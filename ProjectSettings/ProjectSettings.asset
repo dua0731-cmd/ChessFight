@@ -4,7 +4,7 @@
 PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 28
-  productGUID: c5e821ebe8733054b96c9513e0a2aff4
+  productGUID: ac2b662aceea33b498545a5ee79bf005
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: DefaultCompany
-  productName: ChessFighter
+  productName: "\uCCB4\uC2A4\uD30C\uC774\uD2B8"
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -847,14 +847,14 @@ PlayerSettings:
   editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: ChessFighter
+  metroPackageName: "\uCCB4\uC2A4\uD30C\uC774\uD2B8"
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: ChessFighter
+  metroApplicationDescription: "\uCCB4\uC2A4\uD30C\uC774\uD2B8"
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -923,13 +923,13 @@ PlayerSettings:
   qnxGraphicConfPath: 
   apiCompatibilityLevel: 6
   captureStartupLogs: {}
-  activeInputHandler: 0
+  activeInputHandler: 1
   windowsGamepadBackendHint: 0
-  cloudProjectId: 379ad14a-f260-41cd-b4dd-245af2d3737e
+  cloudProjectId: 33244a02-82ff-4e34-ae85-0ec8f5fb6818
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: ChessFighter
-  organizationId: ysunghan
+  projectName: "\uCCB4\uC2A4\uD30C\uC774\uD2B8"
+  organizationId: sjs510
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}
