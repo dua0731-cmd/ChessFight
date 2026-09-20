@@ -16,6 +16,19 @@ namespace ChessFight.ProtectKing
         public string Result { get; private set; } = "";
         public string Notice { get; private set; } = "";
         public float NoticeUntil { get; private set; }
+        public bool HasAuthority { get; set; } = true;
+        public void ApplyRemote(MatchPhase phase, float elapsed, float remaining, byte result)
+        {
+            if (HasAuthority) return;
+            Phase=phase; Elapsed=elapsed; Remaining=remaining;
+            Result=result==1?"BLUE WINS":result==2?"RED WINS":result==3?"DRAW - time expired":"";
+        }
+        public void ReturnToReady()
+        {
+            if(!HasAuthority)return;
+            Phase=MatchPhase.Ready;Elapsed=0;Remaining=regulationSeconds;Result="";
+            throne.ResetProgress();map.ResetPlayers();
+        }
         public bool IsRunning => Phase == MatchPhase.Running || Phase == MatchPhase.Overtime;
 
         void Awake() { Remaining = regulationSeconds; }
@@ -24,7 +37,7 @@ namespace ChessFight.ProtectKing
 
         public void StartMatch()
         {
-            if (IsRunning) return;
+            if (!HasAuthority || IsRunning) return;
             map.ResetPlayers();
             throne.ResetProgress();
             Elapsed = 0;
@@ -36,7 +49,7 @@ namespace ChessFight.ProtectKing
 
         public void AdvanceClock(float seconds)
         {
-            if (!IsRunning || seconds <= 0) return;
+            if (!HasAuthority || !IsRunning || seconds <= 0) return;
             Elapsed += seconds;
             Remaining -= seconds;
             if (Remaining > 0) return;
@@ -56,7 +69,7 @@ namespace ChessFight.ProtectKing
         // Called only by the throne after eligibility and continuous input have been checked.
         public bool TryFinish(PlayerIdentity winner)
         {
-            if (!IsRunning || winner == null || winner.piece != PieceType.King ||
+            if (!HasAuthority || !IsRunning || winner == null || winner.piece != PieceType.King ||
                 winner.checkpoint != 5 || !throne.IsComplete(winner)) return false;
             Phase = MatchPhase.Finished;
             Result = winner.team.ToString().ToUpperInvariant() + " WINS";

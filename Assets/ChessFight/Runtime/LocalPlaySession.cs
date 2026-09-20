@@ -3,10 +3,11 @@ using UnityEngine.InputSystem;
 
 namespace ChessFight.ProtectKing
 {
-    // One controlled player at a time. The other eleven slots are collision dummies, not network peers.
+    // Local input and camera; OnlineMatchSession owns remote input and AI.
     public sealed class LocalPlaySession : MonoBehaviour
     {
         public StageMap map;
+        public OnlineMatchSession online;
         public InputActionAsset inputActions;
         public Camera viewCamera;
         public int selectedPlayer;
@@ -37,6 +38,7 @@ namespace ChessFight.ProtectKing
 
         public void SelectPlayer(int index)
         {
+            if(online != null && online.Online && index != online.LocalSlot) return;
             selectedPlayer = Mathf.Clamp(index, 0, map.players.Length - 1);
             for (int i = 0; i < map.players.Length; i++)
             {
@@ -46,7 +48,7 @@ namespace ChessFight.ProtectKing
             }
             yaw = 0;
             cameraSnap = true;
-            map.match.throne.ResetProgress();
+            if(online == null) map.match.throne.ResetProgress();
         }
 
         void Update()
@@ -54,9 +56,9 @@ namespace ChessFight.ProtectKing
             var keyboard = Keyboard.current;
             if (keyboard != null)
             {
-                if (keyboard.enterKey.wasPressedThisFrame && !map.match.IsRunning) map.match.StartMatch();
-                if (keyboard.tabKey.wasPressedThisFrame) SelectPlayer((selectedPlayer + 1) % map.players.Length);
-                if (keyboard.rKey.wasPressedThisFrame && map.match.IsRunning) map.Respawn(Active);
+                if (keyboard.enterKey.wasPressedThisFrame && !map.match.IsRunning) { if(online != null) online.StartMatch(); else map.match.StartMatch(); }
+                if ((online == null || !online.Online) && keyboard.tabKey.wasPressedThisFrame) SelectPlayer((selectedPlayer + 1) % map.players.Length);
+                if (online == null && keyboard.rKey.wasPressedThisFrame && map.match.IsRunning) map.Respawn(Active);
             }
             bool mouseLook = Mouse.current != null && Mouse.current.rightButton.isPressed;
             if (mouseLook)
@@ -70,6 +72,11 @@ namespace ChessFight.ProtectKing
                 var stick = Gamepad.current.rightStick.ReadValue();
                 yaw += stick.x * 110 * Time.deltaTime;
                 pitch = Mathf.Clamp(pitch - stick.y * 80 * Time.deltaTime, 15, 65);
+            }
+            if(online != null && online.enabled) {
+                online.Submit(move.ReadValue<Vector2>(),yaw,jump.WasPressedThisFrame(),interact.IsPressed(),
+                    keyboard != null && keyboard.rKey.wasPressedThisFrame);
+                return;
             }
             Active.ViewYaw = yaw;
             Active.SetInput(move.ReadValue<Vector2>(), jump.WasPressedThisFrame());

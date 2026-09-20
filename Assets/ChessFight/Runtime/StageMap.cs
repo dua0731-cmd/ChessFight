@@ -20,6 +20,7 @@ namespace ChessFight.ProtectKing
 
         public void CheckTravel(PlayerMotor motor, Vector3 from, Vector3 to)
         {
+            if (!match.HasAuthority) return;
             var player = motor.Identity;
             if (to.y < killHeight || Mathf.Abs(to.x) > outerLimit || to.z < -15 || to.z > 805)
             { Respawn(motor); return; }
@@ -42,6 +43,7 @@ namespace ChessFight.ProtectKing
 
         public void Respawn(PlayerMotor motor, bool countFall = true)
         {
+            if (!match.HasAuthority) return;
             var player = motor.Identity;
             var gate = FindCheckpoint(player.checkpoint, player.team);
             var point = gate != null ? gate.Recovery(player) : startPoints[player.playerId].position;

@@ -115,6 +115,9 @@ namespace ChessFight.ProtectKing.Editor
             var match=map.match;
             var session=Object.FindFirstObjectByType<LocalPlaySession>();
             session.enabled=false;
+            // Keep this original local-rule fixture deterministic; online and AI have their own integration tests.
+            if(session.online!=null) { session.online.enabled=false; session.online=null; }
+            foreach(var player in map.players) { var m=player.GetComponent<PlayerMotor>();m.ExternalControl=false;m.ClearInput(); }
             if(previewOnly) { CaptureViews(session.viewCamera); results.Add("PASS: Four updated scene previews rendered"); yield break; }
             session.SelectPlayer(0);
             var motor=map.players[0].GetComponent<PlayerMotor>();
@@ -239,6 +242,9 @@ namespace ChessFight.ProtectKing.Editor
                 yield return .3f;
                 CaptureViews(session.viewCamera);
                 session.enabled=false;
+            // Keep this original local-rule fixture deterministic; online and AI have their own integration tests.
+            if(session.online!=null) { session.online.enabled=false; session.online=null; }
+            foreach(var player in map.players) { var m=player.GetComponent<PlayerMotor>();m.ExternalControl=false;m.ClearInput(); }
             }
             results.Add("INFO: " + moving.Length + " moving obstacles; 12 local slots; 7 CP volumes for five indices.");
         }

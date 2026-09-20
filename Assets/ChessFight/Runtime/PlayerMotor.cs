@@ -11,6 +11,9 @@ namespace ChessFight.ProtectKing
         public float gravity = -24f;
         public PlayerIdentity Identity { get; private set; }
         public bool IsLocal { get; set; }
+        public bool ExternalControl { get; set; }
+        public bool Simulate { get; set; } = true;
+        public void ClearInput() { moveInput = Vector2.zero; jumpRequested = false; }
         public bool Grounded
         {
             get
@@ -49,7 +52,7 @@ namespace ChessFight.ProtectKing
 
         void Update()
         {
-            if (map == null) return;
+            if (map == null || !Simulate) return;
             if (!map.match.IsRunning) { moveInput = Vector2.zero; jumpRequested = false; return; }
             var before = transform.position;
             if (support != null && Grounded)
@@ -63,7 +66,7 @@ namespace ChessFight.ProtectKing
                 lastGrounded = Time.time;
                 if (verticalSpeed < 0) verticalSpeed = -2;
             }
-            if (IsLocal && jumpRequested && Time.time - lastGrounded < .12f &&
+            if ((IsLocal || ExternalControl) && jumpRequested && Time.time - lastGrounded < .12f &&
                 Time.time - lastJump > .2f)
             {
                 verticalSpeed = Mathf.Sqrt(-2 * gravity * jumpHeight);
@@ -72,7 +75,7 @@ namespace ChessFight.ProtectKing
             }
             jumpRequested = false;
             verticalSpeed = Mathf.Max(verticalSpeed + gravity * Time.deltaTime, -28);
-            var local = IsLocal ? new Vector3(moveInput.x, 0, moveInput.y) : Vector3.zero;
+            var local = (IsLocal || ExternalControl) ? new Vector3(moveInput.x, 0, moveInput.y) : Vector3.zero;
             var horizontal = Quaternion.Euler(0, ViewYaw, 0) * local * moveSpeed;
             controller.Move((horizontal + Vector3.up * verticalSpeed + pushVelocity) * Time.deltaTime);
             pushVelocity = Vector3.MoveTowards(pushVelocity, Vector3.zero, 12 * Time.deltaTime);
