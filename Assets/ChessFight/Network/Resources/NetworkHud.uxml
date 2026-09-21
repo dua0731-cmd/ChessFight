@@ -1,0 +1,34 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="overlay" picking-mode="Ignore">
+        <ui:VisualElement class="panel">
+            <ui:Label text="CHESSFIGHT / NETWORK LAB" class="title" />
+            <ui:Label name="status" text="Starting..." class="status" />
+            <ui:Label name="error" class="error" />
+            <ui:Label name="details" class="details" />
+            <ui:VisualElement class="row">
+                <ui:Button name="copy-party" text="Copy party ID" />
+                <ui:Button name="copy-match" text="Copy match ID" />
+            </ui:VisualElement>
+            <ui:VisualElement class="row">
+                <ui:Button name="invite" text="Invite Steam friends" />
+                <ui:Button name="find" text="Quick match (6 vs 6)" />
+            </ui:VisualElement>
+            <ui:VisualElement class="row">
+                <ui:Button name="create-test" text="Create private test" />
+                <ui:Button name="start" text="Start private test (2+)" />
+            </ui:VisualElement>
+            <ui:TextField name="code" label="Lobby ID" max-length="20" />
+            <ui:VisualElement class="row">
+                <ui:Button name="join-party" text="Join party ID" />
+                <ui:Button name="join-test" text="Join match ID" />
+            </ui:VisualElement>
+            <ui:VisualElement class="row">
+                <ui:Button name="leave" text="Cancel / leave match" />
+                <ui:Button name="new-party" text="Leave party / new solo" />
+            </ui:VisualElement>
+            <ui:Toggle name="capture" label="WASD + Space enabled" />
+            <ui:Label text="Click the arena after entering an ID.\nBlue and orange are the two teams." class="hint" />
+            <ui:Label name="roster" class="roster" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

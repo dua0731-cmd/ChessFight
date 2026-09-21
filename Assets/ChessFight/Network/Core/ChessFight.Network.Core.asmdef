@@ -1,0 +1,7 @@
+{
+  "name": "ChessFight.Network.Core",
+  "rootNamespace": "ChessFight.Network",
+  "references": [],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}
