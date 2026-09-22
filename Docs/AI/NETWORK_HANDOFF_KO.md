@@ -88,7 +88,7 @@ Input System은 asmdef로 참조하지 않는다. 패키지가 없는 asmdef 참
 
 - `SampleScene`의 Main Camera·Directional Light·Global Volume에 남아 있던 **URP 컴포넌트 3개를 제거**했다. URP 패키지가 없어 스크립트가 해결되지 않아 `The referenced script (Unknown) on this Behaviour is missing!` 경고를 내던 것이다. 이제 `SampleScene`은 부트 대상이 아니다.
 - HUD 패널을 `ScrollView`로 바꿨다. 봇 UI가 늘면서 패널이 720px를 넘어 눌러야 할 요소가 잘리거나 눌리는 문제가 생길 수 있었다.
-- Input System이 켜져 있으면 `EventSystem` + `InputSystemUIInputModule`을 런타임에 보장한다(`Scripts/Input/UiInputBootstrap.cs`). Active Input Handling을 Both로 바꾼 뒤 런타임 UI가 입력을 못 받는 경우를 막는다.
+- ~~`EventSystem` 자동 생성~~ **시도했다가 철회했다.** 이 프로젝트 manifest에는 `com.unity.ugui`가 없어 `UnityEngine.EventSystems`가 존재하지 않고, CS0234로 Safe Mode에 빠졌다. UI Toolkit은 EventSystem 없이 자체 `DefaultEventSystem`으로 런타임 입력을 처리하므로 필요 없는 코드였다. **`Scripts/Input`과 `Scripts/Editor`는 asmdef가 없어 Assembly-CSharp에 들어가므로, 없는 패키지를 참조하면 프로젝트 전체 컴파일이 멈춘다.**
 - Steam 초기화 실패 시 **Retry Steam connection** 버튼이 나온다. 이전에는 Play를 다시 눌러야만 복구할 수 있었다.
 - HUD의 `details`에 `Steam: online/OFFLINE` 줄을 추가했다. 버튼이 전부 비활성인 이유를 화면에서 바로 알 수 있다.
 

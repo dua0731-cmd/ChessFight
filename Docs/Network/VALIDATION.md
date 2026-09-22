@@ -55,10 +55,12 @@
 | `The referenced script (Unknown) ... is missing!` | `SampleScene`의 Main Camera / Directional Light / Global Volume에 URP 컴포넌트 3개가 남아 있었다. URP 패키지가 없어 GUID가 해결되지 않는다 | 세 컴포넌트와 Global Volume 오브젝트를 제거. 이 씬은 부트 대상에서 제외 |
 | **UI가 눌리지 않음** | 확정하지 못했다. 재현할 Unity가 없다. 가능성 높은 순으로 아래 세 가지를 모두 고쳤다 | |
 | ↳ 패널이 화면보다 길어짐 | 봇 UI 4줄을 추가해 패널이 720px를 넘었다. flex 축소/잘림으로 요소를 못 누를 수 있다 | 패널을 `ScrollView`로 변경 |
-| ↳ Input System 전환 | Active Input Handling을 Both로 바꾼 뒤 런타임 UI가 입력을 못 받을 수 있다 | `EventSystem` + `InputSystemUIInputModule`을 런타임에 보장 |
+| ↳ ~~Input System 전환~~ | ~~`EventSystem` 추가~~ **철회.** 이 프로젝트에는 `com.unity.ugui`가 없어 `UnityEngine.EventSystems` 자체가 존재하지 않는다(CS0234로 Safe Mode 진입). UI Toolkit은 EventSystem 없이 자체 `DefaultEventSystem`으로 입력을 받으므로 애초에 불필요했다 | 해당 파일 삭제 |
 | ↳ Steam 미실행 | `Online`이 false면 모든 버튼이 비활성이라 "아무것도 안 눌리는" 것처럼 보인다 | `Retry Steam connection` 버튼 추가, HUD에 `Steam: online/OFFLINE` 표시 |
 
-**UI 문제는 위 셋 중 무엇이 원인이었는지 확인이 필요하다.** 실행 후 HUD의 `Steam:` 줄과 `Input:` 줄을 먼저 본다.
+Input System 가설이 무효가 되면서 남은 후보는 **패널 높이**와 **Steam 미실행** 둘이다. 실행 후 HUD의 `Steam:` 줄과 `Input:` 줄을 먼저 본다.
+
+**교훈:** `Assets/Scripts/Input`과 `Assets/Scripts/Editor`는 asmdef가 없어 Assembly-CSharp에 들어간다. 여기서 없는 패키지의 네임스페이스를 쓰면 **프로젝트 전체가 Safe Mode로 떨어진다.** manifest에 없는 패키지를 참조하지 않는다. 현재 manifest에 uGUI(`com.unity.ugui`)는 없다.
 
 **검증되지 않은 사항 — 에디터에서 반드시 먼저 확인한다.**
 
