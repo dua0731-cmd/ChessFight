@@ -44,8 +44,21 @@
 | 재질 | `TeamBlue/TeamOrange/BoardDark/BoardLight.mat` 자산. 런타임 `new Material` 제거 |
 | UI | `NetworkHud.uxml` + `NetworkHudView`. UXML의 `\n` 문자 표시 문제를 `&#10;`으로 수정 |
 | 입력 | `ChessFightControls.inputactions` + Input System. 패키지 미설치 시 Legacy로 자동 대체 |
-| 씬 | `Assets/ChessFight/Game/Scenes/ChessFightLab.unity` 신규. URP 잔여 참조 없음 |
+| 씬 | `Assets/Scenes/ChessFightLab.unity` 신규(유일한 시작 씬). URP 잔여 참조 없음 |
+| 폴더 | `Assets/{Scripts,Prefabs,Materials,Resources,Scenes}`. 스크립트는 폴더 하나 = 어셈블리 하나 |
 | 어셈블리 | `ChessFight.Game` (Steam 무관) / `ChessFight.Game.Steam` (부트스트랩) 분리 |
+
+### 같은 날 후속 수정
+
+| 증상 | 원인 | 수정 |
+|---|---|---|
+| `The referenced script (Unknown) ... is missing!` | `SampleScene`의 Main Camera / Directional Light / Global Volume에 URP 컴포넌트 3개가 남아 있었다. URP 패키지가 없어 GUID가 해결되지 않는다 | 세 컴포넌트와 Global Volume 오브젝트를 제거. 이 씬은 부트 대상에서 제외 |
+| **UI가 눌리지 않음** | 확정하지 못했다. 재현할 Unity가 없다. 가능성 높은 순으로 아래 세 가지를 모두 고쳤다 | |
+| ↳ 패널이 화면보다 길어짐 | 봇 UI 4줄을 추가해 패널이 720px를 넘었다. flex 축소/잘림으로 요소를 못 누를 수 있다 | 패널을 `ScrollView`로 변경 |
+| ↳ Input System 전환 | Active Input Handling을 Both로 바꾼 뒤 런타임 UI가 입력을 못 받을 수 있다 | `EventSystem` + `InputSystemUIInputModule`을 런타임에 보장 |
+| ↳ Steam 미실행 | `Online`이 false면 모든 버튼이 비활성이라 "아무것도 안 눌리는" 것처럼 보인다 | `Retry Steam connection` 버튼 추가, HUD에 `Steam: online/OFFLINE` 표시 |
+
+**UI 문제는 위 셋 중 무엇이 원인이었는지 확인이 필요하다.** 실행 후 HUD의 `Steam:` 줄과 `Input:` 줄을 먼저 본다.
 
 **검증되지 않은 사항 — 에디터에서 반드시 먼저 확인한다.**
 
@@ -57,7 +70,7 @@
 
 ## 관찰된 경고와 한계
 
-- 기존 URP 템플릿 참조에 대한 `The referenced script (Unknown) on this Behaviour is missing!` 경고가 남았다. 이 브랜치에는 URP 패키지가 없으며 테스트 공간은 실행 중 Built-in 렌더링을 사용한다.
+- `The referenced script (Unknown) on this Behaviour is missing!` 경고는 `SampleScene`의 URP 컴포넌트 3개를 제거해 해결했다(미검증). 이 브랜치에는 URP 패키지가 없으며 테스트 공간은 실행 중 Built-in 렌더링을 사용한다.
 - 현재 Start 버튼은 실제 게임 규칙 시작이나 씬 전환이 아니라 경기 로비 입장 마감이다.
 - UI 힌트의 `\n` 문자 표시는 UXML에서 `&#10;`으로 수정했다(미검증). 긴 명단, 다양한 해상도, 한글 이름 전체 지원은 별도 확인이 필요하다.
 - Start 버튼은 이제 실제 시작 조건(비공개 2명 이상 / 공개 12명)과 같은 조건에서만 활성화된다(미검증).
@@ -79,12 +92,13 @@ GitHub 앱 쓰기 403은 사용자 GitHub Desktop으로 Push하여 해결한 작
 ## 다음 검증 우선순위
 
 1. **에디터가 새 구조를 여는지.** `ChessFightLab` 씬을 열고 프리팹·재질·UI가 깨지지 않는지, Play 화면이 이전과 같은지.
-2. **Input System 설치와 이동.** 패키지 설치 후 WASD/Space가 동작하는지, HUD의 `Input:` 줄이 Input System을 가리키는지.
-3. **두 계정 양방향 이동·점프.** 매칭까지는 확인했으므로 이제 실제로 서로의 캡슐이 움직이는지 확인한다.
-4. **봇 1인 테스트.** 비공개 방 + 파티 봇 5 → 6인, 이어서 Fill room to 12 → 12인. 봇이 보이고 움직이는지, 프레임과 대역폭이 견디는지.
-5. **봇 2계정 테스트.** 각 PC가 1인 + 봇 5로 Quick match → 6v6 자동 시작. 상대 PC에서도 봇이 보이는지.
-6. 파티장/파티원 취소, 구성 변경, 호스트 정상 종료 및 강제 종료 후 명단/캡슐 정리.
-7. 실제 6+6, 3+3+2+2+1+1, 4+4+4 거절, 부분 입장 실패.
-8. 입력 손실 시 점프, 지연 시 예측 보정, 호스트 프레임 저하, 장시간 세션 측정.
+2. **UI 버튼이 눌리는지.** 눌리지 않으면 HUD의 `Steam:` / `Input:` 줄과 Console 로그를 확인한다.
+3. **Input System 설치와 이동.** 패키지 설치 후 WASD/Space가 동작하는지, HUD의 `Input:` 줄이 Input System을 가리키는지.
+4. **두 계정 양방향 이동·점프.** 매칭까지는 확인했으므로 이제 실제로 서로의 캡슐이 움직이는지 확인한다.
+5. **봇 1인 테스트.** 비공개 방 + 파티 봇 5 → 6인, 이어서 Fill room to 12 → 12인. 봇이 보이고 움직이는지, 프레임과 대역폭이 견디는지.
+6. **봇 2계정 테스트.** 각 PC가 1인 + 봇 5로 Quick match → 6v6 자동 시작. 상대 PC에서도 봇이 보이는지.
+7. 파티장/파티원 취소, 구성 변경, 호스트 정상 종료 및 강제 종료 후 명단/캡슐 정리.
+8. 실제 6+6, 3+3+2+2+1+1, 4+4+4 거절, 부분 입장 실패.
+9. 입력 손실 시 점프, 지연 시 예측 보정, 호스트 프레임 저하, 장시간 세션 측정.
 
 설계와 재현 절차: [AI 인수인계](../AI/NETWORK_HANDOFF_KO.md), [사용자 실행 안내](README.md).

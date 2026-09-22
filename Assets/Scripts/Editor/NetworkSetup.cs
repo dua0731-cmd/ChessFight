@@ -21,7 +21,7 @@ namespace ChessFight.Editor
     [InitializeOnLoad]
     public static class NetworkSetup
     {
-        public const string LabScene = "Assets/ChessFight/Game/Scenes/ChessFightLab.unity";
+        public const string LabScene = "Assets/Scenes/ChessFightLab.unity";
 
         const string Steamworks = "com.rlabrecque.steamworks.net";
         const string SteamworksUrl = "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c21a8f0e31c56ae8707130967faf491f7dd7c0d8";
@@ -92,7 +92,7 @@ namespace ChessFight.Editor
         public static void OpenScene()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-            EditorSceneManager.OpenScene(File.Exists(LabScene) ? LabScene : "Assets/Scenes/SampleScene.unity");
+            EditorSceneManager.OpenScene(LabScene);
         }
 
         [MenuItem("ChessFight/Network/Build Windows development test")]
@@ -103,7 +103,7 @@ namespace ChessFight.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = new[] { File.Exists(LabScene) ? LabScene : "Assets/Scenes/SampleScene.unity" },
+                scenes = new[] { LabScene },
                 locationPathName = path,
                 target = BuildTarget.StandaloneWindows64,
                 options = BuildOptions.Development

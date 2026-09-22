@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using ChessFight.Network;
 using UnityEngine;
@@ -15,13 +14,14 @@ namespace ChessFight.Game
     [DisallowMultipleComponent]
     public sealed class GameBootstrap : MonoBehaviour
     {
-        // Only these scenes opt into the prototype. No gameplay scene is rewritten.
-        static readonly string[] BootScenes = { "ChessFightLab", "NetworkSandbox", "SampleScene" };
+        // Only this scene opts into the prototype: it is the one carrying a wired
+        // GameSceneConfig. The leftover template SampleScene stays inert.
+        const string BootScene = "ChessFightLab";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
-            if (Array.IndexOf(BootScenes, SceneManager.GetActiveScene().name) < 0) return;
+            if (SceneManager.GetActiveScene().name != BootScene) return;
             if (FindFirstObjectByType<GameBootstrap>() != null) return;
             var existing = FindFirstObjectByType<GameSceneConfig>();
             var host = existing != null ? existing.gameObject : new GameObject("ChessFight Game Root");
@@ -96,12 +96,15 @@ namespace ChessFight.Game
             hud.RemoveBot += () => session.SetPartyBots(session.PartyBots - 1);
             hud.FillRoom += () => session.FillRoomWithBots();
             hud.ClearRoomBots += () => session.ClearRoomBots();
+            hud.RetrySteam += () => session.Retry();
         }
 
         void Update()
         {
             if (session == null) return;
             session.Tick();
+            // A successful retry needs the movement layer built after the fact.
+            if (motion == null && session.Online) motion = new SteamMotion(session);
 
             // Read every frame so an edge-triggered jump is never buffered across
             // the frames where movement is suppressed.
@@ -129,7 +132,8 @@ namespace ChessFight.Game
             {
                 Status = session.Status,
                 Error = session.Error,
-                Details = $"Party: {session.Party}  ({humans}/6 players + {session.PartyBots} bots)\n" +
+                Details = $"Steam: {(session.Online ? "online" : "OFFLINE - start Steam, then Retry")}\n" +
+                          $"Party: {session.Party}  ({humans}/6 players + {session.PartyBots} bots)\n" +
                           $"Match: {session.Match}\n{motion?.ConnectionStatus}\nInput: {input?.DisplayName}",
                 Roster = BuildRoster(),
                 Bots = session.Match == 0
@@ -147,7 +151,8 @@ namespace ChessFight.Game
                 CanAddBot = idleLeader && session.PartyBots < session.MaxPartyBots,
                 CanRemoveBot = idleLeader && session.PartyBots > 0,
                 CanFillRoom = hostWaiting && session.Roster.Count < 12,
-                CanClearRoomBots = hostWaiting && session.RoomBots > 0
+                CanClearRoomBots = hostWaiting && session.RoomBots > 0,
+                CanRetry = !session.Online
             };
         }
 

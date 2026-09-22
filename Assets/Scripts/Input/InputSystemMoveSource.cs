@@ -15,7 +15,7 @@ namespace ChessFight.Game
     // It registers itself so GameBootstrap never has to know the Input System exists.
     public sealed class InputSystemMoveSource : IMoveInputSource
     {
-        const string AssetPath = "ChessFight/ChessFightControls";
+        const string AssetPath = "ChessFightControls";
         const string MapName = "Gameplay";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

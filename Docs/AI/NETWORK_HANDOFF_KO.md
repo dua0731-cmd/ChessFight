@@ -51,7 +51,8 @@
 | `new Material(...)` 런타임 생성 | `TeamBlue/TeamOrange/BoardDark/BoardLight.mat` |
 | `Input.GetKey` (Legacy) | `ChessFightControls.inputactions` + Input System |
 | 한 클래스가 UI·세션·표시·입력 전부 담당 | `GameBootstrap` / `PawnSpawner` / `CameraRig` / `NetworkHudView` / `IMoveInputSource` |
-| 빈 `SampleScene` | `Assets/ChessFight/Game/Scenes/ChessFightLab.unity` |
+| 빈 `SampleScene` | `Assets/Scenes/ChessFightLab.unity` (유일한 시작 씬) |
+| `Assets/ChessFight/...` 중첩 폴더 | `Assets/{Scripts,Prefabs,Materials,Resources,Scenes}` |
 
 어셈블리 분리가 핵심이다. **프리팹이 참조하는 스크립트(`ChessFight.Game`)는 Steamworks 없이도 컴파일된다.** 패키지 설치 전에 프로젝트를 열어도 프리팹에 missing script가 뜨지 않는다. Steam을 아는 코드는 `ChessFight.Game.Steam`(`CHESSFIGHT_STEAM` 게이트)에만 있다.
 
@@ -82,6 +83,14 @@ Input System은 asmdef로 참조하지 않는다. 패키지가 없는 asmdef 참
 | 쓰임새 | PC 2대 × (1인 + 봇 5) = 12인 | PC 1대로 12인 부하 측정 |
 
 `BotBrain`은 순수 C#이라 Unity 없이 테스트된다. 지점을 정해 걸어가고 가끔 점프하는 수준이며 **게임 AI가 아니다.** 킹러시 규칙이나 스킬은 없다.
+
+### 후속 수정 (같은 날)
+
+- `SampleScene`의 Main Camera·Directional Light·Global Volume에 남아 있던 **URP 컴포넌트 3개를 제거**했다. URP 패키지가 없어 스크립트가 해결되지 않아 `The referenced script (Unknown) on this Behaviour is missing!` 경고를 내던 것이다. 이제 `SampleScene`은 부트 대상이 아니다.
+- HUD 패널을 `ScrollView`로 바꿨다. 봇 UI가 늘면서 패널이 720px를 넘어 눌러야 할 요소가 잘리거나 눌리는 문제가 생길 수 있었다.
+- Input System이 켜져 있으면 `EventSystem` + `InputSystemUIInputModule`을 런타임에 보장한다(`Scripts/Input/UiInputBootstrap.cs`). Active Input Handling을 Both로 바꾼 뒤 런타임 UI가 입력을 못 받는 경우를 막는다.
+- Steam 초기화 실패 시 **Retry Steam connection** 버튼이 나온다. 이전에는 Play를 다시 눌러야만 복구할 수 있었다.
+- HUD의 `details`에 `Steam: online/OFFLINE` 줄을 추가했다. 버튼이 전부 비활성인 이유를 화면에서 바로 알 수 있다.
 
 ### 이 변경분에서 검증되지 않은 것
 
@@ -123,50 +132,29 @@ GitHub Desktop에서 두 복사본의 표시 이름이 모두 `ChessFight`일 �
 ## 4. 읽을 파일과 의존 방향
 
 ```text
-Assets/ChessFight/
-  Editor/NetworkSetup.cs                  UPM 설치(Steamworks + Input System), 씬 열기, 개발 빌드
-  Network/                                규칙과 전송. Unity 화면을 모른다
-    ChessFight.Network.Steam.asmdef       Steam 어댑터 어셈블리 (CHESSFIGHT_STEAM)
-    Core/
-      ChessFight.Network.Core.asmdef     Unity 비의존 순수 C# 어셈블리
-      TeamReservations.cs                파티 단위 정원·예약·만료 (봇 인지)
-      MotionProtocol.cs                  입력/상태 모델, 이동 수식, 바이너리 포맷
-      BotIdentity.cs                     Steam ID와 겹칠 수 없는 봇 ID, 소유권
-      BotBrain.cs                        호스트 전용 봇 로밍 + BotDirector
-    Steam/
-      SteamSession.cs                    Steam 로비와 파티/매칭 생명주기, 봇 슬롯
-      SteamMotion.cs                     P2P 송수신, 호스트 이동(봇 포함), 예측·보정
-  Game/                                   표현·입력. Steam을 모른다
-    ChessFight.Game.asmdef                제약 없음 — 프리팹이 참조하는 스크립트
-    Runtime/
-      GameSceneConfig.cs                 Inspector 배선 지점 + Resources 대체
-      PawnAvatar.cs                      프리팹의 표시 전용 보간
-      PawnSpawner.cs                     명단에 맞춘 프리팹 생성·파괴
-      CameraRig.cs                       추적 카메라
-      NetworkHudView.cs                  UXML 바인딩 + HudModel
-      MoveInput.cs                       IMoveInputSource, 등록기, Legacy 대체
-    Steam/
-      ChessFight.Game.Steam.asmdef       CHESSFIGHT_STEAM 게이트
-      GameBootstrap.cs                   조립 지점 (구 NetworkSandbox)
-    Resources/ChessFight/
-      PawnAvatar.prefab / Arena.prefab   캐릭터·맵 자산
-      TeamBlue/TeamOrange/Board*.mat     팀·체스판 재질
-      NetworkHud.uxml / .uss / .tss      테스트 UI
-      NetworkColor.shader                캡슐/체스판 셰이더 (Unlit)
-      ChessFightControls.inputactions    Gameplay 맵: Move(Vector2), Jump(Button)
-    Scenes/ChessFightLab.unity            카메라 + ChessFight Game Root
-  Input/InputSystemMoveSource.cs          Assembly-CSharp, ENABLE_INPUT_SYSTEM 게이트
+Assets/
+  Materials/      TeamBlue TeamOrange BoardDark BoardLight .mat + NetworkColor.shader
+  Prefabs/        PawnAvatar.prefab  Arena.prefab
+  Resources/      NetworkHud.uxml/.uss  NetworkTheme.tss  ChessFightControls.inputactions
+  Scenes/         ChessFightLab.unity (유일한 시작 씬)  SampleScene.unity (템플릿, 비활성)
+  Scripts/        폴더 하나 = 어셈블리 하나
+    Core/         ChessFight.Network.Core   규칙·패킷·봇 (Unity 무관 순수 C#)
+    Network/      ChessFight.Network.Steam  Steam 로비·파티·이동 전송
+    Game/         ChessFight.Game           표시·입력·HUD (Steam 무관)
+    Bootstrap/    ChessFight.Game.Steam     조립 지점
+    Input/        Assembly-CSharp           Input System (ENABLE_INPUT_SYSTEM)
+    Editor/       Assembly-CSharp-Editor    설치·씬·빌드 메뉴
+  Settings/       Unity 템플릿 URP 자산 (현재 미사용)
+```
+
+```text
 Tests/Network/
-  NetworkCoreTests.cs                    23개 핵심 로직 검사 (봇 5개 포함)
-  FakeSteam.cs                          테스트용 Steam/Unity 일부 API 모사
-  SessionFlowTests.cs                    실제 SteamSession의 7개 흐름 검사
+  NetworkCoreTests.cs   23개 핵심 로직 검사 (봇 5개 포함)
+  FakeSteam.cs          테스트용 Steam/Unity 일부 API 모사
+  SessionFlowTests.cs   실제 SteamSession의 7개 흐름 검사
 Tools/
-  Test-NetworkCore.ps1                   Core + 모의 세션 테스트 실행
-  Test-NetworkCompile.ps1                실제 Unity/Steamworks 참조 컴파일
-Docs/Network/README.md                   사용자 실행 안내
-Docs/Network/VALIDATION.md               확인 결과와 미검증 범위
-Docs/AI/UnityProjectContext.md           짧은 AI용 프로젝트 맥락
-Docs/AI/NETWORK_HANDOFF_KO.md             이 문서
+  Test-NetworkCore.ps1     Core + 모의 세션 테스트 실행
+  Test-NetworkCompile.ps1  실제 Unity/Steamworks 참조 컴파일
 ```
 
 ```mermaid

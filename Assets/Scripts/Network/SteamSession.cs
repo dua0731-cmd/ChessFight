@@ -92,6 +92,15 @@ namespace ChessFight.Network
             { Error = "Steamworks native plugin unavailable: " + ex.Message; }
         }
 
+        // Steam has to be running before Play starts. Without this the only way out
+        // of a failed init was to stop and re-enter Play mode.
+        public void Retry()
+        {
+            if (disposed || Online) return;
+            Error = ""; Status = "Starting Steam...";
+            Initialize();
+        }
+
         public void Tick()
         {
             if (!Online || disposed) return;

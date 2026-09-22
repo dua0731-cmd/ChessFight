@@ -21,8 +21,9 @@
 - **입력이 Input System으로 바뀌었다.** `ChessFight > Setup > Install dependencies`가 Steamworks와 `com.unity.inputsystem`을 함께 설치한다(에디터 시작 시 자동 1회 시도). **설치 후 생성된 `Packages/manifest.json`과 `packages-lock.json`을 커밋한다.** 패키지가 없으면 Legacy 입력으로 자동 대체되므로 컴파일은 깨지지 않는다.
 - `ProjectSettings`의 Active Input Handling을 **Both**로 바꿨다. 에디터가 켜진 채 Pull 했다면 재시작을 요구할 수 있다.
 - 씬이 `ChessFightLab`으로 바뀌었다. 기존 `SampleScene`에서도 계속 동작한다.
-- 편집 모드의 `ChessFightLab`에는 카메라와 `ChessFight Game Root`만 있다. **체스판·캡슐·HUD는 프리팹/UXML 자산이며 Play 중에 생성(Instantiate)된다.** 누가 경기에 들어올지는 실행 전에 알 수 없으므로 캐릭터 생성 자체는 런타임이 맞다.
-- 고칠 곳: 캐릭터 모양은 `PawnAvatar.prefab`, 맵은 `Arena.prefab`, 색은 `*.mat`, UI는 `NetworkHud.uxml`/`.uss`, 키 배치는 `ChessFightControls.inputactions`. 모두 `Assets/ChessFight/Game/` 아래에 있다.
+- 시작 씬은 `Assets/Scenes/ChessFightLab.unity` **하나뿐이다.** 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. **체스판·캡슐·HUD는 프리팹/UXML 자산이며 Play 중에 생성(Instantiate)된다.** 누가 경기에 들어올지는 실행 전에 알 수 없으므로 캐릭터 생성 자체는 런타임이 맞다.
+- **폴더를 전부 정리했다.** `Assets/Scripts | Prefabs | Materials | Resources | Scenes` 구조다. 아래 '구조와 확장 지점'을 본다.
+- **`SampleScene`의 죽은 URP 컴포넌트 3개(Main Camera, Directional Light, Global Volume)를 제거했다.** `The referenced script (Unknown) ... is missing!` 경고의 원인이었다. 이 씬은 이제 Play해도 아무것도 하지 않는다. 항상 `ChessFightLab`을 쓴다.
 
 ## 가장 빠른 2인 테스트
 
@@ -71,29 +72,38 @@
 
 ## 구조와 확장 지점
 
-네트워크(`Assets/ChessFight/Network/`)와 표현(`Assets/ChessFight/Game/`)을 분리했다. Game은 Steam을 모르고, Network는 Unity 화면을 모른다.
+폴더는 **폴더 하나 = 어셈블리 하나** 규칙으로 최소한만 나눴다.
 
-| 파일 | 책임 |
+```text
+Assets/
+  Materials/      TeamBlue TeamOrange BoardDark BoardLight .mat + NetworkColor.shader
+  Prefabs/        PawnAvatar.prefab  Arena.prefab
+  Resources/      NetworkHud.uxml/.uss  NetworkTheme.tss  ChessFightControls.inputactions
+  Scenes/         ChessFightLab.unity (유일한 시작 씬)  SampleScene.unity (템플릿, 비활성)
+  Scripts/        폴더 하나 = 어셈블리 하나
+    Core/         ChessFight.Network.Core   규칙·패킷·봇 (Unity 무관 순수 C#)
+    Network/      ChessFight.Network.Steam  Steam 로비·파티·이동 전송
+    Game/         ChessFight.Game           표시·입력·HUD (Steam 무관)
+    Bootstrap/    ChessFight.Game.Steam     조립 지점
+    Input/        Assembly-CSharp           Input System (ENABLE_INPUT_SYSTEM)
+    Editor/       Assembly-CSharp-Editor    설치·씬·빌드 메뉴
+  Settings/       Unity 템플릿 URP 자산 (현재 미사용)
+```
+
+의존 방향은 한쪽이다. `Core` ← `Network` / `Game` ← `Bootstrap`. **`Game`은 Steam을 참조하지 않는다.** 그래서 Steamworks가 설치되기 전에 프로젝트를 열어도 프리팹의 스크립트가 깨지지 않는다.
+
+| 고치고 싶은 것 | 파일 |
 |---|---|
-| `Network/Core/TeamReservations.cs` | 호스트 전용 6v6 정원, 파티 단위 예약·만료·입장 완료 |
-| `Network/Core/MotionProtocol.cs` | 버전/세션이 포함된 바이너리 입력·스냅샷, 크기/수치/순서 검증, 평면 이동 모델 |
-| `Network/Core/BotIdentity.cs` | Steam ID와 겹칠 수 없는 봇 ID, 파티장 소유권 |
-| `Network/Core/BotBrain.cs` | 호스트 전용 봇 로밍. 순수 C#이라 Unity 없이 테스트된다 |
-| `Network/Steam/SteamSession.cs` | 비공개 파티, 공개 경기 검색, 초대, 파티 추적, 봇 슬롯, 취소, 호스트 이탈 처리 |
-| `Network/Steam/SteamMotion.cs` | Steam Networking Messages, 호스트 이동 처리(봇 포함), 클라이언트 예측·보정 |
-| `Game/Steam/GameBootstrap.cs` | 조립 지점. 세션을 만들고 나머지에 데이터를 넘긴다 |
-| `Game/Runtime/GameSceneConfig.cs` | Inspector에서 프리팹·재질·UI를 지정하는 유일한 곳 |
-| `Game/Runtime/PawnAvatar.cs` | 캐릭터 프리팹의 표시 전용 보간. 위치를 결정하지 않는다 |
-| `Game/Runtime/PawnSpawner.cs` | 명단에 맞춰 프리팹을 생성·파괴 |
-| `Game/Runtime/CameraRig.cs` | 추적 카메라 |
-| `Game/Runtime/NetworkHudView.cs` | UXML 바인딩. Steam을 참조하지 않는다 |
-| `Game/Runtime/MoveInput.cs` | 입력 추상화 + Legacy 대체 구현 |
-| `Input/InputSystemMoveSource.cs` | Input System 구현. `ENABLE_INPUT_SYSTEM`으로 감싼다 |
-| `Game/Resources/ChessFight/` | `PawnAvatar.prefab`, `Arena.prefab`, `*.mat`, `NetworkHud.*`, `ChessFightControls.inputactions` |
-| `Game/Scenes/ChessFightLab.unity` | 테스트 씬 |
-| `Editor/NetworkSetup.cs` | 패키지 설치·씬 열기·Windows 테스트 빌드 메뉴 |
-
-어셈블리는 넷이다. `ChessFight.Network.Core`(Unity 무관) → `ChessFight.Network.Steam`(Steam 게이트) / `ChessFight.Game`(Steam 무관, 프리팹이 참조) → `ChessFight.Game.Steam`(Steam 게이트). **프리팹이 참조하는 스크립트는 Steamworks 없이도 컴파일된다.** 그래서 패키지 설치 전에 프로젝트를 열어도 프리팹이 깨지지 않는다.
+| 캐릭터 모양 | `Prefabs/PawnAvatar.prefab` |
+| 맵 | `Prefabs/Arena.prefab` |
+| 색 | `Materials/*.mat` |
+| UI 배치·스타일 | `Resources/NetworkHud.uxml` / `.uss` |
+| 키 배치 | `Resources/ChessFightControls.inputactions` |
+| 씬 배선 | `Scenes/ChessFightLab.unity`의 `ChessFight Game Root` |
+| 매칭·예약 규칙 | `Scripts/Core/TeamReservations.cs` |
+| 봇 | `Scripts/Core/BotIdentity.cs`, `BotBrain.cs` |
+| 로비·파티 | `Scripts/Network/SteamSession.cs` |
+| 이동 동기화 | `Scripts/Network/SteamMotion.cs` |
 
 - 관리형 API 래퍼는 Steamworks.NET, 실제 통신은 Steam Networking Messages다. 별도 유료 매칭 서버나 Unity Gaming Services는 사용하지 않는다.
 - 이동 시뮬레이션은 호스트에서 **30Hz**, 스냅샷은 최대 **20Hz**. 클라이언트는 위치를 명령하지 않고 입력을 보낸다. 대각선 속도 제한, 입력 타임아웃, 이전 패킷 무시, 점프/착지, 맵 경계를 처리한다.

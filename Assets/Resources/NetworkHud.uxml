@@ -1,9 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement class="overlay" picking-mode="Ignore">
-        <ui:VisualElement class="panel">
+        <!-- A ScrollView, because the panel is taller than 720px once the roster
+             fills up and a plain element would be squashed or clipped instead. -->
+        <ui:ScrollView name="panel" class="panel">
             <ui:Label text="CHESSFIGHT / NETWORK LAB" class="title" />
             <ui:Label name="status" text="Starting..." class="status" />
             <ui:Label name="error" class="error" />
+            <ui:Button name="retry" text="Retry Steam connection" />
             <ui:Label name="details" class="details" />
             <ui:VisualElement class="row">
                 <ui:Button name="copy-party" text="Copy party ID" />
@@ -27,7 +30,6 @@
                 <ui:Button name="fill-bots" text="Fill room to 12" />
                 <ui:Button name="clear-bots" text="Remove room bots" />
             </ui:VisualElement>
-            <ui:Label text="Party bots join the queue on your team. Fill room to 12 is a host-only shortcut for load tests." class="hint" />
             <ui:TextField name="code" label="Lobby ID" max-length="20" />
             <ui:VisualElement class="row">
                 <ui:Button name="join-party" text="Join party ID" />
@@ -40,6 +42,6 @@
             <ui:Toggle name="capture" label="WASD + Space enabled" />
             <ui:Label text="Click the arena after entering an ID.&#10;Blue and orange are the two teams." class="hint" />
             <ui:Label name="roster" class="roster" />
-        </ui:VisualElement>
+        </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>

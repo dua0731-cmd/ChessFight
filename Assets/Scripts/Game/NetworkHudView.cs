@@ -10,7 +10,7 @@ namespace ChessFight.Game
     {
         public string Status, Error, Details, Roster, Bots;
         public bool CanFindMatch, CanCreateTest, CanInvite, CanJoinParty, CanJoinMatch;
-        public bool CanStart, CanCancel, CanLeaveParty;
+        public bool CanStart, CanCancel, CanLeaveParty, CanRetry;
         public bool CanAddBot, CanRemoveBot, CanFillRoom, CanClearRoomBots;
     }
 
@@ -19,7 +19,7 @@ namespace ChessFight.Game
     [DisallowMultipleComponent]
     public sealed class NetworkHudView : MonoBehaviour
     {
-        public event Action FindMatch, CreateTest, Invite, StartGame, Cancel, LeaveParty;
+        public event Action FindMatch, CreateTest, Invite, StartGame, Cancel, LeaveParty, RetrySteam;
         public event Action CopyParty, CopyMatch, AddBot, RemoveBot, FillRoom, ClearRoomBots;
         public event Action<ulong> JoinParty, JoinMatch;
 
@@ -27,7 +27,7 @@ namespace ChessFight.Game
         Label status, error, details, roster, bots;
         TextField code;
         Toggle capture;
-        Button find, createTest, invite, joinParty, joinMatch, start, cancel, leaveParty;
+        Button find, createTest, invite, joinParty, joinMatch, start, cancel, leaveParty, retry;
         Button addBot, removeBot, fillRoom, clearRoomBots;
 
         public bool IsTyping
@@ -75,6 +75,7 @@ namespace ChessFight.Game
                 if (target != code && (target == null || !code.Contains(target))) root.Focus();
             }, TrickleDown.TrickleDown);
 
+            retry = Bind(root, "retry", () => RetrySteam?.Invoke());
             find = Bind(root, "find", () => FindMatch?.Invoke());
             createTest = Bind(root, "create-test", () => CreateTest?.Invoke());
             invite = Bind(root, "invite", () => Invite?.Invoke());
@@ -112,6 +113,10 @@ namespace ChessFight.Game
             Enable(invite, model.CanInvite); Enable(joinParty, model.CanJoinParty);
             Enable(joinMatch, model.CanJoinMatch); Enable(start, model.CanStart);
             Enable(cancel, model.CanCancel); Enable(leaveParty, model.CanLeaveParty);
+            Enable(retry, model.CanRetry);
+            // Hide the retry button entirely once Steam is up; it is only an escape
+            // hatch from a failed initialisation.
+            if (retry != null) retry.style.display = model.CanRetry ? DisplayStyle.Flex : DisplayStyle.None;
             Enable(addBot, model.CanAddBot); Enable(removeBot, model.CanRemoveBot);
             Enable(fillRoom, model.CanFillRoom); Enable(clearRoomBots, model.CanClearRoomBots);
         }
