@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d47d0cbdc950a4e459cad4214d9e3ada, type: 3}
+  m_Name: RagdollTuning
+  m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.RagdollTuning
+  values:
+    hipAnchorStrength: 3000
+    lowerBodySpring: 2000
+    upperBodySpring: 400
+    armSpring: 80
+    damperRatio: 0.1
+    contactStiffnessMultiplier: 0.35
+    grabStiffnessMultiplier: 0.5
+    slopeStiffnessMultiplier: 0.6
+    stiffnessLerpSpeed: 8
+    knockdownImpulseThreshold: 8
+    getUpDelay: 1.2
+    getUpBlendTime: 0.35
+    momentumRetention: 0.7
+    moveSpeed: 5
+    acceleration: 30
+    turnResponsiveness: 12
+    jumpImpulse: 6
+    airControl: 0.25
+    lowerBodyDynamicShare: 0.6
+    balanceStrength: 1200
+    balanceDamper: 90
+    yawStrength: 350
+    overspeedDecay: 4
+    ragdollFriction: 0.1
+    footFrictionIdle: 0.6
+    footFrictionMoving: 0.1
+    runLift: 0.03
+    hitStiffnessMultiplier: 0.3
+    hitRecoveryTime: 1
+    hitImpactThreshold: 3
+    contactLinger: 0.15
+    slopeAngleThreshold: 20
+    grabRadius: 0.25
+    grabContactDistance: 0.05
+    grabBreakForce: 6000
+    grabArmMultiplier: 6
+    reachArmMultiplier: 3
+    shoveArmMultiplier: 5
+    shoveDuration: 0.2
+    shoveLean: 22
+    shoveLunge: 0.6
+    grabLean: 14
+    pullUpFactor: 1
+    anchorLeash: 0.6
+    anchorIdleFollow: 6
+    gravityScale: 1
+    strideLength: 0.9
+    legSwing: 35
+    armSwing: 35
+    armRestDown: 20
+    chestLean: 10
+    runLean: 6

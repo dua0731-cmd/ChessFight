@@ -1,0 +1,1018 @@
+﻿using System;
+using System.Collections;
+using System.IO;
+using System.Linq;
+using System.Text;
+using UnityEngine;
+
+namespace ChessFight.RagdollLab
+{
+    /// <summary>
+    /// Scripted checks and screenshots for the lab, run only from the command line:
+    /// -ragdollAutoTest &lt;report.txt&gt; and/or -ragdollShots &lt;folder&gt;. Never active in normal play.
+    /// </summary>
+    [DefaultExecutionOrder(-200)]
+    public class LabAutoTest : MonoBehaviour
+    {
+        public LabGame game;
+
+        public static bool Requested => Arg("-ragdollAutoTest") != null || Arg("-ragdollShots") != null;
+        static bool PanelShotRequested => Arg("-ragdollPanelShot") != null;
+
+        readonly StringBuilder log = new StringBuilder();
+        int passed, failed;
+        bool allFinite = true;
+        string pendingShot;
+        Camera shotCamera;
+
+        public static string Arg(string name)
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+                if (args[i] == name)
+                    return i + 1 < args.Length && !args[i + 1].StartsWith("-") ? args[i + 1] : "";
+            return null;
+        }
+
+        IEnumerator Start()
+        {
+            if (PanelShotRequested)
+            {
+                // Normal play with the tuning panel open, captured with IMGUI (needs a windowed player).
+                yield return new WaitForSeconds(1.5f);
+                if (game.dummies.Count > 0) game.dummies[0].Knockdown("사진");
+                game.PanelOpen = true;
+                yield return new WaitForSeconds(0.4f);
+                ScreenCapture.CaptureScreenshot(Arg("-ragdollPanelShot"));
+                yield return new WaitForSeconds(0.6f);
+                Application.Quit();
+                yield break;
+            }
+            if (!Requested)
+            {
+                enabled = false;
+                yield break;
+            }
+            yield return null;
+            yield return null;
+            string report = Arg("-ragdollAutoTest");
+            if (report != null) yield return RunTests(string.IsNullOrEmpty(report) ? "ragdoll_autotest.txt" : report);
+            string shots = Arg("-ragdollShots");
+            if (shots != null) yield return RunShots(string.IsNullOrEmpty(shots) ? "shots" : shots);
+            Application.Quit();
+        }
+
+        // ------------------------------------------------------------------ helpers
+
+        RagdollPawn Spawn(Vector3 ground, Vector3 forward, string name) => game.Spawn(ground, forward, null, name);
+
+        static float Dt => Time.fixedDeltaTime;
+
+        static Vector3 Flat(Vector3 v)
+        {
+            v.y = 0f;
+            return v;
+        }
+
+        static void Drive(RagdollPawn p, Vector3 move, bool grab = false, bool jump = false, bool shove = false) =>
+            p.SetInput(new PawnInput { move = move, grab = grab, jump = jump, shove = shove });
+
+        IEnumerator Sim(float seconds, Action perStep = null)
+        {
+            int steps = Mathf.CeilToInt(seconds / Dt);
+            for (int i = 0; i < steps; i++)
+            {
+                perStep?.Invoke();
+                yield return new WaitForFixedUpdate();
+                foreach (var pawn in RagdollPawn.All)
+                    if (!pawn.IsFinite()) allFinite = false;
+            }
+        }
+
+        IEnumerator Clear()
+        {
+            foreach (var pawn in RagdollPawn.All.ToArray()) Destroy(pawn.gameObject);
+            yield return null;
+            yield return new WaitForFixedUpdate();
+        }
+
+        void Report(string name, bool ok, string detail)
+        {
+            if (ok) passed++;
+            else failed++;
+            log.AppendLine($"{(ok ? "PASS" : "FAIL")} | {name} | {detail}");
+        }
+
+        void Info(string name, string detail) => log.AppendLine($"INFO | {name} | {detail}");
+
+        // ------------------------------------------------------------------ tests
+
+        IEnumerator RunTests(string path)
+        {
+            Time.timeScale = 4f;
+            Time.fixedDeltaTime = 1f / game.physicsRate;
+            Time.maximumDeltaTime = 0.5f;
+            log.AppendLine($"Ragdoll lab autotest {DateTime.Now:yyyy-MM-dd HH:mm:ss}  fixedDt={Time.fixedDeltaTime:F4} gravity={Physics.gravity.y:F2}");
+            log.AppendLine("params " + JsonUtility.ToJson(game.tuning.values));
+            if (Arg("-ragdollDiag") != null) yield return Diagnostics();
+            yield return JointSign();
+            yield return Stand();
+            yield return Run();
+            yield return Turn();
+            yield return JumpCheck();
+            yield return GetUp();
+            yield return Fall();
+            yield return Slope();
+            yield return Contact();
+            yield return GrabDrag();
+            yield return ShoveCheck();
+            yield return Bar();
+            yield return Beam();
+            yield return WallClimb();
+            yield return Crowd();
+            Report("NaN/폭발 없음", allFinite, allFinite ? "모든 부위 좌표 유한" : "NaN 또는 무한대 좌표 발생");
+            log.AppendLine($"RESULT passed={passed} failed={failed}");
+            File.WriteAllText(path, log.ToString());
+            Debug.Log(log.ToString());
+            Time.timeScale = 1f;
+        }
+
+        string JointErrors(RagdollPawn pawn)
+        {
+            var sb = new StringBuilder();
+            for (int i = 1; i < RagdollPawn.Count; i++)
+            {
+                Transform child = pawn.bodies[i].transform;
+                Transform parent = pawn.bodies[RagdollPawn.ParentOf[i]].transform;
+                Quaternion rel = Quaternion.Inverse(parent.rotation) * child.rotation;
+                Vector3 e = rel.eulerAngles;
+                sb.Append($"{(BodyId)i}({Signed(e.x):F0},{Signed(e.y):F0},{Signed(e.z):F0}) ");
+            }
+            return sb.ToString();
+        }
+
+        static float ChestPitch(RagdollPawn pawn)
+        {
+            Quaternion rel = Quaternion.Inverse(pawn.bodies[0].rotation) * pawn.bodies[(int)BodyId.Chest].rotation;
+            Vector3 up = rel * Vector3.up;
+            return Mathf.Atan2(up.z, up.y) * Mathf.Rad2Deg;
+        }
+
+        IEnumerator DriveProbe()
+        {
+            var p = game.tuning.values;
+            float savedRatio = p.damperRatio;
+            p.damperRatio = 0.02f;
+            // Zero-g, hips pinned. Kick the chest, record its pitch, fit frequency and decay.
+            var pawn = Spawn(new Vector3(-5f, 2f, 5f), Vector3.forward, "drive-probe");
+            foreach (var rb in pawn.bodies) rb.useGravity = false;
+            pawn.Hips.isKinematic = true;
+            foreach (var id in new[] { BodyId.Head, BodyId.ArmL, BodyId.HandL, BodyId.ArmR, BodyId.HandR })
+            {
+                pawn.bodies[(int)id].isKinematic = false;
+            }
+            Destroy(pawn.joints[(int)BodyId.Head]);
+            Destroy(pawn.joints[(int)BodyId.ArmL]);
+            Destroy(pawn.joints[(int)BodyId.ArmR]);
+            yield return Sim(0.5f);
+            var chest = pawn.bodies[(int)BodyId.Chest];
+            chest.angularVelocity = chest.transform.right * 3f;
+            var samples = new System.Collections.Generic.List<float>();
+            yield return Sim(2f, () => samples.Add(ChestPitch(pawn)));
+            // Zero crossings -> damped period; successive peak ratio -> damping.
+            var peaks = new System.Collections.Generic.List<(int index, float value)>();
+            for (int i = 1; i + 1 < samples.Count; i++)
+                if (Mathf.Abs(samples[i]) > Mathf.Abs(samples[i - 1]) && Mathf.Abs(samples[i]) >= Mathf.Abs(samples[i + 1]) && Mathf.Abs(samples[i]) > 0.2f)
+                    peaks.Add((i, samples[i]));
+            float inertia = Vector3.Dot(chest.transform.right, chest.inertiaTensorRotation * Vector3.Scale(chest.inertiaTensor, Quaternion.Inverse(chest.inertiaTensorRotation) * chest.transform.right));
+            Vector3 com = chest.worldCenterOfMass - chest.position;
+            float pivotInertia = inertia + chest.mass * (com.y * com.y + com.z * com.z);
+            string detail = $"관성(허리 기준) {pivotInertia:F3} kg·m², 피크 {peaks.Count}개";
+            if (peaks.Count >= 3)
+            {
+                float halfPeriod = (peaks[2].index - peaks[1].index) * Dt;
+                float omegaD = Mathf.PI / halfPeriod;
+                float ratio = Mathf.Abs(peaks[2].value / peaks[1].value);
+                float zetaTerm = -Mathf.Log(ratio) / Mathf.PI;
+                float zeta = zetaTerm / Mathf.Sqrt(1f + zetaTerm * zetaTerm);
+                float omegaN = omegaD / Mathf.Sqrt(1f - zeta * zeta);
+                float kEff = omegaN * omegaN * pivotInertia;
+                float cEff = 2f * zeta * omegaN * pivotInertia;
+                detail += $", 실효 스프링 {kEff:F0} (설정 {p.upperBodySpring:F0}, 비 {kEff / p.upperBodySpring:F2}), 실효 감쇠 {cEff:F1} (설정 {p.upperBodySpring * p.damperRatio:F1}, 비 {cEff / (p.upperBodySpring * p.damperRatio):F2})";
+            }
+            else detail += $", 진동 없음 (첫 값 {samples[0]:F1}, 끝 값 {samples[samples.Count - 1]:F1})";
+            Info("진단: 상체 드라이브 실효값 (감쇠비 0.02)", detail);
+            p.damperRatio = savedRatio;
+            yield return Clear();
+
+            // Anchor angular drive (XY&Z mode): zero-g, torque the hips about X against the anchor.
+            var hipsProbe = Spawn(new Vector3(-5f, 3f, 5f), Vector3.forward, "angular-probe");
+            foreach (var rb in hipsProbe.bodies) rb.useGravity = false;
+            yield return Sim(0.5f);
+            const float hipTorque = 100f;
+            float tilt = 0f;
+            yield return Sim(2f, () =>
+            {
+                hipsProbe.Hips.AddTorque(Vector3.right * hipTorque, ForceMode.Force);
+                tilt = hipsProbe.HipsTilt;
+            });
+            Info("진단: 골반 직립 드라이브 실효값", $"{hipTorque:F0} N·m에 {tilt:F2}° → {hipTorque / (tilt * Mathf.Deg2Rad):F0} N·m/rad (설정 {p.balanceStrength:F0})");
+            yield return Clear();
+
+            // Anchor linear drive: zero-g, push the hips with a known force against the (fixed) anchor.
+            var lin = Spawn(new Vector3(-5f, 3f, 5f), Vector3.forward, "linear-probe");
+            foreach (var rb in lin.bodies) rb.useGravity = false;
+            yield return Sim(0.5f);
+            const float force = 300f;
+            float offset = 0f;
+            Vector3 anchorStart = lin.AnchorPosition;
+            yield return Sim(2f, () =>
+            {
+                lin.Hips.AddForce(Vector3.right * force, ForceMode.Force);
+                offset = lin.Hips.position.x - lin.AnchorPosition.x;
+            });
+            Info("진단: 앵커 직선 드라이브 실효값", $"{force:F0} N에 {offset:F3} m → {force / Mathf.Max(1e-4f, offset):F0} N/m (설정 {p.hipAnchorStrength:F0}), 앵커 이동 {(lin.AnchorPosition - anchorStart).magnitude:F3} m");
+            yield return Clear();
+        }
+
+        IEnumerator StiffnessProbe()
+        {
+            yield return DriveProbe();
+            var p = game.tuning.values;
+            foreach (var (hz, iterations) in new[] { (60, 16), (60, 40), (120, 24), (240, 16) })
+            {
+                Time.fixedDeltaTime = 1f / hz;
+                var pawn = Spawn(new Vector3(-5f, 0f, 5f), Vector3.forward, "probe");
+                foreach (var rb in pawn.bodies)
+                {
+                    rb.solverIterations = iterations;
+                    rb.solverVelocityIterations = Mathf.Max(4, iterations / 4);
+                }
+                yield return Sim(1.5f);
+                float min = 999f, max = -999f, sum = 0f;
+                int n = 0;
+                yield return Sim(1f, () =>
+                {
+                    float a = ChestPitch(pawn);
+                    min = Mathf.Min(min, a);
+                    max = Mathf.Max(max, a);
+                    sum += a;
+                    n++;
+                });
+                Info($"진단: 서 있기 상체 앞뒤 각도 {hz}Hz 솔버 {iterations}", $"평균 {sum / n:F1}°, 범위 {min:F1}~{max:F1}°, 골반 y {pawn.Hips.position.y:F3}");
+                yield return Clear();
+
+                // Zero-g, hips pinned, push the chest with a known torque and read the settled angle.
+                var probe = Spawn(new Vector3(-5f, 2f, 5f), Vector3.forward, "probe-torque");
+                foreach (var rb in probe.bodies)
+                {
+                    rb.useGravity = false;
+                    rb.solverIterations = iterations;
+                    rb.solverVelocityIterations = Mathf.Max(4, iterations / 4);
+                }
+                probe.Hips.isKinematic = true;
+                yield return Sim(0.5f);
+                const float torque = 40f;
+                float settled = 0f;
+                yield return Sim(2f, () =>
+                {
+                    probe.bodies[(int)BodyId.Chest].AddTorque(Vector3.right * torque, ForceMode.Force);
+                    settled = ChestPitch(probe);
+                });
+                float expectedDeg = torque / p.upperBodySpring * Mathf.Rad2Deg;
+                Info($"진단: 상체에 {torque:F0} N·m 가함 {hz}Hz", $"기울기 {settled:F2}° (스프링 {p.upperBodySpring:F0} 기준 예상 {expectedDeg:F2}°) → 실효 강성 {torque / (Mathf.Abs(settled) * Mathf.Deg2Rad):F0} N·m/rad");
+                yield return Clear();
+            }
+            Time.fixedDeltaTime = 1f / game.physicsRate;
+        }
+
+        IEnumerator RunVariants()
+        {
+            var p = game.tuning.values;
+            string saved = JsonUtility.ToJson(p);
+            var variants = new (string label, Action apply)[]
+            {
+                ("기본", () => { }),
+                ("애니메이션·기울기·마찰 전부 0", () =>
+                {
+                    p.legSwing = 0f; p.armSwing = 0f; p.runLean = 0f; p.chestLean = 0f; p.footFrictionMoving = 0f;
+                }),
+                ("전부 0 + 이동 속도 1", () =>
+                {
+                    p.legSwing = 0f; p.armSwing = 0f; p.runLean = 0f; p.chestLean = 0f; p.footFrictionMoving = 0f; p.moveSpeed = 1f;
+                }),
+                ("전부 0 + 앵커 20000", () =>
+                {
+                    p.legSwing = 0f; p.armSwing = 0f; p.runLean = 0f; p.chestLean = 0f; p.footFrictionMoving = 0f; p.hipAnchorStrength = 20000f;
+                }),
+                ("직립 토크 4000", () => p.balanceStrength = 4000f),
+            };
+            foreach (var (label, apply) in variants)
+            {
+                JsonUtility.FromJsonOverwrite(saved, p);
+                apply();
+                var pawn = Spawn(new Vector3(0f, 0f, -13.5f), Vector3.forward, "run-variant");
+                yield return Sim(0.6f);
+                Drive(pawn, Vector3.forward);
+                yield return Sim(1f);
+                float tiltSum = 0f, chestSum = 0f, speedSum = 0f, footDown = 0f, leadSum = 0f, heightSum = 0f;
+                int n = 0;
+                yield return Sim(1.2f, () =>
+                {
+                    Vector3 up = pawn.Hips.transform.up;
+                    tiltSum += Mathf.Atan2(Vector3.Dot(up, Vector3.forward), up.y) * Mathf.Rad2Deg;
+                    chestSum += ChestPitch(pawn);
+                    speedSum += pawn.HorizontalSpeed;
+                    footDown += Mathf.Min(pawn.bodies[(int)BodyId.FootL].position.y, pawn.bodies[(int)BodyId.FootR].position.y);
+                    leadSum += pawn.AnchorPosition.z - pawn.Hips.position.z;
+                    heightSum += pawn.AnchorPosition.y - pawn.Hips.position.y;
+                    n++;
+                });
+                Info($"진단: 달리기 {label}", $"골반 앞기울기 평균 {tiltSum / n:F1}°, 상체 {chestSum / n:F1}°, 속도 {speedSum / n:F2} m/s, 앵커 앞섬 {leadSum / n:F3} m / 위 {heightSum / n:F3} m, 낮은 발목 {footDown / n:F3}, 넘어짐 {pawn.Knockdowns}");
+                yield return Clear();
+            }
+            JsonUtility.FromJsonOverwrite(saved, p);
+
+            var shoves = new (string label, Action apply)[]
+            {
+                ("기본", () => { }),
+                ("내딛기 0.7m", () => p.shoveLunge = 0.7f),
+                ("팔 배율 20", () => p.shoveArmMultiplier = 20f),
+                ("몸 기울기 40°", () => p.shoveLean = 40f),
+            };
+            foreach (var (label, apply) in shoves)
+            {
+                JsonUtility.FromJsonOverwrite(saved, p);
+                apply();
+                var a = Spawn(new Vector3(-8f, 0f, 8f), Vector3.forward, "shover");
+                var b = Spawn(new Vector3(-8f, 0f, 8.65f), Vector3.back, "target");
+                yield return Sim(1f);
+                Vector3 b0 = b.Hips.position, a0 = a.Hips.position;
+                Drive(a, Vector3.zero, shove: true);
+                float peakB = 0f, maxHandZ = -99f;
+                yield return Sim(1.2f, () =>
+                {
+                    peakB = Mathf.Max(peakB, b.HorizontalSpeed);
+                    maxHandZ = Mathf.Max(maxHandZ, Mathf.Max(a.handL.Center.z, a.handR.Center.z));
+                });
+                Info($"진단: 밀치기 {label}", $"상대 밀림 {Vector3.Distance(Flat(b.Hips.position), Flat(b0)):F2} m (최고 {peakB:F2} m/s), 미는 쪽 전진 {a.Hips.position.z - a0.z:F2} m, 손 최대 전진 z {maxHandZ - a0.z:F2} m (상대 상체 앞면 ≈ {b0.z - 0.13f - a0.z:F2}), 상대 넘어짐 {b.Knockdowns}");
+                yield return Clear();
+            }
+            JsonUtility.FromJsonOverwrite(saved, p);
+        }
+
+        IEnumerator Diagnostics()
+        {
+            var p = game.tuning.values;
+            if (Arg("-ragdollProbe") != null)
+            {
+                yield return StiffnessProbe();
+                yield break;
+            }
+            if (Arg("-ragdollRunDiag") != null)
+            {
+                yield return RunVariants();
+                yield break;
+            }
+            var mass = Spawn(new Vector3(-5f, 0f, 5f), Vector3.forward, "diag-mass");
+            {
+                Vector3 waist = mass.bodies[(int)BodyId.Chest].position;
+                var sb = new StringBuilder();
+                Vector3 sum = Vector3.zero;
+                float total = 0f;
+                foreach (var id in new[] { BodyId.Chest, BodyId.Head, BodyId.ArmL, BodyId.HandL, BodyId.ArmR, BodyId.HandR })
+                {
+                    var rb = mass.bodies[(int)id];
+                    Vector3 c = rb.worldCenterOfMass - waist;
+                    sb.Append($"{id} {rb.mass:F1}kg ({c.x:F3},{c.y:F3},{c.z:F3}) ");
+                    sum += c * rb.mass;
+                    total += rb.mass;
+                }
+                Vector3 com = sum / total;
+                Info("진단: 허리 기준 상체 무게중심", sb + $"→ 합계 ({com.x:F3},{com.y:F3},{com.z:F3})");
+                var hips = mass.bodies[0];
+                Info("진단: 골반", $"피벗 {hips.position} 무게중심 {hips.worldCenterOfMass} 관성 {hips.inertiaTensor}");
+            }
+            yield return Clear();
+            var air = Spawn(new Vector3(-5f, 3f, 5f), Vector3.forward, "diag-air");
+            foreach (var rb in air.bodies) rb.useGravity = false;
+            yield return Sim(1f);
+            Info("진단: 무중력 공중 관절 각도", JointErrors(air));
+            yield return Clear();
+
+            var fresh = Spawn(new Vector3(-5f, 0f, 5f), Vector3.forward, "diag-first");
+            yield return new WaitForFixedUpdate();
+            Info("진단: 생성 직후 1스텝", $"골반 y {fresh.Hips.position.y:F3} " + JointErrors(fresh));
+            yield return Sim(0.25f);
+            Info("진단: 생성 0.25초", $"골반 y {fresh.Hips.position.y:F3} " + JointErrors(fresh));
+            yield return Clear();
+
+            float savedLower = p.lowerBodySpring, savedAnchor = p.hipAnchorStrength;
+            foreach (var (lower, anchorK) in new[] { (10000f, 3000f), (2000f, 20000f), (2000f, 0f) })
+            {
+                p.lowerBodySpring = lower;
+                p.hipAnchorStrength = anchorK;
+                var pawn = Spawn(new Vector3(-5f, 0f, 5f), Vector3.forward, "diag");
+                yield return Sim(1.5f);
+                Info($"진단: 하체 {lower:F0} / 앵커 {anchorK:F0}", $"골반 y {pawn.Hips.position.y:F3}, 기울기 {pawn.HipsTilt:F1}° " + JointErrors(pawn));
+                yield return Clear();
+            }
+            p.lowerBodySpring = savedLower;
+            p.hipAnchorStrength = savedAnchor;
+
+            foreach (int variant in new[] { 1, 3, 4, 5, 6 })
+            {
+                float savedGravity = p.gravityScale;
+                float savedStep = Time.fixedDeltaTime;
+                var pawn = Spawn(new Vector3(-5f, 0f, 5f), Vector3.forward, "diag-variant");
+                foreach (var rb in pawn.bodies)
+                {
+                    rb.solverIterations = 40;
+                    rb.solverVelocityIterations = 10;
+                }
+                pawn.Hips.isKinematic = true;
+                pawn.Hips.MovePosition(pawn.Hips.position + Vector3.up * 0.3f);
+                string label = "골반 고정(공중)";
+                if (variant == 3)
+                {
+                    p.gravityScale = savedGravity * 2f;
+                    label += " 중력 2배";
+                }
+                else if (variant == 4)
+                {
+                    Time.fixedDeltaTime = 1f / 240f;
+                    label += " 240Hz";
+                }
+                else if (variant == 5)
+                {
+                    var chestJoint = pawn.joints[(int)BodyId.Chest];
+                    chestJoint.angularXMotion = chestJoint.angularYMotion = chestJoint.angularZMotion = ConfigurableJointMotion.Free;
+                    label += " 상체 제한 없음";
+                }
+                else if (variant == 6)
+                {
+                    foreach (var id in new[] { BodyId.Head, BodyId.ArmL, BodyId.HandL, BodyId.ArmR, BodyId.HandR })
+                        pawn.bodies[(int)id].isKinematic = false;
+                    Destroy(pawn.joints[(int)BodyId.Head]);
+                    Destroy(pawn.joints[(int)BodyId.ArmL]);
+                    Destroy(pawn.joints[(int)BodyId.ArmR]);
+                    label += " 머리·팔 분리";
+                }
+                yield return Sim(1.5f);
+                p.gravityScale = savedGravity;
+                Time.fixedDeltaTime = savedStep;
+                Transform chest = pawn.bodies[(int)BodyId.Chest].transform;
+                Info($"진단: {label} (솔버 40)", $"상체 세계 기울기 {Vector3.Angle(chest.up, Vector3.up):F1}°, 골반 y {pawn.Hips.position.y:F3}, " + JointErrors(pawn));
+                yield return Clear();
+            }
+
+            float savedUpper = p.upperBodySpring, savedArm = p.armSpring;
+            foreach (var (upper, arm) in new[] { (4000f, 80f), (400f, 0f), (400f, 800f) })
+            {
+                p.upperBodySpring = upper;
+                p.armSpring = arm;
+                var pawn = Spawn(new Vector3(-5f, 0f, 5f), Vector3.forward, "diag");
+                foreach (var rb in pawn.bodies)
+                {
+                    rb.solverIterations = 40;
+                    rb.solverVelocityIterations = 10;
+                }
+                yield return Sim(1.5f);
+                Transform chest = pawn.bodies[(int)BodyId.Chest].transform;
+                Info($"진단: 상체 {upper:F0} / 팔 {arm:F0} (솔버 40)", $"상체 세계 기울기 {Vector3.Angle(chest.up, Vector3.up):F1}° (앞뒤 z {chest.up.z:F2}), 퍼펫 상체 {pawn.puppet[(int)BodyId.Chest].localEulerAngles}, " + JointErrors(pawn));
+                yield return Clear();
+            }
+            p.upperBodySpring = savedUpper;
+            p.armSpring = savedArm;
+
+            float savedDt = Time.fixedDeltaTime;
+            foreach (var (iterations, velocityIterations, hz) in new[] { (40, 10, 60), (16, 4, 120), (40, 10, 120), (100, 20, 60) })
+            {
+                Time.fixedDeltaTime = 1f / hz;
+                var pawn = Spawn(new Vector3(-5f, 0f, 5f), Vector3.forward, "diag");
+                foreach (var rb in pawn.bodies)
+                {
+                    rb.solverIterations = iterations;
+                    rb.solverVelocityIterations = velocityIterations;
+                }
+                yield return Sim(1.5f);
+                Info($"진단: 솔버 {iterations}/{velocityIterations}, {hz}Hz", $"골반 y {pawn.Hips.position.y:F3}, 기울기 {pawn.HipsTilt:F1}° " + JointErrors(pawn));
+                yield return Clear();
+            }
+            Time.fixedDeltaTime = savedDt;
+        }
+
+        IEnumerator JointSign()
+        {
+            var pawn = Spawn(new Vector3(0f, 0f, -10f), Vector3.forward, "sign");
+            yield return Sim(1f);
+            Transform hips = pawn.bodies[0].transform;
+
+            Quaternion chestWant = Quaternion.Euler(25f, 0f, 0f);
+            pawn.PoseOverride = i => i == (int)BodyId.Chest ? chestWant : (Quaternion?)null;
+            yield return Sim(0.8f);
+            Quaternion chestRel = Quaternion.Inverse(hips.rotation) * pawn.bodies[(int)BodyId.Chest].transform.rotation;
+            float chestError = Quaternion.Angle(chestRel, chestWant);
+            float chestForward = (chestRel * Vector3.up).z;
+            Report("관절 목표 방향: 상체 앞으로 25°", chestError < 12f && chestForward > 0.2f, $"각도 오차 {chestError:F1}°, 상체 위쪽 벡터 z {chestForward:F2} (앞 +)");
+
+            // Counter-rotate the foot so the sole stays flat instead of digging its heel into the floor.
+            Quaternion thighWant = Quaternion.Euler(-40f, 0f, 0f);
+            Quaternion footWant = Quaternion.Euler(40f, 0f, 0f);
+            pawn.PoseOverride = i => i == (int)BodyId.ThighL ? thighWant : i == (int)BodyId.FootL ? footWant : (Quaternion?)null;
+            yield return Sim(0.8f);
+            Quaternion thighRel = Quaternion.Inverse(hips.rotation) * pawn.bodies[(int)BodyId.ThighL].transform.rotation;
+            float thighError = Quaternion.Angle(thighRel, thighWant);
+            float thighForward = (thighRel * Vector3.down).z;
+            Report("관절 목표 방향: 허벅지 앞으로 40°", thighError < 15f && thighForward > 0.3f, $"각도 오차 {thighError:F1}°, 다리 방향 z {thighForward:F2} (앞 +), 골반 기울기 {pawn.HipsTilt:F1}°");
+            pawn.PoseOverride = null;
+            yield return Clear();
+        }
+
+        IEnumerator Stand()
+        {
+            var pawn = Spawn(new Vector3(0f, 0f, -10f), Vector3.forward, "stand");
+            yield return Sim(1f);
+            float maxTilt = 0f, minY = 99f, maxY = -99f, maxSpeed = 0f;
+            yield return Sim(2f, () =>
+            {
+                maxTilt = Mathf.Max(maxTilt, pawn.HipsTilt);
+                float y = pawn.Hips.position.y;
+                minY = Mathf.Min(minY, y);
+                maxY = Mathf.Max(maxY, y);
+                maxSpeed = Mathf.Max(maxSpeed, pawn.Hips.linearVelocity.magnitude);
+            });
+            float chestSum = 0f;
+            int chestN = 0;
+            yield return Sim(0.5f, () =>
+            {
+                chestSum += ChestPitch(pawn);
+                chestN++;
+            });
+            float chestMean = chestSum / chestN;
+            Report("가만히 서 있기", maxTilt < 12f && pawn.Knockdowns == 0 && maxSpeed < 0.6f && minY > pawn.standHeight - 0.03f,
+                $"최대 기울기 {maxTilt:F1}°, 골반 높이 {minY:F3}~{maxY:F3} (기준 {pawn.standHeight:F3}), 최대 속도 {maxSpeed:F2} m/s, 상체 앞뒤 평균 {chestMean:F1}°");
+            Transform hips = pawn.bodies[0].transform;
+            string Leg(BodyId thigh, BodyId foot)
+            {
+                Quaternion rel = Quaternion.Inverse(hips.rotation) * pawn.bodies[(int)thigh].transform.rotation;
+                Vector3 e = rel.eulerAngles;
+                float footY = pawn.bodies[(int)foot].position.y;
+                return $"{thigh} 회전 ({Signed(e.x):F0},{Signed(e.y):F0},{Signed(e.z):F0})° 발목 높이 {footY:F3}";
+            }
+            Info("서 있기 자세", $"앵커 y {pawn.AnchorPosition.y:F3} / 골반 y {pawn.Hips.position.y:F3}, 접지 {pawn.Grounded}, {Leg(BodyId.ThighL, BodyId.FootL)}, {Leg(BodyId.ThighR, BodyId.FootR)}");
+            yield return Clear();
+        }
+
+        IEnumerator Run()
+        {
+            float target = game.tuning.values.moveSpeed;
+            var pawn = Spawn(new Vector3(0f, 0f, -13.5f), Vector3.forward, "run");
+            yield return Sim(0.8f);
+            Drive(pawn, Vector3.forward);
+            float t = 0f, reach = -1f;
+            yield return Sim(0.8f, () =>
+            {
+                t += Dt;
+                if (reach < 0f && pawn.HorizontalSpeed >= 0.9f * target) reach = t;
+            });
+            Vector3 start = pawn.Hips.position;
+            float maxTilt = 0f, minStiff = 1f, tiltSum = 0f, chestMin = 99f, chestMax = -99f;
+            int samples = 0;
+            yield return Sim(1.5f, () =>
+            {
+                maxTilt = Mathf.Max(maxTilt, pawn.HipsTilt);
+                tiltSum += pawn.HipsTilt;
+                samples++;
+                float chest = ChestPitch(pawn);
+                chestMin = Mathf.Min(chestMin, chest);
+                chestMax = Mathf.Max(chestMax, chest);
+                minStiff = Mathf.Min(minStiff, pawn.EffectiveStiffness);
+            });
+            float average = Vector3.Distance(Flat(start), Flat(pawn.Hips.position)) / 1.5f;
+            Report("평지 달리기", average >= 0.8f * target && pawn.Knockdowns == 0,
+                $"평균 {average:F2} m/s (목표 {target:F1}), 90% 도달 {reach:F2}s, 골반 기울기 평균 {tiltSum / samples:F1}° 최대 {maxTilt:F1}°, 상체 앞뒤 {chestMin:F0}~{chestMax:F0}°, 최저 강성 {minStiff:F2}, 넘어짐 {pawn.Knockdowns}");
+            Drive(pawn, Vector3.zero);
+            t = 0f;
+            float stop = -1f;
+            yield return Sim(2f, () =>
+            {
+                t += Dt;
+                if (stop < 0f && pawn.HorizontalSpeed < 0.5f) stop = t;
+            });
+            Report("멈추기", stop >= 0f && stop < 1f, $"0.5 m/s 미만까지 {stop:F2}s");
+            yield return Clear();
+        }
+
+        IEnumerator Turn()
+        {
+            var pawn = Spawn(new Vector3(-12f, 0f, 5f), Vector3.right, "turn");
+            yield return Sim(0.6f);
+            Drive(pawn, Vector3.right);
+            yield return Sim(1.2f);
+            Drive(pawn, Vector3.left);
+            float t = 0f, flip = -1f, face = -1f;
+            yield return Sim(1.5f, () =>
+            {
+                t += Dt;
+                if (flip < 0f && pawn.Hips.linearVelocity.x < -1f) flip = t;
+                if (face < 0f && Vector3.Angle(Flat(pawn.Hips.transform.forward), Vector3.left) < 30f) face = t;
+            });
+            Report("180° 방향 전환", flip >= 0f && flip < 0.8f && face >= 0f && face < 0.8f && pawn.Knockdowns == 0,
+                $"속도 반전 {flip:F2}s, 몸 방향 {face:F2}s, 넘어짐 {pawn.Knockdowns}");
+            yield return Clear();
+        }
+
+        IEnumerator JumpCheck()
+        {
+            var pawn = Spawn(new Vector3(5f, 0f, -10f), Vector3.forward, "jump");
+            yield return Sim(1f);
+            float y0 = pawn.Hips.position.y, maxY = y0;
+            Drive(pawn, Vector3.zero, jump: true);
+            yield return Sim(2f, () => maxY = Mathf.Max(maxY, pawn.Hips.position.y));
+            float g = -Physics.gravity.y;
+            float v = game.tuning.values.jumpImpulse;
+            float ideal = v * v / (2f * g);
+            Report("점프 후 착지", maxY - y0 > 0.5f * ideal && pawn.Knockdowns == 0 && pawn.State == PawnState.Active,
+                $"높이 {maxY - y0:F2} m (이론 {ideal:F2} m), 넘어짐 {pawn.Knockdowns}");
+            yield return Clear();
+        }
+
+        IEnumerator GetUp()
+        {
+            var p = game.tuning.values;
+            var pawn = Spawn(new Vector3(-5f, 0f, -10f), Vector3.forward, "getup");
+            yield return Sim(1f);
+            pawn.Knockdown("테스트");
+            pawn.AddVelocity(new Vector3(3f, 1f, 0f));
+            float t = 0f, rise = -1f, stand = -1f;
+            yield return Sim(4f, () =>
+            {
+                t += Dt;
+                if (rise < 0f && pawn.State == PawnState.GettingUp) rise = t;
+                if (stand < 0f && rise >= 0f && pawn.State == PawnState.Active) stand = t;
+            });
+            float tilt = pawn.HipsTilt;
+            Report("넉다운 → 자동 기상", rise > 0f && Mathf.Abs(rise - p.getUpDelay) < 0.1f && stand > 0f && tilt < 15f,
+                $"기상 시작 {rise:F2}s (설정 {p.getUpDelay:F2}), 서기 완료 {stand:F2}s, 4초 뒤 기울기 {tilt:F1}°");
+            yield return Clear();
+        }
+
+        IEnumerator Fall()
+        {
+            var pawn = Spawn(new Vector3(-8f, 6f, -8f), Vector3.forward, "fall");
+            float t = 0f, down = -1f;
+            yield return Sim(3.5f, () =>
+            {
+                t += Dt;
+                if (down < 0f && pawn.State == PawnState.Ragdoll) down = t;
+            });
+            Report("6 m 낙하 → 래그돌 → 기상", pawn.Knockdowns >= 1 && pawn.State != PawnState.Ragdoll,
+                $"래그돌 시작 {down:F2}s ({pawn.LastKnockdownCause}), 3.5초 뒤 상태 {pawn.State}, 기울기 {pawn.HipsTilt:F0}°");
+            yield return Clear();
+        }
+
+        IEnumerator Slope()
+        {
+            foreach (int index in new[] { 0, 1, 2 })
+            {
+                float angle = LabLayout.SlopeAngles[index];
+                float z = LabLayout.SlopeZ[index];
+                float edge = LabLayout.PlatformEdgeX;
+                float finish = LabLayout.SlopeBottomX(angle) + 2f;
+                Vector3 start = new Vector3(LabLayout.PlatformBackX + 0.8f, LabLayout.PlatformHeight, z);
+
+                // Both run up at full speed; the roller throws itself down as it reaches the edge.
+                var runner = Spawn(start, Vector3.right, "slope-run");
+                yield return Sim(0.6f);
+                Drive(runner, Vector3.right);
+                float t = 0f, runEdge = -1f, runEnd = -1f, runMax = 0f;
+                yield return Sim(7f, () =>
+                {
+                    t += Dt;
+                    float x = runner.Hips.position.x;
+                    runMax = Mathf.Max(runMax, runner.HorizontalSpeed);
+                    if (runEdge < 0f && x > edge) runEdge = t;
+                    if (runEnd < 0f && x > finish) runEnd = t;
+                });
+                int runFalls = runner.Knockdowns;
+                yield return Clear();
+
+                var roller = Spawn(start, Vector3.right, "slope-roll");
+                yield return Sim(0.6f);
+                Drive(roller, Vector3.right);
+                t = 0f;
+                float rollEdge = -1f, rollEnd = -1f, rollMax = 0f;
+                yield return Sim(7f, () =>
+                {
+                    t += Dt;
+                    float x = roller.Hips.position.x;
+                    rollMax = Mathf.Max(rollMax, roller.HorizontalSpeed);
+                    if (rollEdge < 0f && x > edge - 0.3f)
+                    {
+                        rollEdge = t;
+                        roller.Knockdown("테스트: 몸 던지기");
+                        roller.AddVelocity(new Vector3(1f, 0.5f, 0f));
+                    }
+                    if (rollEnd < 0f && x > finish) rollEnd = t;
+                });
+                float runDescent = runEnd >= 0f && runEdge >= 0f ? runEnd - runEdge : -1f;
+                float rollDescent = rollEnd >= 0f && rollEdge >= 0f ? rollEnd - rollEdge : -1f;
+                bool faster = rollDescent > 0f && (runDescent < 0f || rollDescent < runDescent);
+                Report($"경사 {angle:F0}°: 몸 던지기가 더 빠른가 (명세 기준 3)", faster,
+                    $"모서리→바닥 달리기 {Fmt(runDescent)} (최고 수평 {runMax:F1} m/s, 넘어짐 {runFalls}) / 구르기 {Fmt(rollDescent)} (최고 수평 {rollMax:F1} m/s, 넘어짐 {roller.Knockdowns})");
+                yield return Clear();
+            }
+        }
+
+        static string Fmt(float seconds) => seconds < 0f ? "도착 못 함" : $"{seconds:F2}s";
+
+        static float Signed(float degrees) => degrees > 180f ? degrees - 360f : degrees;
+
+        IEnumerator Contact()
+        {
+            var p = game.tuning.values;
+            var a = Spawn(new Vector3(8f, 0f, 3f), Vector3.forward, "contact-a");
+            var b = Spawn(new Vector3(8f, 0f, 4.4f), Vector3.back, "contact-b");
+            yield return Sim(0.8f);
+            Drive(a, Vector3.forward * 0.5f);
+            Drive(b, Vector3.back * 0.5f);
+            float minTarget = 1f, minStiff = 1f;
+            bool touched = false;
+            yield return Sim(1.2f, () =>
+            {
+                minTarget = Mathf.Min(minTarget, a.TargetStiffness);
+                minStiff = Mathf.Min(minStiff, a.EffectiveStiffness);
+                touched |= a.Touching;
+            });
+            Drive(a, Vector3.back * 0.6f);
+            Drive(b, Vector3.forward * 0.6f);
+            yield return Sim(0.8f);
+            Drive(a, Vector3.zero);
+            Drive(b, Vector3.zero);
+            yield return Sim(1.2f);
+            float after = a.EffectiveStiffness;
+            Report("몸이 닿으면 흐물 → 떨어지면 복귀", touched && minTarget <= p.contactStiffnessMultiplier + 0.01f && after > 0.9f,
+                $"접촉 {touched}, 목표 배율 최저 {minTarget:F2}, 실제 강성 최저 {minStiff:F2}, 떨어진 뒤 {after:F2}, 넘어짐 A{a.Knockdowns}/B{b.Knockdowns}");
+            yield return Clear();
+        }
+
+        IEnumerator GrabDrag()
+        {
+            var a = Spawn(new Vector3(-8f, 0f, 3f), Vector3.forward, "grabber");
+            var b = Spawn(new Vector3(-8f, 0f, 3.75f), Vector3.back, "held");
+            yield return Sim(0.8f);
+            Drive(a, Vector3.forward * 0.25f, grab: true);
+            float t = 0f, grabbed = -1f;
+            yield return Sim(2f, () =>
+            {
+                t += Dt;
+                if (grabbed < 0f && a.Grabbing)
+                {
+                    grabbed = t;
+                    Drive(a, Vector3.zero, grab: true);
+                }
+            });
+            Vector3 a0 = a.Hips.position, b0 = b.Hips.position;
+            Drive(a, Vector3.back, grab: true);
+            float aStiff = 1f, bStiff = 1f;
+            yield return Sim(1.5f, () =>
+            {
+                aStiff = Mathf.Min(aStiff, a.EffectiveStiffness);
+                bStiff = Mathf.Min(bStiff, b.EffectiveStiffness);
+            });
+            float pulled = Vector3.Dot(b.Hips.position - b0, Vector3.back);
+            float walked = Vector3.Dot(a.Hips.position - a0, Vector3.back);
+            Report("잡고 끌기", grabbed >= 0f && pulled > 0.6f,
+                $"잡기까지 {Fmt(grabbed)}, 끄는 쪽 이동 {walked:F2} m, 끌려온 거리 {pulled:F2} m, 손 L:{a.handL.IsHolding} R:{a.handR.IsHolding}, 최저 강성 A {aStiff:F2} / B {bStiff:F2}, 넘어짐 A{a.Knockdowns}/B{b.Knockdowns}");
+            Drive(a, Vector3.zero);
+            yield return Clear();
+        }
+
+        IEnumerator ShoveCheck()
+        {
+            var a = Spawn(new Vector3(-8f, 0f, 8f), Vector3.forward, "shover");
+            var b = Spawn(new Vector3(-8f, 0f, 8.65f), Vector3.back, "target");
+            yield return Sim(1f);
+            Vector3 b0 = b.Hips.position;
+            Drive(a, Vector3.zero, shove: true);
+            bool shaken = false;
+            float peak = 0f, minStiff = 1f;
+            yield return Sim(1.2f, () =>
+            {
+                shaken |= b.Stunned || b.State != PawnState.Active;
+                peak = Mathf.Max(peak, b.HorizontalSpeed);
+                minStiff = Mathf.Min(minStiff, b.EffectiveStiffness);
+            });
+            float moved = Vector3.Distance(Flat(b.Hips.position), Flat(b0));
+            Report("밀치기로 상대가 밀림", moved > 0.25f || shaken,
+                $"밀린 거리 {moved:F2} m, 최고 속도 {peak:F2} m/s, 최저 강성 {minStiff:F2}, 휘청·넘어짐 {shaken} (넉다운 {b.Knockdowns}), 미는 쪽 넘어짐 {a.Knockdowns}");
+            yield return Clear();
+        }
+
+        IEnumerator Bar()
+        {
+            float saved = game.bar.degreesPerSecond;
+            game.bar.degreesPerSecond = 120f;
+            var pawn = Spawn(LabLayout.BarCenter + new Vector3(3.5f, 0f, 0f), Vector3.forward, "bar");
+            float t = 0f, hit = -1f;
+            yield return Sim(5f, () =>
+            {
+                t += Dt;
+                if (hit < 0f && pawn.Knockdowns > 0) hit = t;
+            });
+            Report("회전 봉에 맞으면 넉다운", hit >= 0f, $"넉다운 {Fmt(hit)} ({pawn.LastKnockdownCause}), 봉 120°/s");
+            game.bar.degreesPerSecond = saved;
+            yield return Clear();
+        }
+
+        IEnumerator Beam()
+        {
+            var pawn = Spawn(new Vector3(0f, 0f, LabLayout.BeamStartZ - 0.3f), Vector3.back, "beam");
+            yield return Sim(0.8f);
+            Drive(pawn, Vector3.back * 0.6f);
+            float t = 0f, fell = -1f;
+            yield return Sim(3f, () =>
+            {
+                t += Dt;
+                if (fell < 0f && pawn.Hips.position.y < -0.5f) fell = t;
+            });
+            float progress = LabLayout.BeamStartZ - pawn.Hips.position.z;
+            Info("외줄 0.6 m 걷기 (속도 60%)", fell < 0f ? $"떨어지지 않음, {progress:F1} m 진행" : $"{fell:F2}s에 떨어짐, {progress:F1} m 진행");
+            yield return Clear();
+        }
+
+        IEnumerator WallClimb()
+        {
+            yield return WallClimb(0);
+            yield return WallClimb(1);
+        }
+
+        IEnumerator WallClimb(int wall)
+        {
+            // Solo attempt: run in holding grab, jump near the wall, jump again while hanging.
+            float wallZ = LabLayout.WallZ[wall];
+            float wallTop = LabLayout.WallHeights[wall];
+            var pawn = Spawn(new Vector3(LabLayout.WallFrontX - 3f, 0f, wallZ), Vector3.right, "climber");
+            yield return Sim(0.6f);
+            Drive(pawn, Vector3.right, grab: true);
+            bool jumped = false, pulled = false, onTop = false;
+            float t = 0f, hangTime = -1f, maxY = 0f, maxHandY = 0f, pullTime = -1f;
+            var trace = new StringBuilder();
+            yield return Sim(5f, () =>
+            {
+                t += Dt;
+                float x = pawn.Hips.position.x;
+                maxY = Mathf.Max(maxY, pawn.Hips.position.y);
+                maxHandY = Mathf.Max(maxHandY, Mathf.Max(pawn.handL.Center.y, pawn.handR.Center.y));
+                if (!jumped && x > LabLayout.WallFrontX - 1.2f)
+                {
+                    jumped = true;
+                    Drive(pawn, Vector3.right, grab: true, jump: true);
+                }
+                if (hangTime < 0f && pawn.HoldingEnvironment()) hangTime = t;
+                if (!pulled && hangTime >= 0f && t > hangTime + 0.3f)
+                {
+                    pulled = true;
+                    pullTime = t;
+                    Drive(pawn, Vector3.right, grab: true, jump: true);
+                }
+                if (pulled && t > hangTime + 1.2f) Drive(pawn, Vector3.right, grab: false);
+                if (pullTime >= 0f && t - pullTime < 0.8f && Mathf.Repeat(t - pullTime, 0.1f) < Dt)
+                    trace.Append($"[{t - pullTime:F1}s y{pawn.Hips.position.y:F2} vy{pawn.Hips.linearVelocity.y:F1} x{x - LabLayout.WallFrontX:F2} 잡음{(pawn.Grabbing ? 1 : 0)}] ");
+                onTop |= pawn.Grounded && pawn.Hips.position.y > wallTop + 0.1f && x > LabLayout.WallFrontX + 0.3f;
+            });
+            Info($"벽 {wallTop:F0}m 혼자 오르기 (잡기+점프, 모서리 잡고 점프)", $"매달림 {Fmt(hangTime)}, 손 최고 {maxHandY:F2} m, 골반 최고 {maxY:F2} m, 위에 올라섬 {onTop} " + trace);
+            yield return Clear();
+        }
+
+        IEnumerator Crowd()
+        {
+            var pawns = new[]
+            {
+                Spawn(new Vector3(5f, 0f, 8f), Vector3.forward, "crowd-1"),
+                Spawn(new Vector3(5.6f, 0f, 8.3f), Vector3.left, "crowd-2"),
+                Spawn(new Vector3(4.5f, 0f, 8.5f), Vector3.right, "crowd-3"),
+            };
+            yield return Sim(0.5f);
+            float maxSpeed = 0f;
+            yield return Sim(3f, () =>
+            {
+                foreach (var pawn in pawns)
+                    foreach (var rb in pawn.bodies)
+                        maxSpeed = Mathf.Max(maxSpeed, rb.linearVelocity.magnitude);
+            });
+            int falls = pawns.Sum(p => p.Knockdowns);
+            Report("세 명 밀착 안정성", maxSpeed < 6f, $"부위 최대 속도 {maxSpeed:F2} m/s, 넘어짐 {falls}");
+            yield return Clear();
+        }
+
+        // ------------------------------------------------------------------ screenshots
+
+        IEnumerator RunShots(string folder)
+        {
+            Directory.CreateDirectory(folder);
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = 1f / game.physicsRate;
+            shotCamera = game.labCamera.GetComponent<Camera>();
+            game.labCamera.enabled = false;
+
+            var pawn = Spawn(new Vector3(0f, 0f, -10f), Vector3.back, "shot");
+            yield return Sim(1.5f);
+            yield return Shot(folder, "01_front", new Vector3(0f, 0.75f, -11.9f), pawn.Hips.position + Vector3.up * 0.3f);
+            yield return Shot(folder, "02_three_quarter", new Vector3(1.4f, 0.95f, -11.5f), pawn.Hips.position + Vector3.up * 0.3f);
+            yield return Shot(folder, "03_back", new Vector3(-0.6f, 1.1f, -8.2f), pawn.Hips.position + Vector3.up * 0.3f);
+            yield return Clear();
+
+            var runner = Spawn(new Vector3(-10f, 0f, -10f), Vector3.right, "runner");
+            yield return Sim(0.6f);
+            Drive(runner, Vector3.right);
+            yield return Sim(1.1f);
+            yield return Shot(folder, "04_run_side", runner.Hips.position + new Vector3(0.4f, 0.6f, -2.6f), runner.Hips.position + Vector3.up * 0.25f);
+            yield return Sim(0.09f);
+            yield return Shot(folder, "05_run_side_b", runner.Hips.position + new Vector3(0.4f, 0.6f, -2.6f), runner.Hips.position + Vector3.up * 0.25f);
+            runner.Knockdown("사진");
+            runner.AddVelocity(new Vector3(1f, 2.5f, 1f));
+            yield return Sim(0.7f);
+            yield return Shot(folder, "06_ragdoll", runner.Hips.position + new Vector3(-1.6f, 1.2f, -2.2f), runner.Hips.position);
+            yield return Sim(0.65f);
+            yield return Shot(folder, "07_getting_up", runner.Hips.position + new Vector3(-1.6f, 1.2f, -2.2f), runner.Hips.position + Vector3.up * 0.2f);
+            yield return Clear();
+
+            var a = Spawn(new Vector3(-8f, 0f, 3f), Vector3.forward, "grabber");
+            var b = Spawn(new Vector3(-8f, 0f, 3.75f), Vector3.back, "held");
+            yield return Sim(0.8f);
+            Drive(a, Vector3.forward * 0.25f, grab: true);
+            yield return Sim(1.2f);
+            Drive(a, Vector3.back * 0.6f, grab: true);
+            yield return Sim(0.5f);
+            Vector3 mid = (a.Hips.position + b.Hips.position) * 0.5f;
+            yield return Shot(folder, "08_grab", mid + new Vector3(2.2f, 1.1f, -0.4f), mid + Vector3.up * 0.25f);
+            yield return Clear();
+
+            var s1 = Spawn(new Vector3(-8f, 0f, 8f), Vector3.forward, "shover");
+            var s2 = Spawn(new Vector3(-8f, 0f, 8.65f), Vector3.back, "target");
+            yield return Sim(1f);
+            Drive(s1, Vector3.zero, shove: true);
+            yield return Sim(0.12f);
+            Vector3 mid2 = (s1.Hips.position + s2.Hips.position) * 0.5f;
+            yield return Shot(folder, "09_shove", mid2 + new Vector3(2.2f, 1.0f, 0f), mid2 + Vector3.up * 0.3f);
+            yield return Clear();
+
+            yield return Shot(folder, "10_overview", new Vector3(8f, 34f, -46f), new Vector3(-2f, 0f, 2f));
+            yield return Shot(folder, "11_walls", new Vector3(9f, 5f, -14f), new Vector3(21f, 1.5f, 0f));
+            yield return Shot(folder, "12_slopes", new Vector3(-10f, 7f, -20f), new Vector3(-30f, 2f, 0f));
+            yield return Shot(folder, "13_bar_beam_low", new Vector3(12f, 9f, 6f), new Vector3(2f, 0f, -8f));
+
+            game.labCamera.enabled = true;
+            var p1 = Spawn(LabLayout.SpawnP1, Vector3.forward, "P1");
+            var p2 = Spawn(LabLayout.SpawnP2, Vector3.forward, "P2");
+            if (game.players.Length > 1)
+            {
+                game.players[0].pawn = p1;
+                game.players[1].pawn = p2;
+                if (game.players[0].material != null) p1.skin.sharedMaterial = game.players[0].material;
+                if (game.players[1].material != null) p2.skin.sharedMaterial = game.players[1].material;
+            }
+            var dummy = Spawn(LabLayout.DummySpawns[0], Vector3.back, "dummy");
+            if (game.dummyMaterial != null) dummy.skin.sharedMaterial = game.dummyMaterial;
+            yield return Sim(1.2f);
+            game.labCamera.enabled = false;
+            yield return ShotCurrent(folder, "14_game_view");
+            yield return Clear();
+        }
+
+        IEnumerator Shot(string folder, string name, Vector3 position, Vector3 lookAt)
+        {
+            shotCamera.transform.SetPositionAndRotation(position, Quaternion.LookRotation(lookAt - position, Vector3.up));
+            yield return ShotCurrent(folder, name);
+        }
+
+        IEnumerator ShotCurrent(string folder, string name)
+        {
+            pendingShot = Path.Combine(folder, name + ".png");
+            yield return null;
+            yield return null;
+        }
+
+        void LateUpdate()
+        {
+            if (pendingShot == null || shotCamera == null) return;
+            const int w = 1280, h = 720;
+            var rt = RenderTexture.GetTemporary(w, h, 24);
+            var previous = shotCamera.targetTexture;
+            shotCamera.targetTexture = rt;
+            shotCamera.Render();
+            shotCamera.targetTexture = previous;
+            RenderTexture.active = rt;
+            var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply();
+            RenderTexture.active = null;
+            RenderTexture.ReleaseTemporary(rt);
+            File.WriteAllBytes(pendingShot, tex.EncodeToPNG());
+            Destroy(tex);
+            pendingShot = null;
+        }
+    }
+}
