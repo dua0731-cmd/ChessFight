@@ -76,6 +76,50 @@ public static class NetworkCoreTests
                 var p=PawnMotor.Spawn(1,0,0); p=PawnMotor.Advance(p,new MoveInput{Jump=true},PawnMotor.Step); Check(p.Y>1,"jump");
                 for(int i=0;i<600;i++) p=PawnMotor.Advance(p,new MoveInput{X=1,Z=1},PawnMotor.Step);
                 Check(p.Y==1&&p.X<=19&&p.Z<=19,"bounds/ground"); });
+            Test("Bot IDs cannot collide with Steam IDs and stay owner scoped", () => {
+                ulong steam = 76561198000000000UL;
+                Check(!BotIdentity.IsBot(steam) && !BotIdentity.IsBot(0), "steam id classified as a bot");
+                ulong mine = BotIdentity.Id(steam, 0), theirs = BotIdentity.Id(steam + 1, 0);
+                Check(BotIdentity.IsBot(mine) && mine != theirs, "owner not encoded in the id");
+                Check(BotIdentity.OwnedBy(mine, steam) && !BotIdentity.OwnedBy(mine, steam + 1), "ownership");
+                Check(BotIdentity.Index(BotIdentity.Id(steam, 5)) == 5, "index");
+                Check(BotIdentity.Fill(steam, 6).Distinct().Count() == 6, "fill repeats ids"); });
+            Test("Declared party bots hold team slots without joining the lobby", () => {
+                var r = new TeamReservations(); ulong leader = 500;
+                var members = new[] { leader, BotIdentity.Id(leader, 0), BotIdentity.Id(leader, 1) };
+                Check(r.Reserve(leader, 77, "t", members, 0, out _), "bot party refused");
+                Check(r.Count == 3 && r.Bots == 2, "bot slots not reserved");
+                r.Reconcile(new HashSet<ulong> { leader }, 26);
+                Check(r.Count == 3 && r.Groups[0].Committed, "absent bots expired the lease"); });
+            Test("A leader cannot claim another party's bots and bots cannot send", () => {
+                var r = new TeamReservations(); ulong mine = 500, other = 600;
+                Check(!r.Reserve(mine, 77, "t", new[] { mine, BotIdentity.Id(other, 0) }, 0, out _), "foreign bot accepted");
+                ulong bot = BotIdentity.Id(mine, 0);
+                Check(!r.Reserve(bot, 77, "t", new[] { bot }, 0, out _), "bot accepted as sender");
+                Check(!r.ReserveBots(mine, new[] { mine }, 0, out _), "human accepted as filler bot");
+                Check(r.Count == 0, "rejected requests changed state"); });
+            Test("Host filler bots reach a full 6v6 alone and can be removed", () => {
+                var r = new TeamReservations(); ulong host = 900;
+                Check(r.Reserve(host, 77, "t", new[] { host }, 0, out _), "host reservation");
+                for (int guard = 0; guard < 12 && r.Count < 12; guard++) {
+                    int size = Math.Min(Math.Min(12 - r.Count, Math.Max(6 - r.Used(0), 6 - r.Used(1))), 6);
+                    Check(size > 0 && r.ReserveBots(host, BotIdentity.Fill(host, size, 6 + r.Bots), 0, out _), "filler refused"); }
+                r.Reconcile(new HashSet<ulong> { host }, 1);
+                Check(r.Count == 12 && r.Used(0) == 6 && r.Used(1) == 6 && r.Ready, "not a full 6v6");
+                r.RemoveFillerBots();
+                Check(r.Count == 1 && r.Bots == 0, "filler bots survived removal"); });
+            Test("Bot movement is a valid in-bounds input stream", () => {
+                ulong id = BotIdentity.Id(900, 0);
+                var brain = new BotBrain(id, 0); var state = PawnMotor.Spawn(id, 0, 0);
+                float startX = state.X, startZ = state.Z; bool moved = false;
+                for (int i = 0; i < 4000; i++) {
+                    var input = brain.Think(state, i * (double)PawnMotor.Step);
+                    Check(Math.Abs(input.X) <= 1.01f && Math.Abs(input.Z) <= 1.01f, "input out of range");
+                    Check(!float.IsNaN(input.X) && !float.IsNaN(input.Z), "input not finite");
+                    state = PawnMotor.Advance(state, input, PawnMotor.Step);
+                    moved |= Math.Abs(state.X - startX) > 1 || Math.Abs(state.Z - startZ) > 1; }
+                Check(moved, "bot never moved");
+                Check(Math.Abs(state.X) <= PawnMotor.Radius && Math.Abs(state.Z) <= PawnMotor.Radius && state.Y >= 1, "bot left the arena"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

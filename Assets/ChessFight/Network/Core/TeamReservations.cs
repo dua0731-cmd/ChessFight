@@ -27,11 +27,34 @@ namespace ChessFight.Network
         public bool Reserve(ulong sender, ulong party, string ticket, ulong[] members, double now, out Group result)
         {
             result = null;
+            // A bot has no Steam presence, so it can never be the sender of a request.
+            if (BotIdentity.IsBot(sender)) return false;
             if (sender == 0 || party == 0 || string.IsNullOrEmpty(ticket) || ticket.Length > 64 ||
                 members == null || members.Length < 1 || members.Length > TeamSize ||
                 !members.Contains(sender) || members.Any(id => id == 0) || members.Distinct().Count() != members.Length)
                 return false;
-            var prior = groups.Find(g => g.Leader == sender);
+            // A declared bot must be derived from the leader declaring it, so one
+            // client cannot claim slots using another party's bot identifiers.
+            if (members.Any(id => BotIdentity.IsBot(id) && !BotIdentity.OwnedBy(id, sender))) return false;
+            return Admit(sender, party, ticket, members, now, out result);
+        }
+
+        // Host-only. Filler bots exist to reach 12 pawns without 12 testers; they
+        // have no lobby membership and therefore no chat path to arrive on.
+        public bool ReserveBots(ulong host, ulong[] members, double now, out Group result)
+        {
+            result = null;
+            if (host == 0 || members == null || members.Length < 1 || members.Length > TeamSize ||
+                members.Distinct().Count() != members.Length ||
+                members.Any(id => !BotIdentity.OwnedBy(id, host)))
+                return false;
+            return Admit(members[0], host, "bots:" + members[0], members, now, out result);
+        }
+
+        bool Admit(ulong leader, ulong party, string ticket, ulong[] members, double now, out Group result)
+        {
+            result = null;
+            var prior = groups.Find(g => g.Leader == leader);
             if (prior != null)
             {
                 if (prior.Party != party || prior.Ticket != ticket || !prior.Members.SequenceEqual(members)) return false;
@@ -42,7 +65,7 @@ namespace ChessFight.Network
             int a = Used(0), b = Used(1), team = a <= b ? 0 : 1;
             if (Used(team) + members.Length > TeamSize) team = 1 - team;
             if (Used(team) + members.Length > TeamSize) return false;
-            result = new Group { Leader = sender, Party = party, Ticket = ticket,
+            result = new Group { Leader = leader, Party = party, Ticket = ticket,
                 Members = (ulong[])members.Clone(), Team = team, Deadline = now + 25 };
             groups.Add(result);
             return true;
@@ -54,7 +77,8 @@ namespace ChessFight.Network
             var removed = new List<Group>();
             foreach (var g in groups.ToArray())
             {
-                bool all = g.Members.All(present.Contains);
+                // Bots never join the Steam lobby, so they always count as arrived.
+                bool all = g.Members.All(id => BotIdentity.IsBot(id) || present.Contains(id));
                 if (all) g.Committed = true;
                 if ((!g.Committed && now > g.Deadline) || (g.Committed && !all))
                 { groups.Remove(g); removed.Add(g); }
@@ -62,7 +86,9 @@ namespace ChessFight.Network
             return removed;
         }
         public bool Ready => Count == 12 && groups.All(g => g.Committed);
+        public int Bots => groups.Sum(g => g.Members.Count(BotIdentity.IsBot));
         public void Remove(ulong leader) => groups.RemoveAll(g => g.Leader == leader);
+        public void RemoveFillerBots() => groups.RemoveAll(g => BotIdentity.IsBot(g.Leader));
         public void Clear() => groups.Clear();
     }
 }

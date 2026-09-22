@@ -1,8 +1,8 @@
 # ChessFight Network — AI·개발자 인수인계
 
-작성일: 2026-09-22 (KST)
+작성일: 2026-09-22 (KST) — 구조 개편·AI 봇 반영
 
-코드 기준: `c9c1e6af50548a8161d10f8754b9a9897a38b3ac` / `Network` 브랜치
+코드 기준: `Network` 브랜치 HEAD
 
 저장소: https://github.com/dua0731-cmd/ChessFight
 
@@ -15,9 +15,11 @@
 - 파티 로비는 최대 6명, 경기 로비는 최대 12명이다. 한 파티를 양 팀으로 나누지 않는다.
 - 공개 자동 매칭은 12명이 모두 입장해야 시작한다. 비공개 테스트는 1명만 있어도 생성·이동이 가능하며, 2명 이상 입장 완료 시 시작 버튼으로 입장을 마감할 수 있다.
 - `StartGame`은 현재 로비를 `playing` 상태로 바꾸고 추가 입장을 잠근다. 킹러시 시작, 씬 전환, 카운트다운, 승패 처리는 없다.
-- Unity에서 `SampleScene`을 열고 Play하면 체스판과 UI가 **실행 중에 생성된다.** 편집 모드의 빈 씬은 이 구현에서 정상이다.
+- `ChessFight > Network > Open test scene`으로 `ChessFightLab`을 열고 Play한다. 체스판·캡슐·HUD는 **프리팹/UXML 자산이며 Play 중에 Instantiate된다.** 편집 모드에 카메라와 `ChessFight Game Root`만 보이는 것은 정상이다.
 - 2026-09-21 실제 Unity에서 패키지 설치, 컴파일, Steam 파티 생성, 비공개 방 입장, 파란 캡슐 생성을 확인했고 Windows 개발 빌드가 성공했다.
-- 2026-09-22 독립 실행 빌드의 체스판·UI 표시, Steam 미실행 시 초기화 오류, 로그인 후 재시작 시 1인 파티·비공개 경기·BLUE 캡슐 생성을 확인했다. **서로 다른 두 PC/Steam 계정의 실시간 이동 동기화는 아직 검증하지 않았다.**
+- 2026-09-22 독립 실행 빌드의 체스판·UI 표시, Steam 미실행 시 초기화 오류, 로그인 후 재시작 시 1인 파티·비공개 경기·BLUE 캡슐 생성을 확인했다.
+- 2026-09-22 **두 PC·두 Steam 계정의 파티 입장과, 각자 1인 파티에서 Quick match를 눌러 서로 같은 경기 방에 수렴하는 것까지 확인했다(사용자 보고).** 그 상태에서 양방향 이동·점프가 보였는지는 보고되지 않았다.
+- 2026-09-22 **구조 개편과 AI 봇을 추가했다. 이 변경분은 Unity에서 한 번도 실행하지 않았다.** 아래 2.5절을 먼저 읽는다.
 
 ### 중요한 커밋
 
@@ -35,6 +37,58 @@
 
 현재 없는 기능: 킹러시 경주 규칙, 기물 선택 및 중복 제한, 6종 스킬, 체력·전투·래그돌, 장애물 충돌 이동, 라운드 점수, 승패, 봇, MMR·랭크, 전용 서버, 호스트 이전, 재접속 복구, 서버 기반 안티치트. Photon, Mirror, Netcode for GameObjects, Unity Relay/Lobby/Matchmaker도 현재 사용하지 않는다. `Multiplayer Center` 패키지가 있다는 이유로 UGS 연결이 구현되었다고 판단하면 안 된다.
 
+## 2.5. 2026-09-22 변경 — 구조 개편과 AI 봇
+
+**기존 네트워크 규칙은 바꾸지 않았다.** 예약·매칭·패킷 포맷·권한 모델은 그대로다. 바뀐 것은 표현 계층과 인원 채우기다.
+
+### 표현 계층을 자산으로 분리
+
+`Assets/ChessFight/Network/Runtime/NetworkSandbox.cs`를 **삭제**하고 `Assets/ChessFight/Game/`로 옮겼다.
+
+| 이전 | 이후 |
+|---|---|
+| `GameObject.CreatePrimitive`로 캡슐·타일 생성 | `PawnAvatar.prefab`, `Arena.prefab` |
+| `new Material(...)` 런타임 생성 | `TeamBlue/TeamOrange/BoardDark/BoardLight.mat` |
+| `Input.GetKey` (Legacy) | `ChessFightControls.inputactions` + Input System |
+| 한 클래스가 UI·세션·표시·입력 전부 담당 | `GameBootstrap` / `PawnSpawner` / `CameraRig` / `NetworkHudView` / `IMoveInputSource` |
+| 빈 `SampleScene` | `Assets/ChessFight/Game/Scenes/ChessFightLab.unity` |
+
+어셈블리 분리가 핵심이다. **프리팹이 참조하는 스크립트(`ChessFight.Game`)는 Steamworks 없이도 컴파일된다.** 패키지 설치 전에 프로젝트를 열어도 프리팹에 missing script가 뜨지 않는다. Steam을 아는 코드는 `ChessFight.Game.Steam`(`CHESSFIGHT_STEAM` 게이트)에만 있다.
+
+Input System은 asmdef로 참조하지 않는다. 패키지가 없는 asmdef 참조는 컴파일을 깨뜨리므로, `Assets/ChessFight/Input/InputSystemMoveSource.cs`를 **Assembly-CSharp**에 두고 Unity 자체 define인 `ENABLE_INPUT_SYSTEM`으로 감쌌다. 이 클래스가 `MoveInputSources.Register`로 자기 자신을 등록하므로 `GameBootstrap`은 Input System을 전혀 참조하지 않는다. 패키지가 없으면 `LegacyMoveInputSource`가 쓰인다.
+
+`com.unity.inputsystem`은 **manifest에 버전을 고정하지 않았다.** 에디터 버전에 맞는 릴리스를 UPM이 고르도록 `Client.Add("com.unity.inputsystem")`만 호출한다. 설치 결과 manifest/lock은 커밋한다. `ProjectSettings`의 `activeInputHandler`는 `0` → `2`(Both)로 바꿨다.
+
+### AI 봇
+
+봇은 **Steam 계정이 없는 명단 항목**이다. 로비에 입장하지 않고, 예약 정원만 차지하며, 경기 호스트가 이동을 계산한다. 봇에게는 절대 패킷을 보내지 않고 봇으로부터 받지도 않는다.
+
+봇 ID 구조: `[4비트 태그 0xB][44비트 소유 파티장][12비트 인덱스]`.
+
+- 개인 SteamID64는 항상 상위 니블이 `0x0`이므로 `0xB` 태그는 Steam ID 공간과 영구히 겹치지 않는다.
+- 소유자를 ID에 넣었기 때문에 **서로 다른 파티의 봇 ID가 충돌할 수 없고**, 호스트가 "이 봇이 정말 이 파티장 것인가"를 검증할 수 있다. 남의 봇을 사칭한 예약은 거절된다.
+- 봇이 예약 요청의 발신자가 되는 경우도 거절한다(`TeamReservations.Reserve`).
+
+정원 처리는 기존 규칙을 그대로 쓴다. `Reconcile`에서 봇은 **항상 입장 완료로 취급**한다(로비에 들어오지 않으므로). 나머지 원자성 규칙(25초 만료, 부분 실패 시 파티 전체 해제)은 사람에게만 그대로 적용된다.
+
+두 가지 사용 경로가 있다.
+
+| | 파티 봇 | 방 채우기 봇 |
+|---|---|---|
+| 누가 | 파티장, 매칭 시작 전 | 경기 호스트, 시작 전 |
+| API | `SetPartyBots(n)` | `FillRoomWithBots()` / `ClearRoomBots()` |
+| 상한 | `6 - 파티원 수` | 남은 전체 자리 |
+| 예약 경로 | `queuedMembers`에 포함되어 평소처럼 채팅으로 예약 | 호스트 로컬 `ReserveBots` (채팅 경로 없음) |
+| 쓰임새 | PC 2대 × (1인 + 봇 5) = 12인 | PC 1대로 12인 부하 측정 |
+
+`BotBrain`은 순수 C#이라 Unity 없이 테스트된다. 지점을 정해 걸어가고 가끔 점프하는 수준이며 **게임 AI가 아니다.** 킹러시 규칙이나 스킬은 없다.
+
+### 이 변경분에서 검증되지 않은 것
+
+1. `.prefab` / `.mat` / `.unity`는 **손으로 작성한 Unity YAML**이다. Unity가 import 하는지, 화면이 이전과 같은지 확인해야 한다.
+2. Input System 설치와 실제 입력 동작.
+3. 봇이 화면에 보이고 움직이는지, 12인 봇 방의 호스트 CPU·대역폭.
+
 ## 3. 환경과 작업 폴더
 
 | 항목 | 기준 |
@@ -45,7 +99,7 @@
 | 패키지 ID | `com.rlabrecque.steamworks.net` |
 | 고정된 패키지 커밋 | `c21a8f0e31c56ae8707130967faf491f7dd7c0d8` |
 | 개발용 Steam App ID | `480`, 루트 `steam_appid.txt` |
-| 입력 | Legacy Input Manager, `Input.GetKey` / `GetKeyDown` |
+| 입력 | Input System (`com.unity.inputsystem`, 버전 미고정) + Legacy 대체. Active Input Handling = Both |
 | 테스트 UI | UI Toolkit / UXML / USS / 런타임 PanelSettings |
 | 테스트 공간 렌더링 | 실행 중 Built-in 렌더링으로 임시 전환 |
 
@@ -70,23 +124,40 @@ GitHub Desktop에서 두 복사본의 표시 이름이 모두 `ChessFight`일 �
 
 ```text
 Assets/ChessFight/
-  Editor/NetworkSetup.cs                  UPM 설치, 테스트 씬 열기, 개발 빌드
-  Network/
-    ChessFight.Network.Steam.asmdef       Steam·런타임 어셈블리
+  Editor/NetworkSetup.cs                  UPM 설치(Steamworks + Input System), 씬 열기, 개발 빌드
+  Network/                                규칙과 전송. Unity 화면을 모른다
+    ChessFight.Network.Steam.asmdef       Steam 어댑터 어셈블리 (CHESSFIGHT_STEAM)
     Core/
       ChessFight.Network.Core.asmdef     Unity 비의존 순수 C# 어셈블리
-      TeamReservations.cs                파티 단위 정원·예약·만료
+      TeamReservations.cs                파티 단위 정원·예약·만료 (봇 인지)
       MotionProtocol.cs                  입력/상태 모델, 이동 수식, 바이너리 포맷
+      BotIdentity.cs                     Steam ID와 겹칠 수 없는 봇 ID, 소유권
+      BotBrain.cs                        호스트 전용 봇 로밍 + BotDirector
     Steam/
-      SteamSession.cs                    Steam 로비와 파티/매칭 생명주기
-      SteamMotion.cs                     P2P 송수신, 호스트 이동, 예측·보정
-    Runtime/NetworkSandbox.cs            실행 부트스트랩, 맵·UI·캡슐·카메라
-    Resources/
-      NetworkHud.uxml / NetworkHud.uss   테스트 UI 구조와 스타일
-      NetworkTheme.tss                  USS를 가져오는 테마
-      NetworkColor.shader               빌드에서도 포함되는 캡슐/체스판 셰이더
+      SteamSession.cs                    Steam 로비와 파티/매칭 생명주기, 봇 슬롯
+      SteamMotion.cs                     P2P 송수신, 호스트 이동(봇 포함), 예측·보정
+  Game/                                   표현·입력. Steam을 모른다
+    ChessFight.Game.asmdef                제약 없음 — 프리팹이 참조하는 스크립트
+    Runtime/
+      GameSceneConfig.cs                 Inspector 배선 지점 + Resources 대체
+      PawnAvatar.cs                      프리팹의 표시 전용 보간
+      PawnSpawner.cs                     명단에 맞춘 프리팹 생성·파괴
+      CameraRig.cs                       추적 카메라
+      NetworkHudView.cs                  UXML 바인딩 + HudModel
+      MoveInput.cs                       IMoveInputSource, 등록기, Legacy 대체
+    Steam/
+      ChessFight.Game.Steam.asmdef       CHESSFIGHT_STEAM 게이트
+      GameBootstrap.cs                   조립 지점 (구 NetworkSandbox)
+    Resources/ChessFight/
+      PawnAvatar.prefab / Arena.prefab   캐릭터·맵 자산
+      TeamBlue/TeamOrange/Board*.mat     팀·체스판 재질
+      NetworkHud.uxml / .uss / .tss      테스트 UI
+      NetworkColor.shader                캡슐/체스판 셰이더 (Unlit)
+      ChessFightControls.inputactions    Gameplay 맵: Move(Vector2), Jump(Button)
+    Scenes/ChessFightLab.unity            카메라 + ChessFight Game Root
+  Input/InputSystemMoveSource.cs          Assembly-CSharp, ENABLE_INPUT_SYSTEM 게이트
 Tests/Network/
-  NetworkCoreTests.cs                    18개 핵심 로직 검사
+  NetworkCoreTests.cs                    23개 핵심 로직 검사 (봇 5개 포함)
   FakeSteam.cs                          테스트용 Steam/Unity 일부 API 모사
   SessionFlowTests.cs                    실제 SteamSession의 7개 흐름 검사
 Tools/
@@ -100,11 +171,17 @@ Docs/AI/NETWORK_HANDOFF_KO.md             이 문서
 
 ```mermaid
 flowchart TD
-  UI[NetworkSandbox: UI / 입력 / 표시] --> Session[SteamSession: 파티와 경기]
-  UI --> Motion[SteamMotion: 이동 동기화]
+  Boot[GameBootstrap: 조립] --> Session[SteamSession: 파티와 경기]
+  Boot --> Motion[SteamMotion: 이동 동기화]
+  Boot --> View[PawnSpawner / CameraRig / NetworkHudView]
+  Boot --> Input[IMoveInputSource]
+  Input -. 등록 .-> ISys[InputSystemMoveSource]
+  View --> Prefabs[(PawnAvatar.prefab / Arena.prefab)]
   Motion --> Session
   Session --> Reservations[TeamReservations]
+  Session --> BotId[BotIdentity]
   Motion --> Protocol[MotionProtocol / PawnMotor]
+  Motion --> Brain[BotDirector / BotBrain]
   Session --> SW[Steamworks.NET]
   Motion --> SW
 ```
@@ -116,13 +193,13 @@ UPM 설치 도구는 Steam 조건부 어셈블리 밖인 `Assets/ChessFight/Edit
 ## 5. 실행부터 종료까지
 
 1. Unity가 패키지를 복원하고 스크립트를 컴파일한다.
-2. `NetworkSandbox.Boot()`가 `AfterSceneLoad` 시점에 현재 씬 이름을 검사한다. `SampleScene` 또는 `NetworkSandbox`이고 기존 컴포넌트가 없을 때만 오브젝트를 생성한다. 별도 `NetworkSandbox.unity` 씬 파일이 만들어져 있다는 뜻은 아니다.
-3. `Awake()`에서 백그라운드 실행을 켜고 렌더 파이프라인 참조를 보관한 뒤 임시로 Built-in을 사용한다. 체스판과 UI를 생성한다.
+2. `GameBootstrap.Boot()`가 `AfterSceneLoad` 시점에 씬 이름을 검사한다. `ChessFightLab` / `NetworkSandbox` / `SampleScene`일 때만 동작한다. 씬에 `GameSceneConfig`가 있으면 그 오브젝트에, 없으면 새 오브젝트에 붙는다.
+3. `Awake()`에서 백그라운드 실행을 켜고 렌더 파이프라인 참조를 보관한 뒤 임시로 Built-in을 사용한다. `Arena.prefab`을 Instantiate하고, 카메라·스포너·입력 소스·HUD를 만든다. 자산이 비어 있으면 `Resources/ChessFight/`에서 대체본을 읽는다.
 4. `SteamSession.Initialize()`가 Packsize/DLL 검사와 `SteamAPI.Init()`을 실행한다. 초기화 성공 후 자신의 Steam ID를 얻고 릴레이 접근 초기화를 요청한다.
 5. 로비 채팅·초대 콜백을 등록한다. 실행 인자 `+connect_lobby <ID>`가 있으면 그 파티로 입장하고, 없으면 자신의 비공개 1인 파티를 만든다.
 6. Steam 초기화에 성공했을 때만 `SteamMotion`을 만든다.
-7. 매 프레임 `session.Tick()` → 입력 수집 → `motion.Update()` → 캡슐 표시 → 약 0.2초 간격 UI 갱신 순서로 실행한다.
-8. `OnDestroy()`에서 **motion.Dispose → session.Dispose** 순서로 네트워크를 종료한다. 재질·PanelSettings를 해제하고 원래 렌더 파이프라인 참조를 되돌린다.
+7. 매 프레임 `session.Tick()` → `IMoveInputSource.Read()` → `motion.Update()` → `PawnSpawner.Sync()` → 카메라 추적 → 약 0.2초 간격 `NetworkHudView.Render()` 순서로 실행한다.
+8. `OnDestroy()`에서 입력 소스를 끈 뒤 **motion.Dispose → session.Dispose** 순서로 네트워크를 종료한다. 생성한 캡슐·맵·PanelSettings를 해제하고 원래 렌더 파이프라인 참조를 되돌린다. 재질은 이제 자산이므로 Destroy하지 않는다.
 
 Steam API는 이 구조에서 `SteamSession` 한 곳이 초기화·콜백 실행·종료를 맡는다. 기존 게임과 통합할 때 다른 SteamManager를 그대로 추가하여 초기화/종료 소유자를 둘로 만들면 안 된다. 현재 초기화 실패 후 UI 안에서 다시 초기화하는 기능은 없다. Steam에 로그인한 뒤 Play 또는 실행 파일을 재시작해야 한다.
 
@@ -321,16 +398,16 @@ BinaryWriter/BinaryReader 기반, 현재 필드들은 little-endian으로 직렬
 
 ## 13. 화면·입력·렌더링 구현
 
-- 체스판은 5×5 크기 타일을 8×8개 생성하여 40×40 공간을 만든다. 타일의 y 중심=-0.25, 두께=0.5다.
-- 플레이어는 Capsule과 작은 Sphere 표시로 구성한다. BLUE/ORANGE로 팀을 구분한다. 체스 말 모델은 아직 없다.
+- 체스판은 `Arena.prefab`에 5×5 타일 64개가 미리 배치되어 40×40 공간을 이룬다. 타일의 y 중심=-0.25, 두께=0.5다. 수치는 코드 생성 시절과 같다.
+- 플레이어는 `PawnAvatar.prefab`(Capsule + `Accent` Sphere + `PawnAvatar` 스크립트)이다. 팀 색은 `PawnSpawner`가 `TeamBlue`/`TeamOrange` 재질로 칠한다. 체스 말 모델로 바꾸려면 이 프리팹만 교체한다.
 - Rigidbody/CharacterController 기반 이동이 아니다. Primitive에 collider가 있어도 motor는 Transform 좌표를 직접 표시하므로 상호 충돌과 장애물 충돌을 해결하지 않는다.
 - avatar 위치는 `1-exp(-18*dt)` 비율의 Lerp, 방향은 수평 이동 차이에 대한 Slerp로 표시한다. snapshot 시간을 쌓아 재생하는 지연 보간 버퍼는 아니다.
 - 초기 카메라는 `(0,24,-24)`에서 아래로 45도, 자기 캐릭터 생성 후 `(0,12,-12)` 오프셋으로 추적한다. 카메라 추적 계수는 `1-exp(-6*dt)`다.
-- 입력은 WASD, Space다. 앱 포커스가 있고 `WASD + Space enabled`가 켜져 있으며 ID 입력칸에 포커스가 없을 때만 적용한다.
+- 입력은 `ChessFightControls.inputactions`의 `Gameplay` 맵이다. `Move`는 WASD·방향키·게임패드 왼쪽 스틱, `Jump`는 Space·게임패드 남쪽 버튼이다. 앱 포커스가 있고 `WASD + Space enabled`가 켜져 있으며 ID 입력칸에 포커스가 없을 때만 적용한다. 패키지가 없으면 `LegacyMoveInputSource`로 자동 대체된다.
 - 버튼은 키보드 포커스를 받지 않고, 입력칸 바깥 클릭은 root로 포커스를 옮겨 이동을 재개한다.
-- `NetworkHud.uxml`의 name과 C# `Q<...>(name)`가 계약이다. UI 요소 이름만 바꾸면 런타임 null 오류가 날 수 있다.
+- `NetworkHud.uxml`의 name과 `NetworkHudView`의 `Q<...>(name)`가 계약이다. 한쪽만 바꾸면 런타임에 로그가 남고 해당 버튼이 죽는다.
 - 참조 해상도 1280×720, UI Toolkit ScaleWithScreenSize를 쓴다. 기본 폰트는 `LegacyRuntime.ttf`다. 한글 이름 및 긴 roster의 모든 해상도 조합을 검증한 상태는 아니다.
-- `NetworkColor`는 Resources에서 명시적으로 로드하여 동적 생성 재질의 셰이더가 Player 빌드에서 누락되는 것을 피한다. 셰이더는 고정 방향 벡터로 간단한 명암을 계산하며 실제 Directional Light의 조명·그림자를 그대로 구현하는 셰이더가 아니다.
+- `NetworkColor`는 **Unlit**이다. 고정 방향 벡터로 명암을 계산하므로 Directional Light도 `RenderSettings.ambientLight`도 화면에 영향을 주지 않는다. 그래서 `Arena.prefab`에는 Light가 없다. 실제 조명이 필요한 재질로 바꿀 때 Light를 추가한다.
 
 현재 브랜치에는 URP 템플릿 자산/컴포넌트 참조가 남았으나 URP 패키지가 없다. 실행 중 Built-in 우회 덕분에 테스트 맵은 보였지만 `The referenced script (Unknown) on this Behaviour is missing!` 경고가 나타났다. 기존 씬·렌더링 구성을 재저장하거나 마이그레이션하여 해결한 것은 아니다. 기존 기획의 URP 선택과 현재 Network 브랜치의 실제 패키지 상태를 혼동하지 않는다.
 
@@ -345,11 +422,14 @@ BinaryWriter/BinaryReader 기반, 현재 필드들은 little-endian으로 직렬
 | Create private test | `FindMatch(true)` | 검색 없이 비공개 경기 생성 |
 | Join party ID | `JoinParty(id)` | 기존 파티를 나간 뒤 해당 파티 입장 |
 | Join match ID | `JoinPrivateMatch(id)` | 파티장을 경기 로비로 보내 예약 시도 |
-| Start private test (2+) | `StartGame()` | 조건 충족 시 playing 및 입장 마감 |
+| Start match | `StartGame()` | 조건 충족 시 playing 및 입장 마감 |
+| `-` / `+` (AI BOTS) | `SetPartyBots(n)` | 파티 봇 수 조절. 파티장, 매칭 전에만 |
+| Fill room to 12 | `FillRoomWithBots()` | 호스트가 남은 자리를 봇으로 채움 |
+| Remove room bots | `ClearRoomBots()` | 호스트 충원 봇만 해제 (파티 봇은 유지) |
 | Cancel / leave match | `Cancel()` | 파티 유지, 경기 취소 |
 | Leave party / new solo | `LeaveParty()` | 새 1인 파티 생성 |
 
-UI의 Start 버튼은 호스트이고 미시작이면 활성화된다. 실제 2명 이상/전체 입장 완료 검사는 `StartGame()` 내부에 있어 **1명 상태에서 버튼이 활성화되어도 시작되지 않는 것**이 현재 동작이다. 버튼 라벨/활성 조건 개선 여지는 있지만 이 문서 작업에서 수정하지 않았다.
+Start 버튼의 활성 조건은 이제 `StartGame()`의 실제 조건과 같다. 비공개 방은 명단 2명 이상, 공개 방은 12명일 때만 활성화된다(`GameBootstrap.BuildModel`). 예전의 "1명인데 버튼이 켜져 있고 눌러도 안 되는" 동작은 없앴다. **다만 실기 확인은 하지 않았다.**
 
 ## 15. 실행·빌드·2인 테스트 절차
 
@@ -358,13 +438,19 @@ UI의 Start 버튼은 호스트이고 미시작이면 활성화된다. 실제 2�
 1. `Network`를 Pull하고 `git log -1`, 현재 폴더, `ProjectVersion.txt`를 확인한다.
 2. Unity `6000.3.11f1`에서 열어 UPM 복원과 컴파일을 기다린다.
 3. Steam 클라이언트를 먼저 실행·로그인한다.
-4. `ChessFight > Network > Open test scene` 또는 `Assets/Scenes/SampleScene.unity`를 연다.
+4. `ChessFight > Network > Open test scene`으로 `ChessFightLab`을 연다. Input System이 없으면 `ChessFight > Setup > Install dependencies`를 먼저 실행한다.
 5. Play를 누르고 `Party ready`와 0이 아닌 Party ID를 확인한다.
-6. `Create private test`를 누르면 `Waiting room: 1/12`와 자기 캡슐이 나타난다. 입력칸 밖을 클릭하고 WASD/Space로 조작한다.
+6. `Create private test`를 누르면 `Waiting room: 1/12`와 자기 캡슐이 나타난다. 입력칸 밖을 클릭하고 WASD/Space로 조작한다. HUD의 `Input:` 줄이 어느 백엔드를 쓰는지 알려준다.
+
+### 봇으로 인원 채우기
+
+- PC 1대로 12인: `+`를 다섯 번 눌러 파티 봇 5 → `Create private test` → 6인 → `Fill room to 12` → 12인.
+- PC 2대로 6v6: 양쪽이 각각 파티 봇 5 → 각자 `Quick match` → 예약이 12가 되면 자동 시작.
+- 봇은 로비 멤버가 아니므로 Steam 친구 목록이나 로비 인원수에는 나타나지 않는다. 명단(roster)에만 `BOT n`으로 보인다.
 
 ### Windows 빌드
 
-`ChessFight > Network > Build Windows development test`는 SampleScene만 포함해 Windows x64 Development 빌드를 생성하고 `steam_appid.txt`를 복사한다.
+`ChessFight > Network > Build Windows development test`는 `ChessFightLab`만 포함해 Windows x64 Development 빌드를 생성하고 `steam_appid.txt`를 복사한다.
 
 ```text
 <프로젝트>/Builds/NetworkTest/ChessFight.exe
@@ -384,6 +470,7 @@ UI의 Start 버튼은 호스트이고 미시작이면 활성화된다. 실제 2�
 6. A: Start private test. 이후 추가 입장이 막히는지 확인한다.
 7. B 퇴장 시 A의 명단과 캡슐 정리, 재입장/새 경기 생성을 확인한다.
 8. 같은 팀 파티를 테스트하려면 먼저 Party ID로 같은 파티를 만든 뒤 파티장이 경기 생성/검색을 시작한다.
+9. 2026-09-22 기준 1~4는 사용자 확인 완료(파티 입장, 공개 매칭 성사). **5의 양방향 이동은 아직 보고되지 않았다.**
 
 동일 Steam 계정으로 Editor와 exe를 띄운 것은 실제 두 사용자 통신 검증이 아니다. 현재 PC 한 대만 조작하여 두 계정 검증을 완료했다고 기록하면 안 된다.
 
@@ -391,7 +478,7 @@ UI의 Start 버튼은 호스트이고 미시작이면 활성화된다. 실제 2�
 
 | 검사 | 상태 | 한계 |
 |---|---|---|
-| 순수 Core 검사 | 18개 통과 | 실제 통신 없음 |
+| 순수 Core 검사 | 23개 통과 (봇 5개 포함) | 실제 통신 없음 |
 | 생산 SteamSession + 모의 Steam 검사 | 7개 통과 | 실제 Steam 전파·연결·패킷 손실 없음 |
 | 실제 Unity/Steamworks 참조 어셈블리 컴파일 | 통과 | Editor/Player 실행과 별도 |
 | 실제 Unity UPM 설치·import·컴파일 | 2026-09-21 완료 | 초기 별도 복사본 라이선스 장애는 이후 사용자 Editor에서 해소 |
@@ -399,8 +486,12 @@ UI의 Start 버튼은 호스트이고 미시작이면 활성화된다. 실제 2�
 | Editor 캡슐·체스판·UI | 표시 확인 | 이동 키 입력을 보냈으나 화면 캡처만으로 점프 궤적 검증은 불충분 |
 | Windows 개발 빌드 | 성공 | 실제 2계정 통신을 보장하지 않음 |
 | 독립 실행 빌드 맵·UI·Steam 입장 | 2026-09-22 1인 성공 | Steam 미실행 오류 후 로그인·재시작으로 Party ready, Waiting room: 1/12, BLUE 캡슐 확인. 두 사용자 통신은 미검증 |
-| 실제 2계정 양방향 이동·점프 | 미검증 | 최우선 후속 검증 |
-| 실제 12인 자동 매칭·부하·손실 | 미검증 | 팀 테스트 필요 |
+| 두 PC·두 계정 파티 입장 | 2026-09-22 성공 | 사용자 보고 |
+| 두 PC·두 계정 공개 매칭 성사 | 2026-09-22 성공 | 사용자 보고. 서로 같은 방으로 수렴 확인 |
+| 실제 2계정 양방향 이동·점프 | 보고 없음 | 최우선 후속 검증 |
+| **구조 개편(프리팹/씬/Input System)** | Unity 미실행 | 손으로 작성한 YAML. 에디터에서 먼저 연다 |
+| **AI 봇 실기 표시·부하** | 미검증 | Core 검사만 통과 |
+| 실제 12인 자동 매칭·부하·손실 | 미검증 | 이제 봇으로 인원 없이도 시도할 수 있다 |
 
 테스트 실행은 프로젝트 루트에서:
 
@@ -416,6 +507,8 @@ $steamRuntime = Get-ChildItem './Library/PackageCache' -Directory |
 
 패키지 Runtime 후보가 여러 개면 사용 중인 패키지를 확인해서 하나를 지정한다. Unity 설치 경로가 다르면 두 도구의 `-UnityEditor` 옵션을 지정한다. 생성물은 Temp 아래이며 커밋하지 않는다. 이 스크립트들은 Unity Test Runner 테스트 모음이 아니라 외부 Mono 컴파일·실행 도구다.
 
+봇 관련 Core 검사 5개: 봇 ID가 Steam ID와 겹치지 않고 소유자별로 구분되는지, 파티 봇이 로비 입장 없이 자리를 유지하는지, 남의 봇 사칭과 봇 발신 요청을 거절하는지, 호스트 충원 봇이 혼자 6v6을 채우고 다시 해제되는지, `BotBrain` 입력이 항상 유효 범위이고 맵을 벗어나지 않는지다.
+
 Core 검사 범위: 팀 정원/파티 유지, 4+4+4 거절, 3+3+2+2+1+1 수용, 아직 접속 중인 인원 예약, 재시도 시 만료 연장 방지, 부분 실패 해제, 중복/0/발신자 불일치/겹친 ID 거절, 명단·ticket 변경 거절, 1,000회 무작위 예약, 입력/상태 직렬화, 세션 격리, 비정상 수치·길이·순서, 대각선 속도, 점프 착지와 경계다. 'spoofed leader' 테스트 이름은 sender가 members에 포함되지 않은 선언을 거절한다는 뜻이며 외부 파티 소속 인증을 증명하지 않는다.
 
 모의 세션 검사 7개: 2인 파티 동행·취소 후 유지, 서로 다른 솔로의 반대 팀 입장, 파티원 취소 전파, 취소된 비동기 입장 콜백 무효화, 일부 파티원 입장 실패, 호스트 이탈, 동시 솔로 12명 검색의 6v6 수렴이다. `SteamMotion` 실제 전송·예측 보정의 통합 테스트는 포함하지 않는다.
@@ -427,28 +520,33 @@ Core 검사 범위: 팀 정원/파티 유지, 4+4+4 거절, 3+3+2+2+1+1 수용, 
 1. **물리 이동 부재:** 수평 경계/지면을 수식으로 고정한다. 킹러시 장애물, 낙하, 경사, 움직이는 발판을 이 motor에 그대로 얹을 수 없다. 이후 충돌 이동 모델과 권위 정책 설계가 필요하다.
 2. **입력 손실과 점프 — 검토 필요:** unreliable 최신 입력만 저장하고 Jump는 한 입력에 실린다. 점프 패킷 손실이나 다음 입력으로의 덮어쓰기 때문에 점프가 반영되지 않을 수 있다. 점프 이벤트 재전송/ack 또는 입력 이력 처리의 실제 필요성을 손실 테스트로 확인한다.
 3. **예측과 호스트 tick 대응 — 검토 필요:** 호스트 최신 입력 유지와 클라이언트 미확인 입력 재실행의 차이를 지연/프레임 저하에서 측정한다. 출시 수준 rollback·결정론 보장으로 설명하지 않는다.
-4. **roster 슬롯 재계산 — 검토 필요:** 대기 중 그룹이 빠지면 슬롯을 다시 계산한다. 기존 `SteamMotion.States`는 기존 캐릭터를 재생성하지 않으므로 표시 roster slot과 현재 상태 slot이 달라질 수 있다. 슬롯을 기물/스폰의 영구 키로 사용하려면 안정적인 배정이 필요하다.
+4. **roster 슬롯 재계산 — 검토 필요:** 대기 중 그룹이 빠지면 슬롯을 다시 계산한다. 기존 `SteamMotion.States`는 기존 캐릭터를 재생성하지 않으므로 표시 roster slot과 현재 상태 slot이 달라질 수 있다. `PawnSpawner`는 팀이 바뀌면 재질을 다시 칠하지만 슬롯 자체를 안정화하지는 않는다. 슬롯을 기물/스폰의 영구 키로 사용하려면 안정적인 배정이 필요하다.
 5. **정보 게시 빈도:** 대기 중 약 4Hz로 roster/free를 게시한다. 변화가 없을 때도 호출한다. Steam 실제 변경 이벤트·제한·비용을 측정하고 변경 시 게시 방식 등을 검토한다.
 6. **호스트 편향과 신뢰:** 호스트가 시뮬레이션·로스터를 쓴다. 악성 호스트 방어/서버 검증은 없다. 호스트가 나가면 경기 종료다.
 7. **권한 검증 범위:** Steam 신원과 현재 경기 명단을 확인하지만 악의적인 파티 명단 선언까지 방어하지 않는다. 모의 테스트 통과를 보안 감사 완료로 표현하지 않는다.
 8. **UI 완성도:** 긴 12인 명단/다양한 해상도, 한글 이름, 입력칸 포커스, 에러 문구 유지, Start 버튼 활성 조건을 실제로 확인해야 한다. 현재 힌트의 `\n`이 화면에 문자로 표시되는 것도 관찰했다.
-9. **URP 잔여 경고:** 템플릿의 누락 스크립트 경고가 남는다. 네트워크 오류와 분리하여 정식 렌더 파이프라인 통합 작업에서 다룬다.
+9. **URP 잔여 경고:** 템플릿 `SampleScene`에는 누락 스크립트 경고가 남는다. 새 `ChessFightLab` 씬에는 URP 참조가 없으므로 이 경고가 나오지 않아야 한다(미확인). 정식 렌더 파이프라인 통합은 별도 작업이다.
 10. **세션 종료 정리 — 검토 필요:** 송신 대상은 connected 집합에 기록되지만 수신 수락만 한 피어의 세션 정리 범위도 점검할 가치가 있다. 현재 테스트로 장시간 연결 자원 누수가 없음을 입증하지 않았다.
 11. **프로토타입 범위:** private Start 이후에도 같은 평면에서 움직인다. '게임 시작'이 실제 게임 규칙을 실행하지 않는다. 공개 자동 매칭은 인원이 없으면 계속 기다린다.
+12. **봇의 한계:** 봇은 호스트 한 대가 전부 시뮬레이션한다. 호스트 성능이 곧 봇 품질이고, 봇이 늘수록 호스트 CPU와 송신량이 는다. 봇은 로비 멤버가 아니라 예약 항목이므로 Steam 쪽 정원(12)과 우리 예약 정원(12)이 서로 다른 값을 가리킬 수 있다. 공개 방을 봇으로 채우면 실제 플레이어가 못 들어온다.
+13. **손으로 만든 Unity 자산:** `.prefab` / `.mat` / `.unity`를 텍스트로 작성했다. Unity가 정상 import 하는지 확인되기 전까지 이 구조는 '작성됨'이지 '동작함'이 아니다.
 
 ## 18. 후속 AI가 작업을 시작하는 순서
 
 1. 저장소를 새로 구현하지 말고 현재 `Network`의 HEAD와 변경 파일을 확인한다. 사용자 작업이 있으면 보존한다.
-2. 이 문서 → SteamSession → TeamReservations → SteamMotion → MotionProtocol → NetworkSandbox 순서로 읽는다.
+2. 이 문서 → SteamSession → TeamReservations → BotIdentity → SteamMotion → MotionProtocol → GameBootstrap 순서로 읽는다.
 3. 실제 열어둔 Unity 프로젝트 경로와 checkout 경로가 같은지 확인한다.
-4. 두 계정 비공개 접속부터 검증하고 결과를 VALIDATION에 날짜·커밋과 함께 남긴다. 12명 자동 매칭부터 시도하면 접속 문제와 정원 대기를 구분하기 어렵다.
-5. 양방향 이동과 파티 단위 입장/취소가 확인된 뒤 강제 종료·패킷 손실·동시 검색을 검증한다.
-6. 그 다음에 킹러시 통합을 별도 작업으로 진행한다. 기물 선택/스킬, 게임 상태, 씬 생명주기, 캐릭터 충돌 모델을 정의해야 한다.
+4. **먼저 에디터에서 새 구조가 열리는지 본다.** `ChessFightLab`을 열고 프리팹·재질·UI가 깨지지 않는지, Play 화면이 예전과 같은지 확인한다. 여기가 막히면 나머지 검증은 의미가 없다.
+5. 봇으로 1인 12인 방을 만들어 표시와 부하를 본다. 사람 없이 할 수 있는 검증이므로 가장 싸다.
+6. 두 계정 양방향 이동을 검증하고 결과를 VALIDATION에 날짜·커밋과 함께 남긴다.
+7. 그 뒤 강제 종료·패킷 손실·동시 검색을 검증한다.
+8. 그 다음에 킹러시 통합을 별도 작업으로 진행한다. 기물 선택/스킬, 게임 상태, 씬 생명주기, 캐릭터 충돌 모델을 정의해야 한다.
 
 변경 시 유지할 계약:
 
 - Core는 Unity/Steam 비의존으로 유지한다.
-- SteamSession은 파티·로비·명단, SteamMotion은 이동, NetworkSandbox는 테스트 표시 책임을 우선 유지한다.
+- SteamSession은 파티·로비·명단, SteamMotion은 이동, `ChessFight.Game`은 표시·입력 책임을 유지한다. **`ChessFight.Game`에 Steam 참조를 넣지 않는다.** 넣는 순간 프리팹이 Steamworks 없이 깨진다.
+- 봇 ID는 `BotIdentity`만 만든다. 다른 곳에서 임의의 ulong을 봇으로 쓰지 않는다. 봇에게 패킷을 보내거나 봇을 피어로 취급하지 않는다.
 - Steam API 초기화·종료 소유자는 하나로 유지한다.
 - 파티는 같은 팀에 원자적으로 예약한다. 클라이언트가 보낸 좌표를 권위 상태로 사용하지 않는다.
 - 대기·취소·늦은 콜백과 해제 경로를 함께 검토한다.
@@ -460,10 +558,12 @@ Core 검사 범위: 팀 정원/파티 유지, 4+4+4 거절, 3+3+2+2+1+1 수용, 
 ### 다른 AI에게 전달할 시작 프롬프트
 
 ```text
-이 저장소의 Network 브랜치에 Steam 파티·기본 6v6 매칭·이동 테스트가 이미 구현되어 있습니다.
+이 저장소의 Network 브랜치에 Steam 파티·6v6 매칭·이동 테스트·AI 봇이 이미 구현되어 있습니다.
 새로 만들지 말고 Docs/AI/NETWORK_HANDOFF_KO.md와 Docs/Network/VALIDATION.md를 먼저 읽으세요.
 현재 git 상태와 Unity 프로젝트 경로를 확인하고 사용자 미커밋 변경을 보존하세요.
-첫 목표는 서로 다른 두 Steam 계정의 비공개 방 입장과 양방향 이동/점프 검증입니다.
+2026-09-22 구조 개편(프리팹/씬/Input System)과 AI 봇은 아직 Unity에서 실행되지 않았습니다.
+첫 목표는 ChessFightLab 씬이 정상적으로 열리고 Play 화면이 이전과 같은지 확인하는 것입니다.
+그 다음 봇으로 1인 12인 방을 만들어 표시와 부하를 보고, 이어서 두 계정 양방향 이동을 검증하세요.
 실제 검증 결과와 코드 검토 추정을 구분하고, 구현 변경이 필요하면 기존 책임 분리를 유지하세요.
 ```
 

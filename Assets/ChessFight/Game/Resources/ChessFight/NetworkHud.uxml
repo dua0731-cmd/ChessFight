@@ -15,8 +15,19 @@
             </ui:VisualElement>
             <ui:VisualElement class="row">
                 <ui:Button name="create-test" text="Create private test" />
-                <ui:Button name="start" text="Start private test (2+)" />
+                <ui:Button name="start" text="Start match" />
             </ui:VisualElement>
+            <ui:Label text="AI BOTS" class="section" />
+            <ui:VisualElement class="row">
+                <ui:Button name="bots-less" text="-" class="narrow" />
+                <ui:Label name="bots" text="Party bots 0 / 5" class="chip" />
+                <ui:Button name="bots-more" text="+" class="narrow" />
+            </ui:VisualElement>
+            <ui:VisualElement class="row">
+                <ui:Button name="fill-bots" text="Fill room to 12" />
+                <ui:Button name="clear-bots" text="Remove room bots" />
+            </ui:VisualElement>
+            <ui:Label text="Party bots join the queue on your team. Fill room to 12 is a host-only shortcut for load tests." class="hint" />
             <ui:TextField name="code" label="Lobby ID" max-length="20" />
             <ui:VisualElement class="row">
                 <ui:Button name="join-party" text="Join party ID" />
@@ -27,7 +38,7 @@
                 <ui:Button name="new-party" text="Leave party / new solo" />
             </ui:VisualElement>
             <ui:Toggle name="capture" label="WASD + Space enabled" />
-            <ui:Label text="Click the arena after entering an ID.\nBlue and orange are the two teams." class="hint" />
+            <ui:Label text="Click the arena after entering an ID.&#10;Blue and orange are the two teams." class="hint" />
             <ui:Label name="roster" class="roster" />
         </ui:VisualElement>
     </ui:VisualElement>

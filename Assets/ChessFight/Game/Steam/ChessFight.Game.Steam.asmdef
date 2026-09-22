@@ -1,0 +1,9 @@
+{
+  "name": "ChessFight.Game.Steam",
+  "rootNamespace": "ChessFight.Game",
+  "references": ["ChessFight.Network.Core", "ChessFight.Network.Steam", "ChessFight.Game"],
+  "includePlatforms": ["Editor", "WindowsStandalone64", "WindowsStandalone32"],
+  "autoReferenced": true,
+  "defineConstraints": ["CHESSFIGHT_STEAM"],
+  "versionDefines": [{"name": "com.rlabrecque.steamworks.net", "expression": "2025.164.1", "define": "CHESSFIGHT_STEAM"}]
+}

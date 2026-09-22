@@ -1,0 +1,6 @@
+{
+  "name": "ChessFight.Game",
+  "rootNamespace": "ChessFight.Game",
+  "references": ["ChessFight.Network.Core"],
+  "autoReferenced": true
+}

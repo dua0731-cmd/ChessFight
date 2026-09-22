@@ -16,6 +16,7 @@ namespace ChessFight.Network
         readonly Dictionary<ulong, float> lastInput = new Dictionary<ulong, float>();
         readonly List<MoveInput> unacknowledged = new List<MoveInput>();
         readonly HashSet<ulong> connected = new HashSet<ulong>();
+        readonly BotDirector bots = new BotDirector();
         readonly Callback<SteamNetworkingMessagesSessionRequest_t> requests;
         readonly Callback<SteamNetworkingMessagesSessionFailed_t> failures;
         public readonly Dictionary<ulong, PawnState> States = new Dictionary<ulong, PawnState>();
@@ -41,7 +42,7 @@ namespace ChessFight.Network
             jumpQueued |= jump;
             Receive();
             foreach (ulong id in States.Keys.ToArray())
-                if (!session.Roster.ContainsKey(id)) { States.Remove(id); inputs.Remove(id); lastInput.Remove(id); Close(id); }
+                if (!session.Roster.ContainsKey(id)) { States.Remove(id); inputs.Remove(id); lastInput.Remove(id); bots.Forget(id); Close(id); }
             if (session.IsHost)
                 foreach (var p in session.Roster) if (!States.ContainsKey(p.Key)) States[p.Key] = p.Value;
             accumulator = Math.Min(accumulator + Time.unscaledDeltaTime, PawnMotor.Step * 4);
@@ -63,10 +64,14 @@ namespace ChessFight.Network
                 if (session.IsHost)
                 {
                     tick++;
+                    float now = Time.realtimeSinceStartup;
                     foreach (ulong id in States.Keys.ToArray())
                     {
+                        // A bot has no network input; the host is its only source.
+                        if (BotIdentity.IsBot(id))
+                        { States[id] = PawnMotor.Advance(States[id], bots.Think(id, States[id], now), PawnMotor.Step); continue; }
                         inputs.TryGetValue(id, out var current);
-                        if (!lastInput.TryGetValue(id, out float time) || Time.realtimeSinceStartup - time > .25f)
+                        if (!lastInput.TryGetValue(id, out float time) || now - time > .25f)
                         { current.X = current.Z = 0; current.Jump = false; }
                         States[id] = PawnMotor.Advance(States[id], current, PawnMotor.Step);
                         current.Jump = false; inputs[id] = current;
@@ -77,14 +82,15 @@ namespace ChessFight.Network
             {
                 lastSnapshotSend = Time.realtimeSinceStartup;
                 byte[] bytes = MotionProtocol.Snapshot(session.Match, tick, States.Values);
-                foreach (ulong id in session.Roster.Keys) if (id != session.Self) Send(id, bytes);
+                foreach (ulong id in session.Roster.Keys) Send(id, bytes);
             }
             if (!session.IsHost && session.Roster.ContainsKey(session.Self) && Time.realtimeSinceStartup - lastReceive > 12)
             { session.Cancel(); ConnectionStatus = "Host stopped sending movement updates. Returned to party."; }
         }
         void Send(ulong id, byte[] bytes)
         {
-            if (id == 0 || id == session.Self) return;
+            // Bots have no Steam identity, so they are never a send target.
+            if (id == 0 || id == session.Self || BotIdentity.IsBot(id)) return;
             var remote = new SteamNetworkingIdentity(); remote.SetSteamID64(id);
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
@@ -105,7 +111,8 @@ namespace ChessFight.Network
                 {
                     var message = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
                     ulong sender = message.m_identityPeer.GetSteamID64();
-                    if (!session.IsPeer(sender) || message.m_cbSize <= 0 || message.m_cbSize > MotionProtocol.MaxBytes) continue;
+                    if (BotIdentity.IsBot(sender) || !session.IsPeer(sender) ||
+                        message.m_cbSize <= 0 || message.m_cbSize > MotionProtocol.MaxBytes) continue;
                     var bytes = new byte[message.m_cbSize]; Marshal.Copy(message.m_pData, bytes, 0, bytes.Length);
                     if (session.IsHost)
                     {
@@ -141,7 +148,7 @@ namespace ChessFight.Network
         void Reset()
         {
             foreach (ulong id in connected.ToArray()) Close(id);
-            States.Clear(); inputs.Clear(); lastInput.Clear(); unacknowledged.Clear();
+            States.Clear(); inputs.Clear(); lastInput.Clear(); unacknowledged.Clear(); bots.Clear();
             accumulator = 0; sequence = tick = lastSnapshot = 0; jumpQueued = false;
             lastReceive = Time.realtimeSinceStartup; ConnectionStatus = "";
         }

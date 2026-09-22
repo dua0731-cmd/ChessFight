@@ -17,3 +17,6 @@ Toggle { margin: 8px 3px; }
 Toggle:checked .unity-toggle__checkmark { background-color: rgb(86, 191, 226); }
 .hint { color: rgb(148, 166, 188); white-space: normal; font-size: 11px; }
 .roster { font-size: 12px; margin-top: 10px; white-space: normal; }
+.section { margin-top: 10px; font-size: 10px; -unity-font-style: bold; color: rgb(127, 217, 246); letter-spacing: 1px; }
+.chip { flex-grow: 1; flex-basis: 0; min-height: 29px; margin: 3px; padding: 5px; background-color: rgb(24, 34, 48); border-radius: 5px; -unity-text-align: middle-center; font-size: 11px; }
+.narrow { flex-grow: 0; flex-basis: auto; width: 34px; }

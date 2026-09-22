@@ -20,6 +20,13 @@ namespace ChessFight.Network
         public bool Searching { get; private set; }
         public bool Started { get; private set; }
         public bool IsHost => Match != 0 && Host == Self;
+        // Bots the party leader takes into the queue. They occupy team slots of
+        // the party's own team exactly like absent members would.
+        public int PartyBots { get; private set; }
+        public int MaxPartyBots => Math.Max(0, TeamReservations.TeamSize - (Party == 0 ? 1 : Members(Party).Count));
+        public int RoomBots => reservations.Bots;
+        // A private test room starts at two pawns; a public room only at twelve.
+        public bool PrivateRoom => privateRoom;
         public bool IsLeader => Party != 0 && Owner(Party) == Self;
         public bool Busy => pending || Searching || Match != 0 || Route(Party) != "idle";
         public string Status { get; private set; } = "Starting Steam...";
@@ -32,7 +39,8 @@ namespace ChessFight.Network
         readonly Queue<ulong> candidates = new Queue<ulong>();
         readonly Dictionary<ulong, string> cancelBaseline = new Dictionary<ulong, string>();
         readonly byte[] chatBuffer = new byte[2048];
-        ulong[] queuedMembers = Array.Empty<ulong>();
+        ulong[] queuedMembers = Array.Empty<ulong>();   // humans + declared party bots
+        ulong[] queuedHumans = Array.Empty<ulong>();    // humans only, for roster-change detection
         ulong partyOwner;
         string ticket = "";
         bool pending, admitted, seenRoster, privateRoom, cancelledFollower, disposed;
@@ -45,7 +53,11 @@ namespace ChessFight.Network
         [Serializable] sealed class Member { public ulong id; public int team, slot; }
 
         static CSteamID Id(ulong id) => new CSteamID(id);
-        public string Name(ulong id) => Online ? SteamFriends.GetFriendPersonaName(Id(id)) : id.ToString();
+        public string Name(ulong id)
+        {
+            if (BotIdentity.IsBot(id)) return Roster.TryGetValue(id, out var bot) ? "BOT " + (bot.Slot + 1) : "BOT";
+            return Online ? SteamFriends.GetFriendPersonaName(Id(id)) : id.ToString();
+        }
         public ulong[] PartyMembers => Party == 0 ? Array.Empty<ulong>() : Members(Party).OrderBy(x => x).ToArray();
         static ulong Owner(ulong lobby) => lobby == 0 ? 0 : SteamMatchmaking.GetLobbyOwner(Id(lobby)).m_SteamID;
         static string Data(ulong lobby, string key) => lobby == 0 ? "" : SteamMatchmaking.GetLobbyData(Id(lobby), key);
@@ -130,6 +142,43 @@ namespace ChessFight.Network
             });
         }
 
+        // Only the leader decides the party's bot count, and only while the party
+        // is idle: queuedMembers is frozen for the whole search.
+        public void SetPartyBots(int count)
+        {
+            if (!Online || !IsLeader || Busy) return;
+            PartyBots = Math.Max(0, Math.Min(count, MaxPartyBots));
+        }
+
+        // Host-side filler so one machine can exercise a full 12-pawn room.
+        public void FillRoomWithBots()
+        {
+            if (!IsHost || Started) return;
+            for (int guard = 0; guard < 12 && reservations.Count < 12; guard++)
+            {
+                int room = 12 - reservations.Count;
+                int free = Math.Max(TeamReservations.TeamSize - reservations.Used(0), TeamReservations.TeamSize - reservations.Used(1));
+                int size = Math.Min(Math.Min(room, free), TeamReservations.TeamSize);
+                if (size <= 0) break;
+                // Offset past the leader's own party bots so identifiers never repeat.
+                if (!reservations.ReserveBots(Self, BotIdentity.Fill(Self, size, NextFillerIndex()), Time.realtimeSinceStartup, out _)) break;
+            }
+            PublishRoster();
+        }
+        public void ClearRoomBots()
+        {
+            if (!IsHost || Started) return;
+            reservations.RemoveFillerBots(); PublishRoster();
+        }
+        int NextFillerIndex()
+        {
+            int next = BotIdentity.MaxPerParty;
+            foreach (var g in reservations.Groups)
+                foreach (ulong id in g.Members)
+                    if (BotIdentity.IsBot(id) && BotIdentity.Index(id) >= next) next = BotIdentity.Index(id) + 1;
+            return next;
+        }
+
         public void Invite()
         {
             if (Party != 0 && !Busy) SteamFriends.ActivateGameOverlayInviteDialog(Id(Party));
@@ -177,9 +226,7 @@ namespace ChessFight.Network
         {
             if (!Online || !IsLeader || Busy) return;
             Error = ""; Searching = true; privateRoom = privateTest; emptySearches = 0;
-            queuedMembers = PartyMembers; ticket = Guid.NewGuid().ToString("N");
-            cancelBaseline.Clear();
-            foreach (ulong id in queuedMembers) cancelBaseline[id] = SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(id), "cancel");
+            FreezeQueue(); ticket = Guid.NewGuid().ToString("N");
             SteamMatchmaking.SetLobbyJoinable(Id(Party), false); Set(Party, "route", "search");
             Status = privateTest ? "Creating private test room..." : "Finding a team slot for your entire party...";
             if (privateTest) CreateLobby(true); else { nextSearch = 0; Search(); }
@@ -187,10 +234,18 @@ namespace ChessFight.Network
         public void JoinPrivateMatch(ulong lobby)
         {
             if (!IsLeader || Busy || lobby == 0) return;
-            Searching = true; privateRoom = true; queuedMembers = PartyMembers; ticket = Guid.NewGuid().ToString("N");
-            cancelBaseline.Clear();
-            foreach (ulong id in queuedMembers) cancelBaseline[id] = SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(id), "cancel");
+            Searching = true; privateRoom = true; FreezeQueue(); ticket = Guid.NewGuid().ToString("N");
             SteamMatchmaking.SetLobbyJoinable(Id(Party), false); Set(Party, "route", "search"); Join(lobby, false);
+        }
+        // The queue is fixed for the whole search: humans for change detection,
+        // humans + bots for the reservation the host has to honour.
+        void FreezeQueue()
+        {
+            queuedHumans = PartyMembers;
+            PartyBots = Math.Min(PartyBots, Math.Max(0, TeamReservations.TeamSize - queuedHumans.Length));
+            queuedMembers = queuedHumans.Concat(BotIdentity.Fill(Self, PartyBots)).ToArray();
+            cancelBaseline.Clear();
+            foreach (ulong id in queuedHumans) cancelBaseline[id] = SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(id), "cancel");
         }
         void Search(bool merge = false)
         {
@@ -200,7 +255,9 @@ namespace ChessFight.Network
             SteamMatchmaking.AddRequestLobbyListStringFilter("kind", "match", ELobbyComparison.k_ELobbyComparisonEqual);
             SteamMatchmaking.AddRequestLobbyListStringFilter("phase", "waiting", ELobbyComparison.k_ELobbyComparisonEqual);
             SteamMatchmaking.AddRequestLobbyListStringFilter("private", "0", ELobbyComparison.k_ELobbyComparisonEqual);
-            SteamMatchmaking.AddRequestLobbyListFilterSlotsAvailable(queuedMembers.Length);
+            // Steam counts real lobby members; bots only consume our own reservation
+            // slots, which the free0/free1 check below enforces.
+            SteamMatchmaking.AddRequestLobbyListFilterSlotsAvailable(queuedHumans.Length);
             SteamMatchmaking.AddRequestLobbyListDistanceFilter(ELobbyDistanceFilter.k_ELobbyDistanceFilterDefault);
             SteamMatchmaking.AddRequestLobbyListResultCountFilter(50);
             var call = CallResult<LobbyMatchList_t>.Create(); calls.Add(call);
@@ -242,7 +299,7 @@ namespace ChessFight.Network
             }
             if (IsLeader && Searching)
             {
-                if (!queuedMembers.SequenceEqual(PartyMembers)) { Cancel(); Error = "Party roster changed. Queue cancelled."; return; }
+                if (!queuedHumans.SequenceEqual(PartyMembers)) { Cancel(); Error = "Party roster changed. Queue cancelled."; return; }
                 foreach (var pair in cancelBaseline)
                     if (pair.Value != SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(pair.Key), "cancel")) { Cancel(); Status = "A party member cancelled."; return; }
             }
@@ -286,7 +343,8 @@ namespace ChessFight.Network
                 }
                 else
                 {
-                    foreach (ulong id in Roster.Keys.ToArray()) if (!present.Contains(id)) Roster.Remove(id);
+                    foreach (ulong id in Roster.Keys.ToArray())
+                        if (!present.Contains(id) && !BotIdentity.IsBot(id)) Roster.Remove(id);
                     PublishMembers();
                 }
             }
@@ -348,7 +406,7 @@ namespace ChessFight.Network
                 foreach (ulong id in g.Members)
                 {
                     int slot = slots[g.Team]++;
-                    if (present.Contains(id)) Roster[id] = PawnMotor.Spawn(id, g.Team, slot);
+                    if (present.Contains(id) || BotIdentity.IsBot(id)) Roster[id] = PawnMotor.Spawn(id, g.Team, slot);
                 }
             Set(Match, "free0", (6 - reservations.Used(0)).ToString()); Set(Match, "free1", (6 - reservations.Used(1)).ToString());
             PublishMembers();
@@ -370,6 +428,7 @@ namespace ChessFight.Network
         }
         public void StartGame()
         {
+            // A private test needs two pawns; bots count, so one tester plus a bot works.
             if (!IsHost || Started || reservations.Groups.Any(g => !g.Committed) || (privateRoom ? Roster.Count < 2 : !reservations.Ready)) return;
             Started = true; SteamMatchmaking.SetLobbyJoinable(Id(Match), false); Set(Match, "phase", "playing");
         }
@@ -387,7 +446,7 @@ namespace ChessFight.Network
             Cancel(); LeavePartyInternal(); CreateParty();
         }
         void LeavePartyInternal()
-        { if (Party != 0) SteamMatchmaking.LeaveLobby(Id(Party)); Party = 0; partyOwner = 0; }
+        { if (Party != 0) SteamMatchmaking.LeaveLobby(Id(Party)); Party = 0; partyOwner = 0; PartyBots = 0; }
         void LeaveMatchInternal()
         {
             if (Match != 0)
