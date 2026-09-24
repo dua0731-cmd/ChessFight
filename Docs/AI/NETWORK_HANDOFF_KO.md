@@ -56,7 +56,16 @@
 
 어셈블리 분리가 핵심이다. **프리팹이 참조하는 스크립트(`ChessFight.Game`)는 Steamworks 없이도 컴파일된다.** 패키지 설치 전에 프로젝트를 열어도 프리팹에 missing script가 뜨지 않는다. Steam을 아는 코드는 `ChessFight.Game.Steam`(`CHESSFIGHT_STEAM` 게이트)에만 있다.
 
-Input System은 asmdef로 참조하지 않는다. 패키지가 없는 asmdef 참조는 컴파일을 깨뜨리므로, `Assets/ChessFight/Input/InputSystemMoveSource.cs`를 **Assembly-CSharp**에 두고 Unity 자체 define인 `ENABLE_INPUT_SYSTEM`으로 감쌌다. 이 클래스가 `MoveInputSources.Register`로 자기 자신을 등록하므로 `GameBootstrap`은 Input System을 전혀 참조하지 않는다. 패키지가 없으면 `LegacyMoveInputSource`가 쓰인다.
+Input System 코드는 **자기 asmdef(`ChessFight.Game.Input`)** 에 가둔다. `versionDefines`가 `com.unity.inputsystem`의 존재를 `CHESSFIGHT_INPUTSYSTEM`으로 바꾸고, 같은 이름의 `defineConstraints`가 패키지가 없을 때 **어셈블리를 통째로 컴파일 대상에서 제외**한다. Steamworks가 `CHESSFIGHT_STEAM`으로 쓰는 것과 같은, 이 저장소에서 이미 검증된 패턴이다. 이 클래스가 `MoveInputSources.Register`로 자기 자신을 등록하므로 `GameBootstrap`은 Input System을 전혀 참조하지 않는다. 패키지가 없으면 `LegacyMoveInputSource`가 쓰인다.
+
+**`ENABLE_INPUT_SYSTEM`을 "패키지가 설치됨"으로 읽으면 안 된다.** 그 define은 Active Input Handling **설정**을 따라가므로, 패키지를 한 번도 설치하지 않은 PC에서도 정의된다. 이걸 컴파일 게이트로 썼다가 Safe Mode에 빠졌다. 역할은 이렇게 나눈다.
+
+| define | 뜻 | 쓰임 |
+|---|---|---|
+| `CHESSFIGHT_INPUTSYSTEM` | 패키지가 있다 | 컴파일 게이트 (asmdef) |
+| `ENABLE_INPUT_SYSTEM` | 백엔드가 켜져 있다 | 런타임 게이트. 꺼져 있으면 Legacy로 넘긴다 |
+
+**Unity는 Safe Mode에서 `[InitializeOnLoad]`를 실행하지 않는다.** 컴파일이 깨지면 패키지를 설치해줄 부트스트랩도 못 돈다. 그러므로 **패키지가 하나도 없는 상태에서 프로젝트가 컴파일되는 것**이 깨뜨리면 안 되는 조건이다.
 
 `com.unity.inputsystem`은 **manifest에 버전을 고정하지 않았다.** 에디터 버전에 맞는 릴리스를 UPM이 고르도록 `Client.Add("com.unity.inputsystem")`만 호출한다. 설치 결과 manifest/lock은 커밋한다. `ProjectSettings`의 `activeInputHandler`는 `0` → `2`(Both)로 바꿨다.
 
@@ -88,7 +97,8 @@ Input System은 asmdef로 참조하지 않는다. 패키지가 없는 asmdef 참
 
 - `SampleScene`의 Main Camera·Directional Light·Global Volume에 남아 있던 **URP 컴포넌트 3개를 제거**했다. URP 패키지가 없어 스크립트가 해결되지 않아 `The referenced script (Unknown) on this Behaviour is missing!` 경고를 내던 것이다. 이제 `SampleScene`은 부트 대상이 아니다.
 - HUD 패널을 `ScrollView`로 바꿨다. 봇 UI가 늘면서 패널이 720px를 넘어 눌러야 할 요소가 잘리거나 눌리는 문제가 생길 수 있었다.
-- ~~`EventSystem` 자동 생성~~ **시도했다가 철회했다.** 이 프로젝트 manifest에는 `com.unity.ugui`가 없어 `UnityEngine.EventSystems`가 존재하지 않고, CS0234로 Safe Mode에 빠졌다. UI Toolkit은 EventSystem 없이 자체 `DefaultEventSystem`으로 런타임 입력을 처리하므로 필요 없는 코드였다. **`Scripts/Input`과 `Scripts/Editor`는 asmdef가 없어 Assembly-CSharp에 들어가므로, 없는 패키지를 참조하면 프로젝트 전체 컴파일이 멈춘다.**
+- ~~`EventSystem` 자동 생성~~ **시도했다가 철회했다.** 이 프로젝트 manifest에는 `com.unity.ugui`가 없어 `UnityEngine.EventSystems`가 존재하지 않고, CS0234로 Safe Mode에 빠졌다. UI Toolkit은 EventSystem 없이 자체 `DefaultEventSystem`으로 런타임 입력을 처리하므로 필요 없는 코드였다.
+- 이어서 `ENABLE_INPUT_SYSTEM`을 패키지 존재 여부로 오인해 두 번째 Safe Mode를 냈다. Input System 코드를 `ChessFight.Game.Input` asmdef로 옮겨 `CHESSFIGHT_INPUTSYSTEM`으로 가뒀다. 위 3절의 표를 본다.
 - Steam 초기화 실패 시 **Retry Steam connection** 버튼이 나온다. 이전에는 Play를 다시 눌러야만 복구할 수 있었다.
 - HUD의 `details`에 `Steam: online/OFFLINE` 줄을 추가했다. 버튼이 전부 비활성인 이유를 화면에서 바로 알 수 있다.
 

@@ -60,7 +60,34 @@
 
 Input System 가설이 무효가 되면서 남은 후보는 **패널 높이**와 **Steam 미실행** 둘이다. 실행 후 HUD의 `Steam:` 줄과 `Input:` 줄을 먼저 본다.
 
-**교훈:** `Assets/Scripts/Input`과 `Assets/Scripts/Editor`는 asmdef가 없어 Assembly-CSharp에 들어간다. 여기서 없는 패키지의 네임스페이스를 쓰면 **프로젝트 전체가 Safe Mode로 떨어진다.** manifest에 없는 패키지를 참조하지 않는다. 현재 manifest에 uGUI(`com.unity.ugui`)는 없다.
+### Safe Mode 두 번 — 원인과 최종 구조
+
+| 회차 | 에러 | 원인 |
+|---|---|---|
+| 1 | `CS0234 'EventSystems' does not exist` | manifest에 없는 uGUI를 참조했다. 코드를 삭제해 해결 |
+| 2 | `CS0246 'InputAction' could not be found` | **`ENABLE_INPUT_SYSTEM`을 "패키지가 있음"으로 잘못 알았다.** 이 define은 **Active Input Handling 설정**을 따라간다. 설정을 Both로 바꿔놨으니 패키지가 없는 PC에서도 `#if` 블록이 컴파일되어 터졌다 |
+
+**치명적인 점:** Unity는 Safe Mode에서 `[InitializeOnLoad]`를 실행하지 않는다. 즉 **컴파일이 깨지면 패키지를 설치해줄 부트스트랩도 못 돈다.** 그래서 "패키지가 하나도 없는 상태에서도 반드시 컴파일될 것"이 절대 조건이다.
+
+최종 구조는 선택적 패키지를 **전부 같은 방식**으로 막는다. Steamworks가 원래 쓰던 검증된 패턴이다.
+
+| 어셈블리 | 게이트 | 패키지 없을 때 |
+|---|---|---|
+| `ChessFight.Network.Core` | 없음 (순수 C#) | 컴파일 |
+| `ChessFight.Game` | 없음 (UnityEngine만) | 컴파일 |
+| `ChessFight.Network.Steam` | `CHESSFIGHT_STEAM` | **통째로 제외** |
+| `ChessFight.Game.Steam` | `CHESSFIGHT_STEAM` | **통째로 제외** |
+| `ChessFight.Game.Input` | `CHESSFIGHT_INPUTSYSTEM` | **통째로 제외** |
+| Assembly-CSharp(-Editor) | 없음 | 컴파일 (설치 도구가 여기 있다) |
+
+`defineConstraints`가 충족되지 않으면 어셈블리 자체가 컴파일 대상에서 빠지므로, 그 안의 패키지 참조도 문제가 되지 않는다.
+
+**규칙 두 가지.**
+
+1. **선택적 패키지를 쓰는 코드는 반드시 자기 asmdef에 `versionDefines` + `defineConstraints`로 가둔다.** asmdef 없이 Assembly-CSharp에 두면 프로젝트 전체가 Safe Mode로 떨어진다.
+2. **`ENABLE_INPUT_SYSTEM`을 패키지 존재 여부로 쓰지 않는다.** 그건 설정값이다. 패키지 존재는 `CHESSFIGHT_INPUTSYSTEM`(asmdef가 만든 것), 백엔드 활성화는 `ENABLE_INPUT_SYSTEM`으로 구분한다. 후자는 "패키지는 있는데 Active Input Handling이 Old"인 경우 입력이 조용히 0이 되는 것을 막는 데 쓴다.
+
+현재 manifest에 uGUI(`com.unity.ugui`)와 Input System은 **없다.** Input System은 에디터 첫 실행 시 `NetworkSetup`이 버전 고정 없이 설치한다(레지스트리 접근이 막혀 있어 정확한 버전을 찍을 수 없었다). **설치 후 생성되는 `manifest.json`과 `packages-lock.json`을 커밋해야 다른 PC가 같은 버전으로 고정된다.** 커밋 전까지는 PC마다 입력 백엔드가 다를 수 있고, 그 상태는 HUD의 `Input:` 줄과 `ChessFight > Setup > Report input backend`로 확인한다.
 
 **검증되지 않은 사항 — 에디터에서 반드시 먼저 확인한다.**
 

@@ -1,4 +1,4 @@
-#if ENABLE_INPUT_SYSTEM
+#if CHESSFIGHT_INPUTSYSTEM
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,11 +6,15 @@ namespace ChessFight.Game
 {
     // Unity 6's recommended input path, reading the ChessFightControls asset.
     //
-    // It sits in Assembly-CSharp behind Unity's own ENABLE_INPUT_SYSTEM define
-    // rather than in an assembly definition, because an .asmdef that references
-    // com.unity.inputsystem stops compiling when the package is absent. This way
-    // the project builds before the package is installed, and the legacy source
-    // in ChessFight.Game covers that window.
+    // This lives in its own assembly gated on CHESSFIGHT_INPUTSYSTEM, which the
+    // asmdef derives from the presence of com.unity.inputsystem. When the package
+    // is missing the assembly is skipped whole, so neither this file nor its
+    // reference to Unity.InputSystem can break the project, and the legacy source
+    // in ChessFight.Game takes over.
+    //
+    // Do NOT gate this on Unity's own ENABLE_INPUT_SYSTEM: that define follows the
+    // Active Input Handling setting, not the package, so it is set even on a
+    // machine that has never installed the Input System.
     //
     // It registers itself so GameBootstrap never has to know the Input System exists.
     public sealed class InputSystemMoveSource : IMoveInputSource
@@ -23,6 +27,13 @@ namespace ChessFight.Game
 
         static IMoveInputSource Create()
         {
+#if !ENABLE_INPUT_SYSTEM
+            // The package is here, but Active Input Handling excludes its backend,
+            // so every action would silently read zero. Hand back to legacy.
+            Debug.LogWarning("[ChessFight] The Input System package is installed but its backend is off. " +
+                             "Set Active Input Handling to Both in Project Settings > Player. Using legacy input.");
+            return null;
+#else
             var asset = Resources.Load<InputActionAsset>(AssetPath);
             if (asset == null)
             {
@@ -43,6 +54,7 @@ namespace ChessFight.Game
                 return null;
             }
             return new InputSystemMoveSource(clone, map, move, jump);
+#endif
         }
 
         InputActionAsset asset;

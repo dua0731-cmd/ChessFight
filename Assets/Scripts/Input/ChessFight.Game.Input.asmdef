@@ -1,0 +1,8 @@
+{
+  "name": "ChessFight.Game.Input",
+  "rootNamespace": "ChessFight.Game",
+  "references": ["ChessFight.Game", "Unity.InputSystem"],
+  "autoReferenced": true,
+  "defineConstraints": ["CHESSFIGHT_INPUTSYSTEM"],
+  "versionDefines": [{"name": "com.unity.inputsystem", "expression": "1.0.0", "define": "CHESSFIGHT_INPUTSYSTEM"}]
+}

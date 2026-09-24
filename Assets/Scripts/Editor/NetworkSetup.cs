@@ -35,6 +35,7 @@ namespace ChessFight.Editor
         static bool Installed(string package) =>
             UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages().Any(p => p.name == package);
         public static bool SteamworksInstalled => Installed(Steamworks);
+        public static bool InputSystemInstalled => Installed(InputSystem);
 
         static NetworkSetup() { EditorApplication.delayCall += AutoInstall; }
 
@@ -80,12 +81,30 @@ namespace ChessFight.Editor
             EditorApplication.update -= Poll;
             bool ok = request.IsCompleted && request.Status == StatusCode.Success;
             string error = request.Error?.message ?? "Timed out";
-            if (ok) Debug.Log("[ChessFight] Installed " + installing + ". Commit Packages/manifest.json and packages-lock.json.");
+            if (ok)
+                // The resolved version is what pins every other machine to the same
+                // build, so it only helps once manifest.json and the lock file are
+                // committed. Nothing else in the project records it.
+                Debug.Log("[ChessFight] Installed " + installing + " " + (request.Result?.version ?? "") +
+                          ". COMMIT Packages/manifest.json and Packages/packages-lock.json so every machine " +
+                          "resolves the same version.");
             else Debug.LogError("[ChessFight] Could not install " + installing + ": " + error +
                                 ". Check the internet connection (and Git for Windows for Steamworks), " +
                                 "then retry with ChessFight > Setup > Install dependencies.");
             request = null; installing = null;
             Next();
+            if (request == null) ReportBackends();
+        }
+
+        // Which backend the next Play session will use. Without this the only clue
+        // is the Input: line in the HUD, which is easy to miss.
+        [MenuItem("ChessFight/Setup/Report input backend")]
+        public static void ReportBackends()
+        {
+            if (InputSystemInstalled) Debug.Log("[ChessFight] Input System installed: movement uses ChessFightControls.inputactions.");
+            else Debug.LogWarning("[ChessFight] com.unity.inputsystem is NOT installed, so movement falls back to the legacy " +
+                                  "Input Manager. Run ChessFight > Setup > Install dependencies, then commit " +
+                                  "Packages/manifest.json and packages-lock.json.");
         }
 
         [MenuItem("ChessFight/Network/Open test scene")]
@@ -99,6 +118,9 @@ namespace ChessFight.Editor
         public static void Build()
         {
             if (!SteamworksInstalled) throw new InvalidOperationException("Install dependencies first from ChessFight > Setup.");
+            // Not fatal: the build still runs on the legacy fallback. It just will
+            // not match a build made on a machine that has the package.
+            if (!InputSystemInstalled) Debug.LogWarning("[ChessFight] Building without com.unity.inputsystem; this build uses legacy input.");
             const string path = "Builds/NetworkTest/ChessFight.exe";
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions

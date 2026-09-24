@@ -18,7 +18,7 @@
 
 런타임에 코드로 만들던 것을 **자산**으로 바꿨다. 보이는 화면은 그대로다.
 
-- **입력이 Input System으로 바뀌었다.** `ChessFight > Setup > Install dependencies`가 Steamworks와 `com.unity.inputsystem`을 함께 설치한다(에디터 시작 시 자동 1회 시도). **설치 후 생성된 `Packages/manifest.json`과 `packages-lock.json`을 커밋한다.** 패키지가 없으면 Legacy 입력으로 자동 대체되므로 컴파일은 깨지지 않는다.
+- **입력이 Input System으로 바뀌었다.** `ChessFight > Setup > Install dependencies`가 Steamworks와 `com.unity.inputsystem`을 함께 설치한다(에디터 시작 시 자동 1회 시도). **설치 후 생성된 `Packages/manifest.json`과 `packages-lock.json`을 꼭 커밋한다 — 그래야 다른 PC가 같은 버전으로 고정된다.** 패키지가 없으면 Input System 어셈블리가 통째로 제외되고 Legacy 입력으로 자동 대체되므로 컴파일은 절대 깨지지 않는다. 지금 어느 쪽을 쓰는지는 HUD의 `Input:` 줄이나 `ChessFight > Setup > Report input backend`로 확인한다.
 - `ProjectSettings`의 Active Input Handling을 **Both**로 바꿨다. 에디터가 켜진 채 Pull 했다면 재시작을 요구할 수 있다.
 - 씬이 `ChessFightLab`으로 바뀌었다. 기존 `SampleScene`에서도 계속 동작한다.
 - 시작 씬은 `Assets/Scenes/ChessFightLab.unity` **하나뿐이다.** 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. **체스판·캡슐·HUD는 프리팹/UXML 자산이며 Play 중에 생성(Instantiate)된다.** 누가 경기에 들어올지는 실행 전에 알 수 없으므로 캐릭터 생성 자체는 런타임이 맞다.
