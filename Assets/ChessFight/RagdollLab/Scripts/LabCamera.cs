@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
@@ -10,11 +10,14 @@ namespace ChessFight.RagdollLab
     {
         public LabGame game;
         public float yaw;
-        public float pitch = 30f;
-        public float minDistance = 4.2f;
+        public float pitch = 24f;
+        public float minDistance = 2.2f;
         public float maxDistance = 28f;
         public float mouseSensitivity = 2.2f;
         public bool freeMode;
+
+        /// <summary>Online play: follow only this pawn instead of framing every local player.</summary>
+        public RagdollPawn soloTarget;
 
         Vector3 focus, focusVelocity;
         float distance = 6f;
@@ -50,7 +53,8 @@ namespace ChessFight.RagdollLab
 
             bool any = false;
             Bounds bounds = default;
-            if (game != null)
+            if (soloTarget != null) Include(ref bounds, ref any, soloTarget.Hips.position);
+            else if (game != null)
             {
                 foreach (var slot in game.players)
                 {
@@ -62,7 +66,7 @@ namespace ChessFight.RagdollLab
                 foreach (var pawn in RagdollPawn.All) Include(ref bounds, ref any, pawn.Hips.position);
             if (!any) return;
 
-            Vector3 target = bounds.center + Vector3.up * 0.35f;
+            Vector3 target = bounds.center + Vector3.up * 0.2f;
             float spread = Mathf.Max(bounds.size.x, bounds.size.z, bounds.size.y * 1.5f);
             float want = Mathf.Clamp(minDistance + spread * 1.15f, minDistance, maxDistance);
             if (!initialized)

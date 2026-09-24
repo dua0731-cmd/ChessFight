@@ -52,6 +52,15 @@ namespace ChessFight.RagdollLab
 
         public const float KillHeight = -12f;
 
+        /// <summary>Online match spawn: team 0 faces +Z from the south, team 1 faces -Z from the north.</summary>
+        public static Vector3 NetSpawn(int team, int slot)
+        {
+            float x = (Mathf.Clamp(slot, 0, 5) - 2.5f) * 1.6f;
+            return new Vector3(x, 0f, team == 0 ? -6f : 6f);
+        }
+
+        public static Vector3 NetFacing(int team) => team == 0 ? Vector3.forward : Vector3.back;
+
         public static float SlopeBottomX(float angleDeg) =>
             PlatformEdgeX + PlatformHeight / Mathf.Tan(angleDeg * Mathf.Deg2Rad);
     }

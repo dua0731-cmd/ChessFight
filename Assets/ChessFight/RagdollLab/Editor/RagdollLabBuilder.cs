@@ -66,6 +66,10 @@ namespace ChessFight.RagdollLab.Editor
             });
             if (report.summary.result != BuildResult.Succeeded)
                 throw new Exception("Player build failed: " + report.summary.result);
+            // Steam only initialises from a build if it is launched through Steam or finds this file.
+            string appId = Path.GetFullPath("steam_appid.txt");
+            if (File.Exists(appId)) File.Copy(appId, Path.Combine(output, "steam_appid.txt"), true);
+            else Debug.LogWarning("[RagdollLab] steam_appid.txt not found at the project root; the build cannot start Steam.");
             Debug.Log("[RagdollLab] Player built: " + output);
         }
 
@@ -627,7 +631,16 @@ namespace ChessFight.RagdollLab.Editor
         static void AddHull(Rigidbody body, IEnumerable<Vector3> worldPoints, string name)
         {
             Vector3 origin = body.transform.position;
-            var points = worldPoints.Select(p => p - origin).ToList();
+            // Snap to a 2 cm grid first: PhysX caps a convex hull at 256 polygons and silently
+            // simplifies anything denser, which showed up as a warning on every import.
+            var unique = new HashSet<Vector3Int>();
+            var points = new List<Vector3>();
+            foreach (var world in worldPoints)
+            {
+                Vector3 local = world - origin;
+                if (!unique.Add(Vector3Int.RoundToInt(local * 50f))) continue;
+                points.Add(local);
+            }
             var hull = new Mesh { name = name };
             hull.SetVertices(points);
             // Convex cooking only needs the point cloud; a fan keeps the mesh valid.
@@ -775,6 +788,10 @@ namespace ChessFight.RagdollLab.Editor
                 new LabGame.Slot { name = "P1", device = LabDevice.KeyboardMouse, spawn = LabLayout.SpawnP1, material = mats.pawnP1 },
                 new LabGame.Slot { name = "P2", device = LabDevice.Pad1, spawn = LabLayout.SpawnP2, material = mats.pawnP2 },
             };
+            var slots = gameGo.AddComponent<LabParamSlots>();
+            slots.tuning = tuning;
+            slots.game = game;
+            game.slots = slots;
             gameGo.AddComponent<LabPanel>().game = game;
             gameGo.AddComponent<LabAutoTest>().game = game;
             labCamera.game = game;

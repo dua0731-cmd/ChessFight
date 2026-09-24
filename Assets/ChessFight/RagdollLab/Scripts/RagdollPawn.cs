@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -73,6 +73,12 @@ namespace ChessFight.RagdollLab
         public float EffectiveStiffness => Stiffness * StateFactor;
         public Vector3 AnchorPosition => anchorPos;
 
+        /// <summary>Remote pawn: physics off, poses written from the network each frame.</summary>
+        public bool NetworkPuppet { get; private set; }
+
+        /// <summary>Set by Teleport so the next snapshot tells remotes to jump instead of interpolate.</summary>
+        public bool NetworkSnap { get; set; }
+
         /// <summary>Test hook: return a pose for a body index to override the procedural puppet.</summary>
         public Func<int, Quaternion?> PoseOverride;
 
@@ -83,6 +89,10 @@ namespace ChessFight.RagdollLab
 
         PhysicsMaterial ownFootMaterial;
         PawnInput input;
+        readonly Vector3[] jointOffset = new Vector3[Count];
+        readonly Quaternion[] prevTarget = new Quaternion[Count];
+        bool targetsPrimed;
+        readonly Vector3[] poseScratch = new Vector3[Count];
         readonly Quaternion[] startRel = new Quaternion[Count];
         readonly Vector3[] bindPos = new Vector3[Count];
         readonly Quaternion[] bindRot = new Quaternion[Count];
@@ -93,6 +103,21 @@ namespace ChessFight.RagdollLab
         readonly RaycastHit[] hits = new RaycastHit[16];
         Vector3 facing = Vector3.forward;
         Vector3 anchorPos, anchorVel;
+        sealed class Leg
+        {
+            public Vector3 plant;
+            public Vector3 swingFrom;
+            public Vector3 target;
+            public float swingT;
+            public bool swinging;
+            public bool ready;
+        }
+
+        readonly Leg[] legs = { new Leg(), new Leg() };
+        int swingingLeg = -1;
+        float landDip, turnRate, strideDrop, hopArc;
+        bool wantsMove, wasGrounded;
+
         float contactTimer, hitTimer, shoveTimer, shoveCooldown, airTimer, coyote, stateTimer, gait;
         bool throwOnShoveEnd, pullUpUsed;
         float vaultTimer, vaultTop;
@@ -139,6 +164,10 @@ namespace ChessFight.RagdollLab
                 bindRot[i] = hipsInv * t.rotation;
                 if (i > 0) startRel[i] = Quaternion.Inverse(bodies[ParentOf[i]].transform.rotation) * t.rotation;
             }
+            // Every joint locks linear motion at the child's own origin, so a child's world position is
+            // its parent's position plus this fixed offset rotated by the parent. That is what lets a
+            // remote pawn be rebuilt from rotations alone.
+            for (int i = 1; i < Count; i++) jointOffset[i] = bindPos[i] - bindPos[ParentOf[i]];
             facing = FlatDir(hips.forward, Vector3.forward);
             anchorPos = hips.position;
             anchor.transform.SetPositionAndRotation(anchorPos, Quaternion.LookRotation(facing));
@@ -206,6 +235,7 @@ namespace ChessFight.RagdollLab
 
         void FixedUpdate()
         {
+            if (NetworkPuppet) return;
             var p = P;
             float dt = Time.fixedDeltaTime;
             contactTimer -= dt;
@@ -365,8 +395,11 @@ namespace ChessFight.RagdollLab
             Vector3 move = Flat(input.move);
             if (move.sqrMagnitude > 1f) move.Normalize();
             bool moving = move.sqrMagnitude > 0.0025f;
+            wantsMove = moving;
+            float speedN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, p.moveSpeed));
             // Feet slide while travelling, lunging into a shove, or reeling from a hit; they grip when idle.
-            bool sliding = moving || anchorVel.sqrMagnitude > 0.25f || shoveTimer > 0f || hitTimer > 0f;
+            bool sliding = moving || anchorVel.sqrMagnitude > 0.25f || shoveTimer > 0f || hitTimer > 0f
+                           || HorizontalSpeed > 0.6f;
             float footFriction = sliding ? p.footFrictionMoving : p.footFrictionIdle;
             ownFootMaterial.dynamicFriction = footFriction;
             ownFootMaterial.staticFriction = footFriction * 1.15f;
@@ -374,13 +407,29 @@ namespace ChessFight.RagdollLab
             {
                 float current = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
                 float target = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;
-                float yaw = Mathf.LerpAngle(current, target, 1f - Mathf.Exp(-p.turnResponsiveness * dt)) * Mathf.Deg2Rad;
+                float wanted = Mathf.LerpAngle(current, target, 1f - Mathf.Exp(-p.turnResponsiveness * dt));
+                // A body at speed cannot pivot on the spot; cap how fast the facing may swing.
+                float maxStep = Mathf.Lerp(1080f, p.turnRateTopSpeed, speedN) * dt;
+                float delta = Mathf.Clamp(Mathf.DeltaAngle(current, wanted), -maxStep, maxStep);
+                turnRate = Mathf.Lerp(turnRate, delta / Mathf.Max(dt, 1e-4f), 0.3f);
+                float yaw = (current + delta) * Mathf.Deg2Rad;
                 facing = new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
             }
+            else turnRate = Mathf.Lerp(turnRate, 0f, 0.3f);
 
             Vector3 groundVel = Grounded && groundBody != null ? Flat(groundBody.GetPointVelocity(hp)) : Vector3.zero;
             Vector3 targetVel = move * p.moveSpeed + groundVel;
-            float accel = p.acceleration * (Grounded ? 1f : p.airControl);
+            float accel = (moving ? p.acceleration : p.stopDeceleration) * (Grounded ? 1f : p.airControl);
+            // Push off in steps instead of gliding: thrust peaks as each foot takes weight.
+            if (p.stanceThrust > 0f && Grounded && moving)
+            {
+                // Walk: two pushes per cycle. Hop: one push while the feet are down, nothing at the
+                // apex. Both waves average 1.0 so the top speed does not change either way.
+                float walkPush = 1.5708f * Mathf.Abs(Mathf.Sin(gait));
+                float hopPush = 3f * (1f - hopArc);
+                float push = Mathf.Lerp(walkPush, hopPush, p.boundGait);
+                accel *= Mathf.Lerp(1f, Mathf.Max(0.3f, push), p.stanceThrust);
+            }
             float speedNow = anchorVel.magnitude;
             if (speedNow > p.moveSpeed + 0.1f && Vector3.Dot(anchorVel, targetVel) > 0f)
             {
@@ -422,17 +471,31 @@ namespace ChessFight.RagdollLab
             // Running lifts the hips a little so the one-piece legs swing clear instead of scraping.
             // Airborne: ride along with the hips (one step ahead) so the vertical drive never brakes a jump.
             float lift = p.runLift * Mathf.Clamp01(anchorVel.magnitude / Mathf.Max(0.1f, p.moveSpeed));
-            next.y = Grounded && groundFound ? groundY + standHeight + lift : hp.y + hips.linearVelocity.y * dt;
+            landDip = Mathf.MoveTowards(landDip, 0f, dt * 0.8f);
+            if (Grounded && !wasGrounded && p.landingDip > 0f)
+                landDip = Mathf.Max(landDip, p.landingDip * Mathf.Clamp01(-hips.linearVelocity.y / 6f));
+            wasGrounded = Grounded;
+            // The hips rise on every push-off and sink for a moment after a landing.
+            // Two rises per cycle for a walk, one big rise per cycle for a hop.
+            float bobWave = Mathf.Lerp(Mathf.Abs(Mathf.Sin(gait)), hopArc, p.boundGait);
+            float bob = p.stepBob * bobWave * speedN;
+            next.y = Grounded && groundFound
+                ? groundY + standHeight + lift + bob - landDip - strideDrop
+                : hp.y + hips.linearVelocity.y * dt;
             anchorPos = next;
             anchor.MovePosition(anchorPos);
 
             // The anchor's rotation is the hips' balance target (upright + facing + lean); the anchor
             // joint's angular drives pull the hips toward it (implicit, so stiff values stay stable).
-            float speedN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, p.moveSpeed));
             float lean = p.runLean * speedN;
             if (shoveTimer > 0f) lean += p.shoveLean;
             else if (input.grab && !Grabbing) lean += p.grabLean;
-            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(lean, 0f, 0f));
+            // Sway with each step, and lean into a turn the way a runner has to.
+            // Rolling toward the stance leg reads as weight when the legs alternate. With both legs
+            // together there is no stance side, so the same roll reads as a limp - fade it out.
+            float roll = p.stepRoll * Mathf.Sin(gait) * speedN * (1f - p.boundGait)
+                       - Mathf.Clamp(turnRate / 180f, -1f, 1f) * p.turnLean * speedN;
+            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(lean, 0f, roll));
         }
 
         void Jump(RagdollParams p)
@@ -514,18 +577,35 @@ namespace ChessFight.RagdollLab
             float speed = State == PawnState.Ragdoll ? 0f : Mathf.Max(HorizontalSpeed, anchorVel.magnitude);
             float speedN = Mathf.Clamp01(speed / Mathf.Max(0.1f, p.moveSpeed));
             bool air = State == PawnState.Active && !Grounded;
-            gait += speed / Mathf.Max(0.2f, p.strideLength) * dt * Mathf.PI * 2f;
+            // Keep a minimum cadence while the player is holding a direction, so the first push-off
+            // of a standing start happens on a step instead of waiting for speed to build.
+            float cadence = Mathf.Max(speed, wantsMove && State == PawnState.Active && Grounded ? 1.2f : 0f);
+            // Distance-based tempo makes the legs spin faster and faster as top speed rises. Locking the
+            // hop rate instead means a faster pawn covers more ground per hop at the SAME rhythm, which
+            // is the only way the gait survives a big moveSpeed.
+            float cycles = cadence / Mathf.Max(0.2f, p.strideLength);
+            if (p.hopCadence > 0.01f)
+                cycles = Mathf.Lerp(cycles, p.hopCadence * Mathf.Clamp01(speedN * 2.5f), p.boundGait);
+            gait += cycles * dt * Mathf.PI * 2f;
             if (gait > Mathf.PI * 2f) gait -= Mathf.PI * 2f;
             float s = Mathf.Sin(gait);
+            // A real hop is a thrown body: height follows a parabola, flat at the ends, peak in the
+            // middle. phase 0 = feet down, 0.5 = apex.
+            float phase = gait / (Mathf.PI * 2f);
+            hopArc = 4f * phase * (1f - phase);
             float legAmp = air ? 0f : p.legSwing * Mathf.Clamp01(speedN * 1.5f);
             float armAmp = air ? 0f : p.armSwing * speedN;
 
             Quaternion chest = Quaternion.Euler(p.chestLean * speedN, 0f, 0f);
             Quaternion head = Quaternion.Euler(-0.5f * p.chestLean * speedN, 0f, 0f);
+            // boundGait 0 = legs alternate (a walk), 1 = legs move together (a hop). A hop has a
+            // flight phase, so "the foot cannot keep up with the ground" simply stops applying - which
+            // is the only way a body with 0.18 m legs can honestly move at several metres per second.
+            float ampR = Mathf.Lerp(legAmp, -legAmp, p.boundGait);
             Quaternion thighL = Quaternion.Euler(-legAmp * s, 0f, 0f);
-            Quaternion thighR = Quaternion.Euler(legAmp * s, 0f, 0f);
+            Quaternion thighR = Quaternion.Euler(ampR * s, 0f, 0f);
             Quaternion footL = Quaternion.Euler(0.8f * legAmp * s, 0f, 0f);
-            Quaternion footR = Quaternion.Euler(-0.8f * legAmp * s, 0f, 0f);
+            Quaternion footR = Quaternion.Euler(-0.8f * ampR * s, 0f, 0f);
             Quaternion armL = Quaternion.Euler(0f, -armAmp * s, p.armRestDown);
             Quaternion armR = Quaternion.Euler(0f, -armAmp * s, -p.armRestDown);
 
@@ -536,6 +616,29 @@ namespace ChessFight.RagdollLab
                 footL = footR = Quaternion.Euler(20f, 0f, 0f);
                 armL = Quaternion.Euler(0f, 0f, -35f);
                 armR = Quaternion.Euler(0f, 0f, 35f);
+            }
+
+            // Measured: with legs this short a foot can only stay planted below about 1 m/s
+            // (41% of the time at 0.65 m/s, 1% at 1.35 m/s). Past that it only fights the leg
+            // swing, so the lock fades out and the procedural stride takes over.
+            float lockAmount = p.stepLock * (1f - Mathf.Clamp01(speed / 1.2f));
+            if (lockAmount > 0.001f && !air && State == PawnState.Active && Grounded)
+            {
+                Vector3 footTargetL = StepTarget(p, dt, 0, speed, speedN);
+                Vector3 footTargetR = StepTarget(p, dt, 1, speed, speedN);
+                LegIk(footTargetL, 0, out Quaternion ikThighL, out Quaternion ikFootL);
+                LegIk(footTargetR, 1, out Quaternion ikThighR, out Quaternion ikFootR);
+                thighL = Quaternion.Slerp(thighL, ikThighL, lockAmount);
+                footL = Quaternion.Slerp(footL, ikFootL, lockAmount);
+                thighR = Quaternion.Slerp(thighR, ikThighR, lockAmount);
+                footR = Quaternion.Slerp(footR, ikFootR, lockAmount);
+                strideDrop = Mathf.Lerp(strideDrop, PelvisDrop(footTargetL, footTargetR) * lockAmount, 0.25f);
+            }
+            else
+            {
+                legs[0].ready = legs[1].ready = false;
+                swingingLeg = -1;
+                strideDrop = Mathf.Lerp(strideDrop, 0f, 0.25f);
             }
 
             if (State != PawnState.Ragdoll)
@@ -564,6 +667,114 @@ namespace ChessFight.RagdollLab
             SetPuppet(BodyId.ArmR, armR);
             SetPuppet(BodyId.HandL, Quaternion.identity);
             SetPuppet(BodyId.HandR, Quaternion.identity);
+        }
+
+        /// <summary>
+        /// Where one foot should be this step. A planted foot keeps its world spot while the body
+        /// passes over it; once it has fallen too far behind, that foot swings to a new spot in front.
+        /// Only one foot swings at a time, so the other one is always carrying the pawn.
+        /// </summary>
+        Vector3 StepTarget(RagdollParams p, float dt, int side, float speed, float speedN)
+        {
+            Leg leg = legs[side];
+            Vector3 hp = bodies[0].position;
+            Vector3 right = Vector3.Cross(Vector3.up, facing);
+            int footId = side == 0 ? (int)BodyId.FootL : (int)BodyId.FootR;
+            int thighId = side == 0 ? (int)BodyId.ThighL : (int)BodyId.ThighR;
+            float lateral = bindPos[footId].x;
+            float ankle = standHeight + bindPos[(int)BodyId.FootL].y;
+            float ground = groundFound ? groundY : hp.y - standHeight;
+            Vector3 under = new Vector3(hp.x, ground + ankle, hp.z) + right * lateral;
+            // These legs are one stiff piece, so a step can never be longer than the foot can reach
+            // (leg length x sin 55 degrees, front and back). Asking for more just drags the foot.
+            float reach = (bindPos[footId] - bindPos[thighId]).magnitude * 1.6f;
+            float stride = Mathf.Min(p.stepLength, reach);
+            float swingTime = Mathf.Clamp(stride / Mathf.Max(0.6f, speed) * 0.5f, 0.04f, 0.3f);
+
+            if (!leg.ready)
+            {
+                leg.plant = under;
+                leg.ready = true;
+                leg.swinging = false;
+            }
+
+            if (leg.swinging)
+            {
+                leg.swingT += dt / swingTime;
+                if (leg.swingT >= 1f)
+                {
+                    leg.swingT = 1f;
+                    leg.swinging = false;
+                    leg.plant = leg.target;
+                    if (swingingLeg == side) swingingLeg = -1;
+                    return leg.plant;
+                }
+                float t = leg.swingT * leg.swingT * (3f - 2f * leg.swingT);
+                Vector3 swing = Vector3.Lerp(leg.swingFrom, leg.target, t);
+                swing.y += Mathf.Sin(leg.swingT * Mathf.PI) * stride * (0.25f + 0.25f * speedN);
+                return swing;
+            }
+
+            leg.plant.y = ground + ankle;
+            if (Flat(leg.plant - under).magnitude > stride * 0.5f && swingingLeg < 0)
+            {
+                swingingLeg = side;
+                leg.swinging = true;
+                leg.swingT = 0f;
+                leg.swingFrom = leg.plant;
+                Vector3 ahead = Flat(anchorVel).sqrMagnitude > 0.04f ? Flat(anchorVel).normalized : facing;
+                // Aim at where the hips will be when the foot lands, half a stride in front of them.
+                leg.target = under + Flat(anchorVel) * swingTime + ahead * (stride * 0.5f);
+                leg.target.y = ground + ankle;
+            }
+            return leg.plant;
+        }
+
+        /// <summary>
+        /// A stiff leg is a fixed length: the further a planted foot is from straight below the hip,
+        /// the lower the hips must sit for that leg to still reach it. Without this the pelvis is
+        /// pinned at ride height, the legs are wedged between it and the floor, and they cannot
+        /// swing at all - which is exactly what makes a pawn look like it is gliding.
+        /// </summary>
+        float PelvisDrop(Vector3 footL, Vector3 footR)
+        {
+            float drop = 0f;
+            for (int side = 0; side < 2; side++)
+            {
+                if (legs[side].swinging) continue;
+                int thighId = side == 0 ? (int)BodyId.ThighL : (int)BodyId.ThighR;
+                int footId = side == 0 ? (int)BodyId.FootL : (int)BodyId.FootR;
+                float legLength = (bindPos[footId] - bindPos[thighId]).magnitude;
+                Vector3 hip = bodies[0].position + bodies[0].rotation * bindPos[thighId];
+                Vector3 foot = side == 0 ? footL : footR;
+                float reach = Flat(foot - hip).magnitude;
+                float vertical = Mathf.Sqrt(Mathf.Max(0.0001f, legLength * legLength - reach * reach));
+                drop = Mathf.Max(drop, legLength - vertical);
+            }
+            return Mathf.Min(drop, 0.08f);
+        }
+
+        /// <summary>
+        /// Aims a one-piece leg at a world point. There is no knee, so only the direction can be
+        /// matched; the ankle counter-rotates to keep the sole flat.
+        /// </summary>
+        void LegIk(Vector3 foot, int side, out Quaternion thigh, out Quaternion ankle)
+        {
+            int thighId = side == 0 ? (int)BodyId.ThighL : (int)BodyId.ThighR;
+            int footId = side == 0 ? (int)BodyId.FootL : (int)BodyId.FootR;
+            Quaternion hipsRot = bodies[0].rotation;
+            Vector3 bindDir = bindPos[footId] - bindPos[thighId];
+            Vector3 hip = bodies[0].position + hipsRot * bindPos[thighId];
+            Vector3 want = Quaternion.Inverse(hipsRot) * (foot - hip);
+            if (want.sqrMagnitude < 1e-6f || bindDir.sqrMagnitude < 1e-6f)
+            {
+                thigh = ankle = Quaternion.identity;
+                return;
+            }
+            thigh = Quaternion.FromToRotation(bindDir.normalized, want.normalized);
+            float angle = Quaternion.Angle(Quaternion.identity, thigh);
+            if (angle > 55f) thigh = Quaternion.Slerp(Quaternion.identity, thigh, 55f / angle);
+            ankle = Quaternion.Inverse(thigh);
         }
 
         Quaternion ReachPose(PawnHand hand, bool left, bool air)
@@ -611,6 +822,12 @@ namespace ChessFight.RagdollLab
             Slerp(BodyId.ArmR, armR, r);
             Slerp(BodyId.HandR, armR, r);
 
+            // A drive's damper pulls the joint toward targetAngularVelocity, which is zero everywhere
+            // in Unity unless it is set. So while the pose is swinging, the damper is braking the very
+            // motion the spring is asking for. Handing it the pose's own angular velocity removes that
+            // brake without touching the spring, the damping ratio or the stability of anything else.
+            float step = Time.fixedDeltaTime;
+            bool feed = p.driveFeedForward > 0.001f && step > 0f && targetsPrimed;
             for (int i = 1; i < Count; i++)
             {
                 Quaternion local = puppet[i].localRotation;
@@ -620,14 +837,32 @@ namespace ChessFight.RagdollLab
                     if (o.HasValue) local = o.Value;
                 }
                 // ConfigurableJoint.targetRotation is relative to the joint's starting orientation.
-                joints[i].targetRotation = Quaternion.Inverse(startRel[i] * local) * startRel[i];
+                Quaternion target = Quaternion.Inverse(startRel[i] * local) * startRel[i];
+                joints[i].targetRotation = target;
+                joints[i].targetAngularVelocity = feed
+                    ? AngularVelocity(prevTarget[i], target, step) * p.driveFeedForward
+                    : Vector3.zero;
+                prevTarget[i] = target;
             }
+            targetsPrimed = true;
         }
 
         float ArmBoost(PawnHand hand, RagdollParams p)
         {
             if (hand.IsHolding) return p.grabArmMultiplier;
             return input.grab && State != PawnState.Ragdoll ? p.reachArmMultiplier : 1f;
+        }
+
+        /// <summary>Angular velocity that carries <paramref name="from"/> to <paramref name="to"/> in dt.</summary>
+        static Vector3 AngularVelocity(Quaternion from, Quaternion to, float dt)
+        {
+            Quaternion delta = to * Quaternion.Inverse(from);
+            delta.ToAngleAxis(out float angle, out Vector3 axis);
+            if (float.IsNaN(axis.x) || axis.sqrMagnitude < 1e-8f) return Vector3.zero;
+            if (angle > 180f) angle -= 360f;
+            Vector3 w = axis.normalized * (angle * Mathf.Deg2Rad / dt);
+            // A teleporting pose (respawn, get-up blend) must not become a huge velocity command.
+            return w.sqrMagnitude > 900f ? Vector3.zero : w;
         }
 
         void Slerp(BodyId id, float spring, float ratio)
@@ -644,6 +879,7 @@ namespace ChessFight.RagdollLab
 
         public void OnPartCollision(RagdollBodyPart part, Collision c, bool enter)
         {
+            if (NetworkPuppet) return;
             ColliderOwner.TryGetValue(c.collider, out RagdollPawn other);
             if (other == this) return;
             var p = P;
@@ -715,6 +951,67 @@ namespace ChessFight.RagdollLab
             Stiffness = 1f;
             contactTimer = hitTimer = shoveTimer = airTimer = 0f;
             SetRagdollFriction(false);
+            NetworkSnap = true;
+        }
+
+        // ---------------------------------------------------------------- networking
+
+        /// <summary>Puppet mode: all bodies go kinematic and the controller stops; poses come from the wire.</summary>
+        public void SetNetworkPuppet(bool on)
+        {
+            if (NetworkPuppet == on) return;
+            NetworkPuppet = on;
+            handL.Release();
+            handR.Release();
+            for (int i = 0; i < Count; i++)
+            {
+                var rb = bodies[i];
+                if (!on)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+                rb.isKinematic = on;
+                rb.interpolation = on ? RigidbodyInterpolation.None : RigidbodyInterpolation.Interpolate;
+            }
+            if (!on)
+            {
+                anchorPos = bodies[0].position;
+                anchorVel = Vector3.zero;
+                State = PawnState.Active;
+                StateFactor = 1f;
+                Stiffness = 1f;
+                stateTimer = 0f;
+            }
+        }
+
+        public void CaptureNetworkPose(RagdollPose pose)
+        {
+            pose.hips = bodies[0].transform.position;
+            for (int i = 0; i < Count; i++) pose.rotations[i] = bodies[i].transform.rotation;
+            pose.state = State == PawnState.Ragdoll ? (byte)1 : State == PawnState.GettingUp ? (byte)2 : (byte)0;
+            pose.grounded = Grounded;
+            pose.grabbing = Grabbing;
+            pose.snap = NetworkSnap;
+        }
+
+        /// <summary>Rebuild the whole pawn from hips + rotations (see jointOffset in Awake).</summary>
+        public void ApplyNetworkPose(RagdollPose pose)
+        {
+            poseScratch[0] = pose.hips;
+            for (int i = 1; i < Count; i++)
+                poseScratch[i] = poseScratch[ParentOf[i]] + pose.rotations[ParentOf[i]] * jointOffset[i];
+            for (int i = 0; i < Count; i++)
+            {
+                var rb = bodies[i];
+                rb.transform.SetPositionAndRotation(poseScratch[i], pose.rotations[i]);
+                rb.position = poseScratch[i];
+                rb.rotation = pose.rotations[i];
+            }
+            State = pose.state == 1 ? PawnState.Ragdoll : pose.state == 2 ? PawnState.GettingUp : PawnState.Active;
+            StateFactor = pose.state == 1 ? 0f : 1f;
+            Grounded = pose.grounded;
+            anchorPos = pose.hips;
         }
 
         public bool IsFinite()

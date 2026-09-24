@@ -16,7 +16,8 @@ namespace ChessFight.RagdollLab
     {
         public LabGame game;
 
-        public static bool Requested => Arg("-ragdollAutoTest") != null || Arg("-ragdollShots") != null;
+        public static bool Requested =>
+            Arg("-ragdollAutoTest") != null || Arg("-ragdollShots") != null || Arg("-ragdollClip") != null;
         static bool PanelShotRequested => Arg("-ragdollPanelShot") != null;
 
         readonly StringBuilder log = new StringBuilder();
@@ -24,6 +25,8 @@ namespace ChessFight.RagdollLab
         bool allFinite = true;
         string pendingShot;
         Camera shotCamera;
+        string clipFolder;
+        int clipFrame;
 
         public static string Arg(string name)
         {
@@ -55,10 +58,19 @@ namespace ChessFight.RagdollLab
             }
             yield return null;
             yield return null;
+            // -ragdollTuning <file.json> runs the whole suite on a candidate value set.
+            string preset = Arg("-ragdollTuning");
+            if (!string.IsNullOrEmpty(preset) && File.Exists(preset))
+            {
+                game.tuning.LoadJson(File.ReadAllText(preset));
+                log.AppendLine($"preset {Path.GetFileName(preset)}");
+            }
             string report = Arg("-ragdollAutoTest");
             if (report != null) yield return RunTests(string.IsNullOrEmpty(report) ? "ragdoll_autotest.txt" : report);
             string shots = Arg("-ragdollShots");
             if (shots != null) yield return RunShots(string.IsNullOrEmpty(shots) ? "shots" : shots);
+            string clip = Arg("-ragdollClip");
+            if (clip != null) yield return RunClip(string.IsNullOrEmpty(clip) ? "clip" : clip);
             Application.Quit();
         }
 
@@ -130,6 +142,7 @@ namespace ChessFight.RagdollLab
             yield return Beam();
             yield return WallClimb();
             yield return Crowd();
+            yield return NetLoopback();
             Report("NaN/폭발 없음", allFinite, allFinite ? "모든 부위 좌표 유한" : "NaN 또는 무한대 좌표 발생");
             log.AppendLine($"RESULT passed={passed} failed={failed}");
             File.WriteAllText(path, log.ToString());
@@ -286,6 +299,56 @@ namespace ChessFight.RagdollLab
             Time.fixedDeltaTime = 1f / game.physicsRate;
         }
 
+        /// <summary>12 pawns (6v6) piling into each other, timed per physics step at several settings.</summary>
+        IEnumerator LoadTest()
+        {
+            var profiler = game.gameObject.AddComponent<PhysicsStepProfiler>();
+            int savedIterations = game.solverIterations;
+            foreach (var (hz, iterations, crowd) in new[]
+            {
+                (120, 24, 12), (120, 24, 6), (90, 24, 12), (60, 40, 12), (60, 16, 12), (120, 40, 12),
+            })
+            {
+                Time.fixedDeltaTime = 1f / hz;
+                game.solverIterations = iterations;
+                var pawns = new System.Collections.Generic.List<RagdollPawn>();
+                for (int i = 0; i < crowd; i++)
+                {
+                    bool blue = i % 2 == 0;
+                    float lane = (i / 2 - (crowd / 4f)) * 1.3f;
+                    var pos = new Vector3(lane, 0f, blue ? -3f : 3f);
+                    pawns.Add(Spawn(pos, blue ? Vector3.forward : Vector3.back, (blue ? "청" : "홍") + i));
+                }
+                yield return Sim(1f);
+                profiler.ResetCounters();
+                profiler.measuring = true;
+                float t = 0f;
+                yield return Sim(6f, () =>
+                {
+                    t += Dt;
+                    for (int i = 0; i < pawns.Count; i++)
+                    {
+                        var pawn = pawns[i];
+                        bool blue = i % 2 == 0;
+                        Vector3 move = (blue ? Vector3.forward : Vector3.back) + Vector3.right * Mathf.Sin(t * 1.3f + i);
+                        // Half of them grab and shove, which is the heaviest case (joints + queries).
+                        Drive(pawn, move.normalized, grab: i % 4 == 0, shove: i % 4 == 1 && Mathf.Repeat(t, 1.2f) < Dt);
+                    }
+                });
+                profiler.measuring = false;
+                double perSecond = profiler.AverageMs * hz;
+                int knockdowns = 0;
+                foreach (var pawn in pawns) knockdowns += pawn.Knockdowns;
+                Info($"부하: {crowd}명 {hz}Hz 솔버 {iterations}회",
+                    $"물리 1스텝 평균 {profiler.AverageMs:F2} ms (최대 {profiler.MaxMs:F2}), 게임 1초당 물리 {perSecond:F0} ms = CPU 코어 {perSecond / 10f:F0}%, 넘어짐 {knockdowns}회");
+                yield return Clear();
+            }
+            profiler.measuring = false;
+            Destroy(profiler);
+            game.solverIterations = savedIterations;
+            Time.fixedDeltaTime = 1f / game.physicsRate;
+        }
+
         IEnumerator RunVariants()
         {
             var p = game.tuning.values;
@@ -372,6 +435,11 @@ namespace ChessFight.RagdollLab
             if (Arg("-ragdollRunDiag") != null)
             {
                 yield return RunVariants();
+                yield break;
+            }
+            if (Arg("-ragdollLoad") != null)
+            {
+                yield return LoadTest();
                 yield break;
             }
             var mass = Spawn(new Vector3(-5f, 0f, 5f), Vector3.forward, "diag-mass");
@@ -579,8 +647,50 @@ namespace ChessFight.RagdollLab
             Vector3 start = pawn.Hips.position;
             float maxTilt = 0f, minStiff = 1f, tiltSum = 0f, chestMin = 99f, chestMax = -99f;
             int samples = 0;
+            // Foot slip: how fast the lower foot (the one taking weight) slides over the ground.
+            // A planted step keeps this near zero; a gliding pawn drags both feet at running speed.
+            float slipSum = 0f, slipMax = 0f;
+            int plantedSamples = 0;
+            float swingMax = 0f, swingSum = 0f;
+            // Limp detector: a healthy gait repeats. Collect the height and the spacing of every
+            // bounce of the hips; if strong and weak steps alternate, these spread out.
+            var hopHeights = new System.Collections.Generic.List<float>();
+            var hopTimes = new System.Collections.Generic.List<float>();
+            float prevY = pawn.Hips.position.y, prevPrevY = prevY, riseTop = prevY, clock = 0f, lastTop = -1f;
+            Vector3 prevL = pawn.bodies[(int)BodyId.FootL].position;
+            Vector3 prevR = pawn.bodies[(int)BodyId.FootR].position;
             yield return Sim(1.5f, () =>
             {
+                Vector3 fl = pawn.bodies[(int)BodyId.FootL].position;
+                Vector3 fr = pawn.bodies[(int)BodyId.FootR].position;
+                float slip = Mathf.Min(Flat(fl - prevL).magnitude, Flat(fr - prevR).magnitude) / Dt;
+                prevL = fl;
+                prevR = fr;
+                slipSum += slip;
+                slipMax = Mathf.Max(slipMax, slip);
+                if (slip < 0.25f * target) plantedSamples++;
+                // How far the leg actually swings from straight down - what reads as "running".
+                Quaternion inv = Quaternion.Inverse(pawn.Hips.rotation);
+                Vector3 legDir = inv * (fl - pawn.bodies[(int)BodyId.ThighL].position);
+                float swingAngle = Mathf.Abs(Mathf.Atan2(legDir.z, -legDir.y) * Mathf.Rad2Deg);
+                swingMax = Mathf.Max(swingMax, swingAngle);
+                swingSum += swingAngle;
+                clock += Dt;
+                float y = pawn.Hips.position.y;
+                if (prevY > prevPrevY && prevY >= y && prevY - riseTop > 0.002f)
+                {
+                    // prevY was a local maximum of the hips height: one bounce.
+                    if (lastTop >= 0f)
+                    {
+                        hopTimes.Add(clock - lastTop);
+                        hopHeights.Add(prevY - riseTop);
+                    }
+                    lastTop = clock;
+                    riseTop = y;
+                }
+                riseTop = Mathf.Min(riseTop, y);
+                prevPrevY = prevY;
+                prevY = y;
                 maxTilt = Mathf.Max(maxTilt, pawn.HipsTilt);
                 tiltSum += pawn.HipsTilt;
                 samples++;
@@ -592,6 +702,69 @@ namespace ChessFight.RagdollLab
             float average = Vector3.Distance(Flat(start), Flat(pawn.Hips.position)) / 1.5f;
             Report("평지 달리기", average >= 0.8f * target && pawn.Knockdowns == 0,
                 $"평균 {average:F2} m/s (목표 {target:F1}), 90% 도달 {reach:F2}s, 골반 기울기 평균 {tiltSum / samples:F1}° 최대 {maxTilt:F1}°, 상체 앞뒤 {chestMin:F0}~{chestMax:F0}°, 최저 강성 {minStiff:F2}, 넘어짐 {pawn.Knockdowns}");
+            // Keep running for another 3 s purely to collect enough bounces to judge the rhythm.
+            hopHeights.Clear();
+            hopTimes.Clear();
+            lastTop = -1f;
+            clock = 0f;
+            yield return Sim(3f, () =>
+            {
+                clock += Dt;
+                float y = pawn.Hips.position.y;
+                if (prevY > prevPrevY && prevY >= y && prevY - riseTop > 0.002f)
+                {
+                    if (lastTop >= 0f)
+                    {
+                        hopTimes.Add(clock - lastTop);
+                        hopHeights.Add(prevY - riseTop);
+                    }
+                    lastTop = clock;
+                    riseTop = y;
+                }
+                riseTop = Mathf.Min(riseTop, y);
+                prevPrevY = prevY;
+                prevY = y;
+            });
+            Info("걸음 리듬 (달리는 중)", GaitRhythm(hopHeights, hopTimes));
+            Info("다리 실제 스윙 각도 (달리는 중)",
+                $"최대 {swingMax:F0}°, 평균 {swingSum / samples:F0}° (목표 진폭 {game.tuning.values.legSwing:F0}°, 보폭 주기 {game.tuning.values.strideLength:F2} m)");
+            Info("디딘 발 미끄러짐 (달리는 중)",
+                $"받침발 평균 {slipSum / samples:F2} m/s, 발이 멈춰 있는 시간 {100f * plantedSamples / samples:F0}% (몸 속도 {average:F2} m/s)");
+            // Same measurement at walking pace, where a step is slow enough to be seen.
+            Drive(pawn, Vector3.forward * 0.4f);
+            yield return Sim(0.8f);
+            float walkSlip = 0f, walkPlanted = 0f;
+            int walkSamples = 0;
+            Vector3 walkStart = pawn.Hips.position;
+            prevL = pawn.bodies[(int)BodyId.FootL].position;
+            prevR = pawn.bodies[(int)BodyId.FootR].position;
+            yield return Sim(1.5f, () =>
+            {
+                Vector3 fl = pawn.bodies[(int)BodyId.FootL].position;
+                Vector3 fr = pawn.bodies[(int)BodyId.FootR].position;
+                float slip = Mathf.Min(Flat(fl - prevL).magnitude, Flat(fr - prevR).magnitude) / Dt;
+                prevL = fl;
+                prevR = fr;
+                walkSlip += slip;
+                walkSamples++;
+                if (slip < 0.25f * 0.4f * target) walkPlanted++;
+            });
+            var trace = new StringBuilder();
+            float traceT = 0f, traceNext = 0f;
+            yield return Sim(0.5f, () =>
+            {
+                traceT += Dt;
+                if (traceT < traceNext) return;
+                traceNext = traceT + 0.04f;
+                Quaternion inv = Quaternion.Inverse(pawn.Hips.rotation);
+                Vector3 ankle = inv * (pawn.bodies[(int)BodyId.FootL].position - pawn.Hips.position);
+                Vector3 want = pawn.puppet[(int)BodyId.ThighL].localRotation * Vector3.down;
+                trace.Append($"[{traceT:F2} 발z{ankle.z:F2} 목표z{want.z:F2}]");
+            });
+            Info("걸음 궤적 (왼발, 걷는 중)", trace.ToString());
+            float walkSpeed = Vector3.Distance(Flat(walkStart), Flat(pawn.Hips.position)) / 1.5f;
+            Info("디딘 발 미끄러짐 (걷는 중)",
+                $"받침발 평균 {walkSlip / walkSamples:F2} m/s, 발이 멈춰 있는 시간 {100f * walkPlanted / walkSamples:F0}% (몸 속도 {walkSpeed:F2} m/s)");
             Drive(pawn, Vector3.zero);
             t = 0f;
             float stop = -1f;
@@ -602,6 +775,39 @@ namespace ChessFight.RagdollLab
             });
             Report("멈추기", stop >= 0f && stop < 1f, $"0.5 m/s 미만까지 {stop:F2}s");
             yield return Clear();
+        }
+
+        /// <summary>
+        /// Turns a list of bounce heights and intervals into a readable "does it limp" line.
+        /// Spread is the coefficient of variation: 0% is a metronome, over ~25% reads as a limp.
+        /// </summary>
+        static string GaitRhythm(System.Collections.Generic.List<float> heights, System.Collections.Generic.List<float> times)
+        {
+            if (times.Count < 3) return $"튕김 {times.Count}회 — 걸음이라 부를 게 없음 (골반이 거의 평평하게 이동)";
+            float Mean(System.Collections.Generic.List<float> v)
+            {
+                float t = 0f;
+                foreach (float x in v) t += x;
+                return t / v.Count;
+            }
+            float Spread(System.Collections.Generic.List<float> v)
+            {
+                float m = Mean(v), q = 0f;
+                foreach (float x in v) q += (x - m) * (x - m);
+                return m <= 1e-5f ? 0f : 100f * Mathf.Sqrt(q / v.Count) / m;
+            }
+            // Alternating strong/weak steps: compare odd-indexed bounces with even-indexed ones.
+            float odd = 0f, even = 0f;
+            int no = 0, ne = 0;
+            for (int i = 0; i < heights.Count; i++)
+            {
+                if (i % 2 == 0) { even += heights[i]; ne++; }
+                else { odd += heights[i]; no++; }
+            }
+            float limp = no == 0 || ne == 0 ? 0f
+                : 100f * Mathf.Abs(even / ne - odd / no) / Mathf.Max(1e-5f, 0.5f * (even / ne + odd / no));
+            return $"튕김 {times.Count}회, {1f / Mean(times):F1}회/초, 높이 {100f * Mean(heights):F1} cm, "
+                 + $"간격 편차 {Spread(times):F0}%, 높이 편차 {Spread(heights):F0}%, 절뚝임(한걸음씩 번갈아) {limp:F0}%";
         }
 
         IEnumerator Turn()
@@ -907,6 +1113,74 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
+        /// <summary>Pose path without Steam: capture on one pawn, pack, unpack, draw on a puppet, compare.</summary>
+        IEnumerator NetLoopback()
+        {
+            byte[] inputBytes = RagdollNetProtocol.Input(99, 7, 1234, new Vector2(0.5f, -0.25f), true, false, true);
+            bool inputOk = RagdollNetProtocol.ReadInput(inputBytes, 99, out uint seq, out uint clientTime, out var move, out bool jump, out bool shove, out bool grab);
+            inputOk &= inputBytes.Length == RagdollNetProtocol.InputBytes && seq == 7 && clientTime == 1234 && jump && !shove && grab
+                       && Mathf.Abs(move.x - 0.5f) < 0.01f && Mathf.Abs(move.y + 0.25f) < 0.01f;
+            bool wrongSession = RagdollNetProtocol.ReadInput(inputBytes, 100, out _, out _, out _, out _, out _, out _);
+            Report("입력 패킷 왕복", inputOk && !wrongSession, $"{inputBytes.Length}바이트, 값 복원 {inputOk}, 다른 방 번호 거부 {!wrongSession}");
+
+            var host = Spawn(new Vector3(0f, 0f, -10f), Vector3.forward, "net-host");
+            var remote = Spawn(new Vector3(20f, 0f, -10f), Vector3.forward, "net-remote");
+            remote.SetNetworkPuppet(true);
+            var pose = new RagdollPose { id = 1 };
+            var list = new System.Collections.Generic.List<RagdollPose> { pose };
+            var snapshot = new RagdollSnapshot();
+            var offset = new Vector3(20f, 0f, 0f);
+            float maxAngle = 0f, maxBody = 0f, maxHips = 0f;
+            int worstBody = 0;
+            int packetBytes = 0, steps = 0, parseFailures = 0;
+
+            void Replicate()
+            {
+                steps++;
+                if (steps % 4 != 0) return;     // 30 Hz out of 120 Hz physics
+                host.CaptureNetworkPose(pose);
+                pose.id = 1;
+                pose.hips += offset;
+                byte[] bytes = RagdollNetProtocol.Snapshot(1234, (uint)steps, (uint)(steps * 8), list);
+                packetBytes = bytes.Length;
+                if (!RagdollNetProtocol.ReadSnapshot(bytes, 1234, snapshot))
+                {
+                    parseFailures++;
+                    return;
+                }
+                remote.ApplyNetworkPose(snapshot.At(0));
+                for (int i = 0; i < RagdollPawn.Count; i++)
+                {
+                    maxAngle = Mathf.Max(maxAngle, Quaternion.Angle(host.bodies[i].transform.rotation, remote.bodies[i].transform.rotation));
+                    float bodyError = Vector3.Distance(host.bodies[i].transform.position + offset, remote.bodies[i].transform.position);
+                    if (bodyError > maxBody)
+                    {
+                        maxBody = bodyError;
+                        worstBody = i;
+                    }
+                }
+                maxHips = Mathf.Max(maxHips, Vector3.Distance(host.bodies[0].transform.position + offset, remote.bodies[0].transform.position));
+            }
+
+            yield return Sim(0.8f);
+            Drive(host, Vector3.forward);
+            yield return Sim(2.5f, Replicate);
+            Drive(host, Vector3.forward, grab: true);
+            yield return Sim(0.8f, Replicate);
+            host.Knockdown("테스트: 원격 복원");
+            host.AddVelocity(new Vector3(2f, 3f, 0f));
+            yield return Sim(2.5f, Replicate);
+
+            // Limb positions are rebuilt from the chain, not sent, so the error grows with how hard
+            // the limbs swing: 1.7 cm on the spec defaults, 5.0 cm on the lively "weight" preset (a
+            // hand, three joints out). 6 cm is the gate; sending hand positions would cost 12 more
+            // bytes per pawn per packet, which is not worth it for a remote pawn's hand.
+            Report("래그돌 자세 원격 복원", parseFailures == 0 && maxAngle < 2f && maxBody < 0.06f && remote.IsFinite(),
+                $"스냅샷 {packetBytes}바이트(폰 1명), 회전 오차 최대 {maxAngle:F2}°, 부위 위치 오차 최대 {maxBody * 100f:F1} cm ({(BodyId)worstBody}), 골반 오차 {maxHips * 100f:F2} cm, 해독 실패 {parseFailures}회");
+            Info("대역폭 환산", $"폰 1명당 {RagdollNetProtocol.PoseBytes}바이트 · 12명 스냅샷 {RagdollNetProtocol.SnapshotBytes(12)}바이트 · 30Hz 기준 호스트 업로드 {RagdollNetProtocol.SnapshotBytes(12) * 30 * 11 * 8 / 1000000f:F2} Mbit/s (11명에게 전송)");
+            yield return Clear();
+        }
+
         // ------------------------------------------------------------------ screenshots
 
         IEnumerator RunShots(string folder)
@@ -982,6 +1256,58 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
+        /// <summary>
+        /// Records one scripted performance at a fixed 30 fps: stand, run, hard turn, jump, take a hit,
+        /// get up. Same script every time, so two parameter sets can be compared frame for frame.
+        /// </summary>
+        IEnumerator RunClip(string folder)
+        {
+            Directory.CreateDirectory(folder);
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = 1f / game.physicsRate;
+            Time.captureFramerate = 30;
+            shotCamera = game.labCamera.GetComponent<Camera>();
+            game.labCamera.enabled = false;
+
+            var pawn = Spawn(new Vector3(-9f, 0f, -6f), Vector3.right, "clip");
+            var follow = pawn.Hips.position;
+            void Track(float lead)
+            {
+                Vector3 want = pawn.Hips.position + pawn.Facing * lead;
+                follow = Vector3.Lerp(follow, want, 0.12f);
+                Vector3 eye = follow + new Vector3(0f, 0.55f, -2.4f);
+                shotCamera.transform.SetPositionAndRotation(
+                    eye, Quaternion.LookRotation(follow + Vector3.up * 0.18f - eye, Vector3.up));
+            }
+
+            for (int i = 0; i < 40; i++) { Track(0f); yield return null; }
+            clipFolder = folder;
+
+            yield return ClipSegment(0.6f, () => { Drive(pawn, Vector3.zero); Track(0f); });
+            yield return ClipSegment(2.6f, () => { Drive(pawn, Vector3.right); Track(0.9f); });
+            yield return ClipSegment(1.6f, () => { Drive(pawn, Vector3.forward); Track(0.9f); });
+            yield return ClipSegment(0.15f, () => { Drive(pawn, Vector3.forward, jump: true); Track(0.9f); });
+            yield return ClipSegment(1.5f, () => { Drive(pawn, Vector3.forward); Track(0.9f); });
+            Drive(pawn, Vector3.zero);
+            pawn.Knockdown("클립");
+            pawn.AddVelocity(new Vector3(2.5f, 2.2f, 0f));
+            yield return ClipSegment(3.2f, () => Track(0f));
+
+            clipFolder = null;
+            Time.captureFramerate = 0;
+        }
+
+        IEnumerator ClipSegment(float seconds, Action perFrame)
+        {
+            float t = 0f;
+            while (t < seconds)
+            {
+                perFrame();
+                yield return null;
+                t += Time.deltaTime;
+            }
+        }
+
         IEnumerator Shot(string folder, string name, Vector3 position, Vector3 lookAt)
         {
             shotCamera.transform.SetPositionAndRotation(position, Quaternion.LookRotation(lookAt - position, Vector3.up));
@@ -997,6 +1323,8 @@ namespace ChessFight.RagdollLab
 
         void LateUpdate()
         {
+            if (clipFolder != null && shotCamera != null && pendingShot == null)
+                pendingShot = Path.Combine(clipFolder, $"f_{clipFrame++:D4}.png");
             if (pendingShot == null || shotCamera == null) return;
             const int w = 1280, h = 720;
             var rt = RenderTexture.GetTemporary(w, h, 24);

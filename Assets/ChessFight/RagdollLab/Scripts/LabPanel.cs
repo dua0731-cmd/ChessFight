@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -32,6 +32,8 @@ namespace ChessFight.RagdollLab
             "카메라 회전: 마우스 / 오른쪽 스틱",
             "R 전체 리스폰 · T 슬로모션 · F 자유 카메라(WASD·Q·E)",
             "Tab / Start 패널 · Esc 마우스 풀기 · 패드 Back 본인 리스폰",
+            "값 세트: 1~4 불러오기 · Shift+1~4 저장 · B 무작위 전환",
+            "평가: ] 좋음 · [ 별로 (블라인드 모드에서 어느 세트인지 숨김)",
         };
 
         void OnGUI()
@@ -102,10 +104,13 @@ namespace ChessFight.RagdollLab
             if (GUILayout.Button("JSON 저장", buttonStyle)) game.SaveParams();
             if (GUILayout.Button("불러오기", buttonStyle)) game.LoadParams();
             if (GUILayout.Button("클립보드 복사", buttonStyle)) game.CopyParams();
+            if (GUILayout.Button("붙여넣기", buttonStyle)) game.PasteParams();
             GUILayout.EndHorizontal();
+            if (GUILayout.Button("무게감 프리셋 (발로 달리는 느낌)", buttonStyle)) game.ApplyWeightPreset();
             if (!string.IsNullOrEmpty(game.Status)) GUILayout.Label(game.Status, smallStyle);
 
             scroll = GUILayout.BeginScrollView(scroll);
+            DrawSlots();
             string group = null;
             bool groupOpen = true;
             bool changed = false;
@@ -184,6 +189,36 @@ namespace ChessFight.RagdollLab
             GUILayout.EndArea();
 
             if (changed) game.MarkTuningDirty();
+        }
+
+        void DrawSlots()
+        {
+            var slots = game.slots;
+            if (slots == null) return;
+            GUILayout.Label("값 세트 비교 (숫자 1~4 불러오기 · Shift+숫자 저장)", foldStyle);
+            for (int i = 0; i < LabParamSlots.Count; i++)
+            {
+                GUILayout.BeginHorizontal();
+                bool active = slots.Active == i && !slots.Blind;
+                GUILayout.Label((active ? "▶ " : "   ") + LabParamSlots.Names[i], labelStyle, GUILayout.Width(30f));
+                if (GUILayout.Button("저장", buttonStyle, GUILayout.Width(52f))) slots.Save(i);
+                if (GUILayout.Button("불러오기", buttonStyle, GUILayout.Width(74f))) slots.Load(i);
+                GUILayout.Label(slots.Blind ? "숨김" : slots.Summary(i), smallStyle);
+                GUILayout.EndHorizontal();
+            }
+            GUILayout.BeginHorizontal();
+            bool blind = GUILayout.Toggle(slots.Blind, "블라인드", buttonStyle, GUILayout.Width(78f));
+            if (blind != slots.Blind) slots.Blind = blind;
+            if (GUILayout.Button("무작위 전환 (B)", buttonStyle)) slots.Randomize();
+            if (GUILayout.Button("좋음 ]", buttonStyle, GUILayout.Width(66f))) slots.Vote(true);
+            if (GUILayout.Button("별로 [", buttonStyle, GUILayout.Width(66f))) slots.Vote(false);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(slots.Blind
+                ? $"현재 값 세트: 숨김 · 평가 {slots.Votes}회"
+                : $"현재 값 세트: {(slots.Active < 0 ? "없음" : LabParamSlots.Names[slots.Active])} · 평가 {slots.Votes}회", smallStyle);
+            if (GUILayout.Button("평가 초기화", buttonStyle, GUILayout.Width(90f))) slots.ClearVotes();
+            GUILayout.EndHorizontal();
         }
 
         float SliderRow(string label, float value, float min, float max)

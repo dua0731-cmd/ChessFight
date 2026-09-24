@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -32,6 +32,7 @@ namespace ChessFight.RagdollLab
         public const string GroupMove = "이동";
         public const string GroupAssist = "보조 (명세 외)";
         public const string GroupPose = "퍼펫 포즈 (명세 외)";
+        public const string GroupWeight = "발과 무게감 (명세 외)";
 
         [Tunable(GroupStiffness, "골반 앵커 hipAnchorStrength")] [Range(0f, 20000f)] public float hipAnchorStrength = 3000f;
         [Tunable(GroupStiffness, "하체 lowerBodySpring")] [Range(0f, 10000f)] public float lowerBodySpring = 2000f;
@@ -90,6 +91,20 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupPose, "팔 내림 (도)")] [Range(-30f, 80f)] public float armRestDown = 20f;
         [Tunable(GroupPose, "상체 기울기 (도)")] [Range(0f, 40f)] public float chestLean = 10f;
         [Tunable(GroupPose, "골반 기울기 (도)")] [Range(0f, 30f)] public float runLean = 6f;
+
+        // Everything below defaults to "off", so the feel only changes when it is dialled up.
+        [Tunable(GroupWeight, "발 고정 (0=미끄러짐)")] [Range(0f, 1f)] public float stepLock;
+        [Tunable(GroupWeight, "걸음당 추진 (0=일정)")] [Range(0f, 1f)] public float stanceThrust;
+        [Tunable(GroupWeight, "걸음 들썩임 (m)")] [Range(0f, 0.12f)] public float stepBob;
+        [Tunable(GroupWeight, "걸음 좌우 기울기 (도)")] [Range(0f, 12f)] public float stepRoll;
+        [Tunable(GroupWeight, "회전 시 기울기 (도)")] [Range(0f, 30f)] public float turnLean;
+        [Tunable(GroupWeight, "착지 주저앉기 (m)")] [Range(0f, 0.2f)] public float landingDip;
+        [Tunable(GroupWeight, "정지 감속 (m/s²)")] [Range(1f, 100f)] public float stopDeceleration = 30f;
+        [Tunable(GroupWeight, "전속력 회전 속도 (도/초)")] [Range(60f, 1080f)] public float turnRateTopSpeed = 1080f;
+        [Tunable(GroupWeight, "보폭 (발 고정용, m)")] [Range(0.05f, 0.6f)] public float stepLength = 0.22f;
+        [Tunable(GroupWeight, "두 발 모아 도약 (0=교대걸음)")] [Range(0f, 1f)] public float boundGait;
+        [Tunable(GroupWeight, "관절 속도 예측 (0=꺼짐)")] [Range(0f, 1.5f)] public float driveFeedForward;
+        [Tunable(GroupWeight, "도약 횟수 고정 (회/초, 0=보폭기준)")] [Range(0f, 5f)] public float hopCadence;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]
