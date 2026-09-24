@@ -42,7 +42,7 @@ namespace ChessFight.Game
     public sealed class LegacyMoveInputSource : IMoveInputSource
     {
         bool unavailable;
-        public string DisplayName => "Legacy Input Manager (fallback)";
+        public string DisplayName => "레거시 입력 (대체)";
         public void Enable() { }
         public void Disable() { }
         public MoveIntent Read()

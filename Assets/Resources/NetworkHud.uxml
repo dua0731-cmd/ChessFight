@@ -1,49 +1,81 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <ui:VisualElement class="overlay" picking-mode="Ignore">
-        <!-- A plain element, NOT a ScrollView: NetworkTheme.tss imports only this
-             project's USS and never Unity's default runtime theme, so composite
-             controls that rely on the default styles collapse to nothing. Buttons,
-             labels and the toggle survive because the USS styles them outright. -->
-        <ui:VisualElement name="panel" class="panel">
-            <ui:Label text="CHESSFIGHT / NETWORK LAB" class="title" />
-            <ui:Label name="status" text="Starting..." class="status" />
-            <ui:Label name="error" class="error" />
-            <ui:Button name="retry" text="Retry Steam connection" />
-            <ui:Label name="details" class="details" />
-            <ui:VisualElement class="row">
-                <ui:Button name="copy-party" text="Copy party ID" />
-                <ui:Button name="copy-match" text="Copy match ID" />
+    <!-- Three columns filling the screen: info rail on the left, spacer, action
+         stack on the right. Plain elements only - NetworkTheme.tss does not import
+         Unity's default runtime theme, so composite controls collapse to nothing. -->
+    <ui:VisualElement class="screen" picking-mode="Ignore">
+
+        <ui:VisualElement class="col col-left">
+            <ui:VisualElement class="card">
+                <ui:Label text="CHESSFIGHT" class="brand" />
+                <ui:Label name="status" text="준비 중..." class="status" />
+                <ui:Label name="error" class="error" />
+                <ui:Button name="retry" text="Steam 다시 연결" class="btn warn" />
             </ui:VisualElement>
-            <ui:VisualElement class="row">
-                <ui:Button name="invite" text="Invite Steam friends" />
-                <ui:Button name="find" text="Quick match (6 vs 6)" />
+
+            <ui:VisualElement class="card">
+                <ui:Label text="AI 봇" class="card-title" />
+                <ui:VisualElement class="row">
+                    <ui:Button name="bots-less" text="-" class="btn narrow" />
+                    <ui:Label name="bots" text="파티 봇 0 / 5" class="chip" />
+                    <ui:Button name="bots-more" text="+" class="btn narrow" />
+                </ui:VisualElement>
+                <ui:VisualElement class="row">
+                    <ui:Button name="fill-bots" text="12명 채우기" class="btn tiny" />
+                    <ui:Button name="clear-bots" text="봇 비우기" class="btn tiny" />
+                </ui:VisualElement>
+
+                <ui:Label text="번호로 직접 입장" class="card-title" />
+                <ui:TextField name="code" label="번호" max-length="20" />
+                <ui:VisualElement class="row">
+                    <ui:Button name="join-party" text="파티 참가" class="btn tiny" />
+                    <ui:Button name="join-test" text="경기 참가" class="btn tiny" />
+                </ui:VisualElement>
+                <ui:Button name="create-test" text="비공개 방 만들기" class="btn tiny" />
+                <ui:Toggle name="capture" label="WASD 이동 켜기" />
             </ui:VisualElement>
-            <ui:VisualElement class="row">
-                <ui:Button name="create-test" text="Create private test" />
-                <ui:Button name="start" text="Start match" />
+
+            <ui:VisualElement class="card">
+                <ui:Label name="roster-title" text="내 파티" class="card-title" />
+                <ui:Label name="roster" class="roster" />
             </ui:VisualElement>
-            <ui:Label text="AI BOTS" class="section" />
-            <ui:VisualElement class="row">
-                <ui:Button name="bots-less" text="-" class="narrow" />
-                <ui:Label name="bots" text="Party bots 0 / 5" class="chip" />
-                <ui:Button name="bots-more" text="+" class="narrow" />
-            </ui:VisualElement>
-            <ui:VisualElement class="row">
-                <ui:Button name="fill-bots" text="Fill room to 12" />
-                <ui:Button name="clear-bots" text="Remove room bots" />
-            </ui:VisualElement>
-            <ui:TextField name="code" label="Lobby ID" max-length="20" />
-            <ui:VisualElement class="row">
-                <ui:Button name="join-party" text="Join party ID" />
-                <ui:Button name="join-test" text="Join match ID" />
-            </ui:VisualElement>
-            <ui:VisualElement class="row">
-                <ui:Button name="leave" text="Cancel / leave match" />
-                <ui:Button name="new-party" text="Leave party / new solo" />
-            </ui:VisualElement>
-            <ui:Toggle name="capture" label="WASD + Space enabled" />
-            <ui:Label text="Click the arena after entering an ID.&#10;Blue and orange are the two teams." class="hint" />
-            <ui:Label name="roster" class="roster" />
         </ui:VisualElement>
+
+        <ui:VisualElement class="spacer" picking-mode="Ignore" />
+
+        <ui:VisualElement class="col col-right">
+            <ui:VisualElement class="card">
+                <ui:Label text="방 번호" class="card-title" />
+                <ui:Label name="party-id" text="파티 —" class="mono" />
+                <ui:Label name="match-id" text="경기 —" class="mono" />
+                <ui:VisualElement class="row">
+                    <ui:Button name="copy-party" text="파티 복사" class="btn tiny" />
+                    <ui:Button name="copy-match" text="경기 복사" class="btn tiny" />
+                </ui:VisualElement>
+                <ui:Label name="details" class="details" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="actions">
+                <ui:Label name="step-hint" class="hint" />
+                <ui:VisualElement name="step-home">
+                    <ui:Button name="play" text="게임 시작" class="btn primary" />
+                </ui:VisualElement>
+                <ui:VisualElement name="step-mode">
+                    <ui:Button name="make-party" text="파티 생성" class="btn primary" />
+                    <ui:Button name="quick-match" text="빠른 매칭" class="btn primary alt" />
+                    <ui:Button name="back" text="뒤로" class="btn ghost" />
+                </ui:VisualElement>
+                <ui:VisualElement name="step-party">
+                    <ui:Button name="invite" text="친구 초대" class="btn primary alt" />
+                    <ui:Button name="party-start" text="게임 시작" class="btn primary" />
+                    <ui:Button name="new-party" text="파티 나가기" class="btn ghost" />
+                    <ui:Button name="back-party" text="뒤로" class="btn ghost" />
+                </ui:VisualElement>
+                <ui:VisualElement name="step-busy">
+                    <ui:Button name="start" text="경기 시작" class="btn primary" />
+                    <ui:Button name="leave" text="취소" class="btn ghost" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
     </ui:VisualElement>
 </ui:UXML>

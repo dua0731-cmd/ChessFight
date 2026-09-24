@@ -34,7 +34,7 @@ namespace ChessFight.Network
                 if (session.IsPeer(id)) SteamNetworkingMessages.AcceptSessionWithUser(ref c.m_identityRemote);
             });
             failures = Callback<SteamNetworkingMessagesSessionFailed_t>.Create(c =>
-            { ConnectionStatus = "Steam peer connection failed. Cancel and try again."; });
+            { ConnectionStatus = "Steam P2P 연결 실패. 취소 후 다시 시도하세요."; });
         }
         public void Update(float x, float z, bool jump)
         {
@@ -85,7 +85,7 @@ namespace ChessFight.Network
                 foreach (ulong id in session.Roster.Keys) Send(id, bytes);
             }
             if (!session.IsHost && session.Roster.ContainsKey(session.Self) && Time.realtimeSinceStartup - lastReceive > 12)
-            { session.Cancel(); ConnectionStatus = "Host stopped sending movement updates. Returned to party."; }
+            { session.Cancel(); ConnectionStatus = "방장의 응답이 끊겨 파티로 돌아왔습니다."; }
         }
         void Send(ulong id, byte[] bytes)
         {
@@ -97,7 +97,7 @@ namespace ChessFight.Network
             {
                 var result = SteamNetworkingMessages.SendMessageToUser(ref remote, handle.AddrOfPinnedObject(), (uint)bytes.Length,
                     Constants.k_nSteamNetworkingSend_Unreliable | Constants.k_nSteamNetworkingSend_NoNagle, Channel);
-                if (result != EResult.k_EResultOK) ConnectionStatus = "Steam send: " + result;
+                if (result != EResult.k_EResultOK) ConnectionStatus = "Steam 전송 오류: " + result;
                 connected.Add(id);
             }
             finally { handle.Free(); }
@@ -122,7 +122,7 @@ namespace ChessFight.Network
                     }
                     else if (sender == session.Host && MotionProtocol.ReadSnapshot(bytes, session.Match, out uint receivedTick, out var pawns) && MotionProtocol.Newer(receivedTick, lastSnapshot))
                     {
-                        lastSnapshot = receivedTick; lastReceive = Time.realtimeSinceStartup; ConnectionStatus = "Connected through Steam";
+                        lastSnapshot = receivedTick; lastReceive = Time.realtimeSinceStartup; ConnectionStatus = "Steam으로 연결됨";
                         foreach (var pawn in pawns)
                         {
                             if (!session.Roster.ContainsKey(pawn.Id)) continue;

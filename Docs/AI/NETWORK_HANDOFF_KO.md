@@ -210,7 +210,7 @@ Steam API는 이 구조에서 `SteamSession` 한 곳이 초기화·콜백 실행
 | 공개 여부 | 비공개 | 자동 매칭은 공개, 테스트는 비공개 |
 | 대표 ID | `Party` | `Match` |
 | 소유자 의미 | 파티장 `IsLeader` | 최초 경기 생성자 `Host` |
-| 참가 버튼 | `Join party ID` | `Join match ID` |
+| 참가 버튼 | `파티 참가` | `경기 참가` |
 | 경기 취소 시 | 유지 | 나감 |
 
 한 플레이어는 자기 파티 로비를 유지한 상태로 경기 로비에도 들어간다. 파티장이 경기 호스트일 수도 있지만 항상 같은 개념은 아니다. 다른 파티가 만든 방으로 들어가면 파티장은 그대로이며 경기 호스트는 다른 플레이어다.
@@ -411,23 +411,44 @@ BinaryWriter/BinaryReader 기반, 현재 필드들은 little-endian으로 직렬
 
 ## 14. 버튼과 호출 관계
 
-| UI 버튼 | 호출 | 실제 효과 |
-|---|---|---|
-| Copy party ID | 클립보드에 Party 기록 | 친구 그룹 ID 복사 |
-| Copy match ID | 클립보드에 Match 기록 | 경기 방 ID 복사 |
-| Invite Steam friends | `session.Invite()` | 파티 초대 오버레이 |
-| Quick match (6 vs 6) | `FindMatch()` | 공개 검색·생성 시작 |
-| Create private test | `FindMatch(true)` | 검색 없이 비공개 경기 생성 |
-| Join party ID | `JoinParty(id)` | 기존 파티를 나간 뒤 해당 파티 입장 |
-| Join match ID | `JoinPrivateMatch(id)` | 파티장을 경기 로비로 보내 예약 시도 |
-| Start match | `StartGame()` | 조건 충족 시 playing 및 입장 마감 |
-| `-` / `+` (AI BOTS) | `SetPartyBots(n)` | 파티 봇 수 조절. 파티장, 매칭 전에만 |
-| Fill room to 12 | `FillRoomWithBots()` | 호스트가 남은 자리를 봇으로 채움 |
-| Remove room bots | `ClearRoomBots()` | 호스트 충원 봇만 해제 (파티 봇은 유지) |
-| Cancel / leave match | `Cancel()` | 파티 유지, 경기 취소 |
-| Leave party / new solo | `LeaveParty()` | 새 1인 파티 생성 |
+HUD는 폴가이즈식 전면 레이아웃이다. 좌측에 상태/도구/명단 카드, 우측 상단에 방 번호, **우측 하단에 큰 액션 버튼 스택**이 있다. 모든 문구는 한국어다.
 
-Start 버튼의 활성 조건은 이제 `StartGame()`의 실제 조건과 같다. 비공개 방은 명단 2명 이상, 공개 방은 12명일 때만 활성화된다(`GameBootstrap.BuildModel`). 예전의 "1명인데 버튼이 켜져 있고 눌러도 안 되는" 동작은 없앴다. **다만 실기 확인은 하지 않았다.**
+액션 스택은 `HudStep` 네 단계를 오간다. **`게임 시작`을 눌러도 아무것도 시작되지 않는다. 순수 화면 이동이다.**
+
+```text
+Home   [게임 시작]
+          ↓
+Mode   [파티 생성] [빠른 매칭] [뒤로]
+          ↓ 파티 생성          ↳ 빠른 매칭 → FindMatch()
+Party  [친구 초대] [게임 시작] [파티 나가기] [뒤로]
+                      ↳ FindMatch()
+Busy   [경기 시작] [취소]        ← 세션이 실제로 바쁠 때 강제 전환
+```
+
+`Busy`는 사용자가 고르는 단계가 아니다. `Searching`이거나 경기 방 안이거나, 파티원이 파티장을 따라가는 중이면 `GameBootstrap`이 강제로 이 단계로 보낸다. 취소하면 `Home`으로 돌아온다.
+
+`Busy` 판정에 `session.Busy`를 그대로 쓰면 안 된다. 실행 직후 1인 파티를 만드는 동안에도 `pending` 때문에 true가 되어, 시작하자마자 취소 버튼이 뜬다.
+
+| UI 요소 | 호출 | 실제 효과 |
+|---|---|---|
+| 게임 시작 (Home) | 없음 | `HudStep.Mode`로 이동만 한다 |
+| 파티 생성 | 없음 | `HudStep.Party`로 이동만 한다. 1인 파티는 실행 시 이미 만들어져 있다 |
+| 빠른 매칭 | `FindMatch()` | 공개 검색·생성 시작 |
+| 친구 초대 | `Invite()` | 파티 초대 오버레이 |
+| 게임 시작 (Party) | `FindMatch()` | 파티 전체로 공개 매칭 시작 |
+| 파티 나가기 | `LeaveParty()` | 새 1인 파티 생성 |
+| 경기 시작 (Busy) | `StartGame()` | 비공개 2명 이상 / 공개 12명일 때만 활성 |
+| 취소 | `Cancel()` | 파티 유지, 경기 취소 |
+| 뒤로 | 없음 | 한 단계 뒤로 |
+| `-` / `+` (AI 봇) | `SetPartyBots(n)` | 파티 봇 수. 파티장, 매칭 전에만 |
+| 12명 채우기 | `FillRoomWithBots()` | 호스트가 남은 자리를 봇으로 채움 |
+| 봇 비우기 | `ClearRoomBots()` | 호스트 충원 봇만 해제 |
+| 파티/경기 복사 | 클립보드 | 방 번호 복사 |
+| 파티 참가 / 경기 참가 | `JoinParty()` / `JoinPrivateMatch()` | 번호로 직접 입장 |
+| 비공개 방 만들기 | `FindMatch(true)` | 검색 없이 비공개 경기 생성 |
+| Steam 다시 연결 | `Retry()` | 초기화 실패 시에만 보인다 |
+
+**한글 폰트:** 기본 `LegacyRuntime.ttf`에는 한글이 없다. `NetworkHudView.ResolveFont()`가 `Font.CreateDynamicFontFromOSFont`로 맑은 고딕 등 OS 폰트를 먼저 잡고, 실패하면 기본 폰트로 떨어지며 Console에 어느 폰트를 썼는지 남긴다. **한글이 깨지면 이 로그를 먼저 본다.**
 
 ## 15. 실행·빌드·2인 테스트 절차
 
@@ -438,12 +459,12 @@ Start 버튼의 활성 조건은 이제 `StartGame()`의 실제 조건과 같다
 3. Steam 클라이언트를 먼저 실행·로그인한다.
 4. `ChessFight > Network > Open test scene`으로 `ChessFightLab`을 연다. Input System이 없으면 `ChessFight > Setup > Install dependencies`를 먼저 실행한다.
 5. Play를 누르고 `Party ready`와 0이 아닌 Party ID를 확인한다.
-6. `Create private test`를 누르면 `Waiting room: 1/12`와 자기 캡슐이 나타난다. 입력칸 밖을 클릭하고 WASD/Space로 조작한다. HUD의 `Input:` 줄이 어느 백엔드를 쓰는지 알려준다.
+6. 좌측 `비공개 방 만들기`를 누르면 `대기실 1/12명`과 자기 캡슐이 나타난다. 입력칸 밖을 클릭하고 WASD/Space로 조작한다. 우측 상단 `입력:` 줄이 어느 백엔드를 쓰는지 알려준다.
 
 ### 봇으로 인원 채우기
 
-- PC 1대로 12인: `+`를 다섯 번 눌러 파티 봇 5 → `Create private test` → 6인 → `Fill room to 12` → 12인.
-- PC 2대로 6v6: 양쪽이 각각 파티 봇 5 → 각자 `Quick match` → 예약이 12가 되면 자동 시작.
+- PC 1대로 12인: `+`를 다섯 번 눌러 파티 봇 5 → `비공개 방 만들기` → 6인 → `12명 채우기` → 12인.
+- PC 2대로 6v6: 양쪽이 각각 파티 봇 5 → 각자 `게임 시작 → 빠른 매칭` → 예약이 12가 되면 자동 시작.
 - 봇은 로비 멤버가 아니므로 Steam 친구 목록이나 로비 인원수에는 나타나지 않는다. 명단(roster)에만 `BOT n`으로 보인다.
 
 ### Windows 빌드
@@ -461,11 +482,11 @@ Start 버튼의 활성 조건은 이제 `StartGame()`의 실제 조건과 같다
 ### 서로 다른 두 PC·계정
 
 1. A와 B가 같은 커밋의 빌드 또는 Editor를 각각 실행한다. 두 PC 모두 서로 다른 Steam 계정으로 로그인한다.
-2. A: Create private test → Copy match ID.
-3. B: Lobby ID에 붙여넣기 → Join match ID.
+2. A: `비공개 방 만들기` → `경기 복사`.
+3. B: `번호` 칸에 붙여넣기 → `경기 참가`.
 4. 양쪽 roster=2, 캡슐 두 개, 각자의 팀과 이름을 확인한다.
 5. A→B, B→A 각각 이동/정지/점프가 보이는지 확인한다. Start 전에도 이동한다.
-6. A: Start private test. 이후 추가 입장이 막히는지 확인한다.
+6. A: `경기 시작`. 이후 추가 입장이 막히는지 확인한다.
 7. B 퇴장 시 A의 명단과 캡슐 정리, 재입장/새 경기 생성을 확인한다.
 8. 같은 팀 파티를 테스트하려면 먼저 Party ID로 같은 파티를 만든 뒤 파티장이 경기 생성/검색을 시작한다.
 9. 2026-09-22 기준 1~4는 사용자 확인 완료(파티 입장, 공개 매칭 성사). **5의 양방향 이동은 아직 보고되지 않았다.**

@@ -64,7 +64,7 @@ namespace ChessFight.Game
         InputSystemMoveSource(InputActionAsset asset, InputActionMap map, InputAction move, InputAction jump)
         { this.asset = asset; this.map = map; this.move = move; this.jump = jump; }
 
-        public string DisplayName => "Input System (ChessFightControls/Gameplay)";
+        public string DisplayName => "Input System (ChessFightControls)";
         public void Enable() => map?.Enable();
 
         public void Disable()

@@ -39,6 +39,9 @@ namespace ChessFight.Game
         RenderPipelineAsset previousPipeline, previousQualityPipeline;
         bool pipelineOverridden;
         float refreshAt;
+        // Pure navigation state. The session never reads it; it only decides which
+        // group of buttons the action stack shows.
+        HudStep step = HudStep.Home;
 
         void Awake()
         {
@@ -60,7 +63,7 @@ namespace ChessFight.Game
 
             var arenaPrefab = config.ArenaPrefab;
             if (arenaPrefab != null) { arena = Instantiate(arenaPrefab); arena.name = arenaPrefab.name; }
-            else Debug.LogError("[ChessFight] Arena prefab missing. Assign it on GameSceneConfig.");
+            else Debug.LogError("[ChessFight] Arena 프리팹이 없습니다. GameSceneConfig에 지정하세요.");
 
             cameraRig = gameObject.AddComponent<CameraRig>();
             cameraRig.Initialize();
@@ -82,14 +85,23 @@ namespace ChessFight.Game
 
         void WireHud()
         {
-            hud.FindMatch += () => session.FindMatch();
+            // Navigation only: pressing play must not start anything by itself.
+            hud.Play += () => step = HudStep.Mode;
+            hud.MakeParty += () => step = HudStep.Party;
+            hud.Back += () => step = step == HudStep.Party ? HudStep.Mode : HudStep.Home;
+
+            // These do reach Steam, and each one makes the session busy, which
+            // moves the stack to the busy group on the next frame.
+            hud.QuickMatch += () => session.FindMatch();
+            hud.PartyStart += () => session.FindMatch();
             hud.CreateTest += () => session.FindMatch(true);
-            hud.Invite += () => session.Invite();
-            hud.StartGame += () => session.StartGame();
-            hud.Cancel += () => session.Cancel();
-            hud.LeaveParty += () => session.LeaveParty();
             hud.JoinParty += id => session.JoinParty(id);
             hud.JoinMatch += id => session.JoinPrivateMatch(id);
+
+            hud.Invite += () => session.Invite();
+            hud.StartGame += () => session.StartGame();
+            hud.Cancel += () => { session.Cancel(); step = HudStep.Home; };
+            hud.LeaveParty += () => { session.LeaveParty(); step = HudStep.Home; };
             hud.CopyParty += () => GUIUtility.systemCopyBuffer = session.Party.ToString();
             hud.CopyMatch += () => GUIUtility.systemCopyBuffer = session.Match.ToString();
             hud.AddBot += () => session.SetPartyBots(session.PartyBots + 1);
@@ -125,29 +137,43 @@ namespace ChessFight.Game
 
         HudModel BuildModel()
         {
+            // Searching or sitting in a match room outranks navigation: the player
+            // needs the cancel button wherever they had browsed to. Busy alone is
+            // too broad - it is also true while the opening solo party is still
+            // being created, which would greet the player with a cancel button.
+            bool inFlight = session.Searching || session.Match != 0 ||
+                            (session.Party != 0 && session.Busy && !session.IsLeader);
+            if (inFlight) step = HudStep.Busy;
+            else if (step == HudStep.Busy) step = HudStep.Home;
+
             bool idleLeader = session.Online && session.IsLeader && !session.Busy;
             bool hostWaiting = session.IsHost && !session.Started;
             int humans = session.PartyMembers.Length;
             return new HudModel
             {
+                Step = step,
                 Status = session.Status,
                 Error = session.Error,
-                Details = $"Steam: {(session.Online ? "online" : "OFFLINE - start Steam, then Retry")}\n" +
-                          $"Party: {session.Party}  ({humans}/6 players + {session.PartyBots} bots)\n" +
-                          $"Match: {session.Match}\n{motion?.ConnectionStatus}\nInput: {input?.DisplayName}",
+                Hint = Hint(),
+                Details = $"Steam: {(session.Online ? "연결됨" : "연결 안 됨 - Steam 실행 후 다시 연결")}\n" +
+                          $"{motion?.ConnectionStatus}\n입력: {input?.DisplayName}",
+                PartyId = "파티  " + (session.Party == 0 ? "—" : session.Party.ToString()),
+                MatchId = "경기  " + (session.Match == 0 ? "—" : session.Match.ToString()),
+                RosterTitle = session.Match == 0 ? $"내 파티  {humans}/6" : $"경기 명단  {session.Roster.Count}/12",
                 Roster = BuildRoster(),
                 Bots = session.Match == 0
-                    ? $"Party bots  {session.PartyBots} / {session.MaxPartyBots}"
-                    : $"Room  {session.Roster.Count} / 12   ({session.RoomBots} bots)",
-                CanFindMatch = idleLeader,
+                    ? $"파티 봇  {session.PartyBots} / {session.MaxPartyBots}"
+                    : $"방 인원  {session.Roster.Count} / 12  (봇 {session.RoomBots})",
+                CanQuickMatch = idleLeader,
+                CanPartyStart = idleLeader,
                 CanCreateTest = idleLeader,
+                CanJoinMatch = idleLeader,
                 CanInvite = session.Online && !session.Busy && session.Party != 0,
                 CanJoinParty = session.Online && !session.Busy,
-                CanJoinMatch = idleLeader,
                 // Mirrors StartGame's real rules, so the button is never a no-op.
                 CanStart = hostWaiting && (session.PrivateRoom ? session.Roster.Count >= 2 : session.Roster.Count == 12),
                 CanCancel = session.Busy,
-                CanLeaveParty = session.Online,
+                CanLeaveParty = session.Online && !session.Busy,
                 CanAddBot = idleLeader && session.PartyBots < session.MaxPartyBots,
                 CanRemoveBot = idleLeader && session.PartyBots > 0,
                 CanFillRoom = hostWaiting && session.Roster.Count < 12,
@@ -156,16 +182,30 @@ namespace ChessFight.Game
             };
         }
 
+        string Hint()
+        {
+            if (!session.Online) return "Steam에 연결되어야 시작할 수 있습니다.";
+            switch (step)
+            {
+                case HudStep.Mode: return "혼자 바로 찾을까요, 친구와 함께 갈까요?";
+                case HudStep.Party: return session.IsLeader
+                    ? "친구를 초대한 뒤 게임 시작을 누르세요."
+                    : "파티장이 시작하기를 기다리는 중입니다.";
+                case HudStep.Busy: return session.Match == 0 ? "상대를 찾는 중입니다." : "";
+                default: return "";
+            }
+        }
+
         string BuildRoster()
         {
             if (session.Match == 0)
             {
-                string players = string.Join("\n", session.PartyMembers.Select(id => (id == session.Self ? "> " : "  ") + session.Name(id)));
+                string players = string.Join("\n", session.PartyMembers.Select(id => (id == session.Self ? "★ " : "   ") + session.Name(id)));
                 if (session.PartyBots <= 0) return players;
-                return players + "\n" + string.Join("\n", Enumerable.Range(1, session.PartyBots).Select(i => "  BOT " + i + " (queued)"));
+                return players + "\n" + string.Join("\n", Enumerable.Range(1, session.PartyBots).Select(i => "   봇 " + i + " (대기)"));
             }
             return string.Join("\n", session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot)
-                .Select(p => $"{(p.Team == 0 ? "BLUE" : "ORANGE")}  {session.Name(p.Id)}{(p.Id == session.Self ? " (you)" : "")}"));
+                .Select(p => $"{(p.Team == 0 ? "청팀" : "주황팀")}  {session.Name(p.Id)}{(p.Id == session.Self ? " (나)" : "")}"));
         }
 
         void OnDestroy()

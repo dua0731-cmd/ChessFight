@@ -1,24 +1,56 @@
-.overlay { flex-grow: 1; align-items: flex-start; padding: 10px; }
-/* flex-shrink: 0 keeps the panel at its natural height. Letting it shrink
-   squashes every row instead of overflowing, which is far harder to use. */
-.panel { width: 380px; flex-shrink: 0; padding: 14px; background-color: rgba(15, 23, 37, 0.94); color: rgb(229, 237, 249); border-radius: 12px; }
-.title { font-size: 18px; -unity-font-style: bold; margin-bottom: 12px; }
-.status { color: rgb(127, 217, 246); font-size: 14px; white-space: normal; margin-bottom: 6px; }
-.error { color: rgb(255, 177, 139); white-space: normal; }
-.details { margin-top: 6px; margin-bottom: 6px; font-size: 11px; }
+/* Three columns across the whole screen. Cards never shrink: letting flex squash
+   them collapses every row instead of overflowing, which is far harder to use. */
+.screen { flex-grow: 1; flex-direction: row; padding: 20px; }
+.col { flex-direction: column; justify-content: space-between; flex-shrink: 0; }
+.col-left { width: 300px; }
+.col-right { width: 280px; }
+.spacer { flex-grow: 1; }
+.actions { margin: 6px 0; }
+
+.card { flex-shrink: 0; margin: 6px 0; padding: 14px; border-radius: 14px;
+        background-color: rgba(12, 20, 34, 0.92); color: rgb(232, 240, 252); }
+
+.brand { font-size: 16px; -unity-font-style: bold; color: rgb(127, 217, 246);
+         letter-spacing: 2px; margin-bottom: 6px; }
+.card-title { font-size: 10px; -unity-font-style: bold; color: rgb(127, 217, 246);
+              letter-spacing: 1px; margin-top: 8px; margin-bottom: 4px; }
+.status { font-size: 14px; color: rgb(210, 228, 248); white-space: normal; }
+.error { font-size: 12px; color: rgb(255, 150, 120); white-space: normal; }
+.details { font-size: 10px; color: rgb(150, 168, 190); white-space: normal; margin-top: 6px; }
+.mono { font-size: 12px; color: rgb(232, 240, 252); }
+.roster { font-size: 12px; color: rgb(214, 226, 242); white-space: normal; }
+.hint { font-size: 11px; color: rgb(170, 186, 206); white-space: normal;
+        -unity-text-align: middle-right; margin-bottom: 6px; }
+
 .row { flex-direction: row; }
-Button { flex-grow: 1; flex-basis: 0; min-height: 29px; margin: 3px; padding: 5px; background-color: rgb(44, 62, 84); color: rgb(242, 247, 255); border-radius: 5px; -unity-text-align: middle-center; font-size: 11px; }
-Button:hover { background-color: rgb(57, 87, 116); }
-Button:disabled { background-color: rgb(29, 39, 53); color: rgb(100, 112, 130); }
-TextField { margin: 7px 3px; flex-direction: row; height: 27px; }
-TextField > Label { min-width: 65px; }
-.unity-text-field__input { flex-grow: 1; background-color: rgb(8, 15, 26); color: white; padding: 4px; }
-Toggle { margin: 8px 3px; }
+.chip { min-height: 28px; padding: 5px; border-radius: 6px; font-size: 11px;
+        background-color: rgb(22, 32, 46); -unity-text-align: middle-center; }
+
+.btn { min-height: 34px; margin: 3px 0; padding: 6px 10px; border-radius: 8px; font-size: 13px;
+       background-color: rgb(40, 58, 80); color: rgb(240, 246, 255); -unity-text-align: middle-center; }
+.btn:hover { background-color: rgb(55, 82, 112); }
+.btn:disabled { background-color: rgb(26, 35, 48); color: rgb(96, 108, 126); }
+
+/* Buttons and the bot counter share a row evenly; the +/- keys stay square. */
+.row > .btn { flex-grow: 1; flex-basis: 0; margin: 3px; }
+.row > .chip { flex-grow: 1; flex-basis: 0; margin: 3px; }
+.row > .btn.narrow { flex-grow: 0; flex-basis: auto; width: 34px; }
+
+.primary { min-height: 58px; font-size: 20px; -unity-font-style: bold; background-color: rgb(46, 134, 222); }
+.primary:hover { background-color: rgb(70, 158, 246); }
+.alt { background-color: rgb(103, 80, 204); }
+.alt:hover { background-color: rgb(127, 104, 228); }
+.warn { background-color: rgb(168, 84, 48); }
+.warn:hover { background-color: rgb(196, 106, 66); }
+.ghost { min-height: 32px; font-size: 12px; background-color: rgba(255, 255, 255, 0.08); }
+.ghost:hover { background-color: rgba(255, 255, 255, 0.16); }
+.tiny { min-height: 28px; font-size: 11px; }
+
+TextField { margin: 4px 0; flex-direction: row; height: 26px; }
+TextField > Label { min-width: 40px; font-size: 11px; }
+.unity-text-field__input { flex-grow: 1; padding: 3px; border-radius: 4px;
+                           background-color: rgb(8, 15, 26); color: white; }
+Toggle { margin: 8px 0; font-size: 11px; }
 .unity-toggle__input { flex-grow: 1; }
-.unity-toggle__checkmark { width: 18px; height: 18px; background-color: rgb(55, 65, 80); margin-left: 8px; }
+.unity-toggle__checkmark { width: 16px; height: 16px; margin-left: 6px; background-color: rgb(55, 65, 80); }
 Toggle:checked .unity-toggle__checkmark { background-color: rgb(86, 191, 226); }
-.hint { color: rgb(148, 166, 188); white-space: normal; font-size: 11px; }
-.roster { font-size: 12px; margin-top: 10px; white-space: normal; }
-.section { margin-top: 10px; font-size: 10px; -unity-font-style: bold; color: rgb(127, 217, 246); letter-spacing: 1px; }
-.chip { flex-grow: 1; flex-basis: 0; min-height: 29px; margin: 3px; padding: 5px; background-color: rgb(24, 34, 48); border-radius: 5px; -unity-text-align: middle-center; font-size: 11px; }
-.narrow { flex-grow: 0; flex-basis: auto; width: 34px; }

@@ -29,7 +29,7 @@ namespace ChessFight.Network
         public bool PrivateRoom => privateRoom;
         public bool IsLeader => Party != 0 && Owner(Party) == Self;
         public bool Busy => pending || Searching || Match != 0 || Route(Party) != "idle";
-        public string Status { get; private set; } = "Starting Steam...";
+        public string Status { get; private set; } = "Steam 연결 중...";
         public string Error { get; private set; } = "";
         public readonly Dictionary<ulong, PawnState> Roster = new Dictionary<ulong, PawnState>();
         public event Action SessionChanged;
@@ -78,7 +78,7 @@ namespace ChessFight.Network
             try
             {
                 if (!Packsize.Test() || !DllCheck.Test() || !SteamAPI.Init())
-                { Error = "Steam init failed. Start Steam, sign in, and check steam_appid.txt (480 for development)."; return; }
+                { Error = "Steam 초기화 실패. Steam을 실행하고 로그인한 뒤 다시 연결하세요. (개발용 App ID 480)"; return; }
                 Online = true; Self = SteamUser.GetSteamID().m_SteamID;
                 SteamNetworkingUtils.InitRelayNetworkAccess();
                 callbacks.Add(Callback<LobbyChatMsg_t>.Create(OnChat));
@@ -89,7 +89,7 @@ namespace ChessFight.Network
                 CreateParty();
             }
             catch (Exception ex) when (ex is DllNotFoundException || ex is BadImageFormatException || ex is EntryPointNotFoundException)
-            { Error = "Steamworks native plugin unavailable: " + ex.Message; }
+            { Error = "Steamworks 플러그인을 불러오지 못했습니다: " + ex.Message; }
         }
 
         // Steam has to be running before Play starts. Without this the only way out
@@ -97,7 +97,7 @@ namespace ChessFight.Network
         public void Retry()
         {
             if (disposed || Online) return;
-            Error = ""; Status = "Starting Steam...";
+            Error = ""; Status = "Steam 연결 중...";
             Initialize();
         }
 
@@ -106,10 +106,10 @@ namespace ChessFight.Network
             if (!Online || disposed) return;
             SteamAPI.RunCallbacks();
             float now = Time.realtimeSinceStartup;
-            if (pending && now > deadline) { generation++; pending = false; Fail("Steam request timed out. Try again."); }
+            if (pending && now > deadline) { generation++; pending = false; Fail("Steam 응답이 없습니다. 다시 시도하세요."); }
             if (now < nextPoll) return;
             nextPoll = now + .25f;
-            if (!SteamUser.BLoggedOn()) { Cancel(); Error = "Steam disconnected. Sign in again and restart Play mode."; return; }
+            if (!SteamUser.BLoggedOn()) { Cancel(); Error = "Steam 연결이 끊겼습니다. 다시 로그인한 뒤 Play를 재시작하세요."; return; }
             PollParty();
             if (Match != 0) PollMatch(now);
             if (Searching && Match == 0 && !pending && now >= nextSearch) Search();
@@ -134,11 +134,11 @@ namespace ChessFight.Network
                 calls.Remove(call); call.Dispose();
                 if (disposed || op != generation) { if (!failed && c.m_eResult == EResult.k_EResultOK) SteamMatchmaking.LeaveLobby(Id(c.m_ulSteamIDLobby)); return; }
                 pending = false;
-                if (failed || c.m_eResult != EResult.k_EResultOK) { Fail("Could not create Steam lobby: " + c.m_eResult); return; }
+                if (failed || c.m_eResult != EResult.k_EResultOK) { Fail("Steam 방을 만들지 못했습니다: " + c.m_eResult); return; }
                 ulong lobby = c.m_ulSteamIDLobby;
                 Set(lobby, "protocol", Protocol); Set(lobby, "kind", match ? "match" : "party");
                 if (!match)
-                { Party = lobby; partyOwner = Self; Set(Party, "route", "idle"); Status = "Party ready. Invite friends or find a match."; Error = ""; }
+                { Party = lobby; partyOwner = Self; Set(Party, "route", "idle"); Status = "파티 준비 완료. 친구를 초대하거나 매칭을 시작하세요."; Error = ""; }
                 else
                 {
                     Match = lobby; Host = Self; admitted = true; Started = false;
@@ -194,7 +194,7 @@ namespace ChessFight.Network
         }
         public void JoinParty(ulong lobby)
         {
-            if (!Online || Busy || lobby == 0) { Error = "Leave the current queue/session before joining another party."; return; }
+            if (!Online || Busy || lobby == 0) { Error = "다른 파티에 들어가려면 먼저 매칭/경기를 취소하세요."; return; }
             LeavePartyInternal();
             Join(lobby, true);
         }
@@ -213,13 +213,13 @@ namespace ChessFight.Network
                 {
                     if (success) SteamMatchmaking.LeaveLobby(Id(lobby));
                     if (!party && IsLeader && Searching && !privateRoom) { nextSearch = Time.realtimeSinceStartup + UnityEngine.Random.Range(1f, 3f); TryCandidate(); }
-                    else Fail("Lobby is full, unavailable, or uses another network version.");
+                    else Fail("방이 가득 찼거나 네트워크 버전이 다릅니다.");
                     return;
                 }
                 if (party)
                 {
                     Party = lobby; partyOwner = Owner(Party); cancelledFollower = false;
-                    Status = "Joined party."; Error = "";
+                    Status = "파티에 참가했습니다."; Error = "";
                 }
                 else
                 {
@@ -237,7 +237,7 @@ namespace ChessFight.Network
             Error = ""; Searching = true; privateRoom = privateTest; emptySearches = 0;
             FreezeQueue(); ticket = Guid.NewGuid().ToString("N");
             SteamMatchmaking.SetLobbyJoinable(Id(Party), false); Set(Party, "route", "search");
-            Status = privateTest ? "Creating private test room..." : "Finding a team slot for your entire party...";
+            Status = privateTest ? "비공개 테스트 방을 만드는 중..." : "파티 전체가 들어갈 자리를 찾는 중...";
             if (privateTest) CreateLobby(true); else { nextSearch = 0; Search(); }
         }
         public void JoinPrivateMatch(ulong lobby)
@@ -275,7 +275,7 @@ namespace ChessFight.Network
                 calls.Remove(call); call.Dispose();
                 if (disposed || op != generation) return;
                 pending = false;
-                if (failed) { nextSearch = Time.realtimeSinceStartup + 4; Status = "Steam search failed. Retrying..."; return; }
+                if (failed) { nextSearch = Time.realtimeSinceStartup + 4; Status = "Steam 검색 실패. 다시 시도합니다..."; return; }
                 var found = new List<ulong>();
                 for (int i = 0; i < c.m_nLobbiesMatching; i++)
                 {
@@ -304,26 +304,26 @@ namespace ChessFight.Network
             ulong owner = Owner(Party);
             if (owner != partyOwner)
             {
-                partyOwner = owner; Cancel(); Error = "Party leader left. Queue/session cancelled; invite or queue again."; return;
+                partyOwner = owner; Cancel(); Error = "파티장이 나갔습니다. 매칭이 취소되었습니다."; return;
             }
             if (IsLeader && Searching)
             {
-                if (!queuedHumans.SequenceEqual(PartyMembers)) { Cancel(); Error = "Party roster changed. Queue cancelled."; return; }
+                if (!queuedHumans.SequenceEqual(PartyMembers)) { Cancel(); Error = "파티 구성이 바뀌어 매칭을 취소했습니다."; return; }
                 foreach (var pair in cancelBaseline)
-                    if (pair.Value != SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(pair.Key), "cancel")) { Cancel(); Status = "A party member cancelled."; return; }
+                    if (pair.Value != SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(pair.Key), "cancel")) { Cancel(); Status = "파티원이 취소했습니다."; return; }
             }
             if (IsLeader) return;
             string route = Route(Party);
             if (route == "idle")
             {
                 if (Match != 0 || pending) { generation++; pending = false; LeaveMatchInternal(); }
-                cancelledFollower = false; Status = "Party ready. Waiting for the leader."; return;
+                cancelledFollower = false; Status = "파티 준비 완료. 파티장을 기다리는 중."; return;
             }
             if (cancelledFollower) return;
             if (route == "search")
             {
                 if (pending) { generation++; pending = false; }
-                if (Match != 0) LeaveMatchInternal(); Status = "Party leader is finding a match..."; return;
+                if (Match != 0) LeaveMatchInternal(); Status = "파티장이 매칭을 찾는 중..."; return;
             }
             if (ulong.TryParse(route, out ulong target) && target != Match && !pending)
             { LeaveMatchInternal(); Join(target, false); }
@@ -336,7 +336,7 @@ namespace ChessFight.Network
                 // Party-route and match-close notifications can arrive in either order
                 // while the host merges an otherwise empty waiting room.
                 if (invalidHostSince < 0) invalidHostSince = now;
-                if (now - invalidHostSince > 2) Fail("Match host left. Returned to your party. Host migration is not enabled.");
+                if (now - invalidHostSince > 2) Fail("방장이 나가 경기가 끝났습니다. 파티로 돌아갑니다.");
                 return;
             }
             invalidHostSince = -1;
@@ -346,7 +346,7 @@ namespace ChessFight.Network
                 if (!Started)
                 {
                     foreach (var removed in reservations.Reconcile(present, now)) Set(Match, "grant_" + removed.Leader, removed.Ticket + "|expired");
-                    if (reservations.Find(Self) == null) { Fail("Party could not join before the reservation expired."); return; }
+                    if (reservations.Find(Self) == null) { Fail("예약 시간 안에 파티가 모두 입장하지 못했습니다."); return; }
                     PublishRoster();
                     if (!privateRoom && reservations.Ready) StartGame();
                 }
@@ -364,7 +364,7 @@ namespace ChessFight.Network
                     string grant = Data(Match, "grant_" + Self);
                     if (grant == ticket + "|ok") { admitted = true; Set(Party, "route", Match.ToString()); }
                     else if (grant.StartsWith(ticket + "|", StringComparison.Ordinal))
-                    { RetryAdmission("Room could not fit the entire party. Retrying..."); return; }
+                    { RetryAdmission("파티 전체가 들어갈 자리가 없습니다. 다시 찾는 중..."); return; }
                     else if (now >= nextRequest)
                     {
                         nextRequest = now + 2;
@@ -378,11 +378,11 @@ namespace ChessFight.Network
                     // Steam can deliver roster and grant metadata in either order.
                     if (IsLeader && Route(Party) != Match.ToString()) Set(Party, "route", Match.ToString());
                 }
-                if (!seenRoster && now > deadline) { RetryAdmission("Party admission timed out."); return; }
-                if (seenRoster && !Roster.ContainsKey(Self)) { Fail("Party reservation ended or a party member disconnected."); return; }
+                if (!seenRoster && now > deadline) { RetryAdmission("입장 승인이 시간 초과되었습니다."); return; }
+                if (seenRoster && !Roster.ContainsKey(Self)) { Fail("예약이 해제되었거나 파티원 연결이 끊겼습니다."); return; }
                 Started = Data(Match, "phase") == "playing";
             }
-            Status = Started ? "Session started. WASD to move, Space to jump." : $"Waiting room: {Roster.Count}/12. You can move while waiting.";
+            Status = Started ? "경기 시작! WASD 이동, Space 점프." : $"대기실 {Roster.Count}/12명. 대기 중에도 움직일 수 있습니다.";
         }
         void RetryAdmission(string message)
         {
@@ -447,7 +447,7 @@ namespace ChessFight.Network
             generation++; pending = false; Searching = false; candidates.Clear();
             if (IsLeader) { Set(Party, "route", "idle"); SteamMatchmaking.SetLobbyJoinable(Id(Party), true); }
             else if (Party != 0) { cancelledFollower = true; SteamMatchmaking.SetLobbyMemberData(Id(Party), "cancel", Guid.NewGuid().ToString("N")); }
-            LeaveMatchInternal(); Status = "Returned to party.";
+            LeaveMatchInternal(); Status = "파티로 돌아왔습니다.";
         }
         public void LeaveParty()
         {
