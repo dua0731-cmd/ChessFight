@@ -25,6 +25,11 @@ namespace Steamworks
     public enum ELobbyDistanceFilter { k_ELobbyDistanceFilterDefault }
     public enum EChatRoomEnterResponse { k_EChatRoomEnterResponseSuccess=1, k_EChatRoomEnterResponseFull=4 }
     public enum EChatEntryType { k_EChatEntryTypeChatMsg }
+    public enum EFriendFlags { k_EFriendFlagImmediate = 4 }
+    public enum EPersonaState { k_EPersonaStateOffline, k_EPersonaStateOnline, k_EPersonaStateBusy, k_EPersonaStateAway }
+    public struct AppId_t { public uint m_AppId; public AppId_t(uint id) {m_AppId=id;} }
+    public struct CGameID { public ulong m_GameID; }
+    public struct FriendGameInfo_t { public CGameID m_gameID; }
     public struct LobbyCreated_t { public ulong m_ulSteamIDLobby; public EResult m_eResult; }
     public struct LobbyEnter_t { public uint m_EChatRoomEnterResponse; }
     public struct LobbyMatchList_t { public uint m_nLobbiesMatching; }
@@ -76,7 +81,17 @@ namespace Steamworks
     public static class SteamAPI {public static bool Init()=>true;public static void RunCallbacks()=>FakeSteam.Dispatch();public static void Shutdown(){} }
     public static class SteamUser { public static CSteamID GetSteamID()=>new CSteamID(FakeSteam.User);public static bool BLoggedOn()=>true; }
     public static class SteamNetworkingUtils { public static void InitRelayNetworkAccess(){} }
-    public static class SteamFriends {public static string GetFriendPersonaName(CSteamID id)=>"Player "+id.m_SteamID;public static void ActivateGameOverlayInviteDialog(CSteamID id){} }
+    public static class SteamUtils { public static AppId_t GetAppID()=>new AppId_t(480); }
+    public static class SteamFriends
+    {
+        public static string GetFriendPersonaName(CSteamID id)=>"Player "+id.m_SteamID;
+        public static void ActivateGameOverlayInviteDialog(CSteamID id){}
+        // The session tests never exercise the friend list; these keep it compiling.
+        public static int GetFriendCount(EFriendFlags flags)=>0;
+        public static CSteamID GetFriendByIndex(int index,EFriendFlags flags)=>new CSteamID(0);
+        public static EPersonaState GetFriendPersonaState(CSteamID id)=>EPersonaState.k_EPersonaStateOffline;
+        public static bool GetFriendGamePlayed(CSteamID id,out FriendGameInfo_t info) {info=default;return false;}
+    }
     public static class SteamMatchmaking
     {
         public static CSteamID GetLobbyOwner(CSteamID id)=>new CSteamID(FakeSteam.Get(id)?.Owner??0);
@@ -86,6 +101,7 @@ namespace Steamworks
         public static CSteamID GetLobbyMemberByIndex(CSteamID id,int i)=>new CSteamID(FakeSteam.Get(id).Members[i]);
         public static string GetLobbyMemberData(CSteamID id,CSteamID user,string key) {var lobby=FakeSteam.Get(id);return lobby!=null&&lobby.MemberData.TryGetValue((user.m_SteamID,key),out var value)?value:"";}
         public static void SetLobbyMemberData(CSteamID id,string key,string value)=>FakeSteam.Get(id).MemberData[(FakeSteam.User,key)]=value;
+        public static bool InviteUserToLobby(CSteamID lobby,CSteamID invitee)=>true;
         public static bool SetLobbyJoinable(CSteamID id,bool value) {var l=FakeSteam.Get(id);if(l.Owner!=FakeSteam.User)return false;l.Joinable=value;return true;}
         public static SteamAPICall_t CreateLobby(ELobbyType type,int limit)=>FakeSteam.Create(type,limit);
         public static SteamAPICall_t JoinLobby(CSteamID id)

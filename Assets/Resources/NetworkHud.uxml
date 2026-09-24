@@ -78,5 +78,26 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
+        <!-- Friend picker. Paged, not searched: a panel driven by the fallback
+             click router receives no keystrokes, so nothing here needs typing. -->
+        <ui:VisualElement name="friends" class="modal">
+            <ui:VisualElement class="modal-card">
+                <ui:VisualElement class="row modal-head">
+                    <ui:Label text="친구 초대" class="modal-title" />
+                    <ui:Button name="friends-close" text="X" class="btn narrow" />
+                </ui:VisualElement>
+                <ui:Label name="friends-info" class="details" />
+                <ui:VisualElement class="row">
+                    <ui:Button name="friends-filter" text="온라인만" class="btn tiny" />
+                    <ui:Button name="friends-prev" text="◀" class="btn tiny" />
+                    <ui:Label name="friends-page" text="1 / 1" class="chip" />
+                    <ui:Button name="friends-next" text="▶" class="btn tiny" />
+                    <ui:Button name="friends-refresh" text="새로고침" class="btn tiny" />
+                </ui:VisualElement>
+                <ui:VisualElement name="friends-list" class="friend-list" />
+                <ui:Button name="friends-overlay" text="Steam 오버레이로 초대" class="btn ghost" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
     </ui:VisualElement>
 </ui:UXML>

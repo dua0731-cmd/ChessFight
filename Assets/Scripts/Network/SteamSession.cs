@@ -188,9 +188,55 @@ namespace ChessFight.Network
             return next;
         }
 
+        // Kept as an escape hatch. The in-game friend list is the normal path: the
+        // overlay renders at its own resolution and hides presence behind a search box.
         public void Invite()
         {
             if (Party != 0 && !Busy) SteamFriends.ActivateGameOverlayInviteDialog(Id(Party));
+        }
+
+        // A snapshot of the friend list, most invitable first. Steam is polled here
+        // rather than cached: presence changes while the panel is open.
+        public List<FriendInfo> Friends()
+        {
+            var list = new List<FriendInfo>();
+            if (!Online) return list;
+            uint appId = SteamUtils.GetAppID().m_AppId;
+            int count = SteamFriends.GetFriendCount(EFriendFlags.k_EFriendFlagImmediate);
+            for (int i = 0; i < count; i++)
+            {
+                var id = SteamFriends.GetFriendByIndex(i, EFriendFlags.k_EFriendFlagImmediate);
+                if (id.m_SteamID == 0 || id.m_SteamID == Self) continue;
+                var state = SteamFriends.GetFriendPersonaState(id);
+                // The app id is the low 24 bits of a game id; comparing it avoids
+                // depending on the exact shape of CGameID.AppID().
+                bool here = SteamFriends.GetFriendGamePlayed(id, out FriendGameInfo_t game) &&
+                            (uint)(game.m_gameID.m_GameID & 0xFFFFFF) == appId;
+                list.Add(new FriendInfo
+                {
+                    Id = id.m_SteamID,
+                    Name = SteamFriends.GetFriendPersonaName(id),
+                    Presence = here ? FriendPresence.InGame
+                             : state == EPersonaState.k_EPersonaStateOffline ? FriendPresence.Offline
+                             : state == EPersonaState.k_EPersonaStateOnline ? FriendPresence.Online
+                             : FriendPresence.Away
+                });
+            }
+            list.Sort((a, b) =>
+            {
+                int byPresence = b.Presence.CompareTo(a.Presence);
+                return byPresence != 0 ? byPresence
+                     : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+            });
+            return list;
+        }
+
+        // Sends the Steam invite straight to one friend, no overlay. The receiving
+        // client already handles it through GameLobbyJoinRequested_t.
+        public bool InviteToParty(ulong friend)
+        {
+            if (!Online || Party == 0 || friend == 0 || Busy) return false;
+            return SteamMatchmaking.InviteUserToLobby(Id(Party), Id(friend));
         }
         public void JoinParty(ulong lobby)
         {

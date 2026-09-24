@@ -54,3 +54,22 @@ Toggle { margin: 8px 0; font-size: 11px; }
 .unity-toggle__input { flex-grow: 1; }
 .unity-toggle__checkmark { width: 16px; height: 16px; margin-left: 6px; background-color: rgb(55, 65, 80); }
 Toggle:checked .unity-toggle__checkmark { background-color: rgb(86, 191, 226); }
+
+/* Friend picker overlay */
+.modal { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+         align-items: center; justify-content: center; background-color: rgba(4, 8, 16, 0.75); }
+.modal-card { width: 520px; padding: 18px; border-radius: 16px; background-color: rgb(16, 24, 38); }
+.modal-head { justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.modal-title { font-size: 18px; -unity-font-style: bold; color: rgb(232, 240, 252); }
+.friend-list { min-height: 260px; margin-top: 6px; margin-bottom: 6px; }
+.friend-row { flex-direction: row; align-items: center; height: 30px; margin: 1px 0;
+              padding-left: 8px; padding-right: 4px; border-radius: 6px;
+              background-color: rgba(255, 255, 255, 0.04); }
+.friend-name { flex-grow: 1; flex-basis: 0; font-size: 13px; color: rgb(232, 240, 252); }
+.friend-state { width: 84px; font-size: 11px; color: rgb(150, 168, 190); -unity-text-align: middle-right; }
+.friend-invite { width: 60px; flex-grow: 0; min-height: 24px; font-size: 11px; margin-left: 8px; }
+.dot { width: 9px; height: 9px; border-radius: 5px; margin-right: 9px; background-color: rgb(96, 108, 126); }
+.dot-ingame { background-color: rgb(124, 214, 118); }
+.dot-online { background-color: rgb(86, 170, 240); }
+.dot-away { background-color: rgb(232, 190, 92); }
+.friend-empty { font-size: 12px; color: rgb(150, 168, 190); -unity-text-align: middle-center; margin-top: 18px; }

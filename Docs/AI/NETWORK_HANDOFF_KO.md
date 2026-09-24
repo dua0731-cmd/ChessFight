@@ -438,7 +438,9 @@ Busy   [경기 시작] [취소]        ← 세션이 실제로 바쁠 때 강제
 | 게임 시작 (Home) | 없음 | `HudStep.Mode`로 이동만 한다 |
 | 파티 생성 | 없음 | `HudStep.Party`로 이동만 한다. 1인 파티는 실행 시 이미 만들어져 있다 |
 | 빠른 매칭 | `FindMatch()` | 공개 검색·생성 시작 |
-| 친구 초대 | `Invite()` | 파티 초대 오버레이 |
+| 친구 초대 | 게임 내 친구 패널 열기 | 아래 참고 |
+| 친구 행의 `초대` | `InviteToParty(id)` | 오버레이 없이 해당 친구에게 직접 초대 발송 |
+| Steam 오버레이로 초대 | `Invite()` | 기존 오버레이 (대체 수단) |
 | 게임 시작 (Party) | `FindMatch()` | 파티 전체로 공개 매칭 시작 |
 | 파티 나가기 | `LeaveParty()` | 새 1인 파티 생성 |
 | 경기 시작 (Busy) | `StartGame()` | 비공개 2명 이상 / 공개 12명일 때만 활성 |
@@ -451,6 +453,14 @@ Busy   [경기 시작] [취소]        ← 세션이 실제로 바쁠 때 강제
 | 파티 참가 / 경기 참가 | `JoinParty()` / `JoinPrivateMatch()` | 번호로 직접 입장 |
 | 비공개 방 만들기 | `FindMatch(true)` | 검색 없이 비공개 경기 생성 |
 | Steam 다시 연결 | `Retry()` | 초기화 실패 시에만 보인다 |
+
+**친구 초대 패널:** Steam 오버레이는 자체 해상도로 그려져 어긋나 보이고, 접속 상태가 검색창 뒤에 가려진다. 그래서 `SteamSession.Friends()`가 `GetFriendCount`/`GetFriendByIndex`/`GetFriendPersonaState`/`GetFriendGamePlayed`로 명단을 읽어 `FriendInfo`(Core에 있는 순수 데이터)로 돌려주고, HUD가 직접 그린다. 초대는 `SteamMatchmaking.InviteUserToLobby`로 오버레이 없이 보낸다. **받는 쪽은 기존 `GameLobbyJoinRequested_t` 경로 그대로다.**
+
+정렬은 게임 중 → 온라인 → 자리 비움 → 오프라인이고 한 페이지 8명이다. **검색창이 아니라 페이지 이동인 이유:** 대체 클릭 처리로 동작 중일 때는 키 입력이 들어오지 않으므로, 타이핑이 필요한 UI를 쓰면 안 된다. 같은 이유로 방 번호 칸에도 `붙여넣기` 버튼이 있다.
+
+매칭 중에는 파티가 joinable=false라서 초대가 불가능하다. `session.Busy`가 되면 패널이 자동으로 닫힌다.
+
+`FriendInfo`는 Core에 있다. Steam 타입을 쓰지 않으므로 `ChessFight.Game`이 Steam 어댑터를 참조하지 않고도 친구 목록을 그릴 수 있다. **이 분리를 깨지 않는다.**
 
 **한글 폰트:** 기본 `LegacyRuntime.ttf`에는 한글이 없다. `NetworkHudView.ResolveFont()`가 `Font.CreateDynamicFontFromOSFont`로 맑은 고딕 등 OS 폰트를 먼저 잡고, 실패하면 기본 폰트로 떨어지며 Console에 어느 폰트를 썼는지 남긴다. **한글이 깨지면 이 로그를 먼저 본다.**
 

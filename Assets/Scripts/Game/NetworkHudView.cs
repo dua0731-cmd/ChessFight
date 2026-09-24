@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Network;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -19,6 +20,7 @@ namespace ChessFight.Game
         public bool CanQuickMatch, CanInvite, CanPartyStart, CanStart, CanCancel, CanLeaveParty;
         public bool CanCreateTest, CanJoinParty, CanJoinMatch, CanRetry;
         public bool CanAddBot, CanRemoveBot, CanFillRoom, CanClearRoomBots;
+        public bool FriendsOpen;
     }
 
     // Binds NetworkHud.uxml. The element names in the UXML and the Q<T>(name)
@@ -28,7 +30,8 @@ namespace ChessFight.Game
     {
         public event Action Play, MakeParty, QuickMatch, Invite, PartyStart, StartGame, Cancel, LeaveParty, Back;
         public event Action CreateTest, CopyParty, CopyMatch, AddBot, RemoveBot, FillRoom, ClearRoomBots, RetrySteam;
-        public event Action<ulong> JoinParty, JoinMatch;
+        public event Action<ulong> JoinParty, JoinMatch, InviteFriend;
+        public event Action CloseFriends, RefreshFriends, SteamOverlayInvite;
 
         PanelSettings ownedPanel;
         VisualElement root;
@@ -43,6 +46,14 @@ namespace ChessFight.Game
         VisualElement stepHome, stepMode, stepParty, stepBusy;
         Button quickMatch, invite, partyStart, start, cancel, leaveParty, createTest, joinParty, joinMatch, retry;
         Button botsLess, botsMore, fillRoom, clearRoomBots;
+        VisualElement friendsPanel, friendsList;
+        Label friendsInfo, friendsPage;
+        Button friendsFilter;
+        readonly List<FriendInfo> friends = new List<FriendInfo>();
+        readonly List<Button> friendButtons = new List<Button>();
+        const int FriendsPerPage = 8;
+        int friendPage;
+        bool onlineOnly = true;
 
         public bool IsTyping
         {
@@ -87,6 +98,8 @@ namespace ChessFight.Game
 
             stepHome = root.Q<VisualElement>("step-home"); stepMode = root.Q<VisualElement>("step-mode");
             stepParty = root.Q<VisualElement>("step-party"); stepBusy = root.Q<VisualElement>("step-busy");
+            friendsPanel = root.Q<VisualElement>("friends"); friendsList = root.Q<VisualElement>("friends-list");
+            friendsInfo = root.Q<Label>("friends-info"); friendsPage = root.Q<Label>("friends-page");
 
             root.focusable = true;
             root.RegisterCallback<PointerDownEvent>(evt =>
@@ -124,6 +137,12 @@ namespace ChessFight.Game
             // Pasting sidesteps the number field entirely, which matters because a
             // panel that gets no pointer events gets no keystrokes either.
             Bind(root, "paste", () => { if (code != null) code.value = GUIUtility.systemCopyBuffer; });
+            Bind(root, "friends-close", () => CloseFriends?.Invoke());
+            Bind(root, "friends-refresh", () => RefreshFriends?.Invoke());
+            Bind(root, "friends-overlay", () => SteamOverlayInvite?.Invoke());
+            Bind(root, "friends-prev", () => { friendPage--; DrawFriends(); });
+            Bind(root, "friends-next", () => { friendPage++; DrawFriends(); });
+            friendsFilter = Bind(root, "friends-filter", () => { onlineOnly = !onlineOnly; friendPage = 0; DrawFriends(); });
             diagnoseAt = Time.unscaledTime + 1f;
         }
 
@@ -172,6 +191,80 @@ namespace ChessFight.Game
                 if (element is Toggle toggle) return new Hit { toggle = toggle };
             }
             return null;
+        }
+
+        // The bootstrap pushes a fresh snapshot while the panel is open.
+        public void SetFriends(List<FriendInfo> snapshot)
+        {
+            friends.Clear();
+            if (snapshot != null) friends.AddRange(snapshot);
+            DrawFriends();
+        }
+
+        void DrawFriends()
+        {
+            if (friendsList == null) return;
+            // Dynamic buttons must leave the fallback router's map with their rows.
+            foreach (var stale in friendButtons) actions.Remove(stale);
+            friendButtons.Clear();
+            friendsList.Clear();
+
+            var shown = new List<FriendInfo>();
+            foreach (var friend in friends)
+                if (!onlineOnly || friend.Presence != FriendPresence.Offline) shown.Add(friend);
+
+            int pages = Mathf.Max(1, (shown.Count + FriendsPerPage - 1) / FriendsPerPage);
+            friendPage = Mathf.Clamp(friendPage, 0, pages - 1);
+            if (friendsFilter != null) friendsFilter.text = onlineOnly ? "온라인만" : "전체 보기";
+            if (friendsPage != null) friendsPage.text = $"{friendPage + 1} / {pages}";
+            if (friendsInfo != null)
+                friendsInfo.text = friends.Count == 0
+                    ? "친구 목록을 불러오는 중입니다."
+                    : $"전체 {friends.Count}명 중 {shown.Count}명 표시";
+
+            if (shown.Count == 0)
+            {
+                var empty = new Label(onlineOnly ? "접속 중인 친구가 없습니다." : "친구가 없습니다.");
+                empty.AddToClassList("friend-empty");
+                friendsList.Add(empty);
+                return;
+            }
+            for (int i = friendPage * FriendsPerPage; i < shown.Count && i < (friendPage + 1) * FriendsPerPage; i++)
+                friendsList.Add(FriendRow(shown[i]));
+        }
+
+        VisualElement FriendRow(FriendInfo friend)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("friend-row");
+
+            var dot = new VisualElement();
+            dot.AddToClassList("dot");
+            dot.AddToClassList(friend.Presence == FriendPresence.InGame ? "dot-ingame"
+                             : friend.Presence == FriendPresence.Online ? "dot-online"
+                             : friend.Presence == FriendPresence.Away ? "dot-away" : "dot-offline");
+            row.Add(dot);
+
+            var name = new Label(friend.Name);
+            name.AddToClassList("friend-name");
+            row.Add(name);
+
+            var state = new Label(friend.Presence == FriendPresence.InGame ? "게임 중"
+                                : friend.Presence == FriendPresence.Online ? "온라인"
+                                : friend.Presence == FriendPresence.Away ? "자리 비움" : "오프라인");
+            state.AddToClassList("friend-state");
+            row.Add(state);
+
+            ulong id = friend.Id;
+            var button = new Button { text = "초대" };
+            button.AddToClassList("btn"); button.AddToClassList("friend-invite");
+            button.focusable = false;
+            Action invite = () => InviteFriend?.Invoke(id);
+            button.clicked += invite;
+            actions[button] = invite;
+            friendButtons.Add(button);
+            row.Add(button);
+            return row;
         }
 
         void LogDiagnostics()
@@ -229,6 +322,7 @@ namespace ChessFight.Game
             if (matchId != null) matchId.text = model.MatchId;
             if (hint != null) hint.text = model.Hint;
 
+            Show(friendsPanel, model.FriendsOpen);
             Show(stepHome, model.Step == HudStep.Home);
             Show(stepMode, model.Step == HudStep.Mode);
             Show(stepParty, model.Step == HudStep.Party);

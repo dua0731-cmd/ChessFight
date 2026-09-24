@@ -42,6 +42,8 @@ namespace ChessFight.Game
         // Pure navigation state. The session never reads it; it only decides which
         // group of buttons the action stack shows.
         HudStep step = HudStep.Home;
+        bool friendsOpen;
+        float refreshFriendsAt;
 
         void Awake()
         {
@@ -98,7 +100,13 @@ namespace ChessFight.Game
             hud.JoinParty += id => session.JoinParty(id);
             hud.JoinMatch += id => session.JoinPrivateMatch(id);
 
-            hud.Invite += () => session.Invite();
+            // The in-game picker replaces the Steam overlay, which renders at its
+            // own resolution and hides presence behind a search box.
+            hud.Invite += () => { friendsOpen = true; refreshFriendsAt = 0; };
+            hud.CloseFriends += () => friendsOpen = false;
+            hud.RefreshFriends += () => refreshFriendsAt = 0;
+            hud.InviteFriend += id => session.InviteToParty(id);
+            hud.SteamOverlayInvite += () => session.Invite();
             hud.StartGame += () => session.StartGame();
             hud.Cancel += () => { session.Cancel(); step = HudStep.Home; };
             hud.LeaveParty += () => { session.LeaveParty(); step = HudStep.Home; };
@@ -129,6 +137,13 @@ namespace ChessFight.Game
             if (motion != null) spawner.Sync(motion.States, dt);
             if (spawner.TryGet(session.Self, out var local)) cameraRig.Follow(local.transform, dt);
 
+            // Presence changes while the panel sits open, so re-poll on a timer.
+            if (friendsOpen && Time.unscaledTime >= refreshFriendsAt)
+            {
+                refreshFriendsAt = Time.unscaledTime + 3f;
+                hud.SetFriends(session.Friends());
+            }
+
             if (Time.unscaledTime < refreshAt) return;
             refreshAt = Time.unscaledTime + .2f;
             var model = BuildModel();
@@ -145,6 +160,9 @@ namespace ChessFight.Game
                             (session.Party != 0 && session.Busy && !session.IsLeader);
             if (inFlight) step = HudStep.Busy;
             else if (step == HudStep.Busy) step = HudStep.Home;
+
+            // Inviting needs a joinable party, which searching turns off.
+            if (session.Busy || !session.Online) friendsOpen = false;
 
             bool idleLeader = session.Online && session.IsLeader && !session.Busy;
             bool hostWaiting = session.IsHost && !session.Started;
@@ -178,7 +196,8 @@ namespace ChessFight.Game
                 CanRemoveBot = idleLeader && session.PartyBots > 0,
                 CanFillRoom = hostWaiting && session.Roster.Count < 12,
                 CanClearRoomBots = hostWaiting && session.RoomBots > 0,
-                CanRetry = !session.Online
+                CanRetry = !session.Online,
+                FriendsOpen = friendsOpen
             };
         }
 
