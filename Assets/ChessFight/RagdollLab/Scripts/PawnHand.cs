@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
@@ -24,11 +24,15 @@ namespace ChessFight.RagdollLab
         public Collider HeldCollider { get; private set; }
         public Rigidbody HeldBody { get; private set; }
         public bool HasReach { get; private set; }
+
+        /// <summary>Surface direction at the grip, pointing from the surface toward the palm.
+        /// Near-vertical y means a floor or a ceiling; near-zero y means a wall worth climbing.</summary>
+        public Vector3 GripNormal { get; private set; } = Vector3.up;
         public Vector3 ReachPoint { get; private set; }
         public Vector3 Center => palm.transform.TransformPoint(palm.center);
         public float Radius => palm.radius * Mathf.Abs(palm.transform.lossyScale.x);
 
-        public void Tick(bool want, RagdollParams p, float dt)
+        public void Tick(bool want, RagdollParams p, float dt, bool wallOk = false)
         {
             regrabCooldown -= dt;
             HasReach = false;
@@ -58,7 +62,8 @@ namespace ChessFight.RagdollLab
             Vector3 center = Center;
             float radius = Radius;
             // While rising, walls only catch at the ledge, so a jump can reach the top edge.
-            bool rising = owner.Hips.linearVelocity.y > 0.5f;
+            // Climbing is the one case where a hand SHOULD catch a flat wall while moving up.
+            bool rising = !wallOk && owner.Hips.linearVelocity.y > 0.5f;
             int n = Physics.OverlapSphereNonAlloc(center, p.grabRadius, buffer, ~0, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
             Collider bestCollider = null;
@@ -98,6 +103,8 @@ namespace ChessFight.RagdollLab
             HeldCollider = target;
             HeldBody = target.attachedRigidbody;
             HoldingLedge = IsEnvironment(target) && IsLedge(target, point);
+            Vector3 away = Center - point;
+            GripNormal = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.up;
         }
 
         public void Release(float cooldown = 0f)

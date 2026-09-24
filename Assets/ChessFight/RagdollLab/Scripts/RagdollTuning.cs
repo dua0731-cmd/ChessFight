@@ -33,6 +33,7 @@ namespace ChessFight.RagdollLab
         public const string GroupAssist = "보조 (명세 외)";
         public const string GroupPose = "퍼펫 포즈 (명세 외)";
         public const string GroupWeight = "발과 무게감 (명세 외)";
+        public const string GroupAction = "버둥대기 / 등반 (명세 외)";
 
         [Tunable(GroupStiffness, "골반 앵커 hipAnchorStrength")] [Range(0f, 20000f)] public float hipAnchorStrength = 3000f;
         [Tunable(GroupStiffness, "하체 lowerBodySpring")] [Range(0f, 10000f)] public float lowerBodySpring = 2000f;
@@ -112,6 +113,22 @@ namespace ChessFight.RagdollLab
         // Not a feel knob: without it a hard direction change lets the anchor spring launch the pawn
         // at 143% of its run speed. On by default because that is a bug, not a mechanic.
         [Tunable(GroupWeight, "최고 속도 상한 (달리기 배수, 0=무제한)")] [Range(0f, 2f)] public float overspeedClamp = 1.1f;
+
+        [Tunable(GroupAction, "버둥 1회 지속 (초)")] [Range(0.05f, 0.8f)] public float struggleBurst = 0.22f;
+        [Tunable(GroupAction, "버둥 1회 탈출량 (1.0에서 탈출)")] [Range(0.05f, 1f)] public float struggleEscape = 0.22f;
+        [Tunable(GroupAction, "버둥 탈출량 감소 (/초)")] [Range(0.1f, 3f)] public float struggleDecay = 0.8f;
+        [Tunable(GroupAction, "버둥 팔 진폭 (도)")] [Range(0f, 160f)] public float struggleSwing = 95f;
+        [Tunable(GroupAction, "버둥 몸부림 충격")] [Range(0f, 40f)] public float struggleShake = 9f;
+        [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 1.3f;
+        [Tunable(GroupAction, "등반 스테미나 (초)")] [Range(1f, 30f)] public float climbStaminaMax = 8f;
+        // Drain and recovery are in stamina-seconds per second, so the numbers read directly:
+        // hanging 0.35 means the 8 s bar lasts 23 s of just hanging, 6.4 s of full climbing.
+        [Tunable(GroupAction, "매달리기 소모 (/초)")] [Range(0f, 1f)] public float climbDrainHold = 0.35f;
+        [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
+        [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
+        [Tunable(GroupAction, "손 번갈아 잡기 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 1.9f;
+        [Tunable(GroupAction, "등반 자세 팔 높이 (도)")] [Range(0f, 120f)] public float climbArmRaise = 70f;
+        [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]

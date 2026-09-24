@@ -81,11 +81,26 @@ namespace ChessFight.RagdollLab
         void DrawHint()
         {
             string text = "Tab: 튜닝 패널   R: 리스폰   T: 슬로모션   F: 자유 카메라";
+            var me = game.players.Length > 0 ? game.players[0].pawn : null;
+            if (me != null)
+            {
+                // Climbing and struggling are both timed resources; hidden ones cannot be played around.
+                if (me.Climbing || me.Stamina < 0.999f)
+                    text += $"   · 스테미나 {Bar(me.Stamina)} {me.Stamina * 100f:F0}%";
+                if (me.BeingHeld)
+                    text += $"   · 잡힘! 좌클릭 연타 {Bar(me.EscapeProgress)}";
+            }
             if (game.SlowMotion) text += "   · 슬로모션 중";
             if (game.labCamera != null && game.labCamera.freeMode) text += "   · 자유 카메라 (WASD·Q·E, F로 복귀)";
             var size = hintStyle.CalcSize(new GUIContent(text));
             GUI.DrawTexture(new Rect(8, 8, size.x + 16, size.y + 8), panelTexture);
             GUI.Label(new Rect(16, 12, size.x, size.y), text, hintStyle);
+        }
+
+        static string Bar(float fill)
+        {
+            int on = Mathf.Clamp(Mathf.RoundToInt(fill * 10f), 0, 10);
+            return new string('■', on) + new string('·', 10 - on);
         }
 
         void DrawTuning()

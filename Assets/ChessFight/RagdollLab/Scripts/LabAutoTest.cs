@@ -17,7 +17,8 @@ namespace ChessFight.RagdollLab
         public LabGame game;
 
         public static bool Requested =>
-            Arg("-ragdollAutoTest") != null || Arg("-ragdollShots") != null || Arg("-ragdollClip") != null;
+            Arg("-ragdollAutoTest") != null || Arg("-ragdollShots") != null
+            || Arg("-ragdollClip") != null || Arg("-ragdollActionClip") != null;
         static bool PanelShotRequested => Arg("-ragdollPanelShot") != null;
 
         readonly StringBuilder log = new StringBuilder();
@@ -71,6 +72,8 @@ namespace ChessFight.RagdollLab
             if (shots != null) yield return RunShots(string.IsNullOrEmpty(shots) ? "shots" : shots);
             string clip = Arg("-ragdollClip");
             if (clip != null) yield return RunClip(string.IsNullOrEmpty(clip) ? "clip" : clip);
+            string actions = Arg("-ragdollActionClip");
+            if (actions != null) yield return RunActionClip(string.IsNullOrEmpty(actions) ? "actions" : actions);
             Application.Quit();
         }
 
@@ -137,6 +140,8 @@ namespace ChessFight.RagdollLab
             yield return Slope();
             yield return Contact();
             yield return GrabDrag();
+            yield return StruggleEscape();
+            yield return Climb();
             yield return ShoveCheck();
             yield return Bar();
             yield return Beam();
@@ -866,6 +871,114 @@ namespace ChessFight.RagdollLab
             return Flat(p / Mathf.Max(0.001f, m));
         }
 
+        /// <summary>
+        /// Held by someone else: doing nothing must not get you out, and tapping fast must. Both
+        /// halves matter - a struggle that works while idle is not a struggle.
+        /// </summary>
+        IEnumerator StruggleEscape()
+        {
+            var holder = Spawn(new Vector3(6f, 0f, 3f), Vector3.forward, "잡는쪽");
+            var victim = Spawn(new Vector3(6f, 0f, 3.7f), Vector3.back, "잡힌쪽");
+            yield return Sim(0.8f);
+            Drive(holder, Vector3.forward * 0.25f, grab: true);
+            float held = 0f;
+            yield return Sim(1.4f, () => { if (victim.BeingHeld) held += Dt; });
+            bool caught = victim.BeingHeld;
+
+            // Phase 1: hold still for a second. The grip must survive.
+            float idle = 0f;
+            yield return Sim(1f, () =>
+            {
+                Drive(holder, Vector3.forward * 0.25f, grab: true);
+                Drive(victim, Vector3.zero);
+                if (victim.BeingHeld) idle += Dt;
+            });
+            bool stillHeld = victim.BeingHeld;
+
+            // Phase 2: mash it. One tap every 0.1 s.
+            float t = 0f, nextTap = 0f, peak = 0f, escapeAt = -1f;
+            yield return Sim(3f, () =>
+            {
+                t += Dt;
+                Drive(holder, Vector3.forward * 0.25f, grab: true);
+                bool tap = t >= nextTap;
+                if (tap) nextTap = t + 0.1f;
+                Drive(victim, Vector3.zero, shove: tap);
+                peak = Mathf.Max(peak, victim.EscapeProgress);
+                if (escapeAt < 0f && !victim.BeingHeld) escapeAt = t;
+            });
+            Report("버둥대기: 가만히 있으면 못 빠져나감, 연타하면 탈출",
+                caught && stillHeld && escapeAt >= 0f,
+                $"잡힘 {caught}, 1초 가만히 둔 뒤에도 잡힘 {stillHeld}, 연타 후 탈출 {(escapeAt >= 0f ? $"{escapeAt:F2}s" : "실패")}, "
+                + $"탈출 게이지 최대 {peak:F2}");
+            yield return Clear();
+        }
+
+        /// <summary>
+        /// A wall is a route with a length: the pawn climbs while stamina lasts and falls when it is
+        /// gone. Checks that it gains height, that stamina actually drains, and that it lets go.
+        /// </summary>
+        IEnumerator Climb()
+        {
+            var pawn = Spawn(new Vector3(LabLayout.WallFrontX - 1.2f, 0f, LabLayout.WallZ[2]), Vector3.right, "등반");
+            yield return Sim(0.6f);
+            float startY = pawn.Hips.position.y, startStamina = pawn.Stamina;
+            float topY = startY, climbedFor = 0f, lowestStamina = 1f;
+            bool everClimbing = false;
+            yield return Sim(6f, () =>
+            {
+                Drive(pawn, Vector3.right, grab: true);
+                if (pawn.Climbing)
+                {
+                    everClimbing = true;
+                    climbedFor += Dt;
+                }
+                topY = Mathf.Max(topY, pawn.Hips.position.y);
+                lowestStamina = Mathf.Min(lowestStamina, pawn.Stamina);
+            });
+            var tr = new StringBuilder();
+            float tt = 0f, tnext = 0f;
+            yield return Sim(1.2f, () =>
+            {
+                Drive(pawn, Vector3.right, grab: true);
+                tt += Dt;
+                if (tt < tnext) return;
+                tnext = tt + 0.15f;
+                tr.Append($"[{tt:F2} 골반{pawn.Hips.position.y:F2} 앵커{pawn.AnchorPosition.y:F2} "
+                    + $"손L{pawn.handL.Center.y:F2}{(pawn.handL.IsHolding ? "O" : "x")} "
+                    + $"손R{pawn.handR.Center.y:F2}{(pawn.handR.IsHolding ? "O" : "x")} "
+                    + $"등반{(pawn.Climbing ? 1 : 0)}]");
+            });
+            Info("등반 추적", tr.ToString());
+            float gain = topY - startY;
+            Report("등반: 벽을 타고 올라감", everClimbing && gain > 0.6f,
+                $"오른 높이 {gain:F2} m, 매달린 시간 {climbedFor:F1}s, 스테미나 {startStamina:F2} → {lowestStamina:F2}");
+
+            yield return Clear();
+
+            // Same wall, but going up and down so the route never ends: stamina has to run out.
+            var hanger = Spawn(new Vector3(LabLayout.WallFrontX - 1.2f, 0f, LabLayout.WallZ[2]), Vector3.right, "매달림");
+            yield return Sim(0.6f);
+            // Climb clear of the ground first, then ride up and down so the route never ends and
+            // stamina has to be what stops it.
+            float phase = 0f, highest = 0f, heightAtEmpty = -1f;
+            bool ranOut = false, letGo = false;
+            yield return Sim(18f, () =>
+            {
+                phase += Dt;
+                bool up = phase < 2f || ((int)((phase - 2f) / 0.35f) & 1) == 1;
+                Drive(hanger, up ? Vector3.right : Vector3.left, grab: true);
+                if (!ranOut) highest = Mathf.Max(highest, hanger.Hips.position.y);
+                if (hanger.Stamina > 0.001f) return;
+                if (!ranOut) heightAtEmpty = hanger.Hips.position.y;
+                ranOut = true;
+                if (!hanger.Climbing) letGo = true;
+            });
+            Report("등반: 스테미나가 떨어지면 손을 놓음", ranOut && letGo,
+                $"스테미나 고갈 {ranOut}, 손 놓음 {letGo}, 최고 {highest:F2} m, 고갈 시점 {heightAtEmpty:F2} m → 최종 {hanger.Hips.position.y:F2} m");
+            yield return Clear();
+        }
+
         IEnumerator JumpCheck()
         {
             var pawn = Spawn(new Vector3(5f, 0f, -10f), Vector3.forward, "jump");
@@ -1330,6 +1443,52 @@ namespace ChessFight.RagdollLab
             pawn.AddVelocity(new Vector3(2.5f, 2.2f, 0f));
             yield return ClipSegment(3.2f, () => Track(0f));
 
+            clipFolder = null;
+            Time.captureFramerate = 0;
+        }
+
+        /// <summary>Records the two new verbs: climbing a wall, and thrashing out of a grab.</summary>
+        IEnumerator RunActionClip(string folder)
+        {
+            Directory.CreateDirectory(folder);
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = 1f / game.physicsRate;
+            Time.captureFramerate = 30;
+            shotCamera = game.labCamera.GetComponent<Camera>();
+            game.labCamera.enabled = false;
+
+            // ---- climb the 4 m wall
+            var climber = Spawn(new Vector3(LabLayout.WallFrontX - 2.2f, 0f, LabLayout.WallZ[2]), Vector3.right, "등반");
+            Vector3 eye = climber.Hips.position + new Vector3(-1.2f, 1.2f, -3.4f);
+            void Watch(RagdollPawn pawn, float height)
+            {
+                Vector3 want = pawn.Hips.position + new Vector3(-1.2f, height, -3.4f);
+                eye = Vector3.Lerp(eye, want, 0.08f);
+                Vector3 look = pawn.Hips.position + Vector3.up * 0.2f;
+                shotCamera.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(look - eye, Vector3.up));
+            }
+            for (int i = 0; i < 30; i++) { Watch(climber, 1.2f); yield return null; }
+            clipFolder = folder;
+            yield return ClipSegment(6.5f, () => { Drive(climber, Vector3.right, grab: true); Watch(climber, 1.2f); });
+            clipFolder = null;
+            yield return Clear();
+
+            // ---- get grabbed, then thrash out of it
+            var holder = Spawn(new Vector3(0f, 0f, -6f), Vector3.forward, "잡는쪽");
+            var victim = Spawn(new Vector3(0f, 0f, -5.3f), Vector3.back, "잡힌쪽");
+            eye = victim.Hips.position + new Vector3(2.0f, 0.7f, -1.6f);
+            for (int i = 0; i < 20; i++) { Watch(victim, 0.7f); yield return null; }
+            clipFolder = folder;
+            float t = 0f, nextTap = 1.4f;
+            yield return ClipSegment(5.5f, () =>
+            {
+                t += Time.deltaTime;
+                Drive(holder, Vector3.forward * 0.25f, grab: true);
+                bool tap = t >= nextTap;
+                if (tap) nextTap = t + 0.12f;
+                Drive(victim, Vector3.zero, shove: tap);
+                Watch(victim, 0.7f);
+            });
             clipFolder = null;
             Time.captureFramerate = 0;
         }

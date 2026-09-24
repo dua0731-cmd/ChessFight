@@ -15,7 +15,7 @@
   "lowerBodySpring": 2600.0,
   "legSwing": 140.0,
   "boundGait": 0.0,
-  "moveSpeed": 12.0,
+  "moveSpeed": 9.6,
   "turnResponsiveness": 8.0,
   "momentumRetention": 1.0,
   "armSwing": 76.0,

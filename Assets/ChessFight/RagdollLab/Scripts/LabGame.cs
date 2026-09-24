@@ -356,7 +356,7 @@ namespace ChessFight.RagdollLab
         /// </summary>
         public const string StepPresetJson =
             "{'lowerBodySpring':2600,'upperBodySpring':1600," +
-            "'moveSpeed':12.0,'acceleration':20.0,'stopDeceleration':20.0," +
+            "'moveSpeed':9.6,'acceleration':20.0,'stopDeceleration':20.0," +
             "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.5," +
             "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
             "'strideLength':1.5,'legSwing':140.0,'armSwing':76.0,'runLean':10.0,'runLift':0.05," +
