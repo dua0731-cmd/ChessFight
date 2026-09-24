@@ -108,7 +108,7 @@ namespace ChessFight.RagdollLab
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("프리셋: 두 발 모아 도약", buttonStyle)) game.ApplyWeightPreset();
-            if (GUILayout.Button("프리셋: 교대 걸음 (파바바밧)", buttonStyle)) game.ApplyStepPreset();
+            if (GUILayout.Button("프리셋: 크게 달리기 12 m/s", buttonStyle)) game.ApplyStepPreset();
             GUILayout.EndHorizontal();
             if (!string.IsNullOrEmpty(game.Status)) GUILayout.Label(game.Status, smallStyle);
 

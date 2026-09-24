@@ -95,6 +95,7 @@ namespace ChessFight.RagdollLab
         readonly Vector3[] poseScratch = new Vector3[Count];
         readonly Quaternion[] startRel = new Quaternion[Count];
         readonly Vector3[] bindPos = new Vector3[Count];
+        readonly float[] baseMass = new float[Count];
         readonly Quaternion[] bindRot = new Quaternion[Count];
         readonly List<Collider> own = new List<Collider>();
         readonly List<PhysicsMaterial> ownMaterial = new List<PhysicsMaterial>();
@@ -154,6 +155,8 @@ namespace ChessFight.RagdollLab
             for (int a = 0; a < own.Count; a++)
                 for (int b = a + 1; b < own.Count; b++)
                     Physics.IgnoreCollision(own[a], own[b], true);
+
+            for (int i = 0; i < Count; i++) baseMass[i] = bodies[i].mass;
 
             Transform hips = bodies[0].transform;
             Quaternion hipsInv = Quaternion.Inverse(hips.rotation);
@@ -380,6 +383,32 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- locomotion
 
+        /// <summary>
+        /// The anchor is a position spring, so a hard direction change lets it stretch to the leash and
+        /// pull with hipAnchorStrength * leash newtons - 1800 N, or 36 m/s^2 on this pawn, more than the
+        /// acceleration setting allows. The body then overshoots and ends up travelling faster than it
+        /// can run. Trim the excess off the whole body (measured at the centre of mass, so a whipping
+        /// limb does not trigger it), but leave slopes, jumps and knockdowns alone: momentum earned by
+        /// throwing yourself down a hill is the point of the game.
+        /// </summary>
+        void ClampOverspeed(RagdollParams p, float dt)
+        {
+            if (p.overspeedClamp <= 0.001f || State != PawnState.Active || !Grounded || OnSlope) return;
+            float limit = p.moveSpeed * p.overspeedClamp;
+            Vector3 momentum = Vector3.zero;
+            float mass = 0f;
+            foreach (var rb in bodies)
+            {
+                momentum += rb.linearVelocity * rb.mass;
+                mass += rb.mass;
+            }
+            Vector3 travel = Flat(momentum / Mathf.Max(0.001f, mass));
+            float speed = travel.magnitude;
+            if (speed <= limit) return;
+            Vector3 excess = travel * ((speed - limit) / speed) * Mathf.Clamp01(dt * 25f);
+            foreach (var rb in bodies) rb.linearVelocity -= excess;
+        }
+
         void Locomotion(RagdollParams p, float dt)
         {
             Rigidbody hips = bodies[0];
@@ -458,6 +487,25 @@ namespace ChessFight.RagdollLab
             }
 
             Vector3 offset = Flat(next - hp);
+            // Reversing direction leaves the anchor behind the still-moving body, and the anchor
+            // spring then yanks the hips backwards at up to hipAnchorStrength * leash newtons - which
+            // is how pressing the opposite key launched the pawn faster than it can run. Limit how far
+            // the anchor may TRAIL, and the yank is limited with it. Leading is untouched.
+            if (p.anchorBrakeLeash > 0.001f)
+            {
+                Vector3 travel = Flat(hips.linearVelocity);
+                if (travel.sqrMagnitude > 0.04f && Vector3.Dot(offset, travel) < 0f)
+                {
+                    Vector3 back = travel.normalized;
+                    float trailing = -Vector3.Dot(offset, back);
+                    if (trailing > p.anchorBrakeLeash)
+                    {
+                        Vector3 fix = back * (trailing - p.anchorBrakeLeash);
+                        next += fix;
+                        offset += fix;
+                    }
+                }
+            }
             float distance = offset.magnitude;
             if (distance > leash)
             {
@@ -496,6 +544,7 @@ namespace ChessFight.RagdollLab
             float roll = p.stepRoll * Mathf.Sin(gait) * speedN * (1f - p.boundGait)
                        - Mathf.Clamp(turnRate / 180f, -1f, 1f) * p.turnLean * speedN;
             anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(lean, 0f, roll));
+            ClampOverspeed(p, dt);
         }
 
         void Jump(RagdollParams p)
@@ -585,7 +634,7 @@ namespace ChessFight.RagdollLab
             // is the only way the gait survives a big moveSpeed.
             float cycles = cadence / Mathf.Max(0.2f, p.strideLength);
             if (p.hopCadence > 0.01f)
-                cycles = Mathf.Lerp(cycles, p.hopCadence * Mathf.Clamp01(speedN * 2.5f), p.boundGait);
+                cycles = p.hopCadence * Mathf.Clamp01(speedN * 2.5f);
             gait += cycles * dt * Mathf.PI * 2f;
             if (gait > Mathf.PI * 2f) gait -= Mathf.PI * 2f;
             float s = Mathf.Sin(gait);
@@ -792,8 +841,27 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- drives
 
+        /// <summary>
+        /// Swinging a leg costs inertia, and the foot dominates it: 2.5 kg at 0.19 m from the hip is
+        /// three times the thigh's 3 kg at 0.10 m. Lighter feet therefore buy cadence far more cheaply
+        /// than any drive setting. Whatever the legs give up goes into the hips, so the pawn still
+        /// weighs the same and every impulse-based threshold keeps its meaning.
+        /// </summary>
+        void ApplyMasses(RagdollParams p)
+        {
+            float thigh = p.thighMass > 0.01f ? p.thighMass : baseMass[(int)BodyId.ThighL];
+            float foot = p.footMass > 0.01f ? p.footMass : baseMass[(int)BodyId.FootL];
+            if (Mathf.Approximately(bodies[(int)BodyId.ThighL].mass, thigh)
+                && Mathf.Approximately(bodies[(int)BodyId.FootL].mass, foot)) return;
+            bodies[(int)BodyId.ThighL].mass = bodies[(int)BodyId.ThighR].mass = thigh;
+            bodies[(int)BodyId.FootL].mass = bodies[(int)BodyId.FootR].mass = foot;
+            float moved = 2f * (baseMass[(int)BodyId.ThighL] - thigh) + 2f * (baseMass[(int)BodyId.FootL] - foot);
+            bodies[0].mass = Mathf.Max(1f, baseMass[0] + moved);
+        }
+
         void Drives(RagdollParams p, float k)
         {
+            ApplyMasses(p);
             float r = p.damperRatio;
             // Dynamic softening hits the upper body and arms fully, legs/anchor only by lowerBodyDynamicShare.
             float kLower = StateFactor * Mathf.Lerp(1f, Stiffness, p.lowerBodyDynamicShare);

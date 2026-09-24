@@ -104,8 +104,14 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupWeight, "보폭 (발 고정용, m)")] [Range(0.05f, 0.6f)] public float stepLength = 0.22f;
         [Tunable(GroupWeight, "두 발 모아 도약 (0=교대걸음)")] [Range(0f, 1f)] public float boundGait;
         [Tunable(GroupWeight, "관절 속도 예측 (0=꺼짐)")] [Range(0f, 1.5f)] public float driveFeedForward;
-        [Tunable(GroupWeight, "도약 횟수 고정 (회/초, 0=보폭기준)")] [Range(0f, 5f)] public float hopCadence;
+        [Tunable(GroupWeight, "걸음 주기 고정 (회/초, 0=보폭기준)")] [Range(0f, 5f)] public float hopCadence;
         [Tunable(GroupWeight, "다리 전용 댐퍼비 (0=전체값 사용)")] [Range(0f, 0.2f)] public float legDamperRatio;
+        [Tunable(GroupWeight, "허벅지 무게 (kg, 0=원래값)")] [Range(0f, 6f)] public float thighMass;
+        [Tunable(GroupWeight, "발 무게 (kg, 0=원래값)")] [Range(0f, 5f)] public float footMass;
+        [Tunable(GroupWeight, "역방향 제동 거리 (m, 0=앵커 거리와 동일)")] [Range(0f, 0.6f)] public float anchorBrakeLeash;
+        // Not a feel knob: without it a hard direction change lets the anchor spring launch the pawn
+        // at 143% of its run speed. On by default because that is a bug, not a mechanic.
+        [Tunable(GroupWeight, "최고 속도 상한 (달리기 배수, 0=무제한)")] [Range(0f, 2f)] public float overspeedClamp = 1.1f;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]

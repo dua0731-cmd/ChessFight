@@ -341,28 +341,29 @@ namespace ChessFight.RagdollLab
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 
         /// <summary>
-        /// Same set, but the legs alternate instead of hopping. A stepping gait cannot use a hop's
-        /// flight phase, so it has to run the cadence up instead: 14 steps a second at 6 m/s. That
-        /// only works because the legs get their own damping ratio (see legDamperRatio) - at the
-        /// shared 0.1 the drives track 1.59 Hz and the swing collapses to 16 degrees.
+        /// The party-game set: legs alternate, but big and slow rather than honest. The cadence is
+        /// locked low (1.6 cycles a second) while the speed is 12 m/s, so each stride is huge and the
+        /// feet slide - which is exactly what Gang Beasts and Party Animals do. Amplitude is what
+        /// reads at speed; foot contact is not. 140 deg is commanded and 95 comes out, because the
+        /// hip joint's own limit (-75..60) is the ceiling - asking for more only adds limp.
         /// </summary>
         public const string StepPresetJson =
-            "{'lowerBodySpring':2600," +
-            "'moveSpeed':6.0,'acceleration':10.0,'stopDeceleration':14.0," +
-            "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':3.0," +
-            "'balanceDamper':120.0,'yawStrength':600.0," +
-            "'strideLength':0.85,'legSwing':70.0,'armSwing':55.0,'runLean':8.0,'runLift':0.045," +
-            "'stepLock':0.3,'stanceThrust':0.45,'stepBob':0.05,'stepRoll':8.0," +
-            "'turnLean':14.0,'landingDip':0.06,'stepLength':0.22," +
-            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':0.0,'legDamperRatio':0.018," +
-            "'knockdownImpulseThreshold':4.5,'hitImpactThreshold':2.2," +
+            "{'lowerBodySpring':2600,'upperBodySpring':1600," +
+            "'moveSpeed':12.0,'acceleration':20.0,'stopDeceleration':20.0," +
+            "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.5," +
+            "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
+            "'strideLength':1.5,'legSwing':140.0,'armSwing':78.0,'runLean':10.0,'runLift':0.05," +
+            "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.06,'stepRoll':12.0," +
+            "'turnLean':16.0,'landingDip':0.06,'stepLength':0.22," +
+            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':1.6,'legDamperRatio':0.0," +
+            "'knockdownImpulseThreshold':6.0,'hitImpactThreshold':2.2," +
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 
         public void ApplyStepPreset()
         {
             tuning.LoadJson(StepPresetJson.Replace('\'', '"'));
             MarkTuningDirty();
-            Status = "교대 걸음 프리셋 (초당 14걸음). 두 발 모아 도약 프리셋과 1/2 키로 비교해보세요";
+            Status = "크게 달리기 프리셋: 12 m/s, 다리 스윙 95도. 도약 프리셋과 1/2 키로 비교해보세요";
         }
 
         public void ApplyWeightPreset()

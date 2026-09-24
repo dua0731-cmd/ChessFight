@@ -818,15 +818,52 @@ namespace ChessFight.RagdollLab
             yield return Sim(1.2f);
             Drive(pawn, Vector3.left);
             float t = 0f, flip = -1f, face = -1f;
+            // Slamming the opposite direction must not launch the pawn faster than it can run, and the
+            // torso must not whip around. Both were reported as feel bugs; measure them.
+            float peakSpeed = 0f, chestWhip = 0f, headWhip = 0f, peakAt = 0f, peakAnchor = 0f, peakCom = 0f;
+            Vector3 peakVel = Vector3.zero;
+            float target = game.tuning.values.moveSpeed;
             yield return Sim(1.5f, () =>
             {
                 t += Dt;
                 if (flip < 0f && pawn.Hips.linearVelocity.x < -1f) flip = t;
                 if (face < 0f && Vector3.Angle(Flat(pawn.Hips.transform.forward), Vector3.left) < 30f) face = t;
+                if (pawn.HorizontalSpeed > peakSpeed)
+                {
+                    peakSpeed = pawn.HorizontalSpeed;
+                    peakAt = t;
+                    peakVel = Flat(pawn.Hips.linearVelocity);
+                    peakAnchor = Flat(pawn.AnchorPosition - pawn.Hips.position).magnitude;
+                    peakCom = ComVelocity(pawn).magnitude;
+                }
+                Quaternion inv = Quaternion.Inverse(pawn.Hips.transform.rotation);
+                chestWhip = Mathf.Max(chestWhip, Quaternion.Angle(Quaternion.identity,
+                    inv * pawn.bodies[(int)BodyId.Chest].transform.rotation));
+                headWhip = Mathf.Max(headWhip, Quaternion.Angle(Quaternion.identity,
+                    inv * pawn.bodies[(int)BodyId.Head].transform.rotation));
             });
+            bool noSlingshot = peakSpeed <= target * 1.25f;
             Report("180° 방향 전환", flip >= 0f && flip < 0.8f && face >= 0f && face < 0.8f && pawn.Knockdowns == 0,
                 $"속도 반전 {flip:F2}s, 몸 방향 {face:F2}s, 넘어짐 {pawn.Knockdowns}");
+            Report("반대 방향 입력 시 과속 없음", noSlingshot,
+                $"전환 중 최고 속도 {peakSpeed:F2} m/s / 달리기 {target:F2} m/s "
+                + $"(= {100f * peakSpeed / Mathf.Max(0.1f, target):F0}%, 125% 이하여야 함)");
+            Info("과속 상세", $"최고 {peakSpeed:F2} m/s @ {peakAt:F2}s, 방향 ({peakVel.x:F1},{peakVel.z:F1}), "
+                + $"전체 무게중심 속도 {peakCom:F2} m/s, 앵커-골반 거리 {peakAnchor:F3} m");
+            Info("전환 중 상체 휘청임", $"가슴 최대 {chestWhip:F0}°, 머리 최대 {headWhip:F0}° (골반 기준)");
             yield return Clear();
+        }
+
+        static Vector3 ComVelocity(RagdollPawn pawn)
+        {
+            Vector3 p = Vector3.zero;
+            float m = 0f;
+            foreach (var rb in pawn.bodies)
+            {
+                p += rb.linearVelocity * rb.mass;
+                m += rb.mass;
+            }
+            return Flat(p / Mathf.Max(0.001f, m));
         }
 
         IEnumerator JumpCheck()
