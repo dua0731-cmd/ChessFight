@@ -27,6 +27,7 @@
                 <ui:Label text="번호로 직접 입장" class="card-title" />
                 <ui:TextField name="code" label="번호" max-length="20" />
                 <ui:VisualElement class="row">
+                    <ui:Button name="paste" text="붙여넣기" class="btn tiny" />
                     <ui:Button name="join-party" text="파티 참가" class="btn tiny" />
                     <ui:Button name="join-test" text="경기 참가" class="btn tiny" />
                 </ui:VisualElement>

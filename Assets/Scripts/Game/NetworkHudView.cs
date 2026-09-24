@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -30,7 +31,12 @@ namespace ChessFight.Game
         public event Action<ulong> JoinParty, JoinMatch;
 
         PanelSettings ownedPanel;
-        bool pointerSeen;
+        VisualElement root;
+        // Every button and what it does, so the fallback router below can fire one
+        // without going through the event system.
+        readonly Dictionary<Button, Action> actions = new Dictionary<Button, Action>();
+        bool pointerSeen, fallbackDead, diagnosed;
+        float diagnoseAt;
         Label status, error, details, roster, rosterTitle, bots, partyId, matchId, hint;
         TextField code;
         Toggle capture;
@@ -67,7 +73,7 @@ namespace ChessFight.Game
             }
             document.panelSettings = settings;
 
-            var root = document.rootVisualElement;
+            root = document.rootVisualElement;
             root.style.unityFont = ResolveFont();
             layout.CloneTree(root);
 
@@ -115,6 +121,73 @@ namespace ChessFight.Game
             clearRoomBots = Bind(root, "clear-bots", () => ClearRoomBots?.Invoke());
             Bind(root, "copy-party", () => CopyParty?.Invoke());
             Bind(root, "copy-match", () => CopyMatch?.Invoke());
+            // Pasting sidesteps the number field entirely, which matters because a
+            // panel that gets no pointer events gets no keystrokes either.
+            Bind(root, "paste", () => { if (code != null) code.value = GUIUtility.systemCopyBuffer; });
+            diagnoseAt = Time.unscaledTime + 1f;
+        }
+
+        // If the panel never receives a real pointer event, drive the buttons from
+        // the mouse directly. This is a safety net, not the intended path: it
+        // switches itself off the moment a genuine event arrives, and it cannot
+        // help with typing, which is what the paste button is for.
+        void Update()
+        {
+            if (!diagnosed && root != null && Time.unscaledTime >= diagnoseAt) { diagnosed = true; LogDiagnostics(); }
+            if (pointerSeen || fallbackDead || root == null) return;
+            bool pressed;
+            Vector2 screen;
+            try { pressed = Input.GetMouseButtonDown(0); screen = Input.mousePosition; }
+            catch (InvalidOperationException)
+            {
+                fallbackDead = true;
+                Debug.LogError("[ChessFight] 레거시 입력이 꺼져 있어 대체 클릭 처리도 쓸 수 없습니다. " +
+                               "Project Settings > Player > Active Input Handling을 'Input Manager (Old)'로 바꾸고 Unity를 재시작하세요.");
+                return;
+            }
+            if (!pressed) return;
+
+            var panel = root.panel;
+            if (panel == null) return;
+            // Unity's own samples flip Y before converting; try the plain point too
+            // rather than betting the whole fallback on the convention.
+            var hit = Resolve(panel, new Vector2(screen.x, Screen.height - screen.y)) ?? Resolve(panel, screen);
+            if (hit == null) return;
+            if (hit.Value.button != null)
+            {
+                if (!hit.Value.button.enabledInHierarchy) return;
+                hit.Value.action();
+            }
+            else hit.Value.toggle.value = !hit.Value.toggle.value;
+        }
+
+        struct Hit { public Button button; public Action action; public Toggle toggle; }
+
+        Hit? Resolve(IPanel panel, Vector2 point)
+        {
+            for (var element = panel.Pick(point); element != null; element = element.parent)
+            {
+                if (element is Button button && actions.TryGetValue(button, out var action))
+                    return new Hit { button = button, action = action };
+                if (element is Toggle toggle) return new Hit { toggle = toggle };
+            }
+            return null;
+        }
+
+        void LogDiagnostics()
+        {
+            string backend = "";
+#if ENABLE_LEGACY_INPUT_MANAGER
+            backend += "LEGACY ";
+#endif
+#if ENABLE_INPUT_SYSTEM
+            backend += "INPUTSYSTEM ";
+#endif
+            var screen = root.Q<VisualElement>(className: "screen");
+            Debug.Log($"[ChessFight] HUD 진단 | 입력 백엔드: {(backend.Length == 0 ? "없음" : backend.Trim())} | " +
+                      $"패널: {(root.panel == null ? "없음" : "있음")} | root: {root.worldBound.size} | " +
+                      $"screen: {(screen == null ? Vector2.zero : screen.worldBound.size)} | " +
+                      $"버튼 {actions.Count}개 | 실제 포인터 이벤트: {(pointerSeen ? "수신됨" : "아직 없음 → 대체 클릭 사용")}");
         }
 
         // The built-in LegacyRuntime font carries no Hangul, so take a Korean
@@ -135,12 +208,13 @@ namespace ChessFight.Game
 
         bool TryReadCode(out ulong id) => ulong.TryParse(code != null ? code.value : "", out id) && id != 0;
 
-        static Button Bind(VisualElement root, string name, Action action)
+        Button Bind(VisualElement parent, string name, Action action)
         {
-            var button = root.Q<Button>(name);
+            var button = parent.Q<Button>(name);
             if (button == null) { Debug.LogError("[ChessFight] HUD 버튼 없음: " + name); return null; }
             button.focusable = false;   // Buttons must never steal keyboard focus from the arena.
             button.clicked += action;
+            actions[button] = action;
             return button;
         }
 
