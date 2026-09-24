@@ -346,16 +346,23 @@ namespace ChessFight.RagdollLab
         /// feet slide - which is exactly what Gang Beasts and Party Animals do. Amplitude is what
         /// reads at speed; foot contact is not. 140 deg is commanded and 95 comes out, because the
         /// hip joint's own limit (-75..60) is the ceiling - asking for more only adds limp.
+        ///
+        /// The cadence is 3.2 cycles a second - cartoon-fast legs, twice what amplitude alone wanted.
+        /// Tripling a swing's frequency needs nine times the torque, so this only holds because the
+        /// legs get their own damping ratio (0.04 = 4 Hz of tracking against the shared 1.59). Past
+        /// 3.2 the top speed falls to 9.5 m/s and the legs push hard enough downhill that running
+        /// beats rolling, which breaks the spec's rule 3. Lighter legs were tried and did not help:
+        /// the bottleneck is drive bandwidth, not inertia.
         /// </summary>
         public const string StepPresetJson =
             "{'lowerBodySpring':2600,'upperBodySpring':1600," +
             "'moveSpeed':12.0,'acceleration':20.0,'stopDeceleration':20.0," +
             "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.5," +
             "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
-            "'strideLength':1.5,'legSwing':140.0,'armSwing':78.0,'runLean':10.0,'runLift':0.05," +
+            "'strideLength':1.5,'legSwing':140.0,'armSwing':76.0,'runLean':10.0,'runLift':0.05," +
             "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.06,'stepRoll':12.0," +
             "'turnLean':16.0,'landingDip':0.06,'stepLength':0.22," +
-            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':1.6,'legDamperRatio':0.0," +
+            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':3.2,'legDamperRatio':0.04," +
             "'knockdownImpulseThreshold':6.0,'hitImpactThreshold':2.2," +
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 
