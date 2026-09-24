@@ -106,7 +106,10 @@ namespace ChessFight.RagdollLab
             if (GUILayout.Button("클립보드 복사", buttonStyle)) game.CopyParams();
             if (GUILayout.Button("붙여넣기", buttonStyle)) game.PasteParams();
             GUILayout.EndHorizontal();
-            if (GUILayout.Button("무게감 프리셋 (발로 달리는 느낌)", buttonStyle)) game.ApplyWeightPreset();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("프리셋: 두 발 모아 도약", buttonStyle)) game.ApplyWeightPreset();
+            if (GUILayout.Button("프리셋: 교대 걸음 (파바바밧)", buttonStyle)) game.ApplyStepPreset();
+            GUILayout.EndHorizontal();
             if (!string.IsNullOrEmpty(game.Status)) GUILayout.Label(game.Status, smallStyle);
 
             scroll = GUILayout.BeginScrollView(scroll);

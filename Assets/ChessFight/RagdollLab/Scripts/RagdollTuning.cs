@@ -105,6 +105,7 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupWeight, "두 발 모아 도약 (0=교대걸음)")] [Range(0f, 1f)] public float boundGait;
         [Tunable(GroupWeight, "관절 속도 예측 (0=꺼짐)")] [Range(0f, 1.5f)] public float driveFeedForward;
         [Tunable(GroupWeight, "도약 횟수 고정 (회/초, 0=보폭기준)")] [Range(0f, 5f)] public float hopCadence;
+        [Tunable(GroupWeight, "다리 전용 댐퍼비 (0=전체값 사용)")] [Range(0f, 0.2f)] public float legDamperRatio;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]

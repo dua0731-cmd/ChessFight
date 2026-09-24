@@ -340,6 +340,31 @@ namespace ChessFight.RagdollLab
             "'knockdownImpulseThreshold':4.5,'hitImpactThreshold':2.2," +
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 
+        /// <summary>
+        /// Same set, but the legs alternate instead of hopping. A stepping gait cannot use a hop's
+        /// flight phase, so it has to run the cadence up instead: 14 steps a second at 6 m/s. That
+        /// only works because the legs get their own damping ratio (see legDamperRatio) - at the
+        /// shared 0.1 the drives track 1.59 Hz and the swing collapses to 16 degrees.
+        /// </summary>
+        public const string StepPresetJson =
+            "{'lowerBodySpring':2600," +
+            "'moveSpeed':6.0,'acceleration':10.0,'stopDeceleration':14.0," +
+            "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':3.0," +
+            "'balanceDamper':120.0,'yawStrength':600.0," +
+            "'strideLength':0.85,'legSwing':70.0,'armSwing':55.0,'runLean':8.0,'runLift':0.045," +
+            "'stepLock':0.3,'stanceThrust':0.45,'stepBob':0.05,'stepRoll':8.0," +
+            "'turnLean':14.0,'landingDip':0.06,'stepLength':0.22," +
+            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':0.0,'legDamperRatio':0.018," +
+            "'knockdownImpulseThreshold':4.5,'hitImpactThreshold':2.2," +
+            "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
+
+        public void ApplyStepPreset()
+        {
+            tuning.LoadJson(StepPresetJson.Replace('\'', '"'));
+            MarkTuningDirty();
+            Status = "교대 걸음 프리셋 (초당 14걸음). 두 발 모아 도약 프리셋과 1/2 키로 비교해보세요";
+        }
+
         public void ApplyWeightPreset()
         {
             tuning.LoadJson(WeightPresetJson.Replace('\'', '"'));

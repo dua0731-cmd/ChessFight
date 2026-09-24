@@ -813,10 +813,27 @@ namespace ChessFight.RagdollLab
             float armR = arm * ArmBoost(handR, p);
             Slerp(BodyId.Chest, upper, r);
             Slerp(BodyId.Head, upper, r);
-            Slerp(BodyId.ThighL, lower, r);
-            Slerp(BodyId.FootL, lower, r);
-            Slerp(BodyId.ThighR, lower, r);
-            Slerp(BodyId.FootR, lower, r);
+            // A drive tracks up to 1/damperRatio rad/s and no further, because Slerp() ties the damper
+            // to the spring. At damperRatio 0.1 that is 1.59 Hz, so a fast stepping gait is filtered
+            // away. The legs get their own, lower ratio; the anchor and torso keep the stable one.
+            //
+            // But one drive is doing two jobs: swinging the leg AND holding the body up on it. Loose
+            // enough to swing fast is too loose to stand on, which is why a low ratio alone just makes
+            // the pawn collapse. So the ratio follows the gait: loose on the leg that is in the air,
+            // firm on the leg that is carrying weight. The lower foot is the one taking the load.
+            float legR = p.legDamperRatio > 0.0001f ? p.legDamperRatio : r;
+            float rL = legR, rR = legR;
+            if (legR < r)
+            {
+                float lift = (bodies[(int)BodyId.FootR].position.y - bodies[(int)BodyId.FootL].position.y) / 0.04f;
+                float stanceL = Mathf.Clamp01(0.5f + 0.5f * Mathf.Clamp(lift, -1f, 1f));
+                rL = Mathf.Lerp(legR, r, stanceL);
+                rR = Mathf.Lerp(legR, r, 1f - stanceL);
+            }
+            Slerp(BodyId.ThighL, lower, rL);
+            Slerp(BodyId.FootL, lower, rL);
+            Slerp(BodyId.ThighR, lower, rR);
+            Slerp(BodyId.FootR, lower, rR);
             Slerp(BodyId.ArmL, armL, r);
             Slerp(BodyId.HandL, armL, r);
             Slerp(BodyId.ArmR, armR, r);
