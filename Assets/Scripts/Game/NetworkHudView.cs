@@ -30,6 +30,7 @@ namespace ChessFight.Game
         public event Action<ulong> JoinParty, JoinMatch;
 
         PanelSettings ownedPanel;
+        bool pointerSeen;
         Label status, error, details, roster, rosterTitle, bots, partyId, matchId, hint;
         TextField code;
         Toggle capture;
@@ -84,6 +85,10 @@ namespace ChessFight.Game
             root.focusable = true;
             root.RegisterCallback<PointerDownEvent>(evt =>
             {
+                // One-shot proof that the panel receives pointer events at all. If a
+                // button never responds and this never logs, the runtime input
+                // backend is the problem, not the layout or the enabled states.
+                if (!pointerSeen) { pointerSeen = true; Debug.Log("[ChessFight] HUD 포인터 입력 확인됨."); }
                 // Clicking anywhere but the number field hands focus back so WASD resumes.
                 if (code == null) return;
                 var target = evt.target as VisualElement;

@@ -60,6 +60,37 @@
 
 Input System 가설이 무효가 되면서 남은 후보는 **패널 높이**와 **Steam 미실행** 둘이다. 실행 후 HUD의 `Steam:` 줄과 `Input:` 줄을 먼저 본다.
 
+### UI 클릭 문제 — 원인 확정 (2026-09-24)
+
+**원인은 `activeInputHandler`였다.** 레이아웃이 아니었다.
+
+| | 값 | 클릭 |
+|---|---|---|
+| `87805f0` ~ 구조 개편 전 | `0` (Input Manager Old) | **됨** |
+| `3abe230` 이후 | `2` (Both) | **안 됨** |
+
+`3abe230`에서 Input System을 쓰려고 `0 → 2`로 바꿨고, 정확히 그 시점부터 클릭이 멈췄다. 그 뒤 HUD 레이아웃을 세 번 바꿨지만(원래 패널 → ScrollView → 전면 레이아웃) **한 번도 눌리지 않았다.** 마크업이 아니라 프로젝트 설정이라는 증거다.
+
+이유: **이 프로젝트에는 uGUI(`com.unity.ugui`)가 없다.** 그래서 UI Toolkit 런타임 패널은 `EventSystem` 경로를 쓸 수 없고 자체 `DefaultEventSystem`에 의존하는데, Input System 백엔드가 켜지면 이 경로가 포인터·키보드 이벤트를 전달하지 못한다. 클릭뿐 아니라 **방 번호 입력도 불가능**해진다.
+
+**조치: `activeInputHandler`를 `0`으로 되돌렸다.** 검증된 구성으로 복귀한 것이다.
+
+| 항목 | 현재 |
+|---|---|
+| UI 클릭·타이핑 | 레거시 Input → 동작 |
+| 캐릭터 이동 | `LegacyMoveInputSource` |
+| Input System 패키지 | 설치·고정 유지 (1.20.0) |
+| `ChessFightControls.inputactions` | 유지 |
+| `InputSystemMoveSource` | 컴파일됨. `ENABLE_INPUT_SYSTEM`이 꺼져 있어 스스로 레거시에 넘긴다 |
+
+**Input System을 다시 켜려면 순서가 있다.** 설정만 바꾸면 클릭이 또 죽는다.
+
+1. `com.unity.ugui` 설치
+2. 씬에 `EventSystem` + `InputSystemUIInputModule` 추가
+3. 그 다음에 Active Input Handling을 `Both`로 변경
+
+**진단 장치:** HUD 패널이 포인터 이벤트를 받으면 Console에 `[ChessFight] HUD 포인터 입력 확인됨.`이 한 번 찍힌다. 버튼이 안 눌리는데 이 로그도 없으면 입력 백엔드 문제이고, 로그는 찍히는데 버튼만 안 되면 picking이나 활성 상태 문제다.
+
 ### UI 전면 개편 (2026-09-24)
 
 HUD가 한 덩어리 패널에서 **화면 전체를 쓰는 폴가이즈식 레이아웃**으로 바뀌었다. 문구는 모두 한국어다. 좌측에 상태/도구/명단, 우측 상단에 방 번호, **우측 하단에 큰 액션 버튼**이 있다.

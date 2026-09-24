@@ -58,6 +58,10 @@
 
 Input System 코드는 **자기 asmdef(`ChessFight.Game.Input`)** 에 가둔다. `versionDefines`가 `com.unity.inputsystem`의 존재를 `CHESSFIGHT_INPUTSYSTEM`으로 바꾸고, 같은 이름의 `defineConstraints`가 패키지가 없을 때 **어셈블리를 통째로 컴파일 대상에서 제외**한다. Steamworks가 `CHESSFIGHT_STEAM`으로 쓰는 것과 같은, 이 저장소에서 이미 검증된 패턴이다. 이 클래스가 `MoveInputSources.Register`로 자기 자신을 등록하므로 `GameBootstrap`은 Input System을 전혀 참조하지 않는다. 패키지가 없으면 `LegacyMoveInputSource`가 쓰인다.
 
+> **경고 — Active Input Handling을 함부로 Both로 바꾸지 않는다.**
+> 이 프로젝트에는 uGUI(`com.unity.ugui`)가 없다. UI Toolkit 런타임 패널은 `EventSystem` 없이 자체 `DefaultEventSystem`에 의존하는데, Input System 백엔드를 켜면 이 경로가 포인터·키보드 이벤트를 전달하지 못한다. **HUD 클릭과 방 번호 입력이 통째로 죽는다.** 실제로 그렇게 여러 라운드를 날렸다.
+> 되살리는 순서: ① `com.unity.ugui` 설치 → ② `EventSystem` + `InputSystemUIInputModule` 추가 → ③ 그 다음에 `Both`로 변경. 순서를 바꾸면 클릭이 죽는다.
+
 **`ENABLE_INPUT_SYSTEM`을 "패키지가 설치됨"으로 읽으면 안 된다.** 그 define은 Active Input Handling **설정**을 따라가므로, 패키지를 한 번도 설치하지 않은 PC에서도 정의된다. 이걸 컴파일 게이트로 썼다가 Safe Mode에 빠졌다. 역할은 이렇게 나눈다.
 
 | define | 뜻 | 쓰임 |
@@ -118,7 +122,7 @@ Input System 코드는 **자기 asmdef(`ChessFight.Game.Input`)** 에 가둔다.
 | 패키지 ID | `com.rlabrecque.steamworks.net` |
 | 고정된 패키지 커밋 | `c21a8f0e31c56ae8707130967faf491f7dd7c0d8` |
 | 개발용 Steam App ID | `480`, 루트 `steam_appid.txt` |
-| 입력 | Input System (`com.unity.inputsystem`, 버전 미고정) + Legacy 대체. Active Input Handling = Both |
+| 입력 | **Active Input Handling = `Input Manager (Old)`**. Input System 1.20.0은 설치·고정되어 있으나 백엔드는 꺼져 있다 (아래 경고 참고) |
 | 테스트 UI | UI Toolkit / UXML / USS / 런타임 PanelSettings |
 | 테스트 공간 렌더링 | 실행 중 Built-in 렌더링으로 임시 전환 |
 

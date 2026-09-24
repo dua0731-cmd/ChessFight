@@ -37,12 +37,14 @@ namespace ChessFight.Game
         }
     }
 
-    // Fallback only. Kept so the prototype boots before com.unity.inputsystem is
-    // installed; the Input System path is the supported one.
+    // Currently the active path, not just a fallback: Active Input Handling is
+    // "Input Manager (Old)" because enabling the Input System backend leaves
+    // UI Toolkit's runtime panel without pointer or keyboard events in a project
+    // that has no uGUI. See InputSystemMoveSource for the way back.
     public sealed class LegacyMoveInputSource : IMoveInputSource
     {
         bool unavailable;
-        public string DisplayName => "레거시 입력 (대체)";
+        public string DisplayName => "레거시 입력 (Input Manager)";
         public void Enable() { }
         public void Disable() { }
         public MoveIntent Read()

@@ -28,10 +28,15 @@ namespace ChessFight.Game
         static IMoveInputSource Create()
         {
 #if !ENABLE_INPUT_SYSTEM
-            // The package is here, but Active Input Handling excludes its backend,
-            // so every action would silently read zero. Hand back to legacy.
-            Debug.LogWarning("[ChessFight] The Input System package is installed but its backend is off. " +
-                             "Set Active Input Handling to Both in Project Settings > Player. Using legacy input.");
+            // Deliberate for now. Active Input Handling is "Input Manager (Old)"
+            // because this project has no uGUI, and with the Input System backend
+            // enabled UI Toolkit's runtime panel stops receiving pointer and
+            // keyboard events entirely - no clicking, no typing a lobby number.
+            // Re-enabling it means adding com.unity.ugui plus an EventSystem with
+            // InputSystemUIInputModule, then switching the setting to Both.
+            // Until then every action here would read zero, so hand back to legacy.
+            Debug.Log("[ChessFight] Input System 백엔드가 꺼져 있어 레거시 입력을 사용합니다. " +
+                      "(Active Input Handling = Input Manager (Old))");
             return null;
 #else
             var asset = Resources.Load<InputActionAsset>(AssetPath);

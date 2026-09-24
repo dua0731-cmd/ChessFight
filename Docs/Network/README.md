@@ -18,7 +18,7 @@
 
 런타임에 코드로 만들던 것을 **자산**으로 바꿨다. 보이는 화면은 그대로다.
 
-- **입력이 Input System으로 바뀌었다.** `com.unity.inputsystem 1.20.0`이 manifest/lock에 고정되어 있으므로 Unity가 열릴 때 자동으로 받는다. 따로 할 일은 없다. Steamworks는 `ChessFight > Setup > Install dependencies`가 설치한다(에디터 시작 시 자동 1회 시도). **설치 결과로 manifest/lock이 바뀌면 Discard하지 말고 커밋한다.** Discard하면 다음 실행 때 다시 설치되어 무한 반복된다. 지금 어느 입력 백엔드를 쓰는지는 HUD의 `Input:` 줄이나 `ChessFight > Setup > Report input backend`로 확인한다.
+- **입력은 현재 레거시 Input Manager를 쓴다.** Input System 1.20.0이 manifest에 고정되어 있어 패키지는 받지만, Active Input Handling은 `Input Manager (Old)`다. **이 값을 `Both`로 바꾸면 HUD 클릭과 번호 입력이 전부 죽는다** — 이 프로젝트에는 uGUI가 없어 UI Toolkit이 `EventSystem` 경로를 쓸 수 없기 때문이다. 켜려면 `com.unity.ugui` 설치 → `EventSystem` + `InputSystemUIInputModule` 추가 → 그 다음에 설정 변경 순서를 지켜야 한다. Steamworks는 `ChessFight > Setup > Install dependencies`가 설치한다. **설치 결과로 manifest/lock이 바뀌면 Discard하지 말고 커밋한다.**
 - `ProjectSettings`의 Active Input Handling을 **Both**로 바꿨다. 에디터가 켜진 채 Pull 했다면 재시작을 요구할 수 있다.
 - 씬이 `ChessFightLab`으로 바뀌었다. 기존 `SampleScene`에서도 계속 동작한다.
 - 시작 씬은 `Assets/Scenes/ChessFightLab.unity` **하나뿐이다.** 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. **체스판·캡슐·HUD는 프리팹/UXML 자산이며 Play 중에 생성(Instantiate)된다.** 누가 경기에 들어올지는 실행 전에 알 수 없으므로 캐릭터 생성 자체는 런타임이 맞다.
