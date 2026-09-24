@@ -15,7 +15,7 @@
 - 파티 로비는 최대 6명, 경기 로비는 최대 12명이다. 한 파티를 양 팀으로 나누지 않는다.
 - 공개 자동 매칭은 12명이 모두 입장해야 시작한다. 비공개 테스트는 1명만 있어도 생성·이동이 가능하며, 2명 이상 입장 완료 시 시작 버튼으로 입장을 마감할 수 있다.
 - `StartGame`은 현재 로비를 `playing` 상태로 바꾸고 추가 입장을 잠근다. 킹러시 시작, 씬 전환, 카운트다운, 승패 처리는 없다.
-- `ChessFight > Network > Open test scene`으로 `ChessFightLab`을 열고 Play한다. 체스판·캡슐·HUD는 **프리팹/UXML 자산이며 Play 중에 Instantiate된다.** 편집 모드에 카메라와 `ChessFight Game Root`만 보이는 것은 정상이다.
+- `ChessFight > Scenes > Lobby`(또는 Intro)를 열고 Play한다. 체스판·캡슐·HUD는 **프리팹/UXML 자산이며 Play 중에 Instantiate된다.** 편집 모드에 카메라와 `ChessFight Game Root`만 보이는 것은 정상이다.
 - 2026-09-21 실제 Unity에서 패키지 설치, 컴파일, Steam 파티 생성, 비공개 방 입장, 파란 캡슐 생성을 확인했고 Windows 개발 빌드가 성공했다.
 - 2026-09-22 독립 실행 빌드의 체스판·UI 표시, Steam 미실행 시 초기화 오류, 로그인 후 재시작 시 1인 파티·비공개 경기·BLUE 캡슐 생성을 확인했다.
 - 2026-09-22 **두 PC·두 Steam 계정의 파티 입장과, 각자 1인 파티에서 Quick match를 눌러 서로 같은 경기 방에 수렴하는 것까지 확인했다(사용자 보고).** 그 상태에서 양방향 이동·점프가 보였는지는 보고되지 않았다.
@@ -51,7 +51,7 @@
 | `new Material(...)` 런타임 생성 | `TeamBlue/TeamOrange/BoardDark/BoardLight.mat` |
 | `Input.GetKey` (Legacy) | `ChessFightControls.inputactions` + Input System |
 | 한 클래스가 UI·세션·표시·입력 전부 담당 | `GameBootstrap` / `PawnSpawner` / `CameraRig` / `NetworkHudView` / `IMoveInputSource` |
-| 빈 `SampleScene` | `Assets/Scenes/ChessFightLab.unity` (유일한 시작 씬) |
+| 빈 `SampleScene` | `Assets/Scenes/ChessFightLab.unity` (2026-09-24 `Lobby.unity`로 이름 변경) |
 | `Assets/ChessFight/...` 중첩 폴더 | `Assets/{Scripts,Prefabs,Materials,Resources,Scenes}` |
 
 어셈블리 분리가 핵심이다. **프리팹이 참조하는 스크립트(`ChessFight.Game`)는 Steamworks 없이도 컴파일된다.** 패키지 설치 전에 프로젝트를 열어도 프리팹에 missing script가 뜨지 않는다. Steam을 아는 코드는 `ChessFight.Game.Steam`(`CHESSFIGHT_STEAM` 게이트)에만 있다.
@@ -112,6 +112,72 @@ Input System 코드는 **자기 asmdef(`ChessFight.Game.Input`)** 에 가둔다.
 2. Input System 설치와 실제 입력 동작.
 3. 봇이 화면에 보이고 움직이는지, 12인 봇 방의 호스트 CPU·대역폭.
 
+## 2.6. 2026-09-24 변경 — 씬 분리와 팀 개발 환경
+
+**팀 전체용 설명은 `Docs/TEAM_GUIDE_KO.md`에 있다.** 여기는 구조 변경만 적는다.
+
+### 씬 흐름
+
+```text
+Intro ─아무 키─▶ Lobby ─session.Started─▶ KingRush ─Match==0─▶ Lobby
+RagdollTest: 개발 전용, 흐름 밖
+```
+
+Build Profiles 순서: Intro(0) · Lobby(1) · KingRush(2) · RagdollTest(비활성). `ChessFightLab.unity`는 `Lobby.unity`로 이름만 바뀌었다(GUID 동일).
+
+### Steam 세션 소유자가 씬에서 상주 객체로
+
+이전에는 `GameBootstrap`(로비 씬)이 `SteamSession`을 만들고 `OnDestroy`에서 끝냈다. 씬을 바꾸면 Steam이 종료되고 파티·경기가 끊기는 구조였다.
+
+이제 **`NetworkRuntime`**(`Scripts/Bootstrap/`)이 `DontDestroyOnLoad`로 한 번만 만들어져 `SteamSession`·`SteamMotion`·입력 소스를 소유한다. 매 프레임 `Session.Tick()`과 `Motion.Update()`를 돌리고, 씬 전환도 맡는다. **Steam 초기화·종료 소유자는 여전히 하나다.**
+
+| 씬 | 붙는 컨트롤러 | 역할 |
+|---|---|---|
+| Intro | `IntroController` | 타이틀, 아무 키 → Lobby |
+| Lobby | `LobbyBootstrap` (구 `GameBootstrap`) | 파티·매칭 HUD, 로비 캡슐 표시 |
+| KingRush (경기로 진입) | `KingRushMatchView` | 네트워크 캡슐 표시, 읽기 전용 HUD, Esc로 나가기 |
+
+컨트롤러는 **씬에 저장되지 않는다.** `NetworkRuntime`이 `sceneLoaded` 때 붙인다. `RuntimeInitializeOnLoadMethod`는 플레이 세션에 한 번만 불려서 씬을 다시 로드할 때는 동작하지 않기 때문이다. 씬 파일은 Steam 어셈블리를 참조하지 않는다는 원칙도 그대로다.
+
+`NetworkRuntime`은 첫 씬이 Intro나 Lobby일 때만 만들어진다. **KingRush·RagdollTest를 직접 열면 Steam 없이 오프라인 플레이테스트**가 된다.
+
+로비 HUD가 입력칸에 타이핑 중일 때 캐릭터가 움직이지 않게 하던 판정은 `NetworkRuntime.MovementGate`(씬이 등록하는 `Func<bool>`)로 옮겼다.
+
+### 렌더 파이프라인 우회를 전역으로
+
+URP 에셋은 있고 URP 패키지는 없는 상태의 Built-in 우회를 로비 부트스트랩에서 `RenderPipelineOverride`(`Scripts/Game/`, `BeforeSceneLoad`)로 옮겼다. 로비가 아닌 씬을 직접 열어도 렌더링된다. `GameSceneConfig.forceBuiltInPipeline`은 삭제(씬 YAML에 남은 값은 무시된다).
+
+### 새 어셈블리 `ChessFight.Gameplay` (`Scripts/Gameplay/`)
+
+Steam을 모르는 게임 로직. 참조: `ChessFight.Game`만.
+
+| 파일 | 내용 |
+|---|---|
+| `Characters/ICharacterDriver.cs` | `CharacterCommand`(Move 월드 좌표·Jump·Shove·Grab)와 `ICharacterDriver`(SetCommand·FollowTarget·Teleport). **래그돌 랩의 `PawnInput`과 같은 모양**이라 어댑터가 필드 복사로 끝난다 |
+| `Obstacles/Obstacle.cs` | kinematic 장애물 기반. **포즈는 `ObstacleClock` 시간의 순수 함수**. `VelocityAt(point)` 제공 |
+| `Obstacles/ObstacleClock.cs` | 오프라인: 씬 시간. 경기: `NetworkRuntime.SharedClock`(Steam 서버 시계 + 로컬 소수점) |
+| `Obstacles/Spinner·Oscillator·Pendulum` | 예시 3종 (프리팹은 `Prefabs/Obstacles/`) |
+| `Course/SpawnPoint·Checkpoint·FinishZone` | 코스 표식. 체크포인트·골인은 정적 이벤트로 알림 |
+| `PhysicsProfile.cs` | 씬 동안만 물리 120Hz / 솔버 24회, 나갈 때 복구 |
+| `Playtest/PlaytestSpawner·PlaytestCharacter` | 오프라인 플레이테스트. 캐릭터는 CharacterController **임시품** |
+
+`Teleport(position)`의 position은 **발이 닿을 바닥 지점**이다. 캐릭터마다 키가 달라서(래그돌은 바닥 + `standHeight`) 중심 좌표로 정하면 어긋난다. 스폰 지점도 바닥(y=0)에 둔다.
+
+### 래그돌 브랜치(`JY-ragdoll`)와의 관계
+
+`2d450aa`까지 읽었다. `RagdollPawn`은 이미 `SetInput(PawnInput)`으로만 움직여서 멀티 연동 경계가 갖춰져 있다. 이 환경이 그 모양에 맞췄다. 병합은 충돌 없음(래그돌 파일은 전부 새 파일). 연결은 어댑터 하나(`RagdollDriver`, 가이드 5.2)면 된다.
+
+**물리 주기 함정:** 프로젝트 기본은 50Hz / 6회다. 래그돌 랩은 60Hz 이하에서 골반이 8cm 주저앉는다고 측정했고 120Hz / 24회를 쓴다. 이 값은 랩 코드가 런타임에 설정하므로 랩 밖 씬에서는 적용되지 않는다. 그래서 KingRush·RagdollTest에 `PhysicsProfile`을 두었다.
+
+**장애물 동기화 함정:** 랩의 `SpinningBar`는 `angle += 속도 × dt` 누적이라 멀티에서 PC마다 각도가 달라진다. 맵에서는 `Spinner`(시간의 함수)를 쓴다.
+
+### 이 변경분에서 검증되지 않은 것
+
+1. **Unity에서 한 번도 열지 않았다.** 새 씬 3개·프리팹 4개·재질 5개는 생성기로 쓴 YAML이다. 파일 내부 참조와 GUID는 스크립트로 검증했다.
+2. 씬 전환(로비 → 킹러시 → 로비) 동안 세션 유지.
+3. `SharedClock`의 PC 간 실제 오차.
+4. `PlaytestCharacter`의 조작감(임시품), `PhysicsProfile` 적용.
+
 ## 3. 환경과 작업 폴더
 
 | 항목 | 기준 |
@@ -147,18 +213,21 @@ GitHub Desktop에서 두 복사본의 표시 이름이 모두 `ChessFight`일 �
 
 ```text
 Assets/
-  Materials/      TeamBlue TeamOrange BoardDark BoardLight .mat + NetworkColor.shader
-  Prefabs/        PawnAvatar.prefab  Arena.prefab
-  Resources/      NetworkHud.uxml/.uss  NetworkTheme.tss  ChessFightControls.inputactions
-  Scenes/         ChessFightLab.unity (유일한 시작 씬)  SampleScene.unity (템플릿, 비활성)
+  Art/            원본 모델·텍스처 (README만 있음)
+  Materials/      Team·Board·Course·Obstacle·Finish·Prop .mat + NetworkColor.shader
+  Prefabs/        PawnAvatar · Arena (로비)
+    Characters/   PlaytestCharacter (임시 캐릭터)
+    Obstacles/    Spinner · SlidingWall · Pendulum
+  Resources/      NetworkHud · IntroHud · MatchHud .uxml, NetworkHud.uss, NetworkTheme.tss, ChessFightControls.inputactions
+  Scenes/         Intro · Lobby · KingRush · RagdollTest (+ SampleScene 템플릿, 비활성)
   Scripts/        폴더 하나 = 어셈블리 하나
-    Core/         ChessFight.Network.Core   규칙·패킷·봇 (Unity 무관 순수 C#)
+    Core/         ChessFight.Network.Core   규칙·패킷·봇·FriendInfo (Unity 무관 순수 C#)
     Network/      ChessFight.Network.Steam  Steam 로비·파티·이동 전송
-    Game/         ChessFight.Game           표시·입력·HUD (Steam 무관)
-    Bootstrap/    ChessFight.Game.Steam     조립 지점
-    Input/        Assembly-CSharp           Input System (ENABLE_INPUT_SYSTEM)
-    Editor/       Assembly-CSharp-Editor    설치·씬·빌드 메뉴
-  Settings/       Unity 템플릿 URP 자산 (현재 미사용)
+    Game/         ChessFight.Game           HUD·카메라·입력·씬 이름·패널 생성·파이프라인 우회
+    Gameplay/     ChessFight.Gameplay       캐릭터 계약·장애물·코스·물리 프로필·플레이테스트
+    Bootstrap/    ChessFight.Game.Steam     NetworkRuntime · Intro/Lobby/KingRush 컨트롤러
+    Input/        ChessFight.Game.Input     Input System (CHESSFIGHT_INPUTSYSTEM)
+    Editor/       Assembly-CSharp-Editor    설치·씬 메뉴·빌드·입력 설정 가드
 ```
 
 ```text
@@ -195,7 +264,7 @@ UPM 설치 도구는 Steam 조건부 어셈블리 밖인 `Assets/ChessFight/Edit
 ## 5. 실행부터 종료까지
 
 1. Unity가 패키지를 복원하고 스크립트를 컴파일한다.
-2. `GameBootstrap.Boot()`가 `AfterSceneLoad` 시점에 씬 이름을 검사한다. `ChessFightLab` / `NetworkSandbox` / `SampleScene`일 때만 동작한다. 씬에 `GameSceneConfig`가 있으면 그 오브젝트에, 없으면 새 오브젝트에 붙는다.
+2. `NetworkRuntime.Boot()`가 `AfterSceneLoad` 시점에 첫 씬 이름을 검사한다. Intro나 Lobby일 때만 `NetworkRuntime`을 만든다(`DontDestroyOnLoad`). 그 뒤 씬이 로드될 때마다 씬에 맞는 컨트롤러(Intro/Lobby/KingRush)를 `GameSceneConfig` 오브젝트에 붙인다. 2.6절 참고.
 3. `Awake()`에서 백그라운드 실행을 켜고 렌더 파이프라인 참조를 보관한 뒤 임시로 Built-in을 사용한다. `Arena.prefab`을 Instantiate하고, 카메라·스포너·입력 소스·HUD를 만든다. 자산이 비어 있으면 `Resources/ChessFight/`에서 대체본을 읽는다.
 4. `SteamSession.Initialize()`가 Packsize/DLL 검사와 `SteamAPI.Init()`을 실행한다. 초기화 성공 후 자신의 Steam ID를 얻고 릴레이 접근 초기화를 요청한다.
 5. 로비 채팅·초대 콜백을 등록한다. 실행 인자 `+connect_lobby <ID>`가 있으면 그 파티로 입장하고, 없으면 자신의 비공개 1인 파티를 만든다.
@@ -471,7 +540,7 @@ Busy   [경기 시작] [취소]        ← 세션이 실제로 바쁠 때 강제
 1. `Network`를 Pull하고 `git log -1`, 현재 폴더, `ProjectVersion.txt`를 확인한다.
 2. Unity `6000.3.11f1`에서 열어 UPM 복원과 컴파일을 기다린다.
 3. Steam 클라이언트를 먼저 실행·로그인한다.
-4. `ChessFight > Network > Open test scene`으로 `ChessFightLab`을 연다. Input System이 없으면 `ChessFight > Setup > Install dependencies`를 먼저 실행한다.
+4. `ChessFight > Scenes > Lobby`를 연다.
 5. Play를 누르고 `Party ready`와 0이 아닌 Party ID를 확인한다.
 6. 좌측 `비공개 방 만들기`를 누르면 `대기실 1/12명`과 자기 캡슐이 나타난다. 입력칸 밖을 클릭하고 WASD/Space로 조작한다. 우측 상단 `입력:` 줄이 어느 백엔드를 쓰는지 알려준다.
 
@@ -483,7 +552,7 @@ Busy   [경기 시작] [취소]        ← 세션이 실제로 바쁠 때 강제
 
 ### Windows 빌드
 
-`ChessFight > Network > Build Windows development test`는 `ChessFightLab`만 포함해 Windows x64 Development 빌드를 생성하고 `steam_appid.txt`를 복사한다.
+`ChessFight > Network > Build Windows development test`는 Intro·Lobby·KingRush를 포함해 Windows x64 Development 빌드를 생성하고 `steam_appid.txt`를 복사한다.
 
 ```text
 <프로젝트>/Builds/NetworkTest/ChessFight.exe
@@ -558,7 +627,7 @@ Core 검사 범위: 팀 정원/파티 유지, 4+4+4 거절, 3+3+2+2+1+1 수용, 
 6. **호스트 편향과 신뢰:** 호스트가 시뮬레이션·로스터를 쓴다. 악성 호스트 방어/서버 검증은 없다. 호스트가 나가면 경기 종료다.
 7. **권한 검증 범위:** Steam 신원과 현재 경기 명단을 확인하지만 악의적인 파티 명단 선언까지 방어하지 않는다. 모의 테스트 통과를 보안 감사 완료로 표현하지 않는다.
 8. **UI 완성도:** 긴 12인 명단/다양한 해상도, 한글 이름, 입력칸 포커스, 에러 문구 유지, Start 버튼 활성 조건을 실제로 확인해야 한다. 현재 힌트의 `\n`이 화면에 문자로 표시되는 것도 관찰했다.
-9. **URP 잔여 경고:** 템플릿 `SampleScene`에는 누락 스크립트 경고가 남는다. 새 `ChessFightLab` 씬에는 URP 참조가 없으므로 이 경고가 나오지 않아야 한다(미확인). 정식 렌더 파이프라인 통합은 별도 작업이다.
+9. **URP 잔여 경고:** 템플릿 `SampleScene`에는 누락 스크립트 경고가 남는다. `SampleScene`의 URP 컴포넌트는 제거했고, 새 씬들에는 URP 참조가 없다. 정식 렌더 파이프라인 통합은 별도 작업이다.
 10. **세션 종료 정리 — 검토 필요:** 송신 대상은 connected 집합에 기록되지만 수신 수락만 한 피어의 세션 정리 범위도 점검할 가치가 있다. 현재 테스트로 장시간 연결 자원 누수가 없음을 입증하지 않았다.
 11. **프로토타입 범위:** private Start 이후에도 같은 평면에서 움직인다. '게임 시작'이 실제 게임 규칙을 실행하지 않는다. 공개 자동 매칭은 인원이 없으면 계속 기다린다.
 12. **봇의 한계:** 봇은 호스트 한 대가 전부 시뮬레이션한다. 호스트 성능이 곧 봇 품질이고, 봇이 늘수록 호스트 CPU와 송신량이 는다. 봇은 로비 멤버가 아니라 예약 항목이므로 Steam 쪽 정원(12)과 우리 예약 정원(12)이 서로 다른 값을 가리킬 수 있다. 공개 방을 봇으로 채우면 실제 플레이어가 못 들어온다.
@@ -567,9 +636,9 @@ Core 검사 범위: 팀 정원/파티 유지, 4+4+4 거절, 3+3+2+2+1+1 수용, 
 ## 18. 후속 AI가 작업을 시작하는 순서
 
 1. 저장소를 새로 구현하지 말고 현재 `Network`의 HEAD와 변경 파일을 확인한다. 사용자 작업이 있으면 보존한다.
-2. 이 문서 → SteamSession → TeamReservations → BotIdentity → SteamMotion → MotionProtocol → GameBootstrap 순서로 읽는다.
+2. `Docs/TEAM_GUIDE_KO.md` → 이 문서 → NetworkRuntime → SteamSession → TeamReservations → BotIdentity → SteamMotion → MotionProtocol → LobbyBootstrap 순서로 읽는다.
 3. 실제 열어둔 Unity 프로젝트 경로와 checkout 경로가 같은지 확인한다.
-4. **먼저 에디터에서 새 구조가 열리는지 본다.** `ChessFightLab`을 열고 프리팹·재질·UI가 깨지지 않는지, Play 화면이 예전과 같은지 확인한다. 여기가 막히면 나머지 검증은 의미가 없다.
+4. **먼저 에디터에서 새 구조가 열리는지 본다.** `VALIDATION.md` 최상단의 2026-09-24 확인 목록을 순서대로 본다. 여기가 막히면 나머지 검증은 의미가 없다.
 5. 봇으로 1인 12인 방을 만들어 표시와 부하를 본다. 사람 없이 할 수 있는 검증이므로 가장 싸다.
 6. 두 계정 양방향 이동을 검증하고 결과를 VALIDATION에 날짜·커밋과 함께 남긴다.
 7. 그 뒤 강제 종료·패킷 손실·동시 검색을 검증한다.
@@ -595,7 +664,7 @@ Core 검사 범위: 팀 정원/파티 유지, 4+4+4 거절, 3+3+2+2+1+1 수용, 
 새로 만들지 말고 Docs/AI/NETWORK_HANDOFF_KO.md와 Docs/Network/VALIDATION.md를 먼저 읽으세요.
 현재 git 상태와 Unity 프로젝트 경로를 확인하고 사용자 미커밋 변경을 보존하세요.
 2026-09-22 구조 개편(프리팹/씬/Input System)과 AI 봇은 아직 Unity에서 실행되지 않았습니다.
-첫 목표는 ChessFightLab 씬이 정상적으로 열리고 Play 화면이 이전과 같은지 확인하는 것입니다.
+첫 목표는 VALIDATION.md 최상단의 2026-09-24 확인 목록(씬 전환·오프라인 플레이테스트)을 확인하는 것입니다.
 그 다음 봇으로 1인 12인 방을 만들어 표시와 부하를 보고, 이어서 두 계정 양방향 이동을 검증하세요.
 실제 검증 결과와 코드 검토 추정을 구분하고, 구현 변경이 필요하면 기존 책임 분리를 유지하세요.
 ```

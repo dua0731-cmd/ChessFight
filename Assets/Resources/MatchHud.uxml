@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Read-only during a match: Esc leaves, so nothing needs clicking. -->
+    <ui:VisualElement class="screen" picking-mode="Ignore">
+        <ui:VisualElement class="card match-card" picking-mode="Ignore">
+            <ui:Label text="킹 러시" class="brand" />
+            <ui:Label name="match-status" class="status" />
+            <ui:Label text="명단" class="card-title" />
+            <ui:Label name="match-roster" class="roster" />
+            <ui:Label text="Esc 로비로 나가기 · WASD 이동 · Space 점프" class="hint hint-left" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

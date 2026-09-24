@@ -27,9 +27,6 @@ namespace ChessFight.Game
         [SerializeField] Vector2Int hudReferenceResolution = new Vector2Int(1280, 720);
 
         [Header("Rendering")]
-        [Tooltip("The Network branch still carries URP references without a URP package. " +
-                 "Leave on until the render pipeline is properly migrated.")]
-        [SerializeField] bool forceBuiltInPipeline = true;
         [SerializeField] Color ambientLight = new Color(.55f, .58f, .65f);
 
         public GameObject ArenaPrefab => arenaPrefab;
@@ -40,7 +37,6 @@ namespace ChessFight.Game
         public ThemeStyleSheet HudTheme => hudTheme != null ? hudTheme : Resources.Load<ThemeStyleSheet>("NetworkTheme");
         public PanelSettings HudPanelSettings => hudPanelSettings;
         public Vector2Int HudReferenceResolution => hudReferenceResolution;
-        public bool ForceBuiltInPipeline => forceBuiltInPipeline;
         public Color AmbientLight => ambientLight;
     }
 }

@@ -16,7 +16,7 @@ namespace ChessFight.Game
     // Active Input Handling setting, not the package, so it is set even on a
     // machine that has never installed the Input System.
     //
-    // It registers itself so GameBootstrap never has to know the Input System exists.
+    // It registers itself so nothing else ever has to know the Input System exists.
     public sealed class InputSystemMoveSource : IMoveInputSource
     {
         const string AssetPath = "ChessFightControls";
@@ -58,16 +58,20 @@ namespace ChessFight.Game
                 Object.Destroy(clone);
                 return null;
             }
-            return new InputSystemMoveSource(clone, map, move, jump);
+            // Optional so an older actions asset without them still loads.
+            var shove = map.FindAction("Shove", false);
+            var grab = map.FindAction("Grab", false);
+            return new InputSystemMoveSource(clone, map, move, jump, shove, grab);
 #endif
         }
 
         InputActionAsset asset;
         InputActionMap map;
-        InputAction move, jump;
+        InputAction move, jump, shove, grab;
 
-        InputSystemMoveSource(InputActionAsset asset, InputActionMap map, InputAction move, InputAction jump)
-        { this.asset = asset; this.map = map; this.move = move; this.jump = jump; }
+        InputSystemMoveSource(InputActionAsset asset, InputActionMap map, InputAction move, InputAction jump,
+                              InputAction shove, InputAction grab)
+        { this.asset = asset; this.map = map; this.move = move; this.jump = jump; this.shove = shove; this.grab = grab; }
 
         public string DisplayName => "Input System (ChessFightControls)";
         public void Enable() => map?.Enable();
@@ -76,7 +80,7 @@ namespace ChessFight.Game
         {
             map?.Disable();
             if (asset != null) Object.Destroy(asset);
-            asset = null; map = null; move = null; jump = null;
+            asset = null; map = null; move = null; jump = null; shove = null; grab = null;
         }
 
         public MoveIntent Read()
@@ -84,7 +88,11 @@ namespace ChessFight.Game
             if (move == null) return default;
             // triggered is the press edge for a button action, matching the
             // GetKeyDown semantics the network layer expects for Jump.
-            return new MoveIntent { Move = move.ReadValue<Vector2>(), Jump = jump.triggered };
+            return new MoveIntent
+            {
+                Move = move.ReadValue<Vector2>(), Jump = jump.triggered,
+                Shove = shove != null && shove.triggered, Grab = grab != null && grab.IsPressed()
+            };
         }
     }
 }

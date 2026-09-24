@@ -21,7 +21,12 @@ namespace ChessFight.Editor
     [InitializeOnLoad]
     public static class NetworkSetup
     {
-        public const string LabScene = "Assets/Scenes/ChessFightLab.unity";
+        const string IntroScene = "Assets/Scenes/Intro.unity";
+        const string LobbyScene = "Assets/Scenes/Lobby.unity";
+        const string KingRushScene = "Assets/Scenes/KingRush.unity";
+        const string RagdollTestScene = "Assets/Scenes/RagdollTest.unity";
+        // Everything a player can reach, in load order. RagdollTest is development only.
+        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, KingRushScene };
 
         const string Steamworks = "com.rlabrecque.steamworks.net";
         const string SteamworksUrl = "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c21a8f0e31c56ae8707130967faf491f7dd7c0d8";
@@ -107,11 +112,17 @@ namespace ChessFight.Editor
                                   "Packages/manifest.json and packages-lock.json.");
         }
 
-        [MenuItem("ChessFight/Network/Open test scene")]
-        public static void OpenScene()
+        // Play from Intro or Lobby to go online. KingRush and RagdollTest played on
+        // their own stay offline and spawn the local playtest character.
+        [MenuItem("ChessFight/Scenes/Intro (online flow)", priority = 0)] static void OpenIntro() => Open(IntroScene);
+        [MenuItem("ChessFight/Scenes/Lobby (online)", priority = 1)] static void OpenLobby() => Open(LobbyScene);
+        [MenuItem("ChessFight/Scenes/King Rush (offline playtest)", priority = 20)] static void OpenKingRush() => Open(KingRushScene);
+        [MenuItem("ChessFight/Scenes/Ragdoll Test (offline)", priority = 21)] static void OpenRagdollTest() => Open(RagdollTestScene);
+
+        static void Open(string scene)
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-            EditorSceneManager.OpenScene(LabScene);
+            EditorSceneManager.OpenScene(scene);
         }
 
         [MenuItem("ChessFight/Network/Build Windows development test")]
@@ -125,7 +136,7 @@ namespace ChessFight.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = new[] { LabScene },
+                scenes = ShippedScenes,
                 locationPathName = path,
                 target = BuildTarget.StandaloneWindows64,
                 options = BuildOptions.Development

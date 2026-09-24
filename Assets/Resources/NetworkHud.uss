@@ -73,3 +73,14 @@ Toggle:checked .unity-toggle__checkmark { background-color: rgb(86, 191, 226); }
 .dot-online { background-color: rgb(86, 170, 240); }
 .dot-away { background-color: rgb(232, 190, 92); }
 .friend-empty { font-size: 12px; color: rgb(150, 168, 190); -unity-text-align: middle-center; margin-top: 18px; }
+
+/* Title screen */
+.intro { flex-grow: 1; align-items: center; justify-content: center; background-color: rgb(9, 14, 24); }
+.intro-title { font-size: 64px; -unity-font-style: bold; color: rgb(232, 240, 252); letter-spacing: 8px; }
+.intro-sub { font-size: 16px; color: rgb(127, 217, 246); margin-top: 6px; }
+.intro-status { font-size: 13px; color: rgb(150, 168, 190); margin-top: 48px; white-space: normal; -unity-text-align: middle-center; }
+.intro-hint { font-size: 18px; color: rgb(232, 240, 252); margin-top: 14px; }
+
+/* Match HUD */
+.match-card { width: 300px; align-self: flex-start; }
+.hint-left { -unity-text-align: middle-left; margin-top: 10px; }

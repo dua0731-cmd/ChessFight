@@ -69,24 +69,8 @@ namespace ChessFight.Game
 
         public void Build(VisualTreeAsset layout, ThemeStyleSheet theme, PanelSettings settings, Vector2Int referenceResolution)
         {
-            if (layout == null) { Debug.LogError("[ChessFight] HUD 레이아웃을 찾지 못했습니다. GameSceneConfig에 지정하세요."); return; }
-            var document = gameObject.AddComponent<UIDocument>();
-            if (settings == null)
-            {
-                settings = ownedPanel = ScriptableObject.CreateInstance<PanelSettings>();
-                settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-                settings.referenceResolution = referenceResolution;
-                // A PanelSettings without a theme renders nothing at all, so say so
-                // loudly rather than leaving an invisible HUD to explain.
-                if (theme != null) settings.themeStyleSheet = theme;
-                else Debug.LogError("[ChessFight] Resources/NetworkTheme (.tss)를 불러오지 못했습니다. " +
-                                    "테마가 없으면 HUD가 아예 보이지 않습니다.");
-            }
-            document.panelSettings = settings;
-
-            root = document.rootVisualElement;
-            root.style.unityFont = ResolveFont();
-            layout.CloneTree(root);
+            root = RuntimePanels.Create(gameObject, layout, theme, settings, referenceResolution, out ownedPanel);
+            if (root == null) return;
 
             status = root.Q<Label>("status"); error = root.Q<Label>("error");
             details = root.Q<Label>("details"); roster = root.Q<Label>("roster");
@@ -281,22 +265,6 @@ namespace ChessFight.Game
                       $"패널: {(root.panel == null ? "없음" : "있음")} | root: {root.worldBound.size} | " +
                       $"screen: {(screen == null ? Vector2.zero : screen.worldBound.size)} | " +
                       $"버튼 {actions.Count}개 | 실제 포인터 이벤트: {(pointerSeen ? "수신됨" : "아직 없음 → 대체 클릭 사용")}");
-        }
-
-        // The built-in LegacyRuntime font carries no Hangul, so take a Korean
-        // capable OS font first and keep the built-in one as the fallback.
-        static Font ResolveFont()
-        {
-            string[] candidates = { "Malgun Gothic", "맑은 고딕", "NanumGothic", "Noto Sans KR",
-                                    "Gulim", "Dotum", "Arial Unicode MS" };
-            try
-            {
-                var os = Font.CreateDynamicFontFromOSFont(candidates, 16);
-                if (os != null) { Debug.Log("[ChessFight] HUD 폰트: " + os.name); return os; }
-            }
-            catch (Exception e) { Debug.LogWarning("[ChessFight] OS 폰트를 불러오지 못했습니다: " + e.Message); }
-            Debug.LogWarning("[ChessFight] 한글 폰트를 찾지 못해 기본 폰트를 씁니다. 한글이 깨질 수 있습니다.");
-            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
         bool TryReadCode(out ulong id) => ulong.TryParse(code != null ? code.value : "", out id) && id != 0;

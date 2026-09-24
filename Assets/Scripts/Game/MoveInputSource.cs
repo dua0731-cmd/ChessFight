@@ -9,6 +9,11 @@ namespace ChessFight.Game
     {
         public Vector2 Move;
         public bool Jump;   // Edge triggered: true on the frame the key went down.
+        // The ragdoll's other two verbs, bound to match the ragdoll lab: shove on
+        // the left mouse button (pad RB), grab while the right is held (pad LB).
+        // The lobby's flat motor ignores both.
+        public bool Shove;  // Edge triggered.
+        public bool Grab;   // Held.
     }
 
     public interface IMoveInputSource
@@ -56,7 +61,9 @@ namespace ChessFight.Game
                 {
                     Move = new Vector2((Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0),
                                        (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)),
-                    Jump = Input.GetKeyDown(KeyCode.Space)
+                    Jump = Input.GetKeyDown(KeyCode.Space),
+                    Shove = Input.GetMouseButtonDown(0),
+                    Grab = Input.GetMouseButton(1)
                 };
             }
             catch (InvalidOperationException)
@@ -68,6 +75,26 @@ namespace ChessFight.Game
                                "(ChessFight > Setup > Install dependencies) or set Active Input Handling to Both.");
                 return default;
             }
+        }
+    }
+}
+
+namespace ChessFight.Game
+{
+    // One-off keys outside the movement verbs (Esc to leave, R to respawn, any key
+    // on the title). Swallows the exception thrown when the legacy manager is off,
+    // so a stray key check can never break a scene.
+    public static class LegacyKeys
+    {
+        public static bool Down(KeyCode key)
+        {
+            try { return Input.GetKeyDown(key); }
+            catch (InvalidOperationException) { return false; }
+        }
+        public static bool AnyDown()
+        {
+            try { return Input.anyKeyDown; }
+            catch (InvalidOperationException) { return false; }
         }
     }
 }

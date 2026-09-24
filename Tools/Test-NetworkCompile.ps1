@@ -31,13 +31,17 @@ $game = Get-ChildItem "$projectRoot/Assets/Scripts/Game" -Filter '*.cs' | ForEac
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.Game.dll") + @($game)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Game (view/input/HUD) compilation failed.' }
+$gameplay = Get-ChildItem "$projectRoot/Assets/Scripts/Gameplay" -Recurse -Filter '*.cs' | ForEach-Object FullName
+$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/ChessFight.Game.dll", "-out:$output/ChessFight.Gameplay.dll") + @($gameplay)
+& $mono $compiler @compileArgs
+if ($LASTEXITCODE -ne 0) { throw 'Gameplay (characters/obstacles/course/playtest) compilation failed.' }
 $bootstrap = Get-ChildItem "$projectRoot/Assets/Scripts/Bootstrap" -Filter '*.cs' | ForEach-Object FullName
-$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.Network.Steam.dll", "-r:$output/ChessFight.Game.dll", "-out:$output/ChessFight.Game.Steam.dll") + @($bootstrap)
+$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.Network.Steam.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-out:$output/ChessFight.Game.Steam.dll") + @($bootstrap)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Bootstrap compilation failed.' }
 $editor = Get-ChildItem "$projectRoot/Assets/Scripts/Editor" -Filter '*.cs' | ForEach-Object FullName
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-out:$output/ChessFight.Network.Editor.dll") + @($editor)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Editor utility compilation failed.' }
-Write-Output 'PASS: Steamworks, Core, Steam adapter, Game, Bootstrap and Editor assemblies compiled.'
+Write-Output 'PASS: Steamworks, Core, Steam adapter, Game, Gameplay, Bootstrap and Editor assemblies compiled.'
 Write-Output 'NOTE: Assets/Scripts/Input is skipped; it needs the Input System package and compiles inside Unity.'

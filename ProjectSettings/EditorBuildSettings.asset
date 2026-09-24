@@ -6,8 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/ChessFightLab.unity
+    path: Assets/Scenes/Intro.unity
+    guid: eada6894f2ca14857e5dac2fd4277ab0
+  - enabled: 1
+    path: Assets/Scenes/Lobby.unity
     guid: ff8114dd859a33d26aae93365313ed82
+  - enabled: 1
+    path: Assets/Scenes/KingRush.unity
+    guid: 6b907b390dfae1d2e9bf995dc3b68a73
+  - enabled: 0
+    path: Assets/Scenes/RagdollTest.unity
+    guid: 1e84d4575290698f1ed256706677510a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

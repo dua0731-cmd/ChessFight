@@ -1,43 +1,28 @@
+using System;
 using System.Linq;
 using ChessFight.Network;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.SceneManagement;
 
 namespace ChessFight.Game
 {
-    // Composition root: it owns the Steam session and hands the pieces that do not
-    // know about Steam (spawner, camera, HUD, input) the data they need.
+    // The lobby scene: party and matchmaking HUD over the waiting arena.
     //
-    // This lives in a Steam-gated assembly so the prefabs and the HUD keep
-    // compiling before Steamworks.NET is installed.
+    // It no longer owns the Steam session. NetworkRuntime does, and survives scene
+    // loads; this only draws what the session holds and forwards the buttons.
+    // NetworkRuntime attaches it when the Lobby scene loads.
     [DisallowMultipleComponent]
-    public sealed class GameBootstrap : MonoBehaviour
+    public sealed class LobbyBootstrap : MonoBehaviour
     {
-        // Only this scene opts into the prototype: it is the one carrying a wired
-        // GameSceneConfig. The leftover template SampleScene stays inert.
-        const string BootScene = "ChessFightLab";
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Boot()
-        {
-            if (SceneManager.GetActiveScene().name != BootScene) return;
-            if (FindFirstObjectByType<GameBootstrap>() != null) return;
-            var existing = FindFirstObjectByType<GameSceneConfig>();
-            var host = existing != null ? existing.gameObject : new GameObject("ChessFight Game Root");
-            host.AddComponent<GameBootstrap>();
-        }
+        NetworkRuntime runtime;
+        SteamSession session => runtime.Session;
+        SteamMotion motion => runtime.Motion;
 
         GameSceneConfig config;
-        SteamSession session;
-        SteamMotion motion;
         PawnSpawner spawner;
         CameraRig cameraRig;
         NetworkHudView hud;
-        IMoveInputSource input;
         GameObject arena;
-        RenderPipelineAsset previousPipeline, previousQualityPipeline;
-        bool pipelineOverridden;
+        Func<bool> gate;
         float refreshAt;
         // Pure navigation state. The session never reads it; it only decides which
         // group of buttons the action stack shows.
@@ -47,20 +32,15 @@ namespace ChessFight.Game
 
         void Awake()
         {
-            Application.runInBackground = true;
+            runtime = NetworkRuntime.Instance;
+            if (runtime == null)
+            {
+                Debug.LogError("[ChessFight] NetworkRuntime 없이 로비를 열 수 없습니다.");
+                enabled = false;
+                return;
+            }
             config = GetComponent<GameSceneConfig>();
             if (config == null) config = gameObject.AddComponent<GameSceneConfig>();
-
-            if (config.ForceBuiltInPipeline)
-            {
-                // The Network branch still carries URP references without a URP
-                // package. Borrow built-in rendering and hand it back on teardown.
-                previousPipeline = GraphicsSettings.defaultRenderPipeline;
-                previousQualityPipeline = QualitySettings.renderPipeline;
-                GraphicsSettings.defaultRenderPipeline = null;
-                QualitySettings.renderPipeline = null;
-                pipelineOverridden = true;
-            }
             RenderSettings.ambientLight = config.AmbientLight;
 
             var arenaPrefab = config.ArenaPrefab;
@@ -73,16 +53,13 @@ namespace ChessFight.Game
             spawner = new GameObject("Pawns").AddComponent<PawnSpawner>();
             spawner.Configure(config.PawnPrefab, config.BlueTeamMaterial, config.OrangeTeamMaterial);
 
-            input = MoveInputSources.Create();
-            input.Enable();
-
-            session = new SteamSession();
-            session.Initialize();
-            if (session.Online) motion = new SteamMotion(session);
-
             hud = gameObject.AddComponent<NetworkHudView>();
             hud.Build(config.HudLayout, config.HudTheme, config.HudPanelSettings, config.HudReferenceResolution);
             WireHud();
+
+            // Typing a lobby number or leaving the window must not steer the pawn.
+            gate = () => hud != null && hud.MovementEnabled;
+            runtime.MovementGate = gate;
         }
 
         void WireHud()
@@ -121,18 +98,8 @@ namespace ChessFight.Game
 
         void Update()
         {
-            if (session == null) return;
-            session.Tick();
-            // A successful retry needs the movement layer built after the fact.
-            if (motion == null && session.Online) motion = new SteamMotion(session);
-
-            // Read every frame so an edge-triggered jump is never buffered across
-            // the frames where movement is suppressed.
-            var intent = input != null ? input.Read() : default;
-            if (hud == null || !hud.MovementEnabled) intent = default;
-            float x = Mathf.Clamp(intent.Move.x, -1f, 1f), z = Mathf.Clamp(intent.Move.y, -1f, 1f);
-            motion?.Update(x, z, intent.Jump);
-
+            // NetworkRuntime has already ticked the session and moved every pawn
+            // this frame; the lobby only draws the result.
             float dt = Time.unscaledDeltaTime;
             if (motion != null) spawner.Sync(motion.States, dt);
             if (spawner.TryGet(session.Self, out var local)) cameraRig.Follow(local.transform, dt);
@@ -174,7 +141,7 @@ namespace ChessFight.Game
                 Error = session.Error,
                 Hint = Hint(),
                 Details = $"Steam: {(session.Online ? "연결됨" : "연결 안 됨 - Steam 실행 후 다시 연결")}\n" +
-                          $"{motion?.ConnectionStatus}\n입력: {input?.DisplayName}",
+                          $"{motion?.ConnectionStatus}\n입력: {runtime.Controls?.DisplayName}",
                 PartyId = "파티  " + (session.Party == 0 ? "—" : session.Party.ToString()),
                 MatchId = "경기  " + (session.Match == 0 ? "—" : session.Match.ToString()),
                 RosterTitle = session.Match == 0 ? $"내 파티  {humans}/6" : $"경기 명단  {session.Roster.Count}/12",
@@ -223,23 +190,15 @@ namespace ChessFight.Game
                 if (session.PartyBots <= 0) return players;
                 return players + "\n" + string.Join("\n", Enumerable.Range(1, session.PartyBots).Select(i => "   봇 " + i + " (대기)"));
             }
-            return string.Join("\n", session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot)
-                .Select(p => $"{(p.Team == 0 ? "청팀" : "주황팀")}  {session.Name(p.Id)}{(p.Id == session.Self ? " (나)" : "")}"));
+            return NetworkRuntime.MatchRoster(session);
         }
 
         void OnDestroy()
         {
-            input?.Disable();
-            // Motion must go before the session: it unregisters from SessionChanged.
-            motion?.Dispose();
-            session?.Dispose();
+            // The session outlives this scene; only the scene's own objects go.
+            if (runtime != null && runtime.MovementGate == gate) runtime.MovementGate = null;
             if (spawner != null) { spawner.Clear(); Destroy(spawner.gameObject); }
             if (arena != null) Destroy(arena);
-            if (pipelineOverridden)
-            {
-                GraphicsSettings.defaultRenderPipeline = previousPipeline;
-                QualitySettings.renderPipeline = previousQualityPipeline;
-            }
         }
     }
 }

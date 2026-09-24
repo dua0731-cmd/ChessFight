@@ -8,6 +8,21 @@
 > 이 문서의 표는 **사용자가 실제로 확인했다고 보고한 것만** '성공'으로 적는다.
 > 코드 작성·코드 검토는 검증이 아니다.
 
+## ★ 2026-09-24 씬 분리 — 팀 배포 전 확인 목록
+
+씬 분리와 팀 개발 환경(`Docs/TEAM_GUIDE_KO.md`)을 추가했다. **Unity에서 아직 열지 않았다.** 팀에 배포하기 전에 아래를 확인하고 결과를 이 표에 적는다.
+
+| # | 확인 | 결과 |
+|---|---|---|
+| 1 | 프로젝트가 Safe Mode 없이 열린다 | 미확인 |
+| 2 | `KingRush` 직접 Play → 캡슐 캐릭터 등장, WASD·점프, 회전봉에 밀림, 체크포인트·골인 기록 | 미확인 |
+| 3 | `RagdollTest` 직접 Play → 턱·벽·상자 밀기, 진자에 밀림 | 미확인 |
+| 4 | `Intro` Play → 타이틀, 아무 키 → 로비 | 미확인 |
+| 5 | 로비에서 비공개 방 → 봇 채우기 → 경기 시작 → **KingRush로 전환**, 캡슐 표시 | 미확인 |
+| 6 | KingRush에서 Esc → **로비로 복귀, 파티 유지** | 미확인 |
+| 7 | 로비 복귀 후 물리 주기가 50Hz로 돌아옴 (`PhysicsProfile` 복구) | 미확인 |
+| 8 | 두 PC: 경기 시작 시 둘 다 KingRush로, 장애물 위치가 두 화면에서 같음 | 미확인 |
+
 ## 확인 결과
 
 | 항목 | 결과 | 근거와 한계 |
@@ -44,7 +59,7 @@
 | 재질 | `TeamBlue/TeamOrange/BoardDark/BoardLight.mat` 자산. 런타임 `new Material` 제거 |
 | UI | `NetworkHud.uxml` + `NetworkHudView`. UXML의 `\n` 문자 표시 문제를 `&#10;`으로 수정 |
 | 입력 | `ChessFightControls.inputactions` + Input System. 패키지 미설치 시 Legacy로 자동 대체 |
-| 씬 | `Assets/Scenes/ChessFightLab.unity` 신규(유일한 시작 씬). URP 잔여 참조 없음 |
+| 씬 | `Assets/Scenes/ChessFightLab.unity` 신규 (2026-09-24 `Lobby.unity`로 이름 변경). URP 잔여 참조 없음 |
 | 폴더 | `Assets/{Scripts,Prefabs,Materials,Resources,Scenes}`. 스크립트는 폴더 하나 = 어셈블리 하나 |
 | 어셈블리 | `ChessFight.Game` (Steam 무관) / `ChessFight.Game.Steam` (부트스트랩) 분리 |
 
@@ -191,8 +206,8 @@ GitHub 앱 쓰기 403은 사용자 GitHub Desktop으로 Push하여 해결한 작
 
 ## 다음 검증 우선순위
 
-1. **에디터가 새 구조를 여는지.** `ChessFightLab` 씬을 열고 프리팹·재질·UI가 깨지지 않는지, Play 화면이 이전과 같은지.
-2. **UI 버튼이 눌리는지.** 눌리지 않으면 HUD의 `Steam:` / `Input:` 줄과 Console 로그를 확인한다.
+1. ~~에디터가 새 구조를 여는지~~ — **2026-09-24 확인됨.** 로비 씬(현 `Lobby`)의 프리팹·재질·HUD 정상, 한글(맑은 고딕) 정상.
+2. ~~UI 버튼이 눌리는지~~ — **2026-09-24 확인됨** (Active Input Handling을 Old로 되돌린 뒤). 게임 내 친구 목록·초대도 동작 확인.
 3. **Input System 설치와 이동.** 패키지 설치 후 WASD/Space가 동작하는지, HUD의 `Input:` 줄이 Input System을 가리키는지.
 4. **두 계정 양방향 이동·점프.** 매칭까지는 확인했으므로 이제 실제로 서로의 캡슐이 움직이는지 확인한다.
 5. **봇 1인 테스트.** `비공개 방 만들기` + 파티 봇 5 → 6인, 이어서 `12명 채우기` → 12인. 봇이 보이고 움직이는지, 프레임과 대역폭이 견디는지.

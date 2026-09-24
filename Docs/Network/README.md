@@ -5,6 +5,19 @@
 
 다른 AI나 개발자가 이어받을 때는 **[상세 인수인계 문서](../AI/NETWORK_HANDOFF_KO.md)**를 먼저 읽는다. 파티 예약, 매칭, 패킷 포맷, 예측·보정, 실제 확인 결과와 후속 검증을 설명한다.
 
+> **팀원은 먼저 [`Docs/TEAM_GUIDE_KO.md`](../TEAM_GUIDE_KO.md)를 읽는다.** 씬 구성·폴더 규칙·역할별 작업 방법이 있다. 이 문서는 파티·매칭 시스템 설명이다.
+
+## 씬
+
+| 씬 | Play하면 |
+|---|---|
+| `Intro` | 온라인. 타이틀 → 아무 키 → 로비 |
+| `Lobby` | 온라인. 파티·매칭 |
+| `KingRush` | **오프라인 플레이테스트** (경기가 시작되면 온라인 흐름에서 자동으로 이 씬이 열린다) |
+| `RagdollTest` | 오프라인. 개발 전용 |
+
+메뉴 `ChessFight > Scenes`에서 연다. 경기 시작 시 전원이 KingRush로, 경기가 끝나거나 Esc를 누르면 로비로 돌아간다. 씬이 바뀌어도 파티·경기는 유지된다(`NetworkRuntime`).
+
 ## 처음 실행
 
 1. 작업 중인 씬을 저장하고 `Network` 브랜치를 Pull한다. 프로젝트 버전과 같은 Unity를 사용한다.
@@ -12,7 +25,7 @@
 3. 패키지 설치/컴파일이 끝날 때까지 기다린다. 설치가 실패하면 Git for Windows 설치와 인터넷 연결을 확인하고 Unity Hub를 완전히 재시작한다. `ChessFight > Network > Install Steamworks dependency`로 재시도한다.
 4. `c9c1e6a`에 실제 설치 결과인 **`Packages/manifest.json`, `Packages/packages-lock.json`이 함께 커밋되어 있다.** 이후 의존성을 변경할 때도 두 파일을 함께 커밋한다. 설치 도구는 이미 설치된 패키지를 반복 추가하지 않는다.
 5. Steam 클라이언트를 실행하고 로그인한다. 프로젝트 루트의 `steam_appid.txt`는 개발용 App ID **480**이다.
-6. `ChessFight > Network > Open test scene`을 실행하고 **Play**를 누른다. `Assets/ChessFight/Game/Scenes/ChessFightLab.unity`가 열린다.
+6. `ChessFight > Scenes > Lobby`(또는 Intro)를 열고 **Play**를 누른다.
 
 ### 2026-09-22 구조 변경 — Pull 후 반드시 읽는다
 
@@ -20,10 +33,9 @@
 
 - **입력은 현재 레거시 Input Manager를 쓴다.** Input System 1.20.0이 manifest에 고정되어 있어 패키지는 받지만, Active Input Handling은 `Input Manager (Old)`다. **이 값을 `Both`로 바꾸면 HUD 클릭과 번호 입력이 전부 죽는다** — 이 프로젝트에는 uGUI가 없어 UI Toolkit이 `EventSystem` 경로를 쓸 수 없기 때문이다. 켜려면 `com.unity.ugui` 설치 → `EventSystem` + `InputSystemUIInputModule` 추가 → 그 다음에 설정 변경 순서를 지켜야 한다. Steamworks는 `ChessFight > Setup > Install dependencies`가 설치한다. **설치 결과로 manifest/lock이 바뀌면 Discard하지 말고 커밋한다.**
 - `ProjectSettings`의 Active Input Handling을 **Both**로 바꿨다. 에디터가 켜진 채 Pull 했다면 재시작을 요구할 수 있다.
-- 씬이 `ChessFightLab`으로 바뀌었다. 기존 `SampleScene`에서도 계속 동작한다.
-- 시작 씬은 `Assets/Scenes/ChessFightLab.unity` **하나뿐이다.** 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. **체스판·캡슐·HUD는 프리팹/UXML 자산이며 Play 중에 생성(Instantiate)된다.** 누가 경기에 들어올지는 실행 전에 알 수 없으므로 캐릭터 생성 자체는 런타임이 맞다.
+- 로비 씬은 `Assets/Scenes/Lobby.unity`다(구 ChessFightLab). 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. **체스판·캡슐·HUD는 프리팹/UXML 자산이며 Play 중에 생성(Instantiate)된다.** 누가 경기에 들어올지는 실행 전에 알 수 없으므로 캐릭터 생성 자체는 런타임이 맞다.
 - **폴더를 전부 정리했다.** `Assets/Scripts | Prefabs | Materials | Resources | Scenes` 구조다. 아래 '구조와 확장 지점'을 본다.
-- **`SampleScene`의 죽은 URP 컴포넌트 3개(Main Camera, Directional Light, Global Volume)를 제거했다.** `The referenced script (Unknown) ... is missing!` 경고의 원인이었다. 이 씬은 이제 Play해도 아무것도 하지 않는다. 항상 `ChessFightLab`을 쓴다.
+- **`SampleScene`의 죽은 URP 컴포넌트 3개(Main Camera, Directional Light, Global Volume)를 제거했다.** `The referenced script (Unknown) ... is missing!` 경고의 원인이었다. 이 씬은 이제 Play해도 아무것도 하지 않는다.
 
 ## 가장 빠른 2인 테스트
 
@@ -102,7 +114,7 @@ Assets/
   Materials/      TeamBlue TeamOrange BoardDark BoardLight .mat + NetworkColor.shader
   Prefabs/        PawnAvatar.prefab  Arena.prefab
   Resources/      NetworkHud.uxml/.uss  NetworkTheme.tss  ChessFightControls.inputactions
-  Scenes/         ChessFightLab.unity (유일한 시작 씬)  SampleScene.unity (템플릿, 비활성)
+  Scenes/         Intro · Lobby · KingRush · RagdollTest  (+ SampleScene 템플릿, 비활성)
   Scripts/        폴더 하나 = 어셈블리 하나
     Core/         ChessFight.Network.Core   규칙·패킷·봇 (Unity 무관 순수 C#)
     Network/      ChessFight.Network.Steam  Steam 로비·파티·이동 전송
@@ -122,7 +134,7 @@ Assets/
 | 색 | `Materials/*.mat` |
 | UI 배치·스타일 | `Resources/NetworkHud.uxml` / `.uss` |
 | 키 배치 | `Resources/ChessFightControls.inputactions` |
-| 씬 배선 | `Scenes/ChessFightLab.unity`의 `ChessFight Game Root` |
+| 씬 배선 | `Scenes/Lobby.unity`의 `ChessFight Game Root` |
 | 매칭·예약 규칙 | `Scripts/Core/TeamReservations.cs` |
 | 봇 | `Scripts/Core/BotIdentity.cs`, `BotBrain.cs` |
 | 로비·파티 | `Scripts/Network/SteamSession.cs` |
@@ -138,7 +150,7 @@ Assets/
 
 ## 빌드와 검증
 
-`ChessFight > Network > Build Windows development test` → `Builds/NetworkTest/ChessFight.exe`. `ChessFightLab` 씬만 포함한다.
+`ChessFight > Network > Build Windows development test` → `Builds/NetworkTest/ChessFight.exe`. Intro·Lobby·KingRush를 포함한다(RagdollTest 제외).
 개발 빌드 옆에 `steam_appid.txt`도 복사한다. Steam 정식 배포 시에는 자체 App ID와 배포 설정을 사용하고 개발용 480 파일을 배포하지 않는다.
 
 자동 테스트(추가 테스트 패키지 불필요):
