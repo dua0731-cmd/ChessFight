@@ -76,8 +76,8 @@ namespace ChessFight.RagdollLab
         /// <summary>Someone else's hand is holding this pawn right now.</summary>
         public bool BeingHeld => heldTimer > 0f;
 
-        /// <summary>0..1 of the way to shaking off whoever is holding on.</summary>
-        public float EscapeProgress => escapeProgress;
+        /// <summary>How hard the last thrash hit the grip, 0..1 against the break force. Display only.</summary>
+        public float EscapeProgress => lastStrugglePunch;
 
         /// <summary>Hanging on a wall by the hands, spending stamina.</summary>
         public bool Climbing { get; private set; }
@@ -129,9 +129,15 @@ namespace ChessFight.RagdollLab
         readonly Leg[] legs = { new Leg(), new Leg() };
         int swingingLeg = -1;
         float landDip, turnRate, strideDrop, hopArc;
-        float heldTimer, struggleTimer, escapeProgress, climbTimer, climbUp, climbSide, climbGrace, climbCooldown;
+        float heldTimer, struggleTimer, escapeProgress, climbTimer, climbUp, climbSide, climbGrace, climbCooldown, topOutTimer;
+        float handStep = 1f;
+        int movingHand = -1;
         Vector3 wallPoint, wallNormal = Vector3.forward;
-        float struggleFlip = 1f;
+        readonly Vector3[] handHold = new Vector3[2];
+        bool holdsPlaced;
+        float struggleFlip = 1f, struggleRush, lastStrugglePunch;
+        RagdollPawn holder;
+        Collider heldCollider;
         float stamina = -1f;   // seconds; negative until the first tick reads the max
         bool wantsMove, wasGrounded;
 
@@ -245,10 +251,12 @@ namespace ChessFight.RagdollLab
             input.shove |= next.shove;
         }
 
-        public void NotifyHeld()
+        public void NotifyHeld(RagdollPawn captor, Collider heldPart)
         {
             contactTimer = Mathf.Max(contactTimer, P.contactLinger);
             heldTimer = 0.2f;
+            holder = captor;
+            heldCollider = heldPart;
         }
 
         public void AddVelocity(Vector3 dv)
@@ -281,8 +289,8 @@ namespace ChessFight.RagdollLab
             Struggle(p, dt);
             Shove(p);
             bool wantGrab = input.grab && State != PawnState.Ragdoll && !Climbing;
-            handL.Tick(wantGrab, p, dt);
-            handR.Tick(wantGrab, p, dt);
+            handL.Tick(wantGrab, p, dt, Climbing);
+            handR.Tick(wantGrab, p, dt, Climbing);
             if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
             Pose(p, dt);
             Drives(p, k);
@@ -649,40 +657,70 @@ namespace ChessFight.RagdollLab
         // ---------------------------------------------------------------- 버둥대기
 
         /// <summary>
-        /// Being grabbed is not a death sentence: tap the shove key to thrash. One tap resists, and
-        /// tapping fast enough fills the escape meter before it drains away again. Each tap also
-        /// throws a real sideways impulse, so a grip near its break force can pop on its own.
+        /// Thrashing out of a grab. There is no escape meter and nothing releases the captor's hand:
+        /// each tap throws a real impulse through the body the captor is actually holding, and the
+        /// grip breaks when PhysX decides it has had enough (FixedJoint.breakForce, which for a hold
+        /// on another pawn is pawnGrabBreakForce). So escape is the physics giving way.
+        ///
+        /// Three things make a tap hit harder, all multiplying: tapping fast, steering AGAINST the
+        /// direction the captor is hauling you, and jumping at the same moment. Each tap costs
+        /// stamina, so mashing forever is not free.
         /// </summary>
         void Struggle(RagdollParams p, float dt)
         {
             heldTimer -= dt;
             struggleTimer -= dt;
+            struggleRush = Mathf.Max(0f, struggleRush - dt);
+            lastStrugglePunch = Mathf.Max(0f, lastStrugglePunch - dt * 0.9f);
             if (!BeingHeld)
             {
-                escapeProgress = 0f;
+                holder = null;
+                heldCollider = null;
                 return;
             }
-            escapeProgress = Mathf.Max(0f, escapeProgress - p.struggleDecay * dt);
             if (State == PawnState.Ragdoll || !input.shove) return;
             input.shove = false;            // this tap is a struggle, not a shove
+            if (stamina < 0f) stamina = p.climbStaminaMax;
+            if (stamina <= 0f) return;      // too tired to fight
+            stamina = Mathf.Max(0f, stamina - p.struggleStamina);
             struggleTimer = p.struggleBurst;
             struggleFlip = -struggleFlip;
-            escapeProgress += p.struggleEscape;
-            Vector3 side = Vector3.Cross(Vector3.up, facing) * (p.struggleShake * struggleFlip);
-            bodies[(int)BodyId.Chest].AddForce(side, ForceMode.Impulse);
-            bodies[(int)BodyId.ArmL].AddForce(-side * 0.6f, ForceMode.Impulse);
-            bodies[(int)BodyId.ArmR].AddForce(side * 0.6f, ForceMode.Impulse);
-            if (escapeProgress < 1f) return;
-            escapeProgress = 0f;
-            foreach (var other in All)
-            {
-                if (other == this) continue;
-                if (HoldsMe(other.handL)) other.handL.Release(0.7f);
-                if (HoldsMe(other.handR)) other.handR.Release(0.7f);
-            }
+
+            // Mash bonus: taps landing inside the burst window stack up to struggleRushBonus.
+            struggleRush = Mathf.Min(1f, struggleRush + 0.42f);
+            float rush = Mathf.Lerp(1f, p.struggleRushBonus, struggleRush);
+
+            // Pulling against the haul. The captor's own travel is the direction to fight.
+            Vector3 haul = holder != null ? Flat(holder.Hips.linearVelocity) : Vector3.zero;
+            Vector3 want = Flat(input.move);
+            float away = 1f;
+            if (haul.sqrMagnitude > 0.25f && want.sqrMagnitude > 0.01f)
+                away = Mathf.Lerp(1f, p.struggleAwayBonus,
+                    Mathf.Clamp01(-Vector3.Dot(want.normalized, haul.normalized)));
+            float leap = input.jump ? p.struggleJumpBonus : 1f;
+
+            float punch = p.struggleShake * rush * away * leap;
+            Vector3 side = Vector3.Cross(Vector3.up, facing) * (punch * struggleFlip);
+            Vector3 lift = Vector3.up * (punch * (input.jump ? 0.7f : 0.25f));
+
+            // Drive it through the part being held, so the grip takes the load rather than the skirt.
+            Rigidbody held = heldCollider != null && ColliderOwner.ContainsKey(heldCollider)
+                ? BodyOf(heldCollider) : bodies[(int)BodyId.Chest];
+            held.AddForce(side + lift, ForceMode.Impulse);
+            bodies[(int)BodyId.ArmL].AddForce(-side * 0.5f, ForceMode.Impulse);
+            bodies[(int)BodyId.ArmR].AddForce(side * 0.5f, ForceMode.Impulse);
+            if (holder != null) holder.bodies[(int)BodyId.Chest].AddForce(-side * 0.35f, ForceMode.Impulse);
+
+            lastStrugglePunch = Mathf.Clamp01(punch * 60f / Mathf.Max(1f, p.pawnGrabBreakForce));
         }
 
-        bool HoldsMe(PawnHand h) => h.IsHolding && h.HeldCollider != null && ownSet.Contains(h.HeldCollider);
+        Rigidbody BodyOf(Collider c)
+        {
+            for (int i = 0; i < Count; i++)
+                foreach (var own in bodies[i].GetComponentsInChildren<Collider>(true))
+                    if (own == c) return bodies[i];
+            return bodies[(int)BodyId.Chest];
+        }
 
         // ---------------------------------------------------------------- 등반
 
@@ -694,24 +732,36 @@ namespace ChessFight.RagdollLab
         /// </summary>
         bool ProbeWall(RagdollParams p)
         {
-            Vector3 from = bodies[(int)BodyId.Chest].position;
-            float reach = p.grabRadius + standHeight * 0.9f;
-            int n = Physics.RaycastNonAlloc(new Ray(from, facing), hits, reach, ~0, QueryTriggerInteraction.Ignore);
+            Vector3 chest = bodies[(int)BodyId.Chest].position;
+            float reach = p.grabRadius + standHeight * 1.1f;
+            Vector3 side = Vector3.Cross(Vector3.up, facing);
             float best = float.MaxValue;
             bool found = false;
-            for (int i = 0; i < n; i++)
+            // Straight ahead finds a plain wall; angled up finds an overhang leaning over the pawn or
+            // the underside of a rock; angled down keeps contact as the body tops out over a lip.
+            // The side rays keep a bulge from slipping out from between the hands.
+            for (int i = 0; i < 5; i++)
             {
-                var h = hits[i];
-                if (ownSet.Contains(h.collider)) continue;
-                if (ColliderOwner.ContainsKey(h.collider)) continue;
-                var rb = h.collider.attachedRigidbody;
-                if (rb != null && !rb.isKinematic) continue;
-                if (Mathf.Abs(h.normal.y) > Mathf.Cos(p.climbGripAngle * Mathf.Deg2Rad)) continue;
-                if (h.distance >= best) continue;
-                best = h.distance;
-                wallPoint = h.point;
-                wallNormal = h.normal;
-                found = true;
+                Vector3 dir = i == 0 ? facing
+                    : i == 1 ? (facing + Vector3.up * 0.7f).normalized
+                    : i == 2 ? (facing - Vector3.up * 0.4f).normalized
+                    : (facing + side * (i == 3 ? 0.45f : -0.45f)).normalized;
+                Vector3 origin = chest + Vector3.up * (i == 1 ? 0.12f : 0f);
+                int n = Physics.RaycastNonAlloc(new Ray(origin, dir), hits, reach, ~0, QueryTriggerInteraction.Ignore);
+                for (int j = 0; j < n; j++)
+                {
+                    var h = hits[j];
+                    if (ownSet.Contains(h.collider)) continue;
+                    if (ColliderOwner.ContainsKey(h.collider)) continue;
+                    var rb = h.collider.attachedRigidbody;
+                    if (rb != null && !rb.isKinematic) continue;
+                    if (Mathf.Abs(h.normal.y) > Mathf.Cos(p.climbGripAngle * Mathf.Deg2Rad)) continue;
+                    if (h.distance >= best) continue;
+                    best = h.distance;
+                    wallPoint = h.point;
+                    wallNormal = h.normal;
+                    found = true;
+                }
             }
             return found;
         }
@@ -731,24 +781,65 @@ namespace ChessFight.RagdollLab
 
             if (stamina < 0f) stamina = p.climbStaminaMax;
             climbCooldown -= dt;
+            topOutTimer -= dt;
             bool gripping = ProbeWall(p);
+            // The wall running out IS the ledge: the big wall is built as set-back blocks, so the
+            // top of each block is somewhere to stand. Throw the body forward so it flops onto it.
+            if (Climbing && !gripping && climbUp > 0.1f && topOutTimer <= -0.2f)
+                topOutTimer = p.climbTopOut;
             // A step over a seam between two blocks must not drop the pawn off the wall.
             climbGrace = gripping ? 0.3f : climbGrace - dt;
             bool wants = input.grab && State == PawnState.Active && climbGrace > 0f
                          && stamina > 0f && climbCooldown <= 0f;
             Climbing = wants && (!Grounded || climbUp > 0.1f);
 
+            if (topOutTimer > 0f && State == PawnState.Active)
+            {
+                // A short scramble over the lip. Deliberately clumsy - it should look like a flop.
+                anchorPos += (facing * 1.6f + Vector3.up * 2.2f) * dt;
+                anchorVel = Flat(facing) * 1.4f;
+                anchor.MovePosition(anchorPos);
+                climbCooldown = Mathf.Max(climbCooldown, 0.35f);   // let it land before grabbing again
+            }
             if (!Climbing)
             {
+                holdsPlaced = false;
                 if (Grounded && State == PawnState.Active)
                     stamina = Mathf.Min(p.climbStaminaMax, stamina + p.climbRecover * dt);
                 return;
             }
 
             stamina -= (p.climbDrainHold + p.climbDrainMove * Mathf.Abs(climbUp)) * dt;
-            // The reach phase runs whether or not a hand physically catches: it is the animation.
+
+            // Where the palms sit on the wall. Each stays put while the body creeps past it, then the
+            // lower one lifts to a new spot - that is what makes the hands look stuck on rather than
+            // waved about. They are placed on the surface the probe found, so a bulge or an overhang
+            // gets hands on it just as a flat face does.
+            Vector3 across = Vector3.Cross(wallNormal, Vector3.up);
+            if (across.sqrMagnitude < 1e-4f) across = Vector3.Cross(wallNormal, facing);
+            across.Normalize();
+            Vector3 up = Vector3.Cross(across, wallNormal).normalized;
+            Vector3 face = wallPoint + wallNormal * 0.02f;
+            if (!holdsPlaced)
+            {
+                float set = bodies[(int)BodyId.Chest].position.y;
+                handHold[0] = face + across * -p.climbHandSpread + up * (set - face.y + 0.06f);
+                handHold[1] = face + across * p.climbHandSpread + up * (set - face.y - 0.1f);
+                holdsPlaced = true;
+            }
             climbTimer += p.climbCadence * dt;
-            if (climbTimer > 1f) climbTimer -= 1f;
+            if (climbTimer > 1f)
+            {
+                climbTimer -= 1f;
+                // Lift the lower palm and set it down a step above the higher one.
+                int low = handHold[0].y <= handHold[1].y ? 0 : 1;
+                float top = Mathf.Max(handHold[0].y, handHold[1].y);
+                Vector3 plant = face + across * (low == 0 ? -p.climbHandSpread : p.climbHandSpread);
+                handHold[low] = plant + up * (top + p.climbHandStep * Mathf.Clamp(climbUp, -1f, 1f) - plant.y);
+                movingHand = low;
+                handStep = 0f;
+            }
+            handStep = Mathf.Min(1f, handStep + p.climbCadence * dt * 2.2f);
             if (stamina > 0f) return;
             stamina = 0f;
             Climbing = false;
@@ -853,16 +944,20 @@ namespace ChessFight.RagdollLab
             if (Climbing)
             {
                 // Both arms overhead on the wall, legs tucked and dangling.
-                // One hand reaches high while the other holds low, swapping every half cycle.
-                float swap = Mathf.Sin(climbTimer * Mathf.PI * 2f);
-                armL = ClimbArm(true, p.climbArmRaise + 32f * swap);
-                armR = ClimbArm(false, p.climbArmRaise - 32f * swap);
-                float paddle = Mathf.Sin(Time.time * 7f) * 12f;
-                thighL = Quaternion.Euler(-22f + paddle, 0f, 0f);
-                thighR = Quaternion.Euler(-22f - paddle, 0f, 0f);
-                footL = footR = Quaternion.Euler(26f, 0f, 0f);
-                chest = Quaternion.Euler(-8f, 0f, 0f);
-                head = Quaternion.Euler(-14f, 0f, 0f);
+                // Each arm points at its own palm spot on the wall, so a planted hand stays planted
+                // while the body creeps past it. Only the hand that is moving swings, and it arcs out
+                // and slaps down rather than sliding - that reads as "stuck on" instead of "waving".
+                float panic = 1f + 1.6f * (1f - Mathf.Clamp01(Stamina / 0.35f));
+                armL = ClimbReach(true, 0, p, panic);
+                armR = ClimbReach(false, 1, p, panic);
+                // Feet paddle at the wall like a kitten. Slow when fresh, frantic when nearly spent.
+                float paddle = Mathf.Sin(Time.time * (4.5f + 7f * panic)) * (9f + 20f * panic);
+                thighL = Quaternion.Euler(-18f + paddle, 0f, 0f);
+                thighR = Quaternion.Euler(-18f - paddle, 0f, 0f);
+                footL = footR = Quaternion.Euler(24f, 0f, 0f);
+                float lean = movingHand == 0 ? 5f : -5f;
+                chest = Quaternion.Euler(-6f, lean * panic, 0f);
+                head = Quaternion.Euler(-12f, -lean * panic, 0f);
             }
             else if (struggleTimer > 0f)
             {
@@ -1015,6 +1110,28 @@ namespace ChessFight.RagdollLab
             ankle = Quaternion.Inverse(thigh);
         }
 
+        /// <summary>
+        /// Aims one arm at the palm spot it is supposed to be holding. The hand that is mid-swap
+        /// travels along a small arc so it lifts off, reaches, and plants, instead of gliding.
+        /// </summary>
+        Quaternion ClimbReach(bool left, int slot, RagdollParams p, float panic)
+        {
+            Transform chestT = bodies[(int)BodyId.Chest].transform;
+            Vector3 shoulder = bodies[left ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
+            Vector3 target = handHold[slot];
+            if (movingHand == slot && handStep < 1f)
+            {
+                // Out from the wall a little and up, then back in: a small hop of the hand.
+                float t = handStep;
+                target = Vector3.Lerp(handHold[slot] - Vector3.up * p.climbHandStep, handHold[slot], t)
+                         + wallNormal * (Mathf.Sin(t * Mathf.PI) * 0.12f * panic);
+            }
+            Vector3 aim = target - shoulder;
+            if (aim.sqrMagnitude < 1e-5f) aim = -wallNormal;
+            Vector3 local = chestT.InverseTransformDirection(aim.normalized);
+            return Quaternion.FromToRotation(left ? Vector3.left : Vector3.right, local);
+        }
+
         /// <summary>Points one arm up the wall: <paramref name="raise"/> 0 = straight out, 90 = overhead.</summary>
         Quaternion ClimbArm(bool left, float raise)
         {
@@ -1075,7 +1192,8 @@ namespace ChessFight.RagdollLab
 
             float lower = p.lowerBodySpring * kLower;
             float upper = p.upperBodySpring * k;
-            float arm = p.armSpring * k * (shoveTimer > 0f ? p.shoveArmMultiplier : 1f);
+            float arm = p.armSpring * k * (shoveTimer > 0f ? p.shoveArmMultiplier : 1f)
+                        * (struggleTimer > 0f ? p.struggleArmMultiplier : 1f);
             float armL = arm * ArmBoost(handL, p);
             float armR = arm * ArmBoost(handR, p);
             Slerp(BodyId.Chest, upper, r);

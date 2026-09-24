@@ -142,6 +142,7 @@ namespace ChessFight.RagdollLab
             yield return GrabDrag();
             yield return StruggleEscape();
             yield return Climb();
+            yield return ClimbSurfaces();
             yield return ShoveCheck();
             yield return Bar();
             yield return Beam();
@@ -895,22 +896,28 @@ namespace ChessFight.RagdollLab
             });
             bool stillHeld = victim.BeingHeld;
 
-            // Phase 2: mash it. One tap every 0.1 s.
-            float t = 0f, nextTap = 0f, peak = 0f, escapeAt = -1f;
-            yield return Sim(3f, () =>
+            // Phase 2: mash it, and pull away from the captor while mashing. One tap every 0.1 s.
+            // Breaking the grip once is not escaping - the captor re-grabs after 0.6 s - so escape is
+            // measured as actually getting clear and staying clear.
+            float t = 0f, nextTap = 0f, breaks = 0f, freeFor = 0f, escapeAt = -1f;
+            bool wasHeld = true;
+            yield return Sim(6f, () =>
             {
                 t += Dt;
                 Drive(holder, Vector3.forward * 0.25f, grab: true);
                 bool tap = t >= nextTap;
                 if (tap) nextTap = t + 0.1f;
-                Drive(victim, Vector3.zero, shove: tap);
-                peak = Mathf.Max(peak, victim.EscapeProgress);
-                if (escapeAt < 0f && !victim.BeingHeld) escapeAt = t;
+                Drive(victim, Vector3.back, shove: tap);
+                if (wasHeld && !victim.BeingHeld) breaks++;
+                wasHeld = victim.BeingHeld;
+                float gap = Vector3.Distance(Flat(victim.Hips.position), Flat(holder.Hips.position));
+                freeFor = !victim.BeingHeld && gap > 1.2f ? freeFor + Dt : 0f;
+                if (escapeAt < 0f && freeFor > 0.5f) escapeAt = t;
             });
             Report("버둥대기: 가만히 있으면 못 빠져나감, 연타하면 탈출",
                 caught && stillHeld && escapeAt >= 0f,
-                $"잡힘 {caught}, 1초 가만히 둔 뒤에도 잡힘 {stillHeld}, 연타 후 탈출 {(escapeAt >= 0f ? $"{escapeAt:F2}s" : "실패")}, "
-                + $"탈출 게이지 최대 {peak:F2}");
+                $"잡힘 {caught}, 1초 가만히 둔 뒤에도 잡힘 {stillHeld}, "
+                + $"그립을 뜯은 횟수 {breaks:F0}, 완전히 벗어난 시점 {(escapeAt >= 0f ? $"{escapeAt:F2}s" : "실패")}");
             yield return Clear();
         }
 
@@ -977,6 +984,45 @@ namespace ChessFight.RagdollLab
             Report("등반: 스테미나가 떨어지면 손을 놓음", ranOut && letGo,
                 $"스테미나 고갈 {ranOut}, 손 놓음 {letGo}, 최고 {highest:F2} m, 고갈 시점 {heightAtEmpty:F2} m → 최종 {hanger.Hips.position.y:F2} m");
             yield return Clear();
+        }
+
+        /// <summary>
+        /// Physical climbing needs something a hand can actually touch. Runs the same attempt at each
+        /// of the three climbing faces and reports the height gained and whether a hand ever held on,
+        /// so "which surfaces can this body climb" is a measurement rather than an opinion.
+        /// </summary>
+        IEnumerator ClimbSurfaces()
+        {
+            string[] names = { "큰 벽 + 바위 (12m)", "역경사 20도", "곡면" };
+            float[] seconds = { 34f, 7f, 7f };
+            for (int i = 0; i < 3; i++)
+            {
+                var pawn = Spawn(new Vector3(LabLayout.ClimbX[i], 0f, LabLayout.ClimbFaceZ - 2.2f), Vector3.forward, "등반" + i);
+                yield return Sim(0.6f);
+                float start = pawn.Hips.position.y, top = start, holdTime = 0f, handTop = 0f;
+                float lastStamina = 1f;
+                int grips = 0, rests = 0;
+                bool wasHolding = false;
+                yield return Sim(seconds[i], () =>
+                {
+                    Drive(pawn, Vector3.forward, grab: true);
+                    top = Mathf.Max(top, pawn.Hips.position.y);
+                    if (pawn.Stamina > lastStamina + 0.002f && pawn.Hips.position.y > 1.5f) rests++;
+                    lastStamina = pawn.Stamina;
+                    bool holding = pawn.handL.IsHolding || pawn.handR.IsHolding;
+                    if (holding)
+                    {
+                        holdTime += Dt;
+                        handTop = Mathf.Max(handTop, Mathf.Max(pawn.handL.Center.y, pawn.handR.Center.y));
+                        if (!wasHolding) grips++;
+                    }
+                    wasHolding = holding;
+                });
+                Info($"등반 표면: {names[i]}",
+                    $"오른 높이 {top - start:F2} m, 최종 {pawn.Hips.position.y:F2} m, "
+                    + $"바위에서 쉰 프레임 {rests}, 남은 스테미나 {pawn.Stamina:F2}");
+                yield return Clear();
+            }
         }
 
         IEnumerator JumpCheck()

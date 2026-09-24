@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
@@ -29,6 +29,24 @@ namespace ChessFight.RagdollLab
         public const float WallWidth = 6f;
         public static readonly float[] WallHeights = { 2f, 3f, 4f };
         public static readonly float[] WallZ = { -9f, 0f, 9f };
+
+        // [3b] Climbing faces along the north edge. Lane 0 is the real one: a wall far taller
+        // than one stamina bar, with rock ledges big enough to stand on. You climb, top out on a
+        // ledge, get your breath back, and go again - the wall is a series of decisions, not one
+        // long hold of a key. Lanes 1 and 2 are shape tests (overhang, bulge).
+        public const float ClimbFaceZ = 13.5f;       // the faces look toward -Z; the pawn approaches from -Z
+        public const float ClimbHeight = 5f;         // the shape-test lanes
+        public const float ClimbWidth = 3f;
+        public static readonly float[] ClimbX = { -9f, 0f, 9f };   // ledges / overhang / curved
+
+        // Lane 0: the big wall
+        // Four blocks stacked and set back, like a staircase for a giant. The top of each block is
+        // the rest ledge: climb one, flop onto it, get your breath, climb the next. No special ledge
+        // logic is needed because the wall genuinely ends at every rest point.
+        public const float LedgeWallWidth = 6f;
+        public const float LedgeStepHeight = 3f;     // one block, just under one stamina bar
+        public const float LedgeStepBack = 1.5f;     // how far each block sits behind the one below
+        public const int LedgeSteps = 4;             // 12 m total
 
         // [4] Slopes 15 / 30 / 45 degrees (west), descending from a 5 m platform toward +X
         public const float PlatformHeight = 5f;

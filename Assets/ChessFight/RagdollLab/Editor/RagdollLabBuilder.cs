@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -843,6 +843,10 @@ namespace ChessFight.RagdollLab.Editor
                 Label(env, $"[3] {h:F0}m", new Vector3(LabLayout.WallFrontX - 0.02f, h * 0.5f, z), Quaternion.LookRotation(Vector3.right), 0.7f);
             }
 
+            BuildClimbWalls(env, mats);
+            {
+            }
+
             // [4] Slopes 15 / 30 / 45 degrees (west), platform 5 m high
             float platformHeight = LabLayout.PlatformHeight;
             Box(env, "Slope Floor", new Vector3(-half - 12.5f, -0.5f, 0f), new Vector3(25f, 1f, half * 2f), mats.floor);
@@ -881,6 +885,48 @@ namespace ChessFight.RagdollLab.Editor
             Box(env, "Tunnel Wall R", tunnel + new Vector3(2.15f, (LabLayout.TunnelClearance + slab) * 0.5f, 0f), new Vector3(0.3f, LabLayout.TunnelClearance + slab, LabLayout.TunnelLength), mats.post);
             Label(env, "[6] 0.55m", limbo + new Vector3(0f, 0.02f, 1.3f), Quaternion.Euler(90f, 0f, 0f), 0.45f);
             Label(env, "[6] 0.65m", tunnel + new Vector3(0f, 0.02f, 2.3f), Quaternion.Euler(90f, 0f, 0f), 0.45f);
+        }
+
+        /// <summary>
+        /// Three climbing test faces, all facing +Z so the pawn walks south into them. A plain flat
+        /// wall is deliberately not among them: this pawn cannot touch one above its own skirt.
+        /// </summary>
+        static void BuildClimbWalls(Transform env, Materials mats)
+        {
+            float h = LabLayout.ClimbHeight, w = LabLayout.ClimbWidth, z = LabLayout.ClimbFaceZ;
+
+            // --- [3b-1] the big wall: a staircase of set-back blocks, each about one stamina bar
+            float x0 = LabLayout.ClimbX[0];
+            for (int i = 0; i < LabLayout.LedgeSteps; i++)
+            {
+                float top = (i + 1) * LabLayout.LedgeStepHeight;
+                float back = z + 0.5f + i * LabLayout.LedgeStepBack;
+                Box(env, $"LedgeStep {i}", new Vector3(x0, top * 0.5f, back),
+                    new Vector3(LabLayout.LedgeWallWidth, top, 1f + i * LabLayout.LedgeStepBack),
+                    i == 0 ? mats.wall : mats.slope);
+            }
+            Label(env, "[3b] 큰 벽 + 바위", new Vector3(x0 + 3.4f, 2f, z - 0.02f), Quaternion.LookRotation(Vector3.forward), 0.9f);
+
+            // --- [3b-2] overhang: the face leans out over the approach, so the body hangs clear
+            float x1 = LabLayout.ClimbX[1];
+            Box(env, "ClimbWall Overhang", new Vector3(x1, h * 0.5f, z + 0.7f), new Vector3(w, h, 1.2f),
+                mats.wall, Quaternion.Euler(20f, 0f, 0f));
+            Label(env, "[3b] 역경사 20도", new Vector3(x1 + 1.8f, h * 0.55f, z - 0.6f), Quaternion.LookRotation(Vector3.forward), 0.7f);
+
+            // --- [3b-3] curved: stacked slabs, each tilted a little more. Every slab is its own convex
+            // box, because PawnHand ignores non-convex meshes and could not grab a single curved mesh.
+            float x2 = LabLayout.ClimbX[2];
+            int slabs = Mathf.FloorToInt(h / 0.35f);
+            for (int i = 0; i < slabs; i++)
+            {
+                float y = 0.175f + i * 0.35f;
+                float t = i / (float)Mathf.Max(1, slabs - 1);
+                float lean = Mathf.Lerp(-12f, 18f, t);          // leans in low, out high
+                float bulge = Mathf.Sin(t * Mathf.PI) * 0.28f;
+                Box(env, $"Curve {i}", new Vector3(x2, y, z + 0.5f - bulge), new Vector3(w, 0.34f, 1f),
+                    mats.wall, Quaternion.Euler(lean, 0f, 0f));
+            }
+            Label(env, "[3b] 곡면", new Vector3(x2 + 1.8f, h * 0.5f, z - 0.4f), Quaternion.LookRotation(Vector3.forward), 0.7f);
         }
 
         static GameObject Box(Transform parent, string name, Vector3 center, Vector3 size, Material material, Quaternion? rotation = null)

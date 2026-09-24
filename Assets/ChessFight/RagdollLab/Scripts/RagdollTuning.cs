@@ -74,6 +74,9 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAssist, "잡기 반경 (m)")] [Range(0.05f, 0.6f)] public float grabRadius = 0.25f;
         [Tunable(GroupAssist, "잡기 접촉 거리 (m)")] [Range(0f, 0.2f)] public float grabContactDistance = 0.05f;
         [Tunable(GroupAssist, "잡기 breakForce")] [Range(200f, 30000f)] public float grabBreakForce = 6000f;
+        // Split from grabBreakForce so escape difficulty can be tuned without changing how a
+        // hand holds a ledge - the same number was doing both jobs.
+        [Tunable(GroupAssist, "상대를 잡는 힘 breakForce")] [Range(200f, 20000f)] public float pawnGrabBreakForce = 2400f;
         [Tunable(GroupAssist, "잡은 팔 강성 배율")] [Range(1f, 20f)] public float grabArmMultiplier = 6f;
         [Tunable(GroupAssist, "뻗는 팔 강성 배율")] [Range(1f, 20f)] public float reachArmMultiplier = 3f;
         [Tunable(GroupAssist, "밀치기 팔 배율")] [Range(1f, 20f)] public float shoveArmMultiplier = 5f;
@@ -115,20 +118,28 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupWeight, "최고 속도 상한 (달리기 배수, 0=무제한)")] [Range(0f, 2f)] public float overspeedClamp = 1.1f;
 
         [Tunable(GroupAction, "버둥 1회 지속 (초)")] [Range(0.05f, 0.8f)] public float struggleBurst = 0.22f;
-        [Tunable(GroupAction, "버둥 1회 탈출량 (1.0에서 탈출)")] [Range(0.05f, 1f)] public float struggleEscape = 0.22f;
-        [Tunable(GroupAction, "버둥 탈출량 감소 (/초)")] [Range(0.1f, 3f)] public float struggleDecay = 0.8f;
+        [Tunable(GroupAction, "연타 보너스 상한 (배)")] [Range(1f, 4f)] public float struggleRushBonus = 2f;
+        [Tunable(GroupAction, "반대 방향 입력 보너스 (배)")] [Range(1f, 3f)] public float struggleAwayBonus = 1.7f;
+        [Tunable(GroupAction, "점프 보너스 (배)")] [Range(1f, 3f)] public float struggleJumpBonus = 1.6f;
+        [Tunable(GroupAction, "버둥 1회 스테미나 (초)")] [Range(0f, 2f)] public float struggleStamina = 0.35f;
         [Tunable(GroupAction, "버둥 팔 진폭 (도)")] [Range(0f, 160f)] public float struggleSwing = 95f;
-        [Tunable(GroupAction, "버둥 몸부림 충격")] [Range(0f, 40f)] public float struggleShake = 9f;
-        [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 1.3f;
+        [Tunable(GroupAction, "버둥 몸부림 충격")] [Range(0f, 400f)] public float struggleShake = 150f;
+        [Tunable(GroupAction, "버둥 중 팔 강성 배율")] [Range(1f, 20f)] public float struggleArmMultiplier = 8f;
+        [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 0.85f;
         [Tunable(GroupAction, "등반 스테미나 (초)")] [Range(1f, 30f)] public float climbStaminaMax = 8f;
         // Drain and recovery are in stamina-seconds per second, so the numbers read directly:
         // hanging 0.35 means the 8 s bar lasts 23 s of just hanging, 6.4 s of full climbing.
         [Tunable(GroupAction, "매달리기 소모 (/초)")] [Range(0f, 1f)] public float climbDrainHold = 0.35f;
         [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
-        [Tunable(GroupAction, "손 번갈아 잡기 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 1.9f;
+        [Tunable(GroupAction, "손 번갈아 잡기 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 1.25f;
         [Tunable(GroupAction, "등반 자세 팔 높이 (도)")] [Range(0f, 120f)] public float climbArmRaise = 70f;
         [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
+        [Tunable(GroupAction, "바위 위로 올라타기 (초)")] [Range(0f, 1.2f)] public float climbTopOut = 0.5f;
+        [Tunable(GroupAction, "등반 허우적 (도)")] [Range(0f, 90f)] public float climbFlail = 18f;
+        [Tunable(GroupAction, "손 짚는 간격 (m)")] [Range(0.1f, 0.6f)] public float climbHandStep = 0.3f;
+        [Tunable(GroupAction, "손 좌우 벌림 (m)")] [Range(0.05f, 0.5f)] public float climbHandSpread = 0.19f;
+        [Tunable(GroupAction, "지칠 때 미끄러짐 (m)")] [Range(0f, 0.5f)] public float climbSlip = 0.18f;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]

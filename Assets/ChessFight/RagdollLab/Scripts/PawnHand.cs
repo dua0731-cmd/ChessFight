@@ -48,13 +48,15 @@ namespace ChessFight.RagdollLab
                     Release();
                     return;
                 }
-                if (!Mathf.Approximately(joint.breakForce, p.grabBreakForce))
+                bool onPawn = RagdollPawn.ColliderOwner.TryGetValue(HeldCollider, out var victim) && victim != owner;
+                float limit = onPawn ? p.pawnGrabBreakForce : p.grabBreakForce;
+                if (!Mathf.Approximately(joint.breakForce, limit))
                 {
-                    joint.breakForce = p.grabBreakForce;
-                    joint.breakTorque = p.grabBreakForce;
+                    joint.breakForce = limit;
+                    joint.breakTorque = limit;
                 }
-                if (RagdollPawn.ColliderOwner.TryGetValue(HeldCollider, out var victim) && victim != owner)
-                    victim.NotifyHeld();
+                // Tell the victim who has them and by which body, so a thrash can be aimed at the grip.
+                if (onPawn) victim.NotifyHeld(owner, HeldCollider);
                 return;
             }
             if (regrabCooldown > 0f) return;
@@ -96,8 +98,9 @@ namespace ChessFight.RagdollLab
         {
             joint = gameObject.AddComponent<FixedJoint>();
             joint.connectedBody = target.attachedRigidbody;
-            joint.breakForce = p.grabBreakForce;
-            joint.breakTorque = p.grabBreakForce;
+            bool grabbedPawn = RagdollPawn.ColliderOwner.ContainsKey(target);
+            joint.breakForce = grabbedPawn ? p.pawnGrabBreakForce : p.grabBreakForce;
+            joint.breakTorque = joint.breakForce;
             joint.enablePreprocessing = false;
             joint.enableCollision = false;
             HeldCollider = target;
