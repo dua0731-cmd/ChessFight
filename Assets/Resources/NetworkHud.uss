@@ -1,6 +1,7 @@
-.overlay { flex-grow: 1; align-items: flex-start; padding: 16px; }
-.panel { width: 380px; max-height: 100%; background-color: rgba(15, 23, 37, 0.94); color: rgb(229, 237, 249); border-radius: 12px; }
-.panel .unity-scroll-view__content-container { padding: 18px; }
+.overlay { flex-grow: 1; align-items: flex-start; padding: 10px; }
+/* flex-shrink: 0 keeps the panel at its natural height. Letting it shrink
+   squashes every row instead of overflowing, which is far harder to use. */
+.panel { width: 380px; flex-shrink: 0; padding: 14px; background-color: rgba(15, 23, 37, 0.94); color: rgb(229, 237, 249); border-radius: 12px; }
 .title { font-size: 18px; -unity-font-style: bold; margin-bottom: 12px; }
 .status { color: rgb(127, 217, 246); font-size: 14px; white-space: normal; margin-bottom: 6px; }
 .error { color: rgb(255, 177, 139); white-space: normal; }

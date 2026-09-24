@@ -1,8 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement class="overlay" picking-mode="Ignore">
-        <!-- A ScrollView, because the panel is taller than 720px once the roster
-             fills up and a plain element would be squashed or clipped instead. -->
-        <ui:ScrollView name="panel" class="panel">
+        <!-- A plain element, NOT a ScrollView: NetworkTheme.tss imports only this
+             project's USS and never Unity's default runtime theme, so composite
+             controls that rely on the default styles collapse to nothing. Buttons,
+             labels and the toggle survive because the USS styles them outright. -->
+        <ui:VisualElement name="panel" class="panel">
             <ui:Label text="CHESSFIGHT / NETWORK LAB" class="title" />
             <ui:Label name="status" text="Starting..." class="status" />
             <ui:Label name="error" class="error" />
@@ -42,6 +44,6 @@
             <ui:Toggle name="capture" label="WASD + Space enabled" />
             <ui:Label text="Click the arena after entering an ID.&#10;Blue and orange are the two teams." class="hint" />
             <ui:Label name="roster" class="roster" />
-        </ui:ScrollView>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

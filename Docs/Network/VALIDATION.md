@@ -60,6 +60,17 @@
 
 Input System 가설이 무효가 되면서 남은 후보는 **패널 높이**와 **Steam 미실행** 둘이다. 실행 후 HUD의 `Steam:` 줄과 `Input:` 줄을 먼저 본다.
 
+### 실행 후 확인된 것 (2026-09-24)
+
+| 증상 | 원인 | 조치 |
+|---|---|---|
+| **HUD가 아예 안 보임** | 패널을 `ScrollView`로 바꾼 것이 원인. `NetworkTheme.tss`는 이 프로젝트의 USS만 가져오고 **Unity 기본 런타임 테마(`unity-theme://default`)를 가져오지 않는다.** Button·Label·Toggle은 USS가 직접 스타일을 주므로 살아남지만, `ScrollView`처럼 기본 테마의 내부 스타일에 의존하는 복합 컨트롤은 크기가 0이 되어 패널 전체가 사라진다 | 패널을 평범한 `VisualElement`로 되돌리고 `flex-shrink: 0`으로 눌리지 않게 했다. 패널 내용을 한 줄 줄이고 여백을 줄여 720p에 들어가게 했다 |
+| **manifest/lock/ProjectSettings가 계속 변경됨** | 정상 동작이었다. 부트스트랩이 Input System을 설치하고 Unity가 그 결과를 파일에 쓴 것이다. **Discard → 재시작 → 재설치**가 반복된 것 | `com.unity.inputsystem 1.20.0`을 manifest와 lock에 **고정해서 커밋**했다. 이제 새 PC는 설치 단계 없이 같은 버전을 받고, 파일이 저절로 바뀌지 않는다 |
+
+**Input System 실제 버전은 `1.20.0`이다.** 레지스트리 접근이 막혀 추측할 수 없었는데, 사용자 PC의 lock 파일 diff에서 확인했다.
+
+`NetworkTheme.tss`에 기본 테마를 추가하는 것(`@import url("unity-theme://default");`)은 **아직 하지 않았다.** 구문이 틀리면 TSS import가 실패해 테마가 null이 되고 패널이 통째로 안 보이게 되므로, 화면이 나오는 것을 먼저 확인한 뒤 별도로 시도한다. 테마가 null이면 이제 Console에 오류를 남긴다.
+
 ### Safe Mode 두 번 — 원인과 최종 구조
 
 | 회차 | 에러 | 원인 |

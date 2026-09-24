@@ -96,7 +96,7 @@ Input System 코드는 **자기 asmdef(`ChessFight.Game.Input`)** 에 가둔다.
 ### 후속 수정 (같은 날)
 
 - `SampleScene`의 Main Camera·Directional Light·Global Volume에 남아 있던 **URP 컴포넌트 3개를 제거**했다. URP 패키지가 없어 스크립트가 해결되지 않아 `The referenced script (Unknown) on this Behaviour is missing!` 경고를 내던 것이다. 이제 `SampleScene`은 부트 대상이 아니다.
-- HUD 패널을 `ScrollView`로 바꿨다. 봇 UI가 늘면서 패널이 720px를 넘어 눌러야 할 요소가 잘리거나 눌리는 문제가 생길 수 있었다.
+- ~~HUD 패널을 `ScrollView`로~~ **되돌렸다.** `NetworkTheme.tss`가 Unity 기본 런타임 테마를 가져오지 않아 `ScrollView`가 크기 0으로 무너지고 HUD가 통째로 보이지 않았다. 평범한 `VisualElement` + `flex-shrink: 0`으로 되돌렸다. **이 TSS 위에서는 기본 테마 스타일에 의존하는 복합 컨트롤을 쓸 수 없다.**
 - ~~`EventSystem` 자동 생성~~ **시도했다가 철회했다.** 이 프로젝트 manifest에는 `com.unity.ugui`가 없어 `UnityEngine.EventSystems`가 존재하지 않고, CS0234로 Safe Mode에 빠졌다. UI Toolkit은 EventSystem 없이 자체 `DefaultEventSystem`으로 런타임 입력을 처리하므로 필요 없는 코드였다.
 - 이어서 `ENABLE_INPUT_SYSTEM`을 패키지 존재 여부로 오인해 두 번째 Safe Mode를 냈다. Input System 코드를 `ChessFight.Game.Input` asmdef로 옮겨 `CHESSFIGHT_INPUTSYSTEM`으로 가뒀다. 위 3절의 표를 본다.
 - Steam 초기화 실패 시 **Retry Steam connection** 버튼이 나온다. 이전에는 Play를 다시 눌러야만 복구할 수 있었다.

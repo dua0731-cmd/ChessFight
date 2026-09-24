@@ -18,7 +18,7 @@
 
 런타임에 코드로 만들던 것을 **자산**으로 바꿨다. 보이는 화면은 그대로다.
 
-- **입력이 Input System으로 바뀌었다.** `ChessFight > Setup > Install dependencies`가 Steamworks와 `com.unity.inputsystem`을 함께 설치한다(에디터 시작 시 자동 1회 시도). **설치 후 생성된 `Packages/manifest.json`과 `packages-lock.json`을 꼭 커밋한다 — 그래야 다른 PC가 같은 버전으로 고정된다.** 패키지가 없으면 Input System 어셈블리가 통째로 제외되고 Legacy 입력으로 자동 대체되므로 컴파일은 절대 깨지지 않는다. 지금 어느 쪽을 쓰는지는 HUD의 `Input:` 줄이나 `ChessFight > Setup > Report input backend`로 확인한다.
+- **입력이 Input System으로 바뀌었다.** `com.unity.inputsystem 1.20.0`이 manifest/lock에 고정되어 있으므로 Unity가 열릴 때 자동으로 받는다. 따로 할 일은 없다. Steamworks는 `ChessFight > Setup > Install dependencies`가 설치한다(에디터 시작 시 자동 1회 시도). **설치 결과로 manifest/lock이 바뀌면 Discard하지 말고 커밋한다.** Discard하면 다음 실행 때 다시 설치되어 무한 반복된다. 지금 어느 입력 백엔드를 쓰는지는 HUD의 `Input:` 줄이나 `ChessFight > Setup > Report input backend`로 확인한다.
 - `ProjectSettings`의 Active Input Handling을 **Both**로 바꿨다. 에디터가 켜진 채 Pull 했다면 재시작을 요구할 수 있다.
 - 씬이 `ChessFightLab`으로 바뀌었다. 기존 `SampleScene`에서도 계속 동작한다.
 - 시작 씬은 `Assets/Scenes/ChessFightLab.unity` **하나뿐이다.** 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. **체스판·캡슐·HUD는 프리팹/UXML 자산이며 Play 중에 생성(Instantiate)된다.** 누가 경기에 들어올지는 실행 전에 알 수 없으므로 캐릭터 생성 자체는 런타임이 맞다.
@@ -135,6 +135,7 @@ Unity 경로가 다르면 두 스크립트에 `-UnityEditor '<설치된 Unity의
 ## 현재 범위의 한계
 
 - **인터넷 지연·패킷 손실과 12인 부하는 아직 검증이 필요하다.** 2026-09-22 두 PC·두 계정의 파티 입장과 공개 매칭 성사는 확인했다. 양방향 이동 동기화는 아직 보고되지 않았다. 2026-09-21 Editor의 Steam 1인 파티·비공개 방·캡슐 표시 및 Windows 빌드는 성공했다. 2026-09-22 독립 실행 빌드에서도 Steam 로그인 후 1인 파티·비공개 방·캡슐 생성을 확인했다. 자세한 범위는 [검증 기록](VALIDATION.md)을 따른다. 현재 결과는 출시 완료 판정이 아니다.
+- **HUD는 UI Toolkit 기본 런타임 테마를 쓰지 않는다.** `Resources/NetworkTheme.tss`가 이 프로젝트 USS만 가져온다. 그래서 `ScrollView`·`DropdownField` 같은 복합 컨트롤은 UXML에 넣어도 보이지 않는다. 필요해지면 먼저 TSS에 기본 테마를 추가해야 한다.
 - 이동 테스트용 캡슐이다. 기물 선택·6종 스킬·팀 전투·라운드 진행·래그돌·플레이어 간 충돌은 이후 작업이다. 현재 `Start`는 입장 마감 상태만 전환한다.
 - **2026-09-22 구조 개편과 AI 봇은 아직 Unity에서 한 번도 실행하지 않았다.** 프리팹·씬·재질은 손으로 작성한 Unity YAML이다. 먼저 에디터에서 열어 화면이 이전과 같은지 확인하고 결과를 [VALIDATION.md](VALIDATION.md)에 남긴다.
 - 봇은 호스트가 전부 시뮬레이션한다. 호스트가 약하면 12인 봇 방의 프레임이 떨어질 수 있고, 그 부하는 아직 측정하지 않았다.

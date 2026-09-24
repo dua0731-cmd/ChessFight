@@ -52,7 +52,11 @@ namespace ChessFight.Game
                 settings = ownedPanel = ScriptableObject.CreateInstance<PanelSettings>();
                 settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
                 settings.referenceResolution = referenceResolution;
+                // A PanelSettings without a theme renders nothing at all, so say so
+                // loudly rather than leaving an invisible HUD to explain.
                 if (theme != null) settings.themeStyleSheet = theme;
+                else Debug.LogError("[ChessFight] Resources/NetworkTheme (.tss) did not load. " +
+                                    "The HUD will be invisible until a theme style sheet is assigned.");
             }
             document.panelSettings = settings;
 
