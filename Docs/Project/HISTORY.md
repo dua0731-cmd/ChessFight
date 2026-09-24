@@ -1,0 +1,23 @@
+# 변경 이력
+
+커밋마다 한 줄. 무엇을 왜 바꿨는지는 [REQUIREMENTS](REQUIREMENTS.md)의 같은 번호를 본다.
+`git log --oneline`과 같은 순서(최신이 위)다.
+
+| 커밋 | 날짜 | 요청 | 내용 |
+|---|---|---|---|
+| (이 항목을 추가한 커밋) | 09-24 | R15 | 인수인계 체계: 루트 `HANDOFF.md`, AI 도구별 안내 파일, `Docs/` 분야별 트리, 요구사항·결정·함정 기록, `Tools/run-tests-linux.sh`, `Tools/Generators/` |
+| `01dd655` | 09-24 | R14 | 호스트 끊김 경고(0.5/2/12초), 점프 누른 횟수, build 검사, 공개 매치 봇 규칙, 핑·응답 표시, F8 지연 시뮬레이터, Rich Presence. 프로토콜 v2 |
+| `72ddf9e` | 09-24 | R11 | Intro·Lobby·KingRush·RagdollTest 씬, `NetworkRuntime`, `ChessFight.Gameplay`, 팀 가이드 |
+| `fef9d42` | 09-24 | R10 | 게임 내 친구 초대 패널 |
+| `d6ff4f9` | 09-24 | R9 | 입력 백엔드와 상관없이 HUD가 눌리도록 대체 클릭 경로 |
+| `7d1ca63` | 09-24 | R8 | Active Input Handling을 Old로 복구, `InputSettingsGuard` |
+| `1c0da4a` | 09-24 | R7 | 한국어 전체 화면 HUD, 단계형 시작 |
+| `a070367` | 09-24 | R6 | Input System 1.20.0 고정, ScrollView 제거 ← **main이 여기** |
+| `475e040` | 09-24 | R5 | Input System 코드를 패키지 존재로 게이트 |
+| `d22e3ec` | 09-22 | R4 | EventSystem 부트스트랩 제거 |
+| `8649011` | 09-22 | R3 | 폴더 평탄화, SampleScene 정리, UI 보강 |
+| `3abe230` | 09-22 | R2 | AI 봇, 코드 생성 → 프리팹·UXML·Input System |
+| `cf29671` | 09-22 | — | 네트워크 인수인계 문서 (이전 도구) |
+| `c9c1e6a` | 09-21 | — | Steamworks 의존성 고정 |
+| `87805f0` | 09-21 | — | Steam 파티, 6v6 매칭, 이동 테스트 |
+| `5af7c8c` | 09-15 | — | 프로젝트 환경 구축 시작 |

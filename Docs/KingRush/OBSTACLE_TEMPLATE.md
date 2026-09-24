@@ -1,6 +1,6 @@
 # 장애물 기획서 — (이름)
 
-> 복사해서 `Docs/KingRush/Obstacles/이름.md`로 저장한다. 구현 규칙은 `Docs/TEAM_GUIDE_KO.md` 6장.
+> 복사해서 `Docs/KingRush/Obstacles/이름.md`로 저장한다. 구현 규칙은 [OBSTACLES.md](OBSTACLES.md).
 
 ## 한 줄 요약
 

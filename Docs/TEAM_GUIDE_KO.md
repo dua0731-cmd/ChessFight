@@ -2,7 +2,9 @@
 
 작성: 2026-09-24 · 기준 Unity `6000.3.11f1` · 기준 브랜치 `main`
 
-이번 주차 역할 분담에 맞춰 **각자 main에 바로 작업을 올릴 수 있도록** 만든 개발 환경의 설명서다. 처음 합류하는 사람과, 각자 쓰는 AI 모두 이 문서부터 읽는다.
+이번 주차 역할 분담에 맞춰 **각자 main에 바로 작업을 올릴 수 있도록** 만든 개발 환경의 설명서다.
+
+> **AI에게 일을 맡길 때는 저장소 루트의 [`HANDOFF.md`](../HANDOFF.md)를 먼저 읽게 한다.** 현재 상태, 절대 규칙, 분야별 문서 지도가 거기 있다. 이 가이드는 팀원이 읽기 편하게 요약을 겹쳐 둔 것이고, 어긋나면 분야 문서(`Docs/Player`, `Docs/KingRush`, `Docs/Network`)가 기준이다.
 
 | 담당 | 이번 주 할 일 | 이 문서에서 볼 곳 |
 |---|---|---|
@@ -184,7 +186,7 @@ namespace ChessFight.RagdollLab
 
 ```text
 ChessFight 저장소의 JY-ragdoll 브랜치에서 작업합니다. main을 먼저 병합하세요.
-Docs/TEAM_GUIDE_KO.md 5장과 Docs/RagdollLab/README.md를 읽고 시작하세요.
+저장소 루트 HANDOFF.md를 먼저 읽고, Docs/Player/RAGDOLL.md(이 가이드 5장과 같은 내용)와 Docs/RagdollLab/README.md를 읽으세요.
 RagdollPawn은 SetInput(PawnInput)으로만 움직입니다. 이 구조를 유지하세요.
 목표: 래그돌 프리팹이 ICharacterDriver를 구현하게 하고(5.2 어댑터), RagdollTest 씬의
 PlaytestSpawner에 넣어 이동·점프·잡기·밀기가 동작하는 것을 확인합니다.
@@ -282,7 +284,7 @@ namespace ChessFight.Gameplay
 
 ```text
 ChessFight 저장소 main에서 feature 브랜치를 만들어 킹러시 맵과 장애물을 작업합니다.
-Docs/TEAM_GUIDE_KO.md 2·3·4·6장을 먼저 읽으세요.
+저장소 루트 HANDOFF.md를 먼저 읽고, Docs/KingRush/README.md와 OBSTACLES.md(이 가이드 6장과 같은 내용)를 읽으세요.
 Assets/Scenes/KingRush.unity가 작업 씬입니다. 직접 Play하면 오프라인 플레이테스트가 됩니다.
 장애물은 Assets/Scripts/Gameplay/Obstacles/Obstacle을 상속하고 Evaluate만 구현합니다.
 반드시 지킬 것: 위치·회전은 ObstacleClock 시간의 순수 함수로만 계산하고
@@ -295,7 +297,7 @@ Assets/Scenes/KingRush.unity가 작업 씬입니다. 직접 Play하면 오프라
 
 ## 7. 승규 — 네트워크 방어 기획
 
-먼저 읽을 것: `Docs/AI/NETWORK_HANDOFF_KO.md` (전체 구조), 그중 6~12장(파티·매칭·예약·이동 동기화)과 17장(알려진 한계). 그다음 `Docs/Network/VALIDATION.md`에서 실제로 확인된 것과 아닌 것을 구분한다.
+먼저 읽을 것: 루트 `HANDOFF.md` → `Docs/Network/README.md`(개요) → `SESSION.md`(파티·매칭·예약) → `MOTION.md`(이동·끊김·핑) → `Docs/Project/ROADMAP.md`(알려진 한계). 그다음 `Docs/Network/VALIDATION.md`에서 실제로 확인된 것과 아닌 것을 구분한다. **기획안 v0.1의 반영 상태와 다음 요청 작업은 `Docs/Network/PLAN_V0.1_STATUS.md`에 있다.**
 
 지금 구조를 한 줄로: **서버 없음. 경기 방을 만든 플레이어 PC가 호스트로서 모든 이동을 판정하고, 나머지는 입력만 보낸다.**
 
@@ -304,9 +306,9 @@ Assets/Scenes/KingRush.unity가 작업 씬입니다. 직접 Play하면 오프라
 | 변수 | 지금 동작 | 관련 코드 |
 |---|---|---|
 | 호스트 이탈 | 경기 즉시 종료, 전원 로비로. 호스트 이전 없음 | `SteamSession.PollMatch` |
-| 호스트 강제 종료·네트워크 단절 | 12초간 호스트 신호 없으면 이탈 처리 | `SteamMotion.Update` |
+| 호스트 강제 종료·네트워크 단절 | 0.5초 "불안정" 경고, 2초 멈춤, 12초 파티 복귀 (09-24 기획안 반영) | `SteamMotion.UpdateHealth`, `LinkMonitor` |
 | 입력 지연 | 클라이언트 예측 후 호스트 값으로 보정 | `SteamMotion` |
-| 패킷 손실 | 입력·스냅샷 모두 비신뢰 전송, 최신 값만 사용. **점프 입력이 사라질 수 있음** | `MotionProtocol` |
+| 패킷 손실 | 입력·스냅샷 모두 비신뢰 전송, 최신 값만 사용. 점프는 누른 횟수로 보내 유실되지 않음(09-24). F8로 지연·손실 시험 가능 | `MotionProtocol`, `LinkSimulator` |
 | 장애물 동기화 | Steam 서버 시계(초 단위) + 로컬 시계로 소수점. **PC 간 실제 오차 미측정** | `NetworkRuntime.SharedClock` |
 | 래그돌 물리 권한 | **미정.** 호스트가 12명 래그돌을 다 돌릴지, 각자 돌리고 호스트가 검증할지 | 준영님 작업과 맞물림 |
 | 봇 | 호스트가 전부 계산. 호스트 부하 미측정 | `BotBrain`, `SteamMotion` |
@@ -318,7 +320,7 @@ Assets/Scenes/KingRush.unity가 작업 씬입니다. 직접 Play하면 오프라
 
 ```text
 ChessFight 저장소 main 브랜치의 멀티플레이 구조를 파악하고 방어 기획을 세웁니다.
-Docs/AI/NETWORK_HANDOFF_KO.md와 Docs/Network/VALIDATION.md, Docs/TEAM_GUIDE_KO.md 7장을 읽으세요.
+저장소 루트 HANDOFF.md를 먼저 읽고, Docs/Network 폴더 전체(README, SESSION, MOTION, BOTS, PLAN_V0.1_STATUS, VALIDATION)를 읽으세요.
 전용 서버 없이 Steam 로비 + 호스트 PC 판정 구조입니다.
 검토할 것: 지연 감소, 호스트 이탈·강제 종료 대응(호스트 이전 가능성 포함), 패킷 손실 시 점프 누락,
 장애물 공유 시계 오차, 래그돌 물리를 누가 시뮬레이션할지, 호스트 부하(12인 + 봇).
