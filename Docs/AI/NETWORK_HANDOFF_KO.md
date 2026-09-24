@@ -178,6 +178,30 @@ Steam을 모르는 게임 로직. 참조: `ChessFight.Game`만.
 3. `SharedClock`의 PC 간 실제 오차.
 4. `PlaytestCharacter`의 조작감(임시품), `PhysicsProfile` 적용.
 
+## 2.7. 2026-09-24 변경 — 네트워크 기획안(v0.1) '지금 적용' 항목
+
+승규 님의 「체스파이트 온라인 기획안 v0.1」 중 지금 코드에 바로 넣을 수 있는 여섯 가지를 반영했다. **프로토콜이 v2로 올라갔다. 이 커밋 이전 빌드와는 서로 찾지도, 들어가지도 못한다.**
+
+| 기획안 | 반영 내용 | 코드 |
+|---|---|---|
+| 호스트 끊김 1단계 | 스냅샷이 0.5초 없으면 "연결 불안정", 2초면 **멈춤**(입력 0 전송, 예측 정지)과 남은 시간 표시, 12초면 파티로 복귀. 킹러시 화면 상단 배너 + 로비 상세 정보 | `Core/LinkQuality.cs` `LinkMonitor`, `SteamMotion.UpdateHealth`, `KingRushMatchView.ShowWarning` |
+| 패킷 손실 시 점프 유실 | 점프를 '누른 횟수'(byte, 순환)로 매 입력 패킷에 싣는다. 첫 패킷이 사라져도 다음 패킷이 같은 횟수를 전달하므로 한 번만 늦게 뛴다. 입력 패킷 magic `CFF2` | `MotionProtocol.TakeJump`, `SteamMotion` |
+| 버전 불일치 | 모든 로비에 `build` 기록. 공개 검색은 같은 build만, 파티 초대·번호 입장은 "게임 버전이 다릅니다 (내 버전 / 상대)" 안내 후 새 1인 파티 | `SteamSession.Incompatibility`, `NetworkRuntime.BuildTag` |
+| M6 공개 매치 봇 금지 | 릴리스 빌드에서만 적용. 봇이 있는 파티는 빠른 매칭 버튼이 꺼지고, 호스트도 봇 포함 예약을 거절(`|bots`), 공개 방에서 `12명 채우기` 불가. 비공개 테스트 방은 그대로 허용. **Editor·개발 빌드는 지금처럼 공개 매칭에도 봇 허용** | `SteamSession.AllowPublicBots`, `BotsBlockPublicMatch`, `CanUseRoomBots` |
+| 핑 표시 · 지연/손실 토글 (T8 전제) | Steam 전송 핑(클라=방장까지, 방장=가장 나쁜 참가자)과 '응답'(입력→그 입력을 반영한 스냅샷까지) 표시. 개발 빌드에서 **F8**로 꺼짐 → +100ms → +200ms/5% → +300ms/10% 순환. 이 PC의 송·수신 양쪽에 적용 | `ResponseTimer`, `LinkSimulator`, `SteamMotion.QualityLine`, `NetworkRuntime.Update` |
+| M5 Steam 친구 목록에서 참가 | 파티가 한가할 때 Rich Presence `connect=+connect_lobby <파티ID>`, 검색·경기 중에는 철회. 실행 중 참가 요청(`GameRichPresenceJoinRequested_t`)과 실행 인자 모두 처리 | `SteamSession.UpdatePresence`, `ParseConnect` |
+
+**build 값:** `Application.version`(Player Settings › Version, 현재 `0.1.0`) + 개발 빌드면 `-dev`. 즉 개발 빌드와 릴리스 빌드는 서로 매칭되지 않는다. 테스터에게 새 빌드를 나눠 줄 때마다 Version을 올리면 옛 빌드는 버전 안내를 받는다. Editor끼리는 같은 커밋이면 같은 값이다.
+
+**아직 하지 않은 것 (결정·설계 필요):** 한 번만 일어나는 이벤트용 신뢰 채널, 씬 로딩 동기화(3·2·1), 호스트 이전(2·3단계), 재입장, 핑 기반 방 검색(M3)과 호스트 재지정(M4), 되감기 판정, 기물 선택(M1)·재대결(M2).
+
+### 이 변경분에서 검증되지 않은 것
+
+1. 실제 Steam에서 경고 배너가 뜨는 시점(한쪽 PC의 Steam을 끊거나 방장 창을 일시정지해 확인).
+2. F8 시뮬레이터 상태에서의 조작감, 핑 수치가 Steam 오버레이 값과 비슷한지.
+3. Steam 친구 목록의 "게임 참가"가 App ID 480에서 뜨는지(Steamworks 설정에 따라 다를 수 있다).
+4. 릴리스 빌드에서 봇 파티의 빠른 매칭 차단.
+
 ## 3. 환경과 작업 폴더
 
 | 항목 | 기준 |
@@ -232,9 +256,9 @@ Assets/
 
 ```text
 Tests/Network/
-  NetworkCoreTests.cs   23개 핵심 로직 검사 (봇 5개 포함)
+  NetworkCoreTests.cs   28개 핵심 로직 검사 (봇 5개, 연결 품질 5개 포함)
   FakeSteam.cs          테스트용 Steam/Unity 일부 API 모사
-  SessionFlowTests.cs   실제 SteamSession의 7개 흐름 검사
+  SessionFlowTests.cs   실제 SteamSession의 12개 흐름 검사
 Tools/
   Test-NetworkCore.ps1     Core + 모의 세션 테스트 실행
   Test-NetworkCompile.ps1  실제 Unity/Steamworks 참조 컴파일
@@ -343,7 +367,8 @@ Steam은 로비 검색·접속 기능을 제공하고, 그 위에서 `SteamSessi
 
 | 키 | 위치 | 값과 용도 |
 |---|---|---|
-| `protocol` | 두 로비 | `chessfight.dua0731.network.v1` |
+| `protocol` | 두 로비 | `chessfight.dua0731.network.v2` |
+| `build` | 두 로비 | `NetworkRuntime.BuildTag` (예: `0.1.0-dev`). 검색 필터와 입장 검사에 쓴다 |
 | `kind` | 두 로비 | `party` 또는 `match` |
 | `route` | 파티 | `idle` / `search` / 경기 로비 ID 문자열 |
 | `cancel` | 파티원의 member data | 취소할 때 새 GUID. 파티장이 시작 당시 값과 비교 |
@@ -409,7 +434,8 @@ sequenceDiagram
 - 실제 roster에 존재하는 사람만 상태를 생성한다.
 - 프레임 누적 시간을 1/30초 단위로 소비한다. 한 프레임의 누적 처리량은 최대 네 step으로 제한한다.
 - 상대별 가장 최근의 유효 입력 하나를 저장해 각 step에 적용한다. 입력이 0.25초 이상 안 오면 X/Z와 점프를 0/false로 취급한다.
-- 한 번 처리한 Jump는 바로 false로 만든다.
+- 점프는 입력 패킷의 누른 횟수(`Jumps`)가 상대별 소비 값과 달라지면 한 번 적용하고 소비 값을 갱신한다(`MotionProtocol.TakeJump`). 패킷 하나가 사라져도 다음 패킷이 같은 횟수를 가져온다.
+- 봇 포함 예약은 릴리스 빌드의 공개 방에서 거절한다.
 - 최대 20Hz(최소 전송 간격 0.05초)로 전체 상태를 각 참가자에게 보낸다. 실제 전송률은 프레임 속도와 환경에 따라 낮아질 수 있다.
 
 ### 클라이언트
@@ -419,7 +445,8 @@ sequenceDiagram
 - 미확인 입력을 최대 120개 보관한다. 약 4초 분량이지만 네트워크 지연 품질을 보장하는 수치는 아니다.
 - 더 새로운 호스트 snapshot을 받으면 자기 Ack 이하 입력을 제거한다. 권위 상태에 남은 입력을 순서대로 재적용한다.
 - 다른 플레이어 상태는 호스트 snapshot을 사용한다.
-- 명단에 입장한 클라이언트가 12초간 유효 snapshot을 못 받으면 경기에서 나가고 오류를 표시한다.
+- 명단에 들어간 순간부터 snapshot 공백을 잰다. 0.5초 "불안정", 2초 "멈춤"(이동 입력 0, 점프 무시), 12초면 경기에서 나가고 오류를 표시한다(`LinkMonitor`).
+- 보낸 입력의 시각을 기록해 그 입력을 Ack한 snapshot이 오면 '응답' 시간을 계산한다(`ResponseTimer`, 1/8 지수 평활).
 
 현재 호스트는 입력 하나마다 독립 tick을 재현하는 완전한 입력 이력 시뮬레이션이 아니라, 수신한 최신 입력을 유지해 판정한다. 클라이언트의 입력별 재실행과는 방식이 다르므로 실제 지연·손실 조건에서 보정 오차를 검증해야 한다.
 
@@ -445,12 +472,12 @@ BinaryWriter/BinaryReader 기반, 현재 필드들은 little-endian으로 직렬
 
 | 순서 | 형식 | 필드 |
 |---|---|---|
-| 1 | uint32 | magic `0x43464631` |
+| 1 | uint32 | magic `0x43464632` (`CFF2`, v1은 `CFF1`) |
 | 2 | byte | type=1 |
 | 3 | uint64 | session |
 | 4 | uint32 | sequence |
 | 5~6 | float32 각각 | X, Z |
-| 7 | bool 1바이트 | Jump |
+| 7 | byte | Jumps — 누른 횟수, 255 다음 0 |
 
 **snapshot: 18 + 30 × 인원수 바이트**, 12명이면 378바이트다.
 
@@ -580,8 +607,8 @@ Busy   [경기 시작] [취소]        ← 세션이 실제로 바쁠 때 강제
 
 | 검사 | 상태 | 한계 |
 |---|---|---|
-| 순수 Core 검사 | 23개 통과 (봇 5개 포함) | 실제 통신 없음 |
-| 생산 SteamSession + 모의 Steam 검사 | 7개 통과 | 실제 Steam 전파·연결·패킷 손실 없음 |
+| 순수 Core 검사 | 28개 통과 (봇 5개, 연결 품질 5개 포함) | 실제 통신 없음 |
+| 생산 SteamSession + 모의 Steam 검사 | 12개 통과 | 실제 Steam 전파·연결·패킷 손실 없음 |
 | 실제 Unity/Steamworks 참조 어셈블리 컴파일 | 통과 | Editor/Player 실행과 별도 |
 | 실제 Unity UPM 설치·import·컴파일 | 2026-09-21 완료 | 초기 별도 복사본 라이선스 장애는 이후 사용자 Editor에서 해소 |
 | Editor Steam 파티·비공개 경기 | 1인 성공 | 두 번째 사용자의 입장 미확인 |
@@ -613,7 +640,7 @@ $steamRuntime = Get-ChildItem './Library/PackageCache' -Directory |
 
 Core 검사 범위: 팀 정원/파티 유지, 4+4+4 거절, 3+3+2+2+1+1 수용, 아직 접속 중인 인원 예약, 재시도 시 만료 연장 방지, 부분 실패 해제, 중복/0/발신자 불일치/겹친 ID 거절, 명단·ticket 변경 거절, 1,000회 무작위 예약, 입력/상태 직렬화, 세션 격리, 비정상 수치·길이·순서, 대각선 속도, 점프 착지와 경계다. 'spoofed leader' 테스트 이름은 sender가 members에 포함되지 않은 선언을 거절한다는 뜻이며 외부 파티 소속 인증을 증명하지 않는다.
 
-모의 세션 검사 7개: 2인 파티 동행·취소 후 유지, 서로 다른 솔로의 반대 팀 입장, 파티원 취소 전파, 취소된 비동기 입장 콜백 무효화, 일부 파티원 입장 실패, 호스트 이탈, 동시 솔로 12명 검색의 6v6 수렴이다. `SteamMotion` 실제 전송·예측 보정의 통합 테스트는 포함하지 않는다.
+모의 세션 검사 12개: 2인 파티 동행·취소 후 유지, 서로 다른 솔로의 반대 팀 입장, 파티원 취소 전파, 취소된 비동기 입장 콜백 무효화, 일부 파티원 입장 실패, 호스트 이탈, 동시 솔로 12명 검색의 6v6 수렴, 다른 build 파티 거절, 다른 build 검색 분리, 릴리스 봇 규칙, 개발 빌드 봇 허용, Rich Presence 참가다. `SteamMotion` 실제 전송·예측 보정의 통합 테스트는 포함하지 않는다.
 
 ## 17. 알려진 한계와 코드 검토상 확인할 지점
 

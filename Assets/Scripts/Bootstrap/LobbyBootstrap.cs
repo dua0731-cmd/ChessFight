@@ -141,7 +141,9 @@ namespace ChessFight.Game
                 Error = session.Error,
                 Hint = Hint(),
                 Details = $"Steam: {(session.Online ? "연결됨" : "연결 안 됨 - Steam 실행 후 다시 연결")}\n" +
-                          $"{motion?.ConnectionStatus}\n입력: {runtime.Controls?.DisplayName}",
+                          Line(motion?.ConnectionStatus) + Line(motion?.QualityLine) +
+                          $"입력: {runtime.Controls?.DisplayName} · 버전 {session.Build}" +
+                          (Debug.isDebugBuild ? "\nF8 지연 시뮬레이터" : ""),
                 PartyId = "파티  " + (session.Party == 0 ? "—" : session.Party.ToString()),
                 MatchId = "경기  " + (session.Match == 0 ? "—" : session.Match.ToString()),
                 RosterTitle = session.Match == 0 ? $"내 파티  {humans}/6" : $"경기 명단  {session.Roster.Count}/12",
@@ -149,8 +151,10 @@ namespace ChessFight.Game
                 Bots = session.Match == 0
                     ? $"파티 봇  {session.PartyBots} / {session.MaxPartyBots}"
                     : $"방 인원  {session.Roster.Count} / 12  (봇 {session.RoomBots})",
-                CanQuickMatch = idleLeader,
-                CanPartyStart = idleLeader,
+                // Release builds keep bots out of public matches (M6); the test
+                // room still takes them.
+                CanQuickMatch = idleLeader && !session.BotsBlockPublicMatch,
+                CanPartyStart = idleLeader && !session.BotsBlockPublicMatch,
                 CanCreateTest = idleLeader,
                 CanJoinMatch = idleLeader,
                 CanInvite = session.Online && !session.Busy && session.Party != 0,
@@ -161,7 +165,7 @@ namespace ChessFight.Game
                 CanLeaveParty = session.Online && !session.Busy,
                 CanAddBot = idleLeader && session.PartyBots < session.MaxPartyBots,
                 CanRemoveBot = idleLeader && session.PartyBots > 0,
-                CanFillRoom = hostWaiting && session.Roster.Count < 12,
+                CanFillRoom = session.CanUseRoomBots && session.Roster.Count < 12,
                 CanClearRoomBots = hostWaiting && session.RoomBots > 0,
                 CanRetry = !session.Online,
                 FriendsOpen = friendsOpen
@@ -171,6 +175,7 @@ namespace ChessFight.Game
         string Hint()
         {
             if (!session.Online) return "Steam에 연결되어야 시작할 수 있습니다.";
+            if (session.BotsBlockPublicMatch && step != HudStep.Busy) return "봇이 있는 파티는 테스트 방에서만 시작할 수 있습니다.";
             switch (step)
             {
                 case HudStep.Mode: return "혼자 바로 찾을까요, 친구와 함께 갈까요?";
@@ -181,6 +186,8 @@ namespace ChessFight.Game
                 default: return "";
             }
         }
+
+        static string Line(string text) => string.IsNullOrEmpty(text) ? "" : text + "\n";
 
         string BuildRoster()
         {

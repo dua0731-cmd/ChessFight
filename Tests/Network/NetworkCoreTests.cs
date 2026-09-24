@@ -50,8 +50,8 @@ public static class NetworkCoreTests
                     for(int request=0;request<30;request++) { int n=random.Next(1,7); Reserve(r,id,n); id+=n; Check(r.Used(0)<=6&&r.Used(1)<=6&&r.Count<=12,"capacity"); }
                 } });
             Test("Motion input roundtrip and session isolation", () => {
-                var bytes=MotionProtocol.Input(42,new MoveInput {Sequence=10,X=1,Z=-1,Jump=true});
-                Check(MotionProtocol.ReadInput(bytes,42,out var i)&&i.Sequence==10&&i.Jump&&i.Z==-1,"input");
+                var bytes=MotionProtocol.Input(42,new MoveInput {Sequence=10,X=1,Z=-1,Jumps=7});
+                Check(MotionProtocol.ReadInput(bytes,42,out var i)&&i.Sequence==10&&i.Jumps==7&&i.Z==-1,"input");
                 Check(!MotionProtocol.ReadInput(bytes,43,out _),"cross session"); });
             Test("Reject invalid, oversized and non-finite input", () => {
                 Check(!MotionProtocol.ReadInput(new byte[25],1,out _),"truncated");
@@ -120,6 +120,35 @@ public static class NetworkCoreTests
                     moved |= Math.Abs(state.X - startX) > 1 || Math.Abs(state.Z - startZ) > 1; }
                 Check(moved, "bot never moved");
                 Check(Math.Abs(state.X) <= PawnMotor.Radius && Math.Abs(state.Z) <= PawnMotor.Radius && state.Y >= 1, "bot left the arena"); });
+            Test("A jump survives the loss of the packet that first carried it", () => {
+                // Client presses on sequence 2; the packet is lost; sequence 3 still carries the count.
+                byte consumed=0; var sent=new[]{ new MoveInput{Sequence=1,Jumps=0}, new MoveInput{Sequence=2,Jumps=1}, new MoveInput{Sequence=3,Jumps=1}, new MoveInput{Sequence=4,Jumps=1} };
+                int jumps=0; foreach(var input in sent) { if(input.Sequence==2) continue;
+                    MotionProtocol.ReadInput(MotionProtocol.Input(5,input),5,out var got); if(MotionProtocol.TakeJump(got.Jumps,ref consumed)) jumps++; }
+                Check(jumps==1,"lost press must jump exactly once, got "+jumps);
+                byte wrap=255; Check(MotionProtocol.TakeJump(0,ref wrap)&&!MotionProtocol.TakeJump(0,ref wrap),"count wraps"); });
+            Test("Old protocol packets are rejected", () => {
+                var bytes=MotionProtocol.Input(1,new MoveInput{Sequence=1}); bytes[0]=0x31; // "CFF1" magic, little endian
+                Check(!MotionProtocol.ReadInput(bytes,1,out _),"v1 input accepted"); });
+            Test("Host silence escalates: unstable, frozen, lost", () => {
+                Check(LinkMonitor.Classify(.1f)==LinkHealth.Ok&&LinkMonitor.Classify(.6f)==LinkHealth.Unstable,"unstable");
+                Check(LinkMonitor.Classify(2.5f)==LinkHealth.Frozen&&LinkMonitor.Classify(12f)==LinkHealth.Lost,"frozen/lost"); });
+            Test("Response time measures send to acknowledgement and ignores stale acks", () => {
+                var t=new ResponseTimer(); Check(t.Milliseconds<0,"empty");
+                for(uint s=1;s<=5;s++) t.Sent(s,s*0.033);
+                t.Acknowledged(3,0.099+0.1); Check(Math.Abs(t.Milliseconds-100)<0.5,"first sample "+t.Milliseconds);
+                t.Acknowledged(2,1.0); Check(Math.Abs(t.Milliseconds-100)<0.5,"stale ack changed estimate");
+                t.Acknowledged(5,0.165+0.180); Check(t.Milliseconds>100&&t.Milliseconds<180,"smoothing "+t.Milliseconds); });
+            Test("Link simulator delays in order and drops about the configured share", () => {
+                var sim=new LinkSimulator<int>(7){Profile=new LinkProfile{RoundTripMs=200}}; var got=new List<int>();
+                for(int n=0;n<5;n++) sim.Push(n,n*0.01);
+                sim.Release(0.099,got.Add); Check(got.Count==0,"released early");
+                sim.Release(0.125,got.Add); Check(got.SequenceEqual(new[]{0,1,2}),"order/partial");
+                sim.Release(1,got.Add); Check(got.Count==5&&sim.Count==0,"rest");
+                var lossy=new LinkSimulator<int>(11){Profile=new LinkProfile{LossPercent=10}}; int kept=0;
+                for(int n=0;n<10000;n++) if(lossy.Push(n,0)) kept++;
+                Check(kept>8700&&kept<9300,"loss rate "+kept);
+                Check(!new LinkProfile().Active&&LinkProfile.Presets.Skip(1).All(p=>p.Active),"presets"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

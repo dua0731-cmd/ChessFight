@@ -45,6 +45,11 @@ namespace ChessFight.Game
             if (first == SceneNames.Intro || first == SceneNames.Lobby) Ensure();
         }
 
+        // Player Settings > Version, plus "-dev" for the Editor and development builds.
+        // Raise the version for every build handed to testers, so stale copies
+        // are told to update instead of desyncing.
+        public static string BuildTag => Application.version + (Debug.isDebugBuild ? "-dev" : "");
+
         public static NetworkRuntime Ensure()
         {
             if (Instance != null) return Instance;
@@ -61,7 +66,9 @@ namespace ChessFight.Game
 
             Controls = MoveInputSources.Create();
             Controls.Enable();
-            Session = new SteamSession();
+            // Development and release builds never meet: the build tag differs,
+            // and only development builds may take bots into public matches.
+            Session = new SteamSession(BuildTag, Debug.isDebugBuild);
             Session.Initialize();
             if (Session.Online) Motion = new SteamMotion(Session);
 
@@ -114,6 +121,16 @@ namespace ChessFight.Game
             var intent = Controls.Read();
             if (MovementGate != null && !MovementGate()) intent = default;
             Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
+
+            // Development aid for the network review: F8 cycles extra delay and
+            // loss on this machine, so one tester can play on a bad connection.
+            if (Debug.isDebugBuild && Motion != null && LegacyKeys.Down(KeyCode.F8))
+            {
+                var presets = LinkProfile.Presets;
+                int next = (Array.FindIndex(presets, p => p.RoundTripMs == Motion.Simulation.RoundTripMs && p.LossPercent == Motion.Simulation.LossPercent) + 1) % presets.Length;
+                Motion.Simulation = presets[next];
+                Debug.Log("[ChessFight] 지연 시뮬레이터: " + Motion.Simulation);
+            }
 
             FollowMatch();
         }

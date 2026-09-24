@@ -11,7 +11,14 @@ namespace ChessFight.Network
     // supplies party-sized admissions; lobby search itself is NOT matchmaking.
     public sealed class SteamSession : IDisposable
     {
-        public const string Protocol = "chessfight.dua0731.network.v1";
+        // v2: jump travels as a press count (MotionProtocol "CFF2").
+        public const string Protocol = "chessfight.dua0731.network.v2";
+        // Which build made a lobby. Two builds of the same protocol can still
+        // disagree on game rules, so rooms and parties only admit the same build.
+        public string Build { get; }
+        // Release rule M6: public matches are people only. Development builds
+        // keep bots everywhere, because there are not twelve testers.
+        public bool AllowPublicBots { get; }
         public ulong Self { get; private set; }
         public ulong Party { get; private set; }
         public ulong Match { get; private set; }
@@ -28,6 +35,8 @@ namespace ChessFight.Network
         // A private test room starts at two pawns; a public room only at twelve.
         public bool PrivateRoom => privateRoom;
         public bool IsLeader => Party != 0 && Owner(Party) == Self;
+        public bool BotsBlockPublicMatch => !AllowPublicBots && PartyBots > 0;
+        public bool CanUseRoomBots => IsHost && !Started && (privateRoom || AllowPublicBots);
         public bool Busy => pending || Searching || Match != 0 || Route(Party) != "idle";
         public string Status { get; private set; } = "Steam 연결 중...";
         public string Error { get; private set; } = "";
@@ -42,7 +51,7 @@ namespace ChessFight.Network
         ulong[] queuedMembers = Array.Empty<ulong>();   // humans + declared party bots
         ulong[] queuedHumans = Array.Empty<ulong>();    // humans only, for roster-change detection
         ulong partyOwner;
-        string ticket = "";
+        string ticket = "", presence, carriedError;
         bool pending, admitted, seenRoster, privateRoom, cancelledFollower, disposed;
         int generation;
         float nextPoll, nextSearch, deadline, nextRequest, mergeAt, invalidHostSince = -1;
@@ -51,6 +60,9 @@ namespace ChessFight.Network
         [Serializable] sealed class Request { public string kind, ticket; public ulong party; public ulong[] members; }
         [Serializable] sealed class RosterData { public Member[] members; }
         [Serializable] sealed class Member { public ulong id; public int team, slot; }
+
+        public SteamSession(string build = "", bool allowPublicBots = true)
+        { Build = build ?? ""; AllowPublicBots = allowPublicBots; }
 
         static CSteamID Id(ulong id) => new CSteamID(id);
         public string Name(ulong id)
@@ -70,7 +82,28 @@ namespace ChessFight.Network
             return ids;
         }
         static void Set(ulong lobby, string key, string value) => SteamMatchmaking.SetLobbyData(Id(lobby), key, value);
-        static bool Compatible(ulong lobby, string kind) => Data(lobby, "protocol") == Protocol && Data(lobby, "kind") == kind;
+        bool Compatible(ulong lobby, string kind) => Incompatibility(lobby, kind) == null;
+        // Null when the lobby is ours to join, otherwise the reason for the player.
+        string Incompatibility(ulong lobby, string kind)
+        {
+            if (Data(lobby, "kind") != kind) return "방이 가득 찼거나 닫혔습니다.";
+            if (Data(lobby, "protocol") != Protocol || Data(lobby, "build") != Build)
+            {
+                string theirs = Data(lobby, "build");
+                return $"게임 버전이 다릅니다. (내 버전 {Show(Build)} / 상대 {Show(theirs)}) 같은 빌드로 맞춘 뒤 다시 시도하세요.";
+            }
+            return null;
+        }
+        static string Show(string build) => string.IsNullOrEmpty(build) ? "알 수 없음" : build;
+        // "+connect_lobby <id>", the form Steam passes both on the command line
+        // and through a Rich Presence join.
+        public static ulong ParseConnect(string text)
+        {
+            var parts = (text ?? "").Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i + 1 < parts.Length; i++)
+                if (parts[i] == "+connect_lobby" && ulong.TryParse(parts[i + 1], out ulong lobby)) return lobby;
+            return 0;
+        }
         public bool IsPeer(ulong id) => Match != 0 && (id == Host || Roster.ContainsKey(id));
 
         public void Initialize()
@@ -83,9 +116,11 @@ namespace ChessFight.Network
                 SteamNetworkingUtils.InitRelayNetworkAccess();
                 callbacks.Add(Callback<LobbyChatMsg_t>.Create(OnChat));
                 callbacks.Add(Callback<GameLobbyJoinRequested_t>.Create(c => JoinParty(c.m_steamIDLobby.m_SteamID)));
-                var args = Environment.GetCommandLineArgs();
-                for (int i = 0; i + 1 < args.Length; i++)
-                    if (args[i] == "+connect_lobby" && ulong.TryParse(args[i + 1], out ulong lobby)) { JoinParty(lobby); return; }
+                // "Join game" on a friend in the Steam friends list, while we are running.
+                callbacks.Add(Callback<GameRichPresenceJoinRequested_t>.Create(c =>
+                { ulong target = ParseConnect(c.m_rgchConnect); if (target != 0 && target != Party) JoinParty(target); }));
+                ulong lobby = ParseConnect(string.Join(" ", Environment.GetCommandLineArgs()));
+                if (lobby != 0) { JoinParty(lobby); return; }
                 CreateParty();
             }
             catch (Exception ex) when (ex is DllNotFoundException || ex is BadImageFormatException || ex is EntryPointNotFoundException)
@@ -112,6 +147,7 @@ namespace ChessFight.Network
             if (!SteamUser.BLoggedOn()) { Cancel(); Error = "Steam 연결이 끊겼습니다. 다시 로그인한 뒤 Play를 재시작하세요."; return; }
             PollParty();
             if (Match != 0) PollMatch(now);
+            UpdatePresence();
             if (Searching && Match == 0 && !pending && now >= nextSearch) Search();
             // A host with only its own party periodically tries an older room. This
             // converges simultaneous room creation without dismantling occupied rooms.
@@ -136,9 +172,9 @@ namespace ChessFight.Network
                 pending = false;
                 if (failed || c.m_eResult != EResult.k_EResultOK) { Fail("Steam 방을 만들지 못했습니다: " + c.m_eResult); return; }
                 ulong lobby = c.m_ulSteamIDLobby;
-                Set(lobby, "protocol", Protocol); Set(lobby, "kind", match ? "match" : "party");
+                Set(lobby, "protocol", Protocol); Set(lobby, "build", Build); Set(lobby, "kind", match ? "match" : "party");
                 if (!match)
-                { Party = lobby; partyOwner = Self; Set(Party, "route", "idle"); Status = "파티 준비 완료. 친구를 초대하거나 매칭을 시작하세요."; Error = ""; }
+                { Party = lobby; partyOwner = Self; Set(Party, "route", "idle"); Status = "파티 준비 완료. 친구를 초대하거나 매칭을 시작하세요."; Error = carriedError ?? ""; carriedError = null; }
                 else
                 {
                     Match = lobby; Host = Self; admitted = true; Started = false;
@@ -162,7 +198,7 @@ namespace ChessFight.Network
         // Host-side filler so one machine can exercise a full 12-pawn room.
         public void FillRoomWithBots()
         {
-            if (!IsHost || Started) return;
+            if (!CanUseRoomBots) return;
             for (int guard = 0; guard < 12 && reservations.Count < 12; guard++)
             {
                 int room = 12 - reservations.Count;
@@ -255,11 +291,15 @@ namespace ChessFight.Network
                 bool success = !failed && c.m_EChatRoomEnterResponse == (uint)EChatRoomEnterResponse.k_EChatRoomEnterResponseSuccess;
                 if (disposed || op != generation) { if (success) SteamMatchmaking.LeaveLobby(Id(lobby)); return; }
                 pending = false;
-                if (!success || !Compatible(lobby, party ? "party" : "match"))
+                string problem = success ? Incompatibility(lobby, party ? "party" : "match") : "방이 가득 찼거나 닫혔습니다.";
+                if (problem != null)
                 {
                     if (success) SteamMatchmaking.LeaveLobby(Id(lobby));
                     if (!party && IsLeader && Searching && !privateRoom) { nextSearch = Time.realtimeSinceStartup + UnityEngine.Random.Range(1f, 3f); TryCandidate(); }
-                    else Fail("방이 가득 찼거나 네트워크 버전이 다릅니다.");
+                    // The old party is already left; a fresh solo party keeps the
+                    // player usable, and the reason survives its creation.
+                    else if (party) { Error = carriedError = problem; CreateParty(); }
+                    else Fail(problem);
                     return;
                 }
                 if (party)
@@ -280,6 +320,8 @@ namespace ChessFight.Network
         public void FindMatch(bool privateTest = false)
         {
             if (!Online || !IsLeader || Busy) return;
+            if (!privateTest && BotsBlockPublicMatch)
+            { Error = "봇이 있는 파티는 공개 매칭에 들어갈 수 없습니다. 봇을 빼거나 테스트 방을 만드세요."; return; }
             Error = ""; Searching = true; privateRoom = privateTest; emptySearches = 0;
             FreezeQueue(); ticket = Guid.NewGuid().ToString("N");
             SteamMatchmaking.SetLobbyJoinable(Id(Party), false); Set(Party, "route", "search");
@@ -307,6 +349,7 @@ namespace ChessFight.Network
             if (!IsLeader || pending) return;
             int op = ++generation; pending = true; deadline = Time.realtimeSinceStartup + 20;
             SteamMatchmaking.AddRequestLobbyListStringFilter("protocol", Protocol, ELobbyComparison.k_ELobbyComparisonEqual);
+            SteamMatchmaking.AddRequestLobbyListStringFilter("build", Build, ELobbyComparison.k_ELobbyComparisonEqual);
             SteamMatchmaking.AddRequestLobbyListStringFilter("kind", "match", ELobbyComparison.k_ELobbyComparisonEqual);
             SteamMatchmaking.AddRequestLobbyListStringFilter("phase", "waiting", ELobbyComparison.k_ELobbyComparisonEqual);
             SteamMatchmaking.AddRequestLobbyListStringFilter("private", "0", ELobbyComparison.k_ELobbyComparisonEqual);
@@ -450,6 +493,9 @@ namespace ChessFight.Network
             try { request = JsonUtility.FromJson<Request>(Encoding.UTF8.GetString(chatBuffer, 0, length)); }
             catch (ArgumentException) { return; }
             if (request == null || request.kind != "reserve" || string.IsNullOrEmpty(request.ticket) || request.ticket.Length > 64) return;
+            // The host enforces M6 too, whatever the joining client decided.
+            if (!privateRoom && !AllowPublicBots && request.members != null && request.members.Any(BotIdentity.IsBot))
+            { Set(Match, "grant_" + sender.m_SteamID, request.ticket + "|bots"); return; }
             bool ok = reservations.Reserve(sender.m_SteamID, request.party, request.ticket, request.members, Time.realtimeSinceStartup, out _);
             Set(Match, "grant_" + sender.m_SteamID, request.ticket + (ok ? "|ok" : "|full"));
             if (ok) PublishRoster();
@@ -513,10 +559,24 @@ namespace ChessFight.Network
             SessionChanged?.Invoke();
         }
         void Fail(string error) { Cancel(); Error = error; Status = error; }
+
+        // Steam friends see "Join game" on us while our party can take them.
+        // A search locks the party lobby, so the offer is withdrawn meanwhile.
+        void UpdatePresence()
+        {
+            string connect = Party != 0 && !Busy ? "+connect_lobby " + Party : "";
+            string status = Match != 0 ? (Started ? "경기 중" : "경기 대기실") : Busy ? "매칭 찾는 중" : $"파티 {PartyMembers.Length}/6";
+            string next = connect + "|" + status;
+            if (next == presence) return;
+            presence = next;
+            // An empty value removes the key.
+            SteamFriends.SetRichPresence("connect", connect);
+            SteamFriends.SetRichPresence("status", status);
+        }
         public void Dispose()
         {
             if (disposed) return;
-            if (Online) { Cancel(); LeavePartyInternal(); }
+            if (Online) { Cancel(); LeavePartyInternal(); SteamFriends.ClearRichPresence(); }
             disposed = true;
             foreach (var c in callbacks) c.Dispose(); foreach (var c in calls) c.Dispose();
             callbacks.Clear(); calls.Clear();

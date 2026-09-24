@@ -35,6 +35,7 @@ namespace Steamworks
     public struct LobbyMatchList_t { public uint m_nLobbiesMatching; }
     public struct LobbyChatMsg_t { public ulong m_ulSteamIDLobby; public uint m_iChatID; }
     public struct GameLobbyJoinRequested_t { public CSteamID m_steamIDLobby; }
+    public struct GameRichPresenceJoinRequested_t { public CSteamID m_steamIDFriend; public string m_rgchConnect; }
     public sealed class Callback<T> : IDisposable
     {
         readonly Action<T> action; readonly ulong user;
@@ -64,11 +65,13 @@ namespace Steamworks
         public static Dictionary<int,object> Results=new Dictionary<int,object>();
         public static Dictionary<ulong,Queue<Action>> Pending=new Dictionary<ulong,Queue<Action>>();
         public static HashSet<ulong> Denied=new HashSet<ulong>();
+        public static Dictionary<(ulong,string),string> Presence=new Dictionary<(ulong,string),string>();
+        public static void Raise<T>(ulong user,T value) {if(Handlers.TryGetValue((user,typeof(T)),out var h))h(value);}
         public static Dictionary<ulong,List<ulong>> SearchResults=new Dictionary<ulong,List<ulong>>();
         public static Dictionary<string,string> Filters=new Dictionary<string,string>();
         public static int RequiredSlots;
         static ulong nextLobby=1000; static int nextCall;
-        public static void Reset() {Lobbies.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
         public static SteamAPICall_t Result(object value) {int id=++nextCall;Results[id]=value;return new SteamAPICall_t{Value=id};}
         public static void Enqueue(ulong user,Action action) {if(!Pending.ContainsKey(user))Pending[user]=new Queue<Action>();Pending[user].Enqueue(action);}
         public static void Dispatch() {if(!Pending.TryGetValue(User,out var q))return;int n=q.Count;for(int i=0;i<n;i++)q.Dequeue()();}
@@ -91,6 +94,8 @@ namespace Steamworks
         public static CSteamID GetFriendByIndex(int index,EFriendFlags flags)=>new CSteamID(0);
         public static EPersonaState GetFriendPersonaState(CSteamID id)=>EPersonaState.k_EPersonaStateOffline;
         public static bool GetFriendGamePlayed(CSteamID id,out FriendGameInfo_t info) {info=default;return false;}
+        public static bool SetRichPresence(string key,string value) {if(string.IsNullOrEmpty(value))FakeSteam.Presence.Remove((FakeSteam.User,key));else FakeSteam.Presence[(FakeSteam.User,key)]=value;return true;}
+        public static void ClearRichPresence() {foreach(var k in FakeSteam.Presence.Keys.Where(k=>k.Item1==FakeSteam.User).ToList())FakeSteam.Presence.Remove(k);}
     }
     public static class SteamMatchmaking
     {

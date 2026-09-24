@@ -4,7 +4,10 @@ using System.IO;
 
 namespace ChessFight.Network
 {
-    public struct MoveInput { public uint Sequence; public float X, Z; public bool Jump; }
+    // Jump is what the motor applies on this tick. Jumps is what travels: a
+    // wrapping count of presses, so a lost packet delays a jump instead of
+    // dropping it - every later packet still carries the new count.
+    public struct MoveInput { public uint Sequence; public float X, Z; public bool Jump; public byte Jumps; }
     public struct PawnState { public ulong Id; public uint Ack; public float X, Y, Z, Vertical; public int Team, Slot; }
 
     // Flat test arena motor. Only the host advances authoritative positions.
@@ -32,15 +35,20 @@ namespace ChessFight.Network
 
     public static class MotionProtocol
     {
-        const uint Magic = 0x43464631;
+        // "CFF2": v2 replaced the one-packet jump flag with the press count.
+        const uint Magic = 0x43464632;
         public const int MaxBytes = 1024;
         public static bool Newer(uint value, uint previous) => unchecked((int)(value - previous)) > 0;
+        // Host side: true once per new press. A count that moved by several
+        // presses still jumps once; the motor cannot jump twice in one tick.
+        public static bool TakeJump(byte jumps, ref byte consumed)
+        { bool pressed = jumps != consumed; consumed = jumps; return pressed; }
         static bool Finite(float n) => !float.IsNaN(n) && !float.IsInfinity(n);
         public static byte[] Input(ulong session, MoveInput input)
         {
             using (var stream = new MemoryStream()) using (var w = new BinaryWriter(stream))
             { w.Write(Magic); w.Write((byte)1); w.Write(session); w.Write(input.Sequence);
-              w.Write(input.X); w.Write(input.Z); w.Write(input.Jump); return stream.ToArray(); }
+              w.Write(input.X); w.Write(input.Z); w.Write(input.Jumps); return stream.ToArray(); }
         }
         public static bool ReadInput(byte[] bytes, ulong session, out MoveInput input)
         {
@@ -49,7 +57,7 @@ namespace ChessFight.Network
             using (var r = new BinaryReader(new MemoryStream(bytes)))
             {
                 if (r.ReadUInt32() != Magic || r.ReadByte() != 1 || r.ReadUInt64() != session) return false;
-                input.Sequence = r.ReadUInt32(); input.X = r.ReadSingle(); input.Z = r.ReadSingle(); input.Jump = r.ReadBoolean();
+                input.Sequence = r.ReadUInt32(); input.X = r.ReadSingle(); input.Z = r.ReadSingle(); input.Jumps = r.ReadByte();
                 return Finite(input.X) && Finite(input.Z) && Math.Abs(input.X) <= 1.01f && Math.Abs(input.Z) <= 1.01f;
             }
         }
