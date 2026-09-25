@@ -135,8 +135,9 @@ namespace ChessFight.RagdollLab
         Vector3 wallPoint, wallNormal = Vector3.forward;
         Vector3 climbUpAxis = Vector3.up, climbAcross = Vector3.right, climbFace;
         readonly Vector3[] handHold = new Vector3[2];
+        readonly Quaternion[] poseRot = new Quaternion[Count];
+        bool holdsPlaced, climbKinematic;
         Vector3 swingFrom;
-        bool holdsPlaced;
         float climbCeiling;
         float struggleFlip = 1f, struggleRush, lastStrugglePunch;
         RagdollPawn holder;
@@ -296,6 +297,8 @@ namespace ChessFight.RagdollLab
             handR.Tick(wantGrab, p, dt, Climbing);
             if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
             Pose(p, dt);
+            if (Climbing) ApplyClimbPose(p);
+            else EndClimbPose();
             Drives(p, k);
 
             input.jump = false;
@@ -374,6 +377,7 @@ namespace ChessFight.RagdollLab
 
         public void Knockdown(string cause)
         {
+            EndClimbPose();
             if (State == PawnState.Ragdoll) return;
             State = PawnState.Ragdoll;
             stateTimer = 0f;
@@ -880,6 +884,77 @@ namespace ChessFight.RagdollLab
             climbCooldown = 1.2f;
             handL.Release(1f);
             handR.Release(1f);
+        }
+
+        /// <summary>
+        /// While on the wall the pawn stops being a ragdoll and is placed, bone by bone, from the
+        /// puppet pose. A spring-driven arm cannot hold a palm on a fixed point - measured, the hand
+        /// rides at a constant offset above the hips the whole way up - and pinning just the palms
+        /// with a kinematic body turns the joint chain into a catapult. Taking the whole body out of
+        /// physics for the duration is the only version that both holds the hands still and stays put.
+        /// Physics resumes the instant the climb ends, carrying the body's velocity so nothing pops.
+        /// </summary>
+        void ApplyClimbPose(RagdollParams p)
+        {
+            if (!climbKinematic)
+            {
+                foreach (var rb in bodies) rb.isKinematic = true;
+                climbKinematic = true;
+            }
+            Quaternion hipsRot = Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(9f, 0f, 0f);
+            poseRot[0] = hipsRot;
+            poseScratch[0] = anchorPos;
+            for (int i = 1; i < Count; i++)
+            {
+                int parent = ParentOf[i];
+                poseRot[i] = poseRot[parent] * puppet[i].localRotation;
+                poseScratch[i] = poseScratch[parent] + poseRot[parent] * jointOffset[i];
+            }
+            // Put the palms exactly on their holds. Everything else hangs off the chain.
+            for (int slot = 0; slot < 2; slot++)
+            {
+                int id = slot == 0 ? (int)BodyId.HandL : (int)BodyId.HandR;
+                Vector3 at = handHold[slot];
+                if (movingHand == slot && handStep < 1f)
+                {
+                    float t = Smooth(handStep);
+                    at = Vector3.Lerp(swingFrom, handHold[slot], t)
+                         + wallNormal * (Mathf.Sin(handStep * Mathf.PI) * 0.1f)
+                         + climbUpAxis * (Mathf.Sin(handStep * Mathf.PI) * p.climbOvershoot * p.climbHandStep);
+                }
+                poseScratch[id] = at;
+            }
+            for (int i = 0; i < Count; i++)
+            {
+                bodies[i].MovePosition(poseScratch[i]);
+                bodies[i].MoveRotation(poseRot[i]);
+            }
+        }
+
+        /// <summary>Back to being a ragdoll, carrying whatever speed the climb had.</summary>
+        public void EndClimbPose()
+        {
+            if (!climbKinematic) return;
+            climbKinematic = false;
+            // Kinematic bodies are pushed through geometry rather than stopped by it, so the pawn can
+            // be inside the wall when physics resumes - and then it falls straight through the level.
+            // Step it back out along the face first.
+            float clear = P.grabRadius + 0.2f;
+            float gap = Vector3.Dot(bodies[0].position - wallPoint, wallNormal);
+            if (gap < clear)
+            {
+                Vector3 push = wallNormal * (clear - gap);
+                foreach (var rb in bodies) rb.position += push;
+                anchorPos += push;
+                anchor.position = anchorPos;
+            }
+            Vector3 carry = Vector3.ClampMagnitude(anchorVel + Vector3.up * 0.5f, 4f);
+            foreach (var rb in bodies)
+            {
+                rb.isKinematic = false;
+                rb.linearVelocity = carry;
+                rb.angularVelocity = Vector3.zero;
+            }
         }
 
         /// <summary>Hangs the body below the hands and walks it up the wall.</summary>
