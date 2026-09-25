@@ -145,6 +145,10 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 2.2f;
         [Tunable(GroupAction, "뻗은 팔 각도 (도, 수평 위)")] [Range(0f, 90f)] public float climbArmRaise = 72f;
         [Tunable(GroupAction, "당긴 팔 각도 (도, 수평 아래)")] [Range(-20f, 80f)] public float climbArmLow = 28f;
+        // Reaching with one arm lifts that shoulder and drops the other, and the head leans away
+        // from the reach. Without these the pawn is a rigid post with arms bolted to it.
+        [Tunable(GroupAction, "뻗는 쪽 어깨 올림 (도)")] [Range(0f, 45f)] public float climbShoulderLift = 24f;
+        [Tunable(GroupAction, "머리 반대쪽 기울임 (도)")] [Range(0f, 45f)] public float climbHeadTilt = 20f;
         [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
         [Tunable(GroupAction, "바위 위로 올라타기 (초)")] [Range(0f, 1.2f)] public float climbTopOut = 0.5f;
         [Tunable(GroupAction, "등반 허우적 (도)")] [Range(0f, 90f)] public float climbFlail = 18f;

@@ -847,7 +847,11 @@ namespace ChessFight.RagdollLab
             // the body climbs past it until it is climbPullDepth below the shoulder, and only then
             // does that hand let go and reach again. Everything the arm does follows from that, so
             // there is no animation loop to fall out of step with the climb.
+            // The HIGHER palm carries the pawn; the LOWER one is the one that gets to reach. Picking
+            // the higher one to swing meant it replanted even higher every time and the same arm moved
+            // forever, which is exactly what it looked like.
             int hold = handHold[0].y >= handHold[1].y ? 0 : 1;
+            int swing = 1 - hold;
             climbCeiling = handHold[hold].y + p.climbPullDepth - shoulderRise;
 
             // Test the COMMANDED height, not the measured one. The body hangs ~5 cm under the
@@ -856,17 +860,16 @@ namespace ChessFight.RagdollLab
             bool reachedTop = anchorPos.y >= climbCeiling - 0.02f;
             if (handStep >= 1f && climbUp > 0.05f && reachedTop)
             {
-                swingFrom = handHold[hold];
-                movingHand = hold;
-                handHold[movingHand] = Plant(movingHand, p, shoulderY + p.climbHandStep);
+                swingFrom = handHold[swing];
+                movingHand = swing;
+                handHold[swing] = Plant(swing, p, handHold[hold].y + p.climbHandStep);
                 handStep = 0f;
             }
             else if (handStep >= 1f && climbUp < -0.05f)
             {
                 swingFrom = handHold[hold];
                 movingHand = hold;
-                handHold[movingHand] = Plant(movingHand, p,
-                    Mathf.Min(handHold[0].y, handHold[1].y) - p.climbHandStep);
+                handHold[hold] = Plant(hold, p, handHold[swing].y - p.climbHandStep);
                 handStep = 0f;
             }
             if (stamina > 0f) return;
@@ -988,14 +991,17 @@ namespace ChessFight.RagdollLab
                 armR = ClimbReach(false, 1, p, panic);
                 // The legs push off the wall in time with the hands instead of paddling at nothing:
                 // the leg under the reaching arm straightens, the other tucks.
-                float pushL = movingHand == 0 ? 1f : 0f;
-                float step = Mathf.Lerp(1f - pushL, pushL, Smooth(handStep));
-                thighL = Quaternion.Euler(-10f - 16f * step, 0f, 0f);
-                thighR = Quaternion.Euler(-10f - 16f * (1f - step), 0f, 0f);
+                // Reaching lifts that shoulder and tips the head the other way, eased across the swap
+                // rather than snapped - this is what makes it read as a person climbing.
+                float toRight = movingHand == 1 ? 1f : -1f;
+                float ease = Mathf.Lerp(-toRight, toRight, Smooth(handStep));
+                // The leg opposite the reaching arm pushes, the way a person does it.
+                float step = 0.5f + 0.5f * ease;
+                thighL = Quaternion.Euler(-10f - 20f * step, 0f, 0f);
+                thighR = Quaternion.Euler(-10f - 20f * (1f - step), 0f, 0f);
                 footL = footR = Quaternion.Euler(20f, 0f, 0f);
-                float lean = movingHand == 0 ? 5f : -5f;
-                chest = Quaternion.Euler(-6f, lean * panic, 0f);
-                head = Quaternion.Euler(-12f, -lean * panic, 0f);
+                chest = Quaternion.Euler(-6f, 4f * ease, p.climbShoulderLift * ease);
+                head = Quaternion.Euler(-12f, -6f * ease, -p.climbHeadTilt * ease);
             }
             else if (struggleTimer > 0f)
             {
