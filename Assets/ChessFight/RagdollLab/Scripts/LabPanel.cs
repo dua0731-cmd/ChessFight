@@ -24,14 +24,14 @@ namespace ChessFight.RagdollLab
         {
             "이동: WASD / 왼쪽 스틱 · 전력질주(누르고 있기, 스테미나 소모): 왼쪽 Shift / LT",
             "점프: Space / A",
-            "다이빙·슬라이딩 태클: 마우스 왼쪽 / RB·B",
-            "  달리면서 쓰면 멀리 날아감 · 부딪힌 상대는 넘어짐 · 내리막에서는 달리기보다 빠름",
+            "슬라이딩 태클: 마우스 왼쪽 / RB·B",
+            "  발부터 미끄러지며 흐물흐물 넘어짐 · 부딪힌 상대도 넘어짐 · 내리막에서는 계속 미끄러져 달리기보다 빠름",
             "잡기(누르고 있기): 마우스 오른쪽 / LB",
             "  상대 근처 = 잡고 끌기 · 잡은 채 좌클릭 = 던지기",
             "  벽 = 매달리기 · 벽 앞에서 W + 우클릭 = 등반(스테미나) · 꼭대기에서 계속 W = 올라서기",
             "  점프하며 잡기 → 벽 모서리를 잡으면 한 번 더 점프 = 기어오르기",
             "  잡혔을 때 좌클릭 연타 = 버둥대며 탈출 (반대 방향 + 점프를 섞으면 더 셈)",
-            "P2 키보드: 방향키 · 오른쪽 Shift 점프 · 오른쪽 Ctrl 다이빙 · Enter 잡기 · / 전력질주",
+            "P2 키보드: 방향키 · 오른쪽 Shift 점프 · 오른쪽 Ctrl 슬라이딩 · Enter 잡기 · / 전력질주",
             "카메라: 마우스 / 오른쪽 스틱 · 휠 확대·축소 · F2 화면 분할 (P2가 조작하면 자동)",
             "마우스 조작은 게임 화면을 한 번 클릭해야 켜져요 · Esc 마우스 풀기",
             "R 전체 리스폰 · T 슬로모션 · F 자유 카메라(WASD·Q·E)",
@@ -89,7 +89,7 @@ namespace ChessFight.RagdollLab
             // Until the cursor is locked the clicks go nowhere, which looks exactly like "the
             // actions are broken". Say so where it cannot be missed.
             if (Cursor.lockState != CursorLockMode.Locked && !game.UiWantsCursor)
-                text = "▶ 화면을 클릭하면 마우스 조작(시점 · 좌클릭 다이빙 · 우클릭 잡기)이 켜져요     " + text;
+                text = "▶ 화면을 클릭하면 마우스 조작(시점 · 좌클릭 슬라이딩 · 우클릭 잡기)이 켜져요     " + text;
             if (game.SlowMotion) text += "   · 슬로모션 중";
             if (game.labCamera != null && game.labCamera.freeMode) text += "   · 자유 카메라 (WASD·Q·E, F로 복귀)";
             var size = hintStyle.CalcSize(new GUIContent(text));
@@ -306,7 +306,7 @@ namespace ChessFight.RagdollLab
             if (pawn.OnSlope) parts.Add($"경사 {pawn.SlopeAngle:F0}°");
             if (pawn.Stunned) parts.Add("피격");
             if (pawn.Shoving) parts.Add("던지기");
-            if (pawn.Diving) parts.Add("다이빙");
+            if (pawn.Diving) parts.Add("슬라이딩");
             if (pawn.Sprinting) parts.Add("질주");
             if (pawn.Exhausted) parts.Add("지침");
             if (pawn.Climbing) parts.Add("등반");

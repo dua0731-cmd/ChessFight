@@ -947,7 +947,7 @@ namespace ChessFight.RagdollLab
             var p = game.tuning.values;
             var pawn = Spawn(new Vector3(-6f, 0f, -6f), Vector3.forward, "no-hop");
             yield return Sim(0.8f);
-            float ride = p.runLift + p.stepBob;
+            float ride = Mathf.Max(p.runLift + p.stepBob, p.sprintLift + p.sprintBob);
             float maxRise = 0f, air = 0f, longestAir = 0f;
             void Watch()
             {
@@ -1364,8 +1364,8 @@ namespace ChessFight.RagdollLab
                     yield return Clear();
                 }
                 bool faster = dove && diveDescent > 0f && (runDescent < 0f || diveDescent < runDescent);
-                Report($"경사 {angle:F0}°: 다이빙이 달려 내려가기보다 빠름", faster,
-                    $"모서리→바닥 달리기 {Fmt(runDescent)} / 다이빙 {Fmt(diveDescent)} (다이빙 {dove}, 넘어짐으로 기록 {falls})");
+                Report($"경사 {angle:F0}°: 슬라이딩이 달려 내려가기보다 빠름", faster,
+                    $"모서리→바닥 달리기 {Fmt(runDescent)} / 슬라이딩 {Fmt(diveDescent)} (슬라이딩 {dove}, 넘어짐으로 기록 {falls})");
             }
         }
 
@@ -1434,8 +1434,9 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>
-        /// Left click on the move: the pawn throws itself forward, floors whoever it hits, does not
-        /// count as knocked down itself, and gets back up on its own.
+        /// Left click on the move: a feet-first slide tackle that floors whoever it hits, does not
+        /// count as a knockdown for the slider, and gets back up on its own. Also checks it stays
+        /// short on the flat (the first version slid about 12 m) and goes feet first.
         /// </summary>
         IEnumerator DiveTackle()
         {
@@ -1445,26 +1446,37 @@ namespace ChessFight.RagdollLab
             Vector3 a0 = a.Hips.position;
             Drive(a, Vector3.right);
             yield return Sim(0.45f);
-            float speedBefore = a.HorizontalSpeed, peak = 0f, t = 0f, upAt = -1f;
+            float speedBefore = a.HorizontalSpeed, peak = 0f, t = 0f, upAt = -1f, feetAhead = 0f;
             bool dove = false;
+            Vector3 slideStart = a.Hips.position;
+            float slid = 0f;
             Drive(a, Vector3.right, shove: true);
             yield return Sim(3f, () =>
             {
                 t += Dt;
                 Drive(a, Vector3.right);
                 dove |= a.Diving;
-                if (a.Diving) peak = Mathf.Max(peak, a.HorizontalSpeed);
+                if (a.Diving)
+                {
+                    peak = Mathf.Max(peak, a.HorizontalSpeed);
+                    slid = Flat(a.Hips.position - slideStart).magnitude;
+                    // Feet first: how far the feet get out in front of the head along the slide.
+                    Vector3 feet = (a.bodies[(int)BodyId.FootL].position + a.bodies[(int)BodyId.FootR].position) * 0.5f;
+                    feetAhead = Mathf.Max(feetAhead, Vector3.Dot(feet - a.bodies[(int)BodyId.Head].position, Vector3.right));
+                }
                 if (dove && upAt < 0f && !a.Diving) upAt = t;
             });
             Drive(a, Vector3.zero);
             bool floored = b.Knockdowns > 0;
-            Report("좌클릭 다이빙 태클: 상대가 넘어지고 나는 넉다운으로 안 셈",
+            Report("좌클릭 슬라이딩 태클: 상대가 넘어지고 나는 넉다운으로 안 셈",
                 dove && floored && a.Knockdowns == 0 && a.State != PawnState.Ragdoll,
-                $"다이빙 {dove}, 속도 {speedBefore:F1} → 최고 {peak:F1} m/s, 상대 넘어짐 {b.Knockdowns} ({b.LastKnockdownCause}), "
-                + $"태클 {a.Tackles}, 다이버 넉다운 {a.Knockdowns}, 일어나기 시작 {Fmt(upAt)}, 이동 {Flat(a.Hips.position - a0).magnitude:F1} m, 최종 상태 {a.State}");
+                $"태클 {dove}, 속도 {speedBefore:F1} → 최고 {peak:F1} m/s, 상대 넘어짐 {b.Knockdowns} ({b.LastKnockdownCause}), "
+                + $"태클 성공 {a.Tackles}, 태클한 쪽 넉다운 {a.Knockdowns}, 일어나기 시작 {Fmt(upAt)}, 이동 {Flat(a.Hips.position - a0).magnitude:F1} m, 최종 상태 {a.State}");
+            Report("슬라이딩: 발부터 짧게", feetAhead > 0.15f && slid < 6f,
+                $"미끄러진 거리 {slid:F1} m (6 m 미만), 발이 머리보다 앞선 최대 거리 {feetAhead:F2} m");
             yield return Clear();
 
-            // On its own, from standing: a short flop forward, then back up by itself.
+            // On its own, from standing: a short slip forward, then back up by itself.
             var c = Spawn(new Vector3(-12f, 0f, 3f), Vector3.right, "flop");
             yield return Sim(1f);
             Vector3 c0 = c.Hips.position;
@@ -1472,7 +1484,7 @@ namespace ChessFight.RagdollLab
             bool flopped = false;
             yield return Sim(2.5f, () => flopped |= c.Diving);
             float flop = Flat(c.Hips.position - c0).magnitude;
-            Report("제자리 다이빙 → 스스로 일어남", flopped && c.State == PawnState.Active && c.Knockdowns == 0 && c.HipsTilt < 25f,
+            Report("제자리 슬라이딩 → 스스로 일어남", flopped && c.State == PawnState.Active && c.Knockdowns == 0 && c.HipsTilt < 25f,
                 $"다이빙 {flopped}, 앞으로 {flop:F2} m, 2.5초 뒤 상태 {c.State}, 기울기 {c.HipsTilt:F0}°");
             yield return Clear();
         }

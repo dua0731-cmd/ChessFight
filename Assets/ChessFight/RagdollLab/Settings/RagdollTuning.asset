@@ -40,7 +40,7 @@ MonoBehaviour:
     ragdollFriction: 0.1
     footFrictionIdle: 0.6
     footFrictionMoving: 0.1
-    runLift: 0.05
+    runLift: 0.01
     hitStiffnessMultiplier: 0.3
     hitRecoveryTime: 0.5
     hitImpactThreshold: 2.2
@@ -62,23 +62,26 @@ MonoBehaviour:
     anchorIdleFollow: 6
     gravityScale: 1
     strideLength: 1.5
-    legSwing: 105
-    armSwing: 50
+    legSwing: 50
+    armSwing: 40
     armRestDown: 20
     chestLean: 10
-    runLean: 6
+    runLean: 7
+    runArmDown: 55
+    runTwist: 7
     stepLock: 0
     stanceThrust: 0.45
-    stepBob: 0.06
-    stepRoll: 12
-    turnLean: 16
+    stepBob: 0.01
+    runStepDip: 0.03
+    stepRoll: 1.5
+    turnLean: 6
     landingDip: 0.06
     stopDeceleration: 20
     turnRateTopSpeed: 260
     stepLength: 0.22
     boundGait: 0
     driveFeedForward: 1
-    hopCadence: 2.6
+    hopCadence: 3
     legDamperRatio: 0.04
     thighMass: 0
     footMass: 0
@@ -118,21 +121,25 @@ MonoBehaviour:
     sprintLegSwing: 140
     sprintArmSwing: 76
     sprintLean: 10
+    sprintLift: 0.05
+    sprintBob: 0.06
+    sprintRoll: 12
+    sprintTurnLean: 16
     sprintBlendSpeed: 4
     sprintDrain: 1
     sprintResume: 0.3
     staminaRecoverDelay: 0.8
     launchClamp: 1.2
-    diveBoost: 2.5
-    diveLift: 2
-    diveMaxSpeed: 12
-    divePitchKick: 6
-    divePitch: 75
-    diveHold: 0.35
-    diveFriction: 0.3
-    diveMinTime: 0.5
-    diveMaxTime: 1.2
-    diveGetUpSpeed: 1.8
+    diveBoost: 1.2
+    diveLift: 0.8
+    diveMaxSpeed: 10
+    diveTip: 5
+    diveSideTip: 1.5
+    diveFriction: 0.5
+    diveSlopeFriction: 0.08
+    diveMinTime: 0.4
+    diveMaxTime: 0.9
+    diveGetUpSpeed: 1.5
     diveCooldown: 0.35
     diveStamina: 0.6
     diveTackleImpact: 3
