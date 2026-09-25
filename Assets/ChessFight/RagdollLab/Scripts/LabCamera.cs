@@ -39,7 +39,8 @@ namespace ChessFight.RagdollLab
 
         Camera cam;
         Vector3 focus, focusVelocity, lastWant, travel;
-        float heightVelocity, shown, fovKick;
+        float heightVelocity, shown, fovKick, lastFacingYaw, climbTurn;
+        bool wasClimbing;
         bool initialized;
         RagdollPawn followed;
         float freeYaw, freePitch;
@@ -117,10 +118,23 @@ namespace ChessFight.RagdollLab
                 focus = lastWant = want;
                 focusVelocity = travel = Vector3.zero;
                 heightVelocity = 0f;
+                climbTurn = 0f;
+                wasClimbing = false;
                 shown = distance;
                 initialized = true;
                 followed = pawn;
             }
+            // On a wall the camera turns with the pawn. Its keys are read against the camera, so when
+            // the pawn went round a corner and the camera stayed put, "right" became "into the new
+            // wall" and holding it climbed up instead of carrying on round.
+            float facingYaw = Mathf.Atan2(pawn.Facing.x, pawn.Facing.z) * Mathf.Rad2Deg;
+            if (pawn.Climbing && wasClimbing) climbTurn += Mathf.DeltaAngle(lastFacingYaw, facingYaw);
+            wasClimbing = pawn.Climbing;
+            lastFacingYaw = facingYaw;
+            float turnNow = climbTurn * (1f - Mathf.Exp(-12f * dt));
+            yaw += turnNow;
+            climbTurn -= turnNow;
+
             // Aim a little ahead along the (smoothed) travel: that takes back half the lag a soft
             // follow builds up at speed without making it any stiffer. Measured on a model of this
             // filter: 0.3 m behind at a run, 0.5 m at a sprint, under 10 cm of overshoot on a stop.

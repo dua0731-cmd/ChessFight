@@ -106,16 +106,17 @@ MonoBehaviour:
     climbDrainHold: 0.35
     climbDrainMove: 0.9
     climbRecover: 2
-    climbCadence: 4.5
+    climbCadence: 8
     climbShoulderLift: 21
     climbHeadTilt: 22
     climbGripAngle: 55
     climbTopOut: 0.45
-    climbHandStep: 0.44
-    climbHandSpread: 0.26
-    climbArmReach: 0.7
-    climbSag: 0.055
-    climbOvershoot: 0.7
+    climbHug: 0.23
+    climbHandStep: 0.12
+    climbHandSpread: 0.06
+    climbArmReach: 0.24
+    climbSag: 0.035
+    climbOvershoot: 0.35
     sprintCadence: 3.5
     sprintLegSwing: 60
     sprintArmSwing: 76

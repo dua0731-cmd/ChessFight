@@ -168,7 +168,8 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "매달리기 소모 (/초)")] [Range(0f, 1f)] public float climbDrainHold = 0.35f;
         [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
-        [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 4.5f;
+        // Short arms, so short quick pats, one hand after the other, rather than long reaches.
+        [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 12f)] public float climbCadence = 8f;
         // Reaching with one arm lifts that shoulder and drops the other, and the head leans away
         // from the reach. Without these the pawn is a rigid post with arms bolted to it.
         [Tunable(GroupAction, "뻗는 쪽 어깨 올림 (도)")] [Range(0f, 45f)] public float climbShoulderLift = 21f;
@@ -176,18 +177,21 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
         // How long climbing over the lip onto the top takes (up past the edge, then in over it).
         [Tunable(GroupAction, "꼭대기로 올라서기 (초)")] [Range(0.1f, 1.2f)] public float climbTopOut = 0.45f;
-        // A reaching hand plants climbHandStep above the shoulder. The head is a 0.195 m ball whose
-        // top sits 0.50 m above the shoulders, so 0.44 puts the palm beside the top of the head.
-        [Tunable(GroupAction, "어깨 위로 짚는 높이 (m)")] [Range(0.1f, 0.7f)] public float climbHandStep = 0.44f;
-        // Wide enough that the palms clear the silhouette of the head (0.195 m) when seen from behind.
-        [Tunable(GroupAction, "손 좌우 벌림 (m)")] [Range(0.05f, 0.5f)] public float climbHandSpread = 0.26f;
-        // The arm is a 0.12 m stub and the holds are up to ~0.6 m away, so on the wall the arm is
-        // drawn out to meet the hand, cartoon-style (RagdollVisualSync). This caps that stretch.
-        [Tunable(GroupAction, "팔이 늘어나는 최대 길이 (m)")] [Range(0.2f, 1f)] public float climbArmReach = 0.7f;
+        // The arms are 0.19 m from shoulder to palm and the head (a 0.195 m ball) sticks out further
+        // than that, so the body hugs the face as closely as the head allows and the hands pat the
+        // wall beside the chin, hand over hand, instead of reaching over the head. A reaching hand
+        // plants climbHandStep above the shoulder, climbHandSpread out beyond it.
+        [Tunable(GroupAction, "벽과 몸 사이 거리 (m)")] [Range(0.18f, 0.45f)] public float climbHug = 0.23f;
+        [Tunable(GroupAction, "어깨 위로 짚는 높이 (m)")] [Range(0f, 0.7f)] public float climbHandStep = 0.12f;
+        [Tunable(GroupAction, "손 좌우 벌림 (m)")] [Range(0f, 0.5f)] public float climbHandSpread = 0.06f;
+        // How far a palm may be from its shoulder on the wall. The arm is drawn out to meet the
+        // hand (RagdollVisualSync): 0.19 is its own length, 0.24 a barely visible stretch. The old
+        // 0.7 (3.6 times the arm) is what looked grotesque.
+        [Tunable(GroupAction, "팔이 늘어나는 최대 길이 (m)")] [Range(0.15f, 1f)] public float climbArmReach = 0.24f;
         // Between one hand letting go and the other catching, the pawn sags a little and then
         // jerks back up. Pure comedy, but it is also what a real climber does.
-        [Tunable(GroupAction, "손 바꿀 때 쳐짐 (m)")] [Range(0f, 0.2f)] public float climbSag = 0.055f;
-        [Tunable(GroupAction, "손 뻗을 때 오버슛")] [Range(0f, 1f)] public float climbOvershoot = 0.7f;
+        [Tunable(GroupAction, "손 바꿀 때 쳐짐 (m)")] [Range(0f, 0.2f)] public float climbSag = 0.035f;
+        [Tunable(GroupAction, "손 뻗을 때 오버슛")] [Range(0f, 1f)] public float climbOvershoot = 0.35f;
 
         // The sprint is the approved big run; these are its gait numbers. The run uses the ones in
         // the pose and weight groups (legSwing, armSwing, runLean, hopCadence), and the pawn blends

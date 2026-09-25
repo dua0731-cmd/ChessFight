@@ -1110,11 +1110,12 @@ namespace ChessFight.RagdollLab
             float startY = pawn.Hips.position.y, startStamina = pawn.Stamina;
             float topY = startY, climbedFor = 0f, lowestStamina = 1f;
             bool everClimbing = false;
-            // Hands, measured against the head: each hand should reach above the centre of the head
-            // and the two should take turns being the higher one. The old climb kept both palms
-            // 0.13-0.55 m below the shoulders, which is what "the hands are under the body" meant.
-            Transform headT = pawn.bodies[(int)BodyId.Head].transform;
-            var headBall = headT.GetComponent<SphereCollider>();
+            // Hands, measured against the shoulders: each hand should pat the wall above its shoulder
+            // and the two should take turns being the higher one, quickly, without the arms being
+            // stretched out past climbArmReach. (With arms this short - the head sticks out further
+            // than they reach - "above the head" is not a thing a hand can do without the cartoon
+            // stretch the playtest found grotesque.)
+            var p = game.tuning.values;
             float overHeadL = float.MinValue, overHeadR = float.MinValue, longestArm = 0f;
             int higher = -1, turns = 0;
             yield return Sim(6f, () =>
@@ -1124,9 +1125,8 @@ namespace ChessFight.RagdollLab
                 {
                     everClimbing = true;
                     climbedFor += Dt;
-                    float headY = headBall != null ? headT.TransformPoint(headBall.center).y : headT.position.y + 0.21f;
-                    overHeadL = Mathf.Max(overHeadL, pawn.handL.Center.y - headY);
-                    overHeadR = Mathf.Max(overHeadR, pawn.handR.Center.y - headY);
+                    overHeadL = Mathf.Max(overHeadL, pawn.handL.Center.y - pawn.bodies[(int)BodyId.ArmL].position.y);
+                    overHeadR = Mathf.Max(overHeadR, pawn.handR.Center.y - pawn.bodies[(int)BodyId.ArmR].position.y);
                     longestArm = Mathf.Max(longestArm,
                         Vector3.Distance(pawn.handL.Center, pawn.bodies[(int)BodyId.ArmL].position),
                         Vector3.Distance(pawn.handR.Center, pawn.bodies[(int)BodyId.ArmR].position));
@@ -1137,9 +1137,10 @@ namespace ChessFight.RagdollLab
                 topY = Mathf.Max(topY, pawn.Hips.position.y);
                 lowestStamina = Mathf.Min(lowestStamina, pawn.Stamina);
             });
-            Report("등반: 두 손이 번갈아 머리 위로 뻗음", overHeadL > 0f && overHeadR > 0f && turns >= 4,
-                $"머리 중심 대비 최고 손 높이 L {overHeadL:+0.00;-0.00} m / R {overHeadR:+0.00;-0.00} m, "
-                + $"위쪽 손 교대 {turns}회, 어깨→손 최대 {longestArm:F2} m");
+            Report("등반: 두 손이 번갈아 어깨 위를 짚음 (팔 안 늘어남)",
+                overHeadL > 0.05f && overHeadR > 0.05f && turns >= 8 && longestArm <= p.climbArmReach + 0.05f,
+                $"어깨 대비 최고 손 높이 L {overHeadL:+0.00;-0.00} m / R {overHeadR:+0.00;-0.00} m, "
+                + $"위쪽 손 교대 {turns}회, 어깨→손 최대 {longestArm:F2} m (한계 {p.climbArmReach:F2})");
             var tr = new StringBuilder();
             float tt = 0f, tnext = 0f;
             yield return Sim(1.2f, () =>
@@ -1205,9 +1206,11 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>
-        /// The climbing bugs from the playtest, one check each: starting a climb put the body inside
-        /// the wall (only the hands showed), moving sideways stretched the arms across the face,
-        /// the top was not reliably climbed onto, and letting go shoved the pawn away from the wall.
+        /// The climbing bugs from the playtests, one check each: starting a climb put the body inside
+        /// the wall (only the hands showed), moving sideways stretched the arms across the face (and
+        /// now has to carry on round the corner), the top was not reliably climbed onto, letting go
+        /// shoved the pawn away from the wall, and a pawn that had climbed onto a ledge tipped back
+        /// off it.
         /// </summary>
         IEnumerator ClimbBugs()
         {
@@ -1230,39 +1233,39 @@ namespace ChessFight.RagdollLab
                 closest = Mathf.Min(closest, face - pawn.Hips.position.x);
                 if (pawn.Climbing) longestArm = Mathf.Max(longestArm, Arm());
             });
-            Report("등반 시작: 몸이 벽 속으로 들어가지 않음", climbed && closest > 0.22f,
-                $"등반 {climbed}, 골반과 벽면 최소 거리 {closest:F2} m (치마 반지름 0.28, 0.22 초과여야 함)");
+            Report("등반 시작: 몸이 벽 속으로 들어가지 않음", climbed && closest > 0.15f,
+                $"등반 {climbed}, 골반과 벽면 최소 거리 {closest:F2} m (치마 반지름 0.14, 0.15 초과여야 함)");
 
-            // 2. Sideways all the way to the end of the wall and back: the arms stay arm-length and
-            // the pawn stops at the edge instead of walking off it.
-            float minZ = z + 2f, maxZ = z + 2f;
-            bool stayed = true;
-            yield return Sim(1.8f, () =>
-            {
-                Drive(pawn, Vector3.forward, grab: true);
-                if (!pawn.Climbing) stayed = false;
-                longestArm = Mathf.Max(longestArm, Arm());
-                maxZ = Mathf.Max(maxZ, pawn.Hips.position.z);
-            });
-            yield return Sim(1.8f, () =>
-            {
-                Drive(pawn, Vector3.back, grab: true);
-                if (!pawn.Climbing) stayed = false;
-                longestArm = Mathf.Max(longestArm, Arm());
-                minZ = Mathf.Min(minZ, pawn.Hips.position.z);
-            });
+            // 2. Sideways to the end of the wall and on round the corner onto its side face: the arms
+            // stay about arm-length all the way. There is no camera here, so the test keeps pressing
+            // "left" in the pawn's own terms: +Z on the front face, +X once it faces the side face.
             float half = LabLayout.WallWidth * 0.5f;
-            Report("등반: 옆으로 가도 팔이 늘어나지 않고 벽 끝에서 멈춤",
-                longestArm <= p.climbArmReach + 0.05f && stayed && maxZ <= z + half && minZ >= z - half,
-                $"어깨→손 최대 {longestArm:F2} m (한계 {p.climbArmReach:F2}), 벽에 붙어 있음 {stayed}, "
-                + $"옆 이동 범위 {minZ - z:+0.00;-0.00} ~ {maxZ - z:+0.00;-0.00} m (벽 ±{half:F1} m)");
+            bool stayed = true, rounded = false;
+            float sideZ = 0f, alongSide = 0f;
+            yield return Sim(2.8f, () =>
+            {
+                bool onSide = pawn.Climbing && pawn.Facing.z < -0.7f;
+                rounded |= onSide;
+                Drive(pawn, onSide ? Vector3.right : Vector3.forward, grab: true);
+                if (!pawn.Climbing) stayed = false;
+                longestArm = Mathf.Max(longestArm, Arm());
+                if (onSide)
+                {
+                    sideZ = pawn.Hips.position.z;
+                    alongSide = Mathf.Max(alongSide, pawn.Hips.position.x - face);
+                }
+            });
+            Report("등반: 옆으로 가도 팔이 안 늘어나고 모서리를 돌아감",
+                longestArm <= p.climbArmReach + 0.05f && stayed && rounded && sideZ > z + half && alongSide > 0.2f,
+                $"어깨→손 최대 {longestArm:F2} m (한계 {p.climbArmReach:F2}), 벽에 붙어 있음 {stayed}, 모서리 돌아감 {rounded}, "
+                + $"옆면에서 벽면까지 {sideZ - z - half:F2} m, 옆면을 따라 {alongSide:F2} m");
 
-            // 3. Letting go halfway up: straight down, not shoved away from the wall.
-            float x0 = pawn.Hips.position.x, drift = 0f;
+            // 3. Letting go on the side face: straight down, not shoved away from the wall.
+            float z0 = pawn.Hips.position.z, drift = 0f;
             yield return Sim(1.5f, () =>
             {
                 Drive(pawn, Vector3.zero);
-                drift = Mathf.Max(drift, x0 - pawn.Hips.position.x);
+                drift = Mathf.Max(drift, pawn.Hips.position.z - z0);
             });
             Report("등반 중 손을 놓으면 그대로 떨어짐", !pawn.Climbing && drift < 0.45f,
                 $"벽에서 밀려난 거리 {drift:F2} m (0.45 미만)");
@@ -1281,6 +1284,23 @@ namespace ChessFight.RagdollLab
             });
             Report("등반: 꼭대기에 올라섬", standAt > 0f && top.Knockdowns == 0,
                 $"올라선 시각 {Fmt(standAt)}, 최종 골반 높이 {top.Hips.position.y:F2} m (벽 {wallTop:F0} m), 넘어짐 {top.Knockdowns}");
+            yield return Clear();
+
+            // 5. The playtest bounce: onto the big wall's first ledge (0.75 m deep), keys held a moment
+            // longer, then let go. It has to stay up there, not tip back off the edge.
+            var ledge = Spawn(new Vector3(LabLayout.ClimbX[0], 0f, LabLayout.ClimbFaceZ - 1.2f), Vector3.forward, "climb-ledge");
+            yield return Sim(0.6f);
+            float ledgeTop = LabLayout.LedgeStepHeight, landedAt = -1f, lowest = 99f, lt = 0f;
+            yield return Sim(7f, () =>
+            {
+                lt += Dt;
+                bool up = landedAt < 0f || lt < landedAt + 0.3f;
+                Drive(ledge, up ? Vector3.forward : Vector3.zero, grab: up);
+                if (landedAt < 0f && !ledge.Climbing && ledge.Grounded && ledge.Hips.position.y > ledgeTop + 0.1f) landedAt = lt;
+                if (landedAt > 0f && lt > landedAt + 0.3f) lowest = Mathf.Min(lowest, ledge.Hips.position.y);
+            });
+            Report("등반: 턱에 올라선 뒤 뒤로 떨어지지 않음", landedAt > 0f && lowest > ledgeTop && ledge.Knockdowns == 0,
+                $"올라선 시각 {Fmt(landedAt)}, 이후 최저 골반 높이 {(lowest > 90f ? 0f : lowest):F2} m (턱 {ledgeTop:F0} m), 넘어짐 {ledge.Knockdowns}");
             yield return Clear();
         }
 
