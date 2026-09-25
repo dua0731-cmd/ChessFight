@@ -34,6 +34,12 @@ namespace ChessFight.Game
             }
             document.panelSettings = settings;
             var root = document.rootVisualElement;
+            // Unity's default runtime theme is what normally stretches a UIDocument
+            // root over the whole screen. NetworkTheme.tss does not import it, so
+            // without this the root is only as tall as its content: zero for a
+            // layout of absolutely positioned cards, which pushes every card
+            // anchored to the bottom edge off the top of the screen.
+            root.StretchToParentSize();
             root.style.unityFont = KoreanFont;
             layout.CloneTree(root);
             return root;
