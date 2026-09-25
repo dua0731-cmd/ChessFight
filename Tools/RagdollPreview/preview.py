@@ -21,7 +21,9 @@ def load_params():
         if m: vals[m.group(1)] = float(m.group(2))
     P = dict(CURRENT)
     P.update({k: vals[k] for k in list(P) if k in vals})
-    P.update(runLegDrop=vals.get('runLegDrop', 0.0), bobStyle='legs', armStyle='pendulum')
+    for k in ('runLegDrop', 'runSplay', 'sprintSplay', 'runDrive', 'sprintDrive', 'sprintChestLean'):
+        P[k] = vals.get(k, 0.0)
+    P.update(bobStyle='legs', armStyle='pendulum')
     return P
 
 def gif(P, blend, cadence, title, path, cycles=2):

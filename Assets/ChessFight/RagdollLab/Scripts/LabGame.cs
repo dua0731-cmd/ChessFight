@@ -465,14 +465,15 @@ namespace ChessFight.RagdollLab
         ///
         /// Speed was then cut to 80% (12 -> 9.6 m/s) on playtest feedback. That approved run is now the
         /// SPRINT (held Shift, spends stamina: sprintSpeed and the sprint* gait numbers). The everyday
-        /// run at 5.5 m/s is its own gait, not the sprint slowed down - that version floated (the hips
-        /// rode 11 cm up on the spread legs) and waddled (12 degrees of roll at a slow tempo). The run
-        /// steps 2.5 times a second with the legs swung 55 degrees, rides exactly on its legs
-        /// (runLegDrop), rolls 3 degrees onto the stance leg, swings hanging arms like pendulums and
-        /// turns the shoulders against the legs. Seen from behind, the sprint's 140 degree legs hit
-        /// the 60 degree hip stop and kicked out sideways and its 12 degree roll rocked the whole body,
-        /// so it now swings to the stop and no further and rolls half as much; speed, tempo, arms and
-        /// the bounding hips are the approved ones.
+        /// run at 5.5 m/s is its own gait, not the sprint slowed down. It runs rather than walks: 2.9
+        /// steps a second with the legs at the hip's full 60 degrees, a light bounce (the hips follow
+        /// the legs down only 30% of the way, so there is a short float at each stride), 8 degrees of
+        /// forward lean plus a nod on each footfall (runDrive), arms pumping at the sides, a little
+        /// kick-out of the back foot. The sprint is the approved cartoon one rebuilt inside the hip
+        /// joint: legs to the 60 degree stop and no further (the old 140 rammed it), the back foot
+        /// kicked out beside the skirt on purpose (sprintSplay), a deep forward lean (hips 12 +
+        /// chest 16 + a 7 degree drive on each footfall), 3.5 steps a second, big bounding hops.
+        /// Both lean into their acceleration (accelLean) instead of rolling with the facing.
         /// Baked into Settings/RagdollTuning.asset, so the lab and the prefab start with it;
         /// "명세 시작값" still resets to the spec for A/B, and this button brings the set back.
         /// </summary>
@@ -481,13 +482,14 @@ namespace ChessFight.RagdollLab
             "'moveSpeed':5.5,'sprintSpeed':9.6,'acceleration':20.0,'stopDeceleration':20.0," +
             "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.5," +
             "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
-            "'strideLength':1.5,'legSwing':55.0,'armSwing':40.0,'runLean':5.0,'runLift':0.0," +
-            "'runArmDown':45.0,'runTwist':8.0,'runLegDrop':0.8," +
-            "'sprintCadence':3.2,'sprintLegSwing':60.0,'sprintArmSwing':76.0,'sprintLean':10.0," +
-            "'sprintLift':0.05,'sprintBob':0.06,'sprintRoll':6.0,'sprintTurnLean':10.0," +
-            "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.012,'stepRoll':3.0," +
-            "'turnLean':6.0,'landingDip':0.06,'stepLength':0.22," +
-            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':2.5,'legDamperRatio':0.04," +
+            "'strideLength':1.5,'legSwing':60.0,'armSwing':55.0,'runLean':8.0,'runLift':0.0," +
+            "'runArmDown':35.0,'runTwist':8.0,'runLegDrop':0.3,'runDrive':4.0,'runSplay':10.0," +
+            "'sprintCadence':3.5,'sprintLegSwing':60.0,'sprintArmSwing':76.0,'sprintLean':12.0," +
+            "'sprintLift':0.05,'sprintBob':0.07,'sprintRoll':6.0,'sprintTurnLean':15.0," +
+            "'sprintChestLean':16.0,'sprintDrive':7.0,'sprintSplay':22.0," +
+            "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.0,'stepRoll':3.0," +
+            "'turnLean':10.0,'accelLean':0.6,'anchorBrakeLeash':0.3,'landingDip':0.06,'stepLength':0.22," +
+            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':2.9,'legDamperRatio':0.04," +
             "'knockdownImpulseThreshold':6.0,'hitImpactThreshold':2.2," +
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 

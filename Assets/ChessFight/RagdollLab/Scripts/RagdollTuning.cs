@@ -107,6 +107,13 @@ namespace ChessFight.RagdollLab
         // at the sides, and the shoulders turn against the hips with each step, the way a person's do.
         [Tunable(GroupPose, "달릴 때 팔 내림 (도)")] [Range(-30f, 80f)] public float runArmDown = 20f;
         [Tunable(GroupPose, "달리기 상체 비틀기 (도)")] [Range(0f, 20f)] public float runTwist;
+        // A little extra forward pitch as each foot takes the weight, then the body rises off it:
+        // reads as pushing off the ground rather than being slid along.
+        [Tunable(GroupPose, "달리기 딛을 때 앞으로 숙임 (도)")] [Range(0f, 15f)] public float runDrive;
+        // The foot on the back swing is kicked out to the side, so it shows beside the skirt - the
+        // legs are otherwise hidden under it from behind. Deliberate and inside the hip's 35 degree
+        // sideways range, unlike the old sprint where the same flick came from ramming the joint.
+        [Tunable(GroupPose, "달리기 뒤로 찬 발 바깥으로 (도)")] [Range(0f, 25f)] public float runSplay;
 
         // Everything below defaults to "off", so the feel only changes when it is dialled up.
         [Tunable(GroupWeight, "발 고정 (0=미끄러짐)")] [Range(0f, 1f)] public float stepLock;
@@ -118,7 +125,10 @@ namespace ChessFight.RagdollLab
         // stride - which is what made the first run float. 1 rides exactly on the legs.
         [Tunable(GroupWeight, "달리기: 다리 벌어진 만큼 골반 내림 (1=다리 길이대로)")] [Range(0f, 1.5f)] public float runLegDrop;
         [Tunable(GroupWeight, "걸음 좌우 기울기 (도)")] [Range(0f, 20f)] public float stepRoll;
-        [Tunable(GroupWeight, "회전 시 기울기 (도)")] [Range(0f, 30f)] public float turnLean;
+        // Leaning into the acceleration (see RagdollPawn.LeanIntoAcceleration): 1 balances the push
+        // exactly, and turnLean / sprintTurnLean cap the angle.
+        [Tunable(GroupWeight, "가속·회전 방향으로 쏠림 (1=힘과 균형)")] [Range(0f, 1.5f)] public float accelLean;
+        [Tunable(GroupWeight, "가속·회전 쏠림 최대 (도)")] [Range(0f, 30f)] public float turnLean;
         [Tunable(GroupWeight, "착지 주저앉기 (m)")] [Range(0f, 0.2f)] public float landingDip;
         [Tunable(GroupWeight, "정지 감속 (m/s²)")] [Range(1f, 100f)] public float stopDeceleration = 30f;
         [Tunable(GroupWeight, "전속력 회전 속도 (도/초)")] [Range(60f, 1080f)] public float turnRateTopSpeed = 1080f;
@@ -193,14 +203,17 @@ namespace ChessFight.RagdollLab
         // The sprint is the approved big run; these are its gait numbers. The run uses the ones in
         // the pose and weight groups (legSwing, armSwing, runLean, hopCadence), and the pawn blends
         // between the two sets, so each can be tuned without touching the other.
-        [Tunable(GroupSprint, "전력질주 걸음 주기 (회/초)")] [Range(0f, 5f)] public float sprintCadence = 3.2f;
+        [Tunable(GroupSprint, "전력질주 걸음 주기 (회/초)")] [Range(0f, 5f)] public float sprintCadence = 3.5f;
         [Tunable(GroupSprint, "전력질주 다리 스윙 (도, 최대 60)")] [Range(0f, 60f)] public float sprintLegSwing = 60f;
         [Tunable(GroupSprint, "전력질주 팔 스윙 (도)")] [Range(0f, 90f)] public float sprintArmSwing = 76f;
-        [Tunable(GroupSprint, "전력질주 골반 기울기 (도)")] [Range(0f, 30f)] public float sprintLean = 10f;
+        [Tunable(GroupSprint, "전력질주 골반 기울기 (도)")] [Range(0f, 30f)] public float sprintLean = 12f;
         [Tunable(GroupSprint, "전력질주 골반 들기 (m)")] [Range(0f, 0.1f)] public float sprintLift = 0.05f;
-        [Tunable(GroupSprint, "전력질주 걸음 들썩임 (m)")] [Range(0f, 0.12f)] public float sprintBob = 0.06f;
+        [Tunable(GroupSprint, "전력질주 걸음 들썩임 (m)")] [Range(0f, 0.12f)] public float sprintBob = 0.07f;
         [Tunable(GroupSprint, "전력질주 걸음 좌우 기울기 (도)")] [Range(0f, 20f)] public float sprintRoll = 6f;
-        [Tunable(GroupSprint, "전력질주 회전 시 기울기 (도)")] [Range(0f, 30f)] public float sprintTurnLean = 10f;
+        [Tunable(GroupSprint, "전력질주 가속·회전 쏠림 최대 (도)")] [Range(0f, 30f)] public float sprintTurnLean = 15f;
+        [Tunable(GroupSprint, "전력질주 상체 앞 숙임 (도)")] [Range(0f, 40f)] public float sprintChestLean = 16f;
+        [Tunable(GroupSprint, "전력질주 딛을 때 앞으로 숙임 (도)")] [Range(0f, 15f)] public float sprintDrive = 7f;
+        [Tunable(GroupSprint, "전력질주 뒤로 찬 발 바깥으로 (도)")] [Range(0f, 25f)] public float sprintSplay = 22f;
         [Tunable(GroupSprint, "달리기↔전력질주 전환 (/초)")] [Range(0.5f, 20f)] public float sprintBlendSpeed = 4f;
         // Stamina-seconds per second, like the climb: 1.0 empties the 8 s pool in 8 s of sprinting.
         [Tunable(GroupSprint, "전력질주 스테미나 소모 (/초)")] [Range(0f, 3f)] public float sprintDrain = 1f;

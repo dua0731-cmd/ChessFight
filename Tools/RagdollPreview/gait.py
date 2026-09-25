@@ -13,15 +13,19 @@ def pose(P, blend, g, speedN=1.0, clampLegs=True):
     s = np.sin(g)
     legAmp = lerp(P['legSwing'], P['sprintLegSwing'], blend) * min(1, speedN * 1.5)
     armAmp = lerp(P['armSwing'], P['sprintArmSwing'], blend) * speedN
+    legAmp = min(legAmp, 60.0)          # RagdollPawn.HipSwingLimit
     thL, thR = -legAmp * s, legAmp * s
     if clampLegs:
         thL, thR = np.clip(thL, -60, 60), np.clip(thR, -60, 60)
+    splay = lerp(P.get('runSplay', 0), P.get('sprintSplay', 0), blend) * min(1, speedN * 1.5)
+    backL, backR = max(0.0, min(1.0, -s)), max(0.0, min(1.0, s))
     loc = {}
-    loc['ThighL'] = Euler(thL, 0, 0); loc['ThighR'] = Euler(thR, 0, 0)
+    loc['ThighL'] = Euler(thL, 0, -splay * backL); loc['ThighR'] = Euler(thR, 0, splay * backR)
     loc['FootL'] = Euler(-0.8 * thL, 0, 0); loc['FootR'] = Euler(-0.8 * thR, 0, 0)
     twist = P.get('runTwist', 0) * (1 - blend) * speedN * s
-    loc['Chest'] = Euler(P['chestLean'] * speedN, -twist, 0)
-    loc['Head'] = Euler(-0.5 * P['chestLean'] * speedN, 0.8 * twist, 0)
+    chestLean = lerp(P['chestLean'], P.get('sprintChestLean', P['chestLean']), blend) * speedN
+    loc['Chest'] = Euler(chestLean, -twist, 0)
+    loc['Head'] = Euler(-0.5 * chestLean, 0.8 * twist, 0)
     down = lerp(P['armRestDown'], lerp(P['runArmDown'], P['armRestDown'], blend), min(1, speedN * 2))
     style = P.get('armStyle', 'yaw')
     if style == 'yaw' or blend >= 0.999:
@@ -29,6 +33,8 @@ def pose(P, blend, g, speedN=1.0, clampLegs=True):
     else:
         # pendulum: lower first, then swing about the body's side-to-side axis
         aL = Euler(armAmp * s, 0, down); aR = Euler(-armAmp * s, 0, -down)
+    if 0.0 < blend < 0.999 and style != 'yaw':
+        pass
     loc['ArmL'] = aL; loc['ArmR'] = aR
     spread = abs(s)
     lift = lerp(P['runLift'], P['sprintLift'], blend)
@@ -42,7 +48,8 @@ def pose(P, blend, g, speedN=1.0, clampLegs=True):
         runBob = P['stepBob'] * np.sin(2 * g + P.get('bobPhase', 0.0)) * 0.5 + P['stepBob'] * 0.5 - P['runStepDip'] * spread
     bob = lerp(runBob, P['sprintBob'] * spread, blend) * speedN
     roll = lerp(P['stepRoll'], P['sprintRoll'], blend) * s * speedN
-    lean = lerp(P['runLean'], P['sprintLean'], blend) * speedN
+    drive = lerp(P.get('runDrive', 0), P.get('sprintDrive', 0), blend) * (1 - spread) * speedN
+    lean = lerp(P['runLean'], P['sprintLean'], blend) * speedN + drive
     hips_rot = Rx(lean) @ Rz(roll)
     return loc, hips_rot, STAND + lift + bob
 

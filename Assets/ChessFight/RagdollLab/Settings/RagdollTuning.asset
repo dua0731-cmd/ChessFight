@@ -62,30 +62,33 @@ MonoBehaviour:
     anchorIdleFollow: 6
     gravityScale: 1
     strideLength: 1.5
-    legSwing: 55
-    armSwing: 40
+    legSwing: 60
+    armSwing: 55
     armRestDown: 20
     chestLean: 10
-    runLean: 5
-    runArmDown: 45
+    runLean: 8
+    runArmDown: 35
     runTwist: 8
+    runDrive: 4
+    runSplay: 10
     stepLock: 0
     stanceThrust: 0.45
-    stepBob: 0.012
-    runLegDrop: 0.8
+    stepBob: 0
+    runLegDrop: 0.3
     stepRoll: 3
-    turnLean: 6
+    accelLean: 0.6
+    turnLean: 10
     landingDip: 0.06
     stopDeceleration: 20
     turnRateTopSpeed: 260
     stepLength: 0.22
     boundGait: 0
     driveFeedForward: 1
-    hopCadence: 2.5
+    hopCadence: 2.9
     legDamperRatio: 0.04
     thighMass: 0
     footMass: 0
-    anchorBrakeLeash: 0
+    anchorBrakeLeash: 0.3
     overspeedClamp: 1.1
     struggleBurst: 0.22
     struggleRushBonus: 2
@@ -117,14 +120,17 @@ MonoBehaviour:
     climbSlip: 0.18
     climbSag: 0.055
     climbOvershoot: 0.7
-    sprintCadence: 3.2
+    sprintCadence: 3.5
     sprintLegSwing: 60
     sprintArmSwing: 76
-    sprintLean: 10
+    sprintLean: 12
     sprintLift: 0.05
-    sprintBob: 0.06
+    sprintBob: 0.07
     sprintRoll: 6
-    sprintTurnLean: 10
+    sprintTurnLean: 15
+    sprintChestLean: 16
+    sprintDrive: 7
+    sprintSplay: 22
     sprintBlendSpeed: 4
     sprintDrain: 1
     sprintResume: 0.3

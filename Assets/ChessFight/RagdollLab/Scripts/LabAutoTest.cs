@@ -831,7 +831,7 @@ namespace ChessFight.RagdollLab
             float t = 0f, flip = -1f, face = -1f;
             // Slamming the opposite direction must not launch the pawn faster than it can run, and the
             // torso must not whip around. Both were reported as feel bugs; measure them.
-            float peakSpeed = 0f, chestWhip = 0f, headWhip = 0f, peakAt = 0f, peakAnchor = 0f, peakCom = 0f;
+            float peakSpeed = 0f, chestWhip = 0f, headWhip = 0f, peakAt = 0f, peakAnchor = 0f, peakCom = 0f, sideTilt = 0f;
             Vector3 peakVel = Vector3.zero;
             float target = game.tuning.values.moveSpeed;
             yield return Sim(1.5f, () =>
@@ -852,6 +852,10 @@ namespace ChessFight.RagdollLab
                     inv * pawn.bodies[(int)BodyId.Chest].transform.rotation));
                 headWhip = Mathf.Max(headWhip, Quaternion.Angle(Quaternion.identity,
                     inv * pawn.bodies[(int)BodyId.Head].transform.rotation));
+                // Seen from a camera behind the run (travel along X), how far the chest tips to
+                // either side - the side-to-side rock that every reversal used to have.
+                Vector3 up = pawn.bodies[(int)BodyId.Chest].transform.up;
+                sideTilt = Mathf.Max(sideTilt, Mathf.Abs(Mathf.Atan2(up.z, up.y) * Mathf.Rad2Deg));
             });
             bool noSlingshot = peakSpeed <= target * 1.25f;
             Report("180° 방향 전환", flip >= 0f && flip < 0.8f && face >= 0f && face < 0.8f && pawn.Knockdowns == 0,
@@ -862,6 +866,8 @@ namespace ChessFight.RagdollLab
             Info("과속 상세", $"최고 {peakSpeed:F2} m/s @ {peakAt:F2}s, 방향 ({peakVel.x:F1},{peakVel.z:F1}), "
                 + $"전체 무게중심 속도 {peakCom:F2} m/s, 앵커-골반 거리 {peakAnchor:F3} m");
             Info("전환 중 상체 휘청임", $"가슴 최대 {chestWhip:F0}°, 머리 최대 {headWhip:F0}° (골반 기준)");
+            Report("반대 방향 전환 시 좌우로 흔들리지 않음", sideTilt < 15f,
+                $"진행 방향 옆으로 가슴이 기운 최대 각도 {sideTilt:F0}° (15° 미만)");
             yield return Clear();
         }
 
@@ -939,9 +945,11 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>
-        /// The two things that looked wrong from the chase camera. The run floated: both feet off the
-        /// floor for much of every stride. The sprint's legs kicked out sideways, because 140 degrees
-        /// was commanded against a 60 degree hip stop and the excess spilled into the sideways axis.
+        /// Two things that looked wrong from the chase camera. The first run floated: both feet well
+        /// off the floor for much of every stride (the run now has a light bounce, ~3 cm, on purpose).
+        /// The old sprint's legs rammed the 60 degree hip stop and spilled up to the 35 degree
+        /// sideways limit; the sprint now kicks the back foot out on purpose (sprintSplay), and must
+        /// stay clear of that limit.
         /// </summary>
         IEnumerator GaitShape()
         {
@@ -954,11 +962,11 @@ namespace ChessFight.RagdollLab
             {
                 frames++;
                 float lowest = Mathf.Min(pawn.footL.bounds.min.y, pawn.footR.bounds.min.y);
-                if (lowest > 0.03f) floating++;
+                if (lowest > 0.06f) floating++;
             });
             float floatShare = 100f * floating / Mathf.Max(1, frames);
-            Report("달리기: 발이 바닥에서 뜨지 않음", floatShare < 15f && pawn.Knockdowns == 0,
-                $"두 발이 다 3 cm 넘게 뜬 시간 {floatShare:F0}% (15% 미만이어야 함)");
+            Report("달리기: 공중에 떠다니지 않음", floatShare < 15f && pawn.Knockdowns == 0,
+                $"두 발이 다 6 cm 넘게 뜬 시간 {floatShare:F0}% (15% 미만이어야 함, 가벼운 뜀은 정상)");
             yield return Clear();
 
             pawn = Spawn(new Vector3(-12f, 0f, -13f), Vector3.forward, "gait-sprint");
@@ -975,8 +983,9 @@ namespace ChessFight.RagdollLab
                     sideways = Mathf.Max(sideways, Mathf.Abs(Signed(e.z)));
                 }
             });
-            Report("전력질주: 다리가 옆으로 차지 않음", sideways < 20f && pawn.Knockdowns == 0,
-                $"허벅지가 옆으로 벌어진 최대 각도 {sideways:F0}° (20° 미만, 관절 한계 35°)");
+            float splay = game.tuning.values.sprintSplay;
+            Report("전력질주: 다리가 관절 한계에 박히지 않음", sideways < Mathf.Min(32f, splay + 8f) && pawn.Knockdowns == 0,
+                $"허벅지가 옆으로 벌어진 최대 각도 {sideways:F0}° (의도한 발 차기 {splay:F0}° + 8° 이하, 관절 한계 35°)");
             yield return Clear();
         }
 

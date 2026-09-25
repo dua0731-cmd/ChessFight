@@ -194,7 +194,7 @@ namespace ChessFight.RagdollLab
 
         readonly Leg[] legs = { new Leg(), new Leg() };
         int swingingLeg = -1;
-        float landDip, turnRate, strideDrop, hopArc;
+        float landDip, strideDrop, hopArc;
         float heldTimer, struggleTimer, escapeProgress, climbTimer, climbUp, climbSide, climbGrace, climbCooldown, topOutTimer;
         float handStep = 1f;
         int movingHand;
@@ -223,6 +223,8 @@ namespace ChessFight.RagdollLab
         float slideSide = 1f;
         bool cameraFooting;
         float footingY, legReach;
+        Vector3 leanAccel, leanLastVel;
+        float leanAlign = 1f;
         Vector3 cameraAnchorBefore, cameraAnchor;
         bool launchCut;
         bool wantsMove, wasGrounded;
@@ -649,12 +651,16 @@ namespace ChessFight.RagdollLab
                 anchorPos = hp;
                 anchorVel = Flat(hips.linearVelocity);
                 anchor.MovePosition(anchorPos);
+                leanLastVel = anchorVel;
+                leanAccel = Vector3.zero;
                 return;
             }
 
             if (Climbing)
             {
                 ClimbMove(p, dt);
+                leanLastVel = anchorVel;
+                leanAccel = Vector3.zero;
                 return;
             }
 
@@ -688,11 +694,9 @@ namespace ChessFight.RagdollLab
                 float fastN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, SprintTop(p)));
                 float maxStep = Mathf.Lerp(1080f, p.turnRateTopSpeed, fastN) * dt;
                 float delta = Mathf.Clamp(Mathf.DeltaAngle(current, wanted), -maxStep, maxStep);
-                turnRate = Mathf.Lerp(turnRate, delta / Mathf.Max(dt, 1e-4f), 0.3f);
                 float yaw = (current + delta) * Mathf.Deg2Rad;
                 facing = new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
             }
-            else turnRate = Mathf.Lerp(turnRate, 0f, 0.3f);
 
             Vector3 groundVel = Grounded && groundBody != null ? Flat(groundBody.GetPointVelocity(hp)) : Vector3.zero;
             Vector3 targetVel = move * top + groundVel;
@@ -790,15 +794,22 @@ namespace ChessFight.RagdollLab
 
             // The anchor's rotation is the hips' balance target (upright + facing + lean); the anchor
             // joint's angular drives pull the hips toward it (implicit, so stiff values stay stable).
-            float lean = Mathf.Lerp(p.runLean, p.sprintLean, sprintBlend) * speedN;
+            // The running lean belongs to the direction of travel. Turning round (W then S, A then
+            // D) the body spins 180 degrees while still moving the old way, and a forward lean
+            // carried round that spin swept sideways across the camera - the side-to-side sway on
+            // every reversal. It fades out while the pawn is not going where it faces.
+            float align = anchorVel.sqrMagnitude > 0.25f ? Mathf.Clamp01(Vector3.Dot(anchorVel.normalized, facing)) : 1f;
+            leanAlign = Mathf.MoveTowards(leanAlign, align * align, 6f * dt);
+            // Each footfall drives the body forward a little more (the push-off), then it rises.
+            float drive = Gait(p.runDrive, p.sprintDrive) * (1f - spread) * speedN;
+            float lean = (Gait(p.runLean, p.sprintLean) * speedN + drive) * leanAlign;
             if (shoveTimer > 0f) lean += p.shoveLean;
             else if (input.grab && !Grabbing) lean += p.grabLean;
-            // Sway with each step, and lean into a turn the way a runner has to.
             // Rolling toward the stance leg reads as weight when the legs alternate. With both legs
             // together there is no stance side, so the same roll reads as a limp - fade it out.
-            float roll = Gait(p.stepRoll, p.sprintRoll) * Mathf.Sin(gait) * speedN * (1f - p.boundGait)
-                       - Mathf.Clamp(turnRate / 180f, -1f, 1f) * Gait(p.turnLean, p.sprintTurnLean) * speedN;
-            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(lean, 0f, roll));
+            float roll = Gait(p.stepRoll, p.sprintRoll) * Mathf.Sin(gait) * speedN * (1f - p.boundGait) * leanAlign;
+            anchor.MoveRotation(LeanIntoAcceleration(p, dt) * Quaternion.LookRotation(facing, Vector3.up)
+                                * Quaternion.Euler(lean, 0f, roll));
             ClampOverspeed(p, dt);
         }
 
@@ -895,6 +906,26 @@ namespace ChessFight.RagdollLab
         // ---------------------------------------------------------------- 전력질주 / 스테미나
 
         static float SprintTop(RagdollParams p) => Mathf.Max(p.moveSpeed, p.sprintSpeed);
+
+        /// <summary>
+        /// Leans the whole body into whatever the legs are doing to it: back while braking, forward
+        /// while speeding up, inward round a curve - in the WORLD frame, so it does not care which
+        /// way the body happens to face mid-spin. That is what stops a reversal rocking the pawn:
+        /// the brake and the run-up afterwards push the same way, so the body leans once, steadily,
+        /// and comes back upright. The old turn lean was worked out from how fast the FACING
+        /// swung, which a 180 degree spin maxes out and a mouse turn (the direction jumps a little
+        /// every frame) made flicker left and right. Smoothed over ~0.1 s; accelLean 1 is the lean
+        /// that balances the push exactly, turnLean / sprintTurnLean cap it.
+        /// </summary>
+        Quaternion LeanIntoAcceleration(RagdollParams p, float dt)
+        {
+            Vector3 accel = (anchorVel - leanLastVel) / Mathf.Max(dt, 1e-4f);
+            leanLastVel = anchorVel;
+            leanAccel = Vector3.Lerp(leanAccel, Flat(accel), 1f - Mathf.Exp(-10f * dt));
+            float cap = Mathf.Tan(Mathf.Clamp(Gait(p.turnLean, p.sprintTurnLean), 0f, 45f) * Mathf.Deg2Rad);
+            Vector3 tilt = Vector3.ClampMagnitude(leanAccel * (p.accelLean / 9.81f), cap);
+            return Quaternion.FromToRotation(Vector3.up, (Vector3.up + tilt).normalized);
+        }
 
         /// <summary>A gait number between its run value and its sprint value, by how far into the sprint.</summary>
         float Gait(float run, float sprint) => Mathf.Lerp(run, sprint, sprintBlend);
@@ -1373,14 +1404,20 @@ namespace ChessFight.RagdollLab
             // Running (not sprinting) the shoulders turn against the stepping legs and the head holds
             // still against them. The right shoulder comes forward with the left leg.
             float twist = p.runTwist * (1f - sprintBlend) * speedN * s;
-            Quaternion chest = Quaternion.Euler(p.chestLean * speedN, -twist, 0f);
-            Quaternion head = Quaternion.Euler(-0.5f * p.chestLean * speedN, 0.8f * twist, 0f);
+            // Like the hips' lean, the chest only bends forward while going the way it faces.
+            float chestLean = Gait(p.chestLean, p.sprintChestLean) * speedN * leanAlign;
+            Quaternion chest = Quaternion.Euler(chestLean, -twist, 0f);
+            Quaternion head = Quaternion.Euler(-0.5f * chestLean, 0.8f * twist, 0f);
             // boundGait 0 = legs alternate (a walk), 1 = legs move together (a hop). A hop has a
             // flight phase, so "the foot cannot keep up with the ground" simply stops applying - which
             // is the only way a body with 0.18 m legs can honestly move at several metres per second.
             float ampR = Mathf.Lerp(legAmp, -legAmp, p.boundGait);
-            Quaternion thighL = Quaternion.Euler(-legAmp * s, 0f, 0f);
-            Quaternion thighR = Quaternion.Euler(ampR * s, 0f, 0f);
+            // The leg on its back swing kicks its foot out sideways (negative Z is outward on the
+            // left, positive on the right), so the stepping shows beside the skirt from behind.
+            float splay = Gait(p.runSplay, p.sprintSplay) * Mathf.Clamp01(speedN * 1.5f);
+            float backL = Mathf.Clamp01(-s), backR = Mathf.Clamp01(ampR >= 0f ? s : -s);
+            Quaternion thighL = Quaternion.Euler(-legAmp * s, 0f, -splay * backL);
+            Quaternion thighR = Quaternion.Euler(ampR * s, 0f, splay * backR);
             Quaternion footL = Quaternion.Euler(0.8f * legAmp * s, 0f, 0f);
             Quaternion footR = Quaternion.Euler(-0.8f * ampR * s, 0f, 0f);
             // Two different arm actions. The run lets the arms hang beside the body and swings them
@@ -1892,6 +1929,8 @@ namespace ChessFight.RagdollLab
             }
             anchorPos = hipsPosition;
             anchorVel = Vector3.zero;
+            leanAccel = leanLastVel = Vector3.zero;
+            leanAlign = 1f;
             cameraAnchor = cameraAnchorBefore = hipsPosition;
             anchor.transform.SetPositionAndRotation(hipsPosition, rot);
             anchor.position = hipsPosition;
