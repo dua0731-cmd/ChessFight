@@ -5,7 +5,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `JY-lobby`) | 09-25 | R18, R19 | 게임 모드 목록(`GameModes`)·모드별 매칭(프로토콜 v3)·모드 씬 로드(`MatchSceneView`), 참고 영상풍 새 로비(`LobbyStage`, HUD 재작성), 타이틀 재구성, 세션 테스트 +3·Core +1, `Docs/GameModes/` |
+| `ec6bc1f` (`JY-lobby`) | 09-25 | R18, R19 | 게임 모드 목록(`GameModes`)·모드별 매칭(프로토콜 v3)·모드 씬 로드(`MatchSceneView`), 참고 영상풍 새 로비(`LobbyStage`, HUD 재작성), 타이틀 재구성, 세션 테스트 +3·Core +1, `Docs/GameModes/` |
 | `0df4403` | 09-25 | R17 | 랩 Steam 연결 → `RagdollLabSteam/`(경계 규칙), LabGame 있는 씬에서 부팅, 테스트 스크립트가 그 어셈블리 컴파일·`simulationMode` 매핑, 인수인계 문서 |
 | (병합) | 09-25 | R17 | `JY-ragdoll` 두 번째 병합: 달리기/질주·스테미나, 슬라이딩 태클, 카메라·방향 전환, 등반 재작성, 랩 온라인 |
 | `a43791c` | 09-25 | R16 | 랩 씬 → RagdollTest, `RagdollDriver`, 랩 어셈블리 Gameplay 참조, 커서 복구, `Assets/ChessFight.meta`, 경계 검사·Roslyn 컴파일, 문서 |
