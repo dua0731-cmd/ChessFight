@@ -986,10 +986,10 @@ namespace ChessFight.RagdollLab
             // stamina has to be what stops it.
             float phase = 0f, highest = 0f, heightAtEmpty = -1f;
             bool ranOut = false, letGo = false;
-            yield return Sim(18f, () =>
+            yield return Sim(28f, () =>
             {
                 phase += Dt;
-                bool up = phase < 2f || ((int)((phase - 2f) / 0.35f) & 1) == 1;
+                bool up = phase < 6f || ((int)((phase - 6f) / 0.5f) & 1) == 1;
                 Drive(hanger, up ? Vector3.right : Vector3.left, grab: true);
                 if (!ranOut) highest = Mathf.Max(highest, hanger.Hips.position.y);
                 if (hanger.Stamina > 0.001f) return;

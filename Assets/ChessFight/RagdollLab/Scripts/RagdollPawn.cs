@@ -134,6 +134,9 @@ namespace ChessFight.RagdollLab
         int movingHand;
         Vector3 wallPoint, wallNormal = Vector3.forward;
         Vector3 climbUpAxis = Vector3.up, climbAcross = Vector3.right, climbFace;
+        readonly Vector3[] handHold = new Vector3[2];
+        bool holdsPlaced;
+        float climbCeiling;
         float struggleFlip = 1f, struggleRush, lastStrugglePunch;
         RagdollPawn holder;
         Collider heldCollider;
@@ -802,6 +805,7 @@ namespace ChessFight.RagdollLab
             }
             if (!Climbing)
             {
+                holdsPlaced = false;
                 if (Grounded && State == PawnState.Active)
                     stamina = Mathf.Min(p.climbStaminaMax, stamina + p.climbRecover * dt);
                 return;
@@ -818,14 +822,41 @@ namespace ChessFight.RagdollLab
             climbUpAxis = Vector3.Cross(across, wallNormal).normalized;
             climbAcross = across;
             climbFace = wallPoint + wallNormal * 0.05f;
-            climbTimer += p.climbCadence * dt;
-            if (climbTimer > 1f)
+            // Hand over hand, the same way the feet do it on the ground: a palm holds a real point
+            // on the wall, the body climbs toward it, and only once the body has caught up does that
+            // hand let go and reach higher. The body may never rise above what the top hand allows,
+            // which is the whole trick - drive the body on its own clock instead and the hands trail
+            // below it within a second, which is how the arms ended up hanging at the pawn's sides.
+            float shoulderY = bodies[(int)BodyId.ArmL].position.y;
+            if (!holdsPlaced)
             {
-                climbTimer -= 1f;
-                movingHand = movingHand == 0 ? 1 : 0;   // the other hand takes its turn reaching
-                handStep = 0f;
+                handHold[0] = OnWall(-p.climbHandSpread, shoulderY + p.climbHandStep);
+                handHold[1] = OnWall(p.climbHandSpread, shoulderY - p.climbHandStep * 0.5f);
+                holdsPlaced = true;
+                movingHand = 0;
+                handStep = 1f;
             }
             handStep = Mathf.Min(1f, handStep + p.climbCadence * dt * 2.4f);
+
+            float topHold = Mathf.Max(handHold[0].y, handHold[1].y);
+            climbCeiling = topHold - (shoulderY - bodies[0].position.y) + 0.04f;
+
+            if (handStep >= 1f && climbUp > 0.05f && shoulderY > topHold - p.climbHandStep * 0.35f)
+            {
+                movingHand = movingHand == 0 ? 1 : 0;
+                float side = movingHand == 0 ? -p.climbHandSpread : p.climbHandSpread;
+                handHold[movingHand] = OnWall(side, topHold + p.climbHandStep);
+                handStep = 0f;
+            }
+            else if (handStep >= 1f && climbUp < -0.05f)
+            {
+                // Going back down: the top hand comes off and drops below the other one.
+                int top = handHold[0].y >= handHold[1].y ? 0 : 1;
+                float side = top == 0 ? -p.climbHandSpread : p.climbHandSpread;
+                handHold[top] = OnWall(side, Mathf.Min(handHold[0].y, handHold[1].y) - p.climbHandStep);
+                movingHand = top;
+                handStep = 0f;
+            }
             if (stamina > 0f) return;
             stamina = 0f;
             Climbing = false;
@@ -840,8 +871,13 @@ namespace ChessFight.RagdollLab
             Vector3 right = Vector3.Cross(Vector3.up, facing);
             Vector3 next = anchorPos;
             next.y += p.climbSpeed * Mathf.Clamp(climbUp, -1f, 1f) * dt;
+            // Never higher than the hand that is holding on, so the climb rate is set by how fast the
+            // hands can be placed rather than by a number. That is what makes it read as climbing.
+            if (holdsPlaced && climbUp > 0f) next.y = Mathf.Min(next.y, climbCeiling);
             next += right * (p.climbSpeed * 0.55f * Mathf.Clamp(climbSide, -1f, 1f) * dt);
             // Hold the body a body-depth off the face, at the height the probe says the wall is.
+            // The skirt is 0.273 m deep: hug any closer than this and the body is jammed into the
+            // wall, pushed back out by the contact, and the climb stalls.
             Vector3 hug = wallPoint + wallNormal * (p.grabRadius + 0.1f);
             next.x = Mathf.Lerp(next.x, hug.x, 1f - Mathf.Exp(-8f * dt));
             next.z = Mathf.Lerp(next.z, hug.z, 1f - Mathf.Exp(-8f * dt));
@@ -852,7 +888,9 @@ namespace ChessFight.RagdollLab
             anchorVel = Vector3.zero;
             anchorPos = next;
             anchor.MovePosition(anchorPos);
-            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(-12f, 0f, 0f));
+            // Belly to the wall. A negative pitch leans the pawn AWAY from it, which is what made
+            // it look like a back-slash propped against the face.
+            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(9f, 0f, 0f));
         }
 
         // ---------------------------------------------------------------- puppet
@@ -1096,6 +1134,13 @@ namespace ChessFight.RagdollLab
             ankle = Quaternion.Inverse(thigh);
         }
 
+        /// <summary>A point on the climbing face: <paramref name="side"/> across, <paramref name="height"/> world y.</summary>
+        Vector3 OnWall(float side, float height)
+        {
+            Vector3 at = climbFace + climbAcross * side;
+            return at + climbUpAxis * (height - at.y);
+        }
+
         /// <summary>
         /// Aims one arm at the palm spot it is supposed to be holding. The hand that is mid-swap
         /// travels along a small arc so it lifts off, reaches, and plants, instead of gliding.
@@ -1104,18 +1149,14 @@ namespace ChessFight.RagdollLab
         {
             Transform chestT = bodies[(int)BodyId.Chest].transform;
             Vector3 shoulder = bodies[left ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
-            // Measured from the SHOULDER, which sits 0.19 m above the chest - hand targets taken
-            // off the chest all landed below the shoulder, so both arms pointed down.
-            bool high = movingHand == slot;
-            float rise = high ? p.climbHandStep : -p.climbHandStep * 0.55f;
-            Vector3 onWall = climbFace + climbAcross * (left ? -p.climbHandSpread : p.climbHandSpread);
-            Vector3 target = onWall + climbUpAxis * (shoulder.y + rise - onWall.y);
-            if (high && handStep < 1f)
+            Vector3 target = handHold[slot];
+            if (movingHand == slot && handStep < 1f)
             {
-                // Peel off the wall, swing up, plant. Tired pawns overshoot and slap.
+                // Peel off the wall, swing up, slap down on the new hold.
                 float t = handStep;
-                target -= climbUpAxis * (p.climbHandStep * 1.3f * (1f - t));
-                target += wallNormal * (Mathf.Sin(t * Mathf.PI) * 0.1f * panic);
+                Vector3 from = handHold[1 - slot] - climbUpAxis * (p.climbHandStep * 1.4f);
+                target = Vector3.Lerp(from, handHold[slot], t * t * (3f - 2f * t));
+                target += wallNormal * (Mathf.Sin(t * Mathf.PI) * 0.09f * panic);
             }
             Vector3 aim = target - shoulder;
             if (aim.sqrMagnitude < 1e-5f) aim = -wallNormal;
@@ -1172,7 +1213,7 @@ namespace ChessFight.RagdollLab
             float r = p.damperRatio;
             // Dynamic softening hits the upper body and arms fully, legs/anchor only by lowerBodyDynamicShare.
             float kLower = StateFactor * Mathf.Lerp(1f, Stiffness, p.lowerBodyDynamicShare);
-            float anchorSpring = p.hipAnchorStrength * kLower;
+            float anchorSpring = p.hipAnchorStrength * kLower * (Climbing ? p.climbPull : 1f);
             var linear = new JointDrive { positionSpring = anchorSpring, positionDamper = anchorSpring * r, maximumForce = float.MaxValue };
             anchorJoint.xDrive = linear;
             anchorJoint.yDrive = linear;

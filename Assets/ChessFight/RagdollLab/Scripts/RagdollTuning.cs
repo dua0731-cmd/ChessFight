@@ -129,6 +129,10 @@ namespace ChessFight.RagdollLab
         // the body rises climbSpeed x that. Keep 2 x climbSpeed / climbCadence under ~0.32 m or the
         // hands trail below the chest and the pose collapses to arms-at-sides.
         [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 0.45f;
+        // Hanging by the hands caps how far the anchor may lead, and at hipAnchorStrength 3000 a
+        // 0.2 m lead is only 600 N against a 490 N bodyweight - barely any lift. Pulling up is a
+        // muscular effort, so the anchor spring is multiplied while climbing.
+        [Tunable(GroupAction, "끌어올리는 힘 배율")] [Range(1f, 8f)] public float climbPull = 3.5f;
         [Tunable(GroupAction, "등반 스테미나 (초)")] [Range(1f, 30f)] public float climbStaminaMax = 8f;
         // Drain and recovery are in stamina-seconds per second, so the numbers read directly:
         // hanging 0.35 means the 8 s bar lasts 23 s of just hanging, 6.4 s of full climbing.
