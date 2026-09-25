@@ -1,0 +1,280 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+namespace ChessFight.RagdollLab
+{
+    /// <summary>
+    /// One pawn's replicated pose. Only the hips position travels: every joint locks linear motion at
+    /// the child's own origin, so the other ten bodies are rebuilt from the parent's rotation.
+    /// </summary>
+    public sealed class RagdollPose
+    {
+        public ulong id;
+        public Vector3 hips;
+        public readonly Quaternion[] rotations = new Quaternion[RagdollPawn.Count];
+        public byte state;      // 0 active, 1 ragdoll, 2 getting up
+        public bool grounded;
+        public bool grabbing;
+        public bool snap;       // teleport: render without interpolation
+        public bool sprinting;
+        public bool exhausted;
+        public bool held;       // someone has this pawn by a hand
+        public float stamina;   // 0..1, sent as a byte so a client can draw its own gauge
+        public uint ack;        // the owner's own send time echoed back, milliseconds
+
+        public void CopyFrom(RagdollPose other)
+        {
+            id = other.id;
+            hips = other.hips;
+            Array.Copy(other.rotations, rotations, rotations.Length);
+            state = other.state;
+            grounded = other.grounded;
+            grabbing = other.grabbing;
+            snap = other.snap;
+            sprinting = other.sprinting;
+            exhausted = other.exhausted;
+            held = other.held;
+            stamina = other.stamina;
+            ack = other.ack;
+        }
+
+        public static void Blend(RagdollPose from, RagdollPose to, float t, RagdollPose into)
+        {
+            into.id = to.id;
+            into.hips = Vector3.Lerp(from.hips, to.hips, t);
+            for (int i = 0; i < into.rotations.Length; i++)
+                into.rotations[i] = Quaternion.Slerp(from.rotations[i], to.rotations[i], t);
+            into.state = t < 0.5f ? from.state : to.state;
+            into.grounded = t < 0.5f ? from.grounded : to.grounded;
+            into.grabbing = t < 0.5f ? from.grabbing : to.grabbing;
+            into.snap = to.snap;
+            into.sprinting = t < 0.5f ? from.sprinting : to.sprinting;
+            into.exhausted = t < 0.5f ? from.exhausted : to.exhausted;
+            into.held = t < 0.5f ? from.held : to.held;
+            into.stamina = Mathf.Lerp(from.stamina, to.stamina, t);
+            into.ack = to.ack;
+        }
+    }
+
+    /// <summary>A decoded snapshot with reusable pose objects (no per-packet allocation).</summary>
+    public sealed class RagdollSnapshot
+    {
+        public uint tick;
+        public uint hostTimeMs;
+        public int count;
+        readonly List<RagdollPose> poses = new List<RagdollPose>();
+
+        public RagdollPose At(int index)
+        {
+            while (poses.Count <= index) poses.Add(new RagdollPose());
+            return poses[index];
+        }
+
+        public void CopyFrom(RagdollSnapshot other)
+        {
+            tick = other.tick;
+            hostTimeMs = other.hostTimeMs;
+            count = other.count;
+            for (int i = 0; i < count; i++) At(i).CopyFrom(other.At(i));
+        }
+    }
+
+    /// <summary>
+    /// Wire format for the ragdoll lab. Same shape as MotionProtocol: fixed length, magic, type,
+    /// match id, and range checks on every field, so a malformed packet is dropped rather than trusted.
+    /// </summary>
+    public static class RagdollNetProtocol
+    {
+        public const uint Magic = 0x43465247;   // "CFRG"
+        public const byte TypeInput = 1;
+        public const byte TypeSnapshot = 2;
+        public const int MaxBytes = 1024;
+        public const int MaxPawns = 12;
+        public const float PositionRange = 80f; // metres, symmetric around the arena origin
+
+        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 4;  // 64
+        public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 1;            // 22
+        public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1;             // 24
+
+        const float SmallestThreeRange = 0.70710678f;
+
+        public static int SnapshotBytes(int pawns) => SnapshotHeaderBytes + pawns * PoseBytes;
+
+        public static bool Newer(uint value, uint previous) => unchecked((int)(value - previous)) > 0;
+
+        // ---------------------------------------------------------------- input
+
+        public static byte[] Input(ulong session, uint sequence, uint clientTimeMs, Vector2 move, bool jump, bool shove, bool grab, bool sprint = false)
+        {
+            using (var stream = new MemoryStream(InputBytes))
+            using (var w = new BinaryWriter(stream))
+            {
+                w.Write(Magic);
+                w.Write(TypeInput);
+                w.Write(session);
+                w.Write(sequence);
+                w.Write(clientTimeMs);
+                w.Write((sbyte)Mathf.Clamp(Mathf.RoundToInt(move.x * 127f), -127, 127));
+                w.Write((sbyte)Mathf.Clamp(Mathf.RoundToInt(move.y * 127f), -127, 127));
+                w.Write((byte)((jump ? 1 : 0) | (shove ? 2 : 0) | (grab ? 4 : 0) | (sprint ? 8 : 0)));
+                return stream.ToArray();
+            }
+        }
+
+        public static bool ReadInput(byte[] bytes, ulong session, out uint sequence, out uint clientTimeMs,
+            out Vector2 move, out bool jump, out bool shove, out bool grab, out bool sprint)
+        {
+            sequence = 0;
+            clientTimeMs = 0;
+            move = Vector2.zero;
+            jump = shove = grab = sprint = false;
+            if (bytes == null || bytes.Length != InputBytes) return false;
+            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            {
+                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeInput || r.ReadUInt64() != session) return false;
+                sequence = r.ReadUInt32();
+                clientTimeMs = r.ReadUInt32();
+                move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+                byte buttons = r.ReadByte();
+                if (buttons > 15) return false;
+                jump = (buttons & 1) != 0;
+                shove = (buttons & 2) != 0;
+                grab = (buttons & 4) != 0;
+                sprint = (buttons & 8) != 0;
+                if (move.sqrMagnitude > 1.05f) move = move.normalized;
+                return true;
+            }
+        }
+
+        // ---------------------------------------------------------------- snapshot
+
+        public static byte[] Snapshot(ulong session, uint tick, uint hostTimeMs, IReadOnlyList<RagdollPose> poses)
+        {
+            int count = Mathf.Min(poses.Count, MaxPawns);
+            using (var stream = new MemoryStream(SnapshotBytes(count)))
+            using (var w = new BinaryWriter(stream))
+            {
+                w.Write(Magic);
+                w.Write(TypeSnapshot);
+                w.Write(session);
+                w.Write(tick);
+                w.Write(hostTimeMs);
+                w.Write((byte)count);
+                for (int i = 0; i < count; i++)
+                {
+                    var pose = poses[i];
+                    w.Write(pose.id);
+                    w.Write(Quantize(pose.hips.x));
+                    w.Write(Quantize(pose.hips.y));
+                    w.Write(Quantize(pose.hips.z));
+                    for (int b = 0; b < RagdollPawn.Count; b++) w.Write(PackRotation(pose.rotations[b]));
+                    w.Write((byte)((pose.state & 3) | (pose.grounded ? 4 : 0) | (pose.grabbing ? 8 : 0) | (pose.snap ? 16 : 0)
+                                   | (pose.sprinting ? 32 : 0) | (pose.exhausted ? 64 : 0) | (pose.held ? 128 : 0)));
+                    w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.stamina * 255f), 0, 255));
+                    w.Write(pose.ack);
+                }
+                return stream.ToArray();
+            }
+        }
+
+        public static bool ReadSnapshot(byte[] bytes, ulong session, RagdollSnapshot into)
+        {
+            if (into == null || bytes == null || bytes.Length < SnapshotHeaderBytes || bytes.Length > MaxBytes) return false;
+            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            {
+                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSnapshot || r.ReadUInt64() != session) return false;
+                uint tick = r.ReadUInt32();
+                uint hostTimeMs = r.ReadUInt32();
+                int count = r.ReadByte();
+                if (count > MaxPawns || bytes.Length != SnapshotBytes(count)) return false;
+                var seen = new HashSet<ulong>();
+                for (int i = 0; i < count; i++)
+                {
+                    var pose = into.At(i);
+                    pose.id = r.ReadUInt64();
+                    if (pose.id == 0 || !seen.Add(pose.id)) return false;
+                    pose.hips = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
+                    for (int b = 0; b < RagdollPawn.Count; b++) pose.rotations[b] = UnpackRotation(r.ReadUInt32());
+                    // Every bit of the flags byte is used; the state's two bits are range-checked below.
+                    byte flags = r.ReadByte();
+                    pose.state = (byte)(flags & 3);
+                    pose.grounded = (flags & 4) != 0;
+                    pose.grabbing = (flags & 8) != 0;
+                    pose.snap = (flags & 16) != 0;
+                    pose.sprinting = (flags & 32) != 0;
+                    pose.exhausted = (flags & 64) != 0;
+                    pose.held = (flags & 128) != 0;
+                    pose.stamina = r.ReadByte() / 255f;
+                    pose.ack = r.ReadUInt32();
+                    if (pose.state > 2) return false;
+                }
+                into.tick = tick;
+                into.hostTimeMs = hostTimeMs;
+                into.count = count;
+                return true;
+            }
+        }
+
+        // ---------------------------------------------------------------- quantisation
+
+        public static short Quantize(float metres) =>
+            (short)Mathf.Clamp(Mathf.RoundToInt(metres / PositionRange * short.MaxValue), short.MinValue + 1, short.MaxValue);
+
+        public static float Dequantize(short value) => value / (float)short.MaxValue * PositionRange;
+
+        /// <summary>Smallest-three: 2 bits for the dropped component, 10 bits for each of the others.</summary>
+        public static uint PackRotation(Quaternion q)
+        {
+            float x = q.x, y = q.y, z = q.z, w = q.w;
+            float norm = Mathf.Sqrt(x * x + y * y + z * z + w * w);
+            if (norm < 1e-6f || float.IsNaN(norm))
+            {
+                x = y = z = 0f;
+                w = 1f;
+            }
+            else
+            {
+                x /= norm; y /= norm; z /= norm; w /= norm;
+            }
+            int largest = 0;
+            float max = Mathf.Abs(x);
+            if (Mathf.Abs(y) > max) { largest = 1; max = Mathf.Abs(y); }
+            if (Mathf.Abs(z) > max) { largest = 2; max = Mathf.Abs(z); }
+            if (Mathf.Abs(w) > max) { largest = 3; }
+            float sign = largest == 0 ? x : largest == 1 ? y : largest == 2 ? z : w;
+            if (sign < 0f) { x = -x; y = -y; z = -z; w = -w; }
+            float a, b, c;
+            switch (largest)
+            {
+                case 0: a = y; b = z; c = w; break;
+                case 1: a = x; b = z; c = w; break;
+                case 2: a = x; b = y; c = w; break;
+                default: a = x; b = y; c = z; break;
+            }
+            return ((uint)largest << 30) | ((uint)Encode(a) << 20) | ((uint)Encode(b) << 10) | (uint)Encode(c);
+        }
+
+        public static Quaternion UnpackRotation(uint value)
+        {
+            int largest = (int)(value >> 30);
+            float a = Decode((int)((value >> 20) & 1023));
+            float b = Decode((int)((value >> 10) & 1023));
+            float c = Decode((int)(value & 1023));
+            float d = Mathf.Sqrt(Mathf.Max(0f, 1f - a * a - b * b - c * c));
+            switch (largest)
+            {
+                case 0: return new Quaternion(d, a, b, c);
+                case 1: return new Quaternion(a, d, b, c);
+                case 2: return new Quaternion(a, b, d, c);
+                default: return new Quaternion(a, b, c, d);
+            }
+        }
+
+        static int Encode(float value) =>
+            Mathf.Clamp(Mathf.RoundToInt((value / SmallestThreeRange * 0.5f + 0.5f) * 1023f), 0, 1023);
+
+        static float Decode(int value) => (value / 1023f * 2f - 1f) * SmallestThreeRange;
+    }
+}

@@ -14,40 +14,42 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.RagdollTuning
   values:
     hipAnchorStrength: 3000
-    lowerBodySpring: 2000
-    upperBodySpring: 400
+    lowerBodySpring: 2600
+    upperBodySpring: 1600
     armSpring: 80
     damperRatio: 0.1
     contactStiffnessMultiplier: 0.35
     grabStiffnessMultiplier: 0.5
     slopeStiffnessMultiplier: 0.6
     stiffnessLerpSpeed: 8
-    knockdownImpulseThreshold: 8
-    getUpDelay: 1.2
-    getUpBlendTime: 0.35
-    momentumRetention: 0.7
-    moveSpeed: 5
-    acceleration: 30
-    turnResponsiveness: 12
-    jumpImpulse: 6
+    knockdownImpulseThreshold: 6
+    getUpDelay: 0.7
+    getUpBlendTime: 0.22
+    momentumRetention: 1
+    moveSpeed: 5.5
+    sprintSpeed: 9.6
+    acceleration: 20
+    turnResponsiveness: 8
+    jumpImpulse: 4.5
     airControl: 0.25
     lowerBodyDynamicShare: 0.6
     balanceStrength: 1200
-    balanceDamper: 90
-    yawStrength: 350
+    balanceDamper: 120
+    yawStrength: 600
     overspeedDecay: 4
     ragdollFriction: 0.1
     footFrictionIdle: 0.6
     footFrictionMoving: 0.1
-    runLift: 0.03
+    runLift: 0
     hitStiffnessMultiplier: 0.3
-    hitRecoveryTime: 1
-    hitImpactThreshold: 3
+    hitRecoveryTime: 0.5
+    hitImpactThreshold: 2.2
     contactLinger: 0.15
     slopeAngleThreshold: 20
     grabRadius: 0.25
     grabContactDistance: 0.05
     grabBreakForce: 6000
+    pawnGrabBreakForce: 2400
     grabArmMultiplier: 6
     reachArmMultiplier: 3
     shoveArmMultiplier: 5
@@ -59,9 +61,89 @@ MonoBehaviour:
     anchorLeash: 0.6
     anchorIdleFollow: 6
     gravityScale: 1
-    strideLength: 0.9
-    legSwing: 35
-    armSwing: 35
+    strideLength: 1.5
+    legSwing: 60
+    armSwing: 55
     armRestDown: 20
     chestLean: 10
-    runLean: 6
+    runLean: 8
+    runArmDown: 35
+    runTwist: 8
+    runDrive: 4
+    runSplay: 10
+    stepLock: 0
+    stanceThrust: 0.45
+    stepBob: 0
+    runLegDrop: 0.3
+    stepRoll: 3
+    accelLean: 0.6
+    turnLean: 10
+    landingDip: 0.06
+    stopDeceleration: 20
+    turnRateTopSpeed: 260
+    stepLength: 0.22
+    boundGait: 0
+    driveFeedForward: 1
+    hopCadence: 2.9
+    legDamperRatio: 0.04
+    thighMass: 0
+    footMass: 0
+    anchorBrakeLeash: 0.3
+    anchorDamperRatio: 0.25
+    overspeedClamp: 1.1
+    struggleBurst: 0.22
+    struggleRushBonus: 2
+    struggleAwayBonus: 1.7
+    struggleJumpBonus: 1.6
+    struggleStamina: 0.35
+    struggleSwing: 95
+    struggleShake: 150
+    struggleArmMultiplier: 8
+    climbSpeed: 1.2
+    climbDownSpeed: 1.6
+    climbSideSpeed: 0.9
+    climbStaminaMax: 8
+    climbDrainHold: 0.35
+    climbDrainMove: 0.9
+    climbRecover: 2
+    climbCadence: 8
+    climbShoulderLift: 21
+    climbHeadTilt: 22
+    climbGripAngle: 55
+    climbTopOut: 0.45
+    climbHug: 0.23
+    climbHandStep: 0.12
+    climbHandSpread: 0.06
+    climbArmReach: 0.24
+    climbSag: 0.035
+    climbOvershoot: 0.35
+    sprintCadence: 3.5
+    sprintLegSwing: 60
+    sprintArmSwing: 76
+    sprintLean: 12
+    sprintLift: 0.05
+    sprintBob: 0.07
+    sprintRoll: 6
+    sprintTurnLean: 15
+    sprintChestLean: 16
+    sprintDrive: 7
+    sprintSplay: 22
+    sprintBlendSpeed: 4
+    sprintDrain: 1
+    sprintResume: 0.3
+    staminaRecoverDelay: 0.8
+    launchClamp: 1.2
+    diveBoost: 1.2
+    diveLift: 0.8
+    diveMaxSpeed: 10
+    diveTip: 5
+    diveSideTip: 1.5
+    diveFriction: 0.5
+    diveSlopeFriction: 0.08
+    diveMinTime: 0.4
+    diveMaxTime: 0.9
+    diveGetUpSpeed: 1.5
+    diveCooldown: 0.35
+    diveStamina: 0.6
+    diveTackleImpact: 3
+    diveTacklePush: 2.5

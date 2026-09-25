@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -22,16 +22,22 @@ namespace ChessFight.RagdollLab
 
         static readonly string[] Help =
         {
-            "이동: WASD / 왼쪽 스틱",
+            "이동: WASD / 왼쪽 스틱 · 전력질주(누르고 있기, 스테미나 소모): 왼쪽 Shift / LT",
             "점프: Space / A",
-            "밀치기: 마우스 왼쪽 / RB",
+            "슬라이딩 태클: 마우스 왼쪽 / RB·B",
+            "  발부터 미끄러지며 흐물흐물 넘어짐 · 부딪힌 상대도 넘어짐 · 내리막에서는 계속 미끄러져 달리기보다 빠름",
             "잡기(누르고 있기): 마우스 오른쪽 / LB",
-            "  잡은 채 밀치기 = 던지기",
+            "  상대 근처 = 잡고 끌기 · 잡은 채 좌클릭 = 던지기",
+            "  벽 = 매달리기 · 벽 앞에서 W + 우클릭 = 등반(스테미나) · 꼭대기에서 계속 W = 올라서기",
             "  점프하며 잡기 → 벽 모서리를 잡으면 한 번 더 점프 = 기어오르기",
-            "P2 키보드: 방향키 · 오른쪽 Shift 점프 · 오른쪽 Ctrl 밀치기 · Enter 잡기",
-            "카메라 회전: 마우스 / 오른쪽 스틱",
+            "  잡혔을 때 좌클릭 연타 = 버둥대며 탈출 (반대 방향 + 점프를 섞으면 더 셈)",
+            "P2 키보드: 방향키 · 오른쪽 Shift 점프 · 오른쪽 Ctrl 슬라이딩 · Enter 잡기 · / 전력질주",
+            "카메라: 마우스 / 오른쪽 스틱 · 휠 확대·축소 · F2 화면 분할 (P2가 조작하면 자동)",
+            "마우스 조작은 게임 화면을 한 번 클릭해야 켜져요 · Esc 마우스 풀기",
             "R 전체 리스폰 · T 슬로모션 · F 자유 카메라(WASD·Q·E)",
-            "Tab / Start 패널 · Esc 마우스 풀기 · 패드 Back 본인 리스폰",
+            "Tab / Start 패널 · 패드 Back 본인 리스폰 · F3 온라인 패널",
+            "값 세트: 1~4 불러오기 · Shift+1~4 저장 · B 무작위 전환",
+            "평가: ] 좋음 · [ 별로 (블라인드 모드에서 어느 세트인지 숨김)",
         };
 
         void OnGUI()
@@ -78,7 +84,12 @@ namespace ChessFight.RagdollLab
 
         void DrawHint()
         {
-            string text = "Tab: 튜닝 패널   R: 리스폰   T: 슬로모션   F: 자유 카메라";
+            // Stamina and the "you are held" prompt live next to the pawn now (StaminaHud).
+            string text = "Tab: 튜닝 패널   R: 리스폰   T: 슬로모션   F: 자유 카메라   F2: 화면 분할";
+            // Until the cursor is locked the clicks go nowhere, which looks exactly like "the
+            // actions are broken". Say so where it cannot be missed.
+            if (Cursor.lockState != CursorLockMode.Locked && !game.UiWantsCursor)
+                text = "▶ 화면을 클릭하면 마우스 조작(시점 · 좌클릭 슬라이딩 · 우클릭 잡기)이 켜져요     " + text;
             if (game.SlowMotion) text += "   · 슬로모션 중";
             if (game.labCamera != null && game.labCamera.freeMode) text += "   · 자유 카메라 (WASD·Q·E, F로 복귀)";
             var size = hintStyle.CalcSize(new GUIContent(text));
@@ -102,10 +113,16 @@ namespace ChessFight.RagdollLab
             if (GUILayout.Button("JSON 저장", buttonStyle)) game.SaveParams();
             if (GUILayout.Button("불러오기", buttonStyle)) game.LoadParams();
             if (GUILayout.Button("클립보드 복사", buttonStyle)) game.CopyParams();
+            if (GUILayout.Button("붙여넣기", buttonStyle)) game.PasteParams();
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("프리셋: 두 발 모아 도약", buttonStyle)) game.ApplyWeightPreset();
+            if (GUILayout.Button("프리셋: 달리기 5.5 · 질주 9.6 (기본)", buttonStyle)) game.ApplyStepPreset();
             GUILayout.EndHorizontal();
             if (!string.IsNullOrEmpty(game.Status)) GUILayout.Label(game.Status, smallStyle);
 
             scroll = GUILayout.BeginScrollView(scroll);
+            DrawSlots();
             string group = null;
             bool groupOpen = true;
             bool changed = false;
@@ -186,6 +203,36 @@ namespace ChessFight.RagdollLab
             if (changed) game.MarkTuningDirty();
         }
 
+        void DrawSlots()
+        {
+            var slots = game.slots;
+            if (slots == null) return;
+            GUILayout.Label("값 세트 비교 (숫자 1~4 불러오기 · Shift+숫자 저장)", foldStyle);
+            for (int i = 0; i < LabParamSlots.Count; i++)
+            {
+                GUILayout.BeginHorizontal();
+                bool active = slots.Active == i && !slots.Blind;
+                GUILayout.Label((active ? "▶ " : "   ") + LabParamSlots.Names[i], labelStyle, GUILayout.Width(30f));
+                if (GUILayout.Button("저장", buttonStyle, GUILayout.Width(52f))) slots.Save(i);
+                if (GUILayout.Button("불러오기", buttonStyle, GUILayout.Width(74f))) slots.Load(i);
+                GUILayout.Label(slots.Blind ? "숨김" : slots.Summary(i), smallStyle);
+                GUILayout.EndHorizontal();
+            }
+            GUILayout.BeginHorizontal();
+            bool blind = GUILayout.Toggle(slots.Blind, "블라인드", buttonStyle, GUILayout.Width(78f));
+            if (blind != slots.Blind) slots.Blind = blind;
+            if (GUILayout.Button("무작위 전환 (B)", buttonStyle)) slots.Randomize();
+            if (GUILayout.Button("좋음 ]", buttonStyle, GUILayout.Width(66f))) slots.Vote(true);
+            if (GUILayout.Button("별로 [", buttonStyle, GUILayout.Width(66f))) slots.Vote(false);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(slots.Blind
+                ? $"현재 값 세트: 숨김 · 평가 {slots.Votes}회"
+                : $"현재 값 세트: {(slots.Active < 0 ? "없음" : LabParamSlots.Names[slots.Active])} · 평가 {slots.Votes}회", smallStyle);
+            if (GUILayout.Button("평가 초기화", buttonStyle, GUILayout.Width(90f))) slots.ClearVotes();
+            GUILayout.EndHorizontal();
+        }
+
         float SliderRow(string label, float value, float min, float max)
         {
             GUILayout.BeginHorizontal();
@@ -258,7 +305,14 @@ namespace ChessFight.RagdollLab
             if (pawn.Grabbing) parts.Add("잡기");
             if (pawn.OnSlope) parts.Add($"경사 {pawn.SlopeAngle:F0}°");
             if (pawn.Stunned) parts.Add("피격");
-            if (pawn.Shoving) parts.Add("밀치기");
+            if (pawn.Shoving) parts.Add("던지기");
+            if (pawn.Diving) parts.Add("슬라이딩");
+            if (pawn.Sprinting) parts.Add("질주");
+            if (pawn.Exhausted) parts.Add("지침");
+            if (pawn.Climbing) parts.Add("등반");
+            if (pawn.Stamina < 0.999f) parts.Add($"스테미나 {pawn.Stamina * 100f:F0}%");
+            if (pawn.Tackles > 0) parts.Add($"태클 {pawn.Tackles}");
+            if (pawn.HopsCaught > 0) parts.Add($"튐 방지 {pawn.HopsCaught}");
             return string.Join(" · ", parts);
         }
     }

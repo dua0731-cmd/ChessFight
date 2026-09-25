@@ -1,0 +1,31 @@
+{
+    "name": "ChessFight.RagdollLab.Net",
+    "rootNamespace": "ChessFight.RagdollLab.Net",
+    "references": [
+        "ChessFight.RagdollLab",
+        "ChessFight.Network.Core",
+        "ChessFight.Network.Steam",
+        "com.rlabrecque.steamworks.net"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "WindowsStandalone64",
+        "WindowsStandalone32"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "CHESSFIGHT_STEAM"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.rlabrecque.steamworks.net",
+            "expression": "2025.164.1",
+            "define": "CHESSFIGHT_STEAM"
+        }
+    ],
+    "noEngineReferences": false
+}

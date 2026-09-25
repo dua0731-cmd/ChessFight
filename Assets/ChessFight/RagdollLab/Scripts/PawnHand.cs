@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
@@ -24,11 +24,15 @@ namespace ChessFight.RagdollLab
         public Collider HeldCollider { get; private set; }
         public Rigidbody HeldBody { get; private set; }
         public bool HasReach { get; private set; }
+
+        /// <summary>Surface direction at the grip, pointing from the surface toward the palm.
+        /// Near-vertical y means a floor or a ceiling; near-zero y means a wall worth climbing.</summary>
+        public Vector3 GripNormal { get; private set; } = Vector3.up;
         public Vector3 ReachPoint { get; private set; }
         public Vector3 Center => palm.transform.TransformPoint(palm.center);
         public float Radius => palm.radius * Mathf.Abs(palm.transform.lossyScale.x);
 
-        public void Tick(bool want, RagdollParams p, float dt)
+        public void Tick(bool want, RagdollParams p, float dt, bool wallOk = false)
         {
             regrabCooldown -= dt;
             HasReach = false;
@@ -44,13 +48,15 @@ namespace ChessFight.RagdollLab
                     Release();
                     return;
                 }
-                if (!Mathf.Approximately(joint.breakForce, p.grabBreakForce))
+                bool onPawn = RagdollPawn.ColliderOwner.TryGetValue(HeldCollider, out var victim) && victim != owner;
+                float limit = onPawn ? p.pawnGrabBreakForce : p.grabBreakForce;
+                if (!Mathf.Approximately(joint.breakForce, limit))
                 {
-                    joint.breakForce = p.grabBreakForce;
-                    joint.breakTorque = p.grabBreakForce;
+                    joint.breakForce = limit;
+                    joint.breakTorque = limit;
                 }
-                if (RagdollPawn.ColliderOwner.TryGetValue(HeldCollider, out var victim) && victim != owner)
-                    victim.NotifyHeld();
+                // Tell the victim who has them and by which body, so a thrash can be aimed at the grip.
+                if (onPawn) victim.NotifyHeld(owner, HeldCollider);
                 return;
             }
             if (regrabCooldown > 0f) return;
@@ -58,7 +64,8 @@ namespace ChessFight.RagdollLab
             Vector3 center = Center;
             float radius = Radius;
             // While rising, walls only catch at the ledge, so a jump can reach the top edge.
-            bool rising = owner.Hips.linearVelocity.y > 0.5f;
+            // Climbing is the one case where a hand SHOULD catch a flat wall while moving up.
+            bool rising = !wallOk && owner.Hips.linearVelocity.y > 0.5f;
             int n = Physics.OverlapSphereNonAlloc(center, p.grabRadius, buffer, ~0, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
             Collider bestCollider = null;
@@ -91,13 +98,16 @@ namespace ChessFight.RagdollLab
         {
             joint = gameObject.AddComponent<FixedJoint>();
             joint.connectedBody = target.attachedRigidbody;
-            joint.breakForce = p.grabBreakForce;
-            joint.breakTorque = p.grabBreakForce;
+            bool grabbedPawn = RagdollPawn.ColliderOwner.ContainsKey(target);
+            joint.breakForce = grabbedPawn ? p.pawnGrabBreakForce : p.grabBreakForce;
+            joint.breakTorque = joint.breakForce;
             joint.enablePreprocessing = false;
             joint.enableCollision = false;
             HeldCollider = target;
             HeldBody = target.attachedRigidbody;
             HoldingLedge = IsEnvironment(target) && IsLedge(target, point);
+            Vector3 away = Center - point;
+            GripNormal = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.up;
         }
 
         public void Release(float cooldown = 0f)
