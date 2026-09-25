@@ -1523,11 +1523,17 @@ namespace ChessFight.RagdollLab
             // ---- climb the 4 m wall
             var climber = Spawn(new Vector3(LabLayout.WallFrontX - 2.2f, 0f, LabLayout.WallZ[2]), Vector3.right, "등반");
             Vector3 eye = climber.Hips.position + new Vector3(-1.2f, 1.2f, -3.4f);
+            Vector3 camSmooth = Vector3.zero;
+            bool camPrimed = false;
             void Watch(RagdollPawn pawn, float height)
             {
-                Vector3 want = pawn.Hips.position + new Vector3(-1.2f, height, -3.4f);
-                eye = Vector3.Lerp(eye, want, 0.08f);
-                Vector3 look = pawn.Hips.position + Vector3.up * 0.2f;
+                // Follow a smoothed copy of the hips. Chasing them directly picks up every pull
+                // and the recording jitters.
+                if (!camPrimed) { camSmooth = pawn.Hips.position; camPrimed = true; }
+                camSmooth = Vector3.Lerp(camSmooth, pawn.Hips.position, 0.06f);
+                Vector3 want = camSmooth + new Vector3(-1.2f, height, -3.4f);
+                eye = Vector3.Lerp(eye, want, 0.05f);
+                Vector3 look = camSmooth + Vector3.up * 0.2f;
                 shotCamera.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(look - eye, Vector3.up));
             }
             for (int i = 0; i < 30; i++) { Watch(climber, 1.2f); yield return null; }
