@@ -73,7 +73,7 @@
 
 **AI의 다음 작업 후보 (사용자 지시가 있을 때만 착수)**
 1. Unity 확인 중 나오는 오류 수정 (최우선). 새 로비는 Unity에서 한 번도 안 열었다: 배치·겹침·색 조정이 나올 수 있다
-2. **퀸 오브 더 힐**: 씬(성 구조물) → `GameModes`에 씬 연결 → 정상 판정·퀸 승격 → AI 채우기 ([GameModes §3](Docs/GameModes/README.md), `JY-lobby`)
+2. **퀸 오브 더 힐**: **GPT 아스트라가 기획부터 이어받는다**(R24). 인수인계·기획 결정 D1~D8·개발 순서·시작 프롬프트: [GameModes/QueenOfTheHill/README](Docs/GameModes/QueenOfTheHill/README.md)
 3. 경기 흐름: 기물 선택 화면(참고 영상), 라운드 소개, 결과 → 로비
 4. Network → main 병합 PR (현재는 main이 Network를 포함하므로 불필요할 수 있음)
 5. 기획안의 "결정 필요" 항목: 신뢰 이벤트 채널 → 로딩 동기화 → 호스트 끊김 2단계(라운드 무효, 파티 유지)
@@ -128,7 +128,8 @@ Docs/
 │  ├─ MOVEMENT_INPUT.md         입력 경로, 네트워크 이동, 오프라인 캐릭터
 │  └─ RAGDOLL.md                래그돌 병합 상태, RagdollTest, 네트워크 안전성, 어댑터, 멀티 규칙
 ├─ RagdollLab/README.md         준영 님 랩 문서 (조작, 구조, 측정 근거)
-├─ GameModes/README.md          게임 모드 목록(킹 러시·퀸 오브 더 힐·소드 파이트), 모드별 매칭, 새 모드 추가법, 퀸 오브 더 힐 참고 기획
+├─ GameModes/README.md          게임 모드 목록(킹 러시·퀸 오브 더 힐·소드 파이트), 모드별 매칭, 새 모드 추가법
+│  └─ QueenOfTheHill/           ★ 퀸 오브 더 힐 인수인계(README), N4 참고 원문(N4_REFERENCE)
 ├─ KingRush/                    첫 미니게임
 │  ├─ README.md                 맵 구성, 코스 컴포넌트, 네트워크 한계
 │  ├─ OBSTACLES.md              장애물 규칙과 만드는 법
@@ -152,6 +153,7 @@ Tools/
 | 봇 | [Network/BOTS](Docs/Network/BOTS.md) | `Core/BotIdentity.cs`, `Core/BotBrain.cs` |
 | 씬 추가, 씬 전환 | [Architecture/SCENES](Docs/Architecture/SCENES.md) | `Bootstrap/NetworkRuntime.cs`, `Game/SceneNames.cs` |
 | 게임 모드 추가, 모드별 매칭 | [GameModes](Docs/GameModes/README.md), [Network/SESSION](Docs/Network/SESSION.md) | `Core/GameModes.cs`, `Network/SteamSession.cs`, `Bootstrap/MatchSceneView.cs` |
+| **퀸 오브 더 힐** | [GameModes/QueenOfTheHill](Docs/GameModes/QueenOfTheHill/README.md) → [RagdollLab README](Docs/RagdollLab/README.md) "등반" | 위 문서 §6 파일 지도 |
 | HUD, UI, 로비 | [Architecture/UI](Docs/Architecture/UI.md) | `Game/NetworkHudView.cs`, `Game/LobbyStage.cs`, `Bootstrap/LobbyBootstrap.cs`, `Resources/*.uxml/uss` |
 | 플레이어 입력, 조작 | [Player/MOVEMENT_INPUT](Docs/Player/MOVEMENT_INPUT.md) | `Game/MoveInputSource.cs`, `Input/` |
 | 래그돌 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md), [RagdollLab/README](Docs/RagdollLab/README.md) | `Assets/ChessFight/RagdollLab/Scripts/`, `Gameplay/Characters/ICharacterDriver.cs` |

@@ -44,6 +44,7 @@
 | R21 | 09-25 | (패키지 제거 후) 오류는 없는데 **기본 씬(Untitled)이 뜨고** Play해도 그대로, 로비 파일·씬이 어디 있는지 모르겠다 | Unity가 빈 새 씬을 연 것. `ChessFight > Scenes > Intro`로 열고 Play하는 순서, 로비 씬은 편집 모드에서 비어 보이고 Play해야 만들어진다는 설명, 파일 위치 안내 | — | 답변 |
 | R22 | 09-25 | (로비 스크린샷) 로비는 잘 나오는데 **게임 모드 선택 버튼과 게임 시작 버튼이 없다** | 원인: HUD 루트가 화면 높이로 늘어나지 않아(기본 테마 없음) 아래쪽 카드가 화면 위로 밀려남. `RuntimePanels.Create`에서 루트를 화면 전체로 늘림. PITFALLS #18 | 이 커밋 | 구현됨 (Unity 미확인) |
 | R23 | 09-25 | 새 버전을 받았더니 `ChessFight` 메뉴와 프로젝트 파일이 전부 사라졌다 | 저장소에서 지워진 파일 없음(`JY-lobby` 436개, 마지막 커밋은 `RuntimePanels.cs` 6줄 + 문서). 스크린샷은 **다른 폴더의 Unity 기본 URP 템플릿 프로젝트**(제목 `chessfight`, `Global Volume`, `Jobs` 메뉴, Input System 패키지 있음 = 첫 커밋 `a4bcfea`와 같은 구성). Unity Hub가 여는 폴더와 GitHub Desktop 폴더를 맞추는 법 안내(PITFALLS #12) | — | 답변 |
+| R24 | 09-25 | 다음은 **퀸 오브 더 힐**. 토큰이 부족해 **GPT 아스트라에게 넘겨 구체적 기획부터 개발까지** 이어 가려 하니, 넘길 자료를 모아 정리해 달라 | `Docs/GameModes/QueenOfTheHill/README.md`(작업 조건, 현재 상태, 사용자 확정/임시값, 기획 결정 D1~D8과 이 저장소 제약, N4와 다른 점, 개발 순서 A~F, 파일 지도, 아스트라 시작 프롬프트), N4 원문 보관본 `N4_REFERENCE.md`, HANDOFF·문서 지도 연결 | 이 커밋 | 답변 (문서) |
 
 ## 2. 요구사항에서 뽑은 지켜야 할 조건
 
