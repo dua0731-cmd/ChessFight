@@ -117,35 +117,29 @@ namespace ChessFight.RagdollLab
             : stamina < 0f ? 1f : P.climbStaminaMax <= 0f ? 0f : Mathf.Clamp01(stamina / P.climbStaminaMax);
 
         /// <summary>
-        /// A steady point for a follow camera. Across: the locomotion anchor, which is where the
-        /// pawn is going with none of the stride sway (that is a rotation of the body, not a move
-        /// of the anchor); limp or remote, the whole body's centre of mass. Up: standing height over
-        /// the floor while on it (the step bob never reaches the camera), the hips in the air, the
-        /// centre of mass while limp. Interpolated between physics steps like the bodies are.
+        /// A steady point for a follow camera: the body's own centre of mass (limbs swinging against
+        /// each other average out), and, while standing on something, standing height over the floor
+        /// so the step bob never reaches the camera. Read from the interpolated transforms, so it
+        /// moves smoothly every rendered frame.
+        ///
+        /// Not the locomotion anchor. That was tried: the anchor leads the body by up to 0.6 m while
+        /// it changes direction, so a camera centred on it saw the pawn swing from side to side on
+        /// every turn, as if its root were loose.
         /// </summary>
         public Vector3 CameraPoint
         {
             get
             {
-                Vector3 c;
-                if (NetworkPuppet || State == PawnState.Ragdoll)
+                Vector3 sum = Vector3.zero;
+                float mass = 0f;
+                for (int i = 0; i < Count; i++)
                 {
-                    Vector3 sum = Vector3.zero;
-                    float mass = 0f;
-                    for (int i = 0; i < Count; i++)
-                    {
-                        float m = Mathf.Max(0.01f, baseMass[i]);
-                        sum += bodies[i].transform.position * m;
-                        mass += m;
-                    }
-                    c = sum / mass;
-                    if (State == PawnState.Ragdoll) return c;
+                    float m = Mathf.Max(0.01f, baseMass[i]);
+                    sum += bodies[i].transform.position * m;
+                    mass += m;
                 }
-                else
-                {
-                    float step = Mathf.Max(1e-5f, Time.fixedDeltaTime);
-                    c = Vector3.Lerp(cameraAnchorBefore, cameraAnchor, Mathf.Clamp01((Time.time - Time.fixedTime) / step));
-                }
+                Vector3 c = sum / mass;
+                if (State == PawnState.Ragdoll) return c;
                 c.y = cameraFooting ? footingY + standHeight : bodies[0].transform.position.y;
                 return c;
             }
@@ -195,20 +189,18 @@ namespace ChessFight.RagdollLab
         readonly Leg[] legs = { new Leg(), new Leg() };
         int swingingLeg = -1;
         float landDip, strideDrop, hopArc;
-        float heldTimer, struggleTimer, escapeProgress, climbTimer, climbUp, climbSide, climbGrace, climbCooldown, topOutTimer;
+        float heldTimer, struggleTimer, escapeProgress, climbUp, climbSide, climbLost, climbCooldown, topOutTimer;
         float handStep = 1f;
         int movingHand;
         Vector3 wallPoint, wallNormal = Vector3.forward;
-        Vector3 climbUpAxis = Vector3.up, climbAcross = Vector3.right, climbFace;
+        Vector3 climbUpAxis = Vector3.up, climbAcross = Vector3.right;
+        Vector3 topOutFrom, topOutMid, topOutTo;
         readonly Vector3[] handHold = new Vector3[2];
         readonly Vector3[] palmLocal = new Vector3[2];
         readonly Quaternion[] poseRot = new Quaternion[Count];
         bool holdsPlaced, climbKinematic;
         Vector3 swingFrom;
-        float climbCeiling, climbFloor;
 
-        /// <summary>How far through its swing a reaching hand is before it takes the body's weight.</summary>
-        const float ClimbGrabAt = 0.6f;
         float struggleFlip = 1f, struggleRush, lastStrugglePunch;
         RagdollPawn holder;
         Collider heldCollider;
@@ -225,7 +217,6 @@ namespace ChessFight.RagdollLab
         float footingY, legReach;
         Vector3 leanAccel, leanLastVel;
         float leanAlign = 1f;
-        Vector3 cameraAnchorBefore, cameraAnchor;
         bool launchCut;
         bool wantsMove, wasGrounded;
 
@@ -292,7 +283,6 @@ namespace ChessFight.RagdollLab
             palmLocal[1] = bodies[(int)BodyId.HandR].transform.InverseTransformPoint(handR.Center);
             facing = FlatDir(hips.forward, Vector3.forward);
             anchorPos = hips.position;
-            cameraAnchor = cameraAnchorBefore = anchorPos;
             // Hip joint to ankle, straight down: how much shorter a leg gets as it swings out.
             legReach = bindPos[(int)BodyId.ThighL].y - bindPos[(int)BodyId.FootL].y;
             anchor.transform.SetPositionAndRotation(anchorPos, Quaternion.LookRotation(facing));
@@ -417,8 +407,6 @@ namespace ChessFight.RagdollLab
             cameraFooting = State != PawnState.Ragdoll && !Climbing && groundFound
                             && (Grounded || (coyote > 0f && jumpTimer <= 0f));
             if (cameraFooting) footingY = groundY;
-            cameraAnchorBefore = cameraAnchor;
-            cameraAnchor = anchorPos;
 
             input.jump = false;
             input.shove = false;
@@ -658,7 +646,7 @@ namespace ChessFight.RagdollLab
 
             if (Climbing)
             {
-                ClimbMove(p, dt);
+                // UpdateClimb has already moved the anchor along the wall.
                 leanLastVel = anchorVel;
                 leanAccel = Vector3.zero;
                 return;
@@ -815,6 +803,7 @@ namespace ChessFight.RagdollLab
 
         void Jump(RagdollParams p, float dt)
         {
+            if (Climbing) return;   // a jump on the wall is a kick-off (UpdateClimb)
             // Hanging off a ledge by the hands, holding forward is enough to climb onto it: after a
             // moment it does the same vault the jump button does. (Only the jump used to, so holding
             // W under a ledge just dangled there.)
@@ -1089,53 +1078,121 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- 등반
 
-        /// <summary>
-        /// Looks for a climbable face right in front of the chest. Hand FixedJoints are deliberately
-        /// NOT used to hold the body up: a 0.25 m arm fixed to the wall at shoulder height cannot
-        /// lift the pawn past its own joint limits, so the body just hangs there. The controller
-        /// lifts the body and the hands are posed to match, which is what the wall probe is for.
-        /// </summary>
-        bool ProbeWall(RagdollParams p)
+        /// <summary>How far the body's centre is held off the face. The skirt is 0.28 m across: any
+        /// closer and the body would be inside the wall.</summary>
+        float ClimbHug(RagdollParams p) => p.grabRadius + 0.1f;
+
+        bool ClimbableHit(RagdollParams p, RaycastHit h)
+        {
+            if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider)) return false;
+            var rb = h.collider.attachedRigidbody;
+            if (rb != null && !rb.isKinematic) return false;
+            return Mathf.Abs(h.normal.y) <= Mathf.Cos(p.climbGripAngle * Mathf.Deg2Rad);
+        }
+
+        /// <summary>Nearest climbable face along one ray.</summary>
+        bool WallRay(RagdollParams p, Vector3 origin, Vector3 dir, float length, out RaycastHit hit)
+        {
+            hit = default;
+            float best = float.MaxValue;
+            bool found = false;
+            int n = Physics.RaycastNonAlloc(new Ray(origin, dir), hits, length, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var h = hits[i];
+                if (h.distance >= best || !ClimbableHit(p, h)) continue;
+                best = h.distance;
+                hit = h;
+                found = true;
+            }
+            return found;
+        }
+
+        /// <summary>Anything solid that is not a pawn, at any angle, along one ray.</summary>
+        bool SolidRay(Vector3 origin, Vector3 dir, float length, out RaycastHit hit)
+        {
+            hit = default;
+            float best = float.MaxValue;
+            bool found = false;
+            int n = Physics.RaycastNonAlloc(new Ray(origin, dir), hits, length, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var h = hits[i];
+                if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider)) continue;
+                var rb = h.collider.attachedRigidbody;
+                if (rb != null && !rb.isKinematic) continue;
+                if (h.distance >= best) continue;
+                best = h.distance;
+                hit = h;
+                found = true;
+            }
+            return found;
+        }
+
+        /// <summary>A climbable face right in front of the chest, to start a climb on.</summary>
+        bool FindWallAhead(RagdollParams p, out RaycastHit hit)
         {
             Vector3 chest = bodies[(int)BodyId.Chest].position;
             float reach = p.grabRadius + standHeight * 1.1f;
-            Vector3 side = Vector3.Cross(Vector3.up, facing);
+            hit = default;
             float best = float.MaxValue;
             bool found = false;
-            // Straight ahead finds a plain wall; angled up finds an overhang leaning over the pawn or
-            // the underside of a rock; angled down keeps contact as the body tops out over a lip.
-            // The side rays keep a bulge from slipping out from between the hands.
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 3; i++)
             {
-                Vector3 dir = i == 0 ? facing
-                    : i == 1 ? (facing + Vector3.up * 0.7f).normalized
-                    : i == 2 ? (facing - Vector3.up * 0.4f).normalized
-                    : (facing + side * (i == 3 ? 0.45f : -0.45f)).normalized;
-                Vector3 origin = chest + Vector3.up * (i == 1 ? 0.12f : 0f);
-                int n = Physics.RaycastNonAlloc(new Ray(origin, dir), hits, reach, ~0, QueryTriggerInteraction.Ignore);
-                for (int j = 0; j < n; j++)
-                {
-                    var h = hits[j];
-                    if (ownSet.Contains(h.collider)) continue;
-                    if (ColliderOwner.ContainsKey(h.collider)) continue;
-                    var rb = h.collider.attachedRigidbody;
-                    if (rb != null && !rb.isKinematic) continue;
-                    if (Mathf.Abs(h.normal.y) > Mathf.Cos(p.climbGripAngle * Mathf.Deg2Rad)) continue;
-                    if (h.distance >= best) continue;
-                    best = h.distance;
-                    wallPoint = h.point;
-                    wallNormal = h.normal;
-                    found = true;
-                }
+                Vector3 dir = Quaternion.AngleAxis(i == 0 ? 0f : i == 1 ? 25f : -25f, Vector3.up) * facing;
+                if (!WallRay(p, chest, dir, reach, out var h) || h.distance >= best) continue;
+                best = h.distance;
+                hit = h;
+                found = true;
             }
             return found;
         }
 
         /// <summary>
-        /// Stamina climbing in the style of PEAK: the hands hold the wall, the body is pulled up
-        /// between them, and stamina drains the whole time - faster while actually moving. When it
-        /// runs out the hands open on their own and the pawn falls, so a wall is a route with a
-        /// length, not a yes/no check.
+        /// Where the wall is under the body: three rays side by side at chest height, straight into
+        /// the wall along its current normal, averaged. Always INTO the current face - the old probe
+        /// took the nearest of a fan of rays, so at a corner it swapped faces from frame to frame
+        /// and the pawn spun between them with its hands left on the other face.
+        /// </summary>
+        bool SenseWall(RagdollParams p, Vector3 at, out Vector3 point, out Vector3 normal)
+        {
+            point = normal = Vector3.zero;
+            float length = ClimbHug(p) + 0.55f;
+            int count = 0;
+            for (int i = -1; i <= 1; i++)
+            {
+                // Start a little out from the body so a ray never begins inside the wall.
+                Vector3 origin = at + climbAcross * (0.15f * i) + wallNormal * 0.1f;
+                if (!WallRay(p, origin, -wallNormal, length, out var h)) continue;
+                point += h.point;
+                normal += h.normal;
+                count++;
+            }
+            // One ray alone is the body hanging off the end of the wall, not a wall to hold.
+            if (count < 2) return false;
+            point /= count;
+            normal.Normalize();
+            return true;
+        }
+
+        void UpdateWallFrame()
+        {
+            Vector3 across = Vector3.Cross(wallNormal, Vector3.up);
+            if (across.sqrMagnitude < 1e-4f) across = Vector3.Cross(wallNormal, facing);
+            climbAcross = across.normalized;
+            climbUpAxis = Vector3.Cross(climbAcross, wallNormal).normalized;
+        }
+
+        Vector3 Shoulder(int slot) => bodies[slot == 0 ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
+
+        /// <summary>
+        /// Stamina climbing in the style of PEAK, rebuilt to be solid rather than clever.
+        /// While grab is held against a wall the whole pawn is placed kinematically (ApplyClimbPose),
+        /// held exactly a hug's distance off the face at every step, and moved in the wall's own
+        /// frame: W up, S down, A/D along. Edges stop the sideways move, the lip at the top becomes a
+        /// scripted climb onto the top, the ground at the bottom ends it, jump kicks off, and letting
+        /// go just drops the pawn. Stamina drains the whole time, faster while moving, and running
+        /// dry opens the hands. The hands are pure presentation (UpdateClimbHands).
         /// </summary>
         void UpdateClimb(RagdollParams p, float dt)
         {
@@ -1143,124 +1200,288 @@ namespace ChessFight.RagdollLab
             Vector3 right = Vector3.Cross(Vector3.up, facing);
             climbUp = Vector3.Dot(move, facing);
             climbSide = Vector3.Dot(move, right);
-
             climbCooldown -= dt;
-            topOutTimer -= dt;
-            bool gripping = ProbeWall(p);
-            // The wall running out IS the ledge: the big wall is built as set-back blocks, so the
-            // top of each block is somewhere to stand. Throw the body forward so it flops onto it.
-            // Only once the probe has been empty for the WHOLE grace window: a single frame with no
-            // hit happens constantly at a seam or when an arm swings past, and treating that as "the
-            // wall ended" cancelled the climb every second.
-            if (Climbing && climbGrace <= 0f && climbUp > 0.1f && topOutTimer <= -0.2f)
-                topOutTimer = p.climbTopOut;
-            // A step over a seam between two blocks must not drop the pawn off the wall.
-            climbGrace = gripping ? 0.55f : climbGrace - dt;
-            bool wants = input.grab && State == PawnState.Active && climbGrace > 0f
-                         && stamina > 0f && climbCooldown <= 0f;
-            Climbing = wants && (!Grounded || climbUp > 0.1f);
 
-            if (topOutTimer > 0f && State == PawnState.Active)
+            if (topOutTimer > 0f)
             {
-                // A short scramble over the lip. Deliberately clumsy - it should look like a flop.
-                anchorPos += (facing * 1.6f + Vector3.up * 2.2f) * dt;
-                anchorVel = Flat(facing) * 1.4f;
-                anchor.MovePosition(anchorPos);
-                climbCooldown = Mathf.Max(climbCooldown, 0.35f);   // let it land before grabbing again
-                freeFlight = Mathf.Max(freeFlight, 0.4f);          // the flop over the lip is meant to fly
+                TopOut(p, dt);
+                return;
             }
             if (!Climbing)
             {
                 holdsPlaced = false;
+                bool wants = input.grab && State == PawnState.Active && stamina > 0f && climbCooldown <= 0f
+                             && (!Grounded || climbUp > 0.1f);
+                if (wants && FindWallAhead(p, out var ahead)) StartClimb(p, ahead);
+                return;
+            }
+            if (!input.grab || State != PawnState.Active)
+            {
+                StopClimb(0.25f);
+                return;
+            }
+            if (input.jump)
+            {
+                WallJump(p);
+                return;
+            }
+            float up = Mathf.Clamp(climbUp, -1f, 1f), side = Mathf.Clamp(climbSide, -1f, 1f);
+            UseStamina(p, (p.climbDrainHold + p.climbDrainMove * Mathf.Clamp01(Mathf.Abs(up) + Mathf.Abs(side))) * dt);
+            if (stamina <= 0f)
+            {
+                stamina = 0f;
+                StopClimb(1.2f);
                 return;
             }
 
-            UseStamina(p, (p.climbDrainHold + p.climbDrainMove * Mathf.Abs(climbUp)) * dt);
+            Vector3 chestAt = anchorPos + Vector3.up * 0.2f;
+            if (SenseWall(p, chestAt, out var wp, out var wn))
+            {
+                climbLost = 0f;
+                wallPoint = wp;
+                // Eased, so a curved face turns the pawn smoothly instead of in steps.
+                wallNormal = Vector3.Slerp(wallNormal, wn, 1f - Mathf.Exp(-12f * dt)).normalized;
+                UpdateWallFrame();
+            }
+            else
+            {
+                // The face has ended at chest height, which only climbing takes the chest to: that is
+                // the lip, so climb onto the top (even if W was let go on that very step).
+                if (up >= 0f && TryStartTopOut(p)) return;
+                // A seam or a gap for a moment is fine; the wall really gone is a fall.
+                climbLost += dt;
+                if (climbLost > 0.15f)
+                {
+                    StopClimb(0.4f);
+                    return;
+                }
+            }
 
-            // The wall frame the hands work in. Both palm targets are measured from the CHEST, so
-            // they cannot trail below the body as it rises - an earlier version pinned them to world
-            // points and within a second the arms were hanging at the pawn's sides.
-            Vector3 across = Vector3.Cross(wallNormal, Vector3.up);
-            if (across.sqrMagnitude < 1e-4f) across = Vector3.Cross(wallNormal, facing);
-            across.Normalize();
-            climbUpAxis = Vector3.Cross(across, wallNormal).normalized;
-            climbAcross = across;
-            // Holds are where the palm BALL goes, so they sit one ball radius off the face.
-            climbFace = wallPoint + wallNormal * handL.Radius;
-            // Hand over hand, the same way the feet do it on the ground: a palm holds a real point
-            // on the wall, the body climbs toward it, and only once the body has caught up does that
-            // hand let go and reach higher. The body may never rise above what the top hand allows,
-            // which is the whole trick - drive the body on its own clock instead and the hands trail
-            // below it within a second, which is how the arms ended up hanging at the pawn's sides.
-            float shoulderY = bodies[(int)BodyId.ArmL].position.y;
-            float shoulderRise = shoulderY - bodies[0].position.y;
+            // A reaching hand has nothing to pull with: the body is slow as a hand leaves its hold and
+            // surges as it lands - that rhythm is what reads as climbing, not an elevator. The hands
+            // swap back to back while climbing, so this averages exactly climbSpeed.
+            float pull = handStep < 1f ? 0.35f + 1.3f * Smooth(handStep) : 1f;
+            float vUp = up > 0f ? p.climbSpeed * up * pull : p.climbDownSpeed * up;
+            float vSide = p.climbSideSpeed * side;
+            if (Mathf.Abs(vSide) > 0.01f)
+            {
+                // Stop at the end of the wall, and at an inside corner, instead of walking off the
+                // edge (the hands used to stay behind and the arms stretched across the whole face).
+                float dir = Mathf.Sign(vSide);
+                bool wallThere = WallRay(p, chestAt + climbAcross * (dir * 0.32f) + wallNormal * 0.1f,
+                    -wallNormal, ClimbHug(p) + 0.55f, out _);
+                bool blocked = SolidRay(chestAt, climbAcross * dir, 0.42f, out _)
+                               || SolidRay(anchorPos, climbAcross * dir, 0.42f, out _);
+                if (!wallThere || blocked) vSide = 0f;
+            }
+            Vector3 next = anchorPos + climbUpAxis * (vUp * dt) + climbAcross * (vSide * dt);
+            // Climbing down onto the floor: stand on it.
+            if (vUp < 0f && SolidRay(next + Vector3.up * 0.1f, Vector3.down, standHeight + 0.15f, out var floor)
+                && floor.normal.y > 0.6f)
+            {
+                StopClimb(0.4f);
+                return;
+            }
+            // A hug's distance off the face. Eased from wherever the body really is, never from the
+            // running anchor - that could be 0.6 m ahead of the body, i.e. inside the wall, and the
+            // climb used to start there with only the hands showing.
+            float gap = Vector3.Dot(next - wallPoint, wallNormal);
+            next += wallNormal * ((ClimbHug(p) - gap) * (1f - Mathf.Exp(-20f * dt)));
+            anchorVel = (next - anchorPos) / Mathf.Max(dt, 1e-4f);
+            anchorPos = next;
+            Vector3 into = Flat(-wallNormal);
+            if (into.sqrMagnitude > 1e-4f)
+                facing = Vector3.RotateTowards(facing, into.normalized, 10f * dt, 0f);
+            anchor.MovePosition(anchorPos);
+            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(9f, 0f, 0f));
+            UpdateClimbHands(p, dt, up, side);
+        }
+
+        void StartClimb(RagdollParams p, RaycastHit hit)
+        {
+            Climbing = true;
+            climbLost = 0f;
+            wallPoint = hit.point;
+            wallNormal = hit.normal;
+            UpdateWallFrame();
+            // From the body's real position, not the anchor's.
+            anchorPos = bodies[0].position;
+            anchorVel = Vector3.zero;
+            Vector3 into = Flat(-wallNormal);
+            if (into.sqrMagnitude > 1e-4f) facing = into.normalized;
+            holdsPlaced = false;
+            handStep = 1f;
+            handL.Release();
+            handR.Release();
+            UpdateClimbHands(p, 0f, 0f, 0f);   // hands on the wall from the first frame
+        }
+
+        void StopClimb(float cooldown)
+        {
+            Climbing = false;
+            topOutTimer = 0f;
+            climbCooldown = Mathf.Max(climbCooldown, cooldown);
+            handL.Release(cooldown);
+            handR.Release(cooldown);
+        }
+
+        /// <summary>Jump on the wall: let go and kick off it, up and backwards.</summary>
+        void WallJump(RagdollParams p)
+        {
+            StopClimb(0.5f);
+            anchorVel = wallNormal * 2.5f + Vector3.up * p.jumpImpulse;
+            jumpTimer = 0.5f;
+            freeFlight = Mathf.Max(freeFlight, 0.6f);
+            airTimer = 0.2f;
+        }
+
+        /// <summary>
+        /// The face ended below the chest while climbing up. If there is a floor on top of it, climb
+        /// onto it along a fixed path - up past the lip, then in over it - rather than flinging the
+        /// body and hoping (the old scramble could land short and fall back down the wall).
+        /// </summary>
+        bool TryStartTopOut(RagdollParams p)
+        {
+            Vector3 over = anchorPos + Vector3.up * 0.9f - wallNormal * (ClimbHug(p) + 0.3f);
+            // Looking down from inside the wall means it goes on up past the chest, and the rays only
+            // slipped through a seam (the curved lane is a stack of slabs); a ray started inside a
+            // collider does not see it, so this would find the top of the slab BELOW and climb into
+            // the one above.
+            if (InsideSolid(over, 0.05f)) return false;
+            if (!SolidRay(over, Vector3.down, 1.5f, out var top) || top.normal.y < 0.6f) return false;
+            // The face ended at the chest, so its top is below the chest; anything higher is a seam.
+            if (top.point.y > anchorPos.y + 0.25f) return false;
+            float standY = top.point.y + standHeight + 0.03f;
+            // Room to stand up there.
+            if (SolidRay(top.point + Vector3.up * 0.05f, Vector3.up, 0.9f, out _)
+                || InsideSolid(new Vector3(top.point.x, standY, top.point.z), 0.14f)) return false;
+            topOutFrom = anchorPos;
+            topOutMid = new Vector3(anchorPos.x, Mathf.Max(anchorPos.y, standY + 0.12f), anchorPos.z);
+            topOutTo = new Vector3(top.point.x, standY, top.point.z);
+            topOutTimer = Mathf.Max(0.1f, p.climbTopOut);
+            // Palms flat on the top, just in from the edge, pushing the body up past them.
+            Vector3 edge = new Vector3(anchorPos.x, top.point.y, anchorPos.z) - wallNormal * (ClimbHug(p) + 0.08f);
+            for (int slot = 0; slot < 2; slot++)
+                handHold[slot] = edge + climbAcross * ((slot == 0 ? -1f : 1f) * p.climbHandSpread) + Vector3.up * handL.Radius;
+            handStep = 1f;
+            return true;
+        }
+
+        void TopOut(RagdollParams p, float dt)
+        {
+            topOutTimer -= dt;
+            float t = 1f - Mathf.Clamp01(topOutTimer / Mathf.Max(0.1f, p.climbTopOut));
+            Vector3 pos = t < 0.55f
+                ? Vector3.Lerp(topOutFrom, topOutMid, Smooth(t / 0.55f))
+                : Vector3.Lerp(topOutMid, topOutTo, Smooth((t - 0.55f) / 0.45f));
+            anchorPos = pos;
+            anchor.MovePosition(pos);
+            if (topOutTimer > 0f) return;
+            // Standing on top: physics back on with a small step forward.
+            Climbing = false;
+            topOutTimer = 0f;
+            climbCooldown = Mathf.Max(climbCooldown, 0.4f);
+            anchorVel = Flat(-wallNormal) * 1.2f;
+            freeFlight = Mathf.Max(freeFlight, 0.4f);
+        }
+
+        /// <summary>
+        /// Hand over hand, as presentation. Each palm sits on a fixed point on the wall until it is
+        /// too far from where it belongs for the way the pawn is moving - above the head going up,
+        /// beside the shoulder going down, a step to the side going sideways - and then the hand that
+        /// is furthest behind swings to a new hold (alternating when they are level). Every hold is
+        /// on the face, and every palm is kept within climbArmReach of its shoulder at every step
+        /// (PalmTarget), so an arm can never be drawn out across the wall.
+        /// </summary>
+        void UpdateClimbHands(RagdollParams p, float dt, float up, float side)
+        {
+            handStep = Mathf.Min(1f, handStep + p.climbCadence * dt);
+            float lift = up < -0.05f ? -0.1f : 1f;
             if (!holdsPlaced)
             {
-                handHold[0] = Plant(0, p, shoulderY + p.climbHandStep);
-                handHold[1] = Plant(1, p, shoulderY + p.climbHandStep * 0.5f);
+                handHold[0] = Grip(HandHome(0, p, lift, 0f), 0, p);
+                handHold[1] = Grip(HandHome(1, p, lift * 0.5f, 0f), 1, p);
                 holdsPlaced = true;
                 movingHand = 0;
                 handStep = 1f;
+                return;
             }
-            handStep = Mathf.Min(1f, handStep + p.climbCadence * dt);
-
-            // Whichever palm is higher carries the pawn, and it does not move at all: the body is
-            // hauled up toward it until the shoulder is climbPullDepth above it, and only then does
-            // the LOWER hand let go and reach again. Everything the arms do follows from that, so
-            // there is no animation loop to fall out of step with the climb. (Swinging the higher
-            // hand instead made the same arm replant higher forever while the other never moved.)
-            int hold = handHold[0].y >= handHold[1].y ? 0 : 1;
-            int swing = 1 - hold;
-            // A hand still flying to its new hold cannot take the weight yet; until it has nearly
-            // landed the pawn hangs from the other one. That splits every move into a reach and then
-            // a pull. Letting the new hold carry from the instant it was chosen hauled the body up
-            // after the flying hand, so the palm arrived at shoulder height and never above the head.
-            int carry = movingHand == hold && handStep < ClimbGrabAt ? swing : hold;
-            climbCeiling = handHold[carry].y + p.climbPullDepth - shoulderRise;
-            // Going down mirrors it: the body may sink until the carrying hand is a full reach
-            // above the shoulder, then the upper hand moves down.
-            climbFloor = handHold[carry].y - p.climbHandStep - shoulderRise;
-            // One hand in the air means less to hang from: drop a little, then snap back up.
-            if (handStep < 1f) climbCeiling -= p.climbSag * Mathf.Sin(handStep * Mathf.PI);
-
-            // Test the COMMANDED height, not the measured one. The body hangs ~5 cm under the
-            // anchor because the spring balances its weight there, and comparing the real
-            // shoulder against the hold left the swap permanently 5 cm out of reach.
-            bool reachedTop = anchorPos.y >= climbCeiling - 0.02f;
-            bool reachedBottom = anchorPos.y <= climbFloor + 0.02f;
-            if (handStep >= 1f && climbUp > 0.05f && reachedTop)
+            if (handStep < 1f) return;
+            int pick = -1;
+            float worst = 0f;
+            for (int slot = 0; slot < 2; slot++)
             {
-                // The lower hand reaches up past the head. Measured from the shoulder rather than
-                // from the other hand, so every reach is the same size.
-                swingFrom = handHold[swing];
-                movingHand = swing;
-                handHold[swing] = Plant(swing, p, shoulderY + p.climbHandStep);
-                handStep = 0f;
+                // Measured against the hold the hand could really take, so at the top of a wall a
+                // hand already on the lip stays there instead of slapping the same spot over and over.
+                float error = (handHold[slot] - Grip(HandHome(slot, p, lift, side), slot, p)).magnitude;
+                if (slot == movingHand) error *= 0.7f;   // prefer the other hand: hand over hand
+                if (error <= worst) continue;
+                worst = error;
+                pick = slot;
             }
-            else if (handStep >= 1f && climbUp < -0.05f && reachedBottom)
+            bool moving = Mathf.Abs(up) > 0.05f || Mathf.Abs(side) > 0.05f;
+            if (pick < 0 || worst < (moving ? 0.14f : 0.45f)) return;
+            swingFrom = PalmTarget(pick, p);
+            movingHand = pick;
+            // Reach a little ahead along the way the pawn is going, so the new hold is not overtaken
+            // before the hand has even landed.
+            Vector3 lead = climbUpAxis * (0.1f * Mathf.Max(0f, up)) + climbAcross * (0.08f * side);
+            handHold[pick] = Grip(HandHome(pick, p, lift, side) + lead, pick, p);
+            handStep = 0f;
+        }
+
+        /// <summary>
+        /// A hold near this point that is really there. Above the top of the wall the palm goes on
+        /// the lip, curled over it; past the end of the wall it comes back in along the face. Holds
+        /// used to go on the face's plane wherever that was, so near the top and at the ends of a
+        /// wall the hands gripped thin air.
+        /// </summary>
+        Vector3 Grip(Vector3 at, int slot, RagdollParams p)
+        {
+            Vector3 shoulder = Shoulder(slot);
+            at = OnFace(at, slot, p);
+            float inward = Vector3.Dot(shoulder - at, climbAcross) > 0f ? 1f : -1f;
+            for (int tries = 0; tries < 4; tries++)
             {
-                // The upper hand drops to just under the shoulder, where a pulled hand ends up on
-                // the way up, so climbing down uses the same band of hand heights as climbing up.
-                swingFrom = handHold[hold];
-                movingHand = hold;
-                handHold[hold] = Plant(hold, p, shoulderY - 2f * p.climbPullDepth - p.climbHandStep);
-                handStep = 0f;
+                if (WallRay(p, at + wallNormal * 0.2f, -wallNormal, 0.45f, out _)) return at;
+                // Over the top: look down just inside the face for the lip, no lower than the shoulder
+                // (a long ray would take the floor beside a wall's end for a lip).
+                Vector3 over = at - wallNormal * (handL.Radius + 0.06f) + Vector3.up * 0.3f;
+                if (SolidRay(over, Vector3.down, 0.3f + Mathf.Max(0f, at.y - shoulder.y), out var top)
+                    && top.normal.y > 0.6f)
+                {
+                    Vector3 lip = top.point + Vector3.up * handL.Radius;
+                    return shoulder + Vector3.ClampMagnitude(lip - shoulder, p.climbArmReach);
+                }
+                // Off the end of the wall: back toward the body.
+                at = OnFace(at + climbAcross * (inward * 0.12f), slot, p);
             }
-            if (stamina > 0f) return;
-            stamina = 0f;
-            Climbing = false;
-            climbCooldown = 1.2f;
-            handL.Release(1f);
-            handR.Release(1f);
+            return at;
+        }
+
+        /// <summary>Where a palm belongs right now: above the shoulder (or beside it going down), out to
+        /// its own side, a step toward the way the pawn is moving.</summary>
+        Vector3 HandHome(int slot, RagdollParams p, float lift, float side)
+        {
+            Vector3 at = Shoulder(slot) + climbUpAxis * (p.climbHandStep * lift)
+                         + climbAcross * ((slot == 0 ? -1f : 1f) * p.climbHandSpread + side * 0.2f);
+            return OnFace(at, slot, p);
+        }
+
+        /// <summary>Onto the face, one palm radius off it, within reach of the shoulder.</summary>
+        Vector3 OnFace(Vector3 at, int slot, RagdollParams p)
+        {
+            at += wallNormal * (handL.Radius - Vector3.Dot(at - wallPoint, wallNormal));
+            Vector3 shoulder = Shoulder(slot);
+            return shoulder + Vector3.ClampMagnitude(at - shoulder, p.climbArmReach);
         }
 
         /// <summary>
         /// While on the wall the pawn stops being a ragdoll and is placed, bone by bone, from the
-        /// puppet pose. A spring-driven arm cannot hold a palm on a fixed point - measured, the hand
-        /// rides at a constant offset above the hips the whole way up - and pinning just the palms
-        /// with a kinematic body turns the joint chain into a catapult. Taking the whole body out of
-        /// physics for the duration is the only version that both holds the hands still and stays put.
-        /// Physics resumes the instant the climb ends, carrying the body's velocity so nothing pops.
+        /// puppet pose. A spring-driven arm cannot hold a palm on a fixed point, and pinning just the
+        /// palms with a kinematic body turns the joint chain into a catapult. Taking the whole body
+        /// out of physics for the duration is the version that both holds the hands still and stays
+        /// put. Physics resumes the instant the climb ends, carrying the body's velocity.
         /// </summary>
         void ApplyClimbPose(RagdollParams p)
         {
@@ -1269,9 +1490,13 @@ namespace ChessFight.RagdollLab
                 foreach (var rb in bodies) rb.isKinematic = true;
                 climbKinematic = true;
             }
-            Quaternion hipsRot = Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(9f, 0f, 0f);
+            // Leaning in over the top on the way over the lip, belly to the wall otherwise.
+            float pitch = topOutTimer > 0f ? 30f : 9f;
+            Quaternion hipsRot = Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(pitch, 0f, 0f);
             poseRot[0] = hipsRot;
-            poseScratch[0] = anchorPos;
+            // One hand in the air means less to hang from: a small sag, then a snap back up.
+            float sag = handStep < 1f && topOutTimer <= 0f ? p.climbSag * Mathf.Sin(handStep * Mathf.PI) : 0f;
+            poseScratch[0] = anchorPos - Vector3.up * sag;
             for (int i = 1; i < Count; i++)
             {
                 int parent = ParentOf[i];
@@ -1279,10 +1504,8 @@ namespace ChessFight.RagdollLab
                 poseScratch[i] = poseScratch[parent] + poseRot[parent] * jointOffset[i];
             }
             // Point each arm from its shoulder straight at its palm and put the palm ball exactly
-            // there. The arm is a 0.12 m stub and a hold can be five times that away, so the arm is
+            // there. The arm is a 0.12 m stub and a hold is up to climbArmReach away, so the arm is
             // drawn out to meet the hand (RagdollVisualSync stretches it while ArmsStretched).
-            // Moving only the palm and leaving the arm its own length is what made the hands look
-            // like they had come off the arms.
             for (int slot = 0; slot < 2; slot++)
             {
                 int arm = slot == 0 ? (int)BodyId.ArmL : (int)BodyId.ArmR;
@@ -1302,34 +1525,34 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>Back to being a ragdoll, carrying whatever speed the climb had.</summary>
+        /// <summary>Back to being a ragdoll, carrying the climb's own speed.</summary>
         public void EndClimbPose()
         {
             if (!climbKinematic) return;
             climbKinematic = false;
             freeFlight = Mathf.Max(freeFlight, 0.5f);
-            // Kinematic bodies are pushed through geometry rather than stopped by it, so the pawn can
-            // be inside the wall when physics resumes - and then it falls straight through the level.
-            // Step it back out along the face first.
+            // Only if the body really ended up inside something, step it out along the face. The old
+            // version pushed it out whenever it was near the face plane, which on a ledge meant
+            // shoving the pawn backwards off the edge it had just climbed onto.
             float clear = P.grabRadius + 0.2f;
-            float gap = Vector3.Dot(bodies[0].position - wallPoint, wallNormal);
-            if (gap < clear)
+            if (InsideSolid(bodies[0].position, 0.2f) || InsideSolid(bodies[(int)BodyId.Chest].position, 0.16f))
             {
-                Vector3 push = wallNormal * (clear - gap);
+                float gap = Vector3.Dot(bodies[0].position - wallPoint, wallNormal);
+                Vector3 push = wallNormal * Mathf.Max(0.05f, clear - gap);
                 foreach (var rb in bodies) rb.position += push;
                 anchorPos += push;
                 anchor.position = anchorPos;
             }
-            // The hands were out on their holds, well past the ends of the arms. Put them back where
-            // the arm joints hold them before physics resumes, or the locked joints yank them in and
-            // the recoil throws the pawn.
+            // The hands were out on their holds, past the ends of the arms. Put them back where the
+            // arm joints hold them before physics resumes, or the locked joints yank them in and the
+            // recoil throws the pawn.
             for (int arm = (int)BodyId.ArmL; arm <= (int)BodyId.ArmR; arm += 2)
             {
                 Rigidbody armBody = bodies[arm], handBody = bodies[arm + 1];
                 handBody.position = armBody.position + armBody.rotation * jointOffset[arm + 1];
                 handBody.rotation = armBody.rotation;
             }
-            Vector3 carry = Vector3.ClampMagnitude(anchorVel + Vector3.up * 0.5f, 4f);
+            Vector3 carry = Vector3.ClampMagnitude(anchorVel, 7f);
             foreach (var rb in bodies)
             {
                 rb.isKinematic = false;
@@ -1338,35 +1561,18 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>Hangs the body below the hands and walks it up the wall.</summary>
-        void ClimbMove(RagdollParams p, float dt)
+        bool InsideSolid(Vector3 at, float radius)
         {
-            Vector3 right = Vector3.Cross(Vector3.up, facing);
-            Vector3 next = anchorPos;
-            next.y += p.climbSpeed * Mathf.Clamp(climbUp, -1f, 1f) * dt;
-            // Never higher than the hand that is holding on, so the climb rate is set by how fast the
-            // hands can be placed rather than by a number. That is what makes it read as climbing.
-            if (holdsPlaced && climbUp > 0f) next.y = Mathf.Min(next.y, climbCeiling);
-            // Likewise on the way down: never lower than the holding hand can reach. Without this the
-            // body dropped at full climb speed and left its hands up to 1.8 m overhead.
-            if (holdsPlaced && climbUp < 0f) next.y = Mathf.Max(next.y, climbFloor);
-            next += right * (p.climbSpeed * 0.55f * Mathf.Clamp(climbSide, -1f, 1f) * dt);
-            // Hold the body a body-depth off the face, at the height the probe says the wall is.
-            // The skirt is 0.273 m deep: hug any closer than this and the body is jammed into the
-            // wall, pushed back out by the contact, and the climb stalls.
-            Vector3 hug = wallPoint + wallNormal * (p.grabRadius + 0.1f);
-            next.x = Mathf.Lerp(next.x, hug.x, 1f - Mathf.Exp(-8f * dt));
-            next.z = Mathf.Lerp(next.z, hug.z, 1f - Mathf.Exp(-8f * dt));
-            // Face the wall while climbing, so "forward" always means up the wall.
-            Vector3 into = Flat(-wallNormal);
-            if (into.sqrMagnitude > 1e-4f)
-                facing = Vector3.RotateTowards(facing, into.normalized, 6f * dt, 0f);
-            anchorVel = Vector3.zero;
-            anchorPos = next;
-            anchor.MovePosition(anchorPos);
-            // Belly to the wall. A negative pitch leans the pawn AWAY from it, which is what made
-            // it look like a back-slash propped against the face.
-            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(9f, 0f, 0f));
+            int n = Physics.OverlapSphereNonAlloc(at, radius, overlap, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var c = overlap[i];
+                if (ownSet.Contains(c) || ColliderOwner.ContainsKey(c)) continue;
+                var rb = c.attachedRigidbody;
+                if (rb != null && !rb.isKinematic) continue;
+                return true;
+            }
+            return false;
         }
 
         // ---------------------------------------------------------------- puppet
@@ -1648,39 +1854,26 @@ namespace ChessFight.RagdollLab
         static float Smooth(float t) => t * t * (3f - 2f * t);
 
         /// <summary>
-        /// Where one palm ball plants: out to its own side, up at <paramref name="height"/>, resting
-        /// against the face. The arm stretches to reach it, up to climbArmReach from the shoulder;
-        /// a hold further than that is pulled back toward the shoulder.
-        /// </summary>
-        Vector3 Plant(int slot, RagdollParams p, float height)
-        {
-            Vector3 shoulder = bodies[slot == 0 ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
-            Vector3 at = climbFace + climbAcross * (slot == 0 ? -p.climbHandSpread : p.climbHandSpread);
-            at += climbUpAxis * (height - at.y);
-            Vector3 off = at - shoulder;
-            float len = off.magnitude;
-            return len > p.climbArmReach ? shoulder + off * (p.climbArmReach / len) : at;
-        }
-
-        /// <summary>
         /// Where a palm ball is this step: on its hold, or for the hand that is changing holds, on an
-        /// arc that peels off the wall, flings past the new hold and drops back onto it.
+        /// arc that peels off the wall, flings past the new hold and drops back onto it. Always within
+        /// climbArmReach of its shoulder.
         /// </summary>
         Vector3 PalmTarget(int slot, RagdollParams p)
         {
             Vector3 target = handHold[slot];
-            if (movingHand != slot || handStep >= 1f) return target;
-            float t = Smooth(handStep);
-            float arc = Mathf.Sin(handStep * Mathf.PI);
-            target = Vector3.Lerp(swingFrom, handHold[slot], t);
-            target += wallNormal * (arc * 0.1f);
-            // Fling it past the hold and let it drop back on - little arms flailing for the hold is
-            // the joke, and on the way up it is what carries the palm over the top of the head.
-            // Not on the way down: a hand moving down to a lower hold has no reason to shoot upward.
-            if (handHold[slot].y >= swingFrom.y)
-                target += climbUpAxis * (arc * p.climbOvershoot * p.climbHandStep);
-            target += climbAcross * (Mathf.Sin(handStep * Mathf.PI * 2f) * 0.05f * (slot == 0 ? -1f : 1f));
-            return target;
+            if (movingHand == slot && handStep < 1f)
+            {
+                float t = Smooth(handStep);
+                float arc = Mathf.Sin(handStep * Mathf.PI);
+                target = Vector3.Lerp(swingFrom, handHold[slot], t);
+                target += wallNormal * (arc * 0.1f);
+                // Fling it past the hold and let it drop back on - little arms flailing for the hold
+                // is the joke. Only reaching up: a hand moving down has no reason to shoot upward.
+                if (Vector3.Dot(handHold[slot] - swingFrom, climbUpAxis) > 0f)
+                    target += climbUpAxis * (arc * p.climbOvershoot * 0.25f);
+            }
+            Vector3 shoulder = Shoulder(slot);
+            return shoulder + Vector3.ClampMagnitude(target - shoulder, p.climbArmReach);
         }
 
         /// <summary>
@@ -1698,16 +1891,6 @@ namespace ChessFight.RagdollLab
             Vector3 aim = PalmTarget(slot, p) - shoulder;
             if (aim.sqrMagnitude < 1e-6f) aim = -wallNormal;
             Vector3 local = chestT.InverseTransformDirection(aim.normalized);
-            return Quaternion.FromToRotation(left ? Vector3.left : Vector3.right, local);
-        }
-
-        /// <summary>Points one arm up the wall: <paramref name="raise"/> 0 = straight out, 90 = overhead.</summary>
-        Quaternion ClimbArm(bool left, float raise)
-        {
-            Transform chest = bodies[(int)BodyId.Chest].transform;
-            float t = Mathf.Clamp01(raise / 90f);
-            Vector3 aim = Vector3.Slerp((left ? -chest.right : chest.right), Vector3.up, t) + chest.forward * 0.55f;
-            Vector3 local = chest.InverseTransformDirection(aim.normalized);
             return Quaternion.FromToRotation(left ? Vector3.left : Vector3.right, local);
         }
 
@@ -1750,8 +1933,11 @@ namespace ChessFight.RagdollLab
             float r = p.damperRatio;
             // Dynamic softening hits the upper body and arms fully, legs/anchor only by lowerBodyDynamicShare.
             float kLower = StateFactor * Mathf.Lerp(1f, Stiffness, p.lowerBodyDynamicShare);
-            float anchorSpring = p.hipAnchorStrength * kLower * (Climbing ? p.climbPull : 1f);
-            float anchorRatio = Climbing ? p.climbDamperRatio : r;
+            float anchorSpring = p.hipAnchorStrength * kLower;
+            // Near critical damping for the body on its anchor spring. At the shared 0.1 ratio it was
+            // at 39% of critical, so after every change of direction the body swung past the path
+            // and back around the anchor - the "root" wobbling from side to side.
+            float anchorRatio = p.anchorDamperRatio > 0.0001f ? p.anchorDamperRatio : r;
             var linear = new JointDrive { positionSpring = anchorSpring, positionDamper = anchorSpring * anchorRatio, maximumForce = float.MaxValue };
             anchorJoint.xDrive = linear;
             anchorJoint.yDrive = linear;
@@ -1931,7 +2117,6 @@ namespace ChessFight.RagdollLab
             anchorVel = Vector3.zero;
             leanAccel = leanLastVel = Vector3.zero;
             leanAlign = 1f;
-            cameraAnchor = cameraAnchorBefore = hipsPosition;
             anchor.transform.SetPositionAndRotation(hipsPosition, rot);
             anchor.position = hipsPosition;
             anchor.rotation = rot;

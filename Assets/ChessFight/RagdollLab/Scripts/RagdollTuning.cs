@@ -140,6 +140,9 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupWeight, "허벅지 무게 (kg, 0=원래값)")] [Range(0f, 6f)] public float thighMass;
         [Tunable(GroupWeight, "발 무게 (kg, 0=원래값)")] [Range(0f, 5f)] public float footMass;
         [Tunable(GroupWeight, "역방향 제동 거리 (m, 0=앵커 거리와 동일)")] [Range(0f, 0.6f)] public float anchorBrakeLeash;
+        // The body hangs on its anchor by a spring. 0.25 is about critical for this 50 kg pawn:
+        // it follows the path without swinging past it and back after every change of direction.
+        [Tunable(GroupWeight, "앵커 감쇠비 (0=전체값, 0.25≈흔들림 없음)")] [Range(0f, 0.6f)] public float anchorDamperRatio;
         // Not a feel knob: without it a hard direction change lets the anchor spring launch the pawn
         // at 143% of its run speed. On by default because that is a bug, not a mechanic.
         [Tunable(GroupWeight, "최고 속도 상한 (달리기 배수, 0=무제한)")] [Range(0f, 2f)] public float overspeedClamp = 1.1f;
@@ -152,16 +155,11 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "버둥 팔 진폭 (도)")] [Range(0f, 160f)] public float struggleSwing = 95f;
         [Tunable(GroupAction, "버둥 몸부림 충격")] [Range(0f, 400f)] public float struggleShake = 150f;
         [Tunable(GroupAction, "버둥 중 팔 강성 배율")] [Range(1f, 20f)] public float struggleArmMultiplier = 8f;
-        // How fast the body is hauled up once a hand has caught its hold. The climb itself is paced
-        // by the hands (see climbHandStep); this only sets how snappy each pull is.
-        [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 3.5f;
-        // Hanging by the hands caps how far the anchor may lead, and at hipAnchorStrength 3000 a
-        // 0.2 m lead is only 600 N against a 490 N bodyweight - barely any lift. Pulling up is a
-        // muscular effort, so the anchor spring is multiplied while climbing.
-        [Tunable(GroupAction, "끌어올리는 힘 배율")] [Range(1f, 8f)] public float climbPull = 3.5f;
-        // The pull multiplier without a matching damper is a 10500 N/m spring running at the
-        // standard 0.1 ratio: it hits the reach ceiling, overshoots, and the body buzzes.
-        [Tunable(GroupAction, "등반 중 감쇠비")] [Range(0.05f, 1f)] public float climbDamperRatio = 0.45f;
+        // The climb moves the body itself (RagdollPawn.UpdateClimb): up at climbSpeed (slower while
+        // a hand is in the air, faster once it lands), down and sideways at their own speeds.
+        [Tunable(GroupAction, "오르는 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 1.2f;
+        [Tunable(GroupAction, "내려가는 속도 (m/s)")] [Range(0.2f, 4f)] public float climbDownSpeed = 1.6f;
+        [Tunable(GroupAction, "옆으로 가는 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSideSpeed = 0.9f;
         // One pool for everything that costs effort: climbing, sprinting, thrashing and diving.
         // The name stays climbStaminaMax so saved JSON and the asset keep loading.
         [Tunable(GroupAction, "스테미나 최대 (초, 등반·질주·버둥·슬라이딩 공용)")] [Range(1f, 30f)] public float climbStaminaMax = 8f;
@@ -171,30 +169,21 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
         [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 4.5f;
-        [Tunable(GroupAction, "뻗은 팔 각도 (도, 수평 위)")] [Range(0f, 90f)] public float climbArmRaise = 72f;
-        [Tunable(GroupAction, "당긴 팔 각도 (도, 수평 아래)")] [Range(-20f, 80f)] public float climbArmLow = 28f;
         // Reaching with one arm lifts that shoulder and drops the other, and the head leans away
         // from the reach. Without these the pawn is a rigid post with arms bolted to it.
         [Tunable(GroupAction, "뻗는 쪽 어깨 올림 (도)")] [Range(0f, 45f)] public float climbShoulderLift = 21f;
         [Tunable(GroupAction, "머리 반대쪽 기울임 (도)")] [Range(0f, 45f)] public float climbHeadTilt = 22f;
         [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
-        [Tunable(GroupAction, "바위 위로 올라타기 (초)")] [Range(0f, 1.2f)] public float climbTopOut = 0.5f;
-        [Tunable(GroupAction, "등반 허우적 (도)")] [Range(0f, 90f)] public float climbFlail = 18f;
+        // How long climbing over the lip onto the top takes (up past the edge, then in over it).
+        [Tunable(GroupAction, "꼭대기로 올라서기 (초)")] [Range(0.1f, 1.2f)] public float climbTopOut = 0.45f;
         // A reaching hand plants climbHandStep above the shoulder. The head is a 0.195 m ball whose
-        // top sits 0.50 m above the shoulders, so 0.44 puts the palm beside the top of the head and
-        // the reach itself (climbOvershoot) flings it over. The body is then hauled up until the
-        // shoulder is climbPullDepth above that hand - negative stops short, so the hands keep
-        // working between the chest and above the head instead of being dragged down to the hips.
-        // Measured in a port of the climb: palms stay between -0.12 and +0.61 m of the shoulder,
-        // the upper palm is above the head's centre 62% of the time, and the pawn rises ~1.1 m/s.
+        // top sits 0.50 m above the shoulders, so 0.44 puts the palm beside the top of the head.
         [Tunable(GroupAction, "어깨 위로 짚는 높이 (m)")] [Range(0.1f, 0.7f)] public float climbHandStep = 0.44f;
-        [Tunable(GroupAction, "당긴 어깨 높이 (잡은 손 기준, m)")] [Range(-0.4f, 0.4f)] public float climbPullDepth = -0.18f;
         // Wide enough that the palms clear the silhouette of the head (0.195 m) when seen from behind.
         [Tunable(GroupAction, "손 좌우 벌림 (m)")] [Range(0.05f, 0.5f)] public float climbHandSpread = 0.26f;
         // The arm is a 0.12 m stub and the holds are up to ~0.6 m away, so on the wall the arm is
         // drawn out to meet the hand, cartoon-style (RagdollVisualSync). This caps that stretch.
         [Tunable(GroupAction, "팔이 늘어나는 최대 길이 (m)")] [Range(0.2f, 1f)] public float climbArmReach = 0.7f;
-        [Tunable(GroupAction, "지칠 때 미끄러짐 (m)")] [Range(0f, 0.5f)] public float climbSlip = 0.18f;
         // Between one hand letting go and the other catching, the pawn sags a little and then
         // jerks back up. Pure comedy, but it is also what a real climber does.
         [Tunable(GroupAction, "손 바꿀 때 쳐짐 (m)")] [Range(0f, 0.2f)] public float climbSag = 0.055f;

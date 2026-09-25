@@ -147,6 +147,7 @@ namespace ChessFight.RagdollLab
             yield return GrabDrag();
             yield return StruggleEscape();
             yield return Climb();
+            yield return ClimbBugs();
             yield return ClimbSurfaces();
             yield return DiveTackle();
             yield return Bar();
@@ -1204,6 +1205,86 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>
+        /// The climbing bugs from the playtest, one check each: starting a climb put the body inside
+        /// the wall (only the hands showed), moving sideways stretched the arms across the face,
+        /// the top was not reliably climbed onto, and letting go shoved the pawn away from the wall.
+        /// </summary>
+        IEnumerator ClimbBugs()
+        {
+            var p = game.tuning.values;
+            float face = LabLayout.WallFrontX;
+            float z = LabLayout.WallZ[2];                 // the 4 m wall, 6 m wide
+            // Start 1 m from its +Z end, so one stamina bar covers reaching the end and coming back.
+            var pawn = Spawn(new Vector3(face - 1.2f, 0f, z + 2f), Vector3.right, "climb-bugs");
+            yield return Sim(0.6f);
+            // 1. Run into it and start climbing: the body must stay in front of the face.
+            float closest = 9f, longestArm = 0f;
+            bool climbed = false;
+            float Arm() => Mathf.Max(
+                Vector3.Distance(pawn.handL.Center, pawn.bodies[(int)BodyId.ArmL].position),
+                Vector3.Distance(pawn.handR.Center, pawn.bodies[(int)BodyId.ArmR].position));
+            yield return Sim(1.6f, () =>
+            {
+                Drive(pawn, Vector3.right, grab: true);
+                climbed |= pawn.Climbing;
+                closest = Mathf.Min(closest, face - pawn.Hips.position.x);
+                if (pawn.Climbing) longestArm = Mathf.Max(longestArm, Arm());
+            });
+            Report("등반 시작: 몸이 벽 속으로 들어가지 않음", climbed && closest > 0.22f,
+                $"등반 {climbed}, 골반과 벽면 최소 거리 {closest:F2} m (치마 반지름 0.28, 0.22 초과여야 함)");
+
+            // 2. Sideways all the way to the end of the wall and back: the arms stay arm-length and
+            // the pawn stops at the edge instead of walking off it.
+            float minZ = z + 2f, maxZ = z + 2f;
+            bool stayed = true;
+            yield return Sim(1.8f, () =>
+            {
+                Drive(pawn, Vector3.forward, grab: true);
+                if (!pawn.Climbing) stayed = false;
+                longestArm = Mathf.Max(longestArm, Arm());
+                maxZ = Mathf.Max(maxZ, pawn.Hips.position.z);
+            });
+            yield return Sim(1.8f, () =>
+            {
+                Drive(pawn, Vector3.back, grab: true);
+                if (!pawn.Climbing) stayed = false;
+                longestArm = Mathf.Max(longestArm, Arm());
+                minZ = Mathf.Min(minZ, pawn.Hips.position.z);
+            });
+            float half = LabLayout.WallWidth * 0.5f;
+            Report("등반: 옆으로 가도 팔이 늘어나지 않고 벽 끝에서 멈춤",
+                longestArm <= p.climbArmReach + 0.05f && stayed && maxZ <= z + half && minZ >= z - half,
+                $"어깨→손 최대 {longestArm:F2} m (한계 {p.climbArmReach:F2}), 벽에 붙어 있음 {stayed}, "
+                + $"옆 이동 범위 {minZ - z:+0.00;-0.00} ~ {maxZ - z:+0.00;-0.00} m (벽 ±{half:F1} m)");
+
+            // 3. Letting go halfway up: straight down, not shoved away from the wall.
+            float x0 = pawn.Hips.position.x, drift = 0f;
+            yield return Sim(1.5f, () =>
+            {
+                Drive(pawn, Vector3.zero);
+                drift = Mathf.Max(drift, x0 - pawn.Hips.position.x);
+            });
+            Report("등반 중 손을 놓으면 그대로 떨어짐", !pawn.Climbing && drift < 0.45f,
+                $"벽에서 밀려난 거리 {drift:F2} m (0.45 미만)");
+            yield return Clear();
+
+            // 4. The 2 m wall to the top: must end up standing on it.
+            var top = Spawn(new Vector3(face - 1.2f, 0f, LabLayout.WallZ[0]), Vector3.right, "climb-top");
+            yield return Sim(0.6f);
+            float wallTop = LabLayout.WallHeights[0], standAt = -1f, t = 0f;
+            yield return Sim(6f, () =>
+            {
+                t += Dt;
+                Drive(top, Vector3.right, grab: standAt < 0f);
+                if (standAt < 0f && !top.Climbing && top.Grounded && top.Hips.position.y > wallTop + 0.1f
+                    && top.Hips.position.x > face + 0.1f) standAt = t;
+            });
+            Report("등반: 꼭대기에 올라섬", standAt > 0f && top.Knockdowns == 0,
+                $"올라선 시각 {Fmt(standAt)}, 최종 골반 높이 {top.Hips.position.y:F2} m (벽 {wallTop:F0} m), 넘어짐 {top.Knockdowns}");
+            yield return Clear();
+        }
+
+        /// <summary>
         /// Physical climbing needs something a hand can actually touch. Runs the same attempt at each
         /// of the three climbing faces and reports the height gained and whether a hand ever held on,
         /// so "which surfaces can this body climb" is a measurement rather than an opinion.
@@ -1245,6 +1326,11 @@ namespace ChessFight.RagdollLab
                 Info($"등반 표면: {names[i]}",
                     $"오른 높이 {top - start:F2} m, 최종 {pawn.Hips.position.y:F2} m, "
                     + $"바위에서 쉰 프레임 {rests}, 남은 스테미나 {pawn.Stamina:F2}");
+                // The curved lane is a stack of slabs: the chest rays slip through the seams between
+                // them, which once read as the top and climbed the pawn into the slab above.
+                if (lane > 0)
+                    Report($"등반: {names[i]} 꼭대기에 올라섬", onTop && pawn.Knockdowns == 0,
+                        $"올라섬 {onTop}, 최고 골반 높이 {top:F2} m (벽 {LabLayout.ClimbHeight:F0} m), 넘어짐 {pawn.Knockdowns}");
                 yield return Clear();
             }
         }

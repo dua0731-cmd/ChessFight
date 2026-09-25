@@ -488,7 +488,7 @@ namespace ChessFight.RagdollLab
             "'sprintLift':0.05,'sprintBob':0.07,'sprintRoll':6.0,'sprintTurnLean':15.0," +
             "'sprintChestLean':16.0,'sprintDrive':7.0,'sprintSplay':22.0," +
             "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.0,'stepRoll':3.0," +
-            "'turnLean':10.0,'accelLean':0.6,'anchorBrakeLeash':0.3,'landingDip':0.06,'stepLength':0.22," +
+            "'turnLean':10.0,'accelLean':0.6,'anchorBrakeLeash':0.3,'anchorDamperRatio':0.25,'landingDip':0.06,'stepLength':0.22," +
             "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':2.9,'legDamperRatio':0.04," +
             "'knockdownImpulseThreshold':6.0,'hitImpactThreshold':2.2," +
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";

@@ -39,6 +39,7 @@
   "turnLean": 10.0,
   "accelLean": 0.6,
   "anchorBrakeLeash": 0.3,
+  "anchorDamperRatio": 0.25,
   "landingDip": 0.06,
   "stepLength": 0.22,
   "boundGait": 0.0,

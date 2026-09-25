@@ -89,6 +89,7 @@ MonoBehaviour:
     thighMass: 0
     footMass: 0
     anchorBrakeLeash: 0.3
+    anchorDamperRatio: 0.25
     overspeedClamp: 1.1
     struggleBurst: 0.22
     struggleRushBonus: 2
@@ -98,26 +99,21 @@ MonoBehaviour:
     struggleSwing: 95
     struggleShake: 150
     struggleArmMultiplier: 8
-    climbSpeed: 3.5
-    climbPull: 3.5
-    climbDamperRatio: 0.45
+    climbSpeed: 1.2
+    climbDownSpeed: 1.6
+    climbSideSpeed: 0.9
     climbStaminaMax: 8
     climbDrainHold: 0.35
     climbDrainMove: 0.9
     climbRecover: 2
     climbCadence: 4.5
-    climbArmRaise: 72
-    climbArmLow: 28
     climbShoulderLift: 21
     climbHeadTilt: 22
     climbGripAngle: 55
-    climbTopOut: 0.5
-    climbFlail: 18
+    climbTopOut: 0.45
     climbHandStep: 0.44
-    climbPullDepth: -0.18
     climbHandSpread: 0.26
     climbArmReach: 0.7
-    climbSlip: 0.18
     climbSag: 0.055
     climbOvershoot: 0.7
     sprintCadence: 3.5

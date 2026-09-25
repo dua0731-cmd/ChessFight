@@ -104,8 +104,11 @@ namespace ChessFight.RagdollLab
             if (pawn == null) return;
 
             // Not the hips: they sway sideways on every stride, bob on every step and flail when the
-            // pawn tumbles, and a camera glued to them shook with all of it. CameraPoint is where
-            // the pawn is going (its locomotion anchor) at standing height over the floor.
+            // pawn tumbles, and a camera glued to them shook with all of it. Not the locomotion
+            // anchor either: on a turn or a reversal it runs up to 0.6 m ahead of the body, and a
+            // camera on it slid the pawn off the middle of the screen and back - that was the
+            // "swinging around its root". CameraPoint is the body's centre of mass, at standing
+            // height over the floor.
             Vector3 want = pawn.CameraPoint + Vector3.up * lookHeight;
             if (!initialized || pawn != followed || (want - focus).sqrMagnitude > 36f)
             {
