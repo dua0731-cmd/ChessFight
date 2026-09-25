@@ -82,6 +82,10 @@ namespace ChessFight.RagdollLab
         /// <summary>Hanging on a wall by the hands, spending stamina.</summary>
         public bool Climbing { get; private set; }
 
+        /// <summary>The climb is placing the hands on their holds, further out than the arms reach;
+        /// RagdollVisualSync draws the arms out to meet them while this is set.</summary>
+        public bool ArmsStretched => climbKinematic;
+
         /// <summary>0..1. Empty means the hands let go.</summary>
         public float Stamina => P.climbStaminaMax <= 0f ? 0f : Mathf.Clamp01(stamina / P.climbStaminaMax);
 
@@ -135,10 +139,14 @@ namespace ChessFight.RagdollLab
         Vector3 wallPoint, wallNormal = Vector3.forward;
         Vector3 climbUpAxis = Vector3.up, climbAcross = Vector3.right, climbFace;
         readonly Vector3[] handHold = new Vector3[2];
+        readonly Vector3[] palmLocal = new Vector3[2];
         readonly Quaternion[] poseRot = new Quaternion[Count];
         bool holdsPlaced, climbKinematic;
         Vector3 swingFrom;
-        float climbCeiling;
+        float climbCeiling, climbFloor;
+
+        /// <summary>How far through its swing a reaching hand is before it takes the body's weight.</summary>
+        const float ClimbGrabAt = 0.6f;
         float struggleFlip = 1f, struggleRush, lastStrugglePunch;
         RagdollPawn holder;
         Collider heldCollider;
@@ -197,6 +205,9 @@ namespace ChessFight.RagdollLab
             // its parent's position plus this fixed offset rotated by the parent. That is what lets a
             // remote pawn be rebuilt from rotations alone.
             for (int i = 1; i < Count; i++) jointOffset[i] = bindPos[i] - bindPos[ParentOf[i]];
+            // Where each palm ball sits on its hand body. The climb places the ball, not the body.
+            palmLocal[0] = bodies[(int)BodyId.HandL].transform.InverseTransformPoint(handL.Center);
+            palmLocal[1] = bodies[(int)BodyId.HandR].transform.InverseTransformPoint(handR.Center);
             facing = FlatDir(hips.forward, Vector3.forward);
             anchorPos = hips.position;
             anchor.transform.SetPositionAndRotation(anchorPos, Quaternion.LookRotation(facing));
@@ -829,7 +840,8 @@ namespace ChessFight.RagdollLab
             across.Normalize();
             climbUpAxis = Vector3.Cross(across, wallNormal).normalized;
             climbAcross = across;
-            climbFace = wallPoint + wallNormal * 0.05f;
+            // Holds are where the palm BALL goes, so they sit one ball radius off the face.
+            climbFace = wallPoint + wallNormal * handL.Radius;
             // Hand over hand, the same way the feet do it on the ground: a palm holds a real point
             // on the wall, the body climbs toward it, and only once the body has caught up does that
             // hand let go and reach higher. The body may never rise above what the top hand allows,
@@ -840,23 +852,29 @@ namespace ChessFight.RagdollLab
             if (!holdsPlaced)
             {
                 handHold[0] = Plant(0, p, shoulderY + p.climbHandStep);
-                handHold[1] = Plant(1, p, shoulderY + p.climbHandStep * 0.25f);
+                handHold[1] = Plant(1, p, shoulderY + p.climbHandStep * 0.5f);
                 holdsPlaced = true;
                 movingHand = 0;
                 handStep = 1f;
             }
             handStep = Mathf.Min(1f, handStep + p.climbCadence * dt);
 
-            // Whichever palm is higher is the one carrying the pawn, and it does not move at all:
-            // the body climbs past it until it is climbPullDepth below the shoulder, and only then
-            // does that hand let go and reach again. Everything the arm does follows from that, so
-            // there is no animation loop to fall out of step with the climb.
-            // The HIGHER palm carries the pawn; the LOWER one is the one that gets to reach. Picking
-            // the higher one to swing meant it replanted even higher every time and the same arm moved
-            // forever, which is exactly what it looked like.
+            // Whichever palm is higher carries the pawn, and it does not move at all: the body is
+            // hauled up toward it until the shoulder is climbPullDepth above it, and only then does
+            // the LOWER hand let go and reach again. Everything the arms do follows from that, so
+            // there is no animation loop to fall out of step with the climb. (Swinging the higher
+            // hand instead made the same arm replant higher forever while the other never moved.)
             int hold = handHold[0].y >= handHold[1].y ? 0 : 1;
             int swing = 1 - hold;
-            climbCeiling = handHold[hold].y + p.climbPullDepth - shoulderRise;
+            // A hand still flying to its new hold cannot take the weight yet; until it has nearly
+            // landed the pawn hangs from the other one. That splits every move into a reach and then
+            // a pull. Letting the new hold carry from the instant it was chosen hauled the body up
+            // after the flying hand, so the palm arrived at shoulder height and never above the head.
+            int carry = movingHand == hold && handStep < ClimbGrabAt ? swing : hold;
+            climbCeiling = handHold[carry].y + p.climbPullDepth - shoulderRise;
+            // Going down mirrors it: the body may sink until the carrying hand is a full reach
+            // above the shoulder, then the upper hand moves down.
+            climbFloor = handHold[carry].y - p.climbHandStep - shoulderRise;
             // One hand in the air means less to hang from: drop a little, then snap back up.
             if (handStep < 1f) climbCeiling -= p.climbSag * Mathf.Sin(handStep * Mathf.PI);
 
@@ -864,18 +882,23 @@ namespace ChessFight.RagdollLab
             // anchor because the spring balances its weight there, and comparing the real
             // shoulder against the hold left the swap permanently 5 cm out of reach.
             bool reachedTop = anchorPos.y >= climbCeiling - 0.02f;
+            bool reachedBottom = anchorPos.y <= climbFloor + 0.02f;
             if (handStep >= 1f && climbUp > 0.05f && reachedTop)
             {
+                // The lower hand reaches up past the head. Measured from the shoulder rather than
+                // from the other hand, so every reach is the same size.
                 swingFrom = handHold[swing];
                 movingHand = swing;
-                handHold[swing] = Plant(swing, p, handHold[hold].y + p.climbHandStep);
+                handHold[swing] = Plant(swing, p, shoulderY + p.climbHandStep);
                 handStep = 0f;
             }
-            else if (handStep >= 1f && climbUp < -0.05f)
+            else if (handStep >= 1f && climbUp < -0.05f && reachedBottom)
             {
+                // The upper hand drops to just under the shoulder, where a pulled hand ends up on
+                // the way up, so climbing down uses the same band of hand heights as climbing up.
                 swingFrom = handHold[hold];
                 movingHand = hold;
-                handHold[hold] = Plant(hold, p, handHold[swing].y - p.climbHandStep);
+                handHold[hold] = Plant(hold, p, shoulderY - 2f * p.climbPullDepth - p.climbHandStep);
                 handStep = 0f;
             }
             if (stamina > 0f) return;
@@ -910,19 +933,22 @@ namespace ChessFight.RagdollLab
                 poseRot[i] = poseRot[parent] * puppet[i].localRotation;
                 poseScratch[i] = poseScratch[parent] + poseRot[parent] * jointOffset[i];
             }
-            // Put the palms exactly on their holds. Everything else hangs off the chain.
+            // Point each arm from its shoulder straight at its palm and put the palm ball exactly
+            // there. The arm is a 0.12 m stub and a hold can be five times that away, so the arm is
+            // drawn out to meet the hand (RagdollVisualSync stretches it while ArmsStretched).
+            // Moving only the palm and leaving the arm its own length is what made the hands look
+            // like they had come off the arms.
             for (int slot = 0; slot < 2; slot++)
             {
-                int id = slot == 0 ? (int)BodyId.HandL : (int)BodyId.HandR;
-                Vector3 at = handHold[slot];
-                if (movingHand == slot && handStep < 1f)
-                {
-                    float t = Smooth(handStep);
-                    at = Vector3.Lerp(swingFrom, handHold[slot], t)
-                         + wallNormal * (Mathf.Sin(handStep * Mathf.PI) * 0.1f)
-                         + climbUpAxis * (Mathf.Sin(handStep * Mathf.PI) * p.climbOvershoot * p.climbHandStep);
-                }
-                poseScratch[id] = at;
+                int arm = slot == 0 ? (int)BodyId.ArmL : (int)BodyId.ArmR;
+                int hand = arm + 1;
+                Vector3 palm = PalmTarget(slot, p);
+                Vector3 along = palm - poseScratch[arm];
+                if (along.sqrMagnitude < 1e-6f) along = -wallNormal;
+                Quaternion aim = Quaternion.FromToRotation(slot == 0 ? Vector3.left : Vector3.right, along.normalized);
+                poseRot[arm] = aim;
+                poseRot[hand] = aim;
+                poseScratch[hand] = palm - aim * palmLocal[slot];
             }
             for (int i = 0; i < Count; i++)
             {
@@ -948,6 +974,15 @@ namespace ChessFight.RagdollLab
                 anchorPos += push;
                 anchor.position = anchorPos;
             }
+            // The hands were out on their holds, well past the ends of the arms. Put them back where
+            // the arm joints hold them before physics resumes, or the locked joints yank them in and
+            // the recoil throws the pawn.
+            for (int arm = (int)BodyId.ArmL; arm <= (int)BodyId.ArmR; arm += 2)
+            {
+                Rigidbody armBody = bodies[arm], handBody = bodies[arm + 1];
+                handBody.position = armBody.position + armBody.rotation * jointOffset[arm + 1];
+                handBody.rotation = armBody.rotation;
+            }
             Vector3 carry = Vector3.ClampMagnitude(anchorVel + Vector3.up * 0.5f, 4f);
             foreach (var rb in bodies)
             {
@@ -966,6 +1001,9 @@ namespace ChessFight.RagdollLab
             // Never higher than the hand that is holding on, so the climb rate is set by how fast the
             // hands can be placed rather than by a number. That is what makes it read as climbing.
             if (holdsPlaced && climbUp > 0f) next.y = Mathf.Min(next.y, climbCeiling);
+            // Likewise on the way down: never lower than the holding hand can reach. Without this the
+            // body dropped at full climb speed and left its hands up to 1.8 m overhead.
+            if (holdsPlaced && climbUp < 0f) next.y = Mathf.Max(next.y, climbFloor);
             next += right * (p.climbSpeed * 0.55f * Mathf.Clamp(climbSide, -1f, 1f) * dt);
             // Hold the body a body-depth off the face, at the height the probe says the wall is.
             // The skirt is 0.273 m deep: hug any closer than this and the body is jammed into the
@@ -1082,14 +1120,20 @@ namespace ChessFight.RagdollLab
             }
             else if (struggleTimer > 0f)
             {
-                // Thrashing: both arms flap fast and out of phase. Deliberately silly.
+                // Thrashing: arms out in a T and flapped up toward the head and down toward the feet,
+                // fast and out of step with each other. Deliberately silly - a tantrum, not a swim.
+                // Local Z swings an arm in the body's frontal plane: +Z lowers the left arm and raises
+                // the right one (the rest pose uses the same signs). Swinging around Y instead, as
+                // this used to, sweeps the arm between the front and the side, which read wrong.
                 float fade = Mathf.Clamp01(struggleTimer / Mathf.Max(0.01f, p.struggleBurst));
                 float a = Mathf.Sin(Time.time * 38f) * p.struggleSwing * fade;
-                float b = Mathf.Cos(Time.time * 31f) * p.struggleSwing * fade;
-                armL = Quaternion.Euler(0f, -a, p.armRestDown - 60f * fade);
-                armR = Quaternion.Euler(0f, b, -p.armRestDown + 60f * fade);
-                chest = Quaternion.Euler(-6f * fade, 16f * fade * struggleFlip, 0f);
-                head = Quaternion.Euler(0f, -10f * fade * struggleFlip, 0f);
+                float b = Mathf.Sin(Time.time * 31f + 1.7f) * p.struggleSwing * fade;
+                float rest = p.armRestDown * (1f - fade);
+                armL = Quaternion.Euler(0f, 0f, rest + a);
+                armR = Quaternion.Euler(0f, 0f, -rest + b);
+                // The body rocks side to side with each tap and the head wobbles against it.
+                chest = Quaternion.Euler(-6f * fade, 8f * fade * struggleFlip, 10f * fade * struggleFlip);
+                head = Quaternion.Euler(0f, -8f * fade * struggleFlip, -14f * fade * struggleFlip);
                 legAmp = Mathf.Max(legAmp, 30f * fade);
                 thighL = Quaternion.Euler(-legAmp * Mathf.Sin(Time.time * 26f), 0f, 0f);
                 thighR = Quaternion.Euler(legAmp * Mathf.Sin(Time.time * 26f), 0f, 0f);
@@ -1234,25 +1278,44 @@ namespace ChessFight.RagdollLab
         static float Smooth(float t) => t * t * (3f - 2f * t);
 
         /// <summary>
-        /// Where one palm plants: out to its own side, up at <paramref name="height"/>, and as close
-        /// to the face as the arm can actually get. Pinning it exactly ON the face does not work - the
-        /// arm reaches 0.20 m and the skirt holds the body 0.27 m off, so only a band at shoulder
-        /// height would ever be touchable and the arm could never swing.
+        /// Where one palm ball plants: out to its own side, up at <paramref name="height"/>, resting
+        /// against the face. The arm stretches to reach it, up to climbArmReach from the shoulder;
+        /// a hold further than that is pulled back toward the shoulder.
         /// </summary>
         Vector3 Plant(int slot, RagdollParams p, float height)
         {
             Vector3 shoulder = bodies[slot == 0 ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
             Vector3 at = climbFace + climbAcross * (slot == 0 ? -p.climbHandSpread : p.climbHandSpread);
             at += climbUpAxis * (height - at.y);
-            // Pull it back toward the shoulder if the arm cannot span the gap to the face.
             Vector3 off = at - shoulder;
             float len = off.magnitude;
-            return len > 0.30f ? shoulder + off * (0.30f / len) : at;
+            return len > p.climbArmReach ? shoulder + off * (p.climbArmReach / len) : at;
         }
 
         /// <summary>
-        /// Aims one arm at the palm spot it is supposed to be holding. The hand that is mid-swap
-        /// travels along a small arc so it lifts off, reaches, and plants, instead of gliding.
+        /// Where a palm ball is this step: on its hold, or for the hand that is changing holds, on an
+        /// arc that peels off the wall, flings past the new hold and drops back onto it.
+        /// </summary>
+        Vector3 PalmTarget(int slot, RagdollParams p)
+        {
+            Vector3 target = handHold[slot];
+            if (movingHand != slot || handStep >= 1f) return target;
+            float t = Smooth(handStep);
+            float arc = Mathf.Sin(handStep * Mathf.PI);
+            target = Vector3.Lerp(swingFrom, handHold[slot], t);
+            target += wallNormal * (arc * 0.1f);
+            // Fling it past the hold and let it drop back on - little arms flailing for the hold is
+            // the joke, and on the way up it is what carries the palm over the top of the head.
+            // Not on the way down: a hand moving down to a lower hold has no reason to shoot upward.
+            if (handHold[slot].y >= swingFrom.y)
+                target += climbUpAxis * (arc * p.climbOvershoot * p.climbHandStep);
+            target += climbAcross * (Mathf.Sin(handStep * Mathf.PI * 2f) * 0.05f * (slot == 0 ? -1f : 1f));
+            return target;
+        }
+
+        /// <summary>
+        /// Aims one arm at its palm. While climbing, ApplyClimbPose places the arms exactly; this is
+        /// the puppet's version of the same aim, so the drives already agree when physics resumes.
         /// </summary>
         Quaternion ClimbReach(bool left, int slot, RagdollParams p, float panic)
         {
@@ -1262,19 +1325,7 @@ namespace ChessFight.RagdollLab
             // so as the body climbs past it the arm sweeps from overhead down past the shoulder on
             // its own - that sweep is the animation, and it cannot fall out of step with the climb
             // because the climb is what produces it.
-            Vector3 target = handHold[slot];
-            if (movingHand == slot && handStep < 1f)
-            {
-                // The swinging hand: peel off, arc up, plant on the new hold.
-                float t = Smooth(handStep);
-                target = Vector3.Lerp(swingFrom, handHold[slot], t);
-                target += wallNormal * (Mathf.Sin(handStep * Mathf.PI) * 0.09f);
-                // Fling it past the hold and let it drop back on - little arms flailing for the hold
-                // is the joke, and it also sells the effort.
-                target += climbUpAxis * (Mathf.Sin(handStep * Mathf.PI) * p.climbOvershoot * p.climbHandStep);
-                target += climbAcross * (Mathf.Sin(handStep * Mathf.PI * 2f) * 0.05f * (slot == 0 ? -1f : 1f));
-            }
-            Vector3 aim = target - shoulder;
+            Vector3 aim = PalmTarget(slot, p) - shoulder;
             if (aim.sqrMagnitude < 1e-6f) aim = -wallNormal;
             Vector3 local = chestT.InverseTransformDirection(aim.normalized);
             return Quaternion.FromToRotation(left ? Vector3.left : Vector3.right, local);

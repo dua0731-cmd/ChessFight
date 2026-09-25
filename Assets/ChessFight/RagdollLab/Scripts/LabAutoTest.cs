@@ -932,6 +932,13 @@ namespace ChessFight.RagdollLab
             float startY = pawn.Hips.position.y, startStamina = pawn.Stamina;
             float topY = startY, climbedFor = 0f, lowestStamina = 1f;
             bool everClimbing = false;
+            // Hands, measured against the head: each hand should reach above the centre of the head
+            // and the two should take turns being the higher one. The old climb kept both palms
+            // 0.13-0.55 m below the shoulders, which is what "the hands are under the body" meant.
+            Transform headT = pawn.bodies[(int)BodyId.Head].transform;
+            var headBall = headT.GetComponent<SphereCollider>();
+            float overHeadL = float.MinValue, overHeadR = float.MinValue, longestArm = 0f;
+            int higher = -1, turns = 0;
             yield return Sim(6f, () =>
             {
                 Drive(pawn, Vector3.right, grab: true);
@@ -939,10 +946,22 @@ namespace ChessFight.RagdollLab
                 {
                     everClimbing = true;
                     climbedFor += Dt;
+                    float headY = headBall != null ? headT.TransformPoint(headBall.center).y : headT.position.y + 0.21f;
+                    overHeadL = Mathf.Max(overHeadL, pawn.handL.Center.y - headY);
+                    overHeadR = Mathf.Max(overHeadR, pawn.handR.Center.y - headY);
+                    longestArm = Mathf.Max(longestArm,
+                        Vector3.Distance(pawn.handL.Center, pawn.bodies[(int)BodyId.ArmL].position),
+                        Vector3.Distance(pawn.handR.Center, pawn.bodies[(int)BodyId.ArmR].position));
+                    int now = pawn.handL.Center.y >= pawn.handR.Center.y ? 0 : 1;
+                    if (higher >= 0 && now != higher) turns++;
+                    higher = now;
                 }
                 topY = Mathf.Max(topY, pawn.Hips.position.y);
                 lowestStamina = Mathf.Min(lowestStamina, pawn.Stamina);
             });
+            Report("등반: 두 손이 번갈아 머리 위로 뻗음", overHeadL > 0f && overHeadR > 0f && turns >= 4,
+                $"머리 중심 대비 최고 손 높이 L {overHeadL:+0.00;-0.00} m / R {overHeadR:+0.00;-0.00} m, "
+                + $"위쪽 손 교대 {turns}회, 어깨→손 최대 {longestArm:F2} m");
             var tr = new StringBuilder();
             float tt = 0f, tnext = 0f;
             yield return Sim(1.2f, () =>
@@ -984,13 +1003,17 @@ namespace ChessFight.RagdollLab
             var hanger = Spawn(new Vector3(LabLayout.ClimbX[1], 0f, LabLayout.ClimbFaceZ - 2.2f), Vector3.forward, "매달림");
             yield return Sim(0.6f);
             // Climb clear of the ground first, then ride up and down so the route never ends and
-            // stamina has to be what stops it.
-            float phase = 0f, highest = 0f, heightAtEmpty = -1f;
+            // stamina has to be what stops it. "Clear" is a height, not a time: a fixed six seconds
+            // of climbing reaches the top of the 5 m lane on a faster climb, and the pawn then rests
+            // on the lip instead of running out.
+            float phase = 0f, highest = 0f, heightAtEmpty = -1f, climbFor = 6f;
+            float hangerStart = hanger.Hips.position.y;
             bool ranOut = false, letGo = false;
             yield return Sim(28f, () =>
             {
                 phase += Dt;
-                bool up = phase < 6f || ((int)((phase - 6f) / 0.5f) & 1) == 1;
+                if (phase < climbFor && hanger.Hips.position.y - hangerStart >= 2.5f) climbFor = phase;
+                bool up = phase < climbFor || ((int)((phase - climbFor) / 0.5f) & 1) == 1;
                 Drive(hanger, up ? Vector3.forward : Vector3.back, grab: true);
                 if (!ranOut) highest = Mathf.Max(highest, hanger.Hips.position.y);
                 if (hanger.Stamina > 0.001f) return;
@@ -1019,10 +1042,17 @@ namespace ChessFight.RagdollLab
                 float start = pawn.Hips.position.y, top = start, holdTime = 0f, handTop = 0f;
                 float lastStamina = 1f;
                 int grips = 0, rests = 0;
-                bool wasHolding = false;
+                bool wasHolding = false, onTop = false;
+                int lane = i;
                 yield return Sim(seconds[i], () =>
                 {
-                    Drive(pawn, Vector3.forward, grab: true);
+                    // The shape-test lanes end in a ~1 m deep top. Once the pawn stands up there, let go
+                    // of the keys: holding "forward" ran it off the back, and the final height then
+                    // measured the fall behind the lane, not the climb. The big wall keeps going - its
+                    // tops are rest ledges and the next block starts behind them.
+                    onTop |= lane > 0 && !pawn.Climbing && pawn.Grounded && pawn.Hips.position.y > 1.5f;
+                    if (onTop) Drive(pawn, Vector3.zero);
+                    else Drive(pawn, Vector3.forward, grab: true);
                     top = Mathf.Max(top, pawn.Hips.position.y);
                     if (pawn.Stamina > lastStamina + 0.002f && pawn.Hips.position.y > 1.5f) rests++;
                     lastStamina = pawn.Stamina;

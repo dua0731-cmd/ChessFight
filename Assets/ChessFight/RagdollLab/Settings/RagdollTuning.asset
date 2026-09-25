@@ -91,7 +91,7 @@ MonoBehaviour:
     struggleSwing: 95
     struggleShake: 150
     struggleArmMultiplier: 8
-    climbSpeed: 2.5
+    climbSpeed: 3.5
     climbPull: 3.5
     climbDamperRatio: 0.45
     climbStaminaMax: 8
@@ -106,9 +106,10 @@ MonoBehaviour:
     climbGripAngle: 55
     climbTopOut: 0.5
     climbFlail: 18
-    climbHandStep: 0.3
-    climbPullDepth: 0.18
-    climbHandSpread: 0.19
+    climbHandStep: 0.44
+    climbPullDepth: -0.18
+    climbHandSpread: 0.26
+    climbArmReach: 0.7
     climbSlip: 0.18
     climbSag: 0.055
-    climbOvershoot: 0.45
+    climbOvershoot: 0.7

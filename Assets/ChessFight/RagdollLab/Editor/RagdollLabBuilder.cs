@@ -927,6 +927,15 @@ namespace ChessFight.RagdollLab.Editor
                     mats.wall, Quaternion.Euler(lean, 0f, 0f));
             }
             Label(env, "[3b] 곡면", new Vector3(x2 + 1.8f, h * 0.5f, z - 0.4f), Quaternion.LookRotation(Vector3.forward), 0.7f);
+
+            // --- floor behind the lanes. They stand at the north edge of the 30 x 30 floor, and the
+            // tops of the shape-test lanes are only ~1 m deep, so a pawn that topped out and kept
+            // going ran straight off the back into the void (curved lane: up 5.49 m, ended at
+            // -6.25 m). The strip fills the 1 m gap to the bar floor; the pads cover the rest.
+            float half = LabLayout.MainHalfSize;
+            Box(env, "Climb Back Strip", new Vector3(0f, -0.5f, half + 0.5f), new Vector3(half * 2f, 1f, 1f), mats.floor);
+            Box(env, "Climb Back East", new Vector3(11.5f, -0.5f, half + 5f), new Vector3(7f, 1f, 8f), mats.floor);
+            Box(env, "Climb Back West", new Vector3(-11.5f, -0.5f, half + 5f), new Vector3(7f, 1f, 8f), mats.floor);
         }
 
         static GameObject Box(Transform parent, string name, Vector3 center, Vector3 size, Material material, Quaternion? rotation = null)
