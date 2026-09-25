@@ -35,7 +35,7 @@
 | R14 | 09-24 | A(호스트 끊김 빠른 감지)·B(점프 유실 방지)·C(버전 검사)·D(공개 매치 봇 금지)·E(핑 표시, 지연 시뮬레이터)·F(Rich Presence) **전부 구현해서 푸시**, 승규에게 요청할 작업 추천(ChatGPT 아스트라 사용 가능) | 6개 전부 구현, 프로토콜 v2, 테스트 +10, 승규 작업 5개와 프롬프트 | `01dd655` | 구현됨 (Unity 미확인) |
 | R15 | 09-24 | 지금까지의 내용과 진행 상황을 정리해서 **다른 AI나 새 채팅에서도 완전히 똑같이 이어지게**. `HANDOFF.md`를 진입점으로, 세부는 **분야별 트리 구조**로. 씬 분리·폴더 정리 같은 **지금까지의 요구사항도 꼼꼼히** | 루트 `HANDOFF.md`, 도구별 안내 파일(AGENTS/CLAUDE/GEMINI/Copilot/Cursor), `Docs/` 분야별 트리 재편, 이 요구사항 기록, 결정·함정 기록, Linux 테스트 스크립트, 생성기 보관 | `cffe4a3` | 구현됨 |
 
-| R16 | 09-25 | `JY-ragdoll`의 **RagdollLab 씬 내용을 현재 브랜치의 RagdollTest 씬으로 그대로 옮기고**, 현재 브랜치 기준으로 병합. **네트워크와 멀티플레이에 전혀 문제가 되지 않게** | Network 기준 병합(폴더 이름 변경 감지 끔), 랩 씬 → `Assets/Scenes/RagdollTest.unity`(GUID 유지), 빌더 저장 경로 변경, `RagdollDriver`(`ICharacterDriver`) 추가·프리팹 부착, 랩 어셈블리 → Gameplay 참조, 떠날 때 커서 복구, `Assets/ChessFight.meta` 복원, 경계 검사·Roslyn 컴파일 추가, 생성기가 RagdollTest를 덮어쓰지 않게 | `fc006b8` + 이 기록을 추가한 커밋 | 구현됨 (Unity 미확인) |
+| R16 | 09-25 | `JY-ragdoll`의 **RagdollLab 씬 내용을 현재 브랜치의 RagdollTest 씬으로 그대로 옮기고**, 현재 브랜치 기준으로 병합. **네트워크와 멀티플레이에 전혀 문제가 되지 않게** | Network 기준 병합(폴더 이름 변경 감지 끔), 랩 씬 → `Assets/Scenes/RagdollTest.unity`(GUID 유지), 빌더 저장 경로 변경, `RagdollDriver`(`ICharacterDriver`) 추가·프리팹 부착, 랩 어셈블리 → Gameplay 참조, 떠날 때 커서 복구, `Assets/ChessFight.meta` 복원, 경계 검사·Roslyn 컴파일 추가, 생성기가 RagdollTest를 덮어쓰지 않게 | `fc006b8`, `a43791c` | 구현됨 (Unity 미확인) |
 
 ## 2. 요구사항에서 뽑은 지켜야 할 조건
 
