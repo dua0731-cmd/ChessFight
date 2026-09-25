@@ -97,7 +97,8 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupPose, "보폭 (m/주기)")] [Range(0.2f, 3f)] public float strideLength = 0.9f;
         // The shipped run commands 140 (the hip limit caps what actually comes out at ~95), so the
         // slider has to reach past it or touching it once would clamp the default away.
-        [Tunable(GroupPose, "다리 스윙 (도)")] [Range(0f, 160f)] public float legSwing = 35f;
+        // Capped at 60 in RagdollPawn: that is as far as the hip joint turns (see HipSwingLimit).
+        [Tunable(GroupPose, "다리 스윙 (도, 최대 60)")] [Range(0f, 60f)] public float legSwing = 35f;
         [Tunable(GroupPose, "팔 스윙 (도)")] [Range(0f, 90f)] public float armSwing = 35f;
         [Tunable(GroupPose, "팔 내림 (도)")] [Range(-30f, 80f)] public float armRestDown = 20f;
         [Tunable(GroupPose, "상체 기울기 (도)")] [Range(0f, 40f)] public float chestLean = 10f;
@@ -112,9 +113,10 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupWeight, "걸음당 추진 (0=일정)")] [Range(0f, 1f)] public float stanceThrust;
         [Tunable(GroupWeight, "걸음 들썩임 (m)")] [Range(0f, 0.12f)] public float stepBob;
         // A walking body is highest as the legs pass each other and lowest when they are spread. A
-        // one-piece leg spread 35 degrees is 3 cm shorter vertically, so unless the hips come down
-        // with it the feet leave the floor at every stride - which is what made the run float.
-        [Tunable(GroupWeight, "달리기: 다리 벌어질 때 골반 내림 (m)")] [Range(0f, 0.08f)] public float runStepDip;
+        // one-piece leg swung out by an angle is reach * (1 - cos angle) shorter vertically (7.5 cm
+        // at 60 degrees), so unless the hips come down with it the feet leave the floor at every
+        // stride - which is what made the first run float. 1 rides exactly on the legs.
+        [Tunable(GroupWeight, "달리기: 다리 벌어진 만큼 골반 내림 (1=다리 길이대로)")] [Range(0f, 1.5f)] public float runLegDrop;
         [Tunable(GroupWeight, "걸음 좌우 기울기 (도)")] [Range(0f, 20f)] public float stepRoll;
         [Tunable(GroupWeight, "회전 시 기울기 (도)")] [Range(0f, 30f)] public float turnLean;
         [Tunable(GroupWeight, "착지 주저앉기 (m)")] [Range(0f, 0.2f)] public float landingDip;
@@ -192,13 +194,13 @@ namespace ChessFight.RagdollLab
         // the pose and weight groups (legSwing, armSwing, runLean, hopCadence), and the pawn blends
         // between the two sets, so each can be tuned without touching the other.
         [Tunable(GroupSprint, "전력질주 걸음 주기 (회/초)")] [Range(0f, 5f)] public float sprintCadence = 3.2f;
-        [Tunable(GroupSprint, "전력질주 다리 스윙 (도)")] [Range(0f, 160f)] public float sprintLegSwing = 140f;
+        [Tunable(GroupSprint, "전력질주 다리 스윙 (도, 최대 60)")] [Range(0f, 60f)] public float sprintLegSwing = 60f;
         [Tunable(GroupSprint, "전력질주 팔 스윙 (도)")] [Range(0f, 90f)] public float sprintArmSwing = 76f;
         [Tunable(GroupSprint, "전력질주 골반 기울기 (도)")] [Range(0f, 30f)] public float sprintLean = 10f;
         [Tunable(GroupSprint, "전력질주 골반 들기 (m)")] [Range(0f, 0.1f)] public float sprintLift = 0.05f;
         [Tunable(GroupSprint, "전력질주 걸음 들썩임 (m)")] [Range(0f, 0.12f)] public float sprintBob = 0.06f;
-        [Tunable(GroupSprint, "전력질주 걸음 좌우 기울기 (도)")] [Range(0f, 20f)] public float sprintRoll = 12f;
-        [Tunable(GroupSprint, "전력질주 회전 시 기울기 (도)")] [Range(0f, 30f)] public float sprintTurnLean = 16f;
+        [Tunable(GroupSprint, "전력질주 걸음 좌우 기울기 (도)")] [Range(0f, 20f)] public float sprintRoll = 6f;
+        [Tunable(GroupSprint, "전력질주 회전 시 기울기 (도)")] [Range(0f, 30f)] public float sprintTurnLean = 10f;
         [Tunable(GroupSprint, "달리기↔전력질주 전환 (/초)")] [Range(0.5f, 20f)] public float sprintBlendSpeed = 4f;
         // Stamina-seconds per second, like the climb: 1.0 empties the 8 s pool in 8 s of sprinting.
         [Tunable(GroupSprint, "전력질주 스테미나 소모 (/초)")] [Range(0f, 3f)] public float sprintDrain = 1f;

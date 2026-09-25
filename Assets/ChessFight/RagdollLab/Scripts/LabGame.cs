@@ -442,7 +442,7 @@ namespace ChessFight.RagdollLab
             "'moveSpeed':6.0,'acceleration':10.0,'stopDeceleration':14.0," +
             "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':3.0," +
             "'balanceDamper':120.0,'yawStrength':600.0," +
-            "'strideLength':1.5,'legSwing':70.0,'armSwing':55.0,'runLean':8.0,'runLift':0.045," +
+            "'strideLength':1.5,'legSwing':60.0,'armSwing':55.0,'runLean':8.0,'runLift':0.045," +
             "'stepLock':0.3,'stanceThrust':0.45,'stepBob':0.05,'stepRoll':8.0," +
             "'turnLean':14.0,'landingDip':0.06,'stepLength':0.22," +
             "'boundGait':1.0,'driveFeedForward':1.0,'hopCadence':2.6," +
@@ -467,8 +467,12 @@ namespace ChessFight.RagdollLab
         /// SPRINT (held Shift, spends stamina: sprintSpeed and the sprint* gait numbers). The everyday
         /// run at 5.5 m/s is its own gait, not the sprint slowed down - that version floated (the hips
         /// rode 11 cm up on the spread legs) and waddled (12 degrees of roll at a slow tempo). The run
-        /// takes quick short steps (3 a second, 50 degrees), keeps the hips down as the legs spread
-        /// (runStepDip), barely rolls, lets the arms hang and turns the shoulders against the legs.
+        /// steps 2.5 times a second with the legs swung 55 degrees, rides exactly on its legs
+        /// (runLegDrop), rolls 3 degrees onto the stance leg, swings hanging arms like pendulums and
+        /// turns the shoulders against the legs. Seen from behind, the sprint's 140 degree legs hit
+        /// the 60 degree hip stop and kicked out sideways and its 12 degree roll rocked the whole body,
+        /// so it now swings to the stop and no further and rolls half as much; speed, tempo, arms and
+        /// the bounding hips are the approved ones.
         /// Baked into Settings/RagdollTuning.asset, so the lab and the prefab start with it;
         /// "명세 시작값" still resets to the spec for A/B, and this button brings the set back.
         /// </summary>
@@ -477,13 +481,13 @@ namespace ChessFight.RagdollLab
             "'moveSpeed':5.5,'sprintSpeed':9.6,'acceleration':20.0,'stopDeceleration':20.0," +
             "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.5," +
             "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
-            "'strideLength':1.5,'legSwing':50.0,'armSwing':40.0,'runLean':7.0,'runLift':0.01," +
-            "'runArmDown':55.0,'runTwist':7.0,'runStepDip':0.03," +
-            "'sprintCadence':3.2,'sprintLegSwing':140.0,'sprintArmSwing':76.0,'sprintLean':10.0," +
-            "'sprintLift':0.05,'sprintBob':0.06,'sprintRoll':12.0,'sprintTurnLean':16.0," +
-            "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.01,'stepRoll':1.5," +
+            "'strideLength':1.5,'legSwing':55.0,'armSwing':40.0,'runLean':5.0,'runLift':0.0," +
+            "'runArmDown':45.0,'runTwist':8.0,'runLegDrop':0.8," +
+            "'sprintCadence':3.2,'sprintLegSwing':60.0,'sprintArmSwing':76.0,'sprintLean':10.0," +
+            "'sprintLift':0.05,'sprintBob':0.06,'sprintRoll':6.0,'sprintTurnLean':10.0," +
+            "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.012,'stepRoll':3.0," +
             "'turnLean':6.0,'landingDip':0.06,'stepLength':0.22," +
-            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':3.0,'legDamperRatio':0.04," +
+            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':2.5,'legDamperRatio':0.04," +
             "'knockdownImpulseThreshold':6.0,'hitImpactThreshold':2.2," +
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 
@@ -491,7 +495,7 @@ namespace ChessFight.RagdollLab
         {
             tuning.LoadJson(StepPresetJson.Replace('\'', '"'));
             MarkTuningDirty();
-            Status = "기본 프리셋: 달리기 5.5 m/s(잔걸음) · Shift 전력질주 9.6 m/s(예전 크게 달리기). 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
+            Status = "기본 프리셋: 달리기 5.5 m/s · Shift 전력질주 9.6 m/s. 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
         }
 
         public void ApplyWeightPreset()

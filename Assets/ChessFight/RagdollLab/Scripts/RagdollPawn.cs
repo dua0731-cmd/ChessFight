@@ -222,7 +222,7 @@ namespace ChessFight.RagdollLab
         Vector3 diveDirection = Vector3.forward;
         float slideSide = 1f;
         bool cameraFooting;
-        float footingY;
+        float footingY, legReach;
         Vector3 cameraAnchorBefore, cameraAnchor;
         bool launchCut;
         bool wantsMove, wasGrounded;
@@ -291,6 +291,8 @@ namespace ChessFight.RagdollLab
             facing = FlatDir(hips.forward, Vector3.forward);
             anchorPos = hips.position;
             cameraAnchor = cameraAnchorBefore = anchorPos;
+            // Hip joint to ankle, straight down: how much shorter a leg gets as it swings out.
+            legReach = bindPos[(int)BodyId.ThighL].y - bindPos[(int)BodyId.FootL].y;
             anchor.transform.SetPositionAndRotation(anchorPos, Quaternion.LookRotation(facing));
         }
 
@@ -770,11 +772,15 @@ namespace ChessFight.RagdollLab
                 landDip = Mathf.Max(landDip, p.landingDip * Mathf.Clamp01(-hips.linearVelocity.y / 6f));
             wasGrounded = planted;
             // The sprint bounds: the hips rise as the legs fling apart (twice a cycle, or once for a
-            // hop). The run walks: the hips are highest as the legs pass each other and come DOWN as
-            // they spread, so the feet stay on the floor instead of the body riding up on them.
+            // hop). The run walks: the hips ride exactly on the legs. A straight leg swung out by some
+            // angle is shorter by reach * (1 - cos angle), so the hips come down by that much as the
+            // legs spread and are highest as they pass - the feet stay on the floor all the time
+            // instead of the body riding up on them (which is what made the first run float).
             float spread = Mathf.Abs(Mathf.Sin(gait));
             float sprintWave = Mathf.Lerp(spread, hopArc, p.boundGait);
-            float runBob = p.stepBob * (1f - spread) - p.runStepDip * spread;
+            float legAngle = Mathf.Abs(LegSwing(p) * Mathf.Clamp01(speedN * 1.5f) * Mathf.Sin(gait));
+            float legDrop = legReach * (1f - Mathf.Cos(legAngle * Mathf.Deg2Rad));
+            float runBob = p.stepBob * (1f - spread) - p.runLegDrop * legDrop;
             float bob = Gait(runBob, p.sprintBob * sprintWave) * speedN;
             next.y = planted && groundFound
                 ? groundY + standHeight + lift + bob - landDip - strideDrop
@@ -892,6 +898,18 @@ namespace ChessFight.RagdollLab
 
         /// <summary>A gait number between its run value and its sprint value, by how far into the sprint.</summary>
         float Gait(float run, float sprint) => Mathf.Lerp(run, sprint, sprintBlend);
+
+        /// <summary>
+        /// The hip joint stops a thigh at 60-75 degrees (RagdollLabBuilder). Commanding more does
+        /// not swing the leg further: the drive shoves it into the stop, the excess spills into the
+        /// sideways axis (up to 35 degrees) and the foot kicks out to the side, and past 90 degrees
+        /// the target on the far side is more than 180 away so the drive pushes the WRONG way until
+        /// the target comes back round. That is the sideways leg flicking seen from behind at
+        /// the old 140 degree sprint. So the swing is capped at the joint's range.
+        /// </summary>
+        const float HipSwingLimit = 60f;
+
+        float LegSwing(RagdollParams p) => Mathf.Min(Gait(p.legSwing, p.sprintLegSwing), HipSwingLimit);
 
         /// <summary>
         /// Holding sprint blends the run into the approved big run (sprintSpeed and the sprint gait)
@@ -1350,10 +1368,7 @@ namespace ChessFight.RagdollLab
             // middle. phase 0 = feet down, 0.5 = apex.
             float phase = gait / (Mathf.PI * 2f);
             hopArc = 4f * phase * (1f - phase);
-            float legSwing = Mathf.Lerp(p.legSwing, p.sprintLegSwing, sprintBlend);
-            float armSwing = Mathf.Lerp(p.armSwing, p.sprintArmSwing, sprintBlend);
-            float legAmp = air ? 0f : legSwing * Mathf.Clamp01(speedN * 1.5f);
-            float armAmp = air ? 0f : armSwing * speedN;
+            float legAmp = air ? 0f : LegSwing(p) * Mathf.Clamp01(speedN * 1.5f);
 
             // Running (not sprinting) the shoulders turn against the stepping legs and the head holds
             // still against them. The right shoulder comes forward with the left leg.
@@ -1368,10 +1383,18 @@ namespace ChessFight.RagdollLab
             Quaternion thighR = Quaternion.Euler(ampR * s, 0f, 0f);
             Quaternion footL = Quaternion.Euler(0.8f * legAmp * s, 0f, 0f);
             Quaternion footR = Quaternion.Euler(-0.8f * ampR * s, 0f, 0f);
-            // The run lets the arms hang and swing along the body; the sprint keeps them out wide.
-            float armDown = Mathf.Lerp(p.armRestDown, Gait(p.runArmDown, p.armRestDown), Mathf.Clamp01(speedN * 2f));
-            Quaternion armL = Quaternion.Euler(0f, -armAmp * s, armDown);
-            Quaternion armR = Quaternion.Euler(0f, -armAmp * s, -armDown);
+            // Two different arm actions. The run lets the arms hang beside the body and swings them
+            // forward and back like pendulums (lower first, then turn about the body's side-to-side
+            // axis), each against its leg. The sprint keeps the approved cartoon flail: arms out wide,
+            // swept forward and back around the vertical. Turning hanging arms around the vertical,
+            // as the first run did, only wiggles the hands in and out from behind.
+            float armGo = air ? 0f : speedN;
+            float runDown = Mathf.Lerp(p.armRestDown, p.runArmDown, Mathf.Clamp01(speedN * 2f));
+            float runArm = p.armSwing * armGo * s, sprintArm = p.sprintArmSwing * armGo * s;
+            Quaternion armL = Quaternion.Slerp(Quaternion.Euler(runArm, 0f, runDown),
+                Quaternion.Euler(0f, -sprintArm, p.armRestDown), sprintBlend);
+            Quaternion armR = Quaternion.Slerp(Quaternion.Euler(-runArm, 0f, -runDown),
+                Quaternion.Euler(0f, -sprintArm, -p.armRestDown), sprintBlend);
 
             if (air)
             {

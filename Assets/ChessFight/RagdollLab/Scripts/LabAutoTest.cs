@@ -134,6 +134,7 @@ namespace ChessFight.RagdollLab
             yield return Stand();
             yield return Run();
             yield return Sprint();
+            yield return GaitShape();
             yield return Turn();
             yield return NoAutoHop();
             yield return JumpCheck();
@@ -934,6 +935,48 @@ namespace ChessFight.RagdollLab
             Report("스테미나가 떨어지면 전력질주 불가 → 회복하면 다시 가능", winded && !sprintWhileWinded && recovered > 0f,
                 $"고갈 {Fmt(emptyAt)} 뒤 지침, 지친 동안 질주 {sprintWhileWinded}, 지친 채 속도 {slowed:F2} m/s, "
                 + $"다시 질주 가능까지 {Fmt(recovered)} (회복 {p.climbRecover:F1}/초, 대기 {p.staminaRecoverDelay:F1}초, 기준 {p.sprintResume * 100f:F0}%)");
+            yield return Clear();
+        }
+
+        /// <summary>
+        /// The two things that looked wrong from the chase camera. The run floated: both feet off the
+        /// floor for much of every stride. The sprint's legs kicked out sideways, because 140 degrees
+        /// was commanded against a 60 degree hip stop and the excess spilled into the sideways axis.
+        /// </summary>
+        IEnumerator GaitShape()
+        {
+            var pawn = Spawn(new Vector3(-12f, 0f, -13f), Vector3.forward, "gait");
+            yield return Sim(0.6f);
+            Drive(pawn, Vector3.forward);
+            yield return Sim(0.8f);
+            int frames = 0, floating = 0;
+            yield return Sim(1.5f, () =>
+            {
+                frames++;
+                float lowest = Mathf.Min(pawn.footL.bounds.min.y, pawn.footR.bounds.min.y);
+                if (lowest > 0.03f) floating++;
+            });
+            float floatShare = 100f * floating / Mathf.Max(1, frames);
+            Report("달리기: 발이 바닥에서 뜨지 않음", floatShare < 15f && pawn.Knockdowns == 0,
+                $"두 발이 다 3 cm 넘게 뜬 시간 {floatShare:F0}% (15% 미만이어야 함)");
+            yield return Clear();
+
+            pawn = Spawn(new Vector3(-12f, 0f, -13f), Vector3.forward, "gait-sprint");
+            yield return Sim(0.6f);
+            Drive(pawn, Vector3.forward, sprint: true);
+            yield return Sim(0.8f);
+            float sideways = 0f;
+            yield return Sim(1.5f, () =>
+            {
+                Quaternion hipsInv = Quaternion.Inverse(pawn.Hips.rotation);
+                foreach (var thigh in new[] { BodyId.ThighL, BodyId.ThighR })
+                {
+                    Vector3 e = (hipsInv * pawn.bodies[(int)thigh].rotation).eulerAngles;
+                    sideways = Mathf.Max(sideways, Mathf.Abs(Signed(e.z)));
+                }
+            });
+            Report("전력질주: 다리가 옆으로 차지 않음", sideways < 20f && pawn.Knockdowns == 0,
+                $"허벅지가 옆으로 벌어진 최대 각도 {sideways:F0}° (20° 미만, 관절 한계 35°)");
             yield return Clear();
         }
 

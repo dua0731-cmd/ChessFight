@@ -40,7 +40,7 @@ MonoBehaviour:
     ragdollFriction: 0.1
     footFrictionIdle: 0.6
     footFrictionMoving: 0.1
-    runLift: 0.01
+    runLift: 0
     hitStiffnessMultiplier: 0.3
     hitRecoveryTime: 0.5
     hitImpactThreshold: 2.2
@@ -62,18 +62,18 @@ MonoBehaviour:
     anchorIdleFollow: 6
     gravityScale: 1
     strideLength: 1.5
-    legSwing: 50
+    legSwing: 55
     armSwing: 40
     armRestDown: 20
     chestLean: 10
-    runLean: 7
-    runArmDown: 55
-    runTwist: 7
+    runLean: 5
+    runArmDown: 45
+    runTwist: 8
     stepLock: 0
     stanceThrust: 0.45
-    stepBob: 0.01
-    runStepDip: 0.03
-    stepRoll: 1.5
+    stepBob: 0.012
+    runLegDrop: 0.8
+    stepRoll: 3
     turnLean: 6
     landingDip: 0.06
     stopDeceleration: 20
@@ -81,7 +81,7 @@ MonoBehaviour:
     stepLength: 0.22
     boundGait: 0
     driveFeedForward: 1
-    hopCadence: 3
+    hopCadence: 2.5
     legDamperRatio: 0.04
     thighMass: 0
     footMass: 0
@@ -118,13 +118,13 @@ MonoBehaviour:
     climbSag: 0.055
     climbOvershoot: 0.7
     sprintCadence: 3.2
-    sprintLegSwing: 140
+    sprintLegSwing: 60
     sprintArmSwing: 76
     sprintLean: 10
     sprintLift: 0.05
     sprintBob: 0.06
-    sprintRoll: 12
-    sprintTurnLean: 16
+    sprintRoll: 6
+    sprintTurnLean: 10
     sprintBlendSpeed: 4
     sprintDrain: 1
     sprintResume: 0.3
