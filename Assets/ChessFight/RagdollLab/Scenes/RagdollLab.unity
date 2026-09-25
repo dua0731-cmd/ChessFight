@@ -4904,11 +4904,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.LabCamera
   game: {fileID: 140281372}
+  playerIndex: 0
   yaw: 0
-  pitch: 24
-  minDistance: 2.2
-  maxDistance: 28
+  pitch: 14
+  distance: 3.6
+  minDistance: 1.4
+  maxDistance: 9
+  minPitch: -35
+  maxPitch: 70
+  lookHeight: 0.6
   mouseSensitivity: 2.2
+  baseFov: 60
+  sprintFov: 8
+  collisionRadius: 0.2
   freeMode: 0
   soloTarget: {fileID: 0}
 --- !u!81 &1543445442
@@ -4952,7 +4960,7 @@ Camera:
     height: 1
   near clip plane: 0.05
   far clip plane: 300
-  field of view: 50
+  field of view: 60
   orthographic: 0
   orthographic size: 5
   m_Depth: 0

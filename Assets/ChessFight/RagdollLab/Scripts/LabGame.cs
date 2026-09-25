@@ -9,7 +9,9 @@ namespace ChessFight.RagdollLab
 
     /// <summary>
     /// Local two-player ragdoll test rig: spawns pawns, routes input, and owns the lab hotkeys
-    /// (R respawn, T slow motion, F free camera, Tab tuning panel). No networking by design.
+    /// (R respawn, T slow motion, F free camera, F2 split screen, Tab tuning panel). No networking
+    /// by design. Each player has their own third-person camera; P2's appears on the right half of
+    /// the screen the moment P2 touches their controls.
     /// </summary>
     [DefaultExecutionOrder(-100)]
     public class LabGame : MonoBehaviour
@@ -49,6 +51,9 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Another on-screen panel needs the mouse; keep the cursor free so its buttons work.</summary>
         public bool UiWantsCursor { get; set; }
+
+        /// <summary>Each local player has their own half of the screen and their own camera.</summary>
+        public bool SplitScreen { get; private set; }
         public string Status { get; set; } = "";
         public string ParamsPath => Path.Combine(Application.persistentDataPath, "RagdollLabParams.json");
 
@@ -57,6 +62,8 @@ namespace ChessFight.RagdollLab
         Vector3 savedGravity;
         float savedFixedDelta;
         bool swallowMouse;
+        LabCamera[] cameras = Array.Empty<LabCamera>();
+        bool splitChosen;   // F2 was used, so stop switching split screen on by itself
 
         void Awake()
         {
@@ -79,7 +86,80 @@ namespace ChessFight.RagdollLab
             ApplyTime();
             ApplyGravity();
             if (AutoTest) return;
+            SetUpCameras();
+            if (GetComponent<StaminaHud>() == null) gameObject.AddComponent<StaminaHud>().game = this;
             SpawnLocalPlayers();
+        }
+
+        /// <summary>
+        /// One camera per player slot. The scene's camera is P1's; the others are copies of it made
+        /// here, without an AudioListener (Unity wants exactly one).
+        /// </summary>
+        void SetUpCameras()
+        {
+            cameras = new LabCamera[players.Length];
+            if (labCamera == null) return;
+            labCamera.game = this;
+            labCamera.playerIndex = 0;
+            cameras[0] = labCamera;
+            var source = labCamera.Cam;
+            for (int i = 1; i < players.Length; i++)
+            {
+                var go = new GameObject(players[i].name + " Camera");
+                var cam = go.AddComponent<Camera>();
+                if (source != null)
+                {
+                    cam.CopyFrom(source);
+                    cam.depth = source.depth + i;
+                }
+                var follow = go.AddComponent<LabCamera>();
+                follow.game = this;
+                follow.playerIndex = i;
+                follow.mouseSensitivity = labCamera.mouseSensitivity;
+                cam.enabled = false;
+                cameras[i] = follow;
+            }
+            ApplyViewports();
+        }
+
+        /// <summary>The camera a slot looks through: its own when the screen is split, P1's otherwise.</summary>
+        public LabCamera CameraFor(int slotIndex) =>
+            SplitScreen && slotIndex >= 0 && slotIndex < cameras.Length && cameras[slotIndex] != null
+                ? cameras[slotIndex] : labCamera;
+
+        public void SetSplitScreen(bool on)
+        {
+            splitChosen = true;
+            SplitScreen = on;
+            ApplyViewports();
+        }
+
+        void ApplyViewports()
+        {
+            // Online there is one player per PC; the extra local cameras stand down.
+            bool split = SplitScreen && !NetworkControlled && cameras.Length > 1;
+            int views = split ? cameras.Length : 1;
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                var c = cameras[i] != null ? cameras[i].Cam : null;
+                if (c == null) continue;
+                bool on = i == 0 || split;
+                if (i > 0) c.enabled = on;
+                if (on) c.rect = new Rect((float)i / views, 0f, 1f / views, 1f);
+            }
+        }
+
+        /// <summary>Pawns to draw a stamina gauge for, and the camera each one is seen through.</summary>
+        public IEnumerable<(RagdollPawn pawn, LabCamera camera)> HudTargets()
+        {
+            if (labCamera == null) yield break;
+            if (NetworkControlled)
+            {
+                if (labCamera.soloTarget != null) yield return (labCamera.soloTarget, labCamera);
+                yield break;
+            }
+            for (int i = 0; i < players.Length; i++)
+                if (players[i].pawn != null) yield return (players[i].pawn, CameraFor(i));
         }
 
         public void SpawnLocalPlayers()
@@ -108,7 +188,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Input for one local player slot, so a network link can read it without duplicating key maps.</summary>
         public PawnInput ReadPlayerInput(int index) =>
-            index >= 0 && index < players.Length ? ReadInput(players[index]) : default;
+            index >= 0 && index < players.Length ? ReadInput(index) : default;
 
         public RagdollPawn Spawn(Vector3 groundPosition, Vector3 forward, Material material, string displayName)
         {
@@ -174,10 +254,24 @@ namespace ChessFight.RagdollLab
             ApplyGravity();
             if (AutoTest) return;
             HandleHotkeys();
+            ApplyViewports();
             if (!NetworkControlled)
             {
-                foreach (var slot in players)
-                    if (slot.pawn != null) slot.pawn.SetInput(ReadInput(slot));
+                for (int i = 0; i < players.Length; i++)
+                {
+                    var slot = players[i];
+                    if (slot.pawn == null) continue;
+                    var input = ReadInput(i);
+                    // P2 joins the moment they touch their controls: split the screen so they get
+                    // their own camera. F2 turns it off (or on) for good.
+                    if (i > 0 && !SplitScreen && !splitChosen && Touched(input))
+                    {
+                        SplitScreen = true;
+                        ApplyViewports();
+                        input = ReadInput(i);   // re-read against the camera it will actually use
+                    }
+                    slot.pawn.SetInput(input);
+                }
                 foreach (var pawn in RagdollPawn.All)
                     if (pawn.Hips.position.y < LabLayout.KillHeight) Respawn(pawn);
             }
@@ -192,6 +286,7 @@ namespace ChessFight.RagdollLab
             if (Input.GetKeyDown(KeyCode.R) && !NetworkControlled) RespawnAll();
             if (Input.GetKeyDown(KeyCode.T) && !NetworkControlled) SetSlowMotion(!SlowMotion);
             if (Input.GetKeyDown(KeyCode.F)) labCamera.SetFreeMode(!labCamera.freeMode);
+            if (Input.GetKeyDown(KeyCode.F2) && !NetworkControlled) SetSplitScreen(!SplitScreen);
             if (Input.GetKeyDown(KeyCode.Escape)) Cursor.lockState = CursorLockMode.None;
 
             if (slots != null)
@@ -217,8 +312,13 @@ namespace ChessFight.RagdollLab
             Cursor.visible = Cursor.lockState != CursorLockMode.Locked;
         }
 
-        PawnInput ReadInput(Slot slot)
+        static bool Touched(PawnInput input) =>
+            input.move.sqrMagnitude > 0.04f || input.jump || input.shove || input.grab || input.sprint;
+
+        PawnInput ReadInput(int slotIndex)
         {
+            var slot = players[slotIndex];
+            var cam = CameraFor(slotIndex);
             var input = new PawnInput();
             Vector2 mv = Vector2.zero;
             if (SuppressInput) return input;
@@ -229,6 +329,9 @@ namespace ChessFight.RagdollLab
                     mv.x = (Input.GetKey(KeyCode.D) ? 1f : 0f) - (Input.GetKey(KeyCode.A) ? 1f : 0f);
                     mv.y = (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f);
                     input.jump = Input.GetKeyDown(KeyCode.Space);
+                    input.sprint = Input.GetKey(KeyCode.LeftShift);
+                    // The clicks only count once the cursor is locked to the game (click the view once;
+                    // Esc frees it again). Otherwise the click that locks it would also dive.
                     if (Cursor.lockState == CursorLockMode.Locked && !PanelOpen && !swallowMouse)
                     {
                         input.shove = Input.GetMouseButtonDown(0);
@@ -241,6 +344,7 @@ namespace ChessFight.RagdollLab
                     input.jump = Input.GetKeyDown(KeyCode.RightShift);
                     input.shove = Input.GetKeyDown(KeyCode.RightControl);
                     input.grab = Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter);
+                    input.sprint = Input.GetKey(KeyCode.Slash);
                     break;
                 default:
                     int index = PadIndex(slot.device);
@@ -248,14 +352,19 @@ namespace ChessFight.RagdollLab
                     if (!pad.connected) break;
                     mv = pad.left;
                     input.jump = XInputPad.Pressed(index, XInputPad.A);
-                    input.shove = XInputPad.Pressed(index, XInputPad.RB);
+                    input.shove = XInputPad.Pressed(index, XInputPad.RB) || XInputPad.Pressed(index, XInputPad.B);
                     input.grab = XInputPad.Held(index, XInputPad.LB);
+                    input.sprint = pad.leftTrigger > 0.35f || XInputPad.Held(index, XInputPad.LeftThumb);
                     if (XInputPad.Pressed(index, XInputPad.Back)) Respawn(slot.pawn);
-                    if (!labCamera.freeMode) labCamera.AddYaw(pad.right.x * 140f * Time.unscaledDeltaTime);
+                    if (!cam.freeMode)
+                    {
+                        cam.AddYaw(pad.right.x * 150f * Time.unscaledDeltaTime);
+                        cam.AddPitch(-pad.right.y * 90f * Time.unscaledDeltaTime);
+                    }
                     break;
             }
             if (mv.sqrMagnitude > 1f) mv.Normalize();
-            input.move = labCamera.FlatRight * mv.x + labCamera.FlatForward * mv.y;
+            input.move = cam.FlatRight * mv.x + cam.FlatForward * mv.y;
             return input;
         }
 
@@ -354,19 +463,22 @@ namespace ChessFight.RagdollLab
         /// beats rolling, which breaks the spec's rule 3. Lighter legs were tried and did not help:
         /// the bottleneck is drive bandwidth, not inertia.
         ///
-        /// Speed was then cut to 80% (12 -> 9.6 m/s) on playtest feedback. This is the approved run and
-        /// is baked into Settings/RagdollTuning.asset, so the lab and the prefab start with it; "명세
-        /// 시작값" still resets to the spec for A/B, and this button brings the run back.
+        /// Speed was then cut to 80% (12 -> 9.6 m/s) on playtest feedback. That approved run is now the
+        /// SPRINT (held Shift, spends stamina: sprintSpeed and the sprint* gait numbers), and the
+        /// everyday run is a smaller, slower version of it: 5.5 m/s, 2.6 steps a second, a 105 degree
+        /// swing. Baked into Settings/RagdollTuning.asset, so the lab and the prefab start with it;
+        /// "명세 시작값" still resets to the spec for A/B, and this button brings the set back.
         /// </summary>
         public const string StepPresetJson =
             "{'lowerBodySpring':2600,'upperBodySpring':1600," +
-            "'moveSpeed':9.6,'acceleration':20.0,'stopDeceleration':20.0," +
+            "'moveSpeed':5.5,'sprintSpeed':9.6,'acceleration':20.0,'stopDeceleration':20.0," +
             "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.5," +
             "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
-            "'strideLength':1.5,'legSwing':140.0,'armSwing':76.0,'runLean':10.0,'runLift':0.05," +
+            "'strideLength':1.5,'legSwing':105.0,'armSwing':50.0,'runLean':6.0,'runLift':0.05," +
+            "'sprintCadence':3.2,'sprintLegSwing':140.0,'sprintArmSwing':76.0,'sprintLean':10.0," +
             "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.06,'stepRoll':12.0," +
             "'turnLean':16.0,'landingDip':0.06,'stepLength':0.22," +
-            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':3.2,'legDamperRatio':0.04," +
+            "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':2.6,'legDamperRatio':0.04," +
             "'knockdownImpulseThreshold':6.0,'hitImpactThreshold':2.2," +
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 
@@ -374,7 +486,7 @@ namespace ChessFight.RagdollLab
         {
             tuning.LoadJson(StepPresetJson.Replace('\'', '"'));
             MarkTuningDirty();
-            Status = "크게 달리기 프리셋(기본값): 9.6 m/s, 다리 스윙 95도. 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
+            Status = "기본 프리셋: 달리기 5.5 m/s · Shift 전력질주 9.6 m/s (예전 크게 달리기). 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
         }
 
         public void ApplyWeightPreset()

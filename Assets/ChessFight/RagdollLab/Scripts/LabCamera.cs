@@ -3,31 +3,64 @@
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// Shared camera that frames every player, plus a free-fly mode (F) for inspecting poses.
+    /// Third-person orbit camera for one player. It sits behind that player's own pawn, and the mouse
+    /// (or the right stick) swings it around; the wheel zooms. Local two-player play gives each player
+    /// one of these on half the screen (LabGame), and online play follows the pawn this PC controls
+    /// (soloTarget). F toggles a free-fly camera for inspecting poses.
     /// </summary>
     [DefaultExecutionOrder(150)]
     public class LabCamera : MonoBehaviour
     {
         public LabGame game;
+        [Tooltip("The LabGame player slot this camera follows.")]
+        public int playerIndex;
         public float yaw;
-        public float pitch = 24f;
-        public float minDistance = 2.2f;
-        public float maxDistance = 28f;
+        public float pitch = 14f;
+        public float distance = 3.6f;
+        public float minDistance = 1.4f;
+        public float maxDistance = 9f;
+        public float minPitch = -35f;
+        public float maxPitch = 70f;
+        [Tooltip("Aim point above the hips, about the top of the pawn's head.")]
+        public float lookHeight = 0.6f;
         public float mouseSensitivity = 2.2f;
+        public float baseFov = 60f;
+        [Tooltip("Extra field of view at full sprint, for a sense of speed.")]
+        public float sprintFov = 8f;
+        public float collisionRadius = 0.2f;
         public bool freeMode;
 
-        /// <summary>Online play: follow only this pawn instead of framing every local player.</summary>
+        /// <summary>Online play: follow this pawn (the one this PC controls) instead of a local slot's.</summary>
         public RagdollPawn soloTarget;
 
+        Camera cam;
         Vector3 focus, focusVelocity;
-        float distance = 6f;
+        float heightVelocity, shown, fovKick;
         bool initialized;
+        RagdollPawn followed;
         float freeYaw, freePitch;
+        readonly RaycastHit[] hits = new RaycastHit[16];
 
+        public Camera Cam => cam != null ? cam : cam = GetComponent<Camera>();
         public Vector3 FlatForward => Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
         public Vector3 FlatRight => Quaternion.Euler(0f, yaw, 0f) * Vector3.right;
 
+        /// <summary>The pawn this camera is following, or null.</summary>
+        public RagdollPawn Target
+        {
+            get
+            {
+                if (soloTarget != null) return soloTarget;
+                if (game != null && playerIndex >= 0 && playerIndex < game.players.Length) return game.players[playerIndex].pawn;
+                return null;
+            }
+        }
+
         public void AddYaw(float degrees) => yaw += degrees;
+
+        public void AddPitch(float degrees) => pitch = Mathf.Clamp(pitch + degrees, minPitch, maxPitch);
+
+        public void Zoom(float steps) => distance = Mathf.Clamp(distance * Mathf.Pow(0.88f, steps), minDistance, maxDistance);
 
         public void SetFreeMode(bool on)
         {
@@ -40,55 +73,77 @@ namespace ChessFight.RagdollLab
             freeMode = on;
         }
 
+        /// <summary>The mouse belongs to whichever slot plays on keyboard and mouse.</summary>
+        bool MouseDriven =>
+            game == null || playerIndex < 0 || playerIndex >= game.players.Length
+            || game.players[playerIndex].device == LabDevice.KeyboardMouse;
+
         void LateUpdate()
         {
             float dt = Time.unscaledDeltaTime;
-            bool mouseLook = Cursor.lockState == CursorLockMode.Locked && (game == null || !game.PanelOpen);
+            bool mouseLook = MouseDriven && Cursor.lockState == CursorLockMode.Locked && (game == null || !game.PanelOpen);
             if (freeMode)
             {
                 FreeFly(dt, mouseLook);
                 return;
             }
-            if (mouseLook) yaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
-
-            bool any = false;
-            Bounds bounds = default;
-            if (soloTarget != null) Include(ref bounds, ref any, soloTarget.Hips.position);
-            else if (game != null)
+            if (mouseLook)
             {
-                foreach (var slot in game.players)
-                {
-                    if (slot.pawn == null) continue;
-                    Include(ref bounds, ref any, slot.pawn.Hips.position);
-                }
+                yaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
+                AddPitch(-Input.GetAxisRaw("Mouse Y") * mouseSensitivity);
+                float wheel = Input.mouseScrollDelta.y;
+                if (Mathf.Abs(wheel) > 0.01f) Zoom(wheel);
             }
-            if (!any)
-                foreach (var pawn in RagdollPawn.All) Include(ref bounds, ref any, pawn.Hips.position);
-            if (!any) return;
 
-            Vector3 target = bounds.center + Vector3.up * 0.2f;
-            float spread = Mathf.Max(bounds.size.x, bounds.size.z, bounds.size.y * 1.5f);
-            float want = Mathf.Clamp(minDistance + spread * 1.15f, minDistance, maxDistance);
-            if (!initialized)
+            var pawn = Target;
+            if (pawn == null && RagdollPawn.All.Count > 0) pawn = RagdollPawn.All[0];
+            if (pawn == null) return;
+
+            // The hips TRANSFORM, not the rigidbody: only the transform is interpolated between physics
+            // steps, and following the raw body position made the whole view stutter at speed.
+            Vector3 want = pawn.Hips.transform.position + Vector3.up * lookHeight;
+            if (!initialized || pawn != followed || (want - focus).sqrMagnitude > 36f)
             {
-                focus = target;
-                distance = want;
+                // First frame, a new pawn, or a respawn: cut rather than swoop across the arena.
+                if (!initialized || pawn != followed) yaw = Mathf.Atan2(pawn.Facing.x, pawn.Facing.z) * Mathf.Rad2Deg;
+                focus = want;
+                focusVelocity = Vector3.zero;
+                heightVelocity = 0f;
+                shown = distance;
                 initialized = true;
+                followed = pawn;
             }
-            focus = Vector3.SmoothDamp(focus, target, ref focusVelocity, 0.12f, Mathf.Infinity, dt);
-            distance = Mathf.Lerp(distance, want, 1f - Mathf.Exp(-3f * dt));
-            Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
-            transform.SetPositionAndRotation(focus - rot * Vector3.forward * distance, rot);
-        }
+            // Loose vertically so the running bob and small hops do not shake the view, tight
+            // horizontally so the pawn stays put on screen; looser still while it tumbles.
+            float flatLag = pawn.State == PawnState.Ragdoll ? 0.12f : 0.05f;
+            Vector3 flat = Vector3.SmoothDamp(new Vector3(focus.x, 0f, focus.z), new Vector3(want.x, 0f, want.z),
+                ref focusVelocity, flatLag, Mathf.Infinity, dt);
+            float y = Mathf.SmoothDamp(focus.y, want.y, ref heightVelocity, 0.14f, Mathf.Infinity, dt);
+            focus = new Vector3(flat.x, y, flat.z);
 
-        static void Include(ref Bounds bounds, ref bool any, Vector3 point)
-        {
-            if (!any)
+            Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
+            Vector3 back = rot * Vector3.back;
+            // Pull in in front of walls, snap in and ease back out. Pawns never block the view:
+            // with a crowd around, the camera would otherwise dive into someone's head.
+            float allowed = distance;
+            int n = Physics.SphereCastNonAlloc(focus, collisionRadius, back, hits, distance, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
             {
-                bounds = new Bounds(point, Vector3.zero);
-                any = true;
+                var h = hits[i];
+                if (h.distance <= 0f || RagdollPawn.ColliderOwner.ContainsKey(h.collider)) continue;
+                allowed = Mathf.Min(allowed, h.distance);
             }
-            else bounds.Encapsulate(point);
+            shown = allowed < shown ? allowed : Mathf.Lerp(shown, allowed, 1f - Mathf.Exp(-4f * dt));
+            transform.SetPositionAndRotation(focus + back * Mathf.Max(0.3f, shown), rot);
+
+            if (Cam != null)
+            {
+                var p = pawn.P;
+                float span = Mathf.Max(0.1f, p.sprintSpeed - p.moveSpeed);
+                float kick = sprintFov * Mathf.Clamp01((pawn.HorizontalSpeed - p.moveSpeed) / span);
+                fovKick = Mathf.Lerp(fovKick, kick, 1f - Mathf.Exp(-3f * dt));
+                Cam.fieldOfView = baseFov + fovKick;
+            }
         }
 
         void FreeFly(float dt, bool mouseLook)

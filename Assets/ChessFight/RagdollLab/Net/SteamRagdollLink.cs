@@ -10,7 +10,7 @@ namespace ChessFight.RagdollLab.Net
 {
     /// <summary>
     /// Host-authoritative ragdoll over Steam for the lab. The host runs the only physics simulation;
-    /// clients send 24-byte inputs and draw interpolated poses (63 bytes per pawn) with no local physics.
+    /// clients send 24-byte inputs and draw interpolated poses (64 bytes per pawn) with no local physics.
     /// It boots itself in the RagdollLab scene and stays out of the way until a match actually starts,
     /// so local two-player testing is unchanged.
     /// </summary>
@@ -35,7 +35,7 @@ namespace ChessFight.RagdollLab.Net
         struct RemoteInput
         {
             public Vector2 move;
-            public bool jump, shove, grab;
+            public bool jump, shove, grab, sprint;
             public uint sequence, clientTimeMs;
             public float received;
         }
@@ -62,13 +62,15 @@ namespace ChessFight.RagdollLab.Net
         float lastSnapshotSend, lastInputSend, lastReceive, statsAt;
         double playbackMs;
         Vector2 pendingMove;
-        bool pendingJump, pendingShove, pendingGrab;
+        bool pendingJump, pendingShove, pendingGrab, pendingSprint;
         int sentBytes, receivedBytes, snapshotsIn;
         int sentRate, receivedRate, snapshotRate;
         float roundTripMs;
         string roomCode = "";
         string message = "";
-        bool hudOpen = true;
+        // Closed by default: while it is open the cursor stays free for its buttons, and a free cursor
+        // means no mouse look and no left/right click actions - which read as "the clicks are broken".
+        bool hudOpen;
         GUIStyle label, small, button;
         Texture2D panel;
 
@@ -77,7 +79,8 @@ namespace ChessFight.RagdollLab.Net
         void Awake()
         {
             game = FindFirstObjectByType<LabGame>();
-            cam = FindFirstObjectByType<LabCamera>();
+            // P1's camera specifically: local split screen adds a second LabCamera for P2.
+            cam = game != null && game.labCamera != null ? game.labCamera : FindFirstObjectByType<LabCamera>();
             session = new SteamSession();
             session.Initialize();
             if (!session.Online) return;
@@ -111,6 +114,7 @@ namespace ChessFight.RagdollLab.Net
             if (session == null || game == null) return;
             if (Input.GetKeyDown(KeyCode.F3)) hudOpen = !hudOpen;
             // The lab locks the cursor for mouse-look; this panel needs it back or its buttons never get clicked.
+            // Only while it is open, though: F3 closes it and the clicks go back to the pawn.
             game.UiWantsCursor = hudOpen && !game.AutoTest;
             session.Tick();
             if (!session.Online) return;
@@ -145,6 +149,7 @@ namespace ChessFight.RagdollLab.Net
                     jump = remote.jump,
                     shove = remote.shove,
                     grab = remote.grab,
+                    sprint = remote.sprint,
                 });
                 remote.jump = false;
                 remote.shove = false;
@@ -203,11 +208,12 @@ namespace ChessFight.RagdollLab.Net
             pendingJump |= local.jump;
             pendingShove |= local.shove;
             pendingGrab = local.grab;
+            pendingSprint = local.sprint;
 
             if (Time.realtimeSinceStartup - lastInputSend >= InputInterval)
             {
                 lastInputSend = Time.realtimeSinceStartup;
-                byte[] bytes = RagdollNetProtocol.Input(session.Match, ++sequence, NowMs(), pendingMove, pendingJump, pendingShove, pendingGrab);
+                byte[] bytes = RagdollNetProtocol.Input(session.Match, ++sequence, NowMs(), pendingMove, pendingJump, pendingShove, pendingGrab, pendingSprint);
                 Send(session.Host, bytes);
                 pendingJump = false;
                 pendingShove = false;
@@ -286,6 +292,8 @@ namespace ChessFight.RagdollLab.Net
             game.DespawnAll();
             game.NetworkControlled = true;
             ResetStream();
+            // Hand the mouse to the pawn: the panel would otherwise keep the cursor free all match.
+            hudOpen = false;
             message = session.IsHost ? "호스트로 경기를 시작했어요." : "호스트에 접속했어요.";
         }
 
@@ -382,7 +390,7 @@ namespace ChessFight.RagdollLab.Net
         void ReceiveInput(ulong sender, byte[] bytes)
         {
             if (!session.Roster.ContainsKey(sender)) return;
-            if (!RagdollNetProtocol.ReadInput(bytes, session.Match, out uint seq, out uint clientTime, out var move, out bool jump, out bool shove, out bool grab)) return;
+            if (!RagdollNetProtocol.ReadInput(bytes, session.Match, out uint seq, out uint clientTime, out var move, out bool jump, out bool shove, out bool grab, out bool sprint)) return;
             inputs.TryGetValue(sender, out var previous);
             if (previous.sequence != 0 && !RagdollNetProtocol.Newer(seq, previous.sequence)) return;
             inputs[sender] = new RemoteInput
@@ -391,6 +399,7 @@ namespace ChessFight.RagdollLab.Net
                 jump = previous.jump | jump,
                 shove = previous.shove | shove,
                 grab = grab,
+                sprint = sprint,
                 sequence = seq,
                 clientTimeMs = clientTime,
                 received = Time.realtimeSinceStartup,
@@ -438,7 +447,7 @@ namespace ChessFight.RagdollLab.Net
             playbackMs = 0d;
             roundTripMs = 0f;
             lastReceive = Time.realtimeSinceStartup;
-            pendingJump = pendingShove = pendingGrab = false;
+            pendingJump = pendingShove = pendingGrab = pendingSprint = false;
         }
 
         void UpdateStats()
@@ -461,14 +470,17 @@ namespace ChessFight.RagdollLab.Net
             float x = game.PanelOpen ? 500f : 12f;
             if (!hudOpen)
             {
-                GUI.Label(new Rect(x, Screen.height - 26f, 600f, 22f), "F3: 온라인 패널", small);
+                string line = matchActive
+                    ? $"F3: 온라인 패널 · {(session.IsHost ? "호스트" : "참가자")} · {pawns.Count}명"
+                    : "F3: 온라인 패널 (방 만들기·참가)";
+                GUI.Label(new Rect(x, Screen.height - 26f, 600f, 22f), line, small);
                 return;
             }
 
             float width = 430f, height = matchActive ? 210f : 300f;
             GUILayout.BeginArea(new Rect(x, Screen.height - height - 12f, width, height), GUIContent.none, GUI.skin.box);
             GUI.DrawTexture(new Rect(0f, 0f, width, height), panel);
-            GUILayout.Label("온라인 (F3으로 닫기)", label);
+            GUILayout.Label("온라인 (F3으로 닫기 - 열려 있는 동안은 마우스 조작이 멈춰요)", label);
             GUILayout.Label(session.Online ? $"스팀: {session.Name(session.Self)}" : "스팀에 연결되지 않았어요 (Steam 실행 후 다시 시작)", small);
             GUILayout.Label(session.Status + (string.IsNullOrEmpty(session.Error) ? "" : "  " + session.Error), small);
             if (!string.IsNullOrEmpty(message)) GUILayout.Label(message, small);

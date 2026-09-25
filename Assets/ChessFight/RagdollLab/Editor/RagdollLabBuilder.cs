@@ -766,7 +766,7 @@ namespace ChessFight.RagdollLab.Editor
             var camera = cameraGo.AddComponent<Camera>();
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = sky;
-            camera.fieldOfView = 50f;
+            camera.fieldOfView = 60f;
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 300f;
             cameraGo.AddComponent<AudioListener>();

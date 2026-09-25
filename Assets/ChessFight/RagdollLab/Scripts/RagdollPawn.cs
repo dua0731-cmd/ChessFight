@@ -13,8 +13,12 @@ namespace ChessFight.RagdollLab
         /// <summary>World-space horizontal move direction, length 0..1.</summary>
         public Vector3 move;
         public bool jump;
+        /// <summary>Left click. A dive / slide tackle; a throw while holding someone; a thrash while held.
+        /// (The name is from when it was a shove, and the wire format still calls it that.)</summary>
         public bool shove;
         public bool grab;
+        /// <summary>Held: sprint while stamina lasts.</summary>
+        public bool sprint;
     }
 
     /// <summary>
@@ -63,6 +67,28 @@ namespace ChessFight.RagdollLab
         public bool OnSlope => Grounded && SlopeAngle >= P.slopeAngleThreshold;
         public bool Grabbing => handL.IsHolding || handR.IsHolding;
         public bool Shoving => shoveTimer > 0f;
+
+        /// <summary>Thrown itself forward on purpose: limp like a knockdown, but not counted as one,
+        /// and back up as soon as the slide runs out.</summary>
+        public bool Diving { get; private set; }
+
+        /// <summary>Holding sprint with stamina to spend.</summary>
+        public bool Sprinting { get; private set; }
+
+        /// <summary>Ran the stamina dry: no sprint and no new climb until it is back to sprintResume.</summary>
+        public bool Exhausted { get; private set; }
+
+        /// <summary>How far between the run (0) and the sprint (1) the gait currently is.</summary>
+        public float SprintBlend => sprintBlend;
+
+        /// <summary>The speed the pawn is running at right now, between moveSpeed and sprintSpeed.</summary>
+        public float TopSpeed => Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend);
+
+        /// <summary>Pawns this one has floored with a dive.</summary>
+        public int Tackles { get; private set; }
+
+        /// <summary>Times the launch guard stopped the body hopping off the ground on its own.</summary>
+        public int HopsCaught { get; private set; }
         public int Knockdowns { get; private set; }
         public string LastKnockdownCause { get; private set; } = "-";
         public float LastRagdollTime { get; private set; }
@@ -86,8 +112,9 @@ namespace ChessFight.RagdollLab
         /// RagdollVisualSync draws the arms out to meet them while this is set.</summary>
         public bool ArmsStretched => climbKinematic;
 
-        /// <summary>0..1. Empty means the hands let go.</summary>
-        public float Stamina => P.climbStaminaMax <= 0f ? 0f : Mathf.Clamp01(stamina / P.climbStaminaMax);
+        /// <summary>0..1. Empty means the hands let go. Remote pawns read it off the wire.</summary>
+        public float Stamina => NetworkPuppet ? netStamina
+            : stamina < 0f ? 1f : P.climbStaminaMax <= 0f ? 0f : Mathf.Clamp01(stamina / P.climbStaminaMax);
 
         /// <summary>Remote pawn: physics off, poses written from the network each frame.</summary>
         public bool NetworkPuppet { get; private set; }
@@ -101,7 +128,7 @@ namespace ChessFight.RagdollLab
         public RagdollParams P => tuning != null ? tuning.values : fallback;
         readonly RagdollParams fallback = new RagdollParams();
 
-        static PhysicsMaterial bodyMaterial, footMaterial, handMaterial, ragdollMaterial;
+        static PhysicsMaterial bodyMaterial, footMaterial, handMaterial, ragdollMaterial, diveMaterial;
 
         PhysicsMaterial ownFootMaterial;
         PawnInput input;
@@ -151,6 +178,14 @@ namespace ChessFight.RagdollLab
         RagdollPawn holder;
         Collider heldCollider;
         float stamina = -1f;   // seconds; negative until the first tick reads the max
+        float staminaIdle;     // seconds since stamina was last spent; recovery waits for it
+        float sprintBlend, netStamina = 1f;
+        float diveCooldown, jumpTimer, ledgePush;
+        // While positive the launch guard stands down: set whenever the pawn is SUPPOSED to leave
+        // the ground (a jump, a vault, the end of a climb, getting up).
+        float freeFlight;
+        Vector3 diveDirection = Vector3.forward;
+        bool launchCut;
         bool wantsMove, wasGrounded;
 
         float contactTimer, hitTimer, shoveTimer, shoveCooldown, airTimer, coyote, stateTimer, gait;
@@ -245,15 +280,25 @@ namespace ChessFight.RagdollLab
                 dynamicFriction = 0.1f, staticFriction = 0.1f, bounciness = 0f,
                 frictionCombine = PhysicsMaterialCombine.Minimum, bounceCombine = PhysicsMaterialCombine.Minimum,
             };
+            // Separate from the tumble material: both are shared by every pawn, and a dive wants its
+            // own slide without changing how everybody else rolls.
+            diveMaterial = new PhysicsMaterial("PawnDive")
+            {
+                dynamicFriction = 0.3f, staticFriction = 0.3f, bounciness = 0f,
+                frictionCombine = PhysicsMaterialCombine.Minimum, bounceCombine = PhysicsMaterialCombine.Minimum,
+            };
         }
 
         /// <summary>Low friction while limp so a tumble keeps its momentum (spec: rolling downhill is faster).</summary>
-        void SetRagdollFriction(bool limp)
+        void SetRagdollFriction(bool limp, bool dive = false)
         {
             ragdollMaterial.dynamicFriction = P.ragdollFriction;
             ragdollMaterial.staticFriction = P.ragdollFriction;
+            diveMaterial.dynamicFriction = P.diveFriction;
+            diveMaterial.staticFriction = P.diveFriction;
+            PhysicsMaterial limpMaterial = dive ? diveMaterial : ragdollMaterial;
             for (int i = 0; i < own.Count; i++)
-                own[i].sharedMaterial = limp ? ragdollMaterial : ownMaterial[i];
+                own[i].sharedMaterial = limp ? limpMaterial : ownMaterial[i];
         }
 
         public bool Owns(Collider c) => ownSet.Contains(c);
@@ -262,6 +307,7 @@ namespace ChessFight.RagdollLab
         {
             input.move = next.move;
             input.grab = next.grab;
+            input.sprint = next.sprint;
             input.jump |= next.jump;
             input.shove |= next.shove;
         }
@@ -284,11 +330,15 @@ namespace ChessFight.RagdollLab
             if (NetworkPuppet) return;
             var p = P;
             float dt = Time.fixedDeltaTime;
+            if (stamina < 0f) stamina = p.climbStaminaMax;
             contactTimer -= dt;
             hitTimer -= dt;
             shoveTimer -= dt;
             shoveCooldown -= dt;
             airTimer -= dt;
+            diveCooldown -= dt;
+            jumpTimer -= dt;
+            freeFlight -= dt;
 
             SenseGround();
             coyote = Grounded ? 0.12f : coyote - dt;
@@ -297,12 +347,14 @@ namespace ChessFight.RagdollLab
             UpdateStiffness(p, dt);
             float k = Stiffness * StateFactor;
 
-            Jump(p);
+            Jump(p, dt);
             Mantle(dt);
             UpdateClimb(p, dt);
+            UpdateSprint(p, dt);
             Locomotion(p, dt);
             Struggle(p, dt);
             Shove(p);
+            UpdateStamina(p, dt);
             bool wantGrab = input.grab && State != PawnState.Ragdoll && !Climbing;
             handL.Tick(wantGrab, p, dt, Climbing);
             handR.Tick(wantGrab, p, dt, Climbing);
@@ -311,6 +363,7 @@ namespace ChessFight.RagdollLab
             if (Climbing) ApplyClimbPose(p);
             else EndClimbPose();
             Drives(p, k);
+            GuardLaunch(p);
 
             input.jump = false;
             input.shove = false;
@@ -337,7 +390,10 @@ namespace ChessFight.RagdollLab
                 groundFound = true;
             }
             bool feet = FootTouches(footL) || FootTouches(footR);
-            bool near = groundFound && bodies[0].position.y - groundY < standHeight + 0.1f;
+            // The hips ride up to runLift + stepBob above standing height on purpose; counting that as
+            // "off the ground" flickered Grounded on every stride, and each flicker let the body fly.
+            float ride = standHeight + P.runLift + P.stepBob + 0.1f;
+            bool near = groundFound && bodies[0].position.y - groundY < ride;
             Grounded = State != PawnState.Ragdoll && airTimer <= 0f && (feet || near);
             SlopeAngle = groundFound ? Vector3.Angle(groundNormal, Vector3.up) : 0f;
         }
@@ -371,7 +427,14 @@ namespace ChessFight.RagdollLab
                     break;
                 case PawnState.Ragdoll:
                     StateFactor = 0f;
-                    if (stateTimer >= p.getUpDelay) BeginGetUp(p);
+                    if (Diving)
+                    {
+                        // Up as soon as the slide has run out, or at the latest diveMaxTime. On a steep
+                        // enough hill it never runs out, and getting up keeps the speed it earned.
+                        bool slowed = stateTimer >= p.diveMinTime && HorizontalSpeed < p.diveGetUpSpeed;
+                        if (slowed || stateTimer >= p.diveMaxTime) BeginGetUp(p);
+                    }
+                    else if (stateTimer >= p.getUpDelay) BeginGetUp(p);
                     break;
                 case PawnState.GettingUp:
                     float t = Mathf.Clamp01(stateTimer / Mathf.Max(0.01f, p.getUpBlendTime));
@@ -381,6 +444,8 @@ namespace ChessFight.RagdollLab
                         State = PawnState.Active;
                         stateTimer = 0f;
                         StateFactor = 1f;
+                        // The anchor has just hauled the body up to standing; let it settle.
+                        freeFlight = Mathf.Max(freeFlight, 0.3f);
                     }
                     break;
             }
@@ -389,24 +454,78 @@ namespace ChessFight.RagdollLab
         public void Knockdown(string cause)
         {
             EndClimbPose();
-            if (State == PawnState.Ragdoll) return;
+            if (State == PawnState.Ragdoll && !Diving) return;
+            Knockdowns++;
+            LastKnockdownCause = cause;
+            if (Diving)
+            {
+                // Already limp: the dive just turns into a real fall and waits out getUpDelay.
+                Diving = false;
+                stateTimer = 0f;
+                SetRagdollFriction(true);
+                return;
+            }
+            GoLimp(false);
+        }
+
+        void GoLimp(bool dive)
+        {
             State = PawnState.Ragdoll;
             stateTimer = 0f;
             StateFactor = 0f;
-            Knockdowns++;
-            LastKnockdownCause = cause;
+            Diving = dive;
             handL.Release();
             handR.Release();
             shoveTimer = 0f;
             throwOnShoveEnd = false;
-            SetRagdollFriction(true);
+            SetRagdollFriction(true, dive);
+        }
+
+        /// <summary>
+        /// Left click on the move: throw the whole body forward, head first, and go limp. It is a
+        /// ragdoll on purpose, so it floors whoever it hits (see OnPartCollision) and slides on the
+        /// low-friction dive material - on a downhill that is faster than running. It does not count
+        /// as a knockdown, and the pawn gets up by itself once the slide runs out.
+        /// </summary>
+        void Dive(RagdollParams p)
+        {
+            Vector3 want = Flat(input.move);
+            Vector3 dir = want.sqrMagnitude > 0.04f ? want.normalized : facing;
+            Vector3 travel = Flat(ComVelocity());
+            float along = Mathf.Max(0f, Vector3.Dot(travel, dir));
+            // A dive adds speed but never takes any away: from a downhill tumble at 14 m/s it keeps 14.
+            float speed = Mathf.Max(along, Mathf.Min(along + p.diveBoost, p.diveMaxSpeed));
+            Vector3 drift = (travel - dir * Vector3.Dot(travel, dir)) * 0.3f;
+            bool onGround = Grounded || coyote > 0f;
+            float hipsY = bodies[0].position.y;
+            for (int i = 0; i < Count; i++)
+            {
+                Vector3 v = bodies[i].linearVelocity;
+                Vector3 next = dir * speed + drift;
+                // From the ground it is a short hop so the body has room to tip over; in the air it
+                // only softens the fall a little (no free double jump).
+                next.y = onGround ? Mathf.Max(v.y, p.diveLift) : v.y + p.diveLift * 0.25f;
+                // Head first: everything above the hips moves forward faster, everything below slower.
+                next += dir * (p.divePitchKick * (bodies[i].position.y - hipsY));
+                bodies[i].linearVelocity = next;
+            }
+            facing = dir;
+            diveDirection = dir;
+            UseStamina(p, p.diveStamina);
+            GoLimp(true);
         }
 
         void BeginGetUp(RagdollParams p)
         {
             LastRagdollTime = stateTimer;
+            if (Diving)
+            {
+                Diving = false;
+                diveCooldown = p.diveCooldown;
+            }
             State = PawnState.GettingUp;
             stateTimer = 0f;
+            freeFlight = Mathf.Max(freeFlight, 0.3f);
             SetRagdollFriction(false);
             Vector3 v = Flat(bodies[0].linearVelocity);
             anchorVel = v * p.momentumRetention;
@@ -442,15 +561,12 @@ namespace ChessFight.RagdollLab
         void ClampOverspeed(RagdollParams p, float dt)
         {
             if (p.overspeedClamp <= 0.001f || State != PawnState.Active || !Grounded || OnSlope) return;
-            float limit = p.moveSpeed * p.overspeedClamp;
-            Vector3 momentum = Vector3.zero;
-            float mass = 0f;
-            foreach (var rb in bodies)
-            {
-                momentum += rb.linearVelocity * rb.mass;
-                mass += rb.mass;
-            }
-            Vector3 travel = Flat(momentum / Mathf.Max(0.001f, mass));
+            // Measured against the anchor as well as the run speed: letting go of sprint, or getting
+            // up from a dive with speed to spare, sheds it at overspeedDecay through the anchor. The
+            // anchor itself never goes past the run speed otherwise, so the launch this clamp exists
+            // for is still caught.
+            float limit = Mathf.Max(TopSpeed, anchorVel.magnitude) * p.overspeedClamp;
+            Vector3 travel = Flat(ComVelocity());
             float speed = travel.magnitude;
             if (speed <= limit) return;
             Vector3 excess = travel * ((speed - limit) / speed) * Mathf.Clamp01(dt * 25f);
@@ -466,6 +582,9 @@ namespace ChessFight.RagdollLab
                 anchorPos = hp;
                 anchorVel = Flat(hips.linearVelocity);
                 anchor.MovePosition(anchorPos);
+                // Belly-down along the dive: the drives that stay on (diveHold) hold that shape.
+                if (Diving)
+                    anchor.MoveRotation(Quaternion.LookRotation(diveDirection, Vector3.up) * Quaternion.Euler(p.divePitch, 0f, 0f));
                 return;
             }
 
@@ -479,7 +598,16 @@ namespace ChessFight.RagdollLab
             if (move.sqrMagnitude > 1f) move.Normalize();
             bool moving = move.sqrMagnitude > 0.0025f;
             wantsMove = moving;
-            float speedN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, p.moveSpeed));
+            float top = TopSpeed;
+            // The gait is scaled to whichever speed the pawn is going for, so a run is a whole run
+            // and not a sprint cut short.
+            float speedN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, top));
+            // A pawn off the ground for a moment without jumping - a bump, a hard stop, a sharp turn -
+            // is still running. Keep the hips pulled down to standing height through the coyote
+            // window instead of letting the anchor ride up with them: that is what turned every
+            // small bump into a hop, and pressing jump on top of the hop into a huge one.
+            bool planted = Grounded || (coyote > 0f && jumpTimer <= 0f && freeFlight <= 0f && groundFound
+                                        && hp.y - groundY < standHeight + 0.35f);
             // Feet slide while travelling, lunging into a shove, or reeling from a hit; they grip when idle.
             bool sliding = moving || anchorVel.sqrMagnitude > 0.25f || shoveTimer > 0f || hitTimer > 0f
                            || HorizontalSpeed > 0.6f;
@@ -491,8 +619,10 @@ namespace ChessFight.RagdollLab
                 float current = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
                 float target = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;
                 float wanted = Mathf.LerpAngle(current, target, 1f - Mathf.Exp(-p.turnResponsiveness * dt));
-                // A body at speed cannot pivot on the spot; cap how fast the facing may swing.
-                float maxStep = Mathf.Lerp(1080f, p.turnRateTopSpeed, speedN) * dt;
+                // A body at speed cannot pivot on the spot; cap how fast the facing may swing. Measured
+                // against the sprint, so the slower run turns more sharply than the sprint does.
+                float fastN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, SprintTop(p)));
+                float maxStep = Mathf.Lerp(1080f, p.turnRateTopSpeed, fastN) * dt;
                 float delta = Mathf.Clamp(Mathf.DeltaAngle(current, wanted), -maxStep, maxStep);
                 turnRate = Mathf.Lerp(turnRate, delta / Mathf.Max(dt, 1e-4f), 0.3f);
                 float yaw = (current + delta) * Mathf.Deg2Rad;
@@ -501,10 +631,10 @@ namespace ChessFight.RagdollLab
             else turnRate = Mathf.Lerp(turnRate, 0f, 0.3f);
 
             Vector3 groundVel = Grounded && groundBody != null ? Flat(groundBody.GetPointVelocity(hp)) : Vector3.zero;
-            Vector3 targetVel = move * p.moveSpeed + groundVel;
-            float accel = (moving ? p.acceleration : p.stopDeceleration) * (Grounded ? 1f : p.airControl);
+            Vector3 targetVel = move * top + groundVel;
+            float accel = (moving ? p.acceleration : p.stopDeceleration) * (planted ? 1f : p.airControl);
             // Push off in steps instead of gliding: thrust peaks as each foot takes weight.
-            if (p.stanceThrust > 0f && Grounded && moving)
+            if (p.stanceThrust > 0f && planted && moving)
             {
                 // Walk: two pushes per cycle. Hop: one push while the feet are down, nothing at the
                 // apex. Both waves average 1.0 so the top speed does not change either way.
@@ -514,7 +644,7 @@ namespace ChessFight.RagdollLab
                 accel *= Mathf.Lerp(1f, Mathf.Max(0.3f, push), p.stanceThrust);
             }
             float speedNow = anchorVel.magnitude;
-            if (speedNow > p.moveSpeed + 0.1f && Vector3.Dot(anchorVel, targetVel) > 0f)
+            if (speedNow > top + 0.1f && Vector3.Dot(anchorVel, targetVel) > 0f)
             {
                 // Momentum from a tumble or a slope: steer toward the input, shed the extra speed slowly.
                 Vector3 dir = Vector3.RotateTowards(anchorVel / speedNow, targetVel.normalized, p.turnResponsiveness * 0.5f * dt, 0f);
@@ -532,7 +662,7 @@ namespace ChessFight.RagdollLab
             }
             // In the air the anchor may only lead a little: the bell-shaped skirt meets walls at a slant,
             // so pressing into a wall would push the pawn down and kill the jump.
-            float leash = Grounded ? p.anchorLeash : p.anchorLeash * p.airControl * 0.5f;
+            float leash = planted ? p.anchorLeash : p.anchorLeash * p.airControl * 0.5f;
             if (shoveTimer > 0f)
             {
                 // The shove is a short step into the target: the anchor leads the hips forward.
@@ -572,16 +702,16 @@ namespace ChessFight.RagdollLab
             }
             // Running lifts the hips a little so the one-piece legs swing clear instead of scraping.
             // Airborne: ride along with the hips (one step ahead) so the vertical drive never brakes a jump.
-            float lift = p.runLift * Mathf.Clamp01(anchorVel.magnitude / Mathf.Max(0.1f, p.moveSpeed));
+            float lift = p.runLift * Mathf.Clamp01(anchorVel.magnitude / Mathf.Max(0.1f, top));
             landDip = Mathf.MoveTowards(landDip, 0f, dt * 0.8f);
-            if (Grounded && !wasGrounded && p.landingDip > 0f)
+            if (planted && !wasGrounded && p.landingDip > 0f)
                 landDip = Mathf.Max(landDip, p.landingDip * Mathf.Clamp01(-hips.linearVelocity.y / 6f));
-            wasGrounded = Grounded;
+            wasGrounded = planted;
             // The hips rise on every push-off and sink for a moment after a landing.
             // Two rises per cycle for a walk, one big rise per cycle for a hop.
             float bobWave = Mathf.Lerp(Mathf.Abs(Mathf.Sin(gait)), hopArc, p.boundGait);
             float bob = p.stepBob * bobWave * speedN;
-            next.y = Grounded && groundFound
+            next.y = planted && groundFound
                 ? groundY + standHeight + lift + bob - landDip - strideDrop
                 : hp.y + hips.linearVelocity.y * dt;
             anchorPos = next;
@@ -589,7 +719,7 @@ namespace ChessFight.RagdollLab
 
             // The anchor's rotation is the hips' balance target (upright + facing + lean); the anchor
             // joint's angular drives pull the hips toward it (implicit, so stiff values stay stable).
-            float lean = p.runLean * speedN;
+            float lean = Mathf.Lerp(p.runLean, p.sprintLean, sprintBlend) * speedN;
             if (shoveTimer > 0f) lean += p.shoveLean;
             else if (input.grab && !Grabbing) lean += p.grabLean;
             // Sway with each step, and lean into a turn the way a runner has to.
@@ -601,12 +731,19 @@ namespace ChessFight.RagdollLab
             ClampOverspeed(p, dt);
         }
 
-        void Jump(RagdollParams p)
+        void Jump(RagdollParams p, float dt)
         {
-            if (!input.jump || State == PawnState.Ragdoll) return;
-            bool fromGround = coyote > 0f && airTimer <= 0f;
-            bool pullUp = !fromGround && !pullUpUsed && (handL.HoldingLedge || handR.HoldingLedge);
+            // Hanging off a ledge by the hands, holding forward is enough to climb onto it: after a
+            // moment it does the same vault the jump button does. (Only the jump used to, so holding
+            // W under a ledge just dangled there.)
+            bool onLedge = handL.HoldingLedge || handR.HoldingLedge;
+            ledgePush = onLedge && !Grounded && Vector3.Dot(Flat(input.move), facing) > 0.5f ? ledgePush + dt : 0f;
+            bool autoVault = ledgePush >= 0.35f && !pullUpUsed;
+            if ((!input.jump && !autoVault) || State == PawnState.Ragdoll) return;
+            bool fromGround = coyote > 0f && airTimer <= 0f && !autoVault;
+            bool pullUp = !fromGround && !pullUpUsed && onLedge;
             if (!fromGround && !pullUp) return;
+            ledgePush = 0f;
             float up = p.jumpImpulse * (pullUp ? p.pullUpFactor : 1f);
             Vector3 toward = Vector3.zero;
             if (pullUp)
@@ -624,22 +761,34 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < Count; i++)
             {
                 Vector3 v = bodies[i].linearVelocity + toward;
-                v.y = Mathf.Max(v.y, 0f) + up;
+                // SET the rise, never add to it. Adding stacked the jump on top of whatever the body
+                // was already doing, so jumping out of a bump went twice as high as a clean jump.
+                v.y = Mathf.Max(v.y, up);
                 bodies[i].linearVelocity = v;
             }
             airTimer = 0.2f;
+            jumpTimer = 0.5f;
+            freeFlight = Mathf.Max(freeFlight, 0.5f);
             coyote = 0f;
             Grounded = false;
             if (pullUp) pullUpUsed = true;
         }
 
+        /// <summary>
+        /// The left click. Holding something: a lunge, then let go (a throw). Otherwise: a dive.
+        /// A pawn being held never gets here - Struggle() has already taken the click as a thrash.
+        /// </summary>
         void Shove(RagdollParams p)
         {
-            if (input.shove && State == PawnState.Active && shoveCooldown <= 0f)
+            if (input.shove && State == PawnState.Active && shoveCooldown <= 0f && !Climbing)
             {
-                shoveTimer = p.shoveDuration;
-                shoveCooldown = p.shoveDuration + 0.25f;
-                throwOnShoveEnd = Grabbing;
+                if (Grabbing)
+                {
+                    shoveTimer = p.shoveDuration;
+                    shoveCooldown = p.shoveDuration + 0.25f;
+                    throwOnShoveEnd = true;
+                }
+                else if (diveCooldown <= 0f) Dive(p);
             }
             if (throwOnShoveEnd && shoveTimer <= 0f)
             {
@@ -672,6 +821,88 @@ namespace ChessFight.RagdollLab
         static bool IsEnvironmentGrip(PawnHand h) =>
             h.IsHolding && (h.HeldBody == null || h.HeldBody.isKinematic);
 
+        // ---------------------------------------------------------------- 전력질주 / 스테미나
+
+        static float SprintTop(RagdollParams p) => Mathf.Max(p.moveSpeed, p.sprintSpeed);
+
+        /// <summary>
+        /// Holding sprint blends the run into the approved big run (sprintSpeed and the sprint gait)
+        /// and spends stamina while the pawn is actually going somewhere. Running dry leaves it
+        /// Exhausted until the pool is back to sprintResume, so the sprint cannot stutter at zero.
+        /// </summary>
+        void UpdateSprint(RagdollParams p, float dt)
+        {
+            if (Exhausted && stamina >= p.sprintResume * p.climbStaminaMax) Exhausted = false;
+            bool moving = Flat(input.move).sqrMagnitude > 0.04f;
+            Sprinting = input.sprint && moving && State == PawnState.Active && !Climbing && !Exhausted
+                        && !BeingHeld && stamina > 0f && p.sprintSpeed > p.moveSpeed + 0.01f;
+            if (Sprinting) UseStamina(p, p.sprintDrain * dt);
+            sprintBlend = Mathf.MoveTowards(sprintBlend, Sprinting ? 1f : 0f, p.sprintBlendSpeed * dt);
+        }
+
+        /// <summary>Every stamina cost goes through here: climbing, sprinting, thrashing, diving.</summary>
+        void UseStamina(RagdollParams p, float amount)
+        {
+            if (amount <= 0f) return;
+            stamina = Mathf.Max(0f, stamina - amount);
+            staminaIdle = 0f;
+            if (stamina <= 0f) Exhausted = true;
+        }
+
+        /// <summary>One pool, one recovery: back on its feet, doing nothing tiring, after a breather.</summary>
+        void UpdateStamina(RagdollParams p, float dt)
+        {
+            staminaIdle += dt;
+            bool resting = Grounded && State == PawnState.Active && !Climbing && !Sprinting && !BeingHeld
+                           && staminaIdle >= p.staminaRecoverDelay;
+            if (resting) stamina += p.climbRecover * dt;
+            stamina = Mathf.Min(stamina, p.climbStaminaMax);
+        }
+
+        /// <summary>
+        /// The fix for pawns hopping on their own. Hard stops, sharp turns and big leg swings all end
+        /// up pushing the body off the floor now and then (the one-piece legs pole-vault it), and a
+        /// body already rising gets no help back down. While the pawn is standing on something and
+        /// has no business leaving it - no jump, vault, climb, get-up, hit or grab - it may not come
+        /// off the surface faster than launchClamp. Measured at the centre of mass and relative to
+        /// whatever it stands on, so running up a slope or riding another pawn is untouched.
+        /// </summary>
+        void GuardLaunch(RagdollParams p)
+        {
+            bool cutting = false;
+            if (p.launchClamp > 0.001f && State == PawnState.Active && !Climbing
+                && freeFlight <= 0f && jumpTimer <= 0f && vaultTimer <= 0f && topOutTimer <= 0f
+                && hitTimer <= 0f && !BeingHeld && !HoldingEnvironment()
+                && groundFound && (Grounded || coyote > 0f))
+            {
+                Vector3 n = groundNormal.y > 0.5f ? groundNormal : Vector3.up;
+                Vector3 v = ComVelocity();
+                if (groundBody != null) v -= groundBody.GetPointVelocity(bodies[0].position);
+                float away = Vector3.Dot(v, n);
+                if (away > p.launchClamp)
+                {
+                    Vector3 cut = n * (away - p.launchClamp);
+                    foreach (var rb in bodies) rb.linearVelocity -= cut;
+                    cutting = true;
+                    if (!launchCut && away > p.launchClamp + 0.5f) HopsCaught++;
+                }
+            }
+            launchCut = cutting;
+        }
+
+        /// <summary>Velocity of the whole pawn (its centre of mass).</summary>
+        Vector3 ComVelocity()
+        {
+            Vector3 momentum = Vector3.zero;
+            float mass = 0f;
+            foreach (var rb in bodies)
+            {
+                momentum += rb.linearVelocity * rb.mass;
+                mass += rb.mass;
+            }
+            return momentum / Mathf.Max(0.001f, mass);
+        }
+
         // ---------------------------------------------------------------- 버둥대기
 
         /// <summary>
@@ -697,10 +928,9 @@ namespace ChessFight.RagdollLab
                 return;
             }
             if (State == PawnState.Ragdoll || !input.shove) return;
-            input.shove = false;            // this tap is a struggle, not a shove
-            if (stamina < 0f) stamina = p.climbStaminaMax;
+            input.shove = false;            // this tap is a struggle, not a dive
             if (stamina <= 0f) return;      // too tired to fight
-            stamina = Mathf.Max(0f, stamina - p.struggleStamina);
+            UseStamina(p, p.struggleStamina);
             struggleTimer = p.struggleBurst;
             struggleFlip = -struggleFlip;
 
@@ -797,7 +1027,6 @@ namespace ChessFight.RagdollLab
             climbUp = Vector3.Dot(move, facing);
             climbSide = Vector3.Dot(move, right);
 
-            if (stamina < 0f) stamina = p.climbStaminaMax;
             climbCooldown -= dt;
             topOutTimer -= dt;
             bool gripping = ProbeWall(p);
@@ -821,16 +1050,15 @@ namespace ChessFight.RagdollLab
                 anchorVel = Flat(facing) * 1.4f;
                 anchor.MovePosition(anchorPos);
                 climbCooldown = Mathf.Max(climbCooldown, 0.35f);   // let it land before grabbing again
+                freeFlight = Mathf.Max(freeFlight, 0.4f);          // the flop over the lip is meant to fly
             }
             if (!Climbing)
             {
                 holdsPlaced = false;
-                if (Grounded && State == PawnState.Active)
-                    stamina = Mathf.Min(p.climbStaminaMax, stamina + p.climbRecover * dt);
                 return;
             }
 
-            stamina -= (p.climbDrainHold + p.climbDrainMove * Mathf.Abs(climbUp)) * dt;
+            UseStamina(p, (p.climbDrainHold + p.climbDrainMove * Mathf.Abs(climbUp)) * dt);
 
             // The wall frame the hands work in. Both palm targets are measured from the CHEST, so
             // they cannot trail below the body as it rises - an earlier version pinned them to world
@@ -962,6 +1190,7 @@ namespace ChessFight.RagdollLab
         {
             if (!climbKinematic) return;
             climbKinematic = false;
+            freeFlight = Mathf.Max(freeFlight, 0.5f);
             // Kinematic bodies are pushed through geometry rather than stopped by it, so the pawn can
             // be inside the wall when physics resumes - and then it falls straight through the level.
             // Step it back out along the face first.
@@ -1029,8 +1258,11 @@ namespace ChessFight.RagdollLab
         {
             // Step at the speed the pawn is trying to go, so a blocked pawn runs in place instead of skidding.
             float speed = State == PawnState.Ragdoll ? 0f : Mathf.Max(HorizontalSpeed, anchorVel.magnitude);
-            float speedN = Mathf.Clamp01(speed / Mathf.Max(0.1f, p.moveSpeed));
-            bool air = State == PawnState.Active && !Grounded;
+            float speedN = Mathf.Clamp01(speed / Mathf.Max(0.1f, TopSpeed));
+            // The tucked jump pose needs a reason: the jump button, or longer than coyote time off the
+            // ground. Snapping the legs up on every one-frame loss of contact kicked the floor away,
+            // and that kick was half of what made a pawn hop by itself.
+            bool air = State == PawnState.Active && !Grounded && (coyote <= 0f || jumpTimer > 0f);
             // Keep a minimum cadence while the player is holding a direction, so the first push-off
             // of a standing start happens on a step instead of waiting for speed to build.
             float cadence = Mathf.Max(speed, wantsMove && State == PawnState.Active && Grounded ? 1.2f : 0f);
@@ -1039,7 +1271,10 @@ namespace ChessFight.RagdollLab
             // is the only way the gait survives a big moveSpeed.
             float cycles = cadence / Mathf.Max(0.2f, p.strideLength);
             if (p.hopCadence > 0.01f)
-                cycles = p.hopCadence * Mathf.Clamp01(speedN * 2.5f);
+            {
+                float sprintHop = p.sprintCadence > 0.01f ? p.sprintCadence : p.hopCadence;
+                cycles = Mathf.Lerp(p.hopCadence, sprintHop, sprintBlend) * Mathf.Clamp01(speedN * 2.5f);
+            }
             gait += cycles * dt * Mathf.PI * 2f;
             if (gait > Mathf.PI * 2f) gait -= Mathf.PI * 2f;
             float s = Mathf.Sin(gait);
@@ -1047,8 +1282,10 @@ namespace ChessFight.RagdollLab
             // middle. phase 0 = feet down, 0.5 = apex.
             float phase = gait / (Mathf.PI * 2f);
             hopArc = 4f * phase * (1f - phase);
-            float legAmp = air ? 0f : p.legSwing * Mathf.Clamp01(speedN * 1.5f);
-            float armAmp = air ? 0f : p.armSwing * speedN;
+            float legSwing = Mathf.Lerp(p.legSwing, p.sprintLegSwing, sprintBlend);
+            float armSwing = Mathf.Lerp(p.armSwing, p.sprintArmSwing, sprintBlend);
+            float legAmp = air ? 0f : legSwing * Mathf.Clamp01(speedN * 1.5f);
+            float armAmp = air ? 0f : armSwing * speedN;
 
             Quaternion chest = Quaternion.Euler(p.chestLean * speedN, 0f, 0f);
             Quaternion head = Quaternion.Euler(-0.5f * p.chestLean * speedN, 0f, 0f);
@@ -1095,7 +1332,19 @@ namespace ChessFight.RagdollLab
                 strideDrop = Mathf.Lerp(strideDrop, 0f, 0.25f);
             }
 
-            if (Climbing)
+            if (Diving)
+            {
+                // Superman: the body is pitched belly-down (see Locomotion), so arms "overhead" point
+                // along the dive. Head up to see where it is going, legs straight back, toes pointed.
+                // Only diveHold of the stiffness is on, so this is a shape the limbs sag toward.
+                armL = Quaternion.Euler(0f, 20f, -70f);
+                armR = Quaternion.Euler(0f, -20f, 70f);
+                chest = Quaternion.Euler(-12f, 0f, 0f);
+                head = Quaternion.Euler(-30f, 0f, 0f);
+                thighL = thighR = Quaternion.Euler(14f, 0f, 0f);
+                footL = footR = Quaternion.Euler(25f, 0f, 0f);
+            }
+            else if (Climbing)
             {
                 // Both arms overhead on the wall, legs tucked and dangling.
                 // Each arm points at its own palm spot on the wall, so a planted hand stays planted
@@ -1381,6 +1630,13 @@ namespace ChessFight.RagdollLab
             // Dynamic softening hits the upper body and arms fully, legs/anchor only by lowerBodyDynamicShare.
             float kLower = StateFactor * Mathf.Lerp(1f, Stiffness, p.lowerBodyDynamicShare);
             float anchorSpring = p.hipAnchorStrength * kLower * (Climbing ? p.climbPull : 1f);
+            if (Diving)
+            {
+                // A dive is limp where it counts - nothing holds the body up or pulls it along - but
+                // keeps a little of every drive so the shape reads as a dive and not a faint.
+                k = kLower = p.diveHold;
+                anchorSpring = 0f;
+            }
             float anchorRatio = Climbing ? p.climbDamperRatio : r;
             var linear = new JointDrive { positionSpring = anchorSpring, positionDamper = anchorSpring * anchorRatio, maximumForce = float.MaxValue };
             anchorJoint.xDrive = linear;
@@ -1505,6 +1761,22 @@ namespace ChessFight.RagdollLab
                 normal = contact.normal;
             }
 
+            if (Diving && other != null)
+            {
+                // Slide tackle. A diver is already on the floor, so it is never knocked down by the
+                // pawn it hits; the pawn it hits goes over from far less than an ordinary bump.
+                if (impact >= p.diveTackleImpact && other.State != PawnState.Ragdoll && !other.NetworkPuppet)
+                {
+                    other.Knockdown("다이빙 태클");
+                    other.AddVelocity(diveDirection * p.diveTacklePush + Vector3.up * (p.diveTacklePush * 0.4f));
+                    Tackles++;
+                }
+                return;
+            }
+            // The belly flop at the end of a dive IS the dive; only something in the way (a wall, a
+            // hazard) can turn it into a real knockdown.
+            if (Diving && Mathf.Abs(normal.y) > 0.6f) return;
+
             var hazard = c.collider.GetComponentInParent<RagdollHazard>();
             if (hazard != null && hazard.alwaysKnockdown && impact >= hazard.minImpact)
             {
@@ -1552,6 +1824,12 @@ namespace ChessFight.RagdollLab
             StateFactor = 1f;
             Stiffness = 1f;
             contactTimer = hitTimer = shoveTimer = airTimer = 0f;
+            Diving = false;
+            diveCooldown = jumpTimer = 0f;
+            freeFlight = 0.3f;
+            sprintBlend = 0f;
+            stamina = -1f;          // refilled on the next step
+            Exhausted = false;
             SetRagdollFriction(false);
             NetworkSnap = true;
         }
@@ -1580,6 +1858,7 @@ namespace ChessFight.RagdollLab
             {
                 anchorPos = bodies[0].position;
                 anchorVel = Vector3.zero;
+                Diving = false;
                 State = PawnState.Active;
                 StateFactor = 1f;
                 Stiffness = 1f;
@@ -1595,6 +1874,10 @@ namespace ChessFight.RagdollLab
             pose.grounded = Grounded;
             pose.grabbing = Grabbing;
             pose.snap = NetworkSnap;
+            pose.sprinting = Sprinting;
+            pose.exhausted = Exhausted;
+            pose.held = BeingHeld;
+            pose.stamina = Stamina;
         }
 
         /// <summary>Rebuild the whole pawn from hips + rotations (see jointOffset in Awake).</summary>
@@ -1614,6 +1897,11 @@ namespace ChessFight.RagdollLab
             StateFactor = pose.state == 1 ? 0f : 1f;
             Grounded = pose.grounded;
             anchorPos = pose.hips;
+            // What the stamina gauge on a client needs to draw its own pawn.
+            Sprinting = pose.sprinting;
+            Exhausted = pose.exhausted;
+            heldTimer = pose.held ? 0.2f : 0f;
+            netStamina = pose.stamina;
         }
 
         public bool IsFinite()

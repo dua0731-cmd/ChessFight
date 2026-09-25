@@ -18,6 +18,10 @@ namespace ChessFight.RagdollLab
         public bool grounded;
         public bool grabbing;
         public bool snap;       // teleport: render without interpolation
+        public bool sprinting;
+        public bool exhausted;
+        public bool held;       // someone has this pawn by a hand
+        public float stamina;   // 0..1, sent as a byte so a client can draw its own gauge
         public uint ack;        // the owner's own send time echoed back, milliseconds
 
         public void CopyFrom(RagdollPose other)
@@ -29,6 +33,10 @@ namespace ChessFight.RagdollLab
             grounded = other.grounded;
             grabbing = other.grabbing;
             snap = other.snap;
+            sprinting = other.sprinting;
+            exhausted = other.exhausted;
+            held = other.held;
+            stamina = other.stamina;
             ack = other.ack;
         }
 
@@ -42,6 +50,10 @@ namespace ChessFight.RagdollLab
             into.grounded = t < 0.5f ? from.grounded : to.grounded;
             into.grabbing = t < 0.5f ? from.grabbing : to.grabbing;
             into.snap = to.snap;
+            into.sprinting = t < 0.5f ? from.sprinting : to.sprinting;
+            into.exhausted = t < 0.5f ? from.exhausted : to.exhausted;
+            into.held = t < 0.5f ? from.held : to.held;
+            into.stamina = Mathf.Lerp(from.stamina, to.stamina, t);
             into.ack = to.ack;
         }
     }
@@ -82,7 +94,7 @@ namespace ChessFight.RagdollLab
         public const int MaxPawns = 12;
         public const float PositionRange = 80f; // metres, symmetric around the arena origin
 
-        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 4;      // 63
+        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 4;  // 64
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 1;            // 22
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1;             // 24
 
@@ -94,7 +106,7 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- input
 
-        public static byte[] Input(ulong session, uint sequence, uint clientTimeMs, Vector2 move, bool jump, bool shove, bool grab)
+        public static byte[] Input(ulong session, uint sequence, uint clientTimeMs, Vector2 move, bool jump, bool shove, bool grab, bool sprint = false)
         {
             using (var stream = new MemoryStream(InputBytes))
             using (var w = new BinaryWriter(stream))
@@ -106,18 +118,18 @@ namespace ChessFight.RagdollLab
                 w.Write(clientTimeMs);
                 w.Write((sbyte)Mathf.Clamp(Mathf.RoundToInt(move.x * 127f), -127, 127));
                 w.Write((sbyte)Mathf.Clamp(Mathf.RoundToInt(move.y * 127f), -127, 127));
-                w.Write((byte)((jump ? 1 : 0) | (shove ? 2 : 0) | (grab ? 4 : 0)));
+                w.Write((byte)((jump ? 1 : 0) | (shove ? 2 : 0) | (grab ? 4 : 0) | (sprint ? 8 : 0)));
                 return stream.ToArray();
             }
         }
 
         public static bool ReadInput(byte[] bytes, ulong session, out uint sequence, out uint clientTimeMs,
-            out Vector2 move, out bool jump, out bool shove, out bool grab)
+            out Vector2 move, out bool jump, out bool shove, out bool grab, out bool sprint)
         {
             sequence = 0;
             clientTimeMs = 0;
             move = Vector2.zero;
-            jump = shove = grab = false;
+            jump = shove = grab = sprint = false;
             if (bytes == null || bytes.Length != InputBytes) return false;
             using (var r = new BinaryReader(new MemoryStream(bytes)))
             {
@@ -126,10 +138,11 @@ namespace ChessFight.RagdollLab
                 clientTimeMs = r.ReadUInt32();
                 move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
                 byte buttons = r.ReadByte();
-                if (buttons > 7) return false;
+                if (buttons > 15) return false;
                 jump = (buttons & 1) != 0;
                 shove = (buttons & 2) != 0;
                 grab = (buttons & 4) != 0;
+                sprint = (buttons & 8) != 0;
                 if (move.sqrMagnitude > 1.05f) move = move.normalized;
                 return true;
             }
@@ -157,7 +170,9 @@ namespace ChessFight.RagdollLab
                     w.Write(Quantize(pose.hips.y));
                     w.Write(Quantize(pose.hips.z));
                     for (int b = 0; b < RagdollPawn.Count; b++) w.Write(PackRotation(pose.rotations[b]));
-                    w.Write((byte)((pose.state & 3) | (pose.grounded ? 4 : 0) | (pose.grabbing ? 8 : 0) | (pose.snap ? 16 : 0)));
+                    w.Write((byte)((pose.state & 3) | (pose.grounded ? 4 : 0) | (pose.grabbing ? 8 : 0) | (pose.snap ? 16 : 0)
+                                   | (pose.sprinting ? 32 : 0) | (pose.exhausted ? 64 : 0) | (pose.held ? 128 : 0)));
+                    w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.stamina * 255f), 0, 255));
                     w.Write(pose.ack);
                 }
                 return stream.ToArray();
@@ -182,12 +197,16 @@ namespace ChessFight.RagdollLab
                     if (pose.id == 0 || !seen.Add(pose.id)) return false;
                     pose.hips = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
                     for (int b = 0; b < RagdollPawn.Count; b++) pose.rotations[b] = UnpackRotation(r.ReadUInt32());
+                    // Every bit of the flags byte is used; the state's two bits are range-checked below.
                     byte flags = r.ReadByte();
-                    if (flags > 31) return false;
                     pose.state = (byte)(flags & 3);
                     pose.grounded = (flags & 4) != 0;
                     pose.grabbing = (flags & 8) != 0;
                     pose.snap = (flags & 16) != 0;
+                    pose.sprinting = (flags & 32) != 0;
+                    pose.exhausted = (flags & 64) != 0;
+                    pose.held = (flags & 128) != 0;
+                    pose.stamina = r.ReadByte() / 255f;
                     pose.ack = r.ReadUInt32();
                     if (pose.state > 2) return false;
                 }

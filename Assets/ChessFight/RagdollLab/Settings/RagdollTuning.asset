@@ -26,7 +26,8 @@ MonoBehaviour:
     getUpDelay: 0.7
     getUpBlendTime: 0.22
     momentumRetention: 1
-    moveSpeed: 9.6
+    moveSpeed: 5.5
+    sprintSpeed: 9.6
     acceleration: 20
     turnResponsiveness: 8
     jumpImpulse: 4.5
@@ -61,11 +62,11 @@ MonoBehaviour:
     anchorIdleFollow: 6
     gravityScale: 1
     strideLength: 1.5
-    legSwing: 140
-    armSwing: 76
+    legSwing: 105
+    armSwing: 50
     armRestDown: 20
     chestLean: 10
-    runLean: 10
+    runLean: 6
     stepLock: 0
     stanceThrust: 0.45
     stepBob: 0.06
@@ -77,7 +78,7 @@ MonoBehaviour:
     stepLength: 0.22
     boundGait: 0
     driveFeedForward: 1
-    hopCadence: 3.2
+    hopCadence: 2.6
     legDamperRatio: 0.04
     thighMass: 0
     footMass: 0
@@ -113,3 +114,26 @@ MonoBehaviour:
     climbSlip: 0.18
     climbSag: 0.055
     climbOvershoot: 0.7
+    sprintCadence: 3.2
+    sprintLegSwing: 140
+    sprintArmSwing: 76
+    sprintLean: 10
+    sprintBlendSpeed: 4
+    sprintDrain: 1
+    sprintResume: 0.3
+    staminaRecoverDelay: 0.8
+    launchClamp: 1.2
+    diveBoost: 2.5
+    diveLift: 2
+    diveMaxSpeed: 12
+    divePitchKick: 6
+    divePitch: 75
+    diveHold: 0.35
+    diveFriction: 0.3
+    diveMinTime: 0.5
+    diveMaxTime: 1.2
+    diveGetUpSpeed: 1.8
+    diveCooldown: 0.35
+    diveStamina: 0.6
+    diveTackleImpact: 3
+    diveTacklePush: 2.5

@@ -89,8 +89,8 @@ namespace ChessFight.RagdollLab
             return v;
         }
 
-        static void Drive(RagdollPawn p, Vector3 move, bool grab = false, bool jump = false, bool shove = false) =>
-            p.SetInput(new PawnInput { move = move, grab = grab, jump = jump, shove = shove });
+        static void Drive(RagdollPawn p, Vector3 move, bool grab = false, bool jump = false, bool shove = false, bool sprint = false) =>
+            p.SetInput(new PawnInput { move = move, grab = grab, jump = jump, shove = shove, sprint = sprint });
 
         IEnumerator Sim(float seconds, Action perStep = null)
         {
@@ -133,17 +133,21 @@ namespace ChessFight.RagdollLab
             yield return JointSign();
             yield return Stand();
             yield return Run();
+            yield return Sprint();
             yield return Turn();
+            yield return NoAutoHop();
             yield return JumpCheck();
+            yield return JumpNoStack();
             yield return GetUp();
             yield return Fall();
             yield return Slope();
+            yield return DiveSlope();
             yield return Contact();
             yield return GrabDrag();
             yield return StruggleEscape();
             yield return Climb();
             yield return ClimbSurfaces();
-            yield return ShoveCheck();
+            yield return DiveTackle();
             yield return Bar();
             yield return Beam();
             yield return WallClimb();
@@ -860,6 +864,127 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
+        /// <summary>
+        /// Run and sprint are two speeds: plain input runs at moveSpeed, holding sprint reaches
+        /// sprintSpeed and spends stamina, and running it dry leaves the pawn winded (no sprint)
+        /// until enough has come back. Laps a circle so the sprint can last long enough to run out.
+        /// </summary>
+        IEnumerator Sprint()
+        {
+            var p = game.tuning.values;
+            Vector3 center = new Vector3(-5f, 0f, 0f);
+            const float Radius = 8f;
+            var pawn = Spawn(center + new Vector3(Radius, 0f, 0f), Vector3.forward, "sprint");
+            yield return Sim(0.6f);
+            Vector3 Lap()
+            {
+                Vector3 r = Flat(pawn.Hips.position - center);
+                if (r.sqrMagnitude < 1e-4f) return Vector3.forward;
+                Vector3 round = Vector3.Cross(Vector3.up, r.normalized) * -1f;
+                return (round - r.normalized * ((r.magnitude - Radius) / Radius)).normalized;
+            }
+            float runSum = 0f, sprintSum = 0f;
+            int runN = 0, sprintN = 0;
+            yield return Sim(1.2f, () => Drive(pawn, Lap()));
+            yield return Sim(1.5f, () =>
+            {
+                Drive(pawn, Lap());
+                runSum += pawn.HorizontalSpeed;
+                runN++;
+            });
+            float before = pawn.Stamina;
+            yield return Sim(1.2f, () => Drive(pawn, Lap(), sprint: true));
+            yield return Sim(1.5f, () =>
+            {
+                Drive(pawn, Lap(), sprint: true);
+                sprintSum += pawn.HorizontalSpeed;
+                sprintN++;
+            });
+            float run = runSum / runN, sprint = sprintSum / sprintN, spent = before - pawn.Stamina;
+            // Round an 8 m circle the lean and the turn rate cost some speed; 75% of the target is
+            // the gate for both, so the check is that there ARE two speeds, not the exact figures.
+            Report("달리기와 전력질주 (Shift)", run > 0.75f * p.moveSpeed && run < 1.15f * p.moveSpeed
+                                                  && sprint > 0.75f * p.sprintSpeed && sprint > run * 1.3f && spent > 0.1f,
+                $"달리기 {run:F2} m/s (목표 {p.moveSpeed:F1}), 전력질주 {sprint:F2} m/s (목표 {p.sprintSpeed:F1}), "
+                + $"2.7초 질주에 스테미나 {before * 100f:F0}% → {pawn.Stamina * 100f:F0}%, 넘어짐 {pawn.Knockdowns}");
+
+            bool winded = false, sprintWhileWinded = false;
+            float emptyAt = -1f, t = 0f;
+            yield return Sim(12f, () =>
+            {
+                t += Dt;
+                Drive(pawn, Lap(), sprint: true);
+                if (pawn.Exhausted && !winded)
+                {
+                    winded = true;
+                    emptyAt = t;
+                }
+                if (winded && pawn.Exhausted && pawn.Sprinting) sprintWhileWinded = true;
+            });
+            float slowed = pawn.HorizontalSpeed;
+            // Stop, wait for the breather, and the pawn must be able to sprint again.
+            Drive(pawn, Vector3.zero);
+            float recovered = -1f;
+            t = 0f;
+            yield return Sim(6f, () =>
+            {
+                t += Dt;
+                if (recovered < 0f && !pawn.Exhausted) recovered = t;
+            });
+            Report("스테미나가 떨어지면 전력질주 불가 → 회복하면 다시 가능", winded && !sprintWhileWinded && recovered > 0f,
+                $"고갈 {Fmt(emptyAt)} 뒤 지침, 지친 동안 질주 {sprintWhileWinded}, 지친 채 속도 {slowed:F2} m/s, "
+                + $"다시 질주 가능까지 {Fmt(recovered)} (회복 {p.climbRecover:F1}/초, 대기 {p.staminaRecoverDelay:F1}초, 기준 {p.sprintResume * 100f:F0}%)");
+            yield return Clear();
+        }
+
+        /// <summary>
+        /// The reported feel bug: with only the move keys held, slowing down or turning sometimes
+        /// threw the pawn into the air. Sprints, slams the brakes, turns hard and zig-zags without
+        /// ever pressing jump, and measures how far the hips ever get above running height.
+        /// </summary>
+        IEnumerator NoAutoHop()
+        {
+            var p = game.tuning.values;
+            var pawn = Spawn(new Vector3(-6f, 0f, -6f), Vector3.forward, "no-hop");
+            yield return Sim(0.8f);
+            float ride = p.runLift + p.stepBob;
+            float maxRise = 0f, air = 0f, longestAir = 0f;
+            void Watch()
+            {
+                // The floor here is y = 0, so this is the hips' height above standing height.
+                maxRise = Mathf.Max(maxRise, pawn.Hips.position.y - pawn.standHeight);
+                air = pawn.Grounded ? 0f : air + Dt;
+                longestAir = Mathf.Max(longestAir, air);
+            }
+            var legs = new (Vector3 move, bool sprint, float seconds)[]
+            {
+                (Vector3.forward, true, 1.1f),
+                (Vector3.right, true, 0.6f),                  // 90 degree turn at full sprint
+                (Vector3.left, true, 0.8f),                   // reverse
+                (Vector3.zero, false, 0.7f),                  // hard stop
+                (Vector3.back, true, 0.8f),
+                (Vector3.zero, false, 0.6f),
+                ((Vector3.forward + Vector3.right).normalized, false, 0.35f),
+                ((Vector3.forward + Vector3.left).normalized, false, 0.35f),
+                ((Vector3.forward + Vector3.right).normalized, false, 0.35f),
+                ((Vector3.forward + Vector3.left).normalized, false, 0.35f),
+                (Vector3.zero, false, 0.5f),
+                (Vector3.left, false, 0.6f),
+                (Vector3.right, false, 0.6f),
+                (Vector3.zero, false, 0.8f),
+            };
+            foreach (var (move, sprint, seconds) in legs)
+            {
+                Drive(pawn, move, sprint: sprint);
+                yield return Sim(seconds, Watch);
+            }
+            Report("의도치 않은 점프 없음 (방향키만: 질주·급정지·급회전·지그재그)",
+                maxRise < ride + 0.12f && longestAir < 0.25f && pawn.Knockdowns == 0,
+                $"골반 최대 상승 {maxRise:F3} m (달리기 들썩임 {ride:F2} m + 0.12 이하여야 함), 가장 긴 공중 {longestAir:F2}s, "
+                + $"튐 방지 개입 {pawn.HopsCaught}회, 넘어짐 {pawn.Knockdowns}");
+            yield return Clear();
+        }
+
         static Vector3 ComVelocity(RagdollPawn pawn)
         {
             Vector3 p = Vector3.zero;
@@ -1087,6 +1212,27 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
+        /// <summary>
+        /// The second half of the hop bug: jumping while the body was already rising added the jump
+        /// on top, so jumping out of a bump went twice as high. The jump now sets the rise instead.
+        /// </summary>
+        IEnumerator JumpNoStack()
+        {
+            var pawn = Spawn(new Vector3(5f, 0f, -6f), Vector3.forward, "jump-stack");
+            yield return Sim(1f);
+            float y0 = pawn.Hips.position.y, maxY = y0;
+            pawn.AddVelocity(Vector3.up * 2.5f);          // a bump already under way...
+            Drive(pawn, Vector3.zero, jump: true);        // ...and jump pressed on top of it
+            yield return Sim(2f, () => maxY = Mathf.Max(maxY, pawn.Hips.position.y));
+            float g = -Physics.gravity.y;
+            float v = game.tuning.values.jumpImpulse;
+            float ideal = v * v / (2f * g);
+            float stacked = (v + 2.5f) * (v + 2.5f) / (2f * g);
+            Report("점프가 튀는 중에 겹쳐지지 않음", maxY - y0 < ideal * 1.25f,
+                $"높이 {maxY - y0:F2} m (정상 점프 {ideal:F2} m, 겹쳤다면 {stacked:F2} m)");
+            yield return Clear();
+        }
+
         IEnumerator GetUp()
         {
             var p = game.tuning.values;
@@ -1174,6 +1320,55 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>
+        /// A dive is meant to be the fast way down a hill. Same run-up as the slope test; one pawn
+        /// runs down, the other dives off the edge.
+        /// </summary>
+        IEnumerator DiveSlope()
+        {
+            foreach (int index in new[] { 1, 2 })
+            {
+                float angle = LabLayout.SlopeAngles[index];
+                float z = LabLayout.SlopeZ[index];
+                float edge = LabLayout.PlatformEdgeX;
+                float finish = LabLayout.SlopeBottomX(angle) + 2f;
+                Vector3 start = new Vector3(LabLayout.PlatformBackX + 0.8f, LabLayout.PlatformHeight, z);
+                float runDescent = -1f, diveDescent = -1f;
+                int falls = 0;
+                bool dove = false;
+                for (int pass = 0; pass < 2; pass++)
+                {
+                    bool dive = pass == 1;
+                    var pawn = Spawn(start, Vector3.right, dive ? "slope-dive" : "slope-run2");
+                    yield return Sim(0.6f);
+                    float t = 0f, atEdge = -1f, atEnd = -1f;
+                    bool pressed = false;
+                    yield return Sim(7f, () =>
+                    {
+                        t += Dt;
+                        float x = pawn.Hips.position.x;
+                        bool tap = dive && !pressed && x > edge - 0.3f;
+                        if (tap) pressed = true;
+                        Drive(pawn, Vector3.right, shove: tap);
+                        if (atEdge < 0f && x > edge - 0.3f) atEdge = t;
+                        if (atEnd < 0f && x > finish) atEnd = t;
+                        if (dive) dove |= pawn.Diving;
+                    });
+                    float descent = atEnd >= 0f && atEdge >= 0f ? atEnd - atEdge : -1f;
+                    if (dive)
+                    {
+                        diveDescent = descent;
+                        falls = pawn.Knockdowns;
+                    }
+                    else runDescent = descent;
+                    yield return Clear();
+                }
+                bool faster = dove && diveDescent > 0f && (runDescent < 0f || diveDescent < runDescent);
+                Report($"경사 {angle:F0}°: 다이빙이 달려 내려가기보다 빠름", faster,
+                    $"모서리→바닥 달리기 {Fmt(runDescent)} / 다이빙 {Fmt(diveDescent)} (다이빙 {dove}, 넘어짐으로 기록 {falls})");
+            }
+        }
+
         static string Fmt(float seconds) => seconds < 0f ? "도착 못 함" : $"{seconds:F2}s";
 
         static float Signed(float degrees) => degrees > 180f ? degrees - 360f : degrees;
@@ -1238,24 +1433,47 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
-        IEnumerator ShoveCheck()
+        /// <summary>
+        /// Left click on the move: the pawn throws itself forward, floors whoever it hits, does not
+        /// count as knocked down itself, and gets back up on its own.
+        /// </summary>
+        IEnumerator DiveTackle()
         {
-            var a = Spawn(new Vector3(-8f, 0f, 8f), Vector3.forward, "shover");
-            var b = Spawn(new Vector3(-8f, 0f, 8.65f), Vector3.back, "target");
+            var a = Spawn(new Vector3(-12f, 0f, -2f), Vector3.right, "diver");
+            var b = Spawn(new Vector3(-7f, 0f, -2f), Vector3.left, "target");
             yield return Sim(1f);
-            Vector3 b0 = b.Hips.position;
-            Drive(a, Vector3.zero, shove: true);
-            bool shaken = false;
-            float peak = 0f, minStiff = 1f;
-            yield return Sim(1.2f, () =>
+            Vector3 a0 = a.Hips.position;
+            Drive(a, Vector3.right);
+            yield return Sim(0.45f);
+            float speedBefore = a.HorizontalSpeed, peak = 0f, t = 0f, upAt = -1f;
+            bool dove = false;
+            Drive(a, Vector3.right, shove: true);
+            yield return Sim(3f, () =>
             {
-                shaken |= b.Stunned || b.State != PawnState.Active;
-                peak = Mathf.Max(peak, b.HorizontalSpeed);
-                minStiff = Mathf.Min(minStiff, b.EffectiveStiffness);
+                t += Dt;
+                Drive(a, Vector3.right);
+                dove |= a.Diving;
+                if (a.Diving) peak = Mathf.Max(peak, a.HorizontalSpeed);
+                if (dove && upAt < 0f && !a.Diving) upAt = t;
             });
-            float moved = Vector3.Distance(Flat(b.Hips.position), Flat(b0));
-            Report("밀치기로 상대가 밀림", moved > 0.25f || shaken,
-                $"밀린 거리 {moved:F2} m, 최고 속도 {peak:F2} m/s, 최저 강성 {minStiff:F2}, 휘청·넘어짐 {shaken} (넉다운 {b.Knockdowns}), 미는 쪽 넘어짐 {a.Knockdowns}");
+            Drive(a, Vector3.zero);
+            bool floored = b.Knockdowns > 0;
+            Report("좌클릭 다이빙 태클: 상대가 넘어지고 나는 넉다운으로 안 셈",
+                dove && floored && a.Knockdowns == 0 && a.State != PawnState.Ragdoll,
+                $"다이빙 {dove}, 속도 {speedBefore:F1} → 최고 {peak:F1} m/s, 상대 넘어짐 {b.Knockdowns} ({b.LastKnockdownCause}), "
+                + $"태클 {a.Tackles}, 다이버 넉다운 {a.Knockdowns}, 일어나기 시작 {Fmt(upAt)}, 이동 {Flat(a.Hips.position - a0).magnitude:F1} m, 최종 상태 {a.State}");
+            yield return Clear();
+
+            // On its own, from standing: a short flop forward, then back up by itself.
+            var c = Spawn(new Vector3(-12f, 0f, 3f), Vector3.right, "flop");
+            yield return Sim(1f);
+            Vector3 c0 = c.Hips.position;
+            Drive(c, Vector3.zero, shove: true);
+            bool flopped = false;
+            yield return Sim(2.5f, () => flopped |= c.Diving);
+            float flop = Flat(c.Hips.position - c0).magnitude;
+            Report("제자리 다이빙 → 스스로 일어남", flopped && c.State == PawnState.Active && c.Knockdowns == 0 && c.HipsTilt < 25f,
+                $"다이빙 {flopped}, 앞으로 {flop:F2} m, 2.5초 뒤 상태 {c.State}, 기울기 {c.HipsTilt:F0}°");
             yield return Clear();
         }
 
@@ -1359,11 +1577,11 @@ namespace ChessFight.RagdollLab
         /// <summary>Pose path without Steam: capture on one pawn, pack, unpack, draw on a puppet, compare.</summary>
         IEnumerator NetLoopback()
         {
-            byte[] inputBytes = RagdollNetProtocol.Input(99, 7, 1234, new Vector2(0.5f, -0.25f), true, false, true);
-            bool inputOk = RagdollNetProtocol.ReadInput(inputBytes, 99, out uint seq, out uint clientTime, out var move, out bool jump, out bool shove, out bool grab);
-            inputOk &= inputBytes.Length == RagdollNetProtocol.InputBytes && seq == 7 && clientTime == 1234 && jump && !shove && grab
+            byte[] inputBytes = RagdollNetProtocol.Input(99, 7, 1234, new Vector2(0.5f, -0.25f), true, false, true, true);
+            bool inputOk = RagdollNetProtocol.ReadInput(inputBytes, 99, out uint seq, out uint clientTime, out var move, out bool jump, out bool shove, out bool grab, out bool sprint);
+            inputOk &= inputBytes.Length == RagdollNetProtocol.InputBytes && seq == 7 && clientTime == 1234 && jump && !shove && grab && sprint
                        && Mathf.Abs(move.x - 0.5f) < 0.01f && Mathf.Abs(move.y + 0.25f) < 0.01f;
-            bool wrongSession = RagdollNetProtocol.ReadInput(inputBytes, 100, out _, out _, out _, out _, out _, out _);
+            bool wrongSession = RagdollNetProtocol.ReadInput(inputBytes, 100, out _, out _, out _, out _, out _, out _, out _);
             Report("입력 패킷 왕복", inputOk && !wrongSession, $"{inputBytes.Length}바이트, 값 복원 {inputOk}, 다른 방 번호 거부 {!wrongSession}");
 
             var host = Spawn(new Vector3(0f, 0f, -10f), Vector3.forward, "net-host");
@@ -1375,7 +1593,8 @@ namespace ChessFight.RagdollLab
             var offset = new Vector3(20f, 0f, 0f);
             float maxAngle = 0f, maxBody = 0f, maxHips = 0f;
             int worstBody = 0;
-            int packetBytes = 0, steps = 0, parseFailures = 0;
+            int packetBytes = 0, steps = 0, parseFailures = 0, flagMismatch = 0;
+            float maxStaminaError = 0f, minStamina = 1f;
 
             void Replicate()
             {
@@ -1392,6 +1611,11 @@ namespace ChessFight.RagdollLab
                     return;
                 }
                 remote.ApplyNetworkPose(snapshot.At(0));
+                // The client draws its own stamina gauge from these, so they have to arrive intact.
+                maxStaminaError = Mathf.Max(maxStaminaError, Mathf.Abs(remote.Stamina - host.Stamina));
+                minStamina = Mathf.Min(minStamina, remote.Stamina);
+                if (remote.Sprinting != host.Sprinting || remote.Exhausted != host.Exhausted || remote.BeingHeld != host.BeingHeld)
+                    flagMismatch++;
                 for (int i = 0; i < RagdollPawn.Count; i++)
                 {
                     maxAngle = Mathf.Max(maxAngle, Quaternion.Angle(host.bodies[i].transform.rotation, remote.bodies[i].transform.rotation));
@@ -1406,7 +1630,7 @@ namespace ChessFight.RagdollLab
             }
 
             yield return Sim(0.8f);
-            Drive(host, Vector3.forward);
+            Drive(host, Vector3.forward, sprint: true);
             yield return Sim(2.5f, Replicate);
             Drive(host, Vector3.forward, grab: true);
             yield return Sim(0.8f, Replicate);
@@ -1420,6 +1644,8 @@ namespace ChessFight.RagdollLab
             // bytes per pawn per packet, which is not worth it for a remote pawn's hand.
             Report("래그돌 자세 원격 복원", parseFailures == 0 && maxAngle < 2f && maxBody < 0.06f && remote.IsFinite(),
                 $"스냅샷 {packetBytes}바이트(폰 1명), 회전 오차 최대 {maxAngle:F2}°, 부위 위치 오차 최대 {maxBody * 100f:F1} cm ({(BodyId)worstBody}), 골반 오차 {maxHips * 100f:F2} cm, 해독 실패 {parseFailures}회");
+            Report("스테미나·질주 상태 원격 전달", parseFailures == 0 && maxStaminaError < 0.01f && flagMismatch == 0 && minStamina < 0.95f,
+                $"스테미나 오차 최대 {maxStaminaError * 100f:F2}%, 원격에서 본 최저 {minStamina * 100f:F0}%, 상태 불일치 {flagMismatch}회");
             Info("대역폭 환산", $"폰 1명당 {RagdollNetProtocol.PoseBytes}바이트 · 12명 스냅샷 {RagdollNetProtocol.SnapshotBytes(12)}바이트 · 30Hz 기준 호스트 업로드 {RagdollNetProtocol.SnapshotBytes(12) * 30 * 11 * 8 / 1000000f:F2} Mbit/s (11명에게 전송)");
             yield return Clear();
         }
@@ -1467,13 +1693,15 @@ namespace ChessFight.RagdollLab
             yield return Shot(folder, "08_grab", mid + new Vector3(2.2f, 1.1f, -0.4f), mid + Vector3.up * 0.25f);
             yield return Clear();
 
-            var s1 = Spawn(new Vector3(-8f, 0f, 8f), Vector3.forward, "shover");
-            var s2 = Spawn(new Vector3(-8f, 0f, 8.65f), Vector3.back, "target");
+            var s1 = Spawn(new Vector3(-8f, 0f, 6f), Vector3.forward, "diver");
+            var s2 = Spawn(new Vector3(-8f, 0f, 8.4f), Vector3.back, "target");
             yield return Sim(1f);
-            Drive(s1, Vector3.zero, shove: true);
-            yield return Sim(0.12f);
+            Drive(s1, Vector3.forward);
+            yield return Sim(0.3f);
+            Drive(s1, Vector3.forward, shove: true);
+            yield return Sim(0.25f);
             Vector3 mid2 = (s1.Hips.position + s2.Hips.position) * 0.5f;
-            yield return Shot(folder, "09_shove", mid2 + new Vector3(2.2f, 1.0f, 0f), mid2 + Vector3.up * 0.3f);
+            yield return Shot(folder, "09_dive", mid2 + new Vector3(2.4f, 1.0f, 0f), mid2 + Vector3.up * 0.2f);
             yield return Clear();
 
             yield return Shot(folder, "10_overview", new Vector3(8f, 34f, -46f), new Vector3(-2f, 0f, 2f));
