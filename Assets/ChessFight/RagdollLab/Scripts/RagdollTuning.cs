@@ -133,6 +133,9 @@ namespace ChessFight.RagdollLab
         // 0.2 m lead is only 600 N against a 490 N bodyweight - barely any lift. Pulling up is a
         // muscular effort, so the anchor spring is multiplied while climbing.
         [Tunable(GroupAction, "끌어올리는 힘 배율")] [Range(1f, 8f)] public float climbPull = 3.5f;
+        // The pull multiplier without a matching damper is a 10500 N/m spring running at the
+        // standard 0.1 ratio: it hits the reach ceiling, overshoots, and the body buzzes.
+        [Tunable(GroupAction, "등반 중 감쇠비")] [Range(0.05f, 1f)] public float climbDamperRatio = 0.45f;
         [Tunable(GroupAction, "등반 스테미나 (초)")] [Range(1f, 30f)] public float climbStaminaMax = 8f;
         // Drain and recovery are in stamina-seconds per second, so the numbers read directly:
         // hanging 0.35 means the 8 s bar lasts 23 s of just hanging, 6.4 s of full climbing.
@@ -140,7 +143,8 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
         [Tunable(GroupAction, "손 번갈아 잡기 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 3f;
-        [Tunable(GroupAction, "등반 자세 팔 높이 (도)")] [Range(0f, 120f)] public float climbArmRaise = 70f;
+        [Tunable(GroupAction, "뻗은 팔 각도 (도, 수평 위)")] [Range(0f, 90f)] public float climbArmRaise = 72f;
+        [Tunable(GroupAction, "당긴 팔 각도 (도, 수평 아래)")] [Range(-20f, 80f)] public float climbArmLow = 28f;
         [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
         [Tunable(GroupAction, "바위 위로 올라타기 (초)")] [Range(0f, 1.2f)] public float climbTopOut = 0.5f;
         [Tunable(GroupAction, "등반 허우적 (도)")] [Range(0f, 90f)] public float climbFlail = 18f;

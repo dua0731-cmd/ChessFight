@@ -790,7 +790,7 @@ namespace ChessFight.RagdollLab
             if (Climbing && !gripping && climbUp > 0.1f && topOutTimer <= -0.2f)
                 topOutTimer = p.climbTopOut;
             // A step over a seam between two blocks must not drop the pawn off the wall.
-            climbGrace = gripping ? 0.3f : climbGrace - dt;
+            climbGrace = gripping ? 0.55f : climbGrace - dt;
             bool wants = input.grab && State == PawnState.Active && climbGrace > 0f
                          && stamina > 0f && climbCooldown <= 0f;
             Climbing = wants && (!Grounded || climbUp > 0.1f);
@@ -974,11 +974,13 @@ namespace ChessFight.RagdollLab
                 float panic = 1f + 1.6f * (1f - Mathf.Clamp01(Stamina / 0.35f));
                 armL = ClimbReach(true, 0, p, panic);
                 armR = ClimbReach(false, 1, p, panic);
-                // Feet paddle at the wall like a kitten. Slow when fresh, frantic when nearly spent.
-                float paddle = Mathf.Sin(Time.time * (4.5f + 7f * panic)) * (9f + 20f * panic);
-                thighL = Quaternion.Euler(-18f + paddle, 0f, 0f);
-                thighR = Quaternion.Euler(-18f - paddle, 0f, 0f);
-                footL = footR = Quaternion.Euler(24f, 0f, 0f);
+                // The legs push off the wall in time with the hands instead of paddling at nothing:
+                // the leg under the reaching arm straightens, the other tucks.
+                float pushL = movingHand == 0 ? 1f : 0f;
+                float step = Mathf.Lerp(1f - pushL, pushL, Smooth(handStep));
+                thighL = Quaternion.Euler(-10f - 16f * step, 0f, 0f);
+                thighR = Quaternion.Euler(-10f - 16f * (1f - step), 0f, 0f);
+                footL = footR = Quaternion.Euler(20f, 0f, 0f);
                 float lean = movingHand == 0 ? 5f : -5f;
                 chest = Quaternion.Euler(-6f, lean * panic, 0f);
                 head = Quaternion.Euler(-12f, -lean * panic, 0f);
@@ -1134,6 +1136,8 @@ namespace ChessFight.RagdollLab
             ankle = Quaternion.Inverse(thigh);
         }
 
+        static float Smooth(float t) => t * t * (3f - 2f * t);
+
         /// <summary>A point on the climbing face: <paramref name="side"/> across, <paramref name="height"/> world y.</summary>
         Vector3 OnWall(float side, float height)
         {
@@ -1149,18 +1153,22 @@ namespace ChessFight.RagdollLab
         {
             Transform chestT = bodies[(int)BodyId.Chest].transform;
             Vector3 shoulder = bodies[left ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
-            Vector3 target = handHold[slot];
-            if (movingHand == slot && handStep < 1f)
-            {
-                // Peel off the wall, swing up, slap down on the new hold.
-                float t = handStep;
-                Vector3 from = handHold[1 - slot] - climbUpAxis * (p.climbHandStep * 1.4f);
-                target = Vector3.Lerp(from, handHold[slot], t * t * (3f - 2f * t));
-                target += wallNormal * (Mathf.Sin(t * Mathf.PI) * 0.09f * panic);
-            }
-            Vector3 aim = target - shoulder;
-            if (aim.sqrMagnitude < 1e-5f) aim = -wallNormal;
-            Vector3 local = chestT.InverseTransformDirection(aim.normalized);
+            // Aim the arm by ANGLE, not at a point on the wall. The arm is 0.2 m and the skirt
+            // holds the body 0.27 m off the face, so a target pinned to the wall can only ever sit
+            // near shoulder height - which is why the arms only swung about 30 degrees. Reaching
+            // properly means stretching up past the head even if the palm ends up just off the face.
+            bool reaching = movingHand == slot;
+            float blend = reaching ? Smooth(handStep) : 1f - Smooth(handStep);
+            float angle = Mathf.Lerp(-p.climbArmLow, p.climbArmRaise, blend);
+            Vector3 into = -wallNormal;
+            Vector3 dir = (climbUpAxis * Mathf.Sin(angle * Mathf.Deg2Rad)
+                           + into * Mathf.Cos(angle * Mathf.Deg2Rad)).normalized;
+            // A little out to the side so the two arms do not overlap, and a slap outward mid-swing.
+            dir += climbAcross * ((left ? -0.34f : 0.34f) + (reaching ? Mathf.Sin(handStep * Mathf.PI) * 0.1f : 0f));
+            // Only a small peel off the face: a big one throws the body back and the wall probe
+            // loses contact, which drops the pawn out of the climb every couple of swings.
+            dir -= wallNormal * (reaching ? Mathf.Sin(handStep * Mathf.PI) * 0.07f : 0f);
+            Vector3 local = chestT.InverseTransformDirection(dir.normalized);
             return Quaternion.FromToRotation(left ? Vector3.left : Vector3.right, local);
         }
 
@@ -1214,7 +1222,8 @@ namespace ChessFight.RagdollLab
             // Dynamic softening hits the upper body and arms fully, legs/anchor only by lowerBodyDynamicShare.
             float kLower = StateFactor * Mathf.Lerp(1f, Stiffness, p.lowerBodyDynamicShare);
             float anchorSpring = p.hipAnchorStrength * kLower * (Climbing ? p.climbPull : 1f);
-            var linear = new JointDrive { positionSpring = anchorSpring, positionDamper = anchorSpring * r, maximumForce = float.MaxValue };
+            float anchorRatio = Climbing ? p.climbDamperRatio : r;
+            var linear = new JointDrive { positionSpring = anchorSpring, positionDamper = anchorSpring * anchorRatio, maximumForce = float.MaxValue };
             anchorJoint.xDrive = linear;
             anchorJoint.yDrive = linear;
             anchorJoint.zDrive = linear;
