@@ -1,0 +1,743 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace ChessFight.RagdollLab
+{
+    public enum BodyId { Hips, Chest, Head, ArmL, HandL, ArmR, HandR, ThighL, FootL, ThighR, FootR }
+
+    public enum PawnState { Active, Ragdoll, GettingUp }
+
+    public struct PawnInput
+    {
+        /// <summary>World-space horizontal move direction, length 0..1.</summary>
+        public Vector3 move;
+        public bool jump;
+        public bool shove;
+        public bool grab;
+    }
+
+    /// <summary>
+    /// Active ragdoll pawn: a non-physical puppet produces target poses, ConfigurableJoint slerp
+    /// drives make the physical body follow them, and a kinematic LocomotionAnchor pulls the hips.
+    /// One dynamic multiplier scales every spring, so "stiff" and "floppy" blend continuously.
+    /// </summary>
+    [DefaultExecutionOrder(-50)]
+    public class RagdollPawn : MonoBehaviour
+    {
+        public const int Count = 11;
+        public static readonly int[] ParentOf = { -1, 0, 1, 1, 3, 1, 5, 0, 7, 0, 9 };
+
+        /// <summary>
+        /// Measured in this project (Unity 6000.3, PhysX): a Slerp drive only delivers ~1/4 of its
+        /// positionSpring/positionDamper as N·m/rad, while linear and XY&amp;Z drives are 1:1. Scaling by 4
+        /// makes every spring slider read as real N·m/rad.
+        /// </summary>
+        public const float SlerpDriveScale = 4f;
+        public static readonly Dictionary<Collider, RagdollPawn> ColliderOwner = new Dictionary<Collider, RagdollPawn>();
+        public static readonly List<RagdollPawn> All = new List<RagdollPawn>();
+
+        [Header("Built by RagdollLabBuilder")]
+        public RagdollTuning tuning;
+        public Rigidbody[] bodies = new Rigidbody[Count];
+        public ConfigurableJoint[] joints = new ConfigurableJoint[Count];
+        public Transform[] puppet = new Transform[Count];
+        public Rigidbody anchor;
+        public ConfigurableJoint anchorJoint;
+        public PawnHand handL;
+        public PawnHand handR;
+        public BoxCollider footL;
+        public BoxCollider footR;
+        public float standHeight = 0.256f;
+        public SkinnedMeshRenderer skin;
+
+        public string DisplayName { get; set; } = "Pawn";
+        public PawnState State { get; private set; } = PawnState.Active;
+        public float Stiffness { get; private set; } = 1f;
+        public float TargetStiffness { get; private set; } = 1f;
+        public float StateFactor { get; private set; } = 1f;
+        public bool Grounded { get; private set; }
+        public float SlopeAngle { get; private set; }
+        public bool Touching => contactTimer > 0f;
+        public bool Stunned => hitTimer > 0f;
+        public bool OnSlope => Grounded && SlopeAngle >= P.slopeAngleThreshold;
+        public bool Grabbing => handL.IsHolding || handR.IsHolding;
+        public bool Shoving => shoveTimer > 0f;
+        public int Knockdowns { get; private set; }
+        public string LastKnockdownCause { get; private set; } = "-";
+        public float LastRagdollTime { get; private set; }
+        public Rigidbody Hips => bodies[0];
+        public Vector3 Facing => facing;
+        public float HipsTilt => Vector3.Angle(bodies[0].transform.up, Vector3.up);
+        public float HorizontalSpeed => Flat(bodies[0].linearVelocity).magnitude;
+        public float EffectiveStiffness => Stiffness * StateFactor;
+        public Vector3 AnchorPosition => anchorPos;
+
+        /// <summary>Test hook: return a pose for a body index to override the procedural puppet.</summary>
+        public Func<int, Quaternion?> PoseOverride;
+
+        public RagdollParams P => tuning != null ? tuning.values : fallback;
+        readonly RagdollParams fallback = new RagdollParams();
+
+        static PhysicsMaterial bodyMaterial, footMaterial, handMaterial, ragdollMaterial;
+
+        PhysicsMaterial ownFootMaterial;
+        PawnInput input;
+        readonly Quaternion[] startRel = new Quaternion[Count];
+        readonly Vector3[] bindPos = new Vector3[Count];
+        readonly Quaternion[] bindRot = new Quaternion[Count];
+        readonly List<Collider> own = new List<Collider>();
+        readonly List<PhysicsMaterial> ownMaterial = new List<PhysicsMaterial>();
+        readonly HashSet<Collider> ownSet = new HashSet<Collider>();
+        readonly Collider[] overlap = new Collider[16];
+        readonly RaycastHit[] hits = new RaycastHit[16];
+        Vector3 facing = Vector3.forward;
+        Vector3 anchorPos, anchorVel;
+        float contactTimer, hitTimer, shoveTimer, shoveCooldown, airTimer, coyote, stateTimer, gait;
+        bool throwOnShoveEnd, pullUpUsed;
+        float vaultTimer, vaultTop;
+        Vector3 vaultDirection;
+        bool groundFound;
+        float groundY;
+        Vector3 groundNormal = Vector3.up;
+        Rigidbody groundBody;
+
+        void Awake()
+        {
+            All.Add(this);
+            EnsureMaterials();
+            // Per-pawn foot material: grip while standing, slide while running (friction set each step).
+            // Minimum combine so the pawn's value wins over the floor's default 0.6.
+            ownFootMaterial = new PhysicsMaterial("PawnFoot " + name)
+            {
+                dynamicFriction = footMaterial.dynamicFriction, staticFriction = footMaterial.staticFriction,
+                frictionCombine = PhysicsMaterialCombine.Minimum, bounceCombine = footMaterial.bounceCombine,
+            };
+            for (int i = 0; i < Count; i++)
+            {
+                foreach (var c in bodies[i].GetComponentsInChildren<Collider>(true))
+                {
+                    if (!ownSet.Add(c)) continue;
+                    own.Add(c);
+                    ColliderOwner[c] = this;
+                    c.sharedMaterial = c == footL || c == footR ? ownFootMaterial
+                        : (i == (int)BodyId.HandL || i == (int)BodyId.HandR) ? handMaterial
+                        : bodyMaterial;
+                    ownMaterial.Add(c.sharedMaterial);
+                }
+            }
+            for (int a = 0; a < own.Count; a++)
+                for (int b = a + 1; b < own.Count; b++)
+                    Physics.IgnoreCollision(own[a], own[b], true);
+
+            Transform hips = bodies[0].transform;
+            Quaternion hipsInv = Quaternion.Inverse(hips.rotation);
+            for (int i = 0; i < Count; i++)
+            {
+                Transform t = bodies[i].transform;
+                bindPos[i] = hipsInv * (t.position - hips.position);
+                bindRot[i] = hipsInv * t.rotation;
+                if (i > 0) startRel[i] = Quaternion.Inverse(bodies[ParentOf[i]].transform.rotation) * t.rotation;
+            }
+            facing = FlatDir(hips.forward, Vector3.forward);
+            anchorPos = hips.position;
+            anchor.transform.SetPositionAndRotation(anchorPos, Quaternion.LookRotation(facing));
+        }
+
+        void OnDestroy()
+        {
+            All.Remove(this);
+            foreach (var c in own)
+                if (c != null && ColliderOwner.TryGetValue(c, out var o) && o == this) ColliderOwner.Remove(c);
+            if (ownFootMaterial != null) Destroy(ownFootMaterial);
+        }
+
+        static void EnsureMaterials()
+        {
+            if (bodyMaterial != null) return;
+            // Nearly frictionless body so a jump that bumps a wall slides up it instead of stalling.
+            bodyMaterial = new PhysicsMaterial("PawnBody")
+            {
+                dynamicFriction = 0.05f, staticFriction = 0.05f, bounciness = 0f,
+                frictionCombine = PhysicsMaterialCombine.Minimum, bounceCombine = PhysicsMaterialCombine.Minimum,
+            };
+            footMaterial = new PhysicsMaterial("PawnFoot")
+            {
+                dynamicFriction = 0.6f, staticFriction = 0.7f, bounciness = 0f,
+                frictionCombine = PhysicsMaterialCombine.Average, bounceCombine = PhysicsMaterialCombine.Minimum,
+            };
+            handMaterial = new PhysicsMaterial("PawnHand")
+            {
+                dynamicFriction = 0.9f, staticFriction = 1f, bounciness = 0f,
+                frictionCombine = PhysicsMaterialCombine.Maximum, bounceCombine = PhysicsMaterialCombine.Minimum,
+            };
+            ragdollMaterial = new PhysicsMaterial("PawnRagdoll")
+            {
+                dynamicFriction = 0.1f, staticFriction = 0.1f, bounciness = 0f,
+                frictionCombine = PhysicsMaterialCombine.Minimum, bounceCombine = PhysicsMaterialCombine.Minimum,
+            };
+        }
+
+        /// <summary>Low friction while limp so a tumble keeps its momentum (spec: rolling downhill is faster).</summary>
+        void SetRagdollFriction(bool limp)
+        {
+            ragdollMaterial.dynamicFriction = P.ragdollFriction;
+            ragdollMaterial.staticFriction = P.ragdollFriction;
+            for (int i = 0; i < own.Count; i++)
+                own[i].sharedMaterial = limp ? ragdollMaterial : ownMaterial[i];
+        }
+
+        public bool Owns(Collider c) => ownSet.Contains(c);
+
+        public void SetInput(PawnInput next)
+        {
+            input.move = next.move;
+            input.grab = next.grab;
+            input.jump |= next.jump;
+            input.shove |= next.shove;
+        }
+
+        public void NotifyHeld() => contactTimer = Mathf.Max(contactTimer, P.contactLinger);
+
+        public void AddVelocity(Vector3 dv)
+        {
+            foreach (var rb in bodies) rb.linearVelocity += dv;
+        }
+
+        void FixedUpdate()
+        {
+            var p = P;
+            float dt = Time.fixedDeltaTime;
+            contactTimer -= dt;
+            hitTimer -= dt;
+            shoveTimer -= dt;
+            shoveCooldown -= dt;
+            airTimer -= dt;
+
+            SenseGround();
+            coyote = Grounded ? 0.12f : coyote - dt;
+
+            UpdateState(p, dt);
+            UpdateStiffness(p, dt);
+            float k = Stiffness * StateFactor;
+
+            Jump(p);
+            Mantle(dt);
+            Locomotion(p, dt);
+            Shove(p);
+            bool wantGrab = input.grab && State != PawnState.Ragdoll;
+            handL.Tick(wantGrab, p, dt);
+            handR.Tick(wantGrab, p, dt);
+            if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
+            Pose(p, dt);
+            Drives(p, k);
+
+            input.jump = false;
+            input.shove = false;
+        }
+
+        // ---------------------------------------------------------------- sensing
+
+        void SenseGround()
+        {
+            Vector3 origin = bodies[0].position + Vector3.up * 0.05f;
+            int n = Physics.SphereCastNonAlloc(origin, 0.09f, Vector3.down, hits, standHeight + 0.6f, ~0, QueryTriggerInteraction.Ignore);
+            groundFound = false;
+            groundBody = null;
+            float best = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                var h = hits[i];
+                if (ownSet.Contains(h.collider) || h.distance <= 0f) continue;
+                if (h.distance >= best) continue;
+                best = h.distance;
+                groundY = h.point.y;
+                groundNormal = h.normal;
+                groundBody = h.rigidbody;
+                groundFound = true;
+            }
+            bool feet = FootTouches(footL) || FootTouches(footR);
+            bool near = groundFound && bodies[0].position.y - groundY < standHeight + 0.1f;
+            Grounded = State != PawnState.Ragdoll && airTimer <= 0f && (feet || near);
+            SlopeAngle = groundFound ? Vector3.Angle(groundNormal, Vector3.up) : 0f;
+        }
+
+        bool FootTouches(BoxCollider box)
+        {
+            Transform t = box.transform;
+            Vector3 half = Vector3.Scale(box.size, t.lossyScale) * 0.45f;
+            Vector3 footCenter = t.TransformPoint(box.center);
+            int n = Physics.OverlapBoxNonAlloc(footCenter + Vector3.down * 0.04f, half, overlap, t.rotation, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var c = overlap[i];
+                if (ownSet.Contains(c)) continue;
+                if (c is MeshCollider mesh && !mesh.convex) return true;
+                // Only support under the foot counts; a wall beside the foot is not ground.
+                if (c.ClosestPoint(footCenter).y < footCenter.y - half.y * 0.5f) return true;
+            }
+            return false;
+        }
+
+        // ---------------------------------------------------------------- state
+
+        void UpdateState(RagdollParams p, float dt)
+        {
+            stateTimer += dt;
+            switch (State)
+            {
+                case PawnState.Active:
+                    StateFactor = 1f;
+                    break;
+                case PawnState.Ragdoll:
+                    StateFactor = 0f;
+                    if (stateTimer >= p.getUpDelay) BeginGetUp(p);
+                    break;
+                case PawnState.GettingUp:
+                    float t = Mathf.Clamp01(stateTimer / Mathf.Max(0.01f, p.getUpBlendTime));
+                    StateFactor = t * t * (3f - 2f * t);
+                    if (t >= 1f)
+                    {
+                        State = PawnState.Active;
+                        stateTimer = 0f;
+                        StateFactor = 1f;
+                    }
+                    break;
+            }
+        }
+
+        public void Knockdown(string cause)
+        {
+            if (State == PawnState.Ragdoll) return;
+            State = PawnState.Ragdoll;
+            stateTimer = 0f;
+            StateFactor = 0f;
+            Knockdowns++;
+            LastKnockdownCause = cause;
+            handL.Release();
+            handR.Release();
+            shoveTimer = 0f;
+            throwOnShoveEnd = false;
+            SetRagdollFriction(true);
+        }
+
+        void BeginGetUp(RagdollParams p)
+        {
+            LastRagdollTime = stateTimer;
+            State = PawnState.GettingUp;
+            stateTimer = 0f;
+            SetRagdollFriction(false);
+            Vector3 v = Flat(bodies[0].linearVelocity);
+            anchorVel = v * p.momentumRetention;
+            if (v.sqrMagnitude > 1f) facing = v.normalized;
+            anchorPos = bodies[0].position;
+        }
+
+        void UpdateStiffness(RagdollParams p, float dt)
+        {
+            // Active conditions cap the stiffness; the lowest cap wins (a product would collapse to ~0.1).
+            float m = 1f;
+            if (contactTimer > 0f && shoveTimer <= 0f) m = Mathf.Min(m, p.contactStiffnessMultiplier);
+            if (Grabbing) m = Mathf.Min(m, p.grabStiffnessMultiplier);
+            if (OnSlope) m = Mathf.Min(m, p.slopeStiffnessMultiplier);
+            if (hitTimer > 0f) m = Mathf.Min(m, p.hitStiffnessMultiplier);
+            TargetStiffness = m;
+            Stiffness = Mathf.Lerp(Stiffness, m, 1f - Mathf.Exp(-p.stiffnessLerpSpeed * dt));
+        }
+
+        /// <summary>Hit by another pawn's shove: counts as "피격" for the dynamic stiffness.</summary>
+        public void NotifyShoved() => hitTimer = Mathf.Max(hitTimer, P.hitRecoveryTime);
+
+        // ---------------------------------------------------------------- locomotion
+
+        void Locomotion(RagdollParams p, float dt)
+        {
+            Rigidbody hips = bodies[0];
+            Vector3 hp = hips.position;
+            if (State == PawnState.Ragdoll)
+            {
+                anchorPos = hp;
+                anchorVel = Flat(hips.linearVelocity);
+                anchor.MovePosition(anchorPos);
+                return;
+            }
+
+            Vector3 move = Flat(input.move);
+            if (move.sqrMagnitude > 1f) move.Normalize();
+            bool moving = move.sqrMagnitude > 0.0025f;
+            // Feet slide while travelling, lunging into a shove, or reeling from a hit; they grip when idle.
+            bool sliding = moving || anchorVel.sqrMagnitude > 0.25f || shoveTimer > 0f || hitTimer > 0f;
+            float footFriction = sliding ? p.footFrictionMoving : p.footFrictionIdle;
+            ownFootMaterial.dynamicFriction = footFriction;
+            ownFootMaterial.staticFriction = footFriction * 1.15f;
+            if (moving && !Grabbing)
+            {
+                float current = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
+                float target = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;
+                float yaw = Mathf.LerpAngle(current, target, 1f - Mathf.Exp(-p.turnResponsiveness * dt)) * Mathf.Deg2Rad;
+                facing = new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
+            }
+
+            Vector3 groundVel = Grounded && groundBody != null ? Flat(groundBody.GetPointVelocity(hp)) : Vector3.zero;
+            Vector3 targetVel = move * p.moveSpeed + groundVel;
+            float accel = p.acceleration * (Grounded ? 1f : p.airControl);
+            float speedNow = anchorVel.magnitude;
+            if (speedNow > p.moveSpeed + 0.1f && Vector3.Dot(anchorVel, targetVel) > 0f)
+            {
+                // Momentum from a tumble or a slope: steer toward the input, shed the extra speed slowly.
+                Vector3 dir = Vector3.RotateTowards(anchorVel / speedNow, targetVel.normalized, p.turnResponsiveness * 0.5f * dt, 0f);
+                anchorVel = dir * Mathf.Max(targetVel.magnitude, speedNow - p.overspeedDecay * dt);
+            }
+            else anchorVel = Vector3.MoveTowards(anchorVel, targetVel, accel * dt);
+
+            Vector3 next = anchorPos + anchorVel * dt;
+            if (!moving && shoveTimer <= 0f)
+            {
+                // Idle pawns settle where they are; when shoved or tangled they stay where physics put
+                // them instead of springing back to the old spot.
+                float follow = hitTimer > 0f || contactTimer > 0f ? Mathf.Max(p.anchorIdleFollow, 15f) : p.anchorIdleFollow;
+                next += Flat(hp - next) * (1f - Mathf.Exp(-follow * dt));
+            }
+            // In the air the anchor may only lead a little: the bell-shaped skirt meets walls at a slant,
+            // so pressing into a wall would push the pawn down and kill the jump.
+            float leash = Grounded ? p.anchorLeash : p.anchorLeash * p.airControl * 0.5f;
+            if (shoveTimer > 0f)
+            {
+                // The shove is a short step into the target: the anchor leads the hips forward.
+                next += facing * (p.shoveLunge / Mathf.Max(0.05f, p.shoveDuration) * dt);
+                leash += p.shoveLunge;
+            }
+
+            Vector3 offset = Flat(next - hp);
+            float distance = offset.magnitude;
+            if (distance > leash)
+            {
+                Vector3 dir = offset / distance;
+                next.x = hp.x + dir.x * leash;
+                next.z = hp.z + dir.z * leash;
+                float bodyAlong = Vector3.Dot(Flat(hips.linearVelocity), dir);
+                float anchorAlong = Vector3.Dot(anchorVel, dir);
+                if (anchorAlong > bodyAlong) anchorVel -= dir * (anchorAlong - Mathf.Max(0f, bodyAlong));
+            }
+            // Running lifts the hips a little so the one-piece legs swing clear instead of scraping.
+            // Airborne: ride along with the hips (one step ahead) so the vertical drive never brakes a jump.
+            float lift = p.runLift * Mathf.Clamp01(anchorVel.magnitude / Mathf.Max(0.1f, p.moveSpeed));
+            next.y = Grounded && groundFound ? groundY + standHeight + lift : hp.y + hips.linearVelocity.y * dt;
+            anchorPos = next;
+            anchor.MovePosition(anchorPos);
+
+            // The anchor's rotation is the hips' balance target (upright + facing + lean); the anchor
+            // joint's angular drives pull the hips toward it (implicit, so stiff values stay stable).
+            float speedN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, p.moveSpeed));
+            float lean = p.runLean * speedN;
+            if (shoveTimer > 0f) lean += p.shoveLean;
+            else if (input.grab && !Grabbing) lean += p.grabLean;
+            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up) * Quaternion.Euler(lean, 0f, 0f));
+        }
+
+        void Jump(RagdollParams p)
+        {
+            if (!input.jump || State == PawnState.Ragdoll) return;
+            bool fromGround = coyote > 0f && airTimer <= 0f;
+            bool pullUp = !fromGround && !pullUpUsed && (handL.HoldingLedge || handR.HoldingLedge);
+            if (!fromGround && !pullUp) return;
+            float up = p.jumpImpulse * (pullUp ? p.pullUpFactor : 1f);
+            Vector3 toward = Vector3.zero;
+            if (pullUp)
+            {
+                // Vault: let go of the ledge and spring up; Mantle() carries the pawn over once its feet clear the top.
+                PawnHand ledgeHand = handL.HoldingLedge ? handL : handR;
+                vaultTop = ledgeHand.HeldCollider.bounds.max.y;
+                toward = Flat(ledgeHand.Center - bodies[0].position);
+                vaultDirection = toward.sqrMagnitude > 1e-4f ? toward.normalized : facing;
+                toward = vaultDirection * 1.5f;
+                vaultTimer = 0.8f;
+                handL.Release(0.35f);
+                handR.Release(0.35f);
+            }
+            for (int i = 0; i < Count; i++)
+            {
+                Vector3 v = bodies[i].linearVelocity + toward;
+                v.y = Mathf.Max(v.y, 0f) + up;
+                bodies[i].linearVelocity = v;
+            }
+            airTimer = 0.2f;
+            coyote = 0f;
+            Grounded = false;
+            if (pullUp) pullUpUsed = true;
+        }
+
+        void Shove(RagdollParams p)
+        {
+            if (input.shove && State == PawnState.Active && shoveCooldown <= 0f)
+            {
+                shoveTimer = p.shoveDuration;
+                shoveCooldown = p.shoveDuration + 0.25f;
+                throwOnShoveEnd = Grabbing;
+            }
+            if (throwOnShoveEnd && shoveTimer <= 0f)
+            {
+                handL.Release(0.4f);
+                handR.Release(0.4f);
+                throwOnShoveEnd = false;
+            }
+        }
+
+        /// <summary>After a ledge vault, once the feet clear the top, nudge the pawn over the edge.</summary>
+        void Mantle(float dt)
+        {
+            if (vaultTimer <= 0f) return;
+            vaultTimer -= dt;
+            if (State == PawnState.Ragdoll)
+            {
+                vaultTimer = 0f;
+                return;
+            }
+            float feet = Mathf.Min(footL.bounds.min.y, footR.bounds.min.y);
+            if (feet < vaultTop + 0.02f) return;
+            float along = Vector3.Dot(Flat(bodies[0].linearVelocity), vaultDirection);
+            if (along < 2.5f) AddVelocity(vaultDirection * (2.5f - along));
+            anchorVel = vaultDirection * Mathf.Max(2.5f, anchorVel.magnitude);
+            vaultTimer = 0f;
+        }
+
+        public bool HoldingEnvironment() => IsEnvironmentGrip(handL) || IsEnvironmentGrip(handR);
+
+        static bool IsEnvironmentGrip(PawnHand h) =>
+            h.IsHolding && (h.HeldBody == null || h.HeldBody.isKinematic);
+
+        // ---------------------------------------------------------------- puppet
+
+        void Pose(RagdollParams p, float dt)
+        {
+            // Step at the speed the pawn is trying to go, so a blocked pawn runs in place instead of skidding.
+            float speed = State == PawnState.Ragdoll ? 0f : Mathf.Max(HorizontalSpeed, anchorVel.magnitude);
+            float speedN = Mathf.Clamp01(speed / Mathf.Max(0.1f, p.moveSpeed));
+            bool air = State == PawnState.Active && !Grounded;
+            gait += speed / Mathf.Max(0.2f, p.strideLength) * dt * Mathf.PI * 2f;
+            if (gait > Mathf.PI * 2f) gait -= Mathf.PI * 2f;
+            float s = Mathf.Sin(gait);
+            float legAmp = air ? 0f : p.legSwing * Mathf.Clamp01(speedN * 1.5f);
+            float armAmp = air ? 0f : p.armSwing * speedN;
+
+            Quaternion chest = Quaternion.Euler(p.chestLean * speedN, 0f, 0f);
+            Quaternion head = Quaternion.Euler(-0.5f * p.chestLean * speedN, 0f, 0f);
+            Quaternion thighL = Quaternion.Euler(-legAmp * s, 0f, 0f);
+            Quaternion thighR = Quaternion.Euler(legAmp * s, 0f, 0f);
+            Quaternion footL = Quaternion.Euler(0.8f * legAmp * s, 0f, 0f);
+            Quaternion footR = Quaternion.Euler(-0.8f * legAmp * s, 0f, 0f);
+            Quaternion armL = Quaternion.Euler(0f, -armAmp * s, p.armRestDown);
+            Quaternion armR = Quaternion.Euler(0f, -armAmp * s, -p.armRestDown);
+
+            if (air)
+            {
+                thighL = Quaternion.Euler(-25f, 0f, 0f);
+                thighR = Quaternion.Euler(-15f, 0f, 0f);
+                footL = footR = Quaternion.Euler(20f, 0f, 0f);
+                armL = Quaternion.Euler(0f, 0f, -35f);
+                armR = Quaternion.Euler(0f, 0f, 35f);
+            }
+
+            if (State != PawnState.Ragdoll)
+            {
+                if (input.grab)
+                {
+                    armL = ReachPose(handL, true, air);
+                    armR = ReachPose(handR, false, air);
+                    chest *= Quaternion.Euler(p.grabLean * 0.6f, 0f, 0f);
+                }
+                if (shoveTimer > 0f)
+                {
+                    armL = Quaternion.Euler(0f, 90f, 0f);
+                    armR = Quaternion.Euler(0f, -90f, 0f);
+                    chest = Quaternion.Euler(p.chestLean + p.shoveLean * 0.6f, 0f, 0f);
+                }
+            }
+
+            SetPuppet(BodyId.Chest, chest);
+            SetPuppet(BodyId.Head, head);
+            SetPuppet(BodyId.ThighL, thighL);
+            SetPuppet(BodyId.ThighR, thighR);
+            SetPuppet(BodyId.FootL, footL);
+            SetPuppet(BodyId.FootR, footR);
+            SetPuppet(BodyId.ArmL, armL);
+            SetPuppet(BodyId.ArmR, armR);
+            SetPuppet(BodyId.HandL, Quaternion.identity);
+            SetPuppet(BodyId.HandR, Quaternion.identity);
+        }
+
+        Quaternion ReachPose(PawnHand hand, bool left, bool air)
+        {
+            Transform chest = bodies[(int)BodyId.Chest].transform;
+            Vector3 shoulder = bodies[left ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
+            Vector3 aim = hand.HasReach && !hand.IsHolding
+                ? hand.ReachPoint - shoulder
+                : Quaternion.AngleAxis(air ? -45f : -15f, chest.right) * chest.forward;
+            Vector3 local = chest.InverseTransformDirection(aim.normalized);
+            return Quaternion.FromToRotation(left ? Vector3.left : Vector3.right, local);
+        }
+
+        void SetPuppet(BodyId id, Quaternion localRotation) => puppet[(int)id].localRotation = localRotation;
+
+        // ---------------------------------------------------------------- drives
+
+        void Drives(RagdollParams p, float k)
+        {
+            float r = p.damperRatio;
+            // Dynamic softening hits the upper body and arms fully, legs/anchor only by lowerBodyDynamicShare.
+            float kLower = StateFactor * Mathf.Lerp(1f, Stiffness, p.lowerBodyDynamicShare);
+            float anchorSpring = p.hipAnchorStrength * kLower;
+            var linear = new JointDrive { positionSpring = anchorSpring, positionDamper = anchorSpring * r, maximumForce = float.MaxValue };
+            anchorJoint.xDrive = linear;
+            anchorJoint.yDrive = linear;
+            anchorJoint.zDrive = linear;
+            // Anchor joint axis is world-up: X drive = yaw toward facing, YZ drive = keep the hips upright.
+            anchorJoint.angularXDrive = new JointDrive { positionSpring = p.yawStrength * kLower, positionDamper = p.balanceDamper * 0.5f * kLower, maximumForce = float.MaxValue };
+            anchorJoint.angularYZDrive = new JointDrive { positionSpring = p.balanceStrength * kLower, positionDamper = p.balanceDamper * kLower, maximumForce = float.MaxValue };
+
+            float lower = p.lowerBodySpring * kLower;
+            float upper = p.upperBodySpring * k;
+            float arm = p.armSpring * k * (shoveTimer > 0f ? p.shoveArmMultiplier : 1f);
+            float armL = arm * ArmBoost(handL, p);
+            float armR = arm * ArmBoost(handR, p);
+            Slerp(BodyId.Chest, upper, r);
+            Slerp(BodyId.Head, upper, r);
+            Slerp(BodyId.ThighL, lower, r);
+            Slerp(BodyId.FootL, lower, r);
+            Slerp(BodyId.ThighR, lower, r);
+            Slerp(BodyId.FootR, lower, r);
+            Slerp(BodyId.ArmL, armL, r);
+            Slerp(BodyId.HandL, armL, r);
+            Slerp(BodyId.ArmR, armR, r);
+            Slerp(BodyId.HandR, armR, r);
+
+            for (int i = 1; i < Count; i++)
+            {
+                Quaternion local = puppet[i].localRotation;
+                if (PoseOverride != null)
+                {
+                    var o = PoseOverride(i);
+                    if (o.HasValue) local = o.Value;
+                }
+                // ConfigurableJoint.targetRotation is relative to the joint's starting orientation.
+                joints[i].targetRotation = Quaternion.Inverse(startRel[i] * local) * startRel[i];
+            }
+        }
+
+        float ArmBoost(PawnHand hand, RagdollParams p)
+        {
+            if (hand.IsHolding) return p.grabArmMultiplier;
+            return input.grab && State != PawnState.Ragdoll ? p.reachArmMultiplier : 1f;
+        }
+
+        void Slerp(BodyId id, float spring, float ratio)
+        {
+            joints[(int)id].slerpDrive = new JointDrive
+            {
+                positionSpring = spring * SlerpDriveScale,
+                positionDamper = spring * ratio * SlerpDriveScale,
+                maximumForce = float.MaxValue,
+            };
+        }
+
+        // ---------------------------------------------------------------- collisions
+
+        public void OnPartCollision(RagdollBodyPart part, Collision c, bool enter)
+        {
+            ColliderOwner.TryGetValue(c.collider, out RagdollPawn other);
+            if (other == this) return;
+            var p = P;
+            if (other != null)
+            {
+                contactTimer = p.contactLinger;
+                // Being touched by a pawn mid-shove counts as a hit (stiffness only, no damage).
+                if (shoveTimer > 0f) other.NotifyShoved();
+            }
+            if (!enter) return;
+
+            float impact = 0f;
+            Vector3 normal = Vector3.up;
+            int n = c.contactCount;
+            for (int i = 0; i < n; i++)
+            {
+                var contact = c.GetContact(i);
+                float s = Mathf.Abs(Vector3.Dot(c.relativeVelocity, contact.normal));
+                if (s <= impact) continue;
+                impact = s;
+                normal = contact.normal;
+            }
+
+            var hazard = c.collider.GetComponentInParent<RagdollHazard>();
+            if (hazard != null && hazard.alwaysKnockdown && impact >= hazard.minImpact)
+            {
+                Knockdown("회전 봉");
+                return;
+            }
+            if (impact >= p.knockdownImpulseThreshold)
+            {
+                Knockdown(other != null ? "캐릭터 충돌" : "충격·낙하");
+                return;
+            }
+            bool support = Mathf.Abs(normal.y) > 0.6f &&
+                           (part.id == BodyId.FootL || part.id == BodyId.FootR || part.id == BodyId.Hips);
+            if (!support && impact >= p.hitImpactThreshold && State == PawnState.Active)
+                hitTimer = p.hitRecoveryTime;
+        }
+
+        // ---------------------------------------------------------------- utilities
+
+        public void Teleport(Vector3 hipsPosition, Vector3 faceDirection)
+        {
+            handL.Release();
+            handR.Release();
+            Vector3 face = FlatDir(faceDirection, Vector3.forward);
+            Quaternion rot = Quaternion.LookRotation(face, Vector3.up);
+            for (int i = 0; i < Count; i++)
+            {
+                var rb = bodies[i];
+                Vector3 pos = hipsPosition + rot * bindPos[i];
+                Quaternion r = rot * bindRot[i];
+                rb.transform.SetPositionAndRotation(pos, r);
+                rb.position = pos;
+                rb.rotation = r;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            anchorPos = hipsPosition;
+            anchorVel = Vector3.zero;
+            anchor.transform.SetPositionAndRotation(hipsPosition, rot);
+            anchor.position = hipsPosition;
+            anchor.rotation = rot;
+            facing = face;
+            State = PawnState.Active;
+            stateTimer = 0f;
+            StateFactor = 1f;
+            Stiffness = 1f;
+            contactTimer = hitTimer = shoveTimer = airTimer = 0f;
+            SetRagdollFriction(false);
+        }
+
+        public bool IsFinite()
+        {
+            foreach (var rb in bodies)
+            {
+                Vector3 v = rb.position;
+                if (float.IsNaN(v.x) || float.IsNaN(v.y) || float.IsNaN(v.z) ||
+                    float.IsInfinity(v.x) || float.IsInfinity(v.y) || float.IsInfinity(v.z)) return false;
+            }
+            return true;
+        }
+
+        static Vector3 Flat(Vector3 v)
+        {
+            v.y = 0f;
+            return v;
+        }
+
+        static Vector3 FlatDir(Vector3 v, Vector3 fallback)
+        {
+            v.y = 0f;
+            return v.sqrMagnitude > 1e-6f ? v.normalized : fallback;
+        }
+    }
+}
