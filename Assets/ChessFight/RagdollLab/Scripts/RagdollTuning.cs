@@ -90,7 +90,9 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAssist, "중력 배율")] [Range(0.5f, 3f)] public float gravityScale = 1f;
 
         [Tunable(GroupPose, "보폭 (m/주기)")] [Range(0.2f, 3f)] public float strideLength = 0.9f;
-        [Tunable(GroupPose, "다리 스윙 (도)")] [Range(0f, 80f)] public float legSwing = 35f;
+        // The shipped run commands 140 (the hip limit caps what actually comes out at ~95), so the
+        // slider has to reach past it or touching it once would clamp the default away.
+        [Tunable(GroupPose, "다리 스윙 (도)")] [Range(0f, 160f)] public float legSwing = 35f;
         [Tunable(GroupPose, "팔 스윙 (도)")] [Range(0f, 90f)] public float armSwing = 35f;
         [Tunable(GroupPose, "팔 내림 (도)")] [Range(-30f, 80f)] public float armRestDown = 20f;
         [Tunable(GroupPose, "상체 기울기 (도)")] [Range(0f, 40f)] public float chestLean = 10f;

@@ -353,6 +353,10 @@ namespace ChessFight.RagdollLab
         /// 3.2 the top speed falls to 9.5 m/s and the legs push hard enough downhill that running
         /// beats rolling, which breaks the spec's rule 3. Lighter legs were tried and did not help:
         /// the bottleneck is drive bandwidth, not inertia.
+        ///
+        /// Speed was then cut to 80% (12 -> 9.6 m/s) on playtest feedback. This is the approved run and
+        /// is baked into Settings/RagdollTuning.asset, so the lab and the prefab start with it; "명세
+        /// 시작값" still resets to the spec for A/B, and this button brings the run back.
         /// </summary>
         public const string StepPresetJson =
             "{'lowerBodySpring':2600,'upperBodySpring':1600," +
@@ -370,7 +374,7 @@ namespace ChessFight.RagdollLab
         {
             tuning.LoadJson(StepPresetJson.Replace('\'', '"'));
             MarkTuningDirty();
-            Status = "크게 달리기 프리셋: 12 m/s, 다리 스윙 95도. 도약 프리셋과 1/2 키로 비교해보세요";
+            Status = "크게 달리기 프리셋(기본값): 9.6 m/s, 다리 스윙 95도. 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
         }
 
         public void ApplyWeightPreset()
