@@ -73,7 +73,7 @@
 | 기능 | 동작 | 코드 |
 |---|---|---|
 | **방장 끊김 단계** | 클라이언트가 roster에 들어간 순간부터 스냅샷 공백을 잰다. **0.5초** "방장 연결이 불안정합니다" → **2초** "방장 응답 없음 - 멈춤 (n초 뒤 파티로 복귀)" + 이동 입력 0·점프 무시 → **12초** `Cancel()` 후 파티로 | `LinkMonitor.Classify`, `SteamMotion.UpdateHealth` |
-| 표시 | 킹러시: 상단 배너(노랑/빨강). 로비: 상세 정보 문구 | `KingRushMatchView.ShowWarning` |
+| 표시 | 경기 씬: 상단 배너(노랑/빨강). 로비: 연결 정보 카드 문구 | `MatchSceneView.ShowWarning` |
 | **핑** | Steam 전송 핑. 클라이언트는 방장까지, 방장은 가장 나쁜 참가자. 1초마다 `GetSessionConnectionInfo` | `SteamMotion.PollPing` |
 | **응답** | 입력을 보낸 시각 → 그 입력을 Ack한 스냅샷 도착까지. 1/8 지수 평활. 호스트 tick과 스냅샷 간격이 포함된 체감값 | `ResponseTimer` |
 | **F8 지연 시뮬레이터** | 개발 빌드만. 꺼짐 → +100ms → +200ms·손실 5% → +300ms·손실 10%. 이 PC의 송신과 수신에 각각 절반 지연, 손실은 방향마다. 순서는 바꾸지 않는다 | `LinkSimulator<T>`, `LinkProfile.Presets`, `NetworkRuntime.Update` |

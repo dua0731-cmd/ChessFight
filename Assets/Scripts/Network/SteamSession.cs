@@ -12,7 +12,9 @@ namespace ChessFight.Network
     public sealed class SteamSession : IDisposable
     {
         // v2: jump travels as a press count (MotionProtocol "CFF2").
-        public const string Protocol = "chessfight.dua0731.network.v2";
+        // v3: parties and matches carry a game mode, and search filters on it.
+        //     A v2 build would ignore the filter and walk into another mode's room.
+        public const string Protocol = "chessfight.dua0731.network.v3";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }
@@ -35,9 +37,16 @@ namespace ChessFight.Network
         // A private test room starts at two pawns; a public room only at twelve.
         public bool PrivateRoom => privateRoom;
         public bool IsLeader => Party != 0 && Owner(Party) == Self;
+        public ulong PartyLeader => Owner(Party);
         public bool BotsBlockPublicMatch => !AllowPublicBots && PartyBots > 0;
         public bool CanUseRoomBots => IsHost && !Started && (privateRoom || AllowPublicBots);
         public bool Busy => pending || Searching || Match != 0 || Route(Party) != "idle";
+        // The mode the party queues for. Everyone in the party reads it from the
+        // party lobby; only the leader writes it (SetMode).
+        public GameModeInfo PartyMode => GameModes.Resolve(Data(Party, "mode"));
+        // The mode of the match room we are in, which is the host's choice. A room
+        // joined by its number keeps its own mode whatever the party had picked.
+        public GameModeInfo MatchMode => Match == 0 ? null : GameModes.Resolve(Data(Match, "mode"));
         public string Status { get; private set; } = "Steam 연결 중...";
         public string Error { get; private set; } = "";
         public readonly Dictionary<ulong, PawnState> Roster = new Dictionary<ulong, PawnState>();
@@ -51,7 +60,7 @@ namespace ChessFight.Network
         ulong[] queuedMembers = Array.Empty<ulong>();   // humans + declared party bots
         ulong[] queuedHumans = Array.Empty<ulong>();    // humans only, for roster-change detection
         ulong partyOwner;
-        string ticket = "", presence, carriedError;
+        string ticket = "", presence, carriedError, queuedMode = GameModes.Default.Key;
         bool pending, admitted, seenRoster, privateRoom, cancelledFollower, disposed;
         int generation;
         float nextPoll, nextSearch, deadline, nextRequest, mergeAt, invalidHostSince = -1;
@@ -174,17 +183,27 @@ namespace ChessFight.Network
                 ulong lobby = c.m_ulSteamIDLobby;
                 Set(lobby, "protocol", Protocol); Set(lobby, "build", Build); Set(lobby, "kind", match ? "match" : "party");
                 if (!match)
-                { Party = lobby; partyOwner = Self; Set(Party, "route", "idle"); Status = "파티 준비 완료. 친구를 초대하거나 매칭을 시작하세요."; Error = carriedError ?? ""; carriedError = null; }
+                { Party = lobby; partyOwner = Self; Set(Party, "route", "idle"); Set(Party, "mode", GameModes.Default.Key); Status = "파티 준비 완료. 친구를 초대하거나 매칭을 시작하세요."; Error = carriedError ?? ""; carriedError = null; }
                 else
                 {
                     Match = lobby; Host = Self; admitted = true; Started = false;
                     reservations.Clear(); reservations.Reserve(Self, Party, ticket, queuedMembers, Time.realtimeSinceStartup, out _);
-                    Set(Match, "host", Self.ToString()); Set(Match, "phase", "waiting");
+                    Set(Match, "host", Self.ToString()); Set(Match, "phase", "waiting"); Set(Match, "mode", queuedMode);
                     Set(Match, "private", privateRoom ? "1" : "0"); PublishRoster();
                     Set(Party, "route", Match.ToString()); mergeAt = Time.realtimeSinceStartup + 6;
                     SessionChanged?.Invoke();
                 }
             });
+        }
+
+        // Only the leader picks the mode, and only while the party is idle: the
+        // mode is frozen with the queue for the whole search. Any mode this build
+        // knows is accepted; whether it can be played yet is the lobby's call.
+        public bool SetMode(string key)
+        {
+            if (!Online || !IsLeader || Busy || GameModes.Find(key) == null) return false;
+            Set(Party, "mode", key);
+            return true;
         }
 
         // Only the leader decides the party's bot count, and only while the party
@@ -252,6 +271,8 @@ namespace ChessFight.Network
                 {
                     Id = id.m_SteamID,
                     Name = SteamFriends.GetFriendPersonaName(id),
+                    // Our own Rich Presence line, only meaningful inside this game.
+                    Detail = here ? SteamFriends.GetFriendRichPresence(id, "status") : "",
                     Presence = here ? FriendPresence.InGame
                              : state == EPersonaState.k_EPersonaStateOffline ? FriendPresence.Offline
                              : state == EPersonaState.k_EPersonaStateOnline ? FriendPresence.Online
@@ -339,6 +360,7 @@ namespace ChessFight.Network
         void FreezeQueue()
         {
             queuedHumans = PartyMembers;
+            queuedMode = PartyMode.Key;
             PartyBots = Math.Min(PartyBots, Math.Max(0, TeamReservations.TeamSize - queuedHumans.Length));
             queuedMembers = queuedHumans.Concat(BotIdentity.Fill(Self, PartyBots)).ToArray();
             cancelBaseline.Clear();
@@ -353,6 +375,7 @@ namespace ChessFight.Network
             SteamMatchmaking.AddRequestLobbyListStringFilter("kind", "match", ELobbyComparison.k_ELobbyComparisonEqual);
             SteamMatchmaking.AddRequestLobbyListStringFilter("phase", "waiting", ELobbyComparison.k_ELobbyComparisonEqual);
             SteamMatchmaking.AddRequestLobbyListStringFilter("private", "0", ELobbyComparison.k_ELobbyComparisonEqual);
+            SteamMatchmaking.AddRequestLobbyListStringFilter("mode", queuedMode, ELobbyComparison.k_ELobbyComparisonEqual);
             // Steam counts real lobby members; bots only consume our own reservation
             // slots, which the free0/free1 check below enforces.
             SteamMatchmaking.AddRequestLobbyListFilterSlotsAvailable(queuedHumans.Length);
@@ -559,13 +582,17 @@ namespace ChessFight.Network
             SessionChanged?.Invoke();
         }
         void Fail(string error) { Cancel(); Error = error; Status = error; }
+        // For the scene flow: leave the match and tell the player why.
+        public void Abort(string reason) { if (Online) Fail(reason); }
 
         // Steam friends see "Join game" on us while our party can take them.
         // A search locks the party lobby, so the offer is withdrawn meanwhile.
         void UpdatePresence()
         {
             string connect = Party != 0 && !Busy ? "+connect_lobby " + Party : "";
-            string status = Match != 0 ? (Started ? "경기 중" : "경기 대기실") : Busy ? "매칭 찾는 중" : $"파티 {PartyMembers.Length}/6";
+            // Friends see this under our name in the lobby's friend panel.
+            string mode = (MatchMode ?? PartyMode).Name;
+            string status = Match != 0 ? mode + (Started ? " 경기 중" : " 대기실") : Busy ? mode + " 매칭 찾는 중" : $"로비에서 대기 중 · 파티 {PartyMembers.Length}/6";
             string next = connect + "|" + status;
             if (next == presence) return;
             presence = next;

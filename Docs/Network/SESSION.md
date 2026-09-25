@@ -1,6 +1,6 @@
 # 파티·매칭·예약 (`SteamSession`, `TeamReservations`)
 
-코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam 12개), `NetworkCoreTests.cs`(예약 규칙).
+코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam 15개), `NetworkCoreTests.cs`(예약 규칙, 모드 목록).
 
 ## 1. 두 종류의 로비
 
@@ -22,17 +22,17 @@
 - `Initialize()`: Packsize/DLL 검사 → `SteamAPI.Init()` → Self ID → `InitRelayNetworkAccess()` → 콜백 등록(로비 채팅, 초대 `GameLobbyJoinRequested_t`, Rich Presence 참가 `GameRichPresenceJoinRequested_t`) → 실행 인자에 `+connect_lobby <ID>`가 있으면 그 파티로, 없으면 1인 파티 생성.
 - 초기화 실패 → HUD `Steam 다시 연결` → `Retry()`.
 - 초대: 게임 내 친구 패널의 `InviteToParty(friend)`(= `InviteUserToLobby`). 예비로 `Invite()`(오버레이).
-- **Rich Presence(M5):** 파티가 한가할 때 `connect = "+connect_lobby <파티ID>"`, `status = "파티 n/6"`. 검색·경기 중에는 `connect`를 지우고 `status`만 "매칭 찾는 중/경기 대기실/경기 중". 값이 바뀔 때만 설정한다. 종료 때 `ClearRichPresence()`. 파싱은 `SteamSession.ParseConnect`.
+- **Rich Presence(M5):** 파티가 한가할 때 `connect = "+connect_lobby <파티ID>"`, `status = "로비에서 대기 중 · 파티 n/6"`. 검색·경기 중에는 `connect`를 지우고 `status`만 "<모드> 매칭 찾는 중 / <모드> 대기실 / <모드> 경기 중". 친구의 `status`는 로비 친구 카드에 이름 아래 줄로 보인다(`FriendInfo.Detail`). 값이 바뀔 때만 설정한다. 종료 때 `ClearRichPresence()`. 파싱은 `SteamSession.ParseConnect`.
 - **버전 검사:** 입장한 로비의 `kind`, `protocol`, `build`를 `Incompatibility()`가 확인한다. 파티가 다른 버전이면 나와서 "게임 버전이 다릅니다 (내 버전 X / 상대 Y)"를 보여 주고 **새 1인 파티**를 만든다(옛 코드는 파티 없이 남았다).
 
 ## 3. 자동 매칭 알고리즘
 
 별도 매칭 서버가 아니라 Steam 로비 검색 위에 만든 정책이다.
 
-1. 파티장만 `FindMatch()`. 파티원 배열을 정렬해 `queuedHumans`로 고정하고, 파티 봇을 붙여 `queuedMembers`를 만든다. 새 ticket, 각 파티원의 `cancel` 기준값 기록.
+1. 파티장만 `FindMatch()`. 파티원 배열을 정렬해 `queuedHumans`로 고정하고, 파티 봇을 붙여 `queuedMembers`를 만든다. **파티 모드도 `queuedMode`로 고정한다.** 새 ticket, 각 파티원의 `cancel` 기준값 기록.
    - 릴리스 빌드에서 파티 봇이 있으면 공개 매칭을 거부한다(M6, `BotsBlockPublicMatch`).
 2. 파티 추가 입장을 잠그고 `route=search`. 파티원은 이를 보고 기다린다.
-3. 검색 필터: `protocol`, **`build`**, `kind=match`, `phase=waiting`, `private=0`, 사람 수만큼 빈자리, 기본 거리, 최대 50개.
+3. 검색 필터: `protocol`, **`build`**, `kind=match`, `phase=waiting`, `private=0`, **`mode`(= 파티 모드)**, 사람 수만큼 빈자리, 기본 거리, 최대 50개. 그래서 **다른 모드의 방은 검색되지 않는다**(방 합치기 검색도 같은 필터).
 4. 결과의 `free0`/`free1`을 보고 **한 팀에 파티 전체(봇 포함)가 들어가는 방**만 후보로 남긴다.
 5. 로비 ID 오름차순으로 시도. 검색 결과는 오래됐을 수 있어 입장이 최종 승인은 아니다.
 6. 파티장이 먼저 입장해 호스트에 예약을 요청하고, 승인된 뒤에만 `route=<경기ID>`로 바꿔 파티원이 따라오게 한다.
@@ -75,10 +75,12 @@
 
 | 키 | 위치 | 값 |
 |---|---|---|
-| `protocol` | 두 로비 | `chessfight.dua0731.network.v2` |
+| `protocol` | 두 로비 | `chessfight.dua0731.network.v3` (v3: 게임 모드 추가) |
 | `build` | 두 로비 | `NetworkRuntime.BuildTag` 예: `0.1.0-dev` |
 | `kind` | 두 로비 | `party` / `match` |
 | `route` | 파티 | `idle` / `search` / 경기 로비 ID |
+| `mode` | 파티 | 파티장이 고른 게임 모드 키(`kingrush` 등). 파티를 만들 때 기본값. `SetMode`로 파티장만, 한가할 때만 바꾼다 |
+| `mode` | 경기 | 방을 만든 파티장의 모드. 검색 필터와 경기 씬 선택에 쓴다. 번호로 들어간 사람도 이 값을 따른다 |
 | `cancel` | 파티원 member data | 취소할 때 새 GUID |
 | `host` | 경기 | 호스트 Steam ID |
 | `phase` | 경기 | `waiting` / `playing` / `closed` |
@@ -113,5 +115,5 @@
 
 ## 7. 공개 API 요약 (HUD가 쓰는 것)
 
-`FindMatch(bool privateTest)`, `JoinParty(id)`, `JoinPrivateMatch(id)`, `StartGame()`, `Cancel()`, `LeaveParty()`, `Retry()`, `Friends()`, `InviteToParty(id)`, `Invite()`, `SetPartyBots(n)`, `FillRoomWithBots()`, `ClearRoomBots()`.
-속성: `Online`, `Party`, `Match`, `Host`, `IsHost`, `IsLeader`, `Busy`, `Searching`, `Started`, `PrivateRoom`, `Roster`, `PartyMembers`, `PartyBots`, `MaxPartyBots`, `RoomBots`, `Build`, `AllowPublicBots`, `BotsBlockPublicMatch`, `CanUseRoomBots`, `Status`, `Error`.
+`FindMatch(bool privateTest)`, `SetMode(key)`, `JoinParty(id)`, `JoinPrivateMatch(id)`, `StartGame()`, `Cancel()`, `Abort(reason)`, `LeaveParty()`, `Retry()`, `Friends()`, `InviteToParty(id)`, `Invite()`, `SetPartyBots(n)`, `FillRoomWithBots()`, `ClearRoomBots()`.
+속성: `Online`, `Party`, `PartyLeader`, `PartyMode`, `Match`, `MatchMode`, `Host`, `IsHost`, `IsLeader`, `Busy`, `Searching`, `Started`, `PrivateRoom`, `Roster`, `PartyMembers`, `PartyBots`, `MaxPartyBots`, `RoomBots`, `Build`, `AllowPublicBots`, `BotsBlockPublicMatch`, `CanUseRoomBots`, `Status`, `Error`.

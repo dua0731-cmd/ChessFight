@@ -12,7 +12,8 @@ IMoveInputSource.Read() → MoveIntent { Move(Vector2), Jump(누른 순간), Sho
    │   ├─ LegacyMoveInputSource     ← 현재 사용 (Active Input Handling = Old)
    │   └─ InputSystemMoveSource     ← 패키지 있음 + 백엔드 켜짐일 때만 (Scripts/Input, 자기 등록)
    │
-   ├─ 온라인(로비·경기): NetworkRuntime → MovementGate 확인 → SteamMotion.Update(x, z, jump)
+   ├─ 온라인(경기): NetworkRuntime → MovementGate 확인 → SteamMotion.Update(x, z, jump)
+   │                (로비는 메뉴라 MovementGate가 항상 false, 2026-09-25 R19)
    │                     → 호스트 판정 PawnMotor (평면, Shove/Grab 무시)
    └─ 오프라인(KingRush·RagdollTest 직접 Play): PlaytestSpawner → CharacterCommand(월드 좌표)
                          → ICharacterDriver.SetCommand → PlaytestCharacter 또는 래그돌
@@ -35,7 +36,7 @@ IMoveInputSource.Read() → MoveIntent { Move(Vector2), Jump(누른 순간), Sho
 | `Game/MoveInputSource.cs` | `MoveIntent`, `IMoveInputSource`, `MoveInputSources`(등록·생성), `LegacyMoveInputSource`, `LegacyKeys` |
 | `Input/InputSystemMoveSource.cs` | `ChessFight.Game.Input` 어셈블리(`CHESSFIGHT_INPUTSYSTEM`). `ENABLE_INPUT_SYSTEM`이 없으면 null을 돌려 레거시로 넘긴다. Shove/Grab 액션은 없어도 동작 |
 | `Resources/ChessFightControls.inputactions` | `Gameplay` 맵: Move, Jump, Shove, Grab |
-| `Bootstrap/NetworkRuntime.cs` | 온라인 입력 소유, `MovementGate`(로비: 번호 입력 중·창 비활성이면 정지 / 경기: 창 비활성이면 정지) |
+| `Bootstrap/NetworkRuntime.cs` | 온라인 입력 소유, `MovementGate`(로비: 항상 정지 / 경기: 창 비활성이면 정지) |
 | `Gameplay/Playtest/PlaytestSpawner.cs` | 오프라인 입력 → `CharacterCommand`. 카메라가 위아래로만 기울어 화면 위 = 월드 +Z |
 
 ## 3. Input System 백엔드로 되돌리는 방법 (지금은 하지 않는다)
@@ -51,7 +52,7 @@ IMoveInputSource.Read() → MoveIntent { Move(Vector2), Jump(누른 순간), Sho
 
 | | 네트워크 `PawnMotor` | 오프라인 `PlaytestCharacter` |
 |---|---|---|
-| 어디서 | 로비, 현재 네트워크 경기 | KingRush·RagdollTest 직접 Play |
+| 어디서 | 현재 네트워크 경기(로비 대기실은 R19부터 이동 없음) | KingRush·RagdollTest 직접 Play |
 | 방식 | 수식(평면, 충돌 없음), 호스트 권위 | CharacterController(**임시품**) |
 | 동작 | 이동·점프 | 이동·점프·밀치기·잡기 흉내·장애물에 밀림 |
 | 수치 | 속도 6, 점프 7, 중력 22 | 같은 값 + 밀치기·잡기·넉백 값(Inspector) |

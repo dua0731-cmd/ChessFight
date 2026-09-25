@@ -80,6 +80,25 @@ public static class SessionFlowTests
                 As(host,()=>host.FindMatch(true));Step();Check(Presence(host,"connect")==""&&Presence(host,"status")!="","offer kept while busy");
                 As(host,host.Cancel);Step();Check(Presence(host,"connect")=="+connect_lobby "+host.Party,"offer not restored");
                 Check(SteamSession.ParseConnect("+connect_lobby 42")==42&&SteamSession.ParseConnect("x.exe -foo +connect_lobby 7 -bar")==7&&SteamSession.ParseConnect("+connect_lobby")==0,"parse");});
+            Test("Followers see the leader's mode and only an idle leader can change it",()=>{
+                Setup(2);JoinParty(1,0);var leader=clients[0];var follower=clients[1];
+                Check(leader.PartyMode==GameModes.Default&&follower.PartyMode==GameModes.Default,"fresh party mode");
+                bool changed=false;As(leader,()=>changed=leader.SetMode("swordfight"));Step();
+                Check(changed&&follower.PartyMode==GameModes.SwordFight,"follower did not see the mode");
+                As(follower,()=>changed=follower.SetMode("kingrush"));Check(!changed&&leader.PartyMode==GameModes.SwordFight,"follower changed the mode");
+                As(leader,()=>changed=leader.SetMode("bogus"));Check(!changed,"unknown mode accepted");
+                As(leader,()=>leader.FindMatch(true));Step(20);As(leader,()=>changed=leader.SetMode("kingrush"));
+                Check(!changed&&leader.MatchMode==GameModes.SwordFight&&follower.MatchMode==GameModes.SwordFight,"room lost the mode");});
+            Test("Public search only pairs parties that picked the same mode",()=>{
+                Setup(3);As(clients[0],()=>clients[0].SetMode("queenhill"));Step();
+                foreach(var c in clients)As(c,()=>c.FindMatch());Step(80);
+                Check(clients.All(c=>c.Match!=0),"someone never got a room");
+                Check(clients[1].Match==clients[2].Match&&clients[0].Match!=clients[1].Match,"different modes shared a room");
+                Check(clients[0].MatchMode==GameModes.QueenOfTheHill&&clients[1].MatchMode==GameModes.KingRush,"room modes");});
+            Test("A room joined by its number keeps the host's mode",()=>{
+                Setup(2);As(clients[0],()=>clients[0].SetMode("swordfight"));As(clients[0],()=>clients[0].FindMatch(true));Step();
+                As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);
+                Check(clients[1].Match==clients[0].Match&&clients[1].MatchMode==GameModes.SwordFight&&clients[1].PartyMode==GameModes.KingRush,"joined room mode");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

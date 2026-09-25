@@ -5,16 +5,17 @@ using UnityEngine.UIElements;
 
 namespace ChessFight.Game
 {
-    // KingRush opened as the match scene. Draws the networked pawns on the course
-    // and a read-only status panel; Esc leaves the match.
+    // Any mode's scene opened as the match scene (KingRush today). Draws the
+    // networked pawns and a read-only status panel titled with the mode; Esc
+    // leaves the match. Mode rules will sit beside this, not inside it.
     //
     // PLACEHOLDER MOVEMENT: pawns still move with the lobby's flat PawnMotor,
     // which clamps them to a 38 x 38 area at ground height and ignores colliders.
-    // They stand on the start platform and cannot run the course or be hit by
+    // They stand on the start area and cannot run a course or be hit by
     // obstacles until the ragdoll is simulated by the host. Offline playtest is
-    // where the course is exercised for now.
+    // where a course is exercised for now.
     [DisallowMultipleComponent]
-    public sealed class KingRushMatchView : MonoBehaviour
+    public sealed class MatchSceneView : MonoBehaviour
     {
         NetworkRuntime runtime;
         PawnSpawner spawner;
@@ -46,6 +47,8 @@ namespace ChessFight.Game
             roster = root?.Q<Label>("match-roster");
             link = root?.Q<Label>("match-link");
             warning = root?.Q<Label>("match-warning");
+            var title = root?.Q<Label>("match-title");
+            if (title != null) title.text = (runtime.Session.MatchMode ?? GameModes.Default).Name;
 
             gate = () => Application.isFocused;
             runtime.MovementGate = gate;

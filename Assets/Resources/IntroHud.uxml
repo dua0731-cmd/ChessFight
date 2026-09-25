@@ -1,8 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <!-- Title screen. Nothing here is clickable: any key continues. -->
     <ui:VisualElement class="intro" picking-mode="Ignore">
-        <ui:Label text="CHESSFIGHT" class="intro-title" />
-        <ui:Label text="체스 말 6종 · 6 대 6 파티 게임" class="intro-sub" />
+        <ui:VisualElement class="intro-ground" picking-mode="Ignore" />
+        <ui:VisualElement class="intro-logo" picking-mode="Ignore">
+            <ui:Label text="CHESS " class="intro-title" />
+            <ui:Label text="FIGHT" class="intro-title-b" />
+        </ui:VisualElement>
+        <ui:Label text="6 vs 6 · 체스 말 파티 게임" class="intro-sub" />
         <ui:Label name="intro-status" class="intro-status" />
         <ui:Label name="intro-hint" class="intro-hint" />
     </ui:VisualElement>

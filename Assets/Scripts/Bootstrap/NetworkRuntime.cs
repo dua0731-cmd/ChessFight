@@ -14,8 +14,9 @@ namespace ChessFight.Game
     //
     // It also runs the scene flow:
     //   Intro -> Lobby            the title screen, on any key
-    //   Lobby -> KingRush         when the match starts (every client sees phase=playing)
-    //   KingRush -> Lobby         when the match ends or the player leaves
+    //   Lobby -> mode scene       when the match starts (every client sees phase=playing);
+    //                             the scene comes from the match room's game mode
+    //   mode scene -> Lobby       when the match ends or the player leaves
     //
     // Scene objects never reference this Steam-gated assembly. Each scene is
     // given its controller here, when it loads.
@@ -34,6 +35,8 @@ namespace ChessFight.Game
         public Func<bool> MovementGate { get; set; }
 
         bool inMatchScene, loading;
+        // The scene the running match loaded, from its game mode.
+        string matchScene = "";
         readonly SharedClock clock = new SharedClock();
 
         // Only scenes that belong to the online flow start Steam. A course or test
@@ -88,12 +91,10 @@ namespace ChessFight.Game
             {
                 case SceneNames.Intro: Host(scene).AddComponent<IntroController>(); break;
                 case SceneNames.Lobby: Host(scene).AddComponent<LobbyBootstrap>(); break;
-                case SceneNames.KingRush:
-                    // Opened as the match scene: show the networked pawns instead
-                    // of the offline playtest.
-                    if (inMatchScene) Host(scene).AddComponent<KingRushMatchView>();
-                    break;
             }
+            // A mode scene opened as the match scene shows the networked pawns
+            // instead of its offline playtest.
+            if (inMatchScene && scene.name == matchScene) Host(scene).AddComponent<MatchSceneView>();
         }
 
         // The scene's GameSceneConfig object when it has one, so the controller
@@ -141,16 +142,22 @@ namespace ChessFight.Game
             string active = SceneManager.GetActiveScene().name;
             if (!inMatchScene && Session.Started && active == SceneNames.Lobby)
             {
+                var mode = Session.MatchMode ?? GameModes.Default;
+                // The lobby never offers a mode without a scene, but a room joined
+                // by its number is the host's choice, so check before loading.
+                if (!mode.Playable) { Session.Abort(mode.Name + " 모드는 아직 준비 중입니다."); return; }
                 inMatchScene = true;
+                matchScene = mode.Scene;
                 PlaytestSpawner.NetworkDriven = true;
                 // Every client reads the same Steam server clock, so obstacles line
                 // up across screens without any obstacle messages.
                 ObstacleClock.Use(clock.Now);
-                Load(SceneNames.KingRush);
+                Load(matchScene);
             }
             else if (inMatchScene && Session.Match == 0)
             {
                 inMatchScene = false;
+                matchScene = "";
                 PlaytestSpawner.NetworkDriven = false;
                 ObstacleClock.Use(null);
                 Load(SceneNames.Lobby);

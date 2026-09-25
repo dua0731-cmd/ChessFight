@@ -1,87 +1,214 @@
-/* Three columns across the whole screen. Cards never shrink: letting flex squash
-   them collapses every row instead of overflowing, which is far harder to use. */
-.screen { flex-grow: 1; flex-direction: row; padding: 20px; }
-.col { flex-direction: column; justify-content: space-between; flex-shrink: 0; }
-.col-left { width: 300px; }
-.col-right { width: 280px; }
-.spacer { flex-grow: 1; }
-.actions { margin: 6px 0; }
+/* One stylesheet for every HUD (NetworkTheme.tss imports only this file).
+   Reference resolution 1280 x 720. No default theme: plain elements only, and
+   anything that must not squash says flex-shrink: 0. */
 
+/* ---------- shared ---------- */
+.row { flex-direction: row; align-items: center; }
+.grow { flex-grow: 1; }
+.kicker { font-size: 9px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(250, 208, 60); }
+.status { font-size: 13px; color: rgb(210, 228, 248); white-space: normal; }
+.details { font-size: 11px; color: rgb(160, 176, 198); white-space: normal; margin-top: 6px; }
+
+.btn { min-height: 30px; margin: 3px; padding: 4px 12px; border-width: 0; border-radius: 8px; font-size: 13px;
+       background-color: rgb(44, 58, 84); color: rgb(240, 246, 255); -unity-text-align: middle-center; flex-shrink: 0; }
+.btn:hover { background-color: rgb(60, 80, 112); }
+.btn:disabled { background-color: rgb(30, 38, 54); color: rgb(100, 112, 130); }
+.btn.tiny { min-height: 26px; font-size: 11px; padding: 2px 10px; }
+.btn.micro { min-height: 24px; font-size: 11px; padding: 2px 8px; }
+.btn.square { width: 26px; padding: 0; }
+.btn.warn { background-color: rgb(196, 106, 58); }
+.btn.go { background-color: rgb(250, 208, 60); color: rgb(30, 26, 12); -unity-font-style: bold; }
+.btn.go:hover { background-color: rgb(255, 222, 96); }
+.btn.go:disabled { background-color: rgb(80, 74, 50); color: rgb(150, 140, 110); }
+.btn.ghost { background-color: rgba(255, 255, 255, 0.10); }
+.btn.ghost:hover { background-color: rgba(255, 255, 255, 0.20); }
+.btn.danger-text { background-color: rgba(0, 0, 0, 0); color: rgb(255, 150, 120); margin-left: 8px; }
+.btn.danger-text:hover { background-color: rgba(255, 120, 90, 0.14); }
+.btn.danger-text:disabled { color: rgb(110, 100, 100); background-color: rgba(0, 0, 0, 0); }
+
+/* ---------- lobby frame ---------- */
+.lobby { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+.topbar { position: absolute; left: 0; top: 0; right: 0; height: 58px; flex-direction: row; align-items: center;
+          padding-left: 24px; padding-right: 20px; background-color: rgba(14, 22, 38, 0.55); }
+.logo { margin-right: 26px; }
+.logo-a { font-size: 22px; -unity-font-style: bold-and-italic; color: rgb(255, 255, 255); }
+.logo-b { font-size: 22px; -unity-font-style: bold-and-italic; color: rgb(250, 208, 60); }
+.tab { font-size: 14px; margin-right: 22px; padding-bottom: 4px; border-bottom-width: 2px; border-color: rgba(0, 0, 0, 0); }
+.tab-on { color: rgb(255, 255, 255); -unity-font-style: bold; border-color: rgb(250, 208, 60); }
+.tab-off { color: rgba(255, 255, 255, 0.45); }
+.pill { min-height: 34px; margin-left: 8px; padding: 4px 14px; border-radius: 10px; border-width: 0; font-size: 13px;
+        -unity-font-style: bold; color: rgb(236, 242, 252); background-color: rgba(18, 28, 48, 0.88); -unity-text-align: middle-center; }
+.pill:hover { background-color: rgba(40, 56, 88, 0.95); }
+.profile { padding-left: 16px; padding-right: 16px; }
+
+/* ---------- top centre ---------- */
+.top-center { position: absolute; left: 0; right: 0; top: 68px; align-items: center; }
+.toast { display: none; padding: 9px 18px; margin-bottom: 8px; border-radius: 16px; font-size: 13px;
+         -unity-font-style: bold; color: rgb(240, 246, 255); background-color: rgba(18, 28, 48, 0.92); }
+.toast-error { background-color: rgba(176, 58, 46, 0.94); }
+.notice { display: none; padding: 8px 8px 8px 16px; margin-bottom: 8px; border-radius: 12px;
+          background-color: rgba(120, 44, 30, 0.92); }
+.notice-text { font-size: 13px; color: rgb(255, 236, 228); margin-right: 8px; }
+
+.match-panel { display: none; width: 400px; padding: 12px 16px; border-radius: 14px;
+               background-color: rgba(16, 24, 42, 0.94); }
+.match-head { align-items: flex-start; }
+.match-title { font-size: 18px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.match-clock { align-items: flex-end; }
+.match-timer { font-size: 22px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.match-note { font-size: 10px; color: rgb(250, 208, 60); }
+.match-slots { margin-top: 10px; justify-content: center; }
+.slot-group { flex-shrink: 0; }
+.slot { width: 20px; height: 20px; margin: 0 2px; border-radius: 4px; border-width: 1px;
+        border-color: rgba(255, 255, 255, 0.25); background-color: rgba(255, 255, 255, 0.04); }
+.slot-blue { background-color: rgb(70, 130, 240); border-color: rgb(120, 170, 255); }
+.slot-orange { background-color: rgb(236, 128, 60); border-color: rgb(255, 170, 110); }
+.versus { font-size: 11px; -unity-font-style: bold; color: rgb(170, 184, 204); margin: 0 12px; }
+.room-tools { margin-top: 8px; justify-content: center; }
+.room-code { font-size: 12px; color: rgb(214, 226, 242); margin-right: 4px; }
+
+/* ---------- bottom left ---------- */
+.bottom-left { position: absolute; left: 20px; bottom: 44px; }
+.chip-btn { min-height: 30px; margin: 0 8px 8px 0; padding: 4px 14px; border-radius: 10px; border-width: 0; font-size: 12px;
+            -unity-font-style: bold; color: rgb(236, 242, 252); background-color: rgba(18, 28, 48, 0.88); }
+.chip-btn:hover { background-color: rgba(40, 56, 88, 0.95); }
+.chip-btn:disabled { color: rgb(110, 120, 138); }
+.party-bar { padding: 10px 12px; border-radius: 14px; background-color: rgba(16, 24, 42, 0.94); align-items: stretch; }
+.party-count { padding-right: 14px; margin-right: 12px; border-right-width: 1px; border-color: rgba(255, 255, 255, 0.12); justify-content: center; }
+.party-number { font-size: 26px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.party-section { padding-right: 12px; margin-right: 10px; border-right-width: 1px; border-color: rgba(255, 255, 255, 0.12); justify-content: center; }
+.section-title { font-size: 10px; color: rgb(160, 176, 198); margin-left: 3px; }
+.party-code { font-size: 15px; -unity-font-style: bold; color: rgb(255, 255, 255); margin: 0 4px 0 3px; }
+.bot-count { font-size: 15px; -unity-font-style: bold; color: rgb(255, 255, 255); width: 26px; -unity-text-align: middle-center; }
+.bots-note { font-size: 9px; color: rgb(250, 190, 90); margin-left: 3px; }
+
+/* ---------- bottom right ---------- */
+.bottom-right { position: absolute; right: 20px; bottom: 44px; width: 390px; align-items: stretch; }
+.mode-card { height: 76px; margin: 0 0 10px 0; padding: 8px 14px 8px 8px; border-radius: 14px; border-width: 0;
+             background-color: rgba(16, 24, 42, 0.94); }
+.mode-card:hover { background-color: rgba(30, 42, 66, 0.96); }
+.mode-card:disabled { background-color: rgba(16, 24, 42, 0.80); }
+.mode-tile { width: 60px; height: 60px; margin-right: 12px; border-radius: 10px; align-items: center; justify-content: center;
+             background-color: rgb(70, 130, 240); }
+.mode-badge { font-size: 20px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.mode-name { font-size: 20px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.mode-tagline { font-size: 11px; color: rgb(170, 184, 204); }
+.mode-change { font-size: 12px; color: rgb(200, 212, 230); }
+.start-btn { height: 84px; margin: 0; padding: 10px 18px 10px 24px; border-radius: 14px; border-width: 0;
+             background-color: rgb(250, 208, 40); }
+.start-btn:hover { background-color: rgb(255, 222, 80); }
+.start-btn:disabled { background-color: rgb(92, 86, 58); }
+.start-title { font-size: 30px; -unity-font-style: bold; color: rgb(24, 22, 14); }
+.start-sub { font-size: 12px; color: rgb(70, 60, 20); }
+.start-btn:disabled .start-title { color: rgb(170, 160, 120); }
+.start-btn:disabled .start-sub { color: rgb(170, 160, 120); }
+.keycap { padding: 4px 10px; border-radius: 6px; font-size: 12px; -unity-font-style: bold;
+          color: rgb(60, 50, 12); background-color: rgba(0, 0, 0, 0.12); }
+.busy-card { display: none; padding: 12px 14px; border-radius: 14px; background-color: rgba(28, 44, 78, 0.96); }
+.busy-row { align-items: center; }
+.spinner { width: 26px; height: 26px; margin-right: 12px; border-radius: 13px; border-width: 4px;
+           border-color: rgba(255, 255, 255, 0.15); border-top-color: rgb(250, 208, 60); }
+.busy-title { font-size: 22px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.busy-sub { font-size: 12px; color: rgb(180, 196, 220); }
+.busy-card .go { min-height: 40px; font-size: 16px; margin-top: 8px; }
+
+.keys { position: absolute; left: 0; right: 0; bottom: 12px; justify-content: center; }
+.keycap.small { padding: 2px 7px; font-size: 10px; color: rgb(40, 48, 64); background-color: rgba(255, 255, 255, 0.85); }
+.key-label { font-size: 11px; color: rgb(60, 72, 96); margin: 0 14px 0 5px; }
+.version { position: absolute; right: 20px; bottom: 14px; font-size: 10px; color: rgba(40, 52, 76, 0.75); }
+
+/* ---------- lineup nameplates, positioned over the 3D pawns from code ---------- */
+.plate { position: absolute; width: 180px; align-items: center; }
+.plate-name { padding: 4px 12px; border-radius: 8px; font-size: 13px; -unity-font-style: bold;
+              color: rgb(255, 255, 255); background-color: rgba(16, 24, 42, 0.90); }
+.plate-me .plate-name { border-width: 1px; border-color: rgb(250, 208, 60); }
+.plate-tag { margin-top: 3px; padding: 1px 8px; border-radius: 6px; font-size: 10px;
+             color: rgb(214, 226, 242); background-color: rgba(16, 24, 42, 0.70); }
+.invite-spot { position: absolute; width: 120px; align-items: center; }
+.invite-plus { width: 40px; height: 40px; border-radius: 20px; border-width: 0; font-size: 24px; -unity-font-style: bold;
+               color: rgb(30, 26, 12); background-color: rgb(250, 208, 40); -unity-text-align: middle-center; padding: 0; }
+.invite-plus:hover { background-color: rgb(255, 224, 90); }
+.invite-label { margin-top: 4px; padding: 2px 8px; border-radius: 6px; font-size: 11px;
+                color: rgb(255, 255, 255); background-color: rgba(16, 24, 42, 0.85); }
+
+/* ---------- side cards (friends, details) ---------- */
+.side-card { display: none; position: absolute; right: 20px; top: 68px; width: 350px; padding: 14px;
+             border-radius: 14px; background-color: rgba(16, 24, 42, 0.96); }
+.details-card { width: 300px; }
+.panel-head { align-items: center; margin-bottom: 6px; }
+.panel-title { font-size: 18px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.friends-info { font-size: 11px; color: rgb(160, 176, 198); margin-right: 6px; }
+.friends-bar { margin-bottom: 6px; }
+.seg { min-height: 26px; margin: 0 2px 0 0; padding: 2px 12px; border-radius: 8px; border-width: 0; font-size: 12px;
+       color: rgb(180, 196, 220); background-color: rgba(255, 255, 255, 0.06); }
+.seg:hover { background-color: rgba(255, 255, 255, 0.12); }
+.seg-on { color: rgb(255, 255, 255); -unity-font-style: bold; background-color: rgb(52, 70, 104); }
+.friends-page { font-size: 11px; color: rgb(214, 226, 242); margin: 0 4px; }
+.friend-list { min-height: 300px; }
+.friend-group { flex-direction: row; justify-content: space-between; margin: 6px 2px 2px 2px; }
+.friend-group-label { font-size: 10px; color: rgb(160, 176, 198); }
+.friend-row { flex-direction: row; align-items: center; height: 36px; margin: 1px 0; padding: 0 4px 0 6px;
+              border-radius: 8px; background-color: rgba(255, 255, 255, 0.04); }
+.avatar { width: 26px; height: 26px; margin-right: 10px; border-radius: 13px; align-items: center; justify-content: center; }
+.avatar-letter { font-size: 12px; -unity-font-style: bold; color: rgb(30, 36, 50); }
+.friend-text { flex-grow: 1; flex-basis: 0; }
+.friend-name { font-size: 13px; -unity-font-style: bold; color: rgb(240, 246, 255); }
+.friend-state { font-size: 10px; color: rgb(160, 176, 198); }
+.friend-invite { width: 58px; min-height: 26px; margin: 0; padding: 0; border-radius: 8px; border-width: 1px; font-size: 11px;
+                 border-color: rgb(250, 208, 60); color: rgb(250, 208, 60); background-color: rgba(0, 0, 0, 0); }
+.friend-invite:hover { background-color: rgba(250, 208, 60, 0.16); }
+.friend-invite:disabled { border-color: rgb(80, 86, 100); color: rgb(110, 118, 132); }
+.friend-member { width: 58px; font-size: 11px; color: rgb(160, 176, 198); -unity-text-align: middle-center; }
+.friend-empty { font-size: 12px; color: rgb(160, 176, 198); -unity-text-align: middle-center; margin-top: 18px; }
+.friends-foot { margin-top: 8px; }
+.link { border-width: 0; padding: 2px 0; margin: 0; font-size: 11px; -unity-font-style: bold;
+        color: rgb(214, 226, 242); background-color: rgba(0, 0, 0, 0); }
+.link:hover { color: rgb(250, 208, 60); }
+
+/* ---------- modals (join by code, mode picker) ---------- */
+.modal { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+         align-items: center; justify-content: center; background-color: rgba(4, 8, 16, 0.60); }
+.modal-card { width: 460px; padding: 18px; border-radius: 16px; background-color: rgb(18, 26, 44); }
+.modal-card.wide { width: 620px; }
+.modal-card .row > .btn { flex-grow: 1; flex-basis: 0; }
+.mode-list { margin-top: 8px; }
+.mode-option { height: 76px; margin: 4px 0; padding: 8px 14px 8px 8px; border-radius: 12px; border-width: 2px;
+               border-color: rgba(0, 0, 0, 0); background-color: rgba(255, 255, 255, 0.05); }
+.mode-option:hover { background-color: rgba(255, 255, 255, 0.10); }
+.mode-option:disabled { background-color: rgba(255, 255, 255, 0.02); }
+.mode-option-on { border-color: rgb(250, 208, 60); }
+.mode-summary { font-size: 11px; color: rgb(180, 196, 220); white-space: normal; }
+.mode-state { padding: 3px 10px; border-radius: 8px; font-size: 11px; -unity-font-style: bold;
+              color: rgb(214, 226, 242); background-color: rgba(255, 255, 255, 0.08); }
+.mode-state-on { color: rgb(30, 26, 12); background-color: rgb(250, 208, 60); }
+.mode-locked .mode-tile { background-color: rgb(80, 88, 104); }
+.mode-locked .mode-name { color: rgb(150, 160, 176); }
+
+TextField { margin: 10px 3px 6px 3px; height: 34px; }
+.unity-text-field__input { flex-grow: 1; padding: 4px 10px; border-radius: 8px; font-size: 16px;
+                           background-color: rgb(8, 14, 26); color: rgb(255, 255, 255); }
+
+/* ---------- title screen ---------- */
+.intro { flex-grow: 1; align-items: center; justify-content: center; background-color: rgb(154, 202, 242); }
+.intro-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 36%; background-color: rgb(238, 241, 246); }
+.intro-logo { flex-direction: row; }
+.intro-title { font-size: 72px; -unity-font-style: bold-and-italic; color: rgb(255, 255, 255); }
+.intro-title-b { font-size: 72px; -unity-font-style: bold-and-italic; color: rgb(250, 208, 40); }
+.intro-sub { font-size: 14px; -unity-font-style: bold; color: rgb(236, 242, 252); margin-top: 8px; padding: 5px 14px;
+             border-radius: 10px; background-color: rgba(16, 24, 42, 0.85); }
+.intro-status { font-size: 13px; color: rgb(60, 72, 96); margin-top: 80px; white-space: normal; -unity-text-align: middle-center; }
+.intro-hint { font-size: 18px; -unity-font-style: bold; color: rgb(30, 40, 60); margin-top: 12px; }
+
+/* ---------- match HUD (MatchHud.uxml) ---------- */
+.screen { flex-grow: 1; flex-direction: row; padding: 20px; }
 .card { flex-shrink: 0; margin: 6px 0; padding: 14px; border-radius: 14px;
         background-color: rgba(12, 20, 34, 0.92); color: rgb(232, 240, 252); }
-
-.brand { font-size: 16px; -unity-font-style: bold; color: rgb(127, 217, 246);
-         letter-spacing: 2px; margin-bottom: 6px; }
-.card-title { font-size: 10px; -unity-font-style: bold; color: rgb(127, 217, 246);
-              letter-spacing: 1px; margin-top: 8px; margin-bottom: 4px; }
-.status { font-size: 14px; color: rgb(210, 228, 248); white-space: normal; }
-.error { font-size: 12px; color: rgb(255, 150, 120); white-space: normal; }
-.details { font-size: 10px; color: rgb(150, 168, 190); white-space: normal; margin-top: 6px; }
-.mono { font-size: 12px; color: rgb(232, 240, 252); }
+.brand { font-size: 16px; -unity-font-style: bold; color: rgb(250, 208, 60); letter-spacing: 1px; margin-bottom: 6px; }
+.card-title { font-size: 10px; -unity-font-style: bold; color: rgb(127, 217, 246); margin-top: 8px; margin-bottom: 4px; }
 .roster { font-size: 12px; color: rgb(214, 226, 242); white-space: normal; }
-.hint { font-size: 11px; color: rgb(170, 186, 206); white-space: normal;
-        -unity-text-align: middle-right; margin-bottom: 6px; }
-
-.row { flex-direction: row; }
-.chip { min-height: 28px; padding: 5px; border-radius: 6px; font-size: 11px;
-        background-color: rgb(22, 32, 46); -unity-text-align: middle-center; }
-
-.btn { min-height: 34px; margin: 3px 0; padding: 6px 10px; border-radius: 8px; font-size: 13px;
-       background-color: rgb(40, 58, 80); color: rgb(240, 246, 255); -unity-text-align: middle-center; }
-.btn:hover { background-color: rgb(55, 82, 112); }
-.btn:disabled { background-color: rgb(26, 35, 48); color: rgb(96, 108, 126); }
-
-/* Buttons and the bot counter share a row evenly; the +/- keys stay square. */
-.row > .btn { flex-grow: 1; flex-basis: 0; margin: 3px; }
-.row > .chip { flex-grow: 1; flex-basis: 0; margin: 3px; }
-.row > .btn.narrow { flex-grow: 0; flex-basis: auto; width: 34px; }
-
-.primary { min-height: 58px; font-size: 20px; -unity-font-style: bold; background-color: rgb(46, 134, 222); }
-.primary:hover { background-color: rgb(70, 158, 246); }
-.alt { background-color: rgb(103, 80, 204); }
-.alt:hover { background-color: rgb(127, 104, 228); }
-.warn { background-color: rgb(168, 84, 48); }
-.warn:hover { background-color: rgb(196, 106, 66); }
-.ghost { min-height: 32px; font-size: 12px; background-color: rgba(255, 255, 255, 0.08); }
-.ghost:hover { background-color: rgba(255, 255, 255, 0.16); }
-.tiny { min-height: 28px; font-size: 11px; }
-
-TextField { margin: 4px 0; flex-direction: row; height: 26px; }
-TextField > Label { min-width: 40px; font-size: 11px; }
-.unity-text-field__input { flex-grow: 1; padding: 3px; border-radius: 4px;
-                           background-color: rgb(8, 15, 26); color: white; }
-Toggle { margin: 8px 0; font-size: 11px; }
-.unity-toggle__input { flex-grow: 1; }
-.unity-toggle__checkmark { width: 16px; height: 16px; margin-left: 6px; background-color: rgb(55, 65, 80); }
-Toggle:checked .unity-toggle__checkmark { background-color: rgb(86, 191, 226); }
-
-/* Friend picker overlay */
-.modal { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-         align-items: center; justify-content: center; background-color: rgba(4, 8, 16, 0.75); }
-.modal-card { width: 520px; padding: 18px; border-radius: 16px; background-color: rgb(16, 24, 38); }
-.modal-head { justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.modal-title { font-size: 18px; -unity-font-style: bold; color: rgb(232, 240, 252); }
-.friend-list { min-height: 260px; margin-top: 6px; margin-bottom: 6px; }
-.friend-row { flex-direction: row; align-items: center; height: 30px; margin: 1px 0;
-              padding-left: 8px; padding-right: 4px; border-radius: 6px;
-              background-color: rgba(255, 255, 255, 0.04); }
-.friend-name { flex-grow: 1; flex-basis: 0; font-size: 13px; color: rgb(232, 240, 252); }
-.friend-state { width: 84px; font-size: 11px; color: rgb(150, 168, 190); -unity-text-align: middle-right; }
-.friend-invite { width: 60px; flex-grow: 0; min-height: 24px; font-size: 11px; margin-left: 8px; }
-.dot { width: 9px; height: 9px; border-radius: 5px; margin-right: 9px; background-color: rgb(96, 108, 126); }
-.dot-ingame { background-color: rgb(124, 214, 118); }
-.dot-online { background-color: rgb(86, 170, 240); }
-.dot-away { background-color: rgb(232, 190, 92); }
-.friend-empty { font-size: 12px; color: rgb(150, 168, 190); -unity-text-align: middle-center; margin-top: 18px; }
-
-/* Title screen */
-.intro { flex-grow: 1; align-items: center; justify-content: center; background-color: rgb(9, 14, 24); }
-.intro-title { font-size: 64px; -unity-font-style: bold; color: rgb(232, 240, 252); letter-spacing: 8px; }
-.intro-sub { font-size: 16px; color: rgb(127, 217, 246); margin-top: 6px; }
-.intro-status { font-size: 13px; color: rgb(150, 168, 190); margin-top: 48px; white-space: normal; -unity-text-align: middle-center; }
-.intro-hint { font-size: 18px; color: rgb(232, 240, 252); margin-top: 14px; }
-
-/* Match HUD */
+.hint { font-size: 11px; color: rgb(170, 186, 206); white-space: normal; }
 .match-card { width: 300px; align-self: flex-start; }
 .hint-left { -unity-text-align: middle-left; margin-top: 10px; }
 

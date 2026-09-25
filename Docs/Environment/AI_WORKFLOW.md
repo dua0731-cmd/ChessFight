@@ -42,7 +42,7 @@
 - `Docs/Project/REQUIREMENTS.md`에 요청 한 줄
 - `HANDOFF.md` §1·§2·§3 갱신
 - 바꾼 분야 문서 갱신
-- 커밋 → `git push -u origin Network`
+- 커밋 → `git push -u origin <작업 브랜치>` (로비·게임모드는 `JY-lobby`, 그 밖은 `Network`. [HANDOFF §1](../../HANDOFF.md))
 
 ## 5. 사용자에게 보고할 때
 

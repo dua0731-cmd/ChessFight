@@ -1,101 +1,204 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <!-- Three columns filling the screen: info rail on the left, spacer, action
-         stack on the right. Plain elements only - NetworkTheme.tss does not import
-         Unity's default runtime theme, so composite controls collapse to nothing. -->
-    <ui:VisualElement class="screen" picking-mode="Ignore">
+    <!-- Lobby HUD over the 3D lineup (LobbyStage). Laid out after the reference
+         video: top bar, party lineup in the middle, party bar bottom left, mode
+         card and the big start button bottom right.
+         Plain elements only - NetworkTheme.tss does not import Unity's default
+         runtime theme, so composite controls (ScrollView, Dropdown) collapse.
+         Every name here is looked up by NetworkHudView: rename both or neither. -->
+    <ui:VisualElement class="lobby" picking-mode="Ignore">
 
-        <ui:VisualElement class="col col-left">
-            <ui:VisualElement class="card">
-                <ui:Label text="CHESSFIGHT" class="brand" />
-                <ui:Label name="status" text="준비 중..." class="status" />
-                <ui:Label name="error" class="error" />
+        <!-- Nameplates and "+ 친구 초대" buttons are placed over the 3D pawns in code. -->
+        <ui:VisualElement name="lineup" class="layer" picking-mode="Ignore" />
+
+        <ui:VisualElement class="topbar" picking-mode="Ignore">
+            <ui:VisualElement class="row logo" picking-mode="Ignore">
+                <ui:Label text="CHESS" class="logo-a" picking-mode="Ignore" />
+                <ui:Label text="FIGHT" class="logo-b" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:Label text="플레이" class="tab tab-on" picking-mode="Ignore" />
+            <ui:Label text="기물 도감" class="tab tab-off" picking-mode="Ignore" />
+            <ui:Label text="전적" class="tab tab-off" picking-mode="Ignore" />
+            <ui:VisualElement class="grow" picking-mode="Ignore" />
+            <ui:Button name="friends-open" text="친구" class="pill" />
+            <ui:Button name="details-open" text="정보" class="pill" />
+            <ui:Label name="profile" text="—" class="pill profile" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <!-- Top centre: short notices, the offline banner and the matchmaking panel. -->
+        <ui:VisualElement class="top-center" picking-mode="Ignore">
+            <ui:Label name="toast" class="toast" picking-mode="Ignore" />
+            <ui:VisualElement name="offline" class="notice row">
+                <ui:Label name="offline-text" text="Steam에 연결되지 않았습니다." class="notice-text" />
                 <ui:Button name="retry" text="Steam 다시 연결" class="btn warn" />
             </ui:VisualElement>
-
-            <ui:VisualElement class="card">
-                <ui:Label text="AI 봇" class="card-title" />
-                <ui:VisualElement class="row">
-                    <ui:Button name="bots-less" text="-" class="btn narrow" />
-                    <ui:Label name="bots" text="파티 봇 0 / 5" class="chip" />
-                    <ui:Button name="bots-more" text="+" class="btn narrow" />
+            <ui:VisualElement name="match-panel" class="match-panel">
+                <ui:VisualElement class="row match-head">
+                    <ui:VisualElement class="grow">
+                        <ui:Label name="match-kicker" class="kicker" />
+                        <ui:Label name="match-title" class="match-title" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="match-clock">
+                        <ui:Label name="match-timer" text="00:00" class="match-timer" />
+                        <ui:Label name="match-note" class="match-note" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement class="row">
+                <ui:VisualElement class="row match-slots">
+                    <ui:VisualElement name="slots-ours" class="row slot-group" />
+                    <ui:Label text="VS" class="versus" />
+                    <ui:VisualElement name="slots-theirs" class="row slot-group" />
+                </ui:VisualElement>
+                <ui:VisualElement name="room-tools" class="row room-tools">
+                    <ui:Label name="room-code" class="room-code" />
+                    <ui:Button name="copy-match" text="복사" class="btn tiny" />
                     <ui:Button name="fill-bots" text="12명 채우기" class="btn tiny" />
                     <ui:Button name="clear-bots" text="봇 비우기" class="btn tiny" />
                 </ui:VisualElement>
-
-                <ui:Label text="번호로 직접 입장" class="card-title" />
-                <ui:TextField name="code" label="번호" max-length="20" />
-                <ui:VisualElement class="row">
-                    <ui:Button name="paste" text="붙여넣기" class="btn tiny" />
-                    <ui:Button name="join-party" text="파티 참가" class="btn tiny" />
-                    <ui:Button name="join-test" text="경기 참가" class="btn tiny" />
-                </ui:VisualElement>
-                <ui:Button name="create-test" text="비공개 방 만들기" class="btn tiny" />
-                <ui:Toggle name="capture" label="WASD 이동 켜기" />
-            </ui:VisualElement>
-
-            <ui:VisualElement class="card">
-                <ui:Label name="roster-title" text="내 파티" class="card-title" />
-                <ui:Label name="roster" class="roster" />
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <ui:VisualElement class="spacer" picking-mode="Ignore" />
-
-        <ui:VisualElement class="col col-right">
-            <ui:VisualElement class="card">
-                <ui:Label text="방 번호" class="card-title" />
-                <ui:Label name="party-id" text="파티 —" class="mono" />
-                <ui:Label name="match-id" text="경기 —" class="mono" />
-                <ui:VisualElement class="row">
-                    <ui:Button name="copy-party" text="파티 복사" class="btn tiny" />
-                    <ui:Button name="copy-match" text="경기 복사" class="btn tiny" />
-                </ui:VisualElement>
-                <ui:Label name="details" class="details" />
+        <!-- Bottom left: direct entry and the party bar. -->
+        <ui:VisualElement class="bottom-left" picking-mode="Ignore">
+            <ui:VisualElement class="row" picking-mode="Ignore">
+                <ui:Button name="code-open" text="# 코드로 참가" class="chip-btn" />
+                <ui:Button name="create-test" text="비공개 방" class="chip-btn" />
             </ui:VisualElement>
-
-            <ui:VisualElement class="actions">
-                <ui:Label name="step-hint" class="hint" />
-                <ui:VisualElement name="step-home">
-                    <ui:Button name="play" text="게임 시작" class="btn primary" />
+            <ui:VisualElement class="party-bar row">
+                <ui:VisualElement class="party-count">
+                    <ui:Label text="PARTY" class="kicker" />
+                    <ui:Label name="party-count" text="1 / 6" class="party-number" />
                 </ui:VisualElement>
-                <ui:VisualElement name="step-mode">
-                    <ui:Button name="make-party" text="파티 생성" class="btn primary" />
-                    <ui:Button name="quick-match" text="빠른 매칭" class="btn primary alt" />
-                    <ui:Button name="back" text="뒤로" class="btn ghost" />
+                <ui:VisualElement class="party-section">
+                    <ui:Label text="파티 코드" class="section-title" />
+                    <ui:VisualElement class="row">
+                        <ui:Label name="party-code" text="—" class="party-code" />
+                        <ui:Button name="copy-party" text="복사" class="btn micro" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="step-party">
-                    <ui:Button name="invite" text="친구 초대" class="btn primary alt" />
-                    <ui:Button name="party-start" text="게임 시작" class="btn primary" />
-                    <ui:Button name="new-party" text="파티 나가기" class="btn ghost" />
-                    <ui:Button name="back-party" text="뒤로" class="btn ghost" />
+                <ui:VisualElement class="party-section">
+                    <ui:Label text="AI 봇" class="section-title" />
+                    <ui:VisualElement class="row">
+                        <ui:Button name="bots-less" text="-" class="btn micro square" />
+                        <ui:Label name="bots" text="0" class="bot-count" />
+                        <ui:Button name="bots-more" text="+" class="btn micro square" />
+                    </ui:VisualElement>
+                    <ui:Label name="bots-note" class="bots-note" />
                 </ui:VisualElement>
-                <ui:VisualElement name="step-busy">
-                    <ui:Button name="start" text="경기 시작" class="btn primary" />
-                    <ui:Button name="leave" text="취소" class="btn ghost" />
-                </ui:VisualElement>
+                <ui:Button name="leave-party" text="파티 나가기" class="btn danger-text" />
             </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Bottom right: the mode card and the start button, or the busy card. -->
+        <ui:VisualElement class="bottom-right" picking-mode="Ignore">
+            <ui:Button name="mode-open" class="mode-card row">
+                <ui:VisualElement name="mode-tile" class="mode-tile" picking-mode="Ignore">
+                    <ui:Label name="mode-badge" text="KR" class="mode-badge" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement class="grow" picking-mode="Ignore">
+                    <ui:Label text="MODE" class="kicker" picking-mode="Ignore" />
+                    <ui:Label name="mode-name" text="킹 러시" class="mode-name" picking-mode="Ignore" />
+                    <ui:Label name="mode-tagline" class="mode-tagline" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Label name="mode-change" text="변경 &gt;" class="mode-change" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:Button name="play" class="start-btn row">
+                <ui:VisualElement class="grow" picking-mode="Ignore">
+                    <ui:Label text="게임 시작" class="start-title" picking-mode="Ignore" />
+                    <ui:Label name="play-sub" class="start-sub" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Label text="Enter" class="keycap" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:VisualElement name="busy" class="busy-card">
+                <ui:VisualElement class="row busy-row">
+                    <ui:VisualElement name="spinner" class="spinner" picking-mode="Ignore" />
+                    <ui:VisualElement class="grow" picking-mode="Ignore">
+                        <ui:Label name="busy-title" text="매칭 중" class="busy-title" picking-mode="Ignore" />
+                        <ui:Label name="busy-sub" class="busy-sub" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <ui:Button name="cancel" text="취소" class="btn ghost" />
+                </ui:VisualElement>
+                <ui:Button name="start" text="경기 시작" class="btn go" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="keys row" picking-mode="Ignore">
+            <ui:Label text="Enter" class="keycap small" picking-mode="Ignore" />
+            <ui:Label text="게임 시작" class="key-label" picking-mode="Ignore" />
+            <ui:Label text="F" class="keycap small" picking-mode="Ignore" />
+            <ui:Label text="친구" class="key-label" picking-mode="Ignore" />
+            <ui:Label text="M" class="keycap small" picking-mode="Ignore" />
+            <ui:Label text="모드" class="key-label" picking-mode="Ignore" />
+            <ui:Label text="Esc" class="keycap small" picking-mode="Ignore" />
+            <ui:Label text="닫기" class="key-label" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:Label name="version" class="version" picking-mode="Ignore" />
+
+        <!-- Developer details, toggled from the top bar. -->
+        <ui:VisualElement name="details-card" class="side-card details-card">
+            <ui:VisualElement class="row panel-head">
+                <ui:Label text="연결 정보" class="panel-title" />
+                <ui:Button name="details-close" text="X" class="btn micro square" />
+            </ui:VisualElement>
+            <ui:Label name="status" class="status" />
+            <ui:Label name="details" class="details" />
         </ui:VisualElement>
 
         <!-- Friend picker. Paged, not searched: a panel driven by the fallback
              click router receives no keystrokes, so nothing here needs typing. -->
-        <ui:VisualElement name="friends" class="modal">
+        <ui:VisualElement name="friends" class="side-card friends-card">
+            <ui:VisualElement class="row panel-head">
+                <ui:VisualElement class="grow">
+                    <ui:Label text="FRIENDS" class="kicker" />
+                    <ui:Label text="친구 초대" class="panel-title" />
+                </ui:VisualElement>
+                <ui:Label name="friends-info" class="friends-info" />
+                <ui:Button name="friends-close" text="X" class="btn micro square" />
+            </ui:VisualElement>
+            <ui:VisualElement class="row friends-bar">
+                <ui:Button name="friends-online" text="온라인" class="seg" />
+                <ui:Button name="friends-all" text="전체" class="seg" />
+                <ui:VisualElement class="grow" />
+                <ui:Button name="friends-prev" text="&lt;" class="btn micro square" />
+                <ui:Label name="friends-page" text="1 / 1" class="friends-page" />
+                <ui:Button name="friends-next" text="&gt;" class="btn micro square" />
+                <ui:Button name="friends-refresh" text="새로고침" class="btn micro" />
+            </ui:VisualElement>
+            <ui:VisualElement name="friends-list" class="friend-list" />
+            <ui:VisualElement class="row friends-foot">
+                <ui:Button name="friends-overlay" text="Steam 오버레이로 초대" class="link" />
+                <ui:VisualElement class="grow" />
+                <ui:Label text="코드로도 참가 가능" class="friends-info" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Join by number. Pasting sidesteps typing for the fallback click path. -->
+        <ui:VisualElement name="code-modal" class="modal">
             <ui:VisualElement class="modal-card">
-                <ui:VisualElement class="row modal-head">
-                    <ui:Label text="친구 초대" class="modal-title" />
-                    <ui:Button name="friends-close" text="X" class="btn narrow" />
+                <ui:VisualElement class="row panel-head">
+                    <ui:Label text="코드로 참가" class="panel-title" />
+                    <ui:Button name="code-close" text="X" class="btn micro square" />
                 </ui:VisualElement>
-                <ui:Label name="friends-info" class="details" />
+                <ui:Label text="친구의 파티 코드나 비공개 방 번호를 넣으세요." class="details" />
+                <ui:TextField name="code" max-length="20" />
                 <ui:VisualElement class="row">
-                    <ui:Button name="friends-filter" text="온라인만" class="btn tiny" />
-                    <ui:Button name="friends-prev" text="◀" class="btn tiny" />
-                    <ui:Label name="friends-page" text="1 / 1" class="chip" />
-                    <ui:Button name="friends-next" text="▶" class="btn tiny" />
-                    <ui:Button name="friends-refresh" text="새로고침" class="btn tiny" />
+                    <ui:Button name="paste" text="붙여넣기" class="btn" />
+                    <ui:Button name="join-party" text="파티 참가" class="btn go" />
+                    <ui:Button name="join-test" text="비공개 방 참가" class="btn go" />
                 </ui:VisualElement>
-                <ui:VisualElement name="friends-list" class="friend-list" />
-                <ui:Button name="friends-overlay" text="Steam 오버레이로 초대" class="btn ghost" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Mode picker. Only the party leader can choose; planned modes are locked. -->
+        <ui:VisualElement name="mode-modal" class="modal">
+            <ui:VisualElement class="modal-card wide">
+                <ui:VisualElement class="row panel-head">
+                    <ui:VisualElement class="grow">
+                        <ui:Label text="MODE" class="kicker" />
+                        <ui:Label text="게임 모드" class="panel-title" />
+                    </ui:VisualElement>
+                    <ui:Button name="mode-close" text="X" class="btn micro square" />
+                </ui:VisualElement>
+                <ui:Label name="mode-hint" class="details" />
+                <ui:VisualElement name="mode-list" class="mode-list" />
             </ui:VisualElement>
         </ui:VisualElement>
 

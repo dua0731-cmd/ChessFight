@@ -16,7 +16,8 @@
 | U2 | **Active Input Handling = Input Manager (Old)**. Input System 1.20.0 패키지는 설치·고정하지만 백엔드는 끈다. `InputSettingsGuard`가 강제한다 | uGUI 없이 백엔드를 켜면 UI Toolkit 런타임 패널이 클릭·키 이벤트를 못 받는다(R8에서 실제 발생) | HUD 전체가 안 눌린다. 켜려면 uGUI 설치 → EventSystem + InputSystemUIInputModule → 설정 변경 순서 |
 | U3 | HUD 테마(`NetworkTheme.tss`)는 **프로젝트 USS만** 가져온다. 기본 테마 없음 → 복합 컨트롤 금지 | 손으로 쓴 TSS가 `@import url("NetworkHud.uss")` 한 줄뿐이다. Unity 기본 테마(`unity-theme://default`)를 넣는 것은 아직 Unity에서 시험하지 않았다 | 기본 테마 없이 복합 컨트롤을 쓰면 크기 0으로 사라진다(R6). 기본 테마를 추가하면 기존 HUD 모양이 바뀔 수 있다 |
 | U4 | 한글 폰트는 `Font.CreateDynamicFontFromOSFont`(맑은 고딕 우선) | 기본 LegacyRuntime 폰트에 한글이 없다. 폰트 파일 없이 해결 | 폰트 에셋을 넣는다면 라이선스와 용량 확인 |
-| U5 | 시작 버튼은 **단계형**: 게임 시작 → 파티 생성/빠른 매칭 → 친구 초대/게임 시작 | 사용자 요청(R7), 폴가이즈 참고 | — |
+| U5 | ~~시작 버튼은 **단계형**: 게임 시작 → 파티 생성/빠른 매칭 → 친구 초대/게임 시작~~ → **U7로 대체**(2026-09-25) | 사용자 요청(R7), 폴가이즈 참고 | — |
+| U7 | **로비는 참고 영상(R19)대로**: 파티가 3D로 줄지어 서는 메뉴(이동 없음), 우측 하단 **모드 카드 + 게임 시작**. 게임 시작은 **파티 전체로 곧바로 매칭**한다(단계 없음). 매칭 중에는 상단 패널(6칸 VS 6칸)과 매칭 중 카드 | 사용자가 준 영상. 파티는 항상 있으므로 "파티 생성" 단계가 필요 없고, 모드 카드가 무엇을 시작할지 보여 준다 | 되돌리려면 `LobbyBootstrap.WireHud`의 `Play`와 UXML 우측 하단을 바꾼다 |
 | U6 | 친구 초대는 **게임 내 패널**, 검색창 대신 페이지 이동, 번호 칸에 붙여넣기 버튼 | 오버레이 해상도 문제(R10). 대체 클릭 경로에서는 키 입력이 안 들어온다 | 타이핑이 필요한 UI는 대체 경로에서 죽는다 |
 | S1 | **폴더 하나 = 어셈블리 하나**, 최소 폴더(`Scripts · Scenes · Prefabs · Resources · Materials · Art`) | 사용자 요청(R3), 의존 방향이 폴더로 보인다 | — |
 | S2 | `Core`는 Unity·Steam 무의존(`noEngineReferences`). `Game`·`Gameplay`는 Steam 무의존 | Unity 없이 테스트, Steam 패키지 없이도 프리팹 스크립트가 컴파일 | 프리팹에 missing script, Safe Mode |
@@ -31,6 +32,7 @@
 | G3 | 래그돌 씬 물리 **120Hz / 솔버 24회**를 `PhysicsProfile`이 씬 단위로 적용. 프로젝트 기본(50Hz)은 바꾸지 않는다 | 래그돌 랩 측정: 60Hz 이하에서 골반이 주저앉음 | 로비 등 다른 씬까지 비용 증가 |
 | G4 | `Teleport(position)`의 position은 **발 닿는 바닥 지점**. 스폰 지점도 y=0 | 캐릭터마다 키가 다르다 | 래그돌이 공중에서 떨어지거나 파묻힌다 |
 | G5 | **RagdollTest 씬 = 래그돌 랩 씬.** 래그돌 코드는 `Assets/ChessFight/RagdollLab/`의 `ChessFight.RagdollLab` 어셈블리(참조: Gameplay만)에 두고, 게임·네트워크 쪽은 `ICharacterDriver`(`RagdollDriver`)로만 부른다 | 사용자 요구(R16): 랩을 그대로 옮기되 네트워크·멀티에 문제가 없게. 빌더가 경로를 안다 | 네트워크 코드가 래그돌에 묶이거나, 래그돌이 Steam에 묶인다. 경계 검사가 실패한다 |
-| T1 | 팀원은 `main`, AI는 `Network` 브랜치에서 작업하고 병합은 사용자 결정 | 팀원 작업을 AI 변경이 덮지 않게 | — |
+| G6 | **게임 모드 하나 = 미니게임 하나.** 모드 목록은 `Core/GameModes.cs` 한 곳. 파티장이 고르고 **모드마다 따로 매칭**(로비 데이터 `mode` + 검색 필터). 씬이 없는 모드는 로비에서 "준비 중"으로 잠근다 | 사용자 결정(R19). 모드가 섞이면 다른 규칙의 사람끼리 만난다 | 모드 키를 바꾸면 옛 빌드와 다른 모드로 읽힌다. 필터를 빼면 모드가 섞인다(테스트가 잡는다) |
+| T1 | 팀원은 `main`, AI는 `Network` 브랜치에서 작업하고 병합은 사용자 결정. **로비·게임모드 작업은 `JY-lobby`에만 커밋·푸시**(2026-09-25 사용자 지시. `main`·`Network`·`JY-ragdoll`에는 푸시하지 않는다. `JY-ragdoll`은 래그돌 물리 튜닝용) | 팀원 작업을 AI 변경이 덮지 않게 | — |
 | T2 | 같은 `.unity`를 동시에 편집하지 않는다. 맵은 구간 프리팹. Unity YAML 병합 도구와 Git LFS 사용 | 씬 병합은 사실상 불가능 | 작업 유실 |
 | T3 | 손으로 쓰는 Unity YAML은 `Tools/Generators`로 만들고 GUID는 경로의 md5로 고정한다 | AI가 Unity 없이 자산을 만들 때 재현 가능 | GUID 충돌, 참조 끊김 |

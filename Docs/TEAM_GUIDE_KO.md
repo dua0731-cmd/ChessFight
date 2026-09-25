@@ -20,7 +20,7 @@
 ```text
  Intro ──아무 키──▶ Lobby ──경기 시작──▶ KingRush ──경기 종료/Esc──▶ Lobby
  (타이틀)          (파티·매칭)          (게임 씬)
-                                        승격쟁탈전 등 다른 모드도 같은 자리에 추가
+                                        게임 모드(퀸 오브 더 힐 등)의 씬도 같은 자리. Docs/GameModes
 
  RagdollTest  ← 개발 전용. 게임 흐름에 포함되지 않는다.
 ```

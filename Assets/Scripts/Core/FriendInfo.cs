@@ -12,5 +12,7 @@ namespace ChessFight.Network
         public ulong Id;
         public string Name;
         public FriendPresence Presence;
+        // What they are doing in ChessFight ("킹 러시 경기 중"); empty elsewhere.
+        public string Detail;
     }
 }

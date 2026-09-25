@@ -94,6 +94,7 @@ namespace Steamworks
         public static CSteamID GetFriendByIndex(int index,EFriendFlags flags)=>new CSteamID(0);
         public static EPersonaState GetFriendPersonaState(CSteamID id)=>EPersonaState.k_EPersonaStateOffline;
         public static bool GetFriendGamePlayed(CSteamID id,out FriendGameInfo_t info) {info=default;return false;}
+        public static string GetFriendRichPresence(CSteamID id,string key)=>FakeSteam.Presence.TryGetValue((id.m_SteamID,key),out var v)?v:"";
         public static bool SetRichPresence(string key,string value) {if(string.IsNullOrEmpty(value))FakeSteam.Presence.Remove((FakeSteam.User,key));else FakeSteam.Presence[(FakeSteam.User,key)]=value;return true;}
         public static void ClearRichPresence() {foreach(var k in FakeSteam.Presence.Keys.Where(k=>k.Item1==FakeSteam.User).ToList())FakeSteam.Presence.Remove(k);}
     }

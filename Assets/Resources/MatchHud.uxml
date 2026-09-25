@@ -4,7 +4,7 @@
         <!-- Shown only while the host is silent: unstable first, then frozen. -->
         <ui:Label name="match-warning" class="warning" picking-mode="Ignore" style="display: none;" />
         <ui:VisualElement class="card match-card" picking-mode="Ignore">
-            <ui:Label text="킹 러시" class="brand" />
+            <ui:Label name="match-title" text="경기" class="brand" />
             <ui:Label name="match-status" class="status" />
             <ui:Label text="명단" class="card-title" />
             <ui:Label name="match-roster" class="roster" />

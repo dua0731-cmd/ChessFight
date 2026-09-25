@@ -8,7 +8,7 @@
 Assets/
   Art/                원본 모델·텍스처·애니메이션 (README만 있음)
   Materials/          Team{Blue,Orange} Board{Dark,Light} Course CourseEdge Obstacle Finish Prop .mat + NetworkColor.shader(Unlit)
-  Prefabs/            PawnAvatar(네트워크 캡슐) · Arena(로비 체스판)
+  Prefabs/            PawnAvatar(네트워크 캡슐, 로비 라인업에도 씀) · Arena(옛 로비 체스판, 2026-09-25부터 미사용)
     Characters/       PlaytestCharacter (임시 캐릭터)
     Obstacles/        Spinner · SlidingWall · Pendulum
   Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, NetworkTheme.tss, ChessFightControls.inputactions
@@ -27,11 +27,11 @@ Tools/                테스트 스크립트, Generators/
 
 | 폴더 | 어셈블리 | 참조 | 게이트 | 책임 |
 |---|---|---|---|---|
-| `Scripts/Core/` | `ChessFight.Network.Core` | 없음 (`noEngineReferences`) | — | 예약 규칙, 패킷, 이동 모터, 봇 ID·두뇌, 연결 품질, FriendInfo. **Unity 없이 테스트** |
+| `Scripts/Core/` | `ChessFight.Network.Core` | 없음 (`noEngineReferences`) | — | 예약 규칙, 패킷, 이동 모터, 봇 ID·두뇌, 연결 품질, FriendInfo, **게임 모드 목록(`GameModes`)**. **Unity 없이 테스트** |
 | `Scripts/Network/` | `ChessFight.Network.Steam` | Core, Steamworks.NET | `CHESSFIGHT_STEAM` | `SteamSession`(파티·매칭·로비), `SteamMotion`(이동 전송) |
-| `Scripts/Game/` | `ChessFight.Game` | Core | — | HUD 뷰, 카메라, 입력 추상화, 씬 이름, 패널·폰트, 파이프라인 우회, 프리팹 스크립트. **Steam 무참조** |
+| `Scripts/Game/` | `ChessFight.Game` | Core | — | HUD 뷰, 로비 3D 라인업(`LobbyStage`), 카메라, 입력 추상화, 씬 이름, 패널·폰트, 파이프라인 우회, 프리팹 스크립트. **Steam 무참조** |
 | `Scripts/Gameplay/` | `ChessFight.Gameplay` | Game | — | 캐릭터 계약, 장애물, 코스, 물리 프로필, 오프라인 플레이테스트. **Steam 무참조** |
-| `Scripts/Bootstrap/` | `ChessFight.Game.Steam` | Core, Network.Steam, Game, Gameplay, Steamworks.NET | `CHESSFIGHT_STEAM` | `NetworkRuntime`, 씬 컨트롤러(Intro/Lobby/KingRush) |
+| `Scripts/Bootstrap/` | `ChessFight.Game.Steam` | Core, Network.Steam, Game, Gameplay, Steamworks.NET | `CHESSFIGHT_STEAM` | `NetworkRuntime`, 씬 컨트롤러(Intro/Lobby, 모드 씬 공용 `MatchSceneView`) |
 | `Scripts/Input/` | `ChessFight.Game.Input` | Game, Unity.InputSystem | `CHESSFIGHT_INPUTSYSTEM` | Input System 이동 소스(자기 등록) |
 | `Scripts/Editor/` | Assembly-CSharp-Editor | — | — | 설치·씬 메뉴·빌드, `InputSettingsGuard` |
 | `ChessFight/RagdollLab/Scripts/` | `ChessFight.RagdollLab` | Gameplay | — | 래그돌(`RagdollPawn`, 손, 튜닝), 랩(`LabGame`, 카메라, 패널, 자동 점검, XInput), `RagdollDriver`(`ICharacterDriver` 구현). **Steam 무참조** |
@@ -68,7 +68,8 @@ Input (자기 등록, 아무도 참조하지 않음)
 | 바꾸고 싶은 것 | 파일 |
 |---|---|
 | 캐릭터 겉모습(로비·경기) | `Prefabs/PawnAvatar.prefab` |
-| 로비 맵 | `Prefabs/Arena.prefab` |
+| 로비 배경·라인업 | `Scripts/Game/LobbyStage.cs` (색·카메라·자리 간격) |
+| 게임 모드 목록 | `Scripts/Core/GameModes.cs` ([GameModes](../GameModes/README.md)) |
 | 색 | `Materials/*.mat` |
 | HUD 배치·스타일 | `Resources/NetworkHud.uxml` / `.uss` (이름은 `NetworkHudView`와 계약) |
 | 키 배치 | `Resources/ChessFightControls.inputactions` |
