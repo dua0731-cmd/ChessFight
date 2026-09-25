@@ -13,7 +13,7 @@
 | K6 | 봇은 **Steam 계정 없는 명단 항목**이고 ID는 `BotIdentity`만 만든다. 호스트만 시뮬레이션하고 패킷을 주고받지 않는다 | 12명 없이 12인 테스트 | 봇에게 전송하면 Steam 오류, ID 충돌 |
 | K7 | **공개 매치에는 사람만**(M6). 단 Editor·개발 빌드는 봇 허용 | 출시 규칙은 사람만, 개발 중에는 인원이 없다 | 개발 빌드에서도 막으면 12인 테스트를 못 한다 |
 | U1 | UI는 **UI Toolkit(UXML/USS) + 런타임 PanelSettings**. uGUI는 없다 | 사용자 요청(R2), 레이아웃을 코드 밖으로 | uGUI를 추가하면 규칙 U2를 다시 검토해야 한다 |
-| U2 | **Active Input Handling = Input Manager (Old)**. Input System 1.20.0 패키지는 설치·고정하지만 백엔드는 끈다. `InputSettingsGuard`가 강제한다 | uGUI 없이 백엔드를 켜면 UI Toolkit 런타임 패널이 클릭·키 이벤트를 못 받는다(R8에서 실제 발생) | HUD 전체가 안 눌린다. 켜려면 uGUI 설치 → EventSystem + InputSystemUIInputModule → 설정 변경 순서 |
+| U2 | **Active Input Handling = Input Manager (Old)**. Input System 1.20.0 패키지는 설치·고정하지만 백엔드는 끈다. `InputSettingsGuard`가 강제한다 | uGUI 없이 백엔드를 켜면 UI Toolkit 런타임 패널이 클릭·키 이벤트를 못 받는다(R8에서 실제 발생) | HUD 전체가 안 눌린다. 켜려면 uGUI 설치 → EventSystem + InputSystemUIInputModule → 설정 변경 순서 — **2026-09-25(R20, `JY-lobby`): Input System 패키지 제거.** 설치돼 있으면 에디터가 켤 때마다 백엔드를 켜라는 창을 띄우고, 켜면 HUD가 죽는다. `Scripts/Input/`은 패키지가 있을 때만 컴파일되므로 영향 없음. 다시 들이려면 uGUI → EventSystem → 설정 변경 순서 |
 | U3 | HUD 테마(`NetworkTheme.tss`)는 **프로젝트 USS만** 가져온다. 기본 테마 없음 → 복합 컨트롤 금지 | 손으로 쓴 TSS가 `@import url("NetworkHud.uss")` 한 줄뿐이다. Unity 기본 테마(`unity-theme://default`)를 넣는 것은 아직 Unity에서 시험하지 않았다 | 기본 테마 없이 복합 컨트롤을 쓰면 크기 0으로 사라진다(R6). 기본 테마를 추가하면 기존 HUD 모양이 바뀔 수 있다 |
 | U4 | 한글 폰트는 `Font.CreateDynamicFontFromOSFont`(맑은 고딕 우선) | 기본 LegacyRuntime 폰트에 한글이 없다. 폰트 파일 없이 해결 | 폰트 에셋을 넣는다면 라이선스와 용량 확인 |
 | U5 | ~~시작 버튼은 **단계형**: 게임 시작 → 파티 생성/빠른 매칭 → 친구 초대/게임 시작~~ → **U7로 대체**(2026-09-25) | 사용자 요청(R7), 폴가이즈 참고 | — |
@@ -22,7 +22,7 @@
 | S1 | **폴더 하나 = 어셈블리 하나**, 최소 폴더(`Scripts · Scenes · Prefabs · Resources · Materials · Art`) | 사용자 요청(R3), 의존 방향이 폴더로 보인다 | — |
 | S2 | `Core`는 Unity·Steam 무의존(`noEngineReferences`). `Game`·`Gameplay`는 Steam 무의존 | Unity 없이 테스트, Steam 패키지 없이도 프리팹 스크립트가 컴파일 | 프리팹에 missing script, Safe Mode |
 | S3 | 선택 패키지 코드는 **전용 asmdef + versionDefines + defineConstraints**로 가둔다. `ENABLE_INPUT_SYSTEM`을 설치 여부로 쓰지 않는다 | Safe Mode에서는 설치 스크립트가 못 돈다(R4, R5) | 패키지 없는 PC가 Safe Mode에 갇힌다 |
-| S4 | UPM 의존성은 manifest/lock에 **고정**하고 결과를 커밋한다. Steamworks.NET = git 커밋 `c21a8f0e…`, Input System = 1.20.0 | 설치 결과가 PC마다 달라 변경점이 계속 생겼다(R6) | 변경점 무한 반복 |
+| S4 | UPM 의존성은 manifest/lock에 **고정**하고 결과를 커밋한다. Steamworks.NET = git 커밋 `c21a8f0e…`, Input System = 1.20.0 | 설치 결과가 PC마다 달라 변경점이 계속 생겼다(R6) | 변경점 무한 반복 — **2026-09-25(R20, `JY-lobby`): Input System 패키지 제거.** 설치돼 있으면 에디터가 켤 때마다 백엔드를 켜라는 창을 띄우고, 켜면 HUD가 죽는다. `Scripts/Input/`은 패키지가 있을 때만 컴파일되므로 영향 없음. 다시 들이려면 uGUI → EventSystem → 설정 변경 순서 |
 | S5 | URP 에셋은 있지만 URP 패키지는 없다. `RenderPipelineOverride`가 Play 동안 Built-in으로 그린다 | 템플릿 잔재. 렌더 파이프라인 결정은 아직 안 함 | URP를 들이면 재질·셰이더·이 우회를 함께 정리 |
 | C1 | 씬 흐름 **Intro → Lobby → KingRush → Lobby**, 세션 소유자는 `DontDestroyOnLoad`의 `NetworkRuntime` 하나 | 씬을 바꿔도 파티·경기가 끊기지 않아야 한다(R11) | 씬 전환 때 Steam 종료 |
 | C2 | 씬 컨트롤러는 **씬에 저장하지 않고** `NetworkRuntime`이 `sceneLoaded` 때 붙인다. 씬 파일은 Steam 어셈블리를 참조하지 않는다 | Steam 패키지 없는 PC에서도 씬이 깨지지 않는다 | missing script |

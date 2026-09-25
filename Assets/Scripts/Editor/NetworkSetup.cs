@@ -47,7 +47,7 @@ namespace ChessFight.Editor
         static void AutoInstall()
         {
             if (Application.isBatchMode || SessionState.GetBool("ChessFight.InstallAttempted", false)) return;
-            if (Installed(Steamworks) && Installed(InputSystem)) return;
+            if (Installed(Steamworks)) return;
             Install();
         }
 
@@ -56,8 +56,11 @@ namespace ChessFight.Editor
         {
             SessionState.SetBool("ChessFight.InstallAttempted", true);
             if (!Installed(Steamworks)) Enqueue(Steamworks, SteamworksUrl);
-            // No version: Unity resolves the Input System release that matches this Editor.
-            if (!Installed(InputSystem)) Enqueue(InputSystem, InputSystem);
+            // The Input System package is deliberately NOT installed (2026-09-25): the
+            // project runs on "Input Manager (Old)" (no uGUI, see InputSettingsGuard),
+            // and with the package present Unity nags on every start to enable its
+            // backend, and enabling it kills every HUD click. Input/ compiles only
+            // when the package exists, so nothing else needs it.
             Next();
         }
 
@@ -107,9 +110,7 @@ namespace ChessFight.Editor
         public static void ReportBackends()
         {
             if (InputSystemInstalled) Debug.Log("[ChessFight] Input System installed: movement uses ChessFightControls.inputactions.");
-            else Debug.LogWarning("[ChessFight] com.unity.inputsystem is NOT installed, so movement falls back to the legacy " +
-                                  "Input Manager. Run ChessFight > Setup > Install dependencies, then commit " +
-                                  "Packages/manifest.json and packages-lock.json.");
+            else Debug.Log("[ChessFight] com.unity.inputsystem is not installed (intended): movement uses the legacy Input Manager.");
         }
 
         // Play from Intro or Lobby to go online. KingRush and RagdollTest played on
@@ -129,9 +130,7 @@ namespace ChessFight.Editor
         public static void Build()
         {
             if (!SteamworksInstalled) throw new InvalidOperationException("Install dependencies first from ChessFight > Setup.");
-            // Not fatal: the build still runs on the legacy fallback. It just will
-            // not match a build made on a machine that has the package.
-            if (!InputSystemInstalled) Debug.LogWarning("[ChessFight] Building without com.unity.inputsystem; this build uses legacy input.");
+            // Legacy input is the intended path while the Input System package stays out.
             const string path = "Builds/NetworkTest/ChessFight.exe";
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions

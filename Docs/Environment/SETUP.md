@@ -7,7 +7,7 @@
 | Unity | **6000.3.11f1** (`ProjectSettings/ProjectVersion.txt`). 다른 버전으로 열지 않는다 |
 | 플랫폼 | Windows x64 (확인된 유일한 플랫폼) |
 | Steamworks.NET | 2025.164.1, git 커밋 `c21a8f0e31c56ae8707130967faf491f7dd7c0d8`에 고정 |
-| Input System | 1.20.0 고정. **백엔드는 꺼져 있다**(Active Input Handling = Old) |
+| Input System | **설치하지 않는다**(2026-09-25, R20 `JY-lobby`). 설치돼 있으면 Unity가 켤 때마다 "native platform backend not enabled" 창을 띄우고, 켜면 HUD 클릭이 죽는다. 입력은 Active Input Handling = Old |
 | uGUI (`com.unity.ugui`) | **없다.** UI는 UI Toolkit |
 | URP | 패키지 없음. 템플릿 URP 에셋만 남아 있고 `RenderPipelineOverride`가 Built-in으로 그린다 |
 | Multiplayer Center | 템플릿 기본. **UGS를 쓴다는 뜻이 아니다** |
@@ -28,7 +28,7 @@ manifest/lock은 커밋되어 있어 Pull하면 Unity가 복원한다. 복원이
 
 | 메뉴 | 동작 |
 |---|---|
-| `ChessFight/Setup/Install dependencies` | Steamworks.NET과 Input System을 UPM Client API로 설치 |
+| `ChessFight/Setup/Install dependencies` | Steamworks.NET을 UPM Client API로 설치(Input System은 설치하지 않음) |
 | `ChessFight/Setup/Report input backend` | 현재 입력 설정과 백엔드를 Console에 출력 |
 | `ChessFight/Scenes/…` | Intro, Lobby, King Rush, Ragdoll Test 열기 |
 | `ChessFight/Network/Build Windows development test` | Intro·Lobby·KingRush로 x64 개발 빌드 → `Builds/NetworkTest/ChessFight.exe`, `steam_appid.txt` 복사 |
