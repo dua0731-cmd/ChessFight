@@ -142,13 +142,17 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "매달리기 소모 (/초)")] [Range(0f, 1f)] public float climbDrainHold = 0.35f;
         [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
-        [Tunable(GroupAction, "손 번갈아 잡기 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 3f;
+        [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 2.2f;
         [Tunable(GroupAction, "뻗은 팔 각도 (도, 수평 위)")] [Range(0f, 90f)] public float climbArmRaise = 72f;
         [Tunable(GroupAction, "당긴 팔 각도 (도, 수평 아래)")] [Range(-20f, 80f)] public float climbArmLow = 28f;
         [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
         [Tunable(GroupAction, "바위 위로 올라타기 (초)")] [Range(0f, 1.2f)] public float climbTopOut = 0.5f;
         [Tunable(GroupAction, "등반 허우적 (도)")] [Range(0f, 90f)] public float climbFlail = 18f;
-        [Tunable(GroupAction, "어깨 위로 짚는 높이 (m)")] [Range(0.05f, 0.4f)] public float climbHandStep = 0.16f;
+        // How far above the shoulder a hand plants, and how far below the shoulder it is allowed to
+        // end up before the pawn lets go and reaches again. Their sum is the rise per hold, and
+        // the arm sweeps through the whole of it - that sweep IS the climbing animation.
+        [Tunable(GroupAction, "어깨 위로 짚는 높이 (m)")] [Range(0.05f, 0.4f)] public float climbHandStep = 0.22f;
+        [Tunable(GroupAction, "어깨 아래로 당기는 깊이 (m)")] [Range(0f, 0.4f)] public float climbPullDepth = 0.12f;
         [Tunable(GroupAction, "손 좌우 벌림 (m)")] [Range(0.05f, 0.5f)] public float climbHandSpread = 0.19f;
         [Tunable(GroupAction, "지칠 때 미끄러짐 (m)")] [Range(0f, 0.5f)] public float climbSlip = 0.18f;
     }

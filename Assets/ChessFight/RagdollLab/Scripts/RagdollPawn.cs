@@ -135,6 +135,7 @@ namespace ChessFight.RagdollLab
         Vector3 wallPoint, wallNormal = Vector3.forward;
         Vector3 climbUpAxis = Vector3.up, climbAcross = Vector3.right, climbFace;
         readonly Vector3[] handHold = new Vector3[2];
+        Vector3 swingFrom;
         bool holdsPlaced;
         float climbCeiling;
         float struggleFlip = 1f, struggleRush, lastStrugglePunch;
@@ -787,7 +788,10 @@ namespace ChessFight.RagdollLab
             bool gripping = ProbeWall(p);
             // The wall running out IS the ledge: the big wall is built as set-back blocks, so the
             // top of each block is somewhere to stand. Throw the body forward so it flops onto it.
-            if (Climbing && !gripping && climbUp > 0.1f && topOutTimer <= -0.2f)
+            // Only once the probe has been empty for the WHOLE grace window: a single frame with no
+            // hit happens constantly at a seam or when an arm swings past, and treating that as "the
+            // wall ended" cancelled the climb every second.
+            if (Climbing && climbGrace <= 0f && climbUp > 0.1f && topOutTimer <= -0.2f)
                 topOutTimer = p.climbTopOut;
             // A step over a seam between two blocks must not drop the pawn off the wall.
             climbGrace = gripping ? 0.55f : climbGrace - dt;
@@ -828,33 +832,41 @@ namespace ChessFight.RagdollLab
             // which is the whole trick - drive the body on its own clock instead and the hands trail
             // below it within a second, which is how the arms ended up hanging at the pawn's sides.
             float shoulderY = bodies[(int)BodyId.ArmL].position.y;
+            float shoulderRise = shoulderY - bodies[0].position.y;
             if (!holdsPlaced)
             {
-                handHold[0] = OnWall(-p.climbHandSpread, shoulderY + p.climbHandStep);
-                handHold[1] = OnWall(p.climbHandSpread, shoulderY - p.climbHandStep * 0.5f);
+                handHold[0] = Plant(0, p, shoulderY + p.climbHandStep);
+                handHold[1] = Plant(1, p, shoulderY + p.climbHandStep * 0.25f);
                 holdsPlaced = true;
                 movingHand = 0;
                 handStep = 1f;
             }
-            handStep = Mathf.Min(1f, handStep + p.climbCadence * dt * 2.4f);
+            handStep = Mathf.Min(1f, handStep + p.climbCadence * dt);
 
-            float topHold = Mathf.Max(handHold[0].y, handHold[1].y);
-            climbCeiling = topHold - (shoulderY - bodies[0].position.y) + 0.04f;
+            // Whichever palm is higher is the one carrying the pawn, and it does not move at all:
+            // the body climbs past it until it is climbPullDepth below the shoulder, and only then
+            // does that hand let go and reach again. Everything the arm does follows from that, so
+            // there is no animation loop to fall out of step with the climb.
+            int hold = handHold[0].y >= handHold[1].y ? 0 : 1;
+            climbCeiling = handHold[hold].y + p.climbPullDepth - shoulderRise;
 
-            if (handStep >= 1f && climbUp > 0.05f && shoulderY > topHold - p.climbHandStep * 0.35f)
+            // Test the COMMANDED height, not the measured one. The body hangs ~5 cm under the
+            // anchor because the spring balances its weight there, and comparing the real
+            // shoulder against the hold left the swap permanently 5 cm out of reach.
+            bool reachedTop = anchorPos.y >= climbCeiling - 0.02f;
+            if (handStep >= 1f && climbUp > 0.05f && reachedTop)
             {
-                movingHand = movingHand == 0 ? 1 : 0;
-                float side = movingHand == 0 ? -p.climbHandSpread : p.climbHandSpread;
-                handHold[movingHand] = OnWall(side, topHold + p.climbHandStep);
+                swingFrom = handHold[hold];
+                movingHand = hold;
+                handHold[movingHand] = Plant(movingHand, p, shoulderY + p.climbHandStep);
                 handStep = 0f;
             }
             else if (handStep >= 1f && climbUp < -0.05f)
             {
-                // Going back down: the top hand comes off and drops below the other one.
-                int top = handHold[0].y >= handHold[1].y ? 0 : 1;
-                float side = top == 0 ? -p.climbHandSpread : p.climbHandSpread;
-                handHold[top] = OnWall(side, Mathf.Min(handHold[0].y, handHold[1].y) - p.climbHandStep);
-                movingHand = top;
+                swingFrom = handHold[hold];
+                movingHand = hold;
+                handHold[movingHand] = Plant(movingHand, p,
+                    Mathf.Min(handHold[0].y, handHold[1].y) - p.climbHandStep);
                 handStep = 0f;
             }
             if (stamina > 0f) return;
@@ -1138,11 +1150,21 @@ namespace ChessFight.RagdollLab
 
         static float Smooth(float t) => t * t * (3f - 2f * t);
 
-        /// <summary>A point on the climbing face: <paramref name="side"/> across, <paramref name="height"/> world y.</summary>
-        Vector3 OnWall(float side, float height)
+        /// <summary>
+        /// Where one palm plants: out to its own side, up at <paramref name="height"/>, and as close
+        /// to the face as the arm can actually get. Pinning it exactly ON the face does not work - the
+        /// arm reaches 0.20 m and the skirt holds the body 0.27 m off, so only a band at shoulder
+        /// height would ever be touchable and the arm could never swing.
+        /// </summary>
+        Vector3 Plant(int slot, RagdollParams p, float height)
         {
-            Vector3 at = climbFace + climbAcross * side;
-            return at + climbUpAxis * (height - at.y);
+            Vector3 shoulder = bodies[slot == 0 ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
+            Vector3 at = climbFace + climbAcross * (slot == 0 ? -p.climbHandSpread : p.climbHandSpread);
+            at += climbUpAxis * (height - at.y);
+            // Pull it back toward the shoulder if the arm cannot span the gap to the face.
+            Vector3 off = at - shoulder;
+            float len = off.magnitude;
+            return len > 0.30f ? shoulder + off * (0.30f / len) : at;
         }
 
         /// <summary>
@@ -1153,22 +1175,22 @@ namespace ChessFight.RagdollLab
         {
             Transform chestT = bodies[(int)BodyId.Chest].transform;
             Vector3 shoulder = bodies[left ? (int)BodyId.ArmL : (int)BodyId.ArmR].position;
-            // Aim the arm by ANGLE, not at a point on the wall. The arm is 0.2 m and the skirt
-            // holds the body 0.27 m off the face, so a target pinned to the wall can only ever sit
-            // near shoulder height - which is why the arms only swung about 30 degrees. Reaching
-            // properly means stretching up past the head even if the palm ends up just off the face.
-            bool reaching = movingHand == slot;
-            float blend = reaching ? Smooth(handStep) : 1f - Smooth(handStep);
-            float angle = Mathf.Lerp(-p.climbArmLow, p.climbArmRaise, blend);
-            Vector3 into = -wallNormal;
-            Vector3 dir = (climbUpAxis * Mathf.Sin(angle * Mathf.Deg2Rad)
-                           + into * Mathf.Cos(angle * Mathf.Deg2Rad)).normalized;
-            // A little out to the side so the two arms do not overlap, and a slap outward mid-swing.
-            dir += climbAcross * ((left ? -0.34f : 0.34f) + (reaching ? Mathf.Sin(handStep * Mathf.PI) * 0.1f : 0f));
-            // Only a small peel off the face: a big one throws the body back and the wall probe
-            // loses contact, which drops the pawn out of the climb every couple of swings.
-            dir -= wallNormal * (reaching ? Mathf.Sin(handStep * Mathf.PI) * 0.07f : 0f);
-            Vector3 local = chestT.InverseTransformDirection(dir.normalized);
+            // Point the arm at the palm's hold and nothing else. A held hand is fixed in the world,
+            // so as the body climbs past it the arm sweeps from overhead down past the shoulder on
+            // its own - that sweep is the animation, and it cannot fall out of step with the climb
+            // because the climb is what produces it.
+            Vector3 target = handHold[slot];
+            if (movingHand == slot && handStep < 1f)
+            {
+                // The swinging hand: peel off, arc up, plant on the new hold.
+                float t = Smooth(handStep);
+                target = Vector3.Lerp(swingFrom, handHold[slot], t);
+                target += wallNormal * (Mathf.Sin(handStep * Mathf.PI) * 0.09f);
+                target += climbUpAxis * (Mathf.Sin(handStep * Mathf.PI) * 0.05f);
+            }
+            Vector3 aim = target - shoulder;
+            if (aim.sqrMagnitude < 1e-6f) aim = -wallNormal;
+            Vector3 local = chestT.InverseTransformDirection(aim.normalized);
             return Quaternion.FromToRotation(left ? Vector3.left : Vector3.right, local);
         }
 
