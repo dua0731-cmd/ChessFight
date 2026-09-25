@@ -957,6 +957,22 @@ namespace ChessFight.RagdollLab
                     + $"등반{(pawn.Climbing ? 1 : 0)}]");
             });
             Info("등반 추적", tr.ToString());
+            var ar = new StringBuilder();
+            float at = 0f, anext = 0f;
+            yield return Sim(2.2f, () =>
+            {
+                Drive(pawn, Vector3.right, grab: true);
+                at += Dt;
+                if (at < anext) return;
+                anext = at + 0.15f;
+                Transform ch = pawn.bodies[(int)BodyId.Chest].transform;
+                Vector3 hl = ch.InverseTransformPoint(pawn.handL.Center);
+                Vector3 hr = ch.InverseTransformPoint(pawn.handR.Center);
+                Vector3 tl = pawn.puppet[(int)BodyId.ArmL].localRotation * Vector3.left;
+                ar.Append($"[{at:F2} 손L({hl.x:F2},{hl.y:F2},{hl.z:F2}) 손R({hr.x:F2},{hr.y:F2},{hr.z:F2}) "
+                    + $"목표L({tl.x:F2},{tl.y:F2},{tl.z:F2}) 등반{(pawn.Climbing ? 1 : 0)}]");
+            });
+            Info("등반 팔 추적 (가슴 기준)", ar.ToString());
             float gain = topY - startY;
             Report("등반: 벽을 타고 올라감", everClimbing && gain > 0.6f,
                 $"오른 높이 {gain:F2} m, 매달린 시간 {climbedFor:F1}s, 스테미나 {startStamina:F2} → {lowestStamina:F2}");

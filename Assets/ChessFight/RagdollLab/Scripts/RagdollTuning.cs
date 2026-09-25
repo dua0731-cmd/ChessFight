@@ -125,19 +125,22 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "버둥 팔 진폭 (도)")] [Range(0f, 160f)] public float struggleSwing = 95f;
         [Tunable(GroupAction, "버둥 몸부림 충격")] [Range(0f, 400f)] public float struggleShake = 150f;
         [Tunable(GroupAction, "버둥 중 팔 강성 배율")] [Range(1f, 20f)] public float struggleArmMultiplier = 8f;
-        [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 0.85f;
+        // One hand is replanted every OTHER swap, so it sits still for 2/climbCadence seconds while
+        // the body rises climbSpeed x that. Keep 2 x climbSpeed / climbCadence under ~0.32 m or the
+        // hands trail below the chest and the pose collapses to arms-at-sides.
+        [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 0.45f;
         [Tunable(GroupAction, "등반 스테미나 (초)")] [Range(1f, 30f)] public float climbStaminaMax = 8f;
         // Drain and recovery are in stamina-seconds per second, so the numbers read directly:
         // hanging 0.35 means the 8 s bar lasts 23 s of just hanging, 6.4 s of full climbing.
         [Tunable(GroupAction, "매달리기 소모 (/초)")] [Range(0f, 1f)] public float climbDrainHold = 0.35f;
         [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
-        [Tunable(GroupAction, "손 번갈아 잡기 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 1.25f;
+        [Tunable(GroupAction, "손 번갈아 잡기 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 3f;
         [Tunable(GroupAction, "등반 자세 팔 높이 (도)")] [Range(0f, 120f)] public float climbArmRaise = 70f;
         [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
         [Tunable(GroupAction, "바위 위로 올라타기 (초)")] [Range(0f, 1.2f)] public float climbTopOut = 0.5f;
         [Tunable(GroupAction, "등반 허우적 (도)")] [Range(0f, 90f)] public float climbFlail = 18f;
-        [Tunable(GroupAction, "손 짚는 간격 (m)")] [Range(0.1f, 0.6f)] public float climbHandStep = 0.3f;
+        [Tunable(GroupAction, "어깨 위로 짚는 높이 (m)")] [Range(0.05f, 0.4f)] public float climbHandStep = 0.16f;
         [Tunable(GroupAction, "손 좌우 벌림 (m)")] [Range(0.05f, 0.5f)] public float climbHandSpread = 0.19f;
         [Tunable(GroupAction, "지칠 때 미끄러짐 (m)")] [Range(0f, 0.5f)] public float climbSlip = 0.18f;
     }
