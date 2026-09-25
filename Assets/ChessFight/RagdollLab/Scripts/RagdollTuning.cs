@@ -128,7 +128,7 @@ namespace ChessFight.RagdollLab
         // One hand is replanted every OTHER swap, so it sits still for 2/climbCadence seconds while
         // the body rises climbSpeed x that. Keep 2 x climbSpeed / climbCadence under ~0.32 m or the
         // hands trail below the chest and the pose collapses to arms-at-sides.
-        [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 0.45f;
+        [Tunable(GroupAction, "등반 속도 (m/s)")] [Range(0.2f, 4f)] public float climbSpeed = 2.5f;
         // Hanging by the hands caps how far the anchor may lead, and at hipAnchorStrength 3000 a
         // 0.2 m lead is only 600 N against a 490 N bodyweight - barely any lift. Pulling up is a
         // muscular effort, so the anchor spring is multiplied while climbing.
@@ -142,23 +142,27 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "매달리기 소모 (/초)")] [Range(0f, 1f)] public float climbDrainHold = 0.35f;
         [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
-        [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 2.2f;
+        [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 5f)] public float climbCadence = 4.5f;
         [Tunable(GroupAction, "뻗은 팔 각도 (도, 수평 위)")] [Range(0f, 90f)] public float climbArmRaise = 72f;
         [Tunable(GroupAction, "당긴 팔 각도 (도, 수평 아래)")] [Range(-20f, 80f)] public float climbArmLow = 28f;
         // Reaching with one arm lifts that shoulder and drops the other, and the head leans away
         // from the reach. Without these the pawn is a rigid post with arms bolted to it.
-        [Tunable(GroupAction, "뻗는 쪽 어깨 올림 (도)")] [Range(0f, 45f)] public float climbShoulderLift = 24f;
-        [Tunable(GroupAction, "머리 반대쪽 기울임 (도)")] [Range(0f, 45f)] public float climbHeadTilt = 20f;
+        [Tunable(GroupAction, "뻗는 쪽 어깨 올림 (도)")] [Range(0f, 45f)] public float climbShoulderLift = 34f;
+        [Tunable(GroupAction, "머리 반대쪽 기울임 (도)")] [Range(0f, 45f)] public float climbHeadTilt = 30f;
         [Tunable(GroupAction, "등반 가능 경사 (도, 수평 기준)")] [Range(30f, 89f)] public float climbGripAngle = 55f;
         [Tunable(GroupAction, "바위 위로 올라타기 (초)")] [Range(0f, 1.2f)] public float climbTopOut = 0.5f;
         [Tunable(GroupAction, "등반 허우적 (도)")] [Range(0f, 90f)] public float climbFlail = 18f;
         // How far above the shoulder a hand plants, and how far below the shoulder it is allowed to
         // end up before the pawn lets go and reaches again. Their sum is the rise per hold, and
         // the arm sweeps through the whole of it - that sweep IS the climbing animation.
-        [Tunable(GroupAction, "어깨 위로 짚는 높이 (m)")] [Range(0.05f, 0.4f)] public float climbHandStep = 0.22f;
-        [Tunable(GroupAction, "어깨 아래로 당기는 깊이 (m)")] [Range(0f, 0.4f)] public float climbPullDepth = 0.12f;
+        [Tunable(GroupAction, "어깨 위로 짚는 높이 (m)")] [Range(0.05f, 0.4f)] public float climbHandStep = 0.3f;
+        [Tunable(GroupAction, "어깨 아래로 당기는 깊이 (m)")] [Range(0f, 0.4f)] public float climbPullDepth = 0.18f;
         [Tunable(GroupAction, "손 좌우 벌림 (m)")] [Range(0.05f, 0.5f)] public float climbHandSpread = 0.19f;
         [Tunable(GroupAction, "지칠 때 미끄러짐 (m)")] [Range(0f, 0.5f)] public float climbSlip = 0.18f;
+        // Between one hand letting go and the other catching, the pawn sags a little and then
+        // jerks back up. Pure comedy, but it is also what a real climber does.
+        [Tunable(GroupAction, "손 바꿀 때 쳐짐 (m)")] [Range(0f, 0.2f)] public float climbSag = 0.055f;
+        [Tunable(GroupAction, "손 뻗을 때 오버슛")] [Range(0f, 1f)] public float climbOvershoot = 0.45f;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]

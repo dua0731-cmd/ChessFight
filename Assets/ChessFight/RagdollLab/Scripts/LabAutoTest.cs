@@ -980,7 +980,8 @@ namespace ChessFight.RagdollLab
             yield return Clear();
 
             // Same wall, but going up and down so the route never ends: stamina has to run out.
-            var hanger = Spawn(new Vector3(LabLayout.WallFrontX - 1.2f, 0f, LabLayout.WallZ[2]), Vector3.right, "매달림");
+            // The overhang lane, because it has no ledge to rest on - stamina has to be what stops it.
+            var hanger = Spawn(new Vector3(LabLayout.ClimbX[1], 0f, LabLayout.ClimbFaceZ - 2.2f), Vector3.forward, "매달림");
             yield return Sim(0.6f);
             // Climb clear of the ground first, then ride up and down so the route never ends and
             // stamina has to be what stops it.
@@ -990,7 +991,7 @@ namespace ChessFight.RagdollLab
             {
                 phase += Dt;
                 bool up = phase < 6f || ((int)((phase - 6f) / 0.5f) & 1) == 1;
-                Drive(hanger, up ? Vector3.right : Vector3.left, grab: true);
+                Drive(hanger, up ? Vector3.forward : Vector3.back, grab: true);
                 if (!ranOut) highest = Mathf.Max(highest, hanger.Hips.position.y);
                 if (hanger.Stamina > 0.001f) return;
                 if (!ranOut) heightAtEmpty = hanger.Hips.position.y;

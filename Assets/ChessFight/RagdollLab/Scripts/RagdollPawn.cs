@@ -853,6 +853,8 @@ namespace ChessFight.RagdollLab
             int hold = handHold[0].y >= handHold[1].y ? 0 : 1;
             int swing = 1 - hold;
             climbCeiling = handHold[hold].y + p.climbPullDepth - shoulderRise;
+            // One hand in the air means less to hang from: drop a little, then snap back up.
+            if (handStep < 1f) climbCeiling -= p.climbSag * Mathf.Sin(handStep * Mathf.PI);
 
             // Test the COMMANDED height, not the measured one. The body hangs ~5 cm under the
             // anchor because the spring balances its weight there, and comparing the real
@@ -1192,7 +1194,10 @@ namespace ChessFight.RagdollLab
                 float t = Smooth(handStep);
                 target = Vector3.Lerp(swingFrom, handHold[slot], t);
                 target += wallNormal * (Mathf.Sin(handStep * Mathf.PI) * 0.09f);
-                target += climbUpAxis * (Mathf.Sin(handStep * Mathf.PI) * 0.05f);
+                // Fling it past the hold and let it drop back on - little arms flailing for the hold
+                // is the joke, and it also sells the effort.
+                target += climbUpAxis * (Mathf.Sin(handStep * Mathf.PI) * p.climbOvershoot * p.climbHandStep);
+                target += climbAcross * (Mathf.Sin(handStep * Mathf.PI * 2f) * 0.05f * (slot == 0 ? -1f : 1f));
             }
             Vector3 aim = target - shoulder;
             if (aim.sqrMagnitude < 1e-6f) aim = -wallNormal;
