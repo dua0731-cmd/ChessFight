@@ -11,8 +11,10 @@ namespace ChessFight.RagdollLab.Net
     /// <summary>
     /// Host-authoritative ragdoll over Steam for the lab. The host runs the only physics simulation;
     /// clients send 24-byte inputs and draw interpolated poses (64 bytes per pawn) with no local physics.
-    /// It boots itself in the RagdollLab scene and stays out of the way until a match actually starts,
-    /// so local two-player testing is unchanged.
+    /// It boots itself in whichever scene runs the lab (a LabGame is present; on main that is
+    /// RagdollTest) and stays out of the way until a match actually starts, so local two-player
+    /// testing is unchanged. It lives outside RagdollLab/ on purpose: like Bootstrap/, it is the
+    /// bridge between a gameplay assembly and Steam, and the lab itself must not know about Steam.
     /// </summary>
     [DefaultExecutionOrder(-150)]
     public sealed class SteamRagdollLink : MonoBehaviour
@@ -27,7 +29,7 @@ namespace ChessFight.RagdollLab.Net
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
-            if (SceneManager.GetActiveScene().name != "RagdollLab") return;
+            if (FindFirstObjectByType<LabGame>() == null) return;
             if (FindFirstObjectByType<SteamRagdollLink>() != null) return;
             new GameObject("ChessFight Ragdoll Net").AddComponent<SteamRagdollLink>();
         }

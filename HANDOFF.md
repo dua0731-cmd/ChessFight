@@ -31,7 +31,7 @@
 |---|---|
 | 개발 브랜치 | `Network`. AI 작업은 이 브랜치에만 커밋·푸시한다 |
 | `main` | `a070367`에서 멈춤. `Network`가 6커밋 이상 앞서 있다(`git rev-list --count origin/main..origin/Network`). **팀원은 main을 쓰므로 Network → main 병합이 필요하다** (사용자 결정 대기) |
-| 다른 원격 브랜치 | `JY-ragdoll`(준영, 래그돌 랩. **2026-09-25 Network에 병합됨**), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
+| 다른 원격 브랜치 | `JY-ragdoll`(준영, 래그돌 랩·물리 튜닝용으로 유지. **2026-09-25 main에 두 번째 병합**, R17), `JY-lobby`(준영, main에서 시작하는 로비·게임모드 작업), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
 | 네트워크 프로토콜 | `chessfight.dua0731.network.v2`, 입력 패킷 magic `CFF2`. 이전 빌드와는 매칭 불가 |
 | 자동 테스트 | 어셈블리 경계 검사 + Core 28개 + 모의 Steam 세션 12개 통과, 래그돌 포함 6개 어셈블리 Roslyn 컴파일 통과 (2026-09-25) |
 | Unity 실기 확인 | 2026-09-24까지: 로비 HUD 표시·한글·클릭·친구 초대 동작 (사용자 보고) |
@@ -52,7 +52,7 @@
 | 씬 흐름 Intro → Lobby → KingRush → Lobby | 코드만, Unity 미확인 | [Architecture/SCENES](Docs/Architecture/SCENES.md) |
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
-| 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬) | 병합·코드·컴파일만, Unity 미확인. 네트워크 래그돌은 없음 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
+| 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
 | **없음** | 기물 선택·스킬·라운드·승패·점수, 네트워크 경기에서 코스 달리기, 래그돌 네트워크, 호스트 이전, 재접속, 신뢰 이벤트 채널, 로딩 동기화 | [ROADMAP](Docs/Project/ROADMAP.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
@@ -87,7 +87,7 @@
 10. **검증 표기는 정직하게 한다.** 사용자가 Unity나 Steam에서 직접 본 것만 VALIDATION에 '성공'으로 적는다. 코드 작성과 테스트 통과는 검증이 아니다.
 11. **`.meta`는 항상 같이 커밋한다.** Unity 밖에서 파일을 만들면 `Tools/Generators/mkmeta.py`로 만든다.
 12. **같은 `.unity` 씬을 두 사람이 동시에 고치지 않는다.** 맵은 구간 프리팹으로 나눈다.
-13. **`Assets/Scripts`(네트워크·게임 코드)는 래그돌 타입을 참조하지 않고, 래그돌(`Assets/ChessFight/RagdollLab`)은 Steam을 참조하지 않는다.** 캐릭터는 `ICharacterDriver`로만 부른다. `Tools/run-tests-linux.sh`의 경계 검사가 확인한다.
+13. **`Assets/Scripts`(네트워크·게임 코드)는 래그돌 타입을 참조하지 않고, 래그돌(`Assets/ChessFight/RagdollLab`)은 Steam을 참조하지 않는다.** 랩을 Steam에 잇는 코드는 `Assets/ChessFight/RagdollLabSteam/`(Bootstrap과 같은 다리)에만 둔다. 캐릭터는 `ICharacterDriver`로만 부른다. `Tools/run-tests-linux.sh`의 경계 검사가 확인한다.
 
 ## 5. 문서 트리
 

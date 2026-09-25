@@ -5,6 +5,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋) | 09-25 | R17 | 랩 Steam 연결 → `RagdollLabSteam/`(경계 규칙), LabGame 있는 씬에서 부팅, 테스트 스크립트가 그 어셈블리 컴파일·`simulationMode` 매핑, 인수인계 문서 |
+| (병합) | 09-25 | R17 | `JY-ragdoll` 두 번째 병합: 달리기/질주·스테미나, 슬라이딩 태클, 카메라·방향 전환, 등반 재작성, 랩 온라인 |
 | `a43791c` | 09-25 | R16 | 랩 씬 → RagdollTest, `RagdollDriver`, 랩 어셈블리 Gameplay 참조, 커서 복구, `Assets/ChessFight.meta`, 경계 검사·Roslyn 컴파일, 문서 |
 | `fc006b8` | 09-25 | R16 | `JY-ragdoll` 병합 (래그돌 파일 118개 추가) |
 | `444d698` | 09-24 | R15 | 인수인계 커밋 해시 기록 |

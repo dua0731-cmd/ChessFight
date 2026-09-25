@@ -58,6 +58,10 @@ unity6_to_2021() {
   grep -rlE 'linearVelocity|linearDamping|angularDamping|PhysicsMaterial' "$dir" | xargs -r sed -i \
     -e 's/\.linearVelocity/.velocity/g' -e 's/\.linearDamping/.drag/g' -e 's/\.angularDamping/.angularDrag/g' \
     -e 's/PhysicsMaterialCombine/PhysicMaterialCombine/g' -e 's/PhysicsMaterial/PhysicMaterial/g'
+  # Physics.simulationMode is Unity 2022.1+; the 2021.3 equivalent is autoSimulation.
+  grep -rl 'Physics.simulationMode' "$dir" | xargs -r sed -i \
+    -e 's/Physics\.simulationMode = SimulationMode\.Script/Physics.autoSimulation = false/' \
+    -e 's/Physics\.simulationMode = SimulationMode\.FixedUpdate/Physics.autoSimulation = true/'
 }
 
 ensure_roslyn() {
@@ -74,7 +78,7 @@ compile_all() {
   ensure_roslyn
   local build="$OUT/build" src="$OUT/src" refs sym m=/usr/lib/mono/4.5
   rm -rf "$build" "$src"; mkdir -p "$build" "$src"
-  cp -r Assets/Scripts "$src/Scripts"; cp -r Assets/ChessFight/RagdollLab/Scripts "$src/RagdollLab"
+  cp -r Assets/Scripts "$src/Scripts"; cp -r Assets/ChessFight/RagdollLab/Scripts "$src/RagdollLab"; cp -r Assets/ChessFight/RagdollLabSteam "$src/RagdollLabSteam"
   unity6_to_2021 "$src"
   refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
   sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
@@ -93,7 +97,10 @@ compile_all() {
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
        -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/RagdollLab" -name '*.cs')
-  echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap and RagdollLab compiled with Roslyn (Input/ and Editor code skipped)."
+  $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
+       -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+       -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/RagdollLabSteam" -name '*.cs')
+  echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap, RagdollLab and RagdollLabSteam compiled with Roslyn (Input/ and Editor code skipped)."
 }
 
 # Assembly boundaries that keep gameplay work from reaching into the network layer.
@@ -102,7 +109,8 @@ check_boundaries() {
   # code_refs PATTERN PATHS...: matches outside // comments.
   code_refs() { local pattern="$1"; shift
     grep -rnE "$pattern" "$@" --include='*.cs' --include='*.asmdef' | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true; }
-  # Only Network/ and Bootstrap/ may know about Steam.
+  # Only Network/ and Bootstrap/ may know about Steam (and RagdollLabSteam/, the lab's own
+  # Bootstrap-style bridge, which is why it sits outside RagdollLab/).
   hits=$(code_refs 'Steamworks|ChessFight\.Network\.Steam|SteamSession|SteamMotion' \
          Assets/Scripts/Core Assets/Scripts/Game Assets/Scripts/Gameplay Assets/Scripts/Input Assets/ChessFight/RagdollLab)
   if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Steam referenced outside Network/ and Bootstrap/"; bad=1; fi
