@@ -2181,6 +2181,7 @@ GameObject:
   - component: {fileID: 2271441836999177074}
   - component: {fileID: 7684884123511159585}
   - component: {fileID: 5772884665383567638}
+  - component: {fileID: 3149268190553761244}
   m_Layer: 0
   m_Name: RagdollPawn
   m_TagString: Untagged
@@ -2207,6 +2208,18 @@ Transform:
   - {fileID: 4134313736888693469}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3149268190553761244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6024407182778204432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6a55231365b5d1824ee3aeba802ea02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.RagdollDriver
 --- !u!114 &7684884123511159585
 MonoBehaviour:
   m_ObjectHideFlags: 0

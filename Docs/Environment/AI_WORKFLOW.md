@@ -25,8 +25,8 @@
 
 | 환경 | 명령 | 내용 |
 |---|---|---|
-| Linux / 클라우드 AI | `Tools/run-tests-linux.sh` | Core 테스트 + 모의 Steam 세션 테스트. Mono가 없으면 apt로 설치 |
-| 〃 | `Tools/run-tests-linux.sh --compile` | 위 + Steamworks.NET 원본 소스(고정 커밋)와 Unity 참조 DLL(NuGet `UnityEngine.Modules` 2021.3)로 Core·Network·Game·Gameplay·Bootstrap 컴파일. Input/·Editor/는 제외 |
+| Linux / 클라우드 AI | `Tools/run-tests-linux.sh` | **어셈블리 경계 검사**(Steam은 Network·Bootstrap에만, `Assets/Scripts`는 래그돌을 참조하지 않음) + Core 테스트 + 모의 Steam 세션 테스트. Mono가 없으면 apt로 설치 |
+| 〃 | `Tools/run-tests-linux.sh --compile` | 위 + **Roslyn**(.NET 8 SDK, 없으면 apt로 설치)으로 Steamworks.NET 원본 소스(고정 커밋)와 Unity 참조 DLL(NuGet `UnityEngine.Modules` 2021.3)에 대해 Core·Network·Game·Gameplay·Bootstrap·RagdollLab 컴파일. Input/·에디터 코드는 제외 |
 | Windows (Unity 설치) | `./Tools/Test-NetworkCore.ps1` | Core + 세션 테스트 (Unity 내장 Mono 사용) |
 | 〃 | `./Tools/Test-NetworkCompile.ps1 -SteamRuntimeSources <PackageCache의 Steamworks Runtime>` | 실제 Unity DLL로 컴파일 |
 | 컴파일러 없음 | `python3 Tools/Generators/check_braces.py` | 괄호 균형만 확인 |

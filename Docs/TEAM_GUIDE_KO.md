@@ -30,7 +30,7 @@
 | Intro | `Assets/Scenes/Intro.unity` | 타이틀. Steam 초기화 | **온라인** 흐름 시작 |
 | Lobby | `Assets/Scenes/Lobby.unity` | 파티·매칭·친구 초대·봇 | **온라인** |
 | KingRush | `Assets/Scenes/KingRush.unity` | 킹러시 코스 | **오프라인 플레이테스트** |
-| RagdollTest | `Assets/Scenes/RagdollTest.unity` | 래그돌 통합 시험장 | **오프라인 플레이테스트** |
+| RagdollTest | `Assets/Scenes/RagdollTest.unity` | 래그돌 랩 (2026-09-25 준영 님 랩 씬을 옮김) | **오프라인 2인 로컬** |
 
 메뉴 `ChessFight > Scenes`에서 바로 연다.
 
@@ -65,7 +65,7 @@ Assets/
 ```
 
 - **`Gameplay`에서 Steam 코드를 참조하지 않는다.** 캐릭터·장애물은 네트워크를 몰라야 오프라인에서도, 호스트에서도, 봇으로도 돌아간다.
-- 새 스크립트는 담당 폴더에 만든다. asmdef가 없는 폴더(예: 래그돌 랩)에 두면 `Gameplay`를 가져다 쓸 수는 있지만, 반대로 `Gameplay`가 그 코드를 참조할 수는 없다. 그래서 캐릭터를 부르는 쪽은 항상 인터페이스(`ICharacterDriver`)를 쓴다.
+- 새 스크립트는 담당 폴더에 만든다. 래그돌 어셈블리(`Assets/ChessFight/RagdollLab`)는 `Gameplay`를 가져다 쓰지만, 반대로 `Gameplay`나 네트워크 코드는 래그돌을 참조하지 않는다. 그래서 캐릭터를 부르는 쪽은 항상 인터페이스(`ICharacterDriver`)를 쓴다.
 - **`.meta` 파일은 반드시 같이 커밋한다.** 빠지면 다른 사람 PC에서 참조가 전부 끊긴다.
 
 ---
@@ -92,7 +92,7 @@ Assets/
 
 ## 4. 오프라인 플레이테스트 (모두 공통)
 
-`KingRush` 또는 `RagdollTest`를 열고 Play.
+`KingRush`를 열고 Play. (`RagdollTest`는 래그돌 랩이라 조작이 다르다: P1 키보드+마우스, P2 패드/방향키, Tab 튜닝 패널, R 리스폰, T 슬로모션, F 자유 카메라. [Docs/RagdollLab/README.md](RagdollLab/README.md))
 
 | 입력 | 동작 |
 |---|---|
@@ -104,95 +104,40 @@ Assets/
 | Backspace | 처음부터 다시 (기록 초기화) |
 
 - 씬의 `Playtest` 오브젝트(`PlaytestSpawner`)가 캐릭터 하나를 첫 스폰 지점에 만든다. 떨어지면(`fallLimit` 아래) 자동 리스폰.
-- **지금 나오는 캡슐은 임시 캐릭터**(`Prefabs/Characters/PlaytestCharacter`)다. CharacterController라 코스 통과는 정확하지만 맞기·밀기·잡기는 흉내만 낸다. 준영님 래그돌이 들어오면 `PlaytestSpawner`의 `Character Prefab` 칸만 바꾸면 된다(5장).
+- **지금 나오는 캡슐은 임시 캐릭터**(`Prefabs/Characters/PlaytestCharacter`)다. CharacterController라 코스 통과는 정확하지만 맞기·밀기·잡기는 흉내만 낸다. 래그돌은 병합됐으니 `PlaytestSpawner`의 `Character Prefab` 칸을 `RagdollPawn` 프리팹으로 바꾸면 래그돌로 달린다(5장, Unity 확인 전).
 - 체크포인트를 지나면 거기서 리스폰, 골인 지점에 닿으면 기록이 뜬다.
 - 씬에 있는 `PhysicsProfile`이 이 씬 동안만 물리를 **120Hz / 솔버 24회**로 올린다. 래그돌 랩이 측정한 최소 조건이다(아래 5장). 로비로 나가면 원래 값(50Hz / 6회)으로 돌아간다.
 
 ---
 
-## 5. 준영 — 래그돌을 main에 올리기
+## 5. 준영 — 래그돌
 
-`JY-ragdoll` 브랜치의 래그돌 리그를 읽어봤다. **이미 멀티에 필요한 구조를 갖추고 있다.** `RagdollPawn`이 키보드를 직접 읽지 않고 `SetInput(PawnInput)`으로 **월드 좌표 명령**을 받는다. 호스트가 원격 입력을 그대로 넣을 수 있는 형태다. 그대로 살리면 된다.
+**2026-09-25: `JY-ragdoll`이 `Network` 브랜치에 병합됐다.** 자세한 내용과 네트워크 안전성 근거는 [`Docs/Player/RAGDOLL.md`](Player/RAGDOLL.md)에 있다. 요약:
 
-### 5.1 병합
+- 래그돌 파일은 그대로 `Assets/ChessFight/RagdollLab/`에 있다(빌더가 경로를 안다). 전용 어셈블리 `ChessFight.RagdollLab`는 이제 `ChessFight.Gameplay`를 참조한다.
+- **랩 씬은 `Assets/Scenes/RagdollTest.unity`로 옮겼다**(메뉴 `ChessFight > Scenes > Ragdoll Test`). 원래의 `RagdollLab.unity`는 없다. `Rebuild Pawn + Scene` 메뉴도 RagdollTest에 저장한다.
+- **어댑터 `RagdollDriver`를 만들어 `RagdollPawn.prefab`에 붙였다.** 킹러시 `Playtest`의 `Character Prefab`에 래그돌 프리팹을 넣으면 코스에서 래그돌로 달릴 수 있다(Unity 확인 전).
+- 앞으로 작업은 `JY-ragdoll`이 아니라 `Network`(병합 후에는 `main`)에서 feature 브랜치를 딴다. **`JY-ragdoll`에 계속 커밋했다면 알려 달라.** 같은 파일이므로 병합은 쉽다.
 
-`JY-ragdoll`은 폴더 재구성 **이전**(`c9c1e6a`)에서 갈라졌다. 그래도 `main`을 병합하면 충돌 없이 합쳐진다. 래그돌 파일은 전부 새 파일(`Assets/ChessFight/RagdollLab/`)이고 `main`이 바꾼 파일과 겹치지 않는다. `Assets/ChessFight.meta`는 `main`에서 지워졌는데, Unity가 폴더를 보고 새로 만든다. 무해하다.
+### 5.1 멀티를 위해 지켜야 할 것 — AI에게 반드시 전달
 
-```text
-git checkout JY-ragdoll
-git merge origin/main
-```
+1. **캐릭터는 입력을 직접 읽지 않는다.** 모든 의도는 `SetInput`(= `RagdollDriver.SetCommand`)로만 받는다. 새 동작은 `PawnInput`에 필드를 늘린다.
+2. **이동 방향은 월드 좌표.** 카메라 기준 변환은 입력을 만드는 쪽에서 끝낸다.
+3. **점프·밀치기는 "눌린 순간"을 다음 FixedUpdate까지 보관**한다(`input.jump |= next.jump`).
+4. **랜덤·시간 누적에 의존하지 않는다.**
+5. **상태를 작게 요약할 수 있게 둔다**(골반 위치·회전·속도, 상태, 잡는 중).
+6. **물리 주기를 래그돌 코드에서 바꾸지 않는다.** 게임 씬은 `PhysicsProfile`, 랩은 `LabGame`이 맡는다.
+7. **장애물 판정은 물리로**, 넉다운은 `RagdollHazard`. `SpinningBar`는 랩 전용(각도 누적)이고 맵에는 `Spinner`를 쓴다.
+8. **`Assets/Scripts` 코드에서 래그돌 타입을 참조하지 않고, 래그돌 코드에서 Steam을 참조하지 않는다.** `Tools/run-tests-linux.sh`의 경계 검사가 막는다.
 
-`Assets/ChessFight/RagdollLab/`은 **당분간 그 자리에 둔다.** 빌더 메뉴(`Rebuild Pawn + Scene`)가 경로를 알고 있어서 옮기면 깨질 수 있다. 완성된 캐릭터 프리팹만 `Assets/Prefabs/Characters/`에 두면 된다.
-
-### 5.2 어댑터 하나 추가 (필수)
-
-래그돌과 게임을 잇는 연결은 이것 하나다. 병합 후 `Assets/ChessFight/RagdollLab/Scripts/RagdollDriver.cs`로 추가하고 래그돌 프리팹 루트에 붙인다.
-
-```csharp
-using ChessFight.Gameplay;
-using UnityEngine;
-
-namespace ChessFight.RagdollLab
-{
-    // Lets the ragdoll be driven by anything that speaks ICharacterDriver: the
-    // offline playtest now, the network host and bots later.
-    [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver
-    {
-        RagdollPawn pawn;
-
-        void Awake() => pawn = GetComponent<RagdollPawn>();
-
-        // CharacterCommand has the same shape as PawnInput on purpose.
-        public void SetCommand(in CharacterCommand command) => pawn.SetInput(new PawnInput
-        {
-            move = command.Move, jump = command.Jump, shove = command.Shove, grab = command.Grab
-        });
-
-        public Transform FollowTarget => pawn.Hips.transform;
-
-        // position is the ground point; this is LabGame.Respawn's own formula.
-        public void Teleport(Vector3 position, Quaternion rotation) =>
-            pawn.Teleport(position + Vector3.up * (pawn.standHeight + 0.02f), rotation * Vector3.forward);
-    }
-}
-```
-
-그다음 `RagdollTest` 씬 → `Playtest` 오브젝트 → `Character Prefab`에 래그돌 프리팹을 넣고 Play. KingRush도 같은 방법이다.
-
-### 5.3 RagdollTest와 RagdollLab은 다르다
-
-| | RagdollLab (준영님 것) | RagdollTest (이번에 만든 것) |
-|---|---|---|
-| 목적 | 물리 **손맛** 튜닝, 2인 로컬, 자동 점검 | 게임 시스템과의 **통합** 확인 |
-| 입력 | 랩 전용 (패드·P2 키보드·튜닝 패널) | 게임 공통 입력 → `ICharacterDriver` |
-| 확인할 것 | 강성·기상·밀치기 감각 | 체크포인트·리스폰·장애물 공통 클래스·카메라·물리 주기 |
-| 들어있는 것 | 랩 전용 맵 | 경사 15°, 1m 턱, 2m 벽(혼자 오르기), 3m 벽(둘이), 밀 수 있는 상자, 회전봉, 진자 |
-
-랩은 계속 튜닝용으로 쓰고, "게임에 들어가서도 똑같이 움직이는가"는 RagdollTest에서 본다.
-
-### 5.4 멀티를 위해 지켜야 할 것 — AI에게 반드시 전달
-
-1. **캐릭터는 입력을 직접 읽지 않는다.** 모든 의도는 `SetCommand`(=`SetInput`)로만 받는다. 지금 구조가 이미 그렇다. 새 동작(다이브, 감정표현 등)을 추가할 때도 `PawnInput`에 필드를 늘리는 방식으로 한다.
-2. **이동 방향은 월드 좌표.** 카메라 기준 변환은 입력을 만드는 쪽(자기 PC)에서 끝낸다. 호스트는 남의 카메라를 모른다.
-3. **점프·밀치기는 "눌린 순간"을 다음 FixedUpdate까지 보관**한다(`input.jump |= next.jump`). 지금 코드가 이미 그렇다. 네트워크로 입력이 늦게 와도 버튼이 씹히지 않는다.
-4. **랜덤·시간 누적에 의존하지 않는다.** 같은 입력이면 같은 결과가 나와야 호스트 판정과 화면이 맞는다.
-5. **상태를 작게 요약할 수 있게 둔다.** 나중에 호스트가 매 틱 보낼 것은 골반 위치·회전·속도와 상태(Active/Ragdoll/GettingUp, 잡는 중) 정도다. 이 값들을 한곳에서 꺼내고 넣을 수 있게 유지한다.
-6. **물리 120Hz / 24회는 `PhysicsProfile`이 씬 단위로 준다.** 래그돌 코드 안에서 `Time.fixedDeltaTime`을 바꾸지 않는다 (랩 자동 점검 코드는 예외).
-7. **장애물 판정은 지금처럼 물리로.** 장애물에 `RagdollHazard`를 붙이면 된다. 6장의 장애물 공통 클래스는 **움직임만** 맡고 맞는 판정에 끼어들지 않는다.
-
-### 5.5 시작 프롬프트 (AI에게)
+### 5.2 시작 프롬프트 (AI에게)
 
 ```text
-ChessFight 저장소의 JY-ragdoll 브랜치에서 작업합니다. main을 먼저 병합하세요.
-저장소 루트 HANDOFF.md를 먼저 읽고, Docs/Player/RAGDOLL.md(이 가이드 5장과 같은 내용)와 Docs/RagdollLab/README.md를 읽으세요.
-RagdollPawn은 SetInput(PawnInput)으로만 움직입니다. 이 구조를 유지하세요.
-목표: 래그돌 프리팹이 ICharacterDriver를 구현하게 하고(5.2 어댑터), RagdollTest 씬의
-PlaytestSpawner에 넣어 이동·점프·잡기·밀기가 동작하는 것을 확인합니다.
-멀티플레이 조건(5.4)을 반드시 지키세요: 입력 직접 읽기 금지, 월드 좌표 명령,
-눌림 신호는 FixedUpdate까지 보관, 시간 누적·랜덤 의존 금지, 물리 주기는 PhysicsProfile에 맡김.
-Assets/ChessFight/RagdollLab 폴더는 옮기지 말고, 완성 프리팹만 Assets/Prefabs/Characters에 둡니다.
+ChessFight 저장소에서 래그돌 작업을 이어갑니다. 저장소 루트 HANDOFF.md를 먼저 읽고,
+Docs/Player/RAGDOLL.md와 Docs/RagdollLab/README.md를 읽으세요.
+래그돌 랩은 Network 브랜치에 병합되어 있고, RagdollTest 씬(Assets/Scenes/RagdollTest.unity)이 랩 씬입니다.
+RagdollPawn은 SetInput(PawnInput)으로만 움직이고, RagdollDriver가 ICharacterDriver로 연결합니다. 이 구조를 유지하세요.
+TEAM_GUIDE 5.1(= RAGDOLL.md 5절) 규칙을 반드시 지키세요. Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 ```
 
 ---

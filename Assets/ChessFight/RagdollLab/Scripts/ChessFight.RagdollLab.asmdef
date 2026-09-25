@@ -1,7 +1,9 @@
 {
     "name": "ChessFight.RagdollLab",
     "rootNamespace": "ChessFight.RagdollLab",
-    "references": [],
+    "references": [
+        "ChessFight.Gameplay"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

@@ -6,10 +6,11 @@
 #   Tools/run-tests-linux.sh --compile   ...and compile every runtime assembly against
 #                                        Unity reference DLLs and the pinned Steamworks.NET source
 #
-# The compile step is a strong check, not Unity itself: the reference DLLs are
-# Unity 2021.3 (NuGet "UnityEngine.Modules"), and mcs cannot parse a few newer
-# constructs, which are patched in a temporary copy only (see patch_for_mcs).
-# Input/ (needs the Input System package) and Editor/ (needs UnityEditor.dll) are skipped.
+# The compile step uses Roslyn (the compiler Unity uses, from the .NET 8 SDK) but
+# Unity 2021.3 reference DLLs (NuGet "UnityEngine.Modules"), so Unity 6 API renames
+# are mapped back in a temporary copy (see unity6_to_2021). It is a strong check,
+# not Unity itself. Input/ (needs the Input System package) and editor code
+# (needs UnityEditor.dll) are skipped. Tests still use Mono's mcs.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -50,36 +51,69 @@ fetch_references() {
   fi
 }
 
-# Valid C# that mcs or the 2021.3 reference DLLs cannot take. Patched in a copy only.
-patch_for_mcs() {
+# The reference DLLs are Unity 2021.3, so Unity 6 renames are mapped back in a
+# temporary copy. The real sources are never touched.
+unity6_to_2021() {
   local dir="$1"
-  sed -i 's/(rotation \* Quaternion.Inverse(lastRotation)).ToAngleAxis/var delta = rotation * Quaternion.Inverse(lastRotation); delta.ToAngleAxis/' \
-      "$dir/Obstacles/Obstacle.cs"
-  # Unity 6 renamed Rigidbody.velocity to linearVelocity.
-  grep -rl 'linearVelocity' "$dir" | xargs -r sed -i 's/\.linearVelocity/.velocity/g'
+  grep -rlE 'linearVelocity|linearDamping|angularDamping|PhysicsMaterial' "$dir" | xargs -r sed -i \
+    -e 's/\.linearVelocity/.velocity/g' -e 's/\.linearDamping/.drag/g' -e 's/\.angularDamping/.angularDrag/g' \
+    -e 's/PhysicsMaterialCombine/PhysicMaterialCombine/g' -e 's/PhysicsMaterial/PhysicMaterial/g'
+}
+
+ensure_roslyn() {
+  CSC=$(ls /usr/lib/dotnet/sdk/*/Roslyn/bincore/csc.dll 2>/dev/null | head -1 || true)
+  if [ -n "$CSC" ]; then return; fi
+  echo "Installing the .NET 8 SDK for the Roslyn compiler Unity uses..."
+  local sudo=""; [ "$(id -u)" -ne 0 ] && sudo="sudo"
+  $sudo apt-get update -q >/dev/null; $sudo apt-get install -y -q dotnet-sdk-8.0 >/dev/null
+  CSC=$(ls /usr/lib/dotnet/sdk/*/Roslyn/bincore/csc.dll | head -1)
 }
 
 compile_all() {
   fetch_references
-  local build="$OUT/build" unity refs sym
-  mkdir -p "$build"
+  ensure_roslyn
+  local build="$OUT/build" src="$OUT/src" refs sym m=/usr/lib/mono/4.5
+  rm -rf "$build" "$src"; mkdir -p "$build" "$src"
+  cp -r Assets/Scripts "$src/Scripts"; cp -r Assets/ChessFight/RagdollLab/Scripts "$src/RagdollLab"
+  unity6_to_2021 "$src"
   refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
   sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
-  local mcsl="mcs -nologo -langversion:experimental -target:library -nowarn:414,649,169"
+  local csc="dotnet $CSC -nologo -noconfig -nostdlib+ -target:library -langversion:9 -nowarn:414,649,169,8632,0618 -r:$m/mscorlib.dll -r:$m/System.dll -r:$m/System.Core.dll"
   echo "Compiling Steamworks.NET $STEAMWORKS_COMMIT..."
-  $mcsl -unsafe $sym $refs -out:"$build/Steamworks.NET.dll" $(find "$OUT/steamworks/com.rlabrecque.steamworks.net/Runtime" -name '*.cs')
-  $mcsl -out:"$build/ChessFight.Network.Core.dll" Assets/Scripts/Core/*.cs
-  $mcsl $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" \
-        -out:"$build/ChessFight.Network.Steam.dll" Assets/Scripts/Network/*.cs
-  $mcsl $sym $refs -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Game.dll" Assets/Scripts/Game/*.cs
-  rm -rf "$OUT/gameplay" && cp -r Assets/Scripts/Gameplay "$OUT/gameplay" && patch_for_mcs "$OUT/gameplay"
-  $mcsl $sym $refs -r:"$build/ChessFight.Game.dll" -out:"$build/ChessFight.Gameplay.dll" $(find "$OUT/gameplay" -name '*.cs')
-  $mcsl $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
-        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
-        -out:"$build/ChessFight.Game.Steam.dll" Assets/Scripts/Bootstrap/*.cs
-  echo "PASS: Core, Network.Steam, Game, Gameplay and Bootstrap compiled (Input/ and Editor/ skipped)."
+  $csc -unsafe $sym $refs -out:"$build/Steamworks.NET.dll" $(find "$OUT/steamworks/com.rlabrecque.steamworks.net/Runtime" -name '*.cs') >/dev/null
+  $csc -out:"$build/ChessFight.Network.Core.dll" "$src"/Scripts/Core/*.cs
+  $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" \
+       -out:"$build/ChessFight.Network.Steam.dll" "$src"/Scripts/Network/*.cs
+  $csc $sym $refs -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Game.dll" "$src"/Scripts/Game/*.cs
+  $csc $sym $refs -r:"$build/ChessFight.Game.dll" -out:"$build/ChessFight.Gameplay.dll" $(find "$src/Scripts/Gameplay" -name '*.cs')
+  $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
+       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+       -out:"$build/ChessFight.Game.Steam.dll" "$src"/Scripts/Bootstrap/*.cs
+  # Player defines: its UNITY_EDITOR blocks need UnityEditor.dll, which the reference package lacks.
+  $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
+       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+       -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/RagdollLab" -name '*.cs')
+  echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap and RagdollLab compiled with Roslyn (Input/ and Editor code skipped)."
+}
+
+# Assembly boundaries that keep gameplay work from reaching into the network layer.
+check_boundaries() {
+  local bad=0 hits
+  # code_refs PATTERN PATHS...: matches outside // comments.
+  code_refs() { local pattern="$1"; shift
+    grep -rnE "$pattern" "$@" --include='*.cs' --include='*.asmdef' | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true; }
+  # Only Network/ and Bootstrap/ may know about Steam.
+  hits=$(code_refs 'Steamworks|ChessFight\.Network\.Steam|SteamSession|SteamMotion' \
+         Assets/Scripts/Core Assets/Scripts/Game Assets/Scripts/Gameplay Assets/Scripts/Input Assets/ChessFight/RagdollLab)
+  if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Steam referenced outside Network/ and Bootstrap/"; bad=1; fi
+  # The network layer and scene flow never depend on a character implementation.
+  hits=$(code_refs 'RagdollLab|RagdollPawn|LabGame' Assets/Scripts)
+  if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Assets/Scripts depends on the ragdoll lab"; bad=1; fi
+  [ $bad -eq 0 ] && echo "PASS: assembly boundaries (Steam only in Network/Bootstrap, nothing in Assets/Scripts depends on the ragdoll)"
+  return $bad
 }
 
 ensure_mono
+check_boundaries
 run_tests
 if [ "${1:-}" = "--compile" ]; then compile_all; fi

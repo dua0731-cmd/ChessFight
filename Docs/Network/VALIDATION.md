@@ -1,14 +1,27 @@
 # Network 구현 검증 기록
 
-최종 갱신: 2026-09-24 (KST). 코드 기준: `Network` 브랜치. 전체 상황은 루트 [`HANDOFF.md`](../../HANDOFF.md).
+최종 갱신: 2026-09-25 (KST). 코드 기준: `Network` 브랜치. 전체 상황은 루트 [`HANDOFF.md`](../../HANDOFF.md).
 대상: Unity `6000.3.11f1`, Windows x64, Steamworks.NET `2025.164.1`.
 
-상태: **자동 검사 통과(Core 28, 세션 12, 참조 컴파일) / 로비 HUD·한글·클릭·친구 초대 Unity 확인(09-24) / 두 PC 파티 입장·공개 매칭 성사 확인(09-22) / 두 계정 이동 동기화 보고 없음 / 씬 분리(72ddf9e)와 연결 품질(01dd655)은 Unity 미확인**.
+상태: **자동 검사 통과(Core 28, 세션 12, 참조 컴파일) / 로비 HUD·한글·클릭·친구 초대 Unity 확인(09-24) / 두 PC 파티 입장·공개 매칭 성사 확인(09-22) / 두 계정 이동 동기화 보고 없음 / 씬 분리(72ddf9e)·연결 품질(01dd655)·래그돌 병합(09-25)은 Unity 미확인**.
 
 **새 확인 항목은 이 아래 ★ 표처럼 맨 위에 추가한다.** 사용자가 확인하면 '결과' 칸에 날짜와 함께 적는다.
 
 > 이 문서의 표는 **사용자가 실제로 확인했다고 보고한 것만** '성공'으로 적는다.
 > 코드 작성·코드 검토는 검증이 아니다.
+
+## ★ 2026-09-25 래그돌 병합 — 확인 목록
+
+`JY-ragdoll`을 병합하고 랩 씬을 `RagdollTest`로 옮겼다([Player/RAGDOLL](../Player/RAGDOLL.md)). 자동 검사(경계 검사, Roslyn 컴파일, Core·세션 테스트)는 통과했지만 **Unity에서는 아직 열지 않았다.** 모델·텍스처는 Git LFS라 Pull할 때 LFS 파일까지 받아야 한다.
+
+| # | 확인 | 결과 |
+|---|---|---|
+| 1 | Pull 후 Safe Mode·컴파일 오류 없이 열리고, `Assets/ChessFight.meta` 등 **새 변경점이 생기지 않는다** | 미확인 |
+| 2 | `ChessFight > Scenes > Ragdoll Test` Play → JY-ragdoll의 RagdollLab과 **같은 장면**: 회전 봉, 벽 2·3·4m, 경사 3종, 외줄, 림보·터널, P1·P2·더미 | 미확인 |
+| 3 | 랩 조작: WASD·Space·밀치기·잡기, Tab 패널, R·T·F, P2 방향키(또는 패드) | 미확인 |
+| 4 | RagdollTest Play 중 Console에 missing script·오류 없음, 캐릭터 모델이 보인다(LFS) | 미확인 |
+| 5 | **네트워크 영향 없음:** RagdollTest를 멈춘 뒤 `Intro`로 Play → 로비 HUD 클릭, 비공개 방, 캡슐 이동이 전과 같다 | 미확인 |
+| 6 | (선택) `KingRush`의 `Playtest` → `Character Prefab`을 `RagdollPawn`으로 바꿔 Play → 래그돌로 코스 이동, R 리스폰 | 미확인 |
 
 ## ★ 2026-09-24 씬 분리 — 팀 배포 전 확인 목록
 
@@ -18,7 +31,7 @@
 |---|---|---|
 | 1 | 프로젝트가 Safe Mode 없이 열린다 | 미확인 |
 | 2 | `KingRush` 직접 Play → 캡슐 캐릭터 등장, WASD·점프, 회전봉에 밀림, 체크포인트·골인 기록 | 미확인 |
-| 3 | `RagdollTest` 직접 Play → 턱·벽·상자 밀기, 진자에 밀림 | 미확인 |
+| 3 | ~~`RagdollTest` 직접 Play → 턱·벽·상자 밀기, 진자에 밀림~~ (09-25 RagdollTest가 래그돌 랩으로 바뀜. 위 표 참고) | 해당 없음 |
 | 4 | `Intro` Play → 타이틀, 아무 키 → 로비 | 미확인 |
 | 5 | 로비에서 비공개 방 → 봇 채우기 → 경기 시작 → **KingRush로 전환**, 캡슐 표시 | 미확인 |
 | 6 | KingRush에서 Esc → **로비로 복귀, 파티 유지** | 미확인 |

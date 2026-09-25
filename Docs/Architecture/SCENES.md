@@ -16,7 +16,7 @@
 | `Intro.unity` | 0 | `IntroController` | 온라인. 타이틀, Steam 시작, 아무 키 → Lobby |
 | `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티·매칭 HUD, 대기 캡슐 |
 | `KingRush.unity` | 2 | 경기로 들어왔을 때만 `KingRushMatchView` | 직접 열면 **오프라인 플레이테스트** |
-| `RagdollTest.unity` | 비활성 | 없음 | 오프라인 플레이테스트 |
+| `RagdollTest.unity` | 비활성 | 없음 (씬 안의 `LabGame`이 동작) | 래그돌 랩. Steam 없이 2인 로컬 |
 | `SampleScene.unity` | 빌드 제외 | 없음 | 아무것도 안 함(템플릿) |
 
 씬 이름 상수는 `Game/SceneNames.cs`. **런타임에 로드하는 씬은 빌드 목록(`EditorBuildSettings.asset`)에도 있어야 한다.** 빌드 메뉴(`NetworkSetup.ShippedScenes`)가 Intro·Lobby·KingRush를 넣는다.
@@ -44,7 +44,7 @@
 - 직접 Play: `PlaytestSpawner`가 임시 캐릭터를 만든다.
 - 경기로 진입: `PlaytestSpawner.NetworkDriven`이라 캐릭터를 안 만들고, `KingRushMatchView`가 네트워크 캡슐, 읽기 전용 `MatchHud`(명단, 핑, 끊김 배너)를 띄운다. **캡슐은 아직 로비용 평면 모터라 코스를 달릴 수 없다.** Esc = `Session.Cancel()`.
 
-**RagdollTest** — 경사 15°, 1m 턱, 2m 벽(혼자), 3m 벽(둘이), 밀 수 있는 상자 3개, 회전봉, 진자, `PhysicsProfile`, `Playtest`. 래그돌 프리팹을 `Playtest`의 `Character Prefab`에 넣어 통합을 시험한다([Player/RAGDOLL](../Player/RAGDOLL.md)).
+**RagdollTest** — 2026-09-25부터 **준영 님 래그돌 랩 씬 그대로**다. 회전 봉, 벽 2·3·4m, 경사 15·30·45°, 외줄, 림보·터널이 있고, `LabGame`이 P1·P2·더미를 만든다. 튜닝 패널은 Tab. 물리 120Hz는 `LabGame`이 직접 걸고 씬을 떠날 때 되돌린다(`PhysicsProfile` 없음). 빌더 메뉴 `ChessFight > Ragdoll Lab > Rebuild Pawn + Scene`이 이 파일을 다시 만든다. 상세와 네트워크 안전성: [Player/RAGDOLL](../Player/RAGDOLL.md).
 
 ## 4. 렌더링
 

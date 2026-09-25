@@ -4,7 +4,7 @@
 
 ## 여는 법
 
-1. Unity 6000.3.11f1에서 `Assets/ChessFight/RagdollLab/Scenes/RagdollLab.unity`를 연다.
+1. Unity 6000.3.11f1에서 `Assets/Scenes/RagdollTest.unity`를 연다(메뉴 `ChessFight > Scenes > Ragdoll Test`). 2026-09-25 병합 때 랩 씬을 이 이름으로 옮겼다. 게임 쪽 연결과 네트워크 규칙은 [`Docs/Player/RAGDOLL.md`](../Player/RAGDOLL.md).
 2. Play. 게임 화면을 클릭하면 마우스가 잠긴다(Esc로 해제).
 3. Tab(또는 패드 Start)으로 튜닝 패널을 연다. 패널에서 바꾼 값은 `Settings/RagdollTuning.asset`에 그대로 남는다(에디터 기준).
 
@@ -29,7 +29,7 @@
 - `RagdollPawn`: Rigidbody 11개(Hips·Chest·Head·Arm·Hand·Thigh·Foot) + ConfigurableJoint(Slerp). 절차적 퍼펫(`Puppet` 하위 Transform)이 매 FixedUpdate 목표 포즈를 만들고, 조인트 targetRotation이 이를 따른다. `LocomotionAnchor`(kinematic)가 입력대로 움직이고 Hips를 조인트로 끈다.
 - 동적 강성: 접촉·잡기·경사·피격 중 **가장 낮은 배율**이 적용되고, `stiffnessLerpSpeed`로 보간된다. 넉다운 중에는 모든 스프링이 0이다.
 - 시각 메시는 사용자가 준 Mixamo 리그(`Art/Pawn/Pawn.fbx`)를 그대로 쓰고, 빌더가 부위별로 가중치를 다시 계산한다(뼈 이름·구조 유지). 뼈는 LateUpdate에서 물리 몸을 따라간다.
-- 파일: `Assets/ChessFight/RagdollLab/` (Scripts / Editor / Art / Generated / Materials / Prefabs / Scenes / Settings).
+- 파일: `Assets/ChessFight/RagdollLab/` (Scripts / Editor / Art / Generated / Materials / Prefabs / Settings). 씬은 `Assets/Scenes/RagdollTest.unity`. `RagdollDriver`가 게임 공통 캐릭터 계약(`ICharacterDriver`)을 구현한다.
 
 ## 명세서와 다른 점 (측정 근거)
 

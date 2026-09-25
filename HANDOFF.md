@@ -4,7 +4,7 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-24** · 기준 브랜치 **`Network`** · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+최종 갱신: **2026-09-25** · 기준 브랜치 **`Network`** · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
 
 ---
 
@@ -21,6 +21,7 @@
   - 씬 분리(Intro → Lobby → KingRush)
   - 킹러시·래그돌 팀 작업 환경
   - 연결 품질 기능(끊김 경고, 핑, 지연 시뮬레이터, 버전 검사)
+  - 준영 님 래그돌 랩 병합(RagdollTest 씬 = 랩 씬, `RagdollDriver`로 게임 캐릭터 계약 연결)
 - **아직 캡슐 이동 기술 프로토타입이다.** 기물 선택, 스킬, 래그돌 네트워크, 라운드 규칙, 승패는 없다.
 - 이 프로젝트의 AI 작업은 사용자(메인 기획자, GitHub `dua0731-cmd`)의 요청으로 진행되어 왔다. **요청 이력 전체는 [요구사항 기록](Docs/Project/REQUIREMENTS.md)에 있다.**
 
@@ -30,11 +31,11 @@
 |---|---|
 | 개발 브랜치 | `Network`. AI 작업은 이 브랜치에만 커밋·푸시한다 |
 | `main` | `a070367`에서 멈춤. `Network`가 6커밋 이상 앞서 있다(`git rev-list --count origin/main..origin/Network`). **팀원은 main을 쓰므로 Network → main 병합이 필요하다** (사용자 결정 대기) |
-| 다른 원격 브랜치 | `JY-ragdoll`(준영, 래그돌 랩), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
+| 다른 원격 브랜치 | `JY-ragdoll`(준영, 래그돌 랩. **2026-09-25 Network에 병합됨**), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
 | 네트워크 프로토콜 | `chessfight.dua0731.network.v2`, 입력 패킷 magic `CFF2`. 이전 빌드와는 매칭 불가 |
-| 자동 테스트 | Core 28개 + 모의 Steam 세션 12개 통과, 5개 어셈블리 참조 컴파일 통과 (2026-09-24) |
+| 자동 테스트 | 어셈블리 경계 검사 + Core 28개 + 모의 Steam 세션 12개 통과, 래그돌 포함 6개 어셈블리 Roslyn 컴파일 통과 (2026-09-25) |
 | Unity 실기 확인 | 2026-09-24까지: 로비 HUD 표시·한글·클릭·친구 초대 동작 (사용자 보고) |
-| **Unity 미확인** | 2026-09-24 씬 분리(72ddf9e)와 연결 품질 기능(01dd655)은 **아직 Unity에서 열지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 |
+| **Unity 미확인** | 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 열지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 세 표 |
 | 두 PC 확인 | 파티 입장·공개 매칭 성사 확인(2026-09-22). **양방향 이동은 미보고** |
 
 ## 2. 무엇이 되고 무엇이 안 되는가
@@ -51,18 +52,18 @@
 | 씬 흐름 Intro → Lobby → KingRush → Lobby | 코드만, Unity 미확인 | [Architecture/SCENES](Docs/Architecture/SCENES.md) |
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
-| 래그돌 | `JY-ragdoll`에만 있음, 어댑터 설계만 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
+| 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬) | 병합·코드·컴파일만, Unity 미확인. 네트워크 래그돌은 없음 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
 | **없음** | 기물 선택·스킬·라운드·승패·점수, 네트워크 경기에서 코스 달리기, 래그돌 네트워크, 호스트 이전, 재접속, 신뢰 이벤트 채널, 로딩 동기화 | [ROADMAP](Docs/Project/ROADMAP.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
 
 **사용자(메인 기획)가 할 일 — 순서대로**
-1. `Network`를 Pull한 뒤 Unity에서 열고 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 두 표(씬 분리 8개, 연결 품질 5개)를 확인한다. 막히면 증상과 Console 첫 오류를 AI에게 준다.
+1. `Network`를 Pull(LFS 포함)한 뒤 Unity에서 열고 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 세 표(래그돌 병합 6개, 씬 분리, 연결 품질)를 확인한다. 막히면 증상과 Console 첫 오류를 AI에게 준다.
 2. 두 PC로 양방향 이동을 확인한다(가장 오래 미뤄진 검증).
 3. `Network` → `main` 병합 여부를 결정한다. 병합해야 팀원이 새 환경을 받는다.
 
 **팀원(이번 주 배정)**
-- 준영: 래그돌 병합, 어댑터 추가 → [Player/RAGDOLL](Docs/Player/RAGDOLL.md)
+- 준영: 래그돌은 병합됨. 이후 작업은 Network/main 기준, 멀티 규칙 준수 → [Player/RAGDOLL](Docs/Player/RAGDOLL.md)
 - 진호·지성: 킹러시 맵과 장애물, 장애물별 기획서 작성 → [KingRush](Docs/KingRush/README.md)
 - 승규: 네트워크 방어 기획. 추천 작업과 AI 프롬프트 → [기획안 반영 상태 §4](Docs/Network/PLAN_V0.1_STATUS.md#4-승규-님께-요청할-다음-작업)
 
@@ -70,7 +71,7 @@
 1. Unity 확인 중 나오는 오류 수정 (최우선)
 2. Network → main 병합 PR
 3. 기획안의 "결정 필요" 항목: 신뢰 이벤트 채널 → 로딩 동기화 → 호스트 끊김 2단계(라운드 무효, 파티 유지)
-4. 래그돌 병합 후 네트워크 경기에서 코스 달리기(래그돌 권한 결정 필요)
+4. 네트워크 경기에서 래그돌로 코스 달리기(래그돌 권한 결정 필요. 병합은 끝남)
 
 ## 4. 절대 규칙 — 어기면 과거에 실제로 사고가 났던 것들
 
@@ -86,6 +87,7 @@
 10. **검증 표기는 정직하게 한다.** 사용자가 Unity나 Steam에서 직접 본 것만 VALIDATION에 '성공'으로 적는다. 코드 작성과 테스트 통과는 검증이 아니다.
 11. **`.meta`는 항상 같이 커밋한다.** Unity 밖에서 파일을 만들면 `Tools/Generators/mkmeta.py`로 만든다.
 12. **같은 `.unity` 씬을 두 사람이 동시에 고치지 않는다.** 맵은 구간 프리팹으로 나눈다.
+13. **`Assets/Scripts`(네트워크·게임 코드)는 래그돌 타입을 참조하지 않고, 래그돌(`Assets/ChessFight/RagdollLab`)은 Steam을 참조하지 않는다.** 캐릭터는 `ICharacterDriver`로만 부른다. `Tools/run-tests-linux.sh`의 경계 검사가 확인한다.
 
 ## 5. 문서 트리
 
@@ -118,7 +120,8 @@ Docs/
 │  └─ VALIDATION.md             ★ 실제 확인 기록과 확인 목록
 ├─ Player/                      플레이어 캐릭터
 │  ├─ MOVEMENT_INPUT.md         입력 경로, 로비 이동, 오프라인 캐릭터
-│  └─ RAGDOLL.md                래그돌 통합 계획, 어댑터, 멀티 조건
+│  └─ RAGDOLL.md                래그돌 병합 상태, RagdollTest, 네트워크 안전성, 어댑터, 멀티 규칙
+├─ RagdollLab/README.md         준영 님 랩 문서 (조작, 구조, 측정 근거)
 ├─ KingRush/                    첫 미니게임
 │  ├─ README.md                 맵 구성, 코스 컴포넌트, 네트워크 한계
 │  ├─ OBSTACLES.md              장애물 규칙과 만드는 법
@@ -143,7 +146,7 @@ Tools/
 | 씬 추가, 씬 전환 | [Architecture/SCENES](Docs/Architecture/SCENES.md) | `Bootstrap/NetworkRuntime.cs`, `Game/SceneNames.cs` |
 | HUD, UI | [Architecture/UI](Docs/Architecture/UI.md) | `Game/NetworkHudView.cs`, `Resources/*.uxml/uss` |
 | 플레이어 입력, 조작 | [Player/MOVEMENT_INPUT](Docs/Player/MOVEMENT_INPUT.md) | `Game/MoveInputSource.cs`, `Input/` |
-| 래그돌 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) | `Gameplay/Characters/ICharacterDriver.cs` |
+| 래그돌 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md), [RagdollLab/README](Docs/RagdollLab/README.md) | `Assets/ChessFight/RagdollLab/Scripts/`, `Gameplay/Characters/ICharacterDriver.cs` |
 | 킹러시 맵, 장애물 | [KingRush](Docs/KingRush/README.md), [OBSTACLES](Docs/KingRush/OBSTACLES.md) | `Gameplay/Obstacles`, `Gameplay/Course` |
 | 테스트, 검증 | [AI_WORKFLOW §3](Docs/Environment/AI_WORKFLOW.md), [VALIDATION](Docs/Network/VALIDATION.md) | `Tests/Network`, `Tools/` |
 

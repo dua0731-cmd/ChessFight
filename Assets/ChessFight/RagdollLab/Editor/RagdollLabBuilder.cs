@@ -28,8 +28,9 @@ namespace ChessFight.RagdollLab.Editor
         const string PrefabPath = PrefabDir + "/RagdollPawn.prefab";
         const string SettingsDir = Root + "/Settings";
         const string TuningPath = SettingsDir + "/RagdollTuning.asset";
-        const string SceneDir = Root + "/Scenes";
-        public const string ScenePath = SceneDir + "/RagdollLab.unity";
+        // The lab scene is the project's RagdollTest scene, next to the other scenes.
+        const string SceneDir = "Assets/Scenes";
+        public const string ScenePath = SceneDir + "/RagdollTest.unity";
 
         static readonly string[] BodyNames = { "Hips", "Chest", "Head", "Arm_L", "Hand_L", "Arm_R", "Hand_R", "Thigh_L", "Foot_L", "Thigh_R", "Foot_R" };
         static readonly float[] BodyMass = { 16f, 12f, 6f, 1.2f, 1.3f, 1.2f, 1.3f, 3f, 2.5f, 3f, 2.5f };
@@ -555,6 +556,9 @@ namespace ChessFight.RagdollLab.Editor
                 var sync = root.AddComponent<RagdollVisualSync>();
                 sync.pawn = pawn;
                 sync.entries = entries.ToArray();
+
+                // ---- game-facing contract, so playtests, the host and bots can drive it
+                root.AddComponent<RagdollDriver>();
 
                 var saved = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
                 Debug.Log($"[RagdollLab] Prefab saved: {PrefabPath}, total mass {BodyMass.Sum():F1} kg, hips {pawn.standHeight:F3} m");

@@ -21,7 +21,7 @@ Tests/Network/        Unity 밖 테스트 (Core, 모의 Steam 세션)
 Tools/                테스트 스크립트, Generators/
 ```
 
-`Assets/ChessFight/…` 같은 중첩 폴더는 `8649011`에서 없앴다. 예외: 준영의 래그돌 랩은 병합 후에도 당분간 `Assets/ChessFight/RagdollLab/`에 둔다(빌더 메뉴가 경로를 안다).
+`Assets/ChessFight/…` 같은 중첩 폴더는 `8649011`에서 없앴다. **예외: 준영 님 래그돌 랩은 `Assets/ChessFight/RagdollLab/`에 그대로 둔다**(2026-09-25 병합). 빌더 메뉴가 이 경로를 알고 있고, 랩은 Art·Generated·Materials·Prefabs·Scripts·Settings를 한 덩어리로 관리한다. 랩 씬만 `Assets/Scenes/RagdollTest.unity`로 옮겼다. `Assets/ChessFight.meta`는 PC마다 GUID가 달라지지 않게 커밋되어 있다.
 
 ## 2. 어셈블리
 
@@ -34,6 +34,8 @@ Tools/                테스트 스크립트, Generators/
 | `Scripts/Bootstrap/` | `ChessFight.Game.Steam` | Core, Network.Steam, Game, Gameplay, Steamworks.NET | `CHESSFIGHT_STEAM` | `NetworkRuntime`, 씬 컨트롤러(Intro/Lobby/KingRush) |
 | `Scripts/Input/` | `ChessFight.Game.Input` | Game, Unity.InputSystem | `CHESSFIGHT_INPUTSYSTEM` | Input System 이동 소스(자기 등록) |
 | `Scripts/Editor/` | Assembly-CSharp-Editor | — | — | 설치·씬 메뉴·빌드, `InputSettingsGuard` |
+| `ChessFight/RagdollLab/Scripts/` | `ChessFight.RagdollLab` | Gameplay | — | 래그돌(`RagdollPawn`, 손, 튜닝), 랩(`LabGame`, 카메라, 패널, 자동 점검, XInput), `RagdollDriver`(`ICharacterDriver` 구현). **Steam 무참조** |
+| `ChessFight/RagdollLab/Editor/` | `ChessFight.RagdollLab.Editor` | RagdollLab | Editor 전용 | 래그돌 리그·프리팹·씬 빌더 |
 
 Steam 게이트 어셈블리의 플랫폼은 Editor, WindowsStandalone64/32다.
 
@@ -43,13 +45,14 @@ Steam 게이트 어셈블리의 플랫폼은 Editor, WindowsStandalone64/32다.
 Core  ←  Network.Steam  ←┐
   ↑                       Bootstrap (Game.Steam)
 Game  ←  Gameplay      ←┘
-  ↑
+  ↑         ↑
+  │       RagdollLab (래그돌. Gameplay만 참조, 아무도 참조하지 않음)
 Input (자기 등록, 아무도 참조하지 않음)
 ```
 
 - **프리팹과 씬이 참조하는 스크립트는 `Game`·`Gameplay`에만 있다.** 그래서 Steamworks가 설치되기 전에 열어도 missing script가 없다.
 - `Bootstrap`만 모든 것을 안다. 씬 컨트롤러는 씬에 저장되지 않고 `NetworkRuntime`이 붙인다([SCENES](SCENES.md)).
-- 래그돌 랩처럼 asmdef가 없는 폴더(Assembly-CSharp)는 `Gameplay`를 쓸 수 있지만, `Gameplay`는 그쪽을 참조할 수 없다. 그래서 캐릭터 호출은 항상 `ICharacterDriver`로 한다.
+- 래그돌(`ChessFight.RagdollLab`)은 `Gameplay`를 참조하지만 `Gameplay`·`Bootstrap`·네트워크는 래그돌을 참조하지 않는다. 그래서 캐릭터 호출은 항상 `ICharacterDriver`로 한다. **이 경계는 `Tools/run-tests-linux.sh`의 경계 검사가 매번 확인한다.**
 
 ## 4. define 규칙
 

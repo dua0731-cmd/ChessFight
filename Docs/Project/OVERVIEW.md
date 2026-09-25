@@ -26,7 +26,7 @@
 |---|---|---|
 | `Network` | 사용자 + AI 개발 브랜치. 이 문서 체계의 기준 | 최신 |
 | `main` | 팀원이 받는 브랜치 | `a070367`. Network 병합 대기 |
-| `JY-ragdoll` | 준영의 래그돌 랩(`Assets/ChessFight/RagdollLab/`, 로컬 2P, 네트워크 없음). `c9c1e6a`에서 분기, 최신 `2d450aa` | 병합 전. 충돌 없음 확인 |
+| `JY-ragdoll` | 준영의 래그돌 랩(`Assets/ChessFight/RagdollLab/`, 로컬 2P, 네트워크 없음). `c9c1e6a`에서 분기, 최신 `2d450aa` | **`Network`에 병합됨**(2026-09-25, `fc006b8`). 이후 래그돌 작업은 `Network`/`main` 기준 |
 | `킹을-지켜라` | 다른 미니게임 프로토타입(`5af7c8c`에서 분기) | **호환 안 됨**: Unity 6000.3.12f1, URP 17.3.0, uGUI 2.0.0, Input System 1.19.0, 고정 안 된 MCP 패키지, 자체 `SteamLobbyTransport`. 통합 전에 어느 쪽을 기준으로 할지 결정 필요 |
 | `SteamNetworkTest` | 초기 실험 | 사용 안 함 |
 

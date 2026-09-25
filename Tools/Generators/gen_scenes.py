@@ -1,4 +1,4 @@
-# Generates Intro/KingRush/RagdollTest scenes, the obstacle/character prefabs and
+# Generates the Intro and KingRush scenes, the obstacle/character prefabs and
 # course materials as hand-written Unity YAML, with deterministic GUIDs.
 #
 # !! It OVERWRITES those files. Once anyone has saved them from the Unity Editor,
@@ -469,4 +469,7 @@ def ragdoll_test():
         % (prefab_ref(CHARACTER), spawn["tr"], rig))
     write("Assets/Scenes/RagdollTest.unity", d.render(PREAMBLE))
 
-intro(); king_rush(); ragdoll_test()
+# RagdollTest is no longer generated: since 2026-09-25 it is the ragdoll lab scene,
+# rebuilt by ChessFight > Ragdoll Lab > Rebuild Pawn + Scene. ragdoll_test() above
+# only documents the earlier integration course.
+intro(); king_rush()

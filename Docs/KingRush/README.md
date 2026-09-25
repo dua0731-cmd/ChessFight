@@ -39,14 +39,14 @@ z = 200 ~ 230  Finish Platform  Finish Zone
 
 KingRush를 직접 열고 Play → Steam 없이 캐릭터 하나. WASD, Space, 왼쪽 클릭(밀치기), 오른쪽 누르기(잡기), R(체크포인트로), Backspace(처음부터). 떨어지면(`fallLimit`) 자동 리스폰, 골인하면 기록 표시.
 
-지금 캐릭터는 **임시 CharacterController 캡슐**(`Prefabs/Characters/PlaytestCharacter`)이다. 래그돌이 오면 `Playtest`의 `Character Prefab`만 바꾼다([Player/RAGDOLL](../Player/RAGDOLL.md)).
+지금 캐릭터는 **임시 CharacterController 캡슐**(`Prefabs/Characters/PlaytestCharacter`)이다. 래그돌이 병합되었으므로(2026-09-25) `Playtest`의 `Character Prefab`을 `Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab`으로 바꾸면 래그돌로 달릴 수 있다(**Unity 미확인**, [Player/RAGDOLL §4](../Player/RAGDOLL.md)).
 
 ## 4. 네트워크 경기에서의 한계
 
 - 경기가 시작되면 모두 KingRush로 넘어가고 장애물은 **모든 PC에서 같은 위치**로 움직인다(공유 시계).
 - 하지만 캐릭터는 아직 로비용 평면 모터(38×38, 충돌 없음)라 **스타트 플랫폼 위에만 서 있고 코스를 달릴 수 없다.**
 - 체크포인트·골인은 로컬 이벤트다. 호스트 판정·순서 검증은 없다.
-- 해결 순서: 래그돌 병합 → 래그돌 권한 결정 → 호스트 시뮬레이션 → 체크포인트·골인 호스트 판정 → 라운드 규칙.
+- 해결 순서: ~~래그돌 병합~~(09-25 완료) → 래그돌 권한 결정 → 호스트 시뮬레이션 → 체크포인트·골인 호스트 판정 → 라운드 규칙.
 
 ## 5. 협업 규칙
 

@@ -30,6 +30,7 @@
 | G2 | 장애물 포즈는 **`ObstacleClock` 시간의 순수 함수**. 경기 중 시계는 Steam 서버 시간 + 로컬 소수부 | 장애물 패킷 없이 모든 PC가 같은 장면 | PC마다 장애물 위치가 달라진다 |
 | G3 | 래그돌 씬 물리 **120Hz / 솔버 24회**를 `PhysicsProfile`이 씬 단위로 적용. 프로젝트 기본(50Hz)은 바꾸지 않는다 | 래그돌 랩 측정: 60Hz 이하에서 골반이 주저앉음 | 로비 등 다른 씬까지 비용 증가 |
 | G4 | `Teleport(position)`의 position은 **발 닿는 바닥 지점**. 스폰 지점도 y=0 | 캐릭터마다 키가 다르다 | 래그돌이 공중에서 떨어지거나 파묻힌다 |
+| G5 | **RagdollTest 씬 = 래그돌 랩 씬.** 래그돌 코드는 `Assets/ChessFight/RagdollLab/`의 `ChessFight.RagdollLab` 어셈블리(참조: Gameplay만)에 두고, 게임·네트워크 쪽은 `ICharacterDriver`(`RagdollDriver`)로만 부른다 | 사용자 요구(R16): 랩을 그대로 옮기되 네트워크·멀티에 문제가 없게. 빌더가 경로를 안다 | 네트워크 코드가 래그돌에 묶이거나, 래그돌이 Steam에 묶인다. 경계 검사가 실패한다 |
 | T1 | 팀원은 `main`, AI는 `Network` 브랜치에서 작업하고 병합은 사용자 결정 | 팀원 작업을 AI 변경이 덮지 않게 | — |
 | T2 | 같은 `.unity`를 동시에 편집하지 않는다. 맵은 구간 프리팹. Unity YAML 병합 도구와 Git LFS 사용 | 씬 병합은 사실상 불가능 | 작업 유실 |
 | T3 | 손으로 쓰는 Unity YAML은 `Tools/Generators`로 만들고 GUID는 경로의 md5로 고정한다 | AI가 Unity 없이 자산을 만들 때 재현 가능 | GUID 충돌, 참조 끊김 |

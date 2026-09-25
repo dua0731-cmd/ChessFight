@@ -60,6 +60,9 @@ namespace ChessFight.RagdollLab
             Physics.gravity = savedGravity;
             Time.fixedDeltaTime = savedFixedDelta;
             Time.timeScale = 1f;
+            // The lab locks the mouse for look controls; the lobby HUD needs it back.
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         void Start()

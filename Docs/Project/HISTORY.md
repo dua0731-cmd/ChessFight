@@ -5,6 +5,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 항목을 추가한 커밋) | 09-25 | R16 | 랩 씬 → RagdollTest, `RagdollDriver`, 랩 어셈블리 Gameplay 참조, 커서 복구, `Assets/ChessFight.meta`, 경계 검사·Roslyn 컴파일, 문서 |
+| `fc006b8` | 09-25 | R16 | `JY-ragdoll` 병합 (래그돌 파일 118개 추가) |
+| `444d698` | 09-24 | R15 | 인수인계 커밋 해시 기록 |
 | `cffe4a3` | 09-24 | R15 | 인수인계 체계: 루트 `HANDOFF.md`, AI 도구별 안내 파일, `Docs/` 분야별 트리, 요구사항·결정·함정 기록, `Tools/run-tests-linux.sh`, `Tools/Generators/` |
 | `01dd655` | 09-24 | R14 | 호스트 끊김 경고(0.5/2/12초), 점프 누른 횟수, build 검사, 공개 매치 봇 규칙, 핑·응답 표시, F8 지연 시뮬레이터, Rich Presence. 프로토콜 v2 |
 | `72ddf9e` | 09-24 | R11 | Intro·Lobby·KingRush·RagdollTest 씬, `NetworkRuntime`, `ChessFight.Gameplay`, 팀 가이드 |
