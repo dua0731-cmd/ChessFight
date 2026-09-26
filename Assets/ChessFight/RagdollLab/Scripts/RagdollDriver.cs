@@ -10,7 +10,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember
     {
         RagdollPawn pawn;
 
@@ -25,6 +25,8 @@ namespace ChessFight.RagdollLab
         });
 
         public Transform FollowTarget => Pawn.Hips.transform;
+
+        public int Team => Pawn.Team;
 
         // `position` is the ground point; the hips go standHeight above it, as LabGame.Respawn does.
         // RagdollPawn.Teleport lets go of everything first (wall, hands, anyone holding it).

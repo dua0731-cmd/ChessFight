@@ -28,7 +28,7 @@ namespace ChessFight.RagdollLab
     /// below a top). A throw that hits nothing within hookMaxFlight is a
     /// miss, and the next one waits hookRetryDelay. Space or E lets go of the rope.
     ///
-    /// En passant: another pawn holding interact within enPassantRadius of the hook for enPassantHold,
+    /// En passant: an enemy (Teams.AreEnemies) holding interact within enPassantRadius of the hook for enPassantHold,
     /// while the pawn is still reeling in or up to enPassantWindow after it arrived, cuts the hook out
     /// and the pawn falls (or is thrown back off the top it just reached).
     ///
@@ -465,7 +465,8 @@ namespace ChessFight.RagdollLab
                 float best = p.enPassantRadius;
                 foreach (var other in All)
                 {
-                    if (other == null || other == this || !other.HookCuttable) continue;
+                    // Only an enemy's hook (M10): a teammate's is left alone.
+                    if (other == null || other == this || !other.HookCuttable || !Teams.AreEnemies(Team, other.Team)) continue;
                     float d = Vector3.Distance(me, other.hookPos);
                     if (d > best) continue;
                     best = d;

@@ -67,6 +67,10 @@ namespace ChessFight.RagdollLab
         public SkinnedMeshRenderer skin;
 
         public string DisplayName { get; set; } = "Pawn";
+
+        /// <summary>White 0, black 1, none -1 (Teams). Set by whoever spawns the pawn: the lab, the network
+        /// roster, a mode. Only the machine that simulates the pawn uses it.</summary>
+        public int Team { get; set; } = Teams.None;
         public PawnState State { get; private set; } = PawnState.Active;
         public float Stiffness { get; private set; } = 1f;
         public float TargetStiffness { get; private set; } = 1f;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using ChessFight.Gameplay;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -185,8 +186,14 @@ namespace ChessFight.RagdollLab
         {
             if (players.Length > 1 && PadIndex(players[1].device) >= 0 && !XInputPad.Get(PadIndex(players[1].device)).connected)
                 players[1].device = LabDevice.KeyboardArrows;
-            foreach (var slot in players)
-                if (slot.pawn == null) slot.pawn = Spawn(slot.spawn, Vector3.forward, slot.material, slot.name);
+            for (int i = 0; i < players.Length; i++)
+            {
+                var slot = players[i];
+                if (slot.pawn != null) continue;
+                slot.pawn = Spawn(slot.spawn, Vector3.forward, slot.material, slot.name);
+                // P1 white, P2 black, so the lab has two sides to try team rules with (M10). Dummies have none.
+                slot.pawn.Team = i % 2 == 0 ? Teams.White : Teams.Black;
+            }
             if (dummies.Count == 0) AddDummy();
         }
 

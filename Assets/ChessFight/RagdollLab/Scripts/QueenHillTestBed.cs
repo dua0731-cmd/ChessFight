@@ -443,7 +443,7 @@ namespace ChessFight.RagdollLab
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
                 $"탈것: {(pawn.Riding ? "<b>타는 중</b>" : "-")} · 발밑 기준 {pawn.GroundSpeed:0.0} m/s (전체 {pawn.HorizontalSpeed:0.0}) · " +
                 $"피격 {pawn.Hits}회: {pawn.LastHit} · 물에서 부활 {WaterRespawns}회\n" +
-                $"갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
+                $"팀 {Teams.Name(pawn.Team)} · 갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
                 $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}" +
                 (IsDrowning(pawn) ? $" · <b>물에 빠짐! {DrowningLeft(pawn):0.0}초 뒤 체크포인트로</b> (좌클릭 버둥 {pawn.Thrashes}회)" : "") +
                 (Time.unscaledTime - lastActionAt < 2.5f ? $"\n→ {lastAction}" : "");

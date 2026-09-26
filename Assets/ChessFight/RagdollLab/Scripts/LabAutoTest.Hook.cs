@@ -334,6 +334,17 @@ namespace ChessFight.RagdollLab
                 HookInput(climber, aim);
                 HookInput(cutter, Vector3.zero);
             });
+            // A teammate holding F does nothing (M10): only an enemy's hook can be cut.
+            climber.Team = cutter.Team = Gameplay.Teams.White;
+            yield return Sim(0.8f, () =>
+            {
+                HookInput(climber, aim);
+                HookInput(cutter, Vector3.zero, interact: true);
+            });
+            bool teammateLeft = climber.HookCutOff == 0 && climber.Hook == HookPhase.Pulling;
+            cutter.Team = Gameplay.Teams.Black;
+            HookInput(cutter, Vector3.zero);
+            yield return Sim(Dt, () => HookInput(climber, aim));
             float t = 0f, cutAt = -1f, climberTop = climber.Hips.position.y;
             yield return Sim(3f, () =>
             {
@@ -345,9 +356,9 @@ namespace ChessFight.RagdollLab
             });
             bool fell = climber.Hips.position.y < QueenHillTestBed.HookTowerTop - 1f && climber.Hook != HookPhase.Pulling;
             var p = game.tuning.values;
-            Report("M5 앙파상: 끌려가는 상대의 갈고리 옆에서 F를 0.4초 누르면 갈고리가 빠지고 상대가 떨어짐",
-                stuck && cutAt > 0f && Mathf.Abs(cutAt - p.enPassantHold) < 0.1f && fell && cutter.EnPassantCuts == 1,
-                $"갈고리 박힘 {stuck}, F 누른 뒤 {Fmt(cutAt)}에 빠짐 (설정 {p.enPassantHold:F1}초), 끊은 쪽 앙파상 {cutter.EnPassantCuts}회, "
+            Report("M5·M10 앙파상: 끌려가는 적의 갈고리 옆에서 F를 0.4초 누르면 갈고리가 빠지고 적이 떨어짐 (같은 팀은 안 됨)",
+                stuck && teammateLeft && cutAt > 0f && Mathf.Abs(cutAt - p.enPassantHold) < 0.1f && fell && cutter.EnPassantCuts == 1,
+                $"갈고리 박힘 {stuck}, 같은 팀이 0.8초 눌러도 그대로 {teammateLeft}, 적이 F 누른 뒤 {Fmt(cutAt)}에 빠짐 (설정 {p.enPassantHold:F1}초), 끊은 쪽 앙파상 {cutter.EnPassantCuts}회, "
                 + $"상대 떨어짐 {fell} (최고 {climberTop:F1} m → 지금 {climber.Hips.position.y:F1} m)");
             yield return Clear();
         }

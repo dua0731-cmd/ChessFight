@@ -378,6 +378,7 @@ namespace ChessFight.RagdollLab.Net
                 if (pawns.ContainsKey(entry.Key)) continue;
                 var pawn = game.Spawn(LabLayout.NetSpawn(entry.Value.Team, entry.Value.Slot),
                     LabLayout.NetFacing(entry.Value.Team), game.TeamMaterial(entry.Value.Team), session.Name(entry.Key));
+                pawn.Team = entry.Value.Team;   // the roster's side (M10)
                 if (!session.IsHost) pawn.SetNetworkPuppet(true);
                 pawns[entry.Key] = pawn;
                 if (entry.Key == session.Self && cam != null) cam.soloTarget = pawn;
