@@ -2,7 +2,9 @@
 
 작성 2026-09-25, 브랜치 `JY-lobby`. 이 모드를 **구체적인 기획부터 개발까지** 다른 AI(ChatGPT 아스트라)가 이어받기 위한 문서다. 사용자가 요청했다(R24).
 
-**읽는 순서:** 루트 [`HANDOFF.md`](../../../HANDOFF.md) 전체 → **이 문서** → [게임 모드 개요](../README.md) → [N4 참고 원문](N4_REFERENCE.md) → 필요할 때 §6 파일 지도의 문서·코드.
+> **2026-09-25 추가(R25): 사용자가 새 규칙을 확정했고 레벨 디자인 초안이 나왔다 → [DESIGN.md](DESIGN.md).** 아래 §3의 N4 구성·능력보다 DESIGN §1이 우선한다(전부 폰으로 시작, 정상에서 변신, 폰 능력 = 2칸 이동·앙파상). D1(인원)은 결정됨: 6 대 6 전원 폰.
+
+**읽는 순서:** 루트 [`HANDOFF.md`](../../../HANDOFF.md) 전체 → **이 문서** → **[DESIGN.md](DESIGN.md)** → [게임 모드 개요](../README.md) → [N4 참고 원문](N4_REFERENCE.md) → 필요할 때 §6 파일 지도의 문서·코드.
 **우선순위:** 사용자의 최신 발언 > 이 문서의 "사용자 확정" > N4 원문의 "사용자 확정" > N4 원문의 "임시값"(미승인).
 
 ---
@@ -168,8 +170,9 @@ ChessFight(Unity 6000.3.11f1, Steam 파티 게임) 저장소의 JY-lobby 브랜�
 - 작업마다 테스트(Tools/run-tests-linux.sh --compile 또는 Tools/Test-NetworkCore.ps1)와
   HANDOFF.md §8 작업 종료 체크리스트대로 문서를 갱신한다.
 
-첫 할 일: 코드부터 쓰지 말고, README §3.4의 기획 결정 D1~D8을 나와 하나씩 정해서
-Docs/GameModes/QueenOfTheHill/DESIGN.md 기획서로 만들어 줘. 그다음 README §5 순서(A→B→C→D)로 개발한다.
+첫 할 일: 코드부터 쓰지 말고, Docs/GameModes/QueenOfTheHill/DESIGN.md(기획 초안)를 읽고
+§5 '다음에 정할 것'(승격 기물 능력·밸런스, 승격 방식, 승리 조건, 2칸 이동 횟수)을 나와 하나씩 정해
+DESIGN.md를 확정본으로 만들어 줘. 그다음 README §5 순서(A→B→C→D)로 개발한다.
 ```
 
 함께 첨부하면 좋은 것: 9/19 기획개발 핸드오프, 기본 기획 v0.2 PDF, 전체 기획안 v0.3(§3.3). 로비 참고 영상은 로비 작업용이라 필요 없다.
