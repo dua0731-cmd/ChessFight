@@ -37,7 +37,8 @@
 | 네트워크 프로토콜 | **`JY-lobby`: `chessfight.dua0731.network.v3`**(게임 모드 추가). **`JY-ragdoll_v2`: v4**(래그돌 랩 입력 패킷 27바이트, magic `CFR2`). `main`·`Network`는 v2. 캡슐 입력 패킷 magic `CFF2`(변경 없음). 다른 프로토콜 빌드와는 매칭 불가 |
 | 자동 테스트 | 어셈블리 경계 검사 + Core 29개 + 모의 Steam 세션 15개 통과, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과 (2026-09-25, `JY-lobby`). **`JY-ragdoll_v2`(09-26)**: 같은 테스트 + **실제 Unity 6000.3.11f1 DLL로 전 어셈블리 컴파일**(랩 Steam 다리·빌더 포함) 통과, **빌드한 랩 플레이어의 래그돌 자동 점검 46 통과 / 9 실패**(새 퀸 오브 더 힐 12개는 전부 통과, 실패 9개는 원래 코드에서도 같은 기존 실패 → [RagdollLab README](Docs/RagdollLab/README.md#자동-점검)) |
 | Unity 실기 확인 | 2026-09-24까지: 로비 HUD 표시·한글·클릭·친구 초대 동작 (사용자 보고) |
-| **Unity 미확인** | **퀸 오브 더 힐 래그돌 기능 M1~M4(09-26, JY-ragdoll_v2)**, **새 로비·게임 모드(09-25, JY-lobby)**, 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 사람이 보지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 표들 |
+| Unity 실기 확인 (추가) | **퀸 오브 더 힐 M1~M4 시험대 1~12번 성공**(2026-09-26 사용자, `JY-ragdoll_v2`). 두 PC(13번)는 못 함 |
+| **Unity 미확인** | **퀸 오브 더 힐 2차 수정(피격 뒤 1초 누워 있기, 물에 5초 둥둥 뜨기·버둥, 09-26)**, **새 로비·게임 모드(09-25, JY-lobby)**, 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 사람이 보지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 표들 |
 | 두 PC 확인 | 파티 입장·공개 매칭 성사 확인(2026-09-22). **양방향 이동은 미보고** |
 
 ## 2. 무엇이 되고 무엇이 안 되는가
@@ -56,14 +57,14 @@
 | 씬 흐름 Intro → Lobby → 모드 씬(지금은 KingRush) → Lobby | 코드만, Unity 미확인 | [Architecture/SCENES](Docs/Architecture/SCENES.md) |
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
-| **퀸 오브 더 힐 래그돌 기능 M1~M4**(`JY-ragdoll_v2`): 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대 | 코드·자동 점검 통과(빌드한 랩 플레이어), Unity 미확인. M5~M14는 시작 안 함 | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m4), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
+| **퀸 오브 더 힐 래그돌 기능 M1~M4**(`JY-ragdoll_v2`): 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대 | 1차 Unity 확인 성공(09-26, 1~12). 2차 수정(누워 있기·물에 뜨기)은 자동 점검 통과, Unity 재확인 대기. M5~M14는 시작 안 함 | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m4), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
 | 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
 | **없음** | 기물 선택·스킬·라운드·승패·점수, 네트워크 경기에서 코스 달리기, 래그돌 네트워크, 호스트 이전, 재접속, 신뢰 이벤트 채널, 로딩 동기화 | [ROADMAP](Docs/Project/ROADMAP.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
 
 **사용자가 할 일 — 순서대로**
-0. (퀸 오브 더 힐 래그돌) `JY-ragdoll_v2`로 바꿔 Pull한 뒤 `ChessFight > Scenes > Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **퀸 오브 더 힐 표(13개)**. F9로 시험대에 가서 F5·F6·F7, 탈것, 물을 해 본다. 되는 것·안 되는 것을 알려 주면 그대로 기록한다
+0. (퀸 오브 더 힐 래그돌) `JY-ragdoll_v2` → `Ragdoll Test` → Play → F9 → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **2차 재확인 표(5개: F5 뒤 1초 누워 있기, 물에 5초 둥둥·좌클릭 버둥)**. 1차 표는 1~12 성공(09-26), 13번(두 PC)은 친구와 할 때
 1. `JY-lobby`를 Pull(LFS 포함)한 뒤 Unity에서 열고 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **새 로비 표(11개)**를 확인한다. 이어서 씬 분리·래그돌 병합 표. 막히면 증상·스크린샷과 Console 첫 오류를 AI에게 준다.
 2. 두 PC로 양방향 이동을 확인한다(가장 오래 미뤄진 검증). 이제 경기 씬에서 한다([Network/README §2](Docs/Network/README.md)).
 3. 퀸 오브 더 힐을 시작하기 전에 결정: 인원 구성(6 대 6 안에서?), 래그돌 기준 구조물 크기 → [GameModes §3](Docs/GameModes/README.md).
@@ -78,7 +79,7 @@
 1. Unity 확인 중 나오는 오류 수정 (최우선). 새 로비는 Unity에서 한 번도 안 열었다: 배치·겹침·색 조정이 나올 수 있다
 2. **퀸 오브 더 힐**: **GPT 아스트라가 기획부터 이어받는다**(R24). 인수인계·기획 결정 D1~D8·개발 순서·시작 프롬프트: [GameModes/QueenOfTheHill/README](Docs/GameModes/QueenOfTheHill/README.md)
 3. 경기 흐름: 기물 선택 화면(참고 영상), 라운드 소개, 결과 → 로비
-   - **퀸 오브 더 힐 개발 목록(R33):** 래그돌·게임플레이에 새로 필요한 기능 M1~M14와 우선순위·시작 프롬프트 → [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md). **M1~M4는 `JY-ragdoll_v2`에서 구현됨(R34, Unity 미확인).** 다음은 §3 순서대로 **M5**(자유 조준 갈고리 + 앙파상) → M8·M9·M10 → M6·M7. 래그돌 작업 브랜치는 `JY-ragdoll_v2`
+   - **퀸 오브 더 힐 개발 목록(R33):** 래그돌·게임플레이에 새로 필요한 기능 M1~M14와 우선순위·시작 프롬프트 → [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md). **M1~M4는 `JY-ragdoll_v2`에서 구현됨(R34, Unity 1차 확인 성공; R35 수정은 재확인 대기).** 다음은 §3 순서대로 **M5**(자유 조준 갈고리 + 앙파상) → M8·M9·M10 → M6·M7. 래그돌 작업 브랜치는 `JY-ragdoll_v2`
    - **기존 래그돌 자동 점검 실패 9개**(등반 7, 전력질주 스테미나 고갈, 경사 45°): 이번 작업 전 코드에서도 같은 숫자로 실패한다. 준영 님 확인 또는 사용자 지시가 있을 때 고친다 → [RagdollLab README "자동 점검"](Docs/RagdollLab/README.md#자동-점검)
    - **팀 색 정정(R32):** 이 게임의 두 팀은 **백팀·흑팀**이다(캐릭터 자체가 흰 말·검은 말). 코드는 아직 청팀·주황팀(재질 `TeamBlue`/`TeamOrange`, HUD 문구 "청팀/주황팀", 매칭 패널 칸 색). 바꾸려면 사용자 확인 후 작업
 4. Network → main 병합 PR (현재는 main이 Network를 포함하므로 불필요할 수 있음)

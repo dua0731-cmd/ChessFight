@@ -122,6 +122,18 @@ namespace ChessFight.RagdollLab
         /// <summary>Hits taken through TakeHit (IHitReceiver) and the last one, for the test bed.</summary>
         public int Hits { get; private set; }
         public string LastHit { get; private set; } = "-";
+
+        /// <summary>
+        /// In the water (a Gameplay WaterZone), bobbing on the surface until the mode puts the pawn back:
+        /// no walking, jumping, grabbing or climbing, and no knockdowns. Left click thrashes, for nothing.
+        /// </summary>
+        public bool Floating { get; private set; }
+
+        /// <summary>Left clicks spent thrashing in the water (they do nothing else).</summary>
+        public int Thrashes { get; private set; }
+
+        /// <summary>The water surface under a floating pawn, before the swell.</summary>
+        public float WaterSurface => waterSurface;
         public float EffectiveStiffness => Stiffness * StateFactor;
         public Vector3 AnchorPosition => anchorPos;
 
@@ -273,7 +285,15 @@ namespace ChessFight.RagdollLab
         IMovingSurface climbSurface;
         Vector3 climbSurfaceVel;
         float knockdownHold;                 // seconds a hit keeps the pawn down; 0 = the tuned getUpDelay
+        float knockdownLying;                // how long of that it has spent lying on the floor so far
         bool interactPressed;                // interact went down since the last step
+        float waterSurface;                  // Floating: the surface above the hips
+
+        // Floating. The hips settle this far under the surface: the water comes up to the chest and the
+        // head, shoulders and arms stay out. One lift for the whole body rather than per part: lift on
+        // the submerged legs alone would roll the pawn over onto its back.
+        const float FloatDepth = 0.2f, FloatSpring = 30f, FloatDamping = 6f, FloatDrag = 1.5f;
+        const float SwellHeight = 0.05f, SwellPeriod = 2.2f;
 
         void Awake()
         {
@@ -439,6 +459,7 @@ namespace ChessFight.RagdollLab
             freeFlight -= dt;
 
             SenseGround();
+            SenseWater(p);
             coyote = Grounded ? 0.12f : coyote - dt;
 
             UpdateState(p, dt);
@@ -454,7 +475,7 @@ namespace ChessFight.RagdollLab
             Shove(p);
             UpdateStamina(p, dt);
             if (!input.grab) climbGrabLatch = false;
-            bool wantGrab = input.grab && State != PawnState.Ragdoll && !Climbing && !climbGrabLatch;
+            bool wantGrab = input.grab && State != PawnState.Ragdoll && !Climbing && !climbGrabLatch && !Floating;
             handL.Tick(wantGrab, p, dt, Climbing);
             handR.Tick(wantGrab, p, dt, Climbing);
             if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
@@ -570,7 +591,16 @@ namespace ChessFight.RagdollLab
                         bool timeUp = stateTimer >= p.diveMaxTime && !(steep > 0.5f && fast);
                         if (slowed || timeUp || stateTimer >= p.diveMaxTime * 4f) BeginGetUp(p);
                     }
-                    else if (stateTimer >= (knockdownHold > 0f ? knockdownHold : p.getUpDelay)) BeginGetUp(p);
+                    else if (knockdownHold > 0f)
+                    {
+                        // A hit's knockdown is time spent LYING DOWN, not time in the air: a 6 m/s hit
+                        // flies for most of a second, and counting from the hit had the pawn back up the
+                        // moment it landed (playtest, 09-26). Counts anyway if it never comes to rest.
+                        bool down = groundFound && bodies[0].position.y - groundY < standHeight + 0.05f;
+                        if (down || stateTimer > knockdownHold + 3f) knockdownLying += dt;
+                        if (knockdownLying >= knockdownHold) BeginGetUp(p);
+                    }
+                    else if (stateTimer >= p.getUpDelay) BeginGetUp(p);
                     break;
                 case PawnState.GettingUp:
                     float t = Mathf.Clamp01(stateTimer / Mathf.Max(0.01f, p.getUpBlendTime));
@@ -593,12 +623,14 @@ namespace ChessFight.RagdollLab
         /// hit on a pawn that is already down starts its count again.</summary>
         public void Knockdown(string cause, float hold)
         {
+            if (Floating) return;   // the water catches it
             EndClimbPose();
             if (State == PawnState.Ragdoll && !Diving)
             {
                 if (hold > 0f)
                 {
                     knockdownHold = hold;
+                    knockdownLying = 0f;
                     stateTimer = 0f;
                 }
                 return;
@@ -606,6 +638,7 @@ namespace ChessFight.RagdollLab
             Knockdowns++;
             LastKnockdownCause = cause;
             knockdownHold = hold;
+            knockdownLying = 0f;
             if (Diving)
             {
                 // Already limp: the dive just turns into a real fall and waits out getUpDelay.
@@ -674,7 +707,7 @@ namespace ChessFight.RagdollLab
         void BeginGetUp(RagdollParams p)
         {
             LastRagdollTime = stateTimer;
-            knockdownHold = 0f;
+            knockdownHold = knockdownLying = 0f;
             if (Diving)
             {
                 Diving = false;
@@ -698,6 +731,7 @@ namespace ChessFight.RagdollLab
             if (Grabbing) m = Mathf.Min(m, p.grabStiffnessMultiplier);
             if (OnSlope) m = Mathf.Min(m, p.slopeStiffnessMultiplier);
             if (hitTimer > 0f) m = Mathf.Min(m, p.hitStiffnessMultiplier);
+            if (Floating) m = Mathf.Min(m, 0.6f);   // loose in the water, but holding the float pose
             TargetStiffness = m;
             Stiffness = Mathf.Lerp(Stiffness, m, 1f - Mathf.Exp(-p.stiffnessLerpSpeed * dt));
         }
@@ -750,6 +784,11 @@ namespace ChessFight.RagdollLab
                 // UpdateClimb has already moved the anchor along the wall.
                 leanLastVel = anchorVel;
                 leanAccel = Vector3.zero;
+                return;
+            }
+            if (Floating)
+            {
+                Float(dt);
                 return;
             }
 
@@ -925,7 +964,7 @@ namespace ChessFight.RagdollLab
 
         void Jump(RagdollParams p, float dt)
         {
-            if (Climbing) return;   // a jump on the wall is a kick-off (UpdateClimb)
+            if (Climbing || Floating) return;   // a jump on the wall is a kick-off (UpdateClimb)
             // Hanging off a ledge by the hands, holding forward is enough to climb onto it: after a
             // moment it does the same vault the jump button does. (Only the jump used to, so holding
             // W under a ledge just dangled there.)
@@ -975,6 +1014,11 @@ namespace ChessFight.RagdollLab
         /// </summary>
         void Shove(RagdollParams p)
         {
+            if (Floating)
+            {
+                if (input.shove) Thrash();
+                return;
+            }
             if (input.shove && State == PawnState.Active && shoveCooldown <= 0f && !Climbing)
             {
                 if (Grabbing)
@@ -1064,7 +1108,7 @@ namespace ChessFight.RagdollLab
         {
             if (Exhausted && stamina >= p.sprintResume * p.climbStaminaMax) Exhausted = false;
             bool moving = Flat(input.move).sqrMagnitude > 0.04f;
-            Sprinting = input.sprint && moving && State == PawnState.Active && !Climbing && !Exhausted
+            Sprinting = input.sprint && moving && State == PawnState.Active && !Climbing && !Floating && !Exhausted
                         && !BeingHeld && stamina > 0f && p.sprintSpeed > p.moveSpeed + 0.01f;
             if (Sprinting) UseStamina(p, p.sprintDrain * dt);
             sprintBlend = Mathf.MoveTowards(sprintBlend, Sprinting ? 1f : 0f, p.sprintBlendSpeed * dt);
@@ -1100,7 +1144,7 @@ namespace ChessFight.RagdollLab
         void GuardLaunch(RagdollParams p)
         {
             bool cutting = false;
-            if (p.launchClamp > 0.001f && State == PawnState.Active && !Climbing
+            if (p.launchClamp > 0.001f && State == PawnState.Active && !Climbing && !Floating
                 && freeFlight <= 0f && jumpTimer <= 0f && vaultTimer <= 0f && topOutTimer <= 0f
                 && hitTimer <= 0f && !BeingHeld && !HoldingEnvironment()
                 && groundFound && (Grounded || coyote > 0f))
@@ -1130,6 +1174,81 @@ namespace ChessFight.RagdollLab
                 mass += rb.mass;
             }
             return momentum / Mathf.Max(0.001f, mass);
+        }
+
+        // ---------------------------------------------------------------- 물 (floating)
+
+        /// <summary>
+        /// Into the water once the hips are down at a WaterZone's surface; out once they are well clear of
+        /// it (so the swell cannot flicker it), which in practice is the respawn taking the pawn away.
+        /// </summary>
+        void SenseWater(RagdollParams p)
+        {
+            bool wet = WaterZone.SurfaceAt(bodies[0].position, out float surface, Floating ? 0.4f : 0.05f);
+            if (wet && !Floating) StartFloating(p);
+            else if (!wet && Floating) Floating = false;
+            if (!Floating) return;
+            waterSurface = surface;
+            Grounded = false;   // no footing, no stamina recovery, no coyote jump
+        }
+
+        void StartFloating(RagdollParams p)
+        {
+            Floating = true;
+            LetGo(0.5f);           // off the wall, hands empty
+            shoveTimer = 0f;
+            throwOnShoveEnd = false;
+            // Knocked down (or sliding) on the way in: the water catches it and it comes up to float.
+            if (State == PawnState.Ragdoll) BeginGetUp(p);
+            // A different phase of the swell for each pawn, so a pool of them does not bob in step.
+            floatPhase = (GetInstanceID() & 1023) / 1023f * Mathf.PI * 2f;
+        }
+
+        float floatPhase;
+
+        /// <summary>
+        /// Bob on the surface. Every body gets the same lift - a spring toward hips-at-FloatDepth-under, on
+        /// a gentle swell that is a pure function of the shared clock - plus water drag. The anchor lets
+        /// go (its linear springs are off while floating, Drives) and only keeps the pawn upright.
+        /// </summary>
+        void Float(float dt)
+        {
+            Rigidbody hips = bodies[0];
+            anchorPos = hips.position;
+            anchorVel = Flat(hips.linearVelocity);
+            anchor.MovePosition(anchorPos);
+            anchor.MoveRotation(Quaternion.LookRotation(facing, Vector3.up));
+            leanLastVel = anchorVel;
+            leanAccel = Vector3.zero;
+            carryVel = Vector3.zero;
+            carryRise = 0f;
+            double wave = ObstacleClock.Now * (2.0 * Math.PI / SwellPeriod) + floatPhase;
+            float surface = waterSurface + SwellHeight * (float)Math.Sin(wave % (2.0 * Math.PI));
+            float g = -Physics.gravity.y;
+            float low = surface - FloatDepth - hips.position.y;   // positive: the hips are too deep
+            float lift = Mathf.Clamp(g + FloatSpring * low, 0f, 2.5f * g);
+            float drag = Mathf.Exp(-FloatDrag * dt);
+            foreach (var rb in bodies)
+            {
+                Vector3 v = rb.linearVelocity;
+                rb.AddForce(new Vector3(0f, lift - FloatDamping * v.y, 0f), ForceMode.Acceleration);
+                rb.linearVelocity = new Vector3(v.x * drag, rb.linearVelocity.y, v.z * drag);
+                rb.angularVelocity *= Mathf.Exp(-2f * dt);
+            }
+        }
+
+        /// <summary>Left click in the water: a splash of arms and legs that achieves nothing. No stamina.</summary>
+        void Thrash()
+        {
+            input.shove = false;
+            Thrashes++;
+            var p = P;
+            struggleTimer = p.struggleBurst;
+            struggleFlip = -struggleFlip;
+            Vector3 side = Vector3.Cross(Vector3.up, facing) * (0.8f * struggleFlip);
+            bodies[(int)BodyId.Chest].AddForce(Vector3.up * 1.2f + side, ForceMode.VelocityChange);
+            bodies[(int)BodyId.ArmL].AddForce(-side + Vector3.up, ForceMode.VelocityChange);
+            bodies[(int)BodyId.ArmR].AddForce(side + Vector3.up, ForceMode.VelocityChange);
         }
 
         // ---------------------------------------------------------------- 버둥대기
@@ -1337,7 +1456,7 @@ namespace ChessFight.RagdollLab
             if (!Climbing)
             {
                 holdsPlaced = false;
-                bool wants = input.grab && State == PawnState.Active && stamina > 0f && climbCooldown <= 0f
+                bool wants = input.grab && State == PawnState.Active && stamina > 0f && climbCooldown <= 0f && !Floating
                              && (!Grounded || climbUp > 0.1f);
                 if (wants && FindWallAhead(p, out var ahead)) StartClimb(p, ahead);
                 return;
@@ -2011,6 +2130,19 @@ namespace ChessFight.RagdollLab
                     armR = Quaternion.Slerp(armR, Quaternion.Euler(0f, 0f, -p.armRestDown), settle);
                 }
             }
+            else if (Floating && struggleTimer <= 0f)
+            {
+                // Treading water: arms out to the sides sculling back and forth, legs kicking slowly in
+                // turn, chest leaning back a little and the head up out of the water.
+                float tread = Mathf.Sin((float)(Time.timeAsDouble * 2.0 * Math.PI * 1.1 % (2.0 * Math.PI)));
+                armL = Quaternion.Euler(0f, 18f * tread, -62f);
+                armR = Quaternion.Euler(0f, 18f * tread, 62f);
+                thighL = Quaternion.Euler(-20f * tread - 8f, 0f, 0f);
+                thighR = Quaternion.Euler(20f * tread - 8f, 0f, 0f);
+                footL = footR = Quaternion.Euler(15f, 0f, 0f);
+                chest = Quaternion.Euler(-8f, 0f, 0f);
+                head = Quaternion.Euler(-10f, 0f, 0f);
+            }
             else if (struggleTimer > 0f)
             {
                 // Thrashing: arms out in a T and flapped up toward the head and down toward the feet,
@@ -2032,7 +2164,7 @@ namespace ChessFight.RagdollLab
                 thighR = Quaternion.Euler(legAmp * Mathf.Sin(Time.time * 26f), 0f, 0f);
             }
 
-            if (State != PawnState.Ragdoll && !Climbing && struggleTimer <= 0f)
+            if (State != PawnState.Ragdoll && !Climbing && !Floating && struggleTimer <= 0f)
             {
                 if (input.grab)
                 {
@@ -2260,7 +2392,7 @@ namespace ChessFight.RagdollLab
             float r = p.damperRatio;
             // Dynamic softening hits the upper body and arms fully, legs/anchor only by lowerBodyDynamicShare.
             float kLower = StateFactor * Mathf.Lerp(1f, Stiffness, p.lowerBodyDynamicShare);
-            float anchorSpring = p.hipAnchorStrength * kLower;
+            float anchorSpring = Floating ? 0f : p.hipAnchorStrength * kLower;   // the water holds it up
             // Near critical damping for the body on its anchor spring. At the shared 0.1 ratio it was
             // at 39% of critical, so after every change of direction the body swung past the path
             // and back around the anchor - the "root" wobbling from side to side.
@@ -2442,7 +2574,7 @@ namespace ChessFight.RagdollLab
                       + (staminaDamage > 0f ? $", 스테미나 -{staminaDamage:0.#}" : "") + (drop ? ", 떨어뜨림" : "");
             if (staminaDamage > 0f) UseStamina(p, staminaDamage);
             if (drop) LetGo(0.6f);
-            if (knockdownSeconds > 0f) Knockdown("피격", knockdownSeconds);
+            if (knockdownSeconds > 0f && !Floating) Knockdown("피격", knockdownSeconds);
             else if (push.sqrMagnitude > 1e-4f) hitTimer = Mathf.Max(hitTimer, p.hitRecoveryTime);
             // Still on the wall (no drop, no knockdown): the wall takes the push, only the stamina counts.
             if (push.sqrMagnitude <= 1e-6f || climbKinematic) return;
@@ -2499,7 +2631,8 @@ namespace ChessFight.RagdollLab
             heldCollider = null;
             vaultTimer = ledgePush = 0f;
             pullUpUsed = throwOnShoveEnd = false;
-            knockdownHold = 0f;
+            knockdownHold = knockdownLying = 0f;
+            Floating = false;
             carryVel = Vector3.zero;
             carryRise = 0f;
             surfaceVel = climbSurfaceVel = Vector3.zero;

@@ -13,7 +13,7 @@ namespace ChessFight.RagdollLab
     ///   7b  lift: 12 m up at 3 m/s to the top of a tower you can step onto     (M1, and jumping on it)
     ///   7c  turntable: 8 m disc at 20 degrees a second                          (M1, turning with it)
     ///   7d  sliding wall: 4 m wall going 8 m sideways at 1 m/s, to climb        (M1 on a wall)
-    ///   7e  pool: water with a pier, a pillar to climb down into it, a crate    (M4 water and respawn)
+    ///   7e  pool: water with a pier, a pillar to climb down into it, a crate    (M4: float, then respawn)
     ///
     /// Offline hotkeys for P1: F9 walk-in point, F5 a 6 m/s hit with a 1 s knockdown, F6 stamina -2.5,
     /// F7 knocked off the wall (M3). A corner box shows what the pawn received from the new keys (M2).
@@ -143,7 +143,7 @@ namespace ChessFight.RagdollLab
             Water = water.AddComponent<WaterZone>();
             var pad = Box("7e Checkpoint Pad", Checkpoint + Vector3.up * 0.005f, new Vector3(2f, 0.01f, 2f), padMaterial);
             DestroyImmediate(pad.GetComponent<Collider>());
-            Label("[7e] 물 → 2초 뒤 여기서 부활", Checkpoint + new Vector3(0f, 0.02f, 1.6f), 0.45f);
+            Label($"[7e] 물 → {Water.RespawnDelay:0}초 둥둥 → 여기서 부활", Checkpoint + new Vector3(0f, 0.02f, 1.6f), 0.45f);
             Label("부두 끝에서 기둥에 매달려 옆으로 → 아래로", PierEnd + new Vector3(0f, 0.02f, 1.6f), 0.35f);
             var crate = Box("7e Crate", CrateSpot, Vector3.one * 0.5f, crateMaterial);
             Crate = crate.AddComponent<Rigidbody>();
@@ -351,6 +351,8 @@ namespace ChessFight.RagdollLab
         /// <summary>True while the water is about to put this pawn back.</summary>
         public bool IsDrowning(RagdollPawn pawn) => pawn != null && drowning.ContainsKey(pawn);
 
+        float DrowningLeft(RagdollPawn pawn) => drowning.TryGetValue(pawn, out float at) ? Mathf.Max(0f, at - Time.time) : 0f;
+
         public void GoToEntrance(RagdollPawn pawn)
         {
             var driver = pawn.GetComponent<RagdollDriver>();
@@ -394,7 +396,7 @@ namespace ChessFight.RagdollLab
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
                 $"탈것: {(pawn.Riding ? "<b>타는 중</b>" : "-")} · 발밑 기준 {pawn.GroundSpeed:0.0} m/s (전체 {pawn.HorizontalSpeed:0.0}) · " +
                 $"피격 {pawn.Hits}회: {pawn.LastHit} · 물에서 부활 {WaterRespawns}회" +
-                (IsDrowning(pawn) ? " · <b>물에 빠짐! 2초 뒤 체크포인트로</b>" : "") +
+                (IsDrowning(pawn) ? $" · <b>물에 빠짐! {DrowningLeft(pawn):0.0}초 뒤 체크포인트로</b> (좌클릭 버둥 {pawn.Thrashes}회)" : "") +
                 (Time.unscaledTime - lastActionAt < 2.5f ? $"\n→ {lastAction}" : "");
             var size = style.CalcSize(new GUIContent(text));
             var rect = new Rect(8f, Screen.height - size.y - 20f, size.x + 16f, size.y + 12f);

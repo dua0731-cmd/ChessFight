@@ -221,19 +221,25 @@ namespace ChessFight.RagdollLab
             if (receiver != null) receiver.ApplyHit(push, 1f, 0f, false);
             else pawn.TakeHit(push, 1f, 0f, false);
             bool downAtOnce = pawn.State == PawnState.Ragdoll;
-            float t = 0f, rise = -1f, stand = -1f, flown = 0f;
-            yield return Sim(3f, () =>
+            float t = 0f, rise = -1f, stand = -1f, flown = 0f, landed = -1f;
+            bool aloft = false;
+            yield return Sim(4f, () =>
             {
                 t += Dt;
                 pawn.SetInput(default);
                 flown = Mathf.Max(flown, Flat(pawn.Hips.position - start).magnitude);
+                // Flying, then down on the floor (the floor here is y = 0).
+                if (pawn.Hips.position.y > pawn.standHeight + 0.15f) aloft = true;
+                else if (aloft && landed < 0f && pawn.Hips.position.y < pawn.standHeight + 0.05f) landed = t;
                 if (rise < 0f && pawn.State == PawnState.GettingUp) rise = t;
                 if (stand < 0f && rise >= 0f && pawn.State == PawnState.Active) stand = t;
             });
-            bool ok = downAtOnce && rise >= 0.95f && rise <= 1.2f && stand > 0f && flown > 1f && pawn.Grounded;
-            Report("M3 피격: 서 있는 폰에 6 m/s·1초 → 날아가 1초 넘어졌다 일어남", ok,
+            float lying = rise >= 0f && landed >= 0f ? rise - landed : -1f;
+            bool ok = downAtOnce && landed > 0f && lying >= 0.95f && lying <= 1.35f && stand > 0f && flown > 1f && pawn.Grounded;
+            Report("M3 피격: 서 있는 폰에 6 m/s·1초 → 날아가 바닥에 1초 누웠다 일어남", ok,
                 $"경로 {(receiver != null ? "IHitReceiver" : "TakeHit(프리팹에 RagdollDriver 없음)")}, 즉시 넘어짐 {downAtOnce}, "
-                + $"일어나기 시작 {Fmt(rise)} (기준 1.0), 다 일어남 {Fmt(stand)}, 날아간 거리 {flown:F2} m, 마지막 접지 {pawn.Grounded}");
+                + $"바닥에 닿음 {Fmt(landed)}, 일어나기 시작 {Fmt(rise)} → 누워 있던 시간 {lying:F2}초 (기준 1.0), 다 일어남 {Fmt(stand)}, "
+                + $"날아간 거리 {flown:F2} m, 마지막 접지 {pawn.Grounded}");
             yield return Clear();
         }
 
@@ -274,48 +280,82 @@ namespace ChessFight.RagdollLab
 
         // ------------------------------------------------------------------ M4
 
+        /// <summary>What a pawn did in the water before it was put back: floating on the surface with its
+        /// head out, and how long the water kept it.</summary>
+        sealed class Swim
+        {
+            public float wet = -1f, floated = -1f, back = -1f, minDepth = float.MaxValue, maxDepth = float.MinValue;
+            public int floatSteps, headOut;
+
+            public void Step(QueenHillTestBed bed, RagdollPawn pawn, float t, int respawnsBefore)
+            {
+                if (wet < 0f && bed.IsDrowning(pawn)) wet = t;
+                if (back < 0f && bed.WaterRespawns > respawnsBefore) back = t;
+                if (!pawn.Floating || back >= 0f) return;
+                if (floated < 0f) floated = t;
+                // Judge the float once it has had a second to settle from the fall.
+                if (t - floated < 1f) return;
+                floatSteps++;
+                float depth = pawn.WaterSurface - pawn.Hips.position.y;
+                minDepth = Mathf.Min(minDepth, depth);
+                maxDepth = Mathf.Max(maxDepth, depth);
+                if (pawn.bodies[(int)BodyId.Head].position.y > pawn.WaterSurface) headOut++;
+            }
+
+            public bool Floated => floated >= 0f && floatSteps > 0 && headOut >= floatSteps * 0.9f
+                                   && minDepth > 0f && maxDepth < 0.45f;
+
+            public string Describe(float delay) =>
+                $"물에 닿음 {Fmt(wet)}, 뜨기 시작 {Fmt(floated)}, 부활 {Fmt(back)} (물에 있던 시간 {(back >= 0f && wet >= 0f ? back - wet : -1f):F2}초, 설정 {delay:0.#}초), "
+                + $"떠 있는 동안 골반 수심 {minDepth:F2}~{maxDepth:F2} m, 머리가 물 밖 {headOut * 100 / Mathf.Max(1, floatSteps)}%";
+        }
+
         /// <summary>Climb the pool's pillar from the pier, go sideways over the water and down into it, holding
-        /// grab all the way through the respawn: the pawn must come back standing on the checkpoint, off the
-        /// wall and out of the kinematic climb pose.</summary>
+        /// grab all the way through the respawn: the pawn must let go and float, and after the water's delay
+        /// come back standing on the checkpoint, off the wall and out of the kinematic climb pose.</summary>
         IEnumerator QhWaterClimbing()
         {
             var bed = Bed;
+            float delay = bed.Water.RespawnDelay;
             int respawns = bed.WaterRespawns;
             var pawn = Spawn(QueenHillTestBed.PierEnd, Vector3.back, "qh-water-wall");
             yield return Sim(0.4f);
-            float t = 0f, started = -1f, wet = -1f;
+            float t = 0f, started = -1f;
             bool climbingWhenWet = false;
-            // Climb on, then sideways off the end of the pier (right of a pawn facing -Z is -X), then down.
-            yield return Sim(8f, () =>
+            var swim = new Swim();
+            // Climb on, then sideways off the end of the pier (right of a pawn facing -Z is -X), then down
+            // until the water takes it.
+            yield return Sim(4f + delay + 1.5f, () =>
             {
                 t += Dt;
                 Vector3 move = Vector3.back;
                 if (started >= 0f) move = t - started < 2.4f ? Vector3.left : Vector3.forward;
-                if (wet >= 0f) move = Vector3.zero;   // hands off the keys; grab stays held through the respawn
+                if (swim.floated >= 0f) move = Vector3.zero;   // hands off the keys; grab stays held
                 pawn.SetInput(new PawnInput { move = move, grab = true });
                 if (started < 0f && pawn.Climbing) started = t;
-                if (wet < 0f && bed.IsDrowning(pawn))
-                {
-                    wet = t;
-                    climbingWhenWet = pawn.Climbing;
-                }
+                bool firstWet = swim.wet < 0f;
+                swim.Step(bed, pawn, t, respawns);
+                if (firstWet && swim.wet >= 0f) climbingWhenWet = pawn.Climbing;
             });
             yield return Sim(0.8f, () => pawn.SetInput(new PawnInput { grab = true }));
             float fromCheckpoint = Flat(pawn.Hips.position - QueenHillTestBed.Checkpoint).magnitude;
-            bool clean = !pawn.Climbing && !pawn.Grabbing && !pawn.Hips.isKinematic && pawn.State == PawnState.Active;
-            bool ok = started >= 0f && wet >= 0f && climbingWhenWet && bed.WaterRespawns == respawns + 1
+            bool clean = !pawn.Climbing && !pawn.Grabbing && !pawn.Hips.isKinematic && pawn.State == PawnState.Active && !pawn.Floating;
+            bool onTime = swim.back >= 0f && Mathf.Abs(swim.back - swim.wet - delay) < 0.2f;
+            bool ok = started >= 0f && climbingWhenWet && swim.Floated && onTime && bed.WaterRespawns == respawns + 1
                       && fromCheckpoint < 1f && clean && pawn.Grounded;
-            Report("M4 물: 벽에 매달린 채 물에 닿아도 2초 뒤 체크포인트에 멀쩡히 섬", ok,
-                $"매달림 {Fmt(started)}, 물에 닿음 {Fmt(wet)} (그때 매달린 상태 {climbingWhenWet}), 부활 {bed.WaterRespawns - respawns}회, "
+            Report($"M4 물: 벽에 매달린 채 물에 닿으면 손을 놓고 둥둥 뜨다가 {delay:0}초 뒤 체크포인트에 멀쩡히 섬", ok,
+                $"매달림 {Fmt(started)} (물에 닿을 때 매달린 상태 {climbingWhenWet}), {swim.Describe(delay)}, 부활 {bed.WaterRespawns - respawns}회, "
                 + $"체크포인트까지 {fromCheckpoint:F2} m, 매달림 {pawn.Climbing} · 잡기 {pawn.Grabbing} · 운동학 {pawn.Hips.isKinematic} · 상태 {pawn.State} · 접지 {pawn.Grounded}");
             pawn.SetInput(default);
             yield return Clear();
         }
 
-        /// <summary>Grab the crate by the pool and walk into the water holding it.</summary>
+        /// <summary>Grab the crate by the pool and walk into the water holding it; thrash once while
+        /// floating (it must do nothing, and cost no stamina).</summary>
         IEnumerator QhWaterHolding()
         {
             var bed = Bed;
+            float delay = bed.Water.RespawnDelay;
             int respawns = bed.WaterRespawns;
             int logFrom = bed.WaterLog.Count;
             var crate = bed.Crate;
@@ -324,36 +364,47 @@ namespace ChessFight.RagdollLab
             crate.linearVelocity = crate.angularVelocity = Vector3.zero;
             var pawn = Spawn(QueenHillTestBed.CrateSpot + new Vector3(0f, -0.25f, 0.75f), Vector3.back, "qh-water-grab");
             yield return Sim(0.5f);
-            float t = 0f, grabbed = -1f, wet = -1f, kick = 0f;
-            int mostGrips = 0;
-            bool holdingWhenWet = false, back = false;
-            yield return Sim(6f, () =>
+            float t = 0f, grabbed = -1f, kick = 0f, staminaBefore = -1f, staminaAfter = -1f;
+            int mostGrips = 0, thrashes = -1;
+            bool holdingWhenWet = false, thrashSeen = false, stillFloating = false;
+            var swim = new Swim();
+            yield return Sim(delay + 3f, () =>
             {
                 t += Dt;
                 Vector3 move = grabbed < 0f ? Vector3.back * 0.3f : Vector3.back;
-                pawn.SetInput(new PawnInput { move = wet < 0f ? move : Vector3.zero, grab = true });
-                if (grabbed < 0f && pawn.Grabbing) grabbed = t;
-                if (wet < 0f && bed.IsDrowning(pawn))
+                // One left click two seconds into the float.
+                bool click = swim.floated >= 0f && swim.back < 0f && thrashes < 0 && t - swim.floated >= 2f;
+                if (click)
                 {
-                    wet = t;
-                    holdingWhenWet = pawn.Grabbing;
+                    thrashes = pawn.Thrashes;
+                    staminaBefore = pawn.Stamina;
+                }
+                pawn.SetInput(new PawnInput { move = swim.wet < 0f ? move : Vector3.zero, grab = true, shove = click });
+                if (grabbed < 0f && pawn.Grabbing) grabbed = t;
+                bool firstWet = swim.wet < 0f, wasBack = swim.back >= 0f;
+                swim.Step(bed, pawn, t, respawns);
+                if (firstWet && swim.wet >= 0f) holdingWhenWet = pawn.Grabbing;
+                if (thrashes >= 0 && !thrashSeen && pawn.Thrashes > thrashes)
+                {
+                    thrashSeen = true;
+                    staminaAfter = pawn.Stamina;
+                    stillFloating = pawn.Floating;
                 }
                 // One grip joint per hand at most: a grip left behind by a knockdown yanked the pawn
                 // back into the water right after its respawn.
                 mostGrips = Mathf.Max(mostGrips, pawn.GetComponentsInChildren<FixedJoint>(true).Length);
-                if (!back && bed.WaterRespawns > respawns)
-                {
-                    back = true;
-                    kick = pawn.Hips.linearVelocity.magnitude;   // one step after the respawn
-                }
+                if (!wasBack && swim.back >= 0f) kick = pawn.Hips.linearVelocity.magnitude;   // one step after the respawn
             });
             yield return Sim(0.8f, () => pawn.SetInput(new PawnInput { grab = true }));
             float fromCheckpoint = Flat(pawn.Hips.position - QueenHillTestBed.Checkpoint).magnitude;
             bool heldCrate = pawn.handL.HeldBody == crate || pawn.handR.HeldBody == crate;
-            bool ok = grabbed >= 0f && wet >= 0f && holdingWhenWet && bed.WaterRespawns == respawns + 1 && mostGrips <= 2
-                      && kick < 3f && fromCheckpoint < 1f && !heldCrate && pawn.State == PawnState.Active && pawn.Grounded;
-            Report("M4 물: 무언가를 잡은 채 물에 빠져도 2초 뒤 체크포인트에 멀쩡히 섬", ok,
-                $"상자 잡음 {Fmt(grabbed)}, 물에 닿음 {Fmt(wet)} (그때 잡고 있음 {holdingWhenWet}), 부활 {bed.WaterRespawns - respawns}회, "
+            bool onTime = swim.back >= 0f && Mathf.Abs(swim.back - swim.wet - delay) < 0.2f;
+            bool thrashOk = thrashSeen && stillFloating && Mathf.Abs(staminaAfter - staminaBefore) < 0.01f;
+            bool ok = grabbed >= 0f && holdingWhenWet && swim.Floated && onTime && thrashOk && bed.WaterRespawns == respawns + 1
+                      && mostGrips <= 2 && kick < 3f && fromCheckpoint < 1f && !heldCrate && pawn.State == PawnState.Active && pawn.Grounded;
+            Report($"M4 물: 무언가를 잡은 채 빠져도 둥둥 뜨고(좌클릭 버둥은 효과 없음) {delay:0}초 뒤 체크포인트에 멀쩡히 섬", ok,
+                $"상자 잡음 {Fmt(grabbed)} (물에 닿을 때 잡고 있음 {holdingWhenWet}), {swim.Describe(delay)}, "
+                + $"버둥 {thrashSeen} (스테미나 {staminaBefore:P0} → {staminaAfter:P0}, 버둥 뒤에도 떠 있음 {stillFloating}), 부활 {bed.WaterRespawns - respawns}회, "
                 + $"손 관절 최대 {mostGrips}개(2 이하), 부활 직후 속도 {kick:F2} m/s, "
                 + $"체크포인트까지 {fromCheckpoint:F2} m, 부활 뒤 상자를 쥠 {heldCrate}, 상태 {pawn.State}, 접지 {pawn.Grounded}");
             Info("물 기록", string.Join(" / ", bed.WaterLog.GetRange(logFrom, bed.WaterLog.Count - logFrom)));
