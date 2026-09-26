@@ -91,6 +91,7 @@ namespace ChessFight.RagdollLab
             // The Queen of the Hill mechanics test bed, south-east of the arena. Built from code, so the
             // scene does not need rebuilding; the automated checks use it too.
             if (GetComponent<QueenHillTestBed>() == null) gameObject.AddComponent<QueenHillTestBed>().game = this;
+            PawnHookView.LocalAim = LocalAim;
             if (AutoTest) return;
             SetUpCameras();
             if (GetComponent<StaminaHud>() == null) gameObject.AddComponent<StaminaHud>().game = this;
@@ -129,6 +130,17 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The camera a slot looks through: its own when the screen is split, P1's otherwise.</summary>
+        /// <summary>The camera aim of the local player who controls this pawn; zero for anyone else's pawn
+        /// (the hook's aim arc is only drawn for your own).</summary>
+        public Vector3 LocalAim(RagdollPawn pawn)
+        {
+            if (pawn == null || labCamera == null) return Vector3.zero;
+            if (NetworkControlled) return labCamera.soloTarget == pawn ? labCamera.AimForward : Vector3.zero;
+            for (int i = 0; i < players.Length; i++)
+                if (players[i].pawn == pawn) return CameraFor(i).AimForward;
+            return Vector3.zero;
+        }
+
         public LabCamera CameraFor(int slotIndex) =>
             SplitScreen && slotIndex >= 0 && slotIndex < cameras.Length && cameras[slotIndex] != null
                 ? cameras[slotIndex] : labCamera;
@@ -346,6 +358,7 @@ namespace ChessFight.RagdollLab
                     if (Cursor.lockState == CursorLockMode.Locked && !PanelOpen && !swallowMouse)
                     {
                         input.shove = Input.GetMouseButtonDown(0);
+                        input.shoveHeld = Input.GetMouseButton(0);
                         input.grab = Input.GetMouseButton(1);
                     }
                     break;
@@ -354,6 +367,7 @@ namespace ChessFight.RagdollLab
                     mv.y = (Input.GetKey(KeyCode.UpArrow) ? 1f : 0f) - (Input.GetKey(KeyCode.DownArrow) ? 1f : 0f);
                     input.jump = Input.GetKeyDown(KeyCode.RightShift);
                     input.shove = Input.GetKeyDown(KeyCode.RightControl);
+                    input.shoveHeld = Input.GetKey(KeyCode.RightControl);
                     input.grab = Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter);
                     input.sprint = Input.GetKey(KeyCode.Slash);
                     input.ability = Input.GetKeyDown(KeyCode.Period);
@@ -367,6 +381,7 @@ namespace ChessFight.RagdollLab
                     mv = pad.left;
                     input.jump = XInputPad.Pressed(index, XInputPad.A);
                     input.shove = XInputPad.Pressed(index, XInputPad.RB) || XInputPad.Pressed(index, XInputPad.B);
+                    input.shoveHeld = XInputPad.Held(index, XInputPad.RB) || XInputPad.Held(index, XInputPad.B);
                     input.grab = XInputPad.Held(index, XInputPad.LB);
                     input.sprint = pad.leftTrigger > 0.35f || XInputPad.Held(index, XInputPad.LeftThumb);
                     input.ability = XInputPad.Pressed(index, XInputPad.Y);

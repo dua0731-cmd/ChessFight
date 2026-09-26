@@ -159,3 +159,16 @@ MonoBehaviour:
     diveTackleImpact: 3
     diveTacklePush: 2.5
     diveTackleHold: 1.2
+    hookChargeTime: 1.2
+    hookSpeedMin: 8
+    hookSpeedMax: 22
+    hookLoft: 8
+    hookGravity: 9.81
+    hookMaxFlight: 2.5
+    hookRetryDelay: 1
+    hookPullSpeed: 6
+    hookPullRamp: 0.25
+    hookChargeMoveScale: 0.6
+    enPassantRadius: 2
+    enPassantHold: 0.4
+    enPassantWindow: 1

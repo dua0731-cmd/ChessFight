@@ -14,9 +14,13 @@ namespace ChessFight.RagdollLab
         /// <summary>World-space horizontal move direction, length 0..1.</summary>
         public Vector3 move;
         public bool jump;
-        /// <summary>Left click. A dive / slide tackle; a throw while holding someone; a thrash while held.
+        /// <summary>Left click. A dive / slide tackle; a throw while holding someone; a thrash while held; with
+        /// the grappling hook out, the start of its swing.
         /// (The name is from when it was a shove, and the wire format still calls it that.)</summary>
         public bool shove;
+        /// <summary>Left click HELD (not an edge): the grappling hook swings while it is down and flies when it
+        /// comes up.</summary>
+        public bool shoveHeld;
         public bool grab;
         /// <summary>Held: sprint while stamina lasts.</summary>
         public bool sprint;
@@ -34,7 +38,7 @@ namespace ChessFight.RagdollLab
     /// One dynamic multiplier scales every spring, so "stiff" and "floppy" blend continuously.
     /// </summary>
     [DefaultExecutionOrder(-50)]
-    public class RagdollPawn : MonoBehaviour
+    public partial class RagdollPawn : MonoBehaviour
     {
         public const int Count = 11;
         public static readonly int[] ParentOf = { -1, 0, 1, 1, 3, 1, 5, 0, 7, 0, 9 };
@@ -89,7 +93,8 @@ namespace ChessFight.RagdollLab
         public float SprintBlend => sprintBlend;
 
         /// <summary>The speed the pawn is running at right now, between moveSpeed and sprintSpeed.</summary>
-        public float TopSpeed => Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend);
+        public float TopSpeed => Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
+                                 * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f);
 
         /// <summary>Pawns this one has floored with a dive.</summary>
         public int Tackles { get; private set; }
@@ -317,6 +322,7 @@ namespace ChessFight.RagdollLab
         void Awake()
         {
             All.Add(this);
+            if (GetComponent<PawnHookView>() == null) gameObject.AddComponent<PawnHookView>();
             EnsureMaterials();
             // Per-pawn foot material: grip while standing, slide while running (friction set each step).
             // Minimum combine so the pawn's value wins over the floor's default 0.6.
@@ -447,6 +453,7 @@ namespace ChessFight.RagdollLab
             input.ability2 |= next.ability2;
             if (next.interact && !input.interact) interactPressed = true;
             input.interact = next.interact;
+            input.shoveHeld = next.shoveHeld;
             input.aim = next.aim;
         }
 
@@ -492,15 +499,18 @@ namespace ChessFight.RagdollLab
             UpdateSprint(p, dt);
             Locomotion(p, dt);
             Struggle(p, dt);
+            UpdateHook(p, dt);
             Shove(p);
             UpdateStamina(p, dt);
             if (!input.grab) climbGrabLatch = false;
-            bool wantGrab = input.grab && State != PawnState.Ragdoll && !Climbing && !climbGrabLatch && !Floating;
+            bool wantGrab = input.grab && State != PawnState.Ragdoll && !Climbing && !climbGrabLatch && !Floating
+                            && hookPhase != HookPhase.Pulling;
             handL.Tick(wantGrab, p, dt, Climbing);
             handR.Tick(wantGrab, p, dt, Climbing);
             if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
             Pose(p, dt);
             if (Climbing) ApplyClimbPose(p);
+            else if (hookPhase == HookPhase.Pulling) ApplyRopePose(p);
             else EndClimbPose();
             // Read the stiffness now, not before the actions: a dive or a knockdown this step has
             // just dropped StateFactor, and the stale value held the whole body stiff for its first step.
@@ -653,6 +663,7 @@ namespace ChessFight.RagdollLab
         public void Knockdown(string cause, float hold)
         {
             if (Floating) return;   // the water catches it
+            DropHook();
             EndClimbPose();
             if (State == PawnState.Ragdoll && !Diving)
             {
@@ -861,9 +872,9 @@ namespace ChessFight.RagdollLab
                 return;
             }
 
-            if (Climbing)
+            if (Climbing || hookPhase == HookPhase.Pulling)
             {
-                // UpdateClimb has already moved the anchor along the wall.
+                // UpdateClimb has already moved the anchor along the wall (UpdateHook moves it up the rope).
                 leanLastVel = anchorVel;
                 leanAccel = Vector3.zero;
                 return;
@@ -913,7 +924,7 @@ namespace ChessFight.RagdollLab
             float footFriction = sliding ? p.footFrictionMoving : p.footFrictionIdle;
             ownFootMaterial.dynamicFriction = footFriction;
             ownFootMaterial.staticFriction = footFriction * 1.15f;
-            if (moving && !Grabbing)
+            if (moving && !Grabbing && hookPhase != HookPhase.Charging)   // swinging the hook, it faces the aim
             {
                 float current = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
                 float target = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;
@@ -1072,7 +1083,7 @@ namespace ChessFight.RagdollLab
         void Jump(RagdollParams p, float dt)
         {
             // A jump on the wall is a kick-off (UpdateClimb); held by someone it powers the struggle.
-            if (Climbing || Floating || heldTimer > 0.15f) return;
+            if (Climbing || Floating || heldTimer > 0.15f || hookPhase == HookPhase.Pulling) return;
             // Hanging off a ledge by the hands, holding forward is enough to climb onto it: after a
             // moment it does the same vault the jump button does. (Only the jump used to, so holding
             // W under a ledge just dangled there.)
@@ -1220,6 +1231,7 @@ namespace ChessFight.RagdollLab
             if (Exhausted && stamina >= p.sprintResume * p.climbStaminaMax) Exhausted = false;
             bool moving = Flat(input.move).sqrMagnitude > 0.04f;
             Sprinting = input.sprint && moving && State == PawnState.Active && !Climbing && !Floating && !Exhausted
+                        && hookPhase != HookPhase.Charging && hookPhase != HookPhase.Pulling
                         && !BeingHeld && stamina > 0f && p.sprintSpeed > p.moveSpeed + 0.01f;
             if (Sprinting)
             {
@@ -1261,7 +1273,7 @@ namespace ChessFight.RagdollLab
         void GuardLaunch(RagdollParams p)
         {
             bool cutting = false;
-            if (p.launchClamp > 0.001f && State == PawnState.Active && !Climbing && !Floating
+            if (p.launchClamp > 0.001f && State == PawnState.Active && !Climbing && !Floating && hookPhase != HookPhase.Pulling
                 && freeFlight <= 0f && jumpTimer <= 0f && vaultTimer <= 0f && topOutTimer <= 0f
                 && hitTimer <= 0f && !BeingHeld && !HoldingEnvironment()
                 && groundFound && (Grounded || coyote > 0f))
@@ -2395,6 +2407,8 @@ namespace ChessFight.RagdollLab
                 armR = DiveReach(false);
             }
 
+            HookPose(p, ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
+
             SetPuppet(BodyId.Chest, chest);
             SetPuppet(BodyId.Head, head);
             SetPuppet(BodyId.ThighL, thighL);
@@ -2849,6 +2863,7 @@ namespace ChessFight.RagdollLab
         /// its hands. Hooks and ropes (M5, M6) will let go here too.</summary>
         void LetGo(float cooldown)
         {
+            DropHook();
             if (Climbing || topOutTimer > 0f) StopClimb(cooldown);
             EndClimbPose();
             handL.Release(cooldown);
@@ -2891,6 +2906,7 @@ namespace ChessFight.RagdollLab
             Floating = false;
             carryVel = Vector3.zero;
             carryRise = 0f;
+            ClearHook();
             surfaceVel = climbSurfaceVel = Vector3.zero;
             groundCollider = climbCollider = null;
             groundSurface = climbSurface = null;
@@ -2991,6 +3007,7 @@ namespace ChessFight.RagdollLab
             pose.held = BeingHeld;
             pose.stamina = Stamina;
             pose.escape = escapeProgress;
+            CaptureHook(pose);
         }
 
         /// <summary>Rebuild the whole pawn from hips + rotations (see jointOffset in Awake).</summary>
@@ -3016,6 +3033,7 @@ namespace ChessFight.RagdollLab
             heldTimer = pose.held ? 0.2f : 0f;
             netStamina = pose.stamina;
             netEscape = pose.escape;
+            ApplyHook(pose);
         }
 
         public bool IsFinite()

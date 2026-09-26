@@ -14,9 +14,11 @@ namespace ChessFight.RagdollLab
     ///   7c  turntable: 8 m disc at 20 degrees a second                          (M1, turning with it)
     ///   7d  sliding wall: 4 m wall going 8 m sideways at 1 m/s, to climb        (M1 on a wall)
     ///   7e  pool: water with a pier, a pillar to climb down into it, a crate    (M4: float, then respawn)
+    ///   7f  hook range, east: a 10 m tower 20 m from the start line, and an arch (M5 grappling hook)
     ///
-    /// Offline hotkeys for P1: F9 walk-in point, F5 a 6 m/s hit with a 1 s knockdown, F6 stamina -2.5,
-    /// F7 knocked off the wall (M3). A corner box shows what the pawn received from the new keys (M2).
+    /// Offline hotkeys for P1: F9 walk-in point, F8 the hook range's start line, F5 a 6 m/s hit with a
+    /// 1 s knockdown, F6 stamina -2.5, F7 knocked off the wall (M3). A corner box shows what the pawn
+    /// received from the new keys (M2) and what its hook is doing (M5).
     /// </summary>
     public class QueenHillTestBed : MonoBehaviour
     {
@@ -54,6 +56,17 @@ namespace ChessFight.RagdollLab
         /// <summary>Where the water puts pawns back (the ground point), facing the pool.</summary>
         public static readonly Vector3 Checkpoint = new Vector3(15f, 0f, -33f);
         public static readonly Vector3 CrateSpot = new Vector3(18.5f, 0.25f, -34.5f);
+
+        // 7f: the hook range, x 35..75 beside the test bed. Throw from the start line toward +X at a tower
+        // whose face is 20 m away and whose top is 10 m up - the "20 m in about 4 s" of the plan - or
+        // at the underside of the arch.
+        public static readonly Vector3 HookStart = new Vector3(40f, 0f, -30f);
+        public static readonly Vector3 HookTowerCenter = new Vector3(64f, 5f, -30f);
+        public static readonly Vector3 HookTowerSize = new Vector3(8f, 10f, 10f);
+        public static float HookTowerFaceX => HookTowerCenter.x - HookTowerSize.x * 0.5f;
+        public static float HookTowerTop => HookTowerCenter.y + HookTowerSize.y * 0.5f;
+        public static readonly Vector3 HookArchCenter = new Vector3(50f, 5.25f, -40f);
+        public static readonly Vector3 HookArchSize = new Vector3(4f, 0.5f, 4f);
 
         public MovingPlatform Shuttle { get; private set; }
         public MovingPlatform Lift { get; private set; }
@@ -149,6 +162,21 @@ namespace ChessFight.RagdollLab
             Crate = crate.AddComponent<Rigidbody>();
             Crate.mass = 5f;
             Crate.interpolation = RigidbodyInterpolation.Interpolate;
+
+            // 7f hook range
+            Box("7f Floor", new Vector3(55f, -t * 0.5f, -30f), new Vector3(40f, t, 30f), floorMaterial);
+            Box("7f Tower", HookTowerCenter, HookTowerSize, wallMaterial);
+            Box("7f Arch Top", HookArchCenter, HookArchSize, platformMaterial);
+            float pillarHeight = HookArchCenter.y - HookArchSize.y * 0.5f;
+            foreach (float side in new[] { -1f, 1f })
+                Box("7f Arch Pillar", new Vector3(HookArchCenter.x + side * (HookArchSize.x * 0.5f - 0.4f), pillarHeight * 0.5f, HookArchCenter.z),
+                    new Vector3(0.8f, pillarHeight, 0.8f), wallMaterial);
+            var line = Box("7f Start Line", HookStart + new Vector3(0f, 0.005f, 0f), new Vector3(0.3f, 0.01f, 6f), padMaterial);
+            DestroyImmediate(line.GetComponent<Collider>());
+            Label("[7f] 갈고리: E 꺼내기 · 좌클릭 꾹 = 돌리며 게이지 · 떼면 던짐", HookStart + new Vector3(-1.6f, 0.02f, 0f), 0.45f);
+            Label("Space·E 밧줄 놓기 · 벽 앞에서 우클릭 = 벽 잡기 · 남의 갈고리 옆 F 꾹 = 앙파상", HookStart + new Vector3(-2.6f, 0.02f, 0f), 0.35f);
+            Label("[7f] 탑 10 m (20 m 앞)", new Vector3(HookTowerFaceX - 1.2f, 0.02f, HookTowerCenter.z), 0.45f);
+            Label("[7f] 아치 (천장 5 m)", HookArchCenter + new Vector3(0f, -HookArchCenter.y + 0.02f, 3f), 0.4f);
         }
 
         void MakeMaterials()
@@ -320,6 +348,7 @@ namespace ChessFight.RagdollLab
             var pawn = game.players.Length > 0 ? game.players[0].pawn : null;
             if (pawn == null) return;
             if (Input.GetKeyDown(KeyCode.F9)) GoToEntrance(pawn);
+            if (Input.GetKeyDown(KeyCode.F8)) GoToHookRange(pawn);
             if (Input.GetKeyDown(KeyCode.F5))
                 Hit(pawn, (-pawn.Facing * 0.87f + Vector3.up * 0.5f).normalized * 6f, 1f, 0f, false, "F5 피격: 6 m/s · 1초 넘어짐");
             if (Input.GetKeyDown(KeyCode.F6)) Hit(pawn, Vector3.zero, 0f, 2.5f, false, "F6 스테미나 -2.5");
@@ -361,6 +390,14 @@ namespace ChessFight.RagdollLab
             Note("F9 시험대로 이동");
         }
 
+        public void GoToHookRange(RagdollPawn pawn)
+        {
+            var driver = pawn.GetComponent<RagdollDriver>();
+            if (driver != null) driver.Teleport(HookStart, Quaternion.LookRotation(Vector3.right));
+            else pawn.Teleport(HookStart + Vector3.up * (pawn.standHeight + 0.02f), Vector3.right);
+            Note("F8 갈고리 연습장으로 이동 (E로 갈고리 꺼내기)");
+        }
+
         /// <summary>A hit through IHitReceiver, the way every attack will reach a character (M3).</summary>
         void Hit(RagdollPawn pawn, Vector3 push, float knockdown, float stamina, bool drop, string what)
         {
@@ -378,6 +415,16 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- readout (M2)
 
+        static string HookText(HookPhase phase) => phase switch
+        {
+            HookPhase.Held => "손에 듦",
+            HookPhase.Charging => "돌리는 중",
+            HookPhase.Flying => "날아가는 중",
+            HookPhase.Pulling => "<b>끌려가는 중</b>",
+            HookPhase.Stuck => "박혀 있음",
+            _ => "넣어 둠 (E)",
+        };
+
         void OnGUI()
         {
             if (game == null || game.AutoTest || game.PanelOpen) return;
@@ -390,12 +437,14 @@ namespace ChessFight.RagdollLab
             }
             Vector3 aim = pawn.Aim;
             string text =
-                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
+                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
                 $"받은 입력(P1): 능력 E <b>{pawn.AbilityPresses}</b>회 · 능력2 Q <b>{pawn.Ability2Presses}</b>회 · " +
                 $"상호작용 F <b>{pawn.InteractPresses}</b>회{(pawn.InteractHeld ? " (누르는 중)" : "")} · " +
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
                 $"탈것: {(pawn.Riding ? "<b>타는 중</b>" : "-")} · 발밑 기준 {pawn.GroundSpeed:0.0} m/s (전체 {pawn.HorizontalSpeed:0.0}) · " +
-                $"피격 {pawn.Hits}회: {pawn.LastHit} · 물에서 부활 {WaterRespawns}회" +
+                $"피격 {pawn.Hits}회: {pawn.LastHit} · 물에서 부활 {WaterRespawns}회\n" +
+                $"갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
+                $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}" +
                 (IsDrowning(pawn) ? $" · <b>물에 빠짐! {DrowningLeft(pawn):0.0}초 뒤 체크포인트로</b> (좌클릭 버둥 {pawn.Thrashes}회)" : "") +
                 (Time.unscaledTime - lastActionAt < 2.5f ? $"\n→ {lastAction}" : "");
             var size = style.CalcSize(new GUIContent(text));

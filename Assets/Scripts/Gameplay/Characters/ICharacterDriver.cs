@@ -13,6 +13,9 @@ namespace ChessFight.Gameplay
         public Vector3 Move;
         public bool Jump;   // Edge: true for the tick the button went down.
         public bool Shove;  // Edge.
+        // The same button HELD: the pawn's grappling hook swings while it is down and
+        // is thrown when it comes up (Queen of the Hill M5).
+        public bool ShoveHeld;
         public bool Grab;   // Held.
         public bool Sprint; // Held: run faster while stamina lasts.
 

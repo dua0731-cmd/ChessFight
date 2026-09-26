@@ -89,7 +89,7 @@ namespace ChessFight.Gameplay
             driver.SetCommand(new CharacterCommand
             {
                 Move = new Vector3(Mathf.Clamp(intent.Move.x, -1f, 1f), 0f, Mathf.Clamp(intent.Move.y, -1f, 1f)),
-                Jump = intent.Jump, Shove = intent.Shove, Grab = intent.Grab,
+                Jump = intent.Jump, Shove = intent.Shove, ShoveHeld = intent.ShoveHeld, Grab = intent.Grab,
                 Sprint = intent.Sprint, Ability = intent.Ability, Ability2 = intent.Ability2,
                 Interact = intent.Interact,
                 Aim = view != null ? view.forward : Vector3.forward

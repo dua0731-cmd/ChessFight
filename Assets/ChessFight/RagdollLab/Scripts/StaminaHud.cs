@@ -49,7 +49,8 @@ namespace ChessFight.RagdollLab
                 float stamina = pawn.Stamina;
                 // Eased, so a tap of stamina (a thrash, a dive) slides the ring instead of snapping it.
                 g.fill = Mathf.Lerp(g.fill, stamina, 1f - Mathf.Exp(-14f * dt));
-                bool busy = stamina < 0.995f || pawn.Sprinting || pawn.Climbing || pawn.BeingHeld || pawn.Exhausted;
+                bool busy = stamina < 0.995f || pawn.Sprinting || pawn.Climbing || pawn.BeingHeld || pawn.Exhausted
+                            || pawn.HookCharging || pawn.EnPassantProgress > 0f;
                 g.fullFor = busy ? 0f : g.fullFor + dt;
                 float want = g.fullFor < ShowAfterFull ? 1f : 0f;
                 g.alpha = Mathf.MoveTowards(g.alpha, want, dt * (want > g.alpha ? 6f : 2f));
@@ -131,6 +132,17 @@ namespace ChessFight.RagdollLab
                 GUI.color = new Color(1f, 0.85f, 0.3f, alpha);
                 GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * escape, bar.height), white);
             }
+            else if (pawn.HookCharging)
+            {
+                // The hook's throw gauge: how far it flies when the button comes up.
+                float charge = Mathf.Clamp01(pawn.HookCharge);
+                Bar(cx, cy + line, size, alpha, charge >= 0.999f ? "갈고리 최대!" : "갈고리", charge,
+                    Color.Lerp(new Color(0.55f, 0.85f, 1f), new Color(1f, 0.6f, 0.2f), charge));
+            }
+            else if (pawn.EnPassantProgress > 0f)
+            {
+                Bar(cx, cy + line, size, alpha, "앙파상", pawn.EnPassantProgress, new Color(1f, 0.4f, 0.35f));
+            }
             else if (pawn.Exhausted)
             {
                 GUI.color = new Color(1f, 0.55f, 0.5f, alpha);
@@ -138,6 +150,19 @@ namespace ChessFight.RagdollLab
                 Shadowed(new Rect(cx - size, cy + line, size * 2f, size * 0.42f), "지침");
             }
             GUI.color = old;
+        }
+
+        /// <summary>A caption and a filling bar under the ring, like the struggle bar.</summary>
+        void Bar(float cx, float top, float size, float alpha, string caption, float fill, Color color)
+        {
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            label.fontSize = Mathf.RoundToInt(Mathf.Clamp(size * 0.3f, 11f, 24f));
+            Shadowed(new Rect(cx - size * 2f, top, size * 4f, size * 0.42f), caption);
+            var bar = new Rect(cx - size * 0.9f, top + size * 0.46f, size * 1.8f, Mathf.Max(4f, size * 0.12f));
+            GUI.color = new Color(0f, 0f, 0f, 0.55f * alpha);
+            GUI.DrawTexture(bar, white);
+            GUI.color = new Color(color.r, color.g, color.b, alpha);
+            GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(fill), bar.height), white);
         }
 
         void Shadowed(Rect rect, string text)

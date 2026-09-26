@@ -215,6 +215,7 @@ namespace ChessFight.RagdollLab.Net
             pending.grab = now.grab;
             pending.sprint = now.sprint;
             pending.aim = now.aim;
+            pending.shoveHeld = now.shoveHeld;
             pending.jump |= now.jump;
             pending.shove |= now.shove;
             pending.ability |= now.ability;

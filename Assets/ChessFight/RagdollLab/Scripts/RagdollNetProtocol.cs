@@ -23,6 +23,9 @@ namespace ChessFight.RagdollLab
         public bool held;       // someone has this pawn by a hand
         public float stamina;   // 0..1, sent as a byte so a client can draw its own gauge
         public float escape;    // 0..1, the struggle meter, so a client draws the escape bar too
+        public byte hook;       // HookPhase: put away, held, swinging, flying, reeling in, stuck
+        public float hookCharge;    // 0..1, the swing gauge (a byte on the wire)
+        public Vector3 hookPoint;   // the flying hook, or where it is stuck
         public uint ack;        // the owner's own send time echoed back, milliseconds
 
         public void CopyFrom(RagdollPose other)
@@ -39,6 +42,9 @@ namespace ChessFight.RagdollLab
             held = other.held;
             stamina = other.stamina;
             escape = other.escape;
+            hook = other.hook;
+            hookCharge = other.hookCharge;
+            hookPoint = other.hookPoint;
             ack = other.ack;
         }
 
@@ -57,6 +63,10 @@ namespace ChessFight.RagdollLab
             into.held = t < 0.5f ? from.held : to.held;
             into.stamina = Mathf.Lerp(from.stamina, to.stamina, t);
             into.escape = Mathf.Lerp(from.escape, to.escape, t);
+            into.hook = t < 0.5f ? from.hook : to.hook;
+            into.hookCharge = Mathf.Lerp(from.hookCharge, to.hookCharge, t);
+            // A new throw starts from the hand: blend only while both ends show the same hook.
+            into.hookPoint = from.hook == to.hook ? Vector3.Lerp(from.hookPoint, to.hookPoint, t) : to.hookPoint;
             into.ack = to.ack;
         }
     }
@@ -66,6 +76,7 @@ namespace ChessFight.RagdollLab
     {
         public Vector2 move;
         public bool jump, shove, grab, sprint;
+        public bool shoveHeld;           // held: the hook's swing
         public bool ability, ability2;   // edges
         public bool interact;            // held
         public Vector3 aim;
@@ -74,13 +85,13 @@ namespace ChessFight.RagdollLab
         {
             move = new Vector2(input.move.x, input.move.z), jump = input.jump, shove = input.shove, grab = input.grab,
             sprint = input.sprint, ability = input.ability, ability2 = input.ability2, interact = input.interact,
-            aim = input.aim,
+            aim = input.aim, shoveHeld = input.shoveHeld,
         };
 
         public PawnInput ToPawnInput() => new PawnInput
         {
             move = new Vector3(move.x, 0f, move.y), jump = jump, shove = shove, grab = grab, sprint = sprint,
-            ability = ability, ability2 = ability2, interact = interact, aim = aim,
+            ability = ability, ability2 = ability2, interact = interact, aim = aim, shoveHeld = shoveHeld,
         };
     }
 
@@ -116,14 +127,15 @@ namespace ChessFight.RagdollLab
         // Bumped with each change to either packet so an older lab build's packets are dropped at the
         // door instead of half-read. CFR2: abilities, interact and aim in the input (2026-09-26).
         // CFR3: the struggle meter in the snapshot (2026-09-26).
-        public const uint Magic = 0x43465233;   // "CFR3"
+        // CFR4: the left button held in the input; the grappling hook in the snapshot (2026-09-27).
+        public const uint Magic = 0x43465234;   // "CFR4"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         public const int MaxBytes = 1024;
         public const int MaxPawns = 12;
         public const float PositionRange = 80f; // metres, symmetric around the arena origin
 
-        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 4;  // 65
+        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 4;  // 73
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 1;            // 22
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
 
@@ -148,7 +160,8 @@ namespace ChessFight.RagdollLab
                 w.Write(Signed(input.move.x));
                 w.Write(Signed(input.move.y));
                 w.Write((byte)((input.jump ? 1 : 0) | (input.shove ? 2 : 0) | (input.grab ? 4 : 0) | (input.sprint ? 8 : 0)
-                               | (input.ability ? 16 : 0) | (input.ability2 ? 32 : 0) | (input.interact ? 64 : 0)));
+                               | (input.ability ? 16 : 0) | (input.ability2 ? 32 : 0) | (input.interact ? 64 : 0)
+                               | (input.shoveHeld ? 128 : 0)));
                 // The aim as a direction, a byte per axis: about half a degree, plenty for a thrown hook.
                 Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
                 w.Write(Signed(aim.x));
@@ -170,8 +183,8 @@ namespace ChessFight.RagdollLab
                 sequence = r.ReadUInt32();
                 clientTimeMs = r.ReadUInt32();
                 input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+                // All eight bits are buttons now (128 = the left button held).
                 byte buttons = r.ReadByte();
-                if (buttons > 127) return false;
                 input.jump = (buttons & 1) != 0;
                 input.shove = (buttons & 2) != 0;
                 input.grab = (buttons & 4) != 0;
@@ -179,6 +192,7 @@ namespace ChessFight.RagdollLab
                 input.ability = (buttons & 16) != 0;
                 input.ability2 = (buttons & 32) != 0;
                 input.interact = (buttons & 64) != 0;
+                input.shoveHeld = (buttons & 128) != 0;
                 if (input.move.sqrMagnitude > 1.05f) input.move = input.move.normalized;
                 var aim = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f);
                 // Anything but a unit vector or nothing at all is not an aim.
@@ -216,6 +230,11 @@ namespace ChessFight.RagdollLab
                                    | (pose.sprinting ? 32 : 0) | (pose.exhausted ? 64 : 0) | (pose.held ? 128 : 0)));
                     w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.stamina * 255f), 0, 255));
                     w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.escape * 255f), 0, 255));
+                    w.Write(pose.hook);
+                    w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.hookCharge * 255f), 0, 255));
+                    w.Write(Quantize(pose.hookPoint.x));
+                    w.Write(Quantize(pose.hookPoint.y));
+                    w.Write(Quantize(pose.hookPoint.z));
                     w.Write(pose.ack);
                 }
                 return stream.ToArray();
@@ -251,8 +270,11 @@ namespace ChessFight.RagdollLab
                     pose.held = (flags & 128) != 0;
                     pose.stamina = r.ReadByte() / 255f;
                     pose.escape = r.ReadByte() / 255f;
+                    pose.hook = r.ReadByte();
+                    pose.hookCharge = r.ReadByte() / 255f;
+                    pose.hookPoint = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
                     pose.ack = r.ReadUInt32();
-                    if (pose.state > 2) return false;
+                    if (pose.state > 2 || pose.hook > 5) return false;
                 }
                 into.tick = tick;
                 into.hostTimeMs = hostTimeMs;

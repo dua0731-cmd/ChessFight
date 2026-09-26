@@ -97,7 +97,8 @@ namespace ChessFight.Game
             return new MoveIntent
             {
                 Move = move.ReadValue<Vector2>(), Jump = jump.triggered,
-                Shove = shove != null && shove.triggered, Grab = grab != null && grab.IsPressed(),
+                Shove = shove != null && shove.triggered, ShoveHeld = shove != null && shove.IsPressed(),
+                Grab = grab != null && grab.IsPressed(),
                 Sprint = sprint != null && sprint.IsPressed(),
                 Ability = ability != null && ability.triggered,
                 Ability2 = ability2 != null && ability2.triggered,

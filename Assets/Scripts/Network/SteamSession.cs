@@ -18,7 +18,9 @@ namespace ChessFight.Network
         //     the aim (RagdollNetProtocol "CFR2"). A v3 lab build would drop them.
         // v5: the ragdoll lab's snapshot carries the struggle meter ("CFR3"), so a
         //     client sees how close a grabbed pawn is to breaking free.
-        public const string Protocol = "chessfight.dua0731.network.v5";
+        // v6: the lab's input carries the left button held and its snapshot the pawn's
+        //     grappling hook (RagdollNetProtocol "CFR4", Queen of the Hill M5).
+        public const string Protocol = "chessfight.dua0731.network.v6";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

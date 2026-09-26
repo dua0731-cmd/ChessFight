@@ -36,6 +36,7 @@ namespace ChessFight.RagdollLab
         public const string GroupAction = "버둥대기 / 등반 (명세 외)";
         public const string GroupSprint = "전력질주 · 스테미나 (명세 외)";
         public const string GroupDive = "다이빙 태클 (좌클릭, 명세 외)";
+        public const string GroupHook = "갈고리 (E 꺼내기 · 좌클릭 꾹, M5)";
 
         [Tunable(GroupStiffness, "골반 앵커 hipAnchorStrength")] [Range(0f, 20000f)] public float hipAnchorStrength = 3000f;
         [Tunable(GroupStiffness, "하체 lowerBodySpring")] [Range(0f, 10000f)] public float lowerBodySpring = 2000f;
@@ -268,6 +269,27 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupDive, "태클 추가 밀기 (m/s)")] [Range(0f, 8f)] public float diveTacklePush = 2.5f;
         // How long the tackled pawn stays down once it has landed (0 = the usual getUpDelay).
         [Tunable(GroupDive, "태클 맞은 상대 누워 있기 (초)")] [Range(0f, 4f)] public float diveTackleHold = 1.2f;
+
+        // The pawn's grappling hook (Queen of the Hill M5, the pawn's two-square first move). E takes it
+        // out; holding the left button swings it round overhead like a sling while a gauge fills, and
+        // letting go throws it along the aim, further the fuller the gauge. It sticks in whatever it
+        // hits and reels the pawn up the rope.
+        [Tunable(GroupHook, "게이지가 다 차는 시간 (초)")] [Range(0.2f, 3f)] public float hookChargeTime = 1.2f;
+        [Tunable(GroupHook, "가장 약하게 던질 때 속도 (m/s)")] [Range(2f, 30f)] public float hookSpeedMin = 8f;
+        [Tunable(GroupHook, "가득 채워 던질 때 속도 (m/s)")] [Range(5f, 50f)] public float hookSpeedMax = 22f;
+        // Thrown this much above the aim, so aiming straight at a spot arcs onto it rather than under it.
+        [Tunable(GroupHook, "조준보다 위로 던지는 각도 (도)")] [Range(0f, 30f)] public float hookLoft = 8f;
+        [Tunable(GroupHook, "갈고리 중력 (m/s²)")] [Range(0f, 30f)] public float hookGravity = 9.81f;
+        [Tunable(GroupHook, "안 박히면 빗나감 처리까지 (초)")] [Range(0.5f, 6f)] public float hookMaxFlight = 2.5f;
+        [Tunable(GroupHook, "빗나간 뒤 다시 던지기까지 (초)")] [Range(0f, 3f)] public float hookRetryDelay = 1f;
+        [Tunable(GroupHook, "끌려가는 속도 (m/s)")] [Range(1f, 20f)] public float hookPullSpeed = 6f;
+        [Tunable(GroupHook, "끌려가는 속도까지 걸리는 시간 (초)")] [Range(0f, 1.5f)] public float hookPullRamp = 0.25f;
+        [Tunable(GroupHook, "돌리는 동안 걷는 속도 (배)")] [Range(0f, 1f)] public float hookChargeMoveScale = 0.6f;
+        // En passant: cutting an enemy's hook out of the wall while it is still reeling in (or has just
+        // arrived) drops that enemy.
+        [Tunable(GroupHook, "앙파상: 갈고리까지 거리 (m)")] [Range(0.5f, 5f)] public float enPassantRadius = 2f;
+        [Tunable(GroupHook, "앙파상: F 누르고 있기 (초)")] [Range(0.05f, 2f)] public float enPassantHold = 0.4f;
+        [Tunable(GroupHook, "앙파상: 도착 뒤 떼어 낼 수 있는 시간 (초)")] [Range(0f, 3f)] public float enPassantWindow = 1f;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]

@@ -13,6 +13,7 @@ namespace ChessFight.Game
         // the left mouse button (pad RB), grab while the right is held (pad LB).
         // The lobby's flat motor ignores both.
         public bool Shove;  // Edge triggered.
+        public bool ShoveHeld; // The same button held (the grappling hook's swing).
         public bool Grab;   // Held.
         // The Queen of the Hill verbs, also bound to match the ragdoll lab. The
         // capsule motor and the lobby ignore them.
@@ -69,6 +70,7 @@ namespace ChessFight.Game
                                        (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)),
                     Jump = Input.GetKeyDown(KeyCode.Space),
                     Shove = Input.GetMouseButtonDown(0),
+                    ShoveHeld = Input.GetMouseButton(0),
                     Grab = Input.GetMouseButton(1),
                     Sprint = Input.GetKey(KeyCode.LeftShift),
                     Ability = Input.GetKeyDown(KeyCode.E),

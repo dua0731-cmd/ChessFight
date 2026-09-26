@@ -21,7 +21,7 @@ namespace ChessFight.RagdollLab
         {
             move = command.Move, jump = command.Jump, shove = command.Shove, grab = command.Grab,
             sprint = command.Sprint, ability = command.Ability, ability2 = command.Ability2,
-            interact = command.Interact, aim = command.Aim
+            interact = command.Interact, aim = command.Aim, shoveHeld = command.ShoveHeld
         });
 
         public Transform FollowTarget => Pawn.Hips.transform;
