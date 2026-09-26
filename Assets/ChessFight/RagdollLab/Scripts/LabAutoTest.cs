@@ -142,28 +142,33 @@ namespace ChessFight.RagdollLab
                 Time.timeScale = 1f;
                 yield break;
             }
-            // -ragdollAutoTestOnly Climb,ClimbSurfaces: only those tests (by method name), to iterate on
-            // a few without the whole eight-minute run.
-            var tests = new (string name, Func<IEnumerator> run)[]
+            // -ragdollOnly Climb,Slope: just the named groups, in suite order (quick to iterate on).
+            // -ragdollAutoTestOnly is the same switch under the name the control-feel work used.
+            string only = Arg("-ragdollOnly") ?? Arg("-ragdollAutoTestOnly");
+            var picked = string.IsNullOrEmpty(only) ? null : only.Split(',').Select(s => s.Trim()).ToArray();
+            foreach (var (name, check) in Suite())
             {
-                ("JointSign", JointSign), ("Stand", Stand), ("Run", Run), ("Sprint", Sprint),
-                ("GaitShape", GaitShape), ("Turn", Turn), ("NoAutoHop", NoAutoHop), ("JumpCheck", JumpCheck),
-                ("JumpNoStack", JumpNoStack), ("GetUp", GetUp), ("Fall", Fall), ("Slope", Slope),
-                ("DiveSlope", DiveSlope), ("Contact", Contact), ("GrabDrag", GrabDrag),
-                ("StruggleEscape", StruggleEscape), ("Climb", Climb), ("ClimbBugs", ClimbBugs),
-                ("ClimbSurfaces", ClimbSurfaces), ("DiveTackle", DiveTackle), ("Bar", Bar), ("Beam", Beam),
-                ("WallClimb", WallClimb), ("QueenHill", QueenHill), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
-            };
-            string only = Arg("-ragdollAutoTestOnly");
-            foreach (var (name, run) in tests)
-                if (string.IsNullOrEmpty(only) || Array.IndexOf(only.Split(','), name) >= 0)
-                    yield return run();
+                if (picked != null && !picked.Contains(name)) continue;
+                yield return check();
+            }
             Report("NaN/폭발 없음", allFinite, allFinite ? "모든 부위 좌표 유한" : "NaN 또는 무한대 좌표 발생");
             log.AppendLine($"RESULT passed={passed} failed={failed}");
             File.WriteAllText(path, log.ToString());
             Debug.Log(log.ToString());
             Time.timeScale = 1f;
         }
+
+        /// <summary>Every check group, in the order the full run takes them.</summary>
+        (string name, Func<IEnumerator> check)[] Suite() => new (string, Func<IEnumerator>)[]
+        {
+            ("JointSign", JointSign), ("Stand", Stand), ("Run", Run), ("Sprint", Sprint),
+            ("GaitShape", GaitShape), ("Turn", Turn), ("NoAutoHop", NoAutoHop), ("JumpCheck", JumpCheck),
+            ("JumpNoStack", JumpNoStack), ("GetUp", GetUp), ("Fall", Fall), ("Slope", Slope),
+            ("DiveSlope", DiveSlope), ("Contact", Contact), ("GrabDrag", GrabDrag),
+            ("StruggleEscape", StruggleEscape), ("Climb", Climb), ("ClimbBugs", ClimbBugs),
+            ("ClimbSurfaces", ClimbSurfaces), ("DiveTackle", DiveTackle), ("Bar", Bar), ("Beam", Beam),
+            ("WallClimb", WallClimb), ("QueenHill", QueenHill), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
+        };
 
         string JointErrors(RagdollPawn pawn)
         {
@@ -919,32 +924,49 @@ namespace ChessFight.RagdollLab
                 $"달리기 {run:F2} m/s (목표 {p.moveSpeed:F1}), 전력질주 {sprint:F2} m/s (목표 {p.sprintSpeed:F1}), "
                 + $"2.7초 질주에 스테미나 {before * 100f:F0}% → {pawn.Stamina * 100f:F0}%, 넘어짐 {pawn.Knockdowns}");
 
-            bool winded = false, sprintWhileWinded = false;
-            float emptyAt = -1f, t = 0f;
-            yield return Sim(12f, () =>
+            // Keep Shift held the whole way: run the pool dry, then keep holding it. Winded, the pawn
+            // must drop back to the run. Running is not tiring, so the pool refills meanwhile (after
+            // the breather), and at sprintResume the sprint comes back by itself.
+            // The first version of this check held Shift for a fixed 12 s and read the speed at the
+            // end - by then the pool had refilled and the pawn was sprinting again, so it reported
+            // "winded and 9.49 m/s" - then stopped and timed a recovery that had already happened.
+            float resume = p.staminaRecoverDelay + p.sprintResume * p.climbStaminaMax / Mathf.Max(0.1f, p.climbRecover);
+            float budget = pawn.Stamina * p.climbStaminaMax / Mathf.Max(0.1f, p.sprintDrain) + resume + 1.5f;
+            bool sprintWhileWinded = false, sprintAgain = false;
+            float emptyAt = -1f, backAt = -1f, t = 0f, windedSum = 0f;
+            int windedN = 0;
+            yield return Sim(budget, () =>
             {
                 t += Dt;
                 Drive(pawn, Lap(), sprint: true);
-                if (pawn.Exhausted && !winded)
+                // Every step, the one that empties the pool included.
+                if (pawn.Exhausted && pawn.Sprinting) sprintWhileWinded = true;
+                if (emptyAt < 0f)
                 {
-                    winded = true;
-                    emptyAt = t;
+                    if (pawn.Exhausted) emptyAt = t;
+                    return;
                 }
-                if (winded && pawn.Exhausted && pawn.Sprinting) sprintWhileWinded = true;
+                if (backAt < 0f)
+                {
+                    if (!pawn.Exhausted) backAt = t;
+                    else if (t > emptyAt + 1f / Mathf.Max(0.5f, p.sprintBlendSpeed) + 0.3f)
+                    {
+                        // Blended back to the run by now.
+                        windedSum += pawn.HorizontalSpeed;
+                        windedN++;
+                    }
+                    return;
+                }
+                if (pawn.Sprinting) sprintAgain = true;
             });
-            float slowed = pawn.HorizontalSpeed;
-            // Stop, wait for the breather, and the pawn must be able to sprint again.
-            Drive(pawn, Vector3.zero);
-            float recovered = -1f;
-            t = 0f;
-            yield return Sim(6f, () =>
-            {
-                t += Dt;
-                if (recovered < 0f && !pawn.Exhausted) recovered = t;
-            });
-            Report("스테미나가 떨어지면 전력질주 불가 → 회복하면 다시 가능", winded && !sprintWhileWinded && recovered > 0f,
-                $"고갈 {Fmt(emptyAt)} 뒤 지침, 지친 동안 질주 {sprintWhileWinded}, 지친 채 속도 {slowed:F2} m/s, "
-                + $"다시 질주 가능까지 {Fmt(recovered)} (회복 {p.climbRecover:F1}/초, 대기 {p.staminaRecoverDelay:F1}초, 기준 {p.sprintResume * 100f:F0}%)");
+            float winded = windedN > 0 ? windedSum / windedN : -1f;
+            float back = emptyAt >= 0f && backAt >= 0f ? backAt - emptyAt : -1f;
+            Report("스테미나가 떨어지면 전력질주 불가 → 회복하면 다시 가능",
+                emptyAt >= 0f && !sprintWhileWinded && winded > 0f && winded < 1.15f * p.moveSpeed
+                && back > 0f && Mathf.Abs(back - resume) < 0.3f && sprintAgain,
+                $"고갈 {Fmt(emptyAt)} 뒤 지침, 지친 동안 질주 {sprintWhileWinded}, 지친 동안 평균 {winded:F2} m/s (달리기 {p.moveSpeed:F1}), "
+                + $"Shift를 누른 채 {Fmt(back)} 뒤 다시 질주 가능 (예상 {resume:F2}s = 대기 {p.staminaRecoverDelay:F1}초 + "
+                + $"{p.sprintResume * 100f:F0}%까지 {p.climbRecover:F1}/초), 다시 질주함 {sprintAgain}");
             yield return Clear();
         }
 
@@ -1158,9 +1180,16 @@ namespace ChessFight.RagdollLab
             // and the two should take turns being the higher one, quickly, without the arms being
             // stretched out past climbArmReach. (With arms this short - the head sticks out further
             // than they reach - "above the head" is not a thing a hand can do without the cartoon
-            // stretch the playtest found grotesque.)
+            // stretch the playtest found grotesque.) Measured in the built lab player (09-26): the
+            // first step of a climb drew an arm out to 0.46 m, and the palms landed level with the
+            // shoulders (+0.02 m) because each new hold was overtaken by the climb before the hand
+            // got there.
             var p = game.tuning.values;
             float overHeadL = float.MinValue, overHeadR = float.MinValue, longestArm = 0f;
+            // How far each palm is from its shoulder toward the wall. Negative is a hand reaching
+            // back behind the body, which the start of a climb did for 0.3 s (holds picked from a
+            // stride out were left in mid-air as the body closed in).
+            float towardWall = float.MaxValue, towardWallAt = -1f, climbT = 0f;
             int higher = -1, turns = 0;
             yield return Sim(6f, () =>
             {
@@ -1169,6 +1198,18 @@ namespace ChessFight.RagdollLab
                 {
                     everClimbing = true;
                     climbedFor += Dt;
+                    climbT += Dt;
+                    if (!pawn.ToppingOut)
+                    {
+                        float reach = Mathf.Min(
+                            Vector3.Dot(pawn.Facing, pawn.handL.Center - pawn.bodies[(int)BodyId.ArmL].position),
+                            Vector3.Dot(pawn.Facing, pawn.handR.Center - pawn.bodies[(int)BodyId.ArmR].position));
+                        if (reach < towardWall)
+                        {
+                            towardWall = reach;
+                            towardWallAt = climbT;
+                        }
+                    }
                     overHeadL = Mathf.Max(overHeadL, pawn.handL.Center.y - pawn.bodies[(int)BodyId.ArmL].position.y);
                     overHeadR = Mathf.Max(overHeadR, pawn.handR.Center.y - pawn.bodies[(int)BodyId.ArmR].position.y);
                     longestArm = Mathf.Max(longestArm,
@@ -1181,12 +1222,12 @@ namespace ChessFight.RagdollLab
                 topY = Mathf.Max(topY, pawn.Hips.position.y);
                 lowestStamina = Mathf.Min(lowestStamina, pawn.Stamina);
             });
-            // At this arm length a palm on the face can rise only about 0.09 m above its shoulder, and
-            // the lower hand measured 0.050 m: a 0.05 bar flipped on rounding from run to run.
             Report("등반: 두 손이 번갈아 어깨 위를 짚음 (팔 안 늘어남)",
-                overHeadL > 0.035f && overHeadR > 0.035f && turns >= 8 && longestArm <= p.climbArmReach + 0.05f,
+                overHeadL > 0.05f && overHeadR > 0.05f && turns >= 8 && longestArm <= p.climbArmReach + 0.05f,
                 $"어깨 대비 최고 손 높이 L {overHeadL:+0.00;-0.00} m / R {overHeadR:+0.00;-0.00} m, "
                 + $"위쪽 손 교대 {turns}회, 어깨→손 최대 {longestArm:F2} m (한계 {p.climbArmReach:F2})");
+            Report("등반: 손이 늘 어깨보다 벽 쪽 (등 뒤로 안 감)", everClimbing && towardWall > 0f,
+                $"어깨에서 벽 쪽으로 손까지 최소 {towardWall:+0.00;-0.00} m (등반 {towardWallAt:F2}초째, 꼭대기 올라서기 제외)");
             var tr = new StringBuilder();
             float tt = 0f, tnext = 0f;
             yield return Sim(1.2f, () =>
@@ -1326,24 +1367,31 @@ namespace ChessFight.RagdollLab
                 $"벽에서 밀려난 거리 {drift:F2} m (0.45 미만)");
             yield return Clear();
 
-            // 4. The 2 m wall to the top: must end up standing on it.
+            // 4. The 2 m wall to the top: must end up standing on it, and stay there once the keys are
+            // let go. The first version kept "forward" held after standing up, so the pawn ran across
+            // the 5 m top, off the back (knocked down by the landing) and on off the floor: it
+            // reported the pawn 1.5 m below the floor, not a failed climb.
             var top = Spawn(new Vector3(face - 1.2f, 0f, LabLayout.WallZ[0]), Vector3.right, "climb-top");
             yield return Sim(0.6f);
             float wallTop = LabLayout.WallHeights[0], standAt = -1f, t = 0f;
             yield return Sim(6f, () =>
             {
                 t += Dt;
-                // Hands off once it stands up there: the wall is 5 m deep and the floor behind it ends.
                 Drive(top, standAt < 0f ? Vector3.right : Vector3.zero, grab: standAt < 0f);
                 if (standAt < 0f && !top.Climbing && top.Grounded && top.Hips.position.y > wallTop + 0.1f
                     && top.Hips.position.x > face + 0.1f) standAt = t;
             });
-            Report("등반: 꼭대기에 올라섬", standAt > 0f && top.Knockdowns == 0,
-                $"올라선 시각 {Fmt(standAt)}, 최종 골반 높이 {top.Hips.position.y:F2} m (벽 {wallTop:F0} m), 넘어짐 {top.Knockdowns}");
+            bool stillUp = top.Grounded && top.Hips.position.y > wallTop + 0.1f && top.Hips.position.x > face;
+            Report("등반: 꼭대기에 올라섬", standAt > 0f && stillUp && top.Knockdowns == 0,
+                $"올라선 시각 {Fmt(standAt)}, 손 뗀 뒤 {Mathf.Max(0f, 6f - standAt):F1}초 지나 골반 높이 {top.Hips.position.y:F2} m "
+                + $"(벽 {wallTop:F0} m), 벽 위에 서 있음 {stillUp}, 넘어짐 {top.Knockdowns}");
             yield return Clear();
 
             // 5. The playtest bounce: onto the big wall's first ledge (0.75 m deep), keys held a moment
-            // longer, then let go. It has to stay up there, not tip back off the edge.
+            // longer, then let go. It has to stay up there, not tip back off the edge. Measured in
+            // the built lab player (09-26): the held keys walk it into the next block 0.35 m ahead,
+            // the reversal brake took the rebound off that face for a reversal, and the kick threw
+            // it off.
             var ledge = Spawn(new Vector3(LabLayout.ClimbX[0], 0f, LabLayout.ClimbFaceZ - 1.2f), Vector3.forward, "climb-ledge");
             yield return Sim(0.6f);
             float ledgeTop = LabLayout.LedgeStepHeight, landedAt = -1f, lowest = 99f, lt = 0f, ledgeNext = 0f;
@@ -1423,7 +1471,9 @@ namespace ChessFight.RagdollLab
                     $"오른 높이 {top - start:F2} m, 최종 {pawn.Hips.position.y:F2} m, "
                     + $"바위에서 쉰 프레임 {rests}, 남은 스테미나 {pawn.Stamina:F2}");
                 // The curved lane is a stack of slabs: the chest rays slip through the seams between
-                // them, which once read as the top and climbed the pawn into the slab above.
+                // them, which once read as the top and climbed the pawn into the slab above. Its
+                // knockdown (09-26) was not at the top at all: running at the bulge, the head hit it
+                // at 6.3 m/s before any climb started. The overhang lane never started a climb.
                 if (lane > 0)
                     Report($"등반: {names[i]} 꼭대기에 올라섬", onTop && pawn.Knockdowns == 0,
                         $"올라섬 {onTop}, 최고 골반 높이 {top:F2} m (벽 {LabLayout.ClimbHeight:F0} m), 넘어짐 {pawn.Knockdowns}");
@@ -1515,13 +1565,16 @@ namespace ChessFight.RagdollLab
                 var runner = Spawn(start, Vector3.right, "slope-run");
                 yield return Sim(0.6f);
                 Drive(runner, Vector3.right);
+                // Both clocks start at the same line, 0.3 m before the edge, where the roller throws
+                // itself. The runner's used to start AT the edge: a 0.05 s head start at 45 degrees,
+                // which was the whole margin the runner "won" by (1.33 s against 1.38 s).
                 float t = 0f, runEdge = -1f, runEnd = -1f, runMax = 0f;
                 yield return Sim(7f, () =>
                 {
                     t += Dt;
                     float x = runner.Hips.position.x;
                     runMax = Mathf.Max(runMax, runner.HorizontalSpeed);
-                    if (runEdge < 0f && x > edge) runEdge = t;
+                    if (runEdge < 0f && x > edge - 0.3f) runEdge = t;
                     if (runEnd < 0f && x > finish) runEnd = t;
                 });
                 int runFalls = runner.Knockdowns;
@@ -1858,8 +1911,13 @@ namespace ChessFight.RagdollLab
             Report("입력 패킷 왕복", inputOk && !wrongSession,
                 $"{inputBytes.Length}바이트, 값 복원 {inputOk} (능력·상호작용·조준 오차 {aimError:F2}°), 다른 방 번호 거부 {!wrongSession}");
 
-            var host = Spawn(new Vector3(0f, 0f, -10f), Vector3.forward, "net-host");
-            var remote = Spawn(new Vector3(20f, 0f, -10f), Vector3.forward, "net-remote");
+            // Corner to corner across the open floor. Straight north from (0, -10) the sprint ended at
+            // the overhang lane, and once that became climbable from the ground (FindWallAhead) the
+            // grab phase climbed it: a climbing pawn's palms are placed off its arm chain, which a
+            // rotations-only pose cannot carry (a known limit), and the hand error read 12.9 cm.
+            Vector3 across = new Vector3(1f, 0f, 1f).normalized;
+            var host = Spawn(new Vector3(-12f, 0f, -12f), across, "net-host");
+            var remote = Spawn(new Vector3(8f, 0f, -12f), across, "net-remote");
             remote.SetNetworkPuppet(true);
             var pose = new RagdollPose { id = 1 };
             var list = new System.Collections.Generic.List<RagdollPose> { pose };
@@ -1905,9 +1963,9 @@ namespace ChessFight.RagdollLab
             }
 
             yield return Sim(0.8f);
-            Drive(host, Vector3.forward, sprint: true);
+            Drive(host, across, sprint: true);
             yield return Sim(2.5f, Replicate);
-            Drive(host, Vector3.forward, grab: true);
+            Drive(host, across, grab: true);
             yield return Sim(0.8f, Replicate);
             host.Knockdown("테스트: 원격 복원");
             host.AddVelocity(new Vector3(2f, 3f, 0f));

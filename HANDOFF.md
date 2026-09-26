@@ -4,7 +4,7 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-26** · 기준 브랜치 **`JY-lobby`**(로비·게임모드 작업), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+최종 갱신: **2026-09-27** · 기준 브랜치 **`JY-lobby`**(로비·게임모드 작업), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
 
 ---
 
@@ -36,10 +36,10 @@
 | `main` | `0df4403`(R17 병합). **`Network`의 커밋을 모두 포함하고 24커밋 앞선다**(09-25 확인). `JY-lobby`는 이 커밋에서 시작했다. 로비 작업을 `main`에 넣을지는 사용자 결정 |
 | 다른 원격 브랜치 | `Network`(`0ecd3b6`, main에 포함됨), `JY-ragdoll`(준영, 래그돌 랩·**물리 튜닝용으로 유지**, R17), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
 | 네트워크 프로토콜 | **`JY-lobby`: `chessfight.dua0731.network.v3`**(게임 모드 추가). **`JY-ragdoll_v2`: v5**(래그돌 랩 입력 패킷 27바이트, 스냅샷 폰당 65바이트에 버둥대기 게이지 포함, magic `CFR3`). `main`·`Network`는 v2. 캡슐 입력 패킷 magic `CFF2`(변경 없음). 다른 프로토콜 빌드와는 매칭 불가 |
-| 자동 테스트 | 어셈블리 경계 검사 + Core 29개 + 모의 Steam 세션 15개 통과, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과 (2026-09-25, `JY-lobby`). **`JY-ragdoll_v2`(09-26)**: 같은 테스트 + **실제 Unity 6000.3.11f1 DLL로 전 어셈블리 컴파일**(랩 Steam 다리·빌더 포함) 통과, **빌드한 랩 플레이어의 래그돌 자동 점검 55 / 55 통과**(R36 조작감 개선 뒤. 그 전 9개 실패는 원래 코드부터 있던 것으로 모두 해결 → [RagdollLab README](Docs/RagdollLab/README.md#자동-점검)) |
+| 자동 테스트 | 어셈블리 경계 검사 + Core 29개 + 모의 Steam 세션 15개 통과, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과 (2026-09-25, `JY-lobby`). **`JY-ragdoll_v2`(09-26)**: 같은 테스트 + **실제 Unity 6000.3.11f1 DLL로 전 어셈블리 컴파일**(랩 Steam 다리·빌더 포함) 통과, **빌드한 랩 플레이어의 래그돌 자동 점검 56 통과 / 0 실패**(09-27, R36 조작감 개선 + R37 원래부터 실패하던 9개 정리를 합친 뒤, Core 29·세션 15 통과 → [RagdollLab README](Docs/RagdollLab/README.md#자동-점검)) |
 | Unity 실기 확인 | 2026-09-24까지: 로비 HUD 표시·한글·클릭·친구 초대 동작 (사용자 보고) |
 | Unity 실기 확인 (추가) | **퀸 오브 더 힐 M1~M4 시험대 1~12번 성공**(2026-09-26 사용자, `JY-ragdoll_v2`). 두 PC(13번)는 못 함 |
-| **Unity 미확인** | **퀸 오브 더 힐 2차 수정(피격 뒤 1초 누워 있기, 물에 5초 둥둥 뜨기·버둥, 09-26)**, **새 로비·게임 모드(09-25, JY-lobby)**, 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 사람이 보지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 표들 |
+| **Unity 미확인** | **래그돌 등반·질주 수정(09-27, R36: 등반 시작·손 높이·턱 위 되튐·곡면 박치기·질주 지침)**, **퀸 오브 더 힐 2차 수정(피격 뒤 1초 누워 있기, 물에 5초 둥둥 뜨기·버둥, 09-26)**, **새 로비·게임 모드(09-25, JY-lobby)**, 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 사람이 보지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 표들 |
 | 두 PC 확인 | 파티 입장·공개 매칭 성사 확인(2026-09-22). **양방향 이동은 미보고** |
 
 ## 2. 무엇이 되고 무엇이 안 되는가
@@ -59,13 +59,13 @@
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
 | **퀸 오브 더 힐 래그돌 기능 M1~M4**(`JY-ragdoll_v2`): 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대 | 1차 Unity 확인 성공(09-26, 1~12). 2차 수정(누워 있기·물에 뜨기)은 자동 점검 통과, Unity 재확인 대기. M5~M14는 시작 안 함 | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m4), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
-| 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
+| 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 빌드한 랩 플레이어의 자동 점검 56/0(09-27, 등반·질주 버그 수정 포함). 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
 | **없음** | 기물 선택·스킬·라운드·승패·점수, 네트워크 경기에서 코스 달리기, 래그돌 네트워크, 호스트 이전, 재접속, 신뢰 이벤트 채널, 로딩 동기화 | [ROADMAP](Docs/Project/ROADMAP.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
 
 **사용자가 할 일 — 순서대로**
-0. (래그돌, `JY-ragdoll_v2`) `Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **조작감 개선 표(9개: 멈춤·부딪힘·다이빙·버둥대기 클릭 수·질주·등반)**, 이어서 **2차 재확인 표(5개: F5 뒤 1초 누워 있기, 물에 5초 둥둥·좌클릭 버둥)**. 1차 표는 1~12 성공(09-26), 13번(두 PC)은 친구와 할 때
+0. (래그돌, `JY-ragdoll_v2`) `Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **조작감·등반 확인 표(15개, 09-27: 멈춤·부딪힘·다이빙·버둥대기 클릭 수·질주·등반 레인 넷·온라인 막대)**, 이어서 F9 → **퀸 오브 더 힐 2차 재확인 표(5개: F5 뒤 1초 누워 있기, 물에 5초 둥둥·좌클릭 버둥)**. 1차 표는 1~12 성공(09-26), 13번(두 PC)은 친구와 할 때
 1. `JY-lobby`를 Pull(LFS 포함)한 뒤 Unity에서 열고 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **새 로비 표(11개)**를 확인한다. 이어서 씬 분리·래그돌 병합 표. 막히면 증상·스크린샷과 Console 첫 오류를 AI에게 준다.
 2. 두 PC로 양방향 이동을 확인한다(가장 오래 미뤄진 검증). 이제 경기 씬에서 한다([Network/README §2](Docs/Network/README.md)).
 3. 퀸 오브 더 힐을 시작하기 전에 결정: 인원 구성(6 대 6 안에서?), 래그돌 기준 구조물 크기 → [GameModes §3](Docs/GameModes/README.md).
@@ -82,6 +82,7 @@
 3. 경기 흐름: 기물 선택 화면(참고 영상), 라운드 소개, 결과 → 로비
    - **퀸 오브 더 힐 개발 목록(R33):** 래그돌·게임플레이에 새로 필요한 기능 M1~M14와 우선순위·시작 프롬프트 → [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md). **M1~M4는 `JY-ragdoll_v2`에서 구현됨(R34, Unity 1차 확인 성공; R35 수정은 재확인 대기).** 다음은 §3 순서대로 **M5**(자유 조준 갈고리 + 앙파상) → M8·M9·M10 → M6·M7. 래그돌 작업 브랜치는 `JY-ragdoll_v2`
    - **조작감(R36)**: 버둥대기 클릭 게이지, 머리부터 다이빙, 이동 반응성, 질주·등반 버그를 고쳤고, 2차로 기상 중 끌림·다이빙 회전·부딪힘 튕김·역경사 매달림·턱 튕김을 고쳤다(자동 점검 55/55, 등반 점검은 4가지 순서로 확인). 자동 점검이 **앞선 점검 순서에 따라** 결과가 바뀌면 운에 기댄 것이니 원인을 고친다(`-ragdollAutoTestOnly`로 순서를 바꿔 돌린다, DECISIONS G15). 사용자의 Unity 손맛 확인 뒤 다음 후보: 카메라 거리·시야(지금은 휠로 조절), 등반 손동작 크기(준영 님이 정한 "빠르게 짧게 짚기"와 상의), 던지기 힘. 조작감을 바꿀 때는 `-ragdollFeel` 녹화로 전후를 비교한다 → [RagdollLab README "조작감 개선"](Docs/RagdollLab/README.md#조작감-개선-2026-09-26-r36-jy-ragdoll_v2)
+   - **래그돌 자동 점검 기존 실패 9개는 R37(09-27)에 고쳐 R38에서 합침**(합친 뒤 56 통과 / 0 실패, Unity 미확인 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 표). **준영 님·사용자 결정 대기 2개:** ① 경사 45° "몸 던지기가 더 빠른가"는 공정하게 재면 사실상 동률(0.01~0.03초, 통과하지만 불안정) — 그대로 / 참고값으로 / 튜닝 중 선택 ② 역경사 20도 레인은 빌더가 반대로 세워 실제로는 윗부분이 멀어지는 경사판 — 고치려면 씬 재생성 → [RagdollLab README "자동 점검"](Docs/RagdollLab/README.md#자동-점검)
    - **팀 색 정정(R32):** 이 게임의 두 팀은 **백팀·흑팀**이다(캐릭터 자체가 흰 말·검은 말). 코드는 아직 청팀·주황팀(재질 `TeamBlue`/`TeamOrange`, HUD 문구 "청팀/주황팀", 매칭 패널 칸 색). 바꾸려면 사용자 확인 후 작업
 4. Network → main 병합 PR (현재는 main이 Network를 포함하므로 불필요할 수 있음)
 5. 기획안의 "결정 필요" 항목: 신뢰 이벤트 채널 → 로딩 동기화 → 호스트 끊김 2단계(라운드 무효, 파티 유지)
