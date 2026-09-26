@@ -75,6 +75,7 @@
 1. Unity 확인 중 나오는 오류 수정 (최우선). 새 로비는 Unity에서 한 번도 안 열었다: 배치·겹침·색 조정이 나올 수 있다
 2. **퀸 오브 더 힐**: **GPT 아스트라가 기획부터 이어받는다**(R24). 인수인계·기획 결정 D1~D8·개발 순서·시작 프롬프트: [GameModes/QueenOfTheHill/README](Docs/GameModes/QueenOfTheHill/README.md)
 3. 경기 흐름: 기물 선택 화면(참고 영상), 라운드 소개, 결과 → 로비
+   - **퀸 오브 더 힐 개발 목록(R33):** 래그돌·게임플레이에 새로 필요한 기능 M1~M14와 우선순위·시작 프롬프트 → [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md). 래그돌 안쪽 작업의 브랜치는 사용자에게 먼저 묻는다
    - **팀 색 정정(R32):** 이 게임의 두 팀은 **백팀·흑팀**이다(캐릭터 자체가 흰 말·검은 말). 코드는 아직 청팀·주황팀(재질 `TeamBlue`/`TeamOrange`, HUD 문구 "청팀/주황팀", 매칭 패널 칸 색). 바꾸려면 사용자 확인 후 작업
 4. Network → main 병합 PR (현재는 main이 Network를 포함하므로 불필요할 수 있음)
 5. 기획안의 "결정 필요" 항목: 신뢰 이벤트 채널 → 로딩 동기화 → 호스트 끊김 2단계(라운드 무효, 파티 유지)
@@ -130,7 +131,7 @@ Docs/
 │  └─ RAGDOLL.md                래그돌 병합 상태, RagdollTest, 네트워크 안전성, 어댑터, 멀티 규칙
 ├─ RagdollLab/README.md         준영 님 랩 문서 (조작, 구조, 측정 근거)
 ├─ GameModes/README.md          게임 모드 목록(킹 러시·퀸 오브 더 힐·소드 파이트), 모드별 매칭, 새 모드 추가법
-│  └─ QueenOfTheHill/           ★ 퀸 오브 더 힐 인수인계(README), N4 참고 원문(N4_REFERENCE)
+│  └─ QueenOfTheHill/           ★ 퀸 오브 더 힐: 인수인계(README), 기획(DESIGN), 새 기능 개발 목록(MECHANICS_TODO), 아트 후보(ART_CONCEPTS), 이미지 프롬프트, N4 참고 원문
 ├─ KingRush/                    첫 미니게임
 │  ├─ README.md                 맵 구성, 코스 컴포넌트, 네트워크 한계
 │  ├─ OBSTACLES.md              장애물 규칙과 만드는 법
