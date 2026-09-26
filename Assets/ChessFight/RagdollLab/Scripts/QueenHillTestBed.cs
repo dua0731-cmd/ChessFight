@@ -15,6 +15,8 @@ namespace ChessFight.RagdollLab
     ///   7d  sliding wall: 4 m wall going 8 m sideways at 1 m/s, to climb        (M1 on a wall)
     ///   7e  pool: water with a pier, a pillar to climb down into it, a crate    (M4: float, then respawn)
     ///   7f  hook range, east: a 10 m tower 20 m from the start line, and an arch (M5 grappling hook)
+    ///   7g  pioneer tower, north of 7f: two sections with a bell on each landing and the light pillar's
+    ///       lift cell beside each wall (M8), each landing a checkpoint (M9)
     ///
     /// Offline hotkeys for P1: F9 walk-in point, F8 the hook range's start line, F5 a 6 m/s hit with a
     /// 1 s knockdown, F6 stamina -2.5, F7 knocked off the wall (M3). A corner box shows what the pawn
@@ -68,12 +70,25 @@ namespace ChessFight.RagdollLab
         public static readonly Vector3 HookArchCenter = new Vector3(50f, 5.25f, -40f);
         public static readonly Vector3 HookArchSize = new Vector3(4f, 0.5f, 4f);
 
+        // 7g: the pioneer tower. Two walls of SectionRise, the second set back PioneerStepBack behind the
+        // first; the top of each is its section's landing, with the bell at its far side. Beside each wall
+        // is the light pillar's lift cell for that section, hidden until the section's bell is rung.
+        public static readonly Vector3 TowerStart = new Vector3(42f, 0f, -5f);
+        public const float SectionRise = 5.3f, PioneerFaceX = 50f, PioneerStepBack = 4f;
+        public static float SectionFaceX(int section) => PioneerFaceX + (section - 1) * PioneerStepBack;
+        public static Vector3 LandingSpawn(int section) => new Vector3(SectionFaceX(section) + 1f, section * SectionRise, -5.5f);
+        public static Vector3 BellSpot(int section) => new Vector3(SectionFaceX(section) + 3.2f, section * SectionRise, -8.5f);
+        public static Vector3 PillarCenter(int section) =>
+            new Vector3(SectionFaceX(section) - 1.2f, (section - 1) * SectionRise + PlatformThickness * 0.5f, -2f);
+
         public MovingPlatform Shuttle { get; private set; }
         public MovingPlatform Lift { get; private set; }
         public MovingPlatform Disc { get; private set; }
         public MovingPlatform SlideWall { get; private set; }
         public WaterZone Water { get; private set; }
         public Rigidbody Crate { get; private set; }
+        public QueenHillMatch Match { get; private set; }
+        public readonly MovingPlatform[] PillarLifts = new MovingPlatform[3];   // by section, 1 and 2
 
         /// <summary>Pawns put back on the checkpoint by the water so far, and the last one.</summary>
         public int WaterRespawns { get; private set; }
@@ -85,7 +100,7 @@ namespace ChessFight.RagdollLab
         readonly Dictionary<RagdollPawn, float> drowning = new Dictionary<RagdollPawn, float>();
         readonly List<RagdollPawn> due = new List<RagdollPawn>();
         Transform root;
-        Material floorMaterial, wallMaterial, platformMaterial, waterMaterial, crateMaterial, padMaterial;
+        Material floorMaterial, wallMaterial, platformMaterial, waterMaterial, crateMaterial, padMaterial, lightMaterial, bellMaterial;
         Font font;
         GUIStyle style;
         string lastAction = "";
@@ -177,6 +192,62 @@ namespace ChessFight.RagdollLab
             Label("Space·E 밧줄 놓기 · 벽 앞에서 우클릭 = 벽 잡기 · 남의 갈고리 옆 F 꾹 = 앙파상", HookStart + new Vector3(-2.6f, 0.02f, 0f), 0.35f);
             Label("[7f] 탑 10 m (20 m 앞)", new Vector3(HookTowerFaceX - 1.2f, 0.02f, HookTowerCenter.z), 0.45f);
             Label("[7f] 아치 (천장 5 m)", HookArchCenter + new Vector3(0f, -HookArchCenter.y + 0.02f, 3f), 0.4f);
+
+            // 7g pioneer tower
+            Box("7g Floor", new Vector3(55f, -t * 0.5f, -5f), new Vector3(40f, t, 20f), floorMaterial);
+            Match = gameObject.GetComponent<QueenHillMatch>();
+            if (Match == null) Match = gameObject.AddComponent<QueenHillMatch>();
+            Match.Configure(2, 20f);
+            for (int s = 1; s <= 2; s++)
+            {
+                float faceX = SectionFaceX(s), baseY = (s - 1) * SectionRise;
+                Box($"7g Wall S{s}", new Vector3(faceX + (s == 1 ? 4f : 2f), baseY + SectionRise * 0.5f, -5f),
+                    new Vector3(s == 1 ? 8f : 4f, SectionRise, 10f), wallMaterial);
+                // The landing on top of this section's wall: its checkpoint.
+                var landing = new GameObject($"7g Landing S{s}");
+                landing.transform.SetParent(root, false);
+                landing.transform.position = new Vector3(faceX + PioneerStepBack * 0.5f, s * SectionRise + 1f, -5f);
+                var volume = landing.AddComponent<BoxCollider>();
+                volume.isTrigger = true;
+                volume.size = new Vector3(PioneerStepBack, 2f, 10f);
+                var spawnPoint = new GameObject("Spawn").transform;
+                spawnPoint.SetParent(landing.transform, false);
+                spawnPoint.SetPositionAndRotation(LandingSpawn(s), Quaternion.LookRotation(Vector3.right));
+                landing.AddComponent<SectionCheckpoint>().Configure(s, spawnPoint);
+                MakeBell(s, BellSpot(s));
+                // The light pillar's cell: a lift up this wall, flush with the landing at the top.
+                PillarLifts[s] = Platform($"7g Pillar S{s}", PillarCenter(s), new Vector3(2f, PlatformThickness, 2f),
+                    Vector3.up * (SectionRise - PlatformThickness), 1f, 1.5f, lightMaterial);
+                var path = new GameObject($"7g Path S{s}");
+                path.transform.SetParent(root, false);
+                path.AddComponent<OpenPath>().Configure(s, PillarLifts[s].gameObject);
+            }
+            Label("[7g] 개척의 탑: 벽을 올라 종 앞에서 F, 옆에 빛의 기둥 승강기 (20초는 친 팀만)", TowerStart + new Vector3(-1.6f, 0.02f, 0f), 0.4f);
+            Label("S1 5.3 m, S2 10.6 m. F10 이동, F11 종 초기화. 물에 빠지면 체크포인트", TowerStart + new Vector3(-2.5f, 0.02f, 0f), 0.33f);
+        }
+
+        /// <summary>A pioneer bell: a post, a cup that swings when rung, and a reach sphere for the interact key.</summary>
+        void MakeBell(int section, Vector3 at)
+        {
+            Box($"7g Bell Post S{section}", at + Vector3.up * 0.8f, new Vector3(0.15f, 1.6f, 0.15f), wallMaterial);
+            var go = new GameObject($"7g Bell S{section}");
+            go.transform.SetParent(root, false);
+            go.transform.position = at;
+            var pivot = new GameObject("Swing").transform;
+            pivot.SetParent(go.transform, false);
+            pivot.localPosition = new Vector3(-0.3f, 1.55f, 0f);
+            var cup = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            DestroyImmediate(cup.GetComponent<Collider>());
+            cup.name = "Cup";
+            cup.transform.SetParent(pivot, false);
+            cup.transform.localPosition = new Vector3(0f, -0.25f, 0f);
+            cup.transform.localScale = new Vector3(0.45f, 0.22f, 0.45f);
+            cup.GetComponent<MeshRenderer>().sharedMaterial = bellMaterial;
+            var reach = go.AddComponent<SphereCollider>();
+            reach.isTrigger = true;
+            reach.center = new Vector3(-0.3f, 1.2f, 0f);
+            reach.radius = 0.7f;
+            go.AddComponent<Bell>().Configure(section, pivot);
         }
 
         void MakeMaterials()
@@ -188,6 +259,8 @@ namespace ChessFight.RagdollLab
             crateMaterial = Tinted(floorMaterial, new Color(0.72f, 0.5f, 0.3f));
             padMaterial = Tinted(floorMaterial, new Color(0.45f, 0.85f, 0.5f));
             waterMaterial = NewMaterial(new Color(0.2f, 0.45f, 0.9f));
+            lightMaterial = NewMaterial(new Color(0.55f, 0.85f, 1f));
+            bellMaterial = NewMaterial(new Color(0.95f, 0.75f, 0.2f));
             font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 64);
         }
 
@@ -349,6 +422,12 @@ namespace ChessFight.RagdollLab
             if (pawn == null) return;
             if (Input.GetKeyDown(KeyCode.F9)) GoToEntrance(pawn);
             if (Input.GetKeyDown(KeyCode.F8)) GoToHookRange(pawn);
+            if (Input.GetKeyDown(KeyCode.F10)) GoToTower(pawn);
+            if (Input.GetKeyDown(KeyCode.F11) && Match != null)
+            {
+                Match.ResetRound();
+                Note("F11 종 초기화 (모든 구간 닫힘, 체크포인트 지움)");
+            }
             if (Input.GetKeyDown(KeyCode.F5))
                 Hit(pawn, (-pawn.Facing * 0.87f + Vector3.up * 0.5f).normalized * 6f, 1f, 0f, false, "F5 피격: 6 m/s · 1초 넘어짐");
             if (Input.GetKeyDown(KeyCode.F6)) Hit(pawn, Vector3.zero, 0f, 2.5f, false, "F6 스테미나 -2.5");
@@ -369,8 +448,15 @@ namespace ChessFight.RagdollLab
                 // Through the game's own contract, which has to let go of everything on the way out.
                 var driver = pawn.GetComponent<RagdollDriver>();
                 Quaternion face = Quaternion.LookRotation(Vector3.back);
-                if (driver != null) driver.Teleport(Checkpoint, face);
-                else pawn.Teleport(Checkpoint + Vector3.up * (pawn.standHeight + 0.02f), Vector3.back);
+                Vector3 to = Checkpoint;
+                // Queen of the Hill (M9): the higher of its own landing and one below its team's best, if any.
+                if (Match != null && driver != null && Match.TryRespawn(driver, pawn.Team, out var landing, out var facing))
+                {
+                    to = landing;
+                    face = facing;
+                }
+                if (driver != null) driver.Teleport(to, face);
+                else pawn.Teleport(to + Vector3.up * (pawn.standHeight + 0.02f), face * Vector3.forward);
                 WaterRespawns++;
                 LastWater = pawn.DisplayName;
                 LogWater(pawn, "부활");
@@ -388,6 +474,14 @@ namespace ChessFight.RagdollLab
             if (driver != null) driver.Teleport(Entrance, Quaternion.LookRotation(Vector3.back));
             else pawn.Teleport(Entrance + Vector3.up * (pawn.standHeight + 0.02f), Vector3.back);
             Note("F9 시험대로 이동");
+        }
+
+        public void GoToTower(RagdollPawn pawn)
+        {
+            var driver = pawn.GetComponent<RagdollDriver>();
+            if (driver != null) driver.Teleport(TowerStart, Quaternion.LookRotation(Vector3.right));
+            else pawn.Teleport(TowerStart + Vector3.up * (pawn.standHeight + 0.02f), Vector3.right);
+            Note("F10 개척의 탑으로 이동");
         }
 
         public void GoToHookRange(RagdollPawn pawn)
@@ -415,6 +509,17 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- readout (M2)
 
+        string TowerText(RagdollPawn pawn)
+        {
+            if (Match == null) return "";
+            string Section(int s) => !Match.IsOpen(s) ? "닫힘"
+                : Teams.Name(Match.Pioneer(s)) + " 열음" + (Match.Exclusive(s) ? $" (독점 {Match.ExclusiveLeft(s):0}초)" : "");
+            var driver = pawn.GetComponent<RagdollDriver>();
+            int back = driver != null ? Match.Rules.RespawnSection(QueenHillMatch.Id(driver), pawn.Team) : 0;
+            return $"[7g] 종 S1 {Section(1)} · S2 {Section(2)} · 물에 빠지면 {(back > 0 ? $"S{back} 착지대" : "7e 체크포인트")}로 "
+                   + $"(내 최고 S{(driver != null ? Match.PersonalBest(driver) : 0)}, 팀 최고 S{Match.TeamBest(pawn.Team)})";
+        }
+
         static string HookText(HookPhase phase) => phase switch
         {
             HookPhase.Held => "손에 듦",
@@ -437,14 +542,15 @@ namespace ChessFight.RagdollLab
             }
             Vector3 aim = pawn.Aim;
             string text =
-                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
+                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
                 $"받은 입력(P1): 능력 E <b>{pawn.AbilityPresses}</b>회 · 능력2 Q <b>{pawn.Ability2Presses}</b>회 · " +
                 $"상호작용 F <b>{pawn.InteractPresses}</b>회{(pawn.InteractHeld ? " (누르는 중)" : "")} · " +
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
                 $"탈것: {(pawn.Riding ? "<b>타는 중</b>" : "-")} · 발밑 기준 {pawn.GroundSpeed:0.0} m/s (전체 {pawn.HorizontalSpeed:0.0}) · " +
                 $"피격 {pawn.Hits}회: {pawn.LastHit} · 물에서 부활 {WaterRespawns}회\n" +
                 $"팀 {Teams.Name(pawn.Team)} · 갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
-                $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}" +
+                $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}\n" +
+                TowerText(pawn) +
                 (IsDrowning(pawn) ? $" · <b>물에 빠짐! {DrowningLeft(pawn):0.0}초 뒤 체크포인트로</b> (좌클릭 버둥 {pawn.Thrashes}회)" : "") +
                 (Time.unscaledTime - lastActionAt < 2.5f ? $"\n→ {lastAction}" : "");
             var size = style.CalcSize(new GUIContent(text));

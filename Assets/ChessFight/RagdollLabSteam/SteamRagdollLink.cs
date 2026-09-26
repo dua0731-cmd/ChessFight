@@ -64,7 +64,8 @@ namespace ChessFight.RagdollLab.Net
 
         bool matchActive;
         uint tick, sequence, lastTick;
-        float lastSnapshotSend, lastInputSend, lastReceive, statsAt;
+        float lastSnapshotSend, lastInputSend, lastReceive, statsAt, lastMatchSend;
+        const float MatchInterval = 0.5f;
         double playbackMs;
         RagdollNetInput pending;
         int sentBytes, receivedBytes, snapshotsIn;
@@ -205,6 +206,22 @@ namespace ChessFight.RagdollLab.Net
             byte[] bytes = RagdollNetProtocol.Snapshot(session.Match, ++tick, stamp, outgoing);
             foreach (ulong id in session.Roster.Keys)
                 if (id != session.Self) Send(id, bytes);
+            SendMatchState();
+        }
+
+        /// <summary>The Queen of the Hill round's opened sections (M8), twice a second: the host judges the
+        /// bells, the clients show the same paths opening at the same shared-clock moment.</summary>
+        void SendMatchState()
+        {
+            var match = QueenHillMatch.Current;
+            if (match == null || Time.realtimeSinceStartup - lastMatchSend < MatchInterval) return;
+            lastMatchSend = Time.realtimeSinceStartup;
+            string text = match.Encode();
+            if (text.Length == 0) return;
+            byte[] bytes = RagdollNetProtocol.Match(session.Match, text);
+            if (bytes == null) return;
+            foreach (ulong id in session.Roster.Keys)
+                if (id != session.Self) Send(id, bytes);
         }
 
         void ClientFrame()
@@ -340,6 +357,13 @@ namespace ChessFight.RagdollLab.Net
         {
             matchActive = true;
             obstacleSynced = false;
+            // A new round on the shared clock: bells closed; only the host rings them.
+            var queen = QueenHillMatch.Current;
+            if (queen != null)
+            {
+                queen.ResetRound();
+                queen.Authority = session.IsHost;
+            }
             SyncObstacleClock();
             ObstacleClock.Use(ObstacleTime);
             pawns.Clear();
@@ -355,6 +379,12 @@ namespace ChessFight.RagdollLab.Net
         {
             matchActive = false;
             ObstacleClock.Use(null);
+            var queen = QueenHillMatch.Current;
+            if (queen != null)
+            {
+                queen.Authority = true;
+                queen.ResetRound();
+            }
             foreach (var pawn in pawns.Values) if (pawn != null) Destroy(pawn.gameObject);
             pawns.Clear();
             if (cam != null) cam.soloTarget = null;
@@ -433,7 +463,11 @@ namespace ChessFight.RagdollLab.Net
                     Marshal.Copy(packet.m_pData, bytes, 0, bytes.Length);
                     receivedBytes += bytes.Length;
                     if (session.IsHost) ReceiveInput(sender, bytes);
-                    else if (sender == session.Host) ReceiveSnapshot(bytes);
+                    else if (sender == session.Host)
+                    {
+                        if (RagdollNetProtocol.ReadMatch(bytes, session.Match, out string text)) QueenHillMatch.Current?.ApplyRemote(text);
+                        else ReceiveSnapshot(bytes);
+                    }
                 }
                 finally
                 {

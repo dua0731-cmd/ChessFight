@@ -125,7 +125,7 @@ namespace ChessFight.RagdollLab
                 var h = hits[i];
                 // Starting inside something reports distance 0 and no point: not a hit to stick in.
                 if (h.distance <= 0f || h.distance >= best) continue;
-                if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider)) continue;
+                if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || PassesThrough(h.collider)) continue;
                 best = h.distance;
                 hit = h;
                 found = true;
@@ -398,7 +398,7 @@ namespace ChessFight.RagdollLab
             {
                 var h = hits[i];
                 if (h.distance <= 0f || h.distance >= best) continue;
-                if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider)) continue;
+                if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || PassesThrough(h.collider)) continue;
                 var rb = h.collider.attachedRigidbody;
                 if (rb != null && !rb.isKinematic) continue;
                 best = h.distance;

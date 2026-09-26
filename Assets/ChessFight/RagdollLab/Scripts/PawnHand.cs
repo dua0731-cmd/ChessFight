@@ -83,7 +83,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < n; i++)
             {
                 var col = buffer[i];
-                if (owner.Owns(col)) continue;
+                if (owner.Owns(col) || owner.PassesThrough(col)) continue;
                 // A pawn that has just thrashed free cannot be grabbed straight back.
                 if (RagdollPawn.ColliderOwner.TryGetValue(col, out var other) && other.GrabImmune) continue;
                 if (col is MeshCollider mesh && !mesh.convex) continue;

@@ -89,13 +89,13 @@ compile_all() {
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" \
        -out:"$build/ChessFight.Network.Steam.dll" "$src"/Scripts/Network/*.cs
   $csc $sym $refs -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Game.dll" "$src"/Scripts/Game/*.cs
-  $csc $sym $refs -r:"$build/ChessFight.Game.dll" -out:"$build/ChessFight.Gameplay.dll" $(find "$src/Scripts/Gameplay" -name '*.cs')
+  $csc $sym $refs -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Gameplay.dll" $(find "$src/Scripts/Gameplay" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
        -out:"$build/ChessFight.Game.Steam.dll" "$src"/Scripts/Bootstrap/*.cs
   # Player defines: its UNITY_EDITOR blocks need UnityEditor.dll, which the reference package lacks.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
-       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
        -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/RagdollLab" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \

@@ -131,6 +131,10 @@ namespace ChessFight.RagdollLab
         public const uint Magic = 0x43465234;   // "CFR4"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
+        // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
+        public const byte TypeMatch = 3;
+        public const int MatchHeaderBytes = 4 + 1 + 8 + 2;
+        public const int MaxMatchText = 400;
         public const int MaxBytes = 1024;
         public const int MaxPawns = 12;
         public const float PositionRange = 80f; // metres, symmetric around the arena origin
@@ -279,6 +283,50 @@ namespace ChessFight.RagdollLab
                 into.tick = tick;
                 into.hostTimeMs = hostTimeMs;
                 into.count = count;
+                return true;
+            }
+        }
+
+        // ---------------------------------------------------------------- match state
+
+        /// <summary>
+        /// Which sections are open and since when (QueenHillMatch.Encode: short text, the shared clock's
+        /// milliseconds). Sent by the host twice a second: an opening is final for the round, so repeating
+        /// the whole list makes it arrive over an unreliable channel and reach late joiners. Null if too long.
+        /// </summary>
+        public static byte[] Match(ulong session, string text)
+        {
+            byte[] payload = System.Text.Encoding.UTF8.GetBytes(text ?? "");
+            if (payload.Length > MaxMatchText) return null;
+            using (var stream = new MemoryStream(MatchHeaderBytes + payload.Length))
+            using (var w = new BinaryWriter(stream))
+            {
+                w.Write(Magic);
+                w.Write(TypeMatch);
+                w.Write(session);
+                w.Write((ushort)payload.Length);
+                w.Write(payload);
+                return stream.ToArray();
+            }
+        }
+
+        public static bool ReadMatch(byte[] bytes, ulong session, out string text)
+        {
+            text = null;
+            if (bytes == null || bytes.Length < MatchHeaderBytes || bytes.Length > MatchHeaderBytes + MaxMatchText) return false;
+            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            {
+                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeMatch || r.ReadUInt64() != session) return false;
+                int length = r.ReadUInt16();
+                if (bytes.Length != MatchHeaderBytes + length) return false;
+                try
+                {
+                    text = new System.Text.UTF8Encoding(false, true).GetString(r.ReadBytes(length));
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
                 return true;
             }
         }

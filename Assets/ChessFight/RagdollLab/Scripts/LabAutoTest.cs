@@ -137,6 +137,7 @@ namespace ChessFight.RagdollLab
             {
                 yield return QueenHill();
                 yield return HookChecks();
+                yield return PioneerChecks();
                 Report("NaN/폭발 없음", allFinite, allFinite ? "모든 부위 좌표 유한" : "NaN 또는 무한대 좌표 발생");
                 log.AppendLine($"RESULT passed={passed} failed={failed}");
                 File.WriteAllText(path, log.ToString());
@@ -168,7 +169,7 @@ namespace ChessFight.RagdollLab
             ("DiveSlope", DiveSlope), ("Contact", Contact), ("GrabDrag", GrabDrag),
             ("StruggleEscape", StruggleEscape), ("Climb", Climb), ("ClimbBugs", ClimbBugs),
             ("ClimbSurfaces", ClimbSurfaces), ("ClimbMoves", ClimbMoves), ("DiveTackle", DiveTackle), ("Bar", Bar), ("Beam", Beam),
-            ("WallClimb", WallClimb), ("QueenHill", QueenHill), ("Hook", HookChecks), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
+            ("WallClimb", WallClimb), ("QueenHill", QueenHill), ("Hook", HookChecks), ("Pioneer", PioneerChecks), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
         };
 
         string JointErrors(RagdollPawn pawn)

@@ -69,8 +69,32 @@ namespace ChessFight.RagdollLab
         public string DisplayName { get; set; } = "Pawn";
 
         /// <summary>White 0, black 1, none -1 (Teams). Set by whoever spawns the pawn: the lab, the network
-        /// roster, a mode. Only the machine that simulates the pawn uses it.</summary>
-        public int Team { get; set; } = Teams.None;
+        /// roster, a mode. Only the machine that simulates the pawn uses it. Its colliders are listed under
+        /// it in TeamBodies, for paths that hold up one team only (OpenPath).</summary>
+        public int Team
+        {
+            get => team;
+            set
+            {
+                team = value;
+                if (ownColliders != null) TeamBodies.Set(this, team, ownColliders);
+            }
+        }
+
+        int team = Teams.None;
+        Collider[] ownColliders;
+
+        /// <summary>
+        /// This pawn is set to go straight through that collider (an opened path that is another team's for
+        /// its first seconds, OpenPath). Its probes skip it as well - the ground probe, the feet, the climb
+        /// and grab searches, the hook - or the anchor held the pawn up on a floor its body fell through.
+        /// </summary>
+        public bool PassesThrough(Collider c) =>
+            c != null && ownColliders != null && ownColliders.Length > 0 && ownColliders[0] != null
+            && Physics.GetIgnoreCollision(c, ownColliders[0]);
+
+        /// <summary>Times the interact key worked something (a bell).</summary>
+        public int Interactions { get; private set; }
         public PawnState State { get; private set; } = PawnState.Active;
         public float Stiffness { get; private set; } = 1f;
         public float TargetStiffness { get; private set; } = 1f;
@@ -364,6 +388,8 @@ namespace ChessFight.RagdollLab
             for (int a = 0; a < own.Count; a++)
                 for (int b = a + 1; b < own.Count; b++)
                     Physics.IgnoreCollision(own[a], own[b], true);
+            ownColliders = own.ToArray();
+            TeamBodies.Set(this, team, ownColliders);
 
             for (int i = 0; i < Count; i++) baseMass[i] = bodies[i].mass;
 
@@ -402,6 +428,7 @@ namespace ChessFight.RagdollLab
         void OnDestroy()
         {
             All.Remove(this);
+            TeamBodies.Remove(this);
             foreach (var c in own)
                 if (c != null && ColliderOwner.TryGetValue(c, out var o) && o == this) ColliderOwner.Remove(c);
             if (ownFootMaterial != null) Destroy(ownFootMaterial);
@@ -468,6 +495,32 @@ namespace ChessFight.RagdollLab
             input.aim = next.aim;
         }
 
+        const float InteractReach = 1.3f;
+        readonly Collider[] reachable = new Collider[48];
+
+        /// <summary>The interact key went down: work the nearest thing in reach of the chest (a pioneer bell).</summary>
+        void TryInteract()
+        {
+            if (State != PawnState.Active || Floating) return;
+            Vector3 chest = bodies[(int)BodyId.Chest].position;
+            int n = Physics.OverlapSphereNonAlloc(chest, InteractReach, reachable, ~0, QueryTriggerInteraction.Collide);
+            IInteractable best = null;
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                var c = reachable[i];
+                if (ownSet.Contains(c)) continue;
+                var target = c.GetComponentInParent<IInteractable>();
+                if (target == null) continue;
+                Vector3 near = c is MeshCollider mesh && !mesh.convex ? c.bounds.ClosestPoint(chest) : c.ClosestPoint(chest);
+                float d = (near - chest).sqrMagnitude;
+                if (d >= bestDistance) continue;
+                bestDistance = d;
+                best = target;
+            }
+            if (best != null && best.Interact(GetComponent<ICharacterDriver>(), Team)) Interactions++;
+        }
+
         public void NotifyHeld(RagdollPawn captor, Collider heldPart)
         {
             contactTimer = Mathf.Max(contactTimer, P.contactLinger);
@@ -532,10 +585,14 @@ namespace ChessFight.RagdollLab
                             && (Grounded || (coyote > 0f && jumpTimer <= 0f));
             if (cameraFooting) footingY = groundY;
 
-            // Nothing uses the ability keys yet; count them so the lab can show they arrive.
+            // Counted so the lab can show the keys arrive (E is the hook, F rings bells and cuts hooks).
             if (input.ability) AbilityPresses++;
             if (input.ability2) Ability2Presses++;
-            if (interactPressed) InteractPresses++;
+            if (interactPressed)
+            {
+                InteractPresses++;
+                TryInteract();
+            }
             input.jump = false;
             input.shove = false;
             input.ability = false;
@@ -556,7 +613,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];
-                if (ownSet.Contains(h.collider) || h.distance <= 0f) continue;
+                if (ownSet.Contains(h.collider) || h.distance <= 0f || PassesThrough(h.collider)) continue;
                 if (h.distance >= best) continue;
                 best = h.distance;
                 groundY = h.point.y;
@@ -600,7 +657,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < n; i++)
             {
                 var c = overlap[i];
-                if (ownSet.Contains(c)) continue;
+                if (ownSet.Contains(c) || PassesThrough(c)) continue;
                 if (c is MeshCollider mesh && !mesh.convex) return true;
                 // Only support under the foot counts; a wall beside the foot is not ground.
                 if (c.ClosestPoint(footCenter).y < footCenter.y - half.y * 0.5f) return true;
@@ -1505,7 +1562,7 @@ namespace ChessFight.RagdollLab
 
         bool ClimbableHit(RagdollParams p, RaycastHit h)
         {
-            if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider)) return false;
+            if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || PassesThrough(h.collider)) return false;
             var rb = h.collider.attachedRigidbody;
             if (rb != null && !rb.isKinematic) return false;
             return Mathf.Abs(h.normal.y) <= Mathf.Cos(p.climbGripAngle * Mathf.Deg2Rad);
@@ -1539,7 +1596,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];
-                if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider)) continue;
+                if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || PassesThrough(h.collider)) continue;
                 var rb = h.collider.attachedRigidbody;
                 if (rb != null && !rb.isKinematic) continue;
                 if (h.distance >= best) continue;
@@ -2262,7 +2319,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < n; i++)
             {
                 var c = overlap[i];
-                if (ownSet.Contains(c) || ColliderOwner.ContainsKey(c)) continue;
+                if (ownSet.Contains(c) || ColliderOwner.ContainsKey(c) || PassesThrough(c)) continue;
                 var rb = c.attachedRigidbody;
                 if (rb != null && !rb.isKinematic) continue;
                 return true;
