@@ -135,7 +135,8 @@ namespace ChessFight.RagdollLab
         public Vector3 LocalAim(RagdollPawn pawn)
         {
             if (pawn == null || labCamera == null) return Vector3.zero;
-            if (NetworkControlled) return labCamera.soloTarget == pawn ? labCamera.AimForward : Vector3.zero;
+            // The camera's own pawn (online, and the recordings) is the local one.
+            if (labCamera.soloTarget != null) return labCamera.soloTarget == pawn ? labCamera.AimForward : Vector3.zero;
             for (int i = 0; i < players.Length; i++)
                 if (players[i].pawn == pawn) return CameraFor(i).AimForward;
             return Vector3.zero;

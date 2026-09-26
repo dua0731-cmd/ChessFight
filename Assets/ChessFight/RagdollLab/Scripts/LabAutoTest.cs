@@ -167,7 +167,7 @@ namespace ChessFight.RagdollLab
             ("JumpNoStack", JumpNoStack), ("GetUp", GetUp), ("Fall", Fall), ("Slope", Slope),
             ("DiveSlope", DiveSlope), ("Contact", Contact), ("GrabDrag", GrabDrag),
             ("StruggleEscape", StruggleEscape), ("Climb", Climb), ("ClimbBugs", ClimbBugs),
-            ("ClimbSurfaces", ClimbSurfaces), ("DiveTackle", DiveTackle), ("Bar", Bar), ("Beam", Beam),
+            ("ClimbSurfaces", ClimbSurfaces), ("ClimbMoves", ClimbMoves), ("DiveTackle", DiveTackle), ("Bar", Bar), ("Beam", Beam),
             ("WallClimb", WallClimb), ("QueenHill", QueenHill), ("Hook", HookChecks), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
         };
 

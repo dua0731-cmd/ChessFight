@@ -155,6 +155,12 @@ namespace ChessFight.RagdollLab
         /// <summary>Times this pawn has thrashed its way out of a grab.</summary>
         public int Escapes { get; private set; }
 
+        /// <summary>Jumps on the wall (lunges up it, stamina spent).</summary>
+        public int ClimbLunges { get; private set; }
+
+        /// <summary>Mid-lunge up the wall.</summary>
+        public bool Lunging => climbLunge > 0f;
+
         /// <summary>Hanging on a wall by the hands, spending stamina.</summary>
         public bool Climbing { get; private set; }
 
@@ -250,6 +256,7 @@ namespace ChessFight.RagdollLab
         Vector3 topOutFrom, topOutMid, topOutTo;
         float topOutT, cornerTimer, cornerSide;
         float climbSettle;   // > 0 while a new climb is still closing in on the face (at most 0.3 s)
+        float climbLunge, climbLungeWait, lungeSide;   // the jump on the wall: time left, cooldown, sideways share
         Vector3 cornerFrom, cornerCtrl, cornerTo, cornerN0, cornerN1, cornerPoint0, cornerPoint1;
         const float CornerTime = 0.4f;
         readonly Vector3[] handHold = new Vector3[2];
@@ -1646,7 +1653,22 @@ namespace ChessFight.RagdollLab
             Vector3 right = Vector3.Cross(Vector3.up, facing);
             climbUp = Vector3.Dot(move, facing);
             climbSide = Vector3.Dot(move, right);
+            if (Climbing)
+            {
+                // On the wall the keys mean what they say: W and S up and down, A and D along the wall,
+                // however the camera looks at it. The move is camera right * x + camera forward * y, so it
+                // reads back through the camera's own axes. Against the pawn's facing, a camera looking up
+                // the wall at a slant made W partly sideways, and the pawn crept round the wall's corner.
+                Vector3 view = Flat(input.aim);
+                if (view.sqrMagnitude > 1e-4f)
+                {
+                    view.Normalize();
+                    climbUp = Vector3.Dot(move, view);
+                    climbSide = Vector3.Dot(move, Vector3.Cross(Vector3.up, view));
+                }
+            }
             climbCooldown -= dt;
+            climbLungeWait -= dt;
             if (Climbing) RideWall(dt);
             else climbSurfaceVel = Vector3.zero;
 
@@ -1669,12 +1691,17 @@ namespace ChessFight.RagdollLab
                 StopClimb(0.25f);
                 return;
             }
-            if (input.jump)
-            {
-                WallJump(p);
-                return;
-            }
             float up = Mathf.Clamp(climbUp, -1f, 1f), side = Mathf.Clamp(climbSide, -1f, 1f);
+            if (input.jump && climbLunge <= 0f && climbLungeWait <= 0f && cornerTimer <= 0f && stamina >= p.climbLungeStamina)
+            {
+                // Jump on the wall: spend a chunk of stamina and throw the hands up it, staying on - the
+                // fast way up. (It used to kick off the wall backwards; letting go of the right button
+                // is how to drop.) With A or D held it goes up at a slant.
+                UseStamina(p, p.climbLungeStamina);
+                climbLunge = p.climbLungeTime;
+                lungeSide = side * 0.6f;
+                ClimbLunges++;
+            }
             UseStamina(p, (p.climbDrainHold + p.climbDrainMove * Mathf.Clamp01(Mathf.Abs(up) + Mathf.Abs(side))) * dt);
             if (stamina <= 0f)
             {
@@ -1695,6 +1722,15 @@ namespace ChessFight.RagdollLab
                 climbLost = 0f;
                 SetClimbFace(face);
                 wallPoint = wp;
+                // Only A and D take the pawn round a bend in the wall. Going straight up or down it keeps
+                // facing the way it faces - the rays can straddle a corner and average its two faces -
+                // and only the lean of the face (a bulge, a slope) is followed.
+                if (Mathf.Abs(side) < 0.05f && Mathf.Abs(lungeSide) < 0.05f)
+                {
+                    Vector3 now = Flat(wallNormal), seen = Flat(wn);
+                    if (now.sqrMagnitude > 1e-4f && seen.sqrMagnitude > 1e-4f)
+                        wn = (now.normalized * seen.magnitude + Vector3.up * wn.y).normalized;
+                }
                 // Eased, so a curved face turns the pawn smoothly instead of in steps.
                 wallNormal = Vector3.Slerp(wallNormal, wn, 1f - Mathf.Exp(-12f * dt)).normalized;
                 UpdateWallFrame();
@@ -1719,6 +1755,25 @@ namespace ChessFight.RagdollLab
             float pull = handStep < 1f ? 0.35f + 1.3f * Smooth(handStep) : 1f;
             float vUp = up > 0f ? p.climbSpeed * up * pull : p.climbDownSpeed * up;
             float vSide = p.climbSideSpeed * side;
+            if (climbLunge > 0f)
+            {
+                // Fast out, easing to a stop: the speed falls to zero across the lunge, so it covers
+                // exactly climbLungeHeight in climbLungeTime.
+                float time = Mathf.Max(0.01f, p.climbLungeTime);
+                float speed = 2f * p.climbLungeHeight / time * Mathf.Clamp01(climbLunge / time);
+                Vector2 d = new Vector2(1f, lungeSide).normalized;
+                vUp = speed * d.x;
+                vSide = speed * d.y;
+                climbLunge -= dt;
+                if (climbLunge <= 0f)
+                {
+                    // Both hands slap onto new holds where it ended up.
+                    climbLunge = 0f;
+                    lungeSide = 0f;
+                    holdsPlaced = false;
+                    climbLungeWait = p.climbLungeCooldown;
+                }
+            }
             if (Mathf.Abs(vSide) > 0.01f)
             {
                 // Round a corner onto the next face, whichever way it turns; stop at anything else
@@ -1938,21 +1993,12 @@ namespace ChessFight.RagdollLab
         void StopClimb(float cooldown)
         {
             Climbing = false;
+            climbLunge = lungeSide = 0f;
             topOutTimer = 0f;
             cornerTimer = 0f;
             climbCooldown = Mathf.Max(climbCooldown, cooldown);
             handL.Release(cooldown);
             handR.Release(cooldown);
-        }
-
-        /// <summary>Jump on the wall: let go and kick off it, up and backwards.</summary>
-        void WallJump(RagdollParams p)
-        {
-            StopClimb(0.5f);
-            anchorVel = wallNormal * 2.5f + Vector3.up * p.jumpImpulse;
-            jumpTimer = 0.5f;
-            freeFlight = Mathf.Max(freeFlight, 0.6f);
-            airTimer = 0.2f;
         }
 
         /// <summary>
@@ -1981,6 +2027,7 @@ namespace ChessFight.RagdollLab
             topOutTo = new Vector3(top.point.x, standY, top.point.z);
             topOutTimer = Mathf.Max(0.1f, p.climbTopOut);
             topOutT = 0f;
+            climbLunge = lungeSide = 0f;   // a lunge that reaches the lip turns into climbing onto it
             // Palms flat on the top, just in from the edge, pushing the body up past them.
             Vector3 edge = new Vector3(anchorPos.x, top.point.y, anchorPos.z) - wallNormal * (ClimbHug(p) + 0.08f);
             for (int slot = 0; slot < 2; slot++)
@@ -2028,6 +2075,7 @@ namespace ChessFight.RagdollLab
         void UpdateClimbHands(RagdollParams p, float dt, float up, float side)
         {
             handStep = Mathf.Min(1f, handStep + p.climbCadence * dt);
+            if (climbLunge > 0f) return;   // both hands are up in the air (PalmTarget)
             float lift = up < -0.05f ? -0.1f : 1f;
             if (!holdsPlaced || climbSettle > 0f)
             {
@@ -2323,6 +2371,14 @@ namespace ChessFight.RagdollLab
                 float panic = 1f + 1.6f * (1f - Mathf.Clamp01(Stamina / 0.35f));
                 armL = ClimbReach(true, 0, p, panic);
                 armR = ClimbReach(false, 1, p, panic);
+                if (climbLunge > 0f)
+                {
+                    // The lunge: both legs drive the body up the wall, head up after the hands.
+                    thighL = thighR = Quaternion.Euler(8f, 0f, 0f);
+                    footL = footR = Quaternion.identity;
+                    chest = Quaternion.Euler(-10f, 0f, 0f);
+                    head = Quaternion.Euler(-22f, 0f, 0f);
+                }
                 // The legs push off the wall in time with the hands instead of paddling at nothing:
                 // the leg under the reaching arm straightens, the other tucks.
                 // Reaching lifts that shoulder and tips the head the other way, eased across the swap
@@ -2539,6 +2595,12 @@ namespace ChessFight.RagdollLab
         /// </summary>
         Vector3 PalmTarget(int slot, RagdollParams p)
         {
+            if (climbLunge > 0f)
+            {
+                // Lunging: both arms flung up the wall ahead of the body, off their holds.
+                Vector3 reach = climbUpAxis + climbAcross * (lungeSide * 0.8f) - wallNormal * 0.35f;
+                return Shoulder(slot) + reach.normalized * p.climbArmReach;
+            }
             Vector3 target = handHold[slot];
             if (movingHand == slot && handStep < 1f)
             {

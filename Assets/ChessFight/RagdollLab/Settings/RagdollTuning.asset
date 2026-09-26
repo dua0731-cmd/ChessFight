@@ -111,8 +111,12 @@ MonoBehaviour:
     climbDownSpeed: 1.6
     climbSideSpeed: 0.9
     climbStaminaMax: 8
-    climbDrainHold: 0.35
-    climbDrainMove: 0.9
+    climbDrainHold: 0
+    climbDrainMove: 1
+    climbLungeStamina: 1.2
+    climbLungeHeight: 1
+    climbLungeTime: 0.3
+    climbLungeCooldown: 0.4
     climbRecover: 2
     climbCadence: 8
     climbShoulderLift: 21

@@ -16,6 +16,8 @@ namespace ChessFight.RagdollLab
         public int playerIndex;
         public float yaw;
         public float pitch = 14f;
+        const float AimShoulder = 0.6f, AimDistance = 2.4f;
+        float aimBlend;
         public float distance = 3.6f;
         public float minDistance = 1.4f;
         public float maxDistance = 9f;
@@ -167,10 +169,18 @@ namespace ChessFight.RagdollLab
 
             Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
             Vector3 back = rot * Vector3.back;
+            // Swinging the hook, the view slides over the right shoulder and closer in: aiming up past
+            // the pawn, a camera straight behind it looked at the back of its head and hid the target.
+            // The view direction does not change, so the aim (AimForward) is the same either way.
+            bool aiming = pawn.HookCharging || pawn.Hook == HookPhase.Flying;   // and while it flies, to see it land
+            aimBlend = Mathf.MoveTowards(aimBlend, aiming ? 1f : 0f, dt * 4f);
+            float aim = aimBlend * aimBlend * (3f - 2f * aimBlend);
+            Vector3 pivot = focus + rot * Vector3.right * (AimShoulder * aim) + Vector3.up * (0.2f * aim);
+            float reach = Mathf.Lerp(distance, Mathf.Min(distance, AimDistance), aim);
             // Pull in in front of walls and ease back out. Pawns never block the view:
             // with a crowd around, the camera would otherwise dive into someone's head.
-            float allowed = distance;
-            int n = Physics.SphereCastNonAlloc(focus, collisionRadius, back, hits, distance, ~0, QueryTriggerInteraction.Ignore);
+            float allowed = reach;
+            int n = Physics.SphereCastNonAlloc(pivot, collisionRadius, back, hits, reach, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];
@@ -180,7 +190,7 @@ namespace ChessFight.RagdollLab
             // In quickly (a wall must not end up between camera and pawn), out slowly. A hard snap in
             // made the view pump whenever the probe grazed something on and off.
             shown = Mathf.Lerp(shown, allowed, 1f - Mathf.Exp((allowed < shown ? -25f : -4f) * dt));
-            transform.SetPositionAndRotation(focus + back * Mathf.Max(0.3f, shown), rot);
+            transform.SetPositionAndRotation(pivot + back * Mathf.Max(0.3f, shown), rot);
 
             if (Cam != null)
             {

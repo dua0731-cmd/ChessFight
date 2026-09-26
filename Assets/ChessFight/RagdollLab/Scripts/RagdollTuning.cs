@@ -182,10 +182,16 @@ namespace ChessFight.RagdollLab
         // One pool for everything that costs effort: climbing, sprinting, thrashing and diving.
         // The name stays climbStaminaMax so saved JSON and the asset keep loading.
         [Tunable(GroupAction, "스테미나 최대 (초, 등반·질주·버둥·슬라이딩 공용)")] [Range(1f, 30f)] public float climbStaminaMax = 8f;
-        // Drain and recovery are in stamina-seconds per second, so the numbers read directly:
-        // hanging 0.35 means the 8 s bar lasts 23 s of just hanging, 6.4 s of full climbing.
-        [Tunable(GroupAction, "매달리기 소모 (/초)")] [Range(0f, 1f)] public float climbDrainHold = 0.35f;
-        [Tunable(GroupAction, "오르기 추가 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 0.9f;
+        // Drain and recovery are in stamina-seconds per second, so the numbers read directly: moving
+        // at 1.0 the 8 s bar lasts 8 s of climbing (09-27: was 0.35 hanging + 0.9 moving = 6.4 s).
+        // Hanging still costs nothing (the planner: "멈추면 소모되지 않게").
+        [Tunable(GroupAction, "매달리기 소모 (/초, 0 = 멈추면 안 줆)")] [Range(0f, 1f)] public float climbDrainHold = 0f;
+        [Tunable(GroupAction, "오르기 소모 (/초)")] [Range(0f, 2f)] public float climbDrainMove = 1f;
+        // Jump on the wall: a lunge up it for a chunk of stamina, still hanging on - the fast way up.
+        [Tunable(GroupAction, "벽 점프 스테미나 (초)")] [Range(0f, 4f)] public float climbLungeStamina = 1.2f;
+        [Tunable(GroupAction, "벽 점프 높이 (m)")] [Range(0.2f, 3f)] public float climbLungeHeight = 1f;
+        [Tunable(GroupAction, "벽 점프 시간 (초)")] [Range(0.1f, 1f)] public float climbLungeTime = 0.3f;
+        [Tunable(GroupAction, "벽 점프 다시 하기까지 (초)")] [Range(0f, 2f)] public float climbLungeCooldown = 0.4f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
         // Short arms, so short quick pats, one hand after the other, rather than long reaches.
         [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 12f)] public float climbCadence = 8f;

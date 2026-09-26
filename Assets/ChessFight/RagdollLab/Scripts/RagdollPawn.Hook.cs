@@ -43,7 +43,7 @@ namespace ChessFight.RagdollLab
         const float RopeBodyRadius = 0.2f;
 
         HookPhase hookPhase;
-        float hookCharge, hookSpin, hookRetry, hookFlight, hookPullSpeed, hookStuckTime, hookBlocked, ropeSettle;
+        float hookCharge, hookSpin, hookRetry, hookFlight, hookPullSpeed, hookStuckTime, hookBlocked, ropeSettle, ropeTime;
         Vector3 hookPos, hookVel, hookNormal = Vector3.up, hookLocalPoint, hookLocalNormal, hookThrownFrom;
         Collider hookCollider;
         float enPassantTimer;
@@ -251,6 +251,7 @@ namespace ChessFight.RagdollLab
             hookPullSpeed = Mathf.Max(0f, Vector3.Dot(ComVelocity(), rope.normalized));
             hookBlocked = 0f;
             ropeSettle = 0f;
+            ropeTime = 0f;
             HookHits++;
             LastHookEvent = hit.normal.y > 0.6f ? "박힘: 윗면" : hit.normal.y < -0.6f ? "박힘: 천장" : "박힘: 벽";
             handL.Release();
@@ -285,6 +286,7 @@ namespace ChessFight.RagdollLab
                 return;
             }
             bool top = hookNormal.y > 0.6f, ceiling = hookNormal.y < -0.6f;
+            ropeTime += dt;
             // Where the hips are going: standing on a top, hanging from the hook under a ceiling, a hug's
             // distance off a wall with the hands at the hook.
             Vector3 target = top ? hookPos + Vector3.up * (standHeight + 0.03f)
@@ -523,6 +525,11 @@ namespace ChessFight.RagdollLab
             Vector3 forward = Vector3.ProjectOnPlane(facing, bodyUp);
             if (forward.sqrMagnitude < 1e-4f) forward = Vector3.ProjectOnPlane(Vector3.forward, bodyUp);
             poseRot[0] = Quaternion.LookRotation(forward.normalized, bodyUp);
+            // Swinging a little from side to side under the hands, strongest as the rope first snaps
+            // taut, so it hangs rather than rides up like a lift.
+            float sway = 11f * Mathf.Sin(ropeTime * Mathf.PI * 2f * 1.1f) * Mathf.Lerp(1f, 0.45f, Mathf.Clamp01(ropeTime / 1.5f))
+                         * (1f - ropeSettle);
+            poseRot[0] = Quaternion.AngleAxis(sway, forward.normalized) * poseRot[0];
             poseScratch[0] = anchorPos;
             for (int i = 1; i < Count; i++)
             {
@@ -597,9 +604,10 @@ namespace ChessFight.RagdollLab
                 {
                     // Hanging on: looking up the rope, legs dangling and kicking a little. Over the lip of a
                     // top they come under the body to stand.
-                    float kick = Mathf.Sin(hookPullSpeed * 0.9f + Time.time * 5f);
-                    thighL = Quaternion.Euler(-28f + 10f * kick, 0f, 0f);
-                    thighR = Quaternion.Euler(-12f - 10f * kick, 0f, 0f);
+                    // Running on air: the legs cycle against each other.
+                    float kick = Mathf.Sin(ropeTime * Mathf.PI * 2f * 1.6f);
+                    thighL = Quaternion.Euler(-25f + 22f * kick, 0f, 0f);
+                    thighR = Quaternion.Euler(-25f - 22f * kick, 0f, 0f);
                     footL = footR = Quaternion.Euler(22f, 0f, 0f);
                     chest = Quaternion.Euler(-10f, 0f, 0f);
                     head = Quaternion.Euler(-24f, 0f, 0f);

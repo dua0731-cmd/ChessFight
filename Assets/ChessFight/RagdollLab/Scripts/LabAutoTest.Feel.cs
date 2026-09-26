@@ -66,6 +66,8 @@ namespace ChessFight.RagdollLab
             if (Want("climb_2m")) yield return FeelScenario(folder, "climb_2m", FeelClimb(0));
             if (Want("climb_4m")) yield return FeelScenario(folder, "climb_4m", FeelClimb(2));
             if (Want("bump")) yield return FeelScenario(folder, "bump", FeelBump());
+            if (Want("hook")) yield return FeelScenario(folder, "hook", FeelHook());
+            if (Want("climb_lunge")) yield return FeelScenario(folder, "climb_lunge", FeelClimbLunge());
 
             Time.captureFramerate = 0;
             LabCamera.GameTimeClock = false;
@@ -342,6 +344,43 @@ namespace ChessFight.RagdollLab
             yield return FeelRecord(2.2f, "W", _ => Feel(0f, 1f));
             yield return FeelRecord(0.6f, "W+sprint", _ => Feel(0f, 1f, sprint: true));
             yield return FeelRecord(1.2f, "stop", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>The grappling hook (M5): out with E, swung to the gauge the tower's top needs, thrown,
+        /// reeled up 10 m and stood on top. The camera looks where the throw is aimed, as a player's would.</summary>
+        IEnumerator FeelHook()
+        {
+            var pawn = Spawn(QueenHillTestBed.HookStart, Vector3.right, "feel");
+            yield return FeelPreroll(pawn, 0.8f, 90f);
+            var (aim, steps) = TowerTopThrow(pawn, 1.5f);
+            var cam = game.labCamera;
+            cam.pitch = -Mathf.Asin(Mathf.Clamp(aim.y, -1f, 1f)) * Mathf.Rad2Deg;
+            float hold = Mathf.Max(0.05f, (steps - 1.5f) * Dt);
+            void Send(bool ability = false, bool press = false, bool held = false)
+            {
+                feelInput = new PawnInput { aim = aim, ability = ability, shove = press, shoveHeld = held };
+                pawn.SetInput(feelInput);
+            }
+            clipFolder = FeelFolder("hook");
+            yield return FeelRecord(0.4f, "E", t => Send(ability: t == 0f));
+            yield return FeelRecord(hold, "swing", t => Send(press: t == 0f, held: true));
+            yield return FeelRecord(5.5f, "throw", _ => Send());
+            yield return FeelRecord(1f, "on top", _ => Send());
+            cam.pitch = 14f;
+        }
+
+        /// <summary>Climbing the 4 m wall with jumps: W a moment, then two lunges up it and onto the top.</summary>
+        IEnumerator FeelClimbLunge()
+        {
+            var pawn = Spawn(new Vector3(LabLayout.WallFrontX - 2.5f, 0f, LabLayout.WallZ[2]), Vector3.right, "feel");
+            yield return FeelPreroll(pawn, 0.8f, 90f);
+            clipFolder = FeelFolder("climb_lunge");
+            yield return FeelRecord(0.6f, "W", _ => Feel(0f, 1f));
+            yield return FeelRecord(1.2f, "W+grab", _ => Feel(0f, 1f, grab: true));
+            yield return FeelRecord(0.7f, "jump", t => Feel(0f, 0f, grab: true, jump: t == 0f));
+            yield return FeelRecord(0.7f, "jump", t => Feel(0f, 0f, grab: true, jump: t == 0f));
+            yield return FeelRecord(0.9f, "W+grab", _ => Feel(0f, 1f, grab: true));
+            yield return FeelRecord(0.8f, "stop", _ => Feel(0f, 0f));
         }
 
         string FeelFolder(string name) => Path.Combine(Arg("-ragdollFeel") ?? "feel", name);

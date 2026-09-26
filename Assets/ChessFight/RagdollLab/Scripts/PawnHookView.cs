@@ -39,7 +39,7 @@ namespace ChessFight.RagdollLab
             Destroy(dot.GetComponent<Collider>());
             dot.name = "Hook Aim Marker";
             dot.transform.SetParent(transform, false);
-            dot.transform.localScale = Vector3.one * 0.22f;
+            dot.transform.localScale = Vector3.one * 0.35f;
             dot.GetComponent<MeshRenderer>().sharedMaterial = markerMaterial;
             marker = dot.transform;
             Hide();
