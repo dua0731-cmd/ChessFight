@@ -497,7 +497,7 @@ namespace ChessFight.RagdollLab
         /// </summary>
         public const string StepPresetJson =
             "{'lowerBodySpring':2600,'upperBodySpring':1600," +
-            "'moveSpeed':5.5,'sprintSpeed':9.6,'acceleration':20.0,'stopDeceleration':20.0," +
+            "'moveSpeed':5.5,'sprintSpeed':9.6,'acceleration':30.0,'stopDeceleration':40.0," +
             "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.5," +
             "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
             "'strideLength':1.5,'legSwing':60.0,'armSwing':55.0,'runLean':8.0,'runLift':0.0," +
@@ -506,9 +506,9 @@ namespace ChessFight.RagdollLab
             "'sprintLift':0.05,'sprintBob':0.07,'sprintRoll':6.0,'sprintTurnLean':15.0," +
             "'sprintChestLean':16.0,'sprintDrive':7.0,'sprintSplay':22.0," +
             "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.0,'stepRoll':3.0," +
-            "'turnLean':10.0,'accelLean':0.6,'anchorBrakeLeash':0.3,'anchorDamperRatio':0.25,'landingDip':0.06,'stepLength':0.22," +
+            "'turnLean':10.0,'accelLean':0.6,'anchorBrakeLeash':0.3,'anchorDamperRatio':0.21,'hipAnchorStrength':4500.0,'landingDip':0.06,'stepLength':0.22," +
             "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':2.9,'legDamperRatio':0.04," +
-            "'knockdownImpulseThreshold':6.0,'hitImpactThreshold':2.2," +
+            "'knockdownImpulseThreshold':7.5,'hitImpactThreshold':2.2," +
             "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 
         public void ApplyStepPreset()

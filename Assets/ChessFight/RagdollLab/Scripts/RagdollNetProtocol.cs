@@ -22,6 +22,7 @@ namespace ChessFight.RagdollLab
         public bool exhausted;
         public bool held;       // someone has this pawn by a hand
         public float stamina;   // 0..1, sent as a byte so a client can draw its own gauge
+        public float escape;    // 0..1, the struggle meter, so a client draws the escape bar too
         public uint ack;        // the owner's own send time echoed back, milliseconds
 
         public void CopyFrom(RagdollPose other)
@@ -37,6 +38,7 @@ namespace ChessFight.RagdollLab
             exhausted = other.exhausted;
             held = other.held;
             stamina = other.stamina;
+            escape = other.escape;
             ack = other.ack;
         }
 
@@ -54,6 +56,7 @@ namespace ChessFight.RagdollLab
             into.exhausted = t < 0.5f ? from.exhausted : to.exhausted;
             into.held = t < 0.5f ? from.held : to.held;
             into.stamina = Mathf.Lerp(from.stamina, to.stamina, t);
+            into.escape = Mathf.Lerp(from.escape, to.escape, t);
             into.ack = to.ack;
         }
     }
@@ -110,16 +113,17 @@ namespace ChessFight.RagdollLab
     /// </summary>
     public static class RagdollNetProtocol
     {
-        // Bumped with the input packet (abilities, interact, aim; 2026-09-26) so an older lab build's
-        // packets are dropped at the door instead of half-read.
-        public const uint Magic = 0x43465232;   // "CFR2"
+        // Bumped with each change to either packet so an older lab build's packets are dropped at the
+        // door instead of half-read. CFR2: abilities, interact and aim in the input (2026-09-26).
+        // CFR3: the struggle meter in the snapshot (2026-09-26).
+        public const uint Magic = 0x43465233;   // "CFR3"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         public const int MaxBytes = 1024;
         public const int MaxPawns = 12;
         public const float PositionRange = 80f; // metres, symmetric around the arena origin
 
-        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 4;  // 64
+        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 4;  // 65
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 1;            // 22
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
 
@@ -211,6 +215,7 @@ namespace ChessFight.RagdollLab
                     w.Write((byte)((pose.state & 3) | (pose.grounded ? 4 : 0) | (pose.grabbing ? 8 : 0) | (pose.snap ? 16 : 0)
                                    | (pose.sprinting ? 32 : 0) | (pose.exhausted ? 64 : 0) | (pose.held ? 128 : 0)));
                     w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.stamina * 255f), 0, 255));
+                    w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.escape * 255f), 0, 255));
                     w.Write(pose.ack);
                 }
                 return stream.ToArray();
@@ -245,6 +250,7 @@ namespace ChessFight.RagdollLab
                     pose.exhausted = (flags & 64) != 0;
                     pose.held = (flags & 128) != 0;
                     pose.stamina = r.ReadByte() / 255f;
+                    pose.escape = r.ReadByte() / 255f;
                     pose.ack = r.ReadUInt32();
                     if (pose.state > 2) return false;
                 }

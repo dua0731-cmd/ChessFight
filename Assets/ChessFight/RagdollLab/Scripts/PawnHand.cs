@@ -84,6 +84,8 @@ namespace ChessFight.RagdollLab
             {
                 var col = buffer[i];
                 if (owner.Owns(col)) continue;
+                // A pawn that has just thrashed free cannot be grabbed straight back.
+                if (RagdollPawn.ColliderOwner.TryGetValue(col, out var other) && other.GrabImmune) continue;
                 if (col is MeshCollider mesh && !mesh.convex) continue;
                 Vector3 point = col.ClosestPoint(center);
                 if (rising && IsEnvironment(col) && !IsLedge(col, point)) continue;

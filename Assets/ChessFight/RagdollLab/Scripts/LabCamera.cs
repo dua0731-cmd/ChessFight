@@ -66,6 +66,13 @@ namespace ChessFight.RagdollLab
 
         public void AddYaw(float degrees) => yaw += degrees;
 
+        /// <summary>
+        /// Recordings step game time a fixed 1/30 s per frame (Time.captureFramerate) while real time races
+        /// ahead or crawls, so the camera must smooth on game time there or it trails the pawn by metres.
+        /// In play it smooths on real time, so slow motion (T) does not slow the camera down.
+        /// </summary>
+        public static bool GameTimeClock { get; set; }
+
         public void AddPitch(float degrees) => pitch = Mathf.Clamp(pitch + degrees, minPitch, maxPitch);
 
         public void Zoom(float steps) => distance = Mathf.Clamp(distance * Mathf.Pow(0.88f, steps), minDistance, maxDistance);
@@ -88,7 +95,7 @@ namespace ChessFight.RagdollLab
 
         void LateUpdate()
         {
-            float dt = Time.unscaledDeltaTime;
+            float dt = GameTimeClock ? Time.deltaTime : Time.unscaledDeltaTime;
             bool mouseLook = MouseDriven && Cursor.lockState == CursorLockMode.Locked && (game == null || !game.PanelOpen);
             if (freeMode)
             {
@@ -149,7 +156,8 @@ namespace ChessFight.RagdollLab
             }
             lastWant = want;
             // Softer on a tumble and on a remote pawn, whose point still carries some body sway.
-            bool limp = pawn.State == PawnState.Ragdoll;
+            // A dive is on purpose and goes where it was aimed: follow it as tightly as a run.
+            bool limp = pawn.State == PawnState.Ragdoll && !pawn.Diving;
             float across = followTime * (limp ? 1.5f : pawn.NetworkPuppet ? 1.25f : 1f);
             Vector3 lead = want + travel * (across * 0.5f);
             Vector3 flat = Vector3.SmoothDamp(new Vector3(focus.x, 0f, focus.z), new Vector3(lead.x, 0f, lead.z),

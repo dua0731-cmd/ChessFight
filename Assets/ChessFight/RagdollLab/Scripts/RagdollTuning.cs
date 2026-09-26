@@ -35,7 +35,7 @@ namespace ChessFight.RagdollLab
         public const string GroupWeight = "발과 무게감 (명세 외)";
         public const string GroupAction = "버둥대기 / 등반 (명세 외)";
         public const string GroupSprint = "전력질주 · 스테미나 (명세 외)";
-        public const string GroupDive = "슬라이딩 태클 (좌클릭, 명세 외)";
+        public const string GroupDive = "다이빙 태클 (좌클릭, 명세 외)";
 
         [Tunable(GroupStiffness, "골반 앵커 hipAnchorStrength")] [Range(0f, 20000f)] public float hipAnchorStrength = 3000f;
         [Tunable(GroupStiffness, "하체 lowerBodySpring")] [Range(0f, 10000f)] public float lowerBodySpring = 2000f;
@@ -74,6 +74,11 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAssist, "피격 배율")] [Range(0f, 1f)] public float hitStiffnessMultiplier = 0.3f;
         [Tunable(GroupAssist, "피격 회복 (초)")] [Range(0f, 3f)] public float hitRecoveryTime = 1f;
         [Tunable(GroupAssist, "피격 판정 충격 (m/s)")] [Range(0.5f, 15f)] public float hitImpactThreshold = 3f;
+        // Running into another pawn: both bounce apart by this share of the speed they met at, so a
+        // bump reads as a bump instead of two bodies grinding. Pushing someone by walking into them
+        // still works - the run builds up again at once.
+        [Tunable(GroupAssist, "부딪힘 튕김 (만난 속도 배)")] [Range(0f, 1f)] public float bumpBounce = 0.2f;
+        [Tunable(GroupAssist, "부딪힘 튕김 최대 (m/s)")] [Range(0f, 4f)] public float bumpBounceMax = 1.5f;
         [Tunable(GroupAssist, "접촉 유지 (초)")] [Range(0f, 1f)] public float contactLinger = 0.15f;
         [Tunable(GroupAssist, "경사 기준 (도)")] [Range(0f, 60f)] public float slopeAngleThreshold = 20f;
         [Tunable(GroupAssist, "잡기 반경 (m)")] [Range(0.05f, 0.6f)] public float grabRadius = 0.25f;
@@ -81,7 +86,9 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAssist, "잡기 breakForce")] [Range(200f, 30000f)] public float grabBreakForce = 6000f;
         // Split from grabBreakForce so escape difficulty can be tuned without changing how a
         // hand holds a ledge - the same number was doing both jobs.
-        [Tunable(GroupAssist, "상대를 잡는 힘 breakForce")] [Range(200f, 20000f)] public float pawnGrabBreakForce = 2400f;
+        // Only a safety valve now (a throw off a cliff, a pile of pawns): escaping is the struggle
+        // meter's job, and a grip that snapped at random made one click enough to get free.
+        [Tunable(GroupAssist, "상대를 잡는 힘 breakForce")] [Range(200f, 20000f)] public float pawnGrabBreakForce = 20000f;
         [Tunable(GroupAssist, "잡은 팔 강성 배율")] [Range(1f, 20f)] public float grabArmMultiplier = 6f;
         [Tunable(GroupAssist, "뻗는 팔 강성 배율")] [Range(1f, 20f)] public float reachArmMultiplier = 3f;
         [Tunable(GroupAssist, "밀치기 팔 배율")] [Range(1f, 20f)] public float shoveArmMultiplier = 5f;
@@ -91,6 +98,9 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAssist, "잡기 몸 기울기 (도)")] [Range(0f, 45f)] public float grabLean = 14f;
         [Tunable(GroupAssist, "매달려 점프 배율")] [Range(0f, 2f)] public float pullUpFactor = 1f;
         [Tunable(GroupAssist, "앵커 최대 거리 (m)")] [Range(0.1f, 2f)] public float anchorLeash = 0.6f;
+        // Pressing into a wall and getting nowhere, the anchor may only lead this far (a full leash
+        // pinned the body into the wall, and it sprang back off a ledge when the key came up).
+        [Tunable(GroupAssist, "벽에 막혔을 때 앵커 거리 (m)")] [Range(0.05f, 0.6f)] public float anchorBlockedLeash = 0.15f;
         [Tunable(GroupAssist, "정지 시 앵커 따라오기")] [Range(0f, 20f)] public float anchorIdleFollow = 6f;
         [Tunable(GroupAssist, "중력 배율")] [Range(0.5f, 3f)] public float gravityScale = 1f;
 
@@ -147,13 +157,21 @@ namespace ChessFight.RagdollLab
         // at 143% of its run speed. On by default because that is a bug, not a mechanic.
         [Tunable(GroupWeight, "최고 속도 상한 (달리기 배수, 0=무제한)")] [Range(0f, 2f)] public float overspeedClamp = 1.1f;
 
+        // Escaping a grab is a meter, not a physics accident: every left click fills it by
+        // 1 / struggleTaps (times the bonuses), it drains when the clicks stop, and full = free. The
+        // grip itself no longer breaks from a thrash (pawnGrabBreakForce is only a safety valve).
+        [Tunable(GroupAction, "버둥 탈출 연타 수 (가만히)")] [Range(2f, 20f)] public float struggleTaps = 9f;
+        [Tunable(GroupAction, "버둥 게이지 감소 (1/초)")] [Range(0f, 2f)] public float struggleDecay = 0.6f;
+        [Tunable(GroupAction, "버둥 게이지 유지 (초)")] [Range(0f, 1.5f)] public float struggleGrace = 0.25f;
+        [Tunable(GroupAction, "탈출 뒤 다시 안 잡히는 시간 (초)")] [Range(0f, 3f)] public float struggleFreeTime = 1f;
+        [Tunable(GroupAction, "탈출할 때 튕겨 나가는 속도 (m/s)")] [Range(0f, 6f)] public float struggleEscapePush = 3.5f;
         [Tunable(GroupAction, "버둥 1회 지속 (초)")] [Range(0.05f, 0.8f)] public float struggleBurst = 0.22f;
-        [Tunable(GroupAction, "연타 보너스 상한 (배)")] [Range(1f, 4f)] public float struggleRushBonus = 2f;
-        [Tunable(GroupAction, "반대 방향 입력 보너스 (배)")] [Range(1f, 3f)] public float struggleAwayBonus = 1.7f;
-        [Tunable(GroupAction, "점프 보너스 (배)")] [Range(1f, 3f)] public float struggleJumpBonus = 1.6f;
-        [Tunable(GroupAction, "버둥 1회 스테미나 (초)")] [Range(0f, 2f)] public float struggleStamina = 0.35f;
+        [Tunable(GroupAction, "연타 보너스 상한 (배, 흔들림만)")] [Range(1f, 4f)] public float struggleRushBonus = 1.5f;
+        [Tunable(GroupAction, "반대로 당기며 연타 (게이지 배)")] [Range(1f, 3f)] public float struggleAwayBonus = 1.35f;
+        [Tunable(GroupAction, "점프하며 연타 (게이지 배)")] [Range(1f, 3f)] public float struggleJumpBonus = 1.3f;
+        [Tunable(GroupAction, "버둥 1회 스테미나 (초)")] [Range(0f, 2f)] public float struggleStamina = 0.15f;
         [Tunable(GroupAction, "버둥 팔 진폭 (도)")] [Range(0f, 160f)] public float struggleSwing = 95f;
-        [Tunable(GroupAction, "버둥 몸부림 충격")] [Range(0f, 400f)] public float struggleShake = 150f;
+        [Tunable(GroupAction, "버둥 몸부림 흔들림")] [Range(0f, 120f)] public float struggleShake = 35f;
         [Tunable(GroupAction, "버둥 중 팔 강성 배율")] [Range(1f, 20f)] public float struggleArmMultiplier = 8f;
         // The climb moves the body itself (RagdollPawn.UpdateClimb): up at climbSpeed (slower while
         // a hand is in the air, faster once it lands), down and sideways at their own speeds.
@@ -218,30 +236,38 @@ namespace ChessFight.RagdollLab
         // jumping, the body may not leave the ground faster than this. 1.2 m/s is a 7 cm bump.
         [Tunable(GroupSprint, "저절로 튀어오름 방지 (m/s, 0=끔)")] [Range(0f, 5f)] public float launchClamp = 1.2f;
 
-        // A slide tackle is a fall on purpose: the feet are kicked out ahead and the body goes over
-        // backwards, then it is a plain limp ragdoll - no stiffness, no pose - until it gets up.
-        [Tunable(GroupDive, "앞으로 가속 (m/s)")] [Range(0f, 8f)] public float diveBoost = 1.2f;
-        [Tunable(GroupDive, "위로 뜨기 (m/s)")] [Range(0f, 6f)] public float diveLift = 0.8f;
+        // The left click is a dive: the pawn throws itself forward head first with both arms
+        // reaching out to shove, lands on its chest and slides, limp everywhere but the arms until
+        // it gets up. (It used to be a feet-first slide that caught its skirt and flipped.)
+        [Tunable(GroupDive, "앞으로 가속 (m/s)")] [Range(0f, 8f)] public float diveBoost = 3f;
+        [Tunable(GroupDive, "위로 뜨기 (m/s)")] [Range(0f, 6f)] public float diveLift = 1.2f;
         [Tunable(GroupDive, "최고 속도 (m/s)")] [Range(3f, 20f)] public float diveMaxSpeed = 10f;
-        // Feet forward, head back: the legs get this much more forward speed per metre below the
-        // hips, and the head this much less per metre above them.
-        [Tunable(GroupDive, "발부터 미끄러지는 회전 (rad/s)")] [Range(0f, 15f)] public float diveTip = 5f;
-        // A little sideways tip too, alternating sides, so it lands on a hip like a real slide
-        // tackle instead of flat on its back.
-        [Tunable(GroupDive, "옆으로 눕는 회전 (rad/s)")] [Range(0f, 8f)] public float diveSideTip = 1.5f;
-        [Tunable(GroupDive, "평지에서 마찰 (높을수록 짧게)")] [Range(0f, 1f)] public float diveFriction = 0.5f;
+        // Head forward, feet back: the upper body gets this much more forward speed per metre above
+        // the hips and the legs this much less per metre below them, so it tips onto its front.
+        [Tunable(GroupDive, "앞으로 엎어지는 회전 (rad/s)")] [Range(0f, 15f)] public float diveTip = 5f;
+        [Tunable(GroupDive, "옆으로 기우는 회전 (rad/s)")] [Range(0f, 8f)] public float diveSideTip;
+        // The arms stay out in front, reaching to shove, while everything else is limp.
+        [Tunable(GroupDive, "팔 뻗는 힘 (팔 강성 배)")] [Range(0f, 10f)] public float diveArmStiffness = 5f;
+        // Rolling about the direction of travel, taken out per second while diving (so it slides on
+        // its front instead of rolling over on its round head).
+        [Tunable(GroupDive, "옆으로 구르기 억제 (1/초)")] [Range(0f, 30f)] public float diveRollDamping = 10f;
+        [Tunable(GroupDive, "평지에서 마찰 (높을수록 짧게)")] [Range(0f, 1f)] public float diveFriction = 0.35f;
         // Downhill the slide gets slippery and keeps going for as long as it is fast, which is what
         // makes throwing yourself down a hill quicker than running it.
         [Tunable(GroupDive, "내리막에서 마찰")] [Range(0f, 1f)] public float diveSlopeFriction = 0.08f;
-        [Tunable(GroupDive, "최소 시간 (초)")] [Range(0.1f, 2f)] public float diveMinTime = 0.4f;
-        [Tunable(GroupDive, "평지 최대 시간 (초)")] [Range(0.3f, 4f)] public float diveMaxTime = 0.9f;
-        [Tunable(GroupDive, "이 속도 밑으로 느려지면 일어남 (m/s)")] [Range(0f, 6f)] public float diveGetUpSpeed = 1.5f;
+        [Tunable(GroupDive, "최소 시간 (초)")] [Range(0.1f, 2f)] public float diveMinTime = 0.7f;
+        [Tunable(GroupDive, "평지 최대 시간 (초)")] [Range(0.3f, 4f)] public float diveMaxTime = 1.5f;
+        [Tunable(GroupDive, "이 속도 밑으로 느려지면 일어남 (m/s)")] [Range(0f, 6f)] public float diveGetUpSpeed = 1f;
+        // And it has to have lain on the floor this long first, so it never stands up in mid-flop.
+        [Tunable(GroupDive, "엎드려 있는 최소 시간 (초)")] [Range(0f, 1.5f)] public float diveLieTime = 0.35f;
         [Tunable(GroupDive, "재사용 대기 (초)")] [Range(0f, 2f)] public float diveCooldown = 0.35f;
         [Tunable(GroupDive, "스테미나 소모 (초)")] [Range(0f, 3f)] public float diveStamina = 0.6f;
         // Lower than knockdownImpulseThreshold on purpose: a tackle should floor someone that an
         // ordinary bump would not.
         [Tunable(GroupDive, "태클 넉다운 속도 (m/s)")] [Range(0.5f, 15f)] public float diveTackleImpact = 3f;
         [Tunable(GroupDive, "태클 추가 밀기 (m/s)")] [Range(0f, 8f)] public float diveTacklePush = 2.5f;
+        // How long the tackled pawn stays down once it has landed (0 = the usual getUpDelay).
+        [Tunable(GroupDive, "태클 맞은 상대 누워 있기 (초)")] [Range(0f, 4f)] public float diveTackleHold = 1.2f;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]

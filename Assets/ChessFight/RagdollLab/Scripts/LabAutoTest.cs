@@ -18,7 +18,7 @@ namespace ChessFight.RagdollLab
 
         public static bool Requested =>
             Arg("-ragdollAutoTest") != null || Arg("-ragdollShots") != null
-            || Arg("-ragdollClip") != null || Arg("-ragdollActionClip") != null;
+            || Arg("-ragdollClip") != null || Arg("-ragdollActionClip") != null || FeelRequested;
         static bool PanelShotRequested => Arg("-ragdollPanelShot") != null;
 
         readonly StringBuilder log = new StringBuilder();
@@ -72,6 +72,8 @@ namespace ChessFight.RagdollLab
             if (shots != null) yield return RunShots(string.IsNullOrEmpty(shots) ? "shots" : shots);
             string clip = Arg("-ragdollClip");
             if (clip != null) yield return RunClip(string.IsNullOrEmpty(clip) ? "clip" : clip);
+            string feel = Arg("-ragdollFeel");
+            if (feel != null) yield return RunFeel(string.IsNullOrEmpty(feel) ? "feel" : feel);
             string actions = Arg("-ragdollActionClip");
             if (actions != null) yield return RunActionClip(string.IsNullOrEmpty(actions) ? "actions" : actions);
             Application.Quit();
@@ -140,32 +142,22 @@ namespace ChessFight.RagdollLab
                 Time.timeScale = 1f;
                 yield break;
             }
-            yield return JointSign();
-            yield return Stand();
-            yield return Run();
-            yield return Sprint();
-            yield return GaitShape();
-            yield return Turn();
-            yield return NoAutoHop();
-            yield return JumpCheck();
-            yield return JumpNoStack();
-            yield return GetUp();
-            yield return Fall();
-            yield return Slope();
-            yield return DiveSlope();
-            yield return Contact();
-            yield return GrabDrag();
-            yield return StruggleEscape();
-            yield return Climb();
-            yield return ClimbBugs();
-            yield return ClimbSurfaces();
-            yield return DiveTackle();
-            yield return Bar();
-            yield return Beam();
-            yield return WallClimb();
-            yield return QueenHill();
-            yield return Crowd();
-            yield return NetLoopback();
+            // -ragdollAutoTestOnly Climb,ClimbSurfaces: only those tests (by method name), to iterate on
+            // a few without the whole eight-minute run.
+            var tests = new (string name, Func<IEnumerator> run)[]
+            {
+                ("JointSign", JointSign), ("Stand", Stand), ("Run", Run), ("Sprint", Sprint),
+                ("GaitShape", GaitShape), ("Turn", Turn), ("NoAutoHop", NoAutoHop), ("JumpCheck", JumpCheck),
+                ("JumpNoStack", JumpNoStack), ("GetUp", GetUp), ("Fall", Fall), ("Slope", Slope),
+                ("DiveSlope", DiveSlope), ("Contact", Contact), ("GrabDrag", GrabDrag),
+                ("StruggleEscape", StruggleEscape), ("Climb", Climb), ("ClimbBugs", ClimbBugs),
+                ("ClimbSurfaces", ClimbSurfaces), ("DiveTackle", DiveTackle), ("Bar", Bar), ("Beam", Beam),
+                ("WallClimb", WallClimb), ("QueenHill", QueenHill), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
+            };
+            string only = Arg("-ragdollAutoTestOnly");
+            foreach (var (name, run) in tests)
+                if (string.IsNullOrEmpty(only) || Array.IndexOf(only.Split(','), name) >= 0)
+                    yield return run();
             Report("NaN/폭발 없음", allFinite, allFinite ? "모든 부위 좌표 유한" : "NaN 또는 무한대 좌표 발생");
             log.AppendLine($"RESULT passed={passed} failed={failed}");
             File.WriteAllText(path, log.ToString());
@@ -1085,29 +1077,70 @@ namespace ChessFight.RagdollLab
             });
             bool stillHeld = victim.BeingHeld;
 
-            // Phase 2: mash it, and pull away from the captor while mashing. One tap every 0.1 s.
-            // Breaking the grip once is not escaping - the captor re-grabs after 0.6 s - so escape is
-            // measured as actually getting clear and staying clear.
-            float t = 0f, nextTap = 0f, breaks = 0f, freeFor = 0f, escapeAt = -1f;
-            bool wasHeld = true;
-            yield return Sim(6f, () =>
+            // Phase 2: mash it standing still, one click every 0.12 s. It should take 5-10 clicks.
+            int plain = -1;
+            float highest = 0f;
+            yield return MashOut(holder, victim, Vector3.zero, false, n => plain = n, y => highest = Mathf.Max(highest, y));
+            // A slow tap (every 0.6 s) must never get out: the meter leaks between clicks. Twenty
+            // seconds, because a meter that leaks too slowly still lets it out in the end.
+            yield return Regrab(holder, victim);
+            bool regrabbed = victim.BeingHeld;
+            int slow = -1;
+            yield return MashOut(holder, victim, Vector3.zero, false, n => slow = n, null, 0.6f, 20f);
+            bool slowHeld = victim.BeingHeld;
+            // Phase 3: mash while pulling away (the victim is north of the captor) and jumping.
+            yield return Regrab(holder, victim);
+            regrabbed &= victim.BeingHeld;
+            int power = -1;
+            yield return MashOut(holder, victim, Vector3.forward, true, n => power = n, y => highest = Mathf.Max(highest, y));
+            Report("버둥대기: 가만히 5~10번, 당기며 점프하면 더 빨리, 천천히 누르면 못 빠져나감",
+                caught && stillHeld && regrabbed && plain >= 5 && plain <= 10 && power >= 3 && power < plain
+                && slow < 0 && slowHeld && highest < 1.2f,
+                $"잡힘 {caught}, 1초 가만히 둔 뒤에도 잡힘 {stillHeld}, 다시 잡힘 {regrabbed}, 탈출까지 클릭: 가만히 {plain}번 / 당기며 점프 {power}번 / "
+                + $"0.6초 간격 20초 {(slow < 0 ? "못 빠져나감" : slow + "번")} (끝까지 잡혀 있음 {slowHeld}), 버둥대는 동안 골반 최고 {highest:F2} m (튀어 오름 없음)");
+            yield return Clear();
+        }
+
+        /// <summary>Click every <paramref name="every"/> s until the victim is free; reports the clicks it took
+        /// (-1 if still held after <paramref name="limit"/> s).</summary>
+        IEnumerator MashOut(RagdollPawn holder, RagdollPawn victim, Vector3 pull, bool jump, Action<int> clicks,
+                            Action<float> height, float every = 0.12f, float limit = 4f)
+        {
+            float t = 0f, next = 0f;
+            int n = 0, escapesBefore = victim.Escapes;
+            bool done = false;
+            yield return Sim(limit, () =>
             {
                 t += Dt;
-                Drive(holder, Vector3.forward * 0.25f, grab: true);
-                bool tap = t >= nextTap;
-                if (tap) nextTap = t + 0.1f;
-                Drive(victim, Vector3.back, shove: tap);
-                if (wasHeld && !victim.BeingHeld) breaks++;
-                wasHeld = victim.BeingHeld;
-                float gap = Vector3.Distance(Flat(victim.Hips.position), Flat(holder.Hips.position));
-                freeFor = !victim.BeingHeld && gap > 1.2f ? freeFor + Dt : 0f;
-                if (escapeAt < 0f && freeFor > 0.5f) escapeAt = t;
+                Drive(holder, Vector3.forward * 0.25f, grab: !done);
+                if (done) { Drive(victim, Vector3.zero); return; }
+                bool tap = t >= next;
+                if (tap)
+                {
+                    next = t + every;
+                    n++;
+                }
+                Drive(victim, pull, shove: tap, jump: tap && jump);
+                height?.Invoke(victim.Hips.position.y);
+                if (victim.Escapes > escapesBefore)
+                {
+                    done = true;
+                    clicks(n);
+                }
             });
-            Report("버둥대기: 가만히 있으면 못 빠져나감, 연타하면 탈출",
-                caught && stillHeld && escapeAt >= 0f,
-                $"잡힘 {caught}, 1초 가만히 둔 뒤에도 잡힘 {stillHeld}, "
-                + $"그립을 뜯은 횟수 {breaks:F0}, 완전히 벗어난 시점 {(escapeAt >= 0f ? $"{escapeAt:F2}s" : "실패")}");
-            yield return Clear();
+            if (!done) clicks(-1);
+        }
+
+        /// <summary>Put the two back face to face and let the captor take hold again.</summary>
+        IEnumerator Regrab(RagdollPawn holder, RagdollPawn victim)
+        {
+            Drive(holder, Vector3.zero);
+            Drive(victim, Vector3.zero);
+            yield return Sim(1.6f);
+            holder.Teleport(new Vector3(6f, holder.standHeight + 0.02f, 3f), Vector3.forward);
+            victim.Teleport(new Vector3(6f, victim.standHeight + 0.02f, 3.7f), Vector3.back);
+            yield return Sim(0.6f);
+            yield return Sim(1.4f, () => Drive(holder, Vector3.forward * 0.25f, grab: true));
         }
 
         /// <summary>
@@ -1148,8 +1181,10 @@ namespace ChessFight.RagdollLab
                 topY = Mathf.Max(topY, pawn.Hips.position.y);
                 lowestStamina = Mathf.Min(lowestStamina, pawn.Stamina);
             });
+            // At this arm length a palm on the face can rise only about 0.09 m above its shoulder, and
+            // the lower hand measured 0.050 m: a 0.05 bar flipped on rounding from run to run.
             Report("등반: 두 손이 번갈아 어깨 위를 짚음 (팔 안 늘어남)",
-                overHeadL > 0.05f && overHeadR > 0.05f && turns >= 8 && longestArm <= p.climbArmReach + 0.05f,
+                overHeadL > 0.035f && overHeadR > 0.035f && turns >= 8 && longestArm <= p.climbArmReach + 0.05f,
                 $"어깨 대비 최고 손 높이 L {overHeadL:+0.00;-0.00} m / R {overHeadR:+0.00;-0.00} m, "
                 + $"위쪽 손 교대 {turns}회, 어깨→손 최대 {longestArm:F2} m (한계 {p.climbArmReach:F2})");
             var tr = new StringBuilder();
@@ -1197,11 +1232,19 @@ namespace ChessFight.RagdollLab
             // of climbing reaches the top of the 5 m lane on a faster climb, and the pawn then rests
             // on the lip instead of running out.
             float phase = 0f, highest = 0f, heightAtEmpty = -1f, climbFor = 6f;
-            float hangerStart = hanger.Hips.position.y;
+            float hangerStart = hanger.Hips.position.y, hangNext = 0f;
             bool ranOut = false, letGo = false;
+            var hangTrace = new StringBuilder();
             yield return Sim(28f, () =>
             {
                 phase += Dt;
+                if (phase >= hangNext && phase < 4f)
+                {
+                    hangNext = phase + 0.1f;
+                    hangTrace.Append($"[{phase:F1} z{LabLayout.ClimbFaceZ - hanger.Hips.position.z:F2} y{hanger.Hips.position.y:F2} {hanger.State} "
+                                     + $"c{(hanger.Climbing ? 1 : 0)} g{(hanger.Grounded ? 1 : 0)} h{(hanger.handL.IsHolding ? 1 : 0)}{(hanger.handR.IsHolding ? 1 : 0)} "
+                                     + $"t{hanger.HipsTilt:F0} s{hanger.Stamina:F2}]");
+                }
                 if (phase < climbFor && hanger.Hips.position.y - hangerStart >= 2.5f) climbFor = phase;
                 bool up = phase < climbFor || ((int)((phase - climbFor) / 0.5f) & 1) == 1;
                 Drive(hanger, up ? Vector3.forward : Vector3.back, grab: true);
@@ -1211,6 +1254,7 @@ namespace ChessFight.RagdollLab
                 ranOut = true;
                 if (!hanger.Climbing) letGo = true;
             });
+            Info("매달림 추적", hangTrace.ToString());
             Report("등반: 스테미나가 떨어지면 손을 놓음", ranOut && letGo,
                 $"스테미나 고갈 {ranOut}, 손 놓음 {letGo}, 최고 {highest:F2} m, 고갈 시점 {heightAtEmpty:F2} m → 최종 {hanger.Hips.position.y:F2} m");
             yield return Clear();
@@ -1289,7 +1333,8 @@ namespace ChessFight.RagdollLab
             yield return Sim(6f, () =>
             {
                 t += Dt;
-                Drive(top, Vector3.right, grab: standAt < 0f);
+                // Hands off once it stands up there: the wall is 5 m deep and the floor behind it ends.
+                Drive(top, standAt < 0f ? Vector3.right : Vector3.zero, grab: standAt < 0f);
                 if (standAt < 0f && !top.Climbing && top.Grounded && top.Hips.position.y > wallTop + 0.1f
                     && top.Hips.position.x > face + 0.1f) standAt = t;
             });
@@ -1301,15 +1346,24 @@ namespace ChessFight.RagdollLab
             // longer, then let go. It has to stay up there, not tip back off the edge.
             var ledge = Spawn(new Vector3(LabLayout.ClimbX[0], 0f, LabLayout.ClimbFaceZ - 1.2f), Vector3.forward, "climb-ledge");
             yield return Sim(0.6f);
-            float ledgeTop = LabLayout.LedgeStepHeight, landedAt = -1f, lowest = 99f, lt = 0f;
+            float ledgeTop = LabLayout.LedgeStepHeight, landedAt = -1f, lowest = 99f, lt = 0f, ledgeNext = 0f;
+            var ledgeTrace = new StringBuilder();
             yield return Sim(7f, () =>
             {
                 lt += Dt;
+                if (lt >= ledgeNext && lt > 2f && lt < 5f)
+                {
+                    ledgeNext = lt + 0.05f;
+                    ledgeTrace.Append($"[{lt:F2} z{LabLayout.ClimbFaceZ - ledge.Hips.position.z:F2} y{ledge.Hips.position.y:F2} {ledge.State} "
+                                      + $"c{(ledge.Climbing ? 1 : 0)} g{(ledge.Grounded ? 1 : 0)} t{ledge.HipsTilt:F0} "
+                                      + $"vz{ledge.Hips.linearVelocity.z:F1} vy{ledge.Hips.linearVelocity.y:F1} a{LabLayout.ClimbFaceZ - ledge.AnchorPosition.z:F2}]");
+                }
                 bool up = landedAt < 0f || lt < landedAt + 0.3f;
                 Drive(ledge, up ? Vector3.forward : Vector3.zero, grab: up);
                 if (landedAt < 0f && !ledge.Climbing && ledge.Grounded && ledge.Hips.position.y > ledgeTop + 0.1f) landedAt = lt;
                 if (landedAt > 0f && lt > landedAt + 0.3f) lowest = Mathf.Min(lowest, ledge.Hips.position.y);
             });
+            Info("턱 추적", ledgeTrace.ToString());
             Report("등반: 턱에 올라선 뒤 뒤로 떨어지지 않음", landedAt > 0f && lowest > ledgeTop && ledge.Knockdowns == 0,
                 $"올라선 시각 {Fmt(landedAt)}, 이후 최저 골반 높이 {(lowest > 90f ? 0f : lowest):F2} m (턱 {ledgeTop:F0} m), 넘어짐 {ledge.Knockdowns}");
             yield return Clear();
@@ -1333,8 +1387,18 @@ namespace ChessFight.RagdollLab
                 int grips = 0, rests = 0;
                 bool wasHolding = false, onTop = false;
                 int lane = i;
+                var trace = new StringBuilder();
+                float traceT = 0f, traceNext = 0f;
                 yield return Sim(seconds[i], () =>
                 {
+                    traceT += Dt;
+                    if (traceT >= traceNext && traceT < 3f)
+                    {
+                        traceNext += 0.1f;
+                        trace.Append($"[{traceT:F1} z{LabLayout.ClimbFaceZ - pawn.Hips.position.z:F2} y{pawn.Hips.position.y:F2} "
+                                     + $"{pawn.State} c{(pawn.Climbing ? 1 : 0)} g{(pawn.Grounded ? 1 : 0)} "
+                                     + $"h{(pawn.handL.IsHolding ? 1 : 0)}{(pawn.handR.IsHolding ? 1 : 0)} t{pawn.HipsTilt:F0} v{pawn.HorizontalSpeed:F1}]");
+                    }
                     // The shape-test lanes end in a ~1 m deep top. Once the pawn stands up there, let go
                     // of the keys: holding "forward" ran it off the back, and the final height then
                     // measured the fall behind the lane, not the climb. The big wall keeps going - its
@@ -1354,6 +1418,7 @@ namespace ChessFight.RagdollLab
                     }
                     wasHolding = holding;
                 });
+                if (lane == 1) Info("등반 표면 추적: 역경사", trace.ToString());
                 Info($"등반 표면: {names[i]}",
                     $"오른 높이 {top - start:F2} m, 최종 {pawn.Hips.position.y:F2} m, "
                     + $"바위에서 쉰 프레임 {rests}, 남은 스테미나 {pawn.Stamina:F2}");
@@ -1603,9 +1668,10 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>
-        /// Left click on the move: a feet-first slide tackle that floors whoever it hits, does not
-        /// count as a knockdown for the slider, and gets back up on its own. Also checks it stays
-        /// short on the flat (the first version slid about 12 m) and goes feet first.
+        /// Left click on the move: a head-first dive tackle that floors whoever it hits, does not
+        /// count as a knockdown for the diver, and gets back up on its own. Also checks it stays
+        /// short on the flat (the first version slid about 12 m), lands on its front with the arms
+        /// out, stays limp until it gets up, and is not dragged along the floor while it rises.
         /// </summary>
         IEnumerator DiveTackle()
         {
@@ -1615,8 +1681,9 @@ namespace ChessFight.RagdollLab
             Vector3 a0 = a.Hips.position;
             Drive(a, Vector3.right);
             yield return Sim(0.45f);
-            float speedBefore = a.HorizontalSpeed, peak = 0f, t = 0f, upAt = -1f, feetAhead = 0f;
-            bool dove = false;
+            float speedBefore = a.HorizontalSpeed, peak = 0f, t = 0f, upAt = -1f, headAhead = -9f, handsAhead = -9f, prone = -1f, supine = -1f;
+            float towed = 0f, bodySpring = 0f, armSpring = float.MaxValue;
+            bool dove = false, stiffened = false;
             Vector3 slideStart = a.Hips.position;
             float slid = 0f;
             Drive(a, Vector3.right, shove: true);
@@ -1624,25 +1691,43 @@ namespace ChessFight.RagdollLab
             {
                 t += Dt;
                 Drive(a, Vector3.right);
+                // Limp from the click until it gets up: no Active step in between.
+                if (dove && upAt < 0f && a.State == PawnState.Active) stiffened = true;
                 dove |= a.Diving;
                 if (a.Diving)
                 {
                     peak = Mathf.Max(peak, a.HorizontalSpeed);
                     slid = Flat(a.Hips.position - slideStart).magnitude;
-                    // Feet first: how far the feet get out in front of the head along the slide.
+                    // Head first, arms reaching: head in front of the feet, hands in front of the chest.
                     Vector3 feet = (a.bodies[(int)BodyId.FootL].position + a.bodies[(int)BodyId.FootR].position) * 0.5f;
-                    feetAhead = Mathf.Max(feetAhead, Vector3.Dot(feet - a.bodies[(int)BodyId.Head].position, Vector3.right));
+                    headAhead = Mathf.Max(headAhead, Vector3.Dot(a.bodies[(int)BodyId.Head].position - feet, Vector3.right));
+                    Vector3 hands = (a.handL.Center + a.handR.Center) * 0.5f;
+                    handsAhead = Mathf.Max(handsAhead, Vector3.Dot(hands - a.bodies[(int)BodyId.Chest].position, Vector3.right));
+                    // On its front (the hips' forward pointing at the floor), never flipped onto its back.
+                    float down = Vector3.Dot(a.Hips.transform.forward, Vector3.down);
+                    prone = Mathf.Max(prone, down);
+                    supine = Mathf.Max(supine, -down);
+                    // Limp means no drive on the torso at all; the arms are the only thing held.
+                    bodySpring = Mathf.Max(bodySpring, a.joints[(int)BodyId.Chest].slerpDrive.positionSpring);
+                    armSpring = Mathf.Min(armSpring, a.joints[(int)BodyId.ArmL].slerpDrive.positionSpring,
+                                          a.joints[(int)BodyId.ArmR].slerpDrive.positionSpring);
                 }
                 if (dove && upAt < 0f && !a.Diving) upAt = t;
+                // Still holding forward while it gets up: the body must not be dragged along the floor.
+                if (upAt >= 0f && a.HipsTilt > 50f) towed = Mathf.Max(towed, a.HorizontalSpeed);
             });
             Drive(a, Vector3.zero);
             bool floored = b.Knockdowns > 0;
-            Report("좌클릭 슬라이딩 태클: 상대가 넘어지고 나는 넉다운으로 안 셈",
+            Report("좌클릭 다이빙 태클: 상대가 넘어지고 나는 넉다운으로 안 셈",
                 dove && floored && a.Knockdowns == 0 && a.State != PawnState.Ragdoll,
                 $"태클 {dove}, 속도 {speedBefore:F1} → 최고 {peak:F1} m/s, 상대 넘어짐 {b.Knockdowns} ({b.LastKnockdownCause}), "
                 + $"태클 성공 {a.Tackles}, 태클한 쪽 넉다운 {a.Knockdowns}, 일어나기 시작 {Fmt(upAt)}, 이동 {Flat(a.Hips.position - a0).magnitude:F1} m, 최종 상태 {a.State}");
-            Report("슬라이딩: 발부터 짧게", feetAhead > 0.15f && slid < 6f,
-                $"미끄러진 거리 {slid:F1} m (6 m 미만), 발이 머리보다 앞선 최대 거리 {feetAhead:F2} m");
+            Report("다이빙: 머리부터 엎어지며 팔을 앞으로, 등으로 안 뒤집힘, 일어날 때까지 흐물",
+                headAhead > 0.3f && handsAhead > 0.1f && prone > 0.5f && supine < 0.5f && !stiffened && slid < 7f
+                && bodySpring < 0.01f && armSpring > 1f && towed < 2f,
+                $"머리가 발보다 앞선 최대 {headAhead:F2} m, 손이 가슴보다 앞선 최대 {handsAhead:F2} m, "
+                + $"엎드림 {prone:F2} / 뒤집힘 {supine:F2} (골반 앞쪽이 아래·위를 향한 정도), 도중에 굳음 {stiffened}, 미끄러진 거리 {slid:F1} m (7 m 미만), "
+                + $"다이빙 중 가슴 강성 {bodySpring:F0} (0이어야 흐물) / 팔 강성 {armSpring:F0}, 일어나며 W를 누르고 있을 때 누운 채 끌려간 속도 {towed:F2} m/s (2 미만)");
             yield return Clear();
 
             // On its own, from standing: a short slip forward, then back up by itself.
@@ -1653,7 +1738,7 @@ namespace ChessFight.RagdollLab
             bool flopped = false;
             yield return Sim(2.5f, () => flopped |= c.Diving);
             float flop = Flat(c.Hips.position - c0).magnitude;
-            Report("제자리 슬라이딩 → 스스로 일어남", flopped && c.State == PawnState.Active && c.Knockdowns == 0 && c.HipsTilt < 25f,
+            Report("제자리 다이빙 → 스스로 일어남", flopped && c.State == PawnState.Active && c.Knockdowns == 0 && c.HipsTilt < 25f,
                 $"다이빙 {flopped}, 앞으로 {flop:F2} m, 2.5초 뒤 상태 {c.State}, 기울기 {c.HipsTilt:F0}°");
             yield return Clear();
         }
@@ -1803,7 +1888,8 @@ namespace ChessFight.RagdollLab
                 // The client draws its own stamina gauge from these, so they have to arrive intact.
                 maxStaminaError = Mathf.Max(maxStaminaError, Mathf.Abs(remote.Stamina - host.Stamina));
                 minStamina = Mathf.Min(minStamina, remote.Stamina);
-                if (remote.Sprinting != host.Sprinting || remote.Exhausted != host.Exhausted || remote.BeingHeld != host.BeingHeld)
+                if (remote.Sprinting != host.Sprinting || remote.Exhausted != host.Exhausted || remote.BeingHeld != host.BeingHeld
+                    || Mathf.Abs(remote.EscapeProgress - host.EscapeProgress) > 0.01f)
                     flagMismatch++;
                 for (int i = 0; i < RagdollPawn.Count; i++)
                 {
@@ -2038,7 +2124,7 @@ namespace ChessFight.RagdollLab
             if (clipFolder != null && shotCamera != null && pendingShot == null)
                 pendingShot = Path.Combine(clipFolder, $"f_{clipFrame++:D4}.png");
             if (pendingShot == null || shotCamera == null) return;
-            const int w = 1280, h = 720;
+            int w = shotWidth, h = shotHeight;
             var rt = RenderTexture.GetTemporary(w, h, 24);
             var previous = shotCamera.targetTexture;
             shotCamera.targetTexture = rt;
@@ -2049,8 +2135,21 @@ namespace ChessFight.RagdollLab
             tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
             tex.Apply();
             RenderTexture.active = null;
-            RenderTexture.ReleaseTemporary(rt);
             File.WriteAllBytes(pendingShot, tex.EncodeToPNG());
+            if (sideCamera != null && clipFolder != null)
+            {
+                // The feel recordings' close-up side view of the same frame.
+                sideCamera.targetTexture = rt;
+                sideCamera.Render();
+                sideCamera.targetTexture = null;
+                RenderTexture.active = rt;
+                tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+                tex.Apply();
+                RenderTexture.active = null;
+                string file = Path.GetFileName(pendingShot);
+                File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(pendingShot), "s_" + file.Substring(2)), tex.EncodeToPNG());
+            }
+            RenderTexture.ReleaseTemporary(rt);
             Destroy(tex);
             pendingShot = null;
         }

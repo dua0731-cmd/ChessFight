@@ -131,7 +131,7 @@ Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 - 경로: `CharacterCommand`(Gameplay) → `RagdollDriver.SetCommand` → `PawnInput`. 랩은 `LabGame.ReadInput`이, 킹러시 플레이테스트는 `MoveInputSource`(Game)·`PlaytestSpawner`가 채운다.
 - **랩의 자유 카메라는 F → F4로 옮겼다**(F가 상호작용이 됐다).
 - 래그돌은 아직 이 키로 아무것도 하지 않는다. 받은 값(누른 횟수, 누르는 중, 조준)을 `AbilityPresses`·`InteractHeld`·`Aim` 등으로 보여 줄 뿐이다. 시험대 창(화면 왼쪽 아래)에 보인다.
-- 온라인 랩: 입력 패킷이 24 → **27바이트**(버튼 비트 3개 + 조준 3바이트), magic `CFR2`, **프로토콜 v4**. 상호작용은 보낼 때까지 눌림을 붙잡아 두어서 짧게 톡 눌러도 방장에게 간다.
+- 온라인 랩: 입력 패킷이 24 → **27바이트**(버튼 비트 3개 + 조준 3바이트), magic `CFR2`, 프로토콜 v4. (R36에서 스냅샷에 버둥대기 게이지 1바이트가 더해져 magic `CFR3`, **프로토콜 v5**.) 상호작용은 보낼 때까지 눌림을 붙잡아 두어서 짧게 톡 눌러도 방장에게 간다.
 
 ### 8.2 탈것 (M1)
 
