@@ -92,7 +92,7 @@ Assets/
 
 ## 4. 오프라인 플레이테스트 (모두 공통)
 
-`KingRush`를 열고 Play. (`RagdollTest`는 래그돌 랩이라 조작이 다르다: P1 키보드+마우스, P2 패드/방향키, Tab 튜닝 패널, R 리스폰, T 슬로모션, F 자유 카메라. [Docs/RagdollLab/README.md](RagdollLab/README.md))
+`KingRush`를 열고 Play. (`RagdollTest`는 래그돌 랩이라 조작이 다르다: P1 키보드+마우스, P2 패드/방향키, Tab 튜닝 패널, R 리스폰, T 슬로모션, F4 자유 카메라. [Docs/RagdollLab/README.md](RagdollLab/README.md))
 
 | 입력 | 동작 |
 |---|---|

@@ -4,7 +4,7 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-25** · 기준 브랜치 **`JY-lobby`**(로비·게임모드 작업. 그 밖의 AI 작업은 `Network`) · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+최종 갱신: **2026-09-26** · 기준 브랜치 **`JY-lobby`**(로비·게임모드 작업), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
 
 ---
 
@@ -23,6 +23,7 @@
   - 연결 품질 기능(끊김 경고, 핑, 지연 시뮬레이터, 버전 검사)
   - 준영 님 래그돌 랩 병합(RagdollTest 씬 = 랩 씬, `RagdollDriver`로 게임 캐릭터 계약 연결)
   - **(`JY-lobby`) 참고 영상풍 새 로비와 게임 모드**: 킹 러시·퀸 오브 더 힐·소드 파이트 목록, 모드별 매칭, 모드 씬 로드 → [GameModes](Docs/GameModes/README.md)
+  - **(`JY-ragdoll_v2`) 퀸 오브 더 힐 래그돌 기능 M1~M4**: 탈것(움직이는 발판·벽), 입력 확장(능력 E·Q, 상호작용 F, 조준), 피격 약속, 물·부활, RagdollTest의 [7] 시험대 → [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m4)
 - **아직 캡슐 이동 기술 프로토타입이다.** 기물 선택, 스킬, 래그돌 네트워크, 라운드 규칙, 승패는 없다. 모드 중 씬이 있는 것은 킹 러시(코스 뼈대)뿐이다.
 - 이 프로젝트의 AI 작업은 사용자(메인 기획자, GitHub `dua0731-cmd`)의 요청으로 진행되어 왔다. **요청 이력 전체는 [요구사항 기록](Docs/Project/REQUIREMENTS.md)에 있다.**
 
@@ -30,13 +31,13 @@
 
 | 항목 | 상태 |
 |---|---|
-| 개발 브랜치 | **로비·게임모드 작업은 `JY-lobby`에만 커밋·푸시**(2026-09-25 사용자 지시, R18. `main`·`Network`·`JY-ragdoll`에는 푸시 금지). 그 밖의 AI 작업은 기존대로 `Network` |
+| 개발 브랜치 | **로비·게임모드 작업은 `JY-lobby`에만 커밋·푸시**(2026-09-25 사용자 지시, R18. `main`·`Network`·`JY-ragdoll`에는 푸시 금지). **퀸 오브 더 힐의 래그돌 쪽 기능(캐릭터 조작·물리)은 `JY-ragdoll_v2`**(2026-09-26 사용자가 `JY-lobby`의 `d3d617d`에서 만듦, R34). 그 밖의 AI 작업은 기존대로 `Network` |
 | `main` | `0df4403`(R17 병합). **`Network`의 커밋을 모두 포함하고 24커밋 앞선다**(09-25 확인). `JY-lobby`는 이 커밋에서 시작했다. 로비 작업을 `main`에 넣을지는 사용자 결정 |
 | 다른 원격 브랜치 | `Network`(`0ecd3b6`, main에 포함됨), `JY-ragdoll`(준영, 래그돌 랩·**물리 튜닝용으로 유지**, R17), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
-| 네트워크 프로토콜 | **`JY-lobby`: `chessfight.dua0731.network.v3`**(게임 모드 추가). `main`·`Network`는 v2. 입력 패킷 magic `CFF2`(변경 없음). 다른 프로토콜 빌드와는 매칭 불가 |
-| 자동 테스트 | 어셈블리 경계 검사 + Core 29개 + 모의 Steam 세션 15개 통과, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과 (2026-09-25, `JY-lobby`) |
+| 네트워크 프로토콜 | **`JY-lobby`: `chessfight.dua0731.network.v3`**(게임 모드 추가). **`JY-ragdoll_v2`: v4**(래그돌 랩 입력 패킷 27바이트, magic `CFR2`). `main`·`Network`는 v2. 캡슐 입력 패킷 magic `CFF2`(변경 없음). 다른 프로토콜 빌드와는 매칭 불가 |
+| 자동 테스트 | 어셈블리 경계 검사 + Core 29개 + 모의 Steam 세션 15개 통과, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과 (2026-09-25, `JY-lobby`). **`JY-ragdoll_v2`(09-26)**: 같은 테스트 + **실제 Unity 6000.3.11f1 DLL로 전 어셈블리 컴파일**(랩 Steam 다리·빌더 포함) 통과, **빌드한 랩 플레이어의 래그돌 자동 점검 46 통과 / 9 실패**(새 퀸 오브 더 힐 12개는 전부 통과, 실패 9개는 원래 코드에서도 같은 기존 실패 → [RagdollLab README](Docs/RagdollLab/README.md#자동-점검)) |
 | Unity 실기 확인 | 2026-09-24까지: 로비 HUD 표시·한글·클릭·친구 초대 동작 (사용자 보고) |
-| **Unity 미확인** | **새 로비·게임 모드(09-25, JY-lobby)**, 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 열지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 네 표 |
+| **Unity 미확인** | **퀸 오브 더 힐 래그돌 기능 M1~M4(09-26, JY-ragdoll_v2)**, **새 로비·게임 모드(09-25, JY-lobby)**, 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 사람이 보지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 표들 |
 | 두 PC 확인 | 파티 입장·공개 매칭 성사 확인(2026-09-22). **양방향 이동은 미보고** |
 
 ## 2. 무엇이 되고 무엇이 안 되는가
@@ -55,12 +56,14 @@
 | 씬 흐름 Intro → Lobby → 모드 씬(지금은 KingRush) → Lobby | 코드만, Unity 미확인 | [Architecture/SCENES](Docs/Architecture/SCENES.md) |
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
+| **퀸 오브 더 힐 래그돌 기능 M1~M4**(`JY-ragdoll_v2`): 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대 | 코드·자동 점검 통과(빌드한 랩 플레이어), Unity 미확인. M5~M14는 시작 안 함 | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m4), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
 | 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
 | **없음** | 기물 선택·스킬·라운드·승패·점수, 네트워크 경기에서 코스 달리기, 래그돌 네트워크, 호스트 이전, 재접속, 신뢰 이벤트 채널, 로딩 동기화 | [ROADMAP](Docs/Project/ROADMAP.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
 
 **사용자가 할 일 — 순서대로**
+0. (퀸 오브 더 힐 래그돌) `JY-ragdoll_v2`로 바꿔 Pull한 뒤 `ChessFight > Scenes > Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **퀸 오브 더 힐 표(13개)**. F9로 시험대에 가서 F5·F6·F7, 탈것, 물을 해 본다. 되는 것·안 되는 것을 알려 주면 그대로 기록한다
 1. `JY-lobby`를 Pull(LFS 포함)한 뒤 Unity에서 열고 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **새 로비 표(11개)**를 확인한다. 이어서 씬 분리·래그돌 병합 표. 막히면 증상·스크린샷과 Console 첫 오류를 AI에게 준다.
 2. 두 PC로 양방향 이동을 확인한다(가장 오래 미뤄진 검증). 이제 경기 씬에서 한다([Network/README §2](Docs/Network/README.md)).
 3. 퀸 오브 더 힐을 시작하기 전에 결정: 인원 구성(6 대 6 안에서?), 래그돌 기준 구조물 크기 → [GameModes §3](Docs/GameModes/README.md).
@@ -75,7 +78,8 @@
 1. Unity 확인 중 나오는 오류 수정 (최우선). 새 로비는 Unity에서 한 번도 안 열었다: 배치·겹침·색 조정이 나올 수 있다
 2. **퀸 오브 더 힐**: **GPT 아스트라가 기획부터 이어받는다**(R24). 인수인계·기획 결정 D1~D8·개발 순서·시작 프롬프트: [GameModes/QueenOfTheHill/README](Docs/GameModes/QueenOfTheHill/README.md)
 3. 경기 흐름: 기물 선택 화면(참고 영상), 라운드 소개, 결과 → 로비
-   - **퀸 오브 더 힐 개발 목록(R33):** 래그돌·게임플레이에 새로 필요한 기능 M1~M14와 우선순위·시작 프롬프트 → [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md). 래그돌 안쪽 작업의 브랜치는 사용자에게 먼저 묻는다
+   - **퀸 오브 더 힐 개발 목록(R33):** 래그돌·게임플레이에 새로 필요한 기능 M1~M14와 우선순위·시작 프롬프트 → [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md). **M1~M4는 `JY-ragdoll_v2`에서 구현됨(R34, Unity 미확인).** 다음은 §3 순서대로 **M5**(자유 조준 갈고리 + 앙파상) → M8·M9·M10 → M6·M7. 래그돌 작업 브랜치는 `JY-ragdoll_v2`
+   - **기존 래그돌 자동 점검 실패 9개**(등반 7, 전력질주 스테미나 고갈, 경사 45°): 이번 작업 전 코드에서도 같은 숫자로 실패한다. 준영 님 확인 또는 사용자 지시가 있을 때 고친다 → [RagdollLab README "자동 점검"](Docs/RagdollLab/README.md#자동-점검)
    - **팀 색 정정(R32):** 이 게임의 두 팀은 **백팀·흑팀**이다(캐릭터 자체가 흰 말·검은 말). 코드는 아직 청팀·주황팀(재질 `TeamBlue`/`TeamOrange`, HUD 문구 "청팀/주황팀", 매칭 패널 칸 색). 바꾸려면 사용자 확인 후 작업
 4. Network → main 병합 PR (현재는 main이 Network를 포함하므로 불필요할 수 있음)
 5. 기획안의 "결정 필요" 항목: 신뢰 이벤트 채널 → 로딩 동기화 → 호스트 끊김 2단계(라운드 무효, 파티 유지)
@@ -96,6 +100,7 @@
 11. **`.meta`는 항상 같이 커밋한다.** Unity 밖에서 파일을 만들면 `Tools/Generators/mkmeta.py`로 만든다.
 12. **같은 `.unity` 씬을 두 사람이 동시에 고치지 않는다.** 맵은 구간 프리팹으로 나눈다.
 13. **`Assets/Scripts`(네트워크·게임 코드)는 래그돌 타입을 참조하지 않고, 래그돌(`Assets/ChessFight/RagdollLab`)은 Steam을 참조하지 않는다.** 랩을 Steam에 잇는 코드는 `Assets/ChessFight/RagdollLabSteam/`(Bootstrap과 같은 다리)에만 둔다. 캐릭터는 `ICharacterDriver`로만 부른다. `Tools/run-tests-linux.sh`의 경계 검사가 확인한다.
+14. **물리 콜백(`OnCollision*`·`OnTrigger*`) 안에서 순간이동하거나 관절을 즉시 지우지 않는다.** Unity가 `DestroyImmediate`를 거부해 잡기 관절이 남는다. 알리기만 하고 다음 Update에서 처리한다(`WaterZone` → 시험대·`PlaytestSpawner`). → [PITFALLS §19](Docs/Environment/PITFALLS.md)
 
 ## 5. 문서 트리
 
@@ -188,4 +193,4 @@ AI든 사람이든 작업을 끝낼 때:
 4. 바꾼 분야의 상세 문서(Network/…, KingRush/… 등)를 코드와 맞춘다.
 5. Unity에서 확인해야 할 것이 생겼으면 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단에 '미확인' 표로 추가한다.
 6. **이 파일의 §1 스냅샷, §2 표, §3 다음 할 일을 갱신하고 "최종 갱신" 날짜를 바꾼다.**
-7. [HISTORY.md](Docs/Project/HISTORY.md)에 커밋을 한 줄 추가하고 작업 브랜치(§1: 로비·게임모드는 `JY-lobby`, 그 밖은 `Network`)에 커밋·푸시한다.
+7. [HISTORY.md](Docs/Project/HISTORY.md)에 커밋을 한 줄 추가하고 작업 브랜치(§1: 로비·게임모드는 `JY-lobby`, 퀸 오브 더 힐 래그돌 기능은 `JY-ragdoll_v2`, 그 밖은 `Network`)에 커밋·푸시한다.

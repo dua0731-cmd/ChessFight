@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using ChessFight.Gameplay;
 using ChessFight.Network;
 using Steamworks;
 using UnityEngine;
@@ -36,8 +37,10 @@ namespace ChessFight.RagdollLab.Net
 
         struct RemoteInput
         {
-            public Vector2 move;
-            public bool jump, shove, grab, sprint;
+            // Edges (jump, shove, abilities) and interact stay latched until a physics step has
+            // used them; interactNow is the latest packet's own interact, which takes over after.
+            public RagdollNetInput input;
+            public bool interactNow;
             public uint sequence, clientTimeMs;
             public float received;
         }
@@ -63,11 +66,14 @@ namespace ChessFight.RagdollLab.Net
         uint tick, sequence, lastTick;
         float lastSnapshotSend, lastInputSend, lastReceive, statsAt;
         double playbackMs;
-        Vector2 pendingMove;
-        bool pendingJump, pendingShove, pendingGrab, pendingSprint;
+        RagdollNetInput pending;
         int sentBytes, receivedBytes, snapshotsIn;
         int sentRate, receivedRate, snapshotRate;
         float roundTripMs;
+        // Obstacle clock for the match (SyncObstacleClock).
+        double obstacleOffset, serverAnchor;
+        uint serverSecond;
+        bool obstacleSynced;
         string roomCode = "";
         string message = "";
         // Closed by default: while it is open the cursor stays free for its buttons, and a free cursor
@@ -107,6 +113,7 @@ namespace ChessFight.RagdollLab.Net
             sessionRequests?.Dispose();
             sessionFailures?.Dispose();
             if (panel != null) Destroy(panel);
+            if (matchActive) ObstacleClock.Use(null);
         }
 
         // ---------------------------------------------------------------- frame loop
@@ -126,6 +133,7 @@ namespace ChessFight.RagdollLab.Net
             if (active && !matchActive) EnterMatch();
             else if (!active && matchActive) ExitMatch();
             if (!matchActive) return;
+            SyncObstacleClock();
 
             SyncRoster();
             if (session.IsHost) HostFrame();
@@ -145,16 +153,12 @@ namespace ChessFight.RagdollLab.Net
                     pair.Value.SetInput(default);
                     continue;
                 }
-                pair.Value.SetInput(new PawnInput
-                {
-                    move = new Vector3(remote.move.x, 0f, remote.move.y),
-                    jump = remote.jump,
-                    shove = remote.shove,
-                    grab = remote.grab,
-                    sprint = remote.sprint,
-                });
-                remote.jump = false;
-                remote.shove = false;
+                pair.Value.SetInput(remote.input.ToPawnInput());
+                remote.input.jump = false;
+                remote.input.shove = false;
+                remote.input.ability = false;
+                remote.input.ability2 = false;
+                remote.input.interact = remote.interactNow;
                 inputs[pair.Key] = remote;
             }
             foreach (var pair in pawns)
@@ -206,19 +210,24 @@ namespace ChessFight.RagdollLab.Net
         void ClientFrame()
         {
             var local = game.ReadPlayerInput(0);
-            pendingMove = new Vector2(local.move.x, local.move.z);
-            pendingJump |= local.jump;
-            pendingShove |= local.shove;
-            pendingGrab = local.grab;
-            pendingSprint = local.sprint;
+            var now = RagdollNetInput.From(local);
+            pending.move = now.move;
+            pending.grab = now.grab;
+            pending.sprint = now.sprint;
+            pending.aim = now.aim;
+            pending.jump |= now.jump;
+            pending.shove |= now.shove;
+            pending.ability |= now.ability;
+            pending.ability2 |= now.ability2;
+            // Held, but latched until sent: a tap shorter than one send interval still reaches the host.
+            pending.interact |= now.interact;
 
             if (Time.realtimeSinceStartup - lastInputSend >= InputInterval)
             {
                 lastInputSend = Time.realtimeSinceStartup;
-                byte[] bytes = RagdollNetProtocol.Input(session.Match, ++sequence, NowMs(), pendingMove, pendingJump, pendingShove, pendingGrab, pendingSprint);
+                byte[] bytes = RagdollNetProtocol.Input(session.Match, ++sequence, NowMs(), pending);
                 Send(session.Host, bytes);
-                pendingJump = false;
-                pendingShove = false;
+                pending.jump = pending.shove = pending.ability = pending.ability2 = pending.interact = false;
             }
 
             Playback();
@@ -287,9 +296,51 @@ namespace ChessFight.RagdollLab.Net
 
         // ---------------------------------------------------------------- match lifecycle
 
+        // ---------------------------------------------------------------- obstacle clock
+
+        /// <summary>
+        /// Moving platforms (the Queen of the Hill test bed) must be in the same place on both PCs without
+        /// a packet about them (DECISIONS G2), so during a match obstacles run on Steam's server clock. Not
+        /// on the raw clock, though: it reads real time, which jumps a whole frame at a time, and a lift
+        /// driven by it would move unevenly from one physics step to the next and shake its rider. The
+        /// obstacles advance with the physics steps instead, and only their offset to the server clock is
+        /// measured every frame and eased in. A client also runs them PlaybackDelayMs behind, because it
+        /// draws the pawns that far behind the host: a pawn riding a lift is then drawn on the lift.
+        /// </summary>
+        void SyncObstacleClock()
+        {
+            double target = ServerSeconds() - Time.fixedTimeAsDouble - (session.IsHost ? 0d : PlaybackDelayMs / 1000d);
+            double error = target - obstacleOffset;
+            if (!obstacleSynced || Math.Abs(error) > 0.25)
+            {
+                obstacleOffset = target;   // first frame, or a hitch: jump (Obstacle does not sweep a jump)
+                obstacleSynced = true;
+            }
+            else obstacleOffset += Math.Max(-0.002, Math.Min(0.002, error));
+        }
+
+        double ObstacleTime() => Time.fixedTimeAsDouble + obstacleOffset;
+
+        /// <summary>Steam's server time: the same on every PC, whole seconds, the fraction from the local
+        /// clock since the second last changed. Same as NetworkRuntime's match clock.</summary>
+        double ServerSeconds()
+        {
+            uint second = SteamUtils.GetServerRealTime();
+            double local = Time.realtimeSinceStartupAsDouble;
+            if (second != serverSecond)
+            {
+                serverSecond = second;
+                serverAnchor = local;
+            }
+            return second + Math.Min(0.999, local - serverAnchor);
+        }
+
         void EnterMatch()
         {
             matchActive = true;
+            obstacleSynced = false;
+            SyncObstacleClock();
+            ObstacleClock.Use(ObstacleTime);
             pawns.Clear();
             game.DespawnAll();
             game.NetworkControlled = true;
@@ -302,6 +353,7 @@ namespace ChessFight.RagdollLab.Net
         void ExitMatch()
         {
             matchActive = false;
+            ObstacleClock.Use(null);
             foreach (var pawn in pawns.Values) if (pawn != null) Destroy(pawn.gameObject);
             pawns.Clear();
             if (cam != null) cam.soloTarget = null;
@@ -392,16 +444,19 @@ namespace ChessFight.RagdollLab.Net
         void ReceiveInput(ulong sender, byte[] bytes)
         {
             if (!session.Roster.ContainsKey(sender)) return;
-            if (!RagdollNetProtocol.ReadInput(bytes, session.Match, out uint seq, out uint clientTime, out var move, out bool jump, out bool shove, out bool grab, out bool sprint)) return;
+            if (!RagdollNetProtocol.ReadInput(bytes, session.Match, out uint seq, out uint clientTime, out var fresh)) return;
             inputs.TryGetValue(sender, out var previous);
             if (previous.sequence != 0 && !RagdollNetProtocol.Newer(seq, previous.sequence)) return;
+            bool interactNow = fresh.interact;
+            fresh.jump |= previous.input.jump;
+            fresh.shove |= previous.input.shove;
+            fresh.ability |= previous.input.ability;
+            fresh.ability2 |= previous.input.ability2;
+            fresh.interact |= previous.input.interact;
             inputs[sender] = new RemoteInput
             {
-                move = move,
-                jump = previous.jump | jump,
-                shove = previous.shove | shove,
-                grab = grab,
-                sprint = sprint,
+                input = fresh,
+                interactNow = interactNow,
                 sequence = seq,
                 clientTimeMs = clientTime,
                 received = Time.realtimeSinceStartup,
@@ -449,7 +504,7 @@ namespace ChessFight.RagdollLab.Net
             playbackMs = 0d;
             roundTripMs = 0f;
             lastReceive = Time.realtimeSinceStartup;
-            pendingJump = pendingShove = pendingGrab = pendingSprint = false;
+            pending = default;
         }
 
         void UpdateStats()

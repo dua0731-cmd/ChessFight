@@ -3,6 +3,7 @@
     "rootNamespace": "ChessFight.RagdollLab.Net",
     "references": [
         "ChessFight.RagdollLab",
+        "ChessFight.Gameplay",
         "ChessFight.Network.Core",
         "ChessFight.Network.Steam",
         "com.rlabrecque.steamworks.net"

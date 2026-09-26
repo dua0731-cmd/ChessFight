@@ -61,13 +61,18 @@ namespace ChessFight.Game
             // Optional so an older actions asset without them still loads.
             var shove = map.FindAction("Shove", false);
             var grab = map.FindAction("Grab", false);
-            return new InputSystemMoveSource(clone, map, move, jump, shove, grab);
+            var source = new InputSystemMoveSource(clone, map, move, jump, shove, grab);
+            source.sprint = map.FindAction("Sprint", false);
+            source.ability = map.FindAction("Ability", false);
+            source.ability2 = map.FindAction("Ability2", false);
+            source.interact = map.FindAction("Interact", false);
+            return source;
 #endif
         }
 
         InputActionAsset asset;
         InputActionMap map;
-        InputAction move, jump, shove, grab;
+        InputAction move, jump, shove, grab, sprint, ability, ability2, interact;
 
         InputSystemMoveSource(InputActionAsset asset, InputActionMap map, InputAction move, InputAction jump,
                               InputAction shove, InputAction grab)
@@ -81,6 +86,7 @@ namespace ChessFight.Game
             map?.Disable();
             if (asset != null) Object.Destroy(asset);
             asset = null; map = null; move = null; jump = null; shove = null; grab = null;
+            sprint = null; ability = null; ability2 = null; interact = null;
         }
 
         public MoveIntent Read()
@@ -91,7 +97,11 @@ namespace ChessFight.Game
             return new MoveIntent
             {
                 Move = move.ReadValue<Vector2>(), Jump = jump.triggered,
-                Shove = shove != null && shove.triggered, Grab = grab != null && grab.IsPressed()
+                Shove = shove != null && shove.triggered, Grab = grab != null && grab.IsPressed(),
+                Sprint = sprint != null && sprint.IsPressed(),
+                Ability = ability != null && ability.triggered,
+                Ability2 = ability2 != null && ability2.triggered,
+                Interact = interact != null && interact.IsPressed()
             };
         }
     }

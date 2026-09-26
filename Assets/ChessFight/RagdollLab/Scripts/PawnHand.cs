@@ -15,6 +15,16 @@ namespace ChessFight.RagdollLab
         FixedJoint joint;
         float regrabCooldown;
         readonly Collider[] buffer = new Collider[24];
+        readonly System.Collections.Generic.List<FixedJoint> grips = new System.Collections.Generic.List<FixedJoint>();
+
+        /// <summary>
+        /// Above zero while a physics callback runs (RagdollBodyPart's collision messages). Unity refuses
+        /// DestroyImmediate there: it logs an error and leaves the joint where it is, still holding, with
+        /// nothing tracking it any more. A pawn knocked down by a landing kept its grip on a crate that way,
+        /// grabbed it again with a second joint when it got up, and after a respawn the forgotten joint
+        /// yanked it back across the map (found by the Queen of the Hill water check).
+        /// </summary>
+        public static int PhysicsCallbackDepth;
 
         /// <summary>A grip within this distance below an obstacle's top counts as a ledge (generous: short arms).</summary>
         public const float LedgeDepth = 0.4f;
@@ -96,6 +106,7 @@ namespace ChessFight.RagdollLab
 
         void Attach(Collider target, Vector3 point, RagdollParams p)
         {
+            DropGrips();   // one grip per hand, ever
             joint = gameObject.AddComponent<FixedJoint>();
             joint.connectedBody = target.attachedRigidbody;
             bool grabbedPawn = RagdollPawn.ColliderOwner.ContainsKey(target);
@@ -112,13 +123,29 @@ namespace ChessFight.RagdollLab
 
         public void Release(float cooldown = 0f)
         {
-            // DestroyImmediate so the grip is gone before the next physics step of this frame.
-            if (joint != null) DestroyImmediate(joint);
+            DropGrips();
             joint = null;
             HeldCollider = null;
             HeldBody = null;
             HoldingLedge = false;
             if (cooldown > 0f) regrabCooldown = cooldown;
+        }
+
+        /// <summary>
+        /// Every grab joint on this hand goes, not only the tracked one, so no grip is ever left behind.
+        /// Immediately where Unity allows it, so the grip is gone before the next physics step of this
+        /// frame; inside a physics callback at the end of the frame instead (the pawn is limp by then and
+        /// cannot grab again, so there is no second joint to confuse with it).
+        /// </summary>
+        void DropGrips()
+        {
+            GetComponents(grips);
+            foreach (var grip in grips)
+            {
+                if (PhysicsCallbackDepth > 0) Destroy(grip);
+                else DestroyImmediate(grip);
+            }
+            grips.Clear();
         }
 
         void OnJointBreak(float breakForce)

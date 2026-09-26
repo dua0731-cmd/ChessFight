@@ -23,6 +23,7 @@
 | 16 | Pull 후 `Assets/ChessFight.meta` 같은 폴더 메타가 저절로 생김 | 폴더는 병합으로 되살아났는데 폴더 `.meta`는 예전에 지워져 있었다. Unity가 PC마다 다른 GUID로 만든다 | 원래 GUID로 `.meta`를 커밋한다(`git show <옛 커밋>:경로.meta`) | R16 |
 | 17 | Unity를 켤 때마다 **"Input System native platform backend not enabled"** 창(Enable Restart / Don't Enable) | Input System 패키지는 설치돼 있는데 Active Input Handling은 Old. `Enable Restart`를 누르면 HUD 클릭이 죽고 `InputSettingsGuard`가 되돌리며 또 재시작 요구 | 패키지 제거(R20), `NetworkSetup`의 자동 설치에서도 뺌. 이미 눌렀다면 Pull 후 Unity 재시작, Player 설정이 Old인지 확인 | R20 |
 | 18 | **위쪽 카드는 보이는데 아래쪽에 붙인 카드가 전부 안 보임**(새 로비의 파티 바·모드 카드·게임 시작) | UIDocument 루트를 화면 전체로 늘리는 규칙은 Unity **기본 테마**에 있다. 우리 테마는 기본 테마를 안 가져오므로(U3) 루트 높이 = 내용 높이. 카드를 전부 `position: absolute`로 두면 내용 높이가 0이 되어 `bottom:`으로 붙인 것이 화면 위쪽 밖으로 나간다 | `RuntimePanels.Create`가 `root.StretchToParentSize()`로 루트를 늘린다. 새 HUD도 이 함수로 만든다 | R22 |
+| 19 | 래그돌이 **물에서 부활한 직후 다시 물 쪽으로 초속 20 m로 끌려감**(상자를 쥔 채 빠졌을 때). 로그: `Destroying components immediately is not permitted during physics trigger/contact…` | 충돌로 넘어질 때(`OnCollisionEnter` 안) 손을 놓으며 `DestroyImmediate`로 잡기 관절을 지웠는데 Unity가 물리 콜백 안에서는 거부했다. 관절은 남고 추적만 끊겨, 일어나 다시 잡으면 관절이 2개가 됐고, 순간이동 뒤 남은 관절이 폰을 끌고 갔다 | `PawnHand`가 손을 놓을 때 그 손의 잡기 관절을 **전부** 지우고, 물리 콜백 안이면 `Destroy`(프레임 끝)로 미룬다(`PhysicsCallbackDepth`). **물리 콜백 안에서는 순간이동·관절 삭제를 하지 않고 다음 Update로 미룬다**(HANDOFF 규칙 14). 자동 점검 `M4 물: 무언가를 잡은 채…`가 손 관절 수와 부활 직후 속도를 본다 | R34 |
 | 14 | 문서가 코드와 어긋남 (예: Both로 바꿨다는 옛 문장) | 여러 도구가 문서를 부분만 갱신 | [HANDOFF §8](../../HANDOFF.md) 체크리스트. 옛 문서는 삭제하거나 새 트리로 안내 | R15 |
 
 ## AI 도구 작업 시 주의

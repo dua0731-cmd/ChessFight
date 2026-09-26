@@ -39,6 +39,15 @@ $ragdoll = Get-ChildItem "$projectRoot/Assets/ChessFight/RagdollLab/Scripts" -Fi
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-out:$output/ChessFight.RagdollLab.dll") + @($ragdoll)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab compilation failed.' }
+# The lab's Steam bridge and its scene builder, with exactly the references their asmdefs list.
+$ragdollNet = Get-ChildItem "$projectRoot/Assets/ChessFight/RagdollLabSteam" -Filter '*.cs' | ForEach-Object FullName
+$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.Network.Steam.dll", "-r:$output/ChessFight.RagdollLab.dll", "-r:$output/ChessFight.Gameplay.dll", "-out:$output/ChessFight.RagdollLab.Net.dll") + @($ragdollNet)
+& $mono $compiler @compileArgs
+if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab Steam bridge compilation failed.' }
+$ragdollEditor = Get-ChildItem "$projectRoot/Assets/ChessFight/RagdollLab/Editor" -Filter '*.cs' | ForEach-Object FullName
+$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.RagdollLab.dll", "-out:$output/ChessFight.RagdollLab.Editor.dll") + @($ragdollEditor)
+& $mono $compiler @compileArgs
+if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab builder compilation failed.' }
 $bootstrap = Get-ChildItem "$projectRoot/Assets/Scripts/Bootstrap" -Filter '*.cs' | ForEach-Object FullName
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.Network.Steam.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-out:$output/ChessFight.Game.Steam.dll") + @($bootstrap)
 & $mono $compiler @compileArgs
@@ -47,5 +56,5 @@ $editor = Get-ChildItem "$projectRoot/Assets/Scripts/Editor" -Filter '*.cs' | Fo
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-out:$output/ChessFight.Network.Editor.dll") + @($editor)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Editor utility compilation failed.' }
-Write-Output 'PASS: Steamworks, Core, Steam adapter, Game, Gameplay, RagdollLab, Bootstrap and Editor assemblies compiled.'
+Write-Output 'PASS: Steamworks, Core, Steam adapter, Game, Gameplay, RagdollLab (+ Steam bridge, builder), Bootstrap and Editor assemblies compiled.'
 Write-Output 'NOTE: Assets/Scripts/Input is skipped; it needs the Input System package and compiles inside Unity.'

@@ -58,6 +58,29 @@ namespace ChessFight.RagdollLab
         }
     }
 
+    /// <summary>One client's controls as they travel to the host. Move is world XZ, Aim a world unit vector.</summary>
+    public struct RagdollNetInput
+    {
+        public Vector2 move;
+        public bool jump, shove, grab, sprint;
+        public bool ability, ability2;   // edges
+        public bool interact;            // held
+        public Vector3 aim;
+
+        public static RagdollNetInput From(PawnInput input) => new RagdollNetInput
+        {
+            move = new Vector2(input.move.x, input.move.z), jump = input.jump, shove = input.shove, grab = input.grab,
+            sprint = input.sprint, ability = input.ability, ability2 = input.ability2, interact = input.interact,
+            aim = input.aim,
+        };
+
+        public PawnInput ToPawnInput() => new PawnInput
+        {
+            move = new Vector3(move.x, 0f, move.y), jump = jump, shove = shove, grab = grab, sprint = sprint,
+            ability = ability, ability2 = ability2, interact = interact, aim = aim,
+        };
+    }
+
     /// <summary>A decoded snapshot with reusable pose objects (no per-packet allocation).</summary>
     public sealed class RagdollSnapshot
     {
@@ -87,7 +110,9 @@ namespace ChessFight.RagdollLab
     /// </summary>
     public static class RagdollNetProtocol
     {
-        public const uint Magic = 0x43465247;   // "CFRG"
+        // Bumped with the input packet (abilities, interact, aim; 2026-09-26) so an older lab build's
+        // packets are dropped at the door instead of half-read.
+        public const uint Magic = 0x43465232;   // "CFR2"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         public const int MaxBytes = 1024;
@@ -96,7 +121,7 @@ namespace ChessFight.RagdollLab
 
         public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 4;  // 64
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 1;            // 22
-        public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1;             // 24
+        public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
 
         const float SmallestThreeRange = 0.70710678f;
 
@@ -106,7 +131,7 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- input
 
-        public static byte[] Input(ulong session, uint sequence, uint clientTimeMs, Vector2 move, bool jump, bool shove, bool grab, bool sprint = false)
+        public static byte[] Input(ulong session, uint sequence, uint clientTimeMs, in RagdollNetInput input)
         {
             using (var stream = new MemoryStream(InputBytes))
             using (var w = new BinaryWriter(stream))
@@ -116,37 +141,50 @@ namespace ChessFight.RagdollLab
                 w.Write(session);
                 w.Write(sequence);
                 w.Write(clientTimeMs);
-                w.Write((sbyte)Mathf.Clamp(Mathf.RoundToInt(move.x * 127f), -127, 127));
-                w.Write((sbyte)Mathf.Clamp(Mathf.RoundToInt(move.y * 127f), -127, 127));
-                w.Write((byte)((jump ? 1 : 0) | (shove ? 2 : 0) | (grab ? 4 : 0) | (sprint ? 8 : 0)));
+                w.Write(Signed(input.move.x));
+                w.Write(Signed(input.move.y));
+                w.Write((byte)((input.jump ? 1 : 0) | (input.shove ? 2 : 0) | (input.grab ? 4 : 0) | (input.sprint ? 8 : 0)
+                               | (input.ability ? 16 : 0) | (input.ability2 ? 32 : 0) | (input.interact ? 64 : 0)));
+                // The aim as a direction, a byte per axis: about half a degree, plenty for a thrown hook.
+                Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
+                w.Write(Signed(aim.x));
+                w.Write(Signed(aim.y));
+                w.Write(Signed(aim.z));
                 return stream.ToArray();
             }
         }
 
-        public static bool ReadInput(byte[] bytes, ulong session, out uint sequence, out uint clientTimeMs,
-            out Vector2 move, out bool jump, out bool shove, out bool grab, out bool sprint)
+        public static bool ReadInput(byte[] bytes, ulong session, out uint sequence, out uint clientTimeMs, out RagdollNetInput input)
         {
             sequence = 0;
             clientTimeMs = 0;
-            move = Vector2.zero;
-            jump = shove = grab = sprint = false;
+            input = default;
             if (bytes == null || bytes.Length != InputBytes) return false;
             using (var r = new BinaryReader(new MemoryStream(bytes)))
             {
                 if (r.ReadUInt32() != Magic || r.ReadByte() != TypeInput || r.ReadUInt64() != session) return false;
                 sequence = r.ReadUInt32();
                 clientTimeMs = r.ReadUInt32();
-                move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+                input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
                 byte buttons = r.ReadByte();
-                if (buttons > 15) return false;
-                jump = (buttons & 1) != 0;
-                shove = (buttons & 2) != 0;
-                grab = (buttons & 4) != 0;
-                sprint = (buttons & 8) != 0;
-                if (move.sqrMagnitude > 1.05f) move = move.normalized;
+                if (buttons > 127) return false;
+                input.jump = (buttons & 1) != 0;
+                input.shove = (buttons & 2) != 0;
+                input.grab = (buttons & 4) != 0;
+                input.sprint = (buttons & 8) != 0;
+                input.ability = (buttons & 16) != 0;
+                input.ability2 = (buttons & 32) != 0;
+                input.interact = (buttons & 64) != 0;
+                if (input.move.sqrMagnitude > 1.05f) input.move = input.move.normalized;
+                var aim = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+                // Anything but a unit vector or nothing at all is not an aim.
+                float length = aim.magnitude;
+                input.aim = length < 0.5f ? Vector3.zero : aim / length;
                 return true;
             }
         }
+
+        static sbyte Signed(float value) => (sbyte)Mathf.Clamp(Mathf.RoundToInt(value * 127f), -127, 127);
 
         // ---------------------------------------------------------------- snapshot
 

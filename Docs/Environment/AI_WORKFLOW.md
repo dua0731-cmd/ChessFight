@@ -28,10 +28,11 @@
 | Linux / 클라우드 AI | `Tools/run-tests-linux.sh` | **어셈블리 경계 검사**(Steam은 Network·Bootstrap에만, `Assets/Scripts`는 래그돌을 참조하지 않음) + Core 테스트 + 모의 Steam 세션 테스트. Mono가 없으면 apt로 설치 |
 | 〃 | `Tools/run-tests-linux.sh --compile` | 위 + **Roslyn**(.NET 8 SDK, 없으면 apt로 설치)으로 Steamworks.NET 원본 소스(고정 커밋)와 Unity 참조 DLL(NuGet `UnityEngine.Modules` 2021.3)에 대해 Core·Network·Game·Gameplay·Bootstrap·RagdollLab 컴파일. Input/·에디터 코드는 제외 |
 | Windows (Unity 설치) | `./Tools/Test-NetworkCore.ps1` | Core + 세션 테스트 (Unity 내장 Mono 사용) |
-| 〃 | `./Tools/Test-NetworkCompile.ps1 -SteamRuntimeSources <PackageCache의 Steamworks Runtime>` | 실제 Unity DLL로 컴파일 |
+| 〃 | `./Tools/Test-NetworkCompile.ps1 -SteamRuntimeSources <PackageCache의 Steamworks Runtime>` | 실제 Unity DLL로 컴파일(09-26부터 랩 Steam 다리 `RagdollLabSteam`과 랩 빌더도 asmdef 참조 그대로). 이 PC: `-SteamRuntimeSources Library/PackageCache/com.rlabrecque.steamworks.net@6fb66c768572/Runtime` |
+| 〃 (래그돌 물리) | 프로젝트 사본 → `Unity.exe -batchmode -nographics -projectPath <사본> -executeMethod ChessFight.RagdollLab.Editor.RagdollLabBuilder.BuildPlayerBatch -labOut <사본>uild` → `RagdollLab.exe -batchmode -nographics -ragdollAutoTest report.txt` (`-ragdollQueenHillOnly`로 퀸 오브 더 힐 점검만) | **실제 PhysX로 도는 래그돌 자동 점검.** 에디터가 같은 프로젝트를 열고 있으면 배치 모드를 못 쓰므로 사본(`Assets`·`Packages`·`ProjectSettings`·`Library`, 약 210 MB)에서 한다. 결과 기준: [RagdollLab README "자동 점검"](../RagdollLab/README.md#자동-점검). 사람의 Unity 확인을 대신하지 않는다 |
 | 컴파일러 없음 | `python3 Tools/Generators/check_braces.py` | 괄호 균형만 확인 |
 
-- 현재 기준: **Core 28개, 세션 12개.** 수가 줄면 뭔가 빠진 것이다.
+- 현재 기준: **Core 29개, 세션 15개**, 래그돌 자동 점검 **46 통과 / 9 실패(기존 실패, 09-26)**. 수가 줄면 뭔가 빠진 것이다.
 - 테스트 파일: `Tests/Network/NetworkCoreTests.cs`, `SessionFlowTests.cs`, `FakeSteam.cs`(Steam/Unity API 모사). 새 Steam API를 쓰면 `FakeSteam.cs`에도 스텁을 추가한다.
 - 테스트 통과는 **Unity 실행 검증이 아니다.** Unity·Steam에서만 확인할 수 있는 항목은 [VALIDATION](../Network/VALIDATION.md) 최상단에 '미확인'으로 추가하고 사용자에게 확인 방법을 알려준다.
 

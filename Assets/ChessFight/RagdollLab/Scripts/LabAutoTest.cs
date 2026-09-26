@@ -12,7 +12,7 @@ namespace ChessFight.RagdollLab
     /// -ragdollAutoTest &lt;report.txt&gt; and/or -ragdollShots &lt;folder&gt;. Never active in normal play.
     /// </summary>
     [DefaultExecutionOrder(-200)]
-    public class LabAutoTest : MonoBehaviour
+    public partial class LabAutoTest : MonoBehaviour
     {
         public LabGame game;
 
@@ -130,6 +130,16 @@ namespace ChessFight.RagdollLab
             log.AppendLine($"Ragdoll lab autotest {DateTime.Now:yyyy-MM-dd HH:mm:ss}  fixedDt={Time.fixedDeltaTime:F4} gravity={Physics.gravity.y:F2}");
             log.AppendLine("params " + JsonUtility.ToJson(game.tuning.values));
             if (Arg("-ragdollDiag") != null) yield return Diagnostics();
+            // -ragdollQueenHillOnly: just the Queen of the Hill mechanics (quick to iterate on).
+            if (Arg("-ragdollQueenHillOnly") != null)
+            {
+                yield return QueenHill();
+                Report("NaN/폭발 없음", allFinite, allFinite ? "모든 부위 좌표 유한" : "NaN 또는 무한대 좌표 발생");
+                log.AppendLine($"RESULT passed={passed} failed={failed}");
+                File.WriteAllText(path, log.ToString());
+                Time.timeScale = 1f;
+                yield break;
+            }
             yield return JointSign();
             yield return Stand();
             yield return Run();
@@ -153,6 +163,7 @@ namespace ChessFight.RagdollLab
             yield return Bar();
             yield return Beam();
             yield return WallClimb();
+            yield return QueenHill();
             yield return Crowd();
             yield return NetLoopback();
             Report("NaN/폭발 없음", allFinite, allFinite ? "모든 부위 좌표 유한" : "NaN 또는 무한대 좌표 발생");
@@ -1747,12 +1758,20 @@ namespace ChessFight.RagdollLab
         /// <summary>Pose path without Steam: capture on one pawn, pack, unpack, draw on a puppet, compare.</summary>
         IEnumerator NetLoopback()
         {
-            byte[] inputBytes = RagdollNetProtocol.Input(99, 7, 1234, new Vector2(0.5f, -0.25f), true, false, true, true);
-            bool inputOk = RagdollNetProtocol.ReadInput(inputBytes, 99, out uint seq, out uint clientTime, out var move, out bool jump, out bool shove, out bool grab, out bool sprint);
-            inputOk &= inputBytes.Length == RagdollNetProtocol.InputBytes && seq == 7 && clientTime == 1234 && jump && !shove && grab && sprint
-                       && Mathf.Abs(move.x - 0.5f) < 0.01f && Mathf.Abs(move.y + 0.25f) < 0.01f;
-            bool wrongSession = RagdollNetProtocol.ReadInput(inputBytes, 100, out _, out _, out _, out _, out _, out _, out _);
-            Report("입력 패킷 왕복", inputOk && !wrongSession, $"{inputBytes.Length}바이트, 값 복원 {inputOk}, 다른 방 번호 거부 {!wrongSession}");
+            var sent = new RagdollNetInput
+            {
+                move = new Vector2(0.5f, -0.25f), jump = true, grab = true, sprint = true,
+                ability2 = true, interact = true, aim = new Vector3(0.3f, -0.4f, 0.866f).normalized,
+            };
+            byte[] inputBytes = RagdollNetProtocol.Input(99, 7, 1234, sent);
+            bool inputOk = RagdollNetProtocol.ReadInput(inputBytes, 99, out uint seq, out uint clientTime, out var got);
+            float aimError = Vector3.Angle(sent.aim, got.aim);
+            inputOk &= inputBytes.Length == RagdollNetProtocol.InputBytes && seq == 7 && clientTime == 1234
+                       && got.jump && !got.shove && got.grab && got.sprint && !got.ability && got.ability2 && got.interact
+                       && Mathf.Abs(got.move.x - 0.5f) < 0.01f && Mathf.Abs(got.move.y + 0.25f) < 0.01f && aimError < 1f;
+            bool wrongSession = RagdollNetProtocol.ReadInput(inputBytes, 100, out _, out _, out _);
+            Report("입력 패킷 왕복", inputOk && !wrongSession,
+                $"{inputBytes.Length}바이트, 값 복원 {inputOk} (능력·상호작용·조준 오차 {aimError:F2}°), 다른 방 번호 거부 {!wrongSession}");
 
             var host = Spawn(new Vector3(0f, 0f, -10f), Vector3.forward, "net-host");
             var remote = Spawn(new Vector3(20f, 0f, -10f), Vector3.forward, "net-remote");

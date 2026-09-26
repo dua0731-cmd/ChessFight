@@ -14,6 +14,23 @@ namespace ChessFight.Gameplay
         public bool Jump;   // Edge: true for the tick the button went down.
         public bool Shove;  // Edge.
         public bool Grab;   // Held.
+        public bool Sprint; // Held: run faster while stamina lasts.
+
+        // The piece abilities (Queen of the Hill): E is every piece's main one,
+        // Q the queen's and the king's second one. Edges.
+        public bool Ability;
+        public bool Ability2;
+
+        // HELD, unlike the abilities. A bell or a lever reacts to the press, but en
+        // passant (unhooking an enemy's grappling hook) needs it held for 0.4 s, and
+        // only the held state can tell a tap from a hold. The character finds the
+        // press edge itself.
+        public bool Interact;
+
+        // WORLD space unit vector the player aims along: the camera's forward, pitch
+        // included. The hook is thrown along it and the charges go along it. Like
+        // Move, the owning client works it out from its own camera. Zero = no aim.
+        public Vector3 Aim;
     }
 
     // The seam between a playable character and whatever drives it.
@@ -36,7 +53,9 @@ namespace ChessFight.Gameplay
         // Respawns and checkpoints. `position` is the GROUND point the feet go on,
         // not the pivot: each character knows its own height (the ragdoll lab puts
         // the hips at ground + standHeight). Must clear velocities and let go of
-        // anything held.
+        // everything: whatever it holds, the wall it climbs, and anyone holding it
+        // (later also hooks and ropes), so a respawn out of the water is always a
+        // clean start.
         void Teleport(Vector3 position, Quaternion rotation);
     }
 }

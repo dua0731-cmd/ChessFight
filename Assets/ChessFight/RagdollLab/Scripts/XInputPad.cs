@@ -89,6 +89,13 @@ namespace ChessFight.RagdollLab
             return current[index].connected && (current[index].buttons & button) != 0 && (previous[index].buttons & button) == 0;
         }
 
+        /// <summary>The right trigger went past halfway this frame (a trigger has no button bit).</summary>
+        public static bool RightTriggerPressed(int index)
+        {
+            Poll();
+            return current[index].connected && current[index].rightTrigger > 0.5f && previous[index].rightTrigger <= 0.5f;
+        }
+
         static Pad Read(int index)
         {
             var pad = new Pad();

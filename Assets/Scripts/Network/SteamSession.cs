@@ -14,7 +14,9 @@ namespace ChessFight.Network
         // v2: jump travels as a press count (MotionProtocol "CFF2").
         // v3: parties and matches carry a game mode, and search filters on it.
         //     A v2 build would ignore the filter and walk into another mode's room.
-        public const string Protocol = "chessfight.dua0731.network.v3";
+        // v4: the ragdoll lab's input packet carries the ability keys, interact and
+        //     the aim (RagdollNetProtocol "CFR2"). A v3 lab build would drop them.
+        public const string Protocol = "chessfight.dua0731.network.v4";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

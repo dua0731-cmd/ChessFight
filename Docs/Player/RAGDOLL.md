@@ -18,7 +18,7 @@
 ## 2. RagdollTest 씬에 있는 것 (랩 그대로)
 
 - 30×30 바닥, **[2] 회전 봉**(북쪽, `SpinningBar` + `RagdollHazard`), **[3] 벽 2·3·4m**(동쪽), **[4] 5m 단상과 경사 15·30·45°**(서쪽), **[5] 0.6m 외줄**(남쪽, 아래는 낭떠러지), **[6] 림보 0.55m와 터널 0.65m**, 각 구역 라벨, 해, 카메라
-- 실행하면 `LabGame`이 **P1(키보드+마우스), P2(패드 또는 방향키), 더미 1개**를 만든다. Tab 튜닝 패널, R 전체 리스폰, T 슬로모션, F 자유 카메라
+- 실행하면 `LabGame`이 **P1(키보드+마우스), P2(패드 또는 방향키), 더미 1개**를 만든다. Tab 튜닝 패널, R 전체 리스폰, T 슬로모션, F4 자유 카메라(09-26에 F에서 옮김)
 - 자동 점검(`LabAutoTest`)은 실행 인자(`-ragdollAutoTest` 등)가 있을 때만 동작한다
 
 좌표는 `LabLayout.cs`, 씬 구성은 빌더(`RagdollLabBuilder.BuildScene`)가 정한다. 메뉴 `ChessFight > Ragdoll Lab > Rebuild Pawn + Scene`은 이제 **`Assets/Scenes/RagdollTest.unity`에 저장**한다(씬을 손으로 고쳤다면 다시 빌드하면 덮어쓴다). `ChessFight > Scenes > Ragdoll Test (offline)`로 연다.
@@ -50,17 +50,35 @@
 
 ```csharp
 // Assets/Scripts/Gameplay/Characters/ICharacterDriver.cs
-public struct CharacterCommand { public Vector3 Move; public bool Jump, Shove, Grab; }   // Move는 월드 좌표
+public struct CharacterCommand
+{
+    public Vector3 Move;                  // 월드 좌표
+    public bool Jump, Shove, Grab;        // 누른 순간, 누른 순간, 누르고 있기
+    public bool Sprint;                   // 누르고 있기 (09-26 추가, 아래 §8)
+    public bool Ability, Ability2;        // 누른 순간: E, Q
+    public bool Interact;                 // 누르고 있기: F (앙파상 0.4초 때문)
+    public Vector3 Aim;                   // 월드 단위 벡터: 카메라가 보는 방향
+}
 public interface ICharacterDriver
 {
     void SetCommand(in CharacterCommand command);
     Transform FollowTarget { get; }                        // 카메라가 따라갈 것 (래그돌은 골반)
-    void Teleport(Vector3 position, Quaternion rotation);  // position = 발이 닿을 바닥 지점
+    void Teleport(Vector3 position, Quaternion rotation);  // position = 발이 닿을 바닥 지점. 벽·손·잡힌 상태를 모두 푼다
+}
+
+// Assets/Scripts/Gameplay/Characters/IHitReceiver.cs (09-26 추가)
+public interface IHitReceiver
+{
+    // push = 속도 변화(m/s), knockdownSeconds 0 = 비틀·그 이상 = 그만큼 누워 있기,
+    // staminaDamage = 스테미나(초 단위, 가득 = 8), dropFromWallOrRide = 벽·턱(나중에 갈고리·밧줄)을 놓고 떨어짐
+    void ApplyHit(Vector3 push, float knockdownSeconds, float staminaDamage, bool dropFromWallOrRide);
 }
 ```
 
 `Assets/ChessFight/RagdollLab/Scripts/RagdollDriver.cs`가 이것을 구현한다.
 - `SetCommand` → `RagdollPawn.SetInput`. 필드는 이름만 바꿔 복사한다.
+- `ApplyHit` → `RagdollPawn.TakeHit`(09-26, §8).
+- 다른 코드는 `GetComponent<IHitReceiver>()`로 찾는다. 래그돌 타입을 몰라도 된다.
 - `FollowTarget` = `Hips`.
 - `Teleport(바닥, 회전)` → `RagdollPawn.Teleport(바닥 + standHeight + 0.02, 앞 방향)`. `LabGame.Respawn`과 같은 식이다.
 
@@ -95,3 +113,67 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 래그돌 어셈블리가 Steam을 참조하면 안 됩니다. 작업 후 Tools/run-tests-linux.sh(또는 Windows의 Test 스크립트)로 확인하세요.
 Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 ```
+
+## 8. 퀸 오브 더 힐 기능 (M1~M4)
+
+2026-09-26, 브랜치 `JY-ragdoll_v2`, 요청 R34. 무엇을 왜 만드는지와 완료 기준은 [MECHANICS_TODO](../GameModes/QueenOfTheHill/MECHANICS_TODO.md). **자동 점검(빌드한 랩 플레이어)은 통과했지만 Unity에서 사람이 본 것은 아직 없다.** 확인 순서는 [VALIDATION](../Network/VALIDATION.md) 최상단 표.
+
+### 8.1 새 입력 (M2)
+
+| 입력 | P1 키보드·마우스 | 게임패드 | P2 키보드 | 종류 |
+|---|---|---|---|---|
+| 전력질주 `Sprint` | 왼쪽 Shift | LT·왼쪽 스틱 누르기 | `/` | 누르고 있기 (원래 있던 것을 약속에 추가) |
+| 능력 `Ability` | **E** | Y | `.` | 누른 순간 |
+| 능력2 `Ability2` | **Q** | RT | `,` | 누른 순간 |
+| 상호작용 `Interact` | **F** | X | `'` | **누르고 있기** (앙파상은 0.4초 누르기라서. 누른 순간은 래그돌이 스스로 센다) |
+| 조준 `Aim` | 카메라가 보는 방향(위아래 포함) | 〃 | 〃 | 월드 단위 벡터 |
+
+- 경로: `CharacterCommand`(Gameplay) → `RagdollDriver.SetCommand` → `PawnInput`. 랩은 `LabGame.ReadInput`이, 킹러시 플레이테스트는 `MoveInputSource`(Game)·`PlaytestSpawner`가 채운다.
+- **랩의 자유 카메라는 F → F4로 옮겼다**(F가 상호작용이 됐다).
+- 래그돌은 아직 이 키로 아무것도 하지 않는다. 받은 값(누른 횟수, 누르는 중, 조준)을 `AbilityPresses`·`InteractHeld`·`Aim` 등으로 보여 줄 뿐이다. 시험대 창(화면 왼쪽 아래)에 보인다.
+- 온라인 랩: 입력 패킷이 24 → **27바이트**(버튼 비트 3개 + 조준 3바이트), magic `CFR2`, **프로토콜 v4**. 상호작용은 보낼 때까지 눌림을 붙잡아 두어서 짧게 톡 눌러도 방장에게 간다.
+
+### 8.2 탈것 (M1)
+
+- `Gameplay/Obstacles/IMovingSurface`: `PointVelocity(점)`, `DeltaRotation`. **모든 `Obstacle`이 구현한다**(회전 봉·진자 위에 서도 실려 간다).
+- `Obstacle`은 이번 물리 스텝의 움직임을 **먼저 묻는 쪽이 계산**하게 바꿨다. 래그돌이 장애물보다 먼저 도는데(실행 순서 −50), 예전처럼 장애물 자신의 FixedUpdate에서만 계산하면 래그돌은 한 스텝 늦은 값을 읽었다(3 m/s 승강기에서 2.5 cm씩). 장애물 포즈는 여전히 `ObstacleClock` 시간의 순수 함수다(규칙 7).
+- 새 부품 `Gameplay/Obstacles/MovingPlatform`: 놓인 자리에서 `travel`(로컬 오프셋)까지 `speed`로 갔다가 돌아온다. `rampTime` 동안 가속·감속, 양 끝에서 `pause` 대기, `spinDegreesPerSecond`로 계속 회전(원판·궤도 고리). 박스 콜라이더가 있는 오브젝트에 붙이면 된다(Rigidbody는 자동으로 붙고 키네마틱이 된다). **`rampTime`은 `speed ÷ 6` 이상**: 올라가던 승강기가 9.81 m/s²보다 세게 서면 탄 사람이 위로 튕겨 나간다.
+- 래그돌(`RagdollPawn`):
+  - 발밑이 움직이면 **이동을 발판 기준으로 계산하고 발판 속도를 더한다**(수직 포함). 서 있으면 발판 위에 가만히 있고, 달리기·걸음 동작도 발판 기준 속도로 정해진다(`GroundSpeed`).
+  - 원판 위에서는 몸 방향이 원판과 같이 돈다(수직축 회전만).
+  - 점프는 **발판 기준으로** 뛴다(올라가는 승강기에서도 제대로 뛴다). 공중에서는 **마지막으로 밟은 것의 속도를 유지**해서 달리는 발판에서 뛰어도 다시 그 발판에 내린다.
+  - **벽에 매달린 상태**에서 벽이 움직이면(`MovingPlatform`에 붙은 벽) 몸·두 손의 짚은 자리·모서리/올라서기 경로가 벽과 같이 움직인다. 놓으면 벽 속도를 가지고 떨어진다.
+  - 탈것 판정은 `Riding`.
+
+### 8.3 피격 (M3)
+
+- `Gameplay/Characters/IHitReceiver.ApplyHit(push, knockdownSeconds, staminaDamage, dropFromWallOrRide)`. `RagdollDriver`가 구현하고 `RagdollPawn.TakeHit`으로 넘긴다. 공격 코드는 `GetComponentInParent<IHitReceiver>()`로 찾으면 되고 래그돌 타입을 몰라도 된다.
+- `push`: 몸 전체의 속도 변화(m/s). `knockdownSeconds` 0이면 **비틀**(피격 강성·발 미끄러짐, 이동 앵커가 같이 밀려서 끌려 돌아오지 않음), 그보다 크면 넘어져서 **그 시간 동안 누워 있다가** 일어난다(이미 누워 있으면 시간을 다시 센다). `staminaDamage`는 스테미나 초(가득 = 8). `dropFromWallOrRide`면 벽·턱·손에 쥔 것을 놓고 떨어진다(다시 잡기 0.6초 대기). drop 없이 벽에 매달린 폰에게는 스테미나만 깎인다.
+- 네트워크 인형(참가자 화면의 폰)은 피격을 무시한다. 방장만 계산한다.
+
+### 8.4 물과 부활 (M4)
+
+- `Gameplay/Course/WaterZone`: 트리거. 캐릭터의 어느 부위든 닿으면 **캐릭터 단위로 한 번** `WaterZone.Entered(driver, zone)`을 알린다(부위마다 세었다가 다 나가야 다시 알림). `RespawnDelay` 기본 2초. **알리기만 한다.** 부활은 모드가 한다: `PlaytestSpawner`(킹러시 등)는 2초 뒤 마지막 체크포인트로, 랩 시험대는 시험대 체크포인트로 보낸다. 물리 콜백 안에서 바로 순간이동하지 말고 이렇게 **다음 Update로 미룬다.**
+- `ICharacterDriver.Teleport`(래그돌은 `RagdollPawn.Teleport`)는 이제 **모든 동작을 푼다**: 등반(운동학 자세 포함)·올라서기·모서리, 두 손, **나를 잡고 있던 상대의 손**, 버둥대기·잡힘, 턱 넘기, 던지기, 넉다운 시간, 탈것 속도. 잡기 버튼을 누른 채 부활해도 바로 무언가를 잡거나 벽에 붙지 않는다(버튼을 한 번 떼야 한다). 나중에 갈고리·밧줄도 여기서 푼다(`ClearActions`).
+- **고친 기존 버그(`PawnHand`)**: 무언가를 쥔 채 충돌로 넘어지면 충돌 콜백 안에서 손을 놓는데, Unity는 물리 콜백 안의 `DestroyImmediate`를 거부한다("Destroying components immediately is not permitted…" 오류). 그래서 잡기 관절이 **아무도 모르는 채 남아** 계속 붙잡고 있었고, 일어나서 다시 잡으면 관절이 2개가 됐다. 물 점검에서 이 남은 관절이 부활 직후 폰을 물 쪽으로 초속 20 m로 끌고 갔다. 이제 손을 놓을 때 그 손의 잡기 관절을 **전부** 지우고, 물리 콜백 안이면 프레임 끝에 지운다(`PawnHand.PhysicsCallbackDepth`).
+
+### 8.5 [7] 퀸 오브 더 힐 시험대 (RagdollTest 남동쪽)
+
+`QueenHillTestBed`가 랩을 시작할 때 **코드로** 만든다(씬을 다시 빌드할 필요 없음, 자동 점검도 같은 것을 쓴다). 아레나 남쪽 끝(z = −15)에 붙은 바닥 x 5~35, z −15~−45.
+
+| 자리 | 무엇 | 확인할 것 |
+|---|---|---|
+| [7a] 왕복 발판 | 3×3 m, 8 m를 2 m/s로 왕복(끝에서 1.5초 대기) | 올라타 10초 서 있기, 달리는 중 점프 → 다시 발판에 착지 |
+| [7b] 승강기 | 3×3 m, 3 m/s로 12 m 오르내림(끝에서 2초). 옆 탑 꼭대기로 건너갈 수 있다(틈 0.3 m) | 한 바퀴 타기, 올라가는 중 점프 → 다시 착지 |
+| [7c] 회전 원판 | 지름 8 m, 20°/초 | 가장자리 쪽에 10초 서 있기, 몸이 같이 돈다 |
+| [7d] 움직이는 벽 | 4×5 m 벽, 8 m를 1 m/s로 옆으로 왕복 | W + 우클릭으로 매달려 가만히 있기 |
+| [7e] 물 | 수영장, 부두, 부두 끝의 기둥(물 속까지 이어진 벽), 상자, 초록 체크포인트 | 기둥에 매달려 옆으로 가서 아래로 → 물 / 상자를 잡고 물에 뛰어들기 → 2초 뒤 체크포인트 |
+
+키(오프라인, P1): **F9** 시험대 입구로 이동, **F5** 피격 6 m/s·1초 넘어짐, **F6** 스테미나 −2.5, **F7** 벽·탈것에서 떨어뜨리기. 화면 왼쪽 아래 창에 받은 입력, 탈것 여부, 피격, 물 부활 횟수가 보인다(Tab 패널이 열려 있으면 숨는다).
+
+### 8.6 네트워크
+
+- 바뀐 것은 **랩 입력 패킷**뿐이다(8.1). 스냅샷(폰당 64바이트)은 그대로다.
+- 탈것·피격·물은 **방장만 계산**한다(랩 방식). 참가자 화면의 인형은 피격·물 부활을 무시하고 방장이 보낸 자세를 그린다.
+- **발판은 공유 시계로 모든 PC에서 같다.** 랩 온라인 경기 동안 `SteamRagdollLink`가 장애물 시계를 Steam 서버 시계에 맞춘다. 다만 서버 시계를 그대로 쓰지 않고 **물리 스텝마다 고르게** 흐르게 하고(서버 시계는 프레임 단위로 뛰어서 승강기가 덜컥거린다) 서버 시계와의 차이만 매 프레임 조금씩 맞춘다. 참가자는 인형을 약 110 ms 늦게 그리므로 발판도 그만큼 늦게 돌려서, 승강기에 탄 폰이 승강기 위에 그려진다. 시계가 바뀌는 순간(경기 시작·끝) 장애물은 속도 없이 그 자리로 옮겨 간다(`Obstacle`). **두 PC로 확인하지 않았다.**
+- 경기 씬의 래그돌 동기화와 새 상태(갈고리·기물 등)의 스냅샷은 M14에서 한다.

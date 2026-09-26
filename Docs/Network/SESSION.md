@@ -75,7 +75,7 @@
 
 | 키 | 위치 | 값 |
 |---|---|---|
-| `protocol` | 두 로비 | `chessfight.dua0731.network.v3` (v3: 게임 모드 추가) |
+| `protocol` | 두 로비 | `chessfight.dua0731.network.v4` (v3: 게임 모드 추가, **v4(`JY-ragdoll_v2`, 09-26): 래그돌 랩 입력 패킷에 능력·상호작용·조준 추가**, magic `CFR2`. `JY-lobby`는 아직 v3) |
 | `build` | 두 로비 | `NetworkRuntime.BuildTag` 예: `0.1.0-dev` |
 | `kind` | 두 로비 | `party` / `match` |
 | `route` | 파티 | `idle` / `search` / 경기 로비 ID |

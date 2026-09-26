@@ -31,10 +31,12 @@ namespace ChessFight.RagdollLab
             "  벽 = 매달리기 · 벽 앞에서 W + 우클릭 = 등반(스테미나) · 꼭대기에서 계속 W = 올라서기",
             "  점프하며 잡기 → 벽 모서리를 잡으면 한 번 더 점프 = 기어오르기",
             "  잡혔을 때 좌클릭 연타 = 버둥대며 탈출 (반대 방향 + 점프를 섞으면 더 셈)",
-            "P2 키보드: 방향키 · 오른쪽 Shift 점프 · 오른쪽 Ctrl 슬라이딩 · Enter 잡기 · / 전력질주",
+            "능력 E / Y · 능력2 Q / RT · 상호작용(누르고 있기) F / X — 지금은 [7] 시험대 창에 받은 값만 보여요",
+            "P2 키보드: 방향키 · 오른쪽 Shift 점프 · 오른쪽 Ctrl 슬라이딩 · Enter 잡기 · / 전력질주 · . 능력 · , 능력2 · ' 상호작용",
             "카메라: 마우스 / 오른쪽 스틱 · 휠 확대·축소 · F2 화면 분할 (P2가 조작하면 자동)",
             "마우스 조작은 게임 화면을 한 번 클릭해야 켜져요 · Esc 마우스 풀기",
-            "R 전체 리스폰 · T 슬로모션 · F 자유 카메라(WASD·Q·E)",
+            "R 전체 리스폰 · T 슬로모션 · F4 자유 카메라(WASD·Q·E)",
+            "[7] 시험대(남동쪽): F9 이동 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 벽에서 떨어뜨리기",
             "Tab / Start 패널 · 패드 Back 본인 리스폰 · F3 온라인 패널",
             "값 세트: 1~4 불러오기 · Shift+1~4 저장 · B 무작위 전환",
             "평가: ] 좋음 · [ 별로 (블라인드 모드에서 어느 세트인지 숨김)",
@@ -85,13 +87,13 @@ namespace ChessFight.RagdollLab
         void DrawHint()
         {
             // Stamina and the "you are held" prompt live next to the pawn now (StaminaHud).
-            string text = "Tab: 튜닝 패널   R: 리스폰   T: 슬로모션   F: 자유 카메라   F2: 화면 분할";
+            string text = "Tab: 튜닝 패널   R: 리스폰   T: 슬로모션   F4: 자유 카메라   F2: 화면 분할   F9: [7] 시험대";
             // Until the cursor is locked the clicks go nowhere, which looks exactly like "the
             // actions are broken". Say so where it cannot be missed.
             if (Cursor.lockState != CursorLockMode.Locked && !game.UiWantsCursor)
                 text = "▶ 화면을 클릭하면 마우스 조작(시점 · 좌클릭 슬라이딩 · 우클릭 잡기)이 켜져요     " + text;
             if (game.SlowMotion) text += "   · 슬로모션 중";
-            if (game.labCamera != null && game.labCamera.freeMode) text += "   · 자유 카메라 (WASD·Q·E, F로 복귀)";
+            if (game.labCamera != null && game.labCamera.freeMode) text += "   · 자유 카메라 (WASD·Q·E, F4로 복귀)";
             var size = hintStyle.CalcSize(new GUIContent(text));
             GUI.DrawTexture(new Rect(8, 8, size.x + 16, size.y + 8), panelTexture);
             GUI.Label(new Rect(16, 12, size.x, size.y), text, hintStyle);

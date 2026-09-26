@@ -88,6 +88,9 @@ namespace ChessFight.RagdollLab
         {
             ApplyTime();
             ApplyGravity();
+            // The Queen of the Hill mechanics test bed, south-east of the arena. Built from code, so the
+            // scene does not need rebuilding; the automated checks use it too.
+            if (GetComponent<QueenHillTestBed>() == null) gameObject.AddComponent<QueenHillTestBed>().game = this;
             if (AutoTest) return;
             SetUpCameras();
             if (GetComponent<StaminaHud>() == null) gameObject.AddComponent<StaminaHud>().game = this;
@@ -288,7 +291,8 @@ namespace ChessFight.RagdollLab
                 if (XInputPad.Pressed(i, XInputPad.Start)) PanelOpen = !PanelOpen;
             if (Input.GetKeyDown(KeyCode.R) && !NetworkControlled) RespawnAll();
             if (Input.GetKeyDown(KeyCode.T) && !NetworkControlled) SetSlowMotion(!SlowMotion);
-            if (Input.GetKeyDown(KeyCode.F)) labCamera.SetFreeMode(!labCamera.freeMode);
+            // F4, not F: F is the game's interact key now (bells, levers, en passant).
+            if (Input.GetKeyDown(KeyCode.F4)) labCamera.SetFreeMode(!labCamera.freeMode);
             if (Input.GetKeyDown(KeyCode.F2) && !NetworkControlled) SetSplitScreen(!SplitScreen);
             if (Input.GetKeyDown(KeyCode.Escape)) Cursor.lockState = CursorLockMode.None;
 
@@ -316,7 +320,8 @@ namespace ChessFight.RagdollLab
         }
 
         static bool Touched(PawnInput input) =>
-            input.move.sqrMagnitude > 0.04f || input.jump || input.shove || input.grab || input.sprint;
+            input.move.sqrMagnitude > 0.04f || input.jump || input.shove || input.grab || input.sprint
+            || input.ability || input.ability2 || input.interact;
 
         PawnInput ReadInput(int slotIndex)
         {
@@ -333,6 +338,9 @@ namespace ChessFight.RagdollLab
                     mv.y = (Input.GetKey(KeyCode.W) ? 1f : 0f) - (Input.GetKey(KeyCode.S) ? 1f : 0f);
                     input.jump = Input.GetKeyDown(KeyCode.Space);
                     input.sprint = Input.GetKey(KeyCode.LeftShift);
+                    input.ability = Input.GetKeyDown(KeyCode.E);
+                    input.ability2 = Input.GetKeyDown(KeyCode.Q);
+                    input.interact = Input.GetKey(KeyCode.F);
                     // The clicks only count once the cursor is locked to the game (click the view once;
                     // Esc frees it again). Otherwise the click that locks it would also dive.
                     if (Cursor.lockState == CursorLockMode.Locked && !PanelOpen && !swallowMouse)
@@ -348,6 +356,9 @@ namespace ChessFight.RagdollLab
                     input.shove = Input.GetKeyDown(KeyCode.RightControl);
                     input.grab = Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter);
                     input.sprint = Input.GetKey(KeyCode.Slash);
+                    input.ability = Input.GetKeyDown(KeyCode.Period);
+                    input.ability2 = Input.GetKeyDown(KeyCode.Comma);
+                    input.interact = Input.GetKey(KeyCode.Quote);
                     break;
                 default:
                     int index = PadIndex(slot.device);
@@ -358,6 +369,9 @@ namespace ChessFight.RagdollLab
                     input.shove = XInputPad.Pressed(index, XInputPad.RB) || XInputPad.Pressed(index, XInputPad.B);
                     input.grab = XInputPad.Held(index, XInputPad.LB);
                     input.sprint = pad.leftTrigger > 0.35f || XInputPad.Held(index, XInputPad.LeftThumb);
+                    input.ability = XInputPad.Pressed(index, XInputPad.Y);
+                    input.ability2 = XInputPad.RightTriggerPressed(index);
+                    input.interact = XInputPad.Held(index, XInputPad.X);
                     if (XInputPad.Pressed(index, XInputPad.Back)) Respawn(slot.pawn);
                     if (!cam.freeMode)
                     {
@@ -368,6 +382,7 @@ namespace ChessFight.RagdollLab
             }
             if (mv.sqrMagnitude > 1f) mv.Normalize();
             input.move = cam.FlatRight * mv.x + cam.FlatForward * mv.y;
+            input.aim = cam.AimForward;
             return input;
         }
 

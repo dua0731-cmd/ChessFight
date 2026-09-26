@@ -50,6 +50,9 @@ namespace ChessFight.RagdollLab
         public Vector3 FlatForward => Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
         public Vector3 FlatRight => Quaternion.Euler(0f, yaw, 0f) * Vector3.right;
 
+        /// <summary>Where the player aims: straight along the view, pitch included (the hook, the charges).</summary>
+        public Vector3 AimForward => freeMode ? transform.forward : Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward;
+
         /// <summary>The pawn this camera is following, or null.</summary>
         public RagdollPawn Target
         {

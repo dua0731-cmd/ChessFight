@@ -31,13 +31,25 @@ namespace ChessFight.Gameplay
         float runStart;
         string result = "";
         bool finished;
+        float respawnAt = -1f;   // set while the character is in the water
         GUIStyle style;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => NetworkDriven = false;
 
-        void OnEnable() { Checkpoint.Reached += OnCheckpoint; FinishZone.Reached += OnFinish; }
-        void OnDisable() { Checkpoint.Reached -= OnCheckpoint; FinishZone.Reached -= OnFinish; }
+        void OnEnable()
+        {
+            Checkpoint.Reached += OnCheckpoint;
+            FinishZone.Reached += OnFinish;
+            WaterZone.Entered += OnWater;
+        }
+
+        void OnDisable()
+        {
+            Checkpoint.Reached -= OnCheckpoint;
+            FinishZone.Reached -= OnFinish;
+            WaterZone.Entered -= OnWater;
+        }
 
         void Start()
         {
@@ -73,21 +85,33 @@ namespace ChessFight.Gameplay
             var intent = Application.isFocused ? input.Read() : default;
             // The camera here only pitches, so screen-up is world +Z and no
             // camera-relative conversion is needed.
+            var view = cameraRig != null && cameraRig.Target != null ? cameraRig.Target.transform : null;
             driver.SetCommand(new CharacterCommand
             {
                 Move = new Vector3(Mathf.Clamp(intent.Move.x, -1f, 1f), 0f, Mathf.Clamp(intent.Move.y, -1f, 1f)),
-                Jump = intent.Jump, Shove = intent.Shove, Grab = intent.Grab
+                Jump = intent.Jump, Shove = intent.Shove, Grab = intent.Grab,
+                Sprint = intent.Sprint, Ability = intent.Ability, Ability2 = intent.Ability2,
+                Interact = intent.Interact,
+                Aim = view != null ? view.forward : Vector3.forward
             });
 
             var target = driver.FollowTarget;
             if (LegacyKeys.Down(KeyCode.Backspace)) Restart();
-            else if (LegacyKeys.Down(KeyCode.R) || (target != null && target.position.y < fallLimit))
-                driver.Teleport(respawnPosition, respawnRotation);
+            else if (LegacyKeys.Down(KeyCode.R) || (target != null && target.position.y < fallLimit)
+                     || (respawnAt >= 0f && Time.time >= respawnAt))
+                Respawn();
             if (cameraRig != null && target != null) cameraRig.Follow(target, Time.deltaTime);
+        }
+
+        void Respawn()
+        {
+            respawnAt = -1f;
+            driver.Teleport(respawnPosition, respawnRotation);
         }
 
         void Restart()
         {
+            respawnAt = -1f;
             reachedCheckpoint = int.MinValue;
             respawnPosition = startPosition;
             respawnRotation = startRotation;
@@ -105,6 +129,14 @@ namespace ChessFight.Gameplay
             respawnRotation = checkpoint.transform.rotation;
         }
 
+        // Stage-one rule: a fall into the water puts the character back on its last
+        // checkpoint after the water's delay.
+        void OnWater(ICharacterDriver who, WaterZone water)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time + water.RespawnDelay;
+        }
+
         void OnFinish(ICharacterDriver who)
         {
             if (who != driver || finished) return;
@@ -119,10 +151,12 @@ namespace ChessFight.Gameplay
             if (!showHelp || driver == null) return;
             if (style == null)
                 style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
-            GUI.Box(new Rect(12, 12, 360, 112), GUIContent.none);
-            GUI.Label(new Rect(22, 18, 350, 104),
+            float height = respawnAt >= 0f ? 132 : 112;
+            GUI.Box(new Rect(12, 12, 360, height), GUIContent.none);
+            GUI.Label(new Rect(22, 18, 350, height - 8),
                 "<b>플레이테스트 (오프라인)</b>\n" +
                 "WASD 이동 · Space 점프 · 좌클릭 밀치기 · 우클릭 잡기\n" +
+                (respawnAt >= 0f ? "<b>물에 빠졌어요!</b> 곧 체크포인트로 돌아갑니다\n" : "") +
                 "R 체크포인트로 · Backspace 처음부터\n" +
                 $"기록 {(finished ? result : (Time.time - runStart).ToString("0.0") + "초")}", style);
         }

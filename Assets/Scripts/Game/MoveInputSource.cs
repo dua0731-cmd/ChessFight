@@ -14,6 +14,12 @@ namespace ChessFight.Game
         // The lobby's flat motor ignores both.
         public bool Shove;  // Edge triggered.
         public bool Grab;   // Held.
+        // The Queen of the Hill verbs, also bound to match the ragdoll lab. The
+        // capsule motor and the lobby ignore them.
+        public bool Sprint;   // Held (left Shift).
+        public bool Ability;  // Edge (E): the piece's main ability.
+        public bool Ability2; // Edge (Q): the queen's and king's second ability.
+        public bool Interact; // HELD (F): bells, levers, and en passant's 0.4 s hold.
     }
 
     public interface IMoveInputSource
@@ -63,7 +69,11 @@ namespace ChessFight.Game
                                        (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)),
                     Jump = Input.GetKeyDown(KeyCode.Space),
                     Shove = Input.GetMouseButtonDown(0),
-                    Grab = Input.GetMouseButton(1)
+                    Grab = Input.GetMouseButton(1),
+                    Sprint = Input.GetKey(KeyCode.LeftShift),
+                    Ability = Input.GetKeyDown(KeyCode.E),
+                    Ability2 = Input.GetKeyDown(KeyCode.Q),
+                    Interact = Input.GetKey(KeyCode.F)
                 };
             }
             catch (InvalidOperationException)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ChessFight.Gameplay;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -19,6 +20,12 @@ namespace ChessFight.RagdollLab
         public bool grab;
         /// <summary>Held: sprint while stamina lasts.</summary>
         public bool sprint;
+        /// <summary>Pressed: the piece's main ability (E) / its second one (Q, queen and king).</summary>
+        public bool ability, ability2;
+        /// <summary>Held, not an edge: a bell takes the press, en passant needs a 0.4 s hold.</summary>
+        public bool interact;
+        /// <summary>World-space unit vector the player aims along (the camera's forward); zero for none.</summary>
+        public Vector3 aim;
     }
 
     /// <summary>
@@ -96,6 +103,25 @@ namespace ChessFight.RagdollLab
         public Vector3 Facing => facing;
         public float HipsTilt => Vector3.Angle(bodies[0].transform.up, Vector3.up);
         public float HorizontalSpeed => Flat(bodies[0].linearVelocity).magnitude;
+
+        /// <summary>Horizontal speed over whatever the pawn stands on: on a lift or a turntable this is
+        /// how fast it runs, not how fast the platform carries it. The gait is timed from this.</summary>
+        public float GroundSpeed => Flat(bodies[0].linearVelocity - carryVel).magnitude;
+
+        /// <summary>Standing on (or climbing) something that moves and carries the pawn along.</summary>
+        public bool Riding => (Grounded && groundSurface != null) || (Climbing && climbSurface != null);
+
+        /// <summary>The ability keys as the pawn received them (a debug readout until the abilities exist).</summary>
+        public int AbilityPresses { get; private set; }
+        public int Ability2Presses { get; private set; }
+        public int InteractPresses { get; private set; }
+        public bool InteractHeld => input.interact;
+        public bool SprintHeld => input.sprint;
+        public Vector3 Aim => input.aim;
+
+        /// <summary>Hits taken through TakeHit (IHitReceiver) and the last one, for the test bed.</summary>
+        public int Hits { get; private set; }
+        public string LastHit { get; private set; } = "-";
         public float EffectiveStiffness => Stiffness * StateFactor;
         public Vector3 AnchorPosition => anchorPos;
 
@@ -236,6 +262,19 @@ namespace ChessFight.RagdollLab
         Vector3 groundNormal = Vector3.up;
         Rigidbody groundBody;
 
+        // Riding (Queen of the Hill lifts, shuttles, turntables). The pawn's own motion is worked out
+        // in the frame of whatever it stands on and then carried along with it.
+        Collider groundCollider;             // what the ground probe hit; the surface below is cached per collider
+        IMovingSurface groundSurface;
+        Vector3 surfaceVel;                  // the ground's velocity under the hips this step, all three axes
+        Vector3 carryVel;                    // horizontal velocity of the last thing stood on, kept through the air
+        float carryRise;                     // and its vertical speed, so a jump off a rising lift is a real jump
+        Collider climbCollider;              // the face being climbed, and the surface that moves it
+        IMovingSurface climbSurface;
+        Vector3 climbSurfaceVel;
+        float knockdownHold;                 // seconds a hit keeps the pawn down; 0 = the tuned getUpDelay
+        bool interactPressed;                // interact went down since the last step
+
         void Awake()
         {
             All.Add(this);
@@ -364,6 +403,11 @@ namespace ChessFight.RagdollLab
             input.sprint = next.sprint;
             input.jump |= next.jump;
             input.shove |= next.shove;
+            input.ability |= next.ability;
+            input.ability2 |= next.ability2;
+            if (next.interact && !input.interact) interactPressed = true;
+            input.interact = next.interact;
+            input.aim = next.aim;
         }
 
         public void NotifyHeld(RagdollPawn captor, Collider heldPart)
@@ -424,8 +468,15 @@ namespace ChessFight.RagdollLab
                             && (Grounded || (coyote > 0f && jumpTimer <= 0f));
             if (cameraFooting) footingY = groundY;
 
+            // Nothing uses the ability keys yet; count them so the lab can show they arrive.
+            if (input.ability) AbilityPresses++;
+            if (input.ability2) Ability2Presses++;
+            if (interactPressed) InteractPresses++;
             input.jump = false;
             input.shove = false;
+            input.ability = false;
+            input.ability2 = false;
+            interactPressed = false;
         }
 
         // ---------------------------------------------------------------- sensing
@@ -436,6 +487,7 @@ namespace ChessFight.RagdollLab
             int n = Physics.SphereCastNonAlloc(origin, 0.09f, Vector3.down, hits, standHeight + 0.6f, ~0, QueryTriggerInteraction.Ignore);
             groundFound = false;
             groundBody = null;
+            Collider under = null;
             float best = float.MaxValue;
             for (int i = 0; i < n; i++)
             {
@@ -446,8 +498,15 @@ namespace ChessFight.RagdollLab
                 groundY = h.point.y;
                 groundNormal = h.normal;
                 groundBody = h.rigidbody;
+                under = h.collider;
                 groundFound = true;
             }
+            if (under != groundCollider)
+            {
+                groundCollider = under;
+                groundSurface = under != null ? under.GetComponentInParent<IMovingSurface>() : null;
+            }
+            surfaceVel = groundFound ? SurfaceVelocity(groundSurface, groundBody, bodies[0].position) : Vector3.zero;
             bool feet = FootTouches(footL) || FootTouches(footR);
             // The hips ride up to runLift + stepBob above standing height on purpose; counting that as
             // "off the ground" flickered Grounded on every stride, and each flicker let the body fly.
@@ -455,6 +514,17 @@ namespace ChessFight.RagdollLab
             bool near = groundFound && bodies[0].position.y - groundY < ride;
             Grounded = State != PawnState.Ragdoll && airTimer <= 0f && (feet || near);
             SlopeAngle = groundFound ? Vector3.Angle(groundNormal, Vector3.up) : 0f;
+        }
+
+        /// <summary>
+        /// How fast the thing under a point is moving. A moving platform says so itself (IMovingSurface):
+        /// a kinematic body pushed with MovePosition can read zero from the physics engine. Anything else
+        /// with a body - another pawn, a crate - is asked the physics engine's way.
+        /// </summary>
+        static Vector3 SurfaceVelocity(IMovingSurface surface, Rigidbody body, Vector3 at)
+        {
+            if (surface != null) return surface.PointVelocity(at);
+            return body != null ? body.GetPointVelocity(at) : Vector3.zero;
         }
 
         bool FootTouches(BoxCollider box)
@@ -500,7 +570,7 @@ namespace ChessFight.RagdollLab
                         bool timeUp = stateTimer >= p.diveMaxTime && !(steep > 0.5f && fast);
                         if (slowed || timeUp || stateTimer >= p.diveMaxTime * 4f) BeginGetUp(p);
                     }
-                    else if (stateTimer >= p.getUpDelay) BeginGetUp(p);
+                    else if (stateTimer >= (knockdownHold > 0f ? knockdownHold : p.getUpDelay)) BeginGetUp(p);
                     break;
                 case PawnState.GettingUp:
                     float t = Mathf.Clamp01(stateTimer / Mathf.Max(0.01f, p.getUpBlendTime));
@@ -517,12 +587,25 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        public void Knockdown(string cause)
+        public void Knockdown(string cause) => Knockdown(cause, 0f);
+
+        /// <summary>Knocked flat. <paramref name="hold"/> keeps it down that long (0 = getUpDelay); a new
+        /// hit on a pawn that is already down starts its count again.</summary>
+        public void Knockdown(string cause, float hold)
         {
             EndClimbPose();
-            if (State == PawnState.Ragdoll && !Diving) return;
+            if (State == PawnState.Ragdoll && !Diving)
+            {
+                if (hold > 0f)
+                {
+                    knockdownHold = hold;
+                    stateTimer = 0f;
+                }
+                return;
+            }
             Knockdowns++;
             LastKnockdownCause = cause;
+            knockdownHold = hold;
             if (Diving)
             {
                 // Already limp: the dive just turns into a real fall and waits out getUpDelay.
@@ -591,6 +674,7 @@ namespace ChessFight.RagdollLab
         void BeginGetUp(RagdollParams p)
         {
             LastRagdollTime = stateTimer;
+            knockdownHold = 0f;
             if (Diving)
             {
                 Diving = false;
@@ -638,8 +722,9 @@ namespace ChessFight.RagdollLab
             // up from a dive with speed to spare, sheds it at overspeedDecay through the anchor. The
             // anchor itself never goes past the run speed otherwise, so the launch this clamp exists
             // for is still caught.
-            float limit = Mathf.Max(TopSpeed, anchorVel.magnitude) * p.overspeedClamp;
-            Vector3 travel = Flat(ComVelocity());
+            // Over the ground: a pawn carried by a shuttle is not running any faster for it.
+            float limit = Mathf.Max(TopSpeed, (anchorVel - carryVel).magnitude) * p.overspeedClamp;
+            Vector3 travel = Flat(ComVelocity()) - carryVel;
             float speed = travel.magnitude;
             if (speed <= limit) return;
             Vector3 excess = travel * ((speed - limit) / speed) * Mathf.Clamp01(dt * 25f);
@@ -673,18 +758,37 @@ namespace ChessFight.RagdollLab
             bool moving = move.sqrMagnitude > 0.0025f;
             wantsMove = moving;
             float top = TopSpeed;
-            // The gait is scaled to whichever speed the pawn is going for, so a run is a whole run
-            // and not a sprint cut short.
-            float speedN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, top));
             // A pawn off the ground for a moment without jumping - a bump, a hard stop, a sharp turn -
             // is still running. Keep the hips pulled down to standing height through the coyote
             // window instead of letting the anchor ride up with them: that is what turned every
             // small bump into a hop, and pressing jump on top of the hop into a huge one.
             bool planted = Grounded || (coyote > 0f && jumpTimer <= 0f && freeFlight <= 0f && groundFound
                                         && hp.y - groundY < standHeight + 0.35f);
+            // Everything below is worked out over the ground: relative to whatever the pawn stands on,
+            // then carried along with it. Standing on a lift, a shuttle or a turntable the pawn stands
+            // still ON it; in the air it keeps the speed of what it jumped off (a jump off a shuttle
+            // lands back on the shuttle), until it lands on something else.
+            if (planted)
+            {
+                carryVel = groundFound ? Flat(surfaceVel) : Vector3.zero;
+                carryRise = groundFound ? surfaceVel.y : 0f;
+                // A turntable turns the pawn with it. Only the part about the vertical: a tilting
+                // platform does not tip the pawn over.
+                if (groundSurface != null)
+                {
+                    Vector3 turned = Flat(groundSurface.DeltaRotation * facing);
+                    if (turned.sqrMagnitude > 1e-6f) facing = turned.normalized;
+                }
+            }
+            Vector3 frame = carryVel;
+            Vector3 ownVel = Flat(hips.linearVelocity) - frame;
+            float ownSpeed = ownVel.magnitude;
+            // The gait is scaled to whichever speed the pawn is going for, so a run is a whole run
+            // and not a sprint cut short.
+            float speedN = Mathf.Clamp01(ownSpeed / Mathf.Max(0.1f, top));
             // Feet slide while travelling, lunging into a shove, or reeling from a hit; they grip when idle.
-            bool sliding = moving || anchorVel.sqrMagnitude > 0.25f || shoveTimer > 0f || hitTimer > 0f
-                           || HorizontalSpeed > 0.6f;
+            bool sliding = moving || (anchorVel - frame).sqrMagnitude > 0.25f || shoveTimer > 0f || hitTimer > 0f
+                           || ownSpeed > 0.6f;
             float footFriction = sliding ? p.footFrictionMoving : p.footFrictionIdle;
             ownFootMaterial.dynamicFriction = footFriction;
             ownFootMaterial.staticFriction = footFriction * 1.15f;
@@ -695,15 +799,15 @@ namespace ChessFight.RagdollLab
                 float wanted = Mathf.LerpAngle(current, target, 1f - Mathf.Exp(-p.turnResponsiveness * dt));
                 // A body at speed cannot pivot on the spot; cap how fast the facing may swing. Measured
                 // against the sprint, so the slower run turns more sharply than the sprint does.
-                float fastN = Mathf.Clamp01(HorizontalSpeed / Mathf.Max(0.1f, SprintTop(p)));
+                float fastN = Mathf.Clamp01(ownSpeed / Mathf.Max(0.1f, SprintTop(p)));
                 float maxStep = Mathf.Lerp(1080f, p.turnRateTopSpeed, fastN) * dt;
                 float delta = Mathf.Clamp(Mathf.DeltaAngle(current, wanted), -maxStep, maxStep);
                 float yaw = (current + delta) * Mathf.Deg2Rad;
                 facing = new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
             }
 
-            Vector3 groundVel = Grounded && groundBody != null ? Flat(groundBody.GetPointVelocity(hp)) : Vector3.zero;
-            Vector3 targetVel = move * top + groundVel;
+            Vector3 targetVel = move * top;   // over the ground
+            Vector3 ownAnchor = anchorVel - frame;
             float accel = (moving ? p.acceleration : p.stopDeceleration) * (planted ? 1f : p.airControl);
             // Push off in steps instead of gliding: thrust peaks as each foot takes weight.
             if (p.stanceThrust > 0f && planted && moving)
@@ -715,14 +819,15 @@ namespace ChessFight.RagdollLab
                 float push = Mathf.Lerp(walkPush, hopPush, p.boundGait);
                 accel *= Mathf.Lerp(1f, Mathf.Max(0.3f, push), p.stanceThrust);
             }
-            float speedNow = anchorVel.magnitude;
-            if (speedNow > top + 0.1f && Vector3.Dot(anchorVel, targetVel) > 0f)
+            float speedNow = ownAnchor.magnitude;
+            if (speedNow > top + 0.1f && Vector3.Dot(ownAnchor, targetVel) > 0f)
             {
                 // Momentum from a tumble or a slope: steer toward the input, shed the extra speed slowly.
-                Vector3 dir = Vector3.RotateTowards(anchorVel / speedNow, targetVel.normalized, p.turnResponsiveness * 0.5f * dt, 0f);
-                anchorVel = dir * Mathf.Max(targetVel.magnitude, speedNow - p.overspeedDecay * dt);
+                Vector3 dir = Vector3.RotateTowards(ownAnchor / speedNow, targetVel.normalized, p.turnResponsiveness * 0.5f * dt, 0f);
+                ownAnchor = dir * Mathf.Max(targetVel.magnitude, speedNow - p.overspeedDecay * dt);
             }
-            else anchorVel = Vector3.MoveTowards(anchorVel, targetVel, accel * dt);
+            else ownAnchor = Vector3.MoveTowards(ownAnchor, targetVel, accel * dt);
+            anchorVel = ownAnchor + frame;
 
             Vector3 next = anchorPos + anchorVel * dt;
             if (!moving && shoveTimer <= 0f)
@@ -749,7 +854,7 @@ namespace ChessFight.RagdollLab
             // the anchor may TRAIL, and the yank is limited with it. Leading is untouched.
             if (p.anchorBrakeLeash > 0.001f)
             {
-                Vector3 travel = Flat(hips.linearVelocity);
+                Vector3 travel = ownVel;
                 if (travel.sqrMagnitude > 0.04f && Vector3.Dot(offset, travel) < 0f)
                 {
                     Vector3 back = travel.normalized;
@@ -768,16 +873,16 @@ namespace ChessFight.RagdollLab
                 Vector3 dir = offset / distance;
                 next.x = hp.x + dir.x * leash;
                 next.z = hp.z + dir.z * leash;
-                float bodyAlong = Vector3.Dot(Flat(hips.linearVelocity), dir);
-                float anchorAlong = Vector3.Dot(anchorVel, dir);
+                float bodyAlong = Vector3.Dot(ownVel, dir);
+                float anchorAlong = Vector3.Dot(anchorVel - frame, dir);
                 if (anchorAlong > bodyAlong) anchorVel -= dir * (anchorAlong - Mathf.Max(0f, bodyAlong));
             }
             // Running lifts the hips a little so the one-piece legs swing clear instead of scraping.
             // Airborne: ride along with the hips (one step ahead) so the vertical drive never brakes a jump.
-            float lift = Gait(p.runLift, p.sprintLift) * Mathf.Clamp01(anchorVel.magnitude / Mathf.Max(0.1f, top));
+            float lift = Gait(p.runLift, p.sprintLift) * Mathf.Clamp01((anchorVel - frame).magnitude / Mathf.Max(0.1f, top));
             landDip = Mathf.MoveTowards(landDip, 0f, dt * 0.8f);
             if (planted && !wasGrounded && p.landingDip > 0f)
-                landDip = Mathf.Max(landDip, p.landingDip * Mathf.Clamp01(-hips.linearVelocity.y / 6f));
+                landDip = Mathf.Max(landDip, p.landingDip * Mathf.Clamp01(-(hips.linearVelocity.y - carryRise) / 6f));
             wasGrounded = planted;
             // The sprint bounds: the hips rise as the legs fling apart (twice a cycle, or once for a
             // hop). The run walks: the hips ride exactly on the legs. A straight leg swung out by some
@@ -790,8 +895,9 @@ namespace ChessFight.RagdollLab
             float legDrop = legReach * (1f - Mathf.Cos(legAngle * Mathf.Deg2Rad));
             float runBob = p.stepBob * (1f - spread) - p.runLegDrop * legDrop;
             float bob = Gait(runBob, p.sprintBob * sprintWave) * speedN;
+            // On a lift the floor will have moved by the end of this step; aim for where it will be.
             next.y = planted && groundFound
-                ? groundY + standHeight + lift + bob - landDip - strideDrop
+                ? groundY + surfaceVel.y * dt + standHeight + lift + bob - landDip - strideDrop
                 : hp.y + hips.linearVelocity.y * dt;
             anchorPos = next;
             anchor.MovePosition(anchorPos);
@@ -802,7 +908,7 @@ namespace ChessFight.RagdollLab
             // D) the body spins 180 degrees while still moving the old way, and a forward lean
             // carried round that spin swept sideways across the camera - the side-to-side sway on
             // every reversal. It fades out while the pawn is not going where it faces.
-            float align = anchorVel.sqrMagnitude > 0.25f ? Mathf.Clamp01(Vector3.Dot(anchorVel.normalized, facing)) : 1f;
+            float align = ownAnchor.sqrMagnitude > 0.25f ? Mathf.Clamp01(Vector3.Dot(ownAnchor.normalized, facing)) : 1f;
             leanAlign = Mathf.MoveTowards(leanAlign, align * align, 6f * dt);
             // Each footfall drives the body forward a little more (the push-off), then it rises.
             float drive = Gait(p.runDrive, p.sprintDrive) * (1f - spread) * speedN;
@@ -850,7 +956,9 @@ namespace ChessFight.RagdollLab
                 Vector3 v = bodies[i].linearVelocity + toward;
                 // SET the rise, never add to it. Adding stacked the jump on top of whatever the body
                 // was already doing, so jumping out of a bump went twice as high as a clean jump.
-                v.y = Mathf.Max(v.y, up);
+                // Measured from the floor it leaves: off a lift going up at 3 m/s the old rule gave a
+                // 1.5 m/s hop, off one going down a jump 7.5 m/s strong.
+                v.y = Mathf.Max(v.y, up + (fromGround ? carryRise : 0f));
                 bodies[i].linearVelocity = v;
             }
             airTimer = 0.2f;
@@ -998,8 +1106,7 @@ namespace ChessFight.RagdollLab
                 && groundFound && (Grounded || coyote > 0f))
             {
                 Vector3 n = groundNormal.y > 0.5f ? groundNormal : Vector3.up;
-                Vector3 v = ComVelocity();
-                if (groundBody != null) v -= groundBody.GetPointVelocity(bodies[0].position);
+                Vector3 v = ComVelocity() - surfaceVel;
                 float away = Vector3.Dot(v, n);
                 if (away > p.launchClamp)
                 {
@@ -1170,9 +1277,10 @@ namespace ChessFight.RagdollLab
         /// took the nearest of a fan of rays, so at a corner it swapped faces from frame to frame
         /// and the pawn spun between them with its hands left on the other face.
         /// </summary>
-        bool SenseWall(RagdollParams p, Vector3 at, out Vector3 point, out Vector3 normal)
+        bool SenseWall(RagdollParams p, Vector3 at, out Vector3 point, out Vector3 normal, out Collider face)
         {
             point = normal = Vector3.zero;
+            face = null;
             float length = ClimbHug(p) + 0.55f;
             int count = 0;
             for (int i = -1; i <= 1; i++)
@@ -1182,6 +1290,7 @@ namespace ChessFight.RagdollLab
                 if (!WallRay(p, origin, -wallNormal, length, out var h)) continue;
                 point += h.point;
                 normal += h.normal;
+                if (face == null || i == 0) face = h.collider;
                 count++;
             }
             // One ray alone is the body hanging off the end of the wall, not a wall to hold.
@@ -1217,6 +1326,8 @@ namespace ChessFight.RagdollLab
             climbUp = Vector3.Dot(move, facing);
             climbSide = Vector3.Dot(move, right);
             climbCooldown -= dt;
+            if (Climbing) RideWall(dt);
+            else climbSurfaceVel = Vector3.zero;
 
             if (topOutTimer > 0f)
             {
@@ -1257,9 +1368,10 @@ namespace ChessFight.RagdollLab
             }
 
             Vector3 chestAt = anchorPos + Vector3.up * 0.2f;
-            if (SenseWall(p, chestAt, out var wp, out var wn))
+            if (SenseWall(p, chestAt, out var wp, out var wn, out var face))
             {
                 climbLost = 0f;
+                SetClimbFace(face);
                 wallPoint = wp;
                 // Eased, so a curved face turns the pawn smoothly instead of in steps.
                 wallNormal = Vector3.Slerp(wallNormal, wn, 1f - Mathf.Exp(-12f * dt)).normalized;
@@ -1318,7 +1430,7 @@ namespace ChessFight.RagdollLab
             // middle of the head.
             float clear = HeadClearance(next);
             if (clear < 0.02f) next += wallNormal * ((0.02f - clear) * (1f - Mathf.Exp(-30f * dt)));
-            anchorVel = (next - anchorPos) / Mathf.Max(dt, 1e-4f);
+            anchorVel = (next - anchorPos) / Mathf.Max(dt, 1e-4f) + climbSurfaceVel;
             anchorPos = next;
             Vector3 into = Flat(-wallNormal);
             if (into.sqrMagnitude > 1e-4f)
@@ -1339,6 +1451,7 @@ namespace ChessFight.RagdollLab
             if (!WallRay(p, chestAt, along, hug + 0.25f, out var inner) || Vector3.Dot(inner.normal, -along) < 0.7f)
                 return false;
             Vector3 to = anchorPos + along * Mathf.Max(0f, inner.distance - hug);
+            SetClimbFace(inner.collider);
             StartCorner(to, Vector3.Lerp(anchorPos, to, 0.5f), inner.normal, inner.point, dir);
             return true;
         }
@@ -1359,6 +1472,7 @@ namespace ChessFight.RagdollLab
             if (InsideSolid(to, 0.12f)) return false;
             // The edge itself, at hip height: the side face's point brought back out to the old face.
             Vector3 edge = side.point + wallNormal * Vector3.Dot(wallPoint - side.point, wallNormal) - Vector3.up * 0.2f;
+            SetClimbFace(side.collider);
             // Out round the edge: the curve passes about half its control distance off the edge, so
             // this keeps the head (0.195 m) clear of the corner all the way round.
             StartCorner(to, edge + (wallNormal + side.normal).normalized * (hug * 2.6f), side.normal, side.point, dir);
@@ -1385,7 +1499,7 @@ namespace ChessFight.RagdollLab
             cornerTimer -= dt;
             float s = Smooth(1f - Mathf.Clamp01(cornerTimer / CornerTime));
             Vector3 pos = Vector3.Lerp(Vector3.Lerp(cornerFrom, cornerCtrl, s), Vector3.Lerp(cornerCtrl, cornerTo, s), s);
-            anchorVel = (pos - anchorPos) / Mathf.Max(dt, 1e-4f);
+            anchorVel = (pos - anchorPos) / Mathf.Max(dt, 1e-4f) + climbSurfaceVel;
             anchorPos = pos;
             Vector3 into = Flat(-Vector3.Slerp(cornerN0, cornerN1, s));
             if (into.sqrMagnitude > 1e-4f) facing = into.normalized;
@@ -1424,6 +1538,8 @@ namespace ChessFight.RagdollLab
         {
             Climbing = true;
             climbLost = 0f;
+            SetClimbFace(hit.collider);
+            climbSurfaceVel = climbSurface != null ? climbSurface.PointVelocity(hit.point) : Vector3.zero;
             wallPoint = hit.point;
             wallNormal = hit.normal;
             UpdateWallFrame();
@@ -1439,6 +1555,55 @@ namespace ChessFight.RagdollLab
             handL.Release();
             handR.Release();
             UpdateClimbHands(p, 0f, 0f, 0f);   // hands on the wall from the first frame
+        }
+
+        /// <summary>The face the hands are on, and whether it moves (a wall on a MovingPlatform).</summary>
+        void SetClimbFace(Collider face)
+        {
+            if (face == climbCollider) return;
+            climbCollider = face;
+            climbSurface = face != null ? face.GetComponentInParent<IMovingSurface>() : null;
+        }
+
+        /// <summary>
+        /// The wall moved this step: move everything pinned to it the same way - the body, both holds,
+        /// the reaching hand's arc, the corner and top-out paths - so a sliding or turning wall carries its
+        /// climber instead of peeling it off. A rigid move about the anchor: its own displacement, plus the
+        /// wall's turn applied to every offset from it.
+        /// </summary>
+        void RideWall(float dt)
+        {
+            if (climbSurface == null || climbCollider == null)
+            {
+                climbSurfaceVel = Vector3.zero;
+                return;
+            }
+            Vector3 pivot = anchorPos;
+            climbSurfaceVel = climbSurface.PointVelocity(pivot);
+            Vector3 shift = climbSurfaceVel * dt;
+            Quaternion turn = climbSurface.DeltaRotation;
+            Vector3 Carry(Vector3 at) => pivot + shift + turn * (at - pivot);
+            anchorPos = pivot + shift;
+            wallPoint = Carry(wallPoint);
+            wallNormal = (turn * wallNormal).normalized;
+            for (int slot = 0; slot < 2; slot++) handHold[slot] = Carry(handHold[slot]);
+            swingFrom = Carry(swingFrom);
+            topOutFrom = Carry(topOutFrom);
+            topOutMid = Carry(topOutMid);
+            topOutTo = Carry(topOutTo);
+            cornerFrom = Carry(cornerFrom);
+            cornerCtrl = Carry(cornerCtrl);
+            cornerTo = Carry(cornerTo);
+            cornerPoint0 = Carry(cornerPoint0);
+            cornerPoint1 = Carry(cornerPoint1);
+            cornerN0 = (turn * cornerN0).normalized;
+            cornerN1 = (turn * cornerN1).normalized;
+            Vector3 turned = Flat(turn * facing);
+            if (turned.sqrMagnitude > 1e-6f) facing = turned.normalized;
+            UpdateWallFrame();
+            // Let go, the pawn keeps the wall's speed through the air (see carryVel in Locomotion).
+            carryVel = Flat(climbSurfaceVel);
+            carryRise = climbSurfaceVel.y;
         }
 
         void StopClimb(float cooldown)
@@ -1520,7 +1685,7 @@ namespace ChessFight.RagdollLab
             Climbing = false;
             topOutTimer = 0f;
             climbCooldown = Mathf.Max(climbCooldown, 0.4f);
-            anchorVel = Flat(-wallNormal) * 1f;
+            anchorVel = Flat(-wallNormal) * 1f + climbSurfaceVel;
         }
 
         /// <summary>
@@ -1719,7 +1884,7 @@ namespace ChessFight.RagdollLab
         void Pose(RagdollParams p, float dt)
         {
             // Step at the speed the pawn is trying to go, so a blocked pawn runs in place instead of skidding.
-            float speed = State == PawnState.Ragdoll ? 0f : Mathf.Max(HorizontalSpeed, anchorVel.magnitude);
+            float speed = State == PawnState.Ragdoll ? 0f : Mathf.Max(GroundSpeed, (anchorVel - carryVel).magnitude);
             float speedN = Mathf.Clamp01(speed / Mathf.Max(0.1f, TopSpeed));
             // The tucked jump pose needs a reason: the jump button, or longer than coyote time off the
             // ground. Snapping the legs up on every one-frame loss of contact kicked the floor away,
@@ -1948,7 +2113,8 @@ namespace ChessFight.RagdollLab
                 leg.swinging = true;
                 leg.swingT = 0f;
                 leg.swingFrom = leg.plant;
-                Vector3 ahead = Flat(anchorVel).sqrMagnitude > 0.04f ? Flat(anchorVel).normalized : facing;
+                Vector3 own = Flat(anchorVel - carryVel);
+                Vector3 ahead = own.sqrMagnitude > 0.04f ? own.normalized : facing;
                 // Aim at where the hips will be when the foot lands, half a stride in front of them.
                 leg.target = under + Flat(anchorVel) * swingTime + ahead * (stride * 0.5f);
                 leg.target.y = ground + ankle;
@@ -2255,12 +2421,105 @@ namespace ChessFight.RagdollLab
                 hitTimer = p.hitRecoveryTime;
         }
 
+        // ---------------------------------------------------------------- hits (IHitReceiver)
+
+        /// <summary>
+        /// What every attack does to a pawn (RagdollDriver forwards IHitReceiver.ApplyHit here).
+        /// <paramref name="push"/> is a velocity change in m/s for the whole body. With a knockdown the pawn
+        /// goes limp and stays down <paramref name="knockdownSeconds"/>; without one it only staggers (the
+        /// hit stiffness, low foot grip, and the anchor carried along with the push, so it slides and
+        /// recovers instead of being yanked back). Stamina comes off in the bar's own seconds, and on a wall
+        /// that can be what opens the hands. <paramref name="drop"/> lets go of the wall and any ledge first.
+        /// Only the machine that simulates the pawn applies hits; a network puppet ignores them.
+        /// </summary>
+        public void TakeHit(Vector3 push, float knockdownSeconds, float staminaDamage, bool drop)
+        {
+            if (NetworkPuppet) return;
+            var p = P;
+            if (stamina < 0f) stamina = p.climbStaminaMax;
+            Hits++;
+            LastHit = $"{push.magnitude:0.#} m/s" + (knockdownSeconds > 0f ? $", 넘어짐 {knockdownSeconds:0.#}초" : "")
+                      + (staminaDamage > 0f ? $", 스테미나 -{staminaDamage:0.#}" : "") + (drop ? ", 떨어뜨림" : "");
+            if (staminaDamage > 0f) UseStamina(p, staminaDamage);
+            if (drop) LetGo(0.6f);
+            if (knockdownSeconds > 0f) Knockdown("피격", knockdownSeconds);
+            else if (push.sqrMagnitude > 1e-4f) hitTimer = Mathf.Max(hitTimer, p.hitRecoveryTime);
+            // Still on the wall (no drop, no knockdown): the wall takes the push, only the stamina counts.
+            if (push.sqrMagnitude <= 1e-6f || climbKinematic) return;
+            AddVelocity(push);
+            if (State == PawnState.Ragdoll) return;
+            anchorVel += Flat(push);
+            if (push.y > 0.5f)
+            {
+                // A push that lifts: let it, instead of the launch guard cutting it off.
+                freeFlight = Mathf.Max(freeFlight, 0.4f);
+                airTimer = Mathf.Max(airTimer, 0.1f);
+            }
+        }
+
+        /// <summary>Let go of whatever the pawn hangs from and fall: the wall it climbs, any ledge or thing in
+        /// its hands. Hooks and ropes (M5, M6) will let go here too.</summary>
+        void LetGo(float cooldown)
+        {
+            if (Climbing || topOutTimer > 0f) StopClimb(cooldown);
+            EndClimbPose();
+            handL.Release(cooldown);
+            handR.Release(cooldown);
+            vaultTimer = 0f;
+            ledgePush = 0f;
+        }
+
+        /// <summary>
+        /// Back to a clean standing pawn with nothing in progress, before a respawn: off the wall (and out of
+        /// the kinematic climb pose), hands empty, out of anyone's hands, no dive, vault, throw, thrash or
+        /// knockdown under way, and no platform speed carried over. Hooks and ropes join this list.
+        /// </summary>
+        void ClearActions()
+        {
+            Climbing = false;
+            topOutTimer = cornerTimer = 0f;
+            if (climbKinematic)
+            {
+                // Straight back to physics; the teleport places every body next.
+                climbKinematic = false;
+                foreach (var rb in bodies) rb.isKinematic = false;
+            }
+            holdsPlaced = false;
+            handL.Release();
+            handR.Release();
+            // Whoever had this pawn by a hand lets go, or their joint would drag it back across the map.
+            foreach (var other in All)
+            {
+                if (other == this || other == null) continue;
+                foreach (var hand in new[] { other.handL, other.handR })
+                    if (hand != null && hand.HeldCollider != null && ownSet.Contains(hand.HeldCollider)) hand.Release(0.5f);
+            }
+            heldTimer = struggleTimer = 0f;
+            holder = null;
+            heldCollider = null;
+            vaultTimer = ledgePush = 0f;
+            pullUpUsed = throwOnShoveEnd = false;
+            knockdownHold = 0f;
+            carryVel = Vector3.zero;
+            carryRise = 0f;
+            surfaceVel = climbSurfaceVel = Vector3.zero;
+            groundCollider = climbCollider = null;
+            groundSurface = climbSurface = null;
+            // Holding grab through the respawn must not grab or climb the first thing it sees.
+            climbGrabLatch = true;
+            climbCooldown = Mathf.Max(climbCooldown, 0.5f);
+            legs[0].ready = legs[1].ready = false;
+            swingingLeg = -1;
+            strideDrop = landDip = 0f;
+            input.jump = input.shove = input.ability = input.ability2 = false;
+            interactPressed = false;
+        }
+
         // ---------------------------------------------------------------- utilities
 
         public void Teleport(Vector3 hipsPosition, Vector3 faceDirection)
         {
-            handL.Release();
-            handR.Release();
+            ClearActions();
             Vector3 face = FlatDir(faceDirection, Vector3.forward);
             Quaternion rot = Quaternion.LookRotation(face, Vector3.up);
             for (int i = 0; i < Count; i++)

@@ -8,14 +8,22 @@ namespace ChessFight.RagdollLab
         public RagdollPawn owner;
         public BodyId id;
 
+        // Physics callbacks: a knockdown from here lets go of the hands, and Unity refuses to destroy a
+        // joint immediately inside one, so PawnHand is told to defer it.
         void OnCollisionEnter(Collision c)
         {
-            if (owner != null) owner.OnPartCollision(this, c, true);
+            if (owner == null) return;
+            PawnHand.PhysicsCallbackDepth++;
+            try { owner.OnPartCollision(this, c, true); }
+            finally { PawnHand.PhysicsCallbackDepth--; }
         }
 
         void OnCollisionStay(Collision c)
         {
-            if (owner != null) owner.OnPartCollision(this, c, false);
+            if (owner == null) return;
+            PawnHand.PhysicsCallbackDepth++;
+            try { owner.OnPartCollision(this, c, false); }
+            finally { PawnHand.PhysicsCallbackDepth--; }
         }
     }
 }
