@@ -32,6 +32,9 @@ namespace ChessFight.Game
         public int OurTeam, OursFilled, TheirsFilled;
 
         public bool CanInvite, CanJoinParty, CanJoinMatch, CanCreateTest;
+        public bool ShowTestBots, CanAddAlly, CanRemoveAlly, CanAddEnemy, CanRemoveEnemy;
+        public int AllyDummies, EnemyDummies;
+        public string TestHint;
     }
 
     // Binds NetworkHud.uxml. The element names in the UXML and the Q<T>(name)
@@ -41,6 +44,7 @@ namespace ChessFight.Game
     {
         public event Action Play, StartGame, Cancel, LeaveParty, CreateTest, CopyParty, CopyMatch;
         public event Action AddBot, RemoveBot, FillRoom, ClearRoomBots, RetrySteam;
+        public event Action AddAllyDummy, RemoveAllyDummy, AddEnemyDummy, RemoveEnemyDummy;
         public event Action FriendsOpened, RefreshFriends, SteamOverlayInvite;
         public event Action<ulong> JoinParty, JoinMatch, InviteFriend;
         public event Action<string> PickMode;
@@ -64,6 +68,9 @@ namespace ChessFight.Game
         VisualElement offline, busy, spinner, modeTile, roomTools;
         VisualElement matchPanel, slotsOurs, slotsTheirs;
         Label matchKicker, matchTitle, matchTimer, matchNote, roomCode;
+        VisualElement testBots;
+        Label allyDummies, enemyDummies, testHint, partyBotsTitle;
+        Button allyLess, allyMore, enemyLess, enemyMore;
         readonly List<VisualElement> ourSlots = new List<VisualElement>(), theirSlots = new List<VisualElement>();
         TextField code;
 
@@ -118,6 +125,9 @@ namespace ChessFight.Game
             matchKicker = root.Q<Label>("match-kicker"); matchTitle = root.Q<Label>("match-title");
             matchTimer = root.Q<Label>("match-timer"); matchNote = root.Q<Label>("match-note");
             roomTools = root.Q<VisualElement>("room-tools"); roomCode = root.Q<Label>("room-code");
+            testBots = root.Q<VisualElement>("test-bots");
+            allyDummies = root.Q<Label>("ally-dummies"); enemyDummies = root.Q<Label>("enemy-dummies");
+            testHint = root.Q<Label>("test-hint"); partyBotsTitle = root.Q<Label>("party-bots-title");
             slotsOurs = root.Q<VisualElement>("slots-ours"); slotsTheirs = root.Q<VisualElement>("slots-theirs");
             code = root.Q<TextField>("code");
             friendsPanel = root.Q<VisualElement>("friends"); detailsPanel = root.Q<VisualElement>("details-card");
@@ -156,6 +166,10 @@ namespace ChessFight.Game
             botsLess = Bind(root, "bots-less", () => RemoveBot?.Invoke());
             fillRoom = Bind(root, "fill-bots", () => FillRoom?.Invoke());
             clearRoomBots = Bind(root, "clear-bots", () => ClearRoomBots?.Invoke());
+            allyMore = Bind(root, "ally-more", () => AddAllyDummy?.Invoke());
+            allyLess = Bind(root, "ally-less", () => RemoveAllyDummy?.Invoke());
+            enemyMore = Bind(root, "enemy-more", () => AddEnemyDummy?.Invoke());
+            enemyLess = Bind(root, "enemy-less", () => RemoveEnemyDummy?.Invoke());
             copyParty = Bind(root, "copy-party", () => CopyParty?.Invoke());
             Bind(root, "copy-match", () => CopyMatch?.Invoke());
 
@@ -184,7 +198,7 @@ namespace ChessFight.Game
             BuildModeList();
             // Start from a known state instead of trusting the stylesheet defaults,
             // so "is this panel open" is answerable before the first layout pass.
-            foreach (var hidden in new[] { friendsPanel, detailsPanel, codeModal, modeModal, toast, offline, busy, matchPanel, roomTools })
+            foreach (var hidden in new[] { friendsPanel, detailsPanel, codeModal, modeModal, toast, offline, busy, matchPanel, roomTools, testBots })
                 Show(hidden, false);
             diagnoseAt = Time.unscaledTime + 1f;
         }
@@ -233,7 +247,11 @@ namespace ChessFight.Game
                 return;
             }
             bool modal = Visible(modeModal) || Visible(codeModal);
-            if (!modal && (LegacyKeys.Down(KeyCode.Return) || LegacyKeys.Down(KeyCode.KeypadEnter)) && Usable(play)) Play?.Invoke();
+            if (!modal && (LegacyKeys.Down(KeyCode.Return) || LegacyKeys.Down(KeyCode.KeypadEnter)))
+            {
+                if (Usable(start)) StartGame?.Invoke();
+                else if (Usable(play)) Play?.Invoke();
+            }
             if (!modal && LegacyKeys.Down(KeyCode.F)) { if (FriendsOpen) Close(friendsPanel); else if (canInvite) OpenFriends(); }
             if (!modal && LegacyKeys.Down(KeyCode.M) && Usable(modeOpen)) Open(modeModal);
         }
@@ -625,6 +643,18 @@ namespace ChessFight.Game
             Show(roomTools, model.ShowRoomTools);
             if (roomCode != null) roomCode.text = model.RoomCode;
             Enable(fillRoom, model.CanFillRoom); Enable(clearRoomBots, model.CanClearRoomBots);
+            bool sword = model.ModeKey == GameModes.SwordFight.Key;
+            Show(testBots, model.ShowTestBots);
+            matchPanel?.EnableInClassList("dummy-room", model.ShowTestBots);
+            if (allyDummies != null) allyDummies.text = model.AllyDummies.ToString();
+            if (enemyDummies != null) enemyDummies.text = model.EnemyDummies.ToString();
+            if (testHint != null) testHint.text = model.TestHint;
+            Enable(allyMore, model.CanAddAlly); Enable(allyLess, model.CanRemoveAlly);
+            Enable(enemyMore, model.CanAddEnemy); Enable(enemyLess, model.CanRemoveEnemy);
+            if (createTest != null) createTest.text = sword ? "더미 테스트 (혼자 가능)" : "비공개 방";
+            if (partyBotsTitle != null) partyBotsTitle.text = sword ? "파티 더미 (아군)" : "AI 봇";
+            if (clearRoomBots != null) clearRoomBots.text = sword ? "추가 더미 비우기" : "봇 비우기";
+            if (start != null) start.text = model.ShowTestBots ? "테스트 시작  Enter" : "경기 시작";
 
             Enable(codeOpen, model.CanJoinParty || model.CanJoinMatch);
             Enable(joinParty, model.CanJoinParty); Enable(joinMatch, model.CanJoinMatch);

@@ -105,6 +105,40 @@ public static class SessionFlowTests
                 As(c,c.FillRoomWithBots); Step(); As(c,c.StartGame); Step();
                 Check(c.Started&&c.Roster.Count==12&&c.MatchMode.Playable&&c.MatchMode.Scene=="SwordFight","sword mode start");
                 As(c,c.Cancel); Step(); Check(c.Match==0&&c.Party==party&&c.PartyMode==GameModes.SwordFight,"return party");});
+            Test("Solo Sword Fight starts immediately with one chosen enemy dummy",()=>{
+                Setup(1);var c=clients[0];ulong party=c.Party;
+                As(c,()=>c.SetMode("swordfight"));As(c,()=>c.FindMatch(true));Step();
+                Check(!c.CanStartGame,"empty test starts");int team=c.Roster[c.Self].Team;
+                bool ok=false;As(c,()=>ok=c.AddTestBot(1-team));
+                Check(ok&&c.Roster.Count==2&&c.Roster.Values.Count(p=>p.Team==1-team)==1&&c.CanStartGame,"1v1 dummy admission");
+                As(c,c.StartGame);Check(c.Started,"immediate start requires another click");
+                As(c,()=>ok=c.AddTestBot(team));Check(!ok&&c.Roster.Count==2,"edit after start");
+                As(c,()=>ok=c.RemoveTestBot(1-team));Check(!ok,"remove during match");
+                As(c,c.Cancel);Step();Check(c.Party==party&&c.Match==0&&c.RoomBots==0,"cancel leaked dummy");});
+            Test("Solo private dummy counts can be changed independently up to six per team",()=>{
+                Setup(1);var c=clients[0];As(c,()=>c.FindMatch(true));Step();int team=c.Roster[c.Self].Team;
+                for(int i=0;i<8;i++)As(c,()=>c.AddTestBot(team));
+                for(int i=0;i<8;i++)As(c,()=>c.AddTestBot(1-team));
+                Check(c.Roster.Count==12&&c.TestBots(team)==5&&c.TestBots(1-team)==6&&!c.Started,"overfill or private auto-start");
+                As(c,()=>c.RemoveTestBot(1-team));Check(c.TestBots(1-team)==5&&c.TestBots(team)==5,"wrong team removed");
+                As(c,c.ClearRoomBots);Check(c.Roster.Count==1&&!c.CanStartGame,"clear removed self or retained start");
+                As(c,()=>c.AddTestBot(team));Check(c.CanStartGame&&c.Roster.Values.All(p=>p.Team==team),"ally-only test refused");});
+            Test("Dummy controls are host-only and preserve real players and party bots",()=>{
+                Setup(2);var h=clients[0];var guest=clients[1];As(h,()=>h.SetPartyBots(1));As(h,()=>h.FindMatch(true));Step();
+                As(guest,()=>guest.JoinPrivateMatch(h.Match));Step(20);int team=h.Roster[h.Self].Team;
+                bool ok=true;As(guest,()=>ok=guest.AddTestBot(team));Check(!ok,"guest added dummy");
+                As(h,()=>h.AddTestBot(1-team));Step();
+                Check(guest.Roster.Count==4&&guest.Roster.Keys.Count(BotIdentity.IsBot)==2,"follower roster stale");
+                As(guest,()=>ok=guest.RemoveTestBot(1-team));Check(!ok,"guest removed dummy");
+                As(h,()=>h.RemoveTestBot(1-team));As(h,()=>ok=h.RemoveTestBot(team));Step();
+                Check(!ok&&h.Roster.Count==3&&h.Roster.ContainsKey(guest.Self)&&h.RoomBots==1,"human or party bot removed");});
+            Test("Selective dummy tools cannot bypass public matching or invalid team rules",()=>{
+                Setup(1,i=>new SteamSession("r",false));var c=clients[0];bool ok=true;
+                As(c,()=>ok=c.AddTestBot(0));Check(!ok,"bot outside room");
+                As(c,()=>c.FindMatch());Step(20);As(c,()=>ok=c.AddTestBot(1));Check(!ok&&c.Roster.Count==1&&!c.CanStartGame,"release public bypass");
+                As(c,c.Cancel);As(c,()=>c.FindMatch(true));Step();
+                As(c,()=>ok=c.AddTestBot(2));Check(!ok,"invalid team");
+                As(c,()=>ok=c.AddTestBot(1));Check(ok&&c.CanStartGame,"release private refused");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

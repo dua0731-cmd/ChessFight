@@ -53,6 +53,23 @@
                     <ui:Button name="fill-bots" text="12명 채우기" class="btn tiny" />
                     <ui:Button name="clear-bots" text="봇 비우기" class="btn tiny" />
                 </ui:VisualElement>
+                <ui:VisualElement name="test-bots" class="test-bots">
+                    <ui:VisualElement class="row dummy-counters">
+                        <ui:VisualElement class="row dummy-side">
+                            <ui:Label text="아군 더미" class="dummy-label" />
+                            <ui:Button name="ally-less" text="−" class="btn micro square" />
+                            <ui:Label name="ally-dummies" text="0" class="bot-count" />
+                            <ui:Button name="ally-more" text="+" class="btn micro square" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="row dummy-side">
+                            <ui:Label text="적군 더미" class="dummy-label" />
+                            <ui:Button name="enemy-less" text="−" class="btn micro square" />
+                            <ui:Label name="enemy-dummies" text="0" class="bot-count" />
+                            <ui:Button name="enemy-more" text="+" class="btn micro square" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label name="test-hint" class="hint dummy-hint" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
 
@@ -75,7 +92,7 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="party-section">
-                    <ui:Label text="AI 봇" class="section-title" />
+                    <ui:Label name="party-bots-title" text="AI 봇" class="section-title" />
                     <ui:VisualElement class="row">
                         <ui:Button name="bots-less" text="-" class="btn micro square" />
                         <ui:Label name="bots" text="0" class="bot-count" />

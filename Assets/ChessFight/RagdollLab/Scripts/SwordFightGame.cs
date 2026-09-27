@@ -58,9 +58,9 @@ namespace ChessFight.RagdollLab
             if (!Networked && !Automated)
             {
                 Add(1, 0, 0, false, "나 · 폰");
-                Add(2, 0, 1, true, "백팀 폰");
-                Add(3, 1, 0, true, "흑팀 폰");
-                Add(4, 1, 1, true, "흑팀 폰");
+                Add(2, 0, 1, true, "아군 더미");
+                Add(3, 1, 0, true, "적군 더미 1");
+                Add(4, 1, 1, true, "적군 더미 2");
             }
             RefreshCursor();
             if (Automated) gameObject.AddComponent<SwordFightAutoTest>();
@@ -123,26 +123,10 @@ namespace ChessFight.RagdollLab
                     f.RespawnSeconds = (float)Rules.RespawnRemaining(f.Id);
                     if (Rules.TryRespawn(f.Id)) { f.Respawn(SpawnPoint(f.Pawn.Team, f.Slot), Facing(f.Pawn.Team), true); Revision++; }
                 }
-                if (f.Bot && f.Alive) f.SetInput(BotInput(f));
+                // Test dummies are physical pawns, not pursuing or attacking AI.
+                // Neutral input still permits normal hits, knockdowns and respawns.
+                if (f.Bot && f.Alive) f.SetInput(default);
             }
-        }
-        PawnInput BotInput(SwordFightPawn self)
-        {
-            SwordFightPawn target = null; float best = float.MaxValue;
-            foreach (var f in Fighters.Values)
-            {
-                if (!f.Alive || f.Pawn.Team == self.Pawn.Team) continue;
-                float d = (f.Pawn.Hips.position - self.Pawn.Hips.position).sqrMagnitude;
-                if (d < best) { best = d; target = f; }
-            }
-            if (target == null) return default;
-            Vector3 away = target.Pawn.Hips.position - self.Pawn.Hips.position; away.y = 0;
-            float distance = away.magnitude; Vector3 aim = away.normalized;
-            Vector3 move = distance > .9f ? aim : Vector3.Cross(Vector3.up, aim) * Mathf.Sin((float)Rules.Elapsed * 1.7f + self.Slot);
-            Vector3 pos = self.Pawn.Hips.position;
-            if (Mathf.Abs(pos.x) > 6.3f || Mathf.Abs(pos.z) > 6.3f) move = new Vector3(-pos.x, 0, -pos.z).normalized;
-            return new PawnInput { move = move, aim = aim, shove = distance < 1.5f && self.CanAttack,
-                sprint = distance > 4f };
         }
         public void ApplyScore(int w, int b, float remaining, bool finished)
         { remoteWhite = w; remoteBlack = b; remoteRemaining = remaining; remoteFinished = finished; }

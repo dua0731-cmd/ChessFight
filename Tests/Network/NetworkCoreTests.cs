@@ -132,6 +132,26 @@ public static class NetworkCoreTests
                 Check(r.Count == 12 && r.Used(0) == 6 && r.Used(1) == 6 && r.Ready, "not a full 6v6");
                 r.RemoveFillerBots();
                 Check(r.Count == 1 && r.Bots == 0, "filler bots survived removal"); });
+            Test("Targeted filler respects team choice, capacity and idempotence", () => {
+                var r = new TeamReservations(); Reserve(r, 1, 1);
+                var bots = BotIdentity.Fill(1, 5, 6);
+                Check(r.ReserveBots(1, bots, 0, 0, out var g) && g.Team == 0 && r.Used(0) == 6 && r.Used(1) == 0, "rebalanced explicit team");
+                Check(r.ReserveBots(1, bots, 24, 0, out _) && r.Count == 6 && g.Deadline == 25, "retry");
+                Check(!r.ReserveBots(1, bots, 24, 1, out _), "retry moved teams");
+                Check(!r.ReserveBots(1, BotIdentity.Fill(1, 1, 11), 0, 0, out _) && r.Count == 6, "spilled onto enemy");
+                Check(r.ReserveBots(1, BotIdentity.Fill(1, 6, 12), 0, 1, out _) && r.Count == 12, "enemy capacity"); });
+            Test("Targeted filler removal preserves human and party-bot reservations", () => {
+                var r = new TeamReservations(); ulong host = 1, partyBot = BotIdentity.Id(host, 0);
+                r.Reserve(host, 100, "party", new[] { host, partyBot }, 0, out _);
+                r.ReserveBots(host, BotIdentity.Fill(host, 3, 6), 0, 0, out _);
+                Check(r.RemoveFillerBot(0) && r.FillerBots(0) == 2 && r.Count == 4, "remove one, not group");
+                Check(r.RemoveFillerBot(0) && r.RemoveFillerBot(0) && !r.RemoveFillerBot(0), "remove to zero");
+                Check(r.Count == 2 && r.Find(host) == r.Find(partyBot) && !r.RemoveFillerBot(1), "party modified"); });
+            Test("Targeted filler rejects malformed teams, spoofed owners and humans", () => {
+                var r = new TeamReservations(); var bot = BotIdentity.Fill(1, 1, 6);
+                Check(!r.ReserveBots(1, bot, 0, 2, out _) && !r.ReserveBots(1, bot, 0, -2, out _), "invalid team");
+                Check(!r.ReserveBots(2, bot, 0, 0, out _) && !r.ReserveBots(1, new ulong[] { 1 }, 0, 0, out _), "spoofed filler");
+                Check(!r.RemoveFillerBot(2) && r.Count == 0, "invalid mutation"); });
             Test("Bot movement is a valid in-bounds input stream", () => {
                 ulong id = BotIdentity.Id(900, 0);
                 var brain = new BotBrain(id, 0); var state = PawnMotor.Spawn(id, 0, 0);

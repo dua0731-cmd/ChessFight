@@ -117,5 +117,7 @@
 
 ## 7. 공개 API 요약 (HUD가 쓰는 것)
 
+**R48 소드파이트 더미 테스트:** 비공개 방장만 `AddTestBot(team)` / `RemoveTestBot(team)`로 원하는 팀에 한 명씩 추가·제거한다. `CanEditTestBots`, `CanAddTestBot(team)`, `TestBots(team)`은 버튼 권한·잔여 정원·추가 더미 수를 제공한다. 사람/파티 봇은 보존한다. `CanStartGame`을 HUD와 실제 시작 판정이 같이 써서 아직 예약 중일 때의 무응답 버튼을 막는다. 나+더미 1명으로 시작 가능, 공개 12명 규칙은 변경 없음. 패킷/데이터 변경 없어 v7 유지. Core 40·모의 세션 20 통과, 새 UI의 사용자 확인은 대기.
+
 `FindMatch(bool privateTest)`, `SetMode(key)`, `JoinParty(id)`, `JoinPrivateMatch(id)`, `StartGame()`, `Cancel()`, `Abort(reason)`, `LeaveParty()`, `Retry()`, `Friends()`, `InviteToParty(id)`, `Invite()`, `SetPartyBots(n)`, `FillRoomWithBots()`, `ClearRoomBots()`.
 속성: `Online`, `Party`, `PartyLeader`, `PartyMode`, `Match`, `MatchMode`, `Host`, `IsHost`, `IsLeader`, `Busy`, `Searching`, `Started`, `PrivateRoom`, `Roster`, `PartyMembers`, `PartyBots`, `MaxPartyBots`, `RoomBots`, `Build`, `AllowPublicBots`, `BotsBlockPublicMatch`, `CanUseRoomBots`, `Status`, `Error`.

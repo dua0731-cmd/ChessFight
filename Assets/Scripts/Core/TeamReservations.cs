@@ -42,28 +42,34 @@ namespace ChessFight.Network
         // Host-only. Filler bots exist to reach 12 pawns without 12 testers; they
         // have no lobby membership and therefore no chat path to arrive on.
         public bool ReserveBots(ulong host, ulong[] members, double now, out Group result)
+            => ReserveBots(host, members, now, -1, out result);
+
+        // A private test may deliberately be asymmetric. Never rebalance an
+        // explicitly chosen team or split a human party to make room for bots.
+        public bool ReserveBots(ulong host, ulong[] members, double now, int team, out Group result)
         {
             result = null;
-            if (host == 0 || members == null || members.Length < 1 || members.Length > TeamSize ||
+            if (team < -1 || team > 1 || host == 0 || BotIdentity.IsBot(host) || members == null || members.Length < 1 || members.Length > TeamSize ||
                 members.Distinct().Count() != members.Length ||
                 members.Any(id => !BotIdentity.OwnedBy(id, host)))
                 return false;
-            return Admit(members[0], host, "bots:" + members[0], members, now, out result);
+            return Admit(members[0], host, "bots:" + members[0], members, now, out result, team);
         }
 
-        bool Admit(ulong leader, ulong party, string ticket, ulong[] members, double now, out Group result)
+        bool Admit(ulong leader, ulong party, string ticket, ulong[] members, double now, out Group result, int requestedTeam = -1)
         {
             result = null;
             var prior = groups.Find(g => g.Leader == leader);
             if (prior != null)
             {
-                if (prior.Party != party || prior.Ticket != ticket || !prior.Members.SequenceEqual(members)) return false;
+                if (prior.Party != party || prior.Ticket != ticket || !prior.Members.SequenceEqual(members) ||
+                    (requestedTeam >= 0 && prior.Team != requestedTeam)) return false;
                 result = prior; // Retries must not extend the lease forever.
                 return true;
             }
             if (members.Any(id => Find(id) != null)) return false;
-            int a = Used(0), b = Used(1), team = a <= b ? 0 : 1;
-            if (Used(team) + members.Length > TeamSize) team = 1 - team;
+            int a = Used(0), b = Used(1), team = requestedTeam >= 0 ? requestedTeam : a <= b ? 0 : 1;
+            if (requestedTeam < 0 && Used(team) + members.Length > TeamSize) team = 1 - team;
             if (Used(team) + members.Length > TeamSize) return false;
             result = new Group { Leader = leader, Party = party, Ticket = ticket,
                 Members = (ulong[])members.Clone(), Team = team, Deadline = now + 25 };
@@ -87,6 +93,16 @@ namespace ChessFight.Network
         }
         public bool Ready => Count == 12 && groups.All(g => g.Committed);
         public int Bots => groups.Sum(g => g.Members.Count(BotIdentity.IsBot));
+        public int FillerBots(int team) => groups.Where(g => g.Team == team && BotIdentity.IsBot(g.Leader)).Sum(g => g.Members.Length);
+        public bool RemoveFillerBot(int team)
+        {
+            var group = groups.FindLast(g => g.Team == team && BotIdentity.IsBot(g.Leader));
+            if (group == null) return false;
+            // Remove from the tail so the group's leader remains its first member.
+            if (group.Members.Length == 1) groups.Remove(group);
+            else group.Members = group.Members.Take(group.Members.Length - 1).ToArray();
+            return true;
+        }
         public void Remove(ulong leader) => groups.RemoveAll(g => g.Leader == leader);
         public void RemoveFillerBots() => groups.RemoveAll(g => BotIdentity.IsBot(g.Leader));
         public void Clear() => groups.Clear();

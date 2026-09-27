@@ -47,6 +47,11 @@ namespace ChessFight.Network
         public ulong PartyLeader => Owner(Party);
         public bool BotsBlockPublicMatch => !AllowPublicBots && PartyBots > 0;
         public bool CanUseRoomBots => IsHost && !Started && (privateRoom || AllowPublicBots);
+        public bool CanEditTestBots => IsHost && privateRoom && !Started && Roster.ContainsKey(Self);
+        public bool CanStartGame => IsHost && !Started && reservations.Groups.All(g => g.Committed) &&
+            (privateRoom ? Roster.Count >= 2 : reservations.Ready);
+        public int TestBots(int team) => reservations.FillerBots(team);
+        public bool CanAddTestBot(int team) => CanEditTestBots && team >= 0 && team <= 1 && reservations.Used(team) < TeamReservations.TeamSize;
         public bool Busy => pending || Searching || Match != 0 || Route(Party) != "idle";
         // The mode the party queues for. Everyone in the party reads it from the
         // party lobby; only the leader writes it (SetMode).
@@ -240,6 +245,21 @@ namespace ChessFight.Network
         {
             if (!IsHost || Started) return;
             reservations.RemoveFillerBots(); PublishRoster();
+        }
+        public bool AddTestBot(int team)
+        {
+            if (!CanAddTestBot(team)) return false;
+            if (!reservations.ReserveBots(Self, BotIdentity.Fill(Self, 1, NextFillerIndex()), Time.realtimeSinceStartup, team, out var group)) return false;
+            // Filler bots have no asynchronous Steam arrival to wait for.
+            group.Committed = true;
+            PublishRoster();
+            return true;
+        }
+        public bool RemoveTestBot(int team)
+        {
+            if (!CanEditTestBots || team < 0 || team > 1 || !reservations.RemoveFillerBot(team)) return false;
+            PublishRoster();
+            return true;
         }
         int NextFillerIndex()
         {
@@ -560,7 +580,7 @@ namespace ChessFight.Network
         public void StartGame()
         {
             // A private test needs two pawns; bots count, so one tester plus a bot works.
-            if (!IsHost || Started || reservations.Groups.Any(g => !g.Committed) || (privateRoom ? Roster.Count < 2 : !reservations.Ready)) return;
+            if (!CanStartGame) return;
             Started = true; SteamMatchmaking.SetLobbyJoinable(Id(Match), false); Set(Match, "phase", "playing");
         }
         public void Cancel()

@@ -78,6 +78,8 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 
 ## 5. 버튼과 호출
 
+**R48 소드파이트:** `create-test` 문구가 **더미 테스트 (혼자 가능)**로 바뀐다. 비공개 방의 `test-bots` 영역에 아군/적군 `ally-less/more`, `enemy-less/more`와 인원·안내를 표시한다. `Add/RemoveTestBot(team)` 호출은 LobbyBootstrap에서 내 팀을 기준으로 바꾸며, 방장만 조작할 수 있다. 숫자는 전체 팀 더미를 표시하되 `−`는 방에서 추가한 더미만 제거한다(파티 더미가 있으면 설명 표시). `start`는 **테스트 시작**, Enter로도 실행. 공개 매칭과 별도로 나+더미 한 명이면 충분하다. 공통 UI Toolkit 바인딩·대체 클릭 경로를 그대로 쓴다.
+
 | 버튼 | 호출 | 조건 |
 |---|---|---|
 | 게임 시작 | `FindMatch()` | 한가한 파티장, 모드에 씬 있음, (릴리스) 봇 없음 |

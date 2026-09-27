@@ -98,7 +98,19 @@ namespace ChessFight.Game
             hud.RemoveBot += () => session.SetPartyBots(session.PartyBots - 1);
             hud.FillRoom += () => session.FillRoomWithBots();
             hud.ClearRoomBots += () => session.ClearRoomBots();
+            hud.AddAllyDummy += () => ChangeDummy(false, true);
+            hud.RemoveAllyDummy += () => ChangeDummy(false, false);
+            hud.AddEnemyDummy += () => ChangeDummy(true, true);
+            hud.RemoveEnemyDummy += () => ChangeDummy(true, false);
             hud.RetrySteam += () => session.Retry();
+        }
+
+        void ChangeDummy(bool enemy, bool add)
+        {
+            if (!session.Roster.TryGetValue(session.Self, out var me)) return;
+            int team = enemy ? 1 - me.Team : me.Team;
+            if (add) session.AddTestBot(team); else session.RemoveTestBot(team);
+            refreshAt = 0;
         }
 
         void Copy(ulong id, string notice)
@@ -201,6 +213,8 @@ namespace ChessFight.Game
             int humans = session.PartyMembers.Length;
             int party = humans + session.PartyBots;
             int roomCount = session.Roster.Count;
+            bool sword = mode == GameModes.SwordFight;
+            bool dummyRoom = inRoom && session.PrivateRoom && sword && !session.Started;
 
             int ourTeam = 0, ours = party, theirs = 0;
             if (inRoom && session.Roster.TryGetValue(session.Self, out var me))
@@ -251,21 +265,34 @@ namespace ChessFight.Game
                 CanCancel = session.Busy,
                 ShowStart = inRoom && session.PrivateRoom && session.IsHost,
                 // Mirrors StartGame's real rules, so the button is never a no-op.
-                CanStart = hostWaiting && (session.PrivateRoom ? roomCount >= 2 : roomCount == 12),
+                CanStart = session.CanStartGame,
 
                 ShowMatch = busy,
                 MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + mode.Name,
                 MatchTitle = !inRoom ? (following ? "파티장이 방을 찾는 중..." : "상대를 찾는 중...")
                            : session.Started ? "경기를 시작합니다!"
+                           : dummyRoom && session.IsHost ? "더미를 추가하고 시작하세요"
                            : session.PrivateRoom ? (session.IsHost ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")
                            : "상대를 찾는 중...",
                 MatchTimer = Clock(now),
-                MatchNote = session.AllowPublicBots ? "개발 빌드 · 봇 허용" : "",
+                MatchNote = dummyRoom ? "12명 없이 시작 가능" : session.AllowPublicBots ? "개발 빌드 · 봇 허용" : "",
                 OurTeam = ourTeam, OursFilled = ours, TheirsFilled = theirs,
                 ShowRoomTools = inRoom && (session.PrivateRoom || session.CanUseRoomBots),
                 RoomCode = "방 번호  " + Spaced(session.Match),
-                CanFillRoom = session.CanUseRoomBots && roomCount < 12,
-                CanClearRoomBots = hostWaiting && session.RoomBots > 0,
+                CanFillRoom = session.CanUseRoomBots && session.Roster.ContainsKey(session.Self) && roomCount < 12,
+                CanClearRoomBots = hostWaiting && (session.TestBots(0) + session.TestBots(1)) > 0,
+                ShowTestBots = dummyRoom,
+                AllyDummies = session.Roster.Values.Count(p => p.Team == ourTeam && BotIdentity.IsBot(p.Id)),
+                EnemyDummies = session.Roster.Values.Count(p => p.Team != ourTeam && BotIdentity.IsBot(p.Id)),
+                CanAddAlly = dummyRoom && session.CanAddTestBot(ourTeam),
+                CanAddEnemy = dummyRoom && session.CanAddTestBot(1 - ourTeam),
+                CanRemoveAlly = dummyRoom && session.CanEditTestBots && session.TestBots(ourTeam) > 0,
+                CanRemoveEnemy = dummyRoom && session.CanEditTestBots && session.TestBots(1 - ourTeam) > 0,
+                TestHint = !session.IsHost ? "방장만 더미 수를 변경하고 시작할 수 있어요."
+                    : "이동·공격 없는 더미 · 팀당 최대 6명 (나 포함)\n" +
+                      (roomCount < 2 ? "아군이나 적군 더미를 1명 이상 추가하세요."
+                       : session.PartyBots > 0 ? "파티 더미는 유지됩니다. −는 이 방에서 추가한 더미만 제거해요."
+                       : "준비되면 오른쪽 아래 테스트 시작을 누르세요."),
 
                 CanInvite = session.Online && !session.Busy && session.Party != 0 && humans < 6,
                 CanJoinParty = session.Online && !session.Busy,
@@ -280,6 +307,7 @@ namespace ChessFight.Game
             if (!session.IsLeader) return "파티장이 시작하기를 기다리는 중";
             if (!mode.Playable) return mode.Name + " 모드는 준비 중입니다";
             if (session.BotsBlockPublicMatch) return "봇이 있으면 비공개 방에서만 시작할 수 있어요";
+            if (mode == GameModes.SwordFight) return "공개 매칭 · 혼자라면 왼쪽 더미 테스트";
             return party > 1 ? $"{mode.Name} · 파티 {party}명 모두 같은 팀" : $"{mode.Name} · 빠른 매칭";
         }
 
