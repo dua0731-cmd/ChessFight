@@ -1,4 +1,5 @@
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -140,7 +141,8 @@ namespace ChessFight.RagdollLab
         void UpdateHook(RagdollParams p, float dt)
         {
             hookRetry -= dt;
-            if (input.ability)
+            // The hook is the pawn's (DESIGN 6.2): a promoted piece's E is its own ability.
+            if (input.ability && piece == PieceKind.Pawn)
             {
                 if (hookPhase == HookPhase.None)
                 {
@@ -459,7 +461,8 @@ namespace ChessFight.RagdollLab
         void EnPassant(RagdollParams p, float dt)
         {
             RagdollPawn target = null;
-            if (input.interact && State == PawnState.Active && !Climbing && hookPhase != HookPhase.Pulling && !Floating && !BeingHeld)
+            if (input.interact && piece == PieceKind.Pawn && State == PawnState.Active && !Climbing && hookPhase != HookPhase.Pulling
+                && !Floating && !BeingHeld)
             {
                 Vector3 me = bodies[(int)BodyId.Chest].position;
                 float best = p.enPassantRadius;

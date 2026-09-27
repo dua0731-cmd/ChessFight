@@ -755,6 +755,16 @@ namespace ChessFight.RagdollLab
             return $"\n[7i] 밧줄: {on} · 잡음 {pawn.RopeGrabs} · 점프로 놓음 {pawn.RopeJumps} · 놓음 {pawn.RopeDrops} · 올라섬 {pawn.RopeTopOuts}";
         }
 
+        static string AbilityText(RagdollPawn pawn)
+        {
+            string ready = pawn.AbilityCooldown > 0f ? $"쿨 {pawn.AbilityCooldown:0.0}초" : "준비";
+            switch (pawn.Piece)
+            {
+                case PieceKind.Knight: return $" (E L자 도약 {ready} · 도약 {pawn.KnightJumps} · 밟기 {pawn.Stomps})";
+                default: return "";
+            }
+        }
+
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
 
         static string HookText(HookPhase phase) => phase switch
@@ -785,7 +795,7 @@ namespace ChessFight.RagdollLab
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
                 $"탈것: {(pawn.Riding ? "<b>타는 중</b>" : "-")} · 발밑 기준 {pawn.GroundSpeed:0.0} m/s (전체 {pawn.HorizontalSpeed:0.0}) · " +
                 $"피격 {pawn.Hits}회: {pawn.LastHit}{StatusText(pawn)} · 물에서 부활 {WaterRespawns}회\n" +
-                $"팀 {Teams.Name(pawn.Team)} · 기물 <b>{ChessPieces.Name(pawn.Piece)}</b> · 갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
+                $"팀 {Teams.Name(pawn.Team)} · 기물 <b>{ChessPieces.Name(pawn.Piece)}</b>{AbilityText(pawn)} · 갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
                 $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}\n" +
                 TowerText(pawn) + LaunchText(pawn) + RopeText(pawn) +
                 (IsDrowning(pawn) ? $" · <b>물에 빠짐! {DrowningLeft(pawn):0.0}초 뒤 체크포인트로</b> (좌클릭 버둥 {pawn.Thrashes}회)" : "") +

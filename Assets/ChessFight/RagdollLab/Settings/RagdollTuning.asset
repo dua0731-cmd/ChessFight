@@ -180,3 +180,11 @@ MonoBehaviour:
     enPassantRadius: 2
     enPassantHold: 0.4
     enPassantWindow: 1
+    knightJumpUp: 6
+    knightJumpForward: 3
+    knightJumpClearance: 1.2
+    knightJumpCooldown: 5
+    stompReach: 0.45
+    stompSquash: 1.2
+    stompImmunity: 1
+    stompBounce: 4

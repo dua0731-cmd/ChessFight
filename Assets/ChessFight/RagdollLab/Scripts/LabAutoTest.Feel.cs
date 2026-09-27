@@ -73,6 +73,7 @@ namespace ChessFight.RagdollLab
             if (Want("spring")) yield return FeelScenario(folder, "spring", FeelSpring());
             if (Want("rope_climb")) yield return FeelScenario(folder, "rope_climb", FeelRopeClimb());
             if (Want("swing")) yield return FeelScenario(folder, "swing", FeelSwing());
+            if (Want("knight")) yield return FeelScenario(folder, "knight", FeelKnight());
 
             Time.captureFramerate = 0;
             LabCamera.GameTimeClock = false;
@@ -441,6 +442,26 @@ namespace ChessFight.RagdollLab
             clipFolder = FeelFolder("swing");
             yield return FeelRecord(1.2f + swing.Period * 0.5f, "grab", _ => Feel(0f, 0f, grab: true));
             yield return FeelRecord(1.2f, "let go", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>The knight's L-jump (M12): E in front of the [7h] ledge, 6 m up and 3 m on, onto it.</summary>
+        IEnumerator FeelKnight()
+        {
+            var pawn = Spawn(QueenHillTestBed.PadCenter + new Vector3(-1f, 0f, -2f), Vector3.right, "feel");
+            pawn.SetPiece(ChessFight.Network.PieceKind.Knight);
+            yield return FeelPreroll(pawn, 0.8f, 90f);
+            clipFolder = FeelFolder("knight");
+            yield return FeelRecord(0.5f, "W", _ => Feel(0f, 1f));
+            yield return FeelRecord(0.1f, "E", t =>
+            {
+                Feel(0f, 0f);
+                if (t == 0f)
+                {
+                    feelInput.ability = true;
+                    pawn.SetInput(feelInput);
+                }
+            });
+            yield return FeelRecord(2.6f, "L-jump", _ => Feel(0f, 0f));
         }
 
         string FeelFolder(string name) => Path.Combine(Arg("-ragdollFeel") ?? "feel", name);
