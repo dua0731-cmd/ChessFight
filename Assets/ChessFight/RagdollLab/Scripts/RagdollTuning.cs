@@ -37,6 +37,7 @@ namespace ChessFight.RagdollLab
         public const string GroupSprint = "전력질주 · 스테미나 (명세 외)";
         public const string GroupDive = "다이빙 태클 (좌클릭, 명세 외)";
         public const string GroupHook = "갈고리 (E 꺼내기 · 좌클릭 꾹, M5)";
+        public const string GroupPieces = "기물 능력 (E, M12)";
 
         [Tunable(GroupStiffness, "골반 앵커 hipAnchorStrength")] [Range(0f, 20000f)] public float hipAnchorStrength = 3000f;
         [Tunable(GroupStiffness, "하체 lowerBodySpring")] [Range(0f, 10000f)] public float lowerBodySpring = 2000f;
@@ -306,6 +307,16 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupHook, "앙파상: 갈고리까지 거리 (m)")] [Range(0.5f, 5f)] public float enPassantRadius = 2f;
         [Tunable(GroupHook, "앙파상: F 누르고 있기 (초)")] [Range(0.05f, 2f)] public float enPassantHold = 0.4f;
         [Tunable(GroupHook, "앙파상: 도착 뒤 떼어 낼 수 있는 시간 (초)")] [Range(0f, 3f)] public float enPassantWindow = 1f;
+
+        // Knight (DESIGN 6.2): the L-jump "up two, over one", on the launch pads' fixed arc, and the stomp.
+        [Tunable(GroupPieces, "나이트 L자 도약: 위로 (m)")] [Range(1f, 12f)] public float knightJumpUp = 6f;
+        [Tunable(GroupPieces, "나이트 L자 도약: 앞으로 (m)")] [Range(0f, 8f)] public float knightJumpForward = 3f;
+        [Tunable(GroupPieces, "나이트 L자 도약: 착지점 위로 더 (m)")] [Range(0.2f, 3f)] public float knightJumpClearance = 1.2f;
+        [Tunable(GroupPieces, "나이트 L자 도약: 쿨 (초)")] [Range(0f, 15f)] public float knightJumpCooldown = 5f;
+        [Tunable(GroupPieces, "나이트 밟기: 머리에서 옆으로 (m)")] [Range(0.1f, 1f)] public float stompReach = 0.45f;
+        [Tunable(GroupPieces, "나이트 밟기: 찌그러짐 (초)")] [Range(0f, 3f)] public float stompSquash = 1.2f;
+        [Tunable(GroupPieces, "나이트 밟기: 뒤에 면역 (초)")] [Range(0f, 3f)] public float stompImmunity = 1f;
+        [Tunable(GroupPieces, "나이트 밟기: 튕겨 오르기 (m/s)")] [Range(0f, 8f)] public float stompBounce = 4f;
     }
 
     [CreateAssetMenu(menuName = "ChessFight/Ragdoll Tuning", fileName = "RagdollTuning")]

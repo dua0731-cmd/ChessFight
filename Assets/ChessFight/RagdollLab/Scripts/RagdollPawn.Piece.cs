@@ -38,6 +38,12 @@ namespace ChessFight.RagdollLab
             pieceStats = ChessPieces.Stats(kind);
             StatusImmune = pieceStats.StatusImmune;
             if (!pieceStats.Sprint) Sprinting = false;
+            // The hook, en passant and the bells are the pawn's.
+            if (kind != PieceKind.Pawn && hookPhase != HookPhase.None && !NetworkPuppet)
+            {
+                EndClimbPose();
+                ClearHook();
+            }
             ShowPiece();
         }
 

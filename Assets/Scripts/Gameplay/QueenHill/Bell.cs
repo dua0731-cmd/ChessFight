@@ -1,3 +1,4 @@
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.Gameplay
@@ -5,7 +6,9 @@ namespace ChessFight.Gameplay
     // A section's pioneer bell (DESIGN §3.3 B): the first team to ring it opens the
     // section's fast path (OpenPath with the same section). Rung with the interact
     // key within reach; ringing an open bell only makes it swing. It takes the
-    // colour of the team that opened it (white or black; gold while unrung).
+    // colour of the team that opened it (white or black; gold while unrung). Only
+    // a pawn rings it (DESIGN §6.2: a file opens when its pawn moves); a promoted
+    // piece can only guard it.
     //
     // Needs a collider the character's reach search can find (a trigger is fine).
     public sealed class Bell : MonoBehaviour, IInteractable
@@ -33,6 +36,7 @@ namespace ChessFight.Gameplay
 
         public bool Interact(ICharacterDriver who, int team)
         {
+            if (who is IPromotable piece && piece.Piece != PieceKind.Pawn) return false;
             rungAt = Time.time;
             var match = QueenHillMatch.Current;
             return match != null && match.Ring(section, who, team);

@@ -435,6 +435,7 @@ namespace ChessFight.RagdollLab
         {
             All.Remove(this);
             TeamBodies.Remove(this);
+            if (landingMarker != null) Destroy(landingMarker.gameObject);
             foreach (var c in own)
                 if (c != null && ColliderOwner.TryGetValue(c, out var o) && o == this) ColliderOwner.Remove(c);
             if (ownFootMaterial != null) Destroy(ownFootMaterial);
@@ -626,6 +627,7 @@ namespace ChessFight.RagdollLab
             UpdateSprint(p, dt);
             Locomotion(p, dt);
             Struggle(p, dt);
+            UpdateAbilities(p, dt);
             UpdateHook(p, dt);
             Shove(p);
             UpdateStamina(p, dt);
@@ -3113,6 +3115,7 @@ namespace ChessFight.RagdollLab
             rope = null;
             ropeTopping = false;
             squashTimer = squashImmune = staggerTimer = 0f;
+            ClearAbilities();
             surfaceVel = climbSurfaceVel = Vector3.zero;
             groundCollider = climbCollider = null;
             groundSurface = climbSurface = null;
