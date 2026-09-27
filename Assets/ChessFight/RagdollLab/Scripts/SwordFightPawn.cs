@@ -5,9 +5,9 @@ namespace ChessFight.RagdollLab
 {
     // Mode-local physical weapon. The shared pawn never receives sword buttons.
     [DefaultExecutionOrder(-60)]
-    public sealed class SwordFightPawn : MonoBehaviour
+    public sealed partial class SwordFightPawn : MonoBehaviour
     {
-        public const float TurnSpeed = 150f, DrawTime = .25f, RepeatDelay = .5f;
+        public const float DrawTime = .05f, RepeatDelay = .5f;
         public RagdollPawn Pawn { get; private set; }
         public ulong Id { get; private set; }
         public int Slot { get; private set; }
@@ -15,12 +15,13 @@ namespace ChessFight.RagdollLab
         public bool Alive { get; private set; } = true;
         public bool Authority { get; set; } = true;
         public bool Drawn { get; private set; }
+        public bool ClassicControls { get; private set; }
         public float Protection { get; private set; }
         public float RespawnSeconds { get; set; }
         public float HitFlash { get; private set; }
         public int Swings { get; private set; }
         public int HitsLanded { get; private set; }
-        public bool Attacking => Drawn && gesture > 0 && drawAge >= DrawTime;
+        public bool Attacking => Alive && (ClassicControls ? SwingAge < SwingDuration : Drawn && gesture > 0 && drawAge >= DrawTime);
         public bool WeaponVisible => sword != null && sword.gameObject.activeInHierarchy && blade.enabled;
         public Rigidbody SwordBody { get; private set; }
         public Vector3 BladeRoot => SwordBody.position + SwordBody.rotation * Vector3.forward * .13f;
@@ -43,8 +44,8 @@ namespace ChessFight.RagdollLab
         readonly RaycastHit[] groundHits = new RaycastHit[16];
         Vector3 aim = Vector3.forward, requestedAim = Vector3.forward;
         Vector3 previousRoot, previousTip, stepVelocity, stepAngular, remoteOffset;
-        Quaternion remoteRotation = Quaternion.identity;
-        bool held, sweepPrimed;
+        Quaternion remoteRotation = Quaternion.identity, driveGoal = Quaternion.identity;
+        bool held, sweepPrimed, waitForRelease;
         int contactCount;
         float drawAge, gesture, travel;
         Rigidbody Hand => Pawn.bodies[(int)BodyId.HandR];
@@ -72,16 +73,16 @@ namespace ChessFight.RagdollLab
             RagdollPawn.ColliderOwner[bladeCollider] = Pawn;
             SwordBody = root.AddComponent<Rigidbody>();
             SwordBody.mass = .18f; SwordBody.isKinematic = true;
-            // A handle-weighted, actively supported weapon. An automatically computed COM
-            // halfway down this long blade turns a fast hand raise into an unstable pendulum.
-            SwordBody.centerOfMass = new Vector3(0, 0, .12f);
-            SwordBody.inertiaTensorRotation = Quaternion.identity;
-            SwordBody.inertiaTensor = new Vector3(.025f, .025f, .003f);
+            // The active wrist supports the blade at the grip. Keeping the supported COM
+            // on that pin avoids a translational hand impulse flipping the drawn blade.
+            // Rotational inertia and collision response remain simulated.
+            ConfigureSupportedMass();
             // The active wrist supports the weapon's weight; contact and rotational inertia remain physical.
             SwordBody.useGravity = false;
             SwordBody.interpolation = RigidbodyInterpolation.Interpolate;
             SwordBody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-            SwordBody.maxAngularVelocity = 8f;
+            // Solver safety, not a camera/input turn-rate limit.
+            SwordBody.maxAngularVelocity = 30f;
             SwordBody.solverIterations = 24; SwordBody.solverVelocityIterations = 8;
             SwordBody.angularDamping = .4f;
             var contact = root.AddComponent<SwordBladeContact>(); contact.Owner = this;
@@ -106,15 +107,28 @@ namespace ChessFight.RagdollLab
 
         public void SetInput(PawnInput raw)
         {
-            if (!Authority || !Alive) return;
-            held = raw.shoveHeld;
+            if (!Authority) return;
+            // This mode reserves ability2 as an absolute control-style bit. Never forward it
+            // to the shared pawn, and never encode a lossy toggle edge over the network.
+            SetControlStyle(raw.ability2);
+            if (!Alive) return;
+            if (!raw.shoveHeld && !raw.shove) waitForRelease = false;
+            held = raw.shoveHeld && !waitForRelease;
+            if (ClassicControls && raw.shove && !waitForRelease) { inputBuffer = .13f; bufferedAim = raw.aim; }
             if (Finite(raw.aim) && raw.aim.sqrMagnitude > .01f) requestedAim = raw.aim.normalized;
             Pawn.SetInput(new PawnInput { move = raw.move, jump = raw.jump, sprint = raw.sprint, aim = raw.aim });
         }
 
+        public void SetControlStyle(bool classic)
+        {
+            if (ClassicControls == classic) return;
+            StopCombat(); ClassicControls = classic; waitForRelease = true;
+            if (classic) PoseClickSword(); else PoseHolstered();
+        }
+
         public void StopCombat()
         {
-            held = false; SetDrawn(false); Pawn.SetInput(default);
+            held = false; SetDrawn(false); CancelClickSwing(); Pawn.SetInput(default);
         }
 
         void FixedUpdate()
@@ -122,11 +136,11 @@ namespace ChessFight.RagdollLab
             if (Pawn == null || !Authority || !Alive) return;
             float dt = Time.fixedDeltaTime;
             Protection = Mathf.Max(0, Protection - dt); HitFlash = Mathf.Max(0, HitFlash - dt);
+            if (ClassicControls) { aim = requestedAim; StepClickSwing(dt); return; }
             SetDrawn(held && Pawn.State == PawnState.Active);
             if (!Drawn) { aim = requestedAim; contactCount = 0; return; }
-            // The host also rate-limits aim: packet jumps/high mouse DPI cannot bypass the cap.
-            Vector3 next = Vector3.RotateTowards(aim, requestedAim, TurnSpeed * Mathf.Deg2Rad * dt, 0).normalized;
-            float delta = Vector3.Angle(aim, next); aim = next;
+            // Aim follows the camera immediately; only the physical wrist has finite response.
+            float delta = Vector3.Angle(aim, requestedAim); aim = requestedAim;
             travel += delta; drawAge += dt; gesture = Mathf.Max(0, gesture - dt);
             if (delta > 30f * dt && drawAge >= DrawTime)
             {
@@ -153,12 +167,26 @@ namespace ChessFight.RagdollLab
             }
             previousRoot = BladeRoot; previousTip = BladeTip; sweepPrimed = true;
             Quaternion goal = Quaternion.LookRotation(BladeDirection(), Vector3.up);
-            Quaternion error = goal * Quaternion.Inverse(SwordBody.rotation);
-            error.ToAngleAxis(out float angle, out Vector3 axis);
-            if (angle > 180) angle -= 360;
-            if (Finite(axis)) SwordBody.AddTorque(Vector3.ClampMagnitude(axis * (angle * Mathf.Deg2Rad * 180f)
-                - SwordBody.angularVelocity * 22f, 100f), ForceMode.Acceleration);
+            Vector3 targetVelocity = Vector3.ClampMagnitude(RotationVector(goal * Quaternion.Inverse(driveGoal)) / dt, 30f);
+            driveGoal = goal;
+            Vector3 error = RotationVector(goal * Quaternion.Inverse(SwordBody.rotation));
+            SwordBody.AddTorque(Vector3.ClampMagnitude(error * 900f + (targetVelocity - SwordBody.angularVelocity) * 60f, 900f), ForceMode.Acceleration);
             stepVelocity = SwordBody.linearVelocity; stepAngular = SwordBody.angularVelocity;
+        }
+
+        static Vector3 RotationVector(Quaternion rotation)
+        {
+            rotation.ToAngleAxis(out float angle, out Vector3 axis);
+            if (angle > 180) angle -= 360;
+            return Finite(axis) ? axis * (angle * Mathf.Deg2Rad) : Vector3.zero;
+        }
+
+        void ConfigureSupportedMass()
+        {
+            SwordBody.automaticCenterOfMass = false; SwordBody.automaticInertiaTensor = false;
+            SwordBody.centerOfMass = Vector3.zero;
+            SwordBody.inertiaTensorRotation = Quaternion.identity;
+            SwordBody.inertiaTensor = new Vector3(.025f, .025f, .003f);
         }
 
         void SetDrawn(bool value)
@@ -168,11 +196,17 @@ namespace ChessFight.RagdollLab
             if (value)
             {
                 aim = requestedAim; Protection = 0;
+                // Enable first: rebuilding a collider can resync the old holstered transform
+                // and mass properties. Seed both visible and physics poses only afterwards.
+                bladeCollider.enabled = true;
+                Quaternion rotation = Quaternion.LookRotation(BladeDirection());
+                sword.SetPositionAndRotation(Hand.position, rotation);
                 SwordBody.isKinematic = false;
-                SwordBody.position = Hand.position; SwordBody.rotation = Quaternion.LookRotation(BladeDirection());
+                SwordBody.position = Hand.position; SwordBody.rotation = rotation;
+                ConfigureSupportedMass();
+                driveGoal = SwordBody.rotation;
                 SwordBody.linearVelocity = Hand.linearVelocity; SwordBody.angularVelocity = Vector3.zero;
                 gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Locked;
-                bladeCollider.enabled = true;
                 foreach (var c in ownerColliders) if (c != null) Physics.IgnoreCollision(bladeCollider, c);
             }
             else
@@ -187,10 +221,7 @@ namespace ChessFight.RagdollLab
         {
             Vector3 flat = new Vector3(aim.x, 0, aim.z).normalized;
             if (flat.sqrMagnitude < .01f) flat = Pawn.Facing;
-            Vector3 right = Vector3.Cross(Vector3.up, flat);
-            // Raised guard at neutral pitch, but looking down can reach a prone enemy.
-            float lift = 55f * (1f - Mathf.InverseLerp(.45f, .87f, -aim.y));
-            Vector3 direction = Quaternion.AngleAxis(-lift, right) * aim;
+            Vector3 direction = aim;
             // Do not command an impossible wrist pose through the floor. The collider still
             // resolves contact with floors, bodies and other swords; no dynamic pose is teleported.
             int count = Physics.RaycastNonAlloc(Hand.position + Vector3.up * .2f, Vector3.down, groundHits, 1.4f, ~0, QueryTriggerInteraction.Ignore);
@@ -234,6 +265,7 @@ namespace ChessFight.RagdollLab
 
         Quaternion? SwordPose(int part)
         {
+            if (ClassicControls) return ClickSwordPose(part);
             if (!Alive || !Drawn || Pawn.State != PawnState.Active) return null;
             if (part == (int)BodyId.ArmR)
             {
@@ -248,8 +280,10 @@ namespace ChessFight.RagdollLab
             if (sword == null || Pawn == null) return;
             sword.gameObject.SetActive(Alive);
             if (!Alive) return;
-            if (!Authority && Drawn)
+            if (!Authority)
                 sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
+            else if (ClassicControls)
+                PoseClickSword();
             else if (!Drawn)
                 PoseHolstered();
             bladeMaterial.color = HitFlash > 0 ? new Color(1f, .8f, .24f) : Attacking ? new Color(.94f, .94f, .75f) : new Color(.69f, .82f, .94f);
@@ -276,16 +310,16 @@ namespace ChessFight.RagdollLab
             Pawn.Teleport(floor + Vector3.up * (Pawn.standHeight + .02f), facing);
             Pawn.SetNetworkPuppet(!authority);
             Alive = true; Protection = 1.25f; aim = requestedAim = facing;
-            hits.Clear(); travel = 0; HitFlash = 0;
-            PoseHolstered();
+            hits.Clear(); travel = 0; HitFlash = 0; waitForRelease = false;
+            if (ClassicControls) PoseClickSword(); else PoseHolstered();
             foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
         }
-        public void ApplyRemote(bool alive, bool drawn, float protection, Vector3 offset, Quaternion rotation, float respawn, float flash)
+        public void ApplyRemote(bool alive, bool drawn, float protection, Vector3 offset, Quaternion rotation, float respawn, float flash, bool classic = false)
         {
             Authority = false; bladeCollider.enabled = false; SwordBody.isKinematic = true;
             gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Free;
             bool changed = Alive != alive;
-            Alive = alive; Drawn = drawn && alive; Protection = protection; RespawnSeconds = respawn; HitFlash = flash;
+            Alive = alive; Drawn = drawn && alive; ClassicControls = classic; Protection = protection; RespawnSeconds = respawn; HitFlash = flash;
             remoteOffset = offset; remoteRotation = rotation;
             if (changed) foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = alive;
         }

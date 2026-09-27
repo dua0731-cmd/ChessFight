@@ -28,6 +28,15 @@
 | 21 | 자동 점검 9개가 **처음부터 계속 실패** — 그중 4개는 동작이 아니라 **점검이 틀렸다**(끝난 뒤의 속도를 잼, 두 폰의 출발선이 다름, 올라선 뒤에도 앞으로 계속 누름) | 점검을 Linux 세션에서 **Unity 없이 쓰고 한 번도 돌리지 않은 채** 커밋했다. 파이썬 모델로 잰 값은 실제 PhysX와 달랐다(벽의 튀어나온 밑면, 머리 박치기, 앵커 되튐) | 새 점검은 **빌드한 랩 플레이어에서 한 번 이상 돌려 보고** 커밋한다([RagdollLab README "자동 점검"](../RagdollLab/README.md#자동-점검)의 사본 빌드 절차, `-ragdollOnly`로 일부만). 실패하면 먼저 추적값을 찍어 점검과 동작 중 무엇이 틀렸는지 가른다 | R36 |
 | 14 | 문서가 코드와 어긋남 (예: Both로 바꿨다는 옛 문장) | 여러 도구가 문서를 부분만 갱신 | [HANDOFF §8](../../HANDOFF.md) 체크리스트. 옛 문서는 삭제하거나 새 트리로 안내 | R15 |
 
+## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
+
+R50 실행 로그에서 수동 설정했던 무게중심이 검날 중앙 `z=0.5`로 되돌아가고, 발도 첫 프레임의 방향도 수납 방향을 유지했다. 0.1초 뒤 조준 오차 약117도였지만 충분히 기다리면 정렬돼 이전 느린 검사에서는 놓쳤다. 초기화 순서가 중요하다.
+
+- 충돌체를 먼저 켠 뒤 **표시 Transform와 Rigidbody 양쪽에 시작 자세**를 설정한다. 이후 동적인 베기는 순간 회전이 아니라 torque로 계산한다.
+- `automaticCenterOfMass`와 `automaticInertiaTensor`를 명시적으로 끄고, 발도 때도 손잡이 지지 무게중심/회전 관성을 재설정한다. API 의미는 [Unity 6.3 automaticCenterOfMass](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Rigidbody-automaticCenterOfMass.html), [automaticInertiaTensor](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Rigidbody-automaticInertiaTensor.html) 참고. 여기의 재초기화 현상은 이 프로젝트 실행에서 측정한 것이다.
+- **10회 수납/발도 각각 0.1초 시점**의 실제 칼 방향과 무게중심/자동 계산 플래그를 검사한다. 단순히 Drawn=true 또는 1초 뒤 안정화만 검사하지 않는다.
+- 접촉 콜백이 아닌 다음 FixedUpdate에서 처리한다. 공유 Pawn·카메라·튜닝을 이 문제 때문에 바꾸지 않는다.
+
 ## AI 도구 작업 시 주의
 
 - **R49 물리 칼:** 첫 실행에서 손에 연결한 긴 칼이 아래로 처지고 바닥을 파고들었다. 손목 제어의 무게 지지, 매끄러운 칼 접촉 재질, 바닥 아래로 향하는 불가능한 목표 제한을 모드 안에서 적용했다. 공유 중력/래그돌 튜닝을 바꿔 덮지 않는다. 칼 접촉은 콜백에서 기록만 하고 다음 FixedUpdate에서 처리한다. 실제 플레이어의 저공 베기·벽·12칼 검사를 실행하고 궤적/렌더도 본다.

@@ -7,7 +7,7 @@ namespace ChessFight.Network
     public struct SwordFighterState
     {
         public ulong Id;
-        public bool Alive, Drawn;
+        public bool Alive, Drawn, Classic;
         public float Protection, Respawn, Flash;
         // Weapon pose relative to the hips; Core has no Unity dependency.
         public float X, Y, Z, RX, RY, RZ, RW;
@@ -23,7 +23,7 @@ namespace ChessFight.Network
     // Independent mode state on channel 33. The existing CFR4 pose/input layout is unchanged.
     public static class SwordFightProtocol
     {
-        public const uint Magic = 0x43465332; // CFS2: physical sword pose and held guard
+        public const uint Magic = 0x43465333; // CFS3: physical or classic sword controls
         public const int HeaderBytes = 26, FighterBytes = 40, MaxBytes = HeaderBytes + 12 * FighterBytes;
         static byte Q(float value, float scale) => (byte)Math.Max(0, Math.Min(255, (int)Math.Round(value * scale)));
         public static byte[] Write(ulong match, SwordFightState state)
@@ -37,7 +37,7 @@ namespace ChessFight.Network
                 w.Write(state.Finished); w.Write((byte)state.Fighters.Count);
                 foreach (var f in state.Fighters)
                 {
-                    w.Write(f.Id); w.Write((byte)((f.Alive ? 1 : 0) | (f.Drawn ? 2 : 0)));
+                    w.Write(f.Id); w.Write((byte)((f.Alive ? 1 : 0) | (f.Drawn ? 2 : 0) | (f.Classic ? 4 : 0)));
                     w.Write(Q(f.Protection, 100)); w.Write(Q(f.Respawn, 20)); w.Write(Q(f.Flash, 100));
                     w.Write(f.X); w.Write(f.Y); w.Write(f.Z);
                     w.Write(f.RX); w.Write(f.RY); w.Write(f.RZ); w.Write(f.RW);
@@ -60,12 +60,12 @@ namespace ChessFight.Network
                 for (int i = 0; i < count; i++)
                 {
                     ulong id = r.ReadUInt64(); byte flags = r.ReadByte();
-                    var f = new SwordFighterState { Id = id, Alive = (flags & 1) != 0, Drawn = (flags & 2) != 0,
+                    var f = new SwordFighterState { Id = id, Alive = (flags & 1) != 0, Drawn = (flags & 2) != 0, Classic = (flags & 4) != 0,
                         Protection = r.ReadByte() / 100f, Respawn = r.ReadByte() / 20f, Flash = r.ReadByte() / 100f,
                         X = r.ReadSingle(), Y = r.ReadSingle(), Z = r.ReadSingle(),
                         RX = r.ReadSingle(), RY = r.ReadSingle(), RZ = r.ReadSingle(), RW = r.ReadSingle() };
                     float norm = f.RX * f.RX + f.RY * f.RY + f.RZ * f.RZ + f.RW * f.RW;
-                    if (id == 0 || !ids.Add(id) || flags > 3 || (f.Drawn && !f.Alive) ||
+                    if (id == 0 || !ids.Add(id) || flags > 7 || (f.Drawn && (!f.Alive || f.Classic)) ||
                         !Bound(f.X, 4) || !Bound(f.Y, 4) || !Bound(f.Z, 4) ||
                         !Finite(norm) || norm < .9f || norm > 1.1f) return false;
                     s.Fighters.Add(f);

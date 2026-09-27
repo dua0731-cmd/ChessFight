@@ -42,14 +42,25 @@ public static class NetworkCoreTests
                 var s = new SwordFightState(); s.Fighters.Add(new SwordFighterState { Id = 1, Alive = true, RW = 1 });
                 var b = SwordFightProtocol.Write(1, s); b[0] = 0x31;
                 Check(!SwordFightProtocol.Read(b, 1, out _), "CFS1 accepted");
+                b[0] = 0x32; Check(!SwordFightProtocol.Read(b, 1, out _), "CFS2 accepted");
                 foreach (var f in new[] {
                     new SwordFighterState { Id = 1, RW = 0 },
                     new SwordFighterState { Id = 1, RW = float.NaN },
                     new SwordFighterState { Id = 1, RW = 1, X = 5 },
                     new SwordFighterState { Id = 1, RW = 1, Z = float.PositiveInfinity },
+                    new SwordFighterState { Id = 1, RW = 1, Drawn = true, Alive = true, Classic = true },
                     new SwordFighterState { Id = 1, RW = 1, Drawn = true, Alive = false } }) {
                     s.Fighters[0] = f; Check(!SwordFightProtocol.Read(SwordFightProtocol.Write(1, s), 1, out _), "bad weapon accepted");
                 } });
+            Test("Both sword control styles survive absolute full-state updates", () => {
+                var s = new SwordFightState();
+                s.Fighters.Add(new SwordFighterState { Id = 1, Alive = true, Classic = true, RW = 1 });
+                s.Fighters.Add(new SwordFighterState { Id = 2, Alive = true, Drawn = true, RW = 1 });
+                var b = SwordFightProtocol.Write(1, s);
+                Check(SwordFightProtocol.Read(b, 1, out var p) && p.Fighters[0].Classic && !p.Fighters[0].Drawn &&
+                    !p.Fighters[1].Classic && p.Fighters[1].Drawn, "mixed styles");
+                b[SwordFightProtocol.HeaderBytes + 8] = 9;
+                Check(!SwordFightProtocol.Read(b, 1, out _), "unknown flag"); });
             Test("Two six-player parties stay on opposite teams", () => {
                 var r = new TeamReservations(); Check(Reserve(r, 1, 6) && Reserve(r, 7, 6), "admission");
                 Check(r.Used(0) == 6 && r.Used(1) == 6 && r.Find(1).Team != r.Find(7).Team, "split");

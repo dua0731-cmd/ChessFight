@@ -7,13 +7,14 @@
         </ui:VisualElement>
         <ui:Label name="sf-status" class="sf-status" picking-mode="Ignore" />
         <ui:VisualElement class="sf-help" picking-mode="Ignore">
-            <ui:Label text="WASD 이동 · Shift 질주 · Space 점프 · 좌클릭 유지 + 드래그 = 베기" picking-mode="Ignore" />
-            <ui:Label text="좌클릭 떼면 허리에 수납 · 칼을 들면 시점 회전이 느려집니다" picking-mode="Ignore" />
-            <ui:Label text="폰은 우클릭 스킬 없음 · Esc 메뉴  /  장외 = 상대팀 +1점" picking-mode="Ignore" />
+            <ui:Label name="sf-controls" picking-mode="Ignore" />
+            <ui:Label name="sf-control-help" picking-mode="Ignore" />
+            <ui:Label text="WASD 이동 · Shift 질주 · Space 점프 · 우클릭 스킬 없음 · Esc 메뉴" picking-mode="Ignore" />
         </ui:VisualElement>
         <ui:VisualElement name="sf-menu" class="sf-menu" style="display: none;">
             <ui:Label name="sf-heading" class="sf-heading" />
             <ui:Button name="sf-resume" text="계속 플레이" />
+            <ui:Button name="sf-switch-controls" text="이전 클릭 베기로 전환 (F6)" />
             <ui:Button name="sf-leave" text="로비로 돌아가기" />
         </ui:VisualElement>
     </ui:VisualElement>

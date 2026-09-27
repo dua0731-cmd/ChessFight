@@ -7,10 +7,10 @@ namespace ChessFight.Game
     // View only; this assembly never depends on a ragdoll implementation.
     public sealed class SwordFightHud : MonoBehaviour
     {
-        public event Action Resume, Leave;
+        public event Action Resume, Leave, SwitchControls;
         VisualElement root, menu;
-        Label score, clock, team, status, heading;
-        Button resume, leave, pressed;
+        Label score, clock, team, status, heading, controls, controlHelp;
+        Button resume, leave, switchControls, pressed;
         int actionFrame = -1;
         PanelSettings owned;
         void Awake()
@@ -24,6 +24,8 @@ namespace ChessFight.Game
             heading = root.Q<Label>("sf-heading"); menu = root.Q("sf-menu");
             resume = root.Q<Button>("sf-resume"); resume.clicked += () => Trigger(Resume);
             leave = root.Q<Button>("sf-leave"); leave.clicked += () => Trigger(Leave);
+            switchControls = root.Q<Button>("sf-switch-controls"); switchControls.clicked += () => Trigger(SwitchControls);
+            controls = root.Q<Label>("sf-controls"); controlHelp = root.Q<Label>("sf-control-help");
         }
         void Trigger(Action action)
         { if (actionFrame == Time.frameCount) return; actionFrame = Time.frameCount; action?.Invoke(); }
@@ -37,20 +39,25 @@ namespace ChessFight.Game
             if (Input.GetMouseButtonDown(0)) pressed = hit as Button;
             if (Input.GetMouseButtonUp(0))
             {
-                if (pressed != null && hit == pressed) Trigger(pressed == resume ? Resume : Leave);
+                if (pressed != null && hit == pressed) Trigger(pressed == resume ? Resume : pressed == switchControls ? SwitchControls : Leave);
                 pressed = null;
             }
         }
-        public void Draw(int white, int black, float remaining, int target, int localTeam, string localStatus, bool menuOpen, bool finished)
+        public void Draw(int white, int black, float remaining, int target, int localTeam, string localStatus, bool menuOpen, bool finished, bool classic = false)
         {
             if (root == null) return;
             score.text = $"백팀  {white}   :   {black}  흑팀";
             clock.text = $"소드파이트 · 폰     {Mathf.FloorToInt(remaining / 60):0}:{Mathf.FloorToInt(remaining % 60):00}   /   {target}점";
             team.text = localTeam == 0 ? "나는 백팀 · 폰" : localTeam == 1 ? "나는 흑팀 · 폰" : "입장 중";
             status.text = localStatus;
+            status.style.display = menuOpen || finished ? DisplayStyle.None : DisplayStyle.Flex;
             menu.style.display = menuOpen || finished ? DisplayStyle.Flex : DisplayStyle.None;
             heading.text = finished ? white == black ? "무승부" : white > black ? "백팀 승리!" : "흑팀 승리!" : "소드파이트";
             resume.style.display = finished ? DisplayStyle.None : DisplayStyle.Flex;
+            controls.text = classic ? "[클릭 베기] 좌클릭 한 번 = 자동 베기 · F6 조작 전환" : "[물리 드래그] 좌클릭 유지 + 마우스 = 베기 · F6 조작 전환";
+            controlHelp.text = classic ? "이전 방식과 손맛 비교 · 누르고만 있어서는 연속 공격하지 않습니다" : "좌클릭 떼면 허리에 수납 · 발도 중에도 시점 감속 없음";
+            switchControls.text = classic ? "물리 드래그로 전환 (F6)" : "이전 클릭 베기로 전환 (F6)";
+            switchControls.style.display = finished ? DisplayStyle.None : DisplayStyle.Flex;
         }
         void OnDestroy() { if (owned != null) Destroy(owned); }
     }

@@ -28,6 +28,7 @@ namespace ChessFight.RagdollLab
         public bool Finished => Authority ? Rules.Finished : remoteFinished;
         public SwordFightPawn Local => Fighters.TryGetValue(LocalId, out var f) ? f : null;
         public bool MenuOpen { get; private set; }
+        public bool ClassicControls { get; private set; }
         public int Revision { get; private set; }
         Material white, black;
         SwordFightHud hud;
@@ -37,8 +38,7 @@ namespace ChessFight.RagdollLab
         Vector3 savedGravity;
         CursorLockMode savedLock;
         bool savedCursor;
-        float savedSensitivity;
-        public const float SwordSensitivity = .45f;
+        bool waitForAttackRelease;
 
         void Awake()
         {
@@ -49,15 +49,15 @@ namespace ChessFight.RagdollLab
             white = new Material(pawnPrefab.skin.sharedMaterial) { color = new Color(.96f, .93f, .84f) };
             black = new Material(pawnPrefab.skin.sharedMaterial) { color = new Color(.15f, .18f, .24f) };
             CameraRig = FindFirstObjectByType<LabCamera>();
-            if (CameraRig != null) savedSensitivity = CameraRig.mouseSensitivity;
             Automated = Array.IndexOf(Environment.GetCommandLineArgs(), "-swordFightTest") >= 0;
             if (Automated) Application.runInBackground = true;
         }
         void Start()
         {
             hud = gameObject.AddComponent<SwordFightHud>();
-            hud.Resume += () => { MenuOpen = false; RefreshCursor(); };
+            hud.Resume += () => SetMenu(false);
             hud.Leave += Exit;
+            hud.SwitchControls += ToggleControls;
             if (!Networked && !Automated)
             {
                 Add(1, 0, 0, false, "나 · 폰");
@@ -93,27 +93,28 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             if (Automated) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) { MenuOpen = !MenuOpen; RefreshCursor(); }
+            if (Input.GetKeyDown(KeyCode.Escape)) SetMenu(!MenuOpen);
+            if (!Finished && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
             if (!Networked && !Finished && Local != null) Local.SetInput(ReadLocalInput());
             if (Finished) RefreshCursor();
         }
         public PawnInput ReadLocalInput()
         {
-            if (MenuOpen || Finished || !Application.isFocused || Cursor.lockState != CursorLockMode.Locked) return default;
+            if (MenuOpen || Finished || !Application.isFocused || Cursor.lockState != CursorLockMode.Locked)
+            { waitForAttackRelease = true; return new PawnInput { ability2 = ClassicControls }; }
+            if (!Input.GetMouseButton(0)) waitForAttackRelease = false;
             float x = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
             float y = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
             Vector3 move = CameraRig.FlatRight * x + CameraRig.FlatForward * y;
             return new PawnInput { move = Vector3.ClampMagnitude(move, 1), aim = CameraRig.AimForward,
-                jump = Input.GetKeyDown(KeyCode.Space), sprint = Input.GetKey(KeyCode.LeftShift), shoveHeld = Input.GetMouseButton(0) };
+                jump = Input.GetKeyDown(KeyCode.Space), sprint = Input.GetKey(KeyCode.LeftShift), ability2 = ClassicControls,
+                shove = !waitForAttackRelease && Input.GetMouseButtonDown(0), shoveHeld = !waitForAttackRelease && Input.GetMouseButton(0) };
         }
-        // Runs before LabCamera.LateUpdate. Only this mode owns this camera override.
-        public void UpdateSwordCamera(bool drawn, Vector2 mouse, float dt)
+        public void ToggleControls()
         {
-            if (CameraRig == null) return;
-            CameraRig.mouseSensitivity = drawn ? 0 : savedSensitivity;
-            if (!drawn) return;
-            Vector2 turn = Vector2.ClampMagnitude(mouse * (savedSensitivity * SwordSensitivity), SwordFightPawn.TurnSpeed * Mathf.Min(dt, .05f));
-            CameraRig.AddYaw(turn.x); CameraRig.AddPitch(-turn.y);
+            if (Finished) return;
+            ClassicControls = !ClassicControls; waitForAttackRelease = true;
+            if (Authority) Local?.SetControlStyle(ClassicControls);
         }
         void FixedUpdate()
         {
@@ -143,6 +144,8 @@ namespace ChessFight.RagdollLab
         public void ApplyScore(int w, int b, float remaining, bool finished)
         { remoteWhite = w; remoteBlack = b; remoteRemaining = remaining; remoteFinished = finished; }
 
+        public void SetMenu(bool open)
+        { MenuOpen = open; waitForAttackRelease = true; RefreshCursor(); }
         void RefreshCursor()
         {
             bool free = MenuOpen || Finished || Automated;
@@ -155,10 +158,6 @@ namespace ChessFight.RagdollLab
         }
         void LateUpdate()
         {
-            if (!Automated)
-                UpdateSwordCamera(Local != null && Local.Alive && Local.Pawn.State == PawnState.Active &&
-                    !MenuOpen && !Finished && Application.isFocused && Cursor.lockState == CursorLockMode.Locked && Input.GetMouseButton(0),
-                    new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")), Time.unscaledDeltaTime);
             if (hud == null || Rules == null) return;
             var local = Local;
             // During the respawn wait, watch an alive teammate instead of staring under the floor.
@@ -175,13 +174,13 @@ namespace ChessFight.RagdollLab
                 CameraRig.soloTarget = focus.Pawn;
             }
             string status = local == null ? "입장 중" : !local.Alive ? $"{local.RespawnSeconds:0.0}초 뒤 부활"
-                : local.Protection > 0 ? "부활 보호 (칼을 꺼내면 해제)" : local.Pawn.State != PawnState.Active ? "넘어짐 · 일어나는 중" : local.Drawn ? "마우스를 움직여 베기 · 아래로 조준하면 낮게 베기" : "좌클릭을 누르고 드래그 → 물리 칼 휘두르기";
-            hud.Draw(White, Black, Remaining, targetScore, local == null ? -1 : local.Pawn.Team, status, MenuOpen, Finished);
+                : local.Protection > 0 ? "부활 보호 (발도 / 공격 시 해제)" : local.Pawn.State != PawnState.Active ? "넘어짐 · 일어나는 중"
+                : ClassicControls ? "좌클릭 한 번 → 정해진 궤도로 베기" : local.Drawn ? "마우스로 조준하며 베기 · 회전 감속 없음" : "좌클릭을 누르고 드래그 → 물리 칼 휘두르기";
+            hud.Draw(White, Black, Remaining, targetScore, local == null ? -1 : local.Pawn.Team, status, MenuOpen, Finished, ClassicControls);
         }
         void OnDestroy()
         {
             Physics.gravity = savedGravity; Cursor.lockState = savedLock; Cursor.visible = savedCursor;
-            if (CameraRig != null) CameraRig.mouseSensitivity = savedSensitivity;
             if (white != null) Destroy(white); if (black != null) Destroy(black);
         }
     }

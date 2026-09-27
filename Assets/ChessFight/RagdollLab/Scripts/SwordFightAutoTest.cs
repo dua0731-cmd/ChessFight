@@ -36,7 +36,8 @@ namespace ChessFight.RagdollLab
             Check(score != null && score.text.Contains("백팀") && score.worldBound.width > 100, "Score HUD is visible");
             Check(!a.Drawn && a.SwordBody.isKinematic && a.WeaponVisible, "Idle sword is holstered without active physics");
             Capture(Path.Combine(dir, "holstered.png"));
-            var input = new PawnInput { shoveHeld = true, aim = Look(-65, 35), grab = true, ability = true, shove = true };
+            float normalSensitivity = game.CameraRig.mouseSensitivity;
+            var input = new PawnInput { shoveHeld = true, aim = Look(-65, 0), grab = true, ability = true, shove = true };
             var bytes = RagdollNetProtocol.Input(1, 2, 3, RagdollNetInput.From(input));
             Check(RagdollNetProtocol.ReadInput(bytes, 1, out _, out _, out var decoded) && decoded.shoveHeld &&
                 Vector3.Angle(decoded.aim, input.aim) < 1f, "CFR4 carries held sword and pitched aim");
@@ -46,7 +47,7 @@ namespace ChessFight.RagdollLab
                 "Holding LMB draws a physical sword without shared tackle/grab/hook");
             Check(a.HitsLanded == 0 && b.Pawn.Hits == 0, "Drawing and holding still do not deal sword hits");
             Capture(Path.Combine(dir, "guard.png"));
-            yield return Drag(a, -65, 65, 35, 1f, dir);
+            yield return Drag(a, -65, 65, 0, 1f, dir);
             Check(a.HitsLanded == 1 && b.Pawn.Hits == 1,
                 $"Real blade drag hits once (landed={a.HitsLanded}, state={b.Pawn.State})");
             int received = b.Pawn.Hits;
@@ -93,15 +94,7 @@ namespace ChessFight.RagdollLab
                 "Remote sword follows replicated relative pose without authority physics");
             Place(b, new Vector3(0, 0, 3), Vector3.back);
 
-            float normal = game.CameraRig.mouseSensitivity, yaw = game.CameraRig.yaw, pitch = game.CameraRig.pitch;
-            game.UpdateSwordCamera(true, new Vector2(1, 0), 1f / 60);
-            Check(Mathf.Abs(game.CameraRig.yaw - yaw - normal * SwordFightGame.SwordSensitivity) < .001f, "Drawn camera sensitivity is 45 percent");
-            yaw = game.CameraRig.yaw;
-            game.UpdateSwordCamera(true, new Vector2(999, 0), 1f / 60);
-            Check(Mathf.Abs(game.CameraRig.yaw - yaw) <= SwordFightPawn.TurnSpeed / 60 + .001f, "Drawn camera caps excessive mouse turns");
-            game.UpdateSwordCamera(false, Vector2.zero, 1f / 60);
-            Check(game.CameraRig.mouseSensitivity == normal, "Release restores normal camera sensitivity");
-            game.CameraRig.pitch = pitch;
+            Check(game.CameraRig.mouseSensitivity == normalSensitivity, "Sword combat leaves normal camera sensitivity unchanged");
 
             Place(a, new Vector3(0, 0, -3), Vector3.forward);
             var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -119,26 +112,39 @@ namespace ChessFight.RagdollLab
             a.StopCombat(); Destroy(wall); yield return null;
 
             Place(a, new Vector3(0, 0, -2), Vector3.forward);
+            yield return new WaitForSeconds(.2f);
             a.SetInput(new PawnInput { shoveHeld = true, aim = Look(0, 20) });
-            yield return new WaitForSeconds(.5f);
-            Check(a.Drawn && (a.BladeTip - a.BladeRoot).y > .25f && a.BladeTip.z > a.BladeRoot.z,
-                $"Default camera pitch holds sword raised in front (root={a.BladeRoot:F2}, tip={a.BladeTip:F2}, aim={a.Aim:F2})");
+            for (int i = 0; i < Mathf.CeilToInt(.1f / Time.fixedDeltaTime); i++) yield return new WaitForFixedUpdate();
+            float drawError = Vector3.Angle(a.BladeTip - a.BladeRoot, Look(0, 20));
+            Check(a.Drawn && !a.SwordBody.isKinematic && drawError < 15 && SwordFightPawn.DrawTime <= .05f,
+                $"Fast draw points along camera within 0.1 seconds (error={drawError:0.0})");
             yield return new WaitForSeconds(.75f);
-            float guardError = Vector3.Angle(a.BladeTip - a.BladeRoot, Look(0, -35));
-            Check(guardError < 15, $"Draw inertia settles toward the guard (error={guardError:0.0} degrees)");
+            float guardError = Vector3.Angle(a.BladeTip - a.BladeRoot, Look(0, 20));
+            Check(guardError < 10, $"Sword aligns with camera without an upward bias (error={guardError:0.0} degrees)");
             Capture(Path.Combine(dir, "forward-guard.png"));
 
             float maxGuardError = 0; bool stableDraws = true;
             for (int cycle = 0; cycle < 10; cycle++)
             {
                 a.SetInput(default);
-                for (int i = 0; i < 12; i++) yield return new WaitForFixedUpdate();
+                for (int i = 0; i < Mathf.CeilToInt(.1f / Time.fixedDeltaTime); i++) yield return new WaitForFixedUpdate();
                 a.SetInput(new PawnInput { shoveHeld = true, aim = Look(0, 20) });
-                for (int i = 0; i < 96; i++) yield return new WaitForFixedUpdate();
-                maxGuardError = Mathf.Max(maxGuardError, Vector3.Angle(a.BladeTip - a.BladeRoot, Look(0, -35)));
-                stableDraws &= a.Drawn && a.Pawn.IsFinite() && a.Pawn.State == PawnState.Active;
+                for (int i = 0; i < Mathf.CeilToInt(.1f / Time.fixedDeltaTime); i++) yield return new WaitForFixedUpdate();
+                maxGuardError = Mathf.Max(maxGuardError, Vector3.Angle(a.BladeTip - a.BladeRoot, Look(0, 20)));
+                stableDraws &= a.Drawn && a.Pawn.IsFinite() && a.Pawn.State == PawnState.Active &&
+                    !a.SwordBody.automaticCenterOfMass && !a.SwordBody.automaticInertiaTensor && a.SwordBody.centerOfMass.sqrMagnitude < 1e-8f;
             }
-            Check(stableDraws && maxGuardError < 30, $"Ten rapid sheath/redraw cycles stay controlled (worst={maxGuardError:0.0} degrees)");
+            Check(stableDraws && maxGuardError < 15, $"Ten sheath/redraw cycles align in 0.1 seconds (worst={maxGuardError:0.0} degrees)");
+
+            float worstTracking = 0;
+            for (int i = 0; i < 120; i++)
+            {
+                var look = Look(i * 90f * Time.fixedDeltaTime, 0);
+                a.SetInput(new PawnInput { shoveHeld = true, aim = look });
+                yield return new WaitForFixedUpdate();
+                if (i > 24) worstTracking = Mathf.Max(worstTracking, Vector3.Angle(a.BladeTip - a.BladeRoot, look));
+            }
+            Check(worstTracking < 15, $"Physical blade follows a 90-degree/second camera drag (worst={worstTracking:0.0})");
 
             Place(a, new Vector3(0, 0, -2), Vector3.forward);
             a.SetInput(new PawnInput { shoveHeld = true, aim = Vector3.forward });
@@ -146,7 +152,10 @@ namespace ChessFight.RagdollLab
             Vector3 beforeAim = a.Aim;
             a.SetInput(new PawnInput { shoveHeld = true, aim = Vector3.back });
             yield return new WaitForFixedUpdate();
-            Check(Vector3.Angle(beforeAim, a.Aim) <= SwordFightPawn.TurnSpeed * Time.fixedDeltaTime + .1f, "Host caps a sudden 180-degree input jump");
+            Check(Vector3.Angle(beforeAim, a.Aim) > 179 && Vector3.Angle(a.Aim, Vector3.back) < .1f, "Host aim has no artificial turn-speed cap");
+            yield return new WaitForSeconds(.3f);
+            Check(a.Pawn.IsFinite() && Vector3.Distance(a.SwordBody.position, a.Pawn.bodies[(int)BodyId.HandR].position) < .2f,
+                "Sudden unrestricted aim still keeps a finite physical hand joint");
             a.Pawn.TakeHit(Vector3.zero, 1, 0, true);
             yield return new WaitForFixedUpdate(); yield return new WaitForFixedUpdate();
             Check(!a.Drawn && a.SwordBody.isKinematic, "Knockdown disables sword collision and attack");
@@ -159,6 +168,7 @@ namespace ChessFight.RagdollLab
             Vector3 before = a.Pawn.Hips.position;
             for (int i = 0; i < 100; i++) { a.SetInput(new PawnInput { move = Vector3.right, sprint = true }); yield return new WaitForFixedUpdate(); }
             Check(a.Pawn.Hips.position.x > before.x + 1 && !a.Pawn.Diving, "Shared sprint movement still runs");
+            yield return TestControlSwitch(a, b, dir);
             Place(a, new Vector3(0, 0, -.65f), Vector3.forward);
             Place(b, new Vector3(0, 0, .45f), Vector3.back);
             yield return new WaitForSeconds(1.5f);
@@ -197,6 +207,80 @@ namespace ChessFight.RagdollLab
             Capture(Path.Combine(dir, "physical-swords.png"));
             foreach (var f in game.Fighters.Values) f.StopCombat();
             Debug.Log("[SwordFightTest] screenshots: " + dir);
+        }
+
+        IEnumerator TestControlSwitch(SwordFightPawn a, SwordFightPawn b, string dir)
+        {
+            Place(a, new Vector3(0, 0, -.65f), Vector3.forward);
+            Place(b, new Vector3(0, 0, .45f), Vector3.back);
+            var hud = game.GetComponent<ChessFight.Game.SwordFightHud>();
+            game.SetMenu(true);
+            yield return null; yield return new WaitForEndOfFrame();
+            var root = hud.GetComponent<UIDocument>().rootVisualElement;
+            var button = root.Q<Button>("sf-switch-controls");
+            Check(button != null && button.worldBound.width > 200 && button.worldBound.height > 30 &&
+                root.worldBound.Contains(button.worldBound.center), "Control switch button fits the visible menu");
+            using (var submit = NavigationSubmitEvent.GetPooled()) { submit.target = button; button.SendEvent(submit); }
+            yield return null; yield return new WaitForEndOfFrame();
+            Check(game.ClassicControls && a.ClassicControls && !a.Drawn && a.SwordBody.isKinematic &&
+                root.Q<Label>("sf-controls").text.Contains("클릭 베기"), "Menu switch selects classic controls and updates help exactly once");
+            yield return CaptureHud(hud.GetComponent<UIDocument>(), Path.Combine(dir, "control-menu.png"));
+            game.SetMenu(false);
+            var neutral = new PawnInput { ability2 = true };
+            var packet = RagdollNetProtocol.Input(1, 2, 3, RagdollNetInput.From(neutral));
+            Check(RagdollNetProtocol.ReadInput(packet, 1, out _, out _, out var selected) && selected.ability2 && !selected.shove,
+                "Control selection is a repeatable absolute CFR4 bit, not a toggle edge");
+            a.SetInput(neutral);
+            yield return new WaitForSeconds(1.5f);
+            int before = b.Pawn.Hits, swings = a.Swings;
+            a.SetInput(new PawnInput { ability2 = true, shove = true, shoveHeld = true, aim = Vector3.forward });
+            yield return new WaitForFixedUpdate();
+            a.SetInput(new PawnInput { ability2 = true, shoveHeld = true, aim = Vector3.forward });
+            yield return new WaitForSeconds(.25f);
+            Capture(Path.Combine(dir, "classic-swing.png"));
+            yield return new WaitForSeconds(1.5f);
+            Check(b.Pawn.Hits == before + 1 && a.Swings == swings + 1 && !a.Pawn.Diving && a.SwordBody.isKinematic,
+                $"Original click arc hits once and holding does not repeat (hits={b.Pawn.Hits-before}, swings={a.Swings-swings})");
+            Place(a, new Vector3(0, 0, -3), Vector3.forward);
+            Check(a.ClassicControls, "Respawn preserves selected click controls");
+            a.SetInput(neutral);
+            a.SetInput(new PawnInput { ability2 = true, shove = true, shoveHeld = true, aim = Vector3.forward });
+            yield return new WaitForFixedUpdate();
+            bool started = a.Attacking;
+            game.ToggleControls();
+            a.SetInput(new PawnInput { shoveHeld = true, aim = Vector3.forward });
+            yield return new WaitForFixedUpdate();
+            Check(started && !a.ClassicControls && !a.Attacking && !a.Drawn, "Switch during click cancels it and requires button release");
+            a.SetInput(default); yield return new WaitForFixedUpdate();
+            a.SetInput(new PawnInput { shoveHeld = true, aim = Vector3.forward });
+            yield return new WaitForFixedUpdate();
+            Check(a.Drawn && !a.SwordBody.isKinematic, "Fresh press restores physical controls after switch");
+            game.ToggleControls();
+            a.SetInput(new PawnInput { ability2 = true, shoveHeld = true, shove = true, aim = Vector3.forward });
+            yield return new WaitForFixedUpdate();
+            Check(a.ClassicControls && !a.Drawn && !a.Attacking && a.SwordBody.isKinematic,
+                "Switch during physical draw removes collider and does not create a click attack");
+            a.StopCombat();
+            Check(a.ClassicControls && game.ReadLocalInput().ability2, "Neutral menu/focus input and stopping preserve control selection");
+            b.ApplyRemote(true, false, 0, new Vector3(.2f, .3f, .4f), Quaternion.Euler(0, 80, 0), 0, 0, true);
+            yield return null; yield return new WaitForEndOfFrame();
+            Check(b.ClassicControls && b.SwordBody.isKinematic && Vector3.Distance(b.WeaponOffset, new Vector3(.2f,.3f,.4f)) < .01f,
+                "Remote classic idle sword uses host pose, not a holster pose");
+            game.ToggleControls(); a.SetInput(default);
+        }
+
+        IEnumerator CaptureHud(UIDocument document, string path)
+        {
+            var settings = document.panelSettings;
+            var rt = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.ARGB32);
+            rt.Create(); settings.targetTexture = rt;
+            yield return null; yield return new WaitForEndOfFrame();
+            var previous = RenderTexture.active; RenderTexture.active = rt;
+            var texture = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+            texture.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0); texture.Apply();
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            RenderTexture.active = previous; settings.targetTexture = null;
+            Destroy(texture); rt.Release(); Destroy(rt);
         }
 
         static Vector3 Look(float yaw, float pitch) => Quaternion.Euler(pitch, yaw, 0) * Vector3.forward;

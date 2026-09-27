@@ -81,6 +81,8 @@ namespace ChessFight.RagdollLab.Net
             else
             {
                 var fresh = RagdollNetInput.From(local);
+                if (pending.ability2 != fresh.ability2) pending.shove = false;
+                pending.ability2 = fresh.ability2;
                 pending.move = fresh.move; pending.aim = fresh.aim; pending.sprint = fresh.sprint;
                 pending.shoveHeld = fresh.shoveHeld;
                 pending.jump |= fresh.jump; pending.shove |= fresh.shove;
@@ -103,7 +105,7 @@ namespace ChessFight.RagdollLab.Net
             {
                 if (f.Id == session.Self || f.Bot) continue;
                 if (!inputs.TryGetValue(f.Id, out var remote) || Time.realtimeSinceStartup - remote.At > .35f)
-                { f.SetInput(default); continue; }
+                { f.StopCombat(); continue; }
                 f.SetInput(remote.Input.ToPawnInput());
                 remote.Input.jump = remote.Input.shove = false; inputs[f.Id] = remote;
             }
@@ -122,7 +124,7 @@ namespace ChessFight.RagdollLab.Net
                 snaps.TryGetValue(f.Id, out int n); pose.snap = n > 0; snaps[f.Id] = Mathf.Max(0, n - 1);
                 outgoing.Add(pose);
                 var offset = f.WeaponOffset; var rotation = f.WeaponRotation;
-                state.Fighters.Add(new SwordFighterState { Id = f.Id, Alive = f.Alive, Drawn = f.Drawn,
+                state.Fighters.Add(new SwordFighterState { Id = f.Id, Alive = f.Alive, Drawn = f.Drawn, Classic = f.ClassicControls,
                     Protection = f.Protection, Respawn = f.RespawnSeconds, Flash = f.HitFlash,
                     X = offset.x, Y = offset.y, Z = offset.z,
                     RX = rotation.x, RY = rotation.y, RZ = rotation.z, RW = rotation.w });
@@ -156,7 +158,8 @@ namespace ChessFight.RagdollLab.Net
                         if (!RagdollNetProtocol.ReadInput(bytes, session.Match, out uint seq, out uint stamp, out var input)) continue;
                         inputs.TryGetValue(id, out var previous);
                         if (previous.Sequence != 0 && !RagdollNetProtocol.Newer(seq, previous.Sequence)) continue;
-                        input.jump |= previous.Input.jump; input.shove |= previous.Input.shove;
+                        input.jump |= previous.Input.jump;
+                        if (input.ability2 == previous.Input.ability2) input.shove |= previous.Input.shove;
                         inputs[id] = new Remote { Input = input, Sequence = seq, Stamp = stamp, At = Time.realtimeSinceStartup };
                     }
                     else if (id == session.Host)
@@ -203,12 +206,12 @@ namespace ChessFight.RagdollLab.Net
                 {
                     var offset = new Vector3(weapon.X, weapon.Y, weapon.Z);
                     var rotation = new Quaternion(weapon.RX, weapon.RY, weapon.RZ, weapon.RW);
-                    if (!b.snap && WeaponAt(from.tick, b.id, out var old) && old.Alive == weapon.Alive && old.Drawn == weapon.Drawn)
+                    if (!b.snap && WeaponAt(from.tick, b.id, out var old) && old.Alive == weapon.Alive && old.Drawn == weapon.Drawn && old.Classic == weapon.Classic)
                     {
                         offset = Vector3.Lerp(new Vector3(old.X, old.Y, old.Z), offset, t);
                         rotation = Quaternion.Slerp(new Quaternion(old.RX, old.RY, old.RZ, old.RW), rotation, t);
                     }
-                    f.ApplyRemote(weapon.Alive, weapon.Drawn, weapon.Protection, offset, rotation, weapon.Respawn, weapon.Flash);
+                    f.ApplyRemote(weapon.Alive, weapon.Drawn, weapon.Protection, offset, rotation, weapon.Respawn, weapon.Flash, weapon.Classic);
                 }
             }
             while (buffer.Count > 2 && (buffer[1].hostTimeMs < playback || buffer.Count > 16)) { spare.Push(buffer[0]); buffer.RemoveAt(0); }

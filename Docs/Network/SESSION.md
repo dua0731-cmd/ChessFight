@@ -1,6 +1,6 @@
 # 파티·매칭·예약 (`SteamSession`, `TeamReservations`)
 
-> **R49 / `JY-gpt_gamemode`: 프로토콜 v8.** 소드파이트 칼에 물리를 적용하고 `CFS2` 경기/칼 자세 상태(채널33, 최대506바이트)를 전달한다. 기존 랩 `CFR4` 패킷은 변경 없이 held/3D aim을 사용한다. v7 이전과 매칭되지 않으므로 두 PC 모두 같은 새 빌드가 필요하다. 칼과 몸은 같은 지연 보간 시간대를 사용한다. [소드파이트 실행](../GameModes/SwordFight/README.md). R48 팀별 정지 더미·혼자 시작 규칙은 유지한다.
+> **R50 / `JY-gpt_gamemode`: 프로토콜 v9.** 소드파이트 `CFS3` 상태(채널33, 최대506바이트 유지)에 클릭/물리 방식 선택을 추가했다. `CFR4` 레이아웃은 그대로이며 이 모드에서만 ability2를 선택 절대값으로 쓴다(공유 Pawn에 전달 안 함). 선택은 매 입력/전체 상태에 반복; 전환 시 묵은 클릭을 취소, 무응답 시 전투만 중단하고 선택 보존. 원격 클릭 칼도 몸과 같은 지연 시간대의 실제 자세를 표시한다. v8 이하와 매칭되지 않아 두 PC 모두 같은 새 빌드 필요. [소드파이트 실행](../GameModes/SwordFight/README.md). R48 팀별 정지 더미·혼자 시작 규칙 유지.
 
 코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam 15개), `NetworkCoreTests.cs`(예약 규칙, 모드 목록).
 
