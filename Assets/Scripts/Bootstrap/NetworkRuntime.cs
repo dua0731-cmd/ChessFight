@@ -74,6 +74,9 @@ namespace ChessFight.Game
             Session = new SteamSession(BuildTag, Debug.isDebugBuild);
             Session.Initialize();
             if (Session.Online) Motion = new SteamMotion(Session);
+            // Measures this PC in the background so the host role can go to the
+            // machine that simulates fastest (Docs/Network/HOST.md).
+            HostFitnessProbe.Start();
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             Attach(SceneManager.GetActiveScene());
@@ -119,6 +122,10 @@ namespace ChessFight.Game
 
         void Update()
         {
+            // What the host election reads: this machine's score once the probe has
+            // finished, and every frame's time (a slow host hands the match on).
+            if (Session.LocalFitness == 0) Session.LocalFitness = HostFitnessProbe.BaseScore();
+            Session.ReportFrame(Time.unscaledDeltaTime * 1000f);
             Session.Tick();
             // A successful Steam retry needs the movement layer built after the fact.
             if (Motion == null && Session.Online) Motion = new SteamMotion(Session);
@@ -181,7 +188,7 @@ namespace ChessFight.Game
         // Shared by the lobby and the match HUD.
         public static string MatchRoster(SteamSession session) =>
             string.Join("\n", session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot)
-                .Select(p => $"{(p.Team == 0 ? "청팀" : "주황팀")}  {session.Name(p.Id)}{(p.Id == session.Self ? " (나)" : "")}"));
+                .Select(p => $"{(p.Team == 0 ? "청팀" : "주황팀")}  {session.Name(p.Id)}{(p.Id == session.Self ? " (나)" : "")}{(p.Id == session.Host ? " · 방장" : "")}"));
 
         void OnDestroy()
         {

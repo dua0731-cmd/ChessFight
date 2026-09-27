@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `JY-kingrush`) | 09-28 | 병합 | `feature/ui-sample-b`(`c82abfa` = `JY-lobby` R49 + 로비·인트로 샘플 B)를 합침. 충돌: `SteamSession.Protocol`(v10 + v7 → **v11**), HANDOFF·REQUIREMENTS(R 번호가 두 계열이라 §1-b로 분리)·HISTORY·VALIDATION·퀸 오브 더 힐 README 문서. 코드는 자동 병합. 병합 뒤 Core 66·모의 세션 20·실제 Unity DLL·Steamworks 소스 전 어셈블리 컴파일·경계 검사 통과, **래그돌 자동 점검·Unity는 안 돌림** |
+| (이 커밋, `JY-kingrush`) | 09-28 | R57 | `claude/host-migration`(`514cedf`, 방장 선정·이전, `JY-lobby` 계열 R50)을 합침. 충돌: `SteamSession.Protocol`(v11 + 방장 이전 → **v12**), `StartGame`(시작 조건은 `CanStartGame`, 그 뒤에 방장 선정), `SessionFlowTests`(양쪽 테스트 모두 유지), 문서(HANDOFF·HISTORY·SESSION·VALIDATION). 병합 뒤 검사: Core 71·모의 세션 28·실제 Unity 6000.3.11f1 DLL·Steamworks 소스 전 어셈블리 컴파일·경계 검사 통과, **래그돌 자동 점검·Unity·Steam은 안 돌림** |
+| `c499844` (`JY-kingrush`) | 09-28 | R57 | `feature/ui-sample-b`(`c82abfa` = `JY-lobby` R49 + 로비·인트로 샘플 B)를 합침. 충돌: `SteamSession.Protocol`(v10 + v7 → **v11**), HANDOFF·REQUIREMENTS(R 번호가 두 계열이라 §1-b로 분리)·HISTORY·VALIDATION·퀸 오브 더 힐 README 문서. 코드는 자동 병합. 병합 뒤 Core 66·모의 세션 20·실제 Unity DLL·Steamworks 소스 전 어셈블리 컴파일·경계 검사 통과, **래그돌 자동 점검·Unity는 안 돌림** |
+| `514cedf` (`claude/host-migration`) | 09-28 | R50 | 방장 선정·이전: Core `HostElection`(기계·현재 점수, 평균 핑 할인, 순위, 후계자, 느린 방장 `Takeover`, `FrameMonitor`), `HostFitnessProbe`, `SteamSession` epoch·successors·claim(시작 때 적합한 PC, 나가기·크래시·응답 없음 4초에 후계자, 로비 주인이 방장을 따라감, 느린 방장 넘김), `SteamMotion`·`SteamRagdollLink` 역할 전환, 스냅샷 일정 전송·수신 끝까지·래그돌 방장 과부하 보호, 프로토콜 v8, 테스트 Core +5·세션 +8, `Docs/Network/HOST.md` |
 | `51a4036` (`JY-kingrush`) | 09-27 | R56 | 왕의 계단 회전부 추락 보완/최종 자동 검사·인수인계 정리. 새 코스29/0·기존 기능80/0,역순29/0·이전 코스68/0,Core62/세션20·컴파일 통과. 공통 물리/로비/온라인 보존. 상세는 FINAL_COURSE, 사용자 테스트는 나중에 |
 | `a58665a` (`JY-kingrush`, 사용자 중간 저장) | 09-27 | R56 | 개발 중인 왕의 계단/최종 집결/왕좌 결승,6프리팹·16체크포인트·승격2/3/4자리, T0·누적 왕관/붕괴·재진입/초읽기·승패를 저장. 이 시점에는 계단 순서별 자동 검사 실패가 남아 있었으며 위 후속 커밋에서 보완 |
 | `a477c22` (`JY-kingrush`) | 09-27 | R55 | 승격 결정→10초→양 팀 미도착 인원 집결→벽 개방, 성벽 갈림길/시소 미션 연결. 기존 씬에 구간7개 추가, 공통 물리/온라인 보존. 자동 전체68/0·집중34/0·기존80/0, Core56·세션20·컴파일 통과. 한계는 CASTLE_COURSE, 사용자 재확인 대기 |

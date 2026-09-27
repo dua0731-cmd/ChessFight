@@ -18,6 +18,18 @@ public static class SessionFlowTests
     static void JoinParty(int follower,int leader){As(clients[follower],()=>clients[follower].JoinParty(clients[leader].Party));Step();}
     static void Test(string name,Action test)
     {test();passed++;Console.WriteLine("PASS "+name);foreach(var c in clients.ToArray())As(c,c.Dispose);}
+    // Host election and migration (Docs/Network/HOST.md): a private room of solo players
+    // with the given fitness, the first one its creator. `configure` runs before the room.
+    static void Room(int[] fitness,Action configure=null)
+    {
+        Setup(fitness.Length);configure?.Invoke();
+        for(int i=0;i<fitness.Length;i++)clients[i].LocalFitness=fitness[i];
+        As(clients[0],()=>clients[0].FindMatch(true));Step();
+        for(int i=1;i<clients.Count;i++){var c=clients[i];As(c,()=>c.JoinPrivateMatch(clients[0].Match));}
+        Step(20);Check(clients.All(c=>c.Match==clients[0].Match&&c.Roster.Count==fitness.Length),"room did not fill");
+    }
+    static ulong Owner(SteamSession c)=>FakeSteam.Lobbies[c.Match].Owner;
+    static string RoomData(SteamSession c,string key)=>FakeSteam.Lobbies[c.Match].Data.TryGetValue(key,out var v)?v:"";
     public static int Main()
     {
         try
@@ -139,6 +151,62 @@ public static class SessionFlowTests
                 As(c,c.Cancel);As(c,()=>c.FindMatch(true));Step();
                 As(c,()=>ok=c.AddTestBot(2));Check(!ok,"invalid team");
                 As(c,()=>ok=c.AddTestBot(1));Check(ok&&c.CanStartGame,"release private refused");});
+            Test("Match start hands the host role to a clearly fitter PC",()=>{
+                Room(new[]{500,900,700});int changes=0;foreach(var c in clients)c.HostChanged+=(a,b)=>changes++;
+                var creator=clients[0];var fit=clients[1];As(creator,creator.StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==fit.Self),"host did not move to the fittest PC");
+                Check(fit.IsHost&&!creator.IsHost&&Owner(fit)==fit.Self,"lobby ownership did not follow the host");
+                Check(clients.All(c=>c.Epoch==1)&&RoomData(fit,"host")==fit.Self.ToString(),"host record");
+                Check(RoomData(fit,"successors")==$"{clients[2].Self},{creator.Self}","successor order: "+RoomData(fit,"successors"));
+                Check(clients.All(c=>c.Roster.Count==3)&&changes==3,"roster or HostChanged: "+changes);});
+            Test("A small fitness lead does not move the host",()=>{
+                Room(new[]{800,850});As(clients[0],clients[0].StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==clients[0].Self)&&Owner(clients[0])==clients[0].Self,"host moved for 6%");});
+            Test("Ping weighs in: a fast PC far from everyone does not host",()=>{
+                Room(new[]{500,900,600},()=>{
+                    FakeSteam.PingLocations[1]="a";FakeSteam.PingLocations[2]="b";FakeSteam.PingLocations[3]="c";
+                    FakeSteam.Pings[("a","b")]=200;FakeSteam.Pings[("b","c")]=190;FakeSteam.Pings[("a","c")]=20;});
+                As(clients[0],clients[0].StartGame);Step(10);
+                Check(clients.All(c=>c.Host==clients[2].Self),"expected the near PC to host, got "+clients[0].Host);});
+            Test("A crashed host is replaced by its published successor and the match goes on",()=>{
+                Room(new[]{900,700,500});var host=clients[0];var next=clients[1];var other=clients[2];
+                As(host,host.StartGame);Step(20);
+                Check(host.IsHost&&RoomData(host,"successors").StartsWith(next.Self+","),"no successor published: "+RoomData(host,"successors"));
+                FakeSteam.Crash(host.Self);clients.Remove(host);Step(10);
+                Check(next.IsHost&&other.Host==next.Self&&clients.All(c=>c.Started&&c.Match!=0),"match did not continue");
+                Check(Owner(next)==next.Self&&RoomData(next,"host")==next.Self.ToString()&&RoomData(next,"epoch")=="2","record not taken over");
+                Check(next.Roster.Count==2&&other.Roster.Count==2,"crashed host still on the roster");});
+            Test("When Steam hands the room to someone else, ownership still reaches the successor",()=>{
+                Room(new[]{900,500,700});var host=clients[0];var steamPick=clients[1];var next=clients[2];
+                As(host,host.StartGame);Step(20);FakeSteam.Crash(host.Self);clients.Remove(host);
+                Check(Owner(steamPick)==steamPick.Self,"setup: Steam should pick the first member");Step(10);
+                Check(clients.All(c=>c.Host==next.Self)&&next.IsHost&&Owner(next)==next.Self,"ownership stuck with "+Owner(next));
+                Check(RoomData(next,"host")==next.Self.ToString()&&RoomData(next,"epoch")=="2","record");});
+            Test("A host that leaves a live match hands over instead of closing it",()=>{
+                Room(new[]{900,700,500});var host=clients[0];As(host,host.StartGame);Step(20);
+                As(host,host.Cancel);Step(10);
+                Check(host.Match==0,"leaver still in the room");
+                Check(clients[1].IsHost&&clients[2].Host==clients[1].Self&&clients[1].Started&&clients[2].Started&&clients[1].Match!=0,"match closed with its host");
+                Check(RoomData(clients[1],"phase")=="playing","phase");});
+            Test("A silent host is replaced only after the grace period, and steps down when it hears of it",()=>{
+                Room(new[]{900,700,500});var a=clients[0];var b=clients[1];var c=clients[2];As(a,a.StartGame);
+                As(b,()=>b.ReportHostSilence(5));Step(1);Check(a.IsHost&&b.Host==a.Self,"silence during the start moved the host");
+                Step(40);As(b,()=>b.ReportHostSilence(5));Step(3);
+                Check(b.IsHost&&c.Host==b.Self&&a.Host==b.Self&&!a.IsHost,"silent host not replaced everywhere");
+                Check(Owner(b)==b.Self&&RoomData(b,"host")==b.Self.ToString()&&RoomData(b,"epoch")=="2","old host kept the room");});
+            Test("A host that stays slow hands the match to a much stronger machine, not to a slightly stronger one",()=>{
+                foreach(int other in new[]{1000,500})
+                {
+                    // The stronger machine happens to be busy in the lobby (100 ms frames), so the
+                    // weaker creator keeps the host at the start; then the creator bogs down.
+                    Room(new[]{400,other});var a=clients[0];var b=clients[1];
+                    for(int t=0;t<10;t++){As(b,()=>b.ReportFrame(100));Step(1);}
+                    As(a,a.StartGame);Step(2);Check(a.IsHost,"setup: the creator keeps the host");
+                    for(int t=0;t<180;t++){As(a,()=>a.ReportFrame(60));As(b,()=>b.ReportFrame(16));Step(1);}
+                    bool moved=b.IsHost&&a.Host==b.Self;
+                    Check(moved==(other==1000),$"slow host with a {other} peer: moved={moved}");
+                    foreach(var c in clients.ToArray())As(c,c.Dispose);
+                }});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}
