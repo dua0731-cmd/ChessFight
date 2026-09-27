@@ -610,6 +610,7 @@ namespace ChessFight.RagdollLab
             jumpTimer -= dt;
             freeFlight -= dt;
             bumpCooldown -= dt;
+            UpdateStatus(dt);
 
             SenseGround();
             SenseWater(p);
@@ -2603,6 +2604,7 @@ namespace ChessFight.RagdollLab
 
             HookPose(p, ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
             RopeHangPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
+            StatusPose(ref armL, ref armR, ref chest, ref head);
 
             SetPuppet(BodyId.Chest, chest);
             SetPuppet(BodyId.Head, head);
@@ -3107,6 +3109,7 @@ namespace ChessFight.RagdollLab
             ClearHook();
             rope = null;
             ropeTopping = false;
+            squashTimer = squashImmune = staggerTimer = 0f;
             surfaceVel = climbSurfaceVel = Vector3.zero;
             groundCollider = climbCollider = null;
             groundSurface = climbSurface = null;

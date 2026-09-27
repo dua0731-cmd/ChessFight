@@ -572,9 +572,12 @@ namespace ChessFight.RagdollLab
                 Match.ResetRound();
                 Note("F11 종 초기화 (모든 구간 닫힘, 체크포인트 지움)");
             }
-            if (Input.GetKeyDown(KeyCode.F5))
+            bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            if (Input.GetKeyDown(KeyCode.F5) && shift) Status(pawn, true);
+            else if (Input.GetKeyDown(KeyCode.F5))
                 Hit(pawn, (-pawn.Facing * 0.87f + Vector3.up * 0.5f).normalized * 6f, 1f, 0f, false, "F5 피격: 6 m/s · 1초 넘어짐");
-            if (Input.GetKeyDown(KeyCode.F6)) Hit(pawn, Vector3.zero, 0f, 2.5f, false, "F6 스테미나 -2.5");
+            if (Input.GetKeyDown(KeyCode.F6) && shift) Status(pawn, false);
+            else if (Input.GetKeyDown(KeyCode.F6)) Hit(pawn, Vector3.zero, 0f, 2.5f, false, "F6 스테미나 -2.5");
             if (Input.GetKeyDown(KeyCode.F7))
                 Hit(pawn, -pawn.Facing * 2f + Vector3.up, 0f, 0f, true, "F7 벽·탈것에서 떨어뜨리기");
         }
@@ -661,6 +664,19 @@ namespace ChessFight.RagdollLab
             Note(what);
         }
 
+        /// <summary>A status effect through IStatusReceiver (M13): the knight's squash or the stones' stagger.</summary>
+        void Status(RagdollPawn pawn, bool squash)
+        {
+            var receiver = pawn.GetComponent<IStatusReceiver>();
+            bool took = receiver != null && (squash ? receiver.Squash(1.2f, 1f) : receiver.Stagger(0.4f));
+            Note((squash ? "Shift+F5 찌그러짐 1.2초 (뒤 1초 면역)" : "Shift+F6 비틀 0.4초") + (took ? "" : " → 안 먹힘(면역)"));
+        }
+
+        static string StatusText(RagdollPawn pawn) =>
+            pawn.Squashed ? $" · <b>찌그러짐 {pawn.SquashLeft:0.0}초</b>"
+            : pawn.Staggered ? $" · <b>비틀 {pawn.StaggerLeft:0.0}초</b>"
+            : pawn.SquashImmuneLeft > 0f ? $" · 찌그러짐 면역 {pawn.SquashImmuneLeft:0.0}초" : "";
+
         void Note(string what)
         {
             lastAction = what;
@@ -717,12 +733,12 @@ namespace ChessFight.RagdollLab
             }
             Vector3 aim = pawn.Aim;
             string text =
-                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · Shift+F10 도약대 · Shift+F8 밧줄 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
+                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · Shift+F10 도약대 · Shift+F8 밧줄 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기 · Shift+F5 찌그러짐 · Shift+F6 비틀\n" +
                 $"받은 입력(P1): 능력 E <b>{pawn.AbilityPresses}</b>회 · 능력2 Q <b>{pawn.Ability2Presses}</b>회 · " +
                 $"상호작용 F <b>{pawn.InteractPresses}</b>회{(pawn.InteractHeld ? " (누르는 중)" : "")} · " +
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
                 $"탈것: {(pawn.Riding ? "<b>타는 중</b>" : "-")} · 발밑 기준 {pawn.GroundSpeed:0.0} m/s (전체 {pawn.HorizontalSpeed:0.0}) · " +
-                $"피격 {pawn.Hits}회: {pawn.LastHit} · 물에서 부활 {WaterRespawns}회\n" +
+                $"피격 {pawn.Hits}회: {pawn.LastHit}{StatusText(pawn)} · 물에서 부활 {WaterRespawns}회\n" +
                 $"팀 {Teams.Name(pawn.Team)} · 갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
                 $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}\n" +
                 TowerText(pawn) + LaunchText(pawn) + RopeText(pawn) +
