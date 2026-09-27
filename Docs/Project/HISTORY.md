@@ -5,6 +5,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| `eaa2d37` (`JY-pieces`) | 09-27 | R51 | 기물 능력 M12(룩·비숍·나이트·킹): Core `PieceAbilities`(테스트 2개), 래그돌 `RagdollPawn.Ability`(나이트 L자·밟기, 룩 돌진·벽 타기, 킹 체크!·캐슬링·가호, 비숍 호버·돌조각·활공), `PieceShard`, `PieceAbilityView`, 스냅샷 75바이트 `CFR6`·프로토콜 v8, 시험장 [7k] Shift+F7, 자동 점검 10개(안 돌림) |
 | `232931e` (`JY-lobby`) | 09-27 | R50 | 퀸 오브 더 힐 맵 8차: 층 26 m(정상 198 m), 팀마다 서·동 날개(모듈 27종), 4·7층 공용. 체크포인트 없앰 → Core `QueenHillRace`(팀별 지름길, 사람별 랭크, 진공관 목적지, 테스트 2개), `QueenHillRaceMatch`·`TeamBell`·`TeamPath`·`RankPad`·`VacuumTube`, 떨어지면 1랭크, 미리보기 층별 잘라 보기 |
 | `5905eca` (`JY-lobby`) | 09-27 | R49 | 퀸 오브 더 힐 맵 7차: 7개 층 + 8랭크, 층마다 두세 갈래 길. 맵을 데이터로(`Tools/QueenHill/build_layout.py` → JSON → `QueenHillLevel`), `OrbitPlatform`·`PhaseToggle`, three.js 미리보기, `QueenHillCourse` 랭크 높이·테스트 |
 | `6250132` (`JY-lobby`) | 09-27 | R48 | 퀸 오브 더 힐 그레이박스 맵: `QueenHillCourse`(Core, 테스트 2개), `QueenHillLevel`(Play 때 160 m 맵 생성), 구간 기록 패널, `OrbitCamera`, `PlaytestSpawner` 팀·카메라 기준 이동·부활·추락·스테미나, `ITeamAssignable`·`IStaminaReadout`, 씬 `QueenOfTheHill.unity`와 생성기, 문서 `GRAYBOX.md` |
