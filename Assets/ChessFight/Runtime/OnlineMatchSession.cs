@@ -103,6 +103,7 @@ namespace ChessFight.ProtectKing
                 int assigned=Roster.Find(transport.LocalId);
                 if(assigned!=LocalSlot) { LocalSlot=assigned;if(assigned>=0)local.SelectPlayer(assigned); }
                 map.match.ApplyRemote(snapshot.phase,snapshot.elapsed,snapshot.remaining,snapshot.result);
+                WeightedBridge.ApplyRemote(map.gameObject.scene,snapshot.bridgeIds,snapshot.bridgeAngles);
                 for(int i=0;i<12;i++) {
                     var p=map.players[i];bool snap=p.falls!=snapshot.falls[i]||Vector3.Distance(p.transform.position,snapshot.positions[i])>4;
                     p.checkpoint=snapshot.checkpoint[i];p.falls=snapshot.falls[i];
@@ -164,6 +165,7 @@ namespace ChessFight.ProtectKing
                 s.checkpoint[i]=(byte)map.players[i].checkpoint;s.falls[i]=(ushort)Mathf.Clamp(map.players[i].falls,0,65535);
                 s.hold[i]=map.match.throne.GetFraction(i);
             }
+            WeightedBridge.Capture(map.gameObject.scene,out s.bridgeIds,out s.bridgeAngles);
             return s;
         }
         void SendSnapshot(ulong peer,bool reliable)=>transport.Send(peer,MatchProtocol.Encode(MatchMessage.Snapshot,snapshot:Capture()),reliable);

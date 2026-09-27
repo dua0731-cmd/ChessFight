@@ -14,6 +14,7 @@ namespace ChessFight.ProtectKing
         public float phase;
         public float degreesPerSecond = 60;
         public bool shove = true;
+        public bool useLocalTranslationAxes;
         public ProtectTheKingMatchController match;
         Rigidbody body;
         Vector3 origin;
@@ -21,6 +22,12 @@ namespace ChessFight.ProtectKing
         Vector3 previous;
         Vector3 velocity;
         Vector3 angularVelocity;
+
+        void Start()
+        {
+            var context = GetComponentInParent<ObstacleContext>();
+            if (match == null && context != null) match = context.match;
+        }
 
         void Awake()
         {
@@ -37,6 +44,7 @@ namespace ChessFight.ProtectKing
         {
             float t = match != null ? match.Elapsed : Time.time;
             var unit = axis.sqrMagnitude > .001f ? axis.normalized : Vector3.right;
+            if (kind != MotionKind.Rotate && useLocalTranslationAxes) unit = rotation * unit;
             if (kind == MotionKind.Rotate)
             {
                 body.MoveRotation(rotation * Quaternion.AngleAxis(t * degreesPerSecond + phase * 360, unit));

@@ -31,12 +31,39 @@ namespace ChessFight.ProtectKing
         bool jumpRequested;
         float verticalSpeed;
         Vector3 pushVelocity;
+        float pushDamping = 12;
+        ObstacleSurface obstacleSurface;
+        WeightedBridge bridgeSurface;
         Transform support;
         Vector3 supportPoint;
         Vector3 supportWorld;
         float lastGrounded = -10;
         float lastJump = -10;
         public float ViewYaw { get; set; }
+        public bool CanReceiveObstacle => isActiveAndEnabled && Simulate && map != null &&
+            map.match != null && map.match.HasAuthority && map.match.IsRunning;
+
+        public void AddObstacleImpulse(Vector3 velocity)
+        {
+            if (!CanReceiveObstacle) return;
+            pushVelocity = Vector3.ClampMagnitude(pushVelocity + Vector3.ProjectOnPlane(velocity, Vector3.up), 22);
+            pushDamping = 8;
+            if (velocity.y > 0)
+            {
+                verticalSpeed = Mathf.Max(verticalSpeed, velocity.y);
+                support = null; lastGrounded = -10;
+            }
+        }
+
+        public void LaunchFromObstacle(Vector3 velocity)
+        {
+            if (!CanReceiveObstacle) return;
+            pushVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
+            pushDamping = 2;
+            verticalSpeed = Mathf.Max(0, velocity.y);
+            support = null; obstacleSurface = null; bridgeSurface = null;
+            lastGrounded = -10; lastJump = Time.time; jumpRequested = false;
+        }
 
         void Awake()
         {
@@ -55,6 +82,14 @@ namespace ChessFight.ProtectKing
             if (map == null || !Simulate) return;
             if (!map.match.IsRunning) { moveInput = Vector2.zero; jumpRequested = false; return; }
             var before = transform.position;
+            Vector3 surfaceVelocity = Vector3.zero;
+            if (Grounded)
+            {
+                if (obstacleSurface != null) surfaceVelocity += obstacleSurface.Apply(this);
+                if (bridgeSurface != null) surfaceVelocity += bridgeSurface.SlideVelocity;
+            }
+            obstacleSurface = null;
+            bridgeSurface = null;
             if (support != null && Grounded)
             {
                 var nextPoint = support.TransformPoint(supportPoint);
@@ -77,8 +112,8 @@ namespace ChessFight.ProtectKing
             verticalSpeed = Mathf.Max(verticalSpeed + gravity * Time.deltaTime, -28);
             var local = (IsLocal || ExternalControl) ? new Vector3(moveInput.x, 0, moveInput.y) : Vector3.zero;
             var horizontal = Quaternion.Euler(0, ViewYaw, 0) * local * moveSpeed;
-            controller.Move((horizontal + Vector3.up * verticalSpeed + pushVelocity) * Time.deltaTime);
-            pushVelocity = Vector3.MoveTowards(pushVelocity, Vector3.zero, 12 * Time.deltaTime);
+            controller.Move((horizontal + surfaceVelocity + Vector3.up * verticalSpeed + pushVelocity) * Time.deltaTime);
+            pushVelocity = Vector3.MoveTowards(pushVelocity, Vector3.zero, pushDamping * Time.deltaTime);
             if (support != null)
             {
                 supportPoint = support.InverseTransformPoint(transform.position);
@@ -95,6 +130,9 @@ namespace ChessFight.ProtectKing
             controller.enabled = true;
             verticalSpeed = 0;
             pushVelocity = Vector3.zero;
+            pushDamping = 12;
+            obstacleSurface = null;
+            bridgeSurface = null;
             moveInput = Vector2.zero;
             jumpRequested = false;
             support = null;
@@ -103,6 +141,18 @@ namespace ChessFight.ProtectKing
 
         void OnControllerColliderHit(ControllerColliderHit hit)
         {
+            if (hit.normal.y > .5f)
+            {
+                obstacleSurface = hit.collider.GetComponentInParent<ObstacleSurface>();
+                bridgeSurface = hit.collider.GetComponentInParent<WeightedBridge>();
+                var rigidbody = hit.collider.attachedRigidbody;
+                if (rigidbody != null && rigidbody.isKinematic) support = rigidbody.transform;
+            }
+            else
+            {
+                var impact = hit.collider.GetComponentInParent<ObstacleImpact>();
+                if (impact != null) { impact.Hit(this, hit.normal); return; }
+            }
             var motion = hit.collider.GetComponentInParent<ObstacleMotion>();
             if (motion == null) return;
             if (hit.normal.y > .5f) support = motion.transform;

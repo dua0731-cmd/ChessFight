@@ -22,9 +22,11 @@ namespace ChessFight.ProtectKing
         public float[] yaw=new float[12], hold=new float[12];
         public byte[] checkpoint=new byte[12];
         public ushort[] falls=new ushort[12];
+        public uint[] bridgeIds=Array.Empty<uint>();
+        public float[] bridgeAngles=Array.Empty<float>();
     }
     public static class MatchProtocol {
-        public const int Version=1, MaxPacket=1200;
+        public const int Version=2, MaxPacket=1200;
         const uint Magic=0x43464631;
         public static bool Newer(uint current,uint previous)=>(int)(current-previous)>0;
         public static byte[] Encode(MatchMessage kind, PlayerCommand command=default, MatchSnapshot snapshot=null) {
@@ -39,6 +41,10 @@ namespace ChessFight.ProtectKing
                         w.Write(snapshot.owners[i]);w.Write(snapshot.positions[i].x);w.Write(snapshot.positions[i].y);w.Write(snapshot.positions[i].z);
                         w.Write(snapshot.yaw[i]);w.Write(snapshot.checkpoint[i]);w.Write(snapshot.falls[i]);w.Write(snapshot.hold[i]);
                     }
+                    if(snapshot.bridgeIds.Length>64 || snapshot.bridgeIds.Length!=snapshot.bridgeAngles.Length)
+                        throw new ArgumentException("Invalid weighted bridge state count");
+                    w.Write((byte)snapshot.bridgeIds.Length);
+                    for(int i=0;i<snapshot.bridgeIds.Length;i++) { w.Write(snapshot.bridgeIds[i]);w.Write(snapshot.bridgeAngles[i]); }
                 }
                 return stream.ToArray();
             }
@@ -63,6 +69,12 @@ namespace ChessFight.ProtectKing
                             snapshot.yaw[i]=r.ReadSingle();snapshot.checkpoint[i]=r.ReadByte();snapshot.falls[i]=r.ReadUInt16();snapshot.hold[i]=r.ReadSingle();
                             var p=snapshot.positions[i];
                             if(!Valid(p.x)||!Valid(p.y)||!Valid(p.z)||!Valid(snapshot.yaw[i])||!Valid(snapshot.hold[i])||snapshot.checkpoint[i]>5)return false;
+                        }
+                        int bridges=r.ReadByte();if(bridges>64)return false;
+                        snapshot.bridgeIds=new uint[bridges];snapshot.bridgeAngles=new float[bridges];
+                        for(int i=0;i<bridges;i++) {
+                            snapshot.bridgeIds[i]=r.ReadUInt32();snapshot.bridgeAngles[i]=r.ReadSingle();
+                            if(!Valid(snapshot.bridgeAngles[i])||Mathf.Abs(snapshot.bridgeAngles[i])>40)return false;
                         }
                     } else if(kind!=MatchMessage.Hello&&kind!=MatchMessage.Goodbye)return false;
                     return s.Position==s.Length;
