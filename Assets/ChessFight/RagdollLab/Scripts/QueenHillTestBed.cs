@@ -19,9 +19,11 @@ namespace ChessFight.RagdollLab
     ///       lift cell beside each wall (M8), each landing a checkpoint (M9)
     ///   7h  launch pads, south of 7f: an L-shaped pad ("up 6 m, 3 m on") and a clockwork spring that
     ///       throws everyone on it 8 m up every 4 s (M7)
+    ///   7i  ropes, south of 7h: a 6 m tower with a rope down its face, a swing across an 8 m gap between two
+    ///       3 m platforms, and a thick pole to try the wall climb on (M6)
     ///
     /// Offline hotkeys for P1: F9 walk-in point, F8 the hook range's start line, F10 the pioneer tower (Shift+F10 the
-    /// launch pads; F3 is the online panel), F11 silences the bells, F5 a 6 m/s hit with a
+    /// launch pads; F3 is the online panel), Shift+F8 the ropes, F11 silences the bells, F5 a 6 m/s hit with a
     /// 1 s knockdown, F6 stamina -2.5, F7 knocked off the wall (M3). A corner box shows what the pawn
     /// received from the new keys (M2) and what its hook is doing (M5).
     /// </summary>
@@ -97,6 +99,20 @@ namespace ChessFight.RagdollLab
         public static float SpringTop => SpringHeight;
         public static float SpringLedgeTop => SpringHeight + SpringThrow.y;
 
+        // 7i: ropes, x 35..75, z -85..-65. A gold chain hangs down the west face of a 6 m tower from its
+        // top edge; a swing hangs from 9.9 m over the middle of an 8 m gap between two 3 m platforms and
+        // swings 40 degrees each way along X, its end reaching a metre onto each; a 0.5 m pole stands east.
+        public static readonly Vector3 RopeStart = new Vector3(36.5f, 0f, -70f);
+        public const float RopeTowerFaceX = 40f, RopeTowerTop = 6f, RopeOut = 0.35f;
+        public static Vector3 ClimbRopeTop => new Vector3(RopeTowerFaceX - RopeOut, RopeTowerTop, -70f);
+        public const float SwingGap = 8f, SwingPlatformTop = 3f, SwingWestEdgeX = 54f, SwingLength = 8f, SwingDegrees = 40f,
+            SwingPeriod = 5f, SwingPivotHeight = 9.9f;
+        public static float SwingEastEdgeX => SwingWestEdgeX + SwingGap;
+        public static Vector3 SwingPivot => new Vector3(SwingWestEdgeX + SwingGap * 0.5f, SwingPivotHeight, -70f);
+        public static Vector3 SwingStart => new Vector3(SwingWestEdgeX - 0.8f, SwingPlatformTop, -70f);
+        public static readonly Vector3 PoleCenter = new Vector3(71f, 3f, -70f);
+        public const float PoleRadius = 0.25f, PoleHeight = 6f;
+
         public static Vector3 PillarCenter(int section) =>
             new Vector3(SectionFaceX(section) - 1.2f, (section - 1) * SectionRise + PlatformThickness * 0.5f, -2f);
 
@@ -110,6 +126,8 @@ namespace ChessFight.RagdollLab
         public readonly MovingPlatform[] PillarLifts = new MovingPlatform[3];   // by section, 1 and 2
         public LaunchPad Pad { get; private set; }
         public LaunchPad Spring { get; private set; }
+        public RopeLine ClimbRope { get; private set; }
+        public RopeLine Swing { get; private set; }
 
         /// <summary>Pawns put back on the checkpoint by the water so far, and the last one.</summary>
         public int WaterRespawns { get; private set; }
@@ -121,7 +139,8 @@ namespace ChessFight.RagdollLab
         readonly Dictionary<RagdollPawn, float> drowning = new Dictionary<RagdollPawn, float>();
         readonly List<RagdollPawn> due = new List<RagdollPawn>();
         Transform root;
-        Material floorMaterial, wallMaterial, platformMaterial, waterMaterial, crateMaterial, padMaterial, lightMaterial, bellMaterial;
+        Material floorMaterial, wallMaterial, platformMaterial, waterMaterial, crateMaterial, padMaterial, lightMaterial, bellMaterial,
+            ropeMaterial;
         Font font;
         GUIStyle style;
         string lastAction = "";
@@ -280,7 +299,42 @@ namespace ChessFight.RagdollLab
             Box("7h Upper Floor", new Vector3(SpringLedgeFaceX + upperDepth * 0.5f, SpringLedgeTop * 0.5f, SpringCenter.z),
                 new Vector3(upperDepth, SpringLedgeTop, 8f), wallMaterial);
             Label("[7h] L자 도약대: 밟으면 위 6 m, 앞 3 m (나이트처럼)", LaunchStart + new Vector3(-1.4f, 0.02f, 0f), 0.4f);
+            BuildRopes(t);
             Label("[7h] 태엽 스프링: 4초마다 위에 선 모두를 8 m 위로. Shift+F10 이동", SpringCenter + new Vector3(-2.2f, 0.02f, 0f), 0.4f);
+        }
+
+        /// <summary>7i: the climbing chain, the swing over the gap and the thick pole (M6).</summary>
+        void BuildRopes(float t)
+        {
+            Box("7i Floor", new Vector3(55f, -t * 0.5f, -75f), new Vector3(40f, t, 20f), floorMaterial);
+            // The tower with the chain down its west face, from its top edge nearly to the floor.
+            Box("7i Rope Tower", new Vector3(RopeTowerFaceX + 2f, RopeTowerTop * 0.5f, -70f), new Vector3(4f, RopeTowerTop, 4f), wallMaterial);
+            ClimbRope = MakeRope("7i Chain", ClimbRopeTop, Vector3.right, RopeTowerTop - 0.3f, 0f, 0f, 0.1f, bellMaterial);
+            // The swing: two 3 m platforms, an 8 m gap, the pivot over its middle on a beam.
+            Box("7i Swing West", new Vector3(SwingWestEdgeX - 2f, SwingPlatformTop * 0.5f, -70f), new Vector3(4f, SwingPlatformTop, 6f), wallMaterial);
+            Box("7i Swing East", new Vector3(SwingEastEdgeX + 2f, SwingPlatformTop * 0.5f, -70f), new Vector3(4f, SwingPlatformTop, 6f), wallMaterial);
+            Box("7i Swing Beam", SwingPivot + Vector3.up * 0.15f, new Vector3(0.3f, 0.3f, 3f), wallMaterial);
+            Swing = MakeRope("7i Swing", SwingPivot, Vector3.right, SwingLength, SwingDegrees, SwingPeriod, 0.07f, ropeMaterial);
+            // The thick pole: can the wall climb take it? (MECHANICS_TODO M6 asks this first.)
+            var pole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            pole.name = "7i Pole";
+            pole.transform.SetParent(root, false);
+            pole.transform.position = PoleCenter;
+            pole.transform.localScale = new Vector3(PoleRadius * 2f, PoleHeight * 0.5f, PoleRadius * 2f);
+            pole.GetComponent<MeshRenderer>().sharedMaterial = ropeMaterial;
+            Label("[7i] 밧줄: 우클릭으로 잡고 W/S 오르내림 · A/D 돌기 · Space 뛰어내림 · 꼭대기에서 W = 올라섬", RopeStart + new Vector3(-1.4f, 0.02f, 0f), 0.4f);
+            Label("그네: 8 m 틈. 끝에 왔을 때 우클릭, 건너편 끝에서 놓기. Shift+F8 이동", RopeStart + new Vector3(-2.3f, 0.02f, 0f), 0.35f);
+        }
+
+        /// <summary>A rope (M6) hanging from `top`, swinging along `forward`.</summary>
+        RopeLine MakeRope(string name, Vector3 top, Vector3 forward, float length, float swing, float period, float thickness, Material material)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(root, false);
+            go.transform.SetPositionAndRotation(top, Quaternion.LookRotation(forward));
+            var line = go.AddComponent<RopeLine>();
+            line.Configure(length, swing, period, 0f, thickness, material);
+            return line;
         }
 
         /// <summary>A box you can see and walk through: only looks.</summary>
@@ -342,6 +396,7 @@ namespace ChessFight.RagdollLab
             waterMaterial = NewMaterial(new Color(0.2f, 0.45f, 0.9f));
             lightMaterial = NewMaterial(new Color(0.55f, 0.85f, 1f));
             bellMaterial = NewMaterial(new Color(0.95f, 0.75f, 0.2f));
+            ropeMaterial = NewMaterial(new Color(0.55f, 0.38f, 0.2f));
             font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 64);
         }
 
@@ -502,7 +557,11 @@ namespace ChessFight.RagdollLab
             var pawn = game.players.Length > 0 ? game.players[0].pawn : null;
             if (pawn == null) return;
             if (Input.GetKeyDown(KeyCode.F9)) GoToEntrance(pawn);
-            if (Input.GetKeyDown(KeyCode.F8)) GoToHookRange(pawn);
+            if (Input.GetKeyDown(KeyCode.F8))
+            {
+                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) GoToRopes(pawn);
+                else GoToHookRange(pawn);
+            }
             if (Input.GetKeyDown(KeyCode.F10))
             {
                 if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) GoToLaunchPads(pawn);
@@ -569,6 +628,14 @@ namespace ChessFight.RagdollLab
             Note("F10 개척의 탑으로 이동");
         }
 
+        public void GoToRopes(RagdollPawn pawn)
+        {
+            var driver = pawn.GetComponent<RagdollDriver>();
+            if (driver != null) driver.Teleport(RopeStart, Quaternion.LookRotation(Vector3.right));
+            else pawn.Teleport(RopeStart + Vector3.up * (pawn.standHeight + 0.02f), Vector3.right);
+            Note("Shift+F8 밧줄로 이동");
+        }
+
         public void GoToLaunchPads(RagdollPawn pawn)
         {
             var driver = pawn.GetComponent<RagdollDriver>();
@@ -619,6 +686,13 @@ namespace ChessFight.RagdollLab
             return $"\n[7h] 태엽 발사까지 {Spring.SecondsToFire:0.0}초 · 도약대 발사 {pawn.Launches}회{(pawn.Launched ? " (<b>날아가는 중</b>)" : "")}";
         }
 
+        string RopeText(RagdollPawn pawn)
+        {
+            if (Swing == null || Mathf.Abs(pawn.Hips.position.z + 70f) > 10f || pawn.Hips.position.x < 30f) return "";
+            string on = pawn.OnRope ? $"<b>매달림</b> (위에서 {pawn.RopeDown:0.0} m, 스테미나 {pawn.Stamina * 100f:0}%)" : "-";
+            return $"\n[7i] 밧줄: {on} · 잡음 {pawn.RopeGrabs} · 점프로 놓음 {pawn.RopeJumps} · 놓음 {pawn.RopeDrops} · 올라섬 {pawn.RopeTopOuts}";
+        }
+
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
 
         static string HookText(HookPhase phase) => phase switch
@@ -643,7 +717,7 @@ namespace ChessFight.RagdollLab
             }
             Vector3 aim = pawn.Aim;
             string text =
-                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · Shift+F10 도약대 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
+                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · Shift+F10 도약대 · Shift+F8 밧줄 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
                 $"받은 입력(P1): 능력 E <b>{pawn.AbilityPresses}</b>회 · 능력2 Q <b>{pawn.Ability2Presses}</b>회 · " +
                 $"상호작용 F <b>{pawn.InteractPresses}</b>회{(pawn.InteractHeld ? " (누르는 중)" : "")} · " +
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
@@ -651,7 +725,7 @@ namespace ChessFight.RagdollLab
                 $"피격 {pawn.Hits}회: {pawn.LastHit} · 물에서 부활 {WaterRespawns}회\n" +
                 $"팀 {Teams.Name(pawn.Team)} · 갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
                 $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}\n" +
-                TowerText(pawn) + LaunchText(pawn) +
+                TowerText(pawn) + LaunchText(pawn) + RopeText(pawn) +
                 (IsDrowning(pawn) ? $" · <b>물에 빠짐! {DrowningLeft(pawn):0.0}초 뒤 체크포인트로</b> (좌클릭 버둥 {pawn.Thrashes}회)" : "") +
                 (Time.unscaledTime - lastActionAt < 2.5f ? $"\n→ {lastAction}" : "");
             var size = style.CalcSize(new GUIContent(text));

@@ -135,7 +135,7 @@ namespace ChessFight.RagdollLab
 
         bool CanThrowHook => hookRetry <= 0f && CanSwingHook && HookStartZone.Allows(bodies[0].position);
 
-        bool CanSwingHook => State == PawnState.Active && !Climbing && topOutTimer <= 0f && !Floating && !BeingHeld && !Grabbing;
+        bool CanSwingHook => State == PawnState.Active && !Climbing && rope == null && topOutTimer <= 0f && !Floating && !BeingHeld && !Grabbing;
 
         void UpdateHook(RagdollParams p, float dt)
         {
@@ -514,22 +514,33 @@ namespace ChessFight.RagdollLab
         /// </summary>
         void ApplyRopePose(RagdollParams p)
         {
+            Vector3 hands = anchorPos + Vector3.up * RopeHang;
+            Vector3 rope = hookPos - hands;
+            Vector3 along = rope.sqrMagnitude > 1e-4f ? rope.normalized : Vector3.up;
+            Vector3 bodyUp = Vector3.Slerp(Vector3.up, along.y > 0f ? along : Vector3.up, 0.5f * (1f - ropeSettle)).normalized;
+            // Swinging a little from side to side under the hands, strongest as the rope first snaps
+            // taut, so it hangs rather than rides up like a lift.
+            float sway = 11f * Mathf.Sin(ropeTime * Mathf.PI * 2f * 1.1f) * Mathf.Lerp(1f, 0.45f, Mathf.Clamp01(ropeTime / 1.5f))
+                         * (1f - ropeSettle);
+            PlaceHanging(p, hands, along, bodyUp, sway, ropeSettle < 0.5f);
+        }
+
+        /// <summary>
+        /// A body hanging by its hands (the hook's rope, an environment rope, M5 and M6): kinematic, the hips on
+        /// the anchor, the body up along <paramref name="bodyUp"/> and swayed about its forward, and - with
+        /// <paramref name="handsOn"/> - both palms on the line through <paramref name="hands"/> running
+        /// <paramref name="along"/>.
+        /// </summary>
+        void PlaceHanging(RagdollParams p, Vector3 hands, Vector3 along, Vector3 bodyUp, float sway, bool handsOn)
+        {
             if (!climbKinematic)
             {
                 foreach (var rb in bodies) rb.isKinematic = true;
                 climbKinematic = true;
             }
-            Vector3 hands = anchorPos + Vector3.up * RopeHang;
-            Vector3 rope = hookPos - hands;
-            Vector3 along = rope.sqrMagnitude > 1e-4f ? rope.normalized : Vector3.up;
-            Vector3 bodyUp = Vector3.Slerp(Vector3.up, along.y > 0f ? along : Vector3.up, 0.5f * (1f - ropeSettle)).normalized;
             Vector3 forward = Vector3.ProjectOnPlane(facing, bodyUp);
             if (forward.sqrMagnitude < 1e-4f) forward = Vector3.ProjectOnPlane(Vector3.forward, bodyUp);
             poseRot[0] = Quaternion.LookRotation(forward.normalized, bodyUp);
-            // Swinging a little from side to side under the hands, strongest as the rope first snaps
-            // taut, so it hangs rather than rides up like a lift.
-            float sway = 11f * Mathf.Sin(ropeTime * Mathf.PI * 2f * 1.1f) * Mathf.Lerp(1f, 0.45f, Mathf.Clamp01(ropeTime / 1.5f))
-                         * (1f - ropeSettle);
             poseRot[0] = Quaternion.AngleAxis(sway, forward.normalized) * poseRot[0];
             poseScratch[0] = anchorPos;
             for (int i = 1; i < Count; i++)
@@ -538,7 +549,7 @@ namespace ChessFight.RagdollLab
                 poseRot[i] = poseRot[parent] * puppet[i].localRotation;
                 poseScratch[i] = poseScratch[parent] + poseRot[parent] * jointOffset[i];
             }
-            if (ropeSettle < 0.5f)
+            if (handsOn)
             {
                 Vector3 across = Vector3.Cross(bodyUp, forward).normalized;
                 for (int slot = 0; slot < 2; slot++)

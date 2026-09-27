@@ -620,6 +620,7 @@ namespace ChessFight.RagdollLab
 
             Jump(p, dt);
             Mantle(dt);
+            UpdateRope(p, dt);
             UpdateClimb(p, dt);
             UpdateSprint(p, dt);
             Locomotion(p, dt);
@@ -629,13 +630,14 @@ namespace ChessFight.RagdollLab
             UpdateStamina(p, dt);
             if (!input.grab) climbGrabLatch = false;
             bool wantGrab = input.grab && State != PawnState.Ragdoll && !Climbing && !climbGrabLatch && !Floating
-                            && hookPhase != HookPhase.Pulling;
+                            && hookPhase != HookPhase.Pulling && rope == null;
             handL.Tick(wantGrab, p, dt, Climbing);
             handR.Tick(wantGrab, p, dt, Climbing);
             if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
             Pose(p, dt);
             if (Climbing) ApplyClimbPose(p);
             else if (hookPhase == HookPhase.Pulling) ApplyRopePose(p);
+            else if (rope != null) ApplyHangPose(p);
             else EndClimbPose();
             // Read the stiffness now, not before the actions: a dive or a knockdown this step has
             // just dropped StateFactor, and the stale value held the whole body stiff for its first step.
@@ -793,6 +795,7 @@ namespace ChessFight.RagdollLab
         {
             if (Floating) return;   // the water catches it
             DropHook();
+            DropRope();
             EndClimbPose();
             if (State == PawnState.Ragdoll && !Diving)
             {
@@ -1001,14 +1004,14 @@ namespace ChessFight.RagdollLab
                 return;
             }
 
-            if (Climbing || hookPhase == HookPhase.Pulling || Floating) launched = false;
+            if (Climbing || hookPhase == HookPhase.Pulling || rope != null || Floating) launched = false;
             if (launched)
             {
                 // The pad worked the throw out as a clean arc; the bodies' own air damping took 0.3 m off a
                 // 3 m throw. Give it back while the pawn is on the arc.
                 foreach (var rb in bodies) rb.linearVelocity *= 1f + rb.linearDamping * dt;
             }
-            if (Climbing || hookPhase == HookPhase.Pulling)
+            if (Climbing || hookPhase == HookPhase.Pulling || rope != null)
             {
                 // UpdateClimb has already moved the anchor along the wall (UpdateHook moves it up the rope).
                 leanLastVel = anchorVel;
@@ -1225,7 +1228,7 @@ namespace ChessFight.RagdollLab
         void Jump(RagdollParams p, float dt)
         {
             // A jump on the wall is a kick-off (UpdateClimb); held by someone it powers the struggle.
-            if (Climbing || Floating || heldTimer > 0.15f || hookPhase == HookPhase.Pulling) return;
+            if (Climbing || Floating || heldTimer > 0.15f || hookPhase == HookPhase.Pulling || rope != null) return;
             // Hanging off a ledge by the hands, holding forward is enough to climb onto it: after a
             // moment it does the same vault the jump button does. (Only the jump used to, so holding
             // W under a ledge just dangled there.)
@@ -1280,7 +1283,7 @@ namespace ChessFight.RagdollLab
                 if (input.shove) Thrash();
                 return;
             }
-            if (input.shove && State == PawnState.Active && shoveCooldown <= 0f && !Climbing)
+            if (input.shove && State == PawnState.Active && shoveCooldown <= 0f && !Climbing && rope == null)
             {
                 if (Grabbing)
                 {
@@ -1398,7 +1401,7 @@ namespace ChessFight.RagdollLab
         void UpdateStamina(RagdollParams p, float dt)
         {
             staminaIdle += dt;
-            bool resting = Grounded && State == PawnState.Active && !Climbing && !Sprinting && !BeingHeld
+            bool resting = Grounded && State == PawnState.Active && !Climbing && rope == null && !Sprinting && !BeingHeld
                            && staminaIdle >= p.staminaRecoverDelay;
             if (resting) stamina += p.climbRecover * dt;
             stamina = Mathf.Min(stamina, p.climbStaminaMax);
@@ -1415,7 +1418,7 @@ namespace ChessFight.RagdollLab
         void GuardLaunch(RagdollParams p)
         {
             bool cutting = false;
-            if (p.launchClamp > 0.001f && State == PawnState.Active && !Climbing && !Floating && hookPhase != HookPhase.Pulling
+            if (p.launchClamp > 0.001f && State == PawnState.Active && !Climbing && rope == null && !Floating && hookPhase != HookPhase.Pulling
                 && freeFlight <= 0f && jumpTimer <= 0f && vaultTimer <= 0f && topOutTimer <= 0f
                 && hitTimer <= 0f && !BeingHeld && !HoldingEnvironment()
                 && groundFound && (Grounded || coyote > 0f))
@@ -1816,7 +1819,7 @@ namespace ChessFight.RagdollLab
             {
                 holdsPlaced = false;
                 bool wants = input.grab && State == PawnState.Active && stamina > 0f && climbCooldown <= 0f && !Floating
-                             && (!Grounded || climbUp > 0.1f);
+                             && (!Grounded || climbUp > 0.1f) && rope == null;
                 if (wants && (FindWallAhead(p, out var ahead) || (climbUp > 0.1f && FindHeldWall(p, out ahead))))
                     StartClimb(p, ahead);
                 return;
@@ -2599,6 +2602,7 @@ namespace ChessFight.RagdollLab
             }
 
             HookPose(p, ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
+            RopeHangPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
 
             SetPuppet(BodyId.Chest, chest);
             SetPuppet(BodyId.Head, head);
@@ -3057,10 +3061,11 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Let go of whatever the pawn hangs from and fall: the wall it climbs, any ledge or thing in
-        /// its hands. Hooks and ropes (M5, M6) will let go here too.</summary>
+        /// its hands, the hook's rope and an environment rope (M5, M6).</summary>
         void LetGo(float cooldown)
         {
             DropHook();
+            DropRope();
             if (Climbing || topOutTimer > 0f) StopClimb(cooldown);
             EndClimbPose();
             handL.Release(cooldown);
@@ -3100,6 +3105,8 @@ namespace ChessFight.RagdollLab
             carryRise = 0f;
             launched = false;
             ClearHook();
+            rope = null;
+            ropeTopping = false;
             surfaceVel = climbSurfaceVel = Vector3.zero;
             groundCollider = climbCollider = null;
             groundSurface = climbSurface = null;

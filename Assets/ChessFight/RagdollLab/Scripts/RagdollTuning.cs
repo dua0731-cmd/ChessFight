@@ -196,6 +196,12 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupAction, "벽 점프 높이 (m)")] [Range(0.2f, 3f)] public float climbLungeHeight = 1f;
         [Tunable(GroupAction, "벽 점프 시간 (초)")] [Range(0.1f, 1f)] public float climbLungeTime = 0.3f;
         [Tunable(GroupAction, "벽 점프 다시 하기까지 (초)")] [Range(0f, 2f)] public float climbLungeCooldown = 0.4f;
+        // Ropes, chains and swings (M6): the right button takes hold of one this close to where the hands
+        // would be; W/S climb it at climbSpeed (climbDrainMove while moving), A/D turn round it, Space jumps
+        // off with the rope's speed and this much up.
+        [Tunable(GroupAction, "밧줄: 잡는 거리 (m)")] [Range(0.2f, 1.5f)] public float ropeReach = 0.7f;
+        [Tunable(GroupAction, "밧줄: A/D로 도는 속도 (°/초)")] [Range(0f, 360f)] public float ropeTurnRate = 150f;
+        [Tunable(GroupAction, "밧줄: 점프로 놓을 때 위로 (m/s)")] [Range(0f, 8f)] public float ropeJumpUp = 3.5f;
         [Tunable(GroupAction, "스테미나 회복 (/초)")] [Range(0.05f, 4f)] public float climbRecover = 2f;
         // Short arms, so short quick pats, one hand after the other, rather than long reaches.
         [Tunable(GroupAction, "손 바꿔 짚는 속도 (회/초)")] [Range(0.3f, 12f)] public float climbCadence = 8f;

@@ -118,6 +118,9 @@ MonoBehaviour:
     climbLungeHeight: 1
     climbLungeTime: 0.3
     climbLungeCooldown: 0.4
+    ropeReach: 0.7
+    ropeTurnRate: 150
+    ropeJumpUp: 3.5
     climbRecover: 2
     climbCadence: 8
     climbShoulderLift: 21

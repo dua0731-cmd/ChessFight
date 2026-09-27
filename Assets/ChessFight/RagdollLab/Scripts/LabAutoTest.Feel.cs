@@ -3,6 +3,7 @@ using System.Collections;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using ChessFight.Gameplay;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -70,6 +71,8 @@ namespace ChessFight.RagdollLab
             if (Want("climb_lunge")) yield return FeelScenario(folder, "climb_lunge", FeelClimbLunge());
             if (Want("launch_pad")) yield return FeelScenario(folder, "launch_pad", FeelLaunchPad());
             if (Want("spring")) yield return FeelScenario(folder, "spring", FeelSpring());
+            if (Want("rope_climb")) yield return FeelScenario(folder, "rope_climb", FeelRopeClimb());
+            if (Want("swing")) yield return FeelScenario(folder, "swing", FeelSwing());
 
             Time.captureFramerate = 0;
             LabCamera.GameTimeClock = false;
@@ -408,6 +411,36 @@ namespace ChessFight.RagdollLab
             yield return Sim(wait, () => Feel(0f, 0f));
             clipFolder = FeelFolder("spring");
             yield return FeelRecord(3.6f, "spring", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>The chain up the 6 m tower (M6): walk to it with the right button, W up it and onto the top.</summary>
+        IEnumerator FeelRopeClimb()
+        {
+            Vector3 top = QueenHillTestBed.ClimbRopeTop;
+            var pawn = Spawn(new Vector3(top.x - 1.6f, 0f, top.z), Vector3.right, "feel");
+            yield return FeelPreroll(pawn, 0.8f, 90f);
+            clipFolder = FeelFolder("rope_climb");
+            yield return FeelRecord(0.8f, "W+grab", _ => Feel(0f, 1f, grab: true));
+            yield return FeelRecord(0.6f, "hang", _ => Feel(0f, 0f, grab: true));
+            // W up it until it stands on the top (a player holding W on would run off the far side).
+            yield return FeelRecord(5.4f, "W+grab", _ => Feel(0f, pawn.RopeTopOuts > 0 ? 0f : 1f, grab: pawn.RopeTopOuts == 0));
+            yield return FeelRecord(0.8f, "stop", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>The swing over the 8 m gap (M6): waiting with the right button, riding it across, letting go.</summary>
+        IEnumerator FeelSwing()
+        {
+            var swing = Bed != null ? Bed.Swing : null;
+            if (swing == null) yield break;
+            if (swing.SecondsToEnd(false, ObstacleClock.Now) < 2f) yield return Sim(swing.SecondsToEnd(false, ObstacleClock.Now) + 0.2f);
+            var pawn = Spawn(QueenHillTestBed.SwingStart, Vector3.right, "feel");
+            yield return FeelPreroll(pawn, 0.6f, 90f);
+            // Skip most of the wait; record the last second of it.
+            float wait = Mathf.Max(0f, swing.SecondsToEnd(false, ObstacleClock.Now) - 1.2f);
+            yield return Sim(wait, () => Feel(0f, 0f, grab: true));
+            clipFolder = FeelFolder("swing");
+            yield return FeelRecord(1.2f + swing.Period * 0.5f, "grab", _ => Feel(0f, 0f, grab: true));
+            yield return FeelRecord(1.2f, "let go", _ => Feel(0f, 0f));
         }
 
         string FeelFolder(string name) => Path.Combine(Arg("-ragdollFeel") ?? "feel", name);
