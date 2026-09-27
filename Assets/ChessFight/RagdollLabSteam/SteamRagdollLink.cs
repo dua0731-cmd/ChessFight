@@ -26,6 +26,12 @@ namespace ChessFight.RagdollLab.Net
         const float PlaybackDelayMs = 110f;     // jitter buffer: about three snapshots
         const float InputTimeout = 0.35f;
         const float SilenceTimeout = 12f;
+        // Overload guard while this PC hosts: at most this much game time per frame, so
+        // at 120 Hz no frame runs more than 12 physics steps. Unity's default (1/3 s,
+        // 40 steps) lets an overloaded host freeze for a third of a second and then send
+        // everything at once, which clients see as stutter and jumps; capped, the host
+        // runs a little slow instead and its snapshots keep coming evenly.
+        const float HostMaxFrameStep = 0.1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
@@ -64,7 +70,9 @@ namespace ChessFight.RagdollLab.Net
 
         bool matchActive;
         uint tick, sequence, lastTick;
-        float lastSnapshotSend, lastInputSend, lastReceive, statsAt, lastMatchSend;
+        float nextSnapshot, nextInput, lastReceive, statsAt, lastMatchSend;
+        // Time.maximumDeltaTime before this PC started hosting, -1 while it is not hosting.
+        float savedMaxFrameStep = -1f;
         const float MatchInterval = 0.5f;
         double playbackMs;
         RagdollNetInput pending;
@@ -92,7 +100,10 @@ namespace ChessFight.RagdollLab.Net
             cam = game != null && game.labCamera != null ? game.labCamera : FindFirstObjectByType<LabCamera>();
             session = new SteamSession();
             session.Initialize();
+            // Measures this PC so the host role can go to the fastest machine (Docs/Network/HOST.md).
+            HostFitnessProbe.Start();
             if (!session.Online) return;
+            session.HostChanged += OnHostChanged;
             sessionRequests = Callback<SteamNetworkingMessagesSessionRequest_t>.Create(c =>
             {
                 ulong id = c.m_identityRemote.GetSteamID64();
@@ -108,9 +119,11 @@ namespace ChessFight.RagdollLab.Net
             if (session != null)
             {
                 session.SessionChanged -= ResetStream;
+                session.HostChanged -= OnHostChanged;
                 ResetStream();
                 session.Dispose();
             }
+            StopHostingGuard();
             sessionRequests?.Dispose();
             sessionFailures?.Dispose();
             if (panel != null) Destroy(panel);
@@ -126,6 +139,10 @@ namespace ChessFight.RagdollLab.Net
             // The lab locks the cursor for mouse-look; this panel needs it back or its buttons never get clicked.
             // Only while it is open, though: F3 closes it and the clicks go back to the pawn.
             game.UiWantsCursor = hudOpen && !game.AutoTest;
+            // What the host election reads (HOST.md): this machine's score once measured,
+            // and every frame's time, so a host that stays slow hands the match on.
+            if (session.LocalFitness == 0) session.LocalFitness = HostFitnessProbe.BaseScore();
+            session.ReportFrame(Time.unscaledDeltaTime * 1000f);
             session.Tick();
             if (!session.Online) return;
             Receive();
@@ -181,8 +198,13 @@ namespace ChessFight.RagdollLab.Net
                     Respawn(pair.Value, spot.Team, spot.Slot);
                 }
 
-            if (Time.realtimeSinceStartup - lastSnapshotSend < SnapshotInterval) return;
-            lastSnapshotSend = Time.realtimeSinceStartup;
+            // On a schedule rather than "an interval since the last send", which slipped to
+            // the next frame every time and made the rate uneven on a slow host. After a
+            // hitch the schedule restarts instead of bursting to catch up.
+            float now = Time.realtimeSinceStartup;
+            if (now < nextSnapshot) return;
+            nextSnapshot += SnapshotInterval;
+            if (nextSnapshot <= now) nextSnapshot = now + SnapshotInterval;
             uint stamp = NowMs();
             outgoing.Clear();
             foreach (var pair in pawns)
@@ -240,9 +262,11 @@ namespace ChessFight.RagdollLab.Net
             // Held, but latched until sent: a tap shorter than one send interval still reaches the host.
             pending.interact |= now.interact;
 
-            if (Time.realtimeSinceStartup - lastInputSend >= InputInterval)
+            float clock = Time.realtimeSinceStartup;
+            if (clock >= nextInput)
             {
-                lastInputSend = Time.realtimeSinceStartup;
+                nextInput += InputInterval;
+                if (nextInput <= clock) nextInput = clock + InputInterval;
                 byte[] bytes = RagdollNetProtocol.Input(session.Match, ++sequence, NowMs(), pending);
                 Send(session.Host, bytes);
                 pending.jump = pending.shove = pending.ability = pending.ability2 = pending.interact = false;
@@ -250,7 +274,10 @@ namespace ChessFight.RagdollLab.Net
 
             Playback();
 
-            if (Time.realtimeSinceStartup - lastReceive > SilenceTimeout)
+            // A host silent for a few seconds is replaced by its successor (HOST.md); the
+            // return to the party below is only the last resort.
+            session.ReportHostSilence(clock - lastReceive);
+            if (clock - lastReceive > SilenceTimeout)
             {
                 message = "호스트가 자세 전송을 멈췄어요. 파티로 돌아갑니다.";
                 session.Cancel();
@@ -369,6 +396,7 @@ namespace ChessFight.RagdollLab.Net
             pawns.Clear();
             game.DespawnAll();
             game.NetworkControlled = true;
+            if (session.IsHost) StartHostingGuard();
             ResetStream();
             // Hand the mouse to the pawn: the panel would otherwise keep the cursor free all match.
             hudOpen = false;
@@ -378,6 +406,7 @@ namespace ChessFight.RagdollLab.Net
         void ExitMatch()
         {
             matchActive = false;
+            StopHostingGuard();
             ObstacleClock.Use(null);
             var queen = QueenHillMatch.Current;
             if (queen != null)
@@ -392,6 +421,76 @@ namespace ChessFight.RagdollLab.Net
             game.DespawnAll();
             game.SpawnLocalPlayers();
             ResetStream();
+        }
+
+        /// <summary>
+        /// The host role moved mid-match (Docs/Network/HOST.md). The new host takes every pawn from
+        /// the newest pose it received and hands it to its own physics; a host that stepped down turns
+        /// its pawns into puppets of the new one. Nobody is respawned: the round goes on from where it
+        /// was, with a short stop while the pawns change hands.
+        /// </summary>
+        void OnHostChanged(ulong previous, ulong next)
+        {
+            // Before the match is on (the handover at the start), EnterMatch sets the roles itself.
+            if (!matchActive || session == null) return;
+            CloseSession(previous);
+            bool nowHost = session.IsHost;
+            if (nowHost)
+            {
+                // The newest pose, not the drawn one, which is PlaybackDelayMs behind.
+                if (buffer.Count > 0)
+                {
+                    var newest = buffer[buffer.Count - 1];
+                    for (int i = 0; i < newest.count; i++)
+                    {
+                        var pose = newest.At(i);
+                        if (pawns.TryGetValue(pose.id, out var pawn) && pawn != null) pawn.ApplyNetworkPose(pose);
+                    }
+                }
+                foreach (var pawn in pawns.Values) if (pawn != null) pawn.SetNetworkPuppet(false);
+                tick = lastTick;   // clients keep accepting "newer" snapshots
+                StartHostingGuard();
+                message = "이 PC가 새 호스트가 되었어요. 물리를 이어서 계산해요.";
+            }
+            else
+            {
+                foreach (var pawn in pawns.Values) if (pawn != null) pawn.SetNetworkPuppet(true);
+                StopHostingGuard();
+                lastTick = 0;
+                message = $"호스트가 {session.Name(next)} 님으로 바뀌었어요.";
+            }
+            var queen = QueenHillMatch.Current;
+            if (queen != null) queen.Authority = nowHost;
+            while (buffer.Count > 0) Recycle(0);
+            inputs.Clear();
+            snapCountdown.Clear();
+            pending = default;
+            playbackMs = 0d;
+            roundTripMs = 0f;
+            nextSnapshot = nextInput = 0f;
+            lastReceive = Time.realtimeSinceStartup;
+        }
+
+        void StartHostingGuard()
+        {
+            if (savedMaxFrameStep >= 0f) return;
+            savedMaxFrameStep = Time.maximumDeltaTime;
+            Time.maximumDeltaTime = Mathf.Min(savedMaxFrameStep, HostMaxFrameStep);
+        }
+
+        void StopHostingGuard()
+        {
+            if (savedMaxFrameStep < 0f) return;
+            Time.maximumDeltaTime = savedMaxFrameStep;
+            savedMaxFrameStep = -1f;
+        }
+
+        void CloseSession(ulong id)
+        {
+            if (!connected.Remove(id)) return;
+            var identity = new SteamNetworkingIdentity();
+            identity.SetSteamID64(id);
+            SteamNetworkingMessages.CloseSessionWithUser(ref identity);
         }
 
         void SyncRoster()
@@ -451,29 +550,35 @@ namespace ChessFight.RagdollLab.Net
 
         void Receive()
         {
-            int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
-            for (int i = 0; i < count; i++)
+            // Everything that arrived, not one buffer's worth: a host whose frame rate drops
+            // would otherwise read its clients' 60 Hz inputs later and later.
+            for (int round = 0; round < 8; round++)
             {
-                try
+                int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
+                for (int i = 0; i < count; i++)
                 {
-                    var packet = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
-                    ulong sender = packet.m_identityPeer.GetSteamID64();
-                    if (!session.IsPeer(sender) || packet.m_cbSize <= 0 || packet.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
-                    var bytes = new byte[packet.m_cbSize];
-                    Marshal.Copy(packet.m_pData, bytes, 0, bytes.Length);
-                    receivedBytes += bytes.Length;
-                    if (session.IsHost) ReceiveInput(sender, bytes);
-                    else if (sender == session.Host)
+                    try
                     {
-                        if (RagdollNetProtocol.ReadMatch(bytes, session.Match, out string text)) QueenHillMatch.Current?.ApplyRemote(text);
-                        else ReceiveSnapshot(bytes);
+                        var packet = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
+                        ulong sender = packet.m_identityPeer.GetSteamID64();
+                        if (!session.IsPeer(sender) || packet.m_cbSize <= 0 || packet.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
+                        var bytes = new byte[packet.m_cbSize];
+                        Marshal.Copy(packet.m_pData, bytes, 0, bytes.Length);
+                        receivedBytes += bytes.Length;
+                        if (session.IsHost) ReceiveInput(sender, bytes);
+                        else if (sender == session.Host)
+                        {
+                            if (RagdollNetProtocol.ReadMatch(bytes, session.Match, out string text)) QueenHillMatch.Current?.ApplyRemote(text);
+                            else ReceiveSnapshot(bytes);
+                        }
+                    }
+                    finally
+                    {
+                        SteamNetworkingMessage_t.Release(incoming[i]);
+                        incoming[i] = IntPtr.Zero;
                     }
                 }
-                finally
-                {
-                    SteamNetworkingMessage_t.Release(incoming[i]);
-                    incoming[i] = IntPtr.Zero;
-                }
+                if (count < incoming.Length) break;
             }
         }
 
