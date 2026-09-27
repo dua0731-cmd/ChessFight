@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using ChessFight.Network;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace ChessFight.Game
 {
@@ -13,71 +15,72 @@ namespace ChessFight.Game
         public bool Leader, Me, Bot, Invite;
     }
 
-    // The lobby's 3D backdrop: the party standing on a gold ring under a bright
-    // sky, the local player in the middle, like a party game's main menu.
+    // The lobby's 3D backdrop: the party standing on a raised chessboard in the
+    // white tile plaza, an obstacle course fading into the haze behind. The
+    // camera sits right of the party so the game-mode list on the right of the
+    // HUD has open sky behind it.
     //
-    // Display only. Nothing here moves by input or by the network; the pawns bob
-    // in place. Built from primitives and tinted copies of the team material so
-    // the lobby needs no new scene or prefab assets. An artist replaces the pawn
-    // body through the PawnAvatar prefab.
+    // Display only. Nothing here moves by input or by the network; the pieces bob
+    // in place. Each member gets a different chess piece (me the knight), bots
+    // are grey pawns, and an empty spot is a faceless ghost on a gold pad.
     public sealed class LobbyStage : MonoBehaviour
     {
         public const int Spots = 6;
-        const float Spacing = 1.55f;
-        const float StandHeight = 1f;       // PawnAvatar's pivot is its middle; ground + 1
-        const float HeadClearance = 1.45f;  // where a nameplate sits above the pivot
-        const float GhostScale = .8f;
+        const float Spacing = 1.35f;        // sideways between neighbouring spots
+        const float StepBack = .6f;         // each pair further out also stands further back
+        const float Tile = 1.4f;
+        const float PlateHeight = 2.55f;    // nameplate anchor above the feet
+        const float InviteHeight = 1.25f;   // the "+" button, mid-ghost
+        const float GhostScale = .85f;
 
-        static readonly Color Sky = new Color(.60f, .79f, .95f);
-        static readonly Color Floor = new Color(.93f, .94f, .96f);
-        static readonly Color Gold = new Color(.95f, .76f, .20f);
-        static readonly Color Cream = new Color(.97f, .92f, .80f);
-        static readonly Color Piece = new Color(.96f, .86f, .66f);
-        static readonly Color BotPiece = new Color(.90f, .92f, .96f);
-        static readonly Color Ghost = new Color(.70f, .72f, .76f);
-        static readonly Color Prop = new Color(.84f, .88f, .94f);
+        static readonly Vector3 BoardCenter = new Vector3(-.7f, 0f, .8f);
+        static readonly Vector3 CameraAt = new Vector3(1.95f, 3.0f, -12.5f);
+        static readonly Vector3 LookAt = new Vector3(1.95f, 1.45f, 0f);
+        // Who stands where, spot by spot. Spot 0 is always the local player.
+        static readonly PieceKind[] Kinds =
+            { PieceKind.Knight, PieceKind.Queen, PieceKind.King, PieceKind.Rook, PieceKind.Bishop, PieceKind.Pawn };
 
-        PawnAvatar prefab;
-        Material template, accent;
+        static float top = .45f;            // the board's top face, set by Build
+
         Camera view;
-        readonly List<Material> owned = new List<Material>();
-        readonly List<GameObject> scenery = new List<GameObject>();
         readonly GameObject[] bodies = new GameObject[Spots];
         readonly LineupEntry[] shown = new LineupEntry[Spots];
-        Material pieceMaterial, botMaterial, ghostMaterial;
 
         public Camera View => view;
 
-        // `template` is any material on the ChessFight/NetworkColor shader; the
-        // stage copies it for its own colours. `accentMaterial` tints the collar.
-        public void Build(PawnAvatar pawnPrefab, Material templateMaterial, Material accentMaterial)
+        public void Build()
         {
-            prefab = pawnPrefab;
-            template = templateMaterial;
-            accent = accentMaterial;
-            pieceMaterial = Tint(Piece);
-            botMaterial = Tint(BotPiece);
-            ghostMaterial = Tint(Ghost);
-
             view = Camera.main;
             if (view == null)
             {
                 var go = new GameObject("ChessFight Camera") { tag = "MainCamera" };
                 view = go.AddComponent<Camera>();
             }
-            view.clearFlags = CameraClearFlags.SolidColor;
-            view.backgroundColor = Sky;
-            view.fieldOfView = 38f;
-            view.transform.position = new Vector3(0f, 2.2f, -8.2f);
-            view.transform.LookAt(new Vector3(0f, .95f, 0f));
+            view.fieldOfView = 32f;
+            view.transform.position = CameraAt;
+            view.transform.LookAt(LookAt);
 
-            Block("Lobby Floor", new Vector3(0, -.1f, 10), new Vector3(90, .2f, 70), Floor, false);
-            Block("Lobby Ring", new Vector3(0, .005f, 0), new Vector3(6.2f, .01f, 6.2f), Gold, true);
-            Block("Lobby Ring Inner", new Vector3(0, .012f, 0), new Vector3(5.7f, .01f, 5.7f), Cream, true);
-            // Far-off blocks give the sky a horizon, as in the reference video.
-            Block("Lobby Prop A", new Vector3(-16, 1.5f, 26), new Vector3(10, 3, 1), Prop, false);
-            Block("Lobby Prop B", new Vector3(13, .9f, 30), new Vector3(8, 1.8f, 1), Prop, false);
-            Block("Lobby Prop C", new Vector3(-4, 3.2f, 34), new Vector3(4, .6f, 1), Prop, false);
+            StageKit.Environment(transform, view, 28f, 120f);
+            StageKit.Floor(transform);
+            top = StageKit.Board(transform, "Pedestal", 7, 4, Tile, BoardCenter, .4f, .8f, PieceFigure.Hex(0x767F93));
+            Course();
+        }
+
+        // Far-off pieces of the obstacle course: a run, a tiled wall, floating
+        // platforms and a red spinner, all soft in the haze.
+        void Course()
+        {
+            var course = new GameObject("Course").transform;
+            course.SetParent(transform, false);
+            Material pale = PieceFigure.Lit(PieceFigure.Hex(0xE8EBF0), .05f), white = PieceFigure.Lit(PieceFigure.Hex(0xEEF1F5), .05f);
+            StageKit.Box(course, "Run", new Vector3(16f, .7f, 52f), new Vector3(9f, 1.4f, 46f), pale).transform.localRotation = Quaternion.Euler(0, -16f, 0);
+            StageKit.Box(course, "Wall", new Vector3(-21f, 2.5f, 44f), new Vector3(1f, 5f, 30f), PieceFigure.Lit(PieceFigure.Hex(0x8FA2C9), .05f));
+            StageKit.Box(course, "Platform", new Vector3(-9f, 3f, 62f), new Vector3(6f, 1.2f, 6f), white);
+            StageKit.Box(course, "Platform", new Vector3(8f, 4.5f, 78f), new Vector3(7f, 1.2f, 7f), white);
+            StageKit.Box(course, "Platform", new Vector3(-27f, 5f, 84f), new Vector3(8f, 1.2f, 8f), white);
+            StageKit.Box(course, "Spinner Post", new Vector3(17.5f, 2f, 42f), new Vector3(.5f, 1.2f, .5f), PieceFigure.Lit(PieceFigure.Hex(0x3C4250), .2f));
+            var bar = StageKit.Box(course, "Spinner", new Vector3(17.5f, 2.35f, 42f), new Vector3(8f, .38f, .38f), PieceFigure.Lit(PieceFigure.Hex(0xE53935), .3f));
+            bar.transform.localRotation = Quaternion.Euler(0, 40f, 0);
         }
 
         // Rebuilds only the spots whose occupant changed, so a party member joining
@@ -96,41 +99,68 @@ namespace ChessFight.Game
             }
         }
 
-        // Where spot i stands. Me in the middle, then alternating left and right,
-        // bending gently back so the outer spots do not hide behind the middle.
+        // Where spot i stands, feet on the board. Me in front in the middle, then
+        // alternating left and right, each pair a step further back so nobody
+        // hides behind the one in front.
         public static Vector3 SpotPosition(int index)
         {
             int side = index == 0 ? 0 : (index % 2 == 1 ? -1 : 1) * ((index + 1) / 2);
-            return new Vector3(side * Spacing, StandHeight, Mathf.Abs(side) * .45f);
+            return new Vector3(side * Spacing, top, Mathf.Abs(side) * StepBack);
         }
 
-        // Nameplates and the invite "+" hang from here.
-        public static Vector3 Anchor(int index) => SpotPosition(index) + Vector3.up * HeadClearance;
+        // Nameplates hang from here.
+        public static Vector3 Anchor(int index) => SpotPosition(index) + Vector3.up * PlateHeight;
+
+        // The invite "+" sits on the ghost's middle.
+        public static Vector3 InviteAnchor(int index) => SpotPosition(index) + Vector3.up * InviteHeight;
 
         GameObject Spawn(int index, LineupEntry entry)
         {
             Vector3 at = SpotPosition(index);
-            // The invite silhouette is scaled down about its middle; keep it on the floor.
-            if (entry.Invite) at.y = StandHeight * GhostScale;
-            // PawnAvatar's accent faces +Z; the camera looks along +Z, so turn round.
-            var facing = Quaternion.Euler(0f, 180f, 0f);
-            if (prefab == null)
-            {
-                var fallback = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                StripCollider(fallback);
-                fallback.transform.SetPositionAndRotation(at, facing);
-                fallback.transform.SetParent(transform, true);
-                fallback.GetComponent<Renderer>().sharedMaterial = entry.Invite ? ghostMaterial : pieceMaterial;
-                return fallback;
-            }
-            var avatar = Instantiate(prefab, at, facing, transform);
-            avatar.name = entry.Invite ? "Invite Spot " + index : "Lineup " + (entry.Bot ? "Bot " : "") + entry.Id;
-            avatar.Bind(entry.Id, 0, entry.Invite ? ghostMaterial : entry.Bot ? botMaterial : pieceMaterial,
-                        entry.Invite ? ghostMaterial : accent);
-            // An empty spot is a smaller, flatter silhouette: clearly nobody yet.
-            if (entry.Invite) avatar.transform.localScale = Vector3.one * GhostScale;
-            foreach (var collider in avatar.GetComponentsInChildren<Collider>()) Destroy(collider);
-            return avatar.gameObject;
+            if (entry.Invite) return InviteSpot(index, at);
+
+            var kind = entry.Bot ? PieceKind.Pawn : Kinds[index];
+            var figure = PieceFigure.Build(kind, entry.Bot ? PieceSkin.Bot : PieceSkin.White, transform);
+            figure.name = "Lineup " + (entry.Bot ? "Bot " : "") + entry.Id;
+            figure.transform.SetPositionAndRotation(at, Quaternion.Euler(0, Facing(index, kind), 0));
+            return figure;
+        }
+
+        // Everyone faces the camera (-Z), turned a little towards the middle; the
+        // knight turns further so its horse profile reads.
+        static float Facing(int index, PieceKind kind)
+        {
+            if (kind == PieceKind.Knight && index == 0) return 120f;
+            float side = Mathf.Sign(SpotPosition(index).x);
+            return 180f + side * 14f;
+        }
+
+        GameObject InviteSpot(int index, Vector3 at)
+        {
+            var spot = new GameObject("Invite Spot " + index);
+            spot.transform.SetParent(transform, false);
+            spot.transform.position = at;
+            Pad(spot.transform, "Pad Rim", .62f, .03f, PieceFigure.Lit(PieceFigure.Hex(0xFFD23A), .4f, .1f));
+            Pad(spot.transform, "Pad", .54f, .045f, PieceFigure.Lit(PieceFigure.Hex(0xF6EFE2), .1f));
+            var ghost = PieceFigure.Ghost(spot.transform);
+            ghost.transform.localPosition = new Vector3(0, .04f, 0);
+            ghost.transform.localRotation = Quaternion.Euler(0, 180f, 0);
+            ghost.transform.localScale = Vector3.one * GhostScale;
+            return spot;
+        }
+
+        static void Pad(Transform parent, string name, float radius, float height, Material material)
+        {
+            var disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            disc.name = name;
+            Destroy(disc.GetComponent<Collider>());
+            disc.transform.SetParent(parent, false);
+            disc.transform.localPosition = new Vector3(0, height / 2, 0);
+            // A cylinder primitive is 2 units tall and 1 across.
+            disc.transform.localScale = new Vector3(radius * 2, height / 2, radius * 2);
+            var renderer = disc.GetComponent<Renderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
         }
 
         void Update()
@@ -140,48 +170,8 @@ namespace ChessFight.Game
             for (int i = 0; i < Spots; i++)
             {
                 if (bodies[i] == null || shown[i].Invite) continue;
-                Vector3 at = SpotPosition(i);
-                bodies[i].transform.position = at + Vector3.up * (Mathf.Abs(Mathf.Sin(t * 2.2f + i * 1.3f)) * .06f);
+                bodies[i].transform.position = SpotPosition(i) + Vector3.up * (Mathf.Abs(Mathf.Sin(t * 2.2f + i * 1.3f)) * .06f);
             }
-        }
-
-        void Block(string name, Vector3 position, Vector3 scale, Color color, bool round)
-        {
-            var block = GameObject.CreatePrimitive(round ? PrimitiveType.Cylinder : PrimitiveType.Cube);
-            block.name = name;
-            StripCollider(block);
-            block.transform.SetParent(transform, false);
-            block.transform.localPosition = position;
-            // A cylinder primitive is 2 units tall; halve Y so scale means size.
-            block.transform.localScale = round ? new Vector3(scale.x, scale.y * .5f, scale.z) : scale;
-            block.GetComponent<Renderer>().sharedMaterial = Tint(color);
-            scenery.Add(block);
-        }
-
-        static void StripCollider(GameObject go)
-        {
-            var collider = go.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
-        }
-
-        Material Tint(Color color)
-        {
-            Material material;
-            if (template != null) material = new Material(template);
-            else
-            {
-                var shader = Shader.Find("ChessFight/NetworkColor");
-                material = new Material(shader != null ? shader : Shader.Find("Unlit/Color"));
-            }
-            material.color = color;
-            owned.Add(material);
-            return material;
-        }
-
-        void OnDestroy()
-        {
-            foreach (var material in owned) if (material != null) Destroy(material);
-            owned.Clear();
         }
     }
 }

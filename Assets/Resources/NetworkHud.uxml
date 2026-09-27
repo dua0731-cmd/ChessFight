@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <!-- Lobby HUD over the 3D lineup (LobbyStage). Laid out after the reference
-         video: top bar, party lineup in the middle, party bar bottom left, mode
-         card and the big start button bottom right.
+    <!-- Lobby HUD over the 3D lineup (LobbyStage). Top bar, the party on its
+         chessboard left of centre, party bar bottom left, the game-mode list down
+         the right and the big start button under it.
          Plain elements only - NetworkTheme.tss does not import Unity's default
          runtime theme, so composite controls (ScrollView, Dropdown) collapse.
          Every name here is looked up by NetworkHudView: rename both or neither. -->
@@ -87,7 +87,9 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Bottom right: the mode card and the start button, or the busy card. -->
+        <!-- Bottom right: the start button, or the busy card. The mode card is
+             hidden now that the right rail lists every mode; it stays because the
+             view binds it by name. -->
         <ui:VisualElement class="bottom-right" picking-mode="Ignore">
             <ui:Button name="mode-open" class="mode-card row">
                 <ui:VisualElement name="mode-tile" class="mode-tile" picking-mode="Ignore">
@@ -125,12 +127,23 @@
             <ui:Label text="게임 시작" class="key-label" picking-mode="Ignore" />
             <ui:Label text="F" class="keycap small" picking-mode="Ignore" />
             <ui:Label text="친구" class="key-label" picking-mode="Ignore" />
-            <ui:Label text="M" class="keycap small" picking-mode="Ignore" />
-            <ui:Label text="모드" class="key-label" picking-mode="Ignore" />
             <ui:Label text="Esc" class="keycap small" picking-mode="Ignore" />
             <ui:Label text="닫기" class="key-label" picking-mode="Ignore" />
         </ui:VisualElement>
         <ui:Label name="version" class="version" picking-mode="Ignore" />
+
+        <!-- Right rail: every game mode as a card with its piece. A click picks it
+             (the idle party leader only); the cards are filled in code. -->
+        <ui:VisualElement name="mode-rail" class="mode-rail" picking-mode="Ignore">
+            <ui:VisualElement class="row rail-head" picking-mode="Ignore">
+                <ui:VisualElement class="grow" picking-mode="Ignore">
+                    <ui:Label text="GAME MODE" class="rail-kicker" picking-mode="Ignore" />
+                    <ui:Label text="게임 모드" class="rail-title" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Label name="mode-rail-hint" text="모드마다 따로 매칭돼요" class="rail-hint" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="mode-rail-list" picking-mode="Ignore" />
+        </ui:VisualElement>
 
         <!-- Developer details, toggled from the top bar. -->
         <ui:VisualElement name="details-card" class="side-card details-card">

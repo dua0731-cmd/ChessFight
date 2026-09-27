@@ -80,6 +80,12 @@ namespace ChessFight.Game
         VisualElement modeList;
         readonly Dictionary<string, Button> modeButtons = new Dictionary<string, Button>();
 
+        // The game-mode rail down the right, one card per mode.
+        VisualElement railList;
+        Label railHint;
+        readonly Dictionary<string, Button> railButtons = new Dictionary<string, Button>();
+        readonly List<Texture2D> ownedTextures = new List<Texture2D>();
+
         // Nameplates over the 3D lineup.
         VisualElement lineupLayer;
         Camera lineupCamera;
@@ -125,6 +131,8 @@ namespace ChessFight.Game
             friendsList = root.Q<VisualElement>("friends-list");
             friendsInfo = root.Q<Label>("friends-info"); friendsPage = root.Q<Label>("friends-page");
             modeList = root.Q<VisualElement>("mode-list");
+            railList = root.Q<VisualElement>("mode-rail-list");
+            railHint = root.Q<Label>("mode-rail-hint");
             lineupLayer = root.Q<VisualElement>("lineup");
             for (int i = 0; i < TeamReservations.TeamSize; i++)
             {
@@ -182,6 +190,7 @@ namespace ChessFight.Game
             friendsAll = Bind(root, "friends-all", () => { onlineOnly = false; friendPage = 0; DrawFriends(); });
 
             BuildModeList();
+            BuildModeRail();
             // Start from a known state instead of trusting the stylesheet defaults,
             // so "is this panel open" is answerable before the first layout pass.
             foreach (var hidden in new[] { friendsPanel, detailsPanel, codeModal, modeModal, toast, offline, busy, matchPanel, roomTools })
@@ -378,13 +387,13 @@ namespace ChessFight.Game
             if (root?.panel == null || lineupCamera == null) return;
             for (int i = 0; i < plates.Count && i < lineup.Count; i++)
             {
-                Vector3 world = LobbyStage.Anchor(i);
+                bool invite = lineup[i].Invite;
+                Vector3 world = invite ? LobbyStage.InviteAnchor(i) : LobbyStage.Anchor(i);
                 bool front = lineupCamera.WorldToViewportPoint(world).z > 0;
                 plates[i].style.display = front ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!front) continue;
                 Vector2 at = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, world, lineupCamera);
                 // Fixed widths from the USS, so centring needs no layout pass.
-                bool invite = lineup[i].Invite;
                 plates[i].style.left = at.x - (invite ? 60f : 90f);
                 plates[i].style.top = at.y - (invite ? 20f : 46f);
             }
@@ -432,6 +441,106 @@ namespace ChessFight.Game
                 modeButtons[key] = option;
                 modeList.Add(option);
             }
+        }
+
+        // The right rail: every mode as a card with its piece, always on screen, so
+        // picking a mode is one click. Followers see the leader's choice.
+        void BuildModeRail()
+        {
+            if (railList == null) return;
+            foreach (var mode in GameModes.All)
+            {
+                var card = new Button { focusable = false };
+                card.AddToClassList("rail-card");
+                if (!mode.Playable) card.AddToClassList("rail-locked");
+                ModeLook(mode.Key, out Color from, out Color to, out PieceKind piece, out PieceSkin skin, out float yaw);
+                card.style.backgroundImage = new StyleBackground(Diagonal(from, to));
+
+                var art = new VisualElement { pickingMode = PickingMode.Ignore };
+                art.AddToClassList("rail-art");
+                var portrait = PiecePortraits.Get(piece, skin, yaw, Color.Lerp(from, to, .6f));
+                if (portrait != null) art.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(portrait));
+                card.Add(art);
+
+                var text = new VisualElement { pickingMode = PickingMode.Ignore };
+                text.AddToClassList("rail-text");
+                var badges = new VisualElement { pickingMode = PickingMode.Ignore };
+                badges.AddToClassList("rail-badges");
+                var state = new Label { name = "state", pickingMode = PickingMode.Ignore };
+                state.AddToClassList("rail-badge");
+                badges.Add(state);
+                text.Add(badges);
+                var name = new Label(mode.Name) { pickingMode = PickingMode.Ignore };
+                name.AddToClassList("rail-name");
+                var summary = new Label(WrapWords(mode.Summary, RailLineUnits)) { pickingMode = PickingMode.Ignore };
+                summary.AddToClassList("rail-summary");
+                var tagline = new Label(mode.Tagline) { pickingMode = PickingMode.Ignore };
+                tagline.AddToClassList("rail-tagline");
+                text.Add(name); text.Add(summary); text.Add(tagline);
+                card.Add(text);
+
+                string key = mode.Key;
+                Action pick = () => PickMode?.Invoke(key);
+                card.clicked += pick;
+                actions[card] = pick;
+                railButtons[key] = card;
+                railList.Add(card);
+            }
+        }
+
+        // UI Toolkit breaks Korean between any two syllables, even mid-word, so
+        // break the card text at spaces here instead. Widths are estimated: a
+        // Hangul syllable counts two units, anything else one.
+        const int RailLineUnits = 38;   // .rail-text is 232px of 11px text
+
+        static string WrapWords(string text, int units)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            var wrapped = new System.Text.StringBuilder();
+            int line = 0;
+            foreach (string word in text.Split(' '))
+            {
+                int width = 0;
+                foreach (char c in word) width += c >= 'ᄀ' ? 2 : 1;
+                if (line > 0 && line + 1 + width > units) { wrapped.Append('\n'); line = 0; }
+                else if (line > 0) { wrapped.Append(' '); line++; }
+                wrapped.Append(word);
+                line += width;
+            }
+            return wrapped.ToString();
+        }
+
+        // Each mode's card: a diagonal colour wash and the piece that stars in it.
+        static void ModeLook(string key, out Color from, out Color to, out PieceKind piece, out PieceSkin skin, out float yaw)
+        {
+            switch (key)
+            {
+                case "queenhill":
+                    from = PieceFigure.Hex(0x3B5BC4); to = PieceFigure.Hex(0x1B2C66); piece = PieceKind.Queen; skin = PieceSkin.White; yaw = -9f;
+                    return;
+                case "swordfight":
+                    from = PieceFigure.Hex(0x8A3A3A); to = PieceFigure.Hex(0x3A1620); piece = PieceKind.Knight; skin = PieceSkin.Black; yaw = 52f;
+                    return;
+                case "kingrush":
+                    from = PieceFigure.Hex(0x2F7D6E); to = PieceFigure.Hex(0x123A36); piece = PieceKind.King; skin = PieceSkin.White; yaw = -9f;
+                    return;
+                default:
+                    from = PieceFigure.Hex(0x3A4660); to = PieceFigure.Hex(0x1A2236); piece = PieceKind.Pawn; skin = PieceSkin.White; yaw = 0f;
+                    return;
+            }
+        }
+
+        // USS has no gradients: a small texture, top left `from` to bottom right `to`.
+        Texture2D Diagonal(Color from, Color to)
+        {
+            const int size = 16;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Mode Card" };
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                    texture.SetPixel(x, y, Color.Lerp(from, to, (x + (size - 1 - y)) / (2f * (size - 1))));
+            texture.Apply();
+            ownedTextures.Add(texture);
+            return texture;
         }
 
         static Color ModeColor(string key)
@@ -662,6 +771,24 @@ namespace ChessFight.Game
                     Show(state, state.text.Length > 0);
                 }
             }
+            foreach (var pair in railButtons)
+            {
+                var info = GameModes.Find(pair.Key);
+                bool on = pair.Key == mode.Key, playable = info != null && info.Playable;
+                pair.Value.EnableInClassList("rail-on", on);
+                pair.Value.SetEnabled(model.CanChangeMode && playable && !on);
+                var state = pair.Value.Q<Label>("state");
+                if (state != null)
+                {
+                    state.text = on ? "선택됨" : playable ? "플레이 가능" : "준비 중";
+                    state.EnableInClassList("rail-badge-on", on);
+                }
+            }
+            if (railHint != null)
+                railHint.text = !model.Online ? "Steam 연결이 필요해요"
+                              : model.Busy ? "매칭 중엔 바꿀 수 없어요"
+                              : !model.CanChangeMode ? "파티장만 바꿀 수 있어요"
+                              : "모드마다 따로 매칭돼요";
         }
 
         static void Fill(List<VisualElement> slots, int filled, int team)
@@ -713,6 +840,11 @@ namespace ChessFight.Game
         static void Show(VisualElement element, bool value)
         { if (element != null) element.style.display = value ? DisplayStyle.Flex : DisplayStyle.None; }
 
-        void OnDestroy() { if (ownedPanel != null) Destroy(ownedPanel); }
+        void OnDestroy()
+        {
+            if (ownedPanel != null) Destroy(ownedPanel);
+            foreach (var texture in ownedTextures) if (texture != null) Destroy(texture);
+            ownedTextures.Clear();
+        }
     }
 }
