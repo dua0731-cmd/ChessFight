@@ -93,7 +93,7 @@ namespace ChessFight.RagdollLab
             if (!Final.Started) return Final.FirstArrival < 0 ? "킹의 결승 도착을 기다리는 중\n두 킹 도착 또는 첫 킹 +25초에 시작" :
                 $"결승 시작 대기 · {System.Math.Max(0, 25 - (Match.Now - Final.FirstArrival)):0}초\n두 킹이 모두 도착하면 즉시 시작";
             return $"왕관 백 {Final.Progress(0):0%} / 흑 {Final.Progress(1):0%}\n{Final.Elapsed(Match.Now):0} / 180초 · 남은 칸 {finalBoard.Remaining}\n" +
-                (Final.Sudden(Match.Now) ? "초읽기! · 게이지 2배 / 킹 추락 즉시 패배" : finalBoard.Warnings > 0 ? "붉은 칸 붕괴 예고!" : "적이 단상에 있으면 게이지 정지 · 누적 8초");
+                (Final.Sudden(Match.Now) ? "초읽기! · 게이지 2배 / 킹 추락 즉시 패배" : finalBoard.Warnings > 0 ? "붉은 칸 붕괴 예고!" : "적 단상 점유 시 정지 · 8초 누적");
         }
         public void ArrangeFinal(bool mission)
         {

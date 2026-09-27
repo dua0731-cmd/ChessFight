@@ -17,7 +17,7 @@ namespace ChessFight.RagdollLab
             bool steps = true;
             foreach (var point in route) { yield return Walk(p, point, 14); steps &= walkOK && p.BodyPosition.y > point.y - .5f; Debug.Log($"[SkyRoute] target={point} actual={p.BodyPosition} walk={walkOK}"); }
             Check(steps, $"Climb all four turning stair flights with actual inputs ({p.BodyPosition})");
-            yield return Walk(p, new Vector3(0, 21, 453), 6, true);
+            yield return Walk(p, new Vector3(0, 21, 453), 6);
             yield return Walk(p, new Vector3(0, 21, 540), 35);
             Check(walkOK && game.CheckpointOf(p) == 13, $"Long safe route joins at sky checkpoint ({p.BodyPosition})");
             // Independently test the shortcut; do not describe this placement as a continuous run.

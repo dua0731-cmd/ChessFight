@@ -245,12 +245,15 @@ namespace ChessFight.RagdollLab
                 Local.Section == KingRushSection.Red2 ? "성벽 갈림길 · 위/아래 길 → 교차 다리 → 승격 발판" :
                 Local.Section == KingRushSection.Blue1 ? "상대를 우리 팀 상자에 넣어 다리 6칸 완성 → 팀 출구" :
                 $"장난감 상자 · {checkpoints[CheckpointOf(Local)].title} → 정면 코스를 따라 승격 발판으로";
-            string ability = !Local.AbilitiesEnabled ? "빨강 구간 · 능력 잠김" : Local.Piece == KingRushPiece.King ? "E 체크! · 아군도 밀려남" :
+            string ability = !Local.AbilitiesEnabled ? KingRushPieces.IsBlue(Local.Section) ? "미션 구역 밖 · 능력 잠김" : "빨강 구간 · 능력 잠김" : Local.Piece == KingRushPiece.King ? "E 체크! · 아군도 밀려남" :
                 Local.Piece == KingRushPiece.Rook ? "잡고 E · 인간 대포" : "태클·잡기로 미션 진행 · 이 기물 E 능력은 제작 전";
             double elapsed = Mission.Started ? Match.Now - Mission.StartedAt : 0;
             string timer = !Mission.Started ? "첫 입장부터 미션 시계 시작" : elapsed < 120 ? $"미션 {elapsed:0}초 · 120초 이후 10초마다 자동 다리" :
                 $"자동 다리 진행 · 다음 칸까지 {10 - (elapsed - 120) % 10:0}초";
             string detention = Mission.Detained(Local.Id) ? $"상자에 잡힘 · 선반에서 {Math.Max(0, Mission.ReleaseAt(Local.Id) - Match.Now):0.0}초 대기" : "";
+            if (Final.Ended) detention = "경기 종료 · F3 다시 시작";
+            else if (eliminated.Contains(Local)) detention = "초읽기 탈락 · 재진입 불가";
+            else if (finalFalls.TryGetValue(Local, out double due)) detention = $"추락 · 탑 재진입까지 {Math.Max(0, due - Match.Now):0.0}초";
             hud.Draw((Local.Team == 0 ? "백팀" : "흑팀") + " · " + KingRushPieces.Name(Local.Piece), objective, ability, detention,
                 MissionText($"백팀 {Mission.Planks(0)}/6 · {DoorText(0)}\n흑팀 {Mission.Planks(1)}/6 · {DoorText(1)}\n{timer}"), menu);
         }

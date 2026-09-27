@@ -56,6 +56,13 @@ namespace ChessFight.RagdollLab.Editor
             ramp.position = (start + end) * .5f + Vector3.down * .1f; ramp.localScale = new Vector3(width, .2f, delta.magnitude);
             ramp.rotation = Quaternion.Euler(-Mathf.Atan2(delta.y, flat) * Mathf.Rad2Deg, Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg, 0);
         }
+        static void StairEndGuard(Transform t, Vector3 start, Vector3 end)
+        {
+            // Catch a tumbling body at the outside of each turn, leaving the next flight open.
+            Vector3 forward = Vector3.ProjectOnPlane(end - start, Vector3.up).normalized;
+            var guard = Box(t, "Stair turn guard", end + forward * 2.1f + Vector3.up * .5f, new Vector3(4.4f, 1, .2f), gold);
+            guard.transform.rotation = Quaternion.LookRotation(forward);
+        }
         static void SkyFork(Transform t)
         {
             Floor(t, "Sky fork", 0, 3, 447, 34, 10, coral); CastleCheckpoint(t, 12, "왕의 계단 갈림", 0, 3, 445, 32);
@@ -64,7 +71,8 @@ namespace ChessFight.RagdollLab.Editor
             var narrow = Box(t, "Windy shortcut", new Vector3(-8, 11.7f, 494), new Vector3(.8f, .6f, Mathf.Sqrt(84 * 84 + 18 * 18)), wood);
             narrow.transform.rotation = Quaternion.Euler(-Mathf.Atan2(18, 84) * Mathf.Rad2Deg, 0, 0);
             var points = new[] { new Vector3(4, 3, 452), new Vector3(20, 7.5f, 452), new Vector3(20, 12, 480), new Vector3(4, 16.5f, 480), new Vector3(4, 21, 452) };
-            for (int i = 0; i < 4; i++) StairFlight(t, points[i], points[i + 1], 18, 4);
+            for (int i = 0; i < 4; i++)
+            { StairFlight(t, points[i], points[i + 1], 18, 4); StairEndGuard(t, points[i], points[i + 1]); }
             Floor(t, "Spiral upper walk", 0, 21, 496, 4, 88, cream);
             for (int s = -1; s <= 1; s += 2) Box(t, "Upper walk rail", new Vector3(s * 2, 21.3f, 498), new Vector3(.18f, .6f, 84), gold);
             Floor(t, "Sky merge", 0, 21, 540, 28, 8, coral); CastleCheckpoint(t, 13, "무너지는 칸 앞", 0, 21, 540, 27);

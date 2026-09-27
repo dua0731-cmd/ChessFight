@@ -180,12 +180,12 @@ namespace ChessFight.RagdollLab
             var image = new Texture2D(1280, 720, TextureFormat.RGB24, false); image.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0); image.Apply();
             File.WriteAllBytes(Path.Combine(dir, name + ".png"), image.EncodeToPNG());
             camera.targetTexture = previous; RenderTexture.active = active; RenderTexture.ReleaseTemporary(rt); Destroy(image);
-            if (name != "arena") yield break;
+            if (name != "arena" && !name.StartsWith("final-")) yield break;
             var settings = GetComponent<UIDocument>().panelSettings;
             var ui = new RenderTexture(1280, 720, 0, RenderTextureFormat.ARGB32); ui.Create(); settings.targetTexture = ui;
             yield return null; yield return new WaitForEndOfFrame(); active = RenderTexture.active; RenderTexture.active = ui;
             image = new Texture2D(1280, 720, TextureFormat.RGBA32, false); image.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0); image.Apply();
-            File.WriteAllBytes(Path.Combine(dir, "hud.png"), image.EncodeToPNG());
+            File.WriteAllBytes(Path.Combine(dir, name == "arena" ? "hud.png" : name + "-hud.png"), image.EncodeToPNG());
             RenderTexture.active = active; settings.targetTexture = null; Destroy(image); ui.Release(); Destroy(ui);
         }
     }
