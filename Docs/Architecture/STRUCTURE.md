@@ -11,14 +11,14 @@ Assets/
   Prefabs/            PawnAvatar(네트워크 캡슐, 로비 라인업에도 씀) · Arena(옛 로비 체스판, 2026-09-25부터 미사용)
     Characters/       PlaytestCharacter (임시 캐릭터)
     Obstacles/        Spinner · SlidingWall · Pendulum
-  Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, NetworkTheme.tss, ChessFightControls.inputactions
+  Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, NetworkTheme.tss, ChessFightControls.inputactions, QueenHill/QueenHillLayout.json(퀸 오브 더 힐 맵 데이터, 생성물)
   Scenes/             Intro · Lobby · KingRush · RagdollTest · QueenOfTheHill(그레이박스, 맵은 코드가 만듦) (+ SampleScene 템플릿, 빌드 제외·비활성)
   Scripts/            ↓ 폴더 하나 = 어셈블리 하나
   Settings/           템플릿 URP 에셋 (현재 미사용)
   TutorialInfo/       Unity 템플릿 잔재
 Docs/                 문서 트리 (HANDOFF.md에서 시작)
 Tests/Network/        Unity 밖 테스트 (Core, 모의 Steam 세션)
-Tools/                테스트 스크립트, Generators/
+Tools/                테스트 스크립트, Generators/, QueenHill/(맵 데이터 원본과 미리보기)
 ```
 
 `Assets/ChessFight/…` 같은 중첩 폴더는 `8649011`에서 없앴다. **예외: 준영 님 래그돌 랩은 `Assets/ChessFight/RagdollLab/`에 그대로 둔다**(2026-09-25 병합). 빌더 메뉴가 이 경로를 알고 있고, 랩은 Art·Generated·Materials·Prefabs·Scripts·Settings를 한 덩어리로 관리한다. 랩 씬만 `Assets/Scenes/RagdollTest.unity`로 옮겼다. `Assets/ChessFight.meta`는 PC마다 GUID가 달라지지 않게 커밋되어 있다.

@@ -10,6 +10,13 @@ namespace ChessFight.Gameplay
         [Tooltip("Negative reverses the direction.")]
         [SerializeField] float degreesPerSecond = 90f;
 
+        // For spinners built from code: on an inactive object, before Awake.
+        public void Configure(Vector3 axis, float degreesPerSecond)
+        {
+            this.axis = axis;
+            this.degreesPerSecond = degreesPerSecond;
+        }
+
         protected override void Evaluate(double time, out Vector3 position, out Quaternion rotation)
         {
             position = StartPosition;

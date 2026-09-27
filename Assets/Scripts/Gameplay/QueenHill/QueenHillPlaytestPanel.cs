@@ -6,13 +6,13 @@ using UnityEngine;
 namespace ChessFight.Gameplay
 {
     // Offline playtest tools for the Queen of the Hill graybox (DESIGN §3.8 step 2:
-    // "does a section take 25-35 s uncontested"). Sits beside the PlaytestSpawner.
+    // "does a floor take 25-35 s uncontested"). Sits beside the PlaytestSpawner.
     //
-    //   split times: every time the playtest character first gets up to a landing's
-    //   height, the seconds since the previous one are recorded (S1 includes the
-    //   hook start). Measured by height, not by the match's checkpoints, so a
-    //   section can be practised again after PageDown.
-    //   PageUp / PageDown: jump to the next / previous landing (0 = the bridge)
+    //   split times: every time the playtest character first gets up to a rank's
+    //   height, the seconds since the previous one are recorded (floor 1 includes
+    //   the hook start). Measured by height, not by the match's checkpoints, so a
+    //   floor can be practised again after PageDown.
+    //   PageUp / PageDown: jump to the next / previous rank (rank 1 = the bridge)
     //   F11: silence every bell (the round starts over; checkpoints forgotten)
     //   the opened paths and the seconds left of their team's head start
     public sealed class QueenHillPlaytestPanel : MonoBehaviour
@@ -68,14 +68,8 @@ namespace ChessFight.Gameplay
             }
         }
 
-        // The highest landing at or below this height (of the hips): the level the character is up to.
-        static int LevelAt(float y)
-        {
-            int level = 0;
-            for (int l = 1; l <= QueenHillCourse.Sections; l++)
-                if (y >= QueenHillCourse.LevelTop(l) + 0.2f) level = l;
-            return level;
-        }
+        // How many floors the character has climbed, from the height of its hips: rank - 1.
+        static int LevelAt(float y) => QueenHillCourse.RankAt(y) - 1;
 
         void Clear()
         {
@@ -122,11 +116,11 @@ namespace ChessFight.Gameplay
                 style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
 
             var text = new StringBuilder();
-            text.Append("<b>퀸 오브 더 힐 그레이박스</b> · 목표: 구간당 25~35초, 전체 약 4분\n");
+            text.Append("<b>퀸 오브 더 힐 그레이박스</b> · 목표: 층마다 25~35초, 정상까지 약 4분\n");
             float total = 0f;
             for (int s = 1; s <= QueenHillCourse.Sections; s++)
             {
-                var section = QueenHillCourse.Section(s);
+                var floor = QueenHillCourse.Floor(s);
                 string time;
                 if (s <= lastBest)
                 {
@@ -138,12 +132,12 @@ namespace ChessFight.Gameplay
                 string open = match.IsOpen(s)
                     ? $" · 길 열림({Teams.Name(match.Pioneer(s))}" + (match.Exclusive(s) ? $" {match.ExclusiveLeft(s):0}초 독점)" : ")")
                     : "";
-                text.Append($"S{s} {section.Name}: {time}{open}\n");
+                text.Append($"{s}층 {floor.Name}: {time}{open}\n");
             }
-            text.Append($"기록 합계 {total:0.0}초 (예상 {QueenHillCourse.EstimatedTotalSeconds():0}초)\n");
-            text.Append("PageUp / PageDown 다음·이전 착지대 · F11 종 초기화");
+            text.Append($"기록 합계 {total:0.0}초 · 지금 {QueenHillCourse.RankAt(spawner.Driver.FollowTarget.position.y)}랭크\n");
+            text.Append("PageUp / PageDown 다음·이전 랭크 · F11 종 초기화");
 
-            float width = 400f;
+            float width = 430f;
             float height = style.CalcHeight(new GUIContent(text.ToString()), width - 20f) + 12f;
             var box = new Rect(Screen.width - width - 12f, 12f, width, height);
             GUI.Box(box, GUIContent.none);

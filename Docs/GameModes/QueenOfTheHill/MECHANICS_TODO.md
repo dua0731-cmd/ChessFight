@@ -23,7 +23,7 @@
 
 ## 진행 상황 (2026-09-27, `JY-ragdoll_v2`)
 
-> **2026-09-27 R47:** 이 브랜치는 `JY-lobby`에 빨리 감기로 합쳐졌다. **맵은 `JY-lobby`에서 만든다**(R48 그레이박스 → [GRAYBOX](GRAYBOX.md)): 모든 부품(`MovingPlatform`, `LaunchPad`, `RopeLine`, `Bell`, `OpenPath`, `SectionCheckpoint`, `PromotionPad`, `HookStartZone`, `WaterZone`)을 그대로 배치했다. 남은 래그돌 쪽 일은 **M12 기물 능력, M14 네트워크**. 맵 쪽에서 새로 생긴 요청: (1) 쌓인 탑에서 아래층으로 떨어지면 물처럼 칠지(지금은 플레이테스트만 `PlaytestSpawner.fallCatchSpeed`), (2) 갈고리 조준 궤적 선을 `LabGame` 밖에서도(지금은 `PawnHookView.LocalAim`을 랩만 채움), (3) 경기 씬의 스테미나 표시는 `IStaminaReadout`로 읽는다(`RagdollDriver`가 구현).
+> **2026-09-27 R47:** 이 브랜치는 `JY-lobby`에 빨리 감기로 합쳐졌다. **맵은 `JY-lobby`에서 만든다**(R48 그레이박스 → [GRAYBOX](GRAYBOX.md)): 모든 부품(`MovingPlatform`, `LaunchPad`, `RopeLine`, `Bell`, `OpenPath`, `SectionCheckpoint`, `PromotionPad`, `HookStartZone`, `WaterZone`)을 그대로 배치했다. 남은 래그돌 쪽 일은 **M12 기물 능력, M14 네트워크**. 맵 쪽에서 새로 생긴 요청: (1) 쌓인 탑에서 아래층으로 떨어지면 물처럼 칠지(지금은 플레이테스트만 `PlaytestSpawner.fallCatchSpeed`), (2) 갈고리 조준 궤적 선을 `LabGame` 밖에서도(지금은 `PawnHookView.LocalAim`을 랩만 채움), (3) 경기 씬의 스테미나 표시는 `IStaminaReadout`로 읽는다(`RagdollDriver`가 구현). **R49 맵 7차**에서 새 움직이는 부품 `OrbitPlatform`(수평을 유지하며 원을 도는 발판)·`PhaseToggle`(박자에 맞춰 사라지는 발판)과 기울어 도는 고리(`MovingPlatform` 회전)를 쓴다 — 래그돌이 이 위에서 잘 실려 가는지 Unity 확인이 필요하다. 미는 돌·추·시곗바늘·쓸어내는 팔(`Oscillator`·`Pendulum`·`Spinner`)은 물리로만 민다(`RagdollHazard` 같은 넘어뜨리기 판정 없음).
 
 | 항목 | 상태 | 자동 점검(래그돌 랩 빌드, `-ragdollAutoTest`) | 사용자 확인 |
 |---|---|---|---|

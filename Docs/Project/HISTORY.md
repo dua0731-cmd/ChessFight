@@ -5,6 +5,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋, `JY-lobby`) | 09-27 | R49 | 퀸 오브 더 힐 맵 7차: 7개 층 + 8랭크, 층마다 두세 갈래 길. 맵을 데이터로(`Tools/QueenHill/build_layout.py` → JSON → `QueenHillLevel`), `OrbitPlatform`·`PhaseToggle`, three.js 미리보기, `QueenHillCourse` 랭크 높이·테스트 |
 | `6250132` (`JY-lobby`) | 09-27 | R48 | 퀸 오브 더 힐 그레이박스 맵: `QueenHillCourse`(Core, 테스트 2개), `QueenHillLevel`(Play 때 160 m 맵 생성), 구간 기록 패널, `OrbitCamera`, `PlaytestSpawner` 팀·카메라 기준 이동·부활·추락·스테미나, `ITeamAssignable`·`IStaminaReadout`, 씬 `QueenOfTheHill.unity`와 생성기, 문서 `GRAYBOX.md` |
 | `dad2635` (`JY-lobby`) | 09-27 | R47 | `JY-ragdoll_v2`(`41b7d11`)를 `JY-lobby`로 빨리 감기 병합, Core `QueenHillRules`를 mcs 호환으로(foreach 튜플 분해 제거) |
 | `41b7d11` (`JY-ragdoll_v2`) | 09-27 | R46 | M11 승격·기물 성능: Core `ChessPieces`, `PromotionPad`, 래그돌 무게·이동·등반·질주·면역 배율, 머리 위 표시, 스냅샷 기물 1바이트(v7), [7j] 시험대, 자동 점검 5개 |

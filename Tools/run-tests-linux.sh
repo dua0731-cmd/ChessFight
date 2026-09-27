@@ -123,5 +123,7 @@ check_boundaries() {
 
 ensure_mono
 check_boundaries
+# The Queen of the Hill map is generated data; the committed JSON must match its script.
+if command -v python3 >/dev/null 2>&1; then python3 Tools/QueenHill/build_layout.py --check || exit 1; fi
 run_tests
 if [ "${1:-}" = "--compile" ]; then compile_all; fi

@@ -12,6 +12,14 @@ namespace ChessFight.Gameplay
         [Tooltip("Seconds for one full swing there and back.")]
         [SerializeField] float period = 2.5f;
 
+        // For pendulums built from code: on an inactive object, before Awake.
+        public void Configure(Vector3 axis, float amplitude, float period)
+        {
+            this.axis = axis;
+            this.amplitude = amplitude;
+            this.period = period;
+        }
+
         protected override void Evaluate(double time, out Vector3 position, out Quaternion rotation)
         {
             position = StartPosition;

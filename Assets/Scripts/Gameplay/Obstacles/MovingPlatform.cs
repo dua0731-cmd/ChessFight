@@ -43,8 +43,9 @@ namespace ChessFight.Gameplay
         // For platforms built from code (test beds). Call it on an INACTIVE object
         // before it is switched on: Awake evaluates the first pose from these values.
         public void Configure(Vector3 travel, float speed, float pause, float rampTime = 0.5f,
-                              float spinDegreesPerSecond = 0f, Vector3? spinAxis = null)
+                              float spinDegreesPerSecond = 0f, Vector3? spinAxis = null, float phase = 0f)
         {
+            SetPhase(phase);
             this.travel = travel;
             this.speed = speed;
             this.pause = pause;
