@@ -20,8 +20,12 @@ namespace ChessFight.Network
         //     client sees how close a grabbed pawn is to breaking free.
         // v6: the lab's input carries the left button held and its snapshot the pawn's
         //     grappling hook (RagdollNetProtocol "CFR4", Queen of the Hill M5).
+        // v7: the lab's snapshot carries each pawn's piece ("CFR5", Queen of the Hill M11).
         // v8: physical Sword Fight weapon poses (CFS2, channel 33); CFR4 input is unchanged.
-        public const string Protocol = "chessfight.dua0731.network.v10";
+        //     v8-v10 grew on JY-gpt_gamemode/JY-kingrush, v7 on JY-ragdoll_v2, side by side.
+        // v11: JY-kingrush with feature/ui-sample-b merged in: the Sword Fight rules of
+        //      v10 and the lab snapshot's piece byte of v7 ("CFR5") in one build.
+        public const string Protocol = "chessfight.dua0731.network.v11";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

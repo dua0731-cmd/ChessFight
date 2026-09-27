@@ -10,5 +10,8 @@ namespace ChessFight.Game
         public const string SwordFight = "SwordFight";
         // Development only: opened directly in the Editor, never loaded at run time.
         public const string RagdollTest = "RagdollTest";
+        // Queen of the Hill graybox: offline playtest only until the networked ragdoll
+        // (MECHANICS_TODO M14) lets GameModes.QueenOfTheHill load it for a match.
+        public const string QueenOfTheHill = "QueenOfTheHill";
     }
 }

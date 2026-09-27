@@ -4,7 +4,9 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-27** · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`). 다른 채팅의 **`JY-gpt_gamemode`**(소드파이트)·**`JY-ragdoll_v2`**(Claude 물리 튜닝)는 보존. 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+최종 갱신: **2026-09-28**(병합: `feature/ui-sample-b`를 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`). 다른 채팅의 **`JY-gpt_gamemode`**(소드파이트)·**`JY-ragdoll_v2`**(Claude 물리 튜닝)는 보존. 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+
+> **병합(2026-09-28, 승규 님 요청):** `feature/ui-sample-b`(= `JY-lobby`의 R49 `c82abfa`: 퀸 오브 더 힐 래그돌 M6·M11·M13, 퀸 오브 더 힐 그레이박스 맵 7차, 로비·인트로 샘플 B 디자인)를 이 브랜치에 합쳤다. 네트워크 프로토콜은 두 쪽(소드파이트 v10, 기물 종류 스냅샷 v7)을 합쳐 **v11**. **R 번호 주의:** R44 이후는 두 계열이 따로 매겼다. 소드파이트·킹 러쉬 쪽(`JY-gpt_gamemode`·`JY-kingrush`)의 R44~R56과 퀸 오브 더 힐·로비 쪽(`JY-ragdoll_v2`·`JY-lobby`)의 R44~R49는 서로 다른 요청이다. [REQUIREMENTS](Docs/Project/REQUIREMENTS.md)에서 계열별 표로 나눠 두었다.
 
 > **최신 R56:** 사용자는 직접 테스트를 나중으로 미루고 다음 단계 진행을 요청했다. 같은 `KingRushOpening.unity`에 **왕의 계단→4자리 승격/10초 집결→체크메이트 결승**을 연결했다. **F8 계단 / Shift+F8 결승**, 기존 F7 집결/F5 성벽/Shift+F5 시소/F4 상자 유지. [R56 실행·규칙·자동 결과](Docs/KingRush/FINAL_COURSE.md). 왕좌8초 누적/시간별 붕괴/탑 재진입/초읽기/승패의 오프라인1차 구현. **R55/R56 사용자 확인 대기**, 공통 물리/로비/온라인 보존. 최종 아트·음향·자세/나머지 능력은 후속이다.
 
@@ -12,7 +14,9 @@
 
 > **최신 브랜치 결정(R44):** 사용자는 `JY-lobby`로 합치지 않고, `JY-ragdoll_v2`의 마지막 커밋 `cdcc9fe`에서 **`JY-gpt_gamemode`**를 만들도록 요청했다. 아래와 다른 문서의 예전 "게임모드는 JY-lobby" 지시보다 이 결정이 우선한다. 물리 튜닝은 끝난 것으로 보지 않으며 GPT가 임의로 이어서 수정하지 않는다.
 
-> **최신 요청(R51): 검이 몸에 가리지 않게 조금 비껴 들고, 무게감 있는 선 보정형 드래그, 강한 베기만 넉다운.** 오른쪽24°·위12° 검 자세, 시점 목표를 감쇠 추종/따라잡기, 회전 에너지·드래그 폭·평활 입력 속도로 약한 접촉 배제. 클릭 베기/F6·Esc 전환·빠른 발도 유지. 공통 Pawn/카메라 코드·튜닝 보존. CFS3/CFR4 그대로, **Steam v10**. R50 사용자 검 가림/손맛 피드백 반영이며 **R51 사용자/두 PC 미확인**. 맵은 마지막, 누운 적 강한 추가타 허용. [실행·검사](Docs/GameModes/SwordFight/README.md).
+> **최신 요청(R51): 검이 몸에 가리지 않게 조금 비껴 들고, 무게감 있는 선 보정형 드래그, 강한 베기만 넉다운.** 오른쪽24°·위12° 검 자세, 시점 목표를 감쇠 추종/따라잡기, 회전 에너지·드래그 폭·평활 입력 속도로 약한 접촉 배제. 클릭 베기/F6·Esc 전환·빠른 발도 유지. 공통 Pawn/카메라 코드·튜닝 보존. CFS3/CFR4 그대로, **Steam v10**(병합 뒤 v11). R50 사용자 검 가림/손맛 피드백 반영이며 **R51 사용자/두 PC 미확인**. 맵은 마지막, 누운 적 강한 추가타 허용. [실행·검사](Docs/GameModes/SwordFight/README.md).
+
+> **합쳐 온 `JY-lobby` 쪽 기록(R49까지):** 기준 브랜치 **`JY-lobby`**(로비·게임모드·퀸 오브 더 힐 맵 작업, `JY-ragdoll_v2`를 합침), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경). 최종 R49(09-27): 퀸 오브 더 힐 맵 7차(7개 층 + 8랭크).
 
 ---
 
@@ -31,27 +35,32 @@
   - 연결 품질 기능(끊김 경고, 핑, 지연 시뮬레이터, 버전 검사)
   - 준영 님 래그돌 랩 병합(RagdollTest 씬 = 랩 씬, `RagdollDriver`로 게임 캐릭터 계약 연결)
   - **(`JY-lobby`) 참고 영상풍 새 로비와 게임 모드**: 킹 러시·퀸 오브 더 힐·소드 파이트 목록, 모드별 매칭, 모드 씬 로드 → [GameModes](Docs/GameModes/README.md)
+  - **(`JY-lobby`, R47·R48) `JY-ragdoll_v2`를 `JY-lobby`에 합침(빨리 감기, 09-27)**, 그 위에 **퀸 오브 더 힐 그레이박스 맵 7차(R49)**: **7개 층(1~7랭크) + 정상 8랭크(여덟 칸 승격)**, 층마다 두세 갈래 길(대계단·아치 회랑, 체크 곤돌라·사슬 사다리, 석판 나선·나이트·비숍, 기울어 도는 궤도 고리·룩의 탑, 시계 관람차·시계판·스프링, 공중 정원·그네, 두 갈래 나선 계단·빛의 계단). 맵은 데이터(`Tools/QueenHill/build_layout.py` → JSON)로, Play 때 조립. Unity 없이 미리보기 → [GRAYBOX](Docs/GameModes/QueenOfTheHill/GRAYBOX.md)
   - **(`JY-ragdoll_v2`) 래그돌 조작감 개선(R36)**: 버둥대기 클릭 게이지, 머리부터 다이빙 태클, 더 기민한 이동, 일어날 때 안 끌림, 부딪히면 튕김, 역경사·턱 등반 버그, 조작감 녹화 도구 → [RagdollLab README](Docs/RagdollLab/README.md#조작감-개선-2026-09-26-r36-jy-ragdoll_v2)
-  - **(`JY-ragdoll_v2`) 퀸 오브 더 힐 래그돌 기능 M1~M5, M7~M10**: **M7 도약대·태엽 스프링, M8~M10 개척의 종·체크포인트·팀(AI가 이어서, Unity 미확인)**, **M5 갈고리(E 꺼내기·좌클릭 꾹 돌리기·던져 끌려가기)와 앙파상**, 탈것(움직이는 발판·벽), 입력 확장(능력 E·Q, 상호작용 F, 조준), 피격 약속, 물·부활, RagdollTest의 [7] 시험대 → [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m5-m7m10)
-- **로비에 연결된 킹러시는 아직 캡슐 기술 프로토타입**이다. 새 오프라인 킹러시는 능력 시험장과 **장난감/상자(R54)→성벽/시소·승격 집결(R55)→왕의 계단/결승(R56)**의 연결 씬을 제공한다. 온라인/최종 아트는 미구현. 소드파이트는 다른 채팅에서 계속하며 여기서는 변경하지 않는다.
+  - **(`JY-ragdoll_v2`, 병합으로 이 브랜치에도 들어옴) 퀸 오브 더 힐 래그돌 기능 M1~M11, M13**: **M11 승격·기물 성능, M13 찌그러짐·비틀, M6 밧줄·사슬·그네, M7 도약대·태엽 스프링, M8~M10 개척의 종·체크포인트·팀(AI가 이어서, Unity 미확인)**, **M5 갈고리(E 꺼내기·좌클릭 꾹 돌리기·던져 끌려가기)와 앙파상**, 탈것(움직이는 발판·벽), 입력 확장(능력 E·Q, 상호작용 F, 조준), 피격 약속, 물·부활, RagdollTest의 [7] 시험대 → [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13)
+  - **(`JY-lobby`, 병합으로 들어옴) 퀸 오브 더 힐 그레이박스 맵 7차와 로비·인트로 샘플 B 디자인**(체스판 무대, 체스 말 캐릭터, 오른쪽 게임 모드 목록)
+- **로비에 연결된 킹러시는 아직 캡슐 기술 프로토타입**이다. 새 오프라인 킹러시는 능력 시험장과 **장난감/상자(R54)→성벽/시소·승격 집결(R55)→왕의 계단/결승(R56)**의 연결 씬을 제공한다. 온라인/최종 아트는 미구현. 소드파이트는 다른 채팅에서 계속하며 여기서는 변경하지 않는다. 퀸 오브 더 힐은 **오프라인 그레이박스 씬**만 있다(네트워크 래그돌 M14가 없어서 로비에서는 아직 "준비 중").
+- **병합 주의:** 킹 러쉬(`KingRushPiece`/`KingRushPawn`)는 M6·M11·M13이 없던 `852eb2b`를 기준으로 만들어졌다. 병합 뒤 두 기능이 한 래그돌에서 함께 도는지는 **자동 점검·Unity 모두 아직 안 봤다.**
 - 이 프로젝트의 AI 작업은 사용자(메인 기획자, GitHub `dua0731-cmd`)의 요청으로 진행되어 왔다. **요청 이력 전체는 [요구사항 기록](Docs/Project/REQUIREMENTS.md)에 있다.**
 
 ## 1. 현재 상태 스냅샷
 
 | 항목 | 상태 |
 |---|---|
+| **병합(09-28)** | `feature/ui-sample-b`(`c82abfa`)를 합침. 네트워크 프로토콜 **v11**. 병합 뒤 자동 검사 결과는 [HISTORY](Docs/Project/HISTORY.md)의 병합 줄. **Unity·두 PC 미확인** |
 | **이 폴더: 킹 러쉬 R56** | **`JY-kingrush` / 기반 `852eb2b`**. `KingRushOpening.unity`: 구간 프리팹24개, 체크포인트16곳, 승격2/3/4자리. 왕의 계단/최종 집결/왕좌 쟁탈·붕괴·재진입·승패 추가. **R55/R56 사용자 확인 대기**, 자동 결과는 FINAL_COURSE. 밧줄은 임시 다리; 나머지4능력·온라인·최종 아트는 후속 |
 | 개발 브랜치 | **GPT 게임모드 작업은 `JY-gpt_gamemode`에만 커밋·푸시**(09-27 사용자, R44). 출발점은 로컬 `JY-ragdoll_v2`의 `cdcc9fe`. 원본 폴더의 브랜치는 `JY-ragdoll_v2`로 유지하고, 새 브랜치는 별도 작업 폴더(worktree)에서 작업한다. `JY-lobby`·`main`·`Network`로 병합하거나 푸시하지 않는다. 미완성 튜닝의 후속 반영은 별도 결정 |
 | GPT의 현재 작업 | **R51 보이는 검·무게감 있는 보정 드래그·강한 베기만 넉다운**. 이전 클릭/F6 전환·빠른 발도·정지 더미·장외/부활 유지. 공통 물리 튜닝 변경 없음. [실행](Docs/GameModes/SwordFight/README.md) |
-| GPT 프로토콜·자동 검사 | **v10/CFS3**, 최대506바이트 칼/경기 상태에 방식 선택 포함. CFR4 레이아웃 유지, 소드파이트 채널에서만 ability2=선택 절대값. Core **42**·모의 Steam **20**·실제 DLL 컴파일 통과. Windows 플레이어 **51/0**, 시점 보정부터 강한 명중까지·약한 접촉·검 가시성·전환·12칼 검사. [최종 실행/측정](Docs/GameModes/SwordFight/README.md). R51 사용자/2PC 미확인. 아래 v6·래그돌 숫자는 원본 기록 |
+| GPT 프로토콜·자동 검사 | **v10/CFS3**(병합 뒤 v11), 최대506바이트 칼/경기 상태에 방식 선택 포함. CFR4 레이아웃 유지, 소드파이트 채널에서만 ability2=선택 절대값. Core **42**·모의 Steam **20**·실제 DLL 컴파일 통과. Windows 플레이어 **51/0**, 시점 보정부터 강한 명중까지·약한 접촉·검 가시성·전환·12칼 검사. [최종 실행/측정](Docs/GameModes/SwordFight/README.md). R51 사용자/2PC 미확인. 아래 v6·래그돌 숫자는 원본 기록 |
+| 합쳐 온 `JY-lobby` 쪽 브랜치 규칙 | `JY-lobby` = `JY-ragdoll_v2`(`41b7d11`)를 빨리 감기로 합친 것 + 그 뒤 작업(R47). 퀸 오브 더 힐 맵은 `JY-lobby`에서 만든다(R48). 로비·게임모드 작업은 `JY-lobby`에 커밋·푸시(R18. `main`·`Network`·`JY-ragdoll`에는 푸시 금지). 퀸 오브 더 힐의 래그돌 쪽 기능은 `JY-ragdoll_v2`(R34). 그 밖의 AI 작업은 `Network` |
 | `main` | `0df4403`(R17 병합). **`Network`의 커밋을 모두 포함하고 24커밋 앞선다**(09-25 확인). `JY-lobby`는 이 커밋에서 시작했다. 로비 작업을 `main`에 넣을지는 사용자 결정 |
 | 다른 원격 브랜치 | `Network`(`0ecd3b6`, main에 포함됨), `JY-ragdoll`(준영, 래그돌 랩·**물리 튜닝용으로 유지**, R17), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
-| 네트워크 프로토콜 | **`JY-lobby`: `chessfight.dua0731.network.v3`**(게임 모드 추가). **`JY-ragdoll_v2`: v6**(래그돌 랩 입력 패킷 27바이트에 좌클릭 누르고 있기 비트, 스냅샷 폰당 73바이트에 버둥대기 게이지·갈고리 포함, magic `CFR4`). `main`·`Network`는 v2. 캡슐 입력 패킷 magic `CFF2`(변경 없음). 다른 프로토콜 빌드와는 매칭 불가 |
-| 자동 테스트 | 어셈블리 경계 검사 + Core 32개(09-27 `JY-ragdoll_v2`, 퀸 오브 더 힐 규칙 3개 포함; `JY-lobby`는 29개) + 모의 Steam 세션 15개 통과, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과 (2026-09-25, `JY-lobby`). **`JY-ragdoll_v2`(09-26)**: 같은 테스트 + **실제 Unity 6000.3.11f1 DLL로 전 어셈블리 컴파일**(랩 Steam 다리·빌더 포함) 통과, **빌드한 랩 플레이어의 래그돌 자동 점검 56 통과 / 0 실패**(09-27, R36 조작감 개선 + R37 원래부터 실패하던 9개 정리를 합친 뒤, Core 29·세션 15 통과 → [RagdollLab README](Docs/RagdollLab/README.md#자동-점검)) |
+| 네트워크 프로토콜 | **이 브랜치(병합 뒤): v11** = 소드파이트 규칙(v10, CFS3) + 래그돌 랩 스냅샷의 기물 종류(v7, `CFR5`). **`JY-lobby`: v7**(09-27 `JY-ragdoll_v2`를 합쳐서. v3에서 게임 모드 추가). **`JY-ragdoll_v2`: v7**(래그돌 랩 입력 패킷 27바이트에 좌클릭 누르고 있기 비트, 스냅샷 폰당 74바이트에 버둥대기 게이지·갈고리·기물 종류 포함, magic `CFR5`). `main`·`Network`는 v2. 캡슐 입력 패킷 magic `CFF2`(변경 없음). 다른 프로토콜 빌드와는 매칭 불가 |
+| 자동 테스트 | **`JY-lobby`(09-27, R49): 경계 검사 + 퀸 오브 더 힐 맵 JSON 최신 검사 + Core 36개(퀸 오브 더 힐 코스 2개) + 모의 세션 15개 + 7개 어셈블리 Roslyn 컴파일 통과.** 이전 기록: 어셈블리 경계 검사 + Core 34개(09-27 `JY-ragdoll_v2`, 퀸 오브 더 힐 규칙 3개·기물 2개 포함; `JY-lobby`는 29개) + 모의 Steam 세션 15개 통과, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과 (2026-09-25, `JY-lobby`). **`JY-ragdoll_v2`(09-26)**: 같은 테스트 + **실제 Unity 6000.3.11f1 DLL로 전 어셈블리 컴파일**(랩 Steam 다리·빌더 포함) 통과, **빌드한 랩 플레이어의 래그돌 자동 점검 56 통과 / 0 실패**(09-27, R36 조작감 개선 + R37 원래부터 실패하던 9개 정리를 합친 뒤, Core 29·세션 15 통과 → [RagdollLab README](Docs/RagdollLab/README.md#자동-점검)) |
 | Unity 실기 확인 | 2026-09-24까지: 로비 HUD 표시·한글·클릭·친구 초대 동작 (사용자 보고) |
 | Unity 실기 확인 (추가) | **퀸 오브 더 힐 M1~M4 시험대 1~12번 성공**(2026-09-26 사용자, `JY-ragdoll_v2`). 두 PC(13번)는 못 함 |
 | Unity 실기 확인 (GPT) | **소드파이트 선택→매칭 정상, R48 더미로 혼자 시험 가능, R49 물리 시스템은 잘 구현됨**(09-27 사용자). R50 플레이 뒤 **검 가림·반응·약한 접촉** 피드백. R51 개선은 사용자 재확인 대기, 전환/네트워크 전체 성공으로 확대하지 않음 |
-| **Unity 미확인** | **래그돌 등반·질주 수정(09-27, R36: 등반 시작·손 높이·턱 위 되튐·곡면 박치기·질주 지침)**, **퀸 오브 더 힐 2차 수정(피격 뒤 1초 누워 있기, 물에 5초 둥둥 뜨기·버둥, 09-26)**, **새 로비·게임 모드(09-25, JY-lobby)**, 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 사람이 보지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 표들 |
+| **Unity 미확인** | **이 병합 전체(09-28)**, **퀸 오브 더 힐 맵 7차(09-27, `JY-lobby` R49)** (R48 그레이박스는 사용자가 Unity에서 봄 → 단조롭다는 의견으로 7차로 교체), **로비·인트로 샘플 B(`c82abfa`)**, **래그돌 등반·질주 수정(09-27, R36: 등반 시작·손 높이·턱 위 되튐·곡면 박치기·질주 지침)**, **퀸 오브 더 힐 2차 수정(피격 뒤 1초 누워 있기, 물에 5초 둥둥 뜨기·버둥, 09-26)**, **새 로비·게임 모드(09-25, JY-lobby)**, 씬 분리(72ddf9e), 연결 품질 기능(01dd655), 래그돌 병합(09-25)은 **아직 Unity에서 사람이 보지 않았다.** 확인 목록: [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 표들 |
 | 두 PC 확인 | 파티 입장·공개 매칭 성사 확인(2026-09-22). **양방향 이동은 미보고** |
 
 ## 2. 무엇이 되고 무엇이 안 되는가
@@ -72,9 +81,10 @@
 | 씬 흐름 Intro → Lobby → KingRush 또는 SwordFight → Lobby | 코드·자동 검사만, 사용자 확인 대기 | [Architecture/SCENES](Docs/Architecture/SCENES.md) |
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
-| **퀸 오브 더 힐 래그돌 기능 M1~M5, M7~M10**(`JY-ragdoll_v2`): **M7 도약대(R43, [7h] Shift+F10), M8~M10 종·체크포인트·팀(R42, [7g] F10)**, **M5 갈고리·앙파상(R40, 자동 점검 7개, Unity 미확인, [7f] 연습장 F8)**, 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대 | 1차 Unity 확인 성공(09-26, 1~12). 2차 수정(누워 있기·물에 뜨기)은 자동 점검 통과, Unity 재확인 대기. M6, M11~M14는 시작 안 함 | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m5-m7m10), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
-| 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 빌드한 랩 플레이어의 자동 점검 73/0(09-27, M7 도약대까지). 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
-| **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 호스트 이전·재접속·로딩 동기화. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
+| **퀸 오브 더 힐 래그돌 기능 M1~M11, M13**(`JY-ragdoll_v2`, 병합으로 들어옴): **M11 승격·기물 성능([7j] Shift+F9), M13 찌그러짐·비틀(Shift+F5·F6), M6 밧줄·그네([7i] Shift+F8), M7 도약대([7h] Shift+F10), M8~M10 종·체크포인트·팀([7g] F10)**, **M5 갈고리·앙파상(자동 점검 7개, Unity 미확인, [7f] 연습장 F8)**, 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대. (괄호 없는 R 번호는 `JY-lobby` 계열: M6=R44, M13=R45, M11=R46) | 1차 Unity 확인 성공(09-26, 1~12). 2차 수정(누워 있기·물에 뜨기)은 자동 점검 통과, Unity 재확인 대기. M12, M14는 시작 안 함. **킹 러쉬 쪽 시험 키(F4·F5·F7·F8)와 RagdollTest 시험대 키가 한 씬에서 겹치는지 병합 뒤 확인 안 함** | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
+| 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 빌드한 랩 플레이어의 자동 점검: `JY-ragdoll_v2` 86/0(09-27, M11까지), 킹 러쉬 쪽 기능 시험장 80/0(R56). **병합한 코드로는 아직 돌리지 않았다.** 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
+| **퀸 오브 더 힐 그레이박스 맵 7차**(`JY-lobby` R49, 병합으로 들어옴): 7개 층 + 8랭크(156 m), 층마다 두세 갈래 길, 4·7층 공용, 종·빛의 기둥·체크포인트, 8랭크 여덟 칸 승격, 오프라인 래그돌 1인 + 마우스 카메라·층별 기록. 맵은 데이터(JSON), Unity 없는 미리보기 | 코드·컴파일·Core 테스트·미리보기 그림만, **Unity 미확인** (R48판은 사용자 확인 → 교체) | [GRAYBOX](Docs/GameModes/QueenOfTheHill/GRAYBOX.md) |
+| **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 호스트 이전·재접속·로딩 동기화, 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
 
@@ -98,7 +108,8 @@
 - 다음: [VALIDATION R51](Docs/Network/VALIDATION.md)에서 검 가시성·보정 반응·약한 접촉/강한 베기·전환/복원·두 PC 손맛을 비교한다. 맵/기물 스킬/퀸 모드는 자동 착수하지 않는다. 원격 Push는 기존403 때문에 재시도하지 않으며 사용자가 GitHub Desktop에서 한다.
 
 **사용자가 할 일 — 순서대로**
-0. (래그돌, `JY-ragdoll_v2`) `Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **도약대 표(5개, Shift+F10: L자 도약대·태엽 스프링)**, **개척의 탑 표(6개, F10: 종·승강기·독점·체크포인트·팀)**, **등반 표(4개: 멈추면 스테미나 유지, Space 벽 점프, W는 위로만)**, **갈고리 표(11개, F8 연습장)**, 그다음 **조작감·등반 확인 표(15개, 09-27: 멈춤·부딪힘·다이빙·버둥대기 클릭 수·질주·등반 레인 넷·온라인 막대)**, 이어서 F9 → **퀸 오브 더 힐 2차 재확인 표(5개: F5 뒤 1초 누워 있기, 물에 5초 둥둥·좌클릭 버둥)**. 1차 표는 1~12 성공(09-26), 13번(두 PC)은 친구와 할 때
+00. **(새, `JY-lobby`) 퀸 오브 더 힐 맵 7차:** Pull → (JY-lobby 워크트리 폴더를 연 Unity에서) `ChessFight > Scenes > Queen of the Hill (offline graybox)` → Play → [GRAYBOX §4](Docs/GameModes/QueenOfTheHill/GRAYBOX.md#4-unity-확인-순서-처음-한-번) 순서대로. V 자유 카메라로 7개 층을 둘러보고, 층마다 길 하나 이상 해 본 뒤 **층별 시간과 막힌 곳·재미없는 곳**을 알려 준다. 결정 1개: 떨어져 아래층에 부딪히면 물에 빠진 것처럼 칠지([GRAYBOX §5](Docs/GameModes/QueenOfTheHill/GRAYBOX.md#5-알고-있는-빈-곳))
+0. (래그돌, `JY-ragdoll_v2`) `Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **승격 표(4개, Shift+F9: 받침대·킹·룩 등반)**, **찌그러짐 표(3개, Shift+F5·F6)**, **밧줄 표(6개, Shift+F8: 사슬 오르기·그네 8 m·기둥)**, **도약대 표(5개, Shift+F10: L자 도약대·태엽 스프링)**, **개척의 탑 표(6개, F10: 종·승강기·독점·체크포인트·팀)**, **등반 표(4개: 멈추면 스테미나 유지, Space 벽 점프, W는 위로만)**, **갈고리 표(11개, F8 연습장)**, 그다음 **조작감·등반 확인 표(15개, 09-27: 멈춤·부딪힘·다이빙·버둥대기 클릭 수·질주·등반 레인 넷·온라인 막대)**, 이어서 F9 → **퀸 오브 더 힐 2차 재확인 표(5개: F5 뒤 1초 누워 있기, 물에 5초 둥둥·좌클릭 버둥)**. 1차 표는 1~12 성공(09-26), 13번(두 PC)은 친구와 할 때
 1. `JY-lobby`를 Pull(LFS 포함)한 뒤 Unity에서 열고 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **새 로비 표(11개)**를 확인한다. 이어서 씬 분리·래그돌 병합 표. 막히면 증상·스크린샷과 Console 첫 오류를 AI에게 준다.
 2. 두 PC로 양방향 이동을 확인한다(가장 오래 미뤄진 검증). 이제 경기 씬에서 한다([Network/README §2](Docs/Network/README.md)).
 3. 퀸 오브 더 힐을 시작하기 전에 결정: 인원 구성(6 대 6 안에서?), 래그돌 기준 구조물 크기 → [GameModes §3](Docs/GameModes/README.md).
@@ -110,10 +121,12 @@
 - 승규: 네트워크 방어 기획. 추천 작업과 AI 프롬프트 → [기획안 반영 상태 §4](Docs/Network/PLAN_V0.1_STATUS.md#4-승규-님께-요청할-다음-작업)
 
 **AI의 다음 작업 후보 (사용자 지시가 있을 때만 착수)**
-1. Unity 확인 중 나오는 오류 수정 (최우선). R48 더미·R49 물리 동작은 확인됨. 이제 R51 검 가시성·무게감/강한 베기·두 조작 비교/2PC를 확인한다.
+0. **병합 확인(09-28):** 병합한 코드로 래그돌 자동 점검을 다시 돌리고(킹 러쉬 80/0, `JY-ragdoll_v2` 86/0이 그대로인지), Unity에서 킹 러쉬 코스·RagdollTest·로비가 열리는지 본다. 문제가 나오면 이것부터 고친다.
+1. Unity 확인 중 나오는 오류 수정 (최우선). R48 더미·R49 물리 동작은 확인됨. 이제 R51 검 가시성·무게감/강한 베기·두 조작 비교/2PC를 확인한다. 새 로비(샘플 B 포함)는 Unity에서 한 번도 안 열었다: 배치·겹침·색 조정이 나올 수 있다.
 2. **소드 파이트 우선(R47)**: [폰 플레이 버전](Docs/GameModes/SwordFight/README.md)을 사용자와 시험하고 칼/연속타 감각부터 다듬는다. 맵은 마지막. 아래 퀸 모드 목록은 인계 참고이며 자동 착수 지시가 아니다.
+2-b. (`JY-lobby` 계열, 참고) **퀸 오브 더 힐 맵 R49:** 사용자 피드백으로 `Tools/QueenHill/build_layout.py`의 층별 수치·구성 조정 → 층마다 다른 열리는 길 → 퀸 보석판(d8) → 층별 프리팹·아트 모듈. 퀸 오브 더 힐 기획은 **GPT 아스트라가 이어받는다**(R24): [GameModes/QueenOfTheHill/README](Docs/GameModes/QueenOfTheHill/README.md). 자동 착수 지시가 아니다.
 3. 경기 흐름: 기물 선택 화면(참고 영상), 라운드 소개, 결과 → 로비
-   - **퀸 오브 더 힐 개발 목록(R33):** 래그돌·게임플레이에 새로 필요한 기능 M1~M14와 우선순위·시작 프롬프트 → [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md). **M1~M5, M7~M10은 `JY-ragdoll_v2`에서 구현됨(R34 Unity 1차 확인 성공, R35 수정 재확인 대기, M5는 R40 — 조작은 사용자가 바꿈, M8·M9·M10은 R42, M7은 R43에 AI가 이어서).** 다음은 §3 순서대로 **M6**(밧줄·사슬·그네) → M11·M12·M13(기물) → M14(네트워크). 래그돌 작업 브랜치는 `JY-ragdoll_v2`
+   - **퀸 오브 더 힐 개발 목록(R33):** 래그돌·게임플레이에 새로 필요한 기능 M1~M14와 우선순위·시작 프롬프트 → [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md). **M1~M11, M13은 `JY-ragdoll_v2`에서 구현됨(R34 Unity 1차 확인 성공, R35 수정 재확인 대기, M5는 R40 — 조작은 사용자가 바꿈, M8·M9·M10은 R42, M7은 R43, M6은 R44, M13은 R45, M11은 R46에 AI가 이어서).** 다음은 §3 순서대로 **M12**(기물 능력: 나이트 L자 도약·밟기, 룩 돌진, 킹 체크!·캐슬링·가호, 비숍 호버·돌조각·활공, 퀸 칼·돌진·호버·시선) → M14(네트워크, 사용자 결정 필요: 경기에서도 방장이 래그돌을 전부 계산하는가). 래그돌 작업 브랜치는 `JY-ragdoll_v2`
    - **조작감(R36)**: 버둥대기 클릭 게이지, 머리부터 다이빙, 이동 반응성, 질주·등반 버그를 고쳤고, 2차로 기상 중 끌림·다이빙 회전·부딪힘 튕김·역경사 매달림·턱 튕김을 고쳤다(자동 점검 55/55, 등반 점검은 4가지 순서로 확인). 자동 점검이 **앞선 점검 순서에 따라** 결과가 바뀌면 운에 기댄 것이니 원인을 고친다(`-ragdollAutoTestOnly`로 순서를 바꿔 돌린다, DECISIONS G15). 사용자의 Unity 손맛 확인 뒤 다음 후보: 카메라 거리·시야(지금은 휠로 조절), 등반 손동작 크기(준영 님이 정한 "빠르게 짧게 짚기"와 상의), 던지기 힘. 조작감을 바꿀 때는 `-ragdollFeel` 녹화로 전후를 비교한다 → [RagdollLab README "조작감 개선"](Docs/RagdollLab/README.md#조작감-개선-2026-09-26-r36-jy-ragdoll_v2)
    - **래그돌 자동 점검 기존 실패 9개는 R37(09-27)에 고쳐 R38에서 합침**(합친 뒤 56 통과 / 0 실패, Unity 미확인 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 표). **사용자 결정(09-27, R39): 둘 다 그대로 둔다** — ① 경사 45° "몸 던지기가 더 빠른가"는 공정하게 재면 사실상 동률(0.01~0.03초, 통과하지만 불안정)이지만 튜닝하지 않는다 ② 역경사 20도 레인은 실제로는 윗부분이 멀어지는 경사판이지만 씬을 다시 만들지 않는다(DECISIONS G16) → [RagdollLab README "자동 점검"](Docs/RagdollLab/README.md#자동-점검)
    - **팀 색 정정(R32):** 이 게임의 두 팀은 **백팀·흑팀**이다(캐릭터 자체가 흰 말·검은 말). 코드는 아직 청팀·주황팀(재질 `TeamBlue`/`TeamOrange`, HUD 문구 "청팀/주황팀", 매칭 패널 칸 색). 바꾸려면 사용자 확인 후 작업
@@ -172,7 +185,7 @@ Docs/
 │  └─ RAGDOLL.md                래그돌 병합 상태, RagdollTest, 네트워크 안전성, 어댑터, 멀티 규칙
 ├─ RagdollLab/README.md         준영 님 랩 문서 (조작, 구조, 측정 근거)
 ├─ GameModes/README.md          게임 모드 목록(킹 러시·퀸 오브 더 힐·소드 파이트), 모드별 매칭, 새 모드 추가법
-│  └─ QueenOfTheHill/           ★ 퀸 오브 더 힐: 인수인계(README), 기획(DESIGN), 새 기능 개발 목록(MECHANICS_TODO), 아트 후보(ART_CONCEPTS), 이미지 프롬프트, N4 참고 원문
+│  └─ QueenOfTheHill/           ★ 퀸 오브 더 힐: 인수인계(README), 기획(DESIGN), 그레이박스 맵(GRAYBOX), 새 기능 개발 목록(MECHANICS_TODO), 아트 후보(ART_CONCEPTS), 이미지 프롬프트, N4 참고 원문
 ├─ KingRush/                    첫 미니게임
 │  ├─ README.md                 맵 구성, 코스 컴포넌트, 네트워크 한계
 │  ├─ OPENING_COURSE.md         R54 장난감 코스·상자 미션
@@ -185,7 +198,8 @@ Docs/
 ├─ TEAM_GUIDE_KO.md             팀원용 한 권 안내서 (역할별 장, AI 시작 프롬프트)
 └─ AI/                          옛 경로 (새 문서로 안내만 함)
 Tools/
-├─ run-tests-linux.sh           Unity 없는 환경의 테스트 + 컴파일 검사
+├─ run-tests-linux.sh           Unity 없는 환경의 테스트 + 컴파일 검사 (+ 퀸 오브 더 힐 맵 JSON 최신 검사)
+├─ QueenHill/                   퀸 오브 더 힐 맵 원본 스크립트(build_layout.py)와 Unity 없는 미리보기(preview/)
 ├─ Test-NetworkCore.ps1 / Test-NetworkCompile.ps1   Windows(Unity 설치 PC)용 같은 검사
 └─ Generators/                  씬·프리팹 YAML 생성기, .meta 생성기
 ```
@@ -202,6 +216,7 @@ Tools/
 | 씬 추가, 씬 전환 | [Architecture/SCENES](Docs/Architecture/SCENES.md) | `Bootstrap/NetworkRuntime.cs`, `Game/SceneNames.cs` |
 | 게임 모드 추가, 모드별 매칭 | [GameModes](Docs/GameModes/README.md), [Network/SESSION](Docs/Network/SESSION.md) | `Core/GameModes.cs`, `Network/SteamSession.cs`, `Bootstrap/MatchSceneView.cs` |
 | **퀸 오브 더 힐** | [GameModes/QueenOfTheHill](Docs/GameModes/QueenOfTheHill/README.md) → [RagdollLab README](Docs/RagdollLab/README.md) "등반" | 위 문서 §6 파일 지도 |
+| **퀸 오브 더 힐 맵(그레이박스)** | [GRAYBOX](Docs/GameModes/QueenOfTheHill/GRAYBOX.md) → [Tools/QueenHill/README](Tools/QueenHill/README.md) → [DESIGN §3](Docs/GameModes/QueenOfTheHill/DESIGN.md) | `Tools/QueenHill/build_layout.py`(맵 원본), `Gameplay/QueenHill/QueenHillLevel.cs`, `Core/QueenHillCourse.cs` |
 | HUD, UI, 로비 | [Architecture/UI](Docs/Architecture/UI.md) | `Game/NetworkHudView.cs`, `Game/LobbyStage.cs`, `Bootstrap/LobbyBootstrap.cs`, `Resources/*.uxml/uss` |
 | 플레이어 입력, 조작 | [Player/MOVEMENT_INPUT](Docs/Player/MOVEMENT_INPUT.md) | `Game/MoveInputSource.cs`, `Input/` |
 | 래그돌 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md), [RagdollLab/README](Docs/RagdollLab/README.md) | `Assets/ChessFight/RagdollLab/Scripts/`, `Gameplay/Characters/ICharacterDriver.cs` |

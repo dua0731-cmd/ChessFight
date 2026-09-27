@@ -20,6 +20,7 @@
 | `KingRush.unity` | 2 | 경기로 들어왔을 때만 `MatchSceneView` | 직접 열면 **오프라인 플레이테스트** |
 | `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |
 | `RagdollTest.unity` | 비활성 | 없음 (씬 안의 `LabGame`이 동작) | 래그돌 랩. Steam 없이 2인 로컬 |
+| `QueenOfTheHill.unity` (R48, 맵 7차 R49) | 빌드 제외(아직) | 없음 | 퀸 오브 더 힐 그레이박스. `QueenHillLevel`이 맵 데이터(JSON)로 맵을 만들고 래그돌 폰 1인 오프라인 |
 | `SampleScene.unity` | 빌드 제외 | 없음 | 아무것도 안 함(템플릿) |
 
 씬 이름 상수는 `Game/SceneNames.cs`. **런타임에 로드하는 씬은 빌드 목록(`EditorBuildSettings.asset`)에도 있어야 한다.** 빌드 메뉴(`NetworkSetup.ShippedScenes`)가 Intro·Lobby·KingRush·SwordFight를 넣는다.
@@ -50,6 +51,8 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 **KingRush** — 코스 뼈대, 장애물, 스폰 12곳, 체크포인트 2개, 골인, `PhysicsProfile`(120Hz), `Playtest`(`PlaytestSpawner`), `ChessFight Game Root`. 상세: [KingRush](../KingRush/README.md).
 - 직접 Play: `PlaytestSpawner`가 임시 캐릭터를 만든다.
 - 경기로 진입: `PlaytestSpawner.NetworkDriven`이라 캐릭터를 안 만들고, `MatchSceneView`가 네트워크 캡슐, 읽기 전용 `MatchHud`(명단, 핑, 끊김 배너)를 띄운다. **캡슐은 아직 로비용 평면 모터라 코스를 달릴 수 없다.** Esc = `Session.Cancel()`.
+
+**QueenOfTheHill** (R48, `JY-lobby`) — 편집 모드에는 카메라(`OrbitCamera`), 조명, `ChessFight Game Root`(`GameSceneConfig`·`PhysicsProfile`), `Queen of the Hill Level`(`QueenHillLevel`), `Playtest`(`PlaytestSpawner` + `QueenHillPlaytestPanel`, 래그돌 프리팹·백팀)만 있다. **맵은 Play 때 `Resources/QueenHill/QueenHillLayout.json`(원본: `Tools/QueenHill/build_layout.py`)으로 만든다.** 메뉴 `ChessFight > Scenes > Queen of the Hill (offline graybox)`. 생성기 `Tools/Generators/gen_queenhill_scene.py`. 네트워크 래그돌(M14)이 생기기 전까지 로비 흐름에 넣지 않는다(`GameModes.QueenOfTheHill.Scene`은 비어 있다). 상세: [GRAYBOX](../GameModes/QueenOfTheHill/GRAYBOX.md).
 
 **RagdollTest** — 2026-09-25부터 **준영 님 래그돌 랩 씬 그대로**다. 회전 봉, 벽 2·3·4m, 경사 15·30·45°, 외줄, 림보·터널이 있고, `LabGame`이 P1·P2·더미를 만든다. 튜닝 패널은 Tab. 물리 120Hz는 `LabGame`이 직접 걸고 씬을 떠날 때 되돌린다(`PhysicsProfile` 없음). 빌더 메뉴 `ChessFight > Ragdoll Lab > Rebuild Pawn + Scene`이 이 파일을 다시 만든다. 상세와 네트워크 안전성: [Player/RAGDOLL](../Player/RAGDOLL.md).
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -26,6 +27,7 @@ namespace ChessFight.RagdollLab
         public byte hook;       // HookPhase: put away, held, swinging, flying, reeling in, stuck
         public float hookCharge;    // 0..1, the swing gauge (a byte on the wire)
         public Vector3 hookPoint;   // the flying hook, or where it is stuck
+        public byte piece;          // PieceKind (M11): what the pawn has been promoted to
         public uint ack;        // the owner's own send time echoed back, milliseconds
 
         public void CopyFrom(RagdollPose other)
@@ -45,6 +47,7 @@ namespace ChessFight.RagdollLab
             hook = other.hook;
             hookCharge = other.hookCharge;
             hookPoint = other.hookPoint;
+            piece = other.piece;
             ack = other.ack;
         }
 
@@ -67,6 +70,7 @@ namespace ChessFight.RagdollLab
             into.hookCharge = Mathf.Lerp(from.hookCharge, to.hookCharge, t);
             // A new throw starts from the hand: blend only while both ends show the same hook.
             into.hookPoint = from.hook == to.hook ? Vector3.Lerp(from.hookPoint, to.hookPoint, t) : to.hookPoint;
+            into.piece = to.piece;
             into.ack = to.ack;
         }
     }
@@ -128,7 +132,8 @@ namespace ChessFight.RagdollLab
         // door instead of half-read. CFR2: abilities, interact and aim in the input (2026-09-26).
         // CFR3: the struggle meter in the snapshot (2026-09-26).
         // CFR4: the left button held in the input; the grappling hook in the snapshot (2026-09-27).
-        public const uint Magic = 0x43465234;   // "CFR4"
+        // CFR5: the piece kind in the snapshot (Queen of the Hill M11, 2026-09-27).
+        public const uint Magic = 0x43465235;   // "CFR5"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
@@ -139,7 +144,7 @@ namespace ChessFight.RagdollLab
         public const int MaxPawns = 12;
         public const float PositionRange = 80f; // metres, symmetric around the arena origin
 
-        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 4;  // 73
+        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 1 + 4;  // 74
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 1;            // 22
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
 
@@ -239,6 +244,7 @@ namespace ChessFight.RagdollLab
                     w.Write(Quantize(pose.hookPoint.x));
                     w.Write(Quantize(pose.hookPoint.y));
                     w.Write(Quantize(pose.hookPoint.z));
+                    w.Write(pose.piece);
                     w.Write(pose.ack);
                 }
                 return stream.ToArray();
@@ -277,8 +283,9 @@ namespace ChessFight.RagdollLab
                     pose.hook = r.ReadByte();
                     pose.hookCharge = r.ReadByte() / 255f;
                     pose.hookPoint = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
+                    pose.piece = r.ReadByte();
                     pose.ack = r.ReadUInt32();
-                    if (pose.state > 2 || pose.hook > 5) return false;
+                    if (pose.state > 2 || pose.hook > 5 || !ChessPieces.IsValid(pose.piece)) return false;
                 }
                 into.tick = tick;
                 into.hostTimeMs = hostTimeMs;

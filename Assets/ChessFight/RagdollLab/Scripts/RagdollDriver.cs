@@ -1,4 +1,5 @@
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -10,7 +11,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ILaunchable
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IStatusReceiver, IPromotable
     {
         RagdollPawn pawn;
 
@@ -28,6 +29,11 @@ namespace ChessFight.RagdollLab
 
         public int Team => Pawn.Team;
 
+        // Set by whoever spawns the pawn outside the lab (the offline playtest of a mode scene).
+        public void AssignTeam(int team) => Pawn.Team = team;
+
+        public float Stamina01 => Pawn.Stamina;
+
         // `position` is the ground point; the hips go standHeight above it, as LabGame.Respawn does.
         // RagdollPawn.Teleport lets go of everything first (wall, hands, anyone holding it).
         public void Teleport(Vector3 position, Quaternion rotation) =>
@@ -40,5 +46,13 @@ namespace ChessFight.RagdollLab
         public Vector3 LaunchFrom => Pawn.Hips.position - Vector3.up * Pawn.standHeight;
 
         public void Launch(Vector3 velocity) => Pawn.Launch(velocity);
+
+        // Status effects (M13).
+        public bool Squash(float seconds, float immunity) => Pawn.Squash(seconds, immunity);
+        public bool Stagger(float seconds) => Pawn.Stagger(seconds);
+
+        // Promotion (M11).
+        public PieceKind Piece => Pawn.Piece;
+        public void Promote(PieceKind piece) => Pawn.SetPiece(piece);
     }
 }

@@ -11,14 +11,14 @@ Assets/
   Prefabs/            PawnAvatar(네트워크 캡슐, 로비 라인업에도 씀) · Arena(옛 로비 체스판, 2026-09-25부터 미사용)
     Characters/       PlaytestCharacter (임시 캐릭터)
     Obstacles/        Spinner · SlidingWall · Pendulum
-  Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, NetworkTheme.tss, ChessFightControls.inputactions
-  Scenes/             Intro · Lobby · KingRush · RagdollTest (+ SampleScene 템플릿, 빌드 제외·비활성)
+  Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, NetworkTheme.tss, ChessFightControls.inputactions, QueenHill/QueenHillLayout.json(퀸 오브 더 힐 맵 데이터, 생성물)
+  Scenes/             Intro · Lobby · KingRush · RagdollTest · QueenOfTheHill(그레이박스, 맵은 코드가 만듦) (+ SampleScene 템플릿, 빌드 제외·비활성)
   Scripts/            ↓ 폴더 하나 = 어셈블리 하나
   Settings/           템플릿 URP 에셋 (현재 미사용)
   TutorialInfo/       Unity 템플릿 잔재
 Docs/                 문서 트리 (HANDOFF.md에서 시작)
 Tests/Network/        Unity 밖 테스트 (Core, 모의 Steam 세션)
-Tools/                테스트 스크립트, Generators/
+Tools/                테스트 스크립트, Generators/, QueenHill/(맵 데이터 원본과 미리보기)
 ```
 
 `Assets/ChessFight/…` 같은 중첩 폴더는 `8649011`에서 없앴다. **예외: 준영 님 래그돌 랩은 `Assets/ChessFight/RagdollLab/`에 그대로 둔다**(2026-09-25 병합). 빌더 메뉴가 이 경로를 알고 있고, 랩은 Art·Generated·Materials·Prefabs·Scripts·Settings를 한 덩어리로 관리한다. 랩 씬만 `Assets/Scenes/RagdollTest.unity`로 옮겼다. `Assets/ChessFight.meta`는 PC마다 GUID가 달라지지 않게 커밋되어 있다.
@@ -27,10 +27,10 @@ Tools/                테스트 스크립트, Generators/
 
 | 폴더 | 어셈블리 | 참조 | 게이트 | 책임 |
 |---|---|---|---|---|
-| `Scripts/Core/` | `ChessFight.Network.Core` | 없음 (`noEngineReferences`) | — | 예약 규칙, 패킷, 이동 모터, 봇 ID·두뇌, 연결 품질, FriendInfo, **게임 모드 목록(`GameModes`)**. **Unity 없이 테스트** |
+| `Scripts/Core/` | `ChessFight.Network.Core` | 없음 (`noEngineReferences`) | — | 예약 규칙, 패킷, 이동 모터, 봇 ID·두뇌, 연결 품질, FriendInfo, **게임 모드 목록(`GameModes`)**, 퀸 오브 더 힐 규칙·기물·코스 숫자(`QueenHillRules`·`ChessPieces`·`QueenHillCourse`). **Unity 없이 테스트** |
 | `Scripts/Network/` | `ChessFight.Network.Steam` | Core, Steamworks.NET | `CHESSFIGHT_STEAM` | `SteamSession`(파티·매칭·로비), `SteamMotion`(이동 전송) |
 | `Scripts/Game/` | `ChessFight.Game` | Core | — | HUD 뷰, 로비 3D 라인업(`LobbyStage`), 카메라, 입력 추상화, 씬 이름, 패널·폰트, 파이프라인 우회, 프리팹 스크립트. **Steam 무참조** |
-| `Scripts/Gameplay/` | `ChessFight.Gameplay` | Game | — | 캐릭터 계약, 장애물, 코스, 물리 프로필, 오프라인 플레이테스트. **Steam 무참조** |
+| `Scripts/Gameplay/` | `ChessFight.Gameplay` | Game | — | 캐릭터 계약, 장애물, 코스, 물리 프로필, 오프라인 플레이테스트, 퀸 오브 더 힐(`QueenHill/`: 종·열린 길·체크포인트·승격·그레이박스 맵 `QueenHillLevel`). **Steam 무참조** |
 | `Scripts/Bootstrap/` | `ChessFight.Game.Steam` | Core, Network.Steam, Game, Gameplay, Steamworks.NET | `CHESSFIGHT_STEAM` | `NetworkRuntime`, 씬 컨트롤러(Intro/Lobby, 모드 씬 공용 `MatchSceneView`) |
 | `Scripts/Input/` | `ChessFight.Game.Input` | Game, Unity.InputSystem | `CHESSFIGHT_INPUTSYSTEM` | Input System 이동 소스(자기 등록) |
 | `Scripts/Editor/` | Assembly-CSharp-Editor | — | — | 설치·씬 메뉴·빌드, `InputSettingsGuard` |

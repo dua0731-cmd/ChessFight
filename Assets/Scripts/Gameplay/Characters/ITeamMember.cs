@@ -9,6 +9,19 @@ namespace ChessFight.Gameplay
         int Team { get; }
     }
 
+    // A character whose side is set by whoever spawns it (a playtest, the network
+    // roster, a mode). Only the machine that simulates it needs this.
+    public interface ITeamAssignable
+    {
+        void AssignTeam(int team);
+    }
+
+    // Stamina for a HUD, 0..1 (empty = the hands let go). Read only.
+    public interface IStaminaReadout
+    {
+        float Stamina01 { get; }
+    }
+
     public static class Teams
     {
         public const int None = -1, White = 0, Black = 1;

@@ -10,6 +10,13 @@ namespace ChessFight.Gameplay
         [Tooltip("Seconds for one full out-and-back cycle.")]
         [SerializeField] float period = 3f;
 
+        // For oscillators built from code: on an inactive object, before Awake.
+        public void Configure(Vector3 travel, float period)
+        {
+            this.travel = travel;
+            this.period = period;
+        }
+
         protected override void Evaluate(double time, out Vector3 position, out Quaternion rotation)
         {
             rotation = StartRotation;

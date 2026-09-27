@@ -27,6 +27,10 @@ namespace ChessFight.Gameplay
         double stepKey = double.NaN, lastTime = double.NaN;
         bool jumped;
 
+        // For obstacles built from code (the Queen of the Hill level): call it on an
+        // INACTIVE object, before Awake evaluates the first pose.
+        public void SetPhase(float seconds) => phase = seconds;
+
         protected Vector3 StartPosition => startPosition;
         protected Quaternion StartRotation => startRotation;
 

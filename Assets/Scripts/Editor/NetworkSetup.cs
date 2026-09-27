@@ -25,6 +25,7 @@ namespace ChessFight.Editor
         const string LobbyScene = "Assets/Scenes/Lobby.unity";
         const string KingRushScene = "Assets/Scenes/KingRush.unity";
         const string RagdollTestScene = "Assets/Scenes/RagdollTest.unity";
+        const string QueenOfTheHillScene = "Assets/Scenes/QueenOfTheHill.unity";
         // Everything a player can reach, in load order. RagdollTest is development only.
         static readonly string[] ShippedScenes = { IntroScene, LobbyScene, KingRushScene, "Assets/Scenes/SwordFight.unity" };
 
@@ -119,6 +120,7 @@ namespace ChessFight.Editor
         [MenuItem("ChessFight/Scenes/Lobby (online)", priority = 1)] static void OpenLobby() => Open(LobbyScene);
         [MenuItem("ChessFight/Scenes/King Rush (offline playtest)", priority = 20)] static void OpenKingRush() => Open(KingRushScene);
         [MenuItem("ChessFight/Scenes/Ragdoll Test (offline)", priority = 21)] static void OpenRagdollTest() => Open(RagdollTestScene);
+        [MenuItem("ChessFight/Scenes/Queen of the Hill (offline graybox)", priority = 22)] static void OpenQueenOfTheHill() => Open(QueenOfTheHillScene);
 
         static void Open(string scene)
         {
