@@ -10,7 +10,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ILaunchable
     {
         RagdollPawn pawn;
 
@@ -35,5 +35,10 @@ namespace ChessFight.RagdollLab
 
         public void ApplyHit(Vector3 push, float knockdownSeconds, float staminaDamage, bool dropFromWallOrRide) =>
             Pawn.TakeHit(push, knockdownSeconds, staminaDamage, dropFromWallOrRide);
+
+        // A launch pad or a spring lift (M7), worked out from where the feet would be standing.
+        public Vector3 LaunchFrom => Pawn.Hips.position - Vector3.up * Pawn.standHeight;
+
+        public void Launch(Vector3 velocity) => Pawn.Launch(velocity);
     }
 }

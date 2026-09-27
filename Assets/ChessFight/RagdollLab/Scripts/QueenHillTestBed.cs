@@ -17,8 +17,11 @@ namespace ChessFight.RagdollLab
     ///   7f  hook range, east: a 10 m tower 20 m from the start line, and an arch (M5 grappling hook)
     ///   7g  pioneer tower, north of 7f: two sections with a bell on each landing and the light pillar's
     ///       lift cell beside each wall (M8), each landing a checkpoint (M9)
+    ///   7h  launch pads, south of 7f: an L-shaped pad ("up 6 m, 3 m on") and a clockwork spring that
+    ///       throws everyone on it 8 m up every 4 s (M7)
     ///
-    /// Offline hotkeys for P1: F9 walk-in point, F8 the hook range's start line, F5 a 6 m/s hit with a
+    /// Offline hotkeys for P1: F9 walk-in point, F8 the hook range's start line, F10 the pioneer tower (Shift+F10 the
+    /// launch pads; F3 is the online panel), F11 silences the bells, F5 a 6 m/s hit with a
     /// 1 s knockdown, F6 stamina -2.5, F7 knocked off the wall (M3). A corner box shows what the pawn
     /// received from the new keys (M2) and what its hook is doing (M5).
     /// </summary>
@@ -78,6 +81,22 @@ namespace ChessFight.RagdollLab
         public static float SectionFaceX(int section) => PioneerFaceX + (section - 1) * PioneerStepBack;
         public static Vector3 LandingSpawn(int section) => new Vector3(SectionFaceX(section) + 1f, section * SectionRise, -5.5f);
         public static Vector3 BellSpot(int section) => new Vector3(SectionFaceX(section) + 3.2f, section * SectionRise, -8.5f);
+        // 7h: launch pads, x 35..75, z -65..-45. Both throw toward +X. The L-shaped pad (S3, the knight's
+        // move) throws whoever steps on it up PadThrow.y and PadThrow.z on, onto a ledge whose lip is
+        // 0.8 m short of the spot. The clockwork spring (S5) winds up for SpringPeriod seconds and then
+        // throws everyone on it the same way, SpringThrow up and on, onto a higher floor 3 m past it.
+        public static readonly Vector3 LaunchStart = new Vector3(38f, 0f, -52f);
+        public static readonly Vector3 PadCenter = new Vector3(42f, 0f, -52f);
+        public const float PadSize = 1.6f, PadClearance = 1.2f, PadLedgeFaceX = 44.2f;
+        public static readonly Vector3 PadThrow = new Vector3(0f, 6f, 3f);       // pad frame: up, forward (+X)
+        public static Vector3 PadLanding => PadCenter + new Vector3(PadThrow.z, PadThrow.y, 0f);
+        public static readonly Vector3 SpringCenter = new Vector3(56f, 0f, -52f); // the floor under it
+        public const float SpringSize = 2.4f, SpringHeight = 0.3f, SpringPeriod = 4f, SpringClearance = 1.5f;
+        public const float SpringLedgeFaceX = 60.2f;
+        public static readonly Vector3 SpringThrow = new Vector3(0f, 8f, 6f);
+        public static float SpringTop => SpringHeight;
+        public static float SpringLedgeTop => SpringHeight + SpringThrow.y;
+
         public static Vector3 PillarCenter(int section) =>
             new Vector3(SectionFaceX(section) - 1.2f, (section - 1) * SectionRise + PlatformThickness * 0.5f, -2f);
 
@@ -89,6 +108,8 @@ namespace ChessFight.RagdollLab
         public Rigidbody Crate { get; private set; }
         public QueenHillMatch Match { get; private set; }
         public readonly MovingPlatform[] PillarLifts = new MovingPlatform[3];   // by section, 1 and 2
+        public LaunchPad Pad { get; private set; }
+        public LaunchPad Spring { get; private set; }
 
         /// <summary>Pawns put back on the checkpoint by the water so far, and the last one.</summary>
         public int WaterRespawns { get; private set; }
@@ -224,6 +245,66 @@ namespace ChessFight.RagdollLab
             }
             Label("[7g] 개척의 탑: 벽을 올라 종 앞에서 F, 옆에 빛의 기둥 승강기 (20초는 친 팀만)", TowerStart + new Vector3(-1.6f, 0.02f, 0f), 0.4f);
             Label("S1 5.3 m, S2 10.6 m. F10 이동, F11 종 초기화. 물에 빠지면 체크포인트", TowerStart + new Vector3(-2.5f, 0.02f, 0f), 0.33f);
+
+            // 7h launch pads
+            Box("7h Floor", new Vector3(55f, -t * 0.5f, -55f), new Vector3(40f, t, 20f), floorMaterial);
+            Quaternion east = Quaternion.LookRotation(Vector3.right);
+            // The L-shaped pad, flush with the floor, and the ledge it throws onto.
+            Visual("7h Pad", PadCenter + Vector3.up * 0.01f, new Vector3(PadSize, 0.02f, PadSize), platformMaterial);
+            Visual("7h Pad L", PadCenter + new Vector3(0.3f, 0.025f, -0.45f), new Vector3(0.9f, 0.01f, 0.2f), wallMaterial);
+            Visual("7h Pad L2", PadCenter + new Vector3(-0.05f, 0.025f, -0.05f), new Vector3(0.2f, 0.01f, 1f), wallMaterial);
+            Pad = MakeLaunchPad("7h L Pad", PadCenter, east, new Vector3(PadSize, 0.6f, PadSize), PadThrow, PadClearance, 0f, false, null);
+            float ledgeDepth = 5.8f;
+            Box("7h Ledge", new Vector3(PadLedgeFaceX + ledgeDepth * 0.5f, PadThrow.y * 0.5f, PadCenter.z),
+                new Vector3(ledgeDepth, PadThrow.y, 6f), wallMaterial);
+            Visual("7h Pad Mark", PadLanding + Vector3.up * 0.01f, new Vector3(1f, 0.02f, 1f), padMaterial);
+            // The clockwork spring: a plate on the floor, its key turning on the side, and the floor above.
+            Box("7h Spring", SpringCenter + Vector3.up * (SpringHeight * 0.5f), new Vector3(SpringSize, SpringHeight, SpringSize), platformMaterial);
+            var key = new GameObject("7h Spring Key").transform;
+            key.SetParent(root, false);
+            key.SetPositionAndRotation(SpringCenter + new Vector3(0f, SpringHeight * 0.5f, -SpringSize * 0.5f),
+                Quaternion.FromToRotation(Vector3.up, Vector3.back));
+            var shaft = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            DestroyImmediate(shaft.GetComponent<Collider>());
+            shaft.name = "Shaft";
+            shaft.transform.SetParent(key, false);
+            shaft.transform.localPosition = new Vector3(0f, 0.2f, 0f);
+            shaft.transform.localScale = new Vector3(0.08f, 0.2f, 0.08f);
+            shaft.GetComponent<MeshRenderer>().sharedMaterial = bellMaterial;
+            var handle = Visual("Handle", Vector3.zero, new Vector3(0.6f, 0.08f, 0.12f), bellMaterial);
+            handle.transform.SetParent(key, false);
+            handle.transform.localPosition = new Vector3(0f, 0.42f, 0f);
+            Spring = MakeLaunchPad("7h Spring Pad", SpringCenter + Vector3.up * SpringTop, east, new Vector3(SpringSize, 0.6f, SpringSize),
+                SpringThrow, SpringClearance, SpringPeriod, true, key);
+            float upperDepth = 7f;
+            Box("7h Upper Floor", new Vector3(SpringLedgeFaceX + upperDepth * 0.5f, SpringLedgeTop * 0.5f, SpringCenter.z),
+                new Vector3(upperDepth, SpringLedgeTop, 8f), wallMaterial);
+            Label("[7h] L자 도약대: 밟으면 위 6 m, 앞 3 m (나이트처럼)", LaunchStart + new Vector3(-1.4f, 0.02f, 0f), 0.4f);
+            Label("[7h] 태엽 스프링: 4초마다 위에 선 모두를 8 m 위로. Shift+F10 이동", SpringCenter + new Vector3(-2.2f, 0.02f, 0f), 0.4f);
+        }
+
+        /// <summary>A box you can see and walk through: only looks.</summary>
+        GameObject Visual(string name, Vector3 center, Vector3 size, Material material)
+        {
+            var go = Box(name, center, size, material);
+            DestroyImmediate(go.GetComponent<BoxCollider>());
+            return go;
+        }
+
+        /// <summary>A launch pad (M7) whose volume rests on `surface`, throwing toward `facing`'s forward.</summary>
+        LaunchPad MakeLaunchPad(string name, Vector3 surface, Quaternion facing, Vector3 volume, Vector3 throwTo, float clearance,
+                                float period, bool sameThrow, Transform key)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(root, false);
+            go.transform.SetPositionAndRotation(surface, facing);
+            var box = go.AddComponent<BoxCollider>();
+            box.isTrigger = true;
+            box.center = new Vector3(0f, volume.y * 0.5f, 0f);
+            box.size = volume;
+            var pad = go.AddComponent<LaunchPad>();
+            pad.Configure(throwTo, clearance, period, 0f, sameThrow, key);
+            return pad;
         }
 
         /// <summary>A pioneer bell: a post, a cup that swings when rung, and a reach sphere for the interact key.</summary>
@@ -422,7 +503,11 @@ namespace ChessFight.RagdollLab
             if (pawn == null) return;
             if (Input.GetKeyDown(KeyCode.F9)) GoToEntrance(pawn);
             if (Input.GetKeyDown(KeyCode.F8)) GoToHookRange(pawn);
-            if (Input.GetKeyDown(KeyCode.F10)) GoToTower(pawn);
+            if (Input.GetKeyDown(KeyCode.F10))
+            {
+                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) GoToLaunchPads(pawn);
+                else GoToTower(pawn);
+            }
             if (Input.GetKeyDown(KeyCode.F11) && Match != null)
             {
                 Match.ResetRound();
@@ -484,6 +569,14 @@ namespace ChessFight.RagdollLab
             Note("F10 개척의 탑으로 이동");
         }
 
+        public void GoToLaunchPads(RagdollPawn pawn)
+        {
+            var driver = pawn.GetComponent<RagdollDriver>();
+            if (driver != null) driver.Teleport(LaunchStart, Quaternion.LookRotation(Vector3.right));
+            else pawn.Teleport(LaunchStart + Vector3.up * (pawn.standHeight + 0.02f), Vector3.right);
+            Note("Shift+F10 도약대로 이동");
+        }
+
         public void GoToHookRange(RagdollPawn pawn)
         {
             var driver = pawn.GetComponent<RagdollDriver>();
@@ -520,6 +613,14 @@ namespace ChessFight.RagdollLab
                    + $"(내 최고 S{(driver != null ? Match.PersonalBest(driver) : 0)}, 팀 최고 S{Match.TeamBest(pawn.Team)})";
         }
 
+        string LaunchText(RagdollPawn pawn)
+        {
+            if (Spring == null || Flat(pawn.Hips.position - SpringCenter).magnitude > 12f) return "";
+            return $"\n[7h] 태엽 발사까지 {Spring.SecondsToFire:0.0}초 · 도약대 발사 {pawn.Launches}회{(pawn.Launched ? " (<b>날아가는 중</b>)" : "")}";
+        }
+
+        static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+
         static string HookText(HookPhase phase) => phase switch
         {
             HookPhase.Held => "손에 듦",
@@ -542,7 +643,7 @@ namespace ChessFight.RagdollLab
             }
             Vector3 aim = pawn.Aim;
             string text =
-                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
+                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · Shift+F10 도약대 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기\n" +
                 $"받은 입력(P1): 능력 E <b>{pawn.AbilityPresses}</b>회 · 능력2 Q <b>{pawn.Ability2Presses}</b>회 · " +
                 $"상호작용 F <b>{pawn.InteractPresses}</b>회{(pawn.InteractHeld ? " (누르는 중)" : "")} · " +
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
@@ -550,7 +651,7 @@ namespace ChessFight.RagdollLab
                 $"피격 {pawn.Hits}회: {pawn.LastHit} · 물에서 부활 {WaterRespawns}회\n" +
                 $"팀 {Teams.Name(pawn.Team)} · 갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
                 $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}\n" +
-                TowerText(pawn) +
+                TowerText(pawn) + LaunchText(pawn) +
                 (IsDrowning(pawn) ? $" · <b>물에 빠짐! {DrowningLeft(pawn):0.0}초 뒤 체크포인트로</b> (좌클릭 버둥 {pawn.Thrashes}회)" : "") +
                 (Time.unscaledTime - lastActionAt < 2.5f ? $"\n→ {lastAction}" : "");
             var size = style.CalcSize(new GUIContent(text));

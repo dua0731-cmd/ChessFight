@@ -68,6 +68,8 @@ namespace ChessFight.RagdollLab
             if (Want("bump")) yield return FeelScenario(folder, "bump", FeelBump());
             if (Want("hook")) yield return FeelScenario(folder, "hook", FeelHook());
             if (Want("climb_lunge")) yield return FeelScenario(folder, "climb_lunge", FeelClimbLunge());
+            if (Want("launch_pad")) yield return FeelScenario(folder, "launch_pad", FeelLaunchPad());
+            if (Want("spring")) yield return FeelScenario(folder, "spring", FeelSpring());
 
             Time.captureFramerate = 0;
             LabCamera.GameTimeClock = false;
@@ -381,6 +383,31 @@ namespace ChessFight.RagdollLab
             yield return FeelRecord(0.7f, "jump", t => Feel(0f, 0f, grab: true, jump: t == 0f));
             yield return FeelRecord(0.9f, "W+grab", _ => Feel(0f, 1f, grab: true));
             yield return FeelRecord(0.8f, "stop", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>The L-shaped launch pad (M7): walk onto it holding W, up 6 m and 3 m on, onto the ledge.</summary>
+        IEnumerator FeelLaunchPad()
+        {
+            var pawn = Spawn(QueenHillTestBed.PadCenter + new Vector3(-4f, 0f, 0f), Vector3.right, "feel");
+            yield return FeelPreroll(pawn, 0.8f, 90f);
+            clipFolder = FeelFolder("launch_pad");
+            // W until the pad throws it; the flight needs no keys (it flies the pad's arc).
+            yield return FeelRecord(3.4f, "W", _ => Feel(0f, pawn.Launches > 0 ? 0f : 1f));
+            yield return FeelRecord(0.8f, "stop", _ => Feel(0f, 0f));
+        }
+
+        /// <summary>The clockwork spring (M7): standing on it while it winds, then thrown 8 m up onto the floor above.</summary>
+        IEnumerator FeelSpring()
+        {
+            var spring = Bed != null ? Bed.Spring : null;
+            if (spring != null && spring.SecondsToFire < 2.5f) yield return Sim(spring.SecondsToFire + 0.1f);
+            var pawn = Spawn(QueenHillTestBed.SpringCenter + Vector3.up * QueenHillTestBed.SpringTop, Vector3.right, "feel");
+            yield return FeelPreroll(pawn, 0.6f, 90f);
+            float wait = spring != null ? Mathf.Max(0.3f, spring.SecondsToFire - 0.8f) : 1f;
+            // Skip most of the wind-up; record the last moment of it, the throw and the landing.
+            yield return Sim(wait, () => Feel(0f, 0f));
+            clipFolder = FeelFolder("spring");
+            yield return FeelRecord(3.6f, "spring", _ => Feel(0f, 0f));
         }
 
         string FeelFolder(string name) => Path.Combine(Arg("-ragdollFeel") ?? "feel", name);

@@ -32,6 +32,7 @@ MonoBehaviour:
     turnResponsiveness: 8
     jumpImpulse: 4.5
     airControl: 0.25
+    launchSteer: 0
     lowerBodyDynamicShare: 0.6
     balanceStrength: 1200
     balanceDamper: 120

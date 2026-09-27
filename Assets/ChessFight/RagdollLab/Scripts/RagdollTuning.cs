@@ -62,6 +62,10 @@ namespace ChessFight.RagdollLab
         [Tunable(GroupMove, "방향 전환")] [Range(0f, 40f)] public float turnResponsiveness = 12f;
         [Tunable(GroupMove, "점프 (m/s)")] [Range(0f, 15f)] public float jumpImpulse = 6f;
         [Tunable(GroupMove, "공중 제어")] [Range(0f, 1f)] public float airControl = 0.25f;
+        // Thrown by a launch pad (M7) the pawn flies the pad's arc and may steer only this fast off it.
+        // 0: a pad is a fixed path, like the knight's L-jump, and every throw comes to rest within 0.3 m
+        // of the pad's spot. At 0.15 holding W carried it 0.5 m past (autotest, 09-27).
+        [Tunable(GroupMove, "도약대 공중 조종 (m/s, 0 = 정해진 궤적)")] [Range(0f, 5.5f)] public float launchSteer = 0f;
 
         [Tunable(GroupAssist, "동적 배율의 하체 적용 비율")] [Range(0f, 1f)] public float lowerBodyDynamicShare = 0.6f;
         [Tunable(GroupAssist, "골반 직립 토크")] [Range(0f, 5000f)] public float balanceStrength = 1200f;

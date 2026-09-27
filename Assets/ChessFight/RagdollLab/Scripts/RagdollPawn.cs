@@ -156,6 +156,11 @@ namespace ChessFight.RagdollLab
         public int Hits { get; private set; }
         public string LastHit { get; private set; } = "-";
 
+        /// <summary>Throws by a launch pad or a spring lift (M7), and whether the pawn is still on that arc
+        /// (until it stands on something again).</summary>
+        public int Launches { get; private set; }
+        public bool Launched => launched;
+
         /// <summary>
         /// In the water (a Gameplay WaterZone), bobbing on the surface until the mode puts the pawn back:
         /// no walking, jumping, grabbing or climbing, and no knockdowns. Left click thrashes, for nothing.
@@ -340,6 +345,7 @@ namespace ChessFight.RagdollLab
         Vector3 surfaceVel;                  // the ground's velocity under the hips this step, all three axes
         Vector3 carryVel;                    // horizontal velocity of the last thing stood on, kept through the air
         float carryRise;                     // and its vertical speed, so a jump off a rising lift is a real jump
+        bool launched;                       // thrown by a launch pad: carryVel is the throw, steering is capped
         Collider climbCollider;              // the face being climbed, and the surface that moves it
         IMovingSurface climbSurface;
         Vector3 climbSurfaceVel;
@@ -532,6 +538,61 @@ namespace ChessFight.RagdollLab
         public void AddVelocity(Vector3 dv)
         {
             foreach (var rb in bodies) rb.linearVelocity += dv;
+        }
+
+        /// <summary>
+        /// Thrown by a launch pad or a spring lift (Queen of the Hill M7; RagdollDriver forwards
+        /// ILaunchable.Launch here). The whole body is SET to this velocity, so every throw flies the same
+        /// arc whatever the pawn was doing when it stepped on. It lets go of the wall, its hook and whatever
+        /// is in its hands, and anyone holding it lets go. Standing, it stays up and takes the throw's
+        /// horizontal part as the frame it moves in through the air - the way a jump off a moving platform
+        /// keeps the platform's speed - steering at most launchSteer m/s off it, so it lands on the pad's
+        /// spot. Knocked down, it flies limp.
+        /// </summary>
+        public void Launch(Vector3 velocity)
+        {
+            if (NetworkPuppet) return;
+            LetGo(0.3f);
+            ReleaseHolders(0.5f);
+            heldTimer = struggleTimer = escapeProgress = 0f;
+            holder = null;
+            heldCollider = null;
+            foreach (var rb in bodies)
+            {
+                rb.linearVelocity = velocity;
+                rb.angularVelocity = Vector3.zero;
+            }
+            Launches++;
+            // Nothing may pull it back down on the way up: not the launch guard, not the standing spring.
+            float gravity = Mathf.Max(0.01f, -Physics.gravity.y);
+            freeFlight = Mathf.Max(freeFlight, Mathf.Max(0f, velocity.y) / gravity + 0.2f);
+            airTimer = Mathf.Max(airTimer, 0.2f);
+            jumpTimer = Mathf.Max(jumpTimer, 0.5f);
+            coyote = 0f;
+            Grounded = false;
+            if (State == PawnState.Ragdoll) return;
+            launched = true;
+            carryVel = Flat(velocity);
+            carryRise = 0f;
+            anchorVel = carryVel;
+            // The pad may run after this pawn's own step: the anchor was already sent to the standing height
+            // for this step, and its spring took a sixth of the throw back before the body left the pad (a
+            // sprint on it then hit the ledge's face). Put it on the hips (a jump, so the move carries no speed
+            // of its own) and send it along with them a step ahead, at the throw's speed: no pull either way.
+            anchor.position = bodies[0].position;
+            anchorPos = bodies[0].position + velocity * Time.fixedDeltaTime;
+            anchor.MovePosition(anchorPos);
+        }
+
+        /// <summary>Whoever has this pawn by a hand lets go: their joint would drag it along.</summary>
+        void ReleaseHolders(float cooldown)
+        {
+            foreach (var other in All)
+            {
+                if (other == this || other == null) continue;
+                foreach (var hand in new[] { other.handL, other.handR })
+                    if (hand != null && hand.HeldCollider != null && ownSet.Contains(hand.HeldCollider)) hand.Release(cooldown);
+            }
         }
 
         void FixedUpdate()
@@ -940,6 +1001,13 @@ namespace ChessFight.RagdollLab
                 return;
             }
 
+            if (Climbing || hookPhase == HookPhase.Pulling || Floating) launched = false;
+            if (launched)
+            {
+                // The pad worked the throw out as a clean arc; the bodies' own air damping took 0.3 m off a
+                // 3 m throw. Give it back while the pawn is on the arc.
+                foreach (var rb in bodies) rb.linearVelocity *= 1f + rb.linearDamping * dt;
+            }
             if (Climbing || hookPhase == HookPhase.Pulling)
             {
                 // UpdateClimb has already moved the anchor along the wall (UpdateHook moves it up the rope).
@@ -972,6 +1040,7 @@ namespace ChessFight.RagdollLab
             {
                 carryVel = groundFound ? Flat(surfaceVel) : Vector3.zero;
                 carryRise = groundFound ? surfaceVel.y : 0f;
+                launched = false;
                 // A turntable turns the pawn with it. Only the part about the vertical: a tilting
                 // platform does not tip the pawn over.
                 if (groundSurface != null)
@@ -1006,7 +1075,9 @@ namespace ChessFight.RagdollLab
                 facing = new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw));
             }
 
-            Vector3 targetVel = move * top;   // over the ground
+            // Thrown by a launch pad the pawn flies the pad's arc (carryVel is the throw): it may only nudge
+            // itself launchSteer m/s off it, so it comes down on the spot the pad aims at.
+            Vector3 targetVel = move * (launched ? Mathf.Min(top, p.launchSteer) : top);   // over the ground
             Vector3 ownAnchor = anchorVel - frame;
             upSettle = Mathf.Max(0f, upSettle - dt);
             float accel = (moving ? p.acceleration * RiseFactor() : p.stopDeceleration) * (planted ? 1f : p.airControl);
@@ -1123,7 +1194,10 @@ namespace ChessFight.RagdollLab
             // On a lift the floor will have moved by the end of this step; aim for where it will be.
             next.y = planted && groundFound
                 ? groundY + surfaceVel.y * dt + standHeight + lift + bob - landDip - strideDrop
-                : hp.y + hips.linearVelocity.y * dt;
+                : hp.y + hips.linearVelocity.y * dt
+                  // Thrown by a pad, lead by where gravity will have the hips, not where they would coast to:
+                  // the step-ahead anchor held a thrown body up a little (0.15 m higher, 0.1 s longer, 0.2 m long).
+                  + (launched ? Physics.gravity.y * dt * dt : 0f);
             anchorPos = next;
             anchor.MovePosition(anchorPos);
 
@@ -3014,12 +3088,7 @@ namespace ChessFight.RagdollLab
             handL.Release();
             handR.Release();
             // Whoever had this pawn by a hand lets go, or their joint would drag it back across the map.
-            foreach (var other in All)
-            {
-                if (other == this || other == null) continue;
-                foreach (var hand in new[] { other.handL, other.handR })
-                    if (hand != null && hand.HeldCollider != null && ownSet.Contains(hand.HeldCollider)) hand.Release(0.5f);
-            }
+            ReleaseHolders(0.5f);
             heldTimer = struggleTimer = escapeProgress = grabImmune = 0f;
             holder = null;
             heldCollider = null;
@@ -3029,6 +3098,7 @@ namespace ChessFight.RagdollLab
             Floating = false;
             carryVel = Vector3.zero;
             carryRise = 0f;
+            launched = false;
             ClearHook();
             surfaceVel = climbSurfaceVel = Vector3.zero;
             groundCollider = climbCollider = null;
