@@ -17,7 +17,8 @@ namespace ChessFight.RagdollLab
         public bool FixedKing { get; private set; }
         public KingRushSection Section { get; set; }
         public Vector3 BodyPosition => Pawn.Hips.position;
-        public bool CountsAsBody => !CannonFlight && !Pawn.Floating && !Pawn.Launched && !Pawn.BeingHeld;
+        public bool Captured { get; private set; }
+        public bool CountsAsBody => !Captured && !CannonFlight && !Pawn.Floating && !Pawn.Launched && !Pawn.BeingHeld;
         public bool StandingOnPad => CountsAsBody && Pawn.Grounded && Pawn.State == PawnState.Active && !Pawn.Climbing;
         public Collider[] BodyColliders { get; private set; }
         public IHitReceiver HitReceiver { get; private set; }
@@ -71,7 +72,7 @@ namespace ChessFight.RagdollLab
         public void SetInput(PawnInput input, bool held = false)
         {
             cannonAim = input.aim; cannonGrabHeld = input.grab;
-            if (CannonFlight) input = default;
+            if (CannonFlight || Captured) { input = default; held = false; }
             abilityPressed |= input.ability; AbilityHeld = held;
             // Never send King Rush E/Q to the Queen Hill hook on the shared pawn.
             input.ability = input.ability2 = false; Pawn.SetInput(input);
@@ -83,7 +84,7 @@ namespace ChessFight.RagdollLab
             if (!match.Authority) { CancelAbility(); return; }
             StepCannonFlight(dt);
             cooldown = Mathf.Max(0, cooldown - dt);
-            bool allowed = AbilitiesEnabled && !CannonFlight && !Pawn.Floating && Pawn.State == PawnState.Active;
+            bool allowed = AbilitiesEnabled && !Captured && !CannonFlight && !Pawn.Floating && Pawn.State == PawnState.Active;
             if (!allowed || (AbilityActive && Pawn.Hits != hitsAtStart)) CancelAbility();
             if (AbilityActive && Piece == KingRushPiece.Rook) StepCannonAim(dt);
             else if (AbilityActive)
@@ -110,12 +111,15 @@ namespace ChessFight.RagdollLab
         }
         public void Respawn(Vector3 ground)
         {
+            Captured = false;
             RestoreCannonClearance();
             CannonFlight = false;
             CancelAbility(); AbilitiesEnabled = false;
             ((ICharacterDriver)HitReceiver).Teleport(ground, Quaternion.identity);
             Pawn.SetInput(default); // Clear held movement/grab along with latched actions.
         }
+        public void SetCaptured()
+        { Captured = true; AbilitiesEnabled = false; SetInput(default); }
         public void ReleaseHoldOn(IKingRushCharacter target)
         {
             foreach (var body in target.BodyColliders)

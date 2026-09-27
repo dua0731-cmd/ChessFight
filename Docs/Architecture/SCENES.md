@@ -1,5 +1,7 @@
 # 씬 구성과 흐름
 
+**R54 별도 첫 연결 코스:** `KingRushOpening.unity`, 메뉴 **ChessFight → King Rush → Open Opening Course**. 오프라인12명, 장난감 코스·상자 미션·출구. 구간 프리팹은 `Assets/Prefabs/KingRushOpening`. `KingRushOpeningBuilder` 전용 빌드에서만 첫 씬이고 일반 로비/배포 라우팅은 바꾸지 않는다. 기존 `KingRushPrototype` 능력 시험장도 보존. [실행](../KingRush/OPENING_COURSE.md).
+
 사용자 요구(R11): 씬을 **인트로 - 로비 - 게임 씬(킹러시, 승격쟁탈전 등)**으로 나누고, 킹러시 맵 작업 씬과 래그돌 테스트 씬을 만든다. 구현 `72ddf9e`. R19(2026-09-25): 경기 씬은 **경기 방의 게임 모드**가 정한다([GameModes](../GameModes/README.md)). **Unity에서 아직 열지 않았다**(확인 목록: [VALIDATION](../Network/VALIDATION.md) 최상단).
 
 ## 1. 흐름

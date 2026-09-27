@@ -14,6 +14,33 @@ public static class NetworkCoreTests
     {
         try
         {
+            Test("King Rush capture requires entry and reserves each body until release", () => {
+                var g = new KingRushRules(); var r = new KingRushCaptureRules(g);
+                Check(!r.Deposit(1, 1, 0, 0), "before mission"); r.Begin(10); r.Begin(20);
+                Check(r.StartedAt == 10 && r.Deposit(1, 1, 0, 11), "begin once");
+                Check(r.Planks(0) == 1 && r.ReleaseAt(1) == 14 && !r.Deposit(1, 1, 0, 15), "dedupe does not expire in pit");
+                r.Release(1); Check(r.Deposit(1, 1, 0, 15) && r.Planks(0) == 2, "new capture after real respawn"); });
+            Test("King Rush allies return after two seconds without scoring", () => {
+                var r = new KingRushCaptureRules(new KingRushRules()); r.Begin(0);
+                Check(r.Deposit(1, 0, 0, 1) && r.Planks(0) == 0 && r.Captures(0) == 0 && r.ReleaseAt(1) == 3, "ally");
+                Check(!r.Deposit(0, 1, 0, 1) && !r.Deposit(2, 2, 0, 1) && !r.Deposit(2, 1, -1, 1) &&
+                    !r.Deposit(2, 1, 0, double.NaN) && !r.Deposit(2, 1, 0, .5), "invalid input"); });
+            Test("King Rush six captures finish bridge and fallback supplies missing planks", () => {
+                var g = new KingRushRules(); var r = new KingRushCaptureRules(g); r.Begin(0);
+                for (ulong id = 1; id <= 6; id++) Check(r.Deposit(id, 1, 0, id), "capture");
+                Check(r.Planks(0) == 6 && g.IsOpen(0, 0, 6) && !g.IsOpen(0, 1, 25.99), "six opens own");
+                Check(r.VisiblePlanks(1, 26) == 6 && r.Planks(1) == 0 && g.IsOpen(0, 1, 26), "fallback path without fake score");
+                r.Deposit(7, 1, 0, 7); Check(r.Planks(0) == 6 && r.Captures(0) == 6, "cap"); });
+            Test("King Rush overtime starts at 130s and catches up at exact timestamps", () => {
+                var g = new KingRushRules(); var r = new KingRushCaptureRules(g); r.Advance(1000); Check(!r.Started, "no arrival no timer");
+                r.Begin(20); r.Advance(149.99); Check(r.Planks(0) == 0, "not early"); r.Advance(150);
+                Check(r.Planks(0) == 1 && r.Planks(1) == 1, "first auto plank"); r.Advance(400);
+                Check(r.Planks(0) == 6 && r.Planks(1) == 6 && g.OpensAt(0, 0) == 200 && g.OpensAt(0, 1) == 200, "exact completion"); });
+            Test("King Rush earned planks combine with overtime without replacing completion", () => {
+                var g = new KingRushRules(); var r = new KingRushCaptureRules(g); r.Begin(0);
+                for (ulong id = 1; id <= 5; id++) r.Deposit(id, 1, 0, 1);
+                r.Advance(130); Check(g.OpensAt(0, 0) == 130 && g.OpensAt(0, 1) == 150 && r.Captures(0) == 5, "mixed completion");
+                r.Advance(double.NaN); r.Advance(120); Check(r.Planks(1) == 1, "bad clock ignored"); });
             Test("King Rush gates open at own completion or first plus twenty", () => {
                 var r = new KingRushRules(); Check(!r.IsOpen(0, 0, 59), "not yet");
                 Check(r.Complete(0, 0, 60) && r.OpensAt(0, 0) == 60 && r.OpensAt(0, 1) == 80, "first team");

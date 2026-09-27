@@ -1,5 +1,7 @@
 # 장애물
 
+**R54 장난감 코스:** `KingRushToyMotion`(팽이 폰·굴러오는 머리·시계 버튼), 기존 `LaunchPad` 연못. 시간 함수·치수·물리 판정·확인 범위는 [장애물 기획서](Obstacles/TOY_BOX.md), 코스 편집은 [첫 연결 코스](OPENING_COURSE.md).
+
 코드: `Scripts/Gameplay/Obstacles/`. 프리팹: `Prefabs/Obstacles/`. 기획서 양식: [OBSTACLE_TEMPLATE.md](OBSTACLE_TEMPLATE.md).
 
 ## 1. 단 하나의 규칙
