@@ -416,6 +416,79 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3436364862835702843, guid: f4dec83284cfa9841a7a1570c79ced93, type: 3}
   m_PrefabInstance: {fileID: 364644693}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &445787656
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 2966451710084948511, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_Name
+      value: 13_CastleLower
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+--- !u!114 &445787657 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1628995285219718907, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+  m_PrefabInstance: {fileID: 445787656}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
+--- !u!4 &445787658 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8086283030872357259, guid: 851658b5fc5016f49bee1ffda1f29ec1, type: 3}
+  m_PrefabInstance: {fileID: 445787656}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &702300971
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -493,6 +566,163 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6558089864988333233, guid: 584d0ad26e388c649a6cd115490bab42, type: 3}
   m_PrefabInstance: {fileID: 702300971}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &838039868
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4830224817759025861, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+      propertyPath: m_Name
+      value: 11_RallyWall
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+--- !u!114 &838039869 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7183931187152006863, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+  m_PrefabInstance: {fileID: 838039868}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3677d0f93698587419b90e10643dc907, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushRallyGate
+--- !u!4 &838039870 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3694005012945577890, guid: 54904f217db79674d984fcc06f35e473, type: 3}
+  m_PrefabInstance: {fileID: 838039868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &981248210
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 99824380085802567, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_Name
+      value: 17_CastleWater
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+--- !u!114 &981248211 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4306371448653664490, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+  m_PrefabInstance: {fileID: 981248210}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd501d14800877a7b4c6c6ff70ac3c3e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.WaterZone
+--- !u!4 &981248212 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6348873096455038603, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+  m_PrefabInstance: {fileID: 981248210}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &981248213 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8131528458942188511, guid: 944e5d2b0fab61248927376c896654b3, type: 3}
+  m_PrefabInstance: {fileID: 981248210}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd501d14800877a7b4c6c6ff70ac3c3e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.WaterZone
 --- !u!1001 &1007423557
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -647,6 +877,123 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6263584453993180411, guid: 22ed5d4dfedc6d0428be6a39c6ae56fb, type: 3}
   m_PrefabInstance: {fileID: 1079119078}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1170067176
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 3120624549702036971, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_Name
+      value: 16_Seesaw
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+--- !u!114 &1170067177 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8569334832165725352, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+  m_PrefabInstance: {fileID: 1170067176}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab089393ad306688c132f621be17ec37, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PawnGate
+--- !u!4 &1170067178 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+  m_PrefabInstance: {fileID: 1170067176}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1170067179 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 239907421528477068, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+  m_PrefabInstance: {fileID: 1170067176}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab089393ad306688c132f621be17ec37, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PawnGate
+--- !u!114 &1170067180 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2433150978407089906, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+  m_PrefabInstance: {fileID: 1170067176}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e8d4a6544246654dabd8886b9e91186, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSeesawExit
+--- !u!114 &1170067181 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3135257404007376443, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+  m_PrefabInstance: {fileID: 1170067176}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e8d4a6544246654dabd8886b9e91186, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSeesawExit
+--- !u!114 &1170067182 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2854127692022280369, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+  m_PrefabInstance: {fileID: 1170067176}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e0551a2b6e105644aed2bdee934536c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSeesawBoard
 --- !u!1001 &1171855412
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -724,6 +1071,222 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1692014541035606178, guid: f9247ad52eba5544bb80e7c1730d4e11, type: 3}
   m_PrefabInstance: {fileID: 1171855412}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1173828700
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3284495407478949608, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+      propertyPath: m_Name
+      value: 12_CastleUpper
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+--- !u!114 &1173828701 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4577187446100871509, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+  m_PrefabInstance: {fileID: 1173828700}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
+--- !u!4 &1173828702 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1460820660213812356, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+  m_PrefabInstance: {fileID: 1173828700}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1173828703 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8252043294348332249, guid: d519dc3cb66aed44a995b50f2ec5e02e, type: 3}
+  m_PrefabInstance: {fileID: 1173828700}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
+--- !u!1001 &1187613229
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 7772320807713821517, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_Name
+      value: 15_CastlePromotion
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+--- !u!102 &1187613230 stripped
+TextMesh:
+  m_CorrespondingSourceObject: {fileID: 5805076583639763543, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1187613231 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8485041665375370115, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+--- !u!102 &1187613232 stripped
+TextMesh:
+  m_CorrespondingSourceObject: {fileID: 1469613712149151987, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+--- !u!102 &1187613233 stripped
+TextMesh:
+  m_CorrespondingSourceObject: {fileID: 1087614806857838715, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1187613234 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1602802954183160777, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
+--- !u!114 &1187613235 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7656312945693128164, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
+--- !u!114 &1187613236 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8732206039279857182, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
+--- !u!114 &1187613237 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7216538624847330448, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
+--- !u!114 &1187613238 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9052915767042883600, guid: ec6fd1b449411da458d0cead3cee25f0, type: 3}
+  m_PrefabInstance: {fileID: 1187613229}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3677d0f93698587419b90e10643dc907, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushRallyGate
 --- !u!1001 &1197047341
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -896,6 +1459,15 @@ PrefabInstance:
     - target: {fileID: 1753000692892579257, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2320718053334735969, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4138064653984673880, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
+      propertyPath: m_Text
+      value: "03 / \uC131\uBCBD \uAC08\uB9BC\uAE38\n\uC704: \uB4F1\uBC18 \xB7 \uC544\uB798:
+        \uD0C0\uC774\uBC0D"
       objectReference: {fileID: 0}
     - target: {fileID: 4274199882556453137, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -1201,6 +1773,79 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd501d14800877a7b4c6c6ff70ac3c3e, type: 3}
   m_Name:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.WaterZone
+--- !u!1001 &1332041599
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5696102602631160798, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+      propertyPath: m_Name
+      value: 14_CrossingGate
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+--- !u!114 &1332041600 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5865514108868692277, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+  m_PrefabInstance: {fileID: 1332041599}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
+--- !u!4 &1332041601 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1685159520771134826, guid: ce0e2c04b4374194783367f718b5cb4b, type: 3}
+  m_PrefabInstance: {fileID: 1332041599}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1580385746
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1308,6 +1953,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c48aa6e95cedd6e41d7b972fc6492e2, type: 3}
   m_Name:
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.KingRushOpening
+  rallies:
+  - {fileID: 838039869}
+  - {fileID: 1187613238}
+  seesawBoard: {fileID: 1170067182}
+  seesawExits:
+  - {fileID: 1170067181}
+  - {fileID: 1170067180}
   pawnPrefab: {fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}
   tuning: {fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}
   white: {fileID: 2100000, guid: 98c2fb166f78b0b47a2c0e233a3b35cf, type: 2}
@@ -1320,12 +1972,22 @@ MonoBehaviour:
   - {fileID: 702300972}
   - {fileID: 1079119079}
   - {fileID: 1197047347}
+  - {fileID: 1173828703}
+  - {fileID: 445787657}
+  - {fileID: 1173828701}
+  - {fileID: 1332041600}
+  - {fileID: 1187613237}
   pads:
   - {fileID: 1197047346}
   - {fileID: 1197047345}
+  - {fileID: 1187613236}
+  - {fileID: 1187613235}
+  - {fileID: 1187613234}
   gates:
   - {fileID: 1235486856}
   - {fileID: 1235486855}
+  - {fileID: 1170067179}
+  - {fileID: 1170067177}
   boxes:
   - {fileID: 1281045467}
   - {fileID: 1281045466}
@@ -1345,6 +2007,8 @@ MonoBehaviour:
   waters:
   - {fileID: 1291234118}
   - {fileID: 1291234116}
+  - {fileID: 981248213}
+  - {fileID: 981248211}
   boxLabels:
   - {fileID: 1281045465}
   - {fileID: 1281045463}
@@ -1354,6 +2018,9 @@ MonoBehaviour:
   padLabels:
   - {fileID: 1197047344}
   - {fileID: 1197047342}
+  - {fileID: 1187613233}
+  - {fileID: 1187613232}
+  - {fileID: 1187613230}
 --- !u!114 &2062982837
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1392,6 +2059,13 @@ Transform:
   - {fileID: 2626919140526810625}
   - {fileID: 1235486841}
   - {fileID: 1291234117}
+  - {fileID: 838039870}
+  - {fileID: 1173828702}
+  - {fileID: 445787658}
+  - {fileID: 1332041601}
+  - {fileID: 1187613231}
+  - {fileID: 1170067178}
+  - {fileID: 981248212}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2626919140526810624

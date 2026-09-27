@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace ChessFight.RagdollLab.Editor
 {
-    public static class KingRushOpeningBuilder
+    public static partial class KingRushOpeningBuilder
     {
         public const string ScenePath = "Assets/Scenes/KingRushOpening.unity";
         const string Folder = "Assets/Prefabs/KingRushOpening";
@@ -19,6 +19,7 @@ namespace ChessFight.RagdollLab.Editor
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             if (!File.Exists(ScenePath)) CreateScene(); else EditorSceneManager.OpenScene(ScenePath);
+            ExtendCourse();
         }
         static Material Mat(string name, Color color)
         {
@@ -288,7 +289,7 @@ namespace ChessFight.RagdollLab.Editor
         {
             try
             {
-                CreateScene(); AssetDatabase.SaveAssets();
+                CreateScene(); EditorSceneManager.OpenScene(ScenePath); ExtendCourse(); AssetDatabase.SaveAssets();
                 string output = Path.GetFullPath("Builds/KingRushOpening"); Directory.CreateDirectory(output);
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                     scenes = new[] { ScenePath, KingRushBuilder.ScenePath, "Assets/Scenes/Lobby.unity", "Assets/Scenes/KingRush.unity", "Assets/Scenes/SwordFight.unity" },

@@ -1,12 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement class="kr-top" style="width: 570px;" picking-mode="Ignore">
-        <ui:Label text="KING RUSH / 장난감 상자" class="kr-title" />
+        <ui:Label text="KING RUSH / 연결 코스" class="kr-title" />
         <ui:Label name="opening-state" />
         <ui:Label name="opening-objective" class="kr-accent" />
         <ui:Label name="opening-ability" />
     </ui:VisualElement>
     <ui:VisualElement class="kr-side" style="width: 340px;" picking-mode="Ignore">
-        <ui:Label text="잡은 말 상자 · 첫 코스 / 오프라인" class="kr-accent" />
+        <ui:Label text="장난감 상자 → 성벽 · 시소 / 오프라인" class="kr-accent" />
         <ui:Label name="opening-mission" />
     </ui:VisualElement>
     <ui:Label name="opening-help" class="kr-bottom" picking-mode="Ignore" />

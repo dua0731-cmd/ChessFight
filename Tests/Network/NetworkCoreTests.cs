@@ -14,6 +14,38 @@ public static class NetworkCoreTests
     {
         try
         {
+            Test("King Rush rally waits for every slot and releases once after exactly ten seconds", () => {
+                var g = new KingRushRules(); var r = new KingRushRallyRules(0);
+                g.TryClaim(0, 1, 0); r.Advance(g, 20); Check(r.StartedAt < 0 && !r.Ready(500), "partial claims cannot start");
+                g.TryClaim(1, 2, 1); r.Advance(g, 22); r.Advance(g, 25);
+                Check(r.StartedAt == 22 && !r.Ready(31.999) && !r.Release(31.999), "ten full seconds");
+                Check(r.Ready(32) && !r.Released && r.Release(32) && !r.Release(33), "gather before one-shot release");
+                Check(!new KingRushRallyRules(0).Released, "round reset"); });
+            Test("King Rush rally waves are independent and reject invalid clocks", () => {
+                var g = new KingRushRules(); var r = new KingRushRallyRules(1);
+                g.TryClaim(0, 1, 0); g.TryClaim(1, 2, 0); g.TryClaim(2, 1, 0); g.TryClaim(3, 2, 1);
+                r.Advance(g, 20); Check(r.Claimed == 2 && r.StartedAt < 0, "second wave needs three");
+                g.TryClaim(4, 3, 1); r.Advance(g, double.NaN); r.Advance(g, 19); Check(r.StartedAt < 0, "invalid and stale");
+                r.Advance(g, 21); Check(r.Required == 3 && r.Ready(31) && !r.Ready(double.PositiveInfinity), "valid clock"); });
+            Test("King Rush seesaw clamps angle, limits speed and uses exit hysteresis", () => {
+                var r = new KingRushSeesawRules(new KingRushRules()); r.Advance(100, 90); Check(r.Angle == 0, "no early movement");
+                r.Begin(0); r.Advance(1, 90); Check(r.Angle == 8 && !r.Access(0), "speed limit");
+                r.Advance(2, 90); Check(r.Angle == 16 && r.Access(0) && !r.Access(1), "own side");
+                r.Advance(3, 33.6); Check(Math.Abs(r.Angle - 14) < .001 && r.Access(0), "hysteresis");
+                r.Advance(4, 24); Check(!r.Access(0), "closes below twelve");
+                r.Advance(20, -100); Check(r.Angle == -25 && r.Access(1), "opposite clamp"); });
+            Test("King Rush seesaw needs four unique exits and opens fallback after twenty", () => {
+                var g = new KingRushRules(); var r = new KingRushSeesawRules(g); r.Begin(5);
+                for (ulong i = 1; i <= 3; i++) Check(r.Cross(i, 0, 6), "first three");
+                Check(!g.IsOpen(1, 0, 6) && !r.Cross(1, 0, 7) && r.Count(0) == 3, "duplicates");
+                Check(r.Cross(4, 0, 8) && g.IsOpen(1, 0, 8) && !r.Bridges(27.99), "four completes");
+                Check(r.Bridges(28) && g.IsOpen(1, 1, 28), "fallback"); });
+            Test("King Rush seesaw overtime lowers threshold and deploys both bridges", () => {
+                var r = new KingRushSeesawRules(new KingRushRules()); r.Begin(10); r.Advance(129, 26.4);
+                Check(!r.Access(0), "eleven degrees initially closed"); r.Advance(130, 26.4); Check(r.Access(0), "ten degree overtime");
+                r.Advance(159.9, 0); Check(!r.Bridges(159.9) && !r.Access(0), "overtime keeps hysteresis gap");
+                r.Advance(160, 0); Check(r.Bridges(160) && r.Access(0) && r.Access(1), "time fallback");
+                r.Advance(double.NaN, 90); Check(r.Angle == 0, "bad time ignored"); });
             Test("King Rush capture requires entry and reserves each body until release", () => {
                 var g = new KingRushRules(); var r = new KingRushCaptureRules(g);
                 Check(!r.Deposit(1, 1, 0, 0), "before mission"); r.Begin(10); r.Begin(20);

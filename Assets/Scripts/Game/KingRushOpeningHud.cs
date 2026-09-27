@@ -22,7 +22,7 @@ namespace ChessFight.Game
             if (root == null) return;
             state.text = who; objective.text = goal; ability.text = detention.Length > 0 ? detention : skill; mission.text = score;
             help.text = menu ? "시간은 계속 흐릅니다 · Esc 돌아가기 / Backspace 로비" :
-                "WASD 이동 · Shift 질주 · Space 점프 · 좌클릭 태클 · 우클릭 잡기 → 좌클릭 던지기\nR 체크포인트 · Tab 다른 말 · F3 처음부터 · F4 미션+더미 · F6 다음 체크포인트(개발용) · Esc";
+                "WASD 이동 · Shift 질주 · Space 점프 · 좌클릭 태클 · 우클릭 잡기 → 좌클릭 던지기\nR 복귀 · Tab 다른 말 · F3 초기화 · F4 상자 · F5 성벽 / Shift+F5 시소 · F6 체크포인트 · F7 승격 집결 시험 · Esc";
         }
         void OnDestroy() { if (owned != null) Destroy(owned); }
     }

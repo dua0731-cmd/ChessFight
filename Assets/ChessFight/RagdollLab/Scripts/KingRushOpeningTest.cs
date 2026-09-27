@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 namespace ChessFight.RagdollLab
 {
     // Real player/PhysX checks. Teleports are fixtures, never evidence of course traversal.
-    public sealed class KingRushOpeningTest : MonoBehaviour
+    public sealed partial class KingRushOpeningTest : MonoBehaviour
     {
         KingRushOpening game;
         int passed, failed;
@@ -18,8 +18,10 @@ namespace ChessFight.RagdollLab
         IEnumerator Start()
         {
             game = GetComponent<KingRushOpening>(); yield return new WaitForSeconds(1.5f);
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-kingRushCastleOnly") >= 0)
+            { yield return RallyFlow(0); yield return CastleFlow(); CompleteRun(); yield break; }
             var a = game.Local; var enemy = game.Players[6]; var ally = game.Players[1];
-            Check(game.Players.Count == 12 && game.checkpoints.Length == 7 && game.planks.Length == 12, "Course references and twelve stationary bodies");
+            Check(game.Players.Count == 12 && game.checkpoints.Length == 12 && game.planks.Length == 12, "Course references and twelve stationary bodies");
             Check(!game.Mission.Started && a.Section == KingRushSection.Red1, "Mission waits for first arrival");
             var state = GetComponent<UIDocument>().rootVisualElement.Q<Label>("opening-objective");
             Check(state != null && state.worldBound.width > 100 && state.text.Contains("장난감"), "Opening HUD has visible Korean objective");
@@ -61,6 +63,9 @@ namespace ChessFight.RagdollLab
             Check(!a.Pawn.Floating && Mathf.Abs(a.BodyPosition.z - 96) < 2, "Five-second water returns to personal checkpoint");
             a.Respawn(new Vector3(-3, .04f, 155)); yield return new WaitForSeconds(2);
             Check(a.Piece == KingRushPiece.Knight && game.pads[0].Claimed, "Real course pad promotes after standing");
+            a.Respawn(new Vector3(-3, 0, 174)); yield return new WaitForSeconds(.4f);
+            Check(a.Section == KingRushSection.Red1 && !game.Mission.Started && !a.AbilitiesEnabled && a.BodyPosition.z < 170, "Closed rally wall rejects early thrown entry and mission timer");
+            yield return RallyFlow(0);
             a.Respawn(new Vector3(-3, 0, 174)); yield return new WaitForSeconds(.4f);
             Check(a.Section == KingRushSection.Blue1 && a.AbilitiesEnabled && game.Mission.Started && !ally.AbilitiesEnabled, "First arena entry starts timer and personal ability zone");
             a.SetInput(new PawnInput { ability = true }); yield return new WaitForSeconds(.2f);
@@ -117,12 +122,17 @@ namespace ChessFight.RagdollLab
             game.Step(21); yield return new WaitForFixedUpdate();
             count = 0; foreach (var plank in game.planks) if (plank.activeSelf) count++;
             Check(game.gates[1].Open && count == 12 && game.Mission.Planks(1) == 0, "Twenty-second fallback supplies traversable bridge without fake points");
+            yield return CastleFlow();
             game.ResetRound(); yield return new WaitForSeconds(.5f);
             Check(!game.Mission.Started && !game.gates[0].Open && !game.pads[0].Claimed && !enemy.Captured && game.CheckpointOf(a) == 0, "Reset clears mission, captures, checkpoints, pads and gates");
             bool finite = true; foreach (var p in game.Players) finite &= p.Pawn.IsFinite(); Check(finite, "All twelve ragdolls remain finite");
+            CompleteRun();
+        }
+        void CompleteRun()
+        {
             Debug.Log($"[OpeningTest] RESULT {passed} passed / {failed} failed");
             if (failed == 0 && System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-kingRushTest") >= 0)
-            { UnityEngine.SceneManagement.SceneManager.LoadScene("KingRushPrototype"); yield break; }
+            { UnityEngine.SceneManagement.SceneManager.LoadScene("KingRushPrototype"); return; }
             Application.Quit(failed == 0 ? 0 : 1);
         }
         IEnumerator Walk(KingRushPawn pawn, Vector3 target, float limit, bool jumpGaps = false)
