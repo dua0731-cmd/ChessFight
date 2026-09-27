@@ -19,11 +19,12 @@ namespace ChessFight.RagdollLab
 
         public PieceKind Piece => piece;
         public PieceStats PieceStats => pieceStats;
-        public float Weight => pieceStats.Weight;
+        /// <summary>The piece's weight, 30% more in its king's grace (M12).</summary>
+        public float Weight => pieceStats.Weight * (inAura ? PieceAbilities.AuraWeight : 1f);
         public int Promotions { get; private set; }
 
         /// <summary>How far a push moves this piece against a pawn: 1 / weight.</summary>
-        float PushScale => 1f / Mathf.Max(0.1f, pieceStats.Weight);
+        float PushScale => 1f / Mathf.Max(0.1f, Weight);
 
         float ClimbScale => pieceStats.Climb;
 
@@ -34,6 +35,14 @@ namespace ChessFight.RagdollLab
         {
             if (!ChessPieces.IsValid((int)kind)) return;
             if (kind != piece) Promotions++;
+            if (kind != piece) ResetPiece();
+            // The grappling hook is the pawn's (M5); a piece's E is its own ability (M12).
+            if (kind != PieceKind.Pawn && hookPhase != HookPhase.None)
+            {
+                if (hookPhase == HookPhase.Pulling) ReleaseRope(P, false);
+                hookPhase = HookPhase.None;
+                hookCharge = 0f;
+            }
             piece = kind;
             pieceStats = ChessPieces.Stats(kind);
             StatusImmune = pieceStats.StatusImmune;

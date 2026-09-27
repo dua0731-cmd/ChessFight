@@ -221,6 +221,29 @@ public static class NetworkCoreTests
                 Check(!ChessPieces.CanPromote(PieceKind.Pawn,PieceKind.King,1),"one king per team");
                 Check(!ChessPieces.CanPromote(PieceKind.Pawn,PieceKind.Queen,0)&&!ChessPieces.CanPromote(PieceKind.Pawn,PieceKind.Pawn,0),"not the queen, not a pawn");
                 Check(!ChessPieces.CanPromote(PieceKind.Rook,PieceKind.Knight,0)&&!ChessPieces.CanPromote(PieceKind.King,PieceKind.Rook,0),"only pawns"); });
+            Test("Queen of the Hill abilities: DESIGN 6.2's cooldowns, the king's two, none for the pawn and queen", () => {
+                Check(PieceAbilities.Cooldown(PieceKind.Knight,0)==5f && PieceAbilities.Cooldown(PieceKind.Rook,0)==8f
+                      && PieceAbilities.Cooldown(PieceKind.Bishop,0)==9f && PieceAbilities.Cooldown(PieceKind.King,0)==12f, "E cooldowns");
+                Check(PieceAbilities.Cooldown(PieceKind.King,1)==20f && !PieceAbilities.Has(PieceKind.Rook,1) && !PieceAbilities.Has(PieceKind.Knight,1), "Q: the king's castling only");
+                Check(!PieceAbilities.Has(PieceKind.Pawn,0) && !PieceAbilities.Has(PieceKind.Queen,0), "the pawn's E is the hook, the queen comes later");
+                var c = new PieceCooldowns();
+                Check(c.Ready(0) && c.Ready(1), "ready at first");
+                c.Start(0, 5f); c.Tick(4.9f);
+                Check(!c.Ready(0) && c.Ready(1) && Math.Abs(c.Left(0)-0.1f)<1e-3f, "waits");
+                c.Tick(0.2f); Check(c.Ready(0) && c.Left(0)==0f, "then ready");
+                c.Start(1, 20f); c.Clear(); Check(c.Ready(1), "cleared"); });
+            Test("Queen of the Hill abilities: the rook keeps to the board, the knight's arc, the king's grace, the bishop's stones", () => {
+                PieceAbilities.RookAxis(0.9f,0.3f,out float ax,out float az); Check(ax==1f&&az==0f,"east");
+                PieceAbilities.RookAxis(-0.2f,-0.7f,out ax,out az); Check(ax==0f&&az==-1f,"south");
+                PieceAbilities.RookAxis(0f,0f,out ax,out az); Check(ax==0f&&az==1f,"no aim: north");
+                Check(PieceAbilities.RookVertical(0.8f,true)==1 && PieceAbilities.RookVertical(0.8f,false)==0
+                      && PieceAbilities.RookVertical(-0.8f,false)==-1 && PieceAbilities.RookVertical(0.3f,true)==0, "up a wall, down, else flat");
+                Check(PieceAbilities.RookLength(1)==8f && PieceAbilities.RookLength(0)==14f && PieceAbilities.RookLength(-1)==14f, "how far");
+                Check(PieceAbilities.KnightSeconds > 0.5f && PieceAbilities.KnightSeconds < 0.8f && PieceAbilities.KnightUp + PieceAbilities.KnightLift > 6f,
+                      "the L clears a 6 m ledge in well under a second");
+                Check(PieceAbilities.InAura(4f,1f,4f) && !PieceAbilities.InAura(5f,0f,4f), "grace within 6 m");
+                var t = new ShardTally();
+                Check(!t.Hit(10, 2f) && t.Hit(11.5, 2f) && !t.Hit(12, 2f) && !t.Hit(15, 2f), "the second stone within 2 s knocks off, then it starts over"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

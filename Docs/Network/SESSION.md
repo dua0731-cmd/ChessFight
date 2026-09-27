@@ -75,7 +75,7 @@
 
 | 키 | 위치 | 값 |
 |---|---|---|
-| `protocol` | 두 로비 | `chessfight.dua0731.network.v7` (v3: 게임 모드 추가, v4(`JY-ragdoll_v2`, 09-26): 래그돌 랩 입력 패킷에 능력·상호작용·조준 추가, magic `CFR2`. **v5(`JY-ragdoll_v2`, 09-26 R36): 래그돌 랩 스냅샷에 버둥대기 게이지 1바이트 추가(폰당 64 → 65바이트), magic `CFR3`**. **v6(09-27 R40): 입력에 좌클릭 누르고 있기, 스냅샷에 갈고리 8바이트(폰당 73바이트), magic `CFR4`**. **v7(09-27 R46): 스냅샷에 기물 종류 1바이트(폰당 74바이트), magic `CFR5`**. `JY-lobby`는 아직 v3) |
+| `protocol` | 두 로비 | `chessfight.dua0731.network.v8` (v3: 게임 모드 추가, v4(`JY-ragdoll_v2`, 09-26): 래그돌 랩 입력 패킷에 능력·상호작용·조준 추가, magic `CFR2`. **v5(`JY-ragdoll_v2`, 09-26 R36): 래그돌 랩 스냅샷에 버둥대기 게이지 1바이트 추가(폰당 64 → 65바이트), magic `CFR3`**. **v6(09-27 R40): 입력에 좌클릭 누르고 있기, 스냅샷에 갈고리 8바이트(폰당 73바이트), magic `CFR4`**. **v7(09-27 R46): 스냅샷에 기물 종류 1바이트(폰당 74바이트), magic `CFR5`**. **v8(09-27 R51, `JY-pieces`): 스냅샷에 기물 능력 상태 1바이트(폰당 75바이트), magic `CFR6`**. `JY-lobby`는 v7) |
 | `build` | 두 로비 | `NetworkRuntime.BuildTag` 예: `0.1.0-dev` |
 | `kind` | 두 로비 | `party` / `match` |
 | `route` | 파티 | `idle` / `search` / 경기 로비 ID |

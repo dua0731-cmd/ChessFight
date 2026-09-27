@@ -23,9 +23,13 @@ namespace ChessFight.RagdollLab
     ///   7i  ropes, south of 7h: a 6 m tower with a rope down its face, a swing across an 8 m gap between two
     ///       3 m platforms, and a thick pole to try the wall climb on (M6)
     ///   7j  promotion, south of 7i: pedestals for the rook, bishop, knight and king, and one back to a pawn (M11)
+    ///   7k  abilities, south of 7j: a 6 m wall for the knight's L, a 7.5 m wall for the rook's charge up it, a lane
+    ///       with three black dummies to charge, check and stone, a black dummy riding a shuttle, a white rook to
+    ///       castle with and a white king to stand by (M12). Shift+F7 goes there (again: the next piece), putting
+    ///       the dummies back
     ///
     /// Offline hotkeys for P1: F9 walk-in point, F8 the hook range's start line, F10 the pioneer tower (Shift+F10 the
-    /// launch pads; F3 is the online panel), Shift+F8 the ropes, Shift+F9 the promotion pedestals, F11 silences the bells, F5 a 6 m/s hit with a
+    /// launch pads; F3 is the online panel), Shift+F8 the ropes, Shift+F9 the promotion pedestals, Shift+F7 the abilities, F11 silences the bells, F5 a 6 m/s hit with a
     /// 1 s knockdown, F6 stamina -2.5, F7 knocked off the wall (M3). A corner box shows what the pawn
     /// received from the new keys (M2) and what its hook is doing (M5).
     /// </summary>
@@ -121,6 +125,21 @@ namespace ChessFight.RagdollLab
         public static readonly PieceKind[] PedestalPieces = { PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.King, PieceKind.Pawn };
         public static Vector3 Pedestal(int i) => new Vector3(40f + i * 3f, 0f, PedestalZ);
 
+        // 7k: the pieces' abilities (M12), x 35..75, z -125..-105. The knight's wall is 6 m high with its face to
+        // the west at x 42; the rook's is 7.5 m with its face at x 42 too. The lane along z -108 has three black
+        // dummies to charge through; a shuttle carries a fourth; a white rook stands east to castle with.
+        public static readonly Vector3 AbilityStart = new Vector3(38f, 0f, -108f);
+        public static readonly Vector3 KnightWallCenter = new Vector3(45f, 3f, -121f);
+        public static readonly Vector3 KnightWallSize = new Vector3(6f, 6f, 6f);
+        public static readonly Vector3 KnightSpot = new Vector3(40.5f, 0f, -121f);
+        public static readonly Vector3 RookWallCenter = new Vector3(44f, 3.75f, -114f);
+        public static readonly Vector3 RookWallSize = new Vector3(4f, 7.5f, 4f);
+        public static readonly Vector3 RookWallSpot = new Vector3(41.45f, 0f, -114f);
+        public static readonly Vector3[] LaneDummies = { new Vector3(46f, 0f, -108f), new Vector3(49f, 0f, -107.6f), new Vector3(52f, 0f, -108.4f) };
+        public static readonly Vector3 RiderStart = new Vector3(60f, PlatformThickness * 0.5f, -121f);
+        public static readonly Vector3 CastleRookSpot = new Vector3(70f, 0f, -112f);
+        public static readonly Vector3 GraceKingSpot = new Vector3(70f, 0f, -117f);
+
         public static Vector3 PillarCenter(int section) =>
             new Vector3(SectionFaceX(section) - 1.2f, (section - 1) * SectionRise + PlatformThickness * 0.5f, -2f);
 
@@ -137,6 +156,10 @@ namespace ChessFight.RagdollLab
         public RopeLine ClimbRope { get; private set; }
         public RopeLine Swing { get; private set; }
         public readonly PromotionPad[] Pedestals = new PromotionPad[5];
+        public MovingPlatform RiderShuttle { get; private set; }
+        /// <summary>The 7k dummies (M12), spawned the first time Shift+F7 is pressed: the lane's three, the rider, the
+        /// white rook (to castle with) and the white king (to stand by, for its grace).</summary>
+        public readonly List<RagdollPawn> AbilityDummies = new List<RagdollPawn>();
 
         /// <summary>Pawns put back on the checkpoint by the water so far, and the last one.</summary>
         public int WaterRespawns { get; private set; }
@@ -310,6 +333,7 @@ namespace ChessFight.RagdollLab
             Label("[7h] L자 도약대: 밟으면 위 6 m, 앞 3 m (나이트처럼)", LaunchStart + new Vector3(-1.4f, 0.02f, 0f), 0.4f);
             BuildRopes(t);
             BuildPromotion(t);
+            BuildAbilities(t);
             Label("[7h] 태엽 스프링: 4초마다 위에 선 모두를 8 m 위로. Shift+F10 이동", SpringCenter + new Vector3(-2.2f, 0.02f, 0f), 0.4f);
         }
 
@@ -358,6 +382,79 @@ namespace ChessFight.RagdollLab
                 Label(back ? "폰으로" : ChessPieces.Name(kind), at + new Vector3(0f, 0.02f, 1.2f), 0.5f);
             }
             Label("[7j] 승격: 받침대 앞에서 F. 폰만, 킹은 팀에 하나. Shift+F9 이동", PromotionStart + new Vector3(0f, 0.02f, 1.5f), 0.4f);
+        }
+
+        /// <summary>7k: walls for the knight and the rook, a lane for the dummies, a shuttle for a rider (M12).</summary>
+        void BuildAbilities(float t)
+        {
+            Box("7k Floor", new Vector3(55f, -t * 0.5f, -115f), new Vector3(40f, t, 20f), floorMaterial);
+            Box("7k Knight Wall", KnightWallCenter, KnightWallSize, wallMaterial);
+            Box("7k Rook Wall", RookWallCenter, RookWallSize, wallMaterial);
+            RiderShuttle = Platform("7k Rider Shuttle", RiderStart, PlatformSize, new Vector3(8f, 0f, 0f), 1.5f, 1.5f, platformMaterial);
+            Label("[7k] 기물 능력: Shift+F7 = 다음 기물(더미 되돌림). E 능력, 킹은 Q 캐슬링, 비숍은 공중에서 Space 활공", AbilityStart + new Vector3(-1.5f, 0.02f, 0f), 0.4f);
+            Label("나이트: 벽 1.5 m 앞에서 E = L자로 6 m 벽 위", KnightSpot + new Vector3(-1.2f, 0.02f, 0f), 0.33f);
+            Label("룩: 벽 앞에서 위를 보고 E = 벽 타고 7.5 m", RookWallSpot + new Vector3(-1.2f, 0.02f, 0f), 0.33f);
+            Label("움직이는 발판의 더미: 돌조각 2초 안에 두 번 = 떨어짐", RiderStart + new Vector3(0f, 0.02f, 2.5f), 0.33f);
+        }
+
+        /// <summary>Shift+F7: to 7k with the next piece (pawn → rook → bishop → knight → king), the dummies back in place.</summary>
+        public void GoToAbilities(RagdollPawn pawn)
+        {
+            bool here = Flat(pawn.Hips.position - new Vector3(55f, 0f, -115f)).magnitude < 25f;
+            if (here)
+            {
+                PieceKind next = pawn.Piece switch
+                {
+                    PieceKind.Pawn => PieceKind.Rook,
+                    PieceKind.Rook => PieceKind.Bishop,
+                    PieceKind.Bishop => PieceKind.Knight,
+                    PieceKind.Knight => PieceKind.King,
+                    _ => PieceKind.Pawn,
+                };
+                pawn.SetPiece(next);
+            }
+            var driver = pawn.GetComponent<RagdollDriver>();
+            if (driver != null) driver.Teleport(AbilityStart, Quaternion.LookRotation(Vector3.right));
+            else pawn.Teleport(AbilityStart + Vector3.up * (pawn.standHeight + 0.02f), Vector3.right);
+            ResetAbilityDummies();
+            Note($"Shift+F7 기물 능력 연습장: {ChessPieces.Name(pawn.Piece)} (E {PieceAbilities.Name(pawn.Piece, 0)}"
+                 + (PieceAbilities.Has(pawn.Piece, 1) ? $", Q {PieceAbilities.Name(pawn.Piece, 1)}" : "") + ")");
+        }
+
+        /// <summary>The 7k dummies back on their spots, spawning them the first time.</summary>
+        public void ResetAbilityDummies()
+        {
+            if (game == null) return;
+            if (AbilityDummies.Count == 0)
+            {
+                for (int i = 0; i < LaneDummies.Length; i++)
+                {
+                    var d = game.Spawn(LaneDummies[i], Vector3.left, game.dummyMaterial, "7k 흑 더미 " + (i + 1));
+                    d.Team = Teams.Black;
+                    AbilityDummies.Add(d);
+                }
+                var rider = game.Spawn(RiderStart + Vector3.up * PlatformThickness * 0.5f, Vector3.left, game.dummyMaterial, "7k 흑 탑승 더미");
+                rider.Team = Teams.Black;
+                AbilityDummies.Add(rider);
+                var rook = game.Spawn(CastleRookSpot, Vector3.left, null, "7k 백 룩");
+                rook.Team = Teams.White;
+                rook.SetPiece(PieceKind.Rook);
+                AbilityDummies.Add(rook);
+                var king = game.Spawn(GraceKingSpot, Vector3.left, null, "7k 백 킹");
+                king.Team = Teams.White;
+                king.SetPiece(PieceKind.King);
+                AbilityDummies.Add(king);
+                return;
+            }
+            for (int i = 0; i < AbilityDummies.Count; i++)
+            {
+                var d = AbilityDummies[i];
+                if (d == null) continue;
+                Vector3 at = i < LaneDummies.Length ? LaneDummies[i]
+                    : i == LaneDummies.Length && RiderShuttle != null ? RiderShuttle.transform.position + Vector3.up * PlatformThickness * 0.5f
+                    : i == LaneDummies.Length + 1 ? CastleRookSpot : GraceKingSpot;
+                d.Teleport(at + Vector3.up * (d.standHeight + 0.02f), Vector3.left);
+            }
         }
 
         /// <summary>A rope (M6) hanging from `top`, swinging along `forward`.</summary>
@@ -616,7 +713,8 @@ namespace ChessFight.RagdollLab
                 Hit(pawn, (-pawn.Facing * 0.87f + Vector3.up * 0.5f).normalized * 6f, 1f, 0f, false, "F5 피격: 6 m/s · 1초 넘어짐");
             if (Input.GetKeyDown(KeyCode.F6) && shift) Status(pawn, false);
             else if (Input.GetKeyDown(KeyCode.F6)) Hit(pawn, Vector3.zero, 0f, 2.5f, false, "F6 스테미나 -2.5");
-            if (Input.GetKeyDown(KeyCode.F7))
+            if (Input.GetKeyDown(KeyCode.F7) && shift) GoToAbilities(pawn);
+            else if (Input.GetKeyDown(KeyCode.F7))
                 Hit(pawn, -pawn.Facing * 2f + Vector3.up, 0f, 0f, true, "F7 벽·탈것에서 떨어뜨리기");
         }
 
@@ -757,6 +855,28 @@ namespace ChessFight.RagdollLab
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
 
+        static string MoveText(PieceMove move) => move switch
+        {
+            PieceMove.KnightLeap => "<b>L자 도약 중</b>",
+            PieceMove.RookWindup => "<b>돌진 준비</b>",
+            PieceMove.RookCharge => "<b>돌진 중</b>",
+            PieceMove.KingCheck => "<b>체크! 준비</b>",
+            PieceMove.BishopHover => "<b>호버 중</b>",
+            PieceMove.BishopGlide => "<b>활공 중</b>",
+            _ => "-",
+        };
+
+        string AbilityText(RagdollPawn pawn)
+        {
+            if (pawn.Piece == PieceKind.Pawn) return pawn.InKingsGrace ? "\n[7k] <b>킹의 가호</b> 안 (덜 밀림, 스테미나 회복 1.5배)" : "";
+            string Slot(int slot) => !PieceAbilities.Has(pawn.Piece, slot) ? ""
+                : $"{(slot == 0 ? "E" : " · Q")} {PieceAbilities.Name(pawn.Piece, slot)} "
+                  + (pawn.CooldownLeft(slot) > 0f ? $"({pawn.CooldownLeft(slot):0.0}초)" : "<b>준비</b>");
+            return $"\n[7k] 능력: {Slot(0)}{Slot(1)} · 지금 {MoveText(pawn.Move)} · 돌진 적중 {pawn.RookHits} · 체크 적중 {pawn.CheckHits} · "
+                   + $"밟기 {pawn.Stomps} · 캐슬링 {pawn.Castles} · 돌조각 {pawn.ShardsThrown}"
+                   + (pawn.InKingsGrace ? " · <b>킹의 가호</b>" : "") + $" · 마지막: {pawn.LastAbilityEvent}";
+        }
+
         static string HookText(HookPhase phase) => phase switch
         {
             HookPhase.Held => "손에 듦",
@@ -779,7 +899,7 @@ namespace ChessFight.RagdollLab
             }
             Vector3 aim = pawn.Aim;
             string text =
-                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · Shift+F10 도약대 · Shift+F8 밧줄 · Shift+F9 승격 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기 · Shift+F5 찌그러짐 · Shift+F6 비틀\n" +
+                "<b>[7] 퀸 오브 더 힐 시험대</b>  F9 이동 · F8 갈고리 연습장 · F10 개척의 탑 · F11 종 초기화 · Shift+F10 도약대 · Shift+F8 밧줄 · Shift+F9 승격 · Shift+F7 기물 능력 · F5 피격 6 m/s·1초 · F6 스테미나 -2.5 · F7 떨어뜨리기 · Shift+F5 찌그러짐 · Shift+F6 비틀\n" +
                 $"받은 입력(P1): 능력 E <b>{pawn.AbilityPresses}</b>회 · 능력2 Q <b>{pawn.Ability2Presses}</b>회 · " +
                 $"상호작용 F <b>{pawn.InteractPresses}</b>회{(pawn.InteractHeld ? " (누르는 중)" : "")} · " +
                 $"전력질주 {(pawn.SprintHeld ? "●" : "○")} · 조준 ({aim.x:+0.00;-0.00}, {aim.y:+0.00;-0.00}, {aim.z:+0.00;-0.00})\n" +
@@ -787,7 +907,7 @@ namespace ChessFight.RagdollLab
                 $"피격 {pawn.Hits}회: {pawn.LastHit}{StatusText(pawn)} · 물에서 부활 {WaterRespawns}회\n" +
                 $"팀 {Teams.Name(pawn.Team)} · 기물 <b>{ChessPieces.Name(pawn.Piece)}</b> · 갈고리: {HookText(pawn.Hook)} · 던짐 {pawn.HookThrows} · 박힘 {pawn.HookHits} · 빗나감 {pawn.HookMisses} · " +
                 $"도착 {pawn.HookArrivals} · 앙파상 성공 {pawn.EnPassantCuts}/당함 {pawn.HookCutOff} · 마지막: {pawn.LastHookEvent}\n" +
-                TowerText(pawn) + LaunchText(pawn) + RopeText(pawn) +
+                TowerText(pawn) + LaunchText(pawn) + RopeText(pawn) + AbilityText(pawn) +
                 (IsDrowning(pawn) ? $" · <b>물에 빠짐! {DrowningLeft(pawn):0.0}초 뒤 체크포인트로</b> (좌클릭 버둥 {pawn.Thrashes}회)" : "") +
                 (Time.unscaledTime - lastActionAt < 2.5f ? $"\n→ {lastAction}" : "");
             var size = style.CalcSize(new GUIContent(text));

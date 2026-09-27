@@ -34,7 +34,7 @@ Tools/                테스트 스크립트, Generators/, QueenHill/(맵 데이
 | `Scripts/Bootstrap/` | `ChessFight.Game.Steam` | Core, Network.Steam, Game, Gameplay, Steamworks.NET | `CHESSFIGHT_STEAM` | `NetworkRuntime`, 씬 컨트롤러(Intro/Lobby, 모드 씬 공용 `MatchSceneView`) |
 | `Scripts/Input/` | `ChessFight.Game.Input` | Game, Unity.InputSystem | `CHESSFIGHT_INPUTSYSTEM` | Input System 이동 소스(자기 등록) |
 | `Scripts/Editor/` | Assembly-CSharp-Editor | — | — | 설치·씬 메뉴·빌드, `InputSettingsGuard` |
-| `ChessFight/RagdollLab/Scripts/` | `ChessFight.RagdollLab` | Gameplay | — | 래그돌(`RagdollPawn`, 손, 튜닝), 랩(`LabGame`, 카메라, 패널, 자동 점검, XInput), `RagdollDriver`(`ICharacterDriver` 구현). **Steam 무참조** |
+| `ChessFight/RagdollLab/Scripts/` | `ChessFight.RagdollLab` | Gameplay | — | 래그돌(`RagdollPawn`과 부분 파일: 갈고리·밧줄·상태·기물·기물 능력(`RagdollPawn.Ability`, `PieceShard`, `PieceAbilityView`), 손, 튜닝), 랩(`LabGame`, 카메라, 패널, 자동 점검, XInput, 퀸 오브 더 힐 시험대), `RagdollDriver`(`ICharacterDriver` 구현). **Steam 무참조** |
 | `ChessFight/RagdollLab/Editor/` | `ChessFight.RagdollLab.Editor` | RagdollLab | Editor 전용 | 래그돌 리그·프리팹·씬 빌더 |
 
 Steam 게이트 어셈블리의 플랫폼은 Editor, WindowsStandalone64/32다.

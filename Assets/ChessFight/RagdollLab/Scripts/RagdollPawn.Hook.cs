@@ -140,7 +140,8 @@ namespace ChessFight.RagdollLab
         void UpdateHook(RagdollParams p, float dt)
         {
             hookRetry -= dt;
-            if (input.ability)
+            // The hook is the pawn's: a piece's E is its own ability (M12, UpdatePiece).
+            if (input.ability && piece == ChessFight.Network.PieceKind.Pawn)
             {
                 if (hookPhase == HookPhase.None)
                 {

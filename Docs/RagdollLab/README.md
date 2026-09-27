@@ -184,7 +184,7 @@ W→S, A→D처럼 반대로 바꾸거나 마우스로 방향을 돌리면 몸�
 - 점프하며 잡기 → 벽 **모서리**(꼭대기 0.4 m 이내)를 잡으면, 한 번 더 점프하거나 **W를 0.35초 누르고 있으면** 기어오른다. 땅을 밟을 때마다 한 번. 벽 옆면은 매달리기만 된다.
 - R 전체 리스폰, T 슬로모션, **F4 자유 카메라**(WASD·Q·E; 2026-09-26에 F에서 옮김), F2 화면 분할, F3 온라인 패널, 패드 Back 본인 리스폰.
 - **퀸 오브 더 힐 키(2026-09-26):** 능력 E / 패드 Y / P2 `.` = 폰의 갈고리(M5), 능력2 Q / 패드 RT / P2 `,`(아직 동작 없음), 상호작용(누르고 있기) F / 패드 X / P2 `'` = 앙파상. 조준은 카메라가 보는 방향. 받은 값과 갈고리 상태는 화면 왼쪽 아래 [7] 시험대 창에 보인다.
-- **[7] 퀸 오브 더 힐 시험대(남동쪽)**: F9 이동, **F8 갈고리 연습장**(20 m 앞 10 m 탑, 천장 아치), **F10 개척의 탑**(종·빛의 기둥 승강기·체크포인트, M8·M9), **Shift+F10 도약대**(L자 도약대·태엽 스프링, M7), **Shift+F8 밧줄**(사슬·그네·기둥, M6: 우클릭 잡기·W/S·A/D·Space), **Shift+F9 승격 받침대**(M11: 앞에서 F), **F11 종 초기화**, F5 피격(6 m/s·1초 넘어짐), F6 스테미나 −2.5, F7 벽·탈것에서 떨어뜨리기, **Shift+F5 찌그러짐 1.2초**, **Shift+F6 비틀 0.4초**(M13). 자세한 내용은 [Player/RAGDOLL §8](../Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13).
+- **[7] 퀸 오브 더 힐 시험대(남동쪽)**: F9 이동, **F8 갈고리 연습장**(20 m 앞 10 m 탑, 천장 아치), **F10 개척의 탑**(종·빛의 기둥 승강기·체크포인트, M8·M9), **Shift+F10 도약대**(L자 도약대·태엽 스프링, M7), **Shift+F8 밧줄**(사슬·그네·기둥, M6: 우클릭 잡기·W/S·A/D·Space), **Shift+F9 승격 받침대**(M11: 앞에서 F), **F11 종 초기화**, F5 피격(6 m/s·1초 넘어짐), F6 스테미나 −2.5, F7 벽·탈것에서 떨어뜨리기, **Shift+F5 찌그러짐 1.2초**, **Shift+F6 비틀 0.4초**(M13). 자세한 내용은 [Player/RAGDOLL §8](../Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m13).
 - P2 입력 장치는 패널의 "플레이어 입력" 버튼으로 바꾼다. 패드가 없으면 P2는 키보드 방향키로 시작한다.
 
 ## 값 세트 A/B 비교
@@ -482,7 +482,7 @@ RagdollLab.exe -batchmode -ragdollShots shots
 RagdollLab.exe -batchmode -nographics -ragdollDiag -ragdollLoad -ragdollAutoTest load.txt
 ```
 
-`-ragdollOnly`(2026-09-27, 같은 뜻으로 `-ragdollAutoTestOnly`도 된다)는 이름을 준 점검 묶음만, 전체와 같은 순서로 돌린다: `JointSign, Stand, Run, Sprint, GaitShape, Turn, NoAutoHop, JumpCheck, JumpNoStack, GetUp, Fall, Slope, DiveSlope, Contact, GrabDrag, StruggleEscape, Climb, ClimbBugs, ClimbSurfaces, DiveTackle, Bar, Beam, WallClimb, QueenHill, Crowd, NetLoopback`.
+`-ragdollOnly`(2026-09-27, 같은 뜻으로 `-ragdollAutoTestOnly`도 된다)는 이름을 준 점검 묶음만, 전체와 같은 순서로 돌린다: `JointSign, Stand, Run, Sprint, GaitShape, Turn, NoAutoHop, JumpCheck, JumpNoStack, GetUp, Fall, Slope, DiveSlope, Contact, GrabDrag, StruggleEscape, Climb, ClimbBugs, ClimbSurfaces, DiveTackle, Bar, Beam, WallClimb, QueenHill, Hook, Pioneer, Launch, Rope, Status, Piece, Ability, Crowd, NetLoopback` (Ability = 기물 능력 M12, R51 `JY-pieces`).
 
 점검 항목: 관절 목표 방향, 서 있기, 달리기, 멈추기, **달리기·전력질주 두 속도, 달리기가 공중에 떠다니지 않음, 전력질주 다리가 관절 한계에 박히지 않음, 반대 방향 전환 시 좌우로 흔들리지 않음, 스테미나 고갈 → 지침 → 회복**, 방향 전환, **방향키만으로 저절로 점프되지 않음**, 점프, **점프가 겹쳐지지 않음**, 넉다운→기상, 낙하, 경사 3종 구르기, **경사 30°·45° 슬라이딩이 달리기보다 빠름**, 접촉 강성, 잡고 끌기, 버둥대기, 등반, **등반 시작 시 벽 속으로 안 들어감, 옆 이동 시 팔이 안 늘어나고 벽 끝에서 멈춤, 손 놓으면 그대로 떨어짐, 2 m 벽·역경사·곡면 꼭대기에 올라섬, 모서리 돌기, 턱에 올라선 뒤 안 떨어짐**, **좌클릭 다이빙 태클, 다이빙은 머리부터·팔을 앞으로·일어날 때까지 흐물·짧게·일어나며 안 끌려감, 제자리 다이빙 후 스스로 일어남**, 회전 봉, 외줄, 벽 오르기, 밀착 안정성, 입력 패킷 왕복, 래그돌 자세 원격 복원, **스테미나·질주 상태 원격 전달**, NaN, 등반 중 손이 늘 어깨보다 벽 쪽(2026-09-27). (굵은 글씨는 2026-09-25 추가. 처음 실제로 돌린 것은 2026-09-26, 빌드한 플레이어에서다.)
 

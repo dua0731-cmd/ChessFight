@@ -165,7 +165,7 @@ namespace ChessFight.RagdollLab
             bool parsed = RagdollNetProtocol.ReadSnapshot(bytes, 78, snapshot);
             if (parsed) remote.ApplyNetworkPose(snapshot.At(0));
             bool sized = bytes != null && bytes.Length == RagdollNetProtocol.SnapshotBytes(1);
-            Report("M11 네트워크: 기물 종류가 스냅샷으로 참가자에게 전달 (폰당 74바이트)",
+            Report($"M11 네트워크: 기물 종류가 스냅샷으로 참가자에게 전달 (폰당 {RagdollNetProtocol.PoseBytes}바이트)",
                 parsed && sized && remote.Piece == PieceKind.Knight,
                 $"해독 {parsed}, {(bytes != null ? bytes.Length : 0)}바이트(예상 {RagdollNetProtocol.SnapshotBytes(1)}), 참가자 쪽 기물 {ChessPieces.Name(remote.Piece)}");
             yield return Clear();
