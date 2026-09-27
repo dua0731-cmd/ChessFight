@@ -1,5 +1,7 @@
 # 래그돌
 
+> **R47 / `JY-gpt_gamemode`:** 소드파이트는 같은 `RagdollPawn.prefab`·튜닝을 사용하되 `SwordFightPawn`이 모드 입력과 검·팔 자세를 덧붙인다. 공통 `RagdollPawn.cs`/튜닝과 기존 RagdollTest 조작은 수정하지 않았다. `SteamSwordFightLink`는 로비 세션을 재사용한다. [상세](../GameModes/SwordFight/README.md). 사용자 실기 확인 대기.
+
 담당: 준영. 사용자 요구: 래그돌 모델링과 이동·점프·잡기·밀기 프리팹, 멀티 고려(R11). **JY-ragdoll의 래그돌 랩을 현재 브랜치 기준으로 병합하고, 랩 씬 내용을 RagdollTest 씬으로 그대로 옮긴다. 네트워크·멀티에 문제가 없어야 한다**(R16).
 
 랩 자체의 조작법, 구조, 측정 근거는 준영 님 문서 [Docs/RagdollLab/README.md](../RagdollLab/README.md)에 있다.

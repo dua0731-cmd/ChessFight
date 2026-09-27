@@ -1,5 +1,7 @@
 # UI (HUD)
 
+R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.tss` + `Game/SwordFightHud.cs`다. 기존 `RuntimePanels`(한글·화면 확장)를 사용한다. 점수/시간/조작 안내와 Esc 메뉴의 버튼 두 개이며, Legacy Input 대체 클릭도 제공한다. 게임 규칙·래그돌은 뷰가 참조하지 않는다. 로비 HUD는 변경하지 않았다.
+
 사용자 요구: UI는 UXML(UI Toolkit)로 만든다(R2). 한국어, 화면 전체, 폴가이즈 메인처럼 **우측 하단 큰 시작 버튼**(R7). 클릭이 반드시 되어야 한다(R8, R9). Steam 오버레이 대신 게임 안 친구 초대 UI(R10). **로비는 참고 영상처럼**: 파티 라인업, 모드 카드, 파티 바, 매칭 패널(R19).
 
 ## 1. 기술 기반

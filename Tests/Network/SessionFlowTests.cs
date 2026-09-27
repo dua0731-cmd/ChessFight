@@ -99,6 +99,12 @@ public static class SessionFlowTests
                 Setup(2);As(clients[0],()=>clients[0].SetMode("swordfight"));As(clients[0],()=>clients[0].FindMatch(true));Step();
                 As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);
                 Check(clients[1].Match==clients[0].Match&&clients[1].MatchMode==GameModes.SwordFight&&clients[1].PartyMode==GameModes.KingRush,"joined room mode");});
+            Test("Sword Fight private lobby starts alone with bots and returns to the party",()=>{
+                Setup(1); var c=clients[0]; ulong party=c.Party;
+                As(c,()=>c.SetMode("swordfight")); As(c,()=>c.FindMatch(true)); Step(20);
+                As(c,c.FillRoomWithBots); Step(); As(c,c.StartGame); Step();
+                Check(c.Started&&c.Roster.Count==12&&c.MatchMode.Playable&&c.MatchMode.Scene=="SwordFight","sword mode start");
+                As(c,c.Cancel); Step(); Check(c.Match==0&&c.Party==party&&c.PartyMode==GameModes.SwordFight,"return party");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

@@ -7,7 +7,7 @@
 ```text
  Intro ──아무 키──▶ Lobby ──모두가 phase=playing──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
  (타이틀)          (파티·모드·매칭)                  킹 러시 = KingRush
-                                                   퀸 오브 더 힐·소드 파이트 = 씬 준비 중
+                                                   소드 파이트 = SwordFight / 퀸 오브 더 힐 = 준비 중
  RagdollTest ← 개발 전용. 흐름 밖.
 ```
 
@@ -16,10 +16,13 @@
 | `Intro.unity` | 0 | `IntroController` | 온라인. 타이틀, Steam 시작, 아무 키 → Lobby |
 | `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티 라인업(3D), 모드·파티·매칭 HUD. 이동 없음 |
 | `KingRush.unity` | 2 | 경기로 들어왔을 때만 `MatchSceneView` | 직접 열면 **오프라인 플레이테스트** |
+| `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |
 | `RagdollTest.unity` | 비활성 | 없음 (씬 안의 `LabGame`이 동작) | 래그돌 랩. Steam 없이 2인 로컬 |
 | `SampleScene.unity` | 빌드 제외 | 없음 | 아무것도 안 함(템플릿) |
 
-씬 이름 상수는 `Game/SceneNames.cs`. **런타임에 로드하는 씬은 빌드 목록(`EditorBuildSettings.asset`)에도 있어야 한다.** 빌드 메뉴(`NetworkSetup.ShippedScenes`)가 Intro·Lobby·KingRush를 넣는다.
+씬 이름 상수는 `Game/SceneNames.cs`. **런타임에 로드하는 씬은 빌드 목록(`EditorBuildSettings.asset`)에도 있어야 한다.** 빌드 메뉴(`NetworkSetup.ShippedScenes`)가 Intro·Lobby·KingRush·SwordFight를 넣는다.
+
+R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 `MatchSceneView`와 `Motion.Update`를 실행하지 않는다. 별도 래그돌-네트워크 다리가 **기존 NetworkRuntime.Session을 빌려** 실행하며 독립적인 Steam 초기화/종료는 하지 않는다. 직접 열어 Play하면 Steam 없이 연습한다. 공유 캐릭터 물리와 다른 씬은 그대로다.
 
 ## 2. NetworkRuntime — 씬을 넘어 사는 유일한 Steam 소유자
 

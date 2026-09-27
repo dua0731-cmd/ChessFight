@@ -14,6 +14,30 @@ public static class NetworkCoreTests
     {
         try
         {
+            Test("Sword Fight is selectable and Queen remains planned", () => {
+                Check(GameModes.SwordFight.Playable && GameModes.SwordFight.Scene == "SwordFight" && !GameModes.QueenOfTheHill.Playable, "scene routing"); });
+            Test("Sword ring-out scores once per life and respawns on time", () => {
+                var r = new SwordFightRules(); Check(r.RingOut(1, 0) && !r.RingOut(1, 0) && r.Black == 1, "duplicate score");
+                r.Advance(2.99); Check(!r.TryRespawn(1), "early respawn"); r.Advance(.02);
+                Check(r.TryRespawn(1) && !r.TryRespawn(1) && r.RingOut(1, 0) && r.Black == 2, "new life"); });
+            Test("Sword score and timeout end the round without extra scores", () => {
+                var r = new SwordFightRules(1); Check(!r.RingOut(0, 0) && !r.RingOut(2, 5), "bad victim");
+                Check(r.RingOut(1, 1) && r.Finished && r.Winner == 0 && !r.RingOut(2, 1), "target");
+                r = new SwordFightRules(20, 2); r.Advance(double.NaN); r.Advance(double.PositiveInfinity); r.Advance(2);
+                Check(r.Finished && r.Winner == -1 && !r.RingOut(1, 0), "time tie"); });
+            Test("Sword mode state roundtrips twelve pawns and isolates matches", () => {
+                var s = new SwordFightState { Tick = 55, White = 3, Black = 7, Remaining = 123.5f };
+                for (ulong i = 1; i <= 12; i++) s.Fighters.Add(new SwordFighterState { Id = i, Alive = true, Age = .25f, Swing = 9, Yaw = -145 });
+                var b = SwordFightProtocol.Write(42, s);
+                Check(b.Length == SwordFightProtocol.MaxBytes && SwordFightProtocol.Read(b, 42, out var p) && p.Fighters.Count == 12 && p.Fighters[0].Swing == 9 && p.Black == 7, "roundtrip");
+                Check(!SwordFightProtocol.Read(b, 43, out _), "session isolation");
+                for (int n = 0; n < b.Length; n++) Check(!SwordFightProtocol.Read(b.Take(n).ToArray(), 42, out _), "truncation"); });
+            Test("Sword mode state rejects duplicate and nonfinite data without throwing", () => {
+                var s = new SwordFightState(); s.Fighters.Add(new SwordFighterState { Id = 1 }); s.Fighters.Add(new SwordFighterState { Id = 1 });
+                Check(!SwordFightProtocol.Read(SwordFightProtocol.Write(1, s), 1, out _), "duplicates");
+                s.Fighters.Clear(); s.Remaining = float.NaN;
+                Check(!SwordFightProtocol.Read(SwordFightProtocol.Write(1, s), 1, out _), "nan");
+                var rng = new Random(9); for (int i = 0; i < 500; i++) { var bytes = new byte[i]; rng.NextBytes(bytes); SwordFightProtocol.Read(bytes, 1, out _); } });
             Test("Two six-player parties stay on opposite teams", () => {
                 var r = new TeamReservations(); Check(Reserve(r, 1, 6) && Reserve(r, 7, 6), "admission");
                 Check(r.Used(0) == 6 && r.Used(1) == 6 && r.Find(1).Team != r.Find(7).Team, "split");

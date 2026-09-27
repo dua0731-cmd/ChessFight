@@ -2,6 +2,7 @@
     "name": "ChessFight.RagdollLab",
     "rootNamespace": "ChessFight.RagdollLab",
     "references": [
+        "ChessFight.Game",
         "ChessFight.Gameplay",
         "ChessFight.Network.Core"
     ],

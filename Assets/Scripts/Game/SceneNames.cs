@@ -7,6 +7,7 @@ namespace ChessFight.Game
         public const string Intro = "Intro";
         public const string Lobby = "Lobby";
         public const string KingRush = "KingRush";
+        public const string SwordFight = "SwordFight";
         // Development only: opened directly in the Editor, never loaded at run time.
         public const string RagdollTest = "RagdollTest";
     }

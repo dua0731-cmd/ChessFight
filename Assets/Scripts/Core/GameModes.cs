@@ -41,7 +41,7 @@ namespace ChessFight.Network
 
         public static readonly GameModeInfo SwordFight = new GameModeInfo(
             "swordfight", "소드 파이트", "6 vs 6 · 팀 데스매치",
-            "모든 기물이 물리 칼을 들고 싸우는 팀 데스매치입니다.", "SF", null);
+            "칼로 상대를 넘어뜨려 장외로 보내세요. 현재는 폰으로 플레이합니다.", "SF", "SwordFight");
 
         public static readonly GameModeInfo[] All = { KingRush, QueenOfTheHill, SwordFight };
 

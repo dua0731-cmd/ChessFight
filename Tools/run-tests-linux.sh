@@ -98,7 +98,7 @@ compile_all() {
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
        -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/RagdollLab" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
-       -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+       -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Game.Steam.dll" \
        -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/RagdollLabSteam" -name '*.cs')
   echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap, RagdollLab and RagdollLabSteam compiled with Roslyn (Input/ and Editor code skipped)."
 }

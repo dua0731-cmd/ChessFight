@@ -34,7 +34,7 @@ namespace ChessFight.Game
         // typing a lobby number, or with the window in the background.
         public Func<bool> MovementGate { get; set; }
 
-        bool inMatchScene, loading;
+        bool inMatchScene, loading, customSimulation;
         // The scene the running match loaded, from its game mode.
         string matchScene = "";
         readonly SharedClock clock = new SharedClock();
@@ -87,6 +87,12 @@ namespace ChessFight.Game
 
         void Attach(Scene scene)
         {
+            customSimulation = false;
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                var config = root.GetComponentInChildren<GameSceneConfig>(true);
+                if (config != null && config.customMatchSimulation) customSimulation = true;
+            }
             switch (scene.name)
             {
                 case SceneNames.Intro: Host(scene).AddComponent<IntroController>(); break;
@@ -94,7 +100,7 @@ namespace ChessFight.Game
             }
             // A mode scene opened as the match scene shows the networked pawns
             // instead of its offline playtest.
-            if (inMatchScene && scene.name == matchScene) Host(scene).AddComponent<MatchSceneView>();
+            if (inMatchScene && scene.name == matchScene && !customSimulation) Host(scene).AddComponent<MatchSceneView>();
         }
 
         // The scene's GameSceneConfig object when it has one, so the controller
@@ -121,7 +127,8 @@ namespace ChessFight.Game
             // the frames where movement is suppressed.
             var intent = Controls.Read();
             if (MovementGate != null && !MovementGate()) intent = default;
-            Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
+            if (!customSimulation)
+                Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
 
             // Development aid for the network review: F8 cycles extra delay and
             // loss on this machine, so one tester can play on a bad connection.

@@ -1,5 +1,7 @@
 # 파티·매칭·예약 (`SteamSession`, `TeamReservations`)
 
+> **R47 / `JY-gpt_gamemode`: 프로토콜 v7.** 소드파이트 로비 선택·전용 씬과 `CFS1` 경기 상태(채널33)를 추가했다. 기존 랩 `CFR4` 패킷은 변경하지 않았다. v6 빌드와 매칭되지 않으므로 두 PC 모두 같은 빌드가 필요하다. [소드파이트 실행](../GameModes/SwordFight/README.md). 모의 세션에는 혼자 비공개 소드파이트 방을 봇으로 채워 시작·취소하는 검사를 추가했다.
+
 코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam 15개), `NetworkCoreTests.cs`(예약 규칙, 모드 목록).
 
 ## 1. 두 종류의 로비

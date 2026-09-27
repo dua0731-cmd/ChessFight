@@ -26,7 +26,7 @@ namespace ChessFight.Editor
         const string KingRushScene = "Assets/Scenes/KingRush.unity";
         const string RagdollTestScene = "Assets/Scenes/RagdollTest.unity";
         // Everything a player can reach, in load order. RagdollTest is development only.
-        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, KingRushScene };
+        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, KingRushScene, "Assets/Scenes/SwordFight.unity" };
 
         const string Steamworks = "com.rlabrecque.steamworks.net";
         const string SteamworksUrl = "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c21a8f0e31c56ae8707130967faf491f7dd7c0d8";

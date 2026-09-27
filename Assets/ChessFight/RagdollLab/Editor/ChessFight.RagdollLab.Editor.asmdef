@@ -2,7 +2,9 @@
     "name": "ChessFight.RagdollLab.Editor",
     "rootNamespace": "ChessFight.RagdollLab.Editor",
     "references": [
-        "ChessFight.RagdollLab"
+        "ChessFight.RagdollLab",
+        "ChessFight.Game",
+        "ChessFight.Gameplay"
     ],
     "includePlatforms": [
         "Editor"

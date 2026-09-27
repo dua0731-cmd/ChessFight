@@ -14,6 +14,8 @@ namespace ChessFight.Game
     public sealed class GameSceneConfig : MonoBehaviour
     {
         [Header("Content")]
+        [Tooltip("The scene owns its character simulation instead of the legacy capsule match view.")]
+        public bool customMatchSimulation;
         [SerializeField] GameObject arenaPrefab;
         [SerializeField] PawnAvatar pawnPrefab;
         [SerializeField] Material blueTeamMaterial;

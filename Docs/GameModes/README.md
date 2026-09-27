@@ -10,9 +10,9 @@
 |---|---|---|---|---|---|
 | **킹 러시** | `kingrush` | 장애물 달리기 구간과 팀 배틀 구간이 **세 번 번갈아** 나오는 모드. 기획이 아직 다 안 됨 | 선택 가능. 씬은 코스 뼈대만 있음 | `KingRush` | [KingRush](../KingRush/README.md) |
 | **퀸 오브 더 힐** | `queenhill` | 탑을 올라 기물로 승격하고 퀸 등장 후 사냥하는 모드(세부는 최신 DESIGN) | Claude에서 이어갈 수 있으므로 GPT 작업은 보류(R45). 로비에는 "준비 중" | 없음 | **[QueenOfTheHill/README](QueenOfTheHill/README.md)** |
-| **소드 파이트** | `swordfight` | 칼로 상대를 넘어뜨리고 장외로 떨어뜨려 팀 +1점인 귀여운 물리 난투전 | **GPT 우선 작업(R45·R46): 기획·콘셉트 v0.1, 구현은 아직 없음.** 기물 우클릭 스킬은 후속 | 없음 | **[SwordFight/DESIGN](SwordFight/DESIGN.md)** |
+| **소드 파이트** | `swordfight` | 칼로 상대를 넘어뜨리고 장외로 떨어뜨려 팀 +1점인 귀여운 물리 난투전 | **R47 폰 플레이 버전, 로비 선택 가능. Unity·Steam 사용자 미확인.** 다른 기물·우클릭 스킬·최종 맵은 후속 | `SwordFight` | **[실행/구현](SwordFight/README.md)** · [기획](SwordFight/DESIGN.md) |
 
-- 최신 순서(09-27 사용자, R45): **GPT는 소드 파이트의 기획·이미지부터**. 퀸 오브 더 힐은 Claude에서 이어갈 수 있으며 여기서는 재개하지 않는다. 이전 R19의 순서를 이번 작업에 한해 대체한다. 킹 러시는 기획이 정리되면.
+- 최신 순서(09-27 사용자, R47): **GPT는 폰 칼싸움부터 구현하고 맵은 마지막**. 퀸 오브 더 힐·공통 물리 튜닝은 여기서 재개하지 않는다.
 - 소드 파이트의 **누운 상대 연속 타격은 금지하지 않는다**(R46). 너무 쉽게·자주 성공하지 않도록 성립 조건을 조절하는 것이 목표이며 무조건적인 기상 무적을 기본으로 정하지 않는다.
 - 나중에 모드가 더 늘 수 있다. 추가 방법은 §4.
 - 모드 목록의 코드: `Assets/Scripts/Core/GameModes.cs`(`GameModes.All`). Unity 없이 테스트된다.
@@ -26,7 +26,7 @@
        │                                  (다른 모드의 방은 검색에 안 나옴)
 경기 시작 ─▶ NetworkRuntime.FollowMatch: GameModes.Resolve(경기 mode).Scene 로드
        │                                  씬이 없는 모드면 경기를 끝내고 안내
-모드 씬 ─▶ MatchSceneView(명단·핑·끊김 배너·Esc)  ─(경기 끝)─▶ 로비
+모드 씬 ─▶ KingRush: MatchSceneView / SwordFight: 전용 래그돌 경기 ─▶ 로비
 ```
 
 | 규칙 | 이유 |
