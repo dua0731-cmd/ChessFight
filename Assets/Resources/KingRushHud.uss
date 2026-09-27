@@ -1,0 +1,14 @@
+.kr-top, .kr-side, .kr-bottom {
+    position: absolute;
+    background-color: rgba(17, 27, 40, 0.93);
+    color: rgb(241, 241, 230);
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 17px;
+    white-space: normal;
+}
+.kr-top { top: 18px; left: 18px; }
+.kr-title { font-size: 23px; -unity-font-style: bold; margin-bottom: 6px; }
+.kr-accent { color: rgb(255, 212, 98); margin-top: 8px; }
+.kr-side { top: 18px; right: 18px; width: 390px; }
+.kr-bottom { bottom: 18px; left: 18px; right: 18px; -unity-text-align: middle-center; }

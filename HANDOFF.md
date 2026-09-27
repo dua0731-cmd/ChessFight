@@ -4,7 +4,9 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-27** · 기준 브랜치 **`JY-gpt_gamemode`**(GPT 게임모드 작업, R44), **`JY-ragdoll_v2`**(미완성 물리·조작 튜닝 보존), `JY-lobby`는 이전 로비 작업 브랜치 · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+최종 갱신: **2026-09-27** · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R52, 출발점 `JY-gpt_gamemode@852eb2b`). 다른 채팅의 **`JY-gpt_gamemode`**(소드파이트)·**`JY-ragdoll_v2`**(Claude 물리 튜닝)는 보존. 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+
+> **이 작업 폴더의 최신 결정(R52, 아래 이전 브랜치 지시보다 우선):** 킹 러쉬는 **`JY-kingrush`**에서만 작업·커밋한다. 사용자 정정에 따라 **`JY-gpt_gamemode@852eb2b`**(소드파이트·로비 연결 포함)에서 분리했다. 폴더는 `C:/Users/trews/.codex/worktrees/jy-kingrush/ChessFight`. 다른 채팅의 소드파이트와 Claude 미완성 변경은 건드리지 않는다. **오프라인 첫 시험장**만 구현했고 로비 KingRush 선택은 아직 예전 캡슐 코스다. [KingRush README](Docs/KingRush/README.md)를 먼저 읽는다. 알려진 CLI 푸시403은 재시도하지 않고 사용자 GitHub Desktop에서 Push한다.
 
 > **최신 브랜치 결정(R44):** 사용자는 `JY-lobby`로 합치지 않고, `JY-ragdoll_v2`의 마지막 커밋 `cdcc9fe`에서 **`JY-gpt_gamemode`**를 만들도록 요청했다. 아래와 다른 문서의 예전 "게임모드는 JY-lobby" 지시보다 이 결정이 우선한다. 물리 튜닝은 끝난 것으로 보지 않으며 GPT가 임의로 이어서 수정하지 않는다.
 
@@ -36,6 +38,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **이 폴더: 킹 러쉬 R52** | **`JY-kingrush` / 기반 `852eb2b`**. 별도 `KingRushPrototype.unity`: 6v6 동일 몸·고정 킹, 1.5초 승격/쟁탈, 파랑 능력 구역, 팀 문/폰 복귀, 물 부활·승격 유지, 체크! 1차. F4 킹+더미 배치. **Core46/세션20/실제 DLL 컴파일/참조 경계 통과, 플레이어33/0 두 번**. K0/K2/K4 기반만, 미션·다른 능력·온라인 미구현. **사용자 미확인** |
 | 개발 브랜치 | **GPT 게임모드 작업은 `JY-gpt_gamemode`에만 커밋·푸시**(09-27 사용자, R44). 출발점은 로컬 `JY-ragdoll_v2`의 `cdcc9fe`. 원본 폴더의 브랜치는 `JY-ragdoll_v2`로 유지하고, 새 브랜치는 별도 작업 폴더(worktree)에서 작업한다. `JY-lobby`·`main`·`Network`로 병합하거나 푸시하지 않는다. 미완성 튜닝의 후속 반영은 별도 결정 |
 | GPT의 현재 작업 | **R51 보이는 검·무게감 있는 보정 드래그·강한 베기만 넉다운**. 이전 클릭/F6 전환·빠른 발도·정지 더미·장외/부활 유지. 공통 물리 튜닝 변경 없음. [실행](Docs/GameModes/SwordFight/README.md) |
 | GPT 프로토콜·자동 검사 | **v10/CFS3**, 최대506바이트 칼/경기 상태에 방식 선택 포함. CFR4 레이아웃 유지, 소드파이트 채널에서만 ability2=선택 절대값. Core **42**·모의 Steam **20**·실제 DLL 컴파일 통과. Windows 플레이어 **51/0**, 시점 보정부터 강한 명중까지·약한 접촉·검 가시성·전환·12칼 검사. [최종 실행/측정](Docs/GameModes/SwordFight/README.md). R51 사용자/2PC 미확인. 아래 v6·래그돌 숫자는 원본 기록 |
@@ -53,6 +56,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **킹 러쉬 새 래그돌 시험장 (R52)** | 코드·자동 플레이 검사, **사용자 미확인**. 기존 씬·공통 물리·소드파이트/로비 연결 보존. 새 시험장은 별도 메뉴로 연다 | [KingRush](Docs/KingRush/README.md) |
 | Steam 파티(최대 6)·초대·번호 입장 | 동작 확인 | [Network/SESSION](Docs/Network/SESSION.md) |
 | 공개 자동 매칭 6v6 (파티 단위 같은 팀 예약) | 두 PC 성사 확인, 12인 미확인 | [Network/SESSION](Docs/Network/SESSION.md) |
 | 비공개 테스트 방 | 동작 확인 | 〃 |
@@ -71,6 +75,12 @@
 | **아직 없음** | 기물 선택·스킬, 킹러시의 승패·점수/네트워크 코스 달리기, 공통 호스트 이전·재접속·로딩 동기화. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**이 작업 폴더는 킹 러쉬 전용(R52)**
+- `JY-kingrush`에서만 작업한다. 실제 기준은 `JY-gpt_gamemode@852eb2b`이며 첨부 기획이 전제로 쓴 최신 QotH M6/M11/M13은 없다. `KingRushPiece`/`KingRushPawn`으로 격리했고 공유 Pawn/튜닝/프로토콜은 바꾸지 않았다.
+- Unity 메뉴 **ChessFight → King Rush → Open Mechanics Test** → Play. F4 → E로 킹+더미 시험. 승격은 F3 후 노란 발판, 문은 F7/F8 시험 완료 버튼. [확인 목록](Docs/Network/VALIDATION.md) R52.
+- 다음: 룩 대포 → 비숍 승천 → 폰 달라붙기 → 나이트 태우기 → 퀸 손. K2/K4 상태 계약도 해당 능력과 함께 확장. 킹 자세/거리·착지 후 누움·새 구속/왕좌 연동은 추가 검사 필요. **능력 재미 확인을 받은 뒤** 미션/결승으로 간다.
+- K0 중 문/승격 사실만 구현. 미션 점수·T0·게이지·승패와 온라인(K11)은 아직 없다. 아래 소드파이트 목록은 분기 당시 기록이며 이 채팅의 자동 착수 지시가 아니다.
 
 **GPT 게임모드 작업 공간(R44)**
 - 원본: `C:\Users\trews\OneDrive\문서\GitHub\ChessFight` — `JY-ragdoll_v2`. 미커밋 `RagdollPawn.Rope.cs`, `RopeLine.cs`는 이곳에 그대로 보존했다. 삭제·이동·커밋하지 않았고, 새 브랜치에도 복사하지 않았다.
@@ -156,6 +166,8 @@ Docs/
 │  └─ QueenOfTheHill/           ★ 퀸 오브 더 힐: 인수인계(README), 기획(DESIGN), 새 기능 개발 목록(MECHANICS_TODO), 아트 후보(ART_CONCEPTS), 이미지 프롬프트, N4 참고 원문
 ├─ KingRush/                    첫 미니게임
 │  ├─ README.md                 맵 구성, 코스 컴포넌트, 네트워크 한계
+│  ├─ DESIGN.md                 사용자 제공 1차 기획 원문 (확정 UK / 미션 1차 안 구분)
+│  ├─ MECHANICS_TODO.md          개발 목록 원문 + R52 범위/기준 차이
 │  ├─ OBSTACLES.md              장애물 규칙과 만드는 법
 │  └─ OBSTACLE_TEMPLATE.md      장애물 기획서 양식
 ├─ TEAM_GUIDE_KO.md             팀원용 한 권 안내서 (역할별 장, AI 시작 프롬프트)
@@ -210,4 +222,6 @@ AI든 사람이든 작업을 끝낼 때:
 4. 바꾼 분야의 상세 문서(Network/…, KingRush/… 등)를 코드와 맞춘다.
 5. Unity에서 확인해야 할 것이 생겼으면 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단에 '미확인' 표로 추가한다.
 6. **이 파일의 §1 스냅샷, §2 표, §3 다음 할 일을 갱신하고 "최종 갱신" 날짜를 바꾼다.**
-7. [HISTORY.md](Docs/Project/HISTORY.md)에 커밋을 한 줄 추가하고 §1의 작업 브랜치에 커밋·푸시한다. **현재 GPT 게임모드는 `JY-gpt_gamemode`**이며 원본 `JY-ragdoll_v2`의 미완성 작업은 건드리지 않는다.
+7. [HISTORY.md](Docs/Project/HISTORY.md)에 커밋을 한 줄 추가하고 §1의 작업 브랜치에 커밋한다. **이 폴더는 `JY-kingrush`**다. 다른 채팅의 `JY-gpt_gamemode`·원본 `JY-ragdoll_v2` 미완성 작업은 건드리지 않는다. 푸시 제한은 아래를 따른다.
+
+**R52 예외:** 이 폴더의 커밋 대상은 `JY-kingrush`. 다른 두 폴더를 수정하거나 자동 병합하지 않는다. 알려진 CLI 푸시403은 재시도/자격증명 변경 없이 GitHub Desktop Push를 안내한다.

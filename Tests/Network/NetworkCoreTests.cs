@@ -14,6 +14,32 @@ public static class NetworkCoreTests
     {
         try
         {
+            Test("King Rush gates open at own completion or first plus twenty", () => {
+                var r = new KingRushRules(); Check(!r.IsOpen(0, 0, 59), "not yet");
+                Check(r.Complete(0, 0, 60) && r.OpensAt(0, 0) == 60 && r.OpensAt(0, 1) == 80, "first team");
+                Check(!r.Complete(0, 0, 90) && r.Complete(0, 1, 70) && r.OpensAt(0, 1) == 70, "own sooner");
+                Check(!r.IsOpen(1, 0, 900) && !r.Complete(0, 1, double.NaN) && !r.Complete(3, 0, 1), "separate zones"); });
+            Test("King Rush pads pause contest, reset departure, and never inherit another pawn's progress", () => {
+                var c = new KingRushPadCharge(); c.Step(new ulong[] {1}, 1);
+                Check(c.Step(new ulong[] {1,2}, 3) == 0 && c.Seconds == 1 && c.Contested, "contest pause");
+                Check(c.Step(new ulong[] {1}, .5) == 1, "resume original"); c.Reset(); c.Step(new ulong[] {1}, 1);
+                c.Step(new ulong[] {2,3}, .1); Check(c.Seconds == 0, "original left");
+                Check(c.Step(new ulong[] {2}, 1) == 0 && c.Step(new ulong[] {2}, .5) == 2, "new full hold");
+                c.Step(new ulong[0], .1); Check(c.Candidate == 0 && c.Seconds == 0, "empty reset"); });
+            Test("King Rush limited promotion includes queen but never king", () => {
+                var r = new KingRushRules(); Check(r.TryClaim(0, 1, 0) && !r.TryClaim(0, 2, 1) && !r.TryClaim(1, 1, 0), "exclusive and one per wave");
+                Check(r.TryClaim(2, 1, 0) && !r.TryClaim(9, 3, 0) && !r.TryClaim(3, 0, 0), "later wave and invalid IDs");
+                Check(KingRushPieces.CanPromote(KingRushPiece.Pawn, KingRushPiece.Queen) && !KingRushPieces.CanPromote(KingRushPiece.Pawn, KingRushPiece.King) &&
+                    !KingRushPieces.CanPromote(KingRushPiece.King, KingRushPiece.Queen), "promotion types");
+                Check(KingRushRules.PadPiece(5) == KingRushPiece.Queen && KingRushRules.PadPiece(0) == KingRushPiece.Knight, "visible schedule"); });
+            Test("King Rush facts roundtrip atomically and stale snapshots cannot undo them", () => {
+                var a = new KingRushRules(); a.Complete(0, 0, 60); a.TryClaim(0, 123, 1);
+                var b = new KingRushRules(); Check(b.Apply(a.Encode()) && b.Encode() == a.Encode(), "roundtrip");
+                string before = b.Encode(); Check(b.Apply(new KingRushRules().Encode()) && before == b.Encode(), "stale");
+                foreach (var bad in new[] {"", "KR1|NaN|-1|-1|-1", "KR1|60|-1|-1|-1|1,5,0|0,999,1", "KR1|70|-1|-1|-1", "KR1|60|-1|-1|-1|1,123,1", "KR1|-2|-1|-1|-1"})
+                    Check(!b.Apply(bad) && b.Encode() == before, "atomic reject: " + bad);
+                var random = new Random(32); for (int i = 0; i < 300; i++) { var chars = new char[i]; for (int j = 0; j < i; j++) chars[j] = (char)random.Next(32, 127); b.Apply(new string(chars)); }
+                Check(b.Encode() == before, "fuzz preserved"); });
             Test("Sword Fight is selectable and Queen remains planned", () => {
                 Check(GameModes.SwordFight.Playable && GameModes.SwordFight.Scene == "SwordFight" && !GameModes.QueenOfTheHill.Playable, "scene routing"); });
             Test("Sword ring-out scores once per life and respawns on time", () => {

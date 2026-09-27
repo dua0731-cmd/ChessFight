@@ -26,6 +26,8 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 
 ## 2. NetworkRuntime — 씬을 넘어 사는 유일한 Steam 소유자
 
+**R52 별도 시험 씬:** `KingRushPrototype.unity`는 `KingRushBuilder` 전용 빌드에서만 첫 씬이며 일반 `EditorBuildSettings`/GameModes 라우팅은 바꾸지 않는다. `PhysicsProfile`, `KingRushPrototype`, `LabCamera`로 오프라인 12명을 만든다. `GameSceneConfig`/Steam 컨트롤러가 없고, 기존 `KingRush.unity`·`SwordFight.unity`는 수정하지 않는다. [실행](../KingRush/README.md).
+
 `Scripts/Bootstrap/NetworkRuntime.cs`
 
 - `[RuntimeInitializeOnLoadMethod(AfterSceneLoad)]`에서 **첫 씬이 Intro나 Lobby일 때만** 만들어진다. `DontDestroyOnLoad`.

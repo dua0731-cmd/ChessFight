@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="kr-top" picking-mode="Ignore">
+        <ui:Label text="KING RUSH / 오프라인 기능 시험장" class="kr-title" />
+        <ui:Label name="kr-state" />
+        <ui:Label name="kr-ability" class="kr-accent" />
+    </ui:VisualElement>
+    <ui:VisualElement class="kr-side" picking-mode="Ignore">
+        <ui:Label text="1  노란 발판에 혼자 1.5초 서기&#10;2  파란 구역에서 능력 시험&#10;3  열린 팀 출구를 지나 폰으로 복귀" />
+        <ui:Label name="kr-doors" class="kr-accent" />
+    </ui:VisualElement>
+    <ui:Label name="kr-help" class="kr-bottom" picking-mode="Ignore" />
+</ui:UXML>
