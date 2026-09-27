@@ -145,6 +145,30 @@ public static class NetworkCoreTests
                 Check(GameModes.Default.Playable && GameModes.Find("kingrush") == GameModes.KingRush && GameModes.KingRush.Scene == "KingRush", "default");
                 Check(GameModes.Find("nope") == null && GameModes.Resolve("") == GameModes.Default && GameModes.IndexOf("swordfight") == 2, "lookup");
                 Check(GameModes.All.All(m => m.Playable == (m.Scene.Length > 0)), "playable means a scene"); });
+            Test("Queen of the Hill course: 160 m in eight sections, climbs within one stamina bar", () => {
+                Check(QueenHillCourse.All.Length == QueenHillCourse.Sections && Math.Abs(QueenHillCourse.TopHeight - 160f) < 1e-3f, "height");
+                Check(Math.Abs(QueenHillCourse.RideRise + QueenHillCourse.ClimbRise - QueenHillCourse.Rise) < 1e-3f, "ride + climb = rise");
+                Check(QueenHillCourse.ClimbRise <= 5.5f, "a climb longer than one bar of stamina");
+                Check(QueenHillCourse.All.Select((s, i) => s.Number == i + 1).All(ok => ok), "numbering");
+                Check(QueenHillCourse.Section(0) == null && QueenHillCourse.Section(9) == null && QueenHillCourse.Section(4).JoinedAbove, "lookup");
+                Check(QueenHillCourse.HookDistanceToRim < QueenHillCourse.HookFullReach * 0.8f, "the rim is out of an easy hook throw");
+                Check(Enumerable.Range(1, 8).All(s => QueenHillCourse.Side(s) != QueenHillCourse.Side(s + 1)
+                    && QueenHillCourse.CellX(s) != QueenHillCourse.CellX(s + 1)), "sides and cells alternate"); });
+            Test("Queen of the Hill course pacing: about four minutes uncontested, 18-36 s a section", () => {
+                foreach (QueenHillRide ride in Enum.GetValues(typeof(QueenHillRide)))
+                {
+                    var t = QueenHillCourse.Timing(ride);
+                    Check(ride == QueenHillRide.Spring ? t.Period > 0f : t.Speed > 0f && t.Steps >= 1, "timing " + ride);
+                    // Stacked platforms overlap by a metre so the next one is met without a climb.
+                    Check(ride == QueenHillRide.Spring || Math.Abs(t.Steps * t.Step - (t.Steps - 1) - QueenHillCourse.RideRise) < 1e-3f, "reach " + ride);
+                }
+                foreach (var s in QueenHillCourse.All)
+                {
+                    float seconds = QueenHillCourse.EstimatedSeconds(s);
+                    Check(seconds >= 18f && seconds <= 36f, "section " + s.Number + ": " + seconds);
+                }
+                float total = QueenHillCourse.EstimatedTotalSeconds();
+                Check(total >= 220f && total <= 270f, "total " + total); });
             Test("Link simulator delays in order and drops about the configured share", () => {
                 var sim=new LinkSimulator<int>(7){Profile=new LinkProfile{RoundTripMs=200}}; var got=new List<int>();
                 for(int n=0;n<5;n++) sim.Push(n,n*0.01);

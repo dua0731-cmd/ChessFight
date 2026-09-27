@@ -22,15 +22,18 @@ namespace ChessFight.Gameplay
         [SerializeField] int solverIterations = 24;
 
         float savedStep;
-        int savedIterations;
+        int savedIterations, savedVelocityIterations;
         bool applied;
 
         void Awake()
         {
             savedStep = Time.fixedDeltaTime;
             savedIterations = Physics.defaultSolverIterations;
+            savedVelocityIterations = Physics.defaultSolverVelocityIterations;
             Time.fixedDeltaTime = 1f / Mathf.Max(1, physicsRate);
             Physics.defaultSolverIterations = Mathf.Max(1, solverIterations);
+            // The ragdoll lab gives every pawn body a quarter as many velocity iterations (at least 4).
+            Physics.defaultSolverVelocityIterations = Mathf.Max(4, solverIterations / 4);
             applied = true;
         }
 
@@ -39,6 +42,7 @@ namespace ChessFight.Gameplay
             if (!applied) return;
             Time.fixedDeltaTime = savedStep;
             Physics.defaultSolverIterations = savedIterations;
+            Physics.defaultSolverVelocityIterations = savedVelocityIterations;
         }
     }
 }

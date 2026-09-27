@@ -14,6 +14,13 @@ namespace ChessFight.Gameplay
         public int Index => index;
         public int Team => team;
 
+        // For spawn points built from code (the Queen of the Hill level).
+        public void Configure(int index, int team)
+        {
+            this.index = index;
+            this.team = Mathf.Clamp(team, 0, 1);
+        }
+
         void OnDrawGizmos()
         {
             Gizmos.color = team == 0 ? new Color(.28f, .72f, 1f) : new Color(1f, .51f, .3f);

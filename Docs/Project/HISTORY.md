@@ -5,7 +5,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `JY-ragdoll_v2`) | 09-27 | R46 | M11 승격·기물 성능: Core `ChessPieces`, `PromotionPad`, 래그돌 무게·이동·등반·질주·면역 배율, 머리 위 표시, 스냅샷 기물 1바이트(v7), [7j] 시험대, 자동 점검 5개 |
+| (이 커밋, `JY-lobby`) | 09-27 | R48 | 퀸 오브 더 힐 그레이박스 맵: `QueenHillCourse`(Core, 테스트 2개), `QueenHillLevel`(Play 때 160 m 맵 생성), 구간 기록 패널, `OrbitCamera`, `PlaytestSpawner` 팀·카메라 기준 이동·부활·추락·스테미나, `ITeamAssignable`·`IStaminaReadout`, 씬 `QueenOfTheHill.unity`와 생성기, 문서 `GRAYBOX.md` |
+| `dad2635` (`JY-lobby`) | 09-27 | R47 | `JY-ragdoll_v2`(`41b7d11`)를 `JY-lobby`로 빨리 감기 병합, Core `QueenHillRules`를 mcs 호환으로(foreach 튜플 분해 제거) |
+| `41b7d11` (`JY-ragdoll_v2`) | 09-27 | R46 | M11 승격·기물 성능: Core `ChessPieces`, `PromotionPad`, 래그돌 무게·이동·등반·질주·면역 배율, 머리 위 표시, 스냅샷 기물 1바이트(v7), [7j] 시험대, 자동 점검 5개 |
 | `ddad4e6` (`JY-ragdoll_v2`) | 09-27 | R45 | M13 상태 효과: `IStatusReceiver`, 찌그러짐(조작 불가·매달림 놓기·면역)·비틀·면역 플래그, 시험대 Shift+F5·F6, 자동 점검 4개 |
 | `987b6c0` (`JY-ragdoll_v2`) | 09-27 | R44 | M6 밧줄·사슬·그네: `RopeLine`(시계의 함수로 흔들림), 래그돌 밧줄 매달리기(W/S·A/D·Space·꼭대기 올라서기), 0.5 m 기둥은 벽 등반으로 됨, [7i] 시험대, 자동 점검 4개 |
 | `cdcc9fe` (`JY-ragdoll_v2`) | 09-27 | R43 | M7 도약대·태엽 스프링: `LaunchPad`(정해진 곡선, 스프링은 주기마다 모두 같은 속도), 래그돌 `Launch`(앵커가 상쇄하던 세 군데 수정, 공중 조종 0), [7h] 시험대, 자동 점검 3개 |
