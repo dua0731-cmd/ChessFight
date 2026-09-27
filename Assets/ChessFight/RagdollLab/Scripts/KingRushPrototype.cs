@@ -22,6 +22,7 @@ namespace ChessFight.RagdollLab
         public readonly List<KingRushPad> Pads = new List<KingRushPad>();
         public readonly List<PawnGate> Gates = new List<PawnGate>();
         public AbilityZone Blue { get; private set; }
+        public AbilityZone CannonZone { get; private set; }
         public bool Automated { get; private set; }
         public bool ManualSteps { get; set; }
         public WaterZone Water { get; private set; }
@@ -81,6 +82,7 @@ namespace ChessFight.RagdollLab
             if (Input.GetKeyDown(KeyCode.F2)) Select(5);
             if (Input.GetKeyDown(KeyCode.F3)) ResetRound();
             if (Input.GetKeyDown(KeyCode.F4)) ArrangeAbilityTest();
+            if (Input.GetKeyDown(KeyCode.F5)) ArrangeCannonTest(Input.GetKey(KeyCode.LeftShift));
             if (Input.GetKeyDown(KeyCode.F7)) Match.Complete(0, 0);
             if (Input.GetKeyDown(KeyCode.F8)) Match.Complete(0, 1);
             if (Input.GetKeyDown(KeyCode.R)) Respawn(Local);
@@ -98,7 +100,7 @@ namespace ChessFight.RagdollLab
             Match.Advance(dt);
             foreach (var p in Players)
             {
-                bool inside = Blue.Contains(p.BodyPosition) && p.Section <= KingRushSection.Blue1 && !p.Pawn.Floating;
+                bool inside = (Blue.Contains(p.BodyPosition) || CannonZone.Contains(p.BodyPosition)) && p.Section <= KingRushSection.Blue1 && !p.Pawn.Floating;
                 if (inside) p.Section = Blue.section;
                 p.AbilitiesEnabled = inside;
             }
@@ -149,6 +151,14 @@ namespace ChessFight.RagdollLab
         }
         void RefreshCursor()
         { Cursor.lockState = menu || Automated ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = menu || Automated; }
+        public void ArrangeCannonTest(bool ally = false)
+        {
+            ResetRound(); Select(0); Local.Promote(KingRushPiece.Rook);
+            Local.Respawn(new Vector3(22, 0, 8));
+            var target = Players[ally ? 1 : 6]; target.Respawn(new Vector3(22, 0, 8.7f));
+            target.Pawn.Teleport(target.BodyPosition, Vector3.back);
+            CameraRig.yaw = 0; CameraRig.pitch = 8;
+        }
         void LateUpdate()
         {
             if (Players.Count == 0) return;
@@ -163,10 +173,17 @@ namespace ChessFight.RagdollLab
                 doorLabels[i].text = (i == 0 ? "백팀 출구" : "흑팀 출구") + "\n" + DoorText(i) + " · 해당 팀만 통과";
             }
             if (hud != null) hud.Draw(KingRushPieces.Name(Local.Piece), Local.Team, Local.Section.ToString(),
-                Local.AbilitiesEnabled, Local.AbilityActive, Local.Cooldown01, Local.Piece == KingRushPiece.King,
+                Local.AbilitiesEnabled, Local.AbilityActive, Local.CooldownSeconds, Local.Piece == KingRushPiece.King || Local.Piece == KingRushPiece.Rook,
                 DoorText(0), DoorText(1), menu,
-                BodyCount.InBounds(Match.Characters, new Bounds(Blue.transform.position, Blue.size), 0),
-                BodyCount.InBounds(Match.Characters, new Bounds(Blue.transform.position, Blue.size), 1));
+                CountBlueBodies(0), CountBlueBodies(1));
+        }
+        public int CountBlueBodies(int team)
+        {
+            int count = 0;
+            foreach (var member in Match.Characters)
+                if (member.Team == team && member.CountsAsBody &&
+                    (Blue.Contains(member.BodyPosition) || CannonZone.Contains(member.BodyPosition))) count++;
+            return count;
         }
         string DoorText(int team)
         {
@@ -198,6 +215,14 @@ namespace ChessFight.RagdollLab
             }
             Blue = new GameObject("Blue ability zone").AddComponent<AbilityZone>(); Blue.transform.SetParent(transform);
             Blue.transform.position = new Vector3(0, 3, 11); Blue.size = new Vector3(20, 8, 14);
+            Box("Cannon distance test lane", new Vector3(22, -.3f, 20), new Vector3(10, .6f, 34), blue);
+            CannonZone = new GameObject("Cannon blue zone").AddComponent<AbilityZone>(); CannonZone.transform.SetParent(transform);
+            CannonZone.transform.position = new Vector3(22, 3, 20); CannonZone.size = new Vector3(10, 8, 34);
+            foreach (int distance in new[] {5, 10, 20})
+            {
+                Box("Cannon range " + distance, new Vector3(22, .005f, 8.7f + distance), new Vector3(8, .01f, .08f), gold);
+                Label(transform, "Range", new Vector3(25.5f, .5f, 8.7f + distance), distance + " m", .02f);
+            }
             Box("Left boundary", new Vector3(-10, 3, 11), new Vector3(.5f, 6, 14), wall);
             Box("Right boundary", new Vector3(10, 3, 11), new Vector3(.5f, 6, 14), wall);
             Box("Exit wall left", new Vector3(-8, 3, 18), new Vector3(4, 6, .5f), wall);

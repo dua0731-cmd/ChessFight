@@ -5,9 +5,10 @@ using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
-    // All mode state lives beside the shared pawn. No mass/drive/tuning writes.
+    // Mode state lives beside the shared pawn. No mass or shared tuning writes.
+    [DefaultExecutionOrder(90)]
     [RequireComponent(typeof(RagdollPawn), typeof(RagdollDriver))]
-    public sealed class KingRushPawn : MonoBehaviour, IKingRushCharacter
+    public sealed partial class KingRushPawn : MonoBehaviour, IKingRushCharacter
     {
         public RagdollPawn Pawn { get; private set; }
         public ulong Id { get; private set; }
@@ -16,12 +17,14 @@ namespace ChessFight.RagdollLab
         public bool FixedKing { get; private set; }
         public KingRushSection Section { get; set; }
         public Vector3 BodyPosition => Pawn.Hips.position;
-        public bool CountsAsBody => !Pawn.Floating && !Pawn.Launched && !Pawn.BeingHeld;
+        public bool CountsAsBody => !CannonFlight && !Pawn.Floating && !Pawn.Launched && !Pawn.BeingHeld;
         public bool StandingOnPad => CountsAsBody && Pawn.Grounded && Pawn.State == PawnState.Active && !Pawn.Climbing;
         public Collider[] BodyColliders { get; private set; }
         public IHitReceiver HitReceiver { get; private set; }
         public bool AbilityActive => windup > 0;
-        public float Cooldown01 => Mathf.Clamp01(cooldown / 12f);
+        public float Cooldown01 => Mathf.Clamp01(cooldown / cooldownDuration);
+        public float CooldownSeconds => cooldown;
+        float cooldownDuration = 12;
         public int Checks { get; private set; }
         public bool AbilityHeld { get; private set; }
         public bool AbilitiesEnabled
@@ -47,6 +50,7 @@ namespace ChessFight.RagdollLab
             lineMaterial = new Material(Shader.Find("Sprites/Default"));
             warning = Ring("Check warning", .035f, new Color(1, .3f, .15f));
             recharge = Ring("Ability cooldown", .025f, new Color(1, .82f, .12f));
+            InitializeCannon();
         }
         LineRenderer Ring(string title, float width, Color color)
         {
@@ -66,18 +70,23 @@ namespace ChessFight.RagdollLab
         { LeaveBlue(); Section = KingRushSection.Red1; cooldown = 0; Checks = 0; }
         public void SetInput(PawnInput input, bool held = false)
         {
+            cannonAim = input.aim; cannonGrabHeld = input.grab;
+            if (CannonFlight) input = default;
             abilityPressed |= input.ability; AbilityHeld = held;
             // Never send King Rush E/Q to the Queen Hill hook on the shared pawn.
             input.ability = input.ability2 = false; Pawn.SetInput(input);
         }
-        public void CancelAbility() { windup = 0; abilityPressed = false; AbilityHeld = false; }
+        public void CancelAbility() { windup = 0; abilityPressed = false; AbilityHeld = false; cannonTarget = null; }
         public void Step(float dt)
         {
+            StepCannonClearance(dt);
             if (!match.Authority) { CancelAbility(); return; }
+            StepCannonFlight(dt);
             cooldown = Mathf.Max(0, cooldown - dt);
-            bool allowed = AbilitiesEnabled && !Pawn.Floating && Pawn.State == PawnState.Active;
+            bool allowed = AbilitiesEnabled && !CannonFlight && !Pawn.Floating && Pawn.State == PawnState.Active;
             if (!allowed || (AbilityActive && Pawn.Hits != hitsAtStart)) CancelAbility();
-            if (AbilityActive)
+            if (AbilityActive && Piece == KingRushPiece.Rook) StepCannonAim(dt);
+            else if (AbilityActive)
             {
                 windup -= dt;
                 if (windup <= 0)
@@ -94,13 +103,15 @@ namespace ChessFight.RagdollLab
                     }
                 }
             }
-            // Other five abilities intentionally remain unavailable in this milestone.
             if (abilityPressed && allowed && Piece == KingRushPiece.King && cooldown <= 0)
-            { windup = .5f; cooldown = 12; hitsAtStart = Pawn.Hits; }
+            { windup = .5f; cooldownDuration = cooldown = 12; hitsAtStart = Pawn.Hits; }
+            if (abilityPressed && allowed && Piece == KingRushPiece.Rook && cooldown <= 0 && !AbilityActive) BeginCannon();
             abilityPressed = false;
         }
         public void Respawn(Vector3 ground)
         {
+            RestoreCannonClearance();
+            CannonFlight = false;
             CancelAbility(); AbilitiesEnabled = false;
             ((ICharacterDriver)HitReceiver).Teleport(ground, Quaternion.identity);
             Pawn.SetInput(default); // Clear held movement/grab along with latched actions.
@@ -113,6 +124,11 @@ namespace ChessFight.RagdollLab
                 if (Pawn.handR.HeldCollider == body) Pawn.handR.Release(.6f);
             }
         }
+        void FixedUpdate()
+        {
+            // Run after the shared pawn has configured its usual standing drives.
+            if (CannonFlight && match.Authority) Pawn.FreeKingRushFlightTranslation();
+        }
         void LateUpdate()
         {
             if (Pawn == null) return;
@@ -120,8 +136,9 @@ namespace ChessFight.RagdollLab
             if (Camera.main != null) label.transform.rotation = Camera.main.transform.rotation;
             label.text = (Team == 0 ? "백 " : "흑 ") + KingRushPieces.Name(Piece) + (FixedKing ? " [고정]" : "");
             label.color = Team == 0 ? new Color(1, .94f, .65f) : new Color(.7f, .85f, 1);
-            DrawRing(warning, new Vector3(BodyPosition.x, .04f, BodyPosition.z), 4, AbilityActive ? 1 : 0);
+            DrawRing(warning, new Vector3(BodyPosition.x, .04f, BodyPosition.z), 4, AbilityActive && Piece == KingRushPiece.King ? 1 : 0);
             DrawRing(recharge, BodyPosition + Vector3.up * 1.25f, .26f, Cooldown01);
+            DrawCannon();
         }
         static void DrawRing(LineRenderer line, Vector3 center, float radius, float fraction)
         {
@@ -135,6 +152,8 @@ namespace ChessFight.RagdollLab
             }
         }
         void OnDestroy()
-        { if (match != null) match.Unregister(this); if (lineMaterial != null) Destroy(lineMaterial); }
+        { RestoreCannonClearance();
+            if (Pawn != null && Pawn.PoseOverride == CannonPose) Pawn.PoseOverride = previousPose;
+            if (match != null) match.Unregister(this); if (lineMaterial != null) Destroy(lineMaterial); }
     }
 }

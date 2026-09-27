@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 namespace ChessFight.RagdollLab
 {
     // Opt-in integration evidence, not a claim of human-tested game feel.
-    public sealed class KingRushAutoTest : MonoBehaviour
+    public sealed partial class KingRushAutoTest : MonoBehaviour
     {
         int passed, failed;
         KingRushPrototype game;
@@ -19,6 +19,12 @@ namespace ChessFight.RagdollLab
         {
             game = GetComponent<KingRushPrototype>();
             yield return new WaitForSeconds(1.5f);
+            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-kingRushCannonOnly") >= 0)
+            {
+                yield return TestCannon();
+                Debug.Log($"[KingRushTest] RESULT {passed} passed / {failed} failed (cannon only)");
+                Application.Quit(failed == 0 ? 0 : 1); yield break;
+            }
             Check(game.Players.Count == 12 && game.Players[5].FixedKing && game.Players[11].FixedKing, "Six per team with one fixed king each");
             bool same = true;
             foreach (var p in game.Players)
@@ -117,6 +123,7 @@ namespace ChessFight.RagdollLab
             game.ResetRound(); yield return new WaitForSeconds(.5f);
             bool finite = true; foreach (var p in game.Players) finite &= p.Pawn.IsFinite();
             Check(finite, "Twelve physical pawns remain finite after ability, water and reset");
+            yield return TestCannon();
             Debug.Log($"[KingRushTest] RESULT {passed} passed / {failed} failed");
             Application.Quit(failed == 0 ? 0 : 1);
         }

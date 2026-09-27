@@ -27,5 +27,7 @@ namespace ChessFight.Gameplay
         bool Promote(KingRushPiece piece);
         void LeaveBlue();
         void ReleaseHoldOn(IKingRushCharacter target);
+        Vector3 LaunchOrigin { get; }
+        bool LaunchFromCannon(Vector3 velocity, bool enemy);
     }
 }

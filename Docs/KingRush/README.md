@@ -2,7 +2,7 @@
 
 ## R52 첫 래그돌 시험장 (`JY-kingrush`)
 
-2026-09-27. **사용자 Unity 확인 대기**. 새 기획은 [DESIGN](DESIGN.md), 개발 목록은 [MECHANICS_TODO](MECHANICS_TODO.md). 확정 구조/능력과 미션·맵의 1차 안을 구분한다.
+2026-09-27. **R52 첫 시험장은 사용자가 “잘 작동해”라고 확인**했다(승격·열린 문 화면 첨부). 개별 검사 전부나 Steam 성공으로 확대하지 않는다. 새 기획은 [DESIGN](DESIGN.md), 개발 목록은 [MECHANICS_TODO](MECHANICS_TODO.md). 확정 구조/능력과 미션·맵의 1차 안을 구분한다.
 
 사용자 정정: **`JY-gpt_gamemode@852eb2b` → 별도 `JY-kingrush`**. Claude 최신 미커밋 변경과 소드파이트 원본 채팅은 수정하지 않았다. 원문 문서가 전제한 QotH M6/M11/M13은 이 기준에 없다. 공통 기물표 대신 `KingRushPiece`/모드 전용 컴포넌트를 사용한다.
 
@@ -12,13 +12,28 @@
 2. **ChessFight → King Rush → Open Mechanics Test** → Play. 또는 `Assets/Scenes/KingRushPrototype.unity`를 연다. Steam 필요 없음.
 3. 나머지 11명은 입력 없는 물리 더미. **Tab** 조종 대상 변경, **F2** 백팀 킹 선택. 팀당 마지막 슬롯을 킹으로 정한 것은 시험용이며 최종 선정 규칙이 아니다.
 4. 정면 노란 발판(나이트/비숍)에 **폰 하나만 1.5초** 서면 승격. 두 폰이면 멈춤, 진행하던 폰이 내려가면 초기화. 킹·승격 기물은 세지 않는다. 발판은 한 번만 쓴다.
-5. **F4**: 초기화 후 파란 구역에 **킹+아군 더미2+적군 더미3** 배치. **E** 체크!: 0.5초 원형 예고 → 반경4m, 수평6+위1m/s, 아군 포함 피격, 쿨타임12초. 나머지 다섯 능력은 미구현으로 안내.
+5. **F4**: 초기화 후 파란 구역에 **킹+아군 더미2+적군 더미3** 배치. **E** 체크!: 0.5초 원형 예고 → 반경4m, 수평6+위1m/s, 아군 포함 피격, 쿨타임12초. 룩은 아래 R53 시험, 나머지 네 능력은 미구현으로 안내.
 6. **F7 백팀 / F8 흑팀 완료**는 실제 미션 대신 쓰는 디버그 버튼. 자기 팀 문은 즉시, 상대 문은 첫 완료+20초(자기 완료가 더 빠르면 그때). 열린 자기 팀 문을 지나면 승격자는 폰 복귀, 고정 킹은 유지.
 7. **R** 현재 구간 입구 부활(승격 유지), 물은 기존 5초 둥둥 후 부활. **F3** 전체 초기화. **Esc** 안내/커서, **Esc 후 Backspace** 로비. Esc 중에도 물리/시간은 계속 흐른다.
 
 WASD·Shift·Space·좌클릭 태클·우클릭 잡기는 기존 그대로. E/Q는 모드가 가로채 갈고리로 바뀌지 않는다. 검 없음. 모든 기물은 동일한 폰 질량/이동/등반/질주/피격 설정을 쓴다.
 
 Windows 빌드: `Builds/KingRushPrototype/ChessFight.exe`. **새 시험장은 아직 로비 선택에 연결하지 않았다.** 로비 KingRush는 기존 캡슐 코스다. 기존 소드파이트·로비 연결은 기반 브랜치 그대로 보존했다.
+
+### R53 룩 인간 대포 — 사용자 확인 대기
+
+Play를 멈춰 컴파일한 뒤 다시 Play한다. **F5**는 룩+적군 더미, **Shift+F5**는 룩+아군 더미를 긴 파란 시험 레인에 배치한다. 필요하면 조금 다가가 **우클릭을 계속 눌러 실제로 잡고 E**를 누른다.
+
+- 0.6초 조준 뒤 발사. 마우스로 방향을 바꾸며, 아래를 볼수록 가까이(4~20m) 날린다. 청록색 예상 궤적/착지 원을 표시한다. 땅을 찾지 못하면 빨강으로 바뀌고 발사하지 않는다.
+- 조준 중 우클릭을 놓거나 잡기가 풀리거나 피격/구역 이탈하면 취소. 상대가 쌓아 둔 버둥 게이지는 초기화하지 않는다.
+- 아군은 발부터 착지, 적은 실제 착지 후 1초 누움. 발사 성공 뒤 8초 쿨타임. 날아가는 동안 미션 몸 수에서 제외한다.
+- 발사자 팔에 걸리지 않도록 발사자/대상 사이 충돌만 0.2초 유예하고 기존 충돌 설정을 복구한다. 벽/다른 몸은 계속 충돌한다. 비행 중 이동·점프·태클 입력은 잠시 차단하며 착지/중단 뒤 정상 복구한다.
+- 궤적은 출발/착지점 중 높은 쪽 위로 3m 솟는 포물선이다. 벽을 피하는 자동 경로가 아니며 장애물 충돌은 그대로 남는다.
+- 룩 자세는 가벼운 상체 숙임까지만. 성곽 머리/포구 아트, 달라붙은 폰 떼기(폰 능력), 온라인 예고 동기화는 후속이다. 아직 전체 K3 완료가 아니다.
+
+기본 조작·공유 튜닝·소드파이트는 보존한다. `RagdollPawn.KingRush.cs`는 이 모드 대포에서만 호출하는 발사 보조 진입점이며 일반 도약대는 사용하지 않는다.
+
+개발 검사에서 걷기 앵커가 대포의 선형 속도를 빼앗는 문제와, 이전 물리 상태에 따라 발사자의 팔에 걸리는 문제를 발견했다. 비행 중 선형 드라이브 해제(자세 균형은 유지)·위 0.2초 발사자 충돌 유예로 처리한다. 기존 공유 `RagdollPawn.cs`를 고치지 않고 모드 전용 partial 진입점/후순위 FixedUpdate에서만 적용하며, 다음 정상 스텝이 기존 드라이브를 복구한다. 검사 순서를 바꾼 단독/전체 실행으로 회귀를 확인한다.
 
 ### 구현 범위와 남은 일
 
@@ -30,7 +45,8 @@ Windows 빌드: `Builds/KingRushPrototype/ChessFight.exe`. **새 시험장은 �
 | K2 능력 구역 | 몸 중심 출입/취소, 모드 로컬 E 누름/유지, 쿨타임 링/HUD | 공통 CharacterCommand/패킷 AbilityHeld는 **아직 안 바꿈**. 상태 효과는 능력별 추가 |
 | K3a 체크! 1차 | 예고원·아군 포함 피격·기존 잡기 해제·12초 대기 | 홀 드는 자세·3m 이동/착지 뒤1초 계측·새 구속/왕좌 연동. **전체 완료 아님** |
 | K4 몸 세기 기반 | 경기 명단 몸당1회, 물/잡힘/발사 제외, 파랑 몸 수 표시 | 승천/여왕의 손/매달림/탑승·운반자 위치·지면 정보 |
-| K6~K12 | 착수 안 함 | 능력5종 → **사용자 재미 확인** → 미션/맵 → 권한 결정 후 온라인/봇 |
+| K3b 인간 대포 1차 | 실제 잡기 기반 조준·포물선·착지 구분·취소/쿨타임 | 외형·매달림 연동·사용자 손맛/온라인 |
+| K6~K12 | 착수 안 함 | 남은 능력4종 → **사용자 재미 확인** → 미션/맵 → 권한 결정 후 온라인/봇 |
 
 구간은 사람별이며 앞선 사람이 뒤쪽 사람의 능력을 켜지 않는다. 시험 코스는 빨강1→파랑1→빨강2만 있다. 체크포인트·전체 경기·결승은 아직 없다. F4/킹 배정/문 완료 키는 본 게임 규칙이 아니다.
 
@@ -38,7 +54,7 @@ Windows 빌드: `Builds/KingRushPrototype/ChessFight.exe`. **새 시험장은 �
 
 - `Core/KingRushRules.cs`, `KingRushPieces.cs`: Unity 없는 규칙. KR1은 문/승격만 다루는 기반이며 전체 경기 전송 규약이 아니다.
 - `Gameplay/KingRush/`: 명단/시간·능력/몸 계약·승격 발판/구역/문. 래그돌·Steam 참조 없음.
-- `RagdollLab/Scripts/KingRushPawn.cs`: 공유 폰 옆의 모드 상태/입력/체크!. 공유 Pawn/카메라/튜닝 무변경.
+- `RagdollLab/Scripts/KingRushPawn.cs` / `.Cannon.cs`: 공유 폰 옆의 모드 상태/입력/체크!/대포. `RagdollPawn.KingRush.cs`에 모드 전용 발사 보조. 공유 카메라/튜닝 무변경.
 - `KingRushPrototype.cs`: 시험장/물 부활/더미. 물 콜백은 예약만, Update에서 부활.
 - `KingRushBuilder`: 새 씬이 없을 때만 생성. 기존 씬 재생성 안 함. 별도 시험 빌드의 첫 씬은 시험장이며 일반 배포 목록은 안 바꿈.
 - `KingRushAutoTest`: 실제 플레이어 자동 검사. 사용자 손맛/두 PC 시험을 대신하지 않음.
@@ -50,9 +66,13 @@ Unity.exe -batchmode -nographics -projectPath <이 폴더> -executeMethod ChessF
 Builds/KingRushPrototype/ChessFight.exe -kingRushTest -screen-fullscreen 0 -screen-width 1280 -screen-height 720 -logFile <로그>
 ```
 
-**자동 기록:** Core46·모의 세션20·실제 Unity DLL 전 어셈블리 컴파일·참조 경계 통과. 첫 Windows 플레이어29/0. 최종 빌드(`kingrush-build-2.log`)는 **33/0을 두 번** 통과했다(`kingrush-test-2.log`:1600×900, `kingrush-test-3.log`:1280×720). 실제 문을 걸어 통과·F4 더미 배치·킹 발판 제외·파랑 E/Q 갈고리 격리를 추가 검사했다. 기존 Pawn/카메라/튜닝/소드파이트·로비 씬은 시작 커밋과 차이 없음. `Logs/kingrush-*.log`는 Git 제외. 렌더: `%USERPROFILE%/AppData/LocalLow/DefaultCompany/ChessFighter/KingRushTest`의 overview/hud/promoted/check-warning.png. AI가 렌더를 확인했으며 사용자 손맛/Steam 확인은 아니다. [사람 확인 R52](../Network/VALIDATION.md).
+**R53 자동 기록:** Core46·모의 세션20·실제 Unity DLL 전 어셈블리 컴파일·참조 경계 통과. 최종 Windows 빌드(`Logs/kingrush-r53-build.log`) 전체 검사 **80/0**(1600×900, `Logs/kingrush-r53-full.log`). 5/10/20m 예상점 대비 착지 오차 약 **0.07/0.16/0.36m**. 실제 잡기·0.6초 예고·버둥 게이지/탈출·방향 전환·재누름·실제 잡은 상태 쿨타임 차단·피격/부활/구역 취소·지면 없음·벽 충돌·쓰러진 아군 착지·이동 복구·발사자 충돌 유예/복구를 포함한다. 앞선 빌드의 전체79/0, 대포 단독28/0은 중간 기록이다. R53 사용자 손맛/Steam 확인은 아니다.
 
-빌드와 DLL 검사는 **동시에 돌리지 않는다**. Unity 종료가 Temp를 지워 검사 중 DLL이 사라질 수 있다. 기존 공유 URP missing-script/convex-mesh 경고는 별도 자산 문제. 새 Steam 프로토콜 변경 없음(v10/CFS3/CFR4).
+**R52 자동 기록:** 첫 Windows 플레이어29/0. 당시 최종 빌드(`kingrush-build-2.log`)는 **33/0을 두 번** 통과했다(`kingrush-test-2.log`:1600×900, `kingrush-test-3.log`:1280×720). 실제 문을 걸어 통과·F4 더미 배치·킹 발판 제외·파랑 E/Q 갈고리 격리를 추가 검사했다. 기존 `RagdollPawn.cs`/카메라/튜닝/소드파이트·로비 씬은 여전히 시작 커밋과 차이 없음(대포 보조는 새 partial 파일). `Logs/kingrush-*.log`는 Git 제외. 렌더: `%USERPROFILE%/AppData/LocalLow/DefaultCompany/ChessFighter/KingRushTest`의 overview/hud/promoted/check-warning/cannon-aim.png. AI가 렌더를 확인했다. [사람 확인 R52/R53](../Network/VALIDATION.md).
+
+**순서 변경 재실행:** 같은 R53 최종 빌드에 `-kingRushTest -kingRushCannonOnly`를 주면 앞선 R52 시험 없이 대포부터 검사한다. **47/0**(1280×720, `Logs/kingrush-r53-cannon.log`). 전체 실행과 단독 실행 모두 통과했다.
+
+빌드와 DLL 검사는 **같은 프로젝트에서 동시에 돌리지 않는다**. Unity 종료가 Temp를 지워 검사 중 DLL이 사라질 수 있다. R53은 별도 임시 사본에서 빌드해 사용자가 연 에디터와 분리했다. 기존 공유 URP missing-script/convex-mesh 경고는 별도 자산 문제. 새 Steam 프로토콜 변경 없음(v10/CFS3/CFR4).
 
 ---
 
