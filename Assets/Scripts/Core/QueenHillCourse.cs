@@ -18,12 +18,12 @@ namespace ChessFight.Network
         }
     }
 
-    // The numbers of the Queen of the Hill map, "sky palace" (DESIGN §3, 7th
-    // revision, R49): the tower is a chessboard stood on end. Seven floors, one per
+    // The numbers of the Queen of the Hill map, "sky palace" (DESIGN §3, 8th
+    // revision, R50): the tower is a chessboard stood on end. Seven floors, one per
     // rank (a pawn climbs from rank 1 to rank 7), and the summit is rank 8, where a
-    // pawn promotes. Floor n stands on rank n and is climbed to rank n+1, so the
-    // pioneer bell, the light-column lift and the checkpoint of floor n are all on
-    // rank n+1 (QueenHillRules section n).
+    // pawn promotes. Floor n stands on rank n and is climbed to rank n+1: out of the
+    // team's plaza on rank n, round its west or east wing, back to its plaza on
+    // rank n+1, where the team's bell for floor n hangs (QueenHillRace).
     //
     // The map itself is data: Tools/QueenHill/build_layout.py writes
     // Assets/Resources/QueenHill/QueenHillLayout.json and QueenHillLevel builds it.
@@ -34,11 +34,11 @@ namespace ChessFight.Network
     {
         public const int Ranks = 8;
         public const int Floors = Ranks - 1;
-        public const int Sections = Floors;             // QueenHillRules sections
+        public const int Sections = Floors;             // QueenHillRules sections (the 7th revision's shared bells)
         public const float SeaLevel = 0f;
         public const float BridgeTop = 12f;             // the two broken bridges
         public const float FirstRank = 16f;             // the top of the cliff
-        public const float FloorHeight = 20f;
+        public const float FloorHeight = 26f;
 
         // The pawn (measured in the ragdoll lab, Docs/RagdollLab/README.md and Player/RAGDOLL §8).
         public const float RunSpeed = 5.5f;
@@ -47,25 +47,22 @@ namespace ChessFight.Network
         public const float HookFullReach = 18.4f;       // a fully charged throw (M5)
         public const float HipsHeight = 0.6f;           // above the feet, standing
 
-        // The gap between the broken end of a bridge and the cliff; the arcade roof on the
-        // first floor is the "two squares" landing a full throw can reach.
+        // The gap between the broken end of a bridge and the cliff (rank 1).
         public const float BridgeGap = 10.5f;
-        public const float TwoSquaresRise = 6f + 1f;    // the arcade roof above rank 1
-        public const float TwoSquaresAcross = 8f;       // its corner, sideways from the end of the bridge
-        public const float TwoSquaresOut = 10.5f;       // and toward the tower
 
-        // The light column's lift for each floor (DESIGN §3.3 B).
-        public const float LiftSpeed = 3.5f, LiftPause = 2f;
+        // A team's shortcut lift up a floor, once its bell has rung, and its vacuum tube.
+        public const float LiftSpeed = 4f, LiftPause = 1.5f;
+        public const float TubeSpeed = 32f;
 
         public static readonly QueenHillFloor[] All =
         {
-            new QueenHillFloor(1, "폭포 테라스 · 대계단", "대계단(가운데가 무너짐, 미끄러지는 돌) · 아치 회랑(기둥 → 탑 → 외나무) · 갈고리 2칸", false),
-            new QueenHillFloor(2, "사슬 곤돌라", "번갈아 오르내리는 체크 큐브 5개 · 사슬 사다리(쉬는 발코니, 흔들리는 추)", false),
-            new QueenHillFloor(3, "떠오르는 석판 · 나이트 · 비숍", "기둥을 도는 석판 12개 · 나이트 도약대 3번 · 비숍 대각선 레일 2번", false),
-            new QueenHillFloor(4, "궤도 고리 · 룩의 탑", "기울어 도는 고리 두 개(반 바퀴에 9 m) · 네 귀퉁이 룩의 탑", true),
-            new QueenHillFloor(5, "시계 태엽", "시계 관람차 · 바늘을 피하며 시계판 오르기 · 태엽 스프링 2번", false),
-            new QueenHillFloor(6, "공중 정원", "떠 있는 섬 → 사슬 → 그네 → 오르는 섬 · 담쟁이 버팀벽", false),
-            new QueenHillFloor(7, "궁전 대발코니 · 빛의 계단", "두 갈래 나선 계단(쓸어내는 팔) · 켜졌다 꺼지는 빛의 계단", true),
+            new QueenHillFloor(1, "폭포 테라스 · 대계단", "서: 대계단(미끄러지는 돌, 무너진 가운데) · 아치 회랑 · 폰의 행진 / 동: 피스톤 경사로 · 무너지는 체스판 · 계단 벽 · 룩 징검다리 · 밀려오는 벽", false),
+            new QueenHillFloor(2, "사슬 곤돌라", "서: 곤돌라 큐브 · 흔들리는 추 · 사슬 사다리 · 도개교 / 동: 룩 징검다리 · 승강기 · 곤돌라 · 그네 · 피스톤 경사로", false),
+            new QueenHillFloor(3, "떠오르는 석판 · 나이트 · 비숍", "서: 기둥을 도는 석판 · 밀려오는 벽 · 비숍 레일 · 도개교 / 동: 나이트 도약대 두 번 · 뛰어오르는 계단 · 무너지는 체스판", false),
+            new QueenHillFloor(4, "궤도 고리 · 룩의 탑", "기울어 도는 고리 두 개(반 바퀴에 10 m) → 탑 벽 · 동서 네 룩의 탑(6.5 m씩 네 번)", true),
+            new QueenHillFloor(5, "시계 태엽", "서: 톱니 원판 · 시계판 벽 · 흔들리는 추 · 폰의 행진 / 동: 체스 시계 · 관람차 · 태엽 스프링 · 외나무다리", false),
+            new QueenHillFloor(6, "공중 정원", "서: 떠 있는 섬 · 사슬 사다리 · 그네 · 도개교 · 승강기 / 동: 외나무다리 · 담쟁이 벽 · 떠 있는 섬 · 폰의 행진", false),
+            new QueenHillFloor(7, "궁전 대발코니 · 빛의 계단", "두 갈래 나선 계단(드럼의 피스톤) · 켜졌다 꺼지는 빛의 계단 25칸", true),
         };
 
         public static QueenHillFloor Floor(int number) =>
@@ -85,16 +82,12 @@ namespace ChessFight.Network
             return rank;
         }
 
-        // Straight-line distance from a pawn's hips on the broken end of a bridge to the cliff's
-        // rim, and to the corner of the arcade roof (the "two squares"): both inside a full throw.
+        // Straight-line distance from a pawn's hips on the broken end of a bridge to the cliff's rim:
+        // inside an easy throw of the hook.
         public static float HookDistanceToRim =>
             (float)Math.Sqrt(BridgeGap * BridgeGap + Math.Pow(FirstRank - (BridgeTop + HipsHeight), 2));
 
-        public static float HookDistanceToTwoSquares =>
-            (float)Math.Sqrt(TwoSquaresAcross * TwoSquaresAcross + TwoSquaresOut * TwoSquaresOut
-                             + Math.Pow(FirstRank + TwoSquaresRise - (BridgeTop + HipsHeight), 2));
-
-        // Seconds for the light column's lift to carry a floor.
+        // Seconds for a team's shortcut lift to carry a floor.
         public static float LiftSeconds => (FloorHeight - 0.3f) / LiftSpeed + Math.Max(0.5f, LiftSpeed / 6f);
     }
 }

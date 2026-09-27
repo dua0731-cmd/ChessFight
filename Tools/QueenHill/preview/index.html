@@ -1,7 +1,8 @@
 <!doctype html>
 <!-- Queen of the Hill layout preview (Tools/QueenHill/README.md). Loaded by render.py through a
      local web server; renders layout.js (written by render.py) with three.js. The view comes from
-     the URL: #eye=x,y,z&at=x,y,z&fov=45&t=0 (Unity coordinates, seconds on the shared clock). -->
+     the URL: #eye=x,y,z&at=x,y,z&fov=45&t=0 (Unity coordinates, seconds on the shared clock), and
+     optionally &clip=lo,hi to show only what lies between two heights (one floor at a time). -->
 <html><head><meta charset="utf-8"><title>Queen of the Hill preview</title>
 <style>html,body{margin:0;background:#a4c9ec;overflow:hidden}</style>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js"}}</script>
@@ -18,15 +19,15 @@ const sky = new THREE.Color(0.64, 0.79, 0.93);
 scene.background = sky; scene.fog = new THREE.Fog(sky, 180, 900);
 scene.add(new THREE.HemisphereLight(0xeaf2ff, 0x8a7a66, 1.15));
 const sun = new THREE.DirectionalLight(0xfff3dd, 2.1);
-sun.position.set(80, 160, 60); sun.castShadow = true;
+sun.position.set(120, 280, 90); sun.castShadow = true;
 sun.shadow.mapSize.set(4096, 4096);
-Object.assign(sun.shadow.camera, {left: -70, right: 70, top: 70, bottom: -70, near: 10, far: 500});
-sun.target.position.set(0, 70, 0); scene.add(sun); scene.add(sun.target);
+Object.assign(sun.shadow.camera, {left: -140, right: 140, top: 140, bottom: -140, near: 10, far: 900});
+sun.target.position.set(0, 100, 0); scene.add(sun); scene.add(sun.target);
 
 const COL = {marble:[.93,.88,.78], honey:[.88,.76,.55], cliff:[.84,.77,.64], garden:[.42,.66,.44], cypress:[.18,.4,.26],
   gold:[.93,.74,.3], lapis:[.2,.33,.66], palegold:[.93,.85,.6], light:[.72,.93,1], sea:[.12,.56,.62], stone:[.72,.67,.6],
   rock:[.56,.52,.48], waterfall:[.84,.95,1], chain:[.85,.66,.25], niche:[.78,.7,.58], ruby:[.72,.2,.26], cloud:[.97,.98,1],
-  rope:[.6,.45,.3], checker:null};
+  rope:[.6,.45,.3], glass:[.75,.9,.95], checker:null};
 const mats = {};
 function mat(key) {
   key = key || 'marble';
@@ -45,7 +46,8 @@ function mat(key) {
   } else {
     const c = COL[key] || [1, 0, 1];
     m = new THREE.MeshLambertMaterial({color: new THREE.Color(c[0], c[1], c[2]),
-      transparent: key === 'waterfall' || key === 'cloud', opacity: key === 'waterfall' ? 0.75 : key === 'cloud' ? 0.8 : 1});
+      transparent: key === 'waterfall' || key === 'cloud' || key === 'glass',
+      opacity: key === 'waterfall' ? 0.75 : key === 'cloud' ? 0.8 : key === 'glass' ? 0.35 : 1, depthWrite: key !== 'glass'});
   }
   return mats[key] = m;
 }
@@ -123,7 +125,7 @@ for (const pc of LAYOUT.pieces) {
     const u = ((((T + a[3]) / a[0]) % 1) + 1) % 1;
     obj.visible = u >= a[1] && u < a[2];
   }
-  if (obj.isMesh) { obj.castShadow = pc.c !== 'sea' && pc.c !== 'cloud' && pc.c !== 'waterfall'; obj.receiveShadow = true; }
+  if (obj.isMesh) { obj.castShadow = pc.c !== 'sea' && pc.c !== 'cloud' && pc.c !== 'waterfall' && pc.c !== 'glass'; obj.receiveShadow = true; }
   obj.position.copy(toThreeP([pos.x, pos.y, pos.z]));
   obj.quaternion.copy(toThreeQ(rot));
   (pc.g ? groups[pc.g] : scene).add(obj);
@@ -133,6 +135,10 @@ for (const pc of LAYOUT.pieces) {
 const cam = new THREE.PerspectiveCamera(+(q.fov || 45), W / H, 0.3, 3000);
 const eye = vec(q.eye || '90,70,-150'), at = vec(q.at || '0,80,0');
 cam.position.copy(toThreeP(eye)); cam.lookAt(toThreeP(at));
+if (q.clip) {
+  const [lo, hi] = vec(q.clip);
+  renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(0, 1, 0), -lo), new THREE.Plane(new THREE.Vector3(0, -1, 0), hi)];
+}
 renderer.render(scene, cam);
 document.title = 'RENDERED ' + count + ' ' + innerWidth + 'x' + innerHeight + ' ' + devicePixelRatio;
 </script></body></html>

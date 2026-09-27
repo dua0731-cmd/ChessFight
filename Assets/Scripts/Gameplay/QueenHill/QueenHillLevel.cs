@@ -7,18 +7,21 @@ using Object = UnityEngine.Object;
 
 namespace ChessFight.Gameplay
 {
-    // The Queen of the Hill map, "sky palace" (DESIGN §3, 7th revision, R49), as a
+    // The Queen of the Hill map, "sky palace" (DESIGN §3, 8th revision, R50), as a
     // GRAYBOX: plain shapes in the signal colours of §3.9, at the real scale. Seven
     // floors, one per rank of the chessboard, and the summit, rank 8, where a pawn
-    // promotes (QueenHillCourse).
+    // promotes (QueenHillCourse). Each team climbs its own half through a west or an
+    // east wing; its plazas, vacuum tube and shortcut lifts stand in front of it.
     //
     // The map is DATA. Tools/QueenHill/build_layout.py writes
     // Assets/Resources/QueenHill/QueenHillLayout.json and this component builds it
     // when the scene starts: a list of pieces, each a box, a cylinder, a group, a
     // trigger or a sign, optionally moving on the shared clock (MovingPlatform,
     // OrbitPlatform, Oscillator, Pendulum, Spinner, PhaseToggle) and optionally doing
-    // a job (a bell, a light-column path, a checkpoint, a spawn point, the hook start
-    // zone, the sea, a launch pad, a rope, a promotion pedestal). Change the map in
+    // a job (a team's bell and shortcut, a rank pad, a vacuum tube and its stations,
+    // the rank-1 respawn, a spawn point, the hook start zone, the sea, a launch pad,
+    // a rope, a promotion pedestal; the shared bells, paths and checkpoints of the
+    // 7th revision are still understood). Change the map in
     // the script, never in the JSON; Tools/QueenHill/preview renders it without Unity.
     //
     // Keep the level object at the origin and unrotated: water and hook zones are
@@ -35,7 +38,8 @@ namespace ChessFight.Gameplay
 
         public static QueenHillLevel Current { get; private set; }
 
-        public QueenHillMatch Match { get; private set; }
+        public QueenHillRaceMatch Race { get; private set; }
+        public QueenHillMatch Match { get; private set; }     // only for layouts with the old shared bells
         public int Pieces { get; private set; }
 
         Transform root;
@@ -43,6 +47,10 @@ namespace ChessFight.Gameplay
         readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
         readonly List<GameObject> movers = new List<GameObject>();
         readonly List<(GameObject group, int section)> paths = new List<(GameObject, int)>();
+        readonly List<(GameObject group, int floor, int team)> teamPaths = new List<(GameObject, int, int)>();
+        readonly List<(VacuumTube tube, int team, float speed)> tubes = new List<(VacuumTube, int, float)>();
+        readonly Dictionary<(int team, int rank), Transform> stations = new Dictionary<(int, int), Transform>();
+        readonly Dictionary<int, Transform> respawnSpots = new Dictionary<int, Transform>();
         readonly List<Object> owned = new List<Object>();
         Texture2D checkerTexture;
 
@@ -50,6 +58,28 @@ namespace ChessFight.Gameplay
         {
             Current = this;
             Build();
+        }
+
+        // Where a team stands on a rank's plaza (its tube station; rank 1: the respawn spot),
+        // for the playtest's rank jumps. The origin when the level has none.
+        public static Vector3 Plaza(int rank, int team) => Spot(rank, team, out var p, out _) ? p : Vector3.zero;
+
+        public static Quaternion PlazaFacing(int team) => Spot(1, team, out _, out var r) ? r : Quaternion.identity;
+
+        static bool Spot(int rank, int team, out Vector3 position, out Quaternion rotation)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+            var level = Current;
+            if (level == null) return false;
+            if (team != Teams.Black) team = Teams.White;
+            Transform t = null;
+            if (rank <= 1) level.respawnSpots.TryGetValue(team, out t);
+            else level.stations.TryGetValue((team, Mathf.Min(rank, QueenHillCourse.Ranks)), out t);
+            if (t == null) return false;
+            position = t.position;
+            rotation = t.rotation;
+            return true;
         }
 
         void OnDestroy()
@@ -83,7 +113,8 @@ namespace ChessFight.Gameplay
             public string c;    // colour
             public string m;    // motion: move, orbit, osc, pend, spin, toggle
             public float[] a;   // motion arguments
-            public string f;    // job: bell, path, checkpoint, spawn, hookzone, water, launch, rope, promote, sign
+            public string f;    // job: teambell, teampath, rankpad, tube, station, respawn, bridgespawn, spawn, hookzone,
+                                // water, launch, rope, promote, sign (and the old bell, path, checkpoint)
             public float[] b;   // job arguments
             public string t;    // text (a sign) or a colour (a rope)
         }
@@ -117,9 +148,8 @@ namespace ChessFight.Gameplay
             root.SetParent(transform, false);
             Atmosphere();
 
-            Match = GetComponent<QueenHillMatch>();
-            if (Match == null) Match = gameObject.AddComponent<QueenHillMatch>();
-            Match.Configure(QueenHillCourse.Sections, exclusiveSeconds);
+            Race = GetComponent<QueenHillRaceMatch>();
+            if (Race == null) Race = gameObject.AddComponent<QueenHillRaceMatch>();
 
             foreach (var piece in data.pieces)
             {
@@ -134,6 +164,19 @@ namespace ChessFight.Gameplay
                 var controller = new GameObject(group.name + " (Open Path)");
                 controller.transform.SetParent(root, false);
                 controller.AddComponent<OpenPath>().Configure(section, group);
+            }
+            foreach (var (group, floor, team) in teamPaths)
+            {
+                var controller = new GameObject(group.name + " (Team Path)");
+                controller.transform.SetParent(root, false);
+                controller.AddComponent<TeamPath>().Configure(floor, team, group);
+            }
+            foreach (var (tube, team, speed) in tubes)
+            {
+                var list = new Transform[QueenHillCourse.Ranks + 1];
+                for (int r = 2; r <= QueenHillCourse.Ranks; r++)
+                    if (stations.TryGetValue((team, r), out var station)) list[r] = station;
+                tube.Configure(team, speed, list);
             }
             Pieces = data.pieces.Length;
         }
@@ -227,13 +270,48 @@ namespace ChessFight.Gameplay
             switch (piece.f)
             {
                 case "path":
+                    OldRules();
                     paths.Add((go, Mathf.RoundToInt(F(b, 0, 1))));
                     break;
                 case "bell":
-                    MakeBell(go, Mathf.RoundToInt(F(b, 0, 1)));
+                    OldRules();
+                    MakeBell(go, Mathf.RoundToInt(F(b, 0, 1)), -1);
+                    break;
+                case "teambell":
+                    MakeBell(go, Mathf.RoundToInt(F(b, 0, 1)), Mathf.RoundToInt(F(b, 1)));
+                    break;
+                case "teampath":
+                    teamPaths.Add((go, Mathf.RoundToInt(F(b, 0, 1)), Mathf.RoundToInt(F(b, 1))));
+                    break;
+                case "rankpad":
+                {
+                    var box = go.AddComponent<BoxCollider>();
+                    box.isTrigger = true;
+                    box.size = V(piece.s, 0, 1f);
+                    go.AddComponent<RankPad>().Configure(Mathf.RoundToInt(F(b, 0, 2)));
+                    break;
+                }
+                case "tube":
+                {
+                    var box = go.AddComponent<BoxCollider>();
+                    box.isTrigger = true;
+                    box.size = V(piece.s, 0, 1f);
+                    tubes.Add((go.AddComponent<VacuumTube>(), Mathf.RoundToInt(F(b, 0)), F(b, 1, 32f)));
+                    break;
+                }
+                case "station":
+                    stations[(Mathf.RoundToInt(F(b, 0)), Mathf.RoundToInt(F(b, 1)))] = go.transform;
+                    break;
+                case "respawn":
+                    Race.SetRespawn(Mathf.RoundToInt(F(b, 0)), go.transform);
+                    respawnSpots[Mathf.RoundToInt(F(b, 0))] = go.transform;
+                    break;
+                case "bridgespawn":
+                    Race.SetBridge(Mathf.RoundToInt(F(b, 0)), go.transform);
                     break;
                 case "checkpoint":
                 {
+                    OldRules();
                     var box = go.AddComponent<BoxCollider>();
                     box.isTrigger = true;
                     box.size = V(piece.s, 0, 1f);
@@ -296,7 +374,18 @@ namespace ChessFight.Gameplay
             }
         }
 
-        void MakeBell(GameObject go, int section)
+        // The shared bells, opened paths and checkpoints of the 7th revision still work,
+        // on the old QueenHillMatch, for layouts that use them.
+        void OldRules()
+        {
+            if (Match != null) return;
+            Match = GetComponent<QueenHillMatch>();
+            if (Match == null) Match = gameObject.AddComponent<QueenHillMatch>();
+            Match.Configure(QueenHillCourse.Sections, exclusiveSeconds);
+        }
+
+        // team -1: the shared Bell of the 7th revision; 0/1: that team's TeamBell.
+        void MakeBell(GameObject go, int section, int team)
         {
             var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
             post.name = "Post";
@@ -318,7 +407,8 @@ namespace ChessFight.Gameplay
             reach.isTrigger = true;
             reach.center = new Vector3(-0.3f, 1.2f, 0f);
             reach.radius = 0.7f;
-            go.AddComponent<Bell>().Configure(section, pivot);
+            if (team < 0) go.AddComponent<Bell>().Configure(section, pivot);
+            else go.AddComponent<TeamBell>().Configure(section, team, pivot);
         }
 
         void MakeSign(GameObject go, string text, float size)
@@ -399,6 +489,7 @@ namespace ChessFight.Gameplay
             { "waterfall", new Color(0.84f, 0.95f, 1f) }, { "chain", new Color(0.85f, 0.66f, 0.25f) },
             { "niche", new Color(0.78f, 0.7f, 0.58f) }, { "ruby", new Color(0.72f, 0.2f, 0.26f) },
             { "cloud", new Color(0.97f, 0.98f, 1f) }, { "rope", new Color(0.6f, 0.45f, 0.3f) },
+            { "glass", new Color(0.75f, 0.9f, 0.95f, 0.35f) },
         };
 
         Material Material(string key)
@@ -423,10 +514,25 @@ namespace ChessFight.Gameplay
                 m.color = Color.white;
             }
             else m.color = Colours.TryGetValue(key, out var c) ? c : Color.magenta;
+            if (key == "glass") SeeThrough(m);
             if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", 0.12f);
             owned.Add(m);
             materials[key] = m;
             return m;
+        }
+
+        // The Standard shader's Fade mode, so the vacuum tube shows who rides it. Other shaders stay opaque.
+        static void SeeThrough(Material m)
+        {
+            if (!m.HasProperty("_Mode")) return;
+            m.SetFloat("_Mode", 2f);
+            m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            m.SetInt("_ZWrite", 0);
+            m.DisableKeyword("_ALPHATEST_ON");
+            m.EnableKeyword("_ALPHABLEND_ON");
+            m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
 
         // Box mesh with UVs in world metres (one unit per two metres).

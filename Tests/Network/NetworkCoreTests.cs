@@ -145,18 +145,34 @@ public static class NetworkCoreTests
                 Check(GameModes.Default.Playable && GameModes.Find("kingrush") == GameModes.KingRush && GameModes.KingRush.Scene == "KingRush", "default");
                 Check(GameModes.Find("nope") == null && GameModes.Resolve("") == GameModes.Default && GameModes.IndexOf("swordfight") == 2, "lookup");
                 Check(GameModes.All.All(m => m.Playable == (m.Scene.Length > 0)), "playable means a scene"); });
+            Test("Queen of the Hill race: each team opens its own shortcut, the first ring of the team counts", () => {
+                var r = new QueenHillRace(7);
+                Check(r.TryOpen(3, QueenHillRace.Black, 11, 50) && !r.TryOpen(3, QueenHillRace.Black, 12, 51), "first of the team");
+                Check(r.IsOpen(3, QueenHillRace.Black) && !r.IsOpen(3, QueenHillRace.White) && r.OpenedBy(3, QueenHillRace.Black) == 11, "per team");
+                Check(r.TryOpen(3, QueenHillRace.White, 21, 80) && r.OpenCount(QueenHillRace.White) == 1, "the other team opens its own later");
+                Check(!r.TryOpen(0, QueenHillRace.White, 1, 1) && !r.TryOpen(8, QueenHillRace.White, 1, 1) && !r.TryOpen(2, -1, 1, 1), "bad input");
+                var copy = new QueenHillRace(7);
+                Check(copy.Apply(r.Encode()) && copy.IsOpen(3, QueenHillRace.Black) && copy.IsOpen(3, QueenHillRace.White) && !copy.Apply(r.Encode()), "travels as text, only opens");
+                Check(!copy.Apply("3:1") && !copy.Apply("9:0:1"), "malformed dropped"); });
+            Test("Queen of the Hill race: a player's tube goes to its own highest rank, never a teammate's", () => {
+                var r = new QueenHillRace(7);
+                Check(r.ReachedRank(1) == 0 && !r.Landed(1) && r.TubeTarget(1) == 1, "nothing yet = the bridge");
+                Check(r.Reach(1, 1) && r.Landed(1) && r.TubeTarget(1) == 1, "landed on rank 1");
+                r.Reach(1, 3); r.Reach(1, 2); r.Reach(2, 6);
+                Check(r.ReachedRank(1) == 3 && r.TubeTarget(1) == 3 && r.TubeTarget(2) == 6, "own best, never lowered, not shared");
+                Check(r.Reach(2, 8) && r.TubeTarget(2) == 7 && !r.Reach(2, 9) && !r.Reach(3, 0), "the summit is climbed, not ridden");
+                r.Reset(); Check(r.TubeTarget(2) == 1 && r.OpenCount(QueenHillRace.White) == 0, "a new round"); });
             Test("Queen of the Hill course: seven floors, one per rank, the summit is rank 8", () => {
                 Check(QueenHillCourse.Floors == 7 && QueenHillCourse.Sections == 7 && QueenHillCourse.All.Length == 7, "seven floors");
-                Check(Math.Abs(QueenHillCourse.RankHeight(1) - 16f) < 1e-3f && Math.Abs(QueenHillCourse.TopHeight - 156f) < 1e-3f, "heights");
+                Check(Math.Abs(QueenHillCourse.RankHeight(1) - 16f) < 1e-3f && Math.Abs(QueenHillCourse.TopHeight - 198f) < 1e-3f, "heights");
                 Check(Enumerable.Range(1, 7).All(r => Math.Abs(QueenHillCourse.RankHeight(r + 1) - QueenHillCourse.RankHeight(r) - QueenHillCourse.FloorHeight) < 1e-3f), "even floors");
                 Check(QueenHillCourse.All.Select((f, i) => f.Number == i + 1).All(ok => ok), "numbering");
                 Check(QueenHillCourse.Floor(0) == null && QueenHillCourse.Floor(8) == null && QueenHillCourse.Floor(4).Shared && QueenHillCourse.Floor(7).Shared, "lookup");
-                Check(QueenHillCourse.RankAt(16.5f) == 1 && QueenHillCourse.RankAt(36.3f) == 2 && QueenHillCourse.RankAt(200f) == 8 && QueenHillCourse.RankAt(0f) == 1, "rank at a height"); });
-            Test("Queen of the Hill course: the hook reaches the cliff easily and the two-squares roof only at full strength", () => {
+                Check(QueenHillCourse.RankAt(16.5f) == 1 && QueenHillCourse.RankAt(42.3f) == 2 && QueenHillCourse.RankAt(41.9f) == 1
+                      && QueenHillCourse.RankAt(200f) == 8 && QueenHillCourse.RankAt(0f) == 1, "rank at a height"); });
+            Test("Queen of the Hill course: the hook reaches the cliff easily and a shortcut lift takes about seven seconds", () => {
                 Check(QueenHillCourse.HookDistanceToRim < QueenHillCourse.HookFullReach * 0.8f, "the rim is out of an easy throw");
-                Check(QueenHillCourse.HookDistanceToTwoSquares < QueenHillCourse.HookFullReach, "the two-squares roof is out of reach");
-                Check(QueenHillCourse.HookDistanceToTwoSquares > QueenHillCourse.HookFullReach * 0.8f, "the two-squares roof is too easy");
-                Check(QueenHillCourse.LiftSeconds > 5f && QueenHillCourse.LiftSeconds < 8f, "the light lift takes about six seconds"); });
+                Check(QueenHillCourse.LiftSeconds > 6f && QueenHillCourse.LiftSeconds < 8f, "the shortcut lift takes about seven seconds"); });
             Test("Link simulator delays in order and drops about the configured share", () => {
                 var sim=new LinkSimulator<int>(7){Profile=new LinkProfile{RoundTripMs=200}}; var got=new List<int>();
                 for(int n=0;n<5;n++) sim.Push(n,n*0.01);

@@ -14,7 +14,8 @@ namespace ChessFight.Gameplay
     // With no spawn point assigned it starts at the scene's SpawnPoint 0 of its
     // team (a level built from code places them), else at its own transform. In a
     // scene with a QueenHillMatch the water puts the character back where the
-    // match's checkpoint rules say (QueenHillMatch.TryRespawn).
+    // match's checkpoint rules say (QueenHillMatch.TryRespawn); with a
+    // QueenHillRaceMatch (the current map) on rank 1 by its team's vacuum tube.
     public sealed class PlaytestSpawner : MonoBehaviour
     {
         // Set by the match flow before loading a scene for a networked match, so
@@ -194,6 +195,19 @@ namespace ChessFight.Gameplay
         void Respawn()
         {
             respawnAt = -1f;
+            var race = QueenHillRaceMatch.Current;
+            if (race != null)
+            {
+                // Queen of the Hill: no checkpoints. Rank 1 beside the team's vacuum tube
+                // (its bridge if it never made it across).
+                if (!race.TryRespawn(driver, team, out var at, out var facing))
+                {
+                    at = startPosition;
+                    facing = startRotation;
+                }
+                MoveTo(at, facing);
+                return;
+            }
             var match = QueenHillMatch.Current;
             if (match != null)
             {
@@ -218,8 +232,9 @@ namespace ChessFight.Gameplay
             finished = false;
             result = "";
             runStart = Time.time;
-            // A fresh round: every bell silent, every checkpoint forgotten.
+            // A fresh round: every bell silent, every checkpoint and rank forgotten.
             QueenHillMatch.Current?.ResetRound();
+            QueenHillRaceMatch.Current?.ResetRound();
             MoveTo(startPosition, startRotation);
         }
 

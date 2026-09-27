@@ -27,10 +27,10 @@ Tools/                테스트 스크립트, Generators/, QueenHill/(맵 데이
 
 | 폴더 | 어셈블리 | 참조 | 게이트 | 책임 |
 |---|---|---|---|---|
-| `Scripts/Core/` | `ChessFight.Network.Core` | 없음 (`noEngineReferences`) | — | 예약 규칙, 패킷, 이동 모터, 봇 ID·두뇌, 연결 품질, FriendInfo, **게임 모드 목록(`GameModes`)**, 퀸 오브 더 힐 규칙·기물·코스 숫자(`QueenHillRules`·`ChessPieces`·`QueenHillCourse`). **Unity 없이 테스트** |
+| `Scripts/Core/` | `ChessFight.Network.Core` | 없음 (`noEngineReferences`) | — | 예약 규칙, 패킷, 이동 모터, 봇 ID·두뇌, 연결 품질, FriendInfo, **게임 모드 목록(`GameModes`)**, 퀸 오브 더 힐 규칙·기물·코스 숫자(`QueenHillRace` 8차 규칙, `QueenHillRules` 7차 규칙, `ChessPieces`, `QueenHillCourse`). **Unity 없이 테스트** |
 | `Scripts/Network/` | `ChessFight.Network.Steam` | Core, Steamworks.NET | `CHESSFIGHT_STEAM` | `SteamSession`(파티·매칭·로비), `SteamMotion`(이동 전송) |
 | `Scripts/Game/` | `ChessFight.Game` | Core | — | HUD 뷰, 로비 3D 라인업(`LobbyStage`), 카메라, 입력 추상화, 씬 이름, 패널·폰트, 파이프라인 우회, 프리팹 스크립트. **Steam 무참조** |
-| `Scripts/Gameplay/` | `ChessFight.Gameplay` | Game | — | 캐릭터 계약, 장애물, 코스, 물리 프로필, 오프라인 플레이테스트, 퀸 오브 더 힐(`QueenHill/`: 종·열린 길·체크포인트·승격·그레이박스 맵 `QueenHillLevel`). **Steam 무참조** |
+| `Scripts/Gameplay/` | `ChessFight.Gameplay` | Game | — | 캐릭터 계약, 장애물, 코스, 물리 프로필, 오프라인 플레이테스트, 퀸 오브 더 힐(`QueenHill/`: 그레이박스 맵 `QueenHillLevel`, 8차 규칙 창구 `QueenHillRaceMatch`·팀 종 `TeamBell`·팀 지름길 `TeamPath`·랭크 발판 `RankPad`·진공관 `VacuumTube`, 승격, 7차의 종·열린 길·체크포인트). **Steam 무참조** |
 | `Scripts/Bootstrap/` | `ChessFight.Game.Steam` | Core, Network.Steam, Game, Gameplay, Steamworks.NET | `CHESSFIGHT_STEAM` | `NetworkRuntime`, 씬 컨트롤러(Intro/Lobby, 모드 씬 공용 `MatchSceneView`) |
 | `Scripts/Input/` | `ChessFight.Game.Input` | Game, Unity.InputSystem | `CHESSFIGHT_INPUTSYSTEM` | Input System 이동 소스(자기 등록) |
 | `Scripts/Editor/` | Assembly-CSharp-Editor | — | — | 설치·씬 메뉴·빌드, `InputSettingsGuard` |

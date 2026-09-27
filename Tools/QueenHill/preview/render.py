@@ -9,17 +9,20 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 LAYOUT = os.path.join(ROOT, "Assets", "Resources", "QueenHill", "QueenHillLayout.json")
 
+# (name, eye, look at, field of view, optional height band to show)
 VIEWS = [
-    ("01_overview_south_east", (120, 95, -190), (0, 82, 0), 45),
-    ("02_from_white_bridge", (-4, 14, -52), (6, 34, -12), 64),
-    ("03_floor1", (40, 36, -62), (4, 25, -22), 52),
-    ("04_floor2", (-12, 62, -72), (0, 46, -24), 52),
-    ("05_floor3", (36, 82, -64), (4, 66, -22), 52),
-    ("06_floor4", (56, 104, -58), (0, 84, 0), 52),
-    ("07_floor5", (34, 120, -72), (2, 106, -24), 52),
-    ("08_floor6", (-32, 142, -72), (0, 126, -26), 52),
-    ("09_floor7_summit", (40, 172, -52), (0, 148, 0), 50),
-    ("10_overview_north_west", (-120, 95, 190), (0, 82, 0), 45),
+    ("01_overview_south_east", (175, 140, -235), (0, 105, 0), 45, None),
+    ("02_from_white_bridge", (-4, 15, -80), (4, 32, -40), 64, None),
+    ("03_floor1", (70, 95, -130), (0, 24, -40), 50, (8, 44)),
+    ("04_floor2", (-70, 121, -130), (0, 50, -40), 50, (40, 70)),
+    ("05_floor3", (70, 147, -130), (0, 76, -40), 50, (66, 96)),
+    ("06_floor4", (62, 150, -78), (0, 104, 0), 55, (90, 124)),
+    ("07_floor5", (-70, 199, -130), (0, 128, -40), 50, (118, 148)),
+    ("08_floor6", (70, 225, -130), (0, 154, -40), 50, (144, 174)),
+    ("09_floor7_summit", (48, 225, -62), (0, 188, 0), 55, (168, 230)),
+    ("10_overview_north_west", (-175, 140, 235), (0, 105, 0), 45, None),
+    ("11_white_hub", (34, 64, -92), (0, 42, -42), 55, None),
+    ("12_floor1_play_view", (30, 22, -8), (40, 26, -30), 70, None),
 ]
 
 
@@ -38,14 +41,19 @@ def main():
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(HERE, "layout.js"), "w", encoding="utf-8") as f:
         f.write("window.LAYOUT = " + open(LAYOUT, encoding="utf-8").read() + ";\n")
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=HERE)
-    handler.log_message = lambda *a: None
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+    handler = functools.partial(Quiet, directory=HERE)
     with socketserver.TCPServer(("127.0.0.1", 0), handler) as httpd:
         port = httpd.server_address[1]
         threading.Thread(target=httpd.serve_forever, daemon=True).start()
-        for name, eye, at, fov in VIEWS:
+        for name, eye, at, fov, band in VIEWS:
             url = "http://127.0.0.1:%d/index.html#eye=%s&at=%s&fov=%s&t=%s&w=1280&h=720" % (
                 port, ",".join(map(str, eye)), ",".join(map(str, at)), fov, t)
+            if band:
+                url += "&clip=%s,%s" % band
             png = os.path.join(out, name + ".png")
             exe = chrome()
             head = [] if exe.endswith("headless_shell") else ["--headless"]

@@ -5,23 +5,23 @@ using UnityEngine;
 
 namespace ChessFight.Gameplay
 {
-    // Offline playtest tools for the Queen of the Hill graybox (DESIGN §3.8 step 2:
-    // "does a floor take 25-35 s uncontested"). Sits beside the PlaytestSpawner.
+    // Offline playtest tools for the Queen of the Hill graybox. Sits beside the
+    // PlaytestSpawner.
     //
     //   split times: every time the playtest character first gets up to a rank's
     //   height, the seconds since the previous one are recorded (floor 1 includes
-    //   the hook start). Measured by height, not by the match's checkpoints, so a
-    //   floor can be practised again after PageDown.
-    //   PageUp / PageDown: jump to the next / previous rank (rank 1 = the bridge)
-    //   F11: silence every bell (the round starts over; checkpoints forgotten)
-    //   the opened paths and the seconds left of their team's head start
+    //   the hook start). Measured by height, so a floor can be practised again.
+    //   the character's own highest rank (where its vacuum tube goes) and which of
+    //   its team's shortcuts are open; the other team's too
+    //   PageUp / PageDown: jump to the next / previous rank's plaza on its team's side
+    //   F11: close every shortcut and forget every rank (the round starts over)
     public sealed class QueenHillPlaytestPanel : MonoBehaviour
     {
         [SerializeField] PlaytestSpawner spawner;
         [SerializeField] bool show = true;
 
-        readonly float[] splits = new float[QueenHillCourse.Sections + 1];
-        readonly bool[] jumped = new bool[QueenHillCourse.Sections + 1];
+        readonly float[] splits = new float[QueenHillCourse.Floors + 1];
+        readonly bool[] jumped = new bool[QueenHillCourse.Floors + 1];
         int lastBest;
         float mark;
         GUIStyle style;
@@ -33,13 +33,16 @@ namespace ChessFight.Gameplay
             mark = Time.time;
         }
 
+        // Floors the character has climbed, from the height of its hips: rank - 1.
+        static int LevelAt(float y) => QueenHillCourse.RankAt(y) - 1;
+
         void Update()
         {
-            var match = QueenHillMatch.Current;
             var driver = spawner != null ? spawner.Driver : null;
-            if (match == null || driver == null) return;
+            if (driver == null || driver.FollowTarget == null) return;
+            float y = driver.FollowTarget.position.y;
 
-            int best = Mathf.Max(lastBest, LevelAt(driver.FollowTarget != null ? driver.FollowTarget.position.y : 0f));
+            int best = Mathf.Max(lastBest, LevelAt(y));
             if (best > lastBest)
             {
                 for (int s = lastBest + 1; s <= best && s < splits.Length; s++)
@@ -50,26 +53,18 @@ namespace ChessFight.Gameplay
                 lastBest = best;
                 mark = Time.time;
             }
-            else if (lastBest > 0 && match.PersonalBest(driver) == 0 && LevelAt(driver.FollowTarget.position.y) == 0)
-            {
-                // The round was started over (Backspace).
-                Clear();
-            }
 
-            if (LegacyKeys.Down(KeyCode.PageUp)) Jump(Mathf.Min(QueenHillCourse.Sections, best + 1));
-            else if (LegacyKeys.Down(KeyCode.PageDown)) Jump(Mathf.Max(0, LevelAt(driver.FollowTarget.position.y) - 1));
+            if (LegacyKeys.Down(KeyCode.PageUp)) Jump(Mathf.Min(QueenHillCourse.Ranks, QueenHillCourse.RankAt(y) + 1));
+            else if (LegacyKeys.Down(KeyCode.PageDown)) Jump(Mathf.Max(1, QueenHillCourse.RankAt(y) - 1));
             else if (LegacyKeys.Down(KeyCode.F11))
             {
-                match.ResetRound();
+                QueenHillRaceMatch.Current?.ResetRound();
+                QueenHillMatch.Current?.ResetRound();
                 Clear();
-                // Splits start again from wherever the character stands.
-                lastBest = LevelAt(driver.FollowTarget.position.y);
+                lastBest = LevelAt(y);
                 for (int s = 1; s <= lastBest; s++) jumped[s] = true;
             }
         }
-
-        // How many floors the character has climbed, from the height of its hips: rank - 1.
-        static int LevelAt(float y) => QueenHillCourse.RankAt(y) - 1;
 
         void Clear()
         {
@@ -82,43 +77,34 @@ namespace ChessFight.Gameplay
             mark = Time.time;
         }
 
-        // To a landing (0: this team's bridge). Its split will not count as a climb.
-        void Jump(int level)
+        // To a rank's plaza on the team's side (its rank pad then counts it, as if climbed).
+        void Jump(int rank)
         {
-            if (level <= 0)
+            Vector3 at = QueenHillLevel.Plaza(rank, spawner.Team);
+            spawner.MoveTo(at, QueenHillLevel.PlazaFacing(spawner.Team));
+            int level = rank - 1;
+            for (int s = Mathf.Max(1, level); s < splits.Length; s++)
             {
-                spawner.MoveTo(spawner.StartPosition, spawner.StartRotation);
-                QueenHillMatch.Current?.ResetRound();
-                Clear();
-                return;
+                splits[s] = 0f;
+                jumped[s] = s == level;
             }
-            foreach (var landing in SectionCheckpoint.All)
-            {
-                if (landing == null || landing.Section != level) continue;
-                spawner.MoveTo(landing.FreeSpawnPosition(), landing.SpawnRotation);
-                // Splits above here are measured again from this landing.
-                for (int s = level; s < splits.Length; s++)
-                {
-                    splits[s] = 0f;
-                    jumped[s] = s == level;
-                }
-                lastBest = level;
-                mark = Time.time;
-                return;
-            }
+            lastBest = level;
+            mark = Time.time;
         }
 
         void OnGUI()
         {
-            var match = QueenHillMatch.Current;
-            if (!show || match == null || spawner == null || spawner.Driver == null) return;
+            var driver = spawner != null ? spawner.Driver : null;
+            if (!show || driver == null || driver.FollowTarget == null) return;
             if (style == null)
                 style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
+            var race = QueenHillRaceMatch.Current;
+            int team = spawner.Team >= 0 ? spawner.Team : Teams.White;
 
             var text = new StringBuilder();
-            text.Append("<b>퀸 오브 더 힐 그레이박스</b> · 목표: 층마다 25~35초, 정상까지 약 4분\n");
+            text.Append("<b>퀸 오브 더 힐 그레이박스</b> · 층마다 기록 (지름길은 팀별)\n");
             float total = 0f;
-            for (int s = 1; s <= QueenHillCourse.Sections; s++)
+            for (int s = 1; s <= QueenHillCourse.Floors; s++)
             {
                 var floor = QueenHillCourse.Floor(s);
                 string time;
@@ -129,15 +115,16 @@ namespace ChessFight.Gameplay
                 }
                 else if (s == lastBest + 1) time = $"진행 중 {Time.time - mark:0.0}초";
                 else time = "-";
-                string open = match.IsOpen(s)
-                    ? $" · 길 열림({Teams.Name(match.Pioneer(s))}" + (match.Exclusive(s) ? $" {match.ExclusiveLeft(s):0}초 독점)" : ")")
-                    : "";
-                text.Append($"{s}층 {floor.Name}: {time}{open}\n");
+                string shortcut = race == null ? "" :
+                    " · 지름길 " + (race.IsOpen(s, team) ? "<b>열림</b>" : "닫힘") + (race.IsOpen(s, 1 - team) ? " (상대 열림)" : "");
+                text.Append($"{s}층 {floor.Name}: {time}{shortcut}\n");
             }
-            text.Append($"기록 합계 {total:0.0}초 · 지금 {QueenHillCourse.RankAt(spawner.Driver.FollowTarget.position.y)}랭크\n");
-            text.Append("PageUp / PageDown 다음·이전 랭크 · F11 종 초기화");
+            int rank = QueenHillCourse.RankAt(driver.FollowTarget.position.y);
+            text.Append($"기록 합계 {total:0.0}초 · 지금 {rank}랭크");
+            if (race != null) text.Append($" · 내 최고 {race.ReachedRank(driver)}랭크 (진공관 → {race.TubeTarget(driver)}랭크)");
+            text.Append("\nPageUp / PageDown 다음·이전 랭크 광장 · F11 지름길·랭크 초기화");
 
-            float width = 430f;
+            float width = 470f;
             float height = style.CalcHeight(new GUIContent(text.ToString()), width - 20f) + 12f;
             var box = new Rect(Screen.width - width - 12f, 12f, width, height);
             GUI.Box(box, GUIContent.none);
