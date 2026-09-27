@@ -27,17 +27,29 @@ public static class NetworkCoreTests
                 Check(r.Finished && r.Winner == -1 && !r.RingOut(1, 0), "time tie"); });
             Test("Sword mode state roundtrips twelve pawns and isolates matches", () => {
                 var s = new SwordFightState { Tick = 55, White = 3, Black = 7, Remaining = 123.5f };
-                for (ulong i = 1; i <= 12; i++) s.Fighters.Add(new SwordFighterState { Id = i, Alive = true, Age = .25f, Swing = 9, Yaw = -145 });
+                for (ulong i = 1; i <= 12; i++) s.Fighters.Add(new SwordFighterState { Id = i, Alive = true, Drawn = true, X = .3f, Y = .2f, Z = .4f, RW = 1, Flash = .1f });
                 var b = SwordFightProtocol.Write(42, s);
-                Check(b.Length == SwordFightProtocol.MaxBytes && SwordFightProtocol.Read(b, 42, out var p) && p.Fighters.Count == 12 && p.Fighters[0].Swing == 9 && p.Black == 7, "roundtrip");
+                Check(b.Length == SwordFightProtocol.MaxBytes && SwordFightProtocol.Read(b, 42, out var p) && p.Fighters.Count == 12 && p.Fighters[0].Drawn && p.Fighters[0].X == .3f && p.Fighters[0].RW == 1 && p.Black == 7, "roundtrip");
                 Check(!SwordFightProtocol.Read(b, 43, out _), "session isolation");
                 for (int n = 0; n < b.Length; n++) Check(!SwordFightProtocol.Read(b.Take(n).ToArray(), 42, out _), "truncation"); });
             Test("Sword mode state rejects duplicate and nonfinite data without throwing", () => {
-                var s = new SwordFightState(); s.Fighters.Add(new SwordFighterState { Id = 1 }); s.Fighters.Add(new SwordFighterState { Id = 1 });
+                var s = new SwordFightState(); s.Fighters.Add(new SwordFighterState { Id = 1, RW = 1 }); s.Fighters.Add(new SwordFighterState { Id = 1, RW = 1 });
                 Check(!SwordFightProtocol.Read(SwordFightProtocol.Write(1, s), 1, out _), "duplicates");
                 s.Fighters.Clear(); s.Remaining = float.NaN;
                 Check(!SwordFightProtocol.Read(SwordFightProtocol.Write(1, s), 1, out _), "nan");
                 var rng = new Random(9); for (int i = 0; i < 500; i++) { var bytes = new byte[i]; rng.NextBytes(bytes); SwordFightProtocol.Read(bytes, 1, out _); } });
+            Test("Physical sword state rejects old magic, invalid rotation and remote offsets", () => {
+                var s = new SwordFightState(); s.Fighters.Add(new SwordFighterState { Id = 1, Alive = true, RW = 1 });
+                var b = SwordFightProtocol.Write(1, s); b[0] = 0x31;
+                Check(!SwordFightProtocol.Read(b, 1, out _), "CFS1 accepted");
+                foreach (var f in new[] {
+                    new SwordFighterState { Id = 1, RW = 0 },
+                    new SwordFighterState { Id = 1, RW = float.NaN },
+                    new SwordFighterState { Id = 1, RW = 1, X = 5 },
+                    new SwordFighterState { Id = 1, RW = 1, Z = float.PositiveInfinity },
+                    new SwordFighterState { Id = 1, RW = 1, Drawn = true, Alive = false } }) {
+                    s.Fighters[0] = f; Check(!SwordFightProtocol.Read(SwordFightProtocol.Write(1, s), 1, out _), "bad weapon accepted");
+                } });
             Test("Two six-player parties stay on opposite teams", () => {
                 var r = new TeamReservations(); Check(Reserve(r, 1, 6) && Reserve(r, 7, 6), "admission");
                 Check(r.Used(0) == 6 && r.Used(1) == 6 && r.Find(1).Team != r.Find(7).Team, "split");

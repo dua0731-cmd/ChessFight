@@ -22,6 +22,7 @@ namespace ChessFight.RagdollLab.Net
         readonly Dictionary<ulong, int> snaps = new Dictionary<ulong, int>();
         readonly List<RagdollPose> outgoing = new List<RagdollPose>();
         readonly List<RagdollSnapshot> buffer = new List<RagdollSnapshot>();
+        readonly List<SwordFightState> swordBuffer = new List<SwordFightState>();
         readonly Stack<RagdollSnapshot> spare = new Stack<RagdollSnapshot>();
         readonly RagdollPose blend = new RagdollPose();
         readonly List<ulong> removed = new List<ulong>();
@@ -81,6 +82,7 @@ namespace ChessFight.RagdollLab.Net
             {
                 var fresh = RagdollNetInput.From(local);
                 pending.move = fresh.move; pending.aim = fresh.aim; pending.sprint = fresh.sprint;
+                pending.shoveHeld = fresh.shoveHeld;
                 pending.jump |= fresh.jump; pending.shove |= fresh.shove;
                 // Edges use Steam's reliable ordered delivery on this dedicated channel; a lost
                 // short click must not vanish. Stale held motion still times out on the host.
@@ -119,9 +121,11 @@ namespace ChessFight.RagdollLab.Net
                 if (f.Pawn.NetworkSnap) { snaps[f.Id] = 4; f.Pawn.NetworkSnap = false; }
                 snaps.TryGetValue(f.Id, out int n); pose.snap = n > 0; snaps[f.Id] = Mathf.Max(0, n - 1);
                 outgoing.Add(pose);
-                state.Fighters.Add(new SwordFighterState { Id = f.Id, Alive = f.Alive, Age = f.SwingAge,
-                    Protection = f.Protection, Respawn = f.RespawnSeconds, Swing = f.SwingSerial,
-                    Yaw = Mathf.Atan2(f.SwingDirection.x, f.SwingDirection.z) * Mathf.Rad2Deg });
+                var offset = f.WeaponOffset; var rotation = f.WeaponRotation;
+                state.Fighters.Add(new SwordFighterState { Id = f.Id, Alive = f.Alive, Drawn = f.Drawn,
+                    Protection = f.Protection, Respawn = f.RespawnSeconds, Flash = f.HitFlash,
+                    X = offset.x, Y = offset.y, Z = offset.z,
+                    RX = rotation.x, RY = rotation.y, RZ = rotation.z, RW = rotation.w });
             }
             byte[] poseBytes = RagdollNetProtocol.Snapshot(session.Match, tick, NowMs(), outgoing);
             byte[] stateBytes = SwordFightProtocol.Write(session.Match, state);
@@ -161,8 +165,8 @@ namespace ChessFight.RagdollLab.Net
                         {
                             if (lastState != 0 && !RagdollNetProtocol.Newer(state.Tick, lastState)) continue;
                             lastState = state.Tick; game.ApplyScore(state.White, state.Black, state.Remaining, state.Finished);
-                            foreach (var f in state.Fighters)
-                                if (game.Fighters.TryGetValue(f.Id, out var pawn)) pawn.ApplyRemote(f.Alive, f.Protection, f.Age, f.Swing, Quaternion.Euler(0, f.Yaw, 0) * Vector3.forward, f.Respawn);
+                            swordBuffer.Add(state);
+                            if (swordBuffer.Count > 20) swordBuffer.RemoveAt(0);
                         }
                         else
                         {
@@ -194,8 +198,30 @@ namespace ChessFight.RagdollLab.Net
                 for (int j = 0; j < from.count; j++) if (from.At(j).id == b.id) { a = from.At(j); break; }
                 if (b.snap) f.Pawn.ApplyNetworkPose(b);
                 else { RagdollPose.Blend(a, b, t, blend); f.Pawn.ApplyNetworkPose(blend); }
+                // Keep the sword on the same delayed timeline as its owner, not 100ms ahead.
+                if (WeaponAt(to.tick, b.id, out var weapon))
+                {
+                    var offset = new Vector3(weapon.X, weapon.Y, weapon.Z);
+                    var rotation = new Quaternion(weapon.RX, weapon.RY, weapon.RZ, weapon.RW);
+                    if (!b.snap && WeaponAt(from.tick, b.id, out var old) && old.Alive == weapon.Alive && old.Drawn == weapon.Drawn)
+                    {
+                        offset = Vector3.Lerp(new Vector3(old.X, old.Y, old.Z), offset, t);
+                        rotation = Quaternion.Slerp(new Quaternion(old.RX, old.RY, old.RZ, old.RW), rotation, t);
+                    }
+                    f.ApplyRemote(weapon.Alive, weapon.Drawn, weapon.Protection, offset, rotation, weapon.Respawn, weapon.Flash);
+                }
             }
             while (buffer.Count > 2 && (buffer[1].hostTimeMs < playback || buffer.Count > 16)) { spare.Push(buffer[0]); buffer.RemoveAt(0); }
+        }
+        bool WeaponAt(uint frame, ulong id, out SwordFighterState fighter)
+        {
+            for (int i = swordBuffer.Count - 1; i >= 0; i--)
+            {
+                var state = swordBuffer[i];
+                if (RagdollNetProtocol.Newer(state.Tick, frame)) continue;
+                foreach (var f in state.Fighters) if (f.Id == id) { fighter = f; return true; }
+            }
+            fighter = default; return false;
         }
         void OnDestroy()
         {

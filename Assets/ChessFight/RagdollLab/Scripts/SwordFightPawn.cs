@@ -3,55 +3,98 @@ using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
-    // Added only by SwordFightGame. Shared pawn controls and tuning remain untouched.
+    // Mode-local physical weapon. The shared pawn never receives sword buttons.
     [DefaultExecutionOrder(-60)]
     public sealed class SwordFightPawn : MonoBehaviour
     {
-        public const float Windup = .16f, ActiveTime = .20f, Recovery = .34f;
-        public const float SwingDuration = Windup + ActiveTime + Recovery;
+        public const float TurnSpeed = 150f, DrawTime = .25f, RepeatDelay = .5f;
         public RagdollPawn Pawn { get; private set; }
         public ulong Id { get; private set; }
         public int Slot { get; private set; }
         public bool Bot { get; private set; }
         public bool Alive { get; private set; } = true;
         public bool Authority { get; set; } = true;
+        public bool Drawn { get; private set; }
         public float Protection { get; private set; }
-        public float SwingAge { get; private set; } = SwingDuration;
-        public int Swings { get; private set; }
-        public int HitsLanded { get; private set; }
-        public uint SwingSerial { get; private set; }
-        public Vector3 SwingDirection { get; private set; } = Vector3.forward;
-        public bool Attacking => Alive && SwingAge < SwingDuration;
-        public bool WeaponVisible => sword != null && sword.gameObject.activeInHierarchy && blade.enabled;
-        public bool CanAttack => Alive && Pawn.State == PawnState.Active && !Attacking;
         public float RespawnSeconds { get; set; }
         public float HitFlash { get; private set; }
-        public Vector3 BladeRoot => Grip();
-        public Vector3 BladeTip => Grip() + BladeDirection() * .88f;
-        readonly HashSet<SwordFightPawn> hitThisSwing = new HashSet<SwordFightPawn>();
+        public int Swings { get; private set; }
+        public int HitsLanded { get; private set; }
+        public bool Attacking => Drawn && gesture > 0 && drawAge >= DrawTime;
+        public bool WeaponVisible => sword != null && sword.gameObject.activeInHierarchy && blade.enabled;
+        public Rigidbody SwordBody { get; private set; }
+        public Vector3 BladeRoot => SwordBody.position + SwordBody.rotation * Vector3.forward * .13f;
+        public Vector3 BladeTip => SwordBody.position + SwordBody.rotation * Vector3.forward * .88f;
+        public Vector3 WeaponOffset => Alive ? Pawn.Hips.transform.InverseTransformPoint(sword.position) : Vector3.zero;
+        public Quaternion WeaponRotation => Alive ? Quaternion.Inverse(Pawn.Hips.rotation) * sword.rotation : Quaternion.identity;
+        public Vector3 Aim => aim;
+        readonly Dictionary<SwordFightPawn, HitRecord> hits = new Dictionary<SwordFightPawn, HitRecord>();
         readonly Collider[] overlaps = new Collider[128];
+        readonly Contact[] contacts = new Contact[24];
+        struct HitRecord { public float Time, Travel; }
+        struct Contact { public Collider Other; public Vector3 Point, Velocity; }
         Transform sword;
         Renderer blade;
+        Collider bladeCollider;
+        Collider[] ownerColliders;
+        ConfigurableJoint gripJoint;
         Material bladeMaterial, hiltMaterial;
-        Vector3 previousGrip, previousTip;
-        bool wasActive;
-        float inputBuffer;
-        Vector3 bufferedAim;
+        PhysicsMaterial contactMaterial;
+        readonly RaycastHit[] groundHits = new RaycastHit[16];
+        Vector3 aim = Vector3.forward, requestedAim = Vector3.forward;
+        Vector3 previousRoot, previousTip, stepVelocity, stepAngular, remoteOffset;
+        Quaternion remoteRotation = Quaternion.identity;
+        bool held, sweepPrimed;
+        int contactCount;
+        float drawAge, gesture, travel;
+        Rigidbody Hand => Pawn.bodies[(int)BodyId.HandR];
 
         public void Initialize(ulong id, int slot, bool bot)
         {
             Pawn = GetComponent<RagdollPawn>(); Id = id; Slot = slot; Bot = bot;
+            ownerColliders = Pawn.GetComponentsInChildren<Collider>();
             Pawn.PoseOverride = SwordPose;
-            var root = new GameObject("Sword (mode visual)");
+            var root = new GameObject("Physical sword");
             root.transform.SetParent(transform); sword = root.transform;
-            bladeMaterial = Material(new Color(.79f, .88f, .96f));
-            hiltMaterial = Material(new Color(.85f, .60f, .21f));
-            blade = Part("Rounded blade", new Vector3(0, 0, .49f), new Vector3(.105f, .045f, .76f), bladeMaterial);
-            Part("Guard", new Vector3(0, 0, .09f), new Vector3(.24f, .07f, .07f), hiltMaterial);
-            Part("Grip", new Vector3(0, 0, -.015f), new Vector3(.065f, .07f, .16f), hiltMaterial);
+            bladeMaterial = new Material(Shader.Find("Standard")) { color = new Color(.69f, .82f, .94f) };
+            hiltMaterial = new Material(Shader.Find("Standard")) { color = new Color(.85f, .60f, .21f) };
+            blade = Part("Blade", new Vector3(0, 0, .50f), new Vector3(.12f, .055f, .76f), bladeMaterial);
+            Part("Guard", new Vector3(0, 0, .09f), new Vector3(.25f, .075f, .07f), hiltMaterial);
+            Part("Grip", new Vector3(0, 0, -.015f), new Vector3(.07f, .075f, .16f), hiltMaterial);
+            var shape = root.AddComponent<CapsuleCollider>();
+            shape.direction = 2; shape.center = new Vector3(0, 0, .5f); shape.height = .8f; shape.radius = .065f;
+            bladeCollider = shape;
+            contactMaterial = new PhysicsMaterial("Sword smooth contact") { dynamicFriction = 0, staticFriction = 0, bounciness = 0,
+                frictionCombine = PhysicsMaterialCombine.Minimum, bounceCombine = PhysicsMaterialCombine.Minimum };
+            shape.sharedMaterial = contactMaterial;
+            // Register the owned weapon so the shared camera ignores it like a pawn body.
+            root.layer = 2;
+            RagdollPawn.ColliderOwner[bladeCollider] = Pawn;
+            SwordBody = root.AddComponent<Rigidbody>();
+            SwordBody.mass = .18f; SwordBody.isKinematic = true;
+            // A handle-weighted, actively supported weapon. An automatically computed COM
+            // halfway down this long blade turns a fast hand raise into an unstable pendulum.
+            SwordBody.centerOfMass = new Vector3(0, 0, .12f);
+            SwordBody.inertiaTensorRotation = Quaternion.identity;
+            SwordBody.inertiaTensor = new Vector3(.025f, .025f, .003f);
+            // The active wrist supports the weapon's weight; contact and rotational inertia remain physical.
+            SwordBody.useGravity = false;
+            SwordBody.interpolation = RigidbodyInterpolation.Interpolate;
+            SwordBody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            SwordBody.maxAngularVelocity = 8f;
+            SwordBody.solverIterations = 24; SwordBody.solverVelocityIterations = 8;
+            SwordBody.angularDamping = .4f;
+            var contact = root.AddComponent<SwordBladeContact>(); contact.Owner = this;
+            bladeCollider.enabled = false;
+            // A physical pin at the hand allows rotation/contact/inertia, not a detached sword.
+            gripJoint = root.AddComponent<ConfigurableJoint>();
+            gripJoint.connectedBody = Hand; gripJoint.autoConfigureConnectedAnchor = false;
+            gripJoint.anchor = Vector3.zero; gripJoint.connectedAnchor = Vector3.zero;
+            gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Free;
+            gripJoint.angularXMotion = gripJoint.angularYMotion = gripJoint.angularZMotion = ConfigurableJointMotion.Free;
+            gripJoint.enableCollision = false;
         }
 
-        static Material Material(Color color) => new Material(Shader.Find("Standard")) { color = color };
         Renderer Part(string label, Vector3 position, Vector3 scale, Material material)
         {
             var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -61,103 +104,143 @@ namespace ChessFight.RagdollLab
             var r = part.GetComponent<Renderer>(); r.sharedMaterial = material; return r;
         }
 
-        // LMB is intercepted before the shared pawn sees it. RMB/E/Q/F do nothing for a pawn.
         public void SetInput(PawnInput raw)
         {
             if (!Authority || !Alive) return;
-            if (raw.shove) { inputBuffer = .13f; bufferedAim = raw.aim; }
+            held = raw.shoveHeld;
+            if (Finite(raw.aim) && raw.aim.sqrMagnitude > .01f) requestedAim = raw.aim.normalized;
             Pawn.SetInput(new PawnInput { move = raw.move, jump = raw.jump, sprint = raw.sprint, aim = raw.aim });
         }
 
         public void StopCombat()
         {
-            inputBuffer = 0; SwingAge = SwingDuration; wasActive = false;
-            Pawn.SetInput(default);
+            held = false; SetDrawn(false); Pawn.SetInput(default);
         }
 
         void FixedUpdate()
         {
             if (Pawn == null || !Authority || !Alive) return;
             float dt = Time.fixedDeltaTime;
-            Protection = Mathf.Max(0, Protection - dt);
-            HitFlash = Mathf.Max(0, HitFlash - dt);
-            if (inputBuffer > 0 && CanAttack) BeginSwing(bufferedAim);
-            inputBuffer = Mathf.Max(0, inputBuffer - dt);
-            if (Pawn.State != PawnState.Active) { SwingAge = SwingDuration; wasActive = false; }
-            if (!Attacking) return;
-            SwingAge += dt;
-            bool active = SwingAge >= Windup && SwingAge <= Windup + ActiveTime;
-            Vector3 grip = Grip(), tip = BladeTip;
-            if (active)
+            Protection = Mathf.Max(0, Protection - dt); HitFlash = Mathf.Max(0, HitFlash - dt);
+            SetDrawn(held && Pawn.State == PawnState.Active);
+            if (!Drawn) { aim = requestedAim; contactCount = 0; return; }
+            // The host also rate-limits aim: packet jumps/high mouse DPI cannot bypass the cap.
+            Vector3 next = Vector3.RotateTowards(aim, requestedAim, TurnSpeed * Mathf.Deg2Rad * dt, 0).normalized;
+            float delta = Vector3.Angle(aim, next); aim = next;
+            travel += delta; drawAge += dt; gesture = Mathf.Max(0, gesture - dt);
+            if (delta > 30f * dt && drawAge >= DrawTime)
             {
-                if (!wasActive) { previousGrip = grip; previousTip = tip; }
-                // Sweep the blade between physics steps; one ragdoll can contribute many colliders.
-                for (int s = 0; s <= 3; s++)
-                    Detect(Vector3.Lerp(previousGrip, grip, s / 3f), Vector3.Lerp(previousTip, tip, s / 3f));
+                if (gesture <= 0) Swings++;
+                gesture = .12f;
             }
-            previousGrip = grip; previousTip = tip; wasActive = active;
-        }
-
-        void BeginSwing(Vector3 aim)
-        {
-            aim.y = 0; SwingDirection = aim.sqrMagnitude > .01f ? aim.normalized : Pawn.Facing;
-            SwingAge = 0; SwingSerial++; Swings++; inputBuffer = 0;
-            Protection = 0; hitThisSwing.Clear(); wasActive = false;
-        }
-
-        void Detect(Vector3 start, Vector3 end)
-        {
-            int count = Physics.OverlapCapsuleNonAlloc(start, end, .15f, overlaps, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < contactCount; i++) TryHit(contacts[i].Other, contacts[i].Point, contacts[i].Velocity);
+            contactCount = 0;
+            if (sweepPrimed && Attacking)
             {
-                if (!RagdollPawn.ColliderOwner.TryGetValue(overlaps[i], out var target) || target == Pawn || target.Team == Pawn.Team) continue;
-                var fighter = target.GetComponent<SwordFightPawn>();
-                if (fighter == null || !fighter.Alive || fighter.Protection > 0 || !hitThisSwing.Add(fighter)) continue;
-                Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
-                Vector3 push = (SwingDirection * .6f + away.normalized * .4f).normalized;
-                // Follow-up swings may reset the knockdown; no stand-up invulnerability is imposed.
-                target.TakeHit(push * 3.4f + Vector3.up * 1.05f, .65f, 0, true);
-                fighter.SwingAge = SwingDuration; fighter.inputBuffer = 0; fighter.HitFlash = .14f;
-                HitsLanded++;
+                // Sweep simulated poses, never an animation target. Contacts cover a blade
+                // bouncing between samples; this covers angular tunnelling.
+                for (int s = 0; s <= 3; s++)
+                {
+                    Vector3 start = Vector3.Lerp(previousRoot, BladeRoot, s / 3f);
+                    Vector3 end = Vector3.Lerp(previousTip, BladeTip, s / 3f);
+                    int n = Physics.OverlapCapsuleNonAlloc(start, end, .075f, overlaps, ~0, QueryTriggerInteraction.Ignore);
+                    for (int j = 0; j < n; j++)
+                    {
+                        Vector3 point = overlaps[j].ClosestPoint((start + end) * .5f);
+                        TryHit(overlaps[j], point, SwordBody.GetPointVelocity(point));
+                    }
+                }
+            }
+            previousRoot = BladeRoot; previousTip = BladeTip; sweepPrimed = true;
+            Quaternion goal = Quaternion.LookRotation(BladeDirection(), Vector3.up);
+            Quaternion error = goal * Quaternion.Inverse(SwordBody.rotation);
+            error.ToAngleAxis(out float angle, out Vector3 axis);
+            if (angle > 180) angle -= 360;
+            if (Finite(axis)) SwordBody.AddTorque(Vector3.ClampMagnitude(axis * (angle * Mathf.Deg2Rad * 180f)
+                - SwordBody.angularVelocity * 22f, 100f), ForceMode.Acceleration);
+            stepVelocity = SwordBody.linearVelocity; stepAngular = SwordBody.angularVelocity;
+        }
+
+        void SetDrawn(bool value)
+        {
+            if (Drawn == value) return;
+            Drawn = value; contactCount = 0; sweepPrimed = false; gesture = 0; drawAge = 0;
+            if (value)
+            {
+                aim = requestedAim; Protection = 0;
+                SwordBody.isKinematic = false;
+                SwordBody.position = Hand.position; SwordBody.rotation = Quaternion.LookRotation(BladeDirection());
+                SwordBody.linearVelocity = Hand.linearVelocity; SwordBody.angularVelocity = Vector3.zero;
+                gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Locked;
+                bladeCollider.enabled = true;
+                foreach (var c in ownerColliders) if (c != null) Physics.IgnoreCollision(bladeCollider, c);
+            }
+            else
+            {
+                bladeCollider.enabled = false;
+                gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Free;
+                SwordBody.isKinematic = true;
             }
         }
 
         Vector3 BladeDirection()
         {
-            if (!Alive || Pawn.State != PawnState.Active)
-                return Pawn.bodies[(int)BodyId.HandR].rotation * Vector3.right;
-            float angle = -25f;
-            if (Attacking)
-            {
-                if (SwingAge < Windup) angle = Mathf.Lerp(-25, -85, SwingAge / Windup);
-                else if (SwingAge < Windup + ActiveTime) angle = Mathf.Lerp(-85, 85, (SwingAge - Windup) / ActiveTime);
-                else angle = Mathf.Lerp(85, -25, (SwingAge - Windup - ActiveTime) / Recovery);
-            }
-            Vector3 idle = Pawn.Facing;
-            // ApplyNetworkPose restores body rotations, not the controller's private facing.
-            if (Pawn.NetworkPuppet)
-            {
-                idle = Pawn.Hips.transform.forward; idle.y = 0;
-                idle = idle.sqrMagnitude > .001f ? idle.normalized : SwingDirection;
-            }
-            Vector3 forward = Attacking ? SwingDirection : idle;
-            // The cutting arc passes near knee height, low enough for prone bodies without
-            // burying the tip under the floor and shortening the usable forward reach.
-            return (Quaternion.AngleAxis(angle, Vector3.up) * forward + Vector3.up * (Attacking ? -.32f : .35f)).normalized;
+            Vector3 flat = new Vector3(aim.x, 0, aim.z).normalized;
+            if (flat.sqrMagnitude < .01f) flat = Pawn.Facing;
+            Vector3 right = Vector3.Cross(Vector3.up, flat);
+            // Raised guard at neutral pitch, but looking down can reach a prone enemy.
+            float lift = 55f * (1f - Mathf.InverseLerp(.45f, .87f, -aim.y));
+            Vector3 direction = Quaternion.AngleAxis(-lift, right) * aim;
+            // Do not command an impossible wrist pose through the floor. The collider still
+            // resolves contact with floors, bodies and other swords; no dynamic pose is teleported.
+            int count = Physics.RaycastNonAlloc(Hand.position + Vector3.up * .2f, Vector3.down, groundHits, 1.4f, ~0, QueryTriggerInteraction.Ignore);
+            float floor = float.NegativeInfinity;
+            for (int i = 0; i < count; i++)
+                if (!RagdollPawn.ColliderOwner.ContainsKey(groundHits[i].collider) && groundHits[i].normal.y > .6f)
+                    floor = Mathf.Max(floor, groundHits[i].point.y);
+            float minY = Mathf.Clamp((floor + .09f - Hand.position.y) / .88f, -1f, .95f);
+            if (direction.y < minY)
+                direction = flat * Mathf.Sqrt(1f - minY * minY) + Vector3.up * minY;
+            return direction;
         }
-        Vector3 Grip() => Pawn.bodies[(int)BodyId.HandR].position;
+
+        internal void RecordContact(Collision c)
+        {
+            if (!Authority || !Alive || !Attacking || contactCount >= contacts.Length || c.contactCount == 0) return;
+            Vector3 point = c.GetContact(0).point;
+            contacts[contactCount++] = new Contact { Other = c.collider, Point = point,
+                Velocity = stepVelocity + Vector3.Cross(stepAngular, point - SwordBody.worldCenterOfMass) };
+        }
+
+        void TryHit(Collider other, Vector3 point, Vector3 velocity)
+        {
+            if (!Attacking || other == null || !RagdollPawn.ColliderOwner.TryGetValue(other, out var target) || target == null || target == Pawn || target.Team == Pawn.Team || other.GetComponent<SwordBladeContact>() != null) return;
+            var victim = target.GetComponent<SwordFightPawn>();
+            if (victim == null || !victim.Alive || victim.Protection > 0) return;
+            // Walking into someone with a stationary guard is not a damaging swing.
+            Vector3 cut = velocity - Pawn.Hips.linearVelocity;
+            float speed = cut.magnitude;
+            if (!Finite(cut) || speed < 1.1f) return;
+            if (hits.TryGetValue(victim, out var last) && (Time.time - last.Time < RepeatDelay || travel - last.Travel < 35f)) return;
+            hits[victim] = new HitRecord { Time = Time.time, Travel = travel };
+            Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
+            Vector3 direction = Vector3.ProjectOnPlane(cut, Vector3.up).normalized * .65f + away.normalized * .35f;
+            if (direction.sqrMagnitude < .01f) direction = Pawn.Facing;
+            float strength = Mathf.Lerp(2.2f, 4.2f, Mathf.InverseLerp(1.1f, 5f, speed));
+            // FixedUpdate, not a physics callback. Downed follow-ups remain legal.
+            target.TakeHit(direction.normalized * strength + Vector3.up * .7f, .65f, 0, true);
+            victim.StopCombat(); victim.HitFlash = .16f; HitFlash = .1f; HitsLanded++;
+        }
+
         Quaternion? SwordPose(int part)
         {
-            if (!Alive || Pawn.State != PawnState.Active) return null;
-            if (part == (int)BodyId.Chest && Attacking)
+            if (!Alive || !Drawn || Pawn.State != PawnState.Active) return null;
+            if (part == (int)BodyId.ArmR)
             {
-                float turn = Mathf.Clamp(Vector3.SignedAngle(Pawn.Facing, SwingDirection, Vector3.up), -65, 65);
-                float sweep = Mathf.Sin(Mathf.Clamp01((SwingAge - Windup) / ActiveTime) * Mathf.PI);
-                return Quaternion.Euler(-8f * sweep, turn * .65f, -9f * sweep);
+                Vector3 reach = aim + Vector3.up * .10f;
+                return Quaternion.FromToRotation(Vector3.right, Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(reach));
             }
-            if (part != (int)BodyId.ArmR) return null;
-            Vector3 local = Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(BladeDirection());
-            return Quaternion.FromToRotation(Vector3.right, local);
+            return null;
         }
 
         void LateUpdate()
@@ -165,44 +248,64 @@ namespace ChessFight.RagdollLab
             if (sword == null || Pawn == null) return;
             sword.gameObject.SetActive(Alive);
             if (!Alive) return;
-            sword.SetPositionAndRotation(Grip(), Quaternion.LookRotation(BladeDirection()));
-            bladeMaterial.color = Attacking && SwingAge >= Windup && SwingAge <= Windup + ActiveTime
-                ? new Color(1f, .89f, .42f) : new Color(.79f, .88f, .96f);
+            if (!Authority && Drawn)
+                sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
+            else if (!Drawn)
+                PoseHolstered();
+            bladeMaterial.color = HitFlash > 0 ? new Color(1f, .8f, .24f) : Attacking ? new Color(.94f, .94f, .75f) : new Color(.69f, .82f, .94f);
+        }
+        void PoseHolstered()
+        {
+            // No collider or dynamic forces while holstered, including ragdoll/get-up.
+            var hip = Pawn.Hips.transform;
+            Vector3 point = hip.TransformPoint(new Vector3(.28f, -.06f, -.02f));
+            Vector3 direction = hip.TransformDirection(new Vector3(.18f, -.35f, -1f));
+            sword.SetPositionAndRotation(point, Quaternion.LookRotation(direction, hip.forward));
         }
 
         public void Eliminate()
         {
-            Alive = false; inputBuffer = 0; SwingAge = SwingDuration; wasActive = false;
-            Pawn.SetInput(default); Pawn.SetNetworkPuppet(true);
+            StopCombat(); Alive = false; Pawn.SetNetworkPuppet(true);
             foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
         }
         public void Respawn(Vector3 floor, Vector3 facing, bool authority)
         {
-            Authority = authority;
-            // The shared puppet exit clears velocity before switching off kinematic mode.
-            // Prepare this mode's bodies first without changing the shared controller.
+            StopCombat(); Authority = authority;
             if (Pawn.NetworkPuppet) foreach (var rb in Pawn.bodies) rb.isKinematic = false;
             Pawn.SetNetworkPuppet(false);
             Pawn.Teleport(floor + Vector3.up * (Pawn.standHeight + .02f), facing);
             Pawn.SetNetworkPuppet(!authority);
-            Alive = true; Protection = 1.25f; SwingAge = SwingDuration; inputBuffer = 0; hitThisSwing.Clear();
+            Alive = true; Protection = 1.25f; aim = requestedAim = facing;
+            hits.Clear(); travel = 0; HitFlash = 0;
+            PoseHolstered();
             foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
         }
-        public void ApplyRemote(bool alive, float protection, float age, uint serial, Vector3 direction, float respawn)
+        public void ApplyRemote(bool alive, bool drawn, float protection, Vector3 offset, Quaternion rotation, float respawn, float flash)
         {
-            Authority = false;
-            if (Alive != alive)
-            {
-                Alive = alive;
-                foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = alive;
-            }
-            Protection = protection; SwingAge = age; SwingSerial = serial; SwingDirection = direction; RespawnSeconds = respawn;
+            Authority = false; bladeCollider.enabled = false; SwordBody.isKinematic = true;
+            gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Free;
+            bool changed = Alive != alive;
+            Alive = alive; Drawn = drawn && alive; Protection = protection; RespawnSeconds = respawn; HitFlash = flash;
+            remoteOffset = offset; remoteRotation = rotation;
+            if (changed) foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = alive;
         }
+        static bool Finite(Vector3 v) => !float.IsNaN(v.x) && !float.IsInfinity(v.x)
+            && !float.IsNaN(v.y) && !float.IsInfinity(v.y) && !float.IsNaN(v.z) && !float.IsInfinity(v.z);
         void OnDestroy()
         {
+            if (bladeCollider != null) RagdollPawn.ColliderOwner.Remove(bladeCollider);
             if (Pawn != null) Pawn.PoseOverride = null;
             if (bladeMaterial != null) Destroy(bladeMaterial);
             if (hiltMaterial != null) Destroy(hiltMaterial);
+            if (contactMaterial != null) Destroy(contactMaterial);
         }
+    }
+
+    // Contacts only enqueue data; mutations are deferred to the owner's next step.
+    public sealed class SwordBladeContact : MonoBehaviour
+    {
+        public SwordFightPawn Owner;
+        void OnCollisionEnter(Collision c) => Owner?.RecordContact(c);
+        void OnCollisionStay(Collision c) => Owner?.RecordContact(c);
     }
 }

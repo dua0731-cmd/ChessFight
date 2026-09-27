@@ -3,7 +3,7 @@
 .sf-score-card { position: absolute; top: 16px; left: 410px; width: 460px; height: 94px; background-color: rgba(22, 30, 40, .92); border-radius: 12px; align-items: center; justify-content: center; }
 .sf-score { font-size: 30px; -unity-font-style: bold; }
 .sf-clock { font-size: 16px; color: rgb(228, 207, 157); margin-top: 5px; }
-.sf-status { position: absolute; top: 500px; left: 320px; width: 640px; -unity-text-align: middle-center; font-size: 23px; -unity-font-style: bold; }
+.sf-status { position: absolute; top: 500px; left: 320px; width: 640px; -unity-text-align: middle-center; font-size: 20px; -unity-font-style: bold; background-color: rgba(22, 30, 40, .82); padding: 9px; border-radius: 8px; }
 .sf-help { position: absolute; bottom: 18px; left: 24px; background-color: rgba(22, 30, 40, .90); padding: 12px 18px; border-radius: 9px; }
 .sf-help Label { margin-top: 2px; margin-bottom: 2px; }
 .sf-menu { position: absolute; left: 440px; top: 244px; width: 400px; padding: 24px; background-color: rgba(22, 30, 40, .97); border-radius: 14px; }

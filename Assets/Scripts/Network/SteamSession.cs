@@ -20,8 +20,8 @@ namespace ChessFight.Network
         //     client sees how close a grabbed pawn is to breaking free.
         // v6: the lab's input carries the left button held and its snapshot the pawn's
         //     grappling hook (RagdollNetProtocol "CFR4", Queen of the Hill M5).
-        // v7: playable Sword Fight, with mode-only sword/score state (CFS1, channel 33).
-        public const string Protocol = "chessfight.dua0731.network.v7";
+        // v8: physical Sword Fight weapon poses (CFS2, channel 33); CFR4 input is unchanged.
+        public const string Protocol = "chessfight.dua0731.network.v8";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

@@ -1,6 +1,6 @@
 # 파티·매칭·예약 (`SteamSession`, `TeamReservations`)
 
-> **R47 / `JY-gpt_gamemode`: 프로토콜 v7.** 소드파이트 로비 선택·전용 씬과 `CFS1` 경기 상태(채널33)를 추가했다. 기존 랩 `CFR4` 패킷은 변경하지 않았다. v6 빌드와 매칭되지 않으므로 두 PC 모두 같은 빌드가 필요하다. [소드파이트 실행](../GameModes/SwordFight/README.md). 모의 세션에는 혼자 비공개 소드파이트 방을 봇으로 채워 시작·취소하는 검사를 추가했다.
+> **R49 / `JY-gpt_gamemode`: 프로토콜 v8.** 소드파이트 칼에 물리를 적용하고 `CFS2` 경기/칼 자세 상태(채널33, 최대506바이트)를 전달한다. 기존 랩 `CFR4` 패킷은 변경 없이 held/3D aim을 사용한다. v7 이전과 매칭되지 않으므로 두 PC 모두 같은 새 빌드가 필요하다. 칼과 몸은 같은 지연 보간 시간대를 사용한다. [소드파이트 실행](../GameModes/SwordFight/README.md). R48 팀별 정지 더미·혼자 시작 규칙은 유지한다.
 
 코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam 15개), `NetworkCoreTests.cs`(예약 규칙, 모드 목록).
 
@@ -117,7 +117,7 @@
 
 ## 7. 공개 API 요약 (HUD가 쓰는 것)
 
-**R48 소드파이트 더미 테스트:** 비공개 방장만 `AddTestBot(team)` / `RemoveTestBot(team)`로 원하는 팀에 한 명씩 추가·제거한다. `CanEditTestBots`, `CanAddTestBot(team)`, `TestBots(team)`은 버튼 권한·잔여 정원·추가 더미 수를 제공한다. 사람/파티 봇은 보존한다. `CanStartGame`을 HUD와 실제 시작 판정이 같이 써서 아직 예약 중일 때의 무응답 버튼을 막는다. 나+더미 1명으로 시작 가능, 공개 12명 규칙은 변경 없음. 패킷/데이터 변경 없어 v7 유지. Core 40·모의 세션 20 통과, 새 UI의 사용자 확인은 대기.
+**R48 소드파이트 더미 테스트:** 비공개 방장만 `AddTestBot(team)` / `RemoveTestBot(team)`로 원하는 팀에 한 명씩 추가·제거한다. `CanEditTestBots`, `CanAddTestBot(team)`, `TestBots(team)`은 버튼 권한·잔여 정원·추가 더미 수를 제공한다. 사람/파티 봇은 보존한다. `CanStartGame`을 HUD와 실제 시작 판정이 같이 써서 아직 예약 중일 때의 무응답 버튼을 막는다. 나+더미 1명으로 시작 가능, 공개 12명 규칙은 변경 없음. R48 당시에는 패킷 변경 없이 v7 유지했고 R49에서 v8로 변경했다. 당시 Core40·모의 세션20 통과. 09-27 사용자는 더미 기능이 잘 되고 혼자 테스트 가능하다고 확인했으며, 세부 정원/2PC는 별도 대기다.
 
 `FindMatch(bool privateTest)`, `SetMode(key)`, `JoinParty(id)`, `JoinPrivateMatch(id)`, `StartGame()`, `Cancel()`, `Abort(reason)`, `LeaveParty()`, `Retry()`, `Friends()`, `InviteToParty(id)`, `Invite()`, `SetPartyBots(n)`, `FillRoomWithBots()`, `ClearRoomBots()`.
 속성: `Online`, `Party`, `PartyLeader`, `PartyMode`, `Match`, `MatchMode`, `Host`, `IsHost`, `IsLeader`, `Busy`, `Searching`, `Started`, `PrivateRoom`, `Roster`, `PartyMembers`, `PartyBots`, `MaxPartyBots`, `RoomBots`, `Build`, `AllowPublicBots`, `BotsBlockPublicMatch`, `CanUseRoomBots`, `Status`, `Error`.
