@@ -140,7 +140,7 @@ namespace ChessFight.RagdollLab
             if (Camera.main != null) label.transform.rotation = Camera.main.transform.rotation;
             label.text = (Team == 0 ? "백 " : "흑 ") + KingRushPieces.Name(Piece) + (FixedKing ? " [고정]" : "");
             label.color = Team == 0 ? new Color(1, .94f, .65f) : new Color(.7f, .85f, 1);
-            DrawRing(warning, new Vector3(BodyPosition.x, .04f, BodyPosition.z), 4, AbilityActive && Piece == KingRushPiece.King ? 1 : 0);
+            DrawRing(warning, BodyPosition + Vector3.up * (.04f - Pawn.standHeight), 4, AbilityActive && Piece == KingRushPiece.King ? 1 : 0);
             DrawRing(recharge, BodyPosition + Vector3.up * 1.25f, .26f, Cooldown01);
             DrawCannon();
         }

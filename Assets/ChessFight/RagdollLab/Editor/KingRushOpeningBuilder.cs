@@ -20,6 +20,7 @@ namespace ChessFight.RagdollLab.Editor
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             if (!File.Exists(ScenePath)) CreateScene(); else EditorSceneManager.OpenScene(ScenePath);
             ExtendCourse();
+            ExtendFinal();
         }
         static Material Mat(string name, Color color)
         {
@@ -289,7 +290,7 @@ namespace ChessFight.RagdollLab.Editor
         {
             try
             {
-                CreateScene(); EditorSceneManager.OpenScene(ScenePath); ExtendCourse(); AssetDatabase.SaveAssets();
+                CreateScene(); EditorSceneManager.OpenScene(ScenePath); ExtendCourse(); ExtendFinal(); AssetDatabase.SaveAssets();
                 string output = Path.GetFullPath("Builds/KingRushOpening"); Directory.CreateDirectory(output);
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                     scenes = new[] { ScenePath, KingRushBuilder.ScenePath, "Assets/Scenes/Lobby.unity", "Assets/Scenes/KingRush.unity", "Assets/Scenes/SwordFight.unity" },

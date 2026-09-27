@@ -18,10 +18,20 @@ namespace ChessFight.RagdollLab
         IEnumerator Start()
         {
             game = GetComponent<KingRushOpening>(); yield return new WaitForSeconds(1.5f);
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-kingRushSkyOnly") >= 0)
+            { yield return SkyFlow(); CompleteRun(); yield break; }
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-kingRushFinalOnly") >= 0)
+            {
+                bool first = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-kingRushFinalFirst") >= 0;
+                if (first) yield return FinalFlow();
+                yield return SkyFlow(); yield return RallyFlow(2);
+                if (!first) yield return FinalFlow();
+                CompleteRun(); yield break;
+            }
             if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-kingRushCastleOnly") >= 0)
             { yield return RallyFlow(0); yield return CastleFlow(); CompleteRun(); yield break; }
             var a = game.Local; var enemy = game.Players[6]; var ally = game.Players[1];
-            Check(game.Players.Count == 12 && game.checkpoints.Length == 12 && game.planks.Length == 12, "Course references and twelve stationary bodies");
+            Check(game.Players.Count == 12 && game.checkpoints.Length == 16 && game.planks.Length == 12 && game.pads.Length == 9, "Course references and twelve stationary bodies");
             Check(!game.Mission.Started && a.Section == KingRushSection.Red1, "Mission waits for first arrival");
             var state = GetComponent<UIDocument>().rootVisualElement.Q<Label>("opening-objective");
             Check(state != null && state.worldBound.width > 100 && state.text.Contains("장난감"), "Opening HUD has visible Korean objective");
@@ -137,10 +147,16 @@ namespace ChessFight.RagdollLab
         }
         IEnumerator Walk(KingRushPawn pawn, Vector3 target, float limit, bool jumpGaps = false)
         {
-            float end = Time.time + limit, nextJump = 0; walkOK = false;
+            float end = Time.time + limit, nextJump = 0, traceAt = 0; walkOK = false;
+            bool trace = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-kingRushWalkTrace") >= 0;
             while (Time.time < end)
             {
                 Vector3 delta = target - pawn.BodyPosition; delta.y = 0;
+                if (trace && Time.time >= traceAt)
+                {
+                    traceAt = Time.time + .5f;
+                    Debug.Log($"[WalkTrace] target={target} pos={pawn.BodyPosition} state={pawn.Pawn.State} ground={pawn.Pawn.Grounded}");
+                }
                 if (delta.magnitude < .5f) { walkOK = true; break; }
                 bool jump = jumpGaps && pawn.Pawn.Grounded && Time.time > nextJump;
                 if (jump) nextJump = Time.time + .85f;

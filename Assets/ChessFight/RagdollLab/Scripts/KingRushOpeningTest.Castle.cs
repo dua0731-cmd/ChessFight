@@ -12,8 +12,8 @@ namespace ChessFight.RagdollLab
             game.ArrangeRally(wave); yield return new WaitForSeconds(2.2f);
             var rally = game.rallies[wave]; var a = game.Local; var arrived = game.Players[1]; var king = game.Players[11];
             Check(rally.Rules.Claimed == wave + 2 && rally.Rules.StartedAt >= 0 && !rally.Rules.Released, $"Wave {wave}: actual pad claims start countdown");
-            arrived.Section = wave == 0 ? KingRushSection.Red1 : KingRushSection.Red2;
-            arrived.Respawn(new Vector3(-8, 0, rally.arrival.center.z));
+            arrived.Section = KingRushOpening.RedSection(wave);
+            arrived.Respawn(new Vector3(wave == 0 ? -8 : -11, rally.arrival.min.y, rally.arrival.center.z));
             king.Respawn(new Vector3(20, -1.7f, 96));
             yield return new WaitForSeconds(.5f);
             Check(king.Pawn.Floating, $"Wave {wave}: late king is actually in water");
@@ -22,7 +22,7 @@ namespace ChessFight.RagdollLab
             while (game.Match.Now < until - .45) yield return new WaitForFixedUpdate();
             king.Respawn(new Vector3(20, -1.7f, 96));
             var detained = game.Players[2];
-            if (wave == 1)
+            if (wave >= 1)
             {
                 detained.Section = KingRushSection.Blue1; game.Mission.Begin(game.Match.Now);
                 game.Mission.Deposit(detained.Id, detained.Team, 1, game.Match.Now); detained.SetCaptured();
@@ -34,12 +34,12 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(.55f);
             bool gathered = true;
             foreach (var p in game.Players) gathered &= rally.arrival.Contains(p.BodyPosition) && !p.Pawn.Floating && !p.Captured;
-            Check(rally.Rules.Released && !rally.wall.GetComponent<Collider>().enabled && gathered && game.GatheredLast >= 8,
+            Check(rally.Rules.Released && !rally.wall.GetComponent<Collider>().enabled && gathered && game.GatheredLast == 9 - wave,
                 $"Wave {wave}: both teams including wet/detained bodies gather before wall opens ({game.GatheredLast})");
-            Check((arrived.BodyPosition - arrivalBefore).magnitude < .3f && a.Piece == (wave == 0 ? KingRushPiece.Knight : KingRushPiece.Rook) &&
+            Check((arrived.BodyPosition - arrivalBefore).magnitude < .3f && a.Piece == (wave == 0 ? KingRushPiece.Knight : wave == 1 ? KingRushPiece.Rook : KingRushPiece.Queen) &&
                 king.Piece == KingRushPiece.King && detained.Piece == KingRushPiece.Pawn, $"Wave {wave}: arrivals stay put; promotions/king preserved; late pawn stays pawn");
             yield return Capture(wave == 0 ? "rally-open" : "castle-rally");
-            game.Players[3].Respawn(new Vector3(0, 0, rally.arrival.center.z - 9));
+            game.Players[3].Respawn(new Vector3(0, rally.arrival.min.y, rally.arrival.center.z - 9));
             yield return new WaitForSeconds(5.2f);
             Check(Mathf.Abs(game.Players[3].BodyPosition.z - (rally.arrival.center.z - 9)) < 1 && rally.arrival.Contains(king.BodyPosition) &&
                 !game.Mission.Detained(detained.Id), $"Wave {wave}: no repeated gather or stale water/capture respawn");

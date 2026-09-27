@@ -245,7 +245,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 28d4f0ab3cd25124fa2163b4f19b7dd5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.LabCamera
   game: {fileID: 0}
   playerIndex: 0
@@ -393,7 +393,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6920100965190287732, guid: f4dec83284cfa9841a7a1570c79ced93, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -409,7 +409,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &364644695 stripped
 Transform:
@@ -482,7 +482,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &445787658 stripped
 Transform:
@@ -499,7 +499,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3811315079426879666, guid: 584d0ad26e388c649a6cd115490bab42, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 6558089864988333233, guid: 584d0ad26e388c649a6cd115490bab42, type: 3}
       propertyPath: m_LocalPosition.x
@@ -559,7 +559,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &702300973 stripped
 Transform:
@@ -632,7 +632,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3677d0f93698587419b90e10643dc907, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushRallyGate
 --- !u!4 &838039870 stripped
 Transform:
@@ -705,7 +705,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cd501d14800877a7b4c6c6ff70ac3c3e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.WaterZone
 --- !u!4 &981248212 stripped
 Transform:
@@ -721,7 +721,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cd501d14800877a7b4c6c6ff70ac3c3e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.WaterZone
 --- !u!1001 &1007423557
 PrefabInstance:
@@ -733,7 +733,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 564779898597029061, guid: 0659362d8731781459ace91888ed64e3, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 6451976949273918945, guid: 0659362d8731781459ace91888ed64e3, type: 3}
       propertyPath: m_Name
@@ -793,7 +793,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &1007423559 stripped
 Transform:
@@ -810,7 +810,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1454854169686711831, guid: 22ed5d4dfedc6d0428be6a39c6ae56fb, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 4731589055851205853, guid: 22ed5d4dfedc6d0428be6a39c6ae56fb, type: 3}
       propertyPath: m_Name
@@ -870,7 +870,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &1079119080 stripped
 Transform:
@@ -885,9 +885,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2062982838}
     m_Modifications:
+    - target: {fileID: 2017938085562507983, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_Text
+      value: "05 / \uC655\uC758 \uACC4\uB2E8\n\uC67C\uCABD \uC678\uB098\uBB34 / \uC624\uB978\uCABD
+        \uAE34 \uACC4\uB2E8"
+      objectReference: {fileID: 0}
     - target: {fileID: 3120624549702036971, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
       propertyPath: m_Name
       value: 16_Seesaw
+      objectReference: {fileID: 0}
+    - target: {fileID: 4082976045541071523, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4649285988641751353, guid: 9535f473530c2ef47a37c607a265c2d8, type: 3}
       propertyPath: m_LocalPosition.x
@@ -943,7 +952,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab089393ad306688c132f621be17ec37, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PawnGate
 --- !u!4 &1170067178 stripped
 Transform:
@@ -959,7 +968,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab089393ad306688c132f621be17ec37, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PawnGate
 --- !u!114 &1170067180 stripped
 MonoBehaviour:
@@ -970,7 +979,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e8d4a6544246654dabd8886b9e91186, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSeesawExit
 --- !u!114 &1170067181 stripped
 MonoBehaviour:
@@ -981,7 +990,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e8d4a6544246654dabd8886b9e91186, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSeesawExit
 --- !u!114 &1170067182 stripped
 MonoBehaviour:
@@ -992,7 +1001,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e0551a2b6e105644aed2bdee934536c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSeesawBoard
 --- !u!1001 &1171855412
 PrefabInstance:
@@ -1048,7 +1057,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4080271992069851486, guid: f9247ad52eba5544bb80e7c1730d4e11, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1064,7 +1073,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &1171855414 stripped
 Transform:
@@ -1137,7 +1146,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &1173828702 stripped
 Transform:
@@ -1153,7 +1162,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!1001 &1187613229
 PrefabInstance:
@@ -1241,7 +1250,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
 --- !u!114 &1187613235 stripped
 MonoBehaviour:
@@ -1252,7 +1261,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
 --- !u!114 &1187613236 stripped
 MonoBehaviour:
@@ -1263,7 +1272,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
 --- !u!114 &1187613237 stripped
 MonoBehaviour:
@@ -1274,7 +1283,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!114 &1187613238 stripped
 MonoBehaviour:
@@ -1285,7 +1294,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3677d0f93698587419b90e10643dc907, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushRallyGate
 --- !u!1001 &1197047341
 PrefabInstance:
@@ -1337,15 +1346,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3544189675828804620, guid: 5757dffd639f81c49b6a70d7423d9de2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 3787902534189531650, guid: 5757dffd639f81c49b6a70d7423d9de2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 4072401859649027832, guid: 5757dffd639f81c49b6a70d7423d9de2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 7926073970632785047, guid: 5757dffd639f81c49b6a70d7423d9de2, type: 3}
       propertyPath: m_Name
@@ -1380,7 +1389,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
 --- !u!114 &1197047346 stripped
 MonoBehaviour:
@@ -1391,7 +1400,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
 --- !u!114 &1197047347 stripped
 MonoBehaviour:
@@ -1402,7 +1411,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!1001 &1235486839
 PrefabInstance:
@@ -1414,11 +1423,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 897315560829075945, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 1002566588632920341, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 1753000692892579257, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1471,7 +1480,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4274199882556453137, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 5503613482700658667, guid: 0333458d952b7784788dea661d68c4b7, type: 3}
       propertyPath: m_Name
@@ -1566,7 +1575,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab089393ad306688c132f621be17ec37, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PawnGate
 --- !u!114 &1235486856 stripped
 MonoBehaviour:
@@ -1577,7 +1586,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab089393ad306688c132f621be17ec37, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PawnGate
 --- !u!1001 &1281045462
 PrefabInstance:
@@ -1593,7 +1602,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3483595528906616068, guid: b122c0e1039ffa141a6bd44374224945, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 6867321545146567192, guid: b122c0e1039ffa141a6bd44374224945, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1637,15 +1646,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7057928634910522125, guid: b122c0e1039ffa141a6bd44374224945, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 8395665224382583415, guid: b122c0e1039ffa141a6bd44374224945, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 8402768158231048629, guid: b122c0e1039ffa141a6bd44374224945, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1676,7 +1685,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4bafe2f877e9a348a368a37fea99027, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCaptureBox
 --- !u!114 &1281045467 stripped
 MonoBehaviour:
@@ -1687,7 +1696,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4bafe2f877e9a348a368a37fea99027, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCaptureBox
 --- !u!1001 &1291234115
 PrefabInstance:
@@ -1755,7 +1764,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cd501d14800877a7b4c6c6ff70ac3c3e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.WaterZone
 --- !u!4 &1291234117 stripped
 Transform:
@@ -1771,7 +1780,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cd501d14800877a7b4c6c6ff70ac3c3e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.WaterZone
 --- !u!1001 &1332041599
 PrefabInstance:
@@ -1839,7 +1848,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &1332041601 stripped
 Transform:
@@ -1856,7 +1865,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2145712575735708571, guid: 1c575b52892c6c842829a657c95d3d01, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 2705632275030805664, guid: 1c575b52892c6c842829a657c95d3d01, type: 3}
       propertyPath: m_Name
@@ -1916,7 +1925,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!4 &1580385748 stripped
 Transform:
@@ -1951,15 +1960,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c48aa6e95cedd6e41d7b972fc6492e2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.KingRushOpening
   rallies:
   - {fileID: 838039869}
   - {fileID: 1187613238}
+  - {fileID: 2730979737969114562}
   seesawBoard: {fileID: 1170067182}
   seesawExits:
   - {fileID: 1170067181}
   - {fileID: 1170067180}
+  finalBoard: {fileID: 4045675977609844783}
   pawnPrefab: {fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}
   tuning: {fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}
   white: {fileID: 2100000, guid: 98c2fb166f78b0b47a2c0e233a3b35cf, type: 2}
@@ -1977,12 +1988,20 @@ MonoBehaviour:
   - {fileID: 1173828701}
   - {fileID: 1332041600}
   - {fileID: 1187613237}
+  - {fileID: 6773109326705566810}
+  - {fileID: 6773109326705566808}
+  - {fileID: 4062748136171257645}
+  - {fileID: 2730979737969114561}
   pads:
   - {fileID: 1197047346}
   - {fileID: 1197047345}
   - {fileID: 1187613236}
   - {fileID: 1187613235}
   - {fileID: 1187613234}
+  - {fileID: 2730979737969114560}
+  - {fileID: 2730979737969114559}
+  - {fileID: 2730979737969114558}
+  - {fileID: 2730979737969114557}
   gates:
   - {fileID: 1235486856}
   - {fileID: 1235486855}
@@ -2009,6 +2028,7 @@ MonoBehaviour:
   - {fileID: 1291234116}
   - {fileID: 981248213}
   - {fileID: 981248211}
+  - {fileID: 1344579746144357518}
   boxLabels:
   - {fileID: 1281045465}
   - {fileID: 1281045463}
@@ -2021,6 +2041,10 @@ MonoBehaviour:
   - {fileID: 1187613233}
   - {fileID: 1187613232}
   - {fileID: 1187613230}
+  - {fileID: 2730979737969114556}
+  - {fileID: 2730979737969114555}
+  - {fileID: 2730979737969114554}
+  - {fileID: 2730979737969114552}
 --- !u!114 &2062982837
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2031,7 +2055,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1bc1bc7506fbab4907fec6173c092907, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PhysicsProfile
   physicsRate: 120
   solverIterations: 24
@@ -2066,8 +2090,149 @@ Transform:
   - {fileID: 1187613231}
   - {fileID: 1170067178}
   - {fileID: 981248212}
+  - {fileID: 6773109326705566809}
+  - {fileID: 1174548080034648227}
+  - {fileID: 4062748136171257646}
+  - {fileID: 2730979737969114553}
+  - {fileID: 4045675977609844784}
+  - {fileID: 1344579746144357519}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1174548080034648226
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 520305662488635241, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_Name
+      value: 19_FallingSteps
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+--- !u!4 &1174548080034648227 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4454717118240309893, guid: febd1a47aee97b44fbd0cbea128faefc, type: 3}
+  m_PrefabInstance: {fileID: 1174548080034648226}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1344579746144357517
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5257960883611929989, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+      propertyPath: m_Name
+      value: 23_SkyWater
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+--- !u!114 &1344579746144357518 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7399819092395414276, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+  m_PrefabInstance: {fileID: 1344579746144357517}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd501d14800877a7b4c6c6ff70ac3c3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.WaterZone
+--- !u!4 &1344579746144357519 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 228186736744276140, guid: 4001a065bd02bfb48bad821815373261, type: 3}
+  m_PrefabInstance: {fileID: 1344579746144357517}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2626919140526810624
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2130,6 +2295,384 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3354566046565029308, guid: 0a9a8196baa7c8442afe3221d84f3a36, type: 3}
   m_PrefabInstance: {fileID: 2626919140526810624}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2730979737969114551
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 5977685956259493264, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_Name
+      value: 21_FinalPromotion
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+--- !u!102 &2730979737969114552 stripped
+TextMesh:
+  m_CorrespondingSourceObject: {fileID: 4593612273633395371, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2730979737969114553 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6331045745360270918, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+--- !u!102 &2730979737969114554 stripped
+TextMesh:
+  m_CorrespondingSourceObject: {fileID: 2653490654046181395, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+--- !u!102 &2730979737969114555 stripped
+TextMesh:
+  m_CorrespondingSourceObject: {fileID: 6767183491702071065, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+--- !u!102 &2730979737969114556 stripped
+TextMesh:
+  m_CorrespondingSourceObject: {fileID: 7593349397284244814, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2730979737969114557 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8515611580544282988, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
+--- !u!114 &2730979737969114558 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6564797444453161264, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
+--- !u!114 &2730979737969114559 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7239300372039224410, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
+--- !u!114 &2730979737969114560 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5291704699405067107, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d29b50620dad8fd74b82e2d705462846, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPad
+--- !u!114 &2730979737969114561 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6397067938543740303, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
+--- !u!114 &2730979737969114562 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1640969721371097050, guid: e1f73dbcada8aae42a12930cdc37f137, type: 3}
+  m_PrefabInstance: {fileID: 2730979737969114551}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3677d0f93698587419b90e10643dc907, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushRallyGate
+--- !u!1001 &4045675977609844782
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 2088008275646858304, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_Name
+      value: 22_Checkmate
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+--- !u!114 &4045675977609844783 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6485978638270935025, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+  m_PrefabInstance: {fileID: 4045675977609844782}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69ce38e2be990bdcbf8f9f397b5f1a52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFinalBoard
+--- !u!4 &4045675977609844784 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6319455817744994341, guid: 8aa736288eb3d384abf46fd0cfab967c, type: 3}
+  m_PrefabInstance: {fileID: 4045675977609844782}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4062748136171257644
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 792571680121025852, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_Name
+      value: 20_GiantHandStair
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+--- !u!114 &4062748136171257645 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1384524933975311093, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+  m_PrefabInstance: {fileID: 4062748136171257644}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
+--- !u!4 &4062748136171257646 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6542984446744177306, guid: ce44ee05a738b324fa8aef2d32fdbbcb, type: 3}
+  m_PrefabInstance: {fileID: 4062748136171257644}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6773109326705566807
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2062982838}
+    m_Modifications:
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8234982927904204698, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+      propertyPath: m_Name
+      value: 18_KingsStairFork
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+--- !u!114 &6773109326705566808 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6825485878319938937, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+  m_PrefabInstance: {fileID: 6773109326705566807}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
+--- !u!4 &6773109326705566809 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4552814564301457943, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+  m_PrefabInstance: {fileID: 6773109326705566807}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6773109326705566810 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7693227610394529595, guid: 0d7f8cda0e91df24c9f2e946d20ba89d, type: 3}
+  m_PrefabInstance: {fileID: 6773109326705566807}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 369a4f655769c9542a300c7b06bbde33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCourseCheckpoint
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

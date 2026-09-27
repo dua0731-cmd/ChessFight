@@ -34,19 +34,19 @@ namespace ChessFight.RagdollLab
             foreach (var rally in rallies)
             {
                 if (rally.Rules.Released || !rally.Rules.Ready(Match.Now)) continue;
-                var red = rally.wave == 0 ? KingRushSection.Red1 : KingRushSection.Red2;
+                var red = RedSection(rally.wave);
                 GatheredLast = 0;
                 foreach (var p in Players)
                 {
                     if (p.Section > red) continue;
                     if (p.Section == red && !p.Captured && !p.Pawn.Floating && rally.arrival.Contains(p.BodyPosition))
-                    { progress[p] = rally.wave == 0 ? 6 : checkpoints.Length - 1; continue; }
+                    { progress[p] = RallyCheckpoint(rally.wave); continue; }
                     // Collect both teams, including players still detained in the previous mission.
                     // Clear inbound grips before teleporting, and cancel all obsolete respawn reservations.
                     foreach (var holder in Players) holder.ReleaseHoldOn(p);
                     pendingCapture.Remove(p); Mission.Release(p.Id); wetUntil.Remove(p);
                     if (p.Section < red) p.LeaveBlue();
-                    p.Section = red; progress[p] = rally.wave == 0 ? 6 : checkpoints.Length - 1;
+                    p.Section = red; progress[p] = RallyCheckpoint(rally.wave);
                     Vector3 spot = rally.Slot((int)p.Id - 1);
                     // Keep arrivals in place, without spawning a late body on top of them.
                     for (int attempt = 0; attempt < 48; attempt++)
@@ -71,6 +71,7 @@ namespace ChessFight.RagdollLab
             {
                 if (p.Section == KingRushSection.Red1 && !rallies[0].Rules.Released && Arena.Contains(p.BodyPosition)) Respawn(p);
                 if (p.Section == KingRushSection.Red2 && !rallies[1].Rules.Released && secondArena.Contains(p.BodyPosition)) Respawn(p);
+                if (p.Section == KingRushSection.Red3 && !rallies[2].Rules.Released && finalBoard.arena.Contains(p.BodyPosition)) Respawn(p);
             }
         }
         void StepCastle(float dt)
@@ -108,9 +109,10 @@ namespace ChessFight.RagdollLab
         }
         string MissionText(string opening)
         {
-            if (Local.Section == KingRushSection.Red1 || Local.Section == KingRushSection.Red2)
+            if (Final.Ended || Local.Section == KingRushSection.Final) return FinalText();
+            if (!KingRushPieces.IsBlue(Local.Section))
             {
-                var r = rallies[Local.Section == KingRushSection.Red1 ? 0 : 1].Rules;
+                var r = rallies[RallyWave(Local.Section)].Rules;
                 return r.Released ? "전원 집결 완료\n열린 벽을 지나 미션으로" : r.StartedAt < 0 ?
                     $"승격 인원 {r.Claimed} / {r.Required}\n모두 정해지면 10초 카운트다운\n끝나면 양 팀 미도착 인원 자동 합류" :
                     $"출발까지 {Math.Ceiling(r.Remaining(Match.Now)):0}초\n끝나면 양 팀 미도착 인원 자동 합류";
@@ -124,15 +126,15 @@ namespace ChessFight.RagdollLab
         {
             // Solo fixture: put distinct eligible pawns on pads; real 1.5 s claims and 10 s countdown still run.
             ResetRound(); Select(0);
-            var red = wave == 0 ? KingRushSection.Red1 : KingRushSection.Red2;
-            int first = wave == 0 ? 0 : 2;
-            Local.Section = red; progress[Local] = wave == 0 ? 6 : checkpoints.Length - 1;
+            var red = RedSection(wave);
+            int first = wave == 0 ? 0 : wave == 1 ? 2 : 5;
+            Local.Section = red; progress[Local] = RallyCheckpoint(wave);
             for (int i = 0; i < wave + 2; i++)
             {
                 var p = i == 0 ? Local : Players[6 + i - 1]; p.Section = red;
                 progress[p] = progress[Local]; p.Respawn(pads[first + i].transform.position + Vector3.up * .03f);
             }
-            if (wave == 1) rallies[0].OpenAfterGather(Match.Now, true);
+            for (int i = 0; i < wave; i++) rallies[i].OpenAfterGather(Match.Now, true);
         }
         public void ArrangeCastle(bool mission)
         {

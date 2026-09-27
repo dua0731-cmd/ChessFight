@@ -1,5 +1,7 @@
 # 장애물
 
+**R56 왕의 계단:** 외나무 횡풍, 긴 계단, `KingRushSkyMotion`의 복귀하는 칸/그림자 예고 손. [기획서](Obstacles/KINGS_STAIR.md). 결승은 별도 `KingRushFinalRules`의 T0에 맞춰 `KingRushFinalBoard`가 판을 붕괴시킨다. [결승 규칙](FINAL_COURSE.md). 공통 물리 튜닝은 변경하지 않았다.
+
 **R55 성벽 코스:** `KingRushCastleMotion`의 왕복 발판/미는 벽/도개교/철퇴/성문은 모두 시간 함수다. [기획서](Obstacles/CASTLE.md). 시소 체스판은 반복 장애물이 아니라 몸 무게로 결정되는 방장 소유 미션 상태여서 `KingRushSeesawRules`/`KingRushSeesawBoard`로 분리한다. 공통 캐릭터는 기존 `IMovingSurface` 계약을 쓴다.
 
 **R54 장난감 코스:** `KingRushToyMotion`(팽이 폰·굴러오는 머리·시계 버튼), 기존 `LaunchPad` 연못. 시간 함수·치수·물리 판정·확인 범위는 [장애물 기획서](Obstacles/TOY_BOX.md), 코스 편집은 [첫 연결 코스](OPENING_COURSE.md).

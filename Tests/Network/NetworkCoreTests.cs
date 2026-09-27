@@ -14,6 +14,36 @@ public static class NetworkCoreTests
     {
         try
         {
+            Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
+                var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
+                r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");
+                r.Advance(27, 1, 0, 0); Check(r.StartedAt == 27 && r.Progress(0) == 0, "exact timeout");
+                var b = new KingRushFinalRules(); b.ArriveKing(0, 3); b.ArriveKing(1, 7); b.Advance(7, 0, 0, 0); Check(b.StartedAt == 7, "both"); });
+            Test("King Rush final accumulates eight unblocked seconds without decay or double seats", () => {
+                var r = new KingRushFinalRules(); r.ArriveKing(0, 0); r.ArriveKing(1, 0); r.Advance(0, 0, 0, 0);
+                r.Advance(2, 1, 0, 0); Check(r.Progress(0) == .25, "two seconds");
+                r.Advance(4, 3, 3, 0); Check(r.Progress(0) == .25 && r.Seated == 0 && r.Progress(1) == 0, "contested single seat");
+                r.Advance(5, 0, 0, 0); r.Advance(6, 2, 0, 0); Check(r.Progress(1) == .125 && r.Progress(0) == .25, "takeover retains progress");
+                r.Advance(12, 1, 0, 0); Check(r.Winner == 0, "eight total wins"); r.Advance(200, 2, 0, 1); Check(r.Winner == 0, "immutable result"); });
+            Test("King Rush final doubles only time after 140 and resolves king falls atomically", () => {
+                var r = new KingRushFinalRules(); r.ArriveKing(0, 0); r.ArriveKing(1, 0); r.Advance(139, 0, 0, 1);
+                Check(!r.Ended, "early fall respawns"); r.Advance(141, 1, 0, 0); Check(Math.Abs(r.Progress(0) - .375) < 1e-8, "one normal plus one doubled second");
+                r.Advance(141.1, 0, 0, 1); Check(r.Winner == 1, "white king falls");
+                var b = new KingRushFinalRules(); b.ArriveKing(0, 0); b.ArriveKing(1, 0); b.Advance(140, 0, 0, 3); Check(b.Winner == -1, "simultaneous draw"); });
+            Test("King Rush final timeout compares retained gauges and rejects invalid clocks", () => {
+                var r = new KingRushFinalRules(); r.ArriveKing(0, 0); r.ArriveKing(1, 0); r.Advance(0, 0, 0, 0); r.Advance(1, 2, 0, 0);
+                r.Advance(double.NaN, 1, 0, 0); r.Advance(.5, 1, 0, 0); r.Advance(double.PositiveInfinity, 1, 0, 0);
+                Check(r.Progress(0) == 0, "invalid times ignored"); r.Advance(180, 0, 0, 0); Check(r.Winner == 1, "larger gauge");
+                var b = new KingRushFinalRules(); b.ArriveKing(0, 0); b.ArriveKing(1, 0); b.Advance(180, 0, 0, 0); Check(b.Winner == -1, "timeout tie"); });
+            Test("King Rush final collapse leaves thirty black cells then six then dais only", () => {
+                int at50 = 0, at100 = 0, at140 = 0;
+                for (int x = 0; x < 8; x++) for (int z = 0; z < 8; z++) { double drop = KingRushFinalRules.TileFallsAt(x, z); if (drop > 50) at50++; if (drop > 100) at100++; if (drop > 140) at140++; }
+                Check(at50 == 34 && at100 == 10 && at140 == 4, "central four permanent cells are included"); });
+            Test("King Rush last rally needs all four final promotions", () => {
+                var g = new KingRushRules(); var r = new KingRushRallyRules(2);
+                for (int i = 5; i < 8; i++) g.TryClaim(i, (ulong)i, i % 2);
+                r.Advance(g, 4); Check(r.StartedAt < 0 && r.Claimed == 3, "three insufficient"); g.TryClaim(8, 8, 0); r.Advance(g, 5);
+                Check(!r.Ready(14.999) && r.Release(15), "four then ten seconds"); });
             Test("King Rush rally waits for every slot and releases once after exactly ten seconds", () => {
                 var g = new KingRushRules(); var r = new KingRushRallyRules(0);
                 g.TryClaim(0, 1, 0); r.Advance(g, 20); Check(r.StartedAt < 0 && !r.Ready(500), "partial claims cannot start");

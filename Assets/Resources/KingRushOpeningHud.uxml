@@ -6,7 +6,7 @@
         <ui:Label name="opening-ability" />
     </ui:VisualElement>
     <ui:VisualElement class="kr-side" style="width: 340px;" picking-mode="Ignore">
-        <ui:Label text="장난감 상자 → 성벽 · 시소 / 오프라인" class="kr-accent" />
+        <ui:Label text="장난감 → 성벽 → 왕좌 / 오프라인" class="kr-accent" />
         <ui:Label name="opening-mission" />
     </ui:VisualElement>
     <ui:Label name="opening-help" class="kr-bottom" picking-mode="Ignore" />

@@ -51,6 +51,7 @@ namespace ChessFight.RagdollLab
             oldLock = Cursor.lockState; oldVisible = Cursor.visible;
             Match = gameObject.AddComponent<KingRushMatch>(); Mission = new KingRushCaptureRules(Match.Rules);
             Seesaw = new KingRushSeesawRules(Match.Rules);
+            Final = new KingRushFinalRules();
             CameraRig = FindFirstObjectByType<LabCamera>();
             // OS-created font atlases are runtime objects, not serializable prefab assets.
             // World signs must depth-test; the default GUI font shader shows through boards/walls.
@@ -91,11 +92,11 @@ namespace ChessFight.RagdollLab
                 if (p.Captured || Mission.Detained(p.Id)) { p.AbilitiesEnabled = false; continue; }
                 bool inside = Arena.Contains(p.BodyPosition) && !p.Pawn.Floating;
                 if (inside && p.Section == KingRushSection.Red1 && rallies[0].Rules.Released) p.Section = KingRushSection.Blue1;
-                if (p.Section != KingRushSection.Blue2) p.AbilitiesEnabled = inside && p.Section == KingRushSection.Blue1;
+                if (p.Section != KingRushSection.Blue2 && p.Section != KingRushSection.Final) p.AbilitiesEnabled = inside && p.Section == KingRushSection.Blue1;
                 if (p.Section == KingRushSection.Blue1 && p.AbilitiesEnabled) Mission.Begin(Match.Now);
-                if ((p.Section == KingRushSection.Red1 || p.Section == KingRushSection.Red2) && !p.Pawn.Floating)
+                if (!KingRushPieces.IsBlue(p.Section) && !p.Pawn.Floating)
                     for (int i = progress[p] + 1; i < checkpoints.Length; i++)
-                        if ((i < 7) == (p.Section == KingRushSection.Red1) && checkpoints[i].Contains(p.BodyPosition)) progress[p] = i;
+                        if (CheckpointWave(i) == RallyWave(p.Section) && checkpoints[i].Contains(p.BodyPosition)) progress[p] = i;
             }
             Mission.Advance(Match.Now);
             foreach (var p in Players)
@@ -106,6 +107,7 @@ namespace ChessFight.RagdollLab
             foreach (var pad in pads) pad.Step(dt);
             foreach (var rally in rallies) rally.Sample(Match.Rules, Match.Now);
             StepCastle(dt);
+            StepFinal(dt);
             for (int team = 0; team < 2; team++)
                 for (int i = 0; i < 6; i++)
                 {
@@ -119,6 +121,7 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             GatherReadyWaves();
+            UpdateFinal();
             foreach (var p in pendingCapture)
             {
                 foreach (var holder in Players) holder.ReleaseHoldOn(p);
@@ -127,6 +130,7 @@ namespace ChessFight.RagdollLab
             pendingCapture.Clear();
             foreach (var p in Players)
             {
+                if (p.Section == KingRushSection.Final) continue;
                 if (Mission.Detained(p.Id))
                 {
                     if (Match.Now >= Mission.ReleaseAt(p.Id)) { Mission.Release(p.Id); Respawn(p); }
@@ -142,9 +146,12 @@ namespace ChessFight.RagdollLab
             if (Input.GetKeyDown(KeyCode.F3)) ResetRound();
             if (Input.GetKeyDown(KeyCode.F4)) ArrangeMission();
             if (Input.GetKeyDown(KeyCode.F5)) ArrangeCastle(Input.GetKey(KeyCode.LeftShift));
-            if (Input.GetKeyDown(KeyCode.F7)) ArrangeRally(Local.Section >= KingRushSection.Red2 ? 1 : 0);
+            if (Input.GetKeyDown(KeyCode.F7)) ArrangeRally(RallyWave(Local.Section));
+            if (Input.GetKeyDown(KeyCode.F8)) ArrangeFinal(Input.GetKey(KeyCode.LeftShift));
+            if (Input.GetKeyDown(KeyCode.F2)) Select(Input.GetKey(KeyCode.LeftShift) ? 11 : 5);
             if (Input.GetKeyDown(KeyCode.F6)) NextCheckpoint();
             if (Input.GetKeyDown(KeyCode.R)) Respawn(Local);
+            if (Final.Ended || eliminated.Contains(Local) || finalFalls.ContainsKey(Local)) { Local.SetInput(default); return; }
             if (!Application.isFocused) { Local.SetInput(default); return; }
             float x = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
             float z = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
@@ -162,10 +169,16 @@ namespace ChessFight.RagdollLab
         }
         public void Respawn(KingRushPawn p)
         {
+            if (Final.Ended || eliminated.Contains(p) || finalFalls.ContainsKey(p)) return;
             if (Mission.Detained(p.Id)) return; // R cannot skip the capture penalty.
+            if (p.Section == KingRushSection.Final)
+            {
+                foreach (var holder in Players) holder.ReleaseHoldOn(p);
+                wetUntil.Remove(p); finalFalls[p] = Match.Now + 5; p.SetCaptured(); return;
+            }
             wetUntil.Remove(p);
             int index = (int)p.Id - 1;
-            Vector3 spot = p.Section == KingRushSection.Blue2 ? SeesawEntry(index) : p.Section == KingRushSection.Red3 ?
+            Vector3 spot = p.Section == KingRushSection.Final ? FinalEntry(index) : p.Section == KingRushSection.Blue2 ? SeesawEntry(index) : p.Section == KingRushSection.Red3 && CheckpointOf(p) < 12 ?
                 new Vector3(p.Team == 0 ? -12 : 12, 3, 436) : p.Section == KingRushSection.Blue1 ? Entry(index) :
                 p.Section == KingRushSection.Red2 && CheckpointOf(p) < 7 ? new Vector3(p.Team == 0 ? -5 : 5, 0, 214) : CheckpointOf(p) == 0 ? Spawn(index) :
                 checkpoints[CheckpointOf(p)].transform.position + Vector3.right * ((index % 6 - 2.5f) * .9f);
@@ -175,6 +188,7 @@ namespace ChessFight.RagdollLab
         {
             pendingCapture.Clear(); wetUntil.Clear(); Match.ResetRound(); Mission = new KingRushCaptureRules(Match.Rules);
             Seesaw = new KingRushSeesawRules(Match.Rules); seesawBoard.ResetBoard();
+            ResetFinal();
             foreach (var rally in rallies) rally.ResetGate();
             foreach (var pad in pads) pad.Charge.Reset();
             foreach (var p in Players) { progress[p] = 0; p.ResetForRound(); Respawn(p); }
@@ -198,7 +212,8 @@ namespace ChessFight.RagdollLab
         {
             if (Mission.Detained(Local.Id)) return;
             if (Local.Section == KingRushSection.Red1) progress[Local] = Mathf.Min(progress[Local] + 1, 6);
-            else if (Local.Section == KingRushSection.Red2) progress[Local] = Mathf.Clamp(progress[Local] + 1, 7, checkpoints.Length - 1);
+            else if (Local.Section == KingRushSection.Red2) progress[Local] = Mathf.Clamp(progress[Local] + 1, 7, 11);
+            else if (Local.Section == KingRushSection.Red3) progress[Local] = Mathf.Clamp(progress[Local] + 1, 12, 15);
             else return;
             Respawn(Local);
         }
@@ -214,6 +229,7 @@ namespace ChessFight.RagdollLab
         void LateUpdate()
         {
             if (Players.Count == 0) return;
+            DrawFinalCrown();
             for (int i = 0; i < 2; i++)
             {
                 string team = i == 0 ? "백팀" : "흑팀";
@@ -223,7 +239,8 @@ namespace ChessFight.RagdollLab
             }
             for (int i = 0; i < pads.Length; i++)
                 padLabels[i].text = KingRushPieces.Name(pads[i].Reward) + "\n" + (pads[i].Claimed ? "사용 완료" : pads[i].Charge.Contested ? "쟁탈 중" : $"혼자 1.5초 · {pads[i].Charge.Seconds / 1.5:0%}");
-            string objective = Local.Section == KingRushSection.Red3 ? "두 번째 미션 통과! · 왕의 계단/결승은 후속 제작" :
+            string objective = Final.Ended ? "체크메이트 · 경기 종료" : Local.Section == KingRushSection.Final ? "우리 킹이 왕좌 점유 + 단상의 적을 밀어내기 → 누적 8초" :
+                Local.Section == KingRushSection.Red3 ? "왕의 계단 · 외나무/긴 계단 → 붕괴 칸 → 거대한 손 → 마지막 승격" :
                 Local.Section == KingRushSection.Blue2 ? "반대쪽을 무겁게 → 우리 쪽 높은 출구로 4명 통과" :
                 Local.Section == KingRushSection.Red2 ? "성벽 갈림길 · 위/아래 길 → 교차 다리 → 승격 발판" :
                 Local.Section == KingRushSection.Blue1 ? "상대를 우리 팀 상자에 넣어 다리 6칸 완성 → 팀 출구" :
