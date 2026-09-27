@@ -53,10 +53,9 @@ namespace ChessFight.Game
             if (config == null) config = gameObject.AddComponent<GameSceneConfig>();
             RenderSettings.ambientLight = config.AmbientLight;
 
-            // The team material doubles as the template for the stage's own colours:
-            // it is the one material every PC is guaranteed to have wired.
+            // The stage sets its own sky, haze and light over the scene defaults.
             stage = new GameObject("Lobby Stage").AddComponent<LobbyStage>();
-            stage.Build(config.PawnPrefab, config.BlueTeamMaterial, config.BlueTeamMaterial);
+            stage.Build();
 
             hud = gameObject.AddComponent<NetworkHudView>();
             hud.Build(config.HudLayout, config.HudTheme, config.HudPanelSettings, config.HudReferenceResolution);
