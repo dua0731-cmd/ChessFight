@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 namespace ChessFight.RagdollLab
 {
     [DefaultExecutionOrder(-90)]
-    public sealed class SwordFightGame : MonoBehaviour
+    public sealed partial class SwordFightGame : MonoBehaviour
     {
         public RagdollPawn pawnPrefab;
         public RagdollTuning tuning;
@@ -114,6 +114,7 @@ namespace ChessFight.RagdollLab
         {
             if (Finished) return;
             ClassicControls = !ClassicControls; waitForAttackRelease = true;
+            ResetSwordLook();
             if (Authority) Local?.SetControlStyle(ClassicControls);
         }
         void FixedUpdate()
@@ -145,7 +146,7 @@ namespace ChessFight.RagdollLab
         { remoteWhite = w; remoteBlack = b; remoteRemaining = remaining; remoteFinished = finished; }
 
         public void SetMenu(bool open)
-        { MenuOpen = open; waitForAttackRelease = true; RefreshCursor(); }
+        { MenuOpen = open; waitForAttackRelease = true; if (open) ResetSwordLook(); RefreshCursor(); }
         void RefreshCursor()
         {
             bool free = MenuOpen || Finished || Automated;
@@ -158,6 +159,11 @@ namespace ChessFight.RagdollLab
         }
         void LateUpdate()
         {
+            if (!Automated)
+                StepSwordLook(!ClassicControls && Local != null && Local.Alive && Local.Pawn.State == PawnState.Active &&
+                    !MenuOpen && !Finished && !waitForAttackRelease && Application.isFocused &&
+                    Cursor.lockState == CursorLockMode.Locked && Input.GetMouseButton(0),
+                    new Vector2(Input.GetAxisRaw("Mouse X"), -Input.GetAxisRaw("Mouse Y")), Time.unscaledDeltaTime);
             if (hud == null || Rules == null) return;
             var local = Local;
             // During the respawn wait, watch an alive teammate instead of staring under the floor.
@@ -175,11 +181,12 @@ namespace ChessFight.RagdollLab
             }
             string status = local == null ? "입장 중" : !local.Alive ? $"{local.RespawnSeconds:0.0}초 뒤 부활"
                 : local.Protection > 0 ? "부활 보호 (발도 / 공격 시 해제)" : local.Pawn.State != PawnState.Active ? "넘어짐 · 일어나는 중"
-                : ClassicControls ? "좌클릭 한 번 → 정해진 궤도로 베기" : local.Drawn ? "마우스로 조준하며 베기 · 회전 감속 없음" : "좌클릭을 누르고 드래그 → 물리 칼 휘두르기";
+                : ClassicControls ? "좌클릭 한 번 → 정해진 궤도로 베기" : local.Drawn ? "넓고 빠르게 휘두르면 넘어뜨립니다 · 무게감 있는 드래그" : "좌클릭을 누르고 드래그 → 물리 칼 휘두르기";
             hud.Draw(White, Black, Remaining, targetScore, local == null ? -1 : local.Pawn.Team, status, MenuOpen, Finished, ClassicControls);
         }
         void OnDestroy()
         {
+            ResetSwordLook();
             Physics.gravity = savedGravity; Cursor.lockState = savedLock; Cursor.visible = savedCursor;
             if (white != null) Destroy(white); if (black != null) Destroy(black);
         }

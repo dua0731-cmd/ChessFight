@@ -21,6 +21,8 @@ namespace ChessFight.RagdollLab
         public float HitFlash { get; private set; }
         public int Swings { get; private set; }
         public int HitsLanded { get; private set; }
+        public int SoftContacts { get; private set; }
+        public const float StrongCutEnergy = .65f, MinimumStroke = 18f;
         public bool Attacking => Alive && (ClassicControls ? SwingAge < SwingDuration : Drawn && gesture > 0 && drawAge >= DrawTime);
         public bool WeaponVisible => sword != null && sword.gameObject.activeInHierarchy && blade.enabled;
         public Rigidbody SwordBody { get; private set; }
@@ -33,7 +35,7 @@ namespace ChessFight.RagdollLab
         readonly Collider[] overlaps = new Collider[128];
         readonly Contact[] contacts = new Contact[24];
         struct HitRecord { public float Time, Travel; }
-        struct Contact { public Collider Other; public Vector3 Point, Velocity; }
+        struct Contact { public Collider Other; public Vector3 Point, Velocity, Angular; }
         Transform sword;
         Renderer blade;
         Collider bladeCollider;
@@ -47,7 +49,7 @@ namespace ChessFight.RagdollLab
         Quaternion remoteRotation = Quaternion.identity, driveGoal = Quaternion.identity;
         bool held, sweepPrimed, waitForRelease;
         int contactCount;
-        float drawAge, gesture, travel;
+        float drawAge, gesture, travel, strokeTravel, intentSpeed;
         Rigidbody Hand => Pawn.bodies[(int)BodyId.HandR];
 
         public void Initialize(ulong id, int slot, bool bot)
@@ -141,13 +143,17 @@ namespace ChessFight.RagdollLab
             if (!Drawn) { aim = requestedAim; contactCount = 0; return; }
             // Aim follows the camera immediately; only the physical wrist has finite response.
             float delta = Vector3.Angle(aim, requestedAim); aim = requestedAim;
+            // Filter across render/network packet gaps. A slow cut can ricochet quickly off a
+            // body, but that solver velocity alone must never promote it to an intended strike.
+            intentSpeed = Mathf.Lerp(intentSpeed, delta / dt, 1f - Mathf.Exp(-dt / .07f));
             travel += delta; drawAge += dt; gesture = Mathf.Max(0, gesture - dt);
             if (delta > 30f * dt && drawAge >= DrawTime)
             {
-                if (gesture <= 0) Swings++;
+                if (gesture <= 0) { Swings++; strokeTravel = 0; }
+                strokeTravel += delta;
                 gesture = .12f;
             }
-            for (int i = 0; i < contactCount; i++) TryHit(contacts[i].Other, contacts[i].Point, contacts[i].Velocity);
+            for (int i = 0; i < contactCount; i++) TryHit(contacts[i].Other, contacts[i].Point, contacts[i].Velocity, contacts[i].Angular);
             contactCount = 0;
             if (sweepPrimed && Attacking)
             {
@@ -161,7 +167,7 @@ namespace ChessFight.RagdollLab
                     for (int j = 0; j < n; j++)
                     {
                         Vector3 point = overlaps[j].ClosestPoint((start + end) * .5f);
-                        TryHit(overlaps[j], point, SwordBody.GetPointVelocity(point));
+                        TryHit(overlaps[j], point, SwordBody.GetPointVelocity(point), SwordBody.angularVelocity);
                     }
                 }
             }
@@ -170,7 +176,8 @@ namespace ChessFight.RagdollLab
             Vector3 targetVelocity = Vector3.ClampMagnitude(RotationVector(goal * Quaternion.Inverse(driveGoal)) / dt, 30f);
             driveGoal = goal;
             Vector3 error = RotationVector(goal * Quaternion.Inverse(SwordBody.rotation));
-            SwordBody.AddTorque(Vector3.ClampMagnitude(error * 900f + (targetVelocity - SwordBody.angularVelocity) * 60f, 900f), ForceMode.Acceleration);
+            // Some physical follow-through remains after the softened camera changes course.
+            SwordBody.AddTorque(Vector3.ClampMagnitude(error * 500f + (targetVelocity * .25f - SwordBody.angularVelocity) * 42f, 650f), ForceMode.Acceleration);
             stepVelocity = SwordBody.linearVelocity; stepAngular = SwordBody.angularVelocity;
         }
 
@@ -192,7 +199,7 @@ namespace ChessFight.RagdollLab
         void SetDrawn(bool value)
         {
             if (Drawn == value) return;
-            Drawn = value; contactCount = 0; sweepPrimed = false; gesture = 0; drawAge = 0;
+            Drawn = value; contactCount = 0; sweepPrimed = false; gesture = 0; drawAge = 0; strokeTravel = 0; intentSpeed = 0;
             if (value)
             {
                 aim = requestedAim; Protection = 0;
@@ -217,11 +224,21 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        public static Vector3 GuardDirection(Vector3 view)
+        {
+            Vector3 flat = Vector3.ProjectOnPlane(view, Vector3.up).normalized;
+            if (flat.sqrMagnitude < .01f) flat = Vector3.forward;
+            // Present the side of the blade outside the silhouette, not its end behind the head.
+            Vector3 raised = Quaternion.AngleAxis(-12f, Vector3.Cross(Vector3.up, flat)) * view;
+            return Quaternion.AngleAxis(24f, Vector3.up) * raised;
+        }
+
         Vector3 BladeDirection()
         {
             Vector3 flat = new Vector3(aim.x, 0, aim.z).normalized;
             if (flat.sqrMagnitude < .01f) flat = Pawn.Facing;
-            Vector3 direction = aim;
+            Vector3 direction = GuardDirection(aim);
+            flat = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
             // Do not command an impossible wrist pose through the floor. The collider still
             // resolves contact with floors, bodies and other swords; no dynamic pose is teleported.
             int count = Physics.RaycastNonAlloc(Hand.position + Vector3.up * .2f, Vector3.down, groundHits, 1.4f, ~0, QueryTriggerInteraction.Ignore);
@@ -240,10 +257,10 @@ namespace ChessFight.RagdollLab
             if (!Authority || !Alive || !Attacking || contactCount >= contacts.Length || c.contactCount == 0) return;
             Vector3 point = c.GetContact(0).point;
             contacts[contactCount++] = new Contact { Other = c.collider, Point = point,
-                Velocity = stepVelocity + Vector3.Cross(stepAngular, point - SwordBody.worldCenterOfMass) };
+                Velocity = stepVelocity + Vector3.Cross(stepAngular, point - SwordBody.worldCenterOfMass), Angular = stepAngular };
         }
 
-        void TryHit(Collider other, Vector3 point, Vector3 velocity)
+        void TryHit(Collider other, Vector3 point, Vector3 velocity, Vector3 angular)
         {
             if (!Attacking || other == null || !RagdollPawn.ColliderOwner.TryGetValue(other, out var target) || target == null || target == Pawn || target.Team == Pawn.Team || other.GetComponent<SwordBladeContact>() != null) return;
             var victim = target.GetComponent<SwordFightPawn>();
@@ -251,13 +268,18 @@ namespace ChessFight.RagdollLab
             // Walking into someone with a stationary guard is not a damaging swing.
             Vector3 cut = velocity - Pawn.Hips.linearVelocity;
             float speed = cut.magnitude;
-            if (!Finite(cut) || speed < 1.1f) return;
+            // Require an intentional stroke and rotational cutting energy at the actual contact.
+            // Walking, raising the hand, and tiny fast twitches cannot buy a full knockdown.
+            Vector3 rotational = Vector3.Cross(angular, point - SwordBody.worldCenterOfMass);
+            float energy = .5f * SwordBody.mass * rotational.sqrMagnitude;
+            if (!Finite(cut) || !Finite(rotational) || speed < 2.7f || energy < StrongCutEnergy || strokeTravel < MinimumStroke || intentSpeed < 150f)
+            { SoftContacts++; return; }
             if (hits.TryGetValue(victim, out var last) && (Time.time - last.Time < RepeatDelay || travel - last.Travel < 35f)) return;
             hits[victim] = new HitRecord { Time = Time.time, Travel = travel };
             Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
             Vector3 direction = Vector3.ProjectOnPlane(cut, Vector3.up).normalized * .65f + away.normalized * .35f;
             if (direction.sqrMagnitude < .01f) direction = Pawn.Facing;
-            float strength = Mathf.Lerp(2.2f, 4.2f, Mathf.InverseLerp(1.1f, 5f, speed));
+            float strength = Mathf.Lerp(2.8f, 4.5f, Mathf.InverseLerp(StrongCutEnergy, 2.5f, energy));
             // FixedUpdate, not a physics callback. Downed follow-ups remain legal.
             target.TakeHit(direction.normalized * strength + Vector3.up * .7f, .65f, 0, true);
             victim.StopCombat(); victim.HitFlash = .16f; HitFlash = .1f; HitsLanded++;
@@ -267,9 +289,11 @@ namespace ChessFight.RagdollLab
         {
             if (ClassicControls) return ClickSwordPose(part);
             if (!Alive || !Drawn || Pawn.State != PawnState.Active) return null;
+            if (part == (int)BodyId.Chest)
+                return Quaternion.Euler(0, Mathf.Clamp(Vector3.SignedAngle(Pawn.Facing, Vector3.ProjectOnPlane(aim, Vector3.up), Vector3.up), -40, 40) * .65f, -5);
             if (part == (int)BodyId.ArmR)
             {
-                Vector3 reach = aim + Vector3.up * .10f;
+                Vector3 reach = GuardDirection(aim) + Vector3.up * .10f;
                 return Quaternion.FromToRotation(Vector3.right, Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(reach));
             }
             return null;

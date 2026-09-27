@@ -55,7 +55,7 @@ namespace ChessFight.Game
             heading.text = finished ? white == black ? "무승부" : white > black ? "백팀 승리!" : "흑팀 승리!" : "소드파이트";
             resume.style.display = finished ? DisplayStyle.None : DisplayStyle.Flex;
             controls.text = classic ? "[클릭 베기] 좌클릭 한 번 = 자동 베기 · F6 조작 전환" : "[물리 드래그] 좌클릭 유지 + 마우스 = 베기 · F6 조작 전환";
-            controlHelp.text = classic ? "이전 방식과 손맛 비교 · 누르고만 있어서는 연속 공격하지 않습니다" : "좌클릭 떼면 허리에 수납 · 발도 중에도 시점 감속 없음";
+            controlHelp.text = classic ? "이전 방식과 손맛 비교 · 누르고만 있어서는 연속 공격하지 않습니다" : "무게감 있는 드래그 · 넓고 빠른 베기만 넉다운 · 놓으면 수납";
             switchControls.text = classic ? "물리 드래그로 전환 (F6)" : "이전 클릭 베기로 전환 (F6)";
             switchControls.style.display = finished ? DisplayStyle.None : DisplayStyle.Flex;
         }

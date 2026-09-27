@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 namespace ChessFight.RagdollLab
 {
     // Opt-in player smoke test. Automated evidence is not a human playtest.
-    public sealed class SwordFightAutoTest : MonoBehaviour
+    public sealed partial class SwordFightAutoTest : MonoBehaviour
     {
         int passed, failed;
         SwordFightGame game;
@@ -47,7 +47,7 @@ namespace ChessFight.RagdollLab
                 "Holding LMB draws a physical sword without shared tackle/grab/hook");
             Check(a.HitsLanded == 0 && b.Pawn.Hits == 0, "Drawing and holding still do not deal sword hits");
             Capture(Path.Combine(dir, "guard.png"));
-            yield return Drag(a, -65, 65, 0, 1f, dir);
+            yield return Drag(a, -85, 45, 0, .32f, dir);
             Check(a.HitsLanded == 1 && b.Pawn.Hits == 1,
                 $"Real blade drag hits once (landed={a.HitsLanded}, state={b.Pawn.State})");
             int received = b.Pawn.Hits;
@@ -64,20 +64,20 @@ namespace ChessFight.RagdollLab
             received = b.Pawn.Hits;
             a.SetInput(new PawnInput { shoveHeld = true, aim = Look(-60, 55) });
             yield return new WaitForSeconds(.5f);
-            yield return Drag(a, -60, 70, 55, 1f, dir, "low");
+            yield return Drag(a, -80, 50, 55, .32f, dir, "low");
             Check(wasDown && b.Pawn.Hits > received, $"Downed enemy permits a physical follow-up (extra={b.Pawn.Hits-received})");
 
             Place(a, new Vector3(0, 0, -.65f), Vector3.forward);
             Place(b, new Vector3(0, 0, .45f), Vector3.back); b.Pawn.Team = 0;
             yield return new WaitForSeconds(1.5f); received = b.Pawn.Hits;
-            a.SetInput(new PawnInput { shoveHeld = true, aim = Look(-65, 35) });
-            yield return new WaitForSeconds(.5f); yield return Drag(a, -65, 65, 35, 1);
+            a.SetInput(new PawnInput { shoveHeld = true, aim = Look(-85, 0) });
+            yield return new WaitForSeconds(.5f); yield return Drag(a, -85, 45, 0, .32f);
             Check(b.Pawn.Hits == received, "No sword friendly fire"); b.Pawn.Team = 1;
             Place(a, new Vector3(0, 0, -.65f), Vector3.forward);
             Place(b, new Vector3(0, 0, .45f), Vector3.back);
-            a.SetInput(new PawnInput { shoveHeld = true, aim = Look(-65, 35) });
+            a.SetInput(new PawnInput { shoveHeld = true, aim = Look(-85, 0) });
             yield return new WaitForSeconds(.35f); received = b.Pawn.Hits;
-            yield return Drag(a, -65, 35, 35, .7f);
+            yield return Drag(a, -85, 45, 0, .32f);
             Check(b.Pawn.Hits == received && b.Protection > 0, "Spawn protection rejects sword hits");
             a.StopCombat();
             b.Pawn.Teleport(new Vector3(0, -4, 0), Vector3.back);
@@ -115,13 +115,14 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(.2f);
             a.SetInput(new PawnInput { shoveHeld = true, aim = Look(0, 20) });
             for (int i = 0; i < Mathf.CeilToInt(.1f / Time.fixedDeltaTime); i++) yield return new WaitForFixedUpdate();
-            float drawError = Vector3.Angle(a.BladeTip - a.BladeRoot, Look(0, 20));
+            float drawError = Vector3.Angle(a.BladeTip - a.BladeRoot, SwordFightPawn.GuardDirection(Look(0, 20)));
             Check(a.Drawn && !a.SwordBody.isKinematic && drawError < 15 && SwordFightPawn.DrawTime <= .05f,
-                $"Fast draw points along camera within 0.1 seconds (error={drawError:0.0})");
+                $"Fast draw reaches the visible guard within 0.1 seconds (error={drawError:0.0})");
             yield return new WaitForSeconds(.75f);
-            float guardError = Vector3.Angle(a.BladeTip - a.BladeRoot, Look(0, 20));
-            Check(guardError < 10, $"Sword aligns with camera without an upward bias (error={guardError:0.0} degrees)");
+            float guardError = Vector3.Angle(a.BladeTip - a.BladeRoot, SwordFightPawn.GuardDirection(Look(0, 20)));
+            Check(guardError < 10, $"Sword settles to an offset from camera aim (error={guardError:0.0} degrees)");
             Capture(Path.Combine(dir, "forward-guard.png"));
+            yield return TestSwordVisibility(a, dir);
 
             float maxGuardError = 0; bool stableDraws = true;
             for (int cycle = 0; cycle < 10; cycle++)
@@ -130,7 +131,7 @@ namespace ChessFight.RagdollLab
                 for (int i = 0; i < Mathf.CeilToInt(.1f / Time.fixedDeltaTime); i++) yield return new WaitForFixedUpdate();
                 a.SetInput(new PawnInput { shoveHeld = true, aim = Look(0, 20) });
                 for (int i = 0; i < Mathf.CeilToInt(.1f / Time.fixedDeltaTime); i++) yield return new WaitForFixedUpdate();
-                maxGuardError = Mathf.Max(maxGuardError, Vector3.Angle(a.BladeTip - a.BladeRoot, Look(0, 20)));
+                maxGuardError = Mathf.Max(maxGuardError, Vector3.Angle(a.BladeTip - a.BladeRoot, SwordFightPawn.GuardDirection(Look(0, 20))));
                 stableDraws &= a.Drawn && a.Pawn.IsFinite() && a.Pawn.State == PawnState.Active &&
                     !a.SwordBody.automaticCenterOfMass && !a.SwordBody.automaticInertiaTensor && a.SwordBody.centerOfMass.sqrMagnitude < 1e-8f;
             }
@@ -142,9 +143,12 @@ namespace ChessFight.RagdollLab
                 var look = Look(i * 90f * Time.fixedDeltaTime, 0);
                 a.SetInput(new PawnInput { shoveHeld = true, aim = look });
                 yield return new WaitForFixedUpdate();
-                if (i > 24) worstTracking = Mathf.Max(worstTracking, Vector3.Angle(a.BladeTip - a.BladeRoot, look));
+                if (i > 24) worstTracking = Mathf.Max(worstTracking, Vector3.Angle(a.BladeTip - a.BladeRoot, SwordFightPawn.GuardDirection(look)));
             }
             Check(worstTracking < 15, $"Physical blade follows a 90-degree/second camera drag (worst={worstTracking:0.0})");
+            TestWeightedLook();
+            yield return TestSoftContact(a, b);
+            yield return TestWeightedStrike(a, b);
 
             Place(a, new Vector3(0, 0, -2), Vector3.forward);
             a.SetInput(new PawnInput { shoveHeld = true, aim = Vector3.forward });

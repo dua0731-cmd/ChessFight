@@ -1,6 +1,6 @@
 # 파티·매칭·예약 (`SteamSession`, `TeamReservations`)
 
-> **R50 / `JY-gpt_gamemode`: 프로토콜 v9.** 소드파이트 `CFS3` 상태(채널33, 최대506바이트 유지)에 클릭/물리 방식 선택을 추가했다. `CFR4` 레이아웃은 그대로이며 이 모드에서만 ability2를 선택 절대값으로 쓴다(공유 Pawn에 전달 안 함). 선택은 매 입력/전체 상태에 반복; 전환 시 묵은 클릭을 취소, 무응답 시 전투만 중단하고 선택 보존. 원격 클릭 칼도 몸과 같은 지연 시간대의 실제 자세를 표시한다. v8 이하와 매칭되지 않아 두 PC 모두 같은 새 빌드 필요. [소드파이트 실행](../GameModes/SwordFight/README.md). R48 팀별 정지 더미·혼자 시작 규칙 유지.
+> **R51 / `JY-gpt_gamemode`: 프로토콜 v10.** 강한 물리 베기만 넉다운하는 새 규칙과 무게감 있는 드래그. 패킷은 R50의 **CFS3/CFR4 그대로**, 클라이언트는 보정된 시점의 입력만 보내며 실제 검의 에너지/타격은 호스트가 판정한다. v9 이하와 매칭되지 않아 두 PC 모두 같은 새 빌드 필요. 채널33·506바이트 칼 상태·ability2 선택 절대값·몸/칼 동일 지연 보간·정지 더미 규칙 유지. 보정 드래그의 지연과 네트워크 보간은 서로 다르며 클라이언트 체감은 두 PC 확인이 필요하다. [실행](../GameModes/SwordFight/README.md).
 
 코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam 15개), `NetworkCoreTests.cs`(예약 규칙, 모드 목록).
 
