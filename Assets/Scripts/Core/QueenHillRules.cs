@@ -135,8 +135,9 @@ namespace ChessFight.Network
                 }
             }
             bool changed = false;
-            foreach (var (section, team, at) in parsed)
-                changed |= TryOpen(section, team, at);
+            // Tuple deconstruction in foreach is not supported by mcs (Core stays mcs-compatible).
+            foreach (var open in parsed)
+                changed |= TryOpen(open.Item1, open.Item2, open.Item3);
             return changed;
         }
     }
