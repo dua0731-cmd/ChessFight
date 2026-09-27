@@ -119,7 +119,7 @@ namespace ChessFight.Gameplay
                 var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 go.name = "Line";
                 var c = go.GetComponent<Collider>();
-                if (c != null) Destroy(c);
+                if (c != null) DestroyImmediate(c);   // not even for a frame: it would push whoever it met
                 if (material != null) go.GetComponent<MeshRenderer>().sharedMaterial = material;
                 drawn = go.transform;
                 drawn.SetParent(transform, false);

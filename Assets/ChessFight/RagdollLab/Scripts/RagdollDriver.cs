@@ -1,4 +1,5 @@
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -10,7 +11,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ILaunchable, IStatusReceiver
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ILaunchable, IStatusReceiver, IPromotable
     {
         RagdollPawn pawn;
 
@@ -44,5 +45,9 @@ namespace ChessFight.RagdollLab
         // Status effects (M13).
         public bool Squash(float seconds, float immunity) => Pawn.Squash(seconds, immunity);
         public bool Stagger(float seconds) => Pawn.Stagger(seconds);
+
+        // Promotion (M11).
+        public PieceKind Piece => Pawn.Piece;
+        public void Promote(PieceKind piece) => Pawn.SetPiece(piece);
     }
 }

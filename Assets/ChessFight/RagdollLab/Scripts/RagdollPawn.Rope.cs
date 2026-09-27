@@ -81,7 +81,7 @@ namespace ChessFight.RagdollLab
                 LeaveRope(p, false);
                 return;
             }
-            ropeS = Mathf.Clamp(ropeS - ropeClimbing * p.climbSpeed * dt, RopeTopGap, rope.Length);
+            ropeS = Mathf.Clamp(ropeS - ropeClimbing * p.climbSpeed * ClimbScale * dt, RopeTopGap, rope.Length);
             if (Mathf.Abs(ropeS - before) > 1e-4f) UseStamina(p, p.climbDrainMove * dt);
             else if (p.climbDrainHold > 0f) UseStamina(p, p.climbDrainHold * dt);
             PlaceOnRope(dt);
@@ -137,7 +137,7 @@ namespace ChessFight.RagdollLab
             float k = ropeBlend * ropeBlend * (3f - 2f * ropeBlend);
             Vector3 next = Vector3.Lerp(ropeFrom, target, k);
             // Where it is going: the rope's own speed there plus the climb, for letting go.
-            anchorVel = rope.PointVelocity(ropeS + RopeHang, now) - down * (ropeClimbing * P.climbSpeed);
+            anchorVel = rope.PointVelocity(ropeS + RopeHang, now) - down * (ropeClimbing * P.climbSpeed * ClimbScale);
             anchorPos = next;
             anchor.MovePosition(anchorPos);
             Vector3 face = Vector3.ProjectOnPlane(facing, down);
