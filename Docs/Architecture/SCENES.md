@@ -7,7 +7,7 @@
 ## 1. 흐름
 
 ```text
- Intro ──아무 키──▶ Lobby ──모두가 phase=playing──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
+ Intro ──아무 키──▶ Lobby ──모두가 phase=playing──▶ [로딩 화면] ──모두 준비, 공유 시각 go──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
  (타이틀)          (파티·모드·매칭)                  킹 러시 = KingRush
                                                    소드 파이트 = SwordFight / 퀸 오브 더 힐 = 준비 중
  RagdollTest ← 개발 전용. 흐름 밖.
@@ -36,6 +36,7 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 - `[RuntimeInitializeOnLoadMethod(AfterSceneLoad)]`에서 **첫 씬이 Intro나 Lobby일 때만** 만들어진다. `DontDestroyOnLoad`.
 - 가진 것: `SteamSession`, `SteamMotion`, 입력 소스(`Controls`), `MovementGate`(씬이 등록하는 이동 허용 조건).
 - 매 프레임: `Session.Tick()` → 입력 읽기(게이트 적용) → `Motion.Update()` → F8 지연 시뮬레이터 키(개발 빌드) → `FollowMatch()`.
+- **(R58, 09-30) 로비 → 경기 씬은 `MatchLoader`가 로딩 화면 뒤에서 `LoadSceneAsync`로 불러온다.** 예전 동기 `LoadScene`은 모든 PC를 5~10초 멈췄다. 모두 준비되면 방장이 정한 공유 시각에 동시에 화면이 걷히고, 그때까지 이동 입력을 막는다. 경기 → 로비는 그대로 동기 로드. 상세: [UI §8](UI.md#8-로딩-화면-r58-2026-09-30)
 - `FollowMatch()`: Lobby에서 `Session.Started`가 되면 경기 방의 모드(`Session.MatchMode`)의 씬을 고른다. 씬이 없는 모드면 `Session.Abort("… 준비 중")`으로 경기를 끝낸다. 있으면 `PlaytestSpawner.NetworkDriven = true`, `ObstacleClock.Use(공유 시계)` 후 그 씬 로드. 경기 방이 사라지면(`Match == 0`) 되돌리고 Lobby 로드.
 - `sceneLoaded` 때마다 씬에 맞는 컨트롤러를 **`GameSceneConfig`가 있는 오브젝트에** `AddComponent`로 붙인다. 경기로 연 모드 씬에는 `MatchSceneView`(구 `KingRushMatchView`, 모드 공용)를 붙인다. 컨트롤러를 씬에 저장하지 않는 이유: 씬 파일이 Steam 어셈블리를 참조하면 Steam 패키지 없는 PC에서 깨진다. 또 `RuntimeInitializeOnLoadMethod`는 한 번만 불린다.
 - 종료: `Motion.Dispose()` → `Session.Dispose()` 순서(Motion이 SessionChanged 구독을 푼다).

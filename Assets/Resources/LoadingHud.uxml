@@ -1,0 +1,35 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The loading screen between the lobby and a match (LoadingScreenView).
+         Nothing here is clickable; the root still takes the pointer so clicks
+         never reach the lobby underneath. LoadingScreenView looks up every name. -->
+    <ui:VisualElement name="loading" class="loading">
+        <!-- Pictures set in code: the menu board, the navy dim, two pawns squaring up. -->
+        <ui:VisualElement name="load-backdrop" class="load-layer load-backdrop" picking-mode="Ignore" />
+        <ui:VisualElement name="load-dim" class="load-layer load-dim" picking-mode="Ignore" />
+        <ui:VisualElement name="load-duel" class="load-duel" picking-mode="Ignore" />
+        <ui:VisualElement class="load-title" picking-mode="Ignore">
+            <ui:Label name="load-kicker" class="load-kicker" picking-mode="Ignore" />
+            <ui:Label name="load-logo-top" class="load-logo" picking-mode="Ignore" />
+            <ui:Label name="load-logo-bottom" class="load-logo load-logo-b" picking-mode="Ignore" />
+            <ui:Label name="load-rule" class="load-rule" picking-mode="Ignore" />
+            <ui:Label name="load-note" class="load-note" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement class="load-progress" picking-mode="Ignore">
+            <ui:VisualElement class="load-head" picking-mode="Ignore">
+                <ui:Label name="load-step" class="load-step" picking-mode="Ignore" />
+                <ui:Label name="load-percent" class="load-percent" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <!-- Eight squares and the walking pawn, added in code. -->
+            <ui:VisualElement name="load-rank" class="load-rank" picking-mode="Ignore" />
+            <ui:VisualElement class="load-foot" picking-mode="Ignore">
+                <ui:VisualElement name="load-pips" class="load-pips" picking-mode="Ignore" />
+                <ui:Label name="load-ready" class="load-ready" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="load-tip" class="load-tip" picking-mode="Ignore">
+            <ui:Label name="load-tip-kicker" class="load-tip-kicker" picking-mode="Ignore" />
+            <ui:Label name="load-tip-text" class="load-tip-text" picking-mode="Ignore" />
+            <ui:VisualElement name="load-tip-art" class="load-tip-art" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

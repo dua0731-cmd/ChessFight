@@ -81,7 +81,7 @@
 
 | 키 | 위치 | 값 |
 |---|---|---|
-| `protocol` | 두 로비 | `chessfight.dua0731.network.v12`(`JY-kingrush`, 09-28 병합 뒤: 소드파이트 v10 + 아래 v7 + 아래 방장 이전 "v8"을 한 빌드에. v8~v10은 `JY-gpt_gamemode`에서 따로 매긴 소드파이트 번호) (이전 기록: v3: 게임 모드 추가, v4(`JY-ragdoll_v2`, 09-26): 래그돌 랩 입력 패킷에 능력·상호작용·조준 추가, magic `CFR2`. **v5(`JY-ragdoll_v2`, 09-26 R36): 래그돌 랩 스냅샷에 버둥대기 게이지 1바이트 추가(폰당 64 → 65바이트), magic `CFR3`**. **v6(09-27 R40): 입력에 좌클릭 누르고 있기, 스냅샷에 갈고리 8바이트(폰당 73바이트), magic `CFR4`**. **v7(09-27 R46): 스냅샷에 기물 종류 1바이트(폰당 74바이트), magic `CFR5`**. **v8(`claude/host-migration`, 09-28 R50): 방장 이전. 경기 로비 `epoch`·`successors`, 멤버 `fit`·`base`·`loc`·`claim`. 패킷은 그대로**) |
+| `protocol` | 두 로비 | `chessfight.dua0731.network.v13`(09-30 R58 `claude/pawnrush-loading`: 로딩 화면 뒤 동시 출발. 멤버 `load`, 경기 `go`. 패킷은 그대로. v12 = `JY-kingrush` 09-28 병합 뒤: 소드파이트 v10 + 아래 v7 + 아래 방장 이전 "v8"을 한 빌드에. v8~v10은 `JY-gpt_gamemode`에서 따로 매긴 소드파이트 번호) (이전 기록: v3: 게임 모드 추가, v4(`JY-ragdoll_v2`, 09-26): 래그돌 랩 입력 패킷에 능력·상호작용·조준 추가, magic `CFR2`. **v5(`JY-ragdoll_v2`, 09-26 R36): 래그돌 랩 스냅샷에 버둥대기 게이지 1바이트 추가(폰당 64 → 65바이트), magic `CFR3`**. **v6(09-27 R40): 입력에 좌클릭 누르고 있기, 스냅샷에 갈고리 8바이트(폰당 73바이트), magic `CFR4`**. **v7(09-27 R46): 스냅샷에 기물 종류 1바이트(폰당 74바이트), magic `CFR5`**. **v8(`claude/host-migration`, 09-28 R50): 방장 이전. 경기 로비 `epoch`·`successors`, 멤버 `fit`·`base`·`loc`·`claim`. 패킷은 그대로**) |
 | `build` | 두 로비 | `NetworkRuntime.BuildTag` 예: `0.1.0-dev` |
 | `kind` | 두 로비 | `party` / `match` |
 | `route` | 파티 | `idle` / `search` / 경기 로비 ID |
@@ -92,6 +92,8 @@
 | `epoch` | 경기 | 방장 번호. 시작 = 1, 방장이 바뀔 때마다 +1. 가장 높은 번호가 이긴다([HOST §5](HOST.md)) |
 | `successors` | 경기 | 다음 방장 순서 `id,id,…`. 방장이 2초마다 갱신 |
 | `fit`, `base`, `loc`, `claim` | 경기 member data | 현재 점수, 기계 점수, Steam 핑 위치, 새 방장의 "내가 이 번호의 방장" ([HOST §4](HOST.md)) |
+| `load` | 경기 member data | (v13) 경기 씬을 얼마나 불러왔는지 0~100. 처음, 10씩 오를 때, 100일 때만 다시 올림. 봇은 항상 100으로 친다(`SteamSession.LoadPercent`) |
+| `go` | 경기 | (v13) 모두 출발할 공유 Steam 시계 시각(초, 소수 셋째 자리). 방장(방 주인)이 모두 `load`=100이거나 자기 준비 뒤 20초가 지나면 "지금+1.5초"로 한 번만 쓴다(`MatchStart`, [UI §8](../Architecture/UI.md#8-로딩-화면-r58-2026-09-30)) |
 | `phase` | 경기 | `waiting` / `playing` / `closed` |
 | `private` | 경기 | `0` 공개 / `1` 테스트 |
 | `free0`, `free1` | 경기 | 예약 반영 팀별 남은 자리 |

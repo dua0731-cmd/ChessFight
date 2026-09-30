@@ -207,6 +207,22 @@ public static class SessionFlowTests
                     Check(moved==(other==1000),$"slow host with a {other} peer: moved={moved}");
                     foreach(var c in clients.ToArray())As(c,c.Dispose);
                 }});
+            Test("Loading: everyone sees each other's progress, bots are ready, and only the host sets the one start time",()=>{
+                Room(new[]{900,800,700});var host=clients[0];
+                As(host,host.FillRoomWithBots);Step();As(host,host.StartGame);Step();
+                Check(clients.All(c=>c.Started)&&host.IsHost,"setup: started with the creator as host");
+                var bots=host.Roster.Keys.Where(BotIdentity.IsBot).ToList();
+                Check(bots.Count>0&&clients.All(c=>bots.All(b=>c.LoadPercent(b)==MatchStart.Ready)),"bots are not ready");
+                foreach(var c in clients)As(c,()=>c.ReportLoading(40));Step();
+                Check(clients.All(c=>clients.All(o=>c.LoadPercent(o.Self)==40)),"progress not shared");
+                As(clients[1],()=>clients[1].ReportLoading(100));Step();
+                Check(clients.All(c=>c.LoadPercent(clients[1].Self)==100),"ready not shared");
+                As(clients[1],()=>clients[1].AnnounceStart(1234.5));Step();
+                Check(clients.All(c=>c.StartAt==0),"a client set the start");
+                As(host,()=>host.AnnounceStart(2000.25));As(host,()=>host.AnnounceStart(3000));Step();
+                Check(clients.All(c=>Math.Abs(c.StartAt-2000.25)<.001),"start not shared, or overwritten");
+                As(host,host.Cancel);Step();
+                Check(host.Match==0&&host.StartAt==0&&host.LoadPercent(host.Self)==0,"leaving the match kept its loading state");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

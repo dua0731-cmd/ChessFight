@@ -38,6 +38,8 @@ namespace ChessFight.Game
         // The scene the running match loaded, from its game mode.
         string matchScene = "";
         readonly SharedClock clock = new SharedClock();
+        // Lobby -> match behind the loading screen, and the shared start.
+        MatchLoader loader;
 
         // Only scenes that belong to the online flow start Steam. A course or test
         // scene opened on its own stays offline and runs its local playtest.
@@ -77,6 +79,7 @@ namespace ChessFight.Game
             // Measures this PC in the background so the host role can go to the
             // machine that simulates fastest (Docs/Network/HOST.md).
             HostFitnessProbe.Start();
+            loader = new MatchLoader(this, clock.Now);
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             Attach(SceneManager.GetActiveScene());
@@ -86,6 +89,7 @@ namespace ChessFight.Game
         {
             loading = false;
             Attach(scene);
+            loader?.SceneLoaded(scene.name);
         }
 
         void Attach(Scene scene)
@@ -134,6 +138,8 @@ namespace ChessFight.Game
             // the frames where movement is suppressed.
             var intent = Controls.Read();
             if (MovementGate != null && !MovementGate()) intent = default;
+            // Nobody moves before the shared start behind the loading screen.
+            if (loader.Blocking) intent = default;
             if (!customSimulation)
                 Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
 
@@ -148,6 +154,10 @@ namespace ChessFight.Game
             }
 
             FollowMatch();
+            // A broken loading screen falls back to loading without one, never to
+            // a player stuck behind it.
+            try { loader.Update(); }
+            catch (Exception e) { Debug.LogException(e); loader.Cancel(); }
         }
 
         void FollowMatch()
@@ -166,7 +176,17 @@ namespace ChessFight.Game
                 // Every client reads the same Steam server clock, so obstacles line
                 // up across screens without any obstacle messages.
                 ObstacleClock.Use(clock.Now);
-                Load(matchScene);
+                // In the background behind the loading screen, not a frozen LoadScene.
+                loading = true;
+                MovementGate = null;
+                if (!loader.Begin(matchScene, mode))
+                {
+                    loading = inMatchScene = false;
+                    matchScene = "";
+                    PlaytestSpawner.NetworkDriven = false;
+                    ObstacleClock.Use(null);
+                    Session.Abort(mode.Name + " 경기 씬을 불러오지 못했습니다.");
+                }
             }
             else if (inMatchScene && Session.Match == 0)
             {
@@ -174,6 +194,7 @@ namespace ChessFight.Game
                 matchScene = "";
                 PlaytestSpawner.NetworkDriven = false;
                 ObstacleClock.Use(null);
+                loader.Cancel();
                 Load(SceneNames.Lobby);
             }
         }
@@ -194,6 +215,7 @@ namespace ChessFight.Game
         {
             if (Instance != this) return;
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            loader?.Cancel();
             ObstacleClock.Use(null);
             PlaytestSpawner.NetworkDriven = false;
             Controls?.Disable();
