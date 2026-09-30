@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/pawnrush-loading`) | 09-30 | R61 | 채팅 Esc: 입력 칸 자체 키 이벤트(Esc·취소)로도 닫음(쓰던 글 지움). 문서: UI §9·SESSION §9·DECISIONS K11·U8·VALIDATION 채팅 표·HANDOFF·STRUCTURE, R58~R60 "푸시 전" 표기를 "09-30 푸시 `6b4118a`"로 |
+| (이 커밋, `claude/pawnrush-loading`) | 09-30 | R61 2차 | 문서: UI §9(Tab으로 여는 패널 하나), DECISIONS U8, VALIDATION 채팅 표(2차 기준 14개), REQUIREMENTS R61, HANDOFF |
+| `c738e87` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 사용자 테스트 뒤: 채팅을 씬 HUD에서 빼 게임 전체에 패널 하나(`NetworkRuntime`의 `ChatBox`, 정렬 순서 50, 로비 왼쪽·모든 경기 씬 오른쪽 아래)로. 평소엔 `Tab 채팅`과 8초 뜨는 새 줄만, Tab 열기·Tab 채널(파티 → 팀 → 전체)·Enter 보내기·Esc/닫기 버튼, 경기에서는 보내면 닫힘. `ChatBox.KeysHeld`로 로비 단축키·경기 Esc·캐릭터 이동·소드 파이트 Esc 메뉴·F6·이동이 채팅 중 멈춤. 검사: Core 79·모의 세션 39·실제 DLL 컴파일 통과, Unity 미확인 |
+| `02e17f0` (`claude/pawnrush-loading`) | 09-30 | R61 | 채팅 Esc: 입력 칸 자체 키 이벤트(Esc·취소)로도 닫음(쓰던 글 지움). 문서: UI §9·SESSION §9·DECISIONS K11·U8·VALIDATION 채팅 표·HANDOFF·STRUCTURE, R58~R60 "푸시 전" 표기를 "09-30 푸시 `6b4118a`"로 |
 | `6859007` (`claude/pawnrush-loading`) | 09-30 | R61 | 로비 채팅에서 막힌 줄의 안내("1초에 한 번까지…")를 입력 줄 끝에 빨간 글씨로(패널 높이가 고정이라 아래에 두면 안 보였다) |
 | `1a8ef5f` (`claude/pawnrush-loading`) | 09-30 | R61 | 한 줄 보낸 뒤에도 입력 칸 유지: 입력 칸이 Enter를 받아 포커스를 놓던 것(다음 Enter가 게임 시작이 됐다)을 채팅이 먼저 받음 |
 | `5bcfd10` (`claude/pawnrush-loading`) | 09-30 | R61 | 로비 대체 클릭 경로를 한 프레임 늦춤: 세션의 첫 클릭이 진짜 클릭과 함께 대체 경로로도 눌려, 버튼이 아닌 곳(채팅 칸)을 누르면 다른 버튼(소드 파이트 카드)이 눌리던 기존 문제. 로비 채팅 패널 380×176, 더 진하게 |
