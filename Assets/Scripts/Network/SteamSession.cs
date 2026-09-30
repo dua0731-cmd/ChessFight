@@ -38,7 +38,10 @@ namespace ChessFight.Network
         //      filters on "open" instead of "phase". A v13 host would ignore requests
         //      for its empty seats. Leaving a started match takes only the leaver
         //      out, and party members publish the match they play ("match").
-        public const string Protocol = "chessfight.dua0731.network.v14";
+        // v15: the lab's snapshot carries the host's obstacle time ("CFR6", "v8" on JY-lobby), so
+        //      clients draw moving obstacles where the host had them instead of on their own
+        //      Steam clock.
+        public const string Protocol = "chessfight.dua0731.network.v15";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

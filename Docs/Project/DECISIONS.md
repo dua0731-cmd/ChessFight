@@ -53,7 +53,7 @@
 | C2 | 씬 컨트롤러는 **씬에 저장하지 않고** `NetworkRuntime`이 `sceneLoaded` 때 붙인다. 씬 파일은 Steam 어셈블리를 참조하지 않는다 | Steam 패키지 없는 PC에서도 씬이 깨지지 않는다 | missing script |
 | C3 | KingRush·RagdollTest를 **직접 Play하면 오프라인 플레이테스트**(Steam 없이) | 맵·래그돌 작업자가 매칭 없이 바로 시험 | — |
 | G1 | 캐릭터 계약은 `ICharacterDriver` + `CharacterCommand`(월드 좌표 Move, Jump, Shove, Grab). 래그돌 랩의 `PawnInput`과 같은 모양 | 래그돌 어댑터가 필드 복사로 끝남, 호스트·봇·오프라인 공통 | — |
-| G2 | 장애물 포즈는 **`ObstacleClock` 시간의 순수 함수**. 경기 중 시계는 Steam 서버 시간 + 로컬 소수부 | 장애물 패킷 없이 모든 PC가 같은 장면 | PC마다 장애물 위치가 달라진다 |
+| G2 | 장애물 포즈는 **`ObstacleClock` 시간의 순수 함수**. 경기 중 시계는 방장은 Steam 서버 시간 + 로컬 소수부, **참가자는 방장이 스냅샷에 실어 보낸 장애물 시각**(그리는 인형과 같은 순간, 09-30 R51). 스스로 움직이는 kinematic 물체는 모두 이 규칙을 따른다(`Tools/run-tests-linux.sh`가 검사) | 장애물 패킷 없이 모든 PC가 같은 장면 | PC마다 장애물 위치가 달라진다 |
 | G3 | 래그돌 씬 물리 **120Hz / 솔버 24회**를 `PhysicsProfile`이 씬 단위로 적용. 프로젝트 기본(50Hz)은 바꾸지 않는다 | 래그돌 랩 측정: 60Hz 이하에서 골반이 주저앉음 | 로비 등 다른 씬까지 비용 증가 |
 | G4 | `Teleport(position)`의 position은 **발 닿는 바닥 지점**. 스폰 지점도 y=0 | 캐릭터마다 키가 다르다 | 래그돌이 공중에서 떨어지거나 파묻힌다 |
 | G5 | **RagdollTest 씬 = 래그돌 랩 씬.** 래그돌 코드는 `Assets/ChessFight/RagdollLab/`의 `ChessFight.RagdollLab` 어셈블리(참조: Gameplay만)에 두고, 게임·네트워크 쪽은 `ICharacterDriver`(`RagdollDriver`)로만 부른다 | 사용자 요구(R16): 랩을 그대로 옮기되 네트워크·멀티에 문제가 없게. 빌더가 경로를 안다 | 네트워크 코드가 래그돌에 묶이거나, 래그돌이 Steam에 묶인다. 경계 검사가 실패한다 |

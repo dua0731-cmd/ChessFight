@@ -154,7 +154,11 @@ namespace ChessFight.RagdollLab
 
             GUILayout.Space(8f);
             GUILayout.Label("테스트 장치", foldStyle);
-            if (game.bar != null)
+            // In an online match every PC must spin the bar at the same speed; a change on one PC
+            // alone would put it somewhere else on the others' screens.
+            if (game.bar != null && ChessFight.Gameplay.ObstacleClock.Shared)
+                GUILayout.Label($"회전 봉 속도 {game.bar.degreesPerSecond:0}도/초 (온라인 경기 중에는 바꿀 수 없어요)", labelStyle);
+            else if (game.bar != null)
                 game.bar.degreesPerSecond = SliderRow("회전 봉 속도 (도/초)", game.bar.degreesPerSecond, 0f, 360f);
             GUILayout.BeginHorizontal();
             GUILayout.Label("물리 스텝", labelStyle, GUILayout.Width(120f));
