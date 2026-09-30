@@ -39,7 +39,9 @@ public static class SessionFlowTests
                 Check(leader.Match!=0&&clients[1].Match==leader.Match&&leader.Roster.Count==2,"party follow failed");
                 Check(leader.Roster[1].Team==leader.Roster[2].Team,"party split");
                 As(leader,leader.StartGame);Step();Check(clients.All(c=>c.Started),"private start failed");
-                As(leader,leader.Cancel);Step();Check(clients.All(c=>c.Match==0)&&clients[1].Party==leader.Party,"party lost");});
+                // R60: leaving a started match takes only the leaver out.
+                As(leader,leader.Cancel);Step();Check(leader.Match==0&&clients[1].Started&&clients[1].IsHost,"the match should go on without the leaver");
+                As(clients[1],clients[1].Cancel);Step();Check(clients.All(c=>c.Match==0)&&clients[1].Party==leader.Party&&!clients[1].Busy,"party lost");});
             Test("Independent solo player joins private match on other team",()=>{
                 Setup(2);As(clients[0],()=>clients[0].FindMatch(true));Step();
                 As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);
@@ -271,12 +273,54 @@ public static class SessionFlowTests
                 FakeSteam.Crash(host.Self);clients.Remove(host);Step(20);
                 Check(next.IsHost&&leader.Started&&friend.Started,"the party did not get in after the host change");
                 Check(next.Roster[leader.Self].Team==lost&&next.Roster[friend.Self].Team==lost&&next.Roster.Count==3&&RoomData(next,"held")=="","party split or held seat lost");});
-            Test("Empty seats are offered only for three minutes after the shared start",()=>{
+            Test("Empty seats are offered only for four minutes after the shared start",()=>{
                 Room(new[]{900,500,400});var host=clients[0];As(host,host.StartGame);Step(5);
                 As(host,()=>host.AnnounceStart(SteamUtils.GetServerRealTime()));Step();
                 As(clients[2],clients[2].Cancel);Step(5);Check(RoomData(host,"open")=="1","seat not offered within the window");
                 Step((int)(Backfill.OpenSeconds/.3)+5);
                 Check(RoomData(host,"open")=="0"&&!FakeSteam.Lobbies[host.Match].Joinable&&host.EmptySeats==0,"seat still offered after the window");});
+            Test("In a started match a party member who leaves goes alone, and the party gathers again afterwards",()=>{
+                Setup(3);var leader=clients[0];var member=clients[1];var solo=clients[2];
+                JoinParty(1,0);As(leader,()=>leader.FindMatch(true));Step(20);
+                As(solo,()=>solo.JoinPrivateMatch(leader.Match));Step(20);
+                Check(leader.Roster.Count==3,"setup: a party of two and a solo player");
+                As(leader,leader.StartGame);Step(5);Check(clients.All(c=>c.Started),"setup: started");ulong room=leader.Match;
+                As(member,member.Cancel);Step(20);
+                Check(member.Match==0&&member.Party==leader.Party&&member.WaitingForParty,"the member did not simply step out");
+                Check(leader.Match==room&&leader.Started&&solo.Match==room&&solo.Started&&leader.Roster.Count==2,"the member's leaving took others with it");
+                Check(RoomData(leader,"open")=="1","the member's seat is not offered");
+                As(leader,leader.Cancel);Step(20);
+                Check(leader.Match==0&&!member.WaitingForParty&&!member.Busy&&member.Party==leader.Party,"the party did not gather again");
+                Check(solo.Match==room&&solo.Started&&solo.IsHost,"the match ended with the party leader");});
+            Test("A host who leads a party leaves a started match alone: hosting moves on and the party waits for its member",()=>{
+                Setup(3);var leader=clients[0];var member=clients[1];var solo=clients[2];
+                JoinParty(1,0);As(leader,()=>leader.FindMatch(true));Step(20);
+                As(solo,()=>solo.JoinPrivateMatch(leader.Match));Step(20);
+                As(leader,leader.StartGame);Step(5);Check(leader.IsHost,"setup: the leader hosts");ulong room=leader.Match;
+                As(leader,leader.Cancel);Step(20);
+                Check(leader.Match==0&&member.Match==room&&member.Started&&solo.Started,"the party left with its leader");
+                Check((member.IsHost||solo.IsHost)&&member.Host==solo.Host&&member.Host!=leader.Self,"the host role did not move on");
+                Check(leader.PartyStillPlaying,"the leader does not see its member still playing");
+                As(leader,()=>leader.FindMatch());Check(!leader.Searching&&leader.Error.Contains("경기 중"),"the leader queued a member who is still playing");
+                As(member,member.Cancel);Step(20);
+                Check(!leader.PartyStillPlaying&&!member.Busy,"the member is not back");
+                As(leader,()=>leader.FindMatch(true));Step(20);Check(leader.Match!=0&&member.Match==leader.Match,"the party did not queue together again");});
+            Test("A party leader's crash does not pull its party out of a started match",()=>{
+                Setup(3);var fit=new[]{900,700,500};for(int i=0;i<3;i++)clients[i].LocalFitness=fit[i];
+                var leader=clients[0];var member=clients[1];var solo=clients[2];
+                JoinParty(1,0);As(leader,()=>leader.FindMatch(true));Step(20);
+                As(solo,()=>solo.JoinPrivateMatch(leader.Match));Step(20);
+                As(leader,leader.StartGame);Step(10);ulong room=leader.Match;
+                FakeSteam.Crash(leader.Self);clients.Remove(leader);Step(20);
+                Check(member.Match==room&&member.Started&&solo.Match==room&&solo.Started,"the crash ended the match for the party");
+                Check(member.IsLeader&&member.IsHost,"party lead or hosting did not pass on");});
+            Test("A party member's crash does not pull the rest of its party out of a started match",()=>{
+                Setup(3);var leader=clients[0];var member=clients[1];var solo=clients[2];
+                JoinParty(1,0);As(leader,()=>leader.FindMatch(true));Step(20);
+                As(solo,()=>solo.JoinPrivateMatch(leader.Match));Step(20);
+                As(leader,leader.StartGame);Step(5);ulong room=leader.Match;
+                FakeSteam.Crash(member.Self);clients.Remove(member);Step(20);
+                Check(leader.Match==room&&leader.Started&&solo.Started&&leader.Roster.Count==2&&RoomData(leader,"open")=="1","a member's crash ended the match for its party");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

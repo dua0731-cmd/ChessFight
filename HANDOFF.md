@@ -4,9 +4,11 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-30**(R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발, 둘 다 `claude/pawnrush-loading` → 로컬 `JY-kingrush`에 빨리 감기, 푸시 전. 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-09-30**(R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발, 둘 다 `claude/pawnrush-loading` → 로컬 `JY-kingrush`에 빨리 감기, 푸시 전. 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
-> **최신 R59(승규 님, 09-30): 경기 중 빈자리 채우기.** 경기가 시작된 뒤 누가 나가면 그 자리를 **매칭 중인 다른 사람**이 채운다. 팀마다 **시작 인원까지만**(6 대 6이면 6명, 5 대 5면 5명), 사람이 빠진 팀에, 파티는 한 팀에 통째로, 공유 출발 시각부터 3분까지. 매칭은 빈자리 경기를 먼저 시도하고, 방장이 바뀌어도 자리 정보(`seats`·`held`)는 방에 있어 이어진다. 프로토콜 **v14**(검색 필터 `open=1`). **코드·테스트만, Unity·Steam 미확인** → [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단(PC 2대 이상 필요)
+> **최신 R60(승규 님, 09-30): 시작한 경기에서는 나간 사람만 나가고, 빈자리는 4분까지 받는다.** 파티원·파티장·방장 누구든 경기 시작 뒤 나가면 그 사람만 빠지고 파티원은 경기를 계속한다(방장이면 방장 이전). 먼저 나온 파티원은 파티에서 기다리고, 파티장은 경기 중인 파티원이 돌아올 때까지 매칭을 못 한다. 시작 전(검색·대기실)은 예전처럼 파티가 함께 취소 → [SESSION §6](Docs/Network/SESSION.md#6-취소퇴장호스트-이탈), [DECISIONS K10](Docs/Project/DECISIONS.md)
+
+> **R59(승규 님, 09-30): 경기 중 빈자리 채우기.** 경기가 시작된 뒤 누가 나가면 그 자리를 **매칭 중인 다른 사람**이 채운다. 팀마다 **시작 인원까지만**(6 대 6이면 6명, 5 대 5면 5명), 사람이 빠진 팀에, 파티는 한 팀에 통째로, 공유 출발 시각부터 4분까지(R60). 매칭은 빈자리 경기를 먼저 시도하고, 방장이 바뀌어도 자리 정보(`seats`·`held`)는 방에 있어 이어진다. 프로토콜 **v14**(검색 필터 `open=1`). **코드·테스트만, Unity·Steam 미확인** → [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단(PC 2대 이상 필요)
 
 > **R58(승규 님, 09-30): 로비 → 경기 씬 로딩 화면과 동시 출발.** 예전 동기 `LoadScene`이 모든 PC를 5~10초 멈추던 것을 `MatchLoader`가 로딩 화면 뒤 `LoadSceneAsync`로 바꿈. 화면은 시안 A의 UI(PAWN RUSH 제목·과반 규칙·8칸 줄에서 폰이 2→8랭크, 준비되면 퀸 승격·플레이어 점·팁) + 시안 B의 배경(메뉴 체스판 + 가운데 마주 보는 두 폰). 모두 준비(멤버 `load`=100)되거나 방장 준비 뒤 20초가 지나면 방장이 공유 Steam 시계 시각 `go`를 정하고 모두 같은 순간에 걷힌다. 프로토콜 **v13**(R59 뒤 v14). **코드·테스트만, Unity·Steam 미확인** → [UI §8](Docs/Architecture/UI.md#8-로딩-화면-r58-2026-09-30), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 위쪽 두 번째 표. 다른 채팅의 **`JY-gpt_gamemode`**(소드파이트)·**`JY-ragdoll_v2`**(Claude 물리 튜닝)는 보존. 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
 
@@ -52,7 +54,7 @@
 
 | 항목 | 상태 |
 |---|---|
-| **빈자리 채우기(09-30, R59)** | `claude/pawnrush-loading`: 시작한 경기에서 나간 자리를 매칭 중인 사람이 채움. 팀마다 시작 인원까지, 파티는 한 팀, 3분까지. 프로토콜 **v14**(경기 `open`·`seats`·`held`). Core 77·세션 33·실제 DLL 컴파일 통과. **Unity·Steam 미확인** |
+| **빈자리 채우기·나간 사람만 나가기(09-30, R59·R60)** | `claude/pawnrush-loading`: 시작한 경기에서 나간 자리를 매칭 중인 사람이 채움. 팀마다 시작 인원까지(공개는 6 대 6), 파티는 한 팀, 4분까지. 경기 중에는 나간 사람만 나가고 방장이면 방장 이전. 프로토콜 **v14**(경기 `open`·`seats`·`held`, 파티 멤버 `match`). Core 77·세션 37·실제 DLL 컴파일 통과. **Unity·Steam 미확인** |
 | **로딩 화면(09-30, R58)** | `claude/pawnrush-loading`: 로비 → 경기 씬을 로딩 화면 뒤 비동기로, 모두 준비 뒤 공유 시각에 동시 출발. 프로토콜 **v13**(멤버 `load`, 경기 `go`). Core 75·세션 29·실제 DLL 컴파일 통과. **Unity·Steam 미확인** |
 | **병합(09-28)** | `feature/ui-sample-b`(`c82abfa`)를 합침. 네트워크 프로토콜 **v11**. 병합 뒤 자동 검사 결과는 [HISTORY](Docs/Project/HISTORY.md)의 병합 줄. **Unity·두 PC 미확인** |
 | **이 폴더: 킹 러쉬 R56** | **`JY-kingrush` / 기반 `852eb2b`**. `KingRushOpening.unity`: 구간 프리팹24개, 체크포인트16곳, 승격2/3/4자리. 왕의 계단/최종 집결/왕좌 쟁탈·붕괴·재진입·승패 추가. **R55/R56 사용자 확인 대기**, 자동 결과는 FINAL_COURSE. 밧줄은 임시 다리; 나머지4능력·온라인·최종 아트는 후속 |
@@ -77,7 +79,7 @@
 |---|---|---|
 | **킹 러쉬 연결 코스 R54~R56, 능력 시험장R52/R53** | 장난감/상자→성벽/시소→왕의 계단/왕좌 결승, 승격 집결10초·자동 합류. R54 일반 피드백 수신, **R55/R56 사용자 미확인**. 기존 조작/튜닝·다른 모드/로비 보존 | [R56](Docs/KingRush/FINAL_COURSE.md), [R55](Docs/KingRush/CASTLE_COURSE.md), [능력 시험장](Docs/KingRush/README.md) |
 | **로딩 화면·동시 출발**(R58): 로비 → 경기 씬 비동기 로드, A 시안 UI + B 시안 배경, 모두 준비 또는 20초 뒤 공유 시각 `go`에 동시 해제 | 코드·테스트만, Unity·Steam 미확인 | [UI §8](Docs/Architecture/UI.md#8-로딩-화면-r58-2026-09-30) |
-| **경기 중 빈자리 채우기**(R59): 나간 자리를 매칭 중인 사람이 채움(팀마다 시작 인원까지, 파티는 한 팀, 시작 뒤 3분까지, 비공개 방은 방 번호로) | 코드·테스트만, Unity·Steam 미확인 | [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30) |
+| **경기 중 빈자리 채우기**(R59): 나간 자리를 매칭 중인 사람이 채움(팀마다 시작 인원까지, 파티는 한 팀, 시작 뒤 4분까지, 비공개 방은 방 번호로). R60: 경기 중에는 나간 사람만 나감(방장이면 방장 이전) | 코드·테스트만, Unity·Steam 미확인 | [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30) |
 | Steam 파티(최대 6)·초대·번호 입장 | 동작 확인 | [Network/SESSION](Docs/Network/SESSION.md) |
 | 공개 자동 매칭 6v6 (파티 단위 같은 팀 예약) | 두 PC 성사 확인, 12인 미확인 | [Network/SESSION](Docs/Network/SESSION.md) |
 | 비공개 테스트 방 | 동작 확인 | 〃 |
@@ -119,7 +121,7 @@
 - 다음: [VALIDATION R51](Docs/Network/VALIDATION.md)에서 검 가시성·보정 반응·약한 접촉/강한 베기·전환/복원·두 PC 손맛을 비교한다. 맵/기물 스킬/퀸 모드는 자동 착수하지 않는다. 원격 Push는 기존403 때문에 재시도하지 않으며 사용자가 GitHub Desktop에서 한다.
 
 **사용자가 할 일 — 순서대로**
-00000. **(새, 승규 님) 빈자리 채우기(R59):** 서로 다른 Steam 계정 PC 2~3대, 각자 1인 파티로 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **빈자리 표(9개)**. A가 매칭 → B가 매칭(같은 대기실) → A가 12명 채우기 → 경기 중 B가 Esc → B가 다시 게임 시작 → 같은 팀·자리로 돌아오는지. 결정 2개: 빈자리를 받는 시간(지금 시작 뒤 3분, `Backfill.OpenSeconds`), 파티원 한 명이 경기 중에 나가면 파티 전체가 같이 나오는 지금 규칙을 바꿀지
+00000. **(새, 승규 님) 빈자리 채우기·나간 사람만 나가기(R59·R60):** 서로 다른 Steam 계정 PC 2~3대 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **표(13개)**. 1~9번은 각자 1인 파티로: A가 매칭 → B가 매칭(같은 대기실) → A가 12명 채우기 → 경기 중 B가 Esc → B가 다시 게임 시작 → 같은 팀·자리로 돌아오는지. 10~13번은 같은 파티로: 파티원이나 방장이 나가도 나머지는 경기를 계속하는지
 0000. **(새, 승규 님) 로딩 화면(R58):** 로비 → 킹 러시(폰 러시) 비공개 방 + 봇으로 경기 시작 → [VALIDATION](Docs/Network/VALIDATION.md) 위쪽 두 번째 **로딩 화면 표(9개)**. 1~6번은 혼자, 7~9번은 PC 2대. 결정 1개: 느린 사람 최대 대기(지금 20초, `MatchStart.MaxWait`)
 000. **(새, 승규 님) 방장 선정·이전(`claude/host-migration`, 이 브랜치에 합쳐짐):** 이 브랜치(`JY-kingrush`)를 연 Unity로 빌드해 **서로 다른 Steam 계정 PC 2~3대**에서 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **방장 표(11개)**. 특히 3번(방장 강제 종료 후 몇 초 만에 새 방장)과 1번(성능 좋은 PC가 방장). 결과를 보고 **`JY-lobby`·`main`에도 넣을지 팀장님이 결정**
 00. **(새, `JY-lobby`) 퀸 오브 더 힐 맵 7차:** Pull → (JY-lobby 워크트리 폴더를 연 Unity에서) `ChessFight > Scenes > Queen of the Hill (offline graybox)` → Play → [GRAYBOX §4](Docs/GameModes/QueenOfTheHill/GRAYBOX.md#4-unity-확인-순서-처음-한-번) 순서대로. V 자유 카메라로 7개 층을 둘러보고, 층마다 길 하나 이상 해 본 뒤 **층별 시간과 막힌 곳·재미없는 곳**을 알려 준다. 결정 1개: 떨어져 아래층에 부딪히면 물에 빠진 것처럼 칠지([GRAYBOX §5](Docs/GameModes/QueenOfTheHill/GRAYBOX.md#5-알고-있는-빈-곳))

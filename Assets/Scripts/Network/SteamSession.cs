@@ -36,7 +36,8 @@ namespace ChessFight.Network
         // v14: a started match refills the seats of players who left from matchmaking
         //      (Backfill): the room carries "open", "seats" and "held", and search
         //      filters on "open" instead of "phase". A v13 host would ignore requests
-        //      for its empty seats.
+        //      for its empty seats. Leaving a started match takes only the leaver
+        //      out, and party members publish the match they play ("match").
         public const string Protocol = "chessfight.dua0731.network.v14";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
@@ -80,6 +81,14 @@ namespace ChessFight.Network
         // Empty seats a started match offers to matchmaking right now (Backfill).
         public int EmptySeats => Match == 0 || !Started || Data(Match, "open") != "1" ? 0
             : ParseInt(Data(Match, "free0")) + ParseInt(Data(Match, "free1"));
+        // Someone else in the party is still playing a started match it stayed in
+        // (party member data "match"). The party queues again once they are back.
+        public bool PartyStillPlaying =>
+            Party != 0 && PartyMembers.Any(id => id != Self && MemberData(Party, id, "match") != "");
+        public const string PartyPlayingMessage = "파티원이 아직 경기 중입니다. 경기가 끝나고 돌아오면 다시 시작하세요.";
+        // A member that left the party's started match early, waiting in the lobby
+        // for the others (R60).
+        public bool WaitingForParty => !IsLeader && cancelledFollower && Match == 0 && ulong.TryParse(Route(Party), out _);
         public string Status { get; private set; } = "Steam 연결 중...";
         public string Error { get; private set; } = "";
         public readonly Dictionary<ulong, PawnState> Roster = new Dictionary<ulong, PawnState>();
@@ -146,7 +155,8 @@ namespace ChessFight.Network
         readonly byte[] chatBuffer = new byte[2048];
         ulong[] queuedMembers = Array.Empty<ulong>();   // humans + declared party bots
         ulong[] queuedHumans = Array.Empty<ulong>();    // humans only, for roster-change detection
-        ulong partyOwner;
+        ulong partyOwner, playingParty;
+        string publishedPlaying = "";
         string ticket = "", presence, carriedError, queuedMode = GameModes.Default.Key;
         bool pending, admitted, seenRoster, privateRoom, cancelledFollower, disposed;
         int generation;
@@ -316,6 +326,7 @@ namespace ChessFight.Network
             if (!SteamUser.BLoggedOn()) { Cancel(); Error = "Steam 연결이 끊겼습니다. 다시 로그인한 뒤 Play를 재시작하세요."; return; }
             PollParty();
             if (Match != 0) PollMatch(now);
+            PublishPlaying();
             UpdatePresence();
             if (Searching && Match == 0 && !pending && now >= nextSearch) Search();
             // A host with only its own party periodically tries an older room. This
@@ -521,6 +532,7 @@ namespace ChessFight.Network
         public void FindMatch(bool privateTest = false)
         {
             if (!Online || !IsLeader || Busy) return;
+            if (PartyStillPlaying) { Error = PartyPlayingMessage; return; }
             if (!privateTest && BotsBlockPublicMatch)
             { Error = "봇이 있는 파티는 공개 매칭에 들어갈 수 없습니다. 봇을 빼거나 테스트 방을 만드세요."; return; }
             Error = ""; Searching = true; privateRoom = privateTest; emptySearches = 0;
@@ -532,6 +544,7 @@ namespace ChessFight.Network
         public void JoinPrivateMatch(ulong lobby)
         {
             if (!IsLeader || Busy || lobby == 0) return;
+            if (PartyStillPlaying) { Error = PartyPlayingMessage; return; }
             Searching = true; privateRoom = true; FreezeQueue(); ticket = Guid.NewGuid().ToString("N");
             SteamMatchmaking.SetLobbyJoinable(Id(Party), false); Set(Party, "route", "search"); Join(lobby, false);
         }
@@ -600,22 +613,33 @@ namespace ChessFight.Network
             ulong owner = Owner(Party);
             if (owner != partyOwner)
             {
-                partyOwner = owner; Cancel(); Error = "파티장이 나갔습니다. 매칭이 취소되었습니다."; return;
+                partyOwner = owner;
+                // A started match goes on whoever leads the party now (R60).
+                if (Started) return;
+                Cancel(); Error = "파티장이 나갔습니다. 매칭이 취소되었습니다."; return;
             }
-            if (IsLeader && Searching)
+            // Before the start the party moves as one. Once the match has started,
+            // everyone plays it out on their own: a member who leaves, or whose
+            // game dies, takes only its own seat with it (R60).
+            if (IsLeader && Searching && !Started)
             {
                 if (!queuedHumans.SequenceEqual(PartyMembers)) { Cancel(); Error = "파티 구성이 바뀌어 매칭을 취소했습니다."; return; }
                 foreach (var pair in cancelBaseline)
                     if (pair.Value != SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(pair.Key), "cancel")) { Cancel(); Status = "파티원이 취소했습니다."; return; }
             }
-            if (IsLeader) return;
+            if (IsLeader || Started) return;
             string route = Route(Party);
             if (route == "idle")
             {
                 if (Match != 0 || pending) { generation++; pending = false; LeaveMatchInternal(); }
                 cancelledFollower = false; Status = "파티 준비 완료. 파티장을 기다리는 중."; return;
             }
-            if (cancelledFollower) return;
+            if (cancelledFollower)
+            {
+                // Left the party's started match: back together when it ends.
+                if (WaitingForParty) Status = "파티원들이 아직 경기 중입니다. 경기가 끝나면 파티로 다시 모입니다.";
+                return;
+            }
             if (route == "search")
             {
                 if (pending) { generation++; pending = false; }
@@ -1043,10 +1067,20 @@ namespace ChessFight.Network
         public void Cancel()
         {
             if (!Online) return;
+            // Leaving a started match takes only this player out (R60). Its seat
+            // is refilled from matchmaking, a leaving host hands the match on, and
+            // party members still in it play on, whatever the party's route says.
+            bool alone = Started;
             generation++; pending = false; Searching = false; candidates.Clear();
             if (IsLeader) { Set(Party, "route", "idle"); SteamMatchmaking.SetLobbyJoinable(Id(Party), true); }
-            else if (Party != 0) { cancelledFollower = true; SteamMatchmaking.SetLobbyMemberData(Id(Party), "cancel", Guid.NewGuid().ToString("N")); }
+            else if (Party != 0)
+            {
+                cancelledFollower = true;
+                // Only a search is called off for the whole party.
+                if (!alone) SteamMatchmaking.SetLobbyMemberData(Id(Party), "cancel", Guid.NewGuid().ToString("N"));
+            }
             LeaveMatchInternal(); Status = "파티로 돌아왔습니다.";
+            PublishPlaying();
         }
         public void LeaveParty()
         {
@@ -1083,6 +1117,17 @@ namespace ChessFight.Network
         void Fail(string error) { Cancel(); Error = error; Status = error; }
         // For the scene flow: leave the match and tell the player why.
         public void Abort(string reason) { if (Online) Fail(reason); }
+
+        // Tells the party which started match we are playing ("match"), so a leader
+        // back in the lobby does not queue us again meanwhile (PartyStillPlaying).
+        void PublishPlaying()
+        {
+            if (Party == 0) return;
+            string value = Started ? Match.ToString() : "";
+            if (Party == playingParty && value == publishedPlaying) return;
+            SteamMatchmaking.SetLobbyMemberData(Id(Party), "match", value);
+            playingParty = Party; publishedPlaying = value;
+        }
 
         // Steam friends see "Join game" on us while our party can take them.
         // A search locks the party lobby, so the offer is withdrawn meanwhile.
