@@ -510,8 +510,8 @@ public static class NetworkCoreTests
                       !ChatText.TryDecode("CFC1|a|   ", out _, out _, out _) && !ChatText.TryDecode("CFC1|a", out _, out _, out _) &&
                       !ChatText.TryDecode(null, out _, out _, out _), "not chat");
                 Check(ChatText.Label(ChatChannel.Party) == "파티" && ChatText.Label(ChatChannel.All) == "전체" && ChatText.Label(ChatChannel.Team) == "팀", "labels");
-                Check(ChatText.Next(ChatChannel.Party, c => true) == ChatChannel.All && ChatText.Next(ChatChannel.Team, c => true) == ChatChannel.Party &&
-                      ChatText.Next(ChatChannel.Party, c => c != ChatChannel.All) == ChatChannel.Team && ChatText.Next(ChatChannel.All, c => false) == ChatChannel.All, "tab order"); });
+                Check(ChatText.Next(ChatChannel.Party, c => true) == ChatChannel.Team && ChatText.Next(ChatChannel.Team, c => true) == ChatChannel.All && ChatText.Next(ChatChannel.All, c => true) == ChatChannel.Party &&
+                      ChatText.Next(ChatChannel.Party, c => c != ChatChannel.Team) == ChatChannel.All && ChatText.Next(ChatChannel.All, c => false) == ChatChannel.All, "tab order"); });
             Test("Chat: one line a second, numbered per channel, fifty kept per channel, unread counted", () => {
                 var throttle = new ChatThrottle();
                 Check(throttle.TryPass(10) && !throttle.TryPass(10.5) && throttle.TryPass(11) && !throttle.TryPass(11.99), "one a second");

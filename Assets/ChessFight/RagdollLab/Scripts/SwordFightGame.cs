@@ -93,14 +93,15 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             if (Automated) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) SetMenu(!MenuOpen);
-            if (!Finished && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
+            // While the network chat is open (ChatBox) its Esc closes the chat, not the menu.
+            if (!ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.Escape)) SetMenu(!MenuOpen);
+            if (!Finished && !ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
             if (!Networked && !Finished && Local != null) Local.SetInput(ReadLocalInput());
             if (Finished) RefreshCursor();
         }
         public PawnInput ReadLocalInput()
         {
-            if (MenuOpen || Finished || !Application.isFocused || Cursor.lockState != CursorLockMode.Locked)
+            if (MenuOpen || Finished || ChatBox.KeysHeld || !Application.isFocused || Cursor.lockState != CursorLockMode.Locked)
             { waitForAttackRelease = true; return new PawnInput { ability2 = ClassicControls }; }
             if (!Input.GetMouseButton(0)) waitForAttackRelease = false;
             float x = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);

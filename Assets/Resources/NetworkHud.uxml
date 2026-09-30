@@ -104,10 +104,6 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Chat, above the party bar (ChatBox clones ChatHud.uxml in here, R61).
-             Before the side cards and dialogs, so those draw over it. -->
-        <ui:VisualElement name="chat-slot" class="chat-slot-lobby" picking-mode="Ignore" />
-
         <!-- Bottom right: the start button, or the busy card. The mode card is
              hidden now that the right rail lists every mode; it stays because the
              view binds it by name. -->
@@ -148,6 +144,8 @@
             <ui:Label text="게임 시작" class="key-label" picking-mode="Ignore" />
             <ui:Label text="F" class="keycap small" picking-mode="Ignore" />
             <ui:Label text="친구" class="key-label" picking-mode="Ignore" />
+            <ui:Label text="Tab" class="keycap small" picking-mode="Ignore" />
+            <ui:Label text="채팅" class="key-label" picking-mode="Ignore" />
             <ui:Label text="Esc" class="keycap small" picking-mode="Ignore" />
             <ui:Label text="닫기" class="key-label" picking-mode="Ignore" />
         </ui:VisualElement>

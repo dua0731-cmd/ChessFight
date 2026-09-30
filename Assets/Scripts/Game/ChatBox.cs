@@ -7,88 +7,117 @@ using UnityEngine.UIElements;
 
 namespace ChessFight.Game
 {
-    // The chat box (Docs/Architecture/UI.md "채팅", R61): chat sample A "기보 로그".
+    // The chat (Docs/Architecture/UI.md "채팅", R61): chat sample A "기보 로그".
     //
-    // Lobby: a panel bottom left, above the party bar. A tab per channel (파티,
-    // 전체, 팀) with a count of unread lines, lines numbered like the moves on a
-    // scoresheet, and the input line always there: click it to type. The mouse
-    // wheel scrolls back.
-    // Match: bottom right, no panel. The last lines of every channel float over
-    // the game and fade after a few seconds. Enter opens the input line, and the
-    // owner stops the character while Typing.
-    // Both: Enter sends, Tab changes the channel, Esc drops the line.
+    // One panel for the whole game, on the persistent runtime object, so every
+    // scene has it without wiring of its own: bottom left in the lobby, bottom
+    // right in any match scene (King Rush, Sword Fight and whichever mode comes
+    // next), hidden on the title and behind the loading screen.
     //
-    // Steam-agnostic like the rest of this assembly: the owner connects the log
-    // and the call that sends. Not a component: the owner's Update calls Tick
-    // before its own shortcuts and skips them while HoldsKeys.
-    public sealed class ChatBox
+    // Closed: the key that opens it, and new lines floating for a few seconds.
+    // Tab opens it on the input line; Tab again moves 파티 → 팀 → 전체; Enter
+    // sends; Esc or the close button closes it. In a match a sent line closes it
+    // too, so the character moves again at once.
+    //
+    // While it is open it holds the keyboard (KeysHeld): the scene's own keys
+    // (Enter to start, Esc to leave or for a menu) and the character wait.
+    // Steam-agnostic like the rest of this assembly: the runtime connects the log
+    // and the call that sends.
+    [DefaultExecutionOrder(-50)]
+    [DisallowMultipleComponent]
+    public sealed class ChatBox : MonoBehaviour
     {
-        public enum Layout { Lobby, Match }
+        public enum Layout { Hidden, Lobby, Match }
 
-        // Match lines stay this long, the last FadeSeconds of it fading.
-        const float ShowSeconds = 10f, FadeSeconds = 2f, NoteSeconds = 3f;
-        // Lines drawn: the lobby clips the oldest at the top of its panel.
-        const int LobbyLines = 12, MatchLines = 8;
+        // Above every scene's HUD (those keep the default, 0) and under the
+        // loading screen (100).
+        const float SortingOrder = 50f;
+        // Closed, a new line floats this long, the last FadeSeconds of it fading.
+        const float RecentSeconds = 8f, FadeSeconds = 2f, NoteSeconds = 3f;
+        const int PanelLines = 12, RecentLines = 4;
         // An Enter pressed while the Korean IME still holds a syllable commits it
         // first, so the send waits for the composition to empty, this long at most.
         const int ImeWaitFrames = 30;
-        static readonly ChatChannel[] Channels = { ChatChannel.Party, ChatChannel.All, ChatChannel.Team };
+        static readonly ChatChannel[] Channels = { ChatChannel.Party, ChatChannel.Team, ChatChannel.All };
 
-        readonly Layout layout;
-        readonly VisualElement box, lines, entry;
-        readonly TextField field;
-        readonly Label chip, placeholder, hint, note, scrolled;
+        static ChatBox current;
+        // True while the chat is open, and for a frame after it closes: the Esc or
+        // Enter that closed it must not also leave a match or start a game.
+        public static bool KeysHeld => current != null && current.HoldsKeys;
+        // A scene with a text field of its own (the lobby's room-number box) says
+        // when the chat must stay shut.
+        public static Func<bool> Blocker;
+
+        // Where the chat is drawn; the runtime sets it every frame.
+        public Layout Where { get; set; }
+        public bool IsOpen => open;
+
+        PanelSettings ownedPanel;
+        VisualElement box, panel, recent, closedHint, lines;
+        TextField field;
+        Label chip, placeholder, hint, note, scrolled, closedUnread;
         readonly Dictionary<ChatChannel, Button> tabs = new Dictionary<ChatChannel, Button>();
         readonly Dictionary<ChatChannel, Label> unread = new Dictionary<ChatChannel, Label>();
-        readonly List<KeyValuePair<ChatEntry, VisualElement>> rows = new List<KeyValuePair<ChatEntry, VisualElement>>();
+        readonly List<KeyValuePair<ChatEntry, VisualElement>> recentRows = new List<KeyValuePair<ChatEntry, VisualElement>>();
 
         ChatLog log;
         Func<ChatChannel, bool> canUse;
         Func<ChatChannel, string, string> send;
         ChatChannel channel = ChatChannel.Party;
-        // Match: the channel the player last picked with Tab, kept while usable.
-        bool picked;
-        bool wasTyping, drawnTyping, noteError;
-        int drawnVersion = -1, drawnScroll, scroll, submitFrame = -1, releasedFrame = -10;
+        Layout lastWhere;
+        // The channel the player moved to with Tab, kept while it can be used and
+        // the chat stays in the same place.
+        bool open, picked, noteError, drawnOpen;
+        int panelVersion = -1, recentVersion = -1, drawnScroll, scroll, submitFrame = -1, releasedFrame = -10;
         ChatChannel drawnChannel;
         float noteUntil;
         string noteText = "";
 
-        public ChatBox(VisualElement slot, Layout layout)
+        bool HoldsKeys => open || submitFrame >= 0 || Time.frameCount - releasedFrame <= 1;
+
+        public void Build()
         {
-            this.layout = layout;
-            var tree = Resources.Load<VisualTreeAsset>("ChatHud");
-            if (slot == null || tree == null) { Debug.LogError("[ChessFight] 채팅창을 만들지 못했습니다 (Resources/ChatHud)."); return; }
-            tree.CloneTree(slot);
-            box = slot.Q<VisualElement>("chat");
-            lines = slot.Q<VisualElement>("chat-lines");
-            entry = slot.Q<VisualElement>("chat-entry");
-            field = slot.Q<TextField>("chat-field");
-            chip = slot.Q<Label>("chat-channel");
-            placeholder = slot.Q<Label>("chat-placeholder");
-            hint = slot.Q<Label>("chat-hint");
-            note = slot.Q<Label>("chat-note");
-            scrolled = slot.Q<Label>("chat-scrolled");
-            if (box == null || lines == null || entry == null || field == null)
+            current = this;
+            var root = RuntimePanels.Create(gameObject, Resources.Load<VisualTreeAsset>("ChatHud"),
+                                            Resources.Load<ThemeStyleSheet>("NetworkTheme"), null,
+                                            new Vector2Int(1280, 720), out ownedPanel);
+            if (root == null) return;
+            if (ownedPanel != null) ownedPanel.sortingOrder = SortingOrder;
+            // The chat covers the screen but must not take the clicks meant for the
+            // scene's HUD under it: only its own panel does.
+            root.pickingMode = PickingMode.Ignore;
+            box = root.Q<VisualElement>("chat");
+            panel = root.Q<VisualElement>("chat-panel");
+            recent = root.Q<VisualElement>("chat-recent");
+            closedHint = root.Q<VisualElement>("chat-closed");
+            lines = root.Q<VisualElement>("chat-lines");
+            field = root.Q<TextField>("chat-field");
+            chip = root.Q<Label>("chat-channel");
+            placeholder = root.Q<Label>("chat-placeholder");
+            hint = root.Q<Label>("chat-hint");
+            note = root.Q<Label>("chat-note");
+            scrolled = root.Q<Label>("chat-scrolled");
+            closedUnread = root.Q<Label>("chat-closed-unread");
+            if (box == null || panel == null || recent == null || lines == null || field == null)
             { Debug.LogError("[ChessFight] ChatHud.uxml의 이름이 ChatBox와 맞지 않습니다."); box = null; return; }
-            box.AddToClassList(layout == Layout.Lobby ? "chat-lobby" : "chat-match");
 
             foreach (var c in Channels)
             {
-                var tab = slot.Q<Button>("chat-tab-" + Key(c));
+                var tab = root.Q<Button>("chat-tab-" + Key(c));
                 if (tab == null) continue;
                 tab.focusable = false;
                 var target = c;
                 tab.clicked += () => Pick(target);
                 tabs[c] = tab;
-                unread[c] = slot.Q<Label>("chat-unread-" + Key(c));
+                unread[c] = root.Q<Label>("chat-unread-" + Key(c));
             }
+            var close = root.Q<Button>("chat-close");
+            if (close != null) { close.focusable = false; close.clicked += () => Close(true); }
 
             field.maxLength = ChatText.MaxLength;
             // Enter, Tab and Esc belong to the chat. Left to the field, Enter gives
-            // up the focus, so the next Enter started a game, and Tab moves the
-            // focus away. Esc closes the line here as well as in Tick, whichever
-            // sees the key first: the field's own Esc only reverts the text.
+            // up the focus and Tab moves it away. Esc closes here as well as in
+            // Update, whichever sees the key first.
             field.RegisterCallback<KeyDownEvent>(e =>
             {
                 if (e.keyCode == KeyCode.Escape) { Swallow(e); Close(true); return; }
@@ -99,29 +128,17 @@ namespace ChessFight.Game
             field.RegisterCallback<NavigationMoveEvent>(Swallow, TrickleDown.TrickleDown);
             field.RegisterCallback<NavigationSubmitEvent>(Swallow, TrickleDown.TrickleDown);
             field.RegisterCallback<NavigationCancelEvent>(e => { Swallow(e); Close(true); }, TrickleDown.TrickleDown);
-            // Whatever ends the typing (Esc handled by the field itself, a click
-            // elsewhere), its key must not also reach the scene this frame.
-            field.RegisterCallback<FocusOutEvent>(_ => releasedFrame = Time.frameCount);
-
-            if (layout == Layout.Lobby)
-                lines.RegisterCallback<WheelEvent>(e => { Scroll(e.delta.y < 0 ? 2 : -2); e.StopPropagation(); });
-            else
-            {
-                // Over the game the box takes no clicks; only its input line does.
-                box.pickingMode = PickingMode.Ignore;
-                lines.pickingMode = PickingMode.Ignore;
-                entry.pickingMode = PickingMode.Ignore;
-            }
-            Refresh();
+            lines.RegisterCallback<WheelEvent>(e => { Scroll(e.delta.y < 0 ? 2 : -2); e.StopPropagation(); });
+            Show(box, false);
         }
 
         public void Connect(ChatLog chatLog, Func<ChatChannel, bool> usable, Func<ChatChannel, string, string> sender)
         {
             log = chatLog; canUse = usable; send = sender;
-            drawnVersion = -1;
+            panelVersion = recentVersion = -1;
         }
 
-        public bool Typing
+        bool Typing
         {
             get
             {
@@ -130,76 +147,88 @@ namespace ChessFight.Game
             }
         }
 
-        // Typing now, or it ended this frame or the last: the Enter or Esc that
-        // ended it must not also start a game or leave a match.
-        public bool HoldsKeys => Typing || wasTyping || submitFrame >= 0 || Time.frameCount - releasedFrame <= 1;
-
-        public bool Contains(VisualElement element) =>
-            box != null && element != null && (element == box || box.Contains(element));
-
-        public void Tick()
+        void Update()
         {
             if (box == null) return;
-            bool typing = Typing;
+            if (Where != lastWhere) { lastWhere = Where; picked = false; scroll = 0; }
+            if (Where == Layout.Hidden || log == null)
+            {
+                if (open) Close(false);
+                Show(box, false);
+                return;
+            }
+            box.EnableInClassList("chat-lobby", Where == Layout.Lobby);
+            box.EnableInClassList("chat-match", Where == Layout.Match);
+            Show(box, true);
+
+            bool blocked = Blocked();
+            if (open && blocked) Close(false);
             if (submitFrame >= 0 && Time.frameCount > submitFrame && (Composition() == "" || Time.frameCount > submitFrame + ImeWaitFrames))
             {
                 submitFrame = -1;
                 Submit();
-                typing = Typing;
             }
-            else if (typing && submitFrame < 0)
+            else if (open && submitFrame < 0)
             {
-                if (EnterDown()) submitFrame = Time.frameCount;
-                else if (LegacyKeys.Down(KeyCode.Escape)) { Close(true); typing = false; }
-                else if (LegacyKeys.Down(KeyCode.Tab)) { channel = ChatText.Next(channel, Usable); picked = true; }
+                if (LegacyKeys.Down(KeyCode.Escape)) Close(true);
+                else if (EnterDown()) submitFrame = Time.frameCount;
+                else if (LegacyKeys.Down(KeyCode.Tab)) { channel = ChatText.Next(channel, Usable); picked = true; scroll = 0; }
+                // A click elsewhere takes the focus; the chat is still open, so it
+                // takes it back for the next key.
+                else if (!Typing && !MouseHeld()) field.Focus();
             }
-            else if (!typing && !wasTyping && layout == Layout.Match && EnterDown() && log != null) { Open(); typing = Typing; }
-            wasTyping = typing;
+            else if (!open && !blocked && Time.frameCount - releasedFrame > 1 && LegacyKeys.Down(KeyCode.Tab)) OpenPanel();
             Refresh();
         }
 
-        void Open()
+        void OpenPanel()
         {
-            if (layout == Layout.Match && !(picked && Usable(channel)))
-                channel = Usable(ChatChannel.Team) ? ChatChannel.Team : Usable(ChatChannel.All) ? ChatChannel.All : ChatChannel.Party;
+            if (!(picked && Usable(channel)))
+                channel = Where == Layout.Match
+                    ? (Usable(ChatChannel.Team) ? ChatChannel.Team : Usable(ChatChannel.All) ? ChatChannel.All : ChatChannel.Party)
+                    : (Usable(channel) ? channel : ChatChannel.Party);
             if (!Usable(channel)) return;
+            open = true; scroll = 0;
+            Refresh();
+            // Shown this frame; if it cannot take the focus until laid out, Update
+            // hands it over on the next.
             field.Focus();
         }
 
         void Close(bool drop)
         {
-            if (drop) field.value = "";
+            if (drop && field != null) field.value = "";
             submitFrame = -1;
-            if (field.focusController?.focusedElement is Focusable focused && Typing) focused.Blur();
-            releasedFrame = Time.frameCount;
+            if (open) releasedFrame = Time.frameCount;
+            open = false;
+            if (Typing && field.focusController?.focusedElement is Focusable focused) focused.Blur();
         }
 
         void Submit()
         {
+            if (!open) return;
             string text = field.value ?? "";
             if (ChatText.Clean(text) == "") { Close(true); return; }
             string refused = send?.Invoke(channel, text) ?? "채팅에 연결되지 않았어요.";
-            if (refused != "") { ShowNote(refused); if (!Typing) field.Focus(); return; }
+            if (refused != "") { ShowNote(refused); return; }
             field.value = "";
             scroll = 0;
-            // The lobby keeps the line open for the next message; a match gives the
+            // The lobby keeps the chat open for the next line; a match gives the
             // keys back to the character.
-            if (layout == Layout.Match) Close(false);
-            else if (!Typing) field.Focus();
+            if (Where == Layout.Match) Close(false);
         }
 
         void Pick(ChatChannel c)
         {
-            if (!Usable(c)) return;
-            channel = c; scroll = 0;
-            Refresh();
+            if (!open || !Usable(c)) return;
+            channel = c; picked = true; scroll = 0;
+            field.Focus();
         }
 
         void Scroll(int by)
         {
             int count = log == null ? 0 : log.In(channel).Count();
             scroll = Mathf.Clamp(scroll + by, 0, Mathf.Max(0, count - 1));
-            Refresh();
         }
 
         void ShowNote(string text)
@@ -209,6 +238,12 @@ namespace ChessFight.Game
         }
 
         bool Usable(ChatChannel c) => canUse != null && canUse(c);
+
+        static bool Blocked()
+        {
+            try { return Blocker != null && Blocker(); }
+            catch (Exception e) { Debug.LogException(e); return false; }
+        }
 
         void Swallow(EventBase e)
         {
@@ -220,111 +255,105 @@ namespace ChessFight.Game
 
         void Refresh()
         {
-            bool typing = Typing;
-            if (layout == Layout.Lobby && !Usable(channel) && !typing) { channel = ChatChannel.Party; scroll = 0; }
             float now = Time.realtimeSinceStartup;
+            if (open && !Usable(channel)) channel = ChatText.Next(channel, Usable);
+            Show(panel, open);
+            Show(recent, !open);
+            Show(closedHint, !open);
 
+            int waiting = 0;
             foreach (var c in Channels)
             {
-                if (!tabs.TryGetValue(c, out var tab)) continue;
-                tab.EnableInClassList("chat-tab-on", c == channel);
-                tab.SetEnabled(Usable(c));
-                if (c == channel) log?.MarkRead(c);
-                var badge = unread[c];
-                if (badge == null) continue;
-                int count = log == null || c == channel ? 0 : log.Unread(c);
-                badge.text = count > 99 ? "99+" : count.ToString();
-                badge.style.display = count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+                if (open && c == channel) log.MarkRead(c);
+                int count = Usable(c) ? log.Unread(c) : 0;
+                waiting += count;
+                if (tabs.TryGetValue(c, out var tab))
+                {
+                    tab.EnableInClassList("chat-tab-on", c == channel);
+                    tab.SetEnabled(Usable(c));
+                }
+                if (unread.TryGetValue(c, out var badge) && badge != null) Badge(badge, c == channel ? 0 : count);
             }
-            if (layout == Layout.Match && log != null) foreach (var c in Channels) log.MarkRead(c);
+            if (closedUnread != null) Badge(closedUnread, open ? 0 : waiting);
 
             if (chip != null)
             {
                 chip.text = ChatText.Label(channel);
                 foreach (var c in Channels) chip.EnableInClassList("chat-chip-" + Key(c), c == channel);
             }
-            box.EnableInClassList("chat-typing", typing);
-            Show(entry, layout == Layout.Lobby || typing || submitFrame >= 0);
             if (placeholder != null)
             {
-                placeholder.text = layout == Layout.Lobby ? $"여기를 눌러 {ChatText.Label(channel)}에 말하기" : "";
-                Show(placeholder, !typing && string.IsNullOrEmpty(field.value));
+                placeholder.text = $"{ChatText.Label(channel)}에 말하기";
+                Show(placeholder, string.IsNullOrEmpty(field.value));
             }
-            if (scrolled != null) Show(scrolled, scroll > 0);
-
-            // A refused line says why for a few seconds: in the lobby at the end of
-            // the input line (the panel has a fixed height), in a match under it.
             bool error = noteError && now < noteUntil;
             if (!error) noteError = false;
-            bool lobbyError = error && layout == Layout.Lobby;
             if (hint != null)
             {
-                hint.text = lobbyError ? noteText : typing ? (layout == Layout.Lobby ? "Enter 보내기 · Tab 채널 · Esc 닫기" : "Tab 채널 · Esc 취소") : "";
-                hint.EnableInClassList("chat-note-error", lobbyError);
+                hint.text = error ? noteText : "Enter 보내기 · Tab 채널";
+                hint.EnableInClassList("chat-note-error", error);
             }
             if (note != null)
             {
-                string text = layout == Layout.Lobby ? "" : error ? noteText : typing ? "입력 중 · 이동 멈춤" : "";
-                note.text = text;
-                note.EnableInClassList("chat-note-error", error);
-                Show(note, text != "");
+                note.text = open && Where == Layout.Match ? "입력 중 · 이동 멈춤" : "";
+                Show(note, note.text != "");
             }
+            if (scrolled != null) Show(scrolled, open && scroll > 0);
 
-            int version = log?.Version ?? -1;
-            if (version != drawnVersion || channel != drawnChannel || scroll != drawnScroll || typing != drawnTyping)
+            if (open && (log.Version != panelVersion || channel != drawnChannel || scroll != drawnScroll || !drawnOpen))
             {
-                drawnVersion = version; drawnChannel = channel; drawnScroll = scroll; drawnTyping = typing;
-                Redraw();
+                panelVersion = log.Version; drawnChannel = channel; drawnScroll = scroll;
+                DrawPanel();
             }
-            if (layout == Layout.Match) Fade(now, typing);
+            drawnOpen = open;
+            if (log.Version != recentVersion) { recentVersion = log.Version; DrawRecent(); }
+            if (!open) Fade(now);
         }
 
-        void Redraw()
+        // The open panel: the chosen channel's lines, numbered like a scoresheet.
+        void DrawPanel()
         {
             lines.Clear();
-            rows.Clear();
-            if (log == null) return;
-            List<ChatEntry> list;
-            if (layout == Layout.Lobby)
+            var all = log.In(channel).ToList();
+            int end = Mathf.Max(0, all.Count - scroll), start = Mathf.Max(0, end - PanelLines);
+            for (int i = start; i < end; i++) lines.Add(Row(all[i], true));
+        }
+
+        // Closed: the newest lines of every channel, each fading on its own.
+        void DrawRecent()
+        {
+            recent.Clear();
+            recentRows.Clear();
+            var all = log.Entries;
+            for (int i = Mathf.Max(0, all.Count - RecentLines); i < all.Count; i++)
             {
-                var all = log.In(channel).ToList();
-                int end = Mathf.Max(0, all.Count - scroll);
-                list = all.GetRange(Mathf.Max(0, end - LobbyLines), end - Mathf.Max(0, end - LobbyLines));
-            }
-            else
-            {
-                var all = log.Entries;
-                list = all.Skip(Mathf.Max(0, all.Count - MatchLines)).ToList();
-            }
-            foreach (var e in list)
-            {
-                var row = Row(e);
-                lines.Add(row);
-                rows.Add(new KeyValuePair<ChatEntry, VisualElement>(e, row));
+                var e = all[i];
+                if (!Usable(e.Channel)) continue;
+                var row = Row(e, false);
+                row.AddToClassList("chat-recent-line");
+                recent.Add(row);
+                recentRows.Add(new KeyValuePair<ChatEntry, VisualElement>(e, row));
             }
         }
 
-        // Match lines fade out a few seconds after they arrive; typing brings the
-        // recent ones back.
-        void Fade(float now, bool typing)
+        void Fade(float now)
         {
-            foreach (var pair in rows)
+            foreach (var pair in recentRows)
             {
-                float age = now - (float)pair.Key.Time;
-                float alpha = typing ? 1f : Mathf.Clamp01((ShowSeconds - age) / FadeSeconds);
+                float alpha = Mathf.Clamp01((RecentSeconds - (now - (float)pair.Key.Time)) / FadeSeconds);
                 pair.Value.style.opacity = alpha;
                 pair.Value.style.display = alpha > 0f ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
 
-        VisualElement Row(ChatEntry e)
+        VisualElement Row(ChatEntry e, bool numbered)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             row.AddToClassList("chat-line");
-            if (layout == Layout.Lobby) row.Add(Text(e.Number + ".", "chat-num"));
+            if (numbered) row.Add(Text(e.Number + ".", "chat-num"));
             if (e.Notice) { row.Add(Text(e.Text, "chat-notice")); return row; }
-            // The Steam name the line came from; in a match, which channel too.
-            var name = Text(layout == Layout.Match ? $"[{ChatText.Label(e.Channel)}] {e.Name}" : e.Name, "chat-name");
+            // The Steam name the line came from; outside the panel, which channel too.
+            var name = Text(numbered ? e.Name : $"[{ChatText.Label(e.Channel)}] {e.Name}", "chat-name");
             name.AddToClassList("chat-name-" + Key(e.Channel));
             if (e.Mine) name.AddToClassList("chat-name-me");
             row.Add(name);
@@ -341,7 +370,13 @@ namespace ChessFight.Game
             return label;
         }
 
-        static string Key(ChatChannel c) => c == ChatChannel.Party ? "party" : c == ChatChannel.All ? "all" : "team";
+        static void Badge(Label badge, int count)
+        {
+            badge.text = count > 99 ? "99+" : count.ToString();
+            badge.style.display = count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        static string Key(ChatChannel c) => c == ChatChannel.Party ? "party" : c == ChatChannel.Team ? "team" : "all";
 
         static void Show(VisualElement element, bool show)
         {
@@ -350,10 +385,22 @@ namespace ChessFight.Game
 
         static bool EnterDown() => LegacyKeys.Down(KeyCode.Return) || LegacyKeys.Down(KeyCode.KeypadEnter);
 
+        static bool MouseHeld()
+        {
+            try { return Input.GetMouseButton(0) || Input.GetMouseButton(1); }
+            catch (InvalidOperationException) { return false; }
+        }
+
         static string Composition()
         {
             try { return Input.compositionString ?? ""; }
             catch (InvalidOperationException) { return ""; }
+        }
+
+        void OnDestroy()
+        {
+            if (current == this) current = null;
+            if (ownedPanel != null) Destroy(ownedPanel);
         }
     }
 }

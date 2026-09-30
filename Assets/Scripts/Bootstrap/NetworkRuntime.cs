@@ -40,6 +40,8 @@ namespace ChessFight.Game
         readonly SharedClock clock = new SharedClock();
         // Lobby -> match behind the loading screen, and the shared start.
         MatchLoader loader;
+        // The chat, one panel for every scene (Docs/Architecture/UI.md "채팅").
+        ChatBox chat;
 
         // Only scenes that belong to the online flow start Steam. A course or test
         // scene opened on its own stays offline and runs its local playtest.
@@ -80,6 +82,14 @@ namespace ChessFight.Game
             // machine that simulates fastest (Docs/Network/HOST.md).
             HostFitnessProbe.Start();
             loader = new MatchLoader(this, clock.Now);
+            // A chat that fails to build must not take the session down with it.
+            try
+            {
+                chat = gameObject.AddComponent<ChatBox>();
+                chat.Build();
+                chat.Connect(Session.Chat, Session.CanChat, Session.Say);
+            }
+            catch (Exception e) { Debug.LogException(e); }
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             Attach(SceneManager.GetActiveScene());
@@ -138,8 +148,9 @@ namespace ChessFight.Game
             // the frames where movement is suppressed.
             var intent = Controls.Read();
             if (MovementGate != null && !MovementGate()) intent = default;
-            // Nobody moves before the shared start behind the loading screen.
-            if (loader.Blocking) intent = default;
+            // Nobody moves before the shared start behind the loading screen, nor
+            // while typing a chat line.
+            if (loader.Blocking || ChatBox.KeysHeld) intent = default;
             if (!customSimulation)
                 Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
 
@@ -158,6 +169,14 @@ namespace ChessFight.Game
             // a player stuck behind it.
             try { loader.Update(); }
             catch (Exception e) { Debug.LogException(e); loader.Cancel(); }
+
+            // The chat: bottom left in the lobby, bottom right in any match scene
+            // (its own simulation or not), hidden on the title and while loading.
+            if (chat != null)
+                chat.Where = loading || loader.Blocking ? ChatBox.Layout.Hidden
+                    : inMatchScene ? ChatBox.Layout.Match
+                    : SceneManager.GetActiveScene().name == SceneNames.Lobby ? ChatBox.Layout.Lobby
+                    : ChatBox.Layout.Hidden;
         }
 
         void FollowMatch()

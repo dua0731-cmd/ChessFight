@@ -10,7 +10,7 @@ namespace ChessFight.Network
     // server: party lines go through the party lobby's Steam chat, match lines
     // through the match room's. Team lines travel through the match room as well,
     // and each PC shows only those of its own team.
-    public enum ChatChannel { Party, All, Team }
+    public enum ChatChannel { Party, Team, All }
 
     // One line in the chat box: something a player said, or a notice such as
     // "○○ 님이 파티에 들어왔어요".
@@ -93,7 +93,8 @@ namespace ChessFight.Network
             return text.Length > 0;
         }
 
-        // The channel after `current` among those usable right now, for the Tab key;
+        // The channel after `current` among those usable right now, for the Tab key
+        // (파티 → 팀 → 전체, the order the user asked for);
         // `current` itself when nothing else is usable.
         public static ChatChannel Next(ChatChannel current, Func<ChatChannel, bool> usable)
         {

@@ -102,7 +102,6 @@ namespace ChessFight.Game
             hud.AddEnemyDummy += () => ChangeDummy(true, true);
             hud.RemoveEnemyDummy += () => ChangeDummy(true, false);
             hud.RetrySteam += () => session.Retry();
-            hud.Chat?.Connect(session.Chat, session.CanChat, session.Say);
         }
 
         void ChangeDummy(bool enemy, bool add)

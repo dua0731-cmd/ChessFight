@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <!-- Nothing to click during a match: Esc leaves, Enter opens the chat line. -->
+    <!-- Read-only during a match: Esc leaves, so nothing needs clicking. -->
     <ui:VisualElement class="screen" picking-mode="Ignore">
         <!-- Shown only while the host is silent: unstable first, then frozen. -->
         <ui:Label name="match-warning" class="warning" picking-mode="Ignore" style="display: none;" />
@@ -9,9 +9,7 @@
             <ui:Label text="명단" class="card-title" />
             <ui:Label name="match-roster" class="roster" />
             <ui:Label name="match-link" class="details" />
-            <ui:Label text="Esc 로비로 나가기 · WASD 이동 · Space 점프 · Enter 채팅" class="hint hint-left" />
+            <ui:Label text="Esc 로비로 나가기 · WASD 이동 · Space 점프 · Tab 채팅" class="hint hint-left" />
         </ui:VisualElement>
-        <!-- Chat, bottom right (ChatBox clones ChatHud.uxml in here, R61). -->
-        <ui:VisualElement name="chat-slot" class="chat-slot-match" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>
