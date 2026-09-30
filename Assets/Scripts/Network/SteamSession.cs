@@ -21,7 +21,9 @@ namespace ChessFight.Network
         // v6: the lab's input carries the left button held and its snapshot the pawn's
         //     grappling hook (RagdollNetProtocol "CFR4", Queen of the Hill M5).
         // v7: the lab's snapshot carries each pawn's piece ("CFR5", Queen of the Hill M11).
-        public const string Protocol = "chessfight.dua0731.network.v7";
+        // v8: the lab's snapshot carries the host's obstacle time ("CFR6"), so clients draw moving
+        // obstacles where the host had them instead of on their own Steam clock.
+        public const string Protocol = "chessfight.dua0731.network.v8";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

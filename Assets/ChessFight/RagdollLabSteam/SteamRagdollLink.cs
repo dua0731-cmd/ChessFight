@@ -71,7 +71,11 @@ namespace ChessFight.RagdollLab.Net
         int sentBytes, receivedBytes, snapshotsIn;
         int sentRate, receivedRate, snapshotRate;
         float roundTripMs;
-        // Obstacle clock for the match (SyncObstacleClock).
+        // Obstacle clock for the match (SyncObstacleClock). A client replaces it with the host's
+        // obstacle time from the snapshots as soon as one arrives (hostObstacles).
+        readonly HostObstacleClock hostObstacles = new HostObstacleClock();
+        // Client diagnostics: how far the Steam-clock estimate is from the host's obstacle time.
+        double steamClockErrorMs;
         double obstacleOffset, serverAnchor;
         uint serverSecond;
         bool obstacleSynced;
@@ -203,7 +207,8 @@ namespace ChessFight.RagdollLab.Net
                 outgoing.Add(pose);
             }
             if (outgoing.Count == 0) return;
-            byte[] bytes = RagdollNetProtocol.Snapshot(session.Match, ++tick, stamp, outgoing);
+            // The obstacle time these poses were simulated at: clients draw the obstacles at it.
+            byte[] bytes = RagdollNetProtocol.Snapshot(session.Match, ++tick, stamp, outgoing, ObstacleClock.Now);
             foreach (ulong id in session.Roster.Keys)
                 if (id != session.Self) Send(id, bytes);
             SendMatchState();
@@ -282,6 +287,11 @@ namespace ChessFight.RagdollLab.Net
 
             float span = Mathf.Max(1f, to.hostTimeMs - from.hostTimeMs);
             float t = Mathf.Clamp01((float)(playbackMs - from.hostTimeMs) / span);
+            // Obstacles on the same timeline as the pawns drawn this frame (HostObstacleClock).
+            double hostObstacleTime = HostObstacleClock.Interpolate(from.obstacleTime, to.obstacleTime, t);
+            hostObstacles.Sample(hostObstacleTime, Time.timeAsDouble, rate);
+            double error = (ObstacleTime() - hostObstacleTime) * 1000d;
+            steamClockErrorMs = steamClockErrorMs == 0d ? error : steamClockErrorMs + (error - steamClockErrorMs) * 0.05d;
             for (int i = 0; i < to.count; i++)
             {
                 var latest = to.At(i);
@@ -339,6 +349,17 @@ namespace ChessFight.RagdollLab.Net
 
         double ObstacleTime() => Time.fixedTimeAsDouble + obstacleOffset;
 
+        /// <summary>What obstacles read during a match. The host runs them on the shared clock above and
+        /// stamps it into every snapshot. A client runs them on that stamp, interpolated at the moment
+        /// whose pawns it is drawing: then an obstacle is exactly where the host had it when it judged
+        /// those pawns, whatever the network delay, the playback rate or the Steam clock's accuracy.
+        /// Until the first snapshot arrives a client falls back on the shared clock.</summary>
+        double MatchObstacleTime()
+        {
+            if (session == null || session.IsHost || !hostObstacles.HasSample) return ObstacleTime();
+            return hostObstacles.Now(Time.timeAsDouble);
+        }
+
         /// <summary>Steam's server time: the same on every PC, whole seconds, the fraction from the local
         /// clock since the second last changed. Same as NetworkRuntime's match clock.</summary>
         double ServerSeconds()
@@ -365,7 +386,9 @@ namespace ChessFight.RagdollLab.Net
                 queen.Authority = session.IsHost;
             }
             SyncObstacleClock();
-            ObstacleClock.Use(ObstacleTime);
+            hostObstacles.Clear();
+            steamClockErrorMs = 0d;
+            ObstacleClock.Use(MatchObstacleTime);
             pawns.Clear();
             game.DespawnAll();
             game.NetworkControlled = true;
@@ -539,6 +562,8 @@ namespace ChessFight.RagdollLab.Net
             tick = sequence = lastTick = 0;
             playbackMs = 0d;
             roundTripMs = 0f;
+            hostObstacles.Clear();
+            steamClockErrorMs = 0d;
             lastReceive = Time.realtimeSinceStartup;
             pending = default;
         }
@@ -620,6 +645,10 @@ namespace ChessFight.RagdollLab.Net
                 GUILayout.Label(session.IsHost
                     ? $"스냅샷 {1f / SnapshotInterval:F0}Hz 송신 · 폰당 {RagdollNetProtocol.PoseBytes}바이트"
                     : $"스냅샷 수신 {snapshotRate}Hz · 왕복 지연 {roundTripMs:F0} ms · 버퍼 {buffer.Count}개 (지연 {PlaybackDelayMs:F0} ms)", small);
+                if (!session.IsHost)
+                    GUILayout.Label(hostObstacles.HasSample
+                        ? $"장애물: 방장 시각에 맞춤 (Steam 시계였다면 {steamClockErrorMs:+0;-0;0} ms 어긋남)"
+                        : "장애물: 방장 스냅샷 기다리는 중 (Steam 시계 사용)", small);
                 if (GUILayout.Button("경기 나가기", button)) session.Cancel();
                 game.SuppressInput = false;
             }

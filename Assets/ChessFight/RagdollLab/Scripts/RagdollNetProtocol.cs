@@ -104,6 +104,9 @@ namespace ChessFight.RagdollLab
     {
         public uint tick;
         public uint hostTimeMs;
+        // The host's obstacle clock (ObstacleClock.Now) when these poses were captured, so a
+        // client draws every moving obstacle where the host had it for these poses.
+        public double obstacleTime;
         public int count;
         readonly List<RagdollPose> poses = new List<RagdollPose>();
 
@@ -117,6 +120,7 @@ namespace ChessFight.RagdollLab
         {
             tick = other.tick;
             hostTimeMs = other.hostTimeMs;
+            obstacleTime = other.obstacleTime;
             count = other.count;
             for (int i = 0; i < count; i++) At(i).CopyFrom(other.At(i));
         }
@@ -133,7 +137,8 @@ namespace ChessFight.RagdollLab
         // CFR3: the struggle meter in the snapshot (2026-09-26).
         // CFR4: the left button held in the input; the grappling hook in the snapshot (2026-09-27).
         // CFR5: the piece kind in the snapshot (Queen of the Hill M11, 2026-09-27).
-        public const uint Magic = 0x43465235;   // "CFR5"
+        // CFR6: the host's obstacle time in the snapshot header (2026-09-30).
+        public const uint Magic = 0x43465236;   // "CFR6"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
@@ -145,7 +150,7 @@ namespace ChessFight.RagdollLab
         public const float PositionRange = 80f; // metres, symmetric around the arena origin
 
         public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 1 + 4;  // 74
-        public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 1;            // 22
+        public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 8 + 1;        // 30
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
 
         const float SmallestThreeRange = 0.70710678f;
@@ -215,7 +220,8 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- snapshot
 
-        public static byte[] Snapshot(ulong session, uint tick, uint hostTimeMs, IReadOnlyList<RagdollPose> poses)
+        public static byte[] Snapshot(ulong session, uint tick, uint hostTimeMs, IReadOnlyList<RagdollPose> poses,
+                                      double obstacleTime = 0d)
         {
             int count = Mathf.Min(poses.Count, MaxPawns);
             using (var stream = new MemoryStream(SnapshotBytes(count)))
@@ -226,6 +232,7 @@ namespace ChessFight.RagdollLab
                 w.Write(session);
                 w.Write(tick);
                 w.Write(hostTimeMs);
+                w.Write(obstacleTime);
                 w.Write((byte)count);
                 for (int i = 0; i < count; i++)
                 {
@@ -259,6 +266,8 @@ namespace ChessFight.RagdollLab
                 if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSnapshot || r.ReadUInt64() != session) return false;
                 uint tick = r.ReadUInt32();
                 uint hostTimeMs = r.ReadUInt32();
+                double obstacleTime = r.ReadDouble();
+                if (double.IsNaN(obstacleTime) || double.IsInfinity(obstacleTime)) return false;
                 int count = r.ReadByte();
                 if (count > MaxPawns || bytes.Length != SnapshotBytes(count)) return false;
                 var seen = new HashSet<ulong>();
@@ -289,6 +298,7 @@ namespace ChessFight.RagdollLab
                 }
                 into.tick = tick;
                 into.hostTimeMs = hostTimeMs;
+                into.obstacleTime = obstacleTime;
                 into.count = count;
                 return true;
             }

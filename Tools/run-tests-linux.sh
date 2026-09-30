@@ -121,8 +121,25 @@ check_boundaries() {
   return $bad
 }
 
+# Moving obstacles must be a pure function of ObstacleClock (DECISIONS G2). A kinematic body that
+# moves itself on its own running total sits somewhere different on every PC, and online players
+# get hit by an obstacle their screen shows elsewhere (the lab's spinning bar did, 2026-09-30).
+# Pawn parts (RagdollPawn*.cs) are exempt: the host simulates them and snapshots carry them.
+check_obstacle_clock() {
+  local bad=0 f
+  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/ChessFight 2>/dev/null \
+             | grep -vE 'LabAutoTest|Test|/Editor/|/RagdollPawn[^/]*\.cs$'); do
+    if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then
+      echo "$f"; bad=1; fi
+  done
+  if [ $bad -eq 0 ]; then echo "PASS: every moving obstacle runs on ObstacleClock"
+  else echo "FAIL: the kinematic movers above do not read ObstacleClock (make them Obstacle subclasses)"; fi
+  return $bad
+}
+
 ensure_mono
 check_boundaries
+check_obstacle_clock
 # The Queen of the Hill map is generated data; the committed JSON must match its script.
 if command -v python3 >/dev/null 2>&1; then python3 Tools/QueenHill/build_layout.py --check || exit 1; fi
 run_tests

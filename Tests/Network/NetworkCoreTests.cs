@@ -221,6 +221,34 @@ public static class NetworkCoreTests
                 Check(!ChessPieces.CanPromote(PieceKind.Pawn,PieceKind.King,1),"one king per team");
                 Check(!ChessPieces.CanPromote(PieceKind.Pawn,PieceKind.Queen,0)&&!ChessPieces.CanPromote(PieceKind.Pawn,PieceKind.Pawn,0),"not the queen, not a pawn");
                 Check(!ChessPieces.CanPromote(PieceKind.Rook,PieceKind.Knight,0)&&!ChessPieces.CanPromote(PieceKind.King,PieceKind.Rook,0),"only pawns"); });
+            Test("Client obstacles follow the host's stamped time, not the Steam clock", () => {
+                // Host: obstacle time = its physics time + an offset; snapshots every 1/30 s.
+                // Client: receives them late by a varying delay, draws 110 ms behind the newest.
+                const double offset = 1759000000.0;
+                Func<double, double> Host = ms => ms / 1000.0 + offset;
+                double playback = 5000 - 110;
+                // The drawn moment (4890) lies between the snapshots stamped 4866.667 and 4900.
+                double obstacle = HostObstacleClock.Interpolate(Host(4866.667), Host(4900), (playback - 4866.667) / 33.333);
+                Check(Math.Abs(obstacle - Host(playback)) < 1e-5, "interpolated obstacle time is not the drawn moment");
+                // The old estimate (Steam clock - 110 ms) misses by the one-way delay plus any clock skew.
+                double oneWay = 0.08, skew = 0.3;
+                double steamEstimate = Host(5000 + oneWay * 1000) + skew - 0.110;
+                Check(Math.Abs(steamEstimate - Host(playback)) > 0.35, "scenario should reproduce the old error");
+                Check(HostObstacleClock.Interpolate(1, 2, -1) == 1 && HostObstacleClock.Interpolate(1, 2, 3) == 2, "clamp"); });
+            Test("Host obstacle clock runs between samples, never shakes back, resets on a new stream", () => {
+                var c = new HostObstacleClock(); Check(!c.HasSample && c.Now(1) == 0, "empty");
+                c.Sample(100.0, 10.0, 1.0);
+                Check(Math.Abs(c.Now(10.05) - 100.05) < 1e-9, "runs on between samples");
+                Check(Math.Abs(c.Now(10.5) - 100.1) < 1e-9, "extrapolation is capped");
+                c.Sample(100.02, 10.06, 1.0);   // slightly behind what was already shown
+                Check(Math.Abs(c.Now(10.06) - 100.1) < 1e-9, "stepped backwards");
+                Check(Math.Abs(c.Now(10.2) - 100.12) < 1e-9, "did not resume");
+                c.Sample(50.0, 11.0, 1.0);      // a new match or a teleport: far behind
+                Check(Math.Abs(c.Now(11.0) - 50.0) < 1e-9, "large jump back not taken");
+                c.Sample(200.0, 12.0, 1.15);
+                Check(Math.Abs(c.Now(12.04) - (200.0 + 0.04 * 1.15)) < 1e-9, "playback rate ignored");
+                c.Sample(double.NaN, 13.0, 1.0); Check(Math.Abs(c.Now(12.04) - (200.0 + 0.04 * 1.15)) < 1e-9, "NaN accepted");
+                c.Clear(); Check(!c.HasSample, "clear"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}
