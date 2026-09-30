@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/pawnrush-loading`) | 09-30 | R61 2차 | 경기 화면의 채팅 창을 불투명하게(소드 파이트 씬은 UI가 밝게 그려져 뒤 글씨가 비쳤다). 문서: AI가 Unity에서 본 것(로비, 킹 러시·소드 파이트 경기 화면, 코드로 열고 닫음)을 VALIDATION·REQUIREMENTS·HANDOFF에 |
+| (이 커밋, `claude/pawnrush-loading`) | 09-30 | R61 2차 | 문서: PITFALLS 24(UIDocument를 부모·자식 오브젝트에 두면 로딩 화면이 안 뜸), VALIDATION·REQUIREMENTS·HANDOFF에 로딩 화면 문제와 수정 |
+| `3bf8981` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 채팅을 `NetworkRuntime` 아래 자기 오브젝트(`Chat`)로: 런타임 오브젝트에 붙인 채팅의 UIDocument 때문에 그 자식인 로딩 화면이 Assert로 안 떴다(`c738e87`부터). AI가 Unity에서 로딩 화면(폰 러시, 12/12 준비)과 오류 0을 확인 |
+| `b579c38` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 경기 화면의 채팅 창을 불투명하게(소드 파이트 씬은 UI가 밝게 그려져 뒤 글씨가 비쳤다). 문서: AI가 Unity에서 본 것(로비, 킹 러시·소드 파이트 경기 화면, 코드로 열고 닫음)을 VALIDATION·REQUIREMENTS·HANDOFF에 |
 | `fbcb265` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | Unity에서 보고 고침: 열린 창을 더 진하게, "입력 중 · 이동 멈춤"에 어두운 바탕, 킹 러시 안내 카드의 "Tab 채/팅" 줄바꿈을 따로 한 줄로, 다시 열 때 남은 글이 통째로 선택되던 것(`selectAllOnFocus` 끔) |
 | `4fab695` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 문서: UI §9(Tab으로 여는 패널 하나), DECISIONS U8, VALIDATION 채팅 표(2차 기준 14개), REQUIREMENTS R61, HANDOFF |
 | `c738e87` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 사용자 테스트 뒤: 채팅을 씬 HUD에서 빼 게임 전체에 패널 하나(`NetworkRuntime`의 `ChatBox`, 정렬 순서 50, 로비 왼쪽·모든 경기 씬 오른쪽 아래)로. 평소엔 `Tab 채팅`과 8초 뜨는 새 줄만, Tab 열기·Tab 채널(파티 → 팀 → 전체)·Enter 보내기·Esc/닫기 버튼, 경기에서는 보내면 닫힘. `ChatBox.KeysHeld`로 로비 단축키·경기 Esc·캐릭터 이동·소드 파이트 Esc 메뉴·F6·이동이 채팅 중 멈춤. 검사: Core 79·모의 세션 39·실제 DLL 컴파일 통과, Unity 미확인 |
