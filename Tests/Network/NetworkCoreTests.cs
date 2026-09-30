@@ -249,6 +249,48 @@ public static class NetworkCoreTests
                 Check(Math.Abs(c.Now(12.04) - (200.0 + 0.04 * 1.15)) < 1e-9, "playback rate ignored");
                 c.Sample(double.NaN, 13.0, 1.0); Check(Math.Abs(c.Now(12.04) - (200.0 + 0.04 * 1.15)) < 1e-9, "NaN accepted");
                 c.Clear(); Check(!c.HasSample, "clear"); });
+            Test("Host fitness: a faster benchmark, more cores and smooth frames score higher", () => {
+                int reference = HostFitness.Score(HostFitness.ReferenceBenchMs, 8, 16000, false, 16);
+                Check(reference == 1000, "reference machine should score 1000, got " + reference);
+                Check(HostFitness.Score(20, 8, 16000, false, 16) > reference && HostFitness.Score(80, 8, 16000, false, 16) < reference, "benchmark");
+                Check(HostFitness.Score(40, 2, 16000, false, 16) < reference && HostFitness.Score(40, 64, 16000, false, 16) == reference, "cores capped at 8");
+                Check(HostFitness.Score(40, 8, 4000, false, 16) < reference && HostFitness.Score(40, 8, 16000, true, 16) < reference, "memory, editor");
+                Check(HostFitness.Score(40, 8, 16000, false, 0) == reference && HostFitness.Score(40, 8, 16000, false, 25) == reference, "no penalty at 40 fps or better");
+                Check(HostFitness.Score(40, 8, 16000, false, 50) == reference / 2, "20 fps halves the score");
+                Check(HostFitness.Score(0, 8, 16000, false, 16) == 0 && HostFitness.Score(double.NaN, 8, 16000, false, 16) == 0, "unmeasured is zero"); });
+            Test("Host election: fitness decides, ping discounts, ties go to the lower ID, bots never host", () => {
+                HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
+                Check(HostElection.Rank(new[] { C(1, 500), C(2, 900), C(3, 700) }).SequenceEqual(new ulong[] { 2, 3, 1 }), "fitness order");
+                Check(HostElection.Rank(new[] { C(5, 800), C(3, 800) }).SequenceEqual(new ulong[] { 3, 5 }), "tie to the lower id");
+                Check(HostElection.Rank(new[] { C(1, 900, 200), C(2, 500, 20) }).SequenceEqual(new ulong[] { 2, 1 }), "far host discounted");
+                Check(HostElection.Rank(new[] { C(1, 900, 60), C(2, 800, 10) }).SequenceEqual(new ulong[] { 1, 2 }), "within the ping budget only fitness counts");
+                Check(HostElection.Rank(new[] { C(1, 0), C(2, 400) }).SequenceEqual(new ulong[] { 2, 1 }), "unmeasured below measured");
+                Check(!HostElection.Rank(new[] { C(BotIdentity.Id(7, 0), 99999), C(0, 5000), C(4, 1) }).Any(id => id != 4), "bots and zero never rank");
+                Check(HostElection.Worth(C(1, 500), C(2, 575), HostElection.StartMargin) && !HostElection.Worth(C(1, 500), C(2, 574), HostElection.StartMargin), "start margin");
+                Check(!HostElection.Worth(C(1, 500), C(1, 5000), 1), "never worth handing to yourself"); });
+            Test("Host election: a slow host goes only to a clearly stronger machine, so the role cannot bounce back", () => {
+                HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
+                var host = M(1, 150, 400);   // bogged down by hosting
+                Check(HostElection.Takeover(host, new[] { M(2, 900, 900), M(3, 1200, 500) }, HostElection.StruggleMargin) == 2, "only a machine 1.5x stronger qualifies");
+                Check(HostElection.Takeover(host, new[] { M(3, 1200, 500) }, HostElection.StruggleMargin) == 0, "fast right now is not enough");
+                // After the move the new host bogs down in turn; the old one looks fast again, but its machine is weaker.
+                Check(HostElection.Takeover(M(2, 150, 900), new[] { M(1, 1000, 400) }, HostElection.StruggleMargin) == 0, "no bounce back");
+                Check(HostElection.Takeover(M(1, 150, 0), new[] { M(2, 900, 900) }, HostElection.StruggleMargin) == 0, "unmeasured host keeps it"); });
+            Test("Host election: the successor is the first published player still here, else the fittest", () => {
+                var fallback = new[] { new HostElection.Candidate { Id = 2, Fitness = 300 }, new HostElection.Candidate { Id = 3, Fitness = 900 } };
+                Check(HostElection.Successor(new ulong[] { 3, 2 }, new HashSet<ulong> { 1, 2 }, 1, fallback) == 2, "absent published player skipped");
+                Check(HostElection.Successor(new ulong[] { 1 }, new HashSet<ulong> { 1, 2, 3 }, 1, fallback) == 3, "the leaver never succeeds itself");
+                Check(HostElection.Successor(null, new HashSet<ulong>(), 1, null) == 0, "nobody left");
+                Check(HostElection.Decode("3,x,,2,3,0").SequenceEqual(new ulong[] { 3, 2 }) && HostElection.Encode(new ulong[] { 3, 2 }) == "3,2", "encoding"); });
+            Test("Frame monitor: five slow seconds are struggling, one loading hitch is not", () => {
+                var m = new FrameMonitor(); double t = 0;
+                for (; t < 10; t += .1) m.Add(16, t);
+                m.Add(5000, t); Check(m.AverageMs < FrameMonitor.StruggleMs && !m.Struggling(t + 10), "one hitch");
+                double slowFrom = -1;
+                for (int i = 0; i < 200; i++, t += .1) { m.Add(60, t); if (slowFrom < 0 && m.AverageMs > FrameMonitor.StruggleMs) slowFrom = t; }
+                Check(slowFrom > 0 && m.Struggling(t) && m.Struggling(slowFrom + 5.01) && !m.Struggling(slowFrom + 4.9), "sustained slowness");
+                for (int i = 0; i < 100; i++, t += .1) m.Add(16, t);
+                Check(!m.Struggling(t) && m.AverageMs < 20, "recovered"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

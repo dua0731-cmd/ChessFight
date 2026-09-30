@@ -24,6 +24,7 @@ Docs/
 │  ├─ README.md            개요, 2인 테스트 방법, 한계
 │  ├─ SESSION.md           파티·매칭·예약·로비 데이터·취소·Rich Presence·버전 검사
 │  ├─ MOTION.md            이동 동기화·패킷·끊김 단계·핑·F8
+│  ├─ HOST.md              방장 선정(성능·핑)과 방장 이전 (`claude/host-migration`, R50)
 │  ├─ BOTS.md              AI 봇, 공개 매치 규칙
 │  ├─ PLAN_V0.1_STATUS.md  승규 기획안 반영 상태, 승규 다음 작업
 │  └─ VALIDATION.md        실제 확인 기록, Unity 확인 목록

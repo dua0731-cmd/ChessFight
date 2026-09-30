@@ -70,8 +70,18 @@ namespace Steamworks
         public static Dictionary<ulong,List<ulong>> SearchResults=new Dictionary<ulong,List<ulong>>();
         public static Dictionary<string,string> Filters=new Dictionary<string,string>();
         public static int RequiredSlots;
+        // Relay-network ping locations per user and estimated pings between them (host election).
+        public static Dictionary<ulong,string> PingLocations=new Dictionary<ulong,string>();
+        public static Dictionary<(string,string),int> Pings=new Dictionary<(string,string),int>();
         static ulong nextLobby=1000; static int nextCall;
-        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        // A game that dies without leaving: Steam drops the user from every lobby
+        // and hands an owned lobby to the next member, and nothing of it runs again.
+        public static void Crash(ulong user)
+        {
+            foreach(var l in Lobbies.Values.ToList()){l.Members.Remove(user);if(l.Owner==user)l.Owner=l.Members.FirstOrDefault();if(l.Members.Count==0)Lobbies.Remove(l.Id);}
+            foreach(var k in Handlers.Keys.Where(k=>k.Item1==user).ToList())Handlers.Remove(k);Pending.Remove(user);
+        }
         public static SteamAPICall_t Result(object value) {int id=++nextCall;Results[id]=value;return new SteamAPICall_t{Value=id};}
         public static void Enqueue(ulong user,Action action) {if(!Pending.ContainsKey(user))Pending[user]=new Queue<Action>();Pending[user].Enqueue(action);}
         public static void Dispatch() {if(!Pending.TryGetValue(User,out var q))return;int n=q.Count;for(int i=0;i<n;i++)q.Dequeue()();}
@@ -83,7 +93,18 @@ namespace Steamworks
     public static class DllCheck { public static bool Test()=>true; }
     public static class SteamAPI {public static bool Init()=>true;public static void RunCallbacks()=>FakeSteam.Dispatch();public static void Shutdown(){} }
     public static class SteamUser { public static CSteamID GetSteamID()=>new CSteamID(FakeSteam.User);public static bool BLoggedOn()=>true; }
-    public static class SteamNetworkingUtils { public static void InitRelayNetworkAccess(){} }
+    public struct SteamNetworkPingLocation_t { public string Text; }
+    public static class Constants { public const int k_cchMaxSteamNetworkingPingLocationString=1024; }
+    public static class SteamNetworkingUtils
+    {
+        public static void InitRelayNetworkAccess(){}
+        public static float GetLocalPingLocation(out SteamNetworkPingLocation_t result)
+        {if(FakeSteam.PingLocations.TryGetValue(FakeSteam.User,out var text)){result=new SteamNetworkPingLocation_t{Text=text};return 1f;}result=default;return -1f;}
+        public static void ConvertPingLocationToString(ref SteamNetworkPingLocation_t location,out string text,int size)=>text=location.Text;
+        public static bool ParsePingLocationString(string text,out SteamNetworkPingLocation_t result){result=new SteamNetworkPingLocation_t{Text=text};return !string.IsNullOrEmpty(text);}
+        public static int EstimatePingTimeBetweenTwoLocations(ref SteamNetworkPingLocation_t a,ref SteamNetworkPingLocation_t b)
+        =>FakeSteam.Pings.TryGetValue((a.Text,b.Text),out int ping)||FakeSteam.Pings.TryGetValue((b.Text,a.Text),out ping)?ping:-1;
+    }
     public static class SteamUtils { public static AppId_t GetAppID()=>new AppId_t(480); }
     public static class SteamFriends
     {
@@ -109,6 +130,7 @@ namespace Steamworks
         public static void SetLobbyMemberData(CSteamID id,string key,string value)=>FakeSteam.Get(id).MemberData[(FakeSteam.User,key)]=value;
         public static bool InviteUserToLobby(CSteamID lobby,CSteamID invitee)=>true;
         public static bool SetLobbyJoinable(CSteamID id,bool value) {var l=FakeSteam.Get(id);if(l.Owner!=FakeSteam.User)return false;l.Joinable=value;return true;}
+        public static bool SetLobbyOwner(CSteamID id,CSteamID owner) {var l=FakeSteam.Get(id);if(l==null||l.Owner!=FakeSteam.User||!l.Members.Contains(owner.m_SteamID))return false;l.Owner=owner.m_SteamID;return true;}
         public static SteamAPICall_t CreateLobby(ELobbyType type,int limit)=>FakeSteam.Create(type,limit);
         public static SteamAPICall_t JoinLobby(CSteamID id)
         {

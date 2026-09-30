@@ -10,11 +10,15 @@ namespace ChessFight.Network
     public sealed class SteamMotion : IDisposable
     {
         const int Channel = 31;
+        const float SnapshotInterval = .05f;
         readonly SteamSession session;
         readonly IntPtr[] incoming = new IntPtr[32];
         readonly Dictionary<ulong, MoveInput> inputs = new Dictionary<ulong, MoveInput>();
         readonly Dictionary<ulong, float> lastInput = new Dictionary<ulong, float>();
         readonly Dictionary<ulong, byte> consumedJumps = new Dictionary<ulong, byte>();
+        // After a host change: players whose press count this new host has not
+        // seen yet. Their next input sets the count instead of firing a jump.
+        readonly HashSet<ulong> jumpBaseline = new HashSet<ulong>();
         readonly List<MoveInput> unacknowledged = new List<MoveInput>();
         readonly HashSet<ulong> connected = new HashSet<ulong>();
         readonly BotDirector bots = new BotDirector();
@@ -33,7 +37,7 @@ namespace ChessFight.Network
         public int PingMs { get; private set; } = -1;
         public double ResponseMs => response.Milliseconds;
         uint sequence, tick, lastSnapshot;
-        float accumulator, lastReceive, lastSnapshotSend, nextPingPoll;
+        float accumulator, lastReceive, nextSnapshot, nextPingPoll;
         byte jumps;
         bool jumpQueued, listed;
 
@@ -60,6 +64,7 @@ namespace ChessFight.Network
         {
             this.session = session;
             session.SessionChanged += Reset;
+            session.HostChanged += OnHostChanged;
             requests = Callback<SteamNetworkingMessagesSessionRequest_t>.Create(c =>
             {
                 ulong id = c.m_identityRemote.GetSteamID64();
@@ -77,6 +82,8 @@ namespace ChessFight.Network
             delayedOut.Release(now, m => Transmit(m.Peer, m.Bytes));
             if (session.Match == 0) return;
             UpdateHealth(now);
+            // The session replaces a host that stays silent (HOST.md).
+            session.ReportHostSilence(Silence);
             // While the host is silent nothing the player does can be confirmed,
             // so the pawn holds still instead of running on unseen.
             if (Health >= LinkHealth.Frozen) { x = z = 0; jump = false; }
@@ -123,9 +130,14 @@ namespace ChessFight.Network
                     }
                 }
             }
-            if (session.IsHost && Time.realtimeSinceStartup - lastSnapshotSend >= .05f)
+            if (session.IsHost && now >= nextSnapshot)
             {
-                lastSnapshotSend = Time.realtimeSinceStartup;
+                // On a schedule, not "50 ms since the last send": that drifted to
+                // the next frame every time, so a host at 60 fps really sent about
+                // 17 snapshots a second, unevenly. After a hitch it restarts
+                // instead of bursting to catch up.
+                nextSnapshot += SnapshotInterval;
+                if (nextSnapshot <= now) nextSnapshot = now + SnapshotInterval;
                 byte[] bytes = MotionProtocol.Snapshot(session.Match, tick, States.Values);
                 foreach (ulong id in session.Roster.Keys) Send(id, bytes);
             }
@@ -145,7 +157,11 @@ namespace ChessFight.Network
             Health = LinkMonitor.Classify(Silence);
             if (Health == LinkHealth.Unstable) ConnectionStatus = "방장 연결이 불안정합니다...";
             else if (Health == LinkHealth.Frozen)
-                ConnectionStatus = $"방장 응답 없음 - 멈춤 ({Math.Ceiling(LinkMonitor.LostAfter - Silence)}초 뒤 파티로 복귀)";
+                // A started match hands the host role on after a few seconds (HOST.md);
+                // the return to the party is only the last resort.
+                ConnectionStatus = session.Started
+                    ? $"방장 응답 없음 - 멈춤. 다음 방장으로 넘기는 중... ({Math.Ceiling(LinkMonitor.LostAfter - Silence)}초 안에 안 되면 파티로 복귀)"
+                    : $"방장 응답 없음 - 멈춤 ({Math.Ceiling(LinkMonitor.LostAfter - Silence)}초 뒤 파티로 복귀)";
             else if (previous != LinkHealth.Ok) ConnectionStatus = "Steam으로 연결됨";
         }
 
@@ -185,20 +201,27 @@ namespace ChessFight.Network
         }
         void Receive()
         {
-            int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
-            for (int i = 0; i < count; i++)
+            // Everything that arrived, not one buffer's worth: twelve players send
+            // 330 inputs a second, so a host below about ten frames a second would
+            // otherwise fall further behind every frame and its lag would grow.
+            for (int round = 0; round < 8; round++)
             {
-                try
+                int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
+                for (int i = 0; i < count; i++)
                 {
-                    var message = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
-                    ulong sender = message.m_identityPeer.GetSteamID64();
-                    if (BotIdentity.IsBot(sender) || !session.IsPeer(sender) ||
-                        message.m_cbSize <= 0 || message.m_cbSize > MotionProtocol.MaxBytes) continue;
-                    var bytes = new byte[message.m_cbSize]; Marshal.Copy(message.m_pData, bytes, 0, bytes.Length);
-                    if (Simulation.Active) delayedIn.Push(new Packet { Peer = sender, Bytes = bytes }, Time.realtimeSinceStartup);
-                    else Handle(sender, bytes);
+                    try
+                    {
+                        var message = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
+                        ulong sender = message.m_identityPeer.GetSteamID64();
+                        if (BotIdentity.IsBot(sender) || !session.IsPeer(sender) ||
+                            message.m_cbSize <= 0 || message.m_cbSize > MotionProtocol.MaxBytes) continue;
+                        var bytes = new byte[message.m_cbSize]; Marshal.Copy(message.m_pData, bytes, 0, bytes.Length);
+                        if (Simulation.Active) delayedIn.Push(new Packet { Peer = sender, Bytes = bytes }, Time.realtimeSinceStartup);
+                        else Handle(sender, bytes);
+                    }
+                    finally { SteamNetworkingMessage_t.Release(incoming[i]); incoming[i] = IntPtr.Zero; }
                 }
-                finally { SteamNetworkingMessage_t.Release(incoming[i]); incoming[i] = IntPtr.Zero; }
+                if (count < incoming.Length) break;
             }
         }
         void Handle(ulong sender, byte[] bytes)
@@ -209,6 +232,9 @@ namespace ChessFight.Network
             {
                 if (!session.Roster.ContainsKey(sender) || !MotionProtocol.ReadInput(bytes, session.Match, out var input)) return;
                 if (inputs.TryGetValue(sender, out var previous) && !MotionProtocol.Newer(input.Sequence, previous.Sequence)) return;
+                // A client keeps counting its jump presses across a host change;
+                // the new host starts from that count instead of jumping for it.
+                if (jumpBaseline.Remove(sender)) consumedJumps[sender] = input.Jumps;
                 inputs[sender] = input; lastInput[sender] = now;
             }
             else if (sender == session.Host && MotionProtocol.ReadSnapshot(bytes, session.Match, out uint receivedTick, out var pawns) && MotionProtocol.Newer(receivedTick, lastSnapshot))
@@ -239,12 +265,42 @@ namespace ChessFight.Network
         void Reset()
         {
             foreach (ulong id in connected.ToArray()) Close(id);
-            States.Clear(); inputs.Clear(); lastInput.Clear(); consumedJumps.Clear(); unacknowledged.Clear(); bots.Clear();
+            States.Clear(); inputs.Clear(); lastInput.Clear(); consumedJumps.Clear(); jumpBaseline.Clear(); unacknowledged.Clear(); bots.Clear();
             delayedOut.Clear(); delayedIn.Clear(); response.Clear();
-            accumulator = 0; sequence = tick = lastSnapshot = 0; jumps = 0; jumpQueued = listed = false;
+            accumulator = 0; nextSnapshot = 0; sequence = tick = lastSnapshot = 0; jumps = 0; jumpQueued = listed = false;
             lastReceive = Time.realtimeSinceStartup; ConnectionStatus = ""; Health = LinkHealth.Ok; Silence = 0; PingMs = -1;
         }
+
+        // The host role moved within the match (Docs/Network/HOST.md). Every pawn
+        // stays where the last snapshot put it; only who simulates and who
+        // listens changes, so nobody is respawned.
+        void OnHostChanged(ulong previous, ulong next)
+        {
+            float now = Time.realtimeSinceStartup;
+            Close(previous);
+            inputs.Clear(); lastInput.Clear(); jumpBaseline.Clear(); unacknowledged.Clear(); bots.Clear();
+            delayedIn.Clear(); response.Clear();
+            accumulator = 0; nextSnapshot = 0;
+            listed = false; lastReceive = now; Health = LinkHealth.Ok; Silence = 0; PingMs = -1;
+            if (session.IsHost)
+            {
+                // Continue from the newest state this PC was shown. The tick keeps
+                // counting from there, so clients still see newer snapshots.
+                tick = lastSnapshot;
+                consumedJumps.Clear();
+                consumedJumps[session.Self] = jumps;
+                foreach (ulong id in session.Roster.Keys) if (id != session.Self && !BotIdentity.IsBot(id)) jumpBaseline.Add(id);
+                ConnectionStatus = "이 PC가 방장을 맡았습니다.";
+            }
+            else
+            {
+                consumedJumps.Clear();
+                lastSnapshot = 0;
+                ConnectionStatus = "방장이 바뀌었습니다.";
+            }
+        }
+
         public void Dispose()
-        { session.SessionChanged -= Reset; Reset(); requests.Dispose(); failures.Dispose(); }
+        { session.SessionChanged -= Reset; session.HostChanged -= OnHostChanged; Reset(); requests.Dispose(); failures.Dispose(); }
     }
 }

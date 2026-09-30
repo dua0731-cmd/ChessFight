@@ -1,6 +1,8 @@
 # 파티·매칭·예약 (`SteamSession`, `TeamReservations`)
 
-코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam 15개), `NetworkCoreTests.cs`(예약 규칙, 모드 목록).
+코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam 23개, 방장 선정·이전 8개 포함), `NetworkCoreTests.cs`(예약 규칙, 모드 목록, 방장 점수).
+
+방장 선정·이전(`claude/host-migration`, R50)은 별도 문서 [HOST](HOST.md).
 
 ## 1. 두 종류의 로비
 
@@ -10,7 +12,7 @@
 | 최대 | 6 | 12 |
 | 공개 | 비공개(ID를 알면 입장 가능) | 자동 매칭은 공개, 테스트 방은 비공개 |
 | ID | `Party` | `Match` |
-| 주인 | 파티장 `IsLeader` | 최초 생성자 `Host` (고정) |
+| 주인 | 파티장 `IsLeader` | 시작 전: 만든 사람 `Host`. 시작 때 가장 적합한 PC로, 경기 중 방장이 사라지면 후계자로 옮겨 간다([HOST](HOST.md)) |
 | 경기 취소 시 | 유지 | 나감 |
 
 한 사람은 자기 파티 로비에 남은 채로 경기 로비에도 들어간다. 파티장과 경기 호스트는 같을 수도 다를 수도 있다.
@@ -82,7 +84,10 @@
 | `mode` | 파티 | 파티장이 고른 게임 모드 키(`kingrush` 등). 파티를 만들 때 기본값. `SetMode`로 파티장만, 한가할 때만 바꾼다 |
 | `mode` | 경기 | 방을 만든 파티장의 모드. 검색 필터와 경기 씬 선택에 쓴다. 번호로 들어간 사람도 이 값을 따른다 |
 | `cancel` | 파티원 member data | 취소할 때 새 GUID |
-| `host` | 경기 | 호스트 Steam ID |
+| `host` | 경기 | 호스트 Steam ID. 시작 뒤에는 바뀔 수 있다 |
+| `epoch` | 경기 | 방장 번호. 시작 = 1, 방장이 바뀔 때마다 +1. 가장 높은 번호가 이긴다([HOST §5](HOST.md)) |
+| `successors` | 경기 | 다음 방장 순서 `id,id,…`. 방장이 2초마다 갱신 |
+| `fit`, `base`, `loc`, `claim` | 경기 member data | 현재 점수, 기계 점수, Steam 핑 위치, 새 방장의 "내가 이 번호의 방장" ([HOST §4](HOST.md)) |
 | `phase` | 경기 | `waiting` / `playing` / `closed` |
 | `private` | 경기 | `0` 공개 / `1` 테스트 |
 | `free0`, `free1` | 경기 | 예약 반영 팀별 남은 자리 |
@@ -98,7 +103,10 @@
 | 예약 기한 | 25초 |
 | 경기 입장 후 roster 대기 | 28초 |
 | reserve 재전송 | 2초 |
-| 호스트 변경·closed 감지 유예 | 2초 |
+| 호스트 변경·closed 감지 유예 (시작 전) | 2초 |
+| 응답 없는 방장 교체 / 시작·교체 직후 제외 | 4초 / 10초 |
+| 방장이 사라졌는데 후계자가 안 나설 때 포기 | 10초 |
+| 느린 방장 넘김: 지속 / 교체 뒤 쉬는 시간 | 5초 / 45초 |
 | HUD 갱신 | 0.2초 |
 
 ## 6. 취소·퇴장·호스트 이탈
@@ -107,13 +115,14 @@
 - 파티원 취소: 자기 `cancel`에 새 값 → 파티장이 보고 전체 취소.
 - 파티 구성 변경: 검색 시작 때와 명단이 다르면 취소.
 - 파티장 교체: 매칭 취소 후 안내.
-- 호스트가 나갈 때 `phase=closed`, joinable=false를 먼저 게시한다.
-- Steam이 경기 로비 소유자를 바꿔도 고정 Host와 다르면 2초 뒤 경기 종료. **로비 소유권 이전 ≠ 호스트 이전.**
+- **시작 전** 호스트가 나갈 때: `phase=closed`, joinable=false를 먼저 게시한다. Steam이 로비 주인을 바꿔도 Host와 다르면 2초 뒤 대기실 종료(예약은 옮길 수 없다).
+- **시작 후** 호스트가 나갈 때(나가기·게임 종료): 경기를 닫지 않고 가장 적합한 사람에게 방장과 로비 주인을 넘긴 뒤 나간다. 크래시·응답 없음은 `successors` 순서대로 후계자가 이어받는다. **로비 주인이 방장을 따라간다**(Steam이 아무에게나 넘긴 주인은 새 방장에게 다시 넘긴다) → [HOST](HOST.md).
 - 시작 전에는 예약 그룹 단위 정리, 시작 후에는 로비에서 사라진 사람을 roster에서 뺀다.
-- 방장 신호 끊김(스냅샷 없음)은 [MOTION §4](MOTION.md)의 단계(0.5/2/12초)로 처리한다.
-- `SessionChanged` 이벤트 → `SteamMotion`이 연결·입력·예측 버퍼를 초기화한다.
+- 방장 신호 끊김(스냅샷 없음)은 [MOTION §4](MOTION.md)의 단계(0.5/2/12초)로 표시하고, 시작 후에는 4초에 방장 이전([HOST](HOST.md)).
+- `SessionChanged` 이벤트 → `SteamMotion`이 연결·입력·예측 버퍼를 초기화한다. 경기 중 방장이 바뀌면 `HostChanged(이전, 다음)` → 캡슐·래그돌 쪽이 역할만 바꾼다(위치 유지).
 
 ## 7. 공개 API 요약 (HUD가 쓰는 것)
 
 `FindMatch(bool privateTest)`, `SetMode(key)`, `JoinParty(id)`, `JoinPrivateMatch(id)`, `StartGame()`, `Cancel()`, `Abort(reason)`, `LeaveParty()`, `Retry()`, `Friends()`, `InviteToParty(id)`, `Invite()`, `SetPartyBots(n)`, `FillRoomWithBots()`, `ClearRoomBots()`.
 속성: `Online`, `Party`, `PartyLeader`, `PartyMode`, `Match`, `MatchMode`, `Host`, `IsHost`, `IsLeader`, `Busy`, `Searching`, `Started`, `PrivateRoom`, `Roster`, `PartyMembers`, `PartyBots`, `MaxPartyBots`, `RoomBots`, `Build`, `AllowPublicBots`, `BotsBlockPublicMatch`, `CanUseRoomBots`, `Status`, `Error`.
+방장 선정·이전([HOST](HOST.md)): `LocalFitness`(세션을 돌리는 쪽이 넣는 기계 점수), `CurrentFitness`, `FrameMs`, `Epoch`, `HostNote`, `ReportFrame(ms)`(매 프레임), `ReportHostSilence(s)`(매 프레임, 이동 계층), 이벤트 `HostChanged(이전, 다음)`.

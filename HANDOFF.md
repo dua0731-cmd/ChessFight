@@ -26,6 +26,7 @@
   - **(`JY-lobby`, R47·R48) `JY-ragdoll_v2`를 `JY-lobby`에 합침(빨리 감기, 09-27)**, 그 위에 **퀸 오브 더 힐 그레이박스 맵 8차(R50)**: **7개 층(1~7랭크, 26 m씩) + 정상 8랭크(198 m, 여덟 칸 승격)**, 팀마다 층마다 **서쪽·동쪽 두 날개**(U자 약 140 m, 장애물 모듈 27종), 4층(기울어 도는 고리·룩의 탑)·7층(나선 계단·빛의 계단) 공용. **체크포인트 없음 → 떨어지면 1랭크, 팀 진공관이 내 최고 랭크까지**(랭크 발판은 사람마다), **팀 종 → 팀별 지름길 승강기**(규칙 `Core/QueenHillRace`). 맵은 데이터(`Tools/QueenHill/build_layout.py` → JSON)로, Play 때 조립. Unity 없이 미리보기 → [GRAYBOX](Docs/GameModes/QueenOfTheHill/GRAYBOX.md)
   - **(`JY-ragdoll_v2`) 래그돌 조작감 개선(R36)**: 버둥대기 클릭 게이지, 머리부터 다이빙 태클, 더 기민한 이동, 일어날 때 안 끌림, 부딪히면 튕김, 역경사·턱 등반 버그, 조작감 녹화 도구 → [RagdollLab README](Docs/RagdollLab/README.md#조작감-개선-2026-09-26-r36-jy-ragdoll_v2)
   - **(`JY-ragdoll_v2`) 퀸 오브 더 힐 래그돌 기능 M1~M11, M13**: **M11 승격·기물 성능, M13 찌그러짐·비틀, M6 밧줄·사슬·그네, M7 도약대·태엽 스프링, M8~M10 개척의 종·체크포인트·팀(AI가 이어서, Unity 미확인)**, **M5 갈고리(E 꺼내기·좌클릭 꾹 돌리기·던져 끌려가기)와 앙파상**, 탈것(움직이는 발판·벽), 입력 확장(능력 E·Q, 상호작용 F, 조준), 피격 약속, 물·부활, RagdollTest의 [7] 시험대 → [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13)
+- **(`claude/host-migration`, R50, 승규 님 요청) 방장 선정·이전**: 경기 시작 때 성능(벤치마크·하드웨어·프레임)과 핑으로 가장 적합한 PC가 방장, 방장이 나가거나 튕기거나 4초 응답이 없으면 다음 방장이 이어받아 경기 계속, 계속 느린 방장은 더 좋은 기계로 넘김. 캡슐·래그돌 랩 둘 다. 렉 줄이기(스냅샷 일정 전송, 수신 끝까지, 래그돌 방장 과부하 보호) 포함. 프로토콜 v8. **코드·테스트만, Unity·Steam 미확인** → [HOST](Docs/Network/HOST.md)
 - **아직 캡슐 이동 기술 프로토타입이다.** 기물 선택, 스킬, 래그돌 네트워크, 라운드 규칙, 승패는 없다. 로비에서 고를 수 있는 모드 씬은 킹 러시(코스 뼈대)뿐이다. 퀸 오브 더 힐은 **오프라인 그레이박스 씬**만 있다(네트워크 래그돌 M14가 없어서 로비에서는 아직 "준비 중").
 - 이 프로젝트의 AI 작업은 사용자(메인 기획자, GitHub `dua0731-cmd`)의 요청으로 진행되어 왔다. **요청 이력 전체는 [요구사항 기록](Docs/Project/REQUIREMENTS.md)에 있다.**
 
@@ -62,6 +63,7 @@
 | **퀸 오브 더 힐 래그돌 기능 M1~M11, M13**(`JY-ragdoll_v2`): **M11 승격·기물 성능(R46, [7j] Shift+F9), M13 찌그러짐·비틀(R45, Shift+F5·F6), M6 밧줄·그네(R44, [7i] Shift+F8), M7 도약대(R43, [7h] Shift+F10), M8~M10 종·체크포인트·팀(R42, [7g] F10)**, **M5 갈고리·앙파상(R40, 자동 점검 7개, Unity 미확인, [7f] 연습장 F8)**, 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대 | 1차 Unity 확인 성공(09-26, 1~12). 2차 수정(누워 있기·물에 뜨기)은 자동 점검 통과, Unity 재확인 대기. M12, M14는 시작 안 함 | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
 | 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 빌드한 랩 플레이어의 자동 점검 86/0(09-27, M11 승격까지). 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
 | **퀸 오브 더 힐 그레이박스 맵 8차**(`JY-lobby`, R50): 7개 층 + 8랭크(198 m), 팀마다 서·동 날개, 4·7층 공용, **팀 허브(광장 = 랭크 발판, 팀 종, 팀별 지름길 승강기, 팀 진공관)**, 체크포인트 없음, 8랭크 여덟 칸 승격, 오프라인 래그돌 1인 + 마우스 카메라·층별 기록. 맵은 데이터(JSON), Unity 없는 미리보기(층별 잘라 보기) | 코드·컴파일·Core 테스트·미리보기 그림만, **Unity 미확인** (7차는 사용자가 해 봄 → 8차로) | [GRAYBOX](Docs/GameModes/QueenOfTheHill/GRAYBOX.md) |
+| **방장 선정·이전**(`claude/host-migration`, R50): 시작 때 성능·핑 기준 방장, 나가기·크래시·응답 없음 4초에 후계자, 느린 방장 넘김, 캡슐·래그돌 랩 역할 전환, 렉 줄이기 | 코드·모의 테스트·실제 DLL 컴파일만, **Unity·Steam 미확인** | [Network/HOST](Docs/Network/HOST.md) |
 | **없음** | 기물 선택·스킬·라운드·승패·점수, 네트워크 경기에서 코스 달리기, 래그돌 네트워크, 호스트 이전, 재접속, 신뢰 이벤트 채널, 로딩 동기화 | [ROADMAP](Docs/Project/ROADMAP.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
@@ -69,6 +71,7 @@
 **사용자가 할 일 — 순서대로**
 000. **(새, `JY-lobby`, R51) 온라인 래그돌 장애물 재시험:** 모든 PC가 이 커밋을 받아야 한다(프로토콜 v8). 3인 이상으로 `Ragdoll Test` 온라인 경기 → 회전 봉·움직이는 발판에서 "안 맞았는데 맞는" 현상이 사라졌는지, 참가자 F3 패널의 "Steam 시계였다면 N ms 어긋남" 숫자 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 표
 00. **(새, `JY-lobby`) 퀸 오브 더 힐 맵 8차:** Pull → (JY-lobby 워크트리 폴더를 연 Unity에서) `ChessFight > Scenes > Queen of the Hill (offline graybox)` → Play → [GRAYBOX §4](Docs/GameModes/QueenOfTheHill/GRAYBOX.md#4-unity-확인-순서-처음-한-번) 순서대로(종 → 지름길, R → 1랭크 → 진공관). 층마다 날개 하나 이상 해 본 뒤 **층별 시간과 막힌 곳·재미없는 곳**을 알려 준다. 결정 2개: 한 층 목표 시간(개척자 50~60초 가정), 떨어져 아래층에 부딪히는 것도 "떨어짐(1랭크로)"으로 칠지([DESIGN §7](Docs/GameModes/QueenOfTheHill/DESIGN.md#7-남은-결정))
+000. **(새, `claude/host-migration`, 승규 님) 방장 선정·이전:** 이 브랜치를 연 Unity로 빌드해 **서로 다른 Steam 계정 PC 2~3대**에서 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **방장 표(11개)**. 특히 3번(방장 강제 종료 후 몇 초 만에 새 방장)과 1번(성능 좋은 PC가 방장). 결과를 보고 **`JY-lobby`에 합칠지 팀장님이 결정**
 0. (래그돌, `JY-ragdoll_v2`) `Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **승격 표(4개, Shift+F9: 받침대·킹·룩 등반)**, **찌그러짐 표(3개, Shift+F5·F6)**, **밧줄 표(6개, Shift+F8: 사슬 오르기·그네 8 m·기둥)**, **도약대 표(5개, Shift+F10: L자 도약대·태엽 스프링)**, **개척의 탑 표(6개, F10: 종·승강기·독점·체크포인트·팀)**, **등반 표(4개: 멈추면 스테미나 유지, Space 벽 점프, W는 위로만)**, **갈고리 표(11개, F8 연습장)**, 그다음 **조작감·등반 확인 표(15개, 09-27: 멈춤·부딪힘·다이빙·버둥대기 클릭 수·질주·등반 레인 넷·온라인 막대)**, 이어서 F9 → **퀸 오브 더 힐 2차 재확인 표(5개: F5 뒤 1초 누워 있기, 물에 5초 둥둥·좌클릭 버둥)**. 1차 표는 1~12 성공(09-26), 13번(두 PC)은 친구와 할 때
 1. `JY-lobby`를 Pull(LFS 포함)한 뒤 Unity에서 열고 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **새 로비 표(11개)**를 확인한다. 이어서 씬 분리·래그돌 병합 표. 막히면 증상·스크린샷과 Console 첫 오류를 AI에게 준다.
 2. 두 PC로 양방향 이동을 확인한다(가장 오래 미뤄진 검증). 이제 경기 씬에서 한다([Network/README §2](Docs/Network/README.md)).
@@ -90,7 +93,7 @@
    - **래그돌 자동 점검 기존 실패 9개는 R37(09-27)에 고쳐 R38에서 합침**(합친 뒤 56 통과 / 0 실패, Unity 미확인 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 표). **사용자 결정(09-27, R39): 둘 다 그대로 둔다** — ① 경사 45° "몸 던지기가 더 빠른가"는 공정하게 재면 사실상 동률(0.01~0.03초, 통과하지만 불안정)이지만 튜닝하지 않는다 ② 역경사 20도 레인은 실제로는 윗부분이 멀어지는 경사판이지만 씬을 다시 만들지 않는다(DECISIONS G16) → [RagdollLab README "자동 점검"](Docs/RagdollLab/README.md#자동-점검)
    - **팀 색 정정(R32):** 이 게임의 두 팀은 **백팀·흑팀**이다(캐릭터 자체가 흰 말·검은 말). 코드는 아직 청팀·주황팀(재질 `TeamBlue`/`TeamOrange`, HUD 문구 "청팀/주황팀", 매칭 패널 칸 색). 바꾸려면 사용자 확인 후 작업
 4. Network → main 병합 PR (현재는 main이 Network를 포함하므로 불필요할 수 있음)
-5. 기획안의 "결정 필요" 항목: 신뢰 이벤트 채널 → 로딩 동기화 → 호스트 끊김 2단계(라운드 무효, 파티 유지)
+5. 기획안의 "결정 필요" 항목: 신뢰 이벤트 채널 → 로딩 동기화 → 호스트 끊김 2단계(라운드 무효, 파티 유지). (3단계 호스트 이전은 `claude/host-migration`, R50. 두 PC 확인에서 나오는 문제 수정이 먼저: 크래시 뒤 Steam이 방에서 빼기까지 걸리는 실제 시간, 래그돌 이어받을 때의 멈칫 정도)
 6. 네트워크 경기에서 래그돌로 코스 달리기(래그돌 권한 결정 필요. 병합은 끝남)
 
 ## 4. 절대 규칙 — 어기면 과거에 실제로 사고가 났던 것들
@@ -109,6 +112,7 @@
 12. **같은 `.unity` 씬을 두 사람이 동시에 고치지 않는다.** 맵은 구간 프리팹으로 나눈다.
 13. **`Assets/Scripts`(네트워크·게임 코드)는 래그돌 타입을 참조하지 않고, 래그돌(`Assets/ChessFight/RagdollLab`)은 Steam을 참조하지 않는다.** 랩을 Steam에 잇는 코드는 `Assets/ChessFight/RagdollLabSteam/`(Bootstrap과 같은 다리)에만 둔다. 캐릭터는 `ICharacterDriver`로만 부른다. `Tools/run-tests-linux.sh`의 경계 검사가 확인한다.
 14. **물리 콜백(`OnCollision*`·`OnTrigger*`) 안에서 순간이동하거나 관절을 즉시 지우지 않는다.** Unity가 `DestroyImmediate`를 거부해 잡기 관절이 남는다. 알리기만 하고 다음 Update에서 처리한다(`WaterZone` → 시험대·`PlaytestSpawner`). → [PITFALLS §19](Docs/Environment/PITFALLS.md)
+15. **(`claude/host-migration`부터) 경기 상태를 방장 PC에만 두지 않는다.** 방장은 경기 중에 바뀔 수 있다([HOST](Docs/Network/HOST.md)). 점수·타이머·모드 상태는 스냅샷이나 로비 데이터에 실어 모두가 갖고 있게 한다. 방장만 아는 값은 이전 때 사라진다.
 
 ## 5. 문서 트리
 
@@ -136,6 +140,7 @@ Docs/
 │  ├─ README.md                 네트워크 개요와 사람용 테스트 방법
 │  ├─ SESSION.md                파티, 매칭, 예약, 로비 데이터, 취소
 │  ├─ MOTION.md                 이동 동기화, 패킷, 연결 품질
+│  ├─ HOST.md                   방장 선정(성능·핑)과 방장 이전 (`claude/host-migration`)
 │  ├─ BOTS.md                   AI 봇
 │  ├─ PLAN_V0.1_STATUS.md       승규 기획안 v0.1 항목별 반영 상태, 승규 다음 작업
 │  └─ VALIDATION.md             ★ 실제 확인 기록과 확인 목록
@@ -166,6 +171,7 @@ Tools/
 | Unity 오류, Safe Mode, 클릭 안 됨 | [PITFALLS](Docs/Environment/PITFALLS.md), [SETUP](Docs/Environment/SETUP.md) | `Scripts/Editor/`, asmdef |
 | 파티, 매칭, 초대 | [Network/SESSION](Docs/Network/SESSION.md) | `Network/SteamSession.cs`, `Core/TeamReservations.cs` |
 | 이동 동기화, 지연, 끊김 | [Network/MOTION](Docs/Network/MOTION.md) | `Network/SteamMotion.cs`, `Core/MotionProtocol.cs`, `Core/LinkQuality.cs` |
+| 방장 선정·이전, 방장 PC 성능 | [Network/HOST](Docs/Network/HOST.md) | `Core/HostElection.cs`, `Network/HostFitnessProbe.cs`, `Network/SteamSession.cs`(`FollowHost`·`StartGame`), `RagdollLabSteam/SteamRagdollLink.cs`(`OnHostChanged`) |
 | 봇 | [Network/BOTS](Docs/Network/BOTS.md) | `Core/BotIdentity.cs`, `Core/BotBrain.cs` |
 | 씬 추가, 씬 전환 | [Architecture/SCENES](Docs/Architecture/SCENES.md) | `Bootstrap/NetworkRuntime.cs`, `Game/SceneNames.cs` |
 | 게임 모드 추가, 모드별 매칭 | [GameModes](Docs/GameModes/README.md), [Network/SESSION](Docs/Network/SESSION.md) | `Core/GameModes.cs`, `Network/SteamSession.cs`, `Bootstrap/MatchSceneView.cs` |

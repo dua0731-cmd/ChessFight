@@ -250,7 +250,7 @@ Assets/Scenes/KingRush.unity가 작업 씬입니다. 직접 Play하면 오프라
 
 | 변수 | 지금 동작 | 관련 코드 |
 |---|---|---|
-| 호스트 이탈 | 경기 즉시 종료, 전원 로비로. 호스트 이전 없음 | `SteamSession.PollMatch` |
+| 호스트 이탈 | 경기 즉시 종료, 전원 로비로. **`claude/host-migration`(R50, Unity 미확인)에서는 다음 방장이 이어받고, 시작 때 성능 좋은 PC가 방장** → `Docs/Network/HOST.md` | `SteamSession.PollMatch`, `FollowHost` |
 | 호스트 강제 종료·네트워크 단절 | 0.5초 "불안정" 경고, 2초 멈춤, 12초 파티 복귀 (09-24 기획안 반영) | `SteamMotion.UpdateHealth`, `LinkMonitor` |
 | 입력 지연 | 클라이언트 예측 후 호스트 값으로 보정 | `SteamMotion` |
 | 패킷 손실 | 입력·스냅샷 모두 비신뢰 전송, 최신 값만 사용. 점프는 누른 횟수로 보내 유실되지 않음(09-24). F8로 지연·손실 시험 가능 | `MotionProtocol`, `LinkSimulator` |
