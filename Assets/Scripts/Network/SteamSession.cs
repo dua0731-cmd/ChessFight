@@ -142,6 +142,32 @@ namespace ChessFight.Network
         bool heldLoaded;
         // What this host last set the room's Steam joinable flag to: -1 unknown, 0 or 1.
         int joinable = -1;
+        // ---- Chat (Docs/Architecture/UI.md "채팅", R61) ----
+        // Lines arrive through Steam lobby chat, which echoes our own lines back to
+        // us too: the log shows what Steam actually delivered.
+        public readonly ChatLog Chat = new ChatLog();
+        public bool CanChat(ChatChannel channel) =>
+            Online && (channel == ChatChannel.Party ? Party != 0 :
+                       channel == ChatChannel.All ? Match != 0 : Match != 0 && Roster.ContainsKey(Self));
+        // Sends one line. "" once it is on its way (or there was nothing to send),
+        // otherwise why not, for the chat box to show.
+        public string Say(ChatChannel channel, string text)
+        {
+            text = ChatText.Clean(text);
+            if (text == "") return "";
+            if (!CanChat(channel)) return $"지금은 {ChatText.Label(channel)} 채팅을 쓸 수 없어요.";
+            if (!chatThrottle.TryPass(Time.realtimeSinceStartup)) return "1초에 한 번까지 보낼 수 있어요.";
+            int team = channel == ChatChannel.Team ? Roster[Self].Team : 0;
+            byte[] bytes = Encoding.UTF8.GetBytes(ChatText.Encode(channel, team, text));
+            ulong lobby = channel == ChatChannel.Party ? Party : Match;
+            return SteamMatchmaking.SendLobbyChatMsg(Id(lobby), bytes, bytes.Length) ? "" : "메시지를 보내지 못했어요.";
+        }
+        readonly ChatThrottle chatThrottle = new ChatThrottle();
+        // The party and match the log's channels belong to, and who was in them,
+        // for the "들어왔어요 / 나갔어요" notices.
+        ulong chatParty, chatMatch;
+        bool chatMatchLive;
+        readonly HashSet<ulong> chatPartyMembers = new HashSet<ulong>(), chatMatchPlayers = new HashSet<ulong>();
 
         readonly FrameMonitor frames = new FrameMonitor();
         int epoch, publishedFit, publishedBase;
@@ -327,6 +353,7 @@ namespace ChessFight.Network
             PollParty();
             if (Match != 0) PollMatch(now);
             PublishPlaying();
+            FollowChat();
             UpdatePresence();
             if (Searching && Match == 0 && !pending && now >= nextSearch) Search();
             // A host with only its own party periodically tries an older room. This
@@ -710,7 +737,7 @@ namespace ChessFight.Network
                     else if (now >= nextRequest)
                     {
                         nextRequest = now + 2;
-                        SendChat(new Request { kind = "reserve", ticket = ticket, party = Party, members = queuedMembers });
+                        SendRequest(new Request { kind = "reserve", ticket = ticket, party = Party, members = queuedMembers });
                     }
                 }
                 var before = wasStarted ? new HashSet<ulong>(Roster.Keys) : null;
@@ -982,22 +1009,87 @@ namespace ChessFight.Network
             { LeaveMatchInternal(); Set(Party, "route", "search"); Status = message; nextSearch = Time.realtimeSinceStartup + UnityEngine.Random.Range(1f, 3f); }
             else Fail(message);
         }
-        void SendChat(Request request)
+        // A line someone typed, from the lobby it arrived in.
+        void Hear(ulong lobby, ulong sender, string wire)
+        {
+            if (!ChatText.TryDecode(wire, out var channel, out int team, out string text)) return;
+            // Party lines count only in the party lobby, match lines only in the match room.
+            if ((channel == ChatChannel.Party) != (lobby == Party)) return;
+            // Every PC in the room receives team lines: show only our own team's, and
+            // only from someone on that team.
+            if (channel == ChatChannel.Team &&
+                (!Roster.TryGetValue(Self, out var me) || me.Team != team ||
+                 !Roster.TryGetValue(sender, out var them) || them.Team != team)) return;
+            ChatRooms();
+            Chat.Add(channel, sender, Name(sender), text, false, sender == Self, Time.realtimeSinceStartup);
+        }
+        // A new party or a new match room starts its channels afresh.
+        void ChatRooms()
+        {
+            if (chatParty != Party)
+            {
+                chatParty = Party;
+                Chat.Clear(ChatChannel.Party);
+                chatPartyMembers.Clear();
+                if (Party != 0) chatPartyMembers.UnionWith(Members(Party));
+            }
+            if (chatMatch != Match)
+            {
+                chatMatch = Match;
+                Chat.Clear(ChatChannel.All); Chat.Clear(ChatChannel.Team);
+                chatMatchPlayers.Clear(); chatMatchLive = false;
+            }
+        }
+        // Notices in the log: who joined or left the party, and, once a match has
+        // started, who left it or took an empty seat. Bots come and go silently.
+        void FollowChat()
+        {
+            ChatRooms();
+            double now = Time.realtimeSinceStartup;
+            if (Party != 0)
+            {
+                var members = Members(Party);
+                foreach (ulong id in members.Except(chatPartyMembers).OrderBy(x => x))
+                    Chat.Add(ChatChannel.Party, 0, "", $"{Name(id)} 님이 파티에 들어왔어요", true, false, now);
+                foreach (ulong id in chatPartyMembers.Except(members).OrderBy(x => x))
+                    Chat.Add(ChatChannel.Party, 0, "", $"{Name(id)} 님이 파티를 나갔어요", true, false, now);
+                chatPartyMembers.Clear(); chatPartyMembers.UnionWith(members);
+            }
+            if (Match == 0 || !Started) return;
+            var players = new HashSet<ulong>(Roster.Keys.Where(id => !BotIdentity.IsBot(id)));
+            if (chatMatchLive)
+            {
+                foreach (ulong id in players.Except(chatMatchPlayers).OrderBy(x => x))
+                    Chat.Add(ChatChannel.All, 0, "", $"{Name(id)} 님이 빈자리에 들어왔어요", true, false, now);
+                foreach (ulong id in chatMatchPlayers.Except(players).OrderBy(x => x))
+                    Chat.Add(ChatChannel.All, 0, "", $"{Name(id)} 님이 경기를 나갔어요", true, false, now);
+            }
+            chatMatchLive = true;
+            chatMatchPlayers.Clear(); chatMatchPlayers.UnionWith(players);
+        }
+        void SendRequest(Request request)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(JsonUtility.ToJson(request));
             if (Match != 0 && bytes.Length <= chatBuffer.Length) SteamMatchmaking.SendLobbyChatMsg(Id(Match), bytes, bytes.Length);
         }
+        // Lobby chat carries two things: what players type (ChatText, in the party
+        // lobby and the match room) and, in the match room only, seat requests for
+        // the host as JSON.
         void OnChat(LobbyChatMsg_t c)
         {
-            if (!IsHost || c.m_ulSteamIDLobby != Match) return;
+            ulong lobby = c.m_ulSteamIDLobby;
+            if (lobby == 0 || (lobby != Match && lobby != Party)) return;
+            int length = SteamMatchmaking.GetLobbyChatEntry(Id(lobby), (int)c.m_iChatID, out CSteamID sender, chatBuffer, chatBuffer.Length, out EChatEntryType type);
+            if (length <= 0 || length >= chatBuffer.Length || type != EChatEntryType.k_EChatEntryTypeChatMsg || !Members(lobby).Contains(sender.m_SteamID)) return;
+            string text = Encoding.UTF8.GetString(chatBuffer, 0, length);
+            if (text.StartsWith(ChatText.Prefix, StringComparison.Ordinal)) { Hear(lobby, sender.m_SteamID, text); return; }
+            if (lobby != Match || !IsHost) return;
             // A started match only takes requests for its empty seats, which only the
             // room's owner can grant. A host still waiting for ownership (HOST.md)
             // leaves them to the joiner's next try, two seconds later.
             if (Started && Owner(Match) != Self) return;
-            int length = SteamMatchmaking.GetLobbyChatEntry(Id(Match), (int)c.m_iChatID, out CSteamID sender, chatBuffer, chatBuffer.Length, out EChatEntryType type);
-            if (length <= 0 || length >= chatBuffer.Length || type != EChatEntryType.k_EChatEntryTypeChatMsg || !Members(Match).Contains(sender.m_SteamID)) return;
             Request request;
-            try { request = JsonUtility.FromJson<Request>(Encoding.UTF8.GetString(chatBuffer, 0, length)); }
+            try { request = JsonUtility.FromJson<Request>(text); }
             catch (ArgumentException) { return; }
             if (request == null || request.kind != "reserve" || string.IsNullOrEmpty(request.ticket) || request.ticket.Length > 64) return;
             // The host enforces M6 too, whatever the joining client decided.

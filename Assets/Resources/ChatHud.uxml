@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The chat box (Game/ChatBox.cs, R61), chat sample A "기보 로그". Cloned into
+         the "chat-slot" of NetworkHud.uxml (lobby, bottom left, above the party
+         bar) and of MatchHud.uxml (match, bottom right). Styles: the "chat" part
+         of NetworkHud.uss. Every name here is looked up by ChatBox: rename both or
+         neither. The lines are added in code. -->
+    <ui:VisualElement name="chat" class="chat">
+        <!-- Lobby only: one tab per channel, with a count of unread lines. -->
+        <ui:VisualElement name="chat-tabs" class="row chat-tabs">
+            <ui:Button name="chat-tab-party" class="chat-tab">
+                <ui:VisualElement class="chat-dot chat-dot-party" picking-mode="Ignore" />
+                <ui:Label text="파티" class="chat-tab-text" picking-mode="Ignore" />
+                <ui:Label name="chat-unread-party" class="chat-unread" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:Button name="chat-tab-all" class="chat-tab">
+                <ui:VisualElement class="chat-dot chat-dot-all" picking-mode="Ignore" />
+                <ui:Label text="전체" class="chat-tab-text" picking-mode="Ignore" />
+                <ui:Label name="chat-unread-all" class="chat-unread" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:Button name="chat-tab-team" class="chat-tab">
+                <ui:VisualElement class="chat-dot chat-dot-team" picking-mode="Ignore" />
+                <ui:Label text="팀" class="chat-tab-text" picking-mode="Ignore" />
+                <ui:Label name="chat-unread-team" class="chat-unread" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:VisualElement class="grow" picking-mode="Ignore" />
+            <ui:Label name="chat-scrolled" text="이전 대화 · 휠을 내리면 최근" class="chat-scrolled" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="chat-lines" class="chat-lines" />
+        <ui:VisualElement name="chat-entry" class="row chat-entry">
+            <ui:Label name="chat-channel" class="chat-chip" picking-mode="Ignore" />
+            <ui:VisualElement class="chat-input" picking-mode="Ignore">
+                <ui:TextField name="chat-field" class="chat-field" max-length="80" />
+                <ui:Label name="chat-placeholder" class="chat-placeholder" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:Label name="chat-hint" class="chat-hint" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <!-- A refused line ("1초에 한 번까지…"), or in a match "입력 중 · 이동 멈춤". -->
+        <ui:Label name="chat-note" class="chat-note" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -495,6 +495,40 @@ public static class NetworkCoreTests
                 Check(Backfill.EncodeHeld(new Backfill.Seat[0]) == "" && Backfill.DecodeHeld(null).Count == 0, "nothing held");
                 var messy = Backfill.DecodeHeld("0:0:0:1;7:2:0:1;8:0:6:1;9:0:1:x;10:1:1:5;10:0:2:5;11:1:1:5;12:0:0:5:9");
                 Check(messy.Count == 1 && messy[0].Id == 10 && messy[0].Team == 1, "bad held entries kept"); });
+            Test("Chat: a line is one clean line of at most eighty characters, and only chat lines decode", () => {
+                Check(ChatText.Clean("  안녕\n하세요\t\t 폰 러시  ") == "안녕 하세요 폰 러시", "white space");
+                Check(ChatText.Clean("a\u202Eb\u200Bc\u0007d") == "abc d", "control and format characters");
+                Check(ChatText.Clean(new string('가', 200)).Length == ChatText.MaxLength && ChatText.Clean(null) == "" && ChatText.Clean(" \n ") == "", "length");
+                string emoji = new string('a', ChatText.MaxLength - 1) + "\U0001F600";
+                Check(ChatText.Clean(emoji) == new string('a', ChatText.MaxLength - 1), "surrogate pair kept whole or dropped");
+                Check(ChatText.TryDecode(ChatText.Encode(ChatChannel.Party, 1, " 2랭크까지 같이 가자 "), out var channel, out int team, out string text) &&
+                      channel == ChatChannel.Party && text == "2랭크까지 같이 가자", "party round trip");
+                Check(ChatText.TryDecode(ChatText.Encode(ChatChannel.Team, 1, "부축 갈게"), out channel, out team, out text) &&
+                      channel == ChatChannel.Team && team == 1 && text == "부축 갈게", "team round trip");
+                Check(ChatText.TryDecode(ChatText.Encode(ChatChannel.All, 0, "gg"), out channel, out _, out _) && channel == ChatChannel.All, "all round trip");
+                Check(!ChatText.TryDecode("{\"kind\":\"reserve\"}", out _, out _, out _) && !ChatText.TryDecode("CFC1|x|hi", out _, out _, out _) &&
+                      !ChatText.TryDecode("CFC1|a|   ", out _, out _, out _) && !ChatText.TryDecode("CFC1|a", out _, out _, out _) &&
+                      !ChatText.TryDecode(null, out _, out _, out _), "not chat");
+                Check(ChatText.Label(ChatChannel.Party) == "파티" && ChatText.Label(ChatChannel.All) == "전체" && ChatText.Label(ChatChannel.Team) == "팀", "labels");
+                Check(ChatText.Next(ChatChannel.Party, c => true) == ChatChannel.All && ChatText.Next(ChatChannel.Team, c => true) == ChatChannel.Party &&
+                      ChatText.Next(ChatChannel.Party, c => c != ChatChannel.All) == ChatChannel.Team && ChatText.Next(ChatChannel.All, c => false) == ChatChannel.All, "tab order"); });
+            Test("Chat: one line a second, numbered per channel, fifty kept per channel, unread counted", () => {
+                var throttle = new ChatThrottle();
+                Check(throttle.TryPass(10) && !throttle.TryPass(10.5) && throttle.TryPass(11) && !throttle.TryPass(11.99), "one a second");
+                var log = new ChatLog();
+                log.Add(ChatChannel.Party, 0, "", "캐슬링 님이 파티에 들어왔어요", true, false, 0);
+                log.Add(ChatChannel.Party, 7, "퀸사이드", "폰 러시 한 판", false, false, 1);
+                var mine = log.Add(ChatChannel.Party, 8, "나이트메어", "ㄱㄱ", false, true, 2);
+                var all = log.Add(ChatChannel.All, 7, "퀸사이드", "hi", false, false, 3);
+                Check(mine.Number == 3 && all.Number == 1 && log.Unread(ChatChannel.Party) == 2 && log.Unread(ChatChannel.All) == 1, "numbers and unread");
+                log.MarkRead(ChatChannel.Party); Check(log.Unread(ChatChannel.Party) == 0 && log.Unread(ChatChannel.All) == 1, "mark read");
+                int version = log.Version;
+                for (int i = 0; i < ChatLog.Capacity; i++) log.Add(ChatChannel.Team, 7, "퀸사이드", "t" + i, false, false, 4);
+                Check(log.In(ChatChannel.Team).Count() == ChatLog.Capacity && log.In(ChatChannel.Party).Count() == 3 && log.Version > version, "capacity");
+                log.Add(ChatChannel.Team, 7, "퀸사이드", "last", false, false, 5);
+                Check(log.In(ChatChannel.Team).Count() == ChatLog.Capacity && log.In(ChatChannel.Team).First().Text == "t1" && log.In(ChatChannel.Team).Last().Number == 51, "oldest dropped");
+                log.Clear(ChatChannel.Team); version = log.Version; log.Clear(ChatChannel.Team);
+                Check(!log.In(ChatChannel.Team).Any() && log.Version == version && log.Add(ChatChannel.Team, 7, "", "again", false, false, 6).Number == 1 && log.In(ChatChannel.Party).Count() == 3, "clear"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

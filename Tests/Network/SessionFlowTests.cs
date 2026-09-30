@@ -321,6 +321,39 @@ public static class SessionFlowTests
                 As(leader,leader.StartGame);Step(5);ulong room=leader.Match;
                 FakeSteam.Crash(member.Self);clients.Remove(member);Step(20);
                 Check(leader.Match==room&&leader.Started&&solo.Started&&leader.Roster.Count==2&&RoomData(leader,"open")=="1","a member's crash ended the match for its party");});
+            Test("Party chat reaches every member under the sender's Steam name, notes joins and leaves, and allows one line a second",()=>{
+                Setup(3);JoinParty(1,0);JoinParty(2,0);var leader=clients[0];var member=clients[1];
+                Check(leader.Chat.In(ChatChannel.Party).Count(e=>e.Notice&&e.Text.Contains("파티에 들어왔어요"))==2,"joins not noted");
+                string said="";As(member,()=>said=member.Say(ChatChannel.Party,"  2랭크까지 같이 가자\n"));Check(said=="","party line refused: "+said);
+                As(member,()=>said=member.Say(ChatChannel.Party,"또"));Check(said.Contains("1초"),"a second line within a second went out");
+                Step();
+                foreach(var c in clients){var line=c.Chat.In(ChatChannel.Party).LastOrDefault(e=>!e.Notice);
+                    Check(line!=null&&line.Text=="2랭크까지 같이 가자"&&line.Sender==member.Self&&line.Name=="Player "+member.Self&&line.Mine==(c==member),"party line not shown the same everywhere");}
+                Check(leader.Chat.In(ChatChannel.All).Count()==0&&!leader.CanChat(ChatChannel.All)&&!leader.CanChat(ChatChannel.Team),"match channels open without a match");
+                As(leader,()=>said=leader.Say(ChatChannel.All,"hi"));Check(said!="","all-chat line sent without a match");
+                As(clients[2],clients[2].LeaveParty);Step();
+                Check(leader.Chat.In(ChatChannel.Party).Last().Text=="Player 3 님이 파티를 나갔어요"&&!clients[2].Chat.In(ChatChannel.Party).Any(e=>!e.Notice),"leave not noted, or the old party's lines followed the leaver");});
+            Test("Team chat shows only on the sender's team, all chat in the whole room, and forged team lines are dropped",()=>{
+                Room(new[]{900,800,700,600});var host=clients[0];
+                var mates=clients.Where(c=>host.Roster[c.Self].Team==host.Roster[host.Self].Team).ToList();var rivals=clients.Except(mates).ToList();
+                Check(mates.Count==2&&rivals.Count==2,"setup: two against two");
+                string said="";As(host,()=>said=host.Say(ChatChannel.Team,"왼쪽 길 막혔음"));Check(said=="","team line refused: "+said);Step();
+                Check(mates.All(c=>c.Chat.In(ChatChannel.Team).Any(e=>e.Text=="왼쪽 길 막혔음"))&&rivals.All(c=>!c.Chat.In(ChatChannel.Team).Any()),"team line leaked or lost");
+                var rival=rivals[0];As(rival,()=>said=rival.Say(ChatChannel.All,"gg"));Step();
+                Check(clients.All(c=>c.Chat.In(ChatChannel.All).Any(e=>e.Text=="gg"&&e.Sender==rival.Self)),"all-chat line lost");
+                Check(clients.All(c=>!c.Chat.In(ChatChannel.Party).Any(e=>!e.Notice)),"a match line landed in party chat");
+                // A modified client on the other team claims to speak for ours.
+                int ourTeam=host.Roster[host.Self].Team;byte[] forged=System.Text.Encoding.UTF8.GetBytes(ChatText.Encode(ChatChannel.Team,ourTeam,"가짜"));
+                As(rival,()=>SteamMatchmaking.SendLobbyChatMsg(new CSteamID(host.Match),forged,forged.Length));Step();
+                Check(clients.All(c=>!c.Chat.In(ChatChannel.Team).Any(e=>e.Text=="가짜")),"forged team line shown");
+                // A party line sent into the match room is not party chat.
+                byte[] stray=System.Text.Encoding.UTF8.GetBytes(ChatText.Encode(ChatChannel.Party,0,"길 잃은 줄"));
+                As(rival,()=>SteamMatchmaking.SendLobbyChatMsg(new CSteamID(host.Match),stray,stray.Length));Step();
+                Check(clients.All(c=>!c.Chat.Entries.Any(e=>e.Text=="길 잃은 줄")),"a party line through the match room was shown");
+                As(host,host.StartGame);Step(5);Check(clients.All(c=>c.Started),"setup: started");
+                var leaver=rivals[1];As(leaver,leaver.Cancel);Step(10);
+                Check(clients.Where(c=>c!=leaver).All(c=>c.Chat.In(ChatChannel.All).Any(e=>e.Notice&&e.Text=="Player "+leaver.Self+" 님이 경기를 나갔어요")),"a player leaving the match was not noted");
+                Check(!leaver.Chat.In(ChatChannel.All).Any()&&!leaver.Chat.In(ChatChannel.Team).Any(),"the old room's lines followed the leaver");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

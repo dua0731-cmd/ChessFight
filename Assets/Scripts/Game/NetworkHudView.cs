@@ -109,6 +109,8 @@ namespace ChessFight.Game
             }
         }
         public bool FriendsOpen => Visible(friendsPanel);
+        // The chat box above the party bar; the lobby controller connects it.
+        public ChatBox Chat { get; private set; }
 
         public void Build(VisualTreeAsset layout, ThemeStyleSheet theme, PanelSettings settings, Vector2Int referenceResolution)
         {
@@ -157,10 +159,11 @@ namespace ChessFight.Game
                 // button never responds and this never logs, the runtime input
                 // backend is the problem, not the layout or the enabled states.
                 if (!pointerSeen) { pointerSeen = true; Debug.Log("[ChessFight] HUD 포인터 입력 확인됨."); }
-                // Clicking anywhere but the number field hands focus back, so the
-                // keyboard shortcuts work again.
+                // Clicking anywhere but the number field or the chat box hands focus
+                // back, so the keyboard shortcuts work again.
                 if (code == null) return;
                 var target = evt.target as VisualElement;
+                if (Chat != null && Chat.Contains(target)) return;
                 if (target != code && (target == null || !code.Contains(target))) root.Focus();
             }, TrickleDown.TrickleDown);
 
@@ -205,6 +208,7 @@ namespace ChessFight.Game
 
             BuildModeList();
             BuildModeRail();
+            Chat = new ChatBox(root.Q<VisualElement>("chat-slot"), ChatBox.Layout.Lobby);
             // Start from a known state instead of trusting the stylesheet defaults,
             // so "is this panel open" is answerable before the first layout pass.
             foreach (var hidden in new[] { friendsPanel, detailsPanel, codeModal, modeModal, toast, offline, busy, matchPanel, roomTools, testBots })
@@ -232,7 +236,10 @@ namespace ChessFight.Game
                 spin = (spin + Time.unscaledDeltaTime * 360f) % 360f;
                 spinner.style.rotate = new StyleRotate(new Rotate(new Angle(spin, AngleUnit.Degree)));
             }
-            Shortcuts();
+            // The chat's own keys first: Enter while typing sends a line, it does
+            // not start a game.
+            Chat?.Tick();
+            if (Chat == null || !Chat.HoldsKeys) Shortcuts();
             FallbackClick();
         }
 

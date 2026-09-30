@@ -6,8 +6,9 @@ using UnityEngine.UIElements;
 namespace ChessFight.Game
 {
     // Any mode's scene opened as the match scene (KingRush today). Draws the
-    // networked pawns and a read-only status panel titled with the mode; Esc
-    // leaves the match. Mode rules will sit beside this, not inside it.
+    // networked pawns, a read-only status panel titled with the mode and the
+    // chat bottom right (Enter to type); Esc leaves the match. Mode rules will
+    // sit beside this, not inside it.
     //
     // PLACEHOLDER MOVEMENT: pawns still move with the lobby's flat PawnMotor,
     // which clamps them to a 38 x 38 area at ground height and ignores colliders.
@@ -22,6 +23,7 @@ namespace ChessFight.Game
         CameraRig cameraRig;
         PanelSettings ownedPanel;
         Label status, roster, link, warning;
+        ChatBox chat;
         Func<bool> gate;
         float refreshAt;
 
@@ -49,15 +51,24 @@ namespace ChessFight.Game
             warning = root?.Q<Label>("match-warning");
             var title = root?.Q<Label>("match-title");
             if (title != null) title.text = (runtime.Session.MatchMode ?? GameModes.Default).Name;
+            if (root != null)
+            {
+                chat = new ChatBox(root.Q<VisualElement>("chat-slot"), ChatBox.Layout.Match);
+                chat.Connect(runtime.Session.Chat, runtime.Session.CanChat, runtime.Session.Say);
+            }
 
-            gate = () => Application.isFocused;
+            // The character stands still while its player types a chat line.
+            gate = () => Application.isFocused && (chat == null || !chat.Typing);
             runtime.MovementGate = gate;
         }
 
         void Update()
         {
             var session = runtime.Session;
-            if (LegacyKeys.Down(KeyCode.Escape)) session.Cancel();
+            // The chat's keys first: Esc while typing drops the line, it does not
+            // leave the match.
+            chat?.Tick();
+            if ((chat == null || !chat.HoldsKeys) && LegacyKeys.Down(KeyCode.Escape)) session.Cancel();
 
             float dt = Time.unscaledDeltaTime;
             if (runtime.Motion != null) spawner.Sync(runtime.Motion.States, dt);
