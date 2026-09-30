@@ -85,18 +85,17 @@ namespace ChessFight.Game
             }
 
             field.maxLength = ChatText.MaxLength;
-            // Tab changes the channel (Tick); UI Toolkit would move the focus with it.
+            // Enter and Tab belong to the chat (Tick sends the line, changes the
+            // channel). Left to the field, Enter gives up the focus, so the next
+            // Enter started a game, and Tab moves the focus away.
             field.RegisterCallback<KeyDownEvent>(e =>
             {
-                if (e.keyCode != KeyCode.Tab && e.character != '\t') return;
-                e.StopImmediatePropagation();
-                field.focusController?.IgnoreEvent(e);
+                bool enter = e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.character == '\n' || e.character == '\r';
+                if (!enter && e.keyCode != KeyCode.Tab && e.character != '\t') return;
+                Swallow(e);
             }, TrickleDown.TrickleDown);
-            field.RegisterCallback<NavigationMoveEvent>(e =>
-            {
-                e.StopImmediatePropagation();
-                field.focusController?.IgnoreEvent(e);
-            }, TrickleDown.TrickleDown);
+            field.RegisterCallback<NavigationMoveEvent>(Swallow, TrickleDown.TrickleDown);
+            field.RegisterCallback<NavigationSubmitEvent>(Swallow, TrickleDown.TrickleDown);
             // Whatever ends the typing (Esc handled by the field itself, a click
             // elsewhere), its key must not also reach the scene this frame.
             field.RegisterCallback<FocusOutEvent>(_ => releasedFrame = Time.frameCount);
@@ -207,6 +206,12 @@ namespace ChessFight.Game
         }
 
         bool Usable(ChatChannel c) => canUse != null && canUse(c);
+
+        void Swallow(EventBase e)
+        {
+            e.StopImmediatePropagation();
+            field.focusController?.IgnoreEvent(e);
+        }
 
         // ---------- drawing ----------
 
