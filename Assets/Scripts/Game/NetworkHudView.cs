@@ -59,6 +59,9 @@ namespace ChessFight.Game
         readonly Dictionary<Button, Action> actions = new Dictionary<Button, Action>();
         bool pointerSeen, fallbackDead, diagnosed;
         float diagnoseAt, toastUntil, spin;
+        // A left press the fallback router holds for a frame (FallbackClick).
+        int pressedAt = -1;
+        Vector2 pressedPoint;
 
         Label status, details, profile, version, toast, offlineText;
         Button friendsOpen, retry, play, cancel, start, codeOpen, createTest, leaveParty, copyParty;
@@ -289,8 +292,21 @@ namespace ChessFight.Game
                                "Project Settings > Player > Active Input Handling을 'Input Manager (Old)'로 바꾸고 Unity를 재시작하세요.");
                 return;
             }
-            if (!pressed) return;
+            // A press is handled a frame late: the genuine pointer event for the same
+            // click is dispatched after this Update, and when it comes it must win
+            // (pointerSeen, above, then drops the press). Handled at once, the very
+            // first click of every session also went through here, and a click on
+            // no button (the chat line) could land on a button elsewhere through
+            // the plain-point guess below.
+            bool due = pressedAt >= 0 && Time.frameCount > pressedAt;
+            Vector2 point = pressedPoint;
+            if (due) pressedAt = -1;
+            if (pressed) { pressedAt = Time.frameCount; pressedPoint = screen; }
+            if (due) Fire(point);
+        }
 
+        void Fire(Vector2 screen)
+        {
             var panel = root.panel;
             if (panel == null) return;
             // Unity's own samples flip Y before converting; try the plain point too
