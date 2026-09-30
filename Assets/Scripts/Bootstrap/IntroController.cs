@@ -85,21 +85,11 @@ namespace ChessFight.Game
             for (int x = 0; x < width; x++)
             {
                 float u = x / (width - 1f);
-                navy.a = Darkening(u < .48f ? Mathf.Lerp(.62f, .15f, u / .48f) : Mathf.Lerp(.15f, 0f, (u - .48f) / .52f));
+                navy.a = StageKit.Darkening(u < .48f ? Mathf.Lerp(.62f, .15f, u / .48f) : Mathf.Lerp(.15f, 0f, (u - .48f) / .52f));
                 texture.SetPixel(x, 0, navy);
             }
             texture.Apply();
             return texture;
-        }
-
-        // The project renders in linear space, where a dark overlay blended at
-        // alpha a darkens far less than the same a does in a picture editor. This
-        // returns the alpha that darkens a bright sky as much as `a` looks like it should.
-        static float Darkening(float a)
-        {
-            if (QualitySettings.activeColorSpace != ColorSpace.Linear) return a;
-            const float sky = .95f;
-            return 1f - Mathf.GammaToLinearSpace((1f - a) * sky) / Mathf.GammaToLinearSpace(sky);
         }
 
         void OnDestroy()

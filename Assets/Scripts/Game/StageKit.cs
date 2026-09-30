@@ -96,6 +96,16 @@ namespace ChessFight.Game
             return center.y + height + .05f;
         }
 
+        // The project renders in linear space, where a dark overlay blended at
+        // alpha a darkens far less than the same a does in a picture editor. This
+        // returns the alpha that darkens a bright sky as much as `a` looks like it should.
+        public static float Darkening(float a)
+        {
+            if (QualitySettings.activeColorSpace != ColorSpace.Linear) return a;
+            const float sky = .95f;
+            return 1f - Mathf.GammaToLinearSpace((1f - a) * sky) / Mathf.GammaToLinearSpace(sky);
+        }
+
         public static GameObject Box(Transform parent, string name, Vector3 position, Vector3 size, Material material)
         {
             var go = new GameObject(name);

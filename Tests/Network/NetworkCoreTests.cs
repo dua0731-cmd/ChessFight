@@ -291,6 +291,41 @@ public static class NetworkCoreTests
                 Check(slowFrom > 0 && m.Struggling(t) && m.Struggling(slowFrom + 5.01) && !m.Struggling(slowFrom + 4.9), "sustained slowness");
                 for (int i = 0; i < 100; i++, t += .1) m.Add(16, t);
                 Check(!m.Struggling(t) && m.AverageMs < 20, "recovered"); });
+            Test("Match start: the host starts when everyone is ready or the slowest had its wait", () => {
+                Check(MatchStart.ShouldStart(new[] { 100, 100, 100 }, 0), "all ready");
+                Check(!MatchStart.ShouldStart(new[] { 100, 99, 100 }, MatchStart.MaxWait - .01), "one short, still waiting");
+                Check(MatchStart.ShouldStart(new[] { 100, 20 }, MatchStart.MaxWait), "waited long enough");
+                Check(MatchStart.ShouldStart(new int[0], 0), "nobody to wait for");
+                Check(MatchStart.ClientGiveUp > MatchStart.MaxWait + MatchStart.Lead, "a client outlasts the host's wait"); });
+            Test("Match start: load reports and start times survive the lobby as text", () => {
+                Check(MatchStart.Parse("64") == 64 && MatchStart.Parse("140") == 100 && MatchStart.Parse("-3") == 0 && MatchStart.Parse("x") == 0 && MatchStart.Parse(null) == 0, "percent");
+                Check(MatchStart.Format(250) == "100", "clamped");
+                double at = 1790700000.25;
+                Check(Math.Abs(MatchStart.ParseTime(MatchStart.FormatTime(at)) - at) < .001, "time round trip");
+                Check(MatchStart.ParseTime("") == 0 && MatchStart.ParseTime("NaN") == 0 && MatchStart.ParseTime("-5") == 0 && MatchStart.ParseTime("Infinity") == 0, "unusable times");
+                Check(MatchStart.WorthPublishing(0, -1) && !MatchStart.WorthPublishing(9, 0) && MatchStart.WorthPublishing(10, 0) &&
+                      MatchStart.WorthPublishing(100, 95) && !MatchStart.WorthPublishing(100, 100), "publishing"); });
+            Test("Load progress fills 0-70 while loading, holds at 72 while switching on, then warms up to 100", () => {
+                Check(LoadProgress.Percent(LoadStage.Loading, 0) == 0 && LoadProgress.Percent(LoadStage.Loading, .45) == 35 &&
+                      LoadProgress.Percent(LoadStage.Loading, .9) == 70 && LoadProgress.Percent(LoadStage.Loading, 1) == 70, "loading");
+                Check(LoadProgress.Percent(LoadStage.Opening, .5) == 72, "opening");
+                Check(LoadProgress.Percent(LoadStage.WarmingUp, 0) == 75 && LoadProgress.Percent(LoadStage.WarmingUp, 1) == 99, "warming up never claims ready");
+                Check(LoadProgress.Percent(LoadStage.Ready, 0) == 100 && LoadProgress.Percent(LoadStage.Loading, double.NaN) == 0, "ready and bad input"); });
+            Test("Warm-up waits for a run of smooth frames, restarts the run on a stutter, and gives up waiting", () => {
+                var w = new WarmupMeter();
+                for (int i = 0; i < 40; i++) w.Add(16);
+                Check(w.Done && w.Fraction == 1, "smooth frames");
+                var s = new WarmupMeter();
+                for (int i = 0; i < 30; i++) s.Add(16);
+                s.Add(400); Check(!s.Done && s.Stable == 0, "a stutter restarts the run");
+                for (int i = 0; i < WarmupMeter.StableFrames; i++) s.Add(16);
+                Check(s.Done, "smooth again");
+                var slow = new WarmupMeter();
+                for (int i = 0; i < 200 && !slow.Done; i++) slow.Add(80);
+                Check(slow.Done && slow.Elapsed >= WarmupMeter.MaxSeconds && slow.Elapsed < WarmupMeter.MaxSeconds + .1, "never smooth, stops waiting");
+                var early = new WarmupMeter();
+                for (int i = 0; i < 20; i++) early.Add(5);
+                Check(!early.Done && early.Fraction < 1, "too soon even when smooth"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

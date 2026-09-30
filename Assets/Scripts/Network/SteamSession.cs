@@ -27,6 +27,8 @@ namespace ChessFight.Network
         //      room carries "epoch" and "successors", members publish "fit", "base",
         //      "loc" and "claim". v9-v14 are taken by JY-gpt_gamemode/JY-kingrush
         //      builds, which must never match this one.
+        //      The match also loads behind a loading screen and starts together:
+        //      members publish "load" (0-100) and the host "go" (MatchStart).
         public const string Protocol = "chessfight.dua0731.network.v15";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
@@ -89,6 +91,23 @@ namespace ChessFight.Network
         public const float OrphanTimeout = 10f;
         // Between a start or handover and the next handover for slowness.
         public const float StruggleCooldown = 45f;
+        // ---- Loading and a shared start (MatchStart) ----
+        // How far this PC's match scene has loaded; published as member data "load".
+        public void ReportLoading(int percent) => loadPercent = MatchStart.Clamp(percent);
+        // How far a player's match scene has loaded, 0-100. Bots have nothing to load.
+        public int LoadPercent(ulong id) =>
+            BotIdentity.IsBot(id) ? MatchStart.Ready : id == Self ? loadPercent : MatchStart.Parse(MemberData(Match, id, "load"));
+        // The shared-clock time the host picked for everyone to start; 0 until then.
+        public double StartAt => MatchStart.ParseTime(Data(Match, "go"));
+        // Only a host that owns the room can write it (HOST.md), so a successor
+        // still waiting for ownership leaves the start to the next poll.
+        public bool CanAnnounceStart => IsHost && Started && Owner(Match) == Self;
+        public void AnnounceStart(double at)
+        {
+            if (CanAnnounceStart && StartAt == 0) Set(Match, "go", MatchStart.FormatTime(at));
+        }
+        int loadPercent, publishedLoad = -1;
+
         readonly FrameMonitor frames = new FrameMonitor();
         int epoch, publishedFit, publishedBase;
         string publishedLoc = "", localLoc = "";
@@ -576,6 +595,7 @@ namespace ChessFight.Network
             // below: it has no reservations and would end the match. The phase
             // is already "playing", so the match is started for it too.
             if (live) Started = true;
+            if (live) PublishLoad();
             if (IsHost)
             {
                 if (!Started)
@@ -646,6 +666,15 @@ namespace ChessFight.Network
                 string location = LocalPingLocation();
                 if (location != "") { SteamMatchmaking.SetLobbyMemberData(Id(Match), "loc", location); publishedLoc = location; }
             }
+        }
+
+        // Our loading progress as member data "load", written only when it moved
+        // enough to matter (MatchStart.WorthPublishing).
+        void PublishLoad()
+        {
+            if (!MatchStart.WorthPublishing(loadPercent, publishedLoad)) return;
+            SteamMatchmaking.SetLobbyMemberData(Id(Match), "load", MatchStart.Format(loadPercent));
+            publishedLoad = loadPercent;
         }
 
         // Keeps Host on the newest host record once the match is live, replaces
@@ -875,6 +904,7 @@ namespace ChessFight.Network
                 SteamMatchmaking.LeaveLobby(Id(Match));
             }
             Match = Host = 0; Started = admitted = seenRoster = false; invalidHostSince = -1; Roster.Clear(); reservations.Clear();
+            loadPercent = 0; publishedLoad = -1;
             ResetHostState();
             SessionChanged?.Invoke();
         }

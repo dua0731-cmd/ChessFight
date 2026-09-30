@@ -252,3 +252,66 @@ TextField { margin: 10px 3px 6px 3px; height: 34px; }
            font-size: 18px; -unity-font-style: bold; -unity-text-align: middle-center; white-space: normal;
            background-color: rgba(196, 140, 30, 0.92); color: rgb(20, 16, 8); }
 .warning-frozen { background-color: rgba(200, 60, 50, 0.94); color: rgb(255, 245, 240); }
+
+/* ---------- loading screen (LoadingHud.uxml, LoadingScreenView) ----------
+   Sample A's layout over sample B's backdrop (2026-09-30). Positions are for
+   1280 x 720; LoadingScreenView's RankInner and MarkSize match .load-rank and
+   .load-mark. */
+.loading { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgb(9, 15, 30);
+           transition-property: opacity; transition-duration: 0.35s; }
+.loading-out { opacity: 0; }
+.load-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.load-backdrop { -unity-background-scale-mode: scale-and-crop; }
+.load-dim { -unity-background-scale-mode: stretch-to-fill; }
+.load-duel { position: absolute; left: 350px; top: 178px; width: 580px; height: 387px; -unity-background-scale-mode: scale-to-fit; }
+
+.load-title { position: absolute; left: 64px; top: 92px; }
+.load-kicker { font-size: 13px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 210, 58);
+               text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45); margin-bottom: 8px; }
+.load-logo { font-size: 100px; -unity-font-style: bold-and-italic; color: rgb(255, 255, 255);
+             margin-top: -15px; margin-bottom: -19px; text-shadow: 0 7px 0 rgb(10, 20, 40); }
+.load-logo-b { color: rgb(255, 210, 58); }
+.load-rule { font-size: 19px; -unity-font-style: bold; color: rgb(255, 255, 255); margin-top: 38px;
+             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55); }
+.load-note { font-size: 15px; color: rgb(228, 235, 246); margin-top: 6px; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55); }
+
+.load-progress { position: absolute; left: 64px; bottom: 40px; width: 520px; }
+.load-head { flex-direction: row; align-items: flex-end; margin-bottom: 18px; }
+.load-step { flex-grow: 1; font-size: 17px; -unity-font-style: bold; color: rgb(255, 255, 255);
+             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55); }
+.load-percent { font-size: 32px; -unity-font-style: bold-and-italic; color: rgb(255, 255, 255);
+                text-shadow: 0 3px 0 rgb(10, 20, 40); }
+.load-rank { flex-direction: row; height: 58px; border-width: 3px; border-radius: 12px; border-color: rgba(14, 22, 40, 0.62); }
+.load-sq { flex-grow: 1; flex-basis: 0; }
+.load-sq-light { background-color: rgb(239, 230, 214); }
+.load-sq-dark { background-color: rgb(86, 93, 110); }
+.load-sq-first { border-top-left-radius: 9px; border-bottom-left-radius: 9px; }
+.load-sq-last { border-top-right-radius: 9px; border-bottom-right-radius: 9px; }
+.load-tint { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgb(255, 210, 58); opacity: 0;
+             transition-property: opacity; transition-duration: 0.25s; }
+.load-sq-first > .load-tint { border-top-left-radius: 9px; border-bottom-left-radius: 9px; }
+.load-sq-last > .load-tint { border-top-right-radius: 9px; border-bottom-right-radius: 9px; }
+.load-tint-passed { opacity: 0.32; }
+.load-tint-here { opacity: 0.55; }
+.load-rn { position: absolute; left: 6px; top: 3px; font-size: 11px; -unity-font-style: bold; color: rgba(58, 53, 65, 0.72); }
+.load-sq-dark > .load-rn { color: rgba(239, 230, 214, 0.78); }
+.load-crown { position: absolute; left: 17px; top: 14px; width: 30px; height: 24px; }
+.load-mark { position: absolute; top: -40px; width: 76px; height: 76px; -unity-background-scale-mode: scale-to-fit;
+             transition-property: left; transition-duration: 0.3s; transition-timing-function: ease-out-cubic; }
+.load-foot { flex-direction: row; align-items: center; margin-top: 16px; }
+.load-pips { flex-direction: row; align-items: center; margin-right: 14px; }
+.load-pip { width: 12px; height: 12px; margin-right: 5px; border-radius: 6px; border-width: 2px; opacity: 0.5;
+            border-color: rgb(147, 172, 255); transition-property: opacity; transition-duration: 0.25s; }
+.load-pip-black { border-color: rgb(233, 185, 60); }
+.load-pip-on { opacity: 1; }
+.load-pip-white.load-pip-on { background-color: rgb(241, 231, 218); }
+.load-pip-black.load-pip-on { background-color: rgb(58, 53, 65); }
+.load-pip-gap { width: 1px; height: 14px; margin-left: 4px; margin-right: 9px; background-color: rgba(255, 255, 255, 0.28); }
+.load-ready { font-size: 14px; -unity-font-style: bold; color: rgb(255, 255, 255); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
+
+.load-tip { position: absolute; right: 48px; bottom: 40px; width: 420px; height: 132px; padding: 18px 140px 16px 20px;
+            border-width: 1px; border-radius: 16px; border-color: rgba(255, 255, 255, 0.13);
+            background-color: rgba(14, 22, 40, 0.86); overflow: hidden; }
+.load-tip-kicker { font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 210, 58); }
+.load-tip-text { font-size: 15px; color: rgb(230, 236, 246); white-space: normal; margin-top: 6px; }
+.load-tip-art { position: absolute; right: -4px; bottom: -36px; width: 156px; height: 156px; -unity-background-scale-mode: scale-to-fit; }
