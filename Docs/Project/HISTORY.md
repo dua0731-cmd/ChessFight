@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/pawnrush-loading`) | 09-30 | R61 2차 | 문서: UI §9(Tab으로 여는 패널 하나), DECISIONS U8, VALIDATION 채팅 표(2차 기준 14개), REQUIREMENTS R61, HANDOFF |
+| (이 커밋, `claude/pawnrush-loading`) | 09-30 | R61 2차 | 경기 화면의 채팅 창을 불투명하게(소드 파이트 씬은 UI가 밝게 그려져 뒤 글씨가 비쳤다). 문서: AI가 Unity에서 본 것(로비, 킹 러시·소드 파이트 경기 화면, 코드로 열고 닫음)을 VALIDATION·REQUIREMENTS·HANDOFF에 |
+| `fbcb265` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | Unity에서 보고 고침: 열린 창을 더 진하게, "입력 중 · 이동 멈춤"에 어두운 바탕, 킹 러시 안내 카드의 "Tab 채/팅" 줄바꿈을 따로 한 줄로, 다시 열 때 남은 글이 통째로 선택되던 것(`selectAllOnFocus` 끔) |
+| `4fab695` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 문서: UI §9(Tab으로 여는 패널 하나), DECISIONS U8, VALIDATION 채팅 표(2차 기준 14개), REQUIREMENTS R61, HANDOFF |
 | `c738e87` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 사용자 테스트 뒤: 채팅을 씬 HUD에서 빼 게임 전체에 패널 하나(`NetworkRuntime`의 `ChatBox`, 정렬 순서 50, 로비 왼쪽·모든 경기 씬 오른쪽 아래)로. 평소엔 `Tab 채팅`과 8초 뜨는 새 줄만, Tab 열기·Tab 채널(파티 → 팀 → 전체)·Enter 보내기·Esc/닫기 버튼, 경기에서는 보내면 닫힘. `ChatBox.KeysHeld`로 로비 단축키·경기 Esc·캐릭터 이동·소드 파이트 Esc 메뉴·F6·이동이 채팅 중 멈춤. 검사: Core 79·모의 세션 39·실제 DLL 컴파일 통과, Unity 미확인 |
 | `02e17f0` (`claude/pawnrush-loading`) | 09-30 | R61 | 채팅 Esc: 입력 칸 자체 키 이벤트(Esc·취소)로도 닫음(쓰던 글 지움). 문서: UI §9·SESSION §9·DECISIONS K11·U8·VALIDATION 채팅 표·HANDOFF·STRUCTURE, R58~R60 "푸시 전" 표기를 "09-30 푸시 `6b4118a`"로 |
 | `6859007` (`claude/pawnrush-loading`) | 09-30 | R61 | 로비 채팅에서 막힌 줄의 안내("1초에 한 번까지…")를 입력 줄 끝에 빨간 글씨로(패널 높이가 고정이라 아래에 두면 안 보였다) |
