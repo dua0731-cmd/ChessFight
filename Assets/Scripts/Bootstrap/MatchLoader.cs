@@ -59,7 +59,11 @@ namespace ChessFight.Game
             try
             {
                 view = host.AddComponent<LoadingScreenView>();
-                view.Build(LoadingContent.For(mode, Math.Max(white, black)), skin);
+                var content = LoadingContent.For(mode, Math.Max(white, black));
+                // The start time is already set: this player takes the empty seat of
+                // someone who left (Backfill) and goes in as soon as it has loaded.
+                if (session.StartAt > 0) content.Kicker += " · 경기 중 합류";
+                view.Build(content, skin);
             }
             catch (Exception e)
             {

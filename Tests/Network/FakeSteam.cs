@@ -105,7 +105,12 @@ namespace Steamworks
         public static int EstimatePingTimeBetweenTwoLocations(ref SteamNetworkPingLocation_t a,ref SteamNetworkPingLocation_t b)
         =>FakeSteam.Pings.TryGetValue((a.Text,b.Text),out int ping)||FakeSteam.Pings.TryGetValue((b.Text,a.Text),out ping)?ping:-1;
     }
-    public static class SteamUtils { public static AppId_t GetAppID()=>new AppId_t(480); }
+    public static class SteamUtils
+    {
+        public static AppId_t GetAppID()=>new AppId_t(480);
+        // Steam's server clock (whole seconds), the same for every simulated user.
+        public static uint GetServerRealTime()=>1000000u+(uint)UnityEngine.Time.realtimeSinceStartup;
+    }
     public static class SteamFriends
     {
         public static string GetFriendPersonaName(CSteamID id)=>"Player "+id.m_SteamID;

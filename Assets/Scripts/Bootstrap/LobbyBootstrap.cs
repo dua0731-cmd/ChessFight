@@ -256,10 +256,12 @@ namespace ChessFight.Game
                 MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + mode.Name,
                 MatchTitle = !inRoom ? (following ? "파티장이 방을 찾는 중..." : "상대를 찾는 중...")
                            : session.Started ? "경기를 시작합니다!"
+                           : session.JoiningLive ? "진행 중인 경기에 들어가는 중..."
                            : session.PrivateRoom ? (session.IsHost ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")
                            : "상대를 찾는 중...",
                 MatchTimer = Clock(now),
-                MatchNote = session.AllowPublicBots ? "개발 빌드 · 봇 허용" : "",
+                MatchNote = session.JoiningLive ? "나간 플레이어의 빈자리를 채워요"
+                          : session.AllowPublicBots ? "개발 빌드 · 봇 허용" : "",
                 OurTeam = ourTeam, OursFilled = ours, TheirsFilled = theirs,
                 ShowRoomTools = inRoom && (session.PrivateRoom || session.CanUseRoomBots),
                 RoomCode = "방 번호  " + Spaced(session.Match),

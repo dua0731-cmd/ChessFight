@@ -183,6 +183,61 @@ public static class SessionFlowTests
                 Check(clients.All(c=>Math.Abs(c.StartAt-2000.25)<.001),"start not shared, or overwritten");
                 As(host,host.Cancel);Step();
                 Check(host.Match==0&&host.StartAt==0&&host.LoadPercent(host.Self)==0,"leaving the match kept its loading state");});
+            Test("A player who leaves a started match leaves a seat on its team, and a searching player takes it",()=>{
+                Setup(3);var host=clients[0];var leaver=clients[1];var joiner=clients[2];
+                As(host,()=>host.FindMatch());Step(20);As(leaver,()=>leaver.FindMatch());Step(20);
+                Check(leaver.Match==host.Match&&host.Roster.Count==2,"setup: one waiting room");
+                As(host,host.FillRoomWithBots);Step(5);
+                Check(host.Started&&leaver.Started&&RoomData(host,"seats")=="6,6"&&RoomData(host,"open")=="0"&&!FakeSteam.Lobbies[host.Match].Joinable,"a full match should start closed");
+                Check(!leaver.Note.Contains("빈자리"),"players who came with the start were announced as filling seats: "+leaver.Note);
+                var seat=host.Roster[leaver.Self];
+                As(leaver,leaver.Cancel);Step(5);
+                Check(host.Roster.Count==11&&RoomData(host,"open")=="1"&&RoomData(host,"free"+seat.Team)=="1"&&RoomData(host,"free"+(1-seat.Team))=="0"&&FakeSteam.Lobbies[host.Match].Joinable,"the leaver's seat is not offered");
+                Check(host.EmptySeats==1&&host.Status.Contains("빈자리"),"the match does not show its empty seat: "+host.Status);
+                As(joiner,()=>joiner.FindMatch());
+                for(int t=0;t<40&&!joiner.Started;t++){Step(1);Check(!joiner.Started||joiner.Roster.ContainsKey(joiner.Self),"in the match before being seated");}
+                Check(joiner.Match==host.Match&&joiner.Started&&host.Roster.Count==12,"the searching player did not take the seat");
+                var taken=host.Roster[joiner.Self];Check(taken.Team==seat.Team&&taken.Slot==seat.Slot,"the seat went elsewhere");
+                Check(host.Note.Contains("빈자리를 채웠"),"no note for the new player: "+host.Note);
+                Step(2);Check(RoomData(host,"open")=="0"&&!FakeSteam.Lobbies[host.Match].Joinable&&joiner.Roster.Count==12,"a refilled match is still offered");});
+            Test("Each team refills only to the size it started with: a 5 v 5 match takes one player back, not two",()=>{
+                Setup(4);var host=clients[0];var leaver=clients[1];var first=clients[2];var second=clients[3];
+                // Four party bots each make it 5 v 5; bots never leave, so only the leaver's seat opens.
+                As(host,()=>host.SetPartyBots(4));As(leaver,()=>leaver.SetPartyBots(4));
+                As(host,()=>host.FindMatch(true));Step();As(leaver,()=>leaver.JoinPrivateMatch(host.Match));Step(20);
+                As(host,host.StartGame);Step(5);
+                Check(host.Started&&leaver.Started&&RoomData(host,"seats")=="5,5"&&RoomData(host,"open")=="0","setup: a closed 5 v 5");
+                Check(!leaver.Note.Contains("빈자리"),"dummies added before the start were announced as filling seats: "+leaver.Note);
+                int lost=host.Roster[leaver.Self].Team;
+                As(leaver,leaver.Cancel);Step(5);
+                Check(RoomData(host,"open")=="1"&&RoomData(host,"free"+lost)=="1"&&RoomData(host,"free"+(1-lost))=="0","a 5 v 5 match should offer exactly one seat");
+                As(first,()=>first.JoinPrivateMatch(host.Match));Step(20);
+                Check(first.Started&&host.Roster[first.Self].Team==lost&&host.Roster.Values.Count(p=>p.Team==lost)==5,"the empty seat was not refilled");
+                Check(RoomData(host,"open")=="0"&&RoomData(host,"free0")=="0"&&RoomData(host,"free1")=="0","a refilled 5 v 5 still offers a seat");
+                As(second,()=>second.JoinPrivateMatch(host.Match));Step(20);
+                Check(second.Match==0&&!second.Started&&host.Roster.Count==10,"a sixth player got into a 5 v 5 team");});
+            Test("A party that joins a started match sits together, and its held seat outlives a host change",()=>{
+                Setup(6);var fit=new[]{900,500,800,400,300,200};for(int i=0;i<6;i++)clients[i].LocalFitness=fit[i];
+                var host=clients[0];var next=clients[2];var leader=clients[4];var friend=clients[5];
+                JoinParty(5,4);As(host,()=>host.FindMatch(true));Step();
+                for(int i=1;i<=3;i++){var c=clients[i];As(c,()=>c.JoinPrivateMatch(host.Match));}
+                Step(20);Check(host.Roster.Count==4,"setup: four solo players");
+                As(host,host.StartGame);Step(10);Check(host.IsHost&&RoomData(host,"seats")=="2,2","setup: 2 v 2, the fittest hosts");
+                int lost=host.Roster[clients[1].Self].Team;Check(host.Roster[clients[3].Self].Team==lost,"setup: both leavers on one team");
+                foreach(var c in new[]{clients[1],clients[3]})As(c,c.Cancel);
+                Step(5);Check(RoomData(host,"free"+lost)=="2","two empty seats not offered");
+                As(leader,()=>leader.JoinPrivateMatch(host.Match));
+                for(int t=0;t<40&&RoomData(host,"held")=="";t++)Step(1);
+                Check(host.Roster.ContainsKey(leader.Self)&&RoomData(host,"held").StartsWith(friend.Self+":"),"the friend's seat is not held: "+RoomData(host,"held"));
+                FakeSteam.Crash(host.Self);clients.Remove(host);Step(20);
+                Check(next.IsHost&&leader.Started&&friend.Started,"the party did not get in after the host change");
+                Check(next.Roster[leader.Self].Team==lost&&next.Roster[friend.Self].Team==lost&&next.Roster.Count==3&&RoomData(next,"held")=="","party split or held seat lost");});
+            Test("Empty seats are offered only for three minutes after the shared start",()=>{
+                Room(new[]{900,500,400});var host=clients[0];As(host,host.StartGame);Step(5);
+                As(host,()=>host.AnnounceStart(SteamUtils.GetServerRealTime()));Step();
+                As(clients[2],clients[2].Cancel);Step(5);Check(RoomData(host,"open")=="1","seat not offered within the window");
+                Step((int)(Backfill.OpenSeconds/.3)+5);
+                Check(RoomData(host,"open")=="0"&&!FakeSteam.Lobbies[host.Match].Joinable&&host.EmptySeats==0,"seat still offered after the window");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

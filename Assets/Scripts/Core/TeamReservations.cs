@@ -27,6 +27,14 @@ namespace ChessFight.Network
         public bool Reserve(ulong sender, ulong party, string ticket, ulong[] members, double now, out Group result)
         {
             result = null;
+            if (!ValidRequest(sender, party, ticket, members)) return false;
+            return Admit(sender, party, ticket, members, now, out result);
+        }
+
+        // The shape every party request must have, in a waiting room or for the
+        // empty seats of a started match (Backfill).
+        public static bool ValidRequest(ulong sender, ulong party, string ticket, ulong[] members)
+        {
             // A bot has no Steam presence, so it can never be the sender of a request.
             if (BotIdentity.IsBot(sender)) return false;
             if (sender == 0 || party == 0 || string.IsNullOrEmpty(ticket) || ticket.Length > 64 ||
@@ -35,8 +43,7 @@ namespace ChessFight.Network
                 return false;
             // A declared bot must be derived from the leader declaring it, so one
             // client cannot claim slots using another party's bot identifiers.
-            if (members.Any(id => BotIdentity.IsBot(id) && !BotIdentity.OwnedBy(id, sender))) return false;
-            return Admit(sender, party, ticket, members, now, out result);
+            return !members.Any(id => BotIdentity.IsBot(id) && !BotIdentity.OwnedBy(id, sender));
         }
 
         // Host-only. Filler bots exist to reach 12 pawns without 12 testers; they
