@@ -464,6 +464,37 @@ public static class NetworkCoreTests
                 var early = new WarmupMeter();
                 for (int i = 0; i < 20; i++) early.Add(5);
                 Check(!early.Done && early.Fraction < 1, "too soon even when smooth"); });
+            Test("Backfill: an empty seat goes to the team that lost a player, and only up to the size that team started with", () => {
+                Func<int, int, ulong, Backfill.Seat> seat = (t, slot, id) => new Backfill.Seat { Id = id, Team = t, Slot = slot };
+                var sixes = new[] { 6, 6 };
+                var taken = new List<Backfill.Seat>();
+                for (int s = 0; s < 6; s++) taken.Add(seat(0, s, (ulong)(10 + s)));
+                foreach (int s in new[] { 0, 1, 2, 4, 5 }) taken.Add(seat(1, s, (ulong)(20 + s)));
+                Check(Backfill.Free(sixes, taken, 0) == 0 && Backfill.Free(sixes, taken, 1) == 1, "free seats");
+                Check(Backfill.Place(sixes, taken, 1, out int team, out int[] slots) && team == 1 && slots.SequenceEqual(new[] { 3 }), "the leaver's seat");
+                Check(!Backfill.Place(sixes, taken, 2, out _, out _), "a party of two split or squeezed in");
+                var fives = new[] { 5, 5 };
+                var five = taken.Where(s => s.Slot < 5).ToList();
+                Check(Backfill.Place(fives, five, 1, out team, out slots) && team == 1 && slots.SequenceEqual(new[] { 3 }), "a 5 v 5 match refills its own seat");
+                five.Add(seat(1, 3, 99));
+                Check(Backfill.Free(fives, five, 0) == 0 && Backfill.Free(fives, five, 1) == 0 && !Backfill.Place(fives, five, 1, out _, out _), "a sixth player got into a 5 v 5 team");
+                var few = new List<Backfill.Seat> { seat(0, 1, 1), seat(1, 0, 2), seat(1, 2, 3) };
+                Check(Backfill.Place(sixes, few, 2, out team, out slots) && team == 0 && slots.SequenceEqual(new[] { 0, 2 }), "more empty seats first, lowest free slots");
+                Check(Backfill.Place(new[] { 1, 1 }, new List<Backfill.Seat>(), 1, out team, out _) && team == 0, "a tie goes to white");
+                Check(Backfill.Free(null, few, 0) == 0 && !Backfill.Place(null, few, 1, out _, out _), "no known size, no seat");
+                Check(TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 1, 2 }) && !TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 2 }) &&
+                      !TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 1, 1 }) && !TeamReservations.ValidRequest(1, 101, "t", null), "request shape"); });
+            Test("Backfill: seats are offered for three minutes after the start, and the room keeps sizes and held seats as text", () => {
+                Check(Backfill.Open(0, 5) && Backfill.Open(1000, 1000 + Backfill.OpenSeconds - .5) && !Backfill.Open(1000, 1000 + Backfill.OpenSeconds), "window");
+                Check(Backfill.EncodeCapacity(6, 5) == "6,5" && Backfill.DecodeCapacity("6,5").SequenceEqual(new[] { 6, 5 }), "sizes");
+                Check(Backfill.DecodeCapacity("") == null && Backfill.DecodeCapacity("7,6") == null && Backfill.DecodeCapacity("6") == null &&
+                      Backfill.DecodeCapacity("-1,6") == null && Backfill.DecodeCapacity("a,b") == null, "bad sizes");
+                var held = new[] { new Backfill.Seat { Id = 76561198000000001, Team = 1, Slot = 3, Until = 1790743925 }, new Backfill.Seat { Id = 5, Team = 0, Slot = 0, Until = 1790743930 } };
+                var back = Backfill.DecodeHeld(Backfill.EncodeHeld(held));
+                Check(back.Count == 2 && back[0].Id == 76561198000000001 && back[0].Team == 1 && back[0].Slot == 3 && back[0].Until == 1790743925 && back[1].Id == 5, "held round trip");
+                Check(Backfill.EncodeHeld(new Backfill.Seat[0]) == "" && Backfill.DecodeHeld(null).Count == 0, "nothing held");
+                var messy = Backfill.DecodeHeld("0:0:0:1;7:2:0:1;8:0:6:1;9:0:1:x;10:1:1:5;10:0:2:5;11:1:1:5;12:0:0:5:9");
+                Check(messy.Count == 1 && messy[0].Id == 10 && messy[0].Team == 1, "bad held entries kept"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

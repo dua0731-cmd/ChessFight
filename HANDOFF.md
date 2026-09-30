@@ -4,9 +4,11 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-30**(R58 로딩 화면·동시 출발, `claude/pawnrush-loading` → 로컬 `JY-kingrush`에 빨리 감기, 푸시 전. 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-09-30**(R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발, 둘 다 `claude/pawnrush-loading` → 로컬 `JY-kingrush`에 빨리 감기, 푸시 전. 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
-> **최신 R58(승규 님, 09-30): 로비 → 경기 씬 로딩 화면과 동시 출발.** 예전 동기 `LoadScene`이 모든 PC를 5~10초 멈추던 것을 `MatchLoader`가 로딩 화면 뒤 `LoadSceneAsync`로 바꿈. 화면은 시안 A의 UI(PAWN RUSH 제목·과반 규칙·8칸 줄에서 폰이 2→8랭크, 준비되면 퀸 승격·플레이어 점·팁) + 시안 B의 배경(메뉴 체스판 + 가운데 마주 보는 두 폰). 모두 준비(멤버 `load`=100)되거나 방장 준비 뒤 20초가 지나면 방장이 공유 Steam 시계 시각 `go`를 정하고 모두 같은 순간에 걷힌다. 프로토콜 **v13**. **코드·테스트만, Unity·Steam 미확인** → [UI §8](Docs/Architecture/UI.md#8-로딩-화면-r58-2026-09-30), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단. 다른 채팅의 **`JY-gpt_gamemode`**(소드파이트)·**`JY-ragdoll_v2`**(Claude 물리 튜닝)는 보존. 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+> **최신 R59(승규 님, 09-30): 경기 중 빈자리 채우기.** 경기가 시작된 뒤 누가 나가면 그 자리를 **매칭 중인 다른 사람**이 채운다. 팀마다 **시작 인원까지만**(6 대 6이면 6명, 5 대 5면 5명), 사람이 빠진 팀에, 파티는 한 팀에 통째로, 공유 출발 시각부터 3분까지. 매칭은 빈자리 경기를 먼저 시도하고, 방장이 바뀌어도 자리 정보(`seats`·`held`)는 방에 있어 이어진다. 프로토콜 **v14**(검색 필터 `open=1`). **코드·테스트만, Unity·Steam 미확인** → [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단(PC 2대 이상 필요)
+
+> **R58(승규 님, 09-30): 로비 → 경기 씬 로딩 화면과 동시 출발.** 예전 동기 `LoadScene`이 모든 PC를 5~10초 멈추던 것을 `MatchLoader`가 로딩 화면 뒤 `LoadSceneAsync`로 바꿈. 화면은 시안 A의 UI(PAWN RUSH 제목·과반 규칙·8칸 줄에서 폰이 2→8랭크, 준비되면 퀸 승격·플레이어 점·팁) + 시안 B의 배경(메뉴 체스판 + 가운데 마주 보는 두 폰). 모두 준비(멤버 `load`=100)되거나 방장 준비 뒤 20초가 지나면 방장이 공유 Steam 시계 시각 `go`를 정하고 모두 같은 순간에 걷힌다. 프로토콜 **v13**(R59 뒤 v14). **코드·테스트만, Unity·Steam 미확인** → [UI §8](Docs/Architecture/UI.md#8-로딩-화면-r58-2026-09-30), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 위쪽 두 번째 표. 다른 채팅의 **`JY-gpt_gamemode`**(소드파이트)·**`JY-ragdoll_v2`**(Claude 물리 튜닝)는 보존. 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
 
 > **병합(2026-09-28, 승규 님 요청):** `feature/ui-sample-b`(= `JY-lobby`의 R49 `c82abfa`: 퀸 오브 더 힐 래그돌 M6·M11·M13, 퀸 오브 더 힐 그레이박스 맵 7차, 로비·인트로 샘플 B 디자인)를 이 브랜치에 합쳤다. 네트워크 프로토콜은 두 쪽(소드파이트 v10, 기물 종류 스냅샷 v7)을 합쳐 **v11**. **R 번호 주의:** R44 이후는 두 계열이 따로 매겼다. 소드파이트·킹 러쉬 쪽(`JY-gpt_gamemode`·`JY-kingrush`)의 R44~R56과 퀸 오브 더 힐·로비 쪽(`JY-ragdoll_v2`·`JY-lobby`)의 R44~R49는 서로 다른 요청이다. [REQUIREMENTS](Docs/Project/REQUIREMENTS.md)에서 계열별 표로 나눠 두었다. **이어서 `claude/host-migration`(방장 선정·이전, `JY-lobby` 계열 R50)도 합쳐 프로토콜은 최종 v12**다 → [Network/HOST](Docs/Network/HOST.md).
 
@@ -50,6 +52,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **빈자리 채우기(09-30, R59)** | `claude/pawnrush-loading`: 시작한 경기에서 나간 자리를 매칭 중인 사람이 채움. 팀마다 시작 인원까지, 파티는 한 팀, 3분까지. 프로토콜 **v14**(경기 `open`·`seats`·`held`). Core 77·세션 33·실제 DLL 컴파일 통과. **Unity·Steam 미확인** |
 | **로딩 화면(09-30, R58)** | `claude/pawnrush-loading`: 로비 → 경기 씬을 로딩 화면 뒤 비동기로, 모두 준비 뒤 공유 시각에 동시 출발. 프로토콜 **v13**(멤버 `load`, 경기 `go`). Core 75·세션 29·실제 DLL 컴파일 통과. **Unity·Steam 미확인** |
 | **병합(09-28)** | `feature/ui-sample-b`(`c82abfa`)를 합침. 네트워크 프로토콜 **v11**. 병합 뒤 자동 검사 결과는 [HISTORY](Docs/Project/HISTORY.md)의 병합 줄. **Unity·두 PC 미확인** |
 | **이 폴더: 킹 러쉬 R56** | **`JY-kingrush` / 기반 `852eb2b`**. `KingRushOpening.unity`: 구간 프리팹24개, 체크포인트16곳, 승격2/3/4자리. 왕의 계단/최종 집결/왕좌 쟁탈·붕괴·재진입·승패 추가. **R55/R56 사용자 확인 대기**, 자동 결과는 FINAL_COURSE. 밧줄은 임시 다리; 나머지4능력·온라인·최종 아트는 후속 |
@@ -59,7 +62,7 @@
 | 합쳐 온 `JY-lobby` 쪽 브랜치 규칙 | `JY-lobby` = `JY-ragdoll_v2`(`41b7d11`)를 빨리 감기로 합친 것 + 그 뒤 작업(R47). 퀸 오브 더 힐 맵은 `JY-lobby`에서 만든다(R48). 로비·게임모드 작업은 `JY-lobby`에 커밋·푸시(R18. `main`·`Network`·`JY-ragdoll`에는 푸시 금지). 퀸 오브 더 힐의 래그돌 쪽 기능은 `JY-ragdoll_v2`(R34). 그 밖의 AI 작업은 `Network` |
 | `main` | `0df4403`(R17 병합). **`Network`의 커밋을 모두 포함하고 24커밋 앞선다**(09-25 확인). `JY-lobby`는 이 커밋에서 시작했다. 로비 작업을 `main`에 넣을지는 사용자 결정 |
 | 다른 원격 브랜치 | `Network`(`0ecd3b6`, main에 포함됨), `JY-ragdoll`(준영, 래그돌 랩·**물리 튜닝용으로 유지**, R17), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
-| 네트워크 프로토콜 | **R58(09-30) 뒤: v13** = 아래 v12 + 로딩 화면 동시 출발(멤버 `load`, 경기 `go`, 패킷 그대로). **이 브랜치(병합 뒤): v12** = 소드파이트 규칙(v10, CFS3) + 래그돌 랩 스냅샷의 기물 종류(v7, `CFR5`)(여기까지 v11) + 방장 선정·이전(`claude/host-migration`의 v8). **`JY-lobby`: v7**(09-27 `JY-ragdoll_v2`를 합쳐서. v3에서 게임 모드 추가). **`JY-ragdoll_v2`: v7**(래그돌 랩 입력 패킷 27바이트에 좌클릭 누르고 있기 비트, 스냅샷 폰당 74바이트에 버둥대기 게이지·갈고리·기물 종류 포함, magic `CFR5`). `main`·`Network`는 v2. 캡슐 입력 패킷 magic `CFF2`(변경 없음). 다른 프로토콜 빌드와는 매칭 불가 |
+| 네트워크 프로토콜 | **R59(09-30) 뒤: v14** = v13 + 빈자리 채우기(경기 `open`·`seats`·`held`, 검색 필터 `open=1`, 패킷 그대로). **R58(09-30) 뒤: v13** = 아래 v12 + 로딩 화면 동시 출발(멤버 `load`, 경기 `go`, 패킷 그대로). **이 브랜치(병합 뒤): v12** = 소드파이트 규칙(v10, CFS3) + 래그돌 랩 스냅샷의 기물 종류(v7, `CFR5`)(여기까지 v11) + 방장 선정·이전(`claude/host-migration`의 v8). **`JY-lobby`: v7**(09-27 `JY-ragdoll_v2`를 합쳐서. v3에서 게임 모드 추가). **`JY-ragdoll_v2`: v7**(래그돌 랩 입력 패킷 27바이트에 좌클릭 누르고 있기 비트, 스냅샷 폰당 74바이트에 버둥대기 게이지·갈고리·기물 종류 포함, magic `CFR5`). `main`·`Network`는 v2. 캡슐 입력 패킷 magic `CFF2`(변경 없음). 다른 프로토콜 빌드와는 매칭 불가 |
 | 방장 이전 브랜치 | **`claude/host-migration`**: `JY-lobby`(R49 `c82abfa`)에서 갈라져 R50 방장 선정·이전만 더한 것. 승규 님 채팅에서 만듦. 2026-09-28 사용자 지시로 이 브랜치(`JY-kingrush`)에 합침. **푸시는 사용자 지시가 있을 때만** |
 | 자동 테스트 | **이 브랜치(두 번째 병합 뒤, 09-28): Core 71·모의 세션 28·실제 Unity DLL·Steamworks 소스 전 어셈블리 컴파일·경계 검사 통과. 래그돌 자동 점검은 병합한 코드로 아직 안 돌림.** **`claude/host-migration`(09-28): Core 41·세션 23·실제 DLL 컴파일 통과.** **`JY-lobby`(09-27, R49): 경계 검사 + 퀸 오브 더 힐 맵 JSON 최신 검사 + Core 36개(퀸 오브 더 힐 코스 2개) + 모의 세션 15개 + 7개 어셈블리 Roslyn 컴파일 통과.** 이전 기록: 어셈블리 경계 검사 + Core 34개(09-27 `JY-ragdoll_v2`, 퀸 오브 더 힐 규칙 3개·기물 2개 포함; `JY-lobby`는 29개) + 모의 Steam 세션 15개 통과, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과 (2026-09-25, `JY-lobby`). **`JY-ragdoll_v2`(09-26)**: 같은 테스트 + **실제 Unity 6000.3.11f1 DLL로 전 어셈블리 컴파일**(랩 Steam 다리·빌더 포함) 통과, **빌드한 랩 플레이어의 래그돌 자동 점검 56 통과 / 0 실패**(09-27, R36 조작감 개선 + R37 원래부터 실패하던 9개 정리를 합친 뒤, Core 29·세션 15 통과 → [RagdollLab README](Docs/RagdollLab/README.md#자동-점검)) |
 | Unity 실기 확인 | 2026-09-24까지: 로비 HUD 표시·한글·클릭·친구 초대 동작 (사용자 보고) |
@@ -74,6 +77,7 @@
 |---|---|---|
 | **킹 러쉬 연결 코스 R54~R56, 능력 시험장R52/R53** | 장난감/상자→성벽/시소→왕의 계단/왕좌 결승, 승격 집결10초·자동 합류. R54 일반 피드백 수신, **R55/R56 사용자 미확인**. 기존 조작/튜닝·다른 모드/로비 보존 | [R56](Docs/KingRush/FINAL_COURSE.md), [R55](Docs/KingRush/CASTLE_COURSE.md), [능력 시험장](Docs/KingRush/README.md) |
 | **로딩 화면·동시 출발**(R58): 로비 → 경기 씬 비동기 로드, A 시안 UI + B 시안 배경, 모두 준비 또는 20초 뒤 공유 시각 `go`에 동시 해제 | 코드·테스트만, Unity·Steam 미확인 | [UI §8](Docs/Architecture/UI.md#8-로딩-화면-r58-2026-09-30) |
+| **경기 중 빈자리 채우기**(R59): 나간 자리를 매칭 중인 사람이 채움(팀마다 시작 인원까지, 파티는 한 팀, 시작 뒤 3분까지, 비공개 방은 방 번호로) | 코드·테스트만, Unity·Steam 미확인 | [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30) |
 | Steam 파티(최대 6)·초대·번호 입장 | 동작 확인 | [Network/SESSION](Docs/Network/SESSION.md) |
 | 공개 자동 매칭 6v6 (파티 단위 같은 팀 예약) | 두 PC 성사 확인, 12인 미확인 | [Network/SESSION](Docs/Network/SESSION.md) |
 | 비공개 테스트 방 | 동작 확인 | 〃 |
@@ -115,7 +119,8 @@
 - 다음: [VALIDATION R51](Docs/Network/VALIDATION.md)에서 검 가시성·보정 반응·약한 접촉/강한 베기·전환/복원·두 PC 손맛을 비교한다. 맵/기물 스킬/퀸 모드는 자동 착수하지 않는다. 원격 Push는 기존403 때문에 재시도하지 않으며 사용자가 GitHub Desktop에서 한다.
 
 **사용자가 할 일 — 순서대로**
-0000. **(새, 승규 님) 로딩 화면(R58):** 로비 → 킹 러시(폰 러시) 비공개 방 + 봇으로 경기 시작 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **로딩 화면 표(9개)**. 1~6번은 혼자, 7~9번은 PC 2대. 결정 1개: 느린 사람 최대 대기(지금 20초, `MatchStart.MaxWait`)
+00000. **(새, 승규 님) 빈자리 채우기(R59):** 서로 다른 Steam 계정 PC 2~3대, 각자 1인 파티로 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **빈자리 표(9개)**. A가 매칭 → B가 매칭(같은 대기실) → A가 12명 채우기 → 경기 중 B가 Esc → B가 다시 게임 시작 → 같은 팀·자리로 돌아오는지. 결정 2개: 빈자리를 받는 시간(지금 시작 뒤 3분, `Backfill.OpenSeconds`), 파티원 한 명이 경기 중에 나가면 파티 전체가 같이 나오는 지금 규칙을 바꿀지
+0000. **(새, 승규 님) 로딩 화면(R58):** 로비 → 킹 러시(폰 러시) 비공개 방 + 봇으로 경기 시작 → [VALIDATION](Docs/Network/VALIDATION.md) 위쪽 두 번째 **로딩 화면 표(9개)**. 1~6번은 혼자, 7~9번은 PC 2대. 결정 1개: 느린 사람 최대 대기(지금 20초, `MatchStart.MaxWait`)
 000. **(새, 승규 님) 방장 선정·이전(`claude/host-migration`, 이 브랜치에 합쳐짐):** 이 브랜치(`JY-kingrush`)를 연 Unity로 빌드해 **서로 다른 Steam 계정 PC 2~3대**에서 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **방장 표(11개)**. 특히 3번(방장 강제 종료 후 몇 초 만에 새 방장)과 1번(성능 좋은 PC가 방장). 결과를 보고 **`JY-lobby`·`main`에도 넣을지 팀장님이 결정**
 00. **(새, `JY-lobby`) 퀸 오브 더 힐 맵 7차:** Pull → (JY-lobby 워크트리 폴더를 연 Unity에서) `ChessFight > Scenes > Queen of the Hill (offline graybox)` → Play → [GRAYBOX §4](Docs/GameModes/QueenOfTheHill/GRAYBOX.md#4-unity-확인-순서-처음-한-번) 순서대로. V 자유 카메라로 7개 층을 둘러보고, 층마다 길 하나 이상 해 본 뒤 **층별 시간과 막힌 곳·재미없는 곳**을 알려 준다. 결정 1개: 떨어져 아래층에 부딪히면 물에 빠진 것처럼 칠지([GRAYBOX §5](Docs/GameModes/QueenOfTheHill/GRAYBOX.md#5-알고-있는-빈-곳))
 0. (래그돌, `JY-ragdoll_v2`) `Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **승격 표(4개, Shift+F9: 받침대·킹·룩 등반)**, **찌그러짐 표(3개, Shift+F5·F6)**, **밧줄 표(6개, Shift+F8: 사슬 오르기·그네 8 m·기둥)**, **도약대 표(5개, Shift+F10: L자 도약대·태엽 스프링)**, **개척의 탑 표(6개, F10: 종·승강기·독점·체크포인트·팀)**, **등반 표(4개: 멈추면 스테미나 유지, Space 벽 점프, W는 위로만)**, **갈고리 표(11개, F8 연습장)**, 그다음 **조작감·등반 확인 표(15개, 09-27: 멈춤·부딪힘·다이빙·버둥대기 클릭 수·질주·등반 레인 넷·온라인 막대)**, 이어서 F9 → **퀸 오브 더 힐 2차 재확인 표(5개: F5 뒤 1초 누워 있기, 물에 5초 둥둥·좌클릭 버둥)**. 1차 표는 1~12 성공(09-26), 13번(두 PC)은 친구와 할 때
@@ -221,7 +226,7 @@ Tools/
 |---|---|---|
 | 무엇이든 처음 | 이 파일 → [REQUIREMENTS](Docs/Project/REQUIREMENTS.md) → [DECISIONS](Docs/Project/DECISIONS.md) → [PITFALLS](Docs/Environment/PITFALLS.md) | — |
 | Unity 오류, Safe Mode, 클릭 안 됨 | [PITFALLS](Docs/Environment/PITFALLS.md), [SETUP](Docs/Environment/SETUP.md) | `Scripts/Editor/`, asmdef |
-| 파티, 매칭, 초대 | [Network/SESSION](Docs/Network/SESSION.md) | `Network/SteamSession.cs`, `Core/TeamReservations.cs` |
+| 파티, 매칭, 초대, 경기 중 빈자리 | [Network/SESSION](Docs/Network/SESSION.md) | `Network/SteamSession.cs`, `Core/TeamReservations.cs`, `Core/Backfill.cs` |
 | 이동 동기화, 지연, 끊김 | [Network/MOTION](Docs/Network/MOTION.md) | `Network/SteamMotion.cs`, `Core/MotionProtocol.cs`, `Core/LinkQuality.cs` |
 | 방장 선정·이전, 방장 PC 성능 | [Network/HOST](Docs/Network/HOST.md) | `Core/HostElection.cs`, `Network/HostFitnessProbe.cs`, `Network/SteamSession.cs`(`FollowHost`·`StartGame`), `RagdollLabSteam/SteamRagdollLink.cs`(`OnHostChanged`) |
 | 봇 | [Network/BOTS](Docs/Network/BOTS.md) | `Core/BotIdentity.cs`, `Core/BotBrain.cs` |

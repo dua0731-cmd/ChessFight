@@ -75,6 +75,7 @@ Input (자기 등록, 아무도 참조하지 않음)
 | 키 배치 | `Resources/ChessFightControls.inputactions` |
 | 씬 배선 | 각 씬의 `ChessFight Game Root` (`GameSceneConfig`) |
 | 매칭·예약 규칙 | `Scripts/Core/TeamReservations.cs` |
+| 경기 중 빈자리 규칙(R59) | `Scripts/Core/Backfill.cs` |
 | 로비·파티 | `Scripts/Network/SteamSession.cs` |
 | 이동 동기화 | `Scripts/Network/SteamMotion.cs`, `Scripts/Core/MotionProtocol.cs` |
 | 씬 흐름 | `Scripts/Bootstrap/NetworkRuntime.cs` |
