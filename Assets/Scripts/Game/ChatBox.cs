@@ -247,14 +247,21 @@ namespace ChessFight.Game
                 placeholder.text = layout == Layout.Lobby ? $"여기를 눌러 {ChatText.Label(channel)}에 말하기" : "";
                 Show(placeholder, !typing && string.IsNullOrEmpty(field.value));
             }
-            if (hint != null) hint.text = typing ? (layout == Layout.Lobby ? "Enter 보내기 · Tab 채널 · Esc 닫기" : "Tab 채널 · Esc 취소") : "";
             if (scrolled != null) Show(scrolled, scroll > 0);
 
+            // A refused line says why for a few seconds: in the lobby at the end of
+            // the input line (the panel has a fixed height), in a match under it.
+            bool error = noteError && now < noteUntil;
+            if (!error) noteError = false;
+            bool lobbyError = error && layout == Layout.Lobby;
+            if (hint != null)
+            {
+                hint.text = lobbyError ? noteText : typing ? (layout == Layout.Lobby ? "Enter 보내기 · Tab 채널 · Esc 닫기" : "Tab 채널 · Esc 취소") : "";
+                hint.EnableInClassList("chat-note-error", lobbyError);
+            }
             if (note != null)
             {
-                bool error = noteError && now < noteUntil;
-                if (!error) noteError = false;
-                string text = error ? noteText : layout == Layout.Match && typing ? "입력 중 · 이동 멈춤" : "";
+                string text = layout == Layout.Lobby ? "" : error ? noteText : typing ? "입력 중 · 이동 멈춤" : "";
                 note.text = text;
                 note.EnableInClassList("chat-note-error", error);
                 Show(note, text != "");

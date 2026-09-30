@@ -34,7 +34,7 @@
             </ui:VisualElement>
             <ui:Label name="chat-hint" class="chat-hint" picking-mode="Ignore" />
         </ui:VisualElement>
-        <!-- A refused line ("1초에 한 번까지…"), or in a match "입력 중 · 이동 멈춤". -->
+        <!-- Match only: why a line was refused, or "입력 중 · 이동 멈춤". The lobby shows the refusal in chat-hint. -->
         <ui:Label name="chat-note" class="chat-note" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>
