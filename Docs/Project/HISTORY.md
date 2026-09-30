@@ -5,6 +5,12 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋, `claude/lobby-port`) | 09-30 | R52 | 문서: SESSION(검색 `open=1`, 로비 데이터 `load`·`go`·`open`·`seats`·`held`·`match`, §6 나간 사람만, §8 빈자리), UI(§8 로딩 화면, 로비·경기 문구), HOST, DECISIONS K9·K10, VALIDATION 확인 표 2개, REQUIREMENTS R52, HANDOFF |
+| `0d7d1ce` (`claude/lobby-port`) | 09-30 | R52 | (`JY-kingrush` `6b4118a`) 로딩 화면: 흑팀 준비 점 금색, 문구 줄과 진행 줄 사이 58px |
+| `cb2c7ee` (`claude/lobby-port`) | 09-30 | R52 | (`JY-kingrush` `6eefd07`) 시작한 경기에서는 나간 사람만 나감, 빈자리 4분 |
+| `01e9b47` (`claude/lobby-port`) | 09-30 | R52 | (`JY-kingrush` `6061934`) 경기 중 빈자리 채우기(`Backfill`). 5 대 5 테스트는 파티 봇으로 |
+| `615418b` (`claude/lobby-port`) | 09-30 | R52 | (`JY-kingrush` `a47d3e1`) 로딩 화면·동시 출발(`MatchLoader`, `LoadingScreenView` 등, `load`/`go`) |
+| `5ee7a0d` (`claude/lobby-port`) | 09-30 | R52 | `claude/host-migration`(`514cedf`) 병합. 프로토콜 v8 + 방장 이전 → **v15**, 방장이 바뀌면 참가자 장애물 시각을 새 방장 것으로 다시 맞춤. Core 45·모의 세션 23·실제 DLL 컴파일 통과 |
 | `27e052c` (`JY-lobby`) | 09-30 | R51 | 온라인 래그돌: 스냅샷에 방장의 장애물 시각(`CFR6`, v8), 참가자 장애물을 방장 시각으로(`HostObstacleClock`), `SpinningBar` 공유 시계화, 장애물 시계 검사 |
 | `232931e` (`JY-lobby`) | 09-27 | R50 | 퀸 오브 더 힐 맵 8차: 층 26 m(정상 198 m), 팀마다 서·동 날개(모듈 27종), 4·7층 공용. 체크포인트 없앰 → Core `QueenHillRace`(팀별 지름길, 사람별 랭크, 진공관 목적지, 테스트 2개), `QueenHillRaceMatch`·`TeamBell`·`TeamPath`·`RankPad`·`VacuumTube`, 떨어지면 1랭크, 미리보기 층별 잘라 보기 |
 | `514cedf` (`claude/host-migration`) | 09-28 | R50 | 방장 선정·이전: Core `HostElection`(기계·현재 점수, 평균 핑 할인, 순위, 후계자, 느린 방장 `Takeover`, `FrameMonitor`), `HostFitnessProbe`, `SteamSession` epoch·successors·claim(시작 때 적합한 PC, 나가기·크래시·응답 없음 4초에 후계자, 로비 주인이 방장을 따라감, 느린 방장 넘김), `SteamMotion`·`SteamRagdollLink` 역할 전환, 스냅샷 일정 전송·수신 끝까지·래그돌 방장 과부하 보호, 프로토콜 v8, 테스트 Core +5·세션 +8, `Docs/Network/HOST.md` |
