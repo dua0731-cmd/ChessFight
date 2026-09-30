@@ -13,7 +13,7 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 | 해상도 | 참조 1280×720, ScaleWithScreenSize |
 | 폰트 | `RuntimePanels.KoreanFont`: OS 폰트 맑은 고딕 → 나눔고딕 → Noto Sans KR → 굴림 → 돋움 → Arial Unicode MS. 실패하면 LegacyRuntime(한글 없음). Console에 `[ChessFight] HUD 폰트:` 로그 |
 | 입력 | Active Input Handling = Old. uGUI·EventSystem 없음. UI Toolkit이 자체 이벤트 시스템으로 받는다 |
-| 파일 | `NetworkHud.uxml`(로비), `NetworkHud.uss`(모든 HUD 공용), `IntroHud.uxml`, `MatchHud.uxml`(모드 공용 경기 화면) |
+| 파일 | `NetworkHud.uxml`(로비), `NetworkHud.uss`(모든 HUD 공용), `IntroHud.uxml`, `MatchHud.uxml`(모드 공용 경기 화면), `ChatHud.uxml`(채팅, 로비·경기 화면에 복제, §9) |
 | 뷰 코드 | `Game/NetworkHudView.cs`(Steam을 모름, `HudModel`만 받는다). 채우는 쪽은 `Bootstrap/LobbyBootstrap.BuildModel()` |
 
 **UXML의 `name`과 `NetworkHudView`의 `Q<T>(name)`이 계약이다.** 한쪽만 바꾸면 해당 버튼이 조용히 죽는다.
@@ -21,10 +21,10 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 ## 2. 클릭이 안 될 때를 대비한 이중 장치
 
 1. **본 경로:** UI Toolkit 포인터 이벤트. Active Input Handling이 Old여야 동작한다(`InputSettingsGuard`).
-2. **대체 경로(`NetworkHudView.Update`):** 실제 포인터 이벤트가 한 번도 오지 않으면 `Input.GetMouseButtonDown(0)`과 `panel.Pick`으로 버튼을 직접 누른다. 진짜 이벤트가 한 번이라도 오면 꺼진다. **키 입력은 도와주지 못한다.** 그래서:
+2. **대체 경로(`NetworkHudView.Update`):** 실제 포인터 이벤트가 한 번도 오지 않으면 `Input.GetMouseButtonDown(0)`과 `panel.Pick`으로 버튼을 직접 누른다. 진짜 이벤트가 한 번이라도 오면 꺼진다. **누른 것은 한 프레임 뒤에 처리한다**(R61): 진짜 이벤트는 이 Update 뒤에 오므로, 그 사이에 진짜 이벤트가 오면 대체 경로는 그 클릭을 버린다. 예전에는 세션의 첫 클릭이 두 경로로 다 눌려, 버튼이 아닌 곳(채팅 칸)을 누르면 다른 버튼(소드 파이트 카드)이 눌렸다. **키 입력은 도와주지 못한다.** 그래서:
    - 번호 칸에는 **붙여넣기** 버튼이 있다. 주요 동작에는 단축키(Enter, F, M, Esc)도 있다.
    - 친구 목록은 검색창이 아니라 **페이지 이동**이다.
-   - 타이핑이 필요한 새 UI를 만들지 않는다.
+   - 타이핑이 필요한 새 UI를 만들지 않는다. (예외: 채팅, [§9](#9-채팅-r61-2026-09-30))
 3. **진단 로그:** 1초 뒤 패널 상태를 한 번 출력하고, 첫 포인터 이벤트를 받으면 한 번 기록한다. "버튼이 안 눌리고 로그도 없다"면 입력 백엔드 문제다.
 
 버튼은 `focusable = false`다(키보드 포커스를 뺏어 단축키를 막지 않게). 입력칸 밖을 클릭하면 포커스가 root로 돌아가 단축키가 다시 동작한다. 동적으로 만드는 버튼(친구 행, `+ 친구 초대`, 모드 항목)도 대체 경로 목록에 등록한다.
@@ -53,6 +53,7 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 | 상단 바 | 로고, 탭(플레이만 동작, 기물 도감·전적은 **자리만**), `친구 n`(온라인 친구 수), `정보`(연결 정보 카드), 내 Steam 이름 | `friends-open`, `details-open`, `profile` |
 | 상단 가운데 | 알림 토스트(파티 참가·나감, 초대 보냄, 복사, 오류는 빨강), Steam 끊김 배너 + `Steam 다시 연결`, **매칭 패널** | `toast`, `offline`, `retry`, `match-panel` |
 | 가운데 (3D) | 나 가운데, 파티원·파티 봇이 좌우로. 빈 자리 최대 2곳에 회색 실루엣 + `+ 친구 초대`. 이름표는 코드가 3D 위치에 맞춰 옮긴다 | `lineup` |
+| 좌측 (파티 바 위) | **채팅**(R61, [§9](#9-채팅-r61-2026-09-30)): 파티·전체·팀 탭, 기보처럼 줄 번호, 누르면 쓰는 입력 칸 | `chat-slot` |
 | 좌측 하단 | `# 코드로 참가`(번호 입력 창), `비공개 방`, **파티 바**(인원 n/6, 파티 코드 + 복사, AI 봇 `-` `+`, 파티 나가기) | `code-open`, `create-test`, `party-*`, `bots-*`, `leave-party` |
 | 우측 하단 | **모드 카드**(누르면 모드 선택 창) + 노란 **게임 시작**. 바쁠 때는 그 자리에 **매칭 중 카드**(시간·인원, 취소, 방장이면 경기 시작) | `mode-open`, `play`, `busy`, `cancel`, `start` |
 | 가운데 창 | 코드로 참가(번호 칸, 붙여넣기, 파티 참가, 비공개 방 참가), 모드 선택 | `code-modal`, `mode-modal` |
@@ -109,7 +110,7 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 ## 7. 인트로·경기 HUD
 
 - `IntroHud.uxml`: 하늘색 배경, `CHESS FIGHT` 로고, "6 vs 6 · 체스 말 파티 게임", Steam 상태, "아무 키나 눌러 시작". 클릭이 필요 없다.
-- `MatchHud.uxml`(`MatchSceneView`): 읽기 전용. 제목은 경기 모드 이름, 상태, 명단, 핑/응답 줄, Esc 안내. 방장 신호가 끊기면 상단 가운데에 **노란 "연결 불안정" → 빨간 "멈춤"** 배너(`.warning`, `.warning-frozen`). 매 프레임 갱신한다.
+- `MatchHud.uxml`(`MatchSceneView`): 읽기 전용. (R61) 오른쪽 아래에 채팅([§9](#9-채팅-r61-2026-09-30)): Enter로 쓰고, 쓰는 동안 이동이 멈춘다. 안내 줄 끝에 "Enter 채팅". 제목은 경기 모드 이름, 상태, 명단, 핑/응답 줄, Esc 안내. 방장 신호가 끊기면 상단 가운데에 **노란 "연결 불안정" → 빨간 "멈춤"** 배너(`.warning`, `.warning-frozen`). 매 프레임 갱신한다.
 - (R59) 상태 줄: 빈자리가 있으면 "경기 중 · 빈자리 n개 · 매칭 중인 플레이어가 들어올 수 있습니다", 누가 빈자리에 앉으면 6초 동안 "○○ 님이 빈자리를 채웠습니다"(`SteamSession.Note`).
 - 오프라인 플레이테스트 도움말은 IMGUI(`PlaytestSpawner.OnGUI`)로 그린다.
 
@@ -156,3 +157,39 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 - 로딩 중 경기가 끝나면(`Match == 0`) 씬을 끝까지 불러온 뒤(유니티가 중간 취소를 못 함) 로비로 돌아간다.
 - 방장이 바뀌어도 `load`·`go`는 로비에 있어서 새 방장이 이어서 판단한다(규칙 15).
 - 소드 파이트처럼 자체 시뮬레이션 모드는 화면만 덮는다(입력 차단은 캡슐 이동만).
+
+## 9. 채팅 (R61, 2026-09-30)
+
+승규 님 요청: 채팅창 시안 3개([시안 페이지](https://claude.ai/artifact/9Mm5cfqHu4DAp7B75tKjHu)) 중 **A "기보 로그"**. 보낸 사람은 **Steam 이름**. **로비는 화면 왼쪽**(오른쪽에는 게임 모드 목록과 게임 시작이 있어서), **경기 화면은 오른쪽**. 메시지가 오가는 방식은 [SESSION §9](../Network/SESSION.md#9-채팅-r61-2026-09-30).
+
+```text
+로비 (왼쪽, 파티 바 위 380×176)             경기 (오른쪽 아래, 배경 없음)
+┌ ■파티 ■전체 ■팀 2 ───────────┐                    [팀] 퀸사이드  3번 발판 조심
+│  1. 캐슬링 님이 파티에 들어왔어요 │                    [전체] 앙파상  왼쪽 길 막혔음
+│  2. 퀸사이드  폰 러시 한 판 ㄱㄱ   │                    ┌ 팀 │ 부축 갈게_        Tab 채널 · Esc 취소 ┐
+│  3. 나이트메어  승격 발판 내가     │                    입력 중 · 이동 멈춤
+│ [파티│ 여기를 눌러 파티에 말하기  ] │
+└──────────────────────────┘
+[# 코드로 참가] [비공개 방]
+┌ PARTY 1/6 │ 파티 코드 … ┐
+```
+
+| | 로비 | 경기 |
+|---|---|---|
+| 자리 | 왼쪽 아래, `# 코드로 참가` 위(`chat-slot-lobby`: left 20, bottom 156, 380×176) | 오른쪽 아래(`chat-slot-match`: right 24, bottom 28, 폭 440). 왼쪽 위 상태 카드와 안 겹친다 |
+| 보이는 줄 | 고른 탭(채널)의 줄만. 체스 기보처럼 **줄 번호**(채널마다 1부터). 위쪽부터 잘린다. **마우스 휠**로 이전 대화(위에 "이전 대화 · 휠을 내리면 최근") | 모든 채널의 마지막 8줄, 이름 앞에 `[파티]`·`[전체]`·`[팀]`. **10초 뒤 2초 동안 흐려져 사라진다.** 쓰는 동안에는 다시 다 보인다 |
+| 탭 | 파티·전체·팀. 쓸 수 없는 채널은 흐리게(전체·팀은 경기 방에 있을 때만). 다른 탭에 새 줄이 오면 금색 숫자 | 없음(입력 줄의 칩이 채널) |
+| 쓰기 | **입력 칸을 누른다.** 보낸 뒤에도 칸이 열려 있어 이어서 쓴다. 빈 칸에서 Enter나 Esc면 닫힌다 | **Enter로 연다.** 보내면 닫혀 다시 움직인다. 처음 채널은 팀(없으면 전체, 파티) |
+| 키 | **Enter** 보내기 · **Tab** 채널 바꾸기 · **Esc** 닫기(쓰던 글 지움) | 같음 |
+| 막혔을 때 | 입력 줄 끝에 빨간 글씨 3초("1초에 한 번까지 보낼 수 있어요." 등). 글은 칸에 남는다 | 입력 줄 아래에 빨간 글씨 |
+| 쓰는 동안 | 로비 단축키(Enter 게임 시작, F 친구, M 모드, Esc 창 닫기)가 멈춘다 | **캐릭터가 멈춘다**(`MovementGate`). Esc는 채팅만 닫고 경기를 나가지 않는다 |
+
+- 색: 파티 민트, 전체 흰색, 팀 파랑, **내 이름 금색**. 알림 줄(들어옴·나감)은 금색 기울임.
+- 이름과 글은 **서식 없이** 그린다(`enableRichText = false`). `<size=200>` 같은 글을 쳐도 그대로 보인다.
+- 한 줄 80자. 한글은 음절 사이에서 줄이 바뀔 수 있다(UI Toolkit 기본 동작).
+- **키 처리 순서가 계약이다.** 로비는 `NetworkHudView.Update`, 경기는 `MatchSceneView.Update`가 먼저 `ChatBox.Tick()`을 부르고, `HoldsKeys`(쓰는 중이거나 방금 닫힘)이면 자기 단축키를 건너뛴다. 그래서 채팅을 닫는 Esc가 경기 나가기가 되지 않고, 보내는 Enter가 게임 시작이 되지 않는다.
+- 입력 칸이 Enter·Tab·Esc를 스스로 처리하지 않게 막는다(`KeyDownEvent`·`Navigation*Event`를 칸에서 먼저 받아 멈춤). 그러지 않으면 Enter에 칸이 닫혀 다음 Enter가 게임 시작이 됐다(Unity에서 봄). 한국어 입력기가 글자를 조립 중일 때 누른 Enter는 조립이 끝난 다음 프레임에 보낸다.
+- **예외:** §2의 "타이핑이 필요한 새 UI를 만들지 않는다"의 예외다(채팅은 쳐야 한다). 포인터 이벤트가 안 오는 PC(대체 클릭 경로)에서는 채팅을 쓸 수 없다.
+- **아직 없음:** 소드 파이트처럼 자체 시뮬레이션 모드의 경기 화면(그 모드 HUD가 따로 있다), 욕설 거르기, 상대 차단.
+
+파일: `Game/ChatBox.cs`(화면·키, Steam 모름), `Resources/ChatHud.uxml`(이름 계약: `chat`, `chat-*`), 스타일은 `NetworkHud.uss` 맨 아래 "chat" 부분. 로비는 `NetworkHud.uxml`의 `chat-slot`, 경기는 `MatchHud.uxml`의 `chat-slot`에 복제된다. 연결: `LobbyBootstrap.WireHud`, `MatchSceneView.Awake`에서 `Connect(session.Chat, session.CanChat, session.Say)`.

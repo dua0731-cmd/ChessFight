@@ -145,7 +145,7 @@
 `FindMatch(bool privateTest)`, `SetMode(key)`, `JoinParty(id)`, `JoinPrivateMatch(id)`, `StartGame()`, `Cancel()`, `Abort(reason)`, `LeaveParty()`, `Retry()`, `Friends()`, `InviteToParty(id)`, `Invite()`, `SetPartyBots(n)`, `FillRoomWithBots()`, `ClearRoomBots()`.
 속성: `Online`, `Party`, `PartyLeader`, `PartyMode`, `Match`, `MatchMode`, `Host`, `IsHost`, `IsLeader`, `Busy`, `Searching`, `Started`, `PrivateRoom`, `Roster`, `PartyMembers`, `PartyBots`, `MaxPartyBots`, `RoomBots`, `Build`, `AllowPublicBots`, `BotsBlockPublicMatch`, `CanUseRoomBots`, `Status`, `Error`.
 방장 선정·이전([HOST](HOST.md)): `LocalFitness`(세션을 돌리는 쪽이 넣는 기계 점수), `CurrentFitness`, `FrameMs`, `Epoch`, `Note`(6초 알림: 방장 교체·빈자리 채움. R59 전 이름 `HostNote`), `ReportFrame(ms)`(매 프레임), `ReportHostSilence(s)`(매 프레임, 이동 계층), 이벤트 `HostChanged(이전, 다음)`.
-빈자리 채우기(§8): `JoiningLive`(시작한 경기에 들어와 자리를 기다리는 중), `EmptySeats`(지금 매칭에 내놓은 빈자리 수). R60: `PartyStillPlaying`(다른 파티원이 아직 경기 중), `WaitingForParty`(경기에서 먼저 나와 파티를 기다리는 중), `PartyPlayingMessage`.
+빈자리 채우기(§8): `JoiningLive`(시작한 경기에 들어와 자리를 기다리는 중), `EmptySeats`(지금 매칭에 내놓은 빈자리 수). R60: `PartyStillPlaying`(다른 파티원이 아직 경기 중), `WaitingForParty`(경기에서 먼저 나와 파티를 기다리는 중), `PartyPlayingMessage`. 채팅(§9, R61): `Chat`, `CanChat(channel)`, `Say(channel, text)`.
 
 ## 8. 빈자리 채우기 (R59, 2026-09-30)
 
@@ -176,3 +176,23 @@
 - **방장이 바뀌어도** 새 방장은 방의 `seats`·`held`를 읽어 그대로 이어간다(규칙 15, [HOST](HOST.md)). 로비 주인이 되기 전의 새 방장은 요청을 건너뛰고, 들어오려는 사람이 2초 뒤 다시 보낸다.
 - 자리를 못 받으면(`|full`: 그새 다른 사람이 앉음, 4분 지남) 대기실과 똑같이 다른 방을 찾는다.
 - **한계:** 공개 매칭은 지금도 12명(6 대 6)이 모여야 시작하므로 5 대 5 경기는 비공개 방에서만 생긴다. 들어온 사람은 출발 자리에서 시작한다(폰 러시에서 체크포인트부터 시작할지는 모드 규칙이 정할 일). 폰 러시의 네트워크 코스·승패는 아직 없어서, 여기서는 사람 수만 맞춘다.
+
+## 9. 채팅 (R61, 2026-09-30)
+
+승규 님 요청: 파티·전체·팀 채팅, 보낸 사람은 **Steam 이름**. 채팅 서버는 없다. 이미 쓰는 **Steam 로비 채팅**(`SendLobbyChatMsg`)으로 보낸다. 화면은 [UI §9](../Architecture/UI.md#9-채팅-r61-2026-09-30).
+
+| 채널 | 보내는 곳 | 받는 사람 | 쓸 수 있을 때(`CanChat`) |
+|---|---|---|---|
+| 파티 | 파티 로비 | 파티원 모두(로비에서도, 경기 중에도) | 파티가 있으면 늘 |
+| 전체 | 경기 방 | 방의 모두(대기실이면 대기실 인원, 경기면 12명) | 경기 방에 있을 때(검색 중 들른 대기실 포함) |
+| 팀 | 경기 방 | 방의 모두가 **받지만** 같은 팀 화면에만 보인다 | 경기 방에서 명단에 내 자리가 있을 때 |
+
+- **글의 모양**(`Core/Chat.cs` `ChatText`): `CFC1|p|글`(파티), `CFC1|a|글`(전체), `CFC1|0|글`·`CFC1|1|글`(백팀·흑팀). 경기 방 채팅에는 자리 요청 JSON(`{"kind":"reserve",…}`, §4·§8)도 흐르는데, 앞의 `CFC1|`로 구분한다. 채팅 줄은 방장의 자리 요청 처리로 가지 않고, 자리 요청은 채팅 창에 나오지 않는다.
+- **받는 쪽 검사**(`SteamSession.Hear`): 그 로비의 멤버가 보낸 것만. 파티 줄은 파티 로비로 온 것만, 경기 줄은 경기 방으로 온 것만. 팀 줄은 **내 팀과 같고, 보낸 사람도 명단에서 그 팀일 때만**(다른 팀 사람이 팀 번호를 속여 보내도 안 보인다). 글은 다시 `Clean`(80자, 줄바꿈·제어·보이지 않는 서식 문자 제거).
+- **보내는 쪽 규칙**(`Say`): 빈 글은 안 보냄, 1초에 한 줄(`ChatThrottle`), 80자. 막히면 이유 문장을 돌려주고 화면이 3초 보여 준다. 자기 줄도 Steam이 되돌려 준 것을 받아 로그에 넣는다(실제로 전달된 것만 보인다).
+- **이름**: 받은 순간의 `Name(보낸 사람)` = `SteamFriends.GetFriendPersonaName`(로비 오른쪽 위에 보이는 그 이름). 봇은 말하지 않는다.
+- **로그**(`ChatLog`, `SteamSession.Chat`): 채널마다 최근 50줄, 채널마다 1부터 번호, 채널별 안 읽은 수. **다른 파티로 옮기면 파티 채널을, 다른 경기 방으로 옮기면(검색 중 방을 옮기는 것 포함) 전체·팀 채널을 비운다.**
+- **알림 줄**: 파티 채널 "○○ 님이 파티에 들어왔어요 / 나갔어요", 시작한 경기의 전체 채널 "○○ 님이 경기를 나갔어요 / 빈자리에 들어왔어요"(§8). 들어가는 순간 이미 있던 사람은 알리지 않는다.
+- **프로토콜은 v14 그대로.** 채팅을 모르는 빌드는 `CFC1|` 줄을 JSON으로 읽다 실패해 버릴 뿐이라 매칭·자리 요청에 해가 없다(그 빌드의 사람에게는 채팅이 안 보일 뿐). 그래도 같은 빌드끼리만 만나는 규칙(K5)은 그대로다.
+- **알고 있는 한계**: 팀 줄은 상대 팀 PC에도 도착한다(화면에만 안 보임). 고친 클라이언트는 읽을 수 있다. 막으려면 팀원에게만 P2P로 보내야 한다(나중 일). 받는 쪽 도배 제한도 없다(보내는 쪽 1초 제한만).
+- 공개 API: `Chat`(로그), `CanChat(channel)`, `Say(channel, text)` → ""(보냄 또는 보낼 것 없음) 또는 막힌 이유.

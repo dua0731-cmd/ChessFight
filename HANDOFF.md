@@ -4,9 +4,11 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-30**(R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발, 둘 다 `claude/pawnrush-loading` → 로컬 `JY-kingrush`에 빨리 감기, 푸시 전. 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-09-30**(R61 채팅: `claude/pawnrush-loading` → 로컬 `JY-kingrush`에 빨리 감기, 푸시 전. R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
-> **최신 R60(승규 님, 09-30): 시작한 경기에서는 나간 사람만 나가고, 빈자리는 4분까지 받는다.** 파티원·파티장·방장 누구든 경기 시작 뒤 나가면 그 사람만 빠지고 파티원은 경기를 계속한다(방장이면 방장 이전). 먼저 나온 파티원은 파티에서 기다리고, 파티장은 경기 중인 파티원이 돌아올 때까지 매칭을 못 한다. 시작 전(검색·대기실)은 예전처럼 파티가 함께 취소 → [SESSION §6](Docs/Network/SESSION.md#6-취소퇴장호스트-이탈), [DECISIONS K10](Docs/Project/DECISIONS.md)
+> **최신 R61(승규 님, 09-30): 채팅.** 채팅창 시안 A "기보 로그". **로비는 왼쪽**(파티 바 위 패널: 파티·전체·팀 탭, 줄 번호, 입력 칸을 눌러 쓰기), **경기 화면은 오른쪽 아래**(흐려지는 글자, Enter로 쓰기, 쓰는 동안 이동 멈춤). 보낸 사람은 **Steam 이름**. Enter 보내기·Tab 채널·Esc 닫기, 1초에 한 줄·80자. 서버 없이 Steam 로비 채팅(파티 로비·경기 방), 팀 줄은 같은 팀 화면에만. 프로토콜 v14 그대로. 로비 첫 클릭이 엉뚱한 버튼을 누르던 기존 대체 클릭 문제도 고침. **AI가 이 PC Unity에서 로비 채팅은 봄, 사용자·Steam 2대·경기 화면·Esc는 미확인** → [UI §9](Docs/Architecture/UI.md#9-채팅-r61-2026-09-30), [SESSION §9](Docs/Network/SESSION.md#9-채팅-r61-2026-09-30), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단
+
+> **R60(승규 님, 09-30): 시작한 경기에서는 나간 사람만 나가고, 빈자리는 4분까지 받는다.** 파티원·파티장·방장 누구든 경기 시작 뒤 나가면 그 사람만 빠지고 파티원은 경기를 계속한다(방장이면 방장 이전). 먼저 나온 파티원은 파티에서 기다리고, 파티장은 경기 중인 파티원이 돌아올 때까지 매칭을 못 한다. 시작 전(검색·대기실)은 예전처럼 파티가 함께 취소 → [SESSION §6](Docs/Network/SESSION.md#6-취소퇴장호스트-이탈), [DECISIONS K10](Docs/Project/DECISIONS.md)
 
 > **R59(승규 님, 09-30): 경기 중 빈자리 채우기.** 경기가 시작된 뒤 누가 나가면 그 자리를 **매칭 중인 다른 사람**이 채운다. 팀마다 **시작 인원까지만**(6 대 6이면 6명, 5 대 5면 5명), 사람이 빠진 팀에, 파티는 한 팀에 통째로, 공유 출발 시각부터 4분까지(R60). 매칭은 빈자리 경기를 먼저 시도하고, 방장이 바뀌어도 자리 정보(`seats`·`held`)는 방에 있어 이어진다. 프로토콜 **v14**(검색 필터 `open=1`). **코드·테스트만, Unity·Steam 미확인** → [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단(PC 2대 이상 필요)
 
@@ -54,6 +56,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **채팅(09-30, R61)** | `claude/pawnrush-loading`: 파티·전체·팀 채팅, 로비 왼쪽 패널·경기 오른쪽 아래, Steam 이름, Enter·Tab·Esc. Steam 로비 채팅으로 전달, 프로토콜 **v14 그대로**. Core 79·세션 39·실제 DLL 컴파일 통과. AI가 이 PC Unity에서 로비 채팅을 봄. **사용자 Unity·Steam 미확인** |
 | **빈자리 채우기·나간 사람만 나가기(09-30, R59·R60)** | `claude/pawnrush-loading`: 시작한 경기에서 나간 자리를 매칭 중인 사람이 채움. 팀마다 시작 인원까지(공개는 6 대 6), 파티는 한 팀, 4분까지. 경기 중에는 나간 사람만 나가고 방장이면 방장 이전. 프로토콜 **v14**(경기 `open`·`seats`·`held`, 파티 멤버 `match`). Core 77·세션 37·실제 DLL 컴파일 통과. **Unity·Steam 미확인** |
 | **로딩 화면(09-30, R58)** | `claude/pawnrush-loading`: 로비 → 경기 씬을 로딩 화면 뒤 비동기로, 모두 준비 뒤 공유 시각에 동시 출발. 프로토콜 **v13**(멤버 `load`, 경기 `go`). Core 75·세션 29·실제 DLL 컴파일 통과. **Unity·Steam 미확인** |
 | **병합(09-28)** | `feature/ui-sample-b`(`c82abfa`)를 합침. 네트워크 프로토콜 **v11**. 병합 뒤 자동 검사 결과는 [HISTORY](Docs/Project/HISTORY.md)의 병합 줄. **Unity·두 PC 미확인** |
@@ -80,6 +83,7 @@
 | **킹 러쉬 연결 코스 R54~R56, 능력 시험장R52/R53** | 장난감/상자→성벽/시소→왕의 계단/왕좌 결승, 승격 집결10초·자동 합류. R54 일반 피드백 수신, **R55/R56 사용자 미확인**. 기존 조작/튜닝·다른 모드/로비 보존 | [R56](Docs/KingRush/FINAL_COURSE.md), [R55](Docs/KingRush/CASTLE_COURSE.md), [능력 시험장](Docs/KingRush/README.md) |
 | **로딩 화면·동시 출발**(R58): 로비 → 경기 씬 비동기 로드, A 시안 UI + B 시안 배경, 모두 준비 또는 20초 뒤 공유 시각 `go`에 동시 해제 | 코드·테스트만, Unity·Steam 미확인 | [UI §8](Docs/Architecture/UI.md#8-로딩-화면-r58-2026-09-30) |
 | **경기 중 빈자리 채우기**(R59): 나간 자리를 매칭 중인 사람이 채움(팀마다 시작 인원까지, 파티는 한 팀, 시작 뒤 4분까지, 비공개 방은 방 번호로). R60: 경기 중에는 나간 사람만 나감(방장이면 방장 이전) | 코드·테스트만, Unity·Steam 미확인 | [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30) |
+| **채팅**(R61): 파티·전체·팀, 로비 왼쪽·경기 오른쪽, Steam 이름, 1초에 한 줄 | 코드·테스트, AI가 로비에서 봄. 사용자·두 PC·경기 화면 미확인. 소드 파이트 경기 화면에는 아직 없음 | [UI §9](Docs/Architecture/UI.md#9-채팅-r61-2026-09-30), [SESSION §9](Docs/Network/SESSION.md#9-채팅-r61-2026-09-30) |
 | Steam 파티(최대 6)·초대·번호 입장 | 동작 확인 | [Network/SESSION](Docs/Network/SESSION.md) |
 | 공개 자동 매칭 6v6 (파티 단위 같은 팀 예약) | 두 PC 성사 확인, 12인 미확인 | [Network/SESSION](Docs/Network/SESSION.md) |
 | 비공개 테스트 방 | 동작 확인 | 〃 |
@@ -121,6 +125,7 @@
 - 다음: [VALIDATION R51](Docs/Network/VALIDATION.md)에서 검 가시성·보정 반응·약한 접촉/강한 베기·전환/복원·두 PC 손맛을 비교한다. 맵/기물 스킬/퀸 모드는 자동 착수하지 않는다. 원격 Push는 기존403 때문에 재시도하지 않으며 사용자가 GitHub Desktop에서 한다.
 
 **사용자가 할 일 — 순서대로**
+000000. **(새, 승규 님) 채팅(R61):** 로비 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **채팅 표(14개)**. 1~10번은 혼자(비공개 방 + 봇 12명 채우기 → 경기 시작), 11~14번은 PC 2대. 특히 **한국어 입력기로 친 마지막 글자가 보내지는지(2번), 쓰는 중 Esc(4·9번)**는 AI가 못 봤다.
 00000. **(새, 승규 님) 빈자리 채우기·나간 사람만 나가기(R59·R60):** 서로 다른 Steam 계정 PC 2~3대 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **표(13개)**. 1~9번은 각자 1인 파티로: A가 매칭 → B가 매칭(같은 대기실) → A가 12명 채우기 → 경기 중 B가 Esc → B가 다시 게임 시작 → 같은 팀·자리로 돌아오는지. 10~13번은 같은 파티로: 파티원이나 방장이 나가도 나머지는 경기를 계속하는지
 0000. **(새, 승규 님) 로딩 화면(R58):** 로비 → 킹 러시(폰 러시) 비공개 방 + 봇으로 경기 시작 → [VALIDATION](Docs/Network/VALIDATION.md) 위쪽 두 번째 **로딩 화면 표(9개)**. 1~6번은 혼자, 7~9번은 PC 2대. 결정 1개: 느린 사람 최대 대기(지금 20초, `MatchStart.MaxWait`)
 000. **(새, 승규 님) 방장 선정·이전(`claude/host-migration`, 이 브랜치에 합쳐짐):** 이 브랜치(`JY-kingrush`)를 연 Unity로 빌드해 **서로 다른 Steam 계정 PC 2~3대**에서 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **방장 표(11개)**. 특히 3번(방장 강제 종료 후 몇 초 만에 새 방장)과 1번(성능 좋은 PC가 방장). 결과를 보고 **`JY-lobby`·`main`에도 넣을지 팀장님이 결정**
@@ -237,6 +242,7 @@ Tools/
 | **퀸 오브 더 힐** | [GameModes/QueenOfTheHill](Docs/GameModes/QueenOfTheHill/README.md) → [RagdollLab README](Docs/RagdollLab/README.md) "등반" | 위 문서 §6 파일 지도 |
 | **퀸 오브 더 힐 맵(그레이박스)** | [GRAYBOX](Docs/GameModes/QueenOfTheHill/GRAYBOX.md) → [Tools/QueenHill/README](Tools/QueenHill/README.md) → [DESIGN §3](Docs/GameModes/QueenOfTheHill/DESIGN.md) | `Tools/QueenHill/build_layout.py`(맵 원본), `Gameplay/QueenHill/QueenHillLevel.cs`, `Core/QueenHillCourse.cs` |
 | HUD, UI, 로비 | [Architecture/UI](Docs/Architecture/UI.md) | `Game/NetworkHudView.cs`, `Game/LobbyStage.cs`, `Bootstrap/LobbyBootstrap.cs`, `Resources/*.uxml/uss` |
+| 채팅 | [UI §9](Docs/Architecture/UI.md#9-채팅-r61-2026-09-30), [SESSION §9](Docs/Network/SESSION.md#9-채팅-r61-2026-09-30) | `Core/Chat.cs`, `Game/ChatBox.cs`, `Resources/ChatHud.uxml`, `Network/SteamSession.cs`(`Say`·`Hear`·`FollowChat`) |
 | 플레이어 입력, 조작 | [Player/MOVEMENT_INPUT](Docs/Player/MOVEMENT_INPUT.md) | `Game/MoveInputSource.cs`, `Input/` |
 | 래그돌 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md), [RagdollLab/README](Docs/RagdollLab/README.md) | `Assets/ChessFight/RagdollLab/Scripts/`, `Gameplay/Characters/ICharacterDriver.cs` |
 | 킹러시 맵, 장애물 | [KingRush](Docs/KingRush/README.md), [OBSTACLES](Docs/KingRush/OBSTACLES.md) | `Gameplay/Obstacles`, `Gameplay/Course` |

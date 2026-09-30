@@ -85,17 +85,20 @@ namespace ChessFight.Game
             }
 
             field.maxLength = ChatText.MaxLength;
-            // Enter and Tab belong to the chat (Tick sends the line, changes the
-            // channel). Left to the field, Enter gives up the focus, so the next
-            // Enter started a game, and Tab moves the focus away.
+            // Enter, Tab and Esc belong to the chat. Left to the field, Enter gives
+            // up the focus, so the next Enter started a game, and Tab moves the
+            // focus away. Esc closes the line here as well as in Tick, whichever
+            // sees the key first: the field's own Esc only reverts the text.
             field.RegisterCallback<KeyDownEvent>(e =>
             {
+                if (e.keyCode == KeyCode.Escape) { Swallow(e); Close(true); return; }
                 bool enter = e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.character == '\n' || e.character == '\r';
                 if (!enter && e.keyCode != KeyCode.Tab && e.character != '\t') return;
                 Swallow(e);
             }, TrickleDown.TrickleDown);
             field.RegisterCallback<NavigationMoveEvent>(Swallow, TrickleDown.TrickleDown);
             field.RegisterCallback<NavigationSubmitEvent>(Swallow, TrickleDown.TrickleDown);
+            field.RegisterCallback<NavigationCancelEvent>(e => { Swallow(e); Close(true); }, TrickleDown.TrickleDown);
             // Whatever ends the typing (Esc handled by the field itself, a click
             // elsewhere), its key must not also reach the scene this frame.
             field.RegisterCallback<FocusOutEvent>(_ => releasedFrame = Time.frameCount);
