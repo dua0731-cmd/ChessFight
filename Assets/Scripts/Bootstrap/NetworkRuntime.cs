@@ -83,9 +83,14 @@ namespace ChessFight.Game
             HostFitnessProbe.Start();
             loader = new MatchLoader(this, clock.Now);
             // A chat that fails to build must not take the session down with it.
+            // On an object of its own: a UI document on this object would make the
+            // loading screen's document (a child of this object) its child, and
+            // Unity then refuses the loading screen's own panel settings.
             try
             {
-                chat = gameObject.AddComponent<ChatBox>();
+                var chatHost = new GameObject("Chat");
+                chatHost.transform.SetParent(transform, false);
+                chat = chatHost.AddComponent<ChatBox>();
                 chat.Build();
                 chat.Connect(Session.Chat, Session.CanChat, Session.Say);
             }
