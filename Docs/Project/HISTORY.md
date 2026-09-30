@@ -5,7 +5,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 항목을 추가한 커밋) (`JY-lobby`) | 09-30 | R51 | 온라인 래그돌: 스냅샷에 방장의 장애물 시각(`CFR6`, v8), 참가자 장애물을 방장 시각으로(`HostObstacleClock`), `SpinningBar` 공유 시계화, 장애물 시계 검사 |
+| `27e052c` (`JY-lobby`) | 09-30 | R51 | 온라인 래그돌: 스냅샷에 방장의 장애물 시각(`CFR6`, v8), 참가자 장애물을 방장 시각으로(`HostObstacleClock`), `SpinningBar` 공유 시계화, 장애물 시계 검사 |
 | `232931e` (`JY-lobby`) | 09-27 | R50 | 퀸 오브 더 힐 맵 8차: 층 26 m(정상 198 m), 팀마다 서·동 날개(모듈 27종), 4·7층 공용. 체크포인트 없앰 → Core `QueenHillRace`(팀별 지름길, 사람별 랭크, 진공관 목적지, 테스트 2개), `QueenHillRaceMatch`·`TeamBell`·`TeamPath`·`RankPad`·`VacuumTube`, 떨어지면 1랭크, 미리보기 층별 잘라 보기 |
 | `5905eca` (`JY-lobby`) | 09-27 | R49 | 퀸 오브 더 힐 맵 7차: 7개 층 + 8랭크, 층마다 두세 갈래 길. 맵을 데이터로(`Tools/QueenHill/build_layout.py` → JSON → `QueenHillLevel`), `OrbitPlatform`·`PhaseToggle`, three.js 미리보기, `QueenHillCourse` 랭크 높이·테스트 |
 | `6250132` (`JY-lobby`) | 09-27 | R48 | 퀸 오브 더 힐 그레이박스 맵: `QueenHillCourse`(Core, 테스트 2개), `QueenHillLevel`(Play 때 160 m 맵 생성), 구간 기록 패널, `OrbitCamera`, `PlaytestSpawner` 팀·카메라 기준 이동·부활·추락·스테미나, `ITeamAssignable`·`IStaminaReadout`, 씬 `QueenOfTheHill.unity`와 생성기, 문서 `GRAYBOX.md` |
