@@ -346,8 +346,8 @@ public static class NetworkCoreTests
                 Check(Backfill.Free(null, few, 0) == 0 && !Backfill.Place(null, few, 1, out _, out _), "no known size, no seat");
                 Check(TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 1, 2 }) && !TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 2 }) &&
                       !TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 1, 1 }) && !TeamReservations.ValidRequest(1, 101, "t", null), "request shape"); });
-            Test("Backfill: seats are offered for three minutes after the start, and the room keeps sizes and held seats as text", () => {
-                Check(Backfill.Open(0, 5) && Backfill.Open(1000, 1000 + Backfill.OpenSeconds - .5) && !Backfill.Open(1000, 1000 + Backfill.OpenSeconds), "window");
+            Test("Backfill: seats are offered for four minutes after the start, and the room keeps sizes and held seats as text", () => {
+                Check(Backfill.OpenSeconds == 240 && Backfill.Open(0, 5) && Backfill.Open(1000, 1000 + Backfill.OpenSeconds - .5) && !Backfill.Open(1000, 1000 + Backfill.OpenSeconds), "window");
                 Check(Backfill.EncodeCapacity(6, 5) == "6,5" && Backfill.DecodeCapacity("6,5").SequenceEqual(new[] { 6, 5 }), "sizes");
                 Check(Backfill.DecodeCapacity("") == null && Backfill.DecodeCapacity("7,6") == null && Backfill.DecodeCapacity("6") == null &&
                       Backfill.DecodeCapacity("-1,6") == null && Backfill.DecodeCapacity("a,b") == null, "bad sizes");

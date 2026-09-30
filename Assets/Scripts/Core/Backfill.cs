@@ -18,9 +18,9 @@ namespace ChessFight.Network
         // A joining party's members still on their way keep their seats this long,
         // like a reservation in the waiting room.
         public const double HoldSeconds = 25;
-        // After the shared start (MatchStart, "go") empty seats are offered this
-        // long; a later newcomer could hardly take part (Sword Fight lasts 240 s).
-        public const double OpenSeconds = 180;
+        // After the shared start (MatchStart, "go") empty seats are offered for
+        // four minutes, the user's choice (R60).
+        public const double OpenSeconds = 240;
 
         // Who sits on which team and spawn slot. Until is only set on a held seat:
         // the Steam server time its player has to arrive by.

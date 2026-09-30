@@ -196,6 +196,10 @@ namespace ChessFight.Game
             var partyMode = session.PartyMode;
             var mode = inRoom ? session.MatchMode : partyMode;
             bool idleLeader = session.Online && session.IsLeader && !session.Busy;
+            // R60: members still playing a match they stayed in, or this member
+            // back early from one, keep the party from queueing again.
+            bool waiting = session.WaitingForParty;
+            bool canQueue = idleLeader && !session.PartyStillPlaying;
             bool hostWaiting = session.IsHost && !session.Started;
             int humans = session.PartyMembers.Length;
             int party = humans + session.PartyBots;
@@ -234,33 +238,35 @@ namespace ChessFight.Game
                 BotsNote = session.BotsBlockPublicMatch ? "봇 포함 시 비공개 방 전용" : "",
                 CanAddBot = idleLeader && session.PartyBots < session.MaxPartyBots,
                 CanRemoveBot = idleLeader && session.PartyBots > 0,
-                CanLeaveParty = session.Online && !session.Busy,
+                CanLeaveParty = session.Online && (!session.Busy || waiting),
                 CanCopyParty = session.Party != 0,
 
                 Busy = busy,
                 // Release builds keep bots out of public matches (M6); the test
                 // room still takes them.
-                CanPlay = idleLeader && !session.BotsBlockPublicMatch && partyMode.Playable,
+                CanPlay = canQueue && !session.BotsBlockPublicMatch && partyMode.Playable,
                 PlaySub = PlaySubtitle(partyMode, party),
-                BusyTitle = following ? "파티장을 따라가는 중"
+                BusyTitle = waiting ? "파티원 경기 중"
+                          : following ? "파티장을 따라가는 중"
                           : inRoom && session.Started ? "경기 시작!"
                           : inRoom && session.PrivateRoom ? "비공개 방"
                           : "매칭 중",
                 BusySub = $"{Clock(now)} · {(inRoom ? roomCount : party)}/12",
-                CanCancel = session.Busy,
+                CanCancel = session.Busy && !waiting,
                 ShowStart = inRoom && session.PrivateRoom && session.IsHost,
                 // Mirrors StartGame's real rules, so the button is never a no-op.
                 CanStart = hostWaiting && (session.PrivateRoom ? roomCount >= 2 : roomCount == 12),
 
                 ShowMatch = busy,
                 MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + mode.Name,
-                MatchTitle = !inRoom ? (following ? "파티장이 방을 찾는 중..." : "상대를 찾는 중...")
+                MatchTitle = !inRoom ? (waiting ? "파티원들이 경기를 마치기를 기다리는 중" : following ? "파티장이 방을 찾는 중..." : "상대를 찾는 중...")
                            : session.Started ? "경기를 시작합니다!"
                            : session.JoiningLive ? "진행 중인 경기에 들어가는 중..."
                            : session.PrivateRoom ? (session.IsHost ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")
                            : "상대를 찾는 중...",
                 MatchTimer = Clock(now),
-                MatchNote = session.JoiningLive ? "나간 플레이어의 빈자리를 채워요"
+                MatchNote = waiting ? "먼저 나왔어요 · 혼자 하려면 파티 나가기"
+                          : session.JoiningLive ? "나간 플레이어의 빈자리를 채워요"
                           : session.AllowPublicBots ? "개발 빌드 · 봇 허용" : "",
                 OurTeam = ourTeam, OursFilled = ours, TheirsFilled = theirs,
                 ShowRoomTools = inRoom && (session.PrivateRoom || session.CanUseRoomBots),
@@ -270,8 +276,8 @@ namespace ChessFight.Game
 
                 CanInvite = session.Online && !session.Busy && session.Party != 0 && humans < 6,
                 CanJoinParty = session.Online && !session.Busy,
-                CanJoinMatch = idleLeader,
-                CanCreateTest = idleLeader && partyMode.Playable
+                CanJoinMatch = canQueue,
+                CanCreateTest = canQueue && partyMode.Playable
             };
         }
 
@@ -279,6 +285,7 @@ namespace ChessFight.Game
         {
             if (!session.Online) return "Steam 연결이 필요합니다";
             if (!session.IsLeader) return "파티장이 시작하기를 기다리는 중";
+            if (session.PartyStillPlaying) return "파티원이 경기를 마치고 돌아오면 시작할 수 있어요";
             if (!mode.Playable) return mode.Name + " 모드는 준비 중입니다";
             if (session.BotsBlockPublicMatch) return "봇이 있으면 비공개 방에서만 시작할 수 있어요";
             return party > 1 ? $"{mode.Name} · 파티 {party}명 모두 같은 팀" : $"{mode.Name} · 빠른 매칭";
