@@ -115,6 +115,10 @@ namespace ChessFight.Game
             if (close != null) { close.focusable = false; close.clicked += () => Close(true); }
 
             field.maxLength = ChatText.MaxLength;
+            // Opening the chat again continues a kept line instead of selecting it,
+            // so the next key does not wipe it.
+            field.selectAllOnFocus = false;
+            field.selectAllOnMouseUp = false;
             // Enter, Tab and Esc belong to the chat. Left to the field, Enter gives
             // up the focus and Tab moves it away. Esc closes here as well as in
             // Update, whichever sees the key first.

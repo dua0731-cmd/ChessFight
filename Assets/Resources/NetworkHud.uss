@@ -352,7 +352,7 @@ TextField { margin: 10px 3px 6px 3px; height: 34px; }
 
 /* open */
 .chat-panel { height: 188px; border-radius: 14px; border-width: 1px; border-color: rgba(255, 255, 255, 0.13);
-              background-color: rgba(14, 22, 40, 0.90); overflow: hidden; }
+              background-color: rgba(14, 22, 40, 0.96); overflow: hidden; }
 .chat-match .chat-panel { height: 230px; }
 .chat-tabs { flex-shrink: 0; padding: 6px 8px 0 10px; border-bottom-width: 1px; border-color: rgba(255, 255, 255, 0.13); }
 .chat-tab { flex-direction: row; align-items: center; min-height: 26px; margin: 0 2px 0 0; padding: 2px 10px 4px 10px;
@@ -403,6 +403,6 @@ TextField { margin: 10px 3px 6px 3px; height: 34px; }
 .chat-placeholder { position: absolute; left: 5px; top: 0; bottom: 0; font-size: 13px; -unity-text-align: middle-left;
                     color: rgba(160, 176, 198, 0.85); }
 .chat-hint { flex-shrink: 0; margin-left: 6px; font-size: 10px; color: rgb(160, 176, 198); }
-.chat-note { display: none; margin: 4px 0 0 2px; font-size: 12px; -unity-font-style: bold; color: rgb(250, 208, 60);
-             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85); }
+.chat-note { display: none; align-self: flex-start; margin: 4px 0 0 0; padding: 2px 9px; border-radius: 7px; font-size: 12px;
+             -unity-font-style: bold; color: rgb(250, 208, 60); background-color: rgba(10, 16, 30, 0.85); }
 .chat-note-error { color: rgb(255, 150, 120); }

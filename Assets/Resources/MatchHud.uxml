@@ -9,7 +9,7 @@
             <ui:Label text="명단" class="card-title" />
             <ui:Label name="match-roster" class="roster" />
             <ui:Label name="match-link" class="details" />
-            <ui:Label text="Esc 로비로 나가기 · WASD 이동 · Space 점프 · Tab 채팅" class="hint hint-left" />
+            <ui:Label text="Esc 로비로 나가기 · WASD 이동 · Space 점프&#10;Tab 채팅" class="hint hint-left" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
