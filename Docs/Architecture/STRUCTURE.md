@@ -78,5 +78,6 @@ Input (자기 등록, 아무도 참조하지 않음)
 | 경기 중 빈자리 규칙(R59) | `Scripts/Core/Backfill.cs` |
 | 로비·파티 | `Scripts/Network/SteamSession.cs` |
 | 채팅(R61) | `Scripts/Core/Chat.cs`(규칙), `Scripts/Network/SteamSession.cs`(`Say`·`Hear`), `Scripts/Game/ChatBox.cs`(화면), `Resources/ChatHud.uxml` |
+| 결과 화면(R62) | `Scenes/LastScene.unity`, `Scripts/Game/LastScene*.cs`(진행·결과판·연출·무대·말, Steam 모름), `Scripts/Core/MatchResult.cs`(도착 순서 규칙), `Resources/LastSceneHud.uxml` / `.uss`, `LastSceneTheme.tss` ([UI §10](UI.md#10-결과-화면-r62-2026-10-01)) |
 | 이동 동기화 | `Scripts/Network/SteamMotion.cs`, `Scripts/Core/MotionProtocol.cs` |
 | 씬 흐름 | `Scripts/Bootstrap/NetworkRuntime.cs` |

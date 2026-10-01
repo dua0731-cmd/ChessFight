@@ -7,7 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/pawnrush-loading`) | 09-30 | R61 2차 | 문서: PITFALLS 24(UIDocument를 부모·자식 오브젝트에 두면 로딩 화면이 안 뜸), VALIDATION·REQUIREMENTS·HANDOFF에 로딩 화면 문제와 수정 |
+| (이 커밋, `claude/last-scene`) | 10-01 | R62 | 문서: UI §10 결과 화면, SCENES(LastScene), STRUCTURE, DECISIONS U9(영상 대신 코드로 만든 3D 장면)·U10(목표 그림체 = PAWN RUSH 참고 그림), VALIDATION 결과 화면 표(12개), REQUIREMENTS R62·조건 2줄, ROADMAP(결과를 어디서 보여 줄지 결정 대기), HANDOFF. R61 "푸시 전" 표기를 "10-01 푸시 `e64012e`"로 |
+| `c968a10` (`claude/last-scene`) | 10-01 | R62 | Unity에서 보고 고침: 진 팀 화면에 비가 없던 것(3.4초부터 비스듬한 파티클 비), 마지막 장면에서 왼쪽 끝 쓰러진 말이 잘리던 것(카메라를 더 뒤로, 줄 간격 좁힘), 에디터 창이 뒤에 있으면 시간이 멈추던 것(`runInBackground`) |
+| `1e92fc0` (`claude/last-scene`) | 10-01 | R62 | 결과 화면 `LastScene.unity`(메뉴 Last Scene): PAWN RUSH 참고 그림체 무대(성·왕관 아치·체크 광장·거대 비숍과 룩)와 다리 달린 말을 코드로, 이긴 팀 세리머니·꽃가루 대포 / 진 팀 왕관 튕김·도미노, 결과판 HUD(팀 목표, 도착 순서와 필요 인원 금색·승리 확정 깃발, 미도착 남은 거리, H 숨기기, 12초 자동 로비, 다시 매칭·로비로). Core `MatchResult` + 테스트 2개(Core 81·세션 39·실제 DLL 컴파일 통과). 경기 흐름에는 아직 연결 안 함 |
+| `e64012e` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 문서: PITFALLS 24(UIDocument를 부모·자식 오브젝트에 두면 로딩 화면이 안 뜸), VALIDATION·REQUIREMENTS·HANDOFF에 로딩 화면 문제와 수정 |
 | `3bf8981` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 채팅을 `NetworkRuntime` 아래 자기 오브젝트(`Chat`)로: 런타임 오브젝트에 붙인 채팅의 UIDocument 때문에 그 자식인 로딩 화면이 Assert로 안 떴다(`c738e87`부터). AI가 Unity에서 로딩 화면(폰 러시, 12/12 준비)과 오류 0을 확인 |
 | `b579c38` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | 경기 화면의 채팅 창을 불투명하게(소드 파이트 씬은 UI가 밝게 그려져 뒤 글씨가 비쳤다). 문서: AI가 Unity에서 본 것(로비, 킹 러시·소드 파이트 경기 화면, 코드로 열고 닫음)을 VALIDATION·REQUIREMENTS·HANDOFF에 |
 | `fbcb265` (`claude/pawnrush-loading`) | 09-30 | R61 2차 | Unity에서 보고 고침: 열린 창을 더 진하게, "입력 중 · 이동 멈춤"에 어두운 바탕, 킹 러시 안내 카드의 "Tab 채/팅" 줄바꿈을 따로 한 줄로, 다시 열 때 남은 글이 통째로 선택되던 것(`selectAllOnFocus` 끔) |
