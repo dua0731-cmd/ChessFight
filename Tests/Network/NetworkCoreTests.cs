@@ -529,6 +529,27 @@ public static class NetworkCoreTests
                 Check(log.In(ChatChannel.Team).Count() == ChatLog.Capacity && log.In(ChatChannel.Team).First().Text == "t1" && log.In(ChatChannel.Team).Last().Number == 51, "oldest dropped");
                 log.Clear(ChatChannel.Team); version = log.Version; log.Clear(ChatChannel.Team);
                 Check(!log.In(ChatChannel.Team).Any() && log.Version == version && log.Add(ChatChannel.Team, 7, "", "again", false, false, 6).Number == 1 && log.In(ChatChannel.Party).Count() == 3, "clear"); });
+            Test("Result screen: crossing order, the winners' first four marked and the fourth clinches", () => {
+                var r = MatchResult.Example(0);
+                var order = r.FinishOrder();
+                Check(string.Join(",", order.Select(l => l.Player.Name)) == "퀸사이드,프로모션,폰돌이,블리츠,갬빗,오프닝", "crossing order");
+                Check(order.Select(l => l.Place).SequenceEqual(new[] { 1, 2, 3, 4, 5, 6 }), "overall places");
+                Check(order.Where(l => l.CountsToWin).Select(l => l.Player.Name).SequenceEqual(new[] { "퀸사이드", "폰돌이", "블리츠", "오프닝" }), "winners' four");
+                Check(order.Count(l => l.Clinched) == 1 && order.Single(l => l.Clinched).Player.Name == "오프닝" && order.Single(l => l.Clinched).TeamPlace == 4, "fourth clinches");
+                Check(order.Single(l => l.Player.Name == "갬빗").TeamPlace == 2 && !order.Single(l => l.Player.Name == "갬빗").CountsToWin, "losers never count");
+                Check(r.FinishedCount(0) == 4 && r.FinishedCount(1) == 2 && r.GoalCount(0) == 4 && r.GoalCount(1) == 2, "goal counts");
+                Check(r.Players.Single(p => p.Self).Name == "폰돌이" && MatchResult.Example(1).Players.Single(p => p.Self).Name == "갬빗", "whose screen"); });
+            Test("Result screen: non-finishers nearest first, distances rounded up, clock, majority and draws", () => {
+                var r = MatchResult.Example(1);
+                Check(string.Join(",", r.NotFinished(1).Select(p => p.Name)) == "스테일메이트,캐슬링,스큐어,포크", "black nearest first");
+                Check(string.Join(",", r.NotFinished(0).Select(p => p.Name)) == "룩앤롤,앙파상", "white nearest first");
+                r.Players.Add(new ResultPlayer { Name = "봇", Team = 1, MetersLeft = -1 });
+                Check(r.NotFinished(1).Last().Name == "봇", "unknown distance last");
+                Check(MatchResult.Meters(12f) == "12m" && MatchResult.Meters(11.2f) == "12m" && MatchResult.Meters(-1) == "-", "meters");
+                Check(MatchResult.Clock(252) == "4:12" && MatchResult.Clock(59.99) == "0:59" && MatchResult.Clock(-1) == "-" && MatchResult.Clock(double.NaN) == "-", "clock");
+                Check(MatchResult.MajorityOf(2) == 2 && MatchResult.MajorityOf(3) == 2 && MatchResult.MajorityOf(4) == 3 && MatchResult.MajorityOf(5) == 3 && MatchResult.MajorityOf(6) == 4, "majority");
+                var draw = MatchResult.Example(0); draw.WinningTeam = -1;
+                Check(!draw.FinishOrder().Any(l => l.CountsToWin || l.Clinched), "a draw marks nobody"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

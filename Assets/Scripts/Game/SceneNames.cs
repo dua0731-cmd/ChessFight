@@ -13,5 +13,8 @@ namespace ChessFight.Game
         // Queen of the Hill graybox: offline playtest only until the networked ragdoll
         // (MECHANICS_TODO M14) lets GameModes.QueenOfTheHill load it for a match.
         public const string QueenOfTheHill = "QueenOfTheHill";
+        // The result screen (R62). Previewed on its own for now; the match flow does
+        // not load it until the team decides where the result plays.
+        public const string LastScene = "LastScene";
     }
 }
