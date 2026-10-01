@@ -5,7 +5,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 항목을 추가한 커밋) (`JY-lobby`) | 10-01 | R53 | 폰 러시 기획 대조(`GameModes/PawnRush/README.md`)와 3명 작업판(`TASKS.md`) |
+| `239f4be` (`JY-lobby`) | 10-01 | R53 | 폰 러시 기획 대조(`GameModes/PawnRush/README.md`)와 3명 작업판(`TASKS.md`) |
 | (이 커밋, `claude/lobby-port`) | 09-30 | R52 | 문서: SESSION(검색 `open=1`, 로비 데이터 `load`·`go`·`open`·`seats`·`held`·`match`, §6 나간 사람만, §8 빈자리), UI(§8 로딩 화면, 로비·경기 문구), HOST, DECISIONS K9·K10, VALIDATION 확인 표 2개, REQUIREMENTS R52, HANDOFF |
 | `0d7d1ce` (`claude/lobby-port`) | 09-30 | R52 | (`JY-kingrush` `6b4118a`) 로딩 화면: 흑팀 준비 점 금색, 문구 줄과 진행 줄 사이 58px |
 | `cb2c7ee` (`claude/lobby-port`) | 09-30 | R52 | (`JY-kingrush` `6eefd07`) 시작한 경기에서는 나간 사람만 나감, 빈자리 4분 |
