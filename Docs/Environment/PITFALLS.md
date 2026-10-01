@@ -39,3 +39,5 @@
 - 이전 도구 시절: GitHub 연동 앱이 저장소 쓰기에 403을 냈다. 사용자가 GitHub Desktop으로 커밋·푸시해 해결했다. 권한 문제는 코드 오류가 아니다. 도구마다 쓰기 권한을 먼저 확인한다.
 - 이전 도구 시절: 샌드박스의 headless Unity가 라이선스 IPC 문제로 실패했다. 이후 사용자 Unity Hub에서 빌드에 성공했다. 과거 장애를 지금의 검증 불가 사유로 재사용하지 않는다.
 - Steam 로그인은 사용자가 직접 한다. 비밀번호·인증 코드·토큰을 문서나 저장소에 적지 않는다.
+- (10-01) **Linux 테스트에서 로컬 함수 금지.** 테스트는 mcs로 컴파일되는데 mcs는 로컬 함수(`Type F(...) => ...`를 메서드 안에 선언)를 못 읽는다. 09-28 방장 선정 테스트가 이것 때문에 Linux에서 컴파일되지 않았고 10-01에 클래스 수준 static 메서드로 옮겼다. 람다 안 도우미는 `Func<>`나 클래스 메서드로 쓴다.
+- (10-01) **`run-tests-linux.sh --compile`은 `LoadingScreenView.cs`(R52 로딩 화면)에서 실패한다.** `MeshGenerationContext.painter2D`·`LineJoin`은 Unity 2022 이상 API인데 Linux 검사의 참조 DLL은 Unity 2021.3이다. 게임 코드 오류가 아니라 검사 도구의 한계다. 이 파일은 Windows의 `Tools/Test-NetworkCompile.ps1`(실제 6000.3 DLL)로 확인한다. 테스트(`--compile` 없이)는 통과해야 한다.

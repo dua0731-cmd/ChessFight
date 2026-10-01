@@ -32,7 +32,7 @@
 | 〃 (래그돌 물리) | 프로젝트 사본 → `Unity.exe -batchmode -nographics -projectPath <사본> -executeMethod ChessFight.RagdollLab.Editor.RagdollLabBuilder.BuildPlayerBatch -labOut <사본>\build` → `RagdollLab.exe -batchmode -nographics -ragdollAutoTest report.txt` (`-ragdollQueenHillOnly`로 퀸 오브 더 힐 점검만, `-ragdollOnly Climb,ClimbBugs`처럼 묶음 이름으로 일부만(`-ragdollAutoTestOnly`도 같음), `-ragdollFeel <폴더>`로 조작감 녹화) | **실제 PhysX로 도는 래그돌 자동 점검.** 에디터가 같은 프로젝트를 열고 있으면 배치 모드를 못 쓰므로 사본(`Assets`·`Packages`·`ProjectSettings`·`Library`, 약 210 MB)에서 한다. 결과 기준: [RagdollLab README "자동 점검"](../RagdollLab/README.md#자동-점검). 사람의 Unity 확인을 대신하지 않는다 |
 | 컴파일러 없음 | `python3 Tools/Generators/check_braces.py` | 괄호 균형만 확인 |
 
-- 현재 기준: **Core 29개, 세션 15개**, 래그돌 자동 점검 **56 통과 / 0 실패(09-27, `JY-ragdoll_v2`)**. 수가 줄면 뭔가 빠진 것이다.
+- 현재 기준(`JY-lobby`, 2026-10-01): **Core 51개, 세션 32개**(`--compile`의 `LoadingScreenView` 실패는 알려진 도구 한계, [PITFALLS](PITFALLS.md) 끝). 이전 기록: Core 29개, 세션 15개, 래그돌 자동 점검 **56 통과 / 0 실패(09-27, `JY-ragdoll_v2`)**. 수가 줄면 뭔가 빠진 것이다.
 - **새 래그돌 점검은 빌드한 플레이어에서 한 번 이상 돌려 보고 커밋한다.** Unity 없이 쓴 점검 9개가 처음부터 실패했고 그중 4개는 점검이 틀렸다([PITFALLS 21](PITFALLS.md)).
 - 테스트 파일: `Tests/Network/NetworkCoreTests.cs`, `SessionFlowTests.cs`, `FakeSteam.cs`(Steam/Unity API 모사). 새 Steam API를 쓰면 `FakeSteam.cs`에도 스텁을 추가한다.
 - 테스트 통과는 **Unity 실행 검증이 아니다.** Unity·Steam에서만 확인할 수 있는 항목은 [VALIDATION](../Network/VALIDATION.md) 최상단에 '미확인'으로 추가하고 사용자에게 확인 방법을 알려준다.
