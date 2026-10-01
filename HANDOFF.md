@@ -4,9 +4,11 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-30**(R52 승규 님 작업 가져옴: 방장 선정·이전·로딩 화면·빈자리 채우기·나간 사람만 나가기, 프로토콜 **v15**. 그 전 R51 온라인 래그돌 장애물 시각) · 기준 브랜치 **`JY-lobby`**(로비·게임모드·퀸 오브 더 힐 맵 작업, `JY-ragdoll_v2`를 합침), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+최종 갱신: **2026-10-01**(R53 폰 러시 기획서 대조·3명 작업판 → [PawnRush](Docs/GameModes/PawnRush/README.md). 그 전 R52 승규 님 작업 가져옴: 방장 선정·이전·로딩 화면·빈자리 채우기·나간 사람만 나가기, 프로토콜 **v15**. 그 전 R51 온라인 래그돌 장애물 시각) · 기준 브랜치 **`JY-lobby`**(로비·게임모드·퀸 오브 더 힐 맵 작업, `JY-ragdoll_v2`를 합침), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
 
 > **최신 R52(승규 님, 09-30): 승규 님 작업을 `JY-lobby`에 가져옴.** ① 방장 선정·이전(`claude/host-migration`) ② 로비 → 경기 **로딩 화면·동시 출발**([UI §8](Docs/Architecture/UI.md#8-로딩-화면-r52-2026-09-30)) ③ 시작한 경기의 **빈자리를 매칭으로 채움**(팀마다 시작 인원까지, 시작 뒤 4분, [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r52-2026-09-30)) ④ **시작한 경기에서는 나간 사람만 나감**(방장이면 방장 이전). ②~④는 `JY-kingrush` R58~R60에서 만든 것을 옮겨 담았다. 소드 파이트·킹 러쉬 등 다른 채팅 작업은 가져오지 않았다. 프로토콜 **v15**(모든 PC가 새 빌드여야 한다). **코드·테스트만, `JY-lobby`에서 Unity·Steam 미확인** → 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 두 표
+
+> **최신 R53(10-01): 폰 러시 기획서 v1.0(성한)을 `JY-lobby`와 대조하고 3명 작업판을 만들었다.** 기획 요약·구현 대조·결정할 것은 [PawnRush/README](Docs/GameModes/PawnRush/README.md), 담당 A(경기·네트워크)·B(코스·장애물·미션)·C(캐릭터·승격·공정성·스킬)의 작업과 규칙·프롬프트는 [PawnRush/TASKS](Docs/GameModes/PawnRush/TASKS.md). **폰 러시 작업을 시작하는 AI는 이 두 문서를 먼저 읽는다.** 코드는 아직 바꾸지 않았다.
 
 ---
 
@@ -172,6 +174,7 @@ Tools/
 
 | 작업 | 먼저 읽을 것 | 그다음 코드 |
 |---|---|---|
+| **폰 러시** | [PawnRush/README](Docs/GameModes/PawnRush/README.md) → [PawnRush/TASKS](Docs/GameModes/PawnRush/TASKS.md)(내 담당·작업 ID·소유 파일) | 작업판의 각 항목에 적힌 파일 |
 | 무엇이든 처음 | 이 파일 → [REQUIREMENTS](Docs/Project/REQUIREMENTS.md) → [DECISIONS](Docs/Project/DECISIONS.md) → [PITFALLS](Docs/Environment/PITFALLS.md) | — |
 | Unity 오류, Safe Mode, 클릭 안 됨 | [PITFALLS](Docs/Environment/PITFALLS.md), [SETUP](Docs/Environment/SETUP.md) | `Scripts/Editor/`, asmdef |
 | 파티, 매칭, 초대 | [Network/SESSION](Docs/Network/SESSION.md) | `Network/SteamSession.cs`, `Core/TeamReservations.cs` |
