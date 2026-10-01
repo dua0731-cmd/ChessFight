@@ -22,6 +22,9 @@ namespace ChessFight.Game
         readonly List<(Transform arm, float phase, float sign)> maces = new List<(Transform, float, float)>();
         readonly List<(Transform t, Vector3 home, float phase)> clouds = new List<(Transform, Vector3, float)>();
         Transform crown, roller;
+        ParticleSystem rain;
+        // The defeat's rain starts here (the beat table's 3.4 s).
+        public const float RainFrom = 3.4f;
 
         public static float GroundY(float x, float z) => OnStage(x, z) ? Top : 0f;
         public static bool OnStage(float x, float z) =>
@@ -40,13 +43,22 @@ namespace ChessFight.Game
             stage.Castle(fixedParts, moving);
             stage.Giants(moving);
             stage.Clouds(moving, sunny);
+            if (!sunny) stage.rain = Rain(moving);
             // Hundreds of still parts drawn in a few batches.
             StaticBatchingUtility.Combine(fixedParts.gameObject);
             return stage;
         }
 
-        public void Update(float time)
+        // `tp`: seconds since the result began (the rain fades in on it).
+        public void Update(float time, float tp)
         {
+            if (rain != null)
+            {
+                float amount = Mathf.Clamp01((tp - RainFrom) / 1.2f);
+                var emission = rain.emission;
+                emission.rateOverTime = 1800f * amount;
+                if (amount <= 0 && rain.particleCount > 0) rain.Clear();
+            }
             foreach (var f in flags) f.t.localRotation = Quaternion.Euler(0, Mathf.Sin(time * 2.4f + f.phase) * f.amp * f.sign * Mathf.Rad2Deg, 0);
             foreach (var m in maces)
                 m.arm.localRotation = Quaternion.Euler(0, Mathf.Sin(time * 1.1f + m.phase) * 63f, m.sign * (8.6f + Mathf.Sin(time * 2.2f + m.phase) * 7f));
@@ -354,6 +366,36 @@ namespace ChessFight.Game
             Vector2[] rook = { new Vector2(0, -1.9f), new Vector2(1.35f, -1.9f), new Vector2(1.4f, -1.6f), new Vector2(1.25f, -1.3f), new Vector2(1.2f, 1.2f), new Vector2(1.4f, 1.4f), new Vector2(1.4f, 1.9f), new Vector2(0, 1.9f) };
             LastSceneArt.Part(lying, "Body", LastSceneArt.Lathe("giant rook", rook, 28), LastSceneArt.Lit(0xF1E6D2, .5f), Vector3.zero);
             LastSceneArt.Part(lying, "Base", LastSceneArt.Cylinder(1.42f, 1.42f, .5f, 28), LastSceneArt.Lit(0x34323C, .55f), new Vector3(0, -1.75f, 0));
+        }
+
+        // Thin streaks falling a little slanted over the plaza; no emission until RainFrom.
+        static ParticleSystem Rain(Transform parent)
+        {
+            var host = LastSceneArt.Group(parent, "Rain", new Vector3(0, 18f, 6f), Quaternion.Euler(0, 0, -10f) * Quaternion.Euler(90f, 0, 0));
+            var system = host.AddComponent<ParticleSystem>();
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = system.main;
+            main.loop = true;
+            main.startLifetime = 1.1f;
+            main.startSpeed = 24f;
+            main.startSize = .045f;
+            main.maxParticles = 2600;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.startColor = new Color(.88f, .92f, 1f, .55f);
+            var emission = system.emission;
+            emission.rateOverTime = 0f;
+            var shape = system.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(46f, 34f, 1f);
+            var renderer = host.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            renderer.velocityScale = .04f;
+            renderer.lengthScale = 1f;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.sharedMaterial = LastSceneArt.Blended("rain", null, Color.white);
+            system.Play();
+            return system;
         }
 
         void Clouds(Transform moving, bool sunny)

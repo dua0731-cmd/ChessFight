@@ -196,7 +196,7 @@ namespace ChessFight.Game
     public sealed class LastSceneDefeat : LastSceneCeremony
     {
         // Centre first. The `fall` time, or a negative one for the piece that sits.
-        static readonly float[,] Slots = { { .75f, 2.08f, 0 }, { -.75f, 2.38f, 2.1f }, { 2.25f, 2.38f, 2.25f }, { -2.25f, 2.08f, 2.45f }, { 3.75f, 2.08f, -2.5f }, { -3.75f, 2.38f, 2.75f } };
+        static readonly float[,] Slots = { { .7f, 2.08f, 0 }, { -.68f, 2.38f, 2.1f }, { 2.05f, 2.38f, 2.25f }, { -2.03f, 2.08f, 2.45f }, { 3.4f, 2.08f, -2.5f }, { -3.38f, 2.38f, 2.75f } };
         readonly List<LastSceneFigure> losers = new List<LastSceneFigure>(), winners = new List<LastSceneFigure>();
         readonly List<(LastSceneDust ring, float at, Vector3 where, float size)> dust = new List<(LastSceneDust, float, Vector3, float)>();
         readonly List<Vector2> shakes = new List<Vector2>();
@@ -212,7 +212,7 @@ namespace ChessFight.Game
             new Key { t = 1f, pos = P(.7f, 2.3f, 6.9f), look = P(.8f, 2.1f, 2.1f), fov = 30 },
             new Key { t = 2.3f, pos = P(1.3f, 2.7f, 7.6f), look = P(.5f, 1.2f, 2f), fov = 32 },
             new Key { t = 3.5f, pos = P(.4f, 3.8f, 11f), look = P(.2f, 1.2f, 1f), fov = 33 },
-            new Key { t = 5.6f, pos = P(-1f, 4.4f, 17.5f), look = P(.6f, 2.3f, -2.5f), fov = 33 },
+            new Key { t = 5.6f, pos = P(-1.4f, 4.9f, 19.5f), look = P(.6f, 2.1f, -2.5f), fov = 33 },
         };
 
         public LastSceneDefeat(Transform world, MatchResult result, int team)

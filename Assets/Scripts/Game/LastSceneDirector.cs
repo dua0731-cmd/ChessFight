@@ -56,6 +56,8 @@ namespace ChessFight.Game
                 host.AddComponent<AudioListener>();
             }
             view.nearClipPlane = .1f;
+            // Keep the show running when the window is behind another (as NetworkRuntime does).
+            Application.runInBackground = true;
             savedShadowDistance = QualitySettings.shadowDistance;
             QualitySettings.shadowDistance = 90f;
 
@@ -128,7 +130,7 @@ namespace ChessFight.Game
             float time = Time.time, tp = time - startedAt, boardAt = winView ? WinBoardAt : LoseBoardAt;
             float target = boardOn && tp >= boardAt ? 1f : 0f;
             frameShift += (target - frameShift) * Mathf.Min(1f, Time.deltaTime * 2.6f);
-            stage.Update(time);
+            stage.Update(time, tp);
             cannons?.Update(tp);
             ceremony.Update(time, tp, frameShift, view);
             confetti?.Draw(tp);
