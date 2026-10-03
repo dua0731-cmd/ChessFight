@@ -7,6 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋, `claude/menu-c`) | 10-03 | R63 | 문서: UI §11(디자인 C 수정안)과 §3·§7·§8·§9 안내, DECISIONS U11, VALIDATION 메뉴 표(12개), REQUIREMENTS R63(+ R62 푸시 표기), STRUCTURE(글꼴), GameModes(폰 러쉬), HANDOFF |
+| (`claude/menu-c`) | 10-03 | R63 | 메뉴 디자인 C 수정안: `MenuArt`(나무결·체스판·마루·전광판 텍스처, 경기장 조명·빛줄기·후광, 3D 글씨 `Caption`, 말 그림 `Portrait`), `ChunkyButtons`(옆면 있는 판 버튼·누름·튀어 오름·빛줄기), `MenuMarks`(왕관·꺾쇠 화살표·비네트), `IntroStage`·`LobbyStage` 다시 만듦(결과 화면 말), `LoadingStudio`+`LoadingScreenView`(플레이어 입장), `NetworkHudView`·UXML·USS(호두나무·놋쇠, 모드 카드, 위 가운데 매칭 배너, 채팅), 표시 글꼴 Black Han Sans(`Resources/Fonts`, OFL), 모드 이름 폰 러쉬, `MatchLoader`가 이름·봇·나를 넘김, `LoadingBackdrop`·`PiecePortraits` 삭제 |
 | (이 커밋, `claude/last-scene`) | 10-01 | R62 | 문서: UI §10 결과 화면, SCENES(LastScene), STRUCTURE, DECISIONS U9(영상 대신 코드로 만든 3D 장면)·U10(목표 그림체 = PAWN RUSH 참고 그림), VALIDATION 결과 화면 표(12개), REQUIREMENTS R62·조건 2줄, ROADMAP(결과를 어디서 보여 줄지 결정 대기), HANDOFF. R61 "푸시 전" 표기를 "10-01 푸시 `e64012e`"로 |
 | `c968a10` (`claude/last-scene`) | 10-01 | R62 | Unity에서 보고 고침: 진 팀 화면에 비가 없던 것(3.4초부터 비스듬한 파티클 비), 마지막 장면에서 왼쪽 끝 쓰러진 말이 잘리던 것(카메라를 더 뒤로, 줄 간격 좁힘), 에디터 창이 뒤에 있으면 시간이 멈추던 것(`runInBackground`) |
 | `1e92fc0` (`claude/last-scene`) | 10-01 | R62 | 결과 화면 `LastScene.unity`(메뉴 Last Scene): PAWN RUSH 참고 그림체 무대(성·왕관 아치·체크 광장·거대 비숍과 룩)와 다리 달린 말을 코드로, 이긴 팀 세리머니·꽃가루 대포 / 진 팀 왕관 튕김·도미노, 결과판 HUD(팀 목표, 도착 순서와 필요 인원 금색·승리 확정 깃발, 미도착 남은 거리, H 숨기기, 12초 자동 로비, 다시 매칭·로비로). Core `MatchResult` + 테스트 2개(Core 81·세션 39·실제 DLL 컴파일 통과). 경기 흐름에는 아직 연결 안 함 |

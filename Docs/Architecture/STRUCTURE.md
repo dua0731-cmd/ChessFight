@@ -11,7 +11,7 @@ Assets/
   Prefabs/            PawnAvatar(네트워크 캡슐, 로비 라인업에도 씀) · Arena(옛 로비 체스판, 2026-09-25부터 미사용)
     Characters/       PlaytestCharacter (임시 캐릭터)
     Obstacles/        Spinner · SlidingWall · Pendulum
-  Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, ChatHud.uxml(채팅), NetworkTheme.tss, ChessFightControls.inputactions, QueenHill/QueenHillLayout.json(퀸 오브 더 힐 맵 데이터, 생성물)
+  Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, ChatHud.uxml(채팅), LoadingHud.uxml, Fonts/BlackHanSans-Regular.ttf(메뉴 표시 글꼴, OFL, LFS, R63), NetworkTheme.tss, ChessFightControls.inputactions, QueenHill/QueenHillLayout.json(퀸 오브 더 힐 맵 데이터, 생성물)
   Scenes/             Intro · Lobby · KingRush · RagdollTest · QueenOfTheHill(그레이박스, 맵은 코드가 만듦) (+ SampleScene 템플릿, 빌드 제외·비활성)
   Scripts/            ↓ 폴더 하나 = 어셈블리 하나
   Settings/           템플릿 URP 에셋 (현재 미사용)
@@ -78,6 +78,7 @@ Input (자기 등록, 아무도 참조하지 않음)
 | 경기 중 빈자리 규칙(R59) | `Scripts/Core/Backfill.cs` |
 | 로비·파티 | `Scripts/Network/SteamSession.cs` |
 | 채팅(R61) | `Scripts/Core/Chat.cs`(규칙), `Scripts/Network/SteamSession.cs`(`Say`·`Hear`), `Scripts/Game/ChatBox.cs`(화면), `Resources/ChatHud.uxml` |
+| 메뉴 디자인 C(R63) | `Scripts/Game/MenuArt.cs`(텍스처·조명·3D 글씨·말 그림), `ChunkyButtons.cs`(판 버튼), `MenuMarks.cs`(왕관·화살표), `IntroStage.cs`, `LobbyStage.cs`, `LoadingStudio.cs`·`LoadingScreenView.cs`(로딩 입장), `Resources/Fonts/` ([UI §11](UI.md#11-메뉴-디자인-c-그랜드-아레나-수정안-r63-2026-10-03)) |
 | 결과 화면(R62) | `Scenes/LastScene.unity`, `Scripts/Game/LastScene*.cs`(진행·결과판·연출·무대·말, Steam 모름), `Scripts/Core/MatchResult.cs`(도착 순서 규칙), `Resources/LastSceneHud.uxml` / `.uss`, `LastSceneTheme.tss` ([UI §10](UI.md#10-결과-화면-r62-2026-10-01)) |
 | 이동 동기화 | `Scripts/Network/SteamMotion.cs`, `Scripts/Core/MotionProtocol.cs` |
 | 씬 흐름 | `Scripts/Bootstrap/NetworkRuntime.cs` |
