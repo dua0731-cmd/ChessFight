@@ -2,7 +2,7 @@
     <!-- The entrance screen (LoadingScreenView), design C revised (2026-10-03):
          from a public match's "게임 시작" through matching and loading, the
          players walk onto a wooden stage as they join. Only "매칭 취소" is
-         clickable; the root takes the pointer so clicks never reach the lobby. LoadingScreenView
+         and "봇 추가" are clickable; the root takes the pointer so clicks never reach the lobby. LoadingScreenView
          looks up every name; "disp" text uses the display font. -->
     <ui:VisualElement name="loading" class="loading">
         <!-- The stage, drawn every frame by LoadingStudio; then team-colour washes. -->
@@ -44,8 +44,10 @@
             <ui:Label name="load-allin" text="모두 입장 완료 · 곧 출발!" class="disp load-allin" picking-mode="Ignore" />
         </ui:VisualElement>
 
-        <!-- While matching: calls the search off (Esc does too). -->
-        <ui:VisualElement class="load-cancel-row" picking-mode="Ignore">
+        <!-- While matching: one more bot in the room (development builds), and
+             calling the search off (Esc does too). -->
+        <ui:VisualElement class="row load-cancel-row" picking-mode="Ignore">
+            <ui:Button name="load-add-bot" text="봇 추가  +" class="disp chunky ch-wood ch-sm load-cancel load-add-bot" />
             <ui:Button name="load-cancel" text="매칭 취소  Esc" class="disp chunky ch-red ch-sm load-cancel" />
         </ui:VisualElement>
         <ui:VisualElement class="load-progress" picking-mode="Ignore">

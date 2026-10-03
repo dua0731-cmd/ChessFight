@@ -64,6 +64,8 @@ namespace ChessFight.Network
         public ulong PartyLeader => Owner(Party);
         public bool BotsBlockPublicMatch => !AllowPublicBots && PartyBots > 0;
         public bool CanUseRoomBots => IsHost && !Started && (privateRoom || AllowPublicBots);
+        // One more filler bot from the entrance screen while the room fills.
+        public bool CanAddRoomBot => CanUseRoomBots && Roster.ContainsKey(Self) && reservations.Count < 12;
         public bool CanEditTestBots => IsHost && privateRoom && !Started && Roster.ContainsKey(Self);
         public bool CanStartGame => IsHost && !Started && reservations.Groups.All(g => g.Committed) &&
             (privateRoom ? Roster.Count >= 2 : reservations.Ready);
@@ -428,6 +430,15 @@ namespace ChessFight.Network
                 if (!reservations.ReserveBots(Self, BotIdentity.Fill(Self, size, NextFillerIndex()), Time.realtimeSinceStartup, out _)) break;
             }
             PublishRoster();
+        }
+        // One filler bot on whichever team has room; a public room that reaches
+        // twelve this way starts on its own like any full room.
+        public bool AddRoomBot()
+        {
+            if (!CanAddRoomBot) return false;
+            if (!reservations.ReserveBots(Self, BotIdentity.Fill(Self, 1, NextFillerIndex()), Time.realtimeSinceStartup, out _)) return false;
+            PublishRoster();
+            return true;
         }
         public void ClearRoomBots()
         {

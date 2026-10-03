@@ -259,7 +259,6 @@ namespace ChessFight.Game
                 // Release builds keep bots out of public matches (M6); the test
                 // room still takes them.
                 CanPlay = canQueue && !session.BotsBlockPublicMatch && partyMode.Playable,
-                PlaySub = PlaySubtitle(partyMode, party),
                 BusyTitle = waiting ? "파티원 경기 중"
                           : following ? "파티장을 따라가는 중"
                           : inRoom && session.Started ? "경기 시작!"
@@ -309,17 +308,6 @@ namespace ChessFight.Game
                 CanJoinMatch = canQueue,
                 CanCreateTest = canQueue && partyMode.Playable
             };
-        }
-
-        string PlaySubtitle(GameModeInfo mode, int party)
-        {
-            if (!session.Online) return "Steam 연결이 필요합니다";
-            if (!session.IsLeader) return "파티장이 시작하기를 기다리는 중";
-            if (session.PartyStillPlaying) return "파티원이 경기를 마치고 돌아오면 시작할 수 있어요";
-            if (!mode.Playable) return mode.Name + " 모드는 준비 중입니다";
-            if (session.BotsBlockPublicMatch) return "봇이 있으면 비공개 방에서만 시작할 수 있어요";
-            if (mode == GameModes.SwordFight) return "공개 매칭 · 혼자라면 왼쪽 더미 테스트";
-            return party > 1 ? $"{mode.Name} · 파티 {party}명 모두 같은 팀" : $"{mode.Name} · 빠른 매칭";
         }
 
         string Clock(float now)

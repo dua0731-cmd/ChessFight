@@ -13,6 +13,9 @@ namespace ChessFight.Game
         // Matching: still finding players (no loading yet); Clock is the time
         // searched, shown where the percentage goes, and the line fills with players.
         public bool Matching, CanCancel;
+        // "봇 추가" while matching: shown to whoever may fill the room (ShowAddBot),
+        // clickable once there is a room with a free seat (CanAddBot).
+        public bool ShowAddBot, CanAddBot;
         public string Step = "", Clock = "";
         public int Percent;
         // Players the match will hold (12 for a public match): one card per seat,
@@ -63,6 +66,8 @@ namespace ChessFight.Game
         public bool Hiding => hideAt >= 0;
         // "매칭 취소" or Esc while matching.
         public event Action CancelRequested;
+        // "봇 추가" while matching: one more bot in the room.
+        public event Action AddBotRequested;
 
         sealed class Card
         {
@@ -78,7 +83,7 @@ namespace ChessFight.Game
         readonly LoadingStudio studio = new LoadingStudio();
         readonly List<Texture2D> washes = new List<Texture2D>();
         VisualElement screen, fill, allIn, ticks;
-        Button cancel;
+        Button cancel, addBot;
         readonly VisualElement[] rosters = new VisualElement[2];
         Label kicker, step, percent, tipTitle, tipText;
         readonly Label[] counts = new Label[2];
@@ -127,6 +132,12 @@ namespace ChessFight.Game
             {
                 cancel.focusable = false;
                 cancel.clicked += () => CancelRequested?.Invoke();
+            }
+            addBot = root.Q<Button>("load-add-bot");
+            if (addBot != null)
+            {
+                addBot.focusable = false;
+                addBot.clicked += () => AddBotRequested?.Invoke();
             }
             ChunkyButtons.Attach(root);
 
@@ -206,6 +217,11 @@ namespace ChessFight.Game
             if (ticks != null) ticks.style.display = matching ? DisplayStyle.None : DisplayStyle.Flex;
             if (cancel != null) cancel.style.display = matching && State.CanCancel && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
             if (matching && State.CanCancel && !Hiding && LegacyKeys.Down(KeyCode.Escape)) CancelRequested?.Invoke();
+            if (addBot != null)
+            {
+                addBot.style.display = matching && State.ShowAddBot && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
+                addBot.SetEnabled(State.CanAddBot);
+            }
 
             studio.Sync(State.Teams, State.Joined, State.Bots, now);
             int total = State.Teams.Count;

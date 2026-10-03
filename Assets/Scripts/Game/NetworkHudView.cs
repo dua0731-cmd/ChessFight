@@ -24,7 +24,7 @@ namespace ChessFight.Game
 
         // Idle: the start button. Busy: the matching card in its place.
         public bool Busy, CanPlay, CanCancel, ShowStart, CanStart;
-        public string PlaySub, BusyTitle, BusySub;
+        public string BusyTitle, BusySub;
 
         // The matchmaking panel at the top: our side on the left, 6 slots each.
         public bool ShowMatch, ShowRoomTools, CanFillRoom, CanClearRoomBots;
@@ -67,7 +67,7 @@ namespace ChessFight.Game
         Label status, details, profile, version, toast, offlineText;
         Button friendsOpen, retry, play, cancel, start, codeOpen, createTest, leaveParty, copyParty;
         Button botsLess, botsMore, fillRoom, clearRoomBots, modeOpen, joinParty, joinMatch;
-        Label partyCount, partyCode, bots, botsNote, playSub, busyTitle, busySub;
+        Label partyCount, partyCode, bots, botsNote, busyTitle, busySub;
         Label modeName, modeTagline, modeBadge, modeChange, modeHint;
         VisualElement offline, busy, spinner, modeTile, roomTools;
         VisualElement matchPanel, slotsOurs, slotsTheirs;
@@ -125,7 +125,7 @@ namespace ChessFight.Game
             offlineText = root.Q<Label>("offline-text");
             partyCount = root.Q<Label>("party-count"); partyCode = root.Q<Label>("party-code");
             bots = root.Q<Label>("bots"); botsNote = root.Q<Label>("bots-note");
-            playSub = root.Q<Label>("play-sub"); busy = root.Q<VisualElement>("busy");
+            busy = root.Q<VisualElement>("busy");
             busyTitle = root.Q<Label>("busy-title"); busySub = root.Q<Label>("busy-sub");
             spinner = root.Q<VisualElement>("spinner");
             modeName = root.Q<Label>("mode-name"); modeTagline = root.Q<Label>("mode-tagline");
@@ -796,7 +796,6 @@ namespace ChessFight.Game
 
             Show(play, !model.Busy);
             Enable(play, model.CanPlay);
-            if (playSub != null) playSub.text = model.PlaySub;
             Show(busy, model.Busy);
             if (busyTitle != null) busyTitle.text = model.BusyTitle;
             if (busySub != null) busySub.text = model.BusySub;

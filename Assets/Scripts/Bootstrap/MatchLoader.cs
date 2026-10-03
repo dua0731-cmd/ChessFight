@@ -103,6 +103,7 @@ namespace ChessFight.Game
                 var screen = host.AddComponent<LoadingScreenView>();
                 screen.Build(content);
                 screen.CancelRequested += () => runtime.Session.Cancel();
+                screen.AddBotRequested += () => runtime.Session.AddRoomBot();
                 return screen;
             }
             catch (Exception e)
@@ -146,6 +147,10 @@ namespace ChessFight.Game
             state.Matching = true;
             state.Expected = TeamReservations.TeamSize * 2;
             state.CanCancel = session.Busy && !session.WaitingForParty;
+            // Development builds let public rooms take bots (M6); the leader sees
+            // the button from the start, usable once it hosts the room it made.
+            state.ShowAddBot = session.AllowPublicBots && (session.Match == 0 ? session.IsLeader : session.IsHost);
+            state.CanAddBot = session.CanAddRoomBot;
             int seconds = Mathf.FloorToInt(Time.unscaledTime - matchingSince);
             state.Clock = $"{seconds / 60:00}:{seconds % 60:00}";
             state.Step = session.JoiningLive ? "진행 중인 경기에 들어가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";

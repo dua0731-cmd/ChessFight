@@ -124,11 +124,6 @@
             <ui:Button name="play" class="chunky ch-lg start-btn row">
                 <ui:Label text="게임 시작" class="disp start-title" picking-mode="Ignore" />
                 <ui:VisualElement name="play-chevrons" class="start-chevrons" picking-mode="Ignore" />
-                <ui:VisualElement class="grow" picking-mode="Ignore" />
-                <ui:VisualElement class="start-side" picking-mode="Ignore">
-                    <ui:Label name="play-sub" class="disp start-sub" picking-mode="Ignore" />
-                    <ui:Label text="ENTER" class="start-key" picking-mode="Ignore" />
-                </ui:VisualElement>
             </ui:Button>
             <ui:VisualElement name="busy" class="busy-card wood-panel">
                 <ui:VisualElement class="row busy-row">
