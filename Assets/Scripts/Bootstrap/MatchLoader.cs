@@ -51,7 +51,6 @@ namespace ChessFight.Game
             var session = runtime.Session;
             scene = sceneName;
             int white = session.Roster.Values.Count(p => p.Team == 0), black = session.Roster.Values.Count(p => p.Team != 0);
-            var skin = session.Roster.TryGetValue(session.Self, out var me) && me.Team != 0 ? PieceSkin.Black : PieceSkin.White;
 
             // A screen that fails to build must not stop the match: load without it.
             var host = new GameObject("Loading Screen");
@@ -63,7 +62,7 @@ namespace ChessFight.Game
                 // The start time is already set: this player takes the empty seat of
                 // someone who left (Backfill) and goes in as soon as it has loaded.
                 if (session.StartAt > 0) content.Kicker += " · 경기 중 합류";
-                view.Build(content, skin);
+                view.Build(content);
             }
             catch (Exception e)
             {
@@ -158,12 +157,19 @@ namespace ChessFight.Game
             if (view == null) return;
             view.State.Percent = percent;
             view.State.Step = step;
-            view.State.Teams.Clear();
-            view.State.Ready.Clear();
+            var state = view.State;
+            state.Teams.Clear();
+            state.Ready.Clear();
+            state.Names.Clear();
+            state.Bots.Clear();
+            state.Me = -1;
             foreach (var p in session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot))
             {
-                view.State.Teams.Add(p.Team);
-                view.State.Ready.Add(session.LoadPercent(p.Id) >= MatchStart.Ready);
+                if (p.Id == session.Self) state.Me = state.Teams.Count;
+                state.Teams.Add(p.Team);
+                state.Ready.Add(session.LoadPercent(p.Id) >= MatchStart.Ready);
+                state.Names.Add(session.Name(p.Id));
+                state.Bots.Add(BotIdentity.IsBot(p.Id));
             }
         }
 

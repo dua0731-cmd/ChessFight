@@ -5,15 +5,52 @@ using UnityEngine.UIElements;
 namespace ChessFight.Game
 {
     // Runtime UI Toolkit plumbing shared by every scene's HUD: one place that
-    // builds a panel and one Korean-capable font.
+    // builds a panel, one Korean-capable body font and the display font.
     public static class RuntimePanels
     {
-        static Font korean;
+        // Elements with this class draw in the display font (titles, buttons, big numbers).
+        public const string DisplayClass = "disp";
+
+        static Font korean, display;
+        static bool displayTried;
 
         // The built-in LegacyRuntime font carries no Hangul, so take a Korean
         // capable OS font first and keep the built-in one as the fallback. Cached:
         // every panel and IMGUI overlay shares the same Font object.
         public static Font KoreanFont => korean != null ? korean : (korean = ResolveFont());
+
+        // Black Han Sans (SIL OFL 1.1, Resources/Fonts with its licence), the menu
+        // design's title face. It carries the 2,350 common Hangul syllables; null
+        // if the file is missing, and then titles keep the body font.
+        public static Font DisplayFont
+        {
+            get
+            {
+                if (display == null && !displayTried)
+                {
+                    displayTried = true;
+                    display = Resources.Load<Font>("Fonts/BlackHanSans-Regular");
+                    if (display == null) Debug.LogWarning("[ChessFight] 제목 글꼴(Resources/Fonts/BlackHanSans-Regular)을 찾지 못했습니다.");
+                }
+                return display;
+            }
+        }
+
+        // Gives every element under `root` that has DisplayClass the display font.
+        // Call again for elements added later (or use Display on each).
+        public static void ApplyDisplay(VisualElement root)
+        {
+            if (root == null || DisplayFont == null) return;
+            root.Query<VisualElement>(className: DisplayClass).ForEach(Display);
+        }
+
+        public static void Display(VisualElement element)
+        {
+            if (element == null || DisplayFont == null) return;
+            element.AddToClassList(DisplayClass);
+            element.style.unityFont = DisplayFont;
+            element.style.unityFontStyleAndWeight = FontStyle.Normal;
+        }
 
         public static VisualElement Create(GameObject host, VisualTreeAsset layout, ThemeStyleSheet theme,
                                            PanelSettings settings, Vector2Int referenceResolution, out PanelSettings owned)
@@ -42,6 +79,7 @@ namespace ChessFight.Game
             root.StretchToParentSize();
             root.style.unityFont = KoreanFont;
             layout.CloneTree(root);
+            ApplyDisplay(root);
             return root;
         }
 

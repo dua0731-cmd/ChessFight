@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Text;
 using ChessFight.Network;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,18 +10,23 @@ namespace ChessFight.Game
     {
         public string Step = "";
         public int Percent;
-        // One entry per player, roster order: their team (0 white, 1 black) and
-        // whether their match scene has finished loading.
+        // One entry per player, roster order sorted by team: their team (0 white,
+        // 1 black), whether their match scene has finished loading, their name,
+        // whether they are a bot, and which entry is this PC's player (-1: none).
         public readonly List<int> Teams = new List<int>();
         public readonly List<bool> Ready = new List<bool>();
+        public readonly List<string> Names = new List<string>();
+        public readonly List<bool> Bots = new List<bool>();
+        public int Me = -1;
     }
 
     // The screen between the lobby and a match (Docs/Architecture/UI.md "로딩
-    // 화면"): sample A's layout over sample B's backdrop, chosen 2026-09-30.
-    // Title and rule top left; one file of the board bottom left, where a pawn
-    // walks from rank 2 to rank 8 as this PC loads and promotes to a queen when
-    // it is ready; a dot per player; a rotating tip bottom right. Behind it the
-    // menu board, dimmed at the sides, with two pawns squaring up in the middle.
+    // 화면"), design C revised (2026-10-03): the mode's name top centre, white's
+    // players down the left and black's down the right, and behind them
+    // LoadingStudio's wooden stage, onto which each player walks as their PC
+    // finishes loading; their card lights up ("입장!") as they arrive. With
+    // everyone in, "모두 입장 완료 · 곧 출발!" and the whole stage cheers. The
+    // progress line and a rotating tip run along the bottom.
     //
     // Display only, nothing to click, and it swallows clicks meant for the lobby
     // under it. It lives on the persistent runtime object, so it survives the
@@ -32,36 +36,37 @@ namespace ChessFight.Game
     {
         // Above every scene's own HUD panel (those keep the default order, 0).
         const float SortingOrder = 100f;
-        const float TipSeconds = 4.5f, HopSeconds = .34f, HopHeight = 16f, FadeSeconds = .35f;
-        // Matches .load-rank and .load-mark in NetworkHud.uss.
-        const float RankInner = 514f, MarkSize = 76f;
+        const float TipSeconds = 4.5f, FadeSeconds = .35f, CardEnter = .7f, ArrivedSeconds = 1f;
         // Tip text is broken at spaces by hand: UI Toolkit breaks Korean between
         // any two syllables. A Hangul syllable counts two units (see NetworkHudView).
-        const int TipLineUnits = 32;
-
-        static readonly Color TileBlend = PieceFigure.Hex(0xC9C2B8);
-        static readonly Color Navy = new Color(9 / 255f, 15 / 255f, 30 / 255f);
+        const int TipLineUnits = 120;
 
         public readonly LoadingState State = new LoadingState();
         public bool Hiding => hideAt >= 0;
 
-        PanelSettings ownedPanel;
-        RenderTexture stage, duel;
-        Texture2D dim;
-        VisualElement screen, rank, mark, pips, tipCard, tipArt;
-        Label step, percent, ready, tipTitle, tipText;
-        CrownMark crown;
-        readonly VisualElement[] tints = new VisualElement[8];
-        readonly List<VisualElement> pipDots = new List<VisualElement>();
-        LoadingTip[] tips = System.Array.Empty<LoadingTip>();
-        PieceSkin skin;
-        RenderTexture pawnArt, queenArt;
-        int shownRank, tipIndex = -1;
-        float shownAt, hopAt = -1, hideAt = -1;
-
-        public void Build(LoadingContent content, PieceSkin mine)
+        sealed class Card
         {
-            skin = mine;
+            public VisualElement Root, Avatar, Flash;
+            public Label Name, Sub, Status;
+            public float Side, OnAt = -1;
+            public bool Bot;
+            public string Shown;
+        }
+
+        PanelSettings ownedPanel;
+        Texture2D shade;
+        readonly LoadingStudio studio = new LoadingStudio();
+        VisualElement screen, fill, allIn;
+        VisualElement[] rosters = new VisualElement[2];
+        Label step, percent, tipTitle, tipText;
+        Label[] counts = new Label[2];
+        readonly List<Card>[] cards = { new List<Card>(), new List<Card>() };
+        LoadingTip[] tips = System.Array.Empty<LoadingTip>();
+        int tipIndex = -1;
+        float shownAt, hideAt = -1;
+
+        public void Build(LoadingContent content)
+        {
             var root = RuntimePanels.Create(gameObject, Resources.Load<VisualTreeAsset>("LoadingHud"),
                                             Resources.Load<ThemeStyleSheet>("NetworkTheme"), null,
                                             new Vector2Int(1280, 720), out ownedPanel);
@@ -69,40 +74,44 @@ namespace ChessFight.Game
             if (ownedPanel != null) ownedPanel.sortingOrder = SortingOrder;
             screen = root.Q<VisualElement>("loading");
 
-            // The pictures first: they are taken from the scene still on screen.
-            // The board is dimmed behind the screen, so 1600 wide is plenty.
-            int width = Mathf.Clamp(Screen.width, 640, 1600);
+            int width = Mathf.Clamp(Screen.width, 960, 1920);
             int height = Mathf.Max(360, Mathf.RoundToInt(width * (float)Screen.height / Mathf.Max(1, Screen.width)));
-            stage = LoadingBackdrop.Stage(width, height);
-            duel = LoadingBackdrop.Duel(780, 520, Navy);
-            dim = Dim();
-            Paint(root.Q<VisualElement>("load-backdrop"), stage);
-            Paint(root.Q<VisualElement>("load-duel"), duel);
-            var dimLayer = root.Q<VisualElement>("load-dim");
-            if (dimLayer != null) dimLayer.style.backgroundImage = new StyleBackground(dim);
+            studio.Build(transform, width, height);
+            var stage = root.Q<VisualElement>("load-stage");
+            if (stage != null && studio.Texture != null) stage.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(studio.Texture));
+            var cyan = MenuArt.Hex(0x1E78BE);
+            var red = MenuArt.Hex(0xC8283C);
+            Wash(root.Q<VisualElement>("load-side-white"), cyan, false);
+            Wash(root.Q<VisualElement>("load-side-black"), red, true);
+            var shadeLayer = root.Q<VisualElement>("load-shade");
+            if (shadeLayer != null)
+            {
+                shade = MenuMarks.Vignette(new Color(8 / 255f, 4 / 255f, 2 / 255f), .55f, .8f);
+                shadeLayer.style.backgroundImage = new StyleBackground(shade);
+            }
 
             SetText(root.Q<Label>("load-kicker"), content.Kicker);
-            SetText(root.Q<Label>("load-logo-top"), content.LogoTop);
-            SetText(root.Q<Label>("load-logo-bottom"), content.LogoBottom);
+            SetText(root.Q<Label>("load-title"), content.Title);
+            SetText(root.Q<Label>("load-title-hi"), content.Title);
             SetText(root.Q<Label>("load-rule"), content.Rule);
             SetText(root.Q<Label>("load-note"), content.Note);
 
+            rosters[0] = root.Q<VisualElement>("load-roster-white");
+            rosters[1] = root.Q<VisualElement>("load-roster-black");
+            counts[0] = root.Q<Label>("load-count-white");
+            counts[1] = root.Q<Label>("load-count-black");
+            allIn = root.Q<VisualElement>("load-allin");
             step = root.Q<Label>("load-step");
             percent = root.Q<Label>("load-percent");
-            ready = root.Q<Label>("load-ready");
-            pips = root.Q<VisualElement>("load-pips");
-            rank = root.Q<VisualElement>("load-rank");
-            BuildRank();
+            fill = root.Q<VisualElement>("load-fill");
+            if (fill != null) fill.style.backgroundImage = new StyleBackground(MenuArt.Line(MenuArt.Hex(MenuArt.Cyan), MenuArt.Hex(MenuArt.Gold), MenuArt.Hex(MenuArt.Red)));
+            Ticks(root.Q<VisualElement>("load-line"));
 
-            tipCard = root.Q<VisualElement>("load-tip");
             tipTitle = root.Q<Label>("load-tip-kicker");
             tipText = root.Q<Label>("load-tip-text");
-            tipArt = root.Q<VisualElement>("load-tip-art");
             tips = content.Tips ?? System.Array.Empty<LoadingTip>();
-            if (tipCard != null && tips.Length == 0) tipCard.style.display = DisplayStyle.None;
-
-            pawnArt = PiecePortraits.Get(PieceKind.Pawn, skin, -26f, TileBlend);
-            queenArt = PiecePortraits.Get(PieceKind.Queen, skin, -22f, TileBlend);
+            var tipRow = root.Q<VisualElement>("load-tip");
+            if (tipRow != null && tips.Length == 0) tipRow.style.display = DisplayStyle.None;
             shownAt = Time.unscaledTime;
             Update();
         }
@@ -118,35 +127,20 @@ namespace ChessFight.Game
             screen.AddToClassList("loading-out");
         }
 
-        void BuildRank()
+        // A tick on the line for each rank a pawn passes, numbered 2 to 8.
+        static void Ticks(VisualElement line)
         {
-            if (rank == null) return;
-            for (int r = 1; r <= 8; r++)
+            if (line == null) return;
+            for (int i = 1; i < 8; i++)
             {
-                var square = new VisualElement { pickingMode = PickingMode.Ignore };
-                square.AddToClassList("load-sq");
-                // The board's a1 is dark, so odd ranks are dark on this file.
-                square.AddToClassList(r % 2 == 1 ? "load-sq-dark" : "load-sq-light");
-                if (r == 1) square.AddToClassList("load-sq-first");
-                if (r == 8) square.AddToClassList("load-sq-last");
-                var tint = new VisualElement { pickingMode = PickingMode.Ignore };
-                tint.AddToClassList("load-tint");
-                square.Add(tint);
-                tints[r - 1] = tint;
-                var number = new Label(r.ToString()) { pickingMode = PickingMode.Ignore };
-                number.AddToClassList("load-rn");
-                square.Add(number);
-                if (r == 8)
-                {
-                    crown = new CrownMark();
-                    crown.AddToClassList("load-crown");
-                    square.Add(crown);
-                }
-                rank.Add(square);
+                var tick = new VisualElement { pickingMode = PickingMode.Ignore };
+                tick.AddToClassList("load-tick");
+                tick.style.left = new Length(i / 8f * 100f, LengthUnit.Percent);
+                var label = new Label((i + 1).ToString()) { pickingMode = PickingMode.Ignore };
+                label.AddToClassList("load-tick-label");
+                tick.Add(label);
+                line.Add(tick);
             }
-            mark = new VisualElement { pickingMode = PickingMode.Ignore };
-            mark.AddToClassList("load-mark");
-            rank.Add(mark);
         }
 
         void Update()
@@ -155,41 +149,12 @@ namespace ChessFight.Game
             float now = Time.unscaledTime;
             if (step != null) step.text = State.Step;
             if (percent != null) percent.text = State.Percent + "%";
+            if (fill != null) fill.style.width = new Length(Mathf.Clamp(State.Percent, 0, 100), LengthUnit.Percent);
 
-            // Rank 2 is where a pawn starts; rank 8 is promotion, which is ready.
-            bool promoted = State.Percent >= MatchStart.Ready;
-            int at = promoted ? 8 : 2 + Mathf.Clamp(Mathf.FloorToInt(State.Percent / 100f * 6f), 0, 5);
-            if (at != shownRank)
-            {
-                if (shownRank > 0) hopAt = now;
-                shownRank = at;
-                for (int i = 0; i < tints.Length; i++)
-                {
-                    if (tints[i] == null) continue;
-                    tints[i].EnableInClassList("load-tint-passed", i + 1 < at);
-                    tints[i].EnableInClassList("load-tint-here", i + 1 == at);
-                }
-                if (mark != null)
-                {
-                    mark.style.left = (at - .5f) * RankInner / 8f - MarkSize / 2f;
-                    var art = promoted ? queenArt : pawnArt;
-                    if (art != null) mark.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(art));
-                }
-                if (crown != null) crown.Promoted = promoted;
-            }
-            if (mark != null)
-            {
-                float hop = hopAt >= 0 ? (now - hopAt) / HopSeconds : 1f;
-                mark.style.translate = new StyleTranslate(new Translate(0, hop < 1f ? -HopHeight * Mathf.Sin(hop * Mathf.PI) : 0f));
-            }
-
-            SyncPips();
-            if (ready != null)
-            {
-                int count = 0;
-                foreach (bool r in State.Ready) if (r) count++;
-                ready.text = "플레이어 준비 " + count + " / " + State.Ready.Count;
-            }
+            studio.Sync(State.Teams, State.Ready, State.Bots, now);
+            studio.Animate(now);
+            SyncCards(now);
+            allIn?.EnableInClassList("load-allin-on", studio.AllIn);
 
             if (tips.Length > 0)
             {
@@ -200,37 +165,95 @@ namespace ChessFight.Game
             if (Hiding && now - hideAt >= FadeSeconds) Destroy(gameObject);
         }
 
-        void SyncPips()
+        // The studio draws after every Update, so its figures are this frame's.
+        void LateUpdate()
         {
-            if (pips == null) return;
-            int count = State.Teams.Count;
-            if (pipDots.Count != count)
+            if (screen != null && !Hiding) studio.Render();
+        }
+
+        void SyncCards(float now)
+        {
+            int[] seen = { 0, 0 }, ready = { 0, 0 };
+            for (int i = 0; i < State.Teams.Count; i++)
             {
-                pips.Clear();
-                pipDots.Clear();
-                for (int i = 0; i < count; i++)
+                int team = State.Teams[i] == 0 ? 0 : 1;
+                int spot = seen[team]++;
+                if (spot >= LoadingStudio.PerTeam) continue;
+                var list = cards[team];
+                bool bot = i < State.Bots.Count && State.Bots[i];
+                if (spot >= list.Count) list.Add(NewCard(team, spot, bot));
+                var card = list[spot];
+                string name = i < State.Names.Count ? State.Names[i] : "";
+                if (card.Shown != name) { card.Shown = name; card.Name.text = name; }
+                card.Root.EnableInClassList("load-me", i == State.Me);
+                bool isReady = i < State.Ready.Count && State.Ready[i];
+                if (isReady)
                 {
-                    // A thin line between the two teams.
-                    if (i > 0 && State.Teams[i] != State.Teams[i - 1])
-                    {
-                        var gap = new VisualElement { pickingMode = PickingMode.Ignore };
-                        gap.AddToClassList("load-pip-gap");
-                        pips.Add(gap);
-                    }
-                    var dot = new VisualElement { pickingMode = PickingMode.Ignore };
-                    dot.AddToClassList("load-pip");
-                    pips.Add(dot);
-                    pipDots.Add(dot);
+                    ready[team]++;
+                    if (card.OnAt < 0) { card.OnAt = now; card.Root.AddToClassList("load-card-on"); }
+                }
+                float age = card.OnAt >= 0 ? now - card.OnAt : -1;
+                card.Status.text = age < 0 ? "불러오는 중" : age < ArrivedSeconds ? "입장!" : "준비 완료";
+                // The card slides in from its side with a little overshoot and a flash.
+                if (age >= 0 && age < CardEnter)
+                {
+                    float x = age / CardEnter;
+                    float back = 1 + 2.70158f * Mathf.Pow(x - 1, 3) + 1.70158f * Mathf.Pow(x - 1, 2);
+                    card.Root.style.translate = new Translate(card.Side * -30f * (1 - back), 0);
+                    card.Flash.style.opacity = .55f * (1 - x);
+                }
+                else if (age >= CardEnter)
+                {
+                    card.Root.style.translate = new Translate(0, 0);
+                    card.Flash.style.opacity = 0;
                 }
             }
-            for (int i = 0; i < count; i++)
+            for (int team = 0; team < 2; team++)
             {
-                var dot = pipDots[i];
-                dot.EnableInClassList("load-pip-white", State.Teams[i] == 0);
-                dot.EnableInClassList("load-pip-black", State.Teams[i] != 0);
-                dot.EnableInClassList("load-pip-on", i < State.Ready.Count && State.Ready[i]);
+                for (int k = 0; k < cards[team].Count; k++) cards[team][k].Root.style.display = k < seen[team] ? DisplayStyle.Flex : DisplayStyle.None;
+                if (counts[team] != null) counts[team].text = ready[team] + " / " + Mathf.Min(seen[team], LoadingStudio.PerTeam) + " 입장";
             }
         }
+
+        Card NewCard(int team, int spot, bool bot)
+        {
+            var card = new Card { Side = team == 0 ? 1f : -1f, Bot = bot };
+            card.Root = new VisualElement { pickingMode = PickingMode.Ignore };
+            card.Root.AddToClassList("load-card");
+            card.Root.style.backgroundImage = new StyleBackground(MenuArt.PanelTexture());
+            var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+            bar.AddToClassList("load-card-bar");
+            card.Root.Add(bar);
+            var kind = bot ? PieceKind.Pawn : LoadingStudio.Kinds[spot];
+            card.Avatar = new VisualElement { pickingMode = PickingMode.Ignore };
+            card.Avatar.AddToClassList("load-avatar");
+            var face = MenuArt.Portrait("face", kind, team, new FigurePose { Arm = .3f }, new Vector2(0, 6), true);
+            if (face != null) card.Avatar.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(face));
+            card.Root.Add(card.Avatar);
+            var names = new VisualElement { pickingMode = PickingMode.Ignore };
+            names.AddToClassList("load-names");
+            card.Name = new Label { pickingMode = PickingMode.Ignore };
+            card.Name.AddToClassList("load-name");
+            RuntimePanels.Display(card.Name);
+            card.Sub = new Label((team == 0 ? "WHITE · " : "BLACK · ") + (bot ? "AI" : KindName(kind))) { pickingMode = PickingMode.Ignore };
+            card.Sub.AddToClassList("load-sub");
+            names.Add(card.Name);
+            names.Add(card.Sub);
+            card.Root.Add(names);
+            var gap = new VisualElement { pickingMode = PickingMode.Ignore };
+            gap.AddToClassList("grow");
+            card.Root.Add(gap);
+            card.Status = new Label { pickingMode = PickingMode.Ignore };
+            card.Status.AddToClassList("load-state");
+            card.Root.Add(card.Status);
+            card.Flash = new VisualElement { pickingMode = PickingMode.Ignore };
+            card.Flash.AddToClassList("load-card-flash");
+            card.Root.Add(card.Flash);
+            rosters[team]?.Add(card.Root);
+            return card;
+        }
+
+        static string KindName(PieceKind kind) => kind.ToString().ToUpperInvariant();
 
         void ShowTip(int index)
         {
@@ -238,14 +261,28 @@ namespace ChessFight.Game
             var tip = tips[index];
             SetText(tipTitle, tip.Title);
             SetText(tipText, Wrap(tip.Text, TipLineUnits));
-            var art = PiecePortraits.Get(tip.Piece, skin, tip.Piece == PieceKind.Knight ? 42f : -10f, Navy);
-            if (tipArt != null && art != null) tipArt.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(art));
         }
 
-        static void Paint(VisualElement element, RenderTexture texture)
+        // A colour wash from the screen edge towards the middle (`fromRight` for black).
+        void Wash(VisualElement element, Color color, bool fromRight)
         {
-            if (element != null && texture != null) element.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(texture));
+            if (element == null) return;
+            const int w = 64;
+            var texture = new Texture2D(w, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Loading Wash" };
+            for (int x = 0; x < w; x++)
+            {
+                float u = x / (w - 1f);
+                if (fromRight) u = 1 - u;
+                var c = color;
+                c.a = u < .55f ? Mathf.Lerp(.38f, .08f, u / .55f) : Mathf.Lerp(.08f, 0f, (u - .55f) / .45f);
+                texture.SetPixel(x, 0, c);
+            }
+            texture.Apply();
+            washes.Add(texture);
+            element.style.backgroundImage = new StyleBackground(texture);
         }
+
+        readonly List<Texture2D> washes = new List<Texture2D>();
 
         static void SetText(Label label, string text)
         {
@@ -257,7 +294,7 @@ namespace ChessFight.Game
         static string Wrap(string text, int units)
         {
             if (string.IsNullOrEmpty(text)) return "";
-            var wrapped = new StringBuilder();
+            var wrapped = new System.Text.StringBuilder();
             int line = 0;
             foreach (string word in text.Split(' '))
             {
@@ -271,84 +308,12 @@ namespace ChessFight.Game
             return wrapped.ToString();
         }
 
-        // Navy over the backdrop: strong at both sides, where the title, the
-        // file and the tip sit, lighter in the middle behind the two pawns.
-        static Texture2D Dim()
-        {
-            const int width = 256;
-            var texture = new Texture2D(width, 1, TextureFormat.RGBA32, false)
-            {
-                wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "Loading Dim"
-            };
-            var navy = Navy;
-            for (int x = 0; x < width; x++)
-            {
-                float side = Mathf.Abs(x / (width - 1f) - .5f) * 2f;   // 0 in the middle, 1 at the edges
-                float a = side < .46f ? Mathf.Lerp(.52f, .84f, side / .46f) : Mathf.Lerp(.84f, .95f, (side - .46f) / .54f);
-                navy.a = StageKit.Darkening(a);
-                texture.SetPixel(x, 0, navy);
-            }
-            texture.Apply();
-            return texture;
-        }
-
         void OnDestroy()
         {
+            studio.Dispose();
             if (ownedPanel != null) Destroy(ownedPanel);
-            if (dim != null) Destroy(dim);
-            foreach (var texture in new[] { stage, duel })
-                if (texture != null) { texture.Release(); Destroy(texture); }
-        }
-
-        // The crown on rank 8: an outline until this PC is ready, then gold.
-        // Drawn with the vector API, since the project has no image assets for it.
-        sealed class CrownMark : VisualElement
-        {
-            static readonly Vector2[] Outline =
-            {
-                new Vector2(-11, 8), new Vector2(-12, -5), new Vector2(-5, 0), new Vector2(0, -10),
-                new Vector2(5, 0), new Vector2(12, -5), new Vector2(11, 8)
-            };
-            static readonly Color Gold = PieceFigure.Hex(0xFFD23A), Deep = PieceFigure.Hex(0xB38A12), Ink = PieceFigure.Hex(0x0A1428);
-            bool promoted;
-
-            public bool Promoted
-            {
-                get => promoted;
-                set { if (promoted == value) return; promoted = value; MarkDirtyRepaint(); }
-            }
-
-            public CrownMark()
-            {
-                pickingMode = PickingMode.Ignore;
-                generateVisualContent += Draw;
-            }
-
-            void Draw(MeshGenerationContext context)
-            {
-                var rect = contentRect;
-                if (rect.width <= 0 || rect.height <= 0) return;
-                float scale = Mathf.Min(rect.width / 26f, rect.height / 20f);
-                var center = rect.center + new Vector2(0, scale);
-                var painter = context.painter2D;
-                painter.lineJoin = LineJoin.Round;
-                painter.lineWidth = 2f;
-                painter.BeginPath();
-                for (int i = 0; i < Outline.Length; i++)
-                {
-                    var point = center + Outline[i] * scale;
-                    if (i == 0) painter.MoveTo(point); else painter.LineTo(point);
-                }
-                painter.ClosePath();
-                if (promoted)
-                {
-                    painter.fillColor = Gold;
-                    painter.Fill();
-                    painter.strokeColor = Ink;
-                }
-                else painter.strokeColor = Deep;
-                painter.Stroke();
-            }
+            if (shade != null) Destroy(shade);
+            foreach (var texture in washes) if (texture != null) Destroy(texture);
         }
     }
 }

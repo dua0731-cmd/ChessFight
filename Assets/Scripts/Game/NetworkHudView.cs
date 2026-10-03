@@ -71,7 +71,8 @@ namespace ChessFight.Game
         Label modeName, modeTagline, modeBadge, modeChange, modeHint;
         VisualElement offline, busy, spinner, modeTile, roomTools;
         VisualElement matchPanel, slotsOurs, slotsTheirs;
-        Label matchKicker, matchTitle, matchTimer, matchNote, roomCode;
+        Label matchKicker, matchTitle, matchTimer, matchNote, matchCount, roomCode;
+        VisualElement matchLive;
         VisualElement testBots;
         Label allyDummies, enemyDummies, testHint, partyBotsTitle;
         Button allyLess, allyMore, enemyLess, enemyMore;
@@ -95,7 +96,6 @@ namespace ChessFight.Game
         VisualElement railList;
         Label railHint;
         readonly Dictionary<string, Button> railButtons = new Dictionary<string, Button>();
-        readonly List<Texture2D> ownedTextures = new List<Texture2D>();
 
         // Nameplates over the 3D lineup.
         VisualElement lineupLayer;
@@ -134,6 +134,7 @@ namespace ChessFight.Game
             matchPanel = root.Q<VisualElement>("match-panel");
             matchKicker = root.Q<Label>("match-kicker"); matchTitle = root.Q<Label>("match-title");
             matchTimer = root.Q<Label>("match-timer"); matchNote = root.Q<Label>("match-note");
+            matchCount = root.Q<Label>("match-count"); matchLive = root.Q<VisualElement>("match-live");
             roomTools = root.Q<VisualElement>("room-tools"); roomCode = root.Q<Label>("room-code");
             testBots = root.Q<VisualElement>("test-bots");
             allyDummies = root.Q<Label>("ally-dummies"); enemyDummies = root.Q<Label>("enemy-dummies");
@@ -209,6 +210,7 @@ namespace ChessFight.Game
 
             BuildModeList();
             BuildModeRail();
+            Dress();
             // The chat (ChatBox, on the runtime) stays shut while the room-number
             // box or a picker is open.
             ChatBox.Blocker = chatBlocker = () => IsTyping || Visible(codeModal) || Visible(modeModal);
@@ -217,6 +219,32 @@ namespace ChessFight.Game
             foreach (var hidden in new[] { friendsPanel, detailsPanel, codeModal, modeModal, toast, offline, busy, matchPanel, roomTools, testBots })
                 Show(hidden, false);
             diagnoseAt = Time.unscaledTime + 1f;
+        }
+
+        // Design C's materials, which USS cannot express: lacquered walnut on every
+        // panel with its gold corner accent, the top bar's shade, the banner's line,
+        // the chevrons on the start button, and the slab buttons themselves.
+        void Dress()
+        {
+            var panel = MenuArt.PanelTexture();
+            root.Query<VisualElement>(className: "wood-panel").ForEach(e =>
+            {
+                e.style.backgroundImage = new StyleBackground(panel);
+                var accent = new VisualElement { pickingMode = PickingMode.Ignore };
+                accent.AddToClassList("panel-accent");
+                if (e == matchPanel) accent.style.display = DisplayStyle.None;
+                e.Insert(0, accent);
+            });
+            var fade = root.Q<VisualElement>("top-fade");
+            if (fade != null) fade.style.backgroundImage = new StyleBackground(MenuArt.VerticalFade(new Color(14 / 255f, 8 / 255f, 4 / 255f, .9f), new Color(14 / 255f, 8 / 255f, 4 / 255f, 0f)));
+            var line = root.Q<VisualElement>("match-line");
+            if (line != null)
+            {
+                Color red = PieceFigure.Hex(0xFF4D62), gold = PieceFigure.Hex(0xFFC93D), clear = new Color(1f, .3f, .38f, 0f);
+                line.style.backgroundImage = new StyleBackground(MenuArt.Line(clear, red, gold, red, clear));
+            }
+            root.Q<VisualElement>("play-chevrons")?.Add(new MenuMarks.Chevrons(new Color(28 / 255f, 18 / 255f, 0f)));
+            ChunkyButtons.Attach(root);
         }
 
         static VisualElement Slot(VisualElement parent)
@@ -239,6 +267,9 @@ namespace ChessFight.Game
                 spin = (spin + Time.unscaledDeltaTime * 360f) % 360f;
                 spinner.style.rotate = new StyleRotate(new Rotate(new Angle(spin, AngleUnit.Degree)));
             }
+            // The banner's live dot breathes once a second.
+            if (matchLive != null && Visible(matchPanel))
+                matchLive.style.opacity = .25f + .75f * (.5f + .5f * Mathf.Cos(Time.unscaledTime * Mathf.PI * 2f));
             // While the chat is open its keys are its own: Enter sends a line, it
             // does not start a game.
             if (!ChatBox.KeysHeld) Shortcuts();
@@ -312,6 +343,7 @@ namespace ChessFight.Game
             // rather than betting the whole fallback on the convention.
             var hit = Resolve(panel, new Vector2(screen.x, Screen.height - screen.y)) ?? Resolve(panel, screen);
             if (hit == null || !hit.Value.button.enabledInHierarchy) return;
+            ChunkyButtons.Pulse(hit.Value.button);
             hit.Value.action();
         }
 
@@ -393,9 +425,20 @@ namespace ChessFight.Game
             var plate = new VisualElement { pickingMode = PickingMode.Ignore };
             plate.AddToClassList("plate");
             if (entry.Me) plate.AddToClassList("plate-me");
-            var name = new Label((entry.Leader ? "★ " : "") + entry.Name) { pickingMode = PickingMode.Ignore };
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            row.AddToClassList("plate-row");
+            if (entry.Leader)
+            {
+                var crown = new VisualElement { pickingMode = PickingMode.Ignore };
+                crown.AddToClassList("plate-crown");
+                crown.Add(new MenuMarks.CrownMark(PieceFigure.Hex(0xFFC93D), Color.clear, 0f));
+                row.Add(crown);
+            }
+            var name = new Label(entry.Name) { pickingMode = PickingMode.Ignore };
             name.AddToClassList("plate-name");
-            plate.Add(name);
+            RuntimePanels.Display(name);
+            row.Add(name);
+            plate.Add(row);
             if (!string.IsNullOrEmpty(entry.Tag))
             {
                 var tag = new Label(entry.Tag) { pickingMode = PickingMode.Ignore };
@@ -411,6 +454,7 @@ namespace ChessFight.Game
             spot.AddToClassList("invite-spot");
             var plus = new Button { text = "+", focusable = false };
             plus.AddToClassList("invite-plus");
+            RuntimePanels.Display(plus);
             Action open = OpenFriends;
             plus.clicked += open;
             actions[plus] = open;
@@ -434,8 +478,8 @@ namespace ChessFight.Game
                 if (!front) continue;
                 Vector2 at = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, world, lineupCamera);
                 // Fixed widths from the USS, so centring needs no layout pass.
-                plates[i].style.left = at.x - (invite ? 60f : 90f);
-                plates[i].style.top = at.y - (invite ? 20f : 46f);
+                plates[i].style.left = at.x - (invite ? 60f : 100f);
+                plates[i].style.top = at.y - (invite ? 27f : 64f);
             }
         }
 
@@ -493,30 +537,34 @@ namespace ChessFight.Game
                 var card = new Button { focusable = false };
                 card.AddToClassList("rail-card");
                 if (!mode.Playable) card.AddToClassList("rail-locked");
-                ModeLook(mode.Key, out Color from, out Color to, out PieceKind piece, out PieceSkin skin, out float yaw);
-                card.style.backgroundImage = new StyleBackground(Diagonal(from, to));
+                card.style.backgroundImage = new StyleBackground(MenuArt.CardTexture(ModeGlow(mode.Key)));
 
                 var art = new VisualElement { pickingMode = PickingMode.Ignore };
                 art.AddToClassList("rail-art");
-                var portrait = PiecePortraits.Get(piece, skin, yaw, Color.Lerp(from, to, .6f));
+                var portrait = ModePortrait(mode.Key);
                 if (portrait != null) art.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(portrait));
                 card.Add(art);
+                var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+                bar.AddToClassList("rail-bar");
+                card.Add(bar);
 
                 var text = new VisualElement { pickingMode = PickingMode.Ignore };
                 text.AddToClassList("rail-text");
-                var badges = new VisualElement { pickingMode = PickingMode.Ignore };
-                badges.AddToClassList("rail-badges");
                 var state = new Label { name = "state", pickingMode = PickingMode.Ignore };
                 state.AddToClassList("rail-badge");
-                badges.Add(state);
-                text.Add(badges);
                 var name = new Label(mode.Name) { pickingMode = PickingMode.Ignore };
                 name.AddToClassList("rail-name");
+                RuntimePanels.Display(name);
                 var summary = new Label(WrapWords(mode.Summary, RailLineUnits)) { pickingMode = PickingMode.Ignore };
                 summary.AddToClassList("rail-summary");
                 var tagline = new Label(mode.Tagline) { pickingMode = PickingMode.Ignore };
                 tagline.AddToClassList("rail-tagline");
-                text.Add(name); text.Add(summary); text.Add(tagline);
+                // The line along the bottom: players and kind, then the state badge.
+                var foot = new VisualElement { pickingMode = PickingMode.Ignore };
+                foot.AddToClassList("rail-foot");
+                foot.Add(tagline);
+                foot.Add(state);
+                text.Add(name); text.Add(summary); text.Add(foot);
                 card.Add(text);
 
                 string key = mode.Key;
@@ -531,7 +579,7 @@ namespace ChessFight.Game
         // UI Toolkit breaks Korean between any two syllables, even mid-word, so
         // break the card text at spaces here instead. Widths are estimated: a
         // Hangul syllable counts two units, anything else one.
-        const int RailLineUnits = 38;   // .rail-text is 232px of 11px text
+        const int RailLineUnits = 32;   // .rail-text is 232px of 13px text
 
         static string WrapWords(string text, int units)
         {
@@ -550,37 +598,34 @@ namespace ChessFight.Game
             return wrapped.ToString();
         }
 
-        // Each mode's card: a diagonal colour wash and the piece that stars in it.
-        static void ModeLook(string key, out Color from, out Color to, out PieceKind piece, out PieceSkin skin, out float yaw)
+        // Each mode's glow on its walnut card (design C: green, blue, red).
+        static Color ModeGlow(string key)
         {
             switch (key)
             {
-                case "queenhill":
-                    from = PieceFigure.Hex(0x3B5BC4); to = PieceFigure.Hex(0x1B2C66); piece = PieceKind.Queen; skin = PieceSkin.White; yaw = -9f;
-                    return;
-                case "swordfight":
-                    from = PieceFigure.Hex(0x8A3A3A); to = PieceFigure.Hex(0x3A1620); piece = PieceKind.Knight; skin = PieceSkin.Black; yaw = 52f;
-                    return;
-                case "kingrush":
-                    from = PieceFigure.Hex(0x2F7D6E); to = PieceFigure.Hex(0x123A36); piece = PieceKind.King; skin = PieceSkin.White; yaw = -9f;
-                    return;
-                default:
-                    from = PieceFigure.Hex(0x3A4660); to = PieceFigure.Hex(0x1A2236); piece = PieceKind.Pawn; skin = PieceSkin.White; yaw = 0f;
-                    return;
+                case "kingrush": return new Color(75 / 255f, 224 / 255f, 143 / 255f);
+                case "queenhill": return new Color(120 / 255f, 150 / 255f, 1f);
+                case "swordfight": return new Color(1f, 92 / 255f, 92 / 255f);
+                default: return new Color(.7f, .6f, .45f);
             }
         }
 
-        // USS has no gradients: a small texture, top left `from` to bottom right `to`.
-        Texture2D Diagonal(Color from, Color to)
+        // The piece that stars in each mode, posed as on the design sample: a pawn
+        // running, the queen waving, a rook with its arm up for a fight.
+        static RenderTexture ModePortrait(string key)
         {
-            const int size = 16;
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Mode Card" };
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
-                    texture.SetPixel(x, y, Color.Lerp(from, to, (x + (size - 1 - y)) / (2f * (size - 1))));
-            texture.Apply();
-            ownedTextures.Add(texture);
-            return texture;
+            switch (key)
+            {
+                case "kingrush":
+                    return MenuArt.Portrait("run", PieceKind.Pawn, 0,
+                        new FigurePose { Leg = .7f, ArmLeft = 1.1f, ArmRight = -.1f, Lean = .22f, Jump = .15f }, new Vector2(3, 4), false);
+                case "queenhill":
+                    return MenuArt.Portrait("wave", PieceKind.Queen, 0, new FigurePose { ArmLeft = 2.3f, ArmRight = .5f, Jump = .05f }, new Vector2(1, 6), false);
+                case "swordfight":
+                    return MenuArt.Portrait("fight", PieceKind.Rook, 0, new FigurePose { ArmRight = 2f, ArmLeft = .4f, Lean = .08f }, new Vector2(-1.5f, 6), false, 7.2f, 1.35f);
+                default:
+                    return MenuArt.Portrait("stand", PieceKind.Pawn, 0, new FigurePose { Arm = .3f }, new Vector2(.6f, 6), false);
+            }
         }
 
         static Color ModeColor(string key)
@@ -770,6 +815,8 @@ namespace ChessFight.Game
                 if (matchNote != null) matchNote.text = model.MatchNote;
                 Fill(ourSlots, model.OursFilled, model.OurTeam);
                 Fill(theirSlots, model.TheirsFilled, 1 - model.OurTeam);
+                if (matchCount != null) matchCount.text = (model.OursFilled + model.TheirsFilled) + " / " + TeamReservations.TeamSize * 2;
+                if (matchNote != null) Show(matchNote, !string.IsNullOrEmpty(model.MatchNote));
             }
             Show(roomTools, model.ShowRoomTools);
             if (roomCode != null) roomCode.text = model.RoomCode;
@@ -896,8 +943,6 @@ namespace ChessFight.Game
         {
             if (ChatBox.Blocker == chatBlocker) ChatBox.Blocker = null;
             if (ownedPanel != null) Destroy(ownedPanel);
-            foreach (var texture in ownedTextures) if (texture != null) Destroy(texture);
-            ownedTextures.Clear();
         }
     }
 }

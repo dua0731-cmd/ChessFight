@@ -15,7 +15,8 @@ namespace ChessFight.Game
     // "전직" until the team settles the word.
     public sealed class LoadingContent
     {
-        public string Kicker = "", LogoTop = "", LogoBottom = "", Rule = "", Note = "";
+        // Title: the mode's name, big and gold. Kicker: the small line above it.
+        public string Title = "", Kicker = "", Rule = "", Note = "";
         public LoadingTip[] Tips = Array.Empty<LoadingTip>();
 
         // `teamSize`: players on the larger team, for the rules that count heads.
@@ -25,14 +26,15 @@ namespace ChessFight.Game
             // More than half the team: 2 of 2, 2 of 3, 3 of 4, 3 of 5, 4 of 6.
             int need = size / 2 + 1;
             string versus = size + " VS " + size;
+            string title = mode != null ? mode.Name : "";
             switch (mode != null ? mode.Key : "")
             {
                 case "kingrush":
                     return new LoadingContent
                     {
-                        Kicker = "폰 러시 · " + versus + " 팀 레이스",
-                        LogoTop = "PAWN", LogoBottom = "RUSH",
-                        Rule = "팀원 <color=#FFD23A>" + need + "명</color>이 먼저 결승선을 넘으면 승리",
+                        Title = title,
+                        Kicker = versus + " · 팀 레이스",
+                        Rule = "팀원 <color=#FFC93D>" + need + "명</color>이 먼저 결승선을 넘으면 승리",
                         Note = "승격 지점에 먼저 닿은 폰은 다른 기물이 될 수 있어요",
                         Tips = new[]
                         {
@@ -45,8 +47,8 @@ namespace ChessFight.Game
                 case "swordfight":
                     return new LoadingContent
                     {
-                        Kicker = "소드 파이트 · " + versus + " 팀 데스매치",
-                        LogoTop = "SWORD", LogoBottom = "FIGHT",
+                        Title = title,
+                        Kicker = versus + " · 팀 데스매치",
                         Rule = "칼로 상대를 넘어뜨려 장외로 보내세요",
                         Note = "지금은 폰으로 플레이해요",
                         Tips = new[]
@@ -58,8 +60,8 @@ namespace ChessFight.Game
                 default:
                     return new LoadingContent
                     {
+                        Title = title,
                         Kicker = mode != null ? mode.Tagline : "",
-                        LogoTop = mode != null ? mode.Name : "",
                         Rule = mode != null ? mode.Summary : ""
                     };
             }

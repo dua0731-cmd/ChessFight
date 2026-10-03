@@ -1,25 +1,50 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <!-- Title screen over the 3D chessboard (IntroStage). Nothing here is
-         clickable: any key continues. IntroController looks up every name. -->
+    <!-- Title screen over IntroStage (design C revised, 2026-10-03). Nothing here
+         is clickable: any key continues, and the gold start plate only shows it.
+         IntroController looks up every name. Display-font text has the class "disp". -->
     <ui:VisualElement class="intro" picking-mode="Ignore">
-        <!-- Darkens the left of the frame so the title reads; texture set in code. -->
+        <!-- Darkens the corners of the frame; texture set in code. -->
         <ui:VisualElement name="intro-shade" class="intro-shade" picking-mode="Ignore" />
-        <ui:VisualElement class="intro-block" picking-mode="Ignore">
-            <ui:Label text="6 VS 6 · CHESS PARTY BRAWL" class="intro-kicker" picking-mode="Ignore" />
-            <ui:Label text="CHESS" class="intro-title" picking-mode="Ignore" />
-            <ui:Label text="FIGHT" class="intro-title intro-title-b" picking-mode="Ignore" />
-            <ui:VisualElement class="intro-subs" picking-mode="Ignore">
-                <ui:Label text="체스 말 6종을 골라 팀원과 함께" class="intro-sub" picking-mode="Ignore" />
-                <ui:Label text="레이스, 탑 오르기, 칼싸움으로 겨루세요" class="intro-sub" picking-mode="Ignore" />
+        <ui:VisualElement class="intro-corner intro-corner-tl" picking-mode="Ignore" />
+        <ui:VisualElement class="intro-corner intro-corner-tr" picking-mode="Ignore" />
+        <ui:VisualElement class="intro-corner intro-corner-bl" picking-mode="Ignore" />
+        <ui:VisualElement class="intro-corner intro-corner-br" picking-mode="Ignore" />
+
+        <ui:VisualElement class="intro-logo" picking-mode="Ignore">
+            <ui:VisualElement class="row intro-crown-row" picking-mode="Ignore">
+                <ui:VisualElement class="intro-rule-line" picking-mode="Ignore" />
+                <ui:VisualElement name="intro-crown" class="intro-crown" picking-mode="Ignore" />
+                <ui:VisualElement class="intro-rule-line" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <!-- Gold metal: the gold title with a cream copy over its upper half. -->
+            <ui:VisualElement class="intro-title-box" picking-mode="Ignore">
+                <ui:Label text="CHESS FIGHT" class="disp intro-title" picking-mode="Ignore" />
+                <ui:VisualElement class="intro-title-hi" picking-mode="Ignore">
+                    <ui:Label text="CHESS FIGHT" class="disp intro-title intro-title-cream" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label text="6 대 6 체스 말 대난투" class="disp intro-tagline" picking-mode="Ignore" />
+            <ui:VisualElement class="row intro-teams" picking-mode="Ignore">
+                <ui:Label text="WHITE · 백팀" class="intro-team intro-team-white" picking-mode="Ignore" />
+                <ui:VisualElement class="intro-team-line" picking-mode="Ignore" />
+                <ui:Label text="VS" class="intro-team intro-team-vs" picking-mode="Ignore" />
+                <ui:VisualElement class="intro-team-line" picking-mode="Ignore" />
+                <ui:Label text="흑팀 · BLACK" class="intro-team intro-team-black" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="intro-press" class="row intro-press" picking-mode="Ignore">
-            <ui:Label text="▶" class="intro-key" picking-mode="Ignore" />
-            <ui:Label name="intro-hint" class="intro-hint" picking-mode="Ignore" />
+
+        <ui:VisualElement class="intro-start" picking-mode="Ignore">
+            <ui:VisualElement name="intro-press" class="row chunky intro-press" picking-mode="Ignore">
+                <ui:Label text="ANY KEY" class="intro-keycap" picking-mode="Ignore" />
+                <ui:Label name="intro-hint" class="disp intro-hint" picking-mode="Ignore" />
+                <ui:VisualElement name="intro-chevrons" class="intro-chevrons" picking-mode="Ignore" />
+            </ui:VisualElement>
         </ui:VisualElement>
+
         <ui:VisualElement name="intro-chip" class="row intro-chip" picking-mode="Ignore">
             <ui:VisualElement name="intro-dot" class="intro-dot" picking-mode="Ignore" />
             <ui:Label name="intro-status" class="intro-status" picking-mode="Ignore" />
         </ui:VisualElement>
+        <ui:Label name="intro-version" class="intro-version" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>

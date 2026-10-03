@@ -273,12 +273,12 @@ namespace ChessFight.Game
 
                 ShowMatch = busy,
                 MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + mode.Name,
-                MatchTitle = !inRoom ? (waiting ? "파티원들이 경기를 마치기를 기다리는 중" : following ? "파티장이 방을 찾는 중..." : "상대를 찾는 중...")
+                MatchTitle = !inRoom ? (waiting ? "파티원들이 경기를 마치기를 기다리는 중" : following ? "파티장이 방을 찾는 중..." : "상대 팀 찾는 중")
                            : session.Started ? "경기를 시작합니다!"
                            : session.JoiningLive ? "진행 중인 경기에 들어가는 중..."
                            : dummyRoom && session.IsHost ? "더미를 추가하고 시작하세요"
                            : session.PrivateRoom ? (session.IsHost ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")
-                           : "상대를 찾는 중...",
+                           : "상대 팀 찾는 중",
                 MatchTimer = Clock(now),
                 MatchNote = waiting ? "먼저 나왔어요 · 혼자 하려면 파티 나가기"
                           : session.JoiningLive ? "나간 플레이어의 빈자리를 채워요"

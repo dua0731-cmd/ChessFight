@@ -49,7 +49,7 @@ namespace ChessFight.Network
     // its finish line (the scene shows Example until then).
     public sealed class MatchResult
     {
-        public string Mode = "폰 러시";
+        public string Mode = "폰 러쉬";
         // 0 white, 1 black, -1 a draw.
         public int WinningTeam = -1;
         // Finishers a team needs to win: more than half of it.
