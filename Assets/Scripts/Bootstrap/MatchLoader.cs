@@ -9,6 +9,12 @@ namespace ChessFight.Game
     // Lobby -> match scene behind the loading screen, then one shared start
     // (Docs/Architecture/UI.md "로딩 화면", MatchStart).
     //
+    // Since R63 (2026-10-03) the same screen already covers a public match's
+    // matchmaking ("상대 팀 찾는 중" is no longer a lobby banner): players walk onto
+    // its stage as they join, "매칭 취소" or Esc calls the search off, and when
+    // the match starts that screen carries straight on into the load. Private
+    // rooms keep the lobby's room panel (room number, bots, the host's start).
+    //
     // The old LoadScene froze every PC for the whole load, 5 to 10 seconds. Now
     // the scene loads in the background under LoadingScreenView; only switching
     // it on still freezes a frame, and the screen covers that too. Then the PC
@@ -22,7 +28,7 @@ namespace ChessFight.Game
         // since switching on freezes the frame.
         const float MinimumShow = .4f;
 
-        enum Phase { Idle, Loading, Opening, WarmingUp, Waiting }
+        enum Phase { Idle, Matching, Loading, Opening, WarmingUp, Waiting }
 
         readonly NetworkRuntime runtime;
         readonly Func<double> clock;
@@ -33,7 +39,7 @@ namespace ChessFight.Game
         WarmupMeter warmup;
         ThreadPriority loadingPriority;
         bool skipFrame;
-        float shownAt, readyAt = -1, hostSince = -1;
+        float shownAt, readyAt = -1, hostSince = -1, matchingSince;
 
         public MatchLoader(NetworkRuntime runtime, Func<double> clock)
         {
@@ -42,34 +48,31 @@ namespace ChessFight.Game
         }
 
         // Local input waits for the start, like everyone else's.
-        public bool Blocking => phase != Phase.Idle;
+        public bool Blocking => phase >= Phase.Loading;
+        // The screen is up (matching or loading): the chat hides under it.
+        public bool Covering => phase != Phase.Idle;
 
         // False when the scene cannot be loaded at all (missing from the build list).
         public bool Begin(string sceneName, GameModeInfo mode)
         {
+            // The matchmaking screen carries on as the loading screen.
+            var kept = phase == Phase.Matching ? view : null;
+            if (kept != null) { view = null; phase = Phase.Idle; }
             Cancel();
             var session = runtime.Session;
             scene = sceneName;
             int white = session.Roster.Values.Count(p => p.Team == 0), black = session.Roster.Values.Count(p => p.Team != 0);
+            var content = LoadingContent.For(mode, Math.Max(white, black));
+            // The start time is already set: this player takes the empty seat of
+            // someone who left (Backfill) and goes in as soon as it has loaded.
+            if (session.StartAt > 0) content.Kicker += " · 경기 중 합류";
 
-            // A screen that fails to build must not stop the match: load without it.
-            var host = new GameObject("Loading Screen");
-            host.transform.SetParent(runtime.transform, false);
-            try
+            if (kept != null)
             {
-                view = host.AddComponent<LoadingScreenView>();
-                var content = LoadingContent.For(mode, Math.Max(white, black));
-                // The start time is already set: this player takes the empty seat of
-                // someone who left (Backfill) and goes in as soon as it has loaded.
-                if (session.StartAt > 0) content.Kicker += " · 경기 중 합류";
-                view.Build(content);
+                view = kept;
+                view.SetContent(content);
             }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-                UnityEngine.Object.Destroy(host);
-                view = null;
-            }
+            else view = Show(content);
 
             session.ReportLoading(0);
             // Loading in the background is throttled by default; nothing else
@@ -88,6 +91,91 @@ namespace ChessFight.Game
             }
             load.allowSceneActivation = false;
             return true;
+        }
+
+        // A screen that fails to build must not stop the match: go on without it.
+        LoadingScreenView Show(LoadingContent content)
+        {
+            var host = new GameObject("Loading Screen");
+            host.transform.SetParent(runtime.transform, false);
+            try
+            {
+                var screen = host.AddComponent<LoadingScreenView>();
+                screen.Build(content);
+                screen.CancelRequested += () => runtime.Session.Cancel();
+                return screen;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                UnityEngine.Object.Destroy(host);
+                return null;
+            }
+        }
+
+        // A public search, or the public room it found, from the lobby: the
+        // entrance screen instead of a lobby banner. Not for private rooms (their
+        // host needs the lobby's room tools), nor for a member back early from a
+        // match waiting for the rest of the party.
+        static bool PublicMatching(SteamSession session)
+        {
+            if (!session.Online || session.PrivateRoom || session.WaitingForParty || session.Started) return false;
+            if (SceneManager.GetActiveScene().name != SceneNames.Lobby) return false;
+            return session.Searching || session.Match != 0 || Following(session);
+        }
+
+        static bool Following(SteamSession session) => session.Party != 0 && session.Busy && !session.IsLeader && session.Match == 0;
+
+        void Matchmaking()
+        {
+            var session = runtime.Session;
+            bool wanted = PublicMatching(session);
+            if (phase == Phase.Idle)
+            {
+                if (!wanted) return;
+                var mode = session.MatchMode ?? session.PartyMode;
+                // Built once per search: if it fails, the busy card under it still cancels.
+                view = Show(LoadingContent.For(mode, TeamReservations.TeamSize));
+                phase = Phase.Matching;
+                matchingSince = Time.unscaledTime;
+            }
+            else if (!wanted) { Finish(); return; }
+            if (view == null) return;
+
+            var state = view.State;
+            state.Matching = true;
+            state.Expected = TeamReservations.TeamSize * 2;
+            state.CanCancel = session.Busy && !session.WaitingForParty;
+            int seconds = Mathf.FloorToInt(Time.unscaledTime - matchingSince);
+            state.Clock = $"{seconds / 60:00}:{seconds % 60:00}";
+            state.Step = session.JoiningLive ? "진행 중인 경기에 들어가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
+            state.Clear();
+            if (session.Match != 0 && session.Roster.Count > 0)
+            {
+                foreach (var p in session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot))
+                    Add(state, session, p.Id, p.Team, false);
+            }
+            else
+            {
+                // Still searching: the party, which always plays on one team.
+                foreach (ulong id in session.PartyMembers.OrderBy(id => id == session.Self ? 0 : 1)) Add(state, session, id, 0, false);
+                for (int i = 1; i <= session.PartyBots; i++)
+                {
+                    state.Teams.Add(0); state.Joined.Add(true); state.Ready.Add(false);
+                    state.Names.Add("BOT " + i); state.Bots.Add(true);
+                }
+                if (session.Party == 0) Add(state, session, session.Self, 0, false);
+            }
+        }
+
+        static void Add(LoadingState state, SteamSession session, ulong id, int team, bool ready)
+        {
+            if (id == session.Self) state.Me = state.Teams.Count;
+            state.Teams.Add(team);
+            state.Joined.Add(true);
+            state.Ready.Add(ready);
+            state.Names.Add(session.Name(id));
+            state.Bots.Add(BotIdentity.IsBot(id));
         }
 
         // From NetworkRuntime.OnSceneLoaded, for every scene.
@@ -117,7 +205,7 @@ namespace ChessFight.Game
 
         public void Update()
         {
-            if (phase == Phase.Idle) return;
+            if (phase <= Phase.Matching) { Matchmaking(); return; }
             var session = runtime.Session;
             float now = Time.unscaledTime;
             int percent = 0;
@@ -158,19 +246,11 @@ namespace ChessFight.Game
             view.State.Percent = percent;
             view.State.Step = step;
             var state = view.State;
-            state.Teams.Clear();
-            state.Ready.Clear();
-            state.Names.Clear();
-            state.Bots.Clear();
-            state.Me = -1;
+            state.Matching = false;
+            state.Expected = 0;
+            state.Clear();
             foreach (var p in session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot))
-            {
-                if (p.Id == session.Self) state.Me = state.Teams.Count;
-                state.Teams.Add(p.Team);
-                state.Ready.Add(session.LoadPercent(p.Id) >= MatchStart.Ready);
-                state.Names.Add(session.Name(p.Id));
-                state.Bots.Add(BotIdentity.IsBot(p.Id));
-            }
+                Add(state, session, p.Id, p.Team, session.LoadPercent(p.Id) >= MatchStart.Ready);
         }
 
         // Ready: wait for the host's start time, and as the host, pick it.

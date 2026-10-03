@@ -271,7 +271,10 @@ namespace ChessFight.Game
                 // Mirrors StartGame's real rules, so the button is never a no-op.
                 CanStart = session.CanStartGame,
 
-                ShowMatch = busy,
+                // A public search covers the lobby with the entrance screen
+                // (MatchLoader); the banner stays for private rooms and for a
+                // member waiting for the party.
+                ShowMatch = busy && (session.PrivateRoom || waiting || session.Started),
                 MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + mode.Name,
                 MatchTitle = !inRoom ? (waiting ? "파티원들이 경기를 마치기를 기다리는 중" : following ? "파티장이 방을 찾는 중..." : "상대 팀 찾는 중")
                            : session.Started ? "경기를 시작합니다!"

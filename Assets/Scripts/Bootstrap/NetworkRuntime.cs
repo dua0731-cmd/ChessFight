@@ -176,9 +176,10 @@ namespace ChessFight.Game
             catch (Exception e) { Debug.LogException(e); loader.Cancel(); }
 
             // The chat: bottom left in the lobby, bottom right in any match scene
-            // (its own simulation or not), hidden on the title and while loading.
+            // (its own simulation or not), hidden on the title and under the
+            // entrance screen (matchmaking and loading).
             if (chat != null)
-                chat.Where = loading || loader.Blocking ? ChatBox.Layout.Hidden
+                chat.Where = loading || loader.Covering ? ChatBox.Layout.Hidden
                     : inMatchScene ? ChatBox.Layout.Match
                     : SceneManager.GetActiveScene().name == SceneNames.Lobby ? ChatBox.Layout.Lobby
                     : ChatBox.Layout.Hidden;

@@ -29,7 +29,6 @@ namespace ChessFight.Game
         static readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
         static readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
         static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
-        static readonly Dictionary<string, RenderTexture> captions = new Dictionary<string, RenderTexture>();
 
         public static Color Hex(int rgb) => PieceFigure.Hex(rgb);
 
@@ -454,96 +453,6 @@ namespace ChessFight.Game
             return textures[key] = texture;
         }
 
-        // The lobby wall: dark warm wood tone, a faint large checker, a warm glow in
-        // the middle and fine scan lines, like an old lit sign board.
-        public static Texture2D WallTexture()
-        {
-            if (textures.TryGetValue("wall", out var cached) && cached != null) return cached;
-            const int w = 768, h = 280, square = 28;
-            Color top = Hex(0x2A1A0E), bottom = Hex(0x110904), glow = new Color(1f, .745f, .392f);
-            var px = new Color[w * h];
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    float v = 1f - y / (h - 1f);   // 0 at the top
-                    var c = Color.Lerp(top, bottom, v);
-                    if ((x / square + y / square) % 2 == 1) c = Color.Lerp(c, new Color(1f, .82f, .59f), .035f);
-                    float r = new Vector2((x - w / 2f) / (w * .42f), (y - h * .54f) / (w * .42f)).magnitude;
-                    c = Color.Lerp(c, glow, .3f * Mathf.Clamp01(1f - r));
-                    if (y % 2 == 0) c = Color.Lerp(c, Color.black, .18f);
-                    c.a = 1f;
-                    px[y * w + x] = c;
-                }
-            return textures["wall"] = Finish("Menu wall", w, h, px, TextureWrapMode.Clamp);
-        }
-
-        // One line in the display font, drawn once into a transparent texture
-        // `width` x `height` by a throwaway camera far below the scene (the way
-        // PiecePortraits takes its pictures). `repeat` fills the width with copies
-        // that tile seamlessly, for a scrolling sign. Null without the font.
-        public static RenderTexture Caption(string text, int width, int height, Color color, bool repeat)
-        {
-            var font = RuntimePanels.DisplayFont;
-            if (font == null || string.IsNullOrEmpty(text)) return null;
-            string key = text + width + "x" + height + ColorUtility.ToHtmlStringRGB(color) + repeat;
-            if (captions.TryGetValue(key, out var cached) && cached != null && cached.IsCreated()) return cached;
-            var studio = new Vector3(0f, -900f, 0f);
-            var go = new GameObject("Menu Caption");
-            go.transform.position = studio;
-            var mesh = go.AddComponent<TextMesh>();
-            mesh.font = font;
-            mesh.fontSize = 96;
-            mesh.characterSize = .1f;
-            mesh.anchor = TextAnchor.MiddleCenter;
-            mesh.alignment = TextAlignment.Center;
-            mesh.color = color;
-            mesh.text = text;
-            var renderer = go.GetComponent<MeshRenderer>();
-            renderer.sharedMaterial = font.material;
-            float aspect = width / (float)height;
-            var size = renderer.bounds.size;
-            // Where the glyphs sit against the line box; the same for any copy count.
-            float rise = renderer.bounds.center.y - studio.y;
-            if (size.x <= 0 || size.y <= 0) { size = new Vector3(text.Length * .55f, 1f, 0); rise = 0; }
-            float viewHeight;
-            if (repeat)
-            {
-                int copies = Mathf.Max(1, Mathf.RoundToInt(size.y * aspect / (.62f * size.x)));
-                var line = new System.Text.StringBuilder();
-                for (int i = 0; i < copies; i++) line.Append(text);
-                mesh.text = line.ToString();
-                size = renderer.bounds.size;
-                if (size.x <= 0) size.x = copies * text.Length * .55f;
-                viewHeight = size.x / aspect;
-            }
-            else viewHeight = Mathf.Max(size.y / .78f, size.x / .96f / aspect);
-
-            var texture = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32)
-            {
-                name = "Menu caption", wrapMode = repeat ? TextureWrapMode.Repeat : TextureWrapMode.Clamp, antiAliasing = 1
-            };
-            texture.Create();
-            var rig = new GameObject("Menu Caption Camera");
-            var camera = rig.AddComponent<Camera>();
-            camera.enabled = false;
-            camera.orthographic = true;
-            camera.orthographicSize = viewHeight / 2f;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(color.r, color.g, color.b, 0f);
-            camera.nearClipPlane = .1f;
-            camera.farClipPlane = 20f;
-            camera.allowHDR = false;
-            camera.targetTexture = texture;
-            rig.transform.position = studio + new Vector3(0, rise, -5f);
-            rig.transform.rotation = Quaternion.identity;
-            camera.Render();
-            camera.targetTexture = null;
-            go.SetActive(false);
-            Object.Destroy(rig);
-            Object.Destroy(go);
-            return captions[key] = texture;
-        }
-
         static Texture2D Solid(Color color)
         {
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
@@ -630,6 +539,26 @@ namespace ChessFight.Game
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return meshes[key] = mesh;
+        }
+
+        // A raised wooden chessboard: a mahogany slab `border` wider than the
+        // squares, the maple and walnut board on top and a brass line round it.
+        // Returns the height of the board's face, where pieces stand.
+        public static float WoodBoard(Transform parent, string name, int squares, float tile, Vector3 center, float height, float border)
+        {
+            var board = new GameObject(name);
+            board.transform.SetParent(parent, false);
+            board.transform.localPosition = center;
+            float size = squares * tile;
+            Slab(board.transform, "Frame", new Vector3(0, height / 2, 0), new Vector3(size + border, height, size + border), Wood(Mahogany, .62f, new Vector2(2f, 1f)));
+            Slab(board.transform, "Squares", new Vector3(0, height + .01f, 0), new Vector3(size, .02f, size), Board(squares));
+            var brass = BrassMetal();
+            for (int s = -1; s <= 1; s += 2)
+            {
+                Slab(board.transform, "Inlay", new Vector3(0, height + .02f, s * (size / 2 + .07f)), new Vector3(size + .2f, .03f, .07f), brass);
+                Slab(board.transform, "Inlay", new Vector3(s * (size / 2 + .07f), height + .02f, 0), new Vector3(.07f, .03f, size + .2f), brass);
+            }
+            return center.y + height + .02f;
         }
 
         // A box with UVs on every face (wood on the sides of a slab).

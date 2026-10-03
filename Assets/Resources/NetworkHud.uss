@@ -247,43 +247,33 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
                            border-color: rgba(217, 174, 98, 0.4); font-size: 17px;
                            background-color: rgba(12, 7, 4, 0.7); color: rgb(255, 255, 255); }
 
-/* ---------- title screen (IntroHud.uxml over IntroStage), design C revised ----------
-   Brass corner brackets, a gold metal title in the middle above the king,
-   white (cyan) and black (red) teams, the gold start plate (ChunkyButtons). */
+/* ---------- title screen (over IntroStage's wooden chessboard) ----------
+   The R58 layout (title block left) with R63's wood and brass: a walnut shade,
+   a brass rule, walnut plates (texture from IntroController) and a walnut
+   slab key (ChunkyButtons). */
 .intro { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .intro-shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; -unity-background-scale-mode: stretch-to-fill; }
-.intro-corner { position: absolute; width: 40px; height: 40px; border-color: rgba(217, 174, 98, 0.6); }
-.intro-corner-tl { left: 22px; top: 22px; border-left-width: 2px; border-top-width: 2px; }
-.intro-corner-tr { right: 22px; top: 22px; border-right-width: 2px; border-top-width: 2px; }
-.intro-corner-bl { left: 22px; bottom: 22px; border-left-width: 2px; border-bottom-width: 2px; }
-.intro-corner-br { right: 22px; bottom: 22px; border-right-width: 2px; border-bottom-width: 2px; }
-.intro-logo { position: absolute; left: 190px; right: 190px; top: 30px; align-items: center; }
-.intro-crown-row { justify-content: center; }
-.intro-rule-line { width: 150px; height: 2px; background-color: rgba(231, 190, 114, 0.65); }
-.intro-crown { width: 50px; height: 38px; margin: 0 25px; }
-.intro-title-box { height: 150px; margin-top: -6px; }
-.intro-title { font-size: 124px; letter-spacing: 8px; color: rgb(233, 168, 66); -unity-text-align: upper-center;
-               text-shadow: 0 7px 0 rgba(0, 0, 0, 0.55); white-space: nowrap; }
-.intro-title-hi { position: absolute; left: 0; top: 0; right: 0; height: 56px; overflow: hidden; }
-.intro-title-cream { color: rgb(255, 244, 218); text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
-.intro-tagline { margin-top: -2px; font-size: 22px; letter-spacing: 10px; color: rgb(227, 210, 186);
-                 text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7); }
-.intro-teams { margin-top: 26px; justify-content: center; }
-.intro-team { white-space: nowrap; font-size: 12px; -unity-font-style: bold; letter-spacing: 3px; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }
-.intro-team-white { color: rgb(60, 208, 255); }
-.intro-team-black { color: rgb(255, 107, 126); }
-.intro-team-vs { color: rgb(185, 165, 140); }
-.intro-team-line { width: 60px; height: 1px; margin: 0 14px; background-color: rgba(255, 226, 170, 0.55); }
-.intro-start { position: absolute; left: 0; right: 0; bottom: 60px; align-items: center; }
-.intro-press { padding: 18px 40px 24px 40px; color: rgb(28, 18, 0); }
-.intro-keycap { margin-right: 16px; padding: 4px 7px; border-width: 1.5px; border-radius: 4px; border-color: rgba(28, 18, 0, 0.85);
-                font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgba(28, 18, 0, 0.85); }
-.intro-hint { font-size: 28px; color: rgb(28, 18, 0); }
-.intro-chevrons { width: 40px; height: 20px; margin-left: 16px; }
-.intro-chip { position: absolute; left: 44px; bottom: 32px; }
-.intro-dot { width: 8px; height: 8px; margin-right: 9px; border-radius: 4px; background-color: rgb(75, 224, 143); }
-.intro-status { white-space: nowrap; font-size: 14px; color: rgb(217, 198, 172); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }
-.intro-version { position: absolute; right: 44px; bottom: 34px; white-space: nowrap; font-size: 12px; color: rgba(246, 236, 223, 0.75); }
+.intro-block { position: absolute; left: 64px; top: 158px; }
+.intro-kicker { font-size: 13px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 201, 61);
+                text-shadow: 0 2px 6px rgba(30, 16, 6, 0.6); }
+.intro-title { font-size: 104px; -unity-font-style: bold-and-italic; color: rgb(255, 248, 236);
+               margin-top: -16px; margin-bottom: -20px; text-shadow: 0 7px 0 rgb(62, 34, 16); }
+.intro-title-b { color: rgb(255, 201, 61); }
+.intro-rule { margin-top: 26px; align-items: center; }
+.intro-rule-gold { width: 46px; height: 3px; background-color: rgb(255, 201, 61); }
+.intro-rule-brass { width: 300px; height: 1px; background-color: rgba(217, 174, 98, 0.75); }
+.intro-subs { margin-top: 14px; padding: 12px 18px 8px 16px; border-left-width: 3px; border-color: rgb(217, 174, 98);
+              background-color: rgba(52, 33, 19, 0.88); -unity-background-scale-mode: scale-and-crop; }
+.intro-sub { font-size: 16px; -unity-font-style: bold; color: rgb(246, 236, 223); margin-bottom: 6px; }
+.intro-press { position: absolute; left: 64px; top: 584px; padding: 9px 18px 13px 10px; }
+.intro-key { width: 30px; height: 30px; margin-right: 12px; border-radius: 6px; font-size: 12px; -unity-font-style: bold;
+             -unity-text-align: middle-center; color: rgb(52, 33, 19); background-color: rgb(255, 201, 61); }
+.intro-hint { font-size: 18px; -unity-font-style: bold; color: rgb(255, 248, 236); }
+.intro-chip { position: absolute; left: 64px; top: 648px; height: 34px; padding: 0 14px 0 13px;
+              border-width: 1px; border-color: rgba(217, 174, 98, 0.45); background-color: rgba(52, 33, 19, 0.95);
+              -unity-background-scale-mode: scale-and-crop; }
+.intro-dot { width: 8px; height: 8px; margin-right: 8px; border-radius: 4px; background-color: rgb(255, 200, 80); }
+.intro-status { font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
 
 /* ---------- match HUD (MatchHud.uxml) ---------- */
 .screen { flex-grow: 1; flex-direction: row; padding: 20px; }
@@ -374,6 +364,9 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .load-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; -unity-background-scale-mode: stretch-to-fill;
              transition-property: width; transition-duration: 0.3s; }
 .load-fill-head { position: absolute; right: -3px; top: -6px; width: 6px; height: 18px; background-color: rgb(255, 255, 255); }
+.load-ticks { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.load-cancel-row { position: absolute; left: 0; right: 0; bottom: 112px; align-items: center; }
+.load-cancel { padding: 10px 20px 14px 20px; font-size: 18px; }
 .load-tick { position: absolute; top: -5px; width: 1px; height: 16px; background-color: rgba(255, 226, 180, 0.35); }
 .load-tick-label { position: absolute; top: 18px; left: -4px; font-size: 10px; -unity-font-style: bold; color: rgb(156, 138, 115); }
 .load-tip { position: absolute; left: 34px; right: 34px; bottom: 16px; align-items: center; }
@@ -411,7 +404,7 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 /* open */
 .chat-panel { height: 270px; border-width: 1px; border-color: rgba(217, 174, 98, 0.26); border-top-color: rgba(255, 220, 170, 0.34);
               background-color: rgba(52, 33, 19, 0.96); overflow: hidden; }
-.chat-match .chat-panel { height: 240px; background-color: rgb(46, 30, 18); }
+.chat-match .chat-panel { height: 240px; background-color: rgba(0, 0, 0, 0); border-width: 0; }
 .chat-tabs { flex-shrink: 0; height: 50px; padding: 0 10px 0 14px; align-items: center; border-bottom-width: 1px;
              border-color: rgba(217, 174, 98, 0.22); border-top-width: 3px; border-top-color: rgb(255, 201, 61); }
 .chat-tab { flex-direction: row; align-items: center; min-height: 30px; margin: 0 18px 0 0; padding: 4px 0 6px 0;
@@ -447,6 +440,19 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .chat-text { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; font-size: 14px; color: rgb(241, 228, 210); white-space: normal; }
 .chat-notice { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; font-size: 12px; -unity-font-style: italic;
                color: rgb(168, 149, 124); white-space: normal; }
+
+/* in a match: see-through, so the game shows behind it (R63, 2026-10-03).
+   Only a faint strip under the input line; every word gets a dark outline
+   shadow to stay readable over a bright course. */
+.chat-match .chat-tabs { border-bottom-color: rgba(255, 255, 255, 0.18); border-top-width: 0; }
+.chat-match .chat-close { background-color: rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.25); }
+.chat-match .chat-recent-line { background-color: rgba(0, 0, 0, 0); border-left-width: 2px; padding: 3px 8px; }
+.chat-match .chat-closed { background-color: rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.2); }
+.chat-match .chat-entry { background-color: rgba(0, 0, 0, 0.3); }
+.chat-match .chat-note { background-color: rgba(0, 0, 0, 0.3); color: rgb(255, 236, 200); border-color: rgb(255, 201, 61); }
+.chat-match .chat-text, .chat-match .chat-name, .chat-match .chat-num, .chat-match .chat-notice,
+.chat-match .chat-tab-text, .chat-match .chat-chip, .chat-match .chat-hint, .chat-match .chat-placeholder,
+.chat-match .chat-closed-text, .chat-match .chat-close-text { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95); }
 
 /* the input line */
 .chat-entry { flex-shrink: 0; height: 42px; margin: 0 12px 12px 12px; padding: 0 10px; border-radius: 0;

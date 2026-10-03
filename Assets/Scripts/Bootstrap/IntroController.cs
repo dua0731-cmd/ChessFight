@@ -41,13 +41,14 @@ namespace ChessFight.Game
             var shadeElement = root?.Q<VisualElement>("intro-shade");
             if (shadeElement != null)
             {
-                shade = MenuMarks.Vignette(new Color(8 / 255f, 4 / 255f, 2 / 255f), .55f, .8f);
+                shade = Shade();
                 shadeElement.style.backgroundImage = new StyleBackground(shade);
             }
-            root?.Q<VisualElement>("intro-crown")?.Add(new MenuMarks.CrownMark());
-            root?.Q<VisualElement>("intro-chevrons")?.Add(new MenuMarks.Chevrons(new Color(28 / 255f, 18 / 255f, 0f)));
-            var version = root?.Q<Label>("intro-version");
-            if (version != null) version.text = "v" + Application.version + " · STEAM";
+            // Lacquered walnut under the lines below the title and the Steam chip.
+            var walnut = new StyleBackground(MenuArt.PanelTexture());
+            var subs = root?.Q<VisualElement>("intro-subs");
+            if (subs != null) subs.style.backgroundImage = walnut;
+            if (chip != null) chip.style.backgroundImage = walnut;
             if (press != null) ChunkyButtons.Make(press);
             shownAt = Time.unscaledTime;
         }
@@ -87,6 +88,25 @@ namespace ChessFight.Game
                 return string.IsNullOrEmpty(name) ? "STEAM 연결됨" : "STEAM 연결됨 · " + name;
             }
             return string.IsNullOrEmpty(session.Error) ? "Steam 연결 중..." : session.Error;
+        }
+
+        // Walnut fading out left to right: strong behind the title, gone by the board.
+        static Texture2D Shade()
+        {
+            const int width = 256;
+            var texture = new Texture2D(width, 1, TextureFormat.RGBA32, false)
+            {
+                wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "Intro Shade"
+            };
+            var walnut = new Color(44 / 255f, 26 / 255f, 14 / 255f);
+            for (int x = 0; x < width; x++)
+            {
+                float u = x / (width - 1f);
+                walnut.a = StageKit.Darkening(u < .48f ? Mathf.Lerp(.66f, .18f, u / .48f) : Mathf.Lerp(.18f, 0f, (u - .48f) / .52f));
+                texture.SetPixel(x, 0, walnut);
+            }
+            texture.Apply();
+            return texture;
         }
 
         void OnDestroy()

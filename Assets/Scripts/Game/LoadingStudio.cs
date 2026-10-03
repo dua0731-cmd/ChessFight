@@ -5,10 +5,10 @@ using UnityEngine.Rendering;
 
 namespace ChessFight.Game
 {
-    // The loading screen's moving picture (design C revised, 2026-10-03): a round
+    // The entrance screen's moving picture (design C revised, 2026-10-03): a round
     // maple and walnut stage in the wooden hall where each player walks in from
-    // the side as their PC finishes loading, hops onto their spot with a flash in
-    // the team colour, and waits; when everyone is in they all cheer. White comes
+    // the side as they join the match, hops onto their spot with a flash in the
+    // team colour, and waits; when everyone is in and ready they all cheer. White comes
     // from the left (cyan light), black from the right (red light). Numbers are
     // the design sample's (MenuArt.Web).
     //
@@ -35,13 +35,16 @@ namespace ChessFight.Game
             public float Side, SpotYaw, StartX;
             public Vector3 At;
             public float EnterAt = -1;   // when the walk began, studio time
-            public bool Queued;
+            public bool Queued, Bot;
             public Material Disc, Ring, Flash;
             public Transform RingT, FlashT;
         }
 
         public RenderTexture Texture { get; private set; }
+        // Everyone listed has walked on and landed.
         public bool AllIn { get; private set; }
+        // Everyone is here and ready: the whole stage cheers.
+        public bool Cheer { get; set; }
 
         readonly Player[] players = new Player[PerTeam * 2];
         readonly Queue<Player> waiting = new Queue<Player>();
@@ -118,20 +121,27 @@ namespace ChessFight.Game
 
         // Hands over who is in the match and who has loaded. Lists are in roster
         // order sorted by team; each team fills its spots in that order.
-        public void Sync(IReadOnlyList<int> teams, IReadOnlyList<bool> ready, IReadOnlyList<bool> bots, float now)
+        public void Sync(IReadOnlyList<int> teams, IReadOnlyList<bool> joined, IReadOnlyList<bool> bots, float now)
         {
             int[] next = { 0, 0 };
             int total = 0, entered = 0;
+            var listed = new bool[players.Length];
             for (int i = 0; i < teams.Count; i++)
             {
                 int team = teams[i] == 0 ? 0 : 1;
                 int spot = next[team]++;
                 if (spot >= PerTeam) continue;
                 var p = players[team * PerTeam + spot];
+                bool bot = i < bots.Count && bots[i];
+                bool isIn = i < joined.Count && joined[i];
+                // Someone else took this spot (a player left and the list moved up).
+                if (p.Figure != null && p.Bot != bot) Reset(p);
+                if (!isIn) { if (p.Queued) Reset(p); continue; }
+                listed[team * PerTeam + spot] = true;
                 total++;
                 if (p.Figure == null)
                 {
-                    bool bot = i < bots.Count && bots[i];
+                    p.Bot = bot;
                     var kind = bot ? PieceKind.Pawn : Kinds[spot];
                     // Facing the camera, turned towards the middle.
                     var s = Spots[spot];
@@ -141,11 +151,14 @@ namespace ChessFight.Game
                     p.SpotYaw = Mathf.Atan2(look.x - p.At.x, look.z - p.At.z);
                     p.Figure.Root.SetActive(false);
                 }
-                bool isReady = i < ready.Count && ready[i];
-                if (isReady && !p.Queued) { p.Queued = true; waiting.Enqueue(p); }
+                if (!p.Queued) { p.Queued = true; waiting.Enqueue(p); }
                 if (p.EnterAt >= 0 && now - p.EnterAt >= WalkTime(p)) entered++;
             }
+            // Spots nobody is on any more.
+            for (int k = 0; k < players.Length; k++)
+                if (!listed[k] && players[k].Queued) Reset(players[k]);
             // One player starts walking at a time, a quarter second apart.
+            while (waiting.Count > 0 && !waiting.Peek().Queued) waiting.Dequeue();
             if (waiting.Count > 0 && now - lastStart >= Stagger)
             {
                 var p = waiting.Dequeue();
@@ -154,6 +167,17 @@ namespace ChessFight.Game
                 lastStart = now;
             }
             AllIn = total > 0 && entered == total && waiting.Count == 0;
+        }
+
+        // Clears a spot: the figure goes (a new one is built for whoever comes).
+        static void Reset(Player p)
+        {
+            if (p.Figure != null) Object.Destroy(p.Figure.Root);
+            p.Figure = null;
+            p.Queued = false;
+            p.EnterAt = -1;
+            SetAlpha(p.Ring, 0);
+            SetAlpha(p.Flash, 0);
         }
 
         // How long a player is out of sight from the stage edge until the hop ends.
@@ -192,7 +216,7 @@ namespace ChessFight.Game
                         ArmLeft = .3f + 1.8f * h, ArmRight = .3f + 1.8f * h
                     });
                 }
-                else if (AllIn) MenuArt.Cheer(p.Figure, now, 0);
+                else if (Cheer) MenuArt.Cheer(p.Figure, now, 0);
                 else MenuArt.Idle(p.Figure, now, i, .7f);
                 SetAlpha(p.Flash, a < .7f ? Mathf.Max(0, .95f - a * 1.35f) : 0);
                 p.FlashT.localScale = Vector3.one * (a < .7f ? .5f + a * 4.2f : .01f);

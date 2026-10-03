@@ -16,8 +16,9 @@ namespace ChessFight.Game
 
     // The lobby's 3D backdrop (design C revised, 2026-10-03): the party on a big
     // maple and walnut chessboard in a mahogany frame with brass trim, raised on a
-    // dark wooden stage whose top edge glows; a framed wall behind it with the
-    // title, lamps on two pillars and warm beams. Numbers are the design sample's
+    // dark wooden stage whose top edge glows; lamps on two pillars and warm beams.
+    // (The sign wall behind and the scrolling sign on the stage's face were taken
+    // out on 2026-10-03: the HUD covered them.) Numbers are the design sample's
     // (MenuArt.Web: +Z towards the camera there).
     //
     // Display only. Nothing here moves by input or by the network; the pieces bob
@@ -46,7 +47,6 @@ namespace ChessFight.Game
         readonly LineupEntry[] shown = new LineupEntry[Spots];
         readonly List<Transform> beams = new List<Transform>();
         readonly List<Material> beamMaterials = new List<Material>();
-        Material ticker;
 
         public Camera View => view;
 
@@ -63,7 +63,6 @@ namespace ChessFight.Game
             MenuArt.Hall(root, view, 22f, 72f);
             Aim(0f);
             Stage(root);
-            Wall(root);
             Lamps(root);
         }
 
@@ -91,46 +90,6 @@ namespace ChessFight.Game
             }
             foreach (var (a, b) in new[] { (-1, -1), (1, -1), (-1, 1), (1, 1) })
                 MenuArt.Slab(root, "Corner", new Vector3(a * 5f, Top + .02f, b * 5f), new Vector3(.42f, .07f, .42f), brass);
-
-            // The moving sign on the stage's front face.
-            var strip = MenuArt.Slab(root, "Ticker Back", MenuArt.Web(0, BaseHeight / 2, StageSize / 2 + .004f), new Vector3(StageSize - .5f, .56f, .01f),
-                                     MenuArt.Lamp(0x0E0804));
-            strip.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            var text = MenuArt.Caption("CHESS FIGHT  ✦  6 VS 6  ✦  폰 러쉬  ✦  퀸 오브 더 힐  ✦  소드 파이트  ✦  ", 2048, 96, MenuArt.Hex(0xFFD58A), true);
-            if (text != null)
-            {
-                ticker = MenuArt.Glow("ticker", text, Color.white, false);
-                ticker.mainTextureScale = new Vector2(1.4f, 1f);
-                LastSceneArt.Part(root, "Ticker", LastSceneArt.Panel(StageSize - .5f, .52f), ticker, MenuArt.Web(0, BaseHeight / 2, StageSize / 2 + .012f),
-                                  null, null, false);
-            }
-        }
-
-        // The framed wall behind the stage: the title, warm glow, walnut frame.
-        void Wall(Transform root)
-        {
-            var wallAt = MenuArt.Web(0, 4.4f, -17f);
-            LastSceneArt.Part(root, "Wall", LastSceneArt.Panel(22f, 8f), LastSceneArt.Blended("menu wall", MenuArt.WallTexture(), MenuArt.Hex(0x9A8C7A)),
-                              wallAt, null, null, false);
-            var title = MenuArt.Caption("CHESS FIGHT", 1536, 220, MenuArt.Hex(0xFFE2A0), false);
-            if (title != null)
-                LastSceneArt.Part(root, "Wall Title", LastSceneArt.Panel(15.4f, 2.2f), LastSceneArt.Blended("menu wall title", title, MenuArt.Hex(0x7E6C52)),
-                                  wallAt + new Vector3(0, -.4f, -.05f), null, null, false);
-            var line = MenuArt.Caption("6 VS 6  ·  체스 말 대난투", 1024, 96, MenuArt.Hex(0xFFD08A), false);
-            if (line != null)
-                LastSceneArt.Part(root, "Wall Line", LastSceneArt.Panel(6.6f, .62f), LastSceneArt.Blended("menu wall line", line, MenuArt.Hex(0x9C8A6C)),
-                                  wallAt + new Vector3(0, -2.2f, -.05f), null, null, false);
-            LastSceneArt.Part(root, "Wall Crown", LastSceneArt.Prism("crown", LastSceneArt.CrownOutline, .1f), MenuArt.Lamp(0xC9A050),
-                              wallAt + new Vector3(0, 1.45f, -.08f), Quaternion.Euler(0, 180f, 0), Vector3.one * 1.4f, false);
-
-            var walnut = MenuArt.Wood(MenuArt.Walnut, .6f, new Vector2(4f, 1f));
-            MenuArt.Slab(root, "Wall Frame", MenuArt.Web(0, 8.6f, -17f), new Vector3(23f, .5f, .6f), walnut);
-            MenuArt.Slab(root, "Wall Frame", MenuArt.Web(0, .2f, -17f), new Vector3(23f, .5f, .6f), walnut);
-            MenuArt.Slab(root, "Wall Frame", MenuArt.Web(-11.25f, 4.4f, -17f), new Vector3(.5f, 8.9f, .6f), walnut);
-            MenuArt.Slab(root, "Wall Frame", MenuArt.Web(11.25f, 4.4f, -17f), new Vector3(.5f, 8.9f, .6f), walnut);
-            var brass = MenuArt.BrassMetal();
-            MenuArt.Slab(root, "Wall Trim", MenuArt.Web(0, 8.32f, -16.98f), new Vector3(23.2f, .06f, .62f), brass);
-            MenuArt.Slab(root, "Wall Trim", MenuArt.Web(0, .48f, -16.98f), new Vector3(23.2f, .06f, .62f), brass);
         }
 
         // Pillars with three lamps each, beams onto the stage, the key light.
@@ -233,7 +192,6 @@ namespace ChessFight.Game
                 }
                 else if (figures[i] != null) MenuArt.Idle(figures[i], t, i, .6f);
             }
-            if (ticker != null) ticker.mainTextureOffset = new Vector2(t * .04f, 0);
             for (int i = 0; i < beamMaterials.Count; i++)
             {
                 var c = beamMaterials[i].color;
