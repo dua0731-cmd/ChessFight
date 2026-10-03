@@ -7,8 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/menu-c`) | 10-03 | R63 2차 | 문서: UI §11-2·§4 안내, DECISIONS U12(공개 매칭은 입장 화면 하나로), VALIDATION 메뉴 표 2차, REQUIREMENTS R63 2차, HANDOFF |
-| (`claude/menu-c`) | 10-03 | R63 2차 | 승규 님 피드백: 인트로를 예전 구성 + 나무 체스판(`MenuArt.WoodBoard`)·호두나무 그늘·판으로, 로비 전광판·전광 글씨 삭제(`Caption`·`WallTexture` 삭제), 공개 매칭은 게임 시작부터 입장 화면(`MatchLoader` Matching 단계, 들어온 사람이 걸어 들어옴, 매칭 취소·Esc, 같은 화면이 로딩으로 이어짐, `LoadingState.Joined`·`Expected`, 로비 배너는 비공개 방·더미·파티 대기만), 경기 중 채팅창 투명 |
+| (이 커밋, `claude/menu-c`) | 10-03 | R63 3차 | 문서: UI §11-3·§4 안내, VALIDATION 5·6-d, DECISIONS U12 덧붙임, REQUIREMENTS R63 3차, HANDOFF |
+| `401381f` (`claude/menu-c`) | 10-03 | R63 3차 | 입장 화면 "봇 추가 +"(`SteamSession.AddRoomBot`·`CanAddRoomBot`, `LoadingState.ShowAddBot`·`CanAddBot`, `AddBotRequested`), 게임 시작 버튼은 "게임 시작"만(`PlaySub`·`PlaySubtitle` 삭제) |
+| `d490ac3` (`claude/menu-c`) | 10-03 | R63 2차 | 문서: UI §11-2·§4 안내, DECISIONS U12(공개 매칭은 입장 화면 하나로), VALIDATION 메뉴 표 2차, REQUIREMENTS R63 2차, HANDOFF |
+| `f3a397c` (`claude/menu-c`) | 10-03 | R63 2차 | 승규 님 피드백: 인트로를 예전 구성 + 나무 체스판(`MenuArt.WoodBoard`)·호두나무 그늘·판으로, 로비 전광판·전광 글씨 삭제(`Caption`·`WallTexture` 삭제), 공개 매칭은 게임 시작부터 입장 화면(`MatchLoader` Matching 단계, 들어온 사람이 걸어 들어옴, 매칭 취소·Esc, 같은 화면이 로딩으로 이어짐, `LoadingState.Joined`·`Expected`, 로비 배너는 비공개 방·더미·파티 대기만), 경기 중 채팅창 투명 |
 | (`a6f6232`, `claude/menu-c`) | 10-03 | R63 | 문서: UI §11(디자인 C 수정안)과 §3·§7·§8·§9 안내, DECISIONS U11, VALIDATION 메뉴 표(12개), REQUIREMENTS R63(+ R62 푸시 표기), STRUCTURE(글꼴), GameModes(폰 러쉬), HANDOFF |
 | `2450bdb` (`claude/menu-c`) | 10-03 | R63 | 메뉴 디자인 C 수정안: `MenuArt`(나무결·체스판·마루·전광판 텍스처, 경기장 조명·빛줄기·후광, 3D 글씨 `Caption`, 말 그림 `Portrait`), `ChunkyButtons`(옆면 있는 판 버튼·누름·튀어 오름·빛줄기), `MenuMarks`(왕관·꺾쇠 화살표·비네트), `IntroStage`·`LobbyStage` 다시 만듦(결과 화면 말), `LoadingStudio`+`LoadingScreenView`(플레이어 입장), `NetworkHudView`·UXML·USS(호두나무·놋쇠, 모드 카드, 위 가운데 매칭 배너, 채팅), 표시 글꼴 Black Han Sans(`Resources/Fonts`, OFL), 모드 이름 폰 러쉬, `MatchLoader`가 이름·봇·나를 넘김, `LoadingBackdrop`·`PiecePortraits` 삭제 |
 | (이 커밋, `claude/last-scene`) | 10-01 | R62 | 문서: UI §10 결과 화면, SCENES(LastScene), STRUCTURE, DECISIONS U9(영상 대신 코드로 만든 3D 장면)·U10(목표 그림체 = PAWN RUSH 참고 그림), VALIDATION 결과 화면 표(12개), REQUIREMENTS R62·조건 2줄, ROADMAP(결과를 어디서 보여 줄지 결정 대기), HANDOFF. R61 "푸시 전" 표기를 "10-01 푸시 `e64012e`"로 |
