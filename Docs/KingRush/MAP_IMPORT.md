@@ -1,0 +1,61 @@
+# 기존 맵 프로젝트 이식 (R47)
+
+2026-10-05. `JY-ragdoll_v2` **로컬 적용만**. 사용자 지시로 커밋·푸시·브랜치 전환을 하지 않는다. Unity에서 사용자 직접 확인과 두 PC 테스트는 아직 하지 않았다.
+
+## 열기
+
+1. 핵심 프로젝트 `C:/Users/Admin/Documents/GitHub/ChessFight`를 Unity 6000.3.11f1로 연다.
+2. **ChessFight → Imported Map → Open Map**. 또는 `Assets/Scenes/ImportedChessFightMap.unity`를 연다. 현재 씬에 수정 사항이 있으면 Unity 저장 대화상자를 따른다.
+3. Scene에서 `Map` 루트가 선택된다. Play하면 **이 핵심 프로젝트에 원래 있던** `RagdollPawn` 하나가 `PlaytestSpawner`를 통해 생성된다. WASD 이동, Space 점프, R/Backspace 시작점 복귀.
+4. 프리팹 폴더는 **ChessFight → Imported Map → Select Obstacle Prefabs** 또는 `Assets/Maps/ImportedChessFight/Prefabs/Obstacles`.
+
+현재 프로젝트가 열고 있던 씬, 기존 KingRush/RagdollTest 씬, Build Settings 및 로비의 씬 연결은 자동으로 바꾸지 않는다. 이식 씬은 씬 파일을 직접 열어 사용하는 오프라인 레벨 작업용이다.
+
+## 포함 범위
+
+- 원본: `C:/Users/Admin/Desktop/호서대_과제/Chessfight/체스파이트/Assets/Scenes/ProtectTheKing_Graybox.unity`의 **저장된 배치**. 원본 파일은 변경하지 않는다.
+- 기존 지형, 경로, 장애물 배치, 체크포인트 구조물·복귀 위치 표식, 왕좌 구조물, 카메라·조명, 배치된 요플레 소품과 필요한 메시/재질을 가져온다. 생성기로 맵을 다시 만들지 않는다.
+- Unity 저장 후 공통 Transform **1539개**의 위치·회전·스케일·부모 참조가 원본과 같다. 보존한 비플레이어 프리팹 인스턴스 14개, 장애물 프리팹 19개(18종, 대리석은 단일/3×4 두 형태).
+- 원본의 `Systems`, `Players`, `AI Navigation`, `UI` 및 해당 게임 규칙·승패·Steam·플레이어·AI 구현은 제외한다.
+- 원본 Unity 6000.3.12f1/URP → 대상 6000.3.11f1/Built-in. 이식 재질만 Standard로 변환하고 기본색/매끄러움을 옮겼다. URP 후처리는 가져오지 않아 광원·광택의 최종 인상은 Unity에서 확인해야 한다. 대상 패키지·렌더 파이프라인·입력 설정은 유지한다.
+
+## 프리팹 목록
+
+| 번호 | 장애물 |
+|---|---|
+| 01~05 | 회전 원판, 점핑 발판, 왕복 밀대, 회전 해머, 상승/하강 타일 |
+| 06~10 | 슬라이딩 벽, 흔들다리, 컨베이어, 체스 시계 게이트, 낙하 체스말 |
+| 11~15 | 진자 철구, 접이식 다리, 바닥 피스톤, 스프링 기둥, 공기 분사구 |
+| 16 | 금이 가는 왕실 대리석: 단일 타일 / 3×4 묶음 |
+| 17~18 | 나이트 기병의 돌파, 캐슬링 교차 교량 |
+
+## 기존 핵심 시스템과 연결한 부분
+
+`Assets/Scripts/Gameplay/ImportedObstacles`는 기존 `ChessFight.Gameplay` 어셈블리에 속한다. 참조 유지를 위해 원본 GUID와 `ChessFight.ProtectKing` 네임스페이스를 유지했고, 원본 플레이어 의존성은 없앴다.
+
+- `ImportedObstacleActor`: 기존 `ICharacterDriver`로 캐릭터를 찾고 다중 래그돌 충돌체를 캐릭터 하나로 묶는다. 별도 플레이어 컨트롤러가 아니다.
+- 넉백은 **기존 `IHitReceiver.ApplyHit`**, 발사는 **기존 `ILaunchable.Launch`**. 원격 kinematic puppet에는 로컬 힘을 주지 않는다.
+- 바람은 캐릭터의 동적 Rigidbody들에 같은 연속 속도 변화를 주되 진행 방향 속도 상한을 둔다. 매 프레임 피격을 발생시키지 않는다. 현재 래그돌은 Rigidbody 기반이며 CharacterController용 새 이동 코드는 가져오지 않는다.
+- 이동/회전/접이식/피스톤/교차 교량은 `ImportedMovingSurface`를 통해 기존 **`IMovingSurface`**에 표면 속도·회전을 제공한다. 비활성화하면 전달 속도도 0이다.
+- 주기적 위치는 **`ObstacleClock.Now`**를 사용한다. 큰 공유 시간은 double에서 주기를 나눈 뒤 float로 바꿔 정밀도를 보존한다.
+- `Core Playtest`는 기존 PhysicsProfile, CameraRig, PlaytestSpawner와 기존 RagdollPawn **참조만** 추가한 테스트용 루트다. 핵심 스크립트나 캐릭터 프리팹은 수정하지 않는다.
+
+## 아직 연결하지 않은 부분
+
+- `CheckpointGate`는 기존 모양·순서 번호·복귀 위치를 남긴 **표식**이다. 새 게임의 체크포인트 정책은 적용하지 않았다. 현재 R/낙사는 테스트 시작점으로 돌아온다. 실제 체크포인트를 쓰려면 대상의 `Checkpoint` 또는 모드용 체크포인트 규칙에 연결한다.
+- 왕좌는 구조물만 있고 승리 상호작용은 없다. 옛 승리 조건을 새 게임에 이식하지 않는다.
+- 온라인 레이스와 로비에서 이식 씬 진입은 연결하지 않았다. 기존 네트워크 구조/프로토콜은 유지했다.
+- **공유 시계가 연결되면 ObstacleContext.Authority는 false**다. 주기적 위치는 계산하지만, 이식 장애물의 타격·발사·바람과 플레이어 반응형 상태는 호스트/상태 전달 연결 전까지 실행하지 않는다. 네트워크 권한을 공유 시계 유무만으로 추측해 방장/클라이언트가 중복 판정하는 것을 피한다. 추후 기존 권한/호스트 시뮬레이션에 명시적으로 연결해야 한다.
+- 금 가는 타일·무게 다리·접근 감지 기둥 등 상태가 플레이어에게 달린 장애물은 별도 상태 전달이 필요하다. 반복 움직임의 공유 시계만으로 온라인 완료라고 간주하지 않는다.
+- 원본 캡슐과 대상 래그돌의 크기/이동 특성이 다르다. 이번에는 배치와 힘 설정을 보존했으므로 통과 난도·점프 거리·카메라 거리·넉백 세기는 플레이테스트 후 조절한다.
+
+## 검사 결과와 직접 테스트
+
+자동 결과는 [검사 기록](MAP_IMPORT_VALIDATION.txt), 원본·제외 범위는 [Manifest](MAP_IMPORT_MANIFEST.json).
+
+- Core 34개, 모의 Steam 세션 15개 통과.
+- 대상 Unity 버전의 별도 검증 사본에서 씬 import, 19개 프리팹, 누락 스크립트/지원되지 않는 재질 검사 통과. Windows 테스트 플레이어 빌드 성공.
+- 테스트 플레이어 실행 **43개 통과, 실패 0, 런타임 오류 0**: 실제 대상 래그돌 인식/다중 충돌체 중복 방지/넉백/발사/puppet 무시/바람 상한/이동 표면 계약/접힘/재발동/시간 정밀도/비활성화.
+- 자동 점검은 전체 코스 완주·12인 충돌·네트워크 동기화·실제 조작감을 증명하지 않는다. [Unity 확인 목록](../Network/VALIDATION.md)에서 아래를 직접 확인한다.
+
+맵을 연 뒤 Play하여 시작점에 래그돌이 생기는지, 카메라가 따라오는지, 바닥을 밟고 점프하는지 확인한다. 각 장애물 프리팹은 필요하면 별도 테스트 씬에 끌어 놓고 시험한다. 다리 위 탑승/접힘, 피스톤·기둥 타격, 진자 넉백, 바람 상한, 대리석 붕괴와 경고를 확인한다. 원본 맵 배치는 수정하지 않은 상태로 비교한다. 원래 KingRush/RagdollTest도 각각 열어 기존 동작을 확인한다.

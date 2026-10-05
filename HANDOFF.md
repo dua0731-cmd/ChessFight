@@ -4,9 +4,11 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-09-27** · 기준 브랜치 **`JY-lobby`**(로비·게임모드 작업), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+최종 갱신: **2026-10-05** · 기준 브랜치 **`JY-lobby`**(로비·게임모드 작업), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
 
 ---
+
+> **이번 맵 이식(R47) 한정 사용자 지시:** 현재 `JY-ragdoll_v2`에 로컬 적용만 한다. 커밋·푸시·브랜치 전환을 하지 않는다. 아래 일반 커밋·푸시 규칙보다 이 지시가 우선한다.
 
 ## 0. 30초 요약
 
@@ -32,6 +34,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| 맵 이식 R47 | `ImportedChessFightMap.unity` + 장애물 19개 로컬 추가. 원본 플레이어·AI·승리 제외, 기존 래그돌 오프라인 연결. Unity import/빌드·실행 검사 43개 통과, 사용자 Unity/멀티 확인 대기 → [MAP_IMPORT](Docs/KingRush/MAP_IMPORT.md) |
 | 개발 브랜치 | **로비·게임모드 작업은 `JY-lobby`에만 커밋·푸시**(2026-09-25 사용자 지시, R18. `main`·`Network`·`JY-ragdoll`에는 푸시 금지). **퀸 오브 더 힐의 래그돌 쪽 기능(캐릭터 조작·물리)은 `JY-ragdoll_v2`**(2026-09-26 사용자가 `JY-lobby`의 `d3d617d`에서 만듦, R34). 그 밖의 AI 작업은 기존대로 `Network` |
 | `main` | `0df4403`(R17 병합). **`Network`의 커밋을 모두 포함하고 24커밋 앞선다**(09-25 확인). `JY-lobby`는 이 커밋에서 시작했다. 로비 작업을 `main`에 넣을지는 사용자 결정 |
 | 다른 원격 브랜치 | `Network`(`0ecd3b6`, main에 포함됨), `JY-ragdoll`(준영, 래그돌 랩·**물리 튜닝용으로 유지**, R17), `킹을-지켜라`(**비호환**: Unity 6000.3.12f1·URP·uGUI·자체 Steam 전송), `SteamNetworkTest`(옛 실험) |
@@ -57,6 +60,7 @@
 | 끊김 경고, 점프 누른 횟수, 버전 검사, 핑, F8 시뮬레이터, Rich Presence | 코드·테스트만 | [Network/MOTION](Docs/Network/MOTION.md), [기획안 반영](Docs/Network/PLAN_V0.1_STATUS.md) |
 | 씬 흐름 Intro → Lobby → 모드 씬(지금은 KingRush) → Lobby | 코드만, Unity 미확인 | [Architecture/SCENES](Docs/Architecture/SCENES.md) |
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
+| 별도 맵 프로젝트 이식 (R47) | 배치 보존·19 프리팹·기존 래그돌 연결, 로컬 적용. 체크포인트 규칙/온라인 판정 미연결 | [MAP_IMPORT](Docs/KingRush/MAP_IMPORT.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
 | **퀸 오브 더 힐 래그돌 기능 M1~M11, M13**(`JY-ragdoll_v2`): **M11 승격·기물 성능(R46, [7j] Shift+F9), M13 찌그러짐·비틀(R45, Shift+F5·F6), M6 밧줄·그네(R44, [7i] Shift+F8), M7 도약대(R43, [7h] Shift+F10), M8~M10 종·체크포인트·팀(R42, [7g] F10)**, **M5 갈고리·앙파상(R40, 자동 점검 7개, Unity 미확인, [7f] 연습장 F8)**, 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대 | 1차 Unity 확인 성공(09-26, 1~12). 2차 수정(누워 있기·물에 뜨기)은 자동 점검 통과, Unity 재확인 대기. M12, M14는 시작 안 함 | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
 | 래그돌 (RagdollTest = 래그돌 랩, 2인 로컬 + 랩 전용 Steam 2인 호스트 판정) | 병합·코드·컴파일만, Unity 미확인. 빌드한 랩 플레이어의 자동 점검 86/0(09-27, M11 승격까지). 게임 씬(KingRush) 네트워크 래그돌은 없음. 조작·등반 등 상세는 [RagdollLab README](Docs/RagdollLab/README.md) | [Player/RAGDOLL](Docs/Player/RAGDOLL.md) |
@@ -65,6 +69,7 @@
 ## 3. 진행 중인 일과 다음 할 일
 
 **사용자가 할 일 — 순서대로**
+- (10-05, R47) `ChessFight → Imported Map → Open Map`으로 가져온 씬을 열고 배치·래그돌·장애물을 확인한다. [이식 설명](Docs/KingRush/MAP_IMPORT.md) 및 [미확인 목록](Docs/Network/VALIDATION.md). 신규 온라인 코스 연결은 별도 작업이다.
 0. (래그돌, `JY-ragdoll_v2`) `Ragdoll Test` → Play → [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **승격 표(4개, Shift+F9: 받침대·킹·룩 등반)**, **찌그러짐 표(3개, Shift+F5·F6)**, **밧줄 표(6개, Shift+F8: 사슬 오르기·그네 8 m·기둥)**, **도약대 표(5개, Shift+F10: L자 도약대·태엽 스프링)**, **개척의 탑 표(6개, F10: 종·승강기·독점·체크포인트·팀)**, **등반 표(4개: 멈추면 스테미나 유지, Space 벽 점프, W는 위로만)**, **갈고리 표(11개, F8 연습장)**, 그다음 **조작감·등반 확인 표(15개, 09-27: 멈춤·부딪힘·다이빙·버둥대기 클릭 수·질주·등반 레인 넷·온라인 막대)**, 이어서 F9 → **퀸 오브 더 힐 2차 재확인 표(5개: F5 뒤 1초 누워 있기, 물에 5초 둥둥·좌클릭 버둥)**. 1차 표는 1~12 성공(09-26), 13번(두 PC)은 친구와 할 때
 1. `JY-lobby`를 Pull(LFS 포함)한 뒤 Unity에서 열고 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단 **새 로비 표(11개)**를 확인한다. 이어서 씬 분리·래그돌 병합 표. 막히면 증상·스크린샷과 Console 첫 오류를 AI에게 준다.
 2. 두 PC로 양방향 이동을 확인한다(가장 오래 미뤄진 검증). 이제 경기 씬에서 한다([Network/README §2](Docs/Network/README.md)).

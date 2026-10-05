@@ -1,0 +1,58 @@
+2026-10-05 / Unity 6000.3.11f1 / Windows x64
+Disposable copy of destination project; no changes to existing core scripts.
+Core tests: 34 passed; simulated Steam session tests: 15 passed.
+Original map transform comparison: 1539 unchanged.
+PASS: Unity imported scene; 2256 transforms, 19 obstacle prefabs; no missing scripts or unsupported materials.
+Core Playtest reuses destination ragdoll and PlaytestSpawner.
+Human Unity/Steam confirmation pending.
+
+Windows development player build: succeeded.
+PASS all 19 obstacle prefabs instantiate
+PASS 01_SpinningDisc(Clone) runtime references
+PASS 02_JumpPad(Clone) runtime references
+PASS 03_ReciprocatingPusher(Clone) runtime references
+PASS 04_RotatingHammer(Clone) runtime references
+PASS 05_RisingFallingTiles(Clone) runtime references
+PASS 06_SlidingWalls(Clone) runtime references
+PASS 07_WeightedBridge(Clone) runtime references
+PASS 08_ConveyorChessboard(Clone) runtime references
+PASS 09_ChessClockGates(Clone) runtime references
+PASS 10_FallingChessPiece(Clone) runtime references
+PASS 11_PendulumBall(Clone) runtime references
+PASS 12_FoldingBridge(Clone) runtime references
+PASS 13_FloorPiston(Clone) runtime references
+PASS 14_SpringPillar(Clone) runtime references
+PASS 15_AirVent(Clone) runtime references
+PASS 16_CrumblingRoyalFloor_3x4(Clone) runtime references
+PASS 16_CrumblingRoyalFloorTile(Clone) runtime references
+PASS 17_KnightCavalryCharge(Clone) runtime references
+PASS 18_CastlingCrossingBridges(Clone) runtime references
+PASS crossing bridge clearance and references
+PASS destination ragdoll is recognized without source player code
+PASS ragdoll body parts deduplicate to one character
+PASS knockback reaches existing IHitReceiver
+PASS launch reaches existing ILaunchable
+PASS network puppet rejects local obstacle impulses
+PASS wind acceleration is bounded by maximum push speed
+PASS wind cannot add beyond its directional speed cap
+PASS conveyor/disc feeds motion to destination rider
+PASS disabled conveyor/disc stops carrying characters
+PASS conveyor/disc feeds motion to destination rider
+PASS disabled conveyor/disc stops carrying characters
+PASS folding bridge reaches folded pose
+PASS folding panels expose existing moving-surface contract
+PASS disabled folding bridge stops carrying characters
+PASS piston only enters launch interval during Rising
+PASS piston support exposes moving-surface contract
+PASS spring accepts first activation
+PASS spring rejects repeated activation during same cycle
+PASS crossing bridges expose existing moving-surface contract
+PASS large shared timestamp retains subsecond precision
+PASS shared-clock context does not claim unassigned state authority
+PASS no runtime errors during imported map/obstacle smoke test
+Failures: 0; logged errors: 0
+Human Unity/Steam validation pending.
+
+Post-apply: Tools/Test-NetworkCompile.ps1 in actual destination passed for all listed assemblies.
+Post-apply: all 458 pre-existing asset/package/settings files unchanged; no duplicate GUIDs or unresolved imported asset references.
+JY-ragdoll_v2 retained; no commit, push or staging performed.
