@@ -88,7 +88,8 @@ compile_all() {
   $csc -out:"$build/ChessFight.Network.Core.dll" "$src"/Scripts/Core/*.cs
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" \
        -out:"$build/ChessFight.Network.Steam.dll" "$src"/Scripts/Network/*.cs
-  $csc $sym $refs -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Game.dll" "$src"/Scripts/Game/*.cs
+  # Game too (SettingsWindow's quit stops play mode in the Editor): player defines.
+  $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs        -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Game.dll" "$src"/Scripts/Game/*.cs
   $csc $sym $refs -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Gameplay.dll" $(find "$src/Scripts/Gameplay" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \

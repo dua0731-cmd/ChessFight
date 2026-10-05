@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/menu-c`) | 10-03 | R63 3차 | 문서: UI §11-3·§4 안내, VALIDATION 5·6-d, DECISIONS U12 덧붙임, REQUIREMENTS R63 3차, HANDOFF |
+| (이 커밋, `claude/menu-c`) | 10-05 | R64 | 문서: REQUIREMENTS R64, VALIDATION 설정 창 표·R63 6-b 고침, HANDOFF. 컴파일 도구: Windows는 Game에 `UnityEditor.dll` 참조, Linux는 Game을 플레이어 정의로(설정 창의 `#if UNITY_EDITOR` 종료 코드) |
+| `728f583` (`claude/settings-window`) | 10-05 | R64 | 설정 창(`SettingsWindow`·`SettingsHud.uxml`·`GameSettings`, 탭 5개·항목 10개, `PlayerPrefs`), 인트로는 판 클릭으로 시작·Esc 설정 창, 로비 Esc 설정 창, 입장 화면 Esc는 매칭 취소 안 함, 이동·카메라·채팅·경기 HUD가 설정을 읽음, `ChunkyButtons` 클릭 감 강화, UI §12 |
+| `82ef0ca` (`claude/menu-c`) | 10-03 | R63 3차 | 문서: UI §11-3·§4 안내, VALIDATION 5·6-d, DECISIONS U12 덧붙임, REQUIREMENTS R63 3차, HANDOFF |
 | `401381f` (`claude/menu-c`) | 10-03 | R63 3차 | 입장 화면 "봇 추가 +"(`SteamSession.AddRoomBot`·`CanAddRoomBot`, `LoadingState.ShowAddBot`·`CanAddBot`, `AddBotRequested`), 게임 시작 버튼은 "게임 시작"만(`PlaySub`·`PlaySubtitle` 삭제) |
 | `d490ac3` (`claude/menu-c`) | 10-03 | R63 2차 | 문서: UI §11-2·§4 안내, DECISIONS U12(공개 매칭은 입장 화면 하나로), VALIDATION 메뉴 표 2차, REQUIREMENTS R63 2차, HANDOFF |
 | `f3a397c` (`claude/menu-c`) | 10-03 | R63 2차 | 승규 님 피드백: 인트로를 예전 구성 + 나무 체스판(`MenuArt.WoodBoard`)·호두나무 그늘·판으로, 로비 전광판·전광 글씨 삭제(`Caption`·`WallTexture` 삭제), 공개 매칭은 게임 시작부터 입장 화면(`MatchLoader` Matching 단계, 들어온 사람이 걸어 들어옴, 매칭 취소·Esc, 같은 화면이 로딩으로 이어짐, `LoadingState.Joined`·`Expected`, 로비 배너는 비공개 방·더미·파티 대기만), 경기 중 채팅창 투명 |
