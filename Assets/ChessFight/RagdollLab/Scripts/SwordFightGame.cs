@@ -104,11 +104,11 @@ namespace ChessFight.RagdollLab
             if (MenuOpen || Finished || ChatBox.KeysHeld || !Application.isFocused || Cursor.lockState != CursorLockMode.Locked)
             { waitForAttackRelease = true; return new PawnInput { ability2 = ClassicControls }; }
             if (!Input.GetMouseButton(0)) waitForAttackRelease = false;
-            float x = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
-            float y = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
+            float x = GameSettings.Move.x;
+            float y = GameSettings.Move.y;
             Vector3 move = CameraRig.FlatRight * x + CameraRig.FlatForward * y;
             return new PawnInput { move = Vector3.ClampMagnitude(move, 1), aim = CameraRig.AimForward,
-                jump = Input.GetKeyDown(KeyCode.Space), sprint = Input.GetKey(KeyCode.LeftShift), ability2 = ClassicControls,
+                jump = GameSettings.Pressed(GameKey.Jump), sprint = GameSettings.Held(GameKey.Sprint), ability2 = ClassicControls,
                 shove = !waitForAttackRelease && Input.GetMouseButtonDown(0), shoveHeld = !waitForAttackRelease && Input.GetMouseButton(0) };
         }
         public void ToggleControls()
@@ -164,7 +164,7 @@ namespace ChessFight.RagdollLab
                 StepSwordLook(!ClassicControls && Local != null && Local.Alive && Local.Pawn.State == PawnState.Active &&
                     !MenuOpen && !Finished && !waitForAttackRelease && Application.isFocused &&
                     Cursor.lockState == CursorLockMode.Locked && Input.GetMouseButton(0),
-                    new Vector2(Input.GetAxisRaw("Mouse X"), -Input.GetAxisRaw("Mouse Y")), Time.unscaledDeltaTime);
+                    new Vector2(GameSettings.LookX, -GameSettings.LookY), Time.unscaledDeltaTime);
             if (hud == null || Rules == null) return;
             var local = Local;
             // During the respawn wait, watch an alive teammate instead of staring under the floor.

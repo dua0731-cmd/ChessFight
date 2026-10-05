@@ -87,10 +87,10 @@ namespace ChessFight.RagdollLab
             if (Input.GetKeyDown(KeyCode.F8)) Match.Complete(0, 1);
             if (Input.GetKeyDown(KeyCode.R)) Respawn(Local);
             if (!Application.isFocused) { Local.SetInput(default); return; }
-            float x = (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0);
-            float y = (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0);
+            float x = GameSettings.Move.x;
+            float y = GameSettings.Move.y;
             Local.SetInput(new PawnInput { move = Vector3.ClampMagnitude(CameraRig.FlatRight * x + CameraRig.FlatForward * y, 1),
-                aim = CameraRig.AimForward, jump = Input.GetKeyDown(KeyCode.Space), sprint = Input.GetKey(KeyCode.LeftShift),
+                aim = CameraRig.AimForward, jump = GameSettings.Pressed(GameKey.Jump), sprint = GameSettings.Held(GameKey.Sprint),
                 shove = Input.GetMouseButtonDown(0), shoveHeld = Input.GetMouseButton(0), grab = Input.GetMouseButton(1),
                 ability = Input.GetKeyDown(KeyCode.E), interact = Input.GetKey(KeyCode.F) }, Input.GetKey(KeyCode.E));
         }

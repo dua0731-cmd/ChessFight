@@ -66,13 +66,12 @@ namespace ChessFight.Game
             {
                 return new MoveIntent
                 {
-                    Move = new Vector2((Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0),
-                                       (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)),
-                    Jump = Input.GetKeyDown(KeyCode.Space),
+                    Move = GameSettings.Move,
+                    Jump = GameSettings.Pressed(GameKey.Jump),
                     Shove = Input.GetMouseButtonDown(0),
                     ShoveHeld = Input.GetMouseButton(0),
                     Grab = Input.GetMouseButton(1),
-                    Sprint = Input.GetKey(KeyCode.LeftShift),
+                    Sprint = GameSettings.Held(GameKey.Sprint),
                     Ability = Input.GetKeyDown(KeyCode.E),
                     Ability2 = Input.GetKeyDown(KeyCode.Q),
                     Interact = Input.GetKey(KeyCode.F)

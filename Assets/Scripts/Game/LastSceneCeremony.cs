@@ -183,7 +183,7 @@ namespace ChessFight.Game
             float k = Ease(tp / 2.4f), punch = Mathf.Exp(-Mathf.Pow((tp - .66f) / .2f, 2));
             float th = (1 - k) * .95f + Mathf.Sin(time * .21f) * .05f;
             float r = 16.6f - 2f * k - 1.1f * punch + 1.4f * shift, h = 7.6f - 4.9f * k + .2f * shift + Mathf.Sin(time * .37f) * .08f;
-            var s = Shake(tp, shakes);
+            var s = Shake(tp, shakes) * GameSettings.ShakeScale;
             view.transform.position = P(r * Mathf.Sin(th) + 1.4f * shift + s.x, h + s.y, 1f + r * Mathf.Cos(th));
             view.transform.LookAt(P(2.7f * shift + s.x * .6f, 1.6f + 1.4f * k + s.y * .6f, 1f));
             view.fieldOfView = 33f - 4f * punch;
@@ -349,7 +349,7 @@ namespace ChessFight.Game
             }
             foreach (var d in dust) d.ring.Show(d.where, (tp - d.at) / .6f, d.size);
             var key = Camera(tp);
-            var s = Shake(tp, shakes);
+            var s = Shake(tp, shakes) * GameSettings.ShakeScale;
             view.transform.position = key.pos + new Vector3(1.8f * shift + s.x, s.y, -1.2f * shift);
             view.transform.LookAt(key.look + new Vector3(3.6f * shift + s.x * .6f, s.y * .6f, 0));
             view.fieldOfView = key.fov;

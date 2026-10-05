@@ -225,6 +225,64 @@
 .modal-card.wide { width: 620px; }
 .modal-btn { flex-grow: 1; flex-basis: 0; margin: 0 4px; }
 .mode-list { margin-top: 8px; }
+
+/* ---------- settings (SettingsHud.uxml + SettingsWindow, R64) ---------- */
+.settings { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+            align-items: center; justify-content: center; background-color: rgba(10, 5, 2, 0.74); }
+.settings-card { width: 780px; height: 596px; padding: 22px 26px 22px 26px; }
+.settings-head { align-items: flex-start; }
+.settings-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(250, 208, 60); }
+.settings-title { font-size: 30px; color: rgb(246, 236, 223); margin-top: 2px; }
+.settings-tabs { margin-top: 14px; border-bottom-width: 1px; border-color: rgba(217, 174, 98, 0.22); flex-shrink: 0; }
+.settings-tab { margin: 0 26px 0 0; padding: 6px 0 9px 0; border-width: 0 0 3px 0; border-radius: 0;
+                border-color: rgba(0, 0, 0, 0); background-color: rgba(0, 0, 0, 0); font-size: 17px; color: rgb(185, 165, 140); }
+.settings-tab:hover { color: rgb(246, 236, 223); background-color: rgba(0, 0, 0, 0); }
+.settings-tab-on { color: rgb(246, 236, 223); border-color: rgb(255, 201, 61); }
+.settings-body { flex-grow: 1; padding-top: 10px; }
+.settings-foot { padding-top: 14px; border-top-width: 1px; border-color: rgba(217, 174, 98, 0.22); flex-shrink: 0; }
+.settings-foot-btn { margin-left: 12px; }
+
+.set-row { flex-direction: row; align-items: center; min-height: 52px; flex-shrink: 0;
+           border-bottom-width: 1px; border-color: rgba(217, 174, 98, 0.10); }
+.set-left { width: 210px; }
+.set-label { font-size: 15px; -unity-font-style: bold; color: rgb(246, 236, 223); }
+.set-note { font-size: 11px; color: rgb(185, 165, 140); margin-top: 2px; }
+.set-ctrl { flex-direction: row; align-items: center; flex-grow: 1; }
+.set-arrow { width: 34px; height: 37px; padding: 0 0 3px 0; font-size: 17px; }
+.set-bar { width: 236px; height: 12px; margin: 0 12px; border-width: 1px; border-color: rgba(217, 174, 98, 0.32);
+           background-color: rgba(12, 7, 4, 0.6); }
+.set-fill { position: absolute; left: 0; top: 0; bottom: 0; background-color: rgb(255, 201, 61); }
+.set-knob { position: absolute; top: -6px; width: 6px; height: 20px; margin-left: -3px; background-color: rgb(255, 243, 218);
+            border-bottom-width: 2px; border-color: rgb(110, 74, 38); }
+.set-value { min-width: 70px; margin-left: 12px; font-size: 18px; color: rgb(255, 201, 61); }
+.set-box { width: 236px; height: 34px; margin: 0 12px; border-width: 1px; border-color: rgba(217, 174, 98, 0.32);
+           background-color: rgba(12, 7, 4, 0.45); -unity-text-align: middle-center; font-size: 14px;
+           -unity-font-style: bold; color: rgb(246, 236, 223); }
+.set-seg { flex-direction: row; padding-left: 1px; }
+.set-seg-btn { height: 34px; margin: 0 0 0 -1px; padding: 0 16px; border-width: 1px; border-radius: 0;
+               border-color: rgba(217, 174, 98, 0.32); background-color: rgba(12, 7, 4, 0.45);
+               font-size: 13px; -unity-font-style: bold; color: rgb(185, 165, 140); }
+.set-seg-btn:hover { color: rgb(246, 236, 223); background-color: rgba(255, 220, 170, 0.08); }
+.set-seg-on { background-color: rgb(255, 201, 61); border-color: rgb(255, 201, 61); color: rgb(28, 18, 0); }
+.set-seg-on:hover { background-color: rgb(255, 214, 100); color: rgb(28, 18, 0); }
+.set-section { flex-direction: row; align-items: flex-end; margin: 16px 0 8px 0; flex-shrink: 0; }
+.set-section-title { font-size: 16px; color: rgb(255, 201, 61); margin-right: 10px; }
+.set-hint { font-size: 11px; color: rgb(185, 165, 140); }
+.set-keys { flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
+.set-key-row { width: 47%; flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.set-key { min-width: 104px; padding: 8px 12px 12px 12px; font-size: 13px; }
+.set-preview { margin-top: 16px; padding: 12px 14px; border-width: 1px; border-color: rgba(217, 174, 98, 0.18);
+               background-color: rgba(12, 7, 4, 0.45); flex-shrink: 0; }
+.set-preview-row { flex-direction: row; align-items: flex-end; margin-top: 6px; }
+.set-preview-row > Label { margin-right: 8px; }
+.set-ping { padding: 5px 10px; margin-left: 12px; background-color: rgba(12, 7, 4, 0.6); font-size: 12px;
+            -unity-font-style: bold; color: rgb(75, 224, 143); }
+
+/* Chat text size (settings → 채팅). */
+.chat-size-0 .chat-name, .chat-size-0 .chat-text, .chat-size-0 .chat-notice { font-size: 12px; }
+.chat-size-0 .chat-num { font-size: 9px; }
+.chat-size-2 .chat-name, .chat-size-2 .chat-text, .chat-size-2 .chat-notice { font-size: 17px; }
+.chat-size-2 .chat-num { font-size: 13px; }
 .mode-option { height: 76px; margin: 4px 0; padding: 8px 14px 8px 8px; border-radius: 0; border-width: 1px;
                border-color: rgba(217, 174, 98, 0.22); background-color: rgba(12, 7, 4, 0.35); }
 .mode-option:hover { background-color: rgba(255, 220, 170, 0.08); }

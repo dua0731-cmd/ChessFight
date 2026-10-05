@@ -73,7 +73,12 @@ namespace ChessFight.Game
             refreshAt = Time.unscaledTime + .2f;
             if (status != null) status.text = session.Status;
             if (roster != null) roster.text = NetworkRuntime.MatchRoster(session);
-            if (link != null) link.text = runtime.Motion?.QualityLine ?? "";
+            if (link != null)
+            {
+                link.text = runtime.Motion?.QualityLine ?? "";
+                // Settings → 기타 → 핑 보이기 (R64). The warning banner stays either way.
+                link.style.display = GameSettings.ShowPing ? DisplayStyle.Flex : DisplayStyle.None;
+            }
         }
 
         void ShowWarning(SteamMotion motion)

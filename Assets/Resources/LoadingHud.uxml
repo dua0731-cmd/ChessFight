@@ -45,10 +45,10 @@
         </ui:VisualElement>
 
         <!-- While matching: one more bot in the room (development builds), and
-             calling the search off (Esc does too). -->
+             calling the search off (a click only: Esc is the settings window, R64). -->
         <ui:VisualElement class="row load-cancel-row" picking-mode="Ignore">
             <ui:Button name="load-add-bot" text="봇 추가  +" class="disp chunky ch-wood ch-sm load-cancel load-add-bot" />
-            <ui:Button name="load-cancel" text="매칭 취소  Esc" class="disp chunky ch-red ch-sm load-cancel" />
+            <ui:Button name="load-cancel" text="매칭 취소" class="disp chunky ch-red ch-sm load-cancel" />
         </ui:VisualElement>
         <ui:VisualElement class="load-progress" picking-mode="Ignore">
             <ui:VisualElement class="row load-progress-row" picking-mode="Ignore">

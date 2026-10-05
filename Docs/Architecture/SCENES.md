@@ -7,7 +7,7 @@
 ## 1. 흐름
 
 ```text
- Intro ──아무 키──▶ Lobby ──모두가 phase=playing──▶ [로딩 화면] ──모두 준비, 공유 시각 go──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
+ Intro ──시작 판 클릭──▶ Lobby ──모두가 phase=playing──▶ [로딩 화면] ──모두 준비, 공유 시각 go──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
  (타이틀)          (파티·모드·매칭)                  킹 러시 = KingRush
                                                    소드 파이트 = SwordFight / 퀸 오브 더 힐 = 준비 중
  RagdollTest ← 개발 전용. 흐름 밖.
@@ -15,7 +15,7 @@
 
 | 씬 | 빌드 순서 | 붙는 컨트롤러 | Play를 누르면 |
 |---|---|---|---|
-| `Intro.unity` | 0 | `IntroController` | 온라인. 타이틀, Steam 시작, 아무 키 → Lobby |
+| `Intro.unity` | 0 | `IntroController` | 온라인. 타이틀, Steam 시작, 시작 판 클릭 → Lobby, Esc 설정 창 |
 | `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티 라인업(3D), 모드·파티·매칭 HUD. 이동 없음 |
 | `KingRush.unity` | 2 | 경기로 들어왔을 때만 `MatchSceneView` | 직접 열면 **오프라인 플레이테스트** |
 | `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |

@@ -1,0 +1,31 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Settings (R64): Esc on the title screen and in the lobby. Design sample:
+         https://claude.ai/artifact/C7WFSCyXfVj6wLX4zDRw4g. The tabs' rows are built
+         by SettingsWindow; it looks up every name here. The dimmed backdrop keeps
+         clicks off the screens underneath. -->
+    <ui:VisualElement class="settings" picking-mode="Position">
+        <ui:VisualElement name="settings-card" class="wood-panel settings-card">
+            <ui:VisualElement class="row settings-head" picking-mode="Ignore">
+                <ui:VisualElement class="grow" picking-mode="Ignore">
+                    <ui:Label text="SETTINGS" class="settings-kicker" picking-mode="Ignore" />
+                    <ui:Label text="설정" class="disp settings-title" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Button name="settings-x" text="✕" class="chunky ch-wood ch-xs btn-sq" />
+            </ui:VisualElement>
+            <ui:VisualElement class="row settings-tabs" picking-mode="Ignore">
+                <ui:Button name="settings-tab-0" text="소리" class="disp settings-tab" />
+                <ui:Button name="settings-tab-1" text="화면" class="disp settings-tab" />
+                <ui:Button name="settings-tab-2" text="조작" class="disp settings-tab" />
+                <ui:Button name="settings-tab-3" text="채팅" class="disp settings-tab" />
+                <ui:Button name="settings-tab-4" text="기타" class="disp settings-tab" />
+            </ui:VisualElement>
+            <ui:VisualElement name="settings-body" class="settings-body" picking-mode="Ignore" />
+            <ui:VisualElement class="row settings-foot" picking-mode="Ignore">
+                <ui:Button name="settings-quit" text="게임 종료" class="disp chunky ch-red ch-sm" />
+                <ui:VisualElement class="grow" picking-mode="Ignore" />
+                <ui:Button name="settings-reset" text="이 탭 기본값" class="disp chunky ch-wood ch-sm settings-foot-btn" />
+                <ui:Button name="settings-close" text="닫기  Esc" class="disp chunky ch-ivory ch-sm settings-foot-btn" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

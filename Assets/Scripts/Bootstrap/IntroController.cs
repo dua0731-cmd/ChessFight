@@ -1,3 +1,4 @@
+using System;
 using ChessFight.Network;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -5,10 +6,10 @@ using UnityEngine.UIElements;
 
 namespace ChessFight.Game
 {
-    // Title screen. NetworkRuntime starts Steam while this is on screen, and any
-    // key moves on to the lobby. Deliberately needs no clickable UI, only a key.
-    // The chess set behind the title is IntroStage, built here at run time so the
-    // scene file stays untouched.
+    // Title screen. NetworkRuntime starts Steam while this is on screen, and a
+    // click on the start plate moves on to the lobby (R64: no longer any key, so
+    // Esc can open the settings window). The chess set behind the title is
+    // IntroStage, built here at run time so the scene file stays untouched.
     [DisallowMultipleComponent]
     public sealed class IntroController : MonoBehaviour
     {
@@ -22,7 +23,7 @@ namespace ChessFight.Game
 
         PanelSettings ownedPanel;
         Texture2D shade;
-        Label status, hint;
+        Label status;
         VisualElement press, chip, dot;
         float shownAt, leaveAt = -1;
 
@@ -34,7 +35,6 @@ namespace ChessFight.Game
                                             Resources.Load<ThemeStyleSheet>("NetworkTheme"), null,
                                             new Vector2Int(1280, 720), out ownedPanel);
             status = root?.Q<Label>("intro-status");
-            hint = root?.Q<Label>("intro-hint");
             press = root?.Q<VisualElement>("intro-press");
             chip = root?.Q<VisualElement>("intro-chip");
             dot = root?.Q<VisualElement>("intro-dot");
@@ -64,19 +64,31 @@ namespace ChessFight.Game
             if (dot != null && session != null)
                 dot.style.backgroundColor = session.Online ? Ready : string.IsNullOrEmpty(session.Error) ? Waiting : Failed;
 
-            if (hint != null) hint.text = "아무 키나 눌러 시작";
             if (press != null) press.style.opacity = ready ? 1f : .55f;
             if (leaveAt >= 0)
             {
                 if (Time.unscaledTime - leaveAt >= LeaveDelay) SceneManager.LoadScene(SceneNames.Lobby);
                 return;
             }
+            if (LegacyKeys.Down(KeyCode.Escape)) SettingsWindow.Toggle();
             // A failed Steam start still continues: the lobby has the retry button.
-            if (ready && LegacyKeys.AnyDown())
-            {
-                leaveAt = Time.unscaledTime;
-                ChunkyButtons.Pulse(press);
-            }
+            if (ready && !SettingsWindow.IsOpen && Released(press)) leaveAt = Time.unscaledTime;
+        }
+
+        // The mouse button let go over the plate this frame. Read from the mouse
+        // rather than a UI event so the title still works where pointer events do
+        // not arrive (NetworkHudView's fallback click is for the same case); the
+        // plate's own press and spring still come from ChunkyButtons.
+        static bool Released(VisualElement plate)
+        {
+            if (plate?.panel == null) return false;
+            bool up;
+            Vector2 screen;
+            try { up = Input.GetMouseButtonUp(0); screen = Input.mousePosition; }
+            catch (InvalidOperationException) { return false; }
+            if (!up) return false;
+            var point = RuntimePanelUtils.ScreenToPanel(plate.panel, new Vector2(screen.x, Screen.height - screen.y));
+            return plate.worldBound.Contains(point);
         }
 
         static string Describe(SteamSession session)

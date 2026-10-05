@@ -19,12 +19,18 @@ namespace ChessFight.Game
     {
         public const string ClassName = "chunky";
 
+        // Offset is the plate's sink (px), Scale its squash: pressed, the plate
+        // drops onto its side at once and narrows a little; released, it springs
+        // up past its rest and swells for a moment (R64, "클릭 감"). Flat marks a
+        // Springy control, which has no plate and only squashes.
         sealed class State
         {
-            public float Offset, Velocity, Target, Flash;
-            public bool Down, Hover;
+            public float Offset, Velocity, Target, Flash, Scale = 1, ScaleVelocity;
+            public bool Down, Hover, Flat;
             public IVisualElementScheduledItem Tick;
         }
+
+        const float PressedScale = .955f, FlatPressedScale = .9f;
 
         struct Look
         {
@@ -69,15 +75,33 @@ namespace ChessFight.Game
                 Move();
                 e.schedule.Execute(Move).Every(100);
             }
+            Listen(e, s);
+        }
+
+        // A flat control (a tab, a choice in a row of choices, a slider) with the
+        // same squash, pop and a smaller burst, but no plate.
+        public static void Springy(VisualElement e)
+        {
+            if (e == null || states.TryGetValue(e, out _)) return;
+            var s = new State { Flat = true };
+            states.Add(e, s);
+            Listen(e, s);
+        }
+
+        static void Listen(VisualElement e, State s)
+        {
             e.RegisterCallback<PointerEnterEvent>(_ => { s.Hover = true; Retarget(e, s); });
             e.RegisterCallback<PointerLeaveEvent>(_ => { s.Hover = false; s.Down = false; Retarget(e, s); });
             e.RegisterCallback<PointerDownEvent>(evt =>
             {
                 if (evt.button != 0 || !e.enabledInHierarchy) return;
                 s.Down = true;
-                // The press is quick (50 ms on the samples): jump most of the way.
-                s.Offset = Mathf.Lerp(s.Offset, Get(e).Depth - 1, .7f);
+                // The press lands at once: the plate is on its side the frame the
+                // button goes down, not a few frames later.
+                if (!s.Flat) s.Offset = Get(e).Depth - 1;
                 s.Velocity = 0;
+                s.Scale = s.Flat ? FlatPressedScale : PressedScale;
+                s.ScaleVelocity = 0;
                 Retarget(e, s);
             }, TrickleDown.TrickleDown);
             e.RegisterCallback<PointerUpEvent>(evt =>
@@ -95,43 +119,56 @@ namespace ChessFight.Game
             if (e == null || e.panel == null) return;
             Make(e);
             if (!states.TryGetValue(e, out var s)) return;
-            s.Offset = Get(e).Depth - 1;
+            if (!s.Flat) s.Offset = Get(e).Depth - 1;
+            s.Scale = s.Flat ? FlatPressedScale : PressedScale;
             Release(e, s, e.worldBound.center);
         }
 
         static void Release(VisualElement e, State s, Vector2 at)
         {
-            s.Velocity = -340f;
+            s.Velocity = -420f;
+            // Out of the squash and past the rest: about 6 % bigger at the peak.
+            s.ScaleVelocity = s.Flat ? 3.4f : 2.6f;
             s.Flash = 1f;
             Retarget(e, s);
-            Burst(e, at);
+            Burst(e, at, s.Flat ? .55f : 1f);
         }
 
         static void Retarget(VisualElement e, State s)
         {
-            var look = Get(e);
-            s.Target = !e.enabledInHierarchy ? 0 : s.Down ? look.Depth - 1 : s.Hover ? -2 : 0;
+            s.Target = s.Flat || !e.enabledInHierarchy ? 0 : s.Down ? Get(e).Depth - 1 : s.Hover ? -3 : 0;
             if (s.Tick == null) s.Tick = e.schedule.Execute(() => Step(e, s)).Every(16);
             else s.Tick.Resume();
         }
 
         static void Step(VisualElement e, State s)
         {
-            const float dt = .016f, stiffness = 900f, damping = 22f;
-            if (s.Down) s.Offset = Mathf.MoveTowards(s.Offset, s.Target, 400f * dt);
+            const float dt = .016f, stiffness = 900f, damping = 22f, scaleStiffness = 700f, scaleDamping = 18f;
+            if (s.Down) s.Offset = Mathf.MoveTowards(s.Offset, s.Target, 600f * dt);
             else
             {
                 s.Velocity += ((s.Target - s.Offset) * stiffness - s.Velocity * damping) * dt;
                 s.Offset += s.Velocity * dt;
             }
+            float scaleTarget = s.Down ? (s.Flat ? FlatPressedScale : PressedScale) : 1f;
+            if (s.Down) s.Scale = Mathf.MoveTowards(s.Scale, scaleTarget, 4f * dt);
+            else
+            {
+                s.ScaleVelocity += ((scaleTarget - s.Scale) * scaleStiffness - s.ScaleVelocity * scaleDamping) * dt;
+                s.Scale += s.ScaleVelocity * dt;
+            }
             s.Flash = Mathf.Max(0, s.Flash - dt / .3f);
             e.style.translate = new Translate(0, s.Offset);
-            e.MarkDirtyRepaint();
-            if (!s.Down && s.Flash <= 0 && Mathf.Abs(s.Offset - s.Target) < .05f && Mathf.Abs(s.Velocity) < .5f)
+            e.style.scale = new Scale(new Vector2(s.Scale, s.Scale));
+            if (!s.Flat) e.MarkDirtyRepaint();
+            if (!s.Down && s.Flash <= 0 && Mathf.Abs(s.Offset - s.Target) < .05f && Mathf.Abs(s.Velocity) < .5f
+                && Mathf.Abs(s.Scale - 1f) < .002f && Mathf.Abs(s.ScaleVelocity) < .02f)
             {
                 s.Offset = s.Target;
                 s.Velocity = 0;
+                s.Scale = 1; s.ScaleVelocity = 0;
                 e.style.translate = new Translate(0, s.Offset);
+                e.style.scale = new Scale(Vector2.one);
                 s.Tick.Pause();
             }
         }
@@ -166,8 +203,8 @@ namespace ChessFight.Game
             }
             else if (flash > 0)
             {
-                top = Color.Lerp(top, Color.white, flash * .45f);
-                bottom = Color.Lerp(bottom, Color.white, flash * .3f);
+                top = Color.Lerp(top, Color.white, flash * .6f);
+                bottom = Color.Lerp(bottom, Color.white, flash * .42f);
             }
 
             // The side stays put on screen while the element moves by o.
@@ -245,23 +282,25 @@ namespace ChessFight.Game
         static Vertex Vert(Vector2 p, float y0, Color color) =>
             new Vertex { position = new Vector3(p.x, p.y + y0, Vertex.nearZ), tint = color };
 
-        // A ring and ten streaks flying out from `at` (panel coordinates).
-        static void Burst(VisualElement e, Vector2 at)
+        // A flash, a ring and twelve streaks flying out from `at` (panel
+        // coordinates); `size` 1 for a slab button, smaller for a flat control.
+        static void Burst(VisualElement e, Vector2 at, float size)
         {
             var host = e.panel?.visualTree;
             if (host == null) return;
-            var fx = new BurstFx(at);
+            var fx = new BurstFx(at, size);
             host.Add(fx);
         }
 
         sealed class BurstFx : VisualElement
         {
-            const float Life = .38f;
-            readonly float start = Time.unscaledTime;
-            readonly float[] angles = new float[10], reach = new float[10];
+            const float Life = .4f;
+            readonly float start = Time.unscaledTime, size;
+            readonly float[] angles = new float[12], reach = new float[12];
 
-            public BurstFx(Vector2 at)
+            public BurstFx(Vector2 at, float size)
             {
+                this.size = size;
                 pickingMode = PickingMode.Ignore;
                 style.position = Position.Absolute;
                 style.left = at.x;
@@ -270,8 +309,8 @@ namespace ChessFight.Game
                 style.height = 0;
                 for (int i = 0; i < angles.Length; i++)
                 {
-                    angles[i] = i / 10f * Mathf.PI * 2 + Random.Range(-.25f, .25f);
-                    reach[i] = Random.Range(50f, 86f);
+                    angles[i] = i / 12f * Mathf.PI * 2 + Random.Range(-.25f, .25f);
+                    reach[i] = Random.Range(56f, 96f) * size;
                 }
                 generateVisualContent += Paint;
                 schedule.Execute(() =>
@@ -287,21 +326,29 @@ namespace ChessFight.Game
                 float ease = 1 - Mathf.Pow(1 - t, 3);
                 var painter = context.painter2D;
                 painter.lineCap = LineCap.Round;
-                float ring = 60f * Mathf.Min(1, t / .84f);
+                // A white pop where the click landed, gone in the first tenth of a second.
+                if (t < .3f)
+                {
+                    painter.fillColor = new Color(1f, .97f, .88f, .55f * (1 - t / .3f));
+                    painter.BeginPath();
+                    painter.Arc(Vector2.zero, (10f + 26f * ease) * size, new Angle(0f, AngleUnit.Degree), new Angle(360f, AngleUnit.Degree));
+                    painter.Fill();
+                }
+                float ring = 72f * size * Mathf.Min(1, t / .84f);
                 if (t < .84f)
                 {
-                    painter.lineWidth = 2f;
+                    painter.lineWidth = 2.5f;
                     painter.strokeColor = new Color(1f, .886f, .627f, .95f * (1 - t / .84f));
                     painter.BeginPath();
                     painter.Arc(Vector2.zero, ring, new Angle(0f, AngleUnit.Degree), new Angle(360f, AngleUnit.Degree));
                     painter.Stroke();
                 }
-                painter.lineWidth = 3f;
+                painter.lineWidth = 3.5f * Mathf.Max(.7f, size);
                 for (int i = 0; i < angles.Length; i++)
                 {
                     var dir = new Vector2(Mathf.Cos(angles[i]), Mathf.Sin(angles[i]));
                     var head = dir * reach[i] * ease;
-                    float length = Mathf.Lerp(16f, 2f, ease);
+                    float length = Mathf.Lerp(18f, 2f, ease) * Mathf.Max(.6f, size);
                     var color = Sparks[i % Sparks.Length];
                     color.a = 1 - .4f * t;
                     painter.strokeColor = color;

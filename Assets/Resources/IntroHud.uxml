@@ -1,6 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <!-- Title screen over the 3D chessboard (IntroStage). Nothing here is
-         clickable: any key continues. IntroController looks up every name.
+    <!-- Title screen over the 3D chessboard (IntroStage). The start plate is the
+         one thing to click (R64: Esc is the settings window, so no any key).
+         IntroController looks up every name.
          Since R63 (2026-10-03) the same layout with wood and brass: a walnut
          shade, a brass rule under the title, walnut plates for the lines below. -->
     <ui:VisualElement class="intro" picking-mode="Ignore">
@@ -19,9 +20,9 @@
                 <ui:Label text="레이스, 탑 오르기, 칼싸움으로 겨루세요" class="intro-sub" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="intro-press" class="row chunky ch-wood ch-sm intro-press" picking-mode="Ignore">
+        <ui:VisualElement name="intro-press" class="row chunky ch-wood ch-sm intro-press">
             <ui:Label text="▶" class="intro-key" picking-mode="Ignore" />
-            <ui:Label name="intro-hint" class="intro-hint" picking-mode="Ignore" />
+            <ui:Label text="클릭해서 시작" class="intro-hint" picking-mode="Ignore" />
         </ui:VisualElement>
         <ui:VisualElement name="intro-chip" class="row intro-chip" picking-mode="Ignore">
             <ui:VisualElement name="intro-dot" class="intro-dot" picking-mode="Ignore" />

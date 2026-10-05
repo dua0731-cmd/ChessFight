@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using ChessFight.Game;
+using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
@@ -106,8 +107,8 @@ namespace ChessFight.RagdollLab
             }
             if (mouseLook)
             {
-                yaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
-                AddPitch(-Input.GetAxisRaw("Mouse Y") * mouseSensitivity);
+                yaw += GameSettings.LookX * mouseSensitivity;
+                AddPitch(-GameSettings.LookY * mouseSensitivity);
                 float wheel = Input.mouseScrollDelta.y;
                 if (Mathf.Abs(wheel) > 0.01f) Zoom(wheel);
             }
@@ -197,7 +198,7 @@ namespace ChessFight.RagdollLab
                 var p = pawn.P;
                 float span = Mathf.Max(0.1f, p.sprintSpeed - p.moveSpeed);
                 // From the smoothed travel, not the hips' own speed, which pulses with every stride.
-                float kick = sprintFov * Mathf.Clamp01((travel.magnitude - p.moveSpeed) / span);
+                float kick = sprintFov * GameSettings.ShakeScale * Mathf.Clamp01((travel.magnitude - p.moveSpeed) / span);
                 fovKick = Mathf.Lerp(fovKick, kick, 1f - Mathf.Exp(-3f * dt));
                 Cam.fieldOfView = baseFov + fovKick;
             }
@@ -207,8 +208,8 @@ namespace ChessFight.RagdollLab
         {
             if (mouseLook)
             {
-                freeYaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
-                freePitch = Mathf.Clamp(freePitch - Input.GetAxisRaw("Mouse Y") * mouseSensitivity, -85f, 85f);
+                freeYaw += GameSettings.LookX * mouseSensitivity;
+                freePitch = Mathf.Clamp(freePitch - GameSettings.LookY * mouseSensitivity, -85f, 85f);
             }
             Quaternion rot = Quaternion.Euler(freePitch, freeYaw, 0f);
             Vector3 move = Vector3.zero;

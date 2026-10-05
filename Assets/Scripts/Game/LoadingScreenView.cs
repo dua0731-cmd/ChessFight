@@ -44,7 +44,7 @@ namespace ChessFight.Game
     // mode's name top centre, white's seats down the left and black's down the
     // right, and behind them LoadingStudio's wooden stage. While matching, each
     // player walks on as they join (their card lights up, "입장!") and the line
-    // fills with players; "매칭 취소" or Esc calls it off. When the match starts
+    // fills with players; a click on "매칭 취소" calls it off. When the match starts
     // the same screen carries on as the loading screen: the line shows this PC's
     // load and each card says when that player is ready. With everyone in and
     // ready, "모두 입장 완료 · 곧 출발!" and the whole stage cheers.
@@ -64,7 +64,7 @@ namespace ChessFight.Game
 
         public readonly LoadingState State = new LoadingState();
         public bool Hiding => hideAt >= 0;
-        // "매칭 취소" or Esc while matching.
+        // "매칭 취소" clicked while matching (R64: not Esc, which is the settings window).
         public event Action CancelRequested;
         // "봇 추가" while matching: one more bot in the room.
         public event Action AddBotRequested;
@@ -216,7 +216,6 @@ namespace ChessFight.Game
             if (fill != null) fill.style.width = new Length(filled, LengthUnit.Percent);
             if (ticks != null) ticks.style.display = matching ? DisplayStyle.None : DisplayStyle.Flex;
             if (cancel != null) cancel.style.display = matching && State.CanCancel && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
-            if (matching && State.CanCancel && !Hiding && LegacyKeys.Down(KeyCode.Escape)) CancelRequested?.Invoke();
             if (addBot != null)
             {
                 addBot.style.display = matching && State.ShowAddBot && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;

@@ -287,14 +287,20 @@ namespace ChessFight.Game
                 if (LegacyKeys.Down(KeyCode.Escape)) { Close(codeModal); root.Focus(); }
                 return;
             }
+            // Esc closes the settings window, else the topmost lobby window, else
+            // opens the settings window (R64). It never calls off matching: the
+            // entrance screen's "매칭 취소" is click only.
             if (LegacyKeys.Down(KeyCode.Escape))
             {
-                if (Visible(modeModal)) Close(modeModal);
+                if (SettingsWindow.IsOpen) SettingsWindow.Back();
+                else if (Visible(modeModal)) Close(modeModal);
                 else if (Visible(codeModal)) Close(codeModal);
                 else if (Visible(friendsPanel)) Close(friendsPanel);
                 else if (Visible(detailsPanel)) Close(detailsPanel);
+                else SettingsWindow.Open();
                 return;
             }
+            if (SettingsWindow.IsOpen) return;
             bool modal = Visible(modeModal) || Visible(codeModal);
             if (!modal && (LegacyKeys.Down(KeyCode.Return) || LegacyKeys.Down(KeyCode.KeypadEnter)))
             {
@@ -311,7 +317,7 @@ namespace ChessFight.Game
         // help with typing, which is what the paste button is for.
         void FallbackClick()
         {
-            if (pointerSeen || fallbackDead) return;
+            if (pointerSeen || fallbackDead || SettingsWindow.IsOpen) return;
             bool pressed;
             Vector2 screen;
             try { pressed = Input.GetMouseButtonDown(0); screen = Input.mousePosition; }

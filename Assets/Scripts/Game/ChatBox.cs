@@ -14,6 +14,9 @@ namespace ChessFight.Game
     // right in any match scene (King Rush, Sword Fight and whichever mode comes
     // next), hidden on the title and behind the loading screen.
     //
+    // Settings → 채팅 (R64) can turn it off, mask common swear words and change
+    // its text size; settings → 조작 can move the key that opens it.
+    //
     // Closed: the key that opens it, and new lines floating for a few seconds.
     // Tab opens it on the input line; Tab again moves 파티 → 팀 → 전체; Enter
     // sends; Esc or the close button closes it. In a match a sent line closes it
@@ -55,7 +58,7 @@ namespace ChessFight.Game
         PanelSettings ownedPanel;
         VisualElement box, panel, recent, closedHint, lines;
         TextField field;
-        Label chip, placeholder, hint, note, scrolled, closedUnread;
+        Label chip, placeholder, hint, note, scrolled, closedUnread, closedKey;
         readonly Dictionary<ChatChannel, Button> tabs = new Dictionary<ChatChannel, Button>();
         readonly Dictionary<ChatChannel, Label> unread = new Dictionary<ChatChannel, Label>();
         readonly List<KeyValuePair<ChatEntry, VisualElement>> recentRows = new List<KeyValuePair<ChatEntry, VisualElement>>();
@@ -68,7 +71,7 @@ namespace ChessFight.Game
         // The channel the player moved to with Tab, kept while it can be used and
         // the chat stays in the same place.
         bool open, picked, noteError, drawnOpen;
-        int panelVersion = -1, recentVersion = -1, drawnScroll, scroll, submitFrame = -1, releasedFrame = -10;
+        int panelVersion = -1, recentVersion = -1, settingsVersion = -1, drawnScroll, scroll, submitFrame = -1, releasedFrame = -10;
         ChatChannel drawnChannel;
         float noteUntil;
         string noteText = "";
@@ -98,6 +101,7 @@ namespace ChessFight.Game
             note = root.Q<Label>("chat-note");
             scrolled = root.Q<Label>("chat-scrolled");
             closedUnread = root.Q<Label>("chat-closed-unread");
+            closedKey = root.Q<Label>("chat-closed-key");
             if (box == null || panel == null || recent == null || lines == null || field == null)
             { Debug.LogError("[ChessFight] ChatHud.uxml의 이름이 ChatBox와 맞지 않습니다."); box = null; return; }
 
@@ -155,7 +159,7 @@ namespace ChessFight.Game
         {
             if (box == null) return;
             if (Where != lastWhere) { lastWhere = Where; picked = false; scroll = 0; }
-            if (Where == Layout.Hidden || log == null)
+            if (Where == Layout.Hidden || log == null || !GameSettings.ChatOn)
             {
                 if (open) Close(false);
                 Show(box, false);
@@ -181,7 +185,7 @@ namespace ChessFight.Game
                 // takes it back for the next key.
                 else if (!Typing && !MouseHeld()) field.Focus();
             }
-            else if (!open && !blocked && Time.frameCount - releasedFrame > 1 && LegacyKeys.Down(KeyCode.Tab)) OpenPanel();
+            else if (!open && !blocked && Time.frameCount - releasedFrame > 1 && GameSettings.Pressed(GameKey.Chat)) OpenPanel();
             Refresh();
         }
 
@@ -245,6 +249,7 @@ namespace ChessFight.Game
 
         static bool Blocked()
         {
+            if (SettingsWindow.IsOpen) return true;
             try { return Blocker != null && Blocker(); }
             catch (Exception e) { Debug.LogException(e); return false; }
         }
@@ -260,6 +265,14 @@ namespace ChessFight.Game
         void Refresh()
         {
             float now = Time.realtimeSinceStartup;
+            // Settings (R64): text size, the swear filter and the key that opens it.
+            if (GameSettings.Version != settingsVersion)
+            {
+                settingsVersion = GameSettings.Version;
+                panelVersion = recentVersion = -1;
+                for (int i = 0; i < 3; i++) box.EnableInClassList("chat-size-" + i, GameSettings.ChatSize == i);
+                if (closedKey != null) closedKey.text = GameSettings.KeyName(GameSettings.Key(GameKey.Chat));
+            }
             if (open && !Usable(channel)) channel = ChatText.Next(channel, Usable);
             Show(panel, open);
             Show(recent, !open);
@@ -361,7 +374,7 @@ namespace ChessFight.Game
             name.AddToClassList("chat-name-" + Key(e.Channel));
             if (e.Mine) name.AddToClassList("chat-name-me");
             row.Add(name);
-            row.Add(Text(e.Text, "chat-text"));
+            row.Add(Text(GameSettings.Filter(e.Text), "chat-text"));
             return row;
         }
 

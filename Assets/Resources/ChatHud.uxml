@@ -11,7 +11,7 @@
             <!-- Closed: new lines float here, then fade. -->
             <ui:VisualElement name="chat-recent" class="chat-recent" picking-mode="Ignore" />
             <ui:VisualElement name="chat-closed" class="row chat-closed" picking-mode="Ignore">
-                <ui:Label text="Tab" class="chat-key" picking-mode="Ignore" />
+                <ui:Label name="chat-closed-key" text="Tab" class="chat-key" picking-mode="Ignore" />
                 <ui:Label text="채팅" class="chat-closed-text" picking-mode="Ignore" />
                 <ui:Label name="chat-closed-unread" class="chat-unread" picking-mode="Ignore" />
             </ui:VisualElement>

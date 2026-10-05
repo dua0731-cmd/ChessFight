@@ -90,8 +90,8 @@ namespace ChessFight.Game
             bool look = Cursor.lockState == CursorLockMode.Locked;
             if (look)
             {
-                yaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
-                pitch = Mathf.Clamp(pitch - Input.GetAxisRaw("Mouse Y") * mouseSensitivity, FreeFly ? -85f : minPitch, FreeFly ? 85f : maxPitch);
+                yaw += GameSettings.LookX * mouseSensitivity;
+                pitch = Mathf.Clamp(pitch - GameSettings.LookY * mouseSensitivity, FreeFly ? -85f : minPitch, FreeFly ? 85f : maxPitch);
                 float wheel = Input.mouseScrollDelta.y;
                 if (!FreeFly && Mathf.Abs(wheel) > 0.01f)
                     distance = Mathf.Clamp(distance * Mathf.Pow(0.88f, wheel), minDistance, maxDistance);

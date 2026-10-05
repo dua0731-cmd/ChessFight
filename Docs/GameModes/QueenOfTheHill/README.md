@@ -47,7 +47,7 @@
 - 자동 검사: 경계 검사, Core 29개, 모의 Steam 세션 15개, 래그돌 포함 7개 어셈블리 Roslyn 컴파일 통과.
 - 남은 확인 목록: [VALIDATION](../../Network/VALIDATION.md) 최상단 "새 로비와 게임 모드" 표.
 - **사고 기록(R23):** 사용자가 한 번 **다른 폴더의 빈 Unity 프로젝트**를 열어 "파일이 다 사라졌다"고 느꼈다. Unity 위쪽 메뉴에 **`ChessFight`**가 있는지로 올바른 프로젝트인지 먼저 확인시킨다([PITFALLS #12](../../Environment/PITFALLS.md)).
-- 사용자 Unity: **6000.3.11f1**, Windows, Unity Hub. 첫 흐름: `ChessFight > Scenes > Intro (online flow)` → Play → 아무 키 → 로비.
+- 사용자 Unity: **6000.3.11f1**, Windows, Unity Hub. 첫 흐름: `ChessFight > Scenes > Intro (online flow)` → Play → "클릭해서 시작" → 로비.
 
 ## 3. 기획 재료
 
