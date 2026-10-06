@@ -28,6 +28,9 @@
 | 21 | 자동 점검 9개가 **처음부터 계속 실패** — 그중 4개는 동작이 아니라 **점검이 틀렸다**(끝난 뒤의 속도를 잼, 두 폰의 출발선이 다름, 올라선 뒤에도 앞으로 계속 누름) | 점검을 Linux 세션에서 **Unity 없이 쓰고 한 번도 돌리지 않은 채** 커밋했다. 파이썬 모델로 잰 값은 실제 PhysX와 달랐다(벽의 튀어나온 밑면, 머리 박치기, 앵커 되튐) | 새 점검은 **빌드한 랩 플레이어에서 한 번 이상 돌려 보고** 커밋한다([RagdollLab README "자동 점검"](../RagdollLab/README.md#자동-점검)의 사본 빌드 절차, `-ragdollOnly`로 일부만). 실패하면 먼저 추적값을 찍어 점검과 동작 중 무엇이 틀렸는지 가른다 | R36 |
 | 14 | 문서가 코드와 어긋남 (예: Both로 바꿨다는 옛 문장) | 여러 도구가 문서를 부분만 갱신 | [HANDOFF §8](../../HANDOFF.md) 체크리스트. 옛 문서는 삭제하거나 새 트리로 안내 | R15 |
 | 24 | **로딩 화면이 안 뜨고** 경기 씬이 그냥 열림. Console: `AssertionException: Assertion failure. Values are not equal.` (`UIDocument.set_panelSettings`, `MatchLoader.cs` 70) | 채팅(`ChatBox`)의 UIDocument를 `NetworkRuntime` 오브젝트에 직접 붙였다. 그 **자식 오브젝트**인 로딩 화면의 UIDocument가 채팅 문서의 자식 문서가 되고, 부모와 다른 PanelSettings를 받자 Unity가 Assert. `MatchLoader`는 이 오류를 잡고 로딩 화면 없이 씬을 불러서 경기는 되지만 화면은 없다 | UIDocument끼리는 부모·자식 오브젝트에 두지 않는다. 자기 PanelSettings(정렬 순서)를 가진 화면은 **형제 오브젝트**로(`ChessFight Network Runtime` 아래 `Chat`, `Loading Screen`). `3bf8981`에서 고침(AI가 Unity에서 확인) | R61 |
+| 25 | 코드로 만든 어두운 홀인데 **반짝이는 바닥·체스판·말이 파랗게** 보임(R65 첫 결과 화면) | 씬의 기본 반사가 템플릿 씬의 파란 절차 하늘에서 구워진 것. Play 중에 `RenderSettings.skybox`를 바꿔도 반사는 그대로 | 반사를 코드로 만든 큐브맵으로: `RenderSettings.defaultReflectionMode = Custom`, `customReflectionTexture`(`PawnRushResultStage.HallReflection`). 앰비언트도 직접 정한다 | R65 |
+| 26 | UI Toolkit 글자가 **안 보이거나 다른 글자가 엉뚱한 곳에** 찍힘. Console: `Unable to load font face for [Cascadia Mono]`, `Can't Generate Mesh, No Font Asset has been assigned.` | `Font.CreateDynamicFontFromOSFont(이름 목록)`의 첫 이름이 이 PC에 없음. 그 글꼴을 쓴 라벨이 망가지고 이웃 라벨까지 깨져 보임 | `Font.GetOSInstalledFontNames()`로 있는 이름 하나를 골라 만든다(`PawnRushResultHud.Build`) | R65 |
+| 27 | Painter2D로 그린 반투명 줄·판이 **불투명**하게 나옴 | `FillGradient.MakeLinearGradient(Color, Color, …)`(두 색 도우미)가 알파를 버림 | 알파 키를 넣은 `Gradient`로 만든다(`PawnRushResultHud.Paint.Fill`) | R65 |
 
 ## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
 

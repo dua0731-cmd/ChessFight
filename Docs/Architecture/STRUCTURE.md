@@ -79,6 +79,6 @@ Input (자기 등록, 아무도 참조하지 않음)
 | 로비·파티 | `Scripts/Network/SteamSession.cs` |
 | 채팅(R61) | `Scripts/Core/Chat.cs`(규칙), `Scripts/Network/SteamSession.cs`(`Say`·`Hear`), `Scripts/Game/ChatBox.cs`(화면), `Resources/ChatHud.uxml` |
 | 메뉴 디자인 C(R63) | `Scripts/Game/MenuArt.cs`(텍스처·조명·3D 글씨·말 그림), `ChunkyButtons.cs`(판 버튼), `MenuMarks.cs`(왕관·화살표), `IntroStage.cs`, `LobbyStage.cs`, `LoadingStudio.cs`·`LoadingScreenView.cs`(로딩 입장), `Resources/Fonts/` ([UI §11](UI.md#11-메뉴-디자인-c-그랜드-아레나-수정안-r63-2026-10-03)) |
-| 결과 화면(R62) | `Scenes/LastScene.unity`, `Scripts/Game/LastScene*.cs`(진행·결과판·연출·무대·말, Steam 모름), `Scripts/Core/MatchResult.cs`(도착 순서 규칙), `Resources/LastSceneHud.uxml` / `.uss`, `LastSceneTheme.tss` ([UI §10](UI.md#10-결과-화면-r62-2026-10-01)) |
+| 폰 러쉬 결과 화면(R65, R62를 대신함) | `Scenes/PawnRushVictory.unity`·`PawnRushLose.unity`, `Scripts/Game/PawnRushResult*.cs`(진행·무대·결과판, Steam 모름), 말 `LastSceneFigure.cs`·메시 `LastSceneArt.cs`, `Scripts/Core/MatchResult.cs`(도착 순서 규칙), `Resources/PawnRushResultHud.uxml` / `.uss`, `PawnRushResultTheme.tss` ([UI §13](UI.md#13-폰-러쉬-결과-화면-r65-2026-10-06)) |
 | 이동 동기화 | `Scripts/Network/SteamMotion.cs`, `Scripts/Core/MotionProtocol.cs` |
 | 씬 흐름 | `Scripts/Bootstrap/NetworkRuntime.cs` |
