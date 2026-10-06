@@ -7,6 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |
+| `9e4966f` (`main`, 원본 `f476968` `JY-ragdoll_v2`) | 10-06 | R66 | 나이트 L자 도약·밟기(`RagdollPawn.Abilities`), 갈고리·앙파상·종은 폰만, 튜닝 8개, 자동 점검 `LabAutoTest.Knight` |
 | (이 커밋, `main` 병합) | 10-06 | R65 | 문서: REQUIREMENTS R51(`JY-lobby`)·R65, HISTORY, VALIDATION 병합 표, HANDOFF, DECISIONS T4, 맵 이식 문서 번호 R47 → R65 |
 | `deabde0` (`main` 병합) | 10-06 | R65 | Linux 검사 유지: 테스트 지역 함수 → 클래스 함수(`f8efbfb` 이식), `MatchResult.Example` 대리자, 장애물 시계 검사의 `StateDrivenMover:` 예외, `--compile`이 Unity 6 API(Painter2D·채팅 입력 칸·칼 무게중심)를 임시 복사본에서 2021.3용으로 바꿈 |
 | `104b18c` (`main` 병합, 원본 `27e052c` `JY-lobby`) | 10-06 | R51 | 온라인 래그돌: 스냅샷에 방장의 장애물 시각(`CFR6`), 참가자 장애물을 방장 시각으로(`HostObstacleClock`), `SpinningBar` 공유 시계화, 장애물 시계 검사. 프로토콜 v14 → **v15** |

@@ -12,7 +12,7 @@
 
 ## 2. 작업 원칙
 
-- 브랜치는 **HANDOFF §1의 최신 사용자 결정**을 따른다. 현재 GPT 게임모드는 **`JY-gpt_gamemode`**(R44)이며, 원본 `JY-ragdoll_v2`의 미완성 작업은 건드리지 않는다. main 병합과 PR은 사용자가 요청할 때만.
+- 브랜치는 **HANDOFF §1의 최신 사용자 결정**을 따른다. **2026-10-06부터 작업 브랜치는 `main`**(R66). PR은 사용자가 요청할 때만.
 - 커밋 메시지는 영어. 무엇을 왜 바꿨는지 쓴다. 따옴표가 많으면 파일로 써서 `git commit -F`.
 - 코드 주석은 영어, 주변 코드의 밀도와 말투를 따른다. 사용자에게 보이는 문구는 한국어.
 - 새 스크립트는 해당 어셈블리 폴더에 둔다([STRUCTURE](../Architecture/STRUCTURE.md)). 새 폴더가 필요하면 새 asmdef 여부를 먼저 정한다.
@@ -44,7 +44,7 @@
 - `Docs/Project/REQUIREMENTS.md`에 요청 한 줄
 - `HANDOFF.md` §1·§2·§3 갱신
 - 바꾼 분야 문서 갱신
-- 커밋 → `git push -u origin <작업 브랜치>` (현재 GPT 게임모드는 `JY-gpt_gamemode`. [HANDOFF §1](../../HANDOFF.md))
+- 커밋 → `git push -u origin main` ([HANDOFF §1](../../HANDOFF.md), R66)
 
 ## 5. 사용자에게 보고할 때
 

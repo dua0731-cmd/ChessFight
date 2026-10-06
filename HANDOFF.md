@@ -6,6 +6,8 @@
 
 최종 갱신: **2026-10-06**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
+> **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
+>
 > **최신 R65(사용자, 10-06): `main` 병합.** `main`은 이제 **`JY-kingrush`(UI·메뉴 디자인 C·설정 창·채팅·로딩·결과 화면·방장 선정·이전·빈자리 채우기·킹 러쉬 코스) 전체** + **`JY-ragdoll_v2`의 지성 님 맵 이식**(`ImportedChessFightMap.unity` = 폰러시 맵용 장애물 배치 시험 씬, 장애물 프리팹 19개, `Gameplay/ImportedObstacles`, 메뉴 `ChessFight → Imported Map`) + **`JY-lobby`의 R51**(RagdollTest 온라인에서 방장이 아닌 PC의 장애물이 방장 판정과 다르게 보이던 문제: 방장이 스냅샷에 장애물 시각을 싣고 참가자가 그 시각으로 장애물을 돌림, `HostObstacleClock`, magic `CFR6`)이다. 프로토콜 **v15**. 가져오지 않은 것: `JY-ragdoll_v2`의 `f476968`(나이트 능력 등), `JY-lobby`의 퀸 오브 더 힐 맵 8차·로비 재설계 등. Linux 자동 검사 통과, **Unity·Steam 미확인** → 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단, [DECISIONS T5](Docs/Project/DECISIONS.md), [REQUIREMENTS R65](Docs/Project/REQUIREMENTS.md)
 >
 > **R64(승규 님, 10-05): 설정 창.** 인트로는 "클릭해서 시작" 판 클릭으로만 시작하고, **Esc는 인트로·로비·입장 화면에서 설정 창**(입장 화면 Esc는 더 이상 매칭을 취소하지 않음). 설정 창은 탭 5개·항목 10개(소리·화면·조작(키 바꾸기)·채팅·기타), `PlayerPrefs` 저장. 두꺼운 버튼 클릭 감 강화. **사용자 미확인** → [UI §12](Docs/Architecture/UI.md#12-설정-창-r64-2026-10-05), 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단
@@ -26,7 +28,7 @@
 
 > **최신 R56:** 사용자는 직접 테스트를 나중으로 미루고 다음 단계 진행을 요청했다. 같은 `KingRushOpening.unity`에 **왕의 계단→4자리 승격/10초 집결→체크메이트 결승**을 연결했다. **F8 계단 / Shift+F8 결승**, 기존 F7 집결/F5 성벽/Shift+F5 시소/F4 상자 유지. [R56 실행·규칙·자동 결과](Docs/KingRush/FINAL_COURSE.md). 왕좌8초 누적/시간별 붕괴/탑 재진입/초읽기/승패의 오프라인1차 구현. **R55/R56 사용자 확인 대기**, 공통 물리/로비/온라인 보존. 최종 아트·음향·자세/나머지 능력은 후속이다.
 
-> **이 작업 폴더의 최신 결정(R52, 아래 이전 브랜치 지시보다 우선):** 킹 러쉬는 **`JY-kingrush`**에서만 작업·커밋한다. 사용자 정정에 따라 **`JY-gpt_gamemode@852eb2b`**(소드파이트·로비 연결 포함)에서 분리했다. 폴더는 `C:/Users/trews/.codex/worktrees/jy-kingrush/ChessFight`. 다른 채팅의 소드파이트와 Claude 미완성 변경은 건드리지 않는다. **오프라인 능력 시험장(R52/R53)과 첫 연결 코스(R54)**를 구현했고 로비 KingRush 선택은 아직 예전 캡슐 코스다. [KingRush README](Docs/KingRush/README.md)를 먼저 읽는다. 알려진 CLI 푸시403은 재시도하지 않고 사용자 GitHub Desktop에서 Push한다.
+> **(옛 결정, R66으로 대체) 이 작업 폴더의 결정(R52):** 킹 러쉬는 **`JY-kingrush`**에서만 작업·커밋한다. 사용자 정정에 따라 **`JY-gpt_gamemode@852eb2b`**(소드파이트·로비 연결 포함)에서 분리했다. 폴더는 `C:/Users/trews/.codex/worktrees/jy-kingrush/ChessFight`. 다른 채팅의 소드파이트와 Claude 미완성 변경은 건드리지 않는다. **오프라인 능력 시험장(R52/R53)과 첫 연결 코스(R54)**를 구현했고 로비 KingRush 선택은 아직 예전 캡슐 코스다. [KingRush README](Docs/KingRush/README.md)를 먼저 읽는다. 알려진 CLI 푸시403은 재시도하지 않고 사용자 GitHub Desktop에서 Push한다.
 
 > **최신 브랜치 결정(R44):** 사용자는 `JY-lobby`로 합치지 않고, `JY-ragdoll_v2`의 마지막 커밋 `cdcc9fe`에서 **`JY-gpt_gamemode`**를 만들도록 요청했다. 아래와 다른 문서의 예전 "게임모드는 JY-lobby" 지시보다 이 결정이 우선한다. 물리 튜닝은 끝난 것으로 보지 않으며 GPT가 임의로 이어서 수정하지 않는다.
 
@@ -73,7 +75,7 @@
 | **로딩 화면(09-30, R58)** | `claude/pawnrush-loading`: 로비 → 경기 씬을 로딩 화면 뒤 비동기로, 모두 준비 뒤 공유 시각에 동시 출발. 프로토콜 **v13**(멤버 `load`, 경기 `go`). Core 75·세션 29·실제 DLL 컴파일 통과. **Unity·Steam 미확인** |
 | **병합(09-28)** | `feature/ui-sample-b`(`c82abfa`)를 합침. 네트워크 프로토콜 **v11**. 병합 뒤 자동 검사 결과는 [HISTORY](Docs/Project/HISTORY.md)의 병합 줄. **Unity·두 PC 미확인** |
 | **이 폴더: 킹 러쉬 R56** | **`JY-kingrush` / 기반 `852eb2b`**. `KingRushOpening.unity`: 구간 프리팹24개, 체크포인트16곳, 승격2/3/4자리. 왕의 계단/최종 집결/왕좌 쟁탈·붕괴·재진입·승패 추가. **R55/R56 사용자 확인 대기**, 자동 결과는 FINAL_COURSE. 밧줄은 임시 다리; 나머지4능력·온라인·최종 아트는 후속 |
-| 개발 브랜치 | **GPT 게임모드 작업은 `JY-gpt_gamemode`에만 커밋·푸시**(09-27 사용자, R44). 출발점은 로컬 `JY-ragdoll_v2`의 `cdcc9fe`. 원본 폴더의 브랜치는 `JY-ragdoll_v2`로 유지하고, 새 브랜치는 별도 작업 폴더(worktree)에서 작업한다. `JY-lobby`·`main`·`Network`로 병합하거나 푸시하지 않는다. 미완성 튜닝의 후속 반영은 별도 결정 |
+| 개발 브랜치 | **`main`(R66, 10-06 사용자). 모든 AI 작업은 `main`에 커밋·푸시한다.** (옛 기록) **GPT 게임모드 작업은 `JY-gpt_gamemode`에만 커밋·푸시**(09-27 사용자, R44). 출발점은 로컬 `JY-ragdoll_v2`의 `cdcc9fe`. 원본 폴더의 브랜치는 `JY-ragdoll_v2`로 유지하고, 새 브랜치는 별도 작업 폴더(worktree)에서 작업한다. `JY-lobby`·`main`·`Network`로 병합하거나 푸시하지 않는다. 미완성 튜닝의 후속 반영은 별도 결정 |
 | GPT의 현재 작업 | **R51 보이는 검·무게감 있는 보정 드래그·강한 베기만 넉다운**. 이전 클릭/F6 전환·빠른 발도·정지 더미·장외/부활 유지. 공통 물리 튜닝 변경 없음. [실행](Docs/GameModes/SwordFight/README.md) |
 | GPT 프로토콜·자동 검사 | **v10/CFS3**(병합 뒤 v11), 최대506바이트 칼/경기 상태에 방식 선택 포함. CFR4 레이아웃 유지, 소드파이트 채널에서만 ability2=선택 절대값. Core **42**·모의 Steam **20**·실제 DLL 컴파일 통과. Windows 플레이어 **51/0**, 시점 보정부터 강한 명중까지·약한 접촉·검 가시성·전환·12칼 검사. [최종 실행/측정](Docs/GameModes/SwordFight/README.md). R51 사용자/2PC 미확인. 아래 v6·래그돌 숫자는 원본 기록 |
 | 합쳐 온 `JY-lobby` 쪽 브랜치 규칙 | `JY-lobby` = `JY-ragdoll_v2`(`41b7d11`)를 빨리 감기로 합친 것 + 그 뒤 작업(R47). 퀸 오브 더 힐 맵은 `JY-lobby`에서 만든다(R48). 로비·게임모드 작업은 `JY-lobby`에 커밋·푸시(R18. `main`·`Network`·`JY-ragdoll`에는 푸시 금지). 퀸 오브 더 힐의 래그돌 쪽 기능은 `JY-ragdoll_v2`(R34). 그 밖의 AI 작업은 `Network` |
@@ -273,7 +275,7 @@ Tools/
 
 - **대답은 한국어로 한다.** 코드 주석과 커밋 메시지는 영어다(기존 관례).
 - 사용자는 메인 기획자다. 개념은 **쉽게, 표와 단계로** 설명한다. 코드 용어는 괄호로 보충한다.
-- "구현해줘"는 **구현 → 테스트 → 작업 브랜치에 커밋·푸시**까지다(현재 GPT 게임모드는 `JY-gpt_gamemode`. §1). **PR은 요청할 때만** 만든다.
+- "구현해줘"는 **구현 → 테스트 → `main`에 커밋·푸시**까지다(R66, §1). **PR은 요청할 때만** 만든다.
 - 확인·검토 요청("체크해줘", "어떻게 생각해")에는 먼저 평가만 하고, 구현 여부를 묻는다.
 - 사용자는 Windows에서 Unity Hub로 `C:\Users\dua07\GitHub\ChessFighter`를 연다. 결과는 스크린샷이나 증상으로 알려준다. AI는 Unity를 직접 실행할 수 없는 경우가 많으므로 **Unity에서 확인할 항목을 명확히 적어 준다.**
 - 사용자가 싫어한 것:
@@ -295,6 +297,6 @@ AI든 사람이든 작업을 끝낼 때:
 4. 바꾼 분야의 상세 문서(Network/…, KingRush/… 등)를 코드와 맞춘다.
 5. Unity에서 확인해야 할 것이 생겼으면 [VALIDATION.md](Docs/Network/VALIDATION.md) 최상단에 '미확인' 표로 추가한다.
 6. **이 파일의 §1 스냅샷, §2 표, §3 다음 할 일을 갱신하고 "최종 갱신" 날짜를 바꾼다.**
-7. [HISTORY.md](Docs/Project/HISTORY.md)에 커밋을 한 줄 추가하고 §1의 작업 브랜치에 커밋한다. **이 폴더는 `JY-kingrush`**다. 다른 채팅의 `JY-gpt_gamemode`·원본 `JY-ragdoll_v2` 미완성 작업은 건드리지 않는다. 푸시 제한은 아래를 따른다.
+7. [HISTORY.md](Docs/Project/HISTORY.md)에 커밋을 한 줄 추가하고 **`main`에 커밋·푸시한다**(R66). 다른 채팅의 `JY-gpt_gamemode`·원본 `JY-ragdoll_v2` 미완성 작업은 건드리지 않는다. 푸시 제한은 아래를 따른다.
 
 **R52 예외:** 이 폴더의 커밋 대상은 `JY-kingrush`. 다른 두 폴더를 수정하거나 자동 병합하지 않는다. 알려진 CLI 푸시403은 재시도/자격증명 변경 없이 GitHub Desktop Push를 안내한다.
