@@ -1643,22 +1643,29 @@ namespace ChessFight.RagdollLab
         bool ClimbableHit(RagdollParams p, RaycastHit h)
         {
             if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || PassesThrough(h.collider)) return false;
+            // A face marked unclimbable (Pawn Rush lane walls, railings, team dividers).
+            if (NoClimbSurface.Blocks(h.collider)) return false;
             var rb = h.collider.attachedRigidbody;
             if (rb != null && !rb.isKinematic) return false;
             return Mathf.Abs(h.normal.y) <= Mathf.Cos(p.climbGripAngle * Mathf.Deg2Rad);
         }
 
-        /// <summary>Nearest climbable face along one ray.</summary>
+        /// <summary>Nearest climbable face along one ray. An unclimbable face in front hides anything
+        /// climbable behind it (the ray would otherwise reach through a marble skin to the block behind).</summary>
         bool WallRay(RagdollParams p, Vector3 origin, Vector3 dir, float length, out RaycastHit hit)
         {
             hit = default;
             float best = float.MaxValue;
             bool found = false;
             int n = Physics.RaycastNonAlloc(new Ray(origin, dir), hits, length, ~0, QueryTriggerInteraction.Ignore);
+            float shield = float.MaxValue;
+            for (int i = 0; i < n; i++)
+                if (NoClimbSurface.Blocks(hits[i].collider) && !PassesThrough(hits[i].collider))
+                    shield = Mathf.Min(shield, hits[i].distance);
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];
-                if (h.distance >= best || !ClimbableHit(p, h)) continue;
+                if (h.distance >= best || h.distance > shield || !ClimbableHit(p, h)) continue;
                 best = h.distance;
                 hit = h;
                 found = true;

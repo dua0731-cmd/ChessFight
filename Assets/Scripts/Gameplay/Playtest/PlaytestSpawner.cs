@@ -64,6 +64,7 @@ namespace ChessFight.Gameplay
             Checkpoint.Reached += OnCheckpoint;
             FinishZone.Reached += OnFinish;
             WaterZone.Entered += OnWater;
+            KillVolume.Entered += OnKill;
         }
 
         void OnDisable()
@@ -71,6 +72,7 @@ namespace ChessFight.Gameplay
             Checkpoint.Reached -= OnCheckpoint;
             FinishZone.Reached -= OnFinish;
             WaterZone.Entered -= OnWater;
+            KillVolume.Entered -= OnKill;
         }
 
         void Start()
@@ -229,6 +231,26 @@ namespace ChessFight.Gameplay
             reachedCheckpoint = checkpoint.Order;
             respawnPosition = checkpoint.RespawnPosition;
             respawnRotation = checkpoint.transform.rotation;
+        }
+
+        // A cliff's kill volume: back on the last checkpoint after its delay.
+        void OnKill(ICharacterDriver who, KillVolume volume)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time + volume.RespawnDelay;
+            caughtFalling = true;
+        }
+
+        // Switch sides (the Pawn Rush playtest's F5): the character joins the other team and starts again
+        // from that team's first spawn point, every checkpoint forgotten.
+        public void SetTeam(int newTeam)
+        {
+            team = Mathf.Clamp(newTeam, -1, 1);
+            if (driver is ITeamAssignable member) member.AssignTeam(team);
+            var at = FindSpawn();
+            startPosition = at.position;
+            startRotation = at.rotation;
+            Restart();
         }
 
         // Stage-one rule: a fall into the water puts the character back on its last

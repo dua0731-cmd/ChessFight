@@ -1,0 +1,9 @@
+{
+    "name": "ChessFight.PawnRush",
+    "rootNamespace": "ChessFight.PawnRush",
+    "references": [
+        "ChessFight.Game",
+        "ChessFight.Gameplay"
+    ],
+    "autoReferenced": true
+}

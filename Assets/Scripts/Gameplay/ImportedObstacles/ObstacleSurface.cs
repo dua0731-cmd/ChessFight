@@ -9,6 +9,8 @@ namespace ChessFight.ProtectKing
     public sealed class ObstacleSurface : MonoBehaviour, IMovingSurface
     {
         public ObstacleSurfaceKind kind;
+        [Tooltip("Spinning disc only: turn counter-clockwise seen from above (the default is clockwise), for mirrored pairs.")]
+        public bool counterClockwise;
         public ObstacleContext context;
         [Min(.1f)] public float radius = 4;
         [Min(0)] public float centerSpeed = 5;
@@ -61,7 +63,7 @@ namespace ChessFight.ProtectKing
             float distance = local.magnitude;
             var radial = distance > .05f ? local / distance : Vector3.right;
             float speed = Mathf.Lerp(centerSpeed, edgeSpeed, Mathf.Clamp01(distance / Mathf.Max(.1f, radius)));
-            var tangent = Vector3.Cross(Vector3.up, radial);
+            var tangent = Vector3.Cross(Vector3.up, radial) * (counterClockwise ? -1f : 1f);
             return transform.TransformDirection(tangent * speed + radial * outwardSpeed);
         }
 
@@ -82,7 +84,7 @@ namespace ChessFight.ProtectKing
             for (int i = 0; i < rotorOrigins.Length; i++)
             {
                 float fraction = rotorOrigins.Length <= 1 ? 0 : (float)i / (rotorOrigins.Length - 1);
-                rotors[i].localRotation = rotorOrigins[i] * Quaternion.Euler(0, t * Mathf.Lerp(150, 30, fraction), 0);
+                rotors[i].localRotation = rotorOrigins[i] * Quaternion.Euler(0, t * Mathf.Lerp(150, 30, fraction) * (counterClockwise ? -1f : 1f), 0);
             }
             var axis = direction.normalized;
             for (int i = 0; i < markerOrigins.Length; i++)

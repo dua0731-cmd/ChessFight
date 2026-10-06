@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using ChessFight.Gameplay;
+using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
@@ -87,6 +88,8 @@ namespace ChessFight.RagdollLab
                 // A pawn that has just thrashed free cannot be grabbed straight back.
                 if (RagdollPawn.ColliderOwner.TryGetValue(col, out var other) && other.GrabImmune) continue;
                 if (col is MeshCollider mesh && !mesh.convex) continue;
+                // An unclimbable wall or railing cannot be gripped either, or a hang-and-vault would climb it.
+                if (IsEnvironment(col) && NoClimbSurface.Blocks(col)) continue;
                 Vector3 point = col.ClosestPoint(center);
                 if (rising && IsEnvironment(col) && !IsLedge(col, point)) continue;
                 float d = Vector3.Distance(point, center) - radius;

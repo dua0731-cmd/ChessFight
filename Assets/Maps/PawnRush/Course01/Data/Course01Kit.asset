@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcf7605148768771413bfd099af19121, type: 3}
+  m_Name: Course01Kit
+  m_EditorClassIdentifier: 
+  floorChecker: {fileID: 2100000, guid: 466003e3f949f9caaccaf42351846074, type: 2}
+  wallClimbable: {fileID: 2100000, guid: 160a744919712151285d51b54c8009dc, type: 2}
+  wallNoClimb: {fileID: 2100000, guid: 2c3cc59a04a6e960d23dbaba6a39334f, type: 2}
+  glass: {fileID: 2100000, guid: 59ad616ed820961261c0211ebd4b98e6, type: 2}
+  trimWhite: {fileID: 2100000, guid: 15984cc263ea347d549609356ca2d63a, type: 2}
+  trimBlack: {fileID: 2100000, guid: dca4bea5282b05eb6142aa58fbebbb7b, type: 2}
+  rankGold: {fileID: 2100000, guid: 408e9dea003c80eecc3e79258bd5c07e, type: 2}
+  hazard: {fileID: 2100000, guid: 64447fec302a6cfc36b4db2f73deffa7, type: 2}
+  spinningDisc: {fileID: 6825614911585855478, guid: 89a881a1cdf80544196f9c5408f80766, type: 3}
+  jumpPad: {fileID: 259932722572005815, guid: 6ba1bc107f7036c4e9fb1ee1114f10ed, type: 3}
+  pusher: {fileID: 5585912580619467645, guid: 696a564cd09f4e749a928e87dbf642ec, type: 3}
+  hammer: {fileID: 6723604469954276660, guid: 6c801ab6c7fa3d649b29ba33f703d6b7, type: 3}
+  risingTiles: {fileID: 5922175499363218178, guid: 23f52c6408396df4c872f4150e08a76b, type: 3}
+  slidingWalls: {fileID: 4891172060451488664, guid: ba457091a3c0c4647b21ea5270248797, type: 3}
+  conveyor: {fileID: 7990089334329873116, guid: 6dd1b0680980ec94a8bfe3ca8b75781f, type: 3}
+  clockGates: {fileID: 2549845774042916635, guid: b2b3d100fcb4d5a4aba30450f90919b6, type: 3}
+  fallingPiece: {fileID: 2112313821959977694, guid: 97a84e4e029bbea4aa912f753e689131, type: 3}
+  pendulum: {fileID: 1221733643433733635, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
+  foldingBridge: {fileID: 3928159743330734561, guid: 6cd1dd77d1d7a644ab04981dec2e0a61, type: 3}
+  airVent: {fileID: 7751891203928480429, guid: fa5b01e2bcb854449b8473d1451eb0b3, type: 3}
+  knightCavalry: {fileID: 8095789638639489457, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}

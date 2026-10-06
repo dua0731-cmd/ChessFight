@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-06 | R68 | 폰 러시 코스 01 「여덟 번째 랭크」: 새 씬·모듈 18개(코드)·키트 스크립트(`Assets/Maps/PawnRush/Course01`), `NoClimbSurface`·`KillVolume`, 래그돌 등반·잡기에 등반 불가 연결, 장애물 `phaseOffset`·원판 방향, `PlaytestSpawner` 낙사 영역·팀 바꾸기, 생성기 `gen_pawnrush_course01.py`, Linux 검사에 PawnRush·에디터 컴파일, 문서 |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
 | (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |
 | `9e4966f` (`main`, 원본 `f476968` `JY-ragdoll_v2`) | 10-06 | R66 | 나이트 L자 도약·밟기(`RagdollPawn.Abilities`), 갈고리·앙파상·종은 폰만, 튜닝 8개, 자동 점검 `LabAutoTest.Knight` |

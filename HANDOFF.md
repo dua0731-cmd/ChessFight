@@ -4,11 +4,13 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-06**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-06**(R68 폰 러시 코스 01 새 씬. 그 전 R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
-> **최신 R67(사용자, 10-06): 폰 러시 맵 기획 재료집** [PAWN_RUSH_MAP_KIT](Docs/KingRush/PAWN_RUSH_MAP_KIT.md). 장애물 시험 씬(`ImportedChessFightMap`)의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치를 모아 채팅 AI가 맵을 기획하게 한 문서(프롬프트·결과 양식 포함). 다음 단계: 사용자가 채팅에서 기획 → 구간별 표를 Claude Code에 주면 구현.
+> **최신 R68(사용자, 10-06): 폰 러시 코스 01 「여덟 번째 랭크」를 새 씬으로** [PAWN_RUSH_COURSE01](Docs/KingRush/PAWN_RUSH_COURSE01.md). 성한 님 레벨 디자인 v0.1([원문](Docs/KingRush/PAWN_RUSH_COURSE01_DESIGN_v0.1.md))의 모듈 15개 + 확장 3개(꺼짐)를 표 좌표 그대로 코드로 만들고(`Assets/Maps/PawnRush/Course01`), `Assets/Scenes/PawnRush/PawnRush_Course01.unity`에서 Play하면 조립된다. 메뉴 **ChessFight → Pawn Rush → Build Course01**은 모듈 프리팹을 굽고 씬에 배치·검증. 새 공용 기능: **등반 불가 면(`NoClimbSurface`, 래그돌 등반·잡기에 연결)**, 낙사 영역(`KillVolume` → 1.5초 뒤 체크포인트), 팀 장벽, 미니게임 슬롯·자리 표시 버튼, 장애물 초 단위 위상, F5 팀 바꾸기, 모듈 CSV. **Linux 컴파일(에디터 포함)만, Unity 미확인** → 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단. 기획서 "먼저 결정할 것" 5개와 "결정할 것" 5개는 사용자 결정 대기
+>
+> **R67(사용자, 10-06): 폰 러시 맵 기획 재료집** [PAWN_RUSH_MAP_KIT](Docs/KingRush/PAWN_RUSH_MAP_KIT.md). 장애물 시험 씬(`ImportedChessFightMap`)의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치를 모아 채팅 AI가 맵을 기획하게 한 문서(프롬프트·결과 양식 포함). 다음 단계: 사용자가 채팅에서 기획 → 구간별 표를 Claude Code에 주면 구현.
 >
 > **R65(사용자, 10-06): `main` 병합.** `main`은 이제 **`JY-kingrush`(UI·메뉴 디자인 C·설정 창·채팅·로딩·결과 화면·방장 선정·이전·빈자리 채우기·킹 러쉬 코스) 전체** + **`JY-ragdoll_v2`의 지성 님 맵 이식**(`ImportedChessFightMap.unity` = 폰러시 맵용 장애물 배치 시험 씬, 장애물 프리팹 19개, `Gameplay/ImportedObstacles`, 메뉴 `ChessFight → Imported Map`) + **`JY-lobby`의 R51**(RagdollTest 온라인에서 방장이 아닌 PC의 장애물이 방장 판정과 다르게 보이던 문제: 방장이 스냅샷에 장애물 시각을 싣고 참가자가 그 시각으로 장애물을 돌림, `HostObstacleClock`, magic `CFR6`)이다. 프로토콜 **v15**. 가져오지 않은 것: `JY-ragdoll_v2`의 `f476968`(나이트 능력 등), `JY-lobby`의 퀸 오브 더 힐 맵 8차·로비 재설계 등. Linux 자동 검사 통과, **Unity·Steam 미확인** → 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단, [DECISIONS T5](Docs/Project/DECISIONS.md), [REQUIREMENTS R65](Docs/Project/REQUIREMENTS.md)
 >
@@ -68,6 +70,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **폰 러시 코스 01(10-06, R68)** | `PawnRush_Course01.unity` + `Assets/Maps/PawnRush/Course01`(asmdef `ChessFight.PawnRush`·`.Editor`): 모듈 18개(코드, Build Course01로 프리팹), 키트 스크립트 18개, 셰이더 2·재질 8, 생성기 `gen_pawnrush_course01.py`. 공용 변경: `NoClimbSurface`·`KillVolume`(Gameplay/Course), `RagdollPawn`·`PawnHand` 등반 불가, 장애물 `phaseOffset`·원판 방향, `PlaytestSpawner` 낙사·`SetTeam`, `Checkpoint.Configure`. Core 83·세션 39·전 어셈블리 + PawnRush 에디터 컴파일 통과. 브랜치 `claude/bold-johnson-8ez95n`(세션 지정, `main` 병합은 사용자 확인 뒤). **Unity 미확인** |
 | **`main` 병합(10-06, R65)** | `main` = `JY-kingrush`(`f3b5cc8`) + `a54b89e`(맵 이식, 원본 `487f62b`) + `104b18c`(방장 장애물 시각, 원본 `JY-lobby` `27e052c`) + `deabde0`(Linux 검사 유지) + 문서. Core 83·세션 39·7개 어셈블리 Roslyn 컴파일(2021.3 참조 DLL) 통과. **Unity·두 PC 미확인** |
 | **설정 창(10-05, R64)** | `claude/settings-window` → 원격 `JY-kingrush`에 푸시. 인트로 판 클릭 시작, Esc 설정 창(인트로·로비·입장 화면), 탭 5개·항목 10개, `GameSettings`(`PlayerPrefs`), 클릭 감 강화. Core 81·세션 39·DLL 컴파일 통과. **사용자 미확인** |
 | **메뉴 디자인 C 수정안(10-03, R63, 3차 포함)** | `claude/menu-c`(`33f1648`에서 갈라짐) → 원격 `JY-kingrush`에 푸시. 인트로(예전 구성 + 나무)·로비(전광판 없음, 게임 시작 버튼 글자만)·공개 매칭 = 입장 화면(봇 추가 +) → 그대로 로딩·채팅(경기 중 투명)을 호두나무·놋쇠 그림으로, 입체 판 버튼, 결과 화면 말. 새 에셋은 글꼴 하나(`Resources/Fonts`, LFS). 프로토콜 그대로. Core 81·세션 39·실제 DLL 컴파일 통과. AI가 Unity에서 화면을 봄. **키·버튼·실제 매칭·사용자 미확인** |
@@ -115,6 +118,7 @@
 | 씬 흐름 Intro → Lobby → KingRush 또는 SwordFight → Lobby | 코드·자동 검사만, 사용자 확인 대기 | [Architecture/SCENES](Docs/Architecture/SCENES.md) |
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
+| **폰 러시 코스 01 「여덟 번째 랭크」**(R68): 523 m·높이 24 m, 공용 12·팀 구간 2(미니게임 섬)·출발, 체크포인트 13, 등반 불가 벽·팀 장벽·낙사 영역, 자리 표시 미니게임, F5 팀 바꾸기, 검증기·CSV | 코드·컴파일만, Unity 미확인. 미니게임 A~E·승격/결승 규칙·온라인·장애물 힘의 방장 판정은 없음 | [PAWN_RUSH_COURSE01](Docs/KingRush/PAWN_RUSH_COURSE01.md) |
 | 폰러시 맵 시험 씬 `ImportedChessFightMap`·장애물 프리팹 19개(지성 님, R65로 `main`에) | 오프라인 래그돌로 배치·장애물 시험. 상태형(무게·접근·붕괴)은 오프라인 전용, 체크포인트·온라인 미연결. Unity 미확인 | [KingRush/MAP_IMPORT](Docs/KingRush/MAP_IMPORT.md) |
 | 래그돌 랩 온라인: 참가자 장애물을 방장 시각에 맞춤(`JY-lobby` R51, R65로 `main`에) | 코드·테스트만, 두 PC 미확인 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md), [RagdollLab README](Docs/RagdollLab/README.md) |
 | **퀸 오브 더 힐 래그돌 기능 M1~M11, M13**(`JY-ragdoll_v2`, 병합으로 들어옴): **M11 승격·기물 성능([7j] Shift+F9), M13 찌그러짐·비틀(Shift+F5·F6), M6 밧줄·그네([7i] Shift+F8), M7 도약대([7h] Shift+F10), M8~M10 종·체크포인트·팀([7g] F10)**, **M5 갈고리·앙파상(자동 점검 7개, Unity 미확인, [7f] 연습장 F8)**, 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대. (괄호 없는 R 번호는 `JY-lobby` 계열: M6=R44, M13=R45, M11=R46) | 1차 Unity 확인 성공(09-26, 1~12). 2차 수정(누워 있기·물에 뜨기)은 자동 점검 통과, Unity 재확인 대기. M12, M14는 시작 안 함. **킹 러쉬 쪽 시험 키(F4·F5·F7·F8)와 RagdollTest 시험대 키가 한 씬에서 겹치는지 병합 뒤 확인 안 함** | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
@@ -145,6 +149,7 @@
 - 다음: [VALIDATION R51](Docs/Network/VALIDATION.md)에서 검 가시성·보정 반응·약한 접촉/강한 베기·전환/복원·두 PC 손맛을 비교한다. 맵/기물 스킬/퀸 모드는 자동 착수하지 않는다. 원격 Push는 기존403 때문에 재시도하지 않으며 사용자가 GitHub Desktop에서 한다.
 
 **사용자가 할 일 — 순서대로**
+00000000000. **(새, R68) 폰 러시 코스 01:** 이 브랜치(`claude/bold-johnson-8ez95n`)를 Pull → Unity → **ChessFight → Pawn Rush → Open Course01** → Play → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **코스 01 표(14개)**. 걸어 보고 모듈별 막힌 곳·너무 쉬운 곳과 CSV(`Logs/PawnRush`)를 알려 주면 수치를 고친다. 기획서의 결정 대기(판 목표 시간, 슬롯 문 위치, 프로모션 ③ 위치, M9 지름길, 코스 이름)도 정해 주세요
 0000000000. **(새, R65) `main` 병합 확인:** `main`을 Pull(LFS 포함) → Unity로 열고 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **`main` 병합 표(5개)**. 모든 PC가 같은 `main`이어야 온라인이 된다(프로토콜 v15).
 000000000. **(새, 승규 님) 설정 창(R64):** Intro 씬 Play → Esc(설정 창) → "클릭해서 시작" → 로비 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **설정 창 표**.
 00000000. **(새, 승규 님) 메뉴 디자인 C(R63):** Intro 씬 Play → "클릭해서 시작" → 로비 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **메뉴 표**. 특히 **버튼 누르는 맛(4번)**, 게임 시작 뒤 **곧바로 뜨는 입장 화면과 매칭 취소·Esc(6·6-b번)**, 경기 중 **투명 채팅(8-b번)**, (3차) 입장 화면 **봇 추가 +(6-d번)**를 봐 주세요. 마음에 안 드는 색·크기는 스크린샷으로 알려 주시면 고칩니다. 정할 것: 버튼 소리(Kenney UI Audio) 넣을지
@@ -270,6 +275,7 @@ Tools/
 | 채팅 | [UI §9](Docs/Architecture/UI.md#9-채팅-r61-2026-09-30), [SESSION §9](Docs/Network/SESSION.md#9-채팅-r61-2026-09-30) | `Core/Chat.cs`, `Game/ChatBox.cs`, `Resources/ChatHud.uxml`, `Network/SteamSession.cs`(`Say`·`Hear`·`FollowChat`), `Bootstrap/NetworkRuntime.cs`(채팅 위치) |
 | 플레이어 입력, 조작 | [Player/MOVEMENT_INPUT](Docs/Player/MOVEMENT_INPUT.md) | `Game/MoveInputSource.cs`, `Input/` |
 | 래그돌 | [Player/RAGDOLL](Docs/Player/RAGDOLL.md), [RagdollLab/README](Docs/RagdollLab/README.md) | `Assets/ChessFight/RagdollLab/Scripts/`, `Gameplay/Characters/ICharacterDriver.cs` |
+| **폰 러시 코스(맵) 01** | [PAWN_RUSH_COURSE01](Docs/KingRush/PAWN_RUSH_COURSE01.md) → [기획서 원문](Docs/KingRush/PAWN_RUSH_COURSE01_DESIGN_v0.1.md) → [재료집](Docs/KingRush/PAWN_RUSH_MAP_KIT.md) | `Assets/Maps/PawnRush/Course01/Scripts/Course01Modules*.cs`(모듈 좌표), `PawnRushCourse.cs`, `TeamMirror.cs`, `Course01Validator.cs`, `Editor/Course01Assembler.cs`, `Gameplay/Course/NoClimbSurface.cs` |
 | 킹러시 맵, 장애물 | [KingRush](Docs/KingRush/README.md), [OBSTACLES](Docs/KingRush/OBSTACLES.md) | `Gameplay/Obstacles`, `Gameplay/Course` |
 | 테스트, 검증 | [AI_WORKFLOW §3](Docs/Environment/AI_WORKFLOW.md), [VALIDATION](Docs/Network/VALIDATION.md) | `Tests/Network`, `Tools/` |
 
