@@ -4,6 +4,8 @@ using UnityEngine.SceneManagement;
 
 namespace ChessFight.ProtectKing
 {
+    // StateDrivenMover: tilted by the weight on its deck, not by ObstacleClock. Offline only
+    // until the host sends its angle (Docs/KingRush/MAP_IMPORT.md).
     [RequireComponent(typeof(Rigidbody))]
     public sealed class WeightedBridge : MonoBehaviour
     {

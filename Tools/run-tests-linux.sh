@@ -62,6 +62,33 @@ unity6_to_2021() {
   grep -rl 'Physics.simulationMode' "$dir" | xargs -r sed -i \
     -e 's/Physics\.simulationMode = SimulationMode\.Script/Physics.autoSimulation = false/' \
     -e 's/Physics\.simulationMode = SimulationMode\.FixedUpdate/Physics.autoSimulation = true/'
+  # Rigidbody.automaticCenterOfMass/automaticInertiaTensor are Unity 2022.2+ (the sword's body).
+  grep -rlE 'automatic(CenterOfMass|InertiaTensor)' "$dir" | xargs -r sed -i -E \
+    -e 's/[A-Za-z_.]+\.automatic(CenterOfMass|InertiaTensor) *= *(true|false);//g' \
+    -e 's/!?[A-Za-z_.]+\.automatic(CenterOfMass|InertiaTensor)/true/g'
+  # The chat's Unity 2022+ text field options (selectAllOnFocus/MouseUp, IgnoreEvent,
+  # parseEscapeSequences) do not exist in 2021.3: dropped from the copy.
+  grep -rlE 'selectAllOn(Focus|MouseUp)|IgnoreEvent|parseEscapeSequences' "$dir" | xargs -r sed -i -E \
+    -e '/\.selectAllOn(Focus|MouseUp) *=/d' -e '/focusController\?\.IgnoreEvent\(/d' -e 's/, *parseEscapeSequences *= *(true|false)//'
+  # Painter2D (MeshGenerationContext.painter2D) is Unity 2022.1+. The menu art draws with it, so
+  # the copy gets a signature-only stand-in: the calls are type-checked, nothing is drawn.
+  if grep -rlq 'painter2D' "$dir"; then
+    grep -rl 'painter2D' "$dir" | xargs -r sed -i -e 's/\.painter2D\b/.Painter2DStandIn()/g'
+    cat > "$dir/Scripts/Game/Painter2DStandIn.cs" <<'CS'
+namespace UnityEngine.UIElements
+{
+    public enum LineCap { Butt, Round }
+    public enum LineJoin { Miter, Bevel, Round }
+    public class Painter2D
+    {
+        public Color fillColor, strokeColor; public float lineWidth; public LineCap lineCap; public LineJoin lineJoin;
+        public void BeginPath() { } public void ClosePath() { } public void MoveTo(Vector2 p) { } public void LineTo(Vector2 p) { }
+        public void Arc(Vector2 center, float radius, Angle start, Angle end) { } public void Fill() { } public void Stroke() { }
+    }
+    public static class Painter2DStandInExtensions { public static Painter2D Painter2DStandIn(this MeshGenerationContext c) => null; }
+}
+CS
+  fi
 }
 
 ensure_roslyn() {
@@ -126,12 +153,16 @@ check_boundaries() {
 # moves itself on its own running total sits somewhere different on every PC, and online players
 # get hit by an obstacle their screen shows elsewhere (the lab's spinning bar did, 2026-09-30).
 # Pawn parts (RagdollPawn*.cs) are exempt: the host simulates them and snapshots carry them.
+# A mover driven by player state rather than time (a seesaw tipped by weight, a pillar fired when
+# someone comes close) cannot be a function of the clock. It says so with a "StateDrivenMover:"
+# comment naming why; it is offline only until the host sends its state (listed, not failed).
 check_obstacle_clock() {
   local bad=0 f
   for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/ChessFight 2>/dev/null \
              | grep -vE 'LabAutoTest|Test|/Editor/|/RagdollPawn[^/]*\.cs$'); do
     if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then
-      echo "$f"; bad=1; fi
+      if grep -q 'StateDrivenMover:' "$f"; then echo "NOTE: state-driven mover, offline only: $f"
+      else echo "$f"; bad=1; fi; fi
   done
   if [ $bad -eq 0 ]; then echo "PASS: every moving obstacle runs on ObstacleClock"
   else echo "FAIL: the kinematic movers above do not read ObstacleClock (make them Obstacle subclasses)"; fi

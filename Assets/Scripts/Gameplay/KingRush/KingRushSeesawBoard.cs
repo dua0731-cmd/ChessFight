@@ -4,6 +4,7 @@ namespace ChessFight.Gameplay
 {
     // A player-driven mission platform. Its authoritative angle is supplied by mission rules.
     // Unlike periodic obstacles, the state will need replication when this course goes online.
+    // StateDrivenMover: tipped by the players standing on it, not by ObstacleClock.
     [RequireComponent(typeof(Rigidbody))]
     public sealed class KingRushSeesawBoard : MonoBehaviour, IMovingSurface
     {

@@ -106,24 +106,26 @@ namespace ChessFight.Network
         public static MatchResult Example(int selfTeam)
         {
             var result = new MatchResult { WinningTeam = 0, Needed = MajorityOf(6), MatchSeconds = 252 };
-            void Add(string name, int team, PieceKind piece, double finish, float left, bool host = false) =>
+            // A delegate rather than a local function: mcs, which runs the Core tests on Linux
+            // (Tools/run-tests-linux.sh), cannot parse local functions.
+            Action<string, int, PieceKind, double, float, bool> add = (name, team, piece, finish, left, host) =>
                 result.Players.Add(new ResultPlayer
                 {
                     Name = name, Team = team, Piece = piece, FinishSeconds = finish, MetersLeft = left, Host = host,
                     Self = (selfTeam == 1 ? name == "갬빗" : name == "폰돌이")
                 });
-            Add("폰돌이", 0, PieceKind.Pawn, 232, -1);
-            Add("퀸사이드", 0, PieceKind.Queen, 221, -1);
-            Add("룩앤롤", 0, PieceKind.Rook, -1, 12);
-            Add("앙파상", 0, PieceKind.Bishop, -1, 27);
-            Add("블리츠", 0, PieceKind.Knight, 243, -1);
-            Add("오프닝", 0, PieceKind.King, 252, -1);
-            Add("캐슬링", 1, PieceKind.King, -1, 18, host: true);
-            Add("갬빗", 1, PieceKind.Knight, 248, -1);
-            Add("프로모션", 1, PieceKind.Queen, 227, -1);
-            Add("스테일메이트", 1, PieceKind.Rook, -1, 9);
-            Add("포크", 1, PieceKind.Bishop, -1, 33);
-            Add("스큐어", 1, PieceKind.Pawn, -1, 21);
+            add("폰돌이", 0, PieceKind.Pawn, 232, -1, false);
+            add("퀸사이드", 0, PieceKind.Queen, 221, -1, false);
+            add("룩앤롤", 0, PieceKind.Rook, -1, 12, false);
+            add("앙파상", 0, PieceKind.Bishop, -1, 27, false);
+            add("블리츠", 0, PieceKind.Knight, 243, -1, false);
+            add("오프닝", 0, PieceKind.King, 252, -1, false);
+            add("캐슬링", 1, PieceKind.King, -1, 18, true);
+            add("갬빗", 1, PieceKind.Knight, 248, -1, false);
+            add("프로모션", 1, PieceKind.Queen, 227, -1, false);
+            add("스테일메이트", 1, PieceKind.Rook, -1, 9, false);
+            add("포크", 1, PieceKind.Bishop, -1, 33, false);
+            add("스큐어", 1, PieceKind.Pawn, -1, 21, false);
             return result;
         }
     }

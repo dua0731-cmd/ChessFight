@@ -9,6 +9,10 @@ public static class NetworkCoreTests
     static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
     static void Test(string name, Action test) { test(); passed++; Console.WriteLine("PASS " + name); }
     static ulong[] Ids(int start, int count) => Enumerable.Range(start, count).Select(x => (ulong)x).ToArray();
+    // Host election candidates. Class-level rather than local functions: mcs, which runs these
+    // tests on Linux (Tools/run-tests-linux.sh), cannot parse local functions.
+    static HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
+    static HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
     public static int Main()
     {
@@ -397,7 +401,6 @@ public static class NetworkCoreTests
                 Check(HostFitness.Score(40, 8, 16000, false, 50) == reference / 2, "20 fps halves the score");
                 Check(HostFitness.Score(0, 8, 16000, false, 16) == 0 && HostFitness.Score(double.NaN, 8, 16000, false, 16) == 0, "unmeasured is zero"); });
             Test("Host election: fitness decides, ping discounts, ties go to the lower ID, bots never host", () => {
-                HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
                 Check(HostElection.Rank(new[] { C(1, 500), C(2, 900), C(3, 700) }).SequenceEqual(new ulong[] { 2, 3, 1 }), "fitness order");
                 Check(HostElection.Rank(new[] { C(5, 800), C(3, 800) }).SequenceEqual(new ulong[] { 3, 5 }), "tie to the lower id");
                 Check(HostElection.Rank(new[] { C(1, 900, 200), C(2, 500, 20) }).SequenceEqual(new ulong[] { 2, 1 }), "far host discounted");
@@ -407,7 +410,6 @@ public static class NetworkCoreTests
                 Check(HostElection.Worth(C(1, 500), C(2, 575), HostElection.StartMargin) && !HostElection.Worth(C(1, 500), C(2, 574), HostElection.StartMargin), "start margin");
                 Check(!HostElection.Worth(C(1, 500), C(1, 5000), 1), "never worth handing to yourself"); });
             Test("Host election: a slow host goes only to a clearly stronger machine, so the role cannot bounce back", () => {
-                HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
                 var host = M(1, 150, 400);   // bogged down by hosting
                 Check(HostElection.Takeover(host, new[] { M(2, 900, 900), M(3, 1200, 500) }, HostElection.StruggleMargin) == 2, "only a machine 1.5x stronger qualifies");
                 Check(HostElection.Takeover(host, new[] { M(3, 1200, 500) }, HostElection.StruggleMargin) == 0, "fast right now is not enough");
