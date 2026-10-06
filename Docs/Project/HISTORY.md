@@ -7,6 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋, `main` 병합) | 10-06 | R65 | 문서: REQUIREMENTS R51(`JY-lobby`)·R65, HISTORY, VALIDATION 병합 표, HANDOFF, DECISIONS T4, 맵 이식 문서 번호 R47 → R65 |
+| `deabde0` (`main` 병합) | 10-06 | R65 | Linux 검사 유지: 테스트 지역 함수 → 클래스 함수(`f8efbfb` 이식), `MatchResult.Example` 대리자, 장애물 시계 검사의 `StateDrivenMover:` 예외, `--compile`이 Unity 6 API(Painter2D·채팅 입력 칸·칼 무게중심)를 임시 복사본에서 2021.3용으로 바꿈 |
+| `104b18c` (`main` 병합, 원본 `27e052c` `JY-lobby`) | 10-06 | R51 | 온라인 래그돌: 스냅샷에 방장의 장애물 시각(`CFR6`), 참가자 장애물을 방장 시각으로(`HostObstacleClock`), `SpinningBar` 공유 시계화, 장애물 시계 검사. 프로토콜 v14 → **v15** |
+| `a54b89e` (`main` 병합, 원본 `487f62b` `JY-ragdoll_v2`) | 10-06 | R65 | 지성 님 "기존 킹러시 맵 추가": `ImportedChessFightMap.unity`, 장애물 프리팹 19개, `Gameplay/ImportedObstacles` 어댑터, 재질·에디터 메뉴, [MAP_IMPORT](../KingRush/MAP_IMPORT.md) |
 | (이 커밋, `claude/menu-c`) | 10-05 | R64 | 문서: REQUIREMENTS R64, VALIDATION 설정 창 표·R63 6-b 고침, HANDOFF. 컴파일 도구: Windows는 Game에 `UnityEditor.dll` 참조, Linux는 Game을 플레이어 정의로(설정 창의 `#if UNITY_EDITOR` 종료 코드) |
 | `728f583` (`claude/settings-window`) | 10-05 | R64 | 설정 창(`SettingsWindow`·`SettingsHud.uxml`·`GameSettings`, 탭 5개·항목 10개, `PlayerPrefs`), 인트로는 판 클릭으로 시작·Esc 설정 창, 로비 Esc 설정 창, 입장 화면 Esc는 매칭 취소 안 함, 이동·카메라·채팅·경기 HUD가 설정을 읽음, `ChunkyButtons` 클릭 감 강화, UI §12 |
 | `82ef0ca` (`claude/menu-c`) | 10-03 | R63 3차 | 문서: UI §11-3·§4 안내, VALIDATION 5·6-d, DECISIONS U12 덧붙임, REQUIREMENTS R63 3차, HANDOFF |
