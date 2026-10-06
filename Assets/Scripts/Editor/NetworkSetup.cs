@@ -26,7 +26,8 @@ namespace ChessFight.Editor
         const string KingRushScene = "Assets/Scenes/KingRush.unity";
         const string RagdollTestScene = "Assets/Scenes/RagdollTest.unity";
         const string QueenOfTheHillScene = "Assets/Scenes/QueenOfTheHill.unity";
-        const string LastSceneScene = "Assets/Scenes/LastScene.unity";
+        const string PawnRushVictoryScene = "Assets/Scenes/PawnRushVictory.unity";
+        const string PawnRushLoseScene = "Assets/Scenes/PawnRushLose.unity";
         // Everything a player can reach, in load order. RagdollTest is development only.
         static readonly string[] ShippedScenes = { IntroScene, LobbyScene, KingRushScene, "Assets/Scenes/SwordFight.unity" };
 
@@ -122,8 +123,9 @@ namespace ChessFight.Editor
         [MenuItem("ChessFight/Scenes/King Rush (offline playtest)", priority = 20)] static void OpenKingRush() => Open(KingRushScene);
         [MenuItem("ChessFight/Scenes/Ragdoll Test (offline)", priority = 21)] static void OpenRagdollTest() => Open(RagdollTestScene);
         [MenuItem("ChessFight/Scenes/Queen of the Hill (offline graybox)", priority = 22)] static void OpenQueenOfTheHill() => Open(QueenOfTheHillScene);
-        // The result screen preview: F1 / F2 winners' or losers' screen, R replay, H hide the board.
-        [MenuItem("ChessFight/Scenes/Last Scene (result preview)", priority = 23)] static void OpenLastScene() => Open(LastSceneScene);
+        // The Pawn Rush result scenes, previewed on their own: R replay, H hide the package.
+        [MenuItem("ChessFight/Scenes/Pawn Rush Victory (result preview)", priority = 23)] static void OpenPawnRushVictory() => Open(PawnRushVictoryScene);
+        [MenuItem("ChessFight/Scenes/Pawn Rush Lose (result preview)", priority = 24)] static void OpenPawnRushLose() => Open(PawnRushLoseScene);
 
         static void Open(string scene)
         {

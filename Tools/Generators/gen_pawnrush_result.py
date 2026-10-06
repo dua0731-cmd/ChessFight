@@ -1,20 +1,20 @@
-# Generates Assets/Scenes/LastScene.unity, the result-screen scene (R62), as
+# Generates Assets/Scenes/PawnRushVictory.unity and PawnRushLose.unity, the Pawn Rush result scenes (R65), as
 # hand-written Unity YAML (same method as gen_queenhill_scene.py).
 #
 # The scene holds almost nothing: a camera and the "Last Scene" root with its
 # LastSceneDirector, which BUILDS THE FINISH AREA, THE PIECES, THE LIGHTS AND THE
-# HUD FROM CODE when Play starts (Assets/Scripts/Game/LastScene*.cs). Look changes
+# HUD FROM CODE when Play starts (Assets/Scripts/Game/PawnRushResult*.cs). Look changes
 # are code changes; this file only needs running again when the scene's two
 # objects change.
 #
 # !! It OVERWRITES the scene. Once anyone has saved it from the Unity Editor,
 # !! running this throws their edits away.
-# Run from the project root:  python3 Tools/Generators/gen_lastscene.py --overwrite
+# Run from the project root:  python3 Tools/Generators/gen_pawnrush_result.py --overwrite
 import hashlib, os, re, math, sys
 
-TARGET = "Assets/Scenes/LastScene.unity"
-if "--overwrite" not in sys.argv and os.path.exists(TARGET):
-    sys.exit("Refusing to run: this overwrites %s. Read the header, then pass --overwrite." % TARGET)
+TARGETS = ["Assets/Scenes/PawnRushVictory.unity", "Assets/Scenes/PawnRushLose.unity"]
+if "--overwrite" not in sys.argv and any(os.path.exists(t) for t in TARGETS):
+    sys.exit("Refusing to run: this overwrites the result scenes. Read the header, then pass --overwrite.")
 
 HEAD = "%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n"
 
@@ -28,7 +28,7 @@ def write(path, text):
     print("wrote", path)
 
 SCRIPT = {n: meta_guid(p) for n, p in {
-    "LastSceneDirector": "Assets/Scripts/Game/LastSceneDirector.cs",
+    "PawnRushResultDirector": "Assets/Scripts/Game/PawnRushResultDirector.cs",
 }.items()}
 
 def fmt(x):
@@ -76,19 +76,20 @@ class Doc:
 # The camera block and the scene settings come from scenes Unity wrote.
 kingrush = open("Assets/Scenes/KingRush.unity").read()
 camera_body = re.search(r'--- !u!20 &\d+\nCamera:\n.*?m_GameObject: \{fileID: \d+\}\n(.*?)(?=--- !u!)', kingrush, re.S).group(1)
-camera_body = re.sub(r'm_BackGroundColor: \{[^}]*\}', 'm_BackGroundColor: {r: 0.42, g: 0.68, b: 0.94, a: 1}', camera_body)
-camera_body = re.sub(r'field of view: [0-9.]+', 'field of view: 33', camera_body)
+camera_body = re.sub(r'm_BackGroundColor: \{[^}]*\}', 'm_BackGroundColor: {r: 0.078, g: 0.051, b: 0.031, a: 1}', camera_body)
+camera_body = re.sub(r'field of view: [0-9.]+', 'field of view: 30', camera_body)
 camera_body = re.sub(r'far clip plane: [0-9.]+', 'far clip plane: 600', camera_body)
 sample = open("Assets/Scenes/SampleScene.unity").read()
 PREAMBLE = sample[sample.index("--- !u!29 &1"):sample.index("--- !u!1 &330585543")]
 
-def last_scene():
+def result_scene(target, victory):
     d = Doc(4000)
     cam = d.go("Main Camera", pos=(0, 3, -17), rot=euler_x(2), tag="MainCamera")
     d.comp(cam, "20", "Camera", camera_body)
     d.comp(cam, "81", "AudioListener", "  m_Enabled: 1\n")
-    root = d.go("Last Scene")
-    d.script(root, "LastSceneDirector", "  startAsLoser: 0\n  preview: 1\n")
-    write(TARGET, d.render(PREAMBLE))
+    root = d.go("Pawn Rush Result")
+    d.script(root, "PawnRushResultDirector", "  victory: %d\n  preview: 1\n" % (1 if victory else 0))
+    write(target, d.render(PREAMBLE))
 
-last_scene()
+result_scene(TARGETS[0], True)
+result_scene(TARGETS[1], False)
