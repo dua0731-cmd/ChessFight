@@ -270,7 +270,7 @@ namespace ChessFight.Game
                         float pu = u - 1.2f, pz = (z - 1.8f) * .8f;
                         float pool = .22f * (1f - Mathf.Clamp01(Mathf.Sqrt(pu * pu + pz * pz) / 2.4f));
                         c = Color.Lerp(c, new Color(1f, .8f, .51f), pool);
-                        c *= Mathf.Lerp(.62f, 1f, Mathf.Clamp01((d - 20f) / 260f));
+                        c *= .8f * Mathf.Lerp(.62f, 1f, Mathf.Clamp01((d - 20f) / 260f));
                         sum += c;
                         covered += Mathf.Clamp01((d - 15f) / 120f);
                     }

@@ -358,7 +358,8 @@ namespace ChessFight.Game
                 var layout = new List<DisplayInfo>();
                 try { Screen.GetDisplayLayout(layout); } catch (Exception) { }
                 for (int i = 0; i < layout.Count; i++)
-                    list.Add($"모니터 {i + 1}" + (string.IsNullOrEmpty(layout[i].name) ? "" : $" ({layout[i].name})"));
+                    // Windows names them like \\.\DISPLAY1: only a real model name is worth showing.
+                    list.Add($"모니터 {i + 1}" + (string.IsNullOrEmpty(layout[i].name) || layout[i].name.StartsWith("\\") ? "" : $" ({layout[i].name})"));
                 if (list.Count == 0) list.Add("모니터 1");
                 return list;
             }

@@ -245,8 +245,8 @@
 .s2-chip { padding: 6px 14px 6px 6px; border-width: 1px; border-color: rgba(217, 174, 98, 0.3); background-color: rgba(12, 7, 4, 0.6); }
 .s2-avatar { width: 30px; height: 30px; margin-right: 10px; justify-content: center; align-items: center; background-color: rgb(255, 201, 61); }
 .s2-avatar-mark { font-size: 15px; -unity-font-style: bold; color: rgb(44, 26, 14); }
-.s2-name { font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); }
-.s2-steam { font-size: 10px; -unity-font-style: bold; color: rgb(75, 224, 143); }
+.s2-name { font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
+.s2-steam { font-size: 10px; -unity-font-style: bold; color: rgb(75, 224, 143); white-space: nowrap; }
 .s2-steam-off { color: rgb(255, 200, 80); }
 
 .s2-side { position: absolute; left: 28px; top: 98px; width: 210px; }
