@@ -69,7 +69,7 @@ namespace ChessFight.RagdollLab
                 fade: new[] { 0f, 1f, 0.7f, 1f, 1f, 0f }, size: new[] { 0f, 1f, 1f, 0.3f });
             motes = new Emitter(root, "Motes", Glow(texDot, opacity: 0.9f, color: 1.15f), stretch: false, gravity: -0.05f, drag: 1.2f, collide: false, noise: 0.6f,
                 fade: new[] { 0f, 0f, 0.15f, 1f, 1f, 0f }, size: new[] { 0f, 0.6f, 0.2f, 1f, 1f, 0.2f });
-            smoke = new Emitter(root, "Smoke", Glow(texSmoke, opacity: 0.85f, soft: 0.4f), stretch: false, gravity: -0.03f, drag: 2.5f, collide: false, noise: 0.3f,
+            smoke = new Emitter(root, "Smoke", Glow(texSmoke, opacity: 0.55f, soft: 0.4f), stretch: false, gravity: -0.03f, drag: 2.5f, collide: false, noise: 0.3f,
                 fade: new[] { 0f, 0f, 0.12f, 1f, 1f, 0f }, size: new[] { 0f, 0.5f, 1f, 1.6f });
             smoke.ps.GetComponent<ParticleSystemRenderer>().sortMode = ParticleSystemSortMode.Distance;
         }

@@ -44,7 +44,7 @@ namespace ChessFight.RagdollLab
         static readonly Color Magenta = new Color(1f, 0.32f, 0.85f);
         static readonly Color Sky = new Color(0.25f, 0.7f, 1f);
         static readonly Color SkyCore = new Color(0.75f, 0.95f, 1f);
-        static readonly Color Dust = new Color(0.6f, 0.54f, 0.48f, 1f);   // darker than the floors it rolls over
+        static readonly Color Dust = new Color(0.72f, 0.66f, 0.58f, 1f);   // a little darker than the floors it rolls over
 
         static Color Hdr(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
 
