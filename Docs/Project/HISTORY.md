@@ -7,7 +7,11 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R81 | 문서: Skills README(키 표·측정·R81 녹화), EFFECTS, REQUIREMENTS R81, VALIDATION, HANDOFF |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R82 | 문서: Skills README(키 표·측정·R82 녹화), EFFECTS, REQUIREMENTS R82, VALIDATION, HANDOFF |
+| `51cfde3` | 10-08 | R82 | 퀸 불씨: 더 진한 금색·크게·많이(흰 바닥에서 보이게) |
+| `883bb21` | 10-08 | R82 | 비숍 줄이 더 오래 붙잡음·팽팽한 빛 줄임·걸린 순간 빛 작게·줄 흰색, 퀸 불씨 진하게, 나이트 표식 테두리 진하게, 비숍 녹화 각도 |
+| `2c86d2b` | 10-08 | R82 | 퀸 예고 원 금색·원에서 불씨 연기, 비숍 줄이 지나가는 적을 따라 늘어남, 나이트 도는 하얀 착지 표식, 시험(비숍 늘어난 길이·다시 지나가기)·녹화 |
+| `aadcf4e` | 10-08 | R81 | 문서: Skills README(키 표·측정·R81 녹화), EFFECTS, REQUIREMENTS R81, VALIDATION, HANDOFF |
 | `298ac5f` | 10-08 | R81 | 비숍 걸림: 튀어 오른 칸을 분홍으로만(하얗게 번짐) |
 | `c3724b4` | 10-08 | R81 | 비숍 걸림: 맞은 말의 빛 껍질 삭제, 조명 약하게 |
 | `ca670e7` | 10-08 | R81 | 비숍 걸림: 빛 기둥 작게, 팽팽한 줄 빛 약하게 |
