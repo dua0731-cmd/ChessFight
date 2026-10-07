@@ -21,8 +21,10 @@ namespace ChessFight.Game
         // The motion settles by 4.5 s; the logo holds, then fades into the title.
         const float FadeAt = 5.5f, FadeSeconds = .6f, SkipFadeSeconds = .3f;
         // A video that has not started by then is given up on; input in the
-        // first moment is not taken as a skip.
-        const float StartTimeout = 4f, SkipAfter = .25f;
+        // first moment is not taken as a skip. Both count shown frames, each at
+        // most MaxStep: the first frame after loading can take seconds (3.7 s in
+        // the editor), and that wait used to give up on the video before it began.
+        const float StartTimeout = 4f, SkipAfter = .25f, MaxStep = .05f;
 
         public static bool Played { get; private set; }
         public static bool Showing => current != null;
@@ -34,7 +36,7 @@ namespace ChessFight.Game
         AudioSource sound;
         RenderTexture frame;
         Action done;
-        float createdAt, fadeFrom = -1, fadeLength = 1;
+        float shown, fadeFrom = -1, fadeLength = 1;
         bool playing, finished;
 
         // Once per run: later calls (or a second title screen) only call `whenDone`.
@@ -50,7 +52,6 @@ namespace ChessFight.Game
         void Build()
         {
             current = this;
-            createdAt = Time.unscaledTime;
             var root = RuntimePanels.Create(gameObject, Resources.Load<VisualTreeAsset>("LogoHud"),
                                             Resources.Load<ThemeStyleSheet>("NetworkTheme"), null,
                                             new Vector2Int(1280, 720), out ownedPanel);
@@ -109,11 +110,12 @@ namespace ChessFight.Game
         {
             if (finished) return;
             float now = Time.unscaledTime;
+            shown += Mathf.Min(Time.unscaledDeltaTime, MaxStep);
             if (fadeFrom < 0)
             {
-                if (!playing && now - createdAt > StartTimeout) BeginFade(SkipFadeSeconds);
+                if (!playing && shown > StartTimeout) BeginFade(SkipFadeSeconds);
                 else if (playing && player.time >= FadeAt) BeginFade(FadeSeconds);
-                else if (now - createdAt > SkipAfter && LegacyKeys.AnyDown()) BeginFade(SkipFadeSeconds);
+                else if (shown > SkipAfter && LegacyKeys.AnyDown()) BeginFade(SkipFadeSeconds);
             }
             float k = fadeFrom < 0 ? 0f : Mathf.Clamp01((now - fadeFrom) / fadeLength);
             if (screen != null) screen.style.opacity = 1f - k;

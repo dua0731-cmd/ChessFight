@@ -23,6 +23,9 @@ namespace ChessFight.Game
         static readonly Vector2[] CloseSteps = { new Vector2(0f, 60f), new Vector2(.103f, 14f), new Vector2(.204f, 5f), new Vector2(.298f, 2.2f), new Vector2(.4f, 1.1f), new Vector2(.458f, 1.22f), new Vector2(.516f, 1.1f), new Vector2(.631f, 0f) };
         static readonly Vector2[] OpenSteps = { new Vector2(0f, 0f), new Vector2(.115f, 1.1f), new Vector2(.173f, 1.22f), new Vector2(.23f, 1.1f), new Vector2(.331f, 2.2f), new Vector2(.425f, 5f), new Vector2(.526f, 14f), new Vector2(.634f, 60f) };
         const float CardIn = .13f, CardOut = .1f, BarSeconds = .62f, BarFinish = .12f, MinCovered = .78f, SweepSeconds = .72f, GiveUpAfter = 20f;
+        // A frame counts at most this much, so one that hangs while the next scene
+        // loads does not jump the animation past what the player sees.
+        const float MaxStep = .05f;
         // The design's keyframe for the last step of the close (it speeds up into the point).
         static readonly Vector4 CloseEase = new Vector4(.6f, 0f, .9f, .4f), SweepEase = new Vector4(.5f, 0f, .3f, 1f);
 
@@ -36,7 +39,8 @@ namespace ChessFight.Game
         Label title;
         Texture2D board, sheen;
         Phase phase = Phase.Idle;
-        float phaseAt, readyAt = -1;
+        // Seconds of drawn frames (see MaxStep); every time below is on this clock.
+        float clock, phaseAt, readyAt = -1;
         Vector2 closeAt, openAt;
         Action whileCovered, done;
         Func<bool> ready;
@@ -94,7 +98,7 @@ namespace ChessFight.Game
             closeAt = from; whileCovered = covered; ready = isReady; openPoint = to; done = finished;
             if (title != null) title.text = nextScreen ?? "";
             phase = Phase.Closing;
-            phaseAt = Time.unscaledTime;
+            phaseAt = clock;
             readyAt = -1;
             sweep = -1;
             // Everything under it stops taking clicks until it is open again.
@@ -105,14 +109,15 @@ namespace ChessFight.Game
         void Update()
         {
             if (phase == Phase.Idle) return;
-            float t = Time.unscaledTime - phaseAt;
+            clock += Mathf.Min(Time.unscaledDeltaTime, MaxStep);
+            float t = clock - phaseAt;
             switch (phase)
             {
                 case Phase.Closing:
                     if (t >= CloseSteps[CloseSteps.Length - 1].x)
                     {
                         phase = Phase.Covered;
-                        phaseAt = Time.unscaledTime;
+                        phaseAt = clock;
                         try { whileCovered?.Invoke(); }
                         catch (Exception e) { Debug.LogException(e); }
                     }
@@ -122,15 +127,15 @@ namespace ChessFight.Game
                     try { isReady = ready == null || ready(); }
                     catch (Exception e) { Debug.LogException(e); isReady = true; }
                     if (t >= GiveUpAfter) isReady = true;
-                    if (isReady && readyAt < 0 && t >= BarSeconds * .5f) readyAt = Time.unscaledTime;
-                    if (readyAt >= 0 && t >= MinCovered && Time.unscaledTime - readyAt >= BarFinish + CardOut)
+                    if (isReady && readyAt < 0 && t >= BarSeconds * .5f) readyAt = clock;
+                    if (readyAt >= 0 && t >= MinCovered && clock - readyAt >= BarFinish + CardOut)
                     {
                         Vector2 to = closeAt;
                         try { if (openPoint != null) to = openPoint(); }
                         catch (Exception e) { Debug.LogException(e); }
                         openAt = to;
                         phase = Phase.Opening;
-                        phaseAt = Time.unscaledTime;
+                        phaseAt = clock;
                     }
                     break;
                 case Phase.Opening:
@@ -151,7 +156,7 @@ namespace ChessFight.Game
 
         void Draw()
         {
-            float t = Time.unscaledTime - phaseAt;
+            float t = clock - phaseAt;
             float cardShown = 0f, bar = 0f;
             sweep = -1;
             switch (phase)
@@ -167,7 +172,7 @@ namespace ChessFight.Game
                     bar = Mathf.Min(.9f, t / BarSeconds * .9f);
                     if (readyAt >= 0)
                     {
-                        float since = Time.unscaledTime - readyAt;
+                        float since = clock - readyAt;
                         bar = Mathf.Lerp(bar, 1f, Mathf.Clamp01(since / BarFinish));
                         if (since > BarFinish) cardShown = Mathf.Min(cardShown, 1f - Mathf.Clamp01((since - BarFinish) / CardOut));
                     }
