@@ -43,6 +43,26 @@ namespace ChessFight.RagdollLab
 
         public static string Report() => Status + "\n" + string.Join("\n", Results);
 
+        /// <summary>Stop the clock (time scale 0, frames still drawn) the first time P1 is this far into this
+        /// stage, to look at a telegraph; set Time.timeScale back to 1 to go on.</summary>
+        public static void FreezeAt(SkillStage stage, float seconds)
+        {
+            freezeStage = stage;
+            freezeAfter = seconds;
+        }
+
+        static SkillStage freezeStage;
+        static float freezeAfter;
+
+        void LateUpdate()
+        {
+            var p1 = P1;
+            if (freezeStage == SkillStage.None || p1 == null) return;
+            if (p1.SkillStage != freezeStage || p1.SkillStageTime < freezeAfter) return;
+            Time.timeScale = 0f;
+            freezeStage = SkillStage.None;
+        }
+
         void Update()
         {
             if (!driving) return;
