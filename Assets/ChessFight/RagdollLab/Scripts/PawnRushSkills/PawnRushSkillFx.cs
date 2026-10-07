@@ -42,8 +42,8 @@ namespace ChessFight.RagdollLab
         static readonly Color FireCore = new Color(1f, 0.8f, 0.45f);
         static readonly Color Violet = new Color(0.6f, 0.3f, 1f);
         static readonly Color Magenta = new Color(1f, 0.32f, 0.85f);
-        static readonly Color Sky = new Color(0.25f, 0.7f, 1f);
-        static readonly Color SkyCore = new Color(0.75f, 0.95f, 1f);
+        static readonly Color Sky = new Color(0.1f, 0.45f, 1f);        // deep enough to read on a white floor
+        static readonly Color SkyCore = new Color(0.55f, 0.85f, 1f);
         static readonly Color Dust = new Color(0.72f, 0.66f, 0.58f, 1f);   // a little darker than the floors it rolls over
 
         static Color Hdr(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
@@ -246,6 +246,7 @@ namespace ChessFight.RagdollLab
             Halo(c + Vector3.up * 1f, 1.8f, Gold, 0.25f);
             Shell(c + Vector3.up * 0.9f, 0.2f, 1.2f, Gold, 0.28f);
             Pillar(c, 0.45f, 5.5f, Gold, 0.55f);
+            Shafts(c, inner, 10, Gold, 2.8f, 0.5f);
             Wall(c, 0.2f, inner, 0.18f, 1.1f, 0.35f, GoldDeep, 0.55f, 0.85f);
             Wall(c, 0.3f, outer, 0.36f, 0.6f, 0.15f, GoldDeep, 0.85f, 0.55f);
             GroundRing(c, 0.2f, inner, 0.18f, Gold, 0.6f, 2.6f);
@@ -448,8 +449,8 @@ namespace ChessFight.RagdollLab
         void KnightLeap(RagdollPawn k)
         {
             Vector3? Where() => KnightLeaping(k) ? k.Hips.position : (Vector3?)null;
-            anims.Add(new Streak(root, matTrail, Hdr(Sky, 1.2f), 0.55f, 0.3f, Where) { paint = 0.8f });
-            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 3f), 0.18f, 0.2f, Where) { paint = 0.3f });
+            anims.Add(new Streak(root, matTrail, Hdr(Sky, 1.25f), 0.75f, 0.35f, Where) { paint = 0.85f });
+            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 3f), 0.22f, 0.22f, Where) { paint = 0.3f });
             float trail = 0f;
             anims.Add(new Ongoing((age, dt) =>
             {
@@ -486,7 +487,8 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.07f);
             StartSquash(e.target);
             Vector3 at = e.at;
-            Wall(at - Vector3.up * 0.2f, 0.15f, 1.3f, 0.16f, 0.45f, 0.1f, Sky, 0.42f, 0.8f);
+            Wall(at - Vector3.up * 0.25f, 0.15f, 1.4f, 0.16f, 0.65f, 0.12f, Sky, 0.45f, 0.85f);
+            Shafts(Ground(at), 0.9f, 6, SkyCore, 1.8f, 0.35f);
             Add(new Shape(root, "Knight strike", meshCylinder, matPillar)
             {
                 life = 0.25f,
@@ -495,12 +497,12 @@ namespace ChessFight.RagdollLab
                 paint = 0.25f,
                 animate = (s, t) =>
                 {
-                    float w = Mathf.Lerp(0.16f, 0.02f, t);
-                    s.scale = new Vector3(w, 2.6f, w);
+                    float w = Mathf.Lerp(0.26f, 0.03f, t);
+                    s.scale = new Vector3(w, 3f, w);
                     s.bright = 1f - t;
                 },
             });
-            anims.Add(new Bolts(root, matBolt, 6, () => at, Hdr(SkyCore, 3.2f), 1.1f, 0.35f));
+            anims.Add(new Bolts(root, matBolt, 8, () => at, Hdr(SkyCore, 3.2f), 1.4f, 0.4f));
             SparkBurst(at, 32, SkyCore, Vector3.up, 70f, 3f, 8f, 0.55f, 0.06f);
             Shell(at, 0.15f, 0.9f, Sky, 0.2f);
             Halo(at, 1.8f, Sky, 0.22f);
@@ -622,6 +624,31 @@ namespace ChessFight.RagdollLab
                         s.dissolve = t * 0.5f;
                     },
                 });
+        }
+
+        /// <summary>Thin shafts of light shooting up around a ring of <paramref name="radius"/>, one after another.</summary>
+        void Shafts(Vector3 c, float radius, int count, Color color, float height, float life)
+        {
+            float turn = Random.Range(0f, Mathf.PI * 2f);
+            for (int i = 0; i < count; i++)
+            {
+                float a = turn + i * Mathf.PI * 2f / count, delay = i * 0.025f, h = height * Random.Range(0.7f, 1.15f);
+                Vector3 at = c + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius;
+                Add(new Shape(root, "Shaft of light", meshCylinder, matPillar)
+                {
+                    life = life + delay,
+                    at = at,
+                    color = Hdr(color, 3f),
+                    paint = 0.3f,
+                    animate = (s, t) =>
+                    {
+                        float k = Mathf.Clamp01((s.Age - delay) / life);
+                        float w = Mathf.Lerp(0.09f, 0.01f, k);
+                        s.scale = new Vector3(w, h * EaseOut(k * 4f), w);
+                        s.bright = s.Age < delay ? 0f : 1f - k * k;
+                    },
+                });
+            }
         }
 
         /// <summary>A ring of light flat on the floor growing out to <paramref name="to"/> metres: a hot line
