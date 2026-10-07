@@ -42,7 +42,7 @@ namespace ChessFight.RagdollLab
         static readonly Color FireCore = new Color(1f, 0.8f, 0.45f);
         static readonly Color Violet = new Color(0.6f, 0.3f, 1f);
         static readonly Color Magenta = new Color(1f, 0.32f, 0.85f);
-        static readonly Color Sky = new Color(0.1f, 0.45f, 1f);        // deep enough to read on a white floor
+        static readonly Color Sky = new Color(0.04f, 0.32f, 1f);       // deep enough to read on a white floor
         static readonly Color SkyCore = new Color(0.55f, 0.85f, 1f);
         static readonly Color Dust = new Color(0.72f, 0.66f, 0.58f, 1f);   // a little darker than the floors it rolls over
 
@@ -468,7 +468,6 @@ namespace ChessFight.RagdollLab
             Vector3 d = e.dir.sqrMagnitude > 1e-4f ? e.dir.normalized : Vector3.forward;
             SonicRing(e.at, d, 0.2f, 1.3f, Sky, 0.26f);
             SparkBurst(e.at, 14, SkyCore, -d, 60f, 2f, 5f, 0.4f, 0.05f);
-            Halo(e.at, 1.3f, Sky, 0.2f);
         }
 
         void KnightHome(SkillFxEvent e)
@@ -477,7 +476,6 @@ namespace ChessFight.RagdollLab
             if (k == null) return;
             anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 3f), 0.3f, 0.2f, () => KnightLeaping(k) ? k.Hips.position : (Vector3?)null) { paint = 0.3f });
             anims.Add(new Bolts(root, matBolt, 3, () => ChestOf(k), Hdr(SkyCore, 3.2f), 0.7f, 0.35f));
-            Halo(ChestOf(k), 1.2f, Sky, 0.2f);
         }
 
         void KnightStomp(SkillFxEvent e)
@@ -487,7 +485,7 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.07f);
             StartSquash(e.target);
             Vector3 at = e.at;
-            Wall(at - Vector3.up * 0.25f, 0.15f, 1.4f, 0.16f, 0.65f, 0.12f, Sky, 0.45f, 0.85f);
+            Wall(at - Vector3.up * 0.25f, 0.15f, 1.4f, 0.16f, 0.65f, 0.12f, Sky, 0.45f, 0.92f);
             Shafts(Ground(at), 0.9f, 6, SkyCore, 1.8f, 0.35f);
             Add(new Shape(root, "Knight strike", meshCylinder, matPillar)
             {
@@ -505,7 +503,6 @@ namespace ChessFight.RagdollLab
             anims.Add(new Bolts(root, matBolt, 8, () => at, Hdr(SkyCore, 3.2f), 1.4f, 0.4f));
             SparkBurst(at, 32, SkyCore, Vector3.up, 70f, 3f, 8f, 0.55f, 0.06f);
             Shell(at, 0.15f, 0.9f, Sky, 0.2f);
-            Halo(at, 1.8f, Sky, 0.22f);
             if (e.target != null) GroundRing(Ground(e.target.Hips.position), 0.2f, 1.2f, 0.2f, Sky, 0.5f, 2.6f);
             Flare(at, Sky, 1.5f, 6f, 0.4f);
             if (e.target != null) Daze(e.target, 0.45f, 1.8f);
@@ -521,7 +518,7 @@ namespace ChessFight.RagdollLab
                 return;
             }
             float radius = e.size > 0f ? e.size : 1.5f;
-            Wall(g, 0.2f, radius, 0.2f, 0.35f, 0.08f, Sky, 0.45f, 0.7f);
+            Wall(g, 0.2f, radius, 0.2f, 0.5f, 0.1f, Sky, 0.5f, 0.92f);
             GroundRing(g, 0.2f, radius, 0.22f, Sky, 0.5f, 2.4f);
             DustRing(g, 14, 0.35f, 3.2f, Dust, 0.6f, 0.8f);
             Flare(g + Vector3.up * 0.5f, Sky, 0.9f, 4f, 0.3f);
