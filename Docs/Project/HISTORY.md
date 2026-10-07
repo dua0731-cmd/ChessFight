@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋, `claude/bold-johnson-8ez95n` 병합) | 10-07 | R76 | `JY-kingrush`(`12772fe`)를 병합: 폰 러쉬 결과 화면(`JY-kingrush`에서는 R65) — `LastScene` 삭제, `PawnRushVictory`·`PawnRushLose`(아래 `12772fe`·`5972c7e`). 코드 충돌 없음. 문서 충돌 정리: 결과 화면 번호 R65 → R76(REQUIREMENTS·VALIDATION·HISTORY·HANDOFF·UI §10·§13·DECISIONS U13·SCENES·STRUCTURE·ROADMAP·코드 주석 3곳), PITFALLS 25~27 → 26~28, 새 29. Windows 컴파일 검사 `Test-NetworkCompile.ps1`이 `RagdollLab/Scripts` 하위 폴더(`PawnRushSkills`)도 읽게(이 브랜치에서 실패하던 것) |
 | (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R75 | 문서: Skills README(룩 조준 중 걷기·나이트 3 m·측정·녹화), EFFECTS, REQUIREMENTS R75, VALIDATION, HANDOFF |
 | `338704e` | 10-07 | R75 | 화면 흔들림: 위치 + 회전, −1~1 사인, 제곱 감쇠 / 벽 흔들림 더 크게 / 조준 중 걷기 시험 짧게 |
 | `5fa903b` | 10-07 | R75 | 시험 도구: 조준 중 룩의 질주 상태 |
@@ -34,6 +35,8 @@
 | `cc6373f` (`claude/bold-johnson-8ez95n`) | 10-07 | R69 | 폰 러시 코스 01 v0.2: 같은 씬을 탑을 감아 오르는 3층 고리로(`Course01v2Builder`, 월드 좌표), `FallDistanceRespawn`·`TeamZone`·`FinishZone` 원형/골반만, `ProgressPath`, v0.2 검증기, 메뉴 Build Course01 v2, v0.1 모듈 코드·레이아웃 에셋 삭제, 기획서 v0.2 원문, 문서 |
 | `c4015ff` (`claude/bold-johnson-8ez95n`) | 10-06 | R68 | 폰 러시 코스 01 「여덟 번째 랭크」: 새 씬·모듈 18개(코드)·키트 스크립트(`Assets/Maps/PawnRush/Course01`), `NoClimbSurface`·`KillVolume`, 래그돌 등반·잡기에 등반 불가 연결, 장애물 `phaseOffset`·원판 방향, `PlaytestSpawner` 낙사 영역·팀 바꾸기, 생성기 `gen_pawnrush_course01.py`, Linux 검사에 PawnRush·에디터 컴파일, 문서 |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
+| `12772fe` (`claude/menu-c` → `JY-kingrush`, 위 병합으로 들어옴) | 10-06 | R76 | 문서: UI §13(폰 러쉬 결과 화면)·§10(바뀜 안내), SCENES·STRUCTURE·ROADMAP, DECISIONS U13, VALIDATION 결과 화면 표(12개, R62 표는 끝남), PITFALLS 25~27(이 브랜치에서는 26~28), REQUIREMENTS R65(이 브랜치에서는 R76), HANDOFF |
+| `5972c7e` (`claude/menu-c` → `JY-kingrush`, 위 병합으로 들어옴) | 10-06 | R76 | `LastScene` 삭제(씬·`LastSceneDirector`·`LastSceneCeremony`·`LastSceneStage`·`LastSceneHud`·uxml·uss·tss·생성기) → 폰 러쉬 결과 씬 `PawnRushVictory`·`PawnRushLose`(`PawnRushResultDirector`·`PawnRushResultStage`·`PawnRushResultHud`, `PawnRushResultHud.uxml`·`.uss`·`PawnRushResultTheme.tss`, 생성기 `gen_pawnrush_result.py`), 메뉴 2개, `SceneNames`. 시안(결승 중계 on B 장면)의 three.js·CSS를 그대로 옮김: 갈색 홀 반사 큐브맵, 배경 판·빛줄기, 보드 글자, 램프, 더하는 빛(칸·고리), 점·꽃가루, 웹 자세·카메라, Painter2D 그라데이션 결과판, 육각 얼굴, 그라데이션 글자. 미리보기 `holdAt`·`holdHidden`·`Hold()` |
 | (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |
 | `9e4966f` (`main`, 원본 `f476968` `JY-ragdoll_v2`) | 10-06 | R66 | 나이트 L자 도약·밟기(`RagdollPawn.Abilities`), 갈고리·앙파상·종은 폰만, 튜닝 8개, 자동 점검 `LabAutoTest.Knight` |
 | (이 커밋, `main` 병합) | 10-06 | R65 | 문서: REQUIREMENTS R51(`JY-lobby`)·R65, HISTORY, VALIDATION 병합 표, HANDOFF, DECISIONS T4, 맵 이식 문서 번호 R47 → R65 |

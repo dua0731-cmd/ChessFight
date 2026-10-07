@@ -35,7 +35,7 @@ $gameplay = Get-ChildItem "$projectRoot/Assets/Scripts/Gameplay" -Recurse -Filte
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.Gameplay.dll") + @($gameplay)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Gameplay (characters/obstacles/course/playtest) compilation failed.' }
-$ragdoll = Get-ChildItem "$projectRoot/Assets/ChessFight/RagdollLab/Scripts" -Filter '*.cs' | ForEach-Object FullName
+$ragdoll = Get-ChildItem "$projectRoot/Assets/ChessFight/RagdollLab/Scripts" -Recurse -Filter '*.cs' | ForEach-Object FullName
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.RagdollLab.dll") + @($ragdoll)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab compilation failed.' }

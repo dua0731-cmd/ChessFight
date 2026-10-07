@@ -1,4 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <!-- Filled from code by LastSceneHud.cs (the plates and icons are painted there). -->
-    <ui:VisualElement name="ls-screen" class="ls-screen" picking-mode="Ignore" />
-</ui:UXML>
