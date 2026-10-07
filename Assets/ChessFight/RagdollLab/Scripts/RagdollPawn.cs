@@ -2981,6 +2981,7 @@ namespace ChessFight.RagdollLab
             // knockdown by its own rules); a wall ends a dash without flooring the dasher.
             if (other != null && (SkillShielded || other.SkillShielded)) return;
             if (other == null && dashing && Mathf.Abs(normal.y) < 0.6f) return;
+            if (other == null && SkillLandsOnFloor && normal.y > 0.6f) return;   // the rook's slam out of the air (R80)
             if (Diving && other != null)
             {
                 // Slide tackle. A diver is already on the floor, so it is never knocked down by the

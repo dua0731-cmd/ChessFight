@@ -273,6 +273,10 @@ namespace ChessFight.RagdollLab
 
         bool OnFloor => Grounded || coyote > 0f;
 
+        /// <summary>The rook coming down out of an air charge (charging, or just slammed in): the floor is where the
+        /// skill means it to land, not a fall that floors it (R80).</summary>
+        bool SkillLandsOnFloor => PawnRushSkills != null && rookAir && (dashing || skillStage == SkillStage.Recovery);
+
         static Vector3 FlatDir(Vector3 v)
         {
             v.y = 0f;
@@ -409,11 +413,12 @@ namespace ChessFight.RagdollLab
             LeanAlongLine();
         }
 
-        /// <summary>The hips' balance target tilted along the charge line: 0° straight up, 30° level, 70° diving.</summary>
+        /// <summary>The hips' balance target tilted along the charge line: 0° straight up, 30° level, 50° diving (more
+        /// and it went into the floor head first).</summary>
         void LeanAlongLine()
         {
             float up = Mathf.Asin(Mathf.Clamp(skillDir.y, -1f, 1f)) * Mathf.Rad2Deg;
-            float lean = up >= 0f ? Mathf.Lerp(30f, 0f, up / 45f) : Mathf.Lerp(30f, 70f, -up / 60f);
+            float lean = up >= 0f ? Mathf.Lerp(30f, 0f, up / 45f) : Mathf.Lerp(30f, 50f, -up / 60f);
             anchor.MoveRotation(Quaternion.LookRotation(FlatDir(skillDir), Vector3.up) * Quaternion.Euler(lean, 0f, 0f));
         }
 
