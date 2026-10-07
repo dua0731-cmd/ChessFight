@@ -1226,8 +1226,14 @@ namespace ChessFight.RagdollLab
                     float half = s.bishopLineLength * 0.5f;
                     Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * bishopYaw, d2 = Quaternion.Euler(0f, -45f, 0f) * bishopYaw;
                     var ghost = new Color(1f, 1f, 1f, 0.75f);
+                    // A faint dark edge under the white lines: white on a light floor is hard to see otherwise.
+                    var edge = new Color(0.05f, 0.08f, 0.19f, 0.2f);
+                    SkillMarks.Segment(Mark(ref markC, "Bishop preview edge 1"), p - d1 * half + up, p + d1 * half + up, edge, 0.11f, false);
+                    SkillMarks.Segment(Mark(ref markD, "Bishop preview edge 2"), p - d2 * half + up, p + d2 * half + up, edge, 0.11f, false);
                     SkillMarks.Segment(Mark(ref markA, "Bishop preview 1"), p - d1 * half + up, p + d1 * half + up, ghost, 0.06f, false);
                     SkillMarks.Segment(Mark(ref markB, "Bishop preview 2"), p - d2 * half + up, p + d2 * half + up, ghost, 0.06f, false);
+                    markC.sortingOrder = markD.sortingOrder = -1;
+                    markA.sortingOrder = markB.sortingOrder = 1;
                     Vector3[] ends = { p - d1 * half, p + d1 * half, p - d2 * half, p + d2 * half };
                     for (int i = 0; i < ends.Length; i++)
                         SkillMarks.Segment(Mark(ref markPegs[i], "Bishop preview peg"), ends[i], ends[i] + up + Vector3.up * 0.04f, ghost, 0.09f, false);
