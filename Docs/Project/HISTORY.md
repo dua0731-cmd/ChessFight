@@ -7,7 +7,14 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R79 | 문서: Skills EFFECTS(3D 빛 이펙트 표·밝은 바닥 규칙), README(코드 표·R79 녹화), REQUIREMENTS R79, VALIDATION, HANDOFF, Tools/Generators README(묶는 도구 줄 삭제) |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R80 | 문서: Skills README(키 표·측정·R80 녹화), EFFECTS(퀸·룩·나이트 줄), REQUIREMENTS R80, VALIDATION, HANDOFF |
+| `e1fbee7` | 10-08 | R80 | 녹화: 룩 공중 돌진 장면 카메라를 위로 |
+| `bdc1dd5` | 10-08 | R80 | 비숍 조준 흰 선 아래 옅은 남색 테두리, 룩 공중 장면 카메라 가깝게 |
+| `993c011` | 10-08 | R80 | 퀸 체스말 튀는 속도 줄임(카메라로 날아옴), 룩 공중 장면 옆에서 |
+| `aaab2c9` | 10-08 | R80 | 룩 내리꽂기: 바닥을 발 높이로 판정(공중 돌진 중 Grounded가 켜지지 않음) |
+| `9bd9df9` | 10-08 | R80 | 룩 내리꽂기: 바닥 충격으로 넘어지지 않게, 다이빙 기울기 70 → 50° |
+| `2a2162f` | 10-08 | R80 | 퀸 금색 체스말 모였다 팡, 룩 반투명 흰 조준선·공중 돌진·내리꽂기·공중 자세, 비숍 조준 파란색 없앰, 나이트 다시 차고 나감("다~당"), 시험 rook-air·knight-straight |
+| `798bdaa` | 10-08 | R79 | 문서: Skills EFFECTS(3D 빛 이펙트 표·밝은 바닥 규칙), README(코드 표·R79 녹화), REQUIREMENTS R79, VALIDATION, HANDOFF, Tools/Generators README(묶는 도구 줄 삭제) |
 | `9b0c259` | 10-08 | R79 | 녹화 설명 글을 3D 이펙트에 맞게(별 없음) |
 | `907e358` | 10-08 | R79 | 나이트 빛을 진한 파랑·칠하기로, 흐린 후광 삭제 |
 | `772a09d` | 10-08 | R79 | 퀸 충격파·나이트 찍기에 빛줄기, 나이트 파랑 진하게, 궤적·번개 굵게 |
