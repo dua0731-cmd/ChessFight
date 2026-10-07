@@ -17,7 +17,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class PawnRushSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-wall", "rook-barricade", "queen", "knight", "knight-turn", "knight-stomp", "knight-land", "bishop", "all" };
+        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "queen", "knight", "knight-turn", "knight-stomp", "knight-land", "bishop", "all" };
         public static string Status { get; private set; } = "idle";
         public static readonly List<string> Results = new List<string>();
 
@@ -76,6 +76,7 @@ namespace ChessFight.RagdollLab
                     "pawn-angles" => PawnAngles(),
                     "pawn-help" => PawnHelp(),
                     "rook" => Rook(),
+                    "rook-free" => RookFree(),
                     "rook-wall" => RookWall(),
                     "rook-barricade" => RookBarricade(),
                     "queen" => Queen(),
@@ -268,6 +269,21 @@ namespace ChessFight.RagdollLab
             Add($"룩 돌진: 예고 동안 움직인 거리 {FlatDistance(start, charge):0.00} m, 돌진 거리 {FlatDistance(charge, p1.Hips.position):0.00} m, 넘어진 더미 {down}/4 (기대 3, 4번째는 밀림)");
             yield return Until(() => p1.SkillStage == SkillStage.None, 1.5f);
             Add($"  룩 쿨 {p1.SkillCooldown:0.0}초 (기대 7)");
+        }
+
+        IEnumerator RookFree()
+        {
+            yield return Ready(PieceKind.Rook, new Vector3(-6f, 0f, -12f), Vector3.forward, 1);
+            var p1 = P1;
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
+            Vector3 from = p1.Hips.position;
+            float t = 0f, top = 0f;
+            yield return Until(() => { t += Time.fixedDeltaTime; top = Mathf.Max(top, p1.HorizontalSpeed); return p1.SkillStage != SkillStage.Active; }, 2f);
+            Vector3 end = p1.Hips.position;
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1.5f);
+            Add($"룩 빈 바닥 돌진: {FlatDistance(from, end):0.00} m (기대 5.95), 돌진 {t:0.00}초 (기대 0.7), 최고 {top:0.0} m/s (기대 8.5), 후딜이 끝날 때까지 미끄러져 총 {FlatDistance(from, p1.Hips.position):0.00} m");
+            yield return new WaitForSeconds(0.5f);
         }
 
         IEnumerator RookWall()

@@ -493,8 +493,11 @@ namespace ChessFight.RagdollLab
         void KnightLeap(PawnRushSkillParams s)
         {
             float g = Mathf.Max(0.01f, -Physics.gravity.y);
+            // The textbook arc for the designed height and distance, then what the ragdoll loses in the air
+            // put back (measured in the skill test scene).
             float up = Mathf.Sqrt(2f * g * Mathf.Max(0.05f, s.knightHeight));
-            float on = s.knightDistance / (2f * up / g);
+            float on = s.knightDistance / (2f * up / g) * s.knightCarryCorrection;
+            up *= s.knightLiftCorrection;
             skillDir = AimFlat();
             float along = Vector3.Dot(Flat(bodies[0].linearVelocity) - carryVel, skillDir);
             on = Mathf.Max(on, along);   // D2

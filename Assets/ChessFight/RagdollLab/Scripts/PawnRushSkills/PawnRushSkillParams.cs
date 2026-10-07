@@ -43,6 +43,9 @@ namespace ChessFight.RagdollLab
         public float knightHeight = 1.6f;
         [Tooltip("평지 비거리 (m): 높이와 함께 출발 속도를 정한다")]
         public float knightDistance = 5.5f;
+        [Tooltip("래그돌 몸이 공중에서 잃는 만큼 출발 속도를 더한다 (위·앞 배율). 10-07 실측: 보정 없이 높이 1.53 m · 비거리 5.05 m")]
+        public float knightLiftCorrection = 1.03f;
+        public float knightCarryCorrection = 1.07f;
         public float knightTurnMax = 90f;
         [Tooltip("이륙 뒤 이 시간부터 꺾을 수 있다 (초)")]
         public float knightTurnAfter = 0.2f;
