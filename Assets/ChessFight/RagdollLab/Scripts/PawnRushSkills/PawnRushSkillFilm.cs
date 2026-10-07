@@ -36,8 +36,8 @@ namespace ChessFight.RagdollLab
         static readonly Shot[] Shots =
         {
             new Shot { run = "rook-cluster", title = "룩 · 조준 중 이동", note = "F 조준 중에도 걷기 (Shift 질주 X) → 좌클릭 · 부딪혀도 조각 없음",
-                eye = new Vector3(-2.6f, 3.4f, -13.6f), look = new Vector3(-6f, 0.2f, -9.3f), lead = 0.35f },
-            new Shot { run = "rook-wall", title = "룩 · 벽 충돌", note = "벽에 박히면 멈춤 0.08초 + 화면 흔들림",
+                eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.35f },
+            new Shot { run = "rook-wall", title = "룩 · 벽 충돌", note = "벽에 박히면 멈춤 0.08초 + 화면이 크게 흔들림",
                 eye = new Vector3(16.6f, 2.8f, -6f), look = new Vector3(18.4f, 0.6f, 0f), lead = 0.4f },
             new Shot { run = "knight-stomp", title = "나이트 · 머리 찍기 (감지 3 m)", note = "적에 주황 표시 → 공중에서 F → 파란 착지 원은 사라지고 머리로",
                 eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },

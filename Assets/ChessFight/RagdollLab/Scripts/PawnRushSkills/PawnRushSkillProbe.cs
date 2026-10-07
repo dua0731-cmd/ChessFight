@@ -408,9 +408,9 @@ namespace ChessFight.RagdollLab
             aimSprinted = false;
             sprint = true;
             move = Vector3.left;
-            yield return Sweep(Vector3.forward, 30f, 1.1f, "조준 중 걷기 (Shift 질주 X)");
+            yield return Sweep(Vector3.forward, 30f, 0.6f, "조준 중 걷기 (Shift 질주 X)");
             move = Vector3.right;
-            yield return new WaitForSeconds(0.55f);
+            yield return new WaitForSeconds(0.4f);
             move = Vector3.zero;
             sprint = false;
             Vector3 lump = Vector3.zero;

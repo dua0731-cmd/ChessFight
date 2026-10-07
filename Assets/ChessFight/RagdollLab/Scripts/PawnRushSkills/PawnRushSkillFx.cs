@@ -97,9 +97,9 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.RookHit: RookHit(e); break;
                 case SkillFxKind.RookStop: RookStop(e); break;
                 case SkillFxKind.RookWall:
-                    // Into a wall: the hardest thud of the rook's (R75: a clear shake).
+                    // Into a wall: the hardest thud of the rook's (R75: a clear shake, up to 2.5°).
                     HitStop(0.08f);
-                    Shake(0.2f, 0.36f);
+                    Shake(0.25f, 0.4f);
                     StarFlash(e.at, Color.white, 0.7f);
                     break;
                 case SkillFxKind.RookBarricade:
@@ -422,10 +422,18 @@ namespace ChessFight.RagdollLab
                 bool free = ViewOverride == null && game != null && game.labCamera != null && game.labCamera.freeMode;
                 if (!free)
                 {
-                    float k = shakeAmp * Mathf.Clamp01(shakeLeft / Mathf.Max(0.01f, shakeTotal));
-                    float x = (Mathf.PerlinNoise(shakeClock * 32f, 0.3f) - 0.5f) * 2f;
-                    float y = (Mathf.PerlinNoise(0.7f, shakeClock * 32f) - 0.5f) * 2f;
-                    cam.transform.position += (cam.transform.right * x + cam.transform.up * y * 0.7f) * k;
+                    // Strong at once, gone fast (a thud). Two sine waves a side, out of step: a rough judder over
+                    // -1..1 (the Perlin noise before mostly stayed near the middle: a 0.1 m shake moved the view a
+                    // few centimetres and could not be seen, R75). It turns the view as well as moving it: a turn
+                    // shows on far things too, a step aside hardly does. 0.1 = up to 0.1 m and 1° (0.6° roll).
+                    float k = Mathf.Clamp01(shakeLeft / Mathf.Max(0.01f, shakeTotal));
+                    float a = shakeAmp * k * k, t = shakeClock;
+                    float x = Mathf.Sin(t * 61f) * 0.6f + Mathf.Sin(t * 97f + 1.3f) * 0.4f;
+                    float y = Mathf.Sin(t * 71f + 2.1f) * 0.6f + Mathf.Sin(t * 113f + 0.4f) * 0.4f;
+                    float roll = Mathf.Sin(t * 53f + 4.2f);
+                    var view = cam.transform;
+                    view.position += (view.right * x + view.up * y * 0.7f) * a;
+                    view.rotation *= Quaternion.Euler(y * a * 10f, x * a * 10f, roll * a * 6f);
                 }
             }
         }
