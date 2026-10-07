@@ -7,7 +7,11 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R74 | 문서: Skills README(F·조준·나이트 찍기·측정·녹화), EFFECTS(글자 뺌), REQUIREMENTS R74, VALIDATION, HANDOFF |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R75 | 문서: Skills README(룩 조준 중 걷기·나이트 3 m·측정·녹화), EFFECTS, REQUIREMENTS R75, VALIDATION, HANDOFF |
+| `338704e` | 10-07 | R75 | 화면 흔들림: 위치 + 회전, −1~1 사인, 제곱 감쇠 / 벽 흔들림 더 크게 / 조준 중 걷기 시험 짧게 |
+| `5fa903b` | 10-07 | R75 | 시험 도구: 조준 중 룩의 질주 상태 |
+| `a28a24a` | 10-07 | R75 | 룩 조준 중 걷기(질주 X), 이펙트 조각 삭제, 벽 흔들림, 나이트 감지 3 m·주황 표시·착지 원 한 벌만 |
+| `7c0658a` | 10-07 | R74 | 문서: Skills README(F·조준·나이트 찍기·측정·녹화), EFFECTS(글자 뺌), REQUIREMENTS R74, VALIDATION, HANDOFF |
 | `2e0d5e9` | 10-07 | R74 | 녹화: 룩 장면 가깝게, 나이트 꺾기는 위에서 |
 | `836adb4` | 10-07 | R74 | 모든 스킬 F(이 씬 F 상호작용 끔), 룩·비숍 F 조준 → 좌클릭, 비숍 근거리 4.5 m·반투명 미리보기, 나이트 공중 F = 감지한 적 머리 자동 찍기(없으면 90° 꺾기), 이펙트 글자·숫자 제거, 시험 도구·녹화 맞춤 |
 | `941da62` | 10-07 | R73 | 문서: Skills README(이펙트·녹화), EFFECTS(고른 것), REQUIREMENTS R73, VALIDATION, HANDOFF |
