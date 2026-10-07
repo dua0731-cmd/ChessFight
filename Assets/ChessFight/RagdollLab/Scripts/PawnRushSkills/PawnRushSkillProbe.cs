@@ -682,7 +682,8 @@ namespace ChessFight.RagdollLab
             walkerMove = Vector3.right;
             yield return Until(() => d.State == PawnState.Ragdoll, 2.5f);
             StopWalker();
-            Add($"비숍 밧줄 걸기: 적 더미 {StateText(d)} · {d.LastSkillHit}");
+            var wire = FindFirstObjectByType<SkillTripwire>();
+            Add($"비숍 밧줄 걸기: 적 더미 {StateText(d)} · {d.LastSkillHit}, 줄이 {(wire != null ? wire.LastPull : 0f):0.00} m 늘어났다 튕김");
             yield return new WaitForSeconds(1.4f);
         }
 
@@ -704,8 +705,19 @@ namespace ChessFight.RagdollLab
             walkerMove = Vector3.right;
             yield return Until(() => d.State == PawnState.Ragdoll, 2f);
             StopWalker();
-            Add($"  가로질러 달려간 적 더미: {StateText(d)} · {d.LastSkillHit}");
-            yield return new WaitForSeconds(1.5f);
+            Add($"  가로질러 달려간 적 더미: {StateText(d)} · {d.LastSkillHit}, 줄이 {(wire != null ? wire.LastPull : 0f):0.00} m 늘어났다 튕김 (늘어나기 최대 {(wire != null ? wire.MostStretch : 0f):0.00} m)");
+            // Up again, it walks back through: the line stretches after its legs and slips off them, and it is not
+            // tripped a second time (R82).
+            yield return Until(() => d.State == PawnState.Active, 3.5f);
+            yield return new WaitForSeconds(0.2f);
+            int pulls = wire != null ? wire.Pulls : 0;
+            walker = d;
+            walkerMove = Vector3.left;
+            yield return new WaitForSeconds(1.4f);
+            StopWalker();
+            bool pulled = wire != null && wire.Pulls > pulls;
+            Add($"  일어나 다시 지나간 더미: {StateText(d)}, 줄 {(pulled ? $"{wire.LastPull:0.00} m 늘어났다 빠져나감" : wire == null ? "없음" : "안 늘어남")} (기대: 늘어나고 안 넘어짐)");
+            yield return new WaitForSeconds(0.5f);
             // A fresh wire; a rook runs through it: it snaps.
             p1.ResetSkill();
             yield return AimThenClick(0.4f);

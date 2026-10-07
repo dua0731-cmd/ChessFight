@@ -185,6 +185,8 @@ namespace ChessFight.RagdollLab
         // and faster, into her chest, glowing brighter as they come; at the blast they pop out of the swirl the same
         // way round, tumbling, falling and bouncing over the floor, with a gold flash and ring, sparks, two thin rings
         // on the floor (1.5 m knocked down, 3 m pushed) and dust; the screen shakes and its edges split red and cyan.
+        // R82: her rings on the floor are the blast's gold (SkillMarks), and small lights rise off them like smoke
+        // while she charges and off the two rings as they run out.
 
         static readonly Color GoldGlow = new Color(0.9f, 0.5f, 0.1f);
 
@@ -211,6 +213,22 @@ namespace ChessFight.RagdollLab
                 anims.Add(piece);
                 anims.Add(new Streak(root, matTrail, Hdr(Gold, 1.3f), 0.07f, 0.12f, () => piece.Alive ? piece.Position : (Vector3?)null) { paint = 0.7f, delay = 0.03f });
             }
+            // Small lights rise like smoke off her three rings on the floor (R82): the outer one, the inner one and
+            // the one closing in.
+            float outer = Params != null ? Params.queenRadius : 3f, inner = Params != null ? Params.queenInner : 1.5f;
+            Vector3 floor = FloorUnder(q);
+            float rise = 0f;
+            anims.Add(new Ongoing((age, dt) =>
+            {
+                if (!QueenCharging(q) || age > windup + 0.1f) return false;
+                float squeeze = Mathf.Lerp(outer, 0.2f, Mathf.Clamp01(age / windup));
+                for (rise += dt * 220f; rise >= 1f; rise -= 1f)
+                {
+                    float pick = Random.value;
+                    RingEmber(floor, pick < 0.45f ? outer : pick < 0.75f ? inner : squeeze, Gold);
+                }
+                return true;
+            }));
             Add(new Shape(root, "Queen gathering glow", meshQuad, matHalo)
             {
                 life = windup + 0.05f,
@@ -260,6 +278,16 @@ namespace ChessFight.RagdollLab
             }
             GroundRing(c, 0.2f, inner, 0.15f, Gold, 0.5f, 2.6f);
             GroundRing(c, 0.3f, outer, 0.3f, Gold, 0.75f, 2.2f);
+            // Small lights rise off the two rings as they run out over the floor (R82).
+            float due = 0f;
+            anims.Add(new Ongoing((age, dt) =>
+            {
+                if (age > 0.4f) return false;
+                float rIn = Mathf.Lerp(0.2f, inner, EaseOut(age / 0.15f)), rOut = Mathf.Lerp(0.3f, outer, EaseOut(age / 0.3f));
+                for (due += dt * 300f; due >= 1f; due -= 1f)
+                    RingEmber(c, Random.value < 0.4f ? rIn : rOut, Gold);
+                return true;
+            }));
             DustRing(c, 16, 0.6f, 4f, Dust, 0.7f, 0.8f);
             HitStop(0.06f);
             Shake(0.14f, 0.28f);
@@ -1037,6 +1065,8 @@ namespace ChessFight.RagdollLab
             sparks.Step(dt);
             motes.Step(dt);
             smoke.Step(dt);
+            embers.Step(dt);
+            wisps.Step(dt);
 
             for (int i = anims.Count - 1; i >= 0; i--)
                 if (!anims[i].Step(dt, cam)) { anims[i].Destroy(); anims.RemoveAt(i); }
@@ -1077,6 +1107,20 @@ namespace ChessFight.RagdollLab
         static Vector3 Flat(Vector3 v) { v.y = 0f; return v; }
 
         static Vector3 HeadOf(RagdollPawn p) => p != null ? p.bodies[(int)BodyId.Head].position : Vector3.zero;
+
+        /// <summary>The floor under a piece, not the piece itself.</summary>
+        static Vector3 FloorUnder(RagdollPawn p)
+        {
+            Vector3 at = p.Hips.position, floor = at - Vector3.up * p.standHeight;
+            float best = float.MaxValue;
+            foreach (var hit in Physics.RaycastAll(at + Vector3.up * 0.3f, Vector3.down, 3f, ~0, QueryTriggerInteraction.Ignore))
+                if (hit.distance < best && !hit.collider.GetComponentInParent<RagdollPawn>())
+                {
+                    best = hit.distance;
+                    floor = hit.point;
+                }
+            return floor;
+        }
 
         static Vector3 Ground(Vector3 at)
         {

@@ -35,14 +35,12 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "queen", title = "퀸 · 금색 체스말", note = "진짜 체스말 모양 · 빙글빙글 돌며 모였다가 소용돌이처럼 팡",
+            new Shot { run = "queen", title = "퀸 · 금빛 원과 불씨", note = "예고 원이 터지는 빛과 같은 금색 · 바닥 원에서 작은 불빛이 연기처럼 피어오름",
                 eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.6f, -7.2f), lead = 0.5f },
-            new Shot { run = "rook-air", title = "룩 · 슈퍼맨 돌진", note = "공중에서 F → 위로 조준 → 좌클릭: 두 팔 뻗고 몸을 눕혀 날아감 / 아래로 내리꽂기",
-                eye = new Vector3(1.2f, 2.9f, -10.8f), look = new Vector3(-6f, 2.5f, -9.4f), lead = 0.5f },
-            new Shot { run = "bishop-trip", title = "비숍 · 줄이 잡아당김", note = "설치 → 적이 걸리면 줄이 다리를 따라 늘어나며 잡아채고 → 튕겨 돌아옴",
-                eye = new Vector3(2.4f, 3.4f, -10.6f), look = new Vector3(-0.8f, 0.2f, -6.8f), lead = 0.45f },
-            new Shot { run = "knight-air", title = "나이트 · 공중에서 도약", note = "점프 → 공중에서 F → 그 자리에서 바로 도약",
-                eye = new Vector3(5f, 3.6f, -14f), look = new Vector3(0f, 1.2f, -7f), lead = 0.45f },
+            new Shot { run = "bishop-trip", title = "비숍 · 줄이 늘어남", note = "적이 지나가면 줄이 다리를 따라 고무줄처럼 늘어났다 → 잡아채고 튕겨 돌아옴",
+                eye = new Vector3(2.0f, 4.4f, -10.4f), look = new Vector3(-0.6f, 0.1f, -6.6f), lead = 0.45f },
+            new Shot { run = "knight", title = "나이트 · 착지 표식", note = "파란 원 대신 하얀 원형 표식이 바닥에서 돌고 · 내려올수록 안쪽 원이 조여듦",
+                eye = new Vector3(5f, 3.8f, -12.5f), look = new Vector3(0f, 0.7f, -8f), lead = 0.45f },
         };
 
         LabGame game;

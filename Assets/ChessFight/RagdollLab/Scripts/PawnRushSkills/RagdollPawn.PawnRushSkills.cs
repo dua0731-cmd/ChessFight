@@ -100,6 +100,7 @@ namespace ChessFight.RagdollLab
         // Telegraphs
         LineRenderer markA, markB, markC, markD, markE;
         readonly LineRenderer[] markPegs = new LineRenderer[4];
+        MeshRenderer markLanding, markLandingInner;
         float blastFlash;
 
         public SkillStage SkillStage => skillStage;
@@ -1162,7 +1163,6 @@ namespace ChessFight.RagdollLab
 
         void DrawSkillMarks(PawnRushSkillParams s)
         {
-            Color color = SkillMarks.TeamColor(team);
             float floorY = groundFound ? groundY : bodies[0].position.y - standHeight;
             Vector3 foot = new Vector3(bodies[0].position.x, floorY + 0.05f, bodies[0].position.z);
             HideSkillMarks();
@@ -1188,10 +1188,13 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Queen when skillStage == SkillStage.Windup:
                 {
+                    // In the gold of the blast's light, not the side's blue (R82: "불빛 색이랑 똑같은 색으로"); the
+                    // effects send small lights up off these rings.
                     float t = Mathf.Clamp01(stageTime / Mathf.Max(0.01f, s.queenWindup));
-                    SkillMarks.Circle(Mark(ref markA, "Queen outer"), foot, s.queenRadius, color, 0.05f);
-                    SkillMarks.Circle(Mark(ref markB, "Queen inner"), foot, s.queenInner, color, 0.05f);
-                    SkillMarks.Circle(Mark(ref markC, "Queen squeeze"), foot, Mathf.Lerp(s.queenRadius, 0.2f, t), color, 0.14f);
+                    var gold = SkillMarks.Gold;
+                    SkillMarks.Circle(Mark(ref markA, "Queen outer"), foot, s.queenRadius, gold, 0.05f);
+                    SkillMarks.Circle(Mark(ref markB, "Queen inner"), foot, s.queenInner, gold, 0.05f);
+                    SkillMarks.Circle(Mark(ref markC, "Queen squeeze"), foot, Mathf.Lerp(s.queenRadius, 0.2f, t), gold, 0.14f);
                     break;
                 }
                 case PieceKind.Queen when blastFlash > 0f:
@@ -1202,12 +1205,15 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Knight when skillStage == SkillStage.Active:
                 {
-                    // Where it comes down, in the knight's colour: until a second F sends it at a head, or the tap
-                    // on the head is made (then the head is where it comes down: one set of marks, not two, R75).
+                    // Where it comes down: until a second F sends it at a head, or the tap on the head is made (then
+                    // the head is where it comes down: one set of marks, not two, R75). R82: a white see-through mark
+                    // turning on the floor ("원형 모형으로 회전") in place of the two blue circles; its inner ring draws
+                    // in round the knight's shadow as it comes down.
                     if (!knightHoming && !knightTapped)
                     {
-                        SkillMarks.Circle(Mark(ref markA, "Knight shadow"), knightSpot, 0.55f, color, 0.12f);
-                        SkillMarks.Circle(Mark(ref markB, "Knight shock"), knightSpot, s.knightLandRadius, color, 0.04f);
+                        float high = Mathf.Clamp01((bodies[0].position.y - knightSpot.y - standHeight) / 2.5f);
+                        SkillMarks.Reticle(Disc(ref markLanding, "Knight landing"), Disc(ref markLandingInner, "Knight landing inner"),
+                            knightSpot, s.knightLandRadius, 0.55f * (1f + 0.35f * high), Time.time);
                     }
                     var marked = KnightMarked;
                     if (marked != null)
@@ -1342,6 +1348,12 @@ namespace ChessFight.RagdollLab
             return mark;
         }
 
+        MeshRenderer Disc(ref MeshRenderer disc, string label)
+        {
+            if (disc == null) disc = SkillMarks.Disc(transform, $"{name} {label}");
+            return disc;
+        }
+
         void HideSkillMarks()
         {
             SkillMarks.Hide(markA);
@@ -1350,6 +1362,8 @@ namespace ChessFight.RagdollLab
             SkillMarks.Hide(markD);
             SkillMarks.Hide(markE);
             foreach (var peg in markPegs) SkillMarks.Hide(peg);
+            SkillMarks.Hide(markLanding);
+            SkillMarks.Hide(markLandingInner);
         }
     }
 }
