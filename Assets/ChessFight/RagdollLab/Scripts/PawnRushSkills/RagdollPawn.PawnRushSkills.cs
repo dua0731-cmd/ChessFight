@@ -186,6 +186,8 @@ namespace ChessFight.RagdollLab
 
         void StartCooldown(float seconds)
         {
+            // The test bed's flat cooldown (2 s for quick tries) stands in for every piece's own.
+            if (PawnRushSkills != null && PawnRushSkills.testCooldown > 0f) seconds = PawnRushSkills.testCooldown;
             cooldownTotal = Mathf.Max(0f, seconds);
             skillCooldownLeft = cooldownTotal;
         }

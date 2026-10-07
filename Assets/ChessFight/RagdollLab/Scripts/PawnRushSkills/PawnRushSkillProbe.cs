@@ -17,7 +17,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class PawnRushSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "queen", "knight", "knight-turn", "knight-stomp", "knight-land", "bishop", "all" };
+        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "rook-cluster", "queen", "knight", "knight-turn", "knight-stomp", "knight-land", "bishop", "all" };
         public static string Status { get; private set; } = "idle";
         public static readonly List<string> Results = new List<string>();
 
@@ -86,6 +86,8 @@ namespace ChessFight.RagdollLab
             yield return null;
             if (P1 == null) { Status = "no P1"; yield break; }
             driving = true;
+            float testCooldown = bed.skills.testCooldown;
+            bed.skills.testCooldown = 0f;   // the probe checks the design cooldowns
             string[] list = name == "all" ? Array.FindAll(Names, n => n != "all") : new[] { name };
             foreach (var n in list)
             {
@@ -100,6 +102,7 @@ namespace ChessFight.RagdollLab
                     "rook-free" => RookFree(),
                     "rook-wall" => RookWall(),
                     "rook-barricade" => RookBarricade(),
+                    "rook-cluster" => RookCluster(),
                     "queen" => Queen(),
                     "knight" => Knight(false),
                     "knight-turn" => Knight(true),
@@ -112,6 +115,7 @@ namespace ChessFight.RagdollLab
                 yield return run;
             }
             Stop();
+            bed.skills.testCooldown = testCooldown;
             Status = "done " + name;
         }
 
@@ -290,6 +294,31 @@ namespace ChessFight.RagdollLab
             Add($"룩 돌진: 예고 동안 움직인 거리 {FlatDistance(start, charge):0.00} m, 돌진 거리 {FlatDistance(charge, p1.Hips.position):0.00} m, 넘어진 더미 {down}/4 (기대 3, 4번째는 밀림)");
             yield return Until(() => p1.SkillStage == SkillStage.None, 1.5f);
             Add($"  룩 쿨 {p1.SkillCooldown:0.0}초 (기대 7)");
+        }
+
+        /// <summary>The bed's 2 x 2 lump (key V) in front of the rook, then the charge, with the bed's test cooldown.</summary>
+        IEnumerator RookCluster()
+        {
+            yield return Ready(PieceKind.Rook, new Vector3(-6f, 0f, -12f), Vector3.forward, 4);
+            var p1 = P1;
+            bed.ClusterDummies(p1);
+            yield return new WaitForSeconds(0.8f);
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
+            Vector3 from = p1.Hips.position;
+            yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
+            Vector3 end = p1.Hips.position;
+            yield return new WaitForSeconds(0.6f);
+            int down = 0, staggered = 0;
+            float spread = 0f;
+            for (int i = 0; i < 4; i++)
+            {
+                var d = game.dummies[i];
+                if (d.State == PawnState.Ragdoll) down++;
+                else if (d.Staggered) staggered++;
+                spread = Mathf.Max(spread, FlatDistance(d.Hips.position, p1.Hips.position));
+            }
+            Add($"룩 4명 뭉치 돌진: 돌진 {FlatDistance(from, end):0.00} m, 넘어짐 {down}/4, 휘청 {staggered}, 가장 멀리 날아간 더미 {spread:0.0} m (룩에서)");
         }
 
         IEnumerator RookFree()

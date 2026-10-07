@@ -21,11 +21,16 @@ namespace ChessFight.RagdollLab
         public KeyCode skillKey = KeyCode.G;
         public KeyCode previousPieceKey = KeyCode.Z;
         public KeyCode nextPieceKey = KeyCode.X;
+        [Tooltip("룩 시험: 더미 4명을 내 앞에 뭉쳐 세운다")]
+        public KeyCode clusterKey = KeyCode.V;
 
         [Header("시험 장치")]
         [Tooltip("룩만 부수는 바리케이드 (바닥 가운데)")]
         public Vector3 barricadeAt = new Vector3(-9f, 0f, 2f);
         public Vector3 barricadeFacing = Vector3.right;
+        [Tooltip("룩 시험 뭉치: 내 앞 거리 (m)와 서로 간격 (m)")]
+        public float clusterAhead = 3.5f;
+        public float clusterGap = 0.7f;
 
         /// <summary>The pieces Pawn Rush promotes to, the pawn first (no king, D1).</summary>
         public static readonly PieceKind[] Pieces = { PieceKind.Pawn, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight };
@@ -76,6 +81,7 @@ namespace ChessFight.RagdollLab
             if (p1 == null || game.SuppressInput || game.NetworkControlled) return;
             if (Input.GetKeyDown(previousPieceKey)) StepPiece(p1, -1);
             if (Input.GetKeyDown(nextPieceKey)) StepPiece(p1, 1);
+            if (Input.GetKeyDown(clusterKey)) ClusterDummies(p1);
             bool free = game.labCamera != null && game.labCamera.freeMode;
             if (!free) p1.SetSkillInput(Input.GetKeyDown(skillKey), Input.GetKey(skillKey));
         }
@@ -112,6 +118,7 @@ namespace ChessFight.RagdollLab
             pawn.SetPiece(kind);
             pawn.ResetSkill();
             Report($"{pawn.DisplayName} → {ChessPieces.Name(kind)} ({RagdollPawn.SkillName(kind)})");
+            if (kind == PieceKind.Rook) ClusterDummies(pawn);
         }
 
         // ---------------------------------------------------------------- the dummies
@@ -128,6 +135,32 @@ namespace ChessFight.RagdollLab
                 d.Teleport(ground + Vector3.up * (d.standHeight + 0.02f), face);
             }
             Report(turn == 0f ? "더미를 제자리에 다시 세움" : $"더미 방향 {turn:+0;-0}°");
+        }
+
+        /// <summary>Four enemy dummies packed 2 x 2 right in front of the piece, facing it: the rook's charge
+        /// meets them as one lump, to see how the ragdolls knock into each other.</summary>
+        public void ClusterDummies(RagdollPawn p1)
+        {
+            if (game == null || p1 == null) return;
+            while (game.dummies.Count < 4) game.AddDummy();
+            Vector3 ahead = Flat(p1.Facing, Vector3.forward);
+            Vector3 side = Vector3.Cross(Vector3.up, ahead);
+            Vector3 center = new Vector3(p1.Hips.position.x, 0f, p1.Hips.position.z) + ahead * clusterAhead;
+            for (int i = 0; i < 4; i++)
+            {
+                var d = game.dummies[i];
+                if (d == null) continue;
+                Vector3 offset = ahead * ((i / 2 - 0.5f) * clusterGap) + side * ((i % 2 - 0.5f) * clusterGap);
+                if (d.Team == p1.Team && p1.Team != Teams.None)
+                {
+                    d.Team = Teams.None;
+                    if (d.skin != null) d.skin.sharedMaterial = game.dummyMaterial;
+                }
+                d.ResetSkill();
+                d.SetInput(new PawnInput());
+                d.Teleport(center + offset + Vector3.up * (d.standHeight + 0.02f), -ahead);
+            }
+            Report($"더미 4명을 앞 {clusterAhead:0.#} m에 뭉쳐 세움 (간격 {clusterGap:0.#} m, 적) — {clusterKey}로 다시");
         }
 
         void ToggleFirstDummyTeam()
@@ -237,6 +270,7 @@ namespace ChessFight.RagdollLab
             float cd = p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f;
             Bar(1f - cd, cd > 0f ? new Color(0.45f, 0.5f, 0.6f) : new Color(0.3f, 0.85f, 1f),
                 cd > 0f ? $"쿨타임 {p1.SkillCooldown:0.0}초" : "사용 가능");
+            GUILayout.Label(skills.testCooldown > 0f ? $"시험용 쿨타임 {skills.testCooldown:0.#}초 (기획 쿨은 Inspector 시험용 쿨을 0으로)" : "기획 쿨타임 (v0.1)", small);
             string extra = "";
             if (p1.HasteLeft > 0f) extra += $"진군 +{(skills.hasteScale - 1f) * 100f:0}% {p1.HasteLeft:0.0}초   ";
             if (p1.GetUpGuardLeft > 0f) extra += $"기상 보호 {p1.GetUpGuardLeft:0.0}초   ";
@@ -257,6 +291,7 @@ namespace ChessFight.RagdollLab
             if (GUILayout.Button("모두 넘어뜨리기", button)) KnockDummies();
             if (GUILayout.Button("더미 기물 바꾸기", button)) CycleDummyPiece();
             GUILayout.EndHorizontal();
+            if (GUILayout.Button($"룩 시험: 앞에 4명 뭉치기 ({clusterKey})", button)) ClusterDummies(p1);
             if (Cursor.lockState == CursorLockMode.Locked) GUILayout.Label("버튼을 누르려면 Esc로 마우스를 풀어요", small);
 
             GUILayout.Space(6f);

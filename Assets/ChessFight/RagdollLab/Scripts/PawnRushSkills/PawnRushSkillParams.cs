@@ -13,6 +13,8 @@ namespace ChessFight.RagdollLab
     public class PawnRushSkillParams
     {
         [Header("공통")]
+        [Tooltip("시험용: 0보다 크면 모든 기물의 쿨타임을 이 값(초)으로 바꾼다. 0이면 아래 기획 쿨타임(v0.1)을 쓴다")]
+        public float testCooldown = 2f;
         [Tooltip("넘어졌다 일어난 뒤 이 시간 동안 스킬에 넘어지지 않고 휘청만 (초)")]
         public float getUpGuard = 1.1f;
         [Tooltip("기상 보호 중 넘어짐이 낮아진 휘청 (초)")]
