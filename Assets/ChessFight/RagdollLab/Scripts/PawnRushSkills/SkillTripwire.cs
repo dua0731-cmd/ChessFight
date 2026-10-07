@@ -98,8 +98,8 @@ namespace ChessFight.RagdollLab
         void Draw(Color color, float width)
         {
             Vector3 up = Vector3.up * height;
-            SkillMarks.Segment(line1, a1 + up, b1 + up, color, width);
-            SkillMarks.Segment(line2, a2 + up, b2 + up, color, width);
+            SkillMarks.Segment(line1, a1 + up, b1 + up, color, width, false);
+            SkillMarks.Segment(line2, a2 + up, b2 + up, color, width, false);
         }
 
         void Update()

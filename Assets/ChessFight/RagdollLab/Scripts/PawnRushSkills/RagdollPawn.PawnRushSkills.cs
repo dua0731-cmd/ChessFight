@@ -907,7 +907,7 @@ namespace ChessFight.RagdollLab
                 {
                     float t = Mathf.Clamp01(stageTime / Mathf.Max(0.01f, bishopFlight));
                     Vector3 tip = Vector3.Lerp(bishopFrom, bishopPoint, t) + Vector3.up * (Mathf.Sin(t * Mathf.PI) * 0.8f);
-                    SkillMarks.Segment(Mark(ref markC, "Bishop thread"), bishopFrom, tip, Color.white, 0.03f);
+                    SkillMarks.Segment(Mark(ref markC, "Bishop thread"), bishopFrom, tip, Color.white, 0.03f, false);
                     break;
                 }
             }

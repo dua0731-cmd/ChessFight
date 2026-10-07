@@ -46,6 +46,7 @@ namespace ChessFight.RagdollLab
 
         public static void Circle(LineRenderer lr, Vector3 center, float radius, Color color, float width, int segments = 48)
         {
+            Flat(lr, true);
             if (lr == null) return;
             lr.enabled = true;
             lr.loop = true;
@@ -58,9 +59,10 @@ namespace ChessFight.RagdollLab
             Paint(lr, color, width);
         }
 
-        public static void Segment(LineRenderer lr, Vector3 a, Vector3 b, Color color, float width)
+        public static void Segment(LineRenderer lr, Vector3 a, Vector3 b, Color color, float width, bool flat = true)
         {
             if (lr == null) return;
+            Flat(lr, flat);
             lr.enabled = true;
             lr.loop = false;
             lr.positionCount = 2;
@@ -75,6 +77,14 @@ namespace ChessFight.RagdollLab
         {
             color.a *= 0.45f;
             Segment(lr, a, b, color, width * 0.5f);
+        }
+
+        /// <summary>Ground marks lie on the floor (the ribbon faces up); ropes and threads face the camera.</summary>
+        static void Flat(LineRenderer lr, bool flat)
+        {
+            if (lr == null) return;
+            lr.alignment = flat ? LineAlignment.TransformZ : LineAlignment.View;
+            if (flat) lr.transform.rotation = Quaternion.LookRotation(Vector3.up, Vector3.forward);
         }
 
         static void Paint(LineRenderer lr, Color color, float width)

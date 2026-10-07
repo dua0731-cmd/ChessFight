@@ -25,7 +25,7 @@ namespace ChessFight.RagdollLab
         PawnRushSkillBed bed;
         bool driving;
         Vector3 move, aim = Vector3.forward;
-        bool sprint, jumpEdge, skillHold;
+        bool sprint, jumpEdge, skillHold, tapPending;
         RagdollPawn walker;
         Vector3 walkerMove;
 
@@ -70,8 +70,9 @@ namespace ChessFight.RagdollLab
             if (p1 != null)
             {
                 p1.SetInput(new PawnInput { move = move, aim = aim, sprint = sprint, jump = jumpEdge });
-                p1.SetSkillInput(false, skillHold);
-                jumpEdge = false;
+                // The press goes in with this frame's aim, move and hold, never ahead of them.
+                p1.SetSkillInput(tapPending, skillHold);
+                jumpEdge = tapPending = false;
             }
             if (walker != null) walker.SetInput(new PawnInput { move = walkerMove, aim = walkerMove });
         }
@@ -117,7 +118,7 @@ namespace ChessFight.RagdollLab
         void Stop()
         {
             move = Vector3.zero;
-            sprint = skillHold = false;
+            sprint = skillHold = tapPending = false;
             StopWalker();
             driving = false;
         }
@@ -165,7 +166,7 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(0.8f);
         }
 
-        void Tap() => P1.SetSkillInput(true, false);
+        void Tap() => tapPending = true;
 
         static float FlatDistance(Vector3 a, Vector3 b) { a.y = b.y = 0f; return Vector3.Distance(a, b); }
 
