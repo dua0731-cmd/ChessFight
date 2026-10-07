@@ -89,6 +89,7 @@ namespace ChessFight.RagdollLab
             cam.fieldOfView = 45f;
             cam.rect = new Rect(0f, 0f, 1f, 1f);
             cam.enabled = false;
+            PawnRushSkillFx.PrepareCamera(cam);   // depth for soft edges, HDR and bloom (R79)
             rt = new RenderTexture(w, h, 24) { antiAliasing = 4 };
             frame = new Texture2D(w, h, TextureFormat.RGBA32, false);
             font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 64);
