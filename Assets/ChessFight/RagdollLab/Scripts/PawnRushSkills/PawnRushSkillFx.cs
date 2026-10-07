@@ -10,8 +10,9 @@ namespace ChessFight.RagdollLab
     ///
     /// Shared parts: a hit stop (the whole game holds still for a few hundredths of a second, a test-bed stand-in
     /// for holding only the two pieces), camera shake and a white flash on the piece that is hit. No words or
-    /// numbers pop up (R74: taken out), and no chips or blocks fly off a hit (R75: taken out). Test-bed art: lines,
-    /// flat squares and star sparks built in code, no sound yet.
+    /// numbers pop up (R74: taken out), no chips or blocks fly off a hit (R75: taken out) and no star pops up on a
+    /// hit (R78: taken out). The pictures are flipbooks drawn in the effect workshop (Resources/PawnRushSkillFx,
+    /// R78): rings and squares lie flat on the floor, sparks and dizzy stars face the camera. No sound yet.
     /// While a bishop aims, its squares show see-through where the X would go. It listens to RagdollPawn.SkillFx, which
     /// only the skills raise, so no other scene changes.
     /// </summary>
@@ -26,19 +27,34 @@ namespace ChessFight.RagdollLab
         /// <summary>The film's camera while it records; the lab camera otherwise.</summary>
         public static Camera ViewOverride;
 
-        static readonly Color QueenGold = new Color(1f, 0.8f, 0.26f);
-        static readonly Color QueenDeep = new Color(1f, 0.6f, 0.08f);
-        static readonly Color RookOrange = new Color(1f, 0.54f, 0.24f);
-        static readonly Color BishopViolet = new Color(0.65f, 0.48f, 1f);
-        static readonly Color BishopLight = new Color(0.86f, 0.78f, 1f);
-        static readonly Color KnightSky = new Color(0.36f, 0.78f, 1f);
         static readonly Color Ink = new Color(0.05f, 0.08f, 0.19f);
+
+        // The workshop's flipbooks: name, frames, frames a second, loops. Each sheet holds its frames in rows of up
+        // to eight, left to right, top to bottom (packed from the workshop's strips).
+        static readonly (string name, int frames, float fps, bool loop)[] SheetList =
+        {
+            ("queen_shockwave", 20, 24f, false),
+            ("queen_shockwave_hit_sparks", 8, 30f, false),
+            ("rook_hit_sparks", 8, 30f, false),
+            ("rook_stop_floor_ring", 17, 24f, false),
+            ("bishop_tripwire_lightup", 8, 24f, false),
+            ("bishop_tripwire_hold", 24, 24f, true),
+            ("bishop_tripwire_preview", 12, 24f, true),
+            ("bishop_trip_pop", 11, 24f, false),
+            ("knight_stomp_sparks", 8, 24f, false),
+            ("knight_stomp_dizzy_stars", 24, 24f, true),
+            ("knight_land_dust_ring", 14, 24f, false),
+        };
+
+        // How far out each picture's drawing reaches, as a share of half its width: rings stop 3-4 px short of the
+        // edge, the bishop's five squares are 17 px apart in a 96 px picture.
+        const float QueenRingReach = 47f / 50f, FloorRingReach = 45f / 48f, BishopSquaresPerPicture = 96f / 17f;
 
         LabGame game;
         Transform root;
         Font font;
         Material lineMat, whiteMat;
-        Mesh boxMesh, discMesh;
+        readonly Dictionary<string, Sheet> sheets = new Dictionary<string, Sheet>();
 
         // hit stop and shake
         float stopLeft, stopResume = 1f, shakeAmp, shakeLeft, shakeTotal, shakeClock;
@@ -49,7 +65,7 @@ namespace ChessFight.RagdollLab
         readonly List<Squash> squashes = new List<Squash>();
         readonly Dictionary<Object, TileSet> tileSets = new Dictionary<Object, TileSet>();
         readonly Dictionary<RagdollPawn, float> stompedAt = new Dictionary<RagdollPawn, float>();
-        readonly Dictionary<RagdollPawn, List<MeshRenderer>> ghosts = new Dictionary<RagdollPawn, List<MeshRenderer>>();
+        readonly Dictionary<RagdollPawn, Flipbook> ghosts = new Dictionary<RagdollPawn, Flipbook>();
         EdgeFlash edge;
 
         // Real time, frame by frame: a hit stop does not stop it, and a recording (Time.captureFramerate)
@@ -68,8 +84,13 @@ namespace ChessFight.RagdollLab
             font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 64);
             lineMat = new Material(Shader.Find("Sprites/Default")) { hideFlags = HideFlags.HideAndDontSave };
             whiteMat = Unlit(Color.white);
-            boxMesh = WhiteBox();
-            discMesh = Disc(48);
+            foreach (var (name, frames, fps, loop) in SheetList)
+            {
+                var texture = Resources.Load<Texture2D>("PawnRushSkillFx/" + name);
+                if (texture == null) { Debug.LogWarning($"[PawnRushSkillFx] missing Resources/PawnRushSkillFx/{name}.png"); continue; }
+                var material = new Material(lineMat) { hideFlags = HideFlags.HideAndDontSave, mainTexture = texture };
+                sheets[name] = new Sheet(material, texture, frames, fps, loop);
+            }
             RagdollPawn.SkillFx += OnSkillFx;
         }
 
@@ -79,6 +100,7 @@ namespace ChessFight.RagdollLab
             if (stopping) Time.timeScale = stopResume;
             foreach (var f in flashes.Values) f.Restore();
             foreach (var s in squashes) s.Restore();
+            foreach (var s in sheets.Values) Destroy(s.material);
             if (root != null) Destroy(root.gameObject);
         }
 
@@ -92,7 +114,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.QueenBlast: QueenBlast(e); break;
                 case SkillFxKind.QueenHit:
                     FlashWhite(e.target, 0.07f);
-                    Sparks(e.at + Vector3.up * 0.3f, QueenGold, 6, 0.6f, 0.25f);
+                    Burst("queen_shockwave_hit_sparks", e.at + Vector3.up * 0.3f, 1.4f);
                     break;
                 case SkillFxKind.RookHit: RookHit(e); break;
                 case SkillFxKind.RookStop: RookStop(e); break;
@@ -100,12 +122,12 @@ namespace ChessFight.RagdollLab
                     // Into a wall: the hardest thud of the rook's (R75: a clear shake, up to 2.5°).
                     HitStop(0.08f);
                     Shake(0.25f, 0.4f);
-                    StarFlash(e.at, Color.white, 0.7f);
+                    Burst("rook_hit_sparks", e.at, 2f);
                     break;
                 case SkillFxKind.RookBarricade:
                     HitStop(0.07f);
                     Shake(0.14f, 0.3f);
-                    StarFlash(e.at + Vector3.up * 0.5f, RookOrange, 0.8f);
+                    Burst("rook_hit_sparks", e.at + Vector3.up * 0.5f, 1.8f);
                     break;
                 case SkillFxKind.BishopWire: BishopWire(e); break;
                 case SkillFxKind.BishopTrip: BishopTrip(e); break;
@@ -114,29 +136,26 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        // Queen A: two rings run out over the floor, the inner one (1.5 m, knocks down) bright and thick, the
-        // outer one (3 m, pushes) thin; the screen shakes and its edges split red and cyan for a moment.
+        // Queen A: the workshop's shockwave on the floor: a gold disc and a thick inner ring out to 1.5 m (knocks
+        // down), a thin outer ring out to 3 m (pushes); the screen shakes and its edges split red and cyan.
         void QueenBlast(SkillFxEvent e)
         {
-            Vector3 c = Ground(e.at);
-            float inner = PawnRushSkillsParams()?.queenInner ?? 1.5f, outer = e.size > 0f ? e.size : 3f;
-            DiscPulse(c, inner, QueenGold, 0.22f, 0.45f, 0.6f);
-            RingPulse(c, 0f, inner, QueenDeep, 0.24f, 0.22f, 0.55f);
-            RingPulse(c, 0f, outer, QueenGold, 0.08f, 0.45f, 0.85f);
+            float outer = e.size > 0f ? e.size : 3f;
+            Floor("queen_shockwave", Ground(e.at), Vector3.forward, outer * 2f / QueenRingReach, 0.03f);
             HitStop(0.06f);
             Shake(0.13f, 0.28f);
             Edge(0.22f);
         }
 
-        // Rook A: each piece it sends flying gives a white star and a longer stop (0.04, 0.06, 0.08 s) and shake
-        // than the one before; the fourth, which stops it, a big orange ring. No chips (R75).
+        // Rook A: each piece it sends flying gives orange sparks and a longer stop (0.04, 0.06, 0.08 s) and shake
+        // than the one before; the fourth, which stops it, bigger sparks and an orange ring on the floor.
         void RookHit(SkillFxEvent e)
         {
             int i = Mathf.Clamp(e.count, 1, 3);
             HitStop(new[] { 0.04f, 0.06f, 0.08f }[i - 1]);
             Shake(new[] { 0.05f, 0.08f, 0.11f }[i - 1], 0.16f + 0.03f * i);
             FlashWhite(e.target, 0.06f);
-            StarFlash(e.at, Color.white, 0.45f + 0.1f * i);
+            Burst("rook_hit_sparks", e.at, 1.2f + 0.2f * i);
         }
 
         void RookStop(SkillFxEvent e)
@@ -144,22 +163,27 @@ namespace ChessFight.RagdollLab
             HitStop(0.09f);
             Shake(0.17f, 0.32f);
             FlashWhite(e.target, 0.07f);
-            StarFlash(e.at, RookOrange, 0.9f);
-            RingPulse(Ground(e.at), 0f, 1.3f, RookOrange, 0.2f, 0.35f, 0.7f);
+            Burst("rook_hit_sparks", e.at, 2f);
+            Floor("rook_stop_floor_ring", Ground(e.at), Vector3.forward, 1.3f * 2f / FloorRingReach, 0.04f);
         }
 
-        // Bishop B: the board squares under the X light up violet, from the middle out; the square an enemy trips
-        // on jumps up.
+        // Bishop B: the board squares under the X light up violet, from the middle out, and pulse while the wire
+        // lasts; the square an enemy trips on pops up.
         void BishopWire(SkillFxEvent e)
         {
-            if (e.source == null) return;
-            var set = new TileSet { source = e.source, born = Clock };
-            foreach (var (at, ring, size, rotation) in Squares(Ground(e.at), e.dir, e.size))
+            if (e.source == null || !sheets.ContainsKey("bishop_tripwire_lightup") || !sheets.ContainsKey("bishop_tripwire_hold")) return;
+            Vector3 center = Ground(e.at);
+            var set = new TileSet { source = e.source };
+            float size = 0f;
+            foreach (var (at, _, square, _) in Squares(center, e.dir, e.size))
             {
-                var tile = new Tile { ring = ring, at = at, renderer = Box(root, "Bishop square", new Vector3(size * 0.92f, 0.03f, size * 0.92f)) };
-                tile.renderer.transform.SetPositionAndRotation(at, rotation);
-                set.tiles.Add(tile);
+                set.squares.Add(at);
+                size = square;
             }
+            float picture = size * BishopSquaresPerPicture;
+            set.lightUp = MakeFloor("bishop_tripwire_lightup", center, e.dir, picture, 0.02f);
+            set.hold = MakeFloor("bishop_tripwire_hold", center, e.dir, picture, 0.02f);
+            set.hold.delay = set.lightUp.Length;   // its first frame is the light-up's last
             if (tileSets.TryGetValue(e.source, out var old)) old.Destroy();
             tileSets[e.source] = set;
         }
@@ -184,32 +208,27 @@ namespace ChessFight.RagdollLab
         {
             var bed = GetComponent<PawnRushSkillBed>();
             float length = bed != null ? bed.skills.bishopLineLength : 4.2f;
+            float picture = length * 0.5f / (2f * Mathf.Sqrt(2f)) * BishopSquaresPerPicture;
+            var gone = new List<RagdollPawn>();
+            foreach (var kv in ghosts) if (kv.Key == null) { kv.Value.Destroy(); gone.Add(kv.Key); }
+            foreach (var p in gone) ghosts.Remove(p);
             foreach (var pawn in RagdollPawn.All)
             {
                 if (pawn == null) continue;
                 bool show = effects && pawn.BishopAiming && pawn.BishopAimValid;
-                if (!ghosts.TryGetValue(pawn, out var boxes))
+                if (!ghosts.TryGetValue(pawn, out var ghost))
                 {
                     if (!show) continue;
-                    boxes = new List<MeshRenderer>();
-                    for (int i = 0; i < 9; i++)
-                    {
-                        var box = Box(root, "Bishop square preview", Vector3.one);
-                        box.sharedMaterial.color = new Color(BishopViolet.r, BishopViolet.g, BishopViolet.b, 0.22f);
-                        boxes.Add(box);
-                    }
-                    ghosts[pawn] = boxes;
+                    ghost = MakeFloor("bishop_tripwire_preview", pawn.BishopAimPoint, pawn.BishopAimYaw, picture, 0.025f);
+                    if (ghost == null) continue;
+                    ghosts[pawn] = ghost;
                 }
-                int n = 0;
+                ghost.hidden = !show;
                 if (show)
-                    foreach (var (at, _, size, rotation) in Squares(pawn.BishopAimPoint, pawn.BishopAimYaw, length))
-                    {
-                        var box = boxes[n++];
-                        box.transform.SetPositionAndRotation(at, rotation);
-                        box.transform.localScale = new Vector3(size * 0.92f, 0.02f, size * 0.92f);
-                        box.enabled = true;
-                    }
-                for (int i = n; i < boxes.Count; i++) boxes[i].enabled = false;
+                {
+                    ghost.at = pawn.BishopAimPoint + Vector3.up * 0.025f;
+                    ghost.Face(pawn.BishopAimYaw);
+                }
             }
         }
 
@@ -218,32 +237,44 @@ namespace ChessFight.RagdollLab
             HitStop(0.05f);
             Shake(0.06f, 0.16f);
             FlashWhite(e.target, 0.06f);
-            Vector3 at = e.at;
-            if (e.source != null && tileSets.TryGetValue(e.source, out var set))
+            Vector3 at = Ground(e.at);
+            float square = 0.74f;
+            if (e.source != null && tileSets.TryGetValue(e.source, out var set) && set.squares.Count > 0)
             {
-                Tile best = null;
                 float bestD = float.MaxValue;
-                foreach (var t in set.tiles)
+                foreach (var s in set.squares)
                 {
-                    float d = Vector3.Distance(Flat(t.at), Flat(e.at));
-                    if (d < bestD) { bestD = d; best = t; }
+                    float d = Vector3.Distance(Flat(s), Flat(e.at));
+                    if (d < bestD) { bestD = d; at = s; }
                 }
-                if (best != null) { best.popAt = Clock; at = best.at; }
+                if (set.squares.Count > 1) square = Vector3.Distance(set.squares[0], set.squares[1]) / Mathf.Sqrt(2f);
             }
-            Sparks(at + Vector3.up * 0.25f, BishopLight, 9, 0.7f, 0.3f);
+            // The popping square is drawn 32 px wide in a 64 px picture, its middle 4 px below the picture's.
+            var pop = Burst("bishop_trip_pop", at, square * 0.92f * 2f);
+            if (pop != null) pop.pivot = new Vector2(0f, -4f / 64f);
         }
 
-        // Knight B: the piece stomped on squashes flat and springs back, a long stop (0.09 s) and stars over it.
-        // The knight's little hop off it lands with nothing more (R75: one set of marks, not two).
+        // Knight B: the piece stomped on squashes flat and springs back, a long stop (0.09 s), sky-blue sparks and
+        // dizzy stars circling over it. The knight's little hop off it lands with nothing more (R75: one set of
+        // marks, not two).
         void KnightStomp(SkillFxEvent e)
         {
             HitStop(0.09f);
             Shake(0.1f, 0.2f);
             FlashWhite(e.target, 0.07f);
-            StarFlash(e.at, Color.white, 0.75f);
-            Sparks(e.at, KnightSky, 12, 0.9f, 0.32f);
+            Burst("knight_stomp_sparks", e.at, 1.8f);
             StartSquash(e.target);
-            Dizzy(e.target, 0.45f, 1.8f);
+            if (e.target != null)
+            {
+                var dizzy = Burst("knight_stomp_dizzy_stars", HeadOf(e.target), 0.8f);
+                if (dizzy != null)
+                {
+                    dizzy.overHead = e.target;
+                    dizzy.headUp = 0.34f;
+                    dizzy.delay = 0.45f;
+                    dizzy.life = 1.8f;
+                }
+            }
             if (e.by != null) stompedAt[e.by] = Clock;
         }
 
@@ -255,13 +286,8 @@ namespace ChessFight.RagdollLab
                 stompedAt.Remove(e.by);
                 return;
             }
-            RingPulse(g, 0.1f, e.size > 0f ? e.size : 1.5f, new Color(0.92f, 0.86f, 0.74f), 0.08f, 0.3f, 0.6f);
-        }
-
-        PawnRushSkillParams PawnRushSkillsParams()
-        {
-            var bed = GetComponent<PawnRushSkillBed>();
-            return bed != null ? bed.skills : null;
+            float radius = e.size > 0f ? e.size : 1.5f;
+            Floor("knight_land_dust_ring", g, Vector3.forward, radius * 2f / FloorRingReach, 0.03f);
         }
 
         // ---------------------------------------------------------------- shared parts
@@ -332,46 +358,30 @@ namespace ChessFight.RagdollLab
             squashes.Add(new Squash { pawn = pawn, bone = bone, baseScale = bone.localScale, axis = axis, born = Clock });
         }
 
-        void StarFlash(Vector3 at, Color color, float height) =>
-            anims.Add(new Pop(MakeText("★", color, height), at, 0.22f, 0f, height) { grow = true });
-
-        void Dizzy(RagdollPawn pawn, float delay, float life)
+        /// <summary>A workshop picture facing the camera, played once from <paramref name="at"/>, <paramref name="size"/>
+        /// metres wide.</summary>
+        Flipbook Burst(string sheet, Vector3 at, float size)
         {
-            if (pawn == null) return;
-            var stars = new Text3D[3];
-            for (int i = 0; i < 3; i++) stars[i] = MakeText("★", new Color(1f, 0.89f, 0.48f), 0.16f);
-            anims.Add(new DizzyStars(stars, pawn, delay, life));
+            if (!sheets.TryGetValue(sheet, out var s)) return null;
+            var f = new Flipbook(root, s, sheet) { at = at, size = size, billboard = true };
+            anims.Add(f);
+            return f;
         }
 
-        void Sparks(Vector3 at, Color color, int n, float length, float life)
+        /// <summary>A workshop picture lying on the floor at <paramref name="at"/>, its top towards
+        /// <paramref name="forward"/>, played once.</summary>
+        void Floor(string sheet, Vector3 at, Vector3 forward, float size, float lift)
         {
-            var lines = new LineRenderer[n];
-            var dirs = new Vector3[n];
-            for (int i = 0; i < n; i++)
-            {
-                lines[i] = SkillMarks.Line(root, "Spark");
-                dirs[i] = Random.onUnitSphere;
-                dirs[i].y = Mathf.Abs(dirs[i].y) * 0.8f + 0.1f;
-            }
-            anims.Add(new SparkBurst(lines, dirs, at, color, length, life));
+            var f = MakeFloor(sheet, at, forward, size, lift);
+            if (f != null) anims.Add(f);
         }
 
-        void RingPulse(Vector3 center, float from, float to, Color color, float width, float grow, float life)
+        Flipbook MakeFloor(string sheet, Vector3 at, Vector3 forward, float size, float lift)
         {
-            var lr = SkillMarks.Line(root, "Ring");
-            anims.Add(new Ring(lr, center, from, to, color, width, grow, life));
-        }
-
-        void DiscPulse(Vector3 center, float radius, Color color, float grow, float life, float alpha)
-        {
-            var go = new GameObject("Disc");
-            go.transform.SetParent(root, false);
-            go.transform.position = center + Vector3.up * 0.03f;
-            go.AddComponent<MeshFilter>().sharedMesh = discMesh;
-            var mr = go.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = new Material(lineMat) { hideFlags = HideFlags.HideAndDontSave };
-            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            anims.Add(new DiscAnim(mr, radius, color, grow, life, alpha));
+            if (!sheets.TryGetValue(sheet, out var s)) return null;
+            var f = new Flipbook(root, s, sheet) { at = at + Vector3.up * lift, size = size };
+            f.Face(forward);
+            return f;
         }
 
         // ---------------------------------------------------------------- per frame
@@ -412,7 +422,7 @@ namespace ChessFight.RagdollLab
 
             var gone = new List<Object>();
             foreach (var kv in tileSets)
-                if (!kv.Value.Step(Clock, kv.Key == null)) { kv.Value.Destroy(); gone.Add(kv.Key); }
+                if (!kv.Value.Step(dt, cam, kv.Key == null)) { kv.Value.Destroy(); gone.Add(kv.Key); }
             foreach (var k in gone) tileSets.Remove(k);
 
             if (edge != null && edge.Alive) edge.Step(dt, cam);
@@ -464,48 +474,136 @@ namespace ChessFight.RagdollLab
             return m;
         }
 
-        MeshRenderer Box(Transform parent, string name, Vector3 size)
+        /// <summary>One of the effect workshop's flipbooks, loaded from Resources/PawnRushSkillFx.</summary>
+        class Sheet
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            go.transform.localScale = size;
-            go.AddComponent<MeshFilter>().sharedMesh = boxMesh;
-            var mr = go.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = new Material(lineMat) { hideFlags = HideFlags.HideAndDontSave };
-            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            return mr;
-        }
+            public readonly Material material;
+            public readonly int frames, cols, rows;
+            public readonly float fps;
+            public readonly bool loop;
+            readonly Vector2 inset;
 
-        /// <summary>A unit cube with white vertex colours (Sprites/Default tints by vertex colour).</summary>
-        static Mesh WhiteBox()
-        {
-            var tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            var mesh = Instantiate(tmp.GetComponent<MeshFilter>().sharedMesh);
-            Destroy(tmp);
-            var colors = new Color[mesh.vertexCount];
-            for (int i = 0; i < colors.Length; i++) colors[i] = Color.white;
-            mesh.colors = colors;
-            return mesh;
-        }
-
-        static Mesh Disc(int segments)
-        {
-            var v = new Vector3[segments + 1];
-            var c = new Color[segments + 1];
-            var t = new int[segments * 3];
-            c[0] = Color.white;
-            for (int i = 0; i < segments; i++)
+            public Sheet(Material material, Texture2D texture, int frames, float fps, bool loop)
             {
-                float a = i * Mathf.PI * 2f / segments;
-                v[i + 1] = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                c[i + 1] = new Color(1f, 1f, 1f, 0.35f);
-                t[i * 3] = 0;
-                t[i * 3 + 1] = (i + 1) % segments + 1;
-                t[i * 3 + 2] = i + 1;
+                this.material = material;
+                this.frames = frames;
+                this.fps = fps;
+                this.loop = loop;
+                cols = Mathf.Min(frames, 8);
+                rows = (frames + cols - 1) / cols;
+                // Half a texel in from each frame's edge, so the frame beside it never shows.
+                inset = new Vector2(0.5f / texture.width, 0.5f / texture.height);
             }
-            var mesh = new Mesh { vertices = v, colors = c, triangles = t };
-            mesh.RecalculateBounds();
-            return mesh;
+
+            public void Uv(int frame, Vector2[] uv)
+            {
+                int c = frame % cols, r = frame / cols;
+                float u0 = (float)c / cols + inset.x, u1 = (float)(c + 1) / cols - inset.x;
+                float top = 1f - (float)r / rows - inset.y, bottom = 1f - (float)(r + 1) / rows + inset.y;
+                uv[0] = new Vector2(u0, bottom);
+                uv[1] = new Vector2(u1, bottom);
+                uv[2] = new Vector2(u1, top);
+                uv[3] = new Vector2(u0, top);
+            }
+        }
+
+        /// <summary>A workshop picture played on a square: lying on the floor, or facing the camera
+        /// (<see cref="billboard"/>), optionally over a piece's head.</summary>
+        class Flipbook : Anim
+        {
+            readonly Sheet sheet;
+            readonly Transform tf;
+            readonly MeshRenderer mr;
+            readonly Mesh mesh;
+            readonly Vector2[] uv = new Vector2[4];
+            readonly Color[] colors = new Color[4];
+            int shownFrame = -1;
+            float shownAlpha = -1f;
+
+            public Vector3 at;
+            public float size = 1f, alpha = 1f, delay;
+            /// <summary>Seconds it lasts (loops fade out over the last quarter second); below zero, as long as the
+            /// picture plays (looping ones: until destroyed).</summary>
+            public float life = -1f;
+            public bool billboard, hidden;
+            /// <summary>Where <see cref="at"/> sits in the picture, from its middle, in picture widths (+y = up).</summary>
+            public Vector2 pivot;
+            public RagdollPawn overHead;
+            public float headUp;
+            Quaternion floor = Quaternion.LookRotation(Vector3.down, Vector3.forward);
+
+            /// <summary>Seconds one play takes.</summary>
+            public float Length => sheet.frames / sheet.fps;
+
+            public Flipbook(Transform parent, Sheet sheet, string name)
+            {
+                this.sheet = sheet;
+                var go = new GameObject("Effect " + name);
+                go.transform.SetParent(parent, false);
+                tf = go.transform;
+                mesh = new Mesh
+                {
+                    vertices = new[] { new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f), new Vector3(0.5f, 0.5f, 0f), new Vector3(-0.5f, 0.5f, 0f) },
+                    triangles = new[] { 0, 2, 1, 0, 3, 2 },
+                };
+                sheet.Uv(0, uv);
+                mesh.uv = uv;
+                mesh.colors = colors;
+                mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = sheet.material;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+                mr.enabled = false;
+            }
+
+            /// <summary>Lie flat with the picture's top towards <paramref name="forward"/>.</summary>
+            public void Face(Vector3 forward)
+            {
+                forward.y = 0f;
+                floor = Quaternion.LookRotation(Vector3.down, forward.sqrMagnitude > 1e-4f ? forward.normalized : Vector3.forward);
+            }
+
+            public override bool Step(float dt, Camera cam)
+            {
+                age += dt;
+                float t = age - delay;
+                if (life >= 0f && t >= life) return false;
+                if (overHead == null && headUp > 0f) return false;   // the piece it hung over is gone
+                int frame = t < 0f ? -1 : Mathf.FloorToInt(t * sheet.fps);
+                if (frame >= sheet.frames)
+                {
+                    if (!sheet.loop) return false;
+                    frame %= sheet.frames;
+                }
+                mr.enabled = frame >= 0 && !hidden;
+                if (!mr.enabled) return true;
+                if (frame != shownFrame)
+                {
+                    sheet.Uv(frame, uv);
+                    mesh.uv = uv;
+                    shownFrame = frame;
+                }
+                float a = alpha * (life >= 0f ? Mathf.Clamp01((life - t) / 0.25f) : 1f);
+                if (!Mathf.Approximately(a, shownAlpha))
+                {
+                    for (int i = 0; i < 4; i++) colors[i] = new Color(1f, 1f, 1f, a);
+                    mesh.colors = colors;
+                    shownAlpha = a;
+                }
+                Vector3 p = overHead != null ? HeadOf(overHead) + Vector3.up * headUp : at;
+                Quaternion rotation = billboard && cam != null ? cam.transform.rotation : floor;
+                tf.SetPositionAndRotation(p - rotation * new Vector3(pivot.x, pivot.y, 0f) * size, rotation);
+                tf.localScale = Vector3.one * size;
+                return true;
+            }
+
+            public override void Destroy()
+            {
+                if (mesh != null) Object.Destroy(mesh);
+                if (tf != null) Object.Destroy(tf.gameObject);
+            }
         }
 
         Text3D MakeText(string text, Color color, float height) => new Text3D(root, font, text, color, height);
@@ -576,161 +674,6 @@ namespace ChessFight.RagdollLab
             protected static float Back(float t) { t = Mathf.Clamp01(t); const float c = 2.2f; return 1f + (c + 1f) * Mathf.Pow(t - 1f, 3f) + c * Mathf.Pow(t - 1f, 2f); }
         }
 
-        class Pop : Anim
-        {
-            readonly Text3D text;
-            readonly Vector3 at;
-            readonly float life, rise;
-            public bool grow;
-
-            public Pop(Text3D text, Vector3 at, float life, float rise, float height)
-            {
-                this.text = text;
-                this.at = at;
-                this.life = life;
-                this.rise = rise;
-            }
-
-            public override bool Step(float dt, Camera cam)
-            {
-                age += dt;
-                float t = age / life;
-                if (t >= 1f) return false;
-                float scale = grow ? 0.6f + 0.7f * EaseOut(t) : t < 0.18f ? Back(t / 0.18f) : 1f;
-                float alpha = grow ? 1f - t : t > 0.7f ? 1f - (t - 0.7f) / 0.3f : 1f;
-                text.Place(at + Vector3.up * rise * EaseOut(t), cam, scale, alpha);
-                return true;
-            }
-
-            public override void Destroy() => text.Destroy();
-        }
-
-        class DizzyStars : Anim
-        {
-            readonly Text3D[] stars;
-            readonly RagdollPawn pawn;
-            readonly float delay, life;
-
-            public DizzyStars(Text3D[] stars, RagdollPawn pawn, float delay, float life)
-            {
-                this.stars = stars;
-                this.pawn = pawn;
-                this.delay = delay;
-                this.life = life;
-                foreach (var s in stars) s.Place(Vector3.down * 100f, null, 0.001f, 0f);
-            }
-
-            public override bool Step(float dt, Camera cam)
-            {
-                age += dt;
-                if (pawn == null || age > delay + life) return false;
-                Vector3 head = HeadOf(pawn) + Vector3.up * 0.32f;
-                float show = age < delay ? 0f : Mathf.Clamp01((delay + life - age) / 0.3f);
-                for (int i = 0; i < stars.Length; i++)
-                {
-                    float a = age * 5f + i * Mathf.PI * 2f / stars.Length;
-                    stars[i].Place(head + new Vector3(Mathf.Cos(a) * 0.3f, Mathf.Sin(a * 2f) * 0.03f, Mathf.Sin(a) * 0.3f), cam, show > 0f ? 1f : 0.001f, show);
-                }
-                return true;
-            }
-
-            public override void Destroy() { foreach (var s in stars) s.Destroy(); }
-        }
-
-        class SparkBurst : Anim
-        {
-            readonly LineRenderer[] lines;
-            readonly Vector3[] dirs;
-            readonly Vector3 at;
-            readonly Color color;
-            readonly float length, life;
-
-            public SparkBurst(LineRenderer[] lines, Vector3[] dirs, Vector3 at, Color color, float length, float life)
-            {
-                this.lines = lines;
-                this.dirs = dirs;
-                this.at = at;
-                this.color = color;
-                this.length = length;
-                this.life = life;
-            }
-
-            public override bool Step(float dt, Camera cam)
-            {
-                age += dt;
-                float t = age / life;
-                if (t >= 1f) return false;
-                float r0 = length * EaseOut(t), r1 = r0 + length * 0.45f * (1f - t);
-                var c = new Color(color.r, color.g, color.b, 1f - t * 0.7f);
-                for (int i = 0; i < lines.Length; i++)
-                    SkillMarks.Segment(lines[i], at + dirs[i] * r0, at + dirs[i] * r1, c, 0.045f * (1f - t) + 0.01f, false);
-                return true;
-            }
-
-            public override void Destroy() { foreach (var l in lines) if (l != null) Object.Destroy(l.gameObject); }
-        }
-
-        class Ring : Anim
-        {
-            readonly LineRenderer lr;
-            readonly Vector3 center;
-            readonly float from, to, width, grow, life;
-            readonly Color color;
-
-            public Ring(LineRenderer lr, Vector3 center, float from, float to, Color color, float width, float grow, float life)
-            {
-                this.lr = lr;
-                this.center = center;
-                this.from = from;
-                this.to = to;
-                this.color = color;
-                this.width = width;
-                this.grow = grow;
-                this.life = life;
-            }
-
-            public override bool Step(float dt, Camera cam)
-            {
-                age += dt;
-                if (age >= life) return false;
-                float r = Mathf.Lerp(from, to, EaseOut(age / grow));
-                float fade = age < grow ? 1f : 1f - (age - grow) / Mathf.Max(0.01f, life - grow);
-                SkillMarks.Circle(lr, center, Mathf.Max(0.02f, r), new Color(color.r, color.g, color.b, color.a * fade), width, 64);
-                return true;
-            }
-
-            public override void Destroy() { if (lr != null) Object.Destroy(lr.gameObject); }
-        }
-
-        class DiscAnim : Anim
-        {
-            readonly MeshRenderer mr;
-            readonly float radius, grow, life, alpha;
-            readonly Color color;
-
-            public DiscAnim(MeshRenderer mr, float radius, Color color, float grow, float life, float alpha)
-            {
-                this.mr = mr;
-                this.radius = radius;
-                this.color = color;
-                this.grow = grow;
-                this.life = life;
-                this.alpha = alpha;
-            }
-
-            public override bool Step(float dt, Camera cam)
-            {
-                age += dt;
-                if (age >= life) return false;
-                float r = Mathf.Max(0.02f, radius * EaseOut(age / grow));
-                mr.transform.localScale = new Vector3(r, 1f, r);
-                mr.sharedMaterial.color = new Color(color.r, color.g, color.b, alpha * (1f - age / life));
-                return true;
-            }
-
-            public override void Destroy() { if (mr != null) { Object.Destroy(mr.sharedMaterial); Object.Destroy(mr.gameObject); } }
-        }
-
         class Flash
         {
             public readonly List<Renderer> renderers = new List<Renderer>();
@@ -783,54 +726,39 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        class Tile
-        {
-            public int ring;
-            public Vector3 at;
-            public MeshRenderer renderer;
-            public float popAt = -1f;
-        }
-
+        /// <summary>A bishop's lit squares: the light-up played once, then the pulse looping while its wire lasts,
+        /// fading out in 0.35 s once the wire is gone.</summary>
         class TileSet
         {
             public Object source;
-            public float born, endAt = -1f;
-            public readonly List<Tile> tiles = new List<Tile>();
+            public Flipbook lightUp, hold;
+            public readonly List<Vector3> squares = new List<Vector3>();
+            float fadeLeft = -1f;
 
-            /// <summary>Squares light from the middle out and pulse while the wire lives, then fade. False = gone.</summary>
-            public bool Step(float clock, bool sourceGone)
+            /// <summary>False once it has faded out.</summary>
+            public bool Step(float dt, Camera cam, bool sourceGone)
             {
-                if (sourceGone && endAt < 0f) endAt = clock;
-                float fade = endAt < 0f ? 1f : 1f - (clock - endAt) / 0.35f;
-                if (fade <= 0f) return false;
-                foreach (var t in tiles)
+                if (sourceGone && fadeLeft < 0f) fadeLeft = 0.35f;
+                if (fadeLeft >= 0f)
                 {
-                    if (t.renderer == null) continue;
-                    float on = Mathf.Clamp01((clock - born - t.ring * 0.09f) / 0.1f);
-                    float pulse = 0.85f + 0.15f * Mathf.Sin(clock * 6f + t.ring);
-                    float lift = 0f, pop = 0f;
-                    if (t.popAt >= 0f)
-                    {
-                        float p = clock - t.popAt;
-                        if (p < 0.45f)
-                        {
-                            lift = 0.24f * Mathf.Sin(p / 0.45f * Mathf.PI) * (1f - p / 0.45f * 0.3f);
-                            pop = 1f - p / 0.45f;
-                        }
-                    }
-                    t.renderer.transform.position = t.at + Vector3.up * lift;
-                    var baseColor = Color.Lerp(BishopViolet, BishopLight, pop);
-                    t.renderer.transform.localScale = new Vector3(t.renderer.transform.localScale.x, 0.03f + lift * 0.6f, t.renderer.transform.localScale.z);
-                    t.renderer.sharedMaterial.color = new Color(baseColor.r, baseColor.g, baseColor.b, (0.5f + 0.35f * pop) * on * pulse * fade);
+                    fadeLeft -= dt;
+                    if (fadeLeft <= 0f) return false;
                 }
+                float a = fadeLeft >= 0f ? fadeLeft / 0.35f : 1f;
+                if (lightUp != null)
+                {
+                    lightUp.alpha = a;
+                    if (!lightUp.Step(dt, cam)) { lightUp.Destroy(); lightUp = null; }
+                }
+                hold.alpha = a;
+                hold.Step(dt, cam);
                 return true;
             }
 
             public void Destroy()
             {
-                foreach (var t in tiles)
-                    if (t.renderer != null) { Object.Destroy(t.renderer.sharedMaterial); Object.Destroy(t.renderer.gameObject); }
-                tiles.Clear();
+                lightUp?.Destroy();
+                hold?.Destroy();
             }
         }
 
