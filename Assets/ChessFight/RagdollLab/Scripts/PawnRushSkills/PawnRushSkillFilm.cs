@@ -35,12 +35,18 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "rook-cluster", title = "룩 · 조준 중 이동", note = "F 조준 중에도 걷기 (Shift 질주 X) → 좌클릭 · 부딪혀도 조각 없음",
+            new Shot { run = "queen", title = "퀸 · 바닥 충격파", note = "안쪽 1.5 m 넘어짐 · 바깥 3 m 밀림 · 맞은 적에 금색 불꽃",
+                eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.3f, -7.2f), lead = 0.5f },
+            new Shot { run = "rook-cluster", title = "룩 · 4명 뭉치 돌진", note = "맞을 때마다 주황 불꽃이 커짐 · 막히면 바닥에 주황 고리",
                 eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.35f },
-            new Shot { run = "rook-wall", title = "룩 · 벽 충돌", note = "벽에 박히면 멈춤 0.08초 + 화면이 크게 흔들림",
+            new Shot { run = "rook-wall", title = "룩 · 벽 충돌", note = "벽에 박히면 큰 주황 불꽃 + 화면이 크게 흔들림",
                 eye = new Vector3(16.6f, 2.8f, -6f), look = new Vector3(18.4f, 0.6f, 0f), lead = 0.4f },
-            new Shot { run = "knight-stomp", title = "나이트 · 머리 찍기 (감지 3 m)", note = "적에 주황 표시 → 공중에서 F → 파란 착지 원은 사라지고 머리로",
+            new Shot { run = "bishop-trip", title = "비숍 · 대각선 칸", note = "조준 중 흐린 칸 → 설치하면 가운데부터 켜짐 → 걸린 칸이 튀어오름",
+                eye = new Vector3(5.5f, 5.8f, -13.5f), look = new Vector3(-0.2f, 0f, -8.6f), lead = 0.45f },
+            new Shot { run = "knight-stomp", title = "나이트 · 머리 찍기", note = "하늘색 불꽃 + 머리 위에 어지러움 별",
                 eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
+            new Shot { run = "knight-turn", title = "나이트 · 착지", note = "내려앉으면 바닥에 먼지 고리",
+                eye = new Vector3(-1f, 6.5f, -16f), look = new Vector3(1.6f, 0.3f, -10.8f), lead = 0.45f },
         };
 
         LabGame game;
