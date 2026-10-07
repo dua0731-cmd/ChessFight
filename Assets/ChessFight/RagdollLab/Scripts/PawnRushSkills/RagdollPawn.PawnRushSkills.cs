@@ -994,7 +994,9 @@ namespace ChessFight.RagdollLab
         /// <summary>One step of the charge's contacts. False = the charge has just ended.</summary>
         bool RookCharge(PawnRushSkillParams s, float dt)
         {
-            if (rookAir && skillDir.y < -0.15f && stageTime > 0.04f && Grounded)
+            // (Grounded is no use here: the charge keeps the air timer running, so it never turns true.)
+            bool feetDown = groundFound && bodies[0].position.y - groundY < standHeight + 0.12f;
+            if (rookAir && skillDir.y < -0.15f && stageTime > 0.04f && feetDown)
             {
                 // A charge down out of the air meets the floor: it slams in where it lands (R80).
                 EndDash();
