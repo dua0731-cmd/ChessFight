@@ -23,6 +23,7 @@ namespace ChessFight.RagdollLab
         BishopWire, BishopTrip,
         KnightStomp, KnightLand,
         KnightTurn, KnightHome,
+        KnightLeap, RookSlam,
     }
 
     public struct SkillFxEvent
@@ -73,6 +74,8 @@ namespace ChessFight.RagdollLab
         SkillStage skillStage;
         float stageTime, skillCooldownLeft, cooldownTotal, skillGrace;
         bool skillPressed, skillConfirm, skillCancel, skillGrabRaw, skillGrabLatch, aimLocked, rookConfirmQueued;
+        // The rook's charge in the air (R80): aimed up or down with the mouse, along skillDir (not flat then).
+        bool rookAir;
         Vector3 skillMoveRaw;
         // A dash (the pawn's steps, the rook's charge): a fixed speed along a fixed line for a while.
         bool dashing;
@@ -86,7 +89,7 @@ namespace ChessFight.RagdollLab
         float getUpGuardLeft, pendingGuard, hasteLeft;
         PawnState skillSeenState = PawnState.Active;
         // Knight
-        float knightAir, knightHomeLeft;
+        float knightAir, knightHomeLeft, knightKick;
         bool knightTurned, knightHoming, knightTapped;
         Vector3 knightSpot;
         RagdollPawn knightCandidate, knightTarget;
@@ -236,8 +239,9 @@ namespace ChessFight.RagdollLab
             pawnBuffered = pawnStepHit = false;
             pawnStep = 0;
             skillPressed = skillConfirm = skillCancel = false;
-            aimLocked = rookConfirmQueued = false;
+            aimLocked = rookConfirmQueued = rookAir = false;
             knightHoming = knightTapped = false;
+            knightKick = 0f;
             knightTarget = knightCandidate = null;
             SkillDetail = "";
             HideSkillMarks();
@@ -261,10 +265,19 @@ namespace ChessFight.RagdollLab
             skillCooldownLeft = cooldownTotal;
         }
 
-        bool CanStartSkill() =>
+        /// <summary>Free to start a skill: on the ground, or anywhere for one that works in the air (the rook, R80).</summary>
+        bool CanStartSkill(bool inAir = false) =>
             State == PawnState.Active && !Climbing && rope == null && !Floating && !BeingHeld && !Squashed && !Staggered
             && (hookPhase == HookPhase.None || hookPhase == HookPhase.Held) && skillCooldownLeft <= 0f
-            && (Grounded || coyote > 0f);
+            && (inAir || Grounded || coyote > 0f);
+
+        bool OnFloor => Grounded || coyote > 0f;
+
+        static Vector3 FlatDir(Vector3 v)
+        {
+            v.y = 0f;
+            return v.sqrMagnitude > 1e-6f ? v.normalized : Vector3.forward;
+        }
 
         void TrackGetUp(PawnRushSkillParams s)
         {
@@ -347,7 +360,7 @@ namespace ChessFight.RagdollLab
             dashLeft = seconds;
             dashing = true;
             dashHits = 0;
-            facing = skillDir;
+            facing = FlatDir(skillDir);
         }
 
         void DriveDash(float dt)
@@ -367,6 +380,41 @@ namespace ChessFight.RagdollLab
             if (!dashing) return;
             dashing = false;
             skillGrace = 0.3f;
+        }
+
+        /// <summary>The rook's charge in the air (R80): straight along its line, up or down, gravity held off, the
+        /// body leaning into it (upright going up, flat going level, head first diving down).</summary>
+        void DriveAirDash(float dt)
+        {
+            Vector3 want = skillDir * dashBase;
+            AddVelocity(want - bodies[0].linearVelocity);
+            carryVel = Vector3.zero;
+            anchorVel = Flat(want);
+            Vector3 hp = bodies[0].position;
+            anchorPos = hp + want * dt;
+            anchor.MovePosition(anchorPos);
+            facing = FlatDir(skillDir);
+            freeFlight = Mathf.Max(freeFlight, 0.1f);
+            airTimer = Mathf.Max(airTimer, 0.1f);
+            LeanAlongLine();
+        }
+
+        /// <summary>The air charge's warning: the rook stops in the air (its fall too) for rookAirLock.</summary>
+        void HoverForCharge(float dt)
+        {
+            Vector3 v = bodies[0].linearVelocity;
+            AddVelocity(-v * Mathf.Clamp01(14f * dt) - Physics.gravity * dt);
+            freeFlight = Mathf.Max(freeFlight, 0.1f);
+            airTimer = Mathf.Max(airTimer, 0.1f);
+            LeanAlongLine();
+        }
+
+        /// <summary>The hips' balance target tilted along the charge line: 0° straight up, 30° level, 70° diving.</summary>
+        void LeanAlongLine()
+        {
+            float up = Mathf.Asin(Mathf.Clamp(skillDir.y, -1f, 1f)) * Mathf.Rad2Deg;
+            float lean = up >= 0f ? Mathf.Lerp(30f, 0f, up / 45f) : Mathf.Lerp(30f, 70f, -up / 60f);
+            anchor.MoveRotation(Quaternion.LookRotation(FlatDir(skillDir), Vector3.up) * Quaternion.Euler(lean, 0f, 0f));
         }
 
         /// <summary>Stopped dead (a wall): the speed goes, the anchor stays on the body.</summary>
@@ -533,7 +581,8 @@ namespace ChessFight.RagdollLab
                 {
                     stageTime += dt;
                     knightAir += dt;
-                    // One second press per leap: onto the head of an enemy close by, or else the 90° turn.
+                    knightKick -= dt;
+                    // One second press per leap: onto the head of an enemy close by, or else the kick on (turned or not).
                     bool second = !knightTurned && knightAir >= s.knightTurnAfter;
                     knightCandidate = second ? StompTarget(s) : null;
                     if (press && second)
@@ -591,8 +640,9 @@ namespace ChessFight.RagdollLab
             skillHitSet.Clear();
             skillStage = SkillStage.Active;
             stageTime = 0f;
-            SkillDetail = "도약 (공중에서 G = 꺾기)";
+            SkillDetail = "도약 (공중에서 F = 다시 차고 나감)";
             knightSpot = PredictLanding(bodies[0].position, bodies[0].linearVelocity, g);
+            Fx(SkillFxKind.KnightLeap, null, bodies[0].position - Vector3.up * standHeight, skillDir);
         }
 
         void KnightTurn(PawnRushSkillParams s)
@@ -605,17 +655,19 @@ namespace ChessFight.RagdollLab
             Vector3 dir = speed > 0.1f ? v / speed : skillDir;
             Vector3 turned = Vector3.RotateTowards(dir, want, s.knightTurnMax * Mathf.Deg2Rad, 0f);
             float angle = Vector3.Angle(dir, turned);
-            Quaternion r = Quaternion.FromToRotation(dir, turned);
-            AddVelocity(turned * speed - v);
-            carryVel = r * carryVel;
-            anchorVel = r * anchorVel;
+            // The second leg of the L kicks off the air (R80, "다~당"): at least knightTurnSpeed along the new line
+            // and a fresh rise, straight on as much as round the corner. The plain turn before kept the speed and
+            // the fall it had: the second leg was short, and going straight the press did nothing at all.
+            float rise = Mathf.Max(bodies[0].linearVelocity.y, s.knightTurnLift);
+            Launch(turned * Mathf.Max(speed, s.knightTurnSpeed) + Vector3.up * rise);
             facing = turned;
             skillDir = turned;
             knightTurned = true;
+            knightKick = 0.3f;
             knightSpot = PredictLanding(bodies[0].position, bodies[0].linearVelocity, Mathf.Max(0.01f, -Physics.gravity.y));
             Fx(SkillFxKind.KnightTurn, null, bodies[0].position, turned, Mathf.RoundToInt(angle));
-            SkillDetail = "꺾음";
-            Log($"나이트: 공중 꺾기 {angle:0}°");
+            SkillDetail = angle > 5f ? "꺾어 차고 나감" : "앞으로 차고 나감";
+            Log($"나이트: 공중에서 다시 차고 나감 {angle:0}°");
         }
 
         void KnightStomp(PawnRushSkillParams s)
@@ -828,13 +880,13 @@ namespace ChessFight.RagdollLab
             switch (skillStage)
             {
                 case SkillStage.None:
-                    if (press && CanStartSkill())
+                    if (press && CanStartSkill(true))   // in the air too (R80)
                     {
                         skillStage = SkillStage.Windup;
                         stageTime = 0f;
                         aimLocked = false;
                         skillGrabLatch = skillGrabRaw;
-                        skillDir = AimFlat();
+                        skillDir = RookAim(s);
                         SkillDetail = "조준 (마우스로 방향 · 좌클릭 돌진 · 우클릭/F 취소)";
                     }
                     break;
@@ -844,8 +896,8 @@ namespace ChessFight.RagdollLab
                     {
                         // Aiming: the line follows the mouse (the camera's aim) until the left click. The rook walks
                         // meanwhile (no sprint, R75); standing still, it turns to the aim.
-                        skillDir = AimFlat();
-                        if (Flat(skillMoveRaw).sqrMagnitude < 0.04f) facing = skillDir;
+                        skillDir = RookAim(s);
+                        if (Flat(skillMoveRaw).sqrMagnitude < 0.04f) facing = FlatDir(skillDir);
                         if (cancel || press)
                         {
                             if (cancel) skillGrabLatch = true;
@@ -853,41 +905,53 @@ namespace ChessFight.RagdollLab
                             Log("룩: 조준 취소");
                             break;
                         }
-                        // A click in the air waits for the feet: the charge starts from the ground.
-                        if (confirm) rookConfirmQueued = true;
-                        if (rookConfirmQueued && (Grounded || coyote > 0f))
+                        // On the ground the charge runs over the floor after rookLock; a click in the air (R80; it
+                        // waited for the feet before) stops the rook in the air for rookAirLock and charges along
+                        // the aim, up or down.
+                        if (confirm)
                         {
-                            rookConfirmQueued = false;
                             SkillUses++;
                             aimLocked = true;
+                            rookAir = !OnFloor;
+                            if (!rookAir) skillDir = FlatDir(skillDir);
                             stageTime = 0f;
-                            facing = skillDir;
-                            SkillDetail = "예고 (방향 고정)";
+                            facing = FlatDir(skillDir);
+                            SkillDetail = rookAir ? "공중 예고 (방향 고정, 멈춤)" : "예고 (방향 고정)";
                         }
                         break;
                     }
-                    facing = skillDir;
-                    if (stageTime >= s.rookLock)
+                    facing = FlatDir(skillDir);
+                    if (rookAir) HoverForCharge(dt);
+                    if (stageTime >= (rookAir ? s.rookAirLock : s.rookLock))
                     {
                         skillHitSet.Clear();
                         StartDash(s.rookSpeed, s.rookTime);
                         skillStage = SkillStage.Active;
                         stageTime = 0f;
-                        SkillDetail = "돌진";
+                        SkillDetail = rookAir ? (skillDir.y > 0.1f ? "공중 돌진 (위로)" : skillDir.y < -0.1f ? "공중 돌진 (아래로)" : "공중 돌진") : "돌진";
                     }
                     break;
                 case SkillStage.Active:
                     stageTime += dt;
                     if (!RookCharge(s, dt)) break;
-                    DriveDash(dt);
+                    if (rookAir) DriveAirDash(dt);
+                    else DriveDash(dt);
                     dashLeft -= dt;
                     if (dashLeft <= 0f)
                     {
-                        // The charge is four squares: it plants its feet at the end instead of sliding on
-                        // (measured without this: 1.25 m more during the recovery).
-                        Vector3 own = Flat(bodies[0].linearVelocity) - carryVel;
-                        AddVelocity(-own * 0.75f);
-                        anchorVel = carryVel + own * 0.25f;
+                        if (rookAir)
+                        {
+                            // Off the end of a charge in the air it flies on, slowing, and falls.
+                            AddVelocity(-bodies[0].linearVelocity * 0.55f);
+                        }
+                        else
+                        {
+                            // The charge is four squares: it plants its feet at the end instead of sliding on
+                            // (measured without this: 1.25 m more during the recovery).
+                            Vector3 own = Flat(bodies[0].linearVelocity) - carryVel;
+                            AddVelocity(-own * 0.75f);
+                            anchorVel = carryVel + own * 0.25f;
+                        }
                         RookRecovery();
                     }
                     break;
@@ -903,6 +967,17 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>Where the rook would charge: over the floor where the mouse points; in the air (R80) tilted up or
+        /// down too, by how far the camera looks above or below rookAirNeutralPitch, within rookAirMaxUp/Down.</summary>
+        Vector3 RookAim(PawnRushSkillParams s)
+        {
+            Vector3 flat = AimFlat();
+            if (OnFloor || input.aim.sqrMagnitude < 1e-4f) return flat;
+            float lookDown = Mathf.Asin(Mathf.Clamp(-input.aim.normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
+            float up = Mathf.Clamp(s.rookAirNeutralPitch - lookDown, -s.rookAirMaxDown, s.rookAirMaxUp) * Mathf.Deg2Rad;
+            return (flat * Mathf.Cos(up) + Vector3.up * Mathf.Sin(up)).normalized;
+        }
+
         void RookRecovery()
         {
             EndDash();
@@ -914,6 +989,20 @@ namespace ChessFight.RagdollLab
         /// <summary>One step of the charge's contacts. False = the charge has just ended.</summary>
         bool RookCharge(PawnRushSkillParams s, float dt)
         {
+            if (rookAir && skillDir.y < -0.15f && stageTime > 0.04f && Grounded)
+            {
+                // A charge down out of the air meets the floor: it slams in where it lands (R80).
+                EndDash();
+                AddVelocity(-bodies[0].linearVelocity * 0.9f);
+                anchorVel = carryVel = Vector3.zero;
+                Vector3 hp = bodies[0].position;
+                anchorPos = hp;
+                anchor.MovePosition(anchorPos);
+                Fx(SkillFxKind.RookSlam, null, hp - Vector3.up * standHeight, skillDir);
+                RookRecovery();
+                Log("룩: 공중에서 내리꽂아 바닥에 박힘");
+                return false;
+            }
             if (WallAhead(dashBase * dt + 0.3f, out var wall))
             {
                 var barricade = wall.collider.GetComponentInParent<SkillBarricade>();
@@ -937,7 +1026,7 @@ namespace ChessFight.RagdollLab
             Vector3 center = bodies[(int)BodyId.Chest].position + skillDir * 0.45f;
             var half = new Vector3(s.rookWidth * 0.5f + 0.1f, 0.6f, 0.4f);
             int n = Physics.OverlapBoxNonAlloc(center, half, skillOverlap, Quaternion.LookRotation(skillDir, Vector3.up), ~0, QueryTriggerInteraction.Ignore);
-            Vector3 right = Vector3.Cross(Vector3.up, skillDir);
+            Vector3 right = Vector3.Cross(Vector3.up, FlatDir(skillDir));
             for (int i = 0; i < n; i++)
             {
                 if (!ColliderOwner.TryGetValue(skillOverlap[i], out var other) || other == null || other == this
@@ -1065,9 +1154,20 @@ namespace ChessFight.RagdollLab
             {
                 case PieceKind.Rook when skillStage == SkillStage.Windup:
                 {
-                    Vector3 end = foot + skillDir * (s.rookSpeed * s.rookTime);
-                    if (!aimLocked) SkillMarks.Faint(Mark(ref markA, "Rook line"), foot, end, color, s.rookWidth);
-                    else SkillMarks.Segment(Mark(ref markA, "Rook line"), foot, end, color, s.rookWidth);
+                    // See-through white, not the side's blue (R80): faint while aiming, firmer once fixed.
+                    var line = new Color(1f, 1f, 1f, aimLocked ? 0.6f : 0.38f);
+                    float length = s.rookSpeed * s.rookTime;
+                    if (!rookAir && (aimLocked || OnFloor))
+                    {
+                        Vector3 end = foot + FlatDir(skillDir) * length;
+                        SkillMarks.Segment(Mark(ref markA, "Rook line"), foot, end, line, aimLocked ? s.rookWidth : s.rookWidth * 0.5f);
+                        break;
+                    }
+                    // In the air the line leaves the chest along the aim, up or down; where it would meet the floor, a ring.
+                    Vector3 from = bodies[(int)BodyId.Chest].position;
+                    SkillMarks.Segment(Mark(ref markA, "Rook line"), from, from + skillDir * length, line, aimLocked ? 0.32f : 0.2f, false);
+                    if (FloorAlong(from, skillDir, length, out var land))
+                        SkillMarks.Circle(Mark(ref markB, "Rook landing"), land, 0.6f, line, 0.07f);
                     break;
                 }
                 case PieceKind.Queen when skillStage == SkillStage.Windup:
@@ -1110,22 +1210,20 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Bishop when skillStage == SkillStage.Windup:
                 {
-                    // The reach (close range) around the bishop, and the X where it would go, see-through: its
-                    // shadow on the floor, the two lines at shin height and the four pegs.
-                    SkillMarks.Circle(Mark(ref markE, "Bishop range"), foot, s.bishopRange, new Color(color.r, color.g, color.b, 0.3f), 0.05f, 64);
+                    // The reach (close range) around the bishop, and the X where it would go: the two lines at shin
+                    // height and the four pegs. R80: no blue (the reach and the floor shadow of the lines were the
+                    // side's colour; the shadow is gone), the white lines thicker and stronger, still see-through.
+                    SkillMarks.Circle(Mark(ref markE, "Bishop range"), foot, s.bishopRange, new Color(1f, 1f, 1f, 0.22f), 0.05f, 64);
                     if (!bishopValid) break;
                     Vector3 p = bishopPoint + Vector3.up * 0.04f, up = Vector3.up * s.bishopHeight;
                     float half = s.bishopLineLength * 0.5f;
                     Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * bishopYaw, d2 = Quaternion.Euler(0f, -45f, 0f) * bishopYaw;
-                    var shadow = new Color(color.r, color.g, color.b, 0.3f);
-                    var ghost = new Color(1f, 1f, 1f, 0.5f);
-                    SkillMarks.Segment(Mark(ref markC, "Bishop preview shadow 1"), p - d1 * half, p + d1 * half, shadow, 0.09f);
-                    SkillMarks.Segment(Mark(ref markD, "Bishop preview shadow 2"), p - d2 * half, p + d2 * half, shadow, 0.09f);
-                    SkillMarks.Segment(Mark(ref markA, "Bishop preview 1"), p - d1 * half + up, p + d1 * half + up, ghost, 0.035f, false);
-                    SkillMarks.Segment(Mark(ref markB, "Bishop preview 2"), p - d2 * half + up, p + d2 * half + up, ghost, 0.035f, false);
+                    var ghost = new Color(1f, 1f, 1f, 0.75f);
+                    SkillMarks.Segment(Mark(ref markA, "Bishop preview 1"), p - d1 * half + up, p + d1 * half + up, ghost, 0.06f, false);
+                    SkillMarks.Segment(Mark(ref markB, "Bishop preview 2"), p - d2 * half + up, p + d2 * half + up, ghost, 0.06f, false);
                     Vector3[] ends = { p - d1 * half, p + d1 * half, p - d2 * half, p + d2 * half };
                     for (int i = 0; i < ends.Length; i++)
-                        SkillMarks.Segment(Mark(ref markPegs[i], "Bishop preview peg"), ends[i], ends[i] + up + Vector3.up * 0.04f, ghost, 0.07f, false);
+                        SkillMarks.Segment(Mark(ref markPegs[i], "Bishop preview peg"), ends[i], ends[i] + up + Vector3.up * 0.04f, ghost, 0.09f, false);
                     break;
                 }
                 case PieceKind.Bishop when skillStage == SkillStage.Active:
@@ -1135,6 +1233,71 @@ namespace ChessFight.RagdollLab
                     SkillMarks.Segment(Mark(ref markC, "Bishop thread"), bishopFrom, tip, Color.white, 0.03f, false);
                     break;
                 }
+            }
+        }
+
+        /// <summary>The first floor (not a piece, not this rook) along a line, for the air charge's landing ring.</summary>
+        bool FloorAlong(Vector3 from, Vector3 dir, float length, out Vector3 point)
+        {
+            point = default;
+            int n = Physics.RaycastNonAlloc(from, dir, hits, length, ~0, QueryTriggerInteraction.Ignore);
+            float best = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                var h = hits[i];
+                if (h.distance >= best || ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || h.normal.y < 0.5f) continue;
+                best = h.distance;
+                point = h.point;
+            }
+            return best < float.MaxValue;
+        }
+
+        /// <summary>
+        /// The skills' part of the body pose (R80), from Pose before the hook's and the status' parts. The rook in the
+        /// air (aiming, holding, charging): reaching up as it rises or charges upward, arms forward and head down
+        /// diving as it falls or charges down, fists out in between. The knight kicking off the air on its second
+        /// press: legs flung back, arms out ahead.
+        /// </summary>
+        void SkillPose(ref Quaternion armL, ref Quaternion armR, ref Quaternion chest, ref Quaternion head,
+                       ref Quaternion thighL, ref Quaternion thighR, ref Quaternion footL, ref Quaternion footR)
+        {
+            if (PawnRushSkills == null || State != PawnState.Active) return;
+            if (piece == PieceKind.Rook && skillStage != SkillStage.None && (rookAir || !OnFloor))
+            {
+                // +1 = going up, -1 = going down: the charge's line while charging or holding, the rise or fall otherwise.
+                float t = rookAir && (dashing || aimLocked)
+                    ? Mathf.Clamp(skillDir.y * 1.6f, -1f, 1f)
+                    : Mathf.Clamp(bodies[0].linearVelocity.y / 4f, -1f, 1f);
+                Quaternion midL = Quaternion.Euler(0f, 90f, -10f), midR = Quaternion.Euler(0f, -90f, 10f);
+                if (t >= 0f)
+                {
+                    armL = Quaternion.Slerp(midL, Quaternion.Euler(0f, 0f, -72f), t);
+                    armR = Quaternion.Slerp(midR, Quaternion.Euler(0f, 0f, 72f), t);
+                    chest = Quaternion.Slerp(Quaternion.Euler(10f, 0f, 0f), Quaternion.Euler(-10f, 0f, 0f), t);
+                    head = Quaternion.Slerp(Quaternion.Euler(4f, 0f, 0f), Quaternion.Euler(-22f, 0f, 0f), t);
+                    thighL = thighR = Quaternion.Slerp(Quaternion.Euler(12f, 0f, 0f), Quaternion.Euler(6f, 0f, 0f), t);
+                }
+                else
+                {
+                    float k = -t;
+                    armL = Quaternion.Slerp(midL, Quaternion.Euler(0f, 90f, 38f), k);
+                    armR = Quaternion.Slerp(midR, Quaternion.Euler(0f, -90f, -38f), k);
+                    chest = Quaternion.Slerp(Quaternion.Euler(10f, 0f, 0f), Quaternion.Euler(28f, 0f, 0f), k);
+                    head = Quaternion.Slerp(Quaternion.Euler(4f, 0f, 0f), Quaternion.Euler(32f, 0f, 0f), k);
+                    thighL = thighR = Quaternion.Slerp(Quaternion.Euler(12f, 0f, 0f), Quaternion.Euler(38f, 0f, 0f), k);
+                }
+                footL = footR = Quaternion.Euler(12f, 0f, 0f);
+                return;
+            }
+            if (piece == PieceKind.Knight && knightKick > 0f && skillStage == SkillStage.Active)
+            {
+                float k = Mathf.Clamp01(knightKick / 0.3f);
+                thighL = Quaternion.Slerp(thighL, Quaternion.Euler(52f, 0f, 0f), k);
+                thighR = Quaternion.Slerp(thighR, Quaternion.Euler(40f, 0f, 0f), k);
+                footL = footR = Quaternion.Slerp(footL, Quaternion.Euler(20f, 0f, 0f), k);
+                armL = Quaternion.Slerp(armL, Quaternion.Euler(0f, 90f, -25f), k);
+                armR = Quaternion.Slerp(armR, Quaternion.Euler(0f, -90f, 25f), k);
+                chest = Quaternion.Slerp(chest, Quaternion.Euler(20f, 0f, 0f), k);
             }
         }
 

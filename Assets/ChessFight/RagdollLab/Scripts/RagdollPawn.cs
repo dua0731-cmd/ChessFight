@@ -2614,6 +2614,7 @@ namespace ChessFight.RagdollLab
                 armR = DiveReach(false);
             }
 
+            SkillPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);   // Pawn Rush skills only
             HookPose(p, ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
             RopeHangPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
             StatusPose(ref armL, ref armR, ref chest, ref head);

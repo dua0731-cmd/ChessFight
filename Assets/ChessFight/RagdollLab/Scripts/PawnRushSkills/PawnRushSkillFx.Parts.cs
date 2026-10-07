@@ -12,15 +12,19 @@ namespace ChessFight.RagdollLab
     /// cylinder for walls and beams, a sphere for shells of light, a square, a box of four walls) and on three
     /// particle systems (sparks that bounce off the floor and walls, motes of light, smoke), plus point lights that
     /// light the floor and the pieces, trails and lightning. Textures are drawn by code too: a soft dot, smoke,
-    /// noise, a beam that fades upward, a ring, a magic circle (rings, ticks, a chessboard; no stars), a lit square.
+    /// noise, a beam that fades upward, a ring, a lit square. The queen's gold chess pieces are turned on a lathe (R80).
     /// </summary>
     public partial class PawnRushSkillFx
     {
         // ---------------------------------------------------------------- textures and meshes
 
-        Texture2D texDot, texSoft, texSmoke, texNoise, texBeam, texRing, texCircle, texTile, texBand;
+        Texture2D texDot, texSoft, texSmoke, texNoise, texBeam, texRing, texTile, texBand;
         Mesh meshQuad, meshCylinder, meshSphere, meshBox;
         Shader glowShader;
+        /// <summary>Little chess pieces turned on a lathe (pawn, rook, bishop, queen, king; R80, the queen's gold
+        /// pieces) and the polished gold they are made of.</summary>
+        Mesh[] chessMeshes;
+        Material goldMat;
 
         void BuildParts()
         {
@@ -54,11 +58,26 @@ namespace ChessFight.RagdollLab
                 float corner = Mathf.Max(Mathf.Abs(u - 0.5f), Mathf.Abs(v - 0.5f)) > 0.38f && Mathf.Min(Mathf.Abs(u - 0.5f), Mathf.Abs(v - 0.5f)) > 0.3f ? 0.5f : 0f;
                 return White(Mathf.Clamp01(Mathf.Exp(-d / 0.03f) * 1.1f + corner * Mathf.Exp(-d / 0.08f) + 0.2f));
             });
-            texCircle = Tex(512, 512, TextureWrapMode.Clamp, MagicCircle);
 
             meshQuad = Quad();
             meshCylinder = Cylinder(48);
             meshBox = OpenBox();
+            chessMeshes = new[]
+            {
+                Lathe(new[] { V(0f, 0f), V(.4f, 0f), V(.4f, .07f), V(.3f, .12f), V(.2f, .18f), V(.13f, .45f), V(.22f, .5f), V(.11f, .55f), V(.19f, .62f), V(.22f, .72f), V(.19f, .83f), V(.11f, .9f), V(0f, .93f) }),
+                Lathe(new[] { V(0f, 0f), V(.42f, 0f), V(.42f, .09f), V(.3f, .15f), V(.25f, .62f), V(.36f, .7f), V(.36f, .93f), V(.27f, .93f), V(.27f, .85f), V(0f, .85f) }),
+                Lathe(new[] { V(0f, 0f), V(.4f, 0f), V(.4f, .07f), V(.28f, .13f), V(.15f, .5f), V(.24f, .55f), V(.13f, .6f), V(.2f, .72f), V(.19f, .85f), V(.1f, .95f), V(.05f, .99f), V(.07f, 1.02f), V(0f, 1.05f) }),
+                Lathe(new[] { V(0f, 0f), V(.42f, 0f), V(.42f, .07f), V(.29f, .14f), V(.15f, .58f), V(.27f, .64f), V(.15f, .7f), V(.22f, .92f), V(.3f, 1f), V(.2f, 1.02f), V(.1f, 1.07f), V(.06f, 1.1f), V(0f, 1.12f) }),
+                Lathe(new[] { V(0f, 0f), V(.42f, 0f), V(.42f, .07f), V(.29f, .14f), V(.15f, .62f), V(.27f, .68f), V(.15f, .74f), V(.21f, .98f), V(.25f, 1.03f), V(.08f, 1.06f), V(.08f, 1.12f), V(0f, 1.14f) }),
+            };
+            var standard = Shader.Find("Standard");
+            goldMat = new Material(standard != null ? standard : Shader.Find("Diffuse")) { hideFlags = HideFlags.HideAndDontSave };
+            goldMat.color = new Color(1f, 0.74f, 0.26f);
+            goldMat.SetFloat("_Metallic", 0.85f);
+            goldMat.SetFloat("_Glossiness", 0.78f);
+            goldMat.EnableKeyword("_EMISSION");
+            goldMat.SetColor("_EmissionColor", new Color(0.9f, 0.5f, 0.1f) * 0.5f);
+            materials.Add(goldMat);
             var tmp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             meshSphere = Instantiate(tmp.GetComponent<MeshFilter>().sharedMesh);
             Destroy(tmp);
@@ -77,8 +96,9 @@ namespace ChessFight.RagdollLab
         void DestroyParts()
         {
             foreach (var m in materials) if (m != null) Destroy(m);
-            foreach (var t in new Object[] { texDot, texSoft, texSmoke, texNoise, texBeam, texRing, texCircle, texTile, texBand, meshQuad, meshCylinder, meshSphere, meshBox })
+            foreach (var t in new Object[] { texDot, texSoft, texSmoke, texNoise, texBeam, texRing, texTile, texBand, meshQuad, meshCylinder, meshSphere, meshBox })
                 if (t != null) Destroy(t);
+            if (chessMeshes != null) foreach (var m in chessMeshes) if (m != null) Destroy(m);
         }
 
         static float Sq(float x) => x * x;
@@ -125,48 +145,35 @@ namespace ChessFight.RagdollLab
             return ((h ^ (h >> 16)) & 0xffff) / 65535f;
         }
 
-        /// <summary>A magic circle for the floor: rings, a band of glyph dashes, ticks, eight diamonds and a
-        /// chessboard in the middle. No star shapes.</summary>
-        static Color32 MagicCircle(float u, float v)
-        {
-            float x = (u - 0.5f) * 2f, y = (v - 0.5f) * 2f;
-            float r = Mathf.Sqrt(x * x + y * y), ang = Mathf.Atan2(y, x), turn = (ang / (Mathf.PI * 2f) + 1f) % 1f;
-            float a = 0f;
-            a += Line(r, 0.96f, 0.012f) + Line(r, 0.9f, 0.008f) + Line(r, 0.66f, 0.014f) + Line(r, 0.6f, 0.006f);
-            // glyph dashes between the outer rings: short arcs of different lengths
-            if (r > 0.915f && r < 0.945f)
-            {
-                float cell = turn * 48f, f = cell - Mathf.Floor(cell);
-                float len = 0.25f + 0.6f * Hash(Mathf.FloorToInt(cell), 7, 48);
-                a += f < len ? 0.85f : 0f;
-            }
-            // ticks inside the middle ring
-            if (r > 0.67f && r < 0.73f)
-            {
-                float t = turn * 72f;
-                a += Mathf.Clamp01(1f - Mathf.Abs(t - Mathf.Round(t)) * 9f) * 0.8f;
-            }
-            // eight diamonds between the rings
-            for (int i = 0; i < 8; i++)
-            {
-                float da = i * Mathf.PI / 4f;
-                float cx = Mathf.Cos(da) * 0.79f, cy = Mathf.Sin(da) * 0.79f;
-                float d = Mathf.Abs(x - cx) + Mathf.Abs(y - cy);
-                a += Mathf.Clamp01((0.06f - d) * 60f) * 0.35f + Line(d, 0.06f, 0.008f);
-            }
-            // a chessboard square in the middle ring, its cells alternately lit
-            float half = 0.42f;
-            if (Mathf.Abs(x) < half && Mathf.Abs(y) < half)
-            {
-                int cx = Mathf.FloorToInt((x + half) / (half * 2f) * 4f), cy = Mathf.FloorToInt((y + half) / (half * 2f) * 4f);
-                a += ((cx + cy) & 1) == 0 ? 0.28f : 0.06f;
-            }
-            float edge = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
-            a += Line(edge, half, 0.01f);
-            return White(Mathf.Clamp01(a));
-        }
+        static Vector2 V(float radius, float height) => new Vector2(radius, height);
 
-        static float Line(float value, float at, float width) => Mathf.Clamp01(1f - Mathf.Abs(value - at) / width);
+        /// <summary>A solid turned on a lathe from a profile (radius, height; bottom to top), 1 tall, its middle at
+        /// the origin so it spins about its own centre.</summary>
+        static Mesh Lathe(Vector2[] profile, int segments = 18)
+        {
+            float top = profile[profile.Length - 1].y;
+            var v = new List<Vector3>();
+            var tri = new List<int>();
+            int ring = segments + 1;
+            for (int i = 0; i < profile.Length; i++)
+                for (int k = 0; k <= segments; k++)
+                {
+                    float a = k * Mathf.PI * 2f / segments;
+                    v.Add(new Vector3(Mathf.Cos(a) * profile[i].x, profile[i].y - top * 0.5f, Mathf.Sin(a) * profile[i].x) / top);
+                }
+            for (int i = 0; i < profile.Length - 1; i++)
+                for (int k = 0; k < segments; k++)
+                {
+                    int a = i * ring + k, b = a + ring;
+                    tri.AddRange(new[] { a, b, a + 1, a + 1, b, b + 1 });
+                }
+            var m = new Mesh { hideFlags = HideFlags.HideAndDontSave };
+            m.SetVertices(v);
+            m.SetTriangles(tri, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            return m;
+        }
 
         static Mesh Quad()
         {
@@ -321,6 +328,82 @@ namespace ChessFight.RagdollLab
                 block.SetColor("_Color", color * bright);
                 block.SetFloat("_Dissolve", dissolve);
                 if (paint >= 0f) block.SetFloat("_Opacity", paint);
+                mr.SetPropertyBlock(block);
+                return true;
+            }
+
+            public override void Destroy() { if (tf != null) Object.Destroy(tf.gameObject); }
+        }
+
+        /// <summary>
+        /// One of the queen's little gold chess pieces (R80): gathering, it rushes from where it appeared to the queen
+        /// (slow, then faster and faster, shrinking and glowing brighter) and is gone the moment it arrives; burst, it
+        /// flies out spinning, falls, bounces on the floor and shrinks away.
+        /// </summary>
+        class Trinket : Anim
+        {
+            readonly Transform tf;
+            readonly MeshRenderer mr;
+            readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+            readonly Color glow;
+            Quaternion rot;
+            Vector3 spin;
+            public Vector3 pos, vel;
+            public Func<Vector3> target;
+            public float arrive = 0.35f, size = 0.28f, life = 1.3f, floorY;
+            public bool burst;
+            public bool Alive => tf != null && age < (burst ? life : arrive);
+            public Vector3 Position => tf != null ? tf.position : pos;
+
+            public Trinket(Transform parent, Mesh mesh, Material material, Color glow)
+            {
+                var go = new GameObject("Gold chess piece");
+                go.transform.SetParent(parent, false);
+                tf = go.transform;
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = material;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                this.glow = glow;
+                rot = Random.rotation;
+                spin = Random.onUnitSphere * Random.Range(300f, 720f);
+            }
+
+            public override bool Step(float dt, Camera cam)
+            {
+                age += dt;
+                float scale, shine;
+                if (!burst)
+                {
+                    if (age >= arrive) return false;
+                    float t = age / arrive, k = t * t * t;
+                    Vector3 to = target != null ? target() : pos;
+                    tf.position = Vector3.Lerp(pos, to, k);
+                    scale = size * Mathf.Lerp(1f, 0.5f, k) * Mathf.Clamp01(age / 0.06f);
+                    shine = 0.4f + 2.2f * k;
+                }
+                else
+                {
+                    if (age >= life) return false;
+                    vel += Physics.gravity * dt;
+                    pos += vel * dt;
+                    float rest = floorY + size * 0.5f;
+                    if (pos.y < rest && vel.y < 0f)
+                    {
+                        pos.y = rest;
+                        vel.y = -vel.y * 0.42f;
+                        vel.x *= 0.65f;
+                        vel.z *= 0.65f;
+                        spin *= 0.55f;
+                    }
+                    tf.position = pos;
+                    scale = size * Mathf.Clamp01((life - age) / 0.3f);
+                    shine = Mathf.Lerp(2.4f, 0.35f, Mathf.Clamp01(age / 0.35f));
+                }
+                rot = Quaternion.Euler(spin * dt) * rot;
+                tf.rotation = rot;
+                tf.localScale = Vector3.one * scale;
+                block.SetColor("_EmissionColor", glow * shine);
                 mr.SetPropertyBlock(block);
                 return true;
             }

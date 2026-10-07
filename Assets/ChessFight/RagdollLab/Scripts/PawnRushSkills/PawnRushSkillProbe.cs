@@ -17,7 +17,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class PawnRushSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "rook-cluster", "queen", "knight", "knight-turn", "knight-stomp", "knight-land", "bishop", "bishop-trip", "all" };
+        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "rook-cluster", "rook-air", "queen", "knight", "knight-turn", "knight-straight", "knight-stomp", "knight-land", "bishop", "bishop-trip", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>The current run has set its pieces down and settled them (the film records from here).</summary>
         public static bool Staged { get; private set; }
@@ -117,9 +117,11 @@ namespace ChessFight.RagdollLab
                     "rook-wall" => RookWall(),
                     "rook-barricade" => RookBarricade(),
                     "rook-cluster" => RookCluster(),
+                    "rook-air" => RookAir(),
                     "queen" => Queen(),
                     "knight" => Knight(false),
                     "knight-turn" => Knight(true),
+                    "knight-straight" => KnightStraight(),
                     "knight-stomp" => KnightStomp(),
                     "knight-land" => KnightLand(),
                     "bishop" => Bishop(),
@@ -437,6 +439,44 @@ namespace ChessFight.RagdollLab
             Add($"룩 4명 뭉치 돌진: 돌진 {FlatDistance(from, end):0.00} m, 돌진이 끝날 때 넘어짐 {down}/4 (기대 3), 휘청 {staggered}, 0.6초 뒤 가장 멀리 날아간 더미 {spread:0.0} m (룩에서)");
         }
 
+        /// <summary>The rook's charge in the air (R80): a jump, F near the top, the mouse up 30° (then down 45°), the
+        /// left click; it holds still a moment and charges along the aim (down: into the floor, a slam).</summary>
+        IEnumerator RookAir()
+        {
+            foreach (float up in new[] { 30f, -45f })
+            {
+                yield return Ready(PieceKind.Rook, new Vector3(-6f, 0f, -12f), Vector3.forward, 1);
+                var p1 = P1;
+                Vector3 ground = p1.Hips.position;
+                jumpEdge = true;
+                Say("스페이스 (점프)");
+                yield return Until(() => p1.Hips.linearVelocity.y > 1f, 0.5f);
+                yield return Until(() => p1.Hips.linearVelocity.y < 1f, 1f);
+                // The camera's look: neutral pitch = level; up = the mouse pushed up (the camera looks less down).
+                aim = Quaternion.Euler(bed.skills.rookAirNeutralPitch - up, 0f, 0f) * Vector3.forward;
+                Tap();
+                yield return new WaitForSeconds(0.1f);
+                Say(up > 0f ? "마우스 위로" : "마우스 아래로");
+                yield return new WaitForSeconds(0.12f);
+                bool aimingInAir = p1.SkillAiming && !p1.Grounded;
+                Click();
+                yield return Until(() => p1.SkillStage == SkillStage.Active || p1.SkillStage == SkillStage.Recovery, 1f);
+                Vector3 from = p1.Hips.position;
+                float top = from.y;
+                yield return Until(() =>
+                {
+                    top = Mathf.Max(top, p1.Hips.position.y);
+                    return p1.SkillStage != SkillStage.Active;
+                }, 2f);
+                Vector3 end = p1.Hips.position;
+                string how = p1.SkillDetail;
+                yield return Until(() => p1.SkillStage == SkillStage.None && p1.Grounded, 3f);
+                Add($"룩 공중 돌진 ({(up > 0f ? "위" : "아래")} {Mathf.Abs(up):0}°): 공중에서 조준 {(aimingInAir ? "됨" : "안 됨")}, 돌진 {Vector3.Distance(from, end):0.00} m (앞 {end.z - from.z:0.00} · 높이 {end.y - from.y:+0.00;-0.00}), 골반 최고 바닥 위 +{top - ground.y:0.00} m, 끝 {how}, 착지 뒤 {StateText(p1)}");
+                aim = Vector3.forward;
+                yield return new WaitForSeconds(0.6f);
+            }
+        }
+
         IEnumerator RookFree()
         {
             yield return Ready(PieceKind.Rook, new Vector3(-6f, 0f, -12f), Vector3.forward, 1);
@@ -541,6 +581,24 @@ namespace ChessFight.RagdollLab
             }
             yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
             Add($"  착지 후딜 뒤 쿨 {p1.SkillCooldown:0.0}초 (기대 7)");
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        /// <summary>The knight's second press with no turn (R80, "다~당"): it kicks off again straight on.</summary>
+        IEnumerator KnightStraight()
+        {
+            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
+            var p1 = P1;
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
+            Vector3 takeoff = p1.Hips.position;
+            yield return new WaitForSeconds(0.35f);
+            Tap("F (그대로 앞)");
+            float peak = takeoff.y;
+            yield return Until(() => { peak = Mathf.Max(peak, p1.Hips.position.y); return p1.SkillStage != SkillStage.Active; }, 3f);
+            Vector3 d = p1.Hips.position - takeoff;
+            Add($"나이트 직진 두 번 F: 착지 앞 {d.z:0.00} m · 옆 {d.x:0.00} m (한 번 도약은 약 5.5 m), 골반 최고 +{peak - takeoff.y:0.00} m, 상태 {StateText(p1)}");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
             yield return new WaitForSeconds(0.5f);
         }
 

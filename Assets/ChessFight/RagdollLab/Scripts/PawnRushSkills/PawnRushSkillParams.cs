@@ -66,6 +66,10 @@ namespace ChessFight.RagdollLab
         [Tooltip("머리 찍은 뒤 콩 튀어 바로 옆에 착지: 위 속도와 앞 속도 (m/s)")]
         public float knightHomingBounce = 2.5f;
         public float knightHomingHop = 2f;
+        [Tooltip("공중 두 번째 F(적이 없을 때): 새 방향(곧게 또는 최대 90° 꺾어)으로 적어도 이 빠르기로 다시 차고 나간다 (m/s). R80: 꺾은 뒤 거리가 짧고 직진이면 아무 느낌이 없어서 \"다~당\"으로")]
+        public float knightTurnSpeed = 7.5f;
+        [Tooltip("그때 위로 다시 차오르는 속도 (m/s): 두 번째 구간의 체공")]
+        public float knightTurnLift = 4f;
 
         [Header("비숍 — 교차 밧줄")]
         [Tooltip("최대 거리 (m). v0.1은 9 m(6칸), R74 근거리로 4.5 m(3칸)")]
@@ -98,6 +102,13 @@ namespace ChessFight.RagdollLab
         public float rookWidth = 0.8f;
         [Tooltip("부서진 바리케이드가 다시 생기는 시간 (초)")]
         public float barricadeRegrow = 15f;
+        [Tooltip("공중에서 좌클릭 뒤 돌진까지 (초): 그동안 공중에 멈춘다 (R80 공중 돌진)")]
+        public float rookAirLock = 0.15f;
+        [Tooltip("공중 조준: 카메라가 이 각도(아래로, 도)를 볼 때 수평으로 돌진. 마우스를 올리면 위로, 내리면 아래로 (기본 카메라 14°)")]
+        public float rookAirNeutralPitch = 14f;
+        [Tooltip("공중 돌진이 오를 수 있는 최대 각도와 내리꽂는 최대 각도 (도)")]
+        public float rookAirMaxUp = 45f;
+        public float rookAirMaxDown = 60f;
 
         [Header("퀸 — 팔방 밀치기")]
         public float queenWindup = 0.35f;

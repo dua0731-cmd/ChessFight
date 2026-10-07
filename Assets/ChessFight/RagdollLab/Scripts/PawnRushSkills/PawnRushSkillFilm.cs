@@ -35,18 +35,18 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "queen", title = "퀸 · 바닥 충격파", note = "금색 마법진 → 빛 기둥 · 1.5 m 빛 벽(넘어짐) · 3 m 빛 벽(밀림)",
-                eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.3f, -7.2f), lead = 0.5f },
-            new Shot { run = "rook-cluster", title = "룩 · 4명 뭉치 돌진", note = "주황 방패·불꽃 꼬리 → 맞을 때마다 충격 고리 · 막히면 불의 벽",
+            new Shot { run = "queen", title = "퀸 · 금색 체스말", note = "작은 금색 체스말이 모여들었다가 팡 터짐 · 1.5 m 넘어짐 · 3 m 밀림",
+                eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.6f, -7.2f), lead = 0.5f },
+            new Shot { run = "rook-air", title = "룩 · 공중 돌진", note = "공중에서 F → 마우스 위아래로 조준(반투명 선) → 좌클릭: 위로 / 아래로 내리꽂기",
+                eye = new Vector3(1.5f, 3.2f, -15f), look = new Vector3(-6f, 1.6f, -8.5f), lead = 0.5f },
+            new Shot { run = "rook-cluster", title = "룩 · 반투명 조준선", note = "파란 선 대신 반투명 흰 선 → 좌클릭 → 4명 뭉치 돌진",
                 eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.35f },
-            new Shot { run = "rook-wall", title = "룩 · 벽 충돌", note = "벽에 박히면 벽면에 큰 충격 고리·불꽃 + 화면이 크게 흔들림",
-                eye = new Vector3(16.6f, 2.8f, -6f), look = new Vector3(18.4f, 0.6f, 0f), lead = 0.4f },
-            new Shot { run = "bishop-trip", title = "비숍 · 대각선 칸", note = "조준 중 흐린 칸 → 빛 상자 칸·빛나는 줄 → 걸린 칸에서 빛 기둥",
+            new Shot { run = "bishop-trip", title = "비숍 · 설치 조준", note = "파란 선 없음 · 흰 선을 더 굵게(반투명 유지) → 설치 → 걸림",
                 eye = new Vector3(5.5f, 5.8f, -13.5f), look = new Vector3(-0.2f, 0f, -8.6f), lead = 0.45f },
-            new Shot { run = "knight-stomp", title = "나이트 · 머리 찍기", note = "파란 꼬리 → 머리에 빛 왕관·빛줄기·번개 → 머리 위에 빛 구슬",
-                eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
-            new Shot { run = "knight-turn", title = "나이트 · 착지", note = "꺾을 때 빛 고리 · 내려앉으면 먼지와 낮은 빛 벽",
+            new Shot { run = "knight-turn", title = "나이트 · 꺾어 다시 차고 나감", note = "공중 F + 오른쪽 → 당! 하고 꺾어 멀리",
                 eye = new Vector3(-1f, 6.5f, -16f), look = new Vector3(1.6f, 0.3f, -10.8f), lead = 0.45f },
+            new Shot { run = "knight-straight", title = "나이트 · 다~당", note = "도약(다) → 공중 F(당) → 앞으로 한 번 더",
+                eye = new Vector3(5f, 4.2f, -14f), look = new Vector3(0f, 0.6f, -6f), lead = 0.45f },
         };
 
         LabGame game;
