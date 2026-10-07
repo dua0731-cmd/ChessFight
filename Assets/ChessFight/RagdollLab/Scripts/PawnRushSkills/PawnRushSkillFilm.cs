@@ -113,6 +113,7 @@ namespace ChessFight.RagdollLab
                     if (game != null) game.SetSlowMotion(false);
                     // A bishop's wire from the shot before would still be lying there.
                     foreach (var wire in FindObjectsByType<SkillTripwire>(FindObjectsSortMode.None)) Destroy(wire.gameObject);
+                    ParkOtherPlayers();
                     PawnRushSkillProbe.Run(shot.run);
                     yield return null;
                     while (!PawnRushSkillProbe.Staged && !Done) yield return null;
@@ -153,6 +154,17 @@ namespace ChessFight.RagdollLab
         }
 
         static bool Done => PawnRushSkillProbe.Status.StartsWith("done");
+
+        /// <summary>The second local player stands about the middle of the lab: out of the shots.</summary>
+        void ParkOtherPlayers()
+        {
+            if (game == null) return;
+            for (int i = 1; i < game.players.Length; i++)
+            {
+                var p = game.players[i].pawn;
+                if (p != null) p.Teleport(new Vector3(12f, p.standHeight + 0.02f, 9f + i * 1.5f), Vector3.back);
+            }
+        }
 
         void OnSkillFx(SkillFxEvent e)
         {
