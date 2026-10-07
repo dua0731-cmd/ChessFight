@@ -308,17 +308,17 @@ namespace ChessFight.RagdollLab
             Vector3 from = p1.Hips.position;
             yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
             Vector3 end = p1.Hips.position;
-            yield return new WaitForSeconds(0.6f);
             int down = 0, staggered = 0;
-            float spread = 0f;
             for (int i = 0; i < 4; i++)
             {
                 var d = game.dummies[i];
                 if (d.State == PawnState.Ragdoll) down++;
                 else if (d.Staggered) staggered++;
-                spread = Mathf.Max(spread, FlatDistance(d.Hips.position, p1.Hips.position));
             }
-            Add($"룩 4명 뭉치 돌진: 돌진 {FlatDistance(from, end):0.00} m, 넘어짐 {down}/4, 휘청 {staggered}, 가장 멀리 날아간 더미 {spread:0.0} m (룩에서)");
+            yield return new WaitForSeconds(0.6f);
+            float spread = 0f;
+            for (int i = 0; i < 4; i++) spread = Mathf.Max(spread, FlatDistance(game.dummies[i].Hips.position, p1.Hips.position));
+            Add($"룩 4명 뭉치 돌진: 돌진 {FlatDistance(from, end):0.00} m, 돌진이 끝날 때 넘어짐 {down}/4 (기대 3), 휘청 {staggered}, 0.6초 뒤 가장 멀리 날아간 더미 {spread:0.0} m (룩에서)");
         }
 
         IEnumerator RookFree()
