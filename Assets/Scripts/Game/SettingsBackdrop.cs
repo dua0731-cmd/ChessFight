@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ChessFight.Game
@@ -13,8 +14,36 @@ namespace ChessFight.Game
     {
         const int W = 1280, H = 720;
         static Texture2D cached;
+        static Task<Color[]> drawing;
 
-        public static Texture2D Texture => cached != null ? cached : cached = Build();
+        // Drawing takes about a second, so it runs on a worker thread from the
+        // start of the game (GameSettings.Load) and is ready long before Esc.
+        public static void Prewarm()
+        {
+            if (cached == null && drawing == null) drawing = Task.Run(() => Build());
+        }
+
+        // The picture, or null while it is still being drawn.
+        public static Texture2D TryGet()
+        {
+            if (cached != null) return cached;
+            Prewarm();
+            if (!drawing.IsCompleted) return null;
+            if (drawing.IsFaulted)
+            {
+                Debug.LogException(drawing.Exception);
+                drawing = null;
+                return null;
+            }
+            cached = new Texture2D(W, H, TextureFormat.RGBA32, false)
+            {
+                name = "Settings Backdrop", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear
+            };
+            cached.SetPixels(drawing.Result);
+            cached.Apply(false, true);
+            drawing = null;
+            return cached;
+        }
 
         // ---------- shapes in a piece's own 100 × 200 box ----------
 
@@ -143,7 +172,7 @@ namespace ChessFight.Game
 
         // ---------- the picture ----------
 
-        static Texture2D Build()
+        static Color[] Build()
         {
             var px = new Color[W * H];
             for (int sy = 0; sy < H; sy++)
@@ -176,13 +205,7 @@ namespace ChessFight.Game
                     Blend(px, x, sy, Color.Lerp(Hex(0x0E0804), Hex(0x080402), d), Mathf.Lerp(.30f, .78f, d));
                 }
 
-            var texture = new Texture2D(W, H, TextureFormat.RGBA32, false)
-            {
-                name = "Settings Backdrop", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear
-            };
-            texture.SetPixels(px);
-            texture.Apply(false, true);
-            return texture;
+            return px;
         }
 
         // Screen rows run top down; a texture's rows bottom up.

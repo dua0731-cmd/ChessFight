@@ -390,7 +390,21 @@ namespace ChessFight.Game
             if (ownedPanel != null) { ownedPanel.sortingOrder = SortingOrder; ownedPanel.scale = 1f; }
 
             var bg = root.Q<VisualElement>("s2-bg");
-            if (bg != null) bg.style.backgroundImage = new StyleBackground(SettingsBackdrop.Texture);
+            if (bg != null)
+            {
+                // Drawn on a worker thread since the game started; if it is not
+                // done yet the plain dark ground shows until it is.
+                IVisualElementScheduledItem wait = null;
+                bool Show()
+                {
+                    var picture = SettingsBackdrop.TryGet();
+                    if (picture == null) return false;
+                    bg.style.backgroundImage = new StyleBackground(picture);
+                    wait?.Pause();
+                    return true;
+                }
+                if (!Show()) wait = bg.schedule.Execute(() => Show()).Every(100);
+            }
             tabsBox = root.Q<VisualElement>("s2-tabs");
             subsBox = root.Q<VisualElement>("s2-subs");
             view = root.Q<VisualElement>("s2-view");

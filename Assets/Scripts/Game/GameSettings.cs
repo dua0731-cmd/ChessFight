@@ -115,6 +115,7 @@ namespace ChessFight.Game
             AudioListener.volume = Master;
             ApplyDisplay();
             ScreenOverlay.Ensure();
+            SettingsBackdrop.Prewarm();
         }
 
         // ---------- keys ----------
