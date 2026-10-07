@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R84 | 문서: UI §15(시작 로고·이름 설정 화면·장면 전환), SCENES(Intro 흐름), SESSION(`nick`), VALIDATION R84 표, DECISIONS U15·U16, REQUIREMENTS R84, HANDOFF |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R84 | 문서: AI가 Unity에서 Play해 본 결과(VALIDATION R84 표), PITFALLS 32(첫 프레임 3.7초가 로고 기다림을 써 버림), UI §15·HANDOFF·REQUIREMENTS에 반영 |
+| `a78f5d6` | 10-08 | R84 | 로고 기다림과 장면 전환을 보인 프레임으로 셈(한 프레임 최대 0.05초): Play 직후 로고가 영상 전에 사라지던 것 고침 |
+| `5c97820` | 10-08 | R84 | 문서: UI §15(시작 로고·이름 설정 화면·장면 전환), SCENES(Intro 흐름), SESSION(`nick`), VALIDATION R84 표, DECISIONS U15·U16, REQUIREMENTS R84, HANDOFF |
 | `f381dcc` | 10-08 | R84 | 게임을 켜면 시작 로고 영상(`LogoIntro`, `StreamingAssets/LogoIntro.mp4`, 소리 A), 처음 한 번 이름 설정 화면(`NameScreen`·도는 유리 폰 `GlassPawn`·글자 수 옆 추천 이름 → 입력칸 위 말풍선, 규칙 `Core/PlayerNames` + 테스트 5), 고른 이름을 멤버 데이터 `nick`으로(`PlayerProfile`·`SteamSession.LocalName` + 세션 테스트 1), 킹 구멍 → 카드 → 나이트 구멍 장면 전환(`SceneTransition`), 그림·영상 3개(LFS) |
 | `82e38ed` | 10-08 | R83 | 로비 UI를 A 시안으로: `NetworkHud.uxml`·`.uss` 로비 부분(`a-` 클래스), `NetworkHudView.Dress`(그늘·판·금은 줄·은색 제목·선 아이콘·아이보리 게임 시작), `MenuArt.Ramp`·`HudBlend`·`LineCard`, `MenuMarks.IconMark`, 로고 `Resources/Menu/LobbyLogo.png`(LFS), 대체 클릭은 판 버튼에만 `Pulse`. 문서: UI §14, DECISIONS U14, PITFALLS 30·31, VALIDATION 로비 표, REQUIREMENTS R83, HANDOFF |
 | `54faa02` | 10-08 | R82 | 문서: Skills README(키 표·측정·R82 녹화), EFFECTS, REQUIREMENTS R82, VALIDATION, HANDOFF |

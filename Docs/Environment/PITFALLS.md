@@ -35,6 +35,7 @@
 | 29 | Windows `Tools/Test-NetworkCompile.ps1`이 **Ragdoll lab compilation failed**(`PawnRushSkills`·`SkillSpeedScale`·`PreSkills` 등이 없다는 CS0103) | 스크립트가 `RagdollLab/Scripts`의 맨 위 `.cs`만 읽고 R71에 생긴 하위 폴더 `PawnRushSkills/`의 partial 파일을 빠뜨림(코드는 멀쩡함, Unity는 컴파일됨) | `-Recurse`로 하위 폴더까지 읽게 고침(R76 병합 때). 스크립트 폴더를 새로 나누면 컴파일 도구가 그 폴더를 읽는지 확인한다 | R76 |
 | 30 | Unity UI의 반투명 색이 웹 시안과 다르게 보임: 밝은 테두리·옅은 바탕은 **훨씬 진하게**, 어두운 그늘·판은 **훨씬 옅게**(뒤가 비침) | 프로젝트가 선형(Linear) 색 공간이라 UI Toolkit도 선형으로 섞는다. 시안(CSS)의 알파는 sRGB에서 섞은 값이다 | 시안 값을 그대로 쓰지 않는다: 어두운 것은 `StageKit.Darkening(a)`(.78 → .96), 어두운 바탕 위 밝은 것은 sRGB 곡선(`Mathf.GammaToLinearSpace`, .38 → .12). 그라데이션은 `MenuArt.Ramp(…, HudBlend.Shade/Tint)`, 모드 카드처럼 겹이 많은 판은 sRGB로 합친 불투명 텍스처(`MenuArt.LineCard`) | R83 |
 | 31 | 라벨 글자가 **한 글자씩 세로로 줄바꿈**(로비 "플레이" 탭) | UI Toolkit의 Label(TextElement)에 자식 요소를 붙이면 글자 크기를 재지 않아 폭이 0이 된다 | 밑줄 같은 장식은 라벨을 감싼 상자에 붙인다(`a-tab-box`). 버튼에 아이콘을 넣을 때는 글자를 자식 Label로 옮긴다(`NetworkHudView.IconText`) | R83 |
+| 32 | 게임을 켜면(에디터 Play) **시작 로고가 영상이 나오기 전에 1초 만에 사라짐**. 코드로 다시 부르면 끝까지 잘 나옴 | Play 뒤 첫 프레임까지 3.7초가 걸리는데(씬·Steam 준비), `Time.unscaledTime`으로 잰 "영상 준비 기다림 4초"에 그 시간이 들어가 영상 준비(약 1.6초)가 끝나기 전에 포기함 | 기다림·연출 시간은 **보인 프레임으로 센다**: 한 프레임은 최대 0.05초(`LogoIntro.shown`, `SceneTransition.clock`). 로딩으로 멈춘 프레임이 기다림을 다 써 버리거나 움직임을 건너뛰게 하지 않는다 | R84 |
 
 ## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
 

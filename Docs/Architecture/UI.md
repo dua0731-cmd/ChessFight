@@ -405,4 +405,6 @@ R62의 `LastScene`(PAWN RUSH 참고 그림의 성·아치 무대, 기울어진 �
 
 - **그림 파일(새 에셋 3개, Git LFS):** `Assets/StreamingAssets/LogoIntro.mp4`·`NameBackdrop.jpg`·`TransitionBoard.jpg`. StreamingAssets라 가져오기 설정(import) 없이 그대로 빌드에 들어가고, 그림은 처음 쓸 때 한 번 읽는다(`StreamingArt`). 메뉴 디자인 C의 "텍스처는 코드로"(U11)의 예외: 시안과 똑같은 모양·소리를 위해 시안 페이지를 그대로 찍었다([DECISIONS U14](../Project/DECISIONS.md)). 다시 만들려면 시안 페이지를 고친 뒤 AI에게 다시 찍어 달라고 한다(영상은 브라우저에서 프레임마다 그려 H.264로 묶음).
 - **스타일:** 세 화면의 클래스는 `Resources/IntroFlow.uss`에 따로 두고 `IntroFlowStyle`이 NetworkTheme 옆에 붙인다(로비의 `NetworkHud.uss`는 안 건드림). 두꺼운 버튼·`disp`·`row`는 공용 그대로.
+- **시간:** 로고의 "영상 준비 기다림(4초)·건너뛰기 막는 시간(0.25초)"과 전환의 모든 시간은 실제 시계가 아니라 **보인 프레임으로 센다**(한 프레임 최대 0.05초). Play 직후 첫 프레임이 3.7초 걸려 로고가 영상 전에 사라졌던 일(PITFALLS 32) 때문이고, 로비를 불러오다 멈춘 프레임이 전환 움직임을 건너뛰게 하지도 않는다.
+- **콘솔 경고 하나:** 로고가 나올 때 `Color primaries 0 is unknown or unsupported by WindowsMediaFoundation ... LogoIntro.mp4`. 영상(브라우저에서 만든 MP4)에 색 정보 표시가 없어서 Windows가 기본값으로 읽는다는 뜻이고, 재생은 정상이며 Unity 캡처의 색도 시안과 같아 보였다.
 - **아직 없음:** 로비에서 이름 바꾸기(지금은 인트로 판 Shift+클릭), 설정의 "번쩍임 줄이기·흔들림 줄이기"는 영상인 시작 로고에는 적용되지 않음, 로고 영상은 16:9 밖 화면에서 가장자리를 잘라 채움. 경기 씬 ↔ 로비는 예전처럼 로딩 화면(§8)·바로 전환이다(이번 전환은 인트로·이름·로비 사이만).
