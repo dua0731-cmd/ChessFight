@@ -28,6 +28,9 @@ namespace ChessFight.RagdollLab
         LineRenderer line1, line2;
         readonly List<Transform> pegs = new List<Transform>();
 
+        public Vector3 Center => center;
+        public bool Armed => armed;
+
         public static SkillTripwire Spawn(RagdollPawn owner, Vector3 at, Vector3 forward, PawnRushSkillParams skills)
         {
             // One wire per bishop: a new one replaces the old.
