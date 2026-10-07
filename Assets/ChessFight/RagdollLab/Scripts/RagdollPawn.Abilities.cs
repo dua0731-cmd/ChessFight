@@ -34,7 +34,8 @@ namespace ChessFight.RagdollLab
             {
                 case PieceKind.Knight:
                     if (input.ability) KnightJump(p);
-                    Stomp(p);
+                    // With the Pawn Rush skills on, the bent leap's own head stomp (a knockdown) takes over.
+                    if (PawnRushSkills == null) Stomp(p);
                     break;
             }
             // The marker stays until the knight is down again (or anything else took it off the arc).

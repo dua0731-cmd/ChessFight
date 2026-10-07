@@ -122,7 +122,8 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The speed the pawn is running at right now, between moveSpeed and sprintSpeed.</summary>
         public float TopSpeed => Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
-                                 * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move;
+                                 * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move
+                                 * SkillSpeedScale;   // 1 unless a Pawn Rush pawn's help is speeding it up
 
         /// <summary>Pawns this one has floored with a dive.</summary>
         public int Tackles { get; private set; }
@@ -620,6 +621,7 @@ namespace ChessFight.RagdollLab
             UpdateState(p, dt);
             UpdateStiffness(p, dt);
 
+            PreSkills();   // Pawn Rush skills only (off unless PawnRushSkills is set)
             Jump(p, dt);
             Mantle(dt);
             UpdateRope(p, dt);
@@ -628,6 +630,7 @@ namespace ChessFight.RagdollLab
             Locomotion(p, dt);
             Struggle(p, dt);
             UpdateAbilities(p, dt);
+            UpdateSkills(dt);   // Pawn Rush skills only
             UpdateHook(p, dt);
             Shove(p);
             UpdateStamina(p, dt);
@@ -2973,6 +2976,10 @@ namespace ChessFight.RagdollLab
                 normal = contact.normal;
             }
 
+            // A Pawn Rush skill moving a pawn into others decides what that contact does (a push or a
+            // knockdown by its own rules); a wall ends a dash without flooring the dasher.
+            if (other != null && (SkillShielded || other.SkillShielded)) return;
+            if (other == null && dashing && Mathf.Abs(normal.y) < 0.6f) return;
             if (Diving && other != null)
             {
                 // Slide tackle. A diver is already on the floor, so it is never knocked down by the
@@ -3123,6 +3130,7 @@ namespace ChessFight.RagdollLab
             ropeTopping = false;
             squashTimer = squashImmune = staggerTimer = 0f;
             ClearAbilities();
+            ClearSkills();
             surfaceVel = climbSurfaceVel = Vector3.zero;
             groundCollider = climbCollider = null;
             groundSurface = climbSurface = null;
