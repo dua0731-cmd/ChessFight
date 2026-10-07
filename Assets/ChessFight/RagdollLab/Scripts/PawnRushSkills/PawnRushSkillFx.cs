@@ -222,7 +222,7 @@ namespace ChessFight.RagdollLab
             {
                 if (!QueenCharging(q) || age > windup + 0.1f) return false;
                 float squeeze = Mathf.Lerp(outer, 0.2f, Mathf.Clamp01(age / windup));
-                for (rise += dt * 220f; rise >= 1f; rise -= 1f)
+                for (rise += dt * 320f; rise >= 1f; rise -= 1f)
                 {
                     float pick = Random.value;
                     RingEmber(floor, pick < 0.45f ? outer : pick < 0.75f ? inner : squeeze, Gold);
@@ -284,7 +284,7 @@ namespace ChessFight.RagdollLab
             {
                 if (age > 0.4f) return false;
                 float rIn = Mathf.Lerp(0.2f, inner, EaseOut(age / 0.15f)), rOut = Mathf.Lerp(0.3f, outer, EaseOut(age / 0.3f));
-                for (due += dt * 300f; due >= 1f; due -= 1f)
+                for (due += dt * 360f; due >= 1f; due -= 1f)
                     RingEmber(c, Random.value < 0.4f ? rIn : rOut, Gold);
                 return true;
             }));
@@ -479,13 +479,13 @@ namespace ChessFight.RagdollLab
                 at = set.Pop(e.at);
                 square = set.square;
             }
-            // The pull is the moment now (R81): a smaller pillar than before, so the stretched line shows.
-            Pillar(at, square * 0.3f, 1.4f, Magenta, 0.35f);
+            // The pull is the moment now (R81, R82): a small pillar and flash, so the stretched line and its twang show.
+            Pillar(at, square * 0.2f, 1f, Magenta, 0.3f);
             SparkBurst(at + Vector3.up * 0.2f, 18, Magenta, Vector3.up, 50f, 2f, 6f, 0.5f, 0.05f);
             MoteBurst(at, 20, Violet, square * 0.4f, 2.2f, 0.6f, 1f);
-            Halo(at + Vector3.up * 0.4f, 1.1f, Violet, 0.2f);
+            Halo(at + Vector3.up * 0.4f, 0.75f, Violet, 0.18f);
             // No shell on the piece and a dim light: up close they washed the moment of the pull out white.
-            Flare(at + Vector3.up * 0.6f, Violet, 0.6f, 4f, 0.3f);
+            Flare(at + Vector3.up * 0.6f, Violet, 0.45f, 3.5f, 0.25f);
         }
 
         // ---- Knight B: a trail of light through the leap; a ring where it turns; homing in, crackling lightning;
@@ -925,8 +925,9 @@ namespace ChessFight.RagdollLab
                         else Rod(wire, mid, b);
                         tension = tripwire.Tension(line);
                     }
-                    // Pulled taut, a line glows white-hot along its length.
-                    wire.color = Hdr(Color.Lerp(Color.Lerp(Violet, Magenta, 0.5f), Color.white, 0.35f * tension), 3f + 1.5f * tension);
+                    // Pulled taut, a line glows a little hotter along its length (only a little since R82: pulled far
+                    // out it bloomed the stretched line away).
+                    wire.color = Hdr(Color.Lerp(Color.Lerp(Violet, Magenta, 0.5f), Color.white, 0.2f * tension), 3f + 0.5f * tension);
                     wire.bright = wireBright;
                     wire.Step(dt, cam);
                 }

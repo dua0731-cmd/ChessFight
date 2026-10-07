@@ -146,7 +146,7 @@ namespace ChessFight.RagdollLab
                         float dashes = 1f - Smooth(0.31f - aa * 3f, 0.31f + aa * 3f, Mathf.Abs(dash - 0.5f));
                         float ticks = Ticks(r, angle, 0.78f, 0.88f, 0.012f, aa);
                         line = Mathf.Max(Mathf.Max(Band(r, R, 0.008f, aa) * 0.35f, Band(r, R, 0.016f, aa) * dashes), ticks);
-                        shade = 0.3f * Mathf.Max(Band(r, R, 0.04f, 0.03f), Ticks(r, angle, 0.75f, 0.91f, 0.035f, 0.02f));
+                        shade = 0.42f * Mathf.Max(Band(r, R, 0.04f, 0.03f), Ticks(r, angle, 0.75f, 0.91f, 0.035f, 0.02f));
                     }
                     else
                     {
@@ -155,8 +155,8 @@ namespace ChessFight.RagdollLab
                         float arcs = 1f - Smooth(0.333f - aa * 2f, 0.333f + aa * 2f, Mathf.Abs(arc - 0.5f));
                         float dot = 1f - Smooth(0.06f - aa, 0.06f + aa, r);
                         line = Mathf.Max(Mathf.Max(Band(r, R, 0.035f, aa) * arcs, Band(r, 0.55f, 0.012f, aa) * 0.4f), dot * 0.9f);
-                        float shadow = 0.2f * (1f - Smooth(0.15f, 0.75f, r));
-                        shade = Mathf.Max(shadow, 0.3f * Mathf.Max(Band(r, R, 0.07f, 0.03f) * arcs, 1f - Smooth(0.08f, 0.13f, r)));
+                        float shadow = 0.24f * (1f - Smooth(0.15f, 0.75f, r));
+                        shade = Mathf.Max(shadow, 0.42f * Mathf.Max(Band(r, R, 0.07f, 0.03f) * arcs, 1f - Smooth(0.08f, 0.13f, r)));
                     }
                     // White over the dark edge.
                     float alpha = line + shade * (1f - line);

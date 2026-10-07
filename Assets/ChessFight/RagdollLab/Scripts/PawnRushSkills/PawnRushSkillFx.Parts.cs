@@ -86,9 +86,9 @@ namespace ChessFight.RagdollLab
             smoke.ps.GetComponent<ParticleSystemRenderer>().sortMode = ParticleSystemSortMode.Distance;
             // Embers (R82, off the queen's rings): little lights hot enough for the bloom that float up and waver
             // like smoke. Wisps: soft smoke that glows, rising with them.
-            embers = new Emitter(root, "Embers", Glow(texDot, opacity: 0.45f, color: 2.5f), stretch: false, gravity: -0.06f, drag: 1.4f, collide: false, noise: 0.9f,
+            embers = new Emitter(root, "Embers", Glow(texDot, opacity: 0.75f, color: 2.4f), stretch: false, gravity: -0.06f, drag: 1.4f, collide: false, noise: 0.9f,
                 fade: new[] { 0f, 0f, 0.1f, 1f, 0.6f, 0.8f, 1f, 0f }, size: new[] { 0f, 0.4f, 0.15f, 1f, 1f, 0.2f });
-            wisps = new Emitter(root, "Wisps", Glow(texSmoke, opacity: 0.25f, color: 1.3f, soft: 0.4f), stretch: false, gravity: -0.04f, drag: 1.8f, collide: false, noise: 0.5f,
+            wisps = new Emitter(root, "Wisps", Glow(texSmoke, opacity: 0.45f, color: 1.25f, soft: 0.4f), stretch: false, gravity: -0.04f, drag: 1.8f, collide: false, noise: 0.5f,
                 fade: new[] { 0f, 0f, 0.2f, 0.8f, 1f, 0f }, size: new[] { 0f, 0.4f, 1f, 1.6f });
             wisps.ps.GetComponent<ParticleSystemRenderer>().sortMode = ParticleSystemSortMode.Distance;
         }
@@ -578,11 +578,11 @@ namespace ChessFight.RagdollLab
             float a = Random.Range(0f, Mathf.PI * 2f);
             var dir = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
             Vector3 at = c + dir * radius + Vector3.up * 0.05f;
-            embers.Emit(at, Vector3.up * Random.Range(0.6f, 1.6f) + dir * Random.Range(-0.15f, 0.25f), Random.Range(0.035f, 0.07f),
-                Random.Range(0.6f, 1.1f), Tint(color, Random.value * 0.5f));
-            if (Random.value < 0.3f)
-                wisps.Emit(at + Vector3.up * 0.1f, Vector3.up * Random.Range(0.3f, 0.7f), Random.Range(0.25f, 0.45f), Random.Range(0.6f, 1f),
-                    Tint(color, 0.3f + Random.value * 0.3f), Random.Range(-40f, 40f));
+            embers.Emit(at, Vector3.up * Random.Range(0.6f, 1.6f) + dir * Random.Range(-0.15f, 0.25f), Random.Range(0.06f, 0.11f),
+                Random.Range(0.7f, 1.2f), Tint(color, Random.value * 0.35f));
+            if (Random.value < 0.35f)
+                wisps.Emit(at + Vector3.up * 0.1f, Vector3.up * Random.Range(0.3f, 0.7f), Random.Range(0.3f, 0.55f), Random.Range(0.6f, 1f),
+                    Tint(color, 0.1f + Random.value * 0.2f), Random.Range(-40f, 40f));
         }
 
         /// <summary>A ring of smoke rolling out along the floor from <paramref name="at"/>.</summary>

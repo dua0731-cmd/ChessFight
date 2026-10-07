@@ -42,9 +42,13 @@ namespace ChessFight.RagdollLab
 
         // How a line gives (R81, R82): it stretches up to MaxStretch after the legs it is caught on; a running enemy
         // trips once it is pulled TripStretch out or has been held TripHold; a line let go twangs for TwangTime.
-        const float MaxStretch = 0.9f, TripStretch = 0.6f, TripHold = 0.25f, TwangTime = 0.5f;
-        // The stretched line's pull on the legs it holds back (m/s² per metre stretched); the hips get some of it.
-        const float Spring = 40f, HipsShare = 0.4f;
+        const float MaxStretch = 0.9f, TripStretch = 0.75f, TripHold = 0.35f, TwangTime = 0.5f;
+        // The stretched line's pull on the legs it holds back (m/s² per metre stretched); the hips get most of it, so
+        // a runner is slowed while the line stretches instead of tearing through it in a few frames.
+        const float Spring = 55f, HipsShare = 0.7f;
+        /// <summary>The line's own colour: white with a little of the bishop's violet, not the side's blue (R82; the
+        /// aim lost its blue in R80).</summary>
+        static readonly Color Wire = new Color(0.96f, 0.9f, 1f);
         // Anyone else pulls a line out only going through it at least this fast (a piece lying on it does not), and
         // not again for a moment after it slipped off them.
         const float PassSpeed = 0.8f, Rest = 0.6f;
@@ -70,6 +74,8 @@ namespace ChessFight.RagdollLab
         /// <summary>How many times a line has been pulled out and let go, and how far the last one was (m).</summary>
         public int Pulls { get; private set; }
         public float LastPull { get; private set; }
+        /// <summary>How long the last line let go had held the legs (s).</summary>
+        public float LastHold { get; private set; }
 
         /// <summary>One of the two lines as it is drawn now (at shin height): its ends and the point it is pulled out
         /// at (by the legs it is caught on, or twanging back after it let go; R81, R82). Straight, the middle.</summary>
@@ -142,7 +148,7 @@ namespace ChessFight.RagdollLab
             Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * forward, d2 = Quaternion.Euler(0f, -45f, 0f) * forward;
             a1 = at - d1 * half; b1 = at + d1 * half;
             a2 = at - d2 * half; b2 = at + d2 * half;
-            Color c = SkillMarks.TeamColor(team);
+            Color c = Wire;
             line1 = SkillMarks.Line(transform, "Line 1");
             line2 = SkillMarks.Line(transform, "Line 2");
             pegFoot = new[] { a1, b1, a2, b2 };
@@ -206,8 +212,7 @@ namespace ChessFight.RagdollLab
             }
             // The glint running along the lines.
             float glint = 0.6f + 0.4f * Mathf.Sin(Time.time * 9f);
-            Color c = Color.Lerp(SkillMarks.TeamColor(team), Color.white, 0.35f);
-            Draw(new Color(c.r, c.g, c.b, glint), 0.035f);
+            Draw(new Color(Wire.r, Wire.g, Wire.b, glint), 0.035f);
         }
 
         void FixedUpdate()
@@ -336,6 +341,7 @@ namespace ChessFight.RagdollLab
             if (p.by != null) restUntil[p.by] = age + Rest;
             Pulls++;
             LastPull = p.most;
+            LastHold = age - p.caughtAt;
             p.released = Mathf.Max(0f, p.depth);
             p.by = null;
             p.letGoAt = age;
@@ -350,10 +356,11 @@ namespace ChessFight.RagdollLab
             string result = owner != null ? owner.SkillTrip(pawn, push) : "-";
             foreach (var id in Legs)
                 pawn.bodies[(int)id].linearVelocity += -runDir * 4.5f + Vector3.down * 0.8f;
-            float stretched = 0f;
+            float stretched = 0f, held = 0f;
             if (line >= 0)
             {
                 stretched = pulls[line].most;
+                held = age - pulls[line].caughtAt;
                 LetGo(line);
                 restUntil[pawn] = age + TwangTime + Rest;
             }
@@ -361,7 +368,7 @@ namespace ChessFight.RagdollLab
             Vector3 trippedAt = pawn.Hips.position;
             trippedAt.y = center.y;
             RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = SkillFxKind.BishopTrip, by = owner, target = pawn, at = trippedAt, dir = runDir, count = trips, source = this });
-            Report($"{pawn.DisplayName} 걸림 ({trips}/{skills.bishopTrips}) → {result}, 줄이 {stretched:0.00} m 늘어났다 다리를 잡아채고 튕김");
+            Report($"{pawn.DisplayName} 걸림 ({trips}/{skills.bishopTrips}) → {result}, 줄이 {held:0.00}초 동안 {stretched:0.00} m 늘어났다 다리를 잡아채고 튕김");
             if (trips < skills.bishopTrips) return false;
             spent = true;
             snapAt = age + TwangTime;
