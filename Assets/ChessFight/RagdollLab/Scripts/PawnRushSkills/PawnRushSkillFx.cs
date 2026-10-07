@@ -869,7 +869,8 @@ namespace ChessFight.RagdollLab
                     float pop = 0f;
                     if (popped.TryGetValue(i, out float when) && age - when < 0.5f) pop = 1f - (age - when) / 0.5f;
                     float bright = hidden ? 0f : (ghost ? 0.55f + 0.1f * Mathf.Sin(age * 5f) : on * pulse * fade);
-                    tile.color = Hdr(Color.Lerp(Violet, Magenta, pop), 1.5f + 2.5f * pop);
+                    // A popped square turns pink rather than white-hot (it washed the pull out up close, R81).
+                    tile.color = Hdr(Color.Lerp(Violet, Magenta, pop), 1.5f + 0.7f * pop);
                     tile.bright = bright;
                     tile.Step(dt, cam);
                     if (box != null)
@@ -877,7 +878,7 @@ namespace ChessFight.RagdollLab
                         float lift = 0.22f * Mathf.Sin(Mathf.Clamp01(pop) * Mathf.PI);
                         box.at = at + Vector3.up * lift;
                         box.scale = new Vector3(square * 0.9f, (0.45f + 0.5f * pop) * EaseOut(on), square * 0.9f);
-                        box.color = Hdr(Color.Lerp(Violet, Magenta, 0.25f + 0.75f * pop), 1.3f + 2f * pop);
+                        box.color = Hdr(Color.Lerp(Violet, Magenta, 0.25f + 0.75f * pop), 1.3f + 0.6f * pop);
                         box.bright = bright;
                         box.Step(dt, cam);
                     }
