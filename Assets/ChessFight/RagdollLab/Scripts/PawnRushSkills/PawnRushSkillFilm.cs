@@ -38,7 +38,7 @@ namespace ChessFight.RagdollLab
             new Shot { run = "queen", title = "퀸 · 금색 체스말", note = "작은 금색 체스말이 모여들었다가 팡 터짐 · 1.5 m 넘어짐 · 3 m 밀림",
                 eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.6f, -7.2f), lead = 0.5f },
             new Shot { run = "rook-air", title = "룩 · 공중 돌진", note = "공중에서 F → 마우스 위아래로 조준(반투명 선) → 좌클릭: 위로 / 아래로 내리꽂기",
-                eye = new Vector3(0.4f, 2.3f, -10.6f), look = new Vector3(-6f, 1.8f, -9.4f), lead = 0.5f },
+                eye = new Vector3(1.2f, 2.9f, -10.8f), look = new Vector3(-6f, 2.5f, -9.4f), lead = 0.5f },
             new Shot { run = "rook-cluster", title = "룩 · 반투명 조준선", note = "파란 선 대신 반투명 흰 선 → 좌클릭 → 4명 뭉치 돌진",
                 eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.35f },
             new Shot { run = "bishop-trip", title = "비숍 · 설치 조준", note = "파란 선 없음 · 흰 선을 더 굵게(반투명 유지) → 설치 → 걸림",
