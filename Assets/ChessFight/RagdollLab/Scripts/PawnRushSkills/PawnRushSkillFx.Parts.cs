@@ -65,7 +65,7 @@ namespace ChessFight.RagdollLab
 
             // Sparks: white-hot (above the bloom threshold) with a coloured glow. Motes: coloured, covering the floor
             // behind them so the colour shows on a light floor. Smoke: paint.
-            sparks = new Emitter(root, "Sparks", Glow(texDot, opacity: 0.5f, color: 3f), stretch: true, gravity: 1.4f, drag: 0.6f, collide: true, noise: 0f,
+            sparks = new Emitter(root, "Sparks", Glow(texDot, opacity: 0.5f, color: 2.4f), stretch: true, gravity: 1.4f, drag: 0.6f, collide: true, noise: 0f,
                 fade: new[] { 0f, 1f, 0.7f, 1f, 1f, 0f }, size: new[] { 0f, 1f, 1f, 0.3f });
             motes = new Emitter(root, "Motes", Glow(texDot, opacity: 0.9f, color: 1.15f), stretch: false, gravity: -0.05f, drag: 1.2f, collide: false, noise: 0.6f,
                 fade: new[] { 0f, 0f, 0.15f, 1f, 1f, 0f }, size: new[] { 0f, 0.6f, 0.2f, 1f, 1f, 0.2f });

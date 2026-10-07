@@ -190,7 +190,7 @@ namespace ChessFight.RagdollLab
             Add(new Shape(root, "Queen circle", meshQuad, matCircle)
             {
                 life = windup + 0.35f,
-                color = Hdr(GoldDeep, 1.3f),
+                color = Hdr(Gold, 1.25f),
                 paint = 0.9f,
                 animate = (s, t) =>
                 {
@@ -210,7 +210,7 @@ namespace ChessFight.RagdollLab
                 animate = (s, t) =>
                 {
                     if (q != null) s.at = ChestOf(q);
-                    s.scale = Vector3.one * (0.5f + 1.4f * t);
+                    s.scale = Vector3.one * (0.4f + 0.9f * t);
                     s.bright = t;
                 },
             });
@@ -242,16 +242,16 @@ namespace ChessFight.RagdollLab
         {
             Vector3 c = Ground(e.at);
             float inner = Params != null ? Params.queenInner : 1.5f, outer = e.size > 0f ? e.size : 3f;
-            Flare(c + Vector3.up * 1.2f, Gold, 1.6f, outer * 2.6f, 0.55f);
-            Halo(c + Vector3.up * 1f, 3.2f, Gold, 0.28f);
-            Shell(c + Vector3.up * 0.9f, 0.2f, 1.7f, Gold, 0.3f);
-            Pillar(c, 0.6f, 5.5f, Gold, 0.55f);
+            Flare(c + Vector3.up * 1.2f, Gold, 1.2f, outer * 2.6f, 0.55f);
+            Halo(c + Vector3.up * 1f, 1.8f, Gold, 0.25f);
+            Shell(c + Vector3.up * 0.9f, 0.2f, 1.2f, Gold, 0.28f);
+            Pillar(c, 0.45f, 5.5f, Gold, 0.55f);
             Wall(c, 0.2f, inner, 0.18f, 1.1f, 0.35f, GoldDeep, 0.55f, 0.85f);
             Wall(c, 0.3f, outer, 0.36f, 0.6f, 0.15f, GoldDeep, 0.85f, 0.55f);
-            GroundRing(c, 0.2f, inner, 0.18f, Gold, 0.6f, 4f);
-            GroundRing(c, 0.3f, outer, 0.36f, Gold, 0.9f, 3f);
-            GroundGlow(c, inner * 1.3f, GoldDeep, 0.6f);
-            for (int i = 0; i < 56; i++)
+            GroundRing(c, 0.2f, inner, 0.18f, Gold, 0.6f, 2.6f);
+            GroundRing(c, 0.3f, outer, 0.36f, Gold, 0.9f, 2.2f);
+            GroundGlow(c, inner * 0.9f, GoldDeep, 0.6f);
+            for (int i = 0; i < 40; i++)
             {
                 float a = Random.Range(0f, Mathf.PI * 2f);
                 var dir = new Vector3(Mathf.Cos(a), Random.Range(0.05f, 0.5f), Mathf.Sin(a)).normalized;
@@ -282,7 +282,7 @@ namespace ChessFight.RagdollLab
         {
             Vector3? Where() => RookDashing(r) ? r.Hips.position : (Vector3?)null;
             anims.Add(new Streak(root, matTrail, Hdr(Fire, 1.2f), 0.95f, 0.28f, Where) { paint = 0.8f });
-            anims.Add(new Streak(root, matTrail, Hdr(FireCore, 4f), 0.3f, 0.16f, Where) { paint = 0.3f });
+            anims.Add(new Streak(root, matTrail, Hdr(FireCore, 3f), 0.3f, 0.16f, Where) { paint = 0.3f });
             Vector3 heading = Flat(r.transform.forward).sqrMagnitude > 0.01f ? Flat(r.transform.forward).normalized : Vector3.forward;
             float endedAt = -1f;
             Add(new Shape(root, "Rook bow", meshSphere, matShell)
@@ -347,7 +347,7 @@ namespace ChessFight.RagdollLab
             SonicRing(e.at, d, 0.3f, 2.2f, Fire, 0.3f);
             SparkBurst(e.at, 40, FireCore, d + Vector3.up * 0.4f, 70f, 4f, 11f, 0.6f, 0.07f);
             Wall(g, 0.3f, 1.3f, 0.2f, 0.7f, 0.15f, Fire, 0.5f, 0.85f);
-            GroundRing(g, 0.3f, 1.3f, 0.2f, Fire, 0.55f, 4f);
+            GroundRing(g, 0.3f, 1.3f, 0.2f, Fire, 0.55f, 2.6f);
             DustRing(g, 18, 0.4f, 3.5f, Dust, 0.75f, 0.9f);
             Halo(e.at, 2.2f, Fire, 0.24f);
             Flare(e.at, Fire, 1.8f, 7f, 0.4f);
@@ -449,7 +449,7 @@ namespace ChessFight.RagdollLab
         {
             Vector3? Where() => KnightLeaping(k) ? k.Hips.position : (Vector3?)null;
             anims.Add(new Streak(root, matTrail, Hdr(Sky, 1.2f), 0.55f, 0.3f, Where) { paint = 0.8f });
-            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 3.5f), 0.18f, 0.2f, Where) { paint = 0.3f });
+            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 3f), 0.18f, 0.2f, Where) { paint = 0.3f });
             float trail = 0f;
             anims.Add(new Ongoing((age, dt) =>
             {
@@ -474,8 +474,8 @@ namespace ChessFight.RagdollLab
         {
             var k = e.by;
             if (k == null) return;
-            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 4f), 0.3f, 0.2f, () => KnightLeaping(k) ? k.Hips.position : (Vector3?)null) { paint = 0.3f });
-            anims.Add(new Bolts(root, matBolt, 3, () => ChestOf(k), Hdr(SkyCore, 4.5f), 0.7f, 0.35f));
+            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 3f), 0.3f, 0.2f, () => KnightLeaping(k) ? k.Hips.position : (Vector3?)null) { paint = 0.3f });
+            anims.Add(new Bolts(root, matBolt, 3, () => ChestOf(k), Hdr(SkyCore, 3.2f), 0.7f, 0.35f));
             Halo(ChestOf(k), 1.2f, Sky, 0.2f);
         }
 
@@ -491,7 +491,7 @@ namespace ChessFight.RagdollLab
             {
                 life = 0.25f,
                 at = at,
-                color = Hdr(SkyCore, 5f),
+                color = Hdr(SkyCore, 3.2f),
                 paint = 0.25f,
                 animate = (s, t) =>
                 {
@@ -500,11 +500,11 @@ namespace ChessFight.RagdollLab
                     s.bright = 1f - t;
                 },
             });
-            anims.Add(new Bolts(root, matBolt, 6, () => at, Hdr(SkyCore, 4.5f), 1.1f, 0.35f));
+            anims.Add(new Bolts(root, matBolt, 6, () => at, Hdr(SkyCore, 3.2f), 1.1f, 0.35f));
             SparkBurst(at, 32, SkyCore, Vector3.up, 70f, 3f, 8f, 0.55f, 0.06f);
             Shell(at, 0.15f, 0.9f, Sky, 0.2f);
             Halo(at, 1.8f, Sky, 0.22f);
-            if (e.target != null) GroundRing(Ground(e.target.Hips.position), 0.2f, 1.2f, 0.2f, Sky, 0.5f, 3.5f);
+            if (e.target != null) GroundRing(Ground(e.target.Hips.position), 0.2f, 1.2f, 0.2f, Sky, 0.5f, 2.6f);
             Flare(at, Sky, 1.5f, 6f, 0.4f);
             if (e.target != null) Daze(e.target, 0.45f, 1.8f);
             if (e.by != null) stompedAt[e.by] = Clock;
@@ -520,7 +520,7 @@ namespace ChessFight.RagdollLab
             }
             float radius = e.size > 0f ? e.size : 1.5f;
             Wall(g, 0.2f, radius, 0.2f, 0.35f, 0.08f, Sky, 0.45f, 0.7f);
-            GroundRing(g, 0.2f, radius, 0.22f, Sky, 0.5f, 3f);
+            GroundRing(g, 0.2f, radius, 0.22f, Sky, 0.5f, 2.4f);
             DustRing(g, 14, 0.35f, 3.2f, Dust, 0.6f, 0.8f);
             Flare(g + Vector3.up * 0.5f, Sky, 0.9f, 4f, 0.3f);
         }
@@ -543,7 +543,7 @@ namespace ChessFight.RagdollLab
                 {
                     life = delay + life,
                     billboard = true,
-                    color = Hdr(SkyCore, 3.5f),
+                    color = Hdr(SkyCore, 2.6f),
                     paint = 0.5f,
                     animate = (s, t) =>
                     {
@@ -607,7 +607,7 @@ namespace ChessFight.RagdollLab
         /// a white-hot core inside it.</summary>
         void Pillar(Vector3 c, float width, float height, Color color, float life)
         {
-            foreach (var (k, light, paint) in new[] { (1f, 1.2f, 0.7f), (0.3f, 5f, 0.2f) })
+            foreach (var (k, light, paint) in new[] { (1f, 1.2f, 0.75f), (0.3f, 3.2f, 0.25f) })
                 Add(new Shape(root, "Pillar of light", meshCylinder, matPillar)
                 {
                     life = life,
@@ -654,7 +654,7 @@ namespace ChessFight.RagdollLab
                 life = life,
                 at = at,
                 rotation = rotation,
-                color = Hdr(color, 3.2f),
+                color = Hdr(color, 2.6f),
                 paint = 0.5f,
                 animate = (s, t) =>
                 {
@@ -672,7 +672,7 @@ namespace ChessFight.RagdollLab
             {
                 life = life,
                 at = at,
-                color = Hdr(color, 1.8f),
+                color = Hdr(color, 1.4f),
                 paint = 0.6f,
                 animate = (s, t) =>
                 {
@@ -837,7 +837,7 @@ namespace ChessFight.RagdollLab
                 float wireBright = (armed ? 1f : 0.4f) * (0.8f + 0.2f * Mathf.Sin(age * 9f)) * fade;
                 foreach (var wire in wires)
                 {
-                    wire.color = Hdr(Color.Lerp(Violet, Magenta, 0.5f), 4.5f);
+                    wire.color = Hdr(Color.Lerp(Violet, Magenta, 0.5f), 3f);
                     wire.bright = wireBright;
                     wire.Step(dt, cam);
                 }

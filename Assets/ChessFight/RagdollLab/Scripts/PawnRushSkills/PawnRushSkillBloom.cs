@@ -15,8 +15,8 @@ namespace ChessFight.RagdollLab
     {
         public float threshold = 2.2f;
         [Range(0f, 1f)] public float softKnee = 0.3f;
-        public float intensity = 1f;
-        [Range(1, 8)] public int steps = 6;
+        public float intensity = 0.55f;
+        [Range(1, 8)] public int steps = 5;
 
         static Material material;
         readonly RenderTexture[] copies = new RenderTexture[8];
