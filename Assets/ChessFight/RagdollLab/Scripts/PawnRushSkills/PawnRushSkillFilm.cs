@@ -36,11 +36,11 @@ namespace ChessFight.RagdollLab
         static readonly Shot[] Shots =
         {
             new Shot { run = "rook-cluster", title = "룩 · 직선 돌파", note = "F로 조준 → 마우스로 방향 → 좌클릭",
-                eye = new Vector3(-1.8f, 4.0f, -14.8f), look = new Vector3(-6f, 0f, -9.2f), lead = 0.35f },
+                eye = new Vector3(-2.6f, 3.4f, -13.6f), look = new Vector3(-6f, 0.2f, -9.3f), lead = 0.35f },
             new Shot { run = "bishop-trip", title = "비숍 · 교차 밧줄", note = "F로 조준 → 반투명 X가 마우스를 따라감 (근거리 4.5 m) → 좌클릭",
                 eye = new Vector3(5.5f, 5.8f, -13.5f), look = new Vector3(-0.2f, 0f, -8.6f), lead = 0.45f },
             new Shot { run = "knight-turn", title = "나이트 · 주위에 적 없음", note = "F 도약 → 공중에서 F + 방향 = 90° 꺾기",
-                eye = new Vector3(-4f, 3.6f, -16.5f), look = new Vector3(1.8f, 0.8f, -10.6f), lead = 0.45f },
+                eye = new Vector3(-1f, 6.5f, -16f), look = new Vector3(1.6f, 0.3f, -10.8f), lead = 0.45f },
             new Shot { run = "knight-stomp", title = "나이트 · 적 감지", note = "F 도약 → 적에 표시 → 공중에서 F = 자동으로 머리 찍고 착지",
                 eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
         };
