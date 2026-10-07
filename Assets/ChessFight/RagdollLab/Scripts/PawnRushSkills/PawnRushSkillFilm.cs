@@ -93,6 +93,8 @@ namespace ChessFight.RagdollLab
             Directory.CreateDirectory(stills);
 
             PawnRushSkillFx.ViewOverride = cam;
+            // Keys pressed in the Game view while it films would play into the takes.
+            if (game != null) game.SuppressInput = true;
             Time.captureFramerate = fps;
             LabCamera.GameTimeClock = true;
             Frames = 0;
@@ -140,6 +142,7 @@ namespace ChessFight.RagdollLab
             }
             RagdollPawn.SkillFx -= OnSkillFx;
             Ended?.Invoke();
+            if (game != null) game.SuppressInput = false;
             Time.captureFramerate = 0;
             LabCamera.GameTimeClock = false;
             PawnRushSkillFx.ViewOverride = null;
