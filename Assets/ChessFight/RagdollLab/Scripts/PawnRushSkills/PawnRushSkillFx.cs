@@ -141,7 +141,7 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.06f);
             StarFlash(e.at, Color.white, 0.45f + 0.1f * i);
             Debris(e.at, 6 + 3 * i, Stone, 2.6f, 2.4f, 0.07f);
-            Word(i.ToString(), HeadOf(e.target) + Vector3.up * 0.45f, Color.white, 0.38f, 0.6f);
+            Word(i.ToString(), HeadOf(e.target) + Vector3.up * 0.5f, Color.white, 0.5f, 0.7f);
         }
 
         void RookStop(SkillFxEvent e)
@@ -203,7 +203,7 @@ namespace ChessFight.RagdollLab
                 if (best != null) { best.popAt = Clock; at = best.at; }
             }
             Sparks(at + Vector3.up * 0.25f, BishopLight, 9, 0.7f, 0.3f);
-            Word("덜컥!", at + Vector3.up * 1.5f, BishopLight, 0.55f, 0.9f);
+            Word("덜컥!", at + Vector3.up * 1.0f, BishopLight, 0.55f, 0.9f);
         }
 
         // Knight B: the piece stomped on squashes flat and springs back, a long stop (0.09 s), "뿅!", and the
@@ -215,7 +215,7 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.07f);
             StarFlash(e.at, Color.white, 0.75f);
             Sparks(e.at, KnightSky, 12, 0.9f, 0.32f);
-            Word("뿅!", e.at + Vector3.up * 0.75f, KnightSky, 0.75f, 0.95f);
+            Word("뿅!", e.at + Vector3.up * 0.55f, KnightSky, 0.7f, 0.95f);
             StartSquash(e.target);
             Dizzy(e.target, 0.45f, 1.8f);
             if (e.by != null) stompedAt[e.by] = Clock;
@@ -790,14 +790,17 @@ namespace ChessFight.RagdollLab
             public int axis;
             public float born;
 
-            /// <summary>Flat at once, then a springy way back (0.6 s). False once it is over.</summary>
+            /// <summary>Flat at once, held a moment, then a springy way back (0.8 s in all). False once it is over.</summary>
             public bool Apply(float clock)
             {
                 if (bone == null) return false;
                 if (bone.position == lastSet) bone.position -= lastOffset;   // nothing re-posed it since last frame
                 float t = clock - born;
-                if (t > 0.65f) { Restore(); return false; }
-                float flat = t < 0.06f ? 0.55f * (t / 0.06f) : 0.55f * Mathf.Exp(-(t - 0.06f) * 7f) * Mathf.Cos((t - 0.06f) * 24f);
+                if (t > 0.8f) { Restore(); return false; }
+                const float down = 0.05f, hold = 0.18f;
+                float flat = t < down ? 0.58f * (t / down)
+                    : t < hold ? 0.58f
+                    : 0.58f * Mathf.Exp(-(t - hold) * 6f) * Mathf.Cos((t - hold) * 20f);
                 float sy = Mathf.Clamp(1f - flat, 0.4f, 1.35f), sx = 1f + (1f - sy) * 0.6f;
                 var s = baseScale;
                 for (int a = 0; a < 3; a++) s[a] *= a == axis ? sy : sx;
