@@ -580,6 +580,32 @@ public static class NetworkCoreTests
                 Check(Math.Abs(c.Now(12.04) - (200.0 + 0.04 * 1.15)) < 1e-9, "playback rate ignored");
                 c.Sample(double.NaN, 13.0, 1.0); Check(Math.Abs(c.Now(12.04) - (200.0 + 0.04 * 1.15)) < 1e-9, "NaN accepted");
                 c.Clear(); Check(!c.HasSample, "clear"); });
+            Test("Player name: two to twelve Hangul, Latin letters or digits, one space between words", () => {
+                Check(!PlayerNames.Check("", false).Ok && PlayerNames.Check("   ", true).Error == "", "empty says nothing");
+                Check(PlayerNames.Check("체스러버", false).Ok && PlayerNames.Check(" Knight 7 ", false).Ok, "plain names");
+                Check(PlayerNames.Check("룩", false).Error == "2자 이상", "too short");
+                Check(PlayerNames.Check("가나다라마바사아자차카타파", false).Error == "12자까지", "too long");
+                Check(PlayerNames.Check("룩!", false).Error == "한글·영어·숫자만" && PlayerNames.Check("<b>퀸</b>", false).Error == "한글·영어·숫자만", "symbols");
+                Check(PlayerNames.Check("철벽  룩", false).Error == "띄어쓰기는 한 칸", "double space"); });
+            Test("Player name: an unfinished syllable waits while typing, then reads as an error", () => {
+                var typing = PlayerNames.Check("체스ㄹ", true);
+                Check(!typing.Ok && typing.Error == "", "quiet while the IME composes");
+                Check(PlayerNames.Check("체스ㄹ", false).Error == "다 쓰지 않은 글자", "named once the field is left");
+                Check(PlayerNames.Check("ㅋㅋ", true).Error == "" && PlayerNames.Check("ㅋㅋ", false).Error == "다 쓰지 않은 글자", "jamo only"); });
+            Test("Player name: banned words anywhere, and gm only as a whole word", () => {
+                Check(PlayerNames.Check("바보 폰", false).Error == "쓸 수 없는 말" && PlayerNames.Check("운 영 자", false).Error == "쓸 수 없는 말", "Korean, spaces ignored");
+                Check(PlayerNames.Check("ADMIN1", false).Error == "쓸 수 없는 말" && PlayerNames.Check("gm King", false).Error == "쓸 수 없는 말", "Latin");
+                Check(PlayerNames.Check("Sigma", false).Ok && PlayerNames.Check("Ogm2", false).Ok, "gm inside a word is fine"); });
+            Test("Player name: tidy keeps one space, others' names show only when already valid and tidy", () => {
+                Check(PlayerNames.Tidy("  철벽   룩 ") == "철벽 룩" && PlayerNames.Tidy(null) == "", "tidy");
+                Check(PlayerNames.Showable("철벽 룩") && !PlayerNames.Showable(" 철벽 룩") && !PlayerNames.Showable("철벽  룩"), "untidy refused");
+                Check(!PlayerNames.Showable("") && !PlayerNames.Showable("관리자") && !PlayerNames.Showable("ㅋㅋ"), "invalid refused"); });
+            Test("Player name: suggestions are valid and never repeat the current name", () => {
+                foreach (var s in PlayerNames.Suggestions) Check(PlayerNames.Check(s, false).Ok, "suggestion " + s);
+                var random = new Random(7);
+                string current = PlayerNames.Suggestions[0];
+                for (int i = 0; i < 200; i++) { string next = PlayerNames.Suggest(current, random); Check(next != current, "repeated"); current = next; }
+                Check(PlayerNames.Suggest("체스러버", null) != "체스러버", "any other name"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

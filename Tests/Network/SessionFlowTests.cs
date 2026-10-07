@@ -354,6 +354,18 @@ public static class SessionFlowTests
                 var leaver=rivals[1];As(leaver,leaver.Cancel);Step(10);
                 Check(clients.Where(c=>c!=leaver).All(c=>c.Chat.In(ChatChannel.All).Any(e=>e.Notice&&e.Text=="Player "+leaver.Self+" 님이 경기를 나갔어요")),"a player leaving the match was not noted");
                 Check(!leaver.Chat.In(ChatChannel.All).Any()&&!leaver.Chat.In(ChatChannel.Team).Any(),"the old room's lines followed the leaver");});
+            Test("Chosen names travel with the party and the match room, Steam names otherwise",()=>{
+                Setup(2);JoinParty(1,0);var a=clients[0];var b=clients[1];
+                Check(b.Name(a.Self)=="Player "+a.Self,"no chosen name yet: the Steam name");
+                a.LocalName="철벽 룩";b.LocalName="관리자";Step();
+                Check(a.Name(a.Self)=="철벽 룩"&&b.Name(a.Self)=="철벽 룩","the chosen name did not reach the party");
+                Check(b.LocalName==""&&a.Name(b.Self)=="Player "+b.Self,"an invalid name was taken");
+                As(a,()=>a.FindMatch(true));Step(20);Check(a.Match!=0&&b.Match==a.Match,"setup: room");
+                Check(FakeSteam.Lobbies[a.Match].MemberData.TryGetValue((a.Self,"nick"),out var nick)&&nick=="철벽 룩","not published in the match room");
+                a.LocalName="번개 폰";Step();
+                Check(b.Name(a.Self)=="번개 폰","a changed name did not follow");
+                a.LocalName="";Step();
+                Check(b.Name(a.Self)=="Player "+a.Self,"clearing the name kept the old one");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

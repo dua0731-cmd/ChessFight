@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The scene transition (R84): a glossy lit chessboard closes in through a
+         king-shaped hole, a walnut card says where the game goes next, and the
+         board opens again through a knight-shaped hole on the next screen.
+         SceneTransition draws the board with its hole into tr-cover and the gold
+         edge into tr-edge, and looks up every name. -->
+    <ui:VisualElement name="tr-screen" class="tr-screen" picking-mode="Ignore">
+        <ui:VisualElement name="tr-cover" class="tr-cover" picking-mode="Ignore" />
+        <ui:VisualElement name="tr-edge" class="tr-edge" picking-mode="Ignore" />
+        <ui:VisualElement name="tr-dim" class="tr-dim" picking-mode="Ignore" />
+        <ui:VisualElement name="tr-card" class="tr-card" picking-mode="Ignore">
+            <ui:VisualElement name="tr-crown" class="tr-crown" picking-mode="Ignore" />
+            <ui:Label text="다음 화면" class="tr-next" picking-mode="Ignore" />
+            <ui:Label name="tr-title" class="tr-title" picking-mode="Ignore" />
+            <ui:VisualElement class="tr-bar" picking-mode="Ignore">
+                <ui:VisualElement name="tr-bar-fill" class="tr-bar-fill" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
