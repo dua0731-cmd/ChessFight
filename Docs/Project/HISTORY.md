@@ -7,7 +7,12 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R80 | 문서: Skills README(키 표·측정·R80 녹화), EFFECTS(퀸·룩·나이트 줄), REQUIREMENTS R80, VALIDATION, HANDOFF |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R81 | 문서: Skills README(키 표·측정·R81 녹화), EFFECTS, REQUIREMENTS R81, VALIDATION, HANDOFF |
+| `298ac5f` | 10-08 | R81 | 비숍 걸림: 튀어 오른 칸을 분홍으로만(하얗게 번짐) |
+| `c3724b4` | 10-08 | R81 | 비숍 걸림: 맞은 말의 빛 껍질 삭제, 조명 약하게 |
+| `ca670e7` | 10-08 | R81 | 비숍 걸림: 빛 기둥 작게, 팽팽한 줄 빛 약하게 |
+| `1c5b6e9` | 10-08 | R81 | 퀸 진짜 체스말 모양·작게·빙글빙글 돌다 팡, 룩 슈퍼맨 자세, 비숍 줄이 다리를 잡아당김(줄이 휘었다 튕김), 나이트 공중 도약, 시험 knight-air |
+| `123dc6d` | 10-08 | R80 | 문서: Skills README(키 표·측정·R80 녹화), EFFECTS(퀸·룩·나이트 줄), REQUIREMENTS R80, VALIDATION, HANDOFF |
 | `e1fbee7` | 10-08 | R80 | 녹화: 룩 공중 돌진 장면 카메라를 위로 |
 | `bdc1dd5` | 10-08 | R80 | 비숍 조준 흰 선 아래 옅은 남색 테두리, 룩 공중 장면 카메라 가깝게 |
 | `993c011` | 10-08 | R80 | 퀸 체스말 튀는 속도 줄임(카메라로 날아옴), 룩 공중 장면 옆에서 |
