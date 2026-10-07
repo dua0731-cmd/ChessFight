@@ -451,10 +451,11 @@ namespace ChessFight.RagdollLab
                 at = set.Pop(e.at);
                 square = set.square;
             }
-            Pillar(at, square * 0.42f, 2.4f, Magenta, 0.45f);
+            // The pull is the moment now (R81): a smaller pillar than before, so the stretched line shows.
+            Pillar(at, square * 0.3f, 1.4f, Magenta, 0.35f);
             SparkBurst(at + Vector3.up * 0.2f, 18, Magenta, Vector3.up, 50f, 2f, 6f, 0.5f, 0.05f);
-            MoteBurst(at, 26, Violet, square * 0.4f, 2.6f, 0.6f, 1f);
-            Halo(at + Vector3.up * 0.4f, 1.6f, Violet, 0.22f);
+            MoteBurst(at, 20, Violet, square * 0.4f, 2.2f, 0.6f, 1f);
+            Halo(at + Vector3.up * 0.4f, 1.1f, Violet, 0.2f);
             if (e.target != null) Shell(ChestOf(e.target), 0.1f, 0.6f, Magenta, 0.18f);
             Flare(at + Vector3.up * 0.6f, Violet, 1.4f, 5f, 0.35f);
         }
@@ -896,7 +897,7 @@ namespace ChessFight.RagdollLab
                         tension = tripwire.Tension(line);
                     }
                     // Pulled taut, a line glows white-hot along its length.
-                    wire.color = Hdr(Color.Lerp(Color.Lerp(Violet, Magenta, 0.5f), Color.white, 0.5f * tension), 3f + 3f * tension);
+                    wire.color = Hdr(Color.Lerp(Color.Lerp(Violet, Magenta, 0.5f), Color.white, 0.35f * tension), 3f + 1.5f * tension);
                     wire.bright = wireBright;
                     wire.Step(dt, cam);
                 }
