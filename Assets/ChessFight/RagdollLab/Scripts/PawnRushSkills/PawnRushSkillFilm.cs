@@ -31,13 +31,13 @@ namespace ChessFight.RagdollLab
         static readonly Shot[] Shots =
         {
             new Shot { run = "queen", title = "퀸 A · 두 겹 충격파", note = "안쪽 1.5 m 넘어짐 · 바깥 3 m 밀림 · 멈춤 0.06초",
-                eye = new Vector3(4.2f, 3.6f, -13.2f), look = new Vector3(0f, 0.3f, -7f) },
-            new Shot { run = "rook-cluster", title = "룩 A · 볼링 핀", note = "1 · 2 · 3명 튕길수록 멈춤 0.04 → 0.06 → 0.08초, 4번째 쿵",
-                eye = new Vector3(-1.2f, 2.9f, -13.4f), look = new Vector3(-6f, 0.5f, -8.8f) },
+                eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.3f, -7.2f) },
+            new Shot { run = "rook-cluster", title = "룩 A · 볼링 핀", note = "1 · 2 · 3명째 멈춤 0.04 → 0.06 → 0.08초 · 4번째에서 쿵",
+                eye = new Vector3(-2.4f, 2.5f, -12.6f), look = new Vector3(-6f, 0.5f, -9.2f) },
             new Shot { run = "bishop-trip", title = "비숍 B · 대각 칸", note = "X가 지나가는 칸이 빛나고, 걸린 칸이 덜컥",
-                eye = new Vector3(3.6f, 4.2f, -10.6f), look = new Vector3(-0.2f, 0f, -6.2f) },
+                eye = new Vector3(2.6f, 3.6f, -10.4f), look = new Vector3(-0.4f, 0f, -6.2f) },
             new Shot { run = "knight-stomp", title = "나이트 B · 머리 밟기", note = "납작 · 멈춤 0.09초 · 뿅 · 다시 통",
-                eye = new Vector3(5.4f, 2.6f, -10.2f), look = new Vector3(0f, 1f, -8.6f) },
+                eye = new Vector3(4.3f, 2.3f, -10.6f), look = new Vector3(0f, 1f, -8.9f) },
         };
 
         LabGame game;
@@ -46,6 +46,7 @@ namespace ChessFight.RagdollLab
         Texture2D frame;
         Font font;
         PawnRushSkillFx.Text3D title, note;
+        Transform banner;
         Vector3 eye, look;
         bool rolling;
         string stills;
@@ -78,8 +79,9 @@ namespace ChessFight.RagdollLab
             rt = new RenderTexture(w, h, 24) { antiAliasing = 4 };
             frame = new Texture2D(w, h, TextureFormat.RGBA32, false);
             font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 64);
-            title = new PawnRushSkillFx.Text3D(go.transform, font, " ", Color.white, 0.042f);
-            note = new PawnRushSkillFx.Text3D(go.transform, font, " ", new Color(1f, 0.9f, 0.6f), 0.028f);
+            title = new PawnRushSkillFx.Text3D(go.transform, font, " ", Color.white, TitleSize);
+            note = new PawnRushSkillFx.Text3D(go.transform, font, " ", new Color(1f, 0.9f, 0.6f), NoteSize);
+            banner = Banner(go.transform);
             stills = Path.Combine(Path.GetDirectoryName(path) ?? ".", Path.GetFileNameWithoutExtension(path) + "_stills");
             Directory.CreateDirectory(stills);
 
@@ -122,8 +124,30 @@ namespace ChessFight.RagdollLab
         {
             title.Destroy();
             note.Destroy();
-            title = new PawnRushSkillFx.Text3D(cam.transform, font, a, Color.white, 0.042f);
-            note = new PawnRushSkillFx.Text3D(cam.transform, font, b, new Color(1f, 0.9f, 0.6f), 0.028f);
+            title = new PawnRushSkillFx.Text3D(cam.transform, font, a, Color.white, TitleSize);
+            note = new PawnRushSkillFx.Text3D(cam.transform, font, b, new Color(1f, 0.9f, 0.6f), NoteSize);
+        }
+
+        const float TitleSize = 0.056f, NoteSize = 0.034f;
+
+        /// <summary>A dark strip behind the captions at the top of the picture.</summary>
+        static Transform Banner(Transform cam)
+        {
+            var mesh = new Mesh
+            {
+                vertices = new[] { new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f), new Vector3(0.5f, 0.5f, 0f), new Vector3(-0.5f, 0.5f, 0f) },
+                colors = new[] { Color.white, Color.white, Color.white, Color.white },
+                triangles = new[] { 0, 2, 1, 0, 3, 2 },
+            };
+            var go = new GameObject("Caption strip");
+            go.transform.SetParent(cam, false);
+            go.transform.localPosition = new Vector3(0f, 0.345f, 1.05f);
+            go.transform.localScale = new Vector3(2f, 0.15f, 1f);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = new Material(Shader.Find("Sprites/Default")) { color = new Color(0.05f, 0.08f, 0.19f, 0.72f) };
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go.transform;
         }
 
         void LateUpdate()
@@ -131,8 +155,8 @@ namespace ChessFight.RagdollLab
             if (cam == null) return;
             if (rolling)
             {
-                title.Place(cam.transform.TransformPoint(new Vector3(0f, 0.36f, 1f)), cam, 1f, 1f);
-                note.Place(cam.transform.TransformPoint(new Vector3(0f, 0.315f, 1f)), cam, 1f, 1f);
+                title.Place(cam.transform.TransformPoint(new Vector3(0f, 0.37f, 1f)), cam, 1f, 1f);
+                note.Place(cam.transform.TransformPoint(new Vector3(0f, 0.313f, 1f)), cam, 1f, 1f);
                 cam.targetTexture = rt;
                 cam.Render();
                 cam.targetTexture = null;

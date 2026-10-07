@@ -25,7 +25,7 @@ namespace ChessFight.RagdollLab
         public static Camera ViewOverride;
 
         static readonly Color QueenGold = new Color(1f, 0.8f, 0.26f);
-        static readonly Color QueenPale = new Color(1f, 0.95f, 0.72f);
+        static readonly Color QueenDeep = new Color(1f, 0.6f, 0.08f);
         static readonly Color RookOrange = new Color(1f, 0.54f, 0.24f);
         static readonly Color BishopViolet = new Color(0.65f, 0.48f, 1f);
         static readonly Color BishopLight = new Color(0.86f, 0.78f, 1f);
@@ -123,8 +123,8 @@ namespace ChessFight.RagdollLab
         {
             Vector3 c = Ground(e.at);
             float inner = PawnRushSkillsParams()?.queenInner ?? 1.5f, outer = e.size > 0f ? e.size : 3f;
-            DiscPulse(c, inner, QueenGold, 0.22f, 0.45f, 0.5f);
-            RingPulse(c, 0f, inner, QueenPale, 0.24f, 0.22f, 0.55f);
+            DiscPulse(c, inner, QueenGold, 0.22f, 0.45f, 0.6f);
+            RingPulse(c, 0f, inner, QueenDeep, 0.24f, 0.22f, 0.55f);
             RingPulse(c, 0f, outer, QueenGold, 0.08f, 0.45f, 0.85f);
             HitStop(0.06f);
             Shake(0.13f, 0.28f);
@@ -265,7 +265,7 @@ namespace ChessFight.RagdollLab
 
         void Edge(float seconds)
         {
-            if (edge == null) edge = new EdgeFlash(lineMat);
+            if (edge == null || !edge.Alive) edge = new EdgeFlash(lineMat);
             edge.left = edge.total = seconds;
         }
 
@@ -410,7 +410,7 @@ namespace ChessFight.RagdollLab
                 if (!kv.Value.Step(Clock, kv.Key == null)) { kv.Value.Destroy(); gone.Add(kv.Key); }
             foreach (var k in gone) tileSets.Remove(k);
 
-            if (edge != null) edge.Step(dt, cam);
+            if (edge != null && edge.Alive) edge.Step(dt, cam);
 
             if (shakeLeft > 0f && cam != null)
             {
@@ -875,6 +875,8 @@ namespace ChessFight.RagdollLab
         {
             readonly LineRenderer red, cyan;
             public float left, total;
+            /// <summary>False once the camera it hung on is gone (the film's camera, after a film).</summary>
+            public bool Alive => red != null && cyan != null;
 
             public EdgeFlash(Material material)
             {
