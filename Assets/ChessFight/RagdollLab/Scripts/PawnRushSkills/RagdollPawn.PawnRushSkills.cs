@@ -692,7 +692,15 @@ namespace ChessFight.RagdollLab
                     if (!RookCharge(s, dt)) break;
                     DriveDash(dt);
                     dashLeft -= dt;
-                    if (dashLeft <= 0f) RookRecovery();
+                    if (dashLeft <= 0f)
+                    {
+                        // The charge is four squares: it plants its feet at the end instead of sliding on
+                        // (measured without this: 1.25 m more during the recovery).
+                        Vector3 own = Flat(bodies[0].linearVelocity) - carryVel;
+                        AddVelocity(-own * 0.75f);
+                        anchorVel = carryVel + own * 0.25f;
+                        RookRecovery();
+                    }
                     break;
                 case SkillStage.Recovery:
                     stageTime += dt;
