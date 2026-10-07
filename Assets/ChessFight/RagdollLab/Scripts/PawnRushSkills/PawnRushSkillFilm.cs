@@ -42,7 +42,7 @@ namespace ChessFight.RagdollLab
             new Shot { run = "bishop-trip", title = "비숍 B · 대각 칸", note = "X가 지나가는 칸이 빛나고, 걸린 칸이 덜컥",
                 eye = new Vector3(2.6f, 3.6f, -10.4f), look = new Vector3(-0.4f, 0f, -6.2f), lead = 0.45f },
             new Shot { run = "knight-stomp", title = "나이트 B · 머리 밟기", note = "납작 · 멈춤 0.09초 · 뿅 · 다시 통",
-                eye = new Vector3(7.6f, 1.8f, -8.6f), look = new Vector3(0f, 1.1f, -8.4f), lead = 0.5f },
+                eye = new Vector3(6.4f, 2.0f, -9.4f), look = new Vector3(0f, 1.25f, -8.3f), lead = 0.5f },
         };
 
         LabGame game;
