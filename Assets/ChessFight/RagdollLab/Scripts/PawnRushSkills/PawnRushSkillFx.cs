@@ -456,8 +456,8 @@ namespace ChessFight.RagdollLab
             SparkBurst(at + Vector3.up * 0.2f, 18, Magenta, Vector3.up, 50f, 2f, 6f, 0.5f, 0.05f);
             MoteBurst(at, 20, Violet, square * 0.4f, 2.2f, 0.6f, 1f);
             Halo(at + Vector3.up * 0.4f, 1.1f, Violet, 0.2f);
-            if (e.target != null) Shell(ChestOf(e.target), 0.1f, 0.6f, Magenta, 0.18f);
-            Flare(at + Vector3.up * 0.6f, Violet, 1.4f, 5f, 0.35f);
+            // No shell on the piece and a dim light: up close they washed the moment of the pull out white.
+            Flare(at + Vector3.up * 0.6f, Violet, 0.6f, 4f, 0.3f);
         }
 
         // ---- Knight B: a trail of light through the leap; a ring where it turns; homing in, crackling lightning;
