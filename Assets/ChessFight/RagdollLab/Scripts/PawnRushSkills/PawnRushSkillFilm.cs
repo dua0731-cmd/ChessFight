@@ -35,17 +35,17 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "queen", title = "퀸 · 바닥 충격파", note = "안쪽 1.5 m 넘어짐 · 바깥 3 m 밀림 · 맞은 적에 금색 불꽃",
+            new Shot { run = "queen", title = "퀸 · 바닥 충격파", note = "금색 마법진 → 빛 기둥 · 1.5 m 빛 벽(넘어짐) · 3 m 빛 벽(밀림)",
                 eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.3f, -7.2f), lead = 0.5f },
-            new Shot { run = "rook-cluster", title = "룩 · 4명 뭉치 돌진", note = "맞을 때마다 주황 불꽃이 커짐 · 막히면 바닥에 주황 고리",
+            new Shot { run = "rook-cluster", title = "룩 · 4명 뭉치 돌진", note = "주황 방패·불꽃 꼬리 → 맞을 때마다 충격 고리 · 막히면 불의 벽",
                 eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.35f },
-            new Shot { run = "rook-wall", title = "룩 · 벽 충돌", note = "벽에 박히면 큰 주황 불꽃 + 화면이 크게 흔들림",
+            new Shot { run = "rook-wall", title = "룩 · 벽 충돌", note = "벽에 박히면 벽면에 큰 충격 고리·불꽃 + 화면이 크게 흔들림",
                 eye = new Vector3(16.6f, 2.8f, -6f), look = new Vector3(18.4f, 0.6f, 0f), lead = 0.4f },
-            new Shot { run = "bishop-trip", title = "비숍 · 대각선 칸", note = "조준 중 흐린 칸 → 설치하면 가운데부터 켜짐 → 걸린 칸이 튀어오름",
+            new Shot { run = "bishop-trip", title = "비숍 · 대각선 칸", note = "조준 중 흐린 칸 → 빛 상자 칸·빛나는 줄 → 걸린 칸에서 빛 기둥",
                 eye = new Vector3(5.5f, 5.8f, -13.5f), look = new Vector3(-0.2f, 0f, -8.6f), lead = 0.45f },
-            new Shot { run = "knight-stomp", title = "나이트 · 머리 찍기", note = "하늘색 불꽃 + 머리 위에 어지러움 별",
+            new Shot { run = "knight-stomp", title = "나이트 · 머리 찍기", note = "파란 꼬리 → 머리에 빛 왕관·빛줄기·번개 → 머리 위에 빛 구슬",
                 eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
-            new Shot { run = "knight-turn", title = "나이트 · 착지", note = "내려앉으면 바닥에 먼지 고리",
+            new Shot { run = "knight-turn", title = "나이트 · 착지", note = "꺾을 때 빛 고리 · 내려앉으면 먼지와 낮은 빛 벽",
                 eye = new Vector3(-1f, 6.5f, -16f), look = new Vector3(1.6f, 0.3f, -10.8f), lead = 0.45f },
         };
 
