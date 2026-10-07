@@ -81,6 +81,8 @@ namespace ChessFight.Game
             // Measures this PC in the background so the host role can go to the
             // machine that simulates fastest (Docs/Network/HOST.md).
             HostFitnessProbe.Start();
+            // The settings window's top bar shows who is playing (R77).
+            SettingsWindow.Identity = () => Session.Online ? Session.Name(Session.Self) : null;
             loader = new MatchLoader(this, clock.Now);
             // A chat that fails to build must not take the session down with it.
             // On an object of its own: a UI document on this object would make the

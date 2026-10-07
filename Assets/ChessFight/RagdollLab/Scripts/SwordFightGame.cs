@@ -103,13 +103,13 @@ namespace ChessFight.RagdollLab
         {
             if (MenuOpen || Finished || ChatBox.KeysHeld || !Application.isFocused || Cursor.lockState != CursorLockMode.Locked)
             { waitForAttackRelease = true; return new PawnInput { ability2 = ClassicControls }; }
-            if (!Input.GetMouseButton(0)) waitForAttackRelease = false;
+            if (!GameSettings.Held(GameKey.Shove)) waitForAttackRelease = false;
             float x = GameSettings.Move.x;
             float y = GameSettings.Move.y;
             Vector3 move = CameraRig.FlatRight * x + CameraRig.FlatForward * y;
             return new PawnInput { move = Vector3.ClampMagnitude(move, 1), aim = CameraRig.AimForward,
-                jump = GameSettings.Pressed(GameKey.Jump), sprint = GameSettings.Held(GameKey.Sprint), ability2 = ClassicControls,
-                shove = !waitForAttackRelease && Input.GetMouseButtonDown(0), shoveHeld = !waitForAttackRelease && Input.GetMouseButton(0) };
+                jump = GameSettings.Pressed(GameKey.Jump), sprint = GameSettings.Sprint, ability2 = ClassicControls,
+                shove = !waitForAttackRelease && GameSettings.Pressed(GameKey.Shove), shoveHeld = !waitForAttackRelease && GameSettings.Held(GameKey.Shove) };
         }
         public void ToggleControls()
         {
@@ -163,7 +163,7 @@ namespace ChessFight.RagdollLab
             if (!Automated)
                 StepSwordLook(!ClassicControls && Local != null && Local.Alive && Local.Pawn.State == PawnState.Active &&
                     !MenuOpen && !Finished && !waitForAttackRelease && Application.isFocused &&
-                    Cursor.lockState == CursorLockMode.Locked && Input.GetMouseButton(0),
+                    Cursor.lockState == CursorLockMode.Locked && GameSettings.Held(GameKey.Shove),
                     new Vector2(GameSettings.LookX, -GameSettings.LookY), Time.unscaledDeltaTime);
             if (hud == null || Rules == null) return;
             var local = Local;

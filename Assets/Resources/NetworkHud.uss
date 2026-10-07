@@ -226,57 +226,108 @@
 .modal-btn { flex-grow: 1; flex-basis: 0; margin: 0 4px; }
 .mode-list { margin-top: 8px; }
 
-/* ---------- settings (SettingsHud.uxml + SettingsWindow, R64) ---------- */
-.settings { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-            align-items: center; justify-content: center; background-color: rgba(10, 5, 2, 0.74); }
-.settings-card { width: 780px; height: 596px; padding: 22px 26px 22px 26px; }
-.settings-head { align-items: flex-start; }
-.settings-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(250, 208, 60); }
-.settings-title { font-size: 30px; color: rgb(246, 236, 223); margin-top: 2px; }
-.settings-tabs { margin-top: 14px; border-bottom-width: 1px; border-color: rgba(217, 174, 98, 0.22); flex-shrink: 0; }
-.settings-tab { margin: 0 26px 0 0; padding: 6px 0 9px 0; border-width: 0 0 3px 0; border-radius: 0;
-                border-color: rgba(0, 0, 0, 0); background-color: rgba(0, 0, 0, 0); font-size: 17px; color: rgb(185, 165, 140); }
-.settings-tab:hover { color: rgb(246, 236, 223); background-color: rgba(0, 0, 0, 0); }
-.settings-tab-on { color: rgb(246, 236, 223); border-color: rgb(255, 201, 61); }
-.settings-body { flex-grow: 1; padding-top: 10px; }
-.settings-foot { padding-top: 14px; border-top-width: 1px; border-color: rgba(217, 174, 98, 0.22); flex-shrink: 0; }
-.settings-foot-btn { margin-left: 12px; }
+/* ---------- settings (SettingsHud.uxml + SettingsWindow, R64; layout R77) ----------
+   Full screen over the still chess background: tabs across the top, pages down
+   the left, one line per setting (name 58 %, value the rest), key hints below. */
+.s2 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgb(14, 8, 5); }
+.s2-bg { position: absolute; left: 0; top: 0; right: 0; bottom: 0; -unity-background-scale-mode: scale-and-crop; }
+.s2-top { position: absolute; left: 0; top: 0; right: 0; height: 74px; padding: 0 28px; align-items: center;
+          background-color: rgba(30, 18, 10, 0.86); border-bottom-width: 1px; border-color: rgba(217, 174, 98, 0.3); }
+.s2-top-line { position: absolute; left: 0; bottom: -1px; width: 220px; height: 2px; background-color: rgb(255, 201, 61); }
+.s2-brand { font-size: 24px; color: rgb(255, 201, 61); margin-right: 28px; }
+.s2-tab { margin: 0 4px 0 0; padding: 11px 20px 14px 20px; border-width: 0; border-radius: 0;
+          background-color: rgba(0, 0, 0, 0); }
+.s2-tab:hover { background-color: rgba(0, 0, 0, 0); }
+.s2-tab-text { font-size: 17px; color: rgb(217, 198, 168); }
+.s2-tab:hover .s2-tab-text { color: rgb(255, 243, 218); }
+.s2-tab-on .s2-tab-text { color: rgb(28, 18, 0); }
+.s2-tab-on:hover .s2-tab-text { color: rgb(28, 18, 0); }
+.s2-chip { padding: 6px 14px 6px 6px; border-width: 1px; border-color: rgba(217, 174, 98, 0.3); background-color: rgba(12, 7, 4, 0.6); }
+.s2-avatar { width: 30px; height: 30px; margin-right: 10px; justify-content: center; align-items: center; background-color: rgb(255, 201, 61); }
+.s2-avatar-mark { font-size: 15px; -unity-font-style: bold; color: rgb(44, 26, 14); }
+.s2-name { font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); }
+.s2-steam { font-size: 10px; -unity-font-style: bold; color: rgb(75, 224, 143); }
+.s2-steam-off { color: rgb(255, 200, 80); }
 
-.set-row { flex-direction: row; align-items: center; min-height: 52px; flex-shrink: 0;
-           border-bottom-width: 1px; border-color: rgba(217, 174, 98, 0.10); }
-.set-left { width: 210px; }
-.set-label { font-size: 15px; -unity-font-style: bold; color: rgb(246, 236, 223); }
-.set-note { font-size: 11px; color: rgb(185, 165, 140); margin-top: 2px; }
-.set-ctrl { flex-direction: row; align-items: center; flex-grow: 1; }
-.set-arrow { width: 34px; height: 37px; padding: 0 0 3px 0; font-size: 17px; }
-.set-bar { width: 236px; height: 12px; margin: 0 12px; border-width: 1px; border-color: rgba(217, 174, 98, 0.32);
-           background-color: rgba(12, 7, 4, 0.6); }
-.set-fill { position: absolute; left: 0; top: 0; bottom: 0; background-color: rgb(255, 201, 61); }
-.set-knob { position: absolute; top: -6px; width: 6px; height: 20px; margin-left: -3px; background-color: rgb(255, 243, 218);
-            border-bottom-width: 2px; border-color: rgb(110, 74, 38); }
-.set-value { min-width: 70px; margin-left: 12px; font-size: 18px; color: rgb(255, 201, 61); }
-.set-box { width: 236px; height: 34px; margin: 0 12px; border-width: 1px; border-color: rgba(217, 174, 98, 0.32);
-           background-color: rgba(12, 7, 4, 0.45); -unity-text-align: middle-center; font-size: 14px;
-           -unity-font-style: bold; color: rgb(246, 236, 223); }
-.set-seg { flex-direction: row; padding-left: 1px; }
-.set-seg-btn { height: 34px; margin: 0 0 0 -1px; padding: 0 16px; border-width: 1px; border-radius: 0;
-               border-color: rgba(217, 174, 98, 0.32); background-color: rgba(12, 7, 4, 0.45);
-               font-size: 13px; -unity-font-style: bold; color: rgb(185, 165, 140); }
-.set-seg-btn:hover { color: rgb(246, 236, 223); background-color: rgba(255, 220, 170, 0.08); }
-.set-seg-on { background-color: rgb(255, 201, 61); border-color: rgb(255, 201, 61); color: rgb(28, 18, 0); }
-.set-seg-on:hover { background-color: rgb(255, 214, 100); color: rgb(28, 18, 0); }
-.set-section { flex-direction: row; align-items: flex-end; margin: 16px 0 8px 0; flex-shrink: 0; }
-.set-section-title { font-size: 16px; color: rgb(255, 201, 61); margin-right: 10px; }
-.set-hint { font-size: 11px; color: rgb(185, 165, 140); }
-.set-keys { flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
-.set-key-row { width: 47%; flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.set-key { min-width: 104px; padding: 8px 12px 12px 12px; font-size: 13px; }
-.set-preview { margin-top: 16px; padding: 12px 14px; border-width: 1px; border-color: rgba(217, 174, 98, 0.18);
-               background-color: rgba(12, 7, 4, 0.45); flex-shrink: 0; }
-.set-preview-row { flex-direction: row; align-items: flex-end; margin-top: 6px; }
-.set-preview-row > Label { margin-right: 8px; }
-.set-ping { padding: 5px 10px; margin-left: 12px; background-color: rgba(12, 7, 4, 0.6); font-size: 12px;
-            -unity-font-style: bold; color: rgb(75, 224, 143); }
+.s2-side { position: absolute; left: 28px; top: 98px; width: 210px; }
+.s2-sub { margin: 0 0 6px 0; padding: 11px 14px 11px 16px; border-width: 0 0 0 4px; border-radius: 0;
+          border-color: rgba(0, 0, 0, 0); background-color: rgba(44, 28, 16, 0.86);
+          -unity-text-align: middle-left; font-size: 15px; -unity-font-style: bold; color: rgb(232, 216, 190); }
+.s2-sub:hover { background-color: rgba(74, 48, 28, 0.92); color: rgb(255, 243, 218); }
+.s2-sub-on { border-color: rgb(255, 201, 61); background-color: rgba(122, 86, 40, 0.92); color: rgb(255, 243, 218); }
+.s2-sub-on:hover { background-color: rgba(132, 94, 44, 0.95); }
+.s2-desc { margin-top: 18px; padding: 12px 14px; border-width: 1px; border-color: rgba(217, 174, 98, 0.18);
+           background-color: rgba(12, 7, 4, 0.62); }
+.s2-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(250, 208, 60); }
+.s2-desc-title { margin-top: 6px; font-size: 14px; -unity-font-style: bold; color: rgb(255, 243, 218); white-space: normal; }
+.s2-desc-text { margin-top: 4px; font-size: 12px; color: rgb(205, 184, 154); white-space: normal; }
+
+.s2-view { position: absolute; left: 262px; top: 98px; width: 950px; height: 552px; overflow: hidden; }
+.s2-content { position: absolute; left: 0; top: 0; right: 16px; }
+.s2-bar { position: absolute; right: 0; top: 0; bottom: 0; width: 8px; background-color: rgba(0, 0, 0, 0.25); }
+.s2-thumb { position: absolute; left: 0; right: 0; top: 0; height: 40px; background-color: rgba(217, 174, 98, 0.45); }
+.s2-thumb:hover { background-color: rgba(255, 201, 61, 0.7); }
+
+.s2-section { flex-direction: row; align-items: flex-end; margin-bottom: 8px; }
+.s2-section-title { font-size: 20px; color: rgb(255, 201, 61); margin-right: 12px; }
+.s2-section-note { font-size: 12px; color: rgb(185, 165, 140); padding-bottom: 2px; }
+.s2-group { margin-bottom: 22px; }
+.s2-row { flex-direction: row; height: 34px; margin-bottom: 3px; }
+.s2-lab { width: 58%; flex-direction: row; align-items: center; padding: 0 14px; border-left-width: 3px;
+          border-color: rgba(0, 0, 0, 0); background-color: rgba(52, 34, 21, 0.88); }
+.s2-lab-text { font-size: 14px; color: rgb(241, 228, 210); }
+.s2-soon { margin-left: 10px; padding: 1px 6px; font-size: 10px; -unity-font-style: bold; color: rgb(185, 165, 140);
+           border-width: 1px; border-color: rgba(185, 165, 140, 0.4); }
+.s2-val { flex-grow: 1; flex-direction: row; align-items: center; margin-left: 3px; padding: 0 6px; background-color: rgba(28, 17, 10, 0.9); }
+.s2-row:hover > .s2-lab { background-color: rgba(84, 57, 37, 0.95); border-color: rgb(255, 201, 61); }
+.s2-row:hover > .s2-val { background-color: rgba(44, 28, 16, 0.95); }
+.s2-ar { width: 26px; height: 26px; padding: 0; margin: 0; border-width: 0; background-color: rgba(0, 0, 0, 0);
+         font-size: 18px; -unity-font-style: bold; color: rgb(255, 201, 61); }
+.s2-ar:hover { color: rgb(255, 243, 218); background-color: rgba(0, 0, 0, 0); }
+.s2-ar:disabled { color: rgba(185, 165, 140, 0.35); }
+.s2-vt { flex-grow: 1; -unity-text-align: middle-center; font-size: 13px; -unity-font-style: bold; color: rgb(255, 243, 218); }
+.s2-dd { flex-grow: 1; height: 28px; margin: 0; padding: 0 6px 0 10px; border-width: 0; background-color: rgba(0, 0, 0, 0);
+         flex-direction: row; align-items: center; justify-content: space-between; }
+.s2-dd:hover { background-color: rgba(255, 220, 170, 0.06); }
+.s2-dd-text { font-size: 13px; -unity-font-style: bold; color: rgb(255, 243, 218); }
+.s2-dd-mark { font-size: 12px; color: rgb(255, 201, 61); }
+.s2-num { width: 52px; padding-left: 6px; font-size: 13px; -unity-font-style: bold; color: rgb(255, 243, 218); }
+.s2-track { flex-grow: 1; height: 22px; margin-right: 12px; justify-content: center; }
+.s2-rail { height: 6px; background-color: rgba(255, 243, 218, 0.16); }
+.s2-fill { position: absolute; left: 0; top: 0; bottom: 0; background-color: rgb(255, 201, 61); }
+.s2-knob { position: absolute; top: -5px; width: 16px; height: 16px; margin-left: -8px; border-radius: 8px;
+           background-color: rgb(255, 243, 218); border-bottom-width: 2px; border-color: rgb(110, 74, 38); }
+.s2-keys { flex-grow: 1; flex-direction: row; padding: 0 4px; }
+.s2-key { flex-grow: 1; flex-basis: 0; margin: 0 4px; padding: 4px 6px 7px 6px; font-size: 12px; }
+.s2-meter { flex-grow: 1; flex-direction: row; padding: 0 8px; }
+.s2-meter-cell { flex-grow: 1; height: 12px; margin-right: 3px; background-color: rgba(255, 243, 218, 0.12); }
+.s2-meter-on { background-color: rgb(255, 201, 61); }
+.s2-meter-hot { background-color: rgb(232, 56, 76); }
+.s2-test { width: auto; padding: 0 10px; font-size: 12px; }
+
+.s2-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 46px; padding: 0 28px; align-items: center;
+           background-color: rgba(20, 12, 7, 0.92); border-top-width: 1px; border-color: rgba(217, 174, 98, 0.25); }
+.s2-foot-btn { margin: 0 26px 0 0; padding: 0; border-width: 0; background-color: rgba(0, 0, 0, 0); align-items: center; }
+.s2-foot-btn:hover { background-color: rgba(0, 0, 0, 0); }
+.s2-foot-btn > Label { color: rgb(232, 216, 190); font-size: 13px; -unity-font-style: bold; }
+.s2-foot-btn:hover > Label { color: rgb(255, 243, 218); }
+.s2-foot-btn > .s2-cap { color: rgb(44, 26, 14); font-size: 11px; }
+.s2-cap { min-width: 34px; height: 22px; margin-right: 8px; padding: 0 6px; -unity-text-align: middle-center;
+          -unity-font-style: bold; background-color: rgb(240, 214, 168); border-bottom-width: 2px; border-color: rgb(110, 74, 38); }
+.s2-saved { font-size: 12px; color: rgb(156, 135, 108); }
+
+.s2-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.s2-catch { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.s2-menu { position: absolute; padding: 4px; border-width: 1px; border-color: rgba(217, 174, 98, 0.45); background-color: rgb(30, 18, 10); }
+.s2-opt { margin: 0; padding: 8px 10px; border-width: 0; border-radius: 0; background-color: rgba(0, 0, 0, 0);
+          -unity-text-align: middle-left; font-size: 13px; -unity-font-style: bold; color: rgb(232, 216, 190); }
+.s2-opt:hover { background-color: rgba(255, 220, 170, 0.1); color: rgb(255, 243, 218); }
+.s2-opt-on { background-color: rgb(255, 201, 61); color: rgb(28, 18, 0); }
+.s2-opt-on:hover { background-color: rgb(255, 214, 100); color: rgb(28, 18, 0); }
+
+/* The frame counter (ScreenOverlay). */
+.overlay-fps { position: absolute; right: 14px; top: 10px; padding: 3px 8px; font-size: 12px; -unity-font-style: bold;
+               color: rgb(75, 224, 143); background-color: rgba(0, 0, 0, 0.5); }
 
 /* Chat text size (settings → 채팅). */
 .chat-size-0 .chat-name, .chat-size-0 .chat-text, .chat-size-0 .chat-notice { font-size: 12px; }

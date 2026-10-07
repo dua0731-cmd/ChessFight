@@ -68,13 +68,13 @@ namespace ChessFight.Game
                 {
                     Move = GameSettings.Move,
                     Jump = GameSettings.Pressed(GameKey.Jump),
-                    Shove = Input.GetMouseButtonDown(0),
-                    ShoveHeld = Input.GetMouseButton(0),
-                    Grab = Input.GetMouseButton(1),
-                    Sprint = GameSettings.Held(GameKey.Sprint),
-                    Ability = Input.GetKeyDown(KeyCode.E),
-                    Ability2 = Input.GetKeyDown(KeyCode.Q),
-                    Interact = Input.GetKey(KeyCode.F)
+                    Shove = GameSettings.Pressed(GameKey.Shove),
+                    ShoveHeld = GameSettings.Held(GameKey.Shove),
+                    Grab = GameSettings.Held(GameKey.Grab),
+                    Sprint = GameSettings.Sprint,
+                    Ability = GameSettings.Pressed(GameKey.Skill),
+                    Ability2 = GameSettings.Pressed(GameKey.Skill2),
+                    Interact = GameSettings.Held(GameKey.Use)
                 };
             }
             catch (InvalidOperationException)

@@ -280,6 +280,9 @@ namespace ChessFight.RagdollLab
 
         void Shake(float amplitude, float seconds)
         {
+            // Settings → 카메라 흔들림 / 화면 흔들림 줄이기 (R77).
+            amplitude *= ChessFight.Game.GameSettings.ShakeScale;
+            if (amplitude <= 0f) return;
             if (!shake) return;
             float now = shakeTotal > 0f ? shakeAmp * Mathf.Clamp01(shakeLeft / shakeTotal) : 0f;
             if (amplitude < now) return;
