@@ -4,11 +4,13 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-07**(R73 타격감 이펙트 퀸 A·룩 A·비숍 B·나이트 B + 녹화 도구. 그 전 R72 시험용 쿨 2초·룩 4명 뭉치·이펙트 시안. 그 전 R71 폰 러쉬 스킬 시험 씬과 스킬 5개. 그 전 R70 기물 스킬 기획서. 그 전 R69 폰 러시 코스 01을 v0.2(탑을 감아 오르는 3층 고리)로. 그 전 R68 v0.1 새 씬. 그 전 R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-07**(R74 스킬 2차 수정: F 통일·룩/비숍 좌클릭 조준·비숍 근거리·나이트 자동 머리 찍기·이펙트 글자 제거. 그 전 R73 타격감 이펙트 퀸 A·룩 A·비숍 B·나이트 B + 녹화 도구. 그 전 R72 시험용 쿨 2초·룩 4명 뭉치·이펙트 시안. 그 전 R71 폰 러쉬 스킬 시험 씬과 스킬 5개. 그 전 R70 기물 스킬 기획서. 그 전 R69 폰 러시 코스 01을 v0.2(탑을 감아 오르는 3층 고리)로. 그 전 R68 v0.1 새 씬. 그 전 R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
-> **최신 R73(승규 님, 10-07): 타격감 이펙트** — 고른 시안 **퀸 A · 룩 A · 비숍 B · 나이트 B**를 `PawnRush_SkillTest`에 만듦(`PawnRushSkillFx`, 시험장만). 맞는 순간 멈춤(지금은 게임 전체)·흔들기·흰 번쩍·글자 + 기물별 그림. 폰은 아직 안 고름, 소리 없음. 녹화 도구 `PawnRushSkillFilm`으로 AI가 mp4를 찍어 보여 줌 → [Skills/README](Docs/Skills/README.md#이펙트-녹화-r73). **사람 확인 전**
+> **최신 R74(승규 님, 10-07): 스킬 2차 수정** — 스킬 키 **F로 통일**(임시, 이 씬에서 F 상호작용 끔). **룩·비숍은 F로 조준 → 마우스로 방향/위치 → 좌클릭**(우클릭/F 취소). 비숍 **근거리 4.5 m**, 설치 전 반투명 X·보라 칸·거리 원. **나이트 공중 F: 4 m 안 적이 표시되면 자동으로 머리 찍고 옆에 착지, 없으면 90° 꺾기.** 이펙트의 글자·숫자(뿅·쿵·덜컥·1·2·3) 전부 뺌. 퀸 그대로. 자동 시험 전부 통과, 녹화 `PawnRush_Skill_R74b.mp4` → [Skills/README](Docs/Skills/README.md). **사람 확인 전**
+>
+> **R73(승규 님, 10-07): 타격감 이펙트** — 고른 시안 **퀸 A · 룩 A · 비숍 B · 나이트 B**를 `PawnRush_SkillTest`에 만듦(`PawnRushSkillFx`, 시험장만). 맞는 순간 멈춤(지금은 게임 전체)·흔들기·흰 번쩍·글자 + 기물별 그림. 폰은 아직 안 고름, 소리 없음. 녹화 도구 `PawnRushSkillFilm`으로 AI가 mp4를 찍어 보여 줌 → [Skills/README](Docs/Skills/README.md#이펙트-녹화-r73). **사람 확인 전**
 >
 > **R72(승규 님, 10-07): 시험 편하게** — 시험용 쿨타임 **모든 기물 2초**(Inspector `Test Cooldown` = 0이면 기획 쿨), **V = 더미 4명을 내 앞에 2×2로 뭉쳐 세움**(룩을 고르면 저절로, 룩 돌진 물리 시험용). 타격감 이펙트 **시안 기물마다 3개** → [Skills/EFFECTS](Docs/Skills/EFFECTS.md)(만든 것 없음, 고르면 만듦)
 >
@@ -161,7 +163,7 @@
 - 다음: [VALIDATION R51](Docs/Network/VALIDATION.md)에서 검 가시성·보정 반응·약한 접촉/강한 베기·전환/복원·두 PC 손맛을 비교한다. 맵/기물 스킬/퀸 모드는 자동 착수하지 않는다. 원격 Push는 기존403 때문에 재시도하지 않으며 사용자가 GitHub Desktop에서 한다.
 
 **사용자가 할 일 — 순서대로**
-000000000000. **(새, R71, 승규 님) 폰 러쉬 스킬 시험:** 이 브랜치(`claude/bold-johnson-8ez95n`) → Unity → **ChessFight → Pawn Rush → Open Skill Test** → Play → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **스킬 표(12개)**. 왼쪽 창에서 기물 고르고 G(시험용 쿨 2초), 룩은 V로 4명 뭉치. 이펙트 시안([Skills/EFFECTS](Docs/Skills/EFFECTS.md))에서 기물마다 하나 고르면 만든다. 손맛·예고·밸런스 의견을 주면 수치(Inspector `Pawn Rush Skill Bed`)부터 고친다. 남은 결정: 스킬 키, D4~D11. D10(킹 러시 기획의 "체스 이동을 옮긴 능력은 하지 않는다"를 바꾸는지)은 팀장님 확인
+000000000000. **(새, R71, 승규 님) 폰 러쉬 스킬 시험:** 이 브랜치(`claude/bold-johnson-8ez95n`) → Unity → **ChessFight → Pawn Rush → Open Skill Test** → Play → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **스킬 표(12개)**. 왼쪽 창에서 기물 고르고 F(시험용 쿨 2초, 룩·비숍은 F 뒤 좌클릭), 룩은 V로 4명 뭉치. 이펙트 시안([Skills/EFFECTS](Docs/Skills/EFFECTS.md))에서 기물마다 하나 고르면 만든다. 손맛·예고·밸런스 의견을 주면 수치(Inspector `Pawn Rush Skill Bed`)부터 고친다. 남은 결정: 스킬 키, D4~D11. D10(킹 러시 기획의 "체스 이동을 옮긴 능력은 하지 않는다"를 바꾸는지)은 팀장님 확인
 00000000000. **(새, R69) 폰 러시 코스 01 v0.2:** 이 브랜치(`claude/bold-johnson-8ez95n`)를 Pull → Unity → **ChessFight → Pawn Rush → Open Course01** → Play → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **v0.2 표(14개)**. 특히 낙차 8 m 복귀(8번), 탑 두 길(7번), 흑팀 완주(10번). 막힌 곳·CSV(`Logs/PawnRush`)를 알려 주면 고친다. 결정 대기: B2 경사로가 테라스 위 7.7 m(9 m 규칙 미만), 기획서 "결정할 것" 5개
 0000000000. **(새, R65) `main` 병합 확인:** `main`을 Pull(LFS 포함) → Unity로 열고 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **`main` 병합 표(5개)**. 모든 PC가 같은 `main`이어야 온라인이 된다(프로토콜 v15).
 000000000. **(새, 승규 님) 설정 창(R64):** Intro 씬 Play → Esc(설정 창) → "클릭해서 시작" → 로비 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **설정 창 표**.

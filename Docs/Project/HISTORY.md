@@ -7,7 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R73 | 문서: Skills README(이펙트·녹화), EFFECTS(고른 것), REQUIREMENTS R73, VALIDATION, HANDOFF |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R74 | 문서: Skills README(F·조준·나이트 찍기·측정·녹화), EFFECTS(글자 뺌), REQUIREMENTS R74, VALIDATION, HANDOFF |
+| `2e0d5e9` | 10-07 | R74 | 녹화: 룩 장면 가깝게, 나이트 꺾기는 위에서 |
+| `836adb4` | 10-07 | R74 | 모든 스킬 F(이 씬 F 상호작용 끔), 룩·비숍 F 조준 → 좌클릭, 비숍 근거리 4.5 m·반투명 미리보기, 나이트 공중 F = 감지한 적 머리 자동 찍기(없으면 90° 꺾기), 이펙트 글자·숫자 제거, 시험 도구·녹화 맞춤 |
+| `941da62` | 10-07 | R73 | 문서: Skills README(이펙트·녹화), EFFECTS(고른 것), REQUIREMENTS R73, VALIDATION, HANDOFF |
 | `88a91de` | 10-07 | R73 | 녹화: P2를 화면 밖으로 |
 | `a465780` | 10-07 | R73 | 녹화: 녹화 중 키보드 입력 막기 |
 | `3c14943` · `c7d8ae9` · `d38f48b` | 10-07 | R73 | 녹화: 느린 화면은 맞는 순간 앞뒤만, 장면 사이 밧줄 지우기, 카메라·자막 띠 / 이펙트: 납작 오래, 글자 위치, 퀸 안쪽 고리 진하게 |
