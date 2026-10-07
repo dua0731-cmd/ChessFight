@@ -7,7 +7,15 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R78 | 문서: Skills EFFECTS(공방 그림 표·바꾼 것·다시 만드는 법), README(코드 표·R78 녹화), REQUIREMENTS R78, VALIDATION, HANDOFF, Tools/Generators README |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R79 | 문서: Skills EFFECTS(3D 빛 이펙트 표·밝은 바닥 규칙), README(코드 표·R79 녹화), REQUIREMENTS R79, VALIDATION, HANDOFF, Tools/Generators README(묶는 도구 줄 삭제) |
+| `9b0c259` | 10-08 | R79 | 녹화 설명 글을 3D 이펙트에 맞게(별 없음) |
+| `907e358` | 10-08 | R79 | 나이트 빛을 진한 파랑·칠하기로, 흐린 후광 삭제 |
+| `772a09d` | 10-08 | R79 | 퀸 충격파·나이트 찍기에 빛줄기, 나이트 파랑 진하게, 궤적·번개 굵게 |
+| `492134c` | 10-08 | R79 | 먼지를 연하고 얇게 |
+| `f182d90` | 10-08 | R79 | 빛 번짐 약하게, 밝은 속을 작게(노란 안개) |
+| `9ae446d` | 10-08 | R79 | 밝은 바닥에서 색이 보이게: 몸통 칠하기, 번짐 기준 2.2, 조명 약하게 |
+| `2bf42db` | 10-08 | R79 | 3D 빛 이펙트(셰이더·빛 번짐·조각·입자·조명·궤적·번개), 공방 그림과 묶는 도구 삭제 |
+| `7cce84e` | 10-07 | R78 | 문서: Skills EFFECTS(공방 그림 표·바꾼 것·다시 만드는 법), README(코드 표·R78 녹화), REQUIREMENTS R78, VALIDATION, HANDOFF, Tools/Generators README |
 | `1574f90` | 10-07 | R78 | 비숍 튀어오르는 칸을 칸 하나 크기로(두 배로 나오던 것), 공방 그림 묶는 도구 `Tools/Generators/pack_skill_fx.py` |
 | `837a7d0` | 10-07 | R78 | 게임 화면에 맞춤: 불꽃 크게·카메라 쪽으로 당겨 그림, 튀어오르는 칸 바닥 위로, 테두리·색, 비숍 미리보기 안 나오던 실수 |
 | `25f64e8` | 10-07 | R78 | 녹화: 기물마다 이펙트 장면(퀸·비숍 다시 넣음, 나이트 착지) |

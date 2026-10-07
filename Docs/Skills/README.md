@@ -42,8 +42,8 @@
 | `…/PawnRushSkillBed.cs` | 시험장: 모든 랩 폰에 스킬 켜기, P1 스킬 키(G), 왼쪽 창, 더미 버튼, 바리케이드 |
 | `…/SkillTripwire.cs` · `SkillBarricade.cs` · `SkillMarks.cs` | 비숍 밧줄, 룩 바리케이드, 바닥 예고선 그리기 |
 | `…/PawnRushSkillProbe.cs` | **자동 시험 도구**: 키보드 없이 P1·더미를 움직이고 G를 눌러 거리·높이·결과를 잰다(아래) |
-| `…/PawnRushSkillFx.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받아 멈춤·흔들기·흰 번쩍·납작 + **이펙트 공방 그림**(R78: 바닥 고리·칸, 불꽃, 어지러움 별, 먼지). 별·글자·조각은 없음. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
-| `RagdollLab/Resources/PawnRushSkillFx/*.png` · `Tools/Generators/pack_skill_fx.py` | 공방 그림 11장(R78)과 그걸 공방 zip에서 다시 만드는 도구([EFFECTS §공방 그림](EFFECTS.md#공방-그림-r78-10-07)) |
+| `…/PawnRushSkillFx.cs` · `PawnRushSkillFx.Parts.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받고, 퀸 예고·룩 돌진·나이트 도약은 기물 상태를 지켜보며 멈춤·흔들기·흰 번쩍·납작 + **3D 빛 이펙트**(R79: 빛의 벽·기둥·빛줄기·껍질·마법진, 튕기는 불꽃·빛 알갱이·연기, 순간 조명, 궤적, 번개). 별·글자·조각은 없음. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
+| `…/PawnRushSkillBloom.cs` · `RagdollLab/Resources/PawnRushSkillFx/SkillGlow.shader` · `SkillBloom.shader` | 이펙트 재질(HDR 빛 + 칠하기)과 직접 만든 빛 번짐. 시험장 카메라·녹화 카메라에만 붙음([EFFECTS §3D 빛 이펙트](EFFECTS.md#3d-빛-이펙트-r79-10-08)) |
 | `…/PawnRushSkillFilm.cs` · `RagdollLab/Editor/PawnRushSkillFilmEncoder.cs` | **녹화 도구**(R73): 자동 시험을 고정 카메라로 찍어 `.mp4`로(아래) |
 | `RagdollLab/Editor/PawnRushSkillTestMenu.cs` | 메뉴 Open Skill Test |
 | `LabGame.cs`(`InteractKeyOff`) | 시험장이 켜면 F가 랩 상호작용을 하지 않음 (R74) |
@@ -96,6 +96,10 @@ Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면�
 ### R78 녹화 (10-07)
 
 `PawnRush_Skill_R78c.mp4`(약 50초, 장면 6개: 퀸 충격파, 룩 4명 뭉치, 룩 벽, 비숍 칸, 나이트 머리 찍기, 나이트 착지): 모든 이펙트가 공방 그림으로 나오고 부딪힐 때 별은 없다. 첫 녹화(R78)에서 불꽃이 작고 벽·몸에 가리고, 나이트 하늘색 불꽃·크림 먼지가 배경에 묻히고, 비숍 미리보기가 안 나오고(프로그램 실수), 튀어오르는 칸이 바닥에 잘리는 것을 보고 고친 뒤 다시 찍었다. **사람이 손으로 해 본 것은 아님.**
+
+### R79 녹화 (10-08)
+
+`PawnRush_Skill_R79c.mp4`(약 50초, 장면 6개): 공방 그림 대신 3D 빛 이펙트, 별 모양 없음. 만들면서 퀸·나이트를 따로 여러 번 찍어 고쳤다(화면이 하얗게 날아감 → 번짐 기준 2.2·몸통 칠하기, 터질 때 노란 안개 → 밝은 속을 작게, 나이트 하늘색이 흐림 → 진한 파랑). **사람이 손으로 해 본 것은 아님.** 녹화 전에 Unity가 새 코드를 다 읽었는지 확인해야 한다(한 번은 예전 글씨로 찍혔음).
 
 ## 다음 할 일
 
