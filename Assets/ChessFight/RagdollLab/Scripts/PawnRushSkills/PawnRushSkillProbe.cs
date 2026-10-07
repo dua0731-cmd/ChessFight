@@ -17,8 +17,10 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class PawnRushSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "rook-cluster", "queen", "knight", "knight-turn", "knight-stomp", "knight-land", "bishop", "all" };
+        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "rook-cluster", "queen", "knight", "knight-turn", "knight-stomp", "knight-land", "bishop", "bishop-trip", "all" };
         public static string Status { get; private set; } = "idle";
+        /// <summary>The current run has set its pieces down and settled them (the film records from here).</summary>
+        public static bool Staged { get; private set; }
         public static readonly List<string> Results = new List<string>();
 
         LabGame game;
@@ -109,10 +111,13 @@ namespace ChessFight.RagdollLab
                     "knight-stomp" => KnightStomp(),
                     "knight-land" => KnightLand(),
                     "bishop" => Bishop(),
+                    "bishop-trip" => BishopTrip(),
                     _ => null,
                 };
                 if (run == null) { Add($"모르는 시험: {n}"); continue; }
+                Staged = false;
                 yield return run;
+                Staged = false;
             }
             Stop();
             bed.skills.testCooldown = testCooldown;
@@ -168,6 +173,7 @@ namespace ChessFight.RagdollLab
                 Place(d, new Vector3(12f + i * 1.5f, 0f, 13f), Vector3.back);   // parked out of the way
             }
             yield return new WaitForSeconds(0.8f);
+            Staged = true;
         }
 
         void Tap() => tapPending = true;
@@ -459,6 +465,28 @@ namespace ChessFight.RagdollLab
             yield return Until(() => { near |= game.dummies[0].Staggered; far |= game.dummies[1].Staggered; return false; }, 0.3f);
             Add($"나이트 착지 충격: 1 m 옆 더미 {(near ? "휘청" : "그대로")} (기대 휘청), 2.5 m 옆 더미 {(far ? "휘청" : "그대로")} (기대 그대로)");
             yield return new WaitForSeconds(1f);
+        }
+
+        /// <summary>Only the first half of "bishop": the wire, and an enemy tripping on it (for the film).</summary>
+        IEnumerator BishopTrip()
+        {
+            yield return Ready(PieceKind.Bishop, new Vector3(0f, 0f, -11f), Vector3.forward, 1);
+            var p1 = P1;
+            var d = game.dummies[0];
+            Place(d, new Vector3(-3.5f, 0f, -6f), Vector3.right);
+            Vector3 head = p1.bodies[(int)BodyId.Head].position;
+            aim = (new Vector3(0f, 0f, -6f) - head).normalized;
+            skillHold = true;
+            Tap();
+            yield return new WaitForSeconds(0.4f);
+            skillHold = false;
+            yield return new WaitForSeconds(0.9f);
+            walker = d;
+            walkerMove = Vector3.right;
+            yield return Until(() => d.State == PawnState.Ragdoll, 2.5f);
+            StopWalker();
+            Add($"비숍 밧줄 걸기: 적 더미 {StateText(d)} · {d.LastSkillHit}");
+            yield return new WaitForSeconds(1.4f);
         }
 
         IEnumerator Bishop()

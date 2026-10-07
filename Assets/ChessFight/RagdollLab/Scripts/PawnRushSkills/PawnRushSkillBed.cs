@@ -39,6 +39,7 @@ namespace ChessFight.RagdollLab
         const int LogLines = 9;
 
         LabGame game;
+        PawnRushSkillFx fx;
         GUIStyle text, small, header, button, selected, box;
         Texture2D panelTexture, barTexture;
         Rect panelRect;
@@ -66,6 +67,8 @@ namespace ChessFight.RagdollLab
             game = GetComponent<LabGame>();
             if (game == null) game = FindFirstObjectByType<LabGame>();
             SkillBarricade.Build(barricadeAt, barricadeFacing, "Pawn Rush 바리케이드 (룩만 부숨)");
+            fx = GetComponent<PawnRushSkillFx>();
+            if (fx == null) fx = gameObject.AddComponent<PawnRushSkillFx>();
             Report("폰 러쉬 스킬 시험 준비 완료 — 왼쪽 창에서 기물을 고르고 G");
         }
 
@@ -276,6 +279,14 @@ namespace ChessFight.RagdollLab
             if (p1.GetUpGuardLeft > 0f) extra += $"기상 보호 {p1.GetUpGuardLeft:0.0}초   ";
             if (!string.IsNullOrEmpty(extra)) GUILayout.Label(extra, small);
             GUILayout.Label("E · Q · F · 마우스는 랩의 원래 기능 그대로", small);
+            if (fx != null)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(fx.effects ? "이펙트 켜짐" : "이펙트 꺼짐", fx.effects ? selected : button)) fx.effects = !fx.effects;
+                if (GUILayout.Button(fx.hitStop ? "멈춤 켜짐" : "멈춤 꺼짐", fx.hitStop ? selected : button)) fx.hitStop = !fx.hitStop;
+                if (GUILayout.Button(fx.shake ? "흔들기 켜짐" : "흔들기 꺼짐", fx.shake ? selected : button)) fx.shake = !fx.shake;
+                GUILayout.EndHorizontal();
+            }
 
             GUILayout.Space(6f);
             GUILayout.Label("<b>더미</b> (팀 없는 더미 = 적)", text);

@@ -91,6 +91,7 @@ namespace ChessFight.RagdollLab
             }
             Draw(new Color(c.r, c.g, c.b, 0.35f), 0.025f);
             Live.Add(this);
+            RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = SkillFxKind.BishopWire, by = by, at = at, dir = forward, size = s.bishopLineLength, source = this });
         }
 
         void OnDestroy() => Live.Remove(this);
@@ -141,6 +142,9 @@ namespace ChessFight.RagdollLab
                 Vector3 push = (run.sqrMagnitude > 0.25f ? run.normalized : Vector3.forward) * 2f + Vector3.up * 0.5f;
                 string result = owner != null ? owner.SkillTrip(pawn, push) : "-";
                 trips++;
+                Vector3 trippedAt = pawn.Hips.position;
+                trippedAt.y = center.y;
+                RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = SkillFxKind.BishopTrip, by = owner, target = pawn, at = trippedAt, dir = run, count = trips, source = this });
                 Report($"{pawn.DisplayName} 걸림 ({trips}/{skills.bishopTrips}) → {result}");
                 if (trips >= skills.bishopTrips)
                 {

@@ -15,6 +15,29 @@ namespace ChessFight.RagdollLab
         Recovery = 4,   // stuck for a moment after it
     }
 
+    /// <summary>A moment a skill lands, for the test bed's hit effects (PawnRushSkillFx).</summary>
+    public enum SkillFxKind : byte
+    {
+        QueenBlast, QueenHit,
+        RookHit, RookStop, RookWall, RookBarricade,
+        BishopWire, BishopTrip,
+        KnightStomp, KnightLand,
+    }
+
+    public struct SkillFxEvent
+    {
+        public SkillFxKind kind;
+        public RagdollPawn by, target;
+        /// <summary>Where it happened: the ground under a blast or a landing, the contact of a hit.</summary>
+        public Vector3 at, dir;
+        /// <summary>The rook's hit number, the queen's pieces hit, a trip's number.</summary>
+        public int count;
+        /// <summary>A radius or a length (the queen's ring, the bishop's line).</summary>
+        public float size;
+        /// <summary>The thing the effect lasts as long as (the bishop's wire).</summary>
+        public UnityEngine.Object source;
+    }
+
     /// <summary>
     /// The Pawn Rush piece skills (Docs/Skills/DESIGN.md §3-7): pawn "first two steps", knight "bent leap",
     /// bishop "crossed tripwire", rook "straight charge", queen "ring shove". The king's is not made yet (D1).
@@ -32,6 +55,17 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Every result a skill produces, for the test bed's log.</summary>
         public static event Action<RagdollPawn, string> SkillLog;
+
+        /// <summary>Every moment a skill lands, for the test bed's hit effects; nothing else listens.</summary>
+        public static event Action<SkillFxEvent> SkillFx;
+
+        internal static void RaiseSkillFx(SkillFxEvent e) => SkillFx?.Invoke(e);
+
+        void Fx(SkillFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, int count = 0, float size = 0f)
+            => SkillFx?.Invoke(new SkillFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, count = count, size = size });
+
+        Vector3 SkillContact(RagdollPawn other) =>
+            Vector3.Lerp(bodies[(int)BodyId.Chest].position, other.bodies[(int)BodyId.Chest].position, 0.5f);
 
         SkillStage skillStage;
         float stageTime, skillCooldownLeft, cooldownTotal, skillGrace;
@@ -549,6 +583,7 @@ namespace ChessFight.RagdollLab
                 if (Flat(feet - head).magnitude > s.knightStompReach || feet.y < top - 0.15f || feet.y > top + 0.35f) continue;
                 skillHitSet.Add(other);
                 string result = SkillHit(other, Flat(facing) * 1f + Vector3.down * 1f, true, "나이트 밟기");
+                Fx(SkillFxKind.KnightStomp, other, new Vector3(head.x, top, head.z), Flat(facing));
                 // Off its head and up again; still the same leap (the turn, if unused, is still there).
                 Vector3 v = bodies[0].linearVelocity;
                 AddVelocity(new Vector3(0f, s.knightStompBounce - v.y, 0f));
@@ -576,6 +611,7 @@ namespace ChessFight.RagdollLab
                 }
             }
             int wires = SkillTripwire.BreakNear(feet, s.knightLandRadius, team);
+            Fx(SkillFxKind.KnightLand, null, feet, Flat(facing), staggered, s.knightLandRadius);
             Log($"나이트: 착지 — 주변 {staggered}명 휘청 {s.knightLandStagger:0.##}초" + (wires > 0 ? $" · 밧줄 {wires}개 파괴" : ""));
         }
 
@@ -733,12 +769,14 @@ namespace ChessFight.RagdollLab
                 if (barricade != null && barricade.Standing)
                 {
                     barricade.Break(s.barricadeRegrow);
+                    Fx(SkillFxKind.RookBarricade, null, wall.point, skillDir);
                     dashBase *= 1f - s.rookBarricadeSlow;
                     Log($"룩: 바리케이드 파괴 → 속도 −{s.rookBarricadeSlow * 100f:0}% ({dashBase:0.0} m/s), 계속 전진 · {s.barricadeRegrow:0}초 뒤 다시 생김");
                 }
                 else
                 {
                     HaltDash();
+                    Fx(SkillFxKind.RookWall, null, wall.point, skillDir);
                     Stagger(s.rookWallStagger);
                     RookRecovery();
                     Log($"룩: 벽에 박힘 → 그 자리에서 멈춤, 룩 휘청 {s.rookWallStagger:0.#}초");
@@ -766,6 +804,7 @@ namespace ChessFight.RagdollLab
                 if (dashHits >= s.rookMaxHits)
                 {
                     string stop = SkillHit(other, skillDir * 3f, false, "룩 돌파");
+                    Fx(SkillFxKind.RookStop, other, SkillContact(other), skillDir, s.rookMaxHits + 1);
                     Log($"룩 → {other.DisplayName}: {s.rookMaxHits + 1}번째 → {stop}, 돌진 끝");
                     HaltDash();
                     RookRecovery();
@@ -774,6 +813,7 @@ namespace ChessFight.RagdollLab
                 dashHits++;
                 string result = SkillHit(other, right * (side * s.rookSidePush) + skillDir * 1.5f + Vector3.up * s.rookUpPush, true, "룩 돌파");
                 dashBase *= 1f - s.rookSlowPerHit;
+                Fx(SkillFxKind.RookHit, other, SkillContact(other), skillDir, dashHits);
                 Log($"룩 → {other.DisplayName}: {dashHits}번째 옆으로 튕김 → {result}, 룩 속도 {dashBase:0.0} m/s");
             }
             return true;
@@ -839,10 +879,12 @@ namespace ChessFight.RagdollLab
                     result = SkillHit(other, dir * s.queenOuterPush, false, "퀸 바깥 원");
                     pushed++;
                 }
+                Fx(SkillFxKind.QueenHit, other, other.bodies[0].position, dir, dist <= s.queenInner ? 1 : 0);
                 Log($"퀸 → {other.DisplayName}: {dist:0.0} m ({(dist <= s.queenInner ? "안쪽" : "바깥")}) → {result}");
             }
             int wires = SkillTripwire.BreakNear(c, s.queenRadius, team);
             blastFlash = 0.25f;
+            Fx(SkillFxKind.QueenBlast, null, c - Vector3.up * standHeight, Flat(facing), down + pushed, s.queenRadius);
             Log($"퀸: 팔방 밀치기 — 안쪽 {down}명 · 바깥 {pushed}명" + (freed > 0 ? $" · 잡힌 아군 구출 {freed}" : "") + (wires > 0 ? $" · 밧줄 {wires}개 파괴" : ""));
         }
 
