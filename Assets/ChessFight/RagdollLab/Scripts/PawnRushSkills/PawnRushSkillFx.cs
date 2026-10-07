@@ -180,6 +180,7 @@ namespace ChessFight.RagdollLab
                 set.squares.Add(at);
                 size = square;
             }
+            set.square = size;
             float picture = size * BishopSquaresPerPicture;
             set.lightUp = MakeFloor("bishop_tripwire_lightup", center, e.dir, picture, 0.02f);
             set.hold = MakeFloor("bishop_tripwire_hold", center, e.dir, picture, 0.02f);
@@ -248,10 +249,11 @@ namespace ChessFight.RagdollLab
                     float d = Vector3.Distance(Flat(s), Flat(e.at));
                     if (d < bestD) { bestD = d; at = s; }
                 }
-                if (set.squares.Count > 1) square = Vector3.Distance(set.squares[0], set.squares[1]) / Mathf.Sqrt(2f);
+                square = set.square;
             }
-            // The popping square is drawn 32 px wide in a 64 px picture, its middle 4 px below the picture's.
-            var pop = Burst("bishop_trip_pop", at, square * 0.92f * 2f);
+            // The popping square is drawn corner to corner 32 px wide in a 64 px picture (its diagonal, as the
+            // squares on the floor are mostly seen), its middle 4 px below the picture's.
+            var pop = Burst("bishop_trip_pop", at, square * 0.92f * Mathf.Sqrt(2f) * 2f);
             if (pop != null)
             {
                 pop.pivot = new Vector2(0f, -4f / 64f);
@@ -766,6 +768,8 @@ namespace ChessFight.RagdollLab
             public Object source;
             public Flipbook lightUp, hold;
             public readonly List<Vector3> squares = new List<Vector3>();
+            /// <summary>One square's side (metres).</summary>
+            public float square;
             float fadeLeft = -1f;
 
             /// <summary>False once it has faded out.</summary>
