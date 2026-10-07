@@ -99,6 +99,7 @@
 | `fit`, `base`, `loc`, `claim` | 경기 member data | 현재 점수, 기계 점수, Steam 핑 위치, 새 방장의 "내가 이 번호의 방장" ([HOST §4](HOST.md)) |
 | `load` | 경기 member data | (v13) 경기 씬을 얼마나 불러왔는지 0~100. 처음, 10씩 오를 때, 100일 때만 다시 올림. 봇은 항상 100으로 친다(`SteamSession.LoadPercent`) |
 | `go` | 경기 | (v13) 모두 출발할 공유 Steam 시계 시각(초, 소수 셋째 자리). 방장(방 주인)이 모두 `load`=100이거나 자기 준비 뒤 20초가 지나면 "지금+1.5초"로 한 번만 쓴다(`MatchStart`, [UI §8](../Architecture/UI.md#8-로딩-화면-r58-2026-09-30)) |
+| `nick` | 파티·경기 member data | (R84, 프로토콜 그대로) 이름 설정 화면에서 고른 이름(`PlayerNames` 규칙에 맞는 2~12자, 없으면 빈 값). 방이 바뀌거나 이름이 바뀌면 다시 쓴다(`SteamSession.PublishNick`). 화면의 이름(`SteamSession.Name`)은 경기 방 → 파티 방의 `nick`, 둘 다 없거나 규칙에 안 맞으면 Steam 이름. 옛 빌드는 이 값을 몰라 Steam 이름을 보여 준다 → [UI §15](../Architecture/UI.md#15-시작-로고이름-설정-화면장면-전환-r84-2026-10-08) |
 | `phase` | 경기 | `waiting` / `playing` / `closed` |
 | `open` | 경기 | (v14) `1` = 지금 사람을 받는 방: 대기실, 또는 빈자리가 있고 받는 시간(4분) 안인 시작한 경기. 검색 필터 |
 | `seats` | 경기 | (v14) 시작 때 팀별 인원 `백,흑`(예: `6,6`, `5,5`). 빈자리는 이 인원까지만 채운다 |
