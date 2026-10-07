@@ -899,8 +899,8 @@ namespace ChessFight.RagdollLab
                     float half = s.bishopLineLength * 0.5f;
                     Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * bishopYaw, d2 = Quaternion.Euler(0f, -45f, 0f) * bishopYaw;
                     var faint = new Color(color.r, color.g, color.b, 0.55f);
-                    SkillMarks.Segment(Mark(ref markA, "Bishop preview 1"), p - d1 * half, p + d1 * half, faint, 0.05f);
-                    SkillMarks.Segment(Mark(ref markB, "Bishop preview 2"), p - d2 * half, p + d2 * half, faint, 0.05f);
+                    SkillMarks.Segment(Mark(ref markA, "Bishop preview 1"), p - d1 * half, p + d1 * half, faint, 0.09f);
+                    SkillMarks.Segment(Mark(ref markB, "Bishop preview 2"), p - d2 * half, p + d2 * half, faint, 0.09f);
                     break;
                 }
                 case PieceKind.Bishop when skillStage == SkillStage.Active:

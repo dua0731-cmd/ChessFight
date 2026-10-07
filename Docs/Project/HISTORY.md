@@ -7,7 +7,15 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R70 | 문서: 기물 스킬 기획서 v0.2 상세판 `Docs/Skills/DESIGN.md`(+ `README.md`), REQUIREMENTS R70, HANDOFF·Docs/README 지도. 코드 변경 없음 |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R71 | 문서: Skills README(쓰는 법·실측)·DESIGN(D1~D3 결정), VALIDATION 스킬 표, DECISIONS SK1·SK2, AI_WORKFLOW(Unity MCP 다리), REQUIREMENTS R71, HANDOFF. 비숍 조준 미리보기 굵게 |
+| `7947e4a` | 10-07 | R71 | 바닥 예고선을 바닥에 눕힘, 시험 도구가 그 프레임의 조준·누름과 함께 키를 누름 |
+| `be0c63d` | 10-07 | R71 | 시험 도구: 스킬 단계에서 시간 멈추기(예고 표시 캡처용) |
+| `023be98` | 10-07 | R71 | 룩 돌진 끝에 발을 디딤(미끄러짐 줄임) |
+| `ea3dee7` | 10-07 | R71 | 나이트 도약 공중 손실 보정(기획 1.6 m · 5.5 m에 맞춤), 시험 도구에 룩 빈 바닥 돌진 |
+| `aea87df` | 10-07 | R71 | 시험 도구: 걷는 더미 멈추기, 나이트 꺾기 타이밍, 밟기·착지 더미 위치, 착지를 출발 높이로 잼 |
+| `215051d` | 10-07 | R71 | 자동 시험 도구 `PawnRushSkillProbe`, 쿨 막대 글씨 대비 |
+| `401ac15` | 10-07 | R71 | 폰 러쉬 스킬 시험 씬 `PawnRush_SkillTest`(RagdollTest 복사 + `PawnRushSkillBed`), 스킬 5개(`RagdollPawn.PawnRushSkills`), 밧줄·바리케이드·예고선, 메뉴 Open Skill Test, `RagdollPawn.cs`·`Abilities.cs` 연결 |
+| `cf69513` (`claude/bold-johnson-8ez95n`) | 10-07 | R70 | 문서: 기물 스킬 기획서 v0.2 상세판 `Docs/Skills/DESIGN.md`(+ `README.md`), REQUIREMENTS R70, HANDOFF·Docs/README 지도. 코드 변경 없음 |
 | `cc6373f` (`claude/bold-johnson-8ez95n`) | 10-07 | R69 | 폰 러시 코스 01 v0.2: 같은 씬을 탑을 감아 오르는 3층 고리로(`Course01v2Builder`, 월드 좌표), `FallDistanceRespawn`·`TeamZone`·`FinishZone` 원형/골반만, `ProgressPath`, v0.2 검증기, 메뉴 Build Course01 v2, v0.1 모듈 코드·레이아웃 에셋 삭제, 기획서 v0.2 원문, 문서 |
 | `c4015ff` (`claude/bold-johnson-8ez95n`) | 10-06 | R68 | 폰 러시 코스 01 「여덟 번째 랭크」: 새 씬·모듈 18개(코드)·키트 스크립트(`Assets/Maps/PawnRush/Course01`), `NoClimbSurface`·`KillVolume`, 래그돌 등반·잡기에 등반 불가 연결, 장애물 `phaseOffset`·원판 방향, `PlaytestSpawner` 낙사 영역·팀 바꾸기, 생성기 `gen_pawnrush_course01.py`, Linux 검사에 PawnRush·에디터 컴파일, 문서 |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
