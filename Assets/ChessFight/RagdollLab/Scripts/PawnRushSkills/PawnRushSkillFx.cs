@@ -229,13 +229,14 @@ namespace ChessFight.RagdollLab
             Shell(pop, 0.15f, 1.3f, Gold, 0.22f);
             for (int i = 0; i < 28; i++)
             {
-                float a = Random.Range(0f, Mathf.PI * 2f), up = Random.Range(15f, 62f) * Mathf.Deg2Rad;
+                // Kept within about 3 m (faster ones flew into the camera and filled the picture).
+                float a = Random.Range(0f, Mathf.PI * 2f), up = Random.Range(20f, 55f) * Mathf.Deg2Rad;
                 var dir = new Vector3(Mathf.Cos(a) * Mathf.Cos(up), Mathf.Sin(up), Mathf.Sin(a) * Mathf.Cos(up));
                 anims.Add(new Trinket(root, chessMeshes[Random.Range(0, chessMeshes.Length)], goldMat, GoldGlow)
                 {
                     burst = true,
                     pos = pop + dir * 0.2f,
-                    vel = dir * Random.Range(4f, 8.5f),
+                    vel = dir * Random.Range(3.5f, 6.2f),
                     floorY = c.y,
                     size = Random.Range(0.22f, 0.32f),
                     life = Random.Range(1.1f, 1.6f),
