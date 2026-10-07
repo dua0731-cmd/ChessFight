@@ -39,7 +39,8 @@ namespace ChessFight.Game
         VisualElement root, tabsBox, subsBox, view, content, bar, thumb, layer;
         Label descTitle, descText, resetText;
         readonly List<Action> refreshers = new List<Action>();
-        readonly List<Tab> tabs = Schema();
+        // Built in Build, not as a field initializer: Unity refuses Screen calls in a constructor.
+        List<Tab> tabs;
         float scroll;
         // A key being bound: which action and slot, and the frame it started.
         GameKey? waitingKey;
@@ -383,6 +384,7 @@ namespace ChessFight.Game
 
         void Build()
         {
+            tabs = Schema();
             root = RuntimePanels.Create(gameObject, Resources.Load<VisualTreeAsset>("SettingsHud"),
                                         Resources.Load<ThemeStyleSheet>("NetworkTheme"), null,
                                         new Vector2Int(1280, 720), out ownedPanel);
