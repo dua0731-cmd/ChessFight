@@ -273,7 +273,9 @@ namespace ChessFight.RagdollLab
             GUI.color = color;
             GUI.DrawTexture(new Rect(r.x, r.y, r.width * Mathf.Clamp01(fill), r.height), barTexture);
             GUI.color = Color.white;
-            GUI.Label(new Rect(r.x + 6f, r.y, r.width, r.height), label, small);
+            var dark = new GUIStyle(small);
+            dark.normal.textColor = fill >= 0.999f ? new Color(0.02f, 0.1f, 0.16f) : Color.white;
+            GUI.Label(new Rect(r.x + 6f, r.y, r.width, r.height), label, dark);
         }
 
         /// <summary>A short line over each piece: its skill state (P1) or what last hit it (the dummies).</summary>
