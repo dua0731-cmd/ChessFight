@@ -42,6 +42,8 @@
 | `…/PawnRushSkillBed.cs` | 시험장: 모든 랩 폰에 스킬 켜기, P1 스킬 키(G), 왼쪽 창, 더미 버튼, 바리케이드 |
 | `…/SkillTripwire.cs` · `SkillBarricade.cs` · `SkillMarks.cs` | 비숍 밧줄, 룩 바리케이드, 바닥 예고선 그리기 |
 | `…/PawnRushSkillProbe.cs` | **자동 시험 도구**: 키보드 없이 P1·더미를 움직이고 G를 눌러 거리·높이·결과를 잰다(아래) |
+| `…/PawnRushSkillFx.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받아 멈춤·흔들기·흰 번쩍·글자·고리·조각·칸·납작. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
+| `…/PawnRushSkillFilm.cs` · `RagdollLab/Editor/PawnRushSkillFilmEncoder.cs` | **녹화 도구**(R73): 자동 시험을 고정 카메라로 찍어 `.mp4`로(아래) |
 | `RagdollLab/Editor/PawnRushSkillTestMenu.cs` | 메뉴 Open Skill Test |
 | `RagdollPawn.cs`(4곳)·`RagdollPawn.Abilities.cs`(1곳) | 스킬이 켜졌을 때만 동작하는 연결: 키 막기/속도 덮어쓰기 위치, 진군 속도 배율, 스킬 돌진 중 몸끼리 부딪힘 판정은 스킬이 정함, 리스폰 때 스킬 초기화, 나이트 옛 밟기(찌그러짐) 대신 새 밟기 |
 
@@ -69,6 +71,12 @@ AI는 Unity MCP 다리(`C:/Work/ChessFight`, 포트 6401)의 `execute_code`로 �
 | 나이트 밟기 / 착지 | 머리 밟힌 더미 넘어짐, 나이트 +0.75 m 튀어 오름 / 1 m 옆 휘청, 2.5 m 옆 그대로 | 같음 |
 | 비숍 | 5 m 앞에 깔림, 가로질러 달린 적 넘어짐, 룩 더미는 걸리지 않고 끊음 | 같음 |
 | (참고) 일반 점프 | 달리기 5.30 m(골반 +1.12 m), 전력질주 5.35~6.84 m(골반 +0.4~0.6 m, 질주 걸음 박자에 따라 다름) | 기획서 §12.4: 프리비즈는 3.1 m를 가정 |
+
+## 이펙트 녹화 (R73)
+
+Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면마다 한 번은 제 속도, 한 번은 맞는 순간 앞뒤만 느리게(×0.3). 1280×720, 60fps, 게임 시간을 한 프레임에 1/60초씩 밀어서 녹화가 느려도 영상은 제 속도. 프레임은 Unity 자체 인코더(MediaEncoder)로 `.mp4`가 되고, 10프레임마다 `.jpg`가 `이름_stills`에 남는다. 녹화 중에는 키보드 입력을 막고 P2를 화면 밖으로 옮긴다. 장면: `queen`, `rook-cluster`, `bishop-trip`(새 시험: 밧줄에 적 한 명 걸기), `knight-stomp`. 네 번째 인자로 이름 앞부분을 주면 그 장면만.
+
+10-07 AI 녹화 `PawnRush_SkillFx_R73b.mp4`(32초): 퀸 고리 두 겹·가장자리 번짐, 룩 1·2·3 숫자와 조각·4번째 "쿵!", 비숍 보라 칸·"덜컥!", 나이트 납작·"뿅!"·어지러운 별이 다 찍힘. **사람이 손으로 해 본 것은 아님.** 이펙트는 시험용 그림(선·상자·글자)이고 소리는 아직 없다. 멈춤은 지금 게임 전체가 멈춘다(실제 게임·온라인에서는 때린 쪽·맞은 쪽만 멈추게 바꿔야 함). 폰은 시안을 아직 안 골라 그대로.
 
 ## 다음 할 일
 

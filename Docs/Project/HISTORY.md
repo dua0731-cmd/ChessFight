@@ -7,7 +7,12 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R72 | 문서: Skills EFFECTS(이펙트 시안 기물마다 3개), README(V 키·시험용 쿨), REQUIREMENTS R72, VALIDATION, HANDOFF |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R73 | 문서: Skills README(이펙트·녹화), EFFECTS(고른 것), REQUIREMENTS R73, VALIDATION, HANDOFF |
+| `88a91de` | 10-07 | R73 | 녹화: P2를 화면 밖으로 |
+| `a465780` | 10-07 | R73 | 녹화: 녹화 중 키보드 입력 막기 |
+| `3c14943` · `c7d8ae9` · `d38f48b` | 10-07 | R73 | 녹화: 느린 화면은 맞는 순간 앞뒤만, 장면 사이 밧줄 지우기, 카메라·자막 띠 / 이펙트: 납작 오래, 글자 위치, 퀸 안쪽 고리 진하게 |
+| `c6c51eb` | 10-07 | R73 | 타격감 이펙트(퀸 A·룩 A·비숍 B·나이트 B) `PawnRushSkillFx`, 스킬 이벤트 `RagdollPawn.SkillFx`, 녹화 도구 `PawnRushSkillFilm` + mp4 인코더, 시험 `bishop-trip` |
+| `4091d33` | 10-07 | R72 | 문서: Skills EFFECTS(이펙트 시안 기물마다 3개), README(V 키·시험용 쿨), REQUIREMENTS R72, VALIDATION, HANDOFF |
 | `f2cf4e6` | 10-07 | R72 | 시험 도구 rook-cluster: 돌진이 끝날 때 넘어진 수를 셈 |
 | `d807606` | 10-07 | R72 | 시험용 쿨타임 2초(모든 기물), 룩 시험용 더미 4명 뭉치기(V·버튼·룩 고르면 저절로), 시험 도구 rook-cluster |
 | `30292b2` | 10-07 | R71 | 문서: Skills README(쓰는 법·실측)·DESIGN(D1~D3 결정), VALIDATION 스킬 표, DECISIONS SK1·SK2, AI_WORKFLOW(Unity MCP 다리), REQUIREMENTS R71, HANDOFF. 비숍 조준 미리보기 굵게 |
