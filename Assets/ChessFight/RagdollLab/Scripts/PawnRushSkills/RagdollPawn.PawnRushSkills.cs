@@ -400,26 +400,28 @@ namespace ChessFight.RagdollLab
             facing = FlatDir(skillDir);
             freeFlight = Mathf.Max(freeFlight, 0.1f);
             airTimer = Mathf.Max(airTimer, 0.1f);
-            LeanAlongLine();
+            LeanAlongLine(1f);
         }
 
-        /// <summary>The air charge's warning: the rook stops in the air (its fall too) for rookAirLock.</summary>
+        /// <summary>The air charge's warning: the rook stops in the air (its fall too) for rookAirLock, already
+        /// leaning a little into the line.</summary>
         void HoverForCharge(float dt)
         {
             Vector3 v = bodies[0].linearVelocity;
             AddVelocity(-v * Mathf.Clamp01(14f * dt) - Physics.gravity * dt);
             freeFlight = Mathf.Max(freeFlight, 0.1f);
             airTimer = Mathf.Max(airTimer, 0.1f);
-            LeanAlongLine();
+            LeanAlongLine(0.4f);
         }
 
-        /// <summary>The hips' balance target tilted along the charge line: 0° straight up, 30° level, 50° diving (more
-        /// and it went into the floor head first).</summary>
-        void LeanAlongLine()
+        /// <summary>The hips' balance target tilted along the charge line like Superman (R81): going up the body lies
+        /// along the line, head first (45° up = 45° lean, level = 80°); diving down it leans 50° (more and it went into
+        /// the floor head first).</summary>
+        void LeanAlongLine(float amount)
         {
             float up = Mathf.Asin(Mathf.Clamp(skillDir.y, -1f, 1f)) * Mathf.Rad2Deg;
-            float lean = up >= 0f ? Mathf.Lerp(30f, 0f, up / 45f) : Mathf.Lerp(30f, 50f, -up / 60f);
-            anchor.MoveRotation(Quaternion.LookRotation(FlatDir(skillDir), Vector3.up) * Quaternion.Euler(lean, 0f, 0f));
+            float lean = up >= 0f ? Mathf.Lerp(80f, 45f, up / 45f) : Mathf.Lerp(80f, 50f, -up / 60f);
+            anchor.MoveRotation(Quaternion.LookRotation(FlatDir(skillDir), Vector3.up) * Quaternion.Euler(lean * amount, 0f, 0f));
         }
 
         /// <summary>Stopped dead (a wall): the speed goes, the anchor stays on the body.</summary>
@@ -569,9 +571,15 @@ namespace ChessFight.RagdollLab
             switch (skillStage)
             {
                 case SkillStage.None:
-                    if (press && CanStartSkill())
+                    if (press && CanStartSkill(true))
                     {
                         SkillUses++;
+                        if (!OnFloor)
+                        {
+                            // In the air too (R81): it leaps on from where it is, at once (no rearing up mid-air).
+                            KnightLeap(s);
+                            break;
+                        }
                         skillStage = SkillStage.Windup;
                         stageTime = 0f;
                         SkillDetail = "준비 (뒷발로 섬)";
@@ -629,6 +637,7 @@ namespace ChessFight.RagdollLab
 
         void KnightLeap(PawnRushSkillParams s)
         {
+            bool fromFloor = OnFloor;   // (the launch below takes it off the floor)
             float g = Mathf.Max(0.01f, -Physics.gravity.y);
             // The textbook arc for the designed height and distance, then what the ragdoll loses in the air
             // put back (measured in the skill test scene).
@@ -647,7 +656,7 @@ namespace ChessFight.RagdollLab
             stageTime = 0f;
             SkillDetail = "도약 (공중에서 F = 다시 차고 나감)";
             knightSpot = PredictLanding(bodies[0].position, bodies[0].linearVelocity, g);
-            Fx(SkillFxKind.KnightLeap, null, bodies[0].position - Vector3.up * standHeight, skillDir);
+            Fx(SkillFxKind.KnightLeap, null, bodies[0].position - Vector3.up * standHeight, skillDir, fromFloor ? 0 : 1);
         }
 
         void KnightTurn(PawnRushSkillParams s)
@@ -1275,6 +1284,19 @@ namespace ChessFight.RagdollLab
                        ref Quaternion thighL, ref Quaternion thighR, ref Quaternion footL, ref Quaternion footR)
         {
             if (PawnRushSkills == null || State != PawnState.Active) return;
+            if (piece == PieceKind.Rook && rookAir && dashing)
+            {
+                // Superman (R81): both fists out ahead over the head, legs straight behind, toes pointed, looking
+                // where it flies.
+                armL = Quaternion.Euler(0f, 0f, -80f);
+                armR = Quaternion.Euler(0f, 0f, 80f);
+                chest = Quaternion.identity;
+                head = Quaternion.Euler(-35f, 0f, 0f);
+                thighL = Quaternion.Euler(4f, 0f, 0f);
+                thighR = Quaternion.Euler(-4f, 0f, 0f);
+                footL = footR = Quaternion.Euler(30f, 0f, 0f);
+                return;
+            }
             if (piece == PieceKind.Rook && skillStage != SkillStage.None && (rookAir || !OnFloor))
             {
                 // +1 = going up, -1 = going down: the charge's line while charging or holding, the rise or fall otherwise.

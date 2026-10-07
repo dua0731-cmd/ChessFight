@@ -181,28 +181,35 @@ namespace ChessFight.RagdollLab
         // Point lights are kept low (1-2): a bright light on a white floor blooms the whole picture.
 
         // ---- Queen A (R80: "small gold chess pieces gather and pop", not a spell): while she charges, little gold
-        // chess pieces appear around her and rush in to her chest, glowing brighter as they come; at the blast they
-        // pop out again, spinning, falling and bouncing over the floor, with a gold flash, sparks, two thin rings on
-        // the floor (1.5 m knocked down, 3 m pushed) and dust; the screen shakes and its edges split red and cyan.
+        // chess pieces (R81: the real Staunton shapes, a little smaller) circle round her, spinning like tops, closer
+        // and faster, into her chest, glowing brighter as they come; at the blast they pop out of the swirl the same
+        // way round, tumbling, falling and bouncing over the floor, with a gold flash and ring, sparks, two thin rings
+        // on the floor (1.5 m knocked down, 3 m pushed) and dust; the screen shakes and its edges split red and cyan.
 
         static readonly Color GoldGlow = new Color(0.9f, 0.5f, 0.1f);
+
+        /// <summary>The pieces' height: a real set's proportions (ChessHeights), the king this tall (m). R81: a little
+        /// smaller than R80's.</summary>
+        const float ChessKing = 0.24f;
 
         void QueenCharge(RagdollPawn q)
         {
             float windup = Params != null ? Params.queenWindup : 0.35f;
-            Vector3 feet = Ground(q.Hips.position);
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < 18; i++)
             {
-                float a = (i + Random.value * 0.7f) * Mathf.PI * 2f / 16f, r = Random.Range(1.9f, 2.8f);
-                var piece = new Trinket(root, chessMeshes[Random.Range(0, chessMeshes.Length)], goldMat, GoldGlow)
+                int kind = i % chessMeshes.Length;
+                var piece = new Trinket(root, chessMeshes[kind], goldMat, GoldGlow)
                 {
-                    pos = feet + new Vector3(Mathf.Cos(a) * r, Random.Range(0.25f, 1.9f), Mathf.Sin(a) * r),
-                    target = () => q != null ? ChestOf(q) : Vector3.zero,
-                    arrive = windup * Random.Range(0.85f, 1f),
-                    size = Random.Range(0.24f, 0.34f),
+                    center = () => q != null ? ChestOf(q) : Vector3.zero,
+                    startAngle = i * Mathf.PI * 2f / 18f + Random.Range(-0.1f, 0.1f),
+                    startRadius = Random.Range(1.6f, 2.3f),
+                    startHeight = Random.Range(-0.8f, 0.9f),
+                    turns = 1.1f,
+                    arrive = windup * Random.Range(0.9f, 1f),
+                    size = ChessKing * ChessHeights[kind],
                 };
                 anims.Add(piece);
-                anims.Add(new Streak(root, matTrail, Hdr(Gold, 1.3f), 0.1f, 0.12f, () => piece.Alive ? piece.Position : (Vector3?)null) { paint = 0.7f, delay = 0.03f });
+                anims.Add(new Streak(root, matTrail, Hdr(Gold, 1.3f), 0.07f, 0.12f, () => piece.Alive ? piece.Position : (Vector3?)null) { paint = 0.7f, delay = 0.03f });
             }
             Add(new Shape(root, "Queen gathering glow", meshQuad, matHalo)
             {
@@ -227,18 +234,22 @@ namespace ChessFight.RagdollLab
             Flare(pop, Gold, 1.6f, outer * 2.6f, 0.45f);
             Halo(pop, 2.2f, Gold, 0.22f);
             Shell(pop, 0.15f, 1.3f, Gold, 0.22f);
-            for (int i = 0; i < 28; i++)
+            FlatRing(pop, 0.2f, 1.6f, 0.16f, Gold, 0.3f, 3f);
+            for (int i = 0; i < 30; i++)
             {
-                // Kept within about 3 m (faster ones flew into the camera and filled the picture).
-                float a = Random.Range(0f, Mathf.PI * 2f), up = Random.Range(20f, 55f) * Mathf.Deg2Rad;
-                var dir = new Vector3(Mathf.Cos(a) * Mathf.Cos(up), Mathf.Sin(up), Mathf.Sin(a) * Mathf.Cos(up));
-                anims.Add(new Trinket(root, chessMeshes[Random.Range(0, chessMeshes.Length)], goldMat, GoldGlow)
+                // Out of the swirl the same way round (R81: "회전하면서 팡"), kept within about 3 m (faster ones flew
+                // into the camera and filled the picture).
+                int kind = i % chessMeshes.Length;
+                float a = i * Mathf.PI * 2f / 30f + Random.Range(-0.12f, 0.12f);
+                var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                var around = new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a));
+                anims.Add(new Trinket(root, chessMeshes[kind], goldMat, GoldGlow)
                 {
                     burst = true,
-                    pos = pop + dir * 0.2f,
-                    vel = dir * Random.Range(3.5f, 6.2f),
+                    pos = pop + radial * 0.25f,
+                    vel = radial * Random.Range(2.5f, 4.5f) + around * Random.Range(2f, 3.5f) + Vector3.up * Random.Range(2.5f, 4.5f),
                     floorY = c.y,
-                    size = Random.Range(0.22f, 0.32f),
+                    size = ChessKing * ChessHeights[kind],
                     life = Random.Range(1.1f, 1.6f),
                 });
             }
@@ -469,13 +480,20 @@ namespace ChessFight.RagdollLab
             }));
         }
 
-        /// <summary>"다": the leap's take-off, a ring and a puff of dust where it pushed off.</summary>
+        /// <summary>"다": the leap's take-off, a ring and a puff of dust where it pushed off; off the air (R81) a ring
+        /// kicked away under its feet instead.</summary>
         void KnightTakeOff(SkillFxEvent e)
         {
+            Shake(0.04f, 0.12f);
+            if (e.count == 1)
+            {
+                FlatRing(e.at, 0.15f, 1.2f, 0.16f, Sky, 0.32f, 2.8f);
+                SparkBurst(e.at, 12, SkyCore, Vector3.down, 60f, 2f, 5f, 0.35f, 0.05f);
+                return;
+            }
             Vector3 g = Ground(e.at + Vector3.up * 0.3f);
             GroundRing(g, 0.1f, 0.9f, 0.15f, Sky, 0.35f, 2.4f);
             DustRing(g, 10, 0.2f, 2.2f, Dust, 0.45f, 0.6f);
-            Shake(0.04f, 0.12f);
         }
 
         /// <summary>"당" (R80): the second press kicks off the air, turned or straight on: a short stop and a shake,
@@ -801,23 +819,20 @@ namespace ChessFight.RagdollLab
                 }
             }
 
-            /// <summary>The two lines of the wire as thin beams of light at <paramref name="height"/>.</summary>
+            /// <summary>The two lines of the wire as thin beams of light, each in two halves that bend where the wire is
+            /// pulled (R81); placed from the wire every frame.</summary>
             public void AddWires(Vector3 center, Vector3 forward, float length, float height)
             {
-                forward.y = 0f;
-                forward = forward.sqrMagnitude > 1e-4f ? forward.normalized : Vector3.forward;
-                foreach (float turn in new[] { 45f, -45f })
-                {
-                    Vector3 d = Quaternion.Euler(0f, turn, 0f) * forward, a = center - d * length * 0.5f + Vector3.up * height;
-                    wires.Add(new Shape(fx.root, "Bishop wire light", fx.meshCylinder, fx.matRod)
-                    {
-                        life = float.MaxValue,
-                        at = a,
-                        rotation = Quaternion.FromToRotation(Vector3.up, d),
-                        scale = new Vector3(0.03f, length, 0.03f),
-                        paint = 0.3f,
-                    });
-                }
+                for (int i = 0; i < 4; i++)
+                    wires.Add(new Shape(fx.root, "Bishop wire light", fx.meshCylinder, fx.matRod) { life = float.MaxValue, paint = 0.3f });
+            }
+
+            static void Rod(Shape rod, Vector3 from, Vector3 to)
+            {
+                Vector3 d = to - from;
+                rod.at = from;
+                rod.rotation = Quaternion.FromToRotation(Vector3.up, d.sqrMagnitude > 1e-6f ? d.normalized : Vector3.up);
+                rod.scale = new Vector3(0.03f, d.magnitude, 0.03f);
             }
 
             /// <summary>The square nearest <paramref name="at"/> jumps and flares; returns its middle.</summary>
@@ -867,9 +882,21 @@ namespace ChessFight.RagdollLab
                     }
                 }
                 float wireBright = (armed ? 1f : 0.4f) * (0.8f + 0.2f * Mathf.Sin(age * 9f)) * fade;
-                foreach (var wire in wires)
+                var tripwire = source as SkillTripwire;
+                for (int i = 0; i < wires.Count; i++)
                 {
-                    wire.color = Hdr(Color.Lerp(Violet, Magenta, 0.5f), 3f);
+                    var wire = wires[i];
+                    float tension = 0f;
+                    if (tripwire != null)
+                    {
+                        int line = i / 2;
+                        tripwire.LinePoints(line, out var a, out var mid, out var b);
+                        if (i % 2 == 0) Rod(wire, a, mid);
+                        else Rod(wire, mid, b);
+                        tension = tripwire.Tension(line);
+                    }
+                    // Pulled taut, a line glows white-hot along its length.
+                    wire.color = Hdr(Color.Lerp(Color.Lerp(Violet, Magenta, 0.5f), Color.white, 0.5f * tension), 3f + 3f * tension);
                     wire.bright = wireBright;
                     wire.Step(dt, cam);
                 }

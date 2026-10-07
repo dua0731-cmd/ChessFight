@@ -17,7 +17,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class PawnRushSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "rook-cluster", "rook-air", "queen", "knight", "knight-turn", "knight-straight", "knight-stomp", "knight-land", "bishop", "bishop-trip", "all" };
+        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "rook-cluster", "rook-air", "queen", "knight", "knight-turn", "knight-straight", "knight-air", "knight-stomp", "knight-land", "bishop", "bishop-trip", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>The current run has set its pieces down and settled them (the film records from here).</summary>
         public static bool Staged { get; private set; }
@@ -122,6 +122,7 @@ namespace ChessFight.RagdollLab
                     "knight" => Knight(false),
                     "knight-turn" => Knight(true),
                     "knight-straight" => KnightStraight(),
+                    "knight-air" => KnightAir(),
                     "knight-stomp" => KnightStomp(),
                     "knight-land" => KnightLand(),
                     "bishop" => Bishop(),
@@ -598,6 +599,28 @@ namespace ChessFight.RagdollLab
             yield return Until(() => { peak = Mathf.Max(peak, p1.Hips.position.y); return p1.SkillStage != SkillStage.Active; }, 3f);
             Vector3 d = p1.Hips.position - takeoff;
             Add($"나이트 직진 두 번 F: 착지 앞 {d.z:0.00} m · 옆 {d.x:0.00} m (한 번 도약은 약 5.5 m), 골반 최고 +{peak - takeoff.y:0.00} m, 상태 {StateText(p1)}");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        /// <summary>The knight's leap from the air (R81): a jump, F near the top, it leaps on from there.</summary>
+        IEnumerator KnightAir()
+        {
+            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
+            var p1 = P1;
+            Vector3 ground = p1.Hips.position;
+            jumpEdge = true;
+            Say("스페이스 (점프)");
+            yield return Until(() => p1.Hips.linearVelocity.y > 1f, 0.5f);
+            yield return Until(() => p1.Hips.linearVelocity.y < 0.8f, 1f);
+            float jumped = p1.Hips.position.y - ground.y;
+            Tap("F (공중)");
+            yield return Until(() => p1.SkillStage == SkillStage.Active, 0.5f);
+            bool leapt = p1.SkillStage == SkillStage.Active;
+            Vector3 takeoff = p1.Hips.position;
+            float peak = takeoff.y;
+            yield return Until(() => { peak = Mathf.Max(peak, p1.Hips.position.y); return p1.SkillStage != SkillStage.Active; }, 3f);
+            Add($"나이트 공중 도약: 점프 {jumped:0.00} m에서 F → {(leapt ? "바로 도약" : "도약 안 됨")}, 골반 최고 바닥 위 +{peak - ground.y:0.00} m, 착지까지 앞 {FlatDistance(takeoff, p1.Hips.position):0.00} m, 상태 {StateText(p1)}");
             yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
             yield return new WaitForSeconds(0.5f);
         }

@@ -35,18 +35,14 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "queen", title = "퀸 · 금색 체스말", note = "작은 금색 체스말이 모여들었다가 팡 터짐 · 1.5 m 넘어짐 · 3 m 밀림",
+            new Shot { run = "queen", title = "퀸 · 금색 체스말", note = "진짜 체스말 모양 · 빙글빙글 돌며 모였다가 소용돌이처럼 팡",
                 eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.6f, -7.2f), lead = 0.5f },
-            new Shot { run = "rook-air", title = "룩 · 공중 돌진", note = "공중에서 F → 마우스 위아래로 조준(반투명 선) → 좌클릭: 위로 / 아래로 내리꽂기",
+            new Shot { run = "rook-air", title = "룩 · 슈퍼맨 돌진", note = "공중에서 F → 위로 조준 → 좌클릭: 두 팔 뻗고 몸을 눕혀 날아감 / 아래로 내리꽂기",
                 eye = new Vector3(1.2f, 2.9f, -10.8f), look = new Vector3(-6f, 2.5f, -9.4f), lead = 0.5f },
-            new Shot { run = "rook-cluster", title = "룩 · 반투명 조준선", note = "파란 선 대신 반투명 흰 선 → 좌클릭 → 4명 뭉치 돌진",
-                eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.35f },
-            new Shot { run = "bishop-trip", title = "비숍 · 설치 조준", note = "파란 선 없음 · 흰 선을 더 굵게(반투명 유지) → 설치 → 걸림",
-                eye = new Vector3(5.5f, 5.8f, -13.5f), look = new Vector3(-0.2f, 0f, -8.6f), lead = 0.45f },
-            new Shot { run = "knight-turn", title = "나이트 · 꺾어 다시 차고 나감", note = "공중 F + 오른쪽 → 당! 하고 꺾어 멀리",
-                eye = new Vector3(-1f, 6.5f, -16f), look = new Vector3(1.6f, 0.3f, -10.8f), lead = 0.45f },
-            new Shot { run = "knight-straight", title = "나이트 · 다~당", note = "도약(다) → 공중 F(당) → 앞으로 한 번 더",
-                eye = new Vector3(5f, 4.2f, -14f), look = new Vector3(0f, 0.6f, -6f), lead = 0.45f },
+            new Shot { run = "bishop-trip", title = "비숍 · 줄이 잡아당김", note = "설치 → 적이 걸리면 줄이 다리를 따라 늘어나며 잡아채고 → 튕겨 돌아옴",
+                eye = new Vector3(2.4f, 3.4f, -10.6f), look = new Vector3(-0.8f, 0.2f, -6.8f), lead = 0.45f },
+            new Shot { run = "knight-air", title = "나이트 · 공중에서 도약", note = "점프 → 공중에서 F → 그 자리에서 바로 도약",
+                eye = new Vector3(5f, 3.6f, -14f), look = new Vector3(0f, 1.2f, -7f), lead = 0.45f },
         };
 
         LabGame game;

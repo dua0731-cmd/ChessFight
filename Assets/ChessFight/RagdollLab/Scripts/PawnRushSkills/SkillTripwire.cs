@@ -26,10 +26,62 @@ namespace ChessFight.RagdollLab
         int trips;
         readonly HashSet<RagdollPawn> tripped = new HashSet<RagdollPawn>();
         LineRenderer line1, line2;
+        // A trip bends the line it caught (R81: "잡아당기는"): for a moment it stretches with the legs it caught,
+        // then twangs back straight. Spent, the wire stays that long before it goes.
+        const float BendTime = 0.5f, StretchTime = 0.12f, MaxStretch = 0.9f;
+        int bentLine = -1;
+        float bentAt, snapAt = -1f;
+        RagdollPawn bentBy;
+        Vector3 bentContact, released;
+        bool spent;
         readonly List<Transform> pegs = new List<Transform>();
 
         public Vector3 Center => center;
         public bool Armed => armed;
+
+        /// <summary>One of the two lines as it is drawn now (at shin height): its ends and its middle, which is where
+        /// it is pulled to while it holds a tripped piece's legs, and where it twangs back from (R81).</summary>
+        public void LinePoints(int line, out Vector3 a, out Vector3 mid, out Vector3 b)
+        {
+            Vector3 up = Vector3.up * height;
+            a = (line == 0 ? a1 : a2) + up;
+            b = (line == 0 ? b1 : b2) + up;
+            mid = Bend(line, a, b);
+        }
+
+        /// <summary>How far a line is pulled out of straight now, 0..1 (the effects glow it harder).</summary>
+        public float Tension(int line)
+        {
+            if (line != bentLine) return 0f;
+            LinePoints(line, out var a, out var mid, out var b);
+            return Mathf.Clamp01(Vector3.Distance(mid, ClosestOn(a, b, mid)) / 0.5f);
+        }
+
+        Vector3 Bend(int line, Vector3 a, Vector3 b)
+        {
+            Vector3 straight = (a + b) * 0.5f;
+            if (line != bentLine) return straight;
+            float t = age - bentAt;
+            if (t >= BendTime) return straight;
+            Vector3 contact = bentContact + Vector3.up * height;
+            if (t < StretchTime && bentBy != null)
+            {
+                // Held by the legs it caught: drawn after them, stretching.
+                Vector3 legs = (bentBy.bodies[(int)BodyId.FootL].position + bentBy.bodies[(int)BodyId.FootR].position) * 0.5f;
+                released = Vector3.ClampMagnitude(legs - contact, MaxStretch);
+                return contact + released;
+            }
+            // Let go: it twangs back, overshooting and settling.
+            float u = (t - StretchTime) / (BendTime - StretchTime);
+            return contact + released * (Mathf.Cos(u * Mathf.PI * 3f) * (1f - u) * (1f - u));
+        }
+
+        static Vector3 ClosestOn(Vector3 a, Vector3 b, Vector3 p)
+        {
+            Vector3 ab = b - a;
+            float t = ab.sqrMagnitude < 1e-6f ? 0f : Mathf.Clamp01(Vector3.Dot(p - a, ab) / ab.sqrMagnitude);
+            return a + ab * t;
+        }
 
         public static SkillTripwire Spawn(RagdollPawn owner, Vector3 at, Vector3 forward, PawnRushSkillParams skills)
         {
@@ -98,14 +150,22 @@ namespace ChessFight.RagdollLab
 
         void Draw(Color color, float width)
         {
-            Vector3 up = Vector3.up * height;
-            SkillMarks.Segment(line1, a1 + up, b1 + up, color, width, false);
-            SkillMarks.Segment(line2, a2 + up, b2 + up, color, width, false);
+            for (int line = 0; line < 2; line++)
+            {
+                LinePoints(line, out var a, out var mid, out var b);
+                var lr = line == 0 ? line1 : line2;
+                if (line == bentLine && age - bentAt < BendTime) SkillMarks.Polyline(lr, new[] { a, mid, b }, color, width);
+                else SkillMarks.Segment(lr, a, b, color, width, false);
+            }
         }
 
         void Update()
         {
-            if (!armed) return;
+            if (!armed)
+            {
+                // Drawn once at the start; only a bend moves it before it is armed.
+                return;
+            }
             // The glint running along the lines.
             float glint = 0.6f + 0.4f * Mathf.Sin(Time.time * 9f);
             Color c = Color.Lerp(SkillMarks.TeamColor(team), Color.white, 0.35f);
@@ -115,6 +175,12 @@ namespace ChessFight.RagdollLab
         void FixedUpdate()
         {
             age += Time.fixedDeltaTime;
+            if (spent)
+            {
+                // The last trip's yank and twang, then it goes.
+                if (age >= snapAt) Snap("끊어짐");
+                return;
+            }
             if (!armed && age >= skills.bishopArm)
             {
                 armed = true;
@@ -139,16 +205,30 @@ namespace ChessFight.RagdollLab
                 }
                 Vector3 run = pawn.Hips.linearVelocity;
                 run.y = 0f;
-                Vector3 push = (run.sqrMagnitude > 0.25f ? run.normalized : Vector3.forward) * 2f + Vector3.up * 0.5f;
+                Vector3 runDir = run.sqrMagnitude > 0.25f ? run.normalized : Vector3.forward;
+                // The wire catches the legs and yanks them back (R81: "잡아당기는"): the body goes on over them, face
+                // first, and the line it caught is pulled out after the legs before it twangs back.
+                Vector3 push = runDir * 1.6f + Vector3.up * 0.3f;
                 string result = owner != null ? owner.SkillTrip(pawn, push) : "-";
+                foreach (var id in new[] { BodyId.FootL, BodyId.FootR, BodyId.ThighL, BodyId.ThighR })
+                    pawn.bodies[(int)id].linearVelocity += -runDir * 4.5f + Vector3.down * 0.8f;
+                Vector3 feet = (pawn.bodies[(int)BodyId.FootL].position + pawn.bodies[(int)BodyId.FootR].position) * 0.5f;
+                Vector2 f = Flat(feet);
+                bentLine = SegmentDistance(f, Flat(a1), Flat(b1)) <= SegmentDistance(f, Flat(a2), Flat(b2)) ? 0 : 1;
+                Vector3 la = bentLine == 0 ? a1 : a2, lb = bentLine == 0 ? b1 : b2;
+                bentContact = ClosestOn(la, lb, new Vector3(feet.x, la.y, feet.z));
+                bentAt = age;
+                bentBy = pawn;
+                released = Vector3.zero;
                 trips++;
                 Vector3 trippedAt = pawn.Hips.position;
                 trippedAt.y = center.y;
                 RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = SkillFxKind.BishopTrip, by = owner, target = pawn, at = trippedAt, dir = run, count = trips, source = this });
-                Report($"{pawn.DisplayName} 걸림 ({trips}/{skills.bishopTrips}) → {result}");
+                Report($"{pawn.DisplayName} 걸림 ({trips}/{skills.bishopTrips}) → {result}, 다리를 잡아챔");
                 if (trips >= skills.bishopTrips)
                 {
-                    Snap("끊어짐");
+                    spent = true;
+                    snapAt = age + BendTime;
                     return;
                 }
             }

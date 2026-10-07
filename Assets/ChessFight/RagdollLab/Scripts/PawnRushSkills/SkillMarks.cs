@@ -73,6 +73,18 @@ namespace ChessFight.RagdollLab
             Paint(lr, color, width);
         }
 
+        /// <summary>A line through several points (the bishop's wire pulled out of straight, R81).</summary>
+        public static void Polyline(LineRenderer lr, Vector3[] points, Color color, float width, bool flat = false)
+        {
+            if (lr == null) return;
+            Flat(lr, flat);
+            lr.enabled = true;
+            lr.loop = false;
+            lr.positionCount = points.Length;
+            lr.SetPositions(points);
+            Paint(lr, color, width);
+        }
+
         /// <summary>The "still aiming" look of the rook's line (the previz draws it dotted): thin and see-through.
         /// The locked line is a solid Segment.</summary>
         public static void Faint(LineRenderer lr, Vector3 a, Vector3 b, Color color, float width)
