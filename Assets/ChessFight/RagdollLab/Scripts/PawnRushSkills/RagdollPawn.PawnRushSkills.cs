@@ -72,7 +72,7 @@ namespace ChessFight.RagdollLab
 
         SkillStage skillStage;
         float stageTime, skillCooldownLeft, cooldownTotal, skillGrace;
-        bool skillPressed, skillConfirm, skillCancel, skillGrabRaw, skillGrabLatch, aimLocked;
+        bool skillPressed, skillConfirm, skillCancel, skillGrabRaw, skillGrabLatch, aimLocked, rookConfirmQueued;
         Vector3 skillMoveRaw;
         // A dash (the pawn's steps, the rook's charge): a fixed speed along a fixed line for a while.
         bool dashing;
@@ -87,7 +87,7 @@ namespace ChessFight.RagdollLab
         PawnState skillSeenState = PawnState.Active;
         // Knight
         float knightAir, knightHomeLeft;
-        bool knightTurned, knightHoming;
+        bool knightTurned, knightHoming, knightTapped;
         Vector3 knightSpot;
         RagdollPawn knightCandidate, knightTarget;
         // Bishop
@@ -179,8 +179,10 @@ namespace ChessFight.RagdollLab
                 input.jump = false;
                 input.shove = false;
             }
+            // Aiming, the rook walks (and jumps) as usual but cannot sprint; the click roots it (R75).
+            if (Aiming && piece == PieceKind.Rook) input.sprint = false;
             bool rooted = dashing || skillStage == SkillStage.Recovery
-                          || (skillStage == SkillStage.Windup && (piece == PieceKind.Rook || piece == PieceKind.Queen));
+                          || (skillStage == SkillStage.Windup && (piece == PieceKind.Queen || (piece == PieceKind.Rook && aimLocked)));
             if (!rooted) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -234,8 +236,8 @@ namespace ChessFight.RagdollLab
             pawnBuffered = pawnStepHit = false;
             pawnStep = 0;
             skillPressed = skillConfirm = skillCancel = false;
-            aimLocked = false;
-            knightHoming = false;
+            aimLocked = rookConfirmQueued = false;
+            knightHoming = knightTapped = false;
             knightTarget = knightCandidate = null;
             SkillDetail = "";
             HideSkillMarks();
@@ -585,7 +587,7 @@ namespace ChessFight.RagdollLab
             Launch(skillDir * on + Vector3.up * up);
             facing = skillDir;
             knightAir = 0f;
-            knightTurned = false;
+            knightTurned = knightTapped = false;
             skillHitSet.Clear();
             skillStage = SkillStage.Active;
             stageTime = 0f;
@@ -634,6 +636,7 @@ namespace ChessFight.RagdollLab
                 {
                     // The second press's stomp: a tap on the head, then down right beside it.
                     knightHoming = false;
+                    knightTapped = true;
                     knightTarget = null;
                     Launch(Flat(facing) * s.knightHomingHop + Vector3.up * s.knightHomingBounce);
                     knightSpot = PredictLanding(bodies[0].position, bodies[0].linearVelocity, Mathf.Max(0.01f, -Physics.gravity.y));
@@ -713,7 +716,6 @@ namespace ChessFight.RagdollLab
             float t = knightHomeLeft;
             Vector3 want = (StompPoint(knightTarget) - bodies[0].position) / t - 0.5f * t * Physics.gravity;
             Launch(want);
-            knightSpot = StompPoint(knightTarget) - Vector3.up * standHeight;
         }
 
         void KnightLand(PawnRushSkillParams s)
@@ -840,20 +842,26 @@ namespace ChessFight.RagdollLab
                     stageTime += dt;
                     if (!aimLocked)
                     {
-                        // Aiming: the line follows the mouse (the camera's aim) until the left click.
+                        // Aiming: the line follows the mouse (the camera's aim) until the left click. The rook walks
+                        // meanwhile (no sprint, R75); standing still, it turns to the aim.
                         skillDir = AimFlat();
-                        facing = skillDir;
+                        if (Flat(skillMoveRaw).sqrMagnitude < 0.04f) facing = skillDir;
                         if (cancel || press)
                         {
                             if (cancel) skillGrabLatch = true;
                             ClearSkills();
                             Log("룩: 조준 취소");
+                            break;
                         }
-                        else if (confirm)
+                        // A click in the air waits for the feet: the charge starts from the ground.
+                        if (confirm) rookConfirmQueued = true;
+                        if (rookConfirmQueued && (Grounded || coyote > 0f))
                         {
+                            rookConfirmQueued = false;
                             SkillUses++;
                             aimLocked = true;
                             stageTime = 0f;
+                            facing = skillDir;
                             SkillDetail = "예고 (방향 고정)";
                         }
                         break;
@@ -1078,15 +1086,20 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Knight when skillStage == SkillStage.Active:
                 {
-                    SkillMarks.Circle(Mark(ref markA, "Knight shadow"), knightSpot, 0.55f, color, 0.12f);
-                    SkillMarks.Circle(Mark(ref markB, "Knight shock"), knightSpot, s.knightLandRadius, color, 0.04f);
+                    // Where it comes down, in the knight's colour: until a second F sends it at a head, or the tap
+                    // on the head is made (then the head is where it comes down: one set of marks, not two, R75).
+                    if (!knightHoming && !knightTapped)
+                    {
+                        SkillMarks.Circle(Mark(ref markA, "Knight shadow"), knightSpot, 0.55f, color, 0.12f);
+                        SkillMarks.Circle(Mark(ref markB, "Knight shock"), knightSpot, s.knightLandRadius, color, 0.04f);
+                    }
                     var marked = KnightMarked;
                     if (marked != null)
                     {
-                        // The enemy a second F comes down on: a ring at its feet and a pointer over its head,
-                        // blinking while it is only found, steady once the knight is on its way.
+                        // The enemy a second F comes down on, in the target colour (not the knight's own): a ring at
+                        // its feet and a pointer over its head, blinking while only found, steady once on the way.
                         float a = knightHoming ? 1f : 0.55f + 0.45f * Mathf.Sin(Time.time * 14f);
-                        var lockColor = new Color(color.r, color.g, color.b, a);
+                        var lockColor = new Color(SkillMarks.Target.r, SkillMarks.Target.g, SkillMarks.Target.b, a);
                         Vector3 hip = marked.bodies[0].position;
                         Vector3 feet = new Vector3(hip.x, marked.groundFound ? marked.groundY : hip.y - marked.standHeight, hip.z);
                         SkillMarks.Circle(Mark(ref markC, "Knight lock"), feet, 0.5f, lockColor, knightHoming ? 0.12f : 0.07f);

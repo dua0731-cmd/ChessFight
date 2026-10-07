@@ -57,8 +57,8 @@ namespace ChessFight.RagdollLab
         public float knightLandStagger = 0.4f;
         public float knightLandRecovery = 0.35f;
         public float knightCooldown = 7f;
-        [Tooltip("공중에서 두 번째 F: 이 거리(땅 위, m) 안에 서 있는 적이 있으면 그 머리로 자동으로 날아가 찍는다. 없으면 90° 꺾기 (R74, 시험값)")]
-        public float knightLockRange = 4f;
+        [Tooltip("공중에서 두 번째 F: 이 거리(땅 위, m) 안에 서 있는 적이 있으면 그 머리로 자동으로 날아가 찍는다. 없으면 90° 꺾기 (R74 4 m → R75 3 m, 시험값)")]
+        public float knightLockRange = 3f;
         [Tooltip("머리 찍기: 머리까지 날아가는 땅 위 빠르기 (m/s)")]
         public float knightHomingSpeed = 7f;
         [Tooltip("머리 찍기: 머리 위로 내려오는 최소 속도 (m/s). 옆에서 박지 않고 위에서 찍게")]

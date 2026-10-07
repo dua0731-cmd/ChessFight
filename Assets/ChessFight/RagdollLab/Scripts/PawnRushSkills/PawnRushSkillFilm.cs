@@ -35,13 +35,11 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "rook-cluster", title = "룩 · 직선 돌파", note = "F로 조준 → 마우스로 방향 → 좌클릭",
+            new Shot { run = "rook-cluster", title = "룩 · 조준 중 이동", note = "F 조준 중에도 걷기 (Shift 질주 X) → 좌클릭 · 부딪혀도 조각 없음",
                 eye = new Vector3(-2.6f, 3.4f, -13.6f), look = new Vector3(-6f, 0.2f, -9.3f), lead = 0.35f },
-            new Shot { run = "bishop-trip", title = "비숍 · 교차 밧줄", note = "F로 조준 → 반투명 X가 마우스를 따라감 (근거리 4.5 m) → 좌클릭",
-                eye = new Vector3(5.5f, 5.8f, -13.5f), look = new Vector3(-0.2f, 0f, -8.6f), lead = 0.45f },
-            new Shot { run = "knight-turn", title = "나이트 · 주위에 적 없음", note = "F 도약 → 공중에서 F + 방향 = 90° 꺾기",
-                eye = new Vector3(-1f, 6.5f, -16f), look = new Vector3(1.6f, 0.3f, -10.8f), lead = 0.45f },
-            new Shot { run = "knight-stomp", title = "나이트 · 적 감지", note = "F 도약 → 적에 표시 → 공중에서 F = 자동으로 머리 찍고 착지",
+            new Shot { run = "rook-wall", title = "룩 · 벽 충돌", note = "벽에 박히면 멈춤 0.08초 + 화면 흔들림",
+                eye = new Vector3(16.6f, 2.8f, -6f), look = new Vector3(18.4f, 0.6f, 0f), lead = 0.4f },
+            new Shot { run = "knight-stomp", title = "나이트 · 머리 찍기 (감지 3 m)", note = "적에 주황 표시 → 공중에서 F → 파란 착지 원은 사라지고 머리로",
                 eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
         };
 

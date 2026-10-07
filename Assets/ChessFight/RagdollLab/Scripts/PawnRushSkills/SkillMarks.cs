@@ -12,6 +12,8 @@ namespace ChessFight.RagdollLab
         public static readonly Color Cyan = new Color(0.25f, 0.85f, 1f);
         public static readonly Color Orange = new Color(1f, 0.55f, 0.12f);
         public static readonly Color Gold = new Color(1f, 0.82f, 0.3f);
+        /// <summary>An enemy picked out by a skill (the knight's head stomp), apart from the side colours.</summary>
+        public static readonly Color Target = new Color(1f, 0.4f, 0.22f);
 
         static Material lineMaterial;
 

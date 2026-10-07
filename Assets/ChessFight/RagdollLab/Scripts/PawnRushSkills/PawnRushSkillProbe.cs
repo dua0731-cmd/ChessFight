@@ -34,6 +34,7 @@ namespace ChessFight.RagdollLab
         bool sprint, jumpEdge, tapPending, clickPending;
         RagdollPawn walker;
         Vector3 walkerMove;
+        float aimTopSpeed;
 
         public static string Run(string name)
         {
@@ -80,6 +81,7 @@ namespace ChessFight.RagdollLab
                 // The press goes in with this frame's aim and move, never ahead of them.
                 p1.SetSkillInput(tapPending);
                 jumpEdge = tapPending = clickPending = false;
+                if (p1.SkillAiming) aimTopSpeed = Mathf.Max(aimTopSpeed, p1.HorizontalSpeed);
             }
             if (walker != null) walker.SetInput(new PawnInput { move = walkerMove, aim = walkerMove });
         }
@@ -211,9 +213,9 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Swing the aim (the mouse) about <paramref name="center"/>: out to one side, the other, back.</summary>
-        IEnumerator Sweep(Vector3 center, float degrees, float seconds)
+        IEnumerator Sweep(Vector3 center, float degrees, float seconds, string hint = "마우스로 방향")
         {
-            Say("마우스로 방향");
+            Say(hint);
             float t = 0f;
             while (t < seconds)
             {
@@ -222,6 +224,26 @@ namespace ChessFight.RagdollLab
                 t += Time.deltaTime;
             }
             aim = center;
+        }
+
+        /// <summary>Turn the aim (the mouse) onto <paramref name="target"/> across the ground.</summary>
+        IEnumerator AimAt(Vector3 target, float seconds)
+        {
+            var p1 = P1;
+            Vector3 from = aim;
+            from.y = 0f;
+            float t = 0f;
+            while (t < seconds)
+            {
+                Vector3 to = target - p1.Hips.position;
+                to.y = 0f;
+                aim = Vector3.Slerp(from.normalized, to.normalized, Mathf.SmoothStep(0f, 1f, t / seconds));
+                yield return null;
+                t += Time.deltaTime;
+            }
+            Vector3 end = target - p1.Hips.position;
+            end.y = 0f;
+            aim = end.normalized;
         }
 
         /// <summary>Move the aim (the mouse) from the head through these floor points, evenly.</summary>
@@ -374,9 +396,22 @@ namespace ChessFight.RagdollLab
             bed.ClusterDummies(p1);
             yield return new WaitForSeconds(0.8f);
             Tap();
-            yield return new WaitForSeconds(0.25f);
-            yield return Sweep(Vector3.forward, 35f, 1.6f);
             yield return new WaitForSeconds(0.2f);
+            // Aiming, it walks (R75): to the left and back, the line swinging with the mouse. Shift is held the
+            // whole time; aiming, it must not sprint.
+            aimTopSpeed = 0f;
+            sprint = true;
+            move = Vector3.left;
+            yield return Sweep(Vector3.forward, 30f, 1.1f, "조준 중 걷기 (Shift 질주 X)");
+            move = Vector3.right;
+            yield return new WaitForSeconds(0.55f);
+            move = Vector3.zero;
+            sprint = false;
+            Vector3 lump = Vector3.zero;
+            for (int i = 0; i < 4; i++) lump += game.dummies[i].Hips.position;
+            yield return AimAt(lump / 4f, 0.35f);
+            yield return new WaitForSeconds(0.15f);
+            float aimTop = aimTopSpeed;
             Click();
             yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
             Vector3 from = p1.Hips.position;
@@ -392,6 +427,7 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(0.6f);
             float spread = 0f;
             for (int i = 0; i < 4; i++) spread = Mathf.Max(spread, FlatDistance(game.dummies[i].Hips.position, p1.Hips.position));
+            Add($"룩 조준 중 걷기: 최고 {aimTop:0.0} m/s (Shift를 누르고 있었음, 질주 9.8 m/s가 아니면 막힘)");
             Add($"룩 4명 뭉치 돌진: 돌진 {FlatDistance(from, end):0.00} m, 돌진이 끝날 때 넘어짐 {down}/4 (기대 3), 휘청 {staggered}, 0.6초 뒤 가장 멀리 날아간 더미 {spread:0.0} m (룩에서)");
         }
 

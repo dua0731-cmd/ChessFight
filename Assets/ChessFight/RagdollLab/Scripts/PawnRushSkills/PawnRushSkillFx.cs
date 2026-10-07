@@ -10,7 +10,8 @@ namespace ChessFight.RagdollLab
     ///
     /// Shared parts: a hit stop (the whole game holds still for a few hundredths of a second, a test-bed stand-in
     /// for holding only the two pieces), camera shake and a white flash on the piece that is hit. No words or
-    /// numbers pop up (R74: taken out). Test-bed art: lines, cubes and star sparks built in code, no sound yet.
+    /// numbers pop up (R74: taken out), and no chips or blocks fly off a hit (R75: taken out). Test-bed art: lines,
+    /// flat squares and star sparks built in code, no sound yet.
     /// While a bishop aims, its squares show see-through where the X would go. It listens to RagdollPawn.SkillFx, which
     /// only the skills raise, so no other scene changes.
     /// </summary>
@@ -32,14 +33,11 @@ namespace ChessFight.RagdollLab
         static readonly Color BishopLight = new Color(0.86f, 0.78f, 1f);
         static readonly Color KnightSky = new Color(0.36f, 0.78f, 1f);
         static readonly Color Ink = new Color(0.05f, 0.08f, 0.19f);
-        static readonly Color[] Stone = { new Color(0.85f, 0.8f, 0.7f), new Color(0.6f, 0.56f, 0.47f), new Color(1f, 0.54f, 0.24f) };
-        static readonly Color[] Blocks = { new Color(0.78f, 0.27f, 0.23f), new Color(0.96f, 0.91f, 0.82f) };
 
         LabGame game;
         Transform root;
         Font font;
         Material lineMat, whiteMat;
-        readonly Dictionary<Color, Material> litMats = new Dictionary<Color, Material>();
         Mesh boxMesh, discMesh;
 
         // hit stop and shake
@@ -99,15 +97,14 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.RookHit: RookHit(e); break;
                 case SkillFxKind.RookStop: RookStop(e); break;
                 case SkillFxKind.RookWall:
-                    HitStop(0.06f);
-                    Shake(0.1f, 0.22f);
-                    StarFlash(e.at, Color.white, 0.6f);
-                    Debris(e.at, 10, Stone, 2.5f, 2f, 0.07f);
+                    // Into a wall: the hardest thud of the rook's (R75: a clear shake).
+                    HitStop(0.08f);
+                    Shake(0.2f, 0.36f);
+                    StarFlash(e.at, Color.white, 0.7f);
                     break;
                 case SkillFxKind.RookBarricade:
                     HitStop(0.07f);
-                    Shake(0.1f, 0.24f);
-                    Debris(e.at + Vector3.up * 0.3f, 22, Blocks, 3.5f, 3f, 0.16f);
+                    Shake(0.14f, 0.3f);
                     StarFlash(e.at + Vector3.up * 0.5f, RookOrange, 0.8f);
                     break;
                 case SkillFxKind.BishopWire: BishopWire(e); break;
@@ -131,8 +128,8 @@ namespace ChessFight.RagdollLab
             Edge(0.22f);
         }
 
-        // Rook A: each piece it sends flying gives stone chips, a white star, and a longer stop (0.04, 0.06,
-        // 0.08 s) and shake than the one before; the fourth, which stops it, a big orange ring.
+        // Rook A: each piece it sends flying gives a white star and a longer stop (0.04, 0.06, 0.08 s) and shake
+        // than the one before; the fourth, which stops it, a big orange ring. No chips (R75).
         void RookHit(SkillFxEvent e)
         {
             int i = Mathf.Clamp(e.count, 1, 3);
@@ -140,7 +137,6 @@ namespace ChessFight.RagdollLab
             Shake(new[] { 0.05f, 0.08f, 0.11f }[i - 1], 0.16f + 0.03f * i);
             FlashWhite(e.target, 0.06f);
             StarFlash(e.at, Color.white, 0.45f + 0.1f * i);
-            Debris(e.at, 6 + 3 * i, Stone, 2.6f, 2.4f, 0.07f);
         }
 
         void RookStop(SkillFxEvent e)
@@ -149,7 +145,6 @@ namespace ChessFight.RagdollLab
             Shake(0.17f, 0.32f);
             FlashWhite(e.target, 0.07f);
             StarFlash(e.at, RookOrange, 0.9f);
-            Debris(e.at, 18, Stone, 3f, 3f, 0.08f);
             RingPulse(Ground(e.at), 0f, 1.3f, RookOrange, 0.2f, 0.35f, 0.7f);
         }
 
@@ -238,8 +233,8 @@ namespace ChessFight.RagdollLab
             Sparks(at + Vector3.up * 0.25f, BishopLight, 9, 0.7f, 0.3f);
         }
 
-        // Knight B: the piece stomped on squashes flat and springs back, a long stop (0.09 s), stars over it, and
-        // the knight's hop off it lands with a small ring.
+        // Knight B: the piece stomped on squashes flat and springs back, a long stop (0.09 s) and stars over it.
+        // The knight's little hop off it lands with nothing more (R75: one set of marks, not two).
         void KnightStomp(SkillFxEvent e)
         {
             HitStop(0.09f);
@@ -258,7 +253,6 @@ namespace ChessFight.RagdollLab
             if (e.by != null && stompedAt.TryGetValue(e.by, out float t) && Clock - t < 2.5f)
             {
                 stompedAt.Remove(e.by);
-                RingPulse(g, 0.1f, 0.8f, Color.white, 0.06f, 0.25f, 0.45f);
                 return;
             }
             RingPulse(g, 0.1f, e.size > 0f ? e.size : 1.5f, new Color(0.92f, 0.86f, 0.74f), 0.08f, 0.3f, 0.6f);
@@ -359,25 +353,6 @@ namespace ChessFight.RagdollLab
             anims.Add(new SparkBurst(lines, dirs, at, color, length, life));
         }
 
-        void Debris(Vector3 at, int n, Color[] colors, float speed, float up, float size)
-        {
-            float ground = Ground(at).y;
-            for (int i = 0; i < n; i++)
-            {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                var col = go.GetComponent<Collider>();
-                if (col != null) Destroy(col);
-                go.name = "Chip";
-                go.transform.SetParent(root, false);
-                go.GetComponent<MeshRenderer>().sharedMaterial = Lit(colors[i % colors.Length]);
-                float s = size * Random.Range(0.6f, 1.4f);
-                go.transform.localScale = Vector3.one * s;
-                Vector3 v = Random.insideUnitSphere * speed;
-                v.y = up * Random.Range(0.4f, 1.3f);
-                anims.Add(new Chip(go.transform, at, v, Random.insideUnitSphere * 720f, ground + s * 0.5f, Random.Range(0.9f, 1.4f)));
-            }
-        }
-
         void RingPulse(Vector3 center, float from, float to, Color color, float width, float grow, float life)
         {
             var lr = SkillMarks.Line(root, "Ring");
@@ -475,16 +450,6 @@ namespace ChessFight.RagdollLab
             if (shader == null) shader = Shader.Find("Unlit/Color");
             var m = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
             m.color = c;
-            return m;
-        }
-
-        Material Lit(Color c)
-        {
-            if (litMats.TryGetValue(c, out var m)) return m;
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
-            m = new Material(shader) { hideFlags = HideFlags.HideAndDontSave, color = c };
-            litMats[c] = m;
             return m;
         }
 
@@ -692,48 +657,6 @@ namespace ChessFight.RagdollLab
             }
 
             public override void Destroy() { foreach (var l in lines) if (l != null) Object.Destroy(l.gameObject); }
-        }
-
-        class Chip : Anim
-        {
-            readonly Transform t;
-            Vector3 pos, vel;
-            readonly Vector3 spin;
-            readonly float floor, life;
-            bool bounced;
-
-            public Chip(Transform t, Vector3 pos, Vector3 vel, Vector3 spin, float floor, float life)
-            {
-                this.t = t;
-                this.pos = pos;
-                this.vel = vel;
-                this.spin = spin;
-                this.floor = floor;
-                this.life = life;
-                t.position = pos;
-            }
-
-            public override bool Step(float dt, Camera cam)
-            {
-                // Game time: the chips hold still in a hit stop and slow down with the slow motion.
-                float gdt = Time.deltaTime;
-                age += gdt;
-                if (age >= life) return false;
-                vel += Physics.gravity * gdt;
-                pos += vel * gdt;
-                if (pos.y < floor)
-                {
-                    pos.y = floor;
-                    vel = bounced ? Vector3.zero : new Vector3(vel.x * 0.4f, -vel.y * 0.3f, vel.z * 0.4f);
-                    bounced = true;
-                }
-                t.position = pos;
-                if (vel.sqrMagnitude > 0.01f) t.Rotate(spin * gdt, Space.World);
-                if (age > life - 0.25f) t.localScale *= 0.9f;
-                return true;
-            }
-
-            public override void Destroy() { if (t != null) Object.Destroy(t.gameObject); }
         }
 
         class Ring : Anim
