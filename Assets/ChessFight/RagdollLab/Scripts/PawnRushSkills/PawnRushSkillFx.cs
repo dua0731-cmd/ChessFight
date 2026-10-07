@@ -222,7 +222,7 @@ namespace ChessFight.RagdollLab
             {
                 if (!QueenCharging(q) || age > windup + 0.1f) return false;
                 float squeeze = Mathf.Lerp(outer, 0.2f, Mathf.Clamp01(age / windup));
-                for (rise += dt * 320f; rise >= 1f; rise -= 1f)
+                for (rise += dt * 400f; rise >= 1f; rise -= 1f)
                 {
                     float pick = Random.value;
                     RingEmber(floor, pick < 0.45f ? outer : pick < 0.75f ? inner : squeeze, Gold);
@@ -284,7 +284,7 @@ namespace ChessFight.RagdollLab
             {
                 if (age > 0.4f) return false;
                 float rIn = Mathf.Lerp(0.2f, inner, EaseOut(age / 0.15f)), rOut = Mathf.Lerp(0.3f, outer, EaseOut(age / 0.3f));
-                for (due += dt * 360f; due >= 1f; due -= 1f)
+                for (due += dt * 420f; due >= 1f; due -= 1f)
                     RingEmber(c, Random.value < 0.4f ? rIn : rOut, Gold);
                 return true;
             }));
