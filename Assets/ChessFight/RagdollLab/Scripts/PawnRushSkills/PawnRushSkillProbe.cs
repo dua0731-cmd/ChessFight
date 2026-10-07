@@ -35,6 +35,7 @@ namespace ChessFight.RagdollLab
         RagdollPawn walker;
         Vector3 walkerMove;
         float aimTopSpeed;
+        bool aimSprinted;
 
         public static string Run(string name)
         {
@@ -81,7 +82,11 @@ namespace ChessFight.RagdollLab
                 // The press goes in with this frame's aim and move, never ahead of them.
                 p1.SetSkillInput(tapPending);
                 jumpEdge = tapPending = clickPending = false;
-                if (p1.SkillAiming) aimTopSpeed = Mathf.Max(aimTopSpeed, p1.HorizontalSpeed);
+                if (p1.SkillAiming)
+                {
+                    aimTopSpeed = Mathf.Max(aimTopSpeed, p1.HorizontalSpeed);
+                    aimSprinted |= p1.Sprinting;
+                }
             }
             if (walker != null) walker.SetInput(new PawnInput { move = walkerMove, aim = walkerMove });
         }
@@ -400,6 +405,7 @@ namespace ChessFight.RagdollLab
             // Aiming, it walks (R75): to the left and back, the line swinging with the mouse. Shift is held the
             // whole time; aiming, it must not sprint.
             aimTopSpeed = 0f;
+            aimSprinted = false;
             sprint = true;
             move = Vector3.left;
             yield return Sweep(Vector3.forward, 30f, 1.1f, "조준 중 걷기 (Shift 질주 X)");
@@ -427,7 +433,7 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(0.6f);
             float spread = 0f;
             for (int i = 0; i < 4; i++) spread = Mathf.Max(spread, FlatDistance(game.dummies[i].Hips.position, p1.Hips.position));
-            Add($"룩 조준 중 걷기: 최고 {aimTop:0.0} m/s (Shift를 누르고 있었음, 질주 9.8 m/s가 아니면 막힘)");
+            Add($"룩 조준 중 걷기: 최고 {aimTop:0.0} m/s, 질주 상태 {(aimSprinted ? "켜짐 (막히지 않음!)" : "한 번도 안 켜짐")} (Shift를 누르고 있었음, 달리기 약 5.6 · 질주 약 9.8 m/s)");
             Add($"룩 4명 뭉치 돌진: 돌진 {FlatDistance(from, end):0.00} m, 돌진이 끝날 때 넘어짐 {down}/4 (기대 3), 휘청 {staggered}, 0.6초 뒤 가장 멀리 날아간 더미 {spread:0.0} m (룩에서)");
         }
 
