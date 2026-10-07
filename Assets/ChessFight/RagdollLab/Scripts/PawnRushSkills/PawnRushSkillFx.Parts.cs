@@ -63,9 +63,11 @@ namespace ChessFight.RagdollLab
             meshSphere = Instantiate(tmp.GetComponent<MeshFilter>().sharedMesh);
             Destroy(tmp);
 
-            sparks = new Emitter(root, "Sparks", Glow(texDot), stretch: true, gravity: 1.4f, drag: 0.6f, collide: true, noise: 0f,
+            // Sparks: white-hot (above the bloom threshold) with a coloured glow. Motes: coloured, covering the floor
+            // behind them so the colour shows on a light floor. Smoke: paint.
+            sparks = new Emitter(root, "Sparks", Glow(texDot, opacity: 0.5f, color: 3f), stretch: true, gravity: 1.4f, drag: 0.6f, collide: true, noise: 0f,
                 fade: new[] { 0f, 1f, 0.7f, 1f, 1f, 0f }, size: new[] { 0f, 1f, 1f, 0.3f });
-            motes = new Emitter(root, "Motes", Glow(texDot), stretch: false, gravity: -0.05f, drag: 1.2f, collide: false, noise: 0.6f,
+            motes = new Emitter(root, "Motes", Glow(texDot, opacity: 0.9f, color: 1.15f), stretch: false, gravity: -0.05f, drag: 1.2f, collide: false, noise: 0.6f,
                 fade: new[] { 0f, 0f, 0.15f, 1f, 1f, 0f }, size: new[] { 0f, 0.6f, 0.2f, 1f, 1f, 0.2f });
             smoke = new Emitter(root, "Smoke", Glow(texSmoke, opacity: 0.85f, soft: 0.4f), stretch: false, gravity: -0.03f, drag: 2.5f, collide: false, noise: 0.3f,
                 fade: new[] { 0f, 0f, 0.12f, 1f, 1f, 0f }, size: new[] { 0f, 0.5f, 1f, 1.6f });
@@ -247,10 +249,11 @@ namespace ChessFight.RagdollLab
         readonly List<Material> materials = new List<Material>();
 
         /// <summary>The glow material on <paramref name="shape"/>. Opacity 0 = light added on top.</summary>
-        Material Glow(Texture shape, float opacity = 0f, float noise = 0f, Vector4 noiseST = default, float rim = 0f, float rimPower = 2f, float soft = 0f)
+        Material Glow(Texture shape, float opacity = 0f, float noise = 0f, Vector4 noiseST = default, float rim = 0f, float rimPower = 2f, float soft = 0f, float color = 1f)
         {
             var m = new Material(glowShader != null ? glowShader : Shader.Find("Sprites/Default")) { hideFlags = HideFlags.HideAndDontSave };
             m.mainTexture = shape;
+            m.SetColor("_Color", new Color(color, color, color, 1f));
             m.SetFloat("_Opacity", opacity);
             m.SetTexture("_NoiseTex", texNoise);
             m.SetVector("_NoiseST", noiseST == default ? new Vector4(1f, 1f, 0f, 0f) : noiseST);
@@ -285,6 +288,9 @@ namespace ChessFight.RagdollLab
             public Quaternion rotation = Quaternion.identity;
             public Color color = Color.white;
             public float bright = 1f, dissolve;
+            /// <summary>How much it hides what is behind (the material's own when below 0). Bright floors need
+            /// it: light added to white is just white, colour shows only where the floor is covered.</summary>
+            public float paint = -1f;
             public bool billboard;
             public Action<Shape, float> animate;
             public float Age => age;
@@ -314,6 +320,7 @@ namespace ChessFight.RagdollLab
                 tf.localScale = scale;
                 block.SetColor("_Color", color * bright);
                 block.SetFloat("_Dissolve", dissolve);
+                if (paint >= 0f) block.SetFloat("_Opacity", paint);
                 mr.SetPropertyBlock(block);
                 return true;
             }
@@ -556,10 +563,13 @@ namespace ChessFight.RagdollLab
         {
             readonly TrailRenderer trail;
             readonly Func<Vector3?> where;
+            readonly Color color;
             float endedAt = -1f;
             bool started;
             /// <summary>Seconds before it starts following (the daze orbs come in late).</summary>
             public float delay;
+            /// <summary>How much it covers what is behind (see Shape.paint).</summary>
+            public float paint = -1f;
 
             public Streak(Transform parent, Material material, Color color, float width, float time, Func<Vector3?> where)
             {
@@ -579,9 +589,7 @@ namespace ChessFight.RagdollLab
                 g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
                     new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.6f, 0.4f), new GradientAlphaKey(0f, 1f) });
                 trail.colorGradient = g;
-                var block = new MaterialPropertyBlock();
-                block.SetColor("_Color", color);
-                trail.SetPropertyBlock(block);
+                this.color = color;
                 this.where = where;
                 trail.emitting = false;
             }
@@ -599,6 +607,10 @@ namespace ChessFight.RagdollLab
                         // The first point where it is, not where the object was made.
                         trail.Clear();
                         started = true;
+                        var block = new MaterialPropertyBlock();
+                        block.SetColor("_Color", color);
+                        if (paint >= 0f) block.SetFloat("_Opacity", paint);
+                        trail.SetPropertyBlock(block);
                     }
                     trail.emitting = true;
                     return true;
@@ -669,6 +681,7 @@ namespace ChessFight.RagdollLab
                     }
                 }
                 block.SetColor("_Color", color * fade);
+                block.SetFloat("_Opacity", 0.3f);
                 foreach (var lr in lines) lr.SetPropertyBlock(block);
                 return true;
             }

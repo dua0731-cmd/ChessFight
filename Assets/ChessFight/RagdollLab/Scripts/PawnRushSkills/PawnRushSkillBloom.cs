@@ -7,14 +7,15 @@ namespace ChessFight.RagdollLab
     /// this makes them glow, spilling their colour around them. The project uses the built-in render pipeline with
     /// no post-process package, so it is a hand-made one (Resources/PawnRushSkillFx/SkillBloom.shader): light above
     /// <see cref="threshold"/> is blurred down a chain of half-size copies and back up and added over the picture.
-    /// Lit white floors stay at about 1, so only the effects bloom. The test bed adds it; nothing else does.
+    /// The lit test floor measures up to 1.7 (mean 0.9), so the threshold sits above it and only the effects' hot
+    /// cores bloom (a first try at 1.15 washed the whole picture white). The test bed adds it; nothing else does.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class PawnRushSkillBloom : MonoBehaviour
     {
-        public float threshold = 1.15f;
-        [Range(0f, 1f)] public float softKnee = 0.6f;
-        public float intensity = 0.9f;
+        public float threshold = 2.2f;
+        [Range(0f, 1f)] public float softKnee = 0.3f;
+        public float intensity = 1f;
         [Range(1, 8)] public int steps = 6;
 
         static Material material;
