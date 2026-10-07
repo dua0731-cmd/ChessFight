@@ -96,7 +96,7 @@ Builds/KingRushPrototype/ChessFight.exe -kingRushTest -screen-fullscreen 0 -scre
 
 | 문서 | 내용 |
 |---|---|
-| [PAWN_RUSH_COURSE01.md](PAWN_RUSH_COURSE01.md) | **폰 러시 코스 01 구현**(R68): 새 씬 `PawnRush_Course01`, 메뉴 ChessFight → Pawn Rush, 모듈·키트 컴포넌트, 기획서와 다른 곳, 하지 않은 것. 기획서 원문 [PAWN_RUSH_COURSE01_DESIGN_v0.1.md](PAWN_RUSH_COURSE01_DESIGN_v0.1.md) |
+| [PAWN_RUSH_COURSE01.md](PAWN_RUSH_COURSE01.md) | **폰 러시 코스 01 구현**(R68 v0.1 → R69 v0.2): 씬 `PawnRush_Course01`(탑을 감아 오르는 3층 고리), 메뉴 ChessFight → Pawn Rush, 씬 구조·코드, 검증기, 기획서와 다른 곳. 기획서 원문 [v0.2](PAWN_RUSH_COURSE01_DESIGN_v0.2.md) · [v0.1](PAWN_RUSH_COURSE01_DESIGN_v0.1.md) |
 | [PAWN_RUSH_MAP_KIT.md](PAWN_RUSH_MAP_KIT.md) | **폰 러시 맵 기획 재료집**(R67): 장애물 시험 씬의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치, 채팅 AI용 프롬프트와 결과 양식 |
 | [MAP_IMPORT.md](MAP_IMPORT.md) | R65 별도 프로젝트 맵·19 장애물 이식: 열기, 기존 래그돌 연결, 검사와 미연결 범위 |
 | 이 문서 | 씬 구성, 코스 컴포넌트, 오프라인 플레이테스트, 네트워크 한계 |

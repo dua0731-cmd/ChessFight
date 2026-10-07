@@ -65,6 +65,8 @@ namespace ChessFight.Gameplay
             FinishZone.Reached += OnFinish;
             WaterZone.Entered += OnWater;
             KillVolume.Entered += OnKill;
+            FallDistanceRespawn.Fell += OnFell;
+            TeamZone.Intruded += OnIntruded;
         }
 
         void OnDisable()
@@ -73,6 +75,8 @@ namespace ChessFight.Gameplay
             FinishZone.Reached -= OnFinish;
             WaterZone.Entered -= OnWater;
             KillVolume.Entered -= OnKill;
+            FallDistanceRespawn.Fell -= OnFell;
+            TeamZone.Intruded -= OnIntruded;
         }
 
         void Start()
@@ -190,6 +194,12 @@ namespace ChessFight.Gameplay
             lastY = float.NaN;
             fallSpeed = 0f;
             driver?.Teleport(position, rotation);
+            // A drop measured from where it was is no drop from here.
+            if (instance != null)
+            {
+                var drop = instance.GetComponentInChildren<FallDistanceRespawn>();
+                if (drop != null) drop.Forget();
+            }
             if (orbitCamera != null) orbitCamera.Cut();
         }
 
@@ -238,6 +248,22 @@ namespace ChessFight.Gameplay
         {
             if (who != driver || respawnAt >= 0f) return;
             respawnAt = Time.time + volume.RespawnDelay;
+            caughtFalling = true;
+        }
+
+        // The 8 m drop rule: back on the checkpoint before landing on the floor below.
+        void OnFell(ICharacterDriver who, FallDistanceRespawn rule)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time + rule.RespawnDelay;
+            caughtFalling = true;
+        }
+
+        // Thrown into the other team's section: straight back.
+        void OnIntruded(ICharacterDriver who, TeamZone zone)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time;
             caughtFalling = true;
         }
 

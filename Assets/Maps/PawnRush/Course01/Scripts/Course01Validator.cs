@@ -5,17 +5,17 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // The course checks (design doc §6 "완료 확인"), by casting rays at the built course. Run from
-    // the menu ChessFight > Pawn Rush > Validate Course01 (Edit mode: obstacles in their rest poses).
-    //   1. every module's exit floor is at the next module's entry height
-    //   2. no gap over 2.5 m along the required path (a "gap": nothing within 4 m below)
-    //   3. floor under every checkpoint's six respawn spots
-    //   4. a kill volume under every cliff
-    //   5. both teams' paths are the same length
-    //   6. every slot's door at its exit height, whichever exit mode
+    // The course 01 v0.2 checks (design doc v0.2 §8 "완료 확인"), run on the built course from the
+    // menu ChessFight > Pawn Rush > Validate Course01 (Edit mode: obstacles in their rest poses).
+    //   1. two floors stacked one over the other are at least 9 m apart (ramps: reported only)
+    //   2. no team zone overlaps a shared floor or ramp
+    //   3. white's and black's progress paths are within 0.1 m of each other
+    //   4. no gap over 2.5 m along the required path (a "gap": nothing within 4 m below)
+    //   5. floor under every checkpoint's six respawn spots
+    //   6. every slot's door at its exit height, and a mini-game in every slot
     public static class Course01Validator
     {
-        public const float MaxRequiredGap = 2.5f;
+        public const float MinStack = 9f, MaxRequiredGap = 2.5f, PathTolerance = .1f;
 
         static readonly RaycastHit[] hits = new RaycastHit[32];
 
@@ -23,33 +23,65 @@ namespace ChessFight.PawnRush
         {
             var errors = new List<string>();
             Physics.SyncTransforms();
-            var modules = course.Modules;
-            if (modules.Count == 0)
+            var root = course.Root;
+            if (root == null)
             {
-                errors.Add("코스에 모듈이 없습니다. 먼저 Build Course01을 실행하세요.");
+                errors.Add("코스가 없습니다. 먼저 Build Course01 v2를 실행하세요.");
                 return errors;
             }
 
-            // 1. heights
-            for (int i = 0; i + 1 < modules.Count; i++)
-            {
-                CourseModule a = modules[i], b = modules[i + 1];
-                float expected = a.transform.position.y + a.deltaY;
-                if (Mathf.Abs(b.transform.position.y - expected) > .01f)
-                    errors.Add($"{a.Code}→{b.Code}: 다음 모듈 원점 높이 {b.transform.position.y:0.00} ≠ {expected:0.00}");
-                for (int team = 0; team < 2; team++)
+            // 1. stacked floors
+            var floors = root.GetComponentsInChildren<CourseFloor>(false);
+            int pairs = 0;
+            for (int i = 0; i < floors.Length; i++)
+                for (int j = i + 1; j < floors.Length; j++)
                 {
-                    if (!a.isTeamModule && !b.isTeamModule && team == 1) continue;
-                    var exit = a.transform.TransformPoint(a.PathPoint(a.pathPoints.Length - 1, team) - Vector3.forward * .6f);
-                    var entry = b.transform.TransformPoint(b.PathPoint(0, team) + Vector3.forward * .6f);
-                    if (!FloorAt(exit, 2f, 3f, out float exitY) || Mathf.Abs(exitY - expected) > .05f)
-                        errors.Add($"{a.Code} 출구({Teams.Name(team)}) 바닥 {Show(exitY, exit)} ≠ {expected:0.00}");
-                    if (!FloorAt(entry, 2f, 3f, out float entryY) || Mathf.Abs(entryY - b.transform.position.y) > .05f)
-                        errors.Add($"{b.Code} 입구({Teams.Name(team)}) 바닥 {Show(entryY, entry)} ≠ {b.transform.position.y:0.00}");
+                    Bounds a = Box(floors[i]), c = Box(floors[j]);
+                    if (!OverlapXZ(a, c)) continue;
+                    // The higher one's top over the lower one's; a block standing on another is one wall.
+                    var lower = a.max.y <= c.max.y ? floors[i] : floors[j];
+                    var upper = lower == floors[i] ? floors[j] : floors[i];
+                    Bounds lo = Box(lower), up = Box(upper);
+                    if (up.min.y <= lo.max.y + .05f) continue;
+                    // Only when the lower top is open to the upper floor: a block in between (the tower's
+                    // stepped north face) makes it one wall, not two floors.
+                    var probe = new Vector3((Mathf.Max(lo.min.x, up.min.x) + Mathf.Min(lo.max.x, up.max.x)) * .5f, up.min.y - .02f,
+                                            (Mathf.Max(lo.min.z, up.min.z) + Mathf.Min(lo.max.z, up.max.z)) * .5f);
+                    var lowerCollider = lower.GetComponent<Collider>();
+                    if (lowerCollider != null && Physics.Raycast(probe, Vector3.down, out var first, up.min.y - lo.max.y + .5f, ~0,
+                            QueryTriggerInteraction.Ignore) && first.collider != lowerCollider) continue;
+                    pairs++;
+                    float gap = up.max.y - lo.max.y;
+                    if (gap >= MinStack - .01f) continue;
+                    string line = $"겹친 바닥 높이 차 {gap:0.0} m < {MinStack} m: {Name(upper)} 위, {Name(lower)} 아래";
+                    if (upper.sloped || lower.sloped) notes.Add("(경사로, 오류 아님) " + line);
+                    else errors.Add(line);
+                }
+            notes.Add($"위아래로 겹친 바닥 {pairs}쌍 검사");
+
+            // 2. team zones vs shared floors
+            var zones = root.GetComponentsInChildren<TeamZone>(true);
+            foreach (var zone in zones)
+            {
+                var zb = zone.Bounds;
+                foreach (var f in floors)
+                {
+                    if (InTeamSection(f.transform, root)) continue;
+                    var fb = Box(f);
+                    if (zb.min.x < fb.max.x - .01f && zb.max.x > fb.min.x + .01f && zb.min.y < fb.max.y - .01f &&
+                        zb.max.y > fb.min.y + .01f && zb.min.z < fb.max.z - .01f && zb.max.z > fb.min.z + .01f)
+                        errors.Add($"{zone.name}({Teams.Name(zone.Team)})이 공용 바닥 {Name(f)}과 겹칩니다");
                 }
             }
+            notes.Add($"팀 구역 {zones.Length}개");
 
-            // 2. gaps along the required path, 5. equal paths
+            // 3. equal paths, 4. gaps along them
+            float white = ProgressPath.Length(course.Path(Teams.White)), black = ProgressPath.Length(course.Path(Teams.Black));
+            if (Mathf.Abs(white - black) > PathTolerance) errors.Add($"두 팀 경로 길이 차 {Mathf.Abs(white - black):0.00} m > {PathTolerance} m");
+            var progress = course.Progress;
+            if (progress != null)
+                foreach (var section in new[] { "S+A", "W1", "B", "W2", "C", "T" })
+                    notes.Add($"구간 {section} 시작: 경로 {progress.SectionStart(section, Teams.White):0} m");
             for (int team = 0; team < 2; team++)
             {
                 var path = course.Path(team);
@@ -57,14 +89,14 @@ namespace ChessFight.PawnRush
                 Vector3 worstAt = Vector3.zero;
                 for (int i = 1; i < path.Count; i++)
                 {
-                    Vector3 a = path[i - 1], b = path[i];
-                    var flat = new Vector3(b.x - a.x, 0f, b.z - a.z);
+                    Vector3 a = path[i - 1], c = path[i];
+                    var flat = new Vector3(c.x - a.x, 0f, c.z - a.z);
                     if (flat.magnitude < .01f) { run = 0f; continue; }   // a climb
-                    float len = Vector3.Distance(a, b);
+                    float len = Vector3.Distance(a, c);
                     for (float d = 0f; d <= len; d += .05f)
                     {
-                        var p = Vector3.Lerp(a, b, d / len);
-                        if (FloorAt(p, 1f, 5f, out _)) run = 0f;
+                        var p = Vector3.Lerp(a, c, d / len);
+                        if (FloorAt(p, 1f, 5f)) run = 0f;
                         else
                         {
                             run += .05f;
@@ -72,48 +104,24 @@ namespace ChessFight.PawnRush
                         }
                     }
                 }
-                if (worst > MaxRequiredGap + .1f)
-                    errors.Add($"필수 경로({Teams.Name(team)}) 틈 {worst:0.0} m > {MaxRequiredGap} m ({Where(course, worstAt)})");
-                notes.Add($"{Teams.Name(team)}팀 진행 경로 {PawnRushCourse.Length(path):0.0} m, 가장 넓은 틈 {worst:0.00} m");
+                if (worst > MaxRequiredGap + .1f) errors.Add($"필수 경로({Teams.Name(team)}) 틈 {worst:0.0} m > {MaxRequiredGap} m {Fmt(worstAt)}");
+                notes.Add($"{Teams.Name(team)}팀 진행 경로 {ProgressPath.Length(path):0.0} m, 가장 넓은 틈 {worst:0.00} m");
             }
-            float white = PawnRushCourse.Length(course.Path(Teams.White)), black = PawnRushCourse.Length(course.Path(Teams.Black));
-            if (Mathf.Abs(white - black) > .01f) errors.Add($"두 팀 경로 길이가 다릅니다: 백 {white:0.00} / 흑 {black:0.00}");
 
-            // 3. checkpoints
+            // 5. checkpoints
             int spots = 0;
-            foreach (var cp in course.GetComponentsInChildren<CourseCheckpoint>(true))
+            var checkpoints = root.GetComponentsInChildren<CourseCheckpoint>(true);
+            foreach (var cp in checkpoints)
                 for (int i = 0; i < cp.SpotCount; i++)
                 {
                     spots++;
-                    if (!FloorAt(cp.SpotWorld(i), 1f, 2.5f, out _))
+                    if (!FloorAt(cp.SpotWorld(i), 1f, 2.5f))
                         errors.Add($"CP{cp.Number}({(cp.Shared ? "공용" : Teams.Name(cp.Team))}) 부활 자리 {i + 1} 아래에 바닥이 없습니다 {Fmt(cp.SpotWorld(i))}");
                 }
-            notes.Add($"체크포인트 {course.GetComponentsInChildren<CourseCheckpoint>(true).Length}개, 부활 자리 {spots}곳");
+            notes.Add($"체크포인트 {checkpoints.Length}개, 부활 자리 {spots}곳");
 
-            // 4. kill volumes under cliffs
-            var kills = course.GetComponentsInChildren<KillVolume>(true);
-            int cliffs = 0;
-            foreach (var m in modules)
-            {
-                int missing = 0;
-                Vector3 first = Vector3.zero;
-                for (float z = .5f; z < m.length; z += 1f)
-                    for (float x = -20f; x <= 20f; x += 1f)
-                    {
-                        var top = m.transform.TransformPoint(new Vector3(x, 40f, z));
-                        if (FloorAt(top, 0f, 47f, out _)) continue;
-                        cliffs++;
-                        var below = m.transform.TransformPoint(new Vector3(x, -8f, z));
-                        bool covered = false;
-                        foreach (var k in kills) if (k.Bounds.Contains(below)) { covered = true; break; }
-                        if (!covered && missing++ == 0) first = below;
-                    }
-                if (missing > 0) errors.Add($"{m.Code}: 낙사 영역이 없는 낭떠러지 {missing}곳 (예: {Fmt(first)})");
-            }
-            notes.Add($"낭떠러지 표본 {cliffs}곳 검사, 낙사 영역 {kills.Length}개");
-
-            // 6. slot doors
-            foreach (var slot in course.GetComponentsInChildren<MiniGameSlot>(true))
+            // 6. slots
+            foreach (var slot in root.GetComponentsInChildren<MiniGameSlot>(true))
             {
                 if (slot.Door == null) { errors.Add($"슬롯 {slot.Slot}({Teams.Name(slot.Team)})에 문이 없습니다"); continue; }
                 float doorY = slot.transform.InverseTransformPoint(slot.Door.transform.position).y - 1.75f;
@@ -121,28 +129,37 @@ namespace ChessFight.PawnRush
                     errors.Add($"슬롯 {slot.Slot}({Teams.Name(slot.Team)}) 문 높이 {doorY:0.00} ≠ 출구 높이 {slot.ExitHeight}");
                 if (slot.Game == null) errors.Add($"슬롯 {slot.Slot}({Teams.Name(slot.Team)})에 미니게임이 없습니다");
             }
-            notes.Add($"모듈 {modules.Count}개, 결승까지 높이 {modules[modules.Count - 1].transform.position.y + modules[modules.Count - 1].deltaY - modules[0].transform.position.y:0} m");
+            if (root.GetComponentInChildren<KillVolume>(true) == null) errors.Add("낙사 영역(y −10)이 없습니다");
             return errors;
         }
 
-        // The highest solid (non-trigger) top under `point + up * above`, within `depth` of it.
-        static bool FloorAt(Vector3 point, float above, float depth, out float y)
+        // A floor's world box (its renderer's: the collider of an inactive one has no bounds).
+        static Bounds Box(CourseFloor f)
         {
-            y = float.NaN;
-            int n = Physics.RaycastNonAlloc(point + Vector3.up * above, Vector3.down, hits, depth, ~0, QueryTriggerInteraction.Ignore);
-            float best = float.MaxValue;
-            for (int i = 0; i < n; i++)
-                if (hits[i].distance < best) { best = hits[i].distance; y = hits[i].point.y; }
-            return n > 0;
+            var r = f.GetComponent<Renderer>();
+            if (r != null) return r.bounds;
+            var c = f.GetComponent<Collider>();
+            return c != null ? c.bounds : new Bounds(f.transform.position, Vector3.zero);
         }
 
-        static string Where(PawnRushCourse course, Vector3 p)
+        static bool OverlapXZ(Bounds a, Bounds b) =>
+            Mathf.Min(a.max.x, b.max.x) - Mathf.Max(a.min.x, b.min.x) > .3f &&
+            Mathf.Min(a.max.z, b.max.z) - Mathf.Max(a.min.z, b.min.z) > .3f;
+
+        // Under W1_White, W1_Black, W2_White or W2_Black.
+        static bool InTeamSection(Transform t, Transform root)
         {
-            var m = course.ModuleAt(p);
-            return (m != null ? m.Code + " " : "") + Fmt(p);
+            for (; t != null && t != root; t = t.parent)
+                if (t.parent == root && t.name.StartsWith("W")) return true;
+            return false;
         }
 
-        static string Show(float y, Vector3 at) => float.IsNaN(y) ? "없음 " + Fmt(at) : y.ToString("0.00", CultureInfo.InvariantCulture);
+        static string Name(CourseFloor f) => (f.transform.parent != null ? f.transform.parent.name + "/" : "") + f.name;
+
+        // Any solid (non-trigger) surface under `point + up * above`, within `depth` of it.
+        static bool FloorAt(Vector3 point, float above, float depth) =>
+            Physics.RaycastNonAlloc(point + Vector3.up * above, Vector3.down, hits, depth, ~0, QueryTriggerInteraction.Ignore) > 0;
+
         static string Fmt(Vector3 p) => string.Format(CultureInfo.InvariantCulture, "({0:0.0}, {1:0.0}, {2:0.0})", p.x, p.y, p.z);
     }
 }

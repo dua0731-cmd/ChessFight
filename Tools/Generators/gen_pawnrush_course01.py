@@ -4,16 +4,15 @@
 #   Assets/Scenes/PawnRush/PawnRush_Course01.unity       camera, light, physics rate, the course
 #                                                        root (PawnRushCourse) and the offline
 #                                                        playtest (ragdoll pawn, white team)
-#   Assets/Maps/PawnRush/Course01/Data/Course01Layout.asset   module order, extensions off
 #   Assets/Maps/PawnRush/Course01/Data/Course01Kit.asset      materials + imported obstacle prefabs
 #   Assets/Maps/PawnRush/Course01/Materials/*.mat              the course materials
 #
-# The course itself is NOT in the scene file: Play builds it from code when the scene holds no
-# modules, and the menu ChessFight > Pawn Rush > Build Course01 bakes the module prefabs and
-# places them in the scene (Unity then saves the scene).
+# The course itself (v0.2, Course01v2Builder) is NOT in the scene file: Play builds it from code
+# when the scene does not hold it, and the menu ChessFight > Pawn Rush > Build Course01 v2 builds
+# it into the scene (Unity then saves the scene).
 #
-# !! It OVERWRITES these files. Once Unity has saved the scene (Build Course01) or anyone has
-# !! edited the layout or the materials, running this throws that work away.
+# !! It OVERWRITES these files. Once Unity has saved the scene (Build Course01 v2) or anyone has
+# !! edited the kit or the materials, running this throws that work away.
 # Run from the project root:  python3 Tools/Generators/gen_pawnrush_course01.py --overwrite
 import hashlib, os, re, sys
 
@@ -43,7 +42,7 @@ def script(name, folder):
 PR = COURSE + "/Scripts"
 SCRIPT = {
     "PawnRushCourse": script("PawnRushCourse", PR), "Course01Playtest": script("Course01Playtest", PR),
-    "Course01Layout": script("Course01Layout", PR), "Course01Kit": script("Course01Kit", PR),
+    "Course01Kit": script("Course01Kit", PR),
     "OrbitCamera": script("OrbitCamera", "Assets/Scripts/Game"),
     "PhysicsProfile": script("PhysicsProfile", "Assets/Scripts/Gameplay"),
     "PlaytestSpawner": script("PlaytestSpawner", "Assets/Scripts/Gameplay/Playtest"),
@@ -101,12 +100,6 @@ def scriptable(path, script_name, name, fields):
           % (SCRIPT[script_name], name, fields)))
     return "{fileID: 11400000, guid: %s, type: 2}" % meta_guid(path)
 
-# ModuleId order in Course01Layout.cs, and Course01Layout.Default().
-MODULES = ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12", "M13", "M14", "X1", "X2", "X3"]
-ORDER = ["M0", "M1", "M2", "M3", "M4", "X1", "M5", "M6", "M7", "X2", "M8", "M9", "M10", "M11", "M12", "X3", "M13", "M14"]
-layout = scriptable(COURSE + "/Data/Course01Layout.asset", "Course01Layout", "Course01Layout",
-    "  entries:\n" + "".join("  - module: %d\n    enabled: %d\n    prefab: {fileID: 0}\n" % (MODULES.index(m), 0 if m[0] == "X" else 1)
-                             for m in ORDER))
 
 OBS = "Assets/Maps/ImportedChessFight/Prefabs/Obstacles/"
 PREFABS = {
@@ -170,7 +163,7 @@ PREAMBLE = sample[sample.index("--- !u!29 &1"):sample.index("--- !u!1 &330585543
 PAWN_PREFAB = "Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab"
 
 d = Doc(3000)
-cam = d.go("Main Camera", pos=(0, 6, -26), tag="MainCamera")
+cam = d.go("Main Camera", pos=(0, 6, -20), tag="MainCamera")
 d.comp(cam, "20", "Camera", camera_body)
 d.comp(cam, "81", "AudioListener", "  m_Enabled: 1\n")
 orbit = d.script(cam, "OrbitCamera",
@@ -182,7 +175,7 @@ d.comp(light, "108", "Light", light_body)
 physics = d.go("Physics Profile")
 d.script(physics, "PhysicsProfile", "  physicsRate: 120\n  solverIterations: 24\n")
 course = d.go("Pawn Rush Course01")
-course_id = d.script(course, "PawnRushCourse", "  layout: %s\n  kit: %s\n  buildOnPlayIfEmpty: 1\n" % (layout, kit))
+course_id = d.script(course, "PawnRushCourse", "  kit: %s\n  buildOnPlayIfEmpty: 1\n" % kit)
 play = d.go("Playtest", pos=(0, 0, -7))
 spawner = d.script(play, "PlaytestSpawner",
     "  characterPrefab: %s\n  spawnPoint: {fileID: 0}\n  cameraRig: {fileID: 0}\n"

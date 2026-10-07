@@ -10,11 +10,13 @@ namespace ChessFight.PawnRush
 {
     // The offline playtest's course-01 extras, next to the PlaytestSpawner:
     //   F5      switch the pawn to the other team (and start again from that team's start)
-    //   CSV     every module entered and left, with the time and the team, for comparing with the
-    //           design doc's expected times (Logs/PawnRush in the project, or persistentDataPath)
+    //   CSV     every section (S+A, W1, B, W2, C, T) entered and left, with the time and the team,
+    //           for comparing with the design doc's expected times (Logs/PawnRush in the project,
+    //           or persistentDataPath)
+    //   drop    gives the pawn the 8 m drop rule (FallDistanceRespawn)
     //   card    the slot's picture card for 3 s when the island is entered, then the button's
     //           progress while inside
-    //   HUD     module, rank, metres along the progress path, the start countdown
+    //   HUD     section, rank, metres along the progress path, the start countdown
     // Team size (2..6) decides which promotion zones show their pads.
     public sealed class Course01Playtest : MonoBehaviour
     {
@@ -24,13 +26,13 @@ namespace ChessFight.PawnRush
         [SerializeField, Range(2, 6)] int teamSize = 6;
         [SerializeField] bool writeCsv = true;
 
-        CourseModule current;
+        string current;
+        bool dropRule;
         float runStart;
         string csvPath;
         MiniGameSlot cardSlot;
         float cardUntil;
         GUIStyle style, big;
-        readonly Dictionary<int, List<Vector3>> paths = new Dictionary<int, List<Vector3>>();
 
         void OnEnable() => MiniGameSlot.Entered += OnSlotEntered;
         void OnDisable() => MiniGameSlot.Entered -= OnSlotEntered;
@@ -59,13 +61,19 @@ namespace ChessFight.PawnRush
                 Restarted();
             }
             if (LegacyKeys.Down(KeyCode.Backspace)) Restarted();
+            if (!dropRule && spawner.Driver is Component body)
+            {
+                var root = body.transform.root.gameObject;
+                if (root.GetComponent<FallDistanceRespawn>() == null) root.AddComponent<FallDistanceRespawn>();
+                dropRule = true;
+            }
             var target = spawner.Driver.FollowTarget;
             if (target == null) return;
-            var at = course.ModuleAt(target.position);
-            if (at != null && at != current)
+            course.Along(target.position, Mathf.Max(0, spawner.Team), out string section);
+            if (section != current)
             {
                 if (current != null) Log(current, "exit");
-                current = at;
+                current = section;
                 Log(current, "enter");
             }
         }
@@ -107,13 +115,13 @@ namespace ChessFight.PawnRush
             }
         }
 
-        void Log(CourseModule module, string what)
+        void Log(string section, string what)
         {
             if (csvPath == null) return;
             try
             {
                 File.AppendAllText(csvPath, string.Format(CultureInfo.InvariantCulture, "{0},{1},{2:0.00},{3}\n",
-                    module != null ? module.Code : "-", what, Time.time - runStart, Teams.Name(spawner.Team)));
+                    section ?? "-", what, Time.time - runStart, Teams.Name(spawner.Team)));
             }
             catch (Exception) { csvPath = null; }
         }
@@ -131,11 +139,10 @@ namespace ChessFight.PawnRush
             var target = spawner.Driver.FollowTarget;
             if (target == null) return;
             int team = Mathf.Max(0, spawner.Team);
-            if (!paths.TryGetValue(team, out var path)) paths[team] = path = course.Path(team);
-            float along = PawnRushCourse.Progress(path, target.position), total = PawnRushCourse.Length(path);
+            float along = course.Along(target.position, team, out string section), total = ProgressPath.Length(course.Path(team));
             int rank = PawnRushCourse.RankAt(target.position.y - course.transform.position.y);
             string text = $"<b>폰 러시 코스 01 「여덟 번째 랭크」</b> · {Teams.Name(spawner.Team)}팀 (F5 팀 바꾸기)\n" +
-                          $"{(current != null ? current.Code + " " + current.title : "-")} · 랭크 {rank} · 진행 {along:0} / {total:0} m";
+                          $"구간 {section} · 랭크 {rank} · 진행 {along:0} / {total:0} m";
             var box = new Rect(Screen.width - 452, 12, 440, 52);
             GUI.Box(box, GUIContent.none);
             GUI.Label(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 8), text, style);

@@ -3,30 +3,28 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush.Editor
 {
-    // The mirror tools (design doc §6 "거울 생성"), on top of the runtime TeamMirror:
-    //   Mirror Team_White → Team_Black   rebuild a team module's black half from its white half
-    //   Mirror Selected (Left/Right pair) a shared module's pair: a mirrored copy about the module's
-    //                                    centre line, back-and-forth obstacles half a cycle on
+    // The mirror tools (design doc v0.2 §8), on top of the runtime TeamMirror. The mirror is the
+    // world's x = 0 plane: the wings sit on both sides of the map.
+    //   Mirror White → Black              rebuild a wing's black half (W1_Black, W2_Black) from the
+    //                                     selected white one (W1_White, W2_White, or anything in it)
+    //   Mirror Selected (Left-Right Pair) a mirrored copy of the selection about x = 0, back-and-forth
+    //                                     obstacles half a cycle on
+    // Build Course01 v2 rebuilds everything from code, mirrors included: these are for trying a
+    // hand edit before it goes into the builder.
     public static class TeamMirrorMenu
     {
-        [MenuItem("ChessFight/Pawn Rush/Mirror Team_White → Team_Black", false, 20)]
+        [MenuItem("ChessFight/Pawn Rush/Mirror White → Black", false, 20)]
         static void MirrorTeam()
         {
             var white = FindWhite(Selection.activeGameObject);
             if (white == null) return;
-            // Inside a module placed in the scene the halves belong to the module prefab: edit the prefab.
-            if (PrefabUtility.IsPartOfPrefabInstance(white))
-            {
-                EditorUtility.DisplayDialog("Mirror Team_White", "씬에 놓인 모듈 프리팹 안입니다. 모듈 프리팹을 열고(Project 창에서 더블클릭) 거기서 실행하세요.", "확인");
-                return;
-            }
             var black = TeamMirror.MirrorTeam(white);
-            Undo.RegisterCreatedObjectUndo(black.gameObject, "Mirror Team_White");
+            Undo.RegisterCreatedObjectUndo(black.gameObject, "Mirror White → Black");
             EditorUtility.SetDirty(black.gameObject);
             Selection.activeGameObject = black.gameObject;
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Mirror Team_White → Team_Black", true)]
+        [MenuItem("ChessFight/Pawn Rush/Mirror White → Black", true)]
         static bool CanMirrorTeam() => !EditorApplication.isPlaying && FindWhite(Selection.activeGameObject) != null;
 
         [MenuItem("ChessFight/Pawn Rush/Mirror Selected (Left-Right Pair)", false, 21)]
@@ -42,13 +40,12 @@ namespace ChessFight.PawnRush.Editor
         [MenuItem("ChessFight/Pawn Rush/Mirror Selected (Left-Right Pair)", true)]
         static bool CanMirrorSelected() => !EditorApplication.isPlaying && Selection.gameObjects.Length > 0;
 
-        // The Team_White group of the selected module (or the selection itself).
+        // The *_White group the selection is in (or is).
         static Transform FindWhite(GameObject selected)
         {
-            if (selected == null) return null;
-            if (selected.name == TeamMirror.WhiteName) return selected.transform;
-            var module = selected.GetComponentInParent<CourseModule>(true);
-            return module != null ? module.transform.Find(TeamMirror.WhiteName) : null;
+            for (var t = selected != null ? selected.transform : null; t != null; t = t.parent)
+                if (t.name.EndsWith("_White")) return t;
+            return null;
         }
     }
 }

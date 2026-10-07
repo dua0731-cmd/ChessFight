@@ -4,8 +4,9 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // Fairness by mirror (design doc §3): a team module is built for white only (x < 0)
-    // and black is made from it by reflecting x -> -x about the module's centre line.
+    // Fairness by mirror (design doc v0.2 §6): a team section is built for white only (x < 0)
+    // and black is made from it by reflecting x -> -x about the world's x = 0 plane (the
+    // course root sits at the origin, so its groups' x = 0 is the world's).
     //
     // A reflection is applied to every local transform below the copy: position x
     // negated, rotation (x, y, z, w) -> (x, -y, -z, w), scale kept. Doing it at every
@@ -22,18 +23,29 @@ namespace ChessFight.PawnRush
     {
         public const string WhiteName = "Team_White", BlackName = "Team_Black";
 
-        // Builds (or rebuilds) Team_Black next to Team_White.
+        // The black half's name for a white one: W1_White -> W1_Black, Team_White -> Team_Black.
+        public static string BlackOf(string white) => white.EndsWith("_White") ? white.Substring(0, white.Length - 6) + "_Black" : BlackName;
+
+        // Builds (or rebuilds) the black half next to the white one.
         public static Transform MirrorTeam(Transform white)
         {
-            var parent = white.parent;
-            var old = parent.Find(BlackName);
-            if (old != null) Object.DestroyImmediate(old.gameObject);
-            var black = Object.Instantiate(white.gameObject, parent).transform;
-            black.name = BlackName;
-            black.SetSiblingIndex(white.GetSiblingIndex() + 1);
-            Reflect(black, false);
+            var black = MirrorGroup(white, BlackOf(white.name));
             SetTeam(black.gameObject, Teams.Black);
             return black;
+        }
+
+        // A mirror image of a whole group next to it, replacing an earlier one of that name (the
+        // tower's east ramp from its west ramp). Teams are left as they are.
+        public static Transform MirrorGroup(Transform source, string name)
+        {
+            var parent = source.parent;
+            var old = parent.Find(name);
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            var copy = Object.Instantiate(source.gameObject, parent).transform;
+            copy.name = name;
+            copy.SetSiblingIndex(source.GetSiblingIndex() + 1);
+            Reflect(copy, false);
+            return copy;
         }
 
         // A mirrored copy of one object about its parent's x = 0 (the "mirror selected" menu for a
@@ -97,6 +109,7 @@ namespace ChessFight.PawnRush
             foreach (var x in root.GetComponentsInChildren<MiniGameSlot>(true)) x.SetTeam(team);
             foreach (var x in root.GetComponentsInChildren<PromotionZone>(true)) x.SetTeam(team);
             foreach (var x in root.GetComponentsInChildren<TeamTint>(true)) x.Apply(team);
+            foreach (var x in root.GetComponentsInChildren<TeamZone>(true)) x.SetTeam(team);
         }
     }
 }

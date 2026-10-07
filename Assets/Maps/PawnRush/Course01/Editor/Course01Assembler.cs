@@ -1,15 +1,15 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace ChessFight.PawnRush.Editor
 {
-    // ChessFight > Pawn Rush > Build Course01 (design doc §6): one click rebuilds the course in
-    // PawnRush_Course01.unity from Course01Layout - baked module prefabs, laid end to end. Running
-    // it twice gives the same scene; turning an extension on or off in the layout and building
-    // again moves the modules behind it. Nothing is placed by hand.
+    // ChessFight > Pawn Rush > Build Course01 v2 (design doc v0.2 §8, Course01v2Builder): one click
+    // deletes the course root in PawnRush_Course01.unity and builds it again at the design doc's
+    // world coordinates, keeping the links to the imported obstacle prefabs. Running it twice gives
+    // the same scene. Hand edits inside Course01v2_Root are lost on the next build: change the
+    // builder, or keep edits outside the root.
     public static class Course01Assembler
     {
         public const string ScenePath = "Assets/Scenes/PawnRush/PawnRush_Course01.unity";
@@ -27,30 +27,26 @@ namespace ChessFight.PawnRush.Editor
             }
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Build Course01", false, 1)]
+        [MenuItem("ChessFight/Pawn Rush/Build Course01 v2", false, 1)]
         public static void Build()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             if (!EnsureScene()) return;
             var course = Object.FindFirstObjectByType<PawnRushCourse>();
-            if (course == null || course.Layout == null || course.Kit == null)
+            if (course == null || course.Kit == null)
             {
-                EditorUtility.DisplayDialog("Build Course01", "씬에 PawnRushCourse(레이아웃·키트 지정)가 없습니다.", "확인");
+                EditorUtility.DisplayDialog("Build Course01 v2", "씬에 PawnRushCourse(키트 지정)가 없습니다.", "확인");
                 return;
             }
-            Course01ModuleBuilder.BakeMissing(course.Layout, course.Kit);
             course.Clear();
-            course.Assemble((entry, origin) =>
-            {
-                var go = (GameObject)PrefabUtility.InstantiatePrefab(entry.prefab, course.transform);
-                go.transform.position = origin;
-                return go;
-            });
+            var previous = CourseBuilder.Spawn;
+            CourseBuilder.Spawn = (prefab, parent) => (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+            try { Course01v2Builder.Build(course.transform, course.Kit); }
+            finally { CourseBuilder.Spawn = previous; }
             var scene = course.gameObject.scene;
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
-            Debug.Log($"[PawnRush] Build Course01: 모듈 {course.Modules.Count}개 배치 (" +
-                      string.Join(", ", course.Modules.Select(m => m.Code)) + ")");
+            Debug.Log("[PawnRush] Build Course01 v2: 코스를 다시 만들고 씬을 저장했습니다.");
             Course01ValidatorMenu.Report(course, false);
         }
 
@@ -74,7 +70,7 @@ namespace ChessFight.PawnRush.Editor
             var course = Object.FindFirstObjectByType<PawnRushCourse>();
             if (course == null)
             {
-                EditorUtility.DisplayDialog("Validate Course01", "열린 씬에 PawnRushCourse가 없습니다. Open Course01 → Build Course01 먼저.", "확인");
+                EditorUtility.DisplayDialog("Validate Course01", "열린 씬에 PawnRushCourse가 없습니다. Open Course01 → Build Course01 v2 먼저.", "확인");
                 return;
             }
             Report(course, true);
