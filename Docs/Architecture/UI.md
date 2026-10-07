@@ -367,3 +367,19 @@ R62의 `LastScene`(PAWN RUSH 참고 그림의 성·아치 무대, 기울어진 �
 **아직 없음:** 경기 흐름 연결. 결과를 코스 결승 그 자리에서 보여 줄지 따로 씬으로 넘어갈지 미정(승규 님 ④). 연결할 사람은 이긴 팀은 `PawnRushVictory`, 진 팀은 `PawnRushLose`를 열고 `PawnRushResultDirector.Show(MatchResult, 내 팀)`로 결과를 넣은 뒤 `LobbyRequested`(로비로·12초 끝)·`RequeueRequested`(다시 매칭)를 받는다. 무승부 전용 화면(지금은 이긴 쪽 화면처럼 보임), 효과음, 16:9가 아닌 창에서의 배경 맞춤은 아직 안 다듬었다.
 
 파일: `Game/PawnRushResultDirector.cs`(진행·키·이벤트·미리보기), `Game/PawnRushResultStage.cs`(탁자·램프·빛·말·연출·카메라·배경), `Game/PawnRushResultHud.cs`(결과판), `Resources/PawnRushResultHud.uxml`(`pr-screen` 하나)·`.uss`·`PawnRushResultTheme.tss`. 말 `LastSceneFigure`, 메시 `LastSceneArt`, 텍스처·조명 `MenuArt`, 결과 데이터 Core `MatchResult`.
+
+## 14. 로비 UI A 시안 (R83, 2026-10-08)
+
+승규 님 요청: 로비 디자인은 그대로 두고 UI만, "시작하기와 배경 색이 안 어울린다", 이름 설정 화면처럼 어울리게, 더 세련되게 → 시안 3개([캔버스](https://claude.ai/artifact/CriXrXYV7WeUPaVvr3aoPE): A 아이보리 라인, B 호두나무와 놋쇠, C 다크 글래스) → **A**. "무대 판 위 조명 그래픽은 아무것도 바꾸지 말고 UI만."
+
+- 바뀐 곳: `Resources/NetworkHud.uxml`·`NetworkHud.uss`의 로비 부분(`a-` 클래스), `Game/NetworkHudView.cs`(`Dress`: 그늘·판·줄·은색 제목·아이콘·게임 시작), `Game/MenuArt.cs`(`Ramp`·`HudBlend`·`LineCard`), `Game/MenuMarks.cs`(`IconMark`), 새 그림 `Resources/Menu/LobbyLogo.png`(LFS). 3D 무대 `LobbyStage`는 그대로다.
+- 말투는 이름 설정 화면과 같다: 어두운 판에 가는 금 테(#D9AE62), 금색 작은 대문자(GAME MODE, PARTY), 은색 제목(이름 화면 "이름을 정해 주세요"와 같은 그라데이션, 띠마다 자른 글자 24겹), 금 46 px + 은이 흐려지는 줄, 아이보리 버튼(#F7EDDB → #E8D6B6, 모서리 10 px 깎음, 아래 옅은 그림자).
+- 위 막대(64 px): 고른 왕관 로고(다른 채팅의 로고 시안을 PNG로 옮김, 76 × 53), 탭은 본문 굵은 글씨 15 px와 "플레이" 밑 금·은 줄, 오른쪽에 친구(사람 아이콘, 접속 수 금색)·정보(i)·내 이름(왕관) 테두리 버튼.
+- 오른쪽 모드 목록(400 px): 카드 400 × 118, 어두운 판에 기물 뒤 모드 색(초록·파랑·빨강)을 은은하게. 고른 카드는 금 테·3 px 막대·왼쪽에서 번지는 금빛. 상태 칩: 선택됨(금색 채움)·준비 중(흐림)·플레이 가능(밝은 테).
+- 왼쪽 아래: 채팅 칩(로비에서만 같은 테두리), 코드로 참가(#)·비공개 방(자물쇠), 파티 판(PARTY, 1 / 6, 파티 코드 + 복사, AI 봇 −/+, 나가기 연한 빨강).
+- 오른쪽 아래: 게임 시작(400 × 70, "게임 시작 →"), 그 아래 ENTER·ESC 안내(매칭 중엔 숨김). 매칭 카드의 "경기 시작"도 아이보리.
+- 그늘: 위 130 px, 오른쪽 560 px, 아래 270 px, 따뜻한 검은 갈색. 덮는 창(친구·정보·코드·모드 창)은 거의 불투명, 방 배너·파티 판·매칭 카드는 살짝 비친다.
+- 버튼은 두꺼운 판(`ChunkyButtons`)이 아니라 `.a-btn` 테두리 버튼: 올리면 테두리·글자가 밝아지고 누르면 96 %로 작아진다. 대체 클릭 경로는 판 버튼에만 `ChunkyButtons.Pulse`를 부른다(다른 버튼에 부르면 판 버튼으로 바뀐다).
+- **선형 색 공간:** 시안의 반투명 값을 그대로 쓰면 Unity에서 밝은 것은 진하게, 어두운 것은 옅게 보인다. USS 알파는 바꿔 적었고(밝은 것 sRGB 곡선, 어두운 것 `StageKit.Darkening`), 텍스처는 `MenuArt.Ramp(…, HudBlend)`, 모드 카드는 sRGB로 합친 불투명 텍스처다 → [PITFALLS 30](../Environment/PITFALLS.md).
+- 라벨에 장식을 붙일 때는 감싼 상자에(PITFALLS 31). 글꼴은 그대로(제목 Black Han Sans, 본문 OS 한글 글꼴 굵게).
+- 안 바꾼 것: 인트로, 입장 화면(공개 매칭), 로딩, 경기 HUD, 결과 화면, 설정 창, 채팅 창을 연 모습, 모드 창(M) 안의 옛 색 타일.

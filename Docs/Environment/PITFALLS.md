@@ -33,6 +33,8 @@
 | 27 | UI Toolkit 글자가 **안 보이거나 다른 글자가 엉뚱한 곳에** 찍힘. Console: `Unable to load font face for [Cascadia Mono]`, `Can't Generate Mesh, No Font Asset has been assigned.` | `Font.CreateDynamicFontFromOSFont(이름 목록)`의 첫 이름이 이 PC에 없음. 그 글꼴을 쓴 라벨이 망가지고 이웃 라벨까지 깨져 보임 | `Font.GetOSInstalledFontNames()`로 있는 이름 하나를 골라 만든다(`PawnRushResultHud.Build`) | R76 |
 | 28 | Painter2D로 그린 반투명 줄·판이 **불투명**하게 나옴 | `FillGradient.MakeLinearGradient(Color, Color, …)`(두 색 도우미)가 알파를 버림 | 알파 키를 넣은 `Gradient`로 만든다(`PawnRushResultHud.Paint.Fill`) | R76 |
 | 29 | Windows `Tools/Test-NetworkCompile.ps1`이 **Ragdoll lab compilation failed**(`PawnRushSkills`·`SkillSpeedScale`·`PreSkills` 등이 없다는 CS0103) | 스크립트가 `RagdollLab/Scripts`의 맨 위 `.cs`만 읽고 R71에 생긴 하위 폴더 `PawnRushSkills/`의 partial 파일을 빠뜨림(코드는 멀쩡함, Unity는 컴파일됨) | `-Recurse`로 하위 폴더까지 읽게 고침(R76 병합 때). 스크립트 폴더를 새로 나누면 컴파일 도구가 그 폴더를 읽는지 확인한다 | R76 |
+| 30 | Unity UI의 반투명 색이 웹 시안과 다르게 보임: 밝은 테두리·옅은 바탕은 **훨씬 진하게**, 어두운 그늘·판은 **훨씬 옅게**(뒤가 비침) | 프로젝트가 선형(Linear) 색 공간이라 UI Toolkit도 선형으로 섞는다. 시안(CSS)의 알파는 sRGB에서 섞은 값이다 | 시안 값을 그대로 쓰지 않는다: 어두운 것은 `StageKit.Darkening(a)`(.78 → .96), 어두운 바탕 위 밝은 것은 sRGB 곡선(`Mathf.GammaToLinearSpace`, .38 → .12). 그라데이션은 `MenuArt.Ramp(…, HudBlend.Shade/Tint)`, 모드 카드처럼 겹이 많은 판은 sRGB로 합친 불투명 텍스처(`MenuArt.LineCard`) | R83 |
+| 31 | 라벨 글자가 **한 글자씩 세로로 줄바꿈**(로비 "플레이" 탭) | UI Toolkit의 Label(TextElement)에 자식 요소를 붙이면 글자 크기를 재지 않아 폭이 0이 된다 | 밑줄 같은 장식은 라벨을 감싼 상자에 붙인다(`a-tab-box`). 버튼에 아이콘을 넣을 때는 글자를 자식 Label로 옮긴다(`NetworkHudView.IconText`) | R83 |
 
 ## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
 

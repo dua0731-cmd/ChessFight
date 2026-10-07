@@ -26,14 +26,11 @@
 .btn.danger-text:hover { background-color: rgba(255, 120, 90, 0.14); }
 .btn.danger-text:disabled { color: rgb(110, 100, 100); background-color: rgba(0, 0, 0, 0); }
 
-/* ---------- design C shared: walnut panels, slab buttons, small type ----------
-   .wood-panel gets its lacquered walnut texture and gold corner accent from
-   NetworkHudView (USS has no gradients). .chunky buttons are drawn by
-   ChunkyButtons: the slab's side is part of the bottom padding (6 px, ch-lg 7,
-   ch-sm 4, ch-xs 3), so text sits on the plate. */
-.wood-panel { border-width: 1px; border-color: rgba(217, 174, 98, 0.26); border-top-color: rgba(255, 220, 170, 0.34);
-              background-color: rgb(52, 34, 21); -unity-background-scale-mode: scale-and-crop; }
-.panel-accent { position: absolute; left: 0; top: 0; width: 46px; height: 3px; background-color: rgb(255, 201, 61); }
+/* ---------- design C shared: slab buttons, small type ----------
+   .chunky buttons are drawn by ChunkyButtons: the slab's side is part of the
+   bottom padding (6 px, ch-lg 7, ch-sm 4, ch-xs 3), so text sits on the plate.
+   The intro, the entrance screen, the settings window and the result screens
+   use them; the lobby uses design A below (R83). */
 .mono { font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(185, 165, 140); }
 .chunky { background-color: rgba(0, 0, 0, 0); border-width: 0; border-radius: 0; margin: 0; flex-shrink: 0;
           flex-direction: row; justify-content: center; align-items: center;
@@ -51,19 +48,76 @@
 .btn-sq { width: 32px; height: 35px; padding: 0 0 3px 0; font-size: 17px; }
 .btn-xs { margin: 0 3px; }
 
+/* ---------- lobby design A (R83): the name screen's look ----------
+   Thin gold lines on dark glass, line icons (MenuMarks.IconMark), small gold
+   capitals over labels and the ivory start button. Shades, panel fills, rules,
+   the silver title and the start button's face are painted by NetworkHudView.
+   Alphas are the page's, bent for linear-space blending (MenuArt.BlendAlpha):
+   light lines and washes on dark through the sRGB curve (.38 -> .12), dark
+   fills through StageKit.Darkening (.78 -> .96), or they read too strong or too thin. */
+.a-btn { flex-direction: row; align-items: center; justify-content: center; flex-shrink: 0; height: 34px; margin: 0;
+         padding: 0 12px; border-width: 1px; border-radius: 0; border-color: rgba(217, 174, 98, 0.12);
+         background-color: rgba(255, 240, 220, 0.003); color: rgb(227, 211, 184); font-size: 13px; -unity-font-style: bold;
+         -unity-text-align: middle-center; white-space: nowrap;
+         transition-property: scale, background-color, border-color, color; transition-duration: 0.12s; }
+.a-btn:hover { background-color: rgba(255, 240, 220, 0.01); border-color: rgba(226, 184, 102, 0.6); color: rgb(255, 243, 218); }
+.a-btn:active { scale: 0.96 0.96; background-color: rgba(226, 184, 102, 0.033); }
+.a-btn:disabled { opacity: 0.2; }
+.a-btn-text { font-size: 13px; -unity-font-style: bold; white-space: nowrap; }
+.a-icon { width: 16px; height: 16px; margin-right: 7px; flex-shrink: 0; }
+.a-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.a-sm .a-btn-text { font-size: 12px; }
+.a-sm .a-icon { width: 13px; height: 13px; margin-right: 5px; }
+.a-sq { width: 26px; height: 26px; padding: 0; font-size: 15px; }
+.a-gap { margin: 0 3px; }
+.a-danger { border-color: rgba(240, 160, 140, 0.21); color: rgb(240, 160, 140); }
+.a-danger:hover { border-color: rgba(240, 160, 140, 0.69); background-color: rgba(240, 160, 140, 0.01); color: rgb(255, 196, 180); }
+.a-ivory { border-width: 0; background-color: rgb(240, 226, 200); color: rgb(36, 23, 13); }
+.a-ivory:hover { background-color: rgb(250, 240, 220); color: rgb(36, 23, 13); }
+.a-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 4px; color: rgb(217, 174, 98); }
+.a-kicker-wide { font-size: 11px; }
+.a-label { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(185, 165, 140); margin-bottom: 4px; }
+.a-panel { border-width: 1px; border-color: rgba(217, 174, 98, 0.047); background-color: rgba(0, 0, 0, 0);
+           -unity-background-scale-mode: stretch-to-fill; }
+.a-panel-rule { position: absolute; left: -1px; top: -1px; }
+.a-cta { height: 70px; margin: 0; padding: 0; border-width: 0; border-radius: 0; background-color: rgba(0, 0, 0, 0);
+         flex-direction: row; justify-content: center; align-items: center; flex-shrink: 0;
+         transition-property: translate; transition-duration: 0.08s; }
+.a-cta:hover { background-color: rgba(0, 0, 0, 0); }
+.a-cta:active { translate: 0 1px; }
+.a-cta:disabled { opacity: 0.2; }
+.a-cta-text { font-size: 24px; -unity-font-style: bold; letter-spacing: 3px; color: rgb(36, 23, 13); white-space: nowrap; }
+.a-cta-arrow { width: 24px; height: 24px; margin-left: 14px; }
+.a-cta-sm { height: 44px; margin-top: 12px; }
+.a-cta-sm .a-cta-text { font-size: 17px; letter-spacing: 2px; }
+.a-hints { margin-top: 10px; justify-content: flex-end; }
+.a-cap { padding: 1px 6px 2px 6px; margin-right: 6px; border-width: 1px; border-color: rgba(217, 174, 98, 0.1);
+         font-size: 10px; -unity-font-style: bold; color: rgb(227, 211, 184); }
+.a-hint { font-size: 11px; color: rgb(160, 142, 119); margin-right: 16px; }
+.a-hint-last { margin-right: 0; }
+
 /* ---------- lobby frame ---------- */
 .lobby { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 
-.top-fade { position: absolute; left: 0; top: 0; right: 0; height: 76px; -unity-background-scale-mode: stretch-to-fill; }
-.topbar { position: absolute; left: 0; top: 0; right: 0; height: 74px; flex-direction: row; align-items: center;
+.scrim { position: absolute; -unity-background-scale-mode: stretch-to-fill; }
+.scrim-top { left: 0; top: 0; right: 0; height: 130px; }
+.scrim-right { right: 0; top: 0; bottom: 0; width: 560px; }
+.scrim-bottom { left: 0; right: 0; bottom: 0; height: 270px; }
+.topbar { position: absolute; left: 0; top: 0; right: 0; height: 64px; flex-direction: row; align-items: center;
           padding-left: 26px; padding-right: 24px; }
-.logo { font-size: 30px; letter-spacing: 2px; color: rgb(247, 203, 110); margin-right: 38px; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
-.tab { font-size: 20px; margin-right: 30px; padding-top: 6px; padding-bottom: 9px; border-bottom-width: 3px; border-color: rgba(0, 0, 0, 0); }
-.tab-on { color: rgb(255, 246, 232); border-color: rgb(255, 201, 61); }
-.tab-off { color: rgb(185, 165, 140); }
-.pill { height: 46px; margin-left: 10px; padding: 0 14px 4px 14px; font-size: 16px; }
-.profile { -unity-text-align: middle-center; }
+.a-logo { width: 76px; height: 53px; margin-right: 30px; flex-shrink: 0; background-image: resource("Menu/LobbyLogo");
+          -unity-background-scale-mode: scale-to-fit; }
+.a-tab { height: 64px; margin-right: 30px; font-size: 15px; -unity-font-style: bold; color: rgb(168, 147, 122);
+         -unity-text-align: middle-left; }
+.a-tab-on { color: rgb(255, 243, 218); }
+.a-tab-box { height: 64px; margin-right: 30px; }
+.a-tab-box .a-tab { margin-right: 0; }
+.a-tab-rule { position: absolute; left: 0; bottom: 14px; }
+.a-top { margin-left: 8px; }
+.a-profile { padding: 0 14px 0 12px; border-color: rgba(226, 184, 102, 0.45); background-color: rgba(226, 184, 102, 0.01);
+             color: rgb(255, 243, 218); }
+.a-crown { width: 16px; height: 12px; margin-right: 8px; flex-shrink: 0; }
 
 /* ---------- top centre: notices and the matchmaking banner ---------- */
 .top-center { position: absolute; left: 0; right: 0; top: 80px; align-items: center; }
@@ -73,9 +127,9 @@
 .notice { display: none; padding: 8px 8px 8px 16px; margin-bottom: 8px; background-color: rgba(110, 32, 24, 0.94);
           border-left-width: 3px; border-color: rgb(255, 77, 98); }
 .notice-text { font-size: 14px; color: rgb(255, 236, 228); margin-right: 10px; }
-.notice-btn { padding: 6px 12px 10px 12px; font-size: 14px; }
+.notice-btn { margin-left: 4px; }
 
-.match-panel { display: none; width: 360px; padding: 14px 20px 13px 20px; border-color: rgba(255, 201, 61, 0.55); }
+.match-panel { display: none; width: 360px; padding: 14px 20px 13px 20px; border-color: rgba(226, 184, 102, 0.55); }
 .match-line { position: absolute; left: 0; top: 0; right: 0; height: 3px; -unity-background-scale-mode: stretch-to-fill; }
 .match-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(217, 174, 98); margin-bottom: 5px; }
 .match-head { align-items: center; }
@@ -103,20 +157,20 @@
 /* ---------- bottom left: tools and the party panel ---------- */
 .bottom-left { position: absolute; left: 24px; bottom: 24px; }
 .tools { margin-bottom: 16px; }
-.tool-btn { margin-right: 10px; }
-.party-bar { width: 640px; height: 92px; padding: 0 18px; align-items: center; }
+.a-tool { height: 36px; padding: 0 14px; margin-right: 8px; }
+.party-bar { width: 644px; height: 104px; padding: 0 14px 0 20px; align-items: center; }
 .party-count { flex-shrink: 0; justify-content: center; }
-.party-number { font-size: 34px; color: rgb(246, 236, 223); margin-top: 4px; }
-.party-sep { width: 1px; height: 60px; margin: 0 18px; background-color: rgba(217, 174, 98, 0.25); }
+.party-number { font-size: 34px; color: rgb(255, 243, 218); margin-top: 2px; }
+.party-sep { width: 1px; height: 52px; margin: 0 15px; background-color: rgba(217, 174, 98, 0.04); }
 .party-section { justify-content: center; flex-shrink: 0; }
-.party-code { font-size: 18px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(246, 236, 223); margin-top: 7px; white-space: nowrap; }
-.party-copy { margin-left: 14px; }
-.bot-count { font-size: 20px; -unity-font-style: bold; color: rgb(246, 236, 223); width: 30px; -unity-text-align: middle-center; }
+.party-code { font-size: 16px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(255, 243, 218); white-space: nowrap; }
+.party-copy { margin-left: 10px; }
+.bot-count { font-size: 18px; -unity-font-style: bold; color: rgb(255, 243, 218); width: 30px; -unity-text-align: middle-center; }
 .bots-note { font-size: 10px; color: rgb(255, 190, 90); margin-top: 3px; }
 .party-leave { margin-left: 10px; }
 
-/* ---------- bottom right: the start button or the busy card ---------- */
-.bottom-right { position: absolute; right: 24px; bottom: 24px; width: 396px; align-items: stretch; }
+/* ---------- bottom right: the start button or the busy card, then the key hints ---------- */
+.bottom-right { position: absolute; right: 24px; bottom: 20px; width: 400px; align-items: stretch; }
 /* Superseded by the right rail; kept in the layout only for the name contract. */
 .mode-card { display: none; }
 .mode-tile { width: 60px; height: 60px; margin-right: 12px; border-radius: 10px; align-items: center; justify-content: center;
@@ -125,57 +179,56 @@
 .mode-name { font-size: 20px; -unity-font-style: bold; color: rgb(255, 255, 255); }
 .mode-tagline { font-size: 11px; color: rgb(220, 200, 172); }
 .mode-change { font-size: 12px; color: rgb(220, 200, 172); }
-.start-btn { height: 103px; padding: 0 26px 7px 26px; align-items: center; justify-content: center; }
-.start-title { font-size: 40px; color: rgb(28, 18, 0); }
-.start-chevrons { width: 40px; height: 20px; margin-left: 16px; }
-.start-btn:disabled .start-title { color: rgba(255, 255, 255, 0.55); }
 .keycap { padding: 3px 7px; border-radius: 4px; border-width: 1.5px; font-size: 11px; -unity-font-style: bold; }
 .busy-card { display: none; padding: 14px 16px; }
 .busy-row { align-items: center; }
 .spinner { width: 26px; height: 26px; margin-right: 12px; border-radius: 13px; border-width: 4px;
-           border-color: rgba(255, 220, 170, 0.15); border-top-color: rgb(255, 201, 61); }
-.busy-title { font-size: 22px; color: rgb(246, 236, 223); }
+           border-color: rgba(255, 220, 170, 0.15); border-top-color: rgb(226, 184, 102); }
+.busy-title { font-size: 22px; color: rgb(255, 243, 218); }
 .busy-sub { font-size: 12px; color: rgb(220, 200, 172); margin-top: 3px; }
-.busy-start { margin-top: 12px; font-size: 20px; }
 
 .version { position: absolute; left: 0; right: 0; bottom: 4px; font-size: 10px; -unity-text-align: middle-center;
-           color: rgba(246, 236, 223, 0.35); }
+           color: rgba(246, 236, 223, 0.07); }
 
 /* ---------- right rail: the game modes ---------- */
-.mode-rail { position: absolute; right: 24px; top: 94px; width: 396px; }
-.rail-head { align-items: flex-end; margin-bottom: 12px; }
-.rail-title { font-size: 24px; color: rgb(246, 236, 223); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
-.rail-hint { font-size: 13px; color: rgb(185, 165, 140); margin-bottom: 2px; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
-.rail-card { height: 116px; margin: 0 0 10px 0; padding: 0; border-radius: 0; border-width: 1px; border-color: rgba(217, 174, 98, 0.22);
-             border-top-color: rgba(255, 220, 170, 0.3); overflow: hidden; background-color: rgb(60, 39, 24);
-             -unity-background-scale-mode: stretch-to-fill; transition-property: translate; transition-duration: 0.3s;
-             transition-timing-function: ease-out-back; }
+.mode-rail { position: absolute; right: 24px; top: 80px; width: 400px; }
+.rail-head { align-items: center; }
+.rail-hint { font-size: 11px; -unity-font-style: bold; color: rgb(168, 147, 122); }
+.rail-title { height: 32px; margin-top: 2px; }
+.rail-rule { margin: 6px 0 12px 0; }
+.rail-card { height: 118px; margin: 0 0 10px 0; padding: 0; border-radius: 0; border-width: 1px; border-color: rgba(217, 174, 98, 0.04);
+             overflow: hidden; background-color: rgba(0, 0, 0, 0); -unity-background-scale-mode: stretch-to-fill;
+             transition-property: translate; transition-duration: 0.3s; transition-timing-function: ease-out-back; }
 .rail-card:hover { translate: -4px 0; }
 .rail-card:disabled { translate: 0 0; }
-.rail-card.rail-on { border-color: rgba(255, 201, 61, 0.75); }
-.rail-locked { opacity: 0.92; }
-.rail-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background-color: rgb(255, 201, 61); display: none; }
+.rail-card.rail-on { border-color: rgb(226, 184, 102); }
+.rail-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background-color: rgb(226, 184, 102); display: none; }
 .rail-on .rail-bar { display: flex; }
 .rail-art { position: absolute; right: -6px; bottom: -26px; width: 156px; height: 156px; -unity-background-scale-mode: scale-to-fit; }
-.rail-text { position: absolute; left: 18px; top: 10px; width: 232px; height: 97px; }
+.rail-text { position: absolute; left: 20px; top: 15px; width: 246px; height: 92px; }
 .rail-foot { position: absolute; left: 0; bottom: 0; flex-direction: row; align-items: center; }
-.rail-badge { margin-left: 10px; padding: 3px 7px; border-width: 1px; font-size: 11px; -unity-font-style: bold; letter-spacing: 1px;
-              color: rgb(185, 165, 140); border-color: rgb(185, 165, 140); background-color: rgba(20, 12, 7, 0.55); }
-.rail-badge-on { color: rgb(255, 201, 61); border-color: rgb(255, 201, 61); }
-.rail-badge-ok { color: rgb(75, 224, 143); border-color: rgb(75, 224, 143); }
-.rail-name { font-size: 28px; color: rgb(246, 236, 223); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
-.rail-summary { font-size: 13px; color: rgb(220, 200, 172); white-space: normal; margin-top: 2px; }
-.rail-tagline { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(217, 174, 98); }
+.rail-name { font-size: 24px; color: rgb(246, 236, 223); }
+.rail-on .rail-name { color: rgb(255, 243, 218); }
+.rail-locked .rail-name { color: rgb(233, 219, 196); }
+.rail-summary { font-size: 12px; color: rgb(205, 187, 160); white-space: normal; margin-top: 8px; }
+.rail-on .rail-summary { color: rgb(214, 196, 168); }
+.rail-locked .rail-summary { color: rgb(185, 165, 140); }
+.rail-tagline { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(201, 168, 110); }
+.rail-on .rail-tagline { color: rgb(217, 174, 98); }
+.rail-locked .rail-tagline { color: rgb(168, 147, 122); }
+.rail-badge { margin-left: 10px; padding: 1px 7px 2px 7px; border-width: 1px; font-size: 10px; -unity-font-style: bold; letter-spacing: 1px;
+              color: rgb(168, 147, 122); border-color: rgba(168, 147, 122, 0.21); background-color: rgba(0, 0, 0, 0); }
+.rail-badge-on { color: rgb(36, 23, 13); border-color: rgb(226, 184, 102); background-color: rgb(226, 184, 102); }
+.rail-badge-ok { color: rgb(227, 211, 184); border-color: rgba(217, 174, 98, 0.17); }
 
 /* ---------- lineup nameplates, positioned over the 3D pieces from code ---------- */
 .plate { position: absolute; width: 200px; height: 64px; align-items: center; justify-content: flex-end; }
-.plate-row { flex-direction: row; align-items: center; padding: 7px 16px 8px 16px; border-top-width: 2px; border-color: rgb(255, 201, 61);
-             background-color: rgba(52, 33, 19, 0.95); }
-.plate-crown { width: 18px; height: 14px; margin-right: 8px; }
-.plate-name { font-size: 19px; color: rgb(246, 236, 223); white-space: nowrap; }
-.plate-me .plate-name { color: rgb(255, 230, 170); }
-.plate-tag { margin-top: 5px; font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 217, 138);
-             text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); white-space: nowrap; }
+.plate-row { flex-direction: row; align-items: center; padding: 6px 16px 7px 14px; border-width: 1px;
+             border-color: rgba(217, 174, 98, 0.17); background-color: rgba(18, 11, 6, 0.96); }
+.plate-crown { width: 18px; height: 13px; margin-right: 8px; }
+.plate-name { font-size: 17px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(255, 243, 218); white-space: nowrap; }
+.plate-tag { margin-top: 5px; font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(217, 174, 98);
+             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); white-space: nowrap; }
 .invite-spot { position: absolute; width: 120px; align-items: center; }
 .invite-plus { width: 54px; height: 54px; border-radius: 27px; border-width: 2px; border-color: rgb(231, 190, 114); padding: 0;
                font-size: 32px; color: rgb(255, 230, 184); background-color: rgba(255, 190, 100, 0.16); -unity-text-align: middle-center;
@@ -189,13 +242,14 @@
 .side-card { display: none; position: absolute; right: 24px; top: 94px; width: 360px; padding: 16px; }
 .details-card { width: 320px; }
 .panel-head { align-items: center; margin-bottom: 8px; }
+.panel-head > .a-sq { margin-left: auto; }
 .panel-title { font-size: 22px; color: rgb(246, 236, 223); }
 .friends-info { font-size: 11px; color: rgb(185, 165, 140); margin-right: 8px; }
 .friends-bar { margin-bottom: 8px; align-items: center; }
 .seg { min-height: 26px; margin: 0 4px 0 0; padding: 2px 12px; border-radius: 0; border-width: 0; border-bottom-width: 2px;
        border-color: rgba(0, 0, 0, 0); font-size: 13px; -unity-font-style: bold; color: rgb(185, 165, 140); background-color: rgba(0, 0, 0, 0); }
 .seg:hover { color: rgb(246, 236, 223); }
-.seg-on { color: rgb(255, 255, 255); border-color: rgb(255, 201, 61); }
+.seg-on { color: rgb(255, 255, 255); border-color: rgb(226, 184, 102); }
 .friends-page { font-size: 12px; color: rgb(220, 200, 172); margin: 0 6px; }
 .friend-list { min-height: 300px; }
 .friend-group { flex-direction: row; justify-content: space-between; margin: 8px 2px 3px 2px; }
@@ -220,7 +274,7 @@
 
 /* ---------- modals (join by code, mode picker) ---------- */
 .modal { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-         align-items: center; justify-content: center; background-color: rgba(10, 5, 2, 0.62); }
+         align-items: center; justify-content: center; background-color: rgba(10, 5, 2, 0.88); }
 .modal-card { width: 470px; padding: 20px; }
 .modal-card.wide { width: 620px; }
 .modal-btn { flex-grow: 1; flex-basis: 0; margin: 0 4px; }
@@ -505,6 +559,11 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .chat-key { padding: 2px 6px; border-width: 1.5px; border-radius: 4px; border-color: rgba(246, 236, 223, 0.85);
             font-size: 10px; -unity-font-style: bold; color: rgb(246, 236, 223); }
 .chat-closed-text { margin-left: 8px; font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); }
+/* The lobby's closed chat line in design A (R83): a thin gold frame on dark glass. */
+.chat-lobby .chat-closed { padding: 4px 11px 4px 7px; border-color: rgba(217, 174, 98, 0.08); border-top-color: rgba(217, 174, 98, 0.08);
+                           background-color: rgba(18, 11, 6, 0.83); }
+.chat-lobby .chat-closed .chat-key { border-width: 1px; border-radius: 0; border-color: rgba(217, 174, 98, 0.17); color: rgb(227, 211, 184); }
+.chat-lobby .chat-closed-text { font-size: 12px; color: rgb(227, 211, 184); }
 
 /* open */
 .chat-panel { height: 270px; border-width: 1px; border-color: rgba(217, 174, 98, 0.26); border-top-color: rgba(255, 220, 170, 0.34);
