@@ -114,7 +114,7 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.QueenBlast: QueenBlast(e); break;
                 case SkillFxKind.QueenHit:
                     FlashWhite(e.target, 0.07f);
-                    Burst("queen_shockwave_hit_sparks", e.at + Vector3.up * 0.3f, 1.4f);
+                    Burst("queen_shockwave_hit_sparks", e.at + Vector3.up * 0.3f, 1.6f);
                     break;
                 case SkillFxKind.RookHit: RookHit(e); break;
                 case SkillFxKind.RookStop: RookStop(e); break;
@@ -122,12 +122,12 @@ namespace ChessFight.RagdollLab
                     // Into a wall: the hardest thud of the rook's (R75: a clear shake, up to 2.5°).
                     HitStop(0.08f);
                     Shake(0.25f, 0.4f);
-                    Burst("rook_hit_sparks", e.at, 2f);
+                    Burst("rook_hit_sparks", e.at, 2.8f);
                     break;
                 case SkillFxKind.RookBarricade:
                     HitStop(0.07f);
                     Shake(0.14f, 0.3f);
-                    Burst("rook_hit_sparks", e.at + Vector3.up * 0.5f, 1.8f);
+                    Burst("rook_hit_sparks", e.at + Vector3.up * 0.5f, 2.4f);
                     break;
                 case SkillFxKind.BishopWire: BishopWire(e); break;
                 case SkillFxKind.BishopTrip: BishopTrip(e); break;
@@ -155,7 +155,7 @@ namespace ChessFight.RagdollLab
             HitStop(new[] { 0.04f, 0.06f, 0.08f }[i - 1]);
             Shake(new[] { 0.05f, 0.08f, 0.11f }[i - 1], 0.16f + 0.03f * i);
             FlashWhite(e.target, 0.06f);
-            Burst("rook_hit_sparks", e.at, 1.2f + 0.2f * i);
+            Burst("rook_hit_sparks", e.at, 1.6f + 0.3f * i);
         }
 
         void RookStop(SkillFxEvent e)
@@ -163,7 +163,7 @@ namespace ChessFight.RagdollLab
             HitStop(0.09f);
             Shake(0.17f, 0.32f);
             FlashWhite(e.target, 0.07f);
-            Burst("rook_hit_sparks", e.at, 2f);
+            Burst("rook_hit_sparks", e.at, 2.6f);
             Floor("rook_stop_floor_ring", Ground(e.at), Vector3.forward, 1.3f * 2f / FloorRingReach, 0.04f);
         }
 
@@ -204,7 +204,7 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>While a bishop aims, its squares show see-through where the X would go (B's preview).</summary>
-        void GhostSquares()
+        void GhostSquares(float dt, Camera cam)
         {
             var bed = GetComponent<PawnRushSkillBed>();
             float length = bed != null ? bed.skills.bishopLineLength : 4.2f;
@@ -229,6 +229,7 @@ namespace ChessFight.RagdollLab
                     ghost.at = pawn.BishopAimPoint + Vector3.up * 0.025f;
                     ghost.Face(pawn.BishopAimYaw);
                 }
+                ghost.Step(dt, cam);
             }
         }
 
@@ -251,7 +252,11 @@ namespace ChessFight.RagdollLab
             }
             // The popping square is drawn 32 px wide in a 64 px picture, its middle 4 px below the picture's.
             var pop = Burst("bishop_trip_pop", at, square * 0.92f * 2f);
-            if (pop != null) pop.pivot = new Vector2(0f, -4f / 64f);
+            if (pop != null)
+            {
+                pop.pivot = new Vector2(0f, -4f / 64f);
+                pop.keepAbove = at.y;
+            }
         }
 
         // Knight B: the piece stomped on squashes flat and springs back, a long stop (0.09 s), sky-blue sparks and
@@ -262,13 +267,14 @@ namespace ChessFight.RagdollLab
             HitStop(0.09f);
             Shake(0.1f, 0.2f);
             FlashWhite(e.target, 0.07f);
-            Burst("knight_stomp_sparks", e.at, 1.8f);
+            Burst("knight_stomp_sparks", e.at, 2.2f);
             StartSquash(e.target);
             if (e.target != null)
             {
-                var dizzy = Burst("knight_stomp_dizzy_stars", HeadOf(e.target), 0.8f);
+                var dizzy = Burst("knight_stomp_dizzy_stars", HeadOf(e.target), 1f);
                 if (dizzy != null)
                 {
+                    dizzy.pull = 0.4f;
                     dizzy.overHead = e.target;
                     dizzy.headUp = 0.34f;
                     dizzy.delay = 0.45f;
@@ -363,7 +369,7 @@ namespace ChessFight.RagdollLab
         Flipbook Burst(string sheet, Vector3 at, float size)
         {
             if (!sheets.TryGetValue(sheet, out var s)) return null;
-            var f = new Flipbook(root, s, sheet) { at = at, size = size, billboard = true };
+            var f = new Flipbook(root, s, sheet) { at = at, size = size, billboard = true, pull = 0.8f };
             anims.Add(f);
             return f;
         }
@@ -426,7 +432,7 @@ namespace ChessFight.RagdollLab
             foreach (var k in gone) tileSets.Remove(k);
 
             if (edge != null && edge.Alive) edge.Step(dt, cam);
-            GhostSquares();
+            GhostSquares(dt, cam);
 
             if (shakeLeft > 0f && cam != null)
             {
@@ -530,6 +536,11 @@ namespace ChessFight.RagdollLab
             public Vector2 pivot;
             public RagdollPawn overHead;
             public float headUp;
+            /// <summary>Facing the camera: drawn this many metres nearer it along the line of sight, as big on screen
+            /// as before, so the body or wall it bursts from does not hide it.</summary>
+            public float pull;
+            /// <summary>Facing the camera: pulled nearer still until its lower edge clears this height (a floor).</summary>
+            public float keepAbove = float.NaN;
             Quaternion floor = Quaternion.LookRotation(Vector3.down, Vector3.forward);
 
             /// <summary>Seconds one play takes.</summary>
@@ -593,9 +604,31 @@ namespace ChessFight.RagdollLab
                     shownAlpha = a;
                 }
                 Vector3 p = overHead != null ? HeadOf(overHead) + Vector3.up * headUp : at;
-                Quaternion rotation = billboard && cam != null ? cam.transform.rotation : floor;
-                tf.SetPositionAndRotation(p - rotation * new Vector3(pivot.x, pivot.y, 0f) * size, rotation);
-                tf.localScale = Vector3.one * size;
+                Quaternion rotation = floor;
+                float s = size;
+                if (billboard && cam != null)
+                {
+                    var view = cam.transform;
+                    rotation = view.rotation;
+                    Vector3 eye = view.position;
+                    float dist = Vector3.Distance(eye, p), most = dist * 0.6f;
+                    float d = Mathf.Min(pull, most);
+                    float reach = 0.5f * (Mathf.Abs(view.up.y) + Mathf.Abs(view.right.y));   // lowest corner, per metre of size
+                    while (!float.IsNaN(keepAbove) && d < most)
+                    {
+                        float k = (dist - d) / dist;
+                        Vector3 c = Vector3.MoveTowards(p, eye, d) - rotation * new Vector3(pivot.x, pivot.y, 0f) * size * k;
+                        if (c.y - reach * size * k >= keepAbove + 0.02f) break;
+                        d += 0.1f;
+                    }
+                    if (dist > 0.01f)
+                    {
+                        p = Vector3.MoveTowards(p, eye, d);
+                        s = size * (dist - d) / dist;
+                    }
+                }
+                tf.SetPositionAndRotation(p - rotation * new Vector3(pivot.x, pivot.y, 0f) * s, rotation);
+                tf.localScale = Vector3.one * s;
                 return true;
             }
 
