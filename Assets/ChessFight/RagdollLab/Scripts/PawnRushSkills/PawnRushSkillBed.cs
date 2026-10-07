@@ -9,8 +9,8 @@ namespace ChessFight.RagdollLab
     /// The Pawn Rush skill test bed (scene PawnRush_SkillTest, a copy of RagdollTest). It gives every pawn in the
     /// lab the Pawn Rush skills, feeds P1's skill key, and draws a panel on the left of the screen to switch P1
     /// between the pieces Pawn Rush uses - pawn (the default), queen, rook, bishop, knight - and to set up the
-    /// dummies. The king's skill is not made yet (D1). The skill key is a temporary pick (D3): E, Q, F and the
-    /// mouse keep what they already do in the lab.
+    /// dummies. The king's skill is not made yet (D1). Every skill is on F for now (R74, temporary): in this scene F
+    /// is not the lab's interact key (bells, levers). The rook and the bishop aim on F and go on the left click.
     /// </summary>
     [DefaultExecutionOrder(-90)]
     public class PawnRushSkillBed : MonoBehaviour
@@ -18,7 +18,7 @@ namespace ChessFight.RagdollLab
         public PawnRushSkillParams skills = new PawnRushSkillParams();
 
         [Header("키 (임시, 나중에 다시 정함)")]
-        public KeyCode skillKey = KeyCode.G;
+        public KeyCode skillKey = KeyCode.F;
         public KeyCode previousPieceKey = KeyCode.Z;
         public KeyCode nextPieceKey = KeyCode.X;
         [Tooltip("룩 시험: 더미 4명을 내 앞에 뭉쳐 세운다")]
@@ -69,7 +69,9 @@ namespace ChessFight.RagdollLab
             SkillBarricade.Build(barricadeAt, barricadeFacing, "Pawn Rush 바리케이드 (룩만 부숨)");
             fx = GetComponent<PawnRushSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<PawnRushSkillFx>();
-            Report("폰 러쉬 스킬 시험 준비 완료 — 왼쪽 창에서 기물을 고르고 G");
+            // F is the skills' key here, not the lab's interact (bells, levers, cutting a hook).
+            if (game != null && skillKey == KeyCode.F) game.InteractKeyOff = true;
+            Report($"폰 러쉬 스킬 시험 준비 완료 — 왼쪽 창에서 기물을 고르고 {skillKey}");
         }
 
         RagdollPawn P1 => game != null && game.players.Length > 0 ? game.players[0].pawn : null;
@@ -86,7 +88,7 @@ namespace ChessFight.RagdollLab
             if (Input.GetKeyDown(nextPieceKey)) StepPiece(p1, 1);
             if (Input.GetKeyDown(clusterKey)) ClusterDummies(p1);
             bool free = game.labCamera != null && game.labCamera.freeMode;
-            if (!free) p1.SetSkillInput(Input.GetKeyDown(skillKey), Input.GetKey(skillKey));
+            if (!free) p1.SetSkillInput(Input.GetKeyDown(skillKey));
         }
 
         void LateUpdate()
@@ -203,11 +205,11 @@ namespace ChessFight.RagdollLab
 
         static string HowTo(PieceKind kind) => kind switch
         {
-            PieceKind.Pawn => "G = 1칸 걸음 · 0.1~0.8초 안에 G 한 번 더 = 두 번째 걸음\n(걸음마다 방향키 방향) · 곧게 부딪히면 밀침, 대각선이면 넘어뜨림\n넘어진 팀원에게 닿으면 부축 (둘 다 +15%)",
-            PieceKind.Queen => "G = 0.35초 예고(빛이 조여듦) 뒤 반경 3 m 충격파\n1.5 m 안은 넘어지고 바깥은 밀림 · 후딜 0.45초",
-            PieceKind.Rook => "G = 0.7초 예고 (앞 0.4초는 카메라로 조준) 뒤 4칸 돌진\n적 3명까지 옆으로 튕김 · 벽은 휘청 0.6초\n바리케이드는 부숨 (x −9, z 2)",
-            PieceKind.Bishop => "G를 누르고 있으면 조준 (X 미리보기), 떼면 설치\n조준 중 우클릭 = 취소 · 0.5초 뒤 무장, 6초, 적 2명 걸면 끊김",
-            PieceKind.Knight => "G = 도약 (카메라 방향, 높이 1.6 m · 약 5.5 m)\n공중에서 G + 방향키 = 최대 90° 꺾기 (1회)\n머리 밟기 = 넘어뜨림 · 착지 1.5 m 안 휘청",
+            PieceKind.Pawn => "F = 1칸 걸음 · 0.1~0.8초 안에 F 한 번 더 = 두 번째 걸음\n(걸음마다 방향키 방향) · 곧게 부딪히면 밀침, 대각선이면 넘어뜨림\n넘어진 팀원에게 닿으면 부축 (둘 다 +15%)",
+            PieceKind.Queen => "F = 0.35초 예고(빛이 조여듦) 뒤 반경 3 m 충격파\n1.5 m 안은 넘어지고 바깥은 밀림 · 후딜 0.45초",
+            PieceKind.Rook => "F = 조준: 파란 선이 마우스 방향을 따라감 (룩은 제자리)\n좌클릭 = 방향 고정 0.3초 뒤 4칸 돌진 · 우클릭/F = 취소\n적 3명까지 옆으로 튕김 · 벽은 휘청 · 바리케이드 부숨 (x −9, z 2)",
+            PieceKind.Bishop => "F = 조준: 반투명 X가 마우스 위치를 따라감 (근거리 4.5 m 안)\n좌클릭 = 설치 · 우클릭/F = 취소\n0.5초 뒤 무장, 6초, 적 2명 걸면 끊김",
+            PieceKind.Knight => "F = 도약 (카메라 방향, 높이 1.6 m · 약 5.5 m)\n공중에서 F: 4 m 안에 적이 표시되면 자동으로 머리 찍고 착지\n적이 없으면 F + 방향키 = 최대 90° 꺾기 (1회) · 착지 1.5 m 안 휘청",
             _ => "킹 스킬은 아직 만들지 않았어요 (D1)",
         };
 
@@ -278,7 +280,7 @@ namespace ChessFight.RagdollLab
             if (p1.HasteLeft > 0f) extra += $"진군 +{(skills.hasteScale - 1f) * 100f:0}% {p1.HasteLeft:0.0}초   ";
             if (p1.GetUpGuardLeft > 0f) extra += $"기상 보호 {p1.GetUpGuardLeft:0.0}초   ";
             if (!string.IsNullOrEmpty(extra)) GUILayout.Label(extra, small);
-            GUILayout.Label("E · Q · F · 마우스는 랩의 원래 기능 그대로", small);
+            GUILayout.Label("E · Q · 마우스는 랩의 원래 기능 그대로 (이 씬에서 F는 스킬만)", small);
             if (fx != null)
             {
                 GUILayout.BeginHorizontal();

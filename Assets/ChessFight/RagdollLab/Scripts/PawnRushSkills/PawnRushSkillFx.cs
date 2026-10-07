@@ -9,8 +9,9 @@ namespace ChessFight.RagdollLab
     /// stomp"; the pawn is not picked yet and keeps its plain look).
     ///
     /// Shared parts: a hit stop (the whole game holds still for a few hundredths of a second, a test-bed stand-in
-    /// for holding only the two pieces), camera shake, a white flash on the piece that is hit, and pop-up words.
-    /// Test-bed art: lines, cubes and text built in code, no sound yet. It listens to RagdollPawn.SkillFx, which
+    /// for holding only the two pieces), camera shake and a white flash on the piece that is hit. No words or
+    /// numbers pop up (R74: taken out). Test-bed art: lines, cubes and star sparks built in code, no sound yet.
+    /// While a bishop aims, its squares show see-through where the X would go. It listens to RagdollPawn.SkillFx, which
     /// only the skills raise, so no other scene changes.
     /// </summary>
     [DefaultExecutionOrder(210)]   // after the lab camera (150) and the skeleton pose (100)
@@ -50,6 +51,7 @@ namespace ChessFight.RagdollLab
         readonly List<Squash> squashes = new List<Squash>();
         readonly Dictionary<Object, TileSet> tileSets = new Dictionary<Object, TileSet>();
         readonly Dictionary<RagdollPawn, float> stompedAt = new Dictionary<RagdollPawn, float>();
+        readonly Dictionary<RagdollPawn, List<MeshRenderer>> ghosts = new Dictionary<RagdollPawn, List<MeshRenderer>>();
         EdgeFlash edge;
 
         // Real time, frame by frame: a hit stop does not stop it, and a recording (Time.captureFramerate)
@@ -101,14 +103,12 @@ namespace ChessFight.RagdollLab
                     Shake(0.1f, 0.22f);
                     StarFlash(e.at, Color.white, 0.6f);
                     Debris(e.at, 10, Stone, 2.5f, 2f, 0.07f);
-                    Word("쿵!", e.at + Vector3.up * 0.9f, RookOrange, 0.5f, 0.9f);
                     break;
                 case SkillFxKind.RookBarricade:
                     HitStop(0.07f);
                     Shake(0.1f, 0.24f);
                     Debris(e.at + Vector3.up * 0.3f, 22, Blocks, 3.5f, 3f, 0.16f);
                     StarFlash(e.at + Vector3.up * 0.5f, RookOrange, 0.8f);
-                    Word("와장창!", e.at + Vector3.up * 1.6f, RookOrange, 0.55f, 1f);
                     break;
                 case SkillFxKind.BishopWire: BishopWire(e); break;
                 case SkillFxKind.BishopTrip: BishopTrip(e); break;
@@ -131,8 +131,8 @@ namespace ChessFight.RagdollLab
             Edge(0.22f);
         }
 
-        // Rook A: each piece it sends flying gives stone chips, a white star and its number, and a longer stop
-        // (0.04, 0.06, 0.08 s) and shake than the one before; the fourth, which stops it, gives a big "쿵".
+        // Rook A: each piece it sends flying gives stone chips, a white star, and a longer stop (0.04, 0.06,
+        // 0.08 s) and shake than the one before; the fourth, which stops it, a big orange ring.
         void RookHit(SkillFxEvent e)
         {
             int i = Mathf.Clamp(e.count, 1, 3);
@@ -141,7 +141,6 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.06f);
             StarFlash(e.at, Color.white, 0.45f + 0.1f * i);
             Debris(e.at, 6 + 3 * i, Stone, 2.6f, 2.4f, 0.07f);
-            Word(i.ToString(), HeadOf(e.target) + Vector3.up * 0.5f, Color.white, 0.5f, 0.7f);
         }
 
         void RookStop(SkillFxEvent e)
@@ -152,37 +151,71 @@ namespace ChessFight.RagdollLab
             StarFlash(e.at, RookOrange, 0.9f);
             Debris(e.at, 18, Stone, 3f, 3f, 0.08f);
             RingPulse(Ground(e.at), 0f, 1.3f, RookOrange, 0.2f, 0.35f, 0.7f);
-            Word("쿵!", e.at + Vector3.up * 1.1f, RookOrange, 0.75f, 1f);
         }
 
         // Bishop B: the board squares under the X light up violet, from the middle out; the square an enemy trips
-        // on jumps up ("덜컥!").
+        // on jumps up.
         void BishopWire(SkillFxEvent e)
         {
             if (e.source == null) return;
-            Vector3 c = Ground(e.at);
-            Vector3 f = e.dir;
+            var set = new TileSet { source = e.source, born = Clock };
+            foreach (var (at, ring, size, rotation) in Squares(Ground(e.at), e.dir, e.size))
+            {
+                var tile = new Tile { ring = ring, at = at, renderer = Box(root, "Bishop square", new Vector3(size * 0.92f, 0.03f, size * 0.92f)) };
+                tile.renderer.transform.SetPositionAndRotation(at, rotation);
+                set.tiles.Add(tile);
+            }
+            if (tileSets.TryGetValue(e.source, out var old)) old.Destroy();
+            tileSets[e.source] = set;
+        }
+
+        /// <summary>The board squares the X's two lines cross: the middle one and two out along each arm.</summary>
+        static IEnumerable<(Vector3 at, int ring, float size, Quaternion rotation)> Squares(Vector3 center, Vector3 forward, float lineLength)
+        {
+            Vector3 f = forward;
             f.y = 0f;
             f = f.sqrMagnitude > 1e-4f ? f.normalized : Vector3.forward;
             Vector3 r = Vector3.Cross(Vector3.up, f);
-            float half = (e.size > 0f ? e.size : 4.2f) * 0.5f;
+            float half = (lineLength > 0f ? lineLength : 4.2f) * 0.5f;
             float size = half / (2f * Mathf.Sqrt(2f));   // the X's arms run corner to corner across two squares
-            var set = new TileSet { source = e.source, born = Clock };
+            var rotation = Quaternion.LookRotation(f, Vector3.up);
             for (int i = -2; i <= 2; i++)
                 foreach (int j in i == 0 ? new[] { 0 } : new[] { i, -i })
+                    yield return (center + (r * j + f * i) * size + Vector3.up * 0.02f, Mathf.Abs(i), size, rotation);
+        }
+
+        /// <summary>While a bishop aims, its squares show see-through where the X would go (B's preview).</summary>
+        void GhostSquares()
+        {
+            var bed = GetComponent<PawnRushSkillBed>();
+            float length = bed != null ? bed.skills.bishopLineLength : 4.2f;
+            foreach (var pawn in RagdollPawn.All)
+            {
+                if (pawn == null) continue;
+                bool show = effects && pawn.BishopAiming && pawn.BishopAimValid;
+                if (!ghosts.TryGetValue(pawn, out var boxes))
                 {
-                    var tile = new Tile
+                    if (!show) continue;
+                    boxes = new List<MeshRenderer>();
+                    for (int i = 0; i < 9; i++)
                     {
-                        ring = Mathf.Abs(i),
-                        at = c + (r * j + f * i) * size + Vector3.up * 0.02f,
-                        renderer = Box(root, "Bishop square", new Vector3(size * 0.92f, 0.03f, size * 0.92f)),
-                    };
-                    tile.renderer.transform.rotation = Quaternion.LookRotation(f, Vector3.up);
-                    tile.renderer.transform.position = tile.at;
-                    set.tiles.Add(tile);
+                        var box = Box(root, "Bishop square preview", Vector3.one);
+                        box.sharedMaterial.color = new Color(BishopViolet.r, BishopViolet.g, BishopViolet.b, 0.22f);
+                        boxes.Add(box);
+                    }
+                    ghosts[pawn] = boxes;
                 }
-            if (tileSets.TryGetValue(e.source, out var old)) old.Destroy();
-            tileSets[e.source] = set;
+                int n = 0;
+                if (show)
+                    foreach (var (at, _, size, rotation) in Squares(pawn.BishopAimPoint, pawn.BishopAimYaw, length))
+                    {
+                        var box = boxes[n++];
+                        box.transform.SetPositionAndRotation(at, rotation);
+                        box.transform.localScale = new Vector3(size * 0.92f, 0.02f, size * 0.92f);
+                        box.enabled = true;
+                    }
+                for (int i = n; i < boxes.Count; i++) boxes[i].enabled = false;
+            }
         }
 
         void BishopTrip(SkillFxEvent e)
@@ -203,11 +236,10 @@ namespace ChessFight.RagdollLab
                 if (best != null) { best.popAt = Clock; at = best.at; }
             }
             Sparks(at + Vector3.up * 0.25f, BishopLight, 9, 0.7f, 0.3f);
-            Word("덜컥!", at + Vector3.up * 1.0f, BishopLight, 0.55f, 0.9f);
         }
 
-        // Knight B: the piece stomped on squashes flat and springs back, a long stop (0.09 s), "뿅!", and the
-        // knight's bounce off it lands with a small "통".
+        // Knight B: the piece stomped on squashes flat and springs back, a long stop (0.09 s), stars over it, and
+        // the knight's hop off it lands with a small ring.
         void KnightStomp(SkillFxEvent e)
         {
             HitStop(0.09f);
@@ -215,7 +247,6 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.07f);
             StarFlash(e.at, Color.white, 0.75f);
             Sparks(e.at, KnightSky, 12, 0.9f, 0.32f);
-            Word("뿅!", e.at + Vector3.up * 0.55f, KnightSky, 0.7f, 0.95f);
             StartSquash(e.target);
             Dizzy(e.target, 0.45f, 1.8f);
             if (e.by != null) stompedAt[e.by] = Clock;
@@ -227,7 +258,6 @@ namespace ChessFight.RagdollLab
             if (e.by != null && stompedAt.TryGetValue(e.by, out float t) && Clock - t < 2.5f)
             {
                 stompedAt.Remove(e.by);
-                Word("통", g + Vector3.up * 0.9f, Color.white, 0.35f, 0.6f);
                 RingPulse(g, 0.1f, 0.8f, Color.white, 0.06f, 0.25f, 0.45f);
                 return;
             }
@@ -304,9 +334,6 @@ namespace ChessFight.RagdollLab
             }
             squashes.Add(new Squash { pawn = pawn, bone = bone, baseScale = bone.localScale, axis = axis, born = Clock });
         }
-
-        void Word(string text, Vector3 at, Color color, float height, float life) =>
-            anims.Add(new Pop(MakeText(text, color, height), at, life, 0.35f, height));
 
         void StarFlash(Vector3 at, Color color, float height) =>
             anims.Add(new Pop(MakeText("★", color, height), at, 0.22f, 0f, height) { grow = true });
@@ -411,6 +438,7 @@ namespace ChessFight.RagdollLab
             foreach (var k in gone) tileSets.Remove(k);
 
             if (edge != null && edge.Alive) edge.Step(dt, cam);
+            GhostSquares();
 
             if (shakeLeft > 0f && cam != null)
             {

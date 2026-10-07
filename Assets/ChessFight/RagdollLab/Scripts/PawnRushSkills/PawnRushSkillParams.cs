@@ -57,9 +57,19 @@ namespace ChessFight.RagdollLab
         public float knightLandStagger = 0.4f;
         public float knightLandRecovery = 0.35f;
         public float knightCooldown = 7f;
+        [Tooltip("공중에서 두 번째 F: 이 거리(땅 위, m) 안에 서 있는 적이 있으면 그 머리로 자동으로 날아가 찍는다. 없으면 90° 꺾기 (R74, 시험값)")]
+        public float knightLockRange = 4f;
+        [Tooltip("머리 찍기: 머리까지 날아가는 땅 위 빠르기 (m/s)")]
+        public float knightHomingSpeed = 7f;
+        [Tooltip("머리 찍기: 머리 위로 내려오는 최소 속도 (m/s). 옆에서 박지 않고 위에서 찍게")]
+        public float knightHomingFall = 2.5f;
+        [Tooltip("머리 찍은 뒤 콩 튀어 바로 옆에 착지: 위 속도와 앞 속도 (m/s)")]
+        public float knightHomingBounce = 2.5f;
+        public float knightHomingHop = 2f;
 
         [Header("비숍 — 교차 밧줄")]
-        public float bishopRange = 9f;
+        [Tooltip("최대 거리 (m). v0.1은 9 m(6칸), R74 근거리로 4.5 m(3칸)")]
+        public float bishopRange = 4.5f;
         public float bishopLineLength = 4.2f;
         public float bishopHeight = 0.25f;
         [Tooltip("최대 사거리까지 날아가는 시간 (초), 가까우면 그만큼 짧다")]
@@ -72,9 +82,7 @@ namespace ChessFight.RagdollLab
         public float bishopMaxSlope = 30f;
 
         [Header("룩 — 직선 돌파")]
-        [Tooltip("예고 앞부분: 카메라로 방향을 돌릴 수 있다 (초)")]
-        public float rookAim = 0.4f;
-        [Tooltip("예고 뒷부분: 방향 고정 (초)")]
+        [Tooltip("좌클릭 뒤 방향을 고정하고 돌진하기까지 (초). R74부터 그 앞 조준은 F에서 좌클릭까지 마음대로")]
         public float rookLock = 0.3f;
         public float rookSpeed = 8.5f;
         public float rookTime = 0.7f;

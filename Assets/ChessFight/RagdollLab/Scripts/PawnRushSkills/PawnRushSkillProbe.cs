@@ -21,13 +21,17 @@ namespace ChessFight.RagdollLab
         public static string Status { get; private set; } = "idle";
         /// <summary>The current run has set its pieces down and settled them (the film records from here).</summary>
         public static bool Staged { get; private set; }
+        /// <summary>The last key the probe pressed, as a player would read it (the film shows it); the serial
+        /// counts presses so the same key twice shows twice.</summary>
+        public static string Hint { get; private set; } = "";
+        public static int HintSerial { get; private set; }
         public static readonly List<string> Results = new List<string>();
 
         LabGame game;
         PawnRushSkillBed bed;
         bool driving;
         Vector3 move, aim = Vector3.forward;
-        bool sprint, jumpEdge, skillHold, tapPending;
+        bool sprint, jumpEdge, tapPending, clickPending;
         RagdollPawn walker;
         Vector3 walkerMove;
 
@@ -71,10 +75,11 @@ namespace ChessFight.RagdollLab
             var p1 = P1;
             if (p1 != null)
             {
-                p1.SetInput(new PawnInput { move = move, aim = aim, sprint = sprint, jump = jumpEdge });
-                // The press goes in with this frame's aim, move and hold, never ahead of them.
-                p1.SetSkillInput(tapPending, skillHold);
-                jumpEdge = tapPending = false;
+                // The left click is the dive's button (shove): an aiming rook or bishop takes it as "go".
+                p1.SetInput(new PawnInput { move = move, aim = aim, sprint = sprint, jump = jumpEdge, shove = clickPending });
+                // The press goes in with this frame's aim and move, never ahead of them.
+                p1.SetSkillInput(tapPending);
+                jumpEdge = tapPending = clickPending = false;
             }
             if (walker != null) walker.SetInput(new PawnInput { move = walkerMove, aim = walkerMove });
         }
@@ -127,7 +132,7 @@ namespace ChessFight.RagdollLab
         void Stop()
         {
             move = Vector3.zero;
-            sprint = skillHold = tapPending = false;
+            sprint = tapPending = clickPending = false;
             StopWalker();
             driving = false;
         }
@@ -172,11 +177,70 @@ namespace ChessFight.RagdollLab
                 if (d.skin != null) d.skin.sharedMaterial = game.dummyMaterial;
                 Place(d, new Vector3(12f + i * 1.5f, 0f, 13f), Vector3.back);   // parked out of the way
             }
+            // The other local players too: an enemy close by changes what a knight's second press does.
+            for (int i = 1; i < game.players.Length; i++)
+                if (game.players[i].pawn != null) Place(game.players[i].pawn, new Vector3(12f, 0f, 9f + i * 1.5f), Vector3.back);
             yield return new WaitForSeconds(0.8f);
             Staged = true;
         }
 
-        void Tap() => tapPending = true;
+        void Tap(string hint = "F")
+        {
+            tapPending = true;
+            Say(hint);
+        }
+
+        void Click()
+        {
+            clickPending = true;
+            Say("좌클릭");
+        }
+
+        static void Say(string hint)
+        {
+            Hint = hint;
+            HintSerial++;
+        }
+
+        /// <summary>The rook's and the bishop's aim: the key, a moment with the mouse still, the left click.</summary>
+        IEnumerator AimThenClick(float seconds)
+        {
+            Tap();
+            yield return new WaitForSeconds(seconds);
+            Click();
+        }
+
+        /// <summary>Swing the aim (the mouse) about <paramref name="center"/>: out to one side, the other, back.</summary>
+        IEnumerator Sweep(Vector3 center, float degrees, float seconds)
+        {
+            Say("마우스로 방향");
+            float t = 0f;
+            while (t < seconds)
+            {
+                aim = Quaternion.Euler(0f, degrees * Mathf.Sin(t / seconds * Mathf.PI * 2f), 0f) * center;
+                yield return null;
+                t += Time.deltaTime;
+            }
+            aim = center;
+        }
+
+        /// <summary>Move the aim (the mouse) from the head through these floor points, evenly.</summary>
+        IEnumerator AimThrough(Vector3[] points, float seconds)
+        {
+            Say("마우스로 위치");
+            var p1 = P1;
+            float t = 0f;
+            while (t < seconds)
+            {
+                float u = t / seconds * (points.Length - 1);
+                int i = Mathf.Min(points.Length - 2, Mathf.FloorToInt(u));
+                Vector3 at = Vector3.Lerp(points[i], points[i + 1], Mathf.SmoothStep(0f, 1f, u - i));
+                aim = (at - p1.bodies[(int)BodyId.Head].position).normalized;
+                yield return null;
+                t += Time.deltaTime;
+            }
+            aim = (points[points.Length - 1] - p1.bodies[(int)BodyId.Head].position).normalized;
+        }
 
         static float FlatDistance(Vector3 a, Vector3 b) { a.y = b.y = 0f; return Vector3.Distance(a, b); }
 
@@ -291,7 +355,7 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(0.7f);
             var p1 = P1;
             Vector3 start = p1.Hips.position;
-            Tap();
+            yield return AimThenClick(0.4f);
             yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
             Vector3 charge = p1.Hips.position;
             yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
@@ -310,6 +374,10 @@ namespace ChessFight.RagdollLab
             bed.ClusterDummies(p1);
             yield return new WaitForSeconds(0.8f);
             Tap();
+            yield return new WaitForSeconds(0.25f);
+            yield return Sweep(Vector3.forward, 35f, 1.6f);
+            yield return new WaitForSeconds(0.2f);
+            Click();
             yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
             Vector3 from = p1.Hips.position;
             yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
@@ -331,7 +399,7 @@ namespace ChessFight.RagdollLab
         {
             yield return Ready(PieceKind.Rook, new Vector3(-6f, 0f, -12f), Vector3.forward, 1);
             var p1 = P1;
-            Tap();
+            yield return AimThenClick(0.4f);
             yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
             Vector3 from = p1.Hips.position;
             float t = 0f, top = 0f;
@@ -347,7 +415,7 @@ namespace ChessFight.RagdollLab
             // [3] the walls at x 20..25 (the 3 m one at z 0).
             yield return Ready(PieceKind.Rook, new Vector3(15.5f, 0f, 0f), Vector3.right, 1);
             var p1 = P1;
-            Tap();
+            yield return AimThenClick(0.4f);
             yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
             yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
             Add($"룩 → 벽: 멈춘 곳 x {p1.Hips.position.x:0.00} (벽 앞면 20), 상태 {StateText(p1)}, 휘청 남은 {p1.StaggerLeft:0.00}초");
@@ -360,7 +428,7 @@ namespace ChessFight.RagdollLab
             Vector3 at = barricade != null ? barricade.transform.position : bed.barricadeAt;
             yield return Ready(PieceKind.Rook, at + new Vector3(4.6f, 0f, 0f), Vector3.left, 1);
             var p1 = P1;
-            Tap();
+            yield return AimThenClick(0.4f);
             yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
             yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
             Add($"룩 → 바리케이드: 바리케이드 {(barricade != null && !barricade.Standing ? "부서짐" : "그대로")}, 룩 x {p1.Hips.position.x:0.00} (바리케이드 x {at.x:0.0}, 지나갔으면 더 작음)");
@@ -415,7 +483,7 @@ namespace ChessFight.RagdollLab
                     move = Vector3.right;   // held first: the key is read in the step that takes the press
                     yield return null;
                     yield return null;
-                    Tap();
+                    Tap("F + 오른쪽(D)");
                     turned = true;
                 }
                 yield return new WaitForFixedUpdate();
@@ -436,18 +504,24 @@ namespace ChessFight.RagdollLab
 
         IEnumerator KnightStomp()
         {
-            // The feet come down through head height (1 m) about 4.2 m after take-off.
+            // An enemy off to the side of the leap's line: in the air it is found (within knightLockRange), the
+            // second F flies the knight onto its head, and it lands beside it.
             yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
             var d = game.dummies[0];
-            Place(d, new Vector3(0f, 0f, -7.8f), Vector3.back);
+            Place(d, new Vector3(2f, 0f, -7.6f), Vector3.back);
             yield return new WaitForSeconds(0.7f);
             var p1 = P1;
             Tap();
-            float peakAfter = 0f;
-            yield return Until(() => d.State == PawnState.Ragdoll, 2f);
-            float y0 = p1.Hips.position.y;
-            yield return Until(() => { peakAfter = Mathf.Max(peakAfter, p1.Hips.position.y - y0); return p1.SkillStage != SkillStage.Active; }, 3f);
-            Add($"나이트 머리 밟기: 더미 {StateText(d)} · {d.LastSkillHit}, 나이트가 다시 튀어 오른 높이 +{peakAfter:0.00} m");
+            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
+            yield return Until(() => p1.KnightMarked != null || p1.SkillStage != SkillStage.Active, 1.5f);
+            float found = p1.SkillStageTime;
+            bool marked = p1.KnightMarked == d;
+            yield return new WaitForSeconds(0.15f);
+            Tap();
+            yield return Until(() => d.State == PawnState.Ragdoll || p1.SkillStage != SkillStage.Active, 2f);
+            string hit = d.State == PawnState.Ragdoll ? d.LastSkillHit : "안 맞음";
+            yield return Until(() => p1.SkillStage != SkillStage.Active, 3f);
+            Add($"나이트 머리 찍기: 공중 {found:0.00}초에 {(marked ? "더미 감지" : "감지 못함")} → F → 더미 {StateText(d)} · {hit}, 착지 지점이 더미에서 {FlatDistance(p1.Hips.position, d.Hips.position):0.0} m");
             yield return new WaitForSeconds(1f);
         }
 
@@ -473,13 +547,13 @@ namespace ChessFight.RagdollLab
             yield return Ready(PieceKind.Bishop, new Vector3(0f, 0f, -11f), Vector3.forward, 1);
             var p1 = P1;
             var d = game.dummies[0];
-            Place(d, new Vector3(-3.5f, 0f, -6f), Vector3.right);
-            Vector3 head = p1.bodies[(int)BodyId.Head].position;
-            aim = (new Vector3(0f, 0f, -6f) - head).normalized;
-            skillHold = true;
+            Place(d, new Vector3(-3.5f, 0f, -6.4f), Vector3.right);
+            // The see-through X follows the mouse; past the close range it stops at the range's edge.
             Tap();
-            yield return new WaitForSeconds(0.4f);
-            skillHold = false;
+            yield return new WaitForSeconds(0.25f);
+            yield return AimThrough(new[] { new Vector3(-2.5f, 0f, -5f), new Vector3(2.5f, 0f, -2f), new Vector3(1.5f, 0f, -8f), new Vector3(0f, 0f, -6.6f) }, 2.2f);
+            yield return new WaitForSeconds(0.25f);
+            Click();
             yield return new WaitForSeconds(0.9f);
             walker = d;
             walkerMove = Vector3.right;
@@ -495,10 +569,7 @@ namespace ChessFight.RagdollLab
             var p1 = P1;
             Vector3 head = p1.bodies[(int)BodyId.Head].position;
             aim = (new Vector3(0f, 0f, -6f) - head).normalized;
-            skillHold = true;
-            Tap();
-            yield return new WaitForSeconds(0.4f);
-            skillHold = false;
+            yield return AimThenClick(0.4f);
             yield return new WaitForSeconds(0.5f);
             var wire = FindFirstObjectByType<SkillTripwire>();
             Add($"비숍 밧줄: {(wire != null ? $"깔림 (가운데 {wire.Center.x:0.0}, {wire.Center.z:0.0}, 비숍에서 {FlatDistance(wire.Center, p1.Hips.position):0.0} m)" : "안 깔림")}, 쿨 {p1.SkillCooldown:0.0}초");
@@ -514,10 +585,7 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(1.5f);
             // A fresh wire; a rook runs through it: it snaps.
             p1.ResetSkill();
-            skillHold = true;
-            Tap();
-            yield return new WaitForSeconds(0.4f);
-            skillHold = false;
+            yield return AimThenClick(0.4f);
             yield return new WaitForSeconds(0.9f);
             d.SetPiece(PieceKind.Rook);
             Place(d, new Vector3(3.5f, 0f, -6f), Vector3.left);

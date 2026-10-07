@@ -35,14 +35,14 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "queen", title = "퀸 A · 두 겹 충격파", note = "안쪽 1.5 m 넘어짐 · 바깥 3 m 밀림 · 멈춤 0.06초",
-                eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.3f, -7.2f), lead = 0.5f },
-            new Shot { run = "rook-cluster", title = "룩 A · 볼링 핀", note = "1 · 2 · 3명째 멈춤 0.04 → 0.06 → 0.08초 · 4번째에서 쿵",
-                eye = new Vector3(-2.4f, 2.5f, -12.6f), look = new Vector3(-6f, 0.5f, -9.2f), lead = 0.35f },
-            new Shot { run = "bishop-trip", title = "비숍 B · 대각 칸", note = "X가 지나가는 칸이 빛나고, 걸린 칸이 덜컥",
-                eye = new Vector3(2.6f, 3.6f, -10.4f), look = new Vector3(-0.4f, 0f, -6.2f), lead = 0.45f },
-            new Shot { run = "knight-stomp", title = "나이트 B · 머리 밟기", note = "납작 · 멈춤 0.09초 · 뿅 · 다시 통",
-                eye = new Vector3(6.4f, 2.0f, -9.4f), look = new Vector3(0f, 1.25f, -8.3f), lead = 0.5f },
+            new Shot { run = "rook-cluster", title = "룩 · 직선 돌파", note = "F로 조준 → 마우스로 방향 → 좌클릭",
+                eye = new Vector3(-1.8f, 4.0f, -14.8f), look = new Vector3(-6f, 0f, -9.2f), lead = 0.35f },
+            new Shot { run = "bishop-trip", title = "비숍 · 교차 밧줄", note = "F로 조준 → 반투명 X가 마우스를 따라감 (근거리 4.5 m) → 좌클릭",
+                eye = new Vector3(5.5f, 5.8f, -13.5f), look = new Vector3(-0.2f, 0f, -8.6f), lead = 0.45f },
+            new Shot { run = "knight-turn", title = "나이트 · 주위에 적 없음", note = "F 도약 → 공중에서 F + 방향 = 90° 꺾기",
+                eye = new Vector3(-4f, 3.6f, -16.5f), look = new Vector3(1.8f, 0.8f, -10.6f), lead = 0.45f },
+            new Shot { run = "knight-stomp", title = "나이트 · 적 감지", note = "F 도약 → 적에 표시 → 공중에서 F = 자동으로 머리 찍고 착지",
+                eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
         };
 
         LabGame game;
@@ -50,8 +50,10 @@ namespace ChessFight.RagdollLab
         RenderTexture rt;
         Texture2D frame;
         Font font;
-        PawnRushSkillFx.Text3D title, note;
-        Transform banner;
+        PawnRushSkillFx.Text3D title, note, key;
+        Transform banner, keyStrip;
+        int keySerial;
+        float keyLeft;
         Vector3 eye, look;
         bool rolling, clocking;
         float shotClock;
@@ -88,7 +90,11 @@ namespace ChessFight.RagdollLab
             font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 64);
             title = new PawnRushSkillFx.Text3D(go.transform, font, " ", Color.white, TitleSize);
             note = new PawnRushSkillFx.Text3D(go.transform, font, " ", new Color(1f, 0.9f, 0.6f), NoteSize);
-            banner = Banner(go.transform);
+            banner = Banner(go.transform, 0.345f);
+            keyStrip = Banner(go.transform, -0.335f, 0.42f);
+            keyStrip.gameObject.SetActive(false);
+            key = new PawnRushSkillFx.Text3D(go.transform, font, " ", Color.white, KeySize);
+            keySerial = PawnRushSkillProbe.HintSerial;
             stills = Path.Combine(Path.GetDirectoryName(path) ?? ".", Path.GetFileNameWithoutExtension(path) + "_stills");
             Directory.CreateDirectory(stills);
 
@@ -113,7 +119,6 @@ namespace ChessFight.RagdollLab
                     if (game != null) game.SetSlowMotion(false);
                     // A bishop's wire from the shot before would still be lying there.
                     foreach (var wire in FindObjectsByType<SkillTripwire>(FindObjectsSortMode.None)) Destroy(wire.gameObject);
-                    ParkOtherPlayers();
                     PawnRushSkillProbe.Run(shot.run);
                     yield return null;
                     while (!PawnRushSkillProbe.Staged && !Done) yield return null;
@@ -155,17 +160,6 @@ namespace ChessFight.RagdollLab
 
         static bool Done => PawnRushSkillProbe.Status.StartsWith("done");
 
-        /// <summary>The second local player stands about the middle of the lab: out of the shots.</summary>
-        void ParkOtherPlayers()
-        {
-            if (game == null) return;
-            for (int i = 1; i < game.players.Length; i++)
-            {
-                var p = game.players[i].pawn;
-                if (p != null) p.Teleport(new Vector3(12f, p.standHeight + 0.02f, 9f + i * 1.5f), Vector3.back);
-            }
-        }
-
         void OnSkillFx(SkillFxEvent e)
         {
             if (clocking && e.kind != SkillFxKind.BishopWire) hits.Add(shotClock);
@@ -184,10 +178,11 @@ namespace ChessFight.RagdollLab
             note = new PawnRushSkillFx.Text3D(cam.transform, font, b, new Color(1f, 0.9f, 0.6f), NoteSize);
         }
 
-        const float TitleSize = 0.056f, NoteSize = 0.034f;
+        const float TitleSize = 0.056f, NoteSize = 0.034f, KeySize = 0.05f;
 
-        /// <summary>A dark strip behind the captions at the top of the picture.</summary>
-        static Transform Banner(Transform cam)
+        /// <summary>A dark strip across the picture at <paramref name="y"/> (the captions at the top, the key
+        /// just pressed at the bottom).</summary>
+        static Transform Banner(Transform cam, float y, float width = 2f)
         {
             var mesh = new Mesh
             {
@@ -197,8 +192,8 @@ namespace ChessFight.RagdollLab
             };
             var go = new GameObject("Caption strip");
             go.transform.SetParent(cam, false);
-            go.transform.localPosition = new Vector3(0f, 0.345f, 1.05f);
-            go.transform.localScale = new Vector3(2f, 0.15f, 1f);
+            go.transform.localPosition = new Vector3(0f, y, 1.05f);
+            go.transform.localScale = new Vector3(width, y > 0f ? 0.15f : 0.085f, 1f);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterial = new Material(Shader.Find("Sprites/Default")) { color = new Color(0.05f, 0.08f, 0.19f, 0.72f) };
@@ -209,10 +204,17 @@ namespace ChessFight.RagdollLab
         void LateUpdate()
         {
             if (cam == null) return;
+            if (!rolling)
+            {
+                // Keys pressed off camera (before a slowed take begins) are not shown when it begins.
+                keySerial = PawnRushSkillProbe.HintSerial;
+                keyLeft = 0f;
+            }
             if (rolling)
             {
                 title.Place(cam.transform.TransformPoint(new Vector3(0f, 0.37f, 1f)), cam, 1f, 1f);
                 note.Place(cam.transform.TransformPoint(new Vector3(0f, 0.313f, 1f)), cam, 1f, 1f);
+                ShowKey();
                 cam.targetTexture = rt;
                 cam.Render();
                 cam.targetTexture = null;
@@ -226,6 +228,22 @@ namespace ChessFight.RagdollLab
             }
             // Back to the shot's own pose: the effects shake it from there again next frame.
             cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(look - eye, Vector3.up));
+        }
+
+        /// <summary>The key the probe has just pressed, for a moment at the bottom of the picture.</summary>
+        void ShowKey()
+        {
+            if (PawnRushSkillProbe.HintSerial != keySerial)
+            {
+                keySerial = PawnRushSkillProbe.HintSerial;
+                key.Destroy();
+                key = new PawnRushSkillFx.Text3D(cam.transform, font, $"[ {PawnRushSkillProbe.Hint} ]", new Color(1f, 0.85f, 0.3f), KeySize);
+                keyLeft = 1.1f;
+            }
+            keyLeft -= Time.captureDeltaTime > 0f ? Time.captureDeltaTime : Time.unscaledDeltaTime;
+            bool on = keyLeft > 0f;
+            keyStrip.gameObject.SetActive(on);
+            key.Place(cam.transform.TransformPoint(new Vector3(0f, -0.335f, 1f)), cam, on ? 1f : 0.001f, Mathf.Clamp01(keyLeft / 0.3f));
         }
 
         void OnDestroy()
