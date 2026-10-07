@@ -42,7 +42,8 @@
 | `…/PawnRushSkillBed.cs` | 시험장: 모든 랩 폰에 스킬 켜기, P1 스킬 키(G), 왼쪽 창, 더미 버튼, 바리케이드 |
 | `…/SkillTripwire.cs` · `SkillBarricade.cs` · `SkillMarks.cs` | 비숍 밧줄, 룩 바리케이드, 바닥 예고선 그리기 |
 | `…/PawnRushSkillProbe.cs` | **자동 시험 도구**: 키보드 없이 P1·더미를 움직이고 G를 눌러 거리·높이·결과를 잰다(아래) |
-| `…/PawnRushSkillFx.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받아 멈춤·흔들기·흰 번쩍·글자·고리·조각·칸·납작. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
+| `…/PawnRushSkillFx.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받아 멈춤·흔들기·흰 번쩍·납작 + **이펙트 공방 그림**(R78: 바닥 고리·칸, 불꽃, 어지러움 별, 먼지). 별·글자·조각은 없음. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
+| `RagdollLab/Resources/PawnRushSkillFx/*.png` · `Tools/Generators/pack_skill_fx.py` | 공방 그림 11장(R78)과 그걸 공방 zip에서 다시 만드는 도구([EFFECTS §공방 그림](EFFECTS.md#공방-그림-r78-10-07)) |
 | `…/PawnRushSkillFilm.cs` · `RagdollLab/Editor/PawnRushSkillFilmEncoder.cs` | **녹화 도구**(R73): 자동 시험을 고정 카메라로 찍어 `.mp4`로(아래) |
 | `RagdollLab/Editor/PawnRushSkillTestMenu.cs` | 메뉴 Open Skill Test |
 | `LabGame.cs`(`InteractKeyOff`) | 시험장이 켜면 F가 랩 상호작용을 하지 않음 (R74) |
@@ -91,6 +92,10 @@ Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면�
 ### R75 녹화 (10-07)
 
 `PawnRush_Skill_R75b.mp4`(26초): 룩이 F 조준 중 Shift를 누른 채 왼쪽·오른쪽으로 걷고(질주 안 함) 선이 따라옴 → 좌클릭 → 4명 뭉치 돌진(조각 없음), 룩 벽 충돌(멈춤 + 큰 흔들림), 나이트 머리 찍기(3 m, 주황 표시, F 뒤 파란 원 사라짐). **사람이 손으로 해 본 것은 아님.**
+
+### R78 녹화 (10-07)
+
+`PawnRush_Skill_R78c.mp4`(약 50초, 장면 6개: 퀸 충격파, 룩 4명 뭉치, 룩 벽, 비숍 칸, 나이트 머리 찍기, 나이트 착지): 모든 이펙트가 공방 그림으로 나오고 부딪힐 때 별은 없다. 첫 녹화(R78)에서 불꽃이 작고 벽·몸에 가리고, 나이트 하늘색 불꽃·크림 먼지가 배경에 묻히고, 비숍 미리보기가 안 나오고(프로그램 실수), 튀어오르는 칸이 바닥에 잘리는 것을 보고 고친 뒤 다시 찍었다. **사람이 손으로 해 본 것은 아님.**
 
 ## 다음 할 일
 

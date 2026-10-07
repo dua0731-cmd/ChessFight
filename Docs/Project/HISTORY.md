@@ -7,8 +7,13 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n` 병합) | 10-07 | R76 | `JY-kingrush`(`12772fe`)를 병합: 폰 러쉬 결과 화면(`JY-kingrush`에서는 R65) — `LastScene` 삭제, `PawnRushVictory`·`PawnRushLose`(아래 `12772fe`·`5972c7e`). 코드 충돌 없음. 문서 충돌 정리: 결과 화면 번호 R65 → R76(REQUIREMENTS·VALIDATION·HISTORY·HANDOFF·UI §10·§13·DECISIONS U13·SCENES·STRUCTURE·ROADMAP·코드 주석 3곳), PITFALLS 25~27 → 26~28, 새 29. Windows 컴파일 검사 `Test-NetworkCompile.ps1`이 `RagdollLab/Scripts` 하위 폴더(`PawnRushSkills`)도 읽게(이 브랜치에서 실패하던 것) |
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R75 | 문서: Skills README(룩 조준 중 걷기·나이트 3 m·측정·녹화), EFFECTS, REQUIREMENTS R75, VALIDATION, HANDOFF |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-07 | R78 | 문서: Skills EFFECTS(공방 그림 표·바꾼 것·다시 만드는 법), README(코드 표·R78 녹화), REQUIREMENTS R78, VALIDATION, HANDOFF, Tools/Generators README |
+| `1574f90` | 10-07 | R78 | 비숍 튀어오르는 칸을 칸 하나 크기로(두 배로 나오던 것), 공방 그림 묶는 도구 `Tools/Generators/pack_skill_fx.py` |
+| `837a7d0` | 10-07 | R78 | 게임 화면에 맞춤: 불꽃 크게·카메라 쪽으로 당겨 그림, 튀어오르는 칸 바닥 위로, 테두리·색, 비숍 미리보기 안 나오던 실수 |
+| `25f64e8` | 10-07 | R78 | 녹화: 기물마다 이펙트 장면(퀸·비숍 다시 넣음, 나이트 착지) |
+| `fff83a5` | 10-07 | R78 | 이펙트 공방 그림으로 바꿈(별 삭제, 룩 불꽃), `Resources/PawnRushSkillFx` 11장 |
+| `3025125` (병합) | 10-07 | R76 | `JY-kingrush`(`12772fe`)를 병합: 폰 러쉬 결과 화면(`JY-kingrush`에서는 R65) — `LastScene` 삭제, `PawnRushVictory`·`PawnRushLose`(아래 `12772fe`·`5972c7e`). 코드 충돌 없음. 문서 충돌 정리: 결과 화면 번호 R65 → R76(REQUIREMENTS·VALIDATION·HISTORY·HANDOFF·UI §10·§13·DECISIONS U13·SCENES·STRUCTURE·ROADMAP·코드 주석 3곳), PITFALLS 25~27 → 26~28, 새 29. Windows 컴파일 검사 `Test-NetworkCompile.ps1`이 `RagdollLab/Scripts` 하위 폴더(`PawnRushSkills`)도 읽게(이 브랜치에서 실패하던 것) |
+| `c75b8ca` | 10-07 | R75 | 문서: Skills README(룩 조준 중 걷기·나이트 3 m·측정·녹화), EFFECTS, REQUIREMENTS R75, VALIDATION, HANDOFF |
 | `338704e` | 10-07 | R75 | 화면 흔들림: 위치 + 회전, −1~1 사인, 제곱 감쇠 / 벽 흔들림 더 크게 / 조준 중 걷기 시험 짧게 |
 | `5fa903b` | 10-07 | R75 | 시험 도구: 조준 중 룩의 질주 상태 |
 | `a28a24a` | 10-07 | R75 | 룩 조준 중 걷기(질주 X), 이펙트 조각 삭제, 벽 흔들림, 나이트 감지 3 m·주황 표시·착지 원 한 벌만 |
