@@ -9,7 +9,7 @@ namespace ChessFight.RagdollLab.Editor
     /// object (Docs/Skills/README.md).</summary>
     public static class PawnRushSkillTestMenu
     {
-        public const string ScenePath = "Assets/Scenes/PawnRush/PawnRush_SkillTest.unity";
+        public const string ScenePath = "Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity";
 
         [MenuItem("ChessFight/Pawn Rush/Open Skill Test", false, 40)]
         public static void Open()
