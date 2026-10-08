@@ -208,12 +208,12 @@ namespace ChessFight.RagdollLab
                 lump = 0.42f,
                 flow = 6f,
                 heat = 1.15f,
-                rim = Hdr(Gold, 2f),
+                rim = Hdr(Gold, 1.4f),
                 animate = (p, t) =>
                 {
                     float k = Mathf.Clamp01(p.Age / windup);
                     p.at = Heart();
-                    p.scale = Vector3.one * Mathf.Lerp(0.1f, 0.5f, k * k) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
+                    p.scale = Vector3.one * Mathf.Lerp(0.12f, 0.62f, k * k) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
                 },
             });
             Add(new Shape(root, "Queen gathering glow", meshQuad, matHalo)
@@ -242,7 +242,7 @@ namespace ChessFight.RagdollLab
                     dir.y *= 0.6f;
                     float arrive = Mathf.Clamp(windup - age, 0.05f, Random.Range(0.1f, 0.2f));
                     Vector3 from = heart + dir.normalized * Random.Range(1.1f, 1.9f);
-                    streaks.Emit(from, (heart - from) / arrive, Random.Range(0.035f, 0.055f), arrive, Tint(Gold, Random.value * 0.5f));
+                    streaks.Emit(from, (heart - from) / arrive, Random.Range(0.06f, 0.09f), arrive, Tint(GoldDeep, Random.value * 0.4f));
                 }
                 return true;
             }));
@@ -261,14 +261,14 @@ namespace ChessFight.RagdollLab
                 {
                     float k = Mathf.Clamp01(c.Age / windup);
                     c.reveal = 0.3f * k * k;
-                    c.hot = Hdr(Gold, 1.2f + 0.8f * k);
+                    c.hot = Hdr(Gold, 1f + 0.6f * k);
                     if (c.Age > windup + 0.25f) c.fade = Mathf.Clamp01(1f - (c.Age - windup - 0.25f) / 0.2f);
                     if (c.fade <= 0f) c.life = c.Age;
                     return;
                 }
                 float b = c.Age - c.BlastAt;
                 c.reveal = Mathf.Lerp(c.RevealAtBlast, 1.02f, EaseOut(b / 0.09f));
-                c.hot = Hdr(Gold, Keys(b, 0f, 3.6f, 0.3f, 2.2f));
+                c.hot = Hdr(Gold, Keys(b, 0f, 2f, 0.3f, 1.4f));
                 c.cool = Keys(b, 0.25f, 0f, 0.9f, 1f);
                 c.fade = Keys(b, 1.1f, 1f, 1.7f, 0f);
                 if (b > 1.72f) c.life = c.Age;
@@ -308,11 +308,11 @@ namespace ChessFight.RagdollLab
                 at = pop,
                 lump = 0.3f,
                 flow = 3f,
-                rim = Hdr(Gold, 3f),
+                rim = Hdr(Gold, 1.6f),
                 animate = (p, t) =>
                 {
                     float a = p.Age;
-                    p.scale = Vector3.one * Mathf.Lerp(0.5f, 2.1f, EaseOut(a / 0.06f));
+                    p.scale = Vector3.one * Mathf.Lerp(0.5f, 1.4f, EaseOut(a / 0.06f));
                     p.heat = Keys(a, 0.04f, 1.2f, 0.12f, 0.6f);
                     p.dissolve = Keys(a, 0.06f, 0f, 0.16f, 1f);
                 },
@@ -320,14 +320,14 @@ namespace ChessFight.RagdollLab
 
             // The fireball: lumpy puffs bursting up and out, burning, cooling to dark smoke with glowing veins and hot
             // edges, rising, eaten away last.
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < 10; i++)
             {
                 Vector3 dir = i < 2 ? (Vector3.up + Random.insideUnitSphere * 0.3f).normalized : OnSphere(0.15f);
-                float reach = Random.Range(0.45f, 1.05f), size = Random.Range(0.75f, 1.25f), rise = Random.Range(0.25f, 0.55f);
+                float reach = Random.Range(0.4f, 0.9f), size = Random.Range(0.65f, 1f), rise = Random.Range(0.4f, 0.7f);
                 Vector3 from = pop + dir * 0.15f, to = pop + dir * reach + Vector3.up * Random.Range(0f, 0.3f);
                 Add(new Puff(root, "Queen fireball", meshSphere, matFire)
                 {
-                    life = Random.Range(1.05f, 1.4f),
+                    life = Random.Range(0.9f, 1.15f),
                     lump = Random.Range(0.32f, 0.45f),
                     flow = 1.6f,
                     rotation = Random.rotation,
@@ -337,8 +337,8 @@ namespace ChessFight.RagdollLab
                         p.at = Vector3.Lerp(from, to, EaseOut(a / 0.32f)) + Vector3.up * rise * a;
                         p.scale = Vector3.one * size * Mathf.Lerp(0.3f, 1f, EaseOut(a / 0.25f)) * Mathf.Lerp(1f, 1.15f, t);
                         p.heat = Keys(a, 0.03f, 1.1f, 0.12f, 0.5f, 0.32f, 0.18f, 0.6f, 0f);
-                        p.rim = Hdr(FireGlow, 2.4f * Sq(Mathf.Clamp01(1f - a / 0.75f)));
-                        p.dissolve = Keys(t, 0.45f, 0f, 1f, 1f);
+                        p.rim = Hdr(FireGlow, 1.6f * Sq(Mathf.Clamp01(1f - a / 0.75f)));
+                        p.dissolve = Keys(t, 0.35f, 0f, 1f, 1f);
                     },
                 });
             }
@@ -350,21 +350,21 @@ namespace ChessFight.RagdollLab
             {
                 float a = (turn + (i + Random.Range(-0.3f, 0.3f)) * 360f / ring) * Mathf.Deg2Rad;
                 var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                float reach = outer * Random.Range(0.86f, 0.98f), size = Random.Range(0.5f, 0.75f);
+                float reach = outer * Random.Range(0.86f, 0.98f), size = Random.Range(0.38f, 0.55f);
                 Add(new Puff(root, "Queen smoke ring", meshSphere, matFire)
                 {
-                    life = Random.Range(0.75f, 0.95f),
+                    life = Random.Range(0.6f, 0.75f),
                     lump = 0.4f,
                     flow = 2f,
                     rotation = Quaternion.LookRotation(radial),
                     animate = (p, t) =>
                     {
                         float k = EaseOut(p.Age / 0.3f);
-                        p.at = c + radial * Mathf.Lerp(0.5f, reach, k) + Vector3.up * (0.12f + 0.2f * k);
-                        p.scale = new Vector3(size, size * 0.7f, size * 1.2f) * Mathf.Lerp(0.4f, 1f, k);
+                        p.at = c + radial * Mathf.Lerp(0.5f, reach, k) + Vector3.up * (0.15f + 0.3f * k);
+                        p.scale = new Vector3(size, size * 0.85f, size * 1.1f) * Mathf.Lerp(0.4f, 1f, k);
                         p.heat = Keys(p.Age, 0.02f, 0.9f, 0.22f, 0f);
-                        p.rim = Hdr(FireGlow, 2f * Mathf.Clamp01(1f - p.Age / 0.4f));
-                        p.dissolve = Keys(t, 0.3f, 0f, 1f, 1f);
+                        p.rim = Hdr(FireGlow, 1.5f * Mathf.Clamp01(1f - p.Age / 0.4f));
+                        p.dissolve = Keys(t, 0.25f, 0f, 1f, 1f);
                     },
                 });
             }
@@ -377,7 +377,7 @@ namespace ChessFight.RagdollLab
                 sparks.Emit(pop + dir * 0.3f, dir * Random.Range(6f, 12f), Random.Range(0.05f, 0.075f), Random.Range(0.5f, 0.9f), Tint(Gold, Random.value * 0.5f));
             }
             MoteBurst(pop, 26, GoldDeep, 0.8f, 0.6f, 1.6f, 1.4f, 0.08f);
-            Flare(pop, Gold, 1.6f, outer * 2.4f, 0.45f);
+            Flare(pop, Gold, 1f, outer * 2.4f, 0.45f);
             HitStop(0.06f);
             Shake(0.14f, 0.28f);
             Edge(0.22f);
@@ -400,7 +400,7 @@ namespace ChessFight.RagdollLab
                     p.at = at + away * 0.3f * EaseOut(t);
                     p.scale = Vector3.one * Mathf.Lerp(0.25f, 0.6f, EaseOut(p.Age / 0.12f));
                     p.heat = Keys(p.Age, 0.02f, 1.1f, 0.15f, 0f);
-                    p.rim = Hdr(FireGlow, 2f * (1f - t));
+                    p.rim = Hdr(FireGlow, 1.5f * (1f - t));
                     p.dissolve = Keys(t, 0.35f, 0f, 1f, 1f);
                 },
             });

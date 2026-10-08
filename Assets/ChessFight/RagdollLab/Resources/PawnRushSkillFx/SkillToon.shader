@@ -1,10 +1,11 @@
 // Cartoon puffs for the skill effects (R86, after 승규 님's reference shorts: a stylized explosion of dark smoke with
-// burning veins and hot edges, and a hand-drawn burst of wind in hard colour bands with ink edges). A sphere is
-// lumped by noise in the vertex shader, shaded from the sun in three hard bands, burns where its noise lies under
-// _Heat (all of it at 1, glowing veins as it cools), lights its edges (_Rim), inks the edges that turn away (_Ink)
-// and is eaten away by noise (_Dissolve) with an inked or glowing bitten edge. Opaque with alpha test: it goes by
-// being eaten, as in the references. All motion comes from the effects' clock in C# (_Seed.w = age), so it runs on
-// through a hit stop and one recorded frame at a time. Built-in render pipeline. Noise: SkillNoise.cginc.
+// glowing cracks and hot edges, and a hand-drawn burst of wind in hard colour bands with ink edges). A sphere is
+// lumped by noise in the vertex shader, shaded from the sun in three hard bands, burns in the creases between its
+// lumps up to _Heat (all of it at 1, only the deepest creases as it cools, like fire seen through cracks in the
+// smoke), lights its edges (_Rim), inks the edges that turn away (_Ink) and is eaten away from its edges inward
+// (_Dissolve) with an inked or glowing bitten edge. Opaque with alpha test: it goes by being eaten, as in the
+// references. All motion comes from the effects' clock in C# (_Seed.w = age), so it runs on through a hit stop and
+// one recorded frame at a time. Built-in render pipeline. Noise: SkillNoise.cginc.
 Shader "ChessFight/Skill Toon"
 {
     Properties
@@ -58,6 +59,7 @@ Shader "ChessFight/Skill Toon"
                 float3 normal : TEXCOORD0;
                 float3 world : TEXCOORD1;
                 float3 q : TEXCOORD2;
+                float lump : TEXCOORD3;   // -1 deep in a crease .. 1 on top of a lump
             };
 
             // Two octaves: the big lumps and a few smaller ones on them.
@@ -80,6 +82,7 @@ Shader "ChessFight/Skill Toon"
                 o.normal = UnityObjectToWorldNormal(bent);
                 o.world = mul(unity_ObjectToWorld, float4(p, 1)).xyz;
                 o.q = q;
+                o.lump = n;
                 return o;
             }
 
@@ -89,7 +92,7 @@ Shader "ChessFight/Skill Toon"
                 float3 V = normalize(_WorldSpaceCameraPos - i.world);
                 float3 L = dot(_FxSun.xyz, _FxSun.xyz) > 1e-6 ? normalize(_FxSun.xyz) : normalize(float3(0.35, 0.79, -0.5));
 
-                float3 dq = i.q * 2.1 + 5.7;
+                float3 dq = i.q * 1.4 + 5.7;
                 float detail = SkillNoise(dq) * 0.65 + SkillNoise(dq * 2.17 + 3.1) * 0.35;   // about -1..1
 
                 // Three hard bands from the sun, their edges wobbling a little as if drawn by hand.
@@ -99,25 +102,27 @@ Shader "ChessFight/Skill Toon"
                 float3 col = lerp(_Shade.rgb, _Mid.rgb, smoothstep(_Bands.x - aa, _Bands.x + aa, shade));
                 col = lerp(col, _Lit.rgb, smoothstep(_Bands.y - aa, _Bands.y + aa, shade));
 
-                // Fire: the ridges of the noise (lines along its zero crossings) burn first and longest, so a cooling
-                // ball turns to dark smoke laced with glowing veins.
-                float vein = saturate(abs(detail) * 1.3);
-                float vaa = max(fwidth(vein), 1e-3);
-                float fire = (1 - smoothstep(_Heat - vaa - 0.02, _Heat + vaa, vein)) * saturate(_Heat * 25);
-                float core = saturate((_Heat - vein) * 2.5);
-                float3 hot = lerp(_Fire.rgb, _FireCore.rgb, core) * (0.8 + 0.4 * saturate(ndl * 0.5 + 0.5));
+                // Fire: the creases between the lumps burn first and longest (a little broken up by the detail), so a
+                // cooling ball turns to dark smoke with fire glowing through its cracks.
+                float crease = saturate(i.lump * 0.6 + 0.5) + detail * 0.08;
+                float caa = max(fwidth(crease), 1e-3);
+                float fire = (1 - smoothstep(_Heat - caa - 0.03, _Heat + caa, crease)) * saturate(_Heat * 25);
+                float core = saturate((_Heat - crease) * 3);
+                float3 hot = lerp(_Fire.rgb, _FireCore.rgb, core);
                 col = lerp(col, hot, fire);
 
                 // Edges: light (hot rims) and ink (where it turns away).
-                float edge = 1 - saturate(dot(N, V));
+                float facing = saturate(dot(N, V));
+                float edge = 1 - facing;
                 col += _Rim.rgb * pow(edge, _RimPower);
                 float eaa = max(fwidth(edge), 1e-3);
                 float ink = smoothstep(1 - _Ink - eaa, 1 - _Ink + eaa, edge) * step(1e-4, _Ink);
                 col = lerp(col, _InkColor.rgb, ink);
 
-                // Eaten away from its thin parts, with a bitten edge.
-                float bite = SkillNoise(i.q * 1.3 + 41.0) * 0.5 + 0.5;
-                bite = bite * 0.8 + (detail * 0.5 + 0.5) * 0.2;
+                // Eaten away from its edges inward (it shrinks and frays rather than turning to crumbs), with a
+                // bitten edge.
+                float bite = SkillNoise(i.q * 0.9 + 41.0) * 0.5 + 0.5;
+                bite = bite * 0.55 + facing * 0.45;
                 float left = bite - _Dissolve * 1.02;
                 clip(left);
                 float bitten = (1 - smoothstep(0, 0.05, left)) * step(1e-4, _Dissolve);

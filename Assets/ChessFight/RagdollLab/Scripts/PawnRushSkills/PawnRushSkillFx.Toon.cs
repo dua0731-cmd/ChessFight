@@ -24,8 +24,9 @@ namespace ChessFight.RagdollLab
         Emitter streaks;
         Vector3 sunDir = new Vector3(0.35f, 0.79f, -0.5f);
 
-        // The queen's smoke: warm and dark, so it reads on the white test floor and the cream squares alike.
-        static readonly Color SmokeLit = new Color(0.46f, 0.34f, 0.27f), SmokeMid = new Color(0.25f, 0.17f, 0.13f), SmokeShade = new Color(0.11f, 0.07f, 0.06f);
+        // The queen's smoke: charcoal, a little warm, so it reads on the white test floor and the cream squares alike
+        // (a first try in warm browns looked like a lump of earth once the fire was out).
+        static readonly Color SmokeLit = new Color(0.47f, 0.43f, 0.42f), SmokeMid = new Color(0.25f, 0.22f, 0.22f), SmokeShade = new Color(0.11f, 0.095f, 0.1f);
         // The knight's wind: white, sky and a deep blue, inked in navy.
         static readonly Color WindLit = new Color(1f, 1f, 1f), WindMid = new Color(0.55f, 0.78f, 1f), WindShade = new Color(0.12f, 0.36f, 0.95f);
         static readonly Color WindInk = new Color(0.04f, 0.08f, 0.3f);
@@ -40,12 +41,14 @@ namespace ChessFight.RagdollLab
             matFire.SetColor("_Lit", SmokeLit);
             matFire.SetColor("_Mid", SmokeMid);
             matFire.SetColor("_Shade", SmokeShade);
-            matFire.SetVector("_Bands", new Vector4(0.42f, 0.74f, 0.14f, 0f));
-            matFire.SetColor("_Fire", Hdr(new Color(1f, 0.52f, 0.1f), 2.4f));
-            matFire.SetColor("_FireCore", Hdr(new Color(1f, 0.9f, 0.62f), 3.2f));
-            matFire.SetFloat("_RimPower", 2.6f);
-            matFire.SetColor("_Bite", Hdr(new Color(1f, 0.5f, 0.1f), 1.6f));
-            matFire.SetFloat("_Scale", 2.2f);
+            matFire.SetVector("_Bands", new Vector4(0.44f, 0.76f, 0.06f, 0f));
+            // Colours go in as sRGB and the project is linear, so above 1 they grow fast: the fire's body stays
+            // under the bloom threshold, only its core blooms (the first try washed the whole picture white).
+            matFire.SetColor("_Fire", new Color(1.25f, 0.62f, 0.2f));
+            matFire.SetColor("_FireCore", new Color(1.6f, 1.3f, 0.82f));
+            matFire.SetFloat("_RimPower", 2.4f);
+            matFire.SetColor("_Bite", new Color(1.2f, 0.55f, 0.15f));
+            matFire.SetFloat("_Scale", 1.8f);
 
             matWind = Mat(toonShader);
             matWind.SetColor("_Lit", WindLit);
@@ -74,7 +77,7 @@ namespace ChessFight.RagdollLab
             matFlare = Glow(texDot);
 
             // Streaks: thin lines of light that fly straight (sucked in to the queen as she gathers).
-            streaks = new Emitter(root, "Streaks", Glow(texDot, opacity: 0.4f, color: 2.4f), stretch: true, gravity: 0f, drag: 0f, collide: false, noise: 0f,
+            streaks = new Emitter(root, "Streaks", Glow(texDot, opacity: 0.7f, color: 2f), stretch: true, gravity: 0f, drag: 0f, collide: false, noise: 0f,
                 fade: new[] { 0f, 0f, 0.2f, 1f, 1f, 1f }, size: new[] { 0f, 1f, 1f, 0.6f });
 
             var sun = RenderSettings.sun;
@@ -384,7 +387,7 @@ namespace ChessFight.RagdollLab
                     float u = (x + 0.5f) * px - 1f, v = (y + 0.5f) * px - 1f, r = Mathf.Sqrt(u * u + v * v);
                     // A hot spot in the middle where the blast started.
                     float spot = Mathf.Clamp01(1f - r / 0.1f);
-                    float c = Mathf.Max(crack[i], spot * spot), g = Mathf.Max(glow[i], Mathf.Clamp01(1f - r / 0.22f) * 0.9f);
+                    float c = Mathf.Max(crack[i], spot * spot * 0.5f), g = Mathf.Max(glow[i], Mathf.Clamp01(1f - r / 0.22f) * 0.9f);
                     float d = r < 0.22f ? Mathf.Min(along[i], r) : along[i];
                     // Fade the outer edge so the quad's border never shows.
                     float edge = Mathf.Clamp01((1f - r) / 0.08f);
