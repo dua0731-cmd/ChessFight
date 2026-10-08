@@ -24,7 +24,6 @@ namespace ChessFight.RagdollLab
         Mesh meshPuff;
         Material matCrack, matScorch, matSwoosh, matFlare;
         Texture2D texCracks, texScorch;
-        Emitter streaks;
         Vector3 sunDir = new Vector3(0.35f, 0.79f, -0.5f);
 
         // The queen's smoke: charcoal, a little warm, so it reads on the white test floor and the cream squares alike
@@ -86,10 +85,6 @@ namespace ChessFight.RagdollLab
             matSwoosh.SetColor("_Shade", WindShade);
             matSwoosh.SetColor("_InkColor", WindInk);
             matFlare = Glow(texDot);
-
-            // Streaks: thin lines of light that fly straight (sucked in to the queen as she gathers).
-            streaks = new Emitter(root, "Streaks", Glow(texDot, opacity: 0.7f, color: 2f), stretch: true, gravity: 0f, drag: 0f, collide: false, noise: 0f,
-                fade: new[] { 0f, 0f, 0.2f, 1f, 1f, 1f }, size: new[] { 0f, 1f, 1f, 0.6f });
 
             var sun = RenderSettings.sun;
             if (sun == null)
@@ -660,6 +655,26 @@ namespace ChessFight.RagdollLab
                     b.head = front;
                     b.tail = at + dir * (speed * b.Age + length * Smooth01((t - 0.2f) / 0.8f));
                     b.bright = 1f - t * t;
+                },
+            });
+        }
+
+        /// <summary>A line of light sucked in to <paramref name="target"/> from <paramref name="offset"/> away: its head
+        /// races in, its tail follows, both there after <paramref name="life"/> seconds (the queen gathering).</summary>
+        void InwardLine(Func<Vector3> target, Vector3 offset, float life, float width, Color color, float paint)
+        {
+            Add(new Beam(root, matBolt)
+            {
+                life = life,
+                width = width,
+                color = color,
+                paint = paint,
+                animate = (b, t) =>
+                {
+                    Vector3 c = target();
+                    b.head = c + offset * (1f - Smooth01(t * 1.4f));
+                    b.tail = c + offset * (1f - Smooth01(t * 0.9f));
+                    b.bright = Mathf.Clamp01(t * 5f);
                 },
             });
         }

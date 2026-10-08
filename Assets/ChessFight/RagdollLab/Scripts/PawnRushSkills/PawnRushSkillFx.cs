@@ -209,14 +209,14 @@ namespace ChessFight.RagdollLab
                 life = windup + 0.03f,
                 lump = 0.42f,
                 flow = 6f,
-                heat = 0.95f,
-                rim = Hdr(Gold, 1.4f),
+                heat = 0.75f,
+                rim = Hdr(FireGlow, 1.6f),
                 animate = (p, t) =>
                 {
                     float k = Mathf.Clamp01(p.Age / windup);
                     float drop = Smooth01((k - 0.8f) / 0.2f);
                     p.at = Vector3.Lerp(Heart(), q != null ? ChestOf(q) : floor + Vector3.up, drop * drop);
-                    p.scale = Vector3.one * Mathf.Lerp(0.12f, 0.62f, k * k) * Mathf.Lerp(1f, 0.6f, drop) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
+                    p.scale = Vector3.one * Mathf.Lerp(0.2f, 0.72f, EaseOut(k * 1.2f)) * Mathf.Lerp(1f, 0.6f, drop) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
                 },
             });
             // A faint glow round it (brighter, it whitened the ball away).
@@ -234,19 +234,19 @@ namespace ChessFight.RagdollLab
                     s.bright = (0.3f + 0.5f * k) * (1f - Smooth01((k - 0.8f) / 0.2f));
                 },
             });
-            // Thin lines of light sucked in from all round, arriving as she lets go.
+            // Lines of light sucked in from all round, arriving as she lets go: crisp lines (as particles they were
+            // specks), hot gold ones and deeper orange ones that show on a white floor.
             float due = 0f;
             anims.Add(new Ongoing((age, dt) =>
             {
-                if (!QueenCharging(q) || age > windup) return false;
-                Vector3 heart = Heart();
-                for (due += dt * 150f; due >= 1f; due -= 1f)
+                if (!QueenCharging(q) || age > windup - 0.04f) return false;
+                for (due += dt * 45f; due >= 1f; due -= 1f)
                 {
                     var dir = Random.onUnitSphere;
                     dir.y *= 0.6f;
-                    float arrive = Mathf.Clamp(windup - age, 0.05f, Random.Range(0.15f, 0.26f));
-                    Vector3 from = heart + dir.normalized * Random.Range(1.3f, 2.2f);
-                    streaks.Emit(from, (heart - from) / arrive, Random.Range(0.08f, 0.12f), arrive, Tint(GoldDeep, Random.value * 0.4f));
+                    float arrive = Mathf.Clamp(windup - age, 0.06f, Random.Range(0.14f, 0.22f));
+                    bool hot = Random.value < 0.5f;
+                    InwardLine(Heart, dir.normalized * Random.Range(1.2f, 2f), arrive, hot ? 0.04f : 0.06f, hot ? Hdr(Gold, 2.6f) : Hdr(GoldDeep, 1.3f), hot ? 0.3f : 0.85f);
                 }
                 return true;
             }));
@@ -1162,7 +1162,6 @@ namespace ChessFight.RagdollLab
             sparks.Step(dt);
             motes.Step(dt);
             smoke.Step(dt);
-            streaks.Step(dt);
 
             for (int i = anims.Count - 1; i >= 0; i--)
                 if (!anims[i].Step(dt, cam)) { anims[i].Destroy(); anims.RemoveAt(i); }
