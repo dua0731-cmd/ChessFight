@@ -43,7 +43,9 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < 240; i++)
             { yield return new WaitForFixedUpdate(); peak = Mathf.Max(peak, a.BodyPosition.y); }
             a.SetInput(default);
-            Check(peak - standing > .8f && peak - standing < 3, $"Measured unmodified standing jump clears button rise: {peak - standing:0.00} m");
+            // The jump was 1 m when the course was built; since the 10-08 tuning it is about 0.74 m. The clock
+            // buttons are crossed when they pass each other, not at their full 0.8 m apart.
+            Check(peak - standing > .6f && peak - standing < 3, $"Measured unmodified standing jump clears a 0.6 m step: {peak - standing:0.00} m");
 
             // One uninterrupted path from the spawn through the red course, using only movement and jump.
             yield return Walk(a, new Vector3(0, 0, 42), 14);
@@ -145,8 +147,11 @@ namespace ChessFight.RagdollLab
             { UnityEngine.SceneManagement.SceneManager.LoadScene("KingRushPrototype"); return; }
             Application.Quit(failed == 0 ? 0 : 1);
         }
+        // The walk limits were timed at the 5.5 m/s run; a slower run gets proportionally longer.
+        const float LimitRunSpeed = 5.5f;
         IEnumerator Walk(KingRushPawn pawn, Vector3 target, float limit, bool jumpGaps = false)
         {
+            limit *= Mathf.Max(1f, LimitRunSpeed / Mathf.Max(.5f, game.tuning.values.moveSpeed));
             float end = Time.time + limit, nextJump = 0, traceAt = 0; walkOK = false;
             bool trace = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-kingRushWalkTrace") >= 0;
             while (Time.time < end)

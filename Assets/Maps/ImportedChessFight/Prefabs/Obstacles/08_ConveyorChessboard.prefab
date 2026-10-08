@@ -6107,7 +6107,7 @@ MonoBehaviour:
   edgeSpeed: 1
   outwardSpeed: 1.5
   direction: {x: 0, y: 0, z: -1}
-  conveyorSpeed: 3
+  conveyorSpeed: 1.5
   launchVelocity: {x: 0, y: 14, z: 8}
   launchCooldown: 0.7
   rotors: []

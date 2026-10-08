@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-08 | R69 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R69, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R69, HANDOFF |
+| (이 커밋) | 10-08 | R70 | 폰러시 시험 맵: 회전 점프 막대 7개(윗면 0.45 m)·회전 체스판(0.6 m)·점프 계단(0.3·0.45·0.6 m) 낮춤, 08 컨베이어 1.5 m/s. 킹 러쉬 자동 점검 기준(점프 0.6 m, 제한 시간 속도 비율). 문서: MAP_IMPORT, PAWN_RUSH_MAP_KIT, VALIDATION, REQUIREMENTS R70, HANDOFF |
+| `4e93ae3` | 10-08 | R69 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R69, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R69, HANDOFF |
 | `4a3c569` | 10-08 | R69 | (사용자) RagdollTest 패널로 다듬은 튜닝: 달리기 2.5·질주 3.6·점프 3.8·방향 전환 40·공중 제어 0.4·넉다운 9·기상 1·다이빙 |
 | `cd4bd57` | 10-08 | R68 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R68, HANDOFF |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
