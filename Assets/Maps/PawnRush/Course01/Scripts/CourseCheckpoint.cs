@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // A course checkpoint (design doc §5): its number, shared or one team's, and six
-    // respawn spots 2 m apart across the course. Passing it and the respawn itself are
+    // A course checkpoint: its number, shared or one team's, and six respawn spots side by
+    // side across the way (2 m apart, closer on a narrow path). Passing it and the respawn itself are
     // the existing Checkpoint's (order = number; PlaytestSpawner keeps the highest
     // reached and puts the character back on it). This adds what a match will need
     // on top: whose it is and where up to six players come back side by side.
@@ -22,20 +22,20 @@ namespace ChessFight.PawnRush
         public bool Shared => team == Teams.None;
         public int SpotCount => spots.Length;
 
-        public void Configure(int number, int team)
+        public void Configure(int number, int team, float spacing = 2f)
         {
             this.number = number;
             this.team = team;
-            spots = Spots();
+            spots = Spots(spacing);
         }
 
         public void SetTeam(int team) => this.team = team;
 
-        // Ground points of the spots: the bottom of the trigger box, x -5..5.
-        static Vector3[] Spots()
+        // Ground points of the spots: the bottom of the trigger box, centred across it.
+        static Vector3[] Spots(float spacing = 2f)
         {
             var s = new Vector3[6];
-            for (int i = 0; i < 6; i++) s[i] = new Vector3(-5f + 2f * i, -1.5f, 0f);
+            for (int i = 0; i < 6; i++) s[i] = new Vector3((i - 2.5f) * spacing, -1.5f, 0f);
             return s;
         }
 

@@ -129,7 +129,7 @@ compile_all() {
   # Pawn Rush course 01 (Assets/Maps/PawnRush). Player defines here; its UNITY_EDITOR blocks and
   # its Editor folder are compiled against UnityEditor.dll below.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
-       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
        -out:"$build/ChessFight.PawnRush.dll" $(find "$src/PawnRush/Scripts" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Game.Steam.dll" \
@@ -151,10 +151,10 @@ compile_pawnrush_editor() {
   refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
   local csc="dotnet $CSC -nologo -noconfig -nostdlib+ -target:library -langversion:9 -nowarn:414,649,169,8632,0618,1701,1702,1705 -r:$m/mscorlib.dll -r:$m/System.dll -r:$m/System.Core.dll"
   local sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
-  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
        -out:"$build/ChessFight.PawnRush.EditorBuild.dll" $(find "$src/PawnRush/Scripts" -name '*.cs')
   $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
-       -r:"$build/ChessFight.PawnRush.EditorBuild.dll" -out:"$build/ChessFight.PawnRush.Editor.dll" $(find "$src/PawnRush/Editor" -name '*.cs')
+       -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.PawnRush.EditorBuild.dll" -out:"$build/ChessFight.PawnRush.Editor.dll" $(find "$src/PawnRush/Editor" -name '*.cs')
 }
 
 # Assembly boundaries that keep gameplay work from reaching into the network layer.

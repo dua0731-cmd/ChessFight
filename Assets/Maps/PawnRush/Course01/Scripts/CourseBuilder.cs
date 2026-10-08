@@ -9,8 +9,8 @@ namespace ChessFight.PawnRush
     // corners in metres (the course root sits at the world origin, so these are the design
     // doc's world coordinates), and a line of its tables ("x -15~15, z 0~18, y 0") becomes
     // one call. Floors are 1 m thick boxes whose top is the table's y. Every collider is a
-    // BoxCollider except the round parts. Walkable tops are marked CourseFloor for the
-    // validator's stacked-floor check.
+    // BoxCollider except the round parts. Walkable tops are marked CourseFloor (the validator
+    // measures a path's width on them).
     public sealed class CourseBuilder
     {
         // How obstacle prefabs are placed. The editor swaps in PrefabUtility.InstantiatePrefab so
@@ -190,7 +190,7 @@ namespace ChessFight.PawnRush
             box.isTrigger = true;
             var cp = go.AddComponent<CourseCheckpoint>();
             cp.GetComponent<Checkpoint>().Configure(number);
-            cp.Configure(number, team);
+            cp.Configure(number, team, Mathf.Min(2f, (width - 1f) / 5f));
             return cp;
         }
 

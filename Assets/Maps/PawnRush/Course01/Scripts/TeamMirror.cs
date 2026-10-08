@@ -106,7 +106,6 @@ namespace ChessFight.PawnRush
             foreach (var x in root.GetComponentsInChildren<SpawnPoint>(true)) x.Configure(x.Index, team);
             foreach (var x in root.GetComponentsInChildren<CourseCheckpoint>(true)) x.SetTeam(team);
             foreach (var x in root.GetComponentsInChildren<TeamBarrier>(true)) x.SetTeam(team);
-            foreach (var x in root.GetComponentsInChildren<MiniGameSlot>(true)) x.SetTeam(team);
             foreach (var x in root.GetComponentsInChildren<PromotionZone>(true)) x.SetTeam(team);
             foreach (var x in root.GetComponentsInChildren<TeamTint>(true)) x.Apply(team);
             foreach (var x in root.GetComponentsInChildren<TeamZone>(true)) x.SetTeam(team);

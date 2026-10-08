@@ -5,7 +5,7 @@ namespace ChessFight.PawnRush
     // The start line's bar (design doc M0): it holds everyone in the start square until
     // the countdown reaches 0, then sinks under the floor. Offline the countdown starts
     // when the scene does; a match will call Release at its shared start time instead.
-    // StateDrivenMover: dropped by the countdown, not by ObstacleClock. Offline only.
+    // StateDrivenMover: dropped by the countdown, not by the shared obstacle clock. Offline only.
     [RequireComponent(typeof(Rigidbody))]
     public sealed class StartBar : MonoBehaviour
     {

@@ -4,19 +4,24 @@ using System.Globalization;
 using System.IO;
 using ChessFight.Game;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
     // The offline playtest's course-01 extras, next to the PlaytestSpawner:
-    //   F5      switch the pawn to the other team (and start again from that team's start)
-    //   CSV     every section (S+A, W1, B, W2, C, T) entered and left, with the time and the team,
-    //           for comparing with the design doc's expected times (Logs/PawnRush in the project,
-    //           or persistentDataPath)
-    //   drop    gives the pawn the 8 m drop rule (FallDistanceRespawn)
-    //   card    the slot's picture card for 3 s when the island is entered, then the button's
-    //           progress while inside
-    //   HUD     section, rank, metres along the progress path, the start countdown
+    //   F5         switch the pawn to the other team (and start again from that team's start)
+    //   F6         finish the mini-game of the pawn's team in the plaza it is in (or the next one)
+    //   F7         the other team's reverse input in C and D on / off (design doc v0.4: a test switch)
+    //   F8         a new round: two games drawn afresh, every gate shut
+    //   F9 / F10   the next game in plaza 1 / plaza 2
+    //   Backspace  start again: back to the start square, a new round
+    //   CSV        every section (S+A, M1, B, M2, C, T) entered and left, with the time and the team,
+    //              for comparing with the design doc's expected times (Logs/PawnRush in the project,
+    //              or persistentDataPath)
+    //   card       the plaza's game, its name and one line, for 3 s when the plaza is entered
+    //   HUD        section, metres along the progress path, this round's games, the start countdown,
+    //              and in a plaza both teams' progress there
     // Team size (2..6) decides which promotion zones show their pads.
     public sealed class Course01Playtest : MonoBehaviour
     {
@@ -27,21 +32,19 @@ namespace ChessFight.PawnRush
         [SerializeField] bool writeCsv = true;
 
         string current;
-        bool dropRule;
         float runStart;
         string csvPath;
-        MiniGameSlot cardSlot;
+        int cardPlaza;
         float cardUntil;
         GUIStyle style, big;
 
-        void OnEnable() => MiniGameSlot.Entered += OnSlotEntered;
-        void OnDisable() => MiniGameSlot.Entered -= OnSlotEntered;
+        void OnEnable() => PlazaEntry.Entered += OnPlazaEntered;
+        void OnDisable() => PlazaEntry.Entered -= OnPlazaEntered;
 
         void Start()
         {
             if (course == null) course = PawnRushCourse.Current;
-            foreach (var zone in FindObjectsByType<PromotionZone>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                zone.ApplyTeamSize(teamSize);
+            ApplyTeamSize();
             // The pawn's grappling hook (a Queen of the Hill ability) would climb any wall. One hook
             // zone far below the course leaves nowhere it may be thrown from.
             var noHook = new GameObject("No hook here");
@@ -52,23 +55,43 @@ namespace ChessFight.PawnRush
             if (writeCsv) OpenCsv();
         }
 
+        void ApplyTeamSize()
+        {
+            foreach (var zone in FindObjectsByType<PromotionZone>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                zone.ApplyTeamSize(teamSize);
+        }
+
         void Update()
         {
             if (spawner == null || spawner.Driver == null || course == null) return;
+            var picker = course.Missions;
             if (LegacyKeys.Down(KeyCode.F5))
             {
                 spawner.SetTeam(spawner.Team == Teams.Black ? Teams.White : Teams.Black);
-                Restarted();
+                Restarted(false);
             }
-            if (LegacyKeys.Down(KeyCode.Backspace)) Restarted();
-            if (!dropRule && spawner.Driver is Component body)
+            if (LegacyKeys.Down(KeyCode.Backspace)) Restarted(true);
+            if (LegacyKeys.Down(KeyCode.F7))
             {
-                var root = body.transform.root.gameObject;
-                if (root.GetComponent<FallDistanceRespawn>() == null) root.AddComponent<FallDistanceRespawn>();
-                dropRule = true;
+                MissionStation.ReverseSabotage = !MissionStation.ReverseSabotage;
+                Debug.Log("[PawnRush] C·D 상대 반대 입력: " + (MissionStation.ReverseSabotage ? "켜짐" : "꺼짐"));
+            }
+            if (picker != null)
+            {
+                if (LegacyKeys.Down(KeyCode.F8)) NewRound(picker);
+                if (LegacyKeys.Down(KeyCode.F9)) { picker.Cycle(1); ApplyTeamSize(); }
+                if (LegacyKeys.Down(KeyCode.F10)) { picker.Cycle(2); ApplyTeamSize(); }
             }
             var target = spawner.Driver.FollowTarget;
             if (target == null) return;
+            if (LegacyKeys.Down(KeyCode.F6) && picker != null)
+            {
+                int plaza = PlazaAround(target.position, picker);
+                if (plaza == 0) plaza = course.Along(target.position, Mathf.Max(0, spawner.Team), out _) <
+                                        course.Progress.SectionStart("B", Mathf.Max(0, spawner.Team)) ? 1 : 2;
+                var game = picker.Station(plaza, Mathf.Max(0, spawner.Team))?.Game;
+                if (game != null) game.ForceComplete();
+            }
             course.Along(target.position, Mathf.Max(0, spawner.Team), out string section);
             if (section != current)
             {
@@ -78,20 +101,45 @@ namespace ChessFight.PawnRush
             }
         }
 
-        void Restarted()
+        void NewRound(MissionPicker picker)
+        {
+            picker.NewRound(Environment.TickCount);
+            ApplyTeamSize();
+        }
+
+        void Restarted(bool redraw)
         {
             runStart = Time.time;
             current = null;
             StartBar.Current?.Rearm();
-            foreach (var slot in FindObjectsByType<MiniGameSlot>(FindObjectsSortMode.None)) slot.ResetRound();
+            var picker = course.Missions;
+            if (picker != null)
+            {
+                if (redraw) NewRound(picker);
+                else picker.ResetRound();
+            }
             Log(null, "restart");
         }
 
-        void OnSlotEntered(MiniGameSlot slot, ICharacterDriver who)
+        void OnPlazaEntered(PlazaEntry entry, ICharacterDriver who)
         {
-            if (spawner == null || who != spawner.Driver || slot == cardSlot && Time.time < cardUntil + 10f) return;
-            cardSlot = slot;
+            if (spawner == null || who != spawner.Driver || entry.Plaza == cardPlaza && Time.time < cardUntil + 10f) return;
+            cardPlaza = entry.Plaza;
             cardUntil = Time.time + 3f;
+        }
+
+        // 1 or 2 when the point is in a mission plaza (entry band to the gate passages), else 0.
+        static int PlazaAround(Vector3 point, MissionPicker picker)
+        {
+            for (int plaza = 1; plaza <= 2; plaza++)
+                for (int team = 0; team < 2; team++)
+                {
+                    var station = picker.Station(plaza, team);
+                    if (station == null) continue;
+                    var local = station.transform.InverseTransformPoint(point);
+                    if (Mathf.Abs(local.x) <= 12.5f && local.z >= -4f && local.z <= 27f && local.y > -1.5f && local.y < 13f) return plaza;
+                }
+            return 0;
         }
 
         // ------------------------------------------------------------------ CSV
@@ -105,8 +153,8 @@ namespace ChessFight.PawnRush
                     : Path.Combine(Application.persistentDataPath, "PawnRush");
                 Directory.CreateDirectory(folder);
                 csvPath = Path.Combine(folder, "course01_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".csv");
-                File.WriteAllText(csvPath, "module,event,seconds,team\n");
-                Debug.Log("[PawnRush] 모듈 통과 기록(CSV): " + csvPath);
+                File.WriteAllText(csvPath, "section,event,seconds,team\n");
+                Debug.Log("[PawnRush] 구간 통과 기록(CSV): " + csvPath);
             }
             catch (Exception e)
             {
@@ -140,43 +188,43 @@ namespace ChessFight.PawnRush
             if (target == null) return;
             int team = Mathf.Max(0, spawner.Team);
             float along = course.Along(target.position, team, out string section), total = ProgressPath.Length(course.Path(team));
-            int rank = PawnRushCourse.RankAt(target.position.y - course.transform.position.y);
-            string text = $"<b>폰 러시 코스 01 「여덟 번째 랭크」</b> · {Teams.Name(spawner.Team)}팀 (F5 팀 바꾸기)\n" +
-                          $"구간 {section} · 랭크 {rank} · 진행 {along:0} / {total:0} m";
-            var box = new Rect(Screen.width - 452, 12, 440, 52);
+            var picker = course.Missions;
+            string games = picker != null ? $"광장 ① {MissionPicker.Name(picker.First)} · 광장 ② {MissionPicker.Name(picker.Second)}" : "미니게임 없음";
+            string text = $"<b>폰 러시 코스 01 v0.4</b> · {Teams.Name(spawner.Team)}팀 (F5 팀 바꾸기)\n" +
+                          $"구간 {section} · 진행 {along:0} / {total:0} m\n" +
+                          $"{games}\n" +
+                          $"F6 우리 미니게임 완료 · F7 반대 입력 {(MissionStation.ReverseSabotage ? "켜짐" : "꺼짐")} · F8 새 판 · F9/F10 게임 바꾸기";
+            var box = new Rect(Screen.width - 512, 12, 500, 88);
             GUI.Box(box, GUIContent.none);
             GUI.Label(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 8), text, style);
 
             var bar = StartBar.Current;
             if (bar != null && bar.Remaining > 0f)
                 GUI.Label(new Rect(0, Screen.height * .3f, Screen.width, 60), Mathf.CeilToInt(bar.Remaining).ToString(), big);
+            if (picker == null) return;
 
-            if (cardSlot != null && Time.time < cardUntil)
+            if (cardPlaza > 0 && Time.time < cardUntil)
             {
-                var card = new Rect((Screen.width - 520) * .5f, Screen.height * .18f, 520, 74);
+                int game = cardPlaza == 1 ? picker.First : picker.Second;
+                var card = new Rect((Screen.width - 560) * .5f, Screen.height * .18f, 560, 74);
                 GUI.Box(card, GUIContent.none);
-                GUI.Label(card, $"미니게임 슬롯 {cardSlot.Slot} (자리 표시)\n가운데 버튼 위에 서 있으면 진척이 오르고, 다 차면 위쪽 문이 열립니다", style);
+                string hint = game >= 0 && game < PawnRushMissions.Count ? PawnRushMissions.Hints[game] : "";
+                GUI.Label(new Rect(card.x + 12, card.y + 8, card.width - 24, card.height - 12),
+                          $"<b>미션 광장 {cardPlaza} · {MissionPicker.Name(game)}</b>\n{hint}", style);
             }
-            var slot = SlotAround(target.position);
-            if (slot != null && slot.Game != null)
+            int plaza = PlazaAround(target.position, picker);
+            if (plaza == 0) return;
+            for (int t = 0; t < 2; t++)
             {
-                var g = slot.Game;
-                var back = new Rect((Screen.width - 300) * .5f, Screen.height - 80, 300, 14);
+                var g = picker.Station(plaza, t)?.Game;
+                if (g == null) continue;
+                var back = new Rect((Screen.width - 300) * .5f, Screen.height - 96 + t * 40, 300, 14);
                 GUI.Box(back, GUIContent.none);
                 GUI.Box(new Rect(back.x, back.y, back.width * g.Progress01, back.height), GUIContent.none);
-                GUI.Label(new Rect(back.x, back.y - 20, 300, 20), g.Completed ? "문이 열렸습니다" : $"미니게임 진척 {g.Progress01 * 100f:0}%", style);
+                string who = t == team ? "우리" : "상대";
+                GUI.Label(new Rect(back.x, back.y - 20, 300, 20),
+                          g.Completed ? $"{who}({Teams.Name(t)}) 팀 문이 열렸습니다" : $"{who}({Teams.Name(t)}) 진척 {g.Progress01 * 100f:0}%", style);
             }
-        }
-
-        // The slot whose island the point is on (inside its 12 m width and its length).
-        MiniGameSlot SlotAround(Vector3 point)
-        {
-            foreach (var slot in FindObjectsByType<MiniGameSlot>(FindObjectsSortMode.None))
-            {
-                var local = slot.transform.InverseTransformPoint(point);
-                if (Mathf.Abs(local.x) <= 6.3f && local.z >= 0f && local.z <= 22f && local.y > -1f && local.y < 4f) return slot;
-            }
-            return null;
         }
     }
 }
