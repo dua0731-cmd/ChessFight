@@ -65,6 +65,9 @@ namespace ChessFight.RagdollLab
         Vector3 eye, look;
         string stills;
         int width, height;
+        // The captions hang this far in front of the camera, so that every shot's field of view shows them at the same
+        // spot and size as a 44° shot does at 1 m (a narrower shot pushed the title off the top).
+        float depth = 1f, titleFit = 1f, noteFit = 1f, keyFit = 1f;
 
         /// <summary>Film every shot (or only those whose run starts with <paramref name="only"/>) into
         /// <paramref name="path"/> (full speed) and the same name + "_slow" (slow motion). Needs Play mode in
@@ -157,6 +160,9 @@ namespace ChessFight.RagdollLab
                     eye = shot.eye;
                     look = shot.look;
                     cam.fieldOfView = shot.fov;
+                    depth = Mathf.Tan(22f * Mathf.Deg2Rad) / Mathf.Tan(shot.fov * 0.5f * Mathf.Deg2Rad);
+                    banner.localPosition = new Vector3(0f, 0.345f, 1.05f * depth);
+                    keyStrip.localPosition = new Vector3(0f, -0.335f, 1.05f * depth);
                     SetCaption(shot.title, slow ? $"느리게 ×{(game != null ? game.slowMotionScale : 0.3f):0.0#} · {shot.note}" : shot.note);
                     if (game != null) game.SetSlowMotion(false);
                     QueenHillSkillProbe.Run(shot.run);
@@ -191,9 +197,23 @@ namespace ChessFight.RagdollLab
             note.Destroy();
             title = new PawnRushSkillFx.Text3D(cam.transform, font, a, Color.white, TitleSize);
             note = new PawnRushSkillFx.Text3D(cam.transform, font, b, new Color(1f, 0.9f, 0.6f), NoteSize);
+            titleFit = Fit(a, TitleSize);
+            noteFit = Fit(b, NoteSize);
         }
 
         const float TitleSize = 0.05f, NoteSize = 0.03f, KeySize = 0.046f;
+
+        /// <summary>The scale that keeps a caption line inside the picture (a long title shrinks, a short one stays).</summary>
+        float Fit(string text, float size)
+        {
+            // Text3D: 64 px of the font = size metres. The picture is 2·tan(22°)·aspect wide where the captions hang.
+            font.RequestCharactersInTexture(text, 64, FontStyle.Bold);
+            float px = 0f;
+            foreach (char c in text)
+                if (font.GetCharacterInfo(c, out var info, 64, FontStyle.Bold)) px += info.advance;
+            float wide = px * size / 64f, room = 2f * Mathf.Tan(22f * Mathf.Deg2Rad) * width / height * 0.92f;
+            return wide > room ? room / wide : 1f;
+        }
 
         static Transform Banner(Transform cam, float y, float width = 2f)
         {
@@ -219,8 +239,8 @@ namespace ChessFight.RagdollLab
             if (cam == null) return;
             if (Rolling)
             {
-                title.Place(cam.transform.TransformPoint(new Vector3(0f, 0.37f, 1f)), cam, 1f, 1f);
-                note.Place(cam.transform.TransformPoint(new Vector3(0f, 0.313f, 1f)), cam, 1f, 1f);
+                title.Place(cam.transform.TransformPoint(new Vector3(0f, 0.37f, depth)), cam, titleFit, 1f);
+                note.Place(cam.transform.TransformPoint(new Vector3(0f, 0.313f, depth)), cam, noteFit, 1f);
                 ShowKey();
                 cam.targetTexture = rt;
                 cam.Render();
@@ -243,13 +263,15 @@ namespace ChessFight.RagdollLab
             {
                 keySerial = QueenHillSkillProbe.HintSerial;
                 key.Destroy();
-                key = new PawnRushSkillFx.Text3D(cam.transform, font, $"[ {QueenHillSkillProbe.Hint} ]", new Color(1f, 0.85f, 0.3f), KeySize);
+                string hint = $"[ {QueenHillSkillProbe.Hint} ]";
+                key = new PawnRushSkillFx.Text3D(cam.transform, font, hint, new Color(1f, 0.85f, 0.3f), KeySize);
+                keyFit = Fit(hint, KeySize);
                 keyLeft = 1.1f;
             }
             keyLeft -= Time.captureDeltaTime > 0f ? Time.captureDeltaTime : Time.unscaledDeltaTime;
             bool on = keyLeft > 0f;
             keyStrip.gameObject.SetActive(on);
-            key.Place(cam.transform.TransformPoint(new Vector3(0f, -0.335f, 1f)), cam, on ? 1f : 0.001f, Mathf.Clamp01(keyLeft / 0.3f));
+            key.Place(cam.transform.TransformPoint(new Vector3(0f, -0.335f, depth)), cam, on ? keyFit : 0.001f, Mathf.Clamp01(keyLeft / 0.3f));
         }
 
         void OnDestroy()
