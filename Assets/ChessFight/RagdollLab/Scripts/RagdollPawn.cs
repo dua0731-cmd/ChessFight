@@ -800,6 +800,7 @@ namespace ChessFight.RagdollLab
         public void Knockdown(string cause, float hold)
         {
             if (Floating) return;   // the water catches it
+            if (WardCatchesKnockdown(cause)) return;   // a Queen of the Hill king's guard (R89): a stagger instead
             DropHook();
             DropRope();
             EndClimbPose();
@@ -1202,7 +1203,8 @@ namespace ChessFight.RagdollLab
             float bob = Gait(runBob, p.sprintBob * sprintWave) * speedN;
             // On a lift the floor will have moved by the end of this step; aim for where it will be.
             next.y = planted && groundFound
-                ? groundY + surfaceVel.y * dt + standHeight + lift + bob - landDip - strideDrop
+                // (SkillCrouch / SkillCrouchDrop: a Queen of the Hill pawn crouching for its dash, R89; 0 otherwise.)
+                ? groundY + surfaceVel.y * dt + standHeight + (lift + bob) * (1f - SkillCrouch) - landDip - strideDrop - SkillCrouchDrop
                 : hp.y + hips.linearVelocity.y * dt
                   // Thrown by a pad, lead by where gravity will have the hips, not where they would coast to:
                   // the step-ahead anchor held a thrown body up a little (0.15 m higher, 0.1 s longer, 0.2 m long).
@@ -3068,8 +3070,9 @@ namespace ChessFight.RagdollLab
             if (drop) LetGo(0.6f);
             if (knockdownSeconds > 0f && !Floating) Knockdown("피격", knockdownSeconds);
             else if (push.sqrMagnitude > 1e-4f) hitTimer = Mathf.Max(hitTimer, p.hitRecoveryTime);
-            // Heavier pieces go less far (M11): the king a third, the rook two thirds.
-            push *= PushScale;
+            // Heavier pieces go less far (M11): the king a third, the rook two thirds. A Queen of the Hill king's
+            // guard (R89) takes most of a push away as well.
+            push *= PushScale * WardPushScale;
             // Still on the wall (no drop, no knockdown): the wall takes the push, only the stamina counts.
             if (push.sqrMagnitude <= 1e-6f || climbKinematic) return;
             AddVelocity(push);

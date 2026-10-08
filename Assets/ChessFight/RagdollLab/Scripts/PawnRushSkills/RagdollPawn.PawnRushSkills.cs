@@ -123,7 +123,8 @@ namespace ChessFight.RagdollLab
         /// <summary>The enemy a knight's second press in the air would come down on (null: it would turn).</summary>
         public RagdollPawn KnightMarked => knightHoming ? knightTarget : knightCandidate;
 
-        bool Aiming => skillStage == SkillStage.Windup && !aimLocked && (piece == PieceKind.Rook || piece == PieceKind.Bishop);
+        bool Aiming => skillStage == SkillStage.Windup && !aimLocked
+                       && (QueenHillSkills != null ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop);
 
         /// <summary>A skill is moving this pawn into others, or has just stopped doing so: contacts between
         /// pawns are the skill's to judge, not the collision knockdown's.</summary>
@@ -176,6 +177,11 @@ namespace ChessFight.RagdollLab
             // A right click that was down when the aim began, or that called it off, grabs nothing until let go.
             if (skillGrabLatch && !input.grab) skillGrabLatch = false;
             if (Aiming || skillGrabLatch) input.grab = false;
+            if (QueenHillSkills != null)
+            {
+                PreQueenHillSkills();   // the Queen of the Hill skills take it from here (R89)
+                return;
+            }
             if (knightHoming)
             {
                 // The second press flies the knight onto the head by itself.
@@ -207,6 +213,11 @@ namespace ChessFight.RagdollLab
             skillGrace -= dt;
             blastFlash -= dt;
             TrackGetUp(s);
+            if (QueenHillSkills != null)
+            {
+                UpdateQueenHillSkills(QueenHillSkills, press, confirm, cancel, dt);   // Queen of the Hill skills (R89)
+                return;
+            }
 
             if (skillStage != SkillStage.None && (State == PawnState.Ragdoll || Floating))
             {
@@ -246,6 +257,7 @@ namespace ChessFight.RagdollLab
             knightTarget = knightCandidate = null;
             SkillDetail = "";
             HideSkillMarks();
+            ClearQueenHill();
         }
 
         float PieceCooldown(PawnRushSkillParams s) => piece switch
@@ -325,6 +337,14 @@ namespace ChessFight.RagdollLab
         string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause)
         {
             if (target == null || target.NetworkPuppet) return "-";
+            if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
+            {
+                // Guarded by a Queen of the Hill king (R89): no knockdown, a much smaller push (TakeHit scales it).
+                target.TakeHit(Flat(push), 0f, 0f, false);
+                target.Stagger(target.QueenHillSkills != null ? target.QueenHillSkills.wardStagger : 0.2f);
+                target.LastSkillHit = $"{cause}: 호위로 버팀";
+                return "호위로 버팀";
+            }
             float guardStagger = PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f;
             string result;
             if (knockdown && target.State == PawnState.Ragdoll)
@@ -1290,6 +1310,11 @@ namespace ChessFight.RagdollLab
                        ref Quaternion thighL, ref Quaternion thighR, ref Quaternion footL, ref Quaternion footR)
         {
             if (PawnRushSkills == null || State != PawnState.Active) return;
+            if (QueenHillSkills != null)
+            {
+                QueenHillPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);   // R89
+                return;
+            }
             if (piece == PieceKind.Rook && rookAir && dashing)
             {
                 // Superman (R81): both fists out ahead over the head, legs straight behind, toes pointed, looking
