@@ -44,7 +44,7 @@
 | `…/PawnRushSkillProbe.cs` | **자동 시험 도구**: 키보드 없이 P1·더미를 움직이고 G를 눌러 거리·높이·결과를 잰다(아래) |
 | `…/PawnRushSkillFx.cs` · `PawnRushSkillFx.Parts.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받고, 퀸 예고·룩 돌진·나이트 도약은 기물 상태를 지켜보며 멈춤·흔들기·흰 번쩍·납작 + **3D 빛 이펙트**(R79: 빛의 벽·기둥·빛줄기·껍질·마법진, 튕기는 불꽃·빛 알갱이·연기, 순간 조명, 궤적, 번개). 별·글자·조각은 없음. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
 | `…/PawnRushSkillBloom.cs` · `RagdollLab/Resources/PawnRushSkillFx/SkillGlow.shader` · `SkillBloom.shader` | 이펙트 재질(HDR 빛 + 칠하기)과 직접 만든 빛 번짐. 시험장 카메라·녹화 카메라에만 붙음([EFFECTS §3D 빛 이펙트](EFFECTS.md#3d-빛-이펙트-r79-10-08)) |
-| `…/PawnRushSkillFx.Toon.cs` · `Resources/PawnRushSkillFx/SkillToon.shader` · `SkillCrack.shader` · `SkillSwoosh.shader` · `SkillNoise.cginc` | **만화 이펙트**(R86, 참고 쇼츠 세 개): 퀸 불덩이·숯빛 연기·바닥 균열, 룩 만화 번개·속도선, 나이트 바람 덩어리·바람 띠. 비숍은 R82 그대로([EFFECTS §만화 이펙트](EFFECTS.md#만화-이펙트-r86-10-08)) |
+| `…/PawnRushSkillFx.Toon.cs` · `Resources/PawnRushSkillFx/SkillToon.shader` · `SkillCrack.shader` · `SkillSwoosh.shader` · `SkillNoise.cginc` | **만화 이펙트**(R86, 참고 쇼츠 세 개): 퀸 불덩이·숯빛 연기·바닥 균열, 룩 만화 번개·속도선, 나이트 바람 덩어리·바람 띠. 비숍은 R82 그대로. R88: 퀸에 만화 금색 체스말이 모였다 튀어나감(체스말 모양은 `PawnRushSkillFx.Chess.cs`)([EFFECTS §만화 이펙트](EFFECTS.md#만화-이펙트-r86-10-08)) |
 | `…/PawnRushSkillFilm.cs` · `RagdollLab/Editor/PawnRushSkillFilmEncoder.cs` | **녹화 도구**(R73): 자동 시험을 고정 카메라로 찍어 `.mp4`로(아래) |
 | `RagdollLab/Editor/PawnRushSkillTestMenu.cs` | 메뉴 Open Skill Test |
 | `LabGame.cs`(`InteractKeyOff`) | 시험장이 켜면 F가 랩 상호작용을 하지 않음 (R74) |
@@ -123,6 +123,10 @@ Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면�
 ### R86 녹화 (10-08)
 
 `PawnRush_Skill_R86.mp4`(장면 5개, 제 속도 + 느리게): 퀸 머리 위로 모이는 불덩이 → 팡 → 숯빛 연기 틈으로 불빛 → 바닥 균열이 식어 사라짐, 룩 만화 번개·속도선 돌진(4명 뭉치 / 공중 돌진·내리꽂기), 나이트 바람 머리 찍기 / 도약·착지 바람. 비숍은 바꾸지 않아서 이번 녹화에 없음. 만들면서 퀸 5번, 룩 2번, 나이트 2번을 **모든 프레임을 찍어 모음 판으로 보고** 고쳤다(화면이 하얗게 날아감, 흙덩이 같은 연기, 몸에 묻힌 불덩이, 뒤집힌 구 면, 흰 바닥에 묻힌 번개, 흰 솜 같은 바람 → [EFFECTS](EFFECTS.md#만화-이펙트-r86-10-08)). **사람이 손으로 해 본 것은 아님.**
+
+### R88 녹화 (10-08)
+
+`PawnRush_Skill_R88_Queen.mp4`(퀸만, 제 속도 + 느리게): 금색 만화 체스말 12개가 퀸 둘레 바닥에서 솟아 빙글빙글 돌며 머리 위 불덩이로 빨려 들어감 → 팡 → 체스말 16개가 소용돌이치며 튀어나와 바닥에 튕기다 타들어 가듯 사라짐 + 불덩이·숯빛 연기·바닥 균열. 프레임별 모음 판 `R88_frames_queen.jpg`(제 속도), `R88_frames_queen_slow.jpg`(느리게, 게임 시간 표시). 고친 것: 체스말이 작아 금가루처럼 보임 → 킹 0.42 m, 연기에 가려짐 → 불덩이 줄임, 느린 화면에서 모이기가 먼저 끝남 → 퀸 스킬 진행 시간에 맞춤. **사람이 손으로 해 본 것은 아님.**
 
 ## 다음 할 일
 
