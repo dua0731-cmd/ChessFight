@@ -49,6 +49,14 @@
 | `…/QueenHillSkillFilm.cs` · `Editor/QueenHillSkillFilmEncoder.cs` | **녹화 도구**: `QueenHillSkillFilm.Run("Temp/Captures/qoth/이름.mp4")` → 제 속도 영상 + 같은 이름 `_slow.mp4`(×0.3), 프레임 사진 `_stills`. `StillEvery = 1`이면 모든 프레임. `Snap(파일, 눈, 볼 곳)` = 카메라 구도 한 장 |
 | `Editor/QueenHillSkillTestMenu.cs` | 메뉴 Open Skill Test (씬이 없으면 만듦) |
 
+## 확인한 것 (10-09, AI만)
+
+- Core 88 · 모의 세션 40 · 실제 Unity DLL 전체 어셈블리 컴파일(`Tools/Test-NetworkCompile.ps1`) 통과.
+- 이 PC Unity(`C:/Work/ChessFight`)에서 `QueenHillSkillProbe`로 여섯 스킬을 돌리고, `QueenHillSkillFilm`으로 7장면(킹·퀸·룩·비숍·나이트·폰 룩 돌진 피하기·폰 좁은 틈)을 보통 속도(약 25초)와 ×0.3(약 81초)로 찍어 프레임마다 봤다. 장면 구도는 `QueenHillSkillFilm`의 `Shots` 표.
+- 공용 코드를 건드렸으므로 폰 러쉬 시험 씬에서 `PawnRushSkillProbe.Run("all")`도 돌려 예전 값(룩 돌진 3/4 넘어짐, 나이트 도약 +1.63 m · 5.57 m, 비숍 밧줄 걸림 등)을 확인했다.
+- 녹화 제목 줄은 장면마다 시야각이 달라도 같은 자리·크기로 나온다(처음에는 40° 장면에서 제목이 화면 위로 잘렸다).
+- **사람이 키보드·마우스로 해 본 것은 없다.** 확인 목록은 [VALIDATION](../Network/VALIDATION.md) 최상단 R89 표.
+
 ## 다음 할 일
 
 1. **사람이 Unity에서 직접 해 보기**(AI가 자동 시험 도구로만 돌려 봄).
