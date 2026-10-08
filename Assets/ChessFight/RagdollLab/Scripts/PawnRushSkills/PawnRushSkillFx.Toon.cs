@@ -26,7 +26,7 @@ namespace ChessFight.RagdollLab
         /// edge, for the queen (R88, 승규 님: "체스들이 모이면서 터지는 듯한 느낌"); the king this tall (m).</summary>
         Mesh[] chessMeshes;
         Material matChess;
-        const float ChessKing = 0.26f;
+        const float ChessKing = 0.42f;   // R88: 0.26 (R81 size) read as gold specks among the smoke
         Material matCrack, matScorch, matSwoosh, matFlare;
         /// <summary>The rook's cartoon lightning and speed lines: a white-hot middle, orange, an ink edge (Skill Swoosh
         /// with its bands from the middle). Light alone was lost on the white floor.</summary>

@@ -260,21 +260,21 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>
-        /// The queen's chess pieces gathering (R88): sixteen of the six kinds pop up round her (a quick overshoot) and
-        /// swirl in, standing and spinning like tops, closer and faster (R81's "회전하면서"), up into <paramref name="heart"/>,
+        /// The queen's chess pieces gathering (R88): twelve of the six kinds pop up standing on the floor round her (a
+        /// quick overshoot) and swirl in, standing and spinning like tops, closer and faster (R81's "회전하면서"), up into <paramref name="heart"/>,
         /// shrinking and heating up as they come (fire glowing in their creases, a hot edge), each gone in a spark as it
         /// arrives; a short gold trail behind each shows the swirl.
         /// </summary>
         void GatherChess(RagdollPawn q, Vector3 floor, float windup, Func<Vector3> heart)
         {
-            const int count = 16;
+            const int count = 12;
             float way = Random.value < 0.5f ? -1f : 1f;
             Vector3 middle = floor;
             for (int i = 0; i < count; i++)
             {
                 int kind = i % chessMeshes.Length;
                 float a0 = i * Mathf.PI * 2f / count + Random.Range(-0.12f, 0.12f);
-                float r0 = Random.Range(1.9f, 2.6f), h0 = Random.Range(0.2f, 1.1f);
+                float r0 = Random.Range(1.8f, 2.4f);
                 float arrive = windup * Random.Range(0.8f, 0.95f), size = ChessKing * ChessHeights[kind];
                 float yaw0 = Random.Range(0f, 360f), spin = Random.Range(700f, 1000f) * way;
                 bool sparked = false;
@@ -287,7 +287,8 @@ namespace ChessFight.RagdollLab
                     {
                         float k = t, age = p.Age;
                         if (q != null) middle = Flat(q.Hips.position) + Vector3.up * floor.y;
-                        Vector3 center = Vector3.Lerp(middle + Vector3.up * h0, heart(), k * k);
+                        // From standing on the floor round her (pieces on a board) up into the fire.
+                        Vector3 center = Vector3.Lerp(middle + Vector3.up * (size * 0.5f + 0.02f), heart(), k * k);
                         float a = a0 + way * 1.1f * Mathf.PI * 2f * Mathf.Pow(k, 1.4f), r = r0 * (1f - k * k);
                         p.at = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
                         p.rotation = Quaternion.Euler(0f, yaw0 + spin * (age + age * age * 2f), 0f) * Quaternion.Euler(8f * Mathf.Sin(age * 20f), 0f, 0f);
@@ -302,7 +303,7 @@ namespace ChessFight.RagdollLab
                         }
                     },
                 });
-                anims.Add(new Streak(root, matTrail, Hdr(Gold, 1.3f), 0.07f, 0.12f, () => piece.Alive ? piece.at : (Vector3?)null) { paint = 0.7f, delay = 0.03f });
+                anims.Add(new Streak(root, matTrail, Hdr(Gold, 1.3f), 0.1f, 0.12f, () => piece.Alive ? piece.at : (Vector3?)null) { paint = 0.7f, delay = 0.03f });
             }
         }
 
@@ -312,7 +313,7 @@ namespace ChessFight.RagdollLab
         /// </summary>
         void BurstChess(Vector3 pop, float floorY)
         {
-            const int count = 26;
+            const int count = 16;
             float way = Random.value < 0.5f ? -1f : 1f;
             for (int i = 0; i < count; i++)
             {
@@ -322,13 +323,13 @@ namespace ChessFight.RagdollLab
                 var around = new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a)) * way;
                 // Kept within about 3 m (faster ones flew into the camera, R81).
                 Vector3 pos = pop + radial * 0.25f;
-                Vector3 vel = radial * Random.Range(2.5f, 4.5f) + around * Random.Range(1.5f, 3f) + Vector3.up * Random.Range(2.5f, 5f);
+                Vector3 vel = radial * Random.Range(3f, 5f) + around * Random.Range(1.5f, 3f) + Vector3.up * Random.Range(2.5f, 4.5f);
                 Quaternion rot = Random.rotation;
                 Vector3 tumble = Random.onUnitSphere * Random.Range(400f, 800f);
                 float size = ChessKing * ChessHeights[kind], last = 0f;
                 Add(new Puff(root, "Queen burst chess piece", chessMeshes[kind], matChess)
                 {
-                    life = Random.Range(1.1f, 1.5f),
+                    life = Random.Range(1.2f, 1.6f),
                     lump = 0f,
                     flow = 2f,
                     animate = (p, t) =>
@@ -350,7 +351,7 @@ namespace ChessFight.RagdollLab
                         p.at = pos;
                         p.rotation = rot;
                         p.scale = Vector3.one * size * Mathf.Lerp(1.3f, 1f, Mathf.Clamp01(p.Age / 0.1f));
-                        p.heat = Keys(p.Age, 0.05f, 0.8f, 0.4f, 0f);
+                        p.heat = Keys(p.Age, 0.03f, 0.7f, 0.25f, 0f);
                         p.rim = Hdr(FireGlow, 1.5f * Mathf.Clamp01(1f - p.Age / 0.5f));
                         p.dissolve = Keys(t, 0.72f, 0f, 1f, 1f);
                     },
@@ -430,14 +431,14 @@ namespace ChessFight.RagdollLab
 
             // The fireball: lumpy puffs bursting up and out, burning, cooling to charcoal smoke with fire in its creases
             // and hot edges, billowing up and out, eaten away from the edges in.
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 7; i++)
             {
                 Vector3 dir = i < 2 ? (Vector3.up + Random.insideUnitSphere * 0.3f).normalized : OnSphere(0.15f);
-                float reach = Random.Range(0.4f, 0.9f), size = Random.Range(0.6f, 0.95f), rise = Random.Range(0.6f, 0.95f);
+                float reach = Random.Range(0.4f, 0.8f), size = Random.Range(0.5f, 0.8f), rise = Random.Range(0.6f, 0.95f);
                 Vector3 from = pop + dir * 0.15f, to = pop + dir * reach + Vector3.up * Random.Range(0f, 0.3f);
                 Add(new Puff(root, "Queen fireball", meshPuff, matFire)
                 {
-                    life = Random.Range(0.85f, 1.05f),
+                    life = Random.Range(0.7f, 0.9f),
                     lump = Random.Range(0.32f, 0.45f),
                     flow = 1.6f,
                     rotation = Random.rotation,
@@ -448,13 +449,13 @@ namespace ChessFight.RagdollLab
                         p.scale = Vector3.one * size * Mathf.Lerp(0.3f, 1f, EaseOut(a / 0.25f)) * Mathf.Lerp(1f, 1.35f, t);
                         p.heat = Keys(a, 0.03f, 1.1f, 0.12f, 0.5f, 0.32f, 0.18f, 0.6f, 0f);
                         p.rim = Hdr(FireGlow, 1.6f * Sq(Mathf.Clamp01(1f - a / 0.75f)));
-                        p.dissolve = Keys(t, 0.3f, 0f, 1f, 1f);
+                        p.dissolve = Keys(t, 0.25f, 0f, 1f, 1f);
                     },
                 });
             }
 
             // A ring of dust rolling out over the floor to her outer radius, hot at its front for a moment.
-            const int ring = 20;
+            const int ring = 14;
             float turn = Random.Range(0f, 360f);
             for (int i = 0; i < ring; i++)
             {
