@@ -77,7 +77,8 @@ Shader "ChessFight/Skill Swoosh"
                 side = lerp(side, 1 - 2 * abs(across) / max(thick, 1e-3), _Symmetric);
                 float baa = max(fwidth(side), 1e-3);
                 float3 col = lerp(_Shade.rgb, _Mid.rgb, smoothstep(-0.4 - baa, -0.4 + baa, side));
-                col = lerp(col, _Lit.rgb, smoothstep(0.35 - baa, 0.35 + baa, side));
+                float litEdge = lerp(0.35, 0.5, _Symmetric);   // a narrower white-hot middle on lines
+                col = lerp(col, _Lit.rgb, smoothstep(litEdge - baa, litEdge + baa, side));
                 float ink = 1 - smoothstep(_Ink * thick - aa, _Ink * thick + aa, inside);
                 col = lerp(col, _InkColor.rgb, ink * step(1e-4, _Ink));
 

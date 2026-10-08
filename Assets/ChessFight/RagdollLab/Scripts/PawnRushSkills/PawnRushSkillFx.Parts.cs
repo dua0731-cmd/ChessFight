@@ -645,7 +645,7 @@ namespace ChessFight.RagdollLab
                             Vector3 p = o + dir * len * t + side * Random.Range(-0.12f, 0.12f) * len * Mathf.Sin(t * Mathf.PI) + jitter;
                             lr.SetPosition(k, p);
                         }
-                        lr.widthMultiplier = Random.Range(0.04f, 0.075f) * (0.4f + 0.6f * fade) * (toon ? 1.8f : 1f);
+                        lr.widthMultiplier = Random.Range(0.04f, 0.075f) * (0.4f + 0.6f * fade) * (toon ? 2.2f : 1f);
                     }
                 }
                 if (toon) block.SetFloat("_Fade", Mathf.Clamp01(fade * 2f));

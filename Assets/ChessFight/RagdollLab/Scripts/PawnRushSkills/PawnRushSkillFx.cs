@@ -465,7 +465,7 @@ namespace ChessFight.RagdollLab
                 {
                     float a = Random.Range(0f, Mathf.PI * 2f), reach = Random.Range(0.25f, 0.65f);
                     Vector3 at = chest + (side * Mathf.Cos(a) + over * Mathf.Sin(a)) * reach + heading * Random.Range(-0.2f, 0.5f);
-                    SpeedLine(at, -heading, Random.Range(0.8f, 1.9f), Random.Range(1f, 3f), Random.Range(0.06f, 0.11f), Random.Range(0.12f, 0.2f));
+                    SpeedLine(at, -heading, Random.Range(0.8f, 1.9f), Random.Range(1f, 3f), Random.Range(0.08f, 0.14f), Random.Range(0.12f, 0.2f));
                 }
                 // Crackling sparks off its body.
                 for (zap += dt * 70f; zap >= 1f; zap -= 1f)
@@ -754,7 +754,7 @@ namespace ChessFight.RagdollLab
             // The burst: puffs out over the floor to the landing's reach and a few up round the feet, swooshes
             // sweeping round, all eaten away.
             WindPuffs(g, Vector3.up, 14, 0.3f, radius * 0.95f, 0.2f, 0.5f, 0.7f, 0.7f);
-            WindPuffs(g + Vector3.up * 0.1f, Vector3.up, 5, 0.1f, 0.4f, 0.8f, 0.5f, 0.65f, 1f);
+            WindPuffs(g + Vector3.up * 0.1f, Vector3.up, 6, 0.1f, 0.4f, 1.1f, 0.6f, 0.65f, 1f);
             WindArc(g + Vector3.up * 0.05f, Vector3.up, 0.35f, radius * 1.05f, 0.34f, 300f, 0.5f);
             WindArc(g + Vector3.up * 0.08f, Vector3.up, 0.3f, radius * 0.8f, 0.26f, 280f, 0.46f, 0.05f);
             WindArc(g + Vector3.up * 0.5f, (Vector3.up + Flat(Random.onUnitSphere) * 0.45f).normalized, 0.45f, 0.9f, 0.22f, 260f, 0.4f, 0.03f);

@@ -32,8 +32,9 @@ namespace ChessFight.RagdollLab
         // The queen's smoke: charcoal, a little warm, so it reads on the white test floor and the cream squares alike
         // (a first try in warm browns looked like a lump of earth once the fire was out).
         static readonly Color SmokeLit = new Color(0.47f, 0.43f, 0.42f), SmokeMid = new Color(0.25f, 0.22f, 0.22f), SmokeShade = new Color(0.11f, 0.095f, 0.1f);
-        // The knight's wind: white, sky and a deep blue, inked in navy.
-        static readonly Color WindLit = new Color(1f, 1f, 1f), WindMid = new Color(0.55f, 0.78f, 1f), WindShade = new Color(0.12f, 0.36f, 0.95f);
+        // The knight's wind: near white, sky and a deep blue, inked in navy (bluer than a first try, which was lost on the
+        // white floor as white cotton).
+        static readonly Color WindLit = new Color(0.86f, 0.95f, 1f), WindMid = new Color(0.42f, 0.7f, 1f), WindShade = new Color(0.12f, 0.36f, 0.95f);
         static readonly Color WindInk = new Color(0.04f, 0.08f, 0.3f);
 
         void BuildToon()
@@ -66,10 +67,10 @@ namespace ChessFight.RagdollLab
             matWind.SetColor("_Lit", WindLit);
             matWind.SetColor("_Mid", WindMid);
             matWind.SetColor("_Shade", WindShade);
-            matWind.SetVector("_Bands", new Vector4(0.4f, 0.72f, 0.1f, 0f));
-            matWind.SetFloat("_Ink", 0.3f);
+            matWind.SetVector("_Bands", new Vector4(0.5f, 0.8f, 0.1f, 0f));
+            matWind.SetFloat("_Ink", 0.32f);
             matWind.SetColor("_InkColor", WindInk);
-            matWind.SetColor("_Bite", WindInk);
+            matWind.SetColor("_Bite", WindMid);   // fades out light: an inked bitten edge left scribbles behind
             matWind.SetFloat("_Scale", 1.9f);
 
             meshPuff = Icosphere(3);
@@ -278,7 +279,7 @@ namespace ChessFight.RagdollLab
                         p.at = c + radial * Mathf.Lerp(from, reach, k) + axis * up * k + drift * k;
                         float grow = Mathf.Lerp(0.25f, 1f, EaseOut(age / (l * 0.3f)));
                         p.scale = new Vector3(s, s * flat, s * 1.15f) * grow * (p.Age < delay ? 0f : 1f);
-                        p.dissolve = Keys(age / l, 0.3f, 0f, 1f, 1f);
+                        p.dissolve = Keys(age / l, 0.25f, 0f, 0.85f, 1f);
                     },
                 });
             }
@@ -695,7 +696,7 @@ namespace ChessFight.RagdollLab
             {
                 var dir = cone >= 180f ? Random.onUnitSphere : InCone(axis, cone);
                 SpeedLine(at + dir * Random.Range(0.05f, 0.25f), dir, Random.Range(lengthMin, lengthMax), Random.Range(3f, 7f),
-                    Random.Range(0.07f, 0.12f), life * Random.Range(0.8f, 1.25f));
+                    Random.Range(0.09f, 0.15f), life * Random.Range(0.8f, 1.25f));
             }
         }
 
@@ -766,7 +767,7 @@ namespace ChessFight.RagdollLab
                             float swing = (k == 0 || k == count - 1) ? 0.03f : Random.Range(0.08f, 0.24f);
                             lr.SetPosition(k, at + (Random.onUnitSphere + side * 0.5f).normalized * swing);
                         }
-                        lr.widthMultiplier = Random.Range(0.07f, 0.12f);
+                        lr.widthMultiplier = Random.Range(0.09f, 0.14f);
                         lr.enabled = true;
                     }
                 }
