@@ -46,6 +46,8 @@ namespace ChessFight.Game
         public event Action AddBot, RemoveBot, FillRoom, ClearRoomBots, RetrySteam;
         public event Action AddAllyDummy, RemoveAllyDummy, AddEnemyDummy, RemoveEnemyDummy;
         public event Action FriendsOpened, RefreshFriends, SteamOverlayInvite;
+        // My name top right was pressed: change it (R85, NameChange).
+        public event Action Rename;
         public event Action<ulong> JoinParty, JoinMatch, InviteFriend;
         public event Action<string> PickMode;
 
@@ -65,7 +67,7 @@ namespace ChessFight.Game
         Func<bool> chatBlocker;
 
         Label status, details, profile, version, toast, offlineText;
-        Button friendsOpen, retry, play, cancel, start, codeOpen, createTest, leaveParty, copyParty;
+        Button friendsOpen, profileOpen, retry, play, cancel, start, codeOpen, createTest, leaveParty, copyParty;
         Button botsLess, botsMore, fillRoom, clearRoomBots, modeOpen, joinParty, joinMatch;
         Label partyCount, partyCode, bots, botsNote, busyTitle, busySub;
         Label modeName, modeTagline, modeBadge, modeChange, modeHint;
@@ -117,6 +119,19 @@ namespace ChessFight.Game
             }
         }
         public bool FriendsOpen => Visible(friendsPanel);
+
+        // The centre of my name top right, as a fraction of the screen from the top
+        // left: the transition into the name screen closes there.
+        public Vector2 ProfileAt
+        {
+            get
+            {
+                if (profileOpen?.panel == null || root == null || root.worldBound.width <= 0) return new Vector2(.9f, .05f);
+                var c = profileOpen.worldBound.center;
+                var r = root.worldBound;
+                return new Vector2((c.x - r.x) / r.width, (c.y - r.y) / r.height);
+            }
+        }
 
         public void Build(VisualTreeAsset layout, ThemeStyleSheet theme, PanelSettings settings, Vector2Int referenceResolution)
         {
@@ -191,6 +206,7 @@ namespace ChessFight.Game
             Bind(root, "copy-match", () => CopyMatch?.Invoke());
 
             friendsOpen = Bind(root, "friends-open", () => { if (FriendsOpen) Close(friendsPanel); else OpenFriends(); });
+            profileOpen = Bind(root, "profile-open", () => Rename?.Invoke());
             Bind(root, "details-open", () => TogglePanel(detailsPanel));
             Bind(root, "details-close", () => Close(detailsPanel));
             codeOpen = Bind(root, "code-open", () => Open(codeModal));
@@ -434,9 +450,11 @@ namespace ChessFight.Game
             if (matchLive != null && Visible(matchPanel))
                 matchLive.style.opacity = .25f + .75f * (.5f + .5f * Mathf.Cos(Time.unscaledTime * Mathf.PI * 2f));
             // While the chat is open its keys are its own: Enter sends a line, it
-            // does not start a game.
-            if (!ChatBox.KeysHeld) Shortcuts();
-            FallbackClick();
+            // does not start a game. So are the name screen's (R85: Enter there
+            // changes the name) and nothing here moves under a transition.
+            bool covered = NameScreen.Showing || SceneTransition.Busy;
+            if (!ChatBox.KeysHeld && !covered) Shortcuts();
+            FallbackClick(covered);
         }
 
         void LateUpdate() => PlaceLineup();
@@ -478,8 +496,10 @@ namespace ChessFight.Game
         // the mouse directly. This is a safety net, not the intended path: it
         // switches itself off the moment a genuine event arrives, and it cannot
         // help with typing, which is what the paste button is for.
-        void FallbackClick()
+        void FallbackClick(bool covered)
         {
+            // A click on the name screen or the transition is not the lobby's.
+            if (covered) { pressedAt = -1; return; }
             if (pointerSeen || fallbackDead || SettingsWindow.IsOpen) return;
             bool pressed;
             Vector2 screen;

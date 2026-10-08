@@ -91,6 +91,13 @@ namespace ChessFight.Game
                 else hud.ShowToast("지금은 초대할 수 없습니다.", true);
             };
             hud.SteamOverlayInvite += () => session.Invite();
+            // My name top right (R85): the name screen over the lobby, then back.
+            hud.Rename += () =>
+            {
+                if (NameScreen.Showing || SceneTransition.Busy) return;
+                if (Matching) { hud.ShowToast("매칭 중에는 이름을 바꿀 수 없어요", true); return; }
+                NameChange.Begin(hud.ProfileAt, () => stage != null ? stage.SelfOnScreen() : new Vector2(.5f, .62f), "로비");
+            };
             hud.CopyParty += () => Copy(session.Party, "파티 코드를 복사했어요");
             hud.CopyMatch += () => Copy(session.Match, "방 번호를 복사했어요");
             hud.AddBot += () => session.SetPartyBots(session.PartyBots + 1);
@@ -119,9 +126,15 @@ namespace ChessFight.Game
             hud.ShowToast(notice);
         }
 
+        // Searching, following the leader, or in a match room: the lobby is about to
+        // be covered or left, so the name stays as it is.
+        bool Matching => session.Busy || session.Match != 0;
+
         void Update()
         {
             float now = Time.unscaledTime;
+            // A party leader may start a search while this member changes the name.
+            if (NameChange.Showing && Matching) NameChange.Abort();
             PollFriends(now);
             if (now < refreshAt) return;
             refreshAt = now + RefreshSeconds;
@@ -175,7 +188,7 @@ namespace ChessFight.Game
             lineup.Clear();
             if (!session.Online || session.Party == 0)
             {
-                lineup.Add(new LineupEntry { Id = session.Self, Name = session.Online ? session.Name(session.Self) : "나", Tag = session.Online ? "파티 준비 중" : "오프라인", Me = true });
+                lineup.Add(new LineupEntry { Id = session.Self, Name = session.Online ? session.Name(session.Self) : OfflineName("나"), Tag = session.Online ? "파티 준비 중" : "오프라인", Me = true });
                 return;
             }
             ulong leader = session.PartyLeader;
@@ -231,7 +244,7 @@ namespace ChessFight.Game
             {
                 Online = session.Online,
                 CanRetry = !session.Online,
-                PlayerName = session.Online ? session.Name(session.Self) : "오프라인",
+                PlayerName = session.Online ? session.Name(session.Self) : OfflineName("오프라인"),
                 Status = session.Online ? session.Status : (string.IsNullOrEmpty(session.Error) ? session.Status : session.Error),
                 Details = $"Steam: {(session.Online ? "연결됨" : "연결 안 됨 - Steam 실행 후 다시 연결")}\n" +
                           Line(motion?.ConnectionStatus) + Line(motion?.QualityLine) +
@@ -332,6 +345,9 @@ namespace ChessFight.Game
         }
 
         static string Line(string text) => string.IsNullOrEmpty(text) ? "" : text + "\n";
+
+        // Offline there is no Steam name, but the chosen one still shows (R85).
+        static string OfflineName(string otherwise) => PlayerProfile.HasName ? PlayerProfile.Name : otherwise;
 
         void OnDestroy()
         {

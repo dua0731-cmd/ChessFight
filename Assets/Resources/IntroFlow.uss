@@ -58,6 +58,15 @@
 .name-start { margin-top: 34px; height: 62px; justify-content: center; align-items: center; }
 .name-start-text { font-size: 18px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(36, 23, 13); }
 .name-start-arrow { width: 20px; height: 20px; margin-left: 12px; }
+/* "돌아가기" under the start button, only when changing the name (R85); the
+   same thin frame as "추천 이름". */
+.name-back { display: none; align-self: flex-start; height: 40px; margin: 16px 0 0 0; padding: 0 16px 0 12px; align-items: center;
+             border-width: 1px; border-radius: 0; border-color: rgba(217, 174, 98, 0.12); background-color: rgba(255, 240, 220, 0.002); }
+.name-back:hover { border-color: rgba(217, 174, 98, 0.46); background-color: rgba(255, 240, 220, 0.006); }
+.name-back:active { background-color: rgba(255, 240, 220, 0.013); }
+.name-renaming .name-back { display: flex; }
+.name-back-arrow { width: 16px; height: 16px; margin-right: 8px; }
+.name-back-text { font-size: 14px; -unity-font-style: bold; color: rgb(227, 211, 184); white-space: nowrap; }
 .name-keys { position: absolute; left: 88px; bottom: 32px; align-items: center; }
 .name-key { margin-right: 7px; padding: 3px 7px; font-size: 11px; -unity-font-style: bold; color: rgb(227, 211, 184);
             border-width: 1px; border-color: rgba(217, 174, 98, 0.1); }

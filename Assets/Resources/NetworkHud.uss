@@ -423,7 +423,17 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .intro-subs { margin-top: 14px; padding: 12px 18px 8px 16px; border-left-width: 3px; border-color: rgb(217, 174, 98);
               background-color: rgba(52, 33, 19, 0.88); -unity-background-scale-mode: scale-and-crop; }
 .intro-sub { font-size: 16px; -unity-font-style: bold; color: rgb(246, 236, 223); margin-bottom: 6px; }
-.intro-press { position: absolute; left: 64px; top: 584px; padding: 9px 18px 13px 10px; }
+.intro-actions { position: absolute; left: 64px; top: 584px; align-items: center; }
+.intro-press { padding: 9px 18px 13px 10px; }
+/* "이름 바꾸기" beside the start plate (R85): a walnut plate like the Steam chip. */
+.intro-rename { height: 40px; margin: 0 0 4px 14px; padding: 0 16px 0 13px; align-items: center;
+                border-width: 1px; border-color: rgba(217, 174, 98, 0.45); background-color: rgba(52, 33, 19, 0.95);
+                -unity-background-scale-mode: scale-and-crop;
+                transition-property: scale, border-color; transition-duration: 0.12s; }
+.intro-rename:hover { border-color: rgb(255, 214, 120); }
+.intro-rename:active { scale: 0.96 0.96; }
+.intro-rename-crown { width: 16px; height: 12px; margin-right: 8px; flex-shrink: 0; }
+.intro-rename-text { font-size: 15px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
 .intro-key { width: 30px; height: 30px; margin-right: 12px; border-radius: 6px; font-size: 12px; -unity-font-style: bold;
              -unity-text-align: middle-center; color: rgb(52, 33, 19); background-color: rgb(255, 201, 61); }
 .intro-hint { font-size: 18px; -unity-font-style: bold; color: rgb(255, 248, 236); }

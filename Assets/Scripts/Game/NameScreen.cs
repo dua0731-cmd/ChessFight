@@ -12,12 +12,20 @@ namespace ChessFight.Game
     // suggested name over the field, taken with a click. A name that may not be
     // used shows why in place of the count (PlayerNames). Enter or the ivory
     // button confirms; the title screen's controller then runs the transition.
+    // Built `renaming` (R85: the title screen's "이름 바꾸기" or the lobby's
+    // own-name button, through NameChange) it says "이름 바꾸기", shows the
+    // current name, and "돌아가기" or Esc leaves it as it was (Cancelled).
     //
     // Clicks are read from the mouse (like the title's start plate), so the screen
     // also works where UI Toolkit pointer events do not arrive.
     [DisallowMultipleComponent]
     public sealed class NameScreen : MonoBehaviour
     {
+        // While one is up, the lobby's shortcuts and the chat stand down (its
+        // field has the keys) and the chat box is hidden.
+        public static bool Showing => current != null;
+        static NameScreen current;
+
         // Over the title's HUD (0), under the chat (50) and the settings window (200).
         const float SortingOrder = 20f;
         const int ImeWaitFrames = 30;
@@ -35,21 +43,24 @@ namespace ChessFight.Game
         // the transition closes its king-shaped hole there.
         public Vector2 PawnAt => Fraction(pawnBox, new Vector2(250f, 270f));
         public event Action<string> Confirmed;
+        // "돌아가기" or Esc while renaming: the name stays as it was.
+        public event Action Cancelled;
 
         PanelSettings ownedPanel;
-        VisualElement root, fieldBox, bubble, startButton, startArrow, suggestButton, pawnBox, dice;
+        VisualElement root, fieldBox, bubble, startButton, startArrow, suggestButton, pawnBox, dice, backButton;
         TextField field;
         Label placeholder, counter, bubbleText, startText;
         GlassPawn pawn;
         readonly System.Random random = new System.Random();
         string suggestion = "";
-        bool confirming, fromSuggestion;
+        bool renaming, confirming, leaving, fromSuggestion;
         float confirmAt = -1, diceTurn, diceShown, bubbleShownAt = -10;
         int submitFrame = -1, builtFrame;
         VisualElement pressedOn;
 
-        public void Build(string prefill)
+        public void Build(string prefill, bool renaming = false)
         {
+            this.renaming = renaming;
             root = RuntimePanels.Create(gameObject, Resources.Load<VisualTreeAsset>("NameHud"),
                                         Resources.Load<ThemeStyleSheet>("NetworkTheme"), null,
                                         new Vector2Int(1280, 720), out ownedPanel);
@@ -68,14 +79,21 @@ namespace ChessFight.Game
             startText = root.Q<Label>("name-start-text");
             startArrow = root.Q<VisualElement>("name-start-arrow");
             pawnBox = root.Q<VisualElement>("name-pawn");
-            if (fieldBox == null || field == null || counter == null || suggestButton == null || bubble == null || startButton == null || pawnBox == null)
+            backButton = root.Q<VisualElement>("name-back");
+            if (fieldBox == null || field == null || counter == null || suggestButton == null || bubble == null || startButton == null || pawnBox == null || backButton == null)
             { Debug.LogError("[ChessFight] NameHud.uxml의 이름이 NameScreen과 맞지 않습니다."); root = null; return; }
+            current = this;
 
             var backdrop = root.Q<VisualElement>("name-backdrop");
             var picture = StreamingArt.Picture(StreamingArt.NameBackdrop);
             if (backdrop != null && picture != null) backdrop.style.backgroundImage = new StyleBackground(picture);
+            root.Q<VisualElement>("name-screen")?.EnableInClassList("name-renaming", renaming);
+            string now = PlayerNames.Tidy(prefill ?? "");
+            SetText("name-kicker-note", renaming ? (now != "" ? "지금 이름 · " + now : "") : "나중에 언제든 바꿀 수 있어요");
+            SetText("name-key-enter", renaming ? "바꾸기" : "시작");
+            SetText("name-key-esc", renaming ? "돌아가기" : "설정");
             var title = root.Q<VisualElement>("name-title");
-            title?.Add(SilverText("이름을 정해 주세요", 52f, 560f, 62f));
+            title?.Add(SilverText(renaming ? "이름 바꾸기" : "이름을 정해 주세요", 52f, 560f, 62f));
             var rule = root.Q<VisualElement>("name-rule-silver");
             if (rule != null) rule.style.backgroundImage = new StyleBackground(MenuArt.Line(new Color(.863f, .886f, .91f, 1f), new Color(.863f, .886f, .91f, 0f)));
 
@@ -83,10 +101,13 @@ namespace ChessFight.Game
             pawnBox.Add(pawn);
             dice.generateVisualContent += PaintDice;
             startArrow.generateVisualContent += PaintArrow;
+            var backArrow = root.Q<VisualElement>("name-back-arrow");
+            if (backArrow != null) backArrow.generateVisualContent += PaintBackArrow;
             ChunkyButtons.Make(startButton);
             ChunkyButtons.Springy(suggestButton);
             ChunkyButtons.Springy(bubble);
-            foreach (var b in new[] { startButton, suggestButton }) b.focusable = false;
+            ChunkyButtons.Springy(backButton);
+            foreach (var b in new[] { startButton, suggestButton, backButton }) b.focusable = false;
 
             field.maxLength = PlayerNames.MaxLength;
             field.selectAllOnFocus = false;
@@ -126,7 +147,7 @@ namespace ChessFight.Game
                 Refresh();
                 return;
             }
-            bool blocked = SettingsWindow.IsOpen || SceneTransition.Busy;
+            bool blocked = SettingsWindow.IsOpen || SceneTransition.Busy || confirming || leaving;
             if (blocked)
             {
                 if (Typing && field.focusController?.focusedElement is Focusable focused) focused.Blur();
@@ -135,6 +156,7 @@ namespace ChessFight.Game
                 Refresh();
                 return;
             }
+            if (renaming && LegacyKeys.Down(KeyCode.Escape)) { Back(); Refresh(); return; }
 
             if (submitFrame >= 0 && Time.frameCount > submitFrame && (Composition() == "" || Time.frameCount > submitFrame + ImeWaitFrames))
             {
@@ -163,6 +185,7 @@ namespace ChessFight.Game
             if (Shown(bubble) && bubble.worldBound.Contains(point)) hit = bubble;
             else if (suggestButton.worldBound.Contains(point)) hit = suggestButton;
             else if (startButton.worldBound.Contains(point)) hit = startButton;
+            else if (renaming && backButton.worldBound.Contains(point)) hit = backButton;
             if (down) { pressedOn = hit; return; }
             var pressed = pressedOn;
             pressedOn = null;
@@ -170,6 +193,7 @@ namespace ChessFight.Game
             if (hit == bubble) TakeSuggestion();
             else if (hit == suggestButton) Suggest();
             else if (hit == startButton) Confirm(false);
+            else if (hit == backButton) Back();
         }
 
         void Suggest()
@@ -191,9 +215,18 @@ namespace ChessFight.Game
             field.SelectRange(suggestion.Length, suggestion.Length);
         }
 
+        // Renaming only: leaves without a change.
+        void Back()
+        {
+            if (!renaming || confirming || leaving) return;
+            leaving = true;
+            ShowBubble(false);
+            Cancelled?.Invoke();
+        }
+
         void Confirm(bool byKey)
         {
-            if (confirming) return;
+            if (confirming || leaving) return;
             var verdict = PlayerNames.Check(field.value, false);
             if (!verdict.Ok) return;
             confirming = true;
@@ -227,7 +260,9 @@ namespace ChessFight.Game
             bool ok = verdict.Ok || confirming;
             startButton.SetEnabled(ok);
             startButton.style.opacity = ok ? 1f : .45f;
-            if (startText != null) startText.text = confirming ? "좋아요! 로비로 가는 중" : "이 이름으로 시작";
+            if (startText != null)
+                startText.text = renaming ? (confirming ? "바꿨어요! 로비로 돌아가는 중" : "이 이름으로 바꾸기")
+                                          : (confirming ? "좋아요! 로비로 가는 중" : "이 이름으로 시작");
             if (startArrow != null) startArrow.style.display = confirming ? DisplayStyle.None : DisplayStyle.Flex;
 
             // The suggestion pops in.
@@ -315,7 +350,26 @@ namespace ChessFight.Game
             p.BeginPath(); p.MoveTo(new Vector2(13, 6) * s); p.LineTo(new Vector2(19, 12) * s); p.LineTo(new Vector2(13, 18) * s); p.Stroke();
         }
 
+        // The start arrow turned round, in the light text colour of "돌아가기".
+        static void PaintBackArrow(MeshGenerationContext context)
+        {
+            var p = context.painter2D;
+            float s = 16f / 24f;
+            p.strokeColor = new Color(227 / 255f, 211 / 255f, 184 / 255f);
+            p.lineWidth = 2.2f * s;
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            p.BeginPath(); p.MoveTo(new Vector2(19, 12) * s); p.LineTo(new Vector2(5, 12) * s); p.Stroke();
+            p.BeginPath(); p.MoveTo(new Vector2(11, 6) * s); p.LineTo(new Vector2(5, 12) * s); p.LineTo(new Vector2(11, 18) * s); p.Stroke();
+        }
+
         // ---------- helpers ----------
+
+        void SetText(string name, string text)
+        {
+            var label = root?.Q<Label>(name);
+            if (label != null) label.text = text;
+        }
 
         bool Typing
         {
@@ -367,6 +421,7 @@ namespace ChessFight.Game
 
         void OnDestroy()
         {
+            if (current == this) current = null;
             if (ownedPanel != null) Destroy(ownedPanel);
         }
     }

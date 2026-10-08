@@ -31,10 +31,11 @@
             <ui:VisualElement class="grow" picking-mode="Ignore" />
             <ui:Button name="friends-open" text="친구" class="a-btn a-top" />
             <ui:Button name="details-open" text="정보" class="a-btn a-top" />
-            <ui:VisualElement class="a-btn a-top a-profile" picking-mode="Ignore">
+            <!-- My name; pressing it changes the name (R85, NameChange). -->
+            <ui:Button name="profile-open" class="a-btn a-top a-profile">
                 <ui:VisualElement name="profile-crown" class="a-crown" picking-mode="Ignore" />
                 <ui:Label name="profile" text="—" class="a-btn-text" picking-mode="Ignore" />
-            </ui:VisualElement>
+            </ui:Button>
         </ui:VisualElement>
 
         <!-- Top centre: short notices, the offline banner and the matchmaking panel. -->

@@ -13,20 +13,17 @@ namespace ChessFight.Game
     // here at run time so the scene file stays untouched.
     //
     // R84: the opening logo plays over it once per run of the game; the first
-    // time (no name saved yet, or Shift held on the plate) the plate leads to the
-    // name screen, and from there, or straight from the plate, the scene
-    // transition (the board closing through a king, opening through a knight)
-    // carries the player to the lobby.
+    // time (no name saved yet) the plate leads to the name screen, and from
+    // there, or straight from the plate, the scene transition (the board closing
+    // through a king, opening through a knight) carries the player to the lobby.
+    // R85: "이름 바꾸기" beside the plate opens the name screen at any time
+    // (NameChange) and comes back here.
     [DisallowMultipleComponent]
     public sealed class IntroController : MonoBehaviour
     {
         const float MinimumShow = 1f;
         // The start plate's release plays before the transition starts.
         const float LeaveDelay = .3f;
-        // The lobby's own player stands here (feet on the board); the knight-shaped
-        // hole opens a little above the feet.
-        const float KnightHoleHeight = .95f;
-
         static readonly Color Ready = new Color(.36f, .89f, .54f);
         static readonly Color Waiting = new Color(1f, .78f, .31f);
         static readonly Color Failed = new Color(1f, .47f, .39f);
@@ -34,10 +31,10 @@ namespace ChessFight.Game
         PanelSettings ownedPanel;
         Texture2D shade;
         Label status;
-        VisualElement root, press, chip, dot;
+        VisualElement root, press, rename, chip, dot;
         NameScreen nameScreen;
         float shownAt, leaveAt = -1;
-        bool armed, renaming, logoDone, left;
+        bool armed, logoDone, left;
 
         void Awake()
         {
@@ -48,6 +45,7 @@ namespace ChessFight.Game
                                         new Vector2Int(1280, 720), out ownedPanel);
             status = root?.Q<Label>("intro-status");
             press = root?.Q<VisualElement>("intro-press");
+            rename = root?.Q<VisualElement>("intro-rename");
             chip = root?.Q<VisualElement>("intro-chip");
             dot = root?.Q<VisualElement>("intro-dot");
             var shadeElement = root?.Q<VisualElement>("intro-shade");
@@ -61,6 +59,8 @@ namespace ChessFight.Game
             var subs = root?.Q<VisualElement>("intro-subs");
             if (subs != null) subs.style.backgroundImage = walnut;
             if (chip != null) chip.style.backgroundImage = walnut;
+            if (rename != null) rename.style.backgroundImage = walnut;
+            root?.Q("intro-rename-crown")?.Add(new MenuMarks.CrownMark(PieceFigure.Hex(0xE2B866), Color.clear, 0f));
             if (press != null) ChunkyButtons.Make(press);
             shownAt = Time.unscaledTime;
             // The opening logo, once per run; the title counts its minimum time
@@ -79,9 +79,10 @@ namespace ChessFight.Game
 
             bool ready = logoDone && Time.unscaledTime - shownAt >= MinimumShow;
             if (press != null) press.style.opacity = ready ? 1f : .55f;
-            // Nothing here takes input under the logo or the transition, or once the
-            // player has moved on.
-            if (!logoDone || SceneTransition.Busy || left) { armed = false; return; }
+            if (rename != null) rename.style.opacity = ready ? 1f : .55f;
+            // Nothing here takes input under the logo, the transition or the name
+            // screen opened by "이름 바꾸기", or once the player has moved on.
+            if (!logoDone || SceneTransition.Busy || NameChange.Showing || left) { armed = false; return; }
             if (LegacyKeys.Down(KeyCode.Escape)) SettingsWindow.Toggle();
             if (nameScreen != null) return;
 
@@ -93,10 +94,14 @@ namespace ChessFight.Game
             // A press that started under the logo must not start the game when it is let go.
             if (MouseDown()) armed = true;
             // A failed Steam start still continues: the lobby has the retry button.
-            if (ready && armed && !SettingsWindow.IsOpen && Released(press))
+            if (ready && armed && !SettingsWindow.IsOpen)
             {
-                leaveAt = Time.unscaledTime;
-                renaming = ShiftHeld();
+                if (Released(press)) leaveAt = Time.unscaledTime;
+                else if (Released(rename))
+                {
+                    armed = false;
+                    NameChange.Begin(Fraction(rename), () => Fraction(rename), "시작 화면");
+                }
             }
         }
 
@@ -105,7 +110,7 @@ namespace ChessFight.Game
         {
             leaveAt = -1;
             var from = Fraction(press);
-            if (PlayerProfile.HasName && !renaming) { GoToLobby(from); return; }
+            if (PlayerProfile.HasName) { GoToLobby(from); return; }
             SceneTransition.Run("이름 설정", from, ShowNameScreen, () => nameScreen != null && nameScreen.Ready,
                                 () => nameScreen != null ? nameScreen.PawnAt : new Vector2(.5f, .5f));
         }
@@ -122,8 +127,8 @@ namespace ChessFight.Game
             };
         }
 
-        // The saved name when there is one (renaming), else the Steam name if it is
-        // a name the screen would take.
+        // The first time there is no saved name yet: the Steam name, if it is a
+        // name the screen would take.
         static string Prefill()
         {
             if (PlayerProfile.HasName) return PlayerProfile.Name;
@@ -160,11 +165,7 @@ namespace ChessFight.Game
         static Vector2 LobbyPlayerAt()
         {
             var stage = UnityEngine.Object.FindAnyObjectByType<LobbyStage>();
-            var view = stage != null ? stage.View : null;
-            if (view == null || Screen.width <= 0 || Screen.height <= 0) return new Vector2(.5f, .62f);
-            var at = view.WorldToScreenPoint(LobbyStage.SpotPosition(0) + Vector3.up * KnightHoleHeight);
-            if (at.z <= 0) return new Vector2(.5f, .62f);
-            return new Vector2(at.x / Screen.width, 1f - at.y / Screen.height);
+            return stage != null ? stage.SelfOnScreen() : new Vector2(.5f, .62f);
         }
 
         // An element's centre as a fraction of the screen (0..1 from the top left).
@@ -195,12 +196,6 @@ namespace ChessFight.Game
         static bool MouseDown()
         {
             try { return Input.GetMouseButtonDown(0); }
-            catch (InvalidOperationException) { return false; }
-        }
-
-        static bool ShiftHeld()
-        {
-            try { return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift); }
             catch (InvalidOperationException) { return false; }
         }
 
