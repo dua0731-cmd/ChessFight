@@ -206,17 +206,23 @@ namespace ChessFight.RagdollLab
             Vector3 floor = FloorUnder(q);
             // Over her head, where her body cannot hide it from any side (at her chest it was lost in her).
             Vector3 Heart() => q != null ? HeadOf(q) + Vector3.up * 0.55f : floor + Vector3.up * 2f;
+            // How far into her charge she is, in game time, 1 once it is over. The effects' own clock runs on through
+            // slow motion (and a hit stop): timed by it, the gathering ran ahead of a slowed charge and left it empty
+            // (R88, seen frame by frame in the slowed film).
+            bool Charging() => QueenCharging(q);
+            float Charge() => Charging() ? Mathf.Clamp01(q.SkillStageTime / windup) : 1f;
             // The ball of fire: small and boiling, growing faster towards the end, then dropping into her chest.
             Add(new Puff(root, "Queen gathering fire", meshPuff, matFire)
             {
-                life = windup + 0.03f,
+                life = 10f,
                 lump = 0.42f,
                 flow = 6f,
                 heat = 0.62f,
                 rim = Hdr(FireGlow, 1.6f),
                 animate = (p, t) =>
                 {
-                    float k = Mathf.Clamp01(p.Age / windup);
+                    if (!Charging()) { p.life = p.Age; p.scale = Vector3.zero; return; }
+                    float k = Charge();
                     float drop = Smooth01((k - 0.8f) / 0.2f);
                     p.at = Vector3.Lerp(Heart(), q != null ? ChestOf(q) : floor + Vector3.up, drop * drop);
                     p.scale = Vector3.one * Mathf.Lerp(0.2f, 0.72f, EaseOut(k * 1.2f)) * Mathf.Lerp(1f, 0.6f, drop) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
@@ -225,70 +231,82 @@ namespace ChessFight.RagdollLab
             // A faint glow round it (brighter, it whitened the ball away).
             Add(new Shape(root, "Queen gathering glow", meshQuad, matHalo)
             {
-                life = windup + 0.03f,
+                life = 10f,
                 billboard = true,
                 color = Hdr(Gold, 1.1f),
                 paint = 0.2f,
                 animate = (s, t) =>
                 {
-                    float k = Mathf.Clamp01(s.Age / windup);
+                    if (!Charging()) { s.life = s.Age; s.bright = 0f; return; }
+                    float k = Charge();
                     s.at = Heart();
                     s.scale = Vector3.one * (0.3f + 1.1f * k * k);
                     s.bright = (0.3f + 0.5f * k) * (1f - Smooth01((k - 0.8f) / 0.2f));
                 },
             });
-            GatherChess(q, floor, windup, Heart);
+            GatherChess(Charging, Charge, () => q != null ? Flat(q.Hips.position) + Vector3.up * floor.y : floor, Heart);
             // Lines of light sucked in from all round, arriving as she lets go: crisp lines (as particles they were
             // specks), hot gold ones and deeper orange ones that show on a white floor. Fewer since the chess pieces
             // carry the swirl (R88).
             float due = 0f;
             anims.Add(new Ongoing((age, dt) =>
             {
-                if (!QueenCharging(q) || age > windup - 0.04f) return false;
+                if (!Charging() || Charge() > 0.88f) return false;
                 for (due += dt * 25f; due >= 1f; due -= 1f)
                 {
                     var dir = Random.onUnitSphere;
                     dir.y *= 0.6f;
-                    float arrive = Mathf.Clamp(windup - age, 0.06f, Random.Range(0.14f, 0.22f));
+                    float arrive = Mathf.Clamp((1f - Charge()) * windup, 0.06f, Random.Range(0.14f, 0.22f));
                     bool hot = Random.value < 0.5f;
                     InwardLine(Heart, dir.normalized * Random.Range(1.2f, 2f), arrive, hot ? 0.06f : 0.09f, hot ? Hdr(Gold, 2.6f) : Hdr(GoldDeep, 1.3f), hot ? 0.3f : 0.85f);
                 }
                 return true;
             }));
             if (queenCracks.TryGetValue(q, out var old)) old.life = 0f;
-            queenCracks[q] = QueenCracks(floor, windup);
+            queenCracks[q] = QueenCracks(floor, Charge, Charging);
         }
 
         /// <summary>
         /// The queen's chess pieces gathering (R88): twelve of the six kinds pop up standing on the floor round her (a
         /// quick overshoot) and swirl in, standing and spinning like tops, closer and faster (R81's "회전하면서"), up into <paramref name="heart"/>,
         /// shrinking and heating up as they come (fire glowing in their creases, a hot edge), each gone in a spark as it
-        /// arrives; a short gold trail behind each shows the swirl.
+        /// arrives; a short gold trail behind each shows the swirl. Timed by <paramref name="charge"/> (her charge, 0..1
+        /// in game time), gone if the charge is called off.
         /// </summary>
-        void GatherChess(RagdollPawn q, Vector3 floor, float windup, Func<Vector3> heart)
+        void GatherChess(Func<bool> charging, Func<float> charge, Func<Vector3> feet, Func<Vector3> heart)
         {
             const int count = 12;
             float way = Random.value < 0.5f ? -1f : 1f;
-            Vector3 middle = floor;
             for (int i = 0; i < count; i++)
             {
                 int kind = i % chessMeshes.Length;
                 float a0 = i * Mathf.PI * 2f / count + Random.Range(-0.12f, 0.12f);
                 float r0 = Random.Range(1.8f, 2.4f);
-                float arrive = windup * Random.Range(0.8f, 0.95f), size = ChessKing * ChessHeights[kind];
+                // The share of the charge by which it has arrived.
+                float arrive = Random.Range(0.8f, 0.95f), size = ChessKing * ChessHeights[kind];
                 float yaw0 = Random.Range(0f, 360f), spin = Random.Range(700f, 1000f) * way;
                 bool sparked = false;
                 var piece = Add(new Puff(root, "Queen gathering chess piece", chessMeshes[kind], matChess)
                 {
-                    life = arrive,
+                    life = 10f,
                     lump = 0f,
                     flow = 2f,
                     animate = (p, t) =>
                     {
-                        float k = t, age = p.Age;
-                        if (q != null) middle = Flat(q.Hips.position) + Vector3.up * floor.y;
+                        float k = Mathf.Clamp01(charge() / arrive), age = p.Age;
+                        if (k >= 1f || !charging())
+                        {
+                            if (k >= 1f && !sparked)
+                            {
+                                sparked = true;
+                                SparkBurst(heart(), 4, Gold, Vector3.up, 180f, 1f, 3f, 0.2f, 0.04f);
+                            }
+                            p.life = p.Age;
+                            p.scale = Vector3.zero;
+                            return;
+                        }
                         // From standing on the floor round her (pieces on a board) up into the fire.
-                        Vector3 center = Vector3.Lerp(middle + Vector3.up * (size * 0.5f + 0.02f), heart(), k * k);
+                        Vector3 center = Vector3.Lerp(feet() + Vector3.up * (size * 0.5f + 0.02f), heart(), k * k);
                         float a = a0 + way * 1.1f * Mathf.PI * 2f * Mathf.Pow(k, 1.4f), r = r0 * (1f - k * k);
                         p.at = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
                         p.rotation = Quaternion.Euler(0f, yaw0 + spin * (age + age * age * 2f), 0f) * Quaternion.Euler(8f * Mathf.Sin(age * 20f), 0f, 0f);
@@ -296,11 +314,6 @@ namespace ChessFight.RagdollLab
                         p.scale = Vector3.one * size * Mathf.Clamp01(age / 0.04f) * pop * Mathf.Lerp(1f, 0.55f, k * k);
                         p.heat = Keys(k, 0.45f, 0f, 1f, 0.75f);
                         p.rim = Hdr(FireGlow, 1.4f * k * k);
-                        if (k > 0.96f && !sparked)
-                        {
-                            sparked = true;
-                            SparkBurst(heart(), 4, Gold, Vector3.up, 180f, 1f, 3f, 0.2f, 0.04f);
-                        }
                     },
                 });
                 anims.Add(new Streak(root, matTrail, Hdr(Gold, 1.3f), 0.1f, 0.12f, () => piece.Alive ? piece.at : (Vector3?)null) { paint = 0.7f, delay = 0.03f });
@@ -359,19 +372,21 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>The queen's cracks: creeping out dimly while she charges (fading if the charge is called off), then,
-        /// once blasted, running right out hot, cooling to scorch lines and fading.</summary>
-        Crack QueenCracks(Vector3 floor, float windup)
+        /// <summary>The queen's cracks: creeping out dimly as her charge goes on (<paramref name="charge"/>, 0..1; fading
+        /// if it ends with no blast), then, once blasted, running right out hot, cooling to scorch lines and fading.</summary>
+        Crack QueenCracks(Vector3 floor, Func<float> charge, Func<bool> charging)
         {
             var crack = new Crack(root, meshQuad, matCrack) { at = floor, radius = 2.4f, life = 10f, paint = 0.3f };
+            float endedAt = -1f;
             crack.animate = (c, t) =>
             {
                 if (c.BlastAt < 0f)
                 {
-                    float k = Mathf.Clamp01(c.Age / windup);
+                    float k = charge();
                     c.reveal = 0.3f * k * k;
                     c.hot = Hdr(Gold, 1f + 0.6f * k);
-                    if (c.Age > windup + 0.25f) c.fade = Mathf.Clamp01(1f - (c.Age - windup - 0.25f) / 0.2f);
+                    if (endedAt < 0f && !charging()) endedAt = c.Age;
+                    if (endedAt >= 0f && c.Age - endedAt > 0.25f) c.fade = Mathf.Clamp01(1f - (c.Age - endedAt - 0.25f) / 0.2f);
                     if (c.fade <= 0f) c.life = c.Age;
                     return;
                 }
@@ -393,7 +408,7 @@ namespace ChessFight.RagdollLab
             Vector3 pop = c + Vector3.up * 0.9f;
 
             // The cracks under her run right out (from now, if her charge was not seen).
-            if (e.by == null || !queenCracks.TryGetValue(e.by, out var crack) || crack.Gone) crack = QueenCracks(c, 0.01f);
+            if (e.by == null || !queenCracks.TryGetValue(e.by, out var crack) || crack.Gone) crack = QueenCracks(c, () => 1f, () => false);
             if (e.by != null) queenCracks.Remove(e.by);
             crack.Blast();
             Add(new Shape(root, "Queen scorch", meshQuad, matScorch)
