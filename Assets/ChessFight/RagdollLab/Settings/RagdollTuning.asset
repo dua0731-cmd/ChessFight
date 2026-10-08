@@ -26,11 +26,11 @@ MonoBehaviour:
     getUpDelay: 0.7
     getUpBlendTime: 0.22
     momentumRetention: 1
-    moveSpeed: 5.5
-    sprintSpeed: 9.6
-    acceleration: 30
+    moveSpeed: 4
+    sprintSpeed: 5.6
+    acceleration: 22
     turnResponsiveness: 8
-    jumpImpulse: 4.5
+    jumpImpulse: 4.2
     airControl: 0.25
     launchSteer: 0
     lowerBodyDynamicShare: 0.6
@@ -83,7 +83,7 @@ MonoBehaviour:
     accelLean: 0.6
     turnLean: 10
     landingDip: 0.06
-    stopDeceleration: 40
+    stopDeceleration: 29
     turnRateTopSpeed: 260
     stepLength: 0.22
     boundGait: 0

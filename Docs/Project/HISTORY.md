@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋) | 10-08 | R68 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R68, HANDOFF |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
 | (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |
 | `9e4966f` (`main`, 원본 `f476968` `JY-ragdoll_v2`) | 10-06 | R66 | 나이트 L자 도약·밟기(`RagdollPawn.Abilities`), 갈고리·앙파상·종은 폰만, 튜닝 8개, 자동 점검 `LabAutoTest.Knight` |

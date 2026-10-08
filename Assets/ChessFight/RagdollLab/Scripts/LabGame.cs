@@ -515,13 +515,22 @@ namespace ChessFight.RagdollLab
         /// kicked out beside the skirt on purpose (sprintSplay), a deep forward lean (hips 12 +
         /// chest 16 + a 7 degree drive on each footfall), 3.5 steps a second, big bounding hops.
         /// Both lean into their acceleration (accelLean) instead of rolling with the facing.
+        ///
+        /// 2026-10-08 (R68): the speeds were cut to a Fall Guys pace on playtest feedback ("everything
+        /// is too fast and too big"). Measured in body heights (the pawn is 1 m) the run went from
+        /// 5.5 to 4 a second and the sprint from 9.6 to 5.6 - a 1.4x burst instead of a second game.
+        /// Acceleration and the stop scale with the speed, so reaching speed and stopping take the
+        /// same time as before. The jump went from 4.5 to 4.2 m/s (hips about 1.0 -> 0.9 m up, 0.86 s
+        /// in the air); it stays over 0.8 m because the courses are built around 0.8 m steps (King
+        /// Rush clock buttons, the box rim, the imported map's jump bars). A running jump now carries
+        /// 3.4 m instead of 5 m, a sprinting one 4.8 m instead of 8.8 m. The gait is untouched.
         /// Baked into Settings/RagdollTuning.asset, so the lab and the prefab start with it;
         /// "명세 시작값" still resets to the spec for A/B, and this button brings the set back.
         /// </summary>
         public const string StepPresetJson =
             "{'lowerBodySpring':2600,'upperBodySpring':1600," +
-            "'moveSpeed':5.5,'sprintSpeed':9.6,'acceleration':30.0,'stopDeceleration':40.0," +
-            "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.5," +
+            "'moveSpeed':4.0,'sprintSpeed':5.6,'acceleration':22.0,'stopDeceleration':29.0," +
+            "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.2," +
             "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
             "'strideLength':1.5,'legSwing':60.0,'armSwing':55.0,'runLean':8.0,'runLift':0.0," +
             "'runArmDown':35.0,'runTwist':8.0,'runLegDrop':0.3,'runDrive':4.0,'runSplay':10.0," +
@@ -538,7 +547,7 @@ namespace ChessFight.RagdollLab
         {
             tuning.LoadJson(StepPresetJson.Replace('\'', '"'));
             MarkTuningDirty();
-            Status = "기본 프리셋: 달리기 5.5 m/s · Shift 전력질주 9.6 m/s. 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
+            Status = "기본 프리셋: 달리기 4.0 m/s · Shift 전력질주 5.6 m/s · 점프 4.2 m/s. 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
         }
 
         public void ApplyWeightPreset()

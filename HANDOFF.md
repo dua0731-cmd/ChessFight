@@ -4,11 +4,13 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-06**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-08**(R68 폴가이즈 속도감. 그 전: R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
-> **최신 R67(사용자, 10-06): 폰 러시 맵 기획 재료집** [PAWN_RUSH_MAP_KIT](Docs/KingRush/PAWN_RUSH_MAP_KIT.md). 장애물 시험 씬(`ImportedChessFightMap`)의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치를 모아 채팅 AI가 맵을 기획하게 한 문서(프롬프트·결과 양식 포함). 다음 단계: 사용자가 채팅에서 기획 → 구간별 표를 Claude Code에 주면 구현.
+> **최신 R68(사용자, 10-08): 기본 이동을 폴가이즈 속도감으로.** "속도와 점프가 전체적으로 너무 빠르고 크다." 공유 `RagdollTuning.asset`(래그돌을 쓰는 모든 씬): 달리기 5.5 → **4.0**, 전력질주 9.6 → **5.6**, 가속 30 → 22·멈춤 40 → 29(출발·멈춤 시간은 그대로), 점프 4.5 → **4.2**(골반 약 0.9 m, 질주 점프 8.8 → 4.8 m). 걸음 모양은 그대로. 점프는 코스의 0.8 m 턱 때문에 4.2가 바닥([DECISIONS G31](Docs/Project/DECISIONS.md)). **Unity 미확인** → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 표, [RagdollLab README "폴가이즈 속도감"](Docs/RagdollLab/README.md#폴가이즈-속도감-2026-10-08-r68)
+>
+> **R67(사용자, 10-06): 폰 러시 맵 기획 재료집** [PAWN_RUSH_MAP_KIT](Docs/KingRush/PAWN_RUSH_MAP_KIT.md). 장애물 시험 씬(`ImportedChessFightMap`)의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치를 모아 채팅 AI가 맵을 기획하게 한 문서(프롬프트·결과 양식 포함). 다음 단계: 사용자가 채팅에서 기획 → 구간별 표를 Claude Code에 주면 구현.
 >
 > **R65(사용자, 10-06): `main` 병합.** `main`은 이제 **`JY-kingrush`(UI·메뉴 디자인 C·설정 창·채팅·로딩·결과 화면·방장 선정·이전·빈자리 채우기·킹 러쉬 코스) 전체** + **`JY-ragdoll_v2`의 지성 님 맵 이식**(`ImportedChessFightMap.unity` = 폰러시 맵용 장애물 배치 시험 씬, 장애물 프리팹 19개, `Gameplay/ImportedObstacles`, 메뉴 `ChessFight → Imported Map`) + **`JY-lobby`의 R51**(RagdollTest 온라인에서 방장이 아닌 PC의 장애물이 방장 판정과 다르게 보이던 문제: 방장이 스냅샷에 장애물 시각을 싣고 참가자가 그 시각으로 장애물을 돌림, `HostObstacleClock`, magic `CFR6`)이다. 프로토콜 **v15**. 가져오지 않은 것: `JY-ragdoll_v2`의 `f476968`(나이트 능력 등), `JY-lobby`의 퀸 오브 더 힐 맵 8차·로비 재설계 등. Linux 자동 검사 통과, **Unity·Steam 미확인** → 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단, [DECISIONS T5](Docs/Project/DECISIONS.md), [REQUIREMENTS R65](Docs/Project/REQUIREMENTS.md)
 >
@@ -68,6 +70,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **폴가이즈 속도감(10-08, R68)** | `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2. 값만 바꿈. Core 83·세션 39·7개 어셈블리 컴파일 통과, 래그돌 자동 점검(Unity 빌드 필요)은 못 돌림. **Unity 미확인** |
 | **`main` 병합(10-06, R65)** | `main` = `JY-kingrush`(`f3b5cc8`) + `a54b89e`(맵 이식, 원본 `487f62b`) + `104b18c`(방장 장애물 시각, 원본 `JY-lobby` `27e052c`) + `deabde0`(Linux 검사 유지) + 문서. Core 83·세션 39·7개 어셈블리 Roslyn 컴파일(2021.3 참조 DLL) 통과. **Unity·두 PC 미확인** |
 | **설정 창(10-05, R64)** | `claude/settings-window` → 원격 `JY-kingrush`에 푸시. 인트로 판 클릭 시작, Esc 설정 창(인트로·로비·입장 화면), 탭 5개·항목 10개, `GameSettings`(`PlayerPrefs`), 클릭 감 강화. Core 81·세션 39·DLL 컴파일 통과. **사용자 미확인** |
 | **메뉴 디자인 C 수정안(10-03, R63, 3차 포함)** | `claude/menu-c`(`33f1648`에서 갈라짐) → 원격 `JY-kingrush`에 푸시. 인트로(예전 구성 + 나무)·로비(전광판 없음, 게임 시작 버튼 글자만)·공개 매칭 = 입장 화면(봇 추가 +) → 그대로 로딩·채팅(경기 중 투명)을 호두나무·놋쇠 그림으로, 입체 판 버튼, 결과 화면 말. 새 에셋은 글꼴 하나(`Resources/Fonts`, LFS). 프로토콜 그대로. Core 81·세션 39·실제 DLL 컴파일 통과. AI가 Unity에서 화면을 봄. **키·버튼·실제 매칭·사용자 미확인** |
@@ -145,6 +148,7 @@
 - 다음: [VALIDATION R51](Docs/Network/VALIDATION.md)에서 검 가시성·보정 반응·약한 접촉/강한 베기·전환/복원·두 PC 손맛을 비교한다. 맵/기물 스킬/퀸 모드는 자동 착수하지 않는다. 원격 Push는 기존403 때문에 재시도하지 않으며 사용자가 GitHub Desktop에서 한다.
 
 **사용자가 할 일 — 순서대로**
+00000000000. **(새, R68) 폴가이즈 속도감:** `Ragdoll Test` → Play → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **속도감 표(7개)**. 느낌이 다르면 "더 느리게·점프 더 낮게"처럼 말로 알려 주면 값을 다시 맞춘다. 결정 1개: 점프를 더 낮추려면 0.8 m 장치(체스 시계 버튼·회전 점프 막대)를 같이 낮춰야 한다
 0000000000. **(새, R65) `main` 병합 확인:** `main`을 Pull(LFS 포함) → Unity로 열고 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **`main` 병합 표(5개)**. 모든 PC가 같은 `main`이어야 온라인이 된다(프로토콜 v15).
 000000000. **(새, 승규 님) 설정 창(R64):** Intro 씬 Play → Esc(설정 창) → "클릭해서 시작" → 로비 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **설정 창 표**.
 00000000. **(새, 승규 님) 메뉴 디자인 C(R63):** Intro 씬 Play → "클릭해서 시작" → 로비 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **메뉴 표**. 특히 **버튼 누르는 맛(4번)**, 게임 시작 뒤 **곧바로 뜨는 입장 화면과 매칭 취소·Esc(6·6-b번)**, 경기 중 **투명 채팅(8-b번)**, (3차) 입장 화면 **봇 추가 +(6-d번)**를 봐 주세요. 마음에 안 드는 색·크기는 스크린샷으로 알려 주시면 고칩니다. 정할 것: 버튼 소리(Kenney UI Audio) 넣을지
