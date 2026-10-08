@@ -7,10 +7,12 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-08 | R70 | 폰러시 시험 맵: 회전 점프 막대 7개(윗면 0.45 m)·회전 체스판(0.6 m)·점프 계단(0.3·0.45·0.6 m) 낮춤, 08 컨베이어 1.5 m/s. 킹 러쉬 자동 점검 기준(점프 0.6 m, 제한 시간 속도 비율). 문서: MAP_IMPORT, PAWN_RUSH_MAP_KIT, VALIDATION, REQUIREMENTS R70, HANDOFF |
-| `4e93ae3` | 10-08 | R69 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R69, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R69, HANDOFF |
-| `4a3c569` | 10-08 | R69 | (사용자) RagdollTest 패널로 다듬은 튜닝: 달리기 2.5·질주 3.6·점프 3.8·방향 전환 40·공중 제어 0.4·넉다운 9·기상 1·다이빙 |
-| `cd4bd57` | 10-08 | R68 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R68, HANDOFF |
+| (이 커밋) | 10-08 | R89 2차 | bold-johnson 기준으로: 요청 번호 R68~R70 → R87~R89, 폰 러시 코스 01 A1 회전 막대 0.2~0.52 m·턱 0.15 m, A3 원판 사이 1.49 m(A2 벽 윗면 z 33), 검증기 필수 틈 1.5 m, 점프 상승 보정은 스킬 돌진 중 멈춤. `Tools/run-tests-linux.sh`: Unity 6 전용 API 4개를 임시 복사본에서 2021.3로 바꿈(bold-johnson부터 컴파일 검사가 Game에서 멈춰 있었다). Core 91·세션 40·8개 어셈블리 컴파일 통과. 문서: PAWN_RUSH_COURSE01 §6·§7, VALIDATION, REQUIREMENTS, HANDOFF |
+| `d13022a` | 10-08 | R89 2차 | `claude/bold-johnson-8ez95n` 병합(이 작업의 기준을 main → bold-johnson으로) |
+| `85bf7a7` | 10-08 | R89 | 폰러시 시험 맵: 회전 점프 막대 7개(윗면 0.45 m)·회전 체스판(0.6 m)·점프 계단(0.3·0.45·0.6 m) 낮춤, 08 컨베이어 1.5 m/s. 킹 러쉬 자동 점검 기준(점프 0.6 m, 제한 시간 속도 비율). 문서: MAP_IMPORT, PAWN_RUSH_MAP_KIT, VALIDATION, REQUIREMENTS R89, HANDOFF |
+| `4e93ae3` | 10-08 | R88 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R88, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R88, HANDOFF |
+| `4a3c569` | 10-08 | R88 | (사용자) RagdollTest 패널로 다듬은 튜닝: 달리기 2.5·질주 3.6·점프 3.8·방향 전환 40·공중 제어 0.4·넉다운 9·기상 1·다이빙 |
+| `cd4bd57` | 10-08 | R87 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R87, HANDOFF |
 | (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R86 | 폰 러시 코스 01 v0.4: 같은 씬을 공용 길 + 미션 광장 2곳으로(`Course01v4Builder`), `MissionStation`·`TeamGate`·미니게임 A~E(`Mg*`)·`MissionPicker`, Core `PawnRushMissions`(뽑기·4명 상한·25% 걸쇠, 테스트 3개), `ObstacleSpan`·v0.4 검증기, 플레이테스트 F6~F10, 판자 재질 2개, v0.2 빌더·슬롯 삭제 |
 | `7d34fbf` | 10-08 | R85 | 문서: UI §15 "이름 바꾸기", SCENES, DECISIONS U16, VALIDATION R85 표, REQUIREMENTS R85, HANDOFF. 문구 하나("바꿨어요! 돌아가는 중") |
 | `1670ad6` | 10-08 | R85 | 인트로 "이름 바꾸기"와 로비 오른쪽 위 내 이름에서 언제든 이름 바꾸기(`NameChange`, `NameScreen` 바꾸기 모드·돌아가기), 바꾸는 동안 로비 단축키·채팅 쉼, 매칭 중 막음, Shift+클릭 없앰, 오프라인 로비도 고른 이름, `LobbyStage.SelfOnScreen` |

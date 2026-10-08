@@ -91,7 +91,9 @@ namespace ChessFight.PawnRush
             if (surface != null) surface.counterClockwise = counterClockwise;
         }
 
-        // §6 rotating jump bar: a bar spinning about its middle, its top 0.8 m up (contact only).
+        // §6 rotating jump bar: a bar spinning about its middle, 0.2 to 0.52 m up (contact only). It was
+        // 0.49 to 0.81 m for the old 1 m jump; the 10-08 jump rises about 0.74 m. It passes over
+        // A1's kerbs (now 0.15 m) low enough to hit a pawn standing on one.
         static GameObject SpinBar(CourseBuilder b, string name, Vector3 hub, float length, float degreesPerSecond)
         {
             var root = new GameObject("Device_SpinBar " + name);
@@ -103,7 +105,7 @@ namespace ChessFight.PawnRush
             motion.degreesPerSecond = degreesPerSecond;
             var before = b.parent;
             b.parent = root.transform;
-            b.Box("Bar", V(-length * .5f, -.16f, -.225f), V(length * .5f, .16f, .225f), b.kit.hazard);
+            b.Box("Bar", V(-length * .5f, -.45f, -.225f), V(length * .5f, -.13f, .225f), b.kit.hazard);
             b.Cylinder("Hub", V(0f, -.65f, 0f), .85f, .9f, b.kit.rankGold, false);
             b.parent = before;
             return root;

@@ -70,6 +70,10 @@ unity6_to_2021() {
   # parseEscapeSequences) do not exist in 2021.3: dropped from the copy.
   grep -rlE 'selectAllOn(Focus|MouseUp)|IgnoreEvent|parseEscapeSequences' "$dir" | xargs -r sed -i -E \
     -e '/\.selectAllOn(Focus|MouseUp) *=/d' -e '/focusController\?\.IgnoreEvent\(/d' -e 's/, *parseEscapeSequences *= *(true|false)//'
+  # Resolution.refreshRateRatio and RenderSettings.customReflectionTexture are Unity 2022.2+;
+  # the 2021.3 equivalents are refreshRate and customReflection (a Cubemap, which is what is set).
+  grep -rlE 'refreshRateRatio|customReflectionTexture' "$dir" | xargs -r sed -i \
+    -e 's/\.refreshRateRatio\.value/.refreshRate/g' -e 's/customReflectionTexture/customReflection/g'
   # Painter2D (MeshGenerationContext.painter2D) is Unity 2022.1+. The menu art draws with it, so
   # the copy gets a signature-only stand-in: the calls are type-checked, nothing is drawn.
   if grep -rlq 'painter2D' "$dir"; then
@@ -82,8 +86,17 @@ namespace UnityEngine.UIElements
     public class Painter2D
     {
         public Color fillColor, strokeColor; public float lineWidth; public LineCap lineCap; public LineJoin lineJoin;
+        public FillGradient fillGradient;
         public void BeginPath() { } public void ClosePath() { } public void MoveTo(Vector2 p) { } public void LineTo(Vector2 p) { }
-        public void Arc(Vector2 center, float radius, Angle start, Angle end) { } public void Fill() { } public void Stroke() { }
+        public void Arc(Vector2 center, float radius, Angle start, Angle end) { } public void ArcTo(Vector2 p1, Vector2 p2, float radius) { }
+        public void Fill() { } public void Fill(FillRule rule) { } public void Stroke() { }
+    }
+    public enum FillRule { NonZero, OddEven }
+    // Unity 6 gradient fills (the Pawn Rush result screen). AddressMode is in the 2021.3 references.
+    public struct FillGradient
+    {
+        public static FillGradient MakeLinearGradient(Gradient gradient, Vector2 start, Vector2 end, AddressMode mode) => default;
+        public static FillGradient MakeRadialGradient(Gradient gradient, Vector2 center, float radius, Vector2 focus, AddressMode mode) => default;
     }
     public static class Painter2DStandInExtensions { public static Painter2D Painter2DStandIn(this MeshGenerationContext c) => null; }
 }

@@ -1299,13 +1299,14 @@ namespace ChessFight.RagdollLab
         /// as high as a standing one (playtest, 10-08: it went lower). It never adds height a clean jump
         /// would not have: it only tops up to the ballistic climb. A real knock - more than
         /// RiseStepLimit gone in one step - ends it, as does anything that takes the body over (a hit,
-        /// a grab, a wall, a rope, the hook, a dive), the apex, or the ground.
+        /// a grab, a wall, a rope, the hook, a dive, a launch, a skill dash), the apex, or the ground.
         /// </summary>
         void GuardJumpRise(float dt)
         {
             if (riseBudget <= 0f) return;
             if (State != PawnState.Active || Grounded || Climbing || rope != null || Floating || BeingHeld || Diving
-                || hitTimer > 0f || launched || hookPhase == HookPhase.Pulling || HoldingEnvironment())
+                || hitTimer > 0f || launched || hookPhase == HookPhase.Pulling || HoldingEnvironment()
+                || dashing)   // a Pawn Rush skill dash steers the body itself (the rook's charge out of the air)
             {
                 riseBudget = 0f;
                 return;

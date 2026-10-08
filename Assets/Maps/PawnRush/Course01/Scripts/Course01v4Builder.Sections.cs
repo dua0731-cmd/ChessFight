@@ -38,21 +38,23 @@ namespace ChessFight.PawnRush
         static void SharedA(CourseBuilder b)
         {
             var k = b.kit;
-            // A1: 10 m wide, 0.4 m kerbs the bars pass over; two §6 jump bars sweep it all.
+            // A1: 10 m wide, kerbs the bars pass over; two §6 jump bars sweep it all. The kerbs were
+            // 0.4 m under bars from 0.49 m; with the bars down to 0.2 m (10-08 jump) they are 0.15 m.
             b.Floor("A1 road", -5f, 5f, 0f, 28f, 0f);
-            b.Rail("A1 kerb W", -5.4f, -5f, 0f, 28f, 0f, .4f);
-            b.Rail("A1 kerb E", 5f, 5.4f, 0f, 28f, 0f, .4f);
+            b.Rail("A1 kerb W", -5.4f, -5f, 0f, 28f, 0f, .15f);
+            b.Rail("A1 kerb E", 5f, 5.4f, 0f, 28f, 0f, .15f);
             Span(SpinBar(b, "1", V(0f, 0f, 8f), 12f, 65f), Vector3.right, -6f, 6f, 0f);
             Span(SpinBar(b, "2", V(0f, 0f, 20f), 12f, -65f), Vector3.right, -6f, 6f, 0f);
 
-            // A2: the first wall climb, 3 m.
-            b.Wall("A2 wall (face z 28) and edge", -5f, 5f, -1f, 3f, 28f, 31f, true, true);
+            // A2: the first wall climb, 3 m. Its top runs to z 33, where the first disc begins.
+            b.Wall("A2 wall (face z 28) and edge", -5f, 5f, -1f, 3f, 28f, 33f, true, true);
 
-            // A3: three discs over the drop, 2.4 m apart; the end floor turns east.
-            Disc(b, "1", V(-1.5f, 3f, 35f), false);
-            Disc(b, "2", V(1.5f, 3f, 45f), true);
+            // A3: three discs over the drop, 1.5 m apart (a running jump carries 1.9 m since the
+            // 10-08 tuning; they were 2.4 m apart for the old 5 m jump); the end floor turns east.
+            Disc(b, "1", V(-1.5f, 3f, 37f), false);
+            Disc(b, "2", V(1.5f, 3f, 46f), true);
             Disc(b, "3", V(-1.5f, 3f, 55f), false);
-            foreach (var p in new[] { V(-1.5f, -6f, 35f), V(1.5f, -6f, 45f), V(-1.5f, -6f, 55f) })
+            foreach (var p in new[] { V(-1.5f, -6f, 37f), V(1.5f, -6f, 46f), V(-1.5f, -6f, 55f) })
                 b.Cylinder("Disc post", p, 1.2f, 8.6f, k.wallNoClimb, true, true);
             b.Floor("A3 end floor", -6f, 6f, 59f, 70f, 3f);
             b.Rail("A3 rail W", -6.3f, -6f, 59f, 70.3f, 3f);

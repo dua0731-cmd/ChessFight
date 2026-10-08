@@ -518,7 +518,7 @@ namespace ChessFight.RagdollLab
         /// chest 16 + a 7 degree drive on each footfall), 3.5 steps a second, big bounding hops.
         /// Both lean into their acceleration (accelLean) instead of rolling with the facing.
         ///
-        /// 2026-10-08 (R68): the speeds were cut to a Fall Guys pace on playtest feedback ("everything
+        /// 2026-10-08 (R87): the speeds were cut to a Fall Guys pace on playtest feedback ("everything
         /// is too fast and too big"). Measured in body heights (the pawn is 1 m) the run went from
         /// 5.5 to 4 a second and the sprint from 9.6 to 5.6 - a 1.4x burst instead of a second game.
         /// Acceleration and the stop scale with the speed, so reaching speed and stopping take the
