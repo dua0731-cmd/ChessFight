@@ -44,6 +44,7 @@
 | `…/PawnRushSkillProbe.cs` | **자동 시험 도구**: 키보드 없이 P1·더미를 움직이고 G를 눌러 거리·높이·결과를 잰다(아래) |
 | `…/PawnRushSkillFx.cs` · `PawnRushSkillFx.Parts.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받고, 퀸 예고·룩 돌진·나이트 도약은 기물 상태를 지켜보며 멈춤·흔들기·흰 번쩍·납작 + **3D 빛 이펙트**(R79: 빛의 벽·기둥·빛줄기·껍질·마법진, 튕기는 불꽃·빛 알갱이·연기, 순간 조명, 궤적, 번개). 별·글자·조각은 없음. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
 | `…/PawnRushSkillBloom.cs` · `RagdollLab/Resources/PawnRushSkillFx/SkillGlow.shader` · `SkillBloom.shader` | 이펙트 재질(HDR 빛 + 칠하기)과 직접 만든 빛 번짐. 시험장 카메라·녹화 카메라에만 붙음([EFFECTS §3D 빛 이펙트](EFFECTS.md#3d-빛-이펙트-r79-10-08)) |
+| `…/PawnRushSkillFx.Toon.cs` · `Resources/PawnRushSkillFx/SkillToon.shader` · `SkillCrack.shader` · `SkillSwoosh.shader` · `SkillNoise.cginc` | **만화 이펙트**(R86, 참고 쇼츠 세 개): 퀸 불덩이·숯빛 연기·바닥 균열, 룩 만화 번개·속도선, 나이트 바람 덩어리·바람 띠. 비숍은 R82 그대로([EFFECTS §만화 이펙트](EFFECTS.md#만화-이펙트-r86-10-08)) |
 | `…/PawnRushSkillFilm.cs` · `RagdollLab/Editor/PawnRushSkillFilmEncoder.cs` | **녹화 도구**(R73): 자동 시험을 고정 카메라로 찍어 `.mp4`로(아래) |
 | `RagdollLab/Editor/PawnRushSkillTestMenu.cs` | 메뉴 Open Skill Test |
 | `LabGame.cs`(`InteractKeyOff`) | 시험장이 켜면 F가 랩 상호작용을 하지 않음 (R74) |
@@ -87,7 +88,7 @@ AI는 Unity MCP 다리(`C:/Work/ChessFight`, 포트 6401)의 `execute_code`로 �
 
 ## 이펙트 녹화 (R73)
 
-Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면마다 한 번은 제 속도, 한 번은 맞는 순간 앞뒤만 느리게(×0.3). 1280×720, 60fps, 게임 시간을 한 프레임에 1/60초씩 밀어서 녹화가 느려도 영상은 제 속도. 프레임은 Unity 자체 인코더(MediaEncoder)로 `.mp4`가 되고, 10프레임마다 `.jpg`가 `이름_stills`에 남는다. 녹화 중에는 키보드 입력을 막고 P2를 화면 밖으로 옮긴다. 장면: `queen`, `rook-cluster`, `bishop-trip`(새 시험: 밧줄에 적 한 명 걸기), `knight-stomp`. 네 번째 인자로 이름 앞부분을 주면 그 장면만.
+Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면마다 한 번은 제 속도, 한 번은 맞는 순간 앞뒤만 느리게(×0.3). 1280×720, 60fps, 게임 시간을 한 프레임에 1/60초씩 밀어서 녹화가 느려도 영상은 제 속도. 프레임은 Unity 자체 인코더(MediaEncoder)로 `.mp4`가 되고, 10프레임마다 `.jpg`가 `이름_stills`에 남는다. 녹화 중에는 키보드 입력을 막고 P2를 화면 밖으로 옮긴다. 장면(R86): `queen`, `rook-cluster`, `rook-air`, `knight-stomp`, `knight`. 다섯 번째 인자로 이름 앞부분을 주면 그 장면만(`knight`는 `knight-stomp`도 같이 찍힘). **프레임별로 보기(R86):** `PawnRushSkillFilm.StillEvery = 1`(모든 프레임을 `.jpg`로), `PawnRushSkillFilm.SlowTakes = false`(느린 장면 빼고), 맞는 순간의 프레임 번호는 `PawnRushSkillFilm.HitFrames` → [EFFECTS §만화 이펙트](EFFECTS.md#만화-이펙트-r86-10-08).
 
 10-07 AI 녹화 `PawnRush_SkillFx_R73b.mp4`(32초): 퀸 고리 두 겹·가장자리 번짐, 룩 1·2·3 숫자와 조각·4번째 "쿵!", 비숍 보라 칸·"덜컥!", 나이트 납작·"뿅!"·어지러운 별이 다 찍힘. **사람이 손으로 해 본 것은 아님.** 이펙트는 시험용 그림(선·상자·글자)이고 소리는 아직 없다. 멈춤은 지금 게임 전체가 멈춘다(실제 게임·온라인에서는 때린 쪽·맞은 쪽만 멈추게 바꿔야 함). 폰은 시안을 아직 안 골라 그대로.
 
@@ -118,6 +119,10 @@ Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면�
 ### R82 녹화 (10-08)
 
 `PawnRush_Skill_R82c.mp4`(약 25초, 장면 3개): 퀸 금색 예고 원과 원에서 피어오르는 금빛 불씨·연기, 비숍 줄이 지나가는 적의 다리를 따라 V자로 늘어났다가 잡아채고 튕겨 돌아옴(위에서 내려다보는 각도로 바꿈), 나이트 착지할 곳에서 도는 하얀 원형 표식. 첫 녹화에서 불씨가 흰 바닥에서 거의 안 보였고(→ 진한 금색·크게), 비숍은 늘어나는 시간이 너무 짧고 팽팽한 줄 빛이 하얗게 번져 줄 모양을 가렸음(→ 더 오래 붙잡음, 빛 줄임). **사람이 손으로 해 본 것은 아님.**
+
+### R86 녹화 (10-08)
+
+`PawnRush_Skill_R86.mp4`(장면 5개, 제 속도 + 느리게): 퀸 머리 위로 모이는 불덩이 → 팡 → 숯빛 연기 틈으로 불빛 → 바닥 균열이 식어 사라짐, 룩 만화 번개·속도선 돌진(4명 뭉치 / 공중 돌진·내리꽂기), 나이트 바람 머리 찍기 / 도약·착지 바람. 비숍은 바꾸지 않아서 이번 녹화에 없음. 만들면서 퀸 5번, 룩 2번, 나이트 2번을 **모든 프레임을 찍어 모음 판으로 보고** 고쳤다(화면이 하얗게 날아감, 흙덩이 같은 연기, 몸에 묻힌 불덩이, 뒤집힌 구 면, 흰 바닥에 묻힌 번개, 흰 솜 같은 바람 → [EFFECTS](EFFECTS.md#만화-이펙트-r86-10-08)). **사람이 손으로 해 본 것은 아님.**
 
 ## 다음 할 일
 
