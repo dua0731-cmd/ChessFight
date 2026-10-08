@@ -69,7 +69,7 @@ namespace ChessFight.RagdollLab
         // Flying an arc to a spot (the castling swap, the knight's leap).
         bool flying, flySoft;
         Vector3 flyFrom, flyTo;
-        float flyT, flyTime, flyUp, partnerApart;
+        float flyT, flyTime, flyUp, flyGravity = 9.81f, partnerApart;
         RagdollPawn flyPartner, apartFrom;
         // The aim (queen, rook, bishop, knight).
         Vector3 qhPoint;
@@ -89,8 +89,8 @@ namespace ChessFight.RagdollLab
         float shellT, shellTime;
         bool shellOut, shellLanded;
         // Knight: the spot it leaps to; a flattened piece watching for the fall off its ledge.
-        Vector3 leapSpot;
-        float flattenWatch, flattenFloor;
+        Vector3 leapSpot, flattenSlide;
+        float flattenWatch, flattenFloor, flattenSlideLeft;
         RagdollPawn flattenBy;
 
         public float WardLeft => Mathf.Max(0f, wardLeft);
@@ -252,10 +252,15 @@ namespace ChessFight.RagdollLab
                 QhFx(QueenHillFxKind.WardBlock, target, at, Flat(push).normalized);
                 return "호위로 버팀 (밀림만 조금)";
             }
-            bool wasDown = target.State == PawnState.Ragdoll;
             string result = SkillHit(target, push, knockdown, cause);
             QhFx(kind, target, at, Flat(push).normalized);
-            if (knockdown && !wasDown && target.State == PawnState.Ragdoll) QhFx(QueenHillFxKind.Down, target, target.FeetPoint, Flat(push).normalized);
+            if (result == "넘어짐")
+            {
+                // Down for a while, long enough to read (the ragdoll's own get-up was a third of a second for the king).
+                var s = QueenHillSkills;
+                if (s != null && s.downHold > 0f) target.Knockdown(cause, s.downHold);
+                QhFx(QueenHillFxKind.Down, target, target.FeetPoint, Flat(push).normalized);
+            }
             return result;
         }
 
@@ -643,8 +648,8 @@ namespace ChessFight.RagdollLab
             ally.ClearSkills();
             ally.facing = FlatDir(mine - theirs);
             facing = FlatDir(theirs - mine);
-            BeginFly(theirs + Vector3.up * (standHeight + 0.03f), top + standHeight, ally, true);
-            ally.BeginFly(mine + Vector3.up * (ally.standHeight + 0.03f), top + ally.standHeight, this, true);
+            BeginFly(theirs + Vector3.up * (standHeight + 0.03f), top + standHeight, ally, true, s.rookSwapGravity);
+            ally.BeginFly(mine + Vector3.up * (ally.standHeight + 0.03f), top + ally.standHeight, this, true, s.rookSwapGravity);
             SkillUses++;
             skillStage = SkillStage.Active;
             stageTime = 0f;
@@ -659,10 +664,13 @@ namespace ChessFight.RagdollLab
         /// <paramref name="apexY"/>, at gravity's own pace. The arc is flown exactly: every step sets the body's speed
         /// for where the arc will be at the end of that step (as the knight's head stomp does), so the ragdoll's drag
         /// and swinging limbs do not leave it short.</summary>
-        void BeginFly(Vector3 toHips, float apexY, RagdollPawn partner, bool soft)
+        void BeginFly(Vector3 toHips, float apexY, RagdollPawn partner, bool soft, float gravityScale = 1f)
         {
             Vector3 from = bodies[0].position;
-            float g = Mathf.Max(0.01f, -Physics.gravity.y);
+            // A heavier "gravity" for the arc makes the same arc quicker (a snappier swap or leap); the steering below
+            // flies whatever arc it is given.
+            flyGravity = Mathf.Max(0.01f, -Physics.gravity.y) * Mathf.Max(0.2f, gravityScale);
+            float g = flyGravity;
             float top = Mathf.Max(apexY, Mathf.Max(from.y, toHips.y) + 0.2f);
             float up = Mathf.Sqrt(2f * g * (top - from.y));
             float down = Mathf.Sqrt(2f * g * (top - toHips.y));
@@ -680,7 +688,7 @@ namespace ChessFight.RagdollLab
 
         Vector3 FlyPoint(float t)
         {
-            float g = Mathf.Max(0.01f, -Physics.gravity.y);
+            float g = flyGravity;
             t = Mathf.Clamp(t, 0f, flyTime);
             float k = flyTime > 0f ? t / flyTime : 1f;
             return new Vector3(Mathf.Lerp(flyFrom.x, flyTo.x, k), flyFrom.y + flyUp * t - 0.5f * g * t * t, Mathf.Lerp(flyFrom.z, flyTo.z, k));
@@ -989,7 +997,7 @@ namespace ChessFight.RagdollLab
                         Vector3 from = FeetPoint;
                         float top = Mathf.Max(from.y, leapSpot.y) + s.knightArc;
                         skillHitSet.Clear();
-                        BeginFly(leapSpot + Vector3.up * (standHeight + 0.02f), top + standHeight, null, false);
+                        BeginFly(leapSpot + Vector3.up * (standHeight + 0.02f), top + standHeight, null, false, s.knightGravity);
                         skillStage = SkillStage.Active;
                         stageTime = 0f;
                         SkillDetail = "도약";
@@ -1046,8 +1054,9 @@ namespace ChessFight.RagdollLab
                     continue;
                 }
                 n++;
-                // Pushed out of the circle: on a ledge's edge that is over it (B: flattened up high, it falls).
-                other.TakeHit(out_ * s.knightSlide, 0f, 0f, false);
+                // Slid out of the circle while flat: on a ledge's edge that is over it (B: flattened up high, it falls).
+                other.flattenSlide = out_ * s.knightSlide;
+                other.flattenSlideLeft = s.knightSlideTime;
                 other.flattenWatch = s.knightFlatten + 0.4f;
                 other.flattenFloor = other.FeetPoint.y;
                 other.flattenBy = this;
@@ -1063,13 +1072,25 @@ namespace ChessFight.RagdollLab
         {
             if (flattenWatch <= 0f) return;
             flattenWatch -= dt;
-            if (State == PawnState.Ragdoll) { flattenWatch = 0f; return; }
+            if (State == PawnState.Ragdoll) { flattenWatch = flattenSlideLeft = 0f; return; }
+            if (flattenSlideLeft > 0f)
+            {
+                // Flat on the floor it cannot brace: it skids out at the slide's speed for a moment (a plain push was
+                // braked by the standing spring within a few centimetres).
+                flattenSlideLeft -= dt;
+                Vector3 own = Flat(bodies[0].linearVelocity) - carryVel;
+                AddVelocity(flattenSlide - own);
+                anchorVel = flattenSlide + carryVel;
+                Vector3 hp = bodies[0].position;
+                anchorPos = new Vector3(hp.x + anchorVel.x * dt, anchorPos.y, hp.z + anchorVel.z * dt);
+                anchor.MovePosition(anchorPos);
+            }
             bool off = !Grounded && coyote <= 0f && bodies[0].linearVelocity.y < -1f
                        && bodies[0].position.y < flattenFloor + standHeight - 0.2f;
             if (!off) return;
             flattenWatch = 0f;
             squashTimer = 0f;
-            Knockdown("나이트 압착: 납작해져 떨어짐");
+            Knockdown("나이트 압착: 납작해져 떨어짐", QueenHillSkills != null ? QueenHillSkills.downHold : 0f);
             var by = flattenBy != null ? flattenBy : this;
             by.QhFx(QueenHillFxKind.KnightFall, this, bodies[0].position, Flat(bodies[0].linearVelocity).normalized);
             by.QhFx(QueenHillFxKind.Down, this, FeetPoint, Flat(bodies[0].linearVelocity).normalized);

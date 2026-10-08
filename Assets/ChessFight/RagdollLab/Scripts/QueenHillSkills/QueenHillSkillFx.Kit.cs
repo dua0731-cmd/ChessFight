@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
@@ -308,6 +309,7 @@ namespace ChessFight.RagdollLab
                 r.sharedMaterial = fx.matTile;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = false;
+                r.enabled = false;   // nothing until it is placed and painted (Apply)
                 t = go.transform;
             }
 
@@ -382,6 +384,7 @@ namespace ChessFight.RagdollLab
                 r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = fx.matToon;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.enabled = false;   // nothing until it is placed and painted (Apply)
                 t = go.transform;
                 this.colors = colors;
                 seed = new Vector4(Random.value * 50f, Random.value * 50f, Random.value * 50f, 0f);

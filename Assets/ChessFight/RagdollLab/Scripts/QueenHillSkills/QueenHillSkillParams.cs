@@ -17,6 +17,8 @@ namespace ChessFight.RagdollLab
         public float testCooldown = 2f;
         [Tooltip("체스판 한 칸 (m). 경고 칸·잡힌 칸의 크기 (A 디자인: 진짜 체스판 한 칸)")]
         public float square = 1.5f;
+        [Tooltip("스킬에 넘어지면 이 시간 동안 누워 있음 (초). 0이면 래그돌 기본(킹은 0.3초쯤에 일어나 잘 안 보였음)")]
+        public float downHold = 1f;
 
         [Header("킹 — 근접 호위 (B: 킹 자신은 빠짐)")]
         public float kingWindup = 0.3f;
@@ -61,7 +63,9 @@ namespace ChessFight.RagdollLab
         [Tooltip("두 기물이 날아가 자리를 바꾸는 시간 (초)")]
         public float rookSwapTime = 0.55f;
         [Tooltip("자리 바꾸는 호의 높이: 높은 쪽 바닥보다 이만큼 위 (m)")]
-        public float rookArc = 1.4f;
+        public float rookArc = 0.9f;
+        [Tooltip("자리 바꾸는 호를 이만큼 무거운 중력으로 날아 빨리 끝남 (1 = 진짜 중력)")]
+        public float rookSwapGravity = 2.2f;
         public float rookRecovery = 0.25f;
         public float rookCooldown = 12f;
 
@@ -91,14 +95,17 @@ namespace ChessFight.RagdollLab
         [Tooltip("지금 바닥보다 이만큼 높은 곳까지만 뛰어오른다 (m). 탑 한 층 0.9 m")]
         public float knightMaxRise = 1.05f;
         [Tooltip("호의 높이: 높은 쪽 바닥보다 이만큼 위 (m)")]
-        public float knightArc = 1.5f;
+        public float knightArc = 1.0f;
+        [Tooltip("도약 호를 이만큼 무거운 중력으로 날아 짧고 굵게 (1 = 진짜 중력)")]
+        public float knightGravity = 1.6f;
         public float knightWindup = 0.12f;
         [Tooltip("착지 원 반경 (m)")]
         public float knightRadius = 1.3f;
         [Tooltip("납작해지는 시간 (초)")]
         public float knightFlatten = 0.7f;
-        [Tooltip("납작해진 적을 착지점 바깥으로 미는 속도 (m/s): 높은 곳 가장자리면 떨어진다")]
-        public float knightSlide = 3.2f;
+        [Tooltip("납작해진 적이 착지점 바깥으로 미끄러지는 속도 (m/s)와 시간 (초): 높은 곳 가장자리면 떨어진다")]
+        public float knightSlide = 2.6f;
+        public float knightSlideTime = 0.35f;
         public float knightRecovery = 0.3f;
         public float knightCooldown = 7f;
 

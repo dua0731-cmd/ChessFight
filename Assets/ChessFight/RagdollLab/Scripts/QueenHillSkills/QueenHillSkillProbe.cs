@@ -54,6 +54,26 @@ namespace ChessFight.RagdollLab
 
         public static string Report() => Status + "\n" + string.Join("\n", Results);
 
+        /// <summary>Stop the clock (time scale 0, frames still drawn) this many game seconds after the next run is
+        /// staged, to look at a moment from several cameras; set Time.timeScale back to 1 to go on.</summary>
+        public static void FreezeAfter(float seconds) => freezeAfter = seconds;
+
+        /// <summary>Game seconds since the current run was staged.</summary>
+        public static float SinceStaged { get; private set; }
+
+        static float freezeAfter = -1f;
+
+        void LateUpdate()
+        {
+            if (!Staged) { SinceStaged = 0f; return; }
+            SinceStaged += Time.deltaTime;
+            if (freezeAfter >= 0f && SinceStaged >= freezeAfter)
+            {
+                Time.timeScale = 0f;
+                freezeAfter = -1f;
+            }
+        }
+
         void Update()
         {
             if (!driving) return;
@@ -276,7 +296,7 @@ namespace ChessFight.RagdollLab
             Click(q, "좌클릭");
             yield return Wait(1.6f);
             Add($"퀸 검격 길이 {q.SlashReach:0.0} m, 벽에 막힘 {(q.SlashBlocked ? "예" : "아니요")}");
-            for (int i = 0; i < 4; i++) Add($"{Who(bed.Dummy(i))}: {StateOf(bed.Dummy(i))}");
+            for (int i = 0; i < 4; i++) Add($"{Who(bed.Dummy(i))}: {StateOf(bed.Dummy(i))} — {bed.Dummy(i).LastSkillHit}");
             yield return Wait(0.8f);
         }
 
@@ -348,8 +368,7 @@ namespace ChessFight.RagdollLab
             float east = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);
             Vector3 enemyAt = new Vector3(east - 0.45f, QueenHillLayout.TierTop(0), 7.4f);
             yield return Stage(PieceKind.Knight, new Vector3(east + 3.2f, 0f, 7.1f), Vector3.left,
-                (PieceKind.Pawn, false, enemyAt, Vector3.right),
-                (PieceKind.Pawn, false, new Vector3(east + 1.6f, 0f, 9.3f), Vector3.left));
+                (PieceKind.Pawn, false, enemyAt, Vector3.right));
             var knight = P1;
             var enemy = bed.Dummy(0);
             yield return Wait(0.3f);
@@ -370,9 +389,10 @@ namespace ChessFight.RagdollLab
             yield return Wait(0.2f);
             Add($"1층 조준: {(knight.QhAimValid ? "됨" : "안 됨 — " + knight.QhAimWhy)} ({knight.QhAimPoint.y:0.0} m)");
             Click(knight, "좌클릭 (도약)");
-            yield return Wait(1.3f);
-            Add($"나이트 착지 높이 {knight.FeetPoint.y:0.0} m, 적 폰: {StateOf(enemy)}, 높이 {enemy.FeetPoint.y:0.0} m");
-            yield return Wait(1.2f);
+            int downs = enemy.Knockdowns;
+            yield return Wait(2.1f);
+            Add($"나이트 착지 높이 {knight.FeetPoint.y:0.0} m, 적 폰: {enemy.LastSkillHit}, 넘어짐 {enemy.Knockdowns - downs}번, 지금 높이 {enemy.FeetPoint.y:0.0} m");
+            yield return Wait(0.9f);
         }
 
         // ---------------------------------------------------------------- 6.B pawn: crouch and slip the rook's charge
@@ -392,7 +412,7 @@ namespace ChessFight.RagdollLab
             yield return Wait(0.1f);
             Click(rook);
             yield return Wait(0.18f);
-            Of(pawn).move = Vector3.forward;   // to the side, away from the line
+            Of(pawn).move = Vector3.back;   // to the side, off the line
             Tap(pawn, "F (몸 낮춰 옆으로)");
             yield return Wait(0.05f);
             Of(pawn).move = Vector3.zero;

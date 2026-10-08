@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -299,9 +300,17 @@ namespace ChessFight.RagdollLab
             foreach (var p in done) flashes.Remove(p);
         }
 
-        /// <summary>A ring standing up at the hit, facing along it: white core, the hitter's colour, ink; 110% at f3.</summary>
+        /// <summary>A ring standing up at the hit, facing along it: white core, the hitter's colour, ink; 110% at f3.
+        /// Turned half toward the camera so a hit seen from the side is not a ring edge-on (a line).</summary>
         void ImpactRing(Vector3 at, Vector3 normal, Palette p, float r0, float r1)
         {
+            Vector3 toEye = Eye - at;
+            if (normal.sqrMagnitude > 1e-4f && toEye.sqrMagnitude > 1e-4f)
+            {
+                normal = normal.normalized;
+                if (Vector3.Dot(normal, toEye) < 0f) normal = -normal;
+                normal = (normal + toEye.normalized).normalized;
+            }
             var t = new Tile(this, "Impact ring");
             var f = Run(14f * F, (fx, d) =>
             {
@@ -442,8 +451,9 @@ namespace ChessFight.RagdollLab
             {
                 if (!stamped)
                 {
-                    bool lying = target == null || target.State != PawnState.Ragdoll
-                                 || (target.HipsTilt > 50f && target.Hips.linearVelocity.magnitude < 3f) || fx.age > 0.8f;
+                    // Stamped once it has come down: settled, or soon anyway (it may lie crumpled, not flat).
+                    bool lying = target == null || target.State != PawnState.Ragdoll || fx.age > 0.45f
+                                 || (fx.age > 0.12f && target.Hips.linearVelocity.magnitude < 2.5f);
                     if (!lying) return true;
                     stamped = true;
                     since = fx.age;
@@ -1213,8 +1223,8 @@ namespace ChessFight.RagdollLab
             if (!swords.TryGetValue(queen, out var h) || h.a == null)
             {
                 h = new HandProp();
-                h.a = new Prop(this, RoundBox(new Vector3(0.09f, 0.72f, 0.025f), 0.012f), new Palette("#F4F7FF", "#FFFFFF", "#BFC8DC", "#3A2208"), "Sword blade") { inkWidth = 0.012f };
-                h.b = new Prop(this, RoundBox(new Vector3(0.26f, 0.05f, 0.07f), 0.022f), Queen, "Sword guard") { inkWidth = 0.012f };
+                h.a = new Prop(this, RoundBox(new Vector3(0.14f, 0.86f, 0.035f), 0.016f), new Palette("#FFF4D6", "#FFFFFF", "#E2C27A", "#3A2208"), "Sword blade") { inkWidth = 0.018f };
+                h.b = new Prop(this, RoundBox(new Vector3(0.34f, 0.07f, 0.09f), 0.03f), Queen, "Sword guard") { inkWidth = 0.016f };
                 h.c = new Prop(this, meshPuff, Queen, "Sword sheen") { inkWidth = 0f };
                 swords[queen] = h;
                 var f = Keep(queen, "sword", () => new Fx());
@@ -1228,13 +1238,13 @@ namespace ChessFight.RagdollLab
                     if (h.shown <= 0f || queen == null) return false;
                     float k = h.shown < 1f ? Pop(h.shown * 6f * F, 1.1f) : 1f;
                     PlaceInHand(queen, h.b.t, 0.0f, k);
-                    PlaceInHand(queen, h.a.t, 0.4f, k);
+                    PlaceInHand(queen, h.a.t, 0.47f, k);
                     // The windup's sheen: a white oval sliding from the hilt to the tip.
                     var s = queen.QueenHillSkills;
                     bool winding = queen.SkillStage == SkillStage.Windup && queen.QhAimLocked && s != null;
                     float slide = winding ? Mathf.Clamp01(queen.SkillStageTime / Mathf.Max(0.05f, s.queenWindup)) : 0f;
                     h.c.Show(winding);
-                    h.c.t.position = h.b.t.position + h.a.t.up * (0.06f + 0.66f * slide * k) + h.a.t.forward * 0.02f;
+                    h.c.t.position = h.b.t.position + h.a.t.up * (0.08f + 0.78f * slide * k) + h.a.t.forward * 0.025f;
                     h.c.t.rotation = h.a.t.rotation;
                     h.c.t.localScale = new Vector3(0.05f, 0.12f, 0.03f) * k;
                     h.c.colors = new Palette { main = Color.white, light = Color.white, deep = Color.white, ink = Color.white };
