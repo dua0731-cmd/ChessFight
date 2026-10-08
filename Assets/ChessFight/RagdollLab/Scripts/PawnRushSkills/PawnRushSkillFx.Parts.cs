@@ -12,7 +12,8 @@ namespace ChessFight.RagdollLab
     /// cylinder for walls and beams, a sphere for shells of light, a square, a box of four walls) and on three
     /// particle systems (sparks that bounce off the floor and walls, motes of light, smoke), plus point lights that
     /// light the floor and the pieces, trails and lightning. Textures are drawn by code too: a soft dot, smoke,
-    /// noise, a beam that fades upward, a ring, a lit square. The queen's gold chess pieces are turned on a lathe (R80).
+    /// noise, a beam that fades upward, a ring, a lit square. The cartoon parts of R86 (puffs, cracks, swooshes,
+    /// speed lines) are in PawnRushSkillFx.Toon.cs.
     /// </summary>
     public partial class PawnRushSkillFx
     {
@@ -21,10 +22,6 @@ namespace ChessFight.RagdollLab
         Texture2D texDot, texSoft, texSmoke, texNoise, texBeam, texRing, texTile, texBand;
         Mesh meshQuad, meshCylinder, meshSphere, meshBox;
         Shader glowShader;
-        /// <summary>The six chess pieces (pawn, knight, bishop, rook, queen, king; the queen's gold pieces, R80, in
-        /// their real shapes since R81) and the polished gold they are made of.</summary>
-        Mesh[] chessMeshes;
-        Material goldMat;
 
         void BuildParts()
         {
@@ -62,15 +59,6 @@ namespace ChessFight.RagdollLab
             meshQuad = Quad();
             meshCylinder = Cylinder(48);
             meshBox = OpenBox();
-            chessMeshes = ChessPieces();   // PawnRushSkillFx.Chess.cs (R81: the real shapes)
-            var standard = Shader.Find("Standard");
-            goldMat = new Material(standard != null ? standard : Shader.Find("Diffuse")) { hideFlags = HideFlags.HideAndDontSave };
-            goldMat.color = new Color(1f, 0.74f, 0.26f);
-            goldMat.SetFloat("_Metallic", 0.85f);
-            goldMat.SetFloat("_Glossiness", 0.78f);
-            goldMat.EnableKeyword("_EMISSION");
-            goldMat.SetColor("_EmissionColor", new Color(0.9f, 0.5f, 0.1f) * 0.5f);
-            materials.Add(goldMat);
             var tmp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             meshSphere = Instantiate(tmp.GetComponent<MeshFilter>().sharedMesh);
             Destroy(tmp);
@@ -84,14 +72,6 @@ namespace ChessFight.RagdollLab
             smoke = new Emitter(root, "Smoke", Glow(texSmoke, opacity: 0.55f, soft: 0.4f), stretch: false, gravity: -0.03f, drag: 2.5f, collide: false, noise: 0.3f,
                 fade: new[] { 0f, 0f, 0.12f, 1f, 1f, 0f }, size: new[] { 0f, 0.5f, 1f, 1.6f });
             smoke.ps.GetComponent<ParticleSystemRenderer>().sortMode = ParticleSystemSortMode.Distance;
-            // Embers (R82, off the queen's rings): little gold lights that float up and waver like smoke, painted
-            // enough to show on a white floor. Wisps: soft gold smoke rising with them (mostly paint: light added to
-            // a white floor is only white).
-            embers = new Emitter(root, "Embers", Glow(texDot, opacity: 0.85f, color: 2f), stretch: false, gravity: -0.06f, drag: 1.4f, collide: false, noise: 0.9f,
-                fade: new[] { 0f, 0f, 0.1f, 1f, 0.6f, 0.8f, 1f, 0f }, size: new[] { 0f, 0.4f, 0.15f, 1f, 1f, 0.2f });
-            wisps = new Emitter(root, "Wisps", Glow(texSmoke, opacity: 0.85f, color: 1f, soft: 0.4f), stretch: false, gravity: -0.04f, drag: 1.8f, collide: false, noise: 0.5f,
-                fade: new[] { 0f, 0f, 0.2f, 0.8f, 1f, 0f }, size: new[] { 0f, 0.4f, 1f, 1.6f });
-            wisps.ps.GetComponent<ParticleSystemRenderer>().sortMode = ParticleSystemSortMode.Distance;
         }
 
         void DestroyParts()
@@ -99,7 +79,7 @@ namespace ChessFight.RagdollLab
             foreach (var m in materials) if (m != null) Destroy(m);
             foreach (var t in new Object[] { texDot, texSoft, texSmoke, texNoise, texBeam, texRing, texTile, texBand, meshQuad, meshCylinder, meshSphere, meshBox })
                 if (t != null) Destroy(t);
-            if (chessMeshes != null) foreach (var m in chessMeshes) if (m != null) Destroy(m);
+            DestroyToon();
         }
 
         static float Sq(float x) => x * x;
@@ -308,97 +288,6 @@ namespace ChessFight.RagdollLab
             public override void Destroy() { if (tf != null) Object.Destroy(tf.gameObject); }
         }
 
-        /// <summary>
-        /// One of the queen's little gold chess pieces (R80). Gathering (R81: "회전하면서"), it circles the queen
-        /// standing up and spinning like a top, round and round, closer and faster, glowing brighter, and is gone the
-        /// moment it reaches her chest. Burst, it flies out of the swirl the same way round, tumbling, falls, bounces
-        /// on the floor and shrinks away.
-        /// </summary>
-        class Trinket : Anim
-        {
-            readonly Transform tf;
-            readonly MeshRenderer mr;
-            readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
-            readonly Color glow;
-            Quaternion rot;
-            Vector3 spin;
-            float yaw, yawRate;
-            public Vector3 pos, vel;
-            /// <summary>Gathering: the point it circles in to, and where it starts round it.</summary>
-            public Func<Vector3> center;
-            public float startAngle, startRadius = 2f, startHeight, turns = 1.1f;
-            public float arrive = 0.35f, size = 0.2f, life = 1.3f, floorY;
-            public bool burst;
-            public bool Alive => tf != null && age < (burst ? life : arrive);
-            public Vector3 Position => tf != null ? tf.position : pos;
-
-            public Trinket(Transform parent, Mesh mesh, Material material, Color glow)
-            {
-                var go = new GameObject("Gold chess piece");
-                go.transform.SetParent(parent, false);
-                tf = go.transform;
-                go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                mr = go.AddComponent<MeshRenderer>();
-                mr.sharedMaterial = material;
-                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                this.glow = glow;
-                rot = Random.rotation;
-                spin = Random.onUnitSphere * Random.Range(300f, 720f);
-                yaw = Random.Range(0f, 360f);
-                yawRate = Random.Range(600f, 900f) * (Random.value < 0.5f ? -1f : 1f);
-            }
-
-            public override bool Step(float dt, Camera cam)
-            {
-                age += dt;
-                float scale, shine;
-                if (!burst)
-                {
-                    if (age >= arrive) return false;
-                    float t = age / arrive, k = t * t;
-                    Vector3 c = center != null ? center() : pos;
-                    // Round and round, faster as it closes in (the angle runs ahead of time).
-                    float a = startAngle + turns * Mathf.PI * 2f * Mathf.Pow(t, 1.4f);
-                    float r = startRadius * (1f - k);
-                    tf.position = c + new Vector3(Mathf.Cos(a) * r, startHeight * (1f - k), Mathf.Sin(a) * r);
-                    yaw += yawRate * (1f + 2f * t) * dt;
-                    tf.rotation = Quaternion.Euler(0f, yaw, 0f) * Quaternion.Euler(8f * Mathf.Sin(age * 20f), 0f, 0f);
-                    scale = size * Mathf.Lerp(1f, 0.6f, k) * Mathf.Clamp01(age / 0.05f);
-                    shine = 0.4f + 2.2f * k;
-                    tf.localScale = Vector3.one * scale;
-                    block.SetColor("_EmissionColor", glow * shine);
-                    mr.SetPropertyBlock(block);
-                    return true;
-                }
-                else
-                {
-                    if (age >= life) return false;
-                    vel += Physics.gravity * dt;
-                    pos += vel * dt;
-                    float rest = floorY + size * 0.5f;
-                    if (pos.y < rest && vel.y < 0f)
-                    {
-                        pos.y = rest;
-                        vel.y = -vel.y * 0.42f;
-                        vel.x *= 0.65f;
-                        vel.z *= 0.65f;
-                        spin *= 0.55f;
-                    }
-                    tf.position = pos;
-                    scale = size * Mathf.Clamp01((life - age) / 0.3f);
-                    shine = Mathf.Lerp(2.4f, 0.35f, Mathf.Clamp01(age / 0.35f));
-                }
-                rot = Quaternion.Euler(spin * dt) * rot;
-                tf.rotation = rot;
-                tf.localScale = Vector3.one * scale;
-                block.SetColor("_EmissionColor", glow * shine);
-                mr.SetPropertyBlock(block);
-                return true;
-            }
-
-            public override void Destroy() { if (tf != null) Object.Destroy(tf.gameObject); }
-        }
-
         /// <summary>Something that runs while <see cref="step"/> says so (given its age and the frame's time).</summary>
         class Ongoing : Anim
         {
@@ -428,7 +317,7 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- particles
 
-        Emitter sparks, motes, smoke, embers, wisps;
+        Emitter sparks, motes, smoke;
 
         /// <summary>
         /// A particle system the effects emit into by hand (position, speed, size, life and tint each), stepped by
@@ -571,21 +460,6 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>A small light rising like smoke off a ring of radius <paramref name="radius"/> on the floor
-        /// round <paramref name="c"/> (R82, the queen's rings): a hot ember that drifts up wavering, now and then a
-        /// soft wisp of glow with it.</summary>
-        void RingEmber(Vector3 c, float radius, Color color)
-        {
-            float a = Random.Range(0f, Mathf.PI * 2f);
-            var dir = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-            Vector3 at = c + dir * radius + Vector3.up * 0.05f;
-            embers.Emit(at, Vector3.up * Random.Range(0.6f, 1.6f) + dir * Random.Range(-0.15f, 0.25f), Random.Range(0.07f, 0.13f),
-                Random.Range(0.7f, 1.2f), Tint(color, Random.value * 0.25f));
-            if (Random.value < 0.45f)
-                wisps.Emit(at + Vector3.up * 0.1f, Vector3.up * Random.Range(0.3f, 0.7f), Random.Range(0.35f, 0.6f), Random.Range(0.6f, 1f),
-                    Tint(color, 0.05f + Random.value * 0.15f), Random.Range(-40f, 40f));
-        }
-
         /// <summary>A ring of smoke rolling out along the floor from <paramref name="at"/>.</summary>
         void DustRing(Vector3 at, int count, float radius, float speed, Color color, float size = 0.6f, float life = 0.9f)
         {
@@ -709,7 +583,8 @@ namespace ChessFight.RagdollLab
             public override void Destroy() { if (trail != null) Object.Destroy(trail.gameObject); }
         }
 
-        /// <summary>Crackling bolts from a point outwards, redrawn every few hundredths of a second.</summary>
+        /// <summary>Crackling bolts from a point outwards, redrawn every few hundredths of a second. Given a
+        /// <see cref="plane"/> (its normal), they run along it only: over the floor or across a wall (R86, the rook).</summary>
         class Bolts : Anim
         {
             readonly LineRenderer[] lines;
@@ -718,6 +593,7 @@ namespace ChessFight.RagdollLab
             readonly Color color;
             readonly float reach, life;
             float redraw;
+            public Vector3 plane;
 
             public Bolts(Transform parent, Material material, int count, Func<Vector3> from, Color color, float reach, float life)
             {
@@ -752,15 +628,19 @@ namespace ChessFight.RagdollLab
                 {
                     redraw = 0.035f;
                     Vector3 o = from();
+                    bool flat = plane.sqrMagnitude > 1e-6f;
+                    Vector3 n = flat ? plane.normalized : Vector3.up;
                     foreach (var lr in lines)
                     {
-                        Vector3 dir = OnSphere(-0.3f);
+                        Vector3 dir = flat ? Vector3.ProjectOnPlane(Random.onUnitSphere, n).normalized : OnSphere(-0.3f);
                         float len = reach * Random.Range(0.5f, 1f);
-                        Vector3 side = Vector3.Cross(dir, Random.onUnitSphere).normalized;
+                        Vector3 side = flat ? Vector3.Cross(dir, n).normalized : Vector3.Cross(dir, Random.onUnitSphere).normalized;
                         for (int k = 0; k < lr.positionCount; k++)
                         {
                             float t = k / (float)(lr.positionCount - 1);
-                            Vector3 p = o + dir * len * t + side * Random.Range(-0.12f, 0.12f) * len * Mathf.Sin(t * Mathf.PI) + Random.insideUnitSphere * 0.03f;
+                            Vector3 jitter = Random.insideUnitSphere * 0.03f;
+                            if (flat) jitter = Vector3.ProjectOnPlane(jitter, n);
+                            Vector3 p = o + dir * len * t + side * Random.Range(-0.12f, 0.12f) * len * Mathf.Sin(t * Mathf.PI) + jitter;
                             lr.SetPosition(k, p);
                         }
                         lr.widthMultiplier = Random.Range(0.04f, 0.075f) * (0.4f + 0.6f * fade);

@@ -23,6 +23,11 @@ namespace ChessFight.RagdollLab
         public static string Status { get; private set; } = "idle";
         public static int Frames { get; private set; }
         public static int StillEvery = 10;
+        /// <summary>Film each shot again slowed round its hits (false: the full-speed takes only, e.g. to keep every
+        /// frame as a still and look at an effect frame by frame, R86).</summary>
+        public static bool SlowTakes = true;
+        /// <summary>The frame numbers the hits fell on in the last film (to find them among the stills).</summary>
+        public static readonly List<int> HitFrames = new List<int>();
 
         struct Shot
         {
@@ -35,11 +40,15 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "queen", title = "퀸 · 금빛 원과 불씨", note = "예고 원이 터지는 빛과 같은 금색 · 바닥 원에서 작은 불빛이 연기처럼 피어오름",
+            new Shot { run = "queen", title = "퀸 · 만화 폭발", note = "불덩이가 모였다가 팡 → 검은 연기에 빛나는 결과 테두리 · 바닥 균열이 식어 사라짐",
                 eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.6f, -7.2f), lead = 0.5f },
-            new Shot { run = "bishop-trip", title = "비숍 · 줄이 늘어남", note = "적이 지나가면 줄이 다리를 따라 고무줄처럼 늘어났다 → 잡아채고 튕겨 돌아옴",
-                eye = new Vector3(0.4f, 5f, -10.9f), look = new Vector3(0.1f, 0f, -6.4f), lead = 0.45f },
-            new Shot { run = "knight", title = "나이트 · 착지 표식", note = "파란 원 대신 하얀 원형 표식이 바닥에서 돌고 · 내려올수록 안쪽 원이 조여듦",
+            new Shot { run = "rook-cluster", title = "룩 · 전기 돌진", note = "앞에 빛 · 뒤로 흐르는 속도선 · 길을 따라 기는 번개 → 맞을 때마다 번쩍 · 번개",
+                eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.35f },
+            new Shot { run = "rook-air", title = "룩 · 공중 돌진 · 내리꽂기", note = "공중에서도 속도선과 번개 · 바닥에 꽂히면 번개가 바닥으로 퍼짐",
+                eye = new Vector3(1.2f, 2.9f, -10.8f), look = new Vector3(-6f, 2.5f, -9.4f), lead = 0.5f },
+            new Shot { run = "knight-stomp", title = "나이트 · 바람 머리 찍기", note = "만화 바람 덩어리와 바람 띠가 머리 둘레로 터졌다가 녹듯 사라짐",
+                eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
+            new Shot { run = "knight", title = "나이트 · 착지 바람", note = "뛸 때 발밑 바람 · 착지하면 바람 덩어리가 1.5 m까지 퍼지고 바람 띠가 돎",
                 eye = new Vector3(5f, 3.8f, -12.5f), look = new Vector3(0f, 0.7f, -8f), lead = 0.45f },
         };
 
@@ -103,13 +112,14 @@ namespace ChessFight.RagdollLab
             Time.captureFramerate = fps;
             LabCamera.GameTimeClock = true;
             Frames = 0;
+            HitFrames.Clear();
             Began?.Invoke(path, w, h, fps);
             RagdollPawn.SkillFx += OnSkillFx;
             foreach (var shot in Shots)
             {
                 if (!string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
                 float first = 0.5f, last = 1.5f;
-                foreach (bool slow in new[] { false, true })
+                foreach (bool slow in SlowTakes ? new[] { false, true } : new[] { false })
                 {
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";
                     eye = shot.eye;
@@ -162,6 +172,7 @@ namespace ChessFight.RagdollLab
         void OnSkillFx(SkillFxEvent e)
         {
             if (clocking && e.kind != SkillFxKind.BishopWire) hits.Add(shotClock);
+            if (rolling) HitFrames.Add(Frames);
         }
 
         void Update()

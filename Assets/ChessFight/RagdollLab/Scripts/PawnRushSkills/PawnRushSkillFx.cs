@@ -18,6 +18,10 @@ namespace ChessFight.RagdollLab
     /// for the camera's bloom (<see cref="PawnRushSkillBloom"/>). R80: the queen's spell look (magic circle, pillar,
     /// walls) became little gold chess pieces that gather and pop; the rook charges in the air and slams; the
     /// knight's second press kicks off with a "당". Parts: PawnRushSkillFx.Parts.cs.
+    /// R86 (승규 님's three reference shorts, "이런 식의 형태로"): the queen is a cartoon explosion (fire that cools to
+    /// dark smoke with glowing veins, cracks in the floor), the rook an electric dash (speed lines, lightning along
+    /// its path), the knight a hand-drawn wind burst (inked puffs and swooshes); the bishop is unchanged ("지금
+    /// 좋아"). Cartoon parts: PawnRushSkillFx.Toon.cs.
     /// No star shapes anywhere (R78, R79), no words or numbers (R74), no chips or blocks (R75).
     ///
     /// Shared parts: a hit stop (the whole game holds still for a few hundredths of a second, a test-bed stand-in
@@ -41,7 +45,6 @@ namespace ChessFight.RagdollLab
         static readonly Color Gold = new Color(1f, 0.7f, 0.2f);
         static readonly Color GoldDeep = new Color(1f, 0.42f, 0.06f);
         static readonly Color Fire = new Color(1f, 0.4f, 0.08f);
-        static readonly Color FireCore = new Color(1f, 0.8f, 0.45f);
         static readonly Color Violet = new Color(0.6f, 0.3f, 1f);
         static readonly Color Magenta = new Color(1f, 0.32f, 0.85f);
         static readonly Color Sky = new Color(0.04f, 0.32f, 1f);       // deep enough to read on a white floor
@@ -54,7 +57,7 @@ namespace ChessFight.RagdollLab
         Transform root;
         Font font;
         Material lineMat, whiteMat;
-        Material matWall, matPillar, matShell, matRing, matHalo, matTile, matCurtain, matTrail, matBolt, matRod;
+        Material matPillar, matRing, matHalo, matTile, matCurtain, matTrail, matBolt, matRod;
         Camera prepared;
 
         // hit stop and shake
@@ -100,9 +103,7 @@ namespace ChessFight.RagdollLab
             whiteMat = Unlit(Color.white);
             BuildParts();
             var white = Texture2D.whiteTexture;
-            matWall = Glow(texBeam, noise: 0.65f, noiseST: new Vector4(4f, 1f, 0.05f, -1.4f), rim: -0.3f, soft: 0.25f);
             matPillar = Glow(texBeam, noise: 0.5f, noiseST: new Vector4(2f, 0.7f, 0f, -2.6f), rim: -0.8f, rimPower: 1.4f, soft: 0.2f);
-            matShell = Glow(white, noise: 0.4f, noiseST: new Vector4(3f, 2f, 0.4f, 0.7f), rim: 0.9f, rimPower: 2.2f);
             matRing = Glow(texRing, noise: 0.3f, noiseST: new Vector4(2f, 2f, 0.3f, 0.15f));
             matHalo = Glow(texSoft);
             matTile = Glow(texTile, opacity: 0.4f, noise: 0.25f, noiseST: new Vector4(1f, 1f, 0.1f, 0.35f));
@@ -110,6 +111,7 @@ namespace ChessFight.RagdollLab
             matTrail = Glow(texBand, noise: 0.35f, noiseST: new Vector4(3f, 1f, -2.5f, 0f));
             matBolt = Glow(texBand);
             matRod = Glow(white, noise: 0.5f, noiseST: new Vector4(1f, 6f, 0f, -3f), rim: -0.7f, rimPower: 1.2f);
+            BuildToon();
             RagdollPawn.SkillFx += OnSkillFx;
         }
 
@@ -180,115 +182,202 @@ namespace ChessFight.RagdollLab
         // thin hot cores far above white (light 3-6, little paint) that the bloom spreads into a coloured glow.
         // Point lights are kept low (1-2): a bright light on a white floor blooms the whole picture.
 
-        // ---- Queen A (R80: "small gold chess pieces gather and pop", not a spell): while she charges, little gold
-        // chess pieces (R81: the real Staunton shapes, a little smaller) circle round her, spinning like tops, closer
-        // and faster, into her chest, glowing brighter as they come; at the blast they pop out of the swirl the same
-        // way round, tumbling, falling and bouncing over the floor, with a gold flash and ring, sparks, two thin rings
-        // on the floor (1.5 m knocked down, 3 m pushed) and dust; the screen shakes and its edges split red and cyan.
-        // R82: her rings on the floor are the blast's gold (SkillMarks), and small lights rise off them like smoke
-        // while she charges and off the two rings as they run out.
+        // ---- Queen (R86, after the reference's stylized explosion; 승규 님 "바꿔줘": the gold chess pieces and the
+        // embers are gone): while she charges, a ball of fire gathers at her chest, boiling and growing, thin lines of
+        // light are sucked into it, and cracks begin to glow in the floor under her. The blast: a white-hot flash; a
+        // fireball of lumpy puffs that bursts up and out and within a few tenths of a second cools to dark smoke laced
+        // with glowing veins and hot edges, then is eaten away; a ring of smoke rolling out over the floor to her outer
+        // radius, with the two thin gold rings that show 1.5 m and 3 m; the cracks run out, glow, cool to scorch lines
+        // on a darkened floor and fade; sparks shoot up in arcs, embers drift. The stop, the shake and the red/cyan
+        // edges stay. Her rings on the floor while she charges are the skill's telegraph (SkillMarks), not these.
 
-        static readonly Color GoldGlow = new Color(0.9f, 0.5f, 0.1f);
+        static readonly Color FireGlow = new Color(1f, 0.55f, 0.12f);
 
-        /// <summary>The pieces' height: a real set's proportions (ChessHeights), the king this tall (m). R81: a little
-        /// smaller than R80's.</summary>
-        const float ChessKing = 0.24f;
+        /// <summary>The cracks under a charging queen, carried on into her blast.</summary>
+        readonly Dictionary<RagdollPawn, Crack> queenCracks = new Dictionary<RagdollPawn, Crack>();
 
         void QueenCharge(RagdollPawn q)
         {
             float windup = Params != null ? Params.queenWindup : 0.35f;
-            for (int i = 0; i < 18; i++)
-            {
-                int kind = i % chessMeshes.Length;
-                var piece = new Trinket(root, chessMeshes[kind], goldMat, GoldGlow)
-                {
-                    center = () => q != null ? ChestOf(q) : Vector3.zero,
-                    startAngle = i * Mathf.PI * 2f / 18f + Random.Range(-0.1f, 0.1f),
-                    startRadius = Random.Range(1.6f, 2.3f),
-                    startHeight = Random.Range(-0.8f, 0.9f),
-                    turns = 1.1f,
-                    arrive = windup * Random.Range(0.9f, 1f),
-                    size = ChessKing * ChessHeights[kind],
-                };
-                anims.Add(piece);
-                anims.Add(new Streak(root, matTrail, Hdr(Gold, 1.3f), 0.07f, 0.12f, () => piece.Alive ? piece.Position : (Vector3?)null) { paint = 0.7f, delay = 0.03f });
-            }
-            // Small lights rise like smoke off her three rings on the floor (R82): the outer one, the inner one and
-            // the one closing in.
-            float outer = Params != null ? Params.queenRadius : 3f, inner = Params != null ? Params.queenInner : 1.5f;
             Vector3 floor = FloorUnder(q);
-            float rise = 0f;
+            Vector3 Heart() => q != null ? ChestOf(q) + Flat(q.transform.forward).normalized * 0.22f : floor + Vector3.up;
+            // The ball of fire: small, white-hot and boiling, growing faster towards the end.
+            Add(new Puff(root, "Queen gathering fire", meshSphere, matFire)
+            {
+                life = windup + 0.03f,
+                lump = 0.42f,
+                flow = 6f,
+                heat = 1.15f,
+                rim = Hdr(Gold, 2f),
+                animate = (p, t) =>
+                {
+                    float k = Mathf.Clamp01(p.Age / windup);
+                    p.at = Heart();
+                    p.scale = Vector3.one * Mathf.Lerp(0.1f, 0.5f, k * k) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
+                },
+            });
+            Add(new Shape(root, "Queen gathering glow", meshQuad, matHalo)
+            {
+                life = windup + 0.03f,
+                billboard = true,
+                color = Hdr(Gold, 1.4f),
+                paint = 0.35f,
+                animate = (s, t) =>
+                {
+                    float k = Mathf.Clamp01(s.Age / windup);
+                    s.at = Heart();
+                    s.scale = Vector3.one * (0.3f + 1.3f * k * k);
+                    s.bright = 0.4f + 0.6f * k;
+                },
+            });
+            // Thin lines of light sucked in from all round, arriving as she lets go.
+            float due = 0f;
             anims.Add(new Ongoing((age, dt) =>
             {
-                if (!QueenCharging(q) || age > windup + 0.1f) return false;
-                float squeeze = Mathf.Lerp(outer, 0.2f, Mathf.Clamp01(age / windup));
-                for (rise += dt * 400f; rise >= 1f; rise -= 1f)
+                if (!QueenCharging(q) || age > windup) return false;
+                Vector3 heart = Heart();
+                for (due += dt * 110f; due >= 1f; due -= 1f)
                 {
-                    float pick = Random.value;
-                    RingEmber(floor, pick < 0.45f ? outer : pick < 0.75f ? inner : squeeze, Gold);
+                    var dir = Random.onUnitSphere;
+                    dir.y *= 0.6f;
+                    float arrive = Mathf.Clamp(windup - age, 0.05f, Random.Range(0.1f, 0.2f));
+                    Vector3 from = heart + dir.normalized * Random.Range(1.1f, 1.9f);
+                    streaks.Emit(from, (heart - from) / arrive, Random.Range(0.035f, 0.055f), arrive, Tint(Gold, Random.value * 0.5f));
                 }
                 return true;
             }));
-            Add(new Shape(root, "Queen gathering glow", meshQuad, matHalo)
+            if (queenCracks.TryGetValue(q, out var old)) old.life = 0f;
+            queenCracks[q] = QueenCracks(floor, windup);
+        }
+
+        /// <summary>The queen's cracks: creeping out dimly while she charges (fading if the charge is called off), then,
+        /// once blasted, running right out hot, cooling to scorch lines and fading.</summary>
+        Crack QueenCracks(Vector3 floor, float windup)
+        {
+            var crack = new Crack(root, meshQuad, matCrack) { at = floor, radius = 2.4f, life = 10f, paint = 0.3f };
+            crack.animate = (c, t) =>
             {
-                life = windup + 0.05f,
-                billboard = true,
-                color = Hdr(Gold, 1.3f),
-                paint = 0.5f,
-                animate = (s, t) =>
+                if (c.BlastAt < 0f)
                 {
-                    if (q != null) s.at = ChestOf(q);
-                    s.scale = Vector3.one * (0.2f + 0.9f * t * t);
-                    s.bright = t;
-                },
-            });
+                    float k = Mathf.Clamp01(c.Age / windup);
+                    c.reveal = 0.3f * k * k;
+                    c.hot = Hdr(Gold, 1.2f + 0.8f * k);
+                    if (c.Age > windup + 0.25f) c.fade = Mathf.Clamp01(1f - (c.Age - windup - 0.25f) / 0.2f);
+                    if (c.fade <= 0f) c.life = c.Age;
+                    return;
+                }
+                float b = c.Age - c.BlastAt;
+                c.reveal = Mathf.Lerp(c.RevealAtBlast, 1.02f, EaseOut(b / 0.09f));
+                c.hot = Hdr(Gold, Keys(b, 0f, 3.6f, 0.3f, 2.2f));
+                c.cool = Keys(b, 0.25f, 0f, 0.9f, 1f);
+                c.fade = Keys(b, 1.1f, 1f, 1.7f, 0f);
+                if (b > 1.72f) c.life = c.Age;
+            };
+            anims.Add(crack);
+            return crack;
         }
 
         void QueenBlast(SkillFxEvent e)
         {
             Vector3 c = Ground(e.at);
             float inner = Params != null ? Params.queenInner : 1.5f, outer = e.size > 0f ? e.size : 3f;
-            Vector3 pop = c + Vector3.up * 0.95f;
-            Flare(pop, Gold, 1.6f, outer * 2.6f, 0.45f);
-            Halo(pop, 2.2f, Gold, 0.22f);
-            Shell(pop, 0.15f, 1.3f, Gold, 0.22f);
-            FlatRing(pop, 0.2f, 1.6f, 0.16f, Gold, 0.3f, 3f);
-            for (int i = 0; i < 30; i++)
+            Vector3 pop = c + Vector3.up * 0.9f;
+
+            // The cracks under her run right out (from now, if her charge was not seen).
+            if (e.by == null || !queenCracks.TryGetValue(e.by, out var crack) || crack.Gone) crack = QueenCracks(c, 0.01f);
+            if (e.by != null) queenCracks.Remove(e.by);
+            crack.Blast();
+            Add(new Shape(root, "Queen scorch", meshQuad, matScorch)
             {
-                // Out of the swirl the same way round (R81: "회전하면서 팡"), kept within about 3 m (faster ones flew
-                // into the camera and filled the picture).
-                int kind = i % chessMeshes.Length;
-                float a = i * Mathf.PI * 2f / 30f + Random.Range(-0.12f, 0.12f);
-                var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                var around = new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a));
-                anims.Add(new Trinket(root, chessMeshes[kind], goldMat, GoldGlow)
+                life = 1.9f,
+                at = c + Vector3.up * 0.015f,
+                rotation = FlatOnFloor() * Quaternion.Euler(0f, 0f, Random.Range(0f, 360f)),
+                color = new Color(0.06f, 0.035f, 0.02f),
+                paint = 0.55f,
+                animate = (s, t) =>
                 {
-                    burst = true,
-                    pos = pop + radial * 0.25f,
-                    vel = radial * Random.Range(2.5f, 4.5f) + around * Random.Range(2f, 3.5f) + Vector3.up * Random.Range(2.5f, 4.5f),
-                    floorY = c.y,
-                    size = ChessKing * ChessHeights[kind],
-                    life = Random.Range(1.1f, 1.6f),
+                    s.scale = Vector3.one * 4.4f * Mathf.Lerp(0.5f, 1f, EaseOut(s.Age / 0.1f));
+                    s.bright = Keys(s.Age, 0.9f, 1f, 1.9f, 0f);
+                },
+            });
+
+            // The flash: a white-hot puff that bursts and is gone within a sixth of a second.
+            Add(new Puff(root, "Queen flash", meshSphere, matFire)
+            {
+                life = 0.16f,
+                at = pop,
+                lump = 0.3f,
+                flow = 3f,
+                rim = Hdr(Gold, 3f),
+                animate = (p, t) =>
+                {
+                    float a = p.Age;
+                    p.scale = Vector3.one * Mathf.Lerp(0.5f, 2.1f, EaseOut(a / 0.06f));
+                    p.heat = Keys(a, 0.04f, 1.2f, 0.12f, 0.6f);
+                    p.dissolve = Keys(a, 0.06f, 0f, 0.16f, 1f);
+                },
+            });
+
+            // The fireball: lumpy puffs bursting up and out, burning, cooling to dark smoke with glowing veins and hot
+            // edges, rising, eaten away last.
+            for (int i = 0; i < 12; i++)
+            {
+                Vector3 dir = i < 2 ? (Vector3.up + Random.insideUnitSphere * 0.3f).normalized : OnSphere(0.15f);
+                float reach = Random.Range(0.45f, 1.05f), size = Random.Range(0.75f, 1.25f), rise = Random.Range(0.25f, 0.55f);
+                Vector3 from = pop + dir * 0.15f, to = pop + dir * reach + Vector3.up * Random.Range(0f, 0.3f);
+                Add(new Puff(root, "Queen fireball", meshSphere, matFire)
+                {
+                    life = Random.Range(1.05f, 1.4f),
+                    lump = Random.Range(0.32f, 0.45f),
+                    flow = 1.6f,
+                    rotation = Random.rotation,
+                    animate = (p, t) =>
+                    {
+                        float a = p.Age;
+                        p.at = Vector3.Lerp(from, to, EaseOut(a / 0.32f)) + Vector3.up * rise * a;
+                        p.scale = Vector3.one * size * Mathf.Lerp(0.3f, 1f, EaseOut(a / 0.25f)) * Mathf.Lerp(1f, 1.15f, t);
+                        p.heat = Keys(a, 0.03f, 1.1f, 0.12f, 0.5f, 0.32f, 0.18f, 0.6f, 0f);
+                        p.rim = Hdr(FireGlow, 2.4f * Sq(Mathf.Clamp01(1f - a / 0.75f)));
+                        p.dissolve = Keys(t, 0.45f, 0f, 1f, 1f);
+                    },
                 });
             }
-            for (int i = 0; i < 36; i++)
+
+            // A ring of smoke rolling out over the floor to her outer radius, hot at its front at first.
+            const int ring = 18;
+            float turn = Random.Range(0f, 360f);
+            for (int i = 0; i < ring; i++)
             {
-                var dir = OnSphere(0.1f);
-                sparks.Emit(pop + dir * 0.2f, dir * Random.Range(5f, 10f), Random.Range(0.05f, 0.08f), Random.Range(0.35f, 0.6f), Tint(Gold, Random.value * 0.4f));
+                float a = (turn + (i + Random.Range(-0.3f, 0.3f)) * 360f / ring) * Mathf.Deg2Rad;
+                var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                float reach = outer * Random.Range(0.86f, 0.98f), size = Random.Range(0.5f, 0.75f);
+                Add(new Puff(root, "Queen smoke ring", meshSphere, matFire)
+                {
+                    life = Random.Range(0.75f, 0.95f),
+                    lump = 0.4f,
+                    flow = 2f,
+                    rotation = Quaternion.LookRotation(radial),
+                    animate = (p, t) =>
+                    {
+                        float k = EaseOut(p.Age / 0.3f);
+                        p.at = c + radial * Mathf.Lerp(0.5f, reach, k) + Vector3.up * (0.12f + 0.2f * k);
+                        p.scale = new Vector3(size, size * 0.7f, size * 1.2f) * Mathf.Lerp(0.4f, 1f, k);
+                        p.heat = Keys(p.Age, 0.02f, 0.9f, 0.22f, 0f);
+                        p.rim = Hdr(FireGlow, 2f * Mathf.Clamp01(1f - p.Age / 0.4f));
+                        p.dissolve = Keys(t, 0.3f, 0f, 1f, 1f);
+                    },
+                });
             }
-            GroundRing(c, 0.2f, inner, 0.15f, Gold, 0.5f, 2.6f);
-            GroundRing(c, 0.3f, outer, 0.3f, Gold, 0.75f, 2.2f);
-            // Small lights rise off the two rings as they run out over the floor (R82).
-            float due = 0f;
-            anims.Add(new Ongoing((age, dt) =>
+            GroundRing(c, 0.2f, inner, 0.15f, Gold, 0.45f, 2.4f);
+            GroundRing(c, 0.3f, outer, 0.3f, Gold, 0.6f, 2.2f);
+
+            for (int i = 0; i < 30; i++)
             {
-                if (age > 0.4f) return false;
-                float rIn = Mathf.Lerp(0.2f, inner, EaseOut(age / 0.15f)), rOut = Mathf.Lerp(0.3f, outer, EaseOut(age / 0.3f));
-                for (due += dt * 420f; due >= 1f; due -= 1f)
-                    RingEmber(c, Random.value < 0.4f ? rIn : rOut, Gold);
-                return true;
-            }));
-            DustRing(c, 16, 0.6f, 4f, Dust, 0.7f, 0.8f);
+                var dir = InCone(Vector3.up, 70f);
+                sparks.Emit(pop + dir * 0.3f, dir * Random.Range(6f, 12f), Random.Range(0.05f, 0.075f), Random.Range(0.5f, 0.9f), Tint(Gold, Random.value * 0.5f));
+            }
+            MoteBurst(pop, 26, GoldDeep, 0.8f, 0.6f, 1.6f, 1.4f, 0.08f);
+            Flare(pop, Gold, 1.6f, outer * 2.4f, 0.45f);
             HitStop(0.06f);
             Shake(0.14f, 0.28f);
             Edge(0.22f);
@@ -299,56 +388,112 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.07f);
             Vector3 at = e.target != null ? ChestOf(e.target) : e.at + Vector3.up * 0.3f;
             Vector3 away = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.up;
-            SparkBurst(at, 16, Gold, away + Vector3.up * 0.4f, 65f, 3f, 7f, 0.45f, 0.05f);
-            Shell(at, 0.1f, 0.65f, Gold, 0.18f);
-            Halo(at, 1.3f, Gold, 0.2f);
+            SparkBurst(at, 14, Gold, away + Vector3.up * 0.4f, 65f, 3f, 7f, 0.45f, 0.05f);
+            // A small burst of fire on the piece, cooling to a puff of smoke.
+            Add(new Puff(root, "Queen hit puff", meshSphere, matFire)
+            {
+                life = 0.45f,
+                lump = 0.35f,
+                flow = 2f,
+                animate = (p, t) =>
+                {
+                    p.at = at + away * 0.3f * EaseOut(t);
+                    p.scale = Vector3.one * Mathf.Lerp(0.25f, 0.6f, EaseOut(p.Age / 0.12f));
+                    p.heat = Keys(p.Age, 0.02f, 1.1f, 0.15f, 0f);
+                    p.rim = Hdr(FireGlow, 2f * (1f - t));
+                    p.dissolve = Keys(t, 0.35f, 0f, 1f, 1f);
+                },
+            });
         }
 
-        // ---- Rook A: a fire trail and a shield of light ahead while it charges; each piece it sends flying gives a
-        // shell of light, a ring that rushes out along its line, sparks and a flash, each bigger and with a longer stop
-        // (0.04, 0.06, 0.08 s) and shake than the one before; the fourth, which stops it, a wall of fire on the floor.
+        // ---- Rook (R86, after the reference's electric dash; it was a shield and a tail of fire): while it charges, a
+        // bright spindle of light rides ahead of it, a white-hot core and an orange body trail behind, speed lines
+        // stream back off it and lightning crawls along its path, crackling. Each piece it sends flying: a flash,
+        // lightning bursting out, speed lines and sparks thrown along its line and a ring rushing out, each bigger and
+        // with a longer stop (0.04, 0.06, 0.08 s) and shake than the one before; the fourth, which stops it, adds
+        // lightning running out over the floor. Into a wall: lightning spreading over the wall's face.
+
+        /// <summary>The white-orange of the rook's lightning.</summary>
+        static readonly Color Volt = new Color(1f, 0.86f, 0.55f);
 
         void RookCharge(RagdollPawn r)
         {
             Vector3? Where() => RookDashing(r) ? r.Hips.position : (Vector3?)null;
-            anims.Add(new Streak(root, matTrail, Hdr(Fire, 1.2f), 0.95f, 0.28f, Where) { paint = 0.8f });
-            anims.Add(new Streak(root, matTrail, Hdr(FireCore, 3f), 0.3f, 0.16f, Where) { paint = 0.3f });
+            Vector3? Chest() => RookDashing(r) ? ChestOf(r) : (Vector3?)null;
+            anims.Add(new Streak(root, matTrail, Hdr(Fire, 1.25f), 0.75f, 0.2f, Where) { paint = 0.8f });
+            anims.Add(new Streak(root, matTrail, Hdr(Volt, 3.4f), 0.16f, 0.32f, Where) { paint = 0.25f });
+            anims.Add(new PathBolts(root, matBolt, Chest, 1.6f, Hdr(Volt, 3.2f), Hdr(Fire, 1.6f)));
             Vector3 heading = Flat(r.transform.forward).sqrMagnitude > 0.01f ? Flat(r.transform.forward).normalized : Vector3.forward;
             float endedAt = -1f;
-            Add(new Shape(root, "Rook bow", meshSphere, matShell)
+            // The spindle of light ahead of it.
+            Add(new Beam(root, matFlare)
             {
                 life = 5f,
-                color = Hdr(Fire, 1.6f),
-                paint = 0.6f,
-                animate = (s, t) =>
+                color = Hdr(Volt, 2.4f),
+                paint = 0.35f,
+                animate = (b, t) =>
                 {
-                    float age = s.Age;
+                    float age = b.Age;
                     if (endedAt < 0f && !RookDashing(r)) endedAt = age;
-                    if (endedAt >= 0f && age - endedAt > 0.14f) { s.life = age; return; }
+                    if (endedAt >= 0f && age - endedAt > 0.1f) { b.life = age; return; }
                     if (r != null)
                     {
                         Vector3 v = r.Hips.linearVelocity;   // up or down too: the charge in the air (R80)
                         if (v.sqrMagnitude > 1f) heading = v.normalized;
-                        s.at = ChestOf(r) + heading * 0.5f;
+                        Vector3 chest = ChestOf(r);
+                        b.head = chest + heading * 0.75f;
+                        b.tail = chest - heading * 0.15f;
                     }
-                    s.rotation = Quaternion.LookRotation(heading);
-                    s.scale = new Vector3(1.25f, 1.7f, 0.85f) * Mathf.Min(1f, age / 0.06f);
-                    s.bright = (0.8f + 0.2f * Mathf.Sin(age * 47f)) * (endedAt < 0f ? 1f : 1f - (age - endedAt) / 0.14f);
+                    b.width = 0.6f * Mathf.Min(1f, age / 0.05f) * (0.85f + 0.15f * Mathf.Sin(age * 90f));
+                    b.bright = endedAt < 0f ? 1f : 1f - (age - endedAt) / 0.1f;
                 },
             });
-            float flame = 0f, kick = 0f;
+            float line = 0f, zap = 0f, kick = 0f;
             anims.Add(new Ongoing((age, dt) =>
             {
                 if (!RookDashing(r)) return false;
-                Vector3 chest = ChestOf(r), back = -heading;
-                for (flame += dt * 140f; flame >= 1f; flame -= 1f)
-                    motes.Emit(chest + Random.insideUnitSphere * 0.35f, back * Random.Range(2f, 5f) + Random.insideUnitSphere * 0.8f,
-                        Random.Range(0.07f, 0.12f), Random.Range(0.2f, 0.35f), Tint(Fire, Random.value * 0.3f));
-                for (kick += dt * 30f; kick >= 1f; kick -= 1f)
-                    smoke.Emit(Ground(r.Hips.position) + back * 0.3f + Random.insideUnitSphere * 0.2f, back * Random.Range(0.5f, 1.5f) + Vector3.up * 0.4f,
-                        Random.Range(0.35f, 0.55f), Random.Range(0.5f, 0.8f), (Color32)Dust, Random.Range(-60f, 60f));
+                Vector3 chest = ChestOf(r);
+                Vector3 side = Vector3.Cross(heading, Vector3.up);
+                side = side.sqrMagnitude > 1e-4f ? side.normalized : Vector3.right;
+                Vector3 over = Vector3.Cross(side, heading);
+                // Speed lines streaming back off it: thin white-hot ones and wider orange ones (they show on white).
+                for (line += dt * 80f; line >= 1f; line -= 1f)
+                {
+                    float a = Random.Range(0f, Mathf.PI * 2f), reach = Random.Range(0.25f, 0.65f);
+                    Vector3 at = chest + (side * Mathf.Cos(a) + over * Mathf.Sin(a)) * reach + heading * Random.Range(-0.2f, 0.5f);
+                    bool hot = Random.value < 0.6f;
+                    SpeedLine(at, -heading, Random.Range(0.8f, 1.9f), Random.Range(1f, 3f), hot ? Random.Range(0.02f, 0.04f) : Random.Range(0.04f, 0.07f),
+                        hot ? Hdr(Volt, 3f) : Hdr(Fire, 1.4f), hot ? 0.25f : 0.85f, Random.Range(0.12f, 0.2f));
+                }
+                // Crackling sparks off its body.
+                for (zap += dt * 70f; zap >= 1f; zap -= 1f)
+                    sparks.Emit(chest + Random.insideUnitSphere * 0.4f, Random.onUnitSphere * Random.Range(2f, 5f) - heading * 2f, Random.Range(0.03f, 0.05f),
+                        Random.Range(0.1f, 0.2f), Tint(Volt, Random.value * 0.4f));
+                if (r.Grounded)
+                    for (kick += dt * 25f; kick >= 1f; kick -= 1f)
+                        smoke.Emit(Ground(r.Hips.position) - heading * 0.3f + Random.insideUnitSphere * 0.2f, -heading * Random.Range(0.5f, 1.5f) + Vector3.up * 0.4f,
+                            Random.Range(0.35f, 0.55f), Random.Range(0.5f, 0.8f), (Color32)Dust, Random.Range(-60f, 60f));
                 return true;
             }));
+        }
+
+        /// <summary>The flash where the rook's lightning strikes: a white-hot point in an orange glow.</summary>
+        void Zap(Vector3 at, float size, float life)
+        {
+            Halo(at, size * 1.6f, Fire, life * 1.5f);
+            Add(new Shape(root, "Zap", meshQuad, matHalo)
+            {
+                life = life,
+                at = at,
+                billboard = true,
+                color = Hdr(Volt, 3.2f),
+                paint = 0.3f,
+                animate = (s, t) =>
+                {
+                    s.scale = Vector3.one * size * Mathf.Lerp(1f, 0.4f, t);
+                    s.bright = 1f - t;
+                },
+            });
         }
 
         void RookHit(SkillFxEvent e)
@@ -358,11 +503,11 @@ namespace ChessFight.RagdollLab
             Shake(new[] { 0.05f, 0.08f, 0.11f }[i - 1], 0.16f + 0.03f * i);
             FlashWhite(e.target, 0.06f);
             Vector3 d = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
-            Shell(e.at, 0.15f, 0.55f + 0.2f * i, Fire, 0.18f);
+            Zap(e.at, 0.9f + 0.3f * i, 0.12f);
+            anims.Add(new Bolts(root, matBolt, 4 + 2 * i, () => e.at, Hdr(Volt, 3.2f), 0.8f + 0.3f * i, 0.16f + 0.03f * i));
+            LineBurst(e.at, d, 50f, 6 + 3 * i, 0.5f + 0.15f * i, 1.2f + 0.3f * i, Hdr(Volt, 3f), Hdr(Fire, 1.4f));
             SonicRing(e.at, d, 0.2f, 1f + 0.35f * i, Fire, 0.26f);
-            SparkBurst(e.at, 18 + 8 * i, FireCore, d + Vector3.up * 0.3f, 55f, 4f, 9f + 2f * i, 0.5f, 0.06f);
-            SparkBurst(e.at, 6, FireCore, -d, 60f, 2f, 4f, 0.35f, 0.05f);
-            Halo(e.at, 1.4f + 0.3f * i, Fire, 0.18f);
+            SparkBurst(e.at, 18 + 8 * i, Volt, d + Vector3.up * 0.3f, 55f, 4f, 9f + 2f * i, 0.5f, 0.06f);
             Flare(e.at, Fire, 0.8f + 0.4f * i, 6f, 0.3f);
         }
 
@@ -373,44 +518,47 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.07f);
             Vector3 d = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             Vector3 g = Ground(e.at);
-            Shell(e.at, 0.2f, 1.2f, Fire, 0.22f);
+            Zap(e.at, 1.8f, 0.16f);
+            anims.Add(new Bolts(root, matBolt, 10, () => e.at, Hdr(Volt, 3.2f), 1.6f, 0.3f));
+            anims.Add(new Bolts(root, matBolt, 7, () => g + Vector3.up * 0.05f, Hdr(Volt, 3f), 1.8f, 0.35f) { plane = Vector3.up });
+            LineBurst(e.at, d, 60f, 16, 0.8f, 1.9f, Hdr(Volt, 3f), Hdr(Fire, 1.4f), 0.2f);
             SonicRing(e.at, d, 0.3f, 2.2f, Fire, 0.3f);
-            SparkBurst(e.at, 40, FireCore, d + Vector3.up * 0.4f, 70f, 4f, 11f, 0.6f, 0.07f);
-            Wall(g, 0.3f, 1.3f, 0.2f, 0.7f, 0.15f, Fire, 0.5f, 0.85f);
-            GroundRing(g, 0.3f, 1.3f, 0.2f, Fire, 0.55f, 2.6f);
-            DustRing(g, 18, 0.4f, 3.5f, Dust, 0.75f, 0.9f);
-            Halo(e.at, 2.2f, Fire, 0.24f);
+            SparkBurst(e.at, 40, Volt, d + Vector3.up * 0.4f, 70f, 4f, 11f, 0.6f, 0.07f);
+            GroundRing(g, 0.3f, 1.3f, 0.2f, Fire, 0.5f, 2.6f);
+            DustRing(g, 12, 0.4f, 3f, Dust, 0.6f, 0.8f);
             Flare(e.at, Fire, 1.8f, 7f, 0.4f);
         }
 
-        /// <summary>A charge down out of the air into the floor (R80): a wall of fire round where it lands, a ring,
-        /// sparks thrown up, dust, a flash and a big shake.</summary>
+        /// <summary>A charge down out of the air into the floor (R80): lightning running out over the floor, speed
+        /// lines thrown up, a ring, sparks, dust, a flash and a big shake.</summary>
         void RookSlam(SkillFxEvent e)
         {
             HitStop(0.07f);
             Shake(0.22f, 0.35f);
             Vector3 g = Ground(e.at + Vector3.up * 0.3f);
-            Wall(g, 0.2f, 1.6f, 0.18f, 0.8f, 0.12f, Fire, 0.5f, 0.85f);
+            Zap(g + Vector3.up * 0.4f, 2f, 0.16f);
+            anims.Add(new Bolts(root, matBolt, 9, () => g + Vector3.up * 0.05f, Hdr(Volt, 3.2f), 2.1f, 0.38f) { plane = Vector3.up });
+            LineBurst(g + Vector3.up * 0.1f, Vector3.up, 55f, 16, 0.8f, 2f, Hdr(Volt, 3f), Hdr(Fire, 1.4f), 0.22f);
             GroundRing(g, 0.2f, 1.8f, 0.2f, Fire, 0.55f, 2.6f);
-            Shell(g + Vector3.up * 0.3f, 0.2f, 1.2f, Fire, 0.22f);
-            SparkBurst(g + Vector3.up * 0.2f, 40, FireCore, Vector3.up, 75f, 4f, 10f, 0.6f, 0.07f);
-            DustRing(g, 18, 0.4f, 4f, Dust, 0.8f, 0.9f);
-            Halo(g + Vector3.up * 0.5f, 2.2f, Fire, 0.22f);
+            SparkBurst(g + Vector3.up * 0.2f, 40, Volt, Vector3.up, 75f, 4f, 10f, 0.6f, 0.07f);
+            DustRing(g, 16, 0.4f, 4f, Dust, 0.75f, 0.9f);
             Flare(g + Vector3.up * 0.6f, Fire, 2f, 7f, 0.4f);
         }
 
-        /// <summary>Into a wall (or, smaller, a barricade): the hardest thud of the rook's (R75: a clear shake).</summary>
+        /// <summary>Into a wall (or, smaller, a barricade): the hardest thud of the rook's (R75: a clear shake), lightning
+        /// spreading over the wall's face.</summary>
         void RookWall(SkillFxEvent e, float k)
         {
             HitStop(0.08f * k);
             Shake(0.25f * k, 0.4f);
             Vector3 d = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             Vector3 at = e.at - d * 0.1f + Vector3.up * (k < 1f ? 0.5f : 0f);
-            Shell(at, 0.2f, 1.1f * k, Fire, 0.22f);
+            Zap(at, 2f * k, 0.16f);
+            anims.Add(new Bolts(root, matBolt, Mathf.RoundToInt(9 * k), () => at, Hdr(Volt, 3.2f), 1.8f * k, 0.35f) { plane = d });
+            LineBurst(at, -d, 65f, Mathf.RoundToInt(14 * k), 0.6f, 1.6f * k, Hdr(Volt, 3f), Hdr(Fire, 1.4f), 0.2f);
             SonicRing(at, -d, 0.3f, 2.4f * k, Fire, 0.3f);
-            SparkBurst(at, Mathf.RoundToInt(45 * k), FireCore, -d + Vector3.up * 0.25f, 80f, 4f, 11f, 0.6f, 0.07f);
+            SparkBurst(at, Mathf.RoundToInt(45 * k), Volt, -d + Vector3.up * 0.25f, 80f, 4f, 11f, 0.6f, 0.07f);
             DustRing(Ground(at), Mathf.RoundToInt(12 * k), 0.3f, 2.5f, Dust, 0.7f, 0.8f);
-            Halo(at, 2.4f * k, Fire, 0.22f);
             Flare(at - d * 0.4f, Fire, 2f * k, 8f, 0.4f);
         }
 
@@ -488,64 +636,85 @@ namespace ChessFight.RagdollLab
             Flare(at + Vector3.up * 0.6f, Violet, 0.45f, 3.5f, 0.25f);
         }
 
-        // ---- Knight B: a trail of light through the leap; a ring where it turns; homing in, crackling lightning;
-        // the stomp throws a crown of light out from the head, a beam, lightning and sparks, and orbs of light circle
-        // the dazed piece (no stars); a landing rolls dust and a low wall of light out to 1.5 m.
+        // ---- Knight (R86, after the reference's hand-drawn wind burst; it was trails, rings and walls of blue light):
+        // wind in cartoon puffs and swooshes, white, sky and deep blue in hard bands, inked in navy, bursting out and
+        // eaten away (the reference's "afterimage"). The take-off throws puffs out round the feet with a swoosh on the
+        // floor and a swirl rising round the knight; in the air small puffs drop behind it; the second press ("당")
+        // kicks puffs back from under its feet with a ring of wind it bursts through; the stomp throws a crown of puffs
+        // and two swooshes out round the head; a landing bursts puffs out over the floor to 1.5 m with swooshes
+        // sweeping round. A dazed piece has three little puffs and a swoosh circling over its head (no stars).
 
         void KnightLeap(RagdollPawn k)
         {
             Vector3? Where() => KnightLeaping(k) ? k.Hips.position : (Vector3?)null;
-            anims.Add(new Streak(root, matTrail, Hdr(Sky, 1.25f), 0.75f, 0.35f, Where) { paint = 0.85f });
-            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 3f), 0.22f, 0.22f, Where) { paint = 0.3f });
-            float trail = 0f;
+            anims.Add(new Streak(root, matTrail, Hdr(Sky, 1.2f), 0.55f, 0.3f, Where) { paint = 0.85f });
+            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 2.6f), 0.18f, 0.22f, Where) { paint = 0.4f });
+            float due = 0f;
             anims.Add(new Ongoing((age, dt) =>
             {
                 if (!KnightLeaping(k)) return false;
                 Vector3 v = k.Hips.linearVelocity;
-                for (trail += dt * 45f; trail >= 1f; trail -= 1f)
-                    motes.Emit(k.Hips.position + Random.insideUnitSphere * 0.25f, -v * 0.15f + Random.insideUnitSphere * 0.4f,
-                        Random.Range(0.05f, 0.09f), Random.Range(0.3f, 0.5f), Tint(Sky, Random.value * 0.3f));
+                for (due += dt * 22f; due >= 1f; due -= 1f)
+                {
+                    Vector3 at = k.Hips.position - v * 0.04f + Random.insideUnitSphere * 0.2f;
+                    float s = Random.Range(0.14f, 0.24f);
+                    Add(new Puff(root, "Wind trail puff", meshSphere, matWind)
+                    {
+                        life = 0.32f,
+                        at = at,
+                        lump = 0.4f,
+                        flow = 2f,
+                        rotation = Random.rotation,
+                        animate = (p, t) =>
+                        {
+                            p.scale = Vector3.one * s * Mathf.Lerp(0.5f, 1f, EaseOut(t * 3f));
+                            p.dissolve = Keys(t, 0.2f, 0f, 1f, 1f);
+                        },
+                    });
+                }
                 return true;
             }));
         }
 
-        /// <summary>"다": the leap's take-off, a ring and a puff of dust where it pushed off; off the air (R81) a ring
-        /// kicked away under its feet instead.</summary>
+        /// <summary>"다": the leap's take-off, puffs out round the feet, a swoosh on the floor and a swirl rising round
+        /// the knight; off the air (R81) a swoosh and puffs kicked away under its feet instead.</summary>
         void KnightTakeOff(SkillFxEvent e)
         {
             Shake(0.04f, 0.12f);
             if (e.count == 1)
             {
-                FlatRing(e.at, 0.15f, 1.2f, 0.16f, Sky, 0.32f, 2.8f);
-                SparkBurst(e.at, 12, SkyCore, Vector3.down, 60f, 2f, 5f, 0.35f, 0.05f);
+                WindArc(e.at, Vector3.up, 0.25f, 0.95f, 0.26f, 300f, 0.4f);
+                WindPuffs(e.at, Vector3.down, 6, 0.15f, 0.6f, 0.25f, 0.3f, 0.4f);
                 return;
             }
+            var k = e.by;
             Vector3 g = Ground(e.at + Vector3.up * 0.3f);
-            GroundRing(g, 0.1f, 0.9f, 0.15f, Sky, 0.35f, 2.4f);
-            DustRing(g, 10, 0.2f, 2.2f, Dust, 0.45f, 0.6f);
+            WindPuffs(g, Vector3.up, 9, 0.25f, 0.95f, 0.15f, 0.42f, 0.5f, 0.75f);
+            WindArc(g + Vector3.up * 0.05f, Vector3.up, 0.35f, 1.05f, 0.28f, 300f, 0.42f);
+            WindArc(g, Vector3.up, 0.6f, 0.75f, 0.22f, 420f, 0.38f, 0f, 0.85f, 1.3f, () => k != null ? k.Hips.position - Vector3.up * 0.7f : g);
         }
 
         /// <summary>"당" (R80): the second press kicks off the air, turned or straight on: a short stop and a shake,
-        /// a ring of light kicked away under the feet, one rushing along the new line, sparks thrown back, a flash.</summary>
+        /// puffs kicked back from under its feet, a swoosh under them and a ring of wind it bursts through.</summary>
         void KnightTurn(SkillFxEvent e)
         {
             HitStop(0.045f);
             Shake(0.1f, 0.2f);
             Vector3 d = e.dir.sqrMagnitude > 1e-4f ? e.dir.normalized : Vector3.forward;
-            FlatRing(e.at - Vector3.up * 0.35f, 0.15f, 1.6f, 0.18f, Sky, 0.35f, 2.8f);
-            SonicRing(e.at, d, 0.2f, 1.5f, Sky, 0.3f);
-            SparkBurst(e.at, 22, SkyCore, -d + Vector3.down * 0.4f, 55f, 3f, 7f, 0.45f, 0.05f);
-            anims.Add(new Bolts(root, matBolt, 3, () => e.at, Hdr(SkyCore, 3f), 0.8f, 0.2f));
-            Halo(e.at, 1.4f, Sky, 0.2f);
-            Flare(e.at, Sky, 1.4f, 5f, 0.3f);
+            Vector3 feet = e.at - Vector3.up * 0.35f;
+            WindPuffs(feet, -d + Vector3.down * 0.5f, 8, 0.1f, 0.5f, 0.6f, 0.36f, 0.45f, 0.85f);
+            WindArc(feet, Vector3.up, 0.25f, 1.1f, 0.3f, 320f, 0.4f);
+            WindArc(e.at + d * 0.3f, d, 0.35f, 0.95f, 0.24f, 330f, 0.35f);
+            SparkBurst(e.at, 10, SkyCore, -d, 60f, 2f, 5f, 0.3f, 0.04f);
         }
 
         void KnightHome(SkillFxEvent e)
         {
             var k = e.by;
             if (k == null) return;
-            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 3f), 0.3f, 0.2f, () => KnightLeaping(k) ? k.Hips.position : (Vector3?)null) { paint = 0.3f });
-            anims.Add(new Bolts(root, matBolt, 3, () => ChestOf(k), Hdr(SkyCore, 3.2f), 0.7f, 0.35f));
+            anims.Add(new Streak(root, matTrail, Hdr(SkyCore, 2.6f), 0.28f, 0.2f, () => KnightLeaping(k) ? k.Hips.position : (Vector3?)null) { paint = 0.4f });
+            Vector3 line = e.at - ChestOf(k);
+            WindArc(ChestOf(k), line, 0.45f, 0.7f, 0.2f, 380f, 0.3f, 0f, 0f, 0f, () => k != null ? ChestOf(k) : e.at);
         }
 
         void KnightStomp(SkillFxEvent e)
@@ -555,26 +724,18 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.07f);
             StartSquash(e.target);
             Vector3 at = e.at;
-            Wall(at - Vector3.up * 0.25f, 0.15f, 1.4f, 0.16f, 0.65f, 0.12f, Sky, 0.45f, 0.92f);
-            Shafts(Ground(at), 0.9f, 6, SkyCore, 1.8f, 0.35f);
-            Add(new Shape(root, "Knight strike", meshCylinder, matPillar)
+            // A crown of wind bursting out round the head, two swooshes sweeping round it.
+            WindPuffs(at, Vector3.up, 10, 0.15f, 0.9f, 0.25f, 0.4f, 0.55f, 0.8f);
+            WindArc(at, Vector3.up, 0.35f, 1.2f, 0.3f, 320f, 0.45f);
+            WindArc(at - Vector3.up * 0.15f, Vector3.up, 0.3f, 0.95f, 0.22f, 300f, 0.42f, 0.04f);
+            SparkBurst(at, 14, SkyCore, Vector3.up, 70f, 2f, 5f, 0.35f, 0.045f);
+            if (e.target != null)
             {
-                life = 0.25f,
-                at = at,
-                color = Hdr(SkyCore, 3.2f),
-                paint = 0.25f,
-                animate = (s, t) =>
-                {
-                    float w = Mathf.Lerp(0.26f, 0.03f, t);
-                    s.scale = new Vector3(w, 3f, w);
-                    s.bright = 1f - t;
-                },
-            });
-            anims.Add(new Bolts(root, matBolt, 8, () => at, Hdr(SkyCore, 3.2f), 1.4f, 0.4f));
-            SparkBurst(at, 32, SkyCore, Vector3.up, 70f, 3f, 8f, 0.55f, 0.06f);
-            Shell(at, 0.15f, 0.9f, Sky, 0.2f);
-            if (e.target != null) GroundRing(Ground(e.target.Hips.position), 0.2f, 1.2f, 0.2f, Sky, 0.5f, 2.6f);
-            Flare(at, Sky, 1.5f, 6f, 0.4f);
+                Vector3 g = Ground(e.target.Hips.position);
+                WindPuffs(g, Vector3.up, 8, 0.3f, 1.1f, 0.1f, 0.38f, 0.5f, 0.7f);
+                WindArc(g + Vector3.up * 0.05f, Vector3.up, 0.4f, 1.25f, 0.26f, 300f, 0.45f, 0.03f);
+            }
+            Flare(at, Sky, 1f, 5f, 0.3f);
             if (e.target != null) Daze(e.target, 0.45f, 1.8f);
             if (e.by != null) stompedAt[e.by] = Clock;
         }
@@ -588,56 +749,51 @@ namespace ChessFight.RagdollLab
                 return;
             }
             float radius = e.size > 0f ? e.size : 1.5f;
-            Wall(g, 0.2f, radius, 0.2f, 0.5f, 0.1f, Sky, 0.5f, 0.92f);
-            GroundRing(g, 0.2f, radius, 0.22f, Sky, 0.5f, 2.4f);
-            DustRing(g, 14, 0.35f, 3.2f, Dust, 0.6f, 0.8f);
-            Flare(g + Vector3.up * 0.5f, Sky, 0.9f, 4f, 0.3f);
+            // The burst: puffs out over the floor to the landing's reach and a few up round the feet, swooshes
+            // sweeping round, all eaten away.
+            WindPuffs(g, Vector3.up, 14, 0.3f, radius * 0.95f, 0.2f, 0.5f, 0.7f, 0.7f);
+            WindPuffs(g + Vector3.up * 0.1f, Vector3.up, 5, 0.1f, 0.4f, 0.8f, 0.5f, 0.65f, 1f);
+            WindArc(g + Vector3.up * 0.05f, Vector3.up, 0.35f, radius * 1.05f, 0.34f, 300f, 0.5f);
+            WindArc(g + Vector3.up * 0.08f, Vector3.up, 0.3f, radius * 0.8f, 0.26f, 280f, 0.46f, 0.05f);
+            WindArc(g + Vector3.up * 0.5f, (Vector3.up + Flat(Random.onUnitSphere) * 0.45f).normalized, 0.45f, 0.9f, 0.22f, 260f, 0.4f, 0.03f);
+            Flare(g + Vector3.up * 0.5f, Sky, 0.7f, 4f, 0.3f);
         }
 
-        /// <summary>Three orbs of light with tails circling over a dazed piece's head, and a faint ring (in place of
-        /// the stars before).</summary>
+        /// <summary>Three little puffs of wind circling over a dazed piece's head with a swoosh going round with them
+        /// (R86; orbs of light before, R79, and stars before that).</summary>
         void Daze(RagdollPawn pawn, float delay, float life)
         {
             for (int i = 0; i < 3; i++)
             {
                 float phase = i * Mathf.PI * 2f / 3f;
-                float born = 0f;
-                Vector3? Orb()
-                {
-                    if (pawn == null || born < delay || born > delay + life) return null;
-                    float a = born * 6f + phase;
-                    return HeadOf(pawn) + Vector3.up * 0.4f + new Vector3(Mathf.Cos(a) * 0.32f, Mathf.Sin(a * 2f) * 0.04f, Mathf.Sin(a) * 0.32f);
-                }
-                Add(new Shape(root, "Daze orb", meshQuad, matHalo)
+                Add(new Puff(root, "Daze puff", meshSphere, matWind)
                 {
                     life = delay + life,
-                    billboard = true,
-                    color = Hdr(SkyCore, 2.6f),
-                    paint = 0.5f,
-                    animate = (s, t) =>
+                    lump = 0.3f,
+                    flow = 2f,
+                    animate = (p, t) =>
                     {
-                        born = s.Age;
-                        var p = Orb();
-                        s.bright = p.HasValue ? Mathf.Clamp01((delay + life - born) / 0.3f) : 0f;
-                        if (p.HasValue) s.at = p.Value;
-                        s.scale = Vector3.one * 0.2f;
+                        float age = p.Age;
+                        if (pawn == null || age < delay) { p.scale = Vector3.zero; return; }
+                        float a = age * 6f + phase;
+                        p.at = HeadOf(pawn) + Vector3.up * 0.4f + new Vector3(Mathf.Cos(a) * 0.32f, Mathf.Sin(a * 2f) * 0.04f, Mathf.Sin(a) * 0.32f);
+                        p.scale = Vector3.one * 0.15f * Mathf.Clamp01((age - delay) / 0.12f);
+                        p.dissolve = 1f - Mathf.Clamp01((delay + life - age) / 0.3f);
                     },
                 });
-                anims.Add(new Streak(root, matTrail, Hdr(Sky, 1.2f), 0.07f, 0.22f, Orb) { delay = delay + 0.02f, paint = 0.8f });
             }
-            var flat = FlatOnFloor();
-            Add(new Shape(root, "Daze ring", meshQuad, matRing)
+            Add(new Swoosh(root, matSwoosh)
             {
                 life = delay + life,
-                color = Hdr(Sky, 1.5f),
-                paint = 0.8f,
+                sweep = 280f,
+                width = 0.08f,
+                radius = 0.32f,
+                center = () => pawn != null ? HeadOf(pawn) + Vector3.up * 0.4f : Vector3.zero,
                 animate = (s, t) =>
                 {
                     float age = s.Age;
-                    s.bright = age < delay ? 0f : Mathf.Clamp01((delay + life - age) / 0.3f) * Mathf.Clamp01((age - delay) / 0.15f);
-                    if (pawn != null) s.at = HeadOf(pawn) + Vector3.up * 0.4f;
-                    s.rotation = flat * Quaternion.Euler(0f, 0f, age * 90f);
-                    s.scale = Vector3.one * 0.85f;
+                    s.fade = pawn == null || age < delay ? 0f : Mathf.Clamp01((age - delay) / 0.15f) * Mathf.Clamp01((delay + life - age) / 0.3f);
+                    s.startAngle = -age * 6f * Mathf.Rad2Deg;
                 },
             });
         }
@@ -649,28 +805,6 @@ namespace ChessFight.RagdollLab
         static Vector3 ChestOf(RagdollPawn p) => p != null ? p.bodies[(int)BodyId.Chest].position : Vector3.zero;
 
         static float EaseOut(float t) => 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3f);
-
-        /// <summary>A wall of light (an open cylinder) running out over the floor from <paramref name="from"/> to
-        /// <paramref name="to"/> metres in <paramref name="grow"/> seconds, sinking from height h0 to h1. Its body
-        /// covers the floor by <paramref name="paint"/>.</summary>
-        void Wall(Vector3 c, float from, float to, float grow, float h0, float h1, Color color, float life, float paint)
-        {
-            Add(new Shape(root, "Wall of light", meshCylinder, matWall)
-            {
-                life = life,
-                at = c,
-                color = Hdr(color, 1.25f),
-                paint = paint,
-                animate = (s, t) =>
-                {
-                    float age = s.Age, r = Mathf.Lerp(from, to, EaseOut(age / grow));
-                    s.scale = new Vector3(r, Mathf.Lerp(h0, h1, t), r);
-                    float fade = age < grow ? 1f : 1f - (age - grow) / Mathf.Max(0.01f, life - grow);
-                    s.bright = fade * fade;
-                    s.dissolve = Mathf.Clamp01((t - 0.35f) / 0.65f) * 0.7f;
-                },
-            });
-        }
 
         /// <summary>A beam of light standing up from <paramref name="c"/>, narrowing as it fades: a coloured sheath and
         /// a white-hot core inside it.</summary>
@@ -691,31 +825,6 @@ namespace ChessFight.RagdollLab
                         s.dissolve = t * 0.5f;
                     },
                 });
-        }
-
-        /// <summary>Thin shafts of light shooting up around a ring of <paramref name="radius"/>, one after another.</summary>
-        void Shafts(Vector3 c, float radius, int count, Color color, float height, float life)
-        {
-            float turn = Random.Range(0f, Mathf.PI * 2f);
-            for (int i = 0; i < count; i++)
-            {
-                float a = turn + i * Mathf.PI * 2f / count, delay = i * 0.025f, h = height * Random.Range(0.7f, 1.15f);
-                Vector3 at = c + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius;
-                Add(new Shape(root, "Shaft of light", meshCylinder, matPillar)
-                {
-                    life = life + delay,
-                    at = at,
-                    color = Hdr(color, 3f),
-                    paint = 0.3f,
-                    animate = (s, t) =>
-                    {
-                        float k = Mathf.Clamp01((s.Age - delay) / life);
-                        float w = Mathf.Lerp(0.09f, 0.01f, k);
-                        s.scale = new Vector3(w, h * EaseOut(k * 4f), w);
-                        s.bright = s.Age < delay ? 0f : 1f - k * k;
-                    },
-                });
-            }
         }
 
         /// <summary>A ring of light flat on the floor growing out to <paramref name="to"/> metres: a hot line
@@ -759,24 +868,6 @@ namespace ChessFight.RagdollLab
                     s.at = at + facing * 0.6f * EaseOut(t);
                     s.scale = Vector3.one * Mathf.Lerp(from, to, EaseOut(t)) * 2f / 0.86f;
                     s.bright = (1f - t) * (1f - t);
-                },
-            });
-        }
-
-        /// <summary>A sphere of light that bursts out and fades, brightest at its edge.</summary>
-        void Shell(Vector3 at, float from, float to, Color color, float life)
-        {
-            Add(new Shape(root, "Shell of light", meshSphere, matShell)
-            {
-                life = life,
-                at = at,
-                color = Hdr(color, 1.4f),
-                paint = 0.6f,
-                animate = (s, t) =>
-                {
-                    s.scale = Vector3.one * Mathf.Lerp(from, to, EaseOut(t)) * 2f;   // the sphere mesh is 1 across
-                    s.bright = (1f - t) * (1f - t);
-                    s.dissolve = t * 0.5f;
                 },
             });
         }
@@ -1057,6 +1148,7 @@ namespace ChessFight.RagdollLab
                 if (bloom != null) bloom.enabled = effects;
             }
 
+            ShineToon();
             WatchPieces();
 
             // Squash after the skeleton has been posed this frame.
@@ -1066,8 +1158,7 @@ namespace ChessFight.RagdollLab
             sparks.Step(dt);
             motes.Step(dt);
             smoke.Step(dt);
-            embers.Step(dt);
-            wisps.Step(dt);
+            streaks.Step(dt);
 
             for (int i = anims.Count - 1; i >= 0; i--)
                 if (!anims[i].Step(dt, cam)) { anims[i].Destroy(); anims.RemoveAt(i); }
