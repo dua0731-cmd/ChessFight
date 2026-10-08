@@ -17,8 +17,11 @@ namespace ChessFight.RagdollLab
     public partial class PawnRushSkillFx
     {
         Shader toonShader, crackShader, swooshShader;
-        /// <summary>The queen's fire turning to dark smoke; the knight's wind; the rook's dust.</summary>
-        Material matFire, matWind;
+        /// <summary>The queen's fire turning to dark smoke, and the dust her blast rolls over the floor; the knight's
+        /// wind.</summary>
+        Material matFire, matDust, matWind;
+        /// <summary>A round sphere for the puffs (an icosphere: the lumps stay smooth, the UV sphere showed facets).</summary>
+        Mesh meshPuff;
         Material matCrack, matScorch, matSwoosh, matFlare;
         Texture2D texCracks, texScorch;
         Emitter streaks;
@@ -50,6 +53,13 @@ namespace ChessFight.RagdollLab
             matFire.SetColor("_Bite", new Color(1.2f, 0.55f, 0.15f));
             matFire.SetFloat("_Scale", 1.8f);
 
+            matDust = Mat(toonShader);
+            matDust.CopyPropertiesFromMaterial(matFire);
+            matDust.SetColor("_Lit", new Color(0.86f, 0.8f, 0.73f));
+            matDust.SetColor("_Mid", new Color(0.64f, 0.58f, 0.53f));
+            matDust.SetColor("_Shade", new Color(0.43f, 0.38f, 0.36f));
+            matDust.SetColor("_Bite", new Color(0.43f, 0.38f, 0.36f));
+
             matWind = Mat(toonShader);
             matWind.SetColor("_Lit", WindLit);
             matWind.SetColor("_Mid", WindMid);
@@ -60,6 +70,7 @@ namespace ChessFight.RagdollLab
             matWind.SetColor("_Bite", WindInk);
             matWind.SetFloat("_Scale", 1.9f);
 
+            meshPuff = Icosphere(3);
             texCracks = DrawCracks(512, 7);
             texScorch = Tex(128, 128, TextureWrapMode.Clamp, (u, v) =>
             {
@@ -102,7 +113,54 @@ namespace ChessFight.RagdollLab
 
         void DestroyToon()
         {
-            foreach (var t in new Object[] { texCracks, texScorch }) if (t != null) Destroy(t);
+            foreach (var t in new Object[] { texCracks, texScorch, meshPuff }) if (t != null) Destroy(t);
+        }
+
+        /// <summary>A sphere 1 across made by splitting an icosahedron's faces <paramref name="splits"/> times (3 = 642
+        /// points, evenly spread, no poles).</summary>
+        static Mesh Icosphere(int splits)
+        {
+            float g = (1f + Mathf.Sqrt(5f)) * 0.5f;
+            var v = new List<Vector3>
+            {
+                new Vector3(-1f, g, 0f), new Vector3(1f, g, 0f), new Vector3(-1f, -g, 0f), new Vector3(1f, -g, 0f),
+                new Vector3(0f, -1f, g), new Vector3(0f, 1f, g), new Vector3(0f, -1f, -g), new Vector3(0f, 1f, -g),
+                new Vector3(g, 0f, -1f), new Vector3(g, 0f, 1f), new Vector3(-g, 0f, -1f), new Vector3(-g, 0f, 1f),
+            };
+            for (int i = 0; i < v.Count; i++) v[i] = v[i].normalized;
+            var f = new List<int>
+            {
+                0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11, 1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
+                3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9, 4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1,
+            };
+            var middles = new Dictionary<long, int>();
+            int Middle(int a, int b)
+            {
+                long key = a < b ? ((long)a << 32) | (uint)b : ((long)b << 32) | (uint)a;
+                if (middles.TryGetValue(key, out int m)) return m;
+                v.Add(((v[a] + v[b]) * 0.5f).normalized);
+                return middles[key] = v.Count - 1;
+            }
+            for (int s = 0; s < splits; s++)
+            {
+                var next = new List<int>(f.Count * 4);
+                for (int i = 0; i < f.Count; i += 3)
+                {
+                    int a = f[i], b = f[i + 1], c = f[i + 2], ab = Middle(a, b), bc = Middle(b, c), ca = Middle(c, a);
+                    next.AddRange(new[] { a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca });
+                }
+                f = next;
+            }
+            // The list winds counter-clockwise seen from outside; Unity's front faces wind clockwise.
+            for (int i = 0; i < f.Count; i += 3) (f[i + 1], f[i + 2]) = (f[i + 2], f[i + 1]);
+            var points = new Vector3[v.Count];
+            for (int i = 0; i < v.Count; i++) points[i] = v[i] * 0.5f;
+            var mesh = new Mesh { hideFlags = HideFlags.HideAndDontSave };
+            mesh.vertices = points;
+            mesh.normals = v.ToArray();
+            mesh.triangles = f.ToArray();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         /// <summary>The sun the puffs are shaded from (once a frame, cheap).</summary>
@@ -205,7 +263,7 @@ namespace ChessFight.RagdollLab
                 float l = life * Random.Range(0.85f, 1.15f), delay = Random.Range(0f, 0.03f);
                 Vector3 drift = pushDir * push * Random.Range(0.6f, 1.2f);
                 var rot = Quaternion.LookRotation(radial, axis);
-                Add(new Puff(root, "Wind puff", meshSphere, matWind)
+                Add(new Puff(root, "Wind puff", meshPuff, matWind)
                 {
                     life = l + delay,
                     lump = 0.38f,

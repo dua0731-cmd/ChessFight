@@ -183,10 +183,11 @@ namespace ChessFight.RagdollLab
         // Point lights are kept low (1-2): a bright light on a white floor blooms the whole picture.
 
         // ---- Queen (R86, after the reference's stylized explosion; 승규 님 "바꿔줘": the gold chess pieces and the
-        // embers are gone): while she charges, a ball of fire gathers at her chest, boiling and growing, thin lines of
-        // light are sucked into it, and cracks begin to glow in the floor under her. The blast: a white-hot flash; a
-        // fireball of lumpy puffs that bursts up and out and within a few tenths of a second cools to dark smoke laced
-        // with glowing veins and hot edges, then is eaten away; a ring of smoke rolling out over the floor to her outer
+        // embers are gone): while she charges, a ball of fire gathers over her head, boiling and growing, thin lines of
+        // light are sucked into it, and cracks begin to glow in the floor under her; at the last moment the ball drops
+        // into her (the reference's falling fireball). The blast: a white-hot flash; a fireball of lumpy puffs that
+        // bursts up and out and within a few tenths of a second cools to charcoal smoke with fire glowing in its
+        // creases and hot edges, billows up and is eaten away; a ring of dust rolling out over the floor to her outer
         // radius, with the two thin gold rings that show 1.5 m and 3 m; the cracks run out, glow, cool to scorch lines
         // on a darkened floor and fade; sparks shoot up in arcs, embers drift. The stop, the shake and the red/cyan
         // edges stay. Her rings on the floor while she charges are the skill's telegraph (SkillMarks), not these.
@@ -200,20 +201,22 @@ namespace ChessFight.RagdollLab
         {
             float windup = Params != null ? Params.queenWindup : 0.35f;
             Vector3 floor = FloorUnder(q);
-            Vector3 Heart() => q != null ? ChestOf(q) + Flat(q.transform.forward).normalized * 0.22f : floor + Vector3.up;
-            // The ball of fire: small, white-hot and boiling, growing faster towards the end.
-            Add(new Puff(root, "Queen gathering fire", meshSphere, matFire)
+            // Over her head, where her body cannot hide it from any side (at her chest it was lost in her).
+            Vector3 Heart() => q != null ? HeadOf(q) + Vector3.up * 0.55f : floor + Vector3.up * 2f;
+            // The ball of fire: small and boiling, growing faster towards the end, then dropping into her chest.
+            Add(new Puff(root, "Queen gathering fire", meshPuff, matFire)
             {
                 life = windup + 0.03f,
                 lump = 0.42f,
                 flow = 6f,
-                heat = 1.15f,
+                heat = 0.95f,
                 rim = Hdr(Gold, 1.4f),
                 animate = (p, t) =>
                 {
                     float k = Mathf.Clamp01(p.Age / windup);
-                    p.at = Heart();
-                    p.scale = Vector3.one * Mathf.Lerp(0.12f, 0.62f, k * k) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
+                    float drop = Smooth01((k - 0.8f) / 0.2f);
+                    p.at = Vector3.Lerp(Heart(), q != null ? ChestOf(q) : floor + Vector3.up, drop * drop);
+                    p.scale = Vector3.one * Mathf.Lerp(0.12f, 0.62f, k * k) * Mathf.Lerp(1f, 0.6f, drop) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
                 },
             });
             Add(new Shape(root, "Queen gathering glow", meshQuad, matHalo)
@@ -302,7 +305,7 @@ namespace ChessFight.RagdollLab
             });
 
             // The flash: a white-hot puff that bursts and is gone within a sixth of a second.
-            Add(new Puff(root, "Queen flash", meshSphere, matFire)
+            Add(new Puff(root, "Queen flash", meshPuff, matFire)
             {
                 life = 0.16f,
                 at = pop,
@@ -318,16 +321,16 @@ namespace ChessFight.RagdollLab
                 },
             });
 
-            // The fireball: lumpy puffs bursting up and out, burning, cooling to dark smoke with glowing veins and hot
-            // edges, rising, eaten away last.
+            // The fireball: lumpy puffs bursting up and out, burning, cooling to charcoal smoke with fire in its creases
+            // and hot edges, billowing up and out, eaten away from the edges in.
             for (int i = 0; i < 10; i++)
             {
                 Vector3 dir = i < 2 ? (Vector3.up + Random.insideUnitSphere * 0.3f).normalized : OnSphere(0.15f);
-                float reach = Random.Range(0.4f, 0.9f), size = Random.Range(0.65f, 1f), rise = Random.Range(0.4f, 0.7f);
+                float reach = Random.Range(0.4f, 0.9f), size = Random.Range(0.6f, 0.95f), rise = Random.Range(0.6f, 0.95f);
                 Vector3 from = pop + dir * 0.15f, to = pop + dir * reach + Vector3.up * Random.Range(0f, 0.3f);
-                Add(new Puff(root, "Queen fireball", meshSphere, matFire)
+                Add(new Puff(root, "Queen fireball", meshPuff, matFire)
                 {
-                    life = Random.Range(0.9f, 1.15f),
+                    life = Random.Range(0.85f, 1.05f),
                     lump = Random.Range(0.32f, 0.45f),
                     flow = 1.6f,
                     rotation = Random.rotation,
@@ -335,36 +338,36 @@ namespace ChessFight.RagdollLab
                     {
                         float a = p.Age;
                         p.at = Vector3.Lerp(from, to, EaseOut(a / 0.32f)) + Vector3.up * rise * a;
-                        p.scale = Vector3.one * size * Mathf.Lerp(0.3f, 1f, EaseOut(a / 0.25f)) * Mathf.Lerp(1f, 1.15f, t);
+                        p.scale = Vector3.one * size * Mathf.Lerp(0.3f, 1f, EaseOut(a / 0.25f)) * Mathf.Lerp(1f, 1.35f, t);
                         p.heat = Keys(a, 0.03f, 1.1f, 0.12f, 0.5f, 0.32f, 0.18f, 0.6f, 0f);
                         p.rim = Hdr(FireGlow, 1.6f * Sq(Mathf.Clamp01(1f - a / 0.75f)));
-                        p.dissolve = Keys(t, 0.35f, 0f, 1f, 1f);
+                        p.dissolve = Keys(t, 0.3f, 0f, 1f, 1f);
                     },
                 });
             }
 
-            // A ring of smoke rolling out over the floor to her outer radius, hot at its front at first.
-            const int ring = 18;
+            // A ring of dust rolling out over the floor to her outer radius, hot at its front for a moment.
+            const int ring = 20;
             float turn = Random.Range(0f, 360f);
             for (int i = 0; i < ring; i++)
             {
                 float a = (turn + (i + Random.Range(-0.3f, 0.3f)) * 360f / ring) * Mathf.Deg2Rad;
                 var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                float reach = outer * Random.Range(0.86f, 0.98f), size = Random.Range(0.38f, 0.55f);
-                Add(new Puff(root, "Queen smoke ring", meshSphere, matFire)
+                float reach = outer * Random.Range(0.86f, 0.98f), size = Random.Range(0.3f, 0.45f);
+                Add(new Puff(root, "Queen dust ring", meshPuff, matDust)
                 {
-                    life = Random.Range(0.6f, 0.75f),
+                    life = Random.Range(0.45f, 0.6f),
                     lump = 0.4f,
                     flow = 2f,
                     rotation = Quaternion.LookRotation(radial),
                     animate = (p, t) =>
                     {
                         float k = EaseOut(p.Age / 0.3f);
-                        p.at = c + radial * Mathf.Lerp(0.5f, reach, k) + Vector3.up * (0.15f + 0.3f * k);
-                        p.scale = new Vector3(size, size * 0.85f, size * 1.1f) * Mathf.Lerp(0.4f, 1f, k);
-                        p.heat = Keys(p.Age, 0.02f, 0.9f, 0.22f, 0f);
-                        p.rim = Hdr(FireGlow, 1.5f * Mathf.Clamp01(1f - p.Age / 0.4f));
-                        p.dissolve = Keys(t, 0.25f, 0f, 1f, 1f);
+                        p.at = c + radial * Mathf.Lerp(0.5f, reach, k) + Vector3.up * (0.12f + 0.35f * k);
+                        p.scale = new Vector3(size, size * 0.85f, size * 1.15f) * Mathf.Lerp(0.4f, 1.2f, k);
+                        p.heat = Keys(p.Age, 0.02f, 0.8f, 0.12f, 0f);
+                        p.rim = Hdr(FireGlow, 1.4f * Mathf.Clamp01(1f - p.Age / 0.2f));
+                        p.dissolve = Keys(t, 0.2f, 0f, 1f, 1f);
                     },
                 });
             }
@@ -390,7 +393,7 @@ namespace ChessFight.RagdollLab
             Vector3 away = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.up;
             SparkBurst(at, 14, Gold, away + Vector3.up * 0.4f, 65f, 3f, 7f, 0.45f, 0.05f);
             // A small burst of fire on the piece, cooling to a puff of smoke.
-            Add(new Puff(root, "Queen hit puff", meshSphere, matFire)
+            Add(new Puff(root, "Queen hit puff", meshPuff, matFire)
             {
                 life = 0.45f,
                 lump = 0.35f,
@@ -658,7 +661,7 @@ namespace ChessFight.RagdollLab
                 {
                     Vector3 at = k.Hips.position - v * 0.04f + Random.insideUnitSphere * 0.2f;
                     float s = Random.Range(0.14f, 0.24f);
-                    Add(new Puff(root, "Wind trail puff", meshSphere, matWind)
+                    Add(new Puff(root, "Wind trail puff", meshPuff, matWind)
                     {
                         life = 0.32f,
                         at = at,
@@ -766,7 +769,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < 3; i++)
             {
                 float phase = i * Mathf.PI * 2f / 3f;
-                Add(new Puff(root, "Daze puff", meshSphere, matWind)
+                Add(new Puff(root, "Daze puff", meshPuff, matWind)
                 {
                     life = delay + life,
                     lump = 0.3f,
