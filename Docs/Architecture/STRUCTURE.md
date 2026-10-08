@@ -4,24 +4,34 @@
 
 ## 1. 폴더
 
+2026-10-08(R90) 다시 정리: **`Assets/` 바로 아래는 종류별 폴더만, 같은 종류가 두 군데에 있지 않게.** 기능 이름의 폴더(`ChessFight/`, `Maps/`, `Scenes/PawnRush/` 같은 것)는 만들지 않는다. 스크립트는 **`Scripts/` 아래 폴더 하나 = 어셈블리 하나**(래그돌 랩·폰 러시 코스도 여기). 파일은 `.meta`와 함께 옮겨서 GUID 참조는 그대로다.
+
 ```text
 Assets/
-  Art/                원본 모델·텍스처·애니메이션 (README만 있음)
-  Materials/          Team{Blue,Orange} Board{Dark,Light} Course CourseEdge Obstacle Finish Prop .mat + NetworkColor.shader(Unlit)
-  Prefabs/            PawnAvatar(네트워크 캡슐, 로비 라인업에도 씀) · Arena(옛 로비 체스판, 2026-09-25부터 미사용)
-    Characters/       PlaytestCharacter (임시 캐릭터)
-    Obstacles/        Spinner · SlidingWall · Pendulum
-  Resources/          코드가 이름으로 읽는 것만: NetworkHud.uxml/.uss, IntroHud.uxml, MatchHud.uxml, ChatHud.uxml(채팅), LoadingHud.uxml, Fonts/BlackHanSans-Regular.ttf(메뉴 표시 글꼴, OFL, LFS, R63), NetworkTheme.tss, ChessFightControls.inputactions, QueenHill/QueenHillLayout.json(퀸 오브 더 힐 맵 데이터, 생성물)
-  Scenes/             Intro · Lobby · KingRush · RagdollTest · QueenOfTheHill(그레이박스, 맵은 코드가 만듦) (+ SampleScene 템플릿, 빌드 제외·비활성)
-  Scripts/            ↓ 폴더 하나 = 어셈블리 하나
-  Settings/           템플릿 URP 에셋 (현재 미사용)
-  TutorialInfo/       Unity 템플릿 잔재
+  Art/                원본 모델·텍스처
+    Pawn/             폰 모델(Pawn.fbx)·텍스처 (래그돌 랩)
+    PawnGenerated/    래그돌 빌더가 굽는 메시·텍스처·충돌 상자(Boxes/)
+    YogurtCup/        요구르트 컵 소품(가져온 맵 장애물)
+  Materials/          모든 재질과 셰이더: 네트워크 캡슐·로비, 래그돌 랩(Lab_*·Pawn*), 폰 러시 코스(Board_*·Wall_*·Course*.shader 등),
+                      가져온 장애물(Blue·Red·Stone·MapBoardDark·MapBoardLight 등), 옛 킹 러쉬 코스(Cream·Wood 등)
+  Prefabs/            PawnAvatar(네트워크 캡슐·로비 라인업) · RagdollPawn(래그돌 폰) · Arena(옛 로비, 미사용)
+    Characters/       PlaytestCharacter (임시 캡슐)
+    Obstacles/        Spinner·SlidingWall·Pendulum + 가져온 장애물 19개(01_SpinningDisc … PR_* 변형, 폰 러시 코스가 씀)
+    KingRushOpening/  옛 킹 러쉬 코스 구간 프리팹 24개(씬은 10-08 삭제, 코드와 함께 보관)
+  Resources/          코드가 이름으로 읽는 것만: HUD uxml/uss, 글꼴, 메뉴 그림, PawnRushSkillFx/(스킬 효과), QueenHill/(맵 데이터, 생성물) …
+  Scenes/             Intro · Lobby · PawnRush_Course01(폰 러쉬 경기) · PawnRush_SkillTest · PawnRushVictory · PawnRushLose ·
+                      SwordFight · QueenOfTheHill(그레이박스) · RagdollTest(래그돌 랩)
+  Scripts/            ↓ 폴더 하나 = 어셈블리 하나 (2절)
+  Settings/           RagdollTuning.asset·preset_*.json(래그돌 튜닝), Course01Kit.asset(폰 러시 코스 재료 목록), 템플릿 URP 에셋(미사용,
+                      프로젝트 설정이 참조해 남김)
+  StreamingAssets/    시작 로고 영상
+  InputSystem_Actions.inputactions   템플릿 파일(빌드 설정이 참조해 남김)
 Docs/                 문서 트리 (HANDOFF.md에서 시작)
 Tests/Network/        Unity 밖 테스트 (Core, 모의 Steam 세션)
-Tools/                테스트 스크립트, Generators/, QueenHill/(맵 데이터 원본과 미리보기)
+Tools/                테스트 스크립트, Generators/(씬·프리팹 생성기, templates/ = 지운 KingRush·SampleScene 씬을 생성기 틀로 보관), QueenHill/
 ```
 
-`Assets/ChessFight/…` 같은 중첩 폴더는 `8649011`에서 없앴다. **예외: 준영 님 래그돌 랩은 `Assets/ChessFight/RagdollLab/`에 그대로 둔다**(2026-09-25 병합). 빌더 메뉴가 이 경로를 알고 있고, 랩은 Art·Generated·Materials·Prefabs·Scripts·Settings를 한 덩어리로 관리한다. 랩 씬만 `Assets/Scenes/RagdollTest.unity`로 옮겼다. `Assets/ChessFight.meta`는 PC마다 GUID가 달라지지 않게 커밋되어 있다.
+없앤 것(10-08): `Assets/ChessFight/`(래그돌 랩 예외였던 폴더 → `Scripts/RagdollLab`·`RagdollLabEditor`·`RagdollLabSteam`, `Art/Pawn`·`PawnGenerated`, `Materials`, `Prefabs`, `Settings`, `Resources`), `Assets/Maps/`(폰 러시 코스 → `Scripts/PawnRush`·`PawnRushEditor`·`Materials`·`Settings`, 가져온 맵 → `Prefabs/Obstacles`·`Materials`·`Art/YogurtCup`·`Scripts/ImportedMapEditor`), `Scenes/PawnRush/`, `Prefabs/KingRushOpening/Materials/`, `TutorialInfo/`·`Readme.asset`(Unity 템플릿). 예전 `8649011`(09-22)의 정리와 같은 원칙이고, 그때 예외로 둔 래그돌 랩도 이번에 같은 규칙으로 옮겼다.
 
 ## 2. 어셈블리
 
@@ -34,8 +44,12 @@ Tools/                테스트 스크립트, Generators/, QueenHill/(맵 데이
 | `Scripts/Bootstrap/` | `ChessFight.Game.Steam` | Core, Network.Steam, Game, Gameplay, Steamworks.NET | `CHESSFIGHT_STEAM` | `NetworkRuntime`, 씬 컨트롤러(Intro/Lobby, 모드 씬 공용 `MatchSceneView`) |
 | `Scripts/Input/` | `ChessFight.Game.Input` | Game, Unity.InputSystem | `CHESSFIGHT_INPUTSYSTEM` | Input System 이동 소스(자기 등록) |
 | `Scripts/Editor/` | Assembly-CSharp-Editor | — | — | 설치·씬 메뉴·빌드, `InputSettingsGuard` |
-| `ChessFight/RagdollLab/Scripts/` | `ChessFight.RagdollLab` | Gameplay | — | 래그돌(`RagdollPawn`, 손, 튜닝), 랩(`LabGame`, 카메라, 패널, 자동 점검, XInput), `RagdollDriver`(`ICharacterDriver` 구현). **Steam 무참조** |
-| `ChessFight/RagdollLab/Editor/` | `ChessFight.RagdollLab.Editor` | RagdollLab | Editor 전용 | 래그돌 리그·프리팹·씬 빌더 |
+| `Scripts/RagdollLab/` | `ChessFight.RagdollLab` | Gameplay | — | 래그돌(`RagdollPawn`, 손, 튜닝), 랩(`LabGame`, 카메라, 패널, 자동 점검, XInput), `RagdollDriver`(`ICharacterDriver` 구현). **Steam 무참조** |
+| `Scripts/RagdollLabEditor/` | `ChessFight.RagdollLab.Editor` | RagdollLab | Editor 전용 | 래그돌 리그·프리팹·씬 빌더 |
+| `Scripts/RagdollLabSteam/` | `ChessFight.RagdollLab.Net` | RagdollLab, Game, Bootstrap, Gameplay, Core, Network.Steam, Steamworks.NET | `CHESSFIGHT_STEAM` | 랩·소드 파이트의 Steam 다리(`SteamRagdollLink`, `SteamSwordFightLink`) |
+| `Scripts/PawnRush/` | `ChessFight.PawnRush` | Game, Gameplay, Core | — | 폰 러시 코스 01: 코드로 만드는 코스(`Course01v4Builder`), 미션 광장·미니게임, 검증기, 오프라인 플레이(`Course01Playtest`) |
+| `Scripts/PawnRushEditor/` | `ChessFight.PawnRush.Editor` | PawnRush 등 | Editor 전용 | 메뉴 Pawn Rush(Open/Build/Validate Course01, 거울 복사) |
+| `Scripts/ImportedMapEditor/` | `ChessFight.ImportedMap.Editor` | Game, Gameplay | Editor 전용 | 가져온 장애물 프리팹 선택 메뉴(맵 씬은 10-08 삭제) |
 
 Steam 게이트 어셈블리의 플랫폼은 Editor, WindowsStandalone64/32다.
 

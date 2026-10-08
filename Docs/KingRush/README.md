@@ -1,5 +1,7 @@
 # 킹러시
 
+> **(R90, 2026-10-08) 이 문서의 씬은 지웠다.** `KingRush.unity`(옛 캡슐 경기 씬), `KingRushOpening.unity`(R54~R56 코스), `KingRushPrototype.unity`(R52 시험장)는 사용자 요청으로 삭제했고, 로비의 폰 러쉬 경기 씬은 [폰 러시 코스 01](PAWN_RUSH_COURSE01.md)이다. 코드(`Scripts/RagdollLab/KingRush*`, `Gameplay/KingRush`, 빌더)와 구간 프리팹(`Prefabs/KingRushOpening`)은 남겼고, 씬을 다시 만들던 메뉴(King Rush → Open …)만 뺐다. 아래는 기록이다.
+
 ## 최신: R56 왕의 계단과 결승
 
 사용자는 직접 테스트를 미루고 다음 단계 진행을 요청했다. 같은 씬에 **왕의 계단→4자리 승격/10초 집결→체크메이트 결승**을 추가했다. 외나무/긴 계단, 돌아오는 칸, 거대한 손, 왕좌 누적8초, 시간별 판 붕괴와 재진입/승패까지 연결했다. **F8** 계단, **Shift+F8** 결승. [규칙·범위·자동 검사](FINAL_COURSE.md). R55/R56 사용자 확인 대기. 아래 과거의 세 번째 코스/결승 미구현 기록은 이 범위로 대체하며, 온라인·남은 능력·최종 아트는 미구현이다.
@@ -68,7 +70,7 @@ Play를 멈춰 컴파일한 뒤 다시 Play한다. **F5**는 룩+적군 더미, 
 
 - `Core/KingRushRules.cs`, `KingRushPieces.cs`: Unity 없는 규칙. KR1은 문/승격만 다루는 기반이며 전체 경기 전송 규약이 아니다.
 - `Gameplay/KingRush/`: 명단/시간·능력/몸 계약·승격 발판/구역/문. 래그돌·Steam 참조 없음.
-- `RagdollLab/Scripts/KingRushPawn.cs` / `.Cannon.cs`: 공유 폰 옆의 모드 상태/입력/체크!/대포. `RagdollPawn.KingRush.cs`에 모드 전용 발사 보조. 공유 카메라/튜닝 무변경.
+- `Scripts/RagdollLab/KingRushPawn.cs` / `.Cannon.cs`: 공유 폰 옆의 모드 상태/입력/체크!/대포. `RagdollPawn.KingRush.cs`에 모드 전용 발사 보조. 공유 카메라/튜닝 무변경.
 - `KingRushPrototype.cs`: 시험장/물 부활/더미. 물 콜백은 예약만, Update에서 부활.
 - `KingRushBuilder`: 새 씬이 없을 때만 생성. 기존 씬 재생성 안 함. 별도 시험 빌드의 첫 씬은 시험장이며 일반 배포 목록은 안 바꿈.
 - `KingRushAutoTest`: 실제 플레이어 자동 검사. 사용자 손맛/두 PC 시험을 대신하지 않음.
@@ -134,7 +136,7 @@ z = 200 ~ 230  Finish Platform  Finish Zone
 
 KingRush를 직접 열고 Play → Steam 없이 캐릭터 하나. WASD, Space, 왼쪽 클릭(밀치기), 오른쪽 누르기(잡기), R(체크포인트로), Backspace(처음부터). 떨어지면(`fallLimit`) 자동 리스폰, 골인하면 기록 표시.
 
-지금 캐릭터는 **임시 CharacterController 캡슐**(`Prefabs/Characters/PlaytestCharacter`)이다. 래그돌이 병합되었으므로(2026-09-25) `Playtest`의 `Character Prefab`을 `Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab`으로 바꾸면 래그돌로 달릴 수 있다(**Unity 미확인**, [Player/RAGDOLL §4](../Player/RAGDOLL.md)).
+지금 캐릭터는 **임시 CharacterController 캡슐**(`Prefabs/Characters/PlaytestCharacter`)이다. 래그돌이 병합되었으므로(2026-09-25) `Playtest`의 `Character Prefab`을 `Assets/Prefabs/RagdollPawn.prefab`으로 바꾸면 래그돌로 달릴 수 있다(**Unity 미확인**, [Player/RAGDOLL §4](../Player/RAGDOLL.md)).
 
 ## 4. 네트워크 경기에서의 한계
 

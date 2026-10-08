@@ -9,7 +9,7 @@
 ## 지금 상태 (R71, 10-07)
 
 - **작업 브랜치 `claude/bold-johnson-8ez95n`** (사용자 지정). 원격에 푸시하지 않았다.
-- **시험 씬 `Assets/Scenes/PawnRush/PawnRush_SkillTest.unity`** = `RagdollTest.unity`를 그대로 복사하고 랩 오브젝트(`RagdollLab`)에 `PawnRushSkillBed`를 붙인 것. 메뉴 **ChessFight → Pawn Rush → Open Skill Test**. 원본 `RagdollTest`는 바꾸지 않았다.
+- **시험 씬 `Assets/Scenes/PawnRush_SkillTest.unity`** = `RagdollTest.unity`를 그대로 복사하고 랩 오브젝트(`RagdollLab`)에 `PawnRushSkillBed`를 붙인 것. 메뉴 **ChessFight → Pawn Rush → Open Skill Test**. 원본 `RagdollTest`는 바꾸지 않았다.
 - **만든 스킬 5개**: 폰 첫 두 걸음(부축 포함), 퀸 팔방 밀치기, 룩 직선 돌파(바리케이드 포함), 비숍 교차 밧줄, 나이트 꺾어 도약. **킹은 안 만듦**(D1, 사용자 10-07 "킹 스킬은 아직 만들지마").
 - **스킬은 이 씬에서만 켜진다.** `RagdollPawn.PawnRushSkills`(수치 묶음)가 비어 있으면 아무 일도 하지 않는다. 퀸 오브 더 힐·소드 파이트에 쓸지는 미정(사용자 10-07)이라 그쪽 씬과 네트워크 경기는 예전 그대로다.
 - **AI가 이 PC Unity에서 자동 시험 도구로 돌려 봄(아래 표). 사람이 키보드로 해 본 것은 아직 없다** → [VALIDATION](../Network/VALIDATION.md) 최상단 표.
@@ -37,15 +37,15 @@
 
 | 파일 | 내용 |
 |---|---|
-| `RagdollLab/Scripts/PawnRushSkills/RagdollPawn.PawnRushSkills.cs` | 스킬 본체(래그돌 partial). 단계·쿨타임·돌진·결과 등급·기상 보호·예고 표시 |
+| `Scripts/RagdollLab/PawnRushSkills/RagdollPawn.PawnRushSkills.cs` | 스킬 본체(래그돌 partial). 단계·쿨타임·돌진·결과 등급·기상 보호·예고 표시 |
 | `…/PawnRushSkillParams.cs` | 수치 묶음(v0.1 값 그대로 + 나이트 공기 저항 보정 2개) |
 | `…/PawnRushSkillBed.cs` | 시험장: 모든 랩 폰에 스킬 켜기, P1 스킬 키(G), 왼쪽 창, 더미 버튼, 바리케이드 |
 | `…/SkillTripwire.cs` · `SkillBarricade.cs` · `SkillMarks.cs` | 비숍 밧줄, 룩 바리케이드, 바닥 예고선 그리기 |
 | `…/PawnRushSkillProbe.cs` | **자동 시험 도구**: 키보드 없이 P1·더미를 움직이고 G를 눌러 거리·높이·결과를 잰다(아래) |
 | `…/PawnRushSkillFx.cs` · `PawnRushSkillFx.Parts.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받고, 퀸 예고·룩 돌진·나이트 도약은 기물 상태를 지켜보며 멈춤·흔들기·흰 번쩍·납작 + **3D 빛 이펙트**(R79: 빛의 벽·기둥·빛줄기·껍질·마법진, 튕기는 불꽃·빛 알갱이·연기, 순간 조명, 궤적, 번개). 별·글자·조각은 없음. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
 | `…/PawnRushSkillBloom.cs` · `RagdollLab/Resources/PawnRushSkillFx/SkillGlow.shader` · `SkillBloom.shader` | 이펙트 재질(HDR 빛 + 칠하기)과 직접 만든 빛 번짐. 시험장 카메라·녹화 카메라에만 붙음([EFFECTS §3D 빛 이펙트](EFFECTS.md#3d-빛-이펙트-r79-10-08)) |
-| `…/PawnRushSkillFilm.cs` · `RagdollLab/Editor/PawnRushSkillFilmEncoder.cs` | **녹화 도구**(R73): 자동 시험을 고정 카메라로 찍어 `.mp4`로(아래) |
-| `RagdollLab/Editor/PawnRushSkillTestMenu.cs` | 메뉴 Open Skill Test |
+| `…/PawnRushSkillFilm.cs` · `Scripts/RagdollLabEditor/PawnRushSkillFilmEncoder.cs` | **녹화 도구**(R73): 자동 시험을 고정 카메라로 찍어 `.mp4`로(아래) |
+| `Scripts/RagdollLabEditor/PawnRushSkillTestMenu.cs` | 메뉴 Open Skill Test |
 | `LabGame.cs`(`InteractKeyOff`) | 시험장이 켜면 F가 랩 상호작용을 하지 않음 (R74) |
 | `RagdollPawn.cs`(6곳)·`RagdollPawn.Abilities.cs`(1곳) | 스킬이 켜졌을 때만 동작하는 연결: 키 막기/속도 덮어쓰기 위치, 진군 속도 배율, 스킬 돌진 중 몸끼리 부딪힘 판정은 스킬이 정함, 리스폰 때 스킬 초기화, 나이트 옛 밟기(찌그러짐) 대신 새 밟기. R80: 자세 고리(`SkillPose`: 룩 공중 자세·나이트 차는 자세), 룩이 공중에서 내리꽂을 때 바닥 충격으로 넘어지지 않음 |
 

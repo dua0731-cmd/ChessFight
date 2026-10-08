@@ -1,5 +1,17 @@
 # Network 구현 검증 기록
 
+## ★ 2026-10-08 폴더·씬 정리와 폰 러쉬 경기 씬 교체 (R90, `main`) — 확인 목록
+
+| # | 확인 | 기대 | 결과 |
+|---|---|---|---|
+| 1 | `main` Pull(LFS 포함) → Unity로 열기 | Safe Mode·컴파일 오류 없음. Project 창의 `Assets/` 아래가 Art·Materials·Prefabs·Resources·Scenes·Scripts·Settings·StreamingAssets뿐 | 미확인 |
+| 2 | Console | Missing Script·Missing Prefab·분홍 재질 경고 없음(파일은 .meta와 함께 옮겨 참조가 그대로여야 함) | 미확인 |
+| 3 | 메뉴 ChessFight → Ragdoll Lab, Pawn Rush(Open Course01·Open Skill Test), Sword Fight, Scenes | 메뉴가 열고, 각 씬 Play가 예전처럼(래그돌 폰이 나옴). King Rush·Imported Map → Open Map 메뉴는 없음 | 미확인 |
+| 4 | `Ragdoll Test` → Tab 패널 | 튜닝 값이 그대로(달리기 2.5 등, `Assets/Settings/RagdollTuning.asset`) | 미확인 |
+| 5 | Intro → 로비 → 폰 러쉬 → 비공개 방 + 봇 → 게임 시작 | 로딩 화면 뒤 **폰 러시 코스 01**이 열리고 내 래그돌 폰이 출발 광장에 섬(캡슐·옛 KingRush 코스 아님). 다른 사람은 안 보이는 것이 지금 상태 | 미확인 |
+| 6 | 그 경기에서 Esc(채팅이 닫힌 상태) | 경기를 나가 로비로. 채팅이 열려 있을 때 Esc는 채팅만 닫음 | 미확인 |
+| 7 | File → Build Profiles | 씬 목록이 Intro·Lobby·PawnRush_Course01·(RagdollTest 꺼짐)·SwordFight | 미확인 |
+
 ## ★ 2026-10-08 폰러시 시험 맵·폰 러시 코스 01 높이·틈 조정 (R89, `claude/bold-johnson-8ez95n` 기준) — 확인 목록
 
 `ChessFight → Imported Map → Open Map` → Play. 지금 이동 값(달리기 2.5·점프 3.8)으로 확인한다.
@@ -113,7 +125,7 @@
 
 ## ★ 2026-10-06 폰 러쉬 결과 화면 (R76 — `JY-kingrush`의 R65, 10-07 이 브랜치에 병합) — 확인 목록
 
-[UI §13](../Architecture/UI.md#13-폰-러쉬-결과-화면-r76-2026-10-06). R62 `LastScene`을 대신한다. Core 81·모의 세션 39·실제 Unity 6000.3.11f1 DLL 컴파일 통과. **AI가 이 PC의 Unity에서 두 씬을 0.9·1.4·1.5·2.5·3.6·4.95·9초와 결과판 숨김으로 멈춰 캡처해 [시안](https://claude.ai/artifact/9rH56RC5cR2uamzdZd9iNK)과 비교했다**(Console 오류 0). 멈춤은 미리보기 검토용 `Hold()`로 했고 **키·버튼은 누르지 않았다.** 혼자 확인한다(Steam·두 PC 필요 없음). 이름·숫자는 예시 경기(백팀 승리, 4:12)다. **10-07 이 브랜치(`claude/bold-johnson-8ez95n`)에 병합:** 병합 뒤 Windows에서 Core 83·모의 세션 39·실제 Unity DLL 전체 어셈블리 컴파일 통과(`Test-NetworkCompile.ps1`이 스킬 하위 폴더 `RagdollLab/Scripts/PawnRushSkills`를 안 읽어 이 브랜치에서 실패하던 것을 같이 고침). 이 브랜치를 연 Unity에서는 아직 안 봤다.
+[UI §13](../Architecture/UI.md#13-폰-러쉬-결과-화면-r76-2026-10-06). R62 `LastScene`을 대신한다. Core 81·모의 세션 39·실제 Unity 6000.3.11f1 DLL 컴파일 통과. **AI가 이 PC의 Unity에서 두 씬을 0.9·1.4·1.5·2.5·3.6·4.95·9초와 결과판 숨김으로 멈춰 캡처해 [시안](https://claude.ai/artifact/9rH56RC5cR2uamzdZd9iNK)과 비교했다**(Console 오류 0). 멈춤은 미리보기 검토용 `Hold()`로 했고 **키·버튼은 누르지 않았다.** 혼자 확인한다(Steam·두 PC 필요 없음). 이름·숫자는 예시 경기(백팀 승리, 4:12)다. **10-07 이 브랜치(`claude/bold-johnson-8ez95n`)에 병합:** 병합 뒤 Windows에서 Core 83·모의 세션 39·실제 Unity DLL 전체 어셈블리 컴파일 통과(`Test-NetworkCompile.ps1`이 스킬 하위 폴더 `Scripts/RagdollLab/PawnRushSkills`를 안 읽어 이 브랜치에서 실패하던 것을 같이 고침). 이 브랜치를 연 Unity에서는 아직 안 봤다.
 
 | # | 확인 | 기대 | 결과 |
 |---|---|---|---|

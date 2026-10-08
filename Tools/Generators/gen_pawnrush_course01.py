@@ -1,11 +1,11 @@
 # Generates the Pawn Rush course 01 assets that have to exist before Unity has opened them,
 # as hand-written Unity YAML (same method as gen_queenhill_scene.py):
 #
-#   Assets/Scenes/PawnRush/PawnRush_Course01.unity       camera, light, physics rate, the course
+#   Assets/Scenes/PawnRush_Course01.unity       camera, light, physics rate, the course
 #                                                        root (PawnRushCourse) and the offline
 #                                                        playtest (ragdoll pawn, white team)
-#   Assets/Maps/PawnRush/Course01/Data/Course01Kit.asset      materials + imported obstacle prefabs
-#   Assets/Maps/PawnRush/Course01/Materials/*.mat              the course materials
+#   Assets/Settings/Course01Kit.asset                    materials + imported obstacle prefabs
+#   Assets/Materials/*.mat              the course materials
 #
 # The course itself (v0.4, Course01v4Builder) is NOT in the scene file: Play builds it from code
 # when the scene does not hold it, and the menu ChessFight > Pawn Rush > Build Course01 v4 builds
@@ -16,8 +16,10 @@
 # Run from the project root:  python3 Tools/Generators/gen_pawnrush_course01.py --overwrite
 import hashlib, os, re, sys
 
-SCENE = "Assets/Scenes/PawnRush/PawnRush_Course01.unity"
-COURSE = "Assets/Maps/PawnRush/Course01"
+SCENE = "Assets/Scenes/PawnRush_Course01.unity"
+# Since the 10-08 folder cleanup the course has no folder of its own: scripts in
+# Assets/Scripts/PawnRush, materials in Assets/Materials, the kit in Assets/Settings.
+MATERIALS = "Assets/Materials"
 if "--overwrite" not in sys.argv and os.path.exists(SCENE):
     sys.exit("Refusing to run: this overwrites " + SCENE + " and the course's data assets. Read the header, then pass --overwrite.")
 
@@ -39,13 +41,14 @@ def q4(q): return "{x: %s, y: %s, z: %s, w: %s}" % tuple(fmt(c) for c in q)
 
 def script(name, folder):
     return meta_guid("%s/%s.cs" % (folder, name))
-PR = COURSE + "/Scripts"
+PR = "Assets/Scripts/PawnRush"
 SCRIPT = {
     "PawnRushCourse": script("PawnRushCourse", PR), "Course01Playtest": script("Course01Playtest", PR),
     "Course01Kit": script("Course01Kit", PR),
     "OrbitCamera": script("OrbitCamera", "Assets/Scripts/Game"),
     "PhysicsProfile": script("PhysicsProfile", "Assets/Scripts/Gameplay"),
     "PlaytestSpawner": script("PlaytestSpawner", "Assets/Scripts/Gameplay/Playtest"),
+    "GameSceneConfig": script("GameSceneConfig", "Assets/Scripts/Game"),
 }
 
 def root_object(prefab):
@@ -59,7 +62,7 @@ def prefab_ref(prefab): return "{fileID: %d, guid: %s, type: 3}" % (root_object(
 
 # ------------------------------------------------------------------ materials
 def material(name, shader_file, floats, colors):
-    shader = meta_guid(COURSE + "/Materials/" + shader_file)
+    shader = meta_guid(MATERIALS + "/" + shader_file)
     body = HEAD + ("--- !u!21 &2100000\nMaterial:\n  serializedVersion: 8\n  m_ObjectHideFlags: 0\n"
             "  m_CorrespondingSourceObject: {fileID: 0}\n  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n"
             "  m_Name: %s\n  m_Shader: {fileID: 4800000, guid: %s, type: 3}\n  m_Parent: {fileID: 0}\n"
@@ -70,7 +73,7 @@ def material(name, shader_file, floats, colors):
         name, shader,
         "".join("    - %s: %s\n" % (k, fmt(v)) for k, v in floats.items()),
         "".join("    - %s: {r: %s, g: %s, b: %s, a: %s}\n" % ((k,) + tuple(fmt(c) for c in v)) for k, v in colors.items()))
-    path = "%s/Materials/%s.mat" % (COURSE, name)
+    path = "%s/%s.mat" % (MATERIALS, name)
     write(path, body)
     return "{fileID: 2100000, guid: %s, type: 2}" % meta_guid(path)
 
@@ -104,7 +107,7 @@ def scriptable(path, script_name, name, fields):
     return "{fileID: 11400000, guid: %s, type: 2}" % meta_guid(path)
 
 
-OBS = "Assets/Maps/ImportedChessFight/Prefabs/Obstacles/"
+OBS = "Assets/Prefabs/Obstacles/"
 PREFABS = {
     "spinningDisc": "01_SpinningDisc", "jumpPad": "02_JumpPad", "pusher": "03_ReciprocatingPusher",
     "hammer": "04_RotatingHammer", "risingTiles": "05_RisingFallingTiles", "slidingWalls": "06_SlidingWalls",
@@ -116,7 +119,7 @@ kit_fields = "".join("  %s: %s\n" % (k, MAT[k]) for k in
                      ["floorChecker", "wallClimbable", "wallNoClimb", "glass", "trimWhite", "trimBlack", "rankGold",
                       "boardLight", "boardDark", "hazard"])
 kit_fields += "".join("  %s: %s\n" % (k, prefab_ref(OBS + v + ".prefab")) for k, v in PREFABS.items())
-kit = scriptable(COURSE + "/Data/Course01Kit.asset", "Course01Kit", "Course01Kit", kit_fields)
+kit = scriptable("Assets/Settings/Course01Kit.asset", "Course01Kit", "Course01Kit", kit_fields)
 
 # ------------------------------------------------------------------ scene
 class Doc:
@@ -155,16 +158,16 @@ class Doc:
         return out
 
 # The camera block, the light block and the scene settings come from the scenes Unity wrote.
-kingrush = open("Assets/Scenes/KingRush.unity").read()
+kingrush = open("Tools/Generators/templates/KingRush.unity").read()
 camera_body = re.search(r'--- !u!20 &\d+\nCamera:\n.*?m_GameObject: \{fileID: \d+\}\n(.*?)(?=--- !u!)', kingrush, re.S).group(1)
 camera_body = re.sub(r'm_BackGroundColor: \{[^}]*\}', 'm_BackGroundColor: {r: 0.64, g: 0.79, b: 0.93, a: 1}', camera_body)
 camera_body = camera_body.replace("far clip plane: 1000", "far clip plane: 1500")
-sample = open("Assets/Scenes/SampleScene.unity").read()
+sample = open("Tools/Generators/templates/SampleScene.unity").read()
 light_body = re.search(r'--- !u!108 &410087040\nLight:\n(.*?)(?=--- !u!)', sample, re.S).group(1)
 light_body = light_body.split("  m_GameObject: {fileID: 410087039}\n", 1)[1].replace("  m_Intensity: 2\n", "  m_Intensity: 1.2\n")
 PREAMBLE = sample[sample.index("--- !u!29 &1"):sample.index("--- !u!1 &330585543")]
 
-PAWN_PREFAB = "Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab"
+PAWN_PREFAB = "Assets/Prefabs/RagdollPawn.prefab"
 
 d = Doc(3000)
 cam = d.go("Main Camera", pos=(0, 6, -20), tag="MainCamera")
@@ -186,4 +189,7 @@ spawner = d.script(play, "PlaytestSpawner",
     "  orbitCamera: {fileID: %d}\n  team: 0\n  fallLimit: -40\n  fallCatchSpeed: 0\n  showHelp: 1\n"
     % (prefab_ref(PAWN_PREFAB), orbit))
 d.script(play, "Course01Playtest", "  spawner: {fileID: %d}\n  course: {fileID: %d}\n  teamSize: 6\n  writeCsv: 1\n" % (spawner, course_id))
+# The lobby's 폰 러쉬 match opens this scene (10-08): every PC plays the playtest above, Esc leaves.
+match = d.go("ChessFight Game Root")
+d.script(match, "GameSceneConfig", "  customMatchSimulation: 0\n  soloInMatch: 1\n")
 write(SCENE, d.render(PREAMBLE))

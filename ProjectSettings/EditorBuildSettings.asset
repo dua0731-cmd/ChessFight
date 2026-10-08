@@ -12,8 +12,8 @@ EditorBuildSettings:
     path: Assets/Scenes/Lobby.unity
     guid: ff8114dd859a33d26aae93365313ed82
   - enabled: 1
-    path: Assets/Scenes/KingRush.unity
-    guid: 6b907b390dfae1d2e9bf995dc3b68a73
+    path: Assets/Scenes/PawnRush_Course01.unity
+    guid: ff686b26959ee558d85e7a252abe3e23
   - enabled: 0
     path: Assets/Scenes/RagdollTest.unity
     guid: 1e84d4575290698f1ed256706677510a

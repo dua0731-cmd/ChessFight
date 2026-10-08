@@ -5,7 +5,7 @@
 
 ## 1. 여는 법
 
-1. Unity 메뉴 **ChessFight → Pawn Rush → Open Course01** (또는 `Assets/Scenes/PawnRush/PawnRush_Course01.unity`).
+1. Unity 메뉴 **ChessFight → Pawn Rush → Open Course01** (또는 `Assets/Scenes/PawnRush_Course01.unity`).
 2. 그대로 **Play** → 씬에 코스가 없으면 코드가 기획서 월드 좌표대로 코스를 만들고, **이번 판 미니게임 두 개를 뽑아** 광장 ①·②의 두 팀 스테이션에 넣는다(Console에 "이번 판 미니게임: …"). 래그돌 폰(백팀)이 출발 광장에 서고 3초 뒤 출발 막대가 내려간다.
 3. 코스를 씬에 실제 오브젝트로 두려면 Play를 멈추고 **ChessFight → Pawn Rush → Build Course01 v4**. `Course01v4_Root`를 지우고 다시 만든 뒤 씬을 저장하고 검증기를 돌린다(두 번 눌러도 같다). 씬에는 미리 보기로 광장 ①에 A, 광장 ②에 E가 들어 있고, Play 때 새로 뽑는다. **루트 안을 손으로 고치면 다음 Build 때 사라진다.**
 

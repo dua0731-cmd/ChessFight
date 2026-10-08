@@ -23,13 +23,14 @@ namespace ChessFight.Editor
     {
         const string IntroScene = "Assets/Scenes/Intro.unity";
         const string LobbyScene = "Assets/Scenes/Lobby.unity";
-        const string KingRushScene = "Assets/Scenes/KingRush.unity";
+        // The Pawn Rush match scene (the lobby's 폰 러쉬 mode) since 10-08; KingRush.unity is gone.
+        const string PawnRushCourseScene = "Assets/Scenes/PawnRush_Course01.unity";
         const string RagdollTestScene = "Assets/Scenes/RagdollTest.unity";
         const string QueenOfTheHillScene = "Assets/Scenes/QueenOfTheHill.unity";
         const string PawnRushVictoryScene = "Assets/Scenes/PawnRushVictory.unity";
         const string PawnRushLoseScene = "Assets/Scenes/PawnRushLose.unity";
         // Everything a player can reach, in load order. RagdollTest is development only.
-        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, KingRushScene, "Assets/Scenes/SwordFight.unity" };
+        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, PawnRushCourseScene, "Assets/Scenes/SwordFight.unity" };
 
         const string Steamworks = "com.rlabrecque.steamworks.net";
         const string SteamworksUrl = "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c21a8f0e31c56ae8707130967faf491f7dd7c0d8";
@@ -116,11 +117,10 @@ namespace ChessFight.Editor
             else Debug.Log("[ChessFight] com.unity.inputsystem is not installed (intended): movement uses the legacy Input Manager.");
         }
 
-        // Play from Intro or Lobby to go online. KingRush and RagdollTest played on
-        // their own stay offline and spawn the local playtest character.
+        // Play from Intro or Lobby to go online. The other scenes played on their own stay offline
+        // and spawn the local playtest character (Pawn Rush course 01: ChessFight > Pawn Rush).
         [MenuItem("ChessFight/Scenes/Intro (online flow)", priority = 0)] static void OpenIntro() => Open(IntroScene);
         [MenuItem("ChessFight/Scenes/Lobby (online)", priority = 1)] static void OpenLobby() => Open(LobbyScene);
-        [MenuItem("ChessFight/Scenes/King Rush (offline playtest)", priority = 20)] static void OpenKingRush() => Open(KingRushScene);
         [MenuItem("ChessFight/Scenes/Ragdoll Test (offline)", priority = 21)] static void OpenRagdollTest() => Open(RagdollTestScene);
         [MenuItem("ChessFight/Scenes/Queen of the Hill (offline graybox)", priority = 22)] static void OpenQueenOfTheHill() => Open(QueenOfTheHillScene);
         // The Pawn Rush result scenes, previewed on their own: R replay, H hide the package.

@@ -80,19 +80,19 @@ class Doc:
         return out
 
 # The camera block, the light block and the scene settings come from the scenes Unity wrote.
-kingrush = open("Assets/Scenes/KingRush.unity").read()
+kingrush = open("Tools/Generators/templates/KingRush.unity").read()
 camera_body = re.search(r'--- !u!20 &\d+\nCamera:\n.*?m_GameObject: \{fileID: \d+\}\n(.*?)(?=--- !u!)', kingrush, re.S).group(1)
 camera_body = re.sub(r'm_BackGroundColor: \{[^}]*\}', 'm_BackGroundColor: {r: 0.64, g: 0.79, b: 0.93, a: 1}', camera_body)
 camera_body = camera_body.replace("far clip plane: 1000", "far clip plane: 1500")
 config_body = re.search(r'm_Script: \{fileID: 11500000, guid: %s, type: 3\}\n  m_Name: \n  m_EditorClassIdentifier: \n(.*?)(?=--- !u!)'
                         % SCRIPT["GameSceneConfig"], kingrush, re.S).group(1)
-sample = open("Assets/Scenes/SampleScene.unity").read()
+sample = open("Tools/Generators/templates/SampleScene.unity").read()
 light_body = re.search(r'--- !u!108 &410087040\nLight:\n(.*?)(?=--- !u!)', sample, re.S).group(1)
 light_body = light_body.split("  m_GameObject: {fileID: 410087039}\n", 1)[1].replace("  m_Intensity: 2\n", "  m_Intensity: 1.2\n")
 PREAMBLE = sample[sample.index("--- !u!29 &1"):sample.index("--- !u!1 &330585543")]
 
-# The ragdoll pawn prefab (Assets/ChessFight/RagdollLab/Prefabs), by its root GameObject.
-PAWN_PREFAB = "Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab"
+# The ragdoll pawn prefab (Assets/Prefabs), by its root GameObject.
+PAWN_PREFAB = "Assets/Prefabs/RagdollPawn.prefab"
 pawn_text = open(PAWN_PREFAB).read()
 pawn_root = None
 for tid, body in re.findall(r'--- !u!4 &(\d+)\nTransform:(.*?)(?=--- !u!)', pawn_text, re.S):

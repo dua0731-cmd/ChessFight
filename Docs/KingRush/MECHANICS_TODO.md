@@ -33,7 +33,7 @@
 |---|---|---|
 | 규칙 코어(`KingRushRules`), 기물표 | `Assets/Scripts/Core` | 아래 브랜치에 같이 넣는다 |
 | 캐릭터 약속, 경기장 부품, 경기 진행, HUD | `Assets/Scripts/Gameplay`, `Assets/UI` | 〃 |
-| **래그돌 안쪽**(능력 6개, 떠오름, 매달림, 태우기) | `Assets/ChessFight/RagdollLab/` | 〃. **`JY-lobby`에서는 캐릭터 조작·물리를 바꾸지 않는다**(R18) |
+| **래그돌 안쪽**(능력 6개, 떠오름, 매달림, 태우기) | `Assets/` | 〃. **`JY-lobby`에서는 캐릭터 조작·물리를 바꾸지 않는다**(R18) |
 | 래그돌 네트워크 | `RagdollNetProtocol.cs`, `RagdollLabSteam/` | 〃 |
 
 - **새 채팅은 시작할 때 사용자에게 브랜치를 먼저 확인한다.**
@@ -57,7 +57,7 @@
 | 잡기·던지기·태클·버둥 게이지·벽 등반·스테미나 | `RagdollPawn.cs`, [RagdollLab README](../RagdollLab/README.md) | 모든 미션의 기본기 |
 | 밧줄·그네 `RopeLine`, 진자·회전봉·왕복 | `Obstacles/` (M6) | 빨강 코스 |
 | 래그돌 상태 읽기: `Grounded`, `Floating`, `BeingHeld`, `Grabbing`, `Launched`, `Climbing`, `State`, `OnRope`, `Riding` | `RagdollPawn.cs` | 몸 세기(K4)가 이것을 인터페이스로 내보낸다 |
-| 랩 자동 점검(`-ragdollAutoTest`), 코드로 만드는 시험대(`QueenHillTestBed`) | `RagdollLab/Scripts/LabAutoTest.*`, `QueenHillTestBed.cs` | 킹 러쉬 시험대(§4) |
+| 랩 자동 점검(`-ragdollAutoTest`), 코드로 만드는 시험대(`QueenHillTestBed`) | `Scripts/RagdollLab/LabAutoTest.*`, `QueenHillTestBed.cs` | 킹 러쉬 시험대(§4) |
 
 ## 2. 새로 필요한 것 — 우선순위 순
 
@@ -160,7 +160,7 @@ P0 = 이것 없이는 한 판을 시험할 수 없음. P1 = 능력과 미션. P2
 | **K3e** | 나이트 **태우기** | 🟡 | 0.3초에 대상 골반을 나이트 등 안장 지점에 스프링 관절로 연결하고, 대상 앵커를 끈다. 다시 E → 0.3초 예고 → 연결 해제 + 대상 `Launch`(뒤쪽 6 m, 최고 2.5 m) | 태운 채 평소 속도의 95% 이상, 10 m 직선과 90° 회전에서 떨어지지 않는다. 뒷발차기로 뒤쪽 6±1 m에 떨어진다. 적은 버둥으로 내린다. 나이트가 넘어지면 떨어진다. 태운 동안 잡기·태클이 막힌다. 쿨타임 6초 |
 | **K3f** | 퀸 **여왕의 손** | 🔴 | E 누르고 있기 → 0.3초 고정(대상 위에 빛나는 손) → 대상 골반을 조준점(퀸에서 3~15 m)으로 **강한 스프링**으로 끈다(최고 초속 8 m, 중력 상쇄). 순간이동은 쓰지 않는다. 좌클릭이면 조준 방향 12 m 던지기. 3초 뒤 자동으로 놓는다 | 조준점을 0.5 m 안으로 따라간다. 3초에 놓는다. 좌클릭 던지기 약 12 m. 퀸 속도 30%. 퀸이 맞으면 놓친다. 대상 버둥으로 풀린다. 벽 안으로 끌려 들어가지 않는다. 쿨타임 10초 |
 
-- **어디에:** 래그돌(`Assets/ChessFight/RagdollLab/Scripts/`). 다른 캐릭터에게 하는 일은 반드시 `Gameplay/Characters` 인터페이스로만 한다(`IHitReceiver`, `ILaunchable`, `IStatusReceiver`, 새로 만들 `ILatchable`·`IRideable` 등). 그래야 래그돌이 아닌 캐릭터도 맞을 수 있다.
+- **어디에:** 래그돌(`Assets/Scripts/RagdollLab/`). 다른 캐릭터에게 하는 일은 반드시 `Gameplay/Characters` 인터페이스로만 한다(`IHitReceiver`, `ILaunchable`, `IStatusReceiver`, 새로 만들 `ILatchable`·`IRideable` 등). 그래야 래그돌이 아닌 캐릭터도 맞을 수 있다.
 - **네트워크:** K11에 모은다.
 - **공통 완료 기준:**
   - 여섯 능력 모두 **아군에게도** 된다.

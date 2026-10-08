@@ -16,6 +16,8 @@ namespace ChessFight.Game
         [Header("Content")]
         [Tooltip("The scene owns its character simulation instead of the legacy capsule match view.")]
         public bool customMatchSimulation;
+        [Tooltip("Opened as the match scene, every PC plays this scene's own offline playtest (no networked pawns yet) and Esc leaves the match. Pawn Rush course 01 until its pawns go online.")]
+        public bool soloInMatch;
         [SerializeField] GameObject arenaPrefab;
         [SerializeField] PawnAvatar pawnPrefab;
         [SerializeField] Material blueTeamMaterial;

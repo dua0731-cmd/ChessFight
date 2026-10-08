@@ -1,5 +1,7 @@
 # 기존 맵 프로젝트 이식 (R65)
 
+> **(R90, 2026-10-08) 시험 씬 `ImportedChessFightMap.unity`는 지웠다(폰 러시 옛 배치).** 장애물 프리팹 19개는 폰 러시 코스 01이 쓰므로 `Assets/Prefabs/Obstacles/`로, 재질은 `Assets/Materials/`(겹치는 이름 두 개는 `MapBoardDark`·`MapBoardLight`), 요구르트 컵은 `Assets/Art/YogurtCup/`, 메뉴 코드는 `Assets/Scripts/ImportedMapEditor/`(Open Map 메뉴는 뺌)로 옮겼다. 아래의 씬 설명과 R89 높이 조정은 기록이다.
+
 2026-10-05 지성 님이 `JY-ragdoll_v2`에 만든 것(`487f62b`, 그 브랜치 문서의 R47). **2026-10-06 사용자 요청(R65)으로 `JY-kingrush` 기준 `main` 병합에 넣었다**(`a54b89e`). Unity에서 사용자 직접 확인과 두 PC 테스트는 아직 하지 않았다. 병합 뒤 Linux 검사: 무게 다리(`WeightedBridge`)·스프링 기둥(`SpringPillar`)은 시간의 함수가 아니라 플레이어 상태로 움직여 `StateDrivenMover:` 표시로 장애물 시계 검사에서 오프라인 전용으로 분류된다.
 
 ## 열기
@@ -7,7 +9,7 @@
 1. 핵심 프로젝트 `C:/Users/Admin/Documents/GitHub/ChessFight`를 Unity 6000.3.11f1로 연다.
 2. **ChessFight → Imported Map → Open Map**. 또는 `Assets/Scenes/ImportedChessFightMap.unity`를 연다. 현재 씬에 수정 사항이 있으면 Unity 저장 대화상자를 따른다.
 3. Scene에서 `Map` 루트가 선택된다. Play하면 **이 핵심 프로젝트에 원래 있던** `RagdollPawn` 하나가 `PlaytestSpawner`를 통해 생성된다. WASD 이동, Space 점프, R/Backspace 시작점 복귀.
-4. 프리팹 폴더는 **ChessFight → Imported Map → Select Obstacle Prefabs** 또는 `Assets/Maps/ImportedChessFight/Prefabs/Obstacles`.
+4. 프리팹 폴더는 **ChessFight → Imported Map → Select Obstacle Prefabs** 또는 `Assets/Prefabs/Obstacles`.
 
 현재 프로젝트가 열고 있던 씬, 기존 KingRush/RagdollTest 씬, Build Settings 및 로비의 씬 연결은 자동으로 바꾸지 않는다. 이식 씬은 씬 파일을 직접 열어 사용하는 오프라인 레벨 작업용이다.
 

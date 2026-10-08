@@ -11,7 +11,7 @@
 | 항목 | 상태 |
 |---|---|
 | 병합 | `JY-ragdoll`(`2d450aa`)을 `Network`에 병합함(`fc006b8`). 래그돌 파일 118개만 추가, 기존 파일 변경 없음 |
-| 위치 | `Assets/ChessFight/RagdollLab/`(Art, Editor, Generated, Materials, Prefabs, Scripts, Settings). 빌더가 이 경로를 알고 있어 옮기지 않는다 |
+| 위치 | `Assets/`(Art, Editor, Generated, Materials, Prefabs, Scripts, Settings). 빌더가 이 경로를 알고 있어 옮기지 않는다 |
 | **RagdollTest 씬** | `Assets/Scenes/RagdollTest.unity` = **래그돌 랩 씬 그대로**. 원래의 `RagdollLab.unity`는 지웠다. RagdollTest의 GUID는 유지 |
 | 어댑터 `RagdollDriver` | 구현하고 `RagdollPawn.prefab` 루트에 붙임. 빌더도 다시 만들 때 붙인다 |
 | 네트워크 래그돌 | 아직 없음. 권한 결정 필요([ROADMAP](../Project/ROADMAP.md)) |
@@ -77,14 +77,14 @@ public interface IHitReceiver
 }
 ```
 
-`Assets/ChessFight/RagdollLab/Scripts/RagdollDriver.cs`가 이것을 구현한다.
+`Assets/Scripts/RagdollLab/RagdollDriver.cs`가 이것을 구현한다.
 - `SetCommand` → `RagdollPawn.SetInput`. 필드는 이름만 바꿔 복사한다.
 - `ApplyHit` → `RagdollPawn.TakeHit`(09-26, §8).
 - 다른 코드는 `GetComponent<IHitReceiver>()`로 찾는다. 래그돌 타입을 몰라도 된다.
 - `FollowTarget` = `Hips`.
 - `Teleport(바닥, 회전)` → `RagdollPawn.Teleport(바닥 + standHeight + 0.02, 앞 방향)`. `LabGame.Respawn`과 같은 식이다.
 
-**킹러시에서 래그돌로 달려 보려면:** `KingRush` 씬 → `Playtest` 오브젝트 → `Character Prefab`을 `Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab`으로 바꾼다. KingRush에는 `PhysicsProfile`(120Hz/24회)이 이미 있다. 튜닝 에셋은 프리팹에 연결되어 있다. **Unity에서 아직 시험하지 않았다.** 시험 후 결과를 VALIDATION에 적는다.
+**킹러시에서 래그돌로 달려 보려면:** `KingRush` 씬 → `Playtest` 오브젝트 → `Character Prefab`을 `Assets/Prefabs/RagdollPawn.prefab`으로 바꾼다. KingRush에는 `PhysicsProfile`(120Hz/24회)이 이미 있다. 튜닝 에셋은 프리팹에 연결되어 있다. **Unity에서 아직 시험하지 않았다.** 시험 후 결과를 VALIDATION에 적는다.
 
 ## 5. 멀티를 위해 계속 지킬 것
 
@@ -113,7 +113,7 @@ Docs/Player/RAGDOLL.md와 Docs/RagdollLab/README.md를 읽으세요.
 RagdollPawn은 SetInput(PawnInput)으로만 움직이고, RagdollDriver가 ICharacterDriver로 연결합니다. 이 구조를 유지하세요.
 RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드가 래그돌 타입을 참조하거나,
 래그돌 어셈블리가 Steam을 참조하면 안 됩니다. 작업 후 Tools/run-tests-linux.sh(또는 Windows의 Test 스크립트)로 확인하세요.
-Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
+래그돌 폴더(`Assets/Scripts/RagdollLab` 등, 2026-10-08 폴더 정리 뒤 위치)는 옮기지 않습니다.
 ```
 
 ## 8. 퀸 오브 더 힐 기능 (M1~M11, M13)

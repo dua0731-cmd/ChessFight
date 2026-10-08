@@ -1,6 +1,8 @@
 # 씬 구성과 흐름
 
-**R54 별도 첫 연결 코스:** `KingRushOpening.unity`, 메뉴 **ChessFight → King Rush → Open Opening Course**. 오프라인12명, 장난감 코스·상자 미션·출구. 구간 프리팹은 `Assets/Prefabs/KingRushOpening`. `KingRushOpeningBuilder` 전용 빌드에서만 첫 씬이고 일반 로비/배포 라우팅은 바꾸지 않는다. 기존 `KingRushPrototype` 능력 시험장도 보존. [실행](../KingRush/OPENING_COURSE.md).
+**(R90, 10-08) 씬 정리:** `KingRush.unity`(옛 캡슐 경기 씬), `KingRushOpening.unity`(R54~R56 오프라인 코스), `KingRushPrototype.unity`(R52 능력 시험장), `ImportedChessFightMap.unity`(폰 러시 옛 배치 시험 맵), `SampleScene.unity`(템플릿)를 지웠다. **폰 러쉬 경기 씬은 `PawnRush_Course01.unity`**. 그 씬들을 만들던 코드·프리팹은 남겼고 씬을 다시 만들던 메뉴만 뺐다. 생성기가 틀로 읽던 KingRush·SampleScene은 `Tools/Generators/templates/`에 있다.
+
+(옛 기록) **R54 별도 첫 연결 코스:** `KingRushOpening.unity`, 메뉴 **ChessFight → King Rush → Open Opening Course**. 오프라인12명, 장난감 코스·상자 미션·출구. 구간 프리팹은 `Assets/Prefabs/KingRushOpening`. `KingRushOpeningBuilder` 전용 빌드에서만 첫 씬이고 일반 로비/배포 라우팅은 바꾸지 않는다. 기존 `KingRushPrototype` 능력 시험장도 보존. [실행](../KingRush/OPENING_COURSE.md).
 
 사용자 요구(R11): 씬을 **인트로 - 로비 - 게임 씬(킹러시, 승격쟁탈전 등)**으로 나누고, 킹러시 맵 작업 씬과 래그돌 테스트 씬을 만든다. 구현 `72ddf9e`. R19(2026-09-25): 경기 씬은 **경기 방의 게임 모드**가 정한다([GameModes](../GameModes/README.md)). **Unity에서 아직 열지 않았다**(확인 목록: [VALIDATION](../Network/VALIDATION.md) 최상단).
 
@@ -9,7 +11,7 @@
 ```text
  (R84) 게임 실행 → [시작 로고 영상, 인트로 위] → Intro ──시작 판 클릭──▶ (처음 한 번: 이름 설정 화면, Intro 씬 안) ──[장면 전환]──▶ Lobby
  Intro ──시작 판 클릭──▶ Lobby ──모두가 phase=playing──▶ [로딩 화면] ──모두 준비, 공유 시각 go──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
- (타이틀)          (파티·모드·매칭)                  킹 러시 = KingRush
+ (타이틀)          (파티·모드·매칭)                  폰 러쉬 = PawnRush_Course01 (R90, 각자 오프라인 코스, Esc 나가기)
                                                    소드 파이트 = SwordFight / 퀸 오브 더 힐 = 준비 중
  RagdollTest ← 개발 전용. 흐름 밖.
 ```
@@ -18,20 +20,20 @@
 |---|---|---|---|
 | `Intro.unity` | 0 | `IntroController` | 온라인. (R84) 시작 로고 영상 → 타이틀, Steam 시작, 시작 판 클릭 → 처음이면 이름 설정 화면(같은 씬의 `NameScreen`), (R85) "이름 바꾸기" → 이름 바꾸기 화면 → 다시 타이틀 → 장면 전환(`SceneTransition`) 뒤 Lobby(비동기 로드), Esc 설정 창 |
 | `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티 라인업(3D), 모드·파티·매칭 HUD. 이동 없음 |
-| `KingRush.unity` | 2 | 경기로 들어왔을 때만 `MatchSceneView` | 직접 열면 **오프라인 플레이테스트** |
+| `PawnRush_Course01.unity` (R86 코스, R90부터 폰 러쉬 경기 씬) | 2 | 경기로 들어오면 `MatchSceneView` 없이 씬의 오프라인 플레이(`GameSceneConfig.soloInMatch`): PC마다 자기 래그돌 하나로 코스를 달린다(다른 사람은 안 보임). Esc = 경기 나가기 | 직접 열면 오프라인 플레이테스트(메뉴 ChessFight → Pawn Rush → Open Course01) |
+| `PawnRush_SkillTest.unity` (R71) | 빌드 제외 | 없음 | 기물 스킬 시험장(메뉴 Pawn Rush → Open Skill Test) |
 | `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |
 | `RagdollTest.unity` | 비활성 | 없음 (씬 안의 `LabGame`이 동작) | 래그돌 랩. Steam 없이 2인 로컬 |
 | `QueenOfTheHill.unity` (R48, 맵 7차 R49) | 빌드 제외(아직) | 없음 | 퀸 오브 더 힐 그레이박스. `QueenHillLevel`이 맵 데이터(JSON)로 맵을 만들고 래그돌 폰 1인 오프라인 |
 | `PawnRushVictory.unity`, `PawnRushLose.unity` (R76, 폰 러쉬 결과 화면) | 빌드 제외(아직 흐름에 없음) | 씬에 저장된 `PawnRushResultDirector`(Steam 모름, `victory`만 다름) | 결과 화면 미리보기. 탁자 체스판·말·결승 중계 결과판을 코드로 만들고 예시 경기를 보여 줌(R 다시 재생, H 결과판). R62의 `LastScene.unity`는 지움 |
-| `SampleScene.unity` | 빌드 제외 | 없음 | 아무것도 안 함(템플릿) |
 
-씬 이름 상수는 `Game/SceneNames.cs`. **런타임에 로드하는 씬은 빌드 목록(`EditorBuildSettings.asset`)에도 있어야 한다.** 빌드 메뉴(`NetworkSetup.ShippedScenes`)가 Intro·Lobby·KingRush·SwordFight를 넣는다.
+씬 이름 상수는 `Game/SceneNames.cs`. **런타임에 로드하는 씬은 빌드 목록(`EditorBuildSettings.asset`)에도 있어야 한다.** 빌드 메뉴(`NetworkSetup.ShippedScenes`)가 Intro·Lobby·PawnRush_Course01·SwordFight를 넣는다(R90 전에는 KingRush).
 
 R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 `MatchSceneView`와 `Motion.Update`를 실행하지 않는다. 별도 래그돌-네트워크 다리가 **기존 NetworkRuntime.Session을 빌려** 실행하며 독립적인 Steam 초기화/종료는 하지 않는다. 직접 열어 Play하면 Steam 없이 연습한다. 공유 캐릭터 물리와 다른 씬은 그대로다.
 
 ## 2. NetworkRuntime — 씬을 넘어 사는 유일한 Steam 소유자
 
-**R52 별도 시험 씬:** `KingRushPrototype.unity`는 `KingRushBuilder` 전용 빌드에서만 첫 씬이며 일반 `EditorBuildSettings`/GameModes 라우팅은 바꾸지 않는다. `PhysicsProfile`, `KingRushPrototype`, `LabCamera`로 오프라인 12명을 만든다. `GameSceneConfig`/Steam 컨트롤러가 없고, 기존 `KingRush.unity`·`SwordFight.unity`는 수정하지 않는다. [실행](../KingRush/README.md).
+(옛 기록, 씬은 R90에 삭제) **R52 별도 시험 씬:** `KingRushPrototype.unity`는 `KingRushBuilder` 전용 빌드에서만 첫 씬이며 일반 `EditorBuildSettings`/GameModes 라우팅은 바꾸지 않는다. `PhysicsProfile`, `KingRushPrototype`, `LabCamera`로 오프라인 12명을 만든다. `GameSceneConfig`/Steam 컨트롤러가 없고, 기존 `KingRush.unity`·`SwordFight.unity`는 수정하지 않는다. [실행](../KingRush/README.md).
 
 `Scripts/Bootstrap/NetworkRuntime.cs`
 
@@ -51,7 +53,11 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 
 **Lobby** — 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. Play하면 `LobbyBootstrap`이 `LobbyStage`(하늘·흰 바닥·금색 원, 파티 라인업. 프리미티브와 팀 재질 복사본으로 만들어 새 에셋이 없다)와 `NetworkHudView`를 만든다. **로비는 메뉴라 캐릭터가 움직이지 않는다**(`MovementGate` = 항상 false). 예전 `Arena` 체스판 프리팹은 로비에서 더 이상 쓰지 않는다. HUD는 [UI](UI.md).
 
-**KingRush** — 코스 뼈대, 장애물, 스폰 12곳, 체크포인트 2개, 골인, `PhysicsProfile`(120Hz), `Playtest`(`PlaytestSpawner`), `ChessFight Game Root`. 상세: [KingRush](../KingRush/README.md).
+**PawnRush_Course01** (R86 코스 01 v0.4, R90부터 폰 러쉬 경기 씬) — 카메라(`OrbitCamera`)·조명·`Physics Profile`, `Pawn Rush Course01`(`PawnRushCourse`: 씬에 코스가 없으면 Play 때 코드가 만든다), `Playtest`(`PlaytestSpawner` + `Course01Playtest`), `ChessFight Game Root`(`GameSceneConfig`, `soloInMatch` 켬). 상세: [PAWN_RUSH_COURSE01](../KingRush/PAWN_RUSH_COURSE01.md).
+- 직접 Play: 오프라인 플레이테스트(백팀 폰 하나, 3초 뒤 출발).
+- 경기로 진입(R90): `NetworkRuntime`이 `soloInMatch`를 보고 `MatchSceneView`를 붙이지 않고 `PlaytestSpawner.NetworkDriven`을 끈다. 그래서 **PC마다 자기 폰 하나로 같은 코스를 따로 달린다**(다른 사람의 폰·위치는 안 오감, 결과 화면 연결 없음). Esc(채팅 닫는 Esc 말고)로 경기를 나간다. 래그돌을 방장이 계산해 나눠 주는 온라인은 아직 없다.
+
+(옛 기록, 씬은 R90에 삭제) **KingRush** — 코스 뼈대, 장애물, 스폰 12곳, 체크포인트 2개, 골인, `PhysicsProfile`(120Hz), `Playtest`(`PlaytestSpawner`), `ChessFight Game Root`. 상세: [KingRush](../KingRush/README.md).
 - 직접 Play: `PlaytestSpawner`가 임시 캐릭터를 만든다.
 - 경기로 진입: `PlaytestSpawner.NetworkDriven`이라 캐릭터를 안 만들고, `MatchSceneView`가 네트워크 캡슐, 읽기 전용 `MatchHud`(명단, 핑, 끊김 배너)를 띄운다. **캡슐은 아직 로비용 평면 모터라 코스를 달릴 수 없다.** Esc = `Session.Cancel()`.
 

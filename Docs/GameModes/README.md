@@ -8,7 +8,7 @@
 
 | 모드 | 키(`mode`) | 한 줄 설명 | 상태 | 씬 | 상세 |
 |---|---|---|---|---|---|
-| **폰 러쉬**(옛 화면 이름 킹 러시, R63) | `kingrush` | 장애물 달리기 구간과 팀 배틀 구간이 **세 번 번갈아** 나오는 모드. 기획이 아직 다 안 됨 | 선택 가능. 씬은 코스 뼈대만 있음 | `KingRush` | [KingRush](../KingRush/README.md) |
+| **폰 러쉬**(옛 화면 이름 킹 러시, R63) | `kingrush` | 장애물 달리기 구간과 팀 배틀 구간이 **세 번 번갈아** 나오는 모드. 기획이 아직 다 안 됨 | 선택 가능. **R90부터 경기 씬 = 폰 러시 코스 01**(PC마다 각자 오프라인으로 달림, Esc 나가기. 온라인 래그돌은 아직) | `PawnRush_Course01` | [PAWN_RUSH_COURSE01](../KingRush/PAWN_RUSH_COURSE01.md) |
 | **퀸 오브 더 힐** | `queenhill` | 탑을 올라 기물로 승격하고 퀸 등장 후 사냥하는 모드(세부는 최신 DESIGN) | Claude에서 이어갈 수 있으므로 GPT 작업은 보류(R45). 로비에는 "준비 중" | 없음 | **[QueenOfTheHill/README](QueenOfTheHill/README.md)** |
 | **소드 파이트** | `swordfight` | 칼로 상대를 넘어뜨리고 장외로 떨어뜨려 팀 +1점인 귀여운 물리 난투전 | **R51 보이는 검·무게감 있는 보정 드래그·강한 베기만 넉다운(v10)**. 클릭/물리 F6 전환·빠른 발도 유지. R50 사용자 검 가림/손맛 피드백 반영, R51/두 PC 미확인. 기물·스킬·맵은 후속 | `SwordFight` | **[실행/구현](SwordFight/README.md)** · [기획](SwordFight/DESIGN.md) |
 
@@ -28,7 +28,7 @@
        │                                  (다른 모드의 방은 검색에 안 나옴)
 경기 시작 ─▶ NetworkRuntime.FollowMatch: GameModes.Resolve(경기 mode).Scene 로드
        │                                  씬이 없는 모드면 경기를 끝내고 안내
-모드 씬 ─▶ KingRush: MatchSceneView / SwordFight: 전용 래그돌 경기 ─▶ 로비
+모드 씬 ─▶ 폰 러쉬: PawnRush_Course01(각자 오프라인, R90) / SwordFight: 전용 래그돌 경기 ─▶ 로비
 ```
 
 | 규칙 | 이유 |

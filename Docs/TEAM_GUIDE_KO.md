@@ -65,7 +65,7 @@ Assets/
 ```
 
 - **`Gameplay`에서 Steam 코드를 참조하지 않는다.** 캐릭터·장애물은 네트워크를 몰라야 오프라인에서도, 호스트에서도, 봇으로도 돌아간다.
-- 새 스크립트는 담당 폴더에 만든다. 래그돌 어셈블리(`Assets/ChessFight/RagdollLab`)는 `Gameplay`를 가져다 쓰지만, 반대로 `Gameplay`나 네트워크 코드는 래그돌을 참조하지 않는다. 그래서 캐릭터를 부르는 쪽은 항상 인터페이스(`ICharacterDriver`)를 쓴다.
+- 새 스크립트는 담당 폴더에 만든다. 래그돌 어셈블리(`Assets/Scripts/RagdollLab`)는 `Gameplay`를 가져다 쓰지만, 반대로 `Gameplay`나 네트워크 코드는 래그돌을 참조하지 않는다. 그래서 캐릭터를 부르는 쪽은 항상 인터페이스(`ICharacterDriver`)를 쓴다.
 - **`.meta` 파일은 반드시 같이 커밋한다.** 빠지면 다른 사람 PC에서 참조가 전부 끊긴다.
 
 ---
@@ -114,7 +114,7 @@ Assets/
 
 **2026-09-25: `JY-ragdoll`이 `Network` 브랜치에 병합됐다.** 자세한 내용과 네트워크 안전성 근거는 [`Docs/Player/RAGDOLL.md`](Player/RAGDOLL.md)에 있다. 요약:
 
-- 래그돌 파일은 그대로 `Assets/ChessFight/RagdollLab/`에 있다(빌더가 경로를 안다). 전용 어셈블리 `ChessFight.RagdollLab`는 이제 `ChessFight.Gameplay`를 참조한다.
+- 래그돌 파일은 그대로 `Assets/`에 있다(빌더가 경로를 안다). 전용 어셈블리 `ChessFight.RagdollLab`는 이제 `ChessFight.Gameplay`를 참조한다.
 - **랩 씬은 `Assets/Scenes/RagdollTest.unity`로 옮겼다**(메뉴 `ChessFight > Scenes > Ragdoll Test`). 원래의 `RagdollLab.unity`는 없다. `Rebuild Pawn + Scene` 메뉴도 RagdollTest에 저장한다.
 - **어댑터 `RagdollDriver`를 만들어 `RagdollPawn.prefab`에 붙였다.** 킹러시 `Playtest`의 `Character Prefab`에 래그돌 프리팹을 넣으면 코스에서 래그돌로 달릴 수 있다(Unity 확인 전).
 - 앞으로 작업은 `JY-ragdoll`이 아니라 `Network`(병합 후에는 `main`)에서 feature 브랜치를 딴다. **`JY-ragdoll`에 계속 커밋했다면 알려 달라.** 같은 파일이므로 병합은 쉽다.
@@ -137,7 +137,7 @@ ChessFight 저장소에서 래그돌 작업을 이어갑니다. 저장소 루트
 Docs/Player/RAGDOLL.md와 Docs/RagdollLab/README.md를 읽으세요.
 래그돌 랩은 Network 브랜치에 병합되어 있고, RagdollTest 씬(Assets/Scenes/RagdollTest.unity)이 랩 씬입니다.
 RagdollPawn은 SetInput(PawnInput)으로만 움직이고, RagdollDriver가 ICharacterDriver로 연결합니다. 이 구조를 유지하세요.
-TEAM_GUIDE 5.1(= RAGDOLL.md 5절) 규칙을 반드시 지키세요. Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
+TEAM_GUIDE 5.1(= RAGDOLL.md 5절) 규칙을 반드시 지키세요. 래그돌 폴더(`Assets/Scripts/RagdollLab` 등, 2026-10-08 폴더 정리 뒤 위치)는 옮기지 않습니다.
 ```
 
 ---

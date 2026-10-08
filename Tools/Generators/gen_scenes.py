@@ -1,4 +1,5 @@
-# Generates the Intro and KingRush scenes, the obstacle/character prefabs and
+# Generates the Intro scene (and once the KingRush scene, deleted 10-08: king_rush() is kept as a record,
+# not run), the obstacle/character prefabs and
 # course materials as hand-written Unity YAML, with deterministic GUIDs.
 #
 # !! It OVERWRITES those files. Once anyone has saved them from the Unity Editor,
@@ -303,7 +304,7 @@ CAMERA = """  m_Enabled: 1
   m_StereoSeparation: 0.022
 """
 # Light: Unity 6.3's own block from SampleScene, intensity toned down to the old arena's.
-sample = open("Assets/Scenes/SampleScene.unity").read()
+sample = open("Tools/Generators/templates/SampleScene.unity").read()
 light_body = re.search(r'--- !u!108 &410087040\nLight:\n(.*?)(?=--- !u!)', sample, re.S).group(1)
 light_body = light_body.split("  m_GameObject: {fileID: 410087039}\n", 1)[1].replace("  m_Intensity: 2\n", "  m_Intensity: 1.1\n")
 PREAMBLE = sample[sample.index("--- !u!29 &1"):sample.index("--- !u!1 &330585543")]
@@ -472,4 +473,4 @@ def ragdoll_test():
 # RagdollTest is no longer generated: since 2026-09-25 it is the ragdoll lab scene,
 # rebuilt by ChessFight > Ragdoll Lab > Rebuild Pawn + Scene. ragdoll_test() above
 # only documents the earlier integration course.
-intro(); king_rush()
+intro()

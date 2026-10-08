@@ -31,11 +31,12 @@ namespace ChessFight.Network
     // once the scene is in the build list. See Docs/GameModes/README.md.
     public static class GameModes
     {
-        // The key and scene keep the old name (keys never change); the mode is
-        // shown as 폰 러쉬 since 2026-10-03.
+        // The key keeps the old name (keys never change); the mode is shown as
+        // 폰 러쉬 since 2026-10-03, and its match is Pawn Rush course 01 since
+        // 2026-10-08 (the KingRush capsule scene is gone).
         public static readonly GameModeInfo KingRush = new GameModeInfo(
             "kingrush", "폰 러쉬", "6 VS 6 · 팀 레이스",
-            "장애물 코스를 달려 팀원 4명이 먼저 결승선을 넘으면 승리", "PR", "KingRush");
+            "장애물 코스를 달려 팀원 4명이 먼저 결승선을 넘으면 승리", "PR", "PawnRush_Course01");
 
         public static readonly GameModeInfo QueenOfTheHill = new GameModeInfo(
             "queenhill", "퀸 오브 더 힐", "6 VS 6 · 정상 쟁탈",

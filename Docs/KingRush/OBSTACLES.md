@@ -76,4 +76,4 @@ namespace ChessFight.Gameplay
 
 ## 6. 별도 프로젝트에서 가져온 장애물 (2026-10-05, R65)
 
-`Assets/Maps/ImportedChessFight/Prefabs/Obstacles`의 19개 프리팹과 `Scripts/Gameplay/ImportedObstacles` 어댑터는 기존 3종을 교체하지 않는다. 원본 Inspector/GUID 참조를 보존하기 위해 원본 클래스 이름을 유지하며 기존 `Obstacle` 상속으로 통째로 바꾸지 않았다. 주기적 위치는 같은 `ObstacleClock`, 탑승은 `IMovingSurface`, 피격/발사는 `IHitReceiver`/`ILaunchable`을 사용한다. 무게·접근·붕괴 같은 상태형 장애물은 오프라인 전용이며 온라인 호스트/상태 전달은 아직 연결하지 않았다. 목록과 테스트는 [MAP_IMPORT.md](MAP_IMPORT.md).
+`Assets/Prefabs/Obstacles`의 19개 프리팹과 `Scripts/Gameplay/ImportedObstacles` 어댑터는 기존 3종을 교체하지 않는다. 원본 Inspector/GUID 참조를 보존하기 위해 원본 클래스 이름을 유지하며 기존 `Obstacle` 상속으로 통째로 바꾸지 않았다. 주기적 위치는 같은 `ObstacleClock`, 탑승은 `IMovingSurface`, 피격/발사는 `IHitReceiver`/`ILaunchable`을 사용한다. 무게·접근·붕괴 같은 상태형 장애물은 오프라인 전용이며 온라인 호스트/상태 전달은 아직 연결하지 않았다. 목록과 테스트는 [MAP_IMPORT.md](MAP_IMPORT.md).

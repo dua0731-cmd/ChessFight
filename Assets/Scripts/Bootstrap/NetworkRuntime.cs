@@ -34,7 +34,7 @@ namespace ChessFight.Game
         // typing a lobby number, or with the window in the background.
         public Func<bool> MovementGate { get; set; }
 
-        bool inMatchScene, loading, customSimulation;
+        bool inMatchScene, loading, customSimulation, soloMatch;
         // The scene the running match loaded, from its game mode.
         string matchScene = "";
         readonly SharedClock clock = new SharedClock();
@@ -119,12 +119,16 @@ namespace ChessFight.Game
 
         void Attach(Scene scene)
         {
-            customSimulation = false;
+            customSimulation = soloMatch = false;
             foreach (var root in scene.GetRootGameObjects())
             {
                 var config = root.GetComponentInChildren<GameSceneConfig>(true);
-                if (config != null && config.customMatchSimulation) customSimulation = true;
+                if (config != null && (config.customMatchSimulation || config.soloInMatch)) customSimulation = true;
+                if (config != null && config.soloInMatch) soloMatch = true;
             }
+            // A solo match scene (Pawn Rush course 01 for now) runs its offline playtest on every PC: its
+            // spawner may place the local pawn after all. Attach runs before the scene's Start.
+            if (inMatchScene && scene.name == matchScene && soloMatch) PlaytestSpawner.NetworkDriven = false;
             switch (scene.name)
             {
                 case SceneNames.Intro: Host(scene).AddComponent<IntroController>(); break;
@@ -168,6 +172,10 @@ namespace ChessFight.Game
             if (loader.Blocking || ChatBox.KeysHeld) intent = default;
             if (!customSimulation)
                 Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
+            // A solo match scene has no match view to leave from: Esc leaves here (not the Esc that
+            // closes the chat, nor behind the loading screen).
+            if (inMatchScene && soloMatch && !loading && !loader.Blocking && !ChatBox.KeysHeld && LegacyKeys.Down(KeyCode.Escape))
+                Session.Cancel();
 
             // Development aid for the network review: F8 cycles extra delay and
             // loss on this machine, so one tester can play on a bad connection.

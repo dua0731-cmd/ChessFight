@@ -490,7 +490,7 @@ F3으로 온라인 패널을 연다. 스팀이 켜져 있고 로그인돼 있어
 - `RagdollPawn`: Rigidbody 11개(Hips·Chest·Head·Arm·Hand·Thigh·Foot) + ConfigurableJoint(Slerp). 절차적 퍼펫(`Puppet` 하위 Transform)이 매 FixedUpdate 목표 포즈를 만들고, 조인트 targetRotation이 이를 따른다. `LocomotionAnchor`(kinematic)가 입력대로 움직이고 Hips를 조인트로 끈다.
 - 동적 강성: 접촉·잡기·경사·피격 중 **가장 낮은 배율**이 적용되고, `stiffnessLerpSpeed`로 보간된다. 넉다운 중에는 모든 스프링이 0이다.
 - 시각 메시는 사용자가 준 Mixamo 리그(`Art/Pawn/Pawn.fbx`)를 그대로 쓰고, 빌더가 부위별로 가중치를 다시 계산한다(뼈 이름·구조 유지). 뼈는 LateUpdate에서 물리 몸을 따라간다.
-- 파일: `Assets/ChessFight/RagdollLab/` (Scripts / Editor / Art / Generated / Materials / Prefabs / Settings). 씬은 `Assets/Scenes/RagdollTest.unity`. `RagdollDriver`가 게임 공통 캐릭터 계약(`ICharacterDriver`)을 구현한다.
+- 파일: `Assets/` (Scripts / Editor / Art / Generated / Materials / Prefabs / Settings). 씬은 `Assets/Scenes/RagdollTest.unity`. `RagdollDriver`가 게임 공통 캐릭터 계약(`ICharacterDriver`)을 구현한다.
 
 ## 명세서와 다른 점 (측정 근거)
 

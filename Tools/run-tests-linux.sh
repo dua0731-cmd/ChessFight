@@ -118,8 +118,8 @@ compile_all() {
   ensure_roslyn
   local build="$OUT/build" src="$OUT/src" refs sym m=/usr/lib/mono/4.5
   rm -rf "$build" "$src"; mkdir -p "$build" "$src"
-  cp -r Assets/Scripts "$src/Scripts"; cp -r Assets/ChessFight/RagdollLab/Scripts "$src/RagdollLab"; cp -r Assets/ChessFight/RagdollLabSteam "$src/RagdollLabSteam"
-  cp -r Assets/Maps/PawnRush/Course01 "$src/PawnRush"
+  # Every assembly is a folder under Assets/Scripts (the ragdoll lab and Pawn Rush too since 10-08).
+  cp -r Assets/Scripts "$src/Scripts"
   unity6_to_2021 "$src"
   refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
   sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
@@ -138,15 +138,15 @@ compile_all() {
   # Player defines: its UNITY_EDITOR blocks need UnityEditor.dll, which the reference package lacks.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
-       -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/RagdollLab" -name '*.cs')
-  # Pawn Rush course 01 (Assets/Maps/PawnRush). Player defines here; its UNITY_EDITOR blocks and
-  # its Editor folder are compiled against UnityEditor.dll below.
+       -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/Scripts/RagdollLab" -name '*.cs')
+  # Pawn Rush course 01 (Assets/Scripts/PawnRush). Player defines here; its UNITY_EDITOR blocks and
+  # its editor assembly (Assets/Scripts/PawnRushEditor) are compiled against UnityEditor.dll below.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
-       -out:"$build/ChessFight.PawnRush.dll" $(find "$src/PawnRush/Scripts" -name '*.cs')
+       -out:"$build/ChessFight.PawnRush.dll" $(find "$src/Scripts/PawnRush" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Game.Steam.dll" \
-       -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/RagdollLabSteam" -name '*.cs')
+       -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/Scripts/RagdollLabSteam" -name '*.cs')
   compile_pawnrush_editor
   echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap, RagdollLab, RagdollLabSteam and PawnRush compiled with Roslyn (Input/ and other Editor code skipped)."
 }
@@ -165,9 +165,9 @@ compile_pawnrush_editor() {
   local csc="dotnet $CSC -nologo -noconfig -nostdlib+ -target:library -langversion:9 -nowarn:414,649,169,8632,0618,1701,1702,1705 -r:$m/mscorlib.dll -r:$m/System.dll -r:$m/System.Core.dll"
   local sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
   $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
-       -out:"$build/ChessFight.PawnRush.EditorBuild.dll" $(find "$src/PawnRush/Scripts" -name '*.cs')
+       -out:"$build/ChessFight.PawnRush.EditorBuild.dll" $(find "$src/Scripts/PawnRush" -name '*.cs')
   $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
-       -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.PawnRush.EditorBuild.dll" -out:"$build/ChessFight.PawnRush.Editor.dll" $(find "$src/PawnRush/Editor" -name '*.cs')
+       -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.PawnRush.EditorBuild.dll" -out:"$build/ChessFight.PawnRush.Editor.dll" $(find "$src/Scripts/PawnRushEditor" -name '*.cs')
 }
 
 # Assembly boundaries that keep gameplay work from reaching into the network layer.
@@ -177,14 +177,18 @@ check_boundaries() {
   code_refs() { local pattern="$1"; shift
     grep -rnE "$pattern" "$@" --include='*.cs' --include='*.asmdef' | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true; }
   # Only Network/ and Bootstrap/ may know about Steam (and RagdollLabSteam/, the lab's own
-  # Bootstrap-style bridge, which is why it sits outside RagdollLab/).
+  # Bootstrap-style bridge, which is why it is its own assembly beside RagdollLab/).
   hits=$(code_refs 'Steamworks|ChessFight\.Network\.Steam|SteamSession|SteamMotion' \
-         Assets/Scripts/Core Assets/Scripts/Game Assets/Scripts/Gameplay Assets/Scripts/Input Assets/ChessFight/RagdollLab)
+         Assets/Scripts/Core Assets/Scripts/Game Assets/Scripts/Gameplay Assets/Scripts/Input Assets/Scripts/RagdollLab \
+         Assets/Scripts/PawnRush)
   if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Steam referenced outside Network/ and Bootstrap/"; bad=1; fi
   # The network layer and scene flow never depend on a character implementation.
-  hits=$(code_refs 'RagdollLab|RagdollPawn|LabGame' Assets/Scripts)
-  if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Assets/Scripts depends on the ragdoll lab"; bad=1; fi
-  [ $bad -eq 0 ] && echo "PASS: assembly boundaries (Steam only in Network/Bootstrap, nothing in Assets/Scripts depends on the ragdoll)"
+  # (The lab's own folders, RagdollLab/, RagdollLabEditor/ and RagdollLabSteam/, sit in Assets/Scripts
+  # since the 10-08 folder cleanup; the rule is about the network and game folders beside them.)
+  hits=$(code_refs 'RagdollLab|RagdollPawn|LabGame' Assets/Scripts/Core Assets/Scripts/Network Assets/Scripts/Game \
+         Assets/Scripts/Gameplay Assets/Scripts/Bootstrap Assets/Scripts/Input Assets/Scripts/Editor)
+  if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: the network and game code depends on the ragdoll lab"; bad=1; fi
+  [ $bad -eq 0 ] && echo "PASS: assembly boundaries (Steam only in Network/Bootstrap, the network and game code does not depend on the ragdoll)"
   return $bad
 }
 
@@ -197,8 +201,8 @@ check_boundaries() {
 # comment naming why; it is offline only until the host sends its state (listed, not failed).
 check_obstacle_clock() {
   local bad=0 f
-  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/ChessFight Assets/Maps 2>/dev/null \
-             | grep -vE 'LabAutoTest|Test|/Editor/|/RagdollPawn[^/]*\.cs$'); do
+  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/Scripts/RagdollLab Assets/Scripts/PawnRush 2>/dev/null \
+             | grep -vE 'LabAutoTest|Test|Editor/|/RagdollPawn[^/]*\.cs$'); do
     if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then
       if grep -q 'StateDrivenMover:' "$f"; then echo "NOTE: state-driven mover, offline only: $f"
       else echo "$f"; bad=1; fi; fi

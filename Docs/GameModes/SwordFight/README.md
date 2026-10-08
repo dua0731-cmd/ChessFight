@@ -70,8 +70,8 @@ Steam 없이 `Assets/Scenes/SwordFight.unity`를 직접 Play하면 나+아군 �
 
 ## 코드·네트워크
 
-- `RagdollLab/Scripts/SwordFightPawn.cs`: 손 관절/칼 물리·스타일 전환·실제 접촉과 sweep. 콜백은 저장만 하고 다음 FixedUpdate에서 판정한다. `SwordFightPawn.Click.cs`는 이전 클릭 베기를 격리한다.
-- `RagdollLab/Scripts/SwordFightGame.cs`: 경기·F6/메뉴 조작 선택·더미·HUD. `SwordFightGame.Look.cs`는 모드 전용 보정 드래그/복원 처리.
+- `Scripts/RagdollLab/SwordFightPawn.cs`: 손 관절/칼 물리·스타일 전환·실제 접촉과 sweep. 콜백은 저장만 하고 다음 FixedUpdate에서 판정한다. `SwordFightPawn.Click.cs`는 이전 클릭 베기를 격리한다.
+- `Scripts/RagdollLab/SwordFightGame.cs`: 경기·F6/메뉴 조작 선택·더미·HUD. `SwordFightGame.Look.cs`는 모드 전용 보정 드래그/복원 처리.
 - `Scripts/Core/SwordFightRules.cs`: 득점/생명당 중복 방지/부활/종료.
 - `Scripts/Core/SwordFightProtocol.cs`: **CFS3**, 헤더26 + 폰당40 = 최대506바이트 유지. 생존/발도/클릭 방식 선택·보호/부활·타격 표시·hips 기준 칼 위치/회전. 유한값·범위·회전 길이·중복 ID·불가능한 스타일/발도 조합 검사.
 - `RagdollLabSteam/SteamSwordFightLink.cs`: 기존 NetworkRuntime.Session 재사용, 채널33. **Steam 프로토콜 v10**(새 타격 규칙; CFS3/CFR4 레이아웃 그대로). 두 PC 모두 같은 새 빌드 필요.

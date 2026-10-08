@@ -74,12 +74,12 @@ class Doc:
         return out
 
 # The camera block and the scene settings come from scenes Unity wrote.
-kingrush = open("Assets/Scenes/KingRush.unity").read()
+kingrush = open("Tools/Generators/templates/KingRush.unity").read()
 camera_body = re.search(r'--- !u!20 &\d+\nCamera:\n.*?m_GameObject: \{fileID: \d+\}\n(.*?)(?=--- !u!)', kingrush, re.S).group(1)
 camera_body = re.sub(r'm_BackGroundColor: \{[^}]*\}', 'm_BackGroundColor: {r: 0.078, g: 0.051, b: 0.031, a: 1}', camera_body)
 camera_body = re.sub(r'field of view: [0-9.]+', 'field of view: 30', camera_body)
 camera_body = re.sub(r'far clip plane: [0-9.]+', 'far clip plane: 600', camera_body)
-sample = open("Assets/Scenes/SampleScene.unity").read()
+sample = open("Tools/Generators/templates/SampleScene.unity").read()
 PREAMBLE = sample[sample.index("--- !u!29 &1"):sample.index("--- !u!1 &330585543")]
 
 def result_scene(target, victory):

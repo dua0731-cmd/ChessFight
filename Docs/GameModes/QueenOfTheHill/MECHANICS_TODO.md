@@ -14,8 +14,8 @@
 | 작업 종류 | 위치 | 권장 브랜치 | 이유 |
 |---|---|---|---|
 | 캐릭터 약속·환경 부품·규칙 | `Assets/Scripts/Gameplay`, `Assets/Scripts/Core` | `JY-lobby` | 로비·게임모드 브랜치 규칙(R18) 안 |
-| **래그돌 안쪽 동작**(갈고리 타기, 밧줄, 기물 능력, 상태 효과) | `Assets/ChessFight/RagdollLab/` | **`JY-ragdoll` 또는 새 브랜치** | `JY-lobby`에서는 **캐릭터 조작·물리를 바꾸지 않는다**(R18). 래그돌은 준영 님 영역이다 |
-| 래그돌 네트워크 동기화 | `Assets/ChessFight/RagdollLabSteam/`, `RagdollNetProtocol.cs` | 래그돌과 같은 브랜치 | 새 상태를 패킷에 넣어야 한다 |
+| **래그돌 안쪽 동작**(갈고리 타기, 밧줄, 기물 능력, 상태 효과) | `Assets/` | **`JY-ragdoll` 또는 새 브랜치** | `JY-lobby`에서는 **캐릭터 조작·물리를 바꾸지 않는다**(R18). 래그돌은 준영 님 영역이다 |
+| 래그돌 네트워크 동기화 | `Assets/Scripts/RagdollLabSteam/`, `RagdollNetProtocol.cs` | 래그돌과 같은 브랜치 | 새 상태를 패킷에 넣어야 한다 |
 
 **새 채팅을 시작할 때 사용자에게 "래그돌 쪽 작업을 어느 브랜치에서 할지"를 먼저 확인한다.** 두 브랜치에서 나눠 하면 순서가 중요하다: 약속(인터페이스)을 먼저 `Gameplay`에 넣고, 래그돌이 그것을 구현한다.
 
@@ -212,7 +212,7 @@ ChessFight 저장소에서 '퀸 오브 더 힐' 모드에 필요한 새 기능�
 3. Docs/GameModes/QueenOfTheHill/DESIGN.md §3.3(이동 단축 시스템), §4(갈고리·앙파상), §6(기물)
 4. Docs/RagdollLab/README.md (래그돌 현재 동작)
 
-시작하기 전에 나에게 물어볼 것: 래그돌 안쪽(Assets/ChessFight/RagdollLab) 작업을 어느 브랜치에서 할지.
+시작하기 전에 나에게 물어볼 것: 래그돌 안쪽(Assets/Scripts/RagdollLab) 작업을 어느 브랜치에서 할지.
 JY-lobby에서는 캐릭터 조작·물리를 바꾸지 않기로 했다.
 
 순서: MECHANICS_TODO §3대로 M2 → M1 → M3 → M4부터.

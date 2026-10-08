@@ -27,8 +27,8 @@
 | 조건 | 출처 |
 |---|---|
 | 커밋·푸시는 **`JY-lobby`에만**. `main`, `Network`, `JY-ragdoll`에는 푸시하지 않는다. `JY-ragdoll`은 래그돌 물리 튜닝용으로 따로 유지한다 | R18 |
-| **캐릭터 조작·물리(래그돌)는 이 브랜치에서 바꾸지 않는다.** `Assets/ChessFight/RagdollLab/`은 읽기만 한다. 래그돌 쪽 변경이 필요하면 사용자에게 알리고 준영 님과 `JY-ragdoll`에서 한다 | R18 |
-| 어셈블리 경계: `Assets/Scripts`는 래그돌 타입을 모른다. 캐릭터는 **`ICharacterDriver`로만** 부른다. 래그돌은 Steam을 모른다. 둘을 잇는 코드는 `Assets/ChessFight/RagdollLabSteam/` 같은 별도 다리 어셈블리에만 둔다 | HANDOFF §4-13 |
+| **캐릭터 조작·물리(래그돌)는 이 브랜치에서 바꾸지 않는다.** `Assets/`은 읽기만 한다. 래그돌 쪽 변경이 필요하면 사용자에게 알리고 준영 님과 `JY-ragdoll`에서 한다 | R18 |
+| 어셈블리 경계: `Assets/Scripts`는 래그돌 타입을 모른다. 캐릭터는 **`ICharacterDriver`로만** 부른다. 래그돌은 Steam을 모른다. 둘을 잇는 코드는 `Assets/Scripts/RagdollLabSteam/` 같은 별도 다리 어셈블리에만 둔다 | HANDOFF §4-13 |
 | 사용자는 **초보**이고 코드를 직접 쓰지 않는다. 대답은 **쉬운 한국어**, 표와 단계로 쓴다. 코드 주석·커밋 메시지는 **영어**. Unity에서 확인할 것은 **순서대로** 적어 준다 | R18, HANDOFF §7 |
 | **검증은 정직하게.** 사용자가 Unity·Steam에서 직접 본 것만 "성공"이다. 코드 작성·테스트 통과는 검증이 아니다 | HANDOFF §4-10 |
 | 작업마다 테스트(`Tools/run-tests-linux.sh --compile`, Windows는 `Tools/Test-NetworkCore.ps1`)와 [HANDOFF §8](../../../HANDOFF.md#8-작업-종료-체크리스트) 문서 갱신 | R18 |
@@ -127,7 +127,7 @@ N4 원문이 참조하는 **9/19 기획개발 핸드오프**(기물 능력 3-3�
 | 단계 | 할 일 | 네트워크 | 래그돌 수정 |
 |---|---|---|---|
 | **0 기획** | §3.4 D1~D8 확정 → `DESIGN.md` | — | — |
-| **A 오프라인 맵** | 빌더 메뉴로 `QueenOfTheHill.unity` 생성: 바닥, 성 구조물, 스폰 12곳(`SpawnPoint`, 발 닿는 바닥에), 정상 구역, `PhysicsProfile`, `ChessFight Game Root`(`GameSceneConfig`), `Playtest`(`PlaytestSpawner`의 캐릭터를 `Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab`으로). 직접 Play하면 래그돌로 성을 올라 볼 수 있어야 한다 | 없음 | 없음(프리팹을 참조만) |
+| **A 오프라인 맵** | 빌더 메뉴로 `QueenOfTheHill.unity` 생성: 바닥, 성 구조물, 스폰 12곳(`SpawnPoint`, 발 닿는 바닥에), 정상 구역, `PhysicsProfile`, `ChessFight Game Root`(`GameSceneConfig`), `Playtest`(`PlaytestSpawner`의 캐릭터를 `Assets/Prefabs/RagdollPawn.prefab`으로). 직접 Play하면 래그돌로 성을 올라 볼 수 있어야 한다 | 없음 | 없음(프리팹을 참조만) |
 | **B 규칙(순수 로직)** | `Core/QueenHillRules.cs`(Unity·Steam 없음): 퀸 1명, 동시 도착, 승리·무승부, 제한 시간, 부활 시각 → `Tests/Network/NetworkCoreTests.cs`에 테스트 추가. 정상 구역 컴포넌트는 `Gameplay/Course/`에 둔다(`FinishZone`·`Checkpoint`와 같은 방식, `ICharacterDriver`로 누가 들어왔는지 알림) | 없음 | 없음 |
 | **C 오프라인 규칙 연결** | 직접 Play에서 정상에 닿으면 퀸 승격 표시, 떨어지면 부활, 결과 표시 | 없음 | 없음 |
 | **D 로비 연결** | `GameModes.QueenOfTheHill`의 `Scene`에 `"QueenOfTheHill"`, `SceneNames`에 상수, 빌드 목록(`EditorBuildSettings`)과 `NetworkSetup.ShippedScenes`에 추가 → 로비에서 모드 선택 가능, 경기 시작 시 이 씬으로 이동. 이때 네트워크 캐릭터는 **아직 평면 캡슐**이다(한계를 문서에 적는다) | 흐름만 | 없음 |
@@ -146,7 +146,7 @@ A~D는 이 브랜치 규칙 안에서 바로 할 수 있다. E·F의 래그돌 �
 | 모드 공용 경기 화면(명단·핑·끊김·Esc) | `Assets/Scripts/Bootstrap/MatchSceneView.cs`, `Assets/Resources/MatchHud.uxml` |
 | 씬 이름, 빌드 목록 | `Assets/Scripts/Game/SceneNames.cs`, `ProjectSettings/EditorBuildSettings.asset`, `Assets/Scripts/Editor/NetworkSetup.cs`(`ShippedScenes`, 씬 메뉴) |
 | 캐릭터 약속 | `Assets/Scripts/Gameplay/Characters/ICharacterDriver.cs` |
-| 래그돌 어댑터(읽기만) | `Assets/ChessFight/RagdollLab/Scripts/RagdollDriver.cs`, 프리팹 `Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab` |
+| 래그돌 어댑터(읽기만) | `Assets/Scripts/RagdollLab/RagdollDriver.cs`, 프리팹 `Assets/Prefabs/RagdollPawn.prefab` |
 | 오프라인 플레이테스트 | `Assets/Scripts/Gameplay/Playtest/PlaytestSpawner.cs` |
 | 코스 부품(스폰·체크포인트·골인) | `Assets/Scripts/Gameplay/Course/` |
 | 물리 프로필, 장애물 | `Assets/Scripts/Gameplay/PhysicsProfile.cs`, `Assets/Scripts/Gameplay/Obstacles/` |
@@ -169,7 +169,7 @@ ChessFight(Unity 6000.3.11f1, Steam 파티 게임) 저장소의 JY-lobby 브랜�
 지킬 것:
 - 커밋·푸시는 JY-lobby에만. main, Network, JY-ragdoll에는 올리지 않는다.
   직접 푸시할 수 없으면 바뀐 파일 전체와 커밋 메시지를 주면 내가 GitHub Desktop으로 올린다.
-- 캐릭터 조작·물리(래그돌, Assets/ChessFight/RagdollLab)는 바꾸지 않는다. 필요하면 먼저 나에게 묻는다.
+- 캐릭터 조작·물리(래그돌, Assets/Scripts/RagdollLab)는 바꾸지 않는다. 필요하면 먼저 나에게 묻는다.
 - Assets/Scripts는 래그돌 타입을 모르고, 캐릭터는 ICharacterDriver로만 부른다.
 - 나는 초보라서 설명은 한국어로 쉽게, 코드 주석과 커밋 메시지는 영어로.
   Unity에서 확인할 것은 순서대로 알려 주고, 내가 Unity에서 직접 본 것만 '성공'으로 기록한다.

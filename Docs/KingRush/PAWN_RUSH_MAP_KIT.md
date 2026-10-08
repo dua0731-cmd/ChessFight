@@ -1,5 +1,7 @@
 # 폰 러시 맵 기획 재료집 — 장애물 시험 씬(`ImportedChessFightMap`) 기준
 
+> **(R90, 2026-10-08) 대상 씬 `ImportedChessFightMap`은 지웠다.** 지금 폰 러쉬 경기 씬은 [폰 러시 코스 01](PAWN_RUSH_COURSE01.md)이다. 장애물 프리팹 수치(§4)는 그대로 쓸 수 있다(프리팹은 `Assets/Prefabs/Obstacles/`). 구역·좌표·씬 고유 장치(§3·§6)는 지운 씬의 기록이다.
+
 작성 2026-10-06 (R67) · 기준 `main` · 대상 씬 `Assets/Scenes/ImportedChessFightMap.unity`
 함께 볼 문서: 폰 러시 미니게임 기획서 v0.1(성한, 10-02), [MAP_IMPORT](MAP_IMPORT.md)(씬을 가져온 경위)
 
@@ -36,7 +38,7 @@
 - 이 씬은 지성 님이 별도 프로젝트에서 만든 맵(`ProtectTheKing_Graybox`)을 가져온 것이다. 지형, 레인, 체크포인트 표식, 왕좌 구조물과 장애물이 그대로 들어 있다. 원본의 플레이어·AI·승패 규칙은 빼고, 지금 프로젝트의 **래그돌 폰**이 달린다.
 - 코스는 **길이 약 790 m, 6개 구역**이다. 출발 → 팀별 레인(150 m) → 합류 광장 → 지형 구역 → 다시 팀별 레인 → 왕좌.
 - 장애물은 두 종류다.
-  - **장애물 프리팹 19개(18종)**: `Assets/Maps/ImportedChessFight/Prefabs/Obstacles`. 그중 13종이 씬에 놓여 있다. 블루 레인과 2구역에 시험 배치된 상태다(§4).
+  - **장애물 프리팹 19개(18종)**: `Assets/Prefabs/Obstacles`. 그중 13종이 씬에 놓여 있다. 블루 레인과 2구역에 시험 배치된 상태다(§4).
   - **씬 고유 움직이는 장치 29개(7종)**: 회전 점프 막대, 룩 문, 움직이는 벽·발판 등. 프리팹이 아니라 씬에 직접 만들어져 있다(§6).
 - 여는 법: Unity 메뉴 **ChessFight → Imported Map → Open Map** → Play. 래그돌 폰 하나가 출발점에 생긴다. 조작은 WASD 이동, Space 점프, R 출발점 복귀다.
 - 아직 없는 것:
@@ -384,9 +386,9 @@
 | 내용 | 파일 |
 |---|---|
 | 씬 배치·구역·좌표 | `Assets/Scenes/ImportedChessFightMap.unity` (Transform 1,539개를 직접 읽음) |
-| 장애물 설정값 | `Assets/Maps/ImportedChessFight/Prefabs/Obstacles/*.prefab` |
+| 장애물 설정값 | `Assets/Prefabs/Obstacles/*.prefab` |
 | 장애물 동작 | `Assets/Scripts/Gameplay/ImportedObstacles/*.cs` |
-| 래그돌 수치 | `Assets/ChessFight/RagdollLab/Settings/RagdollTuning.asset`, [RagdollLab README](../RagdollLab/README.md) |
+| 래그돌 수치 | `Assets/Settings/RagdollTuning.asset`, [RagdollLab README](../RagdollLab/README.md) |
 | 기물 배율 | `Assets/Scripts/Core/ChessPieces.cs` |
 | 가져온 경위·제외 범위 | [MAP_IMPORT](MAP_IMPORT.md) |
 

@@ -35,7 +35,7 @@ $gameplay = Get-ChildItem "$projectRoot/Assets/Scripts/Gameplay" -Recurse -Filte
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.Gameplay.dll") + @($gameplay)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Gameplay (characters/obstacles/course/playtest) compilation failed.' }
-$ragdoll = Get-ChildItem "$projectRoot/Assets/ChessFight/RagdollLab/Scripts" -Recurse -Filter '*.cs' | ForEach-Object FullName
+$ragdoll = Get-ChildItem "$projectRoot/Assets/Scripts/RagdollLab" -Recurse -Filter '*.cs' | ForEach-Object FullName
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.RagdollLab.dll") + @($ragdoll)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab compilation failed.' }
@@ -44,11 +44,11 @@ $bootstrap = Get-ChildItem "$projectRoot/Assets/Scripts/Bootstrap" -Filter '*.cs
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.Network.Steam.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-out:$output/ChessFight.Game.Steam.dll") + @($bootstrap)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Bootstrap compilation failed.' }
-$ragdollNet = Get-ChildItem "$projectRoot/Assets/ChessFight/RagdollLabSteam" -Filter '*.cs' | ForEach-Object FullName
+$ragdollNet = Get-ChildItem "$projectRoot/Assets/Scripts/RagdollLabSteam" -Filter '*.cs' | ForEach-Object FullName
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.Network.Steam.dll", "-r:$output/ChessFight.RagdollLab.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Game.Steam.dll", "-out:$output/ChessFight.RagdollLab.Net.dll") + @($ragdollNet)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab Steam bridge compilation failed.' }
-$ragdollEditor = Get-ChildItem "$projectRoot/Assets/ChessFight/RagdollLab/Editor" -Filter '*.cs' | ForEach-Object FullName
+$ragdollEditor = Get-ChildItem "$projectRoot/Assets/Scripts/RagdollLabEditor" -Filter '*.cs' | ForEach-Object FullName
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.RagdollLab.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-out:$output/ChessFight.RagdollLab.Editor.dll") + @($ragdollEditor)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab builder compilation failed.' }

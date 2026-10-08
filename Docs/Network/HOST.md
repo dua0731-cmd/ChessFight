@@ -1,6 +1,6 @@
 # 방장(호스트) 선정·이전 (`HostElection`, `HostFitnessProbe`, `SteamSession`)
 
-코드: `Scripts/Core/HostElection.cs`(점수·순위·후계자, 순수 C#), `Scripts/Network/HostFitnessProbe.cs`(PC 측정), `Scripts/Network/SteamSession.cs`(선정·이전), `Scripts/Network/SteamMotion.cs`(캡슐), `ChessFight/RagdollLabSteam/SteamRagdollLink.cs`(래그돌 랩).
+코드: `Scripts/Core/HostElection.cs`(점수·순위·후계자, 순수 C#), `Scripts/Network/HostFitnessProbe.cs`(PC 측정), `Scripts/Network/SteamSession.cs`(선정·이전), `Scripts/Network/SteamMotion.cs`(캡슐), `Scripts/RagdollLabSteam/SteamRagdollLink.cs`(래그돌 랩).
 
 상태: **코드·모의 테스트·실제 Unity/Steamworks DLL 컴파일만 통과. Unity·Steam에서 사람이 본 것은 없다.** 브랜치 `claude/host-migration`(R50, 승규 님 요청), 2026-09-28 `JY-kingrush`에 합쳐짐. 확인 목록은 [VALIDATION](VALIDATION.md) 최상단.
 
