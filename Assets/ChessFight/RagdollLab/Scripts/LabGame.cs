@@ -49,6 +49,8 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Set while the player types in a network field so the keys do not also drive a pawn.</summary>
         public bool SuppressInput { get; set; }
+        /// <summary>F does not work bells, levers or hooks: the Pawn Rush skill test bed has the skills on F.</summary>
+        public bool InteractKeyOff { get; set; }
 
         /// <summary>Another on-screen panel needs the mouse; keep the cursor free so its buttons work.</summary>
         public bool UiWantsCursor { get; set; }
@@ -360,7 +362,7 @@ namespace ChessFight.RagdollLab
                     input.sprint = Input.GetKey(KeyCode.LeftShift);
                     input.ability = Input.GetKeyDown(KeyCode.E);
                     input.ability2 = Input.GetKeyDown(KeyCode.Q);
-                    input.interact = Input.GetKey(KeyCode.F);
+                    input.interact = !InteractKeyOff && Input.GetKey(KeyCode.F);
                     // The clicks only count once the cursor is locked to the game (click the view once;
                     // Esc frees it again). Otherwise the click that locks it would also dive.
                     if (Cursor.lockState == CursorLockMode.Locked && !PanelOpen && !swallowMouse)

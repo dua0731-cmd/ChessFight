@@ -11,7 +11,73 @@
 | `4e93ae3` | 10-08 | R69 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R69, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R69, HANDOFF |
 | `4a3c569` | 10-08 | R69 | (사용자) RagdollTest 패널로 다듬은 튜닝: 달리기 2.5·질주 3.6·점프 3.8·방향 전환 40·공중 제어 0.4·넉다운 9·기상 1·다이빙 |
 | `cd4bd57` | 10-08 | R68 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R68, HANDOFF |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R86 | 폰 러시 코스 01 v0.4: 같은 씬을 공용 길 + 미션 광장 2곳으로(`Course01v4Builder`), `MissionStation`·`TeamGate`·미니게임 A~E(`Mg*`)·`MissionPicker`, Core `PawnRushMissions`(뽑기·4명 상한·25% 걸쇠, 테스트 3개), `ObstacleSpan`·v0.4 검증기, 플레이테스트 F6~F10, 판자 재질 2개, v0.2 빌더·슬롯 삭제 |
+| `7d34fbf` | 10-08 | R85 | 문서: UI §15 "이름 바꾸기", SCENES, DECISIONS U16, VALIDATION R85 표, REQUIREMENTS R85, HANDOFF. 문구 하나("바꿨어요! 돌아가는 중") |
+| `1670ad6` | 10-08 | R85 | 인트로 "이름 바꾸기"와 로비 오른쪽 위 내 이름에서 언제든 이름 바꾸기(`NameChange`, `NameScreen` 바꾸기 모드·돌아가기), 바꾸는 동안 로비 단축키·채팅 쉼, 매칭 중 막음, Shift+클릭 없앰, 오프라인 로비도 고른 이름, `LobbyStage.SelfOnScreen` |
+| `076cc5b` | 10-08 | R84 | 문서: AI가 Unity에서 Play해 본 결과(VALIDATION R84 표), PITFALLS 32(첫 프레임 3.7초가 로고 기다림을 써 버림), UI §15·HANDOFF·REQUIREMENTS에 반영 |
+| `a78f5d6` | 10-08 | R84 | 로고 기다림과 장면 전환을 보인 프레임으로 셈(한 프레임 최대 0.05초): Play 직후 로고가 영상 전에 사라지던 것 고침 |
+| `5c97820` | 10-08 | R84 | 문서: UI §15(시작 로고·이름 설정 화면·장면 전환), SCENES(Intro 흐름), SESSION(`nick`), VALIDATION R84 표, DECISIONS U15·U16, REQUIREMENTS R84, HANDOFF |
+| `f381dcc` | 10-08 | R84 | 게임을 켜면 시작 로고 영상(`LogoIntro`, `StreamingAssets/LogoIntro.mp4`, 소리 A), 처음 한 번 이름 설정 화면(`NameScreen`·도는 유리 폰 `GlassPawn`·글자 수 옆 추천 이름 → 입력칸 위 말풍선, 규칙 `Core/PlayerNames` + 테스트 5), 고른 이름을 멤버 데이터 `nick`으로(`PlayerProfile`·`SteamSession.LocalName` + 세션 테스트 1), 킹 구멍 → 카드 → 나이트 구멍 장면 전환(`SceneTransition`), 그림·영상 3개(LFS) |
+| `82e38ed` | 10-08 | R83 | 로비 UI를 A 시안으로: `NetworkHud.uxml`·`.uss` 로비 부분(`a-` 클래스), `NetworkHudView.Dress`(그늘·판·금은 줄·은색 제목·선 아이콘·아이보리 게임 시작), `MenuArt.Ramp`·`HudBlend`·`LineCard`, `MenuMarks.IconMark`, 로고 `Resources/Menu/LobbyLogo.png`(LFS), 대체 클릭은 판 버튼에만 `Pulse`. 문서: UI §14, DECISIONS U14, PITFALLS 30·31, VALIDATION 로비 표, REQUIREMENTS R83, HANDOFF |
+| `54faa02` | 10-08 | R82 | 문서: Skills README(키 표·측정·R82 녹화), EFFECTS, REQUIREMENTS R82, VALIDATION, HANDOFF |
+| `51cfde3` | 10-08 | R82 | 퀸 불씨: 더 진한 금색·크게·많이(흰 바닥에서 보이게) |
+| `883bb21` | 10-08 | R82 | 비숍 줄이 더 오래 붙잡음·팽팽한 빛 줄임·걸린 순간 빛 작게·줄 흰색, 퀸 불씨 진하게, 나이트 표식 테두리 진하게, 비숍 녹화 각도 |
+| `2c86d2b` | 10-08 | R82 | 퀸 예고 원 금색·원에서 불씨 연기, 비숍 줄이 지나가는 적을 따라 늘어남, 나이트 도는 하얀 착지 표식, 시험(비숍 늘어난 길이·다시 지나가기)·녹화 |
+| `aadcf4e` | 10-08 | R81 | 문서: Skills README(키 표·측정·R81 녹화), EFFECTS, REQUIREMENTS R81, VALIDATION, HANDOFF |
+| `298ac5f` | 10-08 | R81 | 비숍 걸림: 튀어 오른 칸을 분홍으로만(하얗게 번짐) |
+| `c3724b4` | 10-08 | R81 | 비숍 걸림: 맞은 말의 빛 껍질 삭제, 조명 약하게 |
+| `ca670e7` | 10-08 | R81 | 비숍 걸림: 빛 기둥 작게, 팽팽한 줄 빛 약하게 |
+| `1c5b6e9` | 10-08 | R81 | 퀸 진짜 체스말 모양·작게·빙글빙글 돌다 팡, 룩 슈퍼맨 자세, 비숍 줄이 다리를 잡아당김(줄이 휘었다 튕김), 나이트 공중 도약, 시험 knight-air |
+| `123dc6d` | 10-08 | R80 | 문서: Skills README(키 표·측정·R80 녹화), EFFECTS(퀸·룩·나이트 줄), REQUIREMENTS R80, VALIDATION, HANDOFF |
+| `e1fbee7` | 10-08 | R80 | 녹화: 룩 공중 돌진 장면 카메라를 위로 |
+| `bdc1dd5` | 10-08 | R80 | 비숍 조준 흰 선 아래 옅은 남색 테두리, 룩 공중 장면 카메라 가깝게 |
+| `993c011` | 10-08 | R80 | 퀸 체스말 튀는 속도 줄임(카메라로 날아옴), 룩 공중 장면 옆에서 |
+| `aaab2c9` | 10-08 | R80 | 룩 내리꽂기: 바닥을 발 높이로 판정(공중 돌진 중 Grounded가 켜지지 않음) |
+| `9bd9df9` | 10-08 | R80 | 룩 내리꽂기: 바닥 충격으로 넘어지지 않게, 다이빙 기울기 70 → 50° |
+| `2a2162f` | 10-08 | R80 | 퀸 금색 체스말 모였다 팡, 룩 반투명 흰 조준선·공중 돌진·내리꽂기·공중 자세, 비숍 조준 파란색 없앰, 나이트 다시 차고 나감("다~당"), 시험 rook-air·knight-straight |
+| `798bdaa` | 10-08 | R79 | 문서: Skills EFFECTS(3D 빛 이펙트 표·밝은 바닥 규칙), README(코드 표·R79 녹화), REQUIREMENTS R79, VALIDATION, HANDOFF, Tools/Generators README(묶는 도구 줄 삭제) |
+| `9b0c259` | 10-08 | R79 | 녹화 설명 글을 3D 이펙트에 맞게(별 없음) |
+| `907e358` | 10-08 | R79 | 나이트 빛을 진한 파랑·칠하기로, 흐린 후광 삭제 |
+| `772a09d` | 10-08 | R79 | 퀸 충격파·나이트 찍기에 빛줄기, 나이트 파랑 진하게, 궤적·번개 굵게 |
+| `492134c` | 10-08 | R79 | 먼지를 연하고 얇게 |
+| `f182d90` | 10-08 | R79 | 빛 번짐 약하게, 밝은 속을 작게(노란 안개) |
+| `9ae446d` | 10-08 | R79 | 밝은 바닥에서 색이 보이게: 몸통 칠하기, 번짐 기준 2.2, 조명 약하게 |
+| `2bf42db` | 10-08 | R79 | 3D 빛 이펙트(셰이더·빛 번짐·조각·입자·조명·궤적·번개), 공방 그림과 묶는 도구 삭제 |
+| `7cce84e` | 10-07 | R78 | 문서: Skills EFFECTS(공방 그림 표·바꾼 것·다시 만드는 법), README(코드 표·R78 녹화), REQUIREMENTS R78, VALIDATION, HANDOFF, Tools/Generators README |
+| `1574f90` | 10-07 | R78 | 비숍 튀어오르는 칸을 칸 하나 크기로(두 배로 나오던 것), 공방 그림 묶는 도구 `Tools/Generators/pack_skill_fx.py` |
+| `837a7d0` | 10-07 | R78 | 게임 화면에 맞춤: 불꽃 크게·카메라 쪽으로 당겨 그림, 튀어오르는 칸 바닥 위로, 테두리·색, 비숍 미리보기 안 나오던 실수 |
+| `25f64e8` | 10-07 | R78 | 녹화: 기물마다 이펙트 장면(퀸·비숍 다시 넣음, 나이트 착지) |
+| `fff83a5` | 10-07 | R78 | 이펙트 공방 그림으로 바꿈(별 삭제, 룩 불꽃), `Resources/PawnRushSkillFx` 11장 |
+| `3025125` (병합) | 10-07 | R76 | `JY-kingrush`(`12772fe`)를 병합: 폰 러쉬 결과 화면(`JY-kingrush`에서는 R65) — `LastScene` 삭제, `PawnRushVictory`·`PawnRushLose`(아래 `12772fe`·`5972c7e`). 코드 충돌 없음. 문서 충돌 정리: 결과 화면 번호 R65 → R76(REQUIREMENTS·VALIDATION·HISTORY·HANDOFF·UI §10·§13·DECISIONS U13·SCENES·STRUCTURE·ROADMAP·코드 주석 3곳), PITFALLS 25~27 → 26~28, 새 29. Windows 컴파일 검사 `Test-NetworkCompile.ps1`이 `RagdollLab/Scripts` 하위 폴더(`PawnRushSkills`)도 읽게(이 브랜치에서 실패하던 것) |
+| `c75b8ca` | 10-07 | R75 | 문서: Skills README(룩 조준 중 걷기·나이트 3 m·측정·녹화), EFFECTS, REQUIREMENTS R75, VALIDATION, HANDOFF |
+| `338704e` | 10-07 | R75 | 화면 흔들림: 위치 + 회전, −1~1 사인, 제곱 감쇠 / 벽 흔들림 더 크게 / 조준 중 걷기 시험 짧게 |
+| `5fa903b` | 10-07 | R75 | 시험 도구: 조준 중 룩의 질주 상태 |
+| `a28a24a` | 10-07 | R75 | 룩 조준 중 걷기(질주 X), 이펙트 조각 삭제, 벽 흔들림, 나이트 감지 3 m·주황 표시·착지 원 한 벌만 |
+| `7c0658a` | 10-07 | R74 | 문서: Skills README(F·조준·나이트 찍기·측정·녹화), EFFECTS(글자 뺌), REQUIREMENTS R74, VALIDATION, HANDOFF |
+| `2e0d5e9` | 10-07 | R74 | 녹화: 룩 장면 가깝게, 나이트 꺾기는 위에서 |
+| `836adb4` | 10-07 | R74 | 모든 스킬 F(이 씬 F 상호작용 끔), 룩·비숍 F 조준 → 좌클릭, 비숍 근거리 4.5 m·반투명 미리보기, 나이트 공중 F = 감지한 적 머리 자동 찍기(없으면 90° 꺾기), 이펙트 글자·숫자 제거, 시험 도구·녹화 맞춤 |
+| `941da62` | 10-07 | R73 | 문서: Skills README(이펙트·녹화), EFFECTS(고른 것), REQUIREMENTS R73, VALIDATION, HANDOFF |
+| `88a91de` | 10-07 | R73 | 녹화: P2를 화면 밖으로 |
+| `a465780` | 10-07 | R73 | 녹화: 녹화 중 키보드 입력 막기 |
+| `3c14943` · `c7d8ae9` · `d38f48b` | 10-07 | R73 | 녹화: 느린 화면은 맞는 순간 앞뒤만, 장면 사이 밧줄 지우기, 카메라·자막 띠 / 이펙트: 납작 오래, 글자 위치, 퀸 안쪽 고리 진하게 |
+| `c6c51eb` | 10-07 | R73 | 타격감 이펙트(퀸 A·룩 A·비숍 B·나이트 B) `PawnRushSkillFx`, 스킬 이벤트 `RagdollPawn.SkillFx`, 녹화 도구 `PawnRushSkillFilm` + mp4 인코더, 시험 `bishop-trip` |
+| `4091d33` | 10-07 | R72 | 문서: Skills EFFECTS(이펙트 시안 기물마다 3개), README(V 키·시험용 쿨), REQUIREMENTS R72, VALIDATION, HANDOFF |
+| `f2cf4e6` | 10-07 | R72 | 시험 도구 rook-cluster: 돌진이 끝날 때 넘어진 수를 셈 |
+| `d807606` | 10-07 | R72 | 시험용 쿨타임 2초(모든 기물), 룩 시험용 더미 4명 뭉치기(V·버튼·룩 고르면 저절로), 시험 도구 rook-cluster |
+| `30292b2` | 10-07 | R71 | 문서: Skills README(쓰는 법·실측)·DESIGN(D1~D3 결정), VALIDATION 스킬 표, DECISIONS SK1·SK2, AI_WORKFLOW(Unity MCP 다리), REQUIREMENTS R71, HANDOFF. 비숍 조준 미리보기 굵게 |
+| `7947e4a` | 10-07 | R71 | 바닥 예고선을 바닥에 눕힘, 시험 도구가 그 프레임의 조준·누름과 함께 키를 누름 |
+| `be0c63d` | 10-07 | R71 | 시험 도구: 스킬 단계에서 시간 멈추기(예고 표시 캡처용) |
+| `023be98` | 10-07 | R71 | 룩 돌진 끝에 발을 디딤(미끄러짐 줄임) |
+| `ea3dee7` | 10-07 | R71 | 나이트 도약 공중 손실 보정(기획 1.6 m · 5.5 m에 맞춤), 시험 도구에 룩 빈 바닥 돌진 |
+| `aea87df` | 10-07 | R71 | 시험 도구: 걷는 더미 멈추기, 나이트 꺾기 타이밍, 밟기·착지 더미 위치, 착지를 출발 높이로 잼 |
+| `215051d` | 10-07 | R71 | 자동 시험 도구 `PawnRushSkillProbe`, 쿨 막대 글씨 대비 |
+| `401ac15` | 10-07 | R71 | 폰 러쉬 스킬 시험 씬 `PawnRush_SkillTest`(RagdollTest 복사 + `PawnRushSkillBed`), 스킬 5개(`RagdollPawn.PawnRushSkills`), 밧줄·바리케이드·예고선, 메뉴 Open Skill Test, `RagdollPawn.cs`·`Abilities.cs` 연결 |
+| `cf69513` (`claude/bold-johnson-8ez95n`) | 10-07 | R70 | 문서: 기물 스킬 기획서 v0.2 상세판 `Docs/Skills/DESIGN.md`(+ `README.md`), REQUIREMENTS R70, HANDOFF·Docs/README 지도. 코드 변경 없음 |
+| `cc6373f` (`claude/bold-johnson-8ez95n`) | 10-07 | R69 | 폰 러시 코스 01 v0.2: 같은 씬을 탑을 감아 오르는 3층 고리로(`Course01v2Builder`, 월드 좌표), `FallDistanceRespawn`·`TeamZone`·`FinishZone` 원형/골반만, `ProgressPath`, v0.2 검증기, 메뉴 Build Course01 v2, v0.1 모듈 코드·레이아웃 에셋 삭제, 기획서 v0.2 원문, 문서 |
+| `c4015ff` (`claude/bold-johnson-8ez95n`) | 10-06 | R68 | 폰 러시 코스 01 「여덟 번째 랭크」: 새 씬·모듈 18개(코드)·키트 스크립트(`Assets/Maps/PawnRush/Course01`), `NoClimbSurface`·`KillVolume`, 래그돌 등반·잡기에 등반 불가 연결, 장애물 `phaseOffset`·원판 방향, `PlaytestSpawner` 낙사 영역·팀 바꾸기, 생성기 `gen_pawnrush_course01.py`, Linux 검사에 PawnRush·에디터 컴파일, 문서 |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
+| `12772fe` (`claude/menu-c` → `JY-kingrush`, 위 병합으로 들어옴) | 10-06 | R76 | 문서: UI §13(폰 러쉬 결과 화면)·§10(바뀜 안내), SCENES·STRUCTURE·ROADMAP, DECISIONS U13, VALIDATION 결과 화면 표(12개, R62 표는 끝남), PITFALLS 25~27(이 브랜치에서는 26~28), REQUIREMENTS R65(이 브랜치에서는 R76), HANDOFF |
+| `5972c7e` (`claude/menu-c` → `JY-kingrush`, 위 병합으로 들어옴) | 10-06 | R76 | `LastScene` 삭제(씬·`LastSceneDirector`·`LastSceneCeremony`·`LastSceneStage`·`LastSceneHud`·uxml·uss·tss·생성기) → 폰 러쉬 결과 씬 `PawnRushVictory`·`PawnRushLose`(`PawnRushResultDirector`·`PawnRushResultStage`·`PawnRushResultHud`, `PawnRushResultHud.uxml`·`.uss`·`PawnRushResultTheme.tss`, 생성기 `gen_pawnrush_result.py`), 메뉴 2개, `SceneNames`. 시안(결승 중계 on B 장면)의 three.js·CSS를 그대로 옮김: 갈색 홀 반사 큐브맵, 배경 판·빛줄기, 보드 글자, 램프, 더하는 빛(칸·고리), 점·꽃가루, 웹 자세·카메라, Painter2D 그라데이션 결과판, 육각 얼굴, 그라데이션 글자. 미리보기 `holdAt`·`holdHidden`·`Hold()` |
 | (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |
 | `9e4966f` (`main`, 원본 `f476968` `JY-ragdoll_v2`) | 10-06 | R66 | 나이트 L자 도약·밟기(`RagdollPawn.Abilities`), 갈고리·앙파상·종은 폰만, 튜닝 8개, 자동 점검 `LabAutoTest.Knight` |
 | (이 커밋, `main` 병합) | 10-06 | R65 | 문서: REQUIREMENTS R51(`JY-lobby`)·R65, HISTORY, VALIDATION 병합 표, HANDOFF, DECISIONS T4, 맵 이식 문서 번호 R47 → R65 |

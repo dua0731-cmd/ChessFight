@@ -205,7 +205,47 @@ namespace ChessFight.Network
         public string Name(ulong id)
         {
             if (BotIdentity.IsBot(id)) return Roster.TryGetValue(id, out var bot) ? "BOT " + (bot.Slot + 1) : "BOT";
-            return Online ? SteamFriends.GetFriendPersonaName(Id(id)) : id.ToString();
+            if (!Online) return id.ToString();
+            if (id == Self && localName != "") return localName;
+            // The name each player chose (R84), published with the party and the match
+            // room; anyone who has none, or an older build, keeps their Steam name.
+            string nick = Nick(Match, id);
+            if (nick == "") nick = Nick(Party, id);
+            return nick != "" ? nick : SteamFriends.GetFriendPersonaName(Id(id));
+        }
+        static string Nick(ulong lobby, ulong id)
+        {
+            string nick = MemberData(lobby, id, "nick");
+            return PlayerNames.Showable(nick) ? nick : "";
+        }
+
+        // The name chosen on the name screen (R84), set by the game: shown for this
+        // player here and published as member data "nick" of the party and the match
+        // room for everyone else. Empty (or not a valid name) means the Steam name.
+        public string LocalName
+        {
+            get => localName;
+            set => localName = PlayerNames.Showable(value) ? value : "";
+        }
+        string localName = "", nickPartyValue = "", nickMatchValue = "";
+        ulong nickParty, nickMatch;
+
+        // Written when the room or the name changed; Steam clears member data when a
+        // player leaves, so a new room always gets it again.
+        void PublishNick()
+        {
+            if (Party == 0) nickParty = 0;
+            else if (Party != nickParty || nickPartyValue != localName)
+            {
+                SteamMatchmaking.SetLobbyMemberData(Id(Party), "nick", localName);
+                nickParty = Party; nickPartyValue = localName;
+            }
+            if (Match == 0) nickMatch = 0;
+            else if (Match != nickMatch || nickMatchValue != localName)
+            {
+                SteamMatchmaking.SetLobbyMemberData(Id(Match), "nick", localName);
+                nickMatch = Match; nickMatchValue = localName;
+            }
         }
         public ulong[] PartyMembers => Party == 0 ? Array.Empty<ulong>() : Members(Party).OrderBy(x => x).ToArray();
         static ulong Owner(ulong lobby) => lobby == 0 ? 0 : SteamMatchmaking.GetLobbyOwner(Id(lobby)).m_SteamID;
@@ -357,6 +397,7 @@ namespace ChessFight.Network
             if (!SteamUser.BLoggedOn()) { Cancel(); Error = "Steam 연결이 끊겼습니다. 다시 로그인한 뒤 Play를 재시작하세요."; return; }
             PollParty();
             if (Match != 0) PollMatch(now);
+            PublishNick();
             PublishPlaying();
             FollowChat();
             UpdatePresence();

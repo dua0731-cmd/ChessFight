@@ -122,7 +122,8 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The speed the pawn is running at right now, between moveSpeed and sprintSpeed.</summary>
         public float TopSpeed => Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
-                                 * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move;
+                                 * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move
+                                 * SkillSpeedScale;   // 1 unless a Pawn Rush pawn's help is speeding it up
 
         /// <summary>Steps in which the jump rise guard gave vertical speed back (GuardJumpRise).</summary>
         public int RiseTopUps { get; private set; }
@@ -626,6 +627,7 @@ namespace ChessFight.RagdollLab
             UpdateState(p, dt);
             UpdateStiffness(p, dt);
 
+            PreSkills();   // Pawn Rush skills only (off unless PawnRushSkills is set)
             Jump(p, dt);
             Mantle(dt);
             UpdateRope(p, dt);
@@ -634,6 +636,7 @@ namespace ChessFight.RagdollLab
             Locomotion(p, dt);
             Struggle(p, dt);
             UpdateAbilities(p, dt);
+            UpdateSkills(dt);   // Pawn Rush skills only
             UpdateHook(p, dt);
             Shove(p);
             UpdateStamina(p, dt);
@@ -1715,22 +1718,29 @@ namespace ChessFight.RagdollLab
         bool ClimbableHit(RagdollParams p, RaycastHit h)
         {
             if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || PassesThrough(h.collider)) return false;
+            // A face marked unclimbable (Pawn Rush lane walls, railings, team dividers).
+            if (NoClimbSurface.Blocks(h.collider)) return false;
             var rb = h.collider.attachedRigidbody;
             if (rb != null && !rb.isKinematic) return false;
             return Mathf.Abs(h.normal.y) <= Mathf.Cos(p.climbGripAngle * Mathf.Deg2Rad);
         }
 
-        /// <summary>Nearest climbable face along one ray.</summary>
+        /// <summary>Nearest climbable face along one ray. An unclimbable face in front hides anything
+        /// climbable behind it (the ray would otherwise reach through a marble skin to the block behind).</summary>
         bool WallRay(RagdollParams p, Vector3 origin, Vector3 dir, float length, out RaycastHit hit)
         {
             hit = default;
             float best = float.MaxValue;
             bool found = false;
             int n = Physics.RaycastNonAlloc(new Ray(origin, dir), hits, length, ~0, QueryTriggerInteraction.Ignore);
+            float shield = float.MaxValue;
+            for (int i = 0; i < n; i++)
+                if (NoClimbSurface.Blocks(hits[i].collider) && !PassesThrough(hits[i].collider))
+                    shield = Mathf.Min(shield, hits[i].distance);
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];
-                if (h.distance >= best || !ClimbableHit(p, h)) continue;
+                if (h.distance >= best || h.distance > shield || !ClimbableHit(p, h)) continue;
                 best = h.distance;
                 hit = h;
                 found = true;
@@ -2676,6 +2686,7 @@ namespace ChessFight.RagdollLab
                 armR = DiveReach(false);
             }
 
+            SkillPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);   // Pawn Rush skills only
             HookPose(p, ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
             RopeHangPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
             StatusPose(ref armL, ref armR, ref chest, ref head);
@@ -3038,6 +3049,11 @@ namespace ChessFight.RagdollLab
                 normal = contact.normal;
             }
 
+            // A Pawn Rush skill moving a pawn into others decides what that contact does (a push or a
+            // knockdown by its own rules); a wall ends a dash without flooring the dasher.
+            if (other != null && (SkillShielded || other.SkillShielded)) return;
+            if (other == null && dashing && Mathf.Abs(normal.y) < 0.6f) return;
+            if (other == null && SkillLandsOnFloor && normal.y > 0.6f) return;   // the rook's slam out of the air (R80)
             if (Diving && other != null)
             {
                 // Slide tackle. A diver is already on the floor, so it is never knocked down by the
@@ -3188,6 +3204,7 @@ namespace ChessFight.RagdollLab
             ropeTopping = false;
             squashTimer = squashImmune = staggerTimer = 0f;
             ClearAbilities();
+            ClearSkills();
             surfaceVel = climbSurfaceVel = Vector3.zero;
             groundCollider = climbCollider = null;
             groundSurface = climbSurface = null;

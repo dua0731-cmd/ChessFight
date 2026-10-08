@@ -76,11 +76,16 @@ namespace ChessFight.Game
             // Development and release builds never meet: the build tag differs,
             // and only development builds may take bots into public matches.
             Session = new SteamSession(BuildTag, Debug.isDebugBuild);
+            // The name chosen on the name screen (R84), shown and published by the session.
+            Session.LocalName = PlayerProfile.Name;
+            PlayerProfile.Changed += OnNameChanged;
             Session.Initialize();
             if (Session.Online) Motion = new SteamMotion(Session);
             // Measures this PC in the background so the host role can go to the
             // machine that simulates fastest (Docs/Network/HOST.md).
             HostFitnessProbe.Start();
+            // The settings window's top bar shows who is playing (R77).
+            SettingsWindow.Identity = () => Session.Online ? Session.Name(Session.Self) : null;
             loader = new MatchLoader(this, clock.Now);
             // A chat that fails to build must not take the session down with it.
             // On an object of its own: a UI document on this object would make the
@@ -98,6 +103,11 @@ namespace ChessFight.Game
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             Attach(SceneManager.GetActiveScene());
+        }
+
+        void OnNameChanged()
+        {
+            if (Session != null) Session.LocalName = PlayerProfile.Name;
         }
 
         void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -240,6 +250,7 @@ namespace ChessFight.Game
         {
             if (Instance != this) return;
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            PlayerProfile.Changed -= OnNameChanged;
             loader?.Cancel();
             ObstacleClock.Use(null);
             PlaytestSpawner.NetworkDriven = false;

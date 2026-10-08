@@ -7,7 +7,7 @@ namespace ChessFight.ProtectKing
     public sealed class PendulumSwing : MonoBehaviour
     {
         float RuntimeTime => SampleTime(ObstacleClock.Now);
-        float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,2 * (Mathf.Max(.3f,SwingDuration)+Mathf.Max(0,PauseAtEnds)),true);
+        float SampleTime(double t) => ObstacleContext.PeriodicTime(t+phaseOffset,StartDelay,2 * (Mathf.Max(.3f,SwingDuration)+Mathf.Max(0,PauseAtEnds)),true);
         public ObstacleContext context;
         public Transform Ball;
         [Range(0, 85)] public float SwingAngle = 55;
@@ -18,6 +18,8 @@ namespace ChessFight.ProtectKing
         [Min(0)] public float KnockbackForce = 14;
         [Min(0)] public float UpwardForce = 3;
         public bool Active = true;
+        [Tooltip("Seconds added to the shared obstacle clock: the same swing, earlier or later (Pawn Rush pairs).")]
+        public float phaseOffset;
         public float Angle { get; private set; }
         public Vector3 BallVelocity { get; private set; }
         public bool CanHit => isActiveAndEnabled && Active && (context == null || context.Running);

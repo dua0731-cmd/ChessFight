@@ -106,6 +106,7 @@ compile_all() {
   local build="$OUT/build" src="$OUT/src" refs sym m=/usr/lib/mono/4.5
   rm -rf "$build" "$src"; mkdir -p "$build" "$src"
   cp -r Assets/Scripts "$src/Scripts"; cp -r Assets/ChessFight/RagdollLab/Scripts "$src/RagdollLab"; cp -r Assets/ChessFight/RagdollLabSteam "$src/RagdollLabSteam"
+  cp -r Assets/Maps/PawnRush/Course01 "$src/PawnRush"
   unity6_to_2021 "$src"
   refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
   sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
@@ -125,10 +126,35 @@ compile_all() {
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
        -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/RagdollLab" -name '*.cs')
+  # Pawn Rush course 01 (Assets/Maps/PawnRush). Player defines here; its UNITY_EDITOR blocks and
+  # its Editor folder are compiled against UnityEditor.dll below.
+  $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
+       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
+       -out:"$build/ChessFight.PawnRush.dll" $(find "$src/PawnRush/Scripts" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Game.Steam.dll" \
        -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/RagdollLabSteam" -name '*.cs')
-  echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap, RagdollLab and RagdollLabSteam compiled with Roslyn (Input/ and Editor code skipped)."
+  compile_pawnrush_editor
+  echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap, RagdollLab, RagdollLabSteam and PawnRush compiled with Roslyn (Input/ and other Editor code skipped)."
+}
+
+# The Pawn Rush editor tools (and the course scripts' UNITY_EDITOR blocks) against a UnityEditor.dll
+# (NuGet "Unity3D.SDK" 2021.1, the newest there is) next to the 2021.3 module DLLs. Older than the
+# engine references, so it proves the calls exist, not that they behave the same in Unity 6.
+compile_pawnrush_editor() {
+  local build="$OUT/build" src="$OUT/src" refs m=/usr/lib/mono/4.5
+  if [ ! -f "$OUT/editor/lib/UnityEditor.dll" ]; then
+    mkdir -p "$OUT/editor"
+    curl -sSL -o "$OUT/editor/sdk.nupkg" "https://api.nuget.org/v3-flatcontainer/unity3d.sdk/2021.1.14.1/unity3d.sdk.2021.1.14.1.nupkg"
+    (cd "$OUT/editor" && unzip -qo sdk.nupkg lib/UnityEditor.dll)
+  fi
+  refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
+  local csc="dotnet $CSC -nologo -noconfig -nostdlib+ -target:library -langversion:9 -nowarn:414,649,169,8632,0618,1701,1702,1705 -r:$m/mscorlib.dll -r:$m/System.dll -r:$m/System.Core.dll"
+  local sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
+       -out:"$build/ChessFight.PawnRush.EditorBuild.dll" $(find "$src/PawnRush/Scripts" -name '*.cs')
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+       -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.PawnRush.EditorBuild.dll" -out:"$build/ChessFight.PawnRush.Editor.dll" $(find "$src/PawnRush/Editor" -name '*.cs')
 }
 
 # Assembly boundaries that keep gameplay work from reaching into the network layer.
@@ -158,7 +184,7 @@ check_boundaries() {
 # comment naming why; it is offline only until the host sends its state (listed, not failed).
 check_obstacle_clock() {
   local bad=0 f
-  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/ChessFight 2>/dev/null \
+  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/ChessFight Assets/Maps 2>/dev/null \
              | grep -vE 'LabAutoTest|Test|/Editor/|/RagdollPawn[^/]*\.cs$'); do
     if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then
       if grep -q 'StateDrivenMover:' "$f"; then echo "NOTE: state-driven mover, offline only: $f"

@@ -1,0 +1,14 @@
+{
+    "name": "ChessFight.PawnRush.Editor",
+    "rootNamespace": "ChessFight.PawnRush.Editor",
+    "references": [
+        "ChessFight.PawnRush",
+        "ChessFight.Gameplay",
+        "ChessFight.Game",
+        "ChessFight.Network.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": false
+}

@@ -453,6 +453,90 @@ namespace ChessFight.Game
             return textures[key] = texture;
         }
 
+        // How a ramp's alpha is meant (design A, R83). The project renders in linear
+        // space, where UI Toolkit also blends, so a CSS alpha reads differently: a dark
+        // shade looks thinner (Shade bends it through StageKit.Darkening) and a light
+        // tint on dark looks stronger (Tint bends it through the sRGB curve).
+        public enum HudBlend { Plain, Shade, Tint }
+
+        public static float BlendAlpha(HudBlend blend, float a)
+        {
+            if (QualitySettings.activeColorSpace != ColorSpace.Linear || blend == HudBlend.Plain) return a;
+            return blend == HudBlend.Shade ? StageKit.Darkening(a) : Mathf.GammaToLinearSpace(a);
+        }
+
+        // Design A (R83): through (position, colour) stops along one axis, alpha
+        // included. Vertical runs from the top (0) to the bottom (1), horizontal from
+        // the left (0) to the right (1): the lobby's shades, panels and rules.
+        public static Texture2D Ramp(bool vertical, params (float at, Color c)[] stops) => Ramp(vertical, HudBlend.Plain, stops);
+
+        public static Texture2D Ramp(bool vertical, HudBlend blend, params (float at, Color c)[] stops)
+        {
+            string key = (vertical ? "rampv" : "ramph") + (int)blend;
+            foreach (var s in stops) key += s.at.ToString("0.###") + ColorUtility.ToHtmlStringRGBA(s.c);
+            if (textures.TryGetValue(key, out var cached) && cached != null) return cached;
+            const int n = 128;
+            var px = new Color[n * 2];
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (n - 1f);
+                var c = Sample(stops, vertical ? 1f - t : t);   // texture rows run bottom to top
+                c.a = BlendAlpha(blend, c.a);
+                if (vertical) px[i * 2] = px[i * 2 + 1] = c;
+                else px[i] = px[n + i] = c;
+            }
+            var texture = new Texture2D(vertical ? 2 : n, vertical ? n : 2, TextureFormat.RGBA32, false)
+            {
+                wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "Menu ramp"
+            };
+            texture.SetPixels(px);
+            texture.Apply();
+            return textures[key] = texture;
+        }
+
+        static Color Sample((float at, Color c)[] stops, float t)
+        {
+            if (t <= stops[0].at) return stops[0].c;
+            for (int i = 1; i < stops.Length; i++)
+                if (t <= stops[i].at) return Color.Lerp(stops[i - 1].c, stops[i].c, (t - stops[i - 1].at) / Mathf.Max(1e-5f, stops[i].at - stops[i - 1].at));
+            return stops[stops.Length - 1].c;
+        }
+
+        // Design A's game-mode card (R83): a faint sheet (the picked one darker, with
+        // a gold wash from the left) and the mode's colour glowing where its piece stands.
+        // Composed as the page does, in sRGB, over the dark shade it sits on, and kept
+        // opaque, so linear-space blending cannot brighten it.
+        public static Texture2D LineCard(Color tint, bool on)
+        {
+            string key = "linecard" + (on ? "on" : "off") + ColorUtility.ToHtmlStringRGB(tint);
+            if (textures.TryGetValue(key, out var cached) && cached != null) return cached;
+            const int w = 400, h = 118;
+            var px = new Color[w * h];
+            var gold = Hex(0xE2B866);
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float u = x / (w - 1f), v = 1f - y / (h - 1f);   // v is 0 at the top
+                    var c = Hex(0x100A06);   // the right-hand shade behind the cards
+                    c = on ? Over(c, new Color(20 / 255f, 13 / 255f, 8 / 255f), .6f) : Over(c, new Color(1f, 240 / 255f, 220 / 255f), .035f);
+                    if (on) c = Over(c, gold, Mathf.Lerp(.16f, .03f, Mathf.Clamp01(u / .7f)));
+                    float d = new Vector2((u - .86f) / .46f, (v - .5f) / 1.2f).magnitude;
+                    c = Over(c, tint, (on ? .2f : .16f) * Mathf.Clamp01(1f - d / .7f));
+                    c.a = 1f;
+                    px[y * w + x] = c;
+                }
+            return textures[key] = Finish("Menu line card", w, h, px, TextureWrapMode.Clamp);
+        }
+
+        // `top` laid over `under` at opacity `a` (straight alpha).
+        static Color Over(Color under, Color top, float a)
+        {
+            float outA = a + under.a * (1f - a);
+            if (outA <= 0f) return new Color(0f, 0f, 0f, 0f);
+            float k = under.a * (1f - a);
+            return new Color((top.r * a + under.r * k) / outA, (top.g * a + under.g * k) / outA, (top.b * a + under.b * k) / outA, outA);
+        }
+
         static Texture2D Solid(Color color)
         {
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };

@@ -64,6 +64,9 @@ namespace ChessFight.Gameplay
             Checkpoint.Reached += OnCheckpoint;
             FinishZone.Reached += OnFinish;
             WaterZone.Entered += OnWater;
+            KillVolume.Entered += OnKill;
+            FallDistanceRespawn.Fell += OnFell;
+            TeamZone.Intruded += OnIntruded;
         }
 
         void OnDisable()
@@ -71,6 +74,9 @@ namespace ChessFight.Gameplay
             Checkpoint.Reached -= OnCheckpoint;
             FinishZone.Reached -= OnFinish;
             WaterZone.Entered -= OnWater;
+            KillVolume.Entered -= OnKill;
+            FallDistanceRespawn.Fell -= OnFell;
+            TeamZone.Intruded -= OnIntruded;
         }
 
         void Start()
@@ -188,6 +194,12 @@ namespace ChessFight.Gameplay
             lastY = float.NaN;
             fallSpeed = 0f;
             driver?.Teleport(position, rotation);
+            // A drop measured from where it was is no drop from here.
+            if (instance != null)
+            {
+                var drop = instance.GetComponentInChildren<FallDistanceRespawn>();
+                if (drop != null) drop.Forget();
+            }
             if (orbitCamera != null) orbitCamera.Cut();
         }
 
@@ -229,6 +241,42 @@ namespace ChessFight.Gameplay
             reachedCheckpoint = checkpoint.Order;
             respawnPosition = checkpoint.RespawnPosition;
             respawnRotation = checkpoint.transform.rotation;
+        }
+
+        // A cliff's kill volume: back on the last checkpoint after its delay.
+        void OnKill(ICharacterDriver who, KillVolume volume)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time + volume.RespawnDelay;
+            caughtFalling = true;
+        }
+
+        // The 8 m drop rule: back on the checkpoint before landing on the floor below.
+        void OnFell(ICharacterDriver who, FallDistanceRespawn rule)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time + rule.RespawnDelay;
+            caughtFalling = true;
+        }
+
+        // Thrown into the other team's section: straight back.
+        void OnIntruded(ICharacterDriver who, TeamZone zone)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time;
+            caughtFalling = true;
+        }
+
+        // Switch sides (the Pawn Rush playtest's F5): the character joins the other team and starts again
+        // from that team's first spawn point, every checkpoint forgotten.
+        public void SetTeam(int newTeam)
+        {
+            team = Mathf.Clamp(newTeam, -1, 1);
+            if (driver is ITeamAssignable member) member.AssignTeam(team);
+            var at = FindSpawn();
+            startPosition = at.position;
+            startRotation = at.rotation;
+            Restart();
         }
 
         // Stage-one rule: a fall into the water puts the character back on its last

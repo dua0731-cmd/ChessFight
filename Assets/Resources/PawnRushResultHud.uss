@@ -1,0 +1,15 @@
+/* The Pawn Rush result screen (PawnRushResultTheme.tss imports only this file).
+   Reference resolution 1280 x 720, no default theme: plain elements only. Every
+   plate, icon and the wipe is painted and positioned by PawnRushResultHud.cs. */
+
+.pr-screen { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+/* The menus' slab buttons (ChunkyButtons, as in NetworkHud.uss): the slab's side is
+   part of the bottom padding, so the text sits on the plate. */
+.chunky { background-color: rgba(0, 0, 0, 0); border-width: 0; border-radius: 0; margin: 0; flex-shrink: 0;
+          flex-direction: row; justify-content: center; align-items: center;
+          -unity-text-align: middle-center; color: rgb(28, 18, 0); padding: 13px 26px 19px 26px; font-size: 16px; }
+.chunky:hover { background-color: rgba(0, 0, 0, 0); }
+.chunky:active { background-color: rgba(0, 0, 0, 0); }
+.chunky-text { -unity-text-align: middle-center; white-space: nowrap; }
+.ch-wood { color: rgb(246, 236, 223); }

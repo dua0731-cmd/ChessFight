@@ -11,7 +11,7 @@ namespace ChessFight.ProtectKing
     public sealed class KnightCavalryCharge : MonoBehaviour
     {
         float RuntimeTime => SampleTime(ObstacleClock.Now);
-        float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,CycleDuration,Repeat);
+        float SampleTime(double t) => ObstacleContext.PeriodicTime(t+phaseOffset,StartDelay,CycleDuration,Repeat);
         public ObstacleContext context;
         public Rigidbody KnightRoot;
         public Transform Visual, StartPoint, LandingPoint, ChargeEndPoint;
@@ -20,6 +20,8 @@ namespace ChessFight.ProtectKing
         public GameObject LandingWarning, ChargeWarning;
         public Transform LandingVFXPoint, ChargeVFXPoint;
         public bool Active = true, Repeat = true;
+        [Tooltip("Seconds added to the shared obstacle clock: the same cycle, earlier or later.")]
+        public float phaseOffset;
         [Min(0)] public float StartDelay = 1, IdleDuration = 1;
         [Min(.05f)] public float WarningDuration = 1.3f, LeapDuration = 1;
         [Min(0)] public float LeapHeight = 4;

@@ -23,6 +23,8 @@ namespace ChessFight.ProtectKing
         [Range(0, 22)] public float MaxPushSpeed = 10;
         [Min(0)] public float StartDelay = .5f;
         public bool Repeat = true;
+        [Tooltip("Seconds added to the shared obstacle clock: the same cycle, earlier or later.")]
+        public float phaseOffset;
         public UnityEvent OnWarning = new UnityEvent();
         public UnityEvent OnBlowing = new UnityEvent();
         public UnityEvent OnStopped = new UnityEvent();
@@ -53,7 +55,7 @@ namespace ChessFight.ProtectKing
             if (clock < previousClock || (context != null && !context.Running)) visited.Clear();
             previousClock = clock;
             if (context != null && !context.Running) { State = AirVentState.Idle; Visuals(false, false); return; }
-            var next = Evaluate(ObstacleContext.PeriodicTime(ObstacleClock.Now,StartDelay,CycleDuration,Repeat));
+            var next = Evaluate(ObstacleContext.PeriodicTime(ObstacleClock.Now+phaseOffset,StartDelay,CycleDuration,Repeat));
             if (next != State)
             {
                 if (State == AirVentState.Blowing) OnStopped.Invoke();

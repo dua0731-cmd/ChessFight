@@ -150,15 +150,15 @@ namespace ChessFight.RagdollLab
             if (Input.GetKeyDown(KeyCode.F8)) ArrangeFinal(Input.GetKey(KeyCode.LeftShift));
             if (Input.GetKeyDown(KeyCode.F2)) Select(Input.GetKey(KeyCode.LeftShift) ? 11 : 5);
             if (Input.GetKeyDown(KeyCode.F6)) NextCheckpoint();
-            if (Input.GetKeyDown(KeyCode.R)) Respawn(Local);
+            if (GameSettings.Pressed(GameKey.Respawn)) Respawn(Local);
             if (Final.Ended || eliminated.Contains(Local) || finalFalls.ContainsKey(Local)) { Local.SetInput(default); return; }
             if (!Application.isFocused) { Local.SetInput(default); return; }
             float x = GameSettings.Move.x;
             float z = GameSettings.Move.y;
             Local.SetInput(new PawnInput { move = Vector3.ClampMagnitude(CameraRig.FlatRight * x + CameraRig.FlatForward * z, 1),
-                aim = CameraRig.AimForward, jump = GameSettings.Pressed(GameKey.Jump), sprint = GameSettings.Held(GameKey.Sprint),
-                shove = Input.GetMouseButtonDown(0), shoveHeld = Input.GetMouseButton(0), grab = Input.GetMouseButton(1),
-                ability = Input.GetKeyDown(KeyCode.E), interact = Input.GetKey(KeyCode.F) }, Input.GetKey(KeyCode.E));
+                aim = CameraRig.AimForward, jump = GameSettings.Pressed(GameKey.Jump), sprint = GameSettings.Sprint,
+                shove = GameSettings.Pressed(GameKey.Shove), shoveHeld = GameSettings.Held(GameKey.Shove), grab = GameSettings.Held(GameKey.Grab),
+                ability = GameSettings.Pressed(GameKey.Skill), interact = GameSettings.Held(GameKey.Use) }, GameSettings.Held(GameKey.Skill));
         }
         void EnterWater(ICharacterDriver driver, WaterZone water)
         {

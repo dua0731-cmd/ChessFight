@@ -50,6 +50,18 @@ namespace ChessFight.Game
 
         public Camera View => view;
 
+        // Where the player's own knight stands on screen (its chest), as a fraction
+        // of the screen from the top left: the scene transition opens there (R84).
+        public Vector2 SelfOnScreen()
+        {
+            const float chest = .95f;
+            var middle = new Vector2(.5f, .62f);
+            if (view == null || Screen.width <= 0 || Screen.height <= 0) return middle;
+            var at = view.WorldToScreenPoint(SpotPosition(0) + Vector3.up * chest);
+            if (at.z <= 0) return middle;
+            return new Vector2(at.x / Screen.width, 1f - at.y / Screen.height);
+        }
+
         public void Build()
         {
             view = Camera.main;

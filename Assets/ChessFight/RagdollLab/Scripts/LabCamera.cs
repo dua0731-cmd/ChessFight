@@ -133,6 +133,8 @@ namespace ChessFight.RagdollLab
                 heightVelocity = 0f;
                 climbTurn = 0f;
                 wasClimbing = false;
+                // Settings → 게임플레이 → 카메라 거리 (R77): where the player's own camera starts.
+                if (!initialized && MouseDriven) distance = Mathf.Clamp(GameSettings.CameraDistance, minDistance, maxDistance);
                 shown = distance;
                 initialized = true;
                 followed = pawn;
@@ -198,9 +200,10 @@ namespace ChessFight.RagdollLab
                 var p = pawn.P;
                 float span = Mathf.Max(0.1f, p.sprintSpeed - p.moveSpeed);
                 // From the smoothed travel, not the hips' own speed, which pulses with every stride.
-                float kick = sprintFov * GameSettings.ShakeScale * Mathf.Clamp01((travel.magnitude - p.moveSpeed) / span);
+                float kick = sprintFov * GameSettings.SprintFovScale * Mathf.Clamp01((travel.magnitude - p.moveSpeed) / span);
                 fovKick = Mathf.Lerp(fovKick, kick, 1f - Mathf.Exp(-3f * dt));
-                Cam.fieldOfView = baseFov + fovKick;
+                // Settings → 화면 → 시야 범위 (R77), relative to the default 60 so a camera tuned otherwise keeps its offset.
+                Cam.fieldOfView = baseFov + (MouseDriven ? GameSettings.Fov - 60f : 0f) + fovKick;
             }
         }
 

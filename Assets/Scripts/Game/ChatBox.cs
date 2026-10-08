@@ -159,7 +159,8 @@ namespace ChessFight.Game
         {
             if (box == null) return;
             if (Where != lastWhere) { lastWhere = Where; picked = false; scroll = 0; }
-            if (Where == Layout.Hidden || log == null || !GameSettings.ChatOn)
+            // No chat over the name screen (R85): it covers the lobby and its field has the keys.
+            if (Where == Layout.Hidden || log == null || !GameSettings.ChatOn || NameScreen.Showing)
             {
                 if (open) Close(false);
                 Show(box, false);

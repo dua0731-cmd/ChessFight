@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Filled from code by PawnRushResultHud.cs (the plates and icons are painted there). -->
+    <ui:VisualElement name="pr-screen" class="pr-screen" picking-mode="Ignore" />
+</ui:UXML>

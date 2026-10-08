@@ -7,6 +7,7 @@
 ## 1. 흐름
 
 ```text
+ (R84) 게임 실행 → [시작 로고 영상, 인트로 위] → Intro ──시작 판 클릭──▶ (처음 한 번: 이름 설정 화면, Intro 씬 안) ──[장면 전환]──▶ Lobby
  Intro ──시작 판 클릭──▶ Lobby ──모두가 phase=playing──▶ [로딩 화면] ──모두 준비, 공유 시각 go──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
  (타이틀)          (파티·모드·매칭)                  킹 러시 = KingRush
                                                    소드 파이트 = SwordFight / 퀸 오브 더 힐 = 준비 중
@@ -15,13 +16,13 @@
 
 | 씬 | 빌드 순서 | 붙는 컨트롤러 | Play를 누르면 |
 |---|---|---|---|
-| `Intro.unity` | 0 | `IntroController` | 온라인. 타이틀, Steam 시작, 시작 판 클릭 → Lobby, Esc 설정 창 |
+| `Intro.unity` | 0 | `IntroController` | 온라인. (R84) 시작 로고 영상 → 타이틀, Steam 시작, 시작 판 클릭 → 처음이면 이름 설정 화면(같은 씬의 `NameScreen`), (R85) "이름 바꾸기" → 이름 바꾸기 화면 → 다시 타이틀 → 장면 전환(`SceneTransition`) 뒤 Lobby(비동기 로드), Esc 설정 창 |
 | `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티 라인업(3D), 모드·파티·매칭 HUD. 이동 없음 |
 | `KingRush.unity` | 2 | 경기로 들어왔을 때만 `MatchSceneView` | 직접 열면 **오프라인 플레이테스트** |
 | `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |
 | `RagdollTest.unity` | 비활성 | 없음 (씬 안의 `LabGame`이 동작) | 래그돌 랩. Steam 없이 2인 로컬 |
 | `QueenOfTheHill.unity` (R48, 맵 7차 R49) | 빌드 제외(아직) | 없음 | 퀸 오브 더 힐 그레이박스. `QueenHillLevel`이 맵 데이터(JSON)로 맵을 만들고 래그돌 폰 1인 오프라인 |
-| `LastScene.unity` (R62, 결과 화면) | 빌드 제외(아직 흐름에 없음) | 씬에 저장된 `LastSceneDirector`(Steam 모름) | 결과 화면 미리보기. 무대·말·HUD를 코드로 만들고 예시 경기를 보여 줌(F1 이긴 팀, F2 진 팀, R 다시 재생, H 결과판) |
+| `PawnRushVictory.unity`, `PawnRushLose.unity` (R76, 폰 러쉬 결과 화면) | 빌드 제외(아직 흐름에 없음) | 씬에 저장된 `PawnRushResultDirector`(Steam 모름, `victory`만 다름) | 결과 화면 미리보기. 탁자 체스판·말·결승 중계 결과판을 코드로 만들고 예시 경기를 보여 줌(R 다시 재생, H 결과판). R62의 `LastScene.unity`는 지움 |
 | `SampleScene.unity` | 빌드 제외 | 없음 | 아무것도 안 함(템플릿) |
 
 씬 이름 상수는 `Game/SceneNames.cs`. **런타임에 로드하는 씬은 빌드 목록(`EditorBuildSettings.asset`)에도 있어야 한다.** 빌드 메뉴(`NetworkSetup.ShippedScenes`)가 Intro·Lobby·KingRush·SwordFight를 넣는다.
@@ -46,7 +47,7 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 
 ## 3. 씬별 내용
 
-**Intro** — `IntroHud.uxml`. 키 입력 한 번이면 Lobby. 클릭 UI가 필요 없게 만들었다(클릭 문제 회피). Steam 시작 실패여도 로비로 간다(로비에 재시도 버튼).
+**Intro** — `IntroHud.uxml`. 키 입력 한 번이면 Lobby. 클릭 UI가 필요 없게 만들었다(클릭 문제 회피). Steam 시작 실패여도 로비로 간다(로비에 재시도 버튼). (R64부터 시작 판 클릭.) **(R84)** 게임을 켤 때 시작 로고 영상(`LogoIntro`)이 그 위에 한 번 나오고, 저장된 이름이 없으면 시작 판이 같은 씬 안의 이름 설정 화면(`NameScreen`)으로 간다. (R85) 시작 판 옆 "이름 바꾸기"는 같은 화면을 바꾸기 모드로 열고 다시 타이틀로 돌아온다(`NameChange`, 로비 오른쪽 위 내 이름도 같음). Lobby로는 장면 전환(`SceneTransition`, 씬이 바뀌어도 살아 있는 패널) 뒤에서 `LoadSceneAsync`로 넘어가고, 로비 무대가 생기면 내 나이트 자리에서 열린다 → [UI §15](UI.md#15-시작-로고이름-설정-화면장면-전환-r84-2026-10-08).
 
 **Lobby** — 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. Play하면 `LobbyBootstrap`이 `LobbyStage`(하늘·흰 바닥·금색 원, 파티 라인업. 프리미티브와 팀 재질 복사본으로 만들어 새 에셋이 없다)와 `NetworkHudView`를 만든다. **로비는 메뉴라 캐릭터가 움직이지 않는다**(`MovementGate` = 항상 false). 예전 `Arena` 체스판 프리팹은 로비에서 더 이상 쓰지 않는다. HUD는 [UI](UI.md).
 
@@ -56,7 +57,7 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 
 **QueenOfTheHill** (R48, `JY-lobby`) — 편집 모드에는 카메라(`OrbitCamera`), 조명, `ChessFight Game Root`(`GameSceneConfig`·`PhysicsProfile`), `Queen of the Hill Level`(`QueenHillLevel`), `Playtest`(`PlaytestSpawner` + `QueenHillPlaytestPanel`, 래그돌 프리팹·백팀)만 있다. **맵은 Play 때 `Resources/QueenHill/QueenHillLayout.json`(원본: `Tools/QueenHill/build_layout.py`)으로 만든다.** 메뉴 `ChessFight > Scenes > Queen of the Hill (offline graybox)`. 생성기 `Tools/Generators/gen_queenhill_scene.py`. 네트워크 래그돌(M14)이 생기기 전까지 로비 흐름에 넣지 않는다(`GameModes.QueenOfTheHill.Scene`은 비어 있다). 상세: [GRAYBOX](../GameModes/QueenOfTheHill/GRAYBOX.md).
 
-**LastScene** (R62, 10-01, `claude/last-scene` → `JY-kingrush`) — 경기 결과 화면. 편집 모드에는 `Main Camera`와 `Last Scene`(`LastSceneDirector`)만 있다. **Play하면 `LastSceneDirector`가 PAWN RUSH 결승 무대(성·아치·체크 광장), 말, 조명, 하늘, 결과판 HUD를 전부 코드로 만든다**(그래서 모양을 바꾸려면 코드를 고친다). 이긴 팀 화면은 세리머니, 진 팀 화면은 쓰러짐과 비. 메뉴 `ChessFight > Scenes > Last Scene (result preview)`. 생성기 `Tools/Generators/gen_lastscene.py`(씬을 덮어쓰니 `--overwrite`를 붙여야 돈다). `SceneNames.LastScene` 상수는 있지만 **아무도 이 씬을 불러오지 않고 빌드 목록·`ShippedScenes`에도 없다**: 결과를 코스 결승에서 보여 줄지 이 씬으로 넘어갈지 미정(승규 님). 이 씬으로 넘어가기로 하면 빌드 목록·`ShippedScenes`에 넣고, 경기 끝에 `LastSceneDirector.Show(결과, 내 팀)`, 나갈 때 `LobbyRequested`·`RequeueRequested`를 쓴다. `NetworkRuntime`이 없어도 돈다(Steam을 모른다). 상세: [UI §10](UI.md#10-결과-화면-r62-2026-10-01).
+**PawnRushVictory / PawnRushLose** (R76, 10-06 `claude/menu-c` → `JY-kingrush`(거기서는 R65), 10-07 `claude/bold-johnson-8ez95n`에 병합, R62 `LastScene`을 대신함) — 폰 러쉬 결과 화면. 이긴 팀은 Victory, 진 팀은 Lose. 편집 모드에는 `Main Camera`와 `Pawn Rush Result`(`PawnRushResultDirector`)만 있다. **Play하면 디렉터가 램프 아래 탁자 체스판, 두 팀의 말, 조명, 배경, 결승 중계 결과판을 전부 코드로 만든다**(그래서 모양을 바꾸려면 코드를 고친다). 메뉴 `ChessFight > Scenes > Pawn Rush Victory / Pawn Rush Lose (result preview)`. 생성기 `Tools/Generators/gen_pawnrush_result.py`(두 씬을 덮어쓰니 `--overwrite`를 줘야 돈다). 자세한 것은 [UI §13](UI.md#13-폰-러쉬-결과-화면-r76-2026-10-06).
 
 **RagdollTest** — 2026-09-25부터 **준영 님 래그돌 랩 씬 그대로**다. 회전 봉, 벽 2·3·4m, 경사 15·30·45°, 외줄, 림보·터널이 있고, `LabGame`이 P1·P2·더미를 만든다. 튜닝 패널은 Tab. 물리 120Hz는 `LabGame`이 직접 걸고 씬을 떠날 때 되돌린다(`PhysicsProfile` 없음). 빌더 메뉴 `ChessFight > Ragdoll Lab > Rebuild Pawn + Scene`이 이 파일을 다시 만든다. 상세와 네트워크 안전성: [Player/RAGDOLL](../Player/RAGDOLL.md).
 

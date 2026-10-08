@@ -10,7 +10,7 @@ namespace ChessFight.ProtectKing
     public sealed class FoldingBridge : MonoBehaviour
     {
         float RuntimeTime => SampleTime(ObstacleClock.Now);
-        float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,CycleDuration,Repeat);
+        float SampleTime(double t) => ObstacleContext.PeriodicTime(t+phaseOffset,StartDelay,CycleDuration,Repeat);
         public ObstacleContext context;
         public Rigidbody LeftPivot;
         public Rigidbody RightPivot;
@@ -21,6 +21,8 @@ namespace ChessFight.ProtectKing
         [Range(0, 80)] public float FoldAngle = 70;
         [Min(0)] public float StartDelay = 1;
         public bool Repeat = true;
+        [Tooltip("Seconds added to the shared obstacle clock: the same cycle, earlier or later.")]
+        public float phaseOffset;
         public bool Simultaneous = true;
         [Min(0), Tooltip("Right panel delay when Simultaneous is disabled.")]
         public float RightDelay = .6f;

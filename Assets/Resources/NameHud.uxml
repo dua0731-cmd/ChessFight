@@ -1,0 +1,58 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The name screen (R84), the first time the game starts: a walnut background
+         with a pattern of little pieces and a glass pawn slowly turning on the
+         right (NameScreen draws it into name-pawn), the field on the left. Beside
+         the count "4 / 12" sits "추천 이름"; a suggested name then floats over the
+         field and is taken with a click. From the lobby's own-name button (R85) the
+         same screen changes the name: "name-renaming" on the root shows the back
+         button, and NameScreen rewrites the note, title and key hints. NameScreen
+         looks up every name. -->
+    <ui:VisualElement name="name-screen" class="name-screen">
+        <ui:VisualElement name="name-backdrop" class="name-backdrop" picking-mode="Ignore" />
+        <ui:VisualElement name="name-pawn" class="name-pawn" picking-mode="Ignore" />
+        <ui:VisualElement class="name-column">
+            <ui:VisualElement class="row name-kicker-row" picking-mode="Ignore">
+                <ui:Label text="PLAYER NAME" class="name-kicker" picking-mode="Ignore" />
+                <ui:Label name="name-kicker-note" text="나중에 언제든 바꿀 수 있어요" class="name-kicker-note" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="name-title" class="name-title" picking-mode="Ignore" />
+            <ui:VisualElement class="row name-rule" picking-mode="Ignore">
+                <ui:VisualElement class="name-rule-gold" picking-mode="Ignore" />
+                <ui:VisualElement name="name-rule-silver" class="name-rule-silver" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:Label text="내 이름" class="name-label" picking-mode="Ignore" />
+            <ui:VisualElement name="name-field-box" class="row name-field-box">
+                <ui:VisualElement class="name-input">
+                    <ui:TextField name="name-field" class="name-field" max-length="12" />
+                    <ui:Label name="name-placeholder" text="이름을 입력하세요" class="name-placeholder" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Label name="name-counter" text="0 / 12" class="name-counter" picking-mode="Ignore" />
+                <ui:Button name="name-suggest" class="row name-suggest">
+                    <ui:VisualElement name="name-dice" class="name-dice" picking-mode="Ignore" />
+                    <ui:Label text="추천 이름" class="name-suggest-text" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:VisualElement name="name-bubble" class="row name-bubble">
+                    <ui:Label text="추천" class="name-bubble-tag" picking-mode="Ignore" />
+                    <ui:Label name="name-bubble-text" class="name-bubble-text" picking-mode="Ignore" />
+                    <ui:Label text="눌러서 쓰기" class="name-bubble-hint" picking-mode="Ignore" />
+                    <ui:VisualElement class="name-bubble-tail" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Button name="name-start" class="row chunky ch-ivory ch-lg name-start">
+                <ui:Label name="name-start-text" text="이 이름으로 시작" class="name-start-text" picking-mode="Ignore" />
+                <ui:VisualElement name="name-start-arrow" class="name-start-arrow" picking-mode="Ignore" />
+            </ui:Button>
+            <!-- Only when changing the name (R85): back to the lobby as it was. -->
+            <ui:Button name="name-back" class="row name-back">
+                <ui:VisualElement name="name-back-arrow" class="name-back-arrow" picking-mode="Ignore" />
+                <ui:Label text="돌아가기" class="name-back-text" picking-mode="Ignore" />
+            </ui:Button>
+        </ui:VisualElement>
+        <ui:VisualElement class="row name-keys" picking-mode="Ignore">
+            <ui:Label text="ENTER" class="name-key" picking-mode="Ignore" />
+            <ui:Label name="name-key-enter" text="시작" class="name-key-text" picking-mode="Ignore" />
+            <ui:Label text="ESC" class="name-key" picking-mode="Ignore" />
+            <ui:Label name="name-key-esc" text="설정" class="name-key-text" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
