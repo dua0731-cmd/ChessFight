@@ -2,6 +2,8 @@
 // PawnRushSkillFx.Toon.cs bends into arcs and swirls, u along it (tail 0 .. head 1), v across it. Only the part
 // between _Tail and _Head shows, as a crescent pointed at both ends, in three hard bands across (lit on its outer
 // side) with an ink edge, eaten away by noise as it goes. Premultiplied: _Opacity 1 covers like paint.
+// _Symmetric 1 lays the bands out from the middle instead (hot middle, ink on both edges): the rook's cartoon
+// lightning and speed lines on line renderers, which show on a white floor where light alone did not.
 Shader "ChessFight/Skill Swoosh"
 {
     Properties
@@ -17,6 +19,7 @@ Shader "ChessFight/Skill Swoosh"
         _Opacity ("Covers (0 = light only)", Range(0, 1)) = 1
         _Fade ("Fade", Range(0, 1)) = 1
         _Seed ("Seed", Float) = 0
+        _Symmetric ("Bands from the middle (lines, bolts)", Range(0, 1)) = 0
     }
     SubShader
     {
@@ -35,7 +38,7 @@ Shader "ChessFight/Skill Swoosh"
             #include "SkillNoise.cginc"
 
             float4 _Lit, _Mid, _Shade, _InkColor;
-            float _Ink, _Head, _Tail, _Dissolve, _Opacity, _Fade, _Seed;
+            float _Ink, _Head, _Tail, _Dissolve, _Opacity, _Fade, _Seed, _Symmetric;
 
             struct appdata
             {
@@ -70,6 +73,8 @@ Shader "ChessFight/Skill Swoosh"
 
                 float wobble = SkillNoise(float3(i.uv.x * 7, i.uv.y * 2, _Seed)) * 0.15;
                 float side = across / max(thick, 1e-3) + wobble;       // -1..1 across the crescent's own width
+                // Symmetric: 1 in the middle .. -1 at both edges.
+                side = lerp(side, 1 - 2 * abs(across) / max(thick, 1e-3), _Symmetric);
                 float baa = max(fwidth(side), 1e-3);
                 float3 col = lerp(_Shade.rgb, _Mid.rgb, smoothstep(-0.4 - baa, -0.4 + baa, side));
                 col = lerp(col, _Lit.rgb, smoothstep(0.35 - baa, 0.35 + baa, side));

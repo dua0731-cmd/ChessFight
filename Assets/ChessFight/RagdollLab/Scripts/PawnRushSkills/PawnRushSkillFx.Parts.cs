@@ -584,7 +584,8 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Crackling bolts from a point outwards, redrawn every few hundredths of a second. Given a
-        /// <see cref="plane"/> (its normal), they run along it only: over the floor or across a wall (R86, the rook).</summary>
+        /// <see cref="plane"/> (its normal), they run along it only: over the floor or across a wall (R86, the rook).
+        /// <see cref="toon"/>: drawn with the rook's cartoon lightning material, wider.</summary>
         class Bolts : Anim
         {
             readonly LineRenderer[] lines;
@@ -594,6 +595,7 @@ namespace ChessFight.RagdollLab
             readonly float reach, life;
             float redraw;
             public Vector3 plane;
+            public bool toon;
 
             public Bolts(Transform parent, Material material, int count, Func<Vector3> from, Color color, float reach, float life)
             {
@@ -643,11 +645,15 @@ namespace ChessFight.RagdollLab
                             Vector3 p = o + dir * len * t + side * Random.Range(-0.12f, 0.12f) * len * Mathf.Sin(t * Mathf.PI) + jitter;
                             lr.SetPosition(k, p);
                         }
-                        lr.widthMultiplier = Random.Range(0.04f, 0.075f) * (0.4f + 0.6f * fade);
+                        lr.widthMultiplier = Random.Range(0.04f, 0.075f) * (0.4f + 0.6f * fade) * (toon ? 1.8f : 1f);
                     }
                 }
-                block.SetColor("_Color", color * fade);
-                block.SetFloat("_Opacity", 0.3f);
+                if (toon) block.SetFloat("_Fade", Mathf.Clamp01(fade * 2f));
+                else
+                {
+                    block.SetColor("_Color", color * fade);
+                    block.SetFloat("_Opacity", 0.3f);
+                }
                 foreach (var lr in lines) lr.SetPropertyBlock(block);
                 return true;
             }

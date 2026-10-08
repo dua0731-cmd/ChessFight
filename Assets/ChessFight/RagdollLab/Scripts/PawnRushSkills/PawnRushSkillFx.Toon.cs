@@ -23,6 +23,9 @@ namespace ChessFight.RagdollLab
         /// <summary>A round sphere for the puffs (an icosphere: the lumps stay smooth, the UV sphere showed facets).</summary>
         Mesh meshPuff;
         Material matCrack, matScorch, matSwoosh, matFlare;
+        /// <summary>The rook's cartoon lightning and speed lines: a white-hot middle, orange, an ink edge (Skill Swoosh
+        /// with its bands from the middle). Light alone was lost on the white floor.</summary>
+        Material matVolt;
         Texture2D texCracks, texScorch;
         Vector3 sunDir = new Vector3(0.35f, 0.79f, -0.5f);
 
@@ -85,6 +88,13 @@ namespace ChessFight.RagdollLab
             matSwoosh.SetColor("_Shade", WindShade);
             matSwoosh.SetColor("_InkColor", WindInk);
             matFlare = Glow(texDot);
+            matVolt = Mat(swooshShader);
+            matVolt.SetFloat("_Symmetric", 1f);
+            matVolt.SetColor("_Lit", new Color(1.5f, 1.35f, 1.05f));
+            matVolt.SetColor("_Mid", new Color(1f, 0.6f, 0.12f));
+            matVolt.SetColor("_Shade", new Color(0.95f, 0.32f, 0.04f));
+            matVolt.SetColor("_InkColor", new Color(0.3f, 0.08f, 0.03f));
+            matVolt.SetFloat("_Ink", 0.24f);
 
             var sun = RenderSettings.sun;
             if (sun == null)
@@ -624,7 +634,8 @@ namespace ChessFight.RagdollLab
                 lr.SetPosition(0, head);
                 lr.SetPosition(1, tail);
                 lr.widthMultiplier = width;
-                block.SetColor("_Color", color * bright);
+                block.SetColor("_Color", color * bright);   // the glow material
+                block.SetFloat("_Fade", bright);            // the cartoon one (matVolt)
                 if (paint >= 0f) block.SetFloat("_Opacity", paint);
                 lr.SetPropertyBlock(block);
                 return true;
@@ -639,20 +650,17 @@ namespace ChessFight.RagdollLab
             return b;
         }
 
-        /// <summary>A speed line: a thin streak that shoots from <paramref name="at"/> along <paramref name="dir"/>,
-        /// its head running out to <paramref name="length"/> and its tail catching up.</summary>
-        void SpeedLine(Vector3 at, Vector3 dir, float length, float speed, float width, Color color, float paint, float life)
+        /// <summary>A cartoon speed line (the rook's, <see cref="matVolt"/>): it shoots from <paramref name="at"/> along
+        /// <paramref name="dir"/>, its head running out to <paramref name="length"/> and its tail catching up.</summary>
+        void SpeedLine(Vector3 at, Vector3 dir, float length, float speed, float width, float life)
         {
-            Add(new Beam(root, matBolt)
+            Add(new Beam(root, matVolt)
             {
                 life = life,
                 width = width,
-                color = color,
-                paint = paint,
                 animate = (b, t) =>
                 {
-                    Vector3 front = at + dir * (speed * b.Age + length * EaseOut(t * 2.5f));
-                    b.head = front;
+                    b.head = at + dir * (speed * b.Age + length * EaseOut(t * 2.5f));
                     b.tail = at + dir * (speed * b.Age + length * Smooth01((t - 0.2f) / 0.8f));
                     b.bright = 1f - t * t;
                 },
@@ -679,42 +687,37 @@ namespace ChessFight.RagdollLab
             });
         }
 
-        /// <summary>Speed lines bursting out of <paramref name="at"/> within <paramref name="cone"/> degrees of
+        /// <summary>Cartoon speed lines bursting out of <paramref name="at"/> within <paramref name="cone"/> degrees of
         /// <paramref name="axis"/> (the rook's hits, R86 after the reference's electric dash).</summary>
-        void LineBurst(Vector3 at, Vector3 axis, float cone, int count, float lengthMin, float lengthMax, Color hot, Color body, float life = 0.16f)
+        void LineBurst(Vector3 at, Vector3 axis, float cone, int count, float lengthMin, float lengthMax, float life = 0.16f)
         {
             for (int i = 0; i < count; i++)
             {
                 var dir = cone >= 180f ? Random.onUnitSphere : InCone(axis, cone);
-                bool core = i % 3 != 0;
                 SpeedLine(at + dir * Random.Range(0.05f, 0.25f), dir, Random.Range(lengthMin, lengthMax), Random.Range(3f, 7f),
-                    core ? Random.Range(0.025f, 0.045f) : Random.Range(0.05f, 0.08f), core ? hot : body, core ? 0.25f : 0.8f, life * Random.Range(0.8f, 1.25f));
+                    Random.Range(0.07f, 0.12f), life * Random.Range(0.8f, 1.25f));
             }
         }
 
         /// <summary>
-        /// Lightning that crawls along the path behind something moving (the rook's dash, R86 after the reference's
-        /// electric streak): every few hundredths of a second, jagged lines re-drawn roughly along the last stretch
-        /// of the path, hot white-orange ones and orange ones that show on a white floor.
+        /// Cartoon lightning that crawls along the path behind something moving (the rook's dash, R86 after the
+        /// reference's electric streak): every few hundredths of a second, jagged lines re-drawn roughly along the
+        /// last stretch of the path, white-hot in the middle, orange, inked at the edges (<see cref="matVolt"/>).
         /// </summary>
         class PathBolts : Anim
         {
             readonly LineRenderer[] lines;
-            readonly Color[] colors;
-            readonly float[] paints;
             readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
             readonly Func<Vector3?> where;
             readonly List<Vector3> path = new List<Vector3>();
             readonly float stretch;
             float redraw, endedAt = -1f;
 
-            public PathBolts(Transform parent, Material material, Func<Vector3?> where, float stretch, Color hot, Color body)
+            public PathBolts(Transform parent, Material material, Func<Vector3?> where, float stretch)
             {
                 this.where = where;
                 this.stretch = stretch;
-                lines = new LineRenderer[5];
-                colors = new Color[lines.Length];
-                paints = new float[lines.Length];
+                lines = new LineRenderer[4];
                 for (int i = 0; i < lines.Length; i++)
                 {
                     var go = new GameObject("Effect path bolt");
@@ -723,15 +726,13 @@ namespace ChessFight.RagdollLab
                     lr.sharedMaterial = material;
                     lr.positionCount = 8;
                     lr.useWorldSpace = true;
-                    lr.numCapVertices = 2;
+                    lr.numCapVertices = 0;
                     lr.alignment = LineAlignment.View;
                     lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                     lr.receiveShadows = false;
                     lr.textureMode = LineTextureMode.Stretch;
                     lr.enabled = false;
                     lines[i] = lr;
-                    colors[i] = i < 3 ? hot : body;
-                    paints[i] = i < 3 ? 0.3f : 0.85f;
                 }
             }
 
@@ -765,16 +766,12 @@ namespace ChessFight.RagdollLab
                             float swing = (k == 0 || k == count - 1) ? 0.03f : Random.Range(0.08f, 0.24f);
                             lr.SetPosition(k, at + (Random.onUnitSphere + side * 0.5f).normalized * swing);
                         }
-                        lr.widthMultiplier = Random.Range(0.03f, 0.06f);
+                        lr.widthMultiplier = Random.Range(0.07f, 0.12f);
                         lr.enabled = true;
                     }
                 }
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    block.SetColor("_Color", colors[i] * fade);
-                    block.SetFloat("_Opacity", paints[i]);
-                    lines[i].SetPropertyBlock(block);
-                }
+                block.SetFloat("_Fade", fade);
+                foreach (var lr in lines) lr.SetPropertyBlock(block);
                 return true;
             }
 

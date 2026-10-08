@@ -209,7 +209,7 @@ namespace ChessFight.RagdollLab
                 life = windup + 0.03f,
                 lump = 0.42f,
                 flow = 6f,
-                heat = 0.75f,
+                heat = 0.62f,
                 rim = Hdr(FireGlow, 1.6f),
                 animate = (p, t) =>
                 {
@@ -246,7 +246,7 @@ namespace ChessFight.RagdollLab
                     dir.y *= 0.6f;
                     float arrive = Mathf.Clamp(windup - age, 0.06f, Random.Range(0.14f, 0.22f));
                     bool hot = Random.value < 0.5f;
-                    InwardLine(Heart, dir.normalized * Random.Range(1.2f, 2f), arrive, hot ? 0.04f : 0.06f, hot ? Hdr(Gold, 2.6f) : Hdr(GoldDeep, 1.3f), hot ? 0.3f : 0.85f);
+                    InwardLine(Heart, dir.normalized * Random.Range(1.2f, 2f), arrive, hot ? 0.06f : 0.09f, hot ? Hdr(Gold, 2.6f) : Hdr(GoldDeep, 1.3f), hot ? 0.3f : 0.85f);
                 }
                 return true;
             }));
@@ -426,15 +426,15 @@ namespace ChessFight.RagdollLab
             Vector3? Chest() => RookDashing(r) ? ChestOf(r) : (Vector3?)null;
             anims.Add(new Streak(root, matTrail, Hdr(Fire, 1.25f), 0.75f, 0.2f, Where) { paint = 0.8f });
             anims.Add(new Streak(root, matTrail, Hdr(Volt, 3.4f), 0.16f, 0.32f, Where) { paint = 0.25f });
-            anims.Add(new PathBolts(root, matBolt, Chest, 1.6f, Hdr(Volt, 3.2f), Hdr(Fire, 1.6f)));
+            anims.Add(new PathBolts(root, matVolt, Chest, 1.6f));
             Vector3 heading = Flat(r.transform.forward).sqrMagnitude > 0.01f ? Flat(r.transform.forward).normalized : Vector3.forward;
             float endedAt = -1f;
             // The spindle of light ahead of it.
             Add(new Beam(root, matFlare)
             {
                 life = 5f,
-                color = Hdr(Volt, 2.4f),
-                paint = 0.35f,
+                color = Hdr(Fire, 1.4f),
+                paint = 0.7f,
                 animate = (b, t) =>
                 {
                     float age = b.Age;
@@ -465,14 +465,12 @@ namespace ChessFight.RagdollLab
                 {
                     float a = Random.Range(0f, Mathf.PI * 2f), reach = Random.Range(0.25f, 0.65f);
                     Vector3 at = chest + (side * Mathf.Cos(a) + over * Mathf.Sin(a)) * reach + heading * Random.Range(-0.2f, 0.5f);
-                    bool hot = Random.value < 0.6f;
-                    SpeedLine(at, -heading, Random.Range(0.8f, 1.9f), Random.Range(1f, 3f), hot ? Random.Range(0.02f, 0.04f) : Random.Range(0.04f, 0.07f),
-                        hot ? Hdr(Volt, 3f) : Hdr(Fire, 1.4f), hot ? 0.25f : 0.85f, Random.Range(0.12f, 0.2f));
+                    SpeedLine(at, -heading, Random.Range(0.8f, 1.9f), Random.Range(1f, 3f), Random.Range(0.06f, 0.11f), Random.Range(0.12f, 0.2f));
                 }
                 // Crackling sparks off its body.
                 for (zap += dt * 70f; zap >= 1f; zap -= 1f)
                     sparks.Emit(chest + Random.insideUnitSphere * 0.4f, Random.onUnitSphere * Random.Range(2f, 5f) - heading * 2f, Random.Range(0.03f, 0.05f),
-                        Random.Range(0.1f, 0.2f), Tint(Volt, Random.value * 0.4f));
+                        Random.Range(0.1f, 0.2f), Tint(Fire, Random.value * 0.3f));
                 if (r.Grounded)
                     for (kick += dt * 25f; kick >= 1f; kick -= 1f)
                         smoke.Emit(Ground(r.Hips.position) - heading * 0.3f + Random.insideUnitSphere * 0.2f, -heading * Random.Range(0.5f, 1.5f) + Vector3.up * 0.4f,
@@ -490,11 +488,11 @@ namespace ChessFight.RagdollLab
                 life = life,
                 at = at,
                 billboard = true,
-                color = Hdr(Volt, 3.2f),
+                color = Hdr(Volt, 2f),
                 paint = 0.3f,
                 animate = (s, t) =>
                 {
-                    s.scale = Vector3.one * size * Mathf.Lerp(1f, 0.4f, t);
+                    s.scale = Vector3.one * size * 0.6f * Mathf.Lerp(1f, 0.4f, t);
                     s.bright = 1f - t;
                 },
             });
@@ -508,10 +506,10 @@ namespace ChessFight.RagdollLab
             FlashWhite(e.target, 0.06f);
             Vector3 d = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             Zap(e.at, 0.9f + 0.3f * i, 0.12f);
-            anims.Add(new Bolts(root, matBolt, 4 + 2 * i, () => e.at, Hdr(Volt, 3.2f), 0.8f + 0.3f * i, 0.16f + 0.03f * i));
-            LineBurst(e.at, d, 50f, 6 + 3 * i, 0.5f + 0.15f * i, 1.2f + 0.3f * i, Hdr(Volt, 3f), Hdr(Fire, 1.4f));
+            anims.Add(new Bolts(root, matVolt, 4 + 2 * i, () => e.at, Hdr(Volt, 3.2f), 0.8f + 0.3f * i, 0.16f + 0.03f * i) { toon = true });
+            LineBurst(e.at, d, 50f, 6 + 3 * i, 0.5f + 0.15f * i, 1.2f + 0.3f * i);
             SonicRing(e.at, d, 0.2f, 1f + 0.35f * i, Fire, 0.26f);
-            SparkBurst(e.at, 18 + 8 * i, Volt, d + Vector3.up * 0.3f, 55f, 4f, 9f + 2f * i, 0.5f, 0.06f);
+            SparkBurst(e.at, 18 + 8 * i, Fire, d + Vector3.up * 0.3f, 55f, 4f, 9f + 2f * i, 0.5f, 0.06f);
             Flare(e.at, Fire, 0.8f + 0.4f * i, 6f, 0.3f);
         }
 
@@ -523,11 +521,11 @@ namespace ChessFight.RagdollLab
             Vector3 d = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             Vector3 g = Ground(e.at);
             Zap(e.at, 1.8f, 0.16f);
-            anims.Add(new Bolts(root, matBolt, 10, () => e.at, Hdr(Volt, 3.2f), 1.6f, 0.3f));
-            anims.Add(new Bolts(root, matBolt, 7, () => g + Vector3.up * 0.05f, Hdr(Volt, 3f), 1.8f, 0.35f) { plane = Vector3.up });
-            LineBurst(e.at, d, 60f, 16, 0.8f, 1.9f, Hdr(Volt, 3f), Hdr(Fire, 1.4f), 0.2f);
+            anims.Add(new Bolts(root, matVolt, 10, () => e.at, Hdr(Volt, 3.2f), 1.6f, 0.3f) { toon = true });
+            anims.Add(new Bolts(root, matVolt, 7, () => g + Vector3.up * 0.05f, Hdr(Volt, 3f), 1.8f, 0.35f) { plane = Vector3.up, toon = true });
+            LineBurst(e.at, d, 60f, 16, 0.8f, 1.9f, 0.2f);
             SonicRing(e.at, d, 0.3f, 2.2f, Fire, 0.3f);
-            SparkBurst(e.at, 40, Volt, d + Vector3.up * 0.4f, 70f, 4f, 11f, 0.6f, 0.07f);
+            SparkBurst(e.at, 40, Fire, d + Vector3.up * 0.4f, 70f, 4f, 11f, 0.6f, 0.07f);
             GroundRing(g, 0.3f, 1.3f, 0.2f, Fire, 0.5f, 2.6f);
             DustRing(g, 12, 0.4f, 3f, Dust, 0.6f, 0.8f);
             Flare(e.at, Fire, 1.8f, 7f, 0.4f);
@@ -541,10 +539,10 @@ namespace ChessFight.RagdollLab
             Shake(0.22f, 0.35f);
             Vector3 g = Ground(e.at + Vector3.up * 0.3f);
             Zap(g + Vector3.up * 0.4f, 2f, 0.16f);
-            anims.Add(new Bolts(root, matBolt, 9, () => g + Vector3.up * 0.05f, Hdr(Volt, 3.2f), 2.1f, 0.38f) { plane = Vector3.up });
-            LineBurst(g + Vector3.up * 0.1f, Vector3.up, 55f, 16, 0.8f, 2f, Hdr(Volt, 3f), Hdr(Fire, 1.4f), 0.22f);
+            anims.Add(new Bolts(root, matVolt, 9, () => g + Vector3.up * 0.05f, Hdr(Volt, 3.2f), 2.1f, 0.38f) { plane = Vector3.up, toon = true });
+            LineBurst(g + Vector3.up * 0.1f, Vector3.up, 55f, 16, 0.8f, 2f, 0.22f);
             GroundRing(g, 0.2f, 1.8f, 0.2f, Fire, 0.55f, 2.6f);
-            SparkBurst(g + Vector3.up * 0.2f, 40, Volt, Vector3.up, 75f, 4f, 10f, 0.6f, 0.07f);
+            SparkBurst(g + Vector3.up * 0.2f, 40, Fire, Vector3.up, 75f, 4f, 10f, 0.6f, 0.07f);
             DustRing(g, 16, 0.4f, 4f, Dust, 0.75f, 0.9f);
             Flare(g + Vector3.up * 0.6f, Fire, 2f, 7f, 0.4f);
         }
@@ -558,10 +556,10 @@ namespace ChessFight.RagdollLab
             Vector3 d = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             Vector3 at = e.at - d * 0.1f + Vector3.up * (k < 1f ? 0.5f : 0f);
             Zap(at, 2f * k, 0.16f);
-            anims.Add(new Bolts(root, matBolt, Mathf.RoundToInt(9 * k), () => at, Hdr(Volt, 3.2f), 1.8f * k, 0.35f) { plane = d });
-            LineBurst(at, -d, 65f, Mathf.RoundToInt(14 * k), 0.6f, 1.6f * k, Hdr(Volt, 3f), Hdr(Fire, 1.4f), 0.2f);
+            anims.Add(new Bolts(root, matVolt, Mathf.RoundToInt(9 * k), () => at, Hdr(Volt, 3.2f), 1.8f * k, 0.35f) { plane = d, toon = true });
+            LineBurst(at, -d, 65f, Mathf.RoundToInt(14 * k), 0.6f, 1.6f * k, 0.2f);
             SonicRing(at, -d, 0.3f, 2.4f * k, Fire, 0.3f);
-            SparkBurst(at, Mathf.RoundToInt(45 * k), Volt, -d + Vector3.up * 0.25f, 80f, 4f, 11f, 0.6f, 0.07f);
+            SparkBurst(at, Mathf.RoundToInt(45 * k), Fire, -d + Vector3.up * 0.25f, 80f, 4f, 11f, 0.6f, 0.07f);
             DustRing(Ground(at), Mathf.RoundToInt(12 * k), 0.3f, 2.5f, Dust, 0.7f, 0.8f);
             Flare(at - d * 0.4f, Fire, 2f * k, 8f, 0.4f);
         }
