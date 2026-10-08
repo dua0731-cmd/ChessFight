@@ -1143,7 +1143,7 @@ namespace ChessFight.RagdollLab
             if (!scepters.TryGetValue(king, out var h) || h.a == null)
             {
                 h = new HandProp();
-                h.a = new Prop(this, RoundBox(new Vector3(0.05f, 0.62f, 0.05f), 0.024f), new Palette("#FFD34D", "#FFF0A8", "#C7811A", "#3A2208"), "Sceptre shaft");
+                h.a = new Prop(this, RoundBox(new Vector3(0.075f, 0.66f, 0.075f), 0.035f), new Palette("#FFD34D", "#FFF0A8", "#C7811A", "#3A2208"), "Sceptre shaft");
                 h.b = new Prop(this, meshPuff, King, "Sceptre crown") { inkWidth = 0.012f };
                 h.c = new Prop(this, meshTorus, new Palette("#FFD34D", "#FFF0A8", "#C7811A", "#3A2208"), "Sceptre band") { inkWidth = 0.008f };
                 scepters[king] = h;
@@ -1159,9 +1159,9 @@ namespace ChessFight.RagdollLab
                     PlaceInHand(king, h.a.t, 0.31f, h.shown);
                     Vector3 tip = h.a.t.position + h.a.t.up * 0.34f * h.shown;
                     h.b.t.position = tip + h.a.t.up * 0.05f;
-                    h.b.t.localScale = Vector3.one * 0.15f * h.shown;
+                    h.b.t.localScale = Vector3.one * 0.21f * h.shown;
                     h.c.t.SetPositionAndRotation(tip, h.a.t.rotation);
-                    h.c.t.localScale = Vector3.one * 0.075f * h.shown;
+                    h.c.t.localScale = Vector3.one * 0.09f * h.shown;
                     float flash = clock < h.flashUntil ? 1f : 0f;
                     h.a.flash = h.b.flash = h.c.flash = flash;
                     h.a.Apply();
@@ -1361,7 +1361,7 @@ namespace ChessFight.RagdollLab
                         float t = (i + 1f) / (x.puffs.Count + 1f);
                         p.t.position = Arc(a, b, top, t);
                         float beat = Mathf.Repeat(clock * 1.6f - t, 1f);
-                        p.t.localScale = Vector3.one * (0.07f + 0.03f * Mathf.Clamp01(1f - beat * 3f));
+                        p.t.localScale = Vector3.one * (0.11f + 0.04f * Mathf.Clamp01(1f - beat * 3f));
                         p.colors = valid ? Rook : Grey;
                         p.Apply(clock);
                     }

@@ -32,7 +32,8 @@ namespace ChessFight.RagdollLab.Editor
                 width = (uint)width,
                 height = (uint)height,
                 includeAlpha = false,
-                bitRateMode = VideoBitrateMode.High,
+                // Medium: the slow film runs well over a minute and should stay small enough to send.
+                bitRateMode = VideoBitrateMode.Medium,
             };
             encoder = new MediaEncoder(path, video);
         }

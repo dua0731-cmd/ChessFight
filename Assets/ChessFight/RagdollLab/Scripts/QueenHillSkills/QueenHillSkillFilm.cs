@@ -48,7 +48,7 @@ namespace ChessFight.RagdollLab
             new Shot { run = "knight", title = "5. 나이트 · 도약 압착 (B: 한 층까지, 높은 곳에서 납작하면 떨어짐)", note = "2층은 너무 높아 회색 → 1층 말굽 표식 → 도약 → 적이 납작해져 가장자리에서 떨어짐",
                 eye = new Vector3(0.6f, 2.4f, 12.6f), look = new Vector3(-3.0f, 1.0f, 7.0f), fov = 48f },
             new Shot { run = "pawn", title = "6. 폰 · 비집고 돌파 (B: 몸을 낮추는 새 동작)", note = "적 룩 돌진 경고(빨간 줄무늬 칸) → 다리를 앞뒤로 벌리고 낮게 옆으로 빠짐 → 룩이 빗나감",
-                eye = new Vector3(-3.0f, 1.5f, -4.6f), look = new Vector3(2.8f, 0.35f, -3.8f), fov = 42f },
+                eye = new Vector3(-4.2f, 1.9f, -4.0f), look = new Vector3(2.4f, 0.4f, -4.6f), fov = 44f },
             new Shot { run = "pawn-squeeze", title = "6. 폰 · 비집고 돌파 (좁은 틈)", note = "낮게 몸을 숙이고 두 적 사이를 비집고 지나감 · 무적 없음, 부딪힌 적은 옆으로 비킴",
                 eye = new Vector3(-0.4f, 2.4f, -9.4f), look = new Vector3(0.6f, 0.3f, -5f), fov = 40f },
         };
