@@ -219,18 +219,19 @@ namespace ChessFight.RagdollLab
                     p.scale = Vector3.one * Mathf.Lerp(0.12f, 0.62f, k * k) * Mathf.Lerp(1f, 0.6f, drop) * (1f + 0.1f * Mathf.Sin(p.Age * 75f));
                 },
             });
+            // A faint glow round it (brighter, it whitened the ball away).
             Add(new Shape(root, "Queen gathering glow", meshQuad, matHalo)
             {
                 life = windup + 0.03f,
                 billboard = true,
-                color = Hdr(Gold, 1.4f),
-                paint = 0.35f,
+                color = Hdr(Gold, 1.1f),
+                paint = 0.2f,
                 animate = (s, t) =>
                 {
                     float k = Mathf.Clamp01(s.Age / windup);
                     s.at = Heart();
-                    s.scale = Vector3.one * (0.3f + 1.3f * k * k);
-                    s.bright = 0.4f + 0.6f * k;
+                    s.scale = Vector3.one * (0.3f + 1.1f * k * k);
+                    s.bright = (0.3f + 0.5f * k) * (1f - Smooth01((k - 0.8f) / 0.2f));
                 },
             });
             // Thin lines of light sucked in from all round, arriving as she lets go.
@@ -239,13 +240,13 @@ namespace ChessFight.RagdollLab
             {
                 if (!QueenCharging(q) || age > windup) return false;
                 Vector3 heart = Heart();
-                for (due += dt * 110f; due >= 1f; due -= 1f)
+                for (due += dt * 150f; due >= 1f; due -= 1f)
                 {
                     var dir = Random.onUnitSphere;
                     dir.y *= 0.6f;
-                    float arrive = Mathf.Clamp(windup - age, 0.05f, Random.Range(0.1f, 0.2f));
-                    Vector3 from = heart + dir.normalized * Random.Range(1.1f, 1.9f);
-                    streaks.Emit(from, (heart - from) / arrive, Random.Range(0.06f, 0.09f), arrive, Tint(GoldDeep, Random.value * 0.4f));
+                    float arrive = Mathf.Clamp(windup - age, 0.05f, Random.Range(0.15f, 0.26f));
+                    Vector3 from = heart + dir.normalized * Random.Range(1.3f, 2.2f);
+                    streaks.Emit(from, (heart - from) / arrive, Random.Range(0.08f, 0.12f), arrive, Tint(GoldDeep, Random.value * 0.4f));
                 }
                 return true;
             }));

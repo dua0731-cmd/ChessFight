@@ -151,8 +151,6 @@ namespace ChessFight.RagdollLab
                 }
                 f = next;
             }
-            // The list winds counter-clockwise seen from outside; Unity's front faces wind clockwise.
-            for (int i = 0; i < f.Count; i += 3) (f[i + 1], f[i + 2]) = (f[i + 2], f[i + 1]);
             var points = new Vector3[v.Count];
             for (int i = 0; i < v.Count; i++) points[i] = v[i] * 0.5f;
             var mesh = new Mesh { hideFlags = HideFlags.HideAndDontSave };
