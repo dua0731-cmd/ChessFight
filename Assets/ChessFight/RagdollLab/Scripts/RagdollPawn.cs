@@ -124,6 +124,9 @@ namespace ChessFight.RagdollLab
         public float TopSpeed => Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
                                  * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move;
 
+        /// <summary>Steps in which the jump rise guard gave vertical speed back (GuardJumpRise).</summary>
+        public int RiseTopUps { get; private set; }
+
         /// <summary>Pawns this one has floored with a dive.</summary>
         public int Tackles { get; private set; }
 
@@ -346,6 +349,8 @@ namespace ChessFight.RagdollLab
         Vector3 carryVel;                    // horizontal velocity of the last thing stood on, kept through the air
         float carryRise;                     // and its vertical speed, so a jump off a rising lift is a real jump
         bool launched;                       // thrown by a launch pad: carryVel is the throw, steering is capped
+        float airPose;                       // 0 on the ground, 1 in the air: the sprint's deep lean gives way to the run's
+        float riseVel, riseBudget;           // the jump's climb so far, and what the rise guard may still give back
         Collider climbCollider;              // the face being climbed, and the surface that moves it
         IMovingSurface climbSurface;
         Vector3 climbSurfaceVel;
@@ -616,6 +621,7 @@ namespace ChessFight.RagdollLab
             SenseGround();
             SenseWater(p);
             coyote = Grounded ? 0.12f : coyote - dt;
+            GuardJumpRise(dt);
 
             UpdateState(p, dt);
             UpdateStiffness(p, dt);
@@ -1042,6 +1048,7 @@ namespace ChessFight.RagdollLab
             // then carried along with it. Standing on a lift, a shuttle or a turntable the pawn stands
             // still ON it; in the air it keeps the speed of what it jumped off (a jump off a shuttle
             // lands back on the shuttle), until it lands on something else.
+            airPose = Mathf.MoveTowards(airPose, planted ? 0f : 1f, AirPoseRate * dt);
             if (planted)
             {
                 carryVel = groundFound ? Flat(surfaceVel) : Vector3.zero;
@@ -1216,13 +1223,13 @@ namespace ChessFight.RagdollLab
             float align = ownAnchor.sqrMagnitude > 0.25f ? Mathf.Clamp01(Vector3.Dot(ownAnchor.normalized, facing)) : 1f;
             leanAlign = Mathf.MoveTowards(leanAlign, align * align, 6f * dt);
             // Each footfall drives the body forward a little more (the push-off), then it rises.
-            float drive = Gait(p.runDrive, p.sprintDrive) * (1f - spread) * speedN;
-            float lean = (Gait(p.runLean, p.sprintLean) * speedN + drive) * leanAlign;
+            float drive = Posture(p.runDrive, p.sprintDrive) * (1f - spread) * speedN;
+            float lean = (Posture(p.runLean, p.sprintLean) * speedN + drive) * leanAlign;
             if (shoveTimer > 0f) lean += p.shoveLean;
             else if (input.grab && !Grabbing) lean += p.grabLean;
             // Rolling toward the stance leg reads as weight when the legs alternate. With both legs
             // together there is no stance side, so the same roll reads as a limp - fade it out.
-            float roll = Gait(p.stepRoll, p.sprintRoll) * Mathf.Sin(gait) * speedN * (1f - p.boundGait) * leanAlign;
+            float roll = Posture(p.stepRoll, p.sprintRoll) * Mathf.Sin(gait) * speedN * (1f - p.boundGait) * leanAlign;
             anchor.MoveRotation(LeanIntoAcceleration(p, dt) * Quaternion.LookRotation(facing, Vector3.up)
                                 * Quaternion.Euler(lean, 0f, roll));
             ClampOverspeed(p, dt);
@@ -1273,6 +1280,61 @@ namespace ChessFight.RagdollLab
             coyote = 0f;
             Grounded = false;
             if (pullUp) pullUpUsed = true;
+            // A jump off the ground climbs the same however fast the pawn was going (GuardJumpRise).
+            riseVel = ComVelocity().y;
+            riseBudget = fromGround ? RiseBudget : 0f;
+        }
+
+        const float RiseTolerance = 0.05f;   // m/s a step: the guard ignores model error below this
+        const float RiseStepLimit = 0.5f;    // m/s lost in one step is a knock (a beam, a ceiling): not the guard's
+        const float RiseBudget = 1.5f;       // m/s the guard may give back over a whole jump
+
+        /// <summary>
+        /// Holds a jump to the climb it was given. On the way up nothing should take vertical speed off
+        /// the body but gravity and air damping; whatever else does (the hips spring, a limb pushing
+        /// the wrong way while the sprint pose straightens out) is handed back, so a sprint jump goes
+        /// as high as a standing one (playtest, 10-08: it went lower). It never adds height a clean jump
+        /// would not have: it only tops up to the ballistic climb. A real knock - more than
+        /// RiseStepLimit gone in one step - ends it, as does anything that takes the body over (a hit,
+        /// a grab, a wall, a rope, the hook, a dive), the apex, or the ground.
+        /// </summary>
+        void GuardJumpRise(float dt)
+        {
+            if (riseBudget <= 0f) return;
+            if (State != PawnState.Active || Grounded || Climbing || rope != null || Floating || BeingHeld || Diving
+                || hitTimer > 0f || launched || hookPhase == HookPhase.Pulling || HoldingEnvironment())
+            {
+                riseBudget = 0f;
+                return;
+            }
+            float mass = 0f, damping = 0f;
+            foreach (var rb in bodies)
+            {
+                mass += rb.mass;
+                damping += rb.mass * rb.linearDamping;
+            }
+            float want = (riseVel + Physics.gravity.y * dt) * Mathf.Max(0f, 1f - damping / Mathf.Max(0.01f, mass) * dt);
+            if (want <= 0f)
+            {
+                riseBudget = 0f;
+                return;
+            }
+            float vy = ComVelocity().y;
+            float lost = want - vy;
+            if (lost > RiseStepLimit)
+            {
+                riseBudget = 0f;
+                return;
+            }
+            if (lost > RiseTolerance)
+            {
+                float give = Mathf.Min(lost, riseBudget);
+                foreach (var rb in bodies) rb.linearVelocity += Vector3.up * give;
+                riseBudget -= give;
+                vy += give;
+                RiseTopUps++;
+            }
+            riseVel = vy;
         }
 
         /// <summary>
@@ -1346,13 +1408,23 @@ namespace ChessFight.RagdollLab
             Vector3 accel = (anchorVel - leanLastVel) / Mathf.Max(dt, 1e-4f);
             leanLastVel = anchorVel;
             leanAccel = Vector3.Lerp(leanAccel, Flat(accel), 1f - Mathf.Exp(-10f * dt));
-            float cap = Mathf.Tan(Mathf.Clamp(Gait(p.turnLean, p.sprintTurnLean), 0f, 45f) * Mathf.Deg2Rad);
+            float cap = Mathf.Tan(Mathf.Clamp(Posture(p.turnLean, p.sprintTurnLean), 0f, 45f) * Mathf.Deg2Rad);
             Vector3 tilt = Vector3.ClampMagnitude(leanAccel * (p.accelLean / 9.81f), cap);
             return Quaternion.FromToRotation(Vector3.up, (Vector3.up + tilt).normalized);
         }
 
         /// <summary>A gait number between its run value and its sprint value, by how far into the sprint.</summary>
         float Gait(float run, float sprint) => Mathf.Lerp(run, sprint, sprintBlend);
+
+        /// <summary>
+        /// Like Gait, for how far the body bends (lean, chest, roll, the lean into a turn): in the air it
+        /// is the run's. The sprint's lean (hips 12 + 7, chest 16 degrees against the run's 8 + 4 and 10)
+        /// carried into a jump kept the head lower than a run's jump all the way up, so a sprint jump
+        /// read as a smaller jump (playtest, 10-08).
+        /// </summary>
+        float Posture(float run, float sprint) => Mathf.Lerp(run, sprint, sprintBlend * (1f - airPose));
+
+        const float AirPoseRate = 8f;        // 1/s: the lean straightens over 0.125 s after take-off
 
         /// <summary>
         /// The hip joint stops a thigh at 60-75 degrees (RagdollLabBuilder). Commanding more does
@@ -2443,7 +2515,7 @@ namespace ChessFight.RagdollLab
             // still against them. The right shoulder comes forward with the left leg.
             float twist = p.runTwist * (1f - sprintBlend) * speedN * s;
             // Like the hips' lean, the chest only bends forward while going the way it faces.
-            float chestLean = Gait(p.chestLean, p.sprintChestLean) * speedN * leanAlign;
+            float chestLean = Posture(p.chestLean, p.sprintChestLean) * speedN * leanAlign;
             Quaternion chest = Quaternion.Euler(chestLean, -twist, 0f);
             Quaternion head = Quaternion.Euler(-0.5f * chestLean, 0.8f * twist, 0f);
             // boundGait 0 = legs alternate (a walk), 1 = legs move together (a hop). A hop has a
@@ -3164,6 +3236,7 @@ namespace ChessFight.RagdollLab
             diveCooldown = jumpTimer = 0f;
             freeFlight = 0.3f;
             sprintBlend = 0f;
+            airPose = riseBudget = 0f;
             stamina = -1f;          // refilled on the next step
             Exhausted = false;
             SetRagdollFriction(false);

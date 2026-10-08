@@ -524,13 +524,16 @@ namespace ChessFight.RagdollLab
         /// in the air); it stays over 0.8 m because the courses are built around 0.8 m steps (King
         /// Rush clock buttons, the box rim, the imported map's jump bars). A running jump now carries
         /// 3.4 m instead of 5 m, a sprinting one 4.8 m instead of 8.8 m. The gait is untouched.
+        /// The designer then tuned it by hand in the lab (commit 4a3c569): run 2.5, sprint 3.6, jump 3.8,
+        /// turnResponsiveness 40, airControl 0.4, knockdown at 9 m/s (by fall height), getUpDelay 1 and a
+        /// shorter dive. This preset is that set.
         /// Baked into Settings/RagdollTuning.asset, so the lab and the prefab start with it;
         /// "명세 시작값" still resets to the spec for A/B, and this button brings the set back.
         /// </summary>
         public const string StepPresetJson =
             "{'lowerBodySpring':2600,'upperBodySpring':1600," +
-            "'moveSpeed':4.0,'sprintSpeed':5.6,'acceleration':22.0,'stopDeceleration':29.0," +
-            "'turnResponsiveness':8.0,'turnRateTopSpeed':260.0,'jumpImpulse':4.2," +
+            "'moveSpeed':2.5,'sprintSpeed':3.6,'acceleration':22.0,'stopDeceleration':29.0," +
+            "'turnResponsiveness':40.0,'turnRateTopSpeed':260.0,'jumpImpulse':3.8,'airControl':0.4," +
             "'balanceDamper':120.0,'yawStrength':600.0,'overspeedClamp':1.1," +
             "'strideLength':1.5,'legSwing':60.0,'armSwing':55.0,'runLean':8.0,'runLift':0.0," +
             "'runArmDown':35.0,'runTwist':8.0,'runLegDrop':0.3,'runDrive':4.0,'runSplay':10.0," +
@@ -540,14 +543,15 @@ namespace ChessFight.RagdollLab
             "'stepLock':0.0,'stanceThrust':0.45,'stepBob':0.0,'stepRoll':3.0," +
             "'turnLean':10.0,'accelLean':0.6,'anchorBrakeLeash':0.3,'anchorDamperRatio':0.21,'hipAnchorStrength':4500.0,'landingDip':0.06,'stepLength':0.22," +
             "'boundGait':0.0,'driveFeedForward':1.0,'hopCadence':2.9,'legDamperRatio':0.04," +
-            "'knockdownImpulseThreshold':7.5,'hitImpactThreshold':2.2," +
-            "'getUpDelay':0.7,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
+            "'knockdownImpulseThreshold':9.0,'hitImpactThreshold':2.2," +
+            "'diveBoost':1.55,'diveLift':0.55,'diveMaxSpeed':5.3,'diveLieTime':0.51," +
+            "'getUpDelay':1.0,'getUpBlendTime':0.22,'hitRecoveryTime':0.5,'momentumRetention':1.0}";
 
         public void ApplyStepPreset()
         {
             tuning.LoadJson(StepPresetJson.Replace('\'', '"'));
             MarkTuningDirty();
-            Status = "기본 프리셋: 달리기 4.0 m/s · Shift 전력질주 5.6 m/s · 점프 4.2 m/s. 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
+            Status = "기본 프리셋: 달리기 2.5 m/s · Shift 전력질주 3.6 m/s · 점프 3.8 m/s. 명세 시작값과 비교하려면 각각 Shift+1·2로 저장하고 1·2 키로 전환하세요";
         }
 
         public void ApplyWeightPreset()

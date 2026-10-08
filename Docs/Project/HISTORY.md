@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-08 | R68 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R68, HANDOFF |
+| (이 커밋) | 10-08 | R69 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R69, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R69, HANDOFF |
+| `4a3c569` | 10-08 | R69 | (사용자) RagdollTest 패널로 다듬은 튜닝: 달리기 2.5·질주 3.6·점프 3.8·방향 전환 40·공중 제어 0.4·넉다운 9·기상 1·다이빙 |
+| `cd4bd57` | 10-08 | R68 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R68, HANDOFF |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
 | (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |
 | `9e4966f` (`main`, 원본 `f476968` `JY-ragdoll_v2`) | 10-06 | R66 | 나이트 L자 도약·밟기(`RagdollPawn.Abilities`), 갈고리·앙파상·종은 폰만, 튜닝 8개, 자동 점검 `LabAutoTest.Knight` |

@@ -4,11 +4,13 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-08**(R68 폴가이즈 속도감. 그 전: R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-08**(R69 사용자 튜닝·전력질주 점프 높이, R68 폴가이즈 속도감. 그 전: R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
-> **최신 R68(사용자, 10-08): 기본 이동을 폴가이즈 속도감으로.** "속도와 점프가 전체적으로 너무 빠르고 크다." 공유 `RagdollTuning.asset`(래그돌을 쓰는 모든 씬): 달리기 5.5 → **4.0**, 전력질주 9.6 → **5.6**, 가속 30 → 22·멈춤 40 → 29(출발·멈춤 시간은 그대로), 점프 4.5 → **4.2**(골반 약 0.9 m, 질주 점프 8.8 → 4.8 m). 걸음 모양은 그대로. 점프는 코스의 0.8 m 턱 때문에 4.2가 바닥([DECISIONS G31](Docs/Project/DECISIONS.md)). **Unity 미확인** → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 표, [RagdollLab README "폴가이즈 속도감"](Docs/RagdollLab/README.md#폴가이즈-속도감-2026-10-08-r68)
+> **최신 R69(사용자, 10-08): 사용자 튜닝 + 전력질주 점프 높이.** 사용자가 패널로 다듬은 값(`4a3c569`)이 기본: 달리기 **2.5**·질주 **3.6**·점프 **3.8**(약 0.74 m)·방향 전환 40·공중 제어 0.4·넉다운 **9 m/s**(약 4 m 낙하)·기상 1초·짧은 다이빙. 전력질주 점프가 낮던 것은 공중 자세를 달리기 자세로(`Posture`) + 점프 상승 보정(`GuardJumpRise`)으로 맞춤, 자동 점검 `SprintJump`. **Unity 미확인.** 이 값으로 **기존 맵에서 못 지나가게 된 곳**이 있다(아래 §3 "이동 값 변경 뒤 맵·검사 영향") → [DECISIONS G32](Docs/Project/DECISIONS.md), [RagdollLab README R69](Docs/RagdollLab/README.md#사용자-튜닝과-전력질주-점프-2026-10-08-r69)
+>
+> **R68(사용자, 10-08): 기본 이동을 폴가이즈 속도감으로.** "속도와 점프가 전체적으로 너무 빠르고 크다." 공유 `RagdollTuning.asset`(래그돌을 쓰는 모든 씬): 달리기 5.5 → **4.0**, 전력질주 9.6 → **5.6**, 가속 30 → 22·멈춤 40 → 29(출발·멈춤 시간은 그대로), 점프 4.5 → **4.2**(골반 약 0.9 m, 질주 점프 8.8 → 4.8 m). 걸음 모양은 그대로. 점프는 코스의 0.8 m 턱 때문에 4.2가 바닥([DECISIONS G31](Docs/Project/DECISIONS.md)). **Unity 미확인** → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 표, [RagdollLab README "폴가이즈 속도감"](Docs/RagdollLab/README.md#폴가이즈-속도감-2026-10-08-r68)
 >
 > **R67(사용자, 10-06): 폰 러시 맵 기획 재료집** [PAWN_RUSH_MAP_KIT](Docs/KingRush/PAWN_RUSH_MAP_KIT.md). 장애물 시험 씬(`ImportedChessFightMap`)의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치를 모아 채팅 AI가 맵을 기획하게 한 문서(프롬프트·결과 양식 포함). 다음 단계: 사용자가 채팅에서 기획 → 구간별 표를 Claude Code에 주면 구현.
 >
@@ -70,6 +72,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **사용자 튜닝·전력질주 점프(10-08, R69)** | 사용자 값 `4a3c569`(달리기 2.5·질주 3.6·점프 3.8·넉다운 9 등), `RagdollPawn.Posture`·`GuardJumpRise`, 자동 점검 `SprintJump`. Core 83·세션 39·7개 어셈블리 컴파일 통과, 래그돌 자동 점검 못 돌림. **Unity 미확인** |
 | **폴가이즈 속도감(10-08, R68)** | `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2. 값만 바꿈. Core 83·세션 39·7개 어셈블리 컴파일 통과, 래그돌 자동 점검(Unity 빌드 필요)은 못 돌림. **Unity 미확인** |
 | **`main` 병합(10-06, R65)** | `main` = `JY-kingrush`(`f3b5cc8`) + `a54b89e`(맵 이식, 원본 `487f62b`) + `104b18c`(방장 장애물 시각, 원본 `JY-lobby` `27e052c`) + `deabde0`(Linux 검사 유지) + 문서. Core 83·세션 39·7개 어셈블리 Roslyn 컴파일(2021.3 참조 DLL) 통과. **Unity·두 PC 미확인** |
 | **설정 창(10-05, R64)** | `claude/settings-window` → 원격 `JY-kingrush`에 푸시. 인트로 판 클릭 시작, Esc 설정 창(인트로·로비·입장 화면), 탭 5개·항목 10개, `GameSettings`(`PlayerPrefs`), 클릭 감 강화. Core 81·세션 39·DLL 컴파일 통과. **사용자 미확인** |
@@ -128,6 +131,13 @@
 
 ## 3. 진행 중인 일과 다음 할 일
 
+**이동 값 변경 뒤 맵·검사 영향 (R69 검토, 10-08). 사용자 결정 전에는 고치지 않음**
+- **못 지나가는 곳(점프 0.74 m·질주 점프 2.8 m 기준):** 가져온 맵의 회전 점프 막대(윗면 0.8 m, 1·2·4·5구역) → 0.4~0.5 m로 낮춰야 함. 컨베이어 체스판(뒤로 3 m/s) → 달리기 2.5로 못 거슬러 가고 질주도 스테미나가 모자람, 1.5 m/s 안팎으로. 퀸 오브 더 힐 1층 대계단의 무너진 틈(2.5 m 건너 0.8 m 위), 4층 고리 사이 3 m 점프 → 다른 길은 있지만 이 길은 막힘(`Tools/QueenHill/build_layout.py`가 "점프 2.5 m·1 m 위"를 전제). 킹 러쉬 체스 시계 버튼(높이 차 최대 0.8 m)은 낮을 때를 기다리면 됨.
+- **자동 점검이 실패할 것:** `KingRushOpeningTest`의 "제자리 점프 > 0.8 m"와 `Walk(…, 제한 시간)` 37곳(5.5 m/s 기준 시간), 상자 테두리 0.8 m 던지기. 게임 문제가 아니라 기준이 옛 속도라서다. 맵 결정 뒤 같이 고친다.
+- **상대적으로 세진 것:** 장애물 밀어내기(5~14 m/s)와 발사대(위 14·18 m/s)가 이제 달리기의 2~6배라 훨씬 멀리 날아감. 맞아도 넉다운 기준 9라 대부분 "휘청하며 미끄러짐". 다이빙 태클은 상대와의 속도 차 3 m/s가 기준(`diveTackleImpact`)이라 **달아나는 상대를 뒤에서 태클하면 안 넘어질 수 있음**(1.5~2로 낮출지 확인). 갈고리 끌림 6 m/s는 달리기의 2.4배.
+- **느낌 후보(숫자만 바꾸면 됨):** 가속 22·멈춤 29는 2.5 m/s에서 0.11초·0.09초라 R68보다 더 딱딱함(같은 비율이면 14·18). 질주 걸음은 예전 9.6 m/s용 모양(초당 3.5걸음·크게 튀기·깊은 숙임)이라 3.6 m/s에서는 제자리에서 버둥대 보일 수 있음(`sprintCadence`·`sprintBob`·`sprintLean`). 킹은 0.8배라 2 m/s.
+- **경기 길이:** 킹 러쉬 코스·가져온 맵은 약 650~700 m라 쉬지 않고 달려도 4~5분(예전 2분 남짓). 폴가이즈 한 판(2~3분)보다 길다.
+
 **이 작업 폴더는 킹 러쉬 전용(R56)**
 - `JY-kingrush`에서만 작업한다. 실제 기준은 `JY-gpt_gamemode@852eb2b`이며 첨부 기획이 전제로 쓴 최신 QotH M6/M11/M13은 없다. `KingRushPiece`/`KingRushPawn`으로 격리했고 공유 Pawn/튜닝/프로토콜은 바꾸지 않았다.
 - Unity 메뉴 **ChessFight → King Rush → Open Mechanics Test** → Play. F4 → E로 킹+더미 시험. 승격은 F3 후 노란 발판, 문은 F7/F8 시험 완료 버튼. [확인 목록](Docs/Network/VALIDATION.md) R52.
@@ -148,6 +158,7 @@
 - 다음: [VALIDATION R51](Docs/Network/VALIDATION.md)에서 검 가시성·보정 반응·약한 접촉/강한 베기·전환/복원·두 PC 손맛을 비교한다. 맵/기물 스킬/퀸 모드는 자동 착수하지 않는다. 원격 Push는 기존403 때문에 재시도하지 않으며 사용자가 GitHub Desktop에서 한다.
 
 **사용자가 할 일 — 순서대로**
+000000000000. **(새, R69) 전력질주 점프:** `Ragdoll Test`에서 제자리·달리기·질주 점프 높이 비교 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **전력질주 점프 표(5개)**. 결정: §3 "이동 값 변경 뒤 맵·검사 영향"의 못 지나가는 곳을 맵에서 고칠지
 00000000000. **(새, R68) 폴가이즈 속도감:** `Ragdoll Test` → Play → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **속도감 표(7개)**. 느낌이 다르면 "더 느리게·점프 더 낮게"처럼 말로 알려 주면 값을 다시 맞춘다. 결정 1개: 점프를 더 낮추려면 0.8 m 장치(체스 시계 버튼·회전 점프 막대)를 같이 낮춰야 한다
 0000000000. **(새, R65) `main` 병합 확인:** `main`을 Pull(LFS 포함) → Unity로 열고 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **`main` 병합 표(5개)**. 모든 PC가 같은 `main`이어야 온라인이 된다(프로토콜 v15).
 000000000. **(새, 승규 님) 설정 창(R64):** Intro 씬 Play → Esc(설정 창) → "클릭해서 시작" → 로비 → [VALIDATION](Docs/Network/VALIDATION.md) 최상단 **설정 창 표**.
