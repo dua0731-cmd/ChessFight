@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R84 | 문서: AI가 Unity에서 Play해 본 결과(VALIDATION R84 표), PITFALLS 32(첫 프레임 3.7초가 로고 기다림을 써 버림), UI §15·HANDOFF·REQUIREMENTS에 반영 |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R85 | 문서: UI §15 "이름 바꾸기", SCENES, DECISIONS U16, VALIDATION R85 표, REQUIREMENTS R85, HANDOFF. 문구 하나("바꿨어요! 돌아가는 중") |
+| `1670ad6` | 10-08 | R85 | 인트로 "이름 바꾸기"와 로비 오른쪽 위 내 이름에서 언제든 이름 바꾸기(`NameChange`, `NameScreen` 바꾸기 모드·돌아가기), 바꾸는 동안 로비 단축키·채팅 쉼, 매칭 중 막음, Shift+클릭 없앰, 오프라인 로비도 고른 이름, `LobbyStage.SelfOnScreen` |
+| `076cc5b` | 10-08 | R84 | 문서: AI가 Unity에서 Play해 본 결과(VALIDATION R84 표), PITFALLS 32(첫 프레임 3.7초가 로고 기다림을 써 버림), UI §15·HANDOFF·REQUIREMENTS에 반영 |
 | `a78f5d6` | 10-08 | R84 | 로고 기다림과 장면 전환을 보인 프레임으로 셈(한 프레임 최대 0.05초): Play 직후 로고가 영상 전에 사라지던 것 고침 |
 | `5c97820` | 10-08 | R84 | 문서: UI §15(시작 로고·이름 설정 화면·장면 전환), SCENES(Intro 흐름), SESSION(`nick`), VALIDATION R84 표, DECISIONS U15·U16, REQUIREMENTS R84, HANDOFF |
 | `f381dcc` | 10-08 | R84 | 게임을 켜면 시작 로고 영상(`LogoIntro`, `StreamingAssets/LogoIntro.mp4`, 소리 A), 처음 한 번 이름 설정 화면(`NameScreen`·도는 유리 폰 `GlassPawn`·글자 수 옆 추천 이름 → 입력칸 위 말풍선, 규칙 `Core/PlayerNames` + 테스트 5), 고른 이름을 멤버 데이터 `nick`으로(`PlayerProfile`·`SteamSession.LocalName` + 세션 테스트 1), 킹 구멍 → 카드 → 나이트 구멍 장면 전환(`SceneTransition`), 그림·영상 3개(LFS) |

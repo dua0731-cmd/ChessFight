@@ -261,7 +261,7 @@ namespace ChessFight.Game
             startButton.SetEnabled(ok);
             startButton.style.opacity = ok ? 1f : .45f;
             if (startText != null)
-                startText.text = renaming ? (confirming ? "바꿨어요! 로비로 돌아가는 중" : "이 이름으로 바꾸기")
+                startText.text = renaming ? (confirming ? "바꿨어요! 돌아가는 중" : "이 이름으로 바꾸기")
                                           : (confirming ? "좋아요! 로비로 가는 중" : "이 이름으로 시작");
             if (startArrow != null) startArrow.style.display = confirming ? DisplayStyle.None : DisplayStyle.Flex;
 

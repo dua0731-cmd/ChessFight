@@ -16,7 +16,7 @@
 
 | 씬 | 빌드 순서 | 붙는 컨트롤러 | Play를 누르면 |
 |---|---|---|---|
-| `Intro.unity` | 0 | `IntroController` | 온라인. (R84) 시작 로고 영상 → 타이틀, Steam 시작, 시작 판 클릭 → 처음이면 이름 설정 화면(같은 씬의 `NameScreen`) → 장면 전환(`SceneTransition`) 뒤 Lobby(비동기 로드), Esc 설정 창 |
+| `Intro.unity` | 0 | `IntroController` | 온라인. (R84) 시작 로고 영상 → 타이틀, Steam 시작, 시작 판 클릭 → 처음이면 이름 설정 화면(같은 씬의 `NameScreen`), (R85) "이름 바꾸기" → 이름 바꾸기 화면 → 다시 타이틀 → 장면 전환(`SceneTransition`) 뒤 Lobby(비동기 로드), Esc 설정 창 |
 | `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티 라인업(3D), 모드·파티·매칭 HUD. 이동 없음 |
 | `KingRush.unity` | 2 | 경기로 들어왔을 때만 `MatchSceneView` | 직접 열면 **오프라인 플레이테스트** |
 | `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |
@@ -47,7 +47,7 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 
 ## 3. 씬별 내용
 
-**Intro** — `IntroHud.uxml`. 키 입력 한 번이면 Lobby. 클릭 UI가 필요 없게 만들었다(클릭 문제 회피). Steam 시작 실패여도 로비로 간다(로비에 재시도 버튼). (R64부터 시작 판 클릭.) **(R84)** 게임을 켤 때 시작 로고 영상(`LogoIntro`)이 그 위에 한 번 나오고, 저장된 이름이 없으면 시작 판이 같은 씬 안의 이름 설정 화면(`NameScreen`)으로 간다. Lobby로는 장면 전환(`SceneTransition`, 씬이 바뀌어도 살아 있는 패널) 뒤에서 `LoadSceneAsync`로 넘어가고, 로비 무대가 생기면 내 나이트 자리에서 열린다 → [UI §15](UI.md#15-시작-로고이름-설정-화면장면-전환-r84-2026-10-08).
+**Intro** — `IntroHud.uxml`. 키 입력 한 번이면 Lobby. 클릭 UI가 필요 없게 만들었다(클릭 문제 회피). Steam 시작 실패여도 로비로 간다(로비에 재시도 버튼). (R64부터 시작 판 클릭.) **(R84)** 게임을 켤 때 시작 로고 영상(`LogoIntro`)이 그 위에 한 번 나오고, 저장된 이름이 없으면 시작 판이 같은 씬 안의 이름 설정 화면(`NameScreen`)으로 간다. (R85) 시작 판 옆 "이름 바꾸기"는 같은 화면을 바꾸기 모드로 열고 다시 타이틀로 돌아온다(`NameChange`, 로비 오른쪽 위 내 이름도 같음). Lobby로는 장면 전환(`SceneTransition`, 씬이 바뀌어도 살아 있는 패널) 뒤에서 `LoadSceneAsync`로 넘어가고, 로비 무대가 생기면 내 나이트 자리에서 열린다 → [UI §15](UI.md#15-시작-로고이름-설정-화면장면-전환-r84-2026-10-08).
 
 **Lobby** — 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. Play하면 `LobbyBootstrap`이 `LobbyStage`(하늘·흰 바닥·금색 원, 파티 라인업. 프리미티브와 팀 재질 복사본으로 만들어 새 에셋이 없다)와 `NetworkHudView`를 만든다. **로비는 메뉴라 캐릭터가 움직이지 않는다**(`MovementGate` = 항상 false). 예전 `Arena` 체스판 프리팹은 로비에서 더 이상 쓰지 않는다. HUD는 [UI](UI.md).
 
