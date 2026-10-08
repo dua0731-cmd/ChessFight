@@ -182,15 +182,18 @@ namespace ChessFight.RagdollLab
         // thin hot cores far above white (light 3-6, little paint) that the bloom spreads into a coloured glow.
         // Point lights are kept low (1-2): a bright light on a white floor blooms the whole picture.
 
-        // ---- Queen (R86, after the reference's stylized explosion; 승규 님 "바꿔줘": the gold chess pieces and the
-        // embers are gone): while she charges, a ball of fire gathers over her head, boiling and growing, thin lines of
-        // light are sucked into it, and cracks begin to glow in the floor under her; at the last moment the ball drops
-        // into her (the reference's falling fireball). The blast: a white-hot flash; a fireball of lumpy puffs that
-        // bursts up and out and within a few tenths of a second cools to charcoal smoke with fire glowing in its
-        // creases and hot edges, billows up and is eaten away; a ring of dust rolling out over the floor to her outer
-        // radius, with the two thin gold rings that show 1.5 m and 3 m; the cracks run out, glow, cool to scorch lines
-        // on a darkened floor and fade; sparks shoot up in arcs, embers drift. The stop, the shake and the red/cyan
-        // edges stay. Her rings on the floor while she charges are the skill's telegraph (SkillMarks), not these.
+        // ---- Queen (R86, after the reference's stylized explosion; R88, 승규 님 "체스 같은 스킬이라는 느낌이 안 나 —
+        // 체스들이 모이면서 터지는 듯한 느낌": chess pieces gather and burst with it): while she charges, gold chess
+        // pieces in cartoon bands pop up round her and swirl in, spinning like tops, closer and faster, heating up as they
+        // come, into a ball of fire that gathers over her head, boiling and growing, with lines of light sucked in, while
+        // cracks begin to glow in the floor under her; at the last moment the ball drops into her (the reference's
+        // falling fireball). The blast: a white-hot flash; the chess pieces burst back out of it the same way round, hot,
+        // tumbling, bouncing over the floor, cooling to gold and burning away; a fireball of lumpy puffs that bursts up
+        // and out and within a few tenths of a second cools to charcoal smoke with fire glowing in its creases and hot
+        // edges, billows up and is eaten away; a ring of dust rolling out over the floor to her outer radius, with the
+        // two thin gold rings that show 1.5 m and 3 m; the cracks run out, glow, cool to scorch lines on a darkened
+        // floor and fade; sparks shoot up in arcs, embers drift. The stop, the shake and the red/cyan edges stay. Her
+        // rings on the floor while she charges are the skill's telegraph (SkillMarks), not these.
 
         static readonly Color FireGlow = new Color(1f, 0.55f, 0.12f);
 
@@ -234,13 +237,15 @@ namespace ChessFight.RagdollLab
                     s.bright = (0.3f + 0.5f * k) * (1f - Smooth01((k - 0.8f) / 0.2f));
                 },
             });
+            GatherChess(q, floor, windup, Heart);
             // Lines of light sucked in from all round, arriving as she lets go: crisp lines (as particles they were
-            // specks), hot gold ones and deeper orange ones that show on a white floor.
+            // specks), hot gold ones and deeper orange ones that show on a white floor. Fewer since the chess pieces
+            // carry the swirl (R88).
             float due = 0f;
             anims.Add(new Ongoing((age, dt) =>
             {
                 if (!QueenCharging(q) || age > windup - 0.04f) return false;
-                for (due += dt * 45f; due >= 1f; due -= 1f)
+                for (due += dt * 25f; due >= 1f; due -= 1f)
                 {
                     var dir = Random.onUnitSphere;
                     dir.y *= 0.6f;
@@ -252,6 +257,105 @@ namespace ChessFight.RagdollLab
             }));
             if (queenCracks.TryGetValue(q, out var old)) old.life = 0f;
             queenCracks[q] = QueenCracks(floor, windup);
+        }
+
+        /// <summary>
+        /// The queen's chess pieces gathering (R88): sixteen of the six kinds pop up round her (a quick overshoot) and
+        /// swirl in, standing and spinning like tops, closer and faster (R81's "회전하면서"), up into <paramref name="heart"/>,
+        /// shrinking and heating up as they come (fire glowing in their creases, a hot edge), each gone in a spark as it
+        /// arrives; a short gold trail behind each shows the swirl.
+        /// </summary>
+        void GatherChess(RagdollPawn q, Vector3 floor, float windup, Func<Vector3> heart)
+        {
+            const int count = 16;
+            float way = Random.value < 0.5f ? -1f : 1f;
+            Vector3 middle = floor;
+            for (int i = 0; i < count; i++)
+            {
+                int kind = i % chessMeshes.Length;
+                float a0 = i * Mathf.PI * 2f / count + Random.Range(-0.12f, 0.12f);
+                float r0 = Random.Range(1.9f, 2.6f), h0 = Random.Range(0.2f, 1.1f);
+                float arrive = windup * Random.Range(0.8f, 0.95f), size = ChessKing * ChessHeights[kind];
+                float yaw0 = Random.Range(0f, 360f), spin = Random.Range(700f, 1000f) * way;
+                bool sparked = false;
+                var piece = Add(new Puff(root, "Queen gathering chess piece", chessMeshes[kind], matChess)
+                {
+                    life = arrive,
+                    lump = 0f,
+                    flow = 2f,
+                    animate = (p, t) =>
+                    {
+                        float k = t, age = p.Age;
+                        if (q != null) middle = Flat(q.Hips.position) + Vector3.up * floor.y;
+                        Vector3 center = Vector3.Lerp(middle + Vector3.up * h0, heart(), k * k);
+                        float a = a0 + way * 1.1f * Mathf.PI * 2f * Mathf.Pow(k, 1.4f), r = r0 * (1f - k * k);
+                        p.at = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
+                        p.rotation = Quaternion.Euler(0f, yaw0 + spin * (age + age * age * 2f), 0f) * Quaternion.Euler(8f * Mathf.Sin(age * 20f), 0f, 0f);
+                        float pop = age < 0.08f ? 1f + 0.3f * Mathf.Sin(age / 0.08f * Mathf.PI) : 1f;
+                        p.scale = Vector3.one * size * Mathf.Clamp01(age / 0.04f) * pop * Mathf.Lerp(1f, 0.55f, k * k);
+                        p.heat = Keys(k, 0.45f, 0f, 1f, 0.75f);
+                        p.rim = Hdr(FireGlow, 1.4f * k * k);
+                        if (k > 0.96f && !sparked)
+                        {
+                            sparked = true;
+                            SparkBurst(heart(), 4, Gold, Vector3.up, 180f, 1f, 3f, 0.2f, 0.04f);
+                        }
+                    },
+                });
+                anims.Add(new Streak(root, matTrail, Hdr(Gold, 1.3f), 0.07f, 0.12f, () => piece.Alive ? piece.at : (Vector3?)null) { paint = 0.7f, delay = 0.03f });
+            }
+        }
+
+        /// <summary>
+        /// The queen's chess pieces bursting back out of the blast (R88, the swirl the same way round as R81's): hot at
+        /// first, tumbling, falling and bouncing over the floor, cooling to gold, burning away at the end.
+        /// </summary>
+        void BurstChess(Vector3 pop, float floorY)
+        {
+            const int count = 26;
+            float way = Random.value < 0.5f ? -1f : 1f;
+            for (int i = 0; i < count; i++)
+            {
+                int kind = i % chessMeshes.Length;
+                float a = i * Mathf.PI * 2f / count + Random.Range(-0.12f, 0.12f);
+                var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                var around = new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a)) * way;
+                // Kept within about 3 m (faster ones flew into the camera, R81).
+                Vector3 pos = pop + radial * 0.25f;
+                Vector3 vel = radial * Random.Range(2.5f, 4.5f) + around * Random.Range(1.5f, 3f) + Vector3.up * Random.Range(2.5f, 5f);
+                Quaternion rot = Random.rotation;
+                Vector3 tumble = Random.onUnitSphere * Random.Range(400f, 800f);
+                float size = ChessKing * ChessHeights[kind], last = 0f;
+                Add(new Puff(root, "Queen burst chess piece", chessMeshes[kind], matChess)
+                {
+                    life = Random.Range(1.1f, 1.5f),
+                    lump = 0f,
+                    flow = 2f,
+                    animate = (p, t) =>
+                    {
+                        float dt = p.Age - last;
+                        last = p.Age;
+                        vel += Physics.gravity * dt;
+                        pos += vel * dt;
+                        float rest = floorY + size * 0.5f;
+                        if (pos.y < rest && vel.y < 0f)
+                        {
+                            pos.y = rest;
+                            vel.y = -vel.y * 0.42f;
+                            vel.x *= 0.65f;
+                            vel.z *= 0.65f;
+                            tumble *= 0.55f;
+                        }
+                        rot = Quaternion.Euler(tumble * dt) * rot;
+                        p.at = pos;
+                        p.rotation = rot;
+                        p.scale = Vector3.one * size * Mathf.Lerp(1.3f, 1f, Mathf.Clamp01(p.Age / 0.1f));
+                        p.heat = Keys(p.Age, 0.05f, 0.8f, 0.4f, 0f);
+                        p.rim = Hdr(FireGlow, 1.5f * Mathf.Clamp01(1f - p.Age / 0.5f));
+                        p.dissolve = Keys(t, 0.72f, 0f, 1f, 1f);
+                    },
+                });
+            }
         }
 
         /// <summary>The queen's cracks: creeping out dimly while she charges (fading if the charge is called off), then,
@@ -321,6 +425,8 @@ namespace ChessFight.RagdollLab
                     p.dissolve = Keys(a, 0.06f, 0f, 0.16f, 1f);
                 },
             });
+
+            BurstChess(pop, c.y);
 
             // The fireball: lumpy puffs bursting up and out, burning, cooling to charcoal smoke with fire in its creases
             // and hot edges, billowing up and out, eaten away from the edges in.

@@ -22,6 +22,11 @@ namespace ChessFight.RagdollLab
         Material matFire, matDust, matWind;
         /// <summary>A round sphere for the puffs (an icosphere: the lumps stay smooth, the UV sphere showed facets).</summary>
         Mesh meshPuff;
+        /// <summary>The six chess pieces (R81's Staunton shapes, PawnRushSkillFx.Chess.cs) in cartoon gold with an ink
+        /// edge, for the queen (R88, 승규 님: "체스들이 모이면서 터지는 듯한 느낌"); the king this tall (m).</summary>
+        Mesh[] chessMeshes;
+        Material matChess;
+        const float ChessKing = 0.26f;
         Material matCrack, matScorch, matSwoosh, matFlare;
         /// <summary>The rook's cartoon lightning and speed lines: a white-hot middle, orange, an ink edge (Skill Swoosh
         /// with its bands from the middle). Light alone was lost on the white floor.</summary>
@@ -74,6 +79,17 @@ namespace ChessFight.RagdollLab
             matWind.SetFloat("_Scale", 1.9f);
 
             meshPuff = Icosphere(3);
+            chessMeshes = ChessPieces();
+            // Gold in hard bands with a brown ink edge; it heats up with the fire's colours (copied from matFire).
+            matChess = Mat(toonShader);
+            matChess.CopyPropertiesFromMaterial(matFire);
+            matChess.SetColor("_Lit", new Color(1f, 0.9f, 0.55f));
+            matChess.SetColor("_Mid", new Color(0.96f, 0.68f, 0.22f));
+            matChess.SetColor("_Shade", new Color(0.62f, 0.36f, 0.1f));
+            matChess.SetVector("_Bands", new Vector4(0.4f, 0.7f, 0.04f, 0f));
+            matChess.SetFloat("_Ink", 0.3f);
+            matChess.SetColor("_InkColor", new Color(0.28f, 0.13f, 0.04f));
+            matChess.SetFloat("_Scale", 3f);
             texCracks = DrawCracks(512, 7);
             texScorch = Tex(128, 128, TextureWrapMode.Clamp, (u, v) =>
             {
@@ -120,6 +136,7 @@ namespace ChessFight.RagdollLab
         void DestroyToon()
         {
             foreach (var t in new Object[] { texCracks, texScorch, meshPuff }) if (t != null) Destroy(t);
+            if (chessMeshes != null) foreach (var m in chessMeshes) if (m != null) Destroy(m);
         }
 
         /// <summary>A sphere 1 across made by splitting an icosahedron's faces <paramref name="splits"/> times (3 = 642
@@ -193,6 +210,8 @@ namespace ChessFight.RagdollLab
             public readonly Vector3 seed = new Vector3(Random.Range(0f, 90f), Random.Range(0f, 90f), Random.Range(0f, 90f));
             public Action<Puff, float> animate;
             public float Age => age;
+            /// <summary>Not over yet (a trail follows it while this holds).</summary>
+            public bool Alive => age < life;
 
             public Puff(Transform parent, string name, Mesh mesh, Material material)
             {
