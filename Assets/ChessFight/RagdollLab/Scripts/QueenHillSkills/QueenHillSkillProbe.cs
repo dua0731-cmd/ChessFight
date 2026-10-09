@@ -362,6 +362,10 @@ namespace ChessFight.RagdollLab
                 (PieceKind.Knight, false, new Vector3(7.6f, 0f, 3f), Vector3.left),
                 (PieceKind.Rook, false, new Vector3(2.4f, 0f, 5.2f), Vector3.left));
             var q = P1;
+            // Knockdown counts, not LastSkillHit, which keeps the hit of an earlier run.
+            string[] where = { "바로 앞", "줄 가운데", "돌벽 너머", "줄 옆(2.2 m)" };
+            var downs = new int[where.Length];
+            for (int i = 0; i < where.Length; i++) downs[i] = bed.Dummy(i).Knockdowns;
             yield return Wait(0.3f);
             Tap(q, "F (조준)");
             // The aim swings onto the line, as a player sweeps the mouse.
@@ -376,7 +380,8 @@ namespace ChessFight.RagdollLab
             Click(q, "좌클릭");
             yield return Wait(1.6f);
             Add($"퀸 검격 길이 {q.SlashReach:0.0} m, 벽에 막힘 {(q.SlashBlocked ? "예" : "아니요")}");
-            for (int i = 0; i < 4; i++) Add($"{Who(bed.Dummy(i))}: {StateOf(bed.Dummy(i))} — {bed.Dummy(i).LastSkillHit}");
+            for (int i = 0; i < where.Length; i++)
+                Add($"{Who(bed.Dummy(i))} ({where[i]}): {(bed.Dummy(i).Knockdowns > downs[i] ? "맞아 넘어짐" : "안 맞음")}");
             yield return Wait(0.8f);
         }
 
