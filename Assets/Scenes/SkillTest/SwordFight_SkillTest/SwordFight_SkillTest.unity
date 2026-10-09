@@ -586,6 +586,7 @@ MonoBehaviour:
     rookPushNear: 2.6
     rookPushFar: 1.6
     rookLift: 3.2
+    rookLiftCarry: 0.65
     bishopCooldown: 8
     bishopRange: 8
     bishopRadius: 1
