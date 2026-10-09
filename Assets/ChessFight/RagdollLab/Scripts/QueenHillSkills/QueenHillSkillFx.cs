@@ -598,29 +598,35 @@ namespace ChessFight.RagdollLab
             Release(SquaresAlong(floorFrom, dir, S != null ? S.queenLength : 6f, square), dir, queen, square);
             if (swords.TryGetValue(queen, out var sword)) sword.flashUntil = clock + 2f * F;
 
-            // The swing: a gold crescent round her front, right to left, 160 degrees.
+            // The swing (R93): a gold crescent along the path of the sword's tip, from low behind on the right up across
+            // her front to high on the left (the sword passes straight ahead right now, so half of it is drawn at once).
             var swing = new Strip(this, Queen) { core = Color.white, coreShare = 0.28f, inkShare = 0.2f };
             Vector3 right = Vector3.Cross(Vector3.up, dir);
             var f = Run(16f * F, (fx, d) =>
             {
                 float a = fx.age / F;
                 var pts = new List<Vector3>();
-                Vector3 c = queen != null ? queen.Hips.position + Vector3.up * 0.35f : e.at;
-                for (int i = 0; i <= 18; i++)
+                Vector3 c = queen != null ? queen.bodies[(int)BodyId.ArmR].position : e.at;
+                float floor = (queen != null ? queen.FeetPoint.y : floorFrom.y) + 0.08f;
+                for (int i = 0; i <= 20; i++)
                 {
-                    float ang = Mathf.Lerp(80f, -80f, i / 18f) * Mathf.Deg2Rad;
-                    pts.Add(c + (dir * Mathf.Cos(ang) + right * Mathf.Sin(ang)) * 1.3f + Vector3.up * (0.25f * Mathf.Sin(ang)));
+                    Vector3 l = RagdollPawn.SwingDir(Mathf.Lerp(RagdollPawn.SwingLow + 25f, RagdollPawn.SwingHigh, i / 20f));
+                    Vector3 p = c + (right * l.x + Vector3.up * l.y + dir * l.z) * 1.05f;
+                    p.y = Mathf.Max(p.y, floor);
+                    pts.Add(p);
                 }
-                swing.Build(pts, i => 0.3f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(i / 18f * 0.92f + 0.04f)), Eye);
-                swing.head = Mathf.Clamp01(a / 6f);
-                swing.tail = a < 6f ? 0f : Mathf.Clamp01((a - 6f) / 8f);
+                swing.Build(pts, i => 0.3f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(i / 20f * 0.92f + 0.04f)), Eye);
+                swing.head = Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(a / 3f));
+                swing.tail = a < 5f ? 0f : Mathf.Clamp01((a - 5f) / 9f);
                 swing.taper = 0.6f;
                 swing.Apply();
                 return true;
             });
             f.strips.Add(swing);
 
-            // The flying crescent: upright, bowed forward along the line, with a flat twin on the floor and a gold trail.
+            // The flying crescent: leaning left with the swing, bowed forward along the line, with a flat twin on the
+            // floor and a gold trail.
+            Vector3 lean = (Vector3.up * 0.9f - right * 0.42f).normalized;
             var blade = new Strip(this, Queen) { core = Color.white, coreShare = 0.3f, inkShare = 0.2f };
             var low = new Strip(this, Queen) { core = Color.white, coreShare = 0.3f, inkShare = 0.22f };
             var trail = new Strip(this, Queen) { core = Queen.light, coreShare = 0.25f, inkShare = 0.25f };
@@ -630,12 +636,13 @@ namespace ChessFight.RagdollLab
                 float k = Mathf.Clamp01(fx.age / Mathf.Max(F, travel));
                 float eaten = fx.age > travel ? (fx.age - travel) / (10f * F) : 0f;
                 Vector3 front = e.at + dir * (0.6f + (reach - 0.6f) * k);
+                front.y = Mathf.Max(front.y, floorFrom.y + 0.72f);   // its lower tip over the floor, not through it
                 var up = new List<Vector3>();
                 var flat = new List<Vector3>();
                 for (int i = 0; i <= 14; i++)
                 {
                     float ang = Mathf.Lerp(-62f, 62f, i / 14f) * Mathf.Deg2Rad;
-                    up.Add(front + dir * (0.45f * (Mathf.Cos(ang) - 1f)) + Vector3.up * (0.75f * Mathf.Sin(ang)));
+                    up.Add(front + dir * (0.45f * (Mathf.Cos(ang) - 1f)) + lean * (0.75f * Mathf.Sin(ang)));
                     flat.Add(new Vector3(front.x, floorFrom.y + 0.05f, front.z) + dir * (0.5f * (Mathf.Cos(ang) - 1f)) + right * (0.7f * Mathf.Sin(ang)));
                 }
                 blade.Build(up, i => 0.26f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(i / 14f * 0.9f + 0.05f)), Eye);
@@ -667,7 +674,8 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The swap: a trapdoor opens under each, a fat two-colour ribbon arch (the rook's orange half from its end,
-        /// the ally's colour from the other) grows between them, both fly it; puffs in their own colours as they go.</summary>
+        /// the ally's own colour from the other, blending over the middle) grows between them, both fly it; puffs in
+        /// their own colours as they go.</summary>
         void RookSwap(QueenHillFxEvent e)
         {
             var rook = e.by;
@@ -683,9 +691,11 @@ namespace ChessFight.RagdollLab
             PuffBurst(b + Vector3.up * 0.15f, allyColors, 2, 0.5f, 0.2f);
             flyKind[rook] = "castle";
             flyKind[ally] = "castle";
-            // The arch: the flight's own arc (both fly the same one), drawn from both ends.
-            var half1 = new Strip(this, Rook) { core = Rook.light };
-            var half2 = new Strip(this, allyColors) { core = allyColors.light };
+            // The arch: the flight's own arc (both fly the same one), drawn from both ends, each half in its piece's own
+            // colour (R93: the rook orange, the queen gold, the bishop violet, the knight sky, the king emerald; a pawn
+            // its side's), the two running into each other in a gradient over the middle.
+            var half1 = new Strip(this, Rook) { core = Rook.light, blendColors = allyColors, blendCore = allyColors.light, blendFrom = 0.45f, blendTo = 1f, blendAmount = 0.5f };
+            var half2 = new Strip(this, allyColors) { core = allyColors.light, blendColors = Rook, blendCore = Rook.light, blendFrom = 0.45f, blendTo = 1f, blendAmount = 0.5f };
             float total = Mathf.Max(0.2f, e.size);
             float top = Mathf.Max(a.y, b.y) + (S != null ? S.rookArc : 1.4f) + 0.35f;
             var f = Run(total + 8f * F, (fx, d) =>
@@ -999,8 +1009,24 @@ namespace ChessFight.RagdollLab
             f.tiles.Add(t);
             Drops(at, Vector3.down + FlatDir(e.dir, Vector3.forward), Knight, 3, 5f);
             AddSquash(e.target, SquashKind.Flatten, S != null ? S.knightFlatten : 0.7f);
-            HitStop(4);
-            Shake(e.by, e.target, 0.12f, 8);
+            if (e.count == 1)
+            {
+                // Stamped on the head (R93): a horseshoe stamp pops where its feet came down and cream dust bursts out.
+                var stamp = new Tile(this, "Head stamp");
+                var g = Run(14f * F, (fx, d) =>
+                {
+                    float a = fx.age / F;
+                    stamp.Floor(at + Vector3.up * 0.05f, FlatDir(e.dir, Vector3.forward), Vector2.one * (1.1f * Pop(fx.age, 1.2f)));
+                    Horseshoe(stamp, Knight, 1f);
+                    stamp.fade = a < 6f ? 1f : 1f - (a - 6f) / 8f;
+                    stamp.Apply();
+                    return true;
+                });
+                g.tiles.Add(stamp);
+                PuffBurst(at, Dust, 4, 0.6f, 0.16f, 0.4f);
+            }
+            HitStop(e.count == 1 ? 5 : 4);
+            Shake(e.by, e.target, e.count == 1 ? 0.16f : 0.12f, 8);
         }
 
         // ---------------------------------------------------------------- pawn: squeeze through (B)
@@ -1100,7 +1126,11 @@ namespace ChessFight.RagdollLab
                     && pawn.State == PawnState.Active)
                     CastleLand(pawn);
                 wasFlying[pawn] = fly;
-                if (pawn.WardLeft > 0f) WardRing(pawn);
+                if (pawn.WardLeft > 0f)
+                {
+                    WardRing(pawn);
+                    WardOutline(pawn);
+                }
                 if (s == null)
                 {
                     if (pawn.PawnRushSkills != null && pawn.Piece == PieceKind.Rook) WatchChargingRook(pawn);
@@ -1216,6 +1246,54 @@ namespace ChessFight.RagdollLab
             });
         }
 
+        /// <summary>A guarded piece's body outlined (R93, 승규 님: "근접 호위를 받은 아군들은 몸에 윤곽선"): the body's own
+        /// skin drawn twice more on the same bones, pushed out along its normals and inside out — an emerald line with
+        /// an ink edge outside it. They live under the effects (not on the piece), so a hit flash leaves them be. Like
+        /// the guard's ring, it blinks three times in the last 0.6 s.</summary>
+        void WardOutline(RagdollPawn pawn)
+        {
+            if (pawn == null || pawn.skin == null || pawn.skin.sharedMesh == null) return;
+            Keep(pawn, "ward outline", () =>
+            {
+                var fx = new Fx();
+                var hulls = new List<SkinnedMeshRenderer> { Hull(pawn.skin, matWardInk, "Guard outline ink"), Hull(pawn.skin, matWardLine, "Guard outline") };
+                fx.end = () =>
+                {
+                    foreach (var h in hulls) if (h != null) Destroy(h.gameObject);
+                };
+                fx.step = (x, d) =>
+                {
+                    if (!Held(x) || pawn == null) return false;
+                    float left = pawn.WardLeft;
+                    bool on = left > 0.6f || Mathf.Sin((0.6f - left) / 0.6f * 3f * Mathf.PI * 2f) > -0.3f;
+                    // Into the outline in three frames (it pops on with the guard).
+                    float grow = Mathf.Clamp01(x.age / (3f * F));
+                    foreach (var h in hulls)
+                        if (h != null) h.enabled = on && grow > 0.34f;
+                    return true;
+                };
+                return fx;
+            });
+        }
+
+        SkinnedMeshRenderer Hull(SkinnedMeshRenderer skin, Material material, string name)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(root, false);
+            var r = go.AddComponent<SkinnedMeshRenderer>();
+            r.sharedMesh = skin.sharedMesh;
+            r.bones = skin.bones;
+            r.rootBone = skin.rootBone;
+            r.quality = skin.quality;
+            r.updateWhenOffscreen = true;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            var mats = new Material[Mathf.Max(1, skin.sharedMesh.subMeshCount)];
+            for (int i = 0; i < mats.Length; i++) mats[i] = material;
+            r.sharedMaterials = mats;
+            return r;
+        }
+
         // ----- queen
 
         void Sword(RagdollPawn queen)
@@ -1237,8 +1315,7 @@ namespace ChessFight.RagdollLab
                     h.shown = Held(fx) ? Mathf.Min(1f, h.shown + d / (6f * F)) : h.shown - d / (6f * F);
                     if (h.shown <= 0f || queen == null) return false;
                     float k = h.shown < 1f ? Pop(h.shown * 6f * F, 1.1f) : 1f;
-                    PlaceInHand(queen, h.b.t, 0.0f, k);
-                    PlaceInHand(queen, h.a.t, 0.47f, k);
+                    PlaceBlade(queen, h.a.t, h.b.t, k);
                     // The windup's sheen: a white oval sliding from the hilt to the tip.
                     var s = queen.QueenHillSkills;
                     bool winding = queen.SkillStage == SkillStage.Windup && queen.QhAimLocked && s != null;
@@ -1257,6 +1334,33 @@ namespace ChessFight.RagdollLab
                 };
             }
             else Keep(queen, "sword", () => new Fx());
+        }
+
+        const float BladeReach = 0.9f;   // hand → tip of the sword at full size
+
+        /// <summary>The sword in the queen's hand (R93): pointing where her swing says (RagdollPawn.QueenBladeDir), its
+        /// flat across the swing so the edge leads, and never into the floor (it used to carry on from the forearm and
+        /// went through the floor with the arm hanging or cutting low): a tip that would go under the floor is lifted
+        /// round the hand until it clears it.</summary>
+        static void PlaceBlade(RagdollPawn queen, Transform blade, Transform guard, float scale)
+        {
+            Vector3 hand = queen.bodies[(int)BodyId.HandR].position;
+            Vector3 dir = queen.QueenBladeDir;
+            float reach = BladeReach * scale, floor = queen.FeetPoint.y + 0.09f;
+            if (reach > 1e-3f && hand.y + dir.y * reach < floor)
+            {
+                float up = Mathf.Clamp((floor - hand.y) / reach, -1f, 1f);
+                dir = FlatDir(dir, queen.Facing) * Mathf.Sqrt(Mathf.Max(0f, 1f - up * up)) + Vector3.up * up;
+            }
+            // The swing's plane: ahead and up-left (its normal is the blade's thickness).
+            Vector3 f = FlatDir(queen.Facing, Vector3.forward), r = Vector3.Cross(Vector3.up, f);
+            Vector3 normal = Vector3.Cross(f, (Vector3.up * 0.82f - r * 0.57f).normalized);
+            if (Mathf.Abs(Vector3.Dot(normal.normalized, dir)) > 0.95f) normal = r;
+            Quaternion rot = Quaternion.LookRotation(Vector3.ProjectOnPlane(normal, dir).normalized, dir);
+            guard.SetPositionAndRotation(hand, rot);
+            guard.localScale = Vector3.one * scale;
+            blade.SetPositionAndRotation(hand + dir * (0.47f * scale - 0.04f), rot);
+            blade.localScale = Vector3.one * scale;
         }
 
         /// <summary>The queen's line of squares: faint while she aims, filling through the windup, full in its last six frames.</summary>
@@ -1492,7 +1596,10 @@ namespace ChessFight.RagdollLab
                 {
                     if (!Held(x) || knight == null) return false;
                     bool valid = committed || knight.QhAimValid;
-                    Vector3 at = (committed ? knight.LeapSpot : knight.QhAimPoint) + Vector3.up * 0.016f;
+                    // R93: an enemy the aim has caught: the square under it and the horseshoe turning over its head.
+                    var target = committed ? knight.LeapTarget : knight.QhAimTarget;
+                    bool onHead = target != null && target.State == PawnState.Active;
+                    Vector3 at = (onHead ? target.FeetPoint : committed ? knight.LeapSpot : knight.QhAimPoint) + Vector3.up * 0.016f;
                     var sq = x.tiles[0];
                     var shoe = x.tiles[1];
                     sq.Floor(at, knight.Facing, Vector2.one * s.square);
@@ -1500,8 +1607,15 @@ namespace ChessFight.RagdollLab
                     sq.fade = valid ? 1f : 0f;
                     sq.Apply();
                     float r = committed && knight.QhFlying ? Mathf.Lerp(0.7f, 0.5f, knight.QhFlyProgress) : committed ? 0.5f : 0.7f;
+                    if (onHead) r *= 0.75f;
                     float spin = clock * 90f;
-                    shoe.Floor(at + Vector3.up * 0.004f, Quaternion.Euler(0f, spin, 0f) * Vector3.forward, Vector2.one * (2f * r));
+                    Vector3 shoeAt = at + Vector3.up * 0.004f;
+                    if (onHead)
+                    {
+                        Vector3 head = target.bodies[(int)BodyId.Head].position;
+                        shoeAt = new Vector3(head.x, head.y + 0.24f + 0.03f * Mathf.Sin(clock * 9f), head.z);
+                    }
+                    shoe.Floor(shoeAt, Quaternion.Euler(0f, spin, 0f) * Vector3.forward, Vector2.one * (2f * r));
                     Horseshoe(shoe, valid ? Knight : Grey, 1f);
                     shoe.fade = 1f;
                     shoe.Apply();

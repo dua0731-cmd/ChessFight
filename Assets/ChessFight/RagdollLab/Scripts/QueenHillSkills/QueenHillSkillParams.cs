@@ -36,8 +36,10 @@ namespace ChessFight.RagdollLab
         public float kingCooldown = 9f;
 
         [Header("퀸 — 팔방 검격 (A: 조준한 한 방향으로 긴 검격)")]
-        [Tooltip("좌클릭 뒤 베기까지 준비 동작 (초)")]
+        [Tooltip("좌클릭 뒤 베기까지 준비 동작 (초): 칼을 오른쪽 아래 뒤로 내려 잡음 (R93: 아래에서 위로 올려 벰)")]
         public float queenWindup = 0.45f;
+        [Tooltip("칼이 아래에서 위로 올라가는 시간 (초). 검기는 그 가운데쯤(칼이 앞을 지날 때) 나간다")]
+        public float queenSwing = 0.12f;
         [Tooltip("검격 길이 (m) = 체스판 4칸")]
         public float queenLength = 6f;
         [Tooltip("검격 폭 (m)")]
@@ -94,13 +96,15 @@ namespace ChessFight.RagdollLab
         public float knightRange = 6f;
         [Tooltip("지금 바닥보다 이만큼 높은 곳까지만 뛰어오른다 (m). 탑 한 층 0.9 m")]
         public float knightMaxRise = 1.05f;
-        [Tooltip("호의 높이: 높은 쪽 바닥보다 이만큼 위 (m)")]
-        public float knightArc = 1.0f;
+        [Tooltip("호의 높이: 높은 쪽 바닥(머리 위로 갈 때는 그 머리)보다 이만큼 위 (m). R93: 1.0 → 1.6 (조금 더 높게)")]
+        public float knightArc = 1.6f;
         [Tooltip("도약 호를 이만큼 무거운 중력으로 날아 짧고 굵게 (1 = 진짜 중력)")]
         public float knightGravity = 1.6f;
         public float knightWindup = 0.12f;
         [Tooltip("착지 원 반경 (m)")]
         public float knightRadius = 1.3f;
+        [Tooltip("조준점에서 이 거리(땅 위, m) 안에 적이 있으면 그 적의 머리 위로 자동 조준해 머리를 밟는다 (R93)")]
+        public float knightSnap = 1.3f;
         [Tooltip("납작해지는 시간 (초)")]
         public float knightFlatten = 0.7f;
         [Tooltip("납작해진 적이 착지점 바깥으로 미끄러지는 속도 (m/s)와 시간 (초): 높은 곳 가장자리면 떨어진다")]

@@ -233,6 +233,8 @@ namespace ChessFight.RagdollLab
 
         Shader shTile, shInk, shLine, shBand, shToon;
         Material matTile, matInk, matLine, matBand, matToon;
+        // The king's guard drawn round a body (R93): an emerald outline with an ink edge outside it.
+        Material matWardLine, matWardInk;
         readonly Dictionary<Color, Material> flatMats = new Dictionary<Color, Material>();
 
         static Shader Find(string name, string resource)
@@ -263,6 +265,12 @@ namespace ChessFight.RagdollLab
             matToon.SetFloat("_RimPower", 2.4f);
             matToon.SetColor("_Fire", Color.black);
             matToon.SetFloat("_Heat", 0f);
+            matWardLine = new Material(shLine) { hideFlags = HideFlags.HideAndDontSave };
+            matWardLine.SetColor("_InkColor", King.main);
+            matWardLine.SetFloat("_Width", 0.024f);
+            matWardInk = new Material(shLine) { hideFlags = HideFlags.HideAndDontSave };
+            matWardInk.SetColor("_InkColor", King.ink);
+            matWardInk.SetFloat("_Width", 0.038f);
             meshQuad = Quad();
             meshPuff = Icosphere(3);
             meshBall = Icosphere(1);
@@ -271,7 +279,7 @@ namespace ChessFight.RagdollLab
 
         void DestroyKit()
         {
-            foreach (var m in new Object[] { matTile, matInk, matLine, matBand, matToon, meshQuad, meshPuff, meshTorus, meshBall })
+            foreach (var m in new Object[] { matTile, matInk, matLine, matBand, matToon, matWardLine, matWardInk, meshQuad, meshPuff, meshTorus, meshBall })
                 if (m != null) Destroy(m);
             foreach (var m in roundBoxes.Values) if (m != null) Destroy(m);
             foreach (var m in flatMats.Values) if (m != null) Destroy(m);
@@ -425,6 +433,12 @@ namespace ChessFight.RagdollLab
             public Palette colors;
             public float head = 1f, tail, taper, fade = 1f, coreShare = 0.3f, inkShare = 0.22f, opacity = 1f;
             public Color core = Color.white;
+            /// <summary>Toward its head the ribbon can turn into a second set of colours (R93: the castling arch's two
+            /// halves meet in a gradient): from <see cref="blendFrom"/> to <see cref="blendTo"/> along it (0 tail .. 1
+            /// head), up to <see cref="blendAmount"/> of <see cref="blendColors"/> (0 = none).</summary>
+            public Palette blendColors;
+            public Color blendCore = Color.white;
+            public float blendFrom = 0.5f, blendTo = 1f, blendAmount;
 
             public Strip(QueenHillSkillFx fx, Palette colors)
             {
@@ -487,6 +501,11 @@ namespace ChessFight.RagdollLab
                 b.SetFloat("_Taper", taper);
                 b.SetFloat("_Opacity", opacity);
                 b.SetFloat("_Fade", Mathf.Clamp01(fade));
+                bool blend = blendAmount > 0f;
+                b.SetColor("_Core2", blend ? blendCore : core);
+                b.SetColor("_Mid2", blend ? blendColors.main : colors.main);
+                b.SetColor("_Ink2", blend ? blendColors.ink : colors.ink);
+                b.SetVector("_Blend", new Vector4(blendFrom, Mathf.Max(blendFrom + 1e-3f, blendTo), blend ? Mathf.Clamp01(blendAmount) : 0f, 0f));
                 r.SetPropertyBlock(b);
                 r.enabled = fade > 0.001f && head > tail;
             }

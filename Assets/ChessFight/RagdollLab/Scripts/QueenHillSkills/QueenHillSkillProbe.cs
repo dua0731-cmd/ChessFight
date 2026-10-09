@@ -18,8 +18,10 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class QueenHillSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "all" };
+        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "all" };
         public static string Status { get; private set; } = "idle";
+        /// <summary>A run is under way (the bed's test helpers stay out of it unless the run asks for them).</summary>
+        public static bool Busy => Status.StartsWith("running");
         /// <summary>The current run has set its pieces down and settled them (the film records from here).</summary>
         public static bool Staged { get; private set; }
         /// <summary>The last key pressed, as a player would read it (the film shows it); the serial counts presses.</summary>
@@ -53,6 +55,9 @@ namespace ChessFight.RagdollLab
         }
 
         public static string Report() => Status + "\n" + string.Join("\n", Results);
+
+        /// <summary>The pieces the next "rook-up" run swaps with, one swap each (the film shows their colours).</summary>
+        public static PieceKind[] rookPartners = { PieceKind.Bishop, PieceKind.Queen, PieceKind.Knight };
 
         /// <summary>Stop the clock (time scale 0, frames still drawn) this many game seconds after the next run is
         /// staged, to look at a moment from several cameras; set Time.timeScale back to 1 to go on.</summary>
@@ -157,6 +162,10 @@ namespace ChessFight.RagdollLab
                     "knight" => Knight(),
                     "pawn" => PawnDodge(),
                     "pawn-squeeze" => PawnSqueeze(),
+                    "king-help" => KingHelper(),
+                    "rook-up" => RookUp(rookPartners),
+                    // "rook-up-bishop" and the like: one swap with that piece.
+                    var r when r.StartsWith("rook-up-") && Enum.TryParse(r.Substring(8), true, out PieceKind one) => RookUp(new[] { one }),
                     _ => null,
                 };
                 if (run == null) { Add($"모르는 시험: {n}"); continue; }
@@ -164,6 +173,8 @@ namespace ChessFight.RagdollLab
                 yield return run;
                 Staged = false;
                 StopAll();
+                QueenHillSkillBed.HelpersForProbe = false;
+                QueenHillSkillBed.NextRookPartner = null;
             }
             bed.skills.testCooldown = testCooldown;
             Status = "done " + name;
@@ -270,6 +281,50 @@ namespace ChessFight.RagdollLab
             int n = 0;
             foreach (var p in RagdollPawn.All) if (p != null && f(p)) n++;
             return n;
+        }
+
+        /// <summary>R93: the king alone presses F; the bed's helper stands three of its pawns ahead and sets the other
+        /// side's queen on them, who slashes once the guard is on.</summary>
+        IEnumerator KingHelper()
+        {
+            yield return Stage(PieceKind.King, new Vector3(1.2f, 0f, -2.5f), Vector3.right);
+            var king = P1;
+            QueenHillSkillBed.HelpersForProbe = true;
+            yield return Wait(0.3f);
+            Tap(king, "F");
+            yield return Wait(0.5f);
+            Add($"도우미: 아군 폰 {Count(p => p != king && p.Team == king.Team && king.Team != Teams.None && (p.FeetPoint - king.FeetPoint).magnitude < 2.5f)}명, 호위 {Count(p => p.WardLeft > 0f)}명, 킹 자신 호위 {(king.WardLeft > 0f ? "있음 (틀림)" : "없음")}");
+            yield return Wait(1.7f);
+            for (int i = 0; i < 4; i++) Add($"{Who(bed.Dummy(i))}: {StateOf(bed.Dummy(i))} — {bed.Dummy(i).LastSkillHit}");
+            Add($"{Who(king)}: {StateOf(king)} — {king.LastSkillHit}");
+            yield return Wait(0.6f);
+        }
+
+        /// <summary>R93: the rook on the floor east of the hill presses F; the bed's helper puts an ally of the given piece
+        /// up on the tier ahead; the rook asks, it says yes, they swap (the arch half orange, half the ally's colour).</summary>
+        IEnumerator RookUp(PieceKind[] partners)
+        {
+            float east = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);
+            foreach (var kind in partners)
+            {
+                Vector3 rookAt = new Vector3(east + 2.4f, 0f, 6.0f);
+                yield return Stage(PieceKind.Rook, rookAt, Vector3.left);
+                var rook = P1;
+                QueenHillSkillBed.HelpersForProbe = true;
+                QueenHillSkillBed.NextRookPartner = kind;
+                yield return Wait(0.25f);
+                AimFlat(rook, Vector3.left);
+                Tap(rook, "F (조준)");
+                yield return Wait(0.45f);
+                var ally = bed.Dummy(0);
+                Add($"도우미: {Who(ally)} 높이 {ally.FeetPoint.y:0.0} m, 룩 조준 {Who(rook.QhAimTarget)} {(rook.QhAimValid ? "바꿀 수 있음" : "안 됨 " + rook.QhAimWhy)}");
+                Click(rook, "좌클릭 (교대 요청)");
+                yield return Wait(0.45f);
+                Say("상대 수락 (방장 판정)");
+                yield return Wait(1.6f);
+                Add($"룩 → 높이 {rook.FeetPoint.y:0.0} m, {ChessPieces.Name(kind)} → 높이 {ally.FeetPoint.y:0.0} m, 둘 다 {StateOf(rook)}/{StateOf(ally)}");
+                yield return Wait(0.4f);
+            }
         }
 
         // ---------------------------------------------------------------- 2.A queen: one long slash, the wall stops it
@@ -387,11 +442,17 @@ namespace ChessFight.RagdollLab
             }
             AimAt(knight, spot);
             yield return Wait(0.2f);
-            Add($"1층 조준: {(knight.QhAimValid ? "됨" : "안 됨 — " + knight.QhAimWhy)} ({knight.QhAimPoint.y:0.0} m)");
+            Add($"1층 조준: {(knight.QhAimValid ? "됨" : "안 됨 — " + knight.QhAimWhy)} ({knight.QhAimPoint.y:0.0} m), "
+                + $"적 머리 자동 조준 {(knight.QhAimTarget == enemy ? "됨" : "안 됨")} (조준점과 적 {Vector3.Distance(spot, enemyAt):0.0} m)");
             Click(knight, "좌클릭 (도약)");
             int downs = enemy.Knockdowns;
-            yield return Wait(2.1f);
-            Add($"나이트 착지 높이 {knight.FeetPoint.y:0.0} m, 적 폰: {enemy.LastSkillHit}, 넘어짐 {enemy.Knockdowns - downs}번, 지금 높이 {enemy.FeetPoint.y:0.0} m");
+            float apex = knight.Hips.position.y;
+            for (float t = 0f; t < 2.1f; t += Time.deltaTime)
+            {
+                apex = Mathf.Max(apex, knight.Hips.position.y);
+                yield return null;
+            }
+            Add($"나이트 골반 최고 {apex - QueenHillLayout.TierTop(0):+0.0;-0.0} m (1층 바닥 기준), 착지 높이 {knight.FeetPoint.y:0.0} m, 적 폰: {enemy.LastSkillHit}, 넘어짐 {enemy.Knockdowns - downs}번, 지금 높이 {enemy.FeetPoint.y:0.0} m");
             yield return Wait(0.9f);
         }
 

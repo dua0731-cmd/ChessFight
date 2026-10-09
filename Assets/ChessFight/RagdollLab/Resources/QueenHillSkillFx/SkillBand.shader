@@ -2,6 +2,8 @@
 // castling arch, the bishop's shot trail, the knight's wind trail, the pawn's speed wedges. A strip with u along it
 // (0 tail .. 1 head) and v across it; only the part between _Tail and _Head shows. Bands from the middle out: a light
 // core, the colour, an ink edge on both sides. _Taper narrows it toward the tail (a speed line, a trail).
+// _Blend (R93) turns it toward a second set of colours along u: from _Blend.x to _Blend.y, up to _Blend.z of _Core2,
+// _Mid2, _Ink2 (the castling arch's halves meet in a gradient); z = 0 (the default) leaves it one colour.
 // Premultiplied: _Opacity 1 covers like paint. Built-in render pipeline.
 Shader "ChessFight/Skill Band"
 {
@@ -17,6 +19,10 @@ Shader "ChessFight/Skill Band"
         _Taper ("Narrows toward the tail", Range(0, 1)) = 0
         _Opacity ("Covers", Range(0, 1)) = 1
         _Fade ("Fade", Range(0, 1)) = 1
+        _Core2 ("Core 2", Color) = (1, 1, 1, 1)
+        _Mid2 ("Colour 2", Color) = (1, 0.55, 0.12, 1)
+        _Ink2 ("Ink 2", Color) = (0.23, 0.09, 0.02, 1)
+        _Blend ("Toward colour 2: from u, to u, amount", Vector) = (0, 1, 0, 0)
     }
     SubShader
     {
@@ -33,7 +39,7 @@ Shader "ChessFight/Skill Band"
             #pragma target 3.0
             #include "UnityCG.cginc"
 
-            float4 _Core, _Mid, _InkColor;
+            float4 _Core, _Mid, _InkColor, _Core2, _Mid2, _Ink2, _Blend;
             float _CoreShare, _InkShare, _Head, _Tail, _Taper, _Opacity, _Fade;
 
             struct appdata
@@ -71,8 +77,13 @@ Shader "ChessFight/Skill Band"
                 cover *= lerp(1, ends, 1 - _Taper * 0.5);
                 if (cover <= 0.001) discard;
                 float t = across / max(width, 1e-3);                  // 0 middle .. 1 its own edge
-                float3 col = lerp(_Core.rgb, _Mid.rgb, smoothstep(_CoreShare - 0.05, _CoreShare + 0.05, t));
-                col = lerp(col, _InkColor.rgb, smoothstep(1 - _InkShare - 0.04, 1 - _InkShare + 0.04, t));
+                // Toward the second colours along it (a straight ramp, so two halves meeting at 50% join smoothly).
+                float k = _Blend.z * saturate((i.uv.x - _Blend.x) / max(_Blend.y - _Blend.x, 1e-3));
+                float3 core = lerp(_Core.rgb, _Core2.rgb, k);
+                float3 mid = lerp(_Mid.rgb, _Mid2.rgb, k);
+                float3 ink = lerp(_InkColor.rgb, _Ink2.rgb, k);
+                float3 col = lerp(core, mid, smoothstep(_CoreShare - 0.05, _CoreShare + 0.05, t));
+                col = lerp(col, ink, smoothstep(1 - _InkShare - 0.04, 1 - _InkShare + 0.04, t));
                 float a = cover * _Opacity * _Fade;
                 return float4(col * a, a);
             }

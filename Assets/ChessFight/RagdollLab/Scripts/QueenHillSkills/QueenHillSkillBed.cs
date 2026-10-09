@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using ChessFight.Gameplay;
 using ChessFight.Network;
@@ -41,6 +42,15 @@ namespace ChessFight.RagdollLab
         public KeyCode previousPieceKey = KeyCode.Z;
         public KeyCode nextPieceKey = KeyCode.X;
 
+        [Header("시험 도우미 (R93)")]
+        [Tooltip("킹이 F를 누르면 아군 폰 3명이 앞에 서고 5 m 앞의 적이 검격으로 공격 · 룩이 F를 누르면 올라갈 자리(한 층 위)에 아군 1명(기물 무작위)")]
+        public bool helpers = true;
+
+        /// <summary>The probe's runs leave the helpers alone unless a run asks for them.</summary>
+        public static bool HelpersForProbe;
+        /// <summary>The next rook helper's ally piece (a film picks the colours it shows); random otherwise.</summary>
+        public static PieceKind? NextRookPartner;
+
         /// <summary>The six pieces of a Queen of the Hill team, the pawn first.</summary>
         public static readonly PieceKind[] Pieces = { PieceKind.Pawn, PieceKind.King, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight };
 
@@ -75,11 +85,13 @@ namespace ChessFight.RagdollLab
             log.Clear();
             PawnRushOnly.Clear();
             RagdollPawn.SkillLog += OnSkill;
+            RagdollPawn.QueenHillFx += OnSkillMoment;
         }
 
         void OnDestroy()
         {
             RagdollPawn.SkillLog -= OnSkill;
+            RagdollPawn.QueenHillFx -= OnSkillMoment;
             if (built != null) Destroy(built.gameObject);
         }
 
@@ -111,6 +123,15 @@ namespace ChessFight.RagdollLab
             }
 
             var p1 = P1;
+            if (p1 != null)
+            {
+                // The rook starts its aim: an ally to swap with goes up where the rook would climb to.
+                if (p1.Piece == PieceKind.Rook && lastPiece == PieceKind.Rook && lastStage == SkillStage.None
+                    && p1.SkillStage == SkillStage.Windup && HelpersOn) RookHelper(p1);
+                lastStage = p1.SkillStage;
+                lastPiece = p1.Piece;
+            }
+            DriveBot();
             if (p1 == null || game.SuppressInput || game.NetworkControlled) return;
             if (Input.GetKeyDown(previousPieceKey)) StepPiece(p1, -1);
             if (Input.GetKeyDown(nextPieceKey)) StepPiece(p1, 1);
@@ -229,6 +250,168 @@ namespace ChessFight.RagdollLab
             Report("더미를 3초 동안 넘어뜨림");
         }
 
+        // ---------------------------------------------------------------- test helpers (R93, 승규 님: "원활한 테스트를 위해")
+
+        static readonly PieceKind[] RookPartners = { PieceKind.Queen, PieceKind.Bishop, PieceKind.Knight, PieceKind.King, PieceKind.Pawn };
+        PieceKind lastPartner = PieceKind.Rook, lastPiece;
+        SkillStage lastStage;
+
+        // The other side's piece a helper sets on P1: the aim it holds, F once, the left click once, for a while.
+        RagdollPawn bot;
+        Vector3 botAim;
+        bool botTap, botClick;
+        float botLeft;
+
+        bool HelpersOn => helpers && game != null && !game.AutoTest && (HelpersForProbe || !QueenHillSkillProbe.Busy);
+
+        void OnSkillMoment(QueenHillFxEvent e)
+        {
+            if (e.kind == QueenHillFxKind.KingWindup && e.by != null && e.by == P1 && HelpersOn) KingHelper(e.by);
+        }
+
+        /// <summary>The king's guard to try: three of P1's pawns stand just ahead of it (inside the guard's circle), the
+        /// other side's queen 5.2 m off, and once the guard is on she slashes down the line through them and the king
+        /// (the allies stagger, the king falls: B).</summary>
+        void KingHelper(RagdollPawn king)
+        {
+            Vector3 ahead = Flat(king.Facing, Vector3.forward), side = Vector3.Cross(Vector3.up, ahead);
+            Vector3 c = king.FeetPoint;
+            Vector3[] spots = { c + ahead * 1.25f, c + ahead * 0.95f + side * 0.7f, c + ahead * 0.95f - side * 0.7f };
+            for (int i = 0; i < spots.Length; i++)
+            {
+                var d = Dummy(i);
+                if (d == null) continue;
+                Ready(d, PieceKind.Pawn, king, true);
+                Place(d, FloorAt(spots[i], c.y), ahead);
+            }
+            var enemy = Dummy(3);
+            if (enemy != null)
+            {
+                Ready(enemy, PieceKind.Queen, king, false);
+                Place(enemy, FloorAt(c + ahead * 5.2f, c.y), -ahead);
+                StartCoroutine(SlashAt(enemy, king));
+            }
+            Report("킹 시험: 아군 폰 3명을 앞에, 적 퀸을 5 m 앞에 세움 → 호위가 켜지면 검격");
+        }
+
+        IEnumerator SlashAt(RagdollPawn enemy, RagdollPawn king)
+        {
+            // The guard goes on at the end of the king's windup; the queen aims a moment later and slashes.
+            yield return new WaitForSeconds(skills.kingWindup + 0.12f);
+            if (enemy == null || king == null) yield break;
+            Vector3 to = king.Hips.position - enemy.Hips.position;
+            to.y = 0f;
+            bot = enemy;
+            botAim = (to.normalized + Vector3.down * 0.25f).normalized;
+            botLeft = 2.5f;
+            botTap = true;
+            yield return new WaitForSeconds(0.12f);
+            if (bot == enemy) botClick = true;
+        }
+
+        void DriveBot()
+        {
+            if (bot == null) return;
+            botLeft -= Time.deltaTime;
+            if (botLeft <= 0f || bot.State == PawnState.Ragdoll)
+            {
+                bot.SetInput(new PawnInput());
+                bot = null;
+                return;
+            }
+            bot.SetInput(new PawnInput { aim = botAim, shove = botClick });
+            bot.SetSkillInput(botTap);
+            botTap = botClick = false;
+        }
+
+        /// <summary>The rook's swap to try: one ally of a random piece (a new one each time, for its colour on the
+        /// arch) up where the rook would climb to: the nearest higher floor ahead (a tier of the hill), or the floor
+        /// ahead if there is none. It says yes by itself (a dummy).</summary>
+        void RookHelper(RagdollPawn rook)
+        {
+            var ally = Dummy(0);
+            if (ally == null) return;
+            PieceKind kind;
+            if (NextRookPartner.HasValue)
+            {
+                kind = NextRookPartner.Value;
+                NextRookPartner = null;
+            }
+            else
+            {
+                do kind = RookPartners[Random.Range(0, RookPartners.Length)];
+                while (kind == lastPartner);
+            }
+            lastPartner = kind;
+            Vector3 ahead = Flat(rook.Facing, Vector3.forward);
+            Vector3 spot = ClimbSpot(rook, ahead);
+            Ready(ally, kind, rook, true);
+            Place(ally, spot, -ahead);
+            Report($"룩 시험: 아군 {ChessPieces.Name(kind)}를 올라갈 자리(높이 {spot.y:0.0} m)에 세움 — 좌클릭으로 교대 요청");
+        }
+
+        /// <summary>The nearest higher floor ahead of the rook (at least 0.3 m up: a tier), 3–5.4 m off within 24° of
+        /// its aim, with room to stand on; else the floor 4 m ahead.</summary>
+        Vector3 ClimbSpot(RagdollPawn rook, Vector3 ahead)
+        {
+            Vector3 me = rook.FeetPoint;
+            Vector3 best = FloorAt(me + ahead * 4f, me.y);
+            float bestRise = float.MaxValue, bestScore = float.MaxValue;
+            foreach (float dist in new[] { 3f, 3.6f, 4.2f, 4.8f, 5.4f })
+                foreach (float angle in new[] { 0f, -12f, 12f, -24f, 24f })
+                {
+                    Vector3 p = me + Quaternion.Euler(0f, angle, 0f) * ahead * dist;
+                    if (!Physics.Raycast(p + Vector3.up * 8f, Vector3.down, out var hit, 16f, ~0, QueryTriggerInteraction.Ignore)
+                        || hit.normal.y < 0.8f || RagdollPawn.ColliderOwner.ContainsKey(hit.collider)) continue;
+                    float rise = hit.point.y - me.y;
+                    if (rise < 0.3f) continue;
+                    if (Blocked(hit.point)) continue;   // room to stand: nothing solid round the body there
+                    // The lowest tier up first (the swap's arc stays clear), then near the aim and about 4 m off.
+                    float score = Mathf.Abs(angle) + Mathf.Abs(dist - 4f) * 4f;
+                    if (rise > bestRise + 0.2f || rise > bestRise - 0.2f && score >= bestScore) continue;
+                    bestRise = rise;
+                    bestScore = score;
+                    best = hit.point;
+                }
+            return best;
+        }
+
+        static bool Blocked(Vector3 feet)
+        {
+            foreach (var c in Physics.OverlapCapsule(feet + Vector3.up * 0.35f, feet + Vector3.up * 0.75f, 0.28f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (RagdollPawn.ColliderOwner.ContainsKey(c)) continue;
+                var rb = c.attachedRigidbody;
+                if (rb != null && !rb.isKinematic) continue;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>The floor under a spot (not a piece), at or below a little over <paramref name="near"/>.</summary>
+        static Vector3 FloorAt(Vector3 p, float near)
+        {
+            foreach (var hit in Physics.RaycastAll(new Vector3(p.x, Mathf.Max(p.y, near) + 1.2f, p.z), Vector3.down, 8f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.normal.y < 0.8f || RagdollPawn.ColliderOwner.ContainsKey(hit.collider)) continue;
+                var rb = hit.collider.attachedRigidbody;
+                if (rb != null && !rb.isKinematic) continue;
+                if (hit.point.y > p.y + 0.1f || hit.point.y > near + 1.1f) continue;
+                return hit.point;
+            }
+            return new Vector3(p.x, near, p.z);
+        }
+
+        /// <summary>A dummy set to a piece and a side, its skill and keys cleared.</summary>
+        void Ready(RagdollPawn d, PieceKind kind, RagdollPawn of, bool ally)
+        {
+            if (d.Piece != kind) d.SetPiece(kind);
+            SetSide(d, of, ally);
+            d.ResetSkill();
+            d.SetInput(new PawnInput());
+            if (d == bot) bot = null;
+        }
+
         static Vector3 Flat(Vector3 v, Vector3 fallback)
         {
             v.y = 0f;
@@ -332,11 +515,11 @@ namespace ChessFight.RagdollLab
         static string HowTo(PieceKind kind) => kind switch
         {
             PieceKind.Pawn => "F = 몸을 낮추고 짧게 가속 (방향키 방향, 없으면 카메라 방향, 2.6 m)\n다리를 앞뒤로 벌려 골반이 내려감 · 무적 없음 · 벽 통과 없음\n지나가며 부딪힌 적은 옆으로 비킴",
-            PieceKind.King => "F = 홀을 들었다 내리꽂음 (0.3초) → 반경 2.5 m 아군에게 2초 호위\n호위: 넘어지지 않고 밀림도 1/4 · 킹 자신은 빠짐 (B)",
-            PieceKind.Queen => "F = 조준: 검격 줄(체스판 4칸)이 마우스 방향을 따라감 (걸을 수 있음)\n좌클릭 = 칼을 들고 0.45초 준비 → 6 m 검기 · 회복 0.6초 · 우클릭/F = 취소\n벽에 막힘 · 줄 위 적은 넘어짐 (A)",
-            PieceKind.Rook => "F = 조준: 마우스 방향 6 m 안의 아군을 고름 (폰도 됨, B)\n좌클릭 = 교대 요청 → 상대가 수락하면(더미는 0.4초 뒤 자동) 둘이 날아 자리 바꿈\n길이나 설 자리가 막히면 안 됨 · 수락 없으면 취소(쿨 없음)",
+            PieceKind.King => "F = 홀을 들었다 내리꽂음 (0.3초) → 반경 2.5 m 아군에게 2초 호위\n호위: 넘어지지 않고 밀림도 1/4 · 몸에 초록 윤곽선 · 킹 자신은 빠짐 (B)\n시험 도우미: F를 누르면 아군 폰 3명이 앞에 서고 5 m 앞 적 퀸이 검격",
+            PieceKind.Queen => "F = 조준: 검격 줄(체스판 4칸)이 마우스 방향을 따라감 (걸을 수 있음)\n좌클릭 = 칼을 오른쪽 아래 뒤로 내려 0.45초 준비 → 아래에서 위로 올려 베며 6 m 검기\n회복 0.6초 · 우클릭/F = 취소 · 벽에 막힘 · 줄 위 적은 넘어짐 (A)",
+            PieceKind.Rook => "F = 조준: 마우스 방향 6 m 안의 아군을 고름 (폰도 됨, B)\n좌클릭 = 교대 요청 → 상대가 수락하면(더미는 0.4초 뒤 자동) 둘이 날아 자리 바꿈\n길이나 설 자리가 막히면 안 됨 · 수락 없으면 취소(쿨 없음)\n시험 도우미: F를 누르면 앞쪽 한 층 위에 아군 1명(기물 무작위 → 리본 색 확인)",
             PieceKind.Bishop => "F = 1.3 m 떠오름 (3초, 더 오를 수 없음) · 마우스로 조준\n좌클릭 = 견제탄 → 맞은 곳에 X자 파동 (가운데 + 대각선 두 줄)\n맞은 적은 밀려 넘어짐: 벽·탑 가장자리면 떨어짐 (B)",
-            PieceKind.Knight => "F = 착지점 조준 (6 m, 지금 바닥보다 한 층 0.9 m까지만, 그보다 높으면 회색)\n좌클릭 = 도약 → 착지 원 1.3 m 안 적은 0.7초 납작 + 바깥으로 밀림\n높은 곳 가장자리에서 납작해지면 떨어짐 (B)",
+            PieceKind.Knight => "F = 착지점 조준 (6 m, 지금 바닥보다 한 층 0.9 m까지만, 그보다 높으면 회색)\n조준점 1.3 m 안에 적이 있으면 그 머리 위로 자동 조준 (말굽 표식이 머리 위)\n좌클릭 = 높게 도약 → 머리를 밟거나 착지 원 1.3 m 안 적은 0.7초 납작 + 밀림\n높은 곳 가장자리에서 납작해지면 떨어짐 (B)",
             _ => "",
         };
 
@@ -384,7 +567,7 @@ namespace ChessFight.RagdollLab
             const float width = 380f;
             panelRect = new Rect(8f, 44f, width, Mathf.Min(Screen.height - 180f, 680f));
             GUILayout.BeginArea(panelRect, box);
-            GUILayout.Label("퀸 오브 더 힐 스킬 시험 (R89)", header);
+            GUILayout.Label("퀸 오브 더 힐 스킬 시험 (R89 · R93)", header);
             GUILayout.Label($"기물 바꾸기: 버튼 또는 {previousPieceKey} ◀ ▶ {nextPieceKey}   ·   스킬: <b>{skillKey}</b>", small);
             GUILayout.BeginHorizontal();
             foreach (var kind in Pieces)
@@ -412,6 +595,7 @@ namespace ChessFight.RagdollLab
                 if (GUILayout.Button(fx.shake ? "흔들기 켜짐" : "흔들기 꺼짐", fx.shake ? selected : button)) fx.shake = !fx.shake;
                 GUILayout.EndHorizontal();
             }
+            if (GUILayout.Button(helpers ? "시험 도우미 켜짐 (킹·룩: F를 누르면 더미가 섬)" : "시험 도우미 꺼짐", helpers ? selected : button)) helpers = !helpers;
 
             GUILayout.Space(6f);
             GUILayout.Label("<b>더미</b> (회색 = 적, 흰색 = 내 팀)", text);
