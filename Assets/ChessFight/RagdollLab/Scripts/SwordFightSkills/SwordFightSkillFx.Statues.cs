@@ -18,8 +18,8 @@ namespace ChessFight.RagdollLab
     public partial class SwordFightSkillFx
     {
         static readonly PieceKind[] StatueKinds = { PieceKind.Pawn, PieceKind.Rook, PieceKind.Knight, PieceKind.Bishop };
-        /// <summary>The statues stand this big next to the menu figures (about a metre tall: twice a fighter).</summary>
-        const float StatueScale = 0.55f;
+        /// <summary>The statues stand this big next to the menu figures (about 1.2 m tall: a head over a fighter).</summary>
+        const float StatueScale = 0.62f;
 
         static readonly Kit.Palette Wood = new Kit.Palette("#F1E2CB", "#FFF8EE", "#D3B994", "#4A3220");
         static readonly Kit.Palette WoodDark = new Kit.Palette("#C9A27E", "#E3C6A6", "#A27C5A", "#4A3220");

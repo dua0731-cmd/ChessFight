@@ -805,7 +805,7 @@ namespace ChessFight.RagdollLab
         // ---------------------------------------------------------------- bishop
 
         /// <summary>A hand's size (about 0.29 m long at 1): waiting beside the bishop, and holding an ankle.</summary>
-        const float HandReady = 1.15f, HandHold = 1.5f;
+        const float HandReady = 1.5f, HandHold = 1.9f;
         /// <summary>Frames the hands take to get to the point.</summary>
         const float HandFly = 9f;
 
@@ -868,12 +868,12 @@ namespace ChessFight.RagdollLab
         static Vector3 HandStart(SwordFightSkills s, float side)
         {
             Vector3 perp = Vector3.Cross(Vector3.up, s.Dir).normalized;
-            return s.Pawn.bodies[(int)BodyId.Chest].position + perp * (side * 0.42f) - Vector3.up * 0.06f + s.Dir * 0.08f;
+            return s.Pawn.bodies[(int)BodyId.Chest].position + perp * (side * 0.5f) + Vector3.up * 0.1f + s.Dir * 0.05f;
         }
 
         /// <summary>Where a hand holds an ankle: the foot on its side of the piece (as the bishop sees it), the wrist just
-        /// outside the piece's base on the diagonal it comes in on (<paramref name="inDir"/>: toward the line), a little
-        /// into the floor.</summary>
+        /// outside the piece's base on that side (so it shows from all round), a little into the floor, the palm turned in
+        /// to the ankle; it comes in on the diagonal <paramref name="inDir"/> (toward the bishop's line).</summary>
         static Vector3 AnkleGrip(RagdollPawn pawn, Vector3 dir, float side, out Vector3 inDir)
         {
             Vector3 perp = Vector3.Cross(Vector3.up, dir).normalized;
@@ -882,7 +882,7 @@ namespace ChessFight.RagdollLab
             bool aLeft = Vector3.Dot(a - b, perp) < 0f;
             Vector3 foot = side < 0f ? (aLeft ? a : b) : (aLeft ? b : a);
             Vector3 floor = Kit.FloorUnder(foot, 0.4f);
-            return new Vector3(foot.x, floor.y - 0.05f, foot.z) - inDir * 0.17f;
+            return new Vector3(foot.x, floor.y - 0.05f, foot.z) + perp * (side * 0.2f);
         }
 
         /// <summary>Where a hand lands on an empty point: flat on the floor beside it.</summary>
@@ -931,7 +931,7 @@ namespace ChessFight.RagdollLab
         static float FlyEase(float a) => a >= HandFly ? 1f : 1f - (1f - a / HandFly) * (1f - a / HandFly);
 
         /// <summary>A violet arm stretching behind a hand (the bishop's sleeve: light inside, inked).</summary>
-        Kit.Strip ArmStrip() => new Kit.Strip(kit, Kit.Bishop) { core = Kit.Bishop.light, coreShare = 0.36f, inkShare = 0.24f };
+        Kit.Strip ArmStrip() => new Kit.Strip(kit, Kit.Bishop) { core = Color.Lerp(Kit.Bishop.main, Kit.Bishop.light, 0.4f), coreShare = 0.34f, inkShare = 0.24f };
 
         /// <summary>The hands go (the pinned pieces' own effects fly them: <see cref="PinMarks"/>); here the push off beside
         /// the bishop, and when they get there the hit on the point: a ring bursting along the floor, an impact ring, a
@@ -1002,7 +1002,7 @@ namespace ChessFight.RagdollLab
                     for (int j = 0; j <= 12; j++) pts.Add(Bezier(starts[i], c1[i], c2[i], ends[i], t * j / 12f));
                     if (t > 0.05f)
                     {
-                        arms[i].Build(pts, j => Mathf.Lerp(0.06f, 0.1f, j / 12f), kit.Eye);
+                        arms[i].Build(pts, j => Mathf.Lerp(0.09f, 0.16f, j / 12f), kit.Eye);
                         arms[i].Apply();
                     }
                     else arms[i].Hide();
@@ -1120,7 +1120,7 @@ namespace ChessFight.RagdollLab
                         if (by != null) ReachControls(starts[i], ends[i], dir, ins[i], side, out c1, out c2);
                         Vector3 at = Bezier(starts[i], c1, c2, ends[i], t);
                         Quaternion fly = FlyRotation(BezierTangent(starts[i], c1, c2, ends[i], Mathf.Clamp(t, 0.02f, 0.98f)), dir);
-                        Quaternion grip = Quaternion.LookRotation(ins[i], Vector3.up);
+                        Quaternion grip = Quaternion.LookRotation(Vector3.Cross(Vector3.up, dir).normalized * -side, Vector3.up);
                         Quaternion rot = by == null ? grip : Quaternion.Slerp(fly, grip, Mathf.Clamp01((a - (HandFly - 3f)) / 3f));
                         // Open as it flies, shut on the ankle in three frames, a small squeeze while held, open to let go.
                         float curl = early ? -15f
@@ -1137,7 +1137,7 @@ namespace ChessFight.RagdollLab
                         {
                             pts.Clear();
                             for (int j = 0; j <= 12; j++) pts.Add(Bezier(starts[i], c1, c2, ends[i], t * j / 12f));
-                            arm.Build(pts, j => Mathf.Lerp(0.06f, 0.1f, j / 12f), kit.Eye);
+                            arm.Build(pts, j => Mathf.Lerp(0.09f, 0.16f, j / 12f), kit.Eye);
                             arm.tail = gone;
                             arm.Apply();
                         }
@@ -1149,7 +1149,7 @@ namespace ChessFight.RagdollLab
                     if (!grabbed && r < 0f && a >= HandFly)
                     {
                         grabbed = true;
-                        for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] + ins[i] * 0.17f + Vector3.up * 0.08f, Kit.Bishop, 3, 0.3f, 0.09f, 0.3f, 0.15f);
+                        for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] - Vector3.Cross(Vector3.up, dir).normalized * ((i == 0 ? -1f : 1f) * 0.2f) + Vector3.up * 0.1f, Kit.Bishop, 3, 0.3f, 0.09f, 0.3f, 0.15f);
                         kit.ImpactRing(centre + Vector3.up * 0.12f, Vector3.up, Kit.Bishop, 0.15f, 0.55f, false);
                         kit.FlashBody(pawn, Kit.Bishop.main);
                         kit.AddSquash(pawn, Kit.SquashKind.Bump);

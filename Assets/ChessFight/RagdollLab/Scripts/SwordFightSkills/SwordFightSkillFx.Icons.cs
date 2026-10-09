@@ -19,8 +19,9 @@ namespace ChessFight.RagdollLab
         /// <summary>The mark's height in metres (the icon itself; its rim and ink go round it).</summary>
         const float MarkHeight = 0.3f;
         const float MarkLife = 1.2f;
-        /// <summary>The fields cover the icon's middle ± this many icon heights (room for its rim and ink).</summary>
-        const float IconHalf = 0.68f, IconSpread = 0.08f;
+        /// <summary>The fields cover the icon's middle ± <c>IconHalf</c> icon heights (room for its rim and ink), and say distances
+        /// up to ± <c>IconSpread</c> (more than the ink and the rim together, or the rim fills the whole square).</summary>
+        const float IconHalf = 0.68f, IconSpread = 0.12f;
         const int IconSize = 128;
 
         readonly Dictionary<PieceKind, Texture2D> iconTextures = new Dictionary<PieceKind, Texture2D>();

@@ -11,7 +11,7 @@ Shader "ChessFight/Skill Icon"
         _Lines ("Lines", Color) = (1, 0.95, 0.8, 1)
         _InkColor ("Ink", Color) = (0.1, 0.1, 0.2, 1)
         _Rim ("Rim", Color) = (1, 0.96, 0.86, 1)
-        _Spread ("Field spread (icon heights)", Float) = 0.08
+        _Spread ("Field spread (icon heights)", Float) = 0.12
         _InkWidth ("Ink (icon heights)", Float) = 0.045
         _RimWidth ("Rim (icon heights)", Float) = 0.03
         _LineGrow ("Lines widened (icon heights)", Float) = 0
