@@ -92,7 +92,7 @@ namespace ChessFight.RagdollLab
         float castleAskAge, castleWait;
         // Bishop
         float hoverHipY, hoverLeft, hoverTotal, hoverLinger;
-        Vector3 hoverMove;
+        Vector3 hoverMove, hoverVel;
         Vector3 shellFrom, shellTo, shotYaw = Vector3.forward;
         float shellT, shellTime;
         bool shellOut, shellLanded;
@@ -963,6 +963,7 @@ namespace ChessFight.RagdollLab
                         hoverHipY = FeetPoint.y + s.bishopHover + standHeight;
                         hoverLeft = hoverTotal = s.bishopHoverTime;
                         hoverLinger = 0f;
+                        hoverVel = Vector3.zero;
                         shellOut = shellLanded = false;
                         shotsLeft = Mathf.Max(1, s.bishopShots);
                         BishopAimQh(s);
@@ -1041,10 +1042,13 @@ namespace ChessFight.RagdollLab
             float bob = stageTime > s.bishopRise ? Mathf.Sin((stageTime - s.bishopRise) * Mathf.PI * 3f) * 0.04f : 0f;
             float wantUp = Mathf.Clamp((hoverHipY + bob - y) * 7f, -2.5f, 4.5f);
             Vector3 drift = stageTime > s.bishopRise ? Vector3.ClampMagnitude(Flat(hoverMove), 1f) * s.bishopDrift : Vector3.zero;
-            // Rising: stop dead as before; then ease toward the drift (still air: it carries on a moment when let go).
-            float ease = stageTime > s.bishopRise ? Mathf.Clamp01(dt * 3f / Mathf.Max(0.05f, s.bishopDriftEase)) : Mathf.Clamp01(10f * dt);
+            // The carpet's speed eases toward the drift (still air: it carries on a moment when let go); the body is
+            // held to it every step (a nudge lost to the joints' damping and crept at a quarter of it). Rising: stopped.
+            hoverVel = stageTime > s.bishopRise
+                ? Vector3.Lerp(hoverVel, drift, Mathf.Clamp01(dt * 3f / Mathf.Max(0.05f, s.bishopDriftEase)))
+                : Vector3.zero;
             Vector3 flat = new Vector3(v.x, 0f, v.z);
-            Vector3 toward = (drift - flat) * ease;
+            Vector3 toward = (hoverVel - flat) * (stageTime > s.bishopRise ? 1f : Mathf.Clamp01(10f * dt));
             AddVelocity(new Vector3(toward.x, wantUp - v.y, toward.z) - Physics.gravity * dt);
             carryVel = Vector3.zero;
             // The standing anchor goes along with the hover (R105): left where it was, its spring pulled the
