@@ -31,6 +31,10 @@ namespace ChessFight.RagdollLab
         public Vector3 WeaponOffset => Alive ? Pawn.Hips.transform.InverseTransformPoint(sword.position) : Vector3.zero;
         public Quaternion WeaponRotation => Alive ? Quaternion.Inverse(Pawn.Hips.rotation) * sword.rotation : Quaternion.identity;
         public Vector3 Aim => aim;
+        /// <summary>The piece skill (the Sword Fight skill test scene only, R91); null in the match.</summary>
+        public SwordFightSkills Skills { get; set; }
+        /// <summary>A test dummy the skill test drives itself for a moment (a scripted cut): the match leaves its input alone.</summary>
+        public bool Scripted { get; set; }
         readonly Dictionary<SwordFightPawn, HitRecord> hits = new Dictionary<SwordFightPawn, HitRecord>();
         readonly Collider[] overlaps = new Collider[128];
         readonly Contact[] contacts = new Contact[24];
@@ -110,6 +114,7 @@ namespace ChessFight.RagdollLab
         public void SetInput(PawnInput raw)
         {
             if (!Authority) return;
+            if (Skills != null) raw = Skills.Filter(raw);
             // This mode reserves ability2 as an absolute control-style bit. Never forward it
             // to the shared pawn, and never encode a lossy toggle edge over the network.
             SetControlStyle(raw.ability2);
@@ -276,6 +281,8 @@ namespace ChessFight.RagdollLab
             { SoftContacts++; return; }
             if (hits.TryGetValue(victim, out var last) && (Time.time - last.Time < RepeatDelay || travel - last.Travel < 35f)) return;
             hits[victim] = new HitRecord { Time = Time.time, Travel = travel };
+            // A king in its guard (the skill test scene) takes the cut and answers it.
+            if (victim.Skills != null && victim.Skills.Parry(this, point)) { HitFlash = .1f; return; }
             Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
             Vector3 direction = Vector3.ProjectOnPlane(cut, Vector3.up).normalized * .65f + away.normalized * .35f;
             if (direction.sqrMagnitude < .01f) direction = Pawn.Facing;
@@ -287,6 +294,8 @@ namespace ChessFight.RagdollLab
 
         Quaternion? SwordPose(int part)
         {
+            if (Alive && Skills != null && Pawn.State == PawnState.Active && Skills.Blade is Vector3 skillBlade)
+                return part == (int)BodyId.ArmR ? Quaternion.FromToRotation(Vector3.right, Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(skillBlade)) : (Quaternion?)null;
             if (ClassicControls) return ClickSwordPose(part);
             if (!Alive || !Drawn || Pawn.State != PawnState.Active) return null;
             if (part == (int)BodyId.Chest)
@@ -306,6 +315,8 @@ namespace ChessFight.RagdollLab
             if (!Alive) return;
             if (!Authority)
                 sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
+            else if (Skills != null && Skills.Blade is Vector3 skillBlade)
+                sword.SetPositionAndRotation(Hand.position + skillBlade * Skills.Reach01, Quaternion.LookRotation(skillBlade));
             else if (ClassicControls)
                 PoseClickSword();
             else if (!Drawn)

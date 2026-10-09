@@ -43,6 +43,7 @@ namespace ChessFight.RagdollLab
 
         void DetectClickHit(Vector3 start, Vector3 end)
         {
+            if (!Attacking) return;   // stopped this step (a parried cut)
             int count = Physics.OverlapCapsuleNonAlloc(start, end, .15f, overlaps, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
@@ -51,6 +52,8 @@ namespace ChessFight.RagdollLab
                     target.Team == Pawn.Team || c.GetComponent<SwordBladeContact>() != null) continue;
                 var victim = target.GetComponent<SwordFightPawn>();
                 if (victim == null || !victim.Alive || victim.Protection > 0 || !hitThisSwing.Add(victim)) continue;
+                // A king in its guard (the skill test scene) takes the cut and answers it.
+                if (victim.Skills != null && victim.Skills.Parry(this, c.ClosestPoint(Hand.position))) { HitFlash = .1f; CancelClickSwing(); return; }
                 Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
                 Vector3 push = (swingDirection * .6f + away.normalized * .4f).normalized;
                 target.TakeHit(push * 3.4f + Vector3.up * 1.05f, .65f, 0, true);
