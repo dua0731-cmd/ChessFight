@@ -79,8 +79,12 @@ namespace ChessFight.RagdollLab
         [Tooltip("떠오르는 높이 (발이 바닥에서, m). 더 오를 수 없다")]
         public float bishopHover = 1.3f;
         public float bishopRise = 0.25f;
-        [Tooltip("떠 있는 시간 (초, 조준하는 동안만 줄어듦). 기획: 먼저 3초, 6초와 비교")]
+        [Tooltip("첫 발을 쏘기 전까지 떠 있는 시간 (초). 다 되면 쏘지 않고 내려옴(R105). 첫 발을 쏜 뒤에는 시간 제한 없이 다음 발을 기다림")]
         public float bishopHoverTime = 3f;
+        [Tooltip("떠 있는 동안 이동 키로 미끄러지는 속도 (m/s, R105: 양탄자 타듯 아주 천천히)")]
+        public float bishopDrift = 0.7f;
+        [Tooltip("그 속도까지 붙는/멈추는 데 걸리는 시간 (초): 클수록 둥실둥실")]
+        public float bishopDriftEase = 0.9f;
         [Tooltip("한 번 떠올라 쏠 수 있는 견제탄 수. R95: 2발 (첫 발이 떨어지면 다시 조준)")]
         public int bishopShots = 2;
         [Tooltip("조준 최대 거리 (땅 위, m)")]

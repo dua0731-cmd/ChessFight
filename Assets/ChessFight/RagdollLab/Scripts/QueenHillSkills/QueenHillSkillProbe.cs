@@ -18,7 +18,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class QueenHillSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "queen-high", "queen-low", "queen-slope-up", "queen-slope-down", "queen-slope30-up", "queen-slope30-down", "all" };
+        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "queen-high", "queen-low", "queen-slope-up", "queen-slope-down", "queen-slope30-up", "queen-slope30-down", "bishop-wait", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>A run is under way (the bed's test helpers stay out of it unless the run asks for them).</summary>
         public static bool Busy => Status.StartsWith("running");
@@ -159,6 +159,7 @@ namespace ChessFight.RagdollLab
                     "queen" => Queen(),
                     "rook" => Rook(),
                     "bishop" => Bishop(),
+                    "bishop-wait" => BishopWait(),
                     "knight" => Knight(),
                     "pawn" => PawnDodge(),
                     "pawn-squeeze" => PawnSqueeze(),
@@ -534,6 +535,66 @@ namespace ChessFight.RagdollLab
             Add($"2발: 1층 적 {(second.Knockdowns > down2 ? "맞아 넘어짐" : "안 맞음")}");
             yield return Wait(1.4f);
             Add($"비숍 착지: {(bishop.SkillStage == SkillStage.None ? "끝" : bishop.SkillDetail)}");
+        }
+
+        // R105 (승규 님): no shot in the hover's 3 s → called off, no throw; after the first shot it waits for the
+        // second however long; the move keys slide the hovering bishop slowly (a magic carpet).
+        IEnumerator BishopWait()
+        {
+            Vector3 enemyAt = new Vector3(-3.5f, 0f, 3.2f);
+            yield return Stage(PieceKind.Bishop, new Vector3(1.3f, 0f, 3.2f), Vector3.left,
+                (PieceKind.Pawn, false, enemyAt, Vector3.right));
+            var bishop = P1;
+            var enemy = bed.Dummy(0);
+            var s = bed.skills;
+            int throws = 0;
+            void Count(QueenHillFxEvent e) { if (e.by == bishop && e.kind == QueenHillFxKind.BishopThrow) throws++; }
+            RagdollPawn.QueenHillFx += Count;
+            try
+            {
+                Tap(bishop, "F (떠오름)");
+                float up = 0f;
+                for (; up < 0.5f; up += Time.deltaTime) { AimAt(bishop, enemy.FeetPoint); yield return null; }
+                Vector3 from = bishop.Hips.position;
+                Of(bishop).move = Vector3.forward;
+                Say("W (천천히 이동)");
+                float held = 0f, top = 0f;
+                for (; held < 1.6f; held += Time.deltaTime)
+                {
+                    AimAt(bishop, enemy.FeetPoint);
+                    var v = bishop.Hips.linearVelocity;
+                    top = Mathf.Max(top, new Vector2(v.x, v.z).magnitude);
+                    yield return null;
+                }
+                Vector3 moved = bishop.Hips.position - from;
+                Of(bishop).move = Vector3.zero;
+                Vector3 let = bishop.Hips.position;
+                yield return Wait(0.6f);
+                Vector3 slid = bishop.Hips.position - let;
+                float coast = new Vector2(slid.x, slid.z).magnitude;
+                Add($"떠서 이동 {held:0.0}초: {new Vector2(moved.x, moved.z).magnitude:0.00} m (가장 빠를 때 {top:0.00} m/s, 목표 {s.bishopDrift:0.0}), 놓은 뒤 {coast:0.00} m 더 미끄러짐, 높이 변화 {moved.y:+0.00;-0.00} m");
+                while (bishop.SkillStage == SkillStage.Windup && up + held + 0.6f < s.bishopHoverTime + 1.5f)
+                {
+                    AimAt(bishop, enemy.FeetPoint);
+                    up += Time.deltaTime;
+                    yield return null;
+                }
+                Add($"한 발도 안 쏘고 {s.bishopHoverTime:0.#}초: {(bishop.SkillStage == SkillStage.Windup ? "아직 떠 있음" : "취소되어 내려옴")}, 견제탄 {throws}발, 적 {StateOf(enemy)}");
+                float t = 0f;
+                while ((bishop.SkillStage != SkillStage.None || bishop.SkillCooldown > 0f) && t < 15f) { t += Time.deltaTime; yield return null; }
+                Tap(bishop, "F (다시 떠오름)");
+                yield return Wait(0.5f);
+                for (float a = 0f; a < 0.4f; a += Time.deltaTime) { AimAt(bishop, enemy.FeetPoint); yield return null; }
+                Click(bishop, "좌클릭 (1발)");
+                Say("기다림 (자동으로 안 나감)");
+                float waited = 0f;
+                for (; waited < s.bishopHoverTime + 2.5f; waited += Time.deltaTime) { AimAt(bishop, enemy.FeetPoint + Vector3.right * 1.5f); yield return null; }
+                Add($"1발 뒤 {waited:0.0}초 기다림: {(bishop.SkillStage == SkillStage.Windup && !bishop.QhAimLocked ? "아직 떠서 조준 중" : bishop.SkillDetail)}, 견제탄 {throws}발");
+                Click(bishop, "좌클릭 (2발)");
+                yield return Wait(2.5f);
+                Add($"2발 뒤: 견제탄 {throws}발, 비숍 {(bishop.SkillStage == SkillStage.None ? "착지" : bishop.SkillDetail)}");
+            }
+            finally { RagdollPawn.QueenHillFx -= Count; }
         }
 
         // ---------------------------------------------------------------- 5.B knight: one tier up, flattened off the ledge

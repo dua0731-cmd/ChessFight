@@ -963,7 +963,7 @@ namespace ChessFight.RagdollLab
                         shellOut = shellLanded = false;
                         shotsLeft = Mathf.Max(1, s.bishopShots);
                         BishopAimQh(s);
-                        SkillDetail = $"떠오름 (마우스로 조준 · 좌클릭 발사 {shotsLeft}발 · {s.bishopHoverTime:0.#}초)";
+                        SkillDetail = $"떠오름 (이동 키로 천천히 · 마우스로 조준 · 좌클릭 발사 {shotsLeft}발 · {s.bishopHoverTime:0.#}초 안에 안 쏘면 취소)";
                         QhFx(QueenHillFxKind.BishopRise, null, FeetPoint, Flat(facing), s.bishopHover, 0, Vector3.up * s.bishopHoverTime);
                         Log($"비숍: 떠오름 {s.bishopHover:0.0} m · {s.bishopHoverTime:0.#}초 (더 오를 수 없음)");
                     }
@@ -974,19 +974,22 @@ namespace ChessFight.RagdollLab
                     if (!aimLocked)
                     {
                         BishopAimQh(s);
-                        hoverLeft -= dt;
+                        // R105: the hover's time only runs before the first shot; once one is out it waits for the next.
+                        bool fired = shotsLeft < Mathf.Max(1, s.bishopShots);
+                        if (!fired) hoverLeft -= dt;
                         if (cancel || press)
                         {
                             if (cancel) skillGrabLatch = true;
-                            Log("비숍: 쏘지 않고 내려옴");
+                            Log(fired ? "비숍: 남은 발 없이 내려옴" : "비숍: 쏘지 않고 내려옴");
                             DropHover();
                         }
                         else if (confirm && qhValid) FireShell(s);
                         else if (confirm) Log($"비숍: 거기는 쏠 수 없어요 ({qhWhy})");
-                        else if (hoverLeft <= 0f)
+                        else if (!fired && hoverLeft <= 0f)
                         {
-                            if (qhValid) FireShell(s);   // the hover runs out: it throws where it aims
-                            else DropHover();
+                            // R105: a hover with no shot at all is called off (it used to throw where it aimed).
+                            Log($"비숍: {s.bishopHoverTime:0.#}초 동안 안 쏴서 취소");
+                            DropHover();
                         }
                         break;
                     }
@@ -1002,9 +1005,9 @@ namespace ChessFight.RagdollLab
                         }
                         break;
                     }
-                    if (shotsLeft > 0 && hoverLeft > 0f)
+                    if (shotsLeft > 0)
                     {
-                        // R95: another shot in this hover: it aims again (the hover's time runs on while it aims).
+                        // R95: another shot in this hover: it aims again; R105: for as long as it takes.
                         aimLocked = false;
                         shellLanded = false;
                         SkillDetail = $"다시 조준 (좌클릭 발사, {shotsLeft}발 남음 · 우클릭/F 내려옴)";
@@ -1026,15 +1029,20 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>Held up at the hover height (no higher: it cannot keep climbing), still, bobbing a little.</summary>
+        /// <summary>Held up at the hover height (no higher: it cannot keep climbing), bobbing a little. R105: the move
+        /// keys slide it very slowly, like a magic carpet: it eases up to <c>bishopDrift</c> and eases to a stop.</summary>
         void Hover(QueenHillSkillParams s, float dt)
         {
             Vector3 v = bodies[0].linearVelocity;
             float y = bodies[0].position.y;
             float bob = stageTime > s.bishopRise ? Mathf.Sin((stageTime - s.bishopRise) * Mathf.PI * 3f) * 0.04f : 0f;
             float wantUp = Mathf.Clamp((hoverHipY + bob - y) * 7f, -2.5f, 4.5f);
-            float damp = Mathf.Clamp01(10f * dt);
-            AddVelocity(new Vector3(-v.x * damp, wantUp - v.y, -v.z * damp) - Physics.gravity * dt);
+            Vector3 drift = stageTime > s.bishopRise ? Vector3.ClampMagnitude(Flat(input.move), 1f) * s.bishopDrift : Vector3.zero;
+            // Rising: stop dead as before; then ease toward the drift (still air: it carries on a moment when let go).
+            float ease = stageTime > s.bishopRise ? Mathf.Clamp01(dt * 3f / Mathf.Max(0.05f, s.bishopDriftEase)) : Mathf.Clamp01(10f * dt);
+            Vector3 flat = new Vector3(v.x, 0f, v.z);
+            Vector3 toward = (drift - flat) * ease;
+            AddVelocity(new Vector3(toward.x, wantUp - v.y, toward.z) - Physics.gravity * dt);
             carryVel = Vector3.zero;
             anchorVel = Vector3.zero;
             freeFlight = Mathf.Max(freeFlight, 0.1f);
