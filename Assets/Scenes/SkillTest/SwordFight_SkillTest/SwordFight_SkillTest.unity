@@ -566,9 +566,12 @@ MonoBehaviour:
     queenCooldown: 8
     queenLength: 6
     queenWidth: 1.2
-    queenWindup: 0.45
-    queenThrust: 0.12
-    queenRecovery: 0.5
+    queenWindup: 0.4
+    queenDashSpeed: 15
+    queenEdgeMargin: 0.8
+    queenHitAhead: 0.9
+    queenSideShare: 0.6
+    queenRecovery: 0.45
     queenPush:
     - 3
     - 2.1
@@ -582,6 +585,7 @@ MonoBehaviour:
     rookNear: 4
     rookPushNear: 2.6
     rookPushFar: 1.6
+    rookLift: 3.2
     bishopCooldown: 8
     bishopRange: 8
     bishopRadius: 1
@@ -600,6 +604,7 @@ MonoBehaviour:
     knightSpotRadius: 1.2
     knightPush: 2.4
     knightRecovery: 0.35
+  skillKey: 102
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

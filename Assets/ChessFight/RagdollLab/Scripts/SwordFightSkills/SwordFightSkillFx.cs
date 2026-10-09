@@ -68,6 +68,7 @@ namespace ChessFight.RagdollLab
             if (tintQuad != null) Destroy(tintQuad);
             if (tintMat != null) Destroy(tintMat);
             if (tintTex != null) Destroy(tintTex);
+            if (ghostMat != null) Destroy(ghostMat);
             kit?.Destroy();
         }
 
@@ -217,7 +218,7 @@ namespace ChessFight.RagdollLab
                     float u = (x + 0.5f) / n * 2f - 1f, v = (y + 0.5f) / n * 2f - 1f;
                     // A rounded frame: clear in the middle, a painted band at the edges.
                     float r = Mathf.Pow(Mathf.Pow(Mathf.Abs(u), 4f) + Mathf.Pow(Mathf.Abs(v), 4f), 0.25f);
-                    px[y * n + x] = new Color(1f, 1f, 1f, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.66f, 1f, r)));
+                    px[y * n + x] = new Color(1f, 1f, 1f, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.74f, 1f, r)));
                 }
             tintTex.SetPixels(px);
             tintTex.Apply();
@@ -232,13 +233,35 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- shared skill parts (R99)
 
-        /// <summary>A copy of the piece's body as it stands now, in a colour, swelling round its chest and eaten away.</summary>
-        void Afterimage(RagdollPawn pawn, Kit.Palette p, float grow, float life)
+        Material ghostMat;
+
+        Material GhostMaterial()
+        {
+            if (ghostMat != null) return ghostMat;
+            var shader = Shader.Find("ChessFight/Skill Ghost");
+            if (shader == null) shader = Resources.Load<Shader>("SwordFightSkillFx/SkillGhost");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+            ghostMat = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+            return ghostMat;
+        }
+
+        /// <summary>A copy of the piece's body as it stands now: a see-through silhouette of a colour with an ink edge
+        /// (Skill Ghost), swelling round its chest by <paramref name="grow"/> and fading over <paramref name="life"/>;
+        /// white for its first two frames if <paramref name="flash"/>.</summary>
+        void Afterimage(RagdollPawn pawn, Kit.Palette p, float grow, float life, float alpha = 0.6f, bool flash = false)
         {
             if (pawn == null || pawn.skin == null) return;
             var mesh = new Mesh { name = "Skill afterimage" };
             pawn.skin.BakeMesh(mesh, true);
-            var ghost = new Kit.Puff(kit, new Kit.Palette { main = p.main, light = p.light, deep = p.deep, ink = p.ink }, mesh) { ink = 0.32f, lump = 0f, scale = 7f };
+            var go = new GameObject("Afterimage");
+            go.transform.SetParent(kit.root, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = GhostMaterial();
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            r.enabled = false;
+            var block = new MaterialPropertyBlock();
             Transform st = pawn.skin.transform;
             Vector3 pos = st.position, centre = pawn.bodies[(int)BodyId.Chest].position;
             Quaternion rot = st.rotation;
@@ -246,14 +269,21 @@ namespace ChessFight.RagdollLab
             {
                 float k = fx.age / fx.life;
                 float s = Mathf.Lerp(1f, grow, Kit.EaseOut(k));
-                ghost.t.SetPositionAndRotation(centre + (pos - centre) * s, rot);
-                ghost.t.localScale = Vector3.one * s;
-                ghost.dissolve = Mathf.Clamp01((k - 0.1f) / 0.9f);
-                ghost.Apply(fx.age);
+                go.transform.SetPositionAndRotation(centre + (pos - centre) * s, rot);
+                go.transform.localScale = Vector3.one * s;
+                block.SetColor("_Color", flash && fx.age < 2f * F ? Color.white : p.main);
+                block.SetColor("_InkColor", p.ink);
+                block.SetFloat("_Ink", 0.3f);
+                block.SetFloat("_Alpha", alpha * (1f - k * k));
+                r.SetPropertyBlock(block);
+                r.enabled = true;
                 return true;
             });
-            f.puffs.Add(ghost);
-            f.end = () => Destroy(mesh);
+            f.end = () =>
+            {
+                if (go != null) Destroy(go);
+                if (mesh != null) Destroy(mesh);
+            };
         }
 
         /// <summary>A thick ring of a colour bursting out along the floor (white core, ink), eaten round once it is out.</summary>
@@ -290,14 +320,14 @@ namespace ChessFight.RagdollLab
             var pawn = e.by.Pawn;
             var pal = SwordFightSkills.Colors(e.by.Piece);
             Vector3 floor = Kit.FloorUnder(pawn.Hips.position, 0.6f);
-            Afterimage(pawn, pal, 1.6f, 0.3f);
+            Afterimage(pawn, pal, 1.6f, 0.3f, 0.7f, true);
             kit.FlashBody(pawn, pal.main);
             FloorShock(floor, 0.3f, 1.5f, pal, 7, 14, 0.2f);
             kit.PuffBurst(floor + Vector3.up * 0.15f, pal, 5, 0.55f, 0.14f, 0.4f, 0.5f);
             kit.AddSquash(pawn, Kit.SquashKind.Bump);
             HitStop(2);
             Punch(pawn, null, 5f, 14);
-            Tint(pawn, null, pal.main, 0.5f, 22);
+            Tint(pawn, null, pal.main, 0.34f, 22);
         }
 
         float WindupOf(SwordFightSkills s, SwordFightSkillParams S) => s.Piece switch
@@ -615,11 +645,11 @@ namespace ChessFight.RagdollLab
             kit.FlashRing(start, 0.75f, pal);
             kit.PuffBurst(start - dir * 0.3f + Vector3.up * 0.15f, Kit.Dust, 5, 0.6f, 0.2f, 0.4f, 0.2f);
             kit.AddSquash(pawn, Kit.SquashKind.Spring);
-            Afterimage(pawn, pal, 1.35f, 0.22f);
+            Afterimage(pawn, pal, 1.35f, 0.22f, 0.7f, true);
             HitStop(2);
             Shake(pawn, null, 0.08f, 6);
             Punch(pawn, null, 7f, 16);
-            Tint(pawn, null, pal.main, 0.5f, 20);
+            Tint(pawn, null, pal.main, 0.34f, 20);
             var trail = new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.4f, inkShare = 0.2f };
             var cut = new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.45f, inkShare = 0.18f };
             var pts = new List<Vector3>();
@@ -634,7 +664,7 @@ namespace ChessFight.RagdollLab
                     run = Mathf.Max(run, s.DashProgress + 0.4f);
                     if (fx.age >= nextGhost)
                     {
-                        Afterimage(pawn, pal, 1.05f, 0.22f);
+                        Afterimage(pawn, pal, 1f, 0.2f, 0.45f);
                         nextGhost = fx.age + 2f * F;
                     }
                 }
@@ -643,7 +673,7 @@ namespace ChessFight.RagdollLab
                 if (!dashing && pts.Count > 0) pts.RemoveAt(0);
                 if (pts.Count >= 2)
                 {
-                    trail.Build(pts, i => 0.55f * i / Mathf.Max(1f, pts.Count - 1f), kit.Eye);
+                    trail.Build(pts, i => 0.4f * i / Mathf.Max(1f, pts.Count - 1f), kit.Eye);
                     trail.Apply();
                 }
                 else trail.Hide();
@@ -740,7 +770,7 @@ namespace ChessFight.RagdollLab
             HitStop(5);
             Shake(s.Pawn, null, 0.17f, 9);
             Punch(s.Pawn, null, 6f, 16);
-            Tint(s.Pawn, null, Kit.Rook.main, 0.5f, 20);
+            Tint(s.Pawn, null, Kit.Rook.main, 0.34f, 20);
             var S = this.S;
             float stamped = 0.6f, reach = s.Reach, width = S != null ? S.rookWidth : 1.5f;
             Vector3 origin = s.Origin, dir = s.Dir;
@@ -898,7 +928,7 @@ namespace ChessFight.RagdollLab
             HitStop(4);
             Shake(s.Pawn, null, 0.08f, 5);
             Punch(s.Pawn, null, 4f, 12);
-            Tint(s.Pawn, null, pal.main, 0.45f, 18);
+            Tint(s.Pawn, null, pal.main, 0.3f, 18);
         }
 
         void SlowRing(SwordFightSkills s)
@@ -1183,7 +1213,7 @@ namespace ChessFight.RagdollLab
                 bool flying = owner != null && owner.Stage == SfStage.Active && pawn != null;
                 if (flying && fx.age >= nextGhost)
                 {
-                    Afterimage(pawn, Kit.Knight, 1f, 0.2f);
+                    Afterimage(pawn, Kit.Knight, 1f, 0.2f, 0.45f);
                     nextGhost = fx.age + 3f * F;
                 }
                 if (flying) pts.Add(pawn.Hips.position);
@@ -1203,9 +1233,9 @@ namespace ChessFight.RagdollLab
             kit.FlashRing(e.at, 0.8f, Kit.Knight);
             kit.DustRing(e.at, 5, 0.9f);
             FloorShock(e.at, 0.3f, 1.4f, Kit.Knight, 6, 14, 0.24f);
-            Afterimage(s.Pawn, Kit.Knight, 1.45f, 0.26f);
+            Afterimage(s.Pawn, Kit.Knight, 1.45f, 0.26f, 0.7f, true);
             Punch(s.Pawn, null, 6f, 16);
-            Tint(s.Pawn, null, Kit.Knight.main, 0.45f, 18);
+            Tint(s.Pawn, null, Kit.Knight.main, 0.3f, 18);
             foreach (var spot in s.KnightSpots)
             {
                 // The fork: a line shooting out along the floor from where it lands to each spot.
@@ -1269,11 +1299,11 @@ namespace ChessFight.RagdollLab
                     KingWave(e.by);
                     SpinCut(e.by.Pawn, Kit.King, S != null ? Mathf.Min(1.3f, S.kingCounterRadius * 0.5f) : 1.2f);
                     Crown(e.by.Pawn);
-                    Afterimage(e.by.Pawn, Kit.King, 1.7f, 0.32f);
+                    Afterimage(e.by.Pawn, Kit.King, 1.7f, 0.32f, 0.7f, true);
                     HitStop(7);
                     Shake(e.by.Pawn, null, 0.18f, 9);
                     Punch(e.by.Pawn, null, 7f, 18);
-                    Tint(e.by.Pawn, null, Kit.King.main, 0.55f, 22);
+                    Tint(e.by.Pawn, null, Kit.King.main, 0.36f, 22);
                     break;
                 case SfFxKind.KingCounterHit: Hit(e, Kit.King, 0, 0.16f); break;
                 case SfFxKind.KingWhiff:

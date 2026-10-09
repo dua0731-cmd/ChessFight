@@ -40,7 +40,7 @@ namespace ChessFight.RagdollLab
             new Shot { run = "king-whiff", title = "킹 · 왕의 반격 (상대가 늦게 벨 때)", note = "칼이 안 오면 자세가 풀리고 0.6초 빈틈 → 그때 맞음 · 쿨타임은 그대로",
                 eye = new Vector3(3.0f, 3.6f, -3.6f), look = new Vector3(5.2f, 0.2f, -0.2f), fov = 46f },
             new Shot { run = "queen", title = "퀸 · 꼬치 베기", note = "줄 예고 0.4초 → 퀸이 줄을 따라 돌진하며 지나가는 적을 벰 (첫째 3.0 m · 둘째 2.1 m, 앞·바깥으로) → 가장자리 앞에서 멈춤",
-                eye = new Vector3(1.8f, 4.2f, -4.2f), look = new Vector3(4.0f, 0f, 0.3f), fov = 46f },
+                eye = new Vector3(1.1f, 5.5f, -5.6f), look = new Vector3(3.6f, 0f, 0.5f), fov = 46f },
             new Shot { run = "rook", title = "룩 · 열린 파일 포격", note = "칼을 들면 통로가 갈라짐 0.5초 → 내려치면 칸마다 돌탑이 솟아 적을 띄워 밀어냄 (가까이 2.6 m · 멀리 1.6 m)",
                 eye = new Vector3(-6.8f, 3.4f, -3.6f), look = new Vector3(-0.2f, 0f, -1.9f), fov = 46f },
             new Shot { run = "bishop", title = "비숍 · 관통 핀", note = "뒤 2 m 안이 가장자리 → X가 금색 · 광선이 꽂히면 감속, 바닥에서 손이 나와 두 발목을 잡음 0.8초 → 아군 칼 한 번에 장외",
