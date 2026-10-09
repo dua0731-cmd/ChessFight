@@ -340,7 +340,7 @@ namespace ChessFight.RagdollLab
             {
                 yield return new WaitForSeconds(0.05f);
                 Show("적이 안쪽으로 걸어 들어옴");
-                bed.Walk(target, Vector3.left, 0.9f);
+                bed.Walk(target, Vector3.left, 0.45f);
             }
             else if (mode == 2)
             {
@@ -403,7 +403,10 @@ namespace ChessFight.RagdollLab
             {
                 yield return new WaitForSeconds(bed.edge.bishopReach + 0.05f);
                 Show("적이 비숍을 벰");
-                SwordFightSkillBed.BringNear(foes[1], me);
+                // From the edge's side, so the cut throws the bishop in (not off the platform as well).
+                Vector3 at = me.Pawn.Hips.position + Vector3.right * 0.9f;
+                at.y = 0f;
+                SwordFightSkillBed.Place(foes[1], at, Vector3.left);
                 bed.Cut(foes[1], me.Pawn.Hips.position);
             }
             yield return new WaitForSeconds(1.2f);

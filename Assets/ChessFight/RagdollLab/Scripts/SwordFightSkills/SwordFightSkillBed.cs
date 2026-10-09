@@ -654,7 +654,7 @@ namespace ChessFight.RagdollLab
 
         GUIStyle keyStyle;
 
-        /// <summary>The edge skill's badge at the bottom of the view: E in the piece's colour when it can be used now
+        /// <summary>The edge skill's badge at the bottom right of the view: E in the piece's colour when it can be used now
         /// (blinking), grey otherwise, the cooldown draining it from the top; under the name, what it is waiting for.</summary>
         void EdgeBadge(SwordFightSkills s)
         {
@@ -666,8 +666,9 @@ namespace ChessFight.RagdollLab
             }
             var pal = SwordFightSkills.Colors(s.Piece);
             bool ready = s.EdgeReady, running = s.EdgeStage != SfEdge.None;
-            float w = 300f, h = 50f;
-            var r = new Rect((Screen.width - w) * 0.5f, Screen.height - h - 58f, w, h);
+            // Bottom right, clear of the match's help (bottom left) and its sword gauge (bottom middle).
+            float w = 320f, h = 56f;
+            var r = new Rect(Screen.width - w - 24f, Screen.height - h - 120f, w, h);
             GUI.color = new Color(0.05f, 0.07f, 0.12f, 0.8f);
             GUI.DrawTexture(r, bar);
             Color lit = ready || running ? pal.main : new Color(0.42f, 0.46f, 0.55f);
