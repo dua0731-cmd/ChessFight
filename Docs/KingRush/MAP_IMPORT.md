@@ -4,6 +4,9 @@
 
 ## 열기
 
+**15종만 따로 래그돌로 시험하려면:** [래그돌 장애물 시험장](OBSTACLE_RAGDOLL_TEST.md).
+`ChessFight → Obstacles → Open Ragdoll Test (15 Obstacles)`에서 새 전용 씬을 연다. 기존 이식 맵과 별개이며 R/낙사는 선택한 시험대로 복귀한다. Unity 직접 확인 대기(R68).
+
 1. 핵심 프로젝트 `C:/Users/Admin/Documents/GitHub/ChessFight`를 Unity 6000.3.11f1로 연다.
 2. **ChessFight → Imported Map → Open Map**. 또는 `Assets/Scenes/ImportedChessFightMap.unity`를 연다. 현재 씬에 수정 사항이 있으면 Unity 저장 대화상자를 따른다.
 3. Scene에서 `Map` 루트가 선택된다. Play하면 **이 핵심 프로젝트에 원래 있던** `RagdollPawn` 하나가 `PlaytestSpawner`를 통해 생성된다. WASD 이동, Space 점프, R/Backspace 시작점 복귀.

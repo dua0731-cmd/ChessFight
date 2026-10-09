@@ -4,10 +4,12 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-06**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-10**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R68(사용자, 10-10): 래그돌 장애물 시험장 15종.** `main`에 `Assets/Scenes/ObstacleRagdollTest.unity` 추가. **ChessFight → Obstacles → Open Ragdoll Test (15 Obstacles)** → Play. 기존 래그돌·이식 장애물 15종, Tab 선택 메뉴, `[`·`]` 이전/다음, R/낙사 시 현재 시험대 복귀. [실행 안내](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md). Core 83·세션 39·7개 런타임 어셈블리 컴파일·씬 정적 참조 검사 통과. **Unity import/Play·PhysX·사용자 미확인**. 다음은 15종 직접 플레이 확인이며 공통 물리·기존 씬은 유지.
+
 > **최신 R67(사용자, 10-06): 폰 러시 맵 기획 재료집** [PAWN_RUSH_MAP_KIT](Docs/KingRush/PAWN_RUSH_MAP_KIT.md). 장애물 시험 씬(`ImportedChessFightMap`)의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치를 모아 채팅 AI가 맵을 기획하게 한 문서(프롬프트·결과 양식 포함). 다음 단계: 사용자가 채팅에서 기획 → 구간별 표를 Claude Code에 주면 구현.
 >
 > **R65(사용자, 10-06): `main` 병합.** `main`은 이제 **`JY-kingrush`(UI·메뉴 디자인 C·설정 창·채팅·로딩·결과 화면·방장 선정·이전·빈자리 채우기·킹 러쉬 코스) 전체** + **`JY-ragdoll_v2`의 지성 님 맵 이식**(`ImportedChessFightMap.unity` = 폰러시 맵용 장애물 배치 시험 씬, 장애물 프리팹 19개, `Gameplay/ImportedObstacles`, 메뉴 `ChessFight → Imported Map`) + **`JY-lobby`의 R51**(RagdollTest 온라인에서 방장이 아닌 PC의 장애물이 방장 판정과 다르게 보이던 문제: 방장이 스냅샷에 장애물 시각을 싣고 참가자가 그 시각으로 장애물을 돌림, `HostObstacleClock`, magic `CFR6`)이다. 프로토콜 **v15**. 가져오지 않은 것: `JY-ragdoll_v2`의 `f476968`(나이트 능력 등), `JY-lobby`의 퀸 오브 더 힐 맵 8차·로비 재설계 등. Linux 자동 검사 통과, **Unity·Steam 미확인** → 확인 목록 [VALIDATION](Docs/Network/VALIDATION.md) 최상단, [DECISIONS T5](Docs/Project/DECISIONS.md), [REQUIREMENTS R65](Docs/Project/REQUIREMENTS.md)
@@ -68,6 +70,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **래그돌 장애물 시험장(R68)** | 새 독립 씬에서 장애물 15종·기존 래그돌·선택 메뉴·현재 시험대 복귀 구현. Linux 검사 통과, Unity 직접 확인 대기 |
 | **`main` 병합(10-06, R65)** | `main` = `JY-kingrush`(`f3b5cc8`) + `a54b89e`(맵 이식, 원본 `487f62b`) + `104b18c`(방장 장애물 시각, 원본 `JY-lobby` `27e052c`) + `deabde0`(Linux 검사 유지) + 문서. Core 83·세션 39·7개 어셈블리 Roslyn 컴파일(2021.3 참조 DLL) 통과. **Unity·두 PC 미확인** |
 | **설정 창(10-05, R64)** | `claude/settings-window` → 원격 `JY-kingrush`에 푸시. 인트로 판 클릭 시작, Esc 설정 창(인트로·로비·입장 화면), 탭 5개·항목 10개, `GameSettings`(`PlayerPrefs`), 클릭 감 강화. Core 81·세션 39·DLL 컴파일 통과. **사용자 미확인** |
 | **메뉴 디자인 C 수정안(10-03, R63, 3차 포함)** | `claude/menu-c`(`33f1648`에서 갈라짐) → 원격 `JY-kingrush`에 푸시. 인트로(예전 구성 + 나무)·로비(전광판 없음, 게임 시작 버튼 글자만)·공개 매칭 = 입장 화면(봇 추가 +) → 그대로 로딩·채팅(경기 중 투명)을 호두나무·놋쇠 그림으로, 입체 판 버튼, 결과 화면 말. 새 에셋은 글꼴 하나(`Resources/Fonts`, LFS). 프로토콜 그대로. Core 81·세션 39·실제 DLL 컴파일 통과. AI가 Unity에서 화면을 봄. **키·버튼·실제 매칭·사용자 미확인** |
@@ -96,6 +99,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **15종 래그돌 장애물 시험장(R68)** | 씬·코드·정적 검사·컴파일, Unity 미확인 | [실행](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **킹 러쉬 연결 코스 R54~R56, 능력 시험장R52/R53** | 장난감/상자→성벽/시소→왕의 계단/왕좌 결승, 승격 집결10초·자동 합류. R54 일반 피드백 수신, **R55/R56 사용자 미확인**. 기존 조작/튜닝·다른 모드/로비 보존 | [R56](Docs/KingRush/FINAL_COURSE.md), [R55](Docs/KingRush/CASTLE_COURSE.md), [능력 시험장](Docs/KingRush/README.md) |
 | **로딩 화면·동시 출발**(R58): 로비 → 경기 씬 비동기 로드, A 시안 UI + B 시안 배경, 모두 준비 또는 20초 뒤 공유 시각 `go`에 동시 해제 | 코드·테스트만, Unity·Steam 미확인 | [UI §8](Docs/Architecture/UI.md#8-로딩-화면-r58-2026-09-30) |
 | **경기 중 빈자리 채우기**(R59): 나간 자리를 매칭 중인 사람이 채움(팀마다 시작 인원까지, 파티는 한 팀, 시작 뒤 4분까지, 비공개 방은 방 번호로). R60: 경기 중에는 나간 사람만 나감(방장이면 방장 이전) | 코드·테스트만, Unity·Steam 미확인 | [SESSION §8](Docs/Network/SESSION.md#8-빈자리-채우기-r59-2026-09-30) |
@@ -124,6 +128,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R68:** 새 장애물 시험장 Play 후 캐릭터 생성·이동·메뉴 이동·R/낙사 복귀 및 15종 반응을 사용자 확인한다. 확인 목록은 [VALIDATION](Docs/Network/VALIDATION.md) 최상단.
 
 **이 작업 폴더는 킹 러쉬 전용(R56)**
 - `JY-kingrush`에서만 작업한다. 실제 기준은 `JY-gpt_gamemode@852eb2b`이며 첨부 기획이 전제로 쓴 최신 QotH M6/M11/M13은 없다. `KingRushPiece`/`KingRushPawn`으로 격리했고 공유 Pawn/튜닝/프로토콜은 바꾸지 않았다.
