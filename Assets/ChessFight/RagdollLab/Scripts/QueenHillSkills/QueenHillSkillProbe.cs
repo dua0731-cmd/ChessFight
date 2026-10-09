@@ -560,12 +560,14 @@ namespace ChessFight.RagdollLab
                 Vector3 from = bishop.Hips.position;
                 Of(bishop).move = Vector3.forward;
                 Say("W (천천히 이동)");
-                float held = 0f, top = 0f;
+                float held = 0f, top = 0f, carpet = 0f, given = 0f;
                 for (; held < 1.6f; held += Time.deltaTime)
                 {
                     AimAt(bishop, enemy.FeetPoint);
                     var v = bishop.Hips.linearVelocity;
                     top = Mathf.Max(top, new Vector2(v.x, v.z).magnitude);
+                    carpet = Mathf.Max(carpet, bishop.QhHoverVel.magnitude);
+                    given = Mathf.Max(given, bishop.QhHoverMove.magnitude);
                     yield return null;
                 }
                 Vector3 moved = bishop.Hips.position - from;
@@ -574,7 +576,7 @@ namespace ChessFight.RagdollLab
                 yield return Wait(0.6f);
                 Vector3 slid = bishop.Hips.position - let;
                 float coast = new Vector2(slid.x, slid.z).magnitude;
-                Add($"떠서 이동 {held:0.0}초: {new Vector2(moved.x, moved.z).magnitude:0.00} m (가장 빠를 때 {top:0.00} m/s, 목표 {s.bishopDrift:0.0}), 놓은 뒤 {coast:0.00} m 더 미끄러짐, 높이 변화 {moved.y:+0.00;-0.00} m");
+                Add($"떠서 이동 {held:0.0}초: {new Vector2(moved.x, moved.z).magnitude:0.00} m (가장 빠를 때 {top:0.00} m/s, 목표 {s.bishopDrift:0.0}, 양탄자 속도 {carpet:0.00}, 이동 입력 {given:0.00}), 놓은 뒤 {coast:0.00} m 더 미끄러짐, 높이 변화 {moved.y:+0.00;-0.00} m");
                 while (bishop.SkillStage == SkillStage.Windup && up + held + 0.6f < s.bishopHoverTime + 1.5f)
                 {
                     AimAt(bishop, enemy.FeetPoint);

@@ -125,6 +125,9 @@ namespace ChessFight.RagdollLab
         public RagdollPawn CastleAsker => castleAsker;
         public float CastleAskAge => castleAskAge;
         public bool QhAimLocked => aimLocked;
+        /// <summary>The hovering bishop's carpet speed and the move it was given (R105, for the probe).</summary>
+        public Vector3 QhHoverVel => hoverVel;
+        public Vector3 QhHoverMove => hoverMove;
         public Vector3 SlashFrom => slashFrom;
         public Vector3 SlashDir => slashDir;
         public float SlashReach => slashReach;
