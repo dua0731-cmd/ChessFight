@@ -11,7 +11,10 @@ namespace ChessFight.RagdollLab
     /// puts the pieces where the bed's F7 does, then presses and lets go of the skill button the way a player would (and
     /// has a dummy cut where the test needs it), and reports what happened. "calibrate" pushes three dummies at three
     /// speeds and reports how far they slid (it sets <see cref="SwordFightSkillParams.pushPerMetre"/>'s value).
-    /// Runs: calibrate, king, king-whiff, queen, rook, bishop, knight. Needs Play mode in SwordFight_SkillTest.
+    /// Runs: calibrate, king, king-whiff, king-mid (the king in the middle of the platform, F8 0.3 s into his guard: the
+    /// nearest enemy comes up and cuts, R102), queen, rook, bishop, bishop-mid (an enemy in the middle of the platform is
+    /// held by the ankles all the same, R102), bishop-miss (nobody on the point), knight. Needs Play mode in
+    /// SwordFight_SkillTest.
     /// </summary>
     public class SwordFightSkillProbe : MonoBehaviour
     {
@@ -54,9 +57,12 @@ namespace ChessFight.RagdollLab
                 "calibrate" => Calibrate(),
                 "king" => King(false),
                 "king-whiff" => King(true),
+                "king-mid" => KingMid(),
                 "queen" => Line(PieceKind.Queen, Vector3.right, null),
                 "rook" => Line(PieceKind.Rook, Vector3.right, null),
                 "bishop" => Bishop(),
+                "bishop-mid" => BishopMid(false),
+                "bishop-miss" => BishopMid(true),
                 "knight" => Line(PieceKind.Knight, Vector3.right, new Vector3(5.0f, 0f, 0f)),
                 _ => null,
             };
@@ -175,6 +181,58 @@ namespace ChessFight.RagdollLab
             bed.Cut(enemy, me.Pawn.Hips.position);
             yield return new WaitForSeconds(2.6f);
             Moves(from, whiff ? "king-whiff" : "king");
+        }
+
+        /// <summary>The king in the middle of the platform, the enemies far off; F, and 0.3 s later F8 (the bed brings the
+        /// nearest enemy up beside him and has it cut; the guard waits for that cut).</summary>
+        IEnumerator KingMid()
+        {
+            yield return StageFor(PieceKind.King);
+            var me = bed.Local;
+            var enemies = bed.Dummies(1);
+            SwordFightSkillBed.Place(me, new Vector3(-0.5f, 0f, -1.5f), Vector3.right);
+            SwordFightSkillBed.Place(enemies[0], new Vector3(3.5f, 0f, 1.5f), Vector3.left);
+            SwordFightSkillBed.Place(enemies[1], new Vector3(-4.5f, 0f, 4.5f), Vector3.right);
+            SwordFightSkillBed.Place(enemies[2], new Vector3(4.5f, 0f, -5f), Vector3.left);
+            yield return new WaitForSeconds(0.5f);
+            var from = Starts();
+            Show("F · 받아내기 자세");
+            me.Skills.PressKey();
+            yield return new WaitForSeconds(0.3f);
+            Show("F8 · 적이 와서 벰");
+            bed.EnemyCuts();
+            yield return new WaitForSeconds(2.6f);
+            Moves(from, "king-mid");
+        }
+
+        /// <summary>The bishop aims at an enemy standing in the middle of the platform (nothing behind it but floor), or at an
+        /// empty spot (<paramref name="miss"/>); then F8 brings an ally up to cut it.</summary>
+        IEnumerator BishopMid(bool miss)
+        {
+            yield return StageFor(PieceKind.Bishop);
+            var me = bed.Local;
+            var enemies = bed.Dummies(1);
+            var ally = bed.Dummies(0)[0];
+            SwordFightSkillBed.Place(me, new Vector3(-3.4f, 0f, -0.6f), Vector3.right);
+            SwordFightSkillBed.Place(enemies[0], new Vector3(1.6f, 0f, -0.2f), Vector3.left);
+            SwordFightSkillBed.Place(enemies[1], new Vector3(-1f, 0f, 4.5f), Vector3.right);
+            SwordFightSkillBed.Place(enemies[2], new Vector3(3.5f, 0f, -5f), Vector3.left);
+            SwordFightSkillBed.Place(ally, new Vector3(-4.5f, 0f, 4.5f), Vector3.right);
+            yield return new WaitForSeconds(0.5f);
+            Vector3 point = miss ? new Vector3(1.2f, 0f, 2.6f) : enemies[0].Pawn.Hips.position;
+            me.Skills.OverrideAim(Vector3.right, point);
+            var from = Starts();
+            yield return Press(me.Skills, 0.7f);
+            yield return new WaitForSeconds(bed.skills.bishopWindup + 0.3f);
+            var target = enemies[0].Skills;
+            Say($"bishop-{(miss ? "miss" : "mid")}: 발동 0.3초 뒤 묶임 {target.PinLeft:0.00}초 남음 · 감속 {target.SlowLeft:0.00}초 남음");
+            if (!miss)
+            {
+                Show("F8 · 아군이 와서 벰");
+                bed.EnemyCuts();
+            }
+            yield return new WaitForSeconds(2.4f);
+            Moves(from, miss ? "bishop-miss" : "bishop-mid");
         }
 
         IEnumerator Line(PieceKind kind, Vector3 dir, Vector3? point)

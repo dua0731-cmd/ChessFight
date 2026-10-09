@@ -29,9 +29,16 @@ namespace ChessFight.RagdollLab
     /// rook's line cracks as he raises his sword and stone towers burst up out of the floor square by square, throwing
     /// pieces up; two violet hands come up out of the floor and close round a pinned piece's ankles; the king answers
     /// with a full-circle cut and a crown; the knight's landing forks two lines to its spots.
+    ///
+    /// R102 (승규 님 10-10): every cast pops the piece's mark up over its head (the five icons 승규 님 sent, in the piece's
+    /// colour: <c>SwordFightSkillFx.Icons.cs</c>; the king's pops again when his guard takes a cut, instead of R99's
+    /// crown); the rook's towers are the team's piece characters without their feet, in a new random order every slam
+    /// (<c>SwordFightSkillFx.Statues.cs</c>); the bishop's two hands wait by its shoulders through the windup, then
+    /// shoot out on the diagonals with violet arms stretching behind them and close round the ankles of every piece on
+    /// the point (they miss onto the floor and come back if nobody is there), the arms coming away once they hold.
     /// </summary>
     [DefaultExecutionOrder(210)]   // after the match camera (150)
-    public class SwordFightSkillFx : MonoBehaviour
+    public partial class SwordFightSkillFx : MonoBehaviour
     {
         public bool effects = true;
         [Tooltip("맞는 순간 게임 전체를 잠깐 멈춤 (시험용: 실제로는 때린 쪽·맞은 쪽만)")]
@@ -70,6 +77,8 @@ namespace ChessFight.RagdollLab
             if (tintTex != null) Destroy(tintTex);
             if (ghostMat != null) Destroy(ghostMat);
             kit?.Destroy();
+            DestroyIcons();
+            DestroyStatues();
         }
 
         // ---------------------------------------------------------------- time, hit stop, shake
@@ -80,6 +89,7 @@ namespace ChessFight.RagdollLab
             float real = Time.captureDeltaTime > 0f ? Time.captureDeltaTime : Mathf.Min(Time.unscaledDeltaTime, 0.1f);
             if (Time.timeScale > 0f && !stopping) rate = Time.timeScale;
             dt = real * rate;
+            BuildIconsSlowly();
             if (stopping)
             {
                 stopLeft -= dt;
@@ -313,13 +323,15 @@ namespace ChessFight.RagdollLab
             f.tiles.Add(ring);
         }
 
-        /// <summary>The cast: the piece flashes its colour, an afterimage of it swells off it, a ring bursts off the floor,
-        /// a puff of its colour, a two-frame freeze, and for its owner the view kicks in and its edges wash with the colour.</summary>
+        /// <summary>The cast: the piece's mark pops up over its head, the piece flashes its colour, an afterimage of it
+        /// swells off it, a ring bursts off the floor, a puff of its colour, a two-frame freeze, and for its owner the view
+        /// kicks in and its edges wash with the colour.</summary>
         void Cast(SfFxEvent e)
         {
             var pawn = e.by.Pawn;
             var pal = SwordFightSkills.Colors(e.by.Piece);
             Vector3 floor = Kit.FloorUnder(pawn.Hips.position, 0.6f);
+            HeadMark(pawn, e.by.Piece);
             Afterimage(pawn, pal, 1.6f, 0.3f, 0.7f, true);
             kit.FlashBody(pawn, pal.main);
             FloorShock(floor, 0.3f, 1.5f, pal, 7, 14, 0.2f);
@@ -757,8 +769,8 @@ namespace ChessFight.RagdollLab
             });
         }
 
-        /// <summary>The slam: the floor bursts round him, then a stone tower comes up out of each square as the wave
-        /// reaches it.</summary>
+        /// <summary>The slam: the floor bursts round him, then a piece of the photo comes up out of each square as the
+        /// wave reaches it, in a new random order every slam (<see cref="Statue"/>).</summary>
         void RookSlam(SfFxEvent e)
         {
             var s = e.by;
@@ -771,10 +783,11 @@ namespace ChessFight.RagdollLab
             Shake(s.Pawn, null, 0.17f, 9);
             Punch(s.Pawn, null, 6f, 16);
             Tint(s.Pawn, null, Kit.Rook.main, 0.34f, 20);
-            var S = this.S;
-            float stamped = 0.6f, reach = s.Reach, width = S != null ? S.rookWidth : 1.5f;
+            float stamped = 0.6f, reach = s.Reach;
             Vector3 origin = s.Origin, dir = s.Dir;
             var caster = s.Pawn;
+            var order = StatueOrder(Mathf.Max(1, Mathf.CeilToInt((reach - 0.6f) / 1.5f)));
+            int next = 0;
             kit.Run(3f, (fx, d) =>
             {
                 bool running = s != null && s.Stage == SfStage.Active && s.Piece == PieceKind.Rook;
@@ -782,100 +795,68 @@ namespace ChessFight.RagdollLab
                 while (stamped < reach - 0.3f && stamped + 0.35f <= front + 0.01f)
                 {
                     float len = Mathf.Min(1.5f, reach - stamped);
-                    Tower(origin + dir * (stamped + len * 0.5f), dir, caster, len, width);
+                    Statue(order[Mathf.Min(next++, order.Count - 1)], origin + dir * (stamped + len * 0.5f), dir, caster);
                     stamped += 1.5f;
                 }
                 return running || stamped < reach - 0.3f;
             });
         }
 
-        /// <summary>A stone tower with an orange band and four battlements, up out of the floor in four frames past its
-        /// height, held, and back down into it; the square under it flashes, dust and stones fly.</summary>
-        void Tower(Vector3 c, Vector3 dir, RagdollPawn caster, float len, float width)
-        {
-            if (!FloorAt(c, out Vector3 floor)) return;   // no floor there: nothing comes up
-            float w = Mathf.Min(width * 0.72f, 1.1f), l = Mathf.Min(len * 0.72f, 1.1f), h = 0.8f;
-            var parts = new List<(Kit.Prop p, Vector3 at)>
-            {
-                (new Kit.Prop(kit, kit.RoundBox(new Vector3(w, h, l), 0.07f), Kit.Stone, "Rook tower") { inkWidth = 0.02f }, new Vector3(0f, h * 0.5f, 0f)),
-                (new Kit.Prop(kit, kit.RoundBox(new Vector3(w * 1.08f, 0.13f, l * 1.08f), 0.04f), Kit.Rook, "Rook tower band") { inkWidth = 0.016f }, new Vector3(0f, h - 0.07f, 0f)),
-            };
-            for (int i = 0; i < 4; i++)
-            {
-                float sx = i % 2 == 0 ? -1f : 1f, sz = i < 2 ? -1f : 1f;
-                parts.Add((new Kit.Prop(kit, kit.RoundBox(new Vector3(w * 0.3f, 0.2f, l * 0.3f), 0.04f), Kit.Rook, "Rook battlement") { inkWidth = 0.016f },
-                    new Vector3(sx * w * 0.33f, h + 0.08f, sz * l * 0.33f)));
-            }
-            Quaternion rot = Quaternion.LookRotation(Kit.FlatDir(dir, Vector3.forward), Vector3.up);
-            kit.Release(new List<Vector3> { floor + Vector3.up * 0.016f }, dir, caster, 1.45f);
-            kit.DustRing(floor, 5, 0.85f, null, 0.28f, 0.5f);
-            kit.Drops(floor + Vector3.up * 0.3f, Vector3.up, Kit.Stone, 3, 6f);
-            float H = h + 0.2f;
-            void Pose(float up, float flash)
-            {
-                Vector3 baseAt = floor + Vector3.up * (H * (up - 1f) - 0.02f);
-                foreach (var (p, at) in parts)
-                {
-                    p.t.SetPositionAndRotation(baseAt + rot * at, rot);
-                    p.flash = flash;
-                    p.Apply();
-                }
-            }
-            // Made inside another effect's step, it is first stepped next frame: until then it waits under the floor
-            // (a prop shows from the moment it is made, at the effects' root).
-            Pose(0f, 1f);
-            var f = kit.Run(36f * F, (fx, d) =>
-            {
-                float a = fx.age / F;
-                Pose(a < 4f ? Kit.EaseOut(a / 4f) * 1.12f : a < 7f ? Mathf.Lerp(1.12f, 1f, (a - 4f) / 3f) : a < 20f ? 1f : 1f - Kit.EaseIn((a - 20f) / 16f),
-                    a < 2f ? 1f : 0f);
-                return true;
-            });
-            foreach (var (p, _) in parts) f.props.Add(p);
-        }
-
         // ---------------------------------------------------------------- bishop
+
+        /// <summary>A hand's size (about 0.29 m long at 1): waiting beside the bishop, and holding an ankle.</summary>
+        const float HandReady = 1.15f, HandHold = 1.5f;
+        /// <summary>Frames the hands take to get to the point.</summary>
+        const float HandFly = 9f;
+
+        /// <summary>Who pinned whom, from the pin's event to the frame its effect starts (and how the bishop faced).</summary>
+        readonly Dictionary<RagdollPawn, (SwordFightSkills by, Vector3 dir, float at)> pinnedBy = new Dictionary<RagdollPawn, (SwordFightSkills, Vector3, float)>();
 
         void BishopMarks(SwordFightSkills s, SwordFightSkillParams S, float alpha)
         {
             if (s.Stage != SfStage.Aim && s.Stage != SfStage.Windup) return;
             bool aim = s.Stage == SfStage.Aim;
             Vector3 p = aim ? s.AimPoint : s.Point, dir = aim ? s.AimDir : s.Dir;
-            bool pin = s.PinCondition;
-            var w = new Warning { k = Charge(s, S.bishopWindup), alpha = alpha, quiet = aim, fill = pin ? Kit.Queen : (Kit.Palette?)null };
+            // Gold when there is an enemy on the point to take; the X is the bishop's diagonals.
+            var w = new Warning { k = Charge(s, S.bishopWindup), alpha = alpha, quiet = aim, fill = s.PinCandidate != null ? Kit.Queen : (Kit.Palette?)null };
             Vector3 c = Kit.FloorUnder(p, 1.5f);
             w.marks.Add(new Mark { at = c + Vector3.up * 0.02f, along = Quaternion.AngleAxis(45f, Vector3.up) * dir, size = new Vector2(0.24f, 2.1f) });
             w.marks.Add(new Mark { at = c + Vector3.up * 0.021f, along = Quaternion.AngleAxis(-45f, Vector3.up) * dir, size = new Vector2(0.24f, 2.1f) });
             w.marks.Add(Ring(c, S.bishopRadius, 0.12f, dir));
-            if (pin && s.PinCandidate != null)
-            {
-                // The floor ends behind it: a gold strip from the piece to the edge.
-                Vector3 from = Kit.FloorUnder(s.PinCandidate.Hips.position, 0.6f);
-                w.marks.Add(Square(from + dir * (S.bishopPinBehind * 0.5f), dir, 0.3f, S.bishopPinBehind));
-            }
             Warn(s, aim ? "bishop aim" : "bishop x", w);
             if (aim) return;
             ChargeUp(s, S);
-            // The two rays gathering on the point as the windup runs (thin, then the throw makes them thick).
+            // The two hands wait by its shoulders, open and wriggling, the way they will go drawn faint on ahead of them;
+            // white in the windup's last frames. When it goes they are gone here and fly from the same spots.
             var owner = s;
-            kit.Keep(s, "bishop rays", () =>
+            kit.Keep(s, "bishop hands", () =>
             {
                 var fx = new Kit.Fx();
-                var pal = pin ? Kit.Queen : Kit.Bishop;
-                fx.strips.Add(new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.4f });
-                fx.strips.Add(new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.4f });
+                var hands = new[] { new GrabHand(kit, "Bishop hand L"), new GrabHand(kit, "Bishop hand R") };
+                fx.strips.Add(new Kit.Strip(kit, Kit.Bishop) { core = Color.white, coreShare = 0.3f });
+                fx.strips.Add(new Kit.Strip(kit, Kit.Bishop) { core = Color.white, coreShare = 0.3f });
+                fx.end = () => { foreach (var h in hands) h.Destroy(); };
+                var pts = new List<Vector3>();
                 fx.step = (x, d) =>
                 {
                     if (owner == null || owner.Pawn == null || !kit.Held(x)) return false;
                     float k = Kit.Charge(owner.StageTime, S.bishopWindup);
+                    bool blink = k >= 1f && ((int)(kit.Clock / F) & 2) == 0;
                     for (int i = 0; i < 2; i++)
                     {
-                        var (a, b) = RayEnds(owner, i == 0 ? -1f : 1f);
-                        var pts = new List<Vector3> { a, Vector3.Lerp(a, b, 0.5f), b };
-                        x.strips[i].Build(pts, j => 0.06f + 0.06f * k, kit.Eye);
-                        x.strips[i].head = Mathf.Lerp(0.25f, 1f, k);
-                        x.strips[i].opacity = 0.7f;
-                        x.strips[i].Apply();
+                        float side = i == 0 ? -1f : 1f;
+                        Vector3 start = HandStart(owner, side);
+                        Vector3 end = owner.PinCandidate != null ? AnkleGrip(owner.PinCandidate, owner.Dir, side, out Vector3 inDir) : PointGrip(owner, side, out inDir);
+                        Quaternion rot = Quaternion.LookRotation(owner.Dir, Vector3.up) * Quaternion.Euler(0f, 0f, -side * 18f);
+                        hands[i].Place(start, rot, -25f + 10f * Mathf.Sin(kit.Clock * 28f + i * 1.7f), blink ? 1f : 0f, HandReady * Kit.Pop(x.age, 1.25f, 0f));
+                        pts.Clear();
+                        ReachControls(start, end, owner.Dir, inDir, side, out Vector3 p1, out Vector3 p2);
+                        for (int j = 0; j <= 14; j++) pts.Add(Bezier(start, p1, p2, end, j / 14f));
+                        var path = x.strips[i];
+                        path.Build(pts, j => 0.045f, kit.Eye);
+                        path.head = Mathf.Lerp(0.15f, 1f, k);
+                        path.opacity = 0.55f;
+                        path.Apply();
                     }
                     return true;
                 };
@@ -883,59 +864,158 @@ namespace ChessFight.RagdollLab
             });
         }
 
-        /// <summary>A ray from beside the bishop's shoulder through the point and 1.6 m on into the floor.</summary>
-        static (Vector3, Vector3) RayEnds(SwordFightSkills s, float side)
+        /// <summary>Where a hand waits and flies from: beside the bishop's shoulder, a little ahead.</summary>
+        static Vector3 HandStart(SwordFightSkills s, float side)
         {
             Vector3 perp = Vector3.Cross(Vector3.up, s.Dir).normalized;
-            Vector3 a = s.Pawn.bodies[(int)BodyId.Chest].position + perp * (side * 0.9f) + Vector3.up * 0.35f;
-            Vector3 p = Kit.FloorUnder(s.Point, 1.5f) + Vector3.up * 0.5f;
-            Vector3 u = (p - a).normalized;
-            Vector3 b = p + u * 1.6f;
-            if (b.y < p.y - 0.45f) b = p + u * ((0.45f) / Mathf.Max(0.05f, -u.y));
-            return (a, b);
+            return s.Pawn.bodies[(int)BodyId.Chest].position + perp * (side * 0.42f) - Vector3.up * 0.06f + s.Dir * 0.08f;
         }
 
+        /// <summary>Where a hand holds an ankle: the foot on its side of the piece (as the bishop sees it), the wrist just
+        /// outside the piece's base on the diagonal it comes in on (<paramref name="inDir"/>: toward the line), a little
+        /// into the floor.</summary>
+        static Vector3 AnkleGrip(RagdollPawn pawn, Vector3 dir, float side, out Vector3 inDir)
+        {
+            Vector3 perp = Vector3.Cross(Vector3.up, dir).normalized;
+            inDir = (dir - perp * side).normalized;
+            Vector3 a = pawn.bodies[(int)BodyId.FootL].position, b = pawn.bodies[(int)BodyId.FootR].position;
+            bool aLeft = Vector3.Dot(a - b, perp) < 0f;
+            Vector3 foot = side < 0f ? (aLeft ? a : b) : (aLeft ? b : a);
+            Vector3 floor = Kit.FloorUnder(foot, 0.4f);
+            return new Vector3(foot.x, floor.y - 0.05f, foot.z) - inDir * 0.17f;
+        }
+
+        /// <summary>Where a hand lands on an empty point: flat on the floor beside it.</summary>
+        static Vector3 PointGrip(SwordFightSkills s, float side, out Vector3 inDir)
+        {
+            Vector3 perp = Vector3.Cross(Vector3.up, s.Dir).normalized;
+            inDir = (s.Dir - perp * side).normalized;
+            return Kit.FloorUnder(s.Point + perp * (side * 0.22f), 1.5f) + Vector3.up * 0.04f - inDir * 0.2f;
+        }
+
+        /// <summary>A hand's way from <paramref name="start"/> to <paramref name="end"/> (a cubic curve): out on one diagonal,
+        /// in on the other (the bishop's moves), arching over the floor.</summary>
+        static void ReachControls(Vector3 start, Vector3 end, Vector3 dir, Vector3 inDir, float side, out Vector3 p1, out Vector3 p2)
+        {
+            Vector3 perp = Vector3.Cross(Vector3.up, dir).normalized;
+            Vector3 outDir = (dir + perp * side).normalized, flat = end - start;
+            flat.y = 0f;
+            float k = Mathf.Clamp(flat.magnitude * 0.38f, 0.5f, 2.6f);
+            p1 = start + outDir * k + Vector3.up * 0.25f;
+            p2 = end - inDir * k + Vector3.up * 0.45f;
+        }
+
+        static Vector3 Bezier(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t)
+        {
+            float u = 1f - t;
+            return u * u * u * a + 3f * u * u * t * b + 3f * u * t * t * c + t * t * t * d;
+        }
+
+        static Vector3 BezierTangent(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t)
+        {
+            float u = 1f - t;
+            return 3f * u * u * (b - a) + 6f * u * t * (c - b) + 3f * t * t * (d - c);
+        }
+
+        /// <summary>A flying hand: its fingers on along its way, its palm down.</summary>
+        static Quaternion FlyRotation(Vector3 tangent, Vector3 fallback)
+        {
+            if (tangent.sqrMagnitude < 1e-6f) tangent = fallback;
+            tangent.Normalize();
+            Vector3 palm = Vector3.ProjectOnPlane(Vector3.down, tangent);
+            if (palm.sqrMagnitude < 1e-4f) palm = Vector3.ProjectOnPlane(fallback, tangent);
+            return Quaternion.LookRotation(palm.normalized, tangent);
+        }
+
+        /// <summary>The ease of a hand's flight: quick off, slowing onto the ankle (0..1 over <see cref="HandFly"/> frames).</summary>
+        static float FlyEase(float a) => a >= HandFly ? 1f : 1f - (1f - a / HandFly) * (1f - a / HandFly);
+
+        /// <summary>A violet arm stretching behind a hand (the bishop's sleeve: light inside, inked).</summary>
+        Kit.Strip ArmStrip() => new Kit.Strip(kit, Kit.Bishop) { core = Kit.Bishop.light, coreShare = 0.36f, inkShare = 0.24f };
+
+        /// <summary>The hands go (the pinned pieces' own effects fly them: <see cref="PinMarks"/>); here the push off beside
+        /// the bishop, and when they get there the hit on the point: a ring bursting along the floor, an impact ring, a
+        /// puff, a hit stop, the view kicking in (for the bishop) and washing violet. Nobody on the point: the hands slap
+        /// the floor there and come back (<see cref="MissedHands"/>).</summary>
         void BishopFire(SfFxEvent e)
         {
             var s = e.by;
-            var pal = s.PinCondition ? Kit.Queen : Kit.Bishop;
+            var caster = s.Pawn;
+            Vector3 c = Kit.FloorUnder(e.at, 1.5f);
+            bool got = e.order > 0;
+            for (int i = 0; i < 2; i++) kit.PuffBurst(HandStart(s, i == 0 ? -1f : 1f), Kit.Bishop, 3, 0.3f, 0.1f, 0.3f, 0.2f);
+            Punch(caster, null, 3f, 10);
+            if (!got) MissedHands(s);
+            var pal = got ? Kit.Queen : Kit.Bishop;
+            float r = e.size;
+            kit.Run(1f, (fx, d) =>
+            {
+                if (fx.age < HandFly * F) return true;
+                kit.FlashRing(c, r, pal);
+                kit.ImpactRing(c + Vector3.up * 0.4f, Vector3.up, pal, 0.2f, 0.7f);
+                FloorShock(c, 0.2f, r + 0.5f, Kit.Bishop, 6, 14, 0.24f);
+                kit.PuffBurst(c + Vector3.up * 0.1f, Kit.Bishop, 5, 0.6f, 0.14f, 0.4f, 0.3f);
+                HitStop(got ? 4 : 2);
+                Shake(caster, null, got ? 0.08f : 0.05f, 5);
+                Punch(caster, null, 4f, 12);
+                Tint(caster, null, Kit.Bishop.main, 0.3f, 18);
+                return false;
+            });
+        }
+
+        /// <summary>Nobody on the point: the two hands fly there all the same, slap the floor and make fists, and are
+        /// pulled back to the bishop by their arms, popping away as they get there.</summary>
+        void MissedHands(SwordFightSkills s)
+        {
+            var hands = new[] { new GrabHand(kit, "Bishop hand L"), new GrabHand(kit, "Bishop hand R") };
+            var arms = new[] { ArmStrip(), ArmStrip() };
+            var starts = new Vector3[2];
+            var ends = new Vector3[2];
+            var ins = new Vector3[2];
+            var c1 = new Vector3[2];
+            var c2 = new Vector3[2];
+            Vector3 dir = s.Dir;
             for (int i = 0; i < 2; i++)
             {
-                var (a, b) = RayEnds(s, i == 0 ? -1f : 1f);
-                var strip = new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.4f, inkShare = 0.22f };
-                var f = kit.Run(0.3f, (fx, d) =>
-                {
-                    var pts = new List<Vector3> { a, Vector3.Lerp(a, b, 0.5f), b };
-                    float k = fx.age / fx.life;
-                    strip.Build(pts, j => fx.age < 2f * F ? 0.34f : 0.26f * (1f - k * 0.5f), kit.Eye);
-                    strip.core = fx.age < 2f * F ? Color.white : pal.light;
-                    strip.tail = Kit.EaseIn(k);
-                    strip.Apply();
-                    return true;
-                });
-                f.strips.Add(strip);
+                float side = i == 0 ? -1f : 1f;
+                starts[i] = HandStart(s, side);
+                ends[i] = PointGrip(s, side, out ins[i]);
+                ReachControls(starts[i], ends[i], dir, ins[i], side, out c1[i], out c2[i]);
             }
-            Vector3 c = Kit.FloorUnder(e.at, 1.5f);
-            kit.FlashRing(c, e.size, pal);
-            kit.ImpactRing(c + Vector3.up * 0.5f, Vector3.up, pal, 0.2f, 0.7f);
-            FloorShock(c, 0.2f, e.size + 0.5f, pal, 6, 14, 0.24f);
-            // And a beam straight down onto the point, thick for two frames, thinning away.
-            var beam = new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.45f, inkShare = 0.2f };
-            var col = new List<Vector3> { c + Vector3.up * 3.2f, c + Vector3.up * 1.6f, c + Vector3.up * 0.05f };
-            var fb = kit.Run(12f * F, (fx, d) =>
+            var pts = new List<Vector3>();
+            bool slapped = false;
+            var f = kit.Run(34f * F, (fx, d) =>
             {
                 float a = fx.age / F;
-                beam.Build(col, j => a < 2f ? 0.75f : Mathf.Lerp(0.55f, 0.05f, (a - 2f) / 10f), kit.Eye);
-                beam.core = a < 2f ? Color.white : pal.light;
-                beam.Apply();
+                // Out in nine frames, fists by thirteen, back from sixteen to thirty, popping away in the last four.
+                float t = a < 16f ? FlyEase(a) : 1f - Kit.EaseIn((a - 16f) / 14f);
+                for (int i = 0; i < 2; i++)
+                {
+                    Vector3 at = Bezier(starts[i], c1[i], c2[i], ends[i], t);
+                    Quaternion fly = FlyRotation(BezierTangent(starts[i], c1[i], c2[i], ends[i], Mathf.Clamp(t, 0.02f, 0.98f)), dir);
+                    Quaternion slap = Quaternion.LookRotation(Vector3.down, ins[i]);
+                    Quaternion rot = a < HandFly - 3f ? fly : a < 16f ? Quaternion.Slerp(fly, slap, Mathf.Clamp01((a - (HandFly - 3f)) / 3f)) : Quaternion.Slerp(slap, fly, Mathf.Clamp01((a - 16f) / 4f));
+                    float curl = a < HandFly ? -15f : Mathf.Lerp(-15f, 95f, Kit.EaseOut((a - HandFly) / 4f));
+                    float scale = Mathf.Lerp(HandReady, HandHold, t) * (a > 30f ? 1f - Kit.EaseIn((a - 30f) / 4f) : 1f);
+                    hands[i].Place(at, rot, curl, a >= HandFly && a < HandFly + 2f ? 1f : 0f, scale);
+                    pts.Clear();
+                    for (int j = 0; j <= 12; j++) pts.Add(Bezier(starts[i], c1[i], c2[i], ends[i], t * j / 12f));
+                    if (t > 0.05f)
+                    {
+                        arms[i].Build(pts, j => Mathf.Lerp(0.06f, 0.1f, j / 12f), kit.Eye);
+                        arms[i].Apply();
+                    }
+                    else arms[i].Hide();
+                }
+                if (!slapped && a >= HandFly)
+                {
+                    slapped = true;
+                    for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] + Vector3.up * 0.05f, Kit.Dust, 3, 0.3f, 0.1f, 0.3f, 0.15f);
+                }
                 return true;
             });
-            fb.strips.Add(beam);
-            kit.PuffBurst(c + Vector3.up * 0.1f, pal, 5, 0.6f, 0.14f, 0.4f, 0.3f);
-            HitStop(4);
-            Shake(s.Pawn, null, 0.08f, 5);
-            Punch(s.Pawn, null, 4f, 12);
-            Tint(s.Pawn, null, pal.main, 0.3f, 18);
+            f.strips.AddRange(arms);
+            f.end = () => { foreach (var h in hands) h.Destroy(); };
         }
 
         void SlowRing(SwordFightSkills s)
@@ -977,9 +1057,13 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>
-        /// Pinned (R99, 승규 님: "묶으면 적군 발목을 잡는 듯한 연출"): a violet hand comes up out of a dark hole in the floor
-        /// beside each foot, open, and in the next four frames its fingers close round the ankle (a white flash, a puff,
-        /// a jolt); it squeezes while the pin lasts, then lets go and sinks back. A gold ring on the floor round the piece.
+        /// Pinned (R99, 승규 님: "묶으면 적군 발목을 잡는 듯한 연출"; R102: "처음에 스킬을 쓸 때 손 모양이 대각선으로 뻗으면서
+        /// 상대 플레이어 발목을 잡는 연출", and anywhere on the floor): the bishop's two gold hands shoot out from beside its
+        /// shoulders, out on one diagonal and in on the other, violet arms stretching behind them; in nine frames each is at
+        /// an ankle, turning to it, and its fingers close round it in three more (white, puffs, a jolt, the piece flashes
+        /// violet and is pulled down into a crouch). The arms come away from the bishop's end, the hands squeeze while the
+        /// pin lasts (or until the piece is knocked down), then open and pop away. A gold ring on the floor round the piece
+        /// while it is held. Pinned by something that is not a bishop's hands, they come straight up out of the floor.
         /// </summary>
         void PinMarks(SwordFightSkills s)
         {
@@ -989,78 +1073,114 @@ namespace ChessFight.RagdollLab
             {
                 var fx = new Kit.Fx();
                 var hands = new[] { new GrabHand(kit, "Grab hand L"), new GrabHand(kit, "Grab hand R") };
-                var holes = new[] { new Kit.Tile(kit, "Grab hole L"), new Kit.Tile(kit, "Grab hole R") };
-                fx.tiles.AddRange(holes);
+                var arms = new[] { ArmStrip(), ArmStrip() };
+                fx.strips.AddRange(arms);
                 fx.tiles.Add(new Kit.Tile(kit, "Pin ring"));
                 fx.end = () => { foreach (var h in hands) h.Destroy(); };
+                SwordFightSkills by = null;
+                Vector3 dir = Kit.FlatDir(pawn.Facing, Vector3.forward);
+                if (pinnedBy.TryGetValue(pawn, out var src))
+                {
+                    pinnedBy.Remove(pawn);
+                    if (src.by != null && src.by.Pawn != null && kit.Clock - src.at < 0.3f)
+                    {
+                        by = src.by;
+                        dir = Kit.FlatDir(src.dir, dir);
+                    }
+                }
+                var starts = new Vector3[2];
+                var ends = new Vector3[2];
+                var ins = new Vector3[2];
+                for (int i = 0; i < 2; i++)
+                {
+                    float side = i == 0 ? -1f : 1f;
+                    ends[i] = AnkleGrip(pawn, dir, side, out ins[i]);
+                    starts[i] = by != null ? HandStart(by, side) : ends[i] - Vector3.up * 0.5f;
+                }
                 float released = -1f;
-                bool grabbed = false;
-                var feet = new Vector3[2];
+                bool grabbed = false, puffed = false;
+                var pts = new List<Vector3>();
                 fx.step = (x, d) =>
                 {
                     if (pawn == null) return false;
-                    bool on = kit.Held(x) && owner.PinLeft > 0f;
+                    bool on = kit.Held(x) && owner.PinLeft > 0f && pawn.State == PawnState.Active;
                     if (!on && released < 0f) released = x.age;
                     float a = x.age / F, r = released >= 0f ? (x.age - released) / F : -1f;
-                    if (r >= 10f) return false;
-                    Vector3 facing = Kit.FlatDir(pawn.Facing, Vector3.forward);
-                    Vector3 right = Vector3.Cross(Vector3.up, facing);
+                    // Let go before they got there: they only pop away where they are.
+                    bool early = released >= 0f && released < HandFly * F;
+                    if (r >= (early ? 6f : 10f)) return false;
+                    float t = early ? FlyEase(released / F) : FlyEase(a);
                     Vector3 centre = Kit.FloorUnder(pawn.Hips.position, 0.6f);
-                    // Open as it rises, shut on the ankle by frame 9, a small squeeze while held, open again to let go.
-                    float rise = r >= 0f ? 1f - Kit.EaseIn(r / 8f) : Kit.EaseOutBack(a / 5f);
-                    float curl = r >= 0f ? Mathf.Lerp(80f, -25f, Kit.EaseOut(r / 4f))
-                        : a < 5f ? -25f : a < 9f ? Mathf.Lerp(-25f, 88f, Kit.EaseOut((a - 5f) / 4f)) : 80f + 6f * Mathf.Sin(kit.Clock * 38f);
-                    float flash = r < 0f && a >= 9f && a < 11f ? 1f : 0f;
                     for (int i = 0; i < 2; i++)
                     {
-                        // The hands hold the feet where they are; letting go, they stay where they let go.
-                        if (r < 0f) feet[i] = pawn.bodies[(int)(i == 0 ? BodyId.FootL : BodyId.FootR)].position;
-                        Vector3 side = Kit.FlatDir(feet[i] - pawn.Hips.position, right * (i == 0 ? -1f : 1f));
-                        if (Vector3.Dot(side, right * (i == 0 ? -1f : 1f)) < 0.2f) side = right * (i == 0 ? -1f : 1f);
-                        Vector3 floor = Kit.FloorUnder(feet[i], 0.4f);
-                        Vector3 at = new Vector3(feet[i].x, floor.y, feet[i].z) + side * 0.17f;   // just outside the piece's base, so the hand shows
-                        hands[i].Pose(at, -side, rise, curl, flash, 1.5f, 0.07f);
-                        var hole = holes[i];
-                        hole.Floor(new Vector3(at.x, floor.y + 0.012f, at.z), facing, new Vector2(0.3f, 0.44f) * (r >= 0f ? 1f - Mathf.Clamp01(r / 10f) : Kit.Pop(x.age, 1.15f, 0f)));
-                        hole.shape = 2f;
-                        hole.fill = Kit.A(Kit.Bishop.ink, 0.95f);
-                        hole.core = Color.clear;
-                        hole.ink = Kit.A(Kit.Bishop.main, 1f);
-                        hole.inkWidth = 0.03f;
-                        hole.rim = Color.clear;
-                        hole.stripe = Color.clear;
-                        hole.fade = 1f;
-                        hole.Apply();
+                        float side = i == 0 ? -1f : 1f;
+                        // The ankle on its side; held, the hands stay where they took hold.
+                        if (r < 0f) ends[i] = AnkleGrip(pawn, dir, side, out ins[i]);
+                        Vector3 c1 = starts[i], c2 = ends[i];
+                        if (by != null) ReachControls(starts[i], ends[i], dir, ins[i], side, out c1, out c2);
+                        Vector3 at = Bezier(starts[i], c1, c2, ends[i], t);
+                        Quaternion fly = FlyRotation(BezierTangent(starts[i], c1, c2, ends[i], Mathf.Clamp(t, 0.02f, 0.98f)), dir);
+                        Quaternion grip = Quaternion.LookRotation(ins[i], Vector3.up);
+                        Quaternion rot = by == null ? grip : Quaternion.Slerp(fly, grip, Mathf.Clamp01((a - (HandFly - 3f)) / 3f));
+                        // Open as it flies, shut on the ankle in three frames, a small squeeze while held, open to let go.
+                        float curl = early ? -15f
+                            : r >= 0f ? Mathf.Lerp(80f, -25f, Kit.EaseOut(r / 4f))
+                            : a < HandFly ? -15f : a < HandFly + 3f ? Mathf.Lerp(-15f, 88f, Kit.EaseOut((a - HandFly) / 3f)) : 80f + 6f * Mathf.Sin(kit.Clock * 38f);
+                        float scale = Mathf.Lerp(by != null ? HandReady : HandHold, HandHold, t);
+                        if (early) scale *= 1f - Kit.EaseIn(r / 6f);
+                        else if (r >= 4f) scale *= 1f - Kit.EaseIn((r - 4f) / 6f);
+                        hands[i].Place(at, rot, curl, r < 0f && a >= HandFly && a < HandFly + 2f ? 1f : 0f, scale);
+                        // The arm, from beside the bishop to the wrist; once the hand holds, it comes away from the bishop's end.
+                        var arm = arms[i];
+                        float gone = early ? 1f : a < HandFly + 2f ? 0f : Kit.EaseIn((a - HandFly - 2f) / 8f);
+                        if (by != null && t > 0.05f && gone < 0.999f)
+                        {
+                            pts.Clear();
+                            for (int j = 0; j <= 12; j++) pts.Add(Bezier(starts[i], c1, c2, ends[i], t * j / 12f));
+                            arm.Build(pts, j => Mathf.Lerp(0.06f, 0.1f, j / 12f), kit.Eye);
+                            arm.tail = gone;
+                            arm.Apply();
+                        }
+                        else arm.Hide();
                     }
+                    if (early) return true;
                     // Held, the piece is pulled down into a crouch.
-                    if (r < 0f && a >= 9f) kit.Coil(pawn, 0.75f);
-                    if (!grabbed && r < 0f && a >= 9f)
+                    if (r < 0f && a >= HandFly) kit.Coil(pawn, 0.75f);
+                    if (!grabbed && r < 0f && a >= HandFly)
                     {
                         grabbed = true;
-                        for (int i = 0; i < 2; i++) kit.PuffBurst(feet[i] + Vector3.up * 0.05f, Kit.Bishop, 3, 0.3f, 0.09f, 0.3f, 0.15f);
+                        for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] + ins[i] * 0.17f + Vector3.up * 0.08f, Kit.Bishop, 3, 0.3f, 0.09f, 0.3f, 0.15f);
                         kit.ImpactRing(centre + Vector3.up * 0.12f, Vector3.up, Kit.Bishop, 0.15f, 0.55f, false);
+                        kit.FlashBody(pawn, Kit.Bishop.main);
                         kit.AddSquash(pawn, Kit.SquashKind.Bump);
-                        Shake(owner.Pawn, null, 0.06f, 5);
+                        Shake(by != null ? by.Pawn : null, pawn, 0.06f, 5);
                     }
-                    if (released >= 0f && Mathf.Abs(r) < 1e-4f)
-                        kit.PuffBurst(centre + Vector3.up * 0.15f, Kit.Bishop, 4, 0.4f, 0.12f, 0.35f);
-                    var ring = x.tiles[2];
-                    ring.Floor(centre + Vector3.up * 0.022f, Vector3.forward, Vector2.one * 1.4f * Kit.Pop(x.age, 1.1f, 0.6f));
-                    Kit.Horseshoe(ring, Kit.Queen, 0.95f, 0f);
-                    ring.inner = 0.86f;
-                    ring.gap = 0f;
-                    ring.flash = a >= 9f && a < 11f ? 1f : 0f;
-                    ring.fade = r >= 0f ? 1f - r / 10f : 1f;
-                    ring.Apply();
+                    if (!puffed && r >= 4f)
+                    {
+                        puffed = true;
+                        for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] + Vector3.up * 0.15f, Kit.Bishop, 3, 0.3f, 0.1f, 0.3f);
+                    }
+                    var ring = x.tiles[0];
+                    if (a >= HandFly)
+                    {
+                        ring.Floor(centre + Vector3.up * 0.022f, Vector3.forward, Vector2.one * 1.4f * Kit.Pop(x.age - HandFly * F, 1.1f, 0.6f));
+                        Kit.Horseshoe(ring, Kit.Queen, 0.95f, 0f);
+                        ring.inner = 0.86f;
+                        ring.gap = 0f;
+                        ring.flash = a < HandFly + 2f ? 1f : 0f;
+                        ring.fade = r >= 0f ? 1f - r / 10f : 1f;
+                        ring.Apply();
+                    }
+                    else ring.Hide();
                     return true;
                 };
                 return fx;
             });
         }
 
-        /// <summary>A chunky violet cartoon hand (design A props: painted, inked) with a gold cuff: a palm, four fingers
-        /// of two joints and a thumb. Its root sits on the floor; the palm stands up facing <c>Pose</c>'s direction and
-        /// the fingers curl toward it.</summary>
+        /// <summary>A chunky gold cartoon hand (design A props: painted, inked) with a violet cuff: a palm, four fingers of
+        /// two joints and a thumb. Its root is the wrist; the fingers point along its up, the palm faces its forward and the
+        /// fingers curl toward it.</summary>
         sealed class GrabHand
         {
             readonly Transform root;
@@ -1072,7 +1192,8 @@ namespace ChessFight.RagdollLab
             {
                 root = new GameObject(name).transform;
                 root.SetParent(kit.root, false);
-                var pal = Kit.Queen;   // gold: the pin's colour, and it reads on the violet rings
+                root.position = Vector3.down * 1000f;   // out of sight until it is first placed
+                var pal = Kit.Queen;   // gold: the pin's colour, and it reads on the violet arms and rings
                 Add(kit, kit.RoundBox(new Vector3(0.13f, 0.15f, 0.055f), 0.024f), pal, root, new Vector3(0f, 0.075f, 0f));
                 for (int i = 0; i < 4; i++)
                 {
@@ -1104,12 +1225,12 @@ namespace ChessFight.RagdollLab
                 return p;
             }
 
-            /// <summary><paramref name="rise"/> 0 under the floor .. 1 up; <paramref name="curl"/> degrees each finger joint
-            /// bends toward <paramref name="faces"/> (below 0 spread open).</summary>
-            public void Pose(Vector3 at, Vector3 faces, float rise, float curl, float flash, float scale, float sink = 0f)
+            /// <summary>The wrist at <paramref name="wrist"/>, turned by <paramref name="rot"/>; <paramref name="curl"/> degrees
+            /// each finger joint bends toward the palm's side (below 0 spread open).</summary>
+            public void Place(Vector3 wrist, Quaternion rot, float curl, float flash, float scale)
             {
-                root.SetPositionAndRotation(at + Vector3.up * (-sink - 0.32f * scale * (1f - rise)), Quaternion.LookRotation(Kit.FlatDir(faces, Vector3.forward), Vector3.up));
-                root.localScale = Vector3.one * scale;
+                root.SetPositionAndRotation(wrist, rot);
+                root.localScale = Vector3.one * Mathf.Max(0.001f, scale);
                 float open = Mathf.Clamp01(-curl / 25f);
                 for (int i = 0; i < 4; i++)
                 {
@@ -1307,7 +1428,7 @@ namespace ChessFight.RagdollLab
                     kit.FlashBody(e.by.Pawn, Kit.King.main);
                     KingWave(e.by);
                     SpinCut(e.by.Pawn, Kit.King, S != null ? Mathf.Min(1.3f, S.kingCounterRadius * 0.5f) : 1.2f);
-                    Crown(e.by.Pawn);
+                    HeadMark(e.by.Pawn, PieceKind.King);   // his mark pops again (R99's crown is this now)
                     Afterimage(e.by.Pawn, Kit.King, 1.7f, 0.32f, 0.7f, true);
                     HitStop(7);
                     Shake(e.by.Pawn, null, 0.18f, 9);
@@ -1339,13 +1460,9 @@ namespace ChessFight.RagdollLab
                     break;
                 }
                 case SfFxKind.BishopFire: BishopFire(e); break;
-                case SfFxKind.BishopSlow:
-                    kit.FlashBody(e.target, Kit.Bishop.main);
-                    kit.Drops(e.at, Vector3.up, Kit.Bishop, 3, 5f);
-                    break;
+                case SfFxKind.BishopSlow: break;   // the hands say it when they get there (PinMarks)
                 case SfFxKind.BishopPin:
-                    kit.FlashRing(e.at, 0.8f, Kit.Queen);
-                    Shake(e.by.Pawn, e.target, 0.08f, 5);
+                    if (e.target != null) pinnedBy[e.target] = (e.by, e.dir, kit.Clock);
                     break;
                 case SfFxKind.KnightLeap: KnightLeap(e); break;
                 case SfFxKind.KnightLand: KnightLand(e); break;
@@ -1393,46 +1510,6 @@ namespace ChessFight.RagdollLab
                 return true;
             });
             f.strips.Add(strip);
-        }
-
-        /// <summary>A crown popping up over the king's head (his colour, inked), held a moment, hopping back down into him.</summary>
-        void Crown(RagdollPawn pawn)
-        {
-            if (pawn == null) return;
-            var root = new GameObject("King crown").transform;
-            root.SetParent(kit.root, false);
-            var parts = new List<Kit.Prop>();
-            var band = new Kit.Prop(kit, kit.meshTorus, Kit.King, "Crown band", root) { inkWidth = 0.01f };
-            band.t.localScale = new Vector3(0.15f, 0.75f, 0.15f);
-            parts.Add(band);
-            for (int i = 0; i < 5; i++)
-            {
-                float ang = i / 5f * Mathf.PI * 2f;
-                var spike = new Kit.Prop(kit, kit.RoundBox(new Vector3(0.05f, 0.12f, 0.05f), 0.02f), Kit.King, "Crown point", root) { inkWidth = 0.01f };
-                spike.t.localPosition = new Vector3(Mathf.Cos(ang) * 0.15f, 0.07f, Mathf.Sin(ang) * 0.15f);
-                spike.t.localRotation = Quaternion.AngleAxis(-12f, Vector3.Cross(Vector3.up, spike.t.localPosition.normalized));
-                parts.Add(spike);
-                var gem = new Kit.Prop(kit, kit.RoundBox(Vector3.one * 0.05f, 0.024f), Kit.Queen, "Crown ball", spike.t) { inkWidth = 0.01f };
-                gem.t.localPosition = new Vector3(0f, 0.07f, 0f);
-                parts.Add(gem);
-            }
-            var f = kit.Run(0.8f, (fx, d) =>
-            {
-                if (pawn == null) return false;
-                float a = fx.age / F;
-                float hop = fx.age > 0.6f ? Mathf.Clamp01((fx.age - 0.6f) / 0.2f) : 0f;
-                float s = Kit.Pop(fx.age, 1.3f, 0f) * (1f - hop);
-                root.SetPositionAndRotation(pawn.bodies[(int)BodyId.Head].position + Vector3.up * (0.34f + 0.08f * Kit.EaseOutBack(Mathf.Min(1f, a / 8f)) - 0.3f * hop),
-                    Quaternion.Euler(0f, kit.Clock * 120f, 0f));
-                root.localScale = Vector3.one * Mathf.Max(0.001f, s);
-                foreach (var p in parts)
-                {
-                    p.flash = a < 2f ? 1f : 0f;
-                    p.Apply();
-                }
-                return true;
-            });
-            f.end = () => { if (root != null) Destroy(root.gameObject); };
         }
 
         /// <summary>A skill hit in design A: the body white then the hitter's colour, an impact ring, drops and a C half

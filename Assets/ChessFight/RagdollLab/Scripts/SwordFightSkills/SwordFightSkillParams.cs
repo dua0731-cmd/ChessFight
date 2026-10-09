@@ -70,9 +70,9 @@ namespace ChessFight.RagdollLab
         public float bishopWindup = 0.4f;
         public float bishopRecovery = 0.35f;
         public float bishopSlow = 0.6f;
+        [Tooltip("감속이 이어지는 시간 (묶임 시간 포함)")]
         public float bishopSlowTime = 1.5f;
-        [Tooltip("맞은 적 뒤로 이 거리 안이 가장자리(바닥 없음)면 묶임")]
-        public float bishopPinBehind = 2f;
+        [Tooltip("손이 발목을 잡고 있는 시간 (맵 어디서든, R102)")]
         public float bishopPinTime = 0.8f;
 
         [Header("나이트 · 포크 강하")]

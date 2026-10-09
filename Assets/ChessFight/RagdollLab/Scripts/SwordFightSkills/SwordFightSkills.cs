@@ -33,8 +33,9 @@ namespace ChessFight.RagdollLab
     /// it). Design doc chapter 8 on the repo's rules (ring-out = 1 point, no health, the pawn has no skill):
     /// 킹 왕의 반격 (a short guard that takes one sword hit and shoves everyone round), 퀸 꼬치 베기 (a long free-aimed
     /// thrust that pushes a line of pieces, less the further back), 룩 열린 파일 포격 (a ground shockwave along a line,
-    /// stopped by solid things, no turning once it goes), 비숍 관통 핀 (two rays crossing on a point: slowed, and pinned
-    /// if the floor ends right behind the hit piece), 나이트 포크 강하 (a leap to a chosen spot that hits two spots ahead).
+    /// stopped by solid things, no turning once it goes), 비숍 관통 핀 (two hands reaching on the diagonals to a point:
+    /// every piece there is pinned by the ankles, then slowed; anywhere on the floor since R102, before only with the
+    /// floor ending right behind it), 나이트 포크 강하 (a leap to a chosen spot that hits two spots ahead).
     /// The skill key (F in the test scene) starts the aim, the left click uses it, the right click (or the key again) calls it
     /// off, as in the other skill test scenes; the king has no aim: the key is his guard. A skill knocked out of its windup still starts the cooldown.
     /// Offline only: the network packets do not carry skills.
@@ -63,8 +64,7 @@ namespace ChessFight.RagdollLab
         public Vector3 AimDir { get; private set; } = Vector3.forward;
         public Vector3 AimPoint { get; private set; }
         public bool AimValid { get; private set; }
-        /// <summary>The bishop: the piece the point is on has the floor ending behind it (it would be pinned).</summary>
-        public bool PinCondition { get; private set; }
+        /// <summary>The bishop: the enemy on the aimed point (the one the hands will take).</summary>
         public RagdollPawn PinCandidate { get; private set; }
         public Vector3 Origin { get; private set; }
 
@@ -91,7 +91,7 @@ namespace ChessFight.RagdollLab
         Vector3? aimOverride;
         Vector3? pointOverride;
         Vector3 rawAim = Vector3.forward;
-        float cooldownLeft, slowLeft, pinLeft;
+        float cooldownLeft, slowLeft, pinLeft, guardUntil;
         readonly HashSet<RagdollPawn> hitSet = new HashSet<RagdollPawn>();
         Camera aimCamera;
 
@@ -171,6 +171,13 @@ namespace ChessFight.RagdollLab
             SetStage(SfStage.Active, "반격");
             Counter();
             return true;
+        }
+
+        /// <summary>The test bed's F8 while the king is in his guard: a dummy's cut is on its way, so the guard waits for it
+        /// (at most <paramref name="seconds"/> more). Only the test helper; a real cut has to come within the guard.</summary>
+        public void HoldGuard(float seconds)
+        {
+            if (Piece == PieceKind.King && Stage == SfStage.Windup) guardUntil = Mathf.Max(guardUntil, StageTime + seconds);
         }
 
         public void ResetSkill()
@@ -254,6 +261,7 @@ namespace ChessFight.RagdollLab
             WaveFront = 0f;
             WaveBlocked = false;
             KingCountered = false;
+            guardUntil = 0f;
         }
 
         void StartCooldown()
@@ -308,18 +316,9 @@ namespace ChessFight.RagdollLab
             }
             else
             {
-                // The pin is shown before it is thrown, to both sides: the enemy on the point, and the floor behind it.
+                // The enemy on the point is shown before the hands go (to both sides).
                 PinCandidate = Nearest(AimPoint, S.bishopRadius);
-                PinCondition = PinCandidate != null && EdgeBehind(PinCandidate.Hips.position, along);
             }
-        }
-
-        /// <summary>No floor somewhere in the next <see cref="SwordFightSkillParams.bishopPinBehind"/> metres behind it.</summary>
-        bool EdgeBehind(Vector3 at, Vector3 along)
-        {
-            for (float d = 0.5f; d <= S.bishopPinBehind + 0.01f; d += 0.5f)
-                if (!HasFloor(Flat(at) + along * d)) return true;
-            return false;
         }
 
         static bool HasFloor(Vector3 flatPoint)
@@ -357,8 +356,8 @@ namespace ChessFight.RagdollLab
                     Say($"{Pawn.DisplayName}: 열린 파일 포격 예고" + (WaveBlocked ? $" (장애물 {Reach:0.0} m)" : ""));
                     break;
                 case PieceKind.Bishop:
-                    SetStage(SfStage.Windup, PinCondition ? "예고 · 묶임 조건" : "예고");
-                    Say($"{Pawn.DisplayName}: 관통 핀 예고" + (PinCondition ? " (뒤가 가장자리 → 묶임)" : ""));
+                    SetStage(SfStage.Windup, PinCandidate != null ? "예고 · 적 조준" : "예고");
+                    Say($"{Pawn.DisplayName}: 관통 핀 예고" + (PinCandidate != null ? $" ({PinCandidate.DisplayName})" : ""));
                     break;
                 case PieceKind.Knight:
                     KnightLeap();
@@ -376,6 +375,7 @@ namespace ChessFight.RagdollLab
             Dir = Flat(Pawn.Facing).normalized;
             Raise(SfFxKind.Cast, null, Floor(Pawn.Hips.position), Dir, 0f);
             SetStage(SfStage.Windup, "받아내기");
+            guardUntil = 0f;
             Say($"{Pawn.DisplayName}: 왕의 반격 자세");
         }
 
@@ -398,7 +398,7 @@ namespace ChessFight.RagdollLab
             switch (Stage)
             {
                 case SfStage.Windup:
-                    if (StageTime >= S.kingGuard)
+                    if (StageTime >= Mathf.Max(S.kingGuard, guardUntil))
                     {
                         SetStage(SfStage.Recovery, "빈틈");
                         Raise(SfFxKind.KingWhiff, null, Pawn.Hips.position, Dir, 0f);
@@ -576,23 +576,23 @@ namespace ChessFight.RagdollLab
                 case SfStage.Windup:
                     if (StageTime >= S.bishopWindup)
                     {
-                        SetStage(SfStage.Active, "광선");
-                        Raise(SfFxKind.BishopFire, null, Point, Dir, S.bishopRadius);
+                        // The hands go out on the diagonals: every enemy on the point is held by the ankles, wherever it
+                        // stands (승규 님 10-10: "맵 전체에 가능하게"), and slowed for a while after.
+                        SetStage(SfStage.Active, "손");
+                        var taken = new List<SwordFightSkills>();
                         foreach (var other in All)
+                            if (IsEnemy(other) && Flat(other.Pawn.Hips.position - Point).magnitude <= S.bishopRadius + 0.25f) taken.Add(other);
+                        Raise(SfFxKind.BishopFire, null, Point, Dir, S.bishopRadius, taken.Count);
+                        foreach (var other in taken)
                         {
-                            if (!IsEnemy(other)) continue;
-                            if (Flat(other.Pawn.Hips.position - Point).magnitude > S.bishopRadius + 0.25f) continue;
-                            bool pin = EdgeBehind(other.Pawn.Hips.position, Dir);
                             other.slowLeft = S.bishopSlowTime;
+                            other.pinLeft = S.bishopPinTime;
                             other.Fighter.StopCombat();
                             Raise(SfFxKind.BishopSlow, other.Pawn, other.Pawn.Hips.position, Dir, S.bishopSlowTime);
-                            if (pin)
-                            {
-                                other.pinLeft = S.bishopPinTime;
-                                Raise(SfFxKind.BishopPin, other.Pawn, Floor(other.Pawn.Hips.position), Dir, S.bishopPinTime);
-                            }
-                            Say($"{Pawn.DisplayName} → {other.Pawn.DisplayName}: 감속 {(1f - S.bishopSlow) * 100f:0}% {S.bishopSlowTime:0.0}초" + (pin ? $" + 묶임 {S.bishopPinTime:0.0}초" : ""));
+                            Raise(SfFxKind.BishopPin, other.Pawn, Floor(other.Pawn.Hips.position), Dir, S.bishopPinTime);
+                            Say($"{Pawn.DisplayName} → {other.Pawn.DisplayName}: 묶임 {S.bishopPinTime:0.0}초 + 감속 {(1f - S.bishopSlow) * 100f:0}% {S.bishopSlowTime:0.0}초");
                         }
+                        if (taken.Count == 0) Say($"{Pawn.DisplayName}: 관통 핀 — 잡힌 적 없음");
                     }
                     break;
                 case SfStage.Active:

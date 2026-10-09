@@ -11,8 +11,9 @@ namespace ChessFight.RagdollLab
     /// runs as it is (swords, the 14 m platform, ring-out points, respawns, dummies) and this adds the piece skills. Every
     /// fighter gets a <see cref="SwordFightSkills"/>; as in the other skill test scenes F starts the aim, the left click
     /// uses the skill and the right click (or F again) calls it off; the king's F is his guard. Keys (temporary): 1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰
-    /// (or Z / X), F7 puts the dummies where the chosen skill is best tried, F8 makes the enemy next to you cut at you
-    /// (the king's guard), F9 sends the dummies home. The left panel shows the same (Esc frees the mouse for its buttons).
+    /// (or Z / X), F7 puts the dummies where the chosen skill is best tried, F8 makes the nearest enemy come up beside you
+    /// and cut at you, anywhere on the platform (the king's guard waits for that cut, R102), F9 sends the dummies home.
+    /// The left panel shows the same (Esc frees the mouse for its buttons).
     /// The effects are design A "잉크 테두리 장난감 체스" (<see cref="SwordFightSkillFx"/>).
     /// </summary>
     [DefaultExecutionOrder(-80)]   // after the match's step (-90), before the skills (-75) and the sword (-60)
@@ -220,7 +221,7 @@ namespace ChessFight.RagdollLab
                     Place(enemies[1], new Vector3(1.0f, 0f, -3.6f), east);
                     Place(enemies[2], new Vector3(-4f, 0f, 3.5f), east);
                     Place(allies[0], new Vector3(4.85f, 0f, 0.15f), east);
-                    Report("비숍 시험: 가장자리 1 m 앞 적 (묶임 조건) · 그 옆 아군 — 맞힌 뒤 F8은 아군이 벰");
+                    Report("비숍 시험: 가장자리 1 m 앞 적 · 그 옆 아군 — 묶은 뒤 F8은 아군이 와서 벰 (묶기는 맵 어디서든)");
                     break;
                 case PieceKind.Knight:
                     Place(me, new Vector3(0.4f, 0f, 0f), east);
@@ -239,8 +240,9 @@ namespace ChessFight.RagdollLab
 
         static Vector3 Dir(Vector3 from, Vector3 to) { var d = to - from; d.y = 0f; return d.normalized; }
 
-        /// <summary>F8: the enemy dummy nearest to me cuts at me; a bishop's ally (when an enemy is slowed or pinned) cuts
-        /// at that enemy instead.</summary>
+        /// <summary>F8: the enemy dummy nearest to me comes up beside me (wherever I am on the platform) and cuts at me; if I
+        /// am a king in his guard, the guard waits for that cut. A bishop's ally (when an enemy is slowed or pinned) comes
+        /// up to that enemy and cuts at it instead.</summary>
         public void EnemyCuts()
         {
             var me = Local;
@@ -251,10 +253,57 @@ namespace ChessFight.RagdollLab
             if (pinned != null)
             {
                 var ally = NearestTo(pinned, me.Pawn.Team, true);
-                if (ally != null) { Cut(ally, pinned.Pawn.Hips.position); Report($"{ally.Pawn.DisplayName}이 {pinned.Pawn.DisplayName}을 벰"); return; }
+                if (ally != null)
+                {
+                    BringNear(ally, pinned);
+                    Cut(ally, pinned.Pawn.Hips.position);
+                    Report($"{ally.Pawn.DisplayName}이 {pinned.Pawn.DisplayName}을 벰");
+                    return;
+                }
             }
             var enemy = NearestTo(me, me.Pawn.Team, false);
-            if (enemy != null) { Cut(enemy, me.Pawn.Hips.position); Report($"{enemy.Pawn.DisplayName}이 나를 벰"); }
+            if (enemy == null) return;
+            BringNear(enemy, me);
+            Cut(enemy, me.Pawn.Hips.position);
+            // The cut lands 0.2 to 0.4 s from now: a king already in his guard keeps it up until then.
+            me.Skills?.HoldGuard(SwordFightPawn.SwingDuration + 0.1f);
+            Report($"{enemy.Pawn.DisplayName}이 나를 벰");
+        }
+
+        /// <summary>A dummy more than a sword's reach from <paramref name="target"/> (or lying down) is put beside it first,
+        /// on its own side of it if the floor is there (else the first way round that has floor), facing it.</summary>
+        public static void BringNear(SwordFightPawn dummy, SwordFightPawn target)
+        {
+            if (dummy == null || target == null || !dummy.Alive) return;
+            Vector3 at = target.Pawn.Hips.position, off = dummy.Pawn.Hips.position - at;
+            off.y = 0f;
+            if (off.magnitude <= 1.3f && dummy.Pawn.State == PawnState.Active) return;
+            Vector3 dir = off.sqrMagnitude > 1e-4f ? off.normalized : target.Pawn.Facing;
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 d = Quaternion.AngleAxis(45f * ((i + 1) / 2) * (i % 2 == 0 ? 1f : -1f), Vector3.up) * dir;
+                Vector3 spot = at + d * 1.0f;
+                if (!FloorAt(spot, at.y, out Vector3 floor)) continue;
+                Place(dummy, floor, -d);
+                return;
+            }
+        }
+
+        /// <summary>The floor under a spot near a piece's height (not a piece, not a moving body).</summary>
+        static bool FloorAt(Vector3 spot, float hipsY, out Vector3 floor)
+        {
+            floor = spot;
+            float best = float.MaxValue;
+            foreach (var h in Physics.RaycastAll(new Vector3(spot.x, hipsY + 1f, spot.z), Vector3.down, 2.5f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (RagdollPawn.ColliderOwner.ContainsKey(h.collider)) continue;
+                var rb = h.collider.attachedRigidbody;
+                if (rb != null && !rb.isKinematic) continue;
+                if (h.normal.y < 0.5f || h.distance >= best) continue;
+                best = h.distance;
+                floor = h.point;
+            }
+            return best < float.MaxValue;
         }
 
         SwordFightPawn NearestTo(SwordFightPawn of, int team, bool sameTeam)
@@ -281,10 +330,10 @@ namespace ChessFight.RagdollLab
 
         static string HowTo(PieceKind kind) => kind switch
         {
-            PieceKind.King => "F = 받아내기 자세 0.5초 (제자리, 조준 없음)\n그 사이 적 칼이 오면 막고 반경 2.5 m 적을 2.8 m 밀어냄 · 후딜 0.4초\n안 오면 빈틈 0.6초 · F8 = 옆 적이 나를 벰",
-            PieceKind.Queen => "F = 조준: 6 m × 1.2 m 줄 (걸을 수 있음)\n좌클릭 = 0.45초 예고 → 꿰뚫기: 첫째 3.0 m · 둘째 2.1 m · 셋째 1.5 m 밀림\n후딜 0.5초 · 우클릭(또는 F) = 취소",
-            PieceKind.Rook => "F = 조준: 10 m × 1.5 m 통로\n좌클릭 = 0.5초 예고(제자리) → 땅 충격파 18 m/s: 4 m 안 2.6 m · 그 뒤 1.6 m 밀림\n장애물에서 끊김 · 발동 중 방향 못 바꿈 · 후딜 0.4초 · 우클릭 = 취소",
-            PieceKind.Bishop => "F = 조준: 화면 가운데가 가리키는 바닥 (8 m까지)\n좌클릭 = 0.4초 예고 → 두 광선이 X로 모임: 반경 1 m 적 감속 40% 1.5초\n맞은 적 뒤 2 m 안이 가장자리면 X가 금색 → 묶임 0.8초 · 우클릭 = 취소",
+            PieceKind.King => "F = 받아내기 자세 0.5초 (제자리, 조준 없음)\n그 사이 적 칼이 오면 막고 반경 2.5 m 적을 2.8 m 밀어냄 · 후딜 0.4초\n안 오면 빈틈 0.6초 · F8 = 가장 가까운 적이 옆으로 와서 벰 (맵 어디서든, 받아내기 중이면 그 칼을 기다림)",
+            PieceKind.Queen => "F = 조준: 6 m × 1.2 m 줄 (걸을 수 있음)\n좌클릭 = 0.4초 예고 → 줄을 따라 돌진하며 벰: 첫째 3.0 m · 둘째 2.1 m · 셋째 1.5 m 밀림\n가장자리·벽 앞에서 멈춤 · 후딜 0.45초 · 우클릭(또는 F) = 취소",
+            PieceKind.Rook => "F = 조준: 10 m × 1.5 m 통로\n좌클릭 = 0.5초 예고(제자리) → 칸마다 체스 말이 솟음(순서는 매번 무작위): 4 m 안 2.6 m · 그 뒤 1.6 m 밀림\n장애물에서 끊김 · 발동 중 방향 못 바꿈 · 후딜 0.4초 · 우클릭 = 취소",
+            PieceKind.Bishop => "F = 조준: 화면 가운데가 가리키는 바닥 (8 m까지)\n좌클릭 = 0.4초 예고 → 손 두 개가 대각선으로 뻗어 반경 1 m 적의 발목을 잡음\n묶임 0.8초 + 감속 40% 1.5초 (맵 어디서든) · 우클릭 = 취소",
             PieceKind.Knight => "F = 조준: 착지점 (1.5~6 m)\n좌클릭 = 0.55초 도약 → 착지 때 앞쪽 두 자리(반경 1.2 m) 적 2.4 m 밀림\n두 자리는 뛰기 전부터 보임 · 후딜 0.35초 · 우클릭 = 취소",
             _ => "폰은 스킬이 없어요 (소드 파이트 규칙)",
         };
@@ -326,8 +375,8 @@ namespace ChessFight.RagdollLab
             Styles();
             var s = me.Skills;
             GUILayout.BeginArea(new Rect(8f, 80f, 370f, Mathf.Min(Screen.height - 220f, 560f)), box);
-            GUILayout.Label("소드 파이트 스킬 시험 (R91)", header);
-            GUILayout.Label("1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰  (Z ◀ ▶ X)\n스킬: <b>F</b> 조준 → <b>좌클릭</b> 발동 · <b>우클릭</b>(또는 F) 취소 · F7 시험 배치 · F8 더미가 벰 · F9 더미 원위치 · F10 창 숨김", small);
+            GUILayout.Label("소드 파이트 스킬 시험 (R91 · R102)", header);
+            GUILayout.Label("1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰  (Z ◀ ▶ X)\n스킬: <b>F</b> 조준 → <b>좌클릭</b> 발동 · <b>우클릭</b>(또는 F) 취소 · F7 시험 배치 · F8 더미가 와서 벰 · F9 더미 원위치 · F10 창 숨김", small);
             GUILayout.BeginHorizontal();
             foreach (var kind in Pieces)
                 if (GUILayout.Button(ChessPieces.Name(kind), me.Pawn.Piece == kind ? selected : button, GUILayout.Height(24f))) SetPiece(me, kind);
@@ -348,7 +397,7 @@ namespace ChessFight.RagdollLab
             }
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("시험 배치 (F7)", button)) Stage(me.Pawn.Piece);
-            if (GUILayout.Button("더미가 벰 (F8)", button)) EnemyCuts();
+            if (GUILayout.Button("더미가 와서 벰 (F8)", button)) EnemyCuts();
             if (GUILayout.Button("원위치 (F9)", button)) Home();
             GUILayout.EndHorizontal();
             if (Cursor.lockState == CursorLockMode.Locked) GUILayout.Label("버튼은 Esc로 마우스를 푼 뒤에 눌러요", small);
