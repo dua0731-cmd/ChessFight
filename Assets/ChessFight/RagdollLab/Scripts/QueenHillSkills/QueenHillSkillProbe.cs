@@ -395,7 +395,9 @@ namespace ChessFight.RagdollLab
         IEnumerator QueenHigh()
         {
             float east2 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(1), east1 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);
-            yield return Stage(PieceKind.Queen, new Vector3(east2 - 1.8f, QueenHillLayout.TierTop(1), 6.5f), Vector3.right,
+            // 0.3 m clear of the top tier's face (R98: 1.8 m in, she stood 0.3 m inside that block, and once it threw her
+            // out onto the tier below).
+            yield return Stage(PieceKind.Queen, new Vector3(east2 - 1.2f, QueenHillLayout.TierTop(1), 6.5f), Vector3.right,
                 (PieceKind.Pawn, false, new Vector3(east2 - 0.6f, QueenHillLayout.TierTop(1), 7.0f), Vector3.left),
                 (PieceKind.Pawn, false, new Vector3(east1 - 0.75f, QueenHillLayout.TierTop(0), 6.5f), Vector3.left),
                 (PieceKind.Pawn, false, new Vector3(east1 + 1.4f, 0f, 6.5f), Vector3.left));
