@@ -61,7 +61,7 @@ namespace ChessFight.RagdollLab
         [Tooltip("솟는 탑이 띄우는 위 속도 (m/s)")]
         public float rookLift = 3.2f;
         [Tooltip("띄워진 기물은 공중에서 더 멀리 가서, 밀림 거리를 맞추려 수평 속도를 이만큼만 (probe rook로 잼)")]
-        public float rookLiftCarry = 0.58f;
+        public float rookLiftCarry = 0.65f;
 
         [Header("비숍 · 관통 핀")]
         public float bishopCooldown = 8f;
