@@ -356,6 +356,21 @@ public static class NetworkCoreTests
                 t.Acknowledged(3,0.099+0.1); Check(Math.Abs(t.Milliseconds-100)<0.5,"first sample "+t.Milliseconds);
                 t.Acknowledged(2,1.0); Check(Math.Abs(t.Milliseconds-100)<0.5,"stale ack changed estimate");
                 t.Acknowledged(5,0.165+0.180); Check(t.Milliseconds>100&&t.Milliseconds<180,"smoothing "+t.Milliseconds); });
+            Test("Pawn Rush course state round-trips and refuses other matches and damaged packets", () => {
+                var a = new PawnRushNetState { Tick = 77, First = 3, Second = 0 };
+                a.Progress[0] = .25f; a.Progress[3] = 1f; a.Completed[3] = true;
+                a.Bits[0] = 0xFFFFFFFFFFFFFFFFUL; a.Bits[2] = 0x1234;
+                byte[] bytes = a.Write(42UL);
+                Check(bytes.Length == PawnRushNetState.Bytes, "size " + bytes.Length);
+                var b = new PawnRushNetState();
+                Check(PawnRushNetState.Read(bytes, 42UL, b), "read");
+                Check(b.Tick == 77 && b.First == 3 && b.Second == 0, "header");
+                Check(b.Progress[0] == .25f && b.Progress[3] == 1f && b.Completed[3] && !b.Completed[0], "stations");
+                Check(b.Bits[0] == 0xFFFFFFFFFFFFFFFFUL && b.Bits[2] == 0x1234 && b.Bits[1] == 0, "bits");
+                Check(!PawnRushNetState.Read(bytes, 43UL, b), "another match");
+                var cut = new byte[bytes.Length - 1]; Array.Copy(bytes, cut, cut.Length);
+                Check(!PawnRushNetState.Read(cut, 42UL, b), "short packet");
+                bytes[0] ^= 1; Check(!PawnRushNetState.Read(bytes, 42UL, b), "wrong magic"); });
             Test("Game mode catalog: unique lobby keys, a playable default, safe lookups", () => {
                 Check(GameModes.All.Select(m => m.Key).Distinct().Count() == GameModes.All.Length, "duplicate key");
                 Check(GameModes.All.All(m => m.Key.Length > 0 && m.Key.Length <= 16 && m.Key.All(ch => ch >= 'a' && ch <= 'z')), "lobby keys are short lowercase words");

@@ -41,7 +41,10 @@ namespace ChessFight.Network
         // v15: the lab's snapshot carries the host's obstacle time ("CFR6", "v8" on JY-lobby), so
         //      clients draw moving obstacles where the host had them instead of on their own
         //      Steam clock.
-        public const string Protocol = "chessfight.dua0731.network.v15";
+        // v16: the 폰 러쉬 match is Pawn Rush course 01 run by the host over SteamPawnRushLink (ragdoll
+        //      inputs and snapshots plus the course state "CFP1" on channel 34). A v15 build would load
+        //      the old capsule scene for the same mode.
+        public const string Protocol = "chessfight.dua0731.network.v16";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

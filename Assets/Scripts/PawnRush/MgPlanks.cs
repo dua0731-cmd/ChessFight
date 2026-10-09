@@ -84,9 +84,36 @@ namespace ChessFight.PawnRush
             return Rows;
         }
 
+        // Laid slots in bits 0..9, the piles' stock in 10..12 and 13..15. Carried planks are not sent:
+        // online they show only on the host for now.
+        public override ulong StateBits
+        {
+            get
+            {
+                ulong bits = 0;
+                for (int i = 0; i < laid.Length; i++) if (laid[i]) bits |= 1UL << i;
+                return bits | (ulong)(stock[0] & 7) << 10 | (ulong)(stock[1] & 7) << 13;
+            }
+        }
+
+        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        {
+            count = 0;
+            for (int i = 0; i < laid.Length; i++)
+            {
+                laid[i] = (bits >> i & 1UL) != 0;
+                if (laid[i]) count++;
+                if (slots[i] != null && slots[i].activeSelf != laid[i]) slots[i].SetActive(laid[i]);
+            }
+            stock[0] = (int)(bits >> 10 & 7UL);
+            stock[1] = (int)(bits >> 13 & 7UL);
+            ShowPiles();
+            base.ApplyRemote(progress, completed, bits);
+        }
+
         void FixedUpdate()
         {
-            if (Completed || station == null) return;
+            if (Completed || station == null || Remote) return;
             float dt = Time.fixedDeltaTime;
             for (int i = returnAt.Count - 1; i >= 0; i--)
             {

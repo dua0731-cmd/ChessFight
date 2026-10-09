@@ -22,6 +22,25 @@ namespace ChessFight.PawnRush
             Finished?.Invoke();
         }
 
+        // Online (R92): only the host plays the games out. On every other PC this is set and the games
+        // skip their own rules and show what the host sends (ApplyRemote): the pawns there are puppets
+        // drawn a little behind, so working it out again would disagree with the host.
+        public static bool Remote;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => Remote = false;
+
+        // What a game shows beyond its progress, packed for the host's course state: painted squares,
+        // laid planks and piles, rung bells, the capstan's angle. 0 for a game shown by progress alone.
+        public virtual ulong StateBits => 0;
+
+        // The host's word on this game (online, not the host).
+        public virtual void ApplyRemote(float progress, bool completed, ulong bits)
+        {
+            Progress01 = Mathf.Clamp01(progress);
+            if (completed) Complete();
+        }
+
         // Development shortcut (the playtest's F6): done now.
         public void ForceComplete() => Complete();
 

@@ -57,9 +57,31 @@ namespace ChessFight.PawnRush
         static bool OnTop(Vector3 local, Vector3 tower) =>
             Mathf.Abs(local.x - tower.x) <= Reach && Mathf.Abs(local.z - tower.z) <= Reach && local.y >= tower.y - .2f && local.y <= tower.y + 2f;
 
+        public override ulong StateBits
+        {
+            get
+            {
+                ulong bits = 0;
+                for (int i = 0; i < rung.Length; i++) if (rung[i]) bits |= 1UL << i;
+                return bits;
+            }
+        }
+
+        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        {
+            count = 0;
+            for (int i = 0; i < rung.Length; i++)
+            {
+                rung[i] = (bits >> i & 1UL) != 0;
+                if (rung[i]) count++;
+                if (bells[i] != null) bells[i].sharedMaterial = rung[i] ? station.Kit.rankGold : station.Kit.hazard;
+            }
+            base.ApplyRemote(progress, completed, bits);
+        }
+
         void FixedUpdate()
         {
-            if (Completed || station == null) return;
+            if (Completed || station == null || Remote) return;
             var pawns = station.Pawns();
             for (int i = 0; i < Towers.Length; i++)
             {

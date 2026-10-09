@@ -11,7 +11,7 @@
 ```text
  (R84) 게임 실행 → [시작 로고 영상, 인트로 위] → Intro ──시작 판 클릭──▶ (처음 한 번: 이름 설정 화면, Intro 씬 안) ──[장면 전환]──▶ Lobby
  Intro ──시작 판 클릭──▶ Lobby ──모두가 phase=playing──▶ [로딩 화면] ──모두 준비, 공유 시각 go──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
- (타이틀)          (파티·모드·매칭)                  폰 러쉬 = PawnRush_Course01 (R90, 각자 오프라인 코스, Esc 나가기)
+ (타이틀)          (파티·모드·매칭)                  폰 러쉬 = PawnRush_Course01 (R92부터 방장이 모두를 계산하는 온라인, Esc 나가기)
                                                    소드 파이트 = SwordFight / 퀸 오브 더 힐 = 준비 중
  RagdollTest ← 개발 전용. 흐름 밖.
 ```
@@ -20,7 +20,7 @@
 |---|---|---|---|
 | `Intro.unity` | 0 | `IntroController` | 온라인. (R84) 시작 로고 영상 → 타이틀, Steam 시작, 시작 판 클릭 → 처음이면 이름 설정 화면(같은 씬의 `NameScreen`), (R85) "이름 바꾸기" → 이름 바꾸기 화면 → 다시 타이틀 → 장면 전환(`SceneTransition`) 뒤 Lobby(비동기 로드), Esc 설정 창 |
 | `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티 라인업(3D), 모드·파티·매칭 HUD. 이동 없음 |
-| `PawnRush_Course01.unity` (R86 코스, R90부터 폰 러쉬 경기 씬) | 2 | 경기로 들어오면 `MatchSceneView` 없이 씬의 오프라인 플레이(`GameSceneConfig.soloInMatch`): PC마다 자기 래그돌 하나로 코스를 달린다(다른 사람은 안 보임). Esc = 경기 나가기 | 직접 열면 오프라인 플레이테스트(메뉴 ChessFight → Pawn Rush → Open Course01) |
+| `PawnRush_Course01.unity` (R86 코스, R90부터 폰 러쉬 경기 씬) | 2 | 경기로 들어오면 `MatchSceneView` 대신 `SteamPawnRushLink`(R92): 방장이 명단의 모든 폰(사람·봇)을 래그돌로 계산하고 참가자는 입력을 보내고 자세를 받는다. 미니게임 뽑기·진척·문도 방장 기준. Esc = 경기 나가기(`GameSceneConfig.escapeLeavesMatch`) | 직접 열면 오프라인 플레이테스트(메뉴 ChessFight → Pawn Rush → Open Course01) |
 | `PawnRush_SkillTest.unity` (R71) | 빌드 제외 | 없음 | 기물 스킬 시험장(메뉴 Pawn Rush → Open Skill Test) |
 | `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |
 | `RagdollTest.unity` | 비활성 | 없음 (씬 안의 `LabGame`이 동작) | 래그돌 랩. Steam 없이 2인 로컬 |
@@ -55,7 +55,7 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 
 **PawnRush_Course01** (R86 코스 01 v0.4, R90부터 폰 러쉬 경기 씬) — 카메라(`OrbitCamera`)·조명·`Physics Profile`, `Pawn Rush Course01`(`PawnRushCourse`: 씬에 코스가 없으면 Play 때 코드가 만든다), `Playtest`(`PlaytestSpawner` + `Course01Playtest`), `ChessFight Game Root`(`GameSceneConfig`, `soloInMatch` 켬). 상세: [PAWN_RUSH_COURSE01](../KingRush/PAWN_RUSH_COURSE01.md).
 - 직접 Play: 오프라인 플레이테스트(백팀 폰 하나, 3초 뒤 출발).
-- 경기로 진입(R90): `NetworkRuntime`이 `soloInMatch`를 보고 `MatchSceneView`를 붙이지 않고 `PlaytestSpawner.NetworkDriven`을 끈다. 그래서 **PC마다 자기 폰 하나로 같은 코스를 따로 달린다**(다른 사람의 폰·위치는 안 오감, 결과 화면 연결 없음). Esc(채팅 닫는 Esc 말고)로 경기를 나간다. 래그돌을 방장이 계산해 나눠 주는 온라인은 아직 없다.
+- 경기로 진입(R92, R90의 "각자 오프라인"을 대신함): `GameSceneConfig.customMatchSimulation`이라 `MatchSceneView`가 붙지 않고, `PlaytestSpawner`는 `NetworkDriven`이라 폰을 만들지 않는다. 대신 `RagdollLabSteam/SteamPawnRushLink`가 붙어 **명단의 모든 폰을 출발 자리(팀·자리 번호)에 만들고**, 방장은 그 래그돌을 모두 계산(입력·체크포인트·낙사 리스폰)해 초당 30번 자세를, 초당 10번 코스 상태(`Core/PawnRushNetState`: 이번 판 미니게임 둘, 스테이션 넷의 진척·완료·칸/판자/종/캡스턴 각도)를 보낸다. 참가자는 입력만 보내고(채널 34) 받은 자세를 100 ms 뒤에서 보간해 그리며, 미니게임은 `MiniGameBase.Remote`로 자기 판정을 멈추고 방장 상태를 그린다. 방장이 바뀌면 새 방장이 이어서 계산한다(체크포인트는 처음부터). HUD·광장 카드는 `Course01Playtest.NetworkDriver`(내 폰)를 따른다. Esc(채팅 닫는 Esc 말고)로 나간다. 아직 없는 것: 봇 움직임(출발 자리에 서 있음), 참가자 화면의 들고 가는 판자, 결승·결과 화면 연결.
 
 (옛 기록, 씬은 R90에 삭제) **KingRush** — 코스 뼈대, 장애물, 스폰 12곳, 체크포인트 2개, 골인, `PhysicsProfile`(120Hz), `Playtest`(`PlaytestSpawner`), `ChessFight Game Root`. 상세: [KingRush](../KingRush/README.md).
 - 직접 Play: `PlaytestSpawner`가 임시 캐릭터를 만든다.

@@ -189,7 +189,7 @@ spawner = d.script(play, "PlaytestSpawner",
     "  orbitCamera: {fileID: %d}\n  team: 0\n  fallLimit: -40\n  fallCatchSpeed: 0\n  showHelp: 1\n"
     % (prefab_ref(PAWN_PREFAB), orbit))
 d.script(play, "Course01Playtest", "  spawner: {fileID: %d}\n  course: {fileID: %d}\n  teamSize: 6\n  writeCsv: 1\n" % (spawner, course_id))
-# The lobby's 폰 러쉬 match opens this scene (10-08): every PC plays the playtest above, Esc leaves.
+# The lobby's 폰 러쉬 match opens this scene: the Steam link (SteamPawnRushLink, R92) runs it, Esc leaves.
 match = d.go("ChessFight Game Root")
-d.script(match, "GameSceneConfig", "  customMatchSimulation: 0\n  soloInMatch: 1\n")
+d.script(match, "GameSceneConfig", "  customMatchSimulation: 1\n  escapeLeavesMatch: 1\n")
 write(SCENE, d.render(PREAMBLE))

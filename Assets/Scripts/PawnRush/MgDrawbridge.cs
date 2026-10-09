@@ -75,7 +75,7 @@ namespace ChessFight.PawnRush
         void FixedUpdate()
         {
             if (station == null) return;
-            if (!Completed)
+            if (!Completed && !Remote)
             {
                 int pulling = 0, pushing = 0;
                 foreach (var p in station.Pawns())
@@ -94,6 +94,12 @@ namespace ChessFight.PawnRush
 
         // StateDrivenMover: the deck follows the game's progress, not the shared obstacle clock (offline only
         // until the host sends the station's state).
+        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        {
+            this.progress = progress;
+            base.ApplyRemote(progress, completed, bits);
+        }
+
         void Pose()
         {
             if (hinge == null) return;

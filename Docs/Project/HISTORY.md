@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-08 | R90 | main 중간 점검: 폴더를 종류별로(Assets/ChessFight·Maps·Scenes/PawnRush 없앰, 스크립트는 Scripts/ 아래 어셈블리별), 안 쓰는 씬 5개 삭제(생성기 틀은 Tools/Generators/templates), 폰 러쉬 경기 씬 = PawnRush_Course01(`GameSceneConfig.soloInMatch`, Esc 나가기), 경로 문자열·검사 스크립트·문서(STRUCTURE·SCENES·GameModes·DECISIONS T7·T8 등) |
+| (이 커밋) | 10-09 | R92 | 캡스턴 8바퀴·허리 높이 막대·몸으로 밀기(Rigidbody), 폰 러쉬 코스 01 온라인(`SteamPawnRushLink`, `Core/PawnRushNetState`, 미니게임 원격 상태, HUD 내 폰, `escapeLeavesMatch`, `InputBlocked`), 프로토콜 v16, 컴파일 스크립트, 문서(SCENES·GameModes·PAWN_RUSH_COURSE01 §7-2·DECISIONS T9·VALIDATION·REQUIREMENTS·HANDOFF) |
+| `78f6003` | 10-08 | R90 | main 중간 점검: 폴더를 종류별로(Assets/ChessFight·Maps·Scenes/PawnRush 없앰, 스크립트는 Scripts/ 아래 어셈블리별), 안 쓰는 씬 5개 삭제(생성기 틀은 Tools/Generators/templates), 폰 러쉬 경기 씬 = PawnRush_Course01(`GameSceneConfig.soloInMatch`, Esc 나가기), 경로 문자열·검사 스크립트·문서(STRUCTURE·SCENES·GameModes·DECISIONS T7·T8 등) |
 | `3d49a18` | 10-08 | R89 3차 | 이 작업을 `claude/bold-johnson-8ez95n`에 합침(앞으로 감기, 사용자 요청). 문서: HISTORY 커밋 번호, REQUIREMENTS R89 3차, HANDOFF |
 | `67dc468` | 10-08 | R89 2차 | bold-johnson 기준으로: 요청 번호 R68~R70 → R87~R89, 폰 러시 코스 01 A1 회전 막대 0.2~0.52 m·턱 0.15 m, A3 원판 사이 1.49 m(A2 벽 윗면 z 33), 검증기 필수 틈 1.5 m, 점프 상승 보정은 스킬 돌진 중 멈춤. `Tools/run-tests-linux.sh`: Unity 6 전용 API 4개를 임시 복사본에서 2021.3로 바꿈(bold-johnson부터 컴파일 검사가 Game에서 멈춰 있었다). Core 91·세션 40·8개 어셈블리 컴파일 통과. 문서: PAWN_RUSH_COURSE01 §6·§7, VALIDATION, REQUIREMENTS, HANDOFF |
 | `d13022a` | 10-08 | R89 2차 | `claude/bold-johnson-8ez95n` 병합(이 작업의 기준을 main → bold-johnson으로) |

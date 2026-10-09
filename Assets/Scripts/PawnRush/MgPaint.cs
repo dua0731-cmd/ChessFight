@@ -49,9 +49,36 @@ namespace ChessFight.PawnRush
             return ix < 0 || iz < 0 || ix >= N || iz >= N ? -1 : iz * N + ix;
         }
 
+        public override ulong StateBits
+        {
+            get
+            {
+                ulong bits = 0;
+                for (int s = 0; s < painted.Length; s++) if (painted[s]) bits |= 1UL << s;
+                return bits;
+            }
+        }
+
+        // Online, not the host: the host's squares (and the count the host would take over from).
+        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        {
+            count = 0;
+            for (int s = 0; s < painted.Length; s++)
+            {
+                bool on = (bits >> s & 1UL) != 0;
+                if (on) count++;
+                if (on == painted[s]) continue;
+                painted[s] = on;
+                int ix = s % N, iz = s / N;
+                if (squares[s] != null)
+                    squares[s].sharedMaterial = on ? station.Kit.rankGold : ((ix + iz) & 1) == 0 ? station.Kit.boardDark : station.Kit.boardLight;
+            }
+            base.ApplyRemote(progress, completed, bits);
+        }
+
         void FixedUpdate()
         {
-            if (Completed || station == null) return;
+            if (Completed || station == null || Remote) return;
             blocked.Clear();
             active.Clear();
             var pawns = station.Pawns();

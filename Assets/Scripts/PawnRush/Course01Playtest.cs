@@ -31,6 +31,22 @@ namespace ChessFight.PawnRush
         [SerializeField, Range(2, 6)] int teamSize = 6;
         [SerializeField] bool writeCsv = true;
 
+        // Online (R92) the network link places the pawns, not the spawner: it hands this the local one
+        // so the HUD, the plaza cards and the CSV follow it. The development keys stay offline only.
+        public static ICharacterDriver NetworkDriver;
+        public static int NetworkTeam = Teams.White;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            NetworkDriver = null;
+            NetworkTeam = Teams.White;
+        }
+
+        bool Online => NetworkDriver != null;
+        ICharacterDriver Driver => Online ? NetworkDriver : spawner != null ? spawner.Driver : null;
+        int Team => Online ? NetworkTeam : spawner != null ? spawner.Team : Teams.White;
+
         string current;
         float runStart;
         string csvPath;
@@ -63,15 +79,15 @@ namespace ChessFight.PawnRush
 
         void Update()
         {
-            if (spawner == null || spawner.Driver == null || course == null) return;
-            var picker = course.Missions;
-            if (LegacyKeys.Down(KeyCode.F5))
+            if (Driver == null || course == null) return;
+            var picker = Online ? null : course.Missions;   // no development keys in a match
+            if (!Online && LegacyKeys.Down(KeyCode.F5))
             {
                 spawner.SetTeam(spawner.Team == Teams.Black ? Teams.White : Teams.Black);
                 Restarted(false);
             }
-            if (LegacyKeys.Down(KeyCode.Backspace)) Restarted(true);
-            if (LegacyKeys.Down(KeyCode.F7))
+            if (!Online && LegacyKeys.Down(KeyCode.Backspace)) Restarted(true);
+            if (!Online && LegacyKeys.Down(KeyCode.F7))
             {
                 MissionStation.ReverseSabotage = !MissionStation.ReverseSabotage;
                 Debug.Log("[PawnRush] C·D 상대 반대 입력: " + (MissionStation.ReverseSabotage ? "켜짐" : "꺼짐"));
@@ -82,17 +98,17 @@ namespace ChessFight.PawnRush
                 if (LegacyKeys.Down(KeyCode.F9)) { picker.Cycle(1); ApplyTeamSize(); }
                 if (LegacyKeys.Down(KeyCode.F10)) { picker.Cycle(2); ApplyTeamSize(); }
             }
-            var target = spawner.Driver.FollowTarget;
+            var target = Driver.FollowTarget;
             if (target == null) return;
             if (LegacyKeys.Down(KeyCode.F6) && picker != null)
             {
                 int plaza = PlazaAround(target.position, picker);
-                if (plaza == 0) plaza = course.Along(target.position, Mathf.Max(0, spawner.Team), out _) <
-                                        course.Progress.SectionStart("B", Mathf.Max(0, spawner.Team)) ? 1 : 2;
-                var game = picker.Station(plaza, Mathf.Max(0, spawner.Team))?.Game;
+                if (plaza == 0) plaza = course.Along(target.position, Mathf.Max(0, Team), out _) <
+                                        course.Progress.SectionStart("B", Mathf.Max(0, Team)) ? 1 : 2;
+                var game = picker.Station(plaza, Mathf.Max(0, Team))?.Game;
                 if (game != null) game.ForceComplete();
             }
-            course.Along(target.position, Mathf.Max(0, spawner.Team), out string section);
+            course.Along(target.position, Mathf.Max(0, Team), out string section);
             if (section != current)
             {
                 if (current != null) Log(current, "exit");
@@ -123,7 +139,7 @@ namespace ChessFight.PawnRush
 
         void OnPlazaEntered(PlazaEntry entry, ICharacterDriver who)
         {
-            if (spawner == null || who != spawner.Driver || entry.Plaza == cardPlaza && Time.time < cardUntil + 10f) return;
+            if (Driver == null || who != Driver || entry.Plaza == cardPlaza && Time.time < cardUntil + 10f) return;
             cardPlaza = entry.Plaza;
             cardUntil = Time.time + 3f;
         }
@@ -169,7 +185,7 @@ namespace ChessFight.PawnRush
             try
             {
                 File.AppendAllText(csvPath, string.Format(CultureInfo.InvariantCulture, "{0},{1},{2:0.00},{3}\n",
-                    section ?? "-", what, Time.time - runStart, Teams.Name(spawner.Team)));
+                    section ?? "-", what, Time.time - runStart, Teams.Name(Team)));
             }
             catch (Exception) { csvPath = null; }
         }
@@ -178,22 +194,23 @@ namespace ChessFight.PawnRush
 
         void OnGUI()
         {
-            if (spawner == null || spawner.Driver == null || course == null) return;
+            if (Driver == null || course == null) return;
             if (style == null)
             {
                 style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
                 big = new GUIStyle(style) { fontSize = 30, alignment = TextAnchor.MiddleCenter };
             }
-            var target = spawner.Driver.FollowTarget;
+            var target = Driver.FollowTarget;
             if (target == null) return;
-            int team = Mathf.Max(0, spawner.Team);
+            int team = Mathf.Max(0, Team);
             float along = course.Along(target.position, team, out string section), total = ProgressPath.Length(course.Path(team));
             var picker = course.Missions;
             string games = picker != null ? $"광장 ① {MissionPicker.Name(picker.First)} · 광장 ② {MissionPicker.Name(picker.Second)}" : "미니게임 없음";
-            string text = $"<b>폰 러시 코스 01 v0.4</b> · {Teams.Name(spawner.Team)}팀 (F5 팀 바꾸기)\n" +
+            string text = $"<b>폰 러시 코스 01 v0.4</b> · {Teams.Name(Team)}팀{(Online ? " · 온라인 경기 (Esc 나가기)" : " (F5 팀 바꾸기)")}\n" +
                           $"구간 {section} · 진행 {along:0} / {total:0} m\n" +
                           $"{games}\n" +
-                          $"F6 우리 미니게임 완료 · F7 반대 입력 {(MissionStation.ReverseSabotage ? "켜짐" : "꺼짐")} · F8 새 판 · F9/F10 게임 바꾸기";
+                          (Online ? "방장 PC가 모든 폰과 미니게임을 계산합니다"
+                                  : $"F6 우리 미니게임 완료 · F7 반대 입력 {(MissionStation.ReverseSabotage ? "켜짐" : "꺼짐")} · F8 새 판 · F9/F10 게임 바꾸기");
             var box = new Rect(Screen.width - 512, 12, 500, 88);
             GUI.Box(box, GUIContent.none);
             GUI.Label(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 8), text, style);

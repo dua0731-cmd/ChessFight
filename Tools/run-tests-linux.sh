@@ -146,7 +146,7 @@ compile_all() {
        -out:"$build/ChessFight.PawnRush.dll" $(find "$src/Scripts/PawnRush" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Game.Steam.dll" \
-       -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/Scripts/RagdollLabSteam" -name '*.cs')
+       -r:"$build/ChessFight.PawnRush.dll" -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/Scripts/RagdollLabSteam" -name '*.cs')
   compile_pawnrush_editor
   echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap, RagdollLab, RagdollLabSteam and PawnRush compiled with Roslyn (Input/ and other Editor code skipped)."
 }

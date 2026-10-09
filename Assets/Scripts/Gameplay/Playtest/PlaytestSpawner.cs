@@ -51,6 +51,9 @@ namespace ChessFight.Gameplay
         GameObject instance;
 
         public ICharacterDriver Driver => driver;
+        // The character it spawns: a networked match of the same scene spawns this for every player (R92).
+        public GameObject CharacterPrefab => characterPrefab;
+        public OrbitCamera Orbit => orbitCamera;
         public int Team => team;
         public Vector3 StartPosition => startPosition;
         public Quaternion StartRotation => startRotation;
