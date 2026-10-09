@@ -62,6 +62,7 @@ namespace ChessFight.RagdollLab
 
         LabGame game;
         QueenHillSkillFx fx;
+        QueenHillSkillSfx sfx;
         // The machinery's own switch (stages, dashes, the aim's clicks): the Pawn Rush skill object, its cooldown kept
         // in step with ours. The Pawn Rush numbers in it are only used by PawnRushOnly pieces.
         readonly PawnRushSkillParams machinery = new PawnRushSkillParams();
@@ -106,6 +107,8 @@ namespace ChessFight.RagdollLab
             BuildWall(built);
             fx = GetComponent<QueenHillSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<QueenHillSkillFx>();
+            sfx = GetComponent<QueenHillSkillSfx>();
+            if (sfx == null) sfx = gameObject.AddComponent<QueenHillSkillSfx>();
             if (game != null && skillKey == KeyCode.F) game.InteractKeyOff = true;
             Report($"퀸 오브 더 힐 스킬 시험 준비 완료 — 왼쪽 창에서 기물을 고르고 {skillKey}");
         }
@@ -606,6 +609,7 @@ namespace ChessFight.RagdollLab
                 if (GUILayout.Button(fx.effects ? "이펙트 켜짐" : "이펙트 꺼짐", fx.effects ? selected : button)) fx.effects = !fx.effects;
                 if (GUILayout.Button(fx.hitStop ? "멈춤 켜짐" : "멈춤 꺼짐", fx.hitStop ? selected : button)) fx.hitStop = !fx.hitStop;
                 if (GUILayout.Button(fx.shake ? "흔들기 켜짐" : "흔들기 꺼짐", fx.shake ? selected : button)) fx.shake = !fx.shake;
+                if (sfx != null && GUILayout.Button(sfx.sound ? "소리 켜짐" : "소리 꺼짐", sfx.sound ? selected : button)) sfx.sound = !sfx.sound;
                 GUILayout.EndHorizontal();
             }
             if (GUILayout.Button(helpers ? "시험 도우미 켜짐 (킹·룩: F를 누르면 더미가 섬)" : "시험 도우미 꺼짐", helpers ? selected : button)) helpers = !helpers;
