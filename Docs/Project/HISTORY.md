@@ -7,7 +7,17 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R100 | 문서: 퀸 오브 더 힐 효과음 시안(ElevenLabs 30개, 시안 페이지) — Skills/QUEEN_HILL §효과음 시안, REQUIREMENTS R100, HANDOFF, HISTORY. 코드·Unity 변경 없음 |
+| (이 커밋) | 10-10 | R99 | 문서: Skills/SWORD_FIGHT §R99, VALIDATION R99 표, REQUIREMENTS R99, Skills README, HANDOFF, HISTORY |
+| `663701d` | 10-10 | R99 | 녹화: 룩 장면을 비스듬히 뒤에서(옆에서는 통로 끝이 잘림) |
+| `dcd4709` | 10-10 | R99 | 소드 파이트 시험 씬에 `rookLiftCarry` 0.65 저장 |
+| `fe8646c` | 10-10 | R99 | `rookLiftCarry` 0.65(자동 시험 rook: 가까운 적 2.45 m, 기획 2.6) |
+| `38266a0` | 10-10 | R99 | 룩 탑에 띄워진 기물은 수평 밀기를 줄임(`rookLiftCarry`, 그대로면 4.58 / 2.72 m 날아감) |
+| `32d02e4` | 10-10 | R99 | 비숍 발목 손: 1.5배·금색·기물 밑동 바깥에서 솟아 기물을 웅크리게 누름, 묶인 동안 감속 고리 숨김(손이 치마 밑에 숨어 안 보였음) |
+| `f375400` | 10-10 | R99 | 룩 탑이 첫 장면 전까지 땅속에서 대기(효과 원점에 한 장면 보였음), 룩·비숍·나이트 녹화 카메라 |
+| `d273456` | 10-10 | R100 | 문서: 퀸 오브 더 힐 효과음 시안(ElevenLabs 30개, 시안 페이지) — Skills/QUEEN_HILL §효과음 시안, REQUIREMENTS R100, HANDOFF, HISTORY. 코드·Unity 변경 없음 |
+| `0076424` | 10-10 | R99 | 잔상을 반투명 잉크 실루엣으로(새 셰이더 `Skill Ghost`, 만화 연기 잔상은 금 덩어리로 뭉침), 화면 물듦 약하게, 퀸 녹화 카메라 뒤로, 씬에 새 수치 |
+| `1535f6f` | 10-10 | R99 | 퀸이 발로 달리는 돌진(`RagdollPawn.BeginDash`·`StopDash` = 폰 러쉬 돌진 장치를 밖에서, `RagdollPawn.OuterDash.cs`; 던졌더니 착지에서 넘어져 혼자 장외) |
+| `18ef1eb` | 10-10 | R99 | 소드 파이트 스킬 수정: 칼끝을 바닥 위로(`SwordFightPawn.AboveFloor`), 발동·기 모으기·잔상·화면 당김, 퀸 돌진, 룩 돌탑, 비숍 발목 잡는 손, 킹 왕관·한 바퀴 베기, 나이트 갈래 줄 |
 | `2eaa54f` | 10-10 | R98 | 문서: Skills/QUEEN_HILL §R98, VALIDATION R98 표, REQUIREMENTS R98, HANDOFF, HISTORY |
 | `b12766b` | 10-10 | R98 | 녹화: 경사로를 내려가는 검격을 옆에서(경사가 보이게) |
 | `8eb54d1` | 10-10 | R98 | 자동 시험: 탑 위 퀸을 3층 블록에서 0.3 m 떨어진 곳에(블록 속에 세워져 한 번 1층으로 튕겨 나감) |
