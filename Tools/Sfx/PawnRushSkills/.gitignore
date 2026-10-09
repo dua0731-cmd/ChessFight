@@ -1,0 +1,8 @@
+gen/
+out/
+frames/
+st/
+retake*/
+sheet_*.png
+check*.png
+__pycache__/

@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R99 | 문서: Skills/SWORD_FIGHT §R99, VALIDATION R99 표, REQUIREMENTS R99, Skills README, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R101 | 문서·도구: 폰 러쉬 스킬 효과음 시안 — Skills/SOUND(새), Tools/Sfx/PawnRushSkills(새: 설명문·시간표·다듬기·페이지), Skills README·EFFECTS, HANDOFF, REQUIREMENTS, HISTORY. 소리 파일은 시안 페이지와 ElevenLabs 작업판에 |
+| `16ea8c2` | 10-10 | R99 | 문서: Skills/SWORD_FIGHT §R99, VALIDATION R99 표, REQUIREMENTS R99, Skills README, HANDOFF, HISTORY |
 | `663701d` | 10-10 | R99 | 녹화: 룩 장면을 비스듬히 뒤에서(옆에서는 통로 끝이 잘림) |
 | `dcd4709` | 10-10 | R99 | 소드 파이트 시험 씬에 `rookLiftCarry` 0.65 저장 |
 | `fe8646c` | 10-10 | R99 | `rookLiftCarry` 0.65(자동 시험 rook: 가까운 적 2.45 m, 기획 2.6) |
