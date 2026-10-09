@@ -706,6 +706,7 @@ MonoBehaviour:
     queenLift: 1.5
     queenHeight: 1.2
     queenDrop: 0.45
+    queenClimb: 1.05
     queenRecovery: 0.6
     queenCooldown: 6
     rookRange: 9
