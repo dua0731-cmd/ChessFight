@@ -13,7 +13,8 @@ namespace ChessFight.RagdollLab
     /// differ a lot in level, so each is prepared once when loaded: the quiet lead-in is cut (the sound starts on the
     /// moment), the silent tail too, and the loudest 0.3 s is brought to −15 dB (at most ×8, peaks under 0.98) like
     /// the mockup page did. Played flat (2D), panned a little by where the moment is on screen. The same moment
-    /// twice in one frame (three guarded allies, two pieces hit) sounds once.
+    /// twice in one frame (three guarded allies, two pieces hit) sounds once. A knockdown (Down) has no sound since
+    /// R104 (승규 님: "맞을 때 동전 소리 나는 거 빼줘" — its toy-figure take rang like a coin); the hit sounds stay.
     /// </summary>
     [DefaultExecutionOrder(211)]
     public class QueenHillSkillSfx : MonoBehaviour
@@ -43,7 +44,6 @@ namespace ChessFight.RagdollLab
             { QueenHillFxKind.BishopRise, 0.75f }, { QueenHillFxKind.BishopHit, 0.8f }, { QueenHillFxKind.BishopDrop, 0.7f }, { QueenHillFxKind.BishopLand, 0.75f },
             { QueenHillFxKind.KnightLock, 0.65f }, { QueenHillFxKind.KnightFlatten, 0.85f }, { QueenHillFxKind.KnightFall, 0.8f },
             { QueenHillFxKind.PawnCrouch, 0.6f }, { QueenHillFxKind.PawnBump, 0.85f }, { QueenHillFxKind.PawnStop, 0.8f },
-            { QueenHillFxKind.Down, 0.6f },
         };
 
         public const string Folder = "QueenHillSkillSfx";

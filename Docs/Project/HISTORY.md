@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R104 | 문서: Skills/QUEEN_HILL §효과음 넣기, VALIDATION R104 표, REQUIREMENTS R104, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R104 | 승규 님 "맞을 때 동전 소리 나는 거 빼줘": 넘어짐 공통 소리 `Down` 파일 삭제(그 순간은 소리 없음), 문서 |
+| `e720d30` | 10-10 | R104 | 문서: Skills/QUEEN_HILL §효과음 넣기, VALIDATION R104 표, REQUIREMENTS R104, HANDOFF, HISTORY |
 | `8e4e1e9` | 10-10 | R104 | 효과음 28개의 Unity 가져오기 설정(.meta), 퀸 맞음 다시 만든 것(첫 결과가 거의 무음) |
 | `dc889f5` | 10-10 | R104 | 퀸 오브 더 힐 효과음: `Resources/QueenHillSkillSfx/<신호>.mp3` 28개, `QueenHillSkillSfx`(앞뒤 무음 자르기·크기 맞춤·재생), 시험장 소리 켜기/끄기 버튼, 녹화 인코더에 소리 트랙 |
 | `70c5d00` | 10-10 | R102·R103 | 문서: Skills/SWORD_FIGHT §R103 가장자리 스킬·§R102·조작·코드·확인 표, VALIDATION R103·R102 표, REQUIREMENTS R102·R103(+지켜야 할 조건 2줄), DECISIONS SK6, Skills README, HANDOFF, HISTORY. Core 91·모의 세션 40·실제 DLL 컴파일 통과 |
