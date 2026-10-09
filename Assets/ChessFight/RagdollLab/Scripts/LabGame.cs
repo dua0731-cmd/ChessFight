@@ -38,6 +38,9 @@ namespace ChessFight.RagdollLab
         public int physicsRate = 120;
         public int solverIterations = 24;
         public float slowMotionScale = 0.3f;
+        [Tooltip("Disable on a course to reuse the lab character without its test bed and dummies.")]
+        public bool spawnPracticeObjects = true;
+        public float fallLimit = LabLayout.KillHeight;
 
         public readonly List<RagdollPawn> dummies = new List<RagdollPawn>();
         public bool PanelOpen { get; set; }
@@ -91,7 +94,8 @@ namespace ChessFight.RagdollLab
             ApplyGravity();
             // The Queen of the Hill mechanics test bed, south-east of the arena. Built from code, so the
             // scene does not need rebuilding; the automated checks use it too.
-            if (GetComponent<QueenHillTestBed>() == null) gameObject.AddComponent<QueenHillTestBed>().game = this;
+            if (spawnPracticeObjects && GetComponent<QueenHillTestBed>() == null)
+                gameObject.AddComponent<QueenHillTestBed>().game = this;
             PawnHookView.LocalAim = LocalAim;
             if (AutoTest) return;
             SetUpCameras();
@@ -194,7 +198,7 @@ namespace ChessFight.RagdollLab
                 // P1 white, P2 black, so the lab has two sides to try team rules with (M10). Dummies have none.
                 slot.pawn.Team = i % 2 == 0 ? Teams.White : Teams.Black;
             }
-            if (dummies.Count == 0) AddDummy();
+            if (spawnPracticeObjects && dummies.Count == 0) AddDummy();
         }
 
         /// <summary>Clear the arena before a networked match takes over (and after it ends).</summary>
@@ -260,6 +264,7 @@ namespace ChessFight.RagdollLab
 
         public void AddDummy()
         {
+            if (!spawnPracticeObjects) return;
             var spots = LabLayout.DummySpawns;
             if (dummies.Count >= spots.Length) return;
             dummies.Add(Spawn(spots[dummies.Count], Vector3.back, dummyMaterial, "더미 " + (dummies.Count + 1)));
@@ -299,7 +304,7 @@ namespace ChessFight.RagdollLab
                     slot.pawn.SetInput(input);
                 }
                 foreach (var pawn in RagdollPawn.All)
-                    if (pawn.Hips.position.y < LabLayout.KillHeight) Respawn(pawn);
+                    if (pawn.Hips.position.y < fallLimit) Respawn(pawn);
             }
             swallowMouse = false;
         }

@@ -5,6 +5,7 @@
 | 문서 | 내용 |
 |---|---|
 | [MAP_IMPORT.md](MAP_IMPORT.md) | R47 별도 프로젝트 맵·19 장애물 이식: 열기, 기존 래그돌 연결, 검사와 미연결 범위 |
+| [PAWN_RUSH_WORKSPACE.md](PAWN_RUSH_WORKSPACE.md) | R49: ImportedChessFightMap에서 A1~C2 모듈 제작·추첨·미션 문·테스트 |
 | 이 문서 | 씬 구성, 코스 컴포넌트, 오프라인 플레이테스트, 네트워크 한계 |
 | [OBSTACLES.md](OBSTACLES.md) | 장애물 규칙, 기존 장애물, 새 장애물 만드는 법 |
 | [OBSTACLE_TEMPLATE.md](OBSTACLE_TEMPLATE.md) | 장애물 기획서 양식. 완성본은 `Docs/KingRush/Obstacles/이름.md` |

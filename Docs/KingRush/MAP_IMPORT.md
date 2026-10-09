@@ -6,7 +6,7 @@
 
 1. 핵심 프로젝트 `C:/Users/Admin/Documents/GitHub/ChessFight`를 Unity 6000.3.11f1로 연다.
 2. **ChessFight → Imported Map → Open Map**. 또는 `Assets/Scenes/ImportedChessFightMap.unity`를 연다. 현재 씬에 수정 사항이 있으면 Unity 저장 대화상자를 따른다.
-3. Scene에서 `Map` 루트가 선택된다. Play하면 **이 핵심 프로젝트에 원래 있던** `RagdollPawn` 하나가 `PlaytestSpawner`를 통해 생성된다. WASD 이동, Space 점프, R/Backspace 시작점 복귀.
+3. Scene에서 `Map` 루트가 선택된다. Play하면 **이 핵심 프로젝트에 원래 있던** `RagdollPawn` 하나가 `LabGame`을 통해 생성된다(R48). RagdollTest P1과 같은 재질·입력·회전 카메라를 사용한다. Game 화면 클릭 후 WASD 이동, Shift 질주, Space 점프, 좌클릭 다이빙, 우클릭 잡기/등반, E 갈고리, R 시작점 복귀.
 4. 프리팹 폴더는 **ChessFight → Imported Map → Select Obstacle Prefabs** 또는 `Assets/Maps/ImportedChessFight/Prefabs/Obstacles`.
 
 현재 프로젝트가 열고 있던 씬, 기존 KingRush/RagdollTest 씬, Build Settings 및 로비의 씬 연결은 자동으로 바꾸지 않는다. 이식 씬은 씬 파일을 직접 열어 사용하는 오프라인 레벨 작업용이다.
@@ -38,7 +38,7 @@
 - 바람은 캐릭터의 동적 Rigidbody들에 같은 연속 속도 변화를 주되 진행 방향 속도 상한을 둔다. 매 프레임 피격을 발생시키지 않는다. 현재 래그돌은 Rigidbody 기반이며 CharacterController용 새 이동 코드는 가져오지 않는다.
 - 이동/회전/접이식/피스톤/교차 교량은 `ImportedMovingSurface`를 통해 기존 **`IMovingSurface`**에 표면 속도·회전을 제공한다. 비활성화하면 전달 속도도 0이다.
 - 주기적 위치는 **`ObstacleClock.Now`**를 사용한다. 큰 공유 시간은 double에서 주기를 나눈 뒤 float로 바꿔 정밀도를 보존한다.
-- `Core Playtest`는 기존 PhysicsProfile, CameraRig, PlaytestSpawner와 기존 RagdollPawn **참조만** 추가한 테스트용 루트다. 핵심 스크립트나 캐릭터 프리팹은 수정하지 않는다.
+- `Core Playtest`는 R48에서 **LabGame + LabParamSlots + LabPanel**로 교체했다. Main Camera에는 같은 LabCamera 설정을 복사했다. 기존 PlaytestSpawner/CameraRig/PhysicsProfile은 제거해 중복 스폰·입력·카메라 제어를 막는다. 프리팹, 튜닝 에셋과 RagdollTest 씬 파일은 그대로다. LabGame에 `spawnPracticeObjects`(기본 true)와 `fallLimit`(기본 랩 값)만 추가해, 이 맵에서만 연습장/더미 생성을 끄고 -7m 아래 낙사를 시작점으로 돌린다.
 
 ## 아직 연결하지 않은 부분
 
@@ -59,3 +59,16 @@
 - 자동 점검은 전체 코스 완주·12인 충돌·네트워크 동기화·실제 조작감을 증명하지 않는다. [Unity 확인 목록](../Network/VALIDATION.md)에서 아래를 직접 확인한다.
 
 맵을 연 뒤 Play하여 시작점에 래그돌이 생기는지, 카메라가 따라오는지, 바닥을 밟고 점프하는지 확인한다. 각 장애물 프리팹은 필요하면 별도 테스트 씬에 끌어 놓고 시험한다. 다리 위 탑승/접힘, 피스톤·기둥 타격, 진자 넉백, 바람 상한, 대리석 붕괴와 경고를 확인한다. 원본 맵 배치는 수정하지 않은 상태로 비교한다. 원래 KingRush/RagdollTest도 각각 열어 기존 동작을 확인한다.
+
+## 2026-10-09: RagdollTest 캐릭터 연결 (R48)
+
+- 동일한 P1 프리팹/재질/튜닝, 120Hz·솔버 24회·튜닝 중력, 카메라 기준 입력 및 마우스/휠 카메라를 재사용한다. 스테미나 HUD와 Tab 튜닝 패널도 동일하다.
+- 시작점은 기존 `Core Playtest Spawn`(-13, 0, 2). P2, 더미, QueenHillTestBed는 생성하지 않는다. RagdollTest의 기본 동작은 유지된다.
+- 재연결 도구: `ChessFight → Imported Map → Use RagdollTest Character`(Ctrl+Alt+F12). 저장된 RagdollTest 설정을 복사하므로 맵 씬을 먼저 저장한 Edit Mode에서만 실행한다.
+- 검사 도구: `Validate Ragdoll Character`(Ctrl+Alt+F11). Edit/Play Mode의 프리팹·재질·참조·물리·중복 스폰을 검사한다. 결과는 `Logs/ImportedMapValidation/RagdollCharacterScene.txt`, `RagdollCharacterRuntime.txt`.
+- 이번 검사: Unity 6000.3.11f1 컴파일, Edit/Play Mode 구성 검사, Core 34·세션 15 통과. Game 뷰에서 캐릭터와 카메라 표시 및 E 갈고리 표시 관찰. 전체 코스 완주·세부 손맛·온라인은 사용자 확인 대기.
+
+
+## 2026-10-09: 폰러시 제작환경 (R49)
+
+이 씬의 기존 Map을 보존한 채 오른쪽(X=80)에 **Pawn Rush Workspace**를 추가했다. R48 LabGame 시작 위치는 새 코스로 옮겼고 캐릭터/카메라/물리 코드는 그대로다. 최신 작업 순서는 **ChessFight → Pawn Rush → 작업환경 열기** 및 [구역 제작 안내](PAWN_RUSH_WORKSPACE.md)를 따른다.

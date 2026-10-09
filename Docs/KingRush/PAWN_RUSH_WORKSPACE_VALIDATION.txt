@@ -1,0 +1,86 @@
+2026-10-09 | Unity 6000.3.11f1 | Windows x64
+Editor: 19 passed | Runtime: 29 passed
+Core 34, simulated Steam session 15 passed.
+{
+  "baseline_scene_objects": 6333,
+  "preserved_scene_objects": 6333,
+  "new_scene_blocks": 49,
+  "existing_transforms": 1541,
+  "changed_transforms": [
+    [
+      "2109794210",
+      "m_LocalPosition"
+    ]
+  ],
+  "changed_scene_blocks": [
+    [
+      "1497505851",
+      114
+    ],
+    [
+      "2109794210",
+      4
+    ],
+    [
+      "9223372036854775807",
+      1660057539
+    ]
+  ],
+  "editor_checks": 19,
+  "runtime_checks": 29,
+  "user_playtest": "pending",
+  "steam_sync": "not connected"
+}
+
+PASS six sections connected in alternating order
+PASS original map remains present
+PASS 1000 seeds deterministic, distinct, alternating; varied orders
+PASS pinned slots reserved before random selection
+PASS duplicate fixed sections rejected
+PASS wrong-kind fixed section rejected
+PASS insufficient pool rejected instead of repeated sections
+PASS editor regenerates only its owned preview
+PASS Undo restores previous preview and references
+PASS Redo restores next preview
+PASS invalid selection leaves existing preview intact
+PASS no missing scripts in full ImportedChessFightMap
+PASS workspace materials and label fonts resolve
+PASS catalog references prefab asset O01_Slalom
+PASS catalog references prefab asset O02_Timing
+PASS catalog references prefab asset O03_Wind
+PASS catalog references prefab asset M01_Courtyard
+PASS catalog references prefab asset M02_Columns
+PASS catalog references prefab asset M03_Terraces
+
+PASS runtime creates six nonduplicated sections
+PASS saved preview replaced without duplicate colliders
+PASS runtime connector seam 1
+PASS runtime connector seam 2
+PASS runtime connector seam 3
+PASS runtime connector seam 4
+PASS runtime connector seam 5
+PASS existing R48 one-player lab setup reused
+PASS existing player stands at new workspace start
+PASS invalid team and objective rejected
+PASS distant interaction rejected
+PASS spoofed team rejected
+PASS existing F interaction contract records objective
+PASS repeated activation counts only once per team
+PASS partial progress keeps both team gates locked
+PASS white mission completion is independent and fires once
+PASS all white ragdoll colliders pass white gate
+PASS black cannot follow through white gate
+PASS white cannot use black gate
+PASS next mission does not inherit prior progress
+PASS black completes independently and passes own gate
+PASS team change restores collision permission
+PASS disabled gate restores collision pairs
+PASS mission reset closes gates and clears team progress
+PASS shared-clock mode rejects unauthorised local mission outcomes
+PASS online mode cannot independently roll a map
+PASS round rebuild clears old sections
+PASS new round resets all mission state
+PASS no runtime errors
+Failures: 0; logged errors: 0
+
+User Unity/12-player/Steam verification pending.

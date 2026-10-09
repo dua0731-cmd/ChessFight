@@ -92,6 +92,8 @@ namespace ChessFight.RagdollLab
         {
             // Stamina and the "you are held" prompt live next to the pawn now (StaminaHud).
             string text = "Tab: 튜닝 패널   R: 리스폰   T: 슬로모션   F4: 자유 카메라   F2: 화면 분할   F9: [7] 시험대";
+            if (!game.spawnPracticeObjects)
+                text = "Tab: 조작·튜닝 패널   R: 시작점으로   T: 슬로모션   F4: 자유 카메라";
             // Until the cursor is locked the clicks go nowhere, which looks exactly like "the
             // actions are broken". Say so where it cannot be missed.
             if (Cursor.lockState != CursorLockMode.Locked && !game.UiWantsCursor)
@@ -202,7 +204,11 @@ namespace ChessFight.RagdollLab
 
             GUILayout.Space(8f);
             GUILayout.Label("조작", foldStyle);
-            foreach (var line in Help) GUILayout.Label(line, smallStyle);
+            foreach (var line in Help)
+            {
+                if (!game.spawnPracticeObjects && line.StartsWith("[7]")) continue;
+                GUILayout.Label(line, smallStyle);
+            }
             GUILayout.EndScrollView();
             GUILayout.EndArea();
 

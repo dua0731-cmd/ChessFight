@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22b0402f9cb3f9c081670289c7429a13, type: 3}
+  m_Name: PawnRushCatalog
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PawnRush.PawnRushCatalog
+  obstacles:
+  - {fileID: 4626659266746121549, guid: b7fb6ee00e8b34240b3d91862d77922e, type: 3}
+  - {fileID: 8922541075792532937, guid: e44772e99458f104391f24e3f1b88988, type: 3}
+  - {fileID: 5694199234315445636, guid: 6d2468703f19e804eb5a47bcbf2f217c, type: 3}
+  missions:
+  - {fileID: 9217031767821095426, guid: a0e4486da9882eb4b803714ba0d96040, type: 3}
+  - {fileID: 2009484142294733563, guid: 83aa4526a5b33a34caad97ab6c2c7cb0, type: 3}
+  - {fileID: 3260965747648695281, guid: f4808d0c95117a14a89fb3816eb44b27, type: 3}

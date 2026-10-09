@@ -1,6 +1,7 @@
 {
   "name": "ChessFight.ImportedMap.Editor",
-  "references": ["ChessFight.Gameplay", "ChessFight.Game"],
+  "references": ["ChessFight.Gameplay", "ChessFight.Game", "ChessFight.RagdollLab"],
   "includePlatforms": ["Editor"],
   "autoReferenced": true
 }
+

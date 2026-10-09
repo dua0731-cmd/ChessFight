@@ -5,6 +5,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| 로컬 (`JY-ragdoll_v2`, 커밋·푸시 없음) | 10-09 | R49 | 폰러시 A1~C2 모듈 조합 작업환경·6예제/2제작 틀·팀별 미션 문, 기존 맵/R48 보존. [상세](../KingRush/PAWN_RUSH_WORKSPACE.md) |
+| 로컬 변경 (`JY-ragdoll_v2`) | 10-09 | R48 | ImportedChessFightMap에 RagdollTest P1 외형·튜닝·LabGame 입력·LabCamera 연결. Unity 구성/실행 검사 통과, 사용자 손맛 확인 대기 |
 | 로컬 변경 (`JY-ragdoll_v2`, 사용자 지시로 커밋·푸시 안 함) | 10-05 | R47 | 별도 맵 배치 및 장애물 19 프리팹 이식, 기존 래그돌 계약 연결, 원본 플레이어/AI/승리 제외. [상세](../KingRush/MAP_IMPORT.md) |
 | (이 커밋, `JY-ragdoll_v2`) | 09-27 | R46 | M11 승격·기물 성능: Core `ChessPieces`, `PromotionPad`, 래그돌 무게·이동·등반·질주·면역 배율, 머리 위 표시, 스냅샷 기물 1바이트(v7), [7j] 시험대, 자동 점검 5개 |
 | `ddad4e6` (`JY-ragdoll_v2`) | 09-27 | R45 | M13 상태 효과: `IStatusReceiver`, 찌그러짐(조작 불가·매달림 놓기·면역)·비틀·면역 플래그, 시험대 Shift+F5·F6, 자동 점검 4개 |
