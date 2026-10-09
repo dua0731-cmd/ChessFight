@@ -1053,9 +1053,10 @@ namespace ChessFight.RagdollLab
             carryVel = Vector3.zero;
             // The standing anchor goes along with the hover (R105): left where it was, its spring pulled the
             // drifting body back and it barely crept.
-            anchorVel = flat + new Vector3(toward.x, 0f, toward.z);
+            anchorVel = hoverVel;
             Vector3 hips = bodies[0].position;
-            anchorPos = new Vector3(hips.x, anchorPos.y, hips.z);
+            anchorPos = new Vector3(hips.x + hoverVel.x * dt, anchorPos.y, hips.z + hoverVel.z * dt);
+            anchor.MovePosition(anchorPos);   // after the run step's own move this step, so this one counts
             freeFlight = Mathf.Max(freeFlight, 0.1f);
             airTimer = Mathf.Max(airTimer, 0.1f);
             Vector3 aim = Flat(qhPoint - bodies[0].position);
