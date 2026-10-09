@@ -35,9 +35,16 @@ namespace ChessFight.RagdollLab
         public float queenCooldown = 8f;
         public float queenLength = 6f;
         public float queenWidth = 1.2f;
-        public float queenWindup = 0.45f;
-        public float queenThrust = 0.12f;
-        public float queenRecovery = 0.5f;
+        public float queenWindup = 0.4f;
+        [Tooltip("줄을 따라 돌진하는 시간 (가장자리·벽 앞에서 멈춤)")]
+        public float queenDashTime = 0.24f;
+        [Tooltip("돌진이 가장자리 앞 이만큼에서 멈춤")]
+        public float queenEdgeMargin = 0.8f;
+        [Tooltip("퀸 몸보다 이만큼 앞에 있는 적이 베임 (칼끝)")]
+        public float queenHitAhead = 0.9f;
+        [Tooltip("밀리는 방향: 줄 방향 + 옆으로 이만큼")]
+        public float queenSideShare = 0.6f;
+        public float queenRecovery = 0.45f;
         [Tooltip("첫째 · 둘째 · 셋째 밀림 (m)")]
         public float[] queenPush = { 3.0f, 2.1f, 1.5f };
 
@@ -51,6 +58,8 @@ namespace ChessFight.RagdollLab
         public float rookNear = 4f;
         public float rookPushNear = 2.6f;
         public float rookPushFar = 1.6f;
+        [Tooltip("솟는 탑이 띄우는 위 속도 (m/s)")]
+        public float rookLift = 3.2f;
 
         [Header("비숍 · 관통 핀")]
         public float bishopCooldown = 8f;

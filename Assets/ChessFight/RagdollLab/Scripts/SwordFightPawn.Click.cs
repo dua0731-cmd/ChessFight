@@ -72,7 +72,8 @@ namespace ChessFight.RagdollLab
                 else angle = Mathf.Lerp(85, -25, (SwingAge - Windup - ActiveTime) / Recovery);
             }
             Vector3 forward = Attacking ? swingDirection : Pawn.Facing;
-            return (Quaternion.AngleAxis(angle, Vector3.up) * forward + Vector3.up * (Attacking ? -.32f : .35f)).normalized;
+            // The posed blade has no collider: it is kept over the floor, not swept through it.
+            return AboveFloor(Hand.position, (Quaternion.AngleAxis(angle, Vector3.up) * forward + Vector3.up * (Attacking ? -.32f : .35f)).normalized);
         }
         Quaternion? ClickSwordPose(int part)
         {

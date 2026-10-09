@@ -9,8 +9,9 @@ namespace ChessFight.RagdollLab
 
     public enum SfFxKind : byte
     {
+        Cast,
         KingParry, KingCounterHit, KingWhiff,
-        QueenThrust, QueenHit,
+        QueenThrust, QueenHit, QueenStop,
         RookSlam, RookHit, RookBlocked,
         BishopFire, BishopSlow, BishopPin,
         KnightLeap, KnightLand, KnightHit,
@@ -76,6 +77,11 @@ namespace ChessFight.RagdollLab
         public bool WaveBlocked { get; private set; }
         public Vector3[] KnightSpots { get; } = new Vector3[2];
         public bool KingCountered { get; private set; }
+        /// <summary>The queen's and the rook's line as aimed now: how far it runs before an edge (the queen) or a wall.</summary>
+        public float AimReach { get; private set; }
+        /// <summary>The queen's dash: where her hips started and how far along the line they are now.</summary>
+        public Vector3 DashStart { get; private set; }
+        public float DashProgress { get; private set; }
 
         // what is done to this piece
         public float SlowLeft => Mathf.Max(0f, slowLeft);
@@ -86,7 +92,6 @@ namespace ChessFight.RagdollLab
         Vector3? pointOverride;
         Vector3 rawAim = Vector3.forward;
         float cooldownLeft, slowLeft, pinLeft;
-        readonly List<(RagdollPawn p, float at, float push, int order)> pending = new List<(RagdollPawn, float, float, int)>();
         readonly HashSet<RagdollPawn> hitSet = new HashSet<RagdollPawn>();
         Camera aimCamera;
 
@@ -98,7 +103,7 @@ namespace ChessFight.RagdollLab
         }
 
         void OnEnable() { if (!All.Contains(this)) All.Add(this); }
-        void OnDisable() { All.Remove(this); }
+        void OnDisable() { All.Remove(this); PassThrough(false); }
         void OnDestroy()
         {
             All.Remove(this);
@@ -240,10 +245,10 @@ namespace ChessFight.RagdollLab
 
         void Clear()
         {
+            PassThrough(false);
             Stage = SfStage.None;
             StageTime = 0f;
             Detail = "";
-            pending.Clear();
             hitSet.Clear();
             WaveFront = 0f;
             WaveBlocked = false;
@@ -269,6 +274,8 @@ namespace ChessFight.RagdollLab
             Origin = Floor(Pawn.Hips.position);
             Vector3 dir = aimOverride ?? rawAim;
             AimDir = Flat(dir).sqrMagnitude > 1e-4f ? Flat(dir).normalized : Flat(Pawn.Facing).normalized;
+            if (Piece == PieceKind.Queen) AimReach = DashDistance(Origin, AimDir, S.queenLength);
+            else if (Piece == PieceKind.Rook) AimReach = WallDistance(Origin, AimDir, S.rookLength);
             if (Piece != PieceKind.Bishop && Piece != PieceKind.Knight) { AimValid = true; return; }
 
             float range = Piece == PieceKind.Bishop ? S.bishopRange : S.knightRange;
@@ -334,11 +341,13 @@ namespace ChessFight.RagdollLab
             Dir = AimDir;
             Point = AimPoint;
             Uses++;
+            Raise(SfFxKind.Cast, null, Origin, Dir, 0f);
             switch (Piece)
             {
                 case PieceKind.Queen:
                     SetStage(SfStage.Windup, "예고");
-                    Say($"{Pawn.DisplayName}: 꼬치 베기 예고");
+                    Reach = DashDistance(Origin, Dir, S.queenLength);
+                    Say($"{Pawn.DisplayName}: 꼬치 베기 예고 (돌진 {Reach:0.0} m)");
                     break;
                 case PieceKind.Rook:
                     SetStage(SfStage.Windup, "예고 · 고정");
@@ -364,6 +373,7 @@ namespace ChessFight.RagdollLab
         {
             Uses++;
             Dir = Flat(Pawn.Facing).normalized;
+            Raise(SfFxKind.Cast, null, Floor(Pawn.Hips.position), Dir, 0f);
             SetStage(SfStage.Windup, "받아내기");
             Say($"{Pawn.DisplayName}: 왕의 반격 자세");
         }
@@ -427,31 +437,79 @@ namespace ChessFight.RagdollLab
                 case SfStage.Windup:
                     if (StageTime >= S.queenWindup)
                     {
-                        SetStage(SfStage.Active, "베기");
-                        Raise(SfFxKind.QueenThrust, null, Origin, Dir, S.queenLength);
-                        var line = InLine(Origin, Dir, 0.3f, S.queenLength, S.queenWidth * 0.5f + 0.25f);
-                        for (int i = 0; i < line.Count; i++)
-                        {
-                            float push = S.queenPush[Mathf.Min(i, S.queenPush.Length - 1)];
-                            float at = S.queenThrust * Mathf.Clamp01(line[i].along / S.queenLength);
-                            pending.Add((line[i].p, at, push, i));
-                        }
+                        // She goes herself: a flat dash down her line (a low skim, she lands at its end), cutting every
+                        // enemy her sword's tip reaches on the way, nearest first.
+                        SetStage(SfStage.Active, "돌진");
+                        DashStart = Pawn.Hips.position;
+                        DashProgress = 0f;
+                        float t = S.queenDashTime, g = -Physics.gravity.y;
+                        // Measured (probe "queen"): the standing body adds a little of its own to the throw.
+                        Vector3 v = Dir * (Reach / t * 0.9f) + Vector3.up * (0.5f * g * t);
+                        PassThrough(true);
+                        Pawn.Launch(v);
+                        Raise(SfFxKind.QueenThrust, null, Origin, Dir, Reach);
+                        Say($"{Pawn.DisplayName}: 꼬치 베기 돌진 {Reach:0.0} m");
                     }
                     break;
                 case SfStage.Active:
-                    for (int i = pending.Count - 1; i >= 0; i--)
-                        if (StageTime >= pending[i].at)
-                        {
-                            var h = pending[i];
-                            pending.RemoveAt(i);
-                            var other = h.p != null ? h.p.GetComponent<SwordFightSkills>() : null;
-                            if (other != null) Hit(other, Dir, h.push, "꼬치 베기", SfFxKind.QueenHit, h.order);
-                        }
-                    if (StageTime >= S.queenThrust && pending.Count == 0) SetStage(SfStage.Recovery, "후딜");
+                {
+                    DashProgress = Mathf.Max(DashProgress, Vector3.Dot(Flat(Pawn.Hips.position - DashStart), Dir));
+                    Vector3 perp = Vector3.Cross(Vector3.up, Dir);
+                    foreach (var (p, along) in InLine(Origin, Dir, 0.3f, Reach + S.queenHitAhead, S.queenWidth * 0.5f + 0.25f))
+                    {
+                        if (hitSet.Contains(p) || along > DashProgress + S.queenHitAhead) continue;
+                        var other = p.GetComponent<SwordFightSkills>();
+                        if (other == null) continue;
+                        // Thrown on along her line and out to the side it stood on: she cuts through, they part.
+                        float side = Vector3.Dot(Flat(p.Hips.position - Origin), perp) >= 0f ? 1f : -1f;
+                        Vector3 dir = (Dir + perp * (side * S.queenSideShare)).normalized;
+                        int n = hitSet.Count;
+                        Hit(other, dir, S.queenPush[Mathf.Min(n, S.queenPush.Length - 1)], "꼬치 베기", SfFxKind.QueenHit, n);
+                    }
+                    bool down = StageTime > 0.08f && Pawn.Grounded;
+                    if ((StageTime >= S.queenDashTime && down) || StageTime >= S.queenDashTime + 0.3f)
+                    {
+                        PassThrough(false);
+                        Raise(SfFxKind.QueenStop, null, Floor(Pawn.Hips.position), Dir, DashProgress);
+                        Say($"{Pawn.DisplayName}: 돌진 끝 {DashProgress:0.0} m");
+                        SetStage(SfStage.Recovery, "후딜");
+                    }
                     break;
+                }
                 case SfStage.Recovery:
                     if (StageTime >= S.queenRecovery) Finish();
                     break;
+            }
+        }
+
+        /// <summary>How far the queen can dash down a line: to its end, or short of the floor's edge or a wall.</summary>
+        float DashDistance(Vector3 from, Vector3 dir, float length)
+        {
+            float best = Mathf.Min(length, WallDistance(from, dir, length) - 0.45f);
+            for (float s = 0.25f; s <= length + 1e-3f; s += 0.25f)
+                if (!HasFloor(Flat(from) + dir * s)) { best = Mathf.Min(best, s - S.queenEdgeMargin); break; }
+            return Mathf.Max(0f, best);
+        }
+
+        // The dashing queen goes through the pieces she cuts instead of running into them.
+        readonly List<(Collider, Collider)> ignored = new List<(Collider, Collider)>();
+
+        void PassThrough(bool on)
+        {
+            foreach (var (a, b) in ignored) if (a != null && b != null) Physics.IgnoreCollision(a, b, false);
+            ignored.Clear();
+            if (!on || Pawn == null) return;
+            var mine = Pawn.GetComponentsInChildren<Collider>();
+            foreach (var other in All)
+            {
+                if (other == this || other.Pawn == null || other.Pawn.Team == Pawn.Team) continue;
+                foreach (var c in other.Pawn.GetComponentsInChildren<Collider>())
+                    foreach (var m in mine)
+                    {
+                        if (c == null || m == null || c.isTrigger || m.isTrigger) continue;
+                        Physics.IgnoreCollision(m, c, true);
+                        ignored.Add((m, c));
+                    }
             }
         }
 
@@ -477,7 +535,8 @@ namespace ChessFight.RagdollLab
                     {
                         var other = p.GetComponent<SwordFightSkills>();
                         if (other == null || hitSet.Contains(p)) continue;
-                        Hit(other, Dir, along <= S.rookNear ? S.rookPushNear : S.rookPushFar, "열린 파일 포격", SfFxKind.RookHit, hitSet.Count);
+                        // A tower comes up under it: thrown up as well as back (the queen's cut only slides them).
+                        Hit(other, Dir, along <= S.rookNear ? S.rookPushNear : S.rookPushFar, "열린 파일 포격", SfFxKind.RookHit, hitSet.Count, S.rookLift);
                     }
                     if (WaveFront >= Reach - 1e-3f)
                     {
@@ -597,12 +656,12 @@ namespace ChessFight.RagdollLab
             other != null && other != this && other.Fighter != null && other.Fighter.Alive && other.Pawn != null
             && other.Pawn.Team != Pawn.Team && other.Fighter.Protection <= 0f;
 
-        void Hit(SwordFightSkills other, Vector3 dir, float metres, string cause, SfFxKind kind, int order)
+        void Hit(SwordFightSkills other, Vector3 dir, float metres, string cause, SfFxKind kind, int order, float lift = -1f)
         {
             var target = other.Pawn;
             hitSet.Add(target);
             dir = Flat(dir).normalized;
-            Vector3 push = dir * (metres * S.pushPerMetre) + Vector3.up * S.pushLift;
+            Vector3 push = dir * (metres * S.pushPerMetre) + Vector3.up * (lift >= 0f ? lift : S.pushLift);
             target.TakeHit(push, S.knockdownSeconds, 0f, true);
             other.Fighter.StopCombat();
             other.pinLeft = 0f;
@@ -668,6 +727,30 @@ namespace ChessFight.RagdollLab
                 return null;
             }
         }
+
+        /// <summary>The blade in the piece's own colour while its skill winds up and goes (null = the sword's own).</summary>
+        public Color? BladeTint
+        {
+            get
+            {
+                if (!HasSkill || (Stage != SfStage.Windup && Stage != SfStage.Active)) return null;
+                var p = Colors(Piece);
+                // Brighter toward the release, white in the windup's last frames (it is about to go).
+                float k = Stage == SfStage.Active ? 1f : Mathf.Clamp01(StageTime / 0.25f);
+                return Color.Lerp(p.main, p.light, 0.5f + 0.5f * Mathf.Sin(Time.time * 30f) * k);
+            }
+        }
+
+        /// <summary>A piece's own colours in design A.</summary>
+        public static SkillInkKit.Palette Colors(PieceKind kind) => kind switch
+        {
+            PieceKind.King => SkillInkKit.King,
+            PieceKind.Queen => SkillInkKit.Queen,
+            PieceKind.Rook => SkillInkKit.Rook,
+            PieceKind.Bishop => SkillInkKit.Bishop,
+            PieceKind.Knight => SkillInkKit.Knight,
+            _ => SkillInkKit.Grey,
+        };
 
         /// <summary>How far the hand is pulled back (−) or thrust out (+) along the skill's line.</summary>
         public float Reach01 => Piece == PieceKind.Queen ? Stage == SfStage.Windup ? -0.25f : Stage == SfStage.Active ? 0.35f : Stage == SfStage.Recovery ? 0.3f : 0f : 0f;
