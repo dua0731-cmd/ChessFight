@@ -7,7 +7,11 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R97 | 문서: Skills/QUEEN_HILL §R97, VALIDATION R97 표(R95 퀸 두 줄은 R97이 대신함), REQUIREMENTS R97, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R98 | 문서: Skills/QUEEN_HILL §R98, VALIDATION R98 표, REQUIREMENTS R98, HANDOFF, HISTORY |
+| `b12766b` | 10-10 | R98 | 녹화: 경사로를 내려가는 검격을 옆에서(경사가 보이게) |
+| `8eb54d1` | 10-10 | R98 | 자동 시험: 탑 위 퀸을 3층 블록에서 0.3 m 떨어진 곳에(블록 속에 세워져 한 번 1층으로 튕겨 나감) |
+| `080401a` | 10-10 | R98 | 퀸 경고 칸을 격자로 바닥에 붙여 깖(경사로를 따라 휨, 턱 벽면은 빼서 위아래 바닥으로 나뉨, `Tile.Drape`·`SlashFloorAt`), 판정에 적이 선 자리 바닥도, 초승달 검기가 경사를 부드럽게, 시험 도우미가 더미를 그 자리 바닥에(`WalkFloor`), 자동 시험 `queen-slope*` 4개·검격 줄 끝 높이, 녹화 R98 |
+| `73bc0f0` | 10-10 | R97 | 문서: Skills/QUEEN_HILL §R97, VALIDATION R97 표(R95 퀸 두 줄은 R97이 대신함), REQUIREMENTS R97, HANDOFF, HISTORY |
 | `2a9d526` | 10-10 | R97 | 자동 시험 `queen`(돌벽)이 이번에 넘어진 횟수로 셈(앞 시험의 맞은 기록이 남아 벽 너머 적도 맞은 것처럼 보였음) |
 | `c794d09` | 10-10 | R96 | 문서: SKILLS_ONLINE §0에 "확인할 것·정할 것" 한눈에 표, 결정 D-S8(어디서 먼저)·D-S9(어느 지연까지 정상) |
 | `c06bf7b` | 10-10 | R97 | 씬에 `queenClimb` 1.05 저장 |
