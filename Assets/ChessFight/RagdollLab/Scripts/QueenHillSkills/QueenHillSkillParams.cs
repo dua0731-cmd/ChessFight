@@ -48,10 +48,12 @@ namespace ChessFight.RagdollLab
         public float queenTravel = 0.2f;
         public float queenPush = 5f;
         public float queenLift = 1.5f;
-        [Tooltip("퀸이 선 바닥보다 이만큼 높은 곳(점프 중인 적 등)까지 맞는다 (m)")]
+        [Tooltip("검기가 지나가는 바닥보다 이만큼 높은 곳(점프 중인 적 등)까지 맞는다 (m)")]
         public float queenHeight = 1.2f;
-        [Tooltip("퀸이 선 바닥보다 이만큼 낮은 바닥에 선 적까지 맞는다 (m). R95: 검기는 퀸 높이에서 똑바로 날아가니 한 층(0.9 m) 아래는 안 맞음")]
+        [Tooltip("검기가 지나가는 바닥보다 이만큼 낮게 선 적까지 맞는다 (m)")]
         public float queenDrop = 0.45f;
+        [Tooltip("R97: 검기는 경고 칸처럼 바닥을 따라간다 — 낭떠러지는 얼마든 따라 내려가고, 이 높이(m)까지의 턱(탑 한 층)은 타고 오른다. 이보다 높은 면(돌벽)에서 막힘")]
+        public float queenClimb = 1.05f;
         public float queenRecovery = 0.6f;
         public float queenCooldown = 6f;
 

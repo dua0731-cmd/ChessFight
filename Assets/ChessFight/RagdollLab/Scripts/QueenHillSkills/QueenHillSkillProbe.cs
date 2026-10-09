@@ -354,7 +354,9 @@ namespace ChessFight.RagdollLab
 
         IEnumerator Queen()
         {
-            yield return Stage(PieceKind.Queen, new Vector3(0.2f, 0f, 3f), Vector3.right,
+            // A metre closer to the stone wall than in R89, so the 6 m slash meets the wall (R97: walls taller than a tier
+            // still stop it) instead of ending just short of it.
+            yield return Stage(PieceKind.Queen, new Vector3(1.2f, 0f, 3f), Vector3.right,
                 (PieceKind.Pawn, false, new Vector3(2.2f, 0f, 3.2f), Vector3.left),
                 (PieceKind.Bishop, false, new Vector3(4.2f, 0f, 2.8f), Vector3.left),
                 (PieceKind.Knight, false, new Vector3(7.6f, 0f, 3f), Vector3.left),
@@ -378,9 +380,9 @@ namespace ChessFight.RagdollLab
             yield return Wait(0.8f);
         }
 
-        /// <summary>R95: on the hill's second tier, slashing out over the first tier and the floor. The slash flies straight
-        /// at her height: its squares float straight out at that height, and only the enemy on her tier is hit (the one on
-        /// the tier below and the one on the floor are flown over).</summary>
+        /// <summary>On the hill's second tier, slashing out over the first tier and the floor. R97: the slash runs down the
+        /// way its squares lie, so all three are hit — on her tier, a tier below and on the floor — and pushed on along the
+        /// line (R95 had flown it over the lower two).</summary>
         IEnumerator QueenHigh()
         {
             float east2 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(1), east1 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);
@@ -388,18 +390,19 @@ namespace ChessFight.RagdollLab
                 (PieceKind.Pawn, false, new Vector3(east2 - 0.6f, QueenHillLayout.TierTop(1), 7.0f), Vector3.left),
                 (PieceKind.Pawn, false, new Vector3(east1 - 0.75f, QueenHillLayout.TierTop(0), 6.5f), Vector3.left),
                 (PieceKind.Pawn, false, new Vector3(east1 + 1.4f, 0f, 6.5f), Vector3.left));
-            yield return QueenSlashAt(Vector3.right, new[] { "같은 2층", "아래 1층(0.9 m 아래)", "바닥(1.8 m 아래)" });
+            yield return QueenSlashAt(Vector3.right, new[] { "같은 2층", "아래 1층(0.9 m 아래)", "바닥(1.8 m 아래, 줄 끝 쪽)" });
         }
 
-        /// <summary>R95, the other way round: on the floor slashing at the hill's east face: the squares stop at the wall
-        /// like the slash, the enemy in front is hit and the one on the tier behind the wall is not.</summary>
+        /// <summary>The other way round: on the floor slashing at the hill's east face. R97: the slash climbs the tier's
+        /// step (one tier, queenClimb) the way its squares lie, so the enemy in front and the one up on the tier are both
+        /// hit.</summary>
         IEnumerator QueenLow()
         {
             float east1 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);
             yield return Stage(PieceKind.Queen, new Vector3(east1 + 2.6f, 0f, 3.0f), Vector3.left,
                 (PieceKind.Pawn, false, new Vector3(east1 + 1.4f, 0f, 3.0f), Vector3.right),
                 (PieceKind.Pawn, false, new Vector3(east1 - 1.0f, QueenHillLayout.TierTop(0), 3.0f), Vector3.right));
-            yield return QueenSlashAt(Vector3.left, new[] { "앞 바닥", "벽 위 1층" });
+            yield return QueenSlashAt(Vector3.left, new[] { "앞 바닥", "턱 위 1층(0.9 m 위)" });
         }
 
         IEnumerator QueenSlashAt(Vector3 dir, string[] where)

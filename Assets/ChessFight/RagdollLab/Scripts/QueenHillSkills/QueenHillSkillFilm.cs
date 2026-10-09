@@ -97,8 +97,20 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(0.6f, 2.4f, 12.6f), look = new Vector3(-3.0f, 1.0f, 7.0f), fov = 48f },
         };
 
-        /// <summary>Which shots Run films: "r95" (the default, R95's changes), "r94", "r93" or "r89" (all six skills).</summary>
-        public static string ShotSet = "r95";
+        /// <summary>R97 (승규 님: the queen's slash goes where its squares are): down from a tier, up onto one, and a real wall
+        /// still stops it.</summary>
+        static readonly Shot[] ShotsR97 =
+        {
+            new Shot { run = "queen-high", title = "2. 퀸 · 팔방 검격 — 위에서 아래로", note = "경고 칸이 아래층·바닥을 따라 깔림 → 검기도 칸을 따라 내려가 같은 층·아래층·바닥 적 모두 넘어짐 · 줄 끝 쪽으로 밀림",
+                eye = new Vector3(1.5f, 3.6f, 2.5f), look = new Vector3(-5.0f, 1.4f, 6.5f), fov = 50f },
+            new Shot { run = "queen-low", title = "2. 퀸 · 팔방 검격 — 아래에서 위로 (반대)", note = "검기가 한 층(0.9 m) 턱을 타고 올라감 → 앞의 적도, 턱 위 1층 적도 넘어짐",
+                eye = new Vector3(0.4f, 2.0f, -1.6f), look = new Vector3(-2.8f, 0.6f, 3.2f), fov = 52f },
+            new Shot { run = "queen", title = "2. 퀸 · 팔방 검격 — 높은 벽은 그대로 막힘", note = "한 층보다 높은 돌벽(1.6 m)은 막힘 · 벽 뒤 적은 안전, 줄 밖 적도 그대로",
+                eye = new Vector3(3.9f, 4.8f, -3.2f), look = new Vector3(3.7f, 0.3f, 3.3f), fov = 44f },
+        };
+
+        /// <summary>Which shots Run films: "r97" (the default, R97's queen), "r95", "r94", "r93" or "r89" (all six skills).</summary>
+        public static string ShotSet = "r97";
 
         LabGame game;
         Camera cam;
@@ -200,7 +212,7 @@ namespace ChessFight.RagdollLab
                 Directory.CreateDirectory(stills);
                 Frames = 0;
                 Began?.Invoke(file, w, h, fps);
-                foreach (var shot in ShotSet == "r89" ? Shots : ShotSet == "r93" ? ShotsR93 : ShotSet == "r94" ? ShotsR94 : ShotsR95)
+                foreach (var shot in ShotSet == "r89" ? Shots : ShotSet == "r93" ? ShotsR93 : ShotSet == "r94" ? ShotsR94 : ShotSet == "r95" ? ShotsR95 : ShotsR97)
                 {
                     if (!string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";

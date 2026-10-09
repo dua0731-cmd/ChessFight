@@ -33,8 +33,8 @@ namespace ChessFight.RagdollLab
     /// The Queen of the Hill piece skills (design doc §7, R89: 승규 picked 1.B 2.A 3.B 4.B 5.B 6.B on the previz page).
     /// King "근접 호위": allies close by shrug off knockdowns and strong pushes for 2 s; the king himself does not (B).
     /// Queen "팔방 검격": a long slash down one aimed line, with a windup and a recovery, stopped by walls (A); R93: the
-    /// sword comes up from low behind on the right to high on the left; R95: the slash flies straight at her height and
-    /// takes only pieces about level with her. Rook "캐슬링 교대": swap places with any ally close by (B: not only the
+    /// sword comes up from low behind on the right to high on the left; R97: the slash runs along the floor like its
+    /// warning squares, down drops and up steps of a tier, taking whoever stands on its way. Rook "캐슬링 교대": swap places with any ally close by (B: not only the
     /// king), once it agrees; the path and both spots must be clear. Bishop "교차 공중 포격": hover up, throw a shot at the
     /// aimed spot, an X of diagonals there knocks enemies down and off walls (B); R95: two shots a hover. Knight
     /// "도약 압착": leap to a chosen spot at most one tier up, enemies in the landing circle are flattened 0.7 s and
@@ -79,10 +79,12 @@ namespace ChessFight.RagdollLab
         bool qhValid;
         RagdollPawn qhTarget;
         string qhWhy = "";
-        // Queen
+        // Queen: the slash runs along the floor (R97), sampled every SlashPathStep metres from her feet.
         Vector3 slashFrom, slashDir = Vector3.forward, slashStop;
-        float slashReach, slashFloor;
+        float slashReach;
         bool slashBlocked;
+        readonly System.Collections.Generic.List<Vector3> slashPath = new System.Collections.Generic.List<Vector3>();
+        public const float SlashPathStep = 0.25f;
         // Bishop: shots still to throw in this hover (R95: two).
         int shotsLeft;
         // Rook: the request out, and one come in.
@@ -127,6 +129,9 @@ namespace ChessFight.RagdollLab
         public float SlashReach => slashReach;
         public bool SlashBlocked => slashBlocked;
         public Vector3 SlashStop => slashStop;
+        /// <summary>The floor the queen's slash runs along (R97): a point every <see cref="SlashPathStep"/> m from her feet,
+        /// down any drop and up steps of at most queenClimb, to where it ends or a wall stops it.</summary>
+        public System.Collections.Generic.IReadOnlyList<Vector3> SlashPath => slashPath;
         public float HoverLeft => Mathf.Max(0f, hoverLeft);
         public float HoverTotal => hoverTotal;
         public bool ShellOut => shellOut;
@@ -455,34 +460,52 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>The slash's line from the chest along the aim, cut short by the first wall (pieces, loose bodies and
-        /// floors do not stop it).</summary>
+        /// <summary>The slash's way along the aim (R97, 승규 님: "위에 있고 적이 아래에 있으면 아래 적이 맞아야, 마지막 칸에 있는
+        /// 사람 쪽으로 보내져야 돼, 그 반대도"): it runs along the floor the way its warning squares lie — down any drop, up
+        /// steps of at most queenClimb (a tier of the hill) — and a face taller than that (the stone wall) stops it.
+        /// (R95 flew it straight at her height instead; that was not what was asked and is undone.)</summary>
         void SlashLine(QueenHillSkillParams s)
         {
             Vector3 chest = bodies[(int)BodyId.Chest].position;
-            slashFrom = new Vector3(chest.x, chest.y, chest.z);
-            slashFloor = FeetPoint.y;
+            slashFrom = chest;
+            Vector3 feet = FeetPoint;
+            slashPath.Clear();
+            slashPath.Add(feet);
             slashReach = s.queenLength;
             slashBlocked = false;
-            int n = Physics.SphereCastNonAlloc(chest - slashDir * 0.1f, 0.3f, slashDir, hits, s.queenLength + 0.1f, ~0, QueryTriggerInteraction.Ignore);
-            float best = float.MaxValue;
-            for (int i = 0; i < n; i++)
+            float level = feet.y, climb = Mathf.Max(0.1f, s.queenClimb);
+            int n = Mathf.CeilToInt(s.queenLength / SlashPathStep);
+            for (int i = 1; i <= n; i++)
             {
-                var h = hits[i];
-                if (h.distance <= 0f || ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || PassesThrough(h.collider)) continue;
-                var rb = h.collider.attachedRigidbody;
-                if (rb != null && !rb.isKinematic) continue;
-                if (Mathf.Abs(h.normal.y) > 0.6f) continue;   // a floor or a ramp
-                if (h.distance >= best) continue;
-                best = h.distance;
-                slashStop = h.point;
+                float was = (i - 1) * SlashPathStep, d = Mathf.Min(i * SlashPathStep, s.queenLength);
+                float probe = level + climb + 0.1f;
+                Vector3 prev = feet + slashDir * was, here = feet + slashDir * d;
+                // A face taller than a step between the last point and this one: a wall, the slash stops at it.
+                if (SolidRay(new Vector3(prev.x, probe, prev.z), slashDir, d - was, out var wall) && Mathf.Abs(wall.normal.y) < 0.6f)
+                {
+                    slashReach = Mathf.Max(0.3f, was + wall.distance - 0.1f);
+                    slashBlocked = true;
+                    slashStop = wall.point;
+                    if (wall.distance > 0.15f) slashPath.Add(new Vector3(prev.x, level, prev.z) + slashDir * (wall.distance - 0.1f));
+                    return;
+                }
+                // The floor here: the first one below a step's height over the slash's floor (up a step, or down a drop).
+                if (SolidRay(new Vector3(here.x, probe, here.z), Vector3.down, probe - level + 40f, out var floor) && floor.normal.y >= 0.5f)
+                    level = floor.point.y;
+                slashPath.Add(new Vector3(here.x, level, here.z));
             }
-            if (best < float.MaxValue)
-            {
-                slashReach = Mathf.Max(0.3f, best - 0.1f);
-                slashBlocked = true;
-            }
-            else slashStop = chest + slashDir * slashReach;
+            slashStop = slashPath[slashPath.Count - 1] + Vector3.up * Mathf.Max(0.3f, chest.y - feet.y);
+        }
+
+        /// <summary>The lowest and highest floor of the slash's way around <paramref name="along"/> m from her feet (the two
+        /// points either side: a piece on a step's edge counts on either level).</summary>
+        void SlashFloorAround(float along, out float low, out float high)
+        {
+            if (slashPath.Count == 0) { low = high = FeetPoint.y; return; }
+            int a = Mathf.Clamp(Mathf.FloorToInt(along / SlashPathStep), 0, slashPath.Count - 1);
+            int b = Mathf.Clamp(a + 1, 0, slashPath.Count - 1);
+            low = Mathf.Min(slashPath[a].y, slashPath[b].y);
+            high = Mathf.Max(slashPath[a].y, slashPath[b].y);
         }
 
         void QueenSlashHits(QueenHillSkillParams s, float front)
@@ -490,15 +513,17 @@ namespace ChessFight.RagdollLab
             foreach (var other in All)
             {
                 if (other == null || other == this || other.NetworkPuppet || !IsEnemyOf(other) || skillHitSet.Contains(other)) continue;
-                Vector3 rel = other.bodies[0].position - slashFrom;
+                Vector3 start = slashPath.Count > 0 ? slashPath[0] : FeetPoint;
+                Vector3 rel = other.bodies[0].position - start;
                 float along = Vector3.Dot(Flat(rel), slashDir);
                 if (along < -0.3f || along > front + 0.25f || along > slashReach + 0.2f) continue;
                 float across = (Flat(rel) - slashDir * along).magnitude;
                 if (across > s.queenWidth * 0.5f + 0.3f) continue;
-                // The slash flies straight out at her height (R95, as its squares now show): it takes pieces standing about
-                // level with her (a step lower at most) or jumping over the line, not a tier below that it flies over.
-                float dy = other.FeetPoint.y - slashFloor;
-                if (dy < -s.queenDrop || dy > s.queenHeight) continue;
+                // On the slash's way (R97): standing on the floor it runs along there — a tier below or above her included —
+                // or jumping over it.
+                SlashFloorAround(Mathf.Max(0f, along), out float low, out float high);
+                float feet = other.FeetPoint.y;
+                if (feet < low - s.queenDrop || feet > high + s.queenHeight) continue;
                 skillHitSet.Add(other);
                 string result = QhHit(other, slashDir * s.queenPush + Vector3.up * s.queenLift, true, "퀸 팔방 검격",
                     QueenHillFxKind.QueenHit, other.bodies[(int)BodyId.Chest].position);
