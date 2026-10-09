@@ -22,16 +22,16 @@ MonoBehaviour:
     grabStiffnessMultiplier: 0.5
     slopeStiffnessMultiplier: 0.6
     stiffnessLerpSpeed: 8
-    knockdownImpulseThreshold: 7.5
-    getUpDelay: 0.7
+    knockdownImpulseThreshold: 9
+    getUpDelay: 1
     getUpBlendTime: 0.22
     momentumRetention: 1
-    moveSpeed: 5.5
-    sprintSpeed: 9.6
-    acceleration: 30
-    turnResponsiveness: 8
-    jumpImpulse: 4.5
-    airControl: 0.25
+    moveSpeed: 2.5
+    sprintSpeed: 3.6
+    acceleration: 22
+    turnResponsiveness: 40
+    jumpImpulse: 3.8
+    airControl: 0.4
     launchSteer: 0
     lowerBodyDynamicShare: 0.6
     balanceStrength: 1200
@@ -83,7 +83,7 @@ MonoBehaviour:
     accelLean: 0.6
     turnLean: 10
     landingDip: 0.06
-    stopDeceleration: 40
+    stopDeceleration: 29
     turnRateTopSpeed: 260
     stepLength: 0.22
     boundGait: 0
@@ -149,9 +149,9 @@ MonoBehaviour:
     sprintResume: 0.3
     staminaRecoverDelay: 0.8
     launchClamp: 1.2
-    diveBoost: 3
-    diveLift: 1.2
-    diveMaxSpeed: 10
+    diveBoost: 1.55
+    diveLift: 0.55
+    diveMaxSpeed: 5.3
     diveTip: 5
     diveSideTip: 0
     diveArmStiffness: 5
@@ -161,7 +161,7 @@ MonoBehaviour:
     diveMinTime: 0.7
     diveMaxTime: 1.5
     diveGetUpSpeed: 1
-    diveLieTime: 0.35
+    diveLieTime: 0.51
     diveCooldown: 0.35
     diveStamina: 0.6
     diveTackleImpact: 3

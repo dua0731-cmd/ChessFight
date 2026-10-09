@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋) | 10-09 | — | 병합(`C:/Work`, 승규 님 "푸시해 줘"): `main`의 이동·점프 튜닝 `3d49a18`(R87~R89, 7커밋)을 `claude/bold-johnson-8ez95n`에. 코드 충돌 없음, 문서 4개(HANDOFF·HISTORY·REQUIREMENTS·VALIDATION)는 양쪽이 같은 자리에 같은 번호(R87~R89)로 새 줄을 넣어 충돌 → 둘 다 남김, R86 중복 줄 하나 뺌 |
 | (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-09 | R89 | 병합: 아래 `9d06d83`(코스 01 v0.4가 들어온 `claude/bold-johnson-8ez95n`)을 R89 브랜치에. HANDOFF·HISTORY 충돌은 양쪽을 모두 살림. 이 PC Unity 폴더(`C:/Work`)를 이 커밋으로 빨리 감고 복사해 두었던 R89 파일을 걷어 냄 |
 | `9d06d83` | 10-09 | — | 병합(이 PC의 `C:/Work`, 승규 님 "충돌 해결, 내 것은 푸시하지 마"): 10-08부터 멈춰 있던 `upstream/claude/bold-johnson-8ez95n`(`1fb198f`: R86 코스 01 v0.4 + R85 커밋 번호) 받기를 마무리. DECISIONS·REQUIREMENTS 충돌은 양쪽 줄(P6·P7·R86과 R87·SK1 새 경로)을 모두 살림. 푸시 안 함 |
 | `0a910f2` | 10-09 | R89 | 문서: REQUIREMENTS R89, DECISIONS SK3, VALIDATION R89 표, HANDOFF, HISTORY |
@@ -15,6 +16,13 @@
 | `ccc6604` | 10-09 | R89 | 시험 씬 `SkillTest/QueenOfTheHill_SkillTest`, 교대·도약 호와 카메라 조정, 문서 Skills/QUEEN_HILL·README |
 | `dd9e6ad` | 10-09 | R89 | 퀸 오브 더 힐 스킬 시험장, 스킬 6개(1.B 2.A 3.B 4.B 5.B 6.B)와 A 디자인 이펙트, 자동 시험·녹화 도구(첫 판) |
 | `ae87ddc` | 10-08 | R86 | 폰 러시 코스 01 v0.4: 같은 씬을 공용 길 + 미션 광장 2곳으로(`Course01v4Builder`), `MissionStation`·`TeamGate`·미니게임 A~E(`Mg*`)·`MissionPicker`, Core `PawnRushMissions`(뽑기·4명 상한·25% 걸쇠, 테스트 3개), `ObstacleSpan`·v0.4 검증기, 플레이테스트 F6~F10, 판자 재질 2개, v0.2 빌더·슬롯 삭제 |
+| (이 커밋) | 10-08 | R89 3차 | 이 작업을 `claude/bold-johnson-8ez95n`에 합침(앞으로 감기, 사용자 요청). 문서: HISTORY 커밋 번호, REQUIREMENTS R89 3차, HANDOFF |
+| `67dc468` | 10-08 | R89 2차 | bold-johnson 기준으로: 요청 번호 R68~R70 → R87~R89, 폰 러시 코스 01 A1 회전 막대 0.2~0.52 m·턱 0.15 m, A3 원판 사이 1.49 m(A2 벽 윗면 z 33), 검증기 필수 틈 1.5 m, 점프 상승 보정은 스킬 돌진 중 멈춤. `Tools/run-tests-linux.sh`: Unity 6 전용 API 4개를 임시 복사본에서 2021.3로 바꿈(bold-johnson부터 컴파일 검사가 Game에서 멈춰 있었다). Core 91·세션 40·8개 어셈블리 컴파일 통과. 문서: PAWN_RUSH_COURSE01 §6·§7, VALIDATION, REQUIREMENTS, HANDOFF |
+| `d13022a` | 10-08 | R89 2차 | `claude/bold-johnson-8ez95n` 병합(이 작업의 기준을 main → bold-johnson으로) |
+| `85bf7a7` | 10-08 | R89 | 폰러시 시험 맵: 회전 점프 막대 7개(윗면 0.45 m)·회전 체스판(0.6 m)·점프 계단(0.3·0.45·0.6 m) 낮춤, 08 컨베이어 1.5 m/s. 킹 러쉬 자동 점검 기준(점프 0.6 m, 제한 시간 속도 비율). 문서: MAP_IMPORT, PAWN_RUSH_MAP_KIT, VALIDATION, REQUIREMENTS R89, HANDOFF |
+| `4e93ae3` | 10-08 | R88 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R88, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R88, HANDOFF |
+| `4a3c569` | 10-08 | R88 | (사용자) RagdollTest 패널로 다듬은 튜닝: 달리기 2.5·질주 3.6·점프 3.8·방향 전환 40·공중 제어 0.4·넉다운 9·기상 1·다이빙 |
+| `cd4bd57` | 10-08 | R87 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R87, HANDOFF |
 | `7d34fbf` | 10-08 | R85 | 문서: UI §15 "이름 바꾸기", SCENES, DECISIONS U16, VALIDATION R85 표, REQUIREMENTS R85, HANDOFF. 문구 하나("바꿨어요! 돌아가는 중") |
 | `1670ad6` | 10-08 | R85 | 인트로 "이름 바꾸기"와 로비 오른쪽 위 내 이름에서 언제든 이름 바꾸기(`NameChange`, `NameScreen` 바꾸기 모드·돌아가기), 바꾸는 동안 로비 단축키·채팅 쉼, 매칭 중 막음, Shift+클릭 없앰, 오프라인 로비도 고른 이름, `LobbyStage.SelfOnScreen` |
 | `076cc5b` | 10-08 | R84 | 문서: AI가 Unity에서 Play해 본 결과(VALIDATION R84 표), PITFALLS 32(첫 프레임 3.7초가 로고 기다림을 써 버림), UI §15·HANDOFF·REQUIREMENTS에 반영 |

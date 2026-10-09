@@ -170,7 +170,7 @@ namespace ChessFight.RagdollLab
         {
             ("JointSign", JointSign), ("Stand", Stand), ("Run", Run), ("Sprint", Sprint),
             ("GaitShape", GaitShape), ("Turn", Turn), ("NoAutoHop", NoAutoHop), ("JumpCheck", JumpCheck),
-            ("JumpNoStack", JumpNoStack), ("GetUp", GetUp), ("Fall", Fall), ("Slope", Slope),
+            ("JumpNoStack", JumpNoStack), ("SprintJump", SprintJump), ("GetUp", GetUp), ("Fall", Fall), ("Slope", Slope),
             ("DiveSlope", DiveSlope), ("Contact", Contact), ("GrabDrag", GrabDrag),
             ("StruggleEscape", StruggleEscape), ("Climb", Climb), ("ClimbBugs", ClimbBugs),
             ("ClimbSurfaces", ClimbSurfaces), ("ClimbMoves", ClimbMoves), ("DiveTackle", DiveTackle), ("Bar", Bar), ("Beam", Beam),
@@ -1523,6 +1523,53 @@ namespace ChessFight.RagdollLab
             float stacked = (v + 2.5f) * (v + 2.5f) / (2f * g);
             Report("점프가 튀는 중에 겹쳐지지 않음", maxY - y0 < ideal * 1.25f,
                 $"높이 {maxY - y0:F2} m (정상 점프 {ideal:F2} m, 겹쳤다면 {stacked:F2} m)");
+            yield return Clear();
+        }
+
+        /// <summary>
+        /// A jump climbs the same however fast the pawn goes: standing, running and sprinting jumps
+        /// reach the same height, at the hips (the climb) and at the head (what the player sees - the
+        /// sprint's deep lean used to keep it low). Lapping the sprint check's circle, so there is room.
+        /// </summary>
+        IEnumerator SprintJump()
+        {
+            Vector3 center = new Vector3(-5f, 0f, 0f);
+            const float Radius = 8f;
+            var pawn = Spawn(center + new Vector3(Radius, 0f, 0f), Vector3.forward, "sprint-jump");
+            Rigidbody head = pawn.bodies[(int)BodyId.Head];
+            Vector3 Lap()
+            {
+                Vector3 r = Flat(pawn.Hips.position - center);
+                if (r.sqrMagnitude < 1e-4f) return Vector3.forward;
+                Vector3 round = Vector3.Cross(Vector3.up, r.normalized) * -1f;
+                return (round - r.normalized * ((r.magnitude - Radius) / Radius)).normalized;
+            }
+            var hips = new float[3];
+            var tops = new float[3];
+            int topUps = pawn.RiseTopUps;
+            yield return Sim(1f);
+            for (int kind = 0; kind < 3; kind++)
+            {
+                // 0 = standing, 1 = running, 2 = sprinting: get up to speed first, then jump once.
+                bool moving = kind > 0, sprint = kind == 2;
+                yield return Sim(moving ? 1.5f : 0.5f, () => Drive(pawn, moving ? Lap() : Vector3.zero, sprint: sprint));
+                float hips0 = pawn.Hips.position.y, head0 = head.position.y, hipsMax = hips0, headMax = head0;
+                bool pressed = false;
+                yield return Sim(1.4f, () =>
+                {
+                    Drive(pawn, moving ? Lap() : Vector3.zero, jump: !pressed, sprint: sprint);
+                    pressed = true;
+                    hipsMax = Mathf.Max(hipsMax, pawn.Hips.position.y);
+                    headMax = Mathf.Max(headMax, head.position.y);
+                });
+                hips[kind] = hipsMax - hips0;
+                tops[kind] = headMax - head0;
+            }
+            bool sameClimb = hips[2] > 0.92f * hips[0] && hips[1] > 0.92f * hips[0];
+            bool sameLook = tops[2] > 0.9f * tops[1];
+            Report("전력질주 점프도 제자리·달리기 점프만큼 높음", sameClimb && sameLook && pawn.Knockdowns == 0,
+                $"골반 상승 제자리 {hips[0]:F2} / 달리기 {hips[1]:F2} / 질주 {hips[2]:F2} m, "
+                + $"머리 상승 {tops[0]:F2} / {tops[1]:F2} / {tops[2]:F2} m, 보정한 스텝 {pawn.RiseTopUps - topUps}, 넘어짐 {pawn.Knockdowns}");
             yield return Clear();
         }
 

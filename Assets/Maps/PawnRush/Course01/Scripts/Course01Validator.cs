@@ -12,7 +12,8 @@ namespace ChessFight.PawnRush
     //   1. every obstacle's reach covers the whole way across where it stands (ObstacleSpan: the
     //      walkable floor, or the climbable face, measured by rays)
     //   2. white's and black's progress paths are within 0.1 m of each other
-    //   3. no gap over 2.5 m along either path (a "gap": nothing within 4 m below)
+    //   3. no gap over 1.5 m along either path (a "gap": nothing within 4 m below). 2.5 m before the
+    //      10-08 tuning cut the running jump from about 5 m to 1.9 m
     //   4. floor under every checkpoint's six respawn spots
     //   5. four stations, each with its gate, barrier and a game; every one of the five games, built
     //      into every station, stays inside the station's 20 x 20 m
@@ -21,7 +22,7 @@ namespace ChessFight.PawnRush
     //   7. a kill volume under the course
     public static class Course01Validator
     {
-        public const float MaxRequiredGap = 2.5f, PathTolerance = .1f, SpanTolerance = .05f;
+        public const float MaxRequiredGap = 1.5f, PathTolerance = .1f, SpanTolerance = .05f;
 
         static readonly RaycastHit[] hits = new RaycastHit[64];
 
