@@ -705,6 +705,7 @@ MonoBehaviour:
     queenPush: 5
     queenLift: 1.5
     queenHeight: 1.2
+    queenDrop: 0.45
     queenRecovery: 0.6
     queenCooldown: 6
     rookRange: 9
@@ -719,6 +720,7 @@ MonoBehaviour:
     bishopHover: 1.3
     bishopRise: 0.25
     bishopHoverTime: 3
+    bishopShots: 2
     bishopRange: 9
     bishopFlight: 0.5
     bishopArm: 2.25
@@ -733,7 +735,7 @@ MonoBehaviour:
     knightGravity: 1.6
     knightWindup: 0.12
     knightRadius: 1.3
-    knightSnap: 1.15
+    knightSnap: 1.05
     knightFlatten: 0.7
     knightSlide: 2.6
     knightSlideTime: 0.35
