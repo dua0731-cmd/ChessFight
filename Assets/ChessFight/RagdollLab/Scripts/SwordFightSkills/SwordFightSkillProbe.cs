@@ -78,9 +78,22 @@ namespace ChessFight.RagdollLab
                 _ => null,
             };
             if (body == null) { Status = "done: unknown run " + name; yield break; }
+            var sfx = SwordFightSkillSfx.Current;
+            var heardBefore = sfx != null ? new Dictionary<string, int>(sfx.Count) : null;
             yield return body;
             SwordFightSkills.Log -= OnLog;
             foreach (var l in lines) Say("  " + l);
+            // The sounds this run started (R106): which moments reached a clip, and how often.
+            if (sfx != null)
+            {
+                var heard = new List<string>();
+                foreach (var kv in sfx.Count)
+                {
+                    int n = kv.Value - (heardBefore.TryGetValue(kv.Key, out int b) ? b : 0);
+                    if (n > 0) heard.Add(n > 1 ? $"{kv.Key}×{n}" : kv.Key);
+                }
+                Say($"  소리 ({sfx.Sounds.Count}개 불러옴): " + (heard.Count > 0 ? string.Join(", ", heard) : "없음"));
+            }
             var me = bed.Local;
             if (me != null && me.Skills != null) { me.Skills.CancelAim(); me.Skills.OverrideAim(null); }
             SwordFightSkillBed.Scripted = false;

@@ -169,7 +169,8 @@ namespace ChessFight.RagdollLab
                 Began?.Invoke(file, w, h, fps);
                 foreach (var shot in Shots)
                 {
-                    if (!string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
+                    // "f" = the F skills only (every shot but the edge ones), else a prefix of the runs.
+                    if (only == "f" ? shot.run.StartsWith("edge") : !string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";
                     eye = shot.eye;
                     look = shot.look;
