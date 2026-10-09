@@ -73,20 +73,21 @@ namespace ChessFight.RagdollLab
                 _ => null,
             };
             if (data == null) return null;
-            tex = BuildIcon(data);
+            tex = BuildIcon(data, out var outline);
             tex.name = $"Skill icon ({kind})";
             iconTextures[kind] = tex;
-            var mesh = BuildIconMesh(data);
+            var mesh = BuildIconMesh(outline);
             mesh.name = $"Skill icon token ({kind})";
             iconMeshes[kind] = mesh;
             return tex;
         }
 
         /// <summary>The icon as a solid token (R108), in icon heights with its middle at the origin: a face at each end
-        /// (z = ∓<see cref="IconDepth"/>/2, the field square, mirrored on the back so it reads from behind) and a wall round
-        /// every outline (depth-0 contour) pushed out by the ink width, where the faces' ink edge ends. uv2.x is 1 on the
-        /// walls. The light lines stay printed on the faces.</summary>
-        static Mesh BuildIconMesh(short[][] data)
+        /// (z = ∓<see cref="IconDepth"/>/2, the field square, mirrored on the back so it reads from behind) and a wall
+        /// where the faces' ink edge ends — the outline's distance field at −<see cref="IconInk"/>, followed cell by cell
+        /// (marching squares), so the walls stay clean in the outline's notches. uv2.x is 1 on the walls. The light lines
+        /// stay printed on the faces.</summary>
+        static Mesh BuildIconMesh(float[] field)
         {
             var v = new List<Vector3>();
             var n = new List<Vector3>();
@@ -108,36 +109,50 @@ namespace ChessFight.RagdollLab
                 }
                 tri.AddRange(new[] { b, b + 1, b + 2, b, b + 2, b + 3 });
             }
-            foreach (var c in data)
+            float step = 2f * IconHalf / IconSize;
+            Vector2 At(int x, int y) => new Vector2(-IconHalf + (x + 0.5f) * step, -IconHalf + (y + 0.5f) * step);
+            float F(int x, int y) => field[y * IconSize + x] + IconInk;   // > 0 inside the ink edge
+            void Wall(Vector2 a, Vector2 b2, Vector2 outward)
             {
-                if (c[0] != 0) continue;
-                int count = (c.Length - 1) / 2;
-                var p = new Vector2[count];
-                float area = 0f;
-                for (int i = 0; i < count; i++) p[i] = new Vector2(c[1 + 2 * i], c[2 + 2 * i] - 500) * 0.001f;
-                for (int i = 0, j = count - 1; i < count; j = i++) area += p[j].x * p[i].y - p[i].x * p[j].y;
-                float turn = area >= 0f ? 1f : -1f;   // outward = (dy, -dx) on an anticlockwise outline
-                Vector2 Out(Vector2 a, Vector2 b2) { var d = (b2 - a).normalized; return new Vector2(d.y, -d.x) * turn; }
-                var pushed = new Vector2[count];
-                for (int i = 0; i < count; i++)
-                {
-                    Vector2 prev = p[(i + count - 1) % count], next = p[(i + 1) % count];
-                    Vector2 n0 = Out(prev, p[i]), n1 = Out(p[i], next), m = (n0 + n1).normalized;
-                    if (m.sqrMagnitude < 0.5f) m = n1;
-                    pushed[i] = p[i] + m * Mathf.Min(2f * IconInk, IconInk / Mathf.Max(0.5f, Vector2.Dot(m, n1)));
-                }
-                for (int i = 0; i < count; i++)
-                {
-                    Vector2 a = pushed[i], b2 = pushed[(i + 1) % count];
-                    if ((b2 - a).sqrMagnitude < 1e-10f) continue;
-                    var out3 = (Vector3)Out(a, b2);
-                    int s = v.Count;
-                    v.Add(new Vector3(a.x, a.y, -h)); v.Add(new Vector3(b2.x, b2.y, -h));
-                    v.Add(new Vector3(b2.x, b2.y, h)); v.Add(new Vector3(a.x, a.y, h));
-                    for (int k = 0; k < 4; k++) { n.Add(out3); uv.Add(Vector2.zero); uv2.Add(Vector2.right); }
-                    tri.AddRange(new[] { s, s + 1, s + 2, s, s + 2, s + 3 });
-                }
+                var o = (Vector3)outward;
+                var e = new Vector2(b2.y - a.y, a.x - b2.x);
+                if (Vector2.Dot(e, outward) < 0f) (a, b2) = (b2, a);   // a steady turn, though Cull is off
+                int s = v.Count;
+                v.Add(new Vector3(a.x, a.y, -h)); v.Add(new Vector3(b2.x, b2.y, -h));
+                v.Add(new Vector3(b2.x, b2.y, h)); v.Add(new Vector3(a.x, a.y, h));
+                for (int k = 0; k < 4; k++) { n.Add(o); uv.Add(Vector2.zero); uv2.Add(Vector2.right); }
+                tri.AddRange(new[] { s, s + 1, s + 2, s, s + 2, s + 3 });
             }
+            var cross = new List<Vector2>(4);
+            for (int y = 0; y < IconSize - 1; y++)
+                for (int x = 0; x < IconSize - 1; x++)
+                {
+                    float f00 = F(x, y), f10 = F(x + 1, y), f11 = F(x + 1, y + 1), f01 = F(x, y + 1);
+                    bool i00 = f00 > 0f, i10 = f10 > 0f, i11 = f11 > 0f, i01 = f01 > 0f;
+                    if (i00 == i10 && i10 == i11 && i11 == i01) continue;
+                    // The crossings round the cell's edges, in order: bottom, right, top, left.
+                    cross.Clear();
+                    Vector2 p00 = At(x, y), p10 = At(x + 1, y), p11 = At(x + 1, y + 1), p01 = At(x, y + 1);
+                    void Edge(bool ia, bool ib, float fa, float fb, Vector2 pa, Vector2 pb)
+                    {
+                        if (ia != ib) cross.Add(Vector2.Lerp(pa, pb, fa / (fa - fb)));
+                    }
+                    Edge(i00, i10, f00, f10, p00, p10);
+                    Edge(i10, i11, f10, f11, p10, p11);
+                    Edge(i11, i01, f11, f01, p11, p01);
+                    Edge(i01, i00, f01, f00, p01, p00);
+                    // Outward = down the field.
+                    var grad = new Vector2(f10 + f11 - f00 - f01, f01 + f11 - f00 - f10);
+                    var outward = grad.sqrMagnitude > 1e-12f ? -grad.normalized : Vector2.up;
+                    if (cross.Count == 2) Wall(cross[0], cross[1], outward);
+                    else if (cross.Count == 4)
+                    {
+                        // A saddle: the middle decides which corners join.
+                        bool mid = f00 + f10 + f11 + f01 > 0f;
+                        if (mid == i00) { Wall(cross[0], cross[1], outward); Wall(cross[2], cross[3], outward); }
+                        else { Wall(cross[3], cross[0], outward); Wall(cross[1], cross[2], outward); }
+                    }
+                }
             var mesh = new Mesh { hideFlags = HideFlags.HideAndDontSave };
             mesh.SetVertices(v);
             mesh.SetNormals(n);
@@ -149,8 +164,9 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The traced icon as two signed distance fields (r: inside its outlines, g: inside its dark shape, by
-        /// even-odd over every contour), ±<see cref="IconSpread"/> icon heights mapped to 0..1.</summary>
-        static Texture2D BuildIcon(short[][] data)
+        /// even-odd over every contour), ±<see cref="IconSpread"/> icon heights mapped to 0..1; and the outline's field
+        /// unrounded, in icon heights, for the token's walls (R108).</summary>
+        static Texture2D BuildIcon(short[][] data, out float[] outlineField)
         {
             var polys = new List<Vector2[]>();
             var depth = new List<int>();
@@ -170,6 +186,7 @@ namespace ChessFight.RagdollLab
                 boxes.Add(Rect.MinMaxRect(lo.x, lo.y, hi.x, hi.y));
             }
             var px = new Color32[IconSize * IconSize];
+            outlineField = new float[IconSize * IconSize];
             float step = 2f * IconHalf / IconSize;
             for (int y = 0; y < IconSize; y++)
                 for (int x = 0; x < IconSize; x++)
@@ -202,6 +219,7 @@ namespace ChessFight.RagdollLab
                         if (depth[k] == 0) dOutline = Mathf.Min(dOutline, d);
                     }
                     bool inShape = (inside & 1) == 1;
+                    outlineField[y * IconSize + x] = inOutline ? dOutline : -dOutline;
                     float r = 0.5f + (inOutline ? dOutline : -dOutline) / (2f * IconSpread);
                     float g = 0.5f + (inShape ? dShape : -dShape) / (2f * IconSpread);
                     px[y * IconSize + x] = new Color32((byte)(Mathf.Clamp01(r) * 255f + 0.5f), (byte)(Mathf.Clamp01(g) * 255f + 0.5f), 0, 255);
