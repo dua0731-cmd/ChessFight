@@ -811,17 +811,24 @@ namespace ChessFight.RagdollLab
             kit.DustRing(floor, 5, 0.85f, null, 0.28f, 0.5f);
             kit.Drops(floor + Vector3.up * 0.3f, Vector3.up, Kit.Stone, 3, 6f);
             float H = h + 0.2f;
-            var f = kit.Run(36f * F, (fx, d) =>
+            void Pose(float up, float flash)
             {
-                float a = fx.age / F;
-                float up = a < 4f ? Kit.EaseOut(a / 4f) * 1.12f : a < 7f ? Mathf.Lerp(1.12f, 1f, (a - 4f) / 3f) : a < 20f ? 1f : 1f - Kit.EaseIn((a - 20f) / 16f);
                 Vector3 baseAt = floor + Vector3.up * (H * (up - 1f) - 0.02f);
                 foreach (var (p, at) in parts)
                 {
                     p.t.SetPositionAndRotation(baseAt + rot * at, rot);
-                    p.flash = a < 2f ? 1f : 0f;
+                    p.flash = flash;
                     p.Apply();
                 }
+            }
+            // Made inside another effect's step, it is first stepped next frame: until then it waits under the floor
+            // (a prop shows from the moment it is made, at the effects' root).
+            Pose(0f, 1f);
+            var f = kit.Run(36f * F, (fx, d) =>
+            {
+                float a = fx.age / F;
+                Pose(a < 4f ? Kit.EaseOut(a / 4f) * 1.12f : a < 7f ? Mathf.Lerp(1.12f, 1f, (a - 4f) / 3f) : a < 20f ? 1f : 1f - Kit.EaseIn((a - 20f) / 16f),
+                    a < 2f ? 1f : 0f);
                 return true;
             });
             foreach (var (p, _) in parts) f.props.Add(p);
