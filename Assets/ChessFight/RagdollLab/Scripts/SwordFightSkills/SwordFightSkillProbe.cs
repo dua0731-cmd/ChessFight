@@ -121,7 +121,7 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        IEnumerator Press(SwordFightSkills s, float hold, string aimHint = "우클릭 누름 · 조준", string goHint = "우클릭 뗌 · 발동")
+        IEnumerator Press(SwordFightSkills s, float hold, string aimHint = "F 누름 · 조준", string goHint = "F 뗌 · 발동")
         {
             Show(aimHint);
             s.SetButton(true);
@@ -166,7 +166,7 @@ namespace ChessFight.RagdollLab
             var me = bed.Local;
             var enemy = bed.Dummies(1)[0];
             var from = Starts();
-            Show("우클릭 · 받아내기 자세");
+            Show("F · 받아내기 자세");
             me.Skills.SetButton(true);
             yield return new WaitForFixedUpdate();
             me.Skills.SetButton(false);

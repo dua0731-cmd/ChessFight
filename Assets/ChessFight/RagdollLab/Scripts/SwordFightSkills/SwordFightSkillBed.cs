@@ -20,6 +20,9 @@ namespace ChessFight.RagdollLab
     {
         public SwordFightSkillParams skills = new SwordFightSkillParams();
 
+        [Header("키 (임시, 다른 스킬 시험 씬과 같은 F; 우클릭도 됨)")]
+        public KeyCode skillKey = KeyCode.F;
+
         public static readonly PieceKind[] Pieces = { PieceKind.King, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.Pawn };
         /// <summary>The platform's half width (SwordFightBuilder: 14 m × 14 m).</summary>
         public const float Half = 7f;
@@ -56,7 +59,7 @@ namespace ChessFight.RagdollLab
         void OnDestroy() => SwordFightSkills.Log -= OnLog;
         static void OnLog(SwordFightSkills s, string line) => Report(line);
 
-        void Start() => Report("소드 파이트 스킬 시험 준비 완료 — 1~5로 기물, 우클릭 누르고 조준 · 떼면 발동");
+        void Start() => Report("소드 파이트 스킬 시험 준비 완료 — 1~5로 기물, F 누르고 조준 · 떼면 발동");
 
         // ---------------------------------------------------------------- every frame
 
@@ -75,7 +78,7 @@ namespace ChessFight.RagdollLab
             if (Scripted) return;
 
             bool free = !Game.MenuOpen && !Game.Finished && !ChatBox.KeysHeld && Application.isFocused && Cursor.lockState == CursorLockMode.Locked;
-            me.Skills.SetButton(free && GameSettings.Held(GameKey.Grab));
+            me.Skills.SetButton(free && (Input.GetKey(skillKey) || GameSettings.Held(GameKey.Grab)));
             if (ChatBox.KeysHeld) return;
             for (int i = 0; i < Pieces.Length; i++)
                 if (Input.GetKeyDown(KeyCode.Alpha1 + i)) SetPiece(me, Pieces[i]);
@@ -190,7 +193,7 @@ namespace ChessFight.RagdollLab
                     Place(enemies[1], new Vector3(3.7f, 0f, 0.5f), east);
                     Place(enemies[2], far + Vector3.right * 2f, east);
                     Place(allies[0], far, east);
-                    Report("킹 시험: 가장자리를 등진 킹, 가장자리 쪽 적 1 · 안쪽 적 1 — 우클릭 후 F8 (적이 칼을 휘두름)");
+                    Report("킹 시험: 가장자리를 등진 킹, 가장자리 쪽 적 1 · 안쪽 적 1 — F 후 F8 (적이 칼을 휘두름)");
                     break;
                 case PieceKind.Queen:
                     Place(me, new Vector3(0.6f, 0f, 0f), east);
@@ -275,11 +278,11 @@ namespace ChessFight.RagdollLab
 
         static string HowTo(PieceKind kind) => kind switch
         {
-            PieceKind.King => "우클릭 = 받아내기 자세 0.5초 (제자리)\n그 사이 적 칼이 오면 막고 반경 2.5 m 적을 2.8 m 밀어냄 · 후딜 0.4초\n안 오면 빈틈 0.6초 · F8 = 옆 적이 나를 벰",
-            PieceKind.Queen => "우클릭 누르고 조준 = 6 m × 1.2 m 줄 (걸을 수 있음)\n떼면 0.45초 예고 → 꿰뚫기: 첫째 3.0 m · 둘째 2.1 m · 셋째 1.5 m 밀림\n후딜 0.5초 · 조준 중 좌클릭 = 취소",
-            PieceKind.Rook => "우클릭 누르고 조준 = 10 m × 1.5 m 통로\n떼면 0.5초 예고(제자리) → 땅 충격파 18 m/s: 4 m 안 2.6 m · 그 뒤 1.6 m 밀림\n단단한 장애물에서 끊김 · 발동 중 방향 못 바꿈 · 후딜 0.4초",
-            PieceKind.Bishop => "우클릭 누르고 조준 = 화면 가운데가 가리키는 바닥 (8 m까지)\n떼면 0.4초 예고 → 두 광선이 X로 모임: 반경 1 m 적 감속 40% 1.5초\n맞은 적 뒤 2 m 안이 가장자리면 X가 금색 → 묶임 0.8초",
-            PieceKind.Knight => "우클릭 누르고 조준 = 착지점 (1.5~6 m)\n떼면 0.55초 도약 → 착지 때 앞쪽 두 자리(반경 1.2 m) 적 2.4 m 밀림\n두 자리는 뛰기 전부터 보임 · 후딜 0.35초",
+            PieceKind.King => "F(또는 우클릭) = 받아내기 자세 0.5초 (제자리)\n그 사이 적 칼이 오면 막고 반경 2.5 m 적을 2.8 m 밀어냄 · 후딜 0.4초\n안 오면 빈틈 0.6초 · F8 = 옆 적이 나를 벰",
+            PieceKind.Queen => "F(또는 우클릭) 누르고 조준 = 6 m × 1.2 m 줄 (걸을 수 있음)\n떼면 0.45초 예고 → 꿰뚫기: 첫째 3.0 m · 둘째 2.1 m · 셋째 1.5 m 밀림\n후딜 0.5초 · 조준 중 좌클릭 = 취소",
+            PieceKind.Rook => "F(또는 우클릭) 누르고 조준 = 10 m × 1.5 m 통로\n떼면 0.5초 예고(제자리) → 땅 충격파 18 m/s: 4 m 안 2.6 m · 그 뒤 1.6 m 밀림\n단단한 장애물에서 끊김 · 발동 중 방향 못 바꿈 · 후딜 0.4초",
+            PieceKind.Bishop => "F(또는 우클릭) 누르고 조준 = 화면 가운데가 가리키는 바닥 (8 m까지)\n떼면 0.4초 예고 → 두 광선이 X로 모임: 반경 1 m 적 감속 40% 1.5초\n맞은 적 뒤 2 m 안이 가장자리면 X가 금색 → 묶임 0.8초",
+            PieceKind.Knight => "F(또는 우클릭) 누르고 조준 = 착지점 (1.5~6 m)\n떼면 0.55초 도약 → 착지 때 앞쪽 두 자리(반경 1.2 m) 적 2.4 m 밀림\n두 자리는 뛰기 전부터 보임 · 후딜 0.35초",
             _ => "폰은 스킬이 없어요 (소드 파이트 규칙)",
         };
 
@@ -321,7 +324,7 @@ namespace ChessFight.RagdollLab
             var s = me.Skills;
             GUILayout.BeginArea(new Rect(8f, 80f, 370f, Mathf.Min(Screen.height - 220f, 560f)), box);
             GUILayout.Label("소드 파이트 스킬 시험 (R91)", header);
-            GUILayout.Label("1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰  (Z ◀ ▶ X)\n스킬: <b>우클릭</b> 누르고 조준 · 떼면 발동 · F7 시험 배치 · F8 더미가 벰 · F9 더미 원위치 · F10 창 숨김", small);
+            GUILayout.Label("1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰  (Z ◀ ▶ X)\n스킬: <b>F</b>(또는 우클릭) 누르고 조준 · 떼면 발동 · F7 시험 배치 · F8 더미가 벰 · F9 더미 원위치 · F10 창 숨김", small);
             GUILayout.BeginHorizontal();
             foreach (var kind in Pieces)
                 if (GUILayout.Button(ChessPieces.Name(kind), me.Pawn.Piece == kind ? selected : button, GUILayout.Height(24f))) SetPiece(me, kind);
