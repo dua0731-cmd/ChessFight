@@ -4,7 +4,8 @@
     "references": [
         "ChessFight.PawnRush",
         "ChessFight.Gameplay",
-        "ChessFight.Game"
+        "ChessFight.Game",
+        "ChessFight.Network.Core"
     ],
     "includePlatforms": [
         "Editor"

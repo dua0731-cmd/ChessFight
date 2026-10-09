@@ -20,6 +20,9 @@ namespace ChessFight.PawnRush
         public Material trimWhite;
         public Material trimBlack;
         public Material rankGold;
+        [Tooltip("Mini-game boards and planks: plain cream and plain brown (A's squares, B's planks, C's drawbridge).")]
+        public Material boardLight;
+        public Material boardDark;
         [Tooltip("Course-built moving parts (spin bars, rook walls, the start bar, the slot door).")]
         public Material hazard;
 
