@@ -40,16 +40,23 @@ namespace ChessFight.RagdollLab
         // Where each probe run happens (PawnRushSkillProbe) and a camera that sees all of it.
         static readonly Shot[] Shots =
         {
-            new Shot { run = "queen", title = "퀸 · 만화 폭발", note = "불덩이가 모였다가 팡 → 검은 연기에 빛나는 결과 테두리 · 바닥 균열이 식어 사라짐",
-                eye = new Vector3(2.4f, 3.1f, -12.6f), look = new Vector3(-0.3f, 0.6f, -7.2f), lead = 0.5f },
-            new Shot { run = "rook-cluster", title = "룩 · 전기 돌진", note = "앞에 빛 · 뒤로 흐르는 속도선 · 길을 따라 기는 번개 → 맞을 때마다 번쩍 · 번개",
-                eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.35f },
-            new Shot { run = "rook-air", title = "룩 · 공중 돌진 · 내리꽂기", note = "공중에서도 속도선과 번개 · 바닥에 꽂히면 번개가 바닥으로 퍼짐",
-                eye = new Vector3(1.2f, 2.9f, -10.8f), look = new Vector3(-6f, 2.5f, -9.4f), lead = 0.5f },
-            new Shot { run = "knight-stomp", title = "나이트 · 바람 머리 찍기", note = "만화 바람 덩어리와 바람 띠가 머리 둘레로 터졌다가 녹듯 사라짐",
+            // R90: every Pawn Rush skill in design A.
+            new Shot { run = "pawn-angles", title = "폰 · 첫 두 걸음", note = "밟은 칸이 우리 색으로 찍힘 · 곧게 밀면 C자 고리 · 대각선으로 치면 넘어지고 잡힌 칸",
+                eye = new Vector3(2.8f, 2.6f, -11.6f), look = new Vector3(0f, 0.4f, -7f), lead = 0.4f },
+            new Shot { run = "pawn-help", title = "폰 · 일으켜 세우기", note = "넘어진 팀원 칸이 솟아 들어 올림 · 둘 다 발에 청록 띠",
+                eye = new Vector3(2.8f, 2.6f, -11.6f), look = new Vector3(0f, 0.4f, -7f), lead = 0.4f },
+            new Shot { run = "queen", title = "퀸 · 팔방 밀치기", note = "바닥 경고 원이 차오름 · 금색 체스말이 가슴 불덩이로 모였다가 팡 → 진주 8개 왕관 고리",
+                eye = new Vector3(2.4f, 3.6f, -13f), look = new Vector3(-0.2f, 0.3f, -7.8f), lead = 0.5f },
+            new Shot { run = "rook-cluster", title = "룩 · 직선 돌파", note = "앞으로 네 칸이 차례로 켜짐 · 잠그면 돌 먼지 고리 · 번개 돌진 → 맞을 때마다 C자 고리, 잡힌 칸",
+                eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.4f },
+            new Shot { run = "rook-wall", title = "룩 · 벽에 쾅", note = "마지막 칸이 벽에 세워짐 · 벽에 성벽 톱니 고리 · 돌 먼지",
+                eye = new Vector3(16.2f, 2.6f, -5.2f), look = new Vector3(19.2f, 0.9f, 0f), lead = 0.4f },
+            new Shot { run = "bishop-trip", title = "비숍 · 교차 밧줄", note = "보라 작은 칸으로 조준 · X를 던짐 · 걸리면 발밑 보라 초승달과 잡힌 칸 · 쉬는 동안 40% 밝기",
+                eye = new Vector3(-3.6f, 4.4f, -13f), look = new Vector3(0f, 0.2f, -7.3f), lead = 0.45f },
+            new Shot { run = "knight-turn", title = "나이트 · 꺾어 도약", note = "가는 길 칸과 말굽 착지 표시(내려올수록 작아짐) · 공중에서 꺾으면 ㄱ자 바람 띠와 파란 초승달",
+                eye = new Vector3(3.6f, 6f, -18.2f), look = new Vector3(3.4f, 0.4f, -10.4f), lead = 0.45f },
+            new Shot { run = "knight-stomp", title = "나이트 · 머리 밟기", note = "적 발밑 빨간 고리 → 밟으면 납작 · 파란 고리 · 잡힌 칸 · 머리 위 작은 크림 폰 3개",
                 eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
-            new Shot { run = "knight", title = "나이트 · 착지 바람", note = "뛸 때 발밑 바람 · 착지하면 바람 덩어리가 1.5 m까지 퍼지고 바람 띠가 돎",
-                eye = new Vector3(5f, 3.8f, -12.5f), look = new Vector3(0f, 0.7f, -8f), lead = 0.45f },
         };
 
         LabGame game;

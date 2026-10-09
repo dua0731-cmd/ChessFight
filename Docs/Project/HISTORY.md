@@ -7,8 +7,11 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-09 | — | 병합(`C:/Work`, 승규 님 "푸시해 줘"): `main`의 이동·점프 튜닝 `3d49a18`(R87~R89, 7커밋)을 `claude/bold-johnson-8ez95n`에. 코드 충돌 없음, 문서 4개(HANDOFF·HISTORY·REQUIREMENTS·VALIDATION)는 양쪽이 같은 자리에 같은 번호(R87~R89)로 새 줄을 넣어 충돌 → 둘 다 남김, R86 중복 줄 하나 뺌 |
-| (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-09 | R89 | 병합: 아래 `9d06d83`(코스 01 v0.4가 들어온 `claude/bold-johnson-8ez95n`)을 R89 브랜치에. HANDOFF·HISTORY 충돌은 양쪽을 모두 살림. 이 PC Unity 폴더(`C:/Work`)를 이 커밋으로 빨리 감고 복사해 두었던 R89 파일을 걷어 냄 |
+| (이 커밋) | 10-09 | R90·R91 | 병합(`C:/Work`, 승규 님 "R90·R91도 푸시해 줘"): `claude/sword-fight-skill-design-1b90a8`(`5d6e9da`: R90 폰 러쉬 스킬 디자인 A `67fce2b`·`2c0669f` + R91 소드 파이트 스킬 시험 `2559493`·`32c4ad0`·`94713a5`·`5d6e9da`)을 bold-johnson에. 코드 충돌 없음, 문서 2개(HISTORY·REQUIREMENTS)는 같은 자리에 새 줄 → 둘 다 남김. Unity 폴더에 미리 복사해 시험하던 파일은 브랜치와 똑같아 정리한 뒤 합침 |
+| `f12048d` | 10-09 | — | 병합(`C:/Work`, 승규 님 "푸시해 줘"): `main`의 이동·점프 튜닝 `3d49a18`(R87~R89, 7커밋)을 `claude/bold-johnson-8ez95n`에. 코드 충돌 없음, 문서 4개(HANDOFF·HISTORY·REQUIREMENTS·VALIDATION)는 양쪽이 같은 자리에 같은 번호(R87~R89)로 새 줄을 넣어 충돌 → 둘 다 남김, R86 중복 줄 하나 뺌 |
+| `2c0669f` | 10-09 | R90 | 문서: EFFECTS 디자인 A, Skills README R90 녹화, REQUIREMENTS R90, DECISIONS SK4, VALIDATION R90 표, HANDOFF |
+| `67fce2b` | 10-09 | R90 | 폰 러쉬 다섯 기물 이펙트를 디자인 A로: 공통 부품 `SkillInkKit`, 바닥 칸 경고·왕관 고리·성벽 고리·비숍 겉·나이트 말굽·폰 도장, 맞을 때 번쩍·잡힌 칸, 이펙트 시간이 게임 속도를 따라감, 폰 스킬 신호, 녹화 장면 8개 |
+| `5572719` | 10-09 | R89 | 병합: 아래 `9d06d83`(코스 01 v0.4가 들어온 `claude/bold-johnson-8ez95n`)을 R89 브랜치에. HANDOFF·HISTORY 충돌은 양쪽을 모두 살림. 이 PC Unity 폴더(`C:/Work`)를 이 커밋으로 빨리 감고 복사해 두었던 R89 파일을 걷어 냄 |
 | `9d06d83` | 10-09 | — | 병합(이 PC의 `C:/Work`, 승규 님 "충돌 해결, 내 것은 푸시하지 마"): 10-08부터 멈춰 있던 `upstream/claude/bold-johnson-8ez95n`(`1fb198f`: R86 코스 01 v0.4 + R85 커밋 번호) 받기를 마무리. DECISIONS·REQUIREMENTS 충돌은 양쪽 줄(P6·P7·R86과 R87·SK1 새 경로)을 모두 살림. 푸시 안 함 |
 | `0a910f2` | 10-09 | R89 | 문서: REQUIREMENTS R89, DECISIONS SK3, VALIDATION R89 표, HANDOFF, HISTORY |
 | `6fcb900` | 10-09 | R89 | 녹화 도구: 장면마다 시야각이 달라도 제목·키 표시가 같은 자리·크기(좁은 장면에서 제목이 위로 잘리던 것), 긴 줄은 화면에 맞게 줄임 |

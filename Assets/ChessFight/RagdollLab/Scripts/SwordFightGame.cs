@@ -140,7 +140,7 @@ namespace ChessFight.RagdollLab
                 }
                 // Test dummies are physical pawns, not pursuing or attacking AI.
                 // Neutral input still permits normal hits, knockdowns and respawns.
-                if (f.Bot && f.Alive) f.SetInput(default);
+                if (f.Bot && f.Alive && !f.Scripted) f.SetInput(default);
             }
         }
         public void ApplyScore(int w, int b, float remaining, bool finished)
