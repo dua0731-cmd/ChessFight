@@ -56,7 +56,7 @@
 
 ## 자동 시험 도구 (AI용, 사람도 가능)
 
-Play 중 코드에서 `PawnRushSkillProbe.Run("이름")` → 몇 초 뒤 `PawnRushSkillProbe.Report()`. 이름: `jump`, `pawn`, `pawn-angles`, `pawn-help`, `rook`, `rook-free`, `rook-wall`, `rook-barricade`, `rook-cluster`, `queen`, `knight`, `knight-turn`, `knight-stomp`(R74: 옆에 있는 적을 공중 F로 찍기), `knight-land`, `bishop`, `bishop-trip`, `all`. 룩·비숍은 F 뒤 좌클릭(`shove`)을 눌러 쓴다. 시험마다 P2를 화면 밖으로 옮긴다(가까운 적이 나이트 두 번째 F를 바꾸므로). 결과는 왼쪽 창 "최근 결과"에도 `[시험]`으로 나온다. `PawnRushSkillProbe.FreezeAt(SkillStage.Windup, 0.3f)`를 먼저 부르면 그 순간 시간이 멈춰(time scale 0) 예고 표시를 찍어 볼 수 있다(`Time.timeScale = 1`로 다시).
+Play 중 코드에서 `PawnRushSkillProbe.Run("이름")` → 몇 초 뒤 `PawnRushSkillProbe.Report()`. 이름: `jump`, `pawn`, `pawn-angles`, `pawn-help`, `rook`, `rook-free`, `rook-wall`, `rook-wall-slant`(R92: 벽 35°, 벽 끝 0.9 m 앞), `rook-barricade`, `rook-cluster`, `queen`, `knight`, `knight-turn`, `knight-stomp`(R74: 옆에 있는 적을 공중 F로 찍기), `knight-land`, `bishop`, `bishop-trip`, `all`. 룩·비숍은 F 뒤 좌클릭(`shove`)을 눌러 쓴다. 시험마다 P2를 화면 밖으로 옮긴다(가까운 적이 나이트 두 번째 F를 바꾸므로). 결과는 왼쪽 창 "최근 결과"에도 `[시험]`으로 나온다. `PawnRushSkillProbe.FreezeAt(SkillStage.Windup, 0.3f)`를 먼저 부르면 그 순간 시간이 멈춰(time scale 0) 예고 표시를 찍어 볼 수 있다(`Time.timeScale = 1`로 다시).
 
 AI는 Unity MCP 다리(`C:/Work/ChessFight`, 포트 6401)의 `execute_code`로 부르고 `manage_camera` 스크린샷으로 본다 → [AI_WORKFLOW §3](../Environment/AI_WORKFLOW.md#3-테스트).
 
@@ -87,6 +87,10 @@ AI는 Unity MCP 다리(`C:/Work/ChessFight`, 포트 6401)의 `execute_code`로 �
 | (R80) 룩 공중 돌진 아래 45° | 점프 꼭대기(바닥 위 0.8 m)에서 1.01 m 가서 바닥에 내리꽂음, 서 있음(처음엔 바닥 충격으로 넘어졌고, 공중 판정 때문에 4 m 미끄러졌음 → 고침) | 내리꽂기 |
 | 비숍 | (R74) 5 m를 가리키면 4.5 m에서 멈춰 깔림, 가로질러 달린 적 넘어짐, 룩 더미는 걸리지 않고 끊음 | 근거리 4.5 m |
 | (참고) 일반 점프 | 달리기 5.30 m(골반 +1.12 m), 전력질주 5.35~6.84 m(골반 +0.4~0.6 m, 질주 걸음 박자에 따라 다름) | 기획서 §12.4: 프리비즈는 3.1 m를 가정 |
+| (R92) 나이트 도약 4.5 m | 골반 +1.63 m, 비거리 4.59 m, 1.14초, 쿨 7초 | 4.5 m (DECISIONS SK5, v0.1은 5.5 m) |
+| (R92) 나이트 꺾기 (0.35초에 오른쪽) | 앞 1.60 m · 옆 6.46 m, 체공 1.39초. 그 전의 옆 6.74~6.80 m는 바로 옆 터널 지붕(x 7, 높이 0.9 m) 모서리에 걸려 짧게 잰 값이라, 평지로 치면 약 7.8 m → 6.46 m | 두 번째 구간 6.2 m/s |
+| (R92) 나이트 직진 F 두 번 / 공중 도약 / 머리 찍기 | 착지 앞 7.80 m(전 9.53) / 5.02 m(전 6.34) / 공중 0.54초에 감지 → 더미 넘어짐, 더미에서 0.6 m에 착지 | 같은 비율로 짧게 |
+| (R92) 룩 → 벽 35° (벽 끝 0.9 m 앞) / 바리케이드 | x 19.45 · z 2.11에서 멈춤, 휘청. 성벽 톱니 고리가 벽면에 납작하게, 벽 끝을 넘지 않게 안쪽으로 0.6 m 밀림(반지름 0.98 m) / 바리케이드 부서짐, 고리는 부서진 자리에 서고 바닥에 안 묻힘 | 벽에 묻히지 않음 |
 
 ## 이펙트 녹화 (R73)
 
@@ -129,6 +133,10 @@ Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면�
 ### R88 녹화 (10-08)
 
 `PawnRush_Skill_R88_Queen.mp4`(퀸만, 제 속도 + 느리게): 금색 만화 체스말 12개가 퀸 둘레 바닥에서 솟아 빙글빙글 돌며 머리 위 불덩이로 빨려 들어감 → 팡 → 체스말 16개가 소용돌이치며 튀어나와 바닥에 튕기다 타들어 가듯 사라짐 + 불덩이·숯빛 연기·바닥 균열. 프레임별 모음 판 `R88_frames_queen.jpg`(제 속도), `R88_frames_queen_slow.jpg`(느리게, 게임 시간 표시). 고친 것: 체스말이 작아 금가루처럼 보임 → 킹 0.42 m, 연기에 가려짐 → 불덩이 줄임, 느린 화면에서 모이기가 먼저 끝남 → 퀸 스킬 진행 시간에 맞춤. **사람이 손으로 해 본 것은 아님.**
+
+### R92 녹화 (10-09)
+
+`PawnRush_Skill_R92.mp4`(약 42초, 장면 5개, 제 속도 + 느리게): 룩이 벽에 비스듬히 박힘(새 장면, 승규 님 스크린샷과 비슷한 각도) · 바리케이드 부수기(새 장면) · 벽에 곧게, 나이트 꺾어 도약 · 머리 밟기(비거리 4.5 m). `PawnRushSkillFilm.Run(경로, 1280, 720, 60, "rook-wall,rook-barricade,knight")`처럼 장면 이름을 쉼표로 여러 개 줄 수 있다. AI가 벽 장면을 프레임마다 봤다. **사람 확인 전.**
 
 ### R90 녹화 (10-09)
 

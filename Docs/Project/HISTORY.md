@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-09 | R90·R91 | 병합(`C:/Work`, 승규 님 "R90·R91도 푸시해 줘"): `claude/sword-fight-skill-design-1b90a8`(`5d6e9da`: R90 폰 러쉬 스킬 디자인 A `67fce2b`·`2c0669f` + R91 소드 파이트 스킬 시험 `2559493`·`32c4ad0`·`94713a5`·`5d6e9da`)을 bold-johnson에. 코드 충돌 없음, 문서 2개(HISTORY·REQUIREMENTS)는 같은 자리에 새 줄 → 둘 다 남김. Unity 폴더에 미리 복사해 시험하던 파일은 브랜치와 똑같아 정리한 뒤 합침 |
+| (이 커밋) | 10-09 | R92 | 문서: HANDOFF, REQUIREMENTS R92, DECISIONS SK5(나이트 4.5 m), EFFECTS 룩 벽 고리, Skills README 측정·녹화, DESIGN 나이트 수치, VALIDATION R92 표 |
+| `fe627b7` | 10-09 | R92 | 룩 벽 고리를 부딪힌 벽면에 납작하게(벽면 방향을 신호에 싣고 벽 끝·바닥에 맞춰 밀고 줄임), 나이트 비거리 5.5 → 4.5 m·두 번째 F 7.5 → 6.2 m/s, 시험·녹화에 벽 35°·바리케이드 장면 |
+| `73c2c06` | 10-09 | R90·R91 | 병합(`C:/Work`, 승규 님 "R90·R91도 푸시해 줘"): `claude/sword-fight-skill-design-1b90a8`(`5d6e9da`: R90 폰 러쉬 스킬 디자인 A `67fce2b`·`2c0669f` + R91 소드 파이트 스킬 시험 `2559493`·`32c4ad0`·`94713a5`·`5d6e9da`)을 bold-johnson에. 코드 충돌 없음, 문서 2개(HISTORY·REQUIREMENTS)는 같은 자리에 새 줄 → 둘 다 남김. Unity 폴더에 미리 복사해 시험하던 파일은 브랜치와 똑같아 정리한 뒤 합침 |
 | `f12048d` | 10-09 | — | 병합(`C:/Work`, 승규 님 "푸시해 줘"): `main`의 이동·점프 튜닝 `3d49a18`(R87~R89, 7커밋)을 `claude/bold-johnson-8ez95n`에. 코드 충돌 없음, 문서 4개(HANDOFF·HISTORY·REQUIREMENTS·VALIDATION)는 양쪽이 같은 자리에 같은 번호(R87~R89)로 새 줄을 넣어 충돌 → 둘 다 남김, R86 중복 줄 하나 뺌 |
 | `2c0669f` | 10-09 | R90 | 문서: EFFECTS 디자인 A, Skills README R90 녹화, REQUIREMENTS R90, DECISIONS SK4, VALIDATION R90 표, HANDOFF |
 | `67fce2b` | 10-09 | R90 | 폰 러쉬 다섯 기물 이펙트를 디자인 A로: 공통 부품 `SkillInkKit`, 바닥 칸 경고·왕관 고리·성벽 고리·비숍 겉·나이트 말굽·폰 도장, 맞을 때 번쩍·잡힌 칸, 이펙트 시간이 게임 속도를 따라감, 폰 스킬 신호, 녹화 장면 8개 |
