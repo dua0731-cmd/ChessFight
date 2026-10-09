@@ -543,7 +543,7 @@ namespace ChessFight.RagdollLab
                     case PieceKind.Bishop: BishopMarks(s, S, aimAlpha); break;
                     case PieceKind.Knight: KnightMarks(s, S, aimAlpha); break;
                 }
-                if (s.SlowLeft > 0f) SlowRing(s);
+                if (s.SlowLeft > 0f && s.PinLeft <= 0f) SlowRing(s);   // pinned, the hands say it
                 if (s.PinLeft > 0f) PinMarks(s);
             }
         }
@@ -1018,10 +1018,10 @@ namespace ChessFight.RagdollLab
                         Vector3 side = Kit.FlatDir(feet[i] - pawn.Hips.position, right * (i == 0 ? -1f : 1f));
                         if (Vector3.Dot(side, right * (i == 0 ? -1f : 1f)) < 0.2f) side = right * (i == 0 ? -1f : 1f);
                         Vector3 floor = Kit.FloorUnder(feet[i], 0.4f);
-                        Vector3 at = new Vector3(feet[i].x, floor.y, feet[i].z) + side * 0.075f;
-                        hands[i].Pose(at, -side, rise, curl, flash, 0.85f);
+                        Vector3 at = new Vector3(feet[i].x, floor.y, feet[i].z) + side * 0.17f;   // just outside the piece's base, so the hand shows
+                        hands[i].Pose(at, -side, rise, curl, flash, 1.5f, 0.07f);
                         var hole = holes[i];
-                        hole.Floor(new Vector3(at.x, floor.y + 0.012f, at.z), facing, new Vector2(0.26f, 0.2f) * (r >= 0f ? 1f - Mathf.Clamp01(r / 10f) : Kit.Pop(x.age, 1.15f, 0f)));
+                        hole.Floor(new Vector3(at.x, floor.y + 0.012f, at.z), facing, new Vector2(0.3f, 0.44f) * (r >= 0f ? 1f - Mathf.Clamp01(r / 10f) : Kit.Pop(x.age, 1.15f, 0f)));
                         hole.shape = 2f;
                         hole.fill = Kit.A(Kit.Bishop.ink, 0.95f);
                         hole.core = Color.clear;
@@ -1032,6 +1032,8 @@ namespace ChessFight.RagdollLab
                         hole.fade = 1f;
                         hole.Apply();
                     }
+                    // Held, the piece is pulled down into a crouch.
+                    if (r < 0f && a >= 9f) kit.Coil(pawn, 0.75f);
                     if (!grabbed && r < 0f && a >= 9f)
                     {
                         grabbed = true;
@@ -1070,7 +1072,7 @@ namespace ChessFight.RagdollLab
             {
                 root = new GameObject(name).transform;
                 root.SetParent(kit.root, false);
-                var pal = Kit.Bishop;
+                var pal = Kit.Queen;   // gold: the pin's colour, and it reads on the violet rings
                 Add(kit, kit.RoundBox(new Vector3(0.13f, 0.15f, 0.055f), 0.024f), pal, root, new Vector3(0f, 0.075f, 0f));
                 for (int i = 0; i < 4; i++)
                 {
@@ -1081,7 +1083,7 @@ namespace ChessFight.RagdollLab
                 }
                 thumb = Joint(root, new Vector3(0.07f, 0.055f, 0.005f));
                 Add(kit, kit.RoundBox(new Vector3(0.034f, 0.075f, 0.036f), 0.015f), pal, thumb, new Vector3(0f, 0.034f, 0f));
-                var cuff = Add(kit, kit.meshTorus, Kit.Queen, root, new Vector3(0f, 0.012f, 0f));
+                var cuff = Add(kit, kit.meshTorus, Kit.Bishop, root, new Vector3(0f, 0.012f, 0f));
                 cuff.t.localScale = new Vector3(0.085f, 0.3f, 0.045f);
                 cuff.inkWidth = 0.008f;
             }
@@ -1104,9 +1106,9 @@ namespace ChessFight.RagdollLab
 
             /// <summary><paramref name="rise"/> 0 under the floor .. 1 up; <paramref name="curl"/> degrees each finger joint
             /// bends toward <paramref name="faces"/> (below 0 spread open).</summary>
-            public void Pose(Vector3 at, Vector3 faces, float rise, float curl, float flash, float scale)
+            public void Pose(Vector3 at, Vector3 faces, float rise, float curl, float flash, float scale, float sink = 0f)
             {
-                root.SetPositionAndRotation(at + Vector3.up * (-0.32f * scale * (1f - rise)), Quaternion.LookRotation(Kit.FlatDir(faces, Vector3.forward), Vector3.up));
+                root.SetPositionAndRotation(at + Vector3.up * (-sink - 0.32f * scale * (1f - rise)), Quaternion.LookRotation(Kit.FlatDir(faces, Vector3.forward), Vector3.up));
                 root.localScale = Vector3.one * scale;
                 float open = Mathf.Clamp01(-curl / 25f);
                 for (int i = 0; i < 4; i++)
