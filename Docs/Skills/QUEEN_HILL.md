@@ -1,6 +1,6 @@
-# 퀸 오브 더 힐 기물 스킬 — 시험 씬 (R89 · R93 · R94 · R95 · R97 · R98 · 효과음 시안 R100)
+# 퀸 오브 더 힐 기물 스킬 — 시험 씬 (R89 · R93 · R94 · R95 · R97 · R98 · 효과음 시안 R100 · 효과음 R104)
 
-2026-10-09 시작. 기획서 7장 「승격 쟁탈전과 스킬 6개」의 스킬을, 검토 표와 미리보기 페이지(장면 A = 원안, B = 제안)에서 승규 님이 고른 대로 만들었다: **1.B 2.A 3.B 4.B 5.B 6.B**. 이펙트는 기물 스킬 VFX 채팅에서 고른 **A 「잉크 테두리 만화 장난감」**. 소리는 넣지 않는다(10-09).
+2026-10-09 시작. 기획서 7장 「승격 쟁탈전과 스킬 6개」의 스킬을, 검토 표와 미리보기 페이지(장면 A = 원안, B = 제안)에서 승규 님이 고른 대로 만들었다: **1.B 2.A 3.B 4.B 5.B 6.B**. 이펙트는 기물 스킬 VFX 채팅에서 고른 **A 「잉크 테두리 만화 장난감」**. 소리는 넣지 않는다(10-09) → R104에서 고른 방향으로 넣음.
 
 - **시험 씬** `Assets/Scenes/SkillTest/QueenOfTheHill_SkillTest/QueenOfTheHill_SkillTest.unity` = `RagdollTest.unity`를 복사하고 랩 오브젝트(`RagdollLab`)에 `QueenHillSkillBed`를 붙인 것. 메뉴 **ChessFight → Queen of the Hill → Open Skill Test** (씬이 없으면 이 메뉴가 만든다). 원본 `RagdollTest`, 폰 러쉬 시험 씬, 게임 씬 `QueenOfTheHill.unity`는 그대로다.
 - 시험장이 랩 북서쪽에 **3층 탑**(한 층 0.9 m, 9 m · 6 m · 3 m, 윗면은 1.5 m 체스판 칸, 꼭대기 승격 받침)과 동쪽에 **돌벽**(퀸 검격이 막히는 벽)을 코드로 세운다.
@@ -77,6 +77,28 @@ R95는 칸을 검기에 맞췄는데, 승규 님이 원한 것은 거꾸로 **�
 
 **고른 다음(남은 일)**: 고른 방향으로 스킬의 나머지 순간 소리도 만든다. Unity에서 소리가 붙을 자리는 이미 이펙트 신호(`QueenHillFxKind`)로 나뉘어 있다: 킹 `KingWindup`·`KingWard`·`WardOn`·`WardBlock`, 퀸 `QueenLock`·`QueenSlash`·`QueenHit`·`QueenWall`, 룩 `RookRequest`·`RookAccept`·`RookCancel`·`RookSwap`·`RookLand`, 비숍 `BishopRise`·`BishopThrow`·`BishopImpact`·`BishopHit`·`BishopDrop`·`BishopLand`, 나이트 `KnightLock`·`KnightLeap`·`KnightLand`·`KnightFlatten`·`KnightFall`, 폰 `PawnCrouch`·`PawnDash`·`PawnBump`·`PawnStop`, 공통 `Down`. 넣을 때는 이 신호마다 소리 하나씩 재생하면 된다(지금 시험장은 소리 없음).
 
+## 효과음 넣기 (R104, 2026-10-10, 승규 님: "퀸 오브 더 힐 효과음 고른 것: 킹 D · 퀸 C · 룩 C · 비숍 D · 나이트 A · 폰 C")
+
+R100 시안에서 고른 방향으로 **스킬의 순간마다 소리**를 붙였다. 고른 소리 5개는 그 스킬의 대표 순간에 그대로 쓰고, 나머지 23개는 같은 방향으로 ElevenLabs에서 새로 만들었다(Sound Effects v2, 1번씩, `prompt_influence` 0.55, Flows "ChessFight QotH skill SFX R104 (picked styles)", 24번 생성 약 150크레딧). 퀸 맞음(`QueenHit`)은 첫 결과가 거의 무음(가장 큰 곳 약 −34 dB)이라 "Loud cartoon punch hit, big bright bonk with a slap, close-mic"로 다시 만들었다.
+
+| 기물 · 방향 | 순간(이펙트 신호) → 소리 |
+|---|---|
+| 킹 · D 묵직한 타격 | `KingWindup` 무거운 쇠 지팡이 드는 긁힘·휙 · **`KingWard` 고른 D**(쇠 지팡이 쿵 + 방패 울림) · `WardOn` 낮은 방패 웅 · `WardBlock` 두꺼운 쇠 방패에 막히는 쾅 |
+| 퀸 · C 만화 효과음 | `QueenLock` 칼 뽑는 챙 + 올라가는 휘슬 · **`QueenSlash` 고른 C**(휙 + 챙) · `QueenHit` 만화 퍽 · `QueenWall` 돌벽에 챙 + 띠용 |
+| 룩 · C 만화 효과음 | `RookRequest` 물어보는 휘슬 두 번 · `RookAccept` 뽁뽁 + 띵 · `RookCancel` 내려가는 휘슬 + 피식 · **`RookSwap` 고른 C**(휘슬 위아래 + 뽁 두 번) |
+| 비숍 · D 묵직한 타격 | `BishopRise` 낮게 울리며 떠오름 · `BishopThrow` 박격포 쿵 + 휘익 · **`BishopImpact` 고른 D**(쿵 + 깨짐 + 파편) · `BishopHit` 몸에 묵직한 퍽 · `BishopDrop` 떨어지는 휙 · `BishopLand` 돌바닥에 쿵 |
+| 나이트 · A 아케이드 팡 | `KnightLock` 8비트 삑삑 · `KnightLeap` 8비트 점프 띠용 · `KnightLand` 8비트 쿵 · `KnightFlatten` 8비트 찌그러짐 · `KnightFall` 내려가는 8비트 음 + 쿵 |
+| 폰 · C 만화 효과음 | `PawnCrouch` 스프링 눌리는 끽 · **`PawnDash` 고른 C**(휘익) · `PawnBump` 띠용 + 퍽 · `PawnStop` 벽에 퉁 |
+| 공통 | `Down`(스킬에 넘어짐) 장난감이 픽 쓰러지는 소리 |
+
+- 나이트의 고른 A(점프 띠용 + 쿵이 한 파일)는 나는 시간(약 0.9초)과 쿵이 맞지 않아 **뛰는 소리 · 착지 소리를 따로** 같은 느낌으로 만들었다. 고른 원본은 쓰지 않는다.
+- 룩의 고른 C는 1.2초라 교대(0.55초)보다 길다: 끝의 뽁 두 번은 착지 뒤에 난다.
+- 파일 `Assets/ChessFight/RagdollLab/Resources/QueenHillSkillSfx/<신호 이름>.mp3`(28개). 이름이 곧 신호다: 파일을 바꾸면 소리가 바뀐다.
+- **재생** `QueenHillSkillSfx`(시험장이 붙임): 불러올 때 한 번 앞쪽 조용한 부분을 잘라 순간에 바로 나고, 끝의 무음도 자르고, **가장 큰 0.3초를 −15 dB로 맞춘다**(최대 8배, 넘치지 않게 — 시안 페이지와 같은 기준). 순간마다 상대 크기(`Level` 표: 호위 켜짐 0.55, 쓰러짐 0.6 …) × 설정 창 효과음 크기. 2D로 재생하고 화면에서 왼쪽·오른쪽에 따라 조금 기울인다. 같은 순간이 한 장면에 여러 번(아군 3명 호위, 여러 명 맞음)이면 한 번만.
+- 왼쪽 창에 **소리 켜짐/꺼짐** 버튼(이펙트·멈춤·흔들기 옆).
+- 녹화(`QueenHillSkillFilm`)에 **소리가 들어간다**: 인코더가 소리가 날 때마다 그 장면부터 44.1 kHz 스테레오 트랙에 섞는다(느린 영상에서도 소리는 제 속도).
+- **AI는 소리를 들어 보지 못했다**: 파일이 열리는지, 길이·크기, 스킬마다 소리가 제 순간에 나는지(자동 시험의 신호 수)만 확인했다.
+
 ## 조작 (임시 키)
 
 **F = 모든 스킬**(이 씬에서 F는 랩 상호작용이 아님), 기물 바꾸기 **Z ◀ / X ▶** 또는 왼쪽 창 버튼. 퀸·룩·나이트는 **F로 조준 → 좌클릭으로 실행**, 우클릭 또는 F 한 번 더 = 취소. 비숍은 F로 떠오르고 공중에서 조준해 좌클릭으로 쏜다.
@@ -114,6 +136,7 @@ R95는 칸을 검기에 맞췄는데, 승규 님이 원한 것은 거꾸로 **�
 | `…/QueenHillSkillParams.cs` | 수치 묶음 (위 표의 시험 시작값) |
 | `…/QueenHillSkillBed.cs` | 시험장: 모든 폰에 스킬 켜기, P1 F 키, 탑·돌벽 짓기, 왼쪽 창(기물 6개, 더미 편 바꾸기, "내 옆에 아군 3 · 적 1", "탑 위에 적 2", 시험 도우미 켜기/끄기), 더미는 교대 요청에 스스로 수락. 시험 도우미(R93): 킹 F → 아군 폰 3 + 적 퀸 검격, 룩 F → 한 층 위에 무작위 기물 아군 1(`NextRookPartner`로 정할 수 있음). R98: 도우미 더미는 P1에서 그 자리까지 바닥을 따라가 찾은 바닥에 섬(`WalkFloor`, 경사로도) |
 | `…/QueenHillSkillFx.cs` · `QueenHillSkillFx.Kit.cs` | A 디자인 이펙트(위). `RagdollPawn.QueenHillFx` 이벤트와 기물 상태를 보고 그림. `Tile.Drape`(R98) = 칸을 격자로 바닥에 붙여 깔기(턱 벽면 칸은 뺌) |
+| `…/QueenHillSkillSfx.cs` · `RagdollLab/Resources/QueenHillSkillSfx/*.mp3` | 효과음(R104): 신호 이름의 mp3를 불러 앞뒤 무음을 자르고 크기를 맞춰 재생, `Played` 이벤트로 녹화가 섞음 |
 | `RagdollLab/Resources/QueenHillSkillFx/SkillTile.shader` · `SkillInk.shader` · `SkillInkLine.shader` · `SkillBand.shader` | 바닥 칸·고리·말굽(잉크 테두리, 줄무늬, 시계 채움), 잉크 테두리 소품(칼·홀·마름모·고리), 잉크 띠(아치·궤적·속도선). 연기 뭉치는 폰 러쉬의 `Skill Toon`을 같이 씀 |
 | `…/QueenHillSkillProbe.cs` | **자동 시험 도구**: `QueenHillSkillProbe.Run("king" · "queen" · "rook" · "bishop" · "knight" · "pawn" · "pawn-squeeze" · "king-help" · "rook-up" · "rook-up-bishop" 같은 한 기물 · "rook-far" · "queen-high" · "queen-low" · "queen-slope-up" · "queen-slope-down" · "queen-slope30-up" · "queen-slope30-down" · "all")` → `Report()`. P1과 더미(아군·적)를 세우고 키를 눌러 결과를 적는다. `king-help`·`rook-up`은 시험 도우미를 부른다(R93). `FreezeAfter(초)` = 그 순간 시간을 멈춤(맞는 순간의 멈춤과 겹치면 풀림) |
 | `…/QueenHillSkillFilm.cs` · `Editor/QueenHillSkillFilmEncoder.cs` | **녹화 도구**: `QueenHillSkillFilm.Run("Temp/Captures/qoth/이름.mp4")` → 제 속도 영상 + 같은 이름 `_slow.mp4`(×0.3), 프레임 사진 `_stills`. `ShotSet` = `"r98"`(기본, R98 퀸 경사로·탑 4장면), `"r97"`(R97 퀸 3장면), `"r95"`, `"r94"`(R94 바뀐 것 4장면), `"r93"`(6장면) 또는 `"r89"`(여섯 스킬 7장면). `StillEvery = 1`이면 모든 프레임. `Snap(파일, 눈, 볼 곳)` = 카메라 구도 한 장 |

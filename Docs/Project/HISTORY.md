@@ -7,7 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R102·R103 | 문서: Skills/SWORD_FIGHT §R103 가장자리 스킬·§R102·조작·코드·확인 표, VALIDATION R103·R102 표, REQUIREMENTS R102·R103(+지켜야 할 조건 2줄), DECISIONS SK6, Skills README, HANDOFF, HISTORY. Core 91·모의 세션 40·실제 DLL 컴파일 통과 |
+| (이 커밋) | 10-10 | R104 | 문서: Skills/QUEEN_HILL §효과음 넣기, VALIDATION R104 표, REQUIREMENTS R104, HANDOFF, HISTORY |
+| `8e4e1e9` | 10-10 | R104 | 효과음 28개의 Unity 가져오기 설정(.meta), 퀸 맞음 다시 만든 것(첫 결과가 거의 무음) |
+| `dc889f5` | 10-10 | R104 | 퀸 오브 더 힐 효과음: `Resources/QueenHillSkillSfx/<신호>.mp3` 28개, `QueenHillSkillSfx`(앞뒤 무음 자르기·크기 맞춤·재생), 시험장 소리 켜기/끄기 버튼, 녹화 인코더에 소리 트랙 |
+| `70c5d00` | 10-10 | R102·R103 | 문서: Skills/SWORD_FIGHT §R103 가장자리 스킬·§R102·조작·코드·확인 표, VALIDATION R103·R102 표, REQUIREMENTS R102·R103(+지켜야 할 조건 2줄), DECISIONS SK6, Skills README, HANDOFF, HISTORY. Core 91·모의 세션 40·실제 DLL 컴파일 통과 |
 | `19ade3c` | 10-10 | R103 | E 표시를 오른쪽 아래로(칼 게이지와 겹쳤음), 자동 시험의 피하기 동작 짧게 |
 | `25777e0` | 10-10 | R103 | 첫 Unity 시험에서 고친 것: 비숍이 맞아 놓치면 아군이 허공으로 떨어짐(끌던 속도로 발판 안까지 날아갔음, 길도 마지막에야 가장자리를 넘게), 나이트 취소 3 m(3.3 아님)·공중제비 1.1 m, 퀸 화면 베기 자국 얇고 짧게, 장외로 날아간 기물 밑 허공의 잡힌 칸 없앰(`SkillInkKit.Down`, 모든 모드), 녹화 자막 고정·가까운 카메라 |
 | `60453c8` | 10-10 | R103 | 소드 파이트 가장자리 스킬: 기물마다 두 번째 스킬 E(킹 왕의 귀환·퀸 체크메이트 일섬·룩 성벽 붕괴·비숍 구원의 손·나이트 벼랑 끝 역전), 시험 쿨 2초, 슬로 0.3초·화면 당김/돌기, 공용 `RagdollPawn.Fly`(`OuterFlight.cs`), 발판 덩어리 `SwordFightEdgeFloor`, Shift+F7·F8, 자동 시험·녹화 10장면 |
