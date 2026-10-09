@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R98 | 문서: Skills/QUEEN_HILL §R98, VALIDATION R98 표, REQUIREMENTS R98, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R100 | 문서: 퀸 오브 더 힐 효과음 시안(ElevenLabs 30개, 시안 페이지) — Skills/QUEEN_HILL §효과음 시안, REQUIREMENTS R100, HANDOFF, HISTORY. 코드·Unity 변경 없음 |
+| `2eaa54f` | 10-10 | R98 | 문서: Skills/QUEEN_HILL §R98, VALIDATION R98 표, REQUIREMENTS R98, HANDOFF, HISTORY |
 | `b12766b` | 10-10 | R98 | 녹화: 경사로를 내려가는 검격을 옆에서(경사가 보이게) |
 | `8eb54d1` | 10-10 | R98 | 자동 시험: 탑 위 퀸을 3층 블록에서 0.3 m 떨어진 곳에(블록 속에 세워져 한 번 1층으로 튕겨 나감) |
 | `080401a` | 10-10 | R98 | 퀸 경고 칸을 격자로 바닥에 붙여 깖(경사로를 따라 휨, 턱 벽면은 빼서 위아래 바닥으로 나뉨, `Tile.Drape`·`SlashFloorAt`), 판정에 적이 선 자리 바닥도, 초승달 검기가 경사를 부드럽게, 시험 도우미가 더미를 그 자리 바닥에(`WalkFloor`), 자동 시험 `queen-slope*` 4개·검격 줄 끝 높이, 녹화 R98 |

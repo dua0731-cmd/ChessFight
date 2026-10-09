@@ -1,4 +1,4 @@
-# 퀸 오브 더 힐 기물 스킬 — 시험 씬 (R89 · R93 · R94 · R95 · R97 · R98)
+# 퀸 오브 더 힐 기물 스킬 — 시험 씬 (R89 · R93 · R94 · R95 · R97 · R98 · 효과음 시안 R100)
 
 2026-10-09 시작. 기획서 7장 「승격 쟁탈전과 스킬 6개」의 스킬을, 검토 표와 미리보기 페이지(장면 A = 원안, B = 제안)에서 승규 님이 고른 대로 만들었다: **1.B 2.A 3.B 4.B 5.B 6.B**. 이펙트는 기물 스킬 VFX 채팅에서 고른 **A 「잉크 테두리 만화 장난감」**. 소리는 넣지 않는다(10-09).
 
@@ -55,6 +55,27 @@ R95는 칸을 검기에 맞췄는데, 승규 님이 원한 것은 거꾸로 **�
 5. 자동 시험의 탑 장면에서 퀸을 3층 블록 안쪽 0.3 m에 세웠다. 물리가 밀어내다가 한 번은 1층으로 떨어뜨렸다(R97 녹화 때는 운 좋게 섰다). 그래서 3층 벽에서 0.3 m 떨어진 곳(2층 가장자리에서 1.2 m)으로 옮겼다.
 
 자동 시험(새로 `queen-slope-up`·`queen-slope-down` = 15°, `queen-slope30-up`·`queen-slope30-down` = 30°: 퀸이 경사로 바로 앞에서 오르막으로, 또는 6.2 m 올라간 곳에서 내리막으로, 적 둘이 경사 위 2.5 m·5 m): 네 경우 모두 **적 둘 다 맞아 넘어짐**. 검격 줄 끝 높이 +1.3 m(15° 오르막), −1.6 m(15° 내리막), +2.9 m, −3.5 m(30°). `queen-high`(같은 2층·아래 1층·바닥 셋 다), `queen-low`(앞 바닥·턱 위 1층 둘 다, 줄은 2층까지 +1.8 m), `queen`(돌벽 4.9 m에서 막힘, 벽 너머·줄 옆 안 맞음)도 그대로. 녹화 `ShotSet = "r98"` 4장면(경사로 아래→위, 위→아래, 탑 위→아래, 아래→위; 보통·×0.3). `080401a`·`8eb54d1`·`b12766b`, **푸시 안 함**. AI가 자동 시험·녹화로 봄, 사람은 아직.
+
+## 효과음 시안 (R100, 2026-10-10, 승규 님: "스킬들 sfx를 적용시킬 건데 컨셉에 맞게 1스킬 당 사운드 5개 해서 시안 보여줘, unity 적용 x" → "일레븐랩스에 연결시켜서 시안 보여줘")
+
+**[시안 페이지](https://claude.ai/artifact/68Gjcn6A5U2fmmPMnEAEgo)**: 스킬 6개 × 소리 5개 = 30개를 들어 보고 스킬마다 하나씩 고르면 아래 줄에 "킹 A · 퀸 C …"로 정리된다(복사 단추). 같은 알파벳은 같은 방향이라 한 방향으로 통일해도 되고 스킬마다 골라도 된다. **Unity에는 넣지 않았다.**
+
+- 만든 곳: ElevenLabs 커넥터의 **Sound Effects v2**(`eleven_text_to_sound_v2`), 소리마다 1번 생성, `prompt_influence` 0.55, ElevenLabs Flows의 "ChessFight QotH skill SFX R99"(번호 확인 전에 붙인 이름; 기록 번호는 R100 — R99는 같은 날 소드 파이트 채팅이 씀). 30개 합계 350크레딧. mp3(44.1 kHz 스테레오)는 시안 페이지에 함께 올렸다.
+- 소리 하나 = 그 스킬의 **가장 중요한 한 순간**(킹 홀 내리꽂기와 호위 물결, 퀸 베기와 검기, 룩 교대, 비숍 견제탄 터짐, 나이트 착지 밟기, 폰 돌진). 길이 킹·비숍 1.36초, 룩·나이트 1.2초, 퀸 1.0초, 폰 0.8초.
+- 방향 5개: **A 아케이드 팡**(로고 소리 A처럼 밝은 전자음) · **B 나무 체스말**(나무 말·블록·마림바) · **C 만화 효과음**(휘슬·뽀잉·뿅) · **D 묵직한 타격**(낮은 쿵·금속) · **E 장난감 마법**(오르골·글로켄슈필·반짝이).
+- 만든 파일마다 크기 차이가 크다(가장 큰 0.3초 기준 −7 dB ~ −40 dB; 킹 B·나이트 D는 아주 작음). 페이지는 비교하기 쉽게 **가장 큰 0.3초를 −15 dB로 맞춰** 들려준다(최대 8배, 넘치지 않게). Unity에 넣을 때도 같은 기준으로 맞출 것.
+- **AI는 소리를 들어 보지 못했다**: 파일이 열리고 길이·크기가 정상인지만 확인했다. 카드의 설명은 만들 때 요청한 느낌이다.
+
+| 스킬 | A 아케이드 팡 | B 나무 체스말 | C 만화 효과음 | D 묵직한 타격 | E 장난감 마법 |
+|---|---|---|---|---|---|
+| 킹 | Retro 8-bit shield power-up, punchy low thump with a bright rising square-wave chime | Heavy wooden chess piece slammed on a wooden board, deep wooden knock with a soft marimba ring | Cartoon scepter bonk on the floor with a springy boing and a bright shield ding | Heavy iron staff slammed on stone, deep thud with a low resonant shield hum | Magic shield spell, music box glockenspiel chord with soft sparkles over a gentle low thump |
+| 퀸 | Retro 8-bit sword slash, fast descending square-wave zap with a short noise burst | Wooden practice sword whipping fast through the air and cracking against a wooden block | Cartoon sword swish, quick whistling whoosh with a comedic metallic shing | Heavy steel sword slash, sharp metallic shing and a deep powerful swoosh | Magical golden blade slash, bright shimmering chime sweep with a sparkling whoosh |
+| 룩 | Retro 8-bit teleport swap, quick rising and falling square-wave warp ending in two blips | Two wooden chess pieces quickly picked up and set down on a wooden board, two crisp clacks | Cartoon slide whistle going up and down, ending with two soft pops | Heavy stone blocks sliding past each other, low rumbling scrape ending in two deep thuds | Magic teleport, rising and falling sparkle chimes ending with two soft bell tones |
+| 비숍 | Retro 8-bit explosion, crackling noise burst with a descending square-wave tone | Wooden toy blocks knocked over, sharp wooden crack followed by rattling wooden clacks | Cartoon bomb falling whistle ending in a puffy poof explosion | Heavy shell impact, deep boom with a sharp crack and scattering debris | Purple magic burst, crystal chimes exploding into a sparkling shimmer |
+| 나이트 | Retro 8-bit jump boing followed by a crunchy low stomp | Wooden horse toy hopping, quick wooden hoof clops ending in a heavy wooden thump | Cartoon spring boing jump landing with a squishy splat | Heavy armored landing stomp, deep ground-shaking thud with a crunch | Magic leap, rising chime whoosh landing in a soft sparkly thump |
+| 폰 | Retro 8-bit quick dash, fast rising square-wave swoosh | Wooden chess piece sliding fast across a wooden board, short scrape ending in a tap | Cartoon zip dash, quick whistling swoosh | Fast heavy body rush whoosh ending in a short shoulder bump thud | Quick sparkle dash, tiny glockenspiel run with a soft airy swoosh |
+
+**고른 다음(남은 일)**: 고른 방향으로 스킬의 나머지 순간 소리도 만든다. Unity에서 소리가 붙을 자리는 이미 이펙트 신호(`QueenHillFxKind`)로 나뉘어 있다: 킹 `KingWindup`·`KingWard`·`WardOn`·`WardBlock`, 퀸 `QueenLock`·`QueenSlash`·`QueenHit`·`QueenWall`, 룩 `RookRequest`·`RookAccept`·`RookCancel`·`RookSwap`·`RookLand`, 비숍 `BishopRise`·`BishopThrow`·`BishopImpact`·`BishopHit`·`BishopDrop`·`BishopLand`, 나이트 `KnightLock`·`KnightLeap`·`KnightLand`·`KnightFlatten`·`KnightFall`, 폰 `PawnCrouch`·`PawnDash`·`PawnBump`·`PawnStop`, 공통 `Down`. 넣을 때는 이 신호마다 소리 하나씩 재생하면 된다(지금 시험장은 소리 없음).
 
 ## 조작 (임시 키)
 
