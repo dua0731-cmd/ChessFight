@@ -204,7 +204,7 @@ namespace ChessFight.RagdollLab
                 block.SetColor("_Rim", Kit.SelfFill);
                 block.SetFloat("_Spread", IconSpread);
                 block.SetFloat("_InkWidth", 0.05f);
-                block.SetFloat("_RimWidth", 0.035f);
+                block.SetFloat("_RimWidth", 0f);   // no ground behind it: only the piece's shape (승규 님: 사진은 참고만)
                 block.SetFloat("_Flash", a < 2f ? 1f : 0f);
                 block.SetFloat("_Alpha", 1f);
                 r.SetPropertyBlock(block);
