@@ -707,7 +707,7 @@ MonoBehaviour:
     queenHeight: 1.2
     queenRecovery: 0.6
     queenCooldown: 6
-    rookRange: 6
+    rookRange: 9
     rookCone: 35
     rookWait: 3
     dummyAccept: 0.4
@@ -733,7 +733,7 @@ MonoBehaviour:
     knightGravity: 1.6
     knightWindup: 0.12
     knightRadius: 1.3
-    knightSnap: 1.3
+    knightSnap: 1.15
     knightFlatten: 0.7
     knightSlide: 2.6
     knightSlideTime: 0.35
