@@ -536,7 +536,7 @@ namespace ChessFight.RagdollLab
                         var other = p.GetComponent<SwordFightSkills>();
                         if (other == null || hitSet.Contains(p)) continue;
                         // A tower comes up under it: thrown up as well as back (the queen's cut only slides them).
-                        Hit(other, Dir, along <= S.rookNear ? S.rookPushNear : S.rookPushFar, "열린 파일 포격", SfFxKind.RookHit, hitSet.Count, S.rookLift);
+                        Hit(other, Dir, along <= S.rookNear ? S.rookPushNear : S.rookPushFar, "열린 파일 포격", SfFxKind.RookHit, hitSet.Count, S.rookLift, S.rookLiftCarry);
                     }
                     if (WaveFront >= Reach - 1e-3f)
                     {
@@ -656,12 +656,12 @@ namespace ChessFight.RagdollLab
             other != null && other != this && other.Fighter != null && other.Fighter.Alive && other.Pawn != null
             && other.Pawn.Team != Pawn.Team && other.Fighter.Protection <= 0f;
 
-        void Hit(SwordFightSkills other, Vector3 dir, float metres, string cause, SfFxKind kind, int order, float lift = -1f)
+        void Hit(SwordFightSkills other, Vector3 dir, float metres, string cause, SfFxKind kind, int order, float lift = -1f, float carry = 1f)
         {
             var target = other.Pawn;
             hitSet.Add(target);
             dir = Flat(dir).normalized;
-            Vector3 push = dir * (metres * S.pushPerMetre) + Vector3.up * (lift >= 0f ? lift : S.pushLift);
+            Vector3 push = dir * (metres * S.pushPerMetre * carry) + Vector3.up * (lift >= 0f ? lift : S.pushLift);
             target.TakeHit(push, S.knockdownSeconds, 0f, true);
             other.Fighter.StopCombat();
             other.pinLeft = 0f;
