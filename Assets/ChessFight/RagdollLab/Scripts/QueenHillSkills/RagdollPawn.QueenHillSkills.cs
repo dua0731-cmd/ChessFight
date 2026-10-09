@@ -132,6 +132,27 @@ namespace ChessFight.RagdollLab
         /// <summary>The floor the queen's slash runs along (R97): a point every <see cref="SlashPathStep"/> m from her feet,
         /// down any drop and up steps of at most queenClimb, to where it ends or a wall stops it.</summary>
         public System.Collections.Generic.IReadOnlyList<Vector3> SlashPath => slashPath;
+
+        /// <summary>The floor of a slash's way <paramref name="along"/> m from its start, between its points (a slope
+        /// is a straight run between them).</summary>
+        public static float SlashPathFloor(System.Collections.Generic.IReadOnlyList<Vector3> path, float along)
+        {
+            if (path == null || path.Count == 0) return 0f;
+            float at = Mathf.Clamp(along / SlashPathStep, 0f, path.Count - 1);
+            int a = Mathf.FloorToInt(at), b = Mathf.Min(a + 1, path.Count - 1);
+            return Mathf.Lerp(path[a].y, path[b].y, at - a);
+        }
+
+        /// <summary>The floor under <paramref name="p"/> as the queen's slash finds its own (R98): the first one below a
+        /// step's height (queenClimb) over <paramref name="near"/>, or <paramref name="near"/> if there is none. Her
+        /// way, the squares that lie on it and who is standing on them are all found with it.</summary>
+        public float SlashFloorAt(Vector3 p, float near)
+        {
+            float climb = Mathf.Max(0.1f, QueenHillSkills != null ? QueenHillSkills.queenClimb : 1.05f), probe = near + climb + 0.1f;
+            return SolidRay(new Vector3(p.x, probe, p.z), Vector3.down, climb + 0.1f + 40f, out var floor) && floor.normal.y >= 0.5f
+                ? floor.point.y : near;
+        }
+
         public float HoverLeft => Mathf.Max(0f, hoverLeft);
         public float HoverTotal => hoverTotal;
         public bool ShellOut => shellOut;
@@ -489,9 +510,9 @@ namespace ChessFight.RagdollLab
                     if (wall.distance > 0.15f) slashPath.Add(new Vector3(prev.x, level, prev.z) + slashDir * (wall.distance - 0.1f));
                     return;
                 }
-                // The floor here: the first one below a step's height over the slash's floor (up a step, or down a drop).
-                if (SolidRay(new Vector3(here.x, probe, here.z), Vector3.down, probe - level + 40f, out var floor) && floor.normal.y >= 0.5f)
-                    level = floor.point.y;
+                // The floor here: the first one below a step's height over the slash's floor (up a step or a slope, down a
+                // drop).
+                level = SlashFloorAt(here, level);
                 slashPath.Add(new Vector3(here.x, level, here.z));
             }
             slashStop = slashPath[slashPath.Count - 1] + Vector3.up * Mathf.Max(0.3f, chest.y - feet.y);
@@ -520,8 +541,12 @@ namespace ChessFight.RagdollLab
                 float across = (Flat(rel) - slashDir * along).magnitude;
                 if (across > s.queenWidth * 0.5f + 0.3f) continue;
                 // On the slash's way (R97): standing on the floor it runs along there — a tier below or above her included —
-                // or jumping over it.
+                // or jumping over it. R98: or on the floor right under the piece, found the same way (a slope tilted
+                // across the line, the lower floor beside a step's edge): its square lies there too.
                 SlashFloorAround(Mathf.Max(0f, along), out float low, out float high);
+                float under = SlashFloorAt(other.bodies[0].position, SlashPathFloor(slashPath, Mathf.Max(0f, along)));
+                low = Mathf.Min(low, under);
+                high = Mathf.Max(high, under);
                 float feet = other.FeetPoint.y;
                 if (feet < low - s.queenDrop || feet > high + s.queenHeight) continue;
                 skillHitSet.Add(other);

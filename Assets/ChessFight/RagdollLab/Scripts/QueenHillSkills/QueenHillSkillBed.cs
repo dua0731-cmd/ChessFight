@@ -220,7 +220,8 @@ namespace ChessFight.RagdollLab
                 SetSide(d, p1, i < 3);
                 d.ResetSkill();
                 d.SetInput(new PawnInput());
-                Place(d, spots[i], i < 3 ? ahead : -ahead);
+                // On the floor there (R98: on a slope it is not P1's height — they stood inside it or fell from the air).
+                Place(d, WalkFloor(c, spots[i]), i < 3 ? ahead : -ahead);
             }
             Report("아군 더미 3명을 내 옆에, 적 1명을 앞 4.5 m에 세움");
         }
@@ -282,13 +283,13 @@ namespace ChessFight.RagdollLab
                 var d = Dummy(i);
                 if (d == null) continue;
                 Ready(d, PieceKind.Pawn, king, true);
-                Place(d, FloorAt(spots[i], c.y), ahead);
+                Place(d, WalkFloor(c, spots[i]), ahead);
             }
             var enemy = Dummy(3);
             if (enemy != null)
             {
                 Ready(enemy, PieceKind.Queen, king, false);
-                Place(enemy, FloorAt(c + ahead * 5.2f, c.y), -ahead);
+                Place(enemy, WalkFloor(c, c + ahead * 5.2f), -ahead);
                 StartCoroutine(SlashAt(enemy, king));
             }
             Report("킹 시험: 아군 폰 3명을 앞에, 적 퀸을 5 m 앞에 세움 → 호위가 켜지면 검격");
@@ -355,7 +356,7 @@ namespace ChessFight.RagdollLab
         Vector3 ClimbSpot(RagdollPawn rook, Vector3 ahead)
         {
             Vector3 me = rook.FeetPoint;
-            Vector3 best = FloorAt(me + ahead * 4f, me.y);
+            Vector3 best = WalkFloor(me, me + ahead * 4f);
             float bestRise = float.MaxValue, bestScore = float.MaxValue;
             foreach (float dist in new[] { 3f, 3.6f, 4.2f, 4.8f, 5.4f })
                 foreach (float angle in new[] { 0f, -12f, 12f, -24f, 24f })
@@ -388,18 +389,30 @@ namespace ChessFight.RagdollLab
             return false;
         }
 
-        /// <summary>The floor under a spot (not a piece), at or below a little over <paramref name="near"/>.</summary>
-        static Vector3 FloorAt(Vector3 p, float near)
+        /// <summary>The floor at <paramref name="to"/> as one would walk there from <paramref name="from"/> (R98; the
+        /// helper before took a floor at about the starting height, so on a slope a dummy stood inside it or in the air):
+        /// every 0.25 m the nearest floor below a step's height (1.05 m) over the last one, so a slope is followed up or
+        /// down, a drop is gone down, a tier is stepped up, and a taller wall is passed through to the floor behind it.</summary>
+        static Vector3 WalkFloor(Vector3 from, Vector3 to)
         {
-            foreach (var hit in Physics.RaycastAll(new Vector3(p.x, Mathf.Max(p.y, near) + 1.2f, p.z), Vector3.down, 8f, ~0, QueryTriggerInteraction.Ignore))
+            Vector3 flat = to - from;
+            flat.y = 0f;
+            float level = from.y;
+            int n = Mathf.Max(1, Mathf.CeilToInt(flat.magnitude / 0.25f));
+            for (int i = 1; i <= n; i++)
             {
-                if (hit.normal.y < 0.8f || RagdollPawn.ColliderOwner.ContainsKey(hit.collider)) continue;
-                var rb = hit.collider.attachedRigidbody;
-                if (rb != null && !rb.isKinematic) continue;
-                if (hit.point.y > p.y + 0.1f || hit.point.y > near + 1.1f) continue;
-                return hit.point;
+                Vector3 p = from + flat * (i / (float)n);
+                float best = float.MaxValue, top = level + 1.15f;
+                foreach (var hit in Physics.RaycastAll(new Vector3(p.x, top, p.z), Vector3.down, 40f, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    if (hit.normal.y < 0.5f || hit.distance >= best || RagdollPawn.ColliderOwner.ContainsKey(hit.collider)) continue;
+                    var rb = hit.collider.attachedRigidbody;
+                    if (rb != null && !rb.isKinematic) continue;
+                    best = hit.distance;
+                    level = hit.point.y;
+                }
             }
-            return new Vector3(p.x, near, p.z);
+            return new Vector3(to.x, level, to.z);
         }
 
         /// <summary>A dummy set to a piece and a side, its skill and keys cleared.</summary>
@@ -516,7 +529,7 @@ namespace ChessFight.RagdollLab
         {
             PieceKind.Pawn => "F = 몸을 낮추고 짧게 가속 (방향키 방향, 없으면 카메라 방향, 2.6 m)\n다리를 앞뒤로 벌려 골반이 내려감 · 무적 없음 · 벽 통과 없음\n지나가며 부딪힌 적은 옆으로 비킴",
             PieceKind.King => "F = 홀을 들었다 내리꽂음 (0.3초) → 반경 2.5 m 아군에게 2초 호위\n호위: 넘어지지 않고 밀림도 1/4 · 몸에 초록 윤곽선 · 킹 자신은 빠짐 (B)\n시험 도우미: F를 누르면 아군 폰 3명이 앞에 서고 5 m 앞 적 퀸이 검격",
-            PieceKind.Queen => "F = 조준: 검격 줄(체스판 4칸)이 마우스 방향을 따라감 (걸을 수 있음)\n좌클릭 = 칼을 오른쪽 아래 뒤로 내려 0.45초 준비 → 아래에서 위로 올려 베며 6 m 검기\n검기는 경고 칸(바닥)을 따라감: 아래층으로 내려가고 한 층 턱은 타고 오름 · 칸 위 적은 넘어짐 (A)\n돌벽처럼 한 층보다 높은 벽에 막힘 · 회복 0.6초 · 우클릭/F = 취소",
+            PieceKind.Queen => "F = 조준: 검격 줄(체스판 4칸)이 마우스 방향을 따라감 (걸을 수 있음)\n좌클릭 = 칼을 오른쪽 아래 뒤로 내려 0.45초 준비 → 아래에서 위로 올려 베며 6 m 검기\n경고 칸은 바닥에 붙어 깔리고(경사로도) 검기는 그 칸을 따라감: 경사로는 오르내리고, 아래층으로 내려가고, 한 층 턱은 타고 오름 · 칸 위 적은 넘어짐 (A)\n돌벽처럼 한 층보다 높은 벽에 막힘 · 회복 0.6초 · 우클릭/F = 취소",
             PieceKind.Rook => "F = 조준: 마우스 방향 9 m 안의 아군을 고름 (폰도 됨, B)\n좌클릭 = 교대 요청 → 상대가 수락하면(더미는 0.4초 뒤 자동) 둘이 날아 자리 바꿈\n길이나 설 자리가 막히면 안 됨 · 수락 없으면 취소(쿨 없음)\n시험 도우미: F를 누르면 앞쪽 한 층 위에 아군 1명(기물 무작위 → 리본 색 확인)",
             PieceKind.Bishop => "F = 1.3 m 떠오름 (조준 3초, 더 오를 수 없음) · 마우스로 조준\n좌클릭 = 견제탄 → 맞은 곳에 X자 파동 · 2발: 첫 발이 떨어지면 다시 조준\n맞은 적은 밀려 넘어짐: 벽·탑 가장자리면 떨어짐 (B) · 우클릭/F = 내려옴",
             PieceKind.Knight => "F = 착지점 조준 (6 m, 지금 바닥보다 한 층 0.9 m까지만, 그보다 높으면 회색)\n조준점 1.05 m 안에 적이 있으면 그 머리 위로 자동 조준 (말굽 표식이 머리 위)\n좌클릭 = 높게 도약 → 머리를 밟거나 착지 원 1.3 m 안 적은 0.7초 납작 + 밀림\n높은 곳 가장자리에서 납작해지면 떨어짐 (B)",

@@ -109,8 +109,23 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(3.9f, 4.8f, -3.2f), look = new Vector3(3.7f, 0.3f, 3.3f), fov = 44f },
         };
 
-        /// <summary>Which shots Run films: "r97" (the default, R97's queen), "r95", "r94", "r93" or "r89" (all six skills).</summary>
-        public static string ShotSet = "r97";
+        /// <summary>R98 (승규 님's screenshots on the green slopes: the squares stood flat, half in the slope): the squares lie on
+        /// the slope and the slash runs up and down it; then the hill again, down and up.</summary>
+        static readonly Shot[] ShotsR98 =
+        {
+            new Shot { run = "queen-slope-up", title = "2. 퀸 · 팔방 검격 — 경사로 아래에서 위로", note = "경고 칸이 경사로에 붙어 깔림 → 검기가 경사를 타고 올라가 칸 위 적 둘 다 넘어짐",
+                eye = new Vector3(-11.8f, 2.6f, -11.8f), look = new Vector3(-19.5f, 0.8f, -9f), fov = 50f },
+            new Shot { run = "queen-slope-down", title = "2. 퀸 · 팔방 검격 — 경사로 위에서 아래로", note = "경고 칸이 경사로에 붙어 깔림 → 검기가 경사를 타고 내려가 칸 위 적 둘 다 넘어짐",
+                eye = new Vector3(-26.5f, 4.4f, -12.2f), look = new Vector3(-18.5f, 0.4f, -9f), fov = 50f },
+            new Shot { run = "queen-high", title = "2. 퀸 · 팔방 검격 — 탑 위에서 아래로", note = "칸이 아래층·바닥에 깔림 → 검기가 칸을 따라 내려가 같은 층·아래층·바닥 적 모두 넘어짐",
+                eye = new Vector3(1.5f, 3.6f, 2.5f), look = new Vector3(-5.0f, 1.4f, 6.5f), fov = 50f },
+            new Shot { run = "queen-low", title = "2. 퀸 · 팔방 검격 — 탑 아래에서 위로", note = "검기가 한 층(0.9 m) 턱을 타고 올라감 → 앞의 적도, 턱 위 1층 적도 넘어짐",
+                eye = new Vector3(0.4f, 2.0f, -1.6f), look = new Vector3(-2.8f, 0.6f, 3.2f), fov = 52f },
+        };
+
+        /// <summary>Which shots Run films: "r98" (the default, R98's queen on the slopes and the hill), "r97", "r95", "r94",
+        /// "r93" or "r89" (all six skills).</summary>
+        public static string ShotSet = "r98";
 
         LabGame game;
         Camera cam;
@@ -212,7 +227,7 @@ namespace ChessFight.RagdollLab
                 Directory.CreateDirectory(stills);
                 Frames = 0;
                 Began?.Invoke(file, w, h, fps);
-                foreach (var shot in ShotSet == "r89" ? Shots : ShotSet == "r93" ? ShotsR93 : ShotSet == "r94" ? ShotsR94 : ShotSet == "r95" ? ShotsR95 : ShotsR97)
+                foreach (var shot in ShotSet == "r89" ? Shots : ShotSet == "r93" ? ShotsR93 : ShotSet == "r94" ? ShotsR94 : ShotSet == "r95" ? ShotsR95 : ShotSet == "r97" ? ShotsR97 : ShotsR98)
                 {
                     if (!string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";

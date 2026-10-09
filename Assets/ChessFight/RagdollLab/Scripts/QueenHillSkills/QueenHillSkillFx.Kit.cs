@@ -303,16 +303,23 @@ namespace ChessFight.RagdollLab
         {
             public readonly Transform t;
             readonly MeshRenderer r;
+            readonly MeshFilter filter;
+            readonly Mesh quad;
             readonly MaterialPropertyBlock b = new MaterialPropertyBlock();
             public Color fill = new Color(1f, 1f, 1f, 0.35f), core, ink = Color.black, rim, stripe;
             public float inkWidth = 0.05f, rimWidth = 0.08f, coreWidth, round = 0.06f, shape, inner = 0.8f, gap, arc = 1f, flash, fade = 1f, stripePhase;
             public Vector2 size = Vector2.one;
+            // Its own bent grid once it is draped over the floor (R98), instead of the flat quad.
+            Mesh drape;
+            Vector3[] drapeVerts;
 
             public Tile(QueenHillSkillFx fx, string name)
             {
                 var go = new GameObject(name);
                 go.transform.SetParent(fx.root, false);
-                go.AddComponent<MeshFilter>().sharedMesh = fx.meshQuad;
+                quad = fx.meshQuad;
+                filter = go.AddComponent<MeshFilter>();
+                filter.sharedMesh = quad;
                 r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = fx.matTile;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -326,6 +333,7 @@ namespace ChessFight.RagdollLab
             {
                 along.y = 0f;
                 if (along.sqrMagnitude < 1e-6f) along = Vector3.forward;
+                filter.sharedMesh = quad;
                 t.SetPositionAndRotation(at, Quaternion.LookRotation(Vector3.up, along.normalized));
                 Size(metres);
             }
@@ -335,8 +343,86 @@ namespace ChessFight.RagdollLab
             {
                 if (normal.sqrMagnitude < 1e-6f) normal = Vector3.up;
                 Vector3 up = Mathf.Abs(Vector3.Dot(normal.normalized, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
+                filter.sharedMesh = quad;
                 t.SetPositionAndRotation(at, Quaternion.LookRotation(normal.normalized, up));
                 Size(metres);
+            }
+
+            const int DrapeAcross = 4, DrapeAlong = 6;
+            static readonly Vector3[] drapePoints = new Vector3[(DrapeAcross + 1) * (DrapeAlong + 1)];
+            static Vector2[] drapeUv;
+            static int[] drapeTris;
+
+            /// <summary>Lying over the floor like a sticker (R98, 승규 님: on a slope the squares stood flat at their
+            /// middle's height, half in the slope and half in the air): a grid around <paramref name="at"/>, its length
+            /// along <paramref name="along"/>, whose every point sits just over the floor <paramref name="floorAt"/> finds
+            /// under it — down a slope, over a crest. A cell that would hang down a step's face (steeper than 56°) is left
+            /// out, so a square across a step shows on both floors and nothing in the air between.</summary>
+            public void Drape(Vector3 at, Vector3 along, Vector2 metres, Func<Vector3, float> floorAt, float lift = 0.016f)
+            {
+                along.y = 0f;
+                along = along.sqrMagnitude < 1e-6f ? Vector3.forward : along.normalized;
+                Vector3 across = Vector3.Cross(along, Vector3.up);   // the quad's own +x, as Floor lays it
+                size = new Vector2(Mathf.Max(metres.x, 1e-3f), Mathf.Max(metres.y, 1e-3f));
+                if (drape == null) MakeDrape();
+                filter.sharedMesh = drape;
+                t.SetPositionAndRotation(at, Quaternion.identity);
+                t.localScale = Vector3.one;
+                for (int j = 0; j <= DrapeAlong; j++)
+                    for (int i = 0; i <= DrapeAcross; i++)
+                    {
+                        Vector3 p = at + across * ((i / (float)DrapeAcross - 0.5f) * size.x) + along * ((j / (float)DrapeAlong - 0.5f) * size.y);
+                        p.y = floorAt(p) + lift;
+                        drapePoints[j * (DrapeAcross + 1) + i] = p;
+                    }
+                float steepAcross = 1.5f * size.x / DrapeAcross, steepAlong = 1.5f * size.y / DrapeAlong;
+                for (int j = 0; j < DrapeAlong; j++)
+                    for (int i = 0; i < DrapeAcross; i++)
+                    {
+                        int row = j * (DrapeAcross + 1) + i, k = (j * DrapeAcross + i) * 4;
+                        Vector3 p0 = drapePoints[row], p1 = drapePoints[row + 1], p2 = drapePoints[row + DrapeAcross + 2], p3 = drapePoints[row + DrapeAcross + 1];
+                        bool face = Mathf.Abs(p0.y - p1.y) > steepAcross || Mathf.Abs(p3.y - p2.y) > steepAcross
+                            || Mathf.Abs(p0.y - p3.y) > steepAlong || Mathf.Abs(p1.y - p2.y) > steepAlong;
+                        drapeVerts[k] = t.InverseTransformPoint(p0);
+                        // A step's face: the cell shrinks to a point (nothing drawn).
+                        drapeVerts[k + 1] = face ? drapeVerts[k] : t.InverseTransformPoint(p1);
+                        drapeVerts[k + 2] = face ? drapeVerts[k] : t.InverseTransformPoint(p2);
+                        drapeVerts[k + 3] = face ? drapeVerts[k] : t.InverseTransformPoint(p3);
+                    }
+                drape.vertices = drapeVerts;
+                drape.RecalculateBounds();
+            }
+
+            void MakeDrape()
+            {
+                if (drapeUv == null)
+                {
+                    drapeUv = new Vector2[DrapeAcross * DrapeAlong * 4];
+                    drapeTris = new int[DrapeAcross * DrapeAlong * 6];
+                    for (int j = 0; j < DrapeAlong; j++)
+                        for (int i = 0; i < DrapeAcross; i++)
+                        {
+                            int c = j * DrapeAcross + i, k = c * 4;
+                            float u0 = i / (float)DrapeAcross, u1 = (i + 1) / (float)DrapeAcross, v0 = j / (float)DrapeAlong, v1 = (j + 1) / (float)DrapeAlong;
+                            drapeUv[k] = new Vector2(u0, v0);
+                            drapeUv[k + 1] = new Vector2(u1, v0);
+                            drapeUv[k + 2] = new Vector2(u1, v1);
+                            drapeUv[k + 3] = new Vector2(u0, v1);
+                            // The quad's own winding (0, 2, 1 · 0, 3, 2).
+                            drapeTris[c * 6] = k;
+                            drapeTris[c * 6 + 1] = k + 2;
+                            drapeTris[c * 6 + 2] = k + 1;
+                            drapeTris[c * 6 + 3] = k;
+                            drapeTris[c * 6 + 4] = k + 3;
+                            drapeTris[c * 6 + 5] = k + 2;
+                        }
+                }
+                drapeVerts = new Vector3[DrapeAcross * DrapeAlong * 4];
+                drape = new Mesh { name = "Skill tile drape" };
+                drape.MarkDynamic();
+                drape.vertices = drapeVerts;
+                drape.uv = drapeUv;
+                drape.triangles = drapeTris;
             }
 
             public void Size(Vector2 metres)
@@ -371,6 +457,7 @@ namespace ChessFight.RagdollLab
             public void Destroy()
             {
                 if (t != null) Object.Destroy(t.gameObject);
+                if (drape != null) Object.Destroy(drape);
             }
         }
 

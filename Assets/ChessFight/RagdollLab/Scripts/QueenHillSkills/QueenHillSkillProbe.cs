@@ -18,7 +18,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class QueenHillSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "queen-high", "queen-low", "all" };
+        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "queen-high", "queen-low", "queen-slope-up", "queen-slope-down", "queen-slope30-up", "queen-slope30-down", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>A run is under way (the bed's test helpers stay out of it unless the run asks for them).</summary>
         public static bool Busy => Status.StartsWith("running");
@@ -167,6 +167,10 @@ namespace ChessFight.RagdollLab
                     "rook-far" => RookFar(),
                     "queen-high" => QueenHigh(),
                     "queen-low" => QueenLow(),
+                    "queen-slope-up" => QueenSlope(0, true),
+                    "queen-slope-down" => QueenSlope(0, false),
+                    "queen-slope30-up" => QueenSlope(1, true),
+                    "queen-slope30-down" => QueenSlope(1, false),
                     // "rook-up-bishop" and the like: one swap with that piece.
                     var r when r.StartsWith("rook-up-") && Enum.TryParse(r.Substring(8), true, out PieceKind one) => RookUp(new[] { one }),
                     _ => null,
@@ -410,6 +414,34 @@ namespace ChessFight.RagdollLab
             yield return QueenSlashAt(Vector3.left, new[] { "앞 바닥", "턱 위 1층(0.9 m 위)" });
         }
 
+        /// <summary>R98 (승규 님's screenshots on the lab's green slopes: the squares stood flat, half in the slope): the queen
+        /// on slope <paramref name="lane"/> (0 = 15°, 1 = 30°), slashing up it from just before its foot or down it from
+        /// 6.2 m up, two enemies on it ahead. The squares lie on the slope, and the slash runs up or down it taking both.</summary>
+        IEnumerator QueenSlope(int lane, bool up)
+        {
+            float angle = LabLayout.SlopeAngles[lane];
+            Vector3 dir = up ? Vector3.left : Vector3.right;
+            float from = up ? -1f : 6.2f;
+            float[] enemies = up ? new[] { 1.5f, 4f } : new[] { 3.7f, 1f };
+            yield return Stage(PieceKind.Queen, SlopeSpot(lane, from), dir,
+                (PieceKind.Pawn, false, SlopeSpot(lane, enemies[0]), -dir),
+                (PieceKind.Pawn, false, SlopeSpot(lane, enemies[1]), -dir));
+            string way = up ? "위" : "아래";
+            yield return QueenSlashAt(dir, new[]
+            {
+                $"{angle:0}° 경사 {Mathf.Abs(enemies[0] - from):0.0} m {way}",
+                $"{angle:0}° 경사 {Mathf.Abs(enemies[1] - from):0.0} m {way}",
+            });
+        }
+
+        /// <summary>On the middle line of the lab's slope <paramref name="lane"/>, <paramref name="up"/> metres (flat) up from
+        /// its foot (less than 0: on the floor before it).</summary>
+        static Vector3 SlopeSpot(int lane, float up)
+        {
+            float angle = LabLayout.SlopeAngles[lane];
+            return new Vector3(LabLayout.SlopeBottomX(angle) - up, Mathf.Max(0f, up) * Mathf.Tan(angle * Mathf.Deg2Rad), LabLayout.SlopeZ[lane]);
+        }
+
         IEnumerator QueenSlashAt(Vector3 dir, string[] where)
         {
             var q = P1;
@@ -419,7 +451,9 @@ namespace ChessFight.RagdollLab
             AimFlat(q, dir);
             Tap(q, "F (조준)");
             yield return Wait(0.7f);
-            Add($"검격 줄 {q.SlashReach:0.0} m, 벽에 막힘 {(q.SlashBlocked ? "예" : "아니요")}");
+            var way = q.SlashPath;
+            float rise = way.Count > 0 ? way[way.Count - 1].y - way[0].y : 0f;
+            Add($"검격 줄 {q.SlashReach:0.0} m, 끝 높이 {rise:+0.0;-0.0;0.0} m, 벽에 막힘 {(q.SlashBlocked ? "예" : "아니요")}");
             Click(q, "좌클릭");
             yield return Wait(1.5f);
             for (int i = 0; i < where.Length; i++)

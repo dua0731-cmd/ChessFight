@@ -202,8 +202,8 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The queen's squares on the floors her slash runs along (R97: the slash follows its squares now — down to
-        /// a lower tier, up a step — as 승규 님 asked; R95's straight line at her height is undone): each square on the
-        /// way's floor at its middle; past a wall that stops the slash, faint squares on whatever floor is there.</summary>
+        /// a lower tier, up a step — as 승규 님 asked; R95's straight line at her height is undone): the middle of each on
+        /// the way's floor; past a wall that stops the slash, faint squares on whatever floor is there.</summary>
         static List<(Vector3 at, bool past)> PathSquares(IReadOnlyList<Vector3> path, Vector3 dir, float length, float square, float reach, bool blocked)
         {
             var list = new List<(Vector3, bool)>();
@@ -214,17 +214,31 @@ namespace ChessFight.RagdollLab
             {
                 float c = square * (i + 0.5f);
                 Vector3 flat = start + dir * c;
-                if (blocked && c > reach + 0.3f) list.Add((FloorUnder(flat, 1.5f) + Vector3.up * 0.016f, true));
-                else list.Add((new Vector3(flat.x, PathFloor(path, c) + 0.016f, flat.z), false));
+                if (blocked && c > reach + 0.3f) list.Add((FloorUnder(flat, 1.5f), true));
+                else list.Add((new Vector3(flat.x, PathFloor(path, c), flat.z), false));
             }
             return list;
         }
 
         /// <summary>The floor of the slash's way <paramref name="along"/> metres from her feet.</summary>
-        static float PathFloor(IReadOnlyList<Vector3> path, float along)
+        static float PathFloor(IReadOnlyList<Vector3> path, float along) => RagdollPawn.SlashPathFloor(path, along);
+
+        /// <summary>Lay one of the queen's squares over the floor (R98): bent down a slope and over a crest, cut at a step's
+        /// face — every point of it on the floor her slash finds there (on its way's floor, or past a wall the floor under
+        /// the square), so the squares lie where the slash will run and who stands on them is who it takes.</summary>
+        static void LaySquare(Tile t, RagdollPawn queen, IReadOnlyList<Vector3> path, Vector3 dir, (Vector3 at, bool past) square, float size)
         {
-            if (path == null || path.Count == 0) return 0f;
-            return path[Mathf.Clamp(Mathf.RoundToInt(along / RagdollPawn.SlashPathStep), 0, path.Count - 1)].y;
+            if (queen == null || path == null || path.Count == 0)
+            {
+                t.Floor(square.at + Vector3.up * 0.016f, dir, Vector2.one * size);
+                return;
+            }
+            Vector3 start = path[0];
+            t.Drape(square.at, dir, Vector2.one * size, p =>
+            {
+                float near = square.past ? square.at.y : PathFloor(path, Mathf.Max(0f, Vector3.Dot(p - start, dir)));
+                return queen.SlashFloorAt(p, near);
+            });
         }
 
         /// <summary>A windup's strength: rises with the windup, full in its last six frames (A).</summary>
@@ -236,15 +250,21 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Squares that flash white for two frames and are gone in six (the moment a warning turns into the move).</summary>
-        void Release(List<Vector3> squares, Vector3 along, RagdollPawn caster, float square, Palette? fill = null, List<float> lengths = null)
+        void Release(List<Vector3> squares, Vector3 along, RagdollPawn caster, float square, Palette? fill = null)
         {
             var tiles = new List<Tile>();
             for (int i = 0; i < squares.Count; i++)
             {
                 var t = new Tile(this, "Warning release");
-                t.Floor(squares[i], along, lengths != null && i < lengths.Count ? new Vector2(square, lengths[i]) : Vector2.one * square);
+                t.Floor(squares[i], along, Vector2.one * square);
                 tiles.Add(t);
             }
+            Release(tiles, caster, fill);
+        }
+
+        /// <summary>The same flash for squares already laid (the queen's, draped over the floor: R98).</summary>
+        void Release(List<Tile> tiles, RagdollPawn caster, Palette? fill = null)
+        {
             var f = Run(6f * F, (fx, d) =>
             {
                 float a = fx.age / F;
@@ -625,8 +645,15 @@ namespace ChessFight.RagdollLab
             // The way it runs, as it was when it went (the queen's own list changes the next time she aims).
             var path = queen != null && queen.SlashPath.Count > 0 ? new List<Vector3>(queen.SlashPath) : new List<Vector3> { floorFrom };
             Vector3 start = path[0];
-            var lit = PathSquares(path, dir, S != null ? S.queenLength : 6f, square, reach, e.count == 1).FindAll(q => !q.past);
-            Release(lit.ConvertAll(q => q.at), dir, queen, square);
+            var lit = new List<Tile>();
+            foreach (var q in PathSquares(path, dir, S != null ? S.queenLength : 6f, square, reach, e.count == 1))
+            {
+                if (q.past) continue;
+                var t = new Tile(this, "Warning release");
+                LaySquare(t, queen, path, dir, q, square);
+                lit.Add(t);
+            }
+            Release(lit, queen);
             if (swords.TryGetValue(queen, out var sword)) sword.flashUntil = clock + 2f * F;
 
             // The swing (R93): a gold crescent along the path of the sword's tip, from low behind on the right up across
@@ -666,17 +693,19 @@ namespace ChessFight.RagdollLab
             {
                 float k = Mathf.Clamp01(fx.age / Mathf.Max(F, travel));
                 float eaten = fx.age > travel ? (fx.age - travel) / (10f * F) : 0f;
-                // R97: it rides the way's floor (down a drop, up a step) with its lower tip just over it.
-                float dist = 0.6f + (reach - 0.6f) * k, floorY = PathFloor(path, dist);
+                // R97: it rides the way's floor (down a drop, up a step) with its lower tip just over it; R98: smoothly up
+                // or down a slope, its tip clear of the floor just behind it too.
+                float dist = 0.6f + (reach - 0.6f) * k, floorY = Mathf.Max(PathFloor(path, dist), PathFloor(path, dist - 0.3f));
                 Vector3 front = start + dir * dist;
                 front.y = floorY + 0.72f;
                 var up = new List<Vector3>();
                 var flat = new List<Vector3>();
                 for (int i = 0; i <= 14; i++)
                 {
-                    float ang = Mathf.Lerp(-62f, 62f, i / 14f) * Mathf.Deg2Rad;
+                    float ang = Mathf.Lerp(-62f, 62f, i / 14f) * Mathf.Deg2Rad, back = 0.5f * (Mathf.Cos(ang) - 1f);
                     up.Add(front + dir * (0.45f * (Mathf.Cos(ang) - 1f)) + lean * (0.75f * Mathf.Sin(ang)));
-                    flat.Add(new Vector3(front.x, floorY + 0.05f, front.z) + dir * (0.5f * (Mathf.Cos(ang) - 1f)) + right * (0.7f * Mathf.Sin(ang)));
+                    Vector3 pt = start + dir * (dist + back) + right * (0.7f * Mathf.Sin(ang));
+                    flat.Add(new Vector3(pt.x, PathFloor(path, dist + back) + 0.05f, pt.z));
                 }
                 blade.Build(up, i => 0.26f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(i / 14f * 0.9f + 0.05f)), Eye);
                 low.Build(flat, i => 0.2f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(i / 14f * 0.9f + 0.05f)), Eye, true);
@@ -1406,7 +1435,8 @@ namespace ChessFight.RagdollLab
                     if (!Held(x) || queen == null) return false;
                     bool locked = queen.QhAimLocked;
                     Vector3 dir = FlatDir(queen.SlashDir, Vector3.forward);
-                    // On the floors the slash runs along (R97; as R94 laid them, and the slash now goes where they are).
+                    // On the floors the slash runs along (R97; as R94 laid them, and the slash now goes where they are),
+                    // lying over them (R98: down a slope too, not flat at their middle's height).
                     var squares = PathSquares(queen.SlashPath, dir, s.queenLength, s.square, queen.SlashReach, queen.SlashBlocked);
                     float strength = locked ? Charge(queen.SkillStageTime, s.queenWindup) : 0.18f;
                     // Only her own screen shows the aim; the others see the line once she commits (the windup).
@@ -1415,7 +1445,7 @@ namespace ChessFight.RagdollLab
                     {
                         var t = x.tiles[i];
                         bool on = show && i < squares.Count;
-                        if (on) t.Floor(squares[i].at, dir, Vector2.one * s.square);
+                        if (on) LaySquare(t, queen, queen.SlashPath, dir, squares[i], s.square);
                         // Past the wall that stops the slash, the squares stay faint.
                         bool past = on && squares[i].past;
                         t.fade = on ? (past ? 0.35f : 1f) : 0f;
