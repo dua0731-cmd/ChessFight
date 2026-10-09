@@ -7,7 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R106 | 문서: Skills/SWORD_FIGHT §R106 효과음·코드, VALIDATION R106 표, REQUIREMENTS R106, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R108 | 문서: Skills/SWORD_FIGHT §R108, VALIDATION R108 표, REQUIREMENTS R108, HANDOFF, HISTORY |
+| `8f31888` | 10-10 | R108 | 토큰 옆면을 거리장의 잉크 테두리선에서 칸마다(점을 밀어내면 홈에서 꼬였음) |
+| `644e127` | 10-10 | R108 | 머리 위 표시를 3D 토큰으로(셰이더 `Skill Icon 3D`, 앞뒤 그림·옆면, 팝할 때 한 바퀴), 룩 소리 4개를 돌 재료로(띠용 없음) |
+| `8b9a11c` | 10-10 | R106 | 문서: Skills/SWORD_FIGHT §R106 효과음·코드, VALIDATION R106 표, REQUIREMENTS R106, HANDOFF, HISTORY |
 | `d685910` | 10-10 | R106 | 동전 같은 울림 없애기: 폰 러쉬 채팅의 울림 검사(`coin.py`)에 걸린 5개(킹 받아냄·빈틈, 룩 내려침, 끊김, 퀸 예고 = 퀸 오브 더 힐 `QueenLock`)를 다시 만들어 바꿈 |
 | `206a807` | 10-10 | R107 | 문서·도구: 폰 러쉬 효과음 2차 시안(기물별 소리, 동전 울림 검사) — Skills/SOUND §2차, Tools/Sfx/PawnRushSkills(spec_v2·coin·page_template_v2, build/page/fetch를 SPEC으로 고름), REQUIREMENTS R107, HANDOFF, HISTORY. Unity 손대지 않음 |
 | `a31c4b0` | 10-10 | R105 | 문서: Skills/QUEEN_HILL §R105, VALIDATION R105 표, REQUIREMENTS R105, HANDOFF, HISTORY |
