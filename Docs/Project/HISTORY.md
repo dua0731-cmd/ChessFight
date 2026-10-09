@@ -7,12 +7,15 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-09 | R89 | 문서: REQUIREMENTS R89, DECISIONS SK3, VALIDATION R89 표, HANDOFF, HISTORY |
+| (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-09 | R89 | 병합: 아래 `9d06d83`(코스 01 v0.4가 들어온 `claude/bold-johnson-8ez95n`)을 R89 브랜치에. HANDOFF·HISTORY 충돌은 양쪽을 모두 살림. 이 PC Unity 폴더(`C:/Work`)를 이 커밋으로 빨리 감고 복사해 두었던 R89 파일을 걷어 냄 |
+| `9d06d83` | 10-09 | — | 병합(이 PC의 `C:/Work`, 승규 님 "충돌 해결, 내 것은 푸시하지 마"): 10-08부터 멈춰 있던 `upstream/claude/bold-johnson-8ez95n`(`1fb198f`: R86 코스 01 v0.4 + R85 커밋 번호) 받기를 마무리. DECISIONS·REQUIREMENTS 충돌은 양쪽 줄(P6·P7·R86과 R87·SK1 새 경로)을 모두 살림. 푸시 안 함 |
+| `0a910f2` | 10-09 | R89 | 문서: REQUIREMENTS R89, DECISIONS SK3, VALIDATION R89 표, HANDOFF, HISTORY |
 | `6fcb900` | 10-09 | R89 | 녹화 도구: 장면마다 시야각이 달라도 제목·키 표시가 같은 자리·크기(좁은 장면에서 제목이 위로 잘리던 것), 긴 줄은 화면에 맞게 줄임 |
 | `fdc0408` | 10-09 | R89 | 나이트·폰 피하기 장면을 옆에서 찍는 구도, 킹 홀·룩 점선 굵게 |
 | `ccc6604` | 10-09 | R89 | 시험 씬 `SkillTest/QueenOfTheHill_SkillTest`, 교대·도약 호와 카메라 조정, 문서 Skills/QUEEN_HILL·README |
 | `dd9e6ad` | 10-09 | R89 | 퀸 오브 더 힐 스킬 시험장, 스킬 6개(1.B 2.A 3.B 4.B 5.B 6.B)와 A 디자인 이펙트, 자동 시험·녹화 도구(첫 판) |
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R85 | 문서: UI §15 "이름 바꾸기", SCENES, DECISIONS U16, VALIDATION R85 표, REQUIREMENTS R85, HANDOFF. 문구 하나("바꿨어요! 돌아가는 중") |
+| `ae87ddc` | 10-08 | R86 | 폰 러시 코스 01 v0.4: 같은 씬을 공용 길 + 미션 광장 2곳으로(`Course01v4Builder`), `MissionStation`·`TeamGate`·미니게임 A~E(`Mg*`)·`MissionPicker`, Core `PawnRushMissions`(뽑기·4명 상한·25% 걸쇠, 테스트 3개), `ObstacleSpan`·v0.4 검증기, 플레이테스트 F6~F10, 판자 재질 2개, v0.2 빌더·슬롯 삭제 |
+| `7d34fbf` | 10-08 | R85 | 문서: UI §15 "이름 바꾸기", SCENES, DECISIONS U16, VALIDATION R85 표, REQUIREMENTS R85, HANDOFF. 문구 하나("바꿨어요! 돌아가는 중") |
 | `1670ad6` | 10-08 | R85 | 인트로 "이름 바꾸기"와 로비 오른쪽 위 내 이름에서 언제든 이름 바꾸기(`NameChange`, `NameScreen` 바꾸기 모드·돌아가기), 바꾸는 동안 로비 단축키·채팅 쉼, 매칭 중 막음, Shift+클릭 없앰, 오프라인 로비도 고른 이름, `LobbyStage.SelfOnScreen` |
 | `076cc5b` | 10-08 | R84 | 문서: AI가 Unity에서 Play해 본 결과(VALIDATION R84 표), PITFALLS 32(첫 프레임 3.7초가 로고 기다림을 써 버림), UI §15·HANDOFF·REQUIREMENTS에 반영 |
 | `a78f5d6` | 10-08 | R84 | 로고 기다림과 장면 전환을 보인 프레임으로 셈(한 프레임 최대 0.05초): Play 직후 로고가 영상 전에 사라지던 것 고침 |

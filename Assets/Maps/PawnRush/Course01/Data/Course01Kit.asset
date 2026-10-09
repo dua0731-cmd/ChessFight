@@ -19,6 +19,8 @@ MonoBehaviour:
   trimWhite: {fileID: 2100000, guid: 15984cc263ea347d549609356ca2d63a, type: 2}
   trimBlack: {fileID: 2100000, guid: dca4bea5282b05eb6142aa58fbebbb7b, type: 2}
   rankGold: {fileID: 2100000, guid: 408e9dea003c80eecc3e79258bd5c07e, type: 2}
+  boardLight: {fileID: 2100000, guid: 50c680cd236319c3e34436ef015a9fa2, type: 2}
+  boardDark: {fileID: 2100000, guid: 6af57b60624d57ea87d52f46d63c1908, type: 2}
   hazard: {fileID: 2100000, guid: 64447fec302a6cfc36b4db2f73deffa7, type: 2}
   spinningDisc: {fileID: 6825614911585855478, guid: 89a881a1cdf80544196f9c5408f80766, type: 3}
   jumpPad: {fileID: 259932722572005815, guid: 6ba1bc107f7036c4e9fb1ee1114f10ed, type: 3}

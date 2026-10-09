@@ -3,17 +3,17 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // The course root in PawnRush_Course01.unity (course 01 v0.2, "the eighth rank"). It sits at
-    // the world origin and holds one child, Course01v2_Root, with every section placed at the
-    // design doc's world coordinates (Course01v2Builder) - no modules laid end to end any more.
+    // The course root in PawnRush_Course01.unity (course 01 v0.4: one shared road and two mission
+    // plazas). It sits at the world origin and holds one child, Course01v4_Root, with every section
+    // placed at the design doc's world coordinates (Course01v4Builder).
     //
-    // The menu ChessFight > Pawn Rush > Build Course01 v2 builds it in the Editor (the scene keeps
+    // The menu ChessFight > Pawn Rush > Build Course01 v4 builds it in the Editor (the scene keeps
     // the result). A scene that has never been built (fresh from git) builds it from code when
     // Play starts, so it can be walked at once.
     [DefaultExecutionOrder(-500)]
     public sealed class PawnRushCourse : MonoBehaviour
     {
-        public const string RootName = "Course01v2_Root";
+        public const string RootName = "Course01v4_Root";
 
         [SerializeField] Course01Kit kit;
         [Tooltip("Build the course from code on Play when the scene does not hold it yet.")]
@@ -25,11 +25,12 @@ namespace ChessFight.PawnRush
         public static PawnRushCourse Current { get; private set; }
         public Transform Root => transform.Find(RootName);
         public ProgressPath Progress => GetComponentInChildren<ProgressPath>(true);
+        public MissionPicker Missions => GetComponentInChildren<MissionPicker>(true);
 
         void Awake()
         {
             Current = this;
-            if (buildOnPlayIfEmpty && Root == null && kit != null) Course01v2Builder.Build(transform, kit);
+            if (buildOnPlayIfEmpty && Root == null && kit != null) Course01v4Builder.Build(transform, kit);
         }
 
         void OnDestroy()
@@ -58,7 +59,7 @@ namespace ChessFight.PawnRush
             return path;
         }
 
-        // Metres along the team's path, and the section (S+A, W1, B, W2, C, T) the point is in.
+        // Metres along the team's path, and the section (S+A, M1, B, M2, C, T) the point is in.
         public float Along(Vector3 position, int team, out string section)
         {
             var path = Path(team);
@@ -67,12 +68,5 @@ namespace ChessFight.PawnRush
             section = progress != null ? progress.Section(leg) : "-";
             return along;
         }
-
-        // Rank from height (design doc v0.2): 2 at the start, 3 on the bank (y 3), 4 on the terrace
-        // (y 6, 9), 5 on the middle floor (12, 15), 6 on W2's step (18), 7 on the upper floor (24),
-        // 8 on the tower top (36).
-        public static int RankAt(float height) =>
-            height < 1.5f ? 2 : height < 4.5f ? 3 : height < 10.5f ? 4 : height < 16.5f ? 5
-            : height < 21f ? 6 : height < 30f ? 7 : 8;
     }
 }

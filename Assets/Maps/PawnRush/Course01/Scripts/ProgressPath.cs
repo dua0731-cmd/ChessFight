@@ -4,29 +4,35 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // The progress path (design doc v0.2 §3, points P0..P32): white's points, local to the course
-    // root; black's are their mirror (x -> -x), so both are the same length. Each leg (from point i
-    // to i + 1) belongs to a section (S+A, W1, B, W2, C, T) for the HUD and the playtest CSV.
+    // The progress path (design doc v0.4 §6, points P0..P32): white's points, local to the course
+    // root, and black's (the same but inside the plazas, where each runs through its own station;
+    // with none given, white's mirrored x -> -x). Each leg (from point i to i + 1) belongs to a
+    // section (S+A, M1, B, M2, C, T) for the HUD and the playtest CSV.
     // Progress is the distance along the path to the point nearest the character (the judge's
     // third tiebreak, total progress, Pawn Rush v1.0).
     public sealed class ProgressPath : MonoBehaviour
     {
         [SerializeField] Vector3[] points = new Vector3[0];
+        [Tooltip("Black's points, as many as white's; empty: white's mirrored.")]
+        [SerializeField] Vector3[] blackPoints = new Vector3[0];
         [Tooltip("The section of the leg that starts at each point.")]
         [SerializeField] string[] sections = new string[0];
 
         public int Count => points.Length;
 
-        public void Configure(Vector3[] points, string[] sections)
+        public void Configure(Vector3[] white, Vector3[] black, string[] sections)
         {
-            this.points = points;
+            points = white;
+            blackPoints = black ?? new Vector3[0];
             this.sections = sections;
         }
 
         public Vector3 Point(int i, int team)
         {
+            if (team != Teams.Black) return transform.TransformPoint(points[i]);
+            if (blackPoints.Length == points.Length) return transform.TransformPoint(blackPoints[i]);
             var p = points[i];
-            if (team == Teams.Black) p.x = -p.x;
+            p.x = -p.x;
             return transform.TransformPoint(p);
         }
 

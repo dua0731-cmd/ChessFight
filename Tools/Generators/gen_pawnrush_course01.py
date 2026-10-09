@@ -7,11 +7,11 @@
 #   Assets/Maps/PawnRush/Course01/Data/Course01Kit.asset      materials + imported obstacle prefabs
 #   Assets/Maps/PawnRush/Course01/Materials/*.mat              the course materials
 #
-# The course itself (v0.2, Course01v2Builder) is NOT in the scene file: Play builds it from code
-# when the scene does not hold it, and the menu ChessFight > Pawn Rush > Build Course01 v2 builds
+# The course itself (v0.4, Course01v4Builder) is NOT in the scene file: Play builds it from code
+# when the scene does not hold it, and the menu ChessFight > Pawn Rush > Build Course01 v4 builds
 # it into the scene (Unity then saves the scene).
 #
-# !! It OVERWRITES these files. Once Unity has saved the scene (Build Course01 v2) or anyone has
+# !! It OVERWRITES these files. Once Unity has saved the scene (Build Course01 v4) or anyone has
 # !! edited the kit or the materials, running this throws that work away.
 # Run from the project root:  python3 Tools/Generators/gen_pawnrush_course01.py --overwrite
 import hashlib, os, re, sys
@@ -90,6 +90,9 @@ MAT = {
     "trimBlack": pattern("Trim_Black", 1, 0, (0.12, 0.12, 0.14, 1.0), (0.3, 0.3, 0.32, 1.0), 0.4),
     "rankGold": pattern("Rank_Gold", 1, 0, (0.95, 0.74, 0.26, 1.0), (0.6, 0.45, 0.1, 1.0), 0.75, 0.7),
     "hazard": pattern("Hazard_Course", 1, 0, (0.86, 0.27, 0.2, 1.0), (0.4, 0.1, 0.1, 1.0), 0.35),
+    # Mini-game boards and planks (A's squares, B's planks, C's drawbridge): plain cream, plain brown.
+    "boardLight": pattern("Board_Light", 1, 0, CREAM, (0.7, 0.64, 0.52, 1.0), 0.25),
+    "boardDark": pattern("Board_Dark", 1, 0, BROWN, (0.36, 0.24, 0.15, 1.0), 0.25),
 }
 
 # ------------------------------------------------------------------ data assets
@@ -110,7 +113,8 @@ PREFABS = {
     "knightCavalry": "17_KnightCavalryCharge",
 }
 kit_fields = "".join("  %s: %s\n" % (k, MAT[k]) for k in
-                     ["floorChecker", "wallClimbable", "wallNoClimb", "glass", "trimWhite", "trimBlack", "rankGold", "hazard"])
+                     ["floorChecker", "wallClimbable", "wallNoClimb", "glass", "trimWhite", "trimBlack", "rankGold",
+                      "boardLight", "boardDark", "hazard"])
 kit_fields += "".join("  %s: %s\n" % (k, prefab_ref(OBS + v + ".prefab")) for k, v in PREFABS.items())
 kit = scriptable(COURSE + "/Data/Course01Kit.asset", "Course01Kit", "Course01Kit", kit_fields)
 

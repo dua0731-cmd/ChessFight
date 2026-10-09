@@ -3,7 +3,8 @@
     "rootNamespace": "ChessFight.PawnRush",
     "references": [
         "ChessFight.Game",
-        "ChessFight.Gameplay"
+        "ChessFight.Gameplay",
+        "ChessFight.Network.Core"
     ],
     "autoReferenced": true
 }
