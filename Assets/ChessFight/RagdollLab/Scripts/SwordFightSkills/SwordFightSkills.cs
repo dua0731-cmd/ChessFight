@@ -34,8 +34,8 @@ namespace ChessFight.RagdollLab
     /// thrust that pushes a line of pieces, less the further back), 룩 열린 파일 포격 (a ground shockwave along a line,
     /// stopped by solid things, no turning once it goes), 비숍 관통 핀 (two rays crossing on a point: slowed, and pinned
     /// if the floor ends right behind the hit piece), 나이트 포크 강하 (a leap to a chosen spot that hits two spots ahead).
-    /// The skill button (the right click in the test scene) is held to aim and let go to use it; the king has no aim. The
-    /// left click while aiming calls it off. A skill knocked out of its windup still starts the cooldown.
+    /// The skill key (F in the test scene) starts the aim, the left click uses it, the right click (or the key again) calls it
+    /// off, as in the other skill test scenes; the king has no aim: the key is his guard. A skill knocked out of its windup still starts the cooldown.
     /// Offline only: the network packets do not carry skills.
     /// </summary>
     [DefaultExecutionOrder(-75)]   // after the match's step (-90) and the bed (-80), before the sword (-60)
@@ -81,7 +81,7 @@ namespace ChessFight.RagdollLab
         public float SlowLeft => Mathf.Max(0f, slowLeft);
         public float PinLeft => Mathf.Max(0f, pinLeft);
 
-        bool held, pressEdge, releaseEdge, cancelEdge;
+        bool pressEdge, confirmEdge, cancelEdge;
         Vector3? aimOverride;
         Vector3? pointOverride;
         Vector3 rawAim = Vector3.forward;
@@ -107,15 +107,13 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- input
 
-        /// <summary>The skill button this frame (held = aiming; let go = use). Edges are kept until the next step.</summary>
-        public void SetButton(bool down)
-        {
-            if (down && !held) pressEdge = true;
-            if (!down && held) releaseEdge = true;
-            held = down;
-        }
+        /// <summary>The skill key went down (starts the aim; again while aiming calls it off). Kept until the next step.</summary>
+        public void PressKey() => pressEdge = true;
 
-        /// <summary>Call the aim off (the left click while aiming).</summary>
+        /// <summary>Use the aimed skill (the left click while aiming; it also comes in with the match's input).</summary>
+        public void Confirm() => confirmEdge = true;
+
+        /// <summary>Call the aim off (the right click while aiming).</summary>
         public void CancelAim() => cancelEdge = true;
 
         /// <summary>The camera the point aims (the bishop's and the knight's) are taken from: its centre ray onto the floor.</summary>
@@ -133,9 +131,9 @@ namespace ChessFight.RagdollLab
         public PawnInput Filter(PawnInput raw)
         {
             if (raw.aim.sqrMagnitude > 0.01f) rawAim = raw.aim;
-            if (Stage == SfStage.Aim && (raw.shove || raw.shoveHeld))
+            if (Stage == SfStage.Aim && raw.shove)
             {
-                cancelEdge = true;
+                confirmEdge = true;
                 raw.shove = raw.shoveHeld = false;
             }
             if (Stage != SfStage.None)
@@ -188,13 +186,13 @@ namespace ChessFight.RagdollLab
             if (!Fighter.Alive || !Fighter.Authority)
             {
                 if (Stage != SfStage.None) Clear();
-                pressEdge = releaseEdge = cancelEdge = false;
+                pressEdge = confirmEdge = cancelEdge = false;
                 return;
             }
             cooldownLeft -= dt;
             StageTime += dt;
-            bool press = pressEdge, release = releaseEdge, cancel = cancelEdge;
-            pressEdge = releaseEdge = cancelEdge = false;
+            bool press = pressEdge, confirm = confirmEdge, cancel = cancelEdge;
+            pressEdge = confirmEdge = cancelEdge = false;
 
             if (!HasSkill)
             {
@@ -221,12 +219,11 @@ namespace ChessFight.RagdollLab
                     if (cooldownLeft > 0f) { Say($"{Pawn.DisplayName}: 쿨타임 {cooldownLeft:0.0}초"); break; }
                     if (Pawn.State != PawnState.Active) break;
                     if (Piece == PieceKind.King) { BeginKing(); break; }
-                    SetStage(SfStage.Aim, "조준");
-                    if (!held) Go();   // pressed and let go in one step
+                    SetStage(SfStage.Aim, "조준 (좌클릭 발동 · 우클릭 취소)");
                     break;
                 case SfStage.Aim:
-                    if (cancel) { Say($"{Pawn.DisplayName}: 조준 취소"); Clear(); break; }
-                    if (release || !held) Go();
+                    if (cancel || press) { Say($"{Pawn.DisplayName}: 조준 취소"); Clear(); break; }
+                    if (confirm) Go();
                     break;
                 default:
                     StepSkill(dt);

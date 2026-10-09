@@ -65,7 +65,7 @@ namespace ChessFight.RagdollLab
             SwordFightSkills.Log -= OnLog;
             foreach (var l in lines) Say("  " + l);
             var me = bed.Local;
-            if (me != null && me.Skills != null) { me.Skills.SetButton(false); me.Skills.OverrideAim(null); }
+            if (me != null && me.Skills != null) { me.Skills.CancelAim(); me.Skills.OverrideAim(null); }
             SwordFightSkillBed.Scripted = false;
             Staged = false;
             Status = "done " + name;
@@ -121,13 +121,13 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        IEnumerator Press(SwordFightSkills s, float hold, string aimHint = "F 누름 · 조준", string goHint = "F 뗌 · 발동")
+        IEnumerator Press(SwordFightSkills s, float hold, string aimHint = "F · 조준", string goHint = "좌클릭 · 발동")
         {
             Show(aimHint);
-            s.SetButton(true);
+            s.PressKey();
             yield return new WaitForSeconds(hold);
             Show(goHint);
-            s.SetButton(false);
+            s.Confirm();
         }
 
         // ---------------------------------------------------------------- runs
@@ -167,9 +167,8 @@ namespace ChessFight.RagdollLab
             var enemy = bed.Dummies(1)[0];
             var from = Starts();
             Show("F · 받아내기 자세");
-            me.Skills.SetButton(true);
+            me.Skills.PressKey();
             yield return new WaitForFixedUpdate();
-            me.Skills.SetButton(false);
             if (whiff) yield return new WaitForSeconds(0.62f);
             else yield return new WaitForSeconds(0.04f);
             Show(whiff ? "적이 늦게 벰" : "적이 벰");

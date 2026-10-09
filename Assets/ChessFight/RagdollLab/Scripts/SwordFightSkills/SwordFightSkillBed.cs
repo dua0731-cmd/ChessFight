@@ -9,8 +9,8 @@ namespace ChessFight.RagdollLab
     /// <summary>
     /// The Sword Fight skill test bed (scene SwordFight_SkillTest, a copy of the Sword Fight match scene, R91): the match
     /// runs as it is (swords, the 14 m platform, ring-out points, respawns, dummies) and this adds the piece skills. Every
-    /// fighter gets a <see cref="SwordFightSkills"/>; the right click (the grab key) is held to aim and let go to use the
-    /// skill, the left click while aiming calls it off. Keys (temporary): 1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰
+    /// fighter gets a <see cref="SwordFightSkills"/>; as in the other skill test scenes F starts the aim, the left click
+    /// uses the skill and the right click (or F again) calls it off; the king's F is his guard. Keys (temporary): 1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰
     /// (or Z / X), F7 puts the dummies where the chosen skill is best tried, F8 makes the enemy next to you cut at you
     /// (the king's guard), F9 sends the dummies home. The left panel shows the same (Esc frees the mouse for its buttons).
     /// The effects are design A "잉크 테두리 장난감 체스" (<see cref="SwordFightSkillFx"/>).
@@ -20,7 +20,7 @@ namespace ChessFight.RagdollLab
     {
         public SwordFightSkillParams skills = new SwordFightSkillParams();
 
-        [Header("키 (임시, 다른 스킬 시험 씬과 같은 F; 우클릭도 됨)")]
+        [Header("키 (임시, 다른 스킬 시험 씬과 같음: F 조준 → 좌클릭 발동 · 우클릭 취소)")]
         public KeyCode skillKey = KeyCode.F;
 
         public static readonly PieceKind[] Pieces = { PieceKind.King, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.Pawn };
@@ -59,7 +59,7 @@ namespace ChessFight.RagdollLab
         void OnDestroy() => SwordFightSkills.Log -= OnLog;
         static void OnLog(SwordFightSkills s, string line) => Report(line);
 
-        void Start() => Report("소드 파이트 스킬 시험 준비 완료 — 1~5로 기물, F 누르고 조준 · 떼면 발동");
+        void Start() => Report("소드 파이트 스킬 시험 준비 완료 — 1~5로 기물, F 조준 → 좌클릭 발동 · 우클릭 취소");
 
         // ---------------------------------------------------------------- every frame
 
@@ -78,7 +78,10 @@ namespace ChessFight.RagdollLab
             if (Scripted) return;
 
             bool free = !Game.MenuOpen && !Game.Finished && !ChatBox.KeysHeld && Application.isFocused && Cursor.lockState == CursorLockMode.Locked;
-            me.Skills.SetButton(free && (Input.GetKey(skillKey) || GameSettings.Held(GameKey.Grab)));
+            // F starts the aim (or is the king's guard); the left click uses it (it comes with the match's input); the right
+            // click calls it off.
+            if (free && Input.GetKeyDown(skillKey)) me.Skills.PressKey();
+            if (free && GameSettings.Pressed(GameKey.Grab)) me.Skills.CancelAim();
             if (ChatBox.KeysHeld) return;
             for (int i = 0; i < Pieces.Length; i++)
                 if (Input.GetKeyDown(KeyCode.Alpha1 + i)) SetPiece(me, Pieces[i]);
@@ -278,11 +281,11 @@ namespace ChessFight.RagdollLab
 
         static string HowTo(PieceKind kind) => kind switch
         {
-            PieceKind.King => "F(또는 우클릭) = 받아내기 자세 0.5초 (제자리)\n그 사이 적 칼이 오면 막고 반경 2.5 m 적을 2.8 m 밀어냄 · 후딜 0.4초\n안 오면 빈틈 0.6초 · F8 = 옆 적이 나를 벰",
-            PieceKind.Queen => "F(또는 우클릭) 누르고 조준 = 6 m × 1.2 m 줄 (걸을 수 있음)\n떼면 0.45초 예고 → 꿰뚫기: 첫째 3.0 m · 둘째 2.1 m · 셋째 1.5 m 밀림\n후딜 0.5초 · 조준 중 좌클릭 = 취소",
-            PieceKind.Rook => "F(또는 우클릭) 누르고 조준 = 10 m × 1.5 m 통로\n떼면 0.5초 예고(제자리) → 땅 충격파 18 m/s: 4 m 안 2.6 m · 그 뒤 1.6 m 밀림\n단단한 장애물에서 끊김 · 발동 중 방향 못 바꿈 · 후딜 0.4초",
-            PieceKind.Bishop => "F(또는 우클릭) 누르고 조준 = 화면 가운데가 가리키는 바닥 (8 m까지)\n떼면 0.4초 예고 → 두 광선이 X로 모임: 반경 1 m 적 감속 40% 1.5초\n맞은 적 뒤 2 m 안이 가장자리면 X가 금색 → 묶임 0.8초",
-            PieceKind.Knight => "F(또는 우클릭) 누르고 조준 = 착지점 (1.5~6 m)\n떼면 0.55초 도약 → 착지 때 앞쪽 두 자리(반경 1.2 m) 적 2.4 m 밀림\n두 자리는 뛰기 전부터 보임 · 후딜 0.35초",
+            PieceKind.King => "F = 받아내기 자세 0.5초 (제자리, 조준 없음)\n그 사이 적 칼이 오면 막고 반경 2.5 m 적을 2.8 m 밀어냄 · 후딜 0.4초\n안 오면 빈틈 0.6초 · F8 = 옆 적이 나를 벰",
+            PieceKind.Queen => "F = 조준: 6 m × 1.2 m 줄 (걸을 수 있음)\n좌클릭 = 0.45초 예고 → 꿰뚫기: 첫째 3.0 m · 둘째 2.1 m · 셋째 1.5 m 밀림\n후딜 0.5초 · 우클릭(또는 F) = 취소",
+            PieceKind.Rook => "F = 조준: 10 m × 1.5 m 통로\n좌클릭 = 0.5초 예고(제자리) → 땅 충격파 18 m/s: 4 m 안 2.6 m · 그 뒤 1.6 m 밀림\n장애물에서 끊김 · 발동 중 방향 못 바꿈 · 후딜 0.4초 · 우클릭 = 취소",
+            PieceKind.Bishop => "F = 조준: 화면 가운데가 가리키는 바닥 (8 m까지)\n좌클릭 = 0.4초 예고 → 두 광선이 X로 모임: 반경 1 m 적 감속 40% 1.5초\n맞은 적 뒤 2 m 안이 가장자리면 X가 금색 → 묶임 0.8초 · 우클릭 = 취소",
+            PieceKind.Knight => "F = 조준: 착지점 (1.5~6 m)\n좌클릭 = 0.55초 도약 → 착지 때 앞쪽 두 자리(반경 1.2 m) 적 2.4 m 밀림\n두 자리는 뛰기 전부터 보임 · 후딜 0.35초 · 우클릭 = 취소",
             _ => "폰은 스킬이 없어요 (소드 파이트 규칙)",
         };
 
@@ -324,7 +327,7 @@ namespace ChessFight.RagdollLab
             var s = me.Skills;
             GUILayout.BeginArea(new Rect(8f, 80f, 370f, Mathf.Min(Screen.height - 220f, 560f)), box);
             GUILayout.Label("소드 파이트 스킬 시험 (R91)", header);
-            GUILayout.Label("1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰  (Z ◀ ▶ X)\n스킬: <b>F</b>(또는 우클릭) 누르고 조준 · 떼면 발동 · F7 시험 배치 · F8 더미가 벰 · F9 더미 원위치 · F10 창 숨김", small);
+            GUILayout.Label("1 킹 · 2 퀸 · 3 룩 · 4 비숍 · 5 나이트 · 6 폰  (Z ◀ ▶ X)\n스킬: <b>F</b> 조준 → <b>좌클릭</b> 발동 · <b>우클릭</b>(또는 F) 취소 · F7 시험 배치 · F8 더미가 벰 · F9 더미 원위치 · F10 창 숨김", small);
             GUILayout.BeginHorizontal();
             foreach (var kind in Pieces)
                 if (GUILayout.Button(ChessPieces.Name(kind), me.Pawn.Piece == kind ? selected : button, GUILayout.Height(24f))) SetPiece(me, kind);
