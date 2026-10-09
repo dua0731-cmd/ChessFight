@@ -7,7 +7,16 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R101 | 문서·도구: 폰 러쉬 스킬 효과음 시안 — Skills/SOUND(새), Tools/Sfx/PawnRushSkills(새: 설명문·시간표·다듬기·페이지), Skills README·EFFECTS, HANDOFF, REQUIREMENTS, HISTORY. 소리 파일은 시안 페이지와 ElevenLabs 작업판에 |
+| (이 커밋) | 10-10 | R102·R103 | 문서: Skills/SWORD_FIGHT §R103 가장자리 스킬·§R102·조작·코드·확인 표, VALIDATION R103·R102 표, REQUIREMENTS R102·R103(+지켜야 할 조건 2줄), DECISIONS SK6, Skills README, HANDOFF, HISTORY. Core 91·모의 세션 40·실제 DLL 컴파일 통과 |
+| `19ade3c` | 10-10 | R103 | E 표시를 오른쪽 아래로(칼 게이지와 겹쳤음), 자동 시험의 피하기 동작 짧게 |
+| `25777e0` | 10-10 | R103 | 첫 Unity 시험에서 고친 것: 비숍이 맞아 놓치면 아군이 허공으로 떨어짐(끌던 속도로 발판 안까지 날아갔음, 길도 마지막에야 가장자리를 넘게), 나이트 취소 3 m(3.3 아님)·공중제비 1.1 m, 퀸 화면 베기 자국 얇고 짧게, 장외로 날아간 기물 밑 허공의 잡힌 칸 없앰(`SkillInkKit.Down`, 모든 모드), 녹화 자막 고정·가까운 카메라 |
+| `60453c8` | 10-10 | R103 | 소드 파이트 가장자리 스킬: 기물마다 두 번째 스킬 E(킹 왕의 귀환·퀸 체크메이트 일섬·룩 성벽 붕괴·비숍 구원의 손·나이트 벼랑 끝 역전), 시험 쿨 2초, 슬로 0.3초·화면 당김/돌기, 공용 `RagdollPawn.Fly`(`OuterFlight.cs`), 발판 덩어리 `SwordFightEdgeFloor`, Shift+F7·F8, 자동 시험·녹화 10장면 |
+| `9c1546f` | 10-10 | R102 | 룩 탑을 기물 모양으로 깎은 돌탑으로(계단 받침·돌 이음매·주황 띠, 얼굴·팔 없음, 1.4 m; 승규 님 "사진은 참고만, 캐릭터 느낌") |
+| `b2b8623` | 10-10 | R102 | 머리 위 표시에서 크림 바탕을 빼고 기물 모양만(승규 님 "배경 사진은 빼고 참고만") |
+| `94bc761` | 10-10 | R102 | 소드 파이트 시험 씬: 경기가 끝나지 않게 999점·1시간(240초에 끝나 칼질이 다 멈췄음), `bishopPinBehind` 삭제 |
+| `64d5e05` | 10-10 | R102 | 표시 테두리가 아이콘을 따라가게(거리장 폭), 비숍 손 크게·발목 바깥쪽에서, 팔 굵게, 돌탑 한 뼘 크게 |
+| `1f3d122` | 10-10 | R102 | 머리 위 기물 표시(아이콘 윤곽 → 거리장 셰이더 `Skill Icon`), 룩 체스 말 탑(무작위 순서), 비숍 대각선 손·맵 어디서든 묶임, 킹 F8 맵 어디서든(`BringNear`·`HoldGuard`), 자동 시험 king-mid·bishop-mid·bishop-miss |
+| `1a34135` | 10-10 | R101 | 문서·도구: 폰 러쉬 스킬 효과음 시안 — Skills/SOUND(새), Tools/Sfx/PawnRushSkills(새: 설명문·시간표·다듬기·페이지), Skills README·EFFECTS, HANDOFF, REQUIREMENTS, HISTORY. 소리 파일은 시안 페이지와 ElevenLabs 작업판에 |
 | `16ea8c2` | 10-10 | R99 | 문서: Skills/SWORD_FIGHT §R99, VALIDATION R99 표, REQUIREMENTS R99, Skills README, HANDOFF, HISTORY |
 | `663701d` | 10-10 | R99 | 녹화: 룩 장면을 비스듬히 뒤에서(옆에서는 통로 끝이 잘림) |
 | `dcd4709` | 10-10 | R99 | 소드 파이트 시험 씬에 `rookLiftCarry` 0.65 저장 |
