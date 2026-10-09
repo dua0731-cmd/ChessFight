@@ -493,9 +493,14 @@ namespace ChessFight.RagdollLab
 
         public bool Owns(Collider c) => ownSet.Contains(c);
 
+        /// <summary>The move as last handed in, which the skills' rooting (it clears input.move each step) leaves alone: the
+        /// Queen of the Hill bishop's hover slides on it (R105).</summary>
+        Vector3 givenMove;
+
         public void SetInput(PawnInput next)
         {
             input.move = next.move;
+            givenMove = next.move;
             input.grab = next.grab;
             input.sprint = next.sprint;
             input.jump |= next.jump;

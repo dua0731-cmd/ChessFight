@@ -232,7 +232,7 @@ namespace ChessFight.RagdollLab
                           || skillStage == SkillStage.Windup && (piece == PieceKind.King || piece == PieceKind.Pawn
                                                                  || piece == PieceKind.Bishop || aimLocked);
             // R105: the hovering bishop does not walk, but its move keys slide the hover (Hover).
-            hoverMove = piece == PieceKind.Bishop && skillStage == SkillStage.Windup ? input.move : Vector3.zero;
+            hoverMove = piece == PieceKind.Bishop && skillStage == SkillStage.Windup ? givenMove : Vector3.zero;
             if (!rooted) return;
             input.move = Vector3.zero;
             input.jump = false;
