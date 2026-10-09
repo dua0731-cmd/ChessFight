@@ -6,3 +6,8 @@ retake*/
 sheet_*.png
 check*.png
 __pycache__/
+gen2/
+out2/
+st2/
+chk*/
+sheet2_*.png

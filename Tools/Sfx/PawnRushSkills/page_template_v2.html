@@ -1,0 +1,420 @@
+<title>폰 러쉬 기물별 효과음</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: the game's own HUD over a tabletop board. Skewed navy banners name things, a cream/slate checker
+   strip opens the page, each skill is one panel tinted by its piece colour, A-E wear the HUD's hexagon badges. */
+:root {
+  --bg: #edf0f5; --panel: #ffffff; --ink: #1b2340; --muted: #59637f; --line: #d6dce8;
+  --navy: #1f2b50; --navy-ink: #ffffff; --navy-soft: #2c3b68; --gold: #e2b03a;
+  --tile-a: #f3ead3; --tile-b: #c9d3e5; --shadow: rgba(16, 24, 48, .18);
+  --pawn: #1f9f9b; --queen: #c98a10; --rook: #e05f24; --bishop: #8654cc; --knight: #2a8bd4;
+  --dA: #95653a; --dB: #df4a86; --dC: #3e4356; --dD: #128f78; --dE: #4462cf;
+  --font-display: "Black Han Sans", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --font-body: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1424; --panel: #171e34; --ink: #edf0f8; --muted: #9aa4c2; --line: #2a3352;
+    --navy: #0a1022; --navy-ink: #ffffff; --navy-soft: #24305a; --gold: #f0c454;
+    --tile-a: #2a3352; --tile-b: #1b2240; --shadow: rgba(0, 0, 0, .45);
+    --pawn: #37c1bc; --queen: #eeb13a; --rook: #f47b44; --bishop: #a67cec; --knight: #4fa9ee;
+    --dA: #c28c5a; --dB: #f06a9e; --dC: #9da3bb; --dD: #2cb99e; --dE: #7090f0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1424; --panel: #171e34; --ink: #edf0f8; --muted: #9aa4c2; --line: #2a3352;
+  --navy: #0a1022; --navy-ink: #ffffff; --navy-soft: #24305a; --gold: #f0c454;
+  --tile-a: #2a3352; --tile-b: #1b2240; --shadow: rgba(0, 0, 0, .45);
+  --pawn: #37c1bc; --queen: #eeb13a; --rook: #f47b44; --bishop: #a67cec; --knight: #4fa9ee;
+  --dA: #c28c5a; --dB: #f06a9e; --dC: #9da3bb; --dD: #2cb99e; --dE: #7090f0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.6 var(--font-body);
+  padding-inline: 16px; padding-block: 0 112px;
+}
+.wrap { max-width: 1080px; margin-inline: auto; display: grid; gap: 26px; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--knight); outline-offset: 2px; }
+
+/* checker strip */
+.checker {
+  height: 22px; margin-inline: -16px;
+  background: conic-gradient(var(--tile-a) 25%, var(--tile-b) 0 50%, var(--tile-a) 0 75%, var(--tile-b) 0) 0 0 / 44px 44px;
+  border-bottom: 3px solid var(--navy);
+}
+
+/* HUD banner */
+.banner {
+  position: relative; isolation: isolate; display: inline-block; margin: 0;
+  font-family: var(--font-display); font-weight: 400; font-size: 22px; line-height: 1.2;
+  color: var(--navy-ink); padding: 7px 20px 8px 22px; text-wrap: balance;
+}
+.banner::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 3px;
+  background: var(--navy); transform: skewX(-12deg); box-shadow: 0 4px 0 var(--shadow);
+}
+.banner > span { display: inline-block; transform: skewX(-7deg); }
+.skill .banner::after {
+  content: ""; position: absolute; left: -14px; top: 0; bottom: 0; width: 9px;
+  background: var(--piece); transform: skewX(-12deg); border-radius: 2px;
+}
+
+/* top */
+header.top { display: grid; gap: 16px; padding-top: 26px; }
+header.top .banner { font-size: clamp(26px, 5vw, 38px); justify-self: start; }
+.lede { margin: 0; max-width: 64ch; font-size: 16px; }
+.how { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 14px; }
+.how b { color: var(--ink); font-weight: 700; }
+.jump { display: flex; flex-wrap: wrap; gap: 8px; }
+.jump a {
+  text-decoration: none; color: var(--ink); font-weight: 700; font-size: 14px;
+  padding: 5px 12px 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.jump a::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--piece); }
+
+/* directions */
+.dirs { display: grid; gap: 14px; }
+.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.legend li {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+}
+.legend li > div { min-width: 0; }
+.legend strong { font-size: 16px; }
+.legend p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
+.legend .run { grid-column: 2; justify-self: start; }
+.legend li[style] { grid-template-columns: 1fr; border-left: 6px solid var(--piece); }
+.fams { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.fam { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: 13.5px; }
+.fam .dir { width: 22px; height: 22px; font-size: 12px; }
+.rec { margin: 0; max-width: 72ch; padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--dD) 12%, var(--panel)); border: 1px solid color-mix(in srgb, var(--dD) 40%, var(--line)); }
+.rec b { font-weight: 700; }
+
+.dir {
+  display: inline-grid; place-items: center; width: 30px; height: 34px; flex: none;
+  font-family: var(--font-display); font-size: 17px; color: #fff; line-height: 1;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.dir-A { background: var(--dA); } .dir-B { background: var(--dB); } .dir-C { background: var(--dC); }
+.dir-D { background: var(--dD); } .dir-E { background: var(--dE); }
+
+.run {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 12px 4px 8px; font-size: 13px;
+}
+.run:hover { border-color: var(--ink); }
+.run.playing { background: var(--navy); color: var(--navy-ink); border-color: var(--navy); }
+
+/* play icon (triangle / square) */
+.ico { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent currentColor; margin-left: 2px; }
+.playing .ico { width: 10px; height: 10px; border: 0; background: currentColor; margin-left: 0; border-radius: 1px; }
+
+/* skill panel */
+.skill { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px 18px 6px 26px; display: grid; gap: 14px; scroll-margin-top: 12px; }
+.skill-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.key { margin: 0; color: var(--muted); font-size: 14px; }
+
+.frames { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.frame { margin: 0; min-width: 0; }
+.frame img { display: block; width: 100%; height: auto; aspect-ratio: 480 / 230; object-fit: cover; border-radius: 6px; outline: 3px solid transparent; outline-offset: 0; transition: outline-color .08s; }
+.frame figcaption { font-size: 12.5px; color: var(--muted); margin-top: 5px; line-height: 1.35; }
+.frame figcaption b { color: var(--ink); font-weight: 500; margin-right: 4px; }
+.frame.on img { outline-color: var(--piece); }
+.frame.on figcaption b { color: var(--piece); }
+
+.timeline { padding: 30px 6px 34px; }
+.track { position: relative; height: 2px; background: var(--line); }
+.tick { position: absolute; top: -4px; width: 1px; height: 10px; background: var(--line); }
+.tick.whole { height: 14px; top: -6px; background: var(--muted); }
+.tick i { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); font: 500 11px/1 var(--font-num); color: var(--muted); font-style: normal; white-space: nowrap; }
+.mark { position: absolute; top: -6px; width: 0; height: 0; }
+.mark::before {
+  content: ""; position: absolute; left: -6px; top: 0; width: 12px; height: 12px; transform: rotate(45deg);
+  background: var(--panel); border: 2px solid var(--piece); border-radius: 2px;
+}
+.mark.hit::before { background: var(--piece); }
+.mark em { position: absolute; left: 0; font-style: normal; font-size: 12px; white-space: nowrap; color: var(--ink); transform: translateX(-8px); }
+.mark em::before { content: ""; position: absolute; left: 8px; width: 1px; background: var(--line); }
+.mark em.lane0 { bottom: 14px; } .mark em.lane0::before { top: 100%; height: 6px; }
+.mark em.lane1 { top: 30px; } .mark em.lane1::before { bottom: 100%; height: 18px; }
+.mark em.lane2 { top: 46px; } .mark em.lane2::before { bottom: 100%; height: 34px; }
+.mark em.lane3 { top: 62px; } .mark em.lane3::before { bottom: 100%; height: 50px; }
+.timeline { padding-bottom: 80px; }
+.playhead { position: absolute; top: -14px; left: 0; width: 2px; height: 30px; background: var(--ink); opacity: 0; }
+.skill.live .playhead { opacity: 1; }
+
+.takes { list-style: none; margin: 0; padding: 0; }
+.take {
+  display: grid; grid-template-columns: 48px 1fr auto; gap: 6px 14px; align-items: center;
+  border-top: 1px solid var(--line); padding: 12px 6px; border-radius: 8px;
+}
+.take.picked { background: color-mix(in srgb, var(--piece) 9%, transparent); }
+.take-body { min-width: 0; }
+.take-title { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.take-title strong { font-size: 16px; }
+.take-title .len { color: var(--muted); font-size: 12px; }
+.desc { margin: 4px 0 8px; font-size: 14px; color: var(--muted); }
+.play {
+  width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--navy); color: var(--navy-ink); display: grid; place-items: center;
+  box-shadow: 0 3px 0 var(--shadow);
+}
+.play:hover { background: var(--navy-soft); }
+.play.playing { background: var(--piece); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  cursor: pointer; font-size: 13px; padding: 3px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel);
+}
+.chip:hover { border-color: var(--piece); }
+.chip.playing { background: var(--piece); border-color: var(--piece); color: #fff; }
+.pick { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; font-weight: 500; white-space: nowrap; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+.pick input { accent-color: var(--piece); width: 17px; height: 17px; margin: 0; }
+.take.picked .pick { border-color: var(--piece); }
+
+.prompts { border-top: 1px solid var(--line); padding: 10px 6px 12px; }
+.prompts summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
+.ptable { overflow-x: auto; margin-top: 8px; }
+.ptable table { border-collapse: collapse; font-size: 12px; min-width: 760px; }
+.ptable th, .ptable td { border: 1px solid var(--line); padding: 5px 7px; vertical-align: top; text-align: left; }
+.ptable thead th { background: color-mix(in srgb, var(--piece) 10%, var(--panel)); }
+.ptable tbody th { white-space: nowrap; }
+
+.notes { display: grid; gap: 10px; }
+.notes ul { margin: 0; padding-left: 20px; max-width: 72ch; display: grid; gap: 6px; color: var(--muted); }
+.notes ul b { color: var(--ink); }
+
+.dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: var(--navy); color: var(--navy-ink);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 14px;
+  box-shadow: 0 -4px 0 var(--shadow);
+}
+.dock .label { font-family: var(--font-display); color: var(--gold); font-size: 15px; }
+.dock #summary { font-weight: 500; letter-spacing: .01em; }
+.dock button { cursor: pointer; border: 1px solid rgba(255,255,255,.45); background: transparent; color: var(--navy-ink); border-radius: 999px; padding: 4px 14px; font-size: 13px; }
+.dock button:hover { background: rgba(255,255,255,.12); }
+.dock .ok { font-size: 13px; color: var(--gold); }
+
+@media (max-width: 640px) {
+  body { font-size: 14.5px; }
+  .skill { padding: 16px 12px 4px 18px; }
+  .take { grid-template-columns: 44px 1fr; }
+  .pick { grid-column: 2; justify-self: start; }
+  .mark em { display: none; }
+  .timeline { padding-bottom: 34px; }
+  .frames { grid-auto-columns: 62%; }
+}
+@media (prefers-reduced-motion: reduce) { .frame img { transition: none; } }
+</style>
+
+<div class="checker" aria-hidden="true"></div>
+<div class="wrap">
+<header class="top">
+  <h1 class="banner"><span>폰 러쉬 효과음 · 기물별 소리</span></h1>
+  <p class="lede">두 번째 시안이에요. 이번에는 <b>기물마다 자기 소리</b>가 있어요. 한 벌 안에서는 걸음부터 마지막 쾅까지 같은 재료(같은 물건·같은 악기)로 소리를 이어 가고, 돌진·팽팽한 줄·날아가는 동안에는 소리를 끊지 않고 깔아 두었어요. <b>동전처럼 짤랑이는 소리는 뺐어요.</b> 각 기물의 A는 퀸 오브 더 힐에서 고른 소리를 그대로 이어요. Unity에는 아직 넣지 않았어요.</p>
+  <ul class="how">
+    <li><b>재생 버튼</b> 스킬 한 번을 실제 타이밍대로</li>
+    <li><b>작은 버튼</b> 그 순간 소리만</li>
+    <li><b>장면 그림</b> 지금 이펙트(Unity 녹화 R90)</li>
+  </ul>
+  <nav class="jump" aria-label="기물로 가기"><!--NAV--></nav>
+</header>
+
+<section class="dirs" aria-labelledby="dirs-h">
+  <h2 class="banner" id="dirs-h"><span>기물마다 소리 다섯 벌</span></h2>
+  <ol class="legend"><!--LEGEND--></ol>
+  <p class="rec"><b>A = 퀸 오브 더 힐과 같은 소리</b>(폰·퀸·룩 만화, 비숍 묵직, 나이트 8비트를 낮은 음으로). 두 모드에서 같은 기물이 같은 소리를 내요. 듣기 전 추천은 화면 이펙트와 재료가 같은 <b>폰 C 잉크 도장 · 퀸 B 불꽃 · 룩 C 번개 · 비숍 B 마법 줄 · 나이트 C 바람</b>이에요. 기물마다 따로 골라 주세요.</p>
+</section>
+
+<!--SECTIONS-->
+
+<footer class="notes">
+  <h2 class="banner"><span>알아 둘 것</span></h2>
+  <ul>
+    <li><b>저는 소리를 직접 듣지 못했어요.</b> 파형·소리 그림과 "동전 울림 검사"로만 확인했어요.</li>
+    <li><b>동전 울림 검사</b>: 1.8 kHz보다 높은 곳에서 가늘고 맑게 0.09초 넘게 울리는 소리를 찾아요. 퀸 오브 더 힐에서 뺀 넘어짐 소리가 이 검사에 걸리는 것을 먼저 확인했어요(첫 시안 R101도 105개 중 23개가 걸렸어요). 이번 소리 중 걸린 것은 다시 만들거나, 같은 벌의 다른 소리로 바꾸거나, 높은 소리를 살짝 깎았어요. 만화 휘슬(룩 A 돌진)처럼 작게 남은 울림도 있어요. 들어 보고 거슬리면 "룩 A 돌진 바꿔"처럼 말해 주세요.</li>
+    <li>새로 만든 99개 중 19개는 거의 소리가 없거나 높게 울려서 설명을 고쳐 다시 만들었어요. 짧게 한 번 치는 북 소리는 다시 만들어도 계속 거의 무음이라, 같은 북의 긴 소리 앞부분을 잘라 썼어요(폰 E 걸음·밀침, 룩 E 조준 칸·잠금·맞음). 룩 B 조준 칸, 비숍 C 꽂힘, 나이트 D 착지도 같은 벌의 다른 소리 앞부분이에요.</li>
+    <li>17개는 첫 시안(R101)에서 같은 재료로 만든 소리를 그대로 가져왔어요: 룩 C 번개 전체, 나이트 B 말발굽과 C 바람의 도약·공중·착지·밟기, 퀸 A 전체와 B 예고, 폰 D 밀침.</li>
+    <li>비교하기 쉽게 모든 소리의 크기를 비슷하게 맞췄어요. 목소리(기합)는 없어요. 장면 그림 일부는 느리게(×0.3) 찍은 녹화예요.</li>
+    <li>첫 시안(방향 다섯 개를 모든 기물에 똑같이)은 그대로 남아 있어요. 일레븐랩스 작업판 「폰 러쉬 스킬 효과음 기물별 (R105)」에 이번 소리가 있어요(만들 때 붙인 이름이고, 기록 번호는 R107이에요).</li>
+  </ul>
+</footer>
+</div>
+
+<div class="dock" role="region" aria-label="고른 소리">
+  <span class="label">고른 것</span>
+  <span id="summary">—</span>
+  <button type="button" id="copy">복사</button>
+  <span class="ok" id="copied" hidden>복사했어요</span>
+</div>
+
+<script>
+window.__sfxWait = new Promise(function (res) { window.__sfxReady = res; });
+</script>
+<script src="sfx-data.js" onload="window.__sfxReady()"></script>
+<script>
+(function () {
+  var NAMES = /*SKILL_NAMES*/{};
+  var FAM = /*FAMILY_NAMES*/{};
+  var $ = function (s, el) { return (el || document).querySelector(s); };
+  var $$ = function (s, el) { return Array.prototype.slice.call((el || document).querySelectorAll(s)); };
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (window.SFX) window.__sfxReady();
+
+  var ctx = null, master = null, cur = null, run = 0;
+  var cache = {};
+  function audio() {
+    if (!ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+  }
+  function decode(key) {
+    if (!cache[key]) {
+      cache[key] = window.__sfxWait.then(function () {
+        var b64 = window.SFX[key];
+        if (!b64) throw new Error('no sound ' + key);
+        var bin = atob(b64), u8 = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+        return new Promise(function (res, rej) { ctx.decodeAudioData(u8.buffer, res, rej); });
+      });
+    }
+    return cache[key];
+  }
+  function stop() {
+    if (cur) { var c = cur; cur = null; try { c.src.stop(); } catch (e) {} c.finish(); }
+  }
+  function play(key, hooks) {
+    hooks = hooks || {};
+    audio(); stop();
+    var token = {};
+    cur = { pending: token, finish: function () { hooks.onend && hooks.onend(); } };
+    return decode(key).then(function (buf) {
+      return new Promise(function (resolve) {
+        if (!cur || cur.pending !== token) { resolve(); return; }
+        var src = ctx.createBufferSource(); src.buffer = buf; src.connect(master);
+        var t0 = ctx.currentTime + 0.03; src.start(t0);
+        var c = { src: src, t0: t0, dur: buf.duration, ended: false,
+          finish: function () { if (c.ended) return; c.ended = true; hooks.onend && hooks.onend(); resolve(); } };
+        cur = c;
+        src.onended = function () { if (cur === c) cur = null; c.finish(); };
+        hooks.onstart && hooks.onstart(c);
+      });
+    }, function () { if (cur && cur.pending === token) cur = null; hooks.onend && hooks.onend(); });
+  }
+
+  function follow(section, c) {
+    var scale = parseFloat(section.dataset.scale);
+    var ph = $('.playhead', section), frames = $$('.frame', section), marks = $$('.mark', section);
+    var row = $('.frames', section), last = null;
+    section.classList.add('live');
+    function step() {
+      if (cur !== c) {
+        section.classList.remove('live');
+        frames.forEach(function (f) { f.classList.remove('on'); });
+        marks.forEach(function (m) { m.classList.remove('hit'); });
+        return;
+      }
+      var t = Math.max(0, ctx.currentTime - c.t0);
+      ph.style.left = Math.min(100, 100 * t / scale) + '%';
+      var on = null;
+      frames.forEach(function (f) { if (parseFloat(f.dataset.t) <= t + 0.02) on = f; });
+      frames.forEach(function (f) { f.classList.toggle('on', f === on); });
+      marks.forEach(function (m) { m.classList.toggle('hit', parseFloat(m.dataset.t) <= t + 0.02); });
+      if (on && on !== last && row.scrollWidth > row.clientWidth + 4) {
+        row.scrollTo({ left: on.offsetLeft - row.offsetLeft - 8, behavior: reduce ? 'auto' : 'smooth' });
+      }
+      last = on;
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function playTake(btn) {
+    var section = btn.closest('.skill'), take = btn.closest('.take');
+    return play(btn.dataset.play, {
+      onstart: function (c) { btn.classList.add('playing'); take.classList.add('live'); follow(section, c); },
+      onend: function () { btn.classList.remove('playing'); take.classList.remove('live'); }
+    });
+  }
+
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.play, .chip, .run');
+    if (!btn) return;
+    var wasPlaying = btn.classList.contains('playing');
+    run++;
+    $$('.run.playing').forEach(function (b) { b.classList.remove('playing'); });
+    if (wasPlaying) { stop(); return; }
+    if (btn.classList.contains('play')) { playTake(btn); return; }
+    if (btn.classList.contains('chip')) {
+      play(btn.dataset.play, {
+        onstart: function () { btn.classList.add('playing'); },
+        onend: function () { btn.classList.remove('playing'); }
+      });
+      return;
+    }
+    // a direction: the five skills one after another
+    var dir = btn.dataset.run, my = run;
+    audio();
+    btn.classList.add('playing');
+    var skills = Object.keys(NAMES), i = 0;
+    (function next() {
+      if (my !== run || i >= skills.length) { btn.classList.remove('playing'); return; }
+      var section = document.getElementById(skills[i]);
+      var b = section && $('.play[data-play="' + skills[i] + '_' + dir + '"]', section);
+      i++;
+      if (!b) { next(); return; }
+      section.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      playTake(b).then(function () { if (my === run) setTimeout(next, 450); else btn.classList.remove('playing'); });
+    })();
+  });
+
+  // picks
+  var KEY = 'pawnrush-skill-sfx-picks-v2';
+  var picks = {};
+  try { picks = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { picks = {}; }
+  function summary() {
+    return Object.keys(NAMES).map(function (k) { return NAMES[k] + ' ' + (picks[k] ? picks[k] + ' ' + FAM[k][picks[k]] : '–'); }).join(' · ');
+  }
+  function render() {
+    $$('.skill').forEach(function (s) {
+      var k = s.dataset.skill;
+      $$('.take', s).forEach(function (t) {
+        var on = picks[k] === t.dataset.dir;
+        t.classList.toggle('picked', on);
+        var r = $('input[type=radio]', t); if (r) r.checked = on;
+      });
+    });
+    $('#summary').textContent = summary();
+  }
+  document.addEventListener('change', function (ev) {
+    var r = ev.target;
+    if (!r.matches('.pick input')) return;
+    picks[r.closest('.skill').dataset.skill] = r.value;
+    try { localStorage.setItem(KEY, JSON.stringify(picks)); } catch (e) {}
+    render();
+  });
+  $('#copy').addEventListener('click', function () {
+    var text = '폰 러쉬 효과음(기물별) 고른 것: ' + summary();
+    var ok = function () { var m = $('#copied'); m.hidden = false; setTimeout(function () { m.hidden = true; }, 1600); };
+    var fallback = function () {
+      var range = document.createRange(); range.selectNodeContents($('#summary'));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    };
+    try { navigator.clipboard.writeText(text).then(ok, fallback); } catch (e) { fallback(); }
+  });
+  render();
+})();
+</script>

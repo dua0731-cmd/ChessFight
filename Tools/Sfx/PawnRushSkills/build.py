@@ -1,11 +1,16 @@
-# Lays the generated cues (gen/<dir>_<skill>_<cue>.<ext>) on each skill's timeline and writes the page's audio:
+# Lays the generated cues (gen/<dir>_<skill>_<cue>.<ext>) on each skill's timeline and writes the page's audio.
+# SPEC=spec_v2 builds the second round (R107: per-piece sound families, gen2/ -> out2/); default spec (R101).
 #   out/audio/<skill>_<dir>.mp3   the whole skill in time with its moments (the demo)
 #   out/audio/cue_<skill>_<cue>_<dir>.mp3   each cue alone, trimmed and levelled
 #   out/meta.json                 what the page draws (moments, frames, parts, file names)
 #   out/check/<skill>_<dir>.png   waveform + spectrogram with the moments, for the AI to look at
-import glob, json, os, subprocess, sys
+import glob, importlib, json, os, subprocess, sys
 import numpy as np, cv2
-from spec import DIRECTIONS, SKILLS, P
+
+SPEC = importlib.import_module(os.environ.get("SPEC", "spec"))
+SKILLS = SPEC.SKILLS
+PER_PIECE = hasattr(SPEC, "FAMILIES")  # R107: every piece has its own five families
+BEDS = getattr(SPEC, "BEDS", set())     # held cues: faded in, and out where they are cut
 
 SR = 48000
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +26,16 @@ def _ffmpeg():
 
 
 FF = _ffmpeg()
-OUT = os.path.join(HERE, "out")
+OUT = os.path.join(HERE, getattr(SPEC, "OUT", "out"))
+GEN = getattr(SPEC, "GEN", "gen")
+
+
+def letters(skill):
+    return list(SPEC.FAMILIES[skill]) if PER_PIECE else list(SPEC.DIRECTIONS)
+
+
+def prompt(skill, d, cue):
+    return SPEC.P[skill][d][cue] if PER_PIECE else SPEC.P[(skill, cue)][d]
 for d in ("audio", "check"):
     os.makedirs(os.path.join(OUT, d), exist_ok=True)
 
@@ -111,6 +125,13 @@ def loudness(x):
     return 10 * np.log10(p.max() + 1e-12)
 
 
+def lowpass(x, fc):
+    """Second-order-like roll-off above fc (magnitude 1 / sqrt(1 + (f/fc)^4)), done in one FFT."""
+    N = 1 << int(np.ceil(np.log2(len(x) + 1)))
+    f = np.fft.rfftfreq(N, 1 / SR)
+    return np.fft.irfft(np.fft.rfft(x, n=N) / np.sqrt(1 + (f / fc) ** 4), n=N)[:len(x)]
+
+
 def level(x, target=-16.0):
     return x * 10 ** ((target - loudness(x)) / 20)
 
@@ -139,25 +160,40 @@ def limit(x, ceil_db=-1.0):
 
 
 def gen_path(d, skill, cue):
-    hits = glob.glob(os.path.join(HERE, "gen", f"{d}_{skill}_{cue}.*"))
+    src = getattr(SPEC, "REUSE", {}).get((skill, d, cue))  # an R101 take kept as it is
+    folder, d = ("gen", src) if src else (GEN, d)
+    hits = glob.glob(os.path.join(HERE, folder, f"{d}_{skill}_{cue}.*"))
     return hits[0] if hits else None
 
 
 def build(only=None):
-    meta = {"directions": DIRECTIONS, "skills": {}}
+    meta = {"skills": {}}
+    if PER_PIECE:
+        meta["families"] = {k: {L: dict(name=n, line=l) for L, (n, l) in v.items()} for k, v in SPEC.FAMILIES.items()}
+    else:
+        meta["directions"] = SPEC.DIRECTIONS
     for skill, s in SKILLS.items():
         if only and skill not in only:
             continue
         sm = dict(name=s["name"], key=s["key"], length=s["length"], moments=s["moments"],
                   frames=[(f"{skill}_{n}.jpg", t, label) for n, t, label in s["frames"]],
                   parts=s["parts"], cues=list(s["cues"]), tracks={})
-        for d in DIRECTIONS:
+        for d in letters(skill):
             cues = {}
             for cue in s["cues"]:
-                p = gen_path(d, skill, cue)
+                cut = getattr(SPEC, "DERIVE", {}).get((skill, d, cue))
+                p = gen_path(d, skill, cut[0] if cut else cue)
                 if p is None:
                     break
                 x = trim(dc_block(load(p)))
+                fc = getattr(SPEC, "LOWPASS", {}).get((skill, d, cue))
+                if fc:
+                    x = lowpass(x, fc)
+                if cut:  # the start of a longer take of the same family, re-pitched
+                    x = x[:int(cut[2] * SR)].copy()
+                    fo = min(int(0.03 * SR), len(x))
+                    x[-fo:] *= np.linspace(1, 0, fo)
+                    x = pitch(x, cut[3])
                 if cue in SINGLE:
                     x = trim(first_event(x))
                 cues[cue] = level(x)
@@ -174,8 +210,12 @@ def build(only=None):
                     k = int(keep * SR)
                     if len(x) > k:
                         x = x[:k].copy()
-                        fo = min(int(0.05 * SR), k)
+                        fo = min(int((0.12 if cue in BEDS else 0.05) * SR), k)
                         x[-fo:] *= np.linspace(1, 0, fo)
+                if cue in BEDS:
+                    x = x.copy()
+                    fi = min(int(0.06 * SR), len(x))
+                    x[:fi] *= np.linspace(0, 1, fi)
                 if align == "end" and cue == "windup":  # the windup is 0.35 s: keep its last part only
                     k = int(0.38 * SR)
                     if len(x) > k:
@@ -200,7 +240,7 @@ def build(only=None):
                 save_mp3(limit(level(x, -16.0)), os.path.join(OUT, "audio", f"cue_{skill}_{cue}_{d}.mp3"), 96)
             sm["tracks"][d] = dict(file=name, length=len(mix) / SR,
                                    cues={c: f"cue_{skill}_{c}_{d}.mp3" for c in cues},
-                                   prompts={c: P[(skill, c)][d] for c in s["cues"]})
+                                   prompts={c: prompt(skill, d, c) for c in s["cues"]})
             draw_check(mix, s, os.path.join(OUT, "check", f"{skill}_{d}.png"), f"{skill} {d}")
             print(f"{skill} {d}: {len(mix) / SR:.2f}s peak {20 * np.log10(np.abs(mix).max() + 1e-9):.1f} dBFS")
         meta["skills"][skill] = sm

@@ -1,18 +1,22 @@
 # page.py: writes the mockup page (out/page/index.html) and its one data file (out/page/sfx-data.js: every mp3
 # and storyboard frame as base64) from out/meta.json, out/audio/ and frames/.
-import base64, html, json, os
+# SPEC=spec_v2 writes the second round (R107, per-piece families) from out2/ with page_template_v2.html.
+import base64, html, importlib, json, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "out", "page")
+SPEC = importlib.import_module(os.environ.get("SPEC", "spec"))
+ROOT = os.path.join(HERE, getattr(SPEC, "OUT", "out"))
+OUT = os.path.join(ROOT, "page")
 os.makedirs(OUT, exist_ok=True)
-meta = json.load(open(os.path.join(HERE, "out", "meta.json"), encoding="utf-8"))
+meta = json.load(open(os.path.join(ROOT, "meta.json"), encoding="utf-8"))
+PER_PIECE = "families" in meta
 
 CUE_KO = {
     "pawn": {"step": "걸음", "push": "밀침", "knock": "넘어뜨림", "help": "부축"},
     "queen": {"windup": "예고", "blast": "터짐"},
     "rook": {"tick": "조준 칸", "lock": "잠금", "dash": "돌진", "hit": "맞음", "wall": "벽에 쾅"},
-    "bishop": {"throw": "던짐", "land": "꽂힘", "arm": "무장", "trip": "걸림", "end": "사라짐"},
-    "knight": {"leap": "도약", "turn": "공중 당", "land": "착지", "stomp": "머리 밟기", "daze": "어지러움"},
+    "bishop": {"throw": "던짐", "land": "꽂힘", "arm": "무장", "hum": "팽팽한 줄", "trip": "걸림", "end": "사라짐"},
+    "knight": {"leap": "도약", "turn": "공중 당", "land": "착지", "stomp": "머리 밟기", "daze": "어지러움", "air": "날아감"},
 }
 DESC = {
     "pawn": {
@@ -52,7 +56,15 @@ DESC = {
     },
 }
 SKILL_ORDER = ["pawn", "queen", "rook", "bishop", "knight"]
-DIRS = list(meta["directions"])
+DIRS = list("ABCDE")
+
+
+def fam_name(skill, d):
+    return meta["families"][skill][d]["name"] if PER_PIECE else meta["directions"][d]["name"]
+
+
+def fam_desc(skill, d):
+    return meta["families"][skill][d]["line"] if PER_PIECE else DESC[skill][d]
 e = html.escape
 
 
@@ -65,9 +77,9 @@ sfx, frames = {}, {}
 for skill in SKILL_ORDER:
     s = meta["skills"][skill]
     for d, t in s["tracks"].items():
-        sfx[f"{skill}_{d}"] = b64(os.path.join(HERE, "out", "audio", t["file"]))
+        sfx[f"{skill}_{d}"] = b64(os.path.join(ROOT, "audio", t["file"]))
         for cue, f in t["cues"].items():
-            sfx[f"cue_{skill}_{cue}_{d}"] = b64(os.path.join(HERE, "out", "audio", f))
+            sfx[f"cue_{skill}_{cue}_{d}"] = b64(os.path.join(ROOT, "audio", f))
     for fname, _, _ in s["frames"]:
         frames[fname[:-4]] = "data:image/jpeg;base64," + b64(os.path.join(HERE, "frames", fname))
 with open(os.path.join(OUT, "sfx-data.js"), "w", encoding="ascii") as f:
@@ -110,12 +122,12 @@ def skill_section(skill):
         if d not in s["tracks"]:
             continue
         t = s["tracks"][d]
-        dn = meta["directions"][d]["name"]
+        dn = fam_name(skill, d)
         out.append(f'<li class="take" data-dir="{d}">')
         out.append(f'<button class="play" type="button" data-play="{skill}_{d}" data-skill="{skill}" aria-label="{d} {e(dn)} 전체 듣기"><span class="ico"></span></button>')
         out.append(f'<div class="take-body"><div class="take-title"><span class="dir dir-{d}">{d}</span><strong>{e(dn)}</strong>'
                    f'<span class="len num">{t["length"]:.1f}초</span></div>')
-        out.append(f'<p class="desc">{e(DESC[skill][d])}</p><div class="chips">')
+        out.append(f'<p class="desc">{e(fam_desc(skill, d))}</p><div class="chips">')
         for cue in s["cues"]:
             out.append(f'<button class="chip" type="button" data-play="cue_{skill}_{cue}_{d}">{e(CUE_KO[skill][cue])}</button>')
         out.append('</div></div>')
@@ -136,17 +148,25 @@ def skill_section(skill):
     return "\n".join(out)
 
 
-legend = "\n".join(
-    f'<li><span class="dir dir-{d}">{d}</span><div><strong>{e(v["name"])}</strong><p>{e(v["line"])}</p></div>'
-    f'<button class="run" type="button" data-run="{d}" aria-label="{d} 방향으로 다섯 스킬 이어 듣기"><span class="ico"></span>다섯 스킬 이어 듣기</button></li>'
-    for d, v in meta["directions"].items())
+if PER_PIECE:  # one card per piece listing its own five families
+    legend = "\n".join(
+        f'<li style="--piece: var(--{k})"><div><strong>{e(meta["skills"][k]["name"].split(" · ")[0])}</strong><p class="fams">'
+        + " ".join(f'<span class="fam"><span class="dir dir-{d}">{d}</span>{e(fam_name(k, d))}</span>' for d in DIRS)
+        + '</p></div></li>' for k in SKILL_ORDER)
+else:
+    legend = "\n".join(
+        f'<li><span class="dir dir-{d}">{d}</span><div><strong>{e(v["name"])}</strong><p>{e(v["line"])}</p></div>'
+        f'<button class="run" type="button" data-run="{d}" aria-label="{d} 방향으로 다섯 스킬 이어 듣기"><span class="ico"></span>다섯 스킬 이어 듣기</button></li>'
+        for d, v in meta["directions"].items())
 nav = "".join(f'<a href="#{k}" style="--piece: var(--{k})">{e(meta["skills"][k]["name"].split(" · ")[0])}</a>' for k in SKILL_ORDER)
 sections = "\n".join(skill_section(k) for k in SKILL_ORDER)
 picks_init = json.dumps({k: meta["skills"][k]["name"].split(" · ")[0] for k in SKILL_ORDER}, ensure_ascii=False)
 
-tpl = open(os.path.join(HERE, "page_template.html"), encoding="utf-8").read()
+fams_init = json.dumps({k: {d: fam_name(k, d) for d in DIRS} for k in SKILL_ORDER}, ensure_ascii=False)
+
+tpl = open(os.path.join(HERE, "page_template_v2.html" if PER_PIECE else "page_template.html"), encoding="utf-8").read()
 page = (tpl.replace("<!--LEGEND-->", legend).replace("<!--NAV-->", nav).replace("<!--SECTIONS-->", sections)
-           .replace("/*SKILL_NAMES*/{}", picks_init))
+           .replace("/*SKILL_NAMES*/{}", picks_init).replace("/*FAMILY_NAMES*/{}", fams_init))
 open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(page)
 print("page", len(page) // 1024, "KB;", "data", os.path.getsize(os.path.join(OUT, "sfx-data.js")) // 1024, "KB;",
       len(sfx), "sounds,", len(frames), "frames")

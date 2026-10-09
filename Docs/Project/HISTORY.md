@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R105 | 문서: Skills/QUEEN_HILL §R105, VALIDATION R105 표, REQUIREMENTS R105, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R107 | 문서·도구: 폰 러쉬 효과음 2차 시안(기물별 소리, 동전 울림 검사) — Skills/SOUND §2차, Tools/Sfx/PawnRushSkills(spec_v2·coin·page_template_v2, build/page/fetch를 SPEC으로 고름), REQUIREMENTS R107, HANDOFF, HISTORY. Unity 손대지 않음 |
+| `a31c4b0` | 10-10 | R105 | 문서: Skills/QUEEN_HILL §R105, VALIDATION R105 표, REQUIREMENTS R105, HANDOFF, HISTORY |
 | `2f6125c` | 10-10 | R105 | 녹화 파일 한국어 되살림(직전 편집이 PowerShell로 다른 인코딩에 저장해 컴파일이 깨졌음) |
 | `f6b7f9e` | 10-10 | R105 | 녹화 장면 묶음 r105(비숍 양탄자·취소·2발째 기다림) |
 | `f925d94` | 10-10 | R105 | 떠 있는 비숍은 손으로 준 이동(`givenMove`, `RagdollPawn.cs` `SetInput`)으로 미끄러짐(스킬이 물리 단계마다 이동 입력을 지워서) |

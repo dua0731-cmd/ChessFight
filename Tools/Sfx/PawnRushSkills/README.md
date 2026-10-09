@@ -30,3 +30,18 @@ ElevenLabs로 만든 순간 소리(스킬 5개 × 순간 21개 × 방향 5개 = 
 4. `python crop_frames.py <R90 모음 판 폴더>` → `python build.py` → `out/check/*.png`로 순간 선과 소리가 맞는지 확인 → `python page.py` → `out/page/index.html`을 `sfx-data.js`와 함께 Artifact로 올린다(같은 파일로 다시 올리면 같은 주소).
 
 `gen/`·`out/`·`frames/`는 저장소에 넣지 않는다(`.gitignore`).
+
+## 2차 시안: 기물별 소리 (R107)
+
+같은 도구를 `SPEC=spec_v2`로 돌린다. 시안 페이지: <https://claude.ai/artifact/37WNW9LFs9h5x2ERs7eUce>.
+
+| 파일 | 하는 일 |
+|---|---|
+| `spec_v2.py` | 기물마다 소리 다섯 벌(`FAMILIES`), 설명(`P[기물][글자][순간]`), 깔리는 소리(`BEDS`: 돌진·팽팽한 줄·날아감)와 그 길이(`clip`), 1차 소리 재사용(`REUSE`), 같은 벌 긴 소리 앞부분 잘라 쓰기(`DERIVE`), 높은 소리 깎기(`LOWPASS`), 다시 만든 순간(`RETAKEN`). 설명에 종·차임·딩·글로켄·짤랑·반짝이·금속이 있으면 불러올 때 멈춘다 |
+| `coin.py` | 동전 울림 검사: `python coin.py "gen2/*.mp3"`. 1.8~12 kHz에서 가늘게 0.09초 넘게 울리는 소리를 찾는다(R104에서 뺀 퀸 오브 더 힐 `Down`이 걸리는 기준) |
+| `page_template_v2.html` | 2차 페이지 틀(기물 카드에 다섯 벌 이름, 고른 것에 벌 이름까지 복사) |
+| `nodes_v2.json` · `sessions_v2.json` | ElevenLabs 작업판 「폰 러쉬 스킬 효과음 기물별 (R105)」(기록 번호는 R107)의 노드와 지금 쓰는 소리의 세션 |
+
+순서: 생성 → `SESSIONS=sessions_v2.json GEN=gen2 python fetch.py 상태파일...` → `python coin.py "gen2/*.mp3"`와 `sheet.py`로 검사(무음·울림은 다시 만들기) → `SPEC=spec_v2 python build.py` → `SPEC=spec_v2 python page.py` → `out2/page/`를 올린다.
+
+주의: `fetch.py`는 이미 있는 파일을 건너뛴다. 다시 만든 순간은 예전 파일을 먼저 `gen2/old/`로 옮기고, `sessions_v2.json`이 새 세션을 가리키는지 확인한 다음 받는다(예전 세션이 남아 있으면 같은 소리를 다시 받는다).
