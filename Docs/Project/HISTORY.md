@@ -7,7 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-09 | R93 | 문서: Skills/QUEEN_HILL §R93, REQUIREMENTS R93, VALIDATION R93 표, HANDOFF, HISTORY |
+| (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-10 | R94 | 문서: Skills/QUEEN_HILL §R94, REQUIREMENTS R94, VALIDATION R94 표, HANDOFF, HISTORY |
+| `b449452` | 10-10 | R94 | 씬에 저장된 수치를 새 값으로(룩 범위 9 m, 나이트 머리 조준 1.15 m) |
+| `c3a3511` | 10-10 | R94 | 룩 범위 6 → 9 m, 교대 리본을 한 줄로 그려 가운데 틈 없앰(`Skill Band` `_Mirror`), 나이트 머리 조준 1.3 → 1.15 m, 자동 시험 `rook-far`, 녹화 R94 장면 |
+| `16db3d9` | 10-09 | R93 | 문서: Skills/QUEEN_HILL §R93, REQUIREMENTS R93, VALIDATION R93 표, HANDOFF, HISTORY |
 | `468772d` | 10-09 | R93 | 나이트가 머리를 밟은 적은 벽 없는 쪽으로 빠져나가고, 둘이 떨어진 뒤에야 다시 부딪힘(겹친 채 부딪혀 하늘로 튕기던 것), 퀸·킹 녹화 구도 |
 | `bf871ef` | 10-09 | R93 | 씬에 저장된 수치를 새 기본값으로(나이트 호 1.6 m, 머리 조준 1.3 m, 퀸 휘두르기 0.12초, 도우미 켬), 녹화 R93 장면 6개 |
 | `fe7ae43` | 10-09 | R93 | 킹 시험 도우미·호위 몸 윤곽선, 퀸 아래에서 위로 올려 베기(칼이 바닥을 뚫지 않음), 룩 리본 기물 색 그라데이션·룩 시험 도우미, 나이트 더 높게·머리 자동 조준 |
