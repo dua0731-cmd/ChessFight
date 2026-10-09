@@ -691,36 +691,27 @@ namespace ChessFight.RagdollLab
             PuffBurst(b + Vector3.up * 0.15f, allyColors, 2, 0.5f, 0.2f);
             flyKind[rook] = "castle";
             flyKind[ally] = "castle";
-            // The arch: the flight's own arc (both fly the same one), drawn from both ends, each half in its piece's own
-            // colour (R93: the rook orange, the queen gold, the bishop violet, the knight sky, the king emerald; a pawn
-            // its side's), the two running into each other in a gradient over the middle.
-            var half1 = new Strip(this, Rook) { core = Rook.light, blendColors = allyColors, blendCore = allyColors.light, blendFrom = 0.45f, blendTo = 1f, blendAmount = 0.5f };
-            var half2 = new Strip(this, allyColors) { core = allyColors.light, blendColors = Rook, blendCore = Rook.light, blendFrom = 0.45f, blendTo = 1f, blendAmount = 0.5f };
+            // The arch: the flight's own arc (both fly the same one), growing from both ends, the rook's half in orange and
+            // the ally's in its piece's own colour (the queen gold, the bishop violet, the knight sky, the king emerald; a
+            // pawn its side's), running into each other in a gradient over the middle (R93). R94: one ribbon end to end
+            // (two halves with rounded heads left an empty notch where they met).
+            var arch = new Strip(this, Rook) { core = Rook.light, blendColors = allyColors, blendCore = allyColors.light, blendFrom = 0.3f, blendTo = 0.7f, blendAmount = 1f, mirror = true };
             float total = Mathf.Max(0.2f, e.size);
             float top = Mathf.Max(a.y, b.y) + (S != null ? S.rookArc : 1.4f) + 0.35f;
             var f = Run(total + 8f * F, (fx, d) =>
             {
                 float grow = Mathf.Clamp01(fx.age / (6f * F));
                 float fade = fx.age > total ? 1f - (fx.age - total) / (8f * F) : 1f;
-                var p1 = new List<Vector3>();
-                var p2 = new List<Vector3>();
-                for (int i = 0; i <= 12; i++)
-                {
-                    float t = i / 24f;
-                    p1.Add(Arc(a, b, top, t));
-                    p2.Add(Arc(b, a, top, t));
-                }
-                half1.Build(p1, i => 0.36f, Eye);
-                half2.Build(p2, i => 0.36f, Eye);
-                half1.tail = half2.tail = 0f;
-                half1.head = half2.head = grow;
-                half1.fade = half2.fade = fade;
-                half1.Apply();
-                half2.Apply();
+                var pts = new List<Vector3>();
+                for (int i = 0; i <= 32; i++) pts.Add(Arc(a, b, top, i / 32f));
+                arch.Build(pts, i => 0.36f, Eye);
+                arch.tail = 0f;
+                arch.head = grow;
+                arch.fade = fade;
+                arch.Apply();
                 return true;
             });
-            f.strips.Add(half1);
-            f.strips.Add(half2);
+            f.strips.Add(arch);
         }
 
         static Vector3 Arc(Vector3 a, Vector3 b, float top, float t)

@@ -439,6 +439,8 @@ namespace ChessFight.RagdollLab
             public Palette blendColors;
             public Color blendCore = Color.white;
             public float blendFrom = 0.5f, blendTo = 1f, blendAmount;
+            /// <summary>Grows from both ends toward the middle (<see cref="head"/> 0..1), one ribbon with no seam (R94).</summary>
+            public bool mirror;
 
             public Strip(QueenHillSkillFx fx, Palette colors)
             {
@@ -506,6 +508,7 @@ namespace ChessFight.RagdollLab
                 b.SetColor("_Mid2", blend ? blendColors.main : colors.main);
                 b.SetColor("_Ink2", blend ? blendColors.ink : colors.ink);
                 b.SetVector("_Blend", new Vector4(blendFrom, Mathf.Max(blendFrom + 1e-3f, blendTo), blend ? Mathf.Clamp01(blendAmount) : 0f, 0f));
+                b.SetFloat("_Mirror", mirror ? 1f : 0f);
                 r.SetPropertyBlock(b);
                 r.enabled = fade > 0.001f && head > tail;
             }

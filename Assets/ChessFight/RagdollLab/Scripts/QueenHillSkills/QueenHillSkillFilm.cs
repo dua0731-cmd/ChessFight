@@ -70,8 +70,21 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(0.6f, 2.4f, 12.6f), look = new Vector3(-3.0f, 1.0f, 7.0f), fov = 48f },
         };
 
-        /// <summary>Which shots Run films: "r93" (the default, R93's changes) or "r89" (all six skills).</summary>
-        public static string ShotSet = "r93";
+        /// <summary>R94 (승규 님's notes on R93): the rook's longer reach and seamless arch, the knight's tighter catch.</summary>
+        static readonly Shot[] ShotsR94 =
+        {
+            new Shot { run = "rook-far", title = "3. 룩 · 캐슬링 교대 — 범위 9 m", note = "6 m → 9 m(체스판 6칸) · 8.4 m 떨어진 아군 폰과 교대",
+                eye = new Vector3(4.0f, 2.6f, -10.5f), look = new Vector3(4.0f, 0.8f, -3.5f), fov = 56f },
+            new Shot { run = "rook-up-bishop", title = "3. 룩 · 캐슬링 교대 — 가운데 빈틈 없앰 (비숍)", note = "리본을 한 줄로 그려 두 색이 만나는 곳에 틈이 없음 · 룩 주황 → 비숍 보라 그라데이션",
+                eye = new Vector3(0.6f, 2.2f, 1.4f), look = new Vector3(-3.2f, 0.9f, 6.0f), fov = 46f },
+            new Shot { run = "rook-up-knight", title = "3. 룩 · 캐슬링 교대 — 가운데 빈틈 없앰 (나이트)", note = "룩 주황 → 나이트 하늘색 그라데이션, 꼭대기에서 반반",
+                eye = new Vector3(0.6f, 2.2f, 1.4f), look = new Vector3(-3.2f, 0.9f, 6.0f), fov = 46f },
+            new Shot { run = "knight", title = "5. 나이트 · 도약 압착 — 머리 자동 조준 1.15 m", note = "적에서 1.24 m 떨어진 곳은 안 잡힘 → 0.7 m로 옮기면 머리 위에 말굽 표식 → 머리를 밟고 납작",
+                eye = new Vector3(0.6f, 2.4f, 12.6f), look = new Vector3(-3.0f, 1.0f, 7.0f), fov = 48f },
+        };
+
+        /// <summary>Which shots Run films: "r94" (the default, R94's changes), "r93" or "r89" (all six skills).</summary>
+        public static string ShotSet = "r94";
 
         LabGame game;
         Camera cam;
@@ -173,7 +186,7 @@ namespace ChessFight.RagdollLab
                 Directory.CreateDirectory(stills);
                 Frames = 0;
                 Began?.Invoke(file, w, h, fps);
-                foreach (var shot in ShotSet == "r89" ? Shots : ShotsR93)
+                foreach (var shot in ShotSet == "r89" ? Shots : ShotSet == "r93" ? ShotsR93 : ShotsR94)
                 {
                     if (!string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";

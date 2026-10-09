@@ -54,8 +54,8 @@ namespace ChessFight.RagdollLab
         public float queenCooldown = 6f;
 
         [Header("룩 — 캐슬링 교대 (B: 가까운 아군 누구나, 동의)")]
-        [Tooltip("교대할 수 있는 아군까지 거리 (m)")]
-        public float rookRange = 6f;
+        [Tooltip("교대할 수 있는 아군까지 거리 (m). R94: 6 → 9 (체스판 6칸)")]
+        public float rookRange = 9f;
         [Tooltip("조준선에서 이 각도 안의 아군을 고른다 (도)")]
         public float rookCone = 35f;
         [Tooltip("상대가 수락할 때까지 기다리는 최대 시간 (초). 넘으면 취소, 쿨타임 없음")]
@@ -103,8 +103,8 @@ namespace ChessFight.RagdollLab
         public float knightWindup = 0.12f;
         [Tooltip("착지 원 반경 (m)")]
         public float knightRadius = 1.3f;
-        [Tooltip("조준점에서 이 거리(땅 위, m) 안에 적이 있으면 그 적의 머리 위로 자동 조준해 머리를 밟는다 (R93)")]
-        public float knightSnap = 1.3f;
+        [Tooltip("조준점에서 이 거리(땅 위, m) 안에 적이 있으면 그 적의 머리 위로 자동 조준해 머리를 밟는다 (R93 1.3 → R94 1.15)")]
+        public float knightSnap = 1.15f;
         [Tooltip("납작해지는 시간 (초)")]
         public float knightFlatten = 0.7f;
         [Tooltip("납작해진 적이 착지점 바깥으로 미끄러지는 속도 (m/s)와 시간 (초): 높은 곳 가장자리면 떨어진다")]

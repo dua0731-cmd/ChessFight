@@ -18,7 +18,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class QueenHillSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "all" };
+        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>A run is under way (the bed's test helpers stay out of it unless the run asks for them).</summary>
         public static bool Busy => Status.StartsWith("running");
@@ -164,6 +164,7 @@ namespace ChessFight.RagdollLab
                     "pawn-squeeze" => PawnSqueeze(),
                     "king-help" => KingHelper(),
                     "rook-up" => RookUp(rookPartners),
+                    "rook-far" => RookFar(),
                     // "rook-up-bishop" and the like: one swap with that piece.
                     var r when r.StartsWith("rook-up-") && Enum.TryParse(r.Substring(8), true, out PieceKind one) => RookUp(new[] { one }),
                     _ => null,
@@ -300,6 +301,26 @@ namespace ChessFight.RagdollLab
             yield return Wait(0.6f);
         }
 
+        /// <summary>R94: a swap across the floor with an ally 8.4 m off (the range went from 6 to 9 m).</summary>
+        IEnumerator RookFar()
+        {
+            Vector3 rookAt = new Vector3(8.2f, 0f, -3.5f), allyAt = new Vector3(-0.2f, 0f, -3.5f);
+            yield return Stage(PieceKind.Rook, rookAt, Vector3.left, (PieceKind.Pawn, true, allyAt, Vector3.right));
+            var rook = P1;
+            var ally = bed.Dummy(0);
+            yield return Wait(0.25f);
+            AimFlat(rook, Vector3.left);
+            Tap(rook, "F (조준)");
+            yield return Wait(0.45f);
+            Add($"먼 교대: {Who(rook.QhAimTarget)} {Vector3.Distance(rook.FeetPoint, ally.FeetPoint):0.0} m, {(rook.QhAimValid ? "바꿀 수 있음" : "안 됨 " + rook.QhAimWhy)}");
+            Click(rook, "좌클릭 (교대 요청)");
+            yield return Wait(0.45f);
+            Say("상대 수락 (방장 판정)");
+            yield return Wait(1.6f);
+            Add($"룩 → x {rook.FeetPoint.x:0.0} (폰이 있던 곳 {allyAt.x:0.0}), 폰 → x {ally.FeetPoint.x:0.0} (룩이 있던 곳 {rookAt.x:0.0}), {StateOf(rook)}/{StateOf(ally)}");
+            yield return Wait(0.4f);
+        }
+
         /// <summary>R93: the rook on the floor east of the hill presses F; the bed's helper puts an ally of the given piece
         /// up on the tier ahead; the rook asks, it says yes, they swap (the arch half orange, half the ally's colour).</summary>
         IEnumerator RookUp(PieceKind[] partners)
@@ -434,10 +455,20 @@ namespace ChessFight.RagdollLab
             yield return Wait(0.15f);
             Add($"2층 조준: {(knight.QhAimValid ? "됨 (틀림)" : "안 됨 — " + knight.QhAimWhy)}");
             yield return Wait(0.5f);
+            // R94: 1.24 m off the enemy the circle does not catch it (knightSnap 1.15 m), 0.7 m off it does.
+            Vector3 near = new Vector3(enemyAt.x - 0.3f, QueenHillLayout.TierTop(0), enemyAt.z - 1.2f);
             Vector3 spot = new Vector3(east - 1.05f, QueenHillLayout.TierTop(0), 7.0f);
             for (float a = 0f; a < 0.35f; a += Time.deltaTime)
             {
-                AimAt(knight, Vector3.Lerp(high, spot, Mathf.SmoothStep(0f, 1f, a / 0.35f)));
+                AimAt(knight, Vector3.Lerp(high, near, Mathf.SmoothStep(0f, 1f, a / 0.35f)));
+                yield return null;
+            }
+            AimAt(knight, near);
+            yield return Wait(0.3f);
+            Add($"적에서 {Vector3.Distance(near, enemyAt):0.00} m 조준: 머리 자동 조준 {(knight.QhAimTarget == enemy ? "됨 (틀림)" : "안 됨")} (범위 {bed.skills.knightSnap:0.00} m)");
+            for (float a = 0f; a < 0.3f; a += Time.deltaTime)
+            {
+                AimAt(knight, Vector3.Lerp(near, spot, Mathf.SmoothStep(0f, 1f, a / 0.3f)));
                 yield return null;
             }
             AimAt(knight, spot);

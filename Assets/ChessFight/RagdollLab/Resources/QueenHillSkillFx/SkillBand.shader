@@ -4,6 +4,9 @@
 // core, the colour, an ink edge on both sides. _Taper narrows it toward the tail (a speed line, a trail).
 // _Blend (R93) turns it toward a second set of colours along u: from _Blend.x to _Blend.y, up to _Blend.z of _Core2,
 // _Mid2, _Ink2 (the castling arch's halves meet in a gradient); z = 0 (the default) leaves it one colour.
+// _Mirror 1 (R94) grows it from both ends toward the middle instead (shown where 1 - |2u - 1| <= _Head), rounding only
+// its two outer ends and, while it grows, its two fronts: one ribbon with no seam where the halves meet (two ribbons
+// with rounded heads left a gap there). 0 (the default) is the tail-to-head ribbon above.
 // Premultiplied: _Opacity 1 covers like paint. Built-in render pipeline.
 Shader "ChessFight/Skill Band"
 {
@@ -23,6 +26,7 @@ Shader "ChessFight/Skill Band"
         _Mid2 ("Colour 2", Color) = (1, 0.55, 0.12, 1)
         _Ink2 ("Ink 2", Color) = (0.23, 0.09, 0.02, 1)
         _Blend ("Toward colour 2: from u, to u, amount", Vector) = (0, 1, 0, 0)
+        _Mirror ("Grow from both ends", Float) = 0
     }
     SubShader
     {
@@ -40,7 +44,7 @@ Shader "ChessFight/Skill Band"
             #include "UnityCG.cginc"
 
             float4 _Core, _Mid, _InkColor, _Core2, _Mid2, _Ink2, _Blend;
-            float _CoreShare, _InkShare, _Head, _Tail, _Taper, _Opacity, _Fade;
+            float _CoreShare, _InkShare, _Head, _Tail, _Taper, _Opacity, _Fade, _Mirror;
 
             struct appdata
             {
@@ -64,16 +68,28 @@ Shader "ChessFight/Skill Band"
 
             float4 frag (v2f i) : SV_Target
             {
-                float span = max(_Head - _Tail, 1e-3);
-                float s = (i.uv.x - _Tail) / span;   // 0 tail .. 1 head over the part that shows
-                if (s < 0 || s > 1) discard;
+                float s, ends;
+                if (_Mirror > 0.5)
+                {
+                    // Grown from both ends: m is 0 at either end and 1 in the middle; what has grown shows.
+                    float m = 1 - abs(i.uv.x * 2 - 1);
+                    if (m > _Head) discard;
+                    s = 1;
+                    ends = smoothstep(0, 0.04, m) * (_Head < 0.999 ? smoothstep(0, 0.04, _Head - m) : 1);
+                }
+                else
+                {
+                    float span = max(_Head - _Tail, 1e-3);
+                    s = (i.uv.x - _Tail) / span;   // 0 tail .. 1 head over the part that shows
+                    if (s < 0 || s > 1) discard;
+                    // Round the ends a little so they do not cut off square.
+                    ends = smoothstep(0, 0.04, s) * smoothstep(0, 0.04, 1 - s);
+                }
                 float width = lerp(1, saturate(s * 1.15), _Taper);   // share of the full width here
                 float across = abs(i.uv.y - 0.5) * 2;                // 0 middle .. 1 edge
                 float inside = width - across;
                 float aa = max(fwidth(across), 1e-4);
                 float cover = smoothstep(-aa, aa, inside);
-                // Round the ends a little so they do not cut off square.
-                float ends = smoothstep(0, 0.04, s) * smoothstep(0, 0.04, 1 - s);
                 cover *= lerp(1, ends, 1 - _Taper * 0.5);
                 if (cover <= 0.001) discard;
                 float t = across / max(width, 1e-3);                  // 0 middle .. 1 its own edge
