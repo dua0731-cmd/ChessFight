@@ -620,6 +620,84 @@ namespace ChessFight.RagdollLab
             kit.PuffBurst(at + normal * 0.25f, Kit.Stone, 6, 0.6f, 0.26f, 0.5f, 0.2f);
         }
 
+        /// <summary>The face a charge met, pointing back out of it (R92): a ray along the charge finds the face itself
+        /// (a sphere cast's normal leans round an edge it touches); failing that the cast's own normal, or straight back.</summary>
+        static Vector3 WallFace(Vector3 at, Vector3 run, Vector3 cast)
+        {
+            Vector3 n = cast.sqrMagnitude > 1e-4f ? cast.normalized : -run;
+            if (NearestHit(at - run * 0.4f, run, 0.9f, out var h)) n = h.normal;
+            return Vector3.Dot(n, run) > 0f ? -n : n;
+        }
+
+        /// <summary>
+        /// Where the battlement ring goes on a wall, and how big (R92): its middle slid along the face by at most 0.6 m
+        /// and, if that is not enough, the ring made smaller (down to 0.45 m), so that all of it, merlons and the pop's
+        /// 1.1 included, stays on the face the charge met: out of the floor, and not over the face's edges into the air.
+        /// onFace false (a barricade, gone the moment it breaks): only the floor counts.
+        /// </summary>
+        static Vector3 FitOnWall(Vector3 at, Vector3 n, ref float radius, bool onFace)
+        {
+            Vector3 up = Vector3.ProjectOnPlane(Vector3.up, n);
+            if (up.sqrMagnitude < 0.25f) return at;   // more floor than wall
+            up.Normalize();
+            Vector3 right = Vector3.Cross(n, up);
+            const float slide = 0.6f;
+            float half = RingHalf(radius), look = half + slide + 0.1f;
+            float below = look, above = look, left = look, rightRoom = look;
+            if (onFace)
+            {
+                below = FaceRoom(at, n, -up, look);
+                above = FaceRoom(at, n, up, look);
+                left = FaceRoom(at, n, -right, look);
+                rightRoom = FaceRoom(at, n, right, look);
+            }
+            if (NearestHit(at + n * 0.35f, Vector3.down, 4f, out var floor, true))
+                below = Mathf.Min(below, (at.y - floor.point.y - 0.03f) / up.y);
+            float fits = Mathf.Min(Room(below, above, slide), Room(left, rightRoom, slide));
+            radius = Mathf.Max(0.45f, Mathf.Min(radius, (fits / 1.1f - 0.14f) / 1.06f));
+            half = RingHalf(radius);
+            return at + up * Slide(below, above, half, slide) + right * Slide(left, rightRoom, half, slide);
+        }
+
+        /// <summary>How far the battlement ring reaches from its middle at the pop's peak (1.1): its merlons' outer edges.</summary>
+        static float RingHalf(float radius) => 1.1f * (1.06f * radius + 0.14f);
+
+        /// <summary>The biggest half size that fits between lo one way and hi the other, the middle slid at most slide.</summary>
+        static float Room(float lo, float hi, float slide) => Mathf.Min((lo + hi) * 0.5f, Mathf.Min(lo, hi) + slide);
+
+        /// <summary>The least slide (at most slide either way) that keeps half each way inside lo and hi.</summary>
+        static float Slide(float lo, float hi, float half, float slide) =>
+            Mathf.Clamp(Mathf.Max(0f, half - lo) - Mathf.Max(0f, half - hi), -slide, slide);
+
+        /// <summary>How far the face goes from at along dir, up to max: out 0.1 m at a time while a short ray back at it
+        /// still meets the same face, square on and where it was.</summary>
+        static float FaceRoom(Vector3 at, Vector3 n, Vector3 dir, float max)
+        {
+            for (float s = 0.1f; s <= max + 1e-3f; s += 0.1f)
+                if (!NearestHit(at + dir * s + n * 0.15f, -n, 0.3f, out var h) || Vector3.Dot(h.normal, n) < 0.9f) return s - 0.1f;
+            return max;
+        }
+
+        static readonly RaycastHit[] wallHits = new RaycastHit[16];
+
+        /// <summary>The nearest solid thing a ray meets, the pieces and loose bodies aside (floor: only what faces up).</summary>
+        static bool NearestHit(Vector3 from, Vector3 dir, float length, out RaycastHit hit, bool floor = false)
+        {
+            hit = default;
+            float best = float.MaxValue;
+            int count = Physics.RaycastNonAlloc(from, dir, wallHits, length, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                var h = wallHits[i];
+                if (h.distance >= best || RagdollPawn.ColliderOwner.ContainsKey(h.collider) || (floor && h.normal.y < 0.5f)) continue;
+                var rb = h.collider.attachedRigidbody;
+                if (rb != null && !rb.isKinematic) continue;
+                best = h.distance;
+                hit = h;
+            }
+            return best < float.MaxValue;
+        }
+
         // ---------------------------------------------------------------- bishop
 
         /// <summary>

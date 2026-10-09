@@ -588,13 +588,18 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Into a wall (or, smaller, a barricade): the battlement ring slammed flat on its face with square stone
-        /// puffs and lightning spreading over it, the rook squashed wide, a 5-frame stop and the biggest shake (A).</summary>
+        /// puffs and lightning spreading over it, the rook squashed wide, a 5-frame stop and the biggest shake (A).
+        /// R92: flat on the face the charge met, no longer square to the charge: a wall met at a slant cut the ring in
+        /// half and buried the rest in it. Fitted onto that face (<see cref="FitOnWall"/>); a barricade is gone the moment
+        /// it breaks, so there only the floor counts.</summary>
         void RookWall(SkillFxEvent e, float k)
         {
             Vector3 d = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
-            Vector3 at = e.at - d * 0.02f;
-            BattlementRing(at, -d, 0.75f * k + 0.25f);
-            anims.Add(new Bolts(root, matVolt, Mathf.RoundToInt(6 * k), () => at, Hdr(Volt, 2f), 1.4f * k, 0.25f) { plane = d, toon = true });
+            Vector3 n = WallFace(e.at, d, e.normal);
+            float radius = 0.75f * k + 0.25f;
+            Vector3 at = FitOnWall(e.at, n, ref radius, e.kind == SkillFxKind.RookWall);
+            BattlementRing(at, n, radius);
+            anims.Add(new Bolts(root, matVolt, Mathf.RoundToInt(6 * k), () => at + n * 0.06f, Hdr(Volt, 2f), Mathf.Min(1.4f * k, 1.25f * radius), 0.25f) { plane = n, toon = true });
             if (e.by != null) kit.AddSquash(e.by, Kit.SquashKind.Wide);
             HitStop(5f * Frame);
             Shake(0.16f * k, 8f * Frame);

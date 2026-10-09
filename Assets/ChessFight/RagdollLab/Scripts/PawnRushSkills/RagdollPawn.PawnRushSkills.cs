@@ -33,6 +33,8 @@ namespace ChessFight.RagdollLab
         public RagdollPawn by, target;
         /// <summary>Where it happened: the ground under a blast or a landing, the contact of a hit.</summary>
         public Vector3 at, dir;
+        /// <summary>The face it happened on, pointing out of it: the wall or barricade a charge met (zero if none).</summary>
+        public Vector3 normal;
         /// <summary>The rook's hit number, the queen's pieces hit, a trip's number.</summary>
         public int count;
         /// <summary>A radius or a length (the queen's ring, the bishop's line).</summary>
@@ -66,8 +68,8 @@ namespace ChessFight.RagdollLab
 
         internal static void RaiseSkillFx(SkillFxEvent e) => SkillFx?.Invoke(e);
 
-        void Fx(SkillFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, int count = 0, float size = 0f)
-            => SkillFx?.Invoke(new SkillFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, count = count, size = size });
+        void Fx(SkillFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, int count = 0, float size = 0f, Vector3 normal = default)
+            => SkillFx?.Invoke(new SkillFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, count = count, size = size, normal = normal });
 
         Vector3 SkillContact(RagdollPawn other) =>
             Vector3.Lerp(bodies[(int)BodyId.Chest].position, other.bodies[(int)BodyId.Chest].position, 0.5f);
@@ -1064,14 +1066,14 @@ namespace ChessFight.RagdollLab
                 if (barricade != null && barricade.Standing)
                 {
                     barricade.Break(s.barricadeRegrow);
-                    Fx(SkillFxKind.RookBarricade, null, wall.point, skillDir);
+                    Fx(SkillFxKind.RookBarricade, null, wall.point, skillDir, normal: wall.normal);
                     dashBase *= 1f - s.rookBarricadeSlow;
                     Log($"룩: 바리케이드 파괴 → 속도 −{s.rookBarricadeSlow * 100f:0}% ({dashBase:0.0} m/s), 계속 전진 · {s.barricadeRegrow:0}초 뒤 다시 생김");
                 }
                 else
                 {
                     HaltDash();
-                    Fx(SkillFxKind.RookWall, null, wall.point, skillDir);
+                    Fx(SkillFxKind.RookWall, null, wall.point, skillDir, normal: wall.normal);
                     Stagger(s.rookWallStagger);
                     RookRecovery();
                     Log($"룩: 벽에 박힘 → 그 자리에서 멈춤, 룩 휘청 {s.rookWallStagger:0.#}초");

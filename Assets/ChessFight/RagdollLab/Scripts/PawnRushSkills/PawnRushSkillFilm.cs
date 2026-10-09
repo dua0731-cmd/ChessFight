@@ -49,6 +49,10 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(2.4f, 3.6f, -13f), look = new Vector3(-0.2f, 0.3f, -7.8f), lead = 0.5f },
             new Shot { run = "rook-cluster", title = "룩 · 직선 돌파", note = "앞으로 네 칸이 차례로 켜짐 · 잠그면 돌 먼지 고리 · 번개 돌진 → 맞을 때마다 C자 고리, 잡힌 칸",
                 eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.4f },
+            new Shot { run = "rook-wall-slant", title = "룩 · 벽에 비스듬히 쾅", note = "비스듬히 부딪혀도 성벽 톱니 고리가 벽면에 납작하게 붙음 · 벽 끝이 가까우면 안쪽으로 밀리고 작아짐",
+                eye = new Vector3(13.6f, 2.4f, -1.6f), look = new Vector3(19.8f, 1.1f, 1.6f), lead = 0.4f },
+            new Shot { run = "rook-barricade", title = "룩 · 바리케이드 부수기", note = "부서지는 바리케이드 자리에 작은 성벽 톱니 고리 · 바닥에 묻히지 않음",
+                eye = new Vector3(-3.4f, 2.6f, -3.2f), look = new Vector3(-8.4f, 0.9f, 2f), lead = 0.4f },
             new Shot { run = "rook-wall", title = "룩 · 벽에 쾅", note = "마지막 칸이 벽에 세워짐 · 벽에 성벽 톱니 고리 · 돌 먼지",
                 eye = new Vector3(16.2f, 2.6f, -5.2f), look = new Vector3(19.2f, 0.9f, 0f), lead = 0.4f },
             new Shot { run = "bishop-trip", title = "비숍 · 교차 밧줄", note = "보라 작은 칸으로 조준 · X를 던짐 · 걸리면 발밑 보라 초승달과 잡힌 칸 · 쉬는 동안 40% 밝기",
@@ -75,8 +79,8 @@ namespace ChessFight.RagdollLab
         string stills;
         int width, height;
 
-        /// <summary>Film every shot (or only the runs whose names start with <paramref name="only"/>) into
-        /// <paramref name="path"/>. Needs Play mode in PawnRush_SkillTest.</summary>
+        /// <summary>Film every shot (or only the runs whose names start with <paramref name="only"/>, or with any of
+        /// its comma-separated parts) into <paramref name="path"/>. Needs Play mode in PawnRush_SkillTest.</summary>
         public static string Run(string path, int width = 1280, int height = 720, int fps = 60, string only = null)
         {
             var bed = FindFirstObjectByType<PawnRushSkillBed>();
@@ -124,7 +128,7 @@ namespace ChessFight.RagdollLab
             RagdollPawn.SkillFx += OnSkillFx;
             foreach (var shot in Shots)
             {
-                if (!string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
+                if (!string.IsNullOrEmpty(only) && !System.Array.Exists(only.Split(','), o => shot.run.StartsWith(o.Trim()))) continue;
                 float first = 0.5f, last = 1.5f;
                 foreach (bool slow in SlowTakes ? new[] { false, true } : new[] { false })
                 {
