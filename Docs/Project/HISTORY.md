@@ -7,7 +7,11 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-10 | R94 | 문서: Skills/QUEEN_HILL §R94, REQUIREMENTS R94, VALIDATION R94 표, HANDOFF, HISTORY |
+| (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-10 | R95 | 문서: Skills/QUEEN_HILL §R95, REQUIREMENTS R95, VALIDATION R95 표, HANDOFF, HISTORY |
+| `a96bd11` | 10-10 | R95 | 녹화: 탑 위 퀸 장면을 동쪽에서(아래층 위로 뜬 경고 칸이 보이게), 같은 층 적을 줄 옆으로 |
+| `7011440` | 10-10 | R95 | 씬에 저장된 수치를 새 값으로(나이트 머리 조준 1.05 m, 비숍 2발, 퀸 높이 범위) |
+| `b6710fc` | 10-10 | R95 | 퀸 경고 칸을 퀸 높이에서 똑바로·검기가 가는 데까지(아래층·위층에 그리던 것), 같은 높이 적만 맞음(`queenDrop`), 비숍 2발(`bishopShots`), 나이트 머리 조준 1.05 m, 자동 시험 `queen-high`·`queen-low`, 녹화 R95 장면 |
+| `9d3507c` | 10-10 | R94 | 문서: Skills/QUEEN_HILL §R94, REQUIREMENTS R94, VALIDATION R94 표, HANDOFF, HISTORY |
 | `b449452` | 10-10 | R94 | 씬에 저장된 수치를 새 값으로(룩 범위 9 m, 나이트 머리 조준 1.15 m) |
 | `c3a3511` | 10-10 | R94 | 룩 범위 6 → 9 m, 교대 리본을 한 줄로 그려 가운데 틈 없앰(`Skill Band` `_Mirror`), 나이트 머리 조준 1.3 → 1.15 m, 자동 시험 `rook-far`, 녹화 R94 장면 |
 | `16db3d9` | 10-09 | R93 | 문서: Skills/QUEEN_HILL §R93, REQUIREMENTS R93, VALIDATION R93 표, HANDOFF, HISTORY |
