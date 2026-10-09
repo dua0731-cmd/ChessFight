@@ -8,8 +8,10 @@ namespace ChessFight.RagdollLab
     /// The Sword Fight F skills' sounds in the test bed (R106). 승규 asked for them "in the feel of the Pawn Rush and Queen of
     /// the Hill sounds", so each piece keeps the direction it got in Queen of the Hill (R104): king D 묵직한 타격, queen C
     /// 만화 효과음, rook C 만화 효과음, bishop D 묵직한 타격, knight A 아케이드 팡. Where the moment is the same kind of thing
-    /// the Queen of the Hill clip is used as it is (queen's draw and hit, bishop's rising hum, knight's leap and landing);
+    /// the Queen of the Hill clip is used as it is (queen's hit, bishop's rising hum, knight's leap and landing);
     /// the others were made in the same direction (ElevenLabs Sound Effects v2). The edge skills (E, R103) have no sound yet.
+    /// R108: the rook's four are stone now, not cartoon (승규 님: "룩 sfx 다 바꿔줘, 띠요오옹 최악이야") — the floor cracking
+    /// open, the slam with the towers thrusting up, a stone thud on a body, a crunch on a wall; no boing, whistle or ring.
     ///
     /// One clip per moment in Resources/SwordFightSkillSfx, named after the <see cref="SfFxKind"/>; the cast is per piece
     /// ("Cast" + piece, the knight has none: its leap is its cast). Prepared once when loaded like QueenHillSkillSfx does:

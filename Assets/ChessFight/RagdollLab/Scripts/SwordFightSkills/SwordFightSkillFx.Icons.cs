@@ -13,6 +13,9 @@ namespace ChessFight.RagdollLab
     /// that), turned into two distance fields when first needed and drawn by <c>ChessFight/Skill Icon</c> as a sticker in
     /// the piece's colour: its light lines, an ink edge, a cream rim. It pops up over the head with every cast (white for
     /// two frames), bobs, and pops away after a second; the king's mark pops again when his guard takes a cut.
+    /// R108 (승규 님: "이거 3D로 넣어줘야지, 전체 다시 만들어줘"): every mark is a solid token now — the same print on a
+    /// front and a back face, a wall round its outline in the piece's darker colour (<c>ChessFight/Skill Icon 3D</c>) —
+    /// that spins one turn as it pops in and then sways, so it reads as a thick toy cut-out over the head.
     /// </summary>
     public partial class SwordFightSkillFx
     {
@@ -23,8 +26,11 @@ namespace ChessFight.RagdollLab
         /// up to ± <c>IconSpread</c> (more than the ink and the rim together, or the rim fills the whole square).</summary>
         const float IconHalf = 0.68f, IconSpread = 0.12f;
         const int IconSize = 128;
+        /// <summary>The token's thickness and its faces' ink edge, in icon heights (R108).</summary>
+        const float IconDepth = 0.2f, IconInk = 0.05f;
 
         readonly Dictionary<PieceKind, Texture2D> iconTextures = new Dictionary<PieceKind, Texture2D>();
+        readonly Dictionary<PieceKind, Mesh> iconMeshes = new Dictionary<PieceKind, Mesh>();
         readonly Dictionary<RagdollPawn, HeadMarkState> headMarks = new Dictionary<RagdollPawn, HeadMarkState>();
         Material iconMat;
         int iconsBuilt;
@@ -47,8 +53,8 @@ namespace ChessFight.RagdollLab
         Material IconMaterial()
         {
             if (iconMat != null) return iconMat;
-            var shader = Shader.Find("ChessFight/Skill Icon");
-            if (shader == null) shader = Resources.Load<Shader>("SwordFightSkillFx/SkillIcon");
+            var shader = Shader.Find("ChessFight/Skill Icon 3D");
+            if (shader == null) shader = Resources.Load<Shader>("SwordFightSkillFx/SkillIcon3D");
             if (shader == null) shader = Shader.Find("Sprites/Default");
             iconMat = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
             return iconMat;
@@ -70,7 +76,76 @@ namespace ChessFight.RagdollLab
             tex = BuildIcon(data);
             tex.name = $"Skill icon ({kind})";
             iconTextures[kind] = tex;
+            var mesh = BuildIconMesh(data);
+            mesh.name = $"Skill icon token ({kind})";
+            iconMeshes[kind] = mesh;
             return tex;
+        }
+
+        /// <summary>The icon as a solid token (R108), in icon heights with its middle at the origin: a face at each end
+        /// (z = ∓<see cref="IconDepth"/>/2, the field square, mirrored on the back so it reads from behind) and a wall round
+        /// every outline (depth-0 contour) pushed out by the ink width, where the faces' ink edge ends. uv2.x is 1 on the
+        /// walls. The light lines stay printed on the faces.</summary>
+        static Mesh BuildIconMesh(short[][] data)
+        {
+            var v = new List<Vector3>();
+            var n = new List<Vector3>();
+            var uv = new List<Vector2>();
+            var uv2 = new List<Vector2>();
+            var tri = new List<int>();
+            float h = IconDepth * 0.5f;
+            for (int face = 0; face < 2; face++)
+            {
+                float z = face == 0 ? -h : h;
+                int b = v.Count;
+                for (int k = 0; k < 4; k++)
+                {
+                    float u = k == 1 || k == 2 ? 1f : 0f, w = k >= 2 ? 1f : 0f;
+                    v.Add(new Vector3(-IconHalf + 2f * IconHalf * u, -IconHalf + 2f * IconHalf * w, z));
+                    n.Add(new Vector3(0f, 0f, face == 0 ? -1f : 1f));
+                    uv.Add(new Vector2(face == 0 ? u : 1f - u, w));
+                    uv2.Add(Vector2.zero);
+                }
+                tri.AddRange(new[] { b, b + 1, b + 2, b, b + 2, b + 3 });
+            }
+            foreach (var c in data)
+            {
+                if (c[0] != 0) continue;
+                int count = (c.Length - 1) / 2;
+                var p = new Vector2[count];
+                float area = 0f;
+                for (int i = 0; i < count; i++) p[i] = new Vector2(c[1 + 2 * i], c[2 + 2 * i] - 500) * 0.001f;
+                for (int i = 0, j = count - 1; i < count; j = i++) area += p[j].x * p[i].y - p[i].x * p[j].y;
+                float turn = area >= 0f ? 1f : -1f;   // outward = (dy, -dx) on an anticlockwise outline
+                Vector2 Out(Vector2 a, Vector2 b2) { var d = (b2 - a).normalized; return new Vector2(d.y, -d.x) * turn; }
+                var pushed = new Vector2[count];
+                for (int i = 0; i < count; i++)
+                {
+                    Vector2 prev = p[(i + count - 1) % count], next = p[(i + 1) % count];
+                    Vector2 n0 = Out(prev, p[i]), n1 = Out(p[i], next), m = (n0 + n1).normalized;
+                    if (m.sqrMagnitude < 0.5f) m = n1;
+                    pushed[i] = p[i] + m * Mathf.Min(2f * IconInk, IconInk / Mathf.Max(0.5f, Vector2.Dot(m, n1)));
+                }
+                for (int i = 0; i < count; i++)
+                {
+                    Vector2 a = pushed[i], b2 = pushed[(i + 1) % count];
+                    if ((b2 - a).sqrMagnitude < 1e-10f) continue;
+                    var out3 = (Vector3)Out(a, b2);
+                    int s = v.Count;
+                    v.Add(new Vector3(a.x, a.y, -h)); v.Add(new Vector3(b2.x, b2.y, -h));
+                    v.Add(new Vector3(b2.x, b2.y, h)); v.Add(new Vector3(a.x, a.y, h));
+                    for (int k = 0; k < 4; k++) { n.Add(out3); uv.Add(Vector2.zero); uv2.Add(Vector2.right); }
+                    tri.AddRange(new[] { s, s + 1, s + 2, s, s + 2, s + 3 });
+                }
+            }
+            var mesh = new Mesh { hideFlags = HideFlags.HideAndDontSave };
+            mesh.SetVertices(v);
+            mesh.SetNormals(n);
+            mesh.SetUVs(0, uv);
+            mesh.SetUVs(1, uv2);
+            mesh.SetTriangles(tri, 0);
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         /// <summary>The traced icon as two signed distance fields (r: inside its outlines, g: inside its dark shape, by
@@ -167,7 +242,7 @@ namespace ChessFight.RagdollLab
             var state = new HeadMarkState { born = kit.Clock, until = kit.Clock + MarkLife };
             var go = new GameObject($"Skill head mark ({kind})");
             go.transform.SetParent(kit.root, false);
-            go.AddComponent<MeshFilter>().sharedMesh = kit.meshQuad;
+            go.AddComponent<MeshFilter>().sharedMesh = iconMeshes.TryGetValue(kind, out var token) && token != null ? token : kit.meshQuad;
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = IconMaterial();
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -194,19 +269,22 @@ namespace ChessFight.RagdollLab
                 float top = headCollider != null ? headCollider.bounds.max.y : head.position.y + 0.12f;
                 float rise = first ? Kit.EaseOutBack(Mathf.Min(1f, a / 8f)) : 1f;
                 Vector3 at = new Vector3(head.position.x, top + 0.2f + MarkHeight * 0.5f - 0.12f * (1f - rise) + 0.012f * Mathf.Sin(age * 6.5f), head.position.z);
+                // R108, a solid token: it faces the camera upright, spins one whole turn as it pops in (every pop, the
+                // king's second one too: fast, then settling), then sways ±25° so its thickness shows.
                 var cam = ViewCamera;
-                go.transform.SetPositionAndRotation(at, cam != null ? cam.transform.rotation : Quaternion.identity);
-                go.transform.localScale = Vector3.one * (MarkHeight * 2f * IconHalf * Mathf.Max(0.001f, s));
+                Vector3 look = cam != null ? Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up) : Vector3.forward;
+                if (look.sqrMagnitude < 1e-6f) look = Vector3.forward;
+                float spin = 360f * (1f - Kit.EaseOut(Mathf.Min(1f, a / 14f)));
+                float sway = 25f * Mathf.Sin(age * 2.8f) * Mathf.Min(1f, a / 14f);
+                go.transform.SetPositionAndRotation(at, Quaternion.LookRotation(look, Vector3.up) * Quaternion.Euler(0f, spin + sway, 0f));
+                go.transform.localScale = Vector3.one * (MarkHeight * Mathf.Max(0.001f, s));
                 block.SetTexture("_MainTex", tex);
                 block.SetColor("_Fill", pal.main);
                 block.SetColor("_Lines", pal.light);
                 block.SetColor("_InkColor", pal.ink);
-                block.SetColor("_Rim", Kit.SelfFill);
                 block.SetFloat("_Spread", IconSpread);
-                block.SetFloat("_InkWidth", 0.05f);
-                block.SetFloat("_RimWidth", 0f);   // no ground behind it: only the piece's shape (승규 님: 사진은 참고만)
+                block.SetFloat("_InkWidth", IconInk);
                 block.SetFloat("_Flash", a < 2f ? 1f : 0f);
-                block.SetFloat("_Alpha", 1f);
                 r.SetPropertyBlock(block);
                 r.enabled = s > 0.01f;
                 return true;
@@ -222,6 +300,8 @@ namespace ChessFight.RagdollLab
         void DestroyIcons()
         {
             foreach (var t in iconTextures.Values) if (t != null) Destroy(t);
+            foreach (var m in iconMeshes.Values) if (m != null) Destroy(m);
+            iconMeshes.Clear();
             iconTextures.Clear();
             if (iconMat != null) Destroy(iconMat);
         }
