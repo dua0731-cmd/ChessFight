@@ -245,6 +245,7 @@ namespace ChessFight.RagdollLab
 
         void Clear()
         {
+            if (Pawn != null) Pawn.StopDash();
             PassThrough(false);
             Stage = SfStage.None;
             StageTime = 0f;
@@ -437,16 +438,13 @@ namespace ChessFight.RagdollLab
                 case SfStage.Windup:
                     if (StageTime >= S.queenWindup)
                     {
-                        // She goes herself: a flat dash down her line (a low skim, she lands at its end), cutting every
-                        // enemy her sword's tip reaches on the way, nearest first.
+                        // She goes herself: a dash on her feet down her line (thrown and landing at that speed she fell
+                        // over), cutting every enemy her sword's tip reaches on the way, nearest first.
                         SetStage(SfStage.Active, "돌진");
                         DashStart = Pawn.Hips.position;
                         DashProgress = 0f;
-                        float t = S.queenDashTime, g = -Physics.gravity.y;
-                        // Measured (probe "queen"): the standing body adds a little of its own to the throw.
-                        Vector3 v = Dir * (Reach / t * 0.9f) + Vector3.up * (0.5f * g * t);
                         PassThrough(true);
-                        Pawn.Launch(v);
+                        Pawn.BeginDash(Dir, S.queenDashSpeed);
                         Raise(SfFxKind.QueenThrust, null, Origin, Dir, Reach);
                         Say($"{Pawn.DisplayName}: 꼬치 베기 돌진 {Reach:0.0} m");
                     }
@@ -466,10 +464,12 @@ namespace ChessFight.RagdollLab
                         int n = hitSet.Count;
                         Hit(other, dir, S.queenPush[Mathf.Min(n, S.queenPush.Length - 1)], "꼬치 베기", SfFxKind.QueenHit, n);
                     }
-                    bool down = StageTime > 0.08f && Pawn.Grounded;
-                    if ((StageTime >= S.queenDashTime && down) || StageTime >= S.queenDashTime + 0.3f)
+                    // She plants her feet where the line ends (short of an edge); a wall or a fall ends it sooner. The
+                    // pieces she passed stay passable until her recovery is over (they are flying off by then).
+                    float brake = S.queenDashSpeed * Time.fixedDeltaTime * 1.5f;
+                    if (DashProgress >= Reach - brake || !Pawn.OuterDashing || StageTime >= Reach / Mathf.Max(1f, S.queenDashSpeed) + 0.25f)
                     {
-                        PassThrough(false);
+                        Pawn.StopDash(0.15f);
                         Raise(SfFxKind.QueenStop, null, Floor(Pawn.Hips.position), Dir, DashProgress);
                         Say($"{Pawn.DisplayName}: 돌진 끝 {DashProgress:0.0} m");
                         SetStage(SfStage.Recovery, "후딜");

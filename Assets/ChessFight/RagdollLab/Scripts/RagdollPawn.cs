@@ -637,6 +637,7 @@ namespace ChessFight.RagdollLab
             Struggle(p, dt);
             UpdateAbilities(p, dt);
             UpdateSkills(dt);   // Pawn Rush skills only
+            UpdateOuterDash(dt);   // a dash another mode's skill drives (the Sword Fight queen, R99)
             UpdateHook(p, dt);
             Shove(p);
             UpdateStamina(p, dt);

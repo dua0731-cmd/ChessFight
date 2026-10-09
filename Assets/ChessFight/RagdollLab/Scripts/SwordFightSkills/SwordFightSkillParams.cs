@@ -36,8 +36,8 @@ namespace ChessFight.RagdollLab
         public float queenLength = 6f;
         public float queenWidth = 1.2f;
         public float queenWindup = 0.4f;
-        [Tooltip("줄을 따라 돌진하는 시간 (가장자리·벽 앞에서 멈춤)")]
-        public float queenDashTime = 0.24f;
+        [Tooltip("줄을 따라 발로 달리는 돌진 속도 m/s (줄 끝이나 가장자리·벽 앞에서 멈춤)")]
+        public float queenDashSpeed = 15f;
         [Tooltip("돌진이 가장자리 앞 이만큼에서 멈춤")]
         public float queenEdgeMargin = 0.8f;
         [Tooltip("퀸 몸보다 이만큼 앞에 있는 적이 베임 (칼끝)")]
