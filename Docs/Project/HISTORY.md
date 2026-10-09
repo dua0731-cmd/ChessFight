@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R96 | 문서: Network/SKILLS_ONLINE(기물 스킬 온라인 조건·시험 계획, 제안), Network README·HANDOFF 문서 트리와 안내 표, Skills/DESIGN §10·PLAN_V0.1_STATUS에서 연결, REQUIREMENTS R96 |
+| (이 커밋) | 10-10 | R96 | 문서: SKILLS_ONLINE §0에 "확인할 것·정할 것" 한눈에 표, 결정 D-S8(어디서 먼저)·D-S9(어느 지연까지 정상) |
+| `6018d68` | 10-10 | R96 | 문서: Network/SKILLS_ONLINE(기물 스킬 온라인 조건·시험 계획, 제안), Network README·HANDOFF 문서 트리와 안내 표, Skills/DESIGN §10·PLAN_V0.1_STATUS에서 연결, REQUIREMENTS R96 |
 | `823e2c4` | 10-10 | R95 | 문서: Skills/QUEEN_HILL §R95, REQUIREMENTS R95, VALIDATION R95 표, HANDOFF, HISTORY |
 | `a96bd11` | 10-10 | R95 | 녹화: 탑 위 퀸 장면을 동쪽에서(아래층 위로 뜬 경고 칸이 보이게), 같은 층 적을 줄 옆으로 |
 | `7011440` | 10-10 | R95 | 씬에 저장된 수치를 새 값으로(나이트 머리 조준 1.05 m, 비숍 2발, 퀸 높이 범위) |

@@ -9,7 +9,7 @@
 | [MOTION.md](MOTION.md) | 이동 동기화, 패킷 형식, 끊김 단계, 핑, F8 지연 시뮬레이터 |
 | [BOTS.md](BOTS.md) | AI 봇, 공개 매치 규칙 |
 | [PLAN_V0.1_STATUS.md](PLAN_V0.1_STATUS.md) | 승규 기획안 v0.1 항목별 상태, 승규 다음 작업 |
-| [SKILLS_ONLINE.md](SKILLS_ONLINE.md) | 기물 스킬을 온라인으로: 지금 막힌 곳, 지연 계산, 합격 기준, 시험 환경 E0~E5, 결정 D-S1~D-S7 (R96 제안) |
+| [SKILLS_ONLINE.md](SKILLS_ONLINE.md) | 기물 스킬을 온라인으로: 지금 막힌 곳, 지연 계산, 합격 기준, 시험 환경 E0~E5, 결정 D-S1~D-S9, 확인할 것·정할 것 한눈에 (R96 제안) |
 | [VALIDATION.md](VALIDATION.md) | 실제 확인 기록과 Unity 확인 목록 |
 
 ## 1. 한눈에
