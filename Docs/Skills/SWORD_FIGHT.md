@@ -1,12 +1,37 @@
-# 소드 파이트 기물 스킬 — 시험 씬 (R91 · R99 · R102 · R103)
+# 소드 파이트 기물 스킬 — 시험 씬 (R91 · R99 · R102 · R103 · 효과음 R106)
 
-2026-10-09 시작. 승규 님 요청: "레그돌 테스트 씬 말고 **지금 소드 파이트에 있는 씬**에서 테스트, **A 디자인**으로". 스킬 내용은 기획서 8장 「기물 난투와 스킬 6개」를 **저장소의 소드 파이트 규칙**(모두 칼을 듦 · 장외 1점 · 체력 없음 · 폰은 스킬 없음) 위에서 본 것이고, 수치는 프리비즈 영상(`Tools/Previz/SwordFightSkills`, 10-08)과 같은 **시험 시작값**이다. 이펙트는 세 모드 공통으로 고른 **A 「잉크 테두리 장난감 체스」**(공용 부품 `SkillInkKit`, R90). 소리 없음.
+2026-10-09 시작. 승규 님 요청: "레그돌 테스트 씬 말고 **지금 소드 파이트에 있는 씬**에서 테스트, **A 디자인**으로". 스킬 내용은 기획서 8장 「기물 난투와 스킬 6개」를 **저장소의 소드 파이트 규칙**(모두 칼을 듦 · 장외 1점 · 체력 없음 · 폰은 스킬 없음) 위에서 본 것이고, 수치는 프리비즈 영상(`Tools/Previz/SwordFightSkills`, 10-08)과 같은 **시험 시작값**이다. 이펙트는 세 모드 공통으로 고른 **A 「잉크 테두리 장난감 체스」**(공용 부품 `SkillInkKit`, R90). 소리는 R106에서 F 스킬에 넣음.
 
 - **시험 씬** `Assets/Scenes/SkillTest/SwordFight_SkillTest/SwordFight_SkillTest.unity` = 경기 씬 `SwordFight.unity`를 복사하고 경기 오브젝트(`Sword Fight · skill test`)에 `SwordFightSkillBed`를 붙인 것. 메뉴 **ChessFight → Sword Fight → Open Skill Test** (없으면 이 메뉴가 만든다). 칼·14 m 발판·장외 점수·부활·더미는 경기 그대로다. 원본 `SwordFight.unity`는 그대로.
 - 폴더 `SkillTest/SwordFight` → `SkillTest/SwordFight_SkillTest`(같은 GUID, 승규 님이 10-08 Unity에서 바꾼 이름을 그대로 올림).
 - **스킬은 이 씬에서만 켜진다.** 시험장이 모든 전투원에 `SwordFightSkills`를 붙일 때만 있다. 경기 코드에는 작은 연결만 더했다: `SwordFightPawn.Skills`(입력 거르기, 킹의 받아내기, 스킬 중 칼 자세), `Scripted`(시험장이 더미 칼질을 잠깐 직접 넣을 때 경기가 더미 입력을 비우지 않음). 스킬이 없으면 모두 그대로다.
 - 네트워크 패킷에는 스킬이 없어 **오프라인만**.
 - **기물마다 스킬이 두 개**다: F 스킬(R91, 아래 표) + **E 가장자리 스킬**(R103, 바로 아래). 둘은 동시에 돌지 않는다.
+
+## R106 효과음 (2026-10-10, 승규 님)
+
+승규 님: "이제 new 스킬 말고 **기존에 있던 스킬 sfx** 입혀 볼 건데, **폰 러쉬·퀸 오브 더 힐 sfx에 있는 느낌으로** 입혀줘."
+
+- **F 스킬(R91)만**. 가장자리 스킬(E, R103)은 아직 소리 없음.
+- **느낌**: 폰 러쉬 효과음은 아직 고르기 전이고(R101 시안, 같은 날 R107 2차 시안 「기물마다 자기 소리, 순간을 이어 감」 — 그 A 벌이 퀸 오브 더 힐에서 고른 방향), 승규 님이 고른 **퀸 오브 더 힐 방향(R104)을 기물마다 그대로** 따름 — 같은 기물은 모드가 달라도 같은 소리 느낌. **킹 D 묵직한 타격 · 퀸 C 만화 효과음 · 룩 C 만화 효과음 · 비숍 D 묵직한 타격 · 나이트 A 아케이드 팡**(폰은 스킬 없음).
+- 순간이 같은 것은 **퀸 오브 더 힐 소리를 그대로** 씀(4개), 나머지 15개는 같은 방향으로 ElevenLabs Sound Effects v2에서 새로 만듦(Flows "ChessFight Sword Fight skill SFX R106", prompt_influence 0.55, 약 230크레딧). 비숍 잡기는 첫 결과가 거의 무음(−40 dB)이라 다시 만듦.
+- **동전 같은 울림 없음**: 승규 님이 R104에서 "맞을 때 동전 소리 나는 거 빼줘", R107에서 "동전 소리 안 돼"라고 해서, 폰 러쉬 채팅의 울림 검사(`Tools/Sfx/PawnRushSkills/coin.py`: 1.8 kHz 위 좁고 오래가는 밝은 음)로 19개를 모두 검사 → 걸린 5개(킹 받아냄 3 kHz 쇳소리 꼬리, 킹 빈틈·끊김 2 kHz 휘슬, 룩 내려침 뽕 3.2 kHz, 퀸 예고 = 퀸 오브 더 힐 `QueenLock`의 6 kHz 챙)를 울림 없는 쪽으로 다시 만들어(두 벌씩 만들어 검사를 통과한 것) 바꿈. 지금 19개 모두 통과.
+
+| 기물 · 방향 | 순간(신호 → 파일) |
+|---|---|
+| 킹 · D 묵직 | `CastKing` 받아내기 자세: 쇠 칼 드는 챙 + 낮은 울림 · `KingParry` 받아냄: 둔한 쇠 부딪힘 + 쿵(꼬리 울림 없음) · `KingCounterHit` 밀려난 적: 묵직한 몸 퍽 · `KingWhiff` 빈틈: 갑옷이 풀리는 둔한 쿵 + 천 스침 |
+| 퀸 · C 만화 | `CastQueen` 예고: 고무줄 끼익 + 올라가는 바람(퀸 오브 더 힐 `QueenLock`은 6 kHz 챙이 울려서 안 씀) · `QueenThrust` 돌진: 휘익 + 챙 · `QueenHit` 맞음 = 퀸 오브 더 힐 `QueenHit`(만화 퍽) · `QueenStop` 멈춤: 끼익 + 뽁 |
+| 룩 · C 만화 | `CastRook` 예고(통로가 갈라짐): 드르륵 감기 + 돌 삐걱 · `RookSlam` 내려침: 만화 쿵 + 돌탑이 두둥둥 솟는 소리 · `RookHit` 맞음: 봉크 + 띠용 · `RookBlocked` 막힘: 돌벽에 퉁 + 띠잉 |
+| 비숍 · D 묵직 | `CastBishop` 예고 = 퀸 오브 더 힐 `BishopRise`(낮게 웅) · `BishopFire` 손이 뻗음: 묵직한 휘익 + 웅 · `BishopPin` 발목 잡음: 쇠 걸쇠 철컥 + 쿵 |
+| 나이트 · A 8비트 | `KnightLeap` 도약 = 퀸 오브 더 힐 `KnightLeap` · `KnightLand` 착지 = 퀸 오브 더 힐 `KnightLand` · `KnightHit` 맞음: 8비트 퍽 + 내려가는 삑 (조준 시작 소리 없음 — 나이트는 도약이 곧 발동) |
+| 공통 | `Interrupted` 넘어져 끊김: 바람 빠지는 푸쉬 + 털썩(작게) |
+
+- 파일 `Assets/ChessFight/RagdollLab/Resources/SwordFightSkillSfx/<이름>.mp3` 19개. 이름이 곧 순간: 발동(`Cast`)만 기물마다 `Cast` + 기물 이름, 나머지는 이펙트 신호(`SfFxKind`) 이름. 파일을 바꾸면 소리가 바뀐다.
+- **재생** `SwordFightSkillSfx`(시험장이 붙임): 퀸 오브 더 힐 `QueenHillSkillSfx`와 같은 방식 — 불러올 때 앞쪽 조용한 부분·끝 무음을 자르고 **가장 큰 0.3초를 −15 dB로** 맞춤(최대 8배), 순간마다 상대 크기(`Level` 표) × 설정 창 효과음 크기, 2D로 화면 왼쪽·오른쪽에 따라 조금 기울임, 같은 장면에 같은 순간 여러 번이면 한 번. 더미가 쓴 스킬도 소리가 남. 히트스톱·슬로 중에도 소리는 제 속도.
+- 왼쪽 창 **소리 켜짐/꺼짐**(이펙트·멈춤·슬로·흔들기 옆).
+- 녹화(`SwordFightSkillFilm`)에 **소리 트랙**: 인코더가 소리가 날 때마다 그 장면부터 44.1 kHz 스테레오로 섞음(느린 영상에서도 소리는 제 속도). `Run(…, only: "f")` = F 스킬 장면만.
+- 자동 시험 보고 끝에 "소리 (19개 불러옴): CastKing, KingParry …" — 그 시험에서 난 소리.
+- **AI는 소리를 들어 보지 못했다**: 파일 길이·크기·주파수와, 스킬마다 제 순간에 소리가 나는지(자동 시험의 수)만 확인했다.
 
 ## R103 가장자리 스킬 (2026-10-10, 승규 님)
 
@@ -103,6 +128,8 @@
 R102: `SwordFightSkillFx.Icons.cs`(머리 위 표시: 아이콘 윤곽 배열 → 거리장 텍스처 → 카메라를 보는 판, 셰이더 `Resources/SwordFightSkillFx/SkillIcon.shader`), `SwordFightSkillFx.Statues.cs`(룩 돌탑: 선반으로 깎은 받침·몸통 + 기물 머리, 무작위 순서), 생성기 `Tools/Generators/trace_skill_icons.py`. 자동 시험 king-mid, bishop-mid, bishop-miss.
 
 R103(가장자리 스킬): `SwordFightSkills.Edge.cs`(조건·단계·판정, `SwordFightSkills`는 partial), `SwordFightEdgeParams.cs`(수치, 시험장 Inspector `edge`), `SwordFightEdgeFloor.cs`(발판 가장자리 찾기·가장 가까운 가장자리·룩 덩어리 무너뜨리고 되살리기), `SwordFightSkillFx.Edge.cs`(연출·슬로·화면 당김/돌기·화면 베기 자국), 공용 `RagdollPawn.OuterFlight.cs`(`Fly`·`EndFlight`·`StandUp`·`Face`, `OuterDash`에서 부름). `SwordFightPawn`: 팔 방향(`Skills.Arm`)과 박힌 칼 자리(`Skills.SwordAt`). 자동 시험·녹화 edge-king, edge-king-cut, edge-queen, edge-queen-step, edge-queen-jump, edge-rook, edge-bishop, edge-bishop-hit, edge-knight, edge-knight-back.
+
+R106(효과음): `SwordFightSkillSfx.cs`(`Resources/SwordFightSkillSfx/<이름>.mp3`를 불러 앞뒤 무음 자르기·크기 맞춤·재생, `Played` 이벤트로 녹화가 섞음), 녹화 인코더(`Editor/SwordFightSkillTestMenu.cs`의 `SwordFightSkillFilmEncoder`)에 소리 트랙.
 
 ## 확인 (AI, 10-09, Unity 6000.3 Play)
 

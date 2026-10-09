@@ -7,10 +7,14 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R107 | 문서·도구: 폰 러쉬 효과음 2차 시안(기물별 소리, 동전 울림 검사) — Skills/SOUND §2차, Tools/Sfx/PawnRushSkills(spec_v2·coin·page_template_v2, build/page/fetch를 SPEC으로 고름), REQUIREMENTS R107, HANDOFF, HISTORY. Unity 손대지 않음 |
+| (이 커밋) | 10-10 | R106 | 문서: Skills/SWORD_FIGHT §R106 효과음·코드, VALIDATION R106 표, REQUIREMENTS R106, HANDOFF, HISTORY |
+| `d685910` | 10-10 | R106 | 동전 같은 울림 없애기: 폰 러쉬 채팅의 울림 검사(`coin.py`)에 걸린 5개(킹 받아냄·빈틈, 룩 내려침, 끊김, 퀸 예고 = 퀸 오브 더 힐 `QueenLock`)를 다시 만들어 바꿈 |
+| `206a807` | 10-10 | R107 | 문서·도구: 폰 러쉬 효과음 2차 시안(기물별 소리, 동전 울림 검사) — Skills/SOUND §2차, Tools/Sfx/PawnRushSkills(spec_v2·coin·page_template_v2, build/page/fetch를 SPEC으로 고름), REQUIREMENTS R107, HANDOFF, HISTORY. Unity 손대지 않음 |
 | `a31c4b0` | 10-10 | R105 | 문서: Skills/QUEEN_HILL §R105, VALIDATION R105 표, REQUIREMENTS R105, HANDOFF, HISTORY |
+| `36a4342` | 10-10 | R106 | 자동 시험 보고에 그 시험에서 난 소리, 녹화 묶음 `"f"` = F 스킬 장면만 |
 | `2f6125c` | 10-10 | R105 | 녹화 파일 한국어 되살림(직전 편집이 PowerShell로 다른 인코딩에 저장해 컴파일이 깨졌음) |
 | `f6b7f9e` | 10-10 | R105 | 녹화 장면 묶음 r105(비숍 양탄자·취소·2발째 기다림) |
+| `c268084` | 10-10 | R106 | 소드 파이트 F 스킬 효과음: 퀸 오브 더 힐에서 고른 방향을 기물마다(킹·비숍 묵직, 퀸·룩 만화, 나이트 8비트), 순간마다 하나 `Resources/SwordFightSkillSfx/*.mp3` 19개(새 14 + 퀸 오브 더 힐 5), `SwordFightSkillSfx`(앞뒤 무음 자르기·크기 맞춤·재생), 시험장 소리 켜기/끄기, 녹화에 소리 트랙 |
 | `f925d94` | 10-10 | R105 | 떠 있는 비숍은 손으로 준 이동(`givenMove`, `RagdollPawn.cs` `SetInput`)으로 미끄러짐(스킬이 물리 단계마다 이동 입력을 지워서) |
 | `cb87532` | 10-10 | R105 | 자동 시험 bishop-wait에 양탄자 속도·받은 이동 표시 |
 | `9072f20` | 10-10 | R105 | 떠 있는 동안 고정점(anchor)을 몸보다 한 걸음 앞에 직접 옮김 |
