@@ -698,6 +698,7 @@ MonoBehaviour:
     kingRecovery: 0.2
     kingCooldown: 9
     queenWindup: 0.45
+    queenSwing: 0.12
     queenLength: 6
     queenWidth: 1.2
     queenTravel: 0.2
@@ -728,10 +729,11 @@ MonoBehaviour:
     bishopCooldown: 9
     knightRange: 6
     knightMaxRise: 1.05
-    knightArc: 1
+    knightArc: 1.6
     knightGravity: 1.6
     knightWindup: 0.12
     knightRadius: 1.3
+    knightSnap: 1.3
     knightFlatten: 0.7
     knightSlide: 2.6
     knightSlideTime: 0.35
@@ -747,6 +749,7 @@ MonoBehaviour:
   skillKey: 102
   previousPieceKey: 122
   nextPieceKey: 120
+  helpers: 1
 --- !u!1 &211662885
 GameObject:
   m_ObjectHideFlags: 0

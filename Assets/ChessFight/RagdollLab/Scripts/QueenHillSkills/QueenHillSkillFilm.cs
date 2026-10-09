@@ -53,6 +53,26 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(-0.4f, 2.4f, -9.4f), look = new Vector3(0.6f, 0.3f, -5f), fov = 40f },
         };
 
+        /// <summary>R93 (승규 님's notes on R89): only what changed.</summary>
+        static readonly Shot[] ShotsR93 =
+        {
+            new Shot { run = "king-help", title = "1. 킹 · 근접 호위 — 시험 도우미 · 몸 윤곽선", note = "F → 아군 폰 3명이 앞에, 적 퀸이 5 m 앞에 섬 · 호위 받은 아군은 몸에 초록 윤곽선 → 검격에 아군은 버티고 킹만 넘어짐",
+                eye = new Vector3(2.6f, 2.6f, -6.4f), look = new Vector3(3.6f, 0.4f, -2.5f), fov = 48f },
+            new Shot { run = "queen", title = "2. 퀸 · 팔방 검격 — 아래에서 위로 올려 베기", note = "칼을 오른쪽 아래 뒤로 내려 잡고(바닥을 뚫지 않음) → 칼이 앞을 지날 때 검기 → 왼쪽 위로",
+                eye = new Vector3(2.4f, 1.9f, -0.6f), look = new Vector3(1.6f, 0.6f, 3.0f), fov = 52f },
+            new Shot { run = "rook-up-bishop", title = "3. 룩 · 캐슬링 교대 — 기물 고유색 리본 (비숍)", note = "F → 시험 도우미가 한 층 위에 아군 1명(기물 무작위) · 룩 주황 반 + 비숍 보라 반, 가운데 그라데이션",
+                eye = new Vector3(0.6f, 2.2f, 1.4f), look = new Vector3(-3.2f, 0.9f, 6.0f), fov = 46f },
+            new Shot { run = "rook-up-queen", title = "3. 룩 · 캐슬링 교대 — 기물 고유색 리본 (퀸)", note = "룩 주황 반 + 퀸 금색 반, 가운데 그라데이션",
+                eye = new Vector3(0.6f, 2.2f, 1.4f), look = new Vector3(-3.2f, 0.9f, 6.0f), fov = 46f },
+            new Shot { run = "rook-up-knight", title = "3. 룩 · 캐슬링 교대 — 기물 고유색 리본 (나이트)", note = "룩 주황 반 + 나이트 하늘색 반, 가운데 그라데이션",
+                eye = new Vector3(0.6f, 2.2f, 1.4f), look = new Vector3(-3.2f, 0.9f, 6.0f), fov = 46f },
+            new Shot { run = "knight", title = "5. 나이트 · 도약 압착 — 더 높게, 머리 위 자동 조준", note = "2층은 너무 높아 회색 → 적 근처를 조준하면 머리 위에 말굽 표식 → 높게 도약해 머리를 밟고 납작",
+                eye = new Vector3(0.6f, 2.4f, 12.6f), look = new Vector3(-3.0f, 1.0f, 7.0f), fov = 48f },
+        };
+
+        /// <summary>Which shots Run films: "r93" (the default, R93's changes) or "r89" (all six skills).</summary>
+        public static string ShotSet = "r93";
+
         LabGame game;
         Camera cam;
         RenderTexture rt;
@@ -153,7 +173,7 @@ namespace ChessFight.RagdollLab
                 Directory.CreateDirectory(stills);
                 Frames = 0;
                 Began?.Invoke(file, w, h, fps);
-                foreach (var shot in Shots)
+                foreach (var shot in ShotSet == "r89" ? Shots : ShotsR93)
                 {
                     if (!string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";
