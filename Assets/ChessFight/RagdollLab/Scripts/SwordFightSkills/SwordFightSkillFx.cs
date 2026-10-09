@@ -32,7 +32,7 @@ namespace ChessFight.RagdollLab
     ///
     /// R102 (승규 님 10-10): every cast pops the piece's mark up over its head (the five icons 승규 님 sent, in the piece's
     /// colour: <c>SwordFightSkillFx.Icons.cs</c>; the king's pops again when his guard takes a cut, instead of R99's
-    /// crown); the rook's towers are the team's piece characters without their feet, in a new random order every slam
+    /// crown); the rook's towers are stone in the shapes of the pieces (pawn, rook, knight, bishop), in a new random order every slam
     /// (<c>SwordFightSkillFx.Statues.cs</c>); the bishop's two hands wait by its shoulders through the windup, then
     /// shoot out on the diagonals with violet arms stretching behind them and close round the ankles of every piece on
     /// the point (they miss onto the floor and come back if nobody is there), the arms coming away once they hold.
@@ -769,7 +769,7 @@ namespace ChessFight.RagdollLab
             });
         }
 
-        /// <summary>The slam: the floor bursts round him, then a piece of the photo comes up out of each square as the
+        /// <summary>The slam: the floor bursts round him, then a stone tower in a piece's shape comes up out of each square as the
         /// wave reaches it, in a new random order every slam (<see cref="Statue"/>).</summary>
         void RookSlam(SfFxEvent e)
         {
