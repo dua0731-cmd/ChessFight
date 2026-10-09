@@ -552,9 +552,11 @@ namespace ChessFight.RagdollLab
             RagdollPawn.QueenHillFx += Count;
             try
             {
+                for (float w = 0f; (bishop.SkillStage != SkillStage.None || bishop.SkillCooldown > 0f) && w < 12f; w += Time.deltaTime) yield return null;
                 Tap(bishop, "F (떠오름)");
                 float up = 0f;
                 for (; up < 0.5f; up += Time.deltaTime) { AimAt(bishop, enemy.FeetPoint); yield return null; }
+                if (bishop.SkillStage != SkillStage.Windup) Add($"F: 안 떠오름 ({bishop.SkillDetail})");
                 Vector3 from = bishop.Hips.position;
                 Of(bishop).move = Vector3.forward;
                 Say("W (천천히 이동)");
