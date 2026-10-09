@@ -36,6 +36,7 @@ namespace ChessFight.RagdollLab
         public SwordFightGame Game { get; private set; }
         public SwordFightPawn Local => Game != null ? Game.Local : null;
         public SwordFightSkillFx FxLayer { get; private set; }
+        public SwordFightSkillSfx Sfx { get; private set; }
         public SwordFightEdgeFloor Floor { get; private set; }
         /// <summary>The probe or the film drives the local fighter: the bed does not read the mouse.</summary>
         public static bool Scripted { get; set; }
@@ -61,6 +62,8 @@ namespace ChessFight.RagdollLab
             SwordFightSkills.Log += OnLog;
             FxLayer = GetComponent<SwordFightSkillFx>();
             if (FxLayer == null) FxLayer = gameObject.AddComponent<SwordFightSkillFx>();
+            Sfx = GetComponent<SwordFightSkillSfx>();
+            if (Sfx == null) Sfx = gameObject.AddComponent<SwordFightSkillSfx>();
             Floor = GetComponent<SwordFightEdgeFloor>();
             if (Floor == null) Floor = gameObject.AddComponent<SwordFightEdgeFloor>();
         }
@@ -622,6 +625,7 @@ namespace ChessFight.RagdollLab
                 if (GUILayout.Button(FxLayer.hitStop ? "멈춤 켜짐" : "멈춤 꺼짐", FxLayer.hitStop ? selected : button)) FxLayer.hitStop = !FxLayer.hitStop;
                 if (GUILayout.Button(FxLayer.slowMotion ? "슬로 켜짐" : "슬로 꺼짐", FxLayer.slowMotion ? selected : button)) FxLayer.slowMotion = !FxLayer.slowMotion;
                 if (GUILayout.Button(FxLayer.shake ? "흔들기 켜짐" : "흔들기 꺼짐", FxLayer.shake ? selected : button)) FxLayer.shake = !FxLayer.shake;
+                if (Sfx != null && GUILayout.Button(Sfx.sound ? "소리 켜짐" : "소리 꺼짐", Sfx.sound ? selected : button)) Sfx.sound = !Sfx.sound;
                 GUILayout.EndHorizontal();
             }
             GUILayout.BeginHorizontal();
