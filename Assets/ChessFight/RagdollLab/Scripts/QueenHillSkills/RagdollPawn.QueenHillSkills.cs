@@ -94,8 +94,9 @@ namespace ChessFight.RagdollLab
         // the fall off its ledge.
         Vector3 leapSpot, flattenSlide;
         float flattenWatch, flattenFloor, flattenSlideLeft;
-        RagdollPawn flattenBy, leapTarget, flyHome;
+        RagdollPawn flattenBy, leapTarget, flyHome, stompedOne;
         bool knightLanded;
+        float stompedLeft;
 
         public float WardLeft => Mathf.Max(0f, wardLeft);
         public float WardTotal => wardTotal;
@@ -214,6 +215,17 @@ namespace ChessFight.RagdollLab
             {
                 partnerApart -= dt;
                 if (partnerApart <= 0f) IgnorePartner(apartFrom, false);
+            }
+            if (stompedOne != null)
+            {
+                // The piece the knight came down on: the two collide again once they are apart (together, the solver
+                // threw the squashed one into the air), or after a while whatever happens.
+                stompedLeft -= dt;
+                if (stompedLeft <= 0f || Flat(stompedOne.bodies[0].position - bodies[0].position).magnitude > 0.62f)
+                {
+                    IgnorePartner(stompedOne, false);
+                    stompedOne = null;
+                }
             }
             // A castling request to this piece: its own skill key answers yes (a test dummy answers by itself).
             if (castleAsker != null) press = AnswerCastle(s, press);
@@ -1215,6 +1227,20 @@ namespace ChessFight.RagdollLab
             return best;
         }
 
+        /// <summary>The first way <paramref name="p"/> can slide a metre along the floor without hitting a wall: the given
+        /// way, then 45° either side of it, and so on round (other pieces do not count).</summary>
+        Vector3 OpenWay(RagdollPawn p, Vector3 first)
+        {
+            if (first.sqrMagnitude < 1e-4f) first = Vector3.forward;
+            Vector3 from = p.bodies[0].position;
+            foreach (float a in new[] { 0f, 45f, -45f, 90f, -90f, 135f, -135f, 180f })
+            {
+                Vector3 d = Quaternion.Euler(0f, a, 0f) * first;
+                if (!BlockedBetween(from, d * 1.1f, p)) return d;
+            }
+            return first;
+        }
+
         /// <summary>The top of a piece's head (its colliders' highest point; a little over the head body otherwise).</summary>
         static float HeadTop(RagdollPawn p)
         {
@@ -1247,17 +1273,21 @@ namespace ChessFight.RagdollLab
                     other.Stagger(0.3f);
                     continue;
                 }
+                float slide = s.knightSlide;
                 if (stomped)
                 {
-                    // Squashed under its feet: the knight goes down through it to the floor as it is pressed flat and
-                    // squirts out (bodies apart again a moment later).
+                    // Squashed under its feet: it squirts out the way the knight was going if that is open (else the
+                    // nearest open way), a little faster, and the knight goes down through it to the floor; the two
+                    // collide again once they are apart.
+                    out_ = OpenWay(other, Flat(facing).normalized);
+                    slide *= 1.25f;
                     IgnorePartner(other, true);
-                    apartFrom = other;
-                    partnerApart = 0.45f;
+                    stompedOne = other;
+                    stompedLeft = 2.5f;
                 }
                 n++;
                 // Slid out of the circle while flat: on a ledge's edge that is over it (B: flattened up high, it falls).
-                other.flattenSlide = out_ * s.knightSlide;
+                other.flattenSlide = out_ * slide;
                 other.flattenSlideLeft = s.knightSlideTime;
                 other.flattenWatch = s.knightFlatten + 0.4f;
                 other.flattenFloor = other.FeetPoint.y;

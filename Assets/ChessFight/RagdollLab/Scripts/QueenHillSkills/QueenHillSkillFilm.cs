@@ -57,9 +57,9 @@ namespace ChessFight.RagdollLab
         static readonly Shot[] ShotsR93 =
         {
             new Shot { run = "king-help", title = "1. 킹 · 근접 호위 — 시험 도우미 · 몸 윤곽선", note = "F → 아군 폰 3명이 앞에, 적 퀸이 5 m 앞에 섬 · 호위 받은 아군은 몸에 초록 윤곽선 → 검격에 아군은 버티고 킹만 넘어짐",
-                eye = new Vector3(2.6f, 2.6f, -6.4f), look = new Vector3(3.6f, 0.4f, -2.5f), fov = 48f },
+                eye = new Vector3(2.0f, 2.8f, -7.0f), look = new Vector3(3.2f, 0.4f, -2.5f), fov = 50f },
             new Shot { run = "queen", title = "2. 퀸 · 팔방 검격 — 아래에서 위로 올려 베기", note = "칼을 오른쪽 아래 뒤로 내려 잡고(바닥을 뚫지 않음) → 칼이 앞을 지날 때 검기 → 왼쪽 위로",
-                eye = new Vector3(2.4f, 1.9f, -0.6f), look = new Vector3(1.6f, 0.6f, 3.0f), fov = 52f },
+                eye = new Vector3(0.6f, 1.5f, -0.2f), look = new Vector3(1.3f, 0.5f, 3.0f), fov = 56f },
             new Shot { run = "rook-up-bishop", title = "3. 룩 · 캐슬링 교대 — 기물 고유색 리본 (비숍)", note = "F → 시험 도우미가 한 층 위에 아군 1명(기물 무작위) · 룩 주황 반 + 비숍 보라 반, 가운데 그라데이션",
                 eye = new Vector3(0.6f, 2.2f, 1.4f), look = new Vector3(-3.2f, 0.9f, 6.0f), fov = 46f },
             new Shot { run = "rook-up-queen", title = "3. 룩 · 캐슬링 교대 — 기물 고유색 리본 (퀸)", note = "룩 주황 반 + 퀸 금색 반, 가운데 그라데이션",
