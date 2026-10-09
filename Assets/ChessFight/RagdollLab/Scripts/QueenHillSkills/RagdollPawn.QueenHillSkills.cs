@@ -92,6 +92,7 @@ namespace ChessFight.RagdollLab
         float castleAskAge, castleWait;
         // Bishop
         float hoverHipY, hoverLeft, hoverTotal, hoverLinger;
+        Vector3 hoverMove;
         Vector3 shellFrom, shellTo, shotYaw = Vector3.forward;
         float shellT, shellTime;
         bool shellOut, shellLanded;
@@ -227,6 +228,8 @@ namespace ChessFight.RagdollLab
                           || skillStage == SkillStage.Recovery
                           || skillStage == SkillStage.Windup && (piece == PieceKind.King || piece == PieceKind.Pawn
                                                                  || piece == PieceKind.Bishop || aimLocked);
+            // R105: the hovering bishop does not walk, but its move keys slide the hover (Hover).
+            hoverMove = piece == PieceKind.Bishop && skillStage == SkillStage.Windup ? input.move : Vector3.zero;
             if (!rooted) return;
             input.move = Vector3.zero;
             input.jump = false;
@@ -1037,7 +1040,7 @@ namespace ChessFight.RagdollLab
             float y = bodies[0].position.y;
             float bob = stageTime > s.bishopRise ? Mathf.Sin((stageTime - s.bishopRise) * Mathf.PI * 3f) * 0.04f : 0f;
             float wantUp = Mathf.Clamp((hoverHipY + bob - y) * 7f, -2.5f, 4.5f);
-            Vector3 drift = stageTime > s.bishopRise ? Vector3.ClampMagnitude(Flat(input.move), 1f) * s.bishopDrift : Vector3.zero;
+            Vector3 drift = stageTime > s.bishopRise ? Vector3.ClampMagnitude(Flat(hoverMove), 1f) * s.bishopDrift : Vector3.zero;
             // Rising: stop dead as before; then ease toward the drift (still air: it carries on a moment when let go).
             float ease = stageTime > s.bishopRise ? Mathf.Clamp01(dt * 3f / Mathf.Max(0.05f, s.bishopDriftEase)) : Mathf.Clamp01(10f * dt);
             Vector3 flat = new Vector3(v.x, 0f, v.z);
