@@ -116,7 +116,7 @@ namespace ChessFight.RagdollLab
             new Shot { run = "queen-slope-up", title = "2. 퀸 · 팔방 검격 — 경사로 아래에서 위로", note = "경고 칸이 경사로에 붙어 깔림 → 검기가 경사를 타고 올라가 칸 위 적 둘 다 넘어짐",
                 eye = new Vector3(-11.8f, 2.6f, -11.8f), look = new Vector3(-19.5f, 0.8f, -9f), fov = 50f },
             new Shot { run = "queen-slope-down", title = "2. 퀸 · 팔방 검격 — 경사로 위에서 아래로", note = "경고 칸이 경사로에 붙어 깔림 → 검기가 경사를 타고 내려가 칸 위 적 둘 다 넘어짐",
-                eye = new Vector3(-26.5f, 4.4f, -12.2f), look = new Vector3(-18.5f, 0.4f, -9f), fov = 50f },
+                eye = new Vector3(-16.0f, 2.8f, -15.0f), look = new Vector3(-20.0f, 0.7f, -9f), fov = 50f },
             new Shot { run = "queen-high", title = "2. 퀸 · 팔방 검격 — 탑 위에서 아래로", note = "칸이 아래층·바닥에 깔림 → 검기가 칸을 따라 내려가 같은 층·아래층·바닥 적 모두 넘어짐",
                 eye = new Vector3(1.5f, 3.6f, 2.5f), look = new Vector3(-5.0f, 1.4f, 6.5f), fov = 50f },
             new Shot { run = "queen-low", title = "2. 퀸 · 팔방 검격 — 탑 아래에서 위로", note = "검기가 한 층(0.9 m) 턱을 타고 올라감 → 앞의 적도, 턱 위 1층 적도 넘어짐",
