@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/queen-of-the-hill-skills-f40ef3`) | 10-10 | R95 | 문서: Skills/QUEEN_HILL §R95, REQUIREMENTS R95, VALIDATION R95 표, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R96 | 문서: Network/SKILLS_ONLINE(기물 스킬 온라인 조건·시험 계획, 제안), Network README·HANDOFF 문서 트리와 안내 표, Skills/DESIGN §10·PLAN_V0.1_STATUS에서 연결, REQUIREMENTS R96 |
+| `823e2c4` | 10-10 | R95 | 문서: Skills/QUEEN_HILL §R95, REQUIREMENTS R95, VALIDATION R95 표, HANDOFF, HISTORY |
 | `a96bd11` | 10-10 | R95 | 녹화: 탑 위 퀸 장면을 동쪽에서(아래층 위로 뜬 경고 칸이 보이게), 같은 층 적을 줄 옆으로 |
 | `7011440` | 10-10 | R95 | 씬에 저장된 수치를 새 값으로(나이트 머리 조준 1.05 m, 비숍 2발, 퀸 높이 범위) |
 | `b6710fc` | 10-10 | R95 | 퀸 경고 칸을 퀸 높이에서 똑바로·검기가 가는 데까지(아래층·위층에 그리던 것), 같은 높이 적만 맞음(`queenDrop`), 비숍 2발(`bishopShots`), 나이트 머리 조준 1.05 m, 자동 시험 `queen-high`·`queen-low`, 녹화 R95 장면 |
