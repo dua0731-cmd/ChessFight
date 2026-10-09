@@ -7,7 +7,11 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R96 | 문서: SKILLS_ONLINE §0에 "확인할 것·정할 것" 한눈에 표, 결정 D-S8(어디서 먼저)·D-S9(어느 지연까지 정상) |
+| (이 커밋) | 10-10 | R97 | 문서: Skills/QUEEN_HILL §R97, VALIDATION R97 표(R95 퀸 두 줄은 R97이 대신함), REQUIREMENTS R97, HANDOFF, HISTORY |
+| `2a9d526` | 10-10 | R97 | 자동 시험 `queen`(돌벽)이 이번에 넘어진 횟수로 셈(앞 시험의 맞은 기록이 남아 벽 너머 적도 맞은 것처럼 보였음) |
+| `c794d09` | 10-10 | R96 | 문서: SKILLS_ONLINE §0에 "확인할 것·정할 것" 한눈에 표, 결정 D-S8(어디서 먼저)·D-S9(어느 지연까지 정상) |
+| `c06bf7b` | 10-10 | R97 | 씬에 `queenClimb` 1.05 저장 |
+| `6fd3892` | 10-10 | R97 | 퀸 검기가 바닥의 경고 칸을 따라감(아래층으로 내려가고 1.05 m까지 턱은 타고 오름, 돌벽에 막힘), 맞는 판정도 그 길 바닥 기준, R95의 "퀸 높이에서 똑바로" 되돌림, 자동 시험 `queen-high`·`queen-low` 새 기대·`queen`은 돌벽 1 m 가까이, 녹화 R97 3장면 |
 | `6018d68` | 10-10 | R96 | 문서: Network/SKILLS_ONLINE(기물 스킬 온라인 조건·시험 계획, 제안), Network README·HANDOFF 문서 트리와 안내 표, Skills/DESIGN §10·PLAN_V0.1_STATUS에서 연결, REQUIREMENTS R96 |
 | `823e2c4` | 10-10 | R95 | 문서: Skills/QUEEN_HILL §R95, REQUIREMENTS R95, VALIDATION R95 표, HANDOFF, HISTORY |
 | `a96bd11` | 10-10 | R95 | 녹화: 탑 위 퀸 장면을 동쪽에서(아래층 위로 뜬 경고 칸이 보이게), 같은 층 적을 줄 옆으로 |
