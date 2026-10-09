@@ -33,9 +33,10 @@ namespace ChessFight.RagdollLab
     /// The Queen of the Hill piece skills (design doc §7, R89: 승규 picked 1.B 2.A 3.B 4.B 5.B 6.B on the previz page).
     /// King "근접 호위": allies close by shrug off knockdowns and strong pushes for 2 s; the king himself does not (B).
     /// Queen "팔방 검격": a long slash down one aimed line, with a windup and a recovery, stopped by walls (A); R93: the
-    /// sword comes up from low behind on the right to high on the left. Rook "캐슬링 교대": swap places with any ally
-    /// close by (B: not only the king), once it agrees; the path and both spots must be clear. Bishop "교차 공중 포격":
-    /// hover up, throw a shot at the aimed spot, an X of diagonals there knocks enemies down and off walls (B). Knight
+    /// sword comes up from low behind on the right to high on the left; R95: the slash flies straight at her height and
+    /// takes only pieces about level with her. Rook "캐슬링 교대": swap places with any ally close by (B: not only the
+    /// king), once it agrees; the path and both spots must be clear. Bishop "교차 공중 포격": hover up, throw a shot at the
+    /// aimed spot, an X of diagonals there knocks enemies down and off walls (B); R95: two shots a hover. Knight
     /// "도약 압착": leap to a chosen spot at most one tier up, enemies in the landing circle are flattened 0.7 s and
     /// pushed out, and fall if that takes them off a ledge (B); R93: a higher arc, and an enemy close to the aimed spot
     /// is caught by it: the knight comes down on its head. Pawn
@@ -80,8 +81,10 @@ namespace ChessFight.RagdollLab
         string qhWhy = "";
         // Queen
         Vector3 slashFrom, slashDir = Vector3.forward, slashStop;
-        float slashReach;
+        float slashReach, slashFloor;
         bool slashBlocked;
+        // Bishop: shots still to throw in this hover (R95: two).
+        int shotsLeft;
         // Rook: the request out, and one come in.
         RagdollPawn castleAsker;
         float castleAskAge, castleWait;
@@ -458,6 +461,7 @@ namespace ChessFight.RagdollLab
         {
             Vector3 chest = bodies[(int)BodyId.Chest].position;
             slashFrom = new Vector3(chest.x, chest.y, chest.z);
+            slashFloor = FeetPoint.y;
             slashReach = s.queenLength;
             slashBlocked = false;
             int n = Physics.SphereCastNonAlloc(chest - slashDir * 0.1f, 0.3f, slashDir, hits, s.queenLength + 0.1f, ~0, QueryTriggerInteraction.Ignore);
@@ -490,7 +494,11 @@ namespace ChessFight.RagdollLab
                 float along = Vector3.Dot(Flat(rel), slashDir);
                 if (along < -0.3f || along > front + 0.25f || along > slashReach + 0.2f) continue;
                 float across = (Flat(rel) - slashDir * along).magnitude;
-                if (across > s.queenWidth * 0.5f + 0.3f || Mathf.Abs(rel.y) > s.queenHeight) continue;
+                if (across > s.queenWidth * 0.5f + 0.3f) continue;
+                // The slash flies straight out at her height (R95, as its squares now show): it takes pieces standing about
+                // level with her (a step lower at most) or jumping over the line, not a tier below that it flies over.
+                float dy = other.FeetPoint.y - slashFloor;
+                if (dy < -s.queenDrop || dy > s.queenHeight) continue;
                 skillHitSet.Add(other);
                 string result = QhHit(other, slashDir * s.queenPush + Vector3.up * s.queenLift, true, "퀸 팔방 검격",
                     QueenHillFxKind.QueenHit, other.bodies[(int)BodyId.Chest].position);
@@ -903,8 +911,9 @@ namespace ChessFight.RagdollLab
                         hoverLeft = hoverTotal = s.bishopHoverTime;
                         hoverLinger = 0f;
                         shellOut = shellLanded = false;
+                        shotsLeft = Mathf.Max(1, s.bishopShots);
                         BishopAimQh(s);
-                        SkillDetail = $"떠오름 (마우스로 조준 · 좌클릭 발사 · {s.bishopHoverTime:0.#}초)";
+                        SkillDetail = $"떠오름 (마우스로 조준 · 좌클릭 발사 {shotsLeft}발 · {s.bishopHoverTime:0.#}초)";
                         QhFx(QueenHillFxKind.BishopRise, null, FeetPoint, Flat(facing), s.bishopHover, 0, Vector3.up * s.bishopHoverTime);
                         Log($"비숍: 떠오름 {s.bishopHover:0.0} m · {s.bishopHoverTime:0.#}초 (더 오를 수 없음)");
                     }
@@ -941,6 +950,14 @@ namespace ChessFight.RagdollLab
                             BishopImpact(s);
                             hoverLinger = 0.3f;
                         }
+                        break;
+                    }
+                    if (shotsLeft > 0 && hoverLeft > 0f)
+                    {
+                        // R95: another shot in this hover: it aims again (the hover's time runs on while it aims).
+                        aimLocked = false;
+                        shellLanded = false;
+                        SkillDetail = $"다시 조준 (좌클릭 발사, {shotsLeft}발 남음 · 우클릭/F 내려옴)";
                         break;
                     }
                     hoverLinger -= dt;
@@ -993,6 +1010,7 @@ namespace ChessFight.RagdollLab
 
         void FireShell(QueenHillSkillParams s)
         {
+            shotsLeft--;
             aimLocked = true;
             shellOut = true;
             shellLanded = false;

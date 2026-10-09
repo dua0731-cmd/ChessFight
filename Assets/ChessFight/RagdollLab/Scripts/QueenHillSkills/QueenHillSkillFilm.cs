@@ -83,8 +83,22 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(0.6f, 2.4f, 12.6f), look = new Vector3(-3.0f, 1.0f, 7.0f), fov = 48f },
         };
 
-        /// <summary>Which shots Run films: "r94" (the default, R94's changes), "r93" or "r89" (all six skills).</summary>
-        public static string ShotSet = "r94";
+        /// <summary>R95 (승규 님's notes on R94): the queen's warning squares on the slash's own line, the bishop's two
+        /// shots, the knight's catch at 1.05 m.</summary>
+        static readonly Shot[] ShotsR95 =
+        {
+            new Shot { run = "queen-high", title = "2. 퀸 · 팔방 검격 — 탑 위에서 (경고 칸 = 실제 검기)", note = "검기는 퀸 높이에서 똑바로 → 경고 칸도 그 높이로 떠서 이어짐 · 같은 층 적만 넘어짐, 아래층·바닥 적 위로는 지나감",
+                eye = new Vector3(-3.0f, 3.4f, 0.8f), look = new Vector3(-5.2f, 1.3f, 6.5f), fov = 55f },
+            new Shot { run = "queen-low", title = "2. 퀸 · 팔방 검격 — 아래에서 벽 쪽으로 (반대 경우)", note = "경고 칸이 검기처럼 벽에서 멈춤(위층에 안 그려짐) · 앞의 적만 넘어짐, 벽 위 1층 적은 그대로",
+                eye = new Vector3(0.4f, 2.0f, -1.6f), look = new Vector3(-2.8f, 0.6f, 3.2f), fov = 52f },
+            new Shot { run = "bishop", title = "4. 비숍 · 교차 공중 포격 — 2발", note = "1발: 벽을 오르던 적 → 떨어지면 다시 조준 → 2발: 1층 적 · 2발 쏘거나 시간이 다 되면 내려옴",
+                eye = new Vector3(-0.8f, 3.0f, -3.8f), look = new Vector3(-1.8f, 1.0f, 3.8f), fov = 50f },
+            new Shot { run = "knight", title = "5. 나이트 · 도약 압착 — 머리 자동 조준 1.05 m", note = "적에서 1.12 m 떨어진 곳은 안 잡힘 → 0.7 m로 옮기면 머리 위 말굽 → 머리를 밟고 납작",
+                eye = new Vector3(0.6f, 2.4f, 12.6f), look = new Vector3(-3.0f, 1.0f, 7.0f), fov = 48f },
+        };
+
+        /// <summary>Which shots Run films: "r95" (the default, R95's changes), "r94", "r93" or "r89" (all six skills).</summary>
+        public static string ShotSet = "r95";
 
         LabGame game;
         Camera cam;
@@ -186,7 +200,7 @@ namespace ChessFight.RagdollLab
                 Directory.CreateDirectory(stills);
                 Frames = 0;
                 Began?.Invoke(file, w, h, fps);
-                foreach (var shot in ShotSet == "r89" ? Shots : ShotSet == "r93" ? ShotsR93 : ShotsR94)
+                foreach (var shot in ShotSet == "r89" ? Shots : ShotSet == "r93" ? ShotsR93 : ShotSet == "r94" ? ShotsR94 : ShotsR95)
                 {
                     if (!string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";

@@ -18,7 +18,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class QueenHillSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "all" };
+        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "queen-high", "queen-low", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>A run is under way (the bed's test helpers stay out of it unless the run asks for them).</summary>
         public static bool Busy => Status.StartsWith("running");
@@ -165,6 +165,8 @@ namespace ChessFight.RagdollLab
                     "king-help" => KingHelper(),
                     "rook-up" => RookUp(rookPartners),
                     "rook-far" => RookFar(),
+                    "queen-high" => QueenHigh(),
+                    "queen-low" => QueenLow(),
                     // "rook-up-bishop" and the like: one swap with that piece.
                     var r when r.StartsWith("rook-up-") && Enum.TryParse(r.Substring(8), true, out PieceKind one) => RookUp(new[] { one }),
                     _ => null,
@@ -376,6 +378,47 @@ namespace ChessFight.RagdollLab
             yield return Wait(0.8f);
         }
 
+        /// <summary>R95: on the hill's second tier, slashing out over the first tier and the floor. The slash flies straight
+        /// at her height: its squares float straight out at that height, and only the enemy on her tier is hit (the one on
+        /// the tier below and the one on the floor are flown over).</summary>
+        IEnumerator QueenHigh()
+        {
+            float east2 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(1), east1 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);
+            yield return Stage(PieceKind.Queen, new Vector3(east2 - 1.8f, QueenHillLayout.TierTop(1), 6.5f), Vector3.right,
+                (PieceKind.Pawn, false, new Vector3(east2 - 0.6f, QueenHillLayout.TierTop(1), 6.5f), Vector3.left),
+                (PieceKind.Pawn, false, new Vector3(east1 - 0.75f, QueenHillLayout.TierTop(0), 6.5f), Vector3.left),
+                (PieceKind.Pawn, false, new Vector3(east1 + 1.4f, 0f, 6.5f), Vector3.left));
+            yield return QueenSlashAt(Vector3.right, new[] { "같은 2층", "아래 1층(0.9 m 아래)", "바닥(1.8 m 아래)" });
+        }
+
+        /// <summary>R95, the other way round: on the floor slashing at the hill's east face: the squares stop at the wall
+        /// like the slash, the enemy in front is hit and the one on the tier behind the wall is not.</summary>
+        IEnumerator QueenLow()
+        {
+            float east1 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);
+            yield return Stage(PieceKind.Queen, new Vector3(east1 + 2.6f, 0f, 3.0f), Vector3.left,
+                (PieceKind.Pawn, false, new Vector3(east1 + 1.4f, 0f, 3.0f), Vector3.right),
+                (PieceKind.Pawn, false, new Vector3(east1 - 1.0f, QueenHillLayout.TierTop(0), 3.0f), Vector3.right));
+            yield return QueenSlashAt(Vector3.left, new[] { "앞 바닥", "벽 위 1층" });
+        }
+
+        IEnumerator QueenSlashAt(Vector3 dir, string[] where)
+        {
+            var q = P1;
+            var downs = new int[where.Length];
+            for (int i = 0; i < where.Length; i++) downs[i] = bed.Dummy(i).Knockdowns;
+            yield return Wait(0.3f);
+            AimFlat(q, dir);
+            Tap(q, "F (조준)");
+            yield return Wait(0.7f);
+            Add($"검격 줄 {q.SlashReach:0.0} m, 벽에 막힘 {(q.SlashBlocked ? "예" : "아니요")}");
+            Click(q, "좌클릭");
+            yield return Wait(1.5f);
+            for (int i = 0; i < where.Length; i++)
+                Add($"{where[i]} 적: {(bed.Dummy(i).Knockdowns > downs[i] ? "맞아 넘어짐" : "안 맞음")}");
+            yield return Wait(0.5f);
+        }
+
         // ---------------------------------------------------------------- 3.B rook: swap with the pawn (any ally)
 
         IEnumerator Rook()
@@ -428,12 +471,24 @@ namespace ChessFight.RagdollLab
                 yield return null;
             }
             Add($"비숍 높이 {bishop.FeetPoint.y:0.0}~{bishop.Hips.position.y - bishop.standHeight:0.0} m, 조준 {(bishop.QhAimValid ? "됨" : bishop.QhAimWhy)}");
-            Click(bishop, "좌클릭 (발사)");
+            Click(bishop, "좌클릭 (1발)");
             Of(climber).grab = true;
-            yield return Wait(1.2f);
-            Add($"맞은 적 폰: {StateOf(climber)}, 벽 {(climber.Climbing ? "여전히 매달림" : "떨어짐")}, 높이 {climber.Hips.position.y:0.0} m");
+            yield return Wait(1.0f);
+            Add($"1발: 맞은 적 폰 {StateOf(climber)}, 벽 {(climber.Climbing ? "여전히 매달림" : "떨어짐")}, 높이 {climber.Hips.position.y:0.0} m");
             Of(climber).grab = false;
-            yield return Wait(1.6f);
+            // R95: two shots a hover: it aims again at the enemy on the first tier.
+            var second = bed.Dummy(1);
+            int down2 = second.Knockdowns;
+            for (float a = 0f; a < 0.5f; a += Time.deltaTime)
+            {
+                AimAt(bishop, second.FeetPoint);
+                yield return null;
+            }
+            Add($"2발 조준: {(bishop.SkillStage == SkillStage.Windup && !bishop.QhAimLocked ? "다시 조준 중" : bishop.SkillDetail)}, 아직 떠 있음 {(bishop.FeetPoint.y > 0.5f || bishop.Hips.position.y > 1f ? "예" : "아니요")}");
+            Click(bishop, "좌클릭 (2발)");
+            yield return Wait(1.1f);
+            Add($"2발: 1층 적 {(second.Knockdowns > down2 ? "맞아 넘어짐" : "안 맞음")}");
+            yield return Wait(1.4f);
             Add($"비숍 착지: {(bishop.SkillStage == SkillStage.None ? "끝" : bishop.SkillDetail)}");
         }
 
@@ -455,8 +510,8 @@ namespace ChessFight.RagdollLab
             yield return Wait(0.15f);
             Add($"2층 조준: {(knight.QhAimValid ? "됨 (틀림)" : "안 됨 — " + knight.QhAimWhy)}");
             yield return Wait(0.5f);
-            // R94: 1.24 m off the enemy the circle does not catch it (knightSnap 1.15 m), 0.7 m off it does.
-            Vector3 near = new Vector3(enemyAt.x - 0.3f, QueenHillLayout.TierTop(0), enemyAt.z - 1.2f);
+            // R95: 1.12 m off the enemy the circle does not catch it (knightSnap 1.05 m), 0.7 m off it does.
+            Vector3 near = new Vector3(enemyAt.x - 0.3f, QueenHillLayout.TierTop(0), enemyAt.z - 1.08f);
             Vector3 spot = new Vector3(east - 1.05f, QueenHillLayout.TierTop(0), 7.0f);
             for (float a = 0f; a < 0.35f; a += Time.deltaTime)
             {

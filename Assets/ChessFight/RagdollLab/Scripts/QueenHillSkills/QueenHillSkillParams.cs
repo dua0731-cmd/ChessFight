@@ -48,8 +48,10 @@ namespace ChessFight.RagdollLab
         public float queenTravel = 0.2f;
         public float queenPush = 5f;
         public float queenLift = 1.5f;
-        [Tooltip("위아래로 이만큼 안이면 맞는다 (m)")]
+        [Tooltip("퀸이 선 바닥보다 이만큼 높은 곳(점프 중인 적 등)까지 맞는다 (m)")]
         public float queenHeight = 1.2f;
+        [Tooltip("퀸이 선 바닥보다 이만큼 낮은 바닥에 선 적까지 맞는다 (m). R95: 검기는 퀸 높이에서 똑바로 날아가니 한 층(0.9 m) 아래는 안 맞음")]
+        public float queenDrop = 0.45f;
         public float queenRecovery = 0.6f;
         public float queenCooldown = 6f;
 
@@ -75,8 +77,10 @@ namespace ChessFight.RagdollLab
         [Tooltip("떠오르는 높이 (발이 바닥에서, m). 더 오를 수 없다")]
         public float bishopHover = 1.3f;
         public float bishopRise = 0.25f;
-        [Tooltip("떠 있는 시간 (초). 기획: 먼저 3초, 6초와 비교")]
+        [Tooltip("떠 있는 시간 (초, 조준하는 동안만 줄어듦). 기획: 먼저 3초, 6초와 비교")]
         public float bishopHoverTime = 3f;
+        [Tooltip("한 번 떠올라 쏠 수 있는 견제탄 수. R95: 2발 (첫 발이 떨어지면 다시 조준)")]
+        public int bishopShots = 2;
         [Tooltip("조준 최대 거리 (땅 위, m)")]
         public float bishopRange = 9f;
         [Tooltip("견제탄이 날아가는 시간 (초)")]
@@ -103,8 +107,8 @@ namespace ChessFight.RagdollLab
         public float knightWindup = 0.12f;
         [Tooltip("착지 원 반경 (m)")]
         public float knightRadius = 1.3f;
-        [Tooltip("조준점에서 이 거리(땅 위, m) 안에 적이 있으면 그 적의 머리 위로 자동 조준해 머리를 밟는다 (R93 1.3 → R94 1.15)")]
-        public float knightSnap = 1.15f;
+        [Tooltip("조준점에서 이 거리(땅 위, m) 안에 적이 있으면 그 적의 머리 위로 자동 조준해 머리를 밟는다 (R93 1.3 → R94 1.15 → R95 1.05)")]
+        public float knightSnap = 1.05f;
         [Tooltip("납작해지는 시간 (초)")]
         public float knightFlatten = 0.7f;
         [Tooltip("납작해진 적이 착지점 바깥으로 미끄러지는 속도 (m/s)와 시간 (초): 높은 곳 가장자리면 떨어진다")]
