@@ -64,6 +64,17 @@ namespace ChessFight.RagdollLab
                 "bishop-mid" => BishopMid(false),
                 "bishop-miss" => BishopMid(true),
                 "knight" => Line(PieceKind.Knight, Vector3.right, new Vector3(5.0f, 0f, 0f)),
+                // The edge skills (R103, E).
+                "edge-king" => EdgeKing(false),
+                "edge-king-cut" => EdgeKing(true),
+                "edge-queen" => EdgeQueen(0),
+                "edge-queen-step" => EdgeQueen(1),
+                "edge-queen-jump" => EdgeQueen(2),
+                "edge-rook" => EdgeRook(),
+                "edge-bishop" => EdgeBishop(false),
+                "edge-bishop-hit" => EdgeBishop(true),
+                "edge-knight" => EdgeKnight(false),
+                "edge-knight-back" => EdgeKnight(true),
                 _ => null,
             };
             if (body == null) { Status = "done: unknown run " + name; yield break; }
@@ -244,6 +255,186 @@ namespace ChessFight.RagdollLab
             yield return Press(me.Skills, 0.7f);
             yield return new WaitForSeconds(kind == PieceKind.Rook ? 2.8f : 2.4f);
             Moves(from, kind.ToString());
+        }
+
+        // ---------------------------------------------------------------- the edge skills (R103)
+
+        /// <summary>Wait until every fighter is back and the floor whole, then put them where the bed's Shift+F7 does.</summary>
+        IEnumerator StageEdgeFor(PieceKind kind)
+        {
+            var me = bed.Local;
+            float waited = 0f;
+            while (waited < 10f)
+            {
+                bool ready = me != null && me.Alive && (bed.Floor == null || bed.Floor.Collapses.Count == 0);
+                foreach (var f in bed.Game.Fighters.Values) ready &= f != null && f.Alive;
+                if (ready) break;
+                waited += Time.deltaTime;
+                yield return null;
+            }
+            bed.SetPiece(me, kind);
+            bed.StageEdge(kind);
+            yield return new WaitForSeconds(0.2f);
+            bed.StageEdge(kind);
+            float t = 0f;
+            while (t < 1.4f)
+            {
+                bool guarded = false;
+                foreach (var f in bed.Game.Fighters.Values) guarded |= f.Protection > 0f;
+                if (!guarded && t > 0.6f) break;
+                t += Time.deltaTime;
+                yield return null;
+            }
+            Staged = true;
+        }
+
+        void EdgeState(SwordFightSkills s, string when) =>
+            Say($"  [{when}] 조건 {(s.EdgeCondition ? "됨" : "안 됨: " + s.EdgeWhy)} · 단계 {s.EdgeStage} {s.EdgeDetail} · 쿨 {s.EdgeCooldown:0.0}/{s.EdgeCooldownTotal:0.0}");
+
+        /// <summary>An enemy pushes the king off the edge; once he has been falling for 0.12 s, E. With
+        /// <paramref name="cut"/>, a moment later the enemy comes to the lip and cuts at the hilt.</summary>
+        IEnumerator EdgeKing(bool cut)
+        {
+            yield return StageEdgeFor(PieceKind.King);
+            var me = bed.Local;
+            var foe = bed.Dummies(1)[0];
+            var from = Starts();
+            EdgeState(me.Skills, "밀기 전");
+            Show("적이 킹을 밀어냄");
+            bed.PushOff(foe, me);
+            float t = 0f;
+            while (me.Skills.FallTime < 0.12f && t < 2.5f) { t += Time.deltaTime; yield return null; }
+            Say($"edge-king: 밀고 {t:0.00}초 · 떨어진 지 {me.Skills.FallTime:0.00}초 · 골반 {me.Pawn.Hips.position.y:0.00} m · {me.Pawn.State}");
+            EdgeState(me.Skills, "E 직전");
+            Show("E · 왕의 귀환");
+            me.Skills.PressEdge();
+            yield return new WaitForSeconds(0.2f);
+            EdgeState(me.Skills, "E 0.2초 뒤");
+            Say($"  골반 {me.Pawn.Hips.position.y:0.00} m · 박힌 자리 {me.Skills.Hilt.x:0.00},{me.Skills.Hilt.y:0.00},{me.Skills.Hilt.z:0.00}");
+            if (cut)
+            {
+                Show("F8 · 적이 박힌 칼을 벰");
+                bed.EnemyCuts();
+            }
+            yield return new WaitForSeconds(2.4f);
+            EdgeState(me.Skills, "끝");
+            Moves(from, cut ? "edge-king-cut" : "edge-king");
+        }
+
+        /// <summary>The queen and an enemy 1.4 m from the edge, 4 m off: E. Mode 1: the enemy walks in out of the edge
+        /// zone during the gold line (it should be called off); mode 2: it jumps as the cut comes.</summary>
+        IEnumerator EdgeQueen(int mode)
+        {
+            yield return StageEdgeFor(PieceKind.Queen);
+            var me = bed.Local;
+            var target = bed.Dummies(1)[0];
+            me.Skills.OverrideAim(Vector3.right);
+            yield return new WaitForSeconds(0.25f);
+            var from = Starts();
+            EdgeState(me.Skills, "E 직전");
+            Show("E · 체크메이트 일섬");
+            me.Skills.PressEdge();
+            if (mode == 1)
+            {
+                yield return new WaitForSeconds(0.12f);
+                Show("적이 안쪽으로 걸어 들어옴");
+                bed.Walk(target, Vector3.left, 0.9f);
+            }
+            else if (mode == 2)
+            {
+                yield return new WaitForSeconds(bed.edge.queenLine - 0.22f);
+                Show("적이 점프");
+                bed.Jump(target);
+            }
+            yield return new WaitForSeconds(mode == 1 ? 1.2f : 0.3f);
+            EdgeState(me.Skills, "뒤");
+            yield return new WaitForSeconds(2.0f);
+            Moves(from, mode == 0 ? "edge-queen" : mode == 1 ? "edge-queen-step" : "edge-queen-jump");
+        }
+
+        /// <summary>The rook by the east edge looks at it and breaks it; once his slam is done he walks in off the chunk.
+        /// The two enemies and the ally on it fall with it; then the floor comes back.</summary>
+        IEnumerator EdgeRook()
+        {
+            yield return StageEdgeFor(PieceKind.Rook);
+            var me = bed.Local;
+            me.Skills.OverrideAim(Vector3.right);
+            yield return new WaitForSeconds(0.25f);
+            var from = Starts();
+            EdgeState(me.Skills, "E 직전");
+            Say($"  덩어리 x {me.Skills.EdgeChunk.xMin:0.0}~{me.Skills.EdgeChunk.xMax:0.0} · z {me.Skills.EdgeChunk.yMin:0.0}~{me.Skills.EdgeChunk.yMax:0.0}");
+            Show("E · 성벽 붕괴");
+            me.Skills.PressEdge();
+            float since = 0f;
+            yield return new WaitForSeconds(bed.edge.rookSlam + 0.02f);
+            since += bed.edge.rookSlam + 0.02f;
+            Show("룩이 안쪽으로 걸어 나옴");
+            bed.Walk(me, Vector3.left, 0.9f);
+            yield return new WaitForSeconds(bed.edge.rookCrack + 1.6f);
+            since += bed.edge.rookCrack + 1.6f;
+            Moves(from, "edge-rook (무너진 뒤)");
+            float t = 0f;
+            while (bed.Floor != null && bed.Floor.Collapses.Count > 0 && t < 8f) { t += Time.deltaTime; yield return null; }
+            since += t;
+            Say($"  바닥이 다시 솟아 원래대로: E 뒤 {since:0.0}초 (무너지고 약 {since - bed.edge.rookCrack:0.0}초)");
+            yield return new WaitForSeconds(0.4f);
+        }
+
+        /// <summary>An enemy pushes the bishop's ally off the edge; once it has been falling 0.15 s, E. With
+        /// <paramref name="hit"/>, an enemy comes up and cuts the bishop while the hands pull.</summary>
+        IEnumerator EdgeBishop(bool hit)
+        {
+            yield return StageEdgeFor(PieceKind.Bishop);
+            var me = bed.Local;
+            var ally = bed.Dummies(0)[0];
+            var foes = bed.Dummies(1);
+            var from = Starts();
+            Show("적이 아군을 밀어 떨어뜨림");
+            bed.PushOff(foes[0], ally);
+            float t = 0f;
+            while (ally.Skills.FallTime < 0.15f && t < 2.5f) { t += Time.deltaTime; yield return null; }
+            Say($"edge-bishop: 아군이 떨어진 지 {ally.Skills.FallTime:0.00}초 · 골반 {ally.Pawn.Hips.position.y:0.00} m");
+            EdgeState(me.Skills, "E 직전");
+            Show("E · 구원의 손");
+            me.Skills.PressEdge();
+            if (hit)
+            {
+                yield return new WaitForSeconds(bed.edge.bishopReach + 0.05f);
+                Show("적이 비숍을 벰");
+                SwordFightSkillBed.BringNear(foes[1], me);
+                bed.Cut(foes[1], me.Pawn.Hips.position);
+            }
+            yield return new WaitForSeconds(1.2f);
+            EdgeState(me.Skills, "뒤");
+            Say($"  아군: {(ally.Alive ? "살아 있음" : "장외")} · 골반 ({ally.Pawn.Hips.position.x:0.0}, {ally.Pawn.Hips.position.y:0.00}, {ally.Pawn.Hips.position.z:0.0}) · {ally.Pawn.State}");
+            yield return new WaitForSeconds(1.4f);
+            Moves(from, hit ? "edge-bishop-hit" : "edge-bishop");
+        }
+
+        /// <summary>The knight with its back to the east edge, an enemy 1.9 m ahead: E. With <paramref name="back"/>, the
+        /// enemy stands 2.7 m off and backs away during the crouch (it should be called off).</summary>
+        IEnumerator EdgeKnight(bool back)
+        {
+            yield return StageEdgeFor(PieceKind.Knight);
+            var me = bed.Local;
+            var foe = bed.Dummies(1)[0];
+            if (back) SwordFightSkillBed.Place(foe, new Vector3(3.3f, 0f, 0.1f), Vector3.right);
+            me.Skills.OverrideAim(Vector3.left);
+            yield return new WaitForSeconds(0.3f);
+            var from = Starts();
+            EdgeState(me.Skills, "E 직전");
+            Show("E · 벼랑 끝 역전");
+            me.Skills.PressEdge();
+            if (back)
+            {
+                yield return new WaitForSeconds(0.05f);
+                Show("적이 뒤로 물러남");
+                bed.Walk(foe, Vector3.left, 0.8f);
+            }
+            yield return new WaitForSeconds(0.6f);
+            EdgeState(me.Skills, "E 0.65초 뒤");
+            yield return new WaitForSeconds(2.0f);
+            Moves(from, back ? "edge-knight-back" : "edge-knight");
         }
 
         IEnumerator Bishop()

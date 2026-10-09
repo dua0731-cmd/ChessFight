@@ -43,6 +43,8 @@ namespace ChessFight.RagdollLab
         public bool effects = true;
         [Tooltip("맞는 순간 게임 전체를 잠깐 멈춤 (시험용: 실제로는 때린 쪽·맞은 쪽만)")]
         public bool hitStop = true;
+        [Tooltip("가장자리 스킬의 극적인 순간 슬로 모션 (시험용: 게임 전체, 실제로는 쓴 사람·맞은 사람 화면만)")]
+        public bool slowMotion = true;
         public bool shake = true;
 
         /// <summary>The film's camera while it records; the match camera otherwise.</summary>
@@ -51,8 +53,12 @@ namespace ChessFight.RagdollLab
         const float F = Kit.F;
         Kit kit;
         SwordFightGame game;
-        float rate = 1f, stopLeft, stopResume = 1f, shakeAmp, shakeLeft, shakeTotal, shakeClock, dt;
+        float rate = 1f, stopLeft, shakeAmp, shakeLeft, shakeTotal, shakeClock, dt;
         bool stopping;
+        // The game's pace while a hit stop or a slow motion holds it (the film's own slow pace, or 1), and the slow
+        // motion's time left (game seconds) and pace.
+        float baseScale = 1f, slowLeft, slowPace = 1f;
+        bool timeHeld;
 
         RagdollPawn Viewer => game != null && game.Local != null ? game.Local.Pawn : null;
         public Camera ViewCamera => ViewOverride != null ? ViewOverride : game != null && game.CameraRig != null ? game.CameraRig.Cam : Camera.main;
@@ -65,12 +71,14 @@ namespace ChessFight.RagdollLab
             if (game == null) game = FindFirstObjectByType<SwordFightGame>();
             kit = new Kit(new GameObject("Sword Fight skill effects").transform, () => Viewer, () => Eye);
             SwordFightSkills.Fx += OnFx;
+            SwordFightEdgeFloor.Changed += OnFloor;
         }
 
         void OnDestroy()
         {
             SwordFightSkills.Fx -= OnFx;
-            if (stopping) Time.timeScale = stopResume;
+            SwordFightEdgeFloor.Changed -= OnFloor;
+            if (timeHeld) Time.timeScale = baseScale;
             if (punchCam != null && Mathf.Abs(punchCam.fieldOfView - punchSetFov) < 1e-3f) punchCam.fieldOfView += punchApplied;
             if (tintQuad != null) Destroy(tintQuad);
             if (tintMat != null) Destroy(tintMat);
@@ -93,24 +101,50 @@ namespace ChessFight.RagdollLab
             if (stopping)
             {
                 stopLeft -= dt;
-                if (stopLeft <= 0f)
-                {
-                    stopping = false;
-                    if (Time.timeScale == 0f) Time.timeScale = stopResume;
-                }
+                if (stopLeft <= 0f) stopping = false;
             }
+            else if (slowLeft > 0f) slowLeft -= real * Time.timeScale;
+            ApplyTime();
+        }
+
+        /// <summary>The hit stop holds the game (0), else a slow motion slows it, else it is back to its own pace.</summary>
+        void ApplyTime()
+        {
+            if (!timeHeld) return;
+            if (stopping) Time.timeScale = 0f;
+            else if (slowLeft > 0f) Time.timeScale = baseScale * slowPace;
+            else
+            {
+                Time.timeScale = baseScale;
+                timeHeld = false;
+            }
+        }
+
+        void HoldTime()
+        {
+            if (timeHeld) return;
+            baseScale = Time.timeScale > 0f ? Time.timeScale : baseScale;
+            timeHeld = true;
         }
 
         void HitStop(int frames)
         {
             if (!hitStop || frames <= 0) return;
-            if (!stopping)
-            {
-                stopResume = Time.timeScale > 0f ? Time.timeScale : stopResume;
-                stopping = true;
-            }
+            HoldTime();
+            stopping = true;
             stopLeft = Mathf.Max(stopLeft, frames * F);
             Time.timeScale = 0f;
+        }
+
+        /// <summary>A slow motion of <paramref name="seconds"/> game time at <paramref name="pace"/> (the edge skills' one
+        /// dramatic beat, R103). A's view effect: only the two pieces' own screens; the test bed slows the whole game.</summary>
+        void SlowMo(RagdollPawn a, RagdollPawn b, float seconds, float pace)
+        {
+            if (!slowMotion || seconds <= 0f || !Sees(a, b)) return;
+            HoldTime();
+            slowLeft = Mathf.Max(slowLeft, seconds);
+            slowPace = Mathf.Clamp(pace, 0.05f, 1f);
+            if (!stopping) Time.timeScale = baseScale * slowPace;
         }
 
         /// <summary>A shake of the view (A: only the hitter's and the hit piece's camera).</summary>
@@ -144,6 +178,7 @@ namespace ChessFight.RagdollLab
                 view.position += (view.right * x + view.up * y * 0.7f) * a;
                 view.rotation *= Quaternion.Euler(y * a * 10f, x * a * 10f, Mathf.Sin(t * 53f + 4.2f) * a * 6f);
             }
+            StepOrbit(cam);
             StepView(cam);
         }
 
@@ -195,8 +230,9 @@ namespace ChessFight.RagdollLab
                 punchLeft -= dt;
                 float k = Mathf.Clamp01(punchLeft / Mathf.Max(0.01f, punchTotal));
                 punchApplied = punchAmp * k * k;
-                cam.fieldOfView -= punchApplied;
             }
+            punchApplied += StepPull();
+            cam.fieldOfView -= punchApplied;
             punchCam = cam;
             punchSetFov = cam.fieldOfView;
 
@@ -541,9 +577,12 @@ namespace ChessFight.RagdollLab
         {
             var S = this.S;
             if (S == null) return;
+            var floor = SwordFightEdgeFloor.Current;
+            if (floor != null) foreach (var c in floor.Collapses) CollapseMarks(c);
             foreach (var s in SwordFightSkills.All)
             {
                 if (s == null || s.Pawn == null || s.Fighter == null || !s.Fighter.Alive) continue;
+                EdgeMarks(s, s.Pawn == Viewer);   // the edge skills (R103): offline only the player's own can be used
                 bool mine = s.Pawn == Viewer || ViewOverride != null;
                 if (s.Stage == SfStage.Aim && !mine) continue;   // the aim is the owner's own
                 float aimAlpha = s.Stage == SfStage.Aim ? 0.55f : 1f;
@@ -1420,6 +1459,7 @@ namespace ChessFight.RagdollLab
         void OnFx(SfFxEvent e)
         {
             if (!effects || kit == null || e.by == null) return;
+            if (OnEdgeFx(e)) return;
             switch (e.kind)
             {
                 case SfFxKind.Cast: Cast(e); break;

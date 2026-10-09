@@ -302,7 +302,7 @@ namespace ChessFight.RagdollLab
         Quaternion? SwordPose(int part)
         {
             if (Alive && Skills != null && Pawn.State == PawnState.Active && Skills.Blade is Vector3 skillBlade)
-                return part == (int)BodyId.ArmR ? Quaternion.FromToRotation(Vector3.right, Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(AboveFloor(Hand.position, skillBlade))) : (Quaternion?)null;
+                return part == (int)BodyId.ArmR ? Quaternion.FromToRotation(Vector3.right, Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(Skills.Arm ?? AboveFloor(Hand.position, skillBlade))) : (Quaternion?)null;
             if (ClassicControls) return ClickSwordPose(part);
             if (!Alive || !Drawn || Pawn.State != PawnState.Active) return null;
             if (part == (int)BodyId.Chest)
@@ -324,8 +324,13 @@ namespace ChessFight.RagdollLab
                 sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
             else if (Skills != null && Skills.Blade is Vector3 skillBlade)
             {
-                Vector3 grip = Hand.position + skillBlade * Skills.Reach01;
-                sword.SetPositionAndRotation(grip, Quaternion.LookRotation(AboveFloor(grip, skillBlade)));
+                // A sword stuck in the stone stays where it went in (the king's edge skill, R103).
+                if (Skills.SwordAt is Vector3 stuck) sword.SetPositionAndRotation(stuck, Quaternion.LookRotation(skillBlade));
+                else
+                {
+                    Vector3 grip = Hand.position + skillBlade * Skills.Reach01;
+                    sword.SetPositionAndRotation(grip, Quaternion.LookRotation(AboveFloor(grip, skillBlade)));
+                }
             }
             else if (ClassicControls)
                 PoseClickSword();

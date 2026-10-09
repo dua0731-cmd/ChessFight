@@ -44,6 +44,7 @@ namespace ChessFight.RagdollLab
             // The grace after a dash (contacts still the skill's) is counted down by the Pawn Rush skills when there are
             // any; without them, here.
             if (PawnRushSkills == null) skillGrace -= dt;
+            UpdateOuterFlight(dt);   // a flight another mode's skill drives (the Sword Fight edge skills, R103)
             if (!outerDash) return;
             if (State != PawnState.Active || !dashing)
             {

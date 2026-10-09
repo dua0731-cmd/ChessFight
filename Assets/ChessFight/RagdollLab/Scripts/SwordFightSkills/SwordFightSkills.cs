@@ -16,6 +16,13 @@ namespace ChessFight.RagdollLab
         BishopFire, BishopSlow, BishopPin,
         KnightLeap, KnightLand, KnightHit,
         Interrupted,
+        // The edge skills (R103, E).
+        EdgeCast, EdgeCancel,
+        KingStab, KingVault, KingLand, KingLandHit, KingDrop,
+        QueenMark, QueenBlink, QueenCut, QueenMiss,
+        RookBreak,
+        BishopReach, BishopCatch, BishopSet, BishopDrop,
+        KnightCrouch, KnightFlip, KnightKick, KnightKickHit,
     }
 
     public struct SfFxEvent
@@ -38,10 +45,11 @@ namespace ChessFight.RagdollLab
     /// floor ending right behind it), 나이트 포크 강하 (a leap to a chosen spot that hits two spots ahead).
     /// The skill key (F in the test scene) starts the aim, the left click uses it, the right click (or the key again) calls it
     /// off, as in the other skill test scenes; the king has no aim: the key is his guard. A skill knocked out of its windup still starts the cooldown.
+    /// Each piece also has an edge skill on E (R103, <c>SwordFightSkills.Edge.cs</c>).
     /// Offline only: the network packets do not carry skills.
     /// </summary>
     [DefaultExecutionOrder(-75)]   // after the match's step (-90) and the bed (-80), before the sword (-60)
-    public class SwordFightSkills : MonoBehaviour
+    public partial class SwordFightSkills : MonoBehaviour
     {
         public static event Action<SfFxEvent> Fx;
         public static event Action<SwordFightSkills, string> Log;
@@ -95,10 +103,11 @@ namespace ChessFight.RagdollLab
         readonly HashSet<RagdollPawn> hitSet = new HashSet<RagdollPawn>();
         Camera aimCamera;
 
-        public void Init(SwordFightPawn fighter, SwordFightSkillParams s)
+        public void Init(SwordFightPawn fighter, SwordFightSkillParams s, SwordFightEdgeParams edge = null)
         {
             Fighter = fighter;
             S = s;
+            EdgeParams = edge;
             fighter.Skills = this;
         }
 
@@ -141,12 +150,13 @@ namespace ChessFight.RagdollLab
                 confirmEdge = true;
                 raw.shove = raw.shoveHeld = false;
             }
-            if (Stage != SfStage.None)
+            if (Stage != SfStage.None || EdgeStage != SfEdge.None)
             {
                 raw.shove = raw.shoveHeld = false;
                 raw.sprint = false;
             }
-            bool rooted = Stage == SfStage.Windup || Stage == SfStage.Recovery || (Stage == SfStage.Active && Piece != PieceKind.Knight);
+            bool rooted = Stage == SfStage.Windup || Stage == SfStage.Recovery || (Stage == SfStage.Active && Piece != PieceKind.Knight)
+                          || EdgeStage != SfEdge.None;   // an edge skill holds the piece where it is (or carries it)
             if (rooted || pinLeft > 0f)
             {
                 raw.move = Vector3.zero;
@@ -183,8 +193,11 @@ namespace ChessFight.RagdollLab
         public void ResetSkill()
         {
             Clear();
+            ClearEdge();
             cooldownLeft = CooldownTotal = 0f;
+            edgeCooldownLeft = EdgeCooldownTotal = 0f;
             slowLeft = pinLeft = 0f;
+            FallTime = -1f;
         }
 
         // ---------------------------------------------------------------- the step
@@ -198,19 +211,26 @@ namespace ChessFight.RagdollLab
             if (!Fighter.Alive || !Fighter.Authority)
             {
                 if (Stage != SfStage.None) Clear();
-                pressEdge = confirmEdge = cancelEdge = false;
+                if (EdgeStage != SfEdge.None) ClearEdge();
+                pressEdge = confirmEdge = cancelEdge = edgeKey = false;
+                FallTime = -1f;
+                EdgeCondition = false;
                 return;
             }
             cooldownLeft -= dt;
             StageTime += dt;
-            bool press = pressEdge, confirm = confirmEdge, cancel = cancelEdge;
-            pressEdge = confirmEdge = cancelEdge = false;
+            bool press = pressEdge, confirm = confirmEdge, cancel = cancelEdge, edge = edgeKey;
+            pressEdge = confirmEdge = cancelEdge = edgeKey = false;
+            TrackFall(dt);
 
             if (!HasSkill)
             {
-                if (press) Say($"{Pawn.DisplayName}: 폰은 스킬이 없어요");
+                if (press || edge) Say($"{Pawn.DisplayName}: 폰은 스킬이 없어요");
                 return;
             }
+            // The edge skill (its own key and cooldown, R103) first: it is used falling, knocked down. While it runs the
+            // F skill waits.
+            if (StepEdge(edge, dt)) return;
             // Knocked down mid-skill: it ends here (the knight's leap goes on: it is already thrown).
             if (Stage != SfStage.None && Pawn.State != PawnState.Active && !(Piece == PieceKind.Knight && Stage == SfStage.Active))
             {
@@ -709,7 +729,10 @@ namespace ChessFight.RagdollLab
         {
             get
             {
-                if (Pawn == null || Pawn.State != PawnState.Active) return null;
+                if (Pawn == null) return null;
+                // An edge skill's own pose (the king's sword stays in the stone even while he is still getting up).
+                if (EdgeStage != SfEdge.None && (Pawn.State == PawnState.Active || KingHanging)) return EdgeBlade();
+                if (Pawn.State != PawnState.Active) return null;
                 Vector3 f = Stage == SfStage.Aim ? AimDir : Dir;
                 Vector3 side = Vector3.Cross(Vector3.up, f);   // the piece's right
                 switch (Piece)
@@ -733,6 +756,11 @@ namespace ChessFight.RagdollLab
         {
             get
             {
+                if (HasSkill && EdgeStage != SfEdge.None)
+                {
+                    var e = Colors(Piece);
+                    return Color.Lerp(e.main, Color.white, 0.25f + 0.25f * Mathf.Sin(Time.time * 36f));
+                }
                 if (!HasSkill || (Stage != SfStage.Windup && Stage != SfStage.Active)) return null;
                 var p = Colors(Piece);
                 // Brighter toward the release, white in the windup's last frames (it is about to go).
