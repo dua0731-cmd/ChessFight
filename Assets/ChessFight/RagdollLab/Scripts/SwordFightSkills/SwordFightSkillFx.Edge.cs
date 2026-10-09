@@ -940,12 +940,12 @@ namespace ChessFight.RagdollLab
             if (!Sees(a, b)) return;
             var parts = new List<(GameObject go, Material mat, Color c, float thick)>
             {
-                Band(p.ink, 4001, 0.07f),
-                Band(p.main, 4002, 0.046f),
-                Band(Color.white, 4003, 0.016f),
+                Band(p.ink, 4001, 0.032f),
+                Band(p.main, 4002, 0.02f),
+                Band(Color.white, 4003, 0.007f),
             };
             const float Angle = -22f;
-            var f = kit.Run(26f * F, (fx, d) =>
+            var f = kit.Run(18f * F, (fx, d) =>
             {
                 var cam = ViewCamera;
                 if (cam == null) return false;
@@ -953,7 +953,7 @@ namespace ChessFight.RagdollLab
                 float dist = cam.nearClipPlane + 0.03f;
                 float h = 2f * dist * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad), w = h * Mathf.Max(cam.aspect, 1f);
                 float len = Mathf.Sqrt(w * w + h * h) * 1.15f;
-                float sweep = Kit.EaseOut(t / 3f), thin = t < 9f ? 1f : 1f - Kit.EaseIn((t - 9f) / 17f);
+                float sweep = Kit.EaseOut(t / 2f), thin = t < 6f ? 1f : 1f - Kit.EaseIn((t - 6f) / 12f);
                 Quaternion turn = cam.transform.rotation * Quaternion.Euler(0f, 0f, Angle);
                 Vector3 axis = turn * Vector3.right;
                 Vector3 mid = cam.transform.position + cam.transform.forward * dist;

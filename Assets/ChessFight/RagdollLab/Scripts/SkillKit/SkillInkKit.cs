@@ -710,9 +710,16 @@ namespace ChessFight.RagdollLab
         /// <summary>The floor under a point (not a piece, not a moving body), or the point itself if there is none.</summary>
         public static Vector3 FloorUnder(Vector3 p, float above = 1.2f)
         {
+            FloorUnder(p, above, out Vector3 found);
+            return found;
+        }
+
+        /// <summary>The floor under a point (within 6 m), and whether there is any (else <paramref name="floor"/> is the point).</summary>
+        public static bool FloorUnder(Vector3 p, float above, out Vector3 floor)
+        {
             var hits = Physics.RaycastAll(p + Vector3.up * above, Vector3.down, above + 6f, ~0, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
-            Vector3 found = p;
+            floor = p;
             foreach (var h in hits)
             {
                 if (RagdollPawn.ColliderOwner.ContainsKey(h.collider)) continue;
@@ -720,9 +727,9 @@ namespace ChessFight.RagdollLab
                 if (rb != null && !rb.isKinematic) continue;
                 if (h.normal.y < 0.5f || h.distance >= best) continue;
                 best = h.distance;
-                found = h.point;
+                floor = h.point;
             }
-            return found;
+            return best < float.MaxValue;
         }
 
         // ---------------------------------------------------------------- warning squares
@@ -1073,9 +1080,11 @@ namespace ChessFight.RagdollLab
                     // Stamped once it has come down: settled, or soon anyway (it may lie crumpled, not flat).
                     bool lying = fx.age > 0.5f || (fx.age > 0.15f && target.Hips.linearVelocity.magnitude < 2.5f);
                     if (!lying) return true;
+                    // Thrown off the floor altogether (off a platform's edge): no square in the air.
+                    if (!FloorUnder(target.Hips.position, 0.6f, out Vector3 under)) return false;
                     stamped = true;
                     since = fx.age;
-                    at = FloorUnder(target.Hips.position, 0.6f) + Vector3.up * 0.014f;
+                    at = under + Vector3.up * 0.014f;
                     DustRing(at, 4, 0.8f);
                     AddSquash(target, SquashKind.Down);
                 }

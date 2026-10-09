@@ -367,8 +367,8 @@ namespace ChessFight.RagdollLab
                 case PieceKind.Knight:
                     Place(me, new Vector3(6.0f, 0f, 0f), west);
                     Place(enemies[0], new Vector3(4.1f, 0f, 0.1f), east);
-                    Place(enemies[1], new Vector3(2f, 0f, -4f), east);
-                    Place(enemies[2], new Vector3(-4f, 0f, 4f), east);
+                    Place(enemies[1], new Vector3(-2f, 0f, 4.5f), east);
+                    Place(enemies[2], new Vector3(-4f, 0f, -3f), east);
                     Place(allies[0], far, east);
                     Report("벼랑 끝 역전 시험: 가장자리를 등진 나이트, 앞 1.9 m 적 — 적을 보고 E · Shift+F8 = 적이 뒤로 물러남");
                     break;
@@ -392,7 +392,7 @@ namespace ChessFight.RagdollLab
                     var foe = NearestTo(me, me.Pawn.Team, false);
                     if (foe == null) return;
                     PushOff(foe, me);
-                    Report($"{foe.Pawn.DisplayName}이 킹을 가장자리 밖으로 밀어냄 — 0.6초 안에 E");
+                    Report($"{foe.Pawn.DisplayName} → 킹: 가장자리 밖으로 밀어냄 — 0.6초 안에 E");
                     break;
                 }
                 case PieceKind.Queen:
@@ -401,7 +401,7 @@ namespace ChessFight.RagdollLab
                     if (target == null) return;
                     Vector3 inward = Floor != null && Floor.Nearest(target.Pawn.Hips.position, out var e) ? -e.outward : Vector3.left;
                     Walk(target, inward, 0.9f);
-                    Report($"{target.Pawn.DisplayName}이 안쪽으로 걸어 들어옴");
+                    Report($"{target.Pawn.DisplayName}: 안쪽으로 걸어 들어옴");
                     break;
                 }
                 case PieceKind.Bishop:
@@ -412,7 +412,7 @@ namespace ChessFight.RagdollLab
                     var foe = NearestTo(ally, me.Pawn.Team, false);
                     if (foe == null) return;
                     PushOff(foe, ally);
-                    Report($"{foe.Pawn.DisplayName}이 {ally.Pawn.DisplayName}을 밀어 떨어뜨림 — 1초 안에 E");
+                    Report($"{foe.Pawn.DisplayName} → {ally.Pawn.DisplayName}: 밀어 떨어뜨림 — 1초 안에 E");
                     break;
                 }
                 case PieceKind.Knight:
@@ -420,7 +420,7 @@ namespace ChessFight.RagdollLab
                     var foe = me.Skills != null && me.Skills.EdgeTarget != null ? me.Skills.EdgeTarget.GetComponent<SwordFightPawn>() : NearestTo(me, me.Pawn.Team, false);
                     if (foe == null) return;
                     Walk(foe, Dir(me.Pawn.Hips.position, foe.Pawn.Hips.position), 0.8f);
-                    Report($"{foe.Pawn.DisplayName}이 뒤로 물러남");
+                    Report($"{foe.Pawn.DisplayName}: 뒤로 물러남");
                     break;
                 }
                 default:
@@ -460,7 +460,7 @@ namespace ChessFight.RagdollLab
                 Vector3 side = Vector3.Cross(Vector3.up, o);
                 Place(foe, lip - o * 0.55f + side * 0.3f, o);
                 Cut(foe, me.Skills.Hilt);
-                Report($"{foe.Pawn.DisplayName}이 박힌 칼을 벰");
+                Report($"{foe.Pawn.DisplayName} → 박힌 칼을 벰");
                 return;
             }
             SwordFightPawn pinned = null;

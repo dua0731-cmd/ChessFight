@@ -92,8 +92,8 @@ namespace ChessFight.RagdollLab
         public float knightCrouch = 0.35f;
         [Tooltip("벼랑 밖으로 뛰었다 적 머리 위를 넘어 착지하기까지")]
         public float knightFlip = 0.8f;
-        [Tooltip("공중제비 높이 (발판 위, m)")]
-        public float knightFlipHeight = 1.7f;
+        [Tooltip("공중제비 높이 (발판 위, m) — 기물 키(약 0.6 m)의 두 배쯤")]
+        public float knightFlipHeight = 1.1f;
         [Tooltip("착지: 적 뒤로 (m)")]
         public float knightLandBehind = 0.9f;
         [Tooltip("뒷발차기로 적이 벼랑 쪽으로 날아가는 거리 (m)")]

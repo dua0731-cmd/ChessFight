@@ -328,6 +328,8 @@ namespace ChessFight.RagdollLab
             yield return StageEdgeFor(PieceKind.Queen);
             var me = bed.Local;
             var target = bed.Dummies(1)[0];
+            // Stepping in: the enemy stands near the zone's inner side (1.75 m from the edge) and walks in as the line comes.
+            if (mode == 1) SwordFightSkillBed.Place(target, new Vector3(5.25f, 0f, 0f), Vector3.left);
             me.Skills.OverrideAim(Vector3.right);
             yield return new WaitForSeconds(0.25f);
             var from = Starts();
@@ -336,7 +338,7 @@ namespace ChessFight.RagdollLab
             me.Skills.PressEdge();
             if (mode == 1)
             {
-                yield return new WaitForSeconds(0.12f);
+                yield return new WaitForSeconds(0.05f);
                 Show("적이 안쪽으로 걸어 들어옴");
                 bed.Walk(target, Vector3.left, 0.9f);
             }
@@ -412,13 +414,13 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The knight with its back to the east edge, an enemy 1.9 m ahead: E. With <paramref name="back"/>, the
-        /// enemy stands 2.7 m off and backs away during the crouch (it should be called off).</summary>
+        /// enemy stands 2.85 m off and backs away during the crouch (it should be called off).</summary>
         IEnumerator EdgeKnight(bool back)
         {
             yield return StageEdgeFor(PieceKind.Knight);
             var me = bed.Local;
             var foe = bed.Dummies(1)[0];
-            if (back) SwordFightSkillBed.Place(foe, new Vector3(3.3f, 0f, 0.1f), Vector3.right);
+            if (back) SwordFightSkillBed.Place(foe, new Vector3(3.15f, 0f, 0.1f), Vector3.right);
             me.Skills.OverrideAim(Vector3.left);
             yield return new WaitForSeconds(0.3f);
             var from = Starts();

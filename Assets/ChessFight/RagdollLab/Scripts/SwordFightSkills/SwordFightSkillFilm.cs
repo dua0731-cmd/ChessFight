@@ -55,9 +55,9 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(1.3f, 5.3f, -5.6f), look = new Vector3(3.6f, 0.3f, 0.2f), fov = 46f },
             // The edge skills (R103, E).
             new Shot { run = "edge-king", title = "킹 · 왕의 귀환 (E)", note = "밀려 떨어지는 0.6초 안에 E → 칼을 가장자리에 박고 0.4초 매달림(착지 자리 미리 보임) → 뛰어올라 착지, 반경 2 m 적을 밀어냄",
-                eye = new Vector3(10.2f, 1.5f, -4.6f), look = new Vector3(6.4f, -0.1f, 0.2f), fov = 46f },
+                eye = new Vector3(9.6f, 1.2f, -3.3f), look = new Vector3(6.6f, -0.1f, 0.1f), fov = 46f },
             new Shot { run = "edge-king-cut", title = "킹 · 왕의 귀환 (박힌 칼을 베면)", note = "매달린 동안 적이 박힌 칼을 베면 그대로 떨어짐",
-                eye = new Vector3(10.2f, 1.5f, -4.6f), look = new Vector3(6.4f, -0.3f, 0.2f), fov = 46f },
+                eye = new Vector3(9.6f, 1.2f, -3.3f), look = new Vector3(6.6f, -0.3f, 0.1f), fov = 46f },
             new Shot { run = "edge-queen", title = "퀸 · 체크메이트 일섬 (E)", note = "가장자리 구역의 적이 5 m 안 → 금색 선 0.5초 → 순식간에 다가가 한 번 베어 바깥 위로 날려 보냄",
                 eye = new Vector3(2.2f, 4.0f, -6.2f), look = new Vector3(5.2f, 0.3f, 0.3f), fov = 50f },
             new Shot { run = "edge-queen-step", title = "퀸 · 체크메이트 일섬 (안쪽으로 피함)", note = "금색 선이 보이는 동안 적이 가장자리 구역 밖으로 들어오면 취소 · 쿨타임 반",
@@ -65,15 +65,15 @@ namespace ChessFight.RagdollLab
             new Shot { run = "edge-queen-jump", title = "퀸 · 체크메이트 일섬 (점프로 피함)", note = "베는 순간 적이 공중에 있으면 칼이 아래로 지나감",
                 eye = new Vector3(2.2f, 4.0f, -6.2f), look = new Vector3(5.2f, 0.3f, 0.3f), fov = 50f },
             new Shot { run = "edge-rook", title = "룩 · 성벽 붕괴 (E)", note = "가장자리를 내려쳐 3 × 2 m에 0.8초 금 → 무너져 위의 기물이 모두 떨어짐(룩은 걸어 나옴) → 5초 뒤 바닥이 다시 솟음",
-                eye = new Vector3(11.5f, 3.0f, -6.5f), look = new Vector3(5.6f, -0.6f, -0.4f), fov = 50f },
+                eye = new Vector3(10.4f, 2.3f, -3.6f), look = new Vector3(5.9f, -0.5f, -0.3f), fov = 50f },
             new Shot { run = "edge-bishop", title = "비숍 · 구원의 손 (E)", note = "아군이 떨어지는 1초 안에 E → 가장자리 보라 구멍에서 손이 뻗어 잡고 0.6초 끌어올려 내려놓음",
-                eye = new Vector3(10.4f, 2.2f, -4.8f), look = new Vector3(6.3f, -0.2f, 0.4f), fov = 48f },
+                eye = new Vector3(9.8f, 1.7f, -3.5f), look = new Vector3(6.3f, -0.1f, 0.2f), fov = 48f },
             new Shot { run = "edge-bishop-hit", title = "비숍 · 구원의 손 (비숍을 치면)", note = "끌어올리는 동안 비숍이 맞으면 손이 놓쳐 아군이 떨어짐",
-                eye = new Vector3(10.4f, 2.2f, -4.8f), look = new Vector3(6.1f, -0.2f, 0.6f), fov = 48f },
+                eye = new Vector3(9.8f, 1.7f, -3.5f), look = new Vector3(6.1f, -0.2f, 0.5f), fov = 48f },
             new Shot { run = "edge-knight", title = "나이트 · 벼랑 끝 역전 (E)", note = "가장자리를 등지고 앞 3 m 적 → 0.35초 웅크림 → 벼랑 밖으로 뛰어 공중제비로 적을 넘어 착지 → 뒷발차기로 벼랑 쪽으로",
-                eye = new Vector3(4.8f, 2.4f, -7.2f), look = new Vector3(5.0f, 0.7f, 0.0f), fov = 50f },
+                eye = new Vector3(5.0f, 1.9f, -5.0f), look = new Vector3(5.0f, 0.6f, 0.0f), fov = 52f },
             new Shot { run = "edge-knight-back", title = "나이트 · 벼랑 끝 역전 (물러나 피함)", note = "웅크리는 동안 적이 3 m 밖으로 물러나면 취소 · 쿨타임 반",
-                eye = new Vector3(4.8f, 2.4f, -7.2f), look = new Vector3(4.6f, 0.4f, 0.0f), fov = 50f },
+                eye = new Vector3(5.0f, 1.9f, -5.0f), look = new Vector3(4.5f, 0.4f, 0.0f), fov = 52f },
         };
 
         SwordFightSkillBed bed;
@@ -252,6 +252,11 @@ namespace ChessFight.RagdollLab
             if (cam == null) return;
             if (Rolling)
             {
+                // The effects zoom the view in and out (the edge skills hold it pulled in): keep the captions where they are
+                // on the screen.
+                depth = Mathf.Tan(22f * Mathf.Deg2Rad) / Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                banner.localPosition = new Vector3(0f, 0.345f, 1.05f * depth);
+                keyStrip.localPosition = new Vector3(0f, -0.335f, 1.05f * depth);
                 title.Place(cam.transform.TransformPoint(new Vector3(0f, 0.37f, depth)), cam, titleFit, 1f);
                 note.Place(cam.transform.TransformPoint(new Vector3(0f, 0.313f, depth)), cam, noteFit, 1f);
                 ShowKey();

@@ -529,7 +529,7 @@ namespace ChessFight.RagdollLab
         {
             Pawn.EndFlight();
             Raise(SfFxKind.KingDrop, by != null ? by.Pawn : null, Hilt, EdgeOut, 0f);
-            Say($"{Pawn.DisplayName}: 왕의 귀환 실패 — " + (by != null ? $"{by.Pawn.DisplayName}이 박힌 칼을 쳐서 떨어짐" : "맞아서 떨어짐"));
+            Say($"{Pawn.DisplayName}: 왕의 귀환 실패 — " + (by != null ? $"박힌 칼을 맞아 떨어짐 ({by.Pawn.DisplayName})" : "맞아서 떨어짐"));
             ClearEdge();
             StartEdgeCooldown(1f);
         }
@@ -609,7 +609,7 @@ namespace ChessFight.RagdollLab
             if (!target.Grounded && air > 0.2f)
             {
                 Raise(SfFxKind.QueenMiss, target, target.Hips.position, face, 0f);
-                Say($"{Pawn.DisplayName}: 체크메이트 일섬 — {target.DisplayName}이 점프로 피함");
+                Say($"{Pawn.DisplayName}: 체크메이트 일섬 — 점프로 피함 ({target.DisplayName})");
                 SetEdge(SfEdge.Recovery, "헛벰");
                 return;
             }
@@ -663,8 +663,10 @@ namespace ChessFight.RagdollLab
                 Say($"{Pawn.DisplayName} → {carried.DisplayName}: 구원의 손이 잡음");
             }
             float k = Mathf.Clamp01((t - X.bishopReach) / X.bishopPull);
+            // Up first, still outside the lip, and only over it toward the end: hit the bishop before then and the ally
+            // goes back down into the void.
             Vector3 p0 = catchFrom, p3 = EdgeLand + Vector3.up * (carried.standHeight + 0.03f);
-            Vector3 p1 = p0 + Vector3.up * 1.0f - EdgeOut * 0.25f, p2 = p3 + Vector3.up * 0.9f + EdgeOut * 0.45f;
+            Vector3 p1 = p0 + Vector3.up * 1.1f, p2 = new Vector3(EdgeAt.x, p3.y, EdgeAt.z) + EdgeOut * 0.4f + Vector3.up * 0.9f;
             if (k < 1f)
             {
                 float s = k * k * (3f - 2f * k), ds = 6f * k * (1f - k) / X.bishopPull;
@@ -674,7 +676,7 @@ namespace ChessFight.RagdollLab
             }
             carried.EndFlight(Vector3.down * 0.5f);
             Raise(SfFxKind.BishopSet, carried, EdgeLand, -EdgeOut, 0f);
-            Say($"{Pawn.DisplayName}: 구원 — {carried.DisplayName}을 발판 위에 내려놓음");
+            Say($"{Pawn.DisplayName} → {carried.DisplayName}: 구원 — 발판 위에 내려놓음");
             held = false;
             carried = null;
             SetEdge(SfEdge.Recovery, "후딜");
@@ -682,7 +684,13 @@ namespace ChessFight.RagdollLab
 
         void BishopDrops(string why)
         {
-            if (carried != null && carried.OuterFlying) carried.EndFlight();
+            if (carried != null && carried.OuterFlying)
+            {
+                // Let go: it drops back the way it came, limp (not carried on over the lip by the pull's speed).
+                float vy = Mathf.Min(carried.Hips.linearVelocity.y, 0.5f);
+                carried.EndFlight(new Vector3(EdgeOut.x * 0.8f, vy, EdgeOut.z * 0.8f));
+                carried.Knockdown("구원의 손 놓침", 0.65f);
+            }
             Raise(SfFxKind.BishopDrop, carried, carried != null ? carried.Hips.position : EdgeAt, EdgeOut, held ? 1f : 0f);
             Say($"{Pawn.DisplayName}: 구원의 손 놓침 ({why})");
             ClearEdge();
@@ -703,7 +711,7 @@ namespace ChessFight.RagdollLab
                     var target = EdgeTarget;
                     var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
                     if (ts == null || !ts.Fighter.Alive || !floor.OnFloor(target.Hips.position)
-                        || Flat(target.Hips.position - Pawn.Hips.position).magnitude > X.knightFront + 0.3f)
+                        || Flat(target.Hips.position - Pawn.Hips.position).magnitude > X.knightFront + 0.05f)
                     { CancelEdge($"적이 {X.knightFront:0.#} m 밖으로 물러남"); return; }
                     // The mark behind it follows it until the spring.
                     EdgeLand = KnightLanding(floor, target);
@@ -757,10 +765,10 @@ namespace ChessFight.RagdollLab
             var X = EdgeParams;
             float top = floor != null ? floor.Top : 0f;
             Vector3 s = flipFrom;
-            Vector3 q = new Vector3(EdgeAt.x, top, EdgeAt.z) + EdgeOut * 0.7f + Vector3.up * 1.3f;
-            Vector3 c = q - Vector3.up * 0.6f;
+            Vector3 q = new Vector3(EdgeAt.x, top, EdgeAt.z) + EdgeOut * 0.7f + Vector3.up * 0.95f;
+            Vector3 c = q - Vector3.up * 0.5f;
             Vector3 dir = Flat(EdgeLand - flipFrom).normalized;
-            Vector3 apex = Flat(flipOver) + dir * 0.2f + Vector3.up * (top + X.knightFlipHeight + 0.55f);
+            Vector3 apex = Flat(flipOver) + dir * 0.2f + Vector3.up * (top + X.knightFlipHeight + 0.35f);
             Vector3 land = EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f);
             if (k < FlipOut)
             {
@@ -770,7 +778,7 @@ namespace ChessFight.RagdollLab
                 return;
             }
             float v = (k - FlipOut) / (1f - FlipOut);
-            Vector3 q2 = q + Vector3.up * 0.9f;
+            Vector3 q2 = q + Vector3.up * 0.6f;
             pos = Bezier(q, q2, apex, land, v);
             vel = BezierTangent(q, q2, apex, land, v) / ((1f - FlipOut) * X.knightFlip);
         }
