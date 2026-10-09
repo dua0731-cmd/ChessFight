@@ -485,8 +485,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.SwordFightGame
   pawnPrefab: {fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}
   tuning: {fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}
-  targetScore: 20
-  roundSeconds: 240
+  targetScore: 999
+  roundSeconds: 3600
   respawnDelay: 3
 --- !u!114 &1122090110
 MonoBehaviour:
@@ -594,7 +594,6 @@ MonoBehaviour:
     bishopRecovery: 0.35
     bishopSlow: 0.6
     bishopSlowTime: 1.5
-    bishopPinBehind: 2
     bishopPinTime: 0.8
     knightCooldown: 7
     knightRange: 6
