@@ -385,7 +385,7 @@ namespace ChessFight.RagdollLab
         {
             float east2 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(1), east1 = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);
             yield return Stage(PieceKind.Queen, new Vector3(east2 - 1.8f, QueenHillLayout.TierTop(1), 6.5f), Vector3.right,
-                (PieceKind.Pawn, false, new Vector3(east2 - 0.6f, QueenHillLayout.TierTop(1), 6.5f), Vector3.left),
+                (PieceKind.Pawn, false, new Vector3(east2 - 0.6f, QueenHillLayout.TierTop(1), 7.0f), Vector3.left),
                 (PieceKind.Pawn, false, new Vector3(east1 - 0.75f, QueenHillLayout.TierTop(0), 6.5f), Vector3.left),
                 (PieceKind.Pawn, false, new Vector3(east1 + 1.4f, 0f, 6.5f), Vector3.left));
             yield return QueenSlashAt(Vector3.right, new[] { "같은 2층", "아래 1층(0.9 m 아래)", "바닥(1.8 m 아래)" });

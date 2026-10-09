@@ -88,7 +88,7 @@ namespace ChessFight.RagdollLab
         static readonly Shot[] ShotsR95 =
         {
             new Shot { run = "queen-high", title = "2. 퀸 · 팔방 검격 — 탑 위에서 (경고 칸 = 실제 검기)", note = "검기는 퀸 높이에서 똑바로 → 경고 칸도 그 높이로 떠서 이어짐 · 같은 층 적만 넘어짐, 아래층·바닥 적 위로는 지나감",
-                eye = new Vector3(-3.0f, 3.4f, 0.8f), look = new Vector3(-5.2f, 1.3f, 6.5f), fov = 55f },
+                eye = new Vector3(1.5f, 3.6f, 2.5f), look = new Vector3(-5.0f, 1.4f, 6.5f), fov = 50f },
             new Shot { run = "queen-low", title = "2. 퀸 · 팔방 검격 — 아래에서 벽 쪽으로 (반대 경우)", note = "경고 칸이 검기처럼 벽에서 멈춤(위층에 안 그려짐) · 앞의 적만 넘어짐, 벽 위 1층 적은 그대로",
                 eye = new Vector3(0.4f, 2.0f, -1.6f), look = new Vector3(-2.8f, 0.6f, 3.2f), fov = 52f },
             new Shot { run = "bishop", title = "4. 비숍 · 교차 공중 포격 — 2발", note = "1발: 벽을 오르던 적 → 떨어지면 다시 조준 → 2발: 1층 적 · 2발 쏘거나 시간이 다 되면 내려옴",
