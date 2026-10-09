@@ -69,6 +69,8 @@ namespace ChessFight.RagdollLab
 
         public Vector3 Center => center;
         public bool Armed => armed;
+        /// <summary>Seconds until it goes by itself (design A blinks it three times in its last second).</summary>
+        public float TimeLeft => skills != null ? skills.bishopArm + skills.bishopActive - age : 0f;
         /// <summary>The furthest a line of this wire has been pulled out so far (m; the probe reports it).</summary>
         public float MostStretch { get; private set; }
         /// <summary>How many times a line has been pulled out and let go, and how far the last one was (m).</summary>

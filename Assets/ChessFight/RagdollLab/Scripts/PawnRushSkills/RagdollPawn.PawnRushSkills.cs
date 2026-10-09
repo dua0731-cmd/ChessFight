@@ -24,6 +24,7 @@ namespace ChessFight.RagdollLab
         KnightStomp, KnightLand,
         KnightTurn, KnightHome,
         KnightLeap, RookSlam,
+        PawnStep, PawnHit, PawnHelp,
     }
 
     public struct SkillFxEvent
@@ -122,6 +123,20 @@ namespace ChessFight.RagdollLab
         public Vector3 BishopAimYaw => bishopYaw;
         /// <summary>The enemy a knight's second press in the air would come down on (null: it would turn).</summary>
         public RagdollPawn KnightMarked => knightHoming ? knightTarget : knightCandidate;
+        /// <summary>The rook's charge is in the air (R80): its aim is a line in 3D.</summary>
+        public bool RookInAir => rookAir;
+        /// <summary>On the floor, or just off it (the coyote time).</summary>
+        public bool OnTheFloor => OnFloor;
+        /// <summary>The knight's landing is to be shown: in its leap, not homing onto a head nor after the tap.</summary>
+        public bool KnightShowsLanding => piece == PieceKind.Knight && skillStage == SkillStage.Active && !knightHoming && !knightTapped;
+        public Vector3 KnightLandingSpot => knightSpot;
+        public bool KnightHoming => knightHoming;
+        /// <summary>The bishop's throw: where its X leaves from and how long it flies.</summary>
+        public Vector3 BishopThrowFrom => bishopFrom;
+        public float BishopThrowTime => bishopFlight;
+        /// <summary>Set by the effects when they draw the skills' telegraphs themselves (design A, R90): the plain
+        /// lines (SkillMarks) are not drawn then.</summary>
+        public static bool SkillMarksHidden { get; set; }
 
         bool Aiming => skillStage == SkillStage.Windup && !aimLocked
                        && (QueenHillSkills != null ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop);
@@ -534,6 +549,7 @@ namespace ChessFight.RagdollLab
             skillStage = SkillStage.Active;
             stageTime = 0f;
             SkillDetail = n == 1 ? "첫 걸음" : "두 번째 걸음";
+            Fx(SkillFxKind.PawnStep, null, FeetPoint, skillDir, n);
         }
 
         void FinishPawn(PawnRushSkillParams s, bool bothSteps)
@@ -569,6 +585,7 @@ namespace ChessFight.RagdollLab
                     ? SkillHit(other, skillDir * s.pawnFrontPush + Vector3.up * 1.5f, true, "폰 대각")
                     : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
                 string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
+                Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);
                 Log($"폰 {pawnStep}걸음 → {other.DisplayName}: {kind} {angle:0}° → {result}");
                 // The step stops on the piece it hit; the pawn itself takes nothing back (폰 불이익 없음).
                 dashLeft = Mathf.Min(dashLeft, 0.02f);
@@ -582,6 +599,7 @@ namespace ChessFight.RagdollLab
             ally.hasteLeft = s.hasteTime;
             hasteLeft = s.hasteTime;
             pawnHelped = true;
+            Fx(SkillFxKind.PawnHelp, ally, ally.bodies[0].position, skillDir);
             Log($"폰 → {ally.DisplayName}: 부축 — 바로 일어남, 기상 보호 {s.helpGuard:0.#}초, 둘 다 +{(s.hasteScale - 1f) * 100f:0}% {s.hasteTime:0.#}초, 내 쿨 −{s.helpCooldownCut:0.#}초");
         }
 
@@ -1186,6 +1204,7 @@ namespace ChessFight.RagdollLab
             float floorY = groundFound ? groundY : bodies[0].position.y - standHeight;
             Vector3 foot = new Vector3(bodies[0].position.x, floorY + 0.05f, bodies[0].position.z);
             HideSkillMarks();
+            if (SkillMarksHidden) return;   // the effects draw them (design A, R90)
             switch (piece)
             {
                 case PieceKind.Rook when skillStage == SkillStage.Windup:

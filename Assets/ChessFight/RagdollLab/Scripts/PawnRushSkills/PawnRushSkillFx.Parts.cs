@@ -526,8 +526,6 @@ namespace ChessFight.RagdollLab
             readonly Color color;
             float endedAt = -1f;
             bool started;
-            /// <summary>Seconds before it starts following (the daze orbs come in late).</summary>
-            public float delay;
             /// <summary>How much it covers what is behind (see Shape.paint).</summary>
             public float paint = -1f;
 
@@ -557,7 +555,6 @@ namespace ChessFight.RagdollLab
             public override bool Step(float dt, Camera cam)
             {
                 age += dt;
-                if (age < delay) return true;
                 var p = endedAt < 0f ? where() : null;
                 if (p.HasValue)
                 {
