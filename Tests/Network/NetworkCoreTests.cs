@@ -505,6 +505,21 @@ public static class NetworkCoreTests
                 var bad=new PlaybackDelay(); uint t2=0, last=0; int lost=0;
                 for(int i=0;i<600;i++) { t2+=33; if(i%8==7) { lost++; continue; } bad.Arrived(1000+t2,t2,lost); lost=0; last=t2; }
                 Check(Math.Abs(bad.Milliseconds-103.3)<0.5,"12% loss waits one more snapshot: "+bad.Milliseconds+" share "+bad.LossShare); });
+            Test("Playback delay: a 10% link (F12's worst) waits one snapshot more steadily, not on and off, and stops when the losses stop", () => {
+                var d=new PlaybackDelay(); var r=new Random(3); uint t=0; int lost=0, on=0, arrivals=0, flips=0; bool was=false;
+                for(int i=0;i<30*120;i++) {
+                    t+=33; if(r.Next(10)==0) { lost++; continue; }
+                    d.Arrived(1000+t,t,lost); lost=0;
+                    if(i>30*20) { arrivals++; if(d.Lossy) on++; if(d.Lossy!=was) flips++; }
+                    was=d.Lossy; }
+                Check(on>arrivals*0.95&&flips<=2,"10% loss: on for "+on+" of "+arrivals+" snapshots, "+flips+" flips");
+                Check(Math.Abs(d.Milliseconds-103.3)<0.5,"one more snapshot: "+d.Milliseconds);
+                int offAt=-1;
+                for(int i=0;i<30*20;i++) { t+=33; d.Arrived(1000+t,t,0); if(offAt<0&&!d.Lossy) offAt=i; if(offAt>=0) Check(!d.Lossy,"stays off"); }
+                Check(offAt>=0&&offAt<30*10,"off within 10 s of a clean link: "+offAt+" snapshots");
+                var light=new PlaybackDelay(); var r3=new Random(5); uint t3=0; int lost3=0, on3=0;
+                for(int i=0;i<30*120;i++) { t3+=33; if(r3.Next(33)==0) { lost3++; continue; } light.Arrived(1000+t3,t3,lost3); lost3=0; if(light.Lossy) on3++; }
+                Check(on3==0,"3% loss never waits: "+on3); });
             Test("Queen of the Hill: the first team to ring a bell opens its section, 20 s for that team", () => {
                 var q=new QueenHillRules(8);
                 Check(q.TryOpen(3,QueenHillRules.Black,100)&&!q.TryOpen(3,QueenHillRules.White,101),"first ring wins");

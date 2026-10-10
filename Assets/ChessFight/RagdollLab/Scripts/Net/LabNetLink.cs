@@ -1264,7 +1264,7 @@ namespace ChessFight.RagdollLab
         public string Report()
         {
             var sb = new System.Text.StringBuilder();
-            sb.Append($"report: {(NetIsHost ? "host" : "client")}, playback delay {delay.Milliseconds:0} ms (jitter {delay.JitterMs:0}), round trip {roundTripMs:0} ms, lag {lagOut.Profile}");
+            sb.Append($"report: {(NetIsHost ? "host" : "client")}, playback delay {delay.Milliseconds:0} ms (jitter {delay.JitterMs:0}, snapshots lost {delay.LossShare * 100:0.0}%{(delay.Lossy ? ", one more for the losses" : "")}), round trip {roundTripMs:0} ms, lag {lagOut.Profile}");
             sb.Append($", moments played {eventsPlayed}, confirmed up to {inbox.Acked}, queued {eventQueue.Count}, wires {SkillTripwire.LiveWires.Count} (copies {remoteWires.Count})");
             var barricades = SkillBarricade.All;
             for (int i = 0; i < barricades.Count; i++)
@@ -1319,7 +1319,7 @@ namespace ChessFight.RagdollLab
                 GUILayout.Label($"인원 {pawns.Count}명 · 보내기 {sentRate / 1024f:F1} KB/s · 받기 {receivedRate / 1024f:F1} KB/s · 스킬 {skillRate / 1024f:F1} KB/s", small);
                 GUILayout.Label(NetIsHost
                     ? $"스냅샷 {1f / SnapshotInterval:F0}Hz 송신 · 폰당 {RagdollNetProtocol.PoseBytes}바이트 · 스킬 신호 대기 {eventLog.Count}개"
-                    : $"스냅샷 수신 {snapshotRate}Hz · 왕복 지연 {roundTripMs:F0} ms · 버퍼 {buffer.Count}개 · 재생 지연 {delay.Milliseconds:F0} ms (흔들림 {delay.JitterMs:F0} ms)", small);
+                    : $"스냅샷 수신 {snapshotRate}Hz · 왕복 지연 {roundTripMs:F0} ms · 버퍼 {buffer.Count}개 · 재생 지연 {delay.Milliseconds:F0} ms (흔들림 {delay.JitterMs:F0} ms · 손실 {delay.LossShare * 100:F0}%{(delay.Lossy ? " → 한 장 더 기다림" : "")})", small);
                 if (!NetIsHost)
                 {
                     GUILayout.Label($"스킬 신호 받음 {eventsPlayed}개 · 확인 번호 {inbox.Acked} · 재생 대기 {eventQueue.Count}개", small);

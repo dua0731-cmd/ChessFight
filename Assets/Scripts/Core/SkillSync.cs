@@ -498,13 +498,20 @@ namespace ChessFight.Network
     public sealed class PlaybackDelay
     {
         public const double MinMs = 70, MaxMs = 160, FreeJitterMs = 4;
-        /// <summary>Over this share of snapshots lost, two in a row get likely enough to wait one more snapshot for.</summary>
-        public const double LossyShare = 0.08;
+        /// <summary>Over this share of snapshots lost, two in a row get likely enough to wait one more snapshot for; it
+        /// stops waiting under <see cref="LossyOffShare"/>. One line for both, and a share averaged over a second, put
+        /// a 10% link right on it: the extra snapshot went on and off more than once a second (R111 loopback).</summary>
+        public const double LossyShare = 0.08, LossyOffShare = 0.05;
+        /// <summary>The loss share is averaged over about 128 snapshots (4 s): a lossy link stays lossy for a while.</summary>
+        public const double LossAverage = 128;
         double lastLocal = -1, jitter, loss;
+        bool lossy;
         uint lastHost;
         public double Milliseconds { get; private set; }
         public double JitterMs { get { return jitter; } }
         public double LossShare { get { return loss; } }
+        /// <summary>Waiting one snapshot more for the losses.</summary>
+        public bool Lossy { get { return lossy; } }
 
         public PlaybackDelay() { Milliseconds = MinMs; }
 
@@ -518,11 +525,13 @@ namespace ChessFight.Network
                 // Up fast (a bad patch shows at once), down slowly (so it does not flicker back).
                 jitter += (d - jitter) * (d > jitter ? 0.25 : 1.0 / 32);
             }
-            for (int i = 0; i < Math.Min(Math.Max(0, lostBefore), 10); i++) loss += (1 - loss) / 32;
-            loss -= loss / 32;
+            for (int i = 0; i < Math.Min(Math.Max(0, lostBefore), 10); i++) loss += (1 - loss) / LossAverage;
+            loss -= loss / LossAverage;
+            if (loss > LossyShare) lossy = true;
+            else if (loss < LossyOffShare) lossy = false;
             lastLocal = localMs;
             lastHost = hostMs;
-            double ms = MinMs + 2.5 * Math.Max(0, jitter - FreeJitterMs) + (loss > LossyShare ? 1000.0 / 30 : 0);
+            double ms = MinMs + 2.5 * Math.Max(0, jitter - FreeJitterMs) + (lossy ? 1000.0 / 30 : 0);
             Milliseconds = Math.Max(MinMs, Math.Min(MaxMs, ms));
         }
 
@@ -531,6 +540,7 @@ namespace ChessFight.Network
             lastLocal = -1;
             jitter = 0;
             loss = 0;
+            lossy = false;
             Milliseconds = MinMs;
         }
     }
