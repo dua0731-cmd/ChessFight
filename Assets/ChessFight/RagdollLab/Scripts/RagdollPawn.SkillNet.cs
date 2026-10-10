@@ -277,6 +277,8 @@ namespace ChessFight.RagdollLab
             switch (key)
             {
                 case 0:
+                    // Asked to swap by a rook (Queen of the Hill): the key is the yes, not a skill of its own.
+                    if (castleAsker != null) break;
                     if (skillStage == SkillStage.None && skillCooldownLeft <= 0.05f)
                     {
                         // The pieces whose skill opens with a warning or an aim; a dash or a leap is the body's to show.
