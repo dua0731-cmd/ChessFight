@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R93 | 소드 파이트 재기획 상담 문서 `Docs/GameModes/SwordFight/PLANNING_BRIEF.md`(Claude AI 채팅용), DESIGN 머리 연결, HANDOFF·REQUIREMENTS |
+| (이 커밋) | 10-10 | R113 | 소드 파이트 현황 기획서 `Docs/GameModes/SwordFight/STATUS.md`(bold-johnson 기준), PLANNING_BRIEF 스킬 안내, 오전 R93 → R112 번호 변경 |
+| `2497935` | 10-10 | R112 | 소드 파이트 재기획 상담 문서 `Docs/GameModes/SwordFight/PLANNING_BRIEF.md`(Claude AI 채팅용), DESIGN 머리 연결, HANDOFF·REQUIREMENTS |
 | `ed5d527` | 10-09 | R92 | 캡스턴 8바퀴·허리 높이 막대·몸으로 밀기(Rigidbody), 폰 러쉬 코스 01 온라인(`SteamPawnRushLink`, `Core/PawnRushNetState`, 미니게임 원격 상태, HUD 내 폰, `escapeLeavesMatch`, `InputBlocked`), 프로토콜 v16, 컴파일 스크립트, 문서(SCENES·GameModes·PAWN_RUSH_COURSE01 §7-2·DECISIONS T9·VALIDATION·REQUIREMENTS·HANDOFF) |
 | `78f6003` | 10-08 | R90 | main 중간 점검: 폴더를 종류별로(Assets/ChessFight·Maps·Scenes/PawnRush 없앰, 스크립트는 Scripts/ 아래 어셈블리별), 안 쓰는 씬 5개 삭제(생성기 틀은 Tools/Generators/templates), 폰 러쉬 경기 씬 = PawnRush_Course01(`GameSceneConfig.soloInMatch`, Esc 나가기), 경로 문자열·검사 스크립트·문서(STRUCTURE·SCENES·GameModes·DECISIONS T7·T8 등) |
 | `3d49a18` | 10-08 | R89 3차 | 이 작업을 `claude/bold-johnson-8ez95n`에 합침(앞으로 감기, 사용자 요청). 문서: HISTORY 커밋 번호, REQUIREMENTS R89 3차, HANDOFF |
