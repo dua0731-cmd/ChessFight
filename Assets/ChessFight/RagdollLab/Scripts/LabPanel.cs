@@ -48,7 +48,8 @@ namespace ChessFight.RagdollLab
 
         void OnGUI()
         {
-            if (game == null || game.AutoTest) return;
+            // The skill network test (R112) has its own hint and numbers (SkillNetTest), not the lab's tools.
+            if (game == null || game.AutoTest || game.NetTestMode) return;
             EnsureStyles();
             if (!game.PanelOpen)
             {

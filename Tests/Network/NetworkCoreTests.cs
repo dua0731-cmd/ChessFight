@@ -446,6 +446,9 @@ public static class NetworkCoreTests
                     Check(drawn.Count==1000,$"loss {loss}%: drawn {drawn.Count} of 1000");
                     Check(drawn.Values.All(c=>c==1),"drawn twice");
                     for(ushort s=1;s<=1000;s++) Check(drawn.ContainsKey(s),"missed "+s);
+                    // R112: the test screen's counters say the same.
+                    Check(inbox.Missed==0,$"loss {loss}%: {inbox.Missed} counted as missed");
+                    Check(inbox.Repeats>0,"the resends until confirmed show as repeats");
                 } });
             Test("Skill moments: a late joiner starts from what is kept and gives up on what is gone", () => {
                 var log=new SkillEventLog(); for(int i=0;i<30;i++) log.Add(new SkillWireEvent{Kind=1},(uint)(i*100));
@@ -457,7 +460,10 @@ public static class NetworkCoreTests
                 Check(inbox.Accept(16)&&inbox.Acked==17,"filled");
                 Check(!inbox.Accept(16)&&!inbox.Accept(17),"repeats");
                 inbox.Window(40); Check(inbox.Acked==39,"moments the host gave up on are skipped");
-                Check(inbox.Accept(41)&&!inbox.Accept(30),"older than the window"); });
+                Check(inbox.Accept(41)&&!inbox.Accept(30),"older than the window");
+                // R112: 18..39 never came (22), and 16, 17 and 30 came again or too late (3).
+                Check(inbox.Missed==22&&inbox.Repeats==3,$"counted {inbox.Missed} missed, {inbox.Repeats} repeats");
+                inbox.Clear(); Check(inbox.Missed==0&&inbox.Repeats==0,"cleared"); });
             Test("Skills packet: twelve busy pieces, twelve wires and a burst of moments fit in 1024 bytes (C12)", () => {
                 const int header=4+1+8;   // the ragdoll protocol's magic, type and match id
                 int fit=SkillWire.EventsThatFit(1024-header,12,12,4,999);

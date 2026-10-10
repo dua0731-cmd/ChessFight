@@ -44,7 +44,9 @@ namespace ChessFight.Network
         // v16 (R111): the lab's piece skills online ("CFR7"): the lab input carries press counts,
         //      the piece asked for and the skill moments' confirmation; a skills packet goes
         //      with every snapshot.
-        public const string Protocol = "chessfight.dua0731.network.v16";
+        // v17 (R112, branch skill-network-test): the lab input also carries the client's round trip,
+        //      playback delay and loss ("CFR8") for the host's test screen.
+        public const string Protocol = "chessfight.dua0731.network.v17";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

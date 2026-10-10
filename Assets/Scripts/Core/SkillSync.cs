@@ -447,6 +447,10 @@ namespace ChessFight.Network
         public bool Started { get { return started; } }
         /// <summary>Every moment up to this number has arrived (or will never come).</summary>
         public ushort Acked { get { return acked; } }
+        /// <summary>Moments that came again after they had arrived (the host resends until confirmed; dropped here).</summary>
+        public int Repeats { get; private set; }
+        /// <summary>Moments the host gave up on before they ever arrived (lost every time for EventLifeMs: never drawn).</summary>
+        public int Missed { get; private set; }
 
         /// <summary>The packet's oldest kept number: the ones before it are given up on.</summary>
         public void Window(ushort first)
@@ -459,6 +463,12 @@ namespace ChessFight.Network
                 return;
             }
             if (!SkillWire.Newer(before, acked)) return;
+            // The numbers between what had all arrived and the new window's start that never came are lost for good.
+            int gap = unchecked((ushort)(before - acked));
+            int had = 0;
+            foreach (ushort s in ahead)
+                if (!SkillWire.Newer(s, before)) had++;
+            Missed += System.Math.Max(0, gap - had);
             acked = before;
             ahead.RemoveWhere(s => !SkillWire.Newer(s, acked));
             Advance();
@@ -468,7 +478,11 @@ namespace ChessFight.Network
         public bool Accept(ushort seq)
         {
             if (!started) return false;
-            if (!SkillWire.Newer(seq, acked) || ahead.Contains(seq)) return false;
+            if (!SkillWire.Newer(seq, acked) || ahead.Contains(seq))
+            {
+                Repeats++;
+                return false;
+            }
             ahead.Add(seq);
             Advance();
             return true;
@@ -484,6 +498,7 @@ namespace ChessFight.Network
             started = false;
             acked = 0;
             ahead.Clear();
+            Repeats = Missed = 0;
         }
     }
 

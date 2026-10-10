@@ -86,6 +86,14 @@ namespace ChessFight.RagdollLab
         /// <summary>Another on-screen panel needs the mouse; keep the cursor free so its buttons work.</summary>
         public bool UiWantsCursor { get; set; }
 
+        /// <summary>
+        /// The skill network test (R112, branch skill-network-test): the skill test scenes are only for trying the skills
+        /// online, so the lab's own tools stand down. No tuning panel (Tab, F1, a pad's Start) and its slot keys, no slow
+        /// motion (T), no free camera (F4), no split screen (F2) and no second local player, no [7] test bed (F9). The
+        /// skill test beds set it in Awake (before Start); SkillNetTest draws the numbers instead.
+        /// </summary>
+        public bool NetTestMode { get; set; }
+
         /// <summary>Each local player has their own half of the screen and their own camera.</summary>
         public bool SplitScreen { get; private set; }
         public string Status { get; set; } = "";
@@ -123,8 +131,8 @@ namespace ChessFight.RagdollLab
             ApplyTime();
             ApplyGravity();
             // The Queen of the Hill mechanics test bed, south-east of the arena. Built from code, so the
-            // scene does not need rebuilding; the automated checks use it too.
-            if (GetComponent<QueenHillTestBed>() == null) gameObject.AddComponent<QueenHillTestBed>().game = this;
+            // scene does not need rebuilding; the automated checks use it too. Not in the skill network test (R112).
+            if (!NetTestMode && GetComponent<QueenHillTestBed>() == null) gameObject.AddComponent<QueenHillTestBed>().game = this;
             PawnHookView.LocalAim = LocalAim;
             if (AutoTest) return;
             SetUpCameras();
@@ -223,6 +231,9 @@ namespace ChessFight.RagdollLab
             {
                 var slot = players[i];
                 if (slot.pawn != null) continue;
+                // One person per PC in the skill network test (R112): no second local player (P2's slot stays for its
+                // team colour, which the network's other team wears).
+                if (NetTestMode && i > 0) continue;
                 slot.pawn = Spawn(slot.spawn, Vector3.forward, slot.material, slot.name);
                 // P1 white, P2 black, so the lab has two sides to try team rules with (M10). Dummies have none.
                 slot.pawn.Team = i % 2 == 0 ? Teams.White : Teams.Black;
@@ -339,17 +350,25 @@ namespace ChessFight.RagdollLab
 
         void HandleHotkeys()
         {
-            if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.F1)) PanelOpen = !PanelOpen;
-            for (int i = 0; i < XInputPad.MaxPads; i++)
-                if (XInputPad.Pressed(i, XInputPad.Start)) PanelOpen = !PanelOpen;
             if (Input.GetKeyDown(KeyCode.R) && !NetworkControlled) RespawnAll();
-            if (Input.GetKeyDown(KeyCode.T) && !NetworkControlled) SetSlowMotion(!SlowMotion);
-            // F4, not F: F is the game's interact key now (bells, levers, en passant).
-            if (Input.GetKeyDown(KeyCode.F4)) labCamera.SetFreeMode(!labCamera.freeMode);
-            if (Input.GetKeyDown(KeyCode.F2) && !NetworkControlled) SetSplitScreen(!SplitScreen);
             if (Input.GetKeyDown(KeyCode.Escape)) Cursor.lockState = CursorLockMode.None;
+            if (NetTestMode)
+            {
+                // The skill network test (R112): none of the lab's tools below.
+                PanelOpen = false;
+            }
+            else
+            {
+                if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.F1)) PanelOpen = !PanelOpen;
+                for (int i = 0; i < XInputPad.MaxPads; i++)
+                    if (XInputPad.Pressed(i, XInputPad.Start)) PanelOpen = !PanelOpen;
+                if (Input.GetKeyDown(KeyCode.T) && !NetworkControlled) SetSlowMotion(!SlowMotion);
+                // F4, not F: F is the game's interact key now (bells, levers, en passant).
+                if (Input.GetKeyDown(KeyCode.F4)) labCamera.SetFreeMode(!labCamera.freeMode);
+                if (Input.GetKeyDown(KeyCode.F2) && !NetworkControlled) SetSplitScreen(!SplitScreen);
+            }
 
-            if (slots != null)
+            if (slots != null && !NetTestMode)
             {
                 bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
                 for (int i = 0; i < LabParamSlots.Count; i++)

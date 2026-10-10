@@ -92,6 +92,9 @@ namespace ChessFight.RagdollLab
             PawnRushOnly.Clear();
             RagdollPawn.SkillLog += OnSkill;
             RagdollPawn.QueenHillFx += OnSkillMoment;
+            // The skill network test (R112, branch skill-network-test): the lab's tools stand down before LabGame.Start,
+            // and the test screen draws the numbers.
+            if (GetComponent<SkillNetTest>() == null) gameObject.AddComponent<SkillNetTest>();
         }
 
         void OnDestroy()
@@ -606,7 +609,7 @@ namespace ChessFight.RagdollLab
             const float width = 380f;
             panelRect = new Rect(8f, 44f, width, Mathf.Min(Screen.height - 180f, 680f));
             GUILayout.BeginArea(panelRect, box);
-            GUILayout.Label("퀸 오브 더 힐 스킬 시험 (R89 · R93)", header);
+            GUILayout.Label("퀸 오브 더 힐 스킬 · 네트워크 시험", header);
             GUILayout.Label($"기물 바꾸기: 버튼 또는 {previousPieceKey} ◀ ▶ {nextPieceKey}   ·   스킬: <b>{skillKey}</b>", small);
             GUILayout.BeginHorizontal();
             foreach (var kind in Pieces)
@@ -637,12 +640,10 @@ namespace ChessFight.RagdollLab
             }
             if (Online)
             {
-                // Online (R111): the host runs every skill; the helpers and the dummies are offline only.
+                // Online (R111): the host runs every skill; the helpers and the dummies are offline only. Who hosts and the
+                // link's numbers are on the test screen at the top right (R112).
                 GUILayout.Space(6f);
-                GUILayout.Label(game.NetworkHost
-                    ? "<b>온라인 · 방장</b>: 모든 스킬을 이 PC가 판정해요. 멈춤은 내 화면에서만(맞은 두 기물 그림만 잠깐 멈춤)."
-                    : "<b>온라인 · 참가자</b>: 스킬 키는 방장에게 가요. 내 조준과 예고는 바로 그리고, 결과는 방장 판정을 따라요.", small);
-                GUILayout.Label($"룩 교대 요청을 받으면 {skillKey} = 수락 (방장이 판정). 기물 바꾸기는 방장에게 요청 (Z · X). 지연 시험: F12", small);
+                GUILayout.Label($"룩 교대 요청을 받으면 {skillKey} = 수락 (방장이 판정). 기물 바꾸기는 방장에게 요청 (Z · X). 지연 넣기: F12", small);
                 GUILayout.Space(6f);
                 GUILayout.Label("<b>최근 결과</b>" + (game.NetworkHost ? "" : " (참가자 화면에는 내 요청만 나와요)"), text);
                 for (int i = log.Count - 1; i >= 0; i--) GUILayout.Label(log[i], small);

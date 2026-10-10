@@ -117,6 +117,10 @@ namespace ChessFight.RagdollLab
         public byte jumps, shoves, abilities, abilities2, skills;   // press counts (wrapping)
         public byte pieceAsk, pieceSeq;  // the piece asked for, and a number that changes with every ask (0 = none yet)
         public ushort eventAck;          // skill moments: everything up to this one has arrived
+        // How the link looks from the client (R112, the skill network test screen): the host shows it per player.
+        public ushort roundTripMs;       // measured on the snapshots' echo of this player's input times
+        public byte delayMs;             // the playback delay (jitter buffer), ms
+        public byte lossPercent;         // snapshots lost, %
 
         /// <summary>The held part of a pawn's input (the presses are counted separately).</summary>
         public void Hold(PawnInput input)
@@ -176,7 +180,8 @@ namespace ChessFight.RagdollLab
         // CFR6: the host's obstacle time in the snapshot header (2026-09-30).
         // CFR7: presses as counts, the piece asked for and the skill moments' confirmation in the input; the skills
         // packet (R111, 2026-10-10).
-        public const uint Magic = 0x43465237;   // "CFR7"
+        // CFR8: the client's round trip, playback delay and loss in the input, for the host's test screen (R112).
+        public const uint Magic = 0x43465238;   // "CFR8"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
@@ -198,7 +203,7 @@ namespace ChessFight.RagdollLab
         public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 1 + 4;  // 74
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 8 + 1;        // 30
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
-        public const int LabInputBytes = 4 + 1 + 8 + 4 + 4 + 2 + 1 + 3 + 5 + 2 + 2;   // 36
+        public const int LabInputBytes = 4 + 1 + 8 + 4 + 4 + 2 + 1 + 3 + 5 + 2 + 2 + 4;   // 40
 
         const float SmallestThreeRange = 0.70710678f;
 
@@ -288,6 +293,9 @@ namespace ChessFight.RagdollLab
                 w.Write(input.pieceAsk);
                 w.Write(input.pieceSeq);
                 w.Write(input.eventAck);
+                w.Write(input.roundTripMs);
+                w.Write(input.delayMs);
+                w.Write(input.lossPercent);
                 return stream.ToArray();
             }
         }
@@ -322,7 +330,11 @@ namespace ChessFight.RagdollLab
                 input.pieceAsk = r.ReadByte();
                 input.pieceSeq = r.ReadByte();
                 input.eventAck = r.ReadUInt16();
+                input.roundTripMs = r.ReadUInt16();
+                input.delayMs = r.ReadByte();
+                input.lossPercent = r.ReadByte();
                 if (input.pieceSeq != 0 && !ChessPieces.IsValid(input.pieceAsk)) return false;
+                if (input.lossPercent > 100) return false;
                 return true;
             }
         }

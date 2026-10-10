@@ -101,6 +101,21 @@ namespace ChessFight.RagdollLab
             public bool interactLatch, interactNow;
             public ushort eventAck;
             public bool ackSet;
+            // R112, the test screen: the link as the client reports it, and what the host heard.
+            public ushort reportRtt;
+            public byte reportDelay, reportLoss;
+            public int heard, heardRate, skillsTaken;
+        }
+
+        /// <summary>One player as the host sees it (the skill network test screen, R112).</summary>
+        public struct PeerStat
+        {
+            public string Name;
+            public int RoundTripMs, DelayMs, LossPercent;   // as that player measures it
+            public int InputRate;                           // its input packets heard per second (60 when nothing is lost)
+            public int SkillPresses;                        // its skill key presses the host took
+            public int Unconfirmed;                         // skill moments it has not confirmed yet
+            public float SilentMs;                          // since its last input
         }
 
         struct Packet
@@ -170,6 +185,21 @@ namespace ChessFight.RagdollLab
         GUIStyle label, small, button;
         Texture2D panel;
 
+        // R112, the skill network test screen (SkillNetTest): what the link measures besides the round trip.
+        readonly List<PeerStat> peerStats = new List<PeerStat>();
+        readonly List<SkillWireEvent> statBatch = new List<SkillWireEvent>();
+        int snapshotBytesLast, skillPackets, skillPacketMax, skillPacketRate, skillPacketMaxRate;
+        // A client's press (F, or the click that fires / calls off an aim) until the host's state of its piece changes.
+        float pressAt = -1f;
+        SkillStage pressStage, lastOwnStage;
+        bool pressLocked;
+        readonly float[] reactions = new float[10];
+        int reactionCount, reactionNext;
+        // A client's skill moments: drawn how far from their own pose, and how long after they arrived.
+        readonly Dictionary<ushort, float> arrivedAt = new Dictionary<ushort, float>();
+        readonly float[] momentLate = new float[20], momentWait = new float[20];
+        int momentCount, momentNext;
+
         protected static uint NowMs() => (uint)(Time.realtimeSinceStartupAsDouble * 1000d);
 
         /// <summary>This PC's lag simulation (F12, the panel's buttons).</summary>
@@ -179,6 +209,58 @@ namespace ChessFight.RagdollLab
         public float RoundTripMs => roundTripMs;
         public double PlaybackDelayMs => delay.Milliseconds;
         public int EventsPlayed => eventsPlayed;
+
+        // ---- the test screen's numbers (R112)
+        public string CarrierName => NetKind;
+        public int PlayerCount => pawns.Count;
+        public double JitterMs => delay.JitterMs;
+        public double LossShare => delay.LossShare;
+        public bool LossWait => delay.Lossy;
+        public int SentPerSecond => sentRate;
+        public int ReceivedPerSecond => receivedRate;
+        public int SkillBytesPerSecond => skillRate;
+        public int SnapshotsPerSecond => snapshotRate;
+        public int BufferedSnapshots => buffer.Count;
+        public int SnapshotBytes => snapshotBytesLast;
+        /// <summary>Skills packets a second (to all clients on the host) and their average and largest size.</summary>
+        public int SkillPacketsPerSecond => skillPacketRate;
+        public int SkillPacketAverage => skillPacketRate > 0 ? skillRate / skillPacketRate : 0;
+        public int SkillPacketLargest => skillPacketMaxRate;
+        public int MomentsQueued => eventQueue.Count;
+        public int MomentsRepeated => inbox.Repeats;
+        public int MomentsMissed => inbox.Missed;
+        public int MomentsStale { get; private set; }
+        public int MomentsLogged => eventLog.Count;
+        /// <summary>A client's last press until the host's state of its piece changed (ms; -1 = none yet), the average of
+        /// the last ten, and presses the host never acted on within 1.5 s (on cooldown, knocked down).</summary>
+        public float LastReactionMs { get; private set; } = -1f;
+        public float AverageReactionMs => Average(reactions, reactionCount);
+        public int SkillPresses { get; private set; }
+        public int SkillStarts { get; private set; }
+        public int ReactionsLost { get; private set; }
+        /// <summary>A client's skill moments: how far from their pose they were drawn (ms, average of the last 20; should
+        /// be near 0) and how long they waited after arriving (about the playback delay).</summary>
+        public float MomentLateMs => Average(momentLate, momentCount);
+        public float MomentWaitMs => Average(momentWait, momentCount);
+        public IReadOnlyList<PeerStat> Peers => peerStats;
+        /// <summary>The online panel (F3); the test screen opens it while no match is on.</summary>
+        public bool PanelShown { get => hudOpen; set => hudOpen = value; }
+
+        static float Average(float[] ring, int count)
+        {
+            int n = Mathf.Min(count, ring.Length);
+            if (n == 0) return -1f;
+            float sum = 0f;
+            for (int i = 0; i < n; i++) sum += ring[i];
+            return sum / n;
+        }
+
+        static void Push(float[] ring, ref int next, ref int count, float value)
+        {
+            ring[next] = value;
+            next = (next + 1) % ring.Length;
+            count++;
+        }
 
         // ---------------------------------------------------------------- lifecycle
 
@@ -356,6 +438,7 @@ namespace ChessFight.RagdollLab
             if (outgoing.Count == 0) return;
             // The obstacle time these poses were simulated at: clients draw the obstacles at it.
             byte[] bytes = RagdollNetProtocol.Snapshot(NetMatch, ++tick, stamp, outgoing, ObstacleClock.Now);
+            snapshotBytesLast = bytes.Length;
             foreach (ulong id in NetRoster.Keys)
                 if (id != NetSelf) Send(id, bytes);
             SendSkills(stamp);
@@ -413,6 +496,8 @@ namespace ChessFight.RagdollLab
                 skillOut.Events.AddRange(eventBatch);
                 byte[] bytes = RagdollNetProtocol.Skills(NetMatch, skillOut);
                 skillBytes += bytes.Length;
+                skillPackets++;
+                skillPacketMax = Mathf.Max(skillPacketMax, bytes.Length);
                 Send(id, bytes);
             }
         }
@@ -480,13 +565,19 @@ namespace ChessFight.RagdollLab
             r.shove = Mathf.Min(4, r.shove + PressCount.Take(fresh.shoves, ref r.shoves));
             r.ability = Mathf.Min(4, r.ability + PressCount.Take(fresh.abilities, ref r.abilities));
             r.ability2 = Mathf.Min(4, r.ability2 + PressCount.Take(fresh.abilities2, ref r.abilities2));
-            r.skill = Mathf.Min(4, r.skill + PressCount.Take(fresh.skills, ref r.skills));
+            int skillsNow = PressCount.Take(fresh.skills, ref r.skills);
+            r.skill = Mathf.Min(4, r.skill + skillsNow);
+            r.skillsTaken += skillsNow;
             r.interactLatch |= fresh.interact;
             r.interactNow = fresh.interact;
             r.input = fresh;
             r.sequence = seq;
             r.clientTimeMs = clientTime;
             r.received = Time.realtimeSinceStartup;
+            r.heard++;
+            r.reportRtt = fresh.roundTripMs;
+            r.reportDelay = fresh.delayMs;
+            r.reportLoss = fresh.lossPercent;
             if (fresh.pieceSeq != 0 && fresh.pieceSeq != r.pieceSeq)
             {
                 r.pieceSeq = fresh.pieceSeq;
@@ -515,6 +606,17 @@ namespace ChessFight.RagdollLab
 
             if (pawns.TryGetValue(NetSelf, out var me) && me != null)
             {
+                // R112: time a press until the host's state of my piece changes (the skill key; the click that fires or
+                // the right click that calls off an aim). Measured before the guess below draws over my piece.
+                bool aiming = me.HostStage == SkillStage.Windup && !me.HostAimLocked;
+                bool timed = local.skill || (aiming && (local.shove || (local.grab && !grabWasDown)));
+                if (local.skill) SkillPresses++;
+                if (timed && pressAt < 0f)
+                {
+                    pressAt = Time.realtimeSinceStartup;
+                    pressStage = me.HostStage;
+                    pressLocked = me.HostAimLocked;
+                }
                 // D-S3: my own press and aim drawn at once, for about a round trip, until the host's state says the same.
                 float hold = Mathf.Clamp(roundTripMs / 1000f + 0.25f, 0.25f, 0.8f);
                 if (local.skill) me.PredictPress(0, hold);
@@ -523,6 +625,12 @@ namespace ChessFight.RagdollLab
                 me.ViewAim(local.aim);
             }
             grabWasDown = local.grab;
+            if (pressAt >= 0f && Time.realtimeSinceStartup - pressAt > 1.5f)
+            {
+                // The host never acted on it (a cooldown, knocked down, nothing to aim at).
+                ReactionsLost++;
+                pressAt = -1f;
+            }
 
             float clock = Time.realtimeSinceStartup;
             if (clock >= nextInput)
@@ -537,6 +645,10 @@ namespace ChessFight.RagdollLab
                 pending.pieceAsk = (byte)game.NetPieceAsk;
                 pending.pieceSeq = game.NetPieceSeq;
                 pending.eventAck = inbox.Started ? inbox.Acked : (ushort)0;
+                // The link as this PC sees it, for the host's test screen (R112).
+                pending.roundTripMs = (ushort)Mathf.Clamp(Mathf.RoundToInt(roundTripMs), 0, ushort.MaxValue);
+                pending.delayMs = (byte)Mathf.Clamp((int)Math.Round(delay.Milliseconds), 0, 255);
+                pending.lossPercent = (byte)Mathf.Clamp((int)Math.Round(delay.LossShare * 100d), 0, 100);
                 Send(NetHost, RagdollNetProtocol.LabInput(NetMatch, ++sequence, NowMs(), pending));
                 pending.interact = false;
             }
@@ -635,6 +747,7 @@ namespace ChessFight.RagdollLab
             lastTick = snapshot.tick;
             lastReceive = Time.realtimeSinceStartup;
             snapshotsIn++;
+            snapshotBytesLast = bytes.Length;
             delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snapshot.hostTimeMs, lost);
             // Round trip: my input's time as the host echoes it, now that it is here. R111: it was read when the
             // snapshot was drawn, which added anything from none to all of the playback delay to it (at F12 +300 ms
@@ -654,6 +767,8 @@ namespace ChessFight.RagdollLab
         {
             if (!RagdollNetProtocol.ReadSkills(bytes, NetMatch, skillIn)) return;
             skillBytes += bytes.Length;
+            skillPackets++;
+            skillPacketMax = Mathf.Max(skillPacketMax, bytes.Length);
             // States and wires are whole in every packet: one overtaken by a newer is old news (its moments still count).
             bool newer = !skillsApplied || unchecked((int)(skillIn.HostTimeMs - lastSkillsTime)) > 0;
             if (newer)
@@ -674,6 +789,7 @@ namespace ChessFight.RagdollLab
             foreach (var e in skillIn.Events)
             {
                 if (!inbox.Accept(e.Seq)) continue;
+                arrivedAt[e.Seq] = Time.realtimeSinceStartup;
                 // Kept in time order: each plays when the bodies drawn reach its moment.
                 int at = eventQueue.Count;
                 while (at > 0 && unchecked((int)(eventQueue[at - 1].TimeMs - e.TimeMs)) > 0) at--;
@@ -700,6 +816,22 @@ namespace ChessFight.RagdollLab
                     pawn.ClearSkillNet();
                     if (Trace && was != pawn.SkillStage) Log($"{pawn.DisplayName} {pawn.Piece} {was} → {pawn.SkillStage} (idle)");
                 }
+            TimeOwnPress();
+        }
+
+        /// <summary>R112: the host's state of this PC's piece has changed since the timed press: that press took this
+        /// long to come back (a round trip, the wait for the host's next physics step and snapshot, and the snapshot's
+        /// way back). Its skill starting counts too.</summary>
+        void TimeOwnPress()
+        {
+            if (!pawns.TryGetValue(NetSelf, out var me) || me == null) return;
+            var stage = me.HostStage;
+            if (lastOwnStage == SkillStage.None && stage != SkillStage.None) SkillStarts++;
+            lastOwnStage = stage;
+            if (pressAt < 0f || (stage == pressStage && me.HostAimLocked == pressLocked)) return;
+            LastReactionMs = (Time.realtimeSinceStartup - pressAt) * 1000f;
+            Push(reactions, ref reactionNext, ref reactionCount, LastReactionMs);
+            pressAt = -1f;
         }
 
         void ApplyWires()
@@ -763,7 +895,18 @@ namespace ChessFight.RagdollLab
             eventQueue.RemoveRange(0, n);
             foreach (var e in eventBatch)
             {
-                if (playbackMs - e.TimeMs > StaleEventMs) continue;
+                float arrived = arrivedAt.TryGetValue(e.Seq, out float at) ? at : -1f;
+                arrivedAt.Remove(e.Seq);
+                if (playbackMs - e.TimeMs > StaleEventMs)
+                {
+                    MomentsStale++;
+                    continue;
+                }
+                // R112: drawn how far from its own pose (the bodies on screen), and how long after it came in.
+                momentLate[momentNext] = (float)(playbackMs - e.TimeMs);
+                momentWait[momentNext] = arrived >= 0f ? (Time.realtimeSinceStartup - arrived) * 1000f : 0f;
+                momentNext = (momentNext + 1) % momentLate.Length;
+                momentCount++;
                 try
                 {
                     Play(e);
@@ -1174,6 +1317,15 @@ namespace ChessFight.RagdollLab
             delay.Reset();
             lagOut.Clear();
             lagIn.Clear();
+            // The test screen's numbers start over with the match (R112).
+            arrivedAt.Clear();
+            pressAt = LastReactionMs = -1f;
+            lastOwnStage = SkillStage.None;
+            reactionCount = reactionNext = momentCount = momentNext = 0;
+            MomentsStale = SkillPresses = SkillStarts = ReactionsLost = 0;
+            snapshotBytesLast = 0;
+            peerStats.Clear();
+            RagdollPawn.NetStats.Clear();
             OnStreamReset();
         }
 
@@ -1187,7 +1339,42 @@ namespace ChessFight.RagdollLab
             receivedRate = receivedBytes;
             snapshotRate = snapshotsIn;
             skillRate = skillBytes;
-            sentBytes = receivedBytes = snapshotsIn = skillBytes = 0;
+            skillPacketRate = skillPackets;
+            skillPacketMaxRate = skillPacketMax;
+            sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = 0;
+            UpdatePeerStats();
+        }
+
+        /// <summary>R112: every other player as the host sees it, once a second (the test screen reads the list).</summary>
+        void UpdatePeerStats()
+        {
+            peerStats.Clear();
+            if (!matchActive || !NetIsHost) return;
+            float now = Time.realtimeSinceStartup;
+            foreach (ulong id in NetRoster.Keys)
+            {
+                if (id == NetSelf) continue;
+                inputs.TryGetValue(id, out var r);
+                int unconfirmed = 0;
+                if (r != null)
+                {
+                    eventLog.After(r.ackSet ? r.eventAck : unchecked((ushort)(eventLog.First - 1)), 255, statBatch);
+                    unconfirmed = statBatch.Count;
+                    r.heardRate = r.heard;
+                    r.heard = 0;
+                }
+                peerStats.Add(new PeerStat
+                {
+                    Name = NetName(id),
+                    RoundTripMs = r != null ? r.reportRtt : -1,
+                    DelayMs = r != null ? r.reportDelay : -1,
+                    LossPercent = r != null ? r.reportLoss : -1,
+                    InputRate = r != null ? r.heardRate : 0,
+                    SkillPresses = r != null ? r.skillsTaken : 0,
+                    Unconfirmed = unconfirmed,
+                    SilentMs = r != null ? (now - r.received) * 1000f : -1f,
+                });
+            }
         }
 
         /// <summary>Extra delay and loss on this PC's packets both ways (F12 cycles; 0 = off).</summary>

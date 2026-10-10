@@ -38,8 +38,32 @@ namespace ChessFight.RagdollLab
 
         public void HoldVisual(float seconds)
         {
-            if (seconds > 0f) visualHoldUntil = Mathf.Max(visualHoldUntil, Time.unscaledTime + seconds);
+            if (seconds <= 0f) return;
+            visualHoldUntil = Mathf.Max(visualHoldUntil, Time.unscaledTime + seconds);
+            // One hit stop holds two pieces in the same frame: count it once (the test screen, R112).
+            if (Time.frameCount != lastHoldFrame)
+            {
+                lastHoldFrame = Time.frameCount;
+                NetStats.HitStops++;
+                NetStats.LastHitStopFrames = Mathf.RoundToInt(seconds * 60f);
+            }
         }
+
+        static int lastHoldFrame = -1;
+
+        /// <summary>What the skills' online side did on this PC, for the skill network test screen (R112): the hit stops
+        /// drawn here and the press guesses (made, matched by the host, given up when the host never did it).</summary>
+        public static class NetStats
+        {
+            public static int HitStops, LastHitStopFrames;
+            public static int Guesses, GuessesMatched, GuessesDropped;
+
+            public static void Clear() => HitStops = LastHitStopFrames = Guesses = GuessesMatched = GuessesDropped = 0;
+        }
+
+        /// <summary>The host's last word on this puppet's skill (the guess above draws over it for a moment).</summary>
+        public SkillStage HostStage => netStage;
+        public bool HostAimLocked => netLocked;
 
         // ---------------------------------------------------------------- host: what the others need
 
@@ -229,6 +253,7 @@ namespace ChessFight.RagdollLab
                     // The host never took the press (on its own cooldown, knocked down meanwhile): back to what it says.
                     skillStage = netStage;
                     aimLocked = netLocked;
+                    NetStats.GuessesDropped++;
                 }
             }
             // The queen's slash runs along the floor (R97): the way is the same arithmetic on every PC.
@@ -304,6 +329,7 @@ namespace ChessFight.RagdollLab
 
         void Predict(SkillStage stage, bool locked, float hold, bool restartClock)
         {
+            NetStats.Guesses++;
             predictStage = stage;
             predictLocked = locked;
             predictLeft = Mathf.Max(0.1f, hold);
@@ -329,6 +355,7 @@ namespace ChessFight.RagdollLab
             if (PredictionConfirmed())
             {
                 predictLeft = 0f;   // the host did it: its state from now on
+                NetStats.GuessesMatched++;
                 return;
             }
             // Until then the guess holds, on its own clock (the host's state still says the step before).
