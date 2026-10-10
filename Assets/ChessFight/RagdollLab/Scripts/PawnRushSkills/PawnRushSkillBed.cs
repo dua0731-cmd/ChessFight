@@ -40,6 +40,7 @@ namespace ChessFight.RagdollLab
 
         LabGame game;
         PawnRushSkillFx fx;
+        PawnRushSkillSfx sfx;
         GUIStyle text, small, header, button, selected, box;
         Texture2D panelTexture, barTexture;
         Rect panelRect;
@@ -72,6 +73,9 @@ namespace ChessFight.RagdollLab
             SkillBarricade.Build(barricadeAt, barricadeFacing, "Pawn Rush 바리케이드 (룩만 부숨)");
             fx = GetComponent<PawnRushSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<PawnRushSkillFx>();
+            // The skills' sounds (R114, 승규 님's picks on the R107 page).
+            sfx = GetComponent<PawnRushSkillSfx>();
+            if (sfx == null) sfx = gameObject.AddComponent<PawnRushSkillSfx>();
             // F is the skills' key here, not the lab's interact (bells, levers, cutting a hook).
             if (game != null && skillKey == KeyCode.F) game.InteractKeyOff = true;
             // The key goes in with the rest of P1's input (R111): offline straight to the pawn, online to the host.
@@ -313,6 +317,7 @@ namespace ChessFight.RagdollLab
                 if (GUILayout.Button(fx.effects ? "이펙트 켜짐" : "이펙트 꺼짐", fx.effects ? selected : button)) fx.effects = !fx.effects;
                 if (GUILayout.Button(fx.hitStop ? "멈춤 켜짐" : "멈춤 꺼짐", fx.hitStop ? selected : button)) fx.hitStop = !fx.hitStop;
                 if (GUILayout.Button(fx.shake ? "흔들기 켜짐" : "흔들기 꺼짐", fx.shake ? selected : button)) fx.shake = !fx.shake;
+                if (sfx != null && GUILayout.Button(sfx.sound ? "소리 켜짐" : "소리 꺼짐", sfx.sound ? selected : button)) sfx.sound = !sfx.sound;
                 GUILayout.EndHorizontal();
             }
 

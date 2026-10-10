@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R112 | 문서: Network/SKILLS_ONLINE §14(스킬 네트워크 시험 브랜치·화면), VALIDATION R112 표, REQUIREMENTS R112, DECISIONS SK9, PITFALLS 36·37, HANDOFF, HISTORY, Network·Skills 안내 (두 브랜치 같은 내용, 푸시 안 함) |
+| (이 커밋) | 10-10 | R114 | (`skill-network-test`) 폰 러쉬 스킬 효과음: `PawnRushSkillSfx`(이펙트 신호·스킬 단계로 재생, 돌진·팽팽한 줄·비행은 이어지는 소리), `Resources/PawnRushSkillSfx` 19개, 시험장 소리 버튼, `Tools/Sfx/PawnRushSkills/export_unity.py`, 문서(Skills/SOUND §효과음 넣기, VALIDATION R114, REQUIREMENTS R114, HANDOFF, HISTORY) |
+| `3770810` | 10-10 | R112 | 문서: Network/SKILLS_ONLINE §14(스킬 네트워크 시험 브랜치·화면), VALIDATION R112 표, REQUIREMENTS R112, DECISIONS SK9, PITFALLS 36·37, HANDOFF, HISTORY, Network·Skills 안내 (두 브랜치 같은 내용, 푸시 안 함) |
 | `0c9f628` | 10-10 | R112 | (`skill-network-test`) 교대 수락 F는 방장이 요청을 거둘 때까지 재고 스킬 키로 세지 않음(로컬 시험에서 "반응 없음"으로 나왔음) |
 | `132d053` | 10-10 | R112 | (`skill-network-test`) 방장이 보낸 스냅샷 개/초를 실제로 잼(늘 30이라고 적었음), 시험 화면 긴 줄 줄 바꿈 |
 | `cf2de62` | 10-10 | R112 | (`skill-network-test`) bold-johnson의 씬 삭제 `9a94131`을 `merge -s ours`로 합친 것으로만 기록(이 브랜치는 씬을 그대로 둠) |
