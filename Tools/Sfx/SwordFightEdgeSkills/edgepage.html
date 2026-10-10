@@ -1,0 +1,147 @@
+<meta charset="utf-8">
+<title>가장자리 스킬 효과음</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column of five skill boards (the platform's edge as a hard rule under each title), the picks in a bar at the foot. */
+:root {
+  --ground: #eef0f3; --board: #ffffff; --ink: #1d2433; --mute: #5d6678; --rule: #c9ced8;
+  --king: #2e9e6b; --queen: #c99a1d; --rook: #d4672a; --bishop: #8a4fc7; --knight: #3d97c9;
+  --chip: #e3e7ee; --picked: #1d2433; --picked-fg: #ffffff;
+  --display: "Black Han Sans", "Malgun Gothic", sans-serif;
+  --body: "Gowun Dodum", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #12161e; --board: #1a202b; --ink: #e8ebf1; --mute: #9aa3b4; --rule: #2e3646; --chip: #262e3c; --picked: #e8ebf1; --picked-fg: #12161e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --ground: #12161e; --board: #1a202b; --ink: #e8ebf1; --mute: #9aa3b4; --rule: #2e3646; --chip: #262e3c; --picked: #e8ebf1; --picked-fg: #12161e; color-scheme: dark }
+body { background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 860px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 120px; display: flex; flex-direction: column; gap: 28px; }
+header h1 { font-family: var(--display); font-weight: 400; font-size: clamp(28px, 5vw, 40px); margin: 0; letter-spacing: .01em; text-wrap: balance; }
+header p { margin: 6px 0 0; color: var(--mute); max-width: 62ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.legend button { font: inherit; border: 1px solid var(--rule); background: var(--board); color: var(--ink); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.legend button b { font-family: var(--mono); margin-right: 6px; }
+.legend button:focus-visible, .play:focus-visible, .pick:focus-visible, .copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.skill { background: var(--board); border-radius: 10px; overflow: hidden; }
+.skill .top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 0; }
+.skill img { width: 100%; height: 100%; object-fit: cover; display: block; aspect-ratio: 16 / 9; max-width: 100%; }
+.skill .title { padding: 18px 18px 14px; border-bottom: 4px solid var(--c); display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; min-width: 0; }
+.skill h2 { font-family: var(--display); font-weight: 400; font-size: 24px; margin: 0; color: var(--c); }
+.skill .moment { color: var(--mute); margin: 0; }
+.rows { display: flex; flex-direction: column; }
+.row { display: grid; grid-template-columns: 34px 84px 40px minmax(0, 1fr) 64px; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--rule); }
+.row:first-child { border-top: 0; }
+.letter { font-family: var(--mono); font-size: 18px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 6px; background: var(--chip); }
+.dir { font-size: 13px; color: var(--mute); }
+.play { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--c); color: #fff; cursor: pointer; font-size: 14px; }
+.play[disabled] { opacity: .35; cursor: default; }
+.wave { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wave canvas { width: 100%; height: 34px; display: block; }
+.wave small { font-family: var(--mono); font-size: 11px; color: var(--mute); overflow-wrap: anywhere; }
+.pick { font: inherit; font-size: 13px; border: 1px solid var(--rule); background: transparent; color: var(--ink); border-radius: 6px; padding: 5px 0; cursor: pointer; }
+.pick[aria-pressed="true"] { background: var(--picked); color: var(--picked-fg); border-color: var(--picked); }
+.row.on { background: color-mix(in srgb, var(--c) 9%, transparent); }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; background: var(--board); border-top: 1px solid var(--rule); padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.tray .in { max-width: 860px; margin: 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.tray output { font-family: var(--mono); font-size: 14px; flex: 1 1 300px; min-width: 0; }
+.copy { font: inherit; border: 0; background: var(--ink); color: var(--ground); border-radius: 6px; padding: 8px 14px; cursor: pointer; }
+.note { color: var(--mute); font-size: 13px; }
+@media (max-width: 640px) {
+  .skill .top { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 30px 40px minmax(0, 1fr) 56px; }
+  .dir { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>소드 파이트 가장자리 스킬 효과음</h1>
+    <p>E 스킬 다섯 개, 스킬마다 가장 극적인 순간 하나에 소리 다섯 개. 같은 알파벳은 같은 방향이에요. ▶로 들어 보고 마음에 드는 것에 "이걸로"를 누르면 아래 줄에 모여요. 소리 크기는 비교하기 쉽게 맞춰서 들려줘요.</p>
+    <div class="legend" id="legend"></div>
+  </header>
+  <main id="skills" style="display:flex;flex-direction:column;gap:22px"></main>
+  <p class="note">ElevenLabs Sound Effects v2로 소리마다 한 번 생성. 동전 같은 밝은 울림과 띠용(미끄러지는 음)은 검사해서 걸린 것을 다시 만들었어요. Unity에는 아직 넣지 않았어요.</p>
+</div>
+<div class="tray"><div class="in"><output id="picks">아직 고른 것 없음</output><button class="copy" id="copy" type="button">복사</button></div></div>
+
+<script>
+const DATA = /*DATA*/null;
+const COLOR = { king: 'var(--king)', queen: 'var(--queen)', rook: 'var(--rook)', bishop: 'var(--bishop)', knight: 'var(--knight)' };
+const SHORT = { king: '킹', queen: '퀸', rook: '룩', bishop: '비숍', knight: '나이트' };
+let ctx = null; const buffers = {}; let playing = null;
+const picks = {};
+try { Object.assign(picks, JSON.parse(localStorage.getItem('edge-sfx-picks') || '{}')); } catch (e) {}
+
+function audio() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); return ctx; }
+async function load(file) {
+  if (buffers[file]) return buffers[file];
+  const r = await fetch(file); const b = await r.arrayBuffer();
+  return (buffers[file] = await audio().decodeAudioData(b));
+}
+async function play(s) {
+  const c = audio(); if (c.state === 'suspended') await c.resume();
+  if (playing) { try { playing.stop(); } catch (e) {} }
+  const src = c.createBufferSource(); src.buffer = await load(s.file);
+  const g = c.createGain(); g.gain.value = s.gain;
+  src.connect(g).connect(c.destination); src.start(); playing = src;
+  return new Promise(res => src.onended = res);
+}
+function drawWave(cv, peaks, color) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 300, h = cv.clientHeight || 34;
+  cv.width = w * dpr; cv.height = h * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr);
+  g.fillStyle = color; const bw = w / peaks.length;
+  peaks.forEach((p, i) => { const a = Math.max(1, Math.min(1, p) * (h / 2 - 1)); g.fillRect(i * bw, h / 2 - a, Math.max(1, bw - 1), a * 2); });
+}
+function render() {
+  const legend = document.getElementById('legend');
+  for (const [L, name] of Object.entries(DATA.directions)) {
+    const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `<b>${L}</b>${name} · 다섯 스킬 이어 듣기`;
+    b.onclick = async () => { for (const sk of DATA.skills) { const s = sk.sounds.find(x => x.L === L); if (s && s.file) { await play(s); await new Promise(r => setTimeout(r, 250)); } } };
+    legend.appendChild(b);
+  }
+  const main = document.getElementById('skills');
+  for (const sk of DATA.skills) {
+    const sec = document.createElement('section'); sec.className = 'skill'; sec.style.setProperty('--c', COLOR[sk.id]);
+    sec.innerHTML = `<div class="top"><img src="img/${sk.id}.jpg" alt="${sk.name} 장면"><div class="title"><h2>${sk.name}</h2><p class="moment">순간: ${sk.moment}</p></div></div><div class="rows"></div>`;
+    const rows = sec.querySelector('.rows');
+    for (const s of sk.sounds) {
+      const row = document.createElement('div'); row.className = 'row';
+      row.innerHTML = `<span class="letter">${s.L}</span><span class="dir">${DATA.directions[s.L]}</span>
+        <button class="play" type="button" aria-label="${sk.name} ${s.L} 듣기" ${s.file ? '' : 'disabled'}>▶</button>
+        <div class="wave"><canvas></canvas><small>${s.file ? s.len.toFixed(2) + '초 · ' : '만드는 중 · '}${s.prompt}</small></div>
+        <button class="pick" type="button" aria-pressed="false">이걸로</button>`;
+      if (s.file) {
+        row.querySelector('.play').onclick = () => play(s);
+        requestAnimationFrame(() => drawWave(row.querySelector('canvas'), s.peaks, getComputedStyle(sec).getPropertyValue('--c') || '#888'));
+      }
+      const pk = row.querySelector('.pick');
+      pk.onclick = () => { picks[sk.id] = picks[sk.id] === s.L ? undefined : s.L; save(); sync(); };
+      rows.appendChild(row);
+    }
+    main.appendChild(sec);
+  }
+  sync();
+}
+function sync() {
+  document.querySelectorAll('.skill').forEach((sec, i) => {
+    const sk = DATA.skills[i];
+    sec.querySelectorAll('.row').forEach((row, j) => {
+      const on = picks[sk.id] === sk.sounds[j].L;
+      row.classList.toggle('on', on); row.querySelector('.pick').setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  });
+  const text = DATA.skills.filter(s => picks[s.id]).map(s => `${SHORT[s.id]} ${picks[s.id]}`).join(' · ');
+  document.getElementById('picks').textContent = text ? `가장자리 스킬 효과음 고른 것: ${text}` : '아직 고른 것 없음';
+}
+function save() { try { localStorage.setItem('edge-sfx-picks', JSON.stringify(picks)); } catch (e) {} }
+document.getElementById('copy').onclick = async () => {
+  const out = document.getElementById('picks'), btn = document.getElementById('copy');
+  try { await navigator.clipboard.writeText(out.textContent); btn.textContent = '복사됨'; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents(out); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = '선택됨, Ctrl+C'; }
+  setTimeout(() => btn.textContent = '복사', 1600);
+};
+render();
+</script>

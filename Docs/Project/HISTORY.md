@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R112 | 문서: Network/SKILLS_ONLINE §14(스킬 네트워크 시험 브랜치·화면), VALIDATION R112 표, REQUIREMENTS R112, DECISIONS SK9, PITFALLS 36·37, HANDOFF, HISTORY, Network·Skills 안내 (두 브랜치 같은 내용, 푸시 안 함) |
+| (이 커밋) | 10-10 | R115 | 소드 파이트 가장자리 스킬 효과음 시안: 25개 고르기 페이지(SmP9pDnP9xTaNSRvH5TJMB), 도구 `Tools/Sfx/SwordFightEdgeSkills/`(spec·페이지 만들기·내려받기·띠용 검사), Skills/SWORD_FIGHT §R115, REQUIREMENTS R115, HANDOFF, HISTORY. Unity 안 건드림 |
+| `16cbc16` | 10-10 | R112 | 문서: Network/SKILLS_ONLINE §14(스킬 네트워크 시험 브랜치·화면), VALIDATION R112 표, REQUIREMENTS R112, DECISIONS SK9, PITFALLS 36·37, HANDOFF, HISTORY, Network·Skills 안내 (두 브랜치 같은 내용, 푸시 안 함) |
 | `0c9f628` | 10-10 | R112 | (`skill-network-test`) 교대 수락 F는 방장이 요청을 거둘 때까지 재고 스킬 키로 세지 않음(로컬 시험에서 "반응 없음"으로 나왔음) |
 | `132d053` | 10-10 | R112 | (`skill-network-test`) 방장이 보낸 스냅샷 개/초를 실제로 잼(늘 30이라고 적었음), 시험 화면 긴 줄 줄 바꿈 |
 | `cf2de62` | 10-10 | R112 | (`skill-network-test`) bold-johnson의 씬 삭제 `9a94131`을 `merge -s ours`로 합친 것으로만 기록(이 브랜치는 씬을 그대로 둠) |
