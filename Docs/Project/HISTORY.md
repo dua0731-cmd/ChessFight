@@ -7,7 +7,18 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R110 | 문서: Skills/SWORD_FIGHT §R110, VALIDATION R110 표, REQUIREMENTS R110, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R111 | 문서: Network/SKILLS_ONLINE §8~§13(R111 구현), VALIDATION R111 표, REQUIREMENTS R111, DECISIONS SK7·SK8, PITFALLS 33~35, HANDOFF, HISTORY (`claude/skills-online`, 푸시 안 함) |
+| `aef76d3` | 10-10 | R111 | 랩 왕복 지연을 스냅샷이 도착할 때 잼(그릴 때 재서 재생 지연이 섞였음), 입력을 아직 못 들은 사람에게 방장 시계 대신 0 |
+| `27a0735` | 10-10 | R111 | 재생 지연의 손실 "한 장 더": 8% 켜짐·5% 꺼짐, 4초 평균(손실 10%에서 1초에 한 번 넘게 왔다 갔다 했음), F3 창·보고 줄에 손실 %, Core 시험 1개 |
+| `0afe27f` | 10-10 | R111 | 룩에게 교대를 청받은 참가자의 F(수락)를 자기 스킬로 미리 그리지 않음 |
+| `5e04efe` | 10-10 | R111 | 손실 8% 넘는 연결은 스냅샷 한 장 더 기다림, 로컬 시험 시간표가 참가자 하나에게(`client2 …`) |
+| `8557f31` | 10-10 | R111 | 로컬 시험의 개발 명령은 지연 시뮬레이터를 건너뜀(손실 10%에 빠져 누름 횟수가 틀렸음) |
+| `f447b3c` | 10-10 | R111 | 기록 줄에 벽시계(같은 PC 두 창 기록이 ms까지 맞음), 방장이 단계 변화를 기록, `report` 명령 |
+| `f005b9b` | 10-10 | R111 | 내 누름 미리 그리기를 자기 시계로, 방장이 한 단계 앞서도 맞은 것으로, 폰 러쉬 비숍 클릭은 던짐, 연속 화면 저장(`burst`)·히트스톱 기록 |
+| `a2a0f00` | 10-10 | R111 | 빌드에서 맞음 번쩍 셰이더(`Unlit/Color`가 빌드에 없음 → `Sprites/Default`), 오류 낸 이펙트가 다음 신호를 막지 않음, 로컬 시험 포트 넘겨받기·다시 시도 |
+| `1d9f894` | 10-10 | R111 | 로컬 시험 시간표(방장·참가자 개발 명령, `hud`) |
+| `22cabf6` | 10-10 | R111 | 기물 스킬 온라인: 누른 횟수(D-S7), 참가자별 스킬 패킷(상태·밧줄·바리케이드·순간 신호, D-S5·D-S1), 화면만 히트스톱(D-S2), 내 누름·조준 즉시(D-S3), 방장 이전 이어받기(D-S6), 잰 재생 지연, F12 지연 시뮬레이터, 랩 경기를 `LabNetLink`로 빼고 `SteamRagdollLink`·`LoopbackLabLink`, 프로토콜 v16 `CFR7`, Core `SkillSync`와 시험 7개 |
+| `4c7d035` | 10-10 | R110 | 문서: Skills/SWORD_FIGHT §R110, VALIDATION R110 표, REQUIREMENTS R110, HANDOFF, HISTORY |
 | `7f1d142` | 10-10 | R110 | 나이트 벼랑 끝 역전: 골반이 밖 0.6 m까지·카메라 방향 무관·떨어지기 시작한 0.6초 안에도 켜짐(허공에서 멈췄다 공중제비), 자동 시험 edge-knight-side·edge-knight-fall |
 | `7ce76d0` | 10-10 | R109 | 문서: Skills/SWORD_FIGHT §R109, VALIDATION R109 표, REQUIREMENTS R109, HANDOFF, HISTORY |
 | `e7d4fdf` | 10-10 | R109 | 자동 시험 edge-bishop-close: 아군이 떨어진 뒤 비숍을 내려질 자리에 세움 |

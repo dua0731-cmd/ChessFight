@@ -147,4 +147,4 @@ Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면�
 
 1. **사용자가 Unity에서 직접 해 보기** → [VALIDATION](../Network/VALIDATION.md) 최상단 표. 손맛·예고 보이는 정도·밸런스 의견을 주면 수치(Inspector)부터 고친다.
 2. 스킬 키 다시 정하기(D3), 전용 간격 실측(D2 후속: 위 점프 표와 함께 레벨 규칙 다시 정하기).
-3. 킹 스킬(D1이 정해지면), 효과음(R107 기물별 2차·R101 1차 시안 [SOUND](SOUND.md)에서 승규 님이 고르면 Unity에 넣음 — 지금 Unity에는 소리 없음), 머리 위 쿨 표시를 기물 모양으로, 온라인(네트워크 패킷에 스킬 키·스냅샷 필드, 기획서 §10).
+3. 킹 스킬(D1이 정해지면), 효과음(R107 기물별 2차·R101 1차 시안 [SOUND](SOUND.md)에서 승규 님이 고르면 Unity에 넣음 — 지금 Unity에는 소리 없음), 머리 위 쿨 표시를 기물 모양으로, 온라인(네트워크 패킷에 스킬 키·스냅샷 필드, 기획서 §10 → **R111에 시험 씬 F3 온라인으로 구현**, [Network/SKILLS_ONLINE §8~§13](../Network/SKILLS_ONLINE.md#8-r111-보내는-것과-칸-지도-프로토콜-v16-cfr7), 사람 확인 전).

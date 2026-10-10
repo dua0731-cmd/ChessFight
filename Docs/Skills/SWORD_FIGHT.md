@@ -5,7 +5,7 @@
 - **시험 씬** `Assets/Scenes/SkillTest/SwordFight_SkillTest/SwordFight_SkillTest.unity` = 경기 씬 `SwordFight.unity`를 복사하고 경기 오브젝트(`Sword Fight · skill test`)에 `SwordFightSkillBed`를 붙인 것. 메뉴 **ChessFight → Sword Fight → Open Skill Test** (없으면 이 메뉴가 만든다). 칼·14 m 발판·장외 점수·부활·더미는 경기 그대로다. 원본 `SwordFight.unity`는 그대로.
 - 폴더 `SkillTest/SwordFight` → `SkillTest/SwordFight_SkillTest`(같은 GUID, 승규 님이 10-08 Unity에서 바꾼 이름을 그대로 올림).
 - **스킬은 이 씬에서만 켜진다.** 시험장이 모든 전투원에 `SwordFightSkills`를 붙일 때만 있다. 경기 코드에는 작은 연결만 더했다: `SwordFightPawn.Skills`(입력 거르기, 킹의 받아내기, 스킬 중 칼 자세), `Scripted`(시험장이 더미 칼질을 잠깐 직접 넣을 때 경기가 더미 입력을 비우지 않음). 스킬이 없으면 모두 그대로다.
-- 네트워크 패킷에는 스킬이 없어 **오프라인만**.
+- 네트워크 패킷에는 스킬이 없어 **오프라인만**. (폰 러쉬·퀸 오브 더 힐 시험 씬은 R111에 온라인이 됐다. 소드 파이트 연결 `SteamSwordFightLink`에는 아직 없음 → [Network/SKILLS_ONLINE §13](../Network/SKILLS_ONLINE.md#13-r111-남은-것과-한계))
 - **기물마다 스킬이 두 개**다: F 스킬(R91, 아래 표) + **E 가장자리 스킬**(R103, 바로 아래). 둘은 동시에 돌지 않는다.
 
 ## R110 수정 (2026-10-10, 승규 님)

@@ -1,6 +1,6 @@
 # 방장(호스트) 선정·이전 (`HostElection`, `HostFitnessProbe`, `SteamSession`)
 
-코드: `Scripts/Core/HostElection.cs`(점수·순위·후계자, 순수 C#), `Scripts/Network/HostFitnessProbe.cs`(PC 측정), `Scripts/Network/SteamSession.cs`(선정·이전), `Scripts/Network/SteamMotion.cs`(캡슐), `ChessFight/RagdollLabSteam/SteamRagdollLink.cs`(래그돌 랩).
+코드: `Scripts/Core/HostElection.cs`(점수·순위·후계자, 순수 C#), `Scripts/Network/HostFitnessProbe.cs`(PC 측정), `Scripts/Network/SteamSession.cs`(선정·이전), `Scripts/Network/SteamMotion.cs`(캡슐), `ChessFight/RagdollLabSteam/SteamRagdollLink.cs`(래그돌 랩의 Steam 쪽, R111부터 경기 본체는 `ChessFight/RagdollLab/Scripts/Net/LabNetLink.cs`).
 
 상태: **코드·모의 테스트·실제 Unity/Steamworks DLL 컴파일만 통과. Unity·Steam에서 사람이 본 것은 없다.** 브랜치 `claude/host-migration`(R50, 승규 님 요청), 2026-09-28 `JY-kingrush`에 합쳐짐. 확인 목록은 [VALIDATION](VALIDATION.md) 최상단.
 
@@ -82,7 +82,7 @@
 | | 새 방장 | 나머지(옛 방장 포함) |
 |---|---|---|
 | 캡슐 (`SteamMotion`) | 마지막 스냅샷 위치에서 이어서 계산. tick은 이어서 센다. 점프 누른 횟수는 첫 입력을 기준값으로 삼는다(바뀌자마자 모두 뛰는 것 방지) | 예측 중이던 입력을 비우고 새 방장에게 보낸다 |
-| 래그돌 랩 (`SteamRagdollLink`) | 가장 최근에 받은 자세를 적용한 뒤 물리를 켠다(`SetNetworkPuppet(false)`), 퀸 오브 더 힐 판정 권한, 과부하 보호 켬 | 모든 래그돌을 인형(puppet)으로. 받은 자세만 그린다 |
+| 래그돌 랩 (`SteamRagdollLink`, R111부터 본체는 `LabNetLink`) | 가장 최근에 받은 자세를 적용한 뒤 물리를 켠다(`SetNetworkPuppet(false)`), 퀸 오브 더 힐 판정 권한, 과부하 보호 켬. R111: 마지막으로 받은 스킬 상태에서 쿨·진군·기상 보호·호위를 이어받고 하던 스킬은 쿨로, 비숍 밧줄·바리케이드도 이어받음([SKILLS_ONLINE §9](SKILLS_ONLINE.md#9-r111-화면에-그리는-법), 아무도 안 봄) | 모든 래그돌을 인형(puppet)으로. 받은 자세만 그린다 |
 | 화면 | 상태 줄 6초: "이 PC가 방장을 맡았습니다" | "방장이 ○○ 님으로 바뀌었습니다". 경기 명단에 `· 방장` |
 
 아무도 다시 스폰되지 않는다. 대신 **약 0.1초 전 자세에서 속도 0으로 이어서** 잠깐 멈칫한다.

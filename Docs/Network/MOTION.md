@@ -78,7 +78,7 @@
 | 표시 | 경기 씬: 상단 배너(노랑/빨강). 로비: 연결 정보 카드 문구 | `MatchSceneView.ShowWarning` |
 | **핑** | Steam 전송 핑. 클라이언트는 방장까지, 방장은 가장 나쁜 참가자. 1초마다 `GetSessionConnectionInfo` | `SteamMotion.PollPing` |
 | **응답** | 입력을 보낸 시각 → 그 입력을 Ack한 스냅샷 도착까지. 1/8 지수 평활. 호스트 tick과 스냅샷 간격이 포함된 체감값 | `ResponseTimer` |
-| **F8 지연 시뮬레이터** | 개발 빌드만. 꺼짐 → +100ms → +200ms·손실 5% → +300ms·손실 10%. 이 PC의 송신과 수신에 각각 절반 지연, 손실은 방향마다. 순서는 바꾸지 않는다 | `LinkSimulator<T>`, `LinkProfile.Presets`, `NetworkRuntime.Update` |
+| **F8 지연 시뮬레이터** | 개발 빌드만. 꺼짐 → +100ms → +200ms·손실 5% → +300ms·손실 10%. 이 PC의 송신과 수신에 각각 절반 지연, 손실은 방향마다. 순서는 바꾸지 않는다. **래그돌 랩(스킬 시험 씬 포함)은 F12**(R111, 같은 단계, `LabNetLink.SetLag`) → [SKILLS_ONLINE §9](SKILLS_ONLINE.md#9-r111-화면에-그리는-법) | `LinkSimulator<T>`, `LinkProfile.Presets`, `NetworkRuntime.Update` |
 | 한 줄 표시 | `SteamMotion.QualityLine`: "핑 42ms · 응답 95ms · 지연 시뮬 +200ms / 손실 5%" | |
 
 씬 로딩 중 멈춤(수 초)이 있으면 반대편에 잠깐 "불안정"이 뜰 수 있다. 그 순간 실제로 신호가 없었던 것이므로 정상이다.
