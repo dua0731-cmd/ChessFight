@@ -408,20 +408,20 @@ namespace ChessFight.RagdollLab
             var ally = bed.Dummies(0)[0];
             var foes = bed.Dummies(1);
             var from = Starts();
-            if (close)
-            {
-                Vector3 spot = ally.Pawn.Hips.position;
-                spot.x = 7f - bed.edge.bishopSetIn - 0.1f;
-                spot.y = 0f;
-                SwordFightSkillBed.Place(me, spot, Vector3.right);
-                yield return new WaitForSeconds(0.4f);
-                from = Starts();
-            }
             Show("적이 아군을 밀어 떨어뜨림");
             bed.PushOff(foes[0], ally);
             float t = 0f;
             while (ally.Skills.FallTime < 0.15f && t < 2.5f) { t += Time.deltaTime; yield return null; }
             Say($"edge-bishop: 아군이 떨어진 지 {ally.Skills.FallTime:0.00}초 · 골반 {ally.Pawn.Hips.position.y:0.00} m");
+            if (close)
+            {
+                // Where the ally would be set down (1.2 m in from the east edge, by the ally): the bishop stands there.
+                Vector3 spot = ally.Pawn.Hips.position;
+                spot.x = 7f - bed.edge.bishopSetIn;
+                spot.y = 0f;
+                SwordFightSkillBed.Place(me, spot, Vector3.right);
+                yield return new WaitForSeconds(0.08f);
+            }
             EdgeState(me.Skills, "E 직전");
             Show("E · 구원의 손");
             me.Skills.PressEdge();
