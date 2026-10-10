@@ -13,6 +13,7 @@
 
 - **작업 브랜치 `claude/bold-johnson-8ez95n`** (사용자 지정). 원격에 푸시하지 않았다.
 - **시험 씬 `Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity`** = `RagdollTest.unity`를 그대로 복사하고 랩 오브젝트(`RagdollLab`)에 `PawnRushSkillBed`를 붙인 것. 메뉴 **ChessFight → Pawn Rush → Open Skill Test**. 원본 `RagdollTest`는 바꾸지 않았다.
+- **R112(10-10): 스킬 시험 씬 셋(폰 러쉬·퀸 오브 더 힐·소드 파이트)은 `skill-network-test` 브랜치에만 있다.** `claude/bold-johnson-8ez95n`에서는 지웠고 메뉴가 옮겨 간 곳을 알려 준다. 시험 브랜치의 폰 러쉬·퀸 오브 더 힐 시험 씬은 랩의 튜닝 패널·슬로모션·자유 카메라·화면 분할이 없고 네트워크 수치가 늘 보인다 → [Network/SKILLS_ONLINE §14](../Network/SKILLS_ONLINE.md#14-r112-스킬-네트워크-시험-브랜치와-화면-10-10). 스킬을 고치는 작업도 그 브랜치에서 한다(DECISIONS SK9).
 - **만든 스킬 5개**: 폰 첫 두 걸음(부축 포함), 퀸 팔방 밀치기, 룩 직선 돌파(바리케이드 포함), 비숍 교차 밧줄, 나이트 꺾어 도약. **킹은 안 만듦**(D1, 사용자 10-07 "킹 스킬은 아직 만들지마").
 - **스킬은 이 씬에서만 켜진다.** `RagdollPawn.PawnRushSkills`(수치 묶음)가 비어 있으면 아무 일도 하지 않는다. 퀸 오브 더 힐·소드 파이트에 쓸지는 미정(사용자 10-07)이라 그쪽 씬과 네트워크 경기는 예전 그대로다.
 - **AI가 이 PC Unity에서 자동 시험 도구로 돌려 봄(아래 표). 사람이 키보드로 해 본 것은 아직 없다** → [VALIDATION](../Network/VALIDATION.md) 최상단 표.

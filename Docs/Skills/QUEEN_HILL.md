@@ -5,6 +5,7 @@
 - **시험 씬** `Assets/Scenes/SkillTest/QueenOfTheHill_SkillTest/QueenOfTheHill_SkillTest.unity` = `RagdollTest.unity`를 복사하고 랩 오브젝트(`RagdollLab`)에 `QueenHillSkillBed`를 붙인 것. 메뉴 **ChessFight → Queen of the Hill → Open Skill Test** (씬이 없으면 이 메뉴가 만든다). 원본 `RagdollTest`, 폰 러쉬 시험 씬, 게임 씬 `QueenOfTheHill.unity`는 그대로다.
 - 시험장이 랩 북서쪽에 **3층 탑**(한 층 0.9 m, 9 m · 6 m · 3 m, 윗면은 1.5 m 체스판 칸, 꼭대기 승격 받침)과 동쪽에 **돌벽**(퀸 검격이 막히는 벽)을 코드로 세운다.
 - **스킬은 이 씬에서만 켜진다.** `RagdollPawn.QueenHillSkills`(수치 묶음)를 시험장이 넣어 줄 때만 동작한다. 폰 러쉬 스킬의 틀(단계·쿨타임·돌진·조준 클릭)을 같이 쓰고, `RagdollPawn.cs`와 폰 러쉬 partial에는 이 스킬이 켜졌을 때만 일하는 작은 연결만 더했다(쪼그려 앉기 골반 높이, 호위 중 넘어짐·밀림).
+- **R112(10-10): 시험 씬은 `skill-network-test` 브랜치에만 있다**(bold-johnson에서는 지움). 그 브랜치에서는 랩 도구(튜닝 패널·슬로모션·자유 카메라·화면 분할·[7] 시험대)가 없고 네트워크 수치가 늘 보인다 → [Network/SKILLS_ONLINE §14](../Network/SKILLS_ONLINE.md#14-r112-스킬-네트워크-시험-브랜치와-화면-10-10).
 - ~~네트워크 패킷에는 스킬 키가 없어 지금은 **오프라인만**.~~ **R111(10-10): 시험 씬의 F3 온라인에서 스킬이 된다**(방장 판정, 룩 교대 수락도 상대 PC의 F → 방장 판정) → [Network/SKILLS_ONLINE §8~§13](../Network/SKILLS_ONLINE.md#8-r111-보내는-것과-칸-지도-프로토콜-v16-cfr7). 오프라인 시험장 더미는 그대로 0.4초 뒤 스스로 수락. 온라인에서는 시험 도우미(더미 세우기)를 쓰지 않는다.
 
 ## R93 수정 (2026-10-09, 승규 님이 R89 영상을 보고)

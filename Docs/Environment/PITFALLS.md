@@ -39,6 +39,8 @@
 | 33 | **빌드에서만** 스킬 이펙트가 맞는 순간부터 안 나오고 신호가 약 1초 막힘. 플레이어 기록: `ArgumentNullException: Value cannot be null. Parameter name: shader` | `Shader.Find("Unlit/Color")`(URP Unlit도)가 플레이어 빌드에 없다. 편집기에서는 찾아서 편집기 시험으로는 안 보인다. `new Material(null)`이 오류를 내고 그 이펙트 처리가 거기서 멈췄다 | 빌드에 늘 있는 `Sprites/Default`로 대신(`SkillInkKit.Flat`, `QueenHillSkillFx.Kit.Flat`, `PawnRushSkillFx.Unlit`). `Shader.Find`로 찾는 셰이더는 빌드에도 들어가는지(Resources 아래, Always Included) 확인하고 null에 대비한다. 온라인 신호 처리는 하나가 오류를 내도 다음 것을 그린다(`LabNetLink.DispatchEvents`) | R111 |
 | 34 | F3 창 왕복 지연이 재생 지연만큼 들쑥날쑥(+300 ms에서 396 ms), 참가자가 들어오자마자 몇 초짜리 값 | 스냅샷을 **그릴 때**(재생 지연 뒤) 쟀고, 입력을 아직 못 들은 사람에게 방장이 자기 시계를 되돌려 줘서 참가자가 서로 다른 두 시계를 뺐다 | 도착할 때 재고, 못 들은 사람에게는 0(`LabNetLink.ReceiveSnapshot`). 두 PC의 시계를 빼지 않는다 | R111 |
 | 35 | 손실 10%에서 재생 지연의 "한 장 더"가 1초에 한 번 넘게 켜졌다 꺼짐(로컬 시험에서는 꺼진 채 남음) | 켜고 끄는 기준이 한 줄(8%)이고 1초 평균이라 10% 근처에서 흔들렸다 | 켜짐 8%·꺼짐 5%, 4초 평균(`PlaybackDelay`). 기준은 작은 시뮬레이션 프로그램으로 바뀌는 횟수를 세어 정했고, Core 시험이 "손실 10%에서 100초 동안 95% 넘게 켜져 있고 2번 이하로 바뀜"을 본다 | R111 |
+| 36 | (막은 사고) 따로 쓰려던 브랜치의 커밋이 `C:/Work/ChessFight`(bold-johnson)에 섞일 뻔함 | 커밋 훅(`~/.claude/scripts/chessfight-sync-unity.sh`)은 워크트리 브랜치가 `claude/*`이면 그 커밋을 `C:/Work/ChessFight`의 지금 브랜치로 빨리 감는다. 새 브랜치가 bold-johnson에서 갈라졌으면 빨리 감기가 그대로 된다 | bold-johnson과 섞이면 안 되는 브랜치는 `claude/` 없이 짓는다(`skill-network-test`). 그 브랜치의 Unity 폴더(`C:\Work\ChessFight-SkillNet`)는 손으로 맞춘다: `git -C C:/Work/ChessFight-SkillNet fetch <워크트리 저장소> skill-network-test` → `merge --ff-only FETCH_HEAD` | R112 |
+| 37 | 시험 브랜치와 bold-johnson을 서로 합칠 때 스킬 시험 씬이 지워지거나 되살아남 | bold-johnson은 씬을 지웠고(`9a94131`) 시험 브랜치는 둔다 | 시험 브랜치에는 `9a94131`을 `merge -s ours`로 기록해 두어 bold-johnson → 시험 브랜치 합치기는 씬을 안 지운다. 시험 브랜치 → bold-johnson으로 합치면 씬이 되살아나니 그 뒤 `Assets/Scenes/SkillTest`를 다시 지운다(DECISIONS SK9) | R112 |
 
 ## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
 
@@ -81,4 +83,5 @@ R50 실행 로그에서 수동 설정했던 무게중심이 검날 중앙 `z=0.5
 - Steam 로그인은 사용자가 직접 한다. 비밀번호·인증 코드·토큰을 문서나 저장소에 적지 않는다.
 - **R111 Unity MCP `execute_code`:** Play에 들어가면 도메인을 다시 불러와 연결이 잠깐 끊기고, 명령이 실패하거나 다시 보내질 수 있다. 부작용 있는 명령(로컬 시험 방장 시작 등)은 "이미 있으면 안 함"으로 막는다. 막지 않았을 때 방장이 여러 개 떠서 UDP 47611이 "이미 사용 중"이었다. 빌드도 한 번에 하나씩 부른다.
 - **R111 로컬 시험으로 지연을 잴 때:** 편집기 방장이 자기 화면을 연속 저장(`burst`)하면 약 3프레임/초로 느려져 스냅샷이 몰려 오고 신호가 최대 250 ms 늦게 그려진다. 시간은 저장 없이 `report`·기록 줄로 재고, 화면은 참가자 창만 저장한다. `ScreenCapture`는 프레임 끝에 저장된다.
+- **R112 Unity 편집기 두 개(MCP):** `C:/Work/ChessFight`와 `C:/Work/ChessFight-SkillNet`이 함께 켜져 있으면 MCP 명령은 "지금 고른 쪽"으로 간다. 먼저 `mcpforunity://instances`를 읽고 `set_active_instance`로 고른 뒤, 명령 안에서도 `Directory.GetCurrentDirectory()`로 폴더를 확인한다(사용자가 다른 편집기에서 Play 중일 수 있다). Play에 들어간 직후 몇 초는 그 편집기가 목록에서 빠져 "not found"가 나는데, 다른 편집기로 넘어가지 않으니 잠깐 기다렸다 다시 부른다. 새 폴더의 첫 열기는 약 3분, 첫 빌드는 셰이더 때문에 약 2분 반 걸렸다.
 - **R111 개발 명령과 지연 시뮬레이터:** 시험 명령 패킷까지 시뮬레이터를 지나면 손실 10%에 빠져 "10번 눌러 8번" 같은 틀린 결과가 나온다. 시험 도구의 패킷은 시뮬레이터를 건너뛰게 한다(`TypeDev`).

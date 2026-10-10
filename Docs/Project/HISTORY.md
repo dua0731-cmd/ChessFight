@@ -7,7 +7,13 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R111 | 문서: Network/SKILLS_ONLINE §8~§13(R111 구현), VALIDATION R111 표, REQUIREMENTS R111, DECISIONS SK7·SK8, PITFALLS 33~35, HANDOFF, HISTORY (`claude/skills-online`, 푸시 안 함) |
+| (이 커밋) | 10-10 | R112 | 문서: Network/SKILLS_ONLINE §14(스킬 네트워크 시험 브랜치·화면), VALIDATION R112 표, REQUIREMENTS R112, DECISIONS SK9, PITFALLS 36·37, HANDOFF, HISTORY, Network·Skills 안내 (두 브랜치 같은 내용, 푸시 안 함) |
+| `0c9f628` | 10-10 | R112 | (`skill-network-test`) 교대 수락 F는 방장이 요청을 거둘 때까지 재고 스킬 키로 세지 않음(로컬 시험에서 "반응 없음"으로 나왔음) |
+| `132d053` | 10-10 | R112 | (`skill-network-test`) 방장이 보낸 스냅샷 개/초를 실제로 잼(늘 30이라고 적었음), 시험 화면 긴 줄 줄 바꿈 |
+| `cf2de62` | 10-10 | R112 | (`skill-network-test`) bold-johnson의 씬 삭제 `9a94131`을 `merge -s ours`로 합친 것으로만 기록(이 브랜치는 씬을 그대로 둠) |
+| `9a94131` | 10-10 | R112 | (bold-johnson) `Assets/Scenes/SkillTest` 스킬 시험 씬 셋 삭제, "Open Skill Test" 메뉴 셋은 옮겨 간 곳 안내(퀸 오브 더 힐·소드 파이트 메뉴가 씬을 다시 만들지 않게) |
+| `08744a9` | 10-10 | R112 | (`skill-network-test`) 스킬 네트워크 시험 화면: `LabGame.NetTestMode`(튜닝 패널·값 세트·슬로모션·자유 카메라·화면 분할·P2·[7] 시험대 없음), `SkillNetTest`(키 안내 줄, 늘 보이는 수치, 방장의 참가자 줄), 연결 전 온라인 창 열기, 입력에 참가자 왕복·재생 지연·손실(`CFR8`, v17), 신호 중복·놓침 셈(Core 시험) |
+| `c9cb187` | 10-10 | R111 | 문서: Network/SKILLS_ONLINE §8~§13(R111 구현), VALIDATION R111 표, REQUIREMENTS R111, DECISIONS SK7·SK8, PITFALLS 33~35, HANDOFF, HISTORY (`claude/skills-online`, 푸시 안 함) |
 | `aef76d3` | 10-10 | R111 | 랩 왕복 지연을 스냅샷이 도착할 때 잼(그릴 때 재서 재생 지연이 섞였음), 입력을 아직 못 들은 사람에게 방장 시계 대신 0 |
 | `27a0735` | 10-10 | R111 | 재생 지연의 손실 "한 장 더": 8% 켜짐·5% 꺼짐, 4초 평균(손실 10%에서 1초에 한 번 넘게 왔다 갔다 했음), F3 창·보고 줄에 손실 %, Core 시험 1개 |
 | `0afe27f` | 10-10 | R111 | 룩에게 교대를 청받은 참가자의 F(수락)를 자기 스킬로 미리 그리지 않음 |
