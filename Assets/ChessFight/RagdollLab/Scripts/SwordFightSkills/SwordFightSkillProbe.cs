@@ -76,6 +76,8 @@ namespace ChessFight.RagdollLab
                 "edge-bishop-close" => EdgeBishop(false, true),
                 "edge-knight" => EdgeKnight(false),
                 "edge-knight-back" => EdgeKnight(true),
+                "edge-knight-side" => EdgeKnight(false, 1),
+                "edge-knight-fall" => EdgeKnight(false, 2),
                 _ => null,
             };
             if (body == null) { Status = "done: unknown run " + name; yield break; }
@@ -445,15 +447,27 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The knight with its back to the east edge, an enemy 1.9 m ahead: E. With <paramref name="back"/>, the
         /// enemy stands 2.85 m off and backs away during the crouch (it should be called off).</summary>
-        IEnumerator EdgeKnight(bool back)
+        /// <summary>The knight with its back to the east edge, an enemy ahead: E. With <paramref name="back"/>, the enemy
+        /// stands 2.85 m off and backs away during the crouch (it should be called off). R109: <paramref name="mode"/> 1 = the
+        /// camera looks along the edge, not inward; 2 = a dummy knocks the knight off the edge first and E goes in the fall.
+        /// </summary>
+        IEnumerator EdgeKnight(bool back, int mode = 0)
         {
             yield return StageEdgeFor(PieceKind.Knight);
             var me = bed.Local;
             var foe = bed.Dummies(1)[0];
             if (back) SwordFightSkillBed.Place(foe, new Vector3(3.15f, 0f, 0.1f), Vector3.right);
-            me.Skills.OverrideAim(Vector3.left);
+            me.Skills.OverrideAim(mode == 1 ? Vector3.forward : Vector3.left);
             yield return new WaitForSeconds(0.3f);
             var from = Starts();
+            if (mode == 2)
+            {
+                Show("적이 나이트를 밀어 떨어뜨림");
+                bed.PushOff(bed.Dummies(1)[1], me);
+                float t = 0f;
+                while (me.Skills.FallTime < 0.12f && t < 2.5f) { t += Time.deltaTime; yield return null; }
+                Say($"edge-knight-fall: 떨어진 지 {me.Skills.FallTime:0.00}초 · 골반 ({me.Pawn.Hips.position.x:0.0}, {me.Pawn.Hips.position.y:0.00}) · {me.Pawn.State}");
+            }
             EdgeState(me.Skills, "E 직전");
             Show("E · 벼랑 끝 역전");
             me.Skills.PressEdge();
@@ -466,7 +480,8 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(0.6f);
             EdgeState(me.Skills, "E 0.65초 뒤");
             yield return new WaitForSeconds(2.0f);
-            Moves(from, back ? "edge-knight-back" : "edge-knight");
+            Say($"  나이트: {(me.Alive ? "살아 있음" : "장외")} · 골반 ({me.Pawn.Hips.position.x:0.0}, {me.Pawn.Hips.position.y:0.00}, {me.Pawn.Hips.position.z:0.0}) · 적: {(foe.Alive ? "살아 있음" : "장외")}");
+            Moves(from, back ? "edge-knight-back" : mode == 1 ? "edge-knight-side" : mode == 2 ? "edge-knight-fall" : "edge-knight");
         }
 
         IEnumerator Bishop()

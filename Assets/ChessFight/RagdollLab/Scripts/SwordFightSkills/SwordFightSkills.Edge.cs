@@ -77,7 +77,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The king's hilt sticking out of the edge's face.</summary>
         public Vector3 Hilt => EdgeAt + EdgeOut * 0.1f + Vector3.down * 0.12f;
 
-        bool edgeKey, held, vaulted;
+        bool edgeKey, held, vaulted, knightAir;
         float edgeCooldownLeft;
         int edgeHits;
         Vector3 hangHips, catchFrom, flipFrom, flipOver, rookLip, rookOut, rookAlong;
@@ -151,7 +151,7 @@ namespace ChessFight.RagdollLab
             if (carried != null && carried.OuterFlying) carried.EndFlight();
             ReleaseClearance(0.3f);
             carried = null;
-            held = vaulted = false;
+            held = vaulted = knightAir = false;
             EdgeStage = SfEdge.None;
             EdgeTime = 0f;
             EdgeDetail = "";
@@ -250,11 +250,26 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Knight:
                 {
-                    if (!Standing(floor)) return;
-                    Vector3 front = AimFlat();
-                    if (!floor.Nearest(hips, out var back) || back.distance > X.knightBackEdge || Vector3.Dot(front, back.outward) > -0.3f)
+                    // R109 (승규 님: "링 밖을 나가면 스킬이 켜져야 하는데 안 켜질 때가 있어"): it lit only standing with the
+                    // hips over the floor and the camera looking inward. Now also with the hips a little past the lip, with
+                    // the camera any way (then "ahead" is straight in from the edge), and in the first moment of a fall
+                    // off it (pushed or stepped off: the knight catches itself in the air, then flips back over).
+                    bool air = FallTime >= 0f;
+                    if (!floor.Nearest(hips, out var back) || back.distance > X.knightBackEdge)
                     { EdgeWhy = $"가장자리를 등지고({X.knightBackEdge:0.#} m 안) 서야 함"; return; }
-                    var foe = KnightPick(floor, front);
+                    if (air)
+                    {
+                        if (FallTime > X.fallWindow || hips.y < floor.Top - X.fallDepth * 0.5f) { EdgeWhy = "떨어진 지 너무 오래됨"; return; }
+                    }
+                    else
+                    {
+                        if (Pawn.State != PawnState.Active) { EdgeWhy = "넘어져 있음"; return; }
+                        if (!floor.OnFloor(hips) && !floor.OnFloor(hips - back.outward * KnightLipSlack)) { EdgeWhy = "발판 위에서만"; return; }
+                    }
+                    Vector3 inward = -back.outward, aim = AimFlat();
+                    bool looking = !air && Vector3.Dot(aim, inward) > 0.2f;
+                    Vector3 front = looking ? aim : inward;
+                    var foe = KnightPick(floor, front, looking ? 0.5f : 0.35f, X.knightFront + (air ? KnightAirReach : 0f));
                     if (foe == null) { EdgeWhy = $"앞 {X.knightFront:0.#} m 안에 적이 없음"; return; }
                     EdgeTarget = foe;
                     Glow(back);
@@ -334,9 +349,15 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The knight's enemy: standing ahead of it (within 60° of where it looks), within range, the nearest.</summary>
-        RagdollPawn KnightPick(SwordFightEdgeFloor floor, Vector3 front)
+        /// <summary>How far past the lip the knight's hips may be and still count as standing at the edge (R109).</summary>
+        const float KnightLipSlack = 0.6f;
+        /// <summary>Falling, the knight is already out past the edge: the enemy may be this much further (R109).</summary>
+        const float KnightAirReach = 1.0f;
+
+        /// <summary>The knight's enemy: on the floor, within <paramref name="range"/>, within the cone
+        /// (<paramref name="cone"/> = the least cosine) round <paramref name="front"/>; the nearest.</summary>
+        RagdollPawn KnightPick(SwordFightEdgeFloor floor, Vector3 front, float cone, float range)
         {
-            var X = EdgeParams;
             RagdollPawn best = null;
             float bestDistance = float.MaxValue;
             foreach (var other in All)
@@ -346,7 +367,7 @@ namespace ChessFight.RagdollLab
                 if (!floor.OnFloor(h)) continue;
                 Vector3 d = Flat(h - Pawn.Hips.position);
                 float m = d.magnitude;
-                if (m > X.knightFront || m >= bestDistance || m < 0.3f || Vector3.Dot(d / m, front) < 0.5f) continue;
+                if (m > range || m >= bestDistance || m < 0.3f || Vector3.Dot(d / m, front) < cone) continue;
                 bestDistance = m;
                 best = other.Pawn;
             }
@@ -360,7 +381,7 @@ namespace ChessFight.RagdollLab
             var X = EdgeParams;
             var floor = SwordFightEdgeFloor.Current;
             edgeHits = Pawn.Hits;
-            held = vaulted = false;
+            held = vaulted = knightAir = false;
             carried = null;
             EdgeStart = Pawn.Hips.position;
             Vector3 hips = Pawn.Hips.position;
@@ -426,6 +447,14 @@ namespace ChessFight.RagdollLab
                     EdgeAt = EdgeGlow.point;
                     EdgeOut = EdgeGlow.outward;
                     EdgeLand = KnightLanding(floor, target);
+                    // Off the edge already (R109): it stops in the air where it is (a little up to the lip if it has
+                    // dropped below it) and crouches there, then the flip starts from the air.
+                    knightAir = FallTime >= 0f;
+                    if (knightAir)
+                    {
+                        hangHips = new Vector3(hips.x, Mathf.Max(hips.y, floor.Top - 0.25f), hips.z);
+                        if (Pawn.State != PawnState.Active) Pawn.StandUp();
+                    }
                     Pawn.Face(target.Hips.position - hips);
                     SetEdge(SfEdge.Windup, "웅크림");
                     Raise(SfFxKind.EdgeCast, target, Floor(hips), Flat(target.Hips.position - hips).normalized, 0f);
@@ -773,12 +802,15 @@ namespace ChessFight.RagdollLab
             {
                 case SfEdge.Windup:
                 {
-                    if (Pawn.Hits != edgeHits || Pawn.State != PawnState.Active) { InterruptEdge("웅크린 채 맞음"); return; }
+                    // In the air it is held where it caught itself (and is getting up from a knock meanwhile).
+                    if (Pawn.Hits != edgeHits || (!knightAir && Pawn.State != PawnState.Active)) { InterruptEdge("웅크린 채 맞음"); return; }
+                    if (knightAir) Pawn.Fly(hangHips, Vector3.zero);
                     var target = EdgeTarget;
                     var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
+                    float reach = X.knightFront + (knightAir ? KnightAirReach : 0f);
                     if (ts == null || !ts.Fighter.Alive || !floor.OnFloor(target.Hips.position)
-                        || Flat(target.Hips.position - Pawn.Hips.position).magnitude > X.knightFront + 0.05f)
-                    { CancelEdge($"적이 {X.knightFront:0.#} m 밖으로 물러남"); return; }
+                        || Flat(target.Hips.position - Pawn.Hips.position).magnitude > reach + 0.05f)
+                    { CancelEdge($"적이 {reach:0.#} m 밖으로 물러남"); return; }
                     // The mark behind it follows it until the spring.
                     EdgeLand = KnightLanding(floor, target);
                     Pawn.Face(target.Hips.position - Pawn.Hips.position);
