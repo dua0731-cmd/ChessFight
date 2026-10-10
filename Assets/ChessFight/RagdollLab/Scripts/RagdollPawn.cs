@@ -1108,6 +1108,12 @@ namespace ChessFight.RagdollLab
             anchorVel = ownAnchor + frame;
 
             Vector3 next = anchorPos + anchorVel * dt;
+            // Exact platform displacement avoids spiralling out from Euler-integrating
+            // a rotating surface's tangent. Airborne carryVel remains tangential inertia.
+            var transport = planted ? groundSurface as ISurfaceTransport : null;
+            if (transport != null && !transport.TransportActive) transport = null;
+            if (transport != null)
+                next += Flat(transport.PointDisplacement(anchorPos)) - frame * dt;
             if (!moving && shoveTimer <= 0f)
             {
                 // Idle pawns settle where they are; when shoved or tangled they stay where physics put
@@ -1120,7 +1126,10 @@ namespace ChessFight.RagdollLab
                 // (autotest, 09-27). Slower than that, the body stays against the wall while it settles.
                 if (pressedWall > 0f)
                     follow = Mathf.Min(follow, 0.8f / Mathf.Max(0.05f, p.anchorDamperRatio > 0.0001f ? p.anchorDamperRatio : p.damperRatio));
-                next += Flat(hp - next) * (1f - Mathf.Exp(-follow * dt));
+                // Keep the supported orbit instead of feeding the body's centrifugal
+                // spring lag back into it. Hits and tangles still move the idle anchor.
+                if (transport == null || tangled)
+                    next += Flat(hp - next) * (1f - Mathf.Exp(-follow * dt));
             }
             // In the air the anchor may only lead a little: the bell-shaped skirt meets walls at a slant,
             // so pressing into a wall would push the pawn down and kill the jump.

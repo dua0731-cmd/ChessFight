@@ -4565,13 +4565,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleSurface
   kind: 0
   context: {fileID: 5646808804411990042}
-  radius: 4
-  centerSpeed: 5
-  edgeSpeed: 1
-  outwardSpeed: 1.5
+  rotationSpeed: 45
+  jumpHeight: 10
+  forwardSpeed: 8
   direction: {x: 0, y: 0, z: 1}
   conveyorSpeed: 3
-  launchVelocity: {x: 0, y: 14, z: 8}
   launchCooldown: 0.7
   rotors:
   - {fileID: 3886350071908459439}

@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R69(사용자, 10-10): 원판 운반·점프 높이 조절.** 의도적 외향 속도 제거, 접지 시 원형 변위·점프 후 접선 관성. Inspector `Rotation Speed`(45°/초), `Jump Height`(10 m). 원판에만 적용하는 `ISurfaceTransport` 경로 추가. Core83·세션39·7개 런타임 컴파일 통과, **Unity/PhysX 재확인 대기**. [조절 방법](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md).
+
 > **R68(사용자, 10-10): 래그돌 장애물 시험장 15종.** `main`에 `Assets/Scenes/ObstacleRagdollTest.unity` 추가. **ChessFight → Obstacles → Open Ragdoll Test (15 Obstacles)** → Play. 기존 래그돌·이식 장애물 15종, Tab 선택 메뉴, `[`·`]` 이전/다음, R/낙사 시 현재 시험대 복귀. [실행 안내](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md). Core 83·세션 39·7개 런타임 어셈블리 컴파일·씬 정적 참조 검사 통과. **Unity import/Play·PhysX·사용자 미확인**. 다음은 15종 직접 플레이 확인이며 공통 물리·기존 씬은 유지.
 
 > **최신 R67(사용자, 10-06): 폰 러시 맵 기획 재료집** [PAWN_RUSH_MAP_KIT](Docs/KingRush/PAWN_RUSH_MAP_KIT.md). 장애물 시험 씬(`ImportedChessFightMap`)의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치를 모아 채팅 AI가 맵을 기획하게 한 문서(프롬프트·결과 양식 포함). 다음 단계: 사용자가 채팅에서 기획 → 구간별 표를 Claude Code에 주면 구현.
@@ -70,6 +72,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **원판·점프 패드(R69)** | 원형 운반·접선 관성, Inspector 속도/높이 조절 구현. Unity 재확인 대기 |
 | **래그돌 장애물 시험장(R68)** | 새 독립 씬에서 장애물 15종·기존 래그돌·선택 메뉴·현재 시험대 복귀 구현. Linux 검사 통과, Unity 직접 확인 대기 |
 | **`main` 병합(10-06, R65)** | `main` = `JY-kingrush`(`f3b5cc8`) + `a54b89e`(맵 이식, 원본 `487f62b`) + `104b18c`(방장 장애물 시각, 원본 `JY-lobby` `27e052c`) + `deabde0`(Linux 검사 유지) + 문서. Core 83·세션 39·7개 어셈블리 Roslyn 컴파일(2021.3 참조 DLL) 통과. **Unity·두 PC 미확인** |
 | **설정 창(10-05, R64)** | `claude/settings-window` → 원격 `JY-kingrush`에 푸시. 인트로 판 클릭 시작, Esc 설정 창(인트로·로비·입장 화면), 탭 5개·항목 10개, `GameSettings`(`PlayerPrefs`), 클릭 감 강화. Core 81·세션 39·DLL 컴파일 통과. **사용자 미확인** |
@@ -99,6 +102,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **원판 운반·높이 조절(R69)** | 코드·컴파일, Unity/PhysX 재확인 대기 | [조절](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **15종 래그돌 장애물 시험장(R68)** | 씬·코드·정적 검사·컴파일, Unity 미확인 | [실행](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **킹 러쉬 연결 코스 R54~R56, 능력 시험장R52/R53** | 장난감/상자→성벽/시소→왕의 계단/왕좌 결승, 승격 집결10초·자동 합류. R54 일반 피드백 수신, **R55/R56 사용자 미확인**. 기존 조작/튜닝·다른 모드/로비 보존 | [R56](Docs/KingRush/FINAL_COURSE.md), [R55](Docs/KingRush/CASTLE_COURSE.md), [능력 시험장](Docs/KingRush/README.md) |
 | **로딩 화면·동시 출발**(R58): 로비 → 경기 씬 비동기 로드, A 시안 UI + B 시안 배경, 모두 준비 또는 20초 뒤 공유 시각 `go`에 동시 해제 | 코드·테스트만, Unity·Steam 미확인 | [UI §8](Docs/Architecture/UI.md#8-로딩-화면-r58-2026-09-30) |
@@ -128,6 +132,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R69:** 원판 중앙/외곽 30초 정지, 속도 0/45/-45, 점프 이탈·재착지, 점프 패드 높이 2/5/10 m를 Unity에서 확인한다.
 
 **R68:** 새 장애물 시험장 Play 후 캐릭터 생성·이동·메뉴 이동·R/낙사 복귀 및 15종 반응을 사용자 확인한다. 확인 목록은 [VALIDATION](Docs/Network/VALIDATION.md) 최상단.
 

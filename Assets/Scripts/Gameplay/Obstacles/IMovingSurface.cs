@@ -17,4 +17,12 @@ namespace ChessFight.Gameplay
         // How far the surface turns during this step.
         Quaternion DeltaRotation { get; }
     }
+
+    // Optional exact transport for surfaces whose curved path must not be integrated
+    // as a straight velocity step. PointVelocity still supplies takeoff momentum.
+    public interface ISurfaceTransport : IMovingSurface
+    {
+        bool TransportActive { get; }
+        Vector3 PointDisplacement(Vector3 worldPoint);
+    }
 }

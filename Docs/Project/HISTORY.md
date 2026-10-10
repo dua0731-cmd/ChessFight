@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| 이 기록을 추가한 커밋 (`main`) | 10-10 | R69 | 원판 외향 밀기 제거·접지 원형 운반·점프 관성 유지, 회전 속도/발사 높이 SerializeField. Core83·세션39·7개 런타임 컴파일 통과, Unity 재확인 대기 |
 | 이 기록을 추가한 커밋 (`main`) | 10-10 | R68 | 래그돌 장애물 시험장 15종: 새 씬·선택 메뉴·현재 시험대 복귀. 공통 물리/기존 씬 보존. Linux Core83·세션39·7개 어셈블리 컴파일 및 씬 정적 검사 통과, Unity 직접 확인 대기 |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
 | (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |

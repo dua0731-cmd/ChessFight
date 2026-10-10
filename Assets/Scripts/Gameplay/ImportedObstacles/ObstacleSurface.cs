@@ -6,18 +6,23 @@ namespace ChessFight.ProtectKing
 {
     public enum ObstacleSurfaceKind { SpinningDisc, JumpPad, Conveyor }
 
-    public sealed class ObstacleSurface : MonoBehaviour, IMovingSurface
+    public sealed class ObstacleSurface : MonoBehaviour, ISurfaceTransport
     {
         public ObstacleSurfaceKind kind;
         public ObstacleContext context;
-        [Min(.1f)] public float radius = 4;
-        [Min(0)] public float centerSpeed = 5;
-        [Min(0)] public float edgeSpeed = 1;
-        [Min(0)] public float outwardSpeed = 1.5f;
+        [Header("Spinning Disc")]
+        [SerializeField, Tooltip("Degrees per second. Negative reverses rotation; zero stops it.")]
+        float rotationSpeed = 45f;
+        [Header("Jump Pad")]
+        [SerializeField, Min(0), Tooltip("Target rise in metres above takeoff, using current gravity. Collisions can shorten the jump.")]
+        float jumpHeight = 10f;
+        [SerializeField, Tooltip("Forward launch speed in metres per second, independent of jump height.")]
+        float forwardSpeed = 8f;
+        [Min(.1f)] public float launchCooldown = .7f;
+        [Header("Conveyor")]
         public Vector3 direction = Vector3.forward;
         [Min(0)] public float conveyorSpeed = 3;
-        public Vector3 launchVelocity = new Vector3(0, 14, 8);
-        [Min(.1f)] public float launchCooldown = .7f;
+        [Header("Visuals")]
         public Transform[] rotors;
         public Transform[] beltMarkers;
         [Min(.1f)] public float beltLength = 6;
@@ -26,7 +31,18 @@ namespace ChessFight.ProtectKing
         Quaternion[] rotorOrigins;
 
         public Vector3 PointVelocity(Vector3 point) => !isActiveAndEnabled || (context!=null && !context.Running) || kind == ObstacleSurfaceKind.JumpPad ? Vector3.zero : VelocityAt(point);
-        public Quaternion DeltaRotation => Quaternion.identity;
+        bool Running => isActiveAndEnabled && (context == null || context.Running);
+        public bool TransportActive => Running && kind == ObstacleSurfaceKind.SpinningDisc;
+        public Quaternion DeltaRotation => Running && kind == ObstacleSurfaceKind.SpinningDisc
+            ? Quaternion.AngleAxis(rotationSpeed * Time.fixedDeltaTime, transform.up) : Quaternion.identity;
+
+        public Vector3 PointDisplacement(Vector3 point)
+        {
+            if (!Running) return Vector3.zero;
+            if (kind != ObstacleSurfaceKind.SpinningDisc) return PointVelocity(point) * Time.fixedDeltaTime;
+            Vector3 offset = point - transform.position;
+            return DeltaRotation * offset - offset;
+        }
         readonly Collider[] occupants = new Collider[512];
         readonly HashSet<ImportedObstacleActor> visited = new HashSet<ImportedObstacleActor>();
         BoxCollider pad;
@@ -57,12 +73,9 @@ namespace ChessFight.ProtectKing
         {
             if (kind == ObstacleSurfaceKind.Conveyor) return transform.TransformDirection(direction.normalized) * conveyorSpeed;
             if (kind != ObstacleSurfaceKind.SpinningDisc) return Vector3.zero;
-            var local = transform.InverseTransformPoint(worldPosition); local.y = 0;
-            float distance = local.magnitude;
-            var radial = distance > .05f ? local / distance : Vector3.right;
-            float speed = Mathf.Lerp(centerSpeed, edgeSpeed, Mathf.Clamp01(distance / Mathf.Max(.1f, radius)));
-            var tangent = Vector3.Cross(Vector3.up, radial);
-            return transform.TransformDirection(tangent * speed + radial * outwardSpeed);
+            // Tangential takeoff velocity, with no artificial outward push. World-space
+            // radius also keeps scaled platforms consistent with their visual rotation.
+            return Vector3.Cross(transform.up * (rotationSpeed * Mathf.Deg2Rad), worldPosition - transform.position);
         }
 
         public Vector3 Apply(ImportedObstacleActor motor)
@@ -72,17 +85,20 @@ namespace ChessFight.ProtectKing
             float time = context != null ? context.Elapsed : Time.time;
             if (lastLaunch.TryGetValue(motor, out float previous) && time >= previous && time - previous < launchCooldown) return Vector3.zero;
             lastLaunch[motor] = time;
-            motor.LaunchFromObstacle(transform.TransformDirection(launchVelocity));
+            float rise = Mathf.Sqrt(2f * Mathf.Max(0f, -Physics.gravity.y) * Mathf.Max(0f, jumpHeight));
+            Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            motor.LaunchFromObstacle(forward * forwardSpeed + Vector3.up * rise);
             return Vector3.zero;
         }
 
         void Update()
         {
-            float t = context != null ? context.Elapsed : Time.time;
+            if (!Running) return;
+            double clock = ObstacleClock.Now;
+            float t = (float)clock;
             for (int i = 0; i < rotorOrigins.Length; i++)
             {
-                float fraction = rotorOrigins.Length <= 1 ? 0 : (float)i / (rotorOrigins.Length - 1);
-                rotors[i].localRotation = rotorOrigins[i] * Quaternion.Euler(0, t * Mathf.Lerp(150, 30, fraction), 0);
+                rotors[i].localRotation = rotorOrigins[i] * Quaternion.Euler(0, (float)(clock * rotationSpeed % 360.0), 0);
             }
             var axis = direction.normalized;
             for (int i = 0; i < markerOrigins.Length; i++)
