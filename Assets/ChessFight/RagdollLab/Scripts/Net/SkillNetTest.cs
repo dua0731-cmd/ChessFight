@@ -55,10 +55,11 @@ namespace ChessFight.RagdollLab
         {
             if (line != null) return;
             var font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 13);
-            line = new GUIStyle(GUI.skin.label) { font = font, fontSize = 13, richText = true, wordWrap = false };
+            // Wrapped: a long line (a player on the host's list) goes on to the next line instead of off the box.
+            line = new GUIStyle(GUI.skin.label) { font = font, fontSize = 13, richText = true, wordWrap = true };
             line.normal.textColor = new Color(0.9f, 0.92f, 0.95f);
             head = new GUIStyle(line) { fontSize = 14, fontStyle = FontStyle.Bold };
-            hint = new GUIStyle(line) { fontSize = 13 };
+            hint = new GUIStyle(line) { fontSize = 13, wordWrap = false };
             panel = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
             panel.SetPixel(0, 0, new Color(0.04f, 0.06f, 0.1f, 0.84f));
             panel.Apply();
@@ -139,7 +140,7 @@ namespace ChessFight.RagdollLab
         {
             sb.Append($"<b>네트워크 · 방장 ({link.CarrierName}) · {link.PlayerCount}명</b>\n");
             sb.Append("이 PC가 물리와 스킬을 판정해요 (내 입력 지연 0)\n");
-            sb.Append($"스냅샷 30개/초 · {link.SnapshotBytes} 바이트 · 보내기 {link.SentPerSecond / 1024f:0.0} KB/s · 받기 {link.ReceivedPerSecond / 1024f:0.0} KB/s\n");
+            sb.Append($"스냅샷 보냄 {Rate(link.SnapshotsSentPerSecond, 28, 24)}개/초 · {link.SnapshotBytes} 바이트 · 보내기 {link.SentPerSecond / 1024f:0.0} KB/s · 받기 {link.ReceivedPerSecond / 1024f:0.0} KB/s\n");
             sb.Append($"스킬 패킷 {link.SkillPacketsPerSecond}개/초 · 평균 {link.SkillPacketAverage} · 최대 {link.SkillPacketLargest} 바이트 · {link.SkillBytesPerSecond / 1024f:0.0} KB/s\n");
             sb.Append($"보관 중인 스킬 신호 {link.MomentsLogged}개 · 지연 시뮬레이터(F12): {link.Lag}\n");
 
@@ -154,7 +155,7 @@ namespace ChessFight.RagdollLab
                     continue;
                 }
                 sb.Append($"왕복 {Ms(p.RoundTripMs, 150, 300)} · 재생 {p.DelayMs} ms · 손실 {LossPct(p.LossPercent)}");
-                sb.Append($" · 입력 {Rate(p.InputRate, 55, 45)}개/초 · 스킬 키 {p.SkillPresses} · 미확인 신호 {p.Unconfirmed}\n");
+                sb.Append($" · 입력 {Rate(p.InputRate, 55, 45)}/초 · 스킬 키 {p.SkillPresses}번 · 미확인 신호 {p.Unconfirmed}\n");
             }
             sb.Append($"\n히트스톱(내 화면만) {RagdollPawn.NetStats.HitStops}번" + (RagdollPawn.NetStats.HitStops > 0 ? $" · 마지막 {RagdollPawn.NetStats.LastHitStopFrames}장면" : ""));
         }

@@ -188,7 +188,7 @@ namespace ChessFight.RagdollLab
         // R112, the skill network test screen (SkillNetTest): what the link measures besides the round trip.
         readonly List<PeerStat> peerStats = new List<PeerStat>();
         readonly List<SkillWireEvent> statBatch = new List<SkillWireEvent>();
-        int snapshotBytesLast, skillPackets, skillPacketMax, skillPacketRate, skillPacketMaxRate;
+        int snapshotBytesLast, skillPackets, skillPacketMax, skillPacketRate, skillPacketMaxRate, snapshotsOut, snapshotOutRate;
         // A client's press (F, or the click that fires / calls off an aim) until the host's state of its piece changes.
         float pressAt = -1f;
         SkillStage pressStage, lastOwnStage;
@@ -220,6 +220,8 @@ namespace ChessFight.RagdollLab
         public int ReceivedPerSecond => receivedRate;
         public int SkillBytesPerSecond => skillRate;
         public int SnapshotsPerSecond => snapshotRate;
+        /// <summary>Snapshots the host sent a second (30 when its frames keep up; fewer on a slow host).</summary>
+        public int SnapshotsSentPerSecond => snapshotOutRate;
         public int BufferedSnapshots => buffer.Count;
         public int SnapshotBytes => snapshotBytesLast;
         /// <summary>Skills packets a second (to all clients on the host) and their average and largest size.</summary>
@@ -439,6 +441,7 @@ namespace ChessFight.RagdollLab
             // The obstacle time these poses were simulated at: clients draw the obstacles at it.
             byte[] bytes = RagdollNetProtocol.Snapshot(NetMatch, ++tick, stamp, outgoing, ObstacleClock.Now);
             snapshotBytesLast = bytes.Length;
+            snapshotsOut++;
             foreach (ulong id in NetRoster.Keys)
                 if (id != NetSelf) Send(id, bytes);
             SendSkills(stamp);
@@ -1341,7 +1344,8 @@ namespace ChessFight.RagdollLab
             skillRate = skillBytes;
             skillPacketRate = skillPackets;
             skillPacketMaxRate = skillPacketMax;
-            sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = 0;
+            snapshotOutRate = snapshotsOut;
+            sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = snapshotsOut = 0;
             UpdatePeerStats();
         }
 
