@@ -375,6 +375,7 @@ Unity 편집기가 방장, 빌드 1~2개가 참가자인 로컬 시험이다. �
 - 이름에 `claude/`를 붙이지 않았다. 붙이면 커밋 훅이 `C:/Work/ChessFight`(bold-johnson)로 빨리 감아 버린다.
 - bold-johnson의 씬 삭제 커밋(`9a94131`)은 `skill-network-test`에 `merge -s ours`로 "합친 것으로" 기록만 했다. 그래서 bold-johnson의 새 커밋을 시험 브랜치로 합쳐도 씬이 지워지지 않는다.
 - 거꾸로 시험 브랜치를 bold-johnson에 합치면 씬이 다시 들어온다. 합칠 일이 생기면 그 뒤에 `Assets/Scenes/SkillTest`를 다시 지운다.
+- **시험 브랜치에는 스킬 시험 씬 3개만 있다**(승규 님 "온전히 스킬만 테스트 할 수 있게 다른 씬들은 지워줘"). Intro·Lobby·KingRush·SwordFight·QueenOfTheHill·RagdollTest·폰 러쉬 코스·결과 씬 등 `Assets/Scenes`의 나머지 씬은 지웠고, Build Settings에도 스킬 시험 씬 3개만 있다. 코드·프리팹·맵 자산은 그대로다. bold-johnson의 새 커밋을 합칠 때 그쪽에서 바뀐 씬이 충돌로 나오면 지운 쪽을 고른다. 이 브랜치를 bold-johnson에 합치면 씬이 지워지므로 **합치지 않는다**.
 
 **시험 화면에서 없앤 것** (`LabGame.NetTestMode`, 스킬 시험 씬의 시험장이 켬)
 - 튜닝 패널(Tab·F1·패드 Start)과 값 세트 키(1~4, Shift+1~4, B, [ ])
