@@ -13,7 +13,7 @@ namespace ChessFight.RagdollLab
     /// The clips are in Resources/PawnRushSkillSfx, named after the moment (Tools/Sfx/PawnRushSkills/export_unity.py
     /// wrote them); the pawn's come from Resources/QueenHillSkillSfx (PawnDash, PawnBump, PawnCrouch). Prepared once when
     /// loaded like QueenHillSkillSfx does: the quiet lead-in and the silent tail are cut and the loudest 0.3 s is brought
-    /// to −15 dB (at most ×8, peaks under 0.98). Played flat (2D), panned a little by where the moment is on screen.
+    /// to −21 dB (R119, was −15; at most ×8, peaks under 0.98). Played flat (2D), panned a little by where the moment is on screen.
     ///
     /// What starts a sound: the effect signals (<see cref="RagdollPawn.SkillFx"/> — online a client raises them from the
     /// host's messages, so it hears the same) and the pieces' skill stages, which every PC sees: the queen's windup, the
@@ -354,7 +354,8 @@ namespace ChessFight.RagdollLab
             var data = new float[count * ch];
             Array.Copy(raw, first * ch, data, 0, data.Length);
 
-            // Loudest 0.3 s (RMS over the channels) → −15 dB, at most ×8, peaks under 0.98.
+            // Loudest 0.3 s (RMS over the channels) → −21 dB, at most ×8, peaks under 0.98. R119: it was −15 dB; the online
+            // test found the sounds loud ("기본 사운드가 크다"), so everything sits 6 dB (half as loud) lower.
             int win = Mathf.Min(count, Mathf.RoundToInt(rate * 0.3f));
             double sum = 0, best = 0;
             for (int i = 0; i < count; i++)
@@ -365,7 +366,7 @@ namespace ChessFight.RagdollLab
                 if (i >= win - 1) best = Math.Max(best, sum);
             }
             float rms = (float)Math.Sqrt(best / Math.Max(1, win * ch));
-            float gain = Mathf.Min(8f, Mathf.Pow(10f, -15f / 20f) / Mathf.Max(1e-5f, rms), 0.98f / top);
+            float gain = Mathf.Min(8f, Mathf.Pow(10f, -21f / 20f) / Mathf.Max(1e-5f, rms), 0.98f / top);
             int fade = Mathf.Min(count, rate * 3 / 100);
             for (int i = 0; i < count; i++)
             {

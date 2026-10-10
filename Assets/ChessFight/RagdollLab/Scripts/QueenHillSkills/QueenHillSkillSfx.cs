@@ -11,7 +11,7 @@ namespace ChessFight.RagdollLab
     ///
     /// One clip per <see cref="QueenHillFxKind"/>, named after it, in Resources/QueenHillSkillSfx. The generated files
     /// differ a lot in level, so each is prepared once when loaded: the quiet lead-in is cut (the sound starts on the
-    /// moment), the silent tail too, and the loudest 0.3 s is brought to −15 dB (at most ×8, peaks under 0.98) like
+    /// moment), the silent tail too, and the loudest 0.3 s is brought to −21 dB (R119, was −15; at most ×8, peaks under 0.98) like
     /// the mockup page did. Played flat (2D), panned a little by where the moment is on screen. The same moment
     /// twice in one frame (three guarded allies, two pieces hit) sounds once. A knockdown (Down) has no sound since
     /// R104 (승규 님: "맞을 때 동전 소리 나는 거 빼줘" — its toy-figure take rang like a coin); the hit sounds stay.
@@ -144,7 +144,8 @@ namespace ChessFight.RagdollLab
             var data = new float[count * ch];
             Array.Copy(raw, first * ch, data, 0, data.Length);
 
-            // Loudest 0.3 s (RMS over the channels) → −15 dB, at most ×8, peaks under 0.98.
+            // Loudest 0.3 s (RMS over the channels) → −21 dB, at most ×8, peaks under 0.98. R119: it was −15 dB; the online
+            // test found the sounds loud ("기본 사운드가 크다"), so everything sits 6 dB (half as loud) lower.
             int win = Mathf.Min(count, Mathf.RoundToInt(rate * 0.3f));
             double sum = 0, best = 0;
             for (int i = 0; i < count; i++)
@@ -155,7 +156,7 @@ namespace ChessFight.RagdollLab
                 if (i >= win - 1) best = Math.Max(best, sum);
             }
             float rms = (float)Math.Sqrt(best / Math.Max(1, win * ch));
-            float gain = Mathf.Min(8f, Mathf.Pow(10f, -15f / 20f) / Mathf.Max(1e-5f, rms), 0.98f / top);
+            float gain = Mathf.Min(8f, Mathf.Pow(10f, -21f / 20f) / Mathf.Max(1e-5f, rms), 0.98f / top);
             int fade = Mathf.Min(count, rate * 3 / 100);
             for (int i = 0; i < count; i++)
             {
