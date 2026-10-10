@@ -10,7 +10,9 @@
 >
 > **예외 — 스킬 시험·온라인 스킬 작업은 `skill-network-test` 브랜치 (R112, 승규 님 10-10).** 스킬 시험 씬 셋이 그 브랜치에만 있다(`claude/bold-johnson-8ez95n`에서는 지움). 승규 님 작업은 **푸시하지 않는다**(로컬 커밋만, 요청할 때만 푸시). 두 브랜치 합치기 규칙은 [DECISIONS SK9](Docs/Project/DECISIONS.md).
 >
-> **최신 R117(승규 님, 10-10): 방장 판정 방식 점검과 3인 시험 (`skill-network-test`, 문서만)** → [Network/HOST_AUTHORITY](Docs/Network/HOST_AUTHORITY.md) · [VALIDATION R117 표](Docs/Network/VALIDATION.md). "방장 컴퓨터에서 계산하면 우려점 있어?" → "더 다듬어야 할 사항?" → "문서로 자세하게, 오늘 3인 테스트 해볼 건데 수치 알려줄게". 방장 판정은 유지하고 다듬는다. 다듬을 것 P1 방장 성능 수치 → P7 방장 이전 확인(시험 5) → 느낌에 따라 P2 스냅샷 60번·P3 내 말 덜 늦게 또는 P4 노리기 보정. 방장 고르기(성능·핑)는 이미 있음. 승규 님 3인 시험 수치를 받으면 VALIDATION R117에 적고 §9대로 고른다. 지금 `SkillNet_*.zip`(20:32)은 R114~R116 효과음 전 빌드. 다음 번호 R118.
+> **최신 R118(승규 님, 10-11): 방장 성능 수치·측정 고침·나이트 머리 찍기 (`skill-network-test`)** → [Network/HOST_AUTHORITY §8.7](Docs/Network/HOST_AUTHORITY.md) · [VALIDATION R118 표](Docs/Network/VALIDATION.md). 2인 Steam 시험(참가자 영상, VALIDATION R117 아래 표): 회선은 아주 좋음(왕복 ~25 ms, 손실 0, 신호 안 빠짐). 시험 화면에 프레임·물리·방장 고르기 줄과 방장 바뀜 메시지, 반응은 시작할 수 있는 누름만, 퀸 오브 더 힐 미리 그림은 땅에서만, 나이트 머리 찍기 속도 상한. 9700K(방 만듦)가 7800X3D보다 방장으로 남은 이유는 새 화면의 점수로 확인할 차례. 사람 확인 전, 푸시 안 함. 다음 번호 R119.
+>
+> **R117(승규 님, 10-10): 방장 판정 방식 점검과 3인 시험 (`skill-network-test`, 문서만)** → [Network/HOST_AUTHORITY](Docs/Network/HOST_AUTHORITY.md) · [VALIDATION R117 표](Docs/Network/VALIDATION.md). "방장 컴퓨터에서 계산하면 우려점 있어?" → "더 다듬어야 할 사항?" → "문서로 자세하게, 오늘 3인 테스트 해볼 건데 수치 알려줄게". 방장 판정은 유지하고 다듬는다. 다듬을 것 P1 방장 성능 수치 → P7 방장 이전 확인(시험 5) → 느낌에 따라 P2 스냅샷 60번·P3 내 말 덜 늦게 또는 P4 노리기 보정. 방장 고르기(성능·핑)는 이미 있음. 승규 님 3인 시험 수치를 받으면 VALIDATION R117에 적고 §9대로 고른다. 지금 `SkillNet_*.zip`(20:32)은 R114~R116 효과음 전 빌드.
 >
 > **R116(승규 님, 10-10): 소드 파이트 가장자리 스킬 효과음 (`skill-network-test`)** → [Skills/SWORD_FIGHT §R116](Docs/Skills/SWORD_FIGHT.md). R115 시안 페이지(bold-johnson 쪽 R115)에서 "킹 D · 퀸 B · 룩 B · 비숍 E · 나이트 D". E 스킬마다 한 순간 한 소리, 가장 큰 곳을 그 순간에 맞춤, 취소되면 줄어듦. 사람 확인 전, 푸시 안 함.
 >

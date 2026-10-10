@@ -348,6 +348,14 @@ namespace ChessFight.Network
             }
             return list;
         }
+        // R118 (the skill network test screen): everyone in the match as the
+        // election ranks them right now, and the published order of successors.
+        public List<HostElection.Candidate> HostCandidates() =>
+            Match == 0 ? new List<HostElection.Candidate>() : Candidates(Members(Match));
+        public List<ulong> PublishedSuccessors() => HostElection.Decode(Data(Match, "successors"));
+        // The host-change line (Note) is still on show.
+        public bool NoteShowing => Time.realtimeSinceStartup < noteUntil && Note != "";
+
         static HostElection.Candidate Pick(List<HostElection.Candidate> candidates, ulong id) =>
             candidates.FirstOrDefault(c => c.Id == id);
 

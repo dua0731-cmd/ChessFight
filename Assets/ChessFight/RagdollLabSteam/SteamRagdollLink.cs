@@ -95,6 +95,31 @@ namespace ChessFight.RagdollLab.Net
 
         protected override void NetHostSilence(float seconds) => session.ReportHostSilence(seconds);
 
+        // R118: the host election as the test screen shows it, read from the room once a second (it is lobby data).
+        readonly List<HostCandidate> hostCandidates = new List<HostCandidate>();
+        float hostCandidatesAt;
+
+        public override IReadOnlyList<HostCandidate> HostCandidates
+        {
+            get
+            {
+                if (session == null || session.Match == 0) { hostCandidates.Clear(); return hostCandidates; }
+                if (Time.realtimeSinceStartup < hostCandidatesAt) return hostCandidates;
+                hostCandidatesAt = Time.realtimeSinceStartup + 1f;
+                hostCandidates.Clear();
+                var next = session.PublishedSuccessors();
+                foreach (var c in session.HostCandidates())
+                    hostCandidates.Add(new HostCandidate
+                    {
+                        Name = session.Name(c.Id), Fitness = c.Fitness, BaseFitness = c.BaseFitness, PingMs = c.PingMs,
+                        Next = next.IndexOf(c.Id) + 1, IsHost = c.Id == session.Host, IsSelf = c.Id == session.Self,
+                    });
+                return hostCandidates;
+            }
+        }
+
+        public override string HostNote => session != null && session.NoteShowing ? session.Note : "";
+
         protected override void NetLeave(string why) => session.Cancel();
 
         void OnHostChanged(ulong previous, ulong next)

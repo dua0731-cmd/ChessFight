@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R117 | (`skill-network-test`) 문서만: 방장 판정 방식 점검(좋은 점·우려·다른 방식 비교·지연·올림 계산), 다듬을 것 P1~P9, 3인 시험 순서·수치 읽는 법·보고 양식([Network/HOST_AUTHORITY](../Network/HOST_AUTHORITY.md)), VALIDATION R117 표, Network/README 목록·방장 이전 줄 바로잡음, REQUIREMENTS R117, HANDOFF |
+| (이 커밋) | 10-11 | R118 | (`skill-network-test`) 시험 화면에 방장 성능 수치(프레임·물리 단계·방장 고르기 점수·핑·다음 방장, 방장 바뀜 메시지), 누름 → 반응은 스킬을 시작할 수 있는 누름만(나이트 두 번째 F는 그 동작까지), 퀸 오브 더 힐 미리 그림은 땅에서만, 나이트 머리 찍기의 마지막 0.1초 재겨냥 없앰·속도 상한(움직이는 상대가 멀리 날아가던 것), 문서(HOST_AUTHORITY §8.7, VALIDATION R118, REQUIREMENTS, HANDOFF) |
+| `00d78a5`·`fb7dd12` | 10-10 | R117 | (`skill-network-test`) 문서만: 방장 판정 방식 점검(좋은 점·우려·다른 방식 비교·지연·올림 계산), 다듬을 것 P1~P9, 3인 시험 순서·수치 읽는 법·보고 양식([Network/HOST_AUTHORITY](../Network/HOST_AUTHORITY.md)), VALIDATION R117 표, Network/README 목록·방장 이전 줄 바로잡음, REQUIREMENTS R117, HANDOFF |
 | `d841480` | 10-10 | R116 | (`skill-network-test`) 소드 파이트 가장자리 스킬 효과음: 승규 님이 고른 킹 D · 퀸 B · 룩 B · 비숍 E · 나이트 D(`KingStab`·`QueenMark`·`RookCollapse`·`BishopReach`·`KnightFlip`), 나이트는 늦춰 시작, 취소·놓침이면 줄어듦(녹화 트랙도), 문서(Skills/SWORD_FIGHT §R116, REQUIREMENTS R116, HANDOFF, HISTORY) |
 | `b1a229f` | 10-10 | R115 | (`skill-network-test`) 폰 러쉬 룩이 적과 부딪히는 소리: 음 없는 묵직한 퍽(`RookHit.mp3`), 맞음마다 음 올리기 뺌, 벽 쾅 그대로, 문서 |
 | `12fae6c` | 10-10 | R114 | (`skill-network-test`) 폰 러쉬 스킬 효과음: `PawnRushSkillSfx`(이펙트 신호·스킬 단계로 재생, 돌진·팽팽한 줄·비행은 이어지는 소리), `Resources/PawnRushSkillSfx` 19개, 시험장 소리 버튼, `Tools/Sfx/PawnRushSkills/export_unity.py`, 문서(Skills/SOUND §효과음 넣기, VALIDATION R114, REQUIREMENTS R114, HANDOFF, HISTORY) |

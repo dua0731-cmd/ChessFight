@@ -192,7 +192,10 @@ namespace ChessFight.RagdollLab
         // A client's press (F, or the click that fires / calls off an aim) until the host's state of its piece changes.
         float pressAt = -1f;
         SkillStage pressStage, lastOwnStage;
-        bool pressLocked, pressAccept;
+        bool pressLocked, pressAccept, pressKick;
+        // R118: this PC's frame time (smoothed) and physics steps a second, for the test screen.
+        float frameMs = -1f;
+        int physicsSteps, physicsRate;
         readonly float[] reactions = new float[10];
         int reactionCount, reactionNext;
         // A client's skill moments: drawn how far from their own pose, and how long after they arrived.
@@ -247,6 +250,27 @@ namespace ChessFight.RagdollLab
         public float MomentLateMs => Average(momentLate, momentCount);
         public float MomentWaitMs => Average(momentWait, momentCount);
         public IReadOnlyList<PeerStat> Peers => peerStats;
+        /// <summary>R118: this PC's frame time (ms, smoothed), its physics steps in the last second and the steps it
+        /// should make (1 / fixedDeltaTime). A host that falls behind shows it here first.</summary>
+        public float FrameMs => frameMs;
+        public int PhysicsStepsPerSecond => physicsRate;
+        public int PhysicsStepsWanted => Mathf.RoundToInt(Time.timeScale / Mathf.Max(1e-4f, Time.fixedDeltaTime));
+
+        /// <summary>One player as the host election ranks them (Docs/Network/HOST.md): the PC's score with its frame rate,
+        /// the machine alone, the mean ping to the others (Steam's estimate), and the place in the published order of who
+        /// takes over next (0 = not in it).</summary>
+        public struct HostCandidate
+        {
+            public string Name;
+            public int Fitness, BaseFitness, PingMs, Next;
+            public bool IsHost, IsSelf;
+        }
+
+        static readonly List<HostCandidate> noCandidates = new List<HostCandidate>();
+        /// <summary>R118: the players as the host election sees them (empty where there is no election: the local test).</summary>
+        public virtual IReadOnlyList<HostCandidate> HostCandidates => noCandidates;
+        /// <summary>R118: the line the session shows for a few seconds when the host role moves ("" otherwise).</summary>
+        public virtual string HostNote => "";
         /// <summary>The online panel (F3); the test screen opens it while no match is on.</summary>
         public bool PanelShown { get => hudOpen; set => hudOpen = value; }
 
@@ -320,6 +344,8 @@ namespace ChessFight.RagdollLab
         protected virtual void Update()
         {
             if (game == null) return;
+            float dtMs = Mathf.Min(Time.unscaledDeltaTime * 1000f, 250f);
+            frameMs = frameMs < 0f ? dtMs : frameMs + (dtMs - frameMs) * 0.05f;
             if (Input.GetKeyDown(KeyCode.F3)) hudOpen = !hudOpen;
             if (Input.GetKeyDown(KeyCode.F12)) SetLag((lagPreset + 1) % LinkProfile.Presets.Length);
             // The lab locks the cursor for mouse-look; this panel needs it back or its buttons never get clicked. Only
@@ -347,6 +373,7 @@ namespace ChessFight.RagdollLab
 
         protected virtual void FixedUpdate()
         {
+            physicsSteps++;
             if (!matchActive || !NetIsHost) return;
             float now = Time.realtimeSinceStartup;
             foreach (var pair in pawns)
@@ -614,9 +641,14 @@ namespace ChessFight.RagdollLab
                 // R112: time a press until the host's state of my piece changes (the skill key; the click that fires or
                 // the right click that calls off an aim). Measured before the guess below draws over my piece.
                 bool aiming = me.HostStage == SkillStage.Windup && !me.HostAimLocked;
-                bool timed = local.skill || (aiming && (local.shove || (local.grab && !grabWasDown)));
                 // Asked to swap by a rook (Queen of the Hill): F is the yes, timed until the host takes the ask away.
                 bool accepting = local.skill && me.CastleAsker != null;
+                // R118: only a press that can do something is timed: one that starts a skill, the knight's second press in
+                // its leap, the yes to a swap, or the aim's click. A press on cooldown or in the air used to start the clock
+                // too, and the skill that came later counted from it (averages of 400-700 ms at a 25 ms round trip).
+                bool kick = local.skill && me.KnightSecondReady;
+                bool timed = (local.skill && (accepting || kick || me.CouldStartSkill))
+                             || (aiming && (local.shove || (local.grab && !grabWasDown)));
                 if (accepting) SwapAccepts++;
                 else if (local.skill) SkillPresses++;
                 if (timed && pressAt < 0f)
@@ -625,6 +657,7 @@ namespace ChessFight.RagdollLab
                     pressStage = me.HostStage;
                     pressLocked = me.HostAimLocked;
                     pressAccept = accepting;
+                    pressKick = kick;
                 }
                 // D-S3: my own press and aim drawn at once, for about a round trip, until the host's state says the same.
                 float hold = Mathf.Clamp(roundTripMs / 1000f + 0.25f, 0.25f, 0.8f);
@@ -838,7 +871,9 @@ namespace ChessFight.RagdollLab
             if (lastOwnStage == SkillStage.None && stage != SkillStage.None) SkillStarts++;
             lastOwnStage = stage;
             if (pressAt < 0f) return;
-            bool answered = pressAccept ? me.CastleAsker == null : stage != pressStage || me.HostAimLocked != pressLocked;
+            bool answered = pressAccept ? me.CastleAsker == null
+                          : pressKick ? me.HostKnightKicked || stage != pressStage
+                          : stage != pressStage || me.HostAimLocked != pressLocked;
             if (!answered) return;
             LastReactionMs = (Time.realtimeSinceStartup - pressAt) * 1000f;
             Push(reactions, ref reactionNext, ref reactionCount, LastReactionMs);
@@ -1353,7 +1388,8 @@ namespace ChessFight.RagdollLab
             skillPacketRate = skillPackets;
             skillPacketMaxRate = skillPacketMax;
             snapshotOutRate = snapshotsOut;
-            sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = snapshotsOut = 0;
+            physicsRate = physicsSteps;
+            sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = snapshotsOut = physicsSteps = 0;
             UpdatePeerStats();
         }
 

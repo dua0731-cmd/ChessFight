@@ -95,8 +95,11 @@ namespace ChessFight.RagdollLab
                 Box(sb.ToString(), 430f);
                 return;
             }
+            string note = link.HostNote;
+            if (note != "") sb.Append(Paint("▶ " + note, Fair)).Append('\n');
             if (link.IsHost) HostNumbers(link);
             else ClientNumbers(link);
+            Hosting(link);
             Box(sb.ToString(), 470f);
         }
 
@@ -150,6 +153,30 @@ namespace ChessFight.RagdollLab
                 sb.Append($" · 입력 {Rate(p.InputRate, 55, 45)}/초 · 스킬 키 {p.SkillPresses}번 · 미확인 신호 {p.Unconfirmed}\n");
             }
             sb.Append($"\n히트스톱(내 화면만) {RagdollPawn.NetStats.HitStops}번" + (RagdollPawn.NetStats.HitStops > 0 ? $" · 마지막 {RagdollPawn.NetStats.LastHitStopFrames}장면" : ""));
+        }
+
+        /// <summary>R118: how this PC is keeping up (frame time, physics steps) and the host election as it ranks everyone:
+        /// the score with the frame rate, the machine alone, the mean ping, who takes over next. At the start the role goes
+        /// to a PC that rates 1.15 times the room's maker; a host slow for 5 s hands it to a machine 1.5 times its own.</summary>
+        void Hosting(LabNetLink link)
+        {
+            float ms = link.FrameMs;
+            int steps = link.PhysicsStepsPerSecond, wanted = link.PhysicsStepsWanted;
+            sb.Append($"\n<b>{(link.IsHost ? "방장 PC" : "내 PC")}</b>: 프레임 ");
+            sb.Append(ms > 0f ? Ms(ms, 16.7f, 25f) + $" ({1000f / ms:0} fps)" : "—");
+            sb.Append($" · 물리 {Rate(steps, Mathf.RoundToInt(wanted * 0.95f), Mathf.RoundToInt(wanted * 0.8f))}/{wanted}번/초\n");
+            var list = link.HostCandidates;
+            if (list.Count == 0) return;
+            sb.Append("<b>방장 고르기</b> (성능 점수 · PC만 · 평균 핑, 시작 때 1.15배 넘게 좋으면 방장)\n");
+            foreach (var c in list)
+            {
+                sb.Append(c.IsHost ? "★ " : "· ").Append(c.Name).Append(c.IsSelf ? "(나)" : "").Append(": ");
+                sb.Append(c.Fitness > 0 ? $"점수 {c.Fitness}" : Paint("점수 재는 중", Fair));
+                sb.Append(c.BaseFitness > 0 ? $" · PC만 {c.BaseFitness}" : "");
+                sb.Append(c.PingMs >= 0 ? $" · 핑 {c.PingMs} ms" : " · 핑 —");
+                sb.Append(c.IsHost ? " · 방장" : c.Next > 0 ? $" · 다음 방장 {c.Next}번째" : "");
+                sb.Append('\n');
+            }
         }
 
         // ---------------------------------------------------------------- drawing

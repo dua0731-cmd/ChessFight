@@ -64,6 +64,19 @@ namespace ChessFight.RagdollLab
         /// <summary>The host's last word on this puppet's skill (the guess above draws over it for a moment).</summary>
         public SkillStage HostStage => netStage;
         public bool HostAimLocked => netLocked;
+        /// <summary>The host says this Pawn Rush knight has used its second press (the kick on or the dive onto a head).</summary>
+        public bool HostKnightKicked => netKicked;
+
+        /// <summary>The skill key would start a skill as far as this client can tell (the host has the last word): not doing
+        /// one, off cooldown, standing, and on the floor unless the piece may start in the air (the Pawn Rush knight and
+        /// rook). The test screen times only these presses (R118).</summary>
+        public bool CouldStartSkill =>
+            PawnRushSkills != null && State == PawnState.Active && skillStage == SkillStage.None && skillCooldownLeft <= 0.05f
+            && (Grounded || (QueenHillSkills == null && (piece == PieceKind.Knight || piece == PieceKind.Rook)));
+
+        /// <summary>A Pawn Rush knight in its leap that can still use its second press.</summary>
+        public bool KnightSecondReady =>
+            PawnRushSkills != null && QueenHillSkills == null && piece == PieceKind.Knight && netStage == SkillStage.Active && !netKicked;
 
         // ---------------------------------------------------------------- host: what the others need
 
@@ -138,7 +151,7 @@ namespace ChessFight.RagdollLab
 
         // The host's state as it last arrived (the prediction draws over it for a moment).
         SkillStage netStage;
-        bool netLocked;
+        bool netLocked, netKicked;
         // The local player's own press, drawn before the host has answered (D-S3), with its own clock.
         float predictLeft, predictTime;
         SkillStage predictStage;
@@ -190,6 +203,7 @@ namespace ChessFight.RagdollLab
                 knightHoming = (s.Flags & NetHoming) != 0;
                 knightTapped = (s.Flags & NetTapped) != 0;
                 knightTurned = (s.Flags & NetTurned) != 0;
+                netKicked = knightHoming || knightTurned || (s.Flags & NetTapped) != 0;
                 if (piece == PieceKind.Bishop)
                 {
                     bishopYaw = FlatDir(dir, bishopYaw);
@@ -220,7 +234,7 @@ namespace ChessFight.RagdollLab
             if (netStage == SkillStage.None && skillStage == SkillStage.None && skillCooldownLeft <= 0f && !flying && castleAsker == null
                 && wardLeft <= 0f && hasteLeft <= 0f && qhCrouch <= 0f) return;
             netStage = SkillStage.None;
-            netLocked = false;
+            netLocked = netKicked = false;
             skillStage = SkillStage.None;
             aimLocked = rookAir = dashing = knightHoming = knightTapped = knightTurned = false;
             flying = slashBlocked = shellOut = false;
@@ -304,10 +318,12 @@ namespace ChessFight.RagdollLab
                 case 0:
                     // Asked to swap by a rook (Queen of the Hill): the key is the yes, not a skill of its own.
                     if (castleAsker != null) break;
-                    if (skillStage == SkillStage.None && skillCooldownLeft <= 0.05f)
+                    if (CouldStartSkill)
                     {
                         // The pieces whose skill opens with a warning or an aim; a dash or a leap is the body's to show.
-                        bool windup = qh || piece == PieceKind.Queen || piece == PieceKind.Rook || piece == PieceKind.Bishop
+                        // R118: every Queen of the Hill skill starts on the floor only (the host refused the guesses made in
+                        // the air, mostly the pawn's: ten taken back out of 57 in the first two-PC test).
+                        bool windup = (qh && Grounded) || piece == PieceKind.Queen || piece == PieceKind.Rook || piece == PieceKind.Bishop
                                       || (piece == PieceKind.Knight && Grounded);
                         if (windup) Predict(SkillStage.Windup, false, hold, true);
                     }

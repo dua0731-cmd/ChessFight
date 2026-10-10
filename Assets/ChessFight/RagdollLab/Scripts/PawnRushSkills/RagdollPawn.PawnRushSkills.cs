@@ -822,7 +822,17 @@ namespace ChessFight.RagdollLab
                 return;
             }
             float t = knightHomeLeft;
+            // R118: the last moment is not steered: dividing by the time left threw the knight at 20 m/s or more when a
+            // moving target stepped aside just before the knight came down, and the head it hit flew far (seen online,
+            // both players running). It keeps the course it has; the stomp still takes a head it comes down on.
+            if (t < 0.1f) return;
             Vector3 want = (StompPoint(knightTarget) - bodies[0].position) / t - 0.5f * t * Physics.gravity;
+            // And no faster than a homing flight is meant to be.
+            var s = PawnRushSkills;
+            float most = (s != null ? s.knightHomingSpeed : 7f) * 1.25f;
+            Vector3 across = Flat(want);
+            if (across.sqrMagnitude > most * most) across = across.normalized * most;
+            want = across + Vector3.up * Mathf.Clamp(want.y, -12f, 8f);
             Launch(want);
         }
 
