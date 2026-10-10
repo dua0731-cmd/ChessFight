@@ -774,6 +774,9 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- the pieces by their seats
 
+        /// <summary>The pawn of a player in the match (null if none).</summary>
+        protected RagdollPawn PawnFor(ulong id) => pawns.TryGetValue(id, out var pawn) ? pawn : null;
+
         byte RefOf(RagdollPawn pawn)
         {
             if (pawn == null || !idOf.TryGetValue(pawn, out ulong id) || !NetRoster.TryGetValue(id, out var seat)) return SkillWire.None;
@@ -1214,6 +1217,9 @@ namespace ChessFight.RagdollLab
                     break;
                 case "trace":
                     Trace = p.Length < 2 || p[1] != "off";
+                    break;
+                case "hud":
+                    hudOpen = p.Length < 2 || p[1] != "off";
                     break;
             }
             if (Trace) Debug.Log("[LabNet] dev: " + command);

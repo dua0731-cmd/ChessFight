@@ -337,6 +337,69 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        // ---------------------------------------------------------------- scripted runs (development)
+
+        /// <summary>
+        /// A timed run on the host, one command a line (the AI's way to try the skills online on one PC):
+        /// <c>wait 0.3</c>; <c>host skill</c> / <c>client skill</c> (any development command, see RunDev: piece, skill,
+        /// click, jump, rclick, move, look, lag, shot, trace) for this PC's own player or sent to the clients;
+        /// <c>place host|client x z faceX faceZ</c> (the host moves a pawn); <c>log text</c>. Returns at once; the run
+        /// goes on in the background (<see cref="ScriptRunning"/>).
+        /// </summary>
+        public static string Script(string text)
+        {
+            var link = Current as LoopbackLabLink;
+            if (link == null || !link.hosting) return "no loopback host";
+            link.StopAllCoroutines();
+            link.StartCoroutine(link.RunScript(text.Replace("\r", "").Split('\n')));
+            return "script started";
+        }
+
+        public static bool ScriptRunning { get; private set; }
+
+        System.Collections.IEnumerator RunScript(string[] lines)
+        {
+            ScriptRunning = true;
+            foreach (string raw in lines)
+            {
+                string line = raw.Trim();
+                if (line.Length == 0 || line.StartsWith("#")) continue;
+                string[] p = line.Split(' ');
+                switch (p[0])
+                {
+                    case "wait":
+                        float seconds = float.Parse(p[1], System.Globalization.CultureInfo.InvariantCulture);
+                        float until = Time.realtimeSinceStartup + seconds;
+                        while (Time.realtimeSinceStartup < until) yield return null;
+                        break;
+                    case "host":
+                        RunDev(line.Substring(5));
+                        break;
+                    case "client":
+                        SendDev(line.Substring(7));
+                        break;
+                    case "place":
+                        PlaceForScript(p);
+                        break;
+                    case "log":
+                        Debug.Log("[LabNet] script: " + line.Substring(4));
+                        break;
+                }
+            }
+            ScriptRunning = false;
+        }
+
+        void PlaceForScript(string[] p)
+        {
+            if (p.Length < 6) return;
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            var pawn = PawnFor(p[1] == "host" ? HostId : HostId + 1);
+            if (pawn == null) return;
+            var at = new Vector3(float.Parse(p[2], inv), 0f, float.Parse(p[3], inv));
+            var face = new Vector3(float.Parse(p[4], inv), 0f, float.Parse(p[5], inv));
+            pawn.Teleport(at + Vector3.up * (pawn.standHeight + 0.02f), face);
+        }
+
         // ---------------------------------------------------------------- HUD
 
         protected override void DrawLobby()
