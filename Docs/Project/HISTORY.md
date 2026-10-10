@@ -7,7 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R108 | 문서: Skills/SWORD_FIGHT §R108, VALIDATION R108 표, REQUIREMENTS R108, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R109 | 문서: Skills/SWORD_FIGHT §R109, VALIDATION R109 표, REQUIREMENTS R109, HANDOFF, HISTORY |
+| `e7d4fdf` | 10-10 | R109 | 자동 시험 edge-bishop-close: 아군이 떨어진 뒤 비숍을 내려질 자리에 세움 |
+| `b273529` | 10-10 | R109 | 비숍 구원의 손: 끌어올리는 동안·내려놓은 뒤 비숍과 아군이 부딪히지 않음, 자리가 비숍과 겹치면 옆으로 비켜 내려놓음 |
+| `d662aea` | 10-10 | R108 | 문서: Skills/SWORD_FIGHT §R108, VALIDATION R108 표, REQUIREMENTS R108, HANDOFF, HISTORY |
 | `8f31888` | 10-10 | R108 | 토큰 옆면을 거리장의 잉크 테두리선에서 칸마다(점을 밀어내면 홈에서 꼬였음) |
 | `644e127` | 10-10 | R108 | 머리 위 표시를 3D 토큰으로(셰이더 `Skill Icon 3D`, 앞뒤 그림·옆면, 팝할 때 한 바퀴), 룩 소리 4개를 돌 재료로(띠용 없음) |
 | `8b9a11c` | 10-10 | R106 | 문서: Skills/SWORD_FIGHT §R106 효과음·코드, VALIDATION R106 표, REQUIREMENTS R106, HANDOFF, HISTORY |
