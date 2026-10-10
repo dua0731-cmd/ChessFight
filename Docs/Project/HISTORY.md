@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R109 | 문서: Skills/SWORD_FIGHT §R109, VALIDATION R109 표, REQUIREMENTS R109, HANDOFF, HISTORY |
+| (이 커밋) | 10-10 | R110 | 문서: Skills/SWORD_FIGHT §R110, VALIDATION R110 표, REQUIREMENTS R110, HANDOFF, HISTORY |
+| `7f1d142` | 10-10 | R110 | 나이트 벼랑 끝 역전: 골반이 밖 0.6 m까지·카메라 방향 무관·떨어지기 시작한 0.6초 안에도 켜짐(허공에서 멈췄다 공중제비), 자동 시험 edge-knight-side·edge-knight-fall |
+| `7ce76d0` | 10-10 | R109 | 문서: Skills/SWORD_FIGHT §R109, VALIDATION R109 표, REQUIREMENTS R109, HANDOFF, HISTORY |
 | `e7d4fdf` | 10-10 | R109 | 자동 시험 edge-bishop-close: 아군이 떨어진 뒤 비숍을 내려질 자리에 세움 |
 | `b273529` | 10-10 | R109 | 비숍 구원의 손: 끌어올리는 동안·내려놓은 뒤 비숍과 아군이 부딪히지 않음, 자리가 비숍과 겹치면 옆으로 비켜 내려놓음 |
 | `d662aea` | 10-10 | R108 | 문서: Skills/SWORD_FIGHT §R108, VALIDATION R108 표, REQUIREMENTS R108, HANDOFF, HISTORY |
