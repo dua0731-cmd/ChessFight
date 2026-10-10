@@ -15,7 +15,8 @@ namespace ChessFight.RagdollLab
     /// repeats, missed, dropped), the hit stops; on the host, every player's line as that player measures it.</item>
     /// </list>
     /// Green is within the R96 bar (D-S9: 150 ms round trip, 5% loss), yellow up to 300 ms and 10% (it must hold up),
-    /// red past that. While no match is on, the online panel (F3) is open to make or join one.
+    /// red past that. The online panel is not opened on its own: an open panel keeps the mouse free, so playing alone would
+    /// not take the mouse until F3 closed it. F3 opens it to make or join a match.
     /// </summary>
     [DefaultExecutionOrder(220)]
     public class SkillNetTest : MonoBehaviour
@@ -23,7 +24,6 @@ namespace ChessFight.RagdollLab
         LabGame game;
         GUIStyle line, head, hint;
         Texture2D panel;
-        bool openedPanel;
         readonly StringBuilder sb = new StringBuilder(1024);
 
         static readonly Color Good = new Color(0.55f, 0.95f, 0.6f), Fair = new Color(1f, 0.85f, 0.35f), Bad = new Color(1f, 0.45f, 0.4f);
@@ -33,17 +33,6 @@ namespace ChessFight.RagdollLab
             game = GetComponent<LabGame>();
             if (game == null) game = FindFirstObjectByType<LabGame>();
             if (game != null) game.NetTestMode = true;
-        }
-
-        void Update()
-        {
-            // Nothing to test until a match is on: show how to make or join one (once; F3 closes it).
-            var link = LabNetLink.Current;
-            if (!openedPanel && link != null && !link.MatchActive && game != null && !game.AutoTest)
-            {
-                link.PanelShown = true;
-                openedPanel = true;
-            }
         }
 
         void OnDestroy()
@@ -84,6 +73,8 @@ namespace ChessFight.RagdollLab
                 : "스킬 네트워크 시험   ·   F3 온라인 창: Steam 방 만들기·참가 또는 로컬 시험(이 PC 두 창)   ·   R 리스폰   ·   Esc 마우스 풀기";
             if (Cursor.lockState != CursorLockMode.Locked && !game.UiWantsCursor)
                 text = "▶ 화면을 클릭하면 마우스 조작(시점 · 좌클릭 · 우클릭)이 켜져요     " + text;
+            else if (game.UiWantsCursor)
+                text = "▶ 온라인 창이 열려 있는 동안은 마우스가 풀려 있어요. F3로 닫고 화면을 클릭하세요     " + text;
             var size = hint.CalcSize(new GUIContent(text));
             GUI.DrawTexture(new Rect(8, 8, size.x + 16, size.y + 8), panel);
             GUI.Label(new Rect(16, 12, size.x, size.y), text, hint);
