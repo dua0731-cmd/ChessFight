@@ -1228,6 +1228,10 @@ namespace ChessFight.RagdollLab
                 case "shot":
                     if (p.Length > 1) ScreenCapture.CaptureScreenshot(command.Substring(5).Trim());
                     break;
+                case "burst":
+                    // burst <path prefix> <count> <seconds apart>: a row of frames round a moment, for a contact sheet.
+                    if (p.Length > 1) StartCoroutine(Burst(p[1], (int)F(2, 10f), F(3, 0.05f)));
+                    break;
                 case "trace":
                     Trace = p.Length < 2 || p[1] != "off";
                     break;
@@ -1236,6 +1240,16 @@ namespace ChessFight.RagdollLab
                     break;
             }
             if (Trace) Debug.Log("[LabNet] dev: " + command);
+        }
+
+        System.Collections.IEnumerator Burst(string prefix, int count, float apart)
+        {
+            for (int i = 0; i < Mathf.Clamp(count, 1, 60); i++)
+            {
+                ScreenCapture.CaptureScreenshot($"{prefix}_{i:00}.png");
+                float until = Time.realtimeSinceStartup + Mathf.Max(0.016f, apart);
+                while (Time.realtimeSinceStartup < until) yield return null;
+            }
         }
 
         // ---------------------------------------------------------------- HUD

@@ -106,6 +106,7 @@ namespace ChessFight.RagdollLab
             {
                 if (stopBy != null) stopBy.HoldVisual(frames * F);
                 if (stopTarget != null) stopTarget.HoldVisual(frames * F);
+                if (LabNetLink.Trace) Debug.Log($"[LabNet] hit stop {frames} frames on {(stopBy != null ? stopBy.DisplayName : "-")} and {(stopTarget != null ? stopTarget.DisplayName : "-")} (this screen only)");
                 return;
             }
             if (!stopping)

@@ -115,8 +115,8 @@ namespace ChessFight.RagdollLab
         // The host's state as it last arrived (the prediction draws over it for a moment).
         SkillStage netStage;
         bool netLocked;
-        // The local player's own press, drawn before the host has answered (D-S3).
-        float predictLeft;
+        // The local player's own press, drawn before the host has answered (D-S3), with its own clock.
+        float predictLeft, predictTime;
         SkillStage predictStage;
         bool predictLocked;
 
@@ -223,6 +223,7 @@ namespace ChessFight.RagdollLab
             if (predictLeft > 0f)
             {
                 predictLeft -= dt;
+                predictTime += dt;
                 if (predictLeft <= 0f)
                 {
                     // The host never took the press (on its own cooldown, knocked down meanwhile): back to what it says.
@@ -288,7 +289,10 @@ namespace ChessFight.RagdollLab
                 case 1:
                     if (!aiming || (qh && piece == PieceKind.Bishop)) break;
                     bool valid = qh ? qhValid : piece != PieceKind.Bishop || bishopValid;
-                    if (valid) Predict(SkillStage.Windup, true, hold, true);
+                    if (!valid) break;
+                    // The Pawn Rush bishop throws at once (its X in flight); the others lock their aim and wind up.
+                    if (!qh && piece == PieceKind.Bishop) Predict(SkillStage.Active, false, hold, true);
+                    else Predict(SkillStage.Windup, true, hold, true);
                     break;
                 case 2:
                     if (aiming && !(qh && piece == PieceKind.Bishop)) Predict(SkillStage.None, false, hold, false);
@@ -301,21 +305,34 @@ namespace ChessFight.RagdollLab
             predictStage = stage;
             predictLocked = locked;
             predictLeft = Mathf.Max(0.1f, hold);
+            predictTime = restartClock ? 0f : stageTime;
             skillStage = stage;
             aimLocked = locked;
-            if (restartClock) stageTime = 0f;
+            stageTime = predictTime;
+        }
+
+        /// <summary>The host's state has caught up with the guess: the same step, or one past it (a quick skill can be a
+        /// step further by the time its state arrives).</summary>
+        bool PredictionConfirmed()
+        {
+            if (predictStage == SkillStage.None) return netStage == SkillStage.None;
+            if (netStage == SkillStage.None) return false;
+            if ((int)netStage > (int)predictStage) return true;
+            return netStage == predictStage && (!predictLocked || netLocked);
         }
 
         void ApplyPrediction()
         {
             if (predictLeft <= 0f) return;
-            if (netStage == predictStage && netLocked == predictLocked)
+            if (PredictionConfirmed())
             {
                 predictLeft = 0f;   // the host did it: its state from now on
                 return;
             }
+            // Until then the guess holds, on its own clock (the host's state still says the step before).
             skillStage = predictStage;
             aimLocked = predictLocked;
+            stageTime = predictTime;
         }
 
         /// <summary>A client becomes the host mid-match (D-S6): what it was drawing becomes what it runs. Cooldowns, the
