@@ -1,4 +1,5 @@
 using ChessFight.Network;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -112,6 +113,7 @@ namespace ChessFight.RagdollLab
             var X = EdgeParams;
             if (X == null) return false;
             edgeCooldownLeft -= dt;
+            StepClearance(dt);
             if (EdgeStage == SfEdge.None)
             {
                 CheckEdge();
@@ -147,6 +149,7 @@ namespace ChessFight.RagdollLab
         {
             if (Pawn != null && Pawn.OuterFlying) Pawn.EndFlight();
             if (carried != null && carried.OuterFlying) carried.EndFlight();
+            ReleaseClearance(0.3f);
             carried = null;
             held = vaulted = false;
             EdgeStage = SfEdge.None;
@@ -409,7 +412,8 @@ namespace ChessFight.RagdollLab
                     carried = EdgeTarget;
                     EdgeAt = EdgeGlow.point;
                     EdgeOut = EdgeGlow.outward;
-                    EdgeLand = Inward(floor, EdgeGlow, X.bishopSetIn);
+                    EdgeLand = RescueLanding(floor, EdgeGlow, X.bishopSetIn);
+                    Clearance(carried, true);
                     SetEdge(SfEdge.Active, "손");
                     Raise(SfFxKind.EdgeCast, carried, Floor(hips), EdgeOut, 0f);
                     Raise(SfFxKind.BishopReach, carried, carried.Hips.position, EdgeOut, X.bishopReach);
@@ -442,6 +446,66 @@ namespace ChessFight.RagdollLab
                 if (floor.OnFloor(p)) return Floor(p);
             }
             return Floor(e.point - e.outward * 0.3f);
+        }
+
+        /// <summary>Where the bishop sets the ally down (R109): <paramref name="inward"/> inside the edge, but never on the
+        /// bishop — the ally set on him was shoved back over the edge (승규 님: "아군이 올라오면 나 때문에 다시 떨어져").
+        /// If the spot is within <see cref="RescueRoom"/> of the bishop it slides along the edge, away from him first.</summary>
+        Vector3 RescueLanding(SwordFightEdgeFloor floor, EdgeHit e, float inward)
+        {
+            Vector3 me = Flat(Pawn.Hips.position);
+            Vector3 along = Vector3.Cross(Vector3.up, e.outward).normalized;
+            float away = Vector3.Dot(Flat(e.point) - me, along) >= 0f ? 1f : -1f;
+            foreach (float side in new[] { 0f, 0.5f, 1f, 1.5f, 2f })
+                foreach (float sign in new[] { away, -away })
+                {
+                    if (side == 0f && sign != away) continue;
+                    var shifted = e;
+                    shifted.point = e.point + along * (side * sign);
+                    if (!floor.OnFloor(shifted.point - e.outward * 0.3f)) continue;
+                    Vector3 p = Inward(floor, shifted, inward);
+                    if ((Flat(p) - me).magnitude >= RescueRoom) return p;
+                }
+            return Inward(floor, e, inward);
+        }
+
+        const float RescueRoom = 1.0f;
+
+        // While the bishop's hands pull an ally up, and a moment after it is set down, the two do not collide (bodies and
+        // swords): the ally comes up past him and lands by him, not on him.
+        readonly List<(Collider, Collider)> clearance = new List<(Collider, Collider)>();
+        RagdollPawn clearedFrom;
+        float clearanceLeft;
+        bool clearanceEnding;
+
+        void Clearance(RagdollPawn other, bool on)
+        {
+            foreach (var (a, b) in clearance) if (a != null && b != null) Physics.IgnoreCollision(a, b, false);
+            clearance.Clear();
+            clearedFrom = null;
+            clearanceEnding = false;
+            if (!on || other == null || Pawn == null) return;
+            var mine = Pawn.GetComponentsInChildren<Collider>();
+            foreach (var c in other.GetComponentsInChildren<Collider>())
+                foreach (var m in mine)
+                {
+                    if (c == null || m == null || c.isTrigger || m.isTrigger) continue;
+                    Physics.IgnoreCollision(m, c, true);
+                    clearance.Add((m, c));
+                }
+            clearedFrom = other;
+        }
+
+        /// <summary>After the set-down the pair stays apart for <paramref name="seconds"/>, and then until they are clear of
+        /// each other.</summary>
+        void ReleaseClearance(float seconds) { if (clearedFrom != null && !clearanceEnding) { clearanceLeft = seconds; clearanceEnding = true; } }
+
+        void StepClearance(float dt)
+        {
+            if (clearedFrom == null || !clearanceEnding) return;
+            clearanceLeft -= dt;
+            bool apart = Pawn == null || (Flat(clearedFrom.Hips.position) - Flat(Pawn.Hips.position)).magnitude > 0.9f;
+            if (clearanceLeft <= 0f && (apart || clearanceLeft < -2f)) Clearance(null, false);
         }
 
         Vector3 KnightLanding(SwordFightEdgeFloor floor, RagdollPawn target)
@@ -675,6 +739,7 @@ namespace ChessFight.RagdollLab
                 return;
             }
             carried.EndFlight(Vector3.down * 0.5f);
+            ReleaseClearance(0.8f);
             Raise(SfFxKind.BishopSet, carried, EdgeLand, -EdgeOut, 0f);
             Say($"{Pawn.DisplayName} → {carried.DisplayName}: 구원 — 발판 위에 내려놓음");
             held = false;
@@ -691,6 +756,7 @@ namespace ChessFight.RagdollLab
                 carried.EndFlight(new Vector3(EdgeOut.x * 0.8f, vy, EdgeOut.z * 0.8f));
                 carried.Knockdown("구원의 손 놓침", 0.65f);
             }
+            ReleaseClearance(0.3f);
             Raise(SfFxKind.BishopDrop, carried, carried != null ? carried.Hips.position : EdgeAt, EdgeOut, held ? 1f : 0f);
             Say($"{Pawn.DisplayName}: 구원의 손 놓침 ({why})");
             ClearEdge();

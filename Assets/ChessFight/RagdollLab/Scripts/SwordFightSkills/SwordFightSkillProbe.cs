@@ -73,6 +73,7 @@ namespace ChessFight.RagdollLab
                 "edge-rook" => EdgeRook(),
                 "edge-bishop" => EdgeBishop(false),
                 "edge-bishop-hit" => EdgeBishop(true),
+                "edge-bishop-close" => EdgeBishop(false, true),
                 "edge-knight" => EdgeKnight(false),
                 "edge-knight-back" => EdgeKnight(true),
                 _ => null,
@@ -397,13 +398,25 @@ namespace ChessFight.RagdollLab
 
         /// <summary>An enemy pushes the bishop's ally off the edge; once it has been falling 0.15 s, E. With
         /// <paramref name="hit"/>, an enemy comes up and cuts the bishop while the hands pull.</summary>
-        IEnumerator EdgeBishop(bool hit)
+        /// <summary>An ally pushed off the east edge, the bishop E. With <paramref name="hit"/> an enemy cuts the bishop during
+        /// the pull; with <paramref name="close"/> the bishop stands where the ally would be set down (R109: it used to be set
+        /// on him and shoved back off).</summary>
+        IEnumerator EdgeBishop(bool hit, bool close = false)
         {
             yield return StageEdgeFor(PieceKind.Bishop);
             var me = bed.Local;
             var ally = bed.Dummies(0)[0];
             var foes = bed.Dummies(1);
             var from = Starts();
+            if (close)
+            {
+                Vector3 spot = ally.Pawn.Hips.position;
+                spot.x = 7f - bed.edge.bishopSetIn - 0.1f;
+                spot.y = 0f;
+                SwordFightSkillBed.Place(me, spot, Vector3.right);
+                yield return new WaitForSeconds(0.4f);
+                from = Starts();
+            }
             Show("적이 아군을 밀어 떨어뜨림");
             bed.PushOff(foes[0], ally);
             float t = 0f;
@@ -426,7 +439,8 @@ namespace ChessFight.RagdollLab
             EdgeState(me.Skills, "뒤");
             Say($"  아군: {(ally.Alive ? "살아 있음" : "장외")} · 골반 ({ally.Pawn.Hips.position.x:0.0}, {ally.Pawn.Hips.position.y:0.00}, {ally.Pawn.Hips.position.z:0.0}) · {ally.Pawn.State}");
             yield return new WaitForSeconds(1.4f);
-            Moves(from, hit ? "edge-bishop-hit" : "edge-bishop");
+            Say($"  비숍 ↔ 아군 {Vector3.ProjectOnPlane(me.Pawn.Hips.position - ally.Pawn.Hips.position, Vector3.up).magnitude:0.00} m · 비숍 {me.Pawn.State}");
+            Moves(from, hit ? "edge-bishop-hit" : close ? "edge-bishop-close" : "edge-bishop");
         }
 
         /// <summary>The knight with its back to the east edge, an enemy 1.9 m ahead: E. With <paramref name="back"/>, the

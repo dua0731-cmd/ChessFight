@@ -112,7 +112,7 @@ namespace ChessFight.RagdollLab
         }
 
         void OnEnable() { if (!All.Contains(this)) All.Add(this); }
-        void OnDisable() { All.Remove(this); PassThrough(false); }
+        void OnDisable() { All.Remove(this); PassThrough(false); Clearance(null, false); }
         void OnDestroy()
         {
             All.Remove(this);
@@ -194,6 +194,7 @@ namespace ChessFight.RagdollLab
         {
             Clear();
             ClearEdge();
+            Clearance(null, false);
             cooldownLeft = CooldownTotal = 0f;
             edgeCooldownLeft = EdgeCooldownTotal = 0f;
             slowLeft = pinLeft = 0f;
@@ -212,6 +213,7 @@ namespace ChessFight.RagdollLab
             {
                 if (Stage != SfStage.None) Clear();
                 if (EdgeStage != SfEdge.None) ClearEdge();
+                if (clearedFrom != null) Clearance(null, false);
                 pressEdge = confirmEdge = cancelEdge = edgeKey = false;
                 FallTime = -1f;
                 EdgeCondition = false;
