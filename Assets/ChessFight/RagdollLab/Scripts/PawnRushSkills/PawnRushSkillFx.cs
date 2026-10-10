@@ -1198,6 +1198,7 @@ namespace ChessFight.RagdollLab
         {
             var shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null) shader = Shader.Find("Unlit/Color");
+            if (shader == null) shader = Shader.Find("Sprites/Default");   // R111: the two above are not in a player build
             var m = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
             m.color = c;
             return m;

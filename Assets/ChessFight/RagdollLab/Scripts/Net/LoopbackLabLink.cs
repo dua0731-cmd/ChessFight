@@ -43,10 +43,10 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Host a loopback match here (any other link in the scene is closed first).</summary>
-        public static LoopbackLabLink StartHost(int port = DefaultPort) => Start(true, "", port);
+        public static LoopbackLabLink StartHost(int port = DefaultPort) => Launch(true, "", port);
 
         /// <summary>Join the loopback match at <paramref name="address"/> (this PC by default).</summary>
-        public static LoopbackLabLink StartClient(string address = "127.0.0.1", int port = DefaultPort) => Start(false, address, port);
+        public static LoopbackLabLink StartClient(string address = "127.0.0.1", int port = DefaultPort) => Launch(false, address, port);
 
         /// <summary>Close the loopback link (back to no network; reopen the scene for Steam).</summary>
         public static void Stop()
@@ -57,11 +57,12 @@ namespace ChessFight.RagdollLab
             Destroy(link.gameObject);
         }
 
-        static LoopbackLabLink Start(bool host, string address, int port)
+        static LoopbackLabLink Launch(bool host, string address, int port)
         {
             if (Current != null)
             {
-                // Possibly called from that link's own panel: stop it now, take it away at the end of the frame.
+                // Possibly called from that link's own panel: stop it now (a loopback link lets go of its port at once,
+                // so this one can take it), take it away at the end of the frame.
                 Current.Shutdown();
                 Destroy(Current.gameObject);
             }
@@ -97,11 +98,15 @@ namespace ChessFight.RagdollLab
         protected override bool AcceptsDev => true;
         protected override double NetServerSeconds() => (DateTime.UtcNow - new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 
+        int openTries;
+        float retryAt;
+
         void Open(bool host, string to, int at)
         {
             hosting = host;
             port = at;
             address = to;
+            openTries++;
             try
             {
                 socket = host ? new UdpClient(new IPEndPoint(IPAddress.Any, at)) : new UdpClient(new IPEndPoint(IPAddress.Any, 0));
@@ -112,8 +117,9 @@ namespace ChessFight.RagdollLab
             }
             catch (Exception e)
             {
-                status = $"소켓을 열 수 없어요 (포트 {at}): {e.Message}";
+                status = $"소켓을 열 수 없어요 (포트 {at}, {openTries}번째): {e.Message.Trim()}";
                 socket = null;
+                retryAt = Time.realtimeSinceStartup + 1f;   // a port still held a moment by a closing copy: try again (NetTick)
                 Debug.LogWarning("[LabNet] loopback: " + status);
                 return;
             }
@@ -146,24 +152,34 @@ namespace ChessFight.RagdollLab
 
         protected override void OnDestroy()
         {
-            if (socket != null)
-            {
-                try
-                {
-                    if (hosting) foreach (var end in peers.Values) SendControl(end, Bye, 0);
-                    else if (welcomed) SendControl(hostEnd, Bye, self);
-                }
-                catch (Exception) { }
-                socket.Close();
-                socket = null;
-            }
+            CloseSocket();
             base.OnDestroy();
+        }
+
+        protected override void OnShutdown() => CloseSocket();
+
+        void CloseSocket()
+        {
+            if (socket == null) return;
+            try
+            {
+                if (hosting) foreach (var end in peers.Values) SendControl(end, Bye, 0);
+                else if (welcomed) SendControl(hostEnd, Bye, self);
+            }
+            catch (Exception) { }
+            socket.Close();
+            socket = null;
+            openTries = 99;   // closed on purpose: no reopening
         }
 
         protected override void NetTick()
         {
-            if (socket == null) return;
             float now = Time.realtimeSinceStartup;
+            if (socket == null)
+            {
+                if (openTries < 20 && now >= retryAt) Open(hosting, address, port);
+                return;
+            }
             if (hosting)
             {
                 // A client silent for a while has gone (closed without a word).

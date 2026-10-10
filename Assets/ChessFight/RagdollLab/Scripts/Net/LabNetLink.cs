@@ -204,7 +204,11 @@ namespace ChessFight.RagdollLab
         {
             if (matchActive) ExitMatch();
             enabled = false;
+            OnShutdown();
         }
+
+        /// <summary>The carrier lets go of what it holds at once (a socket's port), not at the end of the frame.</summary>
+        protected virtual void OnShutdown() { }
 
         protected virtual void OnDestroy()
         {
@@ -729,13 +733,22 @@ namespace ChessFight.RagdollLab
             if (eventQueue.Count == 0 || playbackMs <= 0d) return;
             int n = 0;
             while (n < eventQueue.Count && eventQueue[n].TimeMs <= playbackMs + 0.5d) n++;
-            for (int i = 0; i < n; i++)
-            {
-                var e = eventQueue[i];
-                if (playbackMs - e.TimeMs > StaleEventMs) continue;
-                Play(e);
-            }
+            // Taken off the queue first: an effect that throws must not hold up the ones after it.
+            eventBatch.Clear();
+            eventBatch.AddRange(eventQueue.GetRange(0, n));
             eventQueue.RemoveRange(0, n);
+            foreach (var e in eventBatch)
+            {
+                if (playbackMs - e.TimeMs > StaleEventMs) continue;
+                try
+                {
+                    Play(e);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
         }
 
         void Play(SkillWireEvent w)

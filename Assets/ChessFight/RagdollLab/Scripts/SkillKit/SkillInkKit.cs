@@ -343,7 +343,9 @@ namespace ChessFight.RagdollLab
         {
             c.a = 1f;
             if (flatMats.TryGetValue(c, out var m) && m != null) return m;
+            // R111: Unlit/Color is not in a player build (only the editor finds it); Sprites/Default always is.
             var shader = Shader.Find("Unlit/Color");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
             m = new Material(shader) { color = c, hideFlags = HideFlags.HideAndDontSave };
             flatMats[c] = m;
             return m;
