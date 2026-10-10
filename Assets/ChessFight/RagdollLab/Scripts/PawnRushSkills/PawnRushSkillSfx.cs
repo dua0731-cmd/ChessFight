@@ -20,8 +20,8 @@ namespace ChessFight.RagdollLab
     /// rook's aim, lock and charge, the bishop's throw, its wire being armed and going away. Three sounds are held while
     /// something lasts and faded out when it ends, so the moments join: the rook's charge, the bishop's taut rope (from
     /// armed until a trip, at most its own length) and the knight's flight (from the leap to the landing or the stomp).
-    /// Repeats rise in pitch like on the mockup page: the rook's four aim ticks and its hits one, two, three, the pawn's
-    /// second step; the rook's fourth (stopping) hit and the knight's dive onto a head are lower or higher variants.
+    /// Repeats rise in pitch like on the mockup page: the rook's four aim ticks and the pawn's second step (not the rook's
+    /// hits since R115: one heavy impact each, the stopping fourth lower); the knight's dive onto a head is a higher turn.
     /// </summary>
     [DefaultExecutionOrder(211)]
     public class PawnRushSkillSfx : MonoBehaviour
@@ -131,9 +131,11 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.PawnHit: Play("PawnBump", e.at, e.count == 1 ? -3f : 0f, e.count == 1 ? 1.1f : 1f); break;
                 case SkillFxKind.PawnHelp: Play("PawnCrouch", e.at, 2f); break;
                 case SkillFxKind.QueenBlast: Play("QueenBlast", e.at); break;
-                // The charge keeps sounding under its hits (it ends with the dash).
-                case SkillFxKind.RookHit: Play("RookHit", e.at, 2f * Mathf.Clamp(e.count - 1, 0, 3)); break;
-                case SkillFxKind.RookStop: Play("RookHit", e.at, -3f, 1.1f); break;
+                // The charge keeps sounding under its hits (it ends with the dash). R115: one impact, no rising pitch —
+                // hits one, two, three a whole tone apart sounded like a piano scale (승규 님 "피아노 같은 소리 말고
+                // 임펙트 있는 소리"); later hits are only a little louder, the stopping fourth a little lower and heavier.
+                case SkillFxKind.RookHit: Play("RookHit", e.at, 0f, 1f + 0.08f * Mathf.Clamp(e.count - 1, 0, 2)); break;
+                case SkillFxKind.RookStop: Play("RookHit", e.at, -2f, 1.25f); break;
                 case SkillFxKind.RookWall: Play("RookWall", e.at); break;
                 case SkillFxKind.RookBarricade: Play("RookWall", e.at, 3f, 0.8f); break;
                 case SkillFxKind.RookSlam: Play("RookWall", e.at, -2f); break;
