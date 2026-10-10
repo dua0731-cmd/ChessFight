@@ -41,6 +41,9 @@ namespace ChessFight.RagdollLab
         /// <summary>Development: log what a client is sent and plays (the loopback test's checks read it).</summary>
         public static bool Trace;
 
+        /// <summary>A trace line with the wall clock (the same on two copies on one PC, so their logs line up to the ms).</summary>
+        public static void Log(string text) => Debug.Log($"[LabNet {DateTime.Now:HH:mm:ss.fff}] {text}");
+
         protected const float SnapshotInterval = 1f / 30f;
         const float InputInterval = 1f / 60f;
         const float InputTimeout = 0.35f;
@@ -158,6 +161,7 @@ namespace ChessFight.RagdollLab
         uint lastSkillsTime;
         bool skillsApplied, replaying;
         int eventsPlayed;
+        readonly Dictionary<RagdollPawn, SkillStage> hostSeen = new Dictionary<RagdollPawn, SkillStage>();
 
         // F12: extra delay and loss on this PC's packets both ways (the capsule motor's F8 presets).
         readonly LinkSimulator<Packet> lagOut = new LinkSimulator<Packet>(), lagIn = new LinkSimulator<Packet>();
@@ -312,6 +316,15 @@ namespace ChessFight.RagdollLab
                     var seat = NetRoster.TryGetValue(pair.Key, out var s) ? s : default;
                     Respawn(pair.Value, seat.Team, seat.Slot);
                 }
+            if (Trace)
+                foreach (var pawn in pawns.Values)
+                {
+                    if (pawn == null) continue;
+                    hostSeen.TryGetValue(pawn, out var seen);
+                    if (seen == pawn.SkillStage) continue;
+                    Log($"host: {pawn.DisplayName} {pawn.Piece} {seen} → {pawn.SkillStage}");
+                    hostSeen[pawn] = pawn.SkillStage;
+                }
 
             // On a schedule rather than "an interval since the last send", which slipped to the next frame every time and
             // made the rate uneven on a slow host. After a hitch the schedule restarts instead of bursting to catch up.
@@ -353,7 +366,7 @@ namespace ChessFight.RagdollLab
             if (pawn == null || !ChessPieces.IsValid((byte)kind) || pawn.Piece == kind) return;
             pawn.SetPiece(kind);
             pawn.ResetSkill();
-            if (Trace) Debug.Log($"[LabNet] {pawn.DisplayName} → {kind}");
+            if (Trace) Log($"{pawn.DisplayName} → {kind}");
         }
 
         /// <summary>
@@ -667,14 +680,14 @@ namespace ChessFight.RagdollLab
                 var was = pawn.SkillStage;
                 pawn.ApplySkillNet(s, PawnOf);
                 seenStates.Add(pawn);
-                if (Trace && was != pawn.SkillStage) Debug.Log($"[LabNet] {pawn.DisplayName} {pawn.Piece} {was} → {pawn.SkillStage} (stage {s.StageTime:0.00}s, cd {s.Cooldown:0.0}s)");
+                if (Trace && was != pawn.SkillStage) Log($"{pawn.DisplayName} {pawn.Piece} {was} → {pawn.SkillStage} (stage {s.StageTime:0.00}s, cd {s.Cooldown:0.0}s)");
             }
             foreach (var pawn in pawns.Values)
                 if (pawn != null && pawn.NetworkPuppet && !seenStates.Contains(pawn))
                 {
                     var was = pawn.SkillStage;
                     pawn.ClearSkillNet();
-                    if (Trace && was != pawn.SkillStage) Debug.Log($"[LabNet] {pawn.DisplayName} {pawn.Piece} {was} → {pawn.SkillStage} (idle)");
+                    if (Trace && was != pawn.SkillStage) Log($"{pawn.DisplayName} {pawn.Piece} {was} → {pawn.SkillStage} (idle)");
                 }
         }
 
@@ -772,13 +785,13 @@ namespace ChessFight.RagdollLab
                         wire.NetFxShown = true;
                     }
                     RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = kind, by = by, target = target, at = at, dir = dir, normal = u, count = w.Count, size = w.Size, source = wire });
-                    if (Trace) Debug.Log($"[LabNet] moment {w.Seq} {kind} by {(by != null ? by.DisplayName : "-")} on {(target != null ? target.DisplayName : "-")}, {playbackMs - w.TimeMs:0} ms after its pose");
+                    if (Trace) Log($"moment {w.Seq} {kind} by {(by != null ? by.DisplayName : "-")} on {(target != null ? target.DisplayName : "-")}, {playbackMs - w.TimeMs:0} ms after its pose");
                 }
                 else
                 {
                     var kind = (QueenHillFxKind)w.Kind;
                     RagdollPawn.RaiseQueenHillFx(new QueenHillFxEvent { kind = kind, by = by, target = target, at = at, dir = dir, to = u, size = w.Size, count = w.Count });
-                    if (Trace) Debug.Log($"[LabNet] moment {w.Seq} {kind} by {(by != null ? by.DisplayName : "-")} on {(target != null ? target.DisplayName : "-")}, {playbackMs - w.TimeMs:0} ms after its pose");
+                    if (Trace) Log($"moment {w.Seq} {kind} by {(by != null ? by.DisplayName : "-")} on {(target != null ? target.DisplayName : "-")}, {playbackMs - w.TimeMs:0} ms after its pose");
                 }
                 eventsPlayed++;
             }
@@ -885,7 +898,7 @@ namespace ChessFight.RagdollLab
             // Hand the mouse to the pawn: the panel would otherwise keep the cursor free all match.
             hudOpen = false;
             message = NetIsHost ? "호스트로 경기를 시작했어요." : "호스트에 접속했어요.";
-            if (Trace) Debug.Log($"[LabNet] match on ({NetKind}), {(NetIsHost ? "host" : "client")}, self {NetSelf}, host {NetHost}");
+            if (Trace) Log($"match on ({NetKind}), {(NetIsHost ? "host" : "client")}, self {NetSelf}, host {NetHost}");
         }
 
         void ExitMatch()
@@ -910,7 +923,7 @@ namespace ChessFight.RagdollLab
             game.DespawnAll();
             game.SpawnLocalPlayers();
             ResetStream();
-            if (Trace) Debug.Log("[LabNet] match off");
+            if (Trace) Log("match off");
         }
 
         /// <summary>
@@ -987,7 +1000,7 @@ namespace ChessFight.RagdollLab
             delay.Reset();
             nextSnapshot = nextInput = 0f;
             lastReceive = Time.realtimeSinceStartup;
-            if (Trace) Debug.Log($"[LabNet] host {previous} → {next}, this PC {(nowHost ? "hosts" : "follows")}");
+            if (Trace) Log($"host {previous} → {next}, this PC {(nowHost ? "hosts" : "follows")}");
         }
 
         void StartHostingGuard()
@@ -1238,8 +1251,26 @@ namespace ChessFight.RagdollLab
                 case "hud":
                     hudOpen = p.Length < 2 || p[1] != "off";
                     break;
+                case "report":
+                    Log(Report());
+                    break;
             }
-            if (Trace) Debug.Log("[LabNet] dev: " + command);
+            if (Trace) Log("dev: " + command);
+        }
+
+        /// <summary>One line of what this PC has of the match now (the loopback checks read it from the log).</summary>
+        public string Report()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"report: {(NetIsHost ? "host" : "client")}, playback delay {delay.Milliseconds:0} ms (jitter {delay.JitterMs:0}), round trip {roundTripMs:0} ms, lag {lagOut.Profile}");
+            sb.Append($", moments played {eventsPlayed}, confirmed up to {inbox.Acked}, queued {eventQueue.Count}, wires {SkillTripwire.LiveWires.Count} (copies {remoteWires.Count})");
+            var barricades = SkillBarricade.All;
+            for (int i = 0; i < barricades.Count; i++)
+                if (barricades[i] != null) sb.Append($", barricade {i} {(barricades[i].Standing ? "standing" : $"down {barricades[i].RegrowLeft:0.0}s")}{(barricades[i].Remote ? " (host's)" : "")}");
+            foreach (var pawn in pawns.Values)
+                if (pawn != null)
+                    sb.Append($", {pawn.DisplayName}: {pawn.Piece} {pawn.State} {pawn.SkillStage} {pawn.SkillStageTime:0.00}s cd {pawn.SkillCooldown:0.0}s{(pawn.NetworkPuppet ? " (puppet)" : "")}");
+            return sb.ToString();
         }
 
         System.Collections.IEnumerator Burst(string prefix, int count, float apart)
@@ -1247,6 +1278,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < Mathf.Clamp(count, 1, 60); i++)
             {
                 ScreenCapture.CaptureScreenshot($"{prefix}_{i:00}.png");
+                if (Trace) Log($"burst {System.IO.Path.GetFileName(prefix)}_{i:00}");
                 float until = Time.realtimeSinceStartup + Mathf.Max(0.016f, apart);
                 while (Time.realtimeSinceStartup < until) yield return null;
             }

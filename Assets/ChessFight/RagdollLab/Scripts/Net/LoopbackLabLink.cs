@@ -135,7 +135,7 @@ namespace ChessFight.RagdollLab
                 status = $"참가자: {to}:{at}에 접속 중";
             }
             hudOpen = true;
-            Debug.Log("[LabNet] loopback " + status);
+            Log("loopback " + status);
         }
 
         static IPAddress ResolveAddress(string text)
@@ -398,7 +398,7 @@ namespace ChessFight.RagdollLab
                         PlaceForScript(p);
                         break;
                     case "log":
-                        Debug.Log("[LabNet] script: " + line.Substring(4));
+                        Log("script: " + line.Substring(4));
                         break;
                 }
             }

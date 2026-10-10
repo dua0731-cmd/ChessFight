@@ -1061,7 +1061,7 @@ namespace ChessFight.RagdollLab
                 // the hit piece's picture holds still, on this screen by itself.
                 if (stopBy != null) stopBy.HoldVisual(seconds);
                 if (stopTarget != null) stopTarget.HoldVisual(seconds);
-                if (LabNetLink.Trace) Debug.Log($"[LabNet] hit stop {seconds * 60f:0} frames on {(stopBy != null ? stopBy.DisplayName : "-")} and {(stopTarget != null ? stopTarget.DisplayName : "-")} (this screen only)");
+                if (LabNetLink.Trace) LabNetLink.Log($"hit stop{seconds * 60f:0} frames on {(stopBy != null ? stopBy.DisplayName : "-")} and {(stopTarget != null ? stopTarget.DisplayName : "-")} (this screen only)");
                 return;
             }
             if (!stopping)
