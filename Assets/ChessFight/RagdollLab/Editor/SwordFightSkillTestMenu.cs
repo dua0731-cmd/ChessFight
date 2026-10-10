@@ -9,8 +9,9 @@ using UnityEngine;
 namespace ChessFight.RagdollLab.Editor
 {
     /// <summary>Opens the Sword Fight skill test scene (R91): a copy of the Sword Fight match scene (not the ragdoll lab)
-    /// with the skill test bed on the match object. If the scene is not there yet, it is made: SwordFight copied, the bed
-    /// added. The match scene itself is not touched.</summary>
+    /// with the skill test bed on the match object. <see cref="Make"/> makes it (SwordFight copied, the bed added; the match
+    /// scene itself is not touched); since R112 the menu does not, because the skill test scenes moved to the branch
+    /// skill-network-test.</summary>
     public static class SwordFightSkillTestMenu
     {
         public const string ScenePath = "Assets/Scenes/SkillTest/SwordFight_SkillTest/SwordFight_SkillTest.unity";
@@ -18,9 +19,14 @@ namespace ChessFight.RagdollLab.Editor
         [MenuItem("ChessFight/Sword Fight/Open Skill Test", false, 42)]
         public static void Open()
         {
+            // R112: not made again here when missing (the skill test scenes moved to the branch skill-network-test).
+            if (!File.Exists(ScenePath))
+            {
+                EditorUtility.DisplayDialog("소드 파이트 스킬 시험", PawnRushSkillTestMenu.Moved, "확인");
+                return;
+            }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-            if (!File.Exists(ScenePath)) Debug.Log(Make());
-            else EditorSceneManager.OpenScene(ScenePath);
+            EditorSceneManager.OpenScene(ScenePath);
         }
 
         /// <summary>Copy the match scene into the skill test folder and put the bed on its match object. Returns what it did
