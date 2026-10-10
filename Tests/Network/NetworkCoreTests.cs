@@ -14,6 +14,8 @@ public static class NetworkCoreTests
     static HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
     static HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
+    // An input packet as far as the skill key goes (no tuples: mcs runs these tests on Linux).
+    struct PressPacket { public uint Seq; public byte Count; }
     public static int Main()
     {
         try
@@ -384,6 +386,118 @@ public static class NetworkCoreTests
                 for(int n=0;n<10000;n++) if(lossy.Push(n,0)) kept++;
                 Check(kept>8700&&kept<9300,"loss rate "+kept);
                 Check(!new LinkProfile().Active&&LinkProfile.Presets.Skip(1).All(p=>p.Active),"presets"); });
+            Test("Link simulator jitter lets later packets overtake, still releasing each once", () => {
+                var sim=new LinkSimulator<int>(5){Profile=new LinkProfile{RoundTripMs=100,JitterMs=60}}; var got=new List<int>();
+                for(int n=0;n<400;n++) sim.Push(n,n*0.005);
+                sim.Release(10,got.Add);
+                Check(got.Count==400&&got.Distinct().Count()==400,"each once");
+                bool overtaken=false; for(int i=1;i<got.Count;i++) if(got[i]<got[i-1]) overtaken=true;
+                Check(overtaken,"jitter reorders"); });
+            Test("Skill presses: 1000 presses over 10% loss and reordering arrive exactly 1000 times (C1)", () => {
+                foreach (var profile in new[]{ new LinkProfile{RoundTripMs=200,LossPercent=5,JitterMs=30}, new LinkProfile{RoundTripMs=300,LossPercent=10,JitterMs=50} })
+                {
+                    var link=new LinkSimulator<PressPacket>(17){Profile=profile};
+                    var rng=new Random(3); byte count=0; int pressed=0, taken=0; uint seq=0, newest=0; byte consumed=0; bool first=true;
+                    for(int tick=0; pressed<1000 || tick<pressed*12+600; tick++)
+                    {
+                        double now=tick/60.0;
+                        if(pressed<1000 && rng.Next(8)==0) { count=PressCount.Add(count); pressed++; }
+                        link.Push(new PressPacket{Seq=++seq,Count=count},now);
+                        link.Release(now,p => {
+                            if(!first && !MotionProtocol.Newer(p.Seq,newest)) return;   // an older packet overtaken: its count is stale
+                            if(first) { first=false; consumed=0; }
+                            newest=p.Seq; taken+=PressCount.Take(p.Count,ref consumed); });
+                    }
+                    link.Release(1e9,p => { if(MotionProtocol.Newer(p.Seq,newest)) { newest=p.Seq; taken+=PressCount.Take(p.Count,ref consumed); } });
+                    Check(taken==1000,$"{profile}: {taken} presses for 1000");
+                }
+                byte wrap=255; Check(PressCount.Take(0,ref wrap)==1&&PressCount.Take(0,ref wrap)==0,"count wraps"); });
+            Test("Skill moments: 1000 over 10% loss both ways, reordering and repeats are drawn exactly once each (C5)", () => {
+                foreach (int loss in new[]{5,10})
+                {
+                    var down=new LinkSimulator<byte[]>(21){Profile=new LinkProfile{RoundTripMs=300,LossPercent=loss,JitterMs=50}};
+                    var up=new LinkSimulator<ushort>(22){Profile=new LinkProfile{RoundTripMs=300,LossPercent=loss,JitterMs=50}};
+                    var log=new SkillEventLog(); var inbox=new SkillEventInbox(); var drawn=new Dictionary<ushort,int>();
+                    var rng=new Random(9); ushort hostAck=0; bool hostAckSet=false; int made=0; var batch=new List<SkillWireEvent>(); var packet=new SkillWirePacket(); var read=new SkillWirePacket();
+                    for(int tick=0; tick<60*90; tick++)
+                    {
+                        double now=tick/60.0; uint ms=(uint)(tick*1000/60);
+                        // Bursts: up to 6 moments at once (a rook through a crowd), 1000 in all.
+                        if(made<1000 && rng.Next(6)==0) { int n=Math.Min(1000-made,1+rng.Next(6)); for(int i=0;i<n;i++) { log.Add(new SkillWireEvent{Kind=(byte)(made%17),By=1,Target=2,X=made},ms); made++; } }
+                        log.Expire(ms);
+                        if(tick%2==0)   // 30 Hz, like the snapshots
+                        {
+                            log.After(hostAckSet?hostAck:(ushort)(log.First-1),SkillWire.EventsThatFit(1011,4,2,1,999),batch);
+                            packet.Clear(); packet.HostTimeMs=ms; packet.FirstSeq=log.First; packet.Events.AddRange(batch);
+                            for(int i=0;i<4;i++) packet.States.Add(new SkillWireState{Pawn=(byte)i,Stage=1});
+                            packet.Wires.Add(new SkillWireObject{Id=1}); packet.Wires.Add(new SkillWireObject{Id=2}); packet.Barricades.Add(new SkillWireBarricade());
+                            var ms2=new System.IO.MemoryStream(); var w=new System.IO.BinaryWriter(ms2); SkillWire.Write(w,packet); w.Flush();
+                            var bytes=ms2.ToArray(); Check(bytes.Length<=1011,"packet too big "+bytes.Length);
+                            down.Push(bytes,now);
+                        }
+                        down.Release(now,b => {
+                            var r=new System.IO.BinaryReader(new System.IO.MemoryStream(b)); Check(SkillWire.Read(r,b.Length,read),"read back");
+                            inbox.Window(read.FirstSeq);
+                            foreach(var e in read.Events) if(inbox.Accept(e.Seq)) drawn[e.Seq]=drawn.TryGetValue(e.Seq,out int c)?c+1:1; });
+                        if(inbox.Started) up.Push(inbox.Acked,now);   // 60 Hz inputs carry the confirmation
+                        up.Release(now,a => { if(!hostAckSet||SkillWire.Newer(a,hostAck)) { hostAck=a; hostAckSet=true; } });
+                    }
+                    Check(made==1000,"made all");
+                    Check(drawn.Count==1000,$"loss {loss}%: drawn {drawn.Count} of 1000");
+                    Check(drawn.Values.All(c=>c==1),"drawn twice");
+                    for(ushort s=1;s<=1000;s++) Check(drawn.ContainsKey(s),"missed "+s);
+                } });
+            Test("Skill moments: a late joiner starts from what is kept and gives up on what is gone", () => {
+                var log=new SkillEventLog(); for(int i=0;i<30;i++) log.Add(new SkillWireEvent{Kind=1},(uint)(i*100));
+                log.Expire(3000);   // older than 1.5 s are dropped: 15 left (1500..2900 ms)
+                Check(log.Count==15&&log.First==16,"kept "+log.Count+" from "+log.First);
+                var inbox=new SkillEventInbox(); Check(!inbox.Accept(16),"nothing before the first window");
+                inbox.Window(log.First); Check(inbox.Acked==15,"starts before the first kept");
+                Check(inbox.Accept(17)&&inbox.Acked==15,"a gap holds the confirmation");
+                Check(inbox.Accept(16)&&inbox.Acked==17,"filled");
+                Check(!inbox.Accept(16)&&!inbox.Accept(17),"repeats");
+                inbox.Window(40); Check(inbox.Acked==39,"moments the host gave up on are skipped");
+                Check(inbox.Accept(41)&&!inbox.Accept(30),"older than the window"); });
+            Test("Skills packet: twelve busy pieces, twelve wires and a burst of moments fit in 1024 bytes (C12)", () => {
+                const int header=4+1+8;   // the ragdoll protocol's magic, type and match id
+                int fit=SkillWire.EventsThatFit(1024-header,12,12,4,999);
+                Check(fit>=8,"room for at least eight moments next to everything, got "+fit);
+                Check(header+SkillWire.Size(12,12,4,fit)<=1024,"over 1024");
+                Check(SkillWire.Size(12,0,0,0)<1024-header,"twelve states alone");
+                Check(SkillWire.StateBytes==29&&SkillWire.EventBytes==28&&SkillWire.WireBytes==18,"sizes as documented"); });
+            Test("Skills packet round trip keeps every field within its step and rejects bad packets", () => {
+                var p=new SkillWirePacket{HostTimeMs=123456,FirstSeq=65530};
+                p.States.Add(new SkillWireState{Pawn=SkillWire.Ref(1,3),Stage=2,Flags=0xA5,Flags2=3,StageTime=1.234f,Cooldown=7.25f,CooldownTotal=12f,Dx=0.6f,Dy=0.8f,Px=-12.345f,Py=1.5f,Pz=33.3f,Qx=4,Qy=-0.5f,Qz=79,Target=SkillWire.Ref(0,5),Other=SkillWire.None,A=2.5f,B=25.5f,C=200,D=7});
+                p.Wires.Add(new SkillWireObject{Id=9,Owner=SkillWire.Ref(0,1),X=3,Y=0.02f,Z=-4,Yaw=271,Age=2.5f,Flags=1,Trips=1,Along0=0.33f,Along1=0.5f,Out0=0.62f,Out1=-0.31f});
+                p.Barricades.Add(new SkillWireBarricade{Index=0,Standing=false,RegrowLeft=3.4f});
+                p.Events.Add(new SkillWireEvent{Seq=65531,TimeMs=123000,Mode=SkillWire.ModeQueenHill,Kind=9,By=SkillWire.Ref(1,3),Target=SkillWire.None,X=1,Y=2,Z=3,Dx=0,Dy=0,Dz=-1,Ux=-5,Uy=0,Uz=5,Count=3,Size=6.5f,Source=9});
+                var ms=new System.IO.MemoryStream(); var w=new System.IO.BinaryWriter(ms); SkillWire.Write(w,p); w.Flush(); var b=ms.ToArray();
+                Check(b.Length==SkillWire.Size(1,1,1,1),"length");
+                var q=new SkillWirePacket(); Check(SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(b)),b.Length,q),"read");
+                var s=q.States[0]; var o=q.Wires[0]; var e=q.Events[0];
+                Check(s.Pawn==SkillWire.Ref(1,3)&&s.Stage==2&&s.Flags==0xA5&&s.Flags2==3&&Math.Abs(s.StageTime-1.23f)<0.006f,"state head");
+                Check(Math.Abs(s.Cooldown-7.25f)<0.051f&&Math.Abs(s.CooldownTotal-12f)<0.01f&&Math.Abs(s.Dx-0.6f)<0.01f&&Math.Abs(s.Dy-0.8f)<0.01f,"state times, dir");
+                Check(Math.Abs(s.Px+12.345f)<0.003f&&Math.Abs(s.Pz-33.3f)<0.003f&&Math.Abs(s.Qz-79f)<0.003f,"state points");
+                Check(s.Target==SkillWire.Ref(0,5)&&s.Other==SkillWire.None&&Math.Abs(s.A-2.5f)<0.01f&&Math.Abs(s.B-25.5f)<0.01f&&s.C==200&&s.D==7,"state slots");
+                Check(o.Id==9&&Math.Abs(o.Yaw-271f)<1.5f&&Math.Abs(o.Age-2.5f)<0.006f&&Math.Abs(o.Out0-0.62f)<0.011f&&Math.Abs(o.Out1+0.31f)<0.011f&&Math.Abs(o.Along0-0.33f)<0.003f,"wire");
+                Check(!q.Barricades[0].Standing&&Math.Abs(q.Barricades[0].RegrowLeft-3.4f)<0.051f,"barricade");
+                Check(e.Seq==65531&&e.TimeMs==123000&&e.Mode==1&&e.Kind==9&&Math.Abs(e.Dz+1f)<0.01f&&Math.Abs(e.Ux+5f)<0.003f&&e.Count==3&&Math.Abs(e.Size-6.5f)<0.006f&&e.Source==9,"event");
+                Check(SkillWire.Newer(2,65530)&&!SkillWire.Newer(65530,2),"seq wraps");
+                var bad=(byte[])b.Clone(); bad[6]=99;   // 99 states
+                Check(!SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(bad)),bad.Length,q),"too many states");
+                Check(!SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(b,0,b.Length-1)),b.Length-1,q),"short");
+                var badStage=(byte[])b.Clone(); badStage[SkillWire.HeaderBytes+1]=9;
+                Check(!SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(badStage)),badStage.Length,q),"stage out of range");
+                SkillWire.Place(SkillWire.Ref(1,5),out int team,out int slot); Check(team==1&&slot==5&&SkillWire.Ref(2,0)==SkillWire.None,"roster places"); });
+            Test("Playback delay: 70 ms on a steady link, more as the link wobbles, never past 160 ms", () => {
+                var d=new PlaybackDelay(); var rng=new Random(4);
+                for(int i=0;i<300;i++) d.Arrived(1000+i*33.3+rng.NextDouble()*2,(uint)(i*33.3));
+                Check(Math.Abs(d.Milliseconds-70)<0.001,"steady: "+d.Milliseconds);
+                for(int i=300;i<600;i++) d.Arrived(1000+i*33.3+rng.NextDouble()*60,(uint)(i*33.3));
+                Check(d.Milliseconds>95&&d.Milliseconds<=160,"wobbly: "+d.Milliseconds);
+                for(int i=600;i<700;i++) d.Arrived(1000+i*33.3+rng.NextDouble()*400,(uint)(i*33.3));
+                Check(d.Milliseconds==160,"capped: "+d.Milliseconds);
+                d.Reset(); Check(d.Milliseconds==70,"reset"); });
             Test("Queen of the Hill: the first team to ring a bell opens its section, 20 s for that team", () => {
                 var q=new QueenHillRules(8);
                 Check(q.TryOpen(3,QueenHillRules.Black,100)&&!q.TryOpen(3,QueenHillRules.White,101),"first ring wins");

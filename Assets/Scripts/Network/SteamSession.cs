@@ -41,7 +41,10 @@ namespace ChessFight.Network
         // v15: the lab's snapshot carries the host's obstacle time ("CFR6", "v8" on JY-lobby), so
         //      clients draw moving obstacles where the host had them instead of on their own
         //      Steam clock.
-        public const string Protocol = "chessfight.dua0731.network.v15";
+        // v16 (R111): the lab's piece skills online ("CFR7"): the lab input carries press counts,
+        //      the piece asked for and the skill moments' confirmation; a skills packet goes
+        //      with every snapshot.
+        public const string Protocol = "chessfight.dua0731.network.v16";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

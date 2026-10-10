@@ -62,6 +62,8 @@ namespace ChessFight.RagdollLab
 
         void LateUpdate()
         {
+            // A per-screen hit stop (R111, online): the picture holds still while the bodies go on.
+            if (pawn.VisualHeld) return;
             var bodies = pawn.bodies;
             for (int i = 0; i < entries.Length; i++)
             {

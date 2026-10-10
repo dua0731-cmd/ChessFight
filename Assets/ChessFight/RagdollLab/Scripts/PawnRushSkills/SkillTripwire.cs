@@ -24,14 +24,32 @@ namespace ChessFight.RagdollLab
         static readonly List<SkillTripwire> Live = new List<SkillTripwire>();
         static readonly BodyId[] Feet = { BodyId.FootL, BodyId.FootR };
         static readonly BodyId[] Legs = { BodyId.FootL, BodyId.FootR, BodyId.ThighL, BodyId.ThighR };
+        static ushort nextNetId = 1;
 
         RagdollPawn owner;
         int team;
         PawnRushSkillParams skills;
-        Vector3 center, a1, b1, a2, b2;
+        Vector3 center, a1, b1, a2, b2, forwardDir = Vector3.forward;
         float age, height;
         bool armed;
         int trips;
+
+        // ---- online (R111): the host's wires are sent whole in every skills packet; a client draws its copy of each
+        // (Remote: no trips judged here, the lines bent where the host's are).
+
+        /// <summary>Every wire laid now (the host sends them; a new host takes them over).</summary>
+        public static IReadOnlyList<SkillTripwire> LiveWires => Live;
+        /// <summary>The number the network knows this wire by (its moments point at it).</summary>
+        public ushort NetId { get; private set; }
+        /// <summary>A client's copy of the host's wire: drawn from the host's state, judges nothing.</summary>
+        public bool Remote { get; private set; }
+        /// <summary>A client has shown the wire's landing effect (its BishopWire moment, or one made up for a late joiner).</summary>
+        public bool NetFxShown { get; set; }
+        public RagdollPawn Owner => owner;
+        public Vector3 Forward => forwardDir;
+        public float LineLength => skills != null ? skills.bishopLineLength : Vector3.Distance(a1, b1);
+        public float Age => age;
+        readonly float[] netAlong = { 0.5f, 0.5f }, netOut = { 0f, 0f };
         readonly HashSet<RagdollPawn> tripped = new HashSet<RagdollPawn>();
         LineRenderer line1, line2;
         readonly List<Transform> pegs = new List<Transform>();
@@ -86,14 +104,27 @@ namespace ChessFight.RagdollLab
             Vector3 up = Vector3.up * height;
             a = (line == 0 ? a1 : a2) + up;
             b = (line == 0 ? b1 : b2) + up;
+            if (Remote)
+            {
+                mid = Vector3.Lerp(a, b, netAlong[line]) + Across(line) * netOut[line];
+                return;
+            }
             var p = pulls[line];
             mid = Vector3.Lerp(a, b, Bent(line) ? p.along : 0.5f) + p.side * Out(line);
         }
 
         /// <summary>How far a line is pulled out of straight now, 0..1 (the effects glow it harder).</summary>
-        public float Tension(int line) => Mathf.Clamp01(Mathf.Abs(Out(line)) / 0.5f);
+        public float Tension(int line) => Mathf.Clamp01(Mathf.Abs(Remote ? netOut[line] : Out(line)) / 0.5f);
 
-        bool Bent(int line) => pulls[line].by != null || age - pulls[line].letGoAt < TwangTime;
+        bool Bent(int line) => Remote ? Mathf.Abs(netOut[line]) > 0.005f : pulls[line].by != null || age - pulls[line].letGoAt < TwangTime;
+
+        /// <summary>Square to a line, flat: the way "pulled out" is measured on the wire.</summary>
+        Vector3 Across(int line)
+        {
+            Vector3 la = line == 0 ? a1 : a2, lb = line == 0 ? b1 : b2;
+            Vector3 d = Flat3(lb - la);
+            return d.sqrMagnitude > 1e-6f ? Vector3.Cross(Vector3.up, d).normalized : Vector3.right;
+        }
 
         /// <summary>How far a line is pulled out now (m): after the legs while caught; let go, it twangs back,
         /// overshooting and settling (negative while past straight on the other side).</summary>
@@ -138,14 +169,100 @@ namespace ChessFight.RagdollLab
 
         void Set(RagdollPawn by, Vector3 at, Vector3 forward, PawnRushSkillParams s)
         {
+            Build(by, at, forward, s);
+            NetId = nextNetId;
+            nextNetId = (ushort)(nextNetId == ushort.MaxValue ? 1 : nextNetId + 1);
+            Live.Add(this);
+            RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = SkillFxKind.BishopWire, by = by, at = at, dir = forwardDir, size = s.bishopLineLength, source = this });
+        }
+
+        /// <summary>A client's copy of a wire the host laid (R111): the same lines and pegs, drawn from the host's state.
+        /// Its landing effect comes with the host's moment (or the link makes one up for a late joiner).</summary>
+        public static SkillTripwire SpawnRemote(RagdollPawn owner, ushort id, Vector3 at, Vector3 forward, PawnRushSkillParams skills)
+        {
+            var go = new GameObject($"{(owner != null ? owner.DisplayName : "?")} 교차 밧줄 (방장)");
+            var wire = go.AddComponent<SkillTripwire>();
+            wire.Remote = true;
+            wire.NetId = id;
+            wire.Build(owner, at, forward, skills);
+            Live.Add(wire);
+            return wire;
+        }
+
+        /// <summary>The whole wire for the skills packet (the host).</summary>
+        public void CaptureNet(ref SkillWireObject o, System.Func<RagdollPawn, byte> refOf)
+        {
+            o.Id = NetId;
+            o.Owner = owner != null ? refOf(owner) : SkillWire.None;
+            o.X = center.x; o.Y = center.y; o.Z = center.z;
+            o.Yaw = Mathf.Atan2(forwardDir.x, forwardDir.z) * Mathf.Rad2Deg;
+            o.Age = age;
+            o.Flags = (byte)((armed ? 1 : 0) | (spent ? 2 : 0));
+            o.Trips = (byte)Mathf.Clamp(trips, 0, 255);
+            for (int line = 0; line < 2; line++)
+            {
+                float along = Bent(line) ? pulls[line].along : 0.5f;
+                float signed = Out(line) * (Vector3.Dot(pulls[line].side, Across(line)) >= 0f ? 1f : -1f);
+                if (line == 0) { o.Along0 = along; o.Out0 = signed; }
+                else { o.Along1 = along; o.Out1 = signed; }
+            }
+        }
+
+        /// <summary>The host's state of this wire (a client's copy).</summary>
+        public void ApplyNet(in SkillWireObject o)
+        {
+            age = o.Age;
+            armed = (o.Flags & 1) != 0;
+            spent = (o.Flags & 2) != 0;
+            trips = o.Trips;
+            netAlong[0] = o.Along0;
+            netAlong[1] = o.Along1;
+            netOut[0] = o.Out0;
+            netOut[1] = o.Out1;
+        }
+
+        /// <summary>This PC became the host (D-S6): its copy of the wire is the wire from now on, still armed, still
+        /// counting its trips and its time.</summary>
+        public void Adopt()
+        {
+            if (!Remote) return;
+            Remote = false;
+            if (owner != null) team = owner.Team;
+            for (int line = 0; line < 2; line++)
+            {
+                pulls[line].by = null;
+                pulls[line].letGoAt = -10f;
+                pulls[line].released = 0f;
+            }
+        }
+
+        /// <summary>This PC stopped hosting: what it had laid is now drawn from the new host's packets.</summary>
+        public void Yield()
+        {
+            Remote = true;
+            NetFxShown = true;
+        }
+
+        /// <summary>Gone on the host (a client's copy goes with it).</summary>
+        public void RemoveRemote() => Destroy(gameObject);
+
+        /// <summary>A new host's own wires get numbers past the ones it took over (D-S6), so no two wires share one.</summary>
+        public static void ReserveIds(ushort upTo)
+        {
+            if (upTo >= nextNetId && upTo < ushort.MaxValue) nextNetId = (ushort)(upTo + 1);
+        }
+
+        void Build(RagdollPawn by, Vector3 at, Vector3 forward, PawnRushSkillParams s)
+        {
             owner = by;
-            team = by.Team;
+            team = by != null ? by.Team : Teams.None;
             skills = s;
             center = at;
             height = s.bishopHeight;
             forward.y = 0f;
             if (forward.sqrMagnitude < 1e-4f) forward = Vector3.forward;
             forward.Normalize();
+            forwardDir = forward;
             float half = s.bishopLineLength * 0.5f;
             Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * forward, d2 = Quaternion.Euler(0f, -45f, 0f) * forward;
             a1 = at - d1 * half; b1 = at + d1 * half;
@@ -168,8 +285,6 @@ namespace ChessFight.RagdollLab
                 pegs.Add(peg.transform);
             }
             Draw(new Color(c.r, c.g, c.b, 0.35f), 0.025f);
-            Live.Add(this);
-            RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = SkillFxKind.BishopWire, by = by, at = at, dir = forward, size = s.bishopLineLength, source = this });
         }
 
         void OnDestroy() => Live.Remove(this);
@@ -220,6 +335,7 @@ namespace ChessFight.RagdollLab
         void FixedUpdate()
         {
             age += Time.fixedDeltaTime;
+            if (Remote) return;   // a client's copy: the host judges the trips (and its packets set the age)
             if (spent)
             {
                 // The last trip's yank and twang, then it goes.

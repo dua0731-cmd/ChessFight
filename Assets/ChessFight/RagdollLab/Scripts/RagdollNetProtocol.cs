@@ -75,7 +75,8 @@ namespace ChessFight.RagdollLab
         }
     }
 
-    /// <summary>One client's controls as they travel to the host. Move is world XZ, Aim a world unit vector.</summary>
+    /// <summary>One client's controls as they travel to the host. Move is world XZ, Aim a world unit vector. Used by the
+    /// Sword Fight link; the lab link sends <see cref="RagdollLabInput"/> since R111.</summary>
     public struct RagdollNetInput
     {
         public Vector2 move;
@@ -96,6 +97,41 @@ namespace ChessFight.RagdollLab
         {
             move = new Vector3(move.x, 0f, move.y), jump = jump, shove = shove, grab = grab, sprint = sprint,
             ability = ability, ability2 = ability2, interact = interact, aim = aim, shoveHeld = shoveHeld,
+        };
+    }
+
+    /// <summary>
+    /// The lab link's input (R111). The presses travel as counts (D-S7, like the capsule motor's jumps): every packet
+    /// carries the running count of each press, so a lost packet only delays a press by one packet (1/60 s) instead of
+    /// losing it - the left click that fires a rook, a pawn's second step, the skill key. The held buttons are plain bits.
+    /// It also carries the piece the player asked for and the newest skill moment it has every one up to (the host keeps
+    /// sending the rest).
+    /// </summary>
+    public struct RagdollLabInput
+    {
+        public Vector2 move;
+        public bool grab, sprint;
+        public bool shoveHeld;           // held: the hook's swing
+        public bool interact;            // held (latched until sent)
+        public Vector3 aim;
+        public byte jumps, shoves, abilities, abilities2, skills;   // press counts (wrapping)
+        public byte pieceAsk, pieceSeq;  // the piece asked for, and a number that changes with every ask (0 = none yet)
+        public ushort eventAck;          // skill moments: everything up to this one has arrived
+
+        /// <summary>The held part of a pawn's input (the presses are counted separately).</summary>
+        public void Hold(PawnInput input)
+        {
+            move = new Vector2(input.move.x, input.move.z);
+            grab = input.grab;
+            sprint = input.sprint;
+            shoveHeld = input.shoveHeld;
+            aim = input.aim;
+        }
+
+        /// <summary>The held part as a pawn's input; the host adds the presses as edges, one per physics step.</summary>
+        public PawnInput Held() => new PawnInput
+        {
+            move = new Vector3(move.x, 0f, move.y), grab = grab, sprint = sprint, interact = interact, aim = aim, shoveHeld = shoveHeld,
         };
     }
 
@@ -138,11 +174,21 @@ namespace ChessFight.RagdollLab
         // CFR4: the left button held in the input; the grappling hook in the snapshot (2026-09-27).
         // CFR5: the piece kind in the snapshot (Queen of the Hill M11, 2026-09-27).
         // CFR6: the host's obstacle time in the snapshot header (2026-09-30).
-        public const uint Magic = 0x43465236;   // "CFR6"
+        // CFR7: presses as counts, the piece asked for and the skill moments' confirmation in the input; the skills
+        // packet (R111, 2026-10-10).
+        public const uint Magic = 0x43465237;   // "CFR7"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
         public const byte TypeMatch = 3;
+        // The piece skills (R111): every busy piece's state, the bishops' wires, the barricades and the moments a client
+        // has not confirmed yet (SkillWire), host to each client with every snapshot.
+        public const byte TypeSkills = 4;
+        // A development command to a loopback test client (LoopbackLabLink only; a Steam match drops it).
+        public const byte TypeDev = 5;
+        // The lab link's input with press counts (R111, RagdollLabInput); TypeInput stays the Sword Fight link's.
+        public const byte TypeLabInput = 6;
+        public const int HeaderBytes = 4 + 1 + 8;
         public const int MatchHeaderBytes = 4 + 1 + 8 + 2;
         public const int MaxMatchText = 400;
         public const int MaxBytes = 1024;
@@ -152,6 +198,7 @@ namespace ChessFight.RagdollLab
         public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 1 + 4;  // 74
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 8 + 1;        // 30
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
+        public const int LabInputBytes = 4 + 1 + 8 + 4 + 4 + 2 + 1 + 3 + 5 + 2 + 2;   // 36
 
         const float SmallestThreeRange = 0.70710678f;
 
@@ -214,6 +261,144 @@ namespace ChessFight.RagdollLab
                 input.aim = length < 0.5f ? Vector3.zero : aim / length;
                 return true;
             }
+        }
+
+        public static byte[] LabInput(ulong session, uint sequence, uint clientTimeMs, in RagdollLabInput input)
+        {
+            using (var stream = new MemoryStream(LabInputBytes))
+            using (var w = new BinaryWriter(stream))
+            {
+                w.Write(Magic);
+                w.Write(TypeLabInput);
+                w.Write(session);
+                w.Write(sequence);
+                w.Write(clientTimeMs);
+                w.Write(Signed(input.move.x));
+                w.Write(Signed(input.move.y));
+                w.Write((byte)((input.grab ? 1 : 0) | (input.sprint ? 2 : 0) | (input.interact ? 4 : 0) | (input.shoveHeld ? 8 : 0)));
+                Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
+                w.Write(Signed(aim.x));
+                w.Write(Signed(aim.y));
+                w.Write(Signed(aim.z));
+                w.Write(input.jumps);
+                w.Write(input.shoves);
+                w.Write(input.abilities);
+                w.Write(input.abilities2);
+                w.Write(input.skills);
+                w.Write(input.pieceAsk);
+                w.Write(input.pieceSeq);
+                w.Write(input.eventAck);
+                return stream.ToArray();
+            }
+        }
+
+        public static bool ReadLabInput(byte[] bytes, ulong session, out uint sequence, out uint clientTimeMs, out RagdollLabInput input)
+        {
+            sequence = 0;
+            clientTimeMs = 0;
+            input = default;
+            if (bytes == null || bytes.Length != LabInputBytes) return false;
+            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            {
+                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeLabInput || r.ReadUInt64() != session) return false;
+                sequence = r.ReadUInt32();
+                clientTimeMs = r.ReadUInt32();
+                input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+                byte held = r.ReadByte();
+                if (held > 15) return false;
+                input.grab = (held & 1) != 0;
+                input.sprint = (held & 2) != 0;
+                input.interact = (held & 4) != 0;
+                input.shoveHeld = (held & 8) != 0;
+                if (input.move.sqrMagnitude > 1.05f) input.move = input.move.normalized;
+                var aim = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+                float length = aim.magnitude;
+                input.aim = length < 0.5f ? Vector3.zero : aim / length;
+                input.jumps = r.ReadByte();
+                input.shoves = r.ReadByte();
+                input.abilities = r.ReadByte();
+                input.abilities2 = r.ReadByte();
+                input.skills = r.ReadByte();
+                input.pieceAsk = r.ReadByte();
+                input.pieceSeq = r.ReadByte();
+                input.eventAck = r.ReadUInt16();
+                if (input.pieceSeq != 0 && !ChessPieces.IsValid(input.pieceAsk)) return false;
+                return true;
+            }
+        }
+
+        // ---------------------------------------------------------------- skills (R111)
+
+        /// <summary>The skills packet: this header, then SkillWire's body (Core, tested without Unity).</summary>
+        public static byte[] Skills(ulong session, SkillWirePacket packet)
+        {
+            using (var stream = new MemoryStream(256))
+            using (var w = new BinaryWriter(stream))
+            {
+                w.Write(Magic);
+                w.Write(TypeSkills);
+                w.Write(session);
+                SkillWire.Write(w, packet);
+                w.Flush();
+                return stream.ToArray();
+            }
+        }
+
+        public static bool ReadSkills(byte[] bytes, ulong session, SkillWirePacket into)
+        {
+            if (into == null || bytes == null || bytes.Length < HeaderBytes + SkillWire.HeaderBytes || bytes.Length > MaxBytes) return false;
+            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            {
+                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSkills || r.ReadUInt64() != session) return false;
+                try
+                {
+                    return SkillWire.Read(r, bytes.Length - HeaderBytes, into);
+                }
+                catch (EndOfStreamException)
+                {
+                    return false;
+                }
+            }
+        }
+
+        // ---------------------------------------------------------------- development (loopback test link)
+
+        public static byte[] Dev(ulong session, string text)
+        {
+            byte[] payload = System.Text.Encoding.UTF8.GetBytes(text ?? "");
+            if (payload.Length > MaxMatchText) return null;
+            using (var stream = new MemoryStream(HeaderBytes + 2 + payload.Length))
+            using (var w = new BinaryWriter(stream))
+            {
+                w.Write(Magic);
+                w.Write(TypeDev);
+                w.Write(session);
+                w.Write((ushort)payload.Length);
+                w.Write(payload);
+                return stream.ToArray();
+            }
+        }
+
+        public static bool ReadDev(byte[] bytes, ulong session, out string text)
+        {
+            text = null;
+            if (bytes == null || bytes.Length < HeaderBytes + 2 || bytes.Length > HeaderBytes + 2 + MaxMatchText) return false;
+            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            {
+                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeDev || r.ReadUInt64() != session) return false;
+                int length = r.ReadUInt16();
+                if (bytes.Length != HeaderBytes + 2 + length) return false;
+                text = System.Text.Encoding.UTF8.GetString(r.ReadBytes(length));
+                return true;
+            }
+        }
+
+        /// <summary>The packet's type (0 if it is not one of ours).</summary>
+        public static byte TypeOf(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length < HeaderBytes) return 0;
+            uint magic = (uint)(bytes[0] | bytes[1] << 8 | bytes[2] << 16 | bytes[3] << 24);
+            return magic == Magic ? bytes[4] : (byte)0;
         }
 
         static sbyte Signed(float value) => (sbyte)Mathf.Clamp(Mathf.RoundToInt(value * 127f), -127, 127);

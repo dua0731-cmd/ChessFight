@@ -131,9 +131,14 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- the skills' moments
 
+        // The moment being drawn: online its hit stop holds only these two pieces' picture (R111, D-S2).
+        RagdollPawn stopBy, stopTarget;
+
         void OnSkillFx(SkillFxEvent e)
         {
             if (!effects) return;
+            stopBy = e.by;
+            stopTarget = e.target;
             switch (e.kind)
             {
                 case SkillFxKind.QueenBlast: QueenBlast(e); break;
@@ -1050,6 +1055,14 @@ namespace ChessFight.RagdollLab
         void HitStop(float seconds)
         {
             if (!hitStop || seconds <= 0f) return;
+            if (game != null && game.NetworkControlled)
+            {
+                // Online (R111, D-S2) the game must not stop (the host's physics, everyone's inputs): only the hitter's and
+                // the hit piece's picture holds still, on this screen by itself.
+                if (stopBy != null) stopBy.HoldVisual(seconds);
+                if (stopTarget != null) stopTarget.HoldVisual(seconds);
+                return;
+            }
             if (!stopping)
             {
                 stopResume = Time.timeScale;

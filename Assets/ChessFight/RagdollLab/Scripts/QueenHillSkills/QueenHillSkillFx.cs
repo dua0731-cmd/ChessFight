@@ -46,7 +46,10 @@ namespace ChessFight.RagdollLab
         bool stopping;
         float shakeAmp, shakeLeft, shakeTotal;
 
-        RagdollPawn Viewer => bed != null ? bed.P1 : null;
+        // The person at this PC: P1 offline, this PC's own pawn online (R111).
+        RagdollPawn Viewer => game != null ? game.LocalPawn : bed != null ? bed.P1 : null;
+        // The moment being drawn: online its hit stop holds only these two pieces' picture (D-S2).
+        RagdollPawn stopBy, stopTarget;
         QueenHillSkillParams S => bed != null ? bed.skills : null;
         public Camera ViewCamera => ViewOverride != null ? ViewOverride : game != null && game.labCamera != null ? game.labCamera.Cam : Camera.main;
         Vector3 Eye => ViewCamera != null ? ViewCamera.transform.position : Vector3.up * 5f;
@@ -94,10 +97,17 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>A hit stop of so many frames (3 weak, 4 medium, 5-6 strong).</summary>
+        /// <summary>A hit stop of so many frames (3 weak, 4 medium, 5-6 strong). Online (R111, D-S2) the game must not stop:
+        /// only the hitter's and the hit piece's picture holds still on this screen.</summary>
         void HitStop(int frames)
         {
             if (!hitStop || frames <= 0) return;
+            if (game != null && game.NetworkControlled)
+            {
+                if (stopBy != null) stopBy.HoldVisual(frames * F);
+                if (stopTarget != null) stopTarget.HoldVisual(frames * F);
+                return;
+            }
             if (!stopping)
             {
                 stopResume = Time.timeScale > 0f ? Time.timeScale : stopResume;
@@ -125,6 +135,8 @@ namespace ChessFight.RagdollLab
         void OnFx(QueenHillFxEvent e)
         {
             if (!effects) return;
+            stopBy = e.by;
+            stopTarget = e.target;
             switch (e.kind)
             {
                 case QueenHillFxKind.KingWindup: KingWindup(e); break;

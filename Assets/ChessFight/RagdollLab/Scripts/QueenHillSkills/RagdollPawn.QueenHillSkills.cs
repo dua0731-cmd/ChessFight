@@ -64,6 +64,9 @@ namespace ChessFight.RagdollLab
         void QhFx(QueenHillFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, float size = 0f, int count = 0, Vector3 to = default)
             => QueenHillFx?.Invoke(new QueenHillFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, to = to, size = size, count = count });
 
+        /// <summary>Raise a moment a network client was sent (R111): its effects and sounds play as the host's did.</summary>
+        public static void RaiseQueenHillFx(QueenHillFxEvent e) => QueenHillFx?.Invoke(e);
+
         // The king's guard on this piece.
         float wardLeft, wardTotal;
         RagdollPawn wardBy;

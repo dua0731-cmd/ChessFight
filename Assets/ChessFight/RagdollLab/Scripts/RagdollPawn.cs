@@ -30,6 +30,9 @@ namespace ChessFight.RagdollLab
         public bool interact;
         /// <summary>World-space unit vector the player aims along (the camera's forward); zero for none.</summary>
         public Vector3 aim;
+        /// <summary>Pressed: the piece skill key (the skill test scenes' F, LabGame.SkillKey). R111: it travels with the
+        /// rest of the input, so a network match carries it to the host like a jump.</summary>
+        public bool skill;
     }
 
     /// <summary>
@@ -511,6 +514,7 @@ namespace ChessFight.RagdollLab
             input.interact = next.interact;
             input.shoveHeld = next.shoveHeld;
             input.aim = next.aim;
+            if (next.skill) skillPressed = true;   // the skill key, kept until the next physics step reads it
         }
 
         const float InteractReach = 1.3f;
@@ -3345,6 +3349,7 @@ namespace ChessFight.RagdollLab
             netEscape = pose.escape;
             ApplyHook(pose);
             if (pose.piece != (byte)piece) SetPiece((ChessFight.Network.PieceKind)pose.piece);
+            FaceFromPose(pose);   // R111: the skills' effects read a puppet's facing
         }
 
         public bool IsFinite()

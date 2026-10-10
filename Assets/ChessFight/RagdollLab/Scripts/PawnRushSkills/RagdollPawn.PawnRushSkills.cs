@@ -66,7 +66,8 @@ namespace ChessFight.RagdollLab
         /// <summary>Every moment a skill lands, for the test bed's hit effects; nothing else listens.</summary>
         public static event Action<SkillFxEvent> SkillFx;
 
-        internal static void RaiseSkillFx(SkillFxEvent e) => SkillFx?.Invoke(e);
+        /// <summary>Raise a skill's moment from outside a pawn: a tripwire's, or (R111) one a network client was sent.</summary>
+        public static void RaiseSkillFx(SkillFxEvent e) => SkillFx?.Invoke(e);
 
         void Fx(SkillFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, int count = 0, float size = 0f, Vector3 normal = default)
             => SkillFx?.Invoke(new SkillFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, count = count, size = size, normal = normal });

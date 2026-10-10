@@ -47,6 +47,37 @@ namespace ChessFight.RagdollLab
         /// <summary>A networked match owns the pawns and the input routing; local play stands down.</summary>
         public bool NetworkControlled { get; set; }
 
+        /// <summary>In a networked match: this PC runs the physics (the host); false = it draws the host's puppets.</summary>
+        public bool NetworkHost { get; set; }
+
+        /// <summary>In a networked match: this PC's own pawn (the network link sets it).</summary>
+        public RagdollPawn NetworkLocal { get; set; }
+
+        /// <summary>The pawn the person at this PC plays: P1 offline, the network's own pawn online. The skill test beds'
+        /// panels and the effects' "mine / my side / theirs" colours follow it.</summary>
+        public RagdollPawn LocalPawn => NetworkControlled ? NetworkLocal : players.Length > 0 ? players[0].pawn : null;
+
+        /// <summary>The piece skill key (a skill test bed sets it; none elsewhere). It goes into P1's input as
+        /// <see cref="PawnInput.skill"/>, so online it reaches the host like a jump (R111).</summary>
+        public KeyCode SkillKey { get; set; } = KeyCode.None;
+
+        /// <summary>Online, the piece the person here asked for (the host switches the pawn): the piece and a number
+        /// that changes with every ask, so the ask is repeated in every input packet and a lost one does not matter.</summary>
+        public ChessFight.Network.PieceKind NetPieceAsk { get; private set; }
+        public byte NetPieceSeq { get; private set; }
+
+        public void AskPiece(ChessFight.Network.PieceKind kind)
+        {
+            NetPieceAsk = kind;
+            NetPieceSeq = (byte)(NetPieceSeq == 255 ? 1 : NetPieceSeq + 1);
+        }
+
+        /// <summary>Development only (the loopback test link's commands): presses added to P1's next input, and a move and
+        /// a right-click held until a time.</summary>
+        public PawnInput DevPress;
+        public Vector3 DevMove;
+        public float DevMoveUntil, DevGrabUntil;
+
         /// <summary>Set while the player types in a network field so the keys do not also drive a pawn.</summary>
         public bool SuppressInput { get; set; }
         /// <summary>F does not work bells, levers or hooks: the Pawn Rush skill test bed has the skills on F.</summary>
@@ -363,6 +394,7 @@ namespace ChessFight.RagdollLab
                     input.ability = Input.GetKeyDown(KeyCode.E);
                     input.ability2 = Input.GetKeyDown(KeyCode.Q);
                     input.interact = !InteractKeyOff && Input.GetKey(KeyCode.F);
+                    input.skill = SkillKey != KeyCode.None && Input.GetKeyDown(SkillKey);
                     // The clicks only count once the cursor is locked to the game (click the view once;
                     // Esc frees it again). Otherwise the click that locks it would also dive.
                     if (Cursor.lockState == CursorLockMode.Locked && !PanelOpen && !swallowMouse)
@@ -408,7 +440,21 @@ namespace ChessFight.RagdollLab
             if (mv.sqrMagnitude > 1f) mv.Normalize();
             input.move = cam.FlatRight * mv.x + cam.FlatForward * mv.y;
             input.aim = cam.AimForward;
+            if (slotIndex == 0) AddDevInput(ref input);
             return input;
+        }
+
+        /// <summary>The loopback test link's commands (development): taken once, then cleared.</summary>
+        void AddDevInput(ref PawnInput input)
+        {
+            input.jump |= DevPress.jump;
+            input.shove |= DevPress.shove;
+            input.skill |= DevPress.skill;
+            input.ability |= DevPress.ability;
+            input.ability2 |= DevPress.ability2;
+            DevPress = default;
+            if (Time.unscaledTime < DevMoveUntil) input.move = DevMove;
+            if (Time.unscaledTime < DevGrabUntil) input.grab = true;
         }
 
         public static int PadIndex(LabDevice device) => device >= LabDevice.Pad1 ? device - LabDevice.Pad1 : -1;
