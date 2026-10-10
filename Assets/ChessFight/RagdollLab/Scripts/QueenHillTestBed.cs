@@ -390,7 +390,7 @@ namespace ChessFight.RagdollLab
             box.isTrigger = true;
             box.center = new Vector3(0f, volume.y * 0.5f, 0f);
             box.size = volume;
-            var pad = go.AddComponent<LaunchPad>();
+            LaunchPad pad = period > 0f ? (LaunchPad)go.AddComponent<SpringLaunchPad>() : go.AddComponent<ContactLaunchPad>();
             pad.Configure(throwTo, clearance, period, 0f, sameThrow, key);
             return pad;
         }

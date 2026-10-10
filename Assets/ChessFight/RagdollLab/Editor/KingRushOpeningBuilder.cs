@@ -87,7 +87,7 @@ namespace ChessFight.RagdollLab.Editor
             Shape(root.transform, "Head", PrimitiveType.Sphere, new Vector3(0, 2.1f, 0), Vector3.one * 1.3f, m);
             if (moving)
             {
-                var motion = root.AddComponent<KingRushToyMotion>(); motion.period = 7; motion.radius = 2; motion.offset = at.z * .1f;
+                var motion = root.AddComponent<KingRushOrbitPawn>(); motion.ConfigureTiming(7, at.z * .1f);
                 root.GetComponent<Rigidbody>().isKinematic = true;
             }
         }
@@ -130,8 +130,8 @@ namespace ChessFight.RagdollLab.Editor
             for (int i = 0; i < 3; i++)
             {
                 var head = Shape(t, "Rolling head " + i, PrimitiveType.Sphere, new Vector3((i - 1) * 4, 7.1f, 66), Vector3.one * 2.4f, i == 1 ? gold : cream);
-                var motion = head.AddComponent<KingRushToyMotion>(); motion.motion = KingRushToyMotion.Motion.RollingHead;
-                motion.period = 8; motion.offset = i * 2.4f; head.GetComponent<Rigidbody>().isKinematic = true;
+                var motion = head.AddComponent<KingRushRollingHead>();
+                motion.ConfigureTiming(8, i * 2.4f); head.GetComponent<Rigidbody>().isKinematic = true;
                 head.AddComponent<RagdollHazard>().minImpact = 1;
             }
             Sign(t, new Vector3(5, 2.2f, 43), "굴러오는 머리\n레인을 바꿔 피해요");
@@ -152,8 +152,8 @@ namespace ChessFight.RagdollLab.Editor
             for (int i = 0; i < 2; i++)
             {
                 var button = Box(t, "Clock button " + i, new Vector3(0, -.3f, 102 + i * 8), new Vector3(16, .6f, 7.5f), i == 0 ? gold : coral);
-                var motion = button.AddComponent<KingRushToyMotion>(); motion.motion = KingRushToyMotion.Motion.ClockButton;
-                motion.period = 3; motion.offset = i * 1.5f; button.GetComponent<Rigidbody>().isKinematic = true;
+                var motion = button.AddComponent<KingRushClockButton>();
+                motion.ConfigureTiming(3, i * 1.5f); button.GetComponent<Rigidbody>().isKinematic = true;
             }
             Floor(t, "Clock exit", 0, 0, 117, 16, 6, mint);
             Sign(t, new Vector3(-4, 2.2f, 96), "체스 시계\n오르내리는 버튼을 건너요");
@@ -165,7 +165,7 @@ namespace ChessFight.RagdollLab.Editor
             Box(t, "Spring face", new Vector3(0, .04f, 124), new Vector3(8, .08f, 2.5f), gold);
             var root = new GameObject("Pond launch pad"); root.transform.SetParent(t); root.transform.position = new Vector3(0, .1f, 124);
             var trigger = root.AddComponent<BoxCollider>(); trigger.size = new Vector3(8, .6f, 2.5f); trigger.center = Vector3.up * .3f; trigger.isTrigger = true;
-            root.AddComponent<LaunchPad>().Configure(new Vector3(0, -.1f, 15), 4);
+            root.AddComponent<ContactLaunchPad>().Configure(new Vector3(0, -.1f, 15), 4);
             Sign(t, new Vector3(-4, 2.2f, 121), "도약대 연못\n노란 발판을 밟아 건너요");
             Arrow(t, new Vector3(0, .11f, 124));
         }

@@ -8,7 +8,7 @@ namespace ChessFight.ProtectKing
     public enum CavalryState { Idle, Warning, Leaping, Landing, ChargeWindup, Charging, Recovering, Cooldown }
 
     [RequireComponent(typeof(ObstacleContext))]
-    public sealed class KnightCavalryCharge : MonoBehaviour
+    public sealed class KnightCavalryCharge : Obstacle
     {
         float RuntimeTime => SampleTime(ObstacleClock.Now);
         float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,CycleDuration,Repeat);

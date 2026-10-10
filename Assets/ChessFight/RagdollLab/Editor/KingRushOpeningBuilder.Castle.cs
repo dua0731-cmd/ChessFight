@@ -57,9 +57,9 @@ namespace ChessFight.RagdollLab.Editor
             var cp = go.AddComponent<KingRushCourseCheckpoint>(); cp.order = index; cp.title = title; cp.size = new Vector3(width, 5, 3);
             Box(t, "Checkpoint stripe", new Vector3(x, y + .01f, z), new Vector3(width, .02f, .2f), gold);
         }
-        static KingRushCastleMotion Moving(GameObject go, KingRushCastleMotion.Kind kind, float period)
+        static T Moving<T>(GameObject go, float period) where T : KingRushCastleMotion
         {
-            var m = go.AddComponent<KingRushCastleMotion>(); m.kind = kind; m.period = period;
+            var m = go.AddComponent<T>(); m.ConfigurePeriod(period);
             go.GetComponent<Rigidbody>().isKinematic = true; return m;
         }
         static void UpperCastle(Transform t)
@@ -74,7 +74,7 @@ namespace ChessFight.RagdollLab.Editor
             Floor(t, "Upper mace walk", -10, 3.5f, 290, 8, 24, cream);
             CastleCheckpoint(t, 9, "성벽 철퇴", -10, 3.5f, 280, 7);
             var pivot = new GameObject("Swinging mace pivot"); pivot.transform.SetParent(t); pivot.transform.position = new Vector3(-10, 10, 291);
-            Moving(pivot, KingRushCastleMotion.Kind.Mace, 5);
+            Moving<KingRushMace>(pivot, 5);
             Box(pivot.transform, "Chain", new Vector3(0, -3, 0), new Vector3(.18f, 6, .18f), dark);
             var head = Shape(pivot.transform, "Mace", PrimitiveType.Sphere, new Vector3(0, -6, 0), Vector3.one * 2, dark);
             head.AddComponent<RagdollHazard>().minImpact = 1;
@@ -84,13 +84,13 @@ namespace ChessFight.RagdollLab.Editor
         static void LowerCastle(Transform t)
         {
             var ferry = Box(t, "Moat ferry", new Vector3(10, -.45f, 249), new Vector3(8, .6f, 14), gold);
-            Moving(ferry, KingRushCastleMotion.Kind.Ferry, 8);
+            Moving<KingRushFerry>(ferry, 8);
             Floor(t, "Lower landing", 10, 0, 269, 8, 18, cream);
             CastleCheckpoint(t, 8, "해자 미는 벽", 10, 0, 262, 7);
             var wall = Box(t, "Sliding moat wall", new Vector3(10, .9f, 270), new Vector3(2.4f, 1.8f, 1.5f), wood);
-            Moving(wall, KingRushCastleMotion.Kind.SlidingWall, 5);
+            Moving<KingRushCastleWall>(wall, 5);
             var hinge = new GameObject("Drawbridge hinge"); hinge.transform.SetParent(t); hinge.transform.position = new Vector3(10, 0, 278);
-            Moving(hinge, KingRushCastleMotion.Kind.Drawbridge, 10);
+            Moving<KingRushDrawbridge>(hinge, 10);
             Box(hinge.transform, "Drawbridge deck", new Vector3(0, -.3f, 4), new Vector3(8, .6f, 8.3f), wood);
             Floor(t, "Lower exit walk", 10, 0, 301, 8, 30, cream);
             Sign(t, new Vector3(10, 2.2f, 276), "도개교\n다리가 내려왔을 때 건너요");
@@ -106,7 +106,7 @@ namespace ChessFight.RagdollLab.Editor
             Floor(t, "Gate courtyard", 0, 0, 349, 28, 18, cream);
             CastleCheckpoint(t, 10, "성문", 0, 0, 343, 27);
             var gate = Box(t, "Timed portcullis", new Vector3(0, 2, 351), new Vector3(28, 4, .6f), dark);
-            Moving(gate, KingRushCastleMotion.Kind.Portcullis, 8); gate.AddComponent<RagdollHazard>().minImpact = 1;
+            Moving<KingRushPortcullis>(gate, 8); gate.AddComponent<RagdollHazard>().minImpact = 1;
             foreach (int s in new[] { -1, 1 }) Box(t, "Castle pillar", new Vector3(s * 14, 5, 351), new Vector3(1, 10, 2), wood);
             Sign(t, new Vector3(-7, 2.2f, 346), "성문이 올라갈 때 통과\n다음은 3명 승격");
         }

@@ -7,7 +7,7 @@ namespace ChessFight.ProtectKing
     public enum CastlingBridgeState { Docked, Warning, Swapping, Settling }
 
     [RequireComponent(typeof(ObstacleContext))]
-    public sealed class CastlingCrossingBridges : MonoBehaviour
+    public sealed class CastlingCrossingBridges : Obstacle
     {
         float RuntimeTime => SampleTime(ObstacleClock.Now);
         float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,CycleDuration * 2,Repeat);

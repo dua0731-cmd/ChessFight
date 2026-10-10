@@ -63,13 +63,60 @@ class ObstacleAssets(unittest.TestCase):
                     self.assertEqual(self.scripts[guid], CODE / (name + ".cs"))
 
     def test_no_abstract_surface_or_motion_attached_anywhere(self):
-        guids = [re.search(r"guid: (\w+)", (CODE / (name + ".cs.meta")).read_text())[1]
-                 for name in ("ObstacleSurface", "ObstacleMotion")]
+        guids = [guid for guid, path in self.scripts.items()
+                 if re.search(r"abstract\s+class\s+" + path.stem + r"\b", path.read_text())]
         for pattern in ("*.prefab", "*.unity"):
             for path in ASSETS.rglob(pattern):
                 text = path.read_text()
                 for guid in guids:
                     self.assertNotIn(guid, text, str(path))
+
+    def test_remaining_hazards_and_kingrush_variants_share_obstacle(self):
+        names = ("CrumblingRoyalFloor", "KnightCavalryCharge", "CastlingCrossingBridges",
+                 "RopeLine", "PhaseToggle", "ContactLaunchPad", "SpringLaunchPad",
+                 "KingRushSeesawBoard", "KingRushFinalBoard", "KingRushOrbitPawn",
+                 "KingRushRollingHead", "KingRushClockButton", "KingRushFerry",
+                 "KingRushCastleWall", "KingRushDrawbridge", "KingRushPortcullis",
+                 "KingRushMace", "KingRushFallingStep", "KingRushSweepingHand")
+        for name in names:
+            with self.subTest(name=name):
+                ancestors = []
+                while name in self.parents:
+                    name = self.parents[name]
+                    self.assertNotIn(name, ancestors)
+                    ancestors.append(name)
+                self.assertIn("Obstacle", ancestors)
+
+    def test_kingrush_prefabs_use_concrete_variants(self):
+        expected = {
+            "02_PawnField": {"KingRushOrbitPawn": 4},
+            "03_RollingHeads": {"KingRushRollingHead": 3},
+            "05_Clock": {"KingRushClockButton": 2},
+            "06_Pond": {"ContactLaunchPad": 1},
+            "12_CastleUpper": {"KingRushMace": 1},
+            "13_CastleLower": {"KingRushFerry": 1, "KingRushCastleWall": 1, "KingRushDrawbridge": 1},
+            "14_CrossingGate": {"KingRushPortcullis": 1},
+            "19_FallingSteps": {"KingRushFallingStep": 32},
+            "20_GiantHandStair": {"KingRushSweepingHand": 1},
+        }
+        for prefab, types in expected.items():
+            records = list(blocks((ASSETS / "Prefabs/KingRushOpening" / (prefab + ".prefab")).read_text()).values())
+            for name, count in types.items():
+                matching = [b for b in records if "::ChessFight.Gameplay." + name + "\n" in b]
+                self.assertEqual(len(matching), count, prefab)
+                for block in matching:
+                    guid = re.search(r"m_Script: .*guid: (\w+)", block)[1]
+                    self.assertEqual(self.scripts[guid].stem, name)
+                    self.assertTrue({"kind", "motion", "hand"}.isdisjoint(fields(block)))
+                    if name == "ContactLaunchPad":
+                        self.assertTrue({"period", "phase", "windKey", "windTurns"}.isdisjoint(fields(block)))
+
+    def test_factories_do_not_instantiate_abstract_obstacles(self):
+        abstract = [path.stem for path in self.scripts.values()
+                    if re.search(r"abstract\s+class\s+" + path.stem + r"\b", path.read_text())]
+        pattern = re.compile(r"AddComponent\s*<\s*(?:" + "|".join(abstract) + r")\s*>")
+        for path in ASSETS.rglob("*.cs"):
+            self.assertIsNone(pattern.search(path.read_text()), str(path))
 
     def test_surface_inspectors_contain_only_relevant_serialized_fields(self):
         expected = {

@@ -2,7 +2,7 @@
 
 두 길을 눈으로 비교해 등반/타이밍을 선택하고, 폭4m X다리에서 합류해 몸싸움하는 코스. 모든 말의 기본 조작/질량/스테미나를 그대로 쓴다. 낙하는 기존 물5초 후 마지막 개인 체크포인트. 실제 밧줄 그네는 없으며 폭3m 임시 다리를 명시했다.
 
-`w = sin(2π × ObstacleClock / period)`. `KingRushCastleMotion : Obstacle`, 매 프레임 위치/회전을 누적하지 않는다.
+`w = sin(2π × ObstacleClock / period)`. `KingRushCastleMotion : KinematicObstacle`, 매 프레임 위치/회전을 누적하지 않는다.
 
 | 부품 | 크기/동작 | 주기 | 판정 |
 |---|---|---|---|
@@ -13,3 +13,5 @@
 | 성문 | 폭28×높이4m, 위로6×clamp01(1.5w+0.5)m |8초| 충돌 속도1m/s 이상 넉다운 |
 
 구간 프리팹 `12_CastleUpper`~`15_CastlePromotion`. 3.5m 벽은 공유 등반, 위쪽 내려오는 경사는3.5m/14m. 12명이 지나갈 폭과 초반 등반 대기 시간은 사용자 시험 후 조정한다. 팀원이 편집한 기존 프리팹을 재생성하지 않는다. 자동 통과/렌더 결과와 미확인 구분은 [CASTLE_COURSE](../CASTLE_COURSE.md).
+
+R71: `KingRushCastleMotion`은 추상 주기 부모다. `KingRushFerry`/`KingRushCastleWall`/`KingRushDrawbridge`/`KingRushPortcullis`/`KingRushMace`에 각 거리·각도를 분리했다. [전체 구조](../OBSTACLE_CLASSES.md). 기존 수치·시간 함수는 보존, Unity 재확인 대기.

@@ -1,3 +1,4 @@
+using ChessFight.Gameplay;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,7 +10,7 @@ namespace ChessFight.ProtectKing
     public enum RoyalFloorState : byte { Stable, Cracking, Collapsing, Missing, Restoring }
 
     [RequireComponent(typeof(ObstacleContext))]
-    public sealed class CrumblingRoyalFloor : MonoBehaviour
+    public sealed class CrumblingRoyalFloor : Obstacle
     {
         public ObstacleContext context;
         public Transform Visual;

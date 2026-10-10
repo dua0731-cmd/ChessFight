@@ -422,15 +422,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 851203103670827847}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e889f26c98be09c4491423742fd7ff60, type: 3}
+  m_Script: {fileID: 11500000, guid: 10ff4ac52d7d9141ae81270719027dfd, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushToyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushRollingHead
   phase: 0
-  motion: 1
   offset: 2.4
   period: 8
-  radius: 2
   travel: {x: 0, y: -5.9, z: -22}
+  returnDepth: 8
+  rollDegreesPerCycle: -1080
 --- !u!114 &4180783242076322048
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -861,15 +861,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 2665051681971093141}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e889f26c98be09c4491423742fd7ff60, type: 3}
+  m_Script: {fileID: 11500000, guid: 10ff4ac52d7d9141ae81270719027dfd, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushToyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushRollingHead
   phase: 0
-  motion: 1
   offset: 4.8
   period: 8
-  radius: 2
   travel: {x: 0, y: -5.9, z: -22}
+  returnDepth: 8
+  rollDegreesPerCycle: -1080
 --- !u!114 &7472732856082375981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1252,15 +1252,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 7735067129155926944}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e889f26c98be09c4491423742fd7ff60, type: 3}
+  m_Script: {fileID: 11500000, guid: 10ff4ac52d7d9141ae81270719027dfd, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushToyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushRollingHead
   phase: 0
-  motion: 1
   offset: 0
   period: 8
-  radius: 2
   travel: {x: 0, y: -5.9, z: -22}
+  returnDepth: 8
+  rollDegreesPerCycle: -1080
 --- !u!114 &4823023452228519887
 MonoBehaviour:
   m_ObjectHideFlags: 0

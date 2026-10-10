@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ChessFight.Gameplay
 {
-    public sealed class KingRushFinalBoard : MonoBehaviour
+    public sealed class KingRushFinalBoard : Obstacle
     {
         public Transform[] tiles;
         public Transform[] islands;

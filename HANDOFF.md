@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R71(사용자, 10-10): 기존 장애물 전체 설계 통일.** 이식18종·기존 발판/밧줄/점멸·시소/결승판도 공통 `Obstacle`. 킹러시 장난감3/성벽5/하늘2 전용 클래스, `LaunchPad`는 추상 공통 발사 부모 + `ContactLaunchPad`/`SpringLaunchPad`. 프리팹9개/48컴포넌트와 생성기 이전, 구조10·Core83·세션39·7개 런타임 컴파일 통과. **Unity/PhysX/Editor 생성기 실행 재확인 대기**. [상세](Docs/KingRush/OBSTACLE_CLASSES.md).
+
 > **R70(사용자, 10-10): 시험장 15종 클래스 분리.** 공통 `Obstacle` → 표면/이동 공통 부모 → 장애물별 전용 클래스. 모든 물리 수치는 해당 자식 Inspector에서 조절. 기존 `Obstacle`의 이동 구현은 `KinematicObstacle`로 옮김. 프리팹9개·기존 맵 장치29개 연결 이전, 구조7·Core83·세션39·7개 런타임 컴파일 통과. **Unity import/Play 재확인 대기**. [구조와 설정 위치](Docs/KingRush/OBSTACLE_CLASSES.md).
 
 > **R69(사용자, 10-10): 원판 운반·점프 높이 조절.** 의도적 외향 속도 제거, 접지 시 원형 변위·점프 후 접선 관성. Inspector `Rotation Speed`(45°/초), `Jump Height`(10 m). 원판에만 적용하는 `ISurfaceTransport` 경로 추가. Core83·세션39·7개 런타임 컴파일 통과, **Unity/PhysX 재확인 대기**. [조절 방법](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md).
@@ -74,6 +76,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **전체 장애물 설계 통일(R71)** | 이식18종·일반 장치·킹러시까지 확장, 기존 프리팹/생성기 이전. Unity 재확인 대기 |
 | **15종 클래스 분리(R70)** | 공통 Obstacle와 장애물별 Inspector, 기존 프리팹/맵 연결 이전. 자동 검사 통과·Unity 재확인 대기 |
 | **원판·점프 패드(R69)** | 원형 운반·접선 관성, Inspector 속도/높이 조절 구현. Unity 재확인 대기 |
 | **래그돌 장애물 시험장(R68)** | 새 독립 씬에서 장애물 15종·기존 래그돌·선택 메뉴·현재 시험대 복귀 구현. Linux 검사 통과, Unity 직접 확인 대기 |
@@ -105,6 +108,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **기존 장애물 전체 정리(R71)** | 전용 클래스·공통 부모·보조 기능 분리, 자동 검사 통과·Unity 대기 | [구조](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **장애물별 클래스/설정(R70)** | 15종 전용 클래스 구현, Unity 재확인 대기 | [구조](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **원판 운반·높이 조절(R69)** | 코드·컴파일, Unity/PhysX 재확인 대기 | [조절](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **15종 래그돌 장애물 시험장(R68)** | 씬·코드·정적 검사·컴파일, Unity 미확인 | [실행](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
@@ -136,6 +140,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R71:** 기존 킹러시 전체 코스, 래그돌/퀸오브더힐 접촉·스프링 발사, Editor 생성기를 Unity에서 재확인한다.
 
 **R70:** 시험장 15종 Inspector와 동작, 체스 시계 문/바늘, 기존 이식 맵과 kinematic 발판을 Unity에서 확인한다.
 

@@ -107,6 +107,7 @@
 | R68 | 10-10 | "유니티에서 장애물 테스트 씬을 하나 생성해서 직접 래그돌 캐릭터로 테스트할 수 있게" | `main`에 `ObstacleRagdollTest.unity`: 기존 래그돌과 이식 장애물 15종을 5×3 독립 시험대에 배치. Tab 선택·이전/다음·현재 시험대 복귀·낙사 복귀, 발판/다리/피스톤 아래 구멍, 기존 LabCamera·물리 프로필 사용. Core83·세션39·7개 런타임 어셈블리 컴파일·씬 1,353 참조 정적 검사 통과. [실행](../KingRush/OBSTACLE_RAGDOLL_TEST.md). 클라우드에 Unity/PC 연결이 없어 직접 실행 못 함 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity import/Play·PhysX·사용자 미확인) |
 | R69 | 10-10 | 원판에 서 있을 때 밀려나지 않고 회전, 점프할 때 관성으로 이탈. 회전 속도·점프 패드 높이를 SerializeField로 표시 | 외향 속도 제거, 원형 운반과 접선 이탈 속도 분리. Rotation Speed(45°/초), Jump Height(10 m)·Forward Speed(8 m/s), 프리팹·안내 갱신. Core83·세션39·7개 어셈블리 컴파일 통과 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
 | R70 | 10-10 | ObstacleSurface 구조 설명, 공통 Obstacle 상속과 장애물별 설정 분리. 범위 확인 후 테스트 씬 15종 전체 지정 | 15종 전용 클래스·공통 Obstacle, Surface/Motion 추상화, 기존 kinematic 구현 별도 부모 유지. 피격 설정 소유 클래스 이전, 프리팹9개·기존 맵 장치29개 연결 이전. 구조7·Core83·세션39·7개 런타임 컴파일 통과. [구조/조절](../KingRush/OBSTACLE_CLASSES.md) | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity import/Play·사용자 재확인 대기) |
+| R71 | 10-10 | 기존에 만들어진 장애물도 전부 같은 설계로 변경 | 이식18종·일반 장애물·킹러시 시소/결승판 공통 Obstacle. 킹러시 종류분기10종과 접촉/스프링 발사대 분리, 생성기·프리팹9개/컴포넌트48개 이전. 구조10·Core83·세션39·7개 런타임 컴파일 통과. [범위/구조](../KingRush/OBSTACLE_CLASSES.md) | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity import/PhysX·Editor 실행 미확인) |
 
 ## 2. 요구사항에서 뽑은 지켜야 할 조건
 

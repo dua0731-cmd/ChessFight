@@ -83,7 +83,7 @@ namespace ChessFight.RagdollLab.Editor
             for (int z = 0; z < 8; z++) for (int x = 0; x < 4; x++)
             {
                 var go = Box(t, "Returning tile", new Vector3(-4.5f + x * 3, 20.7f, 545.5f + z * 3), new Vector3(3, .6f, 3), (x + z) % 2 == 0 ? white : black);
-                var motion = go.AddComponent<KingRushSkyMotion>(); motion.offset = -z * .65f + x % 2 * 4;
+                var motion = go.AddComponent<KingRushFallingStep>(); motion.ConfigureOffset(-z * .65f + x % 2 * 4);
                 go.GetComponent<Rigidbody>().isKinematic = true;
             }
         }
@@ -93,7 +93,7 @@ namespace ChessFight.RagdollLab.Editor
             var shadow = Box(t, "Hand warning shadow", new Vector3(0, 21.015f, 584), new Vector3(12, .025f, 5), dark);
             Object.DestroyImmediate(shadow.GetComponent<Collider>());
             var hand = new GameObject("Giant sweeping hand"); hand.transform.SetParent(t); hand.transform.position = new Vector3(0, 22, 584);
-            var m = hand.AddComponent<KingRushSkyMotion>(); m.hand = true; m.shadow = shadow; hand.GetComponent<Rigidbody>().isKinematic = true;
+            var m = hand.AddComponent<KingRushSweepingHand>(); m.ConfigureShadow(shadow); hand.GetComponent<Rigidbody>().isKinematic = true;
             Box(hand.transform, "Palm", Vector3.zero, new Vector3(4, 1.3f, 3), cream).AddComponent<RagdollHazard>().minImpact = 1;
             for (int i = 0; i < 4; i++) Box(hand.transform, "Finger", new Vector3(-1.5f + i, -.25f, 2.3f), new Vector3(.7f, .7f, 3.4f), cream).AddComponent<RagdollHazard>().minImpact = 1;
             Sign(t, new Vector3(-10, 23.2f, 577), "손 그림자 = 1.5초 예고\n쓸고 지나간 뒤 통과");

@@ -29,22 +29,14 @@ namespace ChessFight.Gameplay
     // throws anyone; a network client's puppets ignore the call and move as the
     // host sends them.
     [RequireComponent(typeof(BoxCollider))]
-    public sealed class LaunchPad : MonoBehaviour
+    public abstract class LaunchPad : Obstacle
     {
         [Tooltip("Where it throws to, from the middle of the pad's surface, in the pad's frame (x right, y up, z forward). Metres, not scaled.")]
         [SerializeField] Vector3 landing = new Vector3(0f, 6f, 3f);
         [Tooltip("How far above the landing the arc peaks, so it comes down onto the spot instead of skimming the edge.")]
         [SerializeField] float clearance = 1.2f;
-        [Tooltip("0: throws whoever steps on it. More: a spring that throws everyone on it every this many seconds of the shared clock.")]
-        [SerializeField] float period;
-        [Tooltip("Seconds added to the shared clock, so springs side by side fire in turn.")]
-        [SerializeField] float phase;
         [Tooltip("Everyone gets the same throw and lands as far apart as they stood (a spring lift). Off: every throw aims at the landing spot (a pad).")]
         [SerializeField] bool sameThrow;
-        [Tooltip("The spring's key: it turns about its own up axis while the spring winds up. Only looks.")]
-        [SerializeField] Transform windKey;
-        [SerializeField] float windTurns = 2f;
-
         // Once thrown, a body is left alone this long: it is still inside the volume for a few steps
         // on its way up, and aimed again from there it would fly a different arc.
         const double Rethrow = 0.6;
@@ -54,12 +46,10 @@ namespace ChessFight.Gameplay
         readonly Dictionary<Component, double> thrownAt = new Dictionary<Component, double>();
         readonly HashSet<Component> thisStep = new HashSet<Component>();
         BoxCollider box;
-        Quaternion keyRest = Quaternion.identity;
-        long lastCycle = long.MinValue;
 
         public Vector3 LandingOffset => landing;
         public float Clearance => clearance;
-        public float Period => period;
+        public virtual float Period => 0f;
         public bool SameThrow => sameThrow;
         public int Throws { get; private set; }
 
@@ -74,15 +64,7 @@ namespace ChessFight.Gameplay
         public Vector3 Landing => Surface + transform.rotation * landing;
 
         // A spring: seconds until it next fires. A pad: 0.
-        public float SecondsToFire
-        {
-            get
-            {
-                if (period <= 0f) return 0f;
-                double t = ObstacleClock.Now + phase;
-                return (float)(period - (t - Math.Floor(t / period) * period));
-            }
-        }
+        public virtual float SecondsToFire => 0f;
 
         // For pads built from code (test beds).
         public void Configure(Vector3 landing, float clearance, float period = 0f, float phase = 0f, bool sameThrow = false,
@@ -90,12 +72,8 @@ namespace ChessFight.Gameplay
         {
             this.landing = landing;
             this.clearance = clearance;
-            this.period = period;
-            this.phase = phase;
             this.sameThrow = sameThrow;
-            this.windKey = windKey;
-            if (windKey != null) keyRest = windKey.localRotation;
-            lastCycle = long.MinValue;
+            ConfigureSchedule(period, phase, windKey);
         }
 
         // Where a body standing over `ground` (a point on the pad's surface) is thrown to.
@@ -128,35 +106,11 @@ namespace ChessFight.Gameplay
             return Mathf.Sqrt(2f * apex / gravity) + Mathf.Sqrt(2f * (apex - rise) / gravity);
         }
 
-        void Reset() => GetComponent<BoxCollider>().isTrigger = true;
+        protected void Reset() => GetComponent<BoxCollider>().isTrigger = true;
 
-        void Awake()
-        {
-            if (windKey != null) keyRest = windKey.localRotation;
-        }
+        protected virtual void ConfigureSchedule(float period, float phase, Transform windKey) { }
 
-        void FixedUpdate()
-        {
-            if (period <= 0f)
-            {
-                ThrowAllOn();
-                return;
-            }
-            long cycle = (long)Math.Floor((ObstacleClock.Now + phase) / period);
-            // The first step only learns which cycle it is in: a spring switched on mid-cycle waits for the next.
-            if (lastCycle != long.MinValue && cycle != lastCycle) ThrowAllOn();
-            lastCycle = cycle;
-        }
-
-        void Update()
-        {
-            if (windKey == null || period <= 0f) return;
-            // Wound steadily for the whole period; it lets go all at once when it fires.
-            float wound = 1f - SecondsToFire / period;
-            windKey.localRotation = keyRest * Quaternion.Euler(0f, 360f * windTurns * wound, 0f);
-        }
-
-        void ThrowAllOn()
+        protected void ThrowAllOn()
         {
             var b = Box;
             Vector3 half = Vector3.Scale(b.size, transform.lossyScale) * 0.5f;
@@ -211,7 +165,7 @@ namespace ChessFight.Gameplay
             Thrown?.Invoke(who, velocity);
         }
 
-        void OnDrawGizmosSelected()
+        protected void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(1f, 0.8f, 0.2f);
             Vector3 from = Surface, to = Landing;

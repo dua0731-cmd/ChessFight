@@ -150,13 +150,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 393705379483720140}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 0.10000014
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &520305662488635241
 GameObject:
   m_ObjectHideFlags: 0
@@ -370,13 +371,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 842381468963046054}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 2.7
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &1438257120736160715
 GameObject:
   m_ObjectHideFlags: 0
@@ -527,13 +529,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1438257120736160715}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 0.7500001
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &1443546191931316032
 GameObject:
   m_ObjectHideFlags: 0
@@ -684,13 +687,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1443546191931316032}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -3.8999999
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &1790029785683935189
 GameObject:
   m_ObjectHideFlags: 0
@@ -841,13 +845,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1790029785683935189}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -4.5499997
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &1890267603645584039
 GameObject:
   m_ObjectHideFlags: 0
@@ -998,13 +1003,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1890267603645584039}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 1.4000001
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &1892962533521554795
 GameObject:
   m_ObjectHideFlags: 0
@@ -1155,13 +1161,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1892962533521554795}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 2.7
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &2288167940034009211
 GameObject:
   m_ObjectHideFlags: 0
@@ -1312,13 +1319,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 2288167940034009211}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -3.8999999
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &3140576596691567346
 GameObject:
   m_ObjectHideFlags: 0
@@ -1469,13 +1477,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 3140576596691567346}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 0
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &4259537674044430815
 GameObject:
   m_ObjectHideFlags: 0
@@ -1626,13 +1635,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 4259537674044430815}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 3.35
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &4264597006006120117
 GameObject:
   m_ObjectHideFlags: 0
@@ -1783,13 +1793,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 4264597006006120117}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -1.9499999
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &4379300548689412077
 GameObject:
   m_ObjectHideFlags: 0
@@ -1940,13 +1951,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 4379300548689412077}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -0.54999983
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &5146148491139222412
 GameObject:
   m_ObjectHideFlags: 0
@@ -2097,13 +2109,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5146148491139222412}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -0.54999983
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &5278302625283456793
 GameObject:
   m_ObjectHideFlags: 0
@@ -2254,13 +2267,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5278302625283456793}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 3.35
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &5421440330904134596
 GameObject:
   m_ObjectHideFlags: 0
@@ -2411,13 +2425,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5421440330904134596}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -1.3
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &5457902600662296886
 GameObject:
   m_ObjectHideFlags: 0
@@ -2568,13 +2583,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5457902600662296886}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 0
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &5638070073975011592
 GameObject:
   m_ObjectHideFlags: 0
@@ -2725,13 +2741,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5638070073975011592}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 4
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &5740419411154721949
 GameObject:
   m_ObjectHideFlags: 0
@@ -2882,13 +2899,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5740419411154721949}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -0.65
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &5864231387898643110
 GameObject:
   m_ObjectHideFlags: 0
@@ -3039,13 +3057,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5864231387898643110}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -0.65
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &6131071711826946333
 GameObject:
   m_ObjectHideFlags: 0
@@ -3196,13 +3215,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 6131071711826946333}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -3.25
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &6834968188704305187
 GameObject:
   m_ObjectHideFlags: 0
@@ -3353,13 +3373,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 6834968188704305187}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -4.5499997
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &6861041893873755593
 GameObject:
   m_ObjectHideFlags: 0
@@ -3510,13 +3531,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 6861041893873755593}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 4
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &8168301757166371201
 GameObject:
   m_ObjectHideFlags: 0
@@ -3667,13 +3689,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8168301757166371201}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -3.25
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &8253016567105542034
 GameObject:
   m_ObjectHideFlags: 0
@@ -3824,13 +3847,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8253016567105542034}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -2.6
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &8353818407924764458
 GameObject:
   m_ObjectHideFlags: 0
@@ -3981,13 +4005,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8353818407924764458}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -2.6
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &8549632994557906849
 GameObject:
   m_ObjectHideFlags: 0
@@ -4138,13 +4163,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8549632994557906849}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 0.7500001
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &8556016891861781042
 GameObject:
   m_ObjectHideFlags: 0
@@ -4295,13 +4321,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8556016891861781042}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -1.9499999
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &8696910601423370514
 GameObject:
   m_ObjectHideFlags: 0
@@ -4452,13 +4479,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8696910601423370514}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 2.0500002
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &8849351976152109708
 GameObject:
   m_ObjectHideFlags: 0
@@ -4609,13 +4637,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8849351976152109708}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 0.10000014
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &8939893774342606710
 GameObject:
   m_ObjectHideFlags: 0
@@ -4766,13 +4795,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8939893774342606710}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 2.0500002
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &9030581773682603999
 GameObject:
   m_ObjectHideFlags: 0
@@ -4923,13 +4953,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 9030581773682603999}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: 1.4000001
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035
 --- !u!1 &9135115600669905130
 GameObject:
   m_ObjectHideFlags: 0
@@ -5080,10 +5111,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 9135115600669905130}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bc8ff3a3fde6c87917a109f9b8a70da, type: 3}
+  m_Script: {fileID: 11500000, guid: d3a09a6d82d41f5c51a20ec75bae69a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushSkyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushFallingStep
   phase: 0
-  hand: 0
   offset: -1.3
-  shadow: {fileID: 0}
+  fallDistance: 12
+  fallAcceleration: 8
+  warningAmplitude: 0.035

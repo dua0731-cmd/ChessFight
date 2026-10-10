@@ -9,7 +9,7 @@ namespace ChessFight.Gameplay
     //
     // It switches this object's colliders and renderers, not the object itself, so
     // it keeps running while "gone".
-    public sealed class PhaseToggle : MonoBehaviour
+    public sealed class PhaseToggle : Obstacle
     {
         [SerializeField] float period = 4f;
         [SerializeField, Range(0f, 1f)] float onFrom;

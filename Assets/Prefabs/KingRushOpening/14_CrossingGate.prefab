@@ -256,12 +256,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1393746773459984822}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3cb27f05de8f35342934c1ce09a6c6b2, type: 3}
+  m_Script: {fileID: 11500000, guid: 4f490443d547d78710b26dff2398d360, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCastleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushPortcullis
   phase: 0
-  kind: 3
   period: 8
+  height: 6
 --- !u!114 &4019291261709949801
 MonoBehaviour:
   m_ObjectHideFlags: 0

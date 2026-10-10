@@ -343,15 +343,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1118598710622966428}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e889f26c98be09c4491423742fd7ff60, type: 3}
+  m_Script: {fileID: 11500000, guid: 06c1d20ce68163fff5d5cac52c96dc6c, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushToyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushOrbitPawn
   phase: 0
-  motion: 0
   offset: 2.8
   period: 7
   radius: 2
-  travel: {x: 0, y: -5.9, z: -22}
 --- !u!1 &1560910486002961172
 GameObject:
   m_ObjectHideFlags: 0
@@ -424,15 +422,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1560910486002961172}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e889f26c98be09c4491423742fd7ff60, type: 3}
+  m_Script: {fileID: 11500000, guid: 06c1d20ce68163fff5d5cac52c96dc6c, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushToyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushOrbitPawn
   phase: 0
-  motion: 0
   offset: 3.6000001
   period: 7
   radius: 2
-  travel: {x: 0, y: -5.9, z: -22}
 --- !u!1 &1785571915949442849
 GameObject:
   m_ObjectHideFlags: 0
@@ -1071,15 +1067,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 3678055824771901671}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e889f26c98be09c4491423742fd7ff60, type: 3}
+  m_Script: {fileID: 11500000, guid: 06c1d20ce68163fff5d5cac52c96dc6c, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushToyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushOrbitPawn
   phase: 0
-  motion: 0
   offset: 2.8
   period: 7
   radius: 2
-  travel: {x: 0, y: -5.9, z: -22}
 --- !u!1 &4194842509548338223
 GameObject:
   m_ObjectHideFlags: 0
@@ -1704,15 +1698,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 5715254925820972684}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e889f26c98be09c4491423742fd7ff60, type: 3}
+  m_Script: {fileID: 11500000, guid: 06c1d20ce68163fff5d5cac52c96dc6c, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushToyMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushOrbitPawn
   phase: 0
-  motion: 0
   offset: 3.6000001
   period: 7
   radius: 2
-  travel: {x: 0, y: -5.9, z: -22}
 --- !u!1 &6395183555657508213
 GameObject:
   m_ObjectHideFlags: 0

@@ -1153,13 +1153,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 9141725439032999376}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50eccf127778d6bd606dc5fa9f942496, type: 3}
+  m_Script: {fileID: 11500000, guid: 56edc1858345781761be49b49b9a952e, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.LaunchPad
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.ContactLaunchPad
   landing: {x: 0, y: -0.1, z: 15}
   clearance: 4
-  period: 0
-  phase: 0
   sameThrow: 0
-  windKey: {fileID: 0}
-  windTurns: 2

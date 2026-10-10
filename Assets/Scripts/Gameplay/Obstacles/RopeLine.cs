@@ -15,7 +15,7 @@ namespace ChessFight.Gameplay
     // toward local forward, so every PC sees it in the same place without a packet.
     // 0 degrees is a still rope or chain to climb. The line itself has no collider:
     // it never pushes anyone; characters find it through All.
-    public sealed class RopeLine : MonoBehaviour
+    public sealed class RopeLine : Obstacle
     {
         [Tooltip("From the top (this object) to the bottom end, metres.")]
         [SerializeField] float length = 6f;

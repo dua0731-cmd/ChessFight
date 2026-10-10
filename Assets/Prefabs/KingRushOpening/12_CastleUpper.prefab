@@ -407,12 +407,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1873357652863504017}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3cb27f05de8f35342934c1ce09a6c6b2, type: 3}
+  m_Script: {fileID: 11500000, guid: 2fa1d7de288f4012ee3fe999ba4c9a93, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushCastleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.KingRushMace
   phase: 0
-  kind: 4
   period: 5
+  angle: 55
 --- !u!1 &1988677744184903766
 GameObject:
   m_ObjectHideFlags: 0

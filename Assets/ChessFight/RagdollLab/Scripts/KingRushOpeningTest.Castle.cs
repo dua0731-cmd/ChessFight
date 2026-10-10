@@ -50,9 +50,7 @@ namespace ChessFight.RagdollLab
             game.CameraRig.enabled = false; game.CameraRig.Cam.transform.position = new Vector3(85, 95, 278);
             game.CameraRig.Cam.transform.LookAt(new Vector3(0, 0, 305)); yield return Capture("castle-overview"); game.CameraRig.enabled = true;
             yield return Walk(a, new Vector3(10, 0, 236), 7);
-            KingRushCastleMotion ferry = null;
-            foreach (var motion in game.GetComponentsInChildren<KingRushCastleMotion>())
-                if (motion.kind == KingRushCastleMotion.Kind.Ferry) ferry = motion;
+            KingRushFerry ferry = game.GetComponentInChildren<KingRushFerry>();
             float waitUntil = Time.time + 9;
             while (Time.time < waitUntil && ferry.transform.position.z > 243.6f) yield return new WaitForFixedUpdate();
             waitUntil = Time.time + 3;

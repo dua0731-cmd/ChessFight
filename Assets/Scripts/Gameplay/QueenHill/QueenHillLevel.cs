@@ -270,7 +270,8 @@ namespace ChessFight.Gameplay
                     box.isTrigger = true;
                     box.center = new Vector3(0f, size.y * 0.5f, 0f);
                     box.size = size;
-                    go.AddComponent<LaunchPad>().Configure(V(b), F(b, 3, 1.2f), F(b, 4), F(b, 5), F(b, 6) > 0.5f);
+                    LaunchPad pad = F(b, 4) > 0f ? (LaunchPad)go.AddComponent<SpringLaunchPad>() : go.AddComponent<ContactLaunchPad>();
+                    pad.Configure(V(b), F(b, 3, 1.2f), F(b, 4), F(b, 5), F(b, 6) > 0.5f);
                     break;
                 }
                 case "rope":

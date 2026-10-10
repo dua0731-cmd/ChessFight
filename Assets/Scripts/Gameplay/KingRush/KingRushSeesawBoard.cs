@@ -6,7 +6,7 @@ namespace ChessFight.Gameplay
     // Unlike periodic obstacles, the state will need replication when this course goes online.
     // StateDrivenMover: tipped by the players standing on it, not by ObstacleClock.
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class KingRushSeesawBoard : MonoBehaviour, IMovingSurface
+    public sealed class KingRushSeesawBoard : Obstacle, IMovingSurface
     {
         Rigidbody body;
         Quaternion delta = Quaternion.identity;
