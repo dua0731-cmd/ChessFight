@@ -400,16 +400,30 @@ namespace ChessFight.RagdollLab
                     case "log":
                         Log("script: " + line.Substring(4));
                         break;
+                    default:
+                        // client2 skill: only that client (the second to join), for runs with three or more players.
+                        if (p[0].StartsWith("client") && int.TryParse(p[0].Substring(6), out int n))
+                            SendDevTo(HostId + (ulong)n, line.Substring(p[0].Length + 1));
+                        break;
                 }
             }
             ScriptRunning = false;
+        }
+
+        void SendDevTo(ulong id, string command)
+        {
+            byte[] bytes = RagdollNetProtocol.Dev(MatchId, command);
+            if (bytes != null) NetSend(id, bytes);
         }
 
         void PlaceForScript(string[] p)
         {
             if (p.Length < 6) return;
             var inv = System.Globalization.CultureInfo.InvariantCulture;
-            var pawn = PawnFor(p[1] == "host" ? HostId : HostId + 1);
+            // place host|client|client2 ...: "client" is the first to join.
+            ulong id = p[1] == "host" ? HostId : p[1] == "client" ? HostId + 1
+                : int.TryParse(p[1].Substring(Math.Min(6, p[1].Length)), out int n) ? HostId + (ulong)n : HostId + 1;
+            var pawn = PawnFor(id);
             if (pawn == null) return;
             var at = new Vector3(float.Parse(p[2], inv), 0f, float.Parse(p[3], inv));
             var face = new Vector3(float.Parse(p[4], inv), 0f, float.Parse(p[5], inv));

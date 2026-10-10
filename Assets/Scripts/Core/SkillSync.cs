@@ -498,15 +498,19 @@ namespace ChessFight.Network
     public sealed class PlaybackDelay
     {
         public const double MinMs = 70, MaxMs = 160, FreeJitterMs = 4;
-        double lastLocal = -1, jitter;
+        /// <summary>Over this share of snapshots lost, two in a row get likely enough to wait one more snapshot for.</summary>
+        public const double LossyShare = 0.08;
+        double lastLocal = -1, jitter, loss;
         uint lastHost;
         public double Milliseconds { get; private set; }
         public double JitterMs { get { return jitter; } }
+        public double LossShare { get { return loss; } }
 
         public PlaybackDelay() { Milliseconds = MinMs; }
 
-        /// <summary>A snapshot stamped <paramref name="hostMs"/> by the host arrived at <paramref name="localMs"/>.</summary>
-        public void Arrived(double localMs, uint hostMs)
+        /// <summary>A snapshot stamped <paramref name="hostMs"/> by the host arrived at <paramref name="localMs"/>, after
+        /// <paramref name="lostBefore"/> lost ones (a gap in the snapshot numbers).</summary>
+        public void Arrived(double localMs, uint hostMs, int lostBefore = 0)
         {
             if (lastLocal >= 0)
             {
@@ -514,15 +518,19 @@ namespace ChessFight.Network
                 // Up fast (a bad patch shows at once), down slowly (so it does not flicker back).
                 jitter += (d - jitter) * (d > jitter ? 0.25 : 1.0 / 32);
             }
+            for (int i = 0; i < Math.Min(Math.Max(0, lostBefore), 10); i++) loss += (1 - loss) / 32;
+            loss -= loss / 32;
             lastLocal = localMs;
             lastHost = hostMs;
-            Milliseconds = Math.Max(MinMs, Math.Min(MaxMs, MinMs + 2.5 * Math.Max(0, jitter - FreeJitterMs)));
+            double ms = MinMs + 2.5 * Math.Max(0, jitter - FreeJitterMs) + (loss > LossyShare ? 1000.0 / 30 : 0);
+            Milliseconds = Math.Max(MinMs, Math.Min(MaxMs, ms));
         }
 
         public void Reset()
         {
             lastLocal = -1;
             jitter = 0;
+            loss = 0;
             Milliseconds = MinMs;
         }
     }

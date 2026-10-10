@@ -497,7 +497,14 @@ public static class NetworkCoreTests
                 Check(d.Milliseconds>95&&d.Milliseconds<=160,"wobbly: "+d.Milliseconds);
                 for(int i=600;i<700;i++) d.Arrived(1000+i*33.3+rng.NextDouble()*400,(uint)(i*33.3));
                 Check(d.Milliseconds==160,"capped: "+d.Milliseconds);
-                d.Reset(); Check(d.Milliseconds==70,"reset"); });
+                d.Reset(); Check(d.Milliseconds==70,"reset");
+                // Losses: one in twenty is ridden out by 70 ms; one in eight waits a snapshot more.
+                var lossy=new PlaybackDelay(); var r=new Random(8); uint t=0;
+                for(int i=0;i<600;i++) { t+=33; if(r.Next(20)==0) continue; lossy.Arrived(1000+t,t,0); }
+                Check(lossy.Milliseconds==70,"5% loss keeps 70: "+lossy.Milliseconds);
+                var bad=new PlaybackDelay(); uint t2=0, last=0; int lost=0;
+                for(int i=0;i<600;i++) { t2+=33; if(i%8==7) { lost++; continue; } bad.Arrived(1000+t2,t2,lost); lost=0; last=t2; }
+                Check(Math.Abs(bad.Milliseconds-103.3)<0.5,"12% loss waits one more snapshot: "+bad.Milliseconds+" share "+bad.LossShare); });
             Test("Queen of the Hill: the first team to ring a bell opens its section, 20 s for that team", () => {
                 var q=new QueenHillRules(8);
                 Check(q.TryOpen(3,QueenHillRules.Black,100)&&!q.TryOpen(3,QueenHillRules.White,101),"first ring wins");

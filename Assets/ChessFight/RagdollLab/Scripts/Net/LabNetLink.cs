@@ -631,10 +631,11 @@ namespace ChessFight.RagdollLab
                 spare.Push(snapshot);
                 return;
             }
+            int lost = lastTick != 0 ? (int)Math.Min(30u, snapshot.tick - lastTick - 1) : 0;
             lastTick = snapshot.tick;
             lastReceive = Time.realtimeSinceStartup;
             snapshotsIn++;
-            delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snapshot.hostTimeMs);
+            delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snapshot.hostTimeMs, lost);
             buffer.Add(snapshot);
         }
 
