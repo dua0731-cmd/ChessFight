@@ -45,7 +45,8 @@ namespace ChessFight.RagdollLab.Editor
 
     /// <summary>Writes SwordFightSkillFilm's frames into H.264 .mp4 files with Unity's own encoder, one file per Began …
     /// Ended. R106: with the skills' sounds — every sound SwordFightSkillSfx starts is mixed into a 44.1 kHz stereo track
-    /// from the frame it started on, at its own speed (also in the slow film), as QueenHillSkillFilmEncoder does.</summary>
+    /// from the frame it started on, at its own speed (also in the slow film), as QueenHillSkillFilmEncoder does. R116: a
+    /// sound cut short (an edge skill called off) fades out in the track where it did in the game.</summary>
     [InitializeOnLoad]
     public static class SwordFightSkillFilmEncoder
     {
@@ -60,6 +61,7 @@ namespace ChessFight.RagdollLab.Editor
             public SwordFightSkillSfx.Sound sound;
             public float gain, pan;
             public double at;
+            public double end = double.MaxValue, fade = 1;
         }
 
         static readonly List<Voice> playing = new List<Voice>();
@@ -70,6 +72,7 @@ namespace ChessFight.RagdollLab.Editor
             SwordFightSkillFilm.Frame += Add;
             SwordFightSkillFilm.Ended += End;
             SwordFightSkillSfx.Played += Start;
+            SwordFightSkillSfx.Cut += CutShort;
             EditorApplication.playModeStateChanged += _ => { if (!EditorApplication.isPlayingOrWillChangePlaymode) End(); };
         }
 
@@ -98,6 +101,17 @@ namespace ChessFight.RagdollLab.Editor
             if (encoder != null) playing.Add(new Voice { sound = sound, gain = gain, pan = pan, at = written });
         }
 
+        static void CutShort(SwordFightSkillSfx.Sound sound, float seconds)
+        {
+            for (int v = playing.Count - 1; v >= 0; v--)
+                if (playing[v].sound == sound && playing[v].end == double.MaxValue)
+                {
+                    playing[v].end = written;
+                    playing[v].fade = Mathf.Max(1f, seconds * Rate);
+                    return;
+                }
+        }
+
         static void Add(Texture2D frame)
         {
             if (encoder == null) return;
@@ -122,11 +136,14 @@ namespace ChessFight.RagdollLab.Editor
                     int a = (int)t;
                     if (a < 0) continue;
                     if (a >= length - 1) { over = true; break; }
+                    float cut = (float)(1.0 - (written + i - p.end) / p.fade);
+                    if (cut <= 0f) { over = true; break; }
                     float f = (float)(t - a);
                     float l = Mathf.Lerp(s.data[a * s.channels], s.data[(a + 1) * s.channels], f);
                     float r = s.channels > 1 ? Mathf.Lerp(s.data[a * s.channels + 1], s.data[(a + 1) * s.channels + 1], f) : l;
-                    mix[i * 2] += l * left;
-                    mix[i * 2 + 1] += r * right;
+                    cut = Mathf.Min(1f, cut);
+                    mix[i * 2] += l * left * cut;
+                    mix[i * 2 + 1] += r * right * cut;
                 }
                 if (over) playing.RemoveAt(v);
             }
