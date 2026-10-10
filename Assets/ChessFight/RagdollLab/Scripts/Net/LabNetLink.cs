@@ -340,7 +340,9 @@ namespace ChessFight.RagdollLab
                 var pose = Pose(pair.Key);
                 pair.Value.CaptureNetworkPose(pose);
                 pose.id = pair.Key;
-                pose.ack = inputs.TryGetValue(pair.Key, out var remote) ? remote.clientTimeMs : stamp;
+                // The newest input time heard from that player, for its round trip; 0 = none yet (this PC's clock means
+                // nothing on a client's: a joining client read seconds of "round trip" from it, R111).
+                pose.ack = inputs.TryGetValue(pair.Key, out var remote) ? remote.clientTimeMs : 0u;
                 if (pair.Value.NetworkSnap)
                 {
                     snapCountdown[pair.Key] = 3;   // unreliable packets: repeat the teleport flag
@@ -597,8 +599,6 @@ namespace ChessFight.RagdollLab
                     RagdollPose.Blend(source, latest, t, blended);
                     pawn.ApplyNetworkPose(blended);
                 }
-                if (latest.id == NetSelf && latest.ack != 0)
-                    roundTripMs = Mathf.Lerp(roundTripMs, Mathf.Max(0f, NowMs() - latest.ack), 0.2f);
             }
 
             while (buffer.Count > 2 && buffer[0].hostTimeMs < playbackMs - 400d) Recycle(0);
@@ -636,6 +636,16 @@ namespace ChessFight.RagdollLab
             lastReceive = Time.realtimeSinceStartup;
             snapshotsIn++;
             delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snapshot.hostTimeMs, lost);
+            // Round trip: my input's time as the host echoes it, now that it is here. R111: it was read when the
+            // snapshot was drawn, which added anything from none to all of the playback delay to it (at F12 +300 ms
+            // the panel said 396 with a 78 ms delay).
+            var mine = Find(snapshot, NetSelf);
+            if (mine != null && mine.ack != 0)
+            {
+                int sample = unchecked((int)(NowMs() - mine.ack));
+                if (sample >= 0 && sample < 10000)
+                    roundTripMs = roundTripMs <= 0f ? sample : Mathf.Lerp(roundTripMs, sample, 0.2f);
+            }
             buffer.Add(snapshot);
         }
 
