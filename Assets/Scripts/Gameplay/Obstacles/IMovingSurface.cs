@@ -8,7 +8,7 @@ namespace ChessFight.Gameplay
     //
     // Both answers describe the physics step ABOUT TO RUN, not the one that just
     // finished, so it does not matter whether the character or the surface runs
-    // its FixedUpdate first. Every Obstacle is one.
+    // its FixedUpdate first. Every KinematicObstacle is one.
     public interface IMovingSurface
     {
         // Velocity of the surface at a world point this step, m/s.

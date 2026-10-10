@@ -6,7 +6,7 @@ using UnityEngine.Events;
 namespace ChessFight.ProtectKing
 {
     public enum AirVentState { Idle, Warning, Blowing }
-    public sealed class AirVent : MonoBehaviour
+    public sealed class AirVent : Obstacle
     {
         public ObstacleContext context;
         public BoxCollider WindTrigger;
@@ -53,7 +53,7 @@ namespace ChessFight.ProtectKing
             if (clock < previousClock || (context != null && !context.Running)) visited.Clear();
             previousClock = clock;
             if (context != null && !context.Running) { State = AirVentState.Idle; Visuals(false, false); return; }
-            var next = Evaluate(ObstacleContext.PeriodicTime(ObstacleClock.Now,StartDelay,CycleDuration,Repeat));
+            var next = Evaluate(ObstacleContext.PeriodicTime(SharedTime,StartDelay,CycleDuration,Repeat));
             if (next != State)
             {
                 if (State == AirVentState.Blowing) OnStopped.Invoke();

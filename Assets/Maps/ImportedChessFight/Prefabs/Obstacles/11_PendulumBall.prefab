@@ -1107,6 +1107,7 @@ MonoBehaviour:
   KnockbackForce: 14
   UpwardForce: 3
   Active: 1
+  hitCooldown: 0.5
 --- !u!114 &92999565669273896
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1122,9 +1123,6 @@ MonoBehaviour:
   motion: {fileID: 0}
   pendulum: {fileID: 871924836754015072}
   context: {fileID: 6733247506631082933}
-  strength: 9
-  lift: 2
-  hitCooldown: 0.5
 --- !u!1 &6779102981693848681
 GameObject:
   m_ObjectHideFlags: 0

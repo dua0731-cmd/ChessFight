@@ -99,7 +99,7 @@ namespace ChessFight.Gameplay
             for (int i = 0; i < count; i++)
             {
                 var rb = nearby[i].attachedRigidbody;
-                if (rb == null || !rb.TryGetComponent(out Obstacle obstacle)) continue;
+                if (rb == null || !rb.TryGetComponent(out KinematicObstacle obstacle)) continue;
                 Vector3 hit = obstacle.VelocityAt(center);
                 hit.y = 0f;
                 if (hit.sqrMagnitude < .25f) continue;

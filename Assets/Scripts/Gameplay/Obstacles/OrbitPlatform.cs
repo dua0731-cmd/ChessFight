@@ -10,7 +10,7 @@ namespace ChessFight.Gameplay
     //
     // Like every Obstacle its pose is a pure function of the shared clock (G2), and
     // characters ride it through IMovingSurface.
-    public sealed class OrbitPlatform : Obstacle
+    public sealed class OrbitPlatform : KinematicObstacle
     {
         [SerializeField] float radius = 8f;
         [Tooltip("Seconds for one full turn. Negative turns the other way.")]

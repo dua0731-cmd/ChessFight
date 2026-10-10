@@ -7,9 +7,9 @@ namespace ChessFight.ProtectKing
 {
     public enum FloorPistonState { Idle, Warning, Rising, Hold, Falling }
 
-    public sealed class FloorPiston : MonoBehaviour
+    public sealed class FloorPiston : Obstacle
     {
-        float RuntimeTime => SampleTime(ObstacleClock.Now);
+        float RuntimeTime => SampleTime(SharedTime);
         float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,CycleDuration,Repeat);
         public ObstacleContext context;
         public Rigidbody Piston;

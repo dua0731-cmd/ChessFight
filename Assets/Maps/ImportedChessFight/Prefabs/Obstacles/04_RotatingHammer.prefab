@@ -729,18 +729,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 8257466875824488008}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: bb4bfc8d08c4da7ca155c9059489de32, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
-  kind: 1
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 0, z: 1}
-  distance: 0
-  period: 5
   phase: 0
   degreesPerSecond: 70
-  shove: 0
-  useLocalTranslationAxes: 1
-  match: {fileID: 0}
+  strength: 12
+  lift: 2
+  hitCooldown: 0.35
 --- !u!114 &3922950247404281011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -755,9 +752,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleImpact
   motion: {fileID: 6770812882725443425}
   context: {fileID: 8447855997140447259}
-  strength: 12
-  lift: 2
-  hitCooldown: 0.35
 --- !u!1 &8748156021746747878
 GameObject:
   m_ObjectHideFlags: 0

@@ -7,9 +7,9 @@ namespace ChessFight.ProtectKing
     public enum FoldingBridgeState { Open, Warning, Folding, Closed, Unfolding }
 
     // Two kinematic panels reuse ImportedObstacleActor's existing moving-support handling.
-    public sealed class FoldingBridge : MonoBehaviour
+    public sealed class FoldingBridge : Obstacle
     {
-        float RuntimeTime => SampleTime(ObstacleClock.Now);
+        float RuntimeTime => SampleTime(SharedTime);
         float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,CycleDuration,Repeat);
         public ObstacleContext context;
         public Rigidbody LeftPivot;

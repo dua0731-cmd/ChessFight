@@ -4560,23 +4560,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 6825614911585855478}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95a701b0b60f44843a1f6cd7bf152907, type: 3}
+  m_Script: {fileID: 11500000, guid: 6cde39eab023394ba2f61a8b4e5e1e95, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleSurface
-  kind: 0
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.SpinningDisc
   context: {fileID: 5646808804411990042}
   rotationSpeed: 45
-  jumpHeight: 10
-  forwardSpeed: 8
-  direction: {x: 0, y: 0, z: 1}
-  conveyorSpeed: 3
-  launchCooldown: 0.7
   rotors:
   - {fileID: 3886350071908459439}
   - {fileID: 7949982060734359067}
   - {fileID: 5105911132895000167}
-  beltMarkers: []
-  beltLength: 6
 --- !u!1 &6888917130062736830
 GameObject:
   m_ObjectHideFlags: 0

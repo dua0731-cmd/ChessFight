@@ -6097,18 +6097,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7990089334329873116}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95a701b0b60f44843a1f6cd7bf152907, type: 3}
+  m_Script: {fileID: 11500000, guid: 178b12e9e878830b49e9786fe9252a6c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleSurface
-  kind: 2
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ConveyorChessboard
   context: {fileID: 7552624901312276449}
-  rotationSpeed: 45
-  jumpHeight: 10
-  forwardSpeed: 8
   direction: {x: 0, y: 0, z: -1}
   conveyorSpeed: 3
-  launchCooldown: 0.7
-  rotors: []
   beltMarkers:
   - {fileID: 2979173044912652436}
   - {fileID: 5527751223071830228}

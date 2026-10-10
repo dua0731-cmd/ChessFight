@@ -250,20 +250,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 259932722572005815}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95a701b0b60f44843a1f6cd7bf152907, type: 3}
+  m_Script: {fileID: 11500000, guid: b37e20d9eed4e06d230873bb51fb46f5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleSurface
-  kind: 1
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.JumpPad
   context: {fileID: 6096463002768647617}
-  rotationSpeed: 45
   jumpHeight: 10
   forwardSpeed: 8
-  direction: {x: 0, y: 0, z: 1}
-  conveyorSpeed: 3
   launchCooldown: 0.7
-  rotors: []
-  beltMarkers: []
-  beltLength: 6
 --- !u!1 &865715575391625356
 GameObject:
   m_ObjectHideFlags: 0

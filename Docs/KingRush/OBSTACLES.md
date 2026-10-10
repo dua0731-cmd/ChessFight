@@ -21,7 +21,9 @@ angle = speed * ObstacleClock.Now;    // ✅ 모든 PC가 같은 장면을 본�
 - 경기 중: `NetworkRuntime`이 공유 시계(Steam 서버 시간 + 로컬 소수부)로 바꾼다. **장애물 패킷을 한 번도 보내지 않고** 모든 PC가 같은 위치를 본다.
 - 래그돌 랩의 `SpinningBar`는 누적 방식이라 쓰지 않는다.
 
-## 2. 기반 클래스 `Obstacle`
+## 2. 공통 `Obstacle`와 이동 기반 `KinematicObstacle`
+
+R70: `Obstacle`은 모든 시험장 장애물의 공통 조상이다. Rigidbody 이동 구현은 `KinematicObstacle : Obstacle`로 옮겼다. 표면/발사 장치와 15종별 설정 구조는 [OBSTACLE_CLASSES](OBSTACLE_CLASSES.md)를 본다.
 
 - `protected abstract void Evaluate(double time, out Vector3 position, out Quaternion rotation)` 하나만 구현한다.
 - `StartPosition`, `StartRotation`: 배치된 원래 자세.
@@ -45,7 +47,7 @@ using UnityEngine;
 namespace ChessFight.Gameplay
 {
     // 위아래로 튀어나왔다 들어가는 기둥
-    public sealed class PopUpPillar : Obstacle
+    public sealed class PopUpPillar : KinematicObstacle
     {
         [SerializeField] float height = 2f;
         [SerializeField] float period = 4f;
@@ -67,7 +69,7 @@ namespace ChessFight.Gameplay
 
 ## 5. 제작 체크
 
-- [ ] `Obstacle` 상속, `Evaluate`가 시간의 순수 함수
+- [ ] kinematic 이동은 `KinematicObstacle` 상속, `Evaluate`가 시간의 순수 함수
 - [ ] 프리팹은 `Assets/Prefabs/Obstacles/`
 - [ ] 오프라인 플레이테스트로 통과 가능
 - [ ] 기획서 `Docs/KingRush/Obstacles/이름.md`
@@ -76,4 +78,4 @@ namespace ChessFight.Gameplay
 
 ## 6. 별도 프로젝트에서 가져온 장애물 (2026-10-05, R65)
 
-`Assets/Maps/ImportedChessFight/Prefabs/Obstacles`의 19개 프리팹과 `Scripts/Gameplay/ImportedObstacles` 어댑터는 기존 3종을 교체하지 않는다. 원본 Inspector/GUID 참조를 보존하기 위해 원본 클래스 이름을 유지하며 기존 `Obstacle` 상속으로 통째로 바꾸지 않았다. 주기적 위치는 같은 `ObstacleClock`, 탑승은 `IMovingSurface`, 피격/발사는 `IHitReceiver`/`ILaunchable`을 사용한다. 무게·접근·붕괴 같은 상태형 장애물은 오프라인 전용이며 온라인 호스트/상태 전달은 아직 연결하지 않았다. 목록과 테스트는 [MAP_IMPORT.md](MAP_IMPORT.md).
+`Assets/Maps/ImportedChessFight/Prefabs/Obstacles`의 19개 프리팹과 `Scripts/Gameplay/ImportedObstacles` 어댑터는 기존 3종을 교체하지 않는다. R70에서 시험장 15종을 `Obstacle`의 전용 자식 클래스로 정리했다. `ObstacleSurface`/`ObstacleMotion`은 추상 공통 부모이며 수치는 각 자식이 갖는다. 프리팹·기존 맵의 스크립트 연결도 이전했다. [클래스/설정표](OBSTACLE_CLASSES.md). 주기적 위치는 같은 `ObstacleClock`, 탑승은 `IMovingSurface`, 피격/발사는 `IHitReceiver`/`ILaunchable`을 사용한다. 무게·접근·붕괴 같은 상태형 장애물은 오프라인 전용이며 온라인 호스트/상태 전달은 아직 연결하지 않았다. 목록과 테스트는 [MAP_IMPORT.md](MAP_IMPORT.md).

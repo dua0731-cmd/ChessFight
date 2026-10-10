@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ChessFight.Gameplay
 {
-    public sealed class KingRushSkyMotion : Obstacle
+    public sealed class KingRushSkyMotion : KinematicObstacle
     {
         public bool hand;
         public float offset;

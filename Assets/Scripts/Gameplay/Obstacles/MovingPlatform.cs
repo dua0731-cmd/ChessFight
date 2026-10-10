@@ -15,7 +15,7 @@ namespace ChessFight.Gameplay
     //
     // Keep rampTime at speed / 6 or more. The rider is only held down by gravity,
     // so a lift that stops going up harder than 9.81 m/s^2 throws it off the top.
-    public sealed class MovingPlatform : Obstacle
+    public sealed class MovingPlatform : KinematicObstacle
     {
         [Tooltip("Local offset of the far end. Zero for a platform that only spins.")]
         [SerializeField] Vector3 travel = new Vector3(0f, 12f, 0f);

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ChessFight.Gameplay
 {
     // Slides back and forth along a local offset: sliding walls, pistons, lifts.
-    public sealed class Oscillator : Obstacle
+    public sealed class Oscillator : KinematicObstacle
     {
         [Tooltip("Local offset reached at each end of the swing.")]
         [SerializeField] Vector3 travel = new Vector3(5f, 0f, 0f);

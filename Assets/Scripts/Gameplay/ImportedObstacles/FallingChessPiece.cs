@@ -4,9 +4,9 @@ using ChessFight.Gameplay;
 
 namespace ChessFight.ProtectKing
 {
-    public sealed class FallingChessPiece : MonoBehaviour
+    public sealed class FallingChessPiece : Obstacle
     {
-        float RuntimeTime => SampleTime(ObstacleClock.Now);
+        float RuntimeTime => SampleTime(SharedTime);
         float SampleTime(double t) => ObstacleContext.PeriodicTime(t,0,Period,true);
         public ObstacleContext context;
         public Transform piece;

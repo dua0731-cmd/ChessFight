@@ -4,9 +4,9 @@ using ChessFight.Gameplay;
 namespace ChessFight.ProtectKing
 {
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class PendulumSwing : MonoBehaviour
+    public sealed class PendulumSwing : Obstacle
     {
-        float RuntimeTime => SampleTime(ObstacleClock.Now);
+        float RuntimeTime => SampleTime(SharedTime);
         float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,2 * (Mathf.Max(.3f,SwingDuration)+Mathf.Max(0,PauseAtEnds)),true);
         public ObstacleContext context;
         public Transform Ball;
@@ -17,6 +17,8 @@ namespace ChessFight.ProtectKing
         [Min(0)] public float PauseAtEnds = .2f;
         [Min(0)] public float KnockbackForce = 14;
         [Min(0)] public float UpwardForce = 3;
+        [SerializeField, Min(.05f)] float hitCooldown = .35f;
+        public float HitCooldown => hitCooldown;
         public bool Active = true;
         public float Angle { get; private set; }
         public Vector3 BallVelocity { get; private set; }

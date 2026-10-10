@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R70(사용자, 10-10): 시험장 15종 클래스 분리.** 공통 `Obstacle` → 표면/이동 공통 부모 → 장애물별 전용 클래스. 모든 물리 수치는 해당 자식 Inspector에서 조절. 기존 `Obstacle`의 이동 구현은 `KinematicObstacle`로 옮김. 프리팹9개·기존 맵 장치29개 연결 이전, 구조7·Core83·세션39·7개 런타임 컴파일 통과. **Unity import/Play 재확인 대기**. [구조와 설정 위치](Docs/KingRush/OBSTACLE_CLASSES.md).
+
 > **R69(사용자, 10-10): 원판 운반·점프 높이 조절.** 의도적 외향 속도 제거, 접지 시 원형 변위·점프 후 접선 관성. Inspector `Rotation Speed`(45°/초), `Jump Height`(10 m). 원판에만 적용하는 `ISurfaceTransport` 경로 추가. Core83·세션39·7개 런타임 컴파일 통과, **Unity/PhysX 재확인 대기**. [조절 방법](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md).
 
 > **R68(사용자, 10-10): 래그돌 장애물 시험장 15종.** `main`에 `Assets/Scenes/ObstacleRagdollTest.unity` 추가. **ChessFight → Obstacles → Open Ragdoll Test (15 Obstacles)** → Play. 기존 래그돌·이식 장애물 15종, Tab 선택 메뉴, `[`·`]` 이전/다음, R/낙사 시 현재 시험대 복귀. [실행 안내](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md). Core 83·세션 39·7개 런타임 어셈블리 컴파일·씬 정적 참조 검사 통과. **Unity import/Play·PhysX·사용자 미확인**. 다음은 15종 직접 플레이 확인이며 공통 물리·기존 씬은 유지.
@@ -72,6 +74,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **15종 클래스 분리(R70)** | 공통 Obstacle와 장애물별 Inspector, 기존 프리팹/맵 연결 이전. 자동 검사 통과·Unity 재확인 대기 |
 | **원판·점프 패드(R69)** | 원형 운반·접선 관성, Inspector 속도/높이 조절 구현. Unity 재확인 대기 |
 | **래그돌 장애물 시험장(R68)** | 새 독립 씬에서 장애물 15종·기존 래그돌·선택 메뉴·현재 시험대 복귀 구현. Linux 검사 통과, Unity 직접 확인 대기 |
 | **`main` 병합(10-06, R65)** | `main` = `JY-kingrush`(`f3b5cc8`) + `a54b89e`(맵 이식, 원본 `487f62b`) + `104b18c`(방장 장애물 시각, 원본 `JY-lobby` `27e052c`) + `deabde0`(Linux 검사 유지) + 문서. Core 83·세션 39·7개 어셈블리 Roslyn 컴파일(2021.3 참조 DLL) 통과. **Unity·두 PC 미확인** |
@@ -102,6 +105,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **장애물별 클래스/설정(R70)** | 15종 전용 클래스 구현, Unity 재확인 대기 | [구조](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **원판 운반·높이 조절(R69)** | 코드·컴파일, Unity/PhysX 재확인 대기 | [조절](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **15종 래그돌 장애물 시험장(R68)** | 씬·코드·정적 검사·컴파일, Unity 미확인 | [실행](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **킹 러쉬 연결 코스 R54~R56, 능력 시험장R52/R53** | 장난감/상자→성벽/시소→왕의 계단/왕좌 결승, 승격 집결10초·자동 합류. R54 일반 피드백 수신, **R55/R56 사용자 미확인**. 기존 조작/튜닝·다른 모드/로비 보존 | [R56](Docs/KingRush/FINAL_COURSE.md), [R55](Docs/KingRush/CASTLE_COURSE.md), [능력 시험장](Docs/KingRush/README.md) |
@@ -132,6 +136,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R70:** 시험장 15종 Inspector와 동작, 체스 시계 문/바늘, 기존 이식 맵과 kinematic 발판을 Unity에서 확인한다.
 
 **R69:** 원판 중앙/외곽 30초 정지, 속도 0/45/-45, 점프 이탈·재착지, 점프 패드 높이 2/5/10 m를 Unity에서 확인한다.
 
@@ -199,7 +205,7 @@
 4. **폴더 하나 = 어셈블리 하나.** `Game`·`Gameplay`는 Steam을 참조하지 않는다. `Core`는 Unity도 참조하지 않는다. → [Architecture/STRUCTURE](Docs/Architecture/STRUCTURE.md)
 5. **Steam 초기화·종료 소유자는 `NetworkRuntime` 하나다.** SteamManager를 따로 추가하지 않는다.
 6. **HUD에는 기본 테마가 없다.** ScrollView·Dropdown 같은 복합 컨트롤은 보이지 않는다. 평범한 VisualElement만 쓴다.
-7. **장애물 위치·회전은 `ObstacleClock` 시간의 순수 함수로만 계산한다(스스로 움직이는 kinematic 물체는 `Obstacle`을 상속, 테스트 스크립트가 검사. 플레이어 상태로 움직이는 것은 `StateDrivenMover:` 주석을 달고 오프라인 전용).** 프레임마다 누적하지 않는다. 온라인 래그돌 참가자는 방장이 스냅샷에 실은 장애물 시각을 쓴다(R51).
+7. **장애물 위치·회전은 `ObstacleClock` 시간의 순수 함수로만 계산한다(스스로 움직이는 kinematic 물체는 `KinematicObstacle : Obstacle`을 상속(R70, 이식 장치는 `ObstacleMotion : Obstacle`), 테스트 스크립트가 검사. 플레이어 상태로 움직이는 것은 `StateDrivenMover:` 주석을 달고 오프라인 전용).** 프레임마다 누적하지 않는다. 온라인 래그돌 참가자는 방장이 스냅샷에 실은 장애물 시각을 쓴다(R51).
 8. **클라이언트는 입력만 보낸다.** 좌표를 권위로 받지 않는다. 파티는 같은 팀에 통째로 예약한다.
 9. **네트워크 비호환 변경을 하면 `SteamSession.Protocol`을 올린다.** 패킷 구조를 바꾸면 `MotionProtocol` magic도 올린다.
 10. **검증 표기는 정직하게 한다.** 사용자가 Unity나 Steam에서 직접 본 것만 VALIDATION에 '성공'으로 적는다. 코드 작성과 테스트 통과는 검증이 아니다.

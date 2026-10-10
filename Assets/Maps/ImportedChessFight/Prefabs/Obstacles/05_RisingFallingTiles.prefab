@@ -71,18 +71,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 279237178702591936}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 20c003e8ea2e0594ea0a8df191673994, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
-  kind: 0
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 3
   period: 6
   phase: 0
-  degreesPerSecond: 60
-  shove: 0
   useLocalTranslationAxes: 1
-  match: {fileID: 0}
 --- !u!1 &985059668005996932
 GameObject:
   m_ObjectHideFlags: 0
@@ -266,18 +262,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1096587746087018266}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 20c003e8ea2e0594ea0a8df191673994, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
-  kind: 0
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 3
   period: 6
   phase: 0.5
-  degreesPerSecond: 60
-  shove: 0
   useLocalTranslationAxes: 1
-  match: {fileID: 0}
 --- !u!1 &1230537047522706613
 GameObject:
   m_ObjectHideFlags: 0
@@ -573,18 +565,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 2037785869136917459}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 20c003e8ea2e0594ea0a8df191673994, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
-  kind: 0
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 3
   period: 6
   phase: 0.5
-  degreesPerSecond: 60
-  shove: 0
   useLocalTranslationAxes: 1
-  match: {fileID: 0}
 --- !u!1 &2296574602347217726
 GameObject:
   m_ObjectHideFlags: 0
@@ -1517,18 +1505,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 7674505023258654306}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 20c003e8ea2e0594ea0a8df191673994, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
-  kind: 0
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 3
   period: 6
   phase: 0
-  degreesPerSecond: 60
-  shove: 0
   useLocalTranslationAxes: 1
-  match: {fileID: 0}
 --- !u!1 &8006030178723606348
 GameObject:
   m_ObjectHideFlags: 0

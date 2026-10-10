@@ -165,18 +165,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 808435602819505509}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 19474c653b89ea57b52ff353235104b5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
-  kind: 2
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.SlidingWall
   axis: {x: -1, y: 0, z: 0}
   distance: 3.5
   period: 4.5
   phase: 0.5
-  degreesPerSecond: 60
-  shove: 0
   useLocalTranslationAxes: 1
-  match: {fileID: 0}
+  strength: 5
+  lift: 2
+  hitCooldown: 0.35
 --- !u!114 &8924635940316572943
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -191,9 +190,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleImpact
   motion: {fileID: 6393339409196698477}
   context: {fileID: 7293664468798195724}
-  strength: 5
-  lift: 2
-  hitCooldown: 0.35
 --- !u!1 &1743181024716649542
 GameObject:
   m_ObjectHideFlags: 0
@@ -1210,18 +1206,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 7629949864629348209}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 19474c653b89ea57b52ff353235104b5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
-  kind: 2
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.SlidingWall
   axis: {x: 1, y: -0, z: -0}
   distance: 3.5
   period: 4.5
   phase: 0
-  degreesPerSecond: 60
-  shove: 0
   useLocalTranslationAxes: 1
-  match: {fileID: 0}
+  strength: 5
+  lift: 2
+  hitCooldown: 0.35
 --- !u!114 &4385321100690828156
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1236,9 +1231,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleImpact
   motion: {fileID: 7346142102219170158}
   context: {fileID: 7293664468798195724}
-  strength: 5
-  lift: 2
-  hitCooldown: 0.35
 --- !u!1 &8096220980227934881
 GameObject:
   m_ObjectHideFlags: 0

@@ -169,18 +169,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1199778065954966502}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 4d227dc479dd0742c22b5e24fd0026b6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
-  kind: 0
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ReciprocatingPusher
   axis: {x: 1, y: 0, z: 0}
   distance: 4.5
   period: 4
   phase: 0
-  degreesPerSecond: 60
-  shove: 0
   useLocalTranslationAxes: 1
-  match: {fileID: 0}
+  strength: 9
+  lift: 2
+  hitCooldown: 0.35
 --- !u!114 &5950497603297204363
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -195,9 +194,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleImpact
   motion: {fileID: 2914293873290552574}
   context: {fileID: 6359667729889063676}
-  strength: 9
-  lift: 2
-  hitCooldown: 0.35
 --- !u!1 &1567340513470229103
 GameObject:
   m_ObjectHideFlags: 0

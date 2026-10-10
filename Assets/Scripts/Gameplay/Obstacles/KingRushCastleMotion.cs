@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ChessFight.Gameplay
 {
-    public sealed class KingRushCastleMotion : Obstacle
+    public sealed class KingRushCastleMotion : KinematicObstacle
     {
         public enum Kind { Ferry, SlidingWall, Drawbridge, Portcullis, Mace }
         public Kind kind;

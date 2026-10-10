@@ -4,7 +4,7 @@ namespace ChessFight.Gameplay
 {
     // Swings to and fro about a local axis. Put this on the pivot at the top and
     // hang the arm and head underneath as children: they swing with it.
-    public sealed class Pendulum : Obstacle
+    public sealed class Pendulum : KinematicObstacle
     {
         [SerializeField] Vector3 axis = Vector3.forward;
         [Tooltip("Degrees either side of the authored pose.")]

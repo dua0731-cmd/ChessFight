@@ -1,3 +1,4 @@
+using ChessFight.Gameplay;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,7 +8,7 @@ namespace ChessFight.ProtectKing
     // StateDrivenMover: tilted by the weight on its deck, not by ObstacleClock. Offline only
     // until the host sends its angle (Docs/KingRush/MAP_IMPORT.md).
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class WeightedBridge : MonoBehaviour
+    public sealed class WeightedBridge : Obstacle
     {
         public ObstacleContext context;
         public Vector3 deckSize = new Vector3(6, .4f, 12);

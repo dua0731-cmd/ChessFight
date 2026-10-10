@@ -4,7 +4,7 @@ using UnityEngine;
 namespace ChessFight.Gameplay
 {
     // Every pose, including off-course return travel, is a pure clock function.
-    public sealed class KingRushToyMotion : Obstacle
+    public sealed class KingRushToyMotion : KinematicObstacle
     {
         public enum Motion { Orbit, RollingHead, ClockButton }
         public Motion motion;
