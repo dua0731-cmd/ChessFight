@@ -192,7 +192,7 @@ namespace ChessFight.RagdollLab
         // A client's press (F, or the click that fires / calls off an aim) until the host's state of its piece changes.
         float pressAt = -1f;
         SkillStage pressStage, lastOwnStage;
-        bool pressLocked;
+        bool pressLocked, pressAccept;
         readonly float[] reactions = new float[10];
         int reactionCount, reactionNext;
         // A client's skill moments: drawn how far from their own pose, and how long after they arrived.
@@ -240,6 +240,8 @@ namespace ChessFight.RagdollLab
         public int SkillPresses { get; private set; }
         public int SkillStarts { get; private set; }
         public int ReactionsLost { get; private set; }
+        /// <summary>F pressed as the yes to a rook's swap (Queen of the Hill): not a skill of this piece's own.</summary>
+        public int SwapAccepts { get; private set; }
         /// <summary>A client's skill moments: how far from their pose they were drawn (ms, average of the last 20; should
         /// be near 0) and how long they waited after arriving (about the playback delay).</summary>
         public float MomentLateMs => Average(momentLate, momentCount);
@@ -613,12 +615,16 @@ namespace ChessFight.RagdollLab
                 // the right click that calls off an aim). Measured before the guess below draws over my piece.
                 bool aiming = me.HostStage == SkillStage.Windup && !me.HostAimLocked;
                 bool timed = local.skill || (aiming && (local.shove || (local.grab && !grabWasDown)));
-                if (local.skill) SkillPresses++;
+                // Asked to swap by a rook (Queen of the Hill): F is the yes, timed until the host takes the ask away.
+                bool accepting = local.skill && me.CastleAsker != null;
+                if (accepting) SwapAccepts++;
+                else if (local.skill) SkillPresses++;
                 if (timed && pressAt < 0f)
                 {
                     pressAt = Time.realtimeSinceStartup;
                     pressStage = me.HostStage;
                     pressLocked = me.HostAimLocked;
+                    pressAccept = accepting;
                 }
                 // D-S3: my own press and aim drawn at once, for about a round trip, until the host's state says the same.
                 float hold = Mathf.Clamp(roundTripMs / 1000f + 0.25f, 0.25f, 0.8f);
@@ -831,7 +837,9 @@ namespace ChessFight.RagdollLab
             var stage = me.HostStage;
             if (lastOwnStage == SkillStage.None && stage != SkillStage.None) SkillStarts++;
             lastOwnStage = stage;
-            if (pressAt < 0f || (stage == pressStage && me.HostAimLocked == pressLocked)) return;
+            if (pressAt < 0f) return;
+            bool answered = pressAccept ? me.CastleAsker == null : stage != pressStage || me.HostAimLocked != pressLocked;
+            if (!answered) return;
             LastReactionMs = (Time.realtimeSinceStartup - pressAt) * 1000f;
             Push(reactions, ref reactionNext, ref reactionCount, LastReactionMs);
             pressAt = -1f;
@@ -1325,7 +1333,7 @@ namespace ChessFight.RagdollLab
             pressAt = LastReactionMs = -1f;
             lastOwnStage = SkillStage.None;
             reactionCount = reactionNext = momentCount = momentNext = 0;
-            MomentsStale = SkillPresses = SkillStarts = ReactionsLost = 0;
+            MomentsStale = SkillPresses = SkillStarts = ReactionsLost = SwapAccepts = 0;
             snapshotBytesLast = 0;
             peerStats.Clear();
             RagdollPawn.NetStats.Clear();

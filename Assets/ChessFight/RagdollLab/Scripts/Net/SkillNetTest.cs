@@ -124,13 +124,14 @@ namespace ChessFight.RagdollLab
             sb.Append($"누름 → 방장 반응: 마지막 {Ms(link.LastReactionMs, 200, 400)} · 평균 {Ms(avg, 200, 400)}");
             sb.Append(link.ReactionsLost > 0 ? $" · 반응 없음 {link.ReactionsLost}번\n" : "\n");
             if (avg >= 0f) sb.Append($"내 몸이 움직여 보이기까지 약 {avg + (float)link.PlaybackDelayMs:0} ms (반응 + 재생 지연)\n");
-            sb.Append($"스킬 키 {link.SkillPresses}번 → 방장에서 시작 {link.SkillStarts}번\n");
+            sb.Append($"스킬 키 {link.SkillPresses}번 → 방장에서 시작 {link.SkillStarts}번");
+            sb.Append(link.SwapAccepts > 0 ? $" · 교대 수락 {link.SwapAccepts}번\n" : "\n");
             sb.Append($"미리 그림 {RagdollPawn.NetStats.Guesses}번 · 방장과 맞음 {RagdollPawn.NetStats.GuessesMatched} · 되돌림 {RagdollPawn.NetStats.GuessesDropped}\n");
 
             sb.Append("\n<b>스킬 신호</b> (맞음 · 폭발 · 착지)\n");
             float late = link.MomentLateMs, wait = link.MomentWaitMs;
             sb.Append($"받아 그림 {link.EventsPlayed}개");
-            if (late > -0.5f || link.EventsPlayed > 0) sb.Append($" · 몸과 차이 {Ms(late, 20, 60)} · 받고 기다림 {wait:0} ms");
+            if (late > -0.5f || link.EventsPlayed > 0) sb.Append($" · 몸과 차이 {Ms(late, 20, 60)} · 받은 뒤 그리기까지 {wait:0} ms");
             sb.Append("\n");
             sb.Append($"중복 거름 {link.MomentsRepeated} · 놓침 {Count(link.MomentsMissed)} · 늦어서 버림 {Count(link.MomentsStale)} · 대기 {link.MomentsQueued}\n");
             sb.Append($"히트스톱(내 화면만) {RagdollPawn.NetStats.HitStops}번" + (RagdollPawn.NetStats.HitStops > 0 ? $" · 마지막 {RagdollPawn.NetStats.LastHitStopFrames}장면" : ""));
