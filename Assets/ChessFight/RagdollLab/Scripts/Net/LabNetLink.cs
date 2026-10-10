@@ -1102,7 +1102,8 @@ namespace ChessFight.RagdollLab
         {
             if (bytes == null || bytes.Length == 0 || bytes.Length > RagdollNetProtocol.MaxBytes) return;
             receivedBytes += bytes.Length;
-            if (lagIn.Profile.Active)
+            // A test's own commands are not part of the link under test: never delayed or lost by F12.
+            if (lagIn.Profile.Active && RagdollNetProtocol.TypeOf(bytes) != RagdollNetProtocol.TypeDev)
             {
                 lagIn.Push(new Packet { peer = sender, bytes = bytes }, Time.realtimeSinceStartupAsDouble);
                 return;
@@ -1194,7 +1195,7 @@ namespace ChessFight.RagdollLab
             if (!matchActive || !NetIsHost) return;
             byte[] bytes = RagdollNetProtocol.Dev(NetMatch, command);
             foreach (ulong id in NetRoster.Keys)
-                if (id != NetSelf) Send(id, bytes);
+                if (id != NetSelf && id != 0) NetSend(id, bytes);   // straight out: a test command is not part of the link under test
         }
 
         /// <summary>
