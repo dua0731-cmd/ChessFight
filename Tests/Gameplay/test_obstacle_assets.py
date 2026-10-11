@@ -190,6 +190,30 @@ class ObstacleAssets(unittest.TestCase):
                 if b.startswith("--- !u!54"):
                     self.assertNotEqual(fields(b)["m_GameObject"], "{fileID: " + root_id + "}")
 
+    def test_weighted_bridge_root_controls_and_tile_geometry_references(self):
+        prefab, = PREFABS.glob("07_*.prefab")
+        records = blocks(prefab.read_text())
+        component, = [b for b in records.values() if "::ChessFight.ProtectKing.WeightedBridge\n" in b]
+        values = fields(component)
+        root_id, root = next((k, b) for k, b in records.items() if "  m_Name: 07_WeightedBridge\n" in b)
+        self.assertEqual(values["m_GameObject"], "{fileID: " + root_id + "}")
+        self.assertEqual((int(values["tilesX"]), int(values["tilesZ"])), (4, 8))
+        self.assertEqual(float(values["tileSize"]), 1.5)
+        self.assertNotIn("deckSize", values)
+        self.assertEqual(float(values["maximumTilt"]), 24)
+        for reference in ("deckBody", "solidDeck", "tileMesh", "leftStripe", "rightStripe", "entryRamp", "exitRamp"):
+            target = re.search(r"fileID: (\d+)", values[reference])[1]
+            self.assertIn(target, records)
+        deck_id = re.search(r"fileID: (\d+)", values["deckBody"])[1]
+        self.assertNotEqual(fields(records[deck_id])["m_GameObject"], values["m_GameObject"])
+        tile_id = re.search(r"fileID: (\d+)", values["tileMesh"])[1]
+        tile_go = fields(records[tile_id])["m_GameObject"]
+        renderer, = [b for b in records.values() if b.startswith("--- !u!23") and fields(b)["m_GameObject"] == tile_go]
+        self.assertEqual(len(re.findall(r"^  - \{fileID: 2100000, guid:", renderer, re.M)), 2)
+        source = (CODE / "WeightedBridge.cs").read_text()
+        for field in ("tilesX", "tilesZ", "maximumTilt"):
+            self.assertRegex(source, r"\[SerializeField,[^\]]+\]\s+(?:int|float) " + field)
+
     def test_clock_gates_and_rotating_hands_keep_separate_motion_types(self):
         prefab, = PREFABS.glob("09_*.prefab")
         records = list(blocks(prefab.read_text()).values())

@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R76(사용자, 10-11): 07 무게 다리 설정.** 루트 Maximum Tilt(24°, 0~80°), Tiles X/Z(4×8), Tile Size(1.5 m). 칸 추가로 격자·충돌·탑승 범위 확장, 테두리·경사로 갱신, 자식 판만 기울기. 구조14·Core83·세션39·7개 런타임 컴파일 통과, Unity 대기.
+
 > **R75(사용자, 10-11): 03·04 루트 Inspector 수정.** ReciprocatingPusher/RotatingHammer를 프리팹 루트에 옮김. 기존 자식 Rigidbody를 숨겨진 참조로 구동하여 받침대는 고정. 루트 속도/밀치기 SerializeField, 구조13·Core83·세션39·7개 런타임 컴파일 통과, Unity 대기. 커밋 메시지는 사용자 요청에 따라 한국어.
 
 > **R74(사용자, 10-11): 03·04 속도/밀치기.** Moving pusher: Move Speed(최고 m/s)/Push Force, Hammer pivot: Rotation Speed(°/초)/Push Force. 기존 기본 왕복·역회전·힘 보존, 프리팹/맵 이전. 구조12·Core83·세션39·7개 런타임 컴파일 통과, Unity 대기.
@@ -84,6 +86,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **07 무게 다리 설정(R76)** | 루트 최대 기울기·타일 수, 격자/충돌 동기화. Unity 대기 |
 | **03·04 루트 Inspector(R75)** | 루트에서 SerializeField 조절, 자식 물체만 구동. Unity 대기 |
 | **점프 패드 공중 조작(R73)** | 수직 발사·관성·입력 제동, Inspector 속도/가속도. Unity 대기 |
 | **전체 장애물 설계 통일(R71)** | 이식18종·일반 장치·킹러시까지 확장, 기존 프리팹/생성기 이전. Unity 재확인 대기 |
@@ -118,6 +121,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **07 무게 다리 설정(R76)** | 타일 수로 확장·최대 기울기 조절, 자동 검사 통과·Unity 대기 | [설정](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **03·04 루트 Inspector(R75)** | 루트에서 이동/회전 속도·Push Force 조절 | [설정](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **점프 패드 공중 조작(R73)** | 전용 발사 계약·공중 가속/제동, 자동 검사 통과·Unity 대기 | [설정](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **기존 장애물 전체 정리(R71)** | 전용 클래스·공통 부모·보조 기능 분리, 자동 검사 통과·Unity 대기 | [구조](Docs/KingRush/OBSTACLE_CLASSES.md) |
@@ -152,6 +156,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R76:** 07 루트 최대 기울기 0/10/24/40, X/Z 칸 추가·충돌·탑승·경사로·Undo/재열기를 Unity에서 확인한다.
 
 **R75:** 03/04 루트를 선택해 설정값 표시·저장·Play 반영과 받침대 고정을 확인한다.
 

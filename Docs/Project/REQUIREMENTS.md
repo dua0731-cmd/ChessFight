@@ -112,6 +112,7 @@
 | R73 | 10-11 | 점프 패드 자동 전방 속도 대신 진입 관성 유지·방향키로 공중 조작 | Forward Speed 제거, Air Move Speed/Acceleration. 전용 발사 계약으로 래그돌 공중 제동·가속, 무입력 관성·착지 복귀. 기존 고정 발사 유지. 구조11·Core83·세션39·7개 런타임 컴파일 통과, Unity 점검2개 추가(미실행) | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
 | R74 | 10-11 | 03 이동 속도·밀치기, 04 회전 속도·밀치기 Inspector 조절 | Move Speed·Rotation Speed·Push Force SerializeField. 기존 주기→최고 속도와 필드명 이전, 프리팹/이식 맵 기본 움직임 유지. 구조12·Core83·세션39·7개 런타임 컴파일 통과 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
 | R75 | 10-11 | 03·04가 Hierarchy에서 조절되지 않음, SerializeField로 표시. main 푸시 수정 내용은 한국어 | 전용 설정 컴포넌트를 루트로 이전, 자식 Rigidbody만 구동·받침대 고정. 루트 속도/밀치기 Inspector. 한국어 커밋 규칙 기록. 구조13·Core83·세션39·7개 런타임 컴파일 통과 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
+| R76 | 10-11 | 07 무게 다리 최대 하강 정도, 체스판 타일 수 단위 크기 조절 | 루트 Maximum Tilt·Tiles X/Z·Tile Size SerializeField. 칸 추가로 메시/충돌/탑승 범위 확대, 테두리·경사로 갱신. 기본 4×8칸·6×12 m 유지. 구조14·Core83·세션39·7개 런타임 컴파일 통과 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity Editor/PhysX·사용자 미확인) |
 
 ## 2. 요구사항에서 뽑은 지켜야 할 조건
 

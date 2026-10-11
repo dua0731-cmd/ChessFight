@@ -96,3 +96,16 @@ R75부터 Hierarchy에서 **03_ReciprocatingPusher**, **04_RotatingHammer**의 �
 이전에는 SerializeField가 자식 `Moving pusher`/`Hammer pivot` 컴포넌트에 있어 루트를 선택하면 보이지 않았다. 두 전용 컴포넌트를 프리팹 루트로 옮기고 실제 자식 Rigidbody를 숨겨진 `movingBody` 참조로 지정했다. 공통 ObstacleMotion은 지정한 Rigidbody의 시작 위치·회전을 사용하고 해당 물체에 IMovingSurface를 연결한다. 받침대와 루트에는 Rigidbody를 추가하지 않는다. 다른 직접 구동 장치는 자체 RequireComponent를 유지한다. 피격 릴레이는 동일한 컴포넌트 ID를 계속 참조한다.
 
 03 루트 Inspector: Move Speed·Push Force·Lift·Hit Cooldown. 04 루트 Inspector: Rotation Speed·Push Force·Lift·Hit Cooldown. 모두 private SerializeField이며 Play를 끈 상태에서 편집/저장한다. 구조13·Core83·세션39·7개 런타임 컴파일 통과, Unity/PhysX는 미확인.
+
+## R76 — 무게 다리 최대 기울기·타일 수 (2026-10-11)
+
+Hierarchy의 **07_WeightedBridge 루트**를 선택한다. Weighted Bridge의 private SerializeField를 편집한다.
+
+- **Maximum Tilt**: 양쪽 최대 기울기 각도(0~80°), 기본 24°. 0이면 수평 유지. 무게에 따른 목표 각도를 제한하며 값을 줄이면 현재 각도도 제한한다. 실제 가장자리 하강 거리는 폭/2 × sin(각도)로 폭에 따라 달라진다(기본 폭 6 m, 24°에서 약 1.22 m).
+- **Tiles X**: 기울어지는 방향의 타일 수, 기본 4. **Tiles Z**: 다리 길이 방향 타일 수, 기본 8. 각 1~64칸.
+- **Tile Size**: 한 칸의 변 길이, 기본 1.5 m. X 4→5면 폭 6→7.5 m, Z 8→9면 길이 12→13.5 m. 칸을 추가하며 기존 칸 크기는 늘리지 않는다. 루트 Transform Scale은 추가 배율이다.
+- **Deck Thickness**: 판 두께, 기본 0.4 m. **Degrees Per Player**: 무게당 기울기, 기본 12°, 최대 제한과 별개다.
+
+설정 컴포넌트는 루트, 물리는 기존 자식 Tilting deck Rigidbody를 사용한다. 체스 무늬는 두 재질의 격자 메시로 생성하고, 기존 타일 ID는 보존하되 장식 31개는 비활성화했다. 격자와 Solid deck의 단위 BoxCollider 크기·탑승 검사 범위·테두리·진입 경사로를 같은 치수로 갱신한다. 중심 받침대는 고정이다. ExecuteAlways로 편집 상태에서 표시를 갱신하지만 Awake/FixedUpdate의 물리 이동은 Play에서만 수행한다. OnValidate에서는 값 제한과 갱신 예약만 하며 메시 갱신은 Update에서 실행한다. 생성 메시를 해제해 반복 편집 시 누적하지 않는다.
+
+자동 구조14·Core83·모의 세션39·7개 런타임 컴파일 통과. Unity Editor/PhysX는 실행하지 않았으며 편집 미리보기·Undo/재열기·충돌·탑승 실기는 미확인이다.
