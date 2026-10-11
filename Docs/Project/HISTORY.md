@@ -7,7 +7,11 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-11 | R120 | (`skill-network-test`) 소드 파이트 비숍 소리: `CastBishop`·`BishopFire`·`BishopPin`을 원소 에너지 재료로 교체, `BishopSet` 새로(레벨 0.7), 문서(Skills/SWORD_FIGHT §R120, REQUIREMENTS R120, HANDOFF, HISTORY) |
+| (이 커밋) | 10-11 | R121 | (`skill-network-test`) 소드 파이트 온라인 문서: Network/SKILLS_ONLINE §15(정한 것·보내는 것·그리는 법·AI 로컬 시험·한계·빌드), VALIDATION R121 5명 시험 표, Skills/SWORD_FIGHT §R121, REQUIREMENTS R121, HANDOFF, HISTORY |
+| `897fc47` | 10-11 | R121 | (`skill-network-test`) 로컬 시험 참가자의 카메라 방향을 개발 명령 뒤 3초 동안 입력에 실음(창이 앞에 없어 방향이 지워져 퀸이 옛 방향으로 돌진하던 것, 시험 명령에만 해당) |
+| `136d476` | 10-11 | R121 | (`skill-network-test`) 로컬 시험 보고에 PC마다 재생한 소리 횟수, 개발 명령 `classic`(F6) |
+| `a9b370e` | 10-11 | R121 | (`skill-network-test`) 소드 파이트 스킬 시험 씬 온라인: `LabNetLink` partial + `LabNetLink.Sword.cs`(방장 무작위 팀 3:2·F5, 입력 `TypeSwordInput`, 소드 상태 `TypeSword`·Core `SwordWire`, 칼·스킬·바닥 붕괴·순간 신호 `ModeSwordFight`, 방장 이전), `SwordFightSkills.Net.cs`(상태 받기·미리 그림·내 조준), 온라인 멈춤·박자(슬로 없음), 시험장 키·기물 요청·도우미 끔, `SkillNetTest` 소드 파이트 줄, Steam·로컬 시험 부팅, 프로토콜 v18(`CFR9`), Core 시험 2개(101) |
+| `ae19d2c` | 10-11 | R120 | (`skill-network-test`) 소드 파이트 비숍 소리: `CastBishop`·`BishopFire`·`BishopPin`을 원소 에너지 재료로 교체, `BishopSet` 새로(레벨 0.7), 문서(Skills/SWORD_FIGHT §R120, REQUIREMENTS R120, HANDOFF, HISTORY) |
 | `453b2d0` | 10-11 | R119 | (`skill-network-test`) 스킬 소리: 세 재생기 맞춤 크기 −15 → −21 dB, 쇳소리 칼 소리 9개(퀸 오브 더 힐 5 · 소드 파이트 4) 부드러운 소리로 교체, 문서(Skills/QUEEN_HILL·SWORD_FIGHT·SOUND §R119, VALIDATION, REQUIREMENTS, HANDOFF, HISTORY) |
 | `0efc7f7` | 10-11 | R118 | (`skill-network-test`) 시험 화면에 방장 성능 수치(프레임·물리 단계·방장 고르기 점수·핑·다음 방장, 방장 바뀜 메시지), 누름 → 반응은 스킬을 시작할 수 있는 누름만(나이트 두 번째 F는 그 동작까지), 퀸 오브 더 힐 미리 그림은 땅에서만, 나이트 머리 찍기의 마지막 0.1초 재겨냥 없앰·속도 상한(움직이는 상대가 멀리 날아가던 것), 문서(HOST_AUTHORITY §8.7, VALIDATION R118, REQUIREMENTS, HANDOFF) |
 | `00d78a5`·`fb7dd12` | 10-10 | R117 | (`skill-network-test`) 문서만: 방장 판정 방식 점검(좋은 점·우려·다른 방식 비교·지연·올림 계산), 다듬을 것 P1~P9, 3인 시험 순서·수치 읽는 법·보고 양식([Network/HOST_AUTHORITY](../Network/HOST_AUTHORITY.md)), VALIDATION R117 표, Network/README 목록·방장 이전 줄 바로잡음, REQUIREMENTS R117, HANDOFF |
