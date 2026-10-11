@@ -530,7 +530,26 @@ namespace ChessFight.Network
         /// <summary>Waiting one snapshot more for the losses.</summary>
         public bool Lossy { get { return lossy; } }
 
+        /// <summary>R123: drawn more than this behind its target, the playback clock jumps to it instead of catching up at
+        /// 1.15x. A host that stopped for a second (its window dragged, a hitch) left its clients that far behind for about
+        /// seven times as long: a 1 s stop drew 2.2 s late and still 1.3 s late 6 s on (loopback, 10-11). Well over the
+        /// delay's own range (70..160 ms), so a wobbly link never jumps.</summary>
+        public const double JumpBehindMs = 250;
+
         public PlaybackDelay() { Milliseconds = MinMs; }
+
+        /// <summary>The playback clock one frame of <paramref name="frameMs"/> on: towards <paramref name="targetMs"/> (the
+        /// newest snapshot less the delay) a little faster or slower, at once when it fell more than
+        /// <see cref="JumpBehindMs"/> behind (<paramref name="jumped"/>), never past <paramref name="newestMs"/>.</summary>
+        public static double Advance(double playbackMs, double targetMs, double newestMs, double frameMs, out double rate, out bool jumped)
+        {
+            jumped = targetMs - playbackMs > JumpBehindMs;
+            if (jumped) playbackMs = targetMs;
+            double behind = targetMs - playbackMs;
+            rate = behind > 60d ? 1.15d : behind > 12d ? 1.04d : behind < -60d ? 0.9d : behind < -12d ? 0.96d : 1d;
+            playbackMs += frameMs * rate;
+            return playbackMs > newestMs ? newestMs : playbackMs;
+        }
 
         /// <summary>A snapshot stamped <paramref name="hostMs"/> by the host arrived at <paramref name="localMs"/>, after
         /// <paramref name="lostBefore"/> lost ones (a gap in the snapshot numbers).</summary>

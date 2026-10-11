@@ -238,6 +238,8 @@ namespace ChessFight.RagdollLab
         public int MomentsMissed => inbox.Missed;
         public int MomentsStale { get; private set; }
         public int MomentsLogged => eventLog.Count;
+        /// <summary>R123: times a client's drawing jumped to catch up (more than 250 ms behind: the host stopped a moment).</summary>
+        public int PlaybackJumps { get; private set; }
         /// <summary>A client's last press until the host's state of its piece changed (ms; -1 = none yet), the average of
         /// the last ten, and presses the host never acted on within 1.5 s (on cooldown, knocked down).</summary>
         public float LastReactionMs { get; private set; } = -1f;
@@ -765,17 +767,21 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Render the buffer a little behind the newest snapshot (the measured jitter buffer), speeding up or
-        /// slowing down the playback clock instead of syncing clocks with the host.</summary>
+        /// slowing down the playback clock instead of syncing clocks with the host; far behind (the host stopped a
+        /// moment), it jumps (R123, PlaybackDelay.Advance).</summary>
         void Playback()
         {
             if (buffer.Count == 0) return;
             var newest = buffer[buffer.Count - 1];
             double target = newest.hostTimeMs - delay.Milliseconds;
             if (playbackMs <= 0d) playbackMs = target;
-            double behind = target - playbackMs;
-            double rate = behind > 60d ? 1.15d : behind > 12d ? 1.04d : behind < -60d ? 0.9d : behind < -12d ? 0.96d : 1d;
-            playbackMs += Time.unscaledDeltaTime * 1000d * rate;
-            if (playbackMs > newest.hostTimeMs) playbackMs = newest.hostTimeMs;
+            double before = playbackMs;
+            playbackMs = PlaybackDelay.Advance(playbackMs, target, newest.hostTimeMs, Time.unscaledDeltaTime * 1000d, out double rate, out bool jumped);
+            if (jumped)
+            {
+                PlaybackJumps++;
+                if (Trace) Log($"playback jumped {target - before:0} ms ahead (the host stopped a moment, or its snapshots were held up)");
+            }
 
             RagdollSnapshot from = buffer[0], to = buffer[0];
             for (int i = 0; i < buffer.Count - 1; i++)
@@ -1437,7 +1443,7 @@ namespace ChessFight.RagdollLab
             pressAt = LastReactionMs = -1f;
             lastOwnStage = SkillStage.None;
             reactionCount = reactionNext = momentCount = momentNext = 0;
-            MomentsStale = SkillPresses = SkillStarts = ReactionsLost = SwapAccepts = 0;
+            MomentsStale = SkillPresses = SkillStarts = ReactionsLost = SwapAccepts = PlaybackJumps = 0;
             snapshotBytesLast = 0;
             peerStats.Clear();
             RagdollPawn.NetStats.Clear();
@@ -1585,7 +1591,7 @@ namespace ChessFight.RagdollLab
         public string Report()
         {
             var sb = new System.Text.StringBuilder();
-            sb.Append($"report: {(NetIsHost ? "host" : "client")}, playback delay {delay.Milliseconds:0} ms (jitter {delay.JitterMs:0}, snapshots lost {delay.LossShare * 100:0.0}%{(delay.Lossy ? ", one more for the losses" : "")}), round trip {roundTripMs:0} ms, lag {lagOut.Profile}");
+            sb.Append($"report: {(NetIsHost ? "host" : "client")}, playback delay {delay.Milliseconds:0} ms (jitter {delay.JitterMs:0}, snapshots lost {delay.LossShare * 100:0.0}%{(delay.Lossy ? ", one more for the losses" : "")}, jumps {PlaybackJumps}), round trip {roundTripMs:0} ms, lag {lagOut.Profile}");
             sb.Append($", moments played {eventsPlayed}, confirmed up to {inbox.Acked}, queued {eventQueue.Count}, wires {SkillTripwire.LiveWires.Count} (copies {remoteWires.Count})");
             var barricades = SkillBarricade.All;
             for (int i = 0; i < barricades.Count; i++)

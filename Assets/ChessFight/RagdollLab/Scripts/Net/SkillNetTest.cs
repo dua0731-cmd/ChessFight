@@ -137,7 +137,9 @@ namespace ChessFight.RagdollLab
             sb.Append($"<b>네트워크 · 참가자 ({link.CarrierName}) · {link.PlayerCount}명</b>\n");
             SwordLines(link);
             sb.Append($"왕복 지연 {Ms(link.RoundTripMs, 150, 300)}   재생 지연 {link.PlaybackDelayMs:0} ms");
-            sb.Append($" (흔들림 {link.JitterMs:0} ms · 손실 {Pct(link.LossShare)}{(link.LossWait ? " · 한 장 더" : "")})\n");
+            sb.Append($" (흔들림 {link.JitterMs:0} ms · 손실 {Pct(link.LossShare)}{(link.LossWait ? " · 한 장 더" : "")}");
+            // R123: the drawing jumped to catch up (the host stopped a moment).
+            sb.Append(link.PlaybackJumps > 0 ? $" · 따라잡기 {link.PlaybackJumps}번)\n" : ")\n");
             sb.Append($"스냅샷 {Rate(link.SnapshotsPerSecond, 28, 24)}개/초 · {link.SnapshotBytes} 바이트 · 버퍼 {link.BufferedSnapshots}장\n");
             sb.Append($"보내기 {link.SentPerSecond / 1024f:0.0} KB/s · 받기 {link.ReceivedPerSecond / 1024f:0.0} KB/s · 스킬 {link.SkillBytesPerSecond / 1024f:0.0} KB/s\n");
             sb.Append($"스킬 패킷 {link.SkillPacketsPerSecond}개/초 · 평균 {link.SkillPacketAverage} · 최대 {link.SkillPacketLargest} 바이트\n");

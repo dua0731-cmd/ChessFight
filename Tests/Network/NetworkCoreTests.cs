@@ -564,6 +564,32 @@ public static class NetworkCoreTests
                 var light=new PlaybackDelay(); var r3=new Random(5); uint t3=0; int lost3=0, on3=0;
                 for(int i=0;i<30*120;i++) { t3+=33; if(r3.Next(33)==0) { lost3++; continue; } light.Arrived(1000+t3,t3,lost3); lost3=0; if(light.Lossy) on3++; }
                 Check(on3==0,"3% loss never waits: "+on3); });
+            Test("Playback clock (R123): a host that stops a second is caught up at once, a wobbly link only drifts", () => {
+                double rate; bool jumped;
+                double p=PlaybackDelay.Advance(1000,1000,1070,10,out rate,out jumped);
+                Check(!jumped&&rate==1&&Math.Abs(p-1010)<1e-9,"on target: one frame on at 1x");
+                p=PlaybackDelay.Advance(900,1000,1070,10,out rate,out jumped);
+                Check(!jumped&&rate==1.15&&Math.Abs(p-911.5)<1e-9,"100 ms behind: 1.15x, no jump");
+                p=PlaybackDelay.Advance(750,1000,1070,10,out rate,out jumped);
+                Check(!jumped&&rate==1.15,"exactly 250 ms behind: still catching up");
+                p=PlaybackDelay.Advance(0,1000,1070,10,out rate,out jumped);
+                Check(jumped&&rate==1&&Math.Abs(p-1010)<1e-9,"1 s behind: jumps to the target");
+                p=PlaybackDelay.Advance(1065,1000,1070,10,out rate,out jumped);
+                Check(!jumped&&rate==0.9&&p==1070,"ahead: slower, never past the newest");
+                // A 30 Hz stream at 60 fps, the host stops 1 s: drawn about the delay behind again within a frame of the
+                // next snapshot (it used to take about 7 s at 1.15x).
+                double play=0, newest=0, worst=0; int jumps=0;
+                for(int f=0;f<600;f++) {
+                    double now=f*1000.0/60;
+                    bool stopped=now>=4000&&now<5000;
+                    if(!stopped) newest=Math.Floor(now/33.3)*33.3;
+                    double target=newest-70;
+                    if(play<=0) play=target;
+                    play=PlaybackDelay.Advance(play,target,newest,1000.0/60,out rate,out jumped);
+                    if(jumped) jumps++;
+                    if(now>5100) worst=Math.Max(worst,target-play); }
+                Check(jumps==1,"one jump: "+jumps);
+                Check(worst<60,"behind at most "+worst.ToString("0")+" ms from 0.1 s after the stop"); });
             Test("Queen of the Hill: the first team to ring a bell opens its section, 20 s for that team", () => {
                 var q=new QueenHillRules(8);
                 Check(q.TryOpen(3,QueenHillRules.Black,100)&&!q.TryOpen(3,QueenHillRules.White,101),"first ring wins");
