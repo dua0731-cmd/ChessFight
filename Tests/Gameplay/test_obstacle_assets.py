@@ -171,6 +171,25 @@ class ObstacleAssets(unittest.TestCase):
                             float(fields(b)["rotationSpeed"]) < 0]
         self.assertTrue(reversed_hammers, "Existing reverse rotation must survive migration")
 
+    def test_pusher_hammer_controls_live_on_root_and_move_only_child_body(self):
+        for number in (3, 4):
+            prefab, = PREFABS.glob(f"{number:02}_*.prefab")
+            records = blocks(prefab.read_text())
+            component_id, component = next((k, b) for k, b in records.items()
+                if "::ChessFight.ProtectKing." + TYPES[number - 1] + "\n" in b)
+            root_id, root = next((k, b) for k, b in records.items()
+                if "  m_Name: " + prefab.stem + "\n" in b)
+            self.assertEqual(fields(component)["m_GameObject"], "{fileID: " + root_id + "}")
+            self.assertIn("component: {fileID: " + component_id + "}", root)
+            body_id = re.search(r"fileID: (\d+)", fields(component)["movingBody"])[1]
+            child_id = re.search(r"fileID: (\d+)", fields(records[body_id])["m_GameObject"])[1]
+            self.assertNotEqual(child_id, root_id)
+            self.assertIn("component: {fileID: " + body_id + "}", records[child_id])
+            self.assertNotIn("component: {fileID: " + component_id + "}", records[child_id])
+            for b in records.values():
+                if b.startswith("--- !u!54"):
+                    self.assertNotEqual(fields(b)["m_GameObject"], "{fileID: " + root_id + "}")
+
     def test_clock_gates_and_rotating_hands_keep_separate_motion_types(self):
         prefab, = PREFABS.glob("09_*.prefab")
         records = list(blocks(prefab.read_text()).values())

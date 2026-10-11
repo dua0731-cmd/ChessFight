@@ -5,6 +5,9 @@ namespace ChessFight.ProtectKing
 {
     public sealed class ReciprocatingPusher : ObstacleMotion
     {
+        [SerializeField, HideInInspector] Rigidbody movingBody;
+        protected override Rigidbody MotionBody => movingBody != null ? movingBody : base.MotionBody;
+
         [SerializeField] Vector3 axis = Vector3.right;
         [SerializeField, Tooltip("Offset in cycles.")] float phase;
         [SerializeField, Min(0f), Tooltip("Distance from the centre to either end of the travel (metres). Everyone uses the same smooth sine motion.")] float distance = 4f;

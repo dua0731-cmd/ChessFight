@@ -3,6 +3,7 @@ using UnityEngine;
 namespace ChessFight.ProtectKing
 {
     // A rotating visual part of the chess clock, separate from its sliding gates.
+    [RequireComponent(typeof(Rigidbody))]
     public sealed class ChessClockHand : ObstacleMotion
     {
         [SerializeField] Vector3 axis = Vector3.forward;

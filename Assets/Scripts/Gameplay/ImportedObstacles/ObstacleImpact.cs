@@ -14,7 +14,7 @@ namespace ChessFight.ProtectKing
         void Awake()
         {
             if (context == null) context = GetComponentInParent<ObstacleContext>();
-            if (motion == null) motion = GetComponent<ObstacleMotion>();
+            if (motion == null) motion = GetComponentInParent<ObstacleMotion>();
         }
         void OnTriggerStay(Collider other)
         {

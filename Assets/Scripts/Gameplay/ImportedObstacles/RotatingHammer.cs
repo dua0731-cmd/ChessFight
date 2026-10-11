@@ -5,6 +5,9 @@ namespace ChessFight.ProtectKing
 {
     public sealed class RotatingHammer : ObstacleMotion
     {
+        [SerializeField, HideInInspector] Rigidbody movingBody;
+        protected override Rigidbody MotionBody => movingBody != null ? movingBody : base.MotionBody;
+
         [SerializeField] Vector3 axis = Vector3.right;
         [SerializeField, Tooltip("Offset in cycles.")] float phase;
         [SerializeField, FormerlySerializedAs("degreesPerSecond"), Tooltip("Degrees per second. Zero stops rotation; a negative value reverses it.")] float rotationSpeed = 60f;

@@ -46,8 +46,8 @@ classDiagram
 |---|---|---|---|
 | 01 | 원판 / `SpinningDisc` | `01_SpinningDisc` | Diameter(m), Rotation Direction, Rotation Speed(°/초) |
 | 02 | 점프 패드 / `JumpPad` | `02_JumpPad` | Jump Height(m), Air Move Speed(m/s), Air Acceleration(m/s²), Launch Cooldown |
-| 03 | 왕복 밀대 / `ReciprocatingPusher` | `Moving pusher` | Move Speed(m/s, 최고 속도), Push Force, Lift, Hit Cooldown, Axis, Distance, Phase |
-| 04 | 회전 해머 / `RotatingHammer` | `Hammer pivot` | Rotation Speed(°/초), Push Force, Lift, Hit Cooldown, Axis, Phase |
+| 03 | 왕복 밀대 / `ReciprocatingPusher` | `03_ReciprocatingPusher` 루트 | Move Speed(m/s, 최고 속도), Push Force, Lift, Hit Cooldown, Axis, Distance, Phase |
+| 04 | 회전 해머 / `RotatingHammer` | `04_RotatingHammer` 루트 | Rotation Speed(°/초), Push Force, Lift, Hit Cooldown, Axis, Phase |
 | 05 | 승강 타일 / `RisingFallingTiles` | `Lift tile …` 각각 | Axis, Distance, Period, Phase |
 | 06 | 슬라이딩 벽 / `SlidingWall` | `Left/Right sliding wall` | Axis, Distance, Period, Phase, Strength, Lift, Hit Cooldown |
 | 07 | 하중 다리 / `WeightedBridge` | `Tilting deck` | Deck Size, Degrees Per Player, Maximum Tilt 등 |
@@ -119,10 +119,16 @@ Inspector: Jump Height 10 m, Air Move Speed 6 m/s, Air Acceleration 12 m/s², La
 
 ## R74 — 03·04 속도와 밀치기 설정 (2026-10-11)
 
-Hierarchy에서 **03_ReciprocatingPusher → Moving pusher**, **04_RotatingHammer → Hammer pivot**를 선택한다. Inspector의 각 전용 컴포넌트에 private SerializeField로 다음 값이 표시된다.
+R75부터 Hierarchy에서 **03_ReciprocatingPusher**, **04_RotatingHammer**의 최상위 루트를 선택한다. Inspector의 각 전용 컴포넌트에 private SerializeField로 다음 값이 표시된다.
 
 - 03 **Move Speed**: 왕복 중 최고 이동 속도(m/s). 끝에서는 감속하고 중앙에서 가장 빠른 기존 사인 왕복이다. 기본 약 7.07 m/s로 이전 Distance 4.5 m·Period 4초를 유지한다. Distance는 중심에서 끝까지의 거리이며 왕복 시간은 2π × Distance / Move Speed다. 0은 이동 정지(Phase 위치).
 - 04 **Rotation Speed**: 회전 속도(°/초), 기본 70. 0 정지, 음수 역회전.
 - 두 장애물 **Push Force**: 충돌 시 추가 수평 속도(m/s), 03 기본 9, 04 기본 12. 커질수록 세게 밀며 이동/회전 속도와 독립이다. **Lift**는 위로 튀는 정도, **Hit Cooldown**은 연속 타격 간격이다. Push Force 0에서도 Lift와 콜라이더 물리 반응은 남는다.
 
 기존 프리팹·이식 맵 직렬화 값은 새 이름으로 이전했다. 기존 이름은 FormerlySerializedAs로 보존하며 예전 Period는 숨겨진 legacyPeriod에서 Awake/OnValidate 때 속도로 환산한다. 이동은 ObstacleClock 시간의 순수 함수로 유지한다. 구조12·Core83·세션39·7개 런타임 컴파일 통과. Unity/PhysX 실기는 미확인.
+
+## R75 — 루트에서 03·04 조절 (2026-10-11)
+
+이전에는 SerializeField가 자식 `Moving pusher`/`Hammer pivot` 컴포넌트에 있어 루트를 선택하면 보이지 않았다. 두 전용 컴포넌트를 프리팹 루트로 옮기고 실제 자식 Rigidbody를 숨겨진 `movingBody` 참조로 지정했다. 공통 ObstacleMotion은 지정한 Rigidbody의 시작 위치·회전을 사용하고 해당 물체에 IMovingSurface를 연결한다. 받침대와 루트에는 Rigidbody를 추가하지 않는다. 다른 직접 구동 장치는 자체 RequireComponent를 유지한다. 피격 릴레이는 동일한 컴포넌트 ID를 계속 참조한다.
+
+03 루트 Inspector: Move Speed·Push Force·Lift·Hit Cooldown. 04 루트 Inspector: Rotation Speed·Push Force·Lift·Hit Cooldown. 모두 private SerializeField이며 Play를 끈 상태에서 편집/저장한다. 구조13·Core83·세션39·7개 런타임 컴파일 통과, Unity/PhysX는 미확인.

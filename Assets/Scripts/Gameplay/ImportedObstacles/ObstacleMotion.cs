@@ -5,7 +5,6 @@ namespace ChessFight.ProtectKing
 {
     // Shared Rigidbody transport; parameters belong to concrete obstacle classes.
     // Reads ObstacleClock through SharedTime, independent of execution order.
-    [RequireComponent(typeof(Rigidbody))]
     public abstract class ObstacleMotion : Obstacle
     {
         Rigidbody body;
@@ -16,14 +15,18 @@ namespace ChessFight.ProtectKing
         public virtual float UpwardForce => 0f;
         public virtual float HitCooldown => .35f;
 
+        protected virtual Rigidbody MotionBody => GetComponent<Rigidbody>();
+
         protected virtual void Awake()
         {
-            body = GetComponent<Rigidbody>(); body.isKinematic = true; body.useGravity = false;
+            body = MotionBody;
+            if (body == null) body = gameObject.AddComponent<Rigidbody>();
+            body.isKinematic = true; body.useGravity = false;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-            Origin = transform.position; RestRotation = transform.rotation;
+            Origin = body.position; RestRotation = body.rotation;
             ImportedMovingSurface.Bind(body, Evaluate, () => isActiveAndEnabled);
-            surface = GetComponent<ImportedMovingSurface>();
+            surface = body.GetComponent<ImportedMovingSurface>();
             var first = Evaluate(SharedTime); body.position = first.position; body.rotation = first.rotation;
         }
         protected abstract Pose Evaluate(double time);

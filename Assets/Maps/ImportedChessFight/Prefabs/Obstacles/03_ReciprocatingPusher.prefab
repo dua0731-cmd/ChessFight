@@ -100,7 +100,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2707062179253479980}
   - component: {fileID: 4104836038870671458}
-  - component: {fileID: 2914293873290552574}
   - component: {fileID: 5950497603297204363}
   m_Layer: 0
   m_Name: Moving pusher
@@ -166,12 +165,13 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1199778065954966502}
+  m_GameObject: {fileID: 5585912580619467645}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d227dc479dd0742c22b5e24fd0026b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ReciprocatingPusher
+  movingBody: {fileID: 4104836038870671458}
   axis: {x: 1, y: 0, z: 0}
   distance: 4.5
   moveSpeed: 7.06858347
@@ -841,6 +841,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7092782920754832483}
   - component: {fileID: 6359667729889063676}
+  - component: {fileID: 2914293873290552574}
   m_Layer: 0
   m_Name: 03_ReciprocatingPusher
   m_TagString: Untagged

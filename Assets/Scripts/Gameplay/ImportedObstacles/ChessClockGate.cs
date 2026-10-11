@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace ChessFight.ProtectKing
 {
+    [RequireComponent(typeof(Rigidbody))]
     public sealed class ChessClockGate : ObstacleMotion
     {
         [SerializeField] Vector3 axis = Vector3.right;

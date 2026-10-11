@@ -414,6 +414,7 @@ GameObject:
   m_Component:
   - component: {fileID: 897816170294672075}
   - component: {fileID: 8447855997140447259}
+  - component: {fileID: 6770812882725443425}
   m_Layer: 0
   m_Name: 04_RotatingHammer
   m_TagString: Untagged
@@ -663,7 +664,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8993217651492846525}
   - component: {fileID: 6952336614390017001}
-  - component: {fileID: 6770812882725443425}
   - component: {fileID: 3922950247404281011}
   m_Layer: 0
   m_Name: Hammer pivot
@@ -726,12 +726,13 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8257466875824488008}
+  m_GameObject: {fileID: 6723604469954276660}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb4bfc8d08c4da7ca155c9059489de32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
+  movingBody: {fileID: 6952336614390017001}
   axis: {x: 0, y: 0, z: 1}
   phase: 0
   rotationSpeed: 70
