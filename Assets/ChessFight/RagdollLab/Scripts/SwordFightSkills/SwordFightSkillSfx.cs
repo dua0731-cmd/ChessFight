@@ -17,6 +17,10 @@ namespace ChessFight.RagdollLab
     /// cut), rook B 시네마틱 (the chunk falling away), bishop E 원소 에너지 (the hands reaching, lifting the ally), knight D
     /// 애니 액션 (started <see cref="Delay"/> into the somersault so its hit is the kick). A sound that leads up to something
     /// that then does not happen (the skill called off or cut, the bishop letting go) fades out at once.
+    /// R120: the bishop's F sounds are in the family of its edge sound (승규 님: "비숍도 잘 어울리는 소리로") — no more heavy
+    /// hum and metal latch: a swirling energy gathering on the cast, a rushing wind streak as the hands shoot out, a gust
+    /// bursting up from the floor ending in a soft deep thump as they grab the ankles; and the ally set down on the edge
+    /// (<see cref="SfFxKind.BishopSet"/>) settles with a soft airy thump.
     ///
     /// One clip per moment in Resources/SwordFightSkillSfx, named after the <see cref="SfFxKind"/>; the cast is per piece
     /// ("Cast" + piece, the knight has none: its leap is its cast). Prepared once when loaded like QueenHillSkillSfx does:
@@ -54,7 +58,7 @@ namespace ChessFight.RagdollLab
             { "KingParry", 0.95f }, { "KingCounterHit", 0.8f }, { "KingWhiff", 0.55f },
             { "QueenThrust", 0.8f }, { "QueenHit", 0.85f }, { "QueenStop", 0.55f },
             { "RookSlam", 0.9f }, { "RookHit", 0.8f }, { "RookBlocked", 0.7f },
-            { "BishopFire", 0.75f }, { "BishopPin", 0.85f },
+            { "BishopFire", 0.75f }, { "BishopPin", 0.85f }, { "BishopSet", 0.7f },
             { "KnightLeap", 0.75f }, { "KnightLand", 0.85f }, { "KnightHit", 0.8f },
             { "Interrupted", 0.55f },
             { "KingStab", 0.9f }, { "QueenMark", 0.9f }, { "RookCollapse", 0.95f }, { "BishopReach", 0.85f }, { "KnightFlip", 0.9f },
