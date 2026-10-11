@@ -18,6 +18,7 @@ namespace ChessFight.RagdollLab
     {
         IEnumerator LaunchChecks()
         {
+            yield return SteeredJumpPad();
             var bed = Bed;
             if (bed == null || bed.Pad == null || bed.Spring == null)
             {
@@ -26,6 +27,29 @@ namespace ChessFight.RagdollLab
             }
             yield return PadLandings(bed);
             yield return SpringLift(bed);
+        }
+
+        IEnumerator SteeredJumpPad()
+        {
+            var pawn = Spawn(QueenHillTestBed.PadCenter + new Vector3(-4f, 0f, -3f), Vector3.right, "steered-pad");
+            yield return Sim(0.6f);
+            pawn.AddVelocity(Vector3.right * 3f);
+            float incoming = Flat(pawn.Hips.linearVelocity).x;
+            pawn.LaunchWithAirControl(14f, 6f, 12f);
+            bool retained = Mathf.Abs(Flat(pawn.Hips.linearVelocity).x - incoming) < 0.05f;
+            yield return Sim(0.25f, () => pawn.SetInput(default));
+            bool coasting = Mathf.Abs(Flat(pawn.Hips.linearVelocity).x - incoming) < 0.7f;
+            yield return Sim(0.8f, () => pawn.SetInput(new PawnInput { move = Vector3.left }));
+            bool reversed = Flat(pawn.Hips.linearVelocity).x < -1f;
+            Report("점프 패드: 수평 관성 유지·입력 없으면 관성·반대 입력으로 제동/역방향",
+                retained && coasting && reversed,
+                $"발사 관성 {retained}, 무입력 관성 {coasting}, 반대 방향 {reversed}, 속도 {pawn.Hips.linearVelocity}");
+            // A later aimed throw must clear the optional steering mode.
+            pawn.Launch(Vector3.forward * 8f + Vector3.up * 14f);
+            yield return Sim(0.2f, () => pawn.SetInput(new PawnInput { move = Vector3.left }));
+            Report("점프 패드 이후 기존 발사대 궤적 유지", Flat(pawn.Hips.linearVelocity).z > 7f &&
+                Mathf.Abs(Flat(pawn.Hips.linearVelocity).x) < 0.5f, $"속도 {pawn.Hips.linearVelocity}");
+            yield return Clear();
         }
 
         struct PadThrowResult

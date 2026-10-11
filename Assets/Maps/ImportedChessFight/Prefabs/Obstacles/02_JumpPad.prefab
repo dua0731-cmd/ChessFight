@@ -255,7 +255,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.JumpPad
   context: {fileID: 6096463002768647617}
   jumpHeight: 10
-  forwardSpeed: 8
+  airMoveSpeed: 6
+  airAcceleration: 12
   launchCooldown: 0.7
 --- !u!1 &865715575391625356
 GameObject:

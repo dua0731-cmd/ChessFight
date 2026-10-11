@@ -121,7 +121,7 @@ class ObstacleAssets(unittest.TestCase):
     def test_surface_inspectors_contain_only_relevant_serialized_fields(self):
         expected = {
             1: {"context", "rotationSpeed", "diameter", "rotationDirection", "geometryRoot", "rotatingSurface"},
-            2: {"context", "jumpHeight", "forwardSpeed", "launchCooldown"},
+            2: {"context", "jumpHeight", "airMoveSpeed", "airAcceleration", "launchCooldown"},
             8: {"context", "direction", "conveyorSpeed", "beltMarkers", "beltLength"},
         }
         for number, keys in expected.items():

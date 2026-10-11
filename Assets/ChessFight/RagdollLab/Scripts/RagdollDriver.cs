@@ -11,7 +11,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IStatusReceiver, IPromotable
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IAirSteerableLaunchable, IStatusReceiver, IPromotable
     {
         RagdollPawn pawn;
 
@@ -46,6 +46,8 @@ namespace ChessFight.RagdollLab
         public Vector3 LaunchFrom => Pawn.Hips.position - Vector3.up * Pawn.standHeight;
 
         public void Launch(Vector3 velocity) => Pawn.Launch(velocity);
+        public void LaunchWithAirControl(float upwardSpeed, float maxMoveSpeed, float acceleration) =>
+            Pawn.LaunchWithAirControl(upwardSpeed, maxMoveSpeed, acceleration);
 
         // Status effects (M13).
         public bool Squash(float seconds, float immunity) => Pawn.Squash(seconds, immunity);

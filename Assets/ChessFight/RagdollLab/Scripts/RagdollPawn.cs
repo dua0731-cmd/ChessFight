@@ -345,6 +345,8 @@ namespace ChessFight.RagdollLab
         Vector3 surfaceVel;                  // the ground's velocity under the hips this step, all three axes
         Vector3 carryVel;                    // horizontal velocity of the last thing stood on, kept through the air
         float carryRise;                     // and its vertical speed, so a jump off a rising lift is a real jump
+        bool playerSteeredLaunch;
+        float launchAirSpeed, launchAirAcceleration;
         bool launched;                       // thrown by a launch pad: carryVel is the throw, steering is capped
         Collider climbCollider;              // the face being climbed, and the surface that moves it
         IMovingSurface climbSurface;
@@ -541,6 +543,20 @@ namespace ChessFight.RagdollLab
             foreach (var rb in bodies) rb.linearVelocity += dv;
         }
 
+        /// <summary>A vertical jump pad keeps incoming horizontal momentum and allows input steering.</summary>
+        public void LaunchWithAirControl(float upwardSpeed, float maxMoveSpeed, float acceleration)
+        {
+            if (NetworkPuppet) return;
+            Vector3 momentum = Flat(ComVelocity());
+            Launch(momentum + Vector3.up * Mathf.Max(0f, upwardSpeed));
+            playerSteeredLaunch = true;
+            launchAirSpeed = Mathf.Max(0f, maxMoveSpeed);
+            launchAirAcceleration = Mathf.Max(0f, acceleration);
+            // Steering must brake the inherited velocity itself, rather than an immutable carry frame.
+            carryVel = Vector3.zero;
+            anchorVel = momentum;
+        }
+
         /// <summary>
         /// Thrown by a launch pad or a spring lift (Queen of the Hill M7; RagdollDriver forwards
         /// ILaunchable.Launch here). The whole body is SET to this velocity, so every throw flies the same
@@ -553,6 +569,7 @@ namespace ChessFight.RagdollLab
         public void Launch(Vector3 velocity)
         {
             if (NetworkPuppet) return;
+            playerSteeredLaunch = false;
             LetGo(0.3f);
             ReleaseHolders(0.5f);
             heldTimer = struggleTimer = escapeProgress = 0f;
@@ -1031,7 +1048,8 @@ namespace ChessFight.RagdollLab
             if (move.sqrMagnitude > 1f) move.Normalize();
             bool moving = move.sqrMagnitude > 0.0025f;
             wantsMove = moving;
-            float top = TopSpeed;
+            bool steerLaunch = launched && playerSteeredLaunch;
+            float top = steerLaunch ? launchAirSpeed : TopSpeed;
             // A pawn off the ground for a moment without jumping - a bump, a hard stop, a sharp turn -
             // is still running. Keep the hips pulled down to standing height through the coyote
             // window instead of letting the anchor ride up with them: that is what turned every
@@ -1047,6 +1065,9 @@ namespace ChessFight.RagdollLab
                 carryVel = groundFound ? Flat(surfaceVel) : Vector3.zero;
                 carryRise = groundFound ? surfaceVel.y : 0f;
                 launched = false;
+                playerSteeredLaunch = false;
+                steerLaunch = false;
+                top = TopSpeed;
                 // A turntable turns the pawn with it. Only the part about the vertical: a tilting
                 // platform does not tip the pawn over.
                 if (groundSurface != null)
@@ -1083,10 +1104,12 @@ namespace ChessFight.RagdollLab
 
             // Thrown by a launch pad the pawn flies the pad's arc (carryVel is the throw): it may only nudge
             // itself launchSteer m/s off it, so it comes down on the spot the pad aims at.
-            Vector3 targetVel = move * (launched ? Mathf.Min(top, p.launchSteer) : top);   // over the ground
             Vector3 ownAnchor = anchorVel - frame;
+            Vector3 targetVel = steerLaunch && !moving ? ownAnchor
+                : move * (launched && !steerLaunch ? Mathf.Min(top, p.launchSteer) : top);
             upSettle = Mathf.Max(0f, upSettle - dt);
             float accel = (moving ? p.acceleration * RiseFactor() : p.stopDeceleration) * (planted ? 1f : p.airControl);
+            if (steerLaunch) accel = launchAirAcceleration;
             // Push off in steps instead of gliding: thrust peaks as each foot takes weight.
             if (p.stanceThrust > 0f && planted && moving)
             {
@@ -1098,7 +1121,7 @@ namespace ChessFight.RagdollLab
                 accel *= Mathf.Lerp(1f, Mathf.Max(0.3f, push), p.stanceThrust);
             }
             float speedNow = ownAnchor.magnitude;
-            if (speedNow > top + 0.1f && Vector3.Dot(ownAnchor, targetVel) > 0f)
+            if (!steerLaunch && speedNow > top + 0.1f && Vector3.Dot(ownAnchor, targetVel) > 0f)
             {
                 // Momentum from a tumble or a slope: steer toward the input, shed the extra speed slowly.
                 Vector3 dir = Vector3.RotateTowards(ownAnchor / speedNow, targetVel.normalized, p.turnResponsiveness * 0.5f * dt, 0f);
@@ -1114,7 +1137,7 @@ namespace ChessFight.RagdollLab
             if (transport != null && !transport.TransportActive) transport = null;
             if (transport != null)
                 next += Flat(transport.PointDisplacement(anchorPos)) - frame * dt;
-            if (!moving && shoveTimer <= 0f)
+            if (!moving && shoveTimer <= 0f && !steerLaunch)
             {
                 // Idle pawns settle where they are; when shoved or tangled they stay where physics put
                 // them instead of springing back to the old spot.

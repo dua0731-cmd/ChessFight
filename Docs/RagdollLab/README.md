@@ -536,3 +536,11 @@ RagdollLab.exe -batchmode -nographics -ragdollDiag -ragdollLoad -ragdollAutoTest
 6vs6 규모에서도 여유가 크므로 튜닝은 기본값(120 Hz / 24회)에서 진행한다. 찾은 값은 물리 스텝·솔버 설정과 짝이므로, 나중에 설정을 바꾸면 값도 다시 확인해야 한다.
 
 **아직 사람이 두 명이서 직접 해 본 적은 없다.** 명세서 8장의 체감 기준은 2인 플레이테스트로만 판정할 수 있다.
+
+## R73 — 점프 패드 공중 조작 (2026-10-11)
+
+이식 `JumpPad`는 `IAirSteerableLaunchable` 계약으로 수직 발사와 공중 조작 설정을 캐릭터에 전달한다. `RagdollDriver` → `RagdollPawn.LaunchWithAirControl`에서 몸의 수평 관성을 유지하고 발사 수직 속도만 교체한다. 공중 입력은 carry frame과 별도로 현재 수평 속도 자체를 제동·가속한다. 입력이 없으면 목표 속도를 그대로 유지하고 idle anchor 보정을 생략한다. 착지 시 일반 지상 이동으로 복귀한다. 일반 `Launch`는 전용 조작 상태를 해제하므로 접촉/스프링 발사대와 나이트의 기존 고정 궤적은 유지한다.
+
+Inspector: Jump Height 10 m, Air Move Speed 6 m/s, Air Acceleration 12 m/s², Launch Cooldown 0.7 s. 추가 입력 경로는 없으며 기존 이동 입력을 사용한다. 관성은 충돌·물리 반응으로 달라질 수 있다. 조작 계약을 구현하지 않은 캐릭터는 수평 속도를 유지하는 기존 발사로 대체한다.
+
+구조11·Core83·모의 세션39·7개 런타임 어셈블리 컴파일 통과. Unity용 Launch 자동 점검에 관성/제동 및 기존 발사 궤적 복귀 검사 2개를 추가했으나 Unity/PhysX가 없어 실행하지 않았다.

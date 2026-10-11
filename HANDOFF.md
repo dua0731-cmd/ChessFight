@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R73(사용자, 10-11): 점프 패드 공중 조작.** Forward Speed 제거, Air Move Speed(6 m/s)/Air Acceleration(12 m/s²). 수직 발사·진입 관성·반대 키 제동. 전용 계약으로 기존 고정 발사 유지. 구조11·Core83·세션39·7개 런타임 컴파일 통과, Unity용 검사2개 추가(미실행).
+
 > **R72(사용자, 10-11): 원판 배열 제거.** Inspector에 Diameter(8 m), Rotation Direction(시계/반시계), Rotation Speed(45°/초). 단일 회전 축·바닥 포함 크기 변경, 충돌 영역과 운반 방향 일치. 구조11·Core83·세션39·7개 런타임 컴파일 통과. Unity 실기 대기.
 
 > **R71(사용자, 10-10): 기존 장애물 전체 설계 통일.** 이식18종·기존 발판/밧줄/점멸·시소/결승판도 공통 `Obstacle`. 킹러시 장난감3/성벽5/하늘2 전용 클래스, `LaunchPad`는 추상 공통 발사 부모 + `ContactLaunchPad`/`SpringLaunchPad`. 프리팹9개/48컴포넌트와 생성기 이전, 구조10·Core83·세션39·7개 런타임 컴파일 통과. **Unity/PhysX/Editor 생성기 실행 재확인 대기**. [상세](Docs/KingRush/OBSTACLE_CLASSES.md).
@@ -78,6 +80,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **점프 패드 공중 조작(R73)** | 수직 발사·관성·입력 제동, Inspector 속도/가속도. Unity 대기 |
 | **전체 장애물 설계 통일(R71)** | 이식18종·일반 장치·킹러시까지 확장, 기존 프리팹/생성기 이전. Unity 재확인 대기 |
 | **15종 클래스 분리(R70)** | 공통 Obstacle와 장애물별 Inspector, 기존 프리팹/맵 연결 이전. 자동 검사 통과·Unity 재확인 대기 |
 | **원판·점프 패드(R69)** | 원형 운반·접선 관성, Inspector 속도/높이 조절 구현. Unity 재확인 대기 |
@@ -110,6 +113,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **점프 패드 공중 조작(R73)** | 전용 발사 계약·공중 가속/제동, 자동 검사 통과·Unity 대기 | [설정](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **기존 장애물 전체 정리(R71)** | 전용 클래스·공통 부모·보조 기능 분리, 자동 검사 통과·Unity 대기 | [구조](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **장애물별 클래스/설정(R70)** | 15종 전용 클래스 구현, Unity 재확인 대기 | [구조](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **원판 운반·높이 조절(R69)** | 코드·컴파일, Unity/PhysX 재확인 대기 | [조절](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
@@ -142,6 +146,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R73:** 패드 정지/달리기 진입·무입력 관성·반대/대각선 입력·착지 및 기존 발사대/나이트를 Unity에서 확인한다. Launch 자동 점검 2개도 실행한다.
 
 **R72:** 원판 지름 4/8/12 m, 양방향 회전·접지 운반·점프 관성을 Unity에서 확인한다.
 

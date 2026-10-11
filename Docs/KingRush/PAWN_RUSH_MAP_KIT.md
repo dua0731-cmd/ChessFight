@@ -178,7 +178,7 @@
 
 **02 점핑 발판** (`JumpPad`)
 - 3 × 3 m 판이다. 위에 서면 즉시 발사되고, 0.7초 안에는 다시 발사되지 않는다.
-- R69: `Jump Height` 기본 10 m, `Forward Speed` 기본 8 m/s. 현재 중력으로 수직 속도 √(2gh)를 계산한다. 중력 9.81 m/s²에서는 약 14 m/s로 발사하며 같은 높이에 약 23 m 앞에 떨어진다(충돌 없는 탄도 계산값).
+- R73: `Jump Height` 기본 10 m, 수직 속도 √(2gh). `Forward Speed` 제거: 진입 수평 관성 유지, 공중 이동 입력으로 가속·제동. `Air Move Speed` 기본 6 m/s, `Air Acceleration` 기본 12 m/s². 무입력은 관성 유지, 반대 입력은 감속 후 역방향 이동. 착지 위치는 진입 속도와 입력에 따라 달라진다.
 - 낮은 단으로 보낼 때는 Inspector에서 `Jump Height`를 줄인다. 실제 정점은 관절·충돌·물리 시간 간격의 영향을 받으므로 Unity에서 확인한다.
 
 **03 왕복 밀대** (`ReciprocatingPusher` + `ObstacleImpact`)

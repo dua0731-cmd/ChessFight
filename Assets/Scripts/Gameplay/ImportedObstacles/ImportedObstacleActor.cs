@@ -61,6 +61,14 @@ namespace ChessFight.ProtectKing
             if (launcher != null) launcher.Launch(velocity);
             else hits.ApplyHit(velocity - Velocity,0,0,true);
         }
+        public void LaunchWithAirControl(float upwardSpeed, float maxMoveSpeed, float acceleration)
+        {
+            if (!CanReceiveObstacle) return;
+            if (owner.GetComponent<IAirSteerableLaunchable>() is IAirSteerableLaunchable steerable)
+                steerable.LaunchWithAirControl(upwardSpeed, maxMoveSpeed, acceleration);
+            else
+                LaunchFromObstacle(Vector3.ProjectOnPlane(Velocity, Vector3.up) + Vector3.up * upwardSpeed);
+        }
         // Wind is continuous acceleration, not a repeated hit/stagger. Reject
         // puppets via their kinematic body, then push every body part equally.
         public Vector3 Accelerate(Vector3 acceleration, float limit, float dt)

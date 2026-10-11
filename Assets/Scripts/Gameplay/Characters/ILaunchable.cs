@@ -19,4 +19,12 @@ namespace ChessFight.Gameplay
 
         void Launch(Vector3 velocity);
     }
+
+    // Optional player-steered jump: preserve horizontal momentum and replace vertical speed.
+    // Existing aimed launch pads continue to use ILaunchable.Launch.
+    public interface IAirSteerableLaunchable
+    {
+        void LaunchWithAirControl(float upwardSpeed, float maxMoveSpeed, float acceleration);
+    }
+
 }

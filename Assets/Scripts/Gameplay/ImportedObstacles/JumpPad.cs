@@ -7,8 +7,10 @@ namespace ChessFight.ProtectKing
     {
         [SerializeField, Min(0), Tooltip("Target rise in metres above takeoff, using current gravity.")]
         float jumpHeight = 10f;
-        [SerializeField, Tooltip("Forward launch speed in metres per second, independent of jump height.")]
-        float forwardSpeed = 8f;
+        [SerializeField, Min(0f), Tooltip("Maximum horizontal speed requested by movement input while airborne (m/s).")]
+        float airMoveSpeed = 6f;
+        [SerializeField, Min(0f), Tooltip("Horizontal acceleration and braking from movement input (m/s squared). Releasing input keeps momentum.")]
+        float airAcceleration = 12f;
         [SerializeField, Min(.1f)] float launchCooldown = .7f;
         readonly Dictionary<ImportedObstacleActor, float> lastLaunch = new Dictionary<ImportedObstacleActor, float>();
         readonly Collider[] occupants = new Collider[512];
@@ -38,8 +40,7 @@ namespace ChessFight.ProtectKing
             if (lastLaunch.TryGetValue(actor, out float previous) && time >= previous && time - previous < launchCooldown) return;
             lastLaunch[actor] = time;
             float rise = Mathf.Sqrt(2f * Mathf.Max(0f, -Physics.gravity.y) * Mathf.Max(0f, jumpHeight));
-            Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-            actor.LaunchFromObstacle(forward * forwardSpeed + Vector3.up * rise);
+            actor.LaunchWithAirControl(rise, airMoveSpeed, airAcceleration);
         }
         void OnDisable() { lastLaunch.Clear(); }
     }
