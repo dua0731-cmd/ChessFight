@@ -1,0 +1,76 @@
+{
+ "directions": {
+  "A": "기물 그대로",
+  "B": "시네마틱",
+  "C": "나무 장난감",
+  "D": "애니 액션",
+  "E": "원소 에너지"
+ },
+ "skills": [
+  {
+   "id": "king",
+   "name": "킹 · 왕의 귀환",
+   "moment": "떨어지다 칼을 가장자리에 박고 매달림",
+   "dur": 1.2,
+   "prompts": {
+    "A": "Heavy stone crunch as a blade sinks deep into a rock ledge, deep muffled thud and a gravel trickle",
+    "B": "Cinematic impact, a blade driven into rock with a deep dark trailer boom and a short rising whoosh, dry",
+    "C": "Wooden toy sword jammed into a wooden block, sharp wooden knock and a creaky wooden strain, close-mic",
+    "D": "Anime sword stab into stone, sharp metal crack with a fast air slice and a punchy impact, close-mic",
+    "E": "Energy surge as a sword bites into rock, rushing wind burst with a deep rumble, close-mic"
+   }
+  },
+  {
+   "id": "queen",
+   "name": "퀸 · 체크메이트 일섬",
+   "moment": "순식간에 다가가 한 번 베어 날림",
+   "dur": 1.2,
+   "prompts": {
+    "A": "Cartoon quick zip dash and a sharp comedic sword slash ending in a punchy cartoon thwack, close-mic",
+    "B": "Cinematic slash, a sucked-in reverse whoosh then a huge cutting air slash with a deep boom, dry",
+    "C": "Wooden practice sword swung very fast, a whip of air and a hard wooden crack, close-mic",
+    "D": "Anime instant-step slash, a sharp teleport whoosh then a crisp blade slice and a heavy hit",
+    "E": "Energy dash, a rushing wind streak then a powerful air slice burst, close-mic"
+   }
+  },
+  {
+   "id": "rook",
+   "name": "룩 · 성벽 붕괴",
+   "moment": "가장자리 바닥이 금 가다 무너짐",
+   "dur": 1.6,
+   "prompts": {
+    "A": "Stone floor cracking apart then a big stone slab collapsing and falling away, rumbling rock debris",
+    "B": "Cinematic ground collapse, a deep rumble building into a massive crumbling boom",
+    "C": "Wooden toy blocks cracking then a stack of wooden blocks tumbling down, clattering wood",
+    "D": "Anime ground break, sharp cracking stone then an explosive heavy crash with rubble",
+    "E": "Earth energy quake, a deep rumbling surge then the ground bursting apart with a roar of wind"
+   }
+  },
+  {
+   "id": "bishop",
+   "name": "비숍 · 구원의 손",
+   "moment": "손이 뻗어 떨어지는 아군을 잡아 올림",
+   "dur": 1.3,
+   "prompts": {
+    "A": "Heavy magical grasp, a deep powerful whoosh up from below then a solid heavy catch thud, close-mic",
+    "B": "Cinematic rescue, a deep rising swell whoosh ending in a strong low impact",
+    "C": "Wooden toy hand grabbing, a quick dry wooden rattle then a firm low wooden knock, close-mic",
+    "D": "Anime grab, a fast stretching swoosh then a sharp catch hit and a rising swish",
+    "E": "Energy hands rising, a swirling airy whoosh lifting upward ending in a soft deep thump"
+   }
+  },
+  {
+   "id": "knight",
+   "name": "나이트 · 벼랑 끝 역전",
+   "moment": "공중제비로 넘어가 뒷발차기",
+   "dur": 1.3,
+   "prompts": {
+    "A": "Retro 8-bit flip, a quick 8-bit noise burst whoosh then a crunchy 8-bit kick hit",
+    "B": "Cinematic flip, a big whoosh passing overhead then a heavy deep kick impact",
+    "C": "Wooden toy horse hopping over, quick wooden clops then a hard wooden kick knock, close-mic",
+    "D": "Anime somersault, a fast spinning air swoosh then a sharp powerful kick hit",
+    "E": "Wind energy flip, a swirling gust over the head then a burst of wind impact"
+   }
+  }
+ ]
+}
