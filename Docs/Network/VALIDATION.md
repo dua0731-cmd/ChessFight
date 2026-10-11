@@ -2,7 +2,7 @@
 
 ## ★ 2026-10-11 소드 파이트 스킬 시험 씬 온라인 (R121, 승규 님) — 5명 시험 확인 목록
 
-[SKILLS_ONLINE §15](SKILLS_ONLINE.md#15-r121-소드-파이트-스킬-시험-씬-온라인-10-11). **모두 같은 zip**: `C:\Work\ChessFight-SkillNet\Builds\SkillNet_SwordFightOnline_1011b.zip`(R123, v18. 처음 `_1011`과도 접속은 되지만 방장이 멈춘 뒤 그 화면이 오래 늦음. 예전 오프라인 소드 파이트 zip과는 안 만남). Steam을 켜 두고 `ChessFight_SwordFightSkills.exe` → 방장 F3 "테스트 방 만들기" → 방 번호 보내기 → 나머지 F3 번호 붙여 넣고 "참가" → 방장 "시작". "AI"는 AI가 PC 한 대 로컬 시험으로 본 것(사람 확인 아님).
+[SKILLS_ONLINE §15](SKILLS_ONLINE.md#15-r121-소드-파이트-스킬-시험-씬-온라인-10-11). **모두 같은 zip**: `C:\Work\ChessFight-SkillNet\Builds\SkillNet_SwordFight_1011c.zip`(10-11 21시, 폰 러쉬·퀸 오브 더 힐 `_1011c`와 같이 뽑음). `SkillNet_SwordFightOnline_1011b.zip`과 코드가 같다(R123, v18. 처음 `_1011`과도 접속은 되지만 방장이 멈춘 뒤 그 화면이 오래 늦음. 예전 오프라인 소드 파이트 zip과는 안 만남). Steam을 켜 두고 `ChessFight_SwordFightSkills.exe` → 방장 F3 "테스트 방 만들기" → 방 번호 보내기 → 나머지 F3 번호 붙여 넣고 "참가" → 방장 "시작". "AI"는 AI가 PC 한 대 로컬 시험으로 본 것(사람 확인 아님).
 
 | # | 확인 | 기대 | 결과 |
 |---|---|---|---|

@@ -262,7 +262,7 @@
 ## 3. 진행 중인 일과 다음 할 일
 
 **소드 파이트 스킬 온라인 5명 시험 (R121, 10-11 저녁, 승규 님 + 팀원)**
-- 모두 `C:\Work\ChessFight-SkillNet\Builds\SkillNet_SwordFightOnline_1011b.zip`(v18, R123). 예전 `_1011`도 같이 접속은 되지만 방장이 멈춘 뒤 그 PC 화면이 오래 늦는다. 순서와 볼 것은 [VALIDATION R121 표](Docs/Network/VALIDATION.md).
+- 5명 시험용 최신 빌드 세 개(10-11 21시, `7eedc08`, 모두 v18 + R123): `C:\Work\ChessFight-SkillNet\Builds\SkillNet_PawnRush_1011c.zip` · `SkillNet_QueenOfTheHill_1011c.zip` · `SkillNet_SwordFight_1011c.zip`. 같은 모드는 모두 같은 zip을 쓴다. 폰 러쉬·퀸 오브 더 힐의 예전 zip(v17)과는 안 만난다. 소드 파이트 `_1011b`는 `_1011c`와 코드가 같다. 예전 `_1011`도 같이 접속은 되지만 방장이 멈춘 뒤 그 PC 화면이 오래 늦는다. 순서와 볼 것은 [VALIDATION R121 표](Docs/Network/VALIDATION.md).
 - 결과(수치 캡처·느낌)를 받으면 VALIDATION R121 "결과" 칸에 적는다. 방장 이전(표 12)은 사람도 AI도 아직 안 봤다. 오른쪽 위 "따라잡기 n번"이 보이면 그때 방장이 멈췄던 것(표 15).
 - 남은 것: 실제 소드 파이트 경기(로비) 연결에 스킬을 넣을지는 승규 님 결정. 시험 씬에서 한 사람이 나가 팀 수가 어긋나면 방장이 F5.
 

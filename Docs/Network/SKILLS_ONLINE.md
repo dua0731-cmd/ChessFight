@@ -482,7 +482,7 @@ Unity 편집기가 방장, 빌드 1~2개가 참가자인 로컬 시험이다. �
 - 한 사람이 나가 팀 수가 어긋나도 저절로 고르게 맞추지 않는다(방장 F5).
 - 온라인에서 고른 기물·쿨타임은 그 경기 안에서만 유지(나가면 오프라인 화면으로).
 
-**빌드**: R123부터 `C:\Work\ChessFight-SkillNet\Builds\SkillNet_SwordFightOnline_1011b.zip`(폴더 `SkillTest_SwordFightOnline_1011b`, v18, `steam_appid.txt` 들어 있음). 처음 빌드 `SkillNet_SwordFightOnline_1011.zip`(폴더 `SkillTest_SwordFightOnline`)도 남겨 두었다. 패킷이 같아 서로 접속은 되지만, 그 빌드의 화면은 방장이 멈춘 뒤 오래 늦는다. 예전 `SkillNet_SwordFightSkills.zip`(02:34)은 온라인이 없는 오프라인 빌드다. 폰 러쉬·퀸 오브 더 힐 zip은 다시 뽑지 않았다(승규 님 요청) — 그 둘은 v17이라 이 빌드와 섞어 쓰지 않는다(다른 씬이라 원래 만날 일도 없음).
+**빌드**: 10-11 21시에 5명 시험용으로 세 모드를 같은 커밋(`7eedc08`, v18 + R123)에서 뽑았다: `C:\Work\ChessFight-SkillNet\Builds\SkillNet_PawnRush_1011c.zip` · `SkillNet_QueenOfTheHill_1011c.zip` · `SkillNet_SwordFight_1011c.zip`(폴더 `SkillTest_*_1011c`, `steam_appid.txt` 들어 있음). AI가 모드마다 zip 빌드끼리 로컬 시험으로 붙는 것을 확인했다(예외 0). 그 전 R123 빌드 `SkillNet_SwordFightOnline_1011b.zip`(폴더 `SkillTest_SwordFightOnline_1011b`)은 소드 파이트 `_1011c`와 코드가 같다. 처음 빌드 `SkillNet_SwordFightOnline_1011.zip`(폴더 `SkillTest_SwordFightOnline`)도 남겨 두었다. 패킷이 같아 서로 접속은 되지만, 그 빌드의 화면은 방장이 멈춘 뒤 오래 늦는다. 예전 `SkillNet_SwordFightSkills.zip`(02:34)은 온라인이 없는 오프라인 빌드다. 폰 러쉬·퀸 오브 더 힐 zip은 다시 뽑지 않았다(승규 님 요청) — 그 둘은 v17이라 이 빌드와 섞어 쓰지 않는다(다른 씬이라 원래 만날 일도 없음).
 
 ### R123 다시 보기와 방장 멈춤 (10-11 저녁)
 
