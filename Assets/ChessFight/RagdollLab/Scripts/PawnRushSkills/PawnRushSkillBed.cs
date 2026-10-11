@@ -234,6 +234,19 @@ namespace ChessFight.RagdollLab
             _ => "킹 스킬은 아직 만들지 않았어요 (D1)",
         };
 
+        /// <summary>The skill key card at the bottom right of the view, the same card as Sword Fight's F and E
+        /// (<see cref="SkillKeyCard"/>): the key in the piece's colour when it can be used, grey with the cooldown
+        /// draining it from the top otherwise; under the name, what it is doing, the cooldown left, or how to use it.</summary>
+        void KeyCard(RagdollPawn p1)
+        {
+            if (p1.Piece == PieceKind.King) return;
+            bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
+            string how = (p1.Piece == PieceKind.Rook || p1.Piece == PieceKind.Bishop) ? $"{skillKey} 조준 → 좌클릭" : $"{skillKey} 사용";
+            SkillKeyCard.Draw(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
+                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), SkillKeyCard.Colors(p1.Piece),
+                ready || running, false, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
+        }
+
         static string StageName(RagdollPawn pawn)
         {
             if (pawn.SkillStage == SkillStage.None) return pawn.SkillCooldown > 0f ? "쿨타임" : "준비됨";
@@ -282,6 +295,7 @@ namespace ChessFight.RagdollLab
             if (p1 == null) return;
             EnsureStyles();
             DrawOverheads();
+            KeyCard(p1);
 
             const float width = 360f;
             panelRect = new Rect(8f, 44f, width, Mathf.Min(Screen.height - 180f, 640f));

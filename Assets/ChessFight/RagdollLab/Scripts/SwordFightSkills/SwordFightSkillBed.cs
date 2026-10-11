@@ -656,44 +656,25 @@ namespace ChessFight.RagdollLab
             GUILayout.EndArea();
         }
 
-        GUIStyle keyStyle;
-
-        /// <summary>The edge skill's badge at the bottom right of the view: E in the piece's colour when it can be used now
-        /// (blinking), grey otherwise, the cooldown draining it from the top; under the name, what it is waiting for.</summary>
+        /// <summary>The skill key cards at the bottom right of the view (<see cref="SkillKeyCard"/>, the same cards as the
+        /// Pawn Rush and Queen of the Hill beds): F, the piece's skill, at the bottom; E, the edge skill, above it — E in the
+        /// piece's colour when it can be used now (blinking), grey otherwise, the cooldown draining it from the top; under
+        /// each name, what it is doing, the cooldown left, or what it is waiting for.</summary>
         void EdgeBadge(SwordFightSkills s)
         {
-            if (!s.HasSkill || s.EdgeParams == null) return;
-            if (keyStyle == null)
-            {
-                keyStyle = new GUIStyle(header) { alignment = TextAnchor.MiddleCenter, fontSize = 22 };
-                keyStyle.normal.textColor = Color.white;
-            }
+            if (!s.HasSkill) return;
             var pal = SwordFightSkills.Colors(s.Piece);
+            bool fRunning = s.Stage != SfStage.None, fReady = !fRunning && s.Cooldown <= 0f;
+            string fHow = s.Piece == PieceKind.King ? $"{skillKey} 받아내기 자세" : $"{skillKey} 조준 → 좌클릭";
+            SkillKeyCard.Draw(SkillKeyCard.Slot(0), skillKey.ToString(), SwordFightSkills.Name(s.Piece),
+                SkillKeyCard.Line(fRunning ? StageName(s) : null, s.Cooldown, fHow), pal, fReady || fRunning, false,
+                s.CooldownTotal > 0f ? s.Cooldown / s.CooldownTotal : 0f);
+            if (s.EdgeParams == null) return;
             bool ready = s.EdgeReady, running = s.EdgeStage != SfEdge.None;
-            // Bottom right, clear of the match's help (bottom left) and its sword gauge (bottom middle).
-            float w = 320f, h = 56f;
-            var r = new Rect(Screen.width - w - 24f, Screen.height - h - 120f, w, h);
-            GUI.color = new Color(0.05f, 0.07f, 0.12f, 0.8f);
-            GUI.DrawTexture(r, bar);
-            Color lit = ready || running ? pal.main : new Color(0.42f, 0.46f, 0.55f);
-            float blink = ready ? 0.7f + 0.3f * Mathf.Sin(Time.unscaledTime * 9f) : 1f;
-            var key = new Rect(r.x + 6f, r.y + 6f, h - 12f, h - 12f);
-            GUI.color = new Color(pal.ink.r, pal.ink.g, pal.ink.b, 1f);
-            GUI.DrawTexture(new Rect(key.x - 2f, key.y - 2f, key.width + 4f, key.height + 4f), bar);
-            GUI.color = new Color(lit.r, lit.g, lit.b, blink);
-            GUI.DrawTexture(key, bar);
-            float cd = s.EdgeCooldownTotal > 0f ? s.EdgeCooldown / s.EdgeCooldownTotal : 0f;
-            if (cd > 0f)
-            {
-                GUI.color = new Color(0f, 0f, 0f, 0.55f);
-                GUI.DrawTexture(new Rect(key.x, key.y, key.width, key.height * cd), bar);
-            }
-            GUI.color = Color.white;
-            GUI.Label(key, "E", keyStyle);
-            string name = SwordFightSkills.EdgeName(s.Piece);
-            string line = running ? s.EdgeDetail : cd > 0f ? $"쿨타임 {s.EdgeCooldown:0.0}초" : ready ? "<color=#FFE07A><b>지금 쓸 수 있어요!</b></color>" : s.EdgeWhy;
-            GUI.Label(new Rect(key.xMax + 10f, r.y + 5f, w - key.width - 22f, 22f), $"<b>{name}</b>", text);
-            GUI.Label(new Rect(key.xMax + 10f, r.y + 25f, w - key.width - 22f, 22f), line, small);
+            string line = SkillKeyCard.Line(running ? s.EdgeDetail : null, s.EdgeCooldown,
+                ready ? "<color=#FFE07A><b>지금 쓸 수 있어요!</b></color>" : s.EdgeWhy);
+            SkillKeyCard.Draw(SkillKeyCard.Slot(1), "E", SwordFightSkills.EdgeName(s.Piece), line, pal, ready || running, ready,
+                s.EdgeCooldownTotal > 0f ? s.EdgeCooldown / s.EdgeCooldownTotal : 0f);
         }
 
         void Bar(float fill, Color color, string label)
