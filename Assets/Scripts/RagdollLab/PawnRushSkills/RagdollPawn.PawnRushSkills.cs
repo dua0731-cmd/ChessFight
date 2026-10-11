@@ -24,6 +24,7 @@ namespace ChessFight.RagdollLab
         KnightStomp, KnightLand,
         KnightTurn, KnightHome,
         KnightLeap, RookSlam,
+        PawnStep, PawnHit, PawnHelp,
     }
 
     public struct SkillFxEvent
@@ -32,6 +33,8 @@ namespace ChessFight.RagdollLab
         public RagdollPawn by, target;
         /// <summary>Where it happened: the ground under a blast or a landing, the contact of a hit.</summary>
         public Vector3 at, dir;
+        /// <summary>The face it happened on, pointing out of it: the wall or barricade a charge met (zero if none).</summary>
+        public Vector3 normal;
         /// <summary>The rook's hit number, the queen's pieces hit, a trip's number.</summary>
         public int count;
         /// <summary>A radius or a length (the queen's ring, the bishop's line).</summary>
@@ -63,10 +66,11 @@ namespace ChessFight.RagdollLab
         /// <summary>Every moment a skill lands, for the test bed's hit effects; nothing else listens.</summary>
         public static event Action<SkillFxEvent> SkillFx;
 
-        internal static void RaiseSkillFx(SkillFxEvent e) => SkillFx?.Invoke(e);
+        /// <summary>Raise a skill's moment from outside a pawn: a tripwire's, or (R111) one a network client was sent.</summary>
+        public static void RaiseSkillFx(SkillFxEvent e) => SkillFx?.Invoke(e);
 
-        void Fx(SkillFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, int count = 0, float size = 0f)
-            => SkillFx?.Invoke(new SkillFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, count = count, size = size });
+        void Fx(SkillFxKind kind, RagdollPawn target, Vector3 at, Vector3 dir, int count = 0, float size = 0f, Vector3 normal = default)
+            => SkillFx?.Invoke(new SkillFxEvent { kind = kind, by = this, target = target, at = at, dir = dir, count = count, size = size, normal = normal });
 
         Vector3 SkillContact(RagdollPawn other) =>
             Vector3.Lerp(bodies[(int)BodyId.Chest].position, other.bodies[(int)BodyId.Chest].position, 0.5f);
@@ -122,8 +126,23 @@ namespace ChessFight.RagdollLab
         public Vector3 BishopAimYaw => bishopYaw;
         /// <summary>The enemy a knight's second press in the air would come down on (null: it would turn).</summary>
         public RagdollPawn KnightMarked => knightHoming ? knightTarget : knightCandidate;
+        /// <summary>The rook's charge is in the air (R80): its aim is a line in 3D.</summary>
+        public bool RookInAir => rookAir;
+        /// <summary>On the floor, or just off it (the coyote time).</summary>
+        public bool OnTheFloor => OnFloor;
+        /// <summary>The knight's landing is to be shown: in its leap, not homing onto a head nor after the tap.</summary>
+        public bool KnightShowsLanding => piece == PieceKind.Knight && skillStage == SkillStage.Active && !knightHoming && !knightTapped;
+        public Vector3 KnightLandingSpot => knightSpot;
+        public bool KnightHoming => knightHoming;
+        /// <summary>The bishop's throw: where its X leaves from and how long it flies.</summary>
+        public Vector3 BishopThrowFrom => bishopFrom;
+        public float BishopThrowTime => bishopFlight;
+        /// <summary>Set by the effects when they draw the skills' telegraphs themselves (design A, R90): the plain
+        /// lines (SkillMarks) are not drawn then.</summary>
+        public static bool SkillMarksHidden { get; set; }
 
-        bool Aiming => skillStage == SkillStage.Windup && !aimLocked && (piece == PieceKind.Rook || piece == PieceKind.Bishop);
+        bool Aiming => skillStage == SkillStage.Windup && !aimLocked
+                       && (QueenHillSkills != null ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop);
 
         /// <summary>A skill is moving this pawn into others, or has just stopped doing so: contacts between
         /// pawns are the skill's to judge, not the collision knockdown's.</summary>
@@ -176,6 +195,11 @@ namespace ChessFight.RagdollLab
             // A right click that was down when the aim began, or that called it off, grabs nothing until let go.
             if (skillGrabLatch && !input.grab) skillGrabLatch = false;
             if (Aiming || skillGrabLatch) input.grab = false;
+            if (QueenHillSkills != null)
+            {
+                PreQueenHillSkills();   // the Queen of the Hill skills take it from here (R89)
+                return;
+            }
             if (knightHoming)
             {
                 // The second press flies the knight onto the head by itself.
@@ -207,6 +231,11 @@ namespace ChessFight.RagdollLab
             skillGrace -= dt;
             blastFlash -= dt;
             TrackGetUp(s);
+            if (QueenHillSkills != null)
+            {
+                UpdateQueenHillSkills(QueenHillSkills, press, confirm, cancel, dt);   // Queen of the Hill skills (R89)
+                return;
+            }
 
             if (skillStage != SkillStage.None && (State == PawnState.Ragdoll || Floating))
             {
@@ -246,6 +275,7 @@ namespace ChessFight.RagdollLab
             knightTarget = knightCandidate = null;
             SkillDetail = "";
             HideSkillMarks();
+            ClearQueenHill();
         }
 
         float PieceCooldown(PawnRushSkillParams s) => piece switch
@@ -325,6 +355,14 @@ namespace ChessFight.RagdollLab
         string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause)
         {
             if (target == null || target.NetworkPuppet) return "-";
+            if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
+            {
+                // Guarded by a Queen of the Hill king (R89): no knockdown, a much smaller push (TakeHit scales it).
+                target.TakeHit(Flat(push), 0f, 0f, false);
+                target.Stagger(target.QueenHillSkills != null ? target.QueenHillSkills.wardStagger : 0.2f);
+                target.LastSkillHit = $"{cause}: 호위로 버팀";
+                return "호위로 버팀";
+            }
             float guardStagger = PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f;
             string result;
             if (knockdown && target.State == PawnState.Ragdoll)
@@ -514,6 +552,7 @@ namespace ChessFight.RagdollLab
             skillStage = SkillStage.Active;
             stageTime = 0f;
             SkillDetail = n == 1 ? "첫 걸음" : "두 번째 걸음";
+            Fx(SkillFxKind.PawnStep, null, FeetPoint, skillDir, n);
         }
 
         void FinishPawn(PawnRushSkillParams s, bool bothSteps)
@@ -549,6 +588,7 @@ namespace ChessFight.RagdollLab
                     ? SkillHit(other, skillDir * s.pawnFrontPush + Vector3.up * 1.5f, true, "폰 대각")
                     : SkillHit(other, skillDir * s.pawnFrontPush, false, "폰 정면");
                 string kind = diagonal ? "대각" : angle > s.pawnDiagonalAngle ? "바로 옆" : "곧게";
+                Fx(SkillFxKind.PawnHit, other, SkillContact(other), skillDir, diagonal ? 1 : 0);
                 Log($"폰 {pawnStep}걸음 → {other.DisplayName}: {kind} {angle:0}° → {result}");
                 // The step stops on the piece it hit; the pawn itself takes nothing back (폰 불이익 없음).
                 dashLeft = Mathf.Min(dashLeft, 0.02f);
@@ -562,6 +602,7 @@ namespace ChessFight.RagdollLab
             ally.hasteLeft = s.hasteTime;
             hasteLeft = s.hasteTime;
             pawnHelped = true;
+            Fx(SkillFxKind.PawnHelp, ally, ally.bodies[0].position, skillDir);
             Log($"폰 → {ally.DisplayName}: 부축 — 바로 일어남, 기상 보호 {s.helpGuard:0.#}초, 둘 다 +{(s.hasteScale - 1f) * 100f:0}% {s.hasteTime:0.#}초, 내 쿨 −{s.helpCooldownCut:0.#}초");
         }
 
@@ -781,7 +822,17 @@ namespace ChessFight.RagdollLab
                 return;
             }
             float t = knightHomeLeft;
+            // R118: the last moment is not steered: dividing by the time left threw the knight at 20 m/s or more when a
+            // moving target stepped aside just before the knight came down, and the head it hit flew far (seen online,
+            // both players running). It keeps the course it has; the stomp still takes a head it comes down on.
+            if (t < 0.1f) return;
             Vector3 want = (StompPoint(knightTarget) - bodies[0].position) / t - 0.5f * t * Physics.gravity;
+            // And no faster than a homing flight is meant to be.
+            var s = PawnRushSkills;
+            float most = (s != null ? s.knightHomingSpeed : 7f) * 1.25f;
+            Vector3 across = Flat(want);
+            if (across.sqrMagnitude > most * most) across = across.normalized * most;
+            want = across + Vector3.up * Mathf.Clamp(want.y, -12f, 8f);
             Launch(want);
         }
 
@@ -1026,14 +1077,14 @@ namespace ChessFight.RagdollLab
                 if (barricade != null && barricade.Standing)
                 {
                     barricade.Break(s.barricadeRegrow);
-                    Fx(SkillFxKind.RookBarricade, null, wall.point, skillDir);
+                    Fx(SkillFxKind.RookBarricade, null, wall.point, skillDir, normal: wall.normal);
                     dashBase *= 1f - s.rookBarricadeSlow;
                     Log($"룩: 바리케이드 파괴 → 속도 −{s.rookBarricadeSlow * 100f:0}% ({dashBase:0.0} m/s), 계속 전진 · {s.barricadeRegrow:0}초 뒤 다시 생김");
                 }
                 else
                 {
                     HaltDash();
-                    Fx(SkillFxKind.RookWall, null, wall.point, skillDir);
+                    Fx(SkillFxKind.RookWall, null, wall.point, skillDir, normal: wall.normal);
                     Stagger(s.rookWallStagger);
                     RookRecovery();
                     Log($"룩: 벽에 박힘 → 그 자리에서 멈춤, 룩 휘청 {s.rookWallStagger:0.#}초");
@@ -1166,6 +1217,7 @@ namespace ChessFight.RagdollLab
             float floorY = groundFound ? groundY : bodies[0].position.y - standHeight;
             Vector3 foot = new Vector3(bodies[0].position.x, floorY + 0.05f, bodies[0].position.z);
             HideSkillMarks();
+            if (SkillMarksHidden) return;   // the effects draw them (design A, R90)
             switch (piece)
             {
                 case PieceKind.Rook when skillStage == SkillStage.Windup:
@@ -1290,6 +1342,11 @@ namespace ChessFight.RagdollLab
                        ref Quaternion thighL, ref Quaternion thighR, ref Quaternion footL, ref Quaternion footR)
         {
             if (PawnRushSkills == null || State != PawnState.Active) return;
+            if (QueenHillSkills != null)
+            {
+                QueenHillPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);   // R89
+                return;
+            }
             if (piece == PieceKind.Rook && rookAir && dashing)
             {
                 // Superman (R81): both fists out ahead over the head, legs straight behind, toes pointed, looking

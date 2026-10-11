@@ -30,6 +30,9 @@ namespace ChessFight.RagdollLab
         public bool interact;
         /// <summary>World-space unit vector the player aims along (the camera's forward); zero for none.</summary>
         public Vector3 aim;
+        /// <summary>Pressed: the piece skill key (the skill test scenes' F, LabGame.SkillKey). R111: it travels with the
+        /// rest of the input, so a network match carries it to the host like a jump.</summary>
+        public bool skill;
     }
 
     /// <summary>
@@ -493,9 +496,14 @@ namespace ChessFight.RagdollLab
 
         public bool Owns(Collider c) => ownSet.Contains(c);
 
+        /// <summary>The move as last handed in, which the skills' rooting (it clears input.move each step) leaves alone: the
+        /// Queen of the Hill bishop's hover slides on it (R105).</summary>
+        Vector3 givenMove;
+
         public void SetInput(PawnInput next)
         {
             input.move = next.move;
+            givenMove = next.move;
             input.grab = next.grab;
             input.sprint = next.sprint;
             input.jump |= next.jump;
@@ -506,6 +514,7 @@ namespace ChessFight.RagdollLab
             input.interact = next.interact;
             input.shoveHeld = next.shoveHeld;
             input.aim = next.aim;
+            if (next.skill) skillPressed = true;   // the skill key, kept until the next physics step reads it
         }
 
         const float InteractReach = 1.3f;
@@ -637,6 +646,8 @@ namespace ChessFight.RagdollLab
             Struggle(p, dt);
             UpdateAbilities(p, dt);
             UpdateSkills(dt);   // Pawn Rush skills only
+            UpdateOuterDash(dt);   // a dash another mode's skill drives (the Sword Fight queen, R99)
+            UpdateSkillLanding(dt);   // a skill that carried it lands it standing (10-11)
             UpdateHook(p, dt);
             Shove(p);
             UpdateStamina(p, dt);
@@ -806,6 +817,7 @@ namespace ChessFight.RagdollLab
         public void Knockdown(string cause, float hold)
         {
             if (Floating) return;   // the water catches it
+            if (WardCatchesKnockdown(cause)) return;   // a Queen of the Hill king's guard (R89): a stagger instead
             DropHook();
             DropRope();
             EndClimbPose();
@@ -1209,7 +1221,8 @@ namespace ChessFight.RagdollLab
             float bob = Gait(runBob, p.sprintBob * sprintWave) * speedN;
             // On a lift the floor will have moved by the end of this step; aim for where it will be.
             next.y = planted && groundFound
-                ? groundY + surfaceVel.y * dt + standHeight + lift + bob - landDip - strideDrop
+                // (SkillCrouch / SkillCrouchDrop: a Queen of the Hill pawn crouching for its dash, R89; 0 otherwise.)
+                ? groundY + surfaceVel.y * dt + standHeight + (lift + bob) * (1f - SkillCrouch) - landDip - strideDrop - SkillCrouchDrop
                 : hp.y + hips.linearVelocity.y * dt
                   // Thrown by a pad, lead by where gravity will have the hips, not where they would coast to:
                   // the step-ahead anchor held a thrown body up a little (0.15 m higher, 0.1 s longer, 0.2 m long).
@@ -3055,6 +3068,7 @@ namespace ChessFight.RagdollLab
             if (other != null && (SkillShielded || other.SkillShielded)) return;
             if (other == null && dashing && Mathf.Abs(normal.y) < 0.6f) return;
             if (other == null && SkillLandsOnFloor && normal.y > 0.6f) return;   // the rook's slam out of the air (R80)
+            if (other == null && SkillLandingSafe && normal.y > 0.6f) return;   // landing from a skill (10-11)
             if (Diving && other != null)
             {
                 // Slide tackle. A diver is already on the floor, so it is never knocked down by the
@@ -3141,8 +3155,9 @@ namespace ChessFight.RagdollLab
             if (drop) LetGo(0.6f);
             if (knockdownSeconds > 0f && !Floating) Knockdown("피격", knockdownSeconds);
             else if (push.sqrMagnitude > 1e-4f) hitTimer = Mathf.Max(hitTimer, p.hitRecoveryTime);
-            // Heavier pieces go less far (M11): the king a third, the rook two thirds.
-            push *= PushScale;
+            // Heavier pieces go less far (M11): the king a third, the rook two thirds. A Queen of the Hill king's
+            // guard (R89) takes most of a push away as well.
+            push *= PushScale * WardPushScale;
             // Still on the wall (no drop, no knockdown): the wall takes the push, only the stamina counts.
             if (push.sqrMagnitude <= 1e-6f || climbKinematic) return;
             AddVelocity(push);
@@ -3336,6 +3351,7 @@ namespace ChessFight.RagdollLab
             netEscape = pose.escape;
             ApplyHook(pose);
             if (pose.piece != (byte)piece) SetPiece((ChessFight.Network.PieceKind)pose.piece);
+            FaceFromPose(pose);   // R111: the skills' effects read a puppet's facing
         }
 
         public bool IsFinite()

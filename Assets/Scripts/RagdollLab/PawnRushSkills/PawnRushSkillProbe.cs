@@ -17,7 +17,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class PawnRushSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-barricade", "rook-cluster", "rook-air", "queen", "knight", "knight-turn", "knight-straight", "knight-air", "knight-stomp", "knight-land", "bishop", "bishop-trip", "all" };
+        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-wall-slant", "rook-barricade", "rook-cluster", "rook-air", "queen", "knight", "knight-turn", "knight-straight", "knight-air", "knight-stomp", "knight-land", "bishop", "bishop-trip", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>The current run has set its pieces down and settled them (the film records from here).</summary>
         public static bool Staged { get; private set; }
@@ -115,6 +115,7 @@ namespace ChessFight.RagdollLab
                     "rook" => Rook(),
                     "rook-free" => RookFree(),
                     "rook-wall" => RookWall(),
+                    "rook-wall-slant" => RookWallSlant(),
                     "rook-barricade" => RookBarricade(),
                     "rook-cluster" => RookCluster(),
                     "rook-air" => RookAir(),
@@ -505,6 +506,20 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(1.2f);
         }
 
+        /// <summary>R92: the same 3 m wall met at 35° and 0.7 m from its end (z 3), as in 승규's screenshot, where the
+        /// battlement ring, square to the charge, sank half into the wall.</summary>
+        IEnumerator RookWallSlant()
+        {
+            Vector3 run = Quaternion.Euler(0f, -35f, 0f) * Vector3.right;
+            yield return Ready(PieceKind.Rook, new Vector3(15.8f, 0f, -0.45f), run, 1);
+            var p1 = P1;
+            yield return AimThenClick(0.4f);
+            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
+            yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
+            Add($"룩 → 벽 35°: 멈춘 곳 x {p1.Hips.position.x:0.00} · z {p1.Hips.position.z:0.00} (벽 앞면 x 20, 끝 z 3), 상태 {StateText(p1)}");
+            yield return new WaitForSeconds(1.2f);
+        }
+
         IEnumerator RookBarricade()
         {
             var barricade = FindFirstObjectByType<SkillBarricade>();
@@ -574,7 +589,7 @@ namespace ChessFight.RagdollLab
             if (!down) land = p1.Hips.position;
             move = Vector3.zero;
             if (!turn)
-                Add($"나이트 도약: 골반 최고 +{peak - takeoff.y:0.00} m (기대 1.6), 비거리 {FlatDistance(takeoff, land):0.00} m (골반이 출발 높이로 돌아올 때, 기대 약 5.5), 착지 판정까지 {air:0.00}초 (기대 약 1.14)");
+                Add($"나이트 도약: 골반 최고 +{peak - takeoff.y:0.00} m (기대 1.6), 비거리 {FlatDistance(takeoff, land):0.00} m (골반이 출발 높이로 돌아올 때, 기대 약 {bed.skills.knightDistance:0.0}), 착지 판정까지 {air:0.00}초 (기대 약 1.14)");
             else
             {
                 Vector3 d = land - takeoff;
@@ -598,7 +613,7 @@ namespace ChessFight.RagdollLab
             float peak = takeoff.y;
             yield return Until(() => { peak = Mathf.Max(peak, p1.Hips.position.y); return p1.SkillStage != SkillStage.Active; }, 3f);
             Vector3 d = p1.Hips.position - takeoff;
-            Add($"나이트 직진 두 번 F: 착지 앞 {d.z:0.00} m · 옆 {d.x:0.00} m (한 번 도약은 약 5.5 m), 골반 최고 +{peak - takeoff.y:0.00} m, 상태 {StateText(p1)}");
+            Add($"나이트 직진 두 번 F: 착지 앞 {d.z:0.00} m · 옆 {d.x:0.00} m (한 번 도약은 약 {bed.skills.knightDistance:0.0} m), 골반 최고 +{peak - takeoff.y:0.00} m, 상태 {StateText(p1)}");
             yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
             yield return new WaitForSeconds(0.5f);
         }

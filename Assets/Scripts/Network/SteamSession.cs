@@ -41,10 +41,18 @@ namespace ChessFight.Network
         // v15: the lab's snapshot carries the host's obstacle time ("CFR6", "v8" on JY-lobby), so
         //      clients draw moving obstacles where the host had them instead of on their own
         //      Steam clock.
-        // v16: the 폰 러쉬 match is Pawn Rush course 01 run by the host over SteamPawnRushLink (ragdoll
-        //      inputs and snapshots plus the course state "CFP1" on channel 34). A v15 build would load
-        //      the old capsule scene for the same mode.
-        public const string Protocol = "chessfight.dua0731.network.v16";
+        // v16 (main, R92): the 폰 러쉬 match is Pawn Rush course 01 run by the host over SteamPawnRushLink
+        //      (ragdoll inputs and snapshots plus the course state "CFP1" on channel 34). A v15 build
+        //      would load the old capsule scene for the same mode.
+        // v16 (R111, skill branch): the lab's piece skills online ("CFR7"): the lab input carries press
+        //      counts, the piece asked for and the skill moments' confirmation; a skills packet goes
+        //      with every snapshot.
+        // v17 (R112, branch skill-network-test): the lab input also carries the client's round trip,
+        //      playback delay and loss ("CFR8") for the host's test screen.
+        // v18 (R121, branch skill-network-test): the Sword Fight skill test online ("CFR9").
+        // v19 (R124): main and skill-network-test merged; ragdoll positions carry a +-320 m range
+        //      ("CFRA") so Pawn Rush course 01 (z up to 246 m) is no longer clamped at 80 m on clients.
+        public const string Protocol = "chessfight.dua0731.network.v19";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }
@@ -346,6 +354,14 @@ namespace ChessFight.Network
             }
             return list;
         }
+        // R118 (the skill network test screen): everyone in the match as the
+        // election ranks them right now, and the published order of successors.
+        public List<HostElection.Candidate> HostCandidates() =>
+            Match == 0 ? new List<HostElection.Candidate>() : Candidates(Members(Match));
+        public List<ulong> PublishedSuccessors() => HostElection.Decode(Data(Match, "successors"));
+        // The host-change line (Note) is still on show.
+        public bool NoteShowing => Time.realtimeSinceStartup < noteUntil && Note != "";
+
         static HostElection.Candidate Pick(List<HostElection.Candidate> candidates, ulong id) =>
             candidates.FirstOrDefault(c => c.Id == id);
 

@@ -7,7 +7,8 @@ namespace ChessFight.RagdollLab
     /// The six chess pieces in the Staunton shapes, made in code for the queen's gold pieces (R81: "체스 모양이랑
     /// 똑같아야"): turned bodies for all of them, then what a lathe cannot make: the rook's battlements, the knight's
     /// horse head (a side view cut out and given thickness), the queen's coronet of balls, the king's cross. Heights
-    /// follow a real set (king tallest, pawn smallest); each mesh stands on its base at y 0.
+    /// follow a real set (king tallest, pawn smallest); each mesh is 1 tall about its middle. Taken out with the
+    /// cartoon queen of R86 and brought back in R88 (승규 님: "체스들이 모이면서 터지는 듯한 느낌"), drawn in cartoon gold.
     /// </summary>
     public partial class PawnRushSkillFx
     {

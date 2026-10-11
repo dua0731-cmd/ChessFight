@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -16,6 +17,24 @@ namespace ChessFight.RagdollLab
         float regrowLeft;
         public bool Standing => box != null && box.enabled;
 
+        // ---- online (R111): every PC builds the same barricades in the same order; the host's are sent by their
+        // place in this list and a client's only show what they are told (Remote: no regrowing of their own).
+        static readonly List<SkillBarricade> all = new List<SkillBarricade>();
+        public static IReadOnlyList<SkillBarricade> All => all;
+        public bool Remote { get; set; }
+        public float RegrowLeft => Standing ? 0f : Mathf.Max(0f, regrowLeft);
+
+        /// <summary>The host's state of this barricade (a client's).</summary>
+        public void ApplyNet(bool standing, float regrow)
+        {
+            regrowLeft = regrow;
+            if (box == null || box.enabled == standing) return;
+            box.enabled = standing;
+            Show(standing);
+        }
+
+        void OnDestroy() => all.Remove(this);
+
         public static SkillBarricade Build(Vector3 groundCenter, Vector3 facing, string label)
         {
             var go = new GameObject(label);
@@ -29,6 +48,7 @@ namespace ChessFight.RagdollLab
 
         void Make()
         {
+            all.Add(this);
             box = gameObject.AddComponent<BoxCollider>();
             box.size = size;
             box.center = new Vector3(0f, size.y * 0.5f, 0f);
@@ -72,7 +92,7 @@ namespace ChessFight.RagdollLab
             regrowLeft -= Time.deltaTime;
             // The outline blinks for the last two seconds before it is back.
             Show(regrowLeft < 2f && Mathf.Repeat(Time.time * 4f, 1f) < 0.5f);
-            if (regrowLeft > 0f) return;
+            if (regrowLeft > 0f || Remote) return;
             var center = transform.TransformPoint(box.center);
             // A little smaller than the wall, so the floor it stands on does not count.
             var half = new Vector3(box.size.x * 0.5f, box.size.y * 0.5f - 0.12f, box.size.z * 0.5f);

@@ -9,13 +9,16 @@
 | [MOTION.md](MOTION.md) | 이동 동기화, 패킷 형식, 끊김 단계, 핑, F8 지연 시뮬레이터 |
 | [BOTS.md](BOTS.md) | AI 봇, 공개 매치 규칙 |
 | [PLAN_V0.1_STATUS.md](PLAN_V0.1_STATUS.md) | 승규 기획안 v0.1 항목별 상태, 승규 다음 작업 |
+| [SKILLS_ONLINE.md](SKILLS_ONLINE.md) | 기물 스킬을 온라인으로: **R111 구현**(패킷·칸 지도, 화면에 그리는 법, F12 지연 시뮬레이터, PC 한 대 로컬 시험, AI 확인 결과, PC 두 대 시험 순서) + **R112 스킬 네트워크 시험 브랜치 `skill-network-test`와 늘 보이는 수치 화면**(§14) + R96 조건·지연 계산·합격 기준·시험 환경·결정 D-S1~D-S9 |
+| [HOST_AUTHORITY.md](HOST_AUTHORITY.md) | **R117** 방장 판정 방식 점검: 좋은 점·우려·다른 방식 비교, 지연·올림 계산, 다듬을 것 P1~P9, **3인 시험 순서와 수치 읽는 법·보고 양식** |
+| [HOST.md](HOST.md) | 방장 선정(PC 성능·핑)과 이전 |
 | [VALIDATION.md](VALIDATION.md) | 실제 확인 기록과 Unity 확인 목록 |
 
 ## 1. 한눈에
 
 - **서버 없음.** Steam 로비로 파티(최대 6)와 경기 방(12)을 만들고, 경기 방을 만든 PC가 **호스트**로 모든 이동을 판정한다. 나머지는 입력만 보낸다.
 - 파티는 **같은 팀에 통째로** 들어간다. 6 대 6이 모두 입장하면 공개 경기가 자동 시작한다.
-- 호스트가 나가면 경기가 끝나고 모두 자기 파티로 돌아간다(호스트 이전 없음).
+- 호스트가 나가면 다음 방장이 이어받고 경기가 계속된다. 시작할 때도 PC 성능과 핑으로 방장을 다시 고른다([HOST](HOST.md)).
 - 프로토콜 `chessfight.dua0731.network.v2` + 빌드 값이 같은 사람끼리만 만난다.
 - Steamworks.NET 2025.164.1, Steam Networking Messages 채널 31. UGS, Photon, Mirror, NGO는 쓰지 않는다.
 

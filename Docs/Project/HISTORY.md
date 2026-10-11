@@ -7,7 +7,122 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-10 | R113 | 소드 파이트 현황 기획서 `Docs/GameModes/SwordFight/STATUS.md`(bold-johnson 기준), PLANNING_BRIEF 스킬 안내, 오전 R93 → R112 번호 변경 |
+| `7eedc08` | 10-11 | R123 | (`skill-network-test`) 문서: Network/SKILLS_ONLINE §15 R123(AI가 zip 그대로 다시 본 것·핑·방장 멈춤과 고친 것), VALIDATION R121 표(zip `_1011b`, 14 킹 F 받아내기·15 방장 멈춤), REQUIREMENTS R123, DECISIONS SK11, HANDOFF, HISTORY |
+| `4924093` | 10-11 | R123 | (`skill-network-test`) 방장이 잠깐 멈춘 뒤 참가자 재생이 바로 따라잡음: `PlaybackDelay.Advance`(Core, 0.25초 넘게 뒤처지면 건너뜀, 시험 1개 → 102), `LabNetLink.Playback`이 씀 + 건너뛴 횟수(보고 `jumps`·추적 로그), 시험 화면 "따라잡기 n번". 패킷 그대로(v18). 새 빌드 `SkillNet_SwordFightOnline_1011b.zip` |
+| `bb59542` | 10-11 | R121 | (`skill-network-test`) 소드 파이트 온라인 문서: Network/SKILLS_ONLINE §15(정한 것·보내는 것·그리는 법·AI 로컬 시험·한계·빌드), VALIDATION R121 5명 시험 표, Skills/SWORD_FIGHT §R121, REQUIREMENTS R121, HANDOFF, HISTORY |
+| `897fc47` | 10-11 | R121 | (`skill-network-test`) 로컬 시험 참가자의 카메라 방향을 개발 명령 뒤 3초 동안 입력에 실음(창이 앞에 없어 방향이 지워져 퀸이 옛 방향으로 돌진하던 것, 시험 명령에만 해당) |
+| `136d476` | 10-11 | R121 | (`skill-network-test`) 로컬 시험 보고에 PC마다 재생한 소리 횟수, 개발 명령 `classic`(F6) |
+| `a9b370e` | 10-11 | R121 | (`skill-network-test`) 소드 파이트 스킬 시험 씬 온라인: `LabNetLink` partial + `LabNetLink.Sword.cs`(방장 무작위 팀 3:2·F5, 입력 `TypeSwordInput`, 소드 상태 `TypeSword`·Core `SwordWire`, 칼·스킬·바닥 붕괴·순간 신호 `ModeSwordFight`, 방장 이전), `SwordFightSkills.Net.cs`(상태 받기·미리 그림·내 조준), 온라인 멈춤·박자(슬로 없음), 시험장 키·기물 요청·도우미 끔, `SkillNetTest` 소드 파이트 줄, Steam·로컬 시험 부팅, 프로토콜 v18(`CFR9`), Core 시험 2개(101) |
+| `ae19d2c` | 10-11 | R120 | (`skill-network-test`) 소드 파이트 비숍 소리: `CastBishop`·`BishopFire`·`BishopPin`을 원소 에너지 재료로 교체, `BishopSet` 새로(레벨 0.7), 문서(Skills/SWORD_FIGHT §R120, REQUIREMENTS R120, HANDOFF, HISTORY) |
+| `453b2d0` | 10-11 | R119 | (`skill-network-test`) 스킬 소리: 세 재생기 맞춤 크기 −15 → −21 dB, 쇳소리 칼 소리 9개(퀸 오브 더 힐 5 · 소드 파이트 4) 부드러운 소리로 교체, 문서(Skills/QUEEN_HILL·SWORD_FIGHT·SOUND §R119, VALIDATION, REQUIREMENTS, HANDOFF, HISTORY) |
+| `0efc7f7` | 10-11 | R118 | (`skill-network-test`) 시험 화면에 방장 성능 수치(프레임·물리 단계·방장 고르기 점수·핑·다음 방장, 방장 바뀜 메시지), 누름 → 반응은 스킬을 시작할 수 있는 누름만(나이트 두 번째 F는 그 동작까지), 퀸 오브 더 힐 미리 그림은 땅에서만, 나이트 머리 찍기의 마지막 0.1초 재겨냥 없앰·속도 상한(움직이는 상대가 멀리 날아가던 것), 문서(HOST_AUTHORITY §8.7, VALIDATION R118, REQUIREMENTS, HANDOFF) |
+| `00d78a5`·`fb7dd12` | 10-10 | R117 | (`skill-network-test`) 문서만: 방장 판정 방식 점검(좋은 점·우려·다른 방식 비교·지연·올림 계산), 다듬을 것 P1~P9, 3인 시험 순서·수치 읽는 법·보고 양식([Network/HOST_AUTHORITY](../Network/HOST_AUTHORITY.md)), VALIDATION R117 표, Network/README 목록·방장 이전 줄 바로잡음, REQUIREMENTS R117, HANDOFF |
+| `d841480` | 10-10 | R116 | (`skill-network-test`) 소드 파이트 가장자리 스킬 효과음: 승규 님이 고른 킹 D · 퀸 B · 룩 B · 비숍 E · 나이트 D(`KingStab`·`QueenMark`·`RookCollapse`·`BishopReach`·`KnightFlip`), 나이트는 늦춰 시작, 취소·놓침이면 줄어듦(녹화 트랙도), 문서(Skills/SWORD_FIGHT §R116, REQUIREMENTS R116, HANDOFF, HISTORY) |
+| `b1a229f` | 10-10 | R115 | (`skill-network-test`) 폰 러쉬 룩이 적과 부딪히는 소리: 음 없는 묵직한 퍽(`RookHit.mp3`), 맞음마다 음 올리기 뺌, 벽 쾅 그대로, 문서 |
+| `12fae6c` | 10-10 | R114 | (`skill-network-test`) 폰 러쉬 스킬 효과음: `PawnRushSkillSfx`(이펙트 신호·스킬 단계로 재생, 돌진·팽팽한 줄·비행은 이어지는 소리), `Resources/PawnRushSkillSfx` 19개, 시험장 소리 버튼, `Tools/Sfx/PawnRushSkills/export_unity.py`, 문서(Skills/SOUND §효과음 넣기, VALIDATION R114, REQUIREMENTS R114, HANDOFF, HISTORY) |
+| `3770810` | 10-10 | R112 | 문서: Network/SKILLS_ONLINE §14(스킬 네트워크 시험 브랜치·화면), VALIDATION R112 표, REQUIREMENTS R112, DECISIONS SK9, PITFALLS 36·37, HANDOFF, HISTORY, Network·Skills 안내 (두 브랜치 같은 내용, 푸시 안 함) |
+| `0c9f628` | 10-10 | R112 | (`skill-network-test`) 교대 수락 F는 방장이 요청을 거둘 때까지 재고 스킬 키로 세지 않음(로컬 시험에서 "반응 없음"으로 나왔음) |
+| `132d053` | 10-10 | R112 | (`skill-network-test`) 방장이 보낸 스냅샷 개/초를 실제로 잼(늘 30이라고 적었음), 시험 화면 긴 줄 줄 바꿈 |
+| `cf2de62` | 10-10 | R112 | (`skill-network-test`) bold-johnson의 씬 삭제 `9a94131`을 `merge -s ours`로 합친 것으로만 기록(이 브랜치는 씬을 그대로 둠) |
+| `9a94131` | 10-10 | R112 | (bold-johnson) `Assets/Scenes/SkillTest` 스킬 시험 씬 셋 삭제, "Open Skill Test" 메뉴 셋은 옮겨 간 곳 안내(퀸 오브 더 힐·소드 파이트 메뉴가 씬을 다시 만들지 않게) |
+| `08744a9` | 10-10 | R112 | (`skill-network-test`) 스킬 네트워크 시험 화면: `LabGame.NetTestMode`(튜닝 패널·값 세트·슬로모션·자유 카메라·화면 분할·P2·[7] 시험대 없음), `SkillNetTest`(키 안내 줄, 늘 보이는 수치, 방장의 참가자 줄), 연결 전 온라인 창 열기, 입력에 참가자 왕복·재생 지연·손실(`CFR8`, v17), 신호 중복·놓침 셈(Core 시험) |
+| `c9cb187` | 10-10 | R111 | 문서: Network/SKILLS_ONLINE §8~§13(R111 구현), VALIDATION R111 표, REQUIREMENTS R111, DECISIONS SK7·SK8, PITFALLS 33~35, HANDOFF, HISTORY (`claude/skills-online`, 푸시 안 함) |
+| `aef76d3` | 10-10 | R111 | 랩 왕복 지연을 스냅샷이 도착할 때 잼(그릴 때 재서 재생 지연이 섞였음), 입력을 아직 못 들은 사람에게 방장 시계 대신 0 |
+| `27a0735` | 10-10 | R111 | 재생 지연의 손실 "한 장 더": 8% 켜짐·5% 꺼짐, 4초 평균(손실 10%에서 1초에 한 번 넘게 왔다 갔다 했음), F3 창·보고 줄에 손실 %, Core 시험 1개 |
+| `0afe27f` | 10-10 | R111 | 룩에게 교대를 청받은 참가자의 F(수락)를 자기 스킬로 미리 그리지 않음 |
+| `5e04efe` | 10-10 | R111 | 손실 8% 넘는 연결은 스냅샷 한 장 더 기다림, 로컬 시험 시간표가 참가자 하나에게(`client2 …`) |
+| `8557f31` | 10-10 | R111 | 로컬 시험의 개발 명령은 지연 시뮬레이터를 건너뜀(손실 10%에 빠져 누름 횟수가 틀렸음) |
+| `f447b3c` | 10-10 | R111 | 기록 줄에 벽시계(같은 PC 두 창 기록이 ms까지 맞음), 방장이 단계 변화를 기록, `report` 명령 |
+| `f005b9b` | 10-10 | R111 | 내 누름 미리 그리기를 자기 시계로, 방장이 한 단계 앞서도 맞은 것으로, 폰 러쉬 비숍 클릭은 던짐, 연속 화면 저장(`burst`)·히트스톱 기록 |
+| `a2a0f00` | 10-10 | R111 | 빌드에서 맞음 번쩍 셰이더(`Unlit/Color`가 빌드에 없음 → `Sprites/Default`), 오류 낸 이펙트가 다음 신호를 막지 않음, 로컬 시험 포트 넘겨받기·다시 시도 |
+| `1d9f894` | 10-10 | R111 | 로컬 시험 시간표(방장·참가자 개발 명령, `hud`) |
+| `22cabf6` | 10-10 | R111 | 기물 스킬 온라인: 누른 횟수(D-S7), 참가자별 스킬 패킷(상태·밧줄·바리케이드·순간 신호, D-S5·D-S1), 화면만 히트스톱(D-S2), 내 누름·조준 즉시(D-S3), 방장 이전 이어받기(D-S6), 잰 재생 지연, F12 지연 시뮬레이터, 랩 경기를 `LabNetLink`로 빼고 `SteamRagdollLink`·`LoopbackLabLink`, 프로토콜 v16 `CFR7`, Core `SkillSync`와 시험 7개 |
+| `4c7d035` | 10-10 | R110 | 문서: Skills/SWORD_FIGHT §R110, VALIDATION R110 표, REQUIREMENTS R110, HANDOFF, HISTORY |
+| `7f1d142` | 10-10 | R110 | 나이트 벼랑 끝 역전: 골반이 밖 0.6 m까지·카메라 방향 무관·떨어지기 시작한 0.6초 안에도 켜짐(허공에서 멈췄다 공중제비), 자동 시험 edge-knight-side·edge-knight-fall |
+| `7ce76d0` | 10-10 | R109 | 문서: Skills/SWORD_FIGHT §R109, VALIDATION R109 표, REQUIREMENTS R109, HANDOFF, HISTORY |
+| `e7d4fdf` | 10-10 | R109 | 자동 시험 edge-bishop-close: 아군이 떨어진 뒤 비숍을 내려질 자리에 세움 |
+| `b273529` | 10-10 | R109 | 비숍 구원의 손: 끌어올리는 동안·내려놓은 뒤 비숍과 아군이 부딪히지 않음, 자리가 비숍과 겹치면 옆으로 비켜 내려놓음 |
+| `d662aea` | 10-10 | R108 | 문서: Skills/SWORD_FIGHT §R108, VALIDATION R108 표, REQUIREMENTS R108, HANDOFF, HISTORY |
+| `8f31888` | 10-10 | R108 | 토큰 옆면을 거리장의 잉크 테두리선에서 칸마다(점을 밀어내면 홈에서 꼬였음) |
+| `644e127` | 10-10 | R108 | 머리 위 표시를 3D 토큰으로(셰이더 `Skill Icon 3D`, 앞뒤 그림·옆면, 팝할 때 한 바퀴), 룩 소리 4개를 돌 재료로(띠용 없음) |
+| `8b9a11c` | 10-10 | R106 | 문서: Skills/SWORD_FIGHT §R106 효과음·코드, VALIDATION R106 표, REQUIREMENTS R106, HANDOFF, HISTORY |
+| `d685910` | 10-10 | R106 | 동전 같은 울림 없애기: 폰 러쉬 채팅의 울림 검사(`coin.py`)에 걸린 5개(킹 받아냄·빈틈, 룩 내려침, 끊김, 퀸 예고 = 퀸 오브 더 힐 `QueenLock`)를 다시 만들어 바꿈 |
+| `206a807` | 10-10 | R107 | 문서·도구: 폰 러쉬 효과음 2차 시안(기물별 소리, 동전 울림 검사) — Skills/SOUND §2차, Tools/Sfx/PawnRushSkills(spec_v2·coin·page_template_v2, build/page/fetch를 SPEC으로 고름), REQUIREMENTS R107, HANDOFF, HISTORY. Unity 손대지 않음 |
+| `a31c4b0` | 10-10 | R105 | 문서: Skills/QUEEN_HILL §R105, VALIDATION R105 표, REQUIREMENTS R105, HANDOFF, HISTORY |
+| `36a4342` | 10-10 | R106 | 자동 시험 보고에 그 시험에서 난 소리, 녹화 묶음 `"f"` = F 스킬 장면만 |
+| `2f6125c` | 10-10 | R105 | 녹화 파일 한국어 되살림(직전 편집이 PowerShell로 다른 인코딩에 저장해 컴파일이 깨졌음) |
+| `f6b7f9e` | 10-10 | R105 | 녹화 장면 묶음 r105(비숍 양탄자·취소·2발째 기다림) |
+| `c268084` | 10-10 | R106 | 소드 파이트 F 스킬 효과음: 퀸 오브 더 힐에서 고른 방향을 기물마다(킹·비숍 묵직, 퀸·룩 만화, 나이트 8비트), 순간마다 하나 `Resources/SwordFightSkillSfx/*.mp3` 19개(새 14 + 퀸 오브 더 힐 5), `SwordFightSkillSfx`(앞뒤 무음 자르기·크기 맞춤·재생), 시험장 소리 켜기/끄기, 녹화에 소리 트랙 |
+| `f925d94` | 10-10 | R105 | 떠 있는 비숍은 손으로 준 이동(`givenMove`, `RagdollPawn.cs` `SetInput`)으로 미끄러짐(스킬이 물리 단계마다 이동 입력을 지워서) |
+| `cb87532` | 10-10 | R105 | 자동 시험 bishop-wait에 양탄자 속도·받은 이동 표시 |
+| `9072f20` | 10-10 | R105 | 떠 있는 동안 고정점(anchor)을 몸보다 한 걸음 앞에 직접 옮김 |
+| `4d3fd28` | 10-10 | R105 | 몸을 천천히 붙는 양탄자 속도에 매 단계 맞춤 |
+| `c5cdcf5` | 10-10 | R105 | 고정점이 떠 있는 비숍을 따라감(제자리 고정점이 몸을 끌어당김) |
+| `07f0b5c` | 10-10 | R105 | 떠 있는 비숍의 이동 키를 미끄러짐에 넘김 |
+| `33bb4cb` | 10-10 | R105 | 자동 시험 bishop-wait: 스킬이 준비될 때까지 기다린 뒤 첫 F |
+| `cd032c6` | 10-10 | R105 | 비숍: 3초 안에 안 쏘면 취소(저절로 쏘지 않음), 첫 발 뒤에는 2발째까지 기다림, 이동 키로 천천히 미끄러짐(`bishopDrift` 0.7 m/s · `bishopDriftEase` 0.9초), 자동 시험 bishop-wait |
+| `3a6842e` | 10-10 | R104 | 승규 님 "맞을 때 동전 소리 나는 거 빼줘": 넘어짐 공통 소리 `Down` 파일 삭제(그 순간은 소리 없음), 문서 |
+| `e720d30` | 10-10 | R104 | 문서: Skills/QUEEN_HILL §효과음 넣기, VALIDATION R104 표, REQUIREMENTS R104, HANDOFF, HISTORY |
+| `8e4e1e9` | 10-10 | R104 | 효과음 28개의 Unity 가져오기 설정(.meta), 퀸 맞음 다시 만든 것(첫 결과가 거의 무음) |
+| `dc889f5` | 10-10 | R104 | 퀸 오브 더 힐 효과음: `Resources/QueenHillSkillSfx/<신호>.mp3` 28개, `QueenHillSkillSfx`(앞뒤 무음 자르기·크기 맞춤·재생), 시험장 소리 켜기/끄기 버튼, 녹화 인코더에 소리 트랙 |
+| `70c5d00` | 10-10 | R102·R103 | 문서: Skills/SWORD_FIGHT §R103 가장자리 스킬·§R102·조작·코드·확인 표, VALIDATION R103·R102 표, REQUIREMENTS R102·R103(+지켜야 할 조건 2줄), DECISIONS SK6, Skills README, HANDOFF, HISTORY. Core 91·모의 세션 40·실제 DLL 컴파일 통과 |
+| `19ade3c` | 10-10 | R103 | E 표시를 오른쪽 아래로(칼 게이지와 겹쳤음), 자동 시험의 피하기 동작 짧게 |
+| `25777e0` | 10-10 | R103 | 첫 Unity 시험에서 고친 것: 비숍이 맞아 놓치면 아군이 허공으로 떨어짐(끌던 속도로 발판 안까지 날아갔음, 길도 마지막에야 가장자리를 넘게), 나이트 취소 3 m(3.3 아님)·공중제비 1.1 m, 퀸 화면 베기 자국 얇고 짧게, 장외로 날아간 기물 밑 허공의 잡힌 칸 없앰(`SkillInkKit.Down`, 모든 모드), 녹화 자막 고정·가까운 카메라 |
+| `60453c8` | 10-10 | R103 | 소드 파이트 가장자리 스킬: 기물마다 두 번째 스킬 E(킹 왕의 귀환·퀸 체크메이트 일섬·룩 성벽 붕괴·비숍 구원의 손·나이트 벼랑 끝 역전), 시험 쿨 2초, 슬로 0.3초·화면 당김/돌기, 공용 `RagdollPawn.Fly`(`OuterFlight.cs`), 발판 덩어리 `SwordFightEdgeFloor`, Shift+F7·F8, 자동 시험·녹화 10장면 |
+| `9c1546f` | 10-10 | R102 | 룩 탑을 기물 모양으로 깎은 돌탑으로(계단 받침·돌 이음매·주황 띠, 얼굴·팔 없음, 1.4 m; 승규 님 "사진은 참고만, 캐릭터 느낌") |
+| `b2b8623` | 10-10 | R102 | 머리 위 표시에서 크림 바탕을 빼고 기물 모양만(승규 님 "배경 사진은 빼고 참고만") |
+| `94bc761` | 10-10 | R102 | 소드 파이트 시험 씬: 경기가 끝나지 않게 999점·1시간(240초에 끝나 칼질이 다 멈췄음), `bishopPinBehind` 삭제 |
+| `64d5e05` | 10-10 | R102 | 표시 테두리가 아이콘을 따라가게(거리장 폭), 비숍 손 크게·발목 바깥쪽에서, 팔 굵게, 돌탑 한 뼘 크게 |
+| `1f3d122` | 10-10 | R102 | 머리 위 기물 표시(아이콘 윤곽 → 거리장 셰이더 `Skill Icon`), 룩 체스 말 탑(무작위 순서), 비숍 대각선 손·맵 어디서든 묶임, 킹 F8 맵 어디서든(`BringNear`·`HoldGuard`), 자동 시험 king-mid·bishop-mid·bishop-miss |
+| `1a34135` | 10-10 | R101 | 문서·도구: 폰 러쉬 스킬 효과음 시안 — Skills/SOUND(새), Tools/Sfx/PawnRushSkills(새: 설명문·시간표·다듬기·페이지), Skills README·EFFECTS, HANDOFF, REQUIREMENTS, HISTORY. 소리 파일은 시안 페이지와 ElevenLabs 작업판에 |
+| `16ea8c2` | 10-10 | R99 | 문서: Skills/SWORD_FIGHT §R99, VALIDATION R99 표, REQUIREMENTS R99, Skills README, HANDOFF, HISTORY |
+| `663701d` | 10-10 | R99 | 녹화: 룩 장면을 비스듬히 뒤에서(옆에서는 통로 끝이 잘림) |
+| `dcd4709` | 10-10 | R99 | 소드 파이트 시험 씬에 `rookLiftCarry` 0.65 저장 |
+| `fe8646c` | 10-10 | R99 | `rookLiftCarry` 0.65(자동 시험 rook: 가까운 적 2.45 m, 기획 2.6) |
+| `38266a0` | 10-10 | R99 | 룩 탑에 띄워진 기물은 수평 밀기를 줄임(`rookLiftCarry`, 그대로면 4.58 / 2.72 m 날아감) |
+| `32d02e4` | 10-10 | R99 | 비숍 발목 손: 1.5배·금색·기물 밑동 바깥에서 솟아 기물을 웅크리게 누름, 묶인 동안 감속 고리 숨김(손이 치마 밑에 숨어 안 보였음) |
+| `f375400` | 10-10 | R99 | 룩 탑이 첫 장면 전까지 땅속에서 대기(효과 원점에 한 장면 보였음), 룩·비숍·나이트 녹화 카메라 |
+| `d273456` | 10-10 | R100 | 문서: 퀸 오브 더 힐 효과음 시안(ElevenLabs 30개, 시안 페이지) — Skills/QUEEN_HILL §효과음 시안, REQUIREMENTS R100, HANDOFF, HISTORY. 코드·Unity 변경 없음 |
+| `0076424` | 10-10 | R99 | 잔상을 반투명 잉크 실루엣으로(새 셰이더 `Skill Ghost`, 만화 연기 잔상은 금 덩어리로 뭉침), 화면 물듦 약하게, 퀸 녹화 카메라 뒤로, 씬에 새 수치 |
+| `1535f6f` | 10-10 | R99 | 퀸이 발로 달리는 돌진(`RagdollPawn.BeginDash`·`StopDash` = 폰 러쉬 돌진 장치를 밖에서, `RagdollPawn.OuterDash.cs`; 던졌더니 착지에서 넘어져 혼자 장외) |
+| `18ef1eb` | 10-10 | R99 | 소드 파이트 스킬 수정: 칼끝을 바닥 위로(`SwordFightPawn.AboveFloor`), 발동·기 모으기·잔상·화면 당김, 퀸 돌진, 룩 돌탑, 비숍 발목 잡는 손, 킹 왕관·한 바퀴 베기, 나이트 갈래 줄 |
+| `2eaa54f` | 10-10 | R98 | 문서: Skills/QUEEN_HILL §R98, VALIDATION R98 표, REQUIREMENTS R98, HANDOFF, HISTORY |
+| `b12766b` | 10-10 | R98 | 녹화: 경사로를 내려가는 검격을 옆에서(경사가 보이게) |
+| `8eb54d1` | 10-10 | R98 | 자동 시험: 탑 위 퀸을 3층 블록에서 0.3 m 떨어진 곳에(블록 속에 세워져 한 번 1층으로 튕겨 나감) |
+| `080401a` | 10-10 | R98 | 퀸 경고 칸을 격자로 바닥에 붙여 깖(경사로를 따라 휨, 턱 벽면은 빼서 위아래 바닥으로 나뉨, `Tile.Drape`·`SlashFloorAt`), 판정에 적이 선 자리 바닥도, 초승달 검기가 경사를 부드럽게, 시험 도우미가 더미를 그 자리 바닥에(`WalkFloor`), 자동 시험 `queen-slope*` 4개·검격 줄 끝 높이, 녹화 R98 |
+| `73bc0f0` | 10-10 | R97 | 문서: Skills/QUEEN_HILL §R97, VALIDATION R97 표(R95 퀸 두 줄은 R97이 대신함), REQUIREMENTS R97, HANDOFF, HISTORY |
+| `2a9d526` | 10-10 | R97 | 자동 시험 `queen`(돌벽)이 이번에 넘어진 횟수로 셈(앞 시험의 맞은 기록이 남아 벽 너머 적도 맞은 것처럼 보였음) |
+| `c794d09` | 10-10 | R96 | 문서: SKILLS_ONLINE §0에 "확인할 것·정할 것" 한눈에 표, 결정 D-S8(어디서 먼저)·D-S9(어느 지연까지 정상) |
+| `c06bf7b` | 10-10 | R97 | 씬에 `queenClimb` 1.05 저장 |
+| `6fd3892` | 10-10 | R97 | 퀸 검기가 바닥의 경고 칸을 따라감(아래층으로 내려가고 1.05 m까지 턱은 타고 오름, 돌벽에 막힘), 맞는 판정도 그 길 바닥 기준, R95의 "퀸 높이에서 똑바로" 되돌림, 자동 시험 `queen-high`·`queen-low` 새 기대·`queen`은 돌벽 1 m 가까이, 녹화 R97 3장면 |
+| `6018d68` | 10-10 | R96 | 문서: Network/SKILLS_ONLINE(기물 스킬 온라인 조건·시험 계획, 제안), Network README·HANDOFF 문서 트리와 안내 표, Skills/DESIGN §10·PLAN_V0.1_STATUS에서 연결, REQUIREMENTS R96 |
+| `823e2c4` | 10-10 | R95 | 문서: Skills/QUEEN_HILL §R95, REQUIREMENTS R95, VALIDATION R95 표, HANDOFF, HISTORY |
+| `a96bd11` | 10-10 | R95 | 녹화: 탑 위 퀸 장면을 동쪽에서(아래층 위로 뜬 경고 칸이 보이게), 같은 층 적을 줄 옆으로 |
+| `7011440` | 10-10 | R95 | 씬에 저장된 수치를 새 값으로(나이트 머리 조준 1.05 m, 비숍 2발, 퀸 높이 범위) |
+| `b6710fc` | 10-10 | R95 | 퀸 경고 칸을 퀸 높이에서 똑바로·검기가 가는 데까지(아래층·위층에 그리던 것), 같은 높이 적만 맞음(`queenDrop`), 비숍 2발(`bishopShots`), 나이트 머리 조준 1.05 m, 자동 시험 `queen-high`·`queen-low`, 녹화 R95 장면 |
+| `9d3507c` | 10-10 | R94 | 문서: Skills/QUEEN_HILL §R94, REQUIREMENTS R94, VALIDATION R94 표, HANDOFF, HISTORY |
+| `b449452` | 10-10 | R94 | 씬에 저장된 수치를 새 값으로(룩 범위 9 m, 나이트 머리 조준 1.15 m) |
+| `c3a3511` | 10-10 | R94 | 룩 범위 6 → 9 m, 교대 리본을 한 줄로 그려 가운데 틈 없앰(`Skill Band` `_Mirror`), 나이트 머리 조준 1.3 → 1.15 m, 자동 시험 `rook-far`, 녹화 R94 장면 |
+| `16db3d9` | 10-09 | R93 | 문서: Skills/QUEEN_HILL §R93, REQUIREMENTS R93, VALIDATION R93 표, HANDOFF, HISTORY |
+| `468772d` | 10-09 | R93 | 나이트가 머리를 밟은 적은 벽 없는 쪽으로 빠져나가고, 둘이 떨어진 뒤에야 다시 부딪힘(겹친 채 부딪혀 하늘로 튕기던 것), 퀸·킹 녹화 구도 |
+| `bf871ef` | 10-09 | R93 | 씬에 저장된 수치를 새 기본값으로(나이트 호 1.6 m, 머리 조준 1.3 m, 퀸 휘두르기 0.12초, 도우미 켬), 녹화 R93 장면 6개 |
+| `fe7ae43` | 10-09 | R93 | 킹 시험 도우미·호위 몸 윤곽선, 퀸 아래에서 위로 올려 베기(칼이 바닥을 뚫지 않음), 룩 리본 기물 색 그라데이션·룩 시험 도우미, 나이트 더 높게·머리 자동 조준 |
+| (이 커밋) | 10-09 | R92 | 문서: HANDOFF, REQUIREMENTS R92, DECISIONS SK5(나이트 4.5 m), EFFECTS 룩 벽 고리, Skills README 측정·녹화, DESIGN 나이트 수치, VALIDATION R92 표 |
+| `fe627b7` | 10-09 | R92 | 룩 벽 고리를 부딪힌 벽면에 납작하게(벽면 방향을 신호에 싣고 벽 끝·바닥에 맞춰 밀고 줄임), 나이트 비거리 5.5 → 4.5 m·두 번째 F 7.5 → 6.2 m/s, 시험·녹화에 벽 35°·바리케이드 장면 |
+| `73c2c06` | 10-09 | R90·R91 | 병합(`C:/Work`, 승규 님 "R90·R91도 푸시해 줘"): `claude/sword-fight-skill-design-1b90a8`(`5d6e9da`: R90 폰 러쉬 스킬 디자인 A `67fce2b`·`2c0669f` + R91 소드 파이트 스킬 시험 `2559493`·`32c4ad0`·`94713a5`·`5d6e9da`)을 bold-johnson에. 코드 충돌 없음, 문서 2개(HISTORY·REQUIREMENTS)는 같은 자리에 새 줄 → 둘 다 남김. Unity 폴더에 미리 복사해 시험하던 파일은 브랜치와 똑같아 정리한 뒤 합침 |
+| `f12048d` | 10-09 | — | 병합(`C:/Work`, 승규 님 "푸시해 줘"): `main`의 이동·점프 튜닝 `3d49a18`(R87~R89, 7커밋)을 `claude/bold-johnson-8ez95n`에. 코드 충돌 없음, 문서 4개(HANDOFF·HISTORY·REQUIREMENTS·VALIDATION)는 양쪽이 같은 자리에 같은 번호(R87~R89)로 새 줄을 넣어 충돌 → 둘 다 남김, R86 중복 줄 하나 뺌 |
+| `2c0669f` | 10-09 | R90 | 문서: EFFECTS 디자인 A, Skills README R90 녹화, REQUIREMENTS R90, DECISIONS SK4, VALIDATION R90 표, HANDOFF |
+| `67fce2b` | 10-09 | R90 | 폰 러쉬 다섯 기물 이펙트를 디자인 A로: 공통 부품 `SkillInkKit`, 바닥 칸 경고·왕관 고리·성벽 고리·비숍 겉·나이트 말굽·폰 도장, 맞을 때 번쩍·잡힌 칸, 이펙트 시간이 게임 속도를 따라감, 폰 스킬 신호, 녹화 장면 8개 |
+| `5572719` | 10-09 | R89 | 병합: 아래 `9d06d83`(코스 01 v0.4가 들어온 `claude/bold-johnson-8ez95n`)을 R89 브랜치에. HANDOFF·HISTORY 충돌은 양쪽을 모두 살림. 이 PC Unity 폴더(`C:/Work`)를 이 커밋으로 빨리 감고 복사해 두었던 R89 파일을 걷어 냄 |
+| `9d06d83` | 10-09 | — | 병합(이 PC의 `C:/Work`, 승규 님 "충돌 해결, 내 것은 푸시하지 마"): 10-08부터 멈춰 있던 `upstream/claude/bold-johnson-8ez95n`(`1fb198f`: R86 코스 01 v0.4 + R85 커밋 번호) 받기를 마무리. DECISIONS·REQUIREMENTS 충돌은 양쪽 줄(P6·P7·R86과 R87·SK1 새 경로)을 모두 살림. 푸시 안 함 |
+| `0a910f2` | 10-09 | R89 | 문서: REQUIREMENTS R89, DECISIONS SK3, VALIDATION R89 표, HANDOFF, HISTORY |
+| `6fcb900` | 10-09 | R89 | 녹화 도구: 장면마다 시야각이 달라도 제목·키 표시가 같은 자리·크기(좁은 장면에서 제목이 위로 잘리던 것), 긴 줄은 화면에 맞게 줄임 |
+| `fdc0408` | 10-09 | R89 | 나이트·폰 피하기 장면을 옆에서 찍는 구도, 킹 홀·룩 점선 굵게 |
+| `ccc6604` | 10-09 | R89 | 시험 씬 `SkillTest/QueenOfTheHill_SkillTest`, 교대·도약 호와 카메라 조정, 문서 Skills/QUEEN_HILL·README |
+| `dd9e6ad` | 10-09 | R89 | 퀸 오브 더 힐 스킬 시험장, 스킬 6개(1.B 2.A 3.B 4.B 5.B 6.B)와 A 디자인 이펙트, 자동 시험·녹화 도구(첫 판) |
+| `ae87ddc` | 10-08 | R86 | 폰 러시 코스 01 v0.4: 같은 씬을 공용 길 + 미션 광장 2곳으로(`Course01v4Builder`), `MissionStation`·`TeamGate`·미니게임 A~E(`Mg*`)·`MissionPicker`, Core `PawnRushMissions`(뽑기·4명 상한·25% 걸쇠, 테스트 3개), `ObstacleSpan`·v0.4 검증기, 플레이테스트 F6~F10, 판자 재질 2개, v0.2 빌더·슬롯 삭제 |
+| (이 커밋) | 10-08 | R89 3차 | 이 작업을 `claude/bold-johnson-8ez95n`에 합침(앞으로 감기, 사용자 요청). 문서: HISTORY 커밋 번호, REQUIREMENTS R89 3차, HANDOFF |
+| `c289a81` | 10-10 | R113 | 소드 파이트 현황 기획서 `Docs/GameModes/SwordFight/STATUS.md`(bold-johnson 기준), PLANNING_BRIEF 스킬 안내, 오전 R93 → R112 번호 변경 |
 | `2497935` | 10-10 | R112 | 소드 파이트 재기획 상담 문서 `Docs/GameModes/SwordFight/PLANNING_BRIEF.md`(Claude AI 채팅용), DESIGN 머리 연결, HANDOFF·REQUIREMENTS |
 | `ed5d527` | 10-09 | R92 | 캡스턴 8바퀴·허리 높이 막대·몸으로 밀기(Rigidbody), 폰 러쉬 코스 01 온라인(`SteamPawnRushLink`, `Core/PawnRushNetState`, 미니게임 원격 상태, HUD 내 폰, `escapeLeavesMatch`, `InputBlocked`), 프로토콜 v16, 컴파일 스크립트, 문서(SCENES·GameModes·PAWN_RUSH_COURSE01 §7-2·DECISIONS T9·VALIDATION·REQUIREMENTS·HANDOFF) |
 | `78f6003` | 10-08 | R90 | main 중간 점검: 폴더를 종류별로(Assets/ChessFight·Maps·Scenes/PawnRush 없앰, 스크립트는 Scripts/ 아래 어셈블리별), 안 쓰는 씬 5개 삭제(생성기 틀은 Tools/Generators/templates), 폰 러쉬 경기 씬 = PawnRush_Course01(`GameSceneConfig.soloInMatch`, Esc 나가기), 경로 문자열·검사 스크립트·문서(STRUCTURE·SCENES·GameModes·DECISIONS T7·T8 등) |
@@ -18,7 +133,6 @@
 | `4e93ae3` | 10-08 | R88 | 전력질주 점프 높이: `RagdollPawn` 공중 자세는 달리기 자세(`Posture`)·점프 상승 보정(`GuardJumpRise`), 자동 점검 `SprintJump`, 패널 기본 프리셋을 사용자 값으로. 문서: RagdollLab README R88, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G32, VALIDATION, REQUIREMENTS R88, HANDOFF |
 | `4a3c569` | 10-08 | R88 | (사용자) RagdollTest 패널로 다듬은 튜닝: 달리기 2.5·질주 3.6·점프 3.8·방향 전환 40·공중 제어 0.4·넉다운 9·기상 1·다이빙 |
 | `cd4bd57` | 10-08 | R87 | 폴가이즈 속도감: `RagdollTuning.asset` 달리기 4.0·질주 5.6·가속 22·멈춤 29·점프 4.2, 같은 값을 `LabGame.StepPresetJson`·`preset_step.json`·패널 버튼에. 문서: RagdollLab README, PAWN_RUSH_MAP_KIT, QotH DESIGN, DECISIONS G31(G13 대체 표기), VALIDATION, REQUIREMENTS R87, HANDOFF |
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 10-08 | R86 | 폰 러시 코스 01 v0.4: 같은 씬을 공용 길 + 미션 광장 2곳으로(`Course01v4Builder`), `MissionStation`·`TeamGate`·미니게임 A~E(`Mg*`)·`MissionPicker`, Core `PawnRushMissions`(뽑기·4명 상한·25% 걸쇠, 테스트 3개), `ObstacleSpan`·v0.4 검증기, 플레이테스트 F6~F10, 판자 재질 2개, v0.2 빌더·슬롯 삭제 |
 | `7d34fbf` | 10-08 | R85 | 문서: UI §15 "이름 바꾸기", SCENES, DECISIONS U16, VALIDATION R85 표, REQUIREMENTS R85, HANDOFF. 문구 하나("바꿨어요! 돌아가는 중") |
 | `1670ad6` | 10-08 | R85 | 인트로 "이름 바꾸기"와 로비 오른쪽 위 내 이름에서 언제든 이름 바꾸기(`NameChange`, `NameScreen` 바꾸기 모드·돌아가기), 바꾸는 동안 로비 단축키·채팅 쉼, 매칭 중 막음, Shift+클릭 없앰, 오프라인 로비도 고른 이름, `LobbyStage.SelfOnScreen` |
 | `076cc5b` | 10-08 | R84 | 문서: AI가 Unity에서 Play해 본 결과(VALIDATION R84 표), PITFALLS 32(첫 프레임 3.7초가 로고 기다림을 써 버림), UI §15·HANDOFF·REQUIREMENTS에 반영 |

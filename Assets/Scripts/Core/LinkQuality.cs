@@ -52,8 +52,11 @@ namespace ChessFight.Network
     public struct LinkProfile
     {
         public int RoundTripMs, LossPercent;
-        public bool Active => RoundTripMs > 0 || LossPercent > 0;
-        public override string ToString() => Active ? $"+{RoundTripMs}ms / 손실 {LossPercent}%" : "꺼짐";
+        // R111: up to this much more one-way delay, at random per packet, so packets can
+        // overtake each other (the skills' moments and presses must survive that, C5).
+        public int JitterMs;
+        public bool Active => RoundTripMs > 0 || LossPercent > 0 || JitterMs > 0;
+        public override string ToString() => Active ? $"+{RoundTripMs}ms / 손실 {LossPercent}%" + (JitterMs > 0 ? $" / 흔들림 {JitterMs}ms" : "") : "꺼짐";
         public static readonly LinkProfile[] Presets =
         {
             new LinkProfile(),
@@ -67,6 +70,7 @@ namespace ChessFight.Network
     {
         struct Entry { public double Due; public T Item; }
         readonly List<Entry> queue = new List<Entry>();
+        readonly List<Entry> due = new List<Entry>();
         readonly Random random;
         public LinkProfile Profile;
 
@@ -76,20 +80,30 @@ namespace ChessFight.Network
         public bool Push(T item, double now)
         {
             if (Profile.LossPercent > 0 && random.Next(100) < Profile.LossPercent) return false;
-            queue.Add(new Entry { Due = now + Profile.RoundTripMs / 2000.0, Item = item });
+            double jitter = Profile.JitterMs > 0 ? random.NextDouble() * Profile.JitterMs / 1000.0 : 0;
+            queue.Add(new Entry { Due = now + Profile.RoundTripMs / 2000.0 + jitter, Item = item });
             return true;
         }
 
-        // Due items in the order they were pushed; the delay is constant, so
-        // the simulator never reorders.
+        // Due items, earliest first. Without jitter the delay is constant and that is the
+        // order they were pushed in; with jitter a later packet can come out first.
         public void Release(double now, Action<T> deliver)
         {
-            int n = 0;
-            while (n < queue.Count && queue[n].Due <= now) n++;
-            if (n == 0) return;
-            var due = queue.GetRange(0, n);
-            queue.RemoveRange(0, n);
-            foreach (var entry in due) deliver(entry.Item);
+            due.Clear();
+            for (int i = 0; i < queue.Count; i++)
+                if (queue[i].Due <= now) due.Add(queue[i]);
+            if (due.Count == 0) return;
+            queue.RemoveAll(e => e.Due <= now);
+            // Stable: equal times keep the order they were pushed in.
+            var ordered = new List<Entry>(due);
+            for (int i = 1; i < ordered.Count; i++)
+            {
+                var item = ordered[i];
+                int j = i - 1;
+                while (j >= 0 && ordered[j].Due > item.Due) { ordered[j + 1] = ordered[j]; j--; }
+                ordered[j + 1] = item;
+            }
+            foreach (var entry in ordered) deliver(entry.Item);
         }
 
         public int Count => queue.Count;

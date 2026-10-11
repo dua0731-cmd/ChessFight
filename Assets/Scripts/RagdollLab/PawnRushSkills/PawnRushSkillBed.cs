@@ -40,6 +40,7 @@ namespace ChessFight.RagdollLab
 
         LabGame game;
         PawnRushSkillFx fx;
+        PawnRushSkillSfx sfx;
         GUIStyle text, small, header, button, selected, box;
         Texture2D panelTexture, barTexture;
         Rect panelRect;
@@ -56,6 +57,9 @@ namespace ChessFight.RagdollLab
         {
             log.Clear();
             RagdollPawn.SkillLog += OnSkill;
+            // The skill network test (R112, branch skill-network-test): the lab's tools stand down before LabGame.Start,
+            // and the test screen draws the numbers.
+            if (GetComponent<SkillNetTest>() == null) gameObject.AddComponent<SkillNetTest>();
         }
 
         void OnDestroy() => RagdollPawn.SkillLog -= OnSkill;
@@ -69,26 +73,36 @@ namespace ChessFight.RagdollLab
             SkillBarricade.Build(barricadeAt, barricadeFacing, "Pawn Rush 바리케이드 (룩만 부숨)");
             fx = GetComponent<PawnRushSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<PawnRushSkillFx>();
+            // The skills' sounds (R114, 승규 님's picks on the R107 page).
+            sfx = GetComponent<PawnRushSkillSfx>();
+            if (sfx == null) sfx = gameObject.AddComponent<PawnRushSkillSfx>();
             // F is the skills' key here, not the lab's interact (bells, levers, cutting a hook).
             if (game != null && skillKey == KeyCode.F) game.InteractKeyOff = true;
+            // The key goes in with the rest of P1's input (R111): offline straight to the pawn, online to the host.
+            if (game != null) game.SkillKey = skillKey;
             Report($"폰 러쉬 스킬 시험 준비 완료 — 왼쪽 창에서 기물을 고르고 {skillKey}");
         }
 
         RagdollPawn P1 => game != null && game.players.Length > 0 ? game.players[0].pawn : null;
+
+        /// <summary>The pawn the person here plays: P1 offline, this PC's own pawn in an online match (R111).</summary>
+        RagdollPawn Me => game != null ? game.LocalPawn : null;
+
+        bool Online => game != null && game.NetworkControlled;
 
         void Update()
         {
             if (game == null || game.AutoTest) return;
             foreach (var pawn in RagdollPawn.All)
                 if (pawn != null && pawn.PawnRushSkills == null) pawn.PawnRushSkills = skills;
+            if (game.SkillKey != skillKey) game.SkillKey = skillKey;
 
-            var p1 = P1;
-            if (p1 == null || game.SuppressInput || game.NetworkControlled) return;
-            if (Input.GetKeyDown(previousPieceKey)) StepPiece(p1, -1);
-            if (Input.GetKeyDown(nextPieceKey)) StepPiece(p1, 1);
-            if (Input.GetKeyDown(clusterKey)) ClusterDummies(p1);
-            bool free = game.labCamera != null && game.labCamera.freeMode;
-            if (!free) p1.SetSkillInput(Input.GetKeyDown(skillKey));
+            var me = Me;
+            if (me == null || game.SuppressInput) return;
+            if (Input.GetKeyDown(previousPieceKey)) StepPiece(me, -1);
+            if (Input.GetKeyDown(nextPieceKey)) StepPiece(me, 1);
+            if (!Online && Input.GetKeyDown(clusterKey)) ClusterDummies(me);
+            // The skill key itself: LabGame.ReadInput puts it into P1's input (R111).
         }
 
         void LateUpdate()
@@ -120,6 +134,13 @@ namespace ChessFight.RagdollLab
 
         void SetPiece(RagdollPawn pawn, PieceKind kind)
         {
+            if (Online)
+            {
+                // Online the host switches pieces (it runs them): ask it; the pawn turns when its snapshot says so.
+                game.AskPiece(kind);
+                Report($"기물 바꾸기 요청: {ChessPieces.Name(kind)} ({RagdollPawn.SkillName(kind)}) — 방장이 바꿔요");
+                return;
+            }
             pawn.SetPiece(kind);
             pawn.ResetSkill();
             Report($"{pawn.DisplayName} → {ChessPieces.Name(kind)} ({RagdollPawn.SkillName(kind)})");
@@ -213,10 +234,32 @@ namespace ChessFight.RagdollLab
             _ => "킹 스킬은 아직 만들지 않았어요 (D1)",
         };
 
+        /// <summary>The skill key card at the bottom right of the view, the same card as Sword Fight's F and E
+        /// (<see cref="SkillKeyCard"/>): the key in the piece's colour when it can be used, grey with the cooldown
+        /// draining it from the top otherwise; under the name, what it is doing, the cooldown left, or how to use it.</summary>
+        void KeyCard(RagdollPawn p1)
+        {
+            if (p1.Piece == PieceKind.King) return;
+            bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
+            string how = (p1.Piece == PieceKind.Rook || p1.Piece == PieceKind.Bishop) ? $"{skillKey} 조준 → 좌클릭" : $"{skillKey} 사용";
+            SkillKeyCard.Draw(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
+                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), SkillKeyCard.Colors(p1.Piece),
+                ready || running, false, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
+        }
+
         static string StageName(RagdollPawn pawn)
         {
             if (pawn.SkillStage == SkillStage.None) return pawn.SkillCooldown > 0f ? "쿨타임" : "준비됨";
-            return string.IsNullOrEmpty(pawn.SkillDetail) ? pawn.SkillStage.ToString() : pawn.SkillDetail;
+            if (!string.IsNullOrEmpty(pawn.SkillDetail)) return pawn.SkillDetail;
+            // An online client's puppet has the stage but not the host's wording (R111).
+            switch (pawn.SkillStage)
+            {
+                case SkillStage.Windup: return pawn.SkillAiming ? "조준" : "예고";
+                case SkillStage.Active: return "발동";
+                case SkillStage.Link: return "연결 (F 한 번 더)";
+                case SkillStage.Recovery: return "후딜";
+                default: return pawn.SkillStage.ToString();
+            }
         }
 
         void EnsureStyles()
@@ -248,15 +291,16 @@ namespace ChessFight.RagdollLab
         void OnGUI()
         {
             if (game == null || game.AutoTest || game.PanelOpen) return;
-            var p1 = P1;
+            var p1 = Me;
             if (p1 == null) return;
             EnsureStyles();
             DrawOverheads();
+            KeyCard(p1);
 
             const float width = 360f;
             panelRect = new Rect(8f, 44f, width, Mathf.Min(Screen.height - 180f, 640f));
             GUILayout.BeginArea(panelRect, box);
-            GUILayout.Label("폰 러쉬 스킬 시험", header);
+            GUILayout.Label("폰 러쉬 스킬 · 네트워크 시험", header);
             GUILayout.Label($"기물 바꾸기: 버튼 또는 {previousPieceKey} ◀ ▶ {nextPieceKey}   ·   스킬: <b>{skillKey}</b>", small);
             GUILayout.BeginHorizontal();
             foreach (var kind in Pieces)
@@ -287,7 +331,21 @@ namespace ChessFight.RagdollLab
                 if (GUILayout.Button(fx.effects ? "이펙트 켜짐" : "이펙트 꺼짐", fx.effects ? selected : button)) fx.effects = !fx.effects;
                 if (GUILayout.Button(fx.hitStop ? "멈춤 켜짐" : "멈춤 꺼짐", fx.hitStop ? selected : button)) fx.hitStop = !fx.hitStop;
                 if (GUILayout.Button(fx.shake ? "흔들기 켜짐" : "흔들기 꺼짐", fx.shake ? selected : button)) fx.shake = !fx.shake;
+                if (sfx != null && GUILayout.Button(sfx.sound ? "소리 켜짐" : "소리 꺼짐", sfx.sound ? selected : button)) sfx.sound = !sfx.sound;
                 GUILayout.EndHorizontal();
+            }
+
+            if (Online)
+            {
+                // Online (R111): the host runs every skill; the dummies are offline only. Who hosts and the link's numbers
+                // are on the test screen at the top right (R112).
+                GUILayout.Space(6f);
+                GUILayout.Label("기물 바꾸기는 방장에게 요청해요 (Z · X 또는 위 버튼). 지연 넣기: F12", small);
+                GUILayout.Space(6f);
+                GUILayout.Label("<b>최근 결과</b>" + (game.NetworkHost ? "" : " (참가자 화면에는 내 요청만 나와요)"), text);
+                for (int i = log.Count - 1; i >= 0; i--) GUILayout.Label(log[i], small);
+                GUILayout.EndArea();
+                return;
             }
 
             GUILayout.Space(6f);
@@ -337,7 +395,7 @@ namespace ChessFight.RagdollLab
                 Vector3 sp = cam.WorldToScreenPoint(pawn.Hips.position + Vector3.up * 1.1f);
                 if (sp.z <= 0f) continue;
                 string line;
-                if (pawn == P1)
+                if (pawn == Me)
                     line = pawn.SkillStage != SkillStage.None ? StageName(pawn)
                         : pawn.SkillCooldown > 0f ? $"{RagdollPawn.SkillName(pawn.Piece)} {pawn.SkillCooldown:0.0}" : "";
                 else

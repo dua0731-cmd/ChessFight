@@ -47,6 +47,37 @@ namespace ChessFight.RagdollLab
         /// <summary>A networked match owns the pawns and the input routing; local play stands down.</summary>
         public bool NetworkControlled { get; set; }
 
+        /// <summary>In a networked match: this PC runs the physics (the host); false = it draws the host's puppets.</summary>
+        public bool NetworkHost { get; set; }
+
+        /// <summary>In a networked match: this PC's own pawn (the network link sets it).</summary>
+        public RagdollPawn NetworkLocal { get; set; }
+
+        /// <summary>The pawn the person at this PC plays: P1 offline, the network's own pawn online. The skill test beds'
+        /// panels and the effects' "mine / my side / theirs" colours follow it.</summary>
+        public RagdollPawn LocalPawn => NetworkControlled ? NetworkLocal : players.Length > 0 ? players[0].pawn : null;
+
+        /// <summary>The piece skill key (a skill test bed sets it; none elsewhere). It goes into P1's input as
+        /// <see cref="PawnInput.skill"/>, so online it reaches the host like a jump (R111).</summary>
+        public KeyCode SkillKey { get; set; } = KeyCode.None;
+
+        /// <summary>Online, the piece the person here asked for (the host switches the pawn): the piece and a number
+        /// that changes with every ask, so the ask is repeated in every input packet and a lost one does not matter.</summary>
+        public ChessFight.Network.PieceKind NetPieceAsk { get; private set; }
+        public byte NetPieceSeq { get; private set; }
+
+        public void AskPiece(ChessFight.Network.PieceKind kind)
+        {
+            NetPieceAsk = kind;
+            NetPieceSeq = (byte)(NetPieceSeq == 255 ? 1 : NetPieceSeq + 1);
+        }
+
+        /// <summary>Development only (the loopback test link's commands): presses added to P1's next input, and a move and
+        /// a right-click held until a time.</summary>
+        public PawnInput DevPress;
+        public Vector3 DevMove;
+        public float DevMoveUntil, DevGrabUntil;
+
         /// <summary>Set while the player types in a network field so the keys do not also drive a pawn.</summary>
         public bool SuppressInput { get; set; }
         /// <summary>F does not work bells, levers or hooks: the Pawn Rush skill test bed has the skills on F.</summary>
@@ -54,6 +85,14 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Another on-screen panel needs the mouse; keep the cursor free so its buttons work.</summary>
         public bool UiWantsCursor { get; set; }
+
+        /// <summary>
+        /// The skill network test (R112, branch skill-network-test): the skill test scenes are only for trying the skills
+        /// online, so the lab's own tools stand down. No tuning panel (Tab, F1, a pad's Start) and its slot keys, no slow
+        /// motion (T), no free camera (F4), no split screen (F2) and no second local player, no [7] test bed (F9). The
+        /// skill test beds set it in Awake (before Start); SkillNetTest draws the numbers instead.
+        /// </summary>
+        public bool NetTestMode { get; set; }
 
         /// <summary>Each local player has their own half of the screen and their own camera.</summary>
         public bool SplitScreen { get; private set; }
@@ -92,8 +131,8 @@ namespace ChessFight.RagdollLab
             ApplyTime();
             ApplyGravity();
             // The Queen of the Hill mechanics test bed, south-east of the arena. Built from code, so the
-            // scene does not need rebuilding; the automated checks use it too.
-            if (GetComponent<QueenHillTestBed>() == null) gameObject.AddComponent<QueenHillTestBed>().game = this;
+            // scene does not need rebuilding; the automated checks use it too. Not in the skill network test (R112).
+            if (!NetTestMode && GetComponent<QueenHillTestBed>() == null) gameObject.AddComponent<QueenHillTestBed>().game = this;
             PawnHookView.LocalAim = LocalAim;
             if (AutoTest) return;
             SetUpCameras();
@@ -192,6 +231,9 @@ namespace ChessFight.RagdollLab
             {
                 var slot = players[i];
                 if (slot.pawn != null) continue;
+                // One person per PC in the skill network test (R112): no second local player (P2's slot stays for its
+                // team colour, which the network's other team wears).
+                if (NetTestMode && i > 0) continue;
                 slot.pawn = Spawn(slot.spawn, Vector3.forward, slot.material, slot.name);
                 // P1 white, P2 black, so the lab has two sides to try team rules with (M10). Dummies have none.
                 slot.pawn.Team = i % 2 == 0 ? Teams.White : Teams.Black;
@@ -308,17 +350,25 @@ namespace ChessFight.RagdollLab
 
         void HandleHotkeys()
         {
-            if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.F1)) PanelOpen = !PanelOpen;
-            for (int i = 0; i < XInputPad.MaxPads; i++)
-                if (XInputPad.Pressed(i, XInputPad.Start)) PanelOpen = !PanelOpen;
             if (Input.GetKeyDown(KeyCode.R) && !NetworkControlled) RespawnAll();
-            if (Input.GetKeyDown(KeyCode.T) && !NetworkControlled) SetSlowMotion(!SlowMotion);
-            // F4, not F: F is the game's interact key now (bells, levers, en passant).
-            if (Input.GetKeyDown(KeyCode.F4)) labCamera.SetFreeMode(!labCamera.freeMode);
-            if (Input.GetKeyDown(KeyCode.F2) && !NetworkControlled) SetSplitScreen(!SplitScreen);
             if (Input.GetKeyDown(KeyCode.Escape)) Cursor.lockState = CursorLockMode.None;
+            if (NetTestMode)
+            {
+                // The skill network test (R112): none of the lab's tools below.
+                PanelOpen = false;
+            }
+            else
+            {
+                if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.F1)) PanelOpen = !PanelOpen;
+                for (int i = 0; i < XInputPad.MaxPads; i++)
+                    if (XInputPad.Pressed(i, XInputPad.Start)) PanelOpen = !PanelOpen;
+                if (Input.GetKeyDown(KeyCode.T) && !NetworkControlled) SetSlowMotion(!SlowMotion);
+                // F4, not F: F is the game's interact key now (bells, levers, en passant).
+                if (Input.GetKeyDown(KeyCode.F4)) labCamera.SetFreeMode(!labCamera.freeMode);
+                if (Input.GetKeyDown(KeyCode.F2) && !NetworkControlled) SetSplitScreen(!SplitScreen);
+            }
 
-            if (slots != null)
+            if (slots != null && !NetTestMode)
             {
                 bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
                 for (int i = 0; i < LabParamSlots.Count; i++)
@@ -363,6 +413,7 @@ namespace ChessFight.RagdollLab
                     input.ability = Input.GetKeyDown(KeyCode.E);
                     input.ability2 = Input.GetKeyDown(KeyCode.Q);
                     input.interact = !InteractKeyOff && Input.GetKey(KeyCode.F);
+                    input.skill = SkillKey != KeyCode.None && Input.GetKeyDown(SkillKey);
                     // The clicks only count once the cursor is locked to the game (click the view once;
                     // Esc frees it again). Otherwise the click that locks it would also dive.
                     if (Cursor.lockState == CursorLockMode.Locked && !PanelOpen && !swallowMouse)
@@ -408,7 +459,21 @@ namespace ChessFight.RagdollLab
             if (mv.sqrMagnitude > 1f) mv.Normalize();
             input.move = cam.FlatRight * mv.x + cam.FlatForward * mv.y;
             input.aim = cam.AimForward;
+            if (slotIndex == 0) AddDevInput(ref input);
             return input;
+        }
+
+        /// <summary>The loopback test link's commands (development): taken once, then cleared.</summary>
+        void AddDevInput(ref PawnInput input)
+        {
+            input.jump |= DevPress.jump;
+            input.shove |= DevPress.shove;
+            input.skill |= DevPress.skill;
+            input.ability |= DevPress.ability;
+            input.ability2 |= DevPress.ability2;
+            DevPress = default;
+            if (Time.unscaledTime < DevMoveUntil) input.move = DevMove;
+            if (Time.unscaledTime < DevGrabUntil) input.grab = true;
         }
 
         public static int PadIndex(LabDevice device) => device >= LabDevice.Pad1 ? device - LabDevice.Pad1 : -1;

@@ -1,0 +1,1708 @@
+using System;
+using System.Collections.Generic;
+using ChessFight.Gameplay;
+using ChessFight.Network;
+using UnityEngine;
+
+namespace ChessFight.RagdollLab
+{
+    /// <summary>A seat in a network match: the roster's team and slot (the same on every PC).</summary>
+    public struct LabSeat
+    {
+        public int Team, Slot;
+    }
+
+    /// <summary>
+    /// The lab's network match (host-authoritative ragdolls), whatever carries the packets. The host runs the only
+    /// physics; clients send inputs and draw interpolated poses with no physics of their own. Moved out of
+    /// SteamRagdollLink in R111 so the same match runs over Steam (SteamRagdollLink, two PCs and two accounts) and over a
+    /// plain UDP socket (LoopbackLabLink: two copies of the game on one PC, or two PCs on a LAN, no Steam), which is what
+    /// lets the skills online be tried, filmed and checked frame by frame on one PC.
+    ///
+    /// R111 also adds the piece skills online (Docs/Network/SKILLS_ONLINE.md):
+    /// <list type="bullet">
+    /// <item>presses travel as counts (D-S7, RagdollLabInput): a lost packet delays a press by 1/60 s, never drops it;</item>
+    /// <item>with every snapshot the host sends each client a skills packet (D-S5): every busy piece's state, the bishops'
+    /// wires, the barricades, and the skill moments that client has not confirmed (D-S1, numbered, drawn once);</item>
+    /// <item>a client writes the states into its puppets as they arrive (D-S4: a warning shows as early as possible), plays
+    /// the moments in step with the bodies, draws its own aim from its own camera and its own press at once (D-S3);</item>
+    /// <item>a hit stop holds only the two pieces' picture on each screen (D-S2, the effects' side);</item>
+    /// <item>a new host takes over cooldowns, guards and wires (D-S6);</item>
+    /// <item>the jitter buffer is measured (70..160 ms) instead of a fixed 110 ms, and F12 adds delay and loss (the capsule
+    /// motor's F8 presets) to this PC's packets both ways.</item>
+    /// </list>
+    /// R121: the same link (both carriers, the same transport, buffer and moments) also runs the Sword Fight skill test
+    /// scene, which has a SwordFightGame instead of a LabGame (<c>LabNetLink.Sword.cs</c>).
+    /// </summary>
+    [DefaultExecutionOrder(-150)]
+    public abstract partial class LabNetLink : MonoBehaviour
+    {
+        /// <summary>The link running in this scene (Steam or loopback), for tools and the editor.</summary>
+        public static LabNetLink Current { get; private set; }
+
+        /// <summary>Development: log what a client is sent and plays (the loopback test's checks read it).</summary>
+        public static bool Trace;
+
+        /// <summary>A trace line with the wall clock (the same on two copies on one PC, so their logs line up to the ms).</summary>
+        public static void Log(string text) => Debug.Log($"[LabNet {DateTime.Now:HH:mm:ss.fff}] {text}");
+
+        protected const float SnapshotInterval = 1f / 30f;
+        const float InputInterval = 1f / 60f;
+        const float InputTimeout = 0.35f;
+        protected const float SilenceTimeout = 12f;
+        // Overload guard while this PC hosts: at most this much game time per frame, so at 120 Hz no frame runs more than
+        // 12 physics steps. Unity's default (1/3 s, 40 steps) lets an overloaded host freeze for a third of a second and
+        // then send everything at once, which clients see as stutter and jumps; capped, the host runs a little slow
+        // instead and its snapshots keep coming evenly.
+        const float HostMaxFrameStep = 0.1f;
+        const float MatchInterval = 0.5f;
+        /// <summary>A moment played this much later than the poses it belongs to is not drawn any more (ms).</summary>
+        const double StaleEventMs = 1000;
+
+        // ---------------------------------------------------------------- what a carrier provides
+
+        /// <summary>Can talk at all (Steam is up / the socket is open).</summary>
+        protected abstract bool NetOnline { get; }
+        /// <summary>A match is on: started, with a roster.</summary>
+        protected abstract bool NetActive { get; }
+        protected abstract bool NetIsHost { get; }
+        protected abstract ulong NetSelf { get; }
+        protected abstract ulong NetHost { get; }
+        protected abstract ulong NetMatch { get; }
+        protected abstract IReadOnlyDictionary<ulong, LabSeat> NetRoster { get; }
+        protected abstract string NetName(ulong id);
+        /// <summary>Send raw bytes now (after the lag simulator).</summary>
+        protected abstract void NetSend(ulong id, byte[] bytes);
+        /// <summary>Hand every packet that arrived to <paramref name="deliver"/> (sender, bytes).</summary>
+        protected abstract void NetReceive(Action<ulong, byte[]> deliver);
+        /// <summary>The same seconds on every PC (Steam's server clock; the PC clock for a loopback test).</summary>
+        protected abstract double NetServerSeconds();
+        /// <summary>Once a frame, before anything else (the session's own work).</summary>
+        protected virtual void NetTick() { }
+        /// <summary>How long the host has been silent (a Steam session hands the host role on after a while).</summary>
+        protected virtual void NetHostSilence(float seconds) { }
+        /// <summary>Leave the match (the host stopped sending).</summary>
+        protected abstract void NetLeave(string why);
+        /// <summary>The panel's part for when no match is on (making and joining a room).</summary>
+        protected abstract void DrawLobby();
+        /// <summary>What carries the packets, for the panel.</summary>
+        protected abstract string NetKind { get; }
+        /// <summary>Development commands from the host are taken (loopback tests only).</summary>
+        protected virtual bool AcceptsDev => false;
+
+        // ---------------------------------------------------------------- state
+
+        class Remote
+        {
+            public RagdollLabInput input;
+            public uint sequence, clientTimeMs;
+            public float received;
+            public bool synced;
+            public byte jumps, shoves, abilities, abilities2, skills, pieceSeq;   // counts already taken
+            public int jump, shove, ability, ability2, skill;                    // presses waiting for a physics step
+            public bool interactLatch, interactNow;
+            public ushort eventAck;
+            public bool ackSet;
+            // R112, the test screen: the link as the client reports it, and what the host heard.
+            public ushort reportRtt;
+            public byte reportDelay, reportLoss;
+            public int heard, heardRate, skillsTaken;
+        }
+
+        /// <summary>One player as the host sees it (the skill network test screen, R112).</summary>
+        public struct PeerStat
+        {
+            public string Name;
+            public int RoundTripMs, DelayMs, LossPercent;   // as that player measures it
+            public int InputRate;                           // its input packets heard per second (60 when nothing is lost)
+            public int SkillPresses;                        // its skill key presses the host took
+            public int Unconfirmed;                         // skill moments it has not confirmed yet
+            public float SilentMs;                          // since its last input
+        }
+
+        struct Packet
+        {
+            public ulong peer;
+            public byte[] bytes;
+        }
+
+        protected LabGame game;
+        protected LabCamera cam;
+        protected bool hudOpen;
+        protected string message = "";
+
+        readonly Dictionary<ulong, RagdollPawn> pawns = new Dictionary<ulong, RagdollPawn>();
+        readonly Dictionary<RagdollPawn, ulong> idOf = new Dictionary<RagdollPawn, ulong>();
+        readonly Dictionary<ulong, Remote> inputs = new Dictionary<ulong, Remote>();
+        readonly Dictionary<ulong, RagdollPose> posePool = new Dictionary<ulong, RagdollPose>();
+        readonly Dictionary<ulong, int> snapCountdown = new Dictionary<ulong, int>();
+        readonly List<RagdollPose> outgoing = new List<RagdollPose>();
+        readonly List<RagdollSnapshot> buffer = new List<RagdollSnapshot>();
+        readonly Stack<RagdollSnapshot> spare = new Stack<RagdollSnapshot>();
+        readonly RagdollPose blended = new RagdollPose();
+        readonly List<ulong> scratchIds = new List<ulong>();
+
+        protected bool matchActive;
+        uint tick, sequence, lastTick;
+        float nextSnapshot, nextInput, lastReceive, statsAt, lastMatchSend;
+        float savedMaxFrameStep = -1f;
+        double playbackMs;
+        readonly PlaybackDelay delay = new PlaybackDelay();
+
+        // A client's own presses, counted (D-S7), and the rest of its input waiting for the next send.
+        RagdollLabInput pending;
+        byte myJumps, myShoves, myAbilities, myAbilities2, mySkills, ownPieceSeq;
+        bool grabWasDown;
+
+        int sentBytes, receivedBytes, snapshotsIn, skillBytes;
+        int sentRate, receivedRate, snapshotRate, skillRate;
+        float roundTripMs;
+
+        // Obstacle clock for the match (SyncObstacleClock). A client replaces it with the host's obstacle time from the
+        // snapshots as soon as one arrives (hostObstacles).
+        readonly HostObstacleClock hostObstacles = new HostObstacleClock();
+        double steamClockErrorMs, obstacleOffset, serverAnchor;
+        uint serverSecond;
+        bool obstacleSynced;
+
+        // The skills (R111).
+        readonly SkillEventLog eventLog = new SkillEventLog();
+        readonly SkillEventInbox inbox = new SkillEventInbox();
+        readonly SkillWirePacket skillOut = new SkillWirePacket(), skillIn = new SkillWirePacket();
+        readonly List<SkillWireEvent> eventBatch = new List<SkillWireEvent>();
+        readonly List<SkillWireEvent> eventQueue = new List<SkillWireEvent>();
+        readonly Dictionary<ushort, SkillTripwire> remoteWires = new Dictionary<ushort, SkillTripwire>();
+        readonly HashSet<ushort> seenWires = new HashSet<ushort>();
+        readonly HashSet<RagdollPawn> seenStates = new HashSet<RagdollPawn>();
+        readonly List<ushort> goneWires = new List<ushort>();
+        uint lastSkillsTime;
+        bool skillsApplied, replaying;
+        int eventsPlayed;
+        readonly Dictionary<RagdollPawn, SkillStage> hostSeen = new Dictionary<RagdollPawn, SkillStage>();
+
+        // F12: extra delay and loss on this PC's packets both ways (the capsule motor's F8 presets).
+        readonly LinkSimulator<Packet> lagOut = new LinkSimulator<Packet>(), lagIn = new LinkSimulator<Packet>();
+        int lagPreset;
+
+        GUIStyle label, small, button;
+        Texture2D panel;
+
+        // R112, the skill network test screen (SkillNetTest): what the link measures besides the round trip.
+        readonly List<PeerStat> peerStats = new List<PeerStat>();
+        readonly List<SkillWireEvent> statBatch = new List<SkillWireEvent>();
+        int snapshotBytesLast, skillPackets, skillPacketMax, skillPacketRate, skillPacketMaxRate, snapshotsOut, snapshotOutRate;
+        // A client's press (F, or the click that fires / calls off an aim) until the host's state of its piece changes.
+        float pressAt = -1f;
+        SkillStage pressStage, lastOwnStage;
+        bool pressLocked, pressAccept, pressKick;
+        // R118: this PC's frame time (smoothed) and physics steps a second, for the test screen.
+        float frameMs = -1f;
+        int physicsSteps, physicsRate;
+        readonly float[] reactions = new float[10];
+        int reactionCount, reactionNext;
+        // A client's skill moments: drawn how far from their own pose, and how long after they arrived.
+        readonly Dictionary<ushort, float> arrivedAt = new Dictionary<ushort, float>();
+        readonly float[] momentLate = new float[20], momentWait = new float[20];
+        int momentCount, momentNext;
+
+        protected static uint NowMs() => (uint)(Time.realtimeSinceStartupAsDouble * 1000d);
+
+        /// <summary>This PC's lag simulation (F12, the panel's buttons).</summary>
+        public LinkProfile Lag => lagOut.Profile;
+        public bool MatchActive => matchActive;
+        public bool IsHost => matchActive && NetIsHost;
+        public float RoundTripMs => roundTripMs;
+        public double PlaybackDelayMs => delay.Milliseconds;
+        public int EventsPlayed => eventsPlayed;
+
+        // ---- the test screen's numbers (R112)
+        public string CarrierName => NetKind;
+        public int PlayerCount => pawns.Count;
+        public double JitterMs => delay.JitterMs;
+        public double LossShare => delay.LossShare;
+        public bool LossWait => delay.Lossy;
+        public int SentPerSecond => sentRate;
+        public int ReceivedPerSecond => receivedRate;
+        public int SkillBytesPerSecond => skillRate;
+        public int SnapshotsPerSecond => snapshotRate;
+        /// <summary>Snapshots the host sent a second (30 when its frames keep up; fewer on a slow host).</summary>
+        public int SnapshotsSentPerSecond => snapshotOutRate;
+        public int BufferedSnapshots => buffer.Count;
+        public int SnapshotBytes => snapshotBytesLast;
+        /// <summary>Skills packets a second (to all clients on the host) and their average and largest size.</summary>
+        public int SkillPacketsPerSecond => skillPacketRate;
+        public int SkillPacketAverage => skillPacketRate > 0 ? skillRate / skillPacketRate : 0;
+        public int SkillPacketLargest => skillPacketMaxRate;
+        public int MomentsQueued => eventQueue.Count;
+        public int MomentsRepeated => inbox.Repeats;
+        public int MomentsMissed => inbox.Missed;
+        public int MomentsStale { get; private set; }
+        public int MomentsLogged => eventLog.Count;
+        /// <summary>R123: times a client's drawing jumped to catch up (more than 250 ms behind: the host stopped a moment).</summary>
+        public int PlaybackJumps { get; private set; }
+        /// <summary>A client's last press until the host's state of its piece changed (ms; -1 = none yet), the average of
+        /// the last ten, and presses the host never acted on within 1.5 s (on cooldown, knocked down).</summary>
+        public float LastReactionMs { get; private set; } = -1f;
+        public float AverageReactionMs => Average(reactions, reactionCount);
+        public int SkillPresses { get; private set; }
+        public int SkillStarts { get; private set; }
+        public int ReactionsLost { get; private set; }
+        /// <summary>F pressed as the yes to a rook's swap (Queen of the Hill): not a skill of this piece's own.</summary>
+        public int SwapAccepts { get; private set; }
+        /// <summary>A client's skill moments: how far from their pose they were drawn (ms, average of the last 20; should
+        /// be near 0) and how long they waited after arriving (about the playback delay).</summary>
+        public float MomentLateMs => Average(momentLate, momentCount);
+        public float MomentWaitMs => Average(momentWait, momentCount);
+        public IReadOnlyList<PeerStat> Peers => peerStats;
+        /// <summary>R118: this PC's frame time (ms, smoothed), its physics steps in the last second and the steps it
+        /// should make (1 / fixedDeltaTime). A host that falls behind shows it here first.</summary>
+        public float FrameMs => frameMs;
+        public int PhysicsStepsPerSecond => physicsRate;
+        public int PhysicsStepsWanted => Mathf.RoundToInt(Time.timeScale / Mathf.Max(1e-4f, Time.fixedDeltaTime));
+
+        /// <summary>One player as the host election ranks them (Docs/Network/HOST.md): the PC's score with its frame rate,
+        /// the machine alone, the mean ping to the others (Steam's estimate), and the place in the published order of who
+        /// takes over next (0 = not in it).</summary>
+        public struct HostCandidate
+        {
+            public string Name;
+            public int Fitness, BaseFitness, PingMs, Next;
+            public bool IsHost, IsSelf;
+        }
+
+        static readonly List<HostCandidate> noCandidates = new List<HostCandidate>();
+        /// <summary>R118: the players as the host election sees them (empty where there is no election: the local test).</summary>
+        public virtual IReadOnlyList<HostCandidate> HostCandidates => noCandidates;
+        /// <summary>R118: the line the session shows for a few seconds when the host role moves ("" otherwise).</summary>
+        public virtual string HostNote => "";
+        /// <summary>The online panel (F3); the test screen opens it while no match is on.</summary>
+        public bool PanelShown { get => hudOpen; set => hudOpen = value; }
+
+        static float Average(float[] ring, int count)
+        {
+            int n = Mathf.Min(count, ring.Length);
+            if (n == 0) return -1f;
+            float sum = 0f;
+            for (int i = 0; i < n; i++) sum += ring[i];
+            return sum / n;
+        }
+
+        static void Push(float[] ring, ref int next, ref int count, float value)
+        {
+            ring[next] = value;
+            next = (next + 1) % ring.Length;
+            count++;
+        }
+
+        // ---------------------------------------------------------------- lifecycle
+
+        protected virtual void Awake()
+        {
+            Current = this;
+            game = FindFirstObjectByType<LabGame>();
+            // P1's camera specifically: local split screen adds a second LabCamera for P2.
+            cam = game != null && game.labCamera != null ? game.labCamera : FindFirstObjectByType<LabCamera>();
+            if (game == null) SwordAwake();
+        }
+
+        protected virtual void OnEnable()
+        {
+            RagdollPawn.SkillFx += OnPawnRushFx;
+            RagdollPawn.QueenHillFx += OnQueenHillFx;
+            SwordFightSkills.Fx += OnSwordFx;
+        }
+
+        protected virtual void OnDisable()
+        {
+            RagdollPawn.SkillFx -= OnPawnRushFx;
+            RagdollPawn.QueenHillFx -= OnQueenHillFx;
+            SwordFightSkills.Fx -= OnSwordFx;
+            KeysTaken = false;
+        }
+
+        /// <summary>End a match this link is in, as if it had ended normally (the local players come back), and stop. For a
+        /// link being swapped for another one mid-scene (LoopbackLabLink.Start/Stop).</summary>
+        public void Shutdown()
+        {
+            if (matchActive)
+            {
+                if (sword != null) SwordExit();
+                else ExitMatch();
+            }
+            enabled = false;
+            OnShutdown();
+        }
+
+        /// <summary>The carrier lets go of what it holds at once (a socket's port), not at the end of the frame.</summary>
+        protected virtual void OnShutdown() { }
+
+        protected virtual void OnDestroy()
+        {
+            if (Current == this) Current = null;
+            StopHostingGuard();
+            if (matchActive)
+            {
+                ObstacleClock.Use(null);
+                DropRemoteWires();
+                if (game != null)
+                {
+                    game.NetworkControlled = game.NetworkHost = false;
+                    game.NetworkLocal = null;
+                }
+            }
+            if (sword != null) sword.UiWantsCursor = false;
+            if (panel != null) Destroy(panel);
+        }
+
+        protected virtual void Update()
+        {
+            if (game == null && sword == null) return;
+            float dtMs = Mathf.Min(Time.unscaledDeltaTime * 1000f, 250f);
+            frameMs = frameMs < 0f ? dtMs : frameMs + (dtMs - frameMs) * 0.05f;
+            if (Input.GetKeyDown(KeyCode.F3)) hudOpen = !hudOpen;
+            if (Input.GetKeyDown(KeyCode.F12)) SetLag((lagPreset + 1) % LinkProfile.Presets.Length);
+            // A closed panel has no text field typing into it (the room code's focus must not hold the keys after a join).
+            if (!hudOpen && KeysTaken) SuppressKeys(false);
+            // The lab locks the cursor for mouse-look; this panel needs it back or its buttons never get clicked. Only
+            // while it is open, though: F3 closes it and the clicks go back to the pawn.
+            if (game != null) game.UiWantsCursor = hudOpen && !game.AutoTest;
+            else sword.UiWantsCursor = hudOpen;
+            NetTick();
+            if (!NetOnline) return;
+            // A client's skill timers run before this frame's packets overwrite them.
+            if (matchActive && !NetIsHost)
+            {
+                if (sword != null) AdvanceSwordViews(Time.unscaledDeltaTime);
+                else AdvanceViews(Time.unscaledDeltaTime);
+            }
+            PumpReceive();
+
+            bool active = NetActive;
+            if (active && !matchActive)
+            {
+                if (sword != null) SwordEnter();
+                else EnterMatch();
+            }
+            else if (!active && matchActive)
+            {
+                if (sword != null) SwordExit();
+                else ExitMatch();
+            }
+            if (matchActive)
+            {
+                if (sword != null)
+                {
+                    SyncSwordRoster();
+                    if (NetIsHost) SwordHostFrame();
+                    else SwordClientFrame();
+                }
+                else
+                {
+                    SyncObstacleClock();
+                    SyncRoster();
+                    if (NetIsHost) HostFrame();
+                    else ClientFrame();
+                }
+            }
+            PumpSend();
+            UpdateStats();
+        }
+
+        protected virtual void FixedUpdate()
+        {
+            physicsSteps++;
+            if (!matchActive || !NetIsHost) return;
+            if (sword != null)
+            {
+                SwordFixedUpdate();
+                return;
+            }
+            float now = Time.realtimeSinceStartup;
+            foreach (var pair in pawns)
+            {
+                if (pair.Key == NetSelf || pair.Value == null) continue;
+                if (!inputs.TryGetValue(pair.Key, out var r) || now - r.received > InputTimeout)
+                {
+                    pair.Value.SetInput(default);
+                    continue;
+                }
+                // The held buttons as they are; the presses one per physics step, so two quick ones stay two.
+                var input = r.input.Held();
+                input.interact = r.interactLatch || r.interactNow;
+                r.interactLatch = false;
+                input.jump = Take(ref r.jump);
+                input.shove = Take(ref r.shove);
+                input.ability = Take(ref r.ability);
+                input.ability2 = Take(ref r.ability2);
+                input.skill = Take(ref r.skill);
+                pair.Value.SetInput(input);
+            }
+            foreach (var pair in pawns)
+            {
+                if (pair.Value == null || pair.Value.Hips.position.y >= LabLayout.KillHeight) continue;
+                var seat = NetRoster.TryGetValue(pair.Key, out var s) ? s : default;
+                Respawn(pair.Value, seat.Team, seat.Slot);
+            }
+        }
+
+        static bool Take(ref int presses)
+        {
+            if (presses <= 0) return false;
+            presses--;
+            return true;
+        }
+
+        // ---------------------------------------------------------------- host
+
+        void HostFrame()
+        {
+            if (pawns.TryGetValue(NetSelf, out var mine) && mine != null)
+            {
+                mine.SetInput(game.ReadPlayerInput(0));
+                if (game.NetPieceSeq != ownPieceSeq)
+                {
+                    ownPieceSeq = game.NetPieceSeq;
+                    ApplyPieceAsk(mine, game.NetPieceAsk);
+                }
+            }
+            if (Input.GetKeyDown(KeyCode.R) && !game.SuppressInput)
+                foreach (var pair in pawns)
+                {
+                    var seat = NetRoster.TryGetValue(pair.Key, out var s) ? s : default;
+                    Respawn(pair.Value, seat.Team, seat.Slot);
+                }
+            if (Trace)
+                foreach (var pawn in pawns.Values)
+                {
+                    if (pawn == null) continue;
+                    hostSeen.TryGetValue(pawn, out var seen);
+                    if (seen == pawn.SkillStage) continue;
+                    Log($"host: {pawn.DisplayName} {pawn.Piece} {seen} → {pawn.SkillStage}");
+                    hostSeen[pawn] = pawn.SkillStage;
+                }
+            SendWorld();
+        }
+
+        /// <summary>The host's packets, 30 a second: the poses, the skills packet to each client, the Queen of the Hill
+        /// round's state, and the Sword Fight test's fighters and floor (R121).</summary>
+        void SendWorld()
+        {
+            // On a schedule rather than "an interval since the last send", which slipped to the next frame every time and
+            // made the rate uneven on a slow host. After a hitch the schedule restarts instead of bursting to catch up.
+            float now = Time.realtimeSinceStartup;
+            if (now < nextSnapshot) return;
+            nextSnapshot += SnapshotInterval;
+            if (nextSnapshot <= now) nextSnapshot = now + SnapshotInterval;
+            uint stamp = NowMs();
+            outgoing.Clear();
+            foreach (var pair in pawns)
+            {
+                if (pair.Value == null) continue;
+                var pose = Pose(pair.Key);
+                pair.Value.CaptureNetworkPose(pose);
+                pose.id = pair.Key;
+                // The newest input time heard from that player, for its round trip; 0 = none yet (this PC's clock means
+                // nothing on a client's: a joining client read seconds of "round trip" from it, R111).
+                pose.ack = inputs.TryGetValue(pair.Key, out var remote) ? remote.clientTimeMs : 0u;
+                if (pair.Value.NetworkSnap)
+                {
+                    snapCountdown[pair.Key] = 3;   // unreliable packets: repeat the teleport flag
+                    pair.Value.NetworkSnap = false;
+                }
+                int left = snapCountdown.TryGetValue(pair.Key, out int n) ? n : 0;
+                pose.snap = left > 0;
+                if (left > 0) snapCountdown[pair.Key] = left - 1;
+                outgoing.Add(pose);
+            }
+            if (outgoing.Count == 0) return;
+            // The obstacle time these poses were simulated at: clients draw the obstacles at it.
+            byte[] bytes = RagdollNetProtocol.Snapshot(NetMatch, ++tick, stamp, outgoing, ObstacleClock.Now);
+            snapshotBytesLast = bytes.Length;
+            snapshotsOut++;
+            foreach (ulong id in NetRoster.Keys)
+                if (id != NetSelf) Send(id, bytes);
+            SendSkills(stamp);
+            SendMatchState();
+            if (sword != null) SendSwordState(stamp);
+        }
+
+        /// <summary>A player asked for a piece (the panel, Z/X): the host switches the pawn (and starts its skill over).</summary>
+        void ApplyPieceAsk(RagdollPawn pawn, PieceKind kind)
+        {
+            if (pawn == null || !ChessPieces.IsValid((byte)kind) || pawn.Piece == kind) return;
+            pawn.SetPiece(kind);
+            pawn.ResetSkill();
+            if (Trace) Log($"{pawn.DisplayName} → {kind}");
+        }
+
+        /// <summary>
+        /// The skills packet, to each client with every snapshot: the busy pieces, the wires, the barricades, and the moments
+        /// that client has not confirmed yet (as many as fit in 1024 bytes; the rest go in the next one).
+        /// </summary>
+        void SendSkills(uint stamp)
+        {
+            eventLog.Expire(stamp);
+            skillOut.Clear();
+            skillOut.HostTimeMs = stamp;
+            skillOut.FirstSeq = eventLog.First;
+            foreach (var pair in pawns)
+            {
+                var pawn = pair.Value;
+                if (pawn == null || pawn.SkillNetIdle || skillOut.States.Count >= SkillWire.MaxStates) continue;
+                var s = new SkillWireState { Pawn = RefOf(pawn) };
+                if (s.Pawn == SkillWire.None) continue;
+                pawn.CaptureSkillNet(ref s, RefOf);
+                skillOut.States.Add(s);
+            }
+            foreach (var wire in SkillTripwire.LiveWires)
+            {
+                if (wire == null || wire.Remote || skillOut.Wires.Count >= SkillWire.MaxWires) continue;
+                var o = new SkillWireObject();
+                wire.CaptureNet(ref o, RefOf);
+                skillOut.Wires.Add(o);
+            }
+            var barricades = SkillBarricade.All;
+            for (int i = 0; i < barricades.Count && i < SkillWire.MaxBarricades; i++)
+                if (barricades[i] != null)
+                    skillOut.Barricades.Add(new SkillWireBarricade { Index = (byte)i, Standing = barricades[i].Standing, RegrowLeft = barricades[i].RegrowLeft });
+            int budget = RagdollNetProtocol.MaxBytes - RagdollNetProtocol.HeaderBytes;
+            int fit = SkillWire.EventsThatFit(budget, skillOut.States.Count, skillOut.Wires.Count, skillOut.Barricades.Count, 255);
+            foreach (ulong id in NetRoster.Keys)
+            {
+                if (id == NetSelf) continue;
+                inputs.TryGetValue(id, out var r);
+                ushort acked = r != null && r.ackSet ? r.eventAck : unchecked((ushort)(eventLog.First - 1));
+                eventLog.After(acked, fit, eventBatch);
+                skillOut.Events.Clear();
+                skillOut.Events.AddRange(eventBatch);
+                byte[] bytes = RagdollNetProtocol.Skills(NetMatch, skillOut);
+                skillBytes += bytes.Length;
+                skillPackets++;
+                skillPacketMax = Mathf.Max(skillPacketMax, bytes.Length);
+                Send(id, bytes);
+            }
+        }
+
+        /// <summary>The Queen of the Hill round's opened sections (M8), twice a second: the host judges the bells, the
+        /// clients show the same paths opening at the same shared-clock moment.</summary>
+        void SendMatchState()
+        {
+            var match = QueenHillMatch.Current;
+            if (match == null || Time.realtimeSinceStartup - lastMatchSend < MatchInterval) return;
+            lastMatchSend = Time.realtimeSinceStartup;
+            string text = match.Encode();
+            if (text.Length == 0) return;
+            byte[] bytes = RagdollNetProtocol.Match(NetMatch, text);
+            if (bytes == null) return;
+            foreach (ulong id in NetRoster.Keys)
+                if (id != NetSelf) Send(id, bytes);
+        }
+
+        // The host's own skills, recorded as they happen (the effects on its own screen listen to the same events).
+        void OnPawnRushFx(SkillFxEvent e)
+        {
+            if (!matchActive || !NetIsHost || replaying) return;
+            eventLog.Add(new SkillWireEvent
+            {
+                Mode = SkillWire.ModePawnRush, Kind = (byte)e.kind, By = RefOf(e.by), Target = RefOf(e.target),
+                X = e.at.x, Y = e.at.y, Z = e.at.z, Dx = e.dir.x, Dy = e.dir.y, Dz = e.dir.z,
+                Ux = e.normal.x, Uy = e.normal.y, Uz = e.normal.z,
+                Count = (byte)Mathf.Clamp(e.count, 0, 255), Size = e.size,
+                Source = e.source is SkillTripwire wire && wire != null ? wire.NetId : (ushort)0,
+            }, NowMs());
+        }
+
+        void OnQueenHillFx(QueenHillFxEvent e)
+        {
+            if (!matchActive || !NetIsHost || replaying) return;
+            eventLog.Add(new SkillWireEvent
+            {
+                Mode = SkillWire.ModeQueenHill, Kind = (byte)e.kind, By = RefOf(e.by), Target = RefOf(e.target),
+                X = e.at.x, Y = e.at.y, Z = e.at.z, Dx = e.dir.x, Dy = e.dir.y, Dz = e.dir.z,
+                Ux = e.to.x, Uy = e.to.y, Uz = e.to.z,
+                Count = (byte)Mathf.Clamp(e.count, 0, 255), Size = e.size,
+            }, NowMs());
+        }
+
+        void ReceiveInput(ulong sender, byte[] bytes)
+        {
+            if (!NetRoster.ContainsKey(sender)) return;
+            // The Sword Fight test's input is the lab's with the aimed point after it (R121); the counts mean its own
+            // presses there (SwordFixedUpdate).
+            bool swordInput = RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeSwordInput;
+            if (swordInput != (sword != null)) return;
+            uint seq, clientTime;
+            RagdollLabInput fresh;
+            bool read = swordInput
+                ? RagdollNetProtocol.ReadSwordInput(bytes, NetMatch, out seq, out clientTime, out fresh)
+                : RagdollNetProtocol.ReadLabInput(bytes, NetMatch, out seq, out clientTime, out fresh);
+            if (!read) return;
+            if (!inputs.TryGetValue(sender, out var r)) inputs[sender] = r = new Remote();
+            if (r.sequence != 0 && !RagdollNetProtocol.Newer(seq, r.sequence)) return;   // older, overtaken: its counts are stale
+            if (!r.synced)
+            {
+                // A client's counts start where they are when the host first hears it (after a host change too): presses
+                // from before are not played again. The piece it asked for is.
+                r.synced = true;
+                r.jumps = fresh.jumps;
+                r.shoves = fresh.shoves;
+                r.abilities = fresh.abilities;
+                r.abilities2 = fresh.abilities2;
+                r.skills = fresh.skills;
+                r.pieceSeq = 0;
+            }
+            r.jump = Mathf.Min(4, r.jump + PressCount.Take(fresh.jumps, ref r.jumps));
+            r.shove = Mathf.Min(4, r.shove + PressCount.Take(fresh.shoves, ref r.shoves));
+            r.ability = Mathf.Min(4, r.ability + PressCount.Take(fresh.abilities, ref r.abilities));
+            r.ability2 = Mathf.Min(4, r.ability2 + PressCount.Take(fresh.abilities2, ref r.abilities2));
+            int skillsNow = PressCount.Take(fresh.skills, ref r.skills);
+            r.skill = Mathf.Min(4, r.skill + skillsNow);
+            r.skillsTaken += skillsNow;
+            r.interactLatch |= fresh.interact;
+            r.interactNow = fresh.interact;
+            r.input = fresh;
+            r.sequence = seq;
+            r.clientTimeMs = clientTime;
+            r.received = Time.realtimeSinceStartup;
+            r.heard++;
+            r.reportRtt = fresh.roundTripMs;
+            r.reportDelay = fresh.delayMs;
+            r.reportLoss = fresh.lossPercent;
+            if (fresh.pieceSeq != 0 && fresh.pieceSeq != r.pieceSeq)
+            {
+                r.pieceSeq = fresh.pieceSeq;
+                if (sword != null) ApplySwordPiece(sender, (PieceKind)fresh.pieceAsk);
+                else if (pawns.TryGetValue(sender, out var pawn)) ApplyPieceAsk(pawn, (PieceKind)fresh.pieceAsk);
+            }
+            if (!r.ackSet || SkillWire.Newer(fresh.eventAck, r.eventAck))
+            {
+                r.eventAck = fresh.eventAck;
+                r.ackSet = true;
+            }
+        }
+
+        // ---------------------------------------------------------------- client
+
+        void ClientFrame()
+        {
+            var local = game.ReadPlayerInput(0);
+            if (local.jump) myJumps = PressCount.Add(myJumps);
+            if (local.shove) myShoves = PressCount.Add(myShoves);
+            if (local.ability) myAbilities = PressCount.Add(myAbilities);
+            if (local.ability2) myAbilities2 = PressCount.Add(myAbilities2);
+            if (local.skill) mySkills = PressCount.Add(mySkills);
+            pending.Hold(local);
+            // Held, but latched until sent: a tap shorter than one send interval still reaches the host.
+            pending.interact |= local.interact;
+
+            if (pawns.TryGetValue(NetSelf, out var me) && me != null)
+            {
+                // R112: time a press until the host's state of my piece changes (the skill key; the click that fires or
+                // the right click that calls off an aim). Measured before the guess below draws over my piece.
+                bool aiming = me.HostStage == SkillStage.Windup && !me.HostAimLocked;
+                // Asked to swap by a rook (Queen of the Hill): F is the yes, timed until the host takes the ask away.
+                bool accepting = local.skill && me.CastleAsker != null;
+                // R118: only a press that can do something is timed: one that starts a skill, the knight's second press in
+                // its leap, the yes to a swap, or the aim's click. A press on cooldown or in the air used to start the clock
+                // too, and the skill that came later counted from it (averages of 400-700 ms at a 25 ms round trip).
+                bool kick = local.skill && me.KnightSecondReady;
+                bool timed = (local.skill && (accepting || kick || me.CouldStartSkill))
+                             || (aiming && (local.shove || (local.grab && !grabWasDown)));
+                if (accepting) SwapAccepts++;
+                else if (local.skill) SkillPresses++;
+                if (timed && pressAt < 0f)
+                {
+                    pressAt = Time.realtimeSinceStartup;
+                    pressStage = me.HostStage;
+                    pressLocked = me.HostAimLocked;
+                    pressAccept = accepting;
+                    pressKick = kick;
+                }
+                // D-S3: my own press and aim drawn at once, for about a round trip, until the host's state says the same.
+                float hold = Mathf.Clamp(roundTripMs / 1000f + 0.25f, 0.25f, 0.8f);
+                if (local.skill) me.PredictPress(0, hold);
+                if (local.shove) me.PredictPress(1, hold);
+                if (local.grab && !grabWasDown) me.PredictPress(2, hold);
+                me.ViewAim(local.aim);
+            }
+            grabWasDown = local.grab;
+            if (pressAt >= 0f && Time.realtimeSinceStartup - pressAt > 1.5f)
+            {
+                // The host never acted on it (a cooldown, knocked down, nothing to aim at).
+                ReactionsLost++;
+                pressAt = -1f;
+            }
+
+            float clock = Time.realtimeSinceStartup;
+            if (clock >= nextInput)
+            {
+                nextInput += InputInterval;
+                if (nextInput <= clock) nextInput = clock + InputInterval;
+                pending.jumps = myJumps;
+                pending.shoves = myShoves;
+                pending.abilities = myAbilities;
+                pending.abilities2 = myAbilities2;
+                pending.skills = mySkills;
+                pending.pieceAsk = (byte)game.NetPieceAsk;
+                pending.pieceSeq = game.NetPieceSeq;
+                pending.eventAck = inbox.Started ? inbox.Acked : (ushort)0;
+                // The link as this PC sees it, for the host's test screen (R112).
+                pending.roundTripMs = (ushort)Mathf.Clamp(Mathf.RoundToInt(roundTripMs), 0, ushort.MaxValue);
+                pending.delayMs = (byte)Mathf.Clamp((int)Math.Round(delay.Milliseconds), 0, 255);
+                pending.lossPercent = (byte)Mathf.Clamp((int)Math.Round(delay.LossShare * 100d), 0, 100);
+                Send(NetHost, RagdollNetProtocol.LabInput(NetMatch, ++sequence, NowMs(), pending));
+                pending.interact = false;
+            }
+
+            Playback();
+            DispatchEvents();
+
+            // A host silent for a few seconds is replaced by its successor (Steam, HOST.md); leaving is the last resort.
+            NetHostSilence(clock - lastReceive);
+            if (clock - lastReceive > SilenceTimeout)
+            {
+                message = "호스트가 자세 전송을 멈췄어요. 경기를 나갑니다.";
+                NetLeave(message);
+            }
+        }
+
+        /// <summary>Render the buffer a little behind the newest snapshot (the measured jitter buffer), speeding up or
+        /// slowing down the playback clock instead of syncing clocks with the host; far behind (the host stopped a
+        /// moment), it jumps (R123, PlaybackDelay.Advance).</summary>
+        void Playback()
+        {
+            if (buffer.Count == 0) return;
+            var newest = buffer[buffer.Count - 1];
+            double target = newest.hostTimeMs - delay.Milliseconds;
+            if (playbackMs <= 0d) playbackMs = target;
+            double before = playbackMs;
+            playbackMs = PlaybackDelay.Advance(playbackMs, target, newest.hostTimeMs, Time.unscaledDeltaTime * 1000d, out double rate, out bool jumped);
+            if (jumped)
+            {
+                PlaybackJumps++;
+                if (Trace) Log($"playback jumped {target - before:0} ms ahead (the host stopped a moment, or its snapshots were held up)");
+            }
+
+            RagdollSnapshot from = buffer[0], to = buffer[0];
+            for (int i = 0; i < buffer.Count - 1; i++)
+            {
+                if (playbackMs < buffer[i].hostTimeMs || playbackMs > buffer[i + 1].hostTimeMs) continue;
+                from = buffer[i];
+                to = buffer[i + 1];
+                break;
+            }
+            if (buffer.Count == 1) from = to = buffer[0];
+            else if (playbackMs >= buffer[buffer.Count - 1].hostTimeMs) from = to = buffer[buffer.Count - 1];
+
+            float span = Mathf.Max(1f, to.hostTimeMs - from.hostTimeMs);
+            float t = Mathf.Clamp01((float)(playbackMs - from.hostTimeMs) / span);
+            // The Sword Fight test's swords go with the same two snapshots (SwordPlayback, R121).
+            playFrom = from.hostTimeMs;
+            playTo = to.hostTimeMs;
+            playT = t;
+            // Obstacles on the same timeline as the pawns drawn this frame (HostObstacleClock).
+            double hostObstacleTime = HostObstacleClock.Interpolate(from.obstacleTime, to.obstacleTime, t);
+            hostObstacles.Sample(hostObstacleTime, Time.timeAsDouble, rate);
+            double error = (ObstacleTime() - hostObstacleTime) * 1000d;
+            steamClockErrorMs = steamClockErrorMs == 0d ? error : steamClockErrorMs + (error - steamClockErrorMs) * 0.05d;
+            for (int i = 0; i < to.count; i++)
+            {
+                var latest = to.At(i);
+                if (!pawns.TryGetValue(latest.id, out var pawn) || pawn == null) continue;
+                var source = Find(from, latest.id);
+                if (latest.snap || source == null)
+                {
+                    pawn.ApplyNetworkPose(latest);
+                    playbackMs = newest.hostTimeMs;
+                }
+                else
+                {
+                    RagdollPose.Blend(source, latest, t, blended);
+                    pawn.ApplyNetworkPose(blended);
+                }
+            }
+
+            while (buffer.Count > 2 && buffer[0].hostTimeMs < playbackMs - 400d) Recycle(0);
+            while (buffer.Count > 16) Recycle(0);
+        }
+
+        static RagdollPose Find(RagdollSnapshot snapshot, ulong id)
+        {
+            for (int i = 0; i < snapshot.count; i++)
+                if (snapshot.At(i).id == id) return snapshot.At(i);
+            return null;
+        }
+
+        void AdvanceViews(float dt)
+        {
+            foreach (var pawn in pawns.Values)
+                if (pawn != null && pawn.NetworkPuppet) pawn.AdvanceSkillView(dt);
+        }
+
+        void ReceiveSnapshot(byte[] bytes)
+        {
+            var snapshot = spare.Count > 0 ? spare.Pop() : new RagdollSnapshot();
+            if (!RagdollNetProtocol.ReadSnapshot(bytes, NetMatch, snapshot))
+            {
+                spare.Push(snapshot);
+                return;
+            }
+            if (lastTick != 0 && !RagdollNetProtocol.Newer(snapshot.tick, lastTick))
+            {
+                spare.Push(snapshot);
+                return;
+            }
+            int lost = lastTick != 0 ? (int)Math.Min(30u, snapshot.tick - lastTick - 1) : 0;
+            lastTick = snapshot.tick;
+            lastReceive = Time.realtimeSinceStartup;
+            snapshotsIn++;
+            snapshotBytesLast = bytes.Length;
+            delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snapshot.hostTimeMs, lost);
+            // Round trip: my input's time as the host echoes it, now that it is here. R111: it was read when the
+            // snapshot was drawn, which added anything from none to all of the playback delay to it (at F12 +300 ms
+            // the panel said 396 with a 78 ms delay).
+            var mine = Find(snapshot, NetSelf);
+            if (mine != null && mine.ack != 0)
+            {
+                int sample = unchecked((int)(NowMs() - mine.ack));
+                if (sample >= 0 && sample < 10000)
+                    roundTripMs = roundTripMs <= 0f ? sample : Mathf.Lerp(roundTripMs, sample, 0.2f);
+            }
+            buffer.Add(snapshot);
+        }
+
+        /// <summary>The host's skills packet: the states at once (D-S4), the moments queued to play with the bodies.</summary>
+        void ReceiveSkills(byte[] bytes)
+        {
+            if (!RagdollNetProtocol.ReadSkills(bytes, NetMatch, skillIn)) return;
+            skillBytes += bytes.Length;
+            skillPackets++;
+            skillPacketMax = Mathf.Max(skillPacketMax, bytes.Length);
+            // States and wires are whole in every packet: one overtaken by a newer is old news (its moments still count).
+            bool newer = !skillsApplied || unchecked((int)(skillIn.HostTimeMs - lastSkillsTime)) > 0;
+            if (newer)
+            {
+                skillsApplied = true;
+                lastSkillsTime = skillIn.HostTimeMs;
+                ApplyStates();
+                ApplyWires();
+                var barricades = SkillBarricade.All;
+                foreach (var b in skillIn.Barricades)
+                {
+                    if (b.Index >= barricades.Count || barricades[b.Index] == null) continue;
+                    barricades[b.Index].Remote = true;
+                    barricades[b.Index].ApplyNet(b.Standing, b.RegrowLeft);
+                }
+            }
+            inbox.Window(skillIn.FirstSeq);
+            foreach (var e in skillIn.Events)
+            {
+                if (!inbox.Accept(e.Seq)) continue;
+                arrivedAt[e.Seq] = Time.realtimeSinceStartup;
+                // Kept in time order: each plays when the bodies drawn reach its moment.
+                int at = eventQueue.Count;
+                while (at > 0 && unchecked((int)(eventQueue[at - 1].TimeMs - e.TimeMs)) > 0) at--;
+                eventQueue.Insert(at, e);
+            }
+        }
+
+        void ApplyStates()
+        {
+            seenStates.Clear();
+            foreach (var s in skillIn.States)
+            {
+                var pawn = PawnOf(s.Pawn);
+                if (pawn == null || !pawn.NetworkPuppet) continue;
+                var was = pawn.SkillStage;
+                pawn.ApplySkillNet(s, PawnOf);
+                seenStates.Add(pawn);
+                if (Trace && was != pawn.SkillStage) Log($"{pawn.DisplayName} {pawn.Piece} {was} → {pawn.SkillStage} (stage {s.StageTime:0.00}s, cd {s.Cooldown:0.0}s)");
+            }
+            foreach (var pawn in pawns.Values)
+                if (pawn != null && pawn.NetworkPuppet && !seenStates.Contains(pawn))
+                {
+                    var was = pawn.SkillStage;
+                    pawn.ClearSkillNet();
+                    if (Trace && was != pawn.SkillStage) Log($"{pawn.DisplayName} {pawn.Piece} {was} → {pawn.SkillStage} (idle)");
+                }
+            TimeOwnPress();
+        }
+
+        /// <summary>R112: the host's state of this PC's piece has changed since the timed press: that press took this
+        /// long to come back (a round trip, the wait for the host's next physics step and snapshot, and the snapshot's
+        /// way back). Its skill starting counts too.</summary>
+        void TimeOwnPress()
+        {
+            if (!pawns.TryGetValue(NetSelf, out var me) || me == null) return;
+            var stage = me.HostStage;
+            if (lastOwnStage == SkillStage.None && stage != SkillStage.None) SkillStarts++;
+            lastOwnStage = stage;
+            if (pressAt < 0f) return;
+            bool answered = pressAccept ? me.CastleAsker == null
+                          : pressKick ? me.HostKnightKicked || stage != pressStage
+                          : stage != pressStage || me.HostAimLocked != pressLocked;
+            if (!answered) return;
+            LastReactionMs = (Time.realtimeSinceStartup - pressAt) * 1000f;
+            Push(reactions, ref reactionNext, ref reactionCount, LastReactionMs);
+            pressAt = -1f;
+        }
+
+        void ApplyWires()
+        {
+            seenWires.Clear();
+            foreach (var o in skillIn.Wires)
+            {
+                seenWires.Add(o.Id);
+                if (!remoteWires.TryGetValue(o.Id, out var wire) || wire == null)
+                {
+                    var owner = PawnOf(o.Owner);
+                    var skills = owner != null && owner.PawnRushSkills != null ? owner.PawnRushSkills : AnySkillParams();
+                    if (skills == null) continue;
+                    float yaw = o.Yaw * Mathf.Deg2Rad;
+                    wire = SkillTripwire.SpawnRemote(owner, o.Id, new Vector3(o.X, o.Y, o.Z), new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw)), skills);
+                    remoteWires[o.Id] = wire;
+                }
+                wire.ApplyNet(o);
+                if (!wire.NetFxShown && o.Age > 0.6f)
+                {
+                    // Joined after it was laid (its moment is gone): its squares are drawn now instead.
+                    wire.NetFxShown = true;
+                    replaying = true;
+                    try
+                    {
+                        RagdollPawn.RaiseSkillFx(new SkillFxEvent
+                        {
+                            kind = SkillFxKind.BishopWire, by = wire.Owner, at = new Vector3(o.X, o.Y, o.Z), dir = wire.Forward, size = wire.LineLength, source = wire,
+                        });
+                    }
+                    finally { replaying = false; }
+                }
+            }
+            goneWires.Clear();
+            foreach (var pair in remoteWires)
+                if (!seenWires.Contains(pair.Key)) goneWires.Add(pair.Key);
+            foreach (ushort id in goneWires)
+            {
+                if (remoteWires.TryGetValue(id, out var wire) && wire != null) wire.RemoveRemote();
+                remoteWires.Remove(id);
+            }
+        }
+
+        static PawnRushSkillParams AnySkillParams()
+        {
+            foreach (var pawn in RagdollPawn.All)
+                if (pawn != null && pawn.PawnRushSkills != null) return pawn.PawnRushSkills;
+            var bed = FindFirstObjectByType<PawnRushSkillBed>();
+            return bed != null ? bed.skills : null;
+        }
+
+        /// <summary>The moments whose time the bodies drawn have reached (C6: in step with the poses).</summary>
+        void DispatchEvents()
+        {
+            if (eventQueue.Count == 0 || playbackMs <= 0d) return;
+            int n = 0;
+            while (n < eventQueue.Count && eventQueue[n].TimeMs <= playbackMs + 0.5d) n++;
+            // Taken off the queue first: an effect that throws must not hold up the ones after it.
+            eventBatch.Clear();
+            eventBatch.AddRange(eventQueue.GetRange(0, n));
+            eventQueue.RemoveRange(0, n);
+            foreach (var e in eventBatch)
+            {
+                float arrived = arrivedAt.TryGetValue(e.Seq, out float at) ? at : -1f;
+                arrivedAt.Remove(e.Seq);
+                if (playbackMs - e.TimeMs > StaleEventMs)
+                {
+                    MomentsStale++;
+                    continue;
+                }
+                // R112: drawn how far from its own pose (the bodies on screen), and how long after it came in.
+                momentLate[momentNext] = (float)(playbackMs - e.TimeMs);
+                momentWait[momentNext] = arrived >= 0f ? (Time.realtimeSinceStartup - arrived) * 1000f : 0f;
+                momentNext = (momentNext + 1) % momentLate.Length;
+                momentCount++;
+                try
+                {
+                    Play(e);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+        }
+
+        void Play(SkillWireEvent w)
+        {
+            var by = PawnOf(w.By);
+            var target = PawnOf(w.Target);
+            var at = new Vector3(w.X, w.Y, w.Z);
+            var dir = new Vector3(w.Dx, w.Dy, w.Dz);
+            var u = new Vector3(w.Ux, w.Uy, w.Uz);
+            replaying = true;
+            try
+            {
+                if (w.Mode == SkillWire.ModePawnRush)
+                {
+                    var kind = (SkillFxKind)w.Kind;
+                    SkillTripwire wire = null;
+                    if (w.Source != 0) remoteWires.TryGetValue(w.Source, out wire);
+                    if (kind == SkillFxKind.BishopWire)
+                    {
+                        if (wire == null || wire.NetFxShown) return;
+                        wire.NetFxShown = true;
+                    }
+                    RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = kind, by = by, target = target, at = at, dir = dir, normal = u, count = w.Count, size = w.Size, source = wire });
+                    if (Trace) Log($"moment {w.Seq} {kind} by {(by != null ? by.DisplayName : "-")} on {(target != null ? target.DisplayName : "-")}, {playbackMs - w.TimeMs:0} ms after its pose");
+                }
+                else if (w.Mode == SkillWire.ModeSwordFight)
+                {
+                    if (!PlaySword(w, by, target, at, dir)) return;
+                }
+                else
+                {
+                    var kind = (QueenHillFxKind)w.Kind;
+                    RagdollPawn.RaiseQueenHillFx(new QueenHillFxEvent { kind = kind, by = by, target = target, at = at, dir = dir, to = u, size = w.Size, count = w.Count });
+                    if (Trace) Log($"moment {w.Seq} {kind} by {(by != null ? by.DisplayName : "-")} on {(target != null ? target.DisplayName : "-")}, {playbackMs - w.TimeMs:0} ms after its pose");
+                }
+                eventsPlayed++;
+            }
+            finally { replaying = false; }
+        }
+
+        // ---------------------------------------------------------------- the pieces by their seats
+
+        /// <summary>The pawn of a player in the match (null if none).</summary>
+        protected RagdollPawn PawnFor(ulong id) => pawns.TryGetValue(id, out var pawn) ? pawn : null;
+
+        byte RefOf(RagdollPawn pawn)
+        {
+            if (pawn == null || !idOf.TryGetValue(pawn, out ulong id) || !NetRoster.TryGetValue(id, out var seat)) return SkillWire.None;
+            return SkillWire.Ref(seat.Team, seat.Slot);
+        }
+
+        RagdollPawn PawnOf(byte reference)
+        {
+            if (reference == SkillWire.None) return null;
+            SkillWire.Place(reference, out int team, out int slot);
+            foreach (var pair in NetRoster)
+                if (pair.Value.Team == team && pair.Value.Slot == slot)
+                    return pawns.TryGetValue(pair.Key, out var pawn) ? pawn : null;
+            return null;
+        }
+
+        // ---------------------------------------------------------------- obstacle clock
+
+        /// <summary>
+        /// Moving platforms (the Queen of the Hill test bed) must be in the same place on both PCs without a packet about
+        /// them (DECISIONS G2), so during a match obstacles run on the shared clock. Not on the raw clock, though: it reads
+        /// real time, which jumps a whole frame at a time, and a lift driven by it would move unevenly from one physics
+        /// step to the next and shake its rider. The obstacles advance with the physics steps instead, and only their
+        /// offset to the shared clock is measured every frame and eased in. A client also runs them its playback delay
+        /// behind, because it draws the pawns that far behind the host: a pawn riding a lift is then drawn on the lift.
+        /// </summary>
+        void SyncObstacleClock()
+        {
+            double target = ServerSeconds() - Time.fixedTimeAsDouble - (NetIsHost ? 0d : delay.Milliseconds / 1000d);
+            double error = target - obstacleOffset;
+            if (!obstacleSynced || Math.Abs(error) > 0.25)
+            {
+                obstacleOffset = target;   // first frame, or a hitch: jump (Obstacle does not sweep a jump)
+                obstacleSynced = true;
+            }
+            else obstacleOffset += Math.Max(-0.002, Math.Min(0.002, error));
+        }
+
+        double ObstacleTime() => Time.fixedTimeAsDouble + obstacleOffset;
+
+        /// <summary>What obstacles read during a match. The host runs them on the shared clock above and stamps it into
+        /// every snapshot. A client runs them on that stamp, interpolated at the moment whose pawns it is drawing: then an
+        /// obstacle is exactly where the host had it when it judged those pawns, whatever the network delay, the playback
+        /// rate or the shared clock's accuracy. Until the first snapshot arrives a client falls back on the shared clock.</summary>
+        double MatchObstacleTime()
+        {
+            if (NetIsHost || !hostObstacles.HasSample) return ObstacleTime();
+            return hostObstacles.Now(Time.timeAsDouble);
+        }
+
+        /// <summary>The shared clock: whole seconds from the carrier, the fraction from the local clock since the second
+        /// last changed.</summary>
+        double ServerSeconds()
+        {
+            double shared = NetServerSeconds();
+            uint second = (uint)Math.Floor(shared);
+            double local = Time.realtimeSinceStartupAsDouble;
+            if (second != serverSecond)
+            {
+                serverSecond = second;
+                serverAnchor = local - (shared - second);
+            }
+            return second + Math.Min(0.999, local - serverAnchor);
+        }
+
+        // ---------------------------------------------------------------- match lifecycle
+
+        void EnterMatch()
+        {
+            matchActive = true;
+            obstacleSynced = false;
+            // A new round on the shared clock: bells closed; only the host rings them.
+            var queen = QueenHillMatch.Current;
+            if (queen != null)
+            {
+                queen.ResetRound();
+                queen.Authority = NetIsHost;
+            }
+            SyncObstacleClock();
+            hostObstacles.Clear();
+            steamClockErrorMs = 0d;
+            ObstacleClock.Use(MatchObstacleTime);
+            pawns.Clear();
+            idOf.Clear();
+            game.DespawnAll();
+            ClearWiresAndBarricades();
+            game.NetworkControlled = true;
+            game.NetworkHost = NetIsHost;
+            ownPieceSeq = 0;   // the piece this player last asked for is asked again (a client's is, by its first packet)
+            foreach (var b in SkillBarricade.All) if (b != null) b.Remote = !NetIsHost;
+            if (NetIsHost) StartHostingGuard();
+            ResetStream();
+            // Hand the mouse to the pawn: the panel would otherwise keep the cursor free all match.
+            hudOpen = false;
+            message = NetIsHost ? "호스트로 경기를 시작했어요." : "호스트에 접속했어요.";
+            if (Trace) Log($"match on ({NetKind}), {(NetIsHost ? "host" : "client")}, self {NetSelf}, host {NetHost}");
+        }
+
+        void ExitMatch()
+        {
+            matchActive = false;
+            StopHostingGuard();
+            ObstacleClock.Use(null);
+            var queen = QueenHillMatch.Current;
+            if (queen != null)
+            {
+                queen.Authority = true;
+                queen.ResetRound();
+            }
+            foreach (var pawn in pawns.Values) if (pawn != null) Destroy(pawn.gameObject);
+            pawns.Clear();
+            idOf.Clear();
+            if (cam != null) cam.soloTarget = null;
+            ClearWiresAndBarricades();
+            foreach (var b in SkillBarricade.All) if (b != null) b.Remote = false;
+            game.NetworkControlled = game.NetworkHost = false;
+            game.NetworkLocal = null;
+            game.DespawnAll();
+            game.SpawnLocalPlayers();
+            ResetStream();
+            if (Trace) Log("match off");
+        }
+
+        /// <summary>
+        /// The host role moved mid-match (Docs/Network/HOST.md). The new host takes every pawn from the newest pose it
+        /// received and hands it to its own physics, and what it was drawing of the skills becomes what it runs (D-S6):
+        /// cooldowns, guards, the wires. A host that stepped down turns its pawns into puppets of the new one and draws its
+        /// wires from the new host's packets. Nobody is respawned: the round goes on from where it was, with a short stop
+        /// while the pawns change hands.
+        /// </summary>
+        protected void HostChanged(ulong previous, ulong next)
+        {
+            // Before the match is on (the handover at the start), EnterMatch sets the roles itself.
+            if (!matchActive) return;
+            bool nowHost = NetIsHost;
+            if (sword != null) SwordHostChanged(nowHost, next);
+            else if (nowHost)
+            {
+                // The newest pose, not the drawn one, which is the playback delay behind.
+                if (buffer.Count > 0)
+                {
+                    var newest = buffer[buffer.Count - 1];
+                    for (int i = 0; i < newest.count; i++)
+                    {
+                        var pose = newest.At(i);
+                        if (pawns.TryGetValue(pose.id, out var pawn) && pawn != null) pawn.ApplyNetworkPose(pose);
+                    }
+                }
+                foreach (var pawn in pawns.Values)
+                    if (pawn != null)
+                    {
+                        pawn.SetNetworkPuppet(false);
+                        pawn.AdoptSkillNet();
+                    }
+                ushort highest = 0;
+                foreach (var pair in remoteWires)
+                {
+                    if (pair.Value == null) continue;
+                    pair.Value.Adopt();
+                    if (pair.Key > highest) highest = pair.Key;
+                }
+                SkillTripwire.ReserveIds(highest);
+                remoteWires.Clear();
+                foreach (var b in SkillBarricade.All) if (b != null) b.Remote = false;
+                tick = lastTick;   // clients keep accepting "newer" snapshots
+                StartHostingGuard();
+                message = "이 PC가 새 호스트가 되었어요. 물리와 스킬을 이어서 계산해요.";
+            }
+            else
+            {
+                foreach (var pawn in pawns.Values) if (pawn != null) pawn.SetNetworkPuppet(true);
+                foreach (var wire in SkillTripwire.LiveWires)
+                {
+                    if (wire == null || wire.Remote) continue;
+                    wire.Yield();
+                    remoteWires[wire.NetId] = wire;
+                }
+                foreach (var b in SkillBarricade.All) if (b != null) b.Remote = true;
+                StopHostingGuard();
+                lastTick = 0;
+                message = $"호스트가 {NetName(next)} 님으로 바뀌었어요.";
+            }
+            if (game != null) game.NetworkHost = nowHost;
+            var queen = QueenHillMatch.Current;
+            if (queen != null) queen.Authority = nowHost;
+            while (buffer.Count > 0) Recycle(0);
+            inputs.Clear();
+            snapCountdown.Clear();
+            pending = default;
+            eventLog.Clear();
+            inbox.Clear();
+            eventQueue.Clear();
+            skillsApplied = false;
+            playbackMs = 0d;
+            roundTripMs = 0f;
+            delay.Reset();
+            nextSnapshot = nextInput = 0f;
+            lastReceive = Time.realtimeSinceStartup;
+            if (Trace) Log($"host {previous} → {next}, this PC {(nowHost ? "hosts" : "follows")}");
+        }
+
+        void StartHostingGuard()
+        {
+            if (savedMaxFrameStep >= 0f) return;
+            savedMaxFrameStep = Time.maximumDeltaTime;
+            Time.maximumDeltaTime = Mathf.Min(savedMaxFrameStep, HostMaxFrameStep);
+        }
+
+        void StopHostingGuard()
+        {
+            if (savedMaxFrameStep < 0f) return;
+            Time.maximumDeltaTime = savedMaxFrameStep;
+            savedMaxFrameStep = -1f;
+        }
+
+        void SyncRoster()
+        {
+            scratchIds.Clear();
+            scratchIds.AddRange(pawns.Keys);
+            foreach (ulong id in scratchIds)
+            {
+                if (NetRoster.ContainsKey(id) && pawns[id] != null) continue;
+                if (pawns[id] != null)
+                {
+                    idOf.Remove(pawns[id]);
+                    Destroy(pawns[id].gameObject);
+                }
+                pawns.Remove(id);
+                inputs.Remove(id);
+            }
+            foreach (var entry in NetRoster)
+            {
+                if (pawns.ContainsKey(entry.Key)) continue;
+                var pawn = game.Spawn(LabLayout.NetSpawn(entry.Value.Team, entry.Value.Slot),
+                    LabLayout.NetFacing(entry.Value.Team), game.TeamMaterial(entry.Value.Team), NetName(entry.Key));
+                pawn.Team = entry.Value.Team;   // the roster's side (M10)
+                if (!NetIsHost) pawn.SetNetworkPuppet(true);
+                pawns[entry.Key] = pawn;
+                idOf[pawn] = entry.Key;
+                if (entry.Key == NetSelf)
+                {
+                    if (cam != null) cam.soloTarget = pawn;
+                    game.NetworkLocal = pawn;
+                }
+            }
+        }
+
+        void Respawn(RagdollPawn pawn, int team, int slot)
+        {
+            if (pawn == null) return;
+            pawn.Teleport(LabLayout.NetSpawn(team, slot) + Vector3.up * (pawn.standHeight + 0.02f), LabLayout.NetFacing(team));
+        }
+
+        RagdollPose Pose(ulong id)
+        {
+            if (!posePool.TryGetValue(id, out var pose)) posePool[id] = pose = new RagdollPose();
+            return pose;
+        }
+
+        /// <summary>No wires of a match left lying about, every barricade standing.</summary>
+        void ClearWiresAndBarricades()
+        {
+            DropRemoteWires();
+            var wires = new List<SkillTripwire>(SkillTripwire.LiveWires);
+            foreach (var wire in wires) if (wire != null) Destroy(wire.gameObject);
+            foreach (var b in SkillBarricade.All) if (b != null) b.ApplyNet(true, 0f);
+        }
+
+        void DropRemoteWires()
+        {
+            foreach (var wire in remoteWires.Values) if (wire != null) wire.RemoveRemote();
+            remoteWires.Clear();
+        }
+
+        // ---------------------------------------------------------------- transport
+
+        protected void Send(ulong id, byte[] bytes)
+        {
+            if (id == 0 || id == NetSelf || bytes == null) return;
+            sentBytes += bytes.Length;
+            if (lagOut.Profile.Active)
+            {
+                lagOut.Push(new Packet { peer = id, bytes = bytes }, Time.realtimeSinceStartupAsDouble);
+                return;
+            }
+            NetSend(id, bytes);
+        }
+
+        void PumpSend() => lagOut.Release(Time.realtimeSinceStartupAsDouble, p => NetSend(p.peer, p.bytes));
+
+        void PumpReceive()
+        {
+            NetReceive(OnRaw);
+            lagIn.Release(Time.realtimeSinceStartupAsDouble, p => Deliver(p.peer, p.bytes));
+        }
+
+        void OnRaw(ulong sender, byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0 || bytes.Length > RagdollNetProtocol.MaxBytes) return;
+            receivedBytes += bytes.Length;
+            // A test's own commands are not part of the link under test: never delayed or lost by F12.
+            if (lagIn.Profile.Active && RagdollNetProtocol.TypeOf(bytes) != RagdollNetProtocol.TypeDev)
+            {
+                lagIn.Push(new Packet { peer = sender, bytes = bytes }, Time.realtimeSinceStartupAsDouble);
+                return;
+            }
+            Deliver(sender, bytes);
+        }
+
+        void Deliver(ulong sender, byte[] bytes)
+        {
+            byte type = RagdollNetProtocol.TypeOf(bytes);
+            if (NetIsHost)
+            {
+                if (type == RagdollNetProtocol.TypeLabInput || type == RagdollNetProtocol.TypeSwordInput) ReceiveInput(sender, bytes);
+                return;
+            }
+            if (sender != NetHost) return;
+            switch (type)
+            {
+                case RagdollNetProtocol.TypeSnapshot:
+                    ReceiveSnapshot(bytes);
+                    break;
+                case RagdollNetProtocol.TypeSkills:
+                    ReceiveSkills(bytes);
+                    break;
+                case RagdollNetProtocol.TypeSword:
+                    if (sword != null) ReceiveSwordState(bytes);
+                    break;
+                case RagdollNetProtocol.TypeMatch:
+                    if (RagdollNetProtocol.ReadMatch(bytes, NetMatch, out string text)) QueenHillMatch.Current?.ApplyRemote(text);
+                    break;
+                case RagdollNetProtocol.TypeDev:
+                    if (AcceptsDev && RagdollNetProtocol.ReadDev(bytes, NetMatch, out string command)) RunDev(command);
+                    break;
+            }
+        }
+
+        void Recycle(int index)
+        {
+            spare.Push(buffer[index]);
+            buffer.RemoveAt(index);
+        }
+
+        /// <summary>A fresh stream: nothing buffered, every count and number started over.</summary>
+        protected void ResetStream()
+        {
+            while (buffer.Count > 0) Recycle(0);
+            inputs.Clear();
+            snapCountdown.Clear();
+            tick = sequence = lastTick = 0;
+            playbackMs = 0d;
+            roundTripMs = 0f;
+            hostObstacles.Clear();
+            steamClockErrorMs = 0d;
+            lastReceive = Time.realtimeSinceStartup;
+            pending = default;
+            eventLog.Clear();
+            inbox.Clear();
+            eventQueue.Clear();
+            skillsApplied = false;
+            delay.Reset();
+            lagOut.Clear();
+            lagIn.Clear();
+            // The test screen's numbers start over with the match (R112).
+            arrivedAt.Clear();
+            pressAt = LastReactionMs = -1f;
+            lastOwnStage = SkillStage.None;
+            reactionCount = reactionNext = momentCount = momentNext = 0;
+            MomentsStale = SkillPresses = SkillStarts = ReactionsLost = SwapAccepts = PlaybackJumps = 0;
+            snapshotBytesLast = 0;
+            peerStats.Clear();
+            RagdollPawn.NetStats.Clear();
+            OnStreamReset();
+        }
+
+        protected virtual void OnStreamReset() { }
+
+        void UpdateStats()
+        {
+            if (Time.realtimeSinceStartup < statsAt) return;
+            statsAt = Time.realtimeSinceStartup + 1f;
+            sentRate = sentBytes;
+            receivedRate = receivedBytes;
+            snapshotRate = snapshotsIn;
+            skillRate = skillBytes;
+            skillPacketRate = skillPackets;
+            skillPacketMaxRate = skillPacketMax;
+            snapshotOutRate = snapshotsOut;
+            physicsRate = physicsSteps;
+            swordStateRate = swordStateBytes;
+            sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = snapshotsOut = physicsSteps = swordStateBytes = 0;
+            UpdatePeerStats();
+        }
+
+        /// <summary>R112: every other player as the host sees it, once a second (the test screen reads the list).</summary>
+        void UpdatePeerStats()
+        {
+            peerStats.Clear();
+            if (!matchActive || !NetIsHost) return;
+            float now = Time.realtimeSinceStartup;
+            foreach (ulong id in NetRoster.Keys)
+            {
+                if (id == NetSelf) continue;
+                inputs.TryGetValue(id, out var r);
+                int unconfirmed = 0;
+                if (r != null)
+                {
+                    eventLog.After(r.ackSet ? r.eventAck : unchecked((ushort)(eventLog.First - 1)), 255, statBatch);
+                    unconfirmed = statBatch.Count;
+                    r.heardRate = r.heard;
+                    r.heard = 0;
+                }
+                peerStats.Add(new PeerStat
+                {
+                    Name = NetName(id),
+                    RoundTripMs = r != null ? r.reportRtt : -1,
+                    DelayMs = r != null ? r.reportDelay : -1,
+                    LossPercent = r != null ? r.reportLoss : -1,
+                    InputRate = r != null ? r.heardRate : 0,
+                    SkillPresses = r != null ? r.skillsTaken : 0,
+                    Unconfirmed = unconfirmed,
+                    SilentMs = r != null ? (now - r.received) * 1000f : -1f,
+                });
+            }
+        }
+
+        /// <summary>Extra delay and loss on this PC's packets both ways (F12 cycles; 0 = off).</summary>
+        public void SetLag(int preset)
+        {
+            lagPreset = Mathf.Clamp(preset, 0, LinkProfile.Presets.Length - 1);
+            lagOut.Profile = lagIn.Profile = LinkProfile.Presets[lagPreset];
+            message = lagPreset == 0 ? "지연 시뮬레이터 꺼짐" : $"지연 시뮬레이터: {lagOut.Profile} (이 PC의 보내기·받기 모두, F12로 바꿈)";
+        }
+
+        // ---------------------------------------------------------------- development commands (loopback tests)
+
+        /// <summary>Send a development command to every client (loopback tests: the editor drives the other copy).</summary>
+        public void SendDev(string command)
+        {
+            if (!matchActive || !NetIsHost) return;
+            byte[] bytes = RagdollNetProtocol.Dev(NetMatch, command);
+            foreach (ulong id in NetRoster.Keys)
+                if (id != NetSelf && id != 0) NetSend(id, bytes);   // straight out: a test command is not part of the link under test
+        }
+
+        /// <summary>
+        /// A command from the host, on a loopback test client: <c>piece Queen</c>, <c>skill</c>, <c>click</c>, <c>jump</c>,
+        /// <c>rclick 0.3</c>, <c>move x z seconds</c> (world direction), <c>look yaw pitch</c>, <c>lag 2</c>,
+        /// <c>shot path.png</c>, <c>trace on</c>.
+        /// </summary>
+        protected void RunDev(string command)
+        {
+            if (string.IsNullOrEmpty(command)) return;
+            string[] p = command.Trim().Split(' ');
+            float F(int i, float fallback) => i < p.Length && float.TryParse(p[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v) ? v : fallback;
+            // The Sword Fight test's own presses (R121); the rest (look, lag, shot, trace, report) are the same.
+            if (sword != null && SwordDev(p, F))
+            {
+                if (Trace) Log("dev: " + command);
+                return;
+            }
+            switch (p[0])
+            {
+                case "piece":
+                    if (p.Length > 1 && Enum.TryParse(p[1], true, out PieceKind kind)) game.AskPiece(kind);
+                    break;
+                case "skill":
+                    game.DevPress.skill = true;
+                    break;
+                case "click":
+                    game.DevPress.shove = true;
+                    break;
+                case "jump":
+                    game.DevPress.jump = true;
+                    break;
+                case "rclick":
+                    game.DevGrabUntil = Time.unscaledTime + F(1, 0.2f);
+                    break;
+                case "move":
+                    game.DevMove = Vector3.ClampMagnitude(new Vector3(F(1, 0f), 0f, F(2, 0f)), 1f);
+                    game.DevMoveUntil = Time.unscaledTime + F(3, 0.5f);
+                    break;
+                case "look":
+                    if (cam != null)
+                    {
+                        cam.yaw = F(1, cam.yaw);
+                        cam.pitch = F(2, cam.pitch);
+                    }
+                    break;
+                case "lag":
+                    SetLag((int)F(1, 0f));
+                    break;
+                case "shot":
+                    if (p.Length > 1) ScreenCapture.CaptureScreenshot(command.Substring(5).Trim());
+                    break;
+                case "burst":
+                    // burst <path prefix> <count> <seconds apart>: a row of frames round a moment, for a contact sheet.
+                    if (p.Length > 1) StartCoroutine(Burst(p[1], (int)F(2, 10f), F(3, 0.05f)));
+                    break;
+                case "trace":
+                    Trace = p.Length < 2 || p[1] != "off";
+                    break;
+                case "hud":
+                    hudOpen = p.Length < 2 || p[1] != "off";
+                    break;
+                case "report":
+                    Log(Report());
+                    break;
+            }
+            if (Trace) Log("dev: " + command);
+        }
+
+        /// <summary>One line of what this PC has of the match now (the loopback checks read it from the log).</summary>
+        public string Report()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"report: {(NetIsHost ? "host" : "client")}, playback delay {delay.Milliseconds:0} ms (jitter {delay.JitterMs:0}, snapshots lost {delay.LossShare * 100:0.0}%{(delay.Lossy ? ", one more for the losses" : "")}, jumps {PlaybackJumps}), round trip {roundTripMs:0} ms, lag {lagOut.Profile}");
+            sb.Append($", moments played {eventsPlayed}, confirmed up to {inbox.Acked}, queued {eventQueue.Count}, wires {SkillTripwire.LiveWires.Count} (copies {remoteWires.Count})");
+            var barricades = SkillBarricade.All;
+            for (int i = 0; i < barricades.Count; i++)
+                if (barricades[i] != null) sb.Append($", barricade {i} {(barricades[i].Standing ? "standing" : $"down {barricades[i].RegrowLeft:0.0}s")}{(barricades[i].Remote ? " (host's)" : "")}");
+            if (sword != null) SwordReport(sb);
+            else
+                foreach (var pawn in pawns.Values)
+                    if (pawn != null)
+                        sb.Append($", {pawn.DisplayName}: {pawn.Piece} {pawn.State} {pawn.SkillStage} {pawn.SkillStageTime:0.00}s cd {pawn.SkillCooldown:0.0}s{(pawn.NetworkPuppet ? " (puppet)" : "")}");
+            return sb.ToString();
+        }
+
+        System.Collections.IEnumerator Burst(string prefix, int count, float apart)
+        {
+            for (int i = 0; i < Mathf.Clamp(count, 1, 60); i++)
+            {
+                ScreenCapture.CaptureScreenshot($"{prefix}_{i:00}.png");
+                if (Trace) Log($"burst {System.IO.Path.GetFileName(prefix)}_{i:00}");
+                float until = Time.realtimeSinceStartup + Mathf.Max(0.016f, apart);
+                while (Time.realtimeSinceStartup < until) yield return null;
+            }
+        }
+
+        // ---------------------------------------------------------------- HUD
+
+        protected virtual void OnGUI()
+        {
+            if (game == null && sword == null) return;
+            if (game != null && game.AutoTest) return;
+            EnsureStyles();
+            // Keep clear of the tuning panel, which owns the left edge while it is open (the Sword Fight test bed's panel).
+            float x = game != null ? (game.PanelOpen ? 500f : 12f) : SwordPanelX;
+            if (!hudOpen)
+            {
+                string lag = lagOut.Profile.Active ? $" · 지연 시뮬 {lagOut.Profile}" : "";
+                string line = matchActive
+                    ? $"F3: 온라인 패널 · {NetKind} · {(NetIsHost ? "호스트" : "참가자")} · {pawns.Count}명{lag}"
+                    : $"F3: 온라인 패널 ({NetKind}: 방 만들기·참가){lag}";
+                if (sword != null)
+                {
+                    // The Sword Fight HUD has the bottom left (its controls): bottom right, under the skill key cards.
+                    var size = small.CalcSize(new GUIContent(line));
+                    GUI.Label(new Rect(Screen.width - size.x - 24f, Screen.height - 26f, size.x + 8f, 22f), line, small);
+                }
+                else GUI.Label(new Rect(x, Screen.height - 26f, 700f, 22f), line, small);
+                return;
+            }
+
+            float width = 470f, height = matchActive ? (sword != null ? 330f : 300f) : 330f;
+            GUILayout.BeginArea(new Rect(x, Screen.height - height - 12f, width, height), GUIContent.none, GUI.skin.box);
+            GUI.DrawTexture(new Rect(0f, 0f, width, height), panel);
+            GUILayout.Label($"온라인 · {NetKind} (F3으로 닫기 - 열려 있는 동안은 마우스 조작이 멈춰요)", label);
+            if (!string.IsNullOrEmpty(message)) GUILayout.Label(message, small);
+            if (!matchActive)
+            {
+                DrawLobby();
+            }
+            else
+            {
+                GUILayout.Label(NetIsHost ? "역할: 호스트 (이 PC가 물리와 스킬을 계산해요)" : "역할: 참가자 (호스트 화면을 받아 그려요)", small);
+                GUILayout.Label($"인원 {pawns.Count}명 · 보내기 {sentRate / 1024f:F1} KB/s · 받기 {receivedRate / 1024f:F1} KB/s · 스킬 {skillRate / 1024f:F1} KB/s", small);
+                GUILayout.Label(NetIsHost
+                    ? $"스냅샷 {1f / SnapshotInterval:F0}Hz 송신 · 폰당 {RagdollNetProtocol.PoseBytes}바이트 · 스킬 신호 대기 {eventLog.Count}개"
+                    : $"스냅샷 수신 {snapshotRate}Hz · 왕복 지연 {roundTripMs:F0} ms · 버퍼 {buffer.Count}개 · 재생 지연 {delay.Milliseconds:F0} ms (흔들림 {delay.JitterMs:F0} ms · 손실 {delay.LossShare * 100:F0}%{(delay.Lossy ? " → 한 장 더 기다림" : "")})", small);
+                if (!NetIsHost)
+                {
+                    GUILayout.Label($"스킬 신호 받음 {eventsPlayed}개 · 확인 번호 {inbox.Acked} · 재생 대기 {eventQueue.Count}개", small);
+                    if (sword == null)
+                        GUILayout.Label(hostObstacles.HasSample
+                            ? $"장애물: 방장 시각에 맞춤 (공유 시계였다면 {steamClockErrorMs:+0;-0;0} ms 어긋남)"
+                            : "장애물: 방장 스냅샷 기다리는 중 (공유 시계 사용)", small);
+                }
+                DrawLagButtons();
+                if (sword != null) DrawSwordExtras();
+                DrawMatchExtras();
+            }
+            GUILayout.EndArea();
+        }
+
+        void DrawLagButtons()
+        {
+            GUILayout.Label($"지연 시뮬레이터 (이 PC, 보내기·받기 모두, F12): {lagOut.Profile}", small);
+            GUILayout.BeginHorizontal();
+            string[] names = { "끔", "+100", "+200·5%", "+300·10%" };
+            for (int i = 0; i < LinkProfile.Presets.Length && i < names.Length; i++)
+            {
+                GUI.enabled = lagPreset != i;
+                if (GUILayout.Button(names[i], button)) SetLag(i);
+            }
+            GUI.enabled = true;
+            GUILayout.EndHorizontal();
+        }
+
+        /// <summary>The carrier's own buttons while a match is on (leaving).</summary>
+        protected virtual void DrawMatchExtras() { }
+
+        protected void EnsureStyles()
+        {
+            if (label != null) return;
+            var font = Font.CreateDynamicFontFromOSFont(new[] { "Malgun Gothic", "맑은 고딕", "Segoe UI", "Arial" }, 14);
+            panel = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
+            panel.SetPixel(0, 0, new Color(0.06f, 0.09f, 0.14f, 0.92f));
+            panel.Apply();
+            label = new GUIStyle(GUI.skin.label) { font = font, fontSize = 15, fontStyle = FontStyle.Bold };
+            label.normal.textColor = new Color(0.9f, 0.94f, 1f);
+            small = new GUIStyle(GUI.skin.label) { font = font, fontSize = 12, wordWrap = true };
+            small.normal.textColor = new Color(0.76f, 0.82f, 0.9f);
+            button = new GUIStyle(GUI.skin.button) { font = font, fontSize = 12 };
+        }
+
+        protected GUIStyle Small => small;
+        protected GUIStyle Button => button;
+    }
+}

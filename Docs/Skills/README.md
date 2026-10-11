@@ -5,11 +5,15 @@
 | 문서 | 내용 |
 |---|---|
 | [DESIGN.md](DESIGN.md) | **기물 스킬 기획서 (폰 러쉬) v0.2 상세판.** 스킬 프리비즈 영상·카드(v0.1 수치)를 폰 러쉬 규칙에 맞게 옮김. 공통 규칙, 기물별 수치·타임라인·판정·카운터·이펙트·소리, 스킬끼리 만나면, 네트워크, 시험 계획, 레벨 규칙, 결정할 것 D1~D11 |
+| [QUEEN_HILL.md](QUEEN_HILL.md) | **퀸 오브 더 힐 스킬 6개 시험 씬 (R89, 10-09).** 승규 님 선택 1.B 2.A 3.B 4.B 5.B 6.B, 이펙트 A 「잉크 테두리 만화 장난감」. 조작, 수치, 이펙트, 코드, 자동 시험·녹화 도구 |
+| [SWORD_FIGHT.md](SWORD_FIGHT.md) | **소드 파이트 스킬 5개 시험 씬 (R91, 10-09 · R99·R102 수정 · R103 가장자리 스킬, 10-10).** 경기 씬 SwordFight를 복사한 SwordFight_SkillTest, 이펙트 A, F 조준 → 좌클릭 발동 · 우클릭 취소. R99: 칼끝이 바닥 위로, 발동·기 모으기·잔상, 퀸 돌진 · 룩 돌탑 · 비숍 발목 잡는 손. R102: 머리 위 기물 표시, 룩 체스 말 모양 돌탑, 킹·비숍 맵 어디서든. **R103: 기물마다 두 번째 스킬 E(가장자리 스킬 5개, 시험 쿨 2초, 슬로 0.3초)**. 조작, 수치, 이펙트, 코드, 자동 시험·녹화 |
+| [SOUND.md](SOUND.md) | **폰 러쉬 스킬 효과음 2차 시안 (R107, 10-10): 기물마다 자기 소리 다섯 벌, 동전 울림 없음, A = 퀸 오브 더 힐 방향 — [페이지](https://claude.ai/artifact/37WNW9LFs9h5x2ERs7eUce).** 1차 **폰 러쉬 스킬 효과음 시안 (R101, 10-10).** ElevenLabs로 순간 21개 × 방향 5개(A 나무 체스말 · B 만화 장난감 · C 묵직한 쾅 · D 이펙트 그대로 · E 장난감 악기) = 105개를 만들어 실제 스킬 시간표에 붙인 [시안 페이지](https://claude.ai/artifact/HZYGZQCBe1SgxJrExMBdrC). 승규 님 고르기 대기, Unity에는 소리 없음. 도구 `Tools/Sfx/PawnRushSkills` |
 
 ## 지금 상태 (R71, 10-07)
 
 - **작업 브랜치 `claude/bold-johnson-8ez95n`** (사용자 지정). 원격에 푸시하지 않았다.
-- **시험 씬 `Assets/Scenes/PawnRush_SkillTest.unity`** = `RagdollTest.unity`를 그대로 복사하고 랩 오브젝트(`RagdollLab`)에 `PawnRushSkillBed`를 붙인 것. 메뉴 **ChessFight → Pawn Rush → Open Skill Test**. 원본 `RagdollTest`는 바꾸지 않았다.
+- **시험 씬 `Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity`** = `RagdollTest.unity`를 그대로 복사하고 랩 오브젝트(`RagdollLab`)에 `PawnRushSkillBed`를 붙인 것. 메뉴 **ChessFight → Pawn Rush → Open Skill Test**. 원본 `RagdollTest`는 바꾸지 않았다.
+- **R112(10-10): 스킬 시험 씬 셋(폰 러쉬·퀸 오브 더 힐·소드 파이트)은 `skill-network-test` 브랜치에만 있었다. R124(10-11)에 `main`에 합쳐 지금은 `main`에도 있다.** `claude/bold-johnson-8ez95n`에서는 지웠고 메뉴가 옮겨 간 곳을 알려 준다. 시험 브랜치의 폰 러쉬·퀸 오브 더 힐 시험 씬은 랩의 튜닝 패널·슬로모션·자유 카메라·화면 분할이 없고 네트워크 수치가 늘 보인다 → [Network/SKILLS_ONLINE §14](../Network/SKILLS_ONLINE.md#14-r112-스킬-네트워크-시험-브랜치와-화면-10-10). 스킬을 고치는 작업도 그 브랜치에서 한다(DECISIONS SK9).
 - **만든 스킬 5개**: 폰 첫 두 걸음(부축 포함), 퀸 팔방 밀치기, 룩 직선 돌파(바리케이드 포함), 비숍 교차 밧줄, 나이트 꺾어 도약. **킹은 안 만듦**(D1, 사용자 10-07 "킹 스킬은 아직 만들지마").
 - **스킬은 이 씬에서만 켜진다.** `RagdollPawn.PawnRushSkills`(수치 묶음)가 비어 있으면 아무 일도 하지 않는다. 퀸 오브 더 힐·소드 파이트에 쓸지는 미정(사용자 10-07)이라 그쪽 씬과 네트워크 경기는 예전 그대로다.
 - **AI가 이 PC Unity에서 자동 시험 도구로 돌려 봄(아래 표). 사람이 키보드로 해 본 것은 아직 없다** → [VALIDATION](../Network/VALIDATION.md) 최상단 표.
@@ -44,6 +48,7 @@
 | `…/PawnRushSkillProbe.cs` | **자동 시험 도구**: 키보드 없이 P1·더미를 움직이고 G를 눌러 거리·높이·결과를 잰다(아래) |
 | `…/PawnRushSkillFx.cs` · `PawnRushSkillFx.Parts.cs` | **타격감 이펙트**(R73, [EFFECTS](EFFECTS.md)에서 고른 퀸 A·룩 A·비숍 B·나이트 B). 스킬이 맞는 순간 `RagdollPawn.SkillFx` 이벤트를 받고, 퀸 예고·룩 돌진·나이트 도약은 기물 상태를 지켜보며 멈춤·흔들기·흰 번쩍·납작 + **3D 빛 이펙트**(R79: 빛의 벽·기둥·빛줄기·껍질·마법진, 튕기는 불꽃·빛 알갱이·연기, 순간 조명, 궤적, 번개). 별·글자·조각은 없음. 시험장이 붙일 때만 있음. 왼쪽 창에 이펙트·멈춤·흔들기 켜고 끄기 |
 | `…/PawnRushSkillBloom.cs` · `RagdollLab/Resources/PawnRushSkillFx/SkillGlow.shader` · `SkillBloom.shader` | 이펙트 재질(HDR 빛 + 칠하기)과 직접 만든 빛 번짐. 시험장 카메라·녹화 카메라에만 붙음([EFFECTS §3D 빛 이펙트](EFFECTS.md#3d-빛-이펙트-r79-10-08)) |
+| `…/PawnRushSkillFx.Toon.cs` · `Resources/PawnRushSkillFx/SkillToon.shader` · `SkillCrack.shader` · `SkillSwoosh.shader` · `SkillNoise.cginc` | **만화 이펙트**(R86, 참고 쇼츠 세 개): 퀸 불덩이·숯빛 연기·바닥 균열, 룩 만화 번개·속도선, 나이트 바람 덩어리·바람 띠. 비숍은 R82 그대로. R88: 퀸에 만화 금색 체스말이 모였다 튀어나감(체스말 모양은 `PawnRushSkillFx.Chess.cs`)([EFFECTS §만화 이펙트](EFFECTS.md#만화-이펙트-r86-10-08)) |
 | `…/PawnRushSkillFilm.cs` · `Scripts/RagdollLabEditor/PawnRushSkillFilmEncoder.cs` | **녹화 도구**(R73): 자동 시험을 고정 카메라로 찍어 `.mp4`로(아래) |
 | `Scripts/RagdollLabEditor/PawnRushSkillTestMenu.cs` | 메뉴 Open Skill Test |
 | `LabGame.cs`(`InteractKeyOff`) | 시험장이 켜면 F가 랩 상호작용을 하지 않음 (R74) |
@@ -53,7 +58,7 @@
 
 ## 자동 시험 도구 (AI용, 사람도 가능)
 
-Play 중 코드에서 `PawnRushSkillProbe.Run("이름")` → 몇 초 뒤 `PawnRushSkillProbe.Report()`. 이름: `jump`, `pawn`, `pawn-angles`, `pawn-help`, `rook`, `rook-free`, `rook-wall`, `rook-barricade`, `rook-cluster`, `queen`, `knight`, `knight-turn`, `knight-stomp`(R74: 옆에 있는 적을 공중 F로 찍기), `knight-land`, `bishop`, `bishop-trip`, `all`. 룩·비숍은 F 뒤 좌클릭(`shove`)을 눌러 쓴다. 시험마다 P2를 화면 밖으로 옮긴다(가까운 적이 나이트 두 번째 F를 바꾸므로). 결과는 왼쪽 창 "최근 결과"에도 `[시험]`으로 나온다. `PawnRushSkillProbe.FreezeAt(SkillStage.Windup, 0.3f)`를 먼저 부르면 그 순간 시간이 멈춰(time scale 0) 예고 표시를 찍어 볼 수 있다(`Time.timeScale = 1`로 다시).
+Play 중 코드에서 `PawnRushSkillProbe.Run("이름")` → 몇 초 뒤 `PawnRushSkillProbe.Report()`. 이름: `jump`, `pawn`, `pawn-angles`, `pawn-help`, `rook`, `rook-free`, `rook-wall`, `rook-wall-slant`(R92: 벽 35°, 벽 끝 0.9 m 앞), `rook-barricade`, `rook-cluster`, `queen`, `knight`, `knight-turn`, `knight-stomp`(R74: 옆에 있는 적을 공중 F로 찍기), `knight-land`, `bishop`, `bishop-trip`, `all`. 룩·비숍은 F 뒤 좌클릭(`shove`)을 눌러 쓴다. 시험마다 P2를 화면 밖으로 옮긴다(가까운 적이 나이트 두 번째 F를 바꾸므로). 결과는 왼쪽 창 "최근 결과"에도 `[시험]`으로 나온다. `PawnRushSkillProbe.FreezeAt(SkillStage.Windup, 0.3f)`를 먼저 부르면 그 순간 시간이 멈춰(time scale 0) 예고 표시를 찍어 볼 수 있다(`Time.timeScale = 1`로 다시).
 
 AI는 Unity MCP 다리(`C:/Work/ChessFight`, 포트 6401)의 `execute_code`로 부르고 `manage_camera` 스크린샷으로 본다 → [AI_WORKFLOW §3](../Environment/AI_WORKFLOW.md#3-테스트).
 
@@ -84,10 +89,14 @@ AI는 Unity MCP 다리(`C:/Work/ChessFight`, 포트 6401)의 `execute_code`로 �
 | (R80) 룩 공중 돌진 아래 45° | 점프 꼭대기(바닥 위 0.8 m)에서 1.01 m 가서 바닥에 내리꽂음, 서 있음(처음엔 바닥 충격으로 넘어졌고, 공중 판정 때문에 4 m 미끄러졌음 → 고침) | 내리꽂기 |
 | 비숍 | (R74) 5 m를 가리키면 4.5 m에서 멈춰 깔림, 가로질러 달린 적 넘어짐, 룩 더미는 걸리지 않고 끊음 | 근거리 4.5 m |
 | (참고) 일반 점프 | 달리기 5.30 m(골반 +1.12 m), 전력질주 5.35~6.84 m(골반 +0.4~0.6 m, 질주 걸음 박자에 따라 다름) | 기획서 §12.4: 프리비즈는 3.1 m를 가정 |
+| (R92) 나이트 도약 4.5 m | 골반 +1.63 m, 비거리 4.59 m, 1.14초, 쿨 7초 | 4.5 m (DECISIONS SK5, v0.1은 5.5 m) |
+| (R92) 나이트 꺾기 (0.35초에 오른쪽) | 앞 1.60 m · 옆 6.46 m, 체공 1.39초. 그 전의 옆 6.74~6.80 m는 바로 옆 터널 지붕(x 7, 높이 0.9 m) 모서리에 걸려 짧게 잰 값이라, 평지로 치면 약 7.8 m → 6.46 m | 두 번째 구간 6.2 m/s |
+| (R92) 나이트 직진 F 두 번 / 공중 도약 / 머리 찍기 | 착지 앞 7.80 m(전 9.53) / 5.02 m(전 6.34) / 공중 0.54초에 감지 → 더미 넘어짐, 더미에서 0.6 m에 착지 | 같은 비율로 짧게 |
+| (R92) 룩 → 벽 35° (벽 끝 0.9 m 앞) / 바리케이드 | x 19.45 · z 2.11에서 멈춤, 휘청. 성벽 톱니 고리가 벽면에 납작하게, 벽 끝을 넘지 않게 안쪽으로 0.6 m 밀림(반지름 0.98 m) / 바리케이드 부서짐, 고리는 부서진 자리에 서고 바닥에 안 묻힘 | 벽에 묻히지 않음 |
 
 ## 이펙트 녹화 (R73)
 
-Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면마다 한 번은 제 속도, 한 번은 맞는 순간 앞뒤만 느리게(×0.3). 1280×720, 60fps, 게임 시간을 한 프레임에 1/60초씩 밀어서 녹화가 느려도 영상은 제 속도. 프레임은 Unity 자체 인코더(MediaEncoder)로 `.mp4`가 되고, 10프레임마다 `.jpg`가 `이름_stills`에 남는다. 녹화 중에는 키보드 입력을 막고 P2를 화면 밖으로 옮긴다. 장면: `queen`, `rook-cluster`, `bishop-trip`(새 시험: 밧줄에 적 한 명 걸기), `knight-stomp`. 네 번째 인자로 이름 앞부분을 주면 그 장면만.
+Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면마다 한 번은 제 속도, 한 번은 맞는 순간 앞뒤만 느리게(×0.3). 1280×720, 60fps, 게임 시간을 한 프레임에 1/60초씩 밀어서 녹화가 느려도 영상은 제 속도. 프레임은 Unity 자체 인코더(MediaEncoder)로 `.mp4`가 되고, 10프레임마다 `.jpg`가 `이름_stills`에 남는다. 녹화 중에는 키보드 입력을 막고 P2를 화면 밖으로 옮긴다. 장면(R86): `queen`, `rook-cluster`, `rook-air`, `knight-stomp`, `knight`. 다섯 번째 인자로 이름 앞부분을 주면 그 장면만(`knight`는 `knight-stomp`도 같이 찍힘). **프레임별로 보기(R86):** `PawnRushSkillFilm.StillEvery = 1`(모든 프레임을 `.jpg`로), `PawnRushSkillFilm.SlowTakes = false`(느린 장면 빼고), 맞는 순간의 프레임 번호는 `PawnRushSkillFilm.HitFrames` → [EFFECTS §만화 이펙트](EFFECTS.md#만화-이펙트-r86-10-08).
 
 10-07 AI 녹화 `PawnRush_SkillFx_R73b.mp4`(32초): 퀸 고리 두 겹·가장자리 번짐, 룩 1·2·3 숫자와 조각·4번째 "쿵!", 비숍 보라 칸·"덜컥!", 나이트 납작·"뿅!"·어지러운 별이 다 찍힘. **사람이 손으로 해 본 것은 아님.** 이펙트는 시험용 그림(선·상자·글자)이고 소리는 아직 없다. 멈춤은 지금 게임 전체가 멈춘다(실제 게임·온라인에서는 때린 쪽·맞은 쪽만 멈추게 바꿔야 함). 폰은 시안을 아직 안 골라 그대로.
 
@@ -119,8 +128,24 @@ Play 중 `PawnRushSkillFilm.Run("Temp/Captures/skillfx/이름.mp4")` → 장면�
 
 `PawnRush_Skill_R82c.mp4`(약 25초, 장면 3개): 퀸 금색 예고 원과 원에서 피어오르는 금빛 불씨·연기, 비숍 줄이 지나가는 적의 다리를 따라 V자로 늘어났다가 잡아채고 튕겨 돌아옴(위에서 내려다보는 각도로 바꿈), 나이트 착지할 곳에서 도는 하얀 원형 표식. 첫 녹화에서 불씨가 흰 바닥에서 거의 안 보였고(→ 진한 금색·크게), 비숍은 늘어나는 시간이 너무 짧고 팽팽한 줄 빛이 하얗게 번져 줄 모양을 가렸음(→ 더 오래 붙잡음, 빛 줄임). **사람이 손으로 해 본 것은 아님.**
 
+### R86 녹화 (10-08)
+
+`PawnRush_Skill_R86.mp4`(장면 5개, 제 속도 + 느리게): 퀸 머리 위로 모이는 불덩이 → 팡 → 숯빛 연기 틈으로 불빛 → 바닥 균열이 식어 사라짐, 룩 만화 번개·속도선 돌진(4명 뭉치 / 공중 돌진·내리꽂기), 나이트 바람 머리 찍기 / 도약·착지 바람. 비숍은 바꾸지 않아서 이번 녹화에 없음. 만들면서 퀸 5번, 룩 2번, 나이트 2번을 **모든 프레임을 찍어 모음 판으로 보고** 고쳤다(화면이 하얗게 날아감, 흙덩이 같은 연기, 몸에 묻힌 불덩이, 뒤집힌 구 면, 흰 바닥에 묻힌 번개, 흰 솜 같은 바람 → [EFFECTS](EFFECTS.md#만화-이펙트-r86-10-08)). **사람이 손으로 해 본 것은 아님.**
+
+### R88 녹화 (10-08)
+
+`PawnRush_Skill_R88_Queen.mp4`(퀸만, 제 속도 + 느리게): 금색 만화 체스말 12개가 퀸 둘레 바닥에서 솟아 빙글빙글 돌며 머리 위 불덩이로 빨려 들어감 → 팡 → 체스말 16개가 소용돌이치며 튀어나와 바닥에 튕기다 타들어 가듯 사라짐 + 불덩이·숯빛 연기·바닥 균열. 프레임별 모음 판 `R88_frames_queen.jpg`(제 속도), `R88_frames_queen_slow.jpg`(느리게, 게임 시간 표시). 고친 것: 체스말이 작아 금가루처럼 보임 → 킹 0.42 m, 연기에 가려짐 → 불덩이 줄임, 느린 화면에서 모이기가 먼저 끝남 → 퀸 스킬 진행 시간에 맞춤. **사람이 손으로 해 본 것은 아님.**
+
+### R92 녹화 (10-09)
+
+`PawnRush_Skill_R92.mp4`(약 42초, 장면 5개, 제 속도 + 느리게): 룩이 벽에 비스듬히 박힘(새 장면, 승규 님 스크린샷과 비슷한 각도) · 바리케이드 부수기(새 장면) · 벽에 곧게, 나이트 꺾어 도약 · 머리 밟기(비거리 4.5 m). `PawnRushSkillFilm.Run(경로, 1280, 720, 60, "rook-wall,rook-barricade,knight")`처럼 장면 이름을 쉼표로 여러 개 줄 수 있다. AI가 벽 장면을 프레임마다 봤다. **사람 확인 전.**
+
+### R90 녹화 (10-09)
+
+`PawnRush_Skill_R90.mp4`(약 1분 43초, 장면 8개, 제 속도 + 느리게): [디자인 A](EFFECTS.md#디자인-a-잉크-테두리-장난감-체스-r90-10-09). 폰 첫 두 걸음(밟은 칸 도장, C자 고리, 대각선 넘어뜨림과 잡힌 칸) · 일으켜 세우기, 퀸 경고 고리 → 가슴 불덩이로 체스말 → 진주 8개 왕관 고리, 룩 네 칸 경고(벽에 세워짐) → 돌 먼지 → 번개 돌진 → C자 고리·잡힌 칸 / 벽에 성벽 톱니 고리, 비숍 작은 칸 조준 → X 던지기 → 편 테두리·무장 흰 띠·40% → 보라 초승달·잡힌 칸, 나이트 가는 길 칸·말굽 착지 표시 → 'ㄱ'자 바람 띠 / 빨간 고리 → 밟기·잡힌 칸·크림 폰 3개. 기물별 모음 판 `R90_frames_{pawn,queen,rook,bishop,knight}.jpg`. 프레임별로 보며 고친 것: 퀸 경고가 몇 장면마다 하얗게 깜빡임(효과가 유지되는지 보는 것이 한 장면 늦었음), 터진 뒤 불 덩어리가 검은 돌처럼 보임(바로 숯으로 식었음 → 불인 채로 녹듯 사라지게), 나이트 꺾기 장면 카메라, 밟을 적 화살표·부축 칸 색. 시험 결과는 R86~R88과 같다(폰 0°·90°·180° 밀림, 45° 넘어짐 · 부축 진군 1.5초·기상 보호 1.6초 · 퀸 1 m 넘어짐, 2.2 m 밀림 · 룩 4명 중 3명 넘어짐 · 비숍 걸림 · 나이트 꺾기 옆 6.74 m · 밟기 넘어짐). 비숍 줄은 0.35초 동안 0.40 m 늘어났다(R82는 0.78 m: Unity 폴더에 섞여 있는 팀장 님 이동 튜닝으로 더미가 느리게 걸어 들어옴). **Unity 폴더(`C:/Work`)가 다른 브랜치를 합치는 중이라 바뀐 파일만 복사해서 시험했다. 사람이 손으로 해 본 것은 아님.**
+
 ## 다음 할 일
 
 1. **사용자가 Unity에서 직접 해 보기** → [VALIDATION](../Network/VALIDATION.md) 최상단 표. 손맛·예고 보이는 정도·밸런스 의견을 주면 수치(Inspector)부터 고친다.
 2. 스킬 키 다시 정하기(D3), 전용 간격 실측(D2 후속: 위 점프 표와 함께 레벨 규칙 다시 정하기).
-3. 킹 스킬(D1이 정해지면), 예고 소리·이펙트(지금은 선만 있고 소리 없음, 시안은 [EFFECTS](EFFECTS.md)), 머리 위 쿨 표시를 기물 모양으로, 온라인(네트워크 패킷에 스킬 키·스냅샷 필드, 기획서 §10).
+3. 킹 스킬(D1이 정해지면), 효과음(R107 기물별 2차·R101 1차 시안 [SOUND](SOUND.md)에서 승규 님이 고르면 Unity에 넣음 — 지금 Unity에는 소리 없음), 머리 위 쿨 표시를 기물 모양으로, 온라인(네트워크 패킷에 스킬 키·스냅샷 필드, 기획서 §10 → **R111에 시험 씬 F3 온라인으로 구현**, [Network/SKILLS_ONLINE §8~§13](../Network/SKILLS_ONLINE.md#8-r111-보내는-것과-칸-지도-프로토콜-v16-cfr7), 사람 확인 전).

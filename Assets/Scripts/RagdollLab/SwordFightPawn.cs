@@ -31,6 +31,10 @@ namespace ChessFight.RagdollLab
         public Vector3 WeaponOffset => Alive ? Pawn.Hips.transform.InverseTransformPoint(sword.position) : Vector3.zero;
         public Quaternion WeaponRotation => Alive ? Quaternion.Inverse(Pawn.Hips.rotation) * sword.rotation : Quaternion.identity;
         public Vector3 Aim => aim;
+        /// <summary>The piece skill (the Sword Fight skill test scene only, R91); null in the match.</summary>
+        public SwordFightSkills Skills { get; set; }
+        /// <summary>A test dummy the skill test drives itself for a moment (a scripted cut): the match leaves its input alone.</summary>
+        public bool Scripted { get; set; }
         readonly Dictionary<SwordFightPawn, HitRecord> hits = new Dictionary<SwordFightPawn, HitRecord>();
         readonly Collider[] overlaps = new Collider[128];
         readonly Contact[] contacts = new Contact[24];
@@ -110,6 +114,7 @@ namespace ChessFight.RagdollLab
         public void SetInput(PawnInput raw)
         {
             if (!Authority) return;
+            if (Skills != null) raw = Skills.Filter(raw);
             // This mode reserves ability2 as an absolute control-style bit. Never forward it
             // to the shared pawn, and never encode a lossy toggle edge over the network.
             SetControlStyle(raw.ability2);
@@ -235,21 +240,28 @@ namespace ChessFight.RagdollLab
 
         Vector3 BladeDirection()
         {
-            Vector3 flat = new Vector3(aim.x, 0, aim.z).normalized;
-            if (flat.sqrMagnitude < .01f) flat = Pawn.Facing;
             Vector3 direction = GuardDirection(aim);
-            flat = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
             // Do not command an impossible wrist pose through the floor. The collider still
             // resolves contact with floors, bodies and other swords; no dynamic pose is teleported.
-            int count = Physics.RaycastNonAlloc(Hand.position + Vector3.up * .2f, Vector3.down, groundHits, 1.4f, ~0, QueryTriggerInteraction.Ignore);
+            return AboveFloor(Hand.position, direction, .09f);
+        }
+
+        /// <summary>The blade from <paramref name="grip"/> tipped up just enough that its tip stays above the floor under
+        /// the hand (the posed swords: the click swing, the holster, the skills; they have no collider to stop them).</summary>
+        Vector3 AboveFloor(Vector3 grip, Vector3 direction, float margin = .07f)
+        {
+            if (direction.sqrMagnitude < 1e-6f) return direction;
+            direction.Normalize();
+            int count = Physics.RaycastNonAlloc(grip + Vector3.up * .2f, Vector3.down, groundHits, 1.4f, ~0, QueryTriggerInteraction.Ignore);
             float floor = float.NegativeInfinity;
             for (int i = 0; i < count; i++)
                 if (!RagdollPawn.ColliderOwner.ContainsKey(groundHits[i].collider) && groundHits[i].normal.y > .6f)
                     floor = Mathf.Max(floor, groundHits[i].point.y);
-            float minY = Mathf.Clamp((floor + .09f - Hand.position.y) / .88f, -1f, .95f);
-            if (direction.y < minY)
-                direction = flat * Mathf.Sqrt(1f - minY * minY) + Vector3.up * minY;
-            return direction;
+            float minY = Mathf.Clamp((floor + margin - grip.y) / .88f, -1f, .95f);
+            if (direction.y >= minY) return direction;
+            Vector3 flat = Vector3.ProjectOnPlane(direction, Vector3.up);
+            flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : Pawn.Facing;
+            return flat * Mathf.Sqrt(1f - minY * minY) + Vector3.up * minY;
         }
 
         internal void RecordContact(Collision c)
@@ -276,6 +288,8 @@ namespace ChessFight.RagdollLab
             { SoftContacts++; return; }
             if (hits.TryGetValue(victim, out var last) && (Time.time - last.Time < RepeatDelay || travel - last.Travel < 35f)) return;
             hits[victim] = new HitRecord { Time = Time.time, Travel = travel };
+            // A king in its guard (the skill test scene) takes the cut and answers it.
+            if (victim.Skills != null && victim.Skills.Parry(this, point)) { HitFlash = .1f; return; }
             Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
             Vector3 direction = Vector3.ProjectOnPlane(cut, Vector3.up).normalized * .65f + away.normalized * .35f;
             if (direction.sqrMagnitude < .01f) direction = Pawn.Facing;
@@ -287,6 +301,8 @@ namespace ChessFight.RagdollLab
 
         Quaternion? SwordPose(int part)
         {
+            if (Alive && Skills != null && Pawn.State == PawnState.Active && Skills.Blade is Vector3 skillBlade)
+                return part == (int)BodyId.ArmR ? Quaternion.FromToRotation(Vector3.right, Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(Skills.Arm ?? AboveFloor(Hand.position, skillBlade))) : (Quaternion?)null;
             if (ClassicControls) return ClickSwordPose(part);
             if (!Alive || !Drawn || Pawn.State != PawnState.Active) return null;
             if (part == (int)BodyId.Chest)
@@ -306,18 +322,29 @@ namespace ChessFight.RagdollLab
             if (!Alive) return;
             if (!Authority)
                 sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
+            else if (Skills != null && Skills.Blade is Vector3 skillBlade)
+            {
+                // A sword stuck in the stone stays where it went in (the king's edge skill, R103).
+                if (Skills.SwordAt is Vector3 stuck) sword.SetPositionAndRotation(stuck, Quaternion.LookRotation(skillBlade));
+                else
+                {
+                    Vector3 grip = Hand.position + skillBlade * Skills.Reach01;
+                    sword.SetPositionAndRotation(grip, Quaternion.LookRotation(AboveFloor(grip, skillBlade)));
+                }
+            }
             else if (ClassicControls)
                 PoseClickSword();
             else if (!Drawn)
                 PoseHolstered();
-            bladeMaterial.color = HitFlash > 0 ? new Color(1f, .8f, .24f) : Attacking ? new Color(.94f, .94f, .75f) : new Color(.69f, .82f, .94f);
+            bladeMaterial.color = HitFlash > 0 ? new Color(1f, .8f, .24f) : Skills != null && Skills.BladeTint is Color tint ? tint
+                : Attacking ? new Color(.94f, .94f, .75f) : new Color(.69f, .82f, .94f);
         }
         void PoseHolstered()
         {
             // No collider or dynamic forces while holstered, including ragdoll/get-up.
             var hip = Pawn.Hips.transform;
             Vector3 point = hip.TransformPoint(new Vector3(.28f, -.06f, -.02f));
-            Vector3 direction = hip.TransformDirection(new Vector3(.18f, -.35f, -1f));
+            Vector3 direction = AboveFloor(point, hip.TransformDirection(new Vector3(.18f, -.35f, -1f)), .05f);
             sword.SetPositionAndRotation(point, Quaternion.LookRotation(direction, hip.forward));
         }
 

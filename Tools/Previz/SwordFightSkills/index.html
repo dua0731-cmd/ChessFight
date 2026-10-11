@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>소드 파이트 스킬 프리비즈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+  body { margin: 0; background: #0b0f1a; color: #d8deea; font: 14px "Noto Sans KR", sans-serif; }
+  #out { display: block; width: 100%; max-width: 1280px; height: auto; aspect-ratio: 16 / 9; }
+  #bar { display: flex; gap: 10px; align-items: center; padding: 8px 12px; flex-wrap: wrap; }
+  #scrub { flex: 1; min-width: 200px; }
+  button, select { font: inherit; }
+</style>
+</head>
+<body>
+<canvas id="out" width="1280" height="720"></canvas>
+<div id="bar">
+  <select id="prog"></select>
+  <button id="play">재생 / 멈춤</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0">
+  <span id="info"></span>
+</div>
+<script type="module" src="previz.js"></script>
+</body>
+</html>

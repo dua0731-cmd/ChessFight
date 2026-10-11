@@ -43,8 +43,8 @@ namespace ChessFight.RagdollLab
         public float knightWindup = 0.15f;
         [Tooltip("최고 높이 (골반이 이만큼 오른다, m)")]
         public float knightHeight = 1.6f;
-        [Tooltip("평지 비거리 (m): 높이와 함께 출발 속도를 정한다")]
-        public float knightDistance = 5.5f;
+        [Tooltip("평지 비거리 (m): 높이와 함께 출발 속도를 정한다. v0.1은 5.5 m, R92 승규 \"사거리 조금만 줄여\" → 4.5 m(3칸)")]
+        public float knightDistance = 4.5f;
         [Tooltip("래그돌 몸이 공중에서 잃는 만큼 출발 속도를 더한다 (위·앞 배율). 10-07 실측: 보정 없이 높이 1.53 m · 비거리 5.05 m")]
         public float knightLiftCorrection = 1.03f;
         public float knightCarryCorrection = 1.07f;
@@ -66,8 +66,8 @@ namespace ChessFight.RagdollLab
         [Tooltip("머리 찍은 뒤 콩 튀어 바로 옆에 착지: 위 속도와 앞 속도 (m/s)")]
         public float knightHomingBounce = 2.5f;
         public float knightHomingHop = 2f;
-        [Tooltip("공중 두 번째 F(적이 없을 때): 새 방향(곧게 또는 최대 90° 꺾어)으로 적어도 이 빠르기로 다시 차고 나간다 (m/s). R80: 꺾은 뒤 거리가 짧고 직진이면 아무 느낌이 없어서 \"다~당\"으로")]
-        public float knightTurnSpeed = 7.5f;
+        [Tooltip("공중 두 번째 F(적이 없을 때): 새 방향(곧게 또는 최대 90° 꺾어)으로 적어도 이 빠르기로 다시 차고 나간다 (m/s). R80: 꺾은 뒤 거리가 짧고 직진이면 아무 느낌이 없어서 \"다~당\"으로 7.5. R92: 비거리와 같은 비율로 6.2")]
+        public float knightTurnSpeed = 6.2f;
         [Tooltip("그때 위로 다시 차오르는 속도 (m/s): 두 번째 구간의 체공")]
         public float knightTurnLift = 4f;
 
