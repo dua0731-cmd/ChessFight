@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-11 | R121 | (`skill-network-test`) 소드 파이트 온라인 문서: Network/SKILLS_ONLINE §15(정한 것·보내는 것·그리는 법·AI 로컬 시험·한계·빌드), VALIDATION R121 5명 시험 표, Skills/SWORD_FIGHT §R121, REQUIREMENTS R121, HANDOFF, HISTORY |
+| (이 커밋) | 10-11 | R123 | (`skill-network-test`) 문서: Network/SKILLS_ONLINE §15 R123(AI가 zip 그대로 다시 본 것·핑·방장 멈춤과 고친 것), VALIDATION R121 표(zip `_1011b`, 14 킹 F 받아내기·15 방장 멈춤), REQUIREMENTS R123, DECISIONS SK11, HANDOFF, HISTORY |
+| `4924093` | 10-11 | R123 | (`skill-network-test`) 방장이 잠깐 멈춘 뒤 참가자 재생이 바로 따라잡음: `PlaybackDelay.Advance`(Core, 0.25초 넘게 뒤처지면 건너뜀, 시험 1개 → 102), `LabNetLink.Playback`이 씀 + 건너뛴 횟수(보고 `jumps`·추적 로그), 시험 화면 "따라잡기 n번". 패킷 그대로(v18). 새 빌드 `SkillNet_SwordFightOnline_1011b.zip` |
+| `bb59542` | 10-11 | R121 | (`skill-network-test`) 소드 파이트 온라인 문서: Network/SKILLS_ONLINE §15(정한 것·보내는 것·그리는 법·AI 로컬 시험·한계·빌드), VALIDATION R121 5명 시험 표, Skills/SWORD_FIGHT §R121, REQUIREMENTS R121, HANDOFF, HISTORY |
 | `897fc47` | 10-11 | R121 | (`skill-network-test`) 로컬 시험 참가자의 카메라 방향을 개발 명령 뒤 3초 동안 입력에 실음(창이 앞에 없어 방향이 지워져 퀸이 옛 방향으로 돌진하던 것, 시험 명령에만 해당) |
 | `136d476` | 10-11 | R121 | (`skill-network-test`) 로컬 시험 보고에 PC마다 재생한 소리 횟수, 개발 명령 `classic`(F6) |
 | `a9b370e` | 10-11 | R121 | (`skill-network-test`) 소드 파이트 스킬 시험 씬 온라인: `LabNetLink` partial + `LabNetLink.Sword.cs`(방장 무작위 팀 3:2·F5, 입력 `TypeSwordInput`, 소드 상태 `TypeSword`·Core `SwordWire`, 칼·스킬·바닥 붕괴·순간 신호 `ModeSwordFight`, 방장 이전), `SwordFightSkills.Net.cs`(상태 받기·미리 그림·내 조준), 온라인 멈춤·박자(슬로 없음), 시험장 키·기물 요청·도우미 끔, `SkillNetTest` 소드 파이트 줄, Steam·로컬 시험 부팅, 프로토콜 v18(`CFR9`), Core 시험 2개(101) |
