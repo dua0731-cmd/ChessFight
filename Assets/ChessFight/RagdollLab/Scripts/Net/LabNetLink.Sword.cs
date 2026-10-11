@@ -78,9 +78,11 @@ namespace ChessFight.RagdollLab
         readonly List<(byte id, SwordWireCollapse data, double beginMs)> collapseWaiting = new List<(byte, SwordWireCollapse, double)>();
         readonly List<byte> collapseGone = new List<byte>();
 
-        // Development presses (the loopback tests' commands, RunDev).
+        // Development presses (the loopback tests' commands, RunDev). For a while after any command the camera's aim goes
+        // with every input: a test window is not in front, so the game reads no aim from it, and the aim of the one frame
+        // a command came in was overwritten before the next input packet left (a queen dashing the camera's old way).
         bool devSkill, devEdge, devClick, devCancel, devJump;
-        float devHoldUntil, devMoveUntil;
+        float devHoldUntil, devMoveUntil, devAimUntil;
         Vector3 devMove;
 
         // A client's own press, timed until the host's state of its piece changes (the test screen).
@@ -219,7 +221,7 @@ namespace ChessFight.RagdollLab
             swordLastStage = SfStage.None;
             swordLastEdge = SfEdge.None;
             devSkill = devEdge = devClick = devCancel = devJump = false;
-            devHoldUntil = devMoveUntil = 0f;
+            devHoldUntil = devMoveUntil = devAimUntil = 0f;
         }
 
         // ---------------------------------------------------------------- the roster and the sides
@@ -373,7 +375,7 @@ namespace ChessFight.RagdollLab
             edge = (free && GameSettings.Pressed(GameKey.Skill)) || devEdge;
             cancel = (free && GameSettings.Pressed(GameKey.Grab)) || devCancel;
             float now = Time.unscaledTime;
-            if (devSkill || devEdge || devCancel || devClick || devJump || now < devHoldUntil || now < devMoveUntil)
+            if (devSkill || devEdge || devCancel || devClick || devJump || now < devHoldUntil || now < devMoveUntil || now < devAimUntil)
             {
                 // A loopback test's window is not in front: its input is empty unless the commands make it.
                 if (cam != null) input.aim = cam.AimForward;
@@ -867,6 +869,7 @@ namespace ChessFight.RagdollLab
         /// report...).</summary>
         bool SwordDev(string[] p, Func<int, float, float> number)
         {
+            devAimUntil = Time.unscaledTime + 3f;   // "look" included: the aim it sets goes with the inputs after it
             switch (p[0])
             {
                 case "piece":
