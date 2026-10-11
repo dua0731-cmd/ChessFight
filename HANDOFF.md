@@ -4,7 +4,7 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-09** · 기준 브랜치 **`JY-lobby`**(로비·게임모드 작업), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
+최종 갱신: **2026-10-11** · 기준 브랜치 **`JY-lobby`**(로비·게임모드 작업), **`JY-ragdoll_v2`**(퀸 오브 더 힐 래그돌 기능, 캐릭터 조작·물리 변경), 그 밖의 AI 작업은 `Network` · 기준 커밋: 이 파일을 갱신한 커밋(`git log -1 -- HANDOFF.md`)
 
 ---
 
@@ -36,6 +36,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| 왕성 정문 돌파 R50 | O04 장애물 구역 144×20m 프리팹을 ImportedChessFightMap A1에 고정, Play 즉시 입구 시작. 이동 룩·승강 타일·쌍해머·복귀 경사. 구성 15·물리 12·완주 11·복귀 11 검사 통과, 기본 이동 경로 25.96초. 사용자/12인/Steam 미확인, 로컬 적용 → [상세](Docs/KingRush/ROYAL_GATE_RUSH.md) |
 | 폰러시 구역 작업환경 R49 | ImportedChessFightMap에 A1/A2/B1/B2/C1/C2 모듈 조합, 6개 구역 예제·2개 제작 틀, 팀별 미션/문. 기존 배치·R48 유지, 로컬 적용. 에디터 19·실행 29 검사 통과, 사용자 확인 대기 → [작업환경](Docs/KingRush/PAWN_RUSH_WORKSPACE.md) |
 | 맵 캐릭터 연결 R48 | ImportedChessFightMap이 RagdollTest의 P1 프리팹·재질·LabGame 입력·LabCamera·튜닝을 재사용. 1인 스폰, 연습장/더미 없음. Unity Edit/Play Mode 구성 검사 및 Core 34·세션 15 통과, 사용자 손맛 확인 대기. 로컬 적용 → [MAP_IMPORT](Docs/KingRush/MAP_IMPORT.md) |
 | 맵 이식 R47 | `ImportedChessFightMap.unity` + 장애물 19개 로컬 추가. 원본 플레이어·AI·승리 제외, 기존 래그돌 오프라인 연결. Unity import/빌드·실행 검사 43개 통과, 사용자 Unity/멀티 확인 대기 → [MAP_IMPORT](Docs/KingRush/MAP_IMPORT.md) |
@@ -64,7 +65,7 @@
 | 끊김 경고, 점프 누른 횟수, 버전 검사, 핑, F8 시뮬레이터, Rich Presence | 코드·테스트만 | [Network/MOTION](Docs/Network/MOTION.md), [기획안 반영](Docs/Network/PLAN_V0.1_STATUS.md) |
 | 씬 흐름 Intro → Lobby → 모드 씬(지금은 KingRush) → Lobby | 코드만, Unity 미확인 | [Architecture/SCENES](Docs/Architecture/SCENES.md) |
 | 킹러시 오프라인 플레이테스트(임시 캡슐 캐릭터) | 코드만 | [KingRush](Docs/KingRush/README.md) |
-| 폰러시 모듈 맵 (R49) | 장애물/미션 3개씩 중복 없이 조합, 시드/고정 슬롯/팀별 문, 오프라인 제작 기반. 온라인 미연결 | [작업환경](Docs/KingRush/PAWN_RUSH_WORKSPACE.md) |
+| 폰러시 모듈 맵 (R49/R50) | 장애물 4개 중 3개·미션 3개를 중복 없이 조합, 시드/고정 슬롯/팀별 문, 오프라인 제작 기반. 온라인 미연결 | [작업환경](Docs/KingRush/PAWN_RUSH_WORKSPACE.md) |
 | 별도 맵 프로젝트 이식 (R47) | 배치 보존·19 프리팹·RagdollTest의 외형/물리/입력/카메라 연결(R48), 로컬 적용. 체크포인트 규칙/온라인 판정 미연결 | [MAP_IMPORT](Docs/KingRush/MAP_IMPORT.md) |
 | 장애물 3종(시간의 함수) | 코드만 | [KingRush/OBSTACLES](Docs/KingRush/OBSTACLES.md) |
 | **퀸 오브 더 힐 래그돌 기능 M1~M11, M13**(`JY-ragdoll_v2`): **M11 승격·기물 성능(R46, [7j] Shift+F9), M13 찌그러짐·비틀(R45, Shift+F5·F6), M6 밧줄·그네(R44, [7i] Shift+F8), M7 도약대(R43, [7h] Shift+F10), M8~M10 종·체크포인트·팀(R42, [7g] F10)**, **M5 갈고리·앙파상(R40, 자동 점검 7개, Unity 미확인, [7f] 연습장 F8)**, 탈것·움직이는 벽, 능력·상호작용·조준 입력, 피격(`IHitReceiver`), 물·부활(`WaterZone`), RagdollTest [7] 시험대 | 1차 Unity 확인 성공(09-26, 1~12). 2차 수정(누워 있기·물에 뜨기)은 자동 점검 통과, Unity 재확인 대기. M12, M14는 시작 안 함 | [Player/RAGDOLL §8](Docs/Player/RAGDOLL.md#8-퀸-오브-더-힐-기능-m1m11-m13), [MECHANICS_TODO](Docs/GameModes/QueenOfTheHill/MECHANICS_TODO.md) |
@@ -74,6 +75,7 @@
 ## 3. 진행 중인 일과 다음 할 일
 
 **사용자가 할 일 — 순서대로**
+- (10-11, R50) ImportedChessFightMap → Play → Game 클릭. A1 왕성 정문 돌파의 이동 룩·승강 타일·양쪽 해머·복귀 경사로를 시험한다. [왕성 정문 돌파](Docs/KingRush/ROYAL_GATE_RUSH.md), 사용자 손맛/12인 시간 확인 대기. 현재 브랜치 로컬만 적용했고 커밋·푸시는 하지 않았다.
 - (10-09, R49) `ChessFight → Pawn Rush → 작업환경 열기`. A1~C2 조합과 프리팹 제작 틀을 확인하고, 새 구역은 Catalog에 등록한다. Inspector에서 시드·고정 배치·구역부터 테스트를 사용한다. 온라인 판정 연결은 후속 작업.
 - (10-09, R48) ImportedChessFightMap → Play → Game 화면 클릭. WASD/Shift/Space, 마우스 시점·휠, 좌클릭 다이빙, 우클릭 잡기·등반, E 갈고리, R 시작점 복귀를 RagdollTest와 비교한다.
 - (10-05, R47) `ChessFight → Imported Map → Open Map`으로 가져온 씬을 열고 배치·래그돌·장애물을 확인한다. [이식 설명](Docs/KingRush/MAP_IMPORT.md) 및 [미확인 목록](Docs/Network/VALIDATION.md). 신규 온라인 코스 연결은 별도 작업이다.

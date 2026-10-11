@@ -1,0 +1,79 @@
+Royal Gate Rush R50 — 2026-10-11, Unity 6000.3.11f1, Editor/Play Mode automated evidence.
+No standalone player build this change. Human play / 12-player / Steam integration pending.
+Tools/Test-NetworkCore.ps1: 34 core + 15 simulated session tests passed (exit 0).
+Existing warning before and after: PawnHipsHull convex mesh exceeds 256-polygon limit.
+Scene audit: original 20 roots retained; only generated sections replaced, course/finish/spawn/camera updated.
+LabGame serialized change is spawn only: (77,.04,-5) -> (80,.04,3). No runtime/player/network/settings files changed.
+
+=== validation ===
+PASS section prefab asset exists
+PASS 144m flat +Z connector contract
+PASS three walls and three low moving tiles
+PASS two independent pendulum mallets
+PASS only mallets apply explicit knockback
+PASS no mission gate or duplicate game rules
+PASS mallet body and impact references resolve
+PASS mallet body and impact references resolve
+PASS no missing scripts in prefab
+PASS materials and shaders resolve
+PASS unique selection compatible with A1
+PASS unique selection compatible with B1
+PASS unique selection compatible with C1
+PASS A1 saved preview is pinned for immediate play
+PASS existing player starts inside new entrance
+User/12-player/Steam tests pending.
+
+
+=== runtime ===
+Real pawn / moving-platform / physical mallet contact checks
+PASS existing pawn remains grounded at entry
+PASS all six kinematic walls/tiles advance
+PASS moving geometry uses kinematic bodies
+PASS pawn rides full low-tile cycle: hips 0.30..0.70m, drift 0.00m
+PASS ragdoll compound colliders register one hit per contact
+PASS mallet hit cooldown prevents immediate repeat
+PASS ragdoll compound colliders register one hit per contact
+PASS mallet hit cooldown prevents immediate repeat
+PASS real physical mallet contact reaches existing hit receiver
+INFO mallet contact horizontal displacement: 3.83m; contact count 2
+PASS mallet victim remains on course/recovery geometry
+PASS no runtime errors during probe
+PASS Physics smoke test complete; human/12-player/Steam checks pending.
+
+
+=== walk ===
+Real pawn waypoint traversal (no sprint/jump/abilities)
+PASS waypoint 1 at 2.85s (x=-4.62,y=0.27,z=17.43)
+PASS waypoint 2 at 8.13s (x=-4.80,y=0.24,z=46.44)
+PASS waypoint 3 at 9.19s (x=-7.70,y=0.24,z=51.49)
+PASS waypoint 4 at 14.28s (x=-8.00,y=0.26,z=79.40)
+PASS waypoint 5 at 15.83s (x=-5.19,y=0.26,z=87.44)
+PASS waypoint 6 at 17.69s (x=-7.46,y=0.27,z=97.42)
+PASS waypoint 7 at 20.79s (x=-7.60,y=0.27,z=114.42)
+PASS waypoint 8 at 23.06s (x=-0.34,y=0.26,z=124.53)
+PASS waypoint 9 at 25.96s (x=-0.01,y=0.27,z=140.44)
+PASS no runtime errors during traversal
+PASS Completed without jump/sprint/abilities in 25.96s
+
+
+=== recovery ===
+Real pawn waypoint traversal (no sprint/jump/abilities)
+PASS waypoint 1 at 2.38s (x=-12.00,y=0.28,z=89.59)
+PASS waypoint 2 at 3.15s (x=-8.56,y=0.27,z=89.06)
+PASS waypoint 3 at 3.71s (x=-5.54,y=0.26,z=88.15)
+PASS waypoint 4 at 5.52s (x=4.42,y=0.23,z=88.01)
+PASS waypoint 5 at 7.25s (x=7.82,y=0.24,z=96.47)
+PASS waypoint 6 at 7.99s (x=11.42,y=0.27,z=96.98)
+PASS waypoint 7 at 10.75s (x=12.01,y=-0.94,z=109.43)
+PASS waypoint 8 at 13.25s (x=12.01,y=0.28,z=97.59)
+PASS waypoint 9 at 14.00s (x=8.60,y=0.25,z=97.01)
+PASS no runtime errors during traversal
+PASS Completed without jump/sprint/abilities in 14.00s
+
+
+After checks, a Play-mode script reload was followed by the existing RagdollPawn.Drives Invalid quaternion warning. Stopped Play and started a new session; player code unchanged.
+Clean final Play session (after stopping and restarting; no script reload while playing):
+error CS: 0
+Exception:: 0
+Invalid quaternion rotation: 0
+PawnHipsHull: 0

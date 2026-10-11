@@ -71,6 +71,8 @@
 | R48 | 10-09 | RagdollTest 캐릭터 외형·물리·조작을 ImportedChessFightMap에서도 그대로 사용 | 간이 PlaytestSpawner/CameraRig를 LabGame/LabCamera로 교체. 같은 프리팹·P1 재질·튜닝·120Hz/24회, 1인 스폰. 연습장/더미는 제외. Unity 컴파일·Edit/Play Mode 구성 검사, Core 34·세션 15 통과 | 로컬 (`JY-ragdoll_v2`), 커밋·푸시 없음 | 구현됨, 사용자 손맛 확인 대기 |
 | R49 | 10-09 | 폰러시 A1/A2/B1/B2/C1/C2: 장애물 3개와 미션협동 3개를 목록에서 랜덤 조합. 승인 후 ImportedChessFightMap에 제작환경 구축 | 6개 예제 프리팹/2개 틀/목록, 입출구 정렬, 무중복 추첨/시드/고정 슬롯/Undo, 기존 F/팀으로 미션·전용 문, R48 조작 유지. 에디터 19·실행 29·Core 34·세션 15 통과. [상세](../KingRush/PAWN_RUSH_WORKSPACE.md) | 로컬 (`JY-ragdoll_v2`), 커밋·푸시 없음 | 구현됨, 사용자 확인 대기 / 온라인 연결 별도 |
 
+| R50 | 10-11 | 체스 왕성 레퍼런스의 쉬운 장애물 구역 프리팹 제작, ImportedChessFightMap 앞부분에 배치해 즉시 시험 | O04 왕성 정문 돌파(144×20m), 이동 룩 3·낮은 승강 타일 3·쌍해머·복귀 경사로. A1 고정/기존 래그돌 재사용. Unity 편집·물리·완주·복귀 자동 검사 및 Core 34·세션 15 통과. [상세](../KingRush/ROYAL_GATE_RUSH.md) | 로컬 (`JY-ragdoll_v2`), 커밋·푸시 없음 | 구현됨, 사용자 손맛·12인 시간 확인 대기 / 온라인 연결 별도 |
+
 ## 2. 요구사항에서 뽑은 지켜야 할 조건
 
 여러 요청에 반복해서 나온 사용자 기준이다. 새 작업도 이 기준을 따른다.
