@@ -20,6 +20,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SwordFight.unity
     guid: a6623a38f774c1042970fe4458f45a10
+  - enabled: 1
+    path: Assets/Scenes/PawnRushVictory.unity
+    guid: fc4277d1e5a7c2dfdb75131ca69f6a4e
+  - enabled: 1
+    path: Assets/Scenes/PawnRushLose.unity
+    guid: 3f9bc009bbfb3a9e6749e98ed3738aa8
   - enabled: 0
     path: Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity
     guid: cc9caf21a9ab44e8af429758caa4f434

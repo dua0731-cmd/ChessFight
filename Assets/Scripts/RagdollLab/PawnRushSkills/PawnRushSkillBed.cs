@@ -247,7 +247,7 @@ namespace ChessFight.RagdollLab
                 ready || running, false, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
         }
 
-        static string StageName(RagdollPawn pawn)
+        public static string StageName(RagdollPawn pawn)
         {
             if (pawn.SkillStage == SkillStage.None) return pawn.SkillCooldown > 0f ? "쿨타임" : "준비됨";
             if (!string.IsNullOrEmpty(pawn.SkillDetail)) return pawn.SkillDetail;

@@ -15,8 +15,8 @@ namespace ChessFight.Game
         // (MECHANICS_TODO M14) lets GameModes.QueenOfTheHill load it for a match.
         public const string QueenOfTheHill = "QueenOfTheHill";
         // The Pawn Rush result scenes (R76, in place of R62's LastScene): the winners' and the
-        // losers'. Previewed on their own for now; the match flow does not load them until the
-        // team decides where the result plays.
+        // losers'. Since R125 the race loads them when a team has a majority on the crown
+        // platform (PawnRushResultFlow), and they go back to the lobby.
         public const string PawnRushVictory = "PawnRushVictory";
         public const string PawnRushLose = "PawnRushLose";
     }

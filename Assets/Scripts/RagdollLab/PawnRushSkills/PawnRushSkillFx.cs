@@ -87,10 +87,17 @@ namespace ChessFight.RagdollLab
 
         public Camera ViewCamera => ViewOverride != null ? ViewOverride : game != null && game.labCamera != null ? game.labCamera.Cam : Camera.main;
 
+        // Outside the lab (Pawn Rush course 01, R125, PawnRushCourseSkills): the numbers, the person at this PC, and
+        // whether a hit stop may only hold the two pieces' picture (online) instead of the game.
+        public PawnRushSkillParams ParamsOverride { get; set; }
+        public Func<RagdollPawn> ViewerOverride { get; set; }
+        public bool OnlineOverride { get; set; }
+
         PawnRushSkillParams Params
         {
             get
             {
+                if (ParamsOverride != null) return ParamsOverride;
                 var bed = GetComponent<PawnRushSkillBed>();
                 return bed != null ? bed.skills : null;
             }
@@ -1055,7 +1062,7 @@ namespace ChessFight.RagdollLab
         void HitStop(float seconds)
         {
             if (!hitStop || seconds <= 0f) return;
-            if (game != null && game.NetworkControlled)
+            if ((game != null && game.NetworkControlled) || OnlineOverride)
             {
                 // Online (R111, D-S2) the game must not stop (the host's physics, everyone's inputs): only the hitter's and
                 // the hit piece's picture holds still, on this screen by itself.

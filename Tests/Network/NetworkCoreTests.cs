@@ -363,7 +363,7 @@ public static class NetworkCoreTests
                 a.Progress[0] = .25f; a.Progress[3] = 1f; a.Completed[3] = true;
                 a.Bits[0] = 0xFFFFFFFFFFFFFFFFUL; a.Bits[2] = 0x1234;
                 byte[] bytes = a.Write(42UL);
-                Check(bytes.Length == PawnRushNetState.Bytes, "size " + bytes.Length);
+                Check(bytes.Length == PawnRushNetState.FixedBytes && bytes.Length == a.Bytes, "size " + bytes.Length);
                 var b = new PawnRushNetState();
                 Check(PawnRushNetState.Read(bytes, 42UL, b), "read");
                 Check(b.Tick == 77 && b.First == 3 && b.Second == 0, "header");
@@ -373,6 +373,50 @@ public static class NetworkCoreTests
                 var cut = new byte[bytes.Length - 1]; Array.Copy(bytes, cut, cut.Length);
                 Check(!PawnRushNetState.Read(cut, 42UL, b), "short packet");
                 bytes[0] ^= 1; Check(!PawnRushNetState.Read(bytes, 42UL, b), "wrong magic"); });
+            Test("Pawn Rush course state (CFP2) carries the pads, the winner, the clock and the crown finishers", () => {
+                var a = new PawnRushNetState { Tick = 9, First = 1, Second = 4, PadFirst = (byte)PieceKind.Knight, PadSecond = (byte)PieceKind.Queen,
+                                               PadsUsed = 0x5, Winner = 1, Clock = 187.25f, FinisherCount = 3 };
+                a.FinisherSeat[0] = SkillWire.Ref(1, 0); a.FinisherTime[0] = 170.04f;
+                a.FinisherSeat[1] = SkillWire.Ref(1, 2); a.FinisherTime[1] = 181.5f;
+                a.FinisherSeat[2] = SkillWire.Ref(0, 5); a.FinisherTime[2] = 186.96f;
+                byte[] bytes = a.Write(7UL);
+                Check(bytes.Length == PawnRushNetState.FixedBytes + 3 * PawnRushNetState.FinisherBytes, "size " + bytes.Length);
+                var b = new PawnRushNetState();
+                Check(PawnRushNetState.Read(bytes, 7UL, b), "read");
+                Check(b.PadFirst == (byte)PieceKind.Knight && b.PadSecond == (byte)PieceKind.Queen && b.PadsUsed == 0x5, "pads");
+                Check(b.Winner == 1 && Math.Abs(b.Clock - 187.25f) < 1e-4f, "winner and clock");
+                Check(b.FinisherCount == 3 && b.FinisherSeat[1] == SkillWire.Ref(1, 2) && Math.Abs(b.FinisherTime[0] - 170f) < 0.051f
+                      && Math.Abs(b.FinisherTime[2] - 187f) < 0.051f, "finishers to a tenth");
+                var none = new PawnRushNetState().Write(7UL);
+                Check(PawnRushNetState.Read(none, 7UL, b) && b.Winner == -1 && b.FinisherCount == 0, "a fresh state: nobody yet");
+                var longer = new byte[bytes.Length + 1]; Array.Copy(bytes, longer, bytes.Length);
+                Check(!PawnRushNetState.Read(longer, 7UL, b), "a count that disagrees with the length");
+                bytes[PawnRushNetState.FixedBytes - 1] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
+            Test("Promotion pads: two different pieces a round, the same for every seed holder, never the pawn or the king", () => {
+                var seen = new HashSet<PieceKind>();
+                for (int seed = 0; seed < 400; seed++)
+                {
+                    var d = PawnRushPromotion.Choose(seed);
+                    var again = PawnRushPromotion.Choose(seed);
+                    Check(d.First != d.Second, "the same piece twice, seed " + seed);
+                    Check(d.First == again.First && d.Second == again.Second, "not repeatable, seed " + seed);
+                    Check(PawnRushPromotion.Gives(d.First) && PawnRushPromotion.Gives(d.Second), "a piece a pad cannot give, seed " + seed);
+                    seen.Add(d.First); seen.Add(d.Second);
+                }
+                Check(seen.Count == 4 && !seen.Contains(PieceKind.Pawn) && !seen.Contains(PieceKind.King), "all four pieces come up");
+                Check(PawnRushPromotion.CanPromote(PieceKind.Pawn) && !PawnRushPromotion.CanPromote(PieceKind.Rook), "only a pawn promotes"); });
+            Test("Crown platform: more than half the team's players on it at once wins", () => {
+                Check(PawnRushFinish.Needed(1) == 1 && PawnRushFinish.Needed(2) == 2 && PawnRushFinish.Needed(3) == 2 && PawnRushFinish.Needed(4) == 3
+                      && PawnRushFinish.Needed(5) == 3 && PawnRushFinish.Needed(6) == 4, "majorities");
+                Check(PawnRushFinish.Winner(0, 3, 0, 2) == PawnRushFinish.None, "nobody");
+                Check(PawnRushFinish.Winner(2, 3, 1, 2) == 0, "white 2 of 3");
+                Check(PawnRushFinish.Winner(1, 3, 2, 2) == 1, "black 2 of 2");
+                Check(PawnRushFinish.Winner(1, 2, 0, 3) == PawnRushFinish.None, "half is not more than half");
+                Check(PawnRushFinish.Winner(3, 5, 2, 3) == 0 && PawnRushFinish.Winner(2, 3, 3, 4) == 1, "both at once: more on the platform");
+                Check(PawnRushFinish.Winner(2, 3, 2, 3) == PawnRushFinish.None, "both at once, level: nobody yet");
+                Check(PawnRushFinish.Winner(0, 0, 0, 3) == PawnRushFinish.None && !PawnRushFinish.Reached(1, 0), "a team with no players never wins");
+                Check(PawnRushFinish.OnPlatform(2f, 0.9f, 2f) && !PawnRushFinish.OnPlatform(2.2f, 0.9f, 2.2f) && !PawnRushFinish.OnPlatform(0f, -1f, 0f)
+                      && !PawnRushFinish.OnPlatform(0f, 4f, 0f), "on the platform"); });
             Test("Game mode catalog: unique lobby keys, a playable default, safe lookups", () => {
                 Check(GameModes.All.Select(m => m.Key).Distinct().Count() == GameModes.All.Length, "duplicate key");
                 Check(GameModes.All.All(m => m.Key.Length > 0 && m.Key.Length <= 16 && m.Key.All(ch => ch >= 'a' && ch <= 'z')), "lobby keys are short lowercase words");
@@ -498,11 +542,11 @@ public static class NetworkCoreTests
                 var s=q.States[0]; var o=q.Wires[0]; var e=q.Events[0];
                 Check(s.Pawn==SkillWire.Ref(1,3)&&s.Stage==2&&s.Flags==0xA5&&s.Flags2==3&&Math.Abs(s.StageTime-1.23f)<0.006f,"state head");
                 Check(Math.Abs(s.Cooldown-7.25f)<0.051f&&Math.Abs(s.CooldownTotal-12f)<0.01f&&Math.Abs(s.Dx-0.6f)<0.01f&&Math.Abs(s.Dy-0.8f)<0.01f,"state times, dir");
-                Check(Math.Abs(s.Px+12.345f)<0.003f&&Math.Abs(s.Pz-33.3f)<0.003f&&Math.Abs(s.Qz-79f)<0.003f,"state points");
+                Check(Math.Abs(s.Px+12.345f)<0.006f&&Math.Abs(s.Pz-33.3f)<0.006f&&Math.Abs(s.Qz-79f)<0.006f,"state points");
                 Check(s.Target==SkillWire.Ref(0,5)&&s.Other==SkillWire.None&&Math.Abs(s.A-2.5f)<0.01f&&Math.Abs(s.B-25.5f)<0.01f&&s.C==200&&s.D==7,"state slots");
                 Check(o.Id==9&&Math.Abs(o.Yaw-271f)<1.5f&&Math.Abs(o.Age-2.5f)<0.006f&&Math.Abs(o.Out0-0.62f)<0.011f&&Math.Abs(o.Out1+0.31f)<0.011f&&Math.Abs(o.Along0-0.33f)<0.003f,"wire");
                 Check(!q.Barricades[0].Standing&&Math.Abs(q.Barricades[0].RegrowLeft-3.4f)<0.051f,"barricade");
-                Check(e.Seq==65531&&e.TimeMs==123000&&e.Mode==1&&e.Kind==9&&Math.Abs(e.Dz+1f)<0.01f&&Math.Abs(e.Ux+5f)<0.003f&&e.Count==3&&Math.Abs(e.Size-6.5f)<0.006f&&e.Source==9,"event");
+                Check(e.Seq==65531&&e.TimeMs==123000&&e.Mode==1&&e.Kind==9&&Math.Abs(e.Dz+1f)<0.01f&&Math.Abs(e.Ux+5f)<0.006f&&e.Count==3&&Math.Abs(e.Size-6.5f)<0.006f&&e.Source==9,"event");
                 Check(SkillWire.Newer(2,65530)&&!SkillWire.Newer(65530,2),"seq wraps");
                 var bad=(byte[])b.Clone(); bad[6]=99;   // 99 states
                 Check(!SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(bad)),bad.Length,q),"too many states");
@@ -533,10 +577,10 @@ public static class NetworkCoreTests
                 var a=q.Fighters[0]; var c=q.Fighters[1]; var k=q.Collapses[0];
                 Check(a.Team==1&&a.Alive&&a.Drawn&&!a.Classic&&!a.Skill&&!a.Edge&&!a.Glow&&a.EdgeCondition&&a.Why==6&&a.EdgeTarget==SkillWire.Ref(1,2),"idle fighter");
                 Check(Math.Abs(a.Protection-1.25f)<0.006f&&Math.Abs(a.Flash-0.16f)<0.006f&&Math.Abs(a.Wz-1.234f)<0.0002f&&Math.Abs(a.Wy+0.42f)<0.0002f&&a.WRot==0xC0FFEE11u,"life and sword");
-                Check(c.Skill&&c.Stage==3&&c.Detail==10&&c.SkillFlags==2&&Math.Abs(c.StageTime-0.37f)<0.006f&&Math.Abs(c.Cooldown-1.5f)<0.051f&&Math.Abs(c.Dx-0.6f)<0.01f&&Math.Abs(c.Pz+6.25f)<0.003f&&Math.Abs(c.Reach-5.95f)<0.026f&&Math.Abs(c.Wave-3.3f)<0.026f&&Math.Abs(c.Pin-0.8f)<0.051f,"F skill");
-                Check(c.Edge&&c.EdgeStage==2&&c.EdgeDetail==12&&c.EdgeFlags==3&&Math.Abs(c.EdgeTime-0.45f)<0.006f&&Math.Abs(c.EdgeCooldownTotal-16f)<0.051f&&c.Carried==SkillWire.Ref(0,0)&&Math.Abs(c.Outx-1f)<0.01f&&Math.Abs(c.Sy-0.6f)<0.003f,"E skill");
+                Check(c.Skill&&c.Stage==3&&c.Detail==10&&c.SkillFlags==2&&Math.Abs(c.StageTime-0.37f)<0.006f&&Math.Abs(c.Cooldown-1.5f)<0.051f&&Math.Abs(c.Dx-0.6f)<0.01f&&Math.Abs(c.Pz+6.25f)<0.006f&&Math.Abs(c.Reach-5.95f)<0.026f&&Math.Abs(c.Wave-3.3f)<0.026f&&Math.Abs(c.Pin-0.8f)<0.051f,"F skill");
+                Check(c.Edge&&c.EdgeStage==2&&c.EdgeDetail==12&&c.EdgeFlags==3&&Math.Abs(c.EdgeTime-0.45f)<0.006f&&Math.Abs(c.EdgeCooldownTotal-16f)<0.051f&&c.Carried==SkillWire.Ref(0,0)&&Math.Abs(c.Outx-1f)<0.01f&&Math.Abs(c.Sy-0.6f)<0.006f,"E skill");
                 Check(c.Glow&&Math.Abs(c.GAt-6.5f)<0.006f&&Math.Abs(c.GTo-14f)<0.006f&&Math.Abs(c.GAz-1f)<0.01f,"glow");
-                Check(k.Id==7&&Math.Abs(k.X1-7f)<0.003f&&Math.Abs(k.Z0+1.5f)<0.003f&&Math.Abs(k.Age-1.23f)<0.006f&&Math.Abs(k.Crack-0.8f)<0.051f&&Math.Abs(k.Open-5f)<0.051f,"collapse");
+                Check(k.Id==7&&Math.Abs(k.X1-7f)<0.006f&&Math.Abs(k.Z0+1.5f)<0.006f&&Math.Abs(k.Age-1.23f)<0.006f&&Math.Abs(k.Crack-0.8f)<0.051f&&Math.Abs(k.Open-5f)<0.051f,"collapse");
                 Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(b,0,b.Length-1)),b.Length-1,q),"short");
                 var twice=(byte[])b.Clone(); twice[SwordWire.HeaderBytes+SwordWire.BaseBytes]=twice[SwordWire.HeaderBytes];   // the second fighter's place = the first's
                 Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(twice)),twice.Length,q),"a place twice");

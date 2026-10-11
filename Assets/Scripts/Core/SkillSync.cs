@@ -126,7 +126,9 @@ namespace ChessFight.Network
         public const int MaxStates = 16, MaxWires = 16, MaxBarricades = 8;
         /// <summary>How long ago a moment may have happened and still be sent (ms).</summary>
         public const uint EventLifeMs = 1500;
-        public const float PositionRange = 80f;
+        // Metres around the scene origin, 16 bits (about 1 cm a step). +-80 m until R125: the skills now run on Pawn Rush
+        // course 01 too, which reaches z 246 m (as the ragdoll snapshot, R124, PITFALLS 38).
+        public const float PositionRange = 320f;
 
         /// <summary>A piece by its roster place: team and slot are unique in a match and known on every
         /// PC, so a piece costs one byte instead of its eight-byte Steam id.</summary>

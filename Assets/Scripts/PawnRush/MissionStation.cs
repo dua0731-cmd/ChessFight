@@ -37,6 +37,23 @@ namespace ChessFight.PawnRush
         public int GameIndex => gameIndex;
         public MiniGameBase Game => gameSocket != null ? gameSocket.GetComponentInChildren<MiniGameBase>(true) : null;
         public Transform Socket => gameSocket;
+        // The single-use promotion pad beside the game (R125), made the first time it is asked for in Play (after
+        // Configure: a course built from code at Play adds this component before configuring it).
+        public StationPromotion Promotion
+        {
+            get
+            {
+                if (promotion == null && Application.isPlaying && gameSocket != null)
+                {
+                    // One pad by the game instead of the design doc's four placeholder pads (a scene built before
+                    // R125 still has those: they go).
+                    foreach (var zone in GetComponentsInChildren<PromotionZone>(true)) zone.gameObject.SetActive(false);
+                    promotion = StationPromotion.Make(this);
+                }
+                return promotion;
+            }
+        }
+        StationPromotion promotion;
 
         public void Configure(int team, int plaza, bool mirrored, TeamGate gate, Transform gameSocket, Course01Kit kit)
         {
@@ -65,6 +82,7 @@ namespace ChessFight.PawnRush
         // The game built in the Editor (saved with the scene) opens the gate too.
         void Start()
         {
+            if (Promotion == null) Debug.LogWarning("[PawnRush] 스테이션에 승격 발판을 만들지 못했습니다: " + name);
             if (hooked == null) Hook(Game);
         }
 
@@ -85,6 +103,7 @@ namespace ChessFight.PawnRush
             var game = Game;
             if (game != null) game.ResetGame();
             if (gate != null) gate.Close();
+            if (Promotion != null) Promotion.ResetPad();
         }
 
         // ------------------------------------------------------------------ the pawns in the station

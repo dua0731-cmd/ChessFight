@@ -318,6 +318,8 @@ R62의 `LastScene`(PAWN RUSH 참고 그림의 성·아치 무대, 기울어진 �
 
 승규 님 요청: 라스트 씬을 **나무 계열 갈색**으로, 인트로·로비·입장 화면과 비슷한 승리·패배 시안 3개 → "**B 시안**(램프 아래 탁자 체스판)으로, UI는 체스 시계·기보 말고 다른 것, '킹이 쓰러졌어요'와 남은 거리는 빼고" → 다시 3개 중 "**결승 중계(bcast)**만, **카메라를 좀 낮게**"([시안 페이지](https://claude.ai/artifact/9rH56RC5cR2uamzdZd9iNK)) → "`LastScene`은 지우고 **폰 러쉬 Victory 씬, Lose 씬 2개**를 `JY-kingrush`에" → (처음 만든 판이 시안과 달라) 시안 코드를 그대로 옮겨 다시 만들었다. **AI가 이 PC의 Unity에서 두 씬을 시간대별로 캡처해 시안과 맞춰 봤고, 사용자는 아직 안 봤다.** 경기 흐름에는 아직 안 이어졌다(아래 "아직 없음").
 
+> **R125(10-11): 경기에 연결됨.** 폰 러쉬 코스 01에서 한 팀의 사람 과반이 왕관 발판에 동시에 올라가면 이긴 팀 PC는 Victory, 진 팀 PC는 Lose를 연다(`Game/PawnRushResultFlow.Show`). 디렉터는 넘겨받은 경기가 있으면 미리보기 키를 끄고 그 경기를 보여 주며, 12초 뒤나 "로비로"·"다시 매칭"(지금은 둘 다 로비)에서 `PawnRushResultFlow.ToLobby`로 로비에 간다. 결승 순서 카드의 시각은 **처음 왕관 발판에 올라선 시각**, 미도착자는 진행 경로로 남은 거리. 문구 "먼저 결승선을 넘었어요"는 그대로라 "왕관 발판 과반"과 조금 다르다(바꿀지 결정 대기).
+
 - 씬: **`PawnRushVictory.unity`**(이긴 팀), **`PawnRushLose.unity`**(진 팀). 둘 다 `Main Camera`와 `Pawn Rush Result`(`PawnRushResultDirector`)만 있고 `victory` 하나만 다르다. 메뉴 **ChessFight > Scenes > Pawn Rush Victory / Pawn Rush Lose (result preview)**. 생성기 `Tools/Generators/gen_pawnrush_result.py`(두 씬을 덮어쓴다, `--overwrite`).
 - 무대·말·조명·결과판은 Play 때 코드로 만든다. 새 에셋 없음(제목 글꼴은 쓰던 Black Han Sans, 숫자는 PC의 Consolas).
 

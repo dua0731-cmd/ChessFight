@@ -58,6 +58,7 @@ namespace ChessFight.Gameplay
         public Vector3 StartPosition => startPosition;
         public Quaternion StartRotation => startRotation;
         public float RunSeconds => Time.time - runStart;
+        bool useWasDown;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => NetworkDriven = false;
@@ -150,9 +151,12 @@ namespace ChessFight.Gameplay
                 Move = Vector3.ClampMagnitude(move, 1f),
                 Jump = intent.Jump, Shove = intent.Shove, ShoveHeld = intent.ShoveHeld, Grab = intent.Grab,
                 Sprint = intent.Sprint, Ability = intent.Ability, Ability2 = intent.Ability2,
-                Interact = intent.Interact,
+                // A scene with the Pawn Rush piece skills (course 01, R125): F is the skill key, not interact.
+                Interact = intent.Interact && !CourseSkills.PawnRush,
+                Skill = CourseSkills.PawnRush && intent.Interact && !useWasDown,
                 Aim = aim
             });
+            useWasDown = intent.Interact;
 
             var target = driver.FollowTarget;
             CatchLongFall(target);

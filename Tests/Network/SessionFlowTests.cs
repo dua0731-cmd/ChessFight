@@ -242,6 +242,19 @@ public static class SessionFlowTests
                 var taken=host.Roster[joiner.Self];Check(taken.Team==seat.Team&&taken.Slot==seat.Slot,"the seat went elsewhere");
                 Check(host.Note.Contains("빈자리를 채웠"),"no note for the new player: "+host.Note);
                 Step(2);Check(RoomData(host,"open")=="0"&&!FakeSteam.Lobbies[host.Match].Joinable&&joiner.Roster.Count==12,"a refilled match is still offered");});
+            Test("A decided race offers no empty seats: players leaving for the lobby are not replaced",()=>{
+                Setup(3);var host=clients[0];var leaver=clients[1];var joiner=clients[2];
+                As(host,()=>host.FindMatch());Step(20);As(leaver,()=>leaver.FindMatch());Step(20);
+                As(host,host.FillRoomWithBots);Step(5);
+                Check(host.Started&&leaver.Started,"setup: a started match");
+                As(leaver,leaver.EndMatch);Step();
+                Check(!leaver.MatchEnded&&RoomData(host,"ended")!="1","only the host ends a match");
+                As(host,host.EndMatch);Step(2);
+                Check(host.MatchEnded&&leaver.MatchEnded,"everyone in the room sees it ended");
+                As(leaver,leaver.Cancel);Step(5);
+                Check(host.Roster.Count==11&&RoomData(host,"open")=="0"&&!FakeSteam.Lobbies[host.Match].Joinable,"an ended match offered the leaver's seat");
+                As(joiner,()=>joiner.FindMatch());Step(40);
+                Check(joiner.Match!=host.Match,"a searching player was let into an ended match");});
             Test("Each team refills only to the size it started with: a 5 v 5 match takes one player back, not two",()=>{
                 Setup(4);var host=clients[0];var leaver=clients[1];var first=clients[2];var second=clients[3];
                 As(host,()=>host.FindMatch(true));Step();As(leaver,()=>leaver.JoinPrivateMatch(host.Match));Step(20);

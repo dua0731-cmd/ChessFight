@@ -54,6 +54,15 @@ namespace ChessFight.Game
         {
             string first = SceneManager.GetActiveScene().name;
             if (first == SceneNames.Intro || first == SceneNames.Lobby) Ensure();
+            // A course played offline goes on to its result scene and then the lobby (R125): the lobby
+            // loaded later starts the session then, as if the game had started there.
+            SceneManager.sceneLoaded -= LateStart;
+            SceneManager.sceneLoaded += LateStart;
+        }
+
+        static void LateStart(Scene scene, LoadSceneMode mode)
+        {
+            if (Instance == null && (scene.name == SceneNames.Intro || scene.name == SceneNames.Lobby)) Ensure();
         }
 
         // Player Settings > Version, plus "-dev" for the Editor and development builds.

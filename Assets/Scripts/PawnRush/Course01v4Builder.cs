@@ -248,33 +248,13 @@ namespace ChessFight.PawnRush
             var barrier = b.Box("Team barrier", V(-half, 0f, u + .6f), V(half, 10f, u + .8f), k.glass, true);
             barrier.AddComponent<TeamBarrier>().SetTeam(team);
             b.Box("Gate colour", V(-half - .3f, 4.6f, u - .05f), V(half + .3f, 5.2f, u), k.Team(team), false, false);
-            // Black's pads are the mirror of white's (the queen on the outer side of both).
-            float s = team == Teams.Black ? -1f : 1f;
-            Promotion(b, plaza, team, V(0f, 0f, 1f), new[] { -8f * s, -6f * s, 6f * s, 8f * s }, new[] { 0f, 0f, 0f, 0f });
-            // Promotion 3 in plaza 2's 6 x 6 gate passage, beside the way through (only the team gets in).
-            if (plaza == 2) Promotion(b, 3, team, V(0f, 0f, u + 4f), new[] { -2f * s, 2f * s, -2f * s, 2f * s }, new[] { -1f, -1f, 1f, 1f });
+            // R125: no promotion zones of four placeholder pads any more; the station makes its one single-use pad
+            // beside the game when Play starts (StationPromotion).
             var socket = b.Group("Game socket");
             b.parent = before;
             var station = g.gameObject.AddComponent<MissionStation>();
             station.Configure(team, plaza, team == Teams.Black, gate, socket, k);
             return station;
-        }
-
-        // Four 2 x 2 m pads (queen, rook, bishop, knight) at (xs[i], zs[i]) from `at`.
-        static void Promotion(CourseBuilder b, int zone, int team, Vector3 at, float[] xs, float[] zs)
-        {
-            var k = b.kit;
-            var g = b.Group("PromotionZone_" + zone);
-            g.localPosition = at;
-            var before = b.parent;
-            b.parent = g;
-            Material[] looks = { k.rankGold, k.wallNoClimb, k.trimBlack, k.hazard };
-            string[] names = { "Queen pad", "Rook pad", "Bishop pad", "Knight pad" };
-            var pads = new Transform[4];
-            for (int i = 0; i < 4; i++)
-                pads[i] = b.Box(names[i], V(xs[i] - .95f, 0f, zs[i] - .95f), V(xs[i] + .95f, .04f, zs[i] + .95f), looks[i], false, false).transform;
-            b.parent = before;
-            g.gameObject.AddComponent<PromotionZone>().Configure(zone, team, pads);
         }
     }
 }

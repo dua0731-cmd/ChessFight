@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-11 | R124 | 래그돌 스냅샷 위치 범위 ±80 → ±320 m(`RagdollNetProtocol.PositionRange`, magic `CFRA`): 폰 러쉬 코스 01에서 z 80 m 너머 폰이 참가자 화면에 80 m에 붙어 보이던 것. 프로토콜 v19 주석. 문서: HANDOFF, REQUIREMENTS R124, DECISIONS T10, PITFALLS 38, VALIDATION R124 표, PAWN_RUSH_COURSE01 §7-2, HISTORY |
+| (이 커밋) | 10-11 | R125 | 폰 러쉬 코스 01: 기물 스킬(오프라인·온라인, `PawnRushCourseSkills`, `SteamPawnRushLink` 스킬 동기화), 1회용 승격 발판(`StationPromotion`, `MissionPicker` 발판 기물), 왕관 발판 과반 승리(`CrownFinish`) → Victory/Lose(`PawnRushResultFlow`) → 로비, `SteamSession.EndMatch`(`ended`), `NetworkRuntime.LateStart`, Core `PawnRushCourseRules`·`PawnRushNetState` CFP2, `SkillWire.PositionRange` 320, `CharacterCommand.Skill`·`CourseSkills`, 결과 씬 빌드 목록, 프로토콜 v20·`CFRB`. 시험: Core 106·세션 41 |
+| `4125cf9` | 10-11 | R124 | 래그돌 스냅샷 위치 범위 ±80 → ±320 m(`RagdollNetProtocol.PositionRange`, magic `CFRA`): 폰 러쉬 코스 01에서 z 80 m 너머 폰이 참가자 화면에 80 m에 붙어 보이던 것. 프로토콜 v19 주석. 문서: HANDOFF, REQUIREMENTS R124, DECISIONS T10, PITFALLS 38, VALIDATION R124 표, PAWN_RUSH_COURSE01 §7-2, HISTORY |
 | `22d2204` | 10-11 | R124 | 병합: bold-johnson의 남은 2커밋(`Tools/Sfx/SwordFightEdgeSkills`, 그쪽 R115). 문서 충돌은 양쪽 기록을 남김 |
 | `924ea55` | 10-11 | R124 | 병합: `skill-network-test`(138커밋)를 `main`에. 폴더는 `main` 배치로, 게임 씬 모두 유지 + `Scenes/SkillTest/` 셋(빌드 목록엔 꺼짐), 프로토콜 v19, `SwordFightEdgeFloor` 상태형 표시, 문서 양쪽 기록(번호 겹침 표시) |
 | `3fbc10a` | 10-10 | R115(bold-johnson) | 소드 파이트 가장자리 스킬 효과음 시안: 25개 고르기 페이지(SmP9pDnP9xTaNSRvH5TJMB), 도구 `Tools/Sfx/SwordFightEdgeSkills/`(spec·페이지 만들기·내려받기·띠용 검사), Skills/SWORD_FIGHT §R115, REQUIREMENTS R115, HANDOFF, HISTORY. Unity 안 건드림 |

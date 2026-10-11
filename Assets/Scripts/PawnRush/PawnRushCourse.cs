@@ -31,12 +31,19 @@ namespace ChessFight.PawnRush
         {
             Current = this;
             if (buildOnPlayIfEmpty && Root == null && kit != null) Course01v4Builder.Build(transform, kit);
+            // R125: the Pawn Rush piece skills are on here (offline and online; the ragdoll side gives the pawns
+            // their skills, F is the skill key), and the race ends on the crown platform.
+            Gameplay.CourseSkills.PawnRush = true;
+            if (GetComponent<CrownFinish>() == null) gameObject.AddComponent<CrownFinish>();
         }
 
         void OnDestroy()
         {
             if (Current == this) Current = null;
+            Gameplay.CourseSkills.PawnRush = false;
         }
+
+        public CrownFinish Finish => GetComponent<CrownFinish>();
 
         public void Clear()
         {

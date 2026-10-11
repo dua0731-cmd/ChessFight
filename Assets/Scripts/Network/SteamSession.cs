@@ -52,7 +52,10 @@ namespace ChessFight.Network
         // v18 (R121, branch skill-network-test): the Sword Fight skill test online ("CFR9").
         // v19 (R124): main and skill-network-test merged; ragdoll positions carry a +-320 m range
         //      ("CFRA") so Pawn Rush course 01 (z up to 246 m) is no longer clamped at 80 m on clients.
-        public const string Protocol = "chessfight.dua0731.network.v19";
+        // v20 (R125): the piece skills, the promotion pads and the crown finish in the 폰 러쉬 match: its input is
+        //      the lab's (press counts, the skill press), a skills packet goes with every snapshot, the course
+        //      state is "CFP2" (pads, race clock, finishers, winner), skill positions span +-320 m ("CFRB").
+        public const string Protocol = "chessfight.dua0731.network.v20";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }
@@ -1013,7 +1016,7 @@ namespace ChessFight.Network
             var capacity = Backfill.DecodeCapacity(Data(Match, "seats"));
             var seats = Seats();
             int free0 = Backfill.Free(capacity, seats, 0), free1 = Backfill.Free(capacity, seats, 1);
-            bool open = free0 + free1 > 0 && Backfill.Open(StartAt, ServerNow());
+            bool open = free0 + free1 > 0 && Backfill.Open(StartAt, ServerNow()) && Data(Match, "ended") != "1";
             SetChanged("free0", free0.ToString()); SetChanged("free1", free1.ToString());
             SetChanged("open", open ? "1" : "0"); SetChanged("held", Backfill.EncodeHeld(held));
             int door = open || held.Count > 0 ? 1 : 0;
@@ -1230,6 +1233,16 @@ namespace ChessFight.Network
             SteamMatchmaking.SetLobbyOwner(Id(Match), Id(next));
             ChangeHost(next, 1, $"성능이 더 좋은 {Name(next)} 님의 PC가 방장을 맡습니다.");
         }
+        // The host's race is decided (R125, Pawn Rush): nobody is let into the room's empty seats any more,
+        // and a new host after this one keeps it so (the mark lives in the room's data, rule 15).
+        public void EndMatch()
+        {
+            if (!Online || Match == 0 || !IsHost || Data(Match, "ended") == "1") return;
+            Set(Match, "ended", "1");
+            PublishSeats();
+        }
+        public bool MatchEnded => Match != 0 && Data(Match, "ended") == "1";
+
         public void Cancel()
         {
             if (!Online) return;

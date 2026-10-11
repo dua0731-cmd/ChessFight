@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
+    // R125: no longer built. The course has one single-use pad per station instead (StationPromotion), and a
+    // station switches off any of these a scene built before R125 still holds. Kept so those scenes load.
+    //
     // A promotion zone (design doc §5): four 2 x 2 m pads, queen, rook, bishop and knight.
     // Only where the pads are: the promotion rules (stand 3 s, who gets what) belong to
     // the promotion system. Which zones are on, and which one shows the queen, depends

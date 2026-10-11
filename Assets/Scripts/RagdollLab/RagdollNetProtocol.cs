@@ -189,7 +189,8 @@ namespace ChessFight.RagdollLab
         // moments in the skills packet (SkillWire.ModeSwordFight).
         // CFRA: positions span +-320 m instead of +-80 m (R124). Pawn Rush course 01 runs to z 246 m, and clients drew
         // every pawn past 80 m pinned at 80 m while the host saw them where they were.
-        public const uint Magic = 0x43465241;   // "CFRA"
+        // CFRB: the skill packet's positions span +-320 m as well (SkillWire.PositionRange, R125: the skills on course 01).
+        public const uint Magic = 0x43465242;   // "CFRB"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.

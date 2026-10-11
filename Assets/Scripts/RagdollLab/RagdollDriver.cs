@@ -22,7 +22,8 @@ namespace ChessFight.RagdollLab
         {
             move = command.Move, jump = command.Jump, shove = command.Shove, grab = command.Grab,
             sprint = command.Sprint, ability = command.Ability, ability2 = command.Ability2,
-            interact = command.Interact, aim = command.Aim, shoveHeld = command.ShoveHeld
+            interact = command.Interact, aim = command.Aim, shoveHeld = command.ShoveHeld,
+            skill = command.Skill,
         });
 
         public Transform FollowTarget => Pawn.Hips.transform;
@@ -53,6 +54,11 @@ namespace ChessFight.RagdollLab
 
         // Promotion (M11).
         public PieceKind Piece => Pawn.Piece;
-        public void Promote(PieceKind piece) => Pawn.SetPiece(piece);
+        public void Promote(PieceKind piece)
+        {
+            Pawn.SetPiece(piece);
+            // With the Pawn Rush skills (course 01's pads, R125) the new piece starts its own skill fresh.
+            if (Pawn.PawnRushSkills != null) Pawn.ResetSkill();
+        }
     }
 }

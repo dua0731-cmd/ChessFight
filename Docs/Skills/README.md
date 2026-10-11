@@ -9,6 +9,8 @@
 | [SWORD_FIGHT.md](SWORD_FIGHT.md) | **소드 파이트 스킬 5개 시험 씬 (R91, 10-09 · R99·R102 수정 · R103 가장자리 스킬, 10-10).** 경기 씬 SwordFight를 복사한 SwordFight_SkillTest, 이펙트 A, F 조준 → 좌클릭 발동 · 우클릭 취소. R99: 칼끝이 바닥 위로, 발동·기 모으기·잔상, 퀸 돌진 · 룩 돌탑 · 비숍 발목 잡는 손. R102: 머리 위 기물 표시, 룩 체스 말 모양 돌탑, 킹·비숍 맵 어디서든. **R103: 기물마다 두 번째 스킬 E(가장자리 스킬 5개, 시험 쿨 2초, 슬로 0.3초)**. 조작, 수치, 이펙트, 코드, 자동 시험·녹화 |
 | [SOUND.md](SOUND.md) | **폰 러쉬 스킬 효과음 2차 시안 (R107, 10-10): 기물마다 자기 소리 다섯 벌, 동전 울림 없음, A = 퀸 오브 더 힐 방향 — [페이지](https://claude.ai/artifact/37WNW9LFs9h5x2ERs7eUce).** 1차 **폰 러쉬 스킬 효과음 시안 (R101, 10-10).** ElevenLabs로 순간 21개 × 방향 5개(A 나무 체스말 · B 만화 장난감 · C 묵직한 쾅 · D 이펙트 그대로 · E 장난감 악기) = 105개를 만들어 실제 스킬 시간표에 붙인 [시안 페이지](https://claude.ai/artifact/HZYGZQCBe1SgxJrExMBdrC). 승규 님 고르기 대기, Unity에는 소리 없음. 도구 `Tools/Sfx/PawnRushSkills` |
 
+> **R125(10-11): 폰 러쉬 스킬이 폰 러쉬 코스 01에서도 켜진다**(오프라인·온라인, DECISIONS SK12). 모든 말은 폰(첫 두 걸음)으로 시작하고, 미니게임 옆 1회용 승격 발판(2초)에서 그 판의 기물(퀸·룩·비숍·나이트 중)로 승격하면 그 기물 스킬을 F로 쓴다. 쿨타임은 기획값. 코드 `PawnRushSkills/PawnRushCourseSkills.cs`(스킬·이펙트·소리·스킬 카드), 온라인은 `RagdollLabSteam/SteamPawnRushLink.cs` → [PAWN_RUSH_COURSE01 §4-2](../KingRush/PAWN_RUSH_COURSE01.md).
+
 ## 지금 상태 (R71, 10-07)
 
 - **작업 브랜치 `claude/bold-johnson-8ez95n`** (사용자 지정). 원격에 푸시하지 않았다.

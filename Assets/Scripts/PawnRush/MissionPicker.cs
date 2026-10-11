@@ -22,6 +22,9 @@ namespace ChessFight.PawnRush
 
         public int First { get; private set; } = PawnRushMissions.None;
         public int Second { get; private set; } = PawnRushMissions.None;
+        // The round's promotion pads (R125): plaza 1's piece and plaza 2's, the same for both teams.
+        public PieceKind PadFirst { get; private set; } = PieceKind.Queen;
+        public PieceKind PadSecond { get; private set; } = PieceKind.Rook;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics()
@@ -36,6 +39,7 @@ namespace ChessFight.PawnRush
 
         void Start()
         {
+            SetPads(PadFirst, PadSecond);
             if (drawOnStart) NewRound(Environment.TickCount);
             else
             {
@@ -48,7 +52,43 @@ namespace ChessFight.PawnRush
         public void NewRound(int seed)
         {
             var draw = PawnRushMissions.Choose(seed, LastFirst, LastSecond);
+            var pads = PawnRushPromotion.Choose(seed);
+            SetPads(pads.First, pads.Second);
             Install(draw.First, draw.Second);
+            foreach (var s in stations)
+                if (s != null && s.Promotion != null) s.Promotion.ResetPad();
+        }
+
+        // The pieces the pads give: plaza 1's and plaza 2's (the host's draw, or the host's word online).
+        public void SetPads(PieceKind first, PieceKind second)
+        {
+            if (PawnRushPromotion.Gives(first)) PadFirst = first;
+            if (PawnRushPromotion.Gives(second)) PadSecond = second;
+            for (int i = 0; i < stations.Length; i++)
+                if (stations[i] != null && stations[i].Promotion != null)
+                    stations[i].Promotion.SetPiece(i < 2 ? PadFirst : PadSecond);
+        }
+
+        // The spent pads, a bit per station (plaza 1 white, plaza 1 black, plaza 2 white, plaza 2 black).
+        public byte PadsUsed
+        {
+            get
+            {
+                int bits = 0;
+                for (int i = 0; i < stations.Length && i < 8; i++)
+                    if (stations[i] != null && stations[i].Promotion != null && stations[i].Promotion.Used) bits |= 1 << i;
+                return (byte)bits;
+            }
+        }
+
+        // The host's word on the pads (online, not the host).
+        public void ApplyPads(PieceKind first, PieceKind second, byte used)
+        {
+            if (PawnRushPromotion.Gives(first)) PadFirst = first;
+            if (PawnRushPromotion.Gives(second)) PadSecond = second;
+            for (int i = 0; i < stations.Length; i++)
+                if (stations[i] != null && stations[i].Promotion != null)
+                    stations[i].Promotion.ApplyRemote(i < 2 ? PadFirst : PadSecond, (used & (1 << i)) != 0);
         }
 
         public void Install(int first, int second)

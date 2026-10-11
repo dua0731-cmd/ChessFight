@@ -10,8 +10,9 @@ namespace ChessFight.Game
     // hanging lamp) and the broadcast package over it are built from code when Play starts.
     //
     // Opened on its own it shows the design sample's match (MatchResult.Example): R replays,
-    // H hides the package. The match flow does not load these scenes yet; Show() is the way
-    // in for whoever wires that, and LobbyRequested / RequeueRequested are the way out.
+    // H hides the package. Since R125 the race loads it (PawnRushResultFlow.Show) with the real
+    // match: no preview keys then, and the 12 s countdown or either button goes back to the
+    // lobby (PawnRushResultFlow.ToLobby; "다시 매칭" also goes to the lobby for now).
     [DisallowMultipleComponent]
     public sealed class PawnRushResultDirector : MonoBehaviour
     {
@@ -66,6 +67,21 @@ namespace ChessFight.Game
             Application.runInBackground = true;
             savedShadowDistance = QualitySettings.shadowDistance;
             QualitySettings.shadowDistance = 90f;
+
+            // Loaded by a race that just ended (R125): its match, and the way back to the lobby.
+            if (PawnRushResultFlow.Take(out var raced, out int racedTeam))
+            {
+                preview = false;
+                holdAt = -1f;
+                holdHidden = false;
+                result = raced;
+                myTeam = racedTeam;
+                LobbyRequested += PawnRushResultFlow.ToLobby;
+                RequeueRequested += PawnRushResultFlow.ToLobby;
+                // The course's camera held the mouse; the result's buttons need it back.
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
 
             var hudHost = new GameObject("Result HUD");
             hudHost.transform.SetParent(transform, false);

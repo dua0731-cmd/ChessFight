@@ -28,7 +28,7 @@ namespace ChessFight.RagdollLab
         const float Square = 1.5f;
 
         // The person at this PC: P1 offline, this PC's own pawn online (R111).
-        RagdollPawn Viewer => game != null ? game.LocalPawn : null;
+        RagdollPawn Viewer => game != null ? game.LocalPawn : ViewerOverride != null ? ViewerOverride() : null;
         Vector3 EyePoint => ViewCamera != null ? ViewCamera.transform.position : Vector3.up * 5f;
 
         void BuildDesignA()
