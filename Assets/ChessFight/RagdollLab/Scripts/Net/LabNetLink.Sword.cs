@@ -863,7 +863,8 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The Sword Fight test's own commands: <c>piece Bishop</c>, <c>skill</c> (F), <c>edge</c> (E),
         /// <c>click</c>, <c>hold 0.5</c> (the left button held), <c>rclick</c>, <c>jump</c>, <c>move x z seconds</c>,
-        /// <c>teams</c> (the host draws the sides again). False for the others (look, lag, shot, trace, report...).</summary>
+        /// <c>teams</c> (the host draws the sides again), <c>classic</c> (F6). False for the others (look, lag, shot, trace,
+        /// report...).</summary>
         bool SwordDev(string[] p, Func<int, float, float> number)
         {
             switch (p[0])
@@ -896,6 +897,9 @@ namespace ChessFight.RagdollLab
                 case "teams":
                     DrawSwordTeams();
                     return true;
+                case "classic":
+                    sword.ToggleControls();   // F6: the click cut or the physical drag
+                    return true;
             }
             return false;
         }
@@ -913,6 +917,13 @@ namespace ChessFight.RagdollLab
                     sb.Append($" {s.Stage} {s.StageTime:0.00}s cd {s.Cooldown:0.0}s, edge {s.EdgeStage} {s.EdgeTime:0.00}s cd {s.EdgeCooldown:0.0}s{(s.EdgeCondition ? " ready" : "")}"
                               + (s.PinLeft > 0f ? $" pinned {s.PinLeft:0.0}s" : "") + (s.SlowLeft > 0f ? $" slowed {s.SlowLeft:0.0}s" : ""));
                 if (f.Pawn.NetworkPuppet) sb.Append(" (puppet)");
+            }
+            // The sounds this PC has played (the AI cannot hear them: the loopback checks count them on each client).
+            var sfx = SwordFightSkillSfx.Current;
+            if (sfx != null && sfx.Count.Count > 0)
+            {
+                sb.Append(", sounds");
+                foreach (var pair in sfx.Count) sb.Append($" {pair.Key}×{pair.Value}");
             }
         }
 
