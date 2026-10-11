@@ -4,10 +4,12 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-10**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-11**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R72(사용자, 10-11): 원판 배열 제거.** Inspector에 Diameter(8 m), Rotation Direction(시계/반시계), Rotation Speed(45°/초). 단일 회전 축·바닥 포함 크기 변경, 충돌 영역과 운반 방향 일치. 구조11·Core83·세션39·7개 런타임 컴파일 통과. Unity 실기 대기.
+
 > **R71(사용자, 10-10): 기존 장애물 전체 설계 통일.** 이식18종·기존 발판/밧줄/점멸·시소/결승판도 공통 `Obstacle`. 킹러시 장난감3/성벽5/하늘2 전용 클래스, `LaunchPad`는 추상 공통 발사 부모 + `ContactLaunchPad`/`SpringLaunchPad`. 프리팹9개/48컴포넌트와 생성기 이전, 구조10·Core83·세션39·7개 런타임 컴파일 통과. **Unity/PhysX/Editor 생성기 실행 재확인 대기**. [상세](Docs/KingRush/OBSTACLE_CLASSES.md).
 
 > **R70(사용자, 10-10): 시험장 15종 클래스 분리.** 공통 `Obstacle` → 표면/이동 공통 부모 → 장애물별 전용 클래스. 모든 물리 수치는 해당 자식 Inspector에서 조절. 기존 `Obstacle`의 이동 구현은 `KinematicObstacle`로 옮김. 프리팹9개·기존 맵 장치29개 연결 이전, 구조7·Core83·세션39·7개 런타임 컴파일 통과. **Unity import/Play 재확인 대기**. [구조와 설정 위치](Docs/KingRush/OBSTACLE_CLASSES.md).
@@ -140,6 +142,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R72:** 원판 지름 4/8/12 m, 양방향 회전·접지 운반·점프 관성을 Unity에서 확인한다.
 
 **R71:** 기존 킹러시 전체 코스, 래그돌/퀸오브더힐 접촉·스프링 발사, Editor 생성기를 Unity에서 재확인한다.
 

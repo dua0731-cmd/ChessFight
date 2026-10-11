@@ -44,7 +44,7 @@ classDiagram
 
 | # | 장애물 / 클래스 | 선택할 오브젝트 | 주요 조절값 |
 |---|---|---|---|
-| 01 | 원판 / `SpinningDisc` | `01_SpinningDisc` | Rotation Speed(°/초), Rotors |
+| 01 | 원판 / `SpinningDisc` | `01_SpinningDisc` | Diameter(m), Rotation Direction, Rotation Speed(°/초) |
 | 02 | 점프 패드 / `JumpPad` | `02_JumpPad` | Jump Height(m), Forward Speed(m/s), Launch Cooldown |
 | 03 | 왕복 밀대 / `ReciprocatingPusher` | `Moving pusher` | Axis, Distance, Period, Phase, Strength, Lift, Hit Cooldown |
 | 04 | 회전 해머 / `RotatingHammer` | `Hammer pivot` | Axis, Degrees Per Second, Phase, Strength, Lift, Hit Cooldown |
@@ -104,3 +104,7 @@ R70의 15종뿐 아니라 이식 장애물 18종 전체, 기존 일반 발판/�
 - Unity Editor 생성기 3개, 퀸오브더힐 런타임 생성기/시험대, 기존 성벽 테스트의 발판 타입 조회도 새 클래스를 사용한다.
 - 구조/직렬화 회귀 검사 **10개**, Core **83개**, 모의 세션 **39개**, **7개 런타임 어셈블리** 컴파일 통과. 추상 클래스가 에셋에 직접 붙어 있거나 생성기에서 직접 AddComponent되는지 검사한다.
 - **Unity import·PhysX·Editor 생성기 실행은 미확인**. 기존 킹러시/퀸오브더힐/래그돌 시험장에서 이동·경고·복귀·일반 발사·스프링 발사를 재확인한다. 기존 래그돌 물리 자동 점검은 이번 클라우드에서 실행하지 않았다.
+
+## R72 — 원판 크기·방향 설정 (2026-10-11)
+
+`SpinningDisc`의 원판 배열을 제거하고 단일 회전 축 `Rotating Surface`에 기존 세 고리를 연결했다. `Disc Geometry` 아래에 바닥·회전부를 함께 두어 Diameter가 메시와 콜라이더를 같은 비율로 조절한다. 두 Transform 참조는 숨겨진 직렬화 필드이며 Inspector에는 개수 조절이 없다. 기존 고리·콜라이더 ID와 배치는 유지한다. 접지 원형 운반·점프 접선 관성은 그대로이며 방향 선택이 표시 회전과 운반에 함께 적용된다.

@@ -67,7 +67,9 @@ PhysicsProfile은 120Hz/24 solver iterations를 적용하며, 씬 종료 시 물
 
 Hierarchy에서 시험대 안의 **01_SpinningDisc** 또는 **02_JumpPad** 프리팹 루트를 선택하고 Inspector의 **Spinning Disc** 또는 **Jump Pad**를 편집한다(R70에서 전용 클래스로 분리). 두 값은 private `[SerializeField]`로 저장된다.
 
-- **Rotation Speed**: 초당 회전 각도. 기본 **45**, **0**은 정지, **-45**는 역회전. 표시되는 원판 고리와 캐릭터 운반에 같은 값을 쓴다.
+- **Diameter**: 원판 지름(m), 기본 **8**, 최소 **0.1**. 바닥·회전 고리·충돌 영역의 가로 크기를 함께 바꾸고 높이는 유지한다. 프리팹 루트 Transform의 Scale은 추가 배율이다.
+- **Rotation Direction**: 위에서 보았을 때 **Clockwise**(시계방향, 기본) / **Counterclockwise**(반시계방향).
+- **Rotation Speed**: 초당 회전 각도, 0 이상의 값. 기본 **45**, **0**은 정지. 표시되는 원판 고리와 캐릭터 운반에 같은 방향·속도를 쓴다. **Rotors/Size 배열은 제거**되어 원판 개수를 늘리는 설정은 없다(R72).
 - **Jump Height**: 발사 위치에서 더 올라갈 목표 높이(m), 기본 **10**. 현재 중력으로 수직 발사 속도를 계산한다. **Forward Speed**(기본 8 m/s)는 전방 속도로 높이와 별개다.
 - 값을 계속 보존하려면 Play를 멈춘 상태에서 편집하고 씬을 저장한다. 프리팹에 Apply하면 기존 이식 맵에도 적용된다. Play 중 편집한 값은 Play 종료 시 복원된다.
 

@@ -108,6 +108,7 @@
 | R69 | 10-10 | 원판에 서 있을 때 밀려나지 않고 회전, 점프할 때 관성으로 이탈. 회전 속도·점프 패드 높이를 SerializeField로 표시 | 외향 속도 제거, 원형 운반과 접선 이탈 속도 분리. Rotation Speed(45°/초), Jump Height(10 m)·Forward Speed(8 m/s), 프리팹·안내 갱신. Core83·세션39·7개 어셈블리 컴파일 통과 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
 | R70 | 10-10 | ObstacleSurface 구조 설명, 공통 Obstacle 상속과 장애물별 설정 분리. 범위 확인 후 테스트 씬 15종 전체 지정 | 15종 전용 클래스·공통 Obstacle, Surface/Motion 추상화, 기존 kinematic 구현 별도 부모 유지. 피격 설정 소유 클래스 이전, 프리팹9개·기존 맵 장치29개 연결 이전. 구조7·Core83·세션39·7개 런타임 컴파일 통과. [구조/조절](../KingRush/OBSTACLE_CLASSES.md) | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity import/Play·사용자 재확인 대기) |
 | R71 | 10-10 | 기존에 만들어진 장애물도 전부 같은 설계로 변경 | 이식18종·일반 장애물·킹러시 시소/결승판 공통 Obstacle. 킹러시 종류분기10종과 접촉/스프링 발사대 분리, 생성기·프리팹9개/컴포넌트48개 이전. 구조10·Core83·세션39·7개 런타임 컴파일 통과. [범위/구조](../KingRush/OBSTACLE_CLASSES.md) | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity import/PhysX·Editor 실행 미확인) |
+| R72 | 10-11 | 스피닝 디스크 개수 설정 제거, Hierarchy 선택 후 크기·시계/반시계 방향 조절 | Rotors 배열 제거, 고정 단일 회전 축. Diameter·Rotation Direction·Rotation Speed 표시, 메시/콜라이더 크기와 운반 방향 동기화. 구조11·Core83·세션39·7개 런타임 컴파일 통과 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
 
 ## 2. 요구사항에서 뽑은 지켜야 할 조건
 

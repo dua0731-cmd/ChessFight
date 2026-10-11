@@ -120,7 +120,7 @@ class ObstacleAssets(unittest.TestCase):
 
     def test_surface_inspectors_contain_only_relevant_serialized_fields(self):
         expected = {
-            1: {"context", "rotationSpeed", "rotors"},
+            1: {"context", "rotationSpeed", "diameter", "rotationDirection", "geometryRoot", "rotatingSurface"},
             2: {"context", "jumpHeight", "forwardSpeed", "launchCooldown"},
             8: {"context", "direction", "conveyorSpeed", "beltMarkers", "beltLength"},
         }
@@ -130,6 +130,25 @@ class ObstacleAssets(unittest.TestCase):
             block, = [b for b in blocks(prefab.read_text()).values()
                       if "::ChessFight.ProtectKing." + name + "\n" in b]
             self.assertEqual({k for k in fields(block) if not k.startswith("m_")}, keys)
+
+    def test_disc_has_one_fixed_rotation_pivot_and_shared_size_root(self):
+        prefab, = PREFABS.glob("01_*.prefab")
+        records = blocks(prefab.read_text())
+        component, = [b for b in records.values() if "::ChessFight.ProtectKing.SpinningDisc\n" in b]
+        values = fields(component)
+        geometry = re.search(r"fileID: (\d+)", values["geometryRoot"])[1]
+        rotor = re.search(r"fileID: (\d+)", values["rotatingSurface"])[1]
+        self.assertEqual(fields(records[rotor])["m_Father"], "{fileID: " + geometry + "}")
+        rings = ("5105911132895000167", "7949982060734359067", "3886350071908459439")
+        for ring in rings:
+            self.assertEqual(fields(records[ring])["m_Father"], "{fileID: " + rotor + "}")
+        self.assertEqual(fields(records["735846764765704968"])["m_Father"], "{fileID: " + geometry + "}")
+        self.assertEqual(values["diameter"], "8")
+        self.assertEqual(values["rotationDirection"], "0")
+        source = (CODE / "SpinningDisc.cs").read_text()
+        self.assertNotRegex(source, r"Transform\[\]")
+        for reference in ("geometryRoot", "rotatingSurface"):
+            self.assertRegex(source, r"\[SerializeField, HideInInspector\] Transform " + reference)
 
     def test_clock_gates_and_rotating_hands_keep_separate_motion_types(self):
         prefab, = PREFABS.glob("09_*.prefab")
