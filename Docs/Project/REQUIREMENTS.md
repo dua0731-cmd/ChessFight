@@ -110,6 +110,7 @@
 | R71 | 10-10 | 기존에 만들어진 장애물도 전부 같은 설계로 변경 | 이식18종·일반 장애물·킹러시 시소/결승판 공통 Obstacle. 킹러시 종류분기10종과 접촉/스프링 발사대 분리, 생성기·프리팹9개/컴포넌트48개 이전. 구조10·Core83·세션39·7개 런타임 컴파일 통과. [범위/구조](../KingRush/OBSTACLE_CLASSES.md) | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity import/PhysX·Editor 실행 미확인) |
 | R72 | 10-11 | 스피닝 디스크 개수 설정 제거, Hierarchy 선택 후 크기·시계/반시계 방향 조절 | Rotors 배열 제거, 고정 단일 회전 축. Diameter·Rotation Direction·Rotation Speed 표시, 메시/콜라이더 크기와 운반 방향 동기화. 구조11·Core83·세션39·7개 런타임 컴파일 통과 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
 | R73 | 10-11 | 점프 패드 자동 전방 속도 대신 진입 관성 유지·방향키로 공중 조작 | Forward Speed 제거, Air Move Speed/Acceleration. 전용 발사 계약으로 래그돌 공중 제동·가속, 무입력 관성·착지 복귀. 기존 고정 발사 유지. 구조11·Core83·세션39·7개 런타임 컴파일 통과, Unity 점검2개 추가(미실행) | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
+| R74 | 10-11 | 03 이동 속도·밀치기, 04 회전 속도·밀치기 Inspector 조절 | Move Speed·Rotation Speed·Push Force SerializeField. 기존 주기→최고 속도와 필드명 이전, 프리팹/이식 맵 기본 움직임 유지. 구조12·Core83·세션39·7개 런타임 컴파일 통과 | 이 기록을 추가한 커밋 → `main` | 구현됨 (Unity/PhysX·사용자 미확인) |
 
 ## 2. 요구사항에서 뽑은 지켜야 할 조건
 

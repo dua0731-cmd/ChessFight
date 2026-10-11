@@ -25231,7 +25231,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 1, z: 0}
   phase: 0
-  degreesPerSecond: -55
+  rotationSpeed: -55
 --- !u!54 &356307854
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -34508,7 +34508,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 1, z: 0}
   phase: 0
-  degreesPerSecond: 85
+  rotationSpeed: 85
 --- !u!54 &494772525
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -57391,7 +57391,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 1, z: 0}
   phase: 0
-  degreesPerSecond: 85
+  rotationSpeed: 85
 --- !u!54 &804542835
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -61199,7 +61199,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 1, z: 0}
   phase: 0
-  degreesPerSecond: 65
+  rotationSpeed: 65
 --- !u!54 &848072803
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -61590,7 +61590,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 1, z: 0}
   phase: 0
-  degreesPerSecond: 55
+  rotationSpeed: 55
 --- !u!54 &851488819
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -93400,7 +93400,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 1, z: 0}
   phase: 0
-  degreesPerSecond: 65
+  rotationSpeed: 65
 --- !u!54 &1320576089
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -116181,7 +116181,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 1, z: 0}
   phase: 0
-  degreesPerSecond: 18
+  rotationSpeed: 18
 --- !u!54 &1686272253
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -130113,7 +130113,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 1, z: 0}
   phase: 0
-  degreesPerSecond: 38
+  rotationSpeed: 38
 --- !u!54 &1917771409
 Rigidbody:
   m_ObjectHideFlags: 0

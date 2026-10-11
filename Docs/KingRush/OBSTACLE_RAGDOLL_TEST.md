@@ -80,3 +80,13 @@ R69 자동 검사: Core 83·모의 세션 39·7개 런타임 어셈블리 컴파
 ## R70 — 15종별 자식 클래스
 
 모두 공통 `Obstacle`을 상속한다. 원판에는 회전 설정, 점프 패드에는 발사 설정, 컨베이어에는 운반 설정만 표시된다. 밀대·해머·벽은 타격 힘도 전용 컴포넌트에서 조절한다. [전체 상속 구조와 15종 Inspector 위치](OBSTACLE_CLASSES.md). 구조 회귀 7개·Core83·모의 세션39·7개 런타임 컴파일 통과, Unity import/Play 재확인 대기.
+
+## R74 — 03·04 속도와 밀치기 설정 (2026-10-11)
+
+Hierarchy에서 **03_ReciprocatingPusher → Moving pusher**, **04_RotatingHammer → Hammer pivot**를 선택한다. Inspector의 각 전용 컴포넌트에 private SerializeField로 다음 값이 표시된다.
+
+- 03 **Move Speed**: 왕복 중 최고 이동 속도(m/s). 끝에서는 감속하고 중앙에서 가장 빠른 기존 사인 왕복이다. 기본 약 7.07 m/s로 이전 Distance 4.5 m·Period 4초를 유지한다. Distance는 중심에서 끝까지의 거리이며 왕복 시간은 2π × Distance / Move Speed다. 0은 이동 정지(Phase 위치).
+- 04 **Rotation Speed**: 회전 속도(°/초), 기본 70. 0 정지, 음수 역회전.
+- 두 장애물 **Push Force**: 충돌 시 추가 수평 속도(m/s), 03 기본 9, 04 기본 12. 커질수록 세게 밀며 이동/회전 속도와 독립이다. **Lift**는 위로 튀는 정도, **Hit Cooldown**은 연속 타격 간격이다. Push Force 0에서도 Lift와 콜라이더 물리 반응은 남는다.
+
+기존 프리팹·이식 맵 직렬화 값은 새 이름으로 이전했다. 기존 이름은 FormerlySerializedAs로 보존하며 예전 Period는 숨겨진 legacyPeriod에서 Awake/OnValidate 때 속도로 환산한다. 이동은 ObstacleClock 시간의 순수 함수로 유지한다. 구조12·Core83·세션39·7개 런타임 컴파일 통과. Unity/PhysX 실기는 미확인.

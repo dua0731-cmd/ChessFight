@@ -734,8 +734,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RotatingHammer
   axis: {x: 0, y: 0, z: 1}
   phase: 0
-  degreesPerSecond: 70
-  strength: 12
+  rotationSpeed: 70
+  pushForce: 12
   lift: 2
   hitCooldown: 0.35
 --- !u!114 &3922950247404281011

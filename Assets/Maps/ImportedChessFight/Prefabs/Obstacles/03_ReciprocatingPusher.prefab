@@ -174,10 +174,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ReciprocatingPusher
   axis: {x: 1, y: 0, z: 0}
   distance: 4.5
-  period: 4
+  moveSpeed: 7.06858347
   phase: 0
   useLocalTranslationAxes: 1
-  strength: 9
+  pushForce: 9
   lift: 2
   hitCooldown: 0.35
 --- !u!114 &5950497603297204363

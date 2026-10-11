@@ -4,6 +4,7 @@ Run: python3 -m unittest discover -s Tests/Gameplay -p 'test_*.py' -v
 """
 from pathlib import Path
 import re
+import math
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -150,6 +151,26 @@ class ObstacleAssets(unittest.TestCase):
         for reference in ("geometryRoot", "rotatingSurface"):
             self.assertRegex(source, r"\[SerializeField, HideInInspector\] Transform " + reference)
 
+    def test_pusher_and_hammer_speed_force_migration_preserves_default_motion(self):
+        for number, speed, force in ((3, "moveSpeed", 9), (4, "rotationSpeed", 12)):
+            prefab, = PREFABS.glob(f"{number:02}_*.prefab")
+            component, = [b for b in blocks(prefab.read_text()).values()
+                          if "::ChessFight.ProtectKing." + TYPES[number - 1] + "\n" in b]
+            values = fields(component)
+            self.assertTrue({speed, "pushForce", "lift", "hitCooldown"} <= values.keys())
+            self.assertTrue({"period", "strength", "degreesPerSecond"}.isdisjoint(values))
+            self.assertEqual(float(values["pushForce"]), force)
+            if number == 3:
+                # The original amplitude 4.5 m and period 4 s must survive conversion to peak speed.
+                self.assertAlmostEqual(float(values[speed]), 2 * math.pi * 4.5 / 4, places=6)
+            else:
+                self.assertEqual(float(values[speed]), 70)
+        scene = (ASSETS / "Scenes/ImportedChessFightMap.unity").read_text()
+        reversed_hammers = [b for b in blocks(scene).values()
+                            if "::ChessFight.ProtectKing.RotatingHammer\n" in b and
+                            float(fields(b)["rotationSpeed"]) < 0]
+        self.assertTrue(reversed_hammers, "Existing reverse rotation must survive migration")
+
     def test_clock_gates_and_rotating_hands_keep_separate_motion_types(self):
         prefab, = PREFABS.glob("09_*.prefab")
         records = list(blocks(prefab.read_text()).values())
@@ -175,11 +196,13 @@ class ObstacleAssets(unittest.TestCase):
                 if "::ChessFight.ProtectKing.ObstacleImpact\n" not in block:
                     continue
                 relay = fields(block)
-                self.assertTrue({"strength", "lift", "hitCooldown"}.isdisjoint(relay))
+                self.assertTrue({"strength", "pushForce", "lift", "hitCooldown"}.isdisjoint(relay))
                 pendulum = relay.get("pendulum", "{fileID: 0}") != "{fileID: 0}"
                 target = re.search(r"fileID: (\d+)", relay["pendulum" if pendulum else "motion"])[1]
                 owner = fields(records[target])
                 required = {"hitCooldown", "KnockbackForce", "UpwardForce"} if pendulum else {"hitCooldown", "strength", "lift"}
+                if "::ChessFight.ProtectKing.ReciprocatingPusher\n" in records[target] or "::ChessFight.ProtectKing.RotatingHammer\n" in records[target]:
+                    required = {"hitCooldown", "pushForce", "lift"}
                 self.assertTrue(required <= owner.keys(), (str(path), target))
                 count += 1
         self.assertGreater(count, 0)
