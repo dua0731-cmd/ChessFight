@@ -647,6 +647,7 @@ namespace ChessFight.RagdollLab
             UpdateAbilities(p, dt);
             UpdateSkills(dt);   // Pawn Rush skills only
             UpdateOuterDash(dt);   // a dash another mode's skill drives (the Sword Fight queen, R99)
+            UpdateSkillLanding(dt);   // a skill that carried it lands it standing (10-11)
             UpdateHook(p, dt);
             Shove(p);
             UpdateStamina(p, dt);
@@ -3067,6 +3068,7 @@ namespace ChessFight.RagdollLab
             if (other != null && (SkillShielded || other.SkillShielded)) return;
             if (other == null && dashing && Mathf.Abs(normal.y) < 0.6f) return;
             if (other == null && SkillLandsOnFloor && normal.y > 0.6f) return;   // the rook's slam out of the air (R80)
+            if (other == null && SkillLandingSafe && normal.y > 0.6f) return;   // landing from a skill (10-11)
             if (Diving && other != null)
             {
                 // Slide tackle. A diver is already on the floor, so it is never knocked down by the

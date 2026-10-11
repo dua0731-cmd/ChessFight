@@ -224,6 +224,8 @@ namespace ChessFight.RagdollLab
             bool press = pressEdge, confirm = confirmEdge, cancel = cancelEdge, edge = edgeKey;
             pressEdge = confirmEdge = cancelEdge = edgeKey = false;
             TrackFall(dt);
+            // A leap, a dash or an edge flight lands its piece standing (RagdollPawn.SkillLanding, 10-11).
+            if ((Stage != SfStage.None && Stage != SfStage.Aim) || EdgeStage != SfEdge.None) Pawn.KeepSkillLandingSafe();
 
             if (!HasSkill)
             {
