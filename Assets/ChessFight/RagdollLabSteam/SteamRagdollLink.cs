@@ -11,8 +11,8 @@ namespace ChessFight.RagdollLab.Net
     /// Host-authoritative ragdoll over Steam for the lab: the Steam carrier for <see cref="LabNetLink"/>, which holds the
     /// match itself (R111: moved there so the same match also runs over a local socket, LoopbackLabLink). This class owns
     /// the Steam session (rooms, the roster, the host election and hand-over, HOST.md) and SteamNetworkingMessages.
-    /// It boots itself in whichever scene runs the lab (a LabGame is present) and stays out of the way until a match
-    /// actually starts, so local two-player testing is unchanged. It lives outside RagdollLab/ on purpose: like
+    /// It boots itself in whichever scene runs the lab (a LabGame is present), and since R121 in the Sword Fight skill
+    /// test scene too, and stays out of the way until a match actually starts, so local two-player testing is unchanged. It lives outside RagdollLab/ on purpose: like
     /// Bootstrap/, it is the bridge between a gameplay assembly and Steam, and the lab itself must not know about Steam.
     /// </summary>
     public sealed class SteamRagdollLink : LabNetLink
@@ -22,7 +22,8 @@ namespace ChessFight.RagdollLab.Net
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
-            if (FindFirstObjectByType<LabGame>() == null) return;
+            // A lab scene, or the Sword Fight skill test (R121).
+            if (!LabNetLink.SceneWantsLink()) return;
             if (FindFirstObjectByType<LabNetLink>() != null) return;
             // A loopback test (two copies of the game, no Steam) asked for on the command line runs instead.
             if (LoopbackLabLink.Requested) return;
@@ -241,13 +242,13 @@ namespace ChessFight.RagdollLab.Net
             if (GUILayout.Button("로컬 시험: 참가 (이 PC)", Button)) LoopbackLabLink.StartClient();
             GUI.enabled = true;
             GUILayout.EndHorizontal();
-            game.SuppressInput = GUI.GetNameOfFocusedControl() == "netRoomCode";
+            SuppressKeys(GUI.GetNameOfFocusedControl() == "netRoomCode");
         }
 
         protected override void DrawMatchExtras()
         {
             if (GUILayout.Button("경기 나가기", Button)) session.Cancel();
-            game.SuppressInput = false;
+            SuppressKeys(false);
         }
 
         /// <summary>Why a button is greyed out, in one short line.</summary>

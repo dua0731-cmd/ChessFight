@@ -31,9 +31,11 @@ namespace ChessFight.RagdollLab
     /// <item>the jitter buffer is measured (70..160 ms) instead of a fixed 110 ms, and F12 adds delay and loss (the capsule
     /// motor's F8 presets) to this PC's packets both ways.</item>
     /// </list>
+    /// R121: the same link (both carriers, the same transport, buffer and moments) also runs the Sword Fight skill test
+    /// scene, which has a SwordFightGame instead of a LabGame (<c>LabNetLink.Sword.cs</c>).
     /// </summary>
     [DefaultExecutionOrder(-150)]
-    public abstract class LabNetLink : MonoBehaviour
+    public abstract partial class LabNetLink : MonoBehaviour
     {
         /// <summary>The link running in this scene (Steam or loopback), for tools and the editor.</summary>
         public static LabNetLink Current { get; private set; }
@@ -298,25 +300,33 @@ namespace ChessFight.RagdollLab
             game = FindFirstObjectByType<LabGame>();
             // P1's camera specifically: local split screen adds a second LabCamera for P2.
             cam = game != null && game.labCamera != null ? game.labCamera : FindFirstObjectByType<LabCamera>();
+            if (game == null) SwordAwake();
         }
 
         protected virtual void OnEnable()
         {
             RagdollPawn.SkillFx += OnPawnRushFx;
             RagdollPawn.QueenHillFx += OnQueenHillFx;
+            SwordFightSkills.Fx += OnSwordFx;
         }
 
         protected virtual void OnDisable()
         {
             RagdollPawn.SkillFx -= OnPawnRushFx;
             RagdollPawn.QueenHillFx -= OnQueenHillFx;
+            SwordFightSkills.Fx -= OnSwordFx;
+            KeysTaken = false;
         }
 
         /// <summary>End a match this link is in, as if it had ended normally (the local players come back), and stop. For a
         /// link being swapped for another one mid-scene (LoopbackLabLink.Start/Stop).</summary>
         public void Shutdown()
         {
-            if (matchActive) ExitMatch();
+            if (matchActive)
+            {
+                if (sword != null) SwordExit();
+                else ExitMatch();
+            }
             enabled = false;
             OnShutdown();
         }
@@ -338,34 +348,59 @@ namespace ChessFight.RagdollLab
                     game.NetworkLocal = null;
                 }
             }
+            if (sword != null) sword.UiWantsCursor = false;
             if (panel != null) Destroy(panel);
         }
 
         protected virtual void Update()
         {
-            if (game == null) return;
+            if (game == null && sword == null) return;
             float dtMs = Mathf.Min(Time.unscaledDeltaTime * 1000f, 250f);
             frameMs = frameMs < 0f ? dtMs : frameMs + (dtMs - frameMs) * 0.05f;
             if (Input.GetKeyDown(KeyCode.F3)) hudOpen = !hudOpen;
             if (Input.GetKeyDown(KeyCode.F12)) SetLag((lagPreset + 1) % LinkProfile.Presets.Length);
+            // A closed panel has no text field typing into it (the room code's focus must not hold the keys after a join).
+            if (!hudOpen && KeysTaken) SuppressKeys(false);
             // The lab locks the cursor for mouse-look; this panel needs it back or its buttons never get clicked. Only
             // while it is open, though: F3 closes it and the clicks go back to the pawn.
-            game.UiWantsCursor = hudOpen && !game.AutoTest;
+            if (game != null) game.UiWantsCursor = hudOpen && !game.AutoTest;
+            else sword.UiWantsCursor = hudOpen;
             NetTick();
             if (!NetOnline) return;
             // A client's skill timers run before this frame's packets overwrite them.
-            if (matchActive && !NetIsHost) AdvanceViews(Time.unscaledDeltaTime);
+            if (matchActive && !NetIsHost)
+            {
+                if (sword != null) AdvanceSwordViews(Time.unscaledDeltaTime);
+                else AdvanceViews(Time.unscaledDeltaTime);
+            }
             PumpReceive();
 
             bool active = NetActive;
-            if (active && !matchActive) EnterMatch();
-            else if (!active && matchActive) ExitMatch();
+            if (active && !matchActive)
+            {
+                if (sword != null) SwordEnter();
+                else EnterMatch();
+            }
+            else if (!active && matchActive)
+            {
+                if (sword != null) SwordExit();
+                else ExitMatch();
+            }
             if (matchActive)
             {
-                SyncObstacleClock();
-                SyncRoster();
-                if (NetIsHost) HostFrame();
-                else ClientFrame();
+                if (sword != null)
+                {
+                    SyncSwordRoster();
+                    if (NetIsHost) SwordHostFrame();
+                    else SwordClientFrame();
+                }
+                else
+                {
+                    SyncObstacleClock();
+                    SyncRoster();
+                    if (NetIsHost) HostFrame();
+                    else ClientFrame();
+                }
             }
             PumpSend();
             UpdateStats();
@@ -375,6 +410,11 @@ namespace ChessFight.RagdollLab
         {
             physicsSteps++;
             if (!matchActive || !NetIsHost) return;
+            if (sword != null)
+            {
+                SwordFixedUpdate();
+                return;
+            }
             float now = Time.realtimeSinceStartup;
             foreach (var pair in pawns)
             {
@@ -438,7 +478,13 @@ namespace ChessFight.RagdollLab
                     Log($"host: {pawn.DisplayName} {pawn.Piece} {seen} → {pawn.SkillStage}");
                     hostSeen[pawn] = pawn.SkillStage;
                 }
+            SendWorld();
+        }
 
+        /// <summary>The host's packets, 30 a second: the poses, the skills packet to each client, the Queen of the Hill
+        /// round's state, and the Sword Fight test's fighters and floor (R121).</summary>
+        void SendWorld()
+        {
             // On a schedule rather than "an interval since the last send", which slipped to the next frame every time and
             // made the rate uneven on a slow host. After a hitch the schedule restarts instead of bursting to catch up.
             float now = Time.realtimeSinceStartup;
@@ -475,6 +521,7 @@ namespace ChessFight.RagdollLab
                 if (id != NetSelf) Send(id, bytes);
             SendSkills(stamp);
             SendMatchState();
+            if (sword != null) SendSwordState(stamp);
         }
 
         /// <summary>A player asked for a piece (the panel, Z/X): the host switches the pawn (and starts its skill over).</summary>
@@ -578,7 +625,16 @@ namespace ChessFight.RagdollLab
         void ReceiveInput(ulong sender, byte[] bytes)
         {
             if (!NetRoster.ContainsKey(sender)) return;
-            if (!RagdollNetProtocol.ReadLabInput(bytes, NetMatch, out uint seq, out uint clientTime, out var fresh)) return;
+            // The Sword Fight test's input is the lab's with the aimed point after it (R121); the counts mean its own
+            // presses there (SwordFixedUpdate).
+            bool swordInput = RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeSwordInput;
+            if (swordInput != (sword != null)) return;
+            uint seq, clientTime;
+            RagdollLabInput fresh;
+            bool read = swordInput
+                ? RagdollNetProtocol.ReadSwordInput(bytes, NetMatch, out seq, out clientTime, out fresh)
+                : RagdollNetProtocol.ReadLabInput(bytes, NetMatch, out seq, out clientTime, out fresh);
+            if (!read) return;
             if (!inputs.TryGetValue(sender, out var r)) inputs[sender] = r = new Remote();
             if (r.sequence != 0 && !RagdollNetProtocol.Newer(seq, r.sequence)) return;   // older, overtaken: its counts are stale
             if (!r.synced)
@@ -613,7 +669,8 @@ namespace ChessFight.RagdollLab
             if (fresh.pieceSeq != 0 && fresh.pieceSeq != r.pieceSeq)
             {
                 r.pieceSeq = fresh.pieceSeq;
-                if (pawns.TryGetValue(sender, out var pawn)) ApplyPieceAsk(pawn, (PieceKind)fresh.pieceAsk);
+                if (sword != null) ApplySwordPiece(sender, (PieceKind)fresh.pieceAsk);
+                else if (pawns.TryGetValue(sender, out var pawn)) ApplyPieceAsk(pawn, (PieceKind)fresh.pieceAsk);
             }
             if (!r.ackSet || SkillWire.Newer(fresh.eventAck, r.eventAck))
             {
@@ -733,6 +790,10 @@ namespace ChessFight.RagdollLab
 
             float span = Mathf.Max(1f, to.hostTimeMs - from.hostTimeMs);
             float t = Mathf.Clamp01((float)(playbackMs - from.hostTimeMs) / span);
+            // The Sword Fight test's swords go with the same two snapshots (SwordPlayback, R121).
+            playFrom = from.hostTimeMs;
+            playTo = to.hostTimeMs;
+            playT = t;
             // Obstacles on the same timeline as the pawns drawn this frame (HostObstacleClock).
             double hostObstacleTime = HostObstacleClock.Interpolate(from.obstacleTime, to.obstacleTime, t);
             hostObstacles.Sample(hostObstacleTime, Time.timeAsDouble, rate);
@@ -987,6 +1048,10 @@ namespace ChessFight.RagdollLab
                     RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = kind, by = by, target = target, at = at, dir = dir, normal = u, count = w.Count, size = w.Size, source = wire });
                     if (Trace) Log($"moment {w.Seq} {kind} by {(by != null ? by.DisplayName : "-")} on {(target != null ? target.DisplayName : "-")}, {playbackMs - w.TimeMs:0} ms after its pose");
                 }
+                else if (w.Mode == SkillWire.ModeSwordFight)
+                {
+                    if (!PlaySword(w, by, target, at, dir)) return;
+                }
                 else
                 {
                     var kind = (QueenHillFxKind)w.Kind;
@@ -1138,7 +1203,8 @@ namespace ChessFight.RagdollLab
             // Before the match is on (the handover at the start), EnterMatch sets the roles itself.
             if (!matchActive) return;
             bool nowHost = NetIsHost;
-            if (nowHost)
+            if (sword != null) SwordHostChanged(nowHost, next);
+            else if (nowHost)
             {
                 // The newest pose, not the drawn one, which is the playback delay behind.
                 if (buffer.Count > 0)
@@ -1184,7 +1250,7 @@ namespace ChessFight.RagdollLab
                 lastTick = 0;
                 message = $"호스트가 {NetName(next)} 님으로 바뀌었어요.";
             }
-            game.NetworkHost = nowHost;
+            if (game != null) game.NetworkHost = nowHost;
             var queen = QueenHillMatch.Current;
             if (queen != null) queen.Authority = nowHost;
             while (buffer.Count > 0) Recycle(0);
@@ -1316,7 +1382,7 @@ namespace ChessFight.RagdollLab
             byte type = RagdollNetProtocol.TypeOf(bytes);
             if (NetIsHost)
             {
-                if (type == RagdollNetProtocol.TypeLabInput) ReceiveInput(sender, bytes);
+                if (type == RagdollNetProtocol.TypeLabInput || type == RagdollNetProtocol.TypeSwordInput) ReceiveInput(sender, bytes);
                 return;
             }
             if (sender != NetHost) return;
@@ -1327,6 +1393,9 @@ namespace ChessFight.RagdollLab
                     break;
                 case RagdollNetProtocol.TypeSkills:
                     ReceiveSkills(bytes);
+                    break;
+                case RagdollNetProtocol.TypeSword:
+                    if (sword != null) ReceiveSwordState(bytes);
                     break;
                 case RagdollNetProtocol.TypeMatch:
                     if (RagdollNetProtocol.ReadMatch(bytes, NetMatch, out string text)) QueenHillMatch.Current?.ApplyRemote(text);
@@ -1389,7 +1458,8 @@ namespace ChessFight.RagdollLab
             skillPacketMaxRate = skillPacketMax;
             snapshotOutRate = snapshotsOut;
             physicsRate = physicsSteps;
-            sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = snapshotsOut = physicsSteps = 0;
+            swordStateRate = swordStateBytes;
+            sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = snapshotsOut = physicsSteps = swordStateBytes = 0;
             UpdatePeerStats();
         }
 
@@ -1454,6 +1524,12 @@ namespace ChessFight.RagdollLab
             if (string.IsNullOrEmpty(command)) return;
             string[] p = command.Trim().Split(' ');
             float F(int i, float fallback) => i < p.Length && float.TryParse(p[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v) ? v : fallback;
+            // The Sword Fight test's own presses (R121); the rest (look, lag, shot, trace, report) are the same.
+            if (sword != null && SwordDev(p, F))
+            {
+                if (Trace) Log("dev: " + command);
+                return;
+            }
             switch (p[0])
             {
                 case "piece":
@@ -1514,9 +1590,11 @@ namespace ChessFight.RagdollLab
             var barricades = SkillBarricade.All;
             for (int i = 0; i < barricades.Count; i++)
                 if (barricades[i] != null) sb.Append($", barricade {i} {(barricades[i].Standing ? "standing" : $"down {barricades[i].RegrowLeft:0.0}s")}{(barricades[i].Remote ? " (host's)" : "")}");
-            foreach (var pawn in pawns.Values)
-                if (pawn != null)
-                    sb.Append($", {pawn.DisplayName}: {pawn.Piece} {pawn.State} {pawn.SkillStage} {pawn.SkillStageTime:0.00}s cd {pawn.SkillCooldown:0.0}s{(pawn.NetworkPuppet ? " (puppet)" : "")}");
+            if (sword != null) SwordReport(sb);
+            else
+                foreach (var pawn in pawns.Values)
+                    if (pawn != null)
+                        sb.Append($", {pawn.DisplayName}: {pawn.Piece} {pawn.State} {pawn.SkillStage} {pawn.SkillStageTime:0.00}s cd {pawn.SkillCooldown:0.0}s{(pawn.NetworkPuppet ? " (puppet)" : "")}");
             return sb.ToString();
         }
 
@@ -1535,21 +1613,28 @@ namespace ChessFight.RagdollLab
 
         protected virtual void OnGUI()
         {
-            if (game == null || game.AutoTest) return;
+            if (game == null && sword == null) return;
+            if (game != null && game.AutoTest) return;
             EnsureStyles();
-            // Keep clear of the tuning panel, which owns the left edge while it is open.
-            float x = game.PanelOpen ? 500f : 12f;
+            // Keep clear of the tuning panel, which owns the left edge while it is open (the Sword Fight test bed's panel).
+            float x = game != null ? (game.PanelOpen ? 500f : 12f) : SwordPanelX;
             if (!hudOpen)
             {
                 string lag = lagOut.Profile.Active ? $" · 지연 시뮬 {lagOut.Profile}" : "";
                 string line = matchActive
                     ? $"F3: 온라인 패널 · {NetKind} · {(NetIsHost ? "호스트" : "참가자")} · {pawns.Count}명{lag}"
                     : $"F3: 온라인 패널 ({NetKind}: 방 만들기·참가){lag}";
-                GUI.Label(new Rect(x, Screen.height - 26f, 700f, 22f), line, small);
+                if (sword != null)
+                {
+                    // The Sword Fight HUD has the bottom left (its controls): bottom right, under the skill key cards.
+                    var size = small.CalcSize(new GUIContent(line));
+                    GUI.Label(new Rect(Screen.width - size.x - 24f, Screen.height - 26f, size.x + 8f, 22f), line, small);
+                }
+                else GUI.Label(new Rect(x, Screen.height - 26f, 700f, 22f), line, small);
                 return;
             }
 
-            float width = 470f, height = matchActive ? 300f : 330f;
+            float width = 470f, height = matchActive ? (sword != null ? 330f : 300f) : 330f;
             GUILayout.BeginArea(new Rect(x, Screen.height - height - 12f, width, height), GUIContent.none, GUI.skin.box);
             GUI.DrawTexture(new Rect(0f, 0f, width, height), panel);
             GUILayout.Label($"온라인 · {NetKind} (F3으로 닫기 - 열려 있는 동안은 마우스 조작이 멈춰요)", label);
@@ -1568,11 +1653,13 @@ namespace ChessFight.RagdollLab
                 if (!NetIsHost)
                 {
                     GUILayout.Label($"스킬 신호 받음 {eventsPlayed}개 · 확인 번호 {inbox.Acked} · 재생 대기 {eventQueue.Count}개", small);
-                    GUILayout.Label(hostObstacles.HasSample
-                        ? $"장애물: 방장 시각에 맞춤 (공유 시계였다면 {steamClockErrorMs:+0;-0;0} ms 어긋남)"
-                        : "장애물: 방장 스냅샷 기다리는 중 (공유 시계 사용)", small);
+                    if (sword == null)
+                        GUILayout.Label(hostObstacles.HasSample
+                            ? $"장애물: 방장 시각에 맞춤 (공유 시계였다면 {steamClockErrorMs:+0;-0;0} ms 어긋남)"
+                            : "장애물: 방장 스냅샷 기다리는 중 (공유 시계 사용)", small);
                 }
                 DrawLagButtons();
+                if (sword != null) DrawSwordExtras();
                 DrawMatchExtras();
             }
             GUILayout.EndArea();

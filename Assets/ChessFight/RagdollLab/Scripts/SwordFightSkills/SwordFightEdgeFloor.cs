@@ -38,6 +38,9 @@ namespace ChessFight.RagdollLab
             public Phase phase;
             public float age, crack, open;   // seconds since it started; the crack's and the open hole's lengths
             public SwordFightSkills by;
+            /// <summary>A client's copy of the host's collapse (R121): it runs the same phases from the same start, and the
+            /// pieces on it fall on the host, not here.</summary>
+            public bool remote;
             public GameObject chunk;         // the falling (and rising) box
             internal Transform look;         // its picture (trembles and tumbles; the collider does not)
             internal Rigidbody body;
@@ -268,6 +271,36 @@ namespace ChessFight.RagdollLab
             return c;
         }
 
+        /// <summary>A client's copy of a collapse the host started <paramref name="age"/> seconds before the moment its
+        /// pieces are drawn at (R121, LabNetLink.Sword.cs): from here it cracks, falls and comes back by itself on the
+        /// host's schedule.</summary>
+        public Collapse BeginRemote(Rect rect, Vector3 outward, Vector3 along, Vector3 lip, float crack, float open, SwordFightSkills by, float age)
+        {
+            var c = Begin(rect, outward, along, lip, crack, open, by);
+            if (c == null) return null;
+            c.remote = true;
+            c.age = Mathf.Max(0f, age);
+            return c;
+        }
+
+        /// <summary>The collapse still going on over this chunk of floor (a new host's numbers for one a client already
+        /// runs), or null.</summary>
+        public Collapse Same(Rect rect)
+        {
+            foreach (var c in Collapses)
+                if (c.phase != Phase.Done && Mathf.Abs(c.rect.xMin - rect.xMin) < 0.02f && Mathf.Abs(c.rect.yMin - rect.yMin) < 0.02f
+                    && Mathf.Abs(c.rect.xMax - rect.xMax) < 0.02f && Mathf.Abs(c.rect.yMax - rect.yMax) < 0.02f) return c;
+            return null;
+        }
+
+        /// <summary>Every chunk back where it was at once and the original floor whole (an online match starting or ending).</summary>
+        public void ClearAll()
+        {
+            foreach (var c in Collapses) if (c.chunk != null) Destroy(c.chunk);
+            Collapses.Clear();
+            Rebuild();
+        }
+
         void FixedUpdate()
         {
             if (Collapses.Count == 0) return;
@@ -352,6 +385,7 @@ namespace ChessFight.RagdollLab
         void Drop(Collapse c)
         {
             c.chunk.GetComponent<Collider>().enabled = false;
+            if (c.remote) return;   // the host knocks them loose; a client draws them falling
             foreach (var p in RagdollPawn.All)
             {
                 if (p == null) continue;

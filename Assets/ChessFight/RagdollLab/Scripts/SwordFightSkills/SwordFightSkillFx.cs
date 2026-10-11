@@ -18,7 +18,8 @@ namespace ChessFight.RagdollLab
     /// orange wall running along the floor lighting each square it crosses; the bishop's two violet rays meeting in an X
     /// (gold when the floor ends behind the piece: it will be pinned, four stakes and a ring); the knight's horseshoe and
     /// its two sky rings ahead. No glow, no words, no stars, no sound (승규 님, 10-09).
-    /// Test-bed stand-ins: the hit stop holds the whole game, the shake moves the view camera.
+    /// Test-bed stand-ins: the hit stop holds the whole game, the shake moves the view camera. Online (R121) the hit stop
+    /// holds only the two pieces' picture on each screen and the edge skills' slow motion is a short hold instead.
     ///
     /// R99 (승규 님 10-10: "좀 더 아! 스킬이다 라는 느낌", the queen and the rook felt like one skill in two colours, the
     /// pinned bishop target should look held by the ankles): every skill now starts with a cast (the piece flashes its
@@ -127,9 +128,25 @@ namespace ChessFight.RagdollLab
             timeHeld = true;
         }
 
-        void HitStop(int frames)
+        /// <summary>Online (the skill test, R121): the game must not stop or slow down (the host's physics, everyone's
+        /// inputs), so a hit stop holds only the two pieces' picture on each screen by itself (RagdollPawn.HoldVisual, as in
+        /// the other two modes, D-S2) and there is no slow motion (승규 님: (가) — a short hold and the view pulled in instead).</summary>
+        static bool Online => LabNetLink.Current != null && LabNetLink.Current.MatchActive;
+
+        // The pieces of the moment being drawn: the ones an online hit stop holds still.
+        RagdollPawn stopBy, stopTarget;
+
+        void HitStop(int frames, RagdollPawn a = null, RagdollPawn b = null)
         {
             if (!hitStop || frames <= 0) return;
+            if (Online)
+            {
+                if (a == null && b == null) { a = stopBy; b = stopTarget; }
+                if (a != null) a.HoldVisual(frames * F);
+                if (b != null && b != a) b.HoldVisual(frames * F);
+                if (LabNetLink.Trace) LabNetLink.Log($"sword hit stop {frames} frames on {(a != null ? a.DisplayName : "-")} and {(b != null ? b.DisplayName : "-")} (this screen only)");
+                return;
+            }
             HoldTime();
             stopping = true;
             stopLeft = Mathf.Max(stopLeft, frames * F);
@@ -140,7 +157,7 @@ namespace ChessFight.RagdollLab
         /// dramatic beat, R103). A's view effect: only the two pieces' own screens; the test bed slows the whole game.</summary>
         void SlowMo(RagdollPawn a, RagdollPawn b, float seconds, float pace)
         {
-            if (!slowMotion || seconds <= 0f || !Sees(a, b)) return;
+            if (!slowMotion || seconds <= 0f || !Sees(a, b) || Online) return;
             HoldTime();
             slowLeft = Mathf.Max(slowLeft, seconds);
             slowPace = Mathf.Clamp(pace, 0.05f, 1f);
@@ -994,7 +1011,7 @@ namespace ChessFight.RagdollLab
                 kit.ImpactRing(c + Vector3.up * 0.4f, Vector3.up, pal, 0.2f, 0.7f);
                 FloorShock(c, 0.2f, r + 0.5f, Kit.Bishop, 6, 14, 0.24f);
                 kit.PuffBurst(c + Vector3.up * 0.1f, Kit.Bishop, 5, 0.6f, 0.14f, 0.4f, 0.3f);
-                HitStop(got ? 4 : 2);
+                HitStop(got ? 4 : 2, caster);
                 Shake(caster, null, got ? 0.08f : 0.05f, 5);
                 Punch(caster, null, 4f, 12);
                 Tint(caster, null, Kit.Bishop.main, 0.3f, 18);
@@ -1459,6 +1476,8 @@ namespace ChessFight.RagdollLab
         void OnFx(SfFxEvent e)
         {
             if (!effects || kit == null || e.by == null) return;
+            stopBy = e.by.Pawn;
+            stopTarget = e.target;
             if (OnEdgeFx(e)) return;
             switch (e.kind)
             {

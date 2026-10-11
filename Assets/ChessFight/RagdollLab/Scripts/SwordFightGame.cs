@@ -30,6 +30,9 @@ namespace ChessFight.RagdollLab
         public bool MenuOpen { get; private set; }
         public bool ClassicControls { get; private set; }
         public int Revision { get; private set; }
+        /// <summary>The skill test's online panel is open (LabNetLink, R121): the mouse is free for its buttons.</summary>
+        public bool UiWantsCursor { get; set; }
+        bool cursorWanted;
         Material white, black;
         SwordFightHud hud;
         int remoteWhite, remoteBlack;
@@ -58,15 +61,44 @@ namespace ChessFight.RagdollLab
             hud.Resume += () => SetMenu(false);
             hud.Leave += Exit;
             hud.SwitchControls += ToggleControls;
-            if (!Networked && !Automated)
-            {
-                Add(1, 0, 0, false, "나 · 폰");
-                Add(2, 0, 1, true, "아군 더미");
-                Add(3, 1, 0, true, "적군 더미 1");
-                Add(4, 1, 1, true, "적군 더미 2");
-            }
+            if (!Networked && !Automated) SpawnOffline();
             RefreshCursor();
             if (Automated) gameObject.AddComponent<SwordFightAutoTest>();
+        }
+
+        /// <summary>The offline line-up: me and three dummies (also what an online skill test goes back to, R121).</summary>
+        public void SpawnOffline()
+        {
+            Add(1, 0, 0, false, "나 · 폰");
+            Add(2, 0, 1, true, "아군 더미");
+            Add(3, 1, 0, true, "적군 더미 1");
+            Add(4, 1, 1, true, "적군 더미 2");
+        }
+
+        /// <summary>Every fighter gone (an online skill test starting or ending, R121).</summary>
+        public void ClearFighters()
+        {
+            foreach (var id in new List<ulong>(Fighters.Keys)) Remove(id);
+        }
+
+        /// <summary>A fresh round: no score, the clock from the start, nobody waiting to come back.</summary>
+        public void ResetRound()
+        {
+            Rules = new SwordFightRules(targetScore, roundSeconds, respawnDelay);
+            remoteWhite = remoteBlack = 0;
+            remoteRemaining = roundSeconds;
+            remoteFinished = false;
+            Revision++;
+        }
+
+        /// <summary>This PC became the host mid-round (R121): the round goes on from the score and the clock the old host
+        /// last sent, and whoever was out comes back when they would have.</summary>
+        public void TakeOverRound()
+        {
+            Rules = new SwordFightRules(targetScore, roundSeconds, respawnDelay);
+            Rules.Restore(remoteWhite, remoteBlack, roundSeconds - remoteRemaining);
+            foreach (var f in Fighters.Values) if (f != null && !f.Alive) Rules.Wait(f.Id, f.RespawnSeconds);
+            Revision++;
         }
 
         public static Vector3 SpawnPoint(int team, int slot) => new Vector3((slot % 3 - 1) * 1.8f, 0, (team == 0 ? -1 : 1) * (3.3f + slot / 3 * 1.4f));
@@ -93,6 +125,12 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             if (Automated) return;
+            if (UiWantsCursor != cursorWanted)
+            {
+                cursorWanted = UiWantsCursor;
+                waitForAttackRelease = true;
+                RefreshCursor();
+            }
             // While the network chat is open (ChatBox) its Esc closes the chat, not the menu.
             if (!ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.Escape)) SetMenu(!MenuOpen);
             if (!Finished && !ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
@@ -150,7 +188,7 @@ namespace ChessFight.RagdollLab
         { MenuOpen = open; waitForAttackRelease = true; if (open) ResetSwordLook(); RefreshCursor(); }
         void RefreshCursor()
         {
-            bool free = MenuOpen || Finished || Automated;
+            bool free = MenuOpen || Finished || Automated || UiWantsCursor;
             Cursor.lockState = free ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = free;
         }
         void Exit()

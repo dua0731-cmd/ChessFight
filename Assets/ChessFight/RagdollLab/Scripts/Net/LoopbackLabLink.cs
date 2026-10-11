@@ -35,7 +35,7 @@ namespace ChessFight.RagdollLab
         static void Boot()
         {
             string mode = Arg("-labLoopback");
-            if (mode == null || FindFirstObjectByType<LabGame>() == null || FindFirstObjectByType<LabNetLink>() != null) return;
+            if (mode == null || !SceneWantsLink() || FindFirstObjectByType<LabNetLink>() != null) return;
             if (HasArg("-labTrace")) Trace = true;
             int port = int.TryParse(Arg("-labLoopbackPort"), out int p) ? p : DefaultPort;
             if (mode == "host") StartHost(port);

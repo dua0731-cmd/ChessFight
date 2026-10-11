@@ -46,7 +46,8 @@ namespace ChessFight.RagdollLab
     /// The skill key (F in the test scene) starts the aim, the left click uses it, the right click (or the key again) calls it
     /// off, as in the other skill test scenes; the king has no aim: the key is his guard. A skill knocked out of its windup still starts the cooldown.
     /// Each piece also has an edge skill on E (R103, <c>SwordFightSkills.Edge.cs</c>).
-    /// Offline only: the network packets do not carry skills.
+    /// Online in this scene since R121: the host runs every piece's skills, the clients draw them
+    /// (<c>SwordFightSkills.Net.cs</c>, LabNetLink.Sword.cs). The match scene's own link still carries no skills.
     /// </summary>
     [DefaultExecutionOrder(-75)]   // after the match's step (-90) and the bed (-80), before the sword (-60)
     public partial class SwordFightSkills : MonoBehaviour
@@ -206,6 +207,8 @@ namespace ChessFight.RagdollLab
         void FixedUpdate()
         {
             if (Fighter == null || S == null) return;
+            // Online a client's copy only draws what the host sends (R121, SwordFightSkills.Net.cs).
+            if (NetPuppet) return;
             float dt = Time.fixedDeltaTime;
             slowLeft -= dt;
             pinLeft -= dt;

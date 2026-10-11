@@ -495,6 +495,44 @@ public static class NetworkCoreTests
                 var badStage=(byte[])b.Clone(); badStage[SkillWire.HeaderBytes+1]=9;
                 Check(!SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(badStage)),badStage.Length,q),"stage out of range");
                 SkillWire.Place(SkillWire.Ref(1,5),out int team,out int slot); Check(team==1&&slot==5&&SkillWire.Ref(2,0)==SkillWire.None,"roster places"); });
+            Test("Skills packet carries the Sword Fight test's moments (R121) and nothing past them", () => {
+                var p=new SkillWirePacket{HostTimeMs=5000,FirstSeq=1};
+                p.Events.Add(new SkillWireEvent{Seq=1,TimeMs=4990,Mode=SkillWire.ModeSwordFight,Kind=36,By=SkillWire.Ref(0,2),Target=SkillWire.Ref(1,0),X=6.5f,Y=0.4f,Z=-1,Dx=1,Count=1,Size=3.5f});
+                var ms=new System.IO.MemoryStream(); var w=new System.IO.BinaryWriter(ms); SkillWire.Write(w,p); w.Flush(); var b=ms.ToArray();
+                var q=new SkillWirePacket(); Check(SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(b)),b.Length,q),"read");
+                var e=q.Events[0]; Check(e.Mode==SkillWire.ModeSwordFight&&e.Kind==36&&e.Target==SkillWire.Ref(1,0)&&Math.Abs(e.Size-3.5f)<0.006f&&e.TimeMs==4990,"the moment");
+                var bad=(byte[])b.Clone(); bad[SkillWire.HeaderBytes+4]=3;   // a mode nobody has
+                Check(!SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(bad)),bad.Length,q),"unknown mode"); });
+            Test("Sword Fight state packet (R121): round trip, skill parts only when present, the budget, bad packets", () => {
+                var p=new SwordWirePacket{HostTimeMs=987654,White=3,Black=12,Remaining=3599.9f,Finished=false};
+                p.Fighters.Add(new SwordWireFighter{Ref=SkillWire.Ref(0,0),Team=1,Alive=true,Drawn=true,Protection=1.25f,Flash=0.16f,Wx=0.31f,Wy=-0.42f,Wz=1.234f,WRot=0xC0FFEE11u,EdgeCondition=true,Why=6,EdgeTarget=SkillWire.Ref(1,2)});
+                p.Fighters.Add(new SwordWireFighter{Ref=SkillWire.Ref(1,2),Team=0,Alive=true,
+                    Skill=true,Stage=3,Detail=10,SkillFlags=2,StageTime=0.37f,Cooldown=1.5f,CooldownTotal=2f,Dx=0.6f,Dz=0.8f,Px=4.5f,Py=0.01f,Pz=-6.25f,Ox=-1,Oz=2,Reach=5.95f,Wave=3.3f,Dash=2.05f,PinCandidate=SkillWire.None,Slow=1.5f,Pin=0.8f,
+                    Edge=true,EdgeStage=2,EdgeDetail=12,EdgeFlags=3,EdgeTime=0.45f,EdgeCooldownTotal=16f,Carried=SkillWire.Ref(0,0),Ax=7,Az=1,Outx=1,Lx=5.6f,Lz=1.2f,Sx=6.9f,Sy=0.6f,Sz=0.4f,
+                    Glow=true,Gx=7,Gz=-0.5f,GOx=1,GAz=1,GAt=6.5f,GTo=14f});
+                p.Collapses.Add(new SwordWireCollapse{Id=7,By=SkillWire.Ref(1,2),X0=5,Z0=-1.5f,X1=7,Z1=1.5f,Ox=1,Az=1,Lx=7,Age=1.23f,Crack=0.8f,Open=5f});
+                var ms=new System.IO.MemoryStream(); var w=new System.IO.BinaryWriter(ms); SwordWire.Write(w,p); w.Flush(); var b=ms.ToArray();
+                Check(b.Length==SwordWire.Size(p)&&b.Length==SwordWire.HeaderBytes+SwordWire.BaseBytes*2+SwordWire.SkillBytes+SwordWire.EdgeBytes+SwordWire.GlowBytes+SwordWire.CollapseBytes,"length "+b.Length);
+                var q=new SwordWirePacket(); Check(SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(b)),b.Length,q),"read");
+                Check(q.HostTimeMs==987654&&q.White==3&&q.Black==12&&Math.Abs(q.Remaining-3599.9f)<0.06f&&!q.Finished,"header");
+                var a=q.Fighters[0]; var c=q.Fighters[1]; var k=q.Collapses[0];
+                Check(a.Team==1&&a.Alive&&a.Drawn&&!a.Classic&&!a.Skill&&!a.Edge&&!a.Glow&&a.EdgeCondition&&a.Why==6&&a.EdgeTarget==SkillWire.Ref(1,2),"idle fighter");
+                Check(Math.Abs(a.Protection-1.25f)<0.006f&&Math.Abs(a.Flash-0.16f)<0.006f&&Math.Abs(a.Wz-1.234f)<0.0002f&&Math.Abs(a.Wy+0.42f)<0.0002f&&a.WRot==0xC0FFEE11u,"life and sword");
+                Check(c.Skill&&c.Stage==3&&c.Detail==10&&c.SkillFlags==2&&Math.Abs(c.StageTime-0.37f)<0.006f&&Math.Abs(c.Cooldown-1.5f)<0.051f&&Math.Abs(c.Dx-0.6f)<0.01f&&Math.Abs(c.Pz+6.25f)<0.003f&&Math.Abs(c.Reach-5.95f)<0.026f&&Math.Abs(c.Wave-3.3f)<0.026f&&Math.Abs(c.Pin-0.8f)<0.051f,"F skill");
+                Check(c.Edge&&c.EdgeStage==2&&c.EdgeDetail==12&&c.EdgeFlags==3&&Math.Abs(c.EdgeTime-0.45f)<0.006f&&Math.Abs(c.EdgeCooldownTotal-16f)<0.051f&&c.Carried==SkillWire.Ref(0,0)&&Math.Abs(c.Outx-1f)<0.01f&&Math.Abs(c.Sy-0.6f)<0.003f,"E skill");
+                Check(c.Glow&&Math.Abs(c.GAt-6.5f)<0.006f&&Math.Abs(c.GTo-14f)<0.006f&&Math.Abs(c.GAz-1f)<0.01f,"glow");
+                Check(k.Id==7&&Math.Abs(k.X1-7f)<0.003f&&Math.Abs(k.Z0+1.5f)<0.003f&&Math.Abs(k.Age-1.23f)<0.006f&&Math.Abs(k.Crack-0.8f)<0.051f&&Math.Abs(k.Open-5f)<0.051f,"collapse");
+                Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(b,0,b.Length-1)),b.Length-1,q),"short");
+                var twice=(byte[])b.Clone(); twice[SwordWire.HeaderBytes+SwordWire.BaseBytes]=twice[SwordWire.HeaderBytes];   // the second fighter's place = the first's
+                Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(twice)),twice.Length,q),"a place twice");
+                var stage=(byte[])b.Clone(); stage[SwordWire.HeaderBytes+SwordWire.BaseBytes*2]=7;   // the second fighter's F stage
+                Check(!SwordWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(stage)),stage.Length,q),"stage out of range");
+                // Twelve busy fighters and six collapses fit 1024 bytes once what does not fit is left off; lives and swords always go.
+                var big=new SwordWirePacket(); for(int i=0;i<12;i++) big.Fighters.Add(new SwordWireFighter{Ref=(byte)i,Alive=true,Skill=true,Edge=true,Glow=true});
+                for(int i=0;i<6;i++) big.Collapses.Add(new SwordWireCollapse{Id=(byte)(i+1),X1=1,Z1=1});
+                Check(SwordWire.Size(big)>1011,"over before fitting");
+                SwordWire.Fit(big,1024-13); Check(SwordWire.Size(big)<=1011&&big.Fighters.Count==12&&big.Fighters[0].Skill&&big.Fighters[0].Edge&&big.Fighters[0].Glow,"fitted, the first ones whole: "+SwordWire.Size(big));
+                Check(SwordWire.BaseBytes==17&&SwordWire.SkillBytes==28&&SwordWire.EdgeBytes==29&&SwordWire.GlowBytes==16&&SwordWire.CollapseBytes==26,"sizes as documented"); });
             Test("Playback delay: 70 ms on a steady link, more as the link wobbles, never past 160 ms", () => {
                 var d=new PlaybackDelay(); var rng=new Random(4);
                 for(int i=0;i<300;i++) d.Arrived(1000+i*33.3+rng.NextDouble()*2,(uint)(i*33.3));

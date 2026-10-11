@@ -18,6 +18,9 @@ namespace ChessFight.RagdollLab
     /// skill is tried, Shift+F8 does what that test needs done to it (an enemy pushes the king off the edge, or the
     /// bishop's ally; the queen's enemy steps in out of the edge zone); the badge at the bottom lights when it can be used.
     /// The effects are design A "잉크 테두리 장난감 체스" (<see cref="SwordFightSkillFx"/>).
+    /// R121: online like the other two skill tests (F3: a Steam test room, or the loopback test; LabNetLink.Sword.cs), with
+    /// the network numbers at the top right (<see cref="SkillNetTest"/>). Online the players are put on two sides at
+    /// random by the host and there are no dummies, so F7–F9 and Shift+F7/F8 are off; a client's keys go to the host.
     /// </summary>
     [DefaultExecutionOrder(-80)]   // after the match's step (-90), before the skills (-75) and the sword (-60)
     public class SwordFightSkillBed : MonoBehaviour
@@ -66,7 +69,14 @@ namespace ChessFight.RagdollLab
             if (Sfx == null) Sfx = gameObject.AddComponent<SwordFightSkillSfx>();
             Floor = GetComponent<SwordFightEdgeFloor>();
             if (Floor == null) Floor = gameObject.AddComponent<SwordFightEdgeFloor>();
+            // The skill network test screen (R121, as in the other two skill tests): the key line and the numbers.
+            if (GetComponent<SkillNetTest>() == null) gameObject.AddComponent<SkillNetTest>();
         }
+
+        /// <summary>This PC's keys go to its fighter: no menu, no chat, the window in front with the mouse taken, and
+        /// the online panel's text field not typing.</summary>
+        public bool KeysFree => Game != null && !Game.MenuOpen && !Game.Finished && !ChatBox.KeysHeld && !LabNetLink.KeysTaken
+                                && Application.isFocused && Cursor.lockState == CursorLockMode.Locked;
 
         void OnDestroy() => SwordFightSkills.Log -= OnLog;
         static void OnLog(SwordFightSkills s, string line) => Report(line);
@@ -93,23 +103,33 @@ namespace ChessFight.RagdollLab
             if (Game.CameraRig != null) me.Skills.SetAimCamera(Game.CameraRig.Cam);
             if (Scripted) return;
 
-            bool free = !Game.MenuOpen && !Game.Finished && !ChatBox.KeysHeld && Application.isFocused && Cursor.lockState == CursorLockMode.Locked;
+            bool free = KeysFree;
             // F starts the aim (or is the king's guard); the left click uses it (it comes with the match's input); the right
-            // click calls it off. E (the settings' skill key) is the edge skill, one press.
-            if (free && Input.GetKeyDown(skillKey)) me.Skills.PressKey();
-            if (free && GameSettings.Pressed(GameKey.Grab)) me.Skills.CancelAim();
-            if (free && GameSettings.Pressed(GameKey.Skill)) me.Skills.PressEdge();
-            if (ChatBox.KeysHeld) return;
+            // click calls it off. E (the settings' skill key) is the edge skill, one press. Online a client's presses go
+            // to the host instead (LabNetLink.Sword.cs reads them); the host's own act here, as offline.
+            if (!LabNetLink.SwordClient)
+            {
+                if (free && Input.GetKeyDown(skillKey)) me.Skills.PressKey();
+                if (free && GameSettings.Pressed(GameKey.Grab)) me.Skills.CancelAim();
+                if (free && GameSettings.Pressed(GameKey.Skill)) me.Skills.PressEdge();
+            }
+            if (ChatBox.KeysHeld || LabNetLink.KeysTaken) return;
             for (int i = 0; i < Pieces.Length; i++)
                 if (Input.GetKeyDown(KeyCode.Alpha1 + i)) SetPiece(me, Pieces[i]);
             if (Input.GetKeyDown(KeyCode.Z)) StepPiece(me, -1);
             if (Input.GetKeyDown(KeyCode.X)) StepPiece(me, 1);
             bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            if (Input.GetKeyDown(KeyCode.F7)) { if (shift) StageEdge(me.Pawn.Piece); else Stage(me.Pawn.Piece); }
-            if (Input.GetKeyDown(KeyCode.F8)) { if (shift) EdgeHelp(); else EnemyCuts(); }
-            if (Input.GetKeyDown(KeyCode.F9)) Home();
+            if (Input.GetKeyDown(KeyCode.F7) || Input.GetKeyDown(KeyCode.F8) || Input.GetKeyDown(KeyCode.F9))
+            {
+                if (LabNetLink.SwordOnline) Report(OnlineHelpers);
+                else if (Input.GetKeyDown(KeyCode.F7)) { if (shift) StageEdge(me.Pawn.Piece); else Stage(me.Pawn.Piece); }
+                else if (Input.GetKeyDown(KeyCode.F8)) { if (shift) EdgeHelp(); else EnemyCuts(); }
+                else Home();
+            }
             if (Input.GetKeyDown(KeyCode.F10)) showPanel = !showPanel;
         }
+
+        const string OnlineHelpers = "온라인 시험에는 더미가 없어서 F7·F8·F9 도우미가 꺼져 있어요 — 같은 방 사람끼리 맞고 살려 보세요";
 
         // ---------------------------------------------------------------- things done a moment from now
 
@@ -212,7 +232,20 @@ namespace ChessFight.RagdollLab
             SetPiece(f, Pieces[i]);
         }
 
+        /// <summary>This player's piece: at once offline (and on the host online); a client asks the host for it (R121).</summary>
         public void SetPiece(SwordFightPawn f, PieceKind kind)
+        {
+            if (LabNetLink.SwordOnline && f == Local)
+            {
+                LabNetLink.Current.AskSwordPiece(kind);
+                if (LabNetLink.SwordClient) Report($"{ChessPieces.Name(kind)} 요청 → 방장");
+                return;
+            }
+            SetPieceNow(f, kind);
+        }
+
+        /// <summary>The piece changes here and now (offline; the host online), its skills start over.</summary>
+        public void SetPieceNow(SwordFightPawn f, PieceKind kind)
         {
             f.Pawn.SetPiece(kind);
             f.Skills?.ResetSkill();
@@ -628,11 +661,16 @@ namespace ChessFight.RagdollLab
                 if (Sfx != null && GUILayout.Button(Sfx.sound ? "소리 켜짐" : "소리 꺼짐", Sfx.sound ? selected : button)) Sfx.sound = !Sfx.sound;
                 GUILayout.EndHorizontal();
             }
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("시험 배치 (F7)", button)) Stage(me.Pawn.Piece);
-            if (GUILayout.Button("더미가 와서 벰 (F8)", button)) EnemyCuts();
-            if (GUILayout.Button("원위치 (F9)", button)) Home();
-            GUILayout.EndHorizontal();
+            bool online = LabNetLink.SwordOnline;
+            if (online) GUILayout.Label("<b>온라인 시험</b>: 더미 없이 사람끼리 (팀은 방장이 무작위로, F5로 다시 섞기) · F7~F9 도우미 꺼짐", small);
+            else
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("시험 배치 (F7)", button)) Stage(me.Pawn.Piece);
+                if (GUILayout.Button("더미가 와서 벰 (F8)", button)) EnemyCuts();
+                if (GUILayout.Button("원위치 (F9)", button)) Home();
+                GUILayout.EndHorizontal();
+            }
 
             // The edge skill (E, R103).
             GUILayout.Space(6f);
@@ -645,10 +683,13 @@ namespace ChessFight.RagdollLab
             Bar(1f - ecd, ecd > 0f ? new Color(0.45f, 0.5f, 0.6f) : s.EdgeCondition ? new Color(1f, 0.82f, 0.3f) : new Color(0.3f, 0.85f, 1f),
                 ecd > 0f ? $"쿨타임 {s.EdgeCooldown:0.0}초" : s.EdgeCondition ? "E 사용 가능" : "조건 기다림");
             GUILayout.Label(edge.testCooldown > 0f ? $"시험용 쿨타임 {edge.testCooldown:0.#}초 (기획 {edge.Cooldown(me.Pawn.Piece):0}초, 예고 중 취소 = 반)" : "기획 쿨타임", small);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("가장자리 시험 배치 (Shift+F7)", button)) StageEdge(me.Pawn.Piece);
-            if (GUILayout.Button("도우미 (Shift+F8)", button)) EdgeHelp();
-            GUILayout.EndHorizontal();
+            if (!online)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("가장자리 시험 배치 (Shift+F7)", button)) StageEdge(me.Pawn.Piece);
+                if (GUILayout.Button("도우미 (Shift+F8)", button)) EdgeHelp();
+                GUILayout.EndHorizontal();
+            }
             if (Cursor.lockState == CursorLockMode.Locked) GUILayout.Label("버튼은 Esc로 마우스를 푼 뒤에 눌러요", small);
             GUILayout.Space(4f);
             GUILayout.Label("<b>최근 결과</b>", text);

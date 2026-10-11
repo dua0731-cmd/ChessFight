@@ -27,7 +27,8 @@ namespace ChessFight.RagdollLab
     /// landing mark shows behind the enemy), springs out over the cliff and somersaults over the enemy's head, lands
     /// behind it and kicks it back toward the cliff 3.5 m. Backing off past 3 m calls it off; a hit stops it.</item>
     /// </list>
-    /// The edge skill and the F skill do not run together. Offline only, like the rest.
+    /// The edge skill and the F skill do not run together. Online in the test scene like the rest since R121
+    /// (<c>SwordFightSkills.Net.cs</c>).
     /// </summary>
     public partial class SwordFightSkills
     {

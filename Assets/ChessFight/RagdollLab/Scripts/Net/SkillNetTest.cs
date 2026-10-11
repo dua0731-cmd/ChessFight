@@ -17,11 +17,14 @@ namespace ChessFight.RagdollLab
     /// Green is within the R96 bar (D-S9: 150 ms round trip, 5% loss), yellow up to 300 ms and 10% (it must hold up),
     /// red past that. The online panel is not opened on its own: an open panel keeps the mouse free, so playing alone would
     /// not take the mouse until F3 closed it. F3 opens it to make or join a match.
+    /// R121: the Sword Fight skill test has it too (its scene has a SwordFightGame, not a LabGame): the same numbers, the
+    /// sides the host drew, and what its own state packet costs.
     /// </summary>
     [DefaultExecutionOrder(220)]
     public class SkillNetTest : MonoBehaviour
     {
         LabGame game;
+        SwordFightGame sword;
         GUIStyle line, head, hint;
         Texture2D panel;
         readonly StringBuilder sb = new StringBuilder(1024);
@@ -33,6 +36,7 @@ namespace ChessFight.RagdollLab
             game = GetComponent<LabGame>();
             if (game == null) game = FindFirstObjectByType<LabGame>();
             if (game != null) game.NetTestMode = true;
+            else sword = FindFirstObjectByType<SwordFightGame>();
         }
 
         void OnDestroy()
@@ -56,10 +60,25 @@ namespace ChessFight.RagdollLab
 
         void OnGUI()
         {
-            if (game == null || game.AutoTest) return;
+            if (game == null && sword == null) return;
+            if (game != null && game.AutoTest) return;
+            if (sword != null && SwordFightSkillFilm.Rolling) return;
             EnsureStyles();
-            DrawHint();
+            // The Sword Fight scene's own HUD has the top left (its side) and the top middle (the score): its key line
+            // goes at the top of the numbers instead.
+            if (sword == null) DrawHint();
             DrawNumbers();
+        }
+
+        /// <summary>The Sword Fight test's key line, at the top of its numbers (yellow while the mouse is not the game's).</summary>
+        void SwordHint(bool online)
+        {
+            bool menu = sword.MenuOpen || sword.Finished;
+            if (sword.UiWantsCursor) sb.Append(Paint("▶ 온라인 창이 열려 있는 동안은 마우스가 풀려 있어요. F3로 닫고 화면을 클릭하세요", Fair)).Append('\n');
+            else if (Cursor.lockState != CursorLockMode.Locked && !menu) sb.Append(Paint("▶ 화면을 클릭하면 마우스 조작이 켜져요", Fair)).Append('\n');
+            sb.Append(online
+                ? "F3 온라인 창 · F12 지연 시뮬레이터 · F5 팀 다시 섞기(방장) · Esc 메뉴\n"
+                : "F3 온라인 창: Steam 방 만들기·참가, 또는 로컬 시험(이 PC 두 창)\n");
         }
 
         // ---------------------------------------------------------------- the key line
@@ -86,6 +105,7 @@ namespace ChessFight.RagdollLab
         {
             var link = LabNetLink.Current;
             sb.Clear();
+            if (sword != null) SwordHint(link != null && link.MatchActive);
             if (link == null || !link.MatchActive)
             {
                 sb.Append("<b>네트워크: 연결 안 됨</b>\n");
@@ -103,9 +123,19 @@ namespace ChessFight.RagdollLab
             Box(sb.ToString(), 470f);
         }
 
+        /// <summary>The Sword Fight test's sides (the host's draw) and its state packet.</summary>
+        void SwordLines(LabNetLink link)
+        {
+            if (sword == null) return;
+            var me = sword.Local;
+            string mine = me == null ? "입장 중" : me.Pawn.Team == 0 ? "백팀" : "흑팀";
+            sb.Append($"팀(무작위): 백 {link.WhiteCount}명 · 흑 {link.BlackCount}명 · 나는 <b>{mine}</b> · 소드 상태 {link.SwordStateBytesPerSecond / 1024f:0.0} KB/s\n");
+        }
+
         void ClientNumbers(LabNetLink link)
         {
             sb.Append($"<b>네트워크 · 참가자 ({link.CarrierName}) · {link.PlayerCount}명</b>\n");
+            SwordLines(link);
             sb.Append($"왕복 지연 {Ms(link.RoundTripMs, 150, 300)}   재생 지연 {link.PlaybackDelayMs:0} ms");
             sb.Append($" (흔들림 {link.JitterMs:0} ms · 손실 {Pct(link.LossShare)}{(link.LossWait ? " · 한 장 더" : "")})\n");
             sb.Append($"스냅샷 {Rate(link.SnapshotsPerSecond, 28, 24)}개/초 · {link.SnapshotBytes} 바이트 · 버퍼 {link.BufferedSnapshots}장\n");
@@ -135,6 +165,7 @@ namespace ChessFight.RagdollLab
         {
             sb.Append($"<b>네트워크 · 방장 ({link.CarrierName}) · {link.PlayerCount}명</b>\n");
             sb.Append("이 PC가 물리와 스킬을 판정해요 (내 입력 지연 0)\n");
+            SwordLines(link);
             sb.Append($"스냅샷 보냄 {Rate(link.SnapshotsSentPerSecond, 28, 24)}개/초 · {link.SnapshotBytes} 바이트 · 보내기 {link.SentPerSecond / 1024f:0.0} KB/s · 받기 {link.ReceivedPerSecond / 1024f:0.0} KB/s\n");
             sb.Append($"스킬 패킷 {link.SkillPacketsPerSecond}개/초 · 평균 {link.SkillPacketAverage} · 최대 {link.SkillPacketLargest} 바이트 · {link.SkillBytesPerSecond / 1024f:0.0} KB/s\n");
             sb.Append($"보관 중인 스킬 신호 {link.MomentsLogged}개 · 지연 시뮬레이터(F12): {link.Lag}\n");

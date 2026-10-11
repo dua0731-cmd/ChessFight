@@ -67,14 +67,24 @@ namespace ChessFight.RagdollLab
             cam.transform.RotateAround(orbitAround.Hips.position, Vector3.up, orbitAmp * Mathf.Sin(k * Mathf.PI));
         }
 
-        /// <summary>The beat: slow motion, the view pulled in and held through it.</summary>
+        /// <summary>The beat: slow motion, the view pulled in and held through it. Online (R121, 승규 님's (가)) nothing
+        /// slows: the two pieces' picture holds a moment (a hit stop on each screen) and the view is pulled in and held as long.</summary>
         void Beat(RagdollPawn a, RagdollPawn b, float pullDegrees)
         {
             var X = EdgeS;
             float slow = X != null ? X.slowTime : 0.3f, pace = X != null ? X.slowScale : 0.35f;
+            if (Online)
+            {
+                HitStop(OnlineBeatFrames, a, b);
+                Pull(a, b, pullDegrees * 1.15f, slow);
+                return;
+            }
             SlowMo(a, b, slow, pace);
             Pull(a, b, pullDegrees, slow);
         }
+
+        /// <summary>The online beat's hold, in frames (0.1 s).</summary>
+        const int OnlineBeatFrames = 6;
 
         // ---------------------------------------------------------------- watching (each frame)
 
@@ -561,6 +571,8 @@ namespace ChessFight.RagdollLab
             var floor = SwordFightEdgeFloor.Current;
             float top = floor != null ? floor.Top : 0f;
             var rook = c.by != null ? c.by.Pawn : null;
+            stopBy = rook;
+            stopTarget = null;
             switch (c.phase)
             {
                 case SwordFightEdgeFloor.Phase.Open:
