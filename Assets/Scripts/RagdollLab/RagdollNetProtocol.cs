@@ -187,7 +187,9 @@ namespace ChessFight.RagdollLab
         // CFR8: the client's round trip, playback delay and loss in the input, for the host's test screen (R112).
         // CFR9: the Sword Fight skill test online (R121): its state packet, its input with the aimed point, and its skill
         // moments in the skills packet (SkillWire.ModeSwordFight).
-        public const uint Magic = 0x43465239;   // "CFR9"
+        // CFRA: positions span +-320 m instead of +-80 m (R124). Pawn Rush course 01 runs to z 246 m, and clients drew
+        // every pawn past 80 m pinned at 80 m while the host saw them where they were.
+        public const uint Magic = 0x43465241;   // "CFRA"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
@@ -208,7 +210,9 @@ namespace ChessFight.RagdollLab
         public const int MaxMatchText = 400;
         public const int MaxBytes = 1024;
         public const int MaxPawns = 12;
-        public const float PositionRange = 80f; // metres, symmetric around the arena origin
+        // Metres, symmetric around the scene origin: a 16-bit step of about 1 cm. Every map a ragdoll runs online must fit
+        // inside it (Pawn Rush course 01 runs from z -6 to about 246 m); Quantize clamps anything further out.
+        public const float PositionRange = 320f;
 
         public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 1 + 4;  // 74
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 8 + 1;        // 30

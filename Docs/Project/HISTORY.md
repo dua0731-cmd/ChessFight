@@ -7,6 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋) | 10-11 | R124 | 래그돌 스냅샷 위치 범위 ±80 → ±320 m(`RagdollNetProtocol.PositionRange`, magic `CFRA`): 폰 러쉬 코스 01에서 z 80 m 너머 폰이 참가자 화면에 80 m에 붙어 보이던 것. 프로토콜 v19 주석. 문서: HANDOFF, REQUIREMENTS R124, DECISIONS T10, PITFALLS 38, VALIDATION R124 표, PAWN_RUSH_COURSE01 §7-2, HISTORY |
+| `22d2204` | 10-11 | R124 | 병합: bold-johnson의 남은 2커밋(`Tools/Sfx/SwordFightEdgeSkills`, 그쪽 R115). 문서 충돌은 양쪽 기록을 남김 |
+| `924ea55` | 10-11 | R124 | 병합: `skill-network-test`(138커밋)를 `main`에. 폴더는 `main` 배치로, 게임 씬 모두 유지 + `Scenes/SkillTest/` 셋(빌드 목록엔 꺼짐), 프로토콜 v19, `SwordFightEdgeFloor` 상태형 표시, 문서 양쪽 기록(번호 겹침 표시) |
 | `3fbc10a` | 10-10 | R115(bold-johnson) | 소드 파이트 가장자리 스킬 효과음 시안: 25개 고르기 페이지(SmP9pDnP9xTaNSRvH5TJMB), 도구 `Tools/Sfx/SwordFightEdgeSkills/`(spec·페이지 만들기·내려받기·띠용 검사), Skills/SWORD_FIGHT §R115, REQUIREMENTS R115, HANDOFF, HISTORY. Unity 안 건드림 |
 | `7eedc08` | 10-11 | R123 | (`skill-network-test`) 문서: Network/SKILLS_ONLINE §15 R123(AI가 zip 그대로 다시 본 것·핑·방장 멈춤과 고친 것), VALIDATION R121 표(zip `_1011b`, 14 킹 F 받아내기·15 방장 멈춤), REQUIREMENTS R123, DECISIONS SK11, HANDOFF, HISTORY |
 | `4924093` | 10-11 | R123 | (`skill-network-test`) 방장이 잠깐 멈춘 뒤 참가자 재생이 바로 따라잡음: `PlaybackDelay.Advance`(Core, 0.25초 넘게 뒤처지면 건너뜀, 시험 1개 → 102), `LabNetLink.Playback`이 씀 + 건너뛴 횟수(보고 `jumps`·추적 로그), 시험 화면 "따라잡기 n번". 패킷 그대로(v18). 새 빌드 `SkillNet_SwordFightOnline_1011b.zip` |

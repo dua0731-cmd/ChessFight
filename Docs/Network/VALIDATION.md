@@ -1,5 +1,20 @@
 # Network 구현 검증 기록
 
+## ★ 2026-10-11 `main` 병합(skill-network-test·bold-johnson)과 참가자 화면 위치 (R124) — 확인 목록
+
+모든 PC가 같은 `main`(프로토콜 **v19**)이어야 만난다. 예전 빌드(v16·v17·v18)와는 매칭되지 않는다. 결과는 사람이 본 것만 "성공"으로 적는다.
+
+| # | 할 일 | 기대 | 결과 |
+|---|---|---|---|
+| 1 | `main` Pull(LFS 포함) → Unity로 열기 | 컴파일 오류 없음. Console에 Missing Script·Prefab 없음 | 미확인 |
+| 2 | Project 창 `Assets/Scenes` | Intro·Lobby·PawnRush_Course01·PawnRushVictory·PawnRushLose·QueenOfTheHill·RagdollTest·SwordFight + `SkillTest/` 아래 스킬 시험 씬 셋 | 미확인 |
+| 3 | File → Build Profiles | Intro·Lobby·PawnRush_Course01·SwordFight 켜짐, RagdollTest·스킬 시험 씬 셋은 꺼짐 | 미확인 |
+| 4 | **(핵심) PC 2대 이상, 로비 → 폰 러쉬 → 코스 01**. 참가자가 앞으로 달려 광장 ① 안(z 약 80~110 m)과 그 너머까지 감 | **방장 화면과 참가자 화면에서 모든 폰이 같은 곳**에 보임. 80 m쯤에서 멈춰 보이거나 벽에 붙어 보이지 않음 | 미확인 |
+| 5 | 4번에서 탑(코스 끝, z 약 230 m)까지 | 참가자 화면에서도 탑을 오르는 폰이 제자리에 보임 | 미확인 |
+| 6 | 5명 이상으로 4번 | 모두의 화면에서 다른 플레이어 위치가 방장 화면과 같음(약 0.1초 늦게) | 미확인 |
+| 7 | ChessFight → Pawn Rush / Queen of the Hill / Sword Fight → Open Skill Test → Play | 세 스킬 시험 씬이 `skill-network-test`에서처럼 열리고 F·E 스킬 동작 | 미확인 |
+| 8 | 스킬 시험 씬 F3 온라인(PC 2대, 같은 `main` 빌드) | `skill-network-test`의 R121 표처럼 동작(v19라 예전 zip과는 안 만남) | 미확인 |
+
 ## ★ 2026-10-11 소드 파이트 스킬 시험 씬 온라인 (R121, 승규 님) — 5명 시험 확인 목록
 
 [SKILLS_ONLINE §15](SKILLS_ONLINE.md#15-r121-소드-파이트-스킬-시험-씬-온라인-10-11). **모두 같은 zip**: `C:\Work\ChessFight-SkillNet\Builds\SkillNet_SwordFightOnline_1011b.zip`(R123, v18. 처음 `_1011`과도 접속은 되지만 방장이 멈춘 뒤 그 화면이 오래 늦음. 예전 오프라인 소드 파이트 zip과는 안 만남). Steam을 켜 두고 `ChessFight_SwordFightSkills.exe` → 방장 F3 "테스트 방 만들기" → 방 번호 보내기 → 나머지 F3 번호 붙여 넣고 "참가" → 방장 "시작". "AI"는 AI가 PC 한 대 로컬 시험으로 본 것(사람 확인 아님).

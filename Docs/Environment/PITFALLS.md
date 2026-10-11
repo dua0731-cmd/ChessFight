@@ -41,6 +41,7 @@
 | 35 | 손실 10%에서 재생 지연의 "한 장 더"가 1초에 한 번 넘게 켜졌다 꺼짐(로컬 시험에서는 꺼진 채 남음) | 켜고 끄는 기준이 한 줄(8%)이고 1초 평균이라 10% 근처에서 흔들렸다 | 켜짐 8%·꺼짐 5%, 4초 평균(`PlaybackDelay`). 기준은 작은 시뮬레이션 프로그램으로 바뀌는 횟수를 세어 정했고, Core 시험이 "손실 10%에서 100초 동안 95% 넘게 켜져 있고 2번 이하로 바뀜"을 본다 | R111 |
 | 36 | (막은 사고) 따로 쓰려던 브랜치의 커밋이 `C:/Work/ChessFight`(bold-johnson)에 섞일 뻔함 | 커밋 훅(`~/.claude/scripts/chessfight-sync-unity.sh`)은 워크트리 브랜치가 `claude/*`이면 그 커밋을 `C:/Work/ChessFight`의 지금 브랜치로 빨리 감는다. 새 브랜치가 bold-johnson에서 갈라졌으면 빨리 감기가 그대로 된다 | bold-johnson과 섞이면 안 되는 브랜치는 `claude/` 없이 짓는다(`skill-network-test`). 그 브랜치의 Unity 폴더(`C:\Work\ChessFight-SkillNet`)는 손으로 맞춘다: `git -C C:/Work/ChessFight-SkillNet fetch <워크트리 저장소> skill-network-test` → `merge --ff-only FETCH_HEAD` | R112 |
 | 37 | 시험 브랜치와 bold-johnson을 서로 합칠 때 스킬 시험 씬이 지워지거나 되살아남 | bold-johnson은 씬을 지웠고(`9a94131`) 시험 브랜치는 둔다 | 시험 브랜치에는 `9a94131`을 `merge -s ours`로 기록해 두어 bold-johnson → 시험 브랜치 합치기는 씬을 안 지운다. 시험 브랜치 → bold-johnson으로 합치면 씬이 되살아나니 그 뒤 `Assets/Scenes/SkillTest`를 다시 지운다(DECISIONS SK9) | R112 |
+| 38 | 온라인 폰 러쉬(코스 01)에서 방장 화면만 맞고, 다른 PC에서는 다른 플레이어가 실제와 다른 곳에 보임(10-11, 5인 시험) | 래그돌 스냅샷 위치를 16비트로 ±80 m(`RagdollNetProtocol.PositionRange`)까지만 담음. 랩(작은 경기장)에 맞춘 값을 길이 246 m 코스에 그대로 써서 z 80 m 너머의 폰이 참가자 화면에서 80 m에 붙음. 방장은 자기 물리를 그대로 그려서 맞게 보임 | 범위 ±320 m(약 1 cm 단위), `CFRA`·v19. **새 맵을 온라인에 올릴 때는 맵 전체가 `PositionRange` 안에 드는지 먼저 본다.** 스킬 순간 신호의 위치(`Core/SkillSync.cs` `SkillWire.PositionRange`)는 아직 ±80 m라, 스킬을 코스 경기에 넣을 때 같이 넓혀야 한다 | R124 |
 
 ## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
 
