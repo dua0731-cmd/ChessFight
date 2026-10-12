@@ -407,7 +407,7 @@ MonoBehaviour:
     hint: "돌출되는 벽 사이를 통과하며 밀림과 끼임 여부를 확인하세요."
     spawn: {fileID: 800177}
   - title: "하중 다리"
-    hint: "다리 양 끝으로 걸어 기울기·미끄러짐·수평 복귀를 확인하세요."
+    hint: "좌우 가장자리에서 최대 기울기를 시험하세요. 판 위에서는 하중을 유지하며, 뛰거나 내려오면 수평으로 복귀합니다. 타일 수를 바꾸면 연습맵의 빈 공간도 함께 바뀝니다."
     spawn: {fileID: 800204}
   - title: "컨베이어 체스판"
     hint: "바닥을 가로질러 걷거나 점프하며 운반 속도와 착지 후 반응을 확인하세요."
@@ -4055,6 +4055,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 800202}
+  - component: {fileID: 800600}
   m_Layer: 0
   m_Name: 07 - 하중 다리
   m_TagString: Untagged
@@ -4112,7 +4113,7 @@ Transform:
   m_GameObject: {fileID: 800203}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.03, z: -13}
+  m_LocalPosition: {x: 0, y: 0.03, z: -11.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4146,8 +4147,8 @@ Transform:
   m_GameObject: {fileID: 800205}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.5, z: -12.075}
-  m_LocalScale: {x: 24, y: 1, z: 11.85}
+  m_LocalPosition: {x: 0, y: -0.5, z: -11.6}
+  m_LocalScale: {x: 24, y: 1, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 800202}
@@ -4251,8 +4252,8 @@ Transform:
   m_GameObject: {fileID: 800210}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.5, z: 15.075}
-  m_LocalScale: {x: 24, y: 1, z: 17.85}
+  m_LocalPosition: {x: 0, y: -0.5, z: 12.6}
+  m_LocalScale: {x: 24, y: 1, z: 12}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 800202}
@@ -4356,8 +4357,8 @@ Transform:
   m_GameObject: {fileID: 800215}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.55, y: -0.5, z: 0}
-  m_LocalScale: {x: 8.9, y: 1, z: 12.3}
+  m_LocalPosition: {x: -8, y: -0.5, z: 0}
+  m_LocalScale: {x: 8, y: 1, z: 13.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 800202}
@@ -4461,8 +4462,8 @@ Transform:
   m_GameObject: {fileID: 800220}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7.55, y: -0.5, z: 0}
-  m_LocalScale: {x: 8.9, y: 1, z: 12.3}
+  m_LocalPosition: {x: 8, y: -0.5, z: 0}
+  m_LocalScale: {x: 8, y: 1, z: 13.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 800202}
@@ -4565,7 +4566,7 @@ Transform:
   m_GameObject: {fileID: 800225}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.006, z: -13}
+  m_LocalPosition: {x: 0, y: 0.006, z: -11.6}
   m_LocalScale: {x: 3, y: 0.012, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4648,7 +4649,7 @@ Transform:
   m_GameObject: {fileID: 800229}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.006, z: 19}
+  m_LocalPosition: {x: 0, y: 0.006, z: 12.6}
   m_LocalScale: {x: 6, y: 0.012, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4731,8 +4732,8 @@ Transform:
   m_GameObject: {fileID: 800233}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -11.8, y: 0.008, z: 3}
-  m_LocalScale: {x: 0.12, y: 0.016, z: 42}
+  m_LocalPosition: {x: -11.8, y: 0.008, z: 0.5}
+  m_LocalScale: {x: 0.12, y: 0.016, z: 35.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 800202}
@@ -4814,8 +4815,8 @@ Transform:
   m_GameObject: {fileID: 800237}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.8, y: 0.008, z: 3}
-  m_LocalScale: {x: 0.12, y: 0.016, z: 42}
+  m_LocalPosition: {x: 11.8, y: 0.008, z: 0.5}
+  m_LocalScale: {x: 0.12, y: 0.016, z: 35.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 800202}
@@ -10538,3 +10539,25 @@ SceneRoots:
   - {fileID: 800007}
   - {fileID: 800010}
   - {fileID: 800013}
+--- !u!114 &800600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f922aeda5972cb26c7bbf8570d8cd77, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.WeightedBridgePracticeArea
+  bridgeRoot: {fileID: 800242}
+  approach: {fileID: 800206}
+  landing: {fileID: 800211}
+  leftWalk: {fileID: 800216}
+  rightWalk: {fileID: 800221}
+  recovery: {fileID: 800204}
+  recoveryMarker: {fileID: 800226}
+  landingMarker: {fileID: 800230}
+  leftEdge: {fileID: 800234}
+  rightEdge: {fileID: 800238}

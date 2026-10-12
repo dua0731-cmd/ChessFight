@@ -214,6 +214,46 @@ class ObstacleAssets(unittest.TestCase):
         for field in ("tilesX", "tilesZ", "maximumTilt"):
             self.assertRegex(source, r"\[SerializeField,[^\]]+\]\s+(?:int|float) " + field)
 
+    def test_bridge_support_and_moving_surface_regressions(self):
+        source = (CODE / "WeightedBridge.cs").read_text()
+        self.assertNotIn("Obstacle, IMovingSurface", source)
+        self.assertIn("WeightedBridgeSurface.Bind(body, this)", source)
+        self.assertIn("DefaultExecutionOrder(-100)", source)
+        self.assertNotIn("motor.Grounded", source)
+        self.assertNotIn("actor.Grounded", source)
+        self.assertNotIn("degreesPerPlayer", source)
+        self.assertIn("actor.TrySupport(support", source)
+        self.assertIn("return -maximumTilt * Mathf.Clamp(weight", source)
+        prefab, = PREFABS.glob("07_*.prefab")
+        component, = [b for b in blocks(prefab.read_text()).values()
+                      if "::ChessFight.ProtectKing.WeightedBridge\n" in b]
+        self.assertEqual(float(fields(component)["supportGrace"]), .12)
+        self.assertNotIn("degreesPerPlayer", fields(component))
+        records = blocks(prefab.read_text())
+        surface, = [b for b in records.values() if "::ChessFight.ProtectKing.WeightedBridgeSurface\n" in b]
+        self.assertNotEqual(fields(surface)["m_GameObject"], fields(component)["m_GameObject"])
+        self.assertEqual(fields(surface)["bridge"], "{fileID: 5156753903950315353}")
+
+    def test_bridge_practice_scene_has_clearance_and_resizing_fixture(self):
+        records = blocks((ASSETS / "Scenes/ObstacleRagdollTest.unity").read_text())
+        fixture, = [b for b in records.values() if "::ChessFight.RagdollLab.WeightedBridgePracticeArea\n" in b]
+        self.assertEqual(fields(fixture)["m_GameObject"], "{fileID: 800201}")
+        for field, value in fields(fixture).items():
+            if field.startswith("m_"): continue
+            target = re.search(r"fileID: (\d+)", value)[1]
+            self.assertIn(target, records)
+        # The old side floors began at 3.1 m; keep a full metre clear of the default half width.
+        for target in ("800216", "800221"):
+            transform = fields(records[target])
+            x = abs(float(re.search(r"x: ([\d.-]+)", transform["m_LocalPosition"])[1]))
+            width = float(re.search(r"x: ([\d.-]+)", transform["m_LocalScale"])[1])
+            self.assertGreaterEqual(x - width / 2, 4)
+        for target in ("800206", "800211"):
+            transform = fields(records[target])
+            z = abs(float(re.search(r"z: ([\d.-]+)", transform["m_LocalPosition"])[1]))
+            length = float(re.search(r"z: ([\d.-]+)", transform["m_LocalScale"])[1])
+            self.assertGreaterEqual(z - length / 2, 6.5)
+
     def test_clock_gates_and_rotating_hands_keep_separate_motion_types(self):
         prefab, = PREFABS.glob("09_*.prefab")
         records = list(blocks(prefab.read_text()).values())

@@ -50,7 +50,7 @@ classDiagram
 | 04 | 회전 해머 / `RotatingHammer` | `04_RotatingHammer` 루트 | Rotation Speed(°/초), Push Force, Lift, Hit Cooldown, Axis, Phase |
 | 05 | 승강 타일 / `RisingFallingTiles` | `Lift tile …` 각각 | Axis, Distance, Period, Phase |
 | 06 | 슬라이딩 벽 / `SlidingWall` | `Left/Right sliding wall` | Axis, Distance, Period, Phase, Strength, Lift, Hit Cooldown |
-| 07 | 하중 다리 / `WeightedBridge` | `07_WeightedBridge` 루트 | Maximum Tilt, Tiles X/Z, Tile Size, Deck Thickness, Degrees Per Player 등 |
+| 07 | 하중 다리 / `WeightedBridge` | `07_WeightedBridge` 루트 | Maximum Tilt, Tiles X/Z, Tile Size, Deck Thickness, Support Grace 등 |
 | 08 | 컨베이어 / `ConveyorChessboard` | `08_ConveyorChessboard` | Direction, Conveyor Speed, Belt Length, Belt Markers |
 | 09 | 체스 시계 문 / `ChessClockGate` | `Left/Right gate` | Axis, Distance, Period, Phase. `Clock hand`는 별도 회전 속도 |
 | 10 | 낙하 기물 / `FallingChessPiece` | `10_FallingChessPiece` | Drop Height, Warning/Fall/Shock/Rest Seconds, Shock Radius, Knockback, Lift |
@@ -145,3 +145,15 @@ Hierarchy의 **07_WeightedBridge 루트**를 선택한다. Weighted Bridge의 pr
 설정 컴포넌트는 루트, 물리는 기존 자식 Tilting deck Rigidbody를 사용한다. 체스 무늬는 두 재질의 격자 메시로 생성하고, 기존 타일 ID는 보존하되 장식 31개는 비활성화했다. 격자와 Solid deck의 단위 BoxCollider 크기·탑승 검사 범위·테두리·진입 경사로를 같은 치수로 갱신한다. 중심 받침대는 고정이다. ExecuteAlways로 편집 상태에서 표시를 갱신하지만 Awake/FixedUpdate의 물리 이동은 Play에서만 수행한다. OnValidate에서는 값 제한과 갱신 예약만 하며 메시 갱신은 Update에서 실행한다. 생성 메시를 해제해 반복 편집 시 누적하지 않는다.
 
 자동 구조14·Core83·모의 세션39·7개 런타임 컴파일 통과. Unity Editor/PhysX는 실행하지 않았으며 편집 미리보기·Undo/재열기·충돌·탑승 실기는 미확인이다.
+
+## R77 — 다리 끝 탑승·운반과 연습맵 수정 (2026-10-12)
+
+코드상 원인: 기존 탑승 판정은 수직 속도 >1.5 m/s 또는 세계 기준 경사 normal.y<0.55이면 끊겼고, 기울어진 다리에서도 세계 수직으로 추정한 발 위치를 엄격하게 검사했다. 실제 판 위에 있어도 RiderCount가 0이 되어 수평 복귀할 수 있었다. 목표 각도는 degreesPerPlayer(12°)로 제한되어 Maximum Tilt를 올려도 한 사람이 최대 각도를 만들지 못했다. 움직이는 판에 IMovingSurface도 연결되어 있지 않았다.
+
+수정: 실제 Solid deck 콜라이더에 대한 지지 캐스트·다리 운동에 대한 상대 이탈 속도로 판정한다. Support Grace 기본 0.12초의 짧은 접촉 여유가 있으며 경계 이탈/위로 이탈 시 해제한다. 하중은 실제 접촉점으로 계산하며, 좌우 바깥 15%에 한 사람이 서면 Maximum Tilt까지 기울어진다. Degrees Per Player는 제거했다. 최대 각도를 낮추면 순간 각도 변경 대신 Tilt Speed로 복귀한다.
+
+WeightedBridgeSurface는 **Tilting deck 자식에만** IMovingSurface를 제공한다. 회전하는 판의 접점 운동을 알려 캐릭터가 판의 상승/하강을 따라간다. 고정 경사로·중앙 받침은 움직이는 표면으로 취급하지 않는다. 이 상태형 판은 DefaultExecutionOrder(-100)로 캐릭터 물리 단계보다 먼저 목표 회전을 계산한다. 공통 래그돌 튜닝은 변경하지 않았다.
+
+`ObstacleRagdollTest`의 07번만 수정: 옆 바닥 시작점을 기존 ±3.1 m에서 기본 ±4 m로, 앞뒤 바닥을 길이 반값 +0.6 m 밖으로 옮겼다. 경사로는 판과 충돌 영역이 겹치지 않도록 간격을 조정했다. `WeightedBridgePracticeArea`가 타일 수/칸 크기/루트 배율에 따라 빈 공간과 바닥·복귀점을 다시 배치한다. 다른 14개 시험대는 유지했다.
+
+구조16·Core83·모의 세션39·7개 런타임 컴파일 통과. 표면 릴레이 위치·설정 이전·연습맵 여유 공간과 참조를 자동 검사했다. Unity/PhysX는 실행하지 않았으므로 실제 속도·끝 탑승·각도 도달·점프/낙하·Undo 실기는 재확인 필요하다.

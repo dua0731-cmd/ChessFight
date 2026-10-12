@@ -32,6 +32,29 @@ namespace ChessFight.ProtectKing
                 return false;
             }
         }
+        // Query the actual supporting collider without world-up slope/velocity gates.
+        public bool TrySupport(Collider support, Vector3 surfaceNormal, Vector3 surfaceVelocity, out Vector3 point)
+        {
+            point = Vector3.zero;
+            if (!CanReceiveObstacle || support == null ||
+                Vector3.Dot(Velocity - surfaceVelocity, surfaceNormal) > 2.5f) return false;
+            Vector3 probe = MainBody != null ? MainBody.position : Position + Vector3.up * .5f;
+            float height = Mathf.Max(.3f, Vector3.Distance(probe, Position));
+            int count = Physics.SphereCastNonAlloc(probe + Vector3.up * .1f, .18f, Vector3.down,
+                groundHits, height + .45f, ~0, QueryTriggerInteraction.Ignore);
+            RaycastHit nearest = default;
+            float distance = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = groundHits[i];
+                if (hit.collider == null || hit.collider.transform.IsChildOf(owner.transform) || hit.distance <= 0f || hit.distance >= distance) continue;
+                distance = hit.distance; nearest = hit;
+            }
+            if (nearest.collider != support || Vector3.Dot(nearest.normal, surfaceNormal) < .75f) return false;
+            point = nearest.point;
+            return true;
+        }
+
         ImportedObstacleActor(Component owner, ICharacterDriver driver)
         {
             this.owner=owner; this.driver=driver;

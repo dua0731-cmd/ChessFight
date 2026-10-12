@@ -7,7 +7,7 @@ namespace ChessFight.ProtectKing
 {
     // StateDrivenMover: tilted by the weight on its deck, not by ObstacleClock. Offline only
     // until the host sends its angle (Docs/KingRush/MAP_IMPORT.md).
-    [ExecuteAlways]
+    [ExecuteAlways, DefaultExecutionOrder(-100)]
     public sealed class WeightedBridge : Obstacle
     {
         [SerializeField] ObstacleContext context;
@@ -17,7 +17,7 @@ namespace ChessFight.ProtectKing
         [SerializeField, Range(1, 64), Tooltip("Number of tiles along the bridge.")] int tilesZ = 8;
         [SerializeField, Min(.1f), Tooltip("Side length of one square tile in metres, before root scale.")] float tileSize = 1.5f;
         [SerializeField, Min(.05f)] float deckThickness = .4f;
-        [SerializeField, Min(0f)] float degreesPerPlayer = 12f;
+        [SerializeField, Range(0f, .3f), Tooltip("Brief contact tolerance in seconds. Jumping or leaving the deck cancels it immediately.")] float supportGrace = .12f;
         [SerializeField, Min(1f)] float tiltSpeed = 30f;
         [SerializeField, Min(0f)] float slideSpeed = 3f;
         [SerializeField, HideInInspector] Rigidbody deckBody;
@@ -29,6 +29,21 @@ namespace ChessFight.ProtectKing
         bool geometryDirty;
         Transform Deck => deckBody != null ? deckBody.transform : transform;
         Vector3 DeckSize => new Vector3(tilesX * tileSize, deckThickness, tilesZ * tileSize);
+        public Vector3 Size => DeckSize;
+        public Quaternion DeltaRotation { get; private set; } = Quaternion.identity;
+        float angularSpeed;
+        public Vector3 PointVelocity(Vector3 point)
+        {
+            if (!Application.isPlaying || body == null || !isActiveAndEnabled || (context != null && !context.Running)) return Vector3.zero;
+            Vector3 normal = body.rotation * Vector3.up;
+            Vector3 offset = point - body.position;
+            // Sample the supporting surface, rather than the upright hips above it.
+            offset -= normal * (Vector3.Dot(offset, normal) - DeckSize.y * .5f);
+            return Vector3.Cross(body.rotation * Vector3.forward * angularSpeed, offset);
+        }
+        struct SupportSample { public float time; public Vector3 localPoint; }
+        readonly Dictionary<ImportedObstacleActor, SupportSample> supportSamples = new Dictionary<ImportedObstacleActor, SupportSample>();
+        readonly List<ImportedObstacleActor> expiredSupports = new List<ImportedObstacleActor>();
         public float Angle { get; private set; }
         public uint NetworkId { get; private set; }
         public int RiderCount { get; private set; }
@@ -51,6 +66,7 @@ namespace ChessFight.ProtectKing
             body.isKinematic = true; body.useGravity = false;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             restRotation = Deck.localRotation;
+            WeightedBridgeSurface.Bind(body, this);
             // Identical saved hierarchy on host and clients yields an identical ID for each instance.
             uint hash = 2166136261;
             for (var t = Deck; t != null; t = t.parent)
@@ -118,41 +134,67 @@ namespace ChessFight.ProtectKing
         static void ResizeRamp(Transform ramp, float side, Vector3 size)
         {
             if (ramp == null) return;
-            var position = ramp.localPosition; position.z = side * (size.z * .5f + 1.2f); ramp.localPosition = position;
+            var position = ramp.localPosition; position.z = side * (size.z * .5f + 1.55f); ramp.localPosition = position;
             var scale = ramp.localScale; scale.x = size.x; ramp.localScale = scale;
         }
-        void OnDisable() { instances.Remove(this); riders.Clear(); }
+        void OnDisable() { instances.Remove(this); riders.Clear(); supportSamples.Clear(); angularSpeed = 0f; DeltaRotation = Quaternion.identity; }
         public float CalculateTarget()
         {
             riders.Clear();
-            Vector3 deckSize = DeckSize;
-            var scale = Deck.lossyScale;
-            var half = Vector3.Scale(new Vector3(deckSize.x * .5f, 1.15f, deckSize.z * .5f), new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
-            int count = Physics.OverlapBoxNonAlloc(Deck.TransformPoint(new Vector3(0, deckSize.y * .5f + 1, 0)), half,
-                overlaps, Deck.rotation, ~0, QueryTriggerInteraction.Ignore);
-            float weight = 0;
+            if (solidDeck == null || body == null) return 0f;
+            var support = solidDeck.GetComponent<BoxCollider>();
+            if (support == null) return 0f;
+            Vector3 size = DeckSize, scale = Deck.lossyScale;
+            var half = Vector3.Scale(new Vector3(size.x * .5f + .35f, 2f, size.z * .5f + .35f),
+                new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+            int count = Physics.OverlapBoxNonAlloc(Deck.TransformPoint(new Vector3(0f, size.y * .5f + 1.5f, 0f)),
+                half, overlaps, body.rotation, ~0, QueryTriggerInteraction.Ignore);
+            Vector3 normal = body.rotation * Vector3.up;
+            float now = Time.time, weight = 0f;
             for (int i = 0; i < count; i++)
             {
-                var motor = ImportedObstacleActor.Find(overlaps[i]);
-                if (motor == null || !motor.CanReceiveObstacle || !motor.Grounded || !riders.Add(motor)) continue;
-                var feet = Deck.InverseTransformPoint(motor.Position);
-                if (feet.y < deckSize.y * .5f - .2f || feet.y > deckSize.y * .5f + .6f ||
-                    Mathf.Abs(feet.x) > deckSize.x * .5f || Mathf.Abs(feet.z) > deckSize.z * .5f)
-                { riders.Remove(motor); continue; }
-                weight += Mathf.Clamp(feet.x / Mathf.Max(.1f, deckSize.x * .5f), -1, 1);
+                var actor = ImportedObstacleActor.Find(overlaps[i]);
+                if (actor == null || !actor.CanReceiveObstacle || !riders.Add(actor)) continue;
+                Vector3 top = Deck.TransformPoint(Vector3.up * (size.y * .5f));
+                Vector3 projectedFeet = actor.Position - Vector3.up *
+                    (Vector3.Dot(actor.Position - top, normal) / Mathf.Max(.1f, normal.y));
+                Vector3 feet = Deck.InverseTransformPoint(projectedFeet);
+                bool inBounds = Mathf.Abs(feet.x) <= size.x * .5f + .35f && Mathf.Abs(feet.z) <= size.z * .5f + .35f;
+                Vector3 velocity = PointVelocity(actor.Position);
+                bool separating = Vector3.Dot(actor.Velocity - velocity, normal) > 2.5f;
+                Vector3 localPoint;
+                if (!separating && actor.TrySupport(support, normal, velocity, out var contact))
+                {
+                    localPoint = Deck.InverseTransformPoint(contact);
+                    supportSamples[actor] = new SupportSample { time = now, localPoint = localPoint };
+                }
+                else if (!separating && inBounds && supportSamples.TryGetValue(actor, out var sample) && now - sample.time <= supportGrace)
+                    localPoint = sample.localPoint;
+                else
+                {
+                    riders.Remove(actor); supportSamples.Remove(actor); continue;
+                }
+                // One player at either side reaches Maximum Tilt; it is not capped at the old 12 degrees.
+                weight += Mathf.Clamp(localPoint.x / Mathf.Max(.1f, size.x * .5f * .85f), -1f, 1f);
             }
+            expiredSupports.Clear();
+            foreach (var pair in supportSamples) if (!riders.Contains(pair.Key)) expiredSupports.Add(pair.Key);
+            foreach (var actor in expiredSupports) supportSamples.Remove(actor);
             RiderCount = riders.Count;
-            return Mathf.Clamp(-weight * degreesPerPlayer, -maximumTilt, maximumTilt);
+            return -maximumTilt * Mathf.Clamp(weight, -1f, 1f);
         }
         void FixedUpdate()
         {
             if (!Application.isPlaying) return;
             if (body == null) Awake();
+            float oldAngle = Angle;
             float time = context != null ? context.Elapsed : Time.time;
             if (time < previousTime || (context != null && !context.Running)) { Angle = 0; remoteAngle = 0; }
             else Angle = Mathf.MoveTowards(Angle, context == null || context.Authority ? CalculateTarget() : remoteAngle, tiltSpeed * Time.fixedDeltaTime);
             previousTime = time;
-            Angle = Mathf.Clamp(Angle, -maximumTilt, maximumTilt);
+            angularSpeed = (Angle - oldAngle) * Mathf.Deg2Rad / Time.fixedDeltaTime;
+            DeltaRotation = Quaternion.AngleAxis(Angle - oldAngle, Deck.parent != null
+                ? Deck.parent.rotation * restRotation * Vector3.forward : restRotation * Vector3.forward);
             var localRotation = restRotation * Quaternion.AngleAxis(Angle, Vector3.forward);
             body.MoveRotation(Deck.parent != null ? Deck.parent.rotation * localRotation : localRotation);
         }

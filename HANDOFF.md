@@ -4,10 +4,12 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-11**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-12**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R77(사용자, 10-12): 다리 끝/각도/연습맵 수정.** 실제 콜라이더 지지 판정·상대 이탈 속도·0.12초 여유. 바깥 15%에서 Maximum Tilt 적용(12°/인 제한 제거), 판 자식만 IMovingSurface 제공. 07 시험대는 크기에 따라 바닥/복귀점·회전 공간 자동 배치. 구조16·Core83·세션39·7개 런타임 컴파일 통과, Unity 대기.
+
 > **R76(사용자, 10-11): 07 무게 다리 설정.** 루트 Maximum Tilt(24°, 0~80°), Tiles X/Z(4×8), Tile Size(1.5 m). 칸 추가로 격자·충돌·탑승 범위 확장, 테두리·경사로 갱신, 자식 판만 기울기. 구조14·Core83·세션39·7개 런타임 컴파일 통과, Unity 대기.
 
 > **R75(사용자, 10-11): 03·04 루트 Inspector 수정.** ReciprocatingPusher/RotatingHammer를 프리팹 루트에 옮김. 기존 자식 Rigidbody를 숨겨진 참조로 구동하여 받침대는 고정. 루트 속도/밀치기 SerializeField, 구조13·Core83·세션39·7개 런타임 컴파일 통과, Unity 대기. 커밋 메시지는 사용자 요청에 따라 한국어.
@@ -86,6 +88,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **다리 끝/각도/연습맵(R77)** | 실제 지지·회전 운반·최대 각도 반영, 자동 회전 공간 확보. Unity 대기 |
 | **07 무게 다리 설정(R76)** | 루트 최대 기울기·타일 수, 격자/충돌 동기화. Unity 대기 |
 | **03·04 루트 Inspector(R75)** | 루트에서 SerializeField 조절, 자식 물체만 구동. Unity 대기 |
 | **점프 패드 공중 조작(R73)** | 수직 발사·관성·입력 제동, Inspector 속도/가속도. Unity 대기 |
@@ -121,6 +124,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **다리 끝/각도/연습맵(R77)** | 지지 판정·각도/표면·07 씬 수정 | [상세](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **07 무게 다리 설정(R76)** | 타일 수로 확장·최대 기울기 조절, 자동 검사 통과·Unity 대기 | [설정](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **03·04 루트 Inspector(R75)** | 루트에서 이동/회전 속도·Push Force 조절 | [설정](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **점프 패드 공중 조작(R73)** | 전용 발사 계약·공중 가속/제동, 자동 검사 통과·Unity 대기 | [설정](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
@@ -156,6 +160,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R77:** 07 좌우 끝 왕복/정지·점프 이탈·Maximum Tilt 10/24/40·크기별 연습맵 바닥 간격·고정 경사로를 Unity에서 확인한다.
 
 **R76:** 07 루트 최대 기울기 0/10/24/40, X/Z 칸 추가·충돌·탑승·경사로·Undo/재열기를 Unity에서 확인한다.
 
