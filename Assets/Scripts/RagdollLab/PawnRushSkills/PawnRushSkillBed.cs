@@ -242,9 +242,9 @@ namespace ChessFight.RagdollLab
             if (p1.Piece == PieceKind.King) return;
             bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
             string how = (p1.Piece == PieceKind.Rook || p1.Piece == PieceKind.Bishop) ? $"{skillKey} 조준 → 좌클릭" : $"{skillKey} 사용";
-            SkillKeyCard.Draw(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
-                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), SkillKeyCard.Colors(p1.Piece),
-                ready || running, false, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
+            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
+                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), p1.Piece,
+                ready || running, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
         }
 
         public static string StageName(RagdollPawn pawn)

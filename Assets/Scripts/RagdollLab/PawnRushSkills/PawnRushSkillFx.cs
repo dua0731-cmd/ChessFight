@@ -275,7 +275,7 @@ namespace ChessFight.RagdollLab
                 // The share of the charge by which it has arrived.
                 float arrive = Random.Range(0.85f, 0.95f), size = ChessKing * ChessHeights[kind];
                 float yaw0 = Random.Range(0f, 360f), spin = Random.Range(700f, 1000f) * way;
-                var piece = Add(new Puff(root, "Queen gathering chess piece", chessMeshes[kind], matChess)
+                var piece = Add(new Puff(root, "Queen gathering chess piece", chessMeshes[kind], ChessMaterial(i))
                 {
                     life = 10f,
                     lump = 0f,
@@ -301,7 +301,7 @@ namespace ChessFight.RagdollLab
                         p.rim = Hdr(FireGlow, 1.3f * k * k);
                     },
                 });
-                if (kit != null) InkTrail(() => piece.Alive ? piece.at : (Vector3?)null, Kit.Queen, 0.1f, 0.07f);
+                if (kit != null) InkTrail(() => piece.Alive ? piece.at : (Vector3?)null, kit.queen, 0.1f, 0.07f);
             }
         }
 
@@ -325,7 +325,7 @@ namespace ChessFight.RagdollLab
                 Quaternion rot = Random.rotation;
                 Vector3 tumble = Random.onUnitSphere * Random.Range(400f, 800f);
                 float size = ChessKing * ChessHeights[kind], last = 0f;
-                Add(new Puff(root, "Queen burst chess piece", chessMeshes[kind], matChess)
+                Add(new Puff(root, "Queen burst chess piece", chessMeshes[kind], ChessMaterial(i))
                 {
                     life = Random.Range(1.05f, 1.2f),   // A: gone into a small gold puff by 1.2 s
                     lump = 0f,
@@ -361,7 +361,9 @@ namespace ChessFight.RagdollLab
         /// if it ends with no blast), then, once blasted, running right out hot, cooling to scorch lines and fading.</summary>
         Crack QueenCracks(Vector3 floor, Func<float> charge, Func<bool> charging)
         {
-            var crack = new Crack(root, meshQuad, matCrack) { at = floor, radius = 2.4f, life = 10f, paint = 0.3f };
+            var crack = new Crack(root, meshQuad, matCrack) { at = floor, radius = 2.4f, life = 10f, paint = board ? 0.75f : 0.3f };
+            Color hotColor = board ? BOrange.main : Gold;
+            float hotGain = board ? 0.55f : 1f;
             float endedAt = -1f;
             crack.animate = (c, t) =>
             {
@@ -369,7 +371,7 @@ namespace ChessFight.RagdollLab
                 {
                     float k = charge();
                     c.reveal = 0.3f * k * k;
-                    c.hot = Hdr(Gold, 1f + 0.6f * k);
+                    c.hot = Hdr(hotColor, (1f + 0.6f * k) * hotGain);
                     if (endedAt < 0f && !charging()) endedAt = c.Age;
                     if (endedAt >= 0f && c.Age - endedAt > 0.25f) c.fade = Mathf.Clamp01(1f - (c.Age - endedAt - 0.25f) / 0.2f);
                     if (c.fade <= 0f) c.life = c.Age;
@@ -377,7 +379,7 @@ namespace ChessFight.RagdollLab
                 }
                 float b = c.Age - c.BlastAt;
                 c.reveal = Mathf.Lerp(c.RevealAtBlast, 1.02f, EaseOut(b / 0.09f));
-                c.hot = Hdr(Gold, Keys(b, 0f, 2f, 0.3f, 1.4f));
+                c.hot = Hdr(hotColor, Keys(b, 0f, 2f, 0.3f, 1.4f) * hotGain);
                 c.cool = Keys(b, 0.25f, 0f, 0.9f, 1f);
                 c.fade = Keys(b, 1.1f, 1f, 1.7f, 0f);
                 if (b > 1.72f) c.life = c.Age;
@@ -401,8 +403,8 @@ namespace ChessFight.RagdollLab
                 life = 1.9f,
                 at = c + Vector3.up * 0.015f,
                 rotation = FlatOnFloor() * Quaternion.Euler(0f, 0f, Random.Range(0f, 360f)),
-                color = new Color(0.06f, 0.035f, 0.02f),
-                paint = 0.55f,
+                color = board ? new Color(0.09f, 0.08f, 0.11f) : new Color(0.06f, 0.035f, 0.02f),
+                paint = board ? 0.28f : 0.55f,
                 animate = (s, t) =>
                 {
                     s.scale = Vector3.one * 4.4f * Mathf.Lerp(0.5f, 1f, EaseOut(s.Age / 0.1f));
@@ -477,9 +479,9 @@ namespace ChessFight.RagdollLab
             // under it once it lies (the inner ring knocks down).
             Vector3 at = e.target != null ? ChestOf(e.target) : e.at + Vector3.up * 0.3f;
             Vector3 away = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
-            kit.FlashBody(e.target, Kit.Queen.main);
-            kit.Drops(at, away + Vector3.up * 0.25f, Kit.Queen, 3, 6f);
-            if (e.count == 1) kit.Down(e.target, Kit.Queen, e.at, Square);
+            kit.FlashBody(e.target, kit.queen.main);
+            kit.Drops(at, away + Vector3.up * 0.25f, kit.queen, 3, 6f);
+            if (e.count == 1) kit.Down(e.target, kit.queen, e.at, Square);
         }
 
         // ---- Rook (R86, after the reference's electric dash; it was a shield and a tail of fire): while it charges, a
@@ -501,8 +503,8 @@ namespace ChessFight.RagdollLab
         {
             Vector3? Where() => RookDashing(r) ? r.Hips.position : (Vector3?)null;
             Vector3? Chest() => RookDashing(r) ? ChestOf(r) : (Vector3?)null;
-            anims.Add(new Streak(root, matTrail, Hdr(Fire, 1.25f), 0.75f, 0.2f, Where) { paint = 0.8f });
-            anims.Add(new Streak(root, matTrail, Hdr(Volt, 3.4f), 0.16f, 0.32f, Where) { paint = 0.25f });
+            anims.Add(new Streak(root, matTrail, board ? Hdr(BOrange.main, 1.05f) : Hdr(Fire, 1.25f), 0.75f, 0.2f, Where) { paint = board ? 0.85f : 0.8f });
+            anims.Add(new Streak(root, matTrail, board ? Hdr(new Color(0.92f, 0.95f, 1f), 2.2f) : Hdr(Volt, 3.4f), 0.16f, 0.32f, Where) { paint = 0.25f });
             anims.Add(new PathBolts(root, matVolt, Chest, 1.6f));
             Vector3 heading = Flat(r.transform.forward).sqrMagnitude > 0.01f ? Flat(r.transform.forward).normalized : Vector3.forward;
             float endedAt = -1f;
@@ -510,7 +512,7 @@ namespace ChessFight.RagdollLab
             Add(new Beam(root, matFlare)
             {
                 life = 5f,
-                color = Hdr(Fire, 1.4f),
+                color = board ? Hdr(BOrange.main, 1.15f) : Hdr(Fire, 1.4f),
                 paint = 0.7f,
                 animate = (b, t) =>
                 {
@@ -547,7 +549,7 @@ namespace ChessFight.RagdollLab
                 if (r.Grounded)
                     for (kick += dt * 25f; kick >= 1f; kick -= 1f)
                         smoke.Emit(Ground(r.Hips.position) - heading * 0.3f + Random.insideUnitSphere * 0.2f, -heading * Random.Range(0.5f, 1.5f) + Vector3.up * 0.4f,
-                            Random.Range(0.35f, 0.55f), Random.Range(0.5f, 0.8f), (Color32)Dust, Random.Range(-60f, 60f));
+                            Random.Range(0.35f, 0.55f), Random.Range(0.5f, 0.8f), (Color32)(board ? new Color(0.92f, 0.84f, 0.74f) : Dust), Random.Range(-60f, 60f));
                 return true;
             }));
         }
@@ -555,7 +557,7 @@ namespace ChessFight.RagdollLab
         void RookHit(SkillFxEvent e)
         {
             int i = Mathf.Clamp(e.count, 1, 3);
-            var p = Kit.Rook;
+            var p = kit.rook;
             Vector3 fly = RookFlight(e);
             Vector3 at = e.target != null ? ChestOf(e.target) : e.at;
             kit.HalfRing(at, fly, p, 0.55f * (1f + 0.2f * (i - 1)), 0.15f);
@@ -577,13 +579,13 @@ namespace ChessFight.RagdollLab
         /// <summary>The piece that stops the charge (the one after its last): the strongest hit of the rook's.</summary>
         void RookStop(SkillFxEvent e)
         {
-            var p = Kit.Rook;
+            var p = kit.rook;
             Vector3 along = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             Vector3 at = e.target != null ? ChestOf(e.target) : e.at;
             kit.HalfRing(at, along, p, 0.8f, 0.18f);
             InkHit(e.target, at, along, p, 5, 0.12f, 8, 4);
             anims.Add(new Bolts(root, matVolt, 6, () => e.at, Hdr(Volt, 2f), 1f, 0.16f) { toon = true });
-            kit.PuffBurst(Ground(e.at) + Vector3.up * 0.15f, Kit.Dust, 4, 0.5f, 0.25f);
+            kit.PuffBurst(Ground(e.at) + Vector3.up * 0.15f, kit.dust, 4, 0.5f, 0.25f);
             kit.Down(e.target, p, e.at, Square);
         }
 
@@ -677,7 +679,7 @@ namespace ChessFight.RagdollLab
 
         void BishopTrip(SkillFxEvent e)
         {
-            var p = Kit.Bishop;
+            var p = kit.bishop;
             Vector3 run = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             if (e.source != null && tileSets.TryGetValue(e.source, out var set)) set.Pop(e.at);
             Vector3 feet = (e.target != null ? Ground(e.target.Hips.position) : Ground(e.at)) + Vector3.up * 0.03f;
@@ -707,7 +709,7 @@ namespace ChessFight.RagdollLab
         void KnightLeap(RagdollPawn k)
         {
             // A: a ribbon of wind from its hips (0.45 s, 0.42 m at the head to nothing), white core, sky, navy ink.
-            InkTrail(() => KnightLeaping(k) ? k.Hips.position : (Vector3?)null, Kit.Knight, 0.45f, 0.42f, Color.white);
+            InkTrail(() => KnightLeaping(k) ? k.Hips.position : (Vector3?)null, kit.knight, 0.45f, 0.42f, Color.white);
         }
 
         /// <summary>"다": the leap's take-off (A): a white ring at the feet for two frames, five wind puffs squashing out
@@ -719,8 +721,8 @@ namespace ChessFight.RagdollLab
             if (k != null) leapPaths[k] = new LeapPath { start = floor, launchedAt = Clock };
             Shake(0.04f, 4f * Frame);
             Vector3 at = (e.count == 1 ? e.at : floor) + Vector3.up * 0.02f;
-            kit.FlashRing(at, 0.4f, Kit.Knight);
-            kit.DustRing(at, 5, 1f, Kit.Knight, 0.3f, 0.45f, 8f);
+            kit.FlashRing(at, 0.4f, kit.knight);
+            kit.DustRing(at, 5, 1f, kit.knight, 0.3f, 0.45f, 8f);
             WindArc(at + Vector3.up * 0.05f, Vector3.up, 0.6f, 0.75f, 0.22f, 420f, 0.38f, 0f, 0.85f, 1.2f, () => k != null ? k.Hips.position - Vector3.up * 0.6f : at);
             WindArc(at + Vector3.up * 0.05f, Vector3.up, 0.5f, 0.68f, 0.18f, 380f, 0.36f, 0.05f, 0.85f, 1.1f, () => k != null ? k.Hips.position - Vector3.up * 0.6f : at);
         }
@@ -739,8 +741,8 @@ namespace ChessFight.RagdollLab
             }
             HitStop(2f * Frame);
             Shake(0.06f, 6f * Frame);
-            Crescent(e.at, Quaternion.Euler(0f, 45f, 0f) * Flat(d).normalized, Kit.Knight, 0.75f, 0.1f, 90f, 6);
-            FlatImpactRing(e.at, Kit.Knight, 0.05f, 0.45f, d);
+            Crescent(e.at, Quaternion.Euler(0f, 45f, 0f) * Flat(d).normalized, kit.knight, 0.75f, 0.1f, 90f, 6);
+            FlatImpactRing(e.at, kit.knight, 0.05f, 0.45f, d);
         }
 
         void KnightHome(SkillFxEvent e)
@@ -751,7 +753,7 @@ namespace ChessFight.RagdollLab
 
         void KnightStomp(SkillFxEvent e)
         {
-            var p = Kit.Knight;
+            var p = kit.knight;
             // A: flat in four frames (to 60%), a level blue ring at head height, three drops down and out, the body
             // white then sky, a 5-frame stop; then its captured square and three little cream pawns over its head.
             kit.AddSquash(e.target, Kit.SquashKind.Flatten, 0.5f);
@@ -767,7 +769,7 @@ namespace ChessFight.RagdollLab
             if (k != null) leapPaths.Remove(k);
             Vector3 g = Ground(e.at) + Vector3.up * 0.02f;
             float radius = e.size > 0f ? e.size : 1.5f;
-            var p = Kit.Knight;
+            var p = kit.knight;
             // A: eight wind puffs rolling out to the stagger reach in ten frames, a horseshoe scuff stamped where it came
             // down (sky, ink) fading over a second; each piece it staggers flashes, with a 3-frame stop.
             kit.DustRing(g, 8, radius, p, 0.32f, 0.6f, 10f);
@@ -901,6 +903,9 @@ namespace ChessFight.RagdollLab
             public RagdollPawn owner;
             readonly List<(Shape tile, Shape box, int ring, Vector3 at)> squares = new List<(Shape, Shape, int, Vector3)>();
             readonly List<Shape> wires = new List<Shape>();
+            /// <summary>The board look's pads (R126): one per square.</summary>
+            readonly List<SkillInkKit.Tile> pads = new List<SkillInkKit.Tile>();
+            Vector3 along = Vector3.forward;
             public Object source;
             public float square;
             public bool hidden;
@@ -916,12 +921,14 @@ namespace ChessFight.RagdollLab
                     var tile = new Shape(fx.root, "Bishop square", fx.meshQuad, fx.matTile) { life = float.MaxValue, paint = ghost ? 0.5f : 0.9f };
                     var box = ghost ? null : new Shape(fx.root, "Bishop light box", fx.meshBox, fx.matCurtain) { life = float.MaxValue, paint = 0.55f };
                     squares.Add((tile, box, ring, at));
+                    if (fx.board && !ghost) pads.Add(new SkillInkKit.Tile(fx.kit, "Bishop board square"));
                 }
                 Place(center, forward, length);
             }
 
             public void Place(Vector3 center, Vector3 forward, float length)
             {
+                along = Flat(forward).sqrMagnitude > 1e-4f ? Flat(forward).normalized : Vector3.forward;
                 int i = 0;
                 foreach (var (at, ring, size, rotation) in Squares(center, forward, length))
                 {
@@ -944,7 +951,7 @@ namespace ChessFight.RagdollLab
             public void AddWires(Vector3 center, Vector3 forward, float length, float height)
             {
                 for (int i = 0; i < 4; i++)
-                    wires.Add(new Shape(fx.root, "Bishop wire light", fx.meshCylinder, fx.matRod) { life = float.MaxValue, paint = 0.3f });
+                    wires.Add(new Shape(fx.root, "Bishop wire light", fx.meshCylinder, fx.board ? fx.matRodBoard : fx.matRod) { life = float.MaxValue, paint = 0.3f });
             }
 
             static void Rod(Shape rod, Vector3 from, Vector3 to)
@@ -1007,8 +1014,35 @@ namespace ChessFight.RagdollLab
                     // A popped square turns pink rather than white-hot (it washed the pull out up close, R81).
                     tile.color = Hdr(Color.Lerp(Violet, Magenta, pop), 1.5f + 0.7f * pop);
                     tile.bright = bright;
+                    if (pads.Count > 0)
+                    {
+                        // The board look: a dark board square standing as a pad, lifted and turned orange as it pops (the
+                        // box of light did that before), a silver band inside it lit with the wire's level.
+                        tile.bright = 0f;
+                        var pad = pads[i];
+                        float lift = 0.22f * Mathf.Sin(Mathf.Clamp01(pop) * Mathf.PI);
+                        pad.Floor(at + Vector3.up * (0.004f + lift), along, Vector2.one * (square * 0.94f));
+                        pad.shape = 0f;
+                        pad.round = 0.05f;
+                        pad.fill = SkillInkKit.A(Color.Lerp(BSquare.main, BOrange.main, pop), 0.94f);
+                        pad.bevel = SkillInkKit.A(Color.Lerp(BSquare.light, BOrange.deep, pop), 0.8f);
+                        pad.bevelWidth = 0.05f;
+                        pad.ink = SkillInkKit.A(BNavy, 1f);
+                        pad.inkWidth = 0.03f;
+                        fx.kit.BoardSide(pad, owner);
+                        pad.core = SkillInkKit.A(BSilver.light, Mathf.Clamp01((level - 0.45f) / 0.55f));
+                        pad.coreWidth = 0.05f;
+                        pad.thick = 0.045f + 0.05f * pop;
+                        pad.fade = hidden ? 0f : on * fade * Mathf.Clamp01(0.8f + 0.3f * level);
+                        pad.Apply();
+                    }
                     tile.Step(dt, cam);
-                    if (box != null)
+                    if (box != null && pads.Count > 0)
+                    {
+                        box.bright = 0f;
+                        box.Step(dt, cam);
+                    }
+                    else if (box != null)
                     {
                         float lift = 0.22f * Mathf.Sin(Mathf.Clamp01(pop) * Mathf.PI);
                         box.at = at + Vector3.up * lift;
@@ -1036,9 +1070,15 @@ namespace ChessFight.RagdollLab
                     // out it bloomed the stretched line away), and whiter where it is pulled (A: violet → white).
                     wire.color = Hdr(Color.Lerp(Color.Lerp(Violet, Magenta, 0.5f), Color.white, 0.55f * tension), 3f + 0.3f * tension);
                     wire.bright = wireBright;
+                    if (fx.board)
+                    {
+                        // The board look: a polished silver wire (Skill Gloss: rgb tints, alpha fades by a dither).
+                        wire.color = Color.white;
+                        wire.bright = fade;
+                    }
                     wire.Step(dt, cam);
                 }
-                if (!ghost && !hidden && squares.Count > 0)
+                if (!ghost && !hidden && squares.Count > 0 && !fx.board)
                     for (rise += dt * 14f * fade * Mathf.Min(1f, level); rise >= 1f; rise -= 1f)
                     {
                         var s = squares[Random.Range(0, squares.Count)];
@@ -1052,6 +1092,8 @@ namespace ChessFight.RagdollLab
             {
                 foreach (var s in squares) { s.tile.Destroy(); s.box?.Destroy(); }
                 foreach (var w in wires) w.Destroy();
+                foreach (var pad in pads) pad.Destroy();
+                pads.Clear();
                 squares.Clear();
                 wires.Clear();
             }
