@@ -23,6 +23,10 @@ namespace ChessFight.PawnRush
 
         public int Painted => count;
 
+        // R127: the squares are a 6 mm sheet. They have no collider, so skill effects find the floor under them and lie
+        // 1.4-2 cm above it; the old 3 cm squares hid the queen's warning on this board.
+        const float Sheet = .006f;
+
         public static MgPaint Build(CourseBuilder b, MissionStation station)
         {
             var k = b.kit;
@@ -32,7 +36,7 @@ namespace ChessFight.PawnRush
                 for (int ix = 0; ix < N; ix++)
                 {
                     float x0 = -9f + ix * Cell, z0 = U0 + iz * Cell;
-                    var sq = b.Box("Square", MissionGames.V(x0 + .03f, 0f, z0 + .03f), MissionGames.V(x0 + Cell - .03f, .03f, z0 + Cell - .03f),
+                    var sq = b.Box("Square", MissionGames.V(x0 + .03f, 0f, z0 + .03f), MissionGames.V(x0 + Cell - .03f, Sheet, z0 + Cell - .03f),
                                    ((ix + iz) & 1) == 0 ? k.boardDark : k.boardLight, false, false);
                     squares[iz * N + ix] = sq.GetComponent<Renderer>();
                 }
@@ -40,6 +44,18 @@ namespace ChessFight.PawnRush
             game.station = station;
             game.squares = squares;
             return game;
+        }
+
+        // Scenes built before R127 still hold 3 cm squares: flatten them to the sheet.
+        void Awake()
+        {
+            foreach (var sq in squares)
+            {
+                if (sq == null) continue;
+                var t = sq.transform;
+                t.localScale = new Vector3(t.localScale.x, Sheet, t.localScale.z);
+                t.localPosition = new Vector3(t.localPosition.x, Sheet * .5f, t.localPosition.z);
+            }
         }
 
         static int SquareAt(Vector3 local)
