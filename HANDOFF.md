@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R79(사용자, 10-13): Unity CS0103 수정.** WeightedBridgeSurface 전용 타입 의존성 제거·파일/meta 삭제, 기존 ImportedMovingSurface의 BindDynamic으로 통합. 프리팹 표면 GUID 이전·힌지 물리 유지. 구조16·Core83·세션39·7개 런타임 컴파일 통과. 사용자 Unity 재컴파일 대기.
+
 > **R78(사용자, 10-13): 통합 기획 PDF·다리 실제 하중 물리.** 일반/기물 테마/혼합 코스 6쪽 초안 [PDF](Docs/KingRush/PAWN_RUSH_LEVEL_DESIGN.pdf). 끝 탑승 실패 재보고로 각도 판정 제거, 동적 판 Rigidbody·HingeJoint·스프링·질량·각속도 설정. 구조16·Core83·세션39·7개 런타임 컴파일 통과. **Unity/PhysX 재확인 필요**.
 
 > **R77(사용자, 10-12): 다리 끝/각도/연습맵 수정.** 실제 콜라이더 지지 판정·상대 이탈 속도·0.12초 여유. 바깥 15%에서 Maximum Tilt 적용(12°/인 제한 제거), 판 자식만 IMovingSurface 제공. 07 시험대는 크기에 따라 바닥/복귀점·회전 공간 자동 배치. 구조16·Core83·세션39·7개 런타임 컴파일 통과, Unity 대기.
@@ -90,6 +92,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **다리 Unity 참조 오류(R79)** | 기존 표면 컴포넌트에 통합, CS0103 의존성 제거. Unity 대기 |
 | **실제 하중 다리·통합 기획(R78)** | 힌지 물리 전환·일반/테마/혼합 코스 PDF. Unity 대기 |
 | **07 무게 다리 설정(R76)** | 루트 최대 기울기·타일 수, 격자/충돌 동기화. Unity 대기 |
 | **03·04 루트 Inspector(R75)** | 루트에서 SerializeField 조절, 자식 물체만 구동. Unity 대기 |
@@ -126,6 +129,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **다리 Unity 참조 오류(R79)** | 전용 타입 제거·기존 표면 바인딩 통합, 컴파일 검사 통과 | [상세](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **실제 하중 다리·통합 기획(R78)** | 동적 판·힌지·스프링 설정, 통합 기획 6쪽 PDF | [상세](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **다리 끝/각도/연습맵(R77)** | 지지 판정·각도/표면·07 씬 수정 | [상세](Docs/KingRush/OBSTACLE_RAGDOLL_TEST.md) |
 | **07 무게 다리 설정(R76)** | 타일 수로 확장·최대 기울기 조절, 자동 검사 통과·Unity 대기 | [설정](Docs/KingRush/OBSTACLE_CLASSES.md) |
@@ -163,6 +167,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R79:** 최신 main Pull 후 Unity CS0103 해결 확인, 07 힌지 물리 및 기존 이동 장애물 재확인.
 
 **R78:** 실제 하중 방식의 07 중앙/끝·양쪽 균형·상자·Return Spring 0/50/150·Maximum Tilt를 Unity에서 확인한다. PDF는 러프 기획으로 수치/규칙 확정 전이다.
 

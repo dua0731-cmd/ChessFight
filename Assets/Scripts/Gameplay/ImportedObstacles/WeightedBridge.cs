@@ -66,7 +66,8 @@ namespace ChessFight.ProtectKing
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             restRotation = Deck.localRotation;
-            WeightedBridgeSurface.Bind(body, this);
+            ImportedMovingSurface.BindDynamic(body, PointVelocity, () => DeltaRotation,
+                () => isActiveAndEnabled && (context == null || context.Running));
             hinge = body.GetComponent<HingeJoint>();
             if (hinge == null) hinge = body.gameObject.AddComponent<HingeJoint>();
             hinge.connectedBody = null;

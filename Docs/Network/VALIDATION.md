@@ -1,5 +1,14 @@
 # Network 구현 검증 기록
 
+## 2026-10-13 Unity CS0103 표면 참조 수정 (R79) — 사용자 재확인 대기
+
+사용자가 WeightedBridge.cs(69,13) CS0103: WeightedBridgeSurface 타입을 찾을 수 없다고 보고했다. 기존 ImportedMovingSurface에 동적 바인딩을 통합하고 전용 타입 의존성을 제거했다. 구조16·Core83·모의 세션39·7개 런타임 컴파일 통과.
+
+| 확인 | 기대 | 결과 |
+|---|---|---|
+| 최신 main Pull·Unity 재컴파일 | WeightedBridgeSurface 참조 오류 없음 | 미확인 |
+| 07 다리 Play·기존 이동 장애물 | 힌지 물리 운반 및 기존 시간 기반 표면 유지 | 미확인 |
+
 ## 2026-10-13 하중 다리 실제 물리 (R78) — 사용자 재확인 대기
 
 R77 사용자가 끝 탑승 판정 실패를 다시 보고했다. Rigidbody/HingeJoint의 실제 접촉 힘으로 전환, 판정 경로 제거. 구조16·Core83·세션39·7개 런타임 컴파일 통과. Unity/PhysX는 실행하지 않았다.

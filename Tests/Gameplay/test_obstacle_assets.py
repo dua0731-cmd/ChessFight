@@ -233,9 +233,12 @@ class ObstacleAssets(unittest.TestCase):
             self.assertGreater(float(values[field]), 0)
         support_id = re.search(r"fileID: (\d+)", values["centralSupport"])[1]
         self.assertTrue(records[support_id].startswith("--- !u!65"))
-        surface, = [b for b in records.values() if "::ChessFight.ProtectKing.WeightedBridgeSurface\n" in b]
+        surface, = [b for b in records.values() if "::ChessFight.ProtectKing.ImportedMovingSurface\n" in b]
         self.assertNotEqual(fields(surface)["m_GameObject"], values["m_GameObject"])
-        self.assertEqual(fields(surface)["bridge"], "{fileID: 5156753903950315353}")
+        guid = re.search(r"m_Script: .*guid: (\w+)", surface)[1]
+        self.assertEqual(self.scripts[guid], CODE / "ImportedMovingSurface.cs")
+        self.assertNotIn("WeightedBridgeSurface", source)
+        self.assertIn("ImportedMovingSurface.BindDynamic(body, PointVelocity", source)
 
     def test_bridge_practice_scene_has_clearance_and_resizing_fixture(self):
         records = blocks((ASSETS / "Scenes/ObstacleRagdollTest.unity").read_text())

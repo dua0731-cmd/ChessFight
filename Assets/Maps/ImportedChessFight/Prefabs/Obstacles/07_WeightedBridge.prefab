@@ -3725,7 +3725,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 7699430357540341203}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 541b5fa465a28d2d2ff60f2c618a3e3c, type: 3}
+  m_Script: {fileID: 11500000, guid: 20c4d8c3375567182c2910de5f7f788c, type: 3}
   m_Name:
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.WeightedBridgeSurface
-  bridge: {fileID: 5156753903950315353}
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ImportedMovingSurface
