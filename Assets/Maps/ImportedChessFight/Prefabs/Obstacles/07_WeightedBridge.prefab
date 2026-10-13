@@ -2825,7 +2825,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7699430357540341203}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 40
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -2839,11 +2839,11 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 3
 --- !u!114 &5156753903950315353
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2901,9 +2901,11 @@ MonoBehaviour:
   - {fileID: 8970488822442858728}
   - {fileID: 9059817806289888204}
   maximumTilt: 24
-  supportGrace: 0.12
-  tiltSpeed: 30
-  slideSpeed: 3
+  deckMass: 40
+  returnSpring: 150
+  returnDamper: 120
+  maximumAngularSpeed: 30
+  centralSupport: {fileID: 7562660048733483798}
 --- !u!1 &7778641596287095002
 GameObject:
   m_ObjectHideFlags: 0

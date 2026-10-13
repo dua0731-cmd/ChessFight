@@ -2,11 +2,11 @@ using ChessFight.Gameplay;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace ChessFight.ProtectKing
 {
-    // StateDrivenMover: tilted by the weight on its deck, not by ObstacleClock. Offline only
-    // until the host sends its angle (Docs/KingRush/MAP_IMPORT.md).
+    // StateDrivenMover: PhysX contact forces rotate a hinged deck. Remote peers follow the host angle.
     [ExecuteAlways, DefaultExecutionOrder(-100)]
     public sealed class WeightedBridge : Obstacle
     {
@@ -17,9 +17,11 @@ namespace ChessFight.ProtectKing
         [SerializeField, Range(1, 64), Tooltip("Number of tiles along the bridge.")] int tilesZ = 8;
         [SerializeField, Min(.1f), Tooltip("Side length of one square tile in metres, before root scale.")] float tileSize = 1.5f;
         [SerializeField, Min(.05f)] float deckThickness = .4f;
-        [SerializeField, Range(0f, .3f), Tooltip("Brief contact tolerance in seconds. Jumping or leaving the deck cancels it immediately.")] float supportGrace = .12f;
-        [SerializeField, Min(1f)] float tiltSpeed = 30f;
-        [SerializeField, Min(0f)] float slideSpeed = 3f;
+        [SerializeField, Min(1f), Tooltip("Mass of the deck in kilograms. Lower values react more strongly to a rider's weight.")] float deckMass = 40f;
+        [SerializeField, Min(0f), Tooltip("Spring torque returning the unloaded deck to level. Zero disables automatic return.")] float returnSpring = 150f;
+        [SerializeField, Min(0f), Tooltip("Damping of the return spring; increase it to reduce oscillation.")] float returnDamper = 120f;
+        [SerializeField, Min(1f), FormerlySerializedAs("tiltSpeed"), Tooltip("Angular speed cap in degrees per second.")] float maximumAngularSpeed = 30f;
+        [SerializeField, HideInInspector] Collider centralSupport;
         [SerializeField, HideInInspector] Rigidbody deckBody;
         [SerializeField, HideInInspector] Transform solidDeck;
         [SerializeField, HideInInspector] Transform leftStripe, rightStripe, entryRamp, exitRamp;
@@ -30,30 +32,26 @@ namespace ChessFight.ProtectKing
         Transform Deck => deckBody != null ? deckBody.transform : transform;
         Vector3 DeckSize => new Vector3(tilesX * tileSize, deckThickness, tilesZ * tileSize);
         public Vector3 Size => DeckSize;
-        public Quaternion DeltaRotation { get; private set; } = Quaternion.identity;
-        float angularSpeed;
+        bool Simulating => body != null && isActiveAndEnabled && (context == null || (context.Running && context.Authority));
+        Vector3 AngularVelocity => Simulating ? body.angularVelocity : remoteAngularVelocity;
+        public Quaternion DeltaRotation => !isActiveAndEnabled || (context != null && !context.Running) || AngularVelocity.sqrMagnitude < .000001f
+            ? Quaternion.identity : Quaternion.AngleAxis(AngularVelocity.magnitude * Time.fixedDeltaTime * Mathf.Rad2Deg, AngularVelocity.normalized);
         public Vector3 PointVelocity(Vector3 point)
         {
             if (!Application.isPlaying || body == null || !isActiveAndEnabled || (context != null && !context.Running)) return Vector3.zero;
-            Vector3 normal = body.rotation * Vector3.up;
-            Vector3 offset = point - body.position;
-            // Sample the supporting surface, rather than the upright hips above it.
+            Vector3 normal = body.rotation * Vector3.up, offset = point - body.position;
             offset -= normal * (Vector3.Dot(offset, normal) - DeckSize.y * .5f);
-            return Vector3.Cross(body.rotation * Vector3.forward * angularSpeed, offset);
+            return Simulating ? body.GetPointVelocity(body.position + offset) : Vector3.Cross(remoteAngularVelocity, offset);
         }
-        struct SupportSample { public float time; public Vector3 localPoint; }
-        readonly Dictionary<ImportedObstacleActor, SupportSample> supportSamples = new Dictionary<ImportedObstacleActor, SupportSample>();
-        readonly List<ImportedObstacleActor> expiredSupports = new List<ImportedObstacleActor>();
-        public float Angle { get; private set; }
+        public float Angle => hinge != null && Simulating ? hinge.angle : remotePoseAngle;
         public uint NetworkId { get; private set; }
-        public int RiderCount { get; private set; }
-        public Vector3 SlideVelocity => Vector3.ProjectOnPlane(Vector3.down, Deck.up) * slideSpeed;
         static readonly List<WeightedBridge> instances = new List<WeightedBridge>();
-        readonly Collider[] overlaps = new Collider[512];
-        readonly HashSet<ImportedObstacleActor> riders = new HashSet<ImportedObstacleActor>();
         Rigidbody body;
         Quaternion restRotation;
-        float remoteAngle, previousTime;
+        HingeJoint hinge;
+        bool physicsDirty = true;
+        float remoteAngle, remotePoseAngle;
+        Vector3 remoteAngularVelocity;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetRegistry() { instances.Clear(); }
@@ -63,10 +61,24 @@ namespace ChessFight.ProtectKing
             if (context == null) context = GetComponentInParent<ObstacleContext>();
             body = deckBody != null ? deckBody : GetComponent<Rigidbody>();
             if (body == null) body = gameObject.AddComponent<Rigidbody>();
-            body.isKinematic = true; body.useGravity = false;
+            body.useGravity = true;
+            body.solverIterations = 24; body.solverVelocityIterations = 12;
+            body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             restRotation = Deck.localRotation;
             WeightedBridgeSurface.Bind(body, this);
+            hinge = body.GetComponent<HingeJoint>();
+            if (hinge == null) hinge = body.gameObject.AddComponent<HingeJoint>();
+            hinge.connectedBody = null;
+            hinge.autoConfigureConnectedAnchor = false;
+            hinge.anchor = Vector3.zero; hinge.axis = Vector3.forward;
+            hinge.connectedAnchor = body.position;
+            hinge.useMotor = false;
+            body.centerOfMass = Vector3.zero;
+            var deckCollider = solidDeck != null ? solidDeck.GetComponent<Collider>() : null;
+            // The fixed pivot housing overlaps the deck centre; it is not a load on the board.
+            if (centralSupport != null && deckCollider != null) Physics.IgnoreCollision(centralSupport, deckCollider, true);
+            ApplyPhysicsSettings();
             // Identical saved hierarchy on host and clients yields an identical ID for each instance.
             uint hash = 2166136261;
             for (var t = Deck; t != null; t = t.parent)
@@ -83,9 +95,25 @@ namespace ChessFight.ProtectKing
             tilesX = Mathf.Clamp(tilesX, 1, 64); tilesZ = Mathf.Clamp(tilesZ, 1, 64);
             tileSize = Mathf.Max(.1f, tileSize); deckThickness = Mathf.Max(.05f, deckThickness);
             maximumTilt = Mathf.Clamp(maximumTilt, 0f, 80f);
-            geometryDirty = true;
+            geometryDirty = true; physicsDirty = true;
         }
         void Update() { if (geometryDirty) RefreshGeometry(); }
+        void ApplyPhysicsSettings()
+        {
+            if (body == null || hinge == null) return;
+            body.mass = Mathf.Max(1f, deckMass);
+            body.maxAngularVelocity = Mathf.Max(1f, maximumAngularSpeed) * Mathf.Deg2Rad;
+            var limits = hinge.limits; limits.min = -maximumTilt; limits.max = maximumTilt;
+            limits.bounciness = 0f; limits.contactDistance = .5f;
+            hinge.limits = limits; hinge.useLimits = true;
+            var spring = hinge.spring; spring.spring = Mathf.Max(0f, returnSpring);
+            spring.damper = Mathf.Max(0f, returnDamper); spring.targetPosition = 0f;
+            hinge.spring = spring; hinge.useSpring = returnSpring > 0f;
+            body.isKinematic = !Simulating;
+            body.ResetInertiaTensor();
+            if (!body.isKinematic) body.WakeUp();
+            physicsDirty = false;
+        }
         void OnDestroy()
         {
             if (generatedTiles == null) return;
@@ -93,7 +121,7 @@ namespace ChessFight.ProtectKing
         }
         void RefreshGeometry()
         {
-            geometryDirty = false;
+            geometryDirty = false; physicsDirty = true;
             if (solidDeck == null || tileMesh == null) return;
             Vector3 size = DeckSize;
             solidDeck.localScale = size; // The authored unit BoxCollider scales with the mesh.
@@ -137,66 +165,29 @@ namespace ChessFight.ProtectKing
             var position = ramp.localPosition; position.z = side * (size.z * .5f + 1.55f); ramp.localPosition = position;
             var scale = ramp.localScale; scale.x = size.x; ramp.localScale = scale;
         }
-        void OnDisable() { instances.Remove(this); riders.Clear(); supportSamples.Clear(); angularSpeed = 0f; DeltaRotation = Quaternion.identity; }
-        public float CalculateTarget()
+        void OnDisable()
         {
-            riders.Clear();
-            if (solidDeck == null || body == null) return 0f;
-            var support = solidDeck.GetComponent<BoxCollider>();
-            if (support == null) return 0f;
-            Vector3 size = DeckSize, scale = Deck.lossyScale;
-            var half = Vector3.Scale(new Vector3(size.x * .5f + .35f, 2f, size.z * .5f + .35f),
-                new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
-            int count = Physics.OverlapBoxNonAlloc(Deck.TransformPoint(new Vector3(0f, size.y * .5f + 1.5f, 0f)),
-                half, overlaps, body.rotation, ~0, QueryTriggerInteraction.Ignore);
-            Vector3 normal = body.rotation * Vector3.up;
-            float now = Time.time, weight = 0f;
-            for (int i = 0; i < count; i++)
-            {
-                var actor = ImportedObstacleActor.Find(overlaps[i]);
-                if (actor == null || !actor.CanReceiveObstacle || !riders.Add(actor)) continue;
-                Vector3 top = Deck.TransformPoint(Vector3.up * (size.y * .5f));
-                Vector3 projectedFeet = actor.Position - Vector3.up *
-                    (Vector3.Dot(actor.Position - top, normal) / Mathf.Max(.1f, normal.y));
-                Vector3 feet = Deck.InverseTransformPoint(projectedFeet);
-                bool inBounds = Mathf.Abs(feet.x) <= size.x * .5f + .35f && Mathf.Abs(feet.z) <= size.z * .5f + .35f;
-                Vector3 velocity = PointVelocity(actor.Position);
-                bool separating = Vector3.Dot(actor.Velocity - velocity, normal) > 2.5f;
-                Vector3 localPoint;
-                if (!separating && actor.TrySupport(support, normal, velocity, out var contact))
-                {
-                    localPoint = Deck.InverseTransformPoint(contact);
-                    supportSamples[actor] = new SupportSample { time = now, localPoint = localPoint };
-                }
-                else if (!separating && inBounds && supportSamples.TryGetValue(actor, out var sample) && now - sample.time <= supportGrace)
-                    localPoint = sample.localPoint;
-                else
-                {
-                    riders.Remove(actor); supportSamples.Remove(actor); continue;
-                }
-                // One player at either side reaches Maximum Tilt; it is not capped at the old 12 degrees.
-                weight += Mathf.Clamp(localPoint.x / Mathf.Max(.1f, size.x * .5f * .85f), -1f, 1f);
-            }
-            expiredSupports.Clear();
-            foreach (var pair in supportSamples) if (!riders.Contains(pair.Key)) expiredSupports.Add(pair.Key);
-            foreach (var actor in expiredSupports) supportSamples.Remove(actor);
-            RiderCount = riders.Count;
-            return -maximumTilt * Mathf.Clamp(weight, -1f, 1f);
+            instances.Remove(this); remoteAngularVelocity = Vector3.zero;
+            if (body != null) body.isKinematic = true;
+            physicsDirty = true;
         }
         void FixedUpdate()
         {
             if (!Application.isPlaying) return;
             if (body == null) Awake();
-            float oldAngle = Angle;
-            float time = context != null ? context.Elapsed : Time.time;
-            if (time < previousTime || (context != null && !context.Running)) { Angle = 0; remoteAngle = 0; }
-            else Angle = Mathf.MoveTowards(Angle, context == null || context.Authority ? CalculateTarget() : remoteAngle, tiltSpeed * Time.fixedDeltaTime);
-            previousTime = time;
-            angularSpeed = (Angle - oldAngle) * Mathf.Deg2Rad / Time.fixedDeltaTime;
-            DeltaRotation = Quaternion.AngleAxis(Angle - oldAngle, Deck.parent != null
-                ? Deck.parent.rotation * restRotation * Vector3.forward : restRotation * Vector3.forward);
-            var localRotation = restRotation * Quaternion.AngleAxis(Angle, Vector3.forward);
-            body.MoveRotation(Deck.parent != null ? Deck.parent.rotation * localRotation : localRotation);
+            bool simulate = Simulating;
+            if (physicsDirty || body.isKinematic == simulate) ApplyPhysicsSettings();
+            if (simulate || (context != null && !context.Running))
+            {
+                remoteAngularVelocity = Vector3.zero;
+                return; // Contact forces and the hinge own the authoritative pose.
+            }
+            float next = Mathf.MoveTowards(remotePoseAngle, remoteAngle, maximumAngularSpeed * Time.fixedDeltaTime);
+            Vector3 axis = Deck.parent != null ? Deck.parent.rotation * restRotation * Vector3.forward : restRotation * Vector3.forward;
+            remoteAngularVelocity = axis * ((next - remotePoseAngle) * Mathf.Deg2Rad / Time.fixedDeltaTime);
+            remotePoseAngle = next;
+            Quaternion local = restRotation * Quaternion.AngleAxis(next, Vector3.forward);
+            body.MoveRotation(Deck.parent != null ? Deck.parent.rotation * local : local);
         }
         public static void Capture(Scene scene, out uint[] ids, out float[] angles)
         {

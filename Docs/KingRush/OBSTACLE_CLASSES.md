@@ -50,7 +50,7 @@ classDiagram
 | 04 | 회전 해머 / `RotatingHammer` | `04_RotatingHammer` 루트 | Rotation Speed(°/초), Push Force, Lift, Hit Cooldown, Axis, Phase |
 | 05 | 승강 타일 / `RisingFallingTiles` | `Lift tile …` 각각 | Axis, Distance, Period, Phase |
 | 06 | 슬라이딩 벽 / `SlidingWall` | `Left/Right sliding wall` | Axis, Distance, Period, Phase, Strength, Lift, Hit Cooldown |
-| 07 | 하중 다리 / `WeightedBridge` | `07_WeightedBridge` 루트 | Maximum Tilt, Tiles X/Z, Tile Size, Deck Thickness, Support Grace 등 |
+| 07 | 하중 다리 / `WeightedBridge` | `07_WeightedBridge` 루트 | Maximum Tilt, Tiles X/Z, Tile Size, Deck Thickness, Deck Mass, Return Spring/Damper, Maximum Angular Speed |
 | 08 | 컨베이어 / `ConveyorChessboard` | `08_ConveyorChessboard` | Direction, Conveyor Speed, Belt Length, Belt Markers |
 | 09 | 체스 시계 문 / `ChessClockGate` | `Left/Right gate` | Axis, Distance, Period, Phase. `Clock hand`는 별도 회전 속도 |
 | 10 | 낙하 기물 / `FallingChessPiece` | `10_FallingChessPiece` | Drop Height, Warning/Fall/Shock/Rest Seconds, Shock Radius, Knockback, Lift |
@@ -157,3 +157,20 @@ WeightedBridgeSurface는 **Tilting deck 자식에만** IMovingSurface를 제공�
 `ObstacleRagdollTest`의 07번만 수정: 옆 바닥 시작점을 기존 ±3.1 m에서 기본 ±4 m로, 앞뒤 바닥을 길이 반값 +0.6 m 밖으로 옮겼다. 경사로는 판과 충돌 영역이 겹치지 않도록 간격을 조정했다. `WeightedBridgePracticeArea`가 타일 수/칸 크기/루트 배율에 따라 빈 공간과 바닥·복귀점을 다시 배치한다. 다른 14개 시험대는 유지했다.
 
 구조16·Core83·모의 세션39·7개 런타임 컴파일 통과. 표면 릴레이 위치·설정 이전·연습맵 여유 공간과 참조를 자동 검사했다. Unity/PhysX는 실행하지 않았으므로 실제 속도·끝 탑승·각도 도달·점프/낙하·Undo 실기는 재확인 필요하다.
+
+## R78 — 실제 하중·힌지 물리 방식 (2026-10-13)
+
+R77의 지지 판정 보정 후에도 사용자 실기에서 끝 탑승 판정이 끊겼다. 판정에 따라 각도를 계산하는 경로를 제거하고 실제 물리 접촉 힘으로 움직이는 방식으로 전환했다. Solid deck의 콜라이더가 자식 동적 Rigidbody(중력 사용)에 부착되어 있으며, HingeJoint가 판 중심 위치를 고정하고 로컬 Z축 회전만 허용한다. 캐릭터·물체가 누르는 위치와 힘이 기울기를 결정한다. Grounded/지지 캐스트/탑승 인원/접촉 여유로 목표 각도를 계산하지 않는다.
+
+07 루트 Inspector:
+
+- **Maximum Tilt**: HingeJoint Limits의 최대 ±각도(기본 24°). 실제 각도를 항상 최대치로 만드는 값은 아니다.
+- **Deck Mass**: 판 질량(기본 40 kg).
+- **Return Spring**: 수평 복귀 스프링 강도(기본 150), 0이면 자동 복귀 힘 없음. 더 쉽게 내려가게 하려면 낮춘다.
+- **Return Damper**: 복귀 시 흔들림을 줄이는 감쇠(기본 120).
+- **Maximum Angular Speed**: 각속도 상한(기본 30°/초). 기존 Tilt Speed 값 이전.
+- 타일 수·칸 크기·두께 설정과 연습맵 회전 공간 자동 배치는 유지한다.
+
+판과 겹치는 중앙 받침대 콜라이더는 판과의 충돌만 제외한다. 플레이어와 받침대의 충돌은 유지한다. Rigidbody 관성과 솔버 설정을 갱신하고 판 자식 WeightedBridgeSurface가 실제 GetPointVelocity를 전달한다. 호스트 각도 캡처/원격 추종 경로는 유지하되 기존 온라인 권한 연결 범위를 확장하지 않았다.
+
+구조16·Core83·모의 세션39·7개 런타임 컴파일 통과. 이는 실제 Unity/PhysX 시험이 아니다. 끝 탑승 유지·양쪽 균형·물체 하중·복귀 및 스프링 강도는 Unity에서 확인하고 조정해야 한다.

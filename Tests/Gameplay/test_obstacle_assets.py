@@ -214,24 +214,27 @@ class ObstacleAssets(unittest.TestCase):
         for field in ("tilesX", "tilesZ", "maximumTilt"):
             self.assertRegex(source, r"\[SerializeField,[^\]]+\]\s+(?:int|float) " + field)
 
-    def test_bridge_support_and_moving_surface_regressions(self):
+    def test_bridge_uses_contact_driven_hinge_and_only_deck_transports_riders(self):
         source = (CODE / "WeightedBridge.cs").read_text()
-        self.assertNotIn("Obstacle, IMovingSurface", source)
-        self.assertIn("WeightedBridgeSurface.Bind(body, this)", source)
-        self.assertIn("DefaultExecutionOrder(-100)", source)
-        self.assertNotIn("motor.Grounded", source)
-        self.assertNotIn("actor.Grounded", source)
-        self.assertNotIn("degreesPerPlayer", source)
-        self.assertIn("actor.TrySupport(support", source)
-        self.assertIn("return -maximumTilt * Mathf.Clamp(weight", source)
+        self.assertNotIn("CalculateTarget", source)
+        self.assertNotIn("TrySupport", source)
+        self.assertNotIn("OverlapBox", source)
+        self.assertIn("AddComponent<HingeJoint>()", source)
+        self.assertIn("hinge.useLimits = true", source)
+        self.assertIn("body.GetPointVelocity", source)
+        self.assertIn("Physics.IgnoreCollision(centralSupport, deckCollider, true)", source)
         prefab, = PREFABS.glob("07_*.prefab")
-        component, = [b for b in blocks(prefab.read_text()).values()
-                      if "::ChessFight.ProtectKing.WeightedBridge\n" in b]
-        self.assertEqual(float(fields(component)["supportGrace"]), .12)
-        self.assertNotIn("degreesPerPlayer", fields(component))
         records = blocks(prefab.read_text())
+        component, = [b for b in records.values() if "::ChessFight.ProtectKing.WeightedBridge\n" in b]
+        values = fields(component)
+        self.assertTrue({"supportGrace", "degreesPerPlayer", "tiltSpeed"}.isdisjoint(values))
+        self.assertEqual(float(values["deckMass"]), 40)
+        for field in ("returnSpring", "returnDamper", "maximumAngularSpeed"):
+            self.assertGreater(float(values[field]), 0)
+        support_id = re.search(r"fileID: (\d+)", values["centralSupport"])[1]
+        self.assertTrue(records[support_id].startswith("--- !u!65"))
         surface, = [b for b in records.values() if "::ChessFight.ProtectKing.WeightedBridgeSurface\n" in b]
-        self.assertNotEqual(fields(surface)["m_GameObject"], fields(component)["m_GameObject"])
+        self.assertNotEqual(fields(surface)["m_GameObject"], values["m_GameObject"])
         self.assertEqual(fields(surface)["bridge"], "{fileID: 5156753903950315353}")
 
     def test_bridge_practice_scene_has_clearance_and_resizing_fixture(self):
