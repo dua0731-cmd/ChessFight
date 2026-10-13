@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋) | 10-13 | R128 | (`skill-network-test`) 스킬 평가 기호 도장: Core `SkillGrades`(+시험 2개), `SkillKit/SkillGradeJudge`·`SkillGradeStamps`, `Resources/SkillGradeFx/SkillGrade.shader`, `SwordFightSkillFx.Grade`, 문서 Skills/GRADES·README, HANDOFF, REQUIREMENTS. 기존 파일은 시험 파일만 바뀜, 다른 채팅 미커밋 변경은 안 넣음 |
 | (이 커밋) | 10-13 | R122 | (`skill-network-test`) 퀸 오브 더 힐 나이트 소리 5개를 폰 러쉬 나이트 E "묵직한 말" 파일로(`KnightLock`←`KnightTurn`, `KnightLeap`, `KnightLand`, `KnightFlatten`←`KnightStomp`, `KnightFall`←`KnightDaze`), 문서(Skills/QUEEN_HILL·SOUND §R122, REQUIREMENTS, HANDOFF, HISTORY) |
 | `fd57f1d` | 10-11 | R123 | (`skill-network-test`) 5명 시험용 빌드 세 개 `SkillNet_PawnRush_1011c.zip`·`SkillNet_QueenOfTheHill_1011c.zip`·`SkillNet_SwordFight_1011c.zip`(`7eedc08`, v18) 이름을 HANDOFF·VALIDATION·SKILLS_ONLINE에 |
 | `7eedc08` | 10-11 | R123 | (`skill-network-test`) 문서: Network/SKILLS_ONLINE §15 R123(AI가 zip 그대로 다시 본 것·핑·방장 멈춤과 고친 것), VALIDATION R121 표(zip `_1011b`, 14 킹 F 받아내기·15 방장 멈춤), REQUIREMENTS R123, DECISIONS SK11, HANDOFF, HISTORY |
