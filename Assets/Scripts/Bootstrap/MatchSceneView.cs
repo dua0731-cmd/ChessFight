@@ -58,8 +58,8 @@ namespace ChessFight.Game
         void Update()
         {
             var session = runtime.Session;
-            // Esc that closes the chat (ChatBox) does not also leave the match.
-            if (!ChatBox.KeysHeld && LegacyKeys.Down(KeyCode.Escape)) session.Cancel();
+            // Esc that closes the chat (ChatBox) or the match sheet (VoiceHud) does not also leave the match.
+            if (!ChatBox.KeysHeld && !VoiceHud.EscapeHeld && LegacyKeys.Down(KeyCode.Escape)) session.Cancel();
 
             float dt = Time.unscaledDeltaTime;
             if (runtime.Motion != null) spawner.Sync(runtime.Motion.States, dt);

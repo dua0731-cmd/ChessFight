@@ -7,7 +7,7 @@ namespace ChessFight.Game
     // The menu's slab buttons (design C, Docs/Architecture/UI.md "버튼"): a plate
     // with clipped corners standing on a darker side a few pixels thick. Pressed,
     // it sinks onto the side; released, it springs back past its rest with a
-    // flash and a burst of light streaks. Gold is the one main action, ivory a
+    // flash (no ring or streaks since R135). Gold is the one main action, ivory a
     // confirmation, walnut secondary, red leave or cancel.
     //
     // Any element with the class "chunky" gets it (usually a Button); add
@@ -40,7 +40,6 @@ namespace ChessFight.Game
         }
 
         static readonly ConditionalWeakTable<VisualElement, State> states = new ConditionalWeakTable<VisualElement, State>();
-        static readonly Color[] Sparks = { Hex(0xFFE07A), Color.white, Hex(0xFFC66B), Hex(0x3CD0FF), Hex(0xFF6B7E) };
         static readonly Color Rim = new Color(217 / 255f, 174 / 255f, 98 / 255f, .4f);
 
         static Color Hex(int rgb) => PieceFigure.Hex(rgb);
@@ -79,7 +78,7 @@ namespace ChessFight.Game
         }
 
         // A flat control (a tab, a choice in a row of choices, a slider) with the
-        // same squash, pop and a smaller burst, but no plate.
+        // same squash and pop, but no plate.
         public static void Springy(VisualElement e)
         {
             if (e == null || states.TryGetValue(e, out _)) return;
@@ -108,12 +107,12 @@ namespace ChessFight.Game
             {
                 if (!s.Down) return;
                 s.Down = false;
-                Release(e, s, evt.position);
+                Release(e, s);
             }, TrickleDown.TrickleDown);
             e.RegisterCallback<PointerCaptureOutEvent>(_ => { if (s.Down) { s.Down = false; Retarget(e, s); } });
         }
 
-        // The release, from code: sink, spring, flash, streaks from the middle.
+        // The release, from code: sink, spring, flash.
         public static void Pulse(VisualElement e)
         {
             if (e == null || e.panel == null) return;
@@ -121,18 +120,17 @@ namespace ChessFight.Game
             if (!states.TryGetValue(e, out var s)) return;
             if (!s.Flat) s.Offset = Get(e).Depth - 1;
             s.Scale = s.Flat ? FlatPressedScale : PressedScale;
-            Release(e, s, e.worldBound.center);
+            Release(e, s);
         }
 
-        static void Release(VisualElement e, State s, Vector2 at)
+        static void Release(VisualElement e, State s)
         {
             s.Velocity = -420f;
             // Out of the squash and past the rest: about 6 % bigger at the peak.
             s.ScaleVelocity = s.Flat ? 3.4f : 2.6f;
-            // Settings → 접근성 → 번쩍임 줄이기 (R77): a faint flash and no streaks.
+            // Settings → 접근성 → 번쩍임 줄이기 (R77): a faint flash.
             s.Flash = GameSettings.ReduceFlash ? .3f : 1f;
             Retarget(e, s);
-            if (!GameSettings.ReduceFlash) Burst(e, at, s.Flat ? .55f : 1f);
         }
 
         static void Retarget(VisualElement e, State s)
@@ -282,83 +280,5 @@ namespace ChessFight.Game
 
         static Vertex Vert(Vector2 p, float y0, Color color) =>
             new Vertex { position = new Vector3(p.x, p.y + y0, Vertex.nearZ), tint = color };
-
-        // A flash, a ring and twelve streaks flying out from `at` (panel
-        // coordinates); `size` 1 for a slab button, smaller for a flat control.
-        static void Burst(VisualElement e, Vector2 at, float size)
-        {
-            var host = e.panel?.visualTree;
-            if (host == null) return;
-            var fx = new BurstFx(at, size);
-            host.Add(fx);
-        }
-
-        sealed class BurstFx : VisualElement
-        {
-            const float Life = .4f;
-            readonly float start = Time.unscaledTime, size;
-            readonly float[] angles = new float[12], reach = new float[12];
-
-            public BurstFx(Vector2 at, float size)
-            {
-                this.size = size;
-                pickingMode = PickingMode.Ignore;
-                style.position = Position.Absolute;
-                style.left = at.x;
-                style.top = at.y;
-                style.width = 0;
-                style.height = 0;
-                for (int i = 0; i < angles.Length; i++)
-                {
-                    angles[i] = i / 12f * Mathf.PI * 2 + Random.Range(-.25f, .25f);
-                    reach[i] = Random.Range(56f, 96f) * size;
-                }
-                generateVisualContent += Paint;
-                schedule.Execute(() =>
-                {
-                    if (Time.unscaledTime - start >= Life) RemoveFromHierarchy();
-                    else MarkDirtyRepaint();
-                }).Every(16);
-            }
-
-            void Paint(MeshGenerationContext context)
-            {
-                float t = Mathf.Clamp01((Time.unscaledTime - start) / Life);
-                float ease = 1 - Mathf.Pow(1 - t, 3);
-                var painter = context.painter2D;
-                painter.lineCap = LineCap.Round;
-                // A white pop where the click landed, gone in the first tenth of a second.
-                if (t < .3f)
-                {
-                    painter.fillColor = new Color(1f, .97f, .88f, .55f * (1 - t / .3f));
-                    painter.BeginPath();
-                    painter.Arc(Vector2.zero, (10f + 26f * ease) * size, new Angle(0f, AngleUnit.Degree), new Angle(360f, AngleUnit.Degree));
-                    painter.Fill();
-                }
-                float ring = 72f * size * Mathf.Min(1, t / .84f);
-                if (t < .84f)
-                {
-                    painter.lineWidth = 2.5f;
-                    painter.strokeColor = new Color(1f, .886f, .627f, .95f * (1 - t / .84f));
-                    painter.BeginPath();
-                    painter.Arc(Vector2.zero, ring, new Angle(0f, AngleUnit.Degree), new Angle(360f, AngleUnit.Degree));
-                    painter.Stroke();
-                }
-                painter.lineWidth = 3.5f * Mathf.Max(.7f, size);
-                for (int i = 0; i < angles.Length; i++)
-                {
-                    var dir = new Vector2(Mathf.Cos(angles[i]), Mathf.Sin(angles[i]));
-                    var head = dir * reach[i] * ease;
-                    float length = Mathf.Lerp(18f, 2f, ease) * Mathf.Max(.6f, size);
-                    var color = Sparks[i % Sparks.Length];
-                    color.a = 1 - .4f * t;
-                    painter.strokeColor = color;
-                    painter.BeginPath();
-                    painter.MoveTo(head - dir * length / 2);
-                    painter.LineTo(head + dir * length / 2);
-                    painter.Stroke();
-                }
-            }
-        }
     }
 }

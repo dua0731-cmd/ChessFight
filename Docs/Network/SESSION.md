@@ -100,6 +100,7 @@
 | `load` | 경기 member data | (v13) 경기 씬을 얼마나 불러왔는지 0~100. 처음, 10씩 오를 때, 100일 때만 다시 올림. 봇은 항상 100으로 친다(`SteamSession.LoadPercent`) |
 | `go` | 경기 | (v13) 모두 출발할 공유 Steam 시계 시각(초, 소수 셋째 자리). 방장(방 주인)이 모두 `load`=100이거나 자기 준비 뒤 20초가 지나면 "지금+1.5초"로 한 번만 쓴다(`MatchStart`, [UI §8](../Architecture/UI.md#8-로딩-화면-r58-2026-09-30)) |
 | `nick` | 파티·경기 member data | (R84, 프로토콜 그대로) 이름 설정 화면에서 고른 이름(`PlayerNames` 규칙에 맞는 2~12자, 없으면 빈 값). 방이 바뀌거나 이름이 바뀌면 다시 쓴다(`SteamSession.PublishNick`). 화면의 이름(`SteamSession.Name`)은 경기 방 → 파티 방의 `nick`, 둘 다 없거나 규칙에 안 맞으면 Steam 이름. 옛 빌드는 이 값을 몰라 Steam 이름을 보여 준다 → [UI §15](../Architecture/UI.md#15-시작-로고이름-설정-화면장면-전환-r84-2026-10-08) |
+| `vc` | 파티·경기 member data | (R131, 프로토콜 그대로) 음성 채팅을 켰으면 `1`, 껐으면 `0`. 방이 바뀌거나 설정이 바뀌면 다시 쓴다(`SteamSession.PublishVoice`). 다른 사람의 경기 명단(기보지)에 "음성 꺼짐"을 띄우는 데만 쓰고, 값이 없으면(옛 빌드) 켠 것으로 본다. 목소리 자체는 로비 데이터가 아니라 SteamNetworkingMessages **채널 40**으로 사람끼리 오간다(`SteamVoice`, 패킷 `CFV1`) → [UI §16](../Architecture/UI.md#16-음성-채팅-r131-2026-10-13) |
 | `phase` | 경기 | `waiting` / `playing` / `closed` |
 | `open` | 경기 | (v14) `1` = 지금 사람을 받는 방: 대기실, 또는 빈자리가 있고 받는 시간(4분) 안인 시작한 경기. 검색 필터 |
 | `ended` | 경기 | (v20, R125) `1` = 폰 러쉬 경기가 끝남(왕관 발판 과반, 방장 `EndMatch`). 그 뒤로는 빈자리가 있어도 `open`=0, 방이 닫힘. 새 방장도 이 값을 보고 그대로 둔다 |

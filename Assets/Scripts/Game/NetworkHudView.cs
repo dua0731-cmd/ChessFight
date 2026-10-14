@@ -109,6 +109,16 @@ namespace ChessFight.Game
         readonly List<LineupEntry> lineup = new List<LineupEntry>();
         readonly List<VisualElement> plates = new List<VisualElement>();
         readonly List<Button> inviteButtons = new List<Button>();
+        // Voice chat on the nameplates (R131): a loudspeaker before each member's name (party green
+        // while talking, red when I muted them), and a click on another member's plate opens a small
+        // menu with one button, 음소거 / 음소거 풀기 (kept on this PC, the other side never knows).
+        readonly List<ChessGlyphs.SpeakerMark> plateVoices = new List<ChessGlyphs.SpeakerMark>();
+        readonly List<VisualElement> plateRings = new List<VisualElement>(), plateRows = new List<VisualElement>();
+        VisualElement voiceMenu;
+        Button voiceMenuButton;
+        ChessGlyphs.SpeakerMark voiceMenuIcon;
+        Label voiceMenuName, voiceMenuText;
+        int voiceMenuIndex = -1;
 
         public bool IsTyping
         {
@@ -181,10 +191,14 @@ namespace ChessFight.Game
                 // button never responds and this never logs, the runtime input
                 // backend is the problem, not the layout or the enabled states.
                 if (!pointerSeen) { pointerSeen = true; Debug.Log("[ChessFight] HUD 포인터 입력 확인됨."); }
+                var target = evt.target as VisualElement;
+                // A click outside the nameplate menu closes it (its own plate toggles it instead).
+                if (voiceMenu != null && voiceMenuIndex >= 0 &&
+                    !(target != null && (target == voiceMenu || voiceMenu.Contains(target) || target.ClassListContains("plate-hit"))))
+                    CloseVoiceMenu();
                 // Clicking anywhere but the number field hands focus back, so the
                 // keyboard shortcuts work again.
                 if (code == null) return;
-                var target = evt.target as VisualElement;
                 if (target != code && (target == null || !code.Contains(target))) root.Focus();
             }, TrickleDown.TrickleDown);
 
@@ -230,6 +244,7 @@ namespace ChessFight.Game
 
             BuildModeList();
             BuildModeRail();
+            BuildVoiceMenu();
             Dress();
             // The chat (ChatBox, on the runtime) stays shut while the room-number
             // box or a picker is open.
@@ -474,6 +489,7 @@ namespace ChessFight.Game
             if (LegacyKeys.Down(KeyCode.Escape))
             {
                 if (SettingsWindow.IsOpen) SettingsWindow.Back();
+                else if (voiceMenuIndex >= 0) CloseVoiceMenu();
                 else if (Visible(modeModal)) Close(modeModal);
                 else if (Visible(codeModal)) Close(codeModal);
                 else if (Visible(friendsPanel)) Close(friendsPanel);
@@ -587,14 +603,19 @@ namespace ChessFight.Game
             foreach (var stale in inviteButtons) actions.Remove(stale);
             inviteButtons.Clear();
             plates.Clear();
+            plateVoices.Clear();
+            plateRings.Clear();
+            plateRows.Clear();
+            CloseVoiceMenu();
             lineupLayer.Clear();
             for (int i = 0; i < lineup.Count; i++)
             {
                 var entry = lineup[i];
-                var plate = entry.Invite ? InviteSpot() : Nameplate(entry);
+                var plate = entry.Invite ? InviteSpot() : Nameplate(entry, i);
                 plate.style.display = DisplayStyle.None;   // until placed
                 lineupLayer.Add(plate);
                 plates.Add(plate);
+                if (entry.Invite) { plateVoices.Add(null); plateRings.Add(null); plateRows.Add(null); }
             }
         }
 
@@ -609,7 +630,7 @@ namespace ChessFight.Game
             return true;
         }
 
-        static VisualElement Nameplate(LineupEntry entry)
+        VisualElement Nameplate(LineupEntry entry, int index)
         {
             var plate = new VisualElement { pickingMode = PickingMode.Ignore };
             plate.AddToClassList("plate");
@@ -623,10 +644,39 @@ namespace ChessFight.Game
                 crown.Add(new MenuMarks.CrownMark(Brass, Color.clear, 0f));
                 row.Add(crown);
             }
+            ChessGlyphs.SpeakerMark voice = null;
+            VisualElement ring = null;
+            if (!entry.Bot)
+            {
+                var holder = new VisualElement { pickingMode = PickingMode.Ignore };
+                holder.AddToClassList("plate-voice");
+                ring = new VisualElement { pickingMode = PickingMode.Ignore };
+                ring.AddToClassList("plate-voice-ring");
+                holder.Add(ring);
+                voice = new ChessGlyphs.SpeakerMark(PlateQuiet, 2.4f);
+                voice.AddToClassList("plate-voice-icon");
+                holder.Add(voice);
+                holder.style.display = DisplayStyle.None;   // until the voice runs
+                row.Add(holder);
+            }
             var name = new Label(entry.Name) { pickingMode = PickingMode.Ignore };
             name.AddToClassList("plate-name");
             row.Add(name);
             plate.Add(row);
+            plateVoices.Add(voice);
+            plateRings.Add(ring);
+            plateRows.Add(row);
+            // Another person's plate opens the mute menu; mine and the bots' do nothing.
+            if (!entry.Me && !entry.Bot && entry.Id != 0)
+            {
+                var hit = new Button { focusable = false };
+                hit.AddToClassList("plate-hit");
+                Action open = () => ToggleVoiceMenu(index);
+                hit.clicked += open;
+                actions[hit] = open;
+                inviteButtons.Add(hit);
+                row.Add(hit);
+            }
             if (!string.IsNullOrEmpty(entry.Tag))
             {
                 var tag = new Label(entry.Tag) { pickingMode = PickingMode.Ignore };
@@ -669,6 +719,107 @@ namespace ChessFight.Game
                 plates[i].style.left = at.x - (invite ? 60f : 100f);
                 plates[i].style.top = at.y - (invite ? 27f : 64f);
             }
+            for (int i = 0; i < plateVoices.Count && i < lineup.Count; i++) DrawVoice(i);
+            PlaceVoiceMenu();
+        }
+
+        // ---------- voice on the nameplates (R131) ----------
+
+        static readonly Color PlateQuiet = new Color(239 / 255f, 228 / 255f, 204 / 255f, .5f);
+
+        void DrawVoice(int i)
+        {
+            var mark = plateVoices[i];
+            if (mark == null) return;
+            var holder = mark.parent;
+            bool running = VoiceBoard.Running;
+            holder.style.display = running ? DisplayStyle.Flex : DisplayStyle.None;
+            var row = plateRows[i];
+            if (!running) { row.style.borderTopColor = row.style.borderBottomColor = row.style.borderLeftColor = row.style.borderRightColor = StyleKeyword.Null; return; }
+            var entry = lineup[i];
+            bool muted = !entry.Me && VoiceBoard.IsMuted(entry.Id);
+            var channel = VoiceChannel.Party;
+            bool talking = !muted && VoiceBoard.IsTalking(entry.Id, out channel);
+            var color = talking ? VoiceBoard.ColorOf(channel) : muted ? VoiceBoard.MutedColor : PlateQuiet;
+            mark.Set(muted ? ChessGlyphs.SpeakerMark.Look.Muted : talking ? ChessGlyphs.SpeakerMark.Look.Talking : ChessGlyphs.SpeakerMark.Look.Quiet, color);
+            // A ring that keeps spreading from the loudspeaker while they talk, and the plate's edge in their colour.
+            var ring = plateRings[i];
+            float t = Time.unscaledTime / 1.1f % 1f;
+            ring.style.display = talking ? DisplayStyle.Flex : DisplayStyle.None;
+            if (talking)
+            {
+                ring.style.scale = new Scale(Vector3.one * Mathf.Lerp(.7f, 1.7f, t));
+                ring.style.opacity = .9f * (1f - t);
+                ring.style.borderTopColor = ring.style.borderBottomColor = ring.style.borderLeftColor = ring.style.borderRightColor = color;
+            }
+            StyleColor edge = talking ? color : muted ? new Color(VoiceBoard.MutedColor.r, VoiceBoard.MutedColor.g, VoiceBoard.MutedColor.b, IntroFlowStyle.Light(.6f))
+                                                      : (StyleColor)StyleKeyword.Null;
+            row.style.borderTopColor = row.style.borderBottomColor = row.style.borderLeftColor = row.style.borderRightColor = edge;
+        }
+
+        void BuildVoiceMenu()
+        {
+            voiceMenu = new VisualElement { pickingMode = PickingMode.Position };
+            voiceMenu.AddToClassList("plate-menu");
+            voiceMenuName = new Label { pickingMode = PickingMode.Ignore, enableRichText = false };
+            voiceMenuName.AddToClassList("plate-menu-name");
+            voiceMenu.Add(voiceMenuName);
+            voiceMenuButton = new Button { focusable = false };
+            voiceMenuButton.AddToClassList("plate-menu-btn");
+            voiceMenuIcon = new ChessGlyphs.SpeakerMark(PieceFigure.Hex(0xEFE4CC), 2.4f);
+            voiceMenuIcon.AddToClassList("plate-menu-icon");
+            voiceMenuButton.Add(voiceMenuIcon);
+            voiceMenuText = new Label("음소거") { pickingMode = PickingMode.Ignore };
+            voiceMenuText.AddToClassList("plate-menu-text");
+            voiceMenuButton.Add(voiceMenuText);
+            Action toggle = () =>
+            {
+                if (voiceMenuIndex >= 0 && voiceMenuIndex < lineup.Count) VoiceBoard.ToggleMuted(lineup[voiceMenuIndex].Id);
+                CloseVoiceMenu();
+            };
+            voiceMenuButton.clicked += toggle;
+            actions[voiceMenuButton] = toggle;
+            voiceMenu.Add(voiceMenuButton);
+            root.Add(voiceMenu);
+            Show(voiceMenu, false);
+        }
+
+        void ToggleVoiceMenu(int index)
+        {
+            if (voiceMenu == null || index < 0 || index >= lineup.Count) return;
+            if (voiceMenuIndex == index) { CloseVoiceMenu(); return; }
+            voiceMenuIndex = index;
+            var entry = lineup[index];
+            bool muted = VoiceBoard.IsMuted(entry.Id);
+            voiceMenuName.text = entry.Name;
+            voiceMenuText.text = muted ? "음소거 풀기" : "음소거";
+            voiceMenuButton.EnableInClassList("plate-menu-btn-on", muted);
+            voiceMenuIcon.Set(muted ? ChessGlyphs.SpeakerMark.Look.Quiet : ChessGlyphs.SpeakerMark.Look.Muted,
+                              muted ? PieceFigure.Hex(0x1A1410) : PieceFigure.Hex(0xEFE4CC));
+            Show(voiceMenu, true);
+            voiceMenu.BringToFront();
+            PlaceVoiceMenu();
+        }
+
+        void CloseVoiceMenu()
+        {
+            voiceMenuIndex = -1;
+            Show(voiceMenu, false);
+        }
+
+        // Centred just above the plate it belongs to, which moves with the camera: clear of my own plate
+        // in the middle and of the game-mode list on the right.
+        void PlaceVoiceMenu()
+        {
+            if (voiceMenu == null || voiceMenuIndex < 0) return;
+            if (voiceMenuIndex >= plateRows.Count || plateRows[voiceMenuIndex] == null || !VoiceBoard.Running) { CloseVoiceMenu(); return; }
+            var box = plateRows[voiceMenuIndex].worldBound;
+            if (box.width <= 0) return;
+            var top = root.WorldToLocal(new Vector2(box.center.x, box.yMin));
+            float width = voiceMenu.layout.width > 0 ? voiceMenu.layout.width : 130f;
+            float height = voiceMenu.layout.height > 0 ? voiceMenu.layout.height : 66f;
+            voiceMenu.style.left = top.x - width * .5f;
+            voiceMenu.style.top = Mathf.Max(70f, top.y - height - 6f);
         }
 
         // ---------- mode picker ----------

@@ -261,6 +261,38 @@ namespace ChessFight.Network
                 nickMatch = Match; nickMatchValue = localName;
             }
         }
+        // Voice chat (R131, SteamVoice): whether this player has it on, published as member data "vc" of
+        // the party and the match room, so the others' match sheets can say "음성 꺼짐". Nothing
+        // published (an older build) reads as on.
+        public bool VoiceOn { get => voiceOn; set => voiceOn = value; }
+        public bool VoiceOff(ulong id)
+        {
+            if (id == 0 || BotIdentity.IsBot(id)) return false;
+            if (id == Self) return !voiceOn;
+            string value = MemberData(Match, id, "vc");
+            if (value == "") value = MemberData(Party, id, "vc");
+            return value == "0";
+        }
+        bool voiceOn = true;
+        string voicePartyValue = "", voiceMatchValue = "";
+        ulong voiceParty, voiceMatch;
+
+        void PublishVoice()
+        {
+            string value = voiceOn ? "1" : "0";
+            if (Party == 0) voiceParty = 0;
+            else if (Party != voiceParty || voicePartyValue != value)
+            {
+                SteamMatchmaking.SetLobbyMemberData(Id(Party), "vc", value);
+                voiceParty = Party; voicePartyValue = value;
+            }
+            if (Match == 0) voiceMatch = 0;
+            else if (Match != voiceMatch || voiceMatchValue != value)
+            {
+                SteamMatchmaking.SetLobbyMemberData(Id(Match), "vc", value);
+                voiceMatch = Match; voiceMatchValue = value;
+            }
+        }
         public ulong[] PartyMembers => Party == 0 ? Array.Empty<ulong>() : Members(Party).OrderBy(x => x).ToArray();
         static ulong Owner(ulong lobby) => lobby == 0 ? 0 : SteamMatchmaking.GetLobbyOwner(Id(lobby)).m_SteamID;
         static string Data(ulong lobby, string key) => lobby == 0 ? "" : SteamMatchmaking.GetLobbyData(Id(lobby), key);
@@ -420,6 +452,7 @@ namespace ChessFight.Network
             PollParty();
             if (Match != 0) PollMatch(now);
             PublishNick();
+            PublishVoice();
             PublishPlaying();
             FollowChat();
             UpdatePresence();

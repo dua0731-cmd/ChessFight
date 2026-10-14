@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Voice chat in a match (R131, Docs/Architecture/UI.md "음성 채팅"): who is talking, top left, and
+         the match sheet (기보지, P) in the middle. VoiceHud builds the rows and looks up both names;
+         the sheet's walnut box is a texture (VoiceArt) and its parts sit on its rules
+         (Resources/VoiceChat.uss). Design: https://claude.ai/artifact/PjSVtsSE9KyU8c2C2uafU6 -->
+    <ui:VisualElement name="vh" class="vh-screen" picking-mode="Ignore">
+        <ui:VisualElement name="vh-talkers" class="vh-talkers" picking-mode="Ignore" />
+        <ui:VisualElement name="vh-sheet" class="vh-sheet" picking-mode="Position" />
+    </ui:VisualElement>
+</ui:UXML>

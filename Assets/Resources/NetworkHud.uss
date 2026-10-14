@@ -229,6 +229,26 @@
 .plate-name { font-size: 17px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(255, 243, 218); white-space: nowrap; }
 .plate-tag { margin-top: 5px; font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(217, 174, 98);
              text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); white-space: nowrap; }
+/* Voice chat on the nameplates (R131): the loudspeaker before the name, its spreading ring while the
+   member talks, the invisible button over another member's plate, and its one-button mute menu. */
+.plate-voice { width: 17px; height: 17px; margin-right: 8px; }
+.plate-voice-icon { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.plate-voice-ring { position: absolute; left: -3px; top: -3px; right: -3px; bottom: -3px; border-width: 2px; border-radius: 12px;
+                    border-color: rgba(0, 0, 0, 0); }
+.plate-hit { position: absolute; left: 0; top: 0; right: 0; bottom: 0; margin: 0; padding: 0; border-width: 0; border-radius: 0;
+             background-color: rgba(0, 0, 0, 0); }
+.plate-hit:hover { background-color: rgba(255, 243, 218, 0.012); }
+.plate-menu { position: absolute; padding: 5px; border-radius: 6px; border-width: 1px; border-color: rgb(14, 8, 5);
+              background-color: rgb(52, 34, 21); }
+.plate-menu-name { padding: 3px 8px 6px 8px; font-size: 12px; -unity-font-style: bold; color: rgb(191, 174, 142); white-space: nowrap; }
+.plate-menu-btn { flex-direction: row; align-items: center; height: 32px; margin: 0; padding: 0 14px 0 11px; border-width: 0; border-radius: 4px;
+                  background-color: rgb(26, 20, 16); }
+.plate-menu-btn:hover { background-color: rgb(42, 32, 25); }
+.plate-menu-btn-on { background-color: rgb(239, 228, 204); }
+.plate-menu-btn-on:hover { background-color: rgb(250, 242, 226); }
+.plate-menu-icon { width: 15px; height: 15px; margin-right: 8px; }
+.plate-menu-text { font-size: 13px; -unity-font-style: bold; color: rgb(239, 228, 204); white-space: nowrap; }
+.plate-menu-btn-on .plate-menu-text { color: rgb(26, 20, 16); }
 .invite-spot { position: absolute; width: 120px; align-items: center; }
 .invite-plus { width: 54px; height: 54px; border-radius: 27px; border-width: 2px; border-color: rgb(231, 190, 114); padding: 0;
                font-size: 32px; color: rgb(255, 230, 184); background-color: rgba(255, 190, 100, 0.16); -unity-text-align: middle-center;
@@ -358,6 +378,12 @@
 .s2-meter-on { background-color: rgb(255, 201, 61); }
 .s2-meter-hot { background-color: rgb(232, 56, 76); }
 .s2-test { width: auto; padding: 0 10px; font-size: 12px; }
+
+/* The voice chat page (R131): the threshold slider's rail fills with the live microphone level,
+   dim below the knob and gold once it passes; a microphone problem shows as a note. */
+.s2-level { background-color: rgba(255, 243, 218, 0.3); }
+.s2-level-go { background-color: rgb(255, 201, 61); }
+.s2-mic-note { flex-grow: 1; padding-left: 8px; -unity-text-align: middle-left; font-size: 12px; color: rgb(185, 165, 140); white-space: nowrap; }
 
 .s2-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 46px; padding: 0 28px; align-items: center;
            background-color: rgba(20, 12, 7, 0.92); border-top-width: 1px; border-color: rgba(217, 174, 98, 0.25); }

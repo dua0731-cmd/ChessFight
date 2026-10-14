@@ -902,6 +902,81 @@ public static class NetworkCoreTests
                 string current = PlayerNames.Suggestions[0];
                 for (int i = 0; i < 200; i++) { string next = PlayerNames.Suggest(current, random); Check(next != current, "repeated"); current = next; }
                 Check(PlayerNames.Suggest("체스러버", null) != "체스러버", "any other name"); });
+            Test("Voice packet: round trip, and anything else is refused", () => {
+                var voice = new byte[] { 9, 8, 7, 6, 5 };
+                var b = VoiceWire.Encode(VoiceChannel.Team, 150, 65535, voice, voice.Length);
+                Check(b.Length == VoiceWire.HeaderBytes + 5, "size");
+                VoiceChannel ch; int gain, at, len; ushort seq;
+                Check(VoiceWire.TryDecode(b, b.Length, out ch, out gain, out seq, out at, out len), "decode");
+                Check(ch == VoiceChannel.Team && gain == 150 && seq == 65535 && at == VoiceWire.HeaderBytes && len == 5 && b[at + 4] == 5, "fields");
+                Check(VoiceWire.Encode(VoiceChannel.Party, 999, 1, voice, 5)[5] == VoiceWire.MaxGain, "gain capped");
+                var bad = (byte[])b.Clone(); bad[0] ^= 1; Check(!VoiceWire.TryDecode(bad, bad.Length, out ch, out gain, out seq, out at, out len), "magic");
+                bad = (byte[])b.Clone(); bad[4] = 2; Check(!VoiceWire.TryDecode(bad, bad.Length, out ch, out gain, out seq, out at, out len), "channel");
+                Check(!VoiceWire.TryDecode(b, VoiceWire.HeaderBytes, out ch, out gain, out seq, out at, out len), "no voice");
+                int big = VoiceWire.HeaderBytes + VoiceWire.MaxPayload + 1;
+                Check(!VoiceWire.TryDecode(new byte[big], big, out ch, out gain, out seq, out at, out len), "too big");
+                Check(VoiceWire.Newer(1, 65535) && !VoiceWire.Newer(65535, 1) && !VoiceWire.Newer(5, 5), "sequence wraps"); });
+            Test("Voice channels: the party when someone else is in it, the team otherwise, the pick when it can be used", () => {
+                Check(VoiceRules.Default(true) == VoiceChannel.Party && VoiceRules.Default(false) == VoiceChannel.Team, "default rule");
+                Check(VoiceRules.Resolve(null, true, true, true) == VoiceChannel.Party, "party first with a party");
+                Check(VoiceRules.Resolve(null, false, true, false) == VoiceChannel.Team, "alone: the team");
+                Check(VoiceRules.Resolve(VoiceChannel.Team, true, true, true) == VoiceChannel.Team, "picked the whole team");
+                Check(VoiceRules.Resolve(VoiceChannel.Party, false, true, false) == VoiceChannel.Team, "the party left: the team");
+                Check(VoiceRules.Resolve(null, true, false, true) == VoiceChannel.Party && VoiceRules.Resolve(VoiceChannel.Team, true, false, true) == VoiceChannel.Party, "lobby: the party");
+                Check(VoiceRules.Resolve(null, false, false, false) == null, "nobody to talk to"); });
+            Test("Voice heard only from the party or a teammate, and only in a channel I am in", () => {
+                Check(VoiceRules.Hear(VoiceChannel.Party, true, false, true, true), "party member");
+                Check(!VoiceRules.Hear(VoiceChannel.Party, false, true, true, true), "a teammate cannot speak as party");
+                Check(VoiceRules.Hear(VoiceChannel.Team, false, true, true, true), "teammate");
+                Check(!VoiceRules.Hear(VoiceChannel.Team, true, false, true, true), "the other team, even a party friend");
+                Check(!VoiceRules.Hear(VoiceChannel.Party, true, true, false, true) && !VoiceRules.Hear(VoiceChannel.Team, true, true, true, false), "channel left");
+                Check(VoiceRules.Label(VoiceChannel.Party) == "파티" && VoiceRules.Label(VoiceChannel.Team) == "팀", "labels"); });
+            Test("Voice level: -60 dB and below is 0, full scale 1; 16-bit PCM measured", () => {
+                Check(VoiceLevel.FromRms(0) == 0 && VoiceLevel.FromRms(double.NaN) == 0 && VoiceLevel.FromRms(.0005) == 0, "floor");
+                Check(Math.Abs(VoiceLevel.FromRms(1) - 1) < 1e-6 && Math.Abs(VoiceLevel.FromRms(.031623) - .5f) < .01, "scale");
+                var pcm = new byte[400];
+                for (int i = 0; i < 200; i++) { short s = (short)(i % 2 == 0 ? 16384 : -16384); pcm[2 * i] = (byte)s; pcm[2 * i + 1] = (byte)(s >> 8); }
+                Check(Math.Abs(VoiceLevel.Rms(pcm, pcm.Length) - .5) < 1e-6 && VoiceLevel.Rms(pcm, 1) == 0 && VoiceLevel.Rms(null, 4) == 0, "rms"); });
+            Test("Voice activation opens at the threshold and holds a moment after", () => {
+                var g = new VoiceGate();
+                Check(!g.Update(0, .2f, .3f), "quiet");
+                Check(g.Update(1, .31f, .3f), "loud opens");
+                Check(g.Update(1 + VoiceGate.Hold - .01, .1f, .3f), "held after");
+                Check(!g.Update(1 + VoiceGate.Hold + .01, .1f, .3f), "then closes");
+                g.Update(5, .9f, .3f); g.Reset(); Check(!g.Open && !g.Update(5.01, 0f, .3f), "reset"); });
+            Test("Voice mutes: kept as Steam IDs, junk ignored, capped", () => {
+                var m = VoiceMuteList.Parse(" 76561198000000001, x, 76561198000000003,,76561198000000001");
+                Check(m.Count == 2 && m.Contains(76561198000000001) && m.Contains(76561198000000003), "parse");
+                Check(m.Format() == "76561198000000001,76561198000000003", "format sorted");
+                Check(m.Set(5, true) && !m.Set(5, true) && m.Set(5, false) && !m.Set(5, false) && !m.Set(0, true), "set");
+                Check(VoiceMuteList.Parse(null).Count == 0 && VoiceMuteList.Parse("").Format() == "", "empty");
+                var full = new VoiceMuteList();
+                for (ulong id = 1; id <= VoiceMuteList.Capacity + 10; id++) full.Set(id, true);
+                Check(full.Count == VoiceMuteList.Capacity, "capped"); });
+            Test("Voice stream: waits for its cushion, resamples, drops the oldest past the limit, refills after running dry", () => {
+                var s = new VoiceStream(8000, .05, .2);   // 400 samples to start, 1600 at most
+                var pcm = new byte[600];   // 300 samples of 0.5
+                for (int i = 0; i < 300; i++) { pcm[2 * i] = 0; pcm[2 * i + 1] = 0x40; }
+                s.Write(pcm, pcm.Length, 1f, 0);
+                var stereo = new float[200];   // 100 stereo frames
+                Check(s.Read(stereo, 100, 2, 1, 1f) == 0 && stereo[0] == 0f, "silent until primed");
+                s.Write(pcm, pcm.Length, 1f, 0);   // 600 waiting now
+                Check(s.Read(stereo, 100, 2, 1, 1f) == 100 && Math.Abs(stereo[0] - .5f) < 1e-4 && stereo[0] == stereo[1], "plays, both channels");
+                Check(s.Buffered == 500, "a hundred taken");
+                var mono = new float[100];
+                Check(s.Read(mono, 100, 1, .5, 1f) == 100 && s.Buffered == 450, "half speed takes half as many");
+                for (int i = 0; i < 10; i++) s.Write(pcm, pcm.Length, 1f, 1);
+                Check(s.Buffered == 1600, "capped at the limit");
+                var lots = new float[2000];
+                Check(s.Read(lots, 2000, 1, 1, 1f) < 2000 && !s.Playing, "ran dry");
+                s.Write(pcm, pcm.Length, 2f, 2);
+                Check(s.Read(mono, 10, 1, 1, 1f) == 0, "waits for the cushion again");
+                s.Write(pcm, pcm.Length, 2f, 2);
+                Check(s.Read(mono, 10, 1, 1, 1f) == 10, "and plays again");
+                s.Clear(); Check(s.Buffered == 0 && !s.Playing, "clear");
+                var loud = new VoiceStream(8000, .001, .2);   // starts at once
+                loud.Write(pcm, pcm.Length, 4f, 0);
+                Check(loud.Read(mono, 1, 1, 1, .5f) == 1 && Math.Abs(mono[0] - .5f) < 1e-4, "gain clipped to 1, then volume"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

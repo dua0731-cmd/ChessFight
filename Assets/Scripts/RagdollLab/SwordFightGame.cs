@@ -125,14 +125,16 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             if (Automated) return;
-            if (UiWantsCursor != cursorWanted)
+            // The match sheet (VoiceHud, R131) frees the mouse like the HUD's own panels.
+            bool wants = UiWantsCursor || GameSettings.PointerTaken;
+            if (wants != cursorWanted)
             {
-                cursorWanted = UiWantsCursor;
+                cursorWanted = wants;
                 waitForAttackRelease = true;
                 RefreshCursor();
             }
-            // While the network chat is open (ChatBox) its Esc closes the chat, not the menu.
-            if (!ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.Escape)) SetMenu(!MenuOpen);
+            // While the network chat or the match sheet is open its Esc closes it, not the menu.
+            if (!ChatBox.KeysHeld && !VoiceHud.EscapeHeld && Input.GetKeyDown(KeyCode.Escape)) SetMenu(!MenuOpen);
             if (!Finished && !ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
             if (!Networked && !Finished && Local != null) Local.SetInput(ReadLocalInput());
             if (Finished) RefreshCursor();
@@ -188,7 +190,7 @@ namespace ChessFight.RagdollLab
         { MenuOpen = open; waitForAttackRelease = true; if (open) ResetSwordLook(); RefreshCursor(); }
         void RefreshCursor()
         {
-            bool free = MenuOpen || Finished || Automated || UiWantsCursor;
+            bool free = MenuOpen || Finished || Automated || UiWantsCursor || GameSettings.PointerTaken;
             Cursor.lockState = free ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = free;
         }
         void Exit()

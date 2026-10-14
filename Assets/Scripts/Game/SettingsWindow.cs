@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Network;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,7 +15,8 @@ namespace ChessFight.Game
     // Design sample: https://claude.ai/artifact/C7WFSCyXfVj6wLX4zDRw4g (Settings2).
     //
     // Lines marked "준비 중" are saved but nothing in the game reads them yet
-    // (voice chat, controller, name tags...).
+    // (controller, name tags...). The 음성 채팅 page (R131) uses the same lines, plus
+    // GateLine (the voice-activated threshold over the live level) and MicLine.
     //
     // The screens own the Esc key: IntroController and NetworkHudView call
     // Toggle/Back. Back closes an open list, then calls off a key being bound,
@@ -34,6 +36,13 @@ namespace ChessFight.Game
         public static bool IsOpen => current != null;
         // The Steam name for the top bar; the runtime sets it (null: offline).
         public static Func<string> Identity;
+        // Voice chat (R131): the runtime's microphone level (0..1, null without Steam) and why it is
+        // silent ("" when fine). While the 음성 채팅 page is open the voice keeps the microphone running
+        // for the meters (VoicePageOpen), and plays my own voice back while VoiceEcho is on.
+        public static Func<float> VoiceLevel;
+        public static Func<string> VoiceProblem;
+        public static bool VoicePageOpen { get; private set; }
+        public static bool VoiceEcho { get; private set; }
 
         PanelSettings ownedPanel;
         VisualElement root, tabsBox, subsBox, view, content, bar, thumb, layer;
@@ -86,6 +95,8 @@ namespace ChessFight.Game
             public string Label, Desc;
             public bool Indent, Soon;
             public Action Reset;
+            // Shown only while this holds (null: always).
+            public Func<bool> When;
         }
 
         // ‹ value › (Drop: a drop-down list instead).
@@ -107,6 +118,9 @@ namespace ChessFight.Game
 
         sealed class Keys : Item { public GameKey Key; }
         sealed class MicTest : Item { }
+
+        // The voice-activated threshold (R131): a slider whose rail also shows the live microphone level.
+        sealed class Gate : Item { }
 
         sealed class Section { public string Title, Note; public Item[] Items; }
         sealed class Page { public string Name; public Section[] Sections; }
@@ -145,8 +159,44 @@ namespace ChessFight.Game
 
         static string Percent(float v) => Mathf.RoundToInt(v) + "%";
 
+        static Item[] VoiceItems(out string note)
+        {
+            note = VoiceLevel == null ? "Steam에 연결되면 들어가요 · 지금은 저장만" : "Steam 음성 · 파티와 팀";
+            return new Item[]
+            {
+                Switch("vcon", "음성 채팅", true, "끄면 듣지도 말하지도 않아요."),
+                Switch("vcparty", "파티 음성 자동 참여", true, "파티에 들어가면 파티원과 바로 이어져요. 로비에서도, 경기 중에도."),
+                Switch("vcteam", "팀 음성 자동 참여", true,
+                       "경기 방에 들어가면 같은 팀과 이어져요. 파티가 없으면 팀 전체에게, 파티가 있으면 파티에게 말해요(경기 중 P 기보지에서 바꿔요). 상대 팀 목소리는 들리지 않아요."),
+            };
+        }
+
+        static Item[] TalkItems() => new Item[]
+        {
+            Pick("vcmode", "마이크 켜기", new[] { "누르고 말하기", "자동으로 켜지기" }, 0,
+                 "누르고 말하기는 아래 키를 누르는 동안만, 자동으로 켜지기는 말소리가 기준을 넘을 때 내 목소리가 나가요."),
+            new Keys
+            {
+                Key = GameKey.Talk, Label = "누르고 말하기 키", Desc = "누르는 동안 내 목소리가 나가요.",
+                Reset = () => GameSettings.ResetKeys(new[] { GameKey.Talk }), When = () => GameSettings.PushToTalk,
+            },
+            new Gate
+            {
+                Label = "켜지는 크기", When = () => !GameSettings.PushToTalk, Reset = () => GameSettings.Forget("vcthresh"),
+                Desc = "말해 보면 줄이 차올라요. 동그라미를 끌어 기준을 정하면 그보다 큰 소리만 나가요(키보드 소리를 막아요). 줄이 노랗게 바뀌면 지금 나가는 소리예요.",
+            },
+            new MicTest
+            {
+                Label = "마이크 확인",
+                Desc = "말해 보면 칸이 차올라요. \"들어 보기\"를 누르면 내 목소리가 나에게만 들려요(다른 사람에게는 안 가요).",
+            },
+        };
+
+        const string VoicePage = "음성 채팅";
+
         static List<Tab> Schema()
         {
+            var voiceItems = VoiceItems(out string voiceNote);
             string editorNote = Application.isEditor ? " (Unity 에디터에서는 안 바뀌고, 빌드한 게임에서 바뀌어요.)" : "";
             var res = Screen.currentResolution;
             string screenNote = $"{res.width} × {res.height} · {Mathf.RoundToInt((float)res.refreshRateRatio.value)}Hz";
@@ -245,7 +295,7 @@ namespace ChessFight.Game
                             Volume("music", "배경 음악", .7f, "로비와 경기 음악.", soon: true, indent: true),
                             Volume("sfx", "효과음", .8f, "부딪힘, 점프, 대포 같은 경기 소리.", soon: true, indent: true),
                             Volume("ui", "버튼 소리", .6f, "메뉴 버튼과 알림 소리.", soon: true, indent: true),
-                            Volume("vc", "음성 채팅", .8f, "다른 사람 목소리 크기.", soon: true, indent: true),
+                            Volume("vc", "음성 채팅", .8f, "다른 사람 목소리 크기. 모두 같은 크기로 들려요.", indent: true),
                         } },
                         new Section { Title = "기타", Items = new Item[]
                         {
@@ -253,17 +303,15 @@ namespace ChessFight.Game
                             Switch("readyding", "경기 잡힘 알림음", true, "매칭이 잡히면 다른 창에 있어도 들리게 울려요.", soon: true),
                         } },
                     } },
-                    new Page { Name = "음성 채팅", Sections = new[]
+                    new Page { Name = VoicePage, Sections = new[]
                     {
-                        new Section { Title = "음성 채팅", Note = "음성 채팅이 들어가면 적용", Items = new Item[]
+                        new Section { Title = "음성 채팅", Note = voiceNote, Items = voiceItems },
+                        new Section { Title = "말하는 방식", Items = TalkItems() },
+                        new Section { Title = "크기", Items = new Item[]
                         {
-                            Switch("vcon", "음성 채팅", true, "끄면 듣지도 말하지도 않아요.", soon: true),
-                            Pick("vcmode", "말하는 방식", new[] { "누르고 말하기", "항상 켜기", "소리 나면 켜기" }, 0,
-                                 "누르고 말하기는 아래 키를 누르는 동안만 내 목소리가 나가요.", drop: true, soon: true),
-                            Bind(GameKey.Talk, "누르고 말하기 키", "누르는 동안 말해요.", soon: true),
-                            Volume("mic", "마이크 크기", .8f, "내 목소리가 나가는 크기.", soon: true),
-                            new MicTest { Label = "마이크 테스트", Desc = "\"테스트\"를 누르고 말해 보세요. 금색 칸이 움직이면 마이크가 잡혀요." },
-                            Pick("vcchan", "기본 채널", new[] { "파티", "팀" }, 0, "경기 중에는 팀 채널로 바뀌어요.", drop: true, soon: true),
+                            Volume("vc", "음성 채팅 볼륨", .8f, "다른 사람 목소리 크기. 가까이 있든 멀리 있든 모두 같은 크기로 들려요."),
+                            Number("micgain", "마이크 크기", 0f, 2f, .05f, 1f, v => Mathf.RoundToInt(v * 100).ToString(),
+                                   "내 목소리가 다른 사람에게 들리는 크기. 100이 원래 크기예요."),
                         } },
                     } },
                 } },
@@ -295,7 +343,8 @@ namespace ChessFight.Game
                         new Section { Title = "기타", Items = new Item[]
                         {
                             Bind(GameKey.Chat, "채팅 열기"),
-                            Bind(GameKey.Score, "점수판 보기", "누르는 동안 양 팀 점수와 핑.", soon: true),
+                            Bind(GameKey.Sheet, "경기 명단 (기보지)", "경기 중에 열고 닫아요. 우리 팀 음성, 말하는 곳, 음소거."),
+                            Bind(GameKey.Talk, "누르고 말하기", "음성 채팅: 누르는 동안 내 목소리가 나가요."),
                         } },
                     } },
                     new Page { Name = "컨트롤러", Sections = new[] { new Section { Title = "컨트롤러", Note = "Xbox · PlayStation 패드", Items = new Item[]
@@ -529,6 +578,11 @@ namespace ChessFight.Game
             var page = tabs[tabIndex].Pages[pageIndex];
             if (resetText != null) resetText.text = page.Name + " 기본값 복원";
             Describe(page.Name, "줄 위에 마우스를 올리면 여기에 설명이 나와요.", false);
+            // The voice page keeps the microphone running for its meters: Steam's when the game is
+            // online, else Unity's (no one to talk to then, but the meter still shows the microphone).
+            VoicePageOpen = page.Name == VoicePage;
+            VoiceEcho = false;
+            if (VoicePageOpen && VoiceLevel == null) StartMic();
             foreach (var section in page.Sections)
             {
                 var head = Add(content, "s2-section");
@@ -574,6 +628,67 @@ namespace ChessFight.Game
                 case Slide s: SlideLine(val, s); break;
                 case Keys k: KeysLine(val, k); break;
                 case MicTest _: MicLine(val); break;
+                case Gate _: GateLine(val); break;
+            }
+            if (item.When != null)
+                refreshers.Add(() => row.style.display = item.When() ? DisplayStyle.Flex : DisplayStyle.None);
+        }
+
+        // ---------- the voice page (R131) ----------
+
+        // The voice-activated threshold as the usual slider: the knob is the threshold, and the rail fills
+        // with the live microphone level, dim below the knob and gold once it passes (that voice goes out).
+        void GateLine(VisualElement val)
+        {
+            var number = Add(val, "s2-num", "");
+            var track = Add(val, "s2-track");
+            track.pickingMode = PickingMode.Position;
+            var rail = Add(track, "s2-rail");
+            var level = Add(rail, "s2-fill s2-level");
+            var knob = Add(rail, "s2-knob");
+            void Show()
+            {
+                float threshold = GameSettings.VoiceThreshold;
+                knob.style.left = new Length(threshold * 100f, LengthUnit.Percent);
+                number.text = Mathf.RoundToInt(threshold * 100f).ToString();
+            }
+            void At(Vector2 local)
+            {
+                float width = track.layout.width;
+                if (width <= 0) return;
+                GameSettings.SetFloat("vcthresh", Mathf.Round(Mathf.Clamp01(local.x / width) * 20f) / 20f);
+                Show();
+            }
+            Drag(track, At);
+            refreshers.Add(Show);
+            rail.schedule.Execute(() =>
+            {
+                float now = Mathf.Clamp01(Level);
+                level.style.width = new Length(now * 100f, LengthUnit.Percent);
+                level.EnableInClassList("s2-level-go", now >= GameSettings.VoiceThreshold);
+            }).Every(50);
+        }
+
+        static void Drag(VisualElement track, Action<Vector2> at)
+        {
+            track.RegisterCallback<PointerDownEvent>(e =>
+            {
+                if (e.button != 0) return;
+                track.CapturePointer(e.pointerId);
+                at(e.localPosition);
+            });
+            track.RegisterCallback<PointerMoveEvent>(e => { if (track.HasPointerCapture(e.pointerId)) at(e.localPosition); });
+            track.RegisterCallback<PointerUpEvent>(e => { if (track.HasPointerCapture(e.pointerId)) track.ReleasePointer(e.pointerId); });
+        }
+
+        // The microphone level the meters show: Steam's voice when online, else Unity's microphone.
+        float Level
+        {
+            get
+            {
+                if (VoiceLevel == null) return micLevel;
+                try { return VoiceLevel(); }
+                catch (Exception e) { Debug.LogException(e); VoiceLevel = null; return 0f; }
             }
         }
 
@@ -721,18 +836,32 @@ namespace ChessFight.Game
             }
         }
 
+        // The microphone check (R131): the level meter, and "들어 보기" (my own voice played back to me only)
+        // as a gold word like the ‹ › arrows. A microphone problem replaces the meter with its note.
         void MicLine(VisualElement val)
         {
             var meter = Add(val, "s2-meter");
             var cells = new VisualElement[16];
             for (int i = 0; i < cells.Length; i++) cells[i] = Add(meter, "s2-meter-cell");
-            var test = Arrow(val, "테스트");
-            test.AddToClassList("s2-test");
-            test.clicked += () => { if (micClip != null) StopMic(); else StartMic(); Refresh(); };
-            refreshers.Add(() => SetText(test, micClip != null ? "테스트 끄기" : (Microphone.devices.Length == 0 ? "마이크 없음" : "테스트")));
+            var note = Add(val, "s2-mic-note", "");
+            var listen = Arrow(val, "들어 보기");
+            listen.AddToClassList("s2-test");
+            listen.clicked += () => { if (VoiceLevel != null) { VoiceEcho = !VoiceEcho; Refresh(); } };
+            refreshers.Add(() =>
+            {
+                bool steam = VoiceLevel != null;
+                string problem = "";
+                try { problem = VoiceProblem?.Invoke() ?? ""; } catch (Exception e) { Debug.LogException(e); }
+                if (problem == "" && !steam && Microphone.devices.Length == 0) problem = "마이크가 없어요";
+                note.text = problem;
+                note.style.display = problem != "" ? DisplayStyle.Flex : DisplayStyle.None;
+                meter.style.display = problem == "" ? DisplayStyle.Flex : DisplayStyle.None;
+                listen.SetEnabled(steam);
+                SetText(listen, !steam ? "Steam 필요" : VoiceEcho ? "그만 듣기" : "들어 보기");
+            });
             meter.schedule.Execute(() =>
             {
-                int lit = micClip != null ? Mathf.RoundToInt(Mathf.Clamp01(micLevel) * cells.Length) : 0;
+                int lit = Mathf.RoundToInt(Mathf.Clamp01(Level) * cells.Length);
                 for (int i = 0; i < cells.Length; i++)
                 {
                     cells[i].EnableInClassList("s2-meter-on", i < lit && i < 12);
@@ -768,7 +897,7 @@ namespace ChessFight.Game
             float sum = 0;
             foreach (var v in micSamples) sum += v * v;
             float rms = Mathf.Sqrt(sum / micSamples.Length);
-            micLevel = Mathf.Lerp(micLevel, Mathf.Clamp01(rms * 12f), .5f);
+            micLevel = Mathf.Lerp(micLevel, ChessFight.Network.VoiceLevel.FromRms(rms), .5f);
         }
 
         Button Arrow(VisualElement parent, string text)
@@ -913,6 +1042,7 @@ namespace ChessFight.Game
         void OnDestroy()
         {
             StopMic();
+            VoicePageOpen = VoiceEcho = false;
             if (current == this) current = null;
             if (ownedPanel != null) Destroy(ownedPanel);
         }

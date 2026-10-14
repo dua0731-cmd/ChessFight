@@ -11,7 +11,7 @@
 클라이언트: 자기 캐릭터는 호스트 값에서 미확인 입력을 다시 적용, 남은 캐릭터는 호스트 값 그대로
 ```
 
-- 전송: `SteamNetworkingMessages`, **채널 31**, `Unreliable | NoNagle`. 직접 연결·릴레이 선택은 Steam이 한다.
+- 전송: `SteamNetworkingMessages`, **채널 31**, `Unreliable | NoNagle`. 직접 연결·릴레이 선택은 Steam이 한다. 다른 채널: 32 래그돌 랩, 33 소드 파이트, 34 폰 러쉬 코스, **40 음성 채팅**(R131, `SteamVoice`: 사람끼리 바로, 방장을 거치지 않음 → [UI §16](../Architecture/UI.md#16-음성-채팅-r131-2026-10-13)). 같은 상대와의 세션은 채널이 달라도 하나라서, 이 계층이 경기 상대와의 세션을 닫으면(`Reset`) 음성도 잠깐 끊겼다가 다음 조각에서 다시 이어진다.
 - 호스트와 클라이언트 모두 같은 `PawnMotor.Advance`를 쓴다. 클라이언트는 좌표를 보내지 않는다. 입력의 주인은 Steam이 알려준 피어 ID다.
 - 봇은 호스트가 `BotDirector`로 움직이고 절대 보내거나 받지 않는다([BOTS](BOTS.md)).
 

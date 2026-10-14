@@ -198,6 +198,7 @@ namespace ChessFight.RagdollLab.Net
             if (finish != null) finish.Decided -= OnDecided;
             Course01Playtest.NetworkDriver = null;
             MiniGameBase.Remote = false;
+            MatchPieces.Clear();
             // Do not close the peer sessions: the lobby's motion transport owns them.
         }
 
@@ -353,6 +354,8 @@ namespace ChessFight.RagdollLab.Net
             if (!session.Started || session.Match == 0) return;
             if (session.IsHost != authority) SetAuthority(session.IsHost);
             SyncRoster();
+            // The match sheet's piece icons (VoiceHud, R131): who has been promoted, as this PC draws them.
+            foreach (var r in runners.Values) MatchPieces.Set(r.Id, r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn);
             // A client's skill timers run before this frame's packets overwrite them.
             if (!authority)
                 foreach (var r in runners.Values)

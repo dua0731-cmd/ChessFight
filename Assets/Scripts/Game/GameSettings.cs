@@ -4,8 +4,9 @@ using UnityEngine;
 
 namespace ChessFight.Game
 {
-    // The actions the player can bind (settings → 조작 → 키 설정), two keys each.
-    public enum GameKey { Forward, Back, Left, Right, Jump, Sprint, Shove, Grab, Skill, Skill2, Use, Respawn, Chat, Score, Talk }
+    // The actions the player can bind (settings → 조작 → 키 설정), two keys each. Sheet opens the
+    // match sheet (기보지, R131; it was the unused "Score" on ` until then), Talk is push to talk.
+    public enum GameKey { Forward, Back, Left, Right, Jump, Sprint, Shove, Grab, Skill, Skill2, Use, Respawn, Chat, Sheet, Talk }
 
     // What the settings window (R64, laid out again in R77) changes, kept on this
     // PC in PlayerPrefs and read by whoever it concerns: the movement code asks
@@ -14,8 +15,8 @@ namespace ChessFight.Game
     // ScreenOverlay for brightness and the frame counter.
     //
     // Every value lives under an id ("master", "fov", ...); the typed properties
-    // below are the ones the game reads. Values the game cannot use yet (voice
-    // chat, controller, name tags...) are saved all the same, under their ids,
+    // below are the ones the game reads. Values the game cannot use yet
+    // (controller, name tags...) are saved all the same, under their ids,
     // so the window keeps them and the feature can read them when it comes.
     //
     // The display settings are applied at start only once the player has changed
@@ -99,6 +100,19 @@ namespace ChessFight.Game
         // The sprint's field-of-view kick.
         public static float SprintFovScale => !ReduceShake && Bool("sprintfov", true) ? 1f : 0f;
 
+        // Voice chat (R131, SteamVoice): on at all, which channels to join by themselves, push to talk
+        // (else voice activated, from the level VoiceThreshold on the meter's 0..1 scale), and the
+        // microphone's gain (the listeners apply it: Steam has none).
+        public static bool VoiceOn => Bool("vcon", true);
+        public static bool VoicePartyAuto => Bool("vcparty", true);
+        public static bool VoiceTeamAuto => Bool("vcteam", true);
+        public static bool PushToTalk => Int("vcmode", 0) == 0;
+        public static float VoiceThreshold => Mathf.Clamp01(Float("vcthresh", .35f));
+        public static float MicGain => Mathf.Clamp(Float("micgain", 1f), 0f, 2f);
+
+        // The match sheet holds the mouse (R131): the mouse buttons do nothing in the match meanwhile.
+        public static bool PointerTaken { get; set; }
+
         public static bool ChatOn => Bool("chat", true);
         public static bool ChatFilter => Bool("filter", true);
         // 0 small, 1 normal, 2 large.
@@ -135,7 +149,7 @@ namespace ChessFight.Game
             { GameKey.Use, new[] { KeyCode.F, KeyCode.None } },
             { GameKey.Respawn, new[] { KeyCode.R, KeyCode.None } },
             { GameKey.Chat, new[] { KeyCode.Tab, KeyCode.None } },
-            { GameKey.Score, new[] { KeyCode.BackQuote, KeyCode.None } },
+            { GameKey.Sheet, new[] { KeyCode.P, KeyCode.None } },
             { GameKey.Talk, new[] { KeyCode.V, KeyCode.None } },
         };
         static readonly Dictionary<GameKey, KeyCode[]> keys = new Dictionary<GameKey, KeyCode[]>();
@@ -198,6 +212,7 @@ namespace ChessFight.Game
         static bool Get(KeyCode code, bool down)
         {
             if (code == KeyCode.None) return false;
+            if (PointerTaken && code >= KeyCode.Mouse0 && code <= KeyCode.Mouse6) return false;
             try { return down ? Input.GetKeyDown(code) : Input.GetKey(code); }
             catch (InvalidOperationException) { return false; }
         }

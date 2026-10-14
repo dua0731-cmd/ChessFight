@@ -557,12 +557,24 @@ namespace ChessFight.Game
 
     // The two hole shapes from the design (a 100 × 200 box, drawn standing on its
     // base): the king that closes and the knight that opens. Anchor is the point
-    // that stays put while the hole grows or shrinks.
+    // that stays put while the hole grows or shrinks. The other pieces below are
+    // icons only (ChessGlyphs.PieceMark).
     public static class ChessOutlines
     {
         public static readonly Vector2 Anchor = new Vector2(50f, 150f);
         public static readonly Vector2[] King = Parse("M45 0 H55 V9 H63 V18 H55 V29 Q58 29 58 32 L69 35 Q72 37 70 41 L63 56 Q72 57 72 61 Q72 66 65 67 Q60 72 61 84 L67 128 Q69 143 77 149 Q83 150 83 155 Q83 160 77 161 L86 176 Q91 179 91 186 L91 196 H9 L9 186 Q9 179 14 176 L23 161 Q17 160 17 155 Q17 150 23 149 Q31 143 33 128 L39 84 Q40 72 35 67 Q28 66 28 61 Q28 57 37 56 L30 41 Q28 37 31 35 L42 32 Q42 29 45 29 V18 H37 V9 H45 Z");
         public static readonly Vector2[] Knight = Parse("M9 196 L9 186 Q9 179 15 177 L19 176 L19 165 Q19 161 24 161 L30 161 L34 117 Q22 108 21 96 Q20 88 25 84 L40 54 L43 31 Q44 25 48 29 L55 40 Q80 47 82 86 L81 161 L81 176 L85 177 Q91 179 91 186 L91 196 Z");
+        // The other four (R131, the match sheet's piece icons), on the same base and box as the king.
+        public static readonly Vector2[] Rook = Parse("M20 40 H36 V54 H44 V40 H56 V54 H64 V40 H80 V72 Q80 78 73 80 L69 84 L67 128 Q69 143 77 149 Q83 150 83 155 Q83 160 77 161 L86 176 Q91 179 91 186 L91 196 H9 L9 186 Q9 179 14 176 L23 161 Q17 160 17 155 Q17 150 23 149 Q31 143 33 128 L31 84 L27 80 Q20 78 20 72 Z");
+        public static readonly Vector2[] Bishop = Parse("M50 18 Q58 18 58 25 Q58 30 54 32 Q74 45 74 66 Q74 80 62 88 L66 89 Q72 90 72 95 Q72 100 66 100 L62 101 Q63 120 67 128 Q69 143 77 149 Q83 150 83 155 Q83 160 77 161 L86 176 Q91 179 91 186 L91 196 H9 L9 186 Q9 179 14 176 L23 161 Q17 160 17 155 Q17 150 23 149 Q31 143 33 128 Q37 120 38 101 L34 100 Q28 100 28 95 Q28 90 34 89 L38 88 Q26 80 26 66 Q26 45 46 32 Q42 30 42 25 Q42 18 50 18 Z");
+        public static readonly Vector2[] Queen = Parse("M14 52 L33 72 L36 44 L47 68 L50 36 L53 68 L64 44 L67 72 L86 52 L72 92 L66 94 Q72 95 72 100 Q72 105 66 106 L62 107 Q63 122 67 128 Q69 143 77 149 Q83 150 83 155 Q83 160 77 161 L86 176 Q91 179 91 186 L91 196 H9 L9 186 Q9 179 14 176 L23 161 Q17 160 17 155 Q17 150 23 149 Q31 143 33 128 Q37 122 38 107 L34 106 Q28 105 28 100 Q28 95 34 94 L28 92 Z");
+        public static readonly Vector2[] Pawn = Parse("M38 84 Q34 84 34 88 Q34 92 40 93 Q38 116 33 128 Q31 143 23 149 Q17 150 17 155 Q17 160 23 161 L14 176 Q9 179 9 186 L9 196 H91 L91 186 Q91 179 86 176 L77 161 Q83 160 83 155 Q83 150 77 149 Q69 143 67 128 Q62 116 60 93 Q66 92 66 88 Q66 84 62 84 Z");
+        // Round parts outside those outlines (x, y, radius): the queen's crown balls, the pawn's head.
+        public static readonly Vector3[] QueenBalls =
+            { new Vector3(14, 47, 6), new Vector3(36, 39, 5.5f), new Vector3(50, 30, 6.5f), new Vector3(64, 39, 5.5f), new Vector3(86, 47, 6) };
+        public static readonly Vector3 PawnHead = new Vector3(50, 66, 19);
+        // The cut in the bishop's mitre, drawn over the body.
+        public static readonly Vector2[] BishopCut = { new Vector2(60, 44), new Vector2(46, 68) };
 
         // Absolute M, L, H, V, Q and Z only, curves cut into eight straight steps.
         static Vector2[] Parse(string path)
