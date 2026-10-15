@@ -31,6 +31,7 @@ namespace ChessFight.PawnRush
         float lastYaw;
         float progress;
         bool shown;       // last step showed the host's capstan (online, not the host)
+        float targetYaw, shownYaw;   // online, not the host: the host's angle and the one drawn, eased toward it
 
         static Vector3 V(float x, float y, float z) => MissionGames.V(x, y, z);
 
@@ -94,28 +95,39 @@ namespace ChessFight.PawnRush
             if (bars != null) lastYaw = Yaw;
         }
 
-        // The bars' angle (degrees, as float bits): the host's capstan drawn on every other PC.
-        public override ulong StateBits => (uint)System.BitConverter.SingleToInt32Bits(bars != null ? Yaw : 0f);
+        // The bars' angle (16 bits of a turn): the host's capstan drawn on every other PC.
+        public override void WriteNet(ref NetBlock block) => block.Unit16(bars != null ? Mathf.Repeat(Yaw, 360f) : 0f, 360f);
 
-        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        public override void ReadNet(ref NetBlock block)
+        {
+            targetYaw = block.ReadUnit16(360f);
+            if (bars != null) bars.isKinematic = true;
+        }
+
+        public override void ApplyRemote(float progress, bool completed)
         {
             this.progress = progress;
-            if (bars != null)
-            {
-                bars.isKinematic = true;
-                bars.MoveRotation(bars.transform.parent.rotation * Quaternion.Euler(0f, System.BitConverter.Int32BitsToSingle((int)(uint)bits), 0f));
-            }
             if (station != null && station.Gate != null) station.Gate.SetLift(PortcullisPeek * progress);
-            base.ApplyRemote(progress, completed, bits);
+            base.ApplyRemote(progress, completed);
+        }
+
+        // Not the host: the bars ease to the host's angle every frame (a kinematic picture: nothing on a
+        // client pushes them; the host's pawns did).
+        void Update()
+        {
+            if (!Remote || bars == null) return;
+            shownYaw = EaseAngle(shownYaw, targetYaw, 25f);
+            bars.transform.localRotation = Quaternion.Euler(0f, shownYaw, 0f);
         }
 
         // StateDrivenMover: the bars turn when pawns push them (physics), not on the obstacle clock.
-        // Online the host simulates them and sends their angle (StateBits).
+        // Online the host simulates them and sends their angle (WriteNet).
         void FixedUpdate()
         {
             if (station == null || bars == null) return;
             if (Remote)
             {
+                if (!shown) shownYaw = targetYaw = Yaw;
                 shown = true;
                 return;
             }

@@ -12,6 +12,12 @@ namespace ChessFight.PawnRush
     // and the pad is spent for the round. Stepping off, or being pushed off, starts the count over; the other
     // team cannot use it.
     //
+    // R130 (user: "승격하는 플레이어가 원하는 기물로 선택, 로그라이크 게임처럼 기물 목록이 화면에 UI로"): the pad no
+    // longer gives a set piece. After the 2 s the pad is spent and held for that pawn, and its player chooses from
+    // cards (PromotionChooser: queen, rook, bishop, knight); nobody choosing within ChooseSeconds gets a random one.
+    // The host judges: its own player's choice comes from its screen, another player's in the lab input
+    // (pieceAsk / pieceSeq), and the course state tells every PC who is choosing on which pad (CFP4).
+    //
     // The station makes it when Play starts (MissionStation.Start), so the scene built before R125 has it too.
     // The round's piece comes from MissionPicker (both teams' pads in a plaza give the same piece). Online only
     // the host judges it; the other PCs show what the host sends (ApplyRemote), like the mini-games.
@@ -25,14 +31,26 @@ namespace ChessFight.PawnRush
         // A promotion that happened (offline or on the host): the playtest's log, the online link's note.
         public static event Action<StationPromotion, ICharacterDriver, PieceKind> Promoted;
 
+        static readonly System.Collections.Generic.List<StationPromotion> all = new System.Collections.Generic.List<StationPromotion>();
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => Promoted = null;
+        static void ResetStatics()
+        {
+            Promoted = null;
+            all.Clear();
+        }
+
+        void OnEnable() { if (!all.Contains(this)) all.Add(this); }
+        void OnDisable() => all.Remove(this);
 
         MissionStation station;
         PieceKind piece = PieceKind.Queen;
         bool used;
         ICharacterDriver standing;
         float standFor;
+        // Who chooses the piece now (the host's, or the host's word on a client) and until when (the host's).
+        ICharacterDriver choosing;
+        float chooseUntil;
 
         Transform marker, fill;
         Renderer slab;
@@ -47,9 +65,38 @@ namespace ChessFight.PawnRush
         // How far the pawn on it is (0..1), for the fill.
         public float Hold01 => used ? 1f : Mathf.Clamp01(standFor / PawnRushPromotion.HoldSeconds);
         public ICharacterDriver Standing => standing;
+        public ICharacterDriver Choosing => choosing;
+
+        // The pad on which this pawn is choosing its piece, or null.
+        public static StationPromotion ChoosingFor(ICharacterDriver driver)
+        {
+            if (driver == null) return null;
+            foreach (var pad in all) if (pad != null && pad.choosing == driver) return pad;
+            return null;
+        }
+
+        // The host (or offline): the chooser's answer. False when it is not this pawn's choice to make.
+        public static bool Choose(ICharacterDriver driver, PieceKind piece)
+        {
+            var pad = ChoosingFor(driver);
+            return pad != null && !MiniGameBase.Remote && pad.Give(piece);
+        }
+
+        bool Give(PieceKind kind)
+        {
+            if (choosing == null || !PawnRushPromotion.Gives(kind)) return false;
+            var who = choosing;
+            choosing = null;
+            if (!(who is IPromotable promotable) || !PawnRushPromotion.CanPromote(promotable.Piece)) { Refresh(); return false; }
+            promotable.Promote(kind);
+            Refresh();
+            Debug.Log($"[PawnRush] 승격: 광장 {station.Plaza} {Teams.Name(station.Team)}팀 발판 → {ChessPieces.Name(kind)} (선택)");
+            Promoted?.Invoke(this, who, kind);
+            return true;
+        }
 
         // Black's station is the mirror of white's: the pad on the outer side of both.
-        public static Vector3 LocalMiddle(bool mirrored) => new Vector3((mirrored ? 1f : -1f) * VOuter, 0f, U);
+        public static Vector3 LocalMiddle(bool mirrored) => new Vector3((mirrored ? 1f : -1f) * VOuter, Arena.DaisHeight, U);
 
         public static StationPromotion Make(MissionStation station)
         {
@@ -75,22 +122,35 @@ namespace ChessFight.PawnRush
             used = false;
             standing = null;
             standFor = 0f;
+            choosing = null;
             Refresh();
         }
 
-        // The host's word on this pad (online, not the host).
-        public void ApplyRemote(PieceKind kind, bool spent)
+        // The host's word on this pad (online, not the host): its piece, spent, and who is choosing on it.
+        public void ApplyRemote(PieceKind kind, bool spent, ICharacterDriver chooser = null)
         {
             if (PawnRushPromotion.Gives(kind)) piece = kind;
             used = spent;
             standing = null;
             standFor = 0f;
+            choosing = chooser;
+            if (chooser != null) PromotionChooser.Ensure();
             Refresh();
         }
 
+        // The seat of whoever chooses on this pad, for the course state.
+        public byte ChooserSeat => choosing != null && MiniGameBase.SeatOf != null ? MiniGameBase.SeatOf(choosing) : PawnRushNetState.NoChooser;
+
         void FixedUpdate()
         {
-            if (station == null || used || MiniGameBase.Remote) return;
+            if (station == null || MiniGameBase.Remote) return;
+            if (choosing != null && Time.time >= chooseUntil)
+            {
+                // Nobody chose in time: a random piece, so the pad is never held for good.
+                Give(PawnRushPromotion.Pieces[UnityEngine.Random.Range(0, PawnRushPromotion.Pieces.Length)]);
+                return;
+            }
+            if (used) return;
             ICharacterDriver found = null, first = null;
             var pawns = station.Pawns();
             Vector3 middle = transform.localPosition;
@@ -111,13 +171,14 @@ namespace ChessFight.PawnRush
             }
             standFor += Time.fixedDeltaTime;
             if (standFor < PawnRushPromotion.HoldSeconds) return;
-            ((IPromotable)found).Promote(piece);
+            // Spent and held for this pawn: its player picks the piece (PromotionChooser).
             used = true;
+            choosing = found;
+            chooseUntil = Time.time + PawnRushPromotion.ChooseSeconds;
             standing = null;
             standFor = 0f;
             Refresh();
-            Debug.Log($"[PawnRush] 승격: 광장 {station.Plaza} {Teams.Name(station.Team)}팀 발판 → {ChessPieces.Name(piece)}");
-            Promoted?.Invoke(this, found, piece);
+            PromotionChooser.Ensure();
         }
 
         // ------------------------------------------------------------------ the look
@@ -168,15 +229,11 @@ namespace ChessFight.PawnRush
         {
             if (slab == null) return;
             slab.sharedMaterial = used ? slabOff : slabOn;
-            if (piece != shownPiece)
-            {
-                shownPiece = piece;
-                for (int i = marker.childCount - 1; i >= 0; i--) Destroy(marker.GetChild(i).gameObject);
-                BuildPiece(marker, piece, slabOn);
-            }
             marker.gameObject.SetActive(!used);
             shownUsed = used;
-            label.text = used ? "승격 발판 · 사용함" : $"{ChessPieces.Name(piece)} 승격\n폰이 {PawnRushPromotion.HoldSeconds:0}초 서 있기";
+            label.text = choosing != null ? "승격 · 기물 고르는 중"
+                       : used ? "승격 발판 · 사용함"
+                       : $"승격 발판 · 원하는 기물 선택\n폰이 {PawnRushPromotion.HoldSeconds:0}초 서 있기";
             label.color = used ? new Color(.7f, .7f, .7f) : new Color(1f, .9f, .45f);
         }
 
@@ -184,6 +241,14 @@ namespace ChessFight.PawnRush
         {
             if (marker == null) return;
             if (used != shownUsed) Refresh();
+            // The gold piece over the pad shows each choice in turn (the player picks one).
+            var cycle = PawnRushPromotion.Pieces[(int)(Time.time / 1.2f) % PawnRushPromotion.Pieces.Length];
+            if (!used && cycle != shownPiece)
+            {
+                shownPiece = cycle;
+                for (int i = marker.childCount - 1; i >= 0; i--) Destroy(marker.GetChild(i).gameObject);
+                BuildPiece(marker, cycle, slabOn);
+            }
             marker.localRotation = Quaternion.Euler(0f, Time.time * 60f, 0f);
             marker.localPosition = new Vector3(0f, 1.4f + Mathf.Sin(Time.time * 2f) * .1f, 0f);
             float k = Hold01;

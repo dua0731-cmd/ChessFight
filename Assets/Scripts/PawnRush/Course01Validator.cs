@@ -20,6 +20,9 @@ namespace ChessFight.PawnRush
     //   6. unclimbable surfaces: marble always with NoClimbSurface, climbable stone never; the plaza
     //      north blocks, the clock gate walls and the tower's marble are unclimbable
     //   7. a kill volume under the course
+    //   8. mini-games v1.0 §2.6: nothing solid of a game but its floors in the entrance band (u < 2.5) or on
+    //      the promotion pad (u 0..2, v +-4.5, 2 x 2 m); every grab handle has its collider and is grab-only;
+    //      every moving (kinematic) part is unclimbable or grab-only (R128); C has handles, G and I grab-only things
     public static class Course01Validator
     {
         public const float MaxRequiredGap = 1.5f, PathTolerance = .1f, SpanTolerance = .05f;
@@ -121,6 +124,7 @@ namespace ChessFight.PawnRush
                     if (game == null) { errors.Add($"{who}: {PawnRushMissions.Ids[g]}를 만들지 못했습니다"); continue; }
                     var outside = Outside(s, game.transform);
                     if (outside != null) errors.Add($"{who}: {PawnRushMissions.Ids[g]}의 {outside}이(가) 스테이션 밖으로 나갑니다");
+                    CheckGame(s, g, game, who, errors);
                 }
                 s.Install(keep);
             }
@@ -212,6 +216,47 @@ namespace ChessFight.PawnRush
                     return r.name;
             }
             return null;
+        }
+
+        // ------------------------------------------------------------------ 8. v1.0 games
+
+        static void CheckGame(MissionStation s, int g, MiniGameBase game, string who, List<string> errors)
+        {
+            string id = PawnRushMissions.Ids[g];
+            foreach (var c in game.GetComponentsInChildren<Collider>(true))
+            {
+                if (c.isTrigger || c.GetComponentInParent<CourseFloor>() != null || c.GetComponentInParent<PaintBoard>() != null) continue;
+                var b = c.bounds;
+                Vector3 p = s.transform.InverseTransformPoint(b.min), q = s.transform.InverseTransformPoint(b.max);
+                float u0 = Mathf.Min(p.z, q.z), v0 = Mathf.Min(p.x, q.x), v1 = Mathf.Max(p.x, q.x), top = Mathf.Max(p.y, q.y);
+                if (top <= Arena.DaisHeight + .02f) continue;   // below the dais top: walls of a moat, a water bottom
+                // A plays on u 2..20 (§1.5); G's sled starts on its pad south of d1 (§5.1, u 0.8..2.0).
+                bool band = g != PawnRushMissions.Paint && g != PawnRushMissions.KingEscort;
+                if (band && u0 < 2.5f - .02f) errors.Add($"{who}: {id}의 {Name(c.transform)}이(가) 입구 띠(u 2.5 안쪽)에 있습니다 (u {u0:0.00})");
+                foreach (float pad in new[] { -4.5f, 4.5f })
+                    if (u0 < 2f && v1 > pad - 1f && v0 < pad + 1f) errors.Add($"{who}: {id}의 {Name(c.transform)}이(가) 승격 발판 자리와 겹칩니다");
+            }
+            int handles = 0;
+            foreach (var h in game.GetComponentsInChildren<GrabHandle>(true))
+            {
+                handles++;
+                if (h.GetComponent<Collider>() == null) errors.Add($"{who}: {id}의 손잡이 {h.name}에 콜라이더가 없습니다");
+                if (h.GetComponent<NoClimbSurface>() != null) errors.Add($"{who}: {id}의 손잡이 {h.name}을(를) 잡을 수 없습니다 (NoClimbSurface)");
+            }
+            if (g == PawnRushMissions.Drawbridge && handles == 0) errors.Add($"{who}: {id}에 GrabHandle이 없습니다");
+            // R128: G and I move their things by hand without handles - the things themselves are grab-only.
+            if ((g == PawnRushMissions.KingEscort || g == PawnRushMissions.CheckBlock) && game.GetComponentInChildren<GrabOnlySurface>(true) == null)
+                errors.Add($"{who}: {id}에 잡기 전용(GrabOnlySurface) 물체가 없습니다");
+            foreach (var h in game.GetComponentsInChildren<GrabHandle>(true))
+                if (h.GetComponent<GrabOnlySurface>() == null) errors.Add($"{who}: {id}의 손잡이 {h.name}에 GrabOnlySurface가 없습니다(잡으면 벽타기가 됨)");
+            // Anything moving is never climbed: unclimbable (NoClimbSurface) or held only (GrabOnlySurface).
+            foreach (var rb in game.GetComponentsInChildren<Rigidbody>(true))
+            {
+                if (!rb.isKinematic) continue;
+                foreach (var c in rb.GetComponentsInChildren<Collider>(true))
+                    if (!c.isTrigger && c.GetComponentInParent<NoClimbSurface>() == null && c.GetComponentInParent<GrabOnlySurface>() == null)
+                        errors.Add($"{who}: {id}의 움직이는 {Name(c.transform)}에 NoClimbSurface도 GrabOnlySurface도 없습니다");
+            }
         }
 
         // ------------------------------------------------------------------ 6. climbing

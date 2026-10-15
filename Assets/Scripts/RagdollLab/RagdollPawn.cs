@@ -502,6 +502,18 @@ namespace ChessFight.RagdollLab
 
         public void SetInput(PawnInput next)
         {
+            // A mini-game holding this pawn still (J's pad winding up), or taking its jump press instead.
+            if (Time.time < holdStillUntil)
+            {
+                next.move = Vector3.zero;
+                next.jump = false;
+                next.sprint = false;
+            }
+            if (next.jump && ChessFight.Gameplay.MiniGameHooks.JumpIntercept != null && !NetworkPuppet)
+            {
+                var driver = GetComponent<RagdollDriver>();
+                if (driver != null && ChessFight.Gameplay.MiniGameHooks.JumpIntercept(driver)) next.jump = false;
+            }
             input.move = next.move;
             givenMove = next.move;
             input.grab = next.grab;
@@ -554,6 +566,16 @@ namespace ChessFight.RagdollLab
         public void AddVelocity(Vector3 dv)
         {
             foreach (var rb in bodies) rb.linearVelocity += dv;
+        }
+
+        // Pawn Rush mini-games (R126): the move last given, sprint held, stamina spent from outside, held still.
+        float holdStillUntil = -1f;
+        public Vector3 GivenMove => givenMove;
+        public void HoldStill(float seconds) => holdStillUntil = Mathf.Max(holdStillUntil, Time.time + Mathf.Max(0f, seconds));
+        public void SpendStamina(float amount)
+        {
+            if (stamina < 0f) stamina = P.climbStaminaMax;   // not ticked yet: full
+            UseStamina(P, amount);
         }
 
         /// <summary>
@@ -1734,6 +1756,8 @@ namespace ChessFight.RagdollLab
             if (ownSet.Contains(h.collider) || ColliderOwner.ContainsKey(h.collider) || PassesThrough(h.collider)) return false;
             // A face marked unclimbable (Pawn Rush lane walls, railings, team dividers).
             if (NoClimbSurface.Blocks(h.collider)) return false;
+            // Something to push and pull (mini-game statues, carts, knots): gripped, never climbed (R128).
+            if (GrabOnlySurface.Marks(h.collider)) return false;
             var rb = h.collider.attachedRigidbody;
             if (rb != null && !rb.isKinematic) return false;
             return Mathf.Abs(h.normal.y) <= Mathf.Cos(p.climbGripAngle * Mathf.Deg2Rad);
@@ -1749,7 +1773,7 @@ namespace ChessFight.RagdollLab
             int n = Physics.RaycastNonAlloc(new Ray(origin, dir), hits, length, ~0, QueryTriggerInteraction.Ignore);
             float shield = float.MaxValue;
             for (int i = 0; i < n; i++)
-                if (NoClimbSurface.Blocks(hits[i].collider) && !PassesThrough(hits[i].collider))
+                if ((NoClimbSurface.Blocks(hits[i].collider) || GrabOnlySurface.Marks(hits[i].collider)) && !PassesThrough(hits[i].collider))
                     shield = Mathf.Min(shield, hits[i].distance);
             for (int i = 0; i < n; i++)
             {

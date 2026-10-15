@@ -7,7 +7,22 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-11 | R125 | 폰 러쉬 코스 01: 기물 스킬(오프라인·온라인, `PawnRushCourseSkills`, `SteamPawnRushLink` 스킬 동기화), 1회용 승격 발판(`StationPromotion`, `MissionPicker` 발판 기물), 왕관 발판 과반 승리(`CrownFinish`) → Victory/Lose(`PawnRushResultFlow`) → 로비, `SteamSession.EndMatch`(`ended`), `NetworkRuntime.LateStart`, Core `PawnRushCourseRules`·`PawnRushNetState` CFP2, `SkillWire.PositionRange` 320, `CharacterCommand.Skill`·`CourseSkills`, 결과 씬 빌드 목록, 프로토콜 v20·`CFRB`. 시험: Core 106·세션 41 |
+| (이 커밋) | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |
+| `86a34de` | 10-15 | R129 | J를 나이트의 길로(Core `KnightRoute`, 나이트 경로 8칸만 바닥, 방향 없는 점프대, 다이빙으로 상대 기물 6개 잡기), 예전 섬·조준·깃발 없앰, 문서 |
+| `baaa1ea` | 10-15 | R128 | G 킹 호위를 밧줄·손잡이 없이(썰매·룩 자체를 잡거나 밀기, 썰매 안 돎), I도 같은 방식, 새 `GrabOnlySurface`(잡기만, 벽타기 안 됨)와 래그돌 연결, 모든 `GrabHandle` 잡기 전용, 검증기, 문서 |
+| `a27d110` | 10-15 | R126 | 문서: HANDOFF·REQUIREMENTS·DECISIONS P10~P14·T11·PITFALLS 39~41·VALIDATION R126 표·PAWN_RUSH_COURSE01 §4-3. 시험: Core 115·세션 41 |
+| `1c21f1c` | 10-15 | R126 | 11단계: 검증기 v1.0 검사(입구 띠·승격 발판·손잡이·움직이는 것 `NoClimbSurface`), B·E 문 위 개수, H 울타리 u 2.75부터 |
+| `afec51f` | 10-15 | R126 | J 나이트 도약대(`MgKnightPads`, 조준·준비·랩 던지기·착지·충돌·깃발, `MgWaterReturn`), `WaterZone.Report`, `MiniGameBase.LocalDriver` |
+| `977fc41` | 10-15 | R126 | I 체크 막기(`MgCheckBlock`, 방장 씨앗 → 같은 배치, 레일 수레·나이트·폰·이중 체크) |
+| `821f710` | 10-15 | R126 | G 킹 호위(`MgKingEscort`, 썰매 거리 s, 손잡이 8개, 회전판, 룩 차고, 캐슬링) |
+| `9fe2c0b` | 10-15 | R126 | C 도개교 다시 만듦(`MgDrawbridge`, 매듭 `GrabHandle`, 질주 1.8, 버팀, 밧줄 길이, 톱니 걸쇠), `IMiniGamePawn.Sprinting` |
+| `ce11595` | 10-15 | R126 | H 체크메이트 몰이(`MgCheckmate`, Core `CheckmateHunt`, 공격 칸은 각 PC가) |
+| `6294714` | 10-15 | R126 | A 공유 체스판(`PaintBoard`, `MgPaint` 다시 만듦), `ArenaFx` 목소리 고침·끊을 수 있는 소리 |
+| `68f8e84` | 10-15 | R126 | F 앙파상 사냥(`MgEnPassant`, 공유 시계 조각상), `MiniGameParts` |
+| `cf3df08` | 10-15 | R126 | 2~3단계: 아레나 단·간판·문 위 막대·공통 연출(`Arena`·`ArenaFx`·`InstallRise`), `GrabHandle`, `IMiniGamePawn`(`RagdollDriver`), `MiniGameHooks.JumpIntercept` |
+| `6b4dc8b` | 10-15 | R126 | 1단계 Core: 게임 10종·묶음 뽑기, 판·F·C·J·G 규칙(`PawnRushGames`), `CheckmateHunt`, `CheckBlockGenerator`, Core 115 |
+| `a10e647` | 10-15 | R126 | 0단계: 장애물 판정 `ObstacleClock.Authority`(방장에서 꺼져 있던 것), 참가자 장애물을 그리는 순간의 방장 시각으로, 출발 막대 공유 시각, 코스 상태 `CFP3`(스테이션 블록, 스냅샷마다·그 시각에 적용), 든 판자 자리 번호로, 프로토콜 v21, 기획서 v1.0 저장 |
+| `56ad187` | 10-11 | R125 | 폰 러쉬 코스 01: 기물 스킬(오프라인·온라인, `PawnRushCourseSkills`, `SteamPawnRushLink` 스킬 동기화), 1회용 승격 발판(`StationPromotion`, `MissionPicker` 발판 기물), 왕관 발판 과반 승리(`CrownFinish`) → Victory/Lose(`PawnRushResultFlow`) → 로비, `SteamSession.EndMatch`(`ended`), `NetworkRuntime.LateStart`, Core `PawnRushCourseRules`·`PawnRushNetState` CFP2, `SkillWire.PositionRange` 320, `CharacterCommand.Skill`·`CourseSkills`, 결과 씬 빌드 목록, 프로토콜 v20·`CFRB`. 시험: Core 106·세션 41 |
 | `4125cf9` | 10-11 | R124 | 래그돌 스냅샷 위치 범위 ±80 → ±320 m(`RagdollNetProtocol.PositionRange`, magic `CFRA`): 폰 러쉬 코스 01에서 z 80 m 너머 폰이 참가자 화면에 80 m에 붙어 보이던 것. 프로토콜 v19 주석. 문서: HANDOFF, REQUIREMENTS R124, DECISIONS T10, PITFALLS 38, VALIDATION R124 표, PAWN_RUSH_COURSE01 §7-2, HISTORY |
 | `22d2204` | 10-11 | R124 | 병합: bold-johnson의 남은 2커밋(`Tools/Sfx/SwordFightEdgeSkills`, 그쪽 R115). 문서 충돌은 양쪽 기록을 남김 |
 | `924ea55` | 10-11 | R124 | 병합: `skill-network-test`(138커밋)를 `main`에. 폴더는 `main` 배치로, 게임 씬 모두 유지 + `Scenes/SkillTest/` 셋(빌드 목록엔 꺼짐), 프로토콜 v19, `SwordFightEdgeFloor` 상태형 표시, 문서 양쪽 기록(번호 겹침 표시) |

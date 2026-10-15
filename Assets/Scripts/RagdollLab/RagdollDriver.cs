@@ -11,7 +11,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IStatusReceiver, IPromotable
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IStatusReceiver, IPromotable, IMiniGamePawn
     {
         RagdollPawn pawn;
 
@@ -51,6 +51,35 @@ namespace ChessFight.RagdollLab
         // Status effects (M13).
         public bool Squash(float seconds, float immunity) => Pawn.Squash(seconds, immunity);
         public bool Stagger(float seconds) => Pawn.Stagger(seconds);
+
+        // Pawn Rush mini-games v1.0 (R126).
+        public bool Down => Pawn.State != PawnState.Active && !Pawn.Diving;
+        public bool Diving => Pawn.Diving;
+        public Vector3 MoveInput => Pawn.GivenMove;
+        public bool SprintHeld => Pawn.SprintHeld;
+        public bool Sprinting => Pawn.Sprinting;
+        public void SpendStamina(float amount) => Pawn.SpendStamina(amount);
+        public Vector3 HipsVelocity => Pawn.Hips.linearVelocity;
+        public Collider Held(int hand) => hand == 0 ? (Pawn.handL != null ? Pawn.handL.HeldCollider : null)
+                                                   : (Pawn.handR != null ? Pawn.handR.HeldCollider : null);
+        public Vector3 HandPosition(int hand) => hand == 0 ? (Pawn.handL != null ? Pawn.handL.Center : Pawn.Hips.position)
+                                                           : (Pawn.handR != null ? Pawn.handR.Center : Pawn.Hips.position);
+        public bool SkillDashing => Pawn.SkillDashing;
+        public int SkillUses => Pawn.SkillUses;
+        public float KnightLandedAt { get; private set; } = -1f;
+        public Vector3 KnightLandedWhere { get; private set; }
+        public void AddVelocity(Vector3 change) => Pawn.AddVelocity(change);
+        public void HoldStill(float seconds) => Pawn.HoldStill(seconds);
+
+        void OnEnable() => RagdollPawn.SkillFx += OnSkillFx;
+        void OnDisable() => RagdollPawn.SkillFx -= OnSkillFx;
+
+        void OnSkillFx(SkillFxEvent e)
+        {
+            if (e.by != Pawn || (e.kind != SkillFxKind.KnightLand && e.kind != SkillFxKind.KnightStomp && e.kind != SkillFxKind.KnightHome)) return;
+            KnightLandedAt = Time.time;
+            KnightLandedWhere = Pawn.Hips.position;
+        }
 
         // Promotion (M11).
         public PieceKind Piece => Pawn.Piece;

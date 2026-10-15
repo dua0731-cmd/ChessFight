@@ -34,14 +34,26 @@ namespace ChessFight.RagdollLab.Net
     /// scene, and from there leaves the match for the lobby (PawnRushResultFlow).</item>
     /// </list>
     ///
-    /// Not yet: bots only stand at the start, planks being carried show on the host only, a new host after a
-    /// host change starts everyone's checkpoints over.
+    /// R126 (mini-games v1.0, the 5-player test: "on every PC but the host, physics acted differently from what
+    /// the screen showed"):
+    /// <list type="bullet">
+    /// <item>obstacles: the host runs them on the shared clock advanced with its physics steps and stamps that time
+    /// into every snapshot; a client runs them at the stamp interpolated at the moment whose pawns it draws
+    /// (HostObstacleClock, as the lab since R51). Before, a client drew the obstacles "now" and the pawns 100-200 ms
+    /// ago, so a hammer was drawn hitting where the host's had long passed;</item>
+    /// <item>only the host's obstacles push anyone (ObstacleClock.Authority; they pushed nobody anywhere before);</item>
+    /// <item>the start bar sinks at the match's shared start on every PC (StartBar.ReleaseAtClock);</item>
+    /// <item>the course state carries the host's time and each station's game block (CFP3; CFP4 adds the pads' choosers); a client applies it when
+    /// its playback reaches that time, so gates, bridges, capstans and carried planks move with the bodies.</item>
+    /// </list>
+    ///
+    /// Not yet: bots only stand at the start, a new host after a host change starts everyone's checkpoints over.
     /// </summary>
     [DefaultExecutionOrder(-150)]
     public sealed class SteamPawnRushLink : MonoBehaviour
     {
         const int Channel = 34;                 // 31 capsule motion, 32 lab, 33 sword fight
-        const float SnapshotInterval = 1f / 30f, StateInterval = .1f, InputInterval = 1f / 60f;
+        const float SnapshotInterval = 1f / 30f, InputInterval = 1f / 60f;
         const float InputTimeout = .35f, SilenceTimeout = 12f, FallLimit = -40f;
         /// <summary>A moment played this much later than the poses it belongs to is not drawn any more (ms).</summary>
         const double StaleEventMs = 1000;
@@ -89,6 +101,8 @@ namespace ChessFight.RagdollLab.Net
             public bool Synced, AckSet, InteractLatch;
             public byte Jumps, Shoves, Abilities, Abilities2, Skills;
             public int Jump, Shove, Ability, Ability2, Skill;
+            // The last promotion choice heard (R130: the lab input's pieceSeq).
+            public byte PieceSeq;
             public ushort EventAck;
         }
 
@@ -117,7 +131,7 @@ namespace ChessFight.RagdollLab.Net
         readonly RagdollPose blend = new RagdollPose();
         readonly PawnRushNetState state = new PawnRushNetState(), received = new PawnRushNetState();
         uint tick, stateTick, inputSequence, lastPose, lastState;
-        float sentAt, stateAt, inputAt, receivedAt;
+        float sentAt, inputAt, receivedAt;
         double playback;
         readonly PlaybackDelay delay = new PlaybackDelay();
         float roundTripMs;
@@ -139,6 +153,17 @@ namespace ChessFight.RagdollLab.Net
         readonly List<ushort> goneWires = new List<ushort>();
         uint lastSkillsTime;
         bool skillsApplied, replaying, ended;
+
+        // The obstacle clock (R126): the shared clock the runtime set, advanced with the physics steps on the host,
+        // the host's stamps on a client.
+        Func<double> sharedClock;
+        readonly HostObstacleClock hostObstacles = new HostObstacleClock();
+        double obstacleOffset;
+        bool obstacleSynced, startBarSet;
+
+        // Course states waiting for the playback to reach their host time (a client), oldest first.
+        readonly List<PawnRushNetState> stateQueue = new List<PawnRushNetState>();
+        readonly Stack<PawnRushNetState> statePool = new Stack<PawnRushNetState>();
 
         // ------------------------------------------------------------------ setup
 
@@ -176,6 +201,20 @@ namespace ChessFight.RagdollLab.Net
                 finish.Decided += OnDecided;
             }
             if (PawnRushCourseSkills.Current != null) PawnRushCourseSkills.Current.Online = true;
+            // The obstacle clock: this link's from now on (MatchObstacleTime), the runtime's shared one underneath.
+            sharedClock = ObstacleClock.Source ?? (() => Time.timeAsDouble);
+            SyncObstacleClock();
+            ObstacleClock.Use(MatchObstacleTime);
+            ObstacleClock.Authority = authority;
+            // The mini-games name pawns by their roster seat on the wire.
+            MiniGameBase.SeatOf = d => d != null && byDriver.TryGetValue(d, out var r) ? RefOf(r) : MiniGameBase.NoSeat;
+            MiniGameBase.DriverOf = seat =>
+            {
+                var pawn = PawnOf(seat);
+                return pawn != null && byPawn.TryGetValue(pawn, out var r) ? r.Driver : null;
+            };
+            // R130: a client's promotion choice rides its input (pieceAsk / pieceSeq) to the host.
+            PromotionChooser.Asked = authority ? null : (Action<PieceKind>)AskPiece;
             Checkpoint.Reached += OnCheckpoint;
             KillVolume.Entered += OnKill;
             FallDistanceRespawn.Fell += OnFell;
@@ -198,6 +237,11 @@ namespace ChessFight.RagdollLab.Net
             if (finish != null) finish.Decided -= OnDecided;
             Course01Playtest.NetworkDriver = null;
             MiniGameBase.Remote = false;
+            PromotionChooser.Asked = null;
+            MiniGameBase.SeatOf = null;
+            MiniGameBase.DriverOf = null;
+            if (sharedClock != null) ObstacleClock.Use(sharedClock);
+            ObstacleClock.Authority = true;
             MatchPieces.Clear();
             // Do not close the peer sessions: the lobby's motion transport owns them.
         }
@@ -287,6 +331,7 @@ namespace ChessFight.RagdollLab.Net
         {
             authority = host;
             MiniGameBase.Remote = !host;
+            ObstacleClock.Authority = host;
             if (finish != null) finish.Authority = host;
             if (host)
             {
@@ -338,6 +383,9 @@ namespace ChessFight.RagdollLab.Net
                 r.Jump = r.Shove = r.Ability = r.Ability2 = r.Skill = 0;
             }
             pending = default;
+            hostObstacles.Clear();
+            obstacleSynced = false;
+            while (stateQueue.Count > 0) { statePool.Push(stateQueue[0]); stateQueue.RemoveAt(0); }
             eventLog.Clear();
             inbox.Clear();
             eventQueue.Clear();
@@ -354,6 +402,8 @@ namespace ChessFight.RagdollLab.Net
             if (!session.Started || session.Match == 0) return;
             if (session.IsHost != authority) SetAuthority(session.IsHost);
             SyncRoster();
+            SyncObstacleClock();
+            ArmStartBar();
             // The match sheet's piece icons (VoiceHud, R131): who has been promoted, as this PC draws them.
             foreach (var r in runners.Values) MatchPieces.Set(r.Id, r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn);
             // A client's skill timers run before this frame's packets overwrite them.
@@ -367,13 +417,13 @@ namespace ChessFight.RagdollLab.Net
             {
                 if (runners.TryGetValue(session.Self, out var self)) self.Pawn.SetInput(local);
                 foreach (var r in runners.Values) CheckRespawn(r);
-                if (now - sentAt >= SnapshotInterval) SendSnapshot();
-                if (now - stateAt >= StateInterval) SendState();
+                if (now - sentAt >= SnapshotInterval) SendSnapshot();   // the course state goes with it
             }
             else
             {
                 ClientInput(local, now);
                 Playback();
+                ApplyDueStates();
                 DispatchEvents();
                 if (now - receivedAt > SilenceTimeout && !ended) session.Abort("폰 러쉬 방장 연결이 끊어졌습니다.");
             }
@@ -489,7 +539,7 @@ namespace ChessFight.RagdollLab.Net
             if (!authority) return;
             // Nobody is let into the empty seats of a decided race; the winner goes out reliably as well.
             session.EndMatch();
-            SendState(true);
+            SendState(NowMs(), true);
         }
 
         // ------------------------------------------------------------------ host: sending
@@ -516,9 +566,11 @@ namespace ChessFight.RagdollLab.Net
                 snaps[r.Id] = Mathf.Max(0, n - 1);
                 outgoing.Add(pose);
             }
-            byte[] bytes = RagdollNetProtocol.Snapshot(session.Match, tick, stamp, outgoing);
+            // The obstacle time these poses were simulated at: clients draw the obstacles at it.
+            byte[] bytes = RagdollNetProtocol.Snapshot(session.Match, tick, stamp, outgoing, ObstacleClock.Now);
             foreach (var id in session.Roster.Keys) Send(id, bytes, false);
             SendSkills(stamp);
+            SendState(stamp);
         }
 
         /// <summary>The skills packet, to each client with every snapshot: the busy pieces, the bishops' wires, and the
@@ -571,24 +623,29 @@ namespace ChessFight.RagdollLab.Net
             }, NowMs());
         }
 
-        void SendState(bool reliable = false)
+        void SendState(uint stamp, bool reliable = false)
         {
-            stateAt = Time.realtimeSinceStartup;
             var picker = course != null ? course.Missions : null;
             if (picker == null) return;
             state.Tick = ++stateTick;
+            state.HostTimeMs = stamp;
             state.First = (sbyte)picker.First;
             state.Second = (sbyte)picker.Second;
             for (int k = 0; k < PawnRushNetState.Stations; k++)
             {
-                var game = picker.Station(k / 2 + 1, k % 2)?.Game;
+                var station = picker.Station(k / 2 + 1, k % 2);
+                var game = station != null ? station.Game : null;
+                state.Game[k] = (sbyte)(station != null ? station.GameIndex : -1);
                 state.Progress[k] = game != null ? game.Progress01 : 0f;
                 state.Completed[k] = game != null && game.Completed;
-                state.Bits[k] = game != null ? game.StateBits : 0UL;
+                var block = new NetBlock(state.Block[k], 0, PawnRushNetState.BlockBytes);
+                if (game != null) game.WriteNet(ref block);
+                state.BlockLength[k] = block.Written;
             }
             state.PadFirst = (byte)picker.PadFirst;
             state.PadSecond = (byte)picker.PadSecond;
             state.PadsUsed = picker.PadsUsed;
+            picker.Choosers(state.PadChooser);
             state.Winner = (sbyte)(finish != null ? finish.Winner : PawnRushFinish.None);
             state.Clock = finish != null ? (finish.Winner != PawnRushFinish.None ? finish.WinClock : finish.Clock) : 0f;
             state.FinisherCount = 0;
@@ -643,7 +700,7 @@ namespace ChessFight.RagdollLab.Net
                             if (lastState != 0 && !RagdollNetProtocol.Newer(received.Tick, lastState)) continue;
                             lastState = received.Tick;
                             receivedAt = Time.realtimeSinceStartup;
-                            ApplyState(received);
+                            QueueState(received);
                             continue;
                         }
                         byte type = RagdollNetProtocol.TypeOf(bytes);
@@ -674,6 +731,13 @@ namespace ChessFight.RagdollLab.Net
                 r.Abilities = fresh.abilities;
                 r.Abilities2 = fresh.abilities2;
                 r.Skills = fresh.skills;
+                r.PieceSeq = fresh.pieceSeq;
+            }
+            // A new promotion choice: the pad it is for checks that this pawn is the one choosing.
+            if (fresh.pieceSeq != 0 && fresh.pieceSeq != r.PieceSeq)
+            {
+                r.PieceSeq = fresh.pieceSeq;
+                if (r.Driver != null) StationPromotion.Choose(r.Driver, (PieceKind)fresh.pieceAsk);
             }
             r.Jump = Mathf.Min(4, r.Jump + PressCount.Take(fresh.jumps, ref r.Jumps));
             r.Shove = Mathf.Min(4, r.Shove + PressCount.Take(fresh.shoves, ref r.Shoves));
@@ -689,6 +753,13 @@ namespace ChessFight.RagdollLab.Net
                 r.EventAck = fresh.eventAck;
                 r.AckSet = true;
             }
+        }
+
+        // Not the host: my promotion choice, sent in every input from now on with a new number (never 0).
+        void AskPiece(PieceKind piece)
+        {
+            pending.pieceAsk = (byte)piece;
+            pending.pieceSeq = (byte)(pending.pieceSeq == 255 ? 1 : pending.pieceSeq + 1);
         }
 
         // Not the host: count my presses, draw my own press and aim at once (D-S3), send 60 times a second.
@@ -754,9 +825,73 @@ namespace ChessFight.RagdollLab.Net
             if (picker == null) return;
             if (s.First >= 0 && s.Second >= 0 && (picker.First != s.First || picker.Second != s.Second)) picker.Install(s.First, s.Second);
             for (int k = 0; k < PawnRushNetState.Stations; k++)
-                picker.Station(k / 2 + 1, k % 2)?.Game?.ApplyRemote(s.Progress[k], s.Completed[k], s.Bits[k]);
-            picker.ApplyPads((PieceKind)s.PadFirst, (PieceKind)s.PadSecond, s.PadsUsed);
+            {
+                var station = picker.Station(k / 2 + 1, k % 2);
+                var game = station != null ? station.Game : null;
+                if (game == null || station.GameIndex != s.Game[k]) continue;
+                var block = new NetBlock(s.Block[k], 0, s.BlockLength[k]);
+                game.ReadNet(ref block);
+                game.ApplyRemote(s.Progress[k], s.Completed[k]);
+            }
+            picker.ApplyPads((PieceKind)s.PadFirst, (PieceKind)s.PadSecond, s.PadsUsed, s.PadChooser);
             if (finish != null) finish.ApplyRemote(s.Winner, s.Clock, s.FinisherSeat, s.FinisherTime, s.FinisherCount);
+        }
+
+        // A client keeps the course states until the pawns it draws reach their host time (R126).
+        void QueueState(PawnRushNetState s)
+        {
+            var copy = statePool.Count > 0 ? statePool.Pop() : new PawnRushNetState();
+            copy.CopyFrom(s);
+            stateQueue.Add(copy);
+            // Never more than a second's worth: the oldest are applied at once (a stalled playback).
+            while (stateQueue.Count > 32) ApplyQueued(0);
+        }
+
+        void ApplyDueStates()
+        {
+            // Before the first snapshot there is no playback to wait for.
+            while (stateQueue.Count > 0 && (playback <= 0d || stateQueue[0].HostTimeMs <= playback + 0.5d)) ApplyQueued(0);
+        }
+
+        void ApplyQueued(int index)
+        {
+            var s = stateQueue[index];
+            stateQueue.RemoveAt(index);
+            try { ApplyState(s); }
+            catch (Exception e) { Debug.LogException(e); }
+            statePool.Push(s);
+        }
+
+        // ------------------------------------------------------------------ the obstacle clock (R126)
+
+        // The shared clock advanced with the physics steps: the runtime's shared clock reads real time, which
+        // moves a whole frame at once, so several physics steps of a frame would see the same time and the
+        // obstacles would move in jerks. Only the offset to the shared clock is measured, eased in a little each
+        // frame (jumps on the first frame or a hitch).
+        void SyncObstacleClock()
+        {
+            double target = sharedClock() - Time.fixedTimeAsDouble;
+            double error = target - obstacleOffset;
+            if (!obstacleSynced || Math.Abs(error) > 0.25)
+            {
+                obstacleOffset = target;
+                obstacleSynced = true;
+            }
+            else obstacleOffset += Math.Max(-0.002, Math.Min(0.002, error));
+        }
+
+        double HostObstacleTime() => Time.fixedTimeAsDouble + obstacleOffset;
+
+        // What the obstacles read: the host its own clock; a client the host's stamp at the moment it draws (until
+        // the first snapshot, the shared clock).
+        double MatchObstacleTime() => authority || !hostObstacles.HasSample ? HostObstacleTime() : hostObstacles.Now(Time.timeAsDouble);
+
+        // The start bar sinks at the match's shared start plus its countdown, by the obstacle clock, on every PC.
+        void ArmStartBar()
+        {
+            if (startBarSet || StartBar.Current == null || session.StartAt <= 0) return;
+            startBarSet = true;
+            StartBar.Current.ReleaseAtClock(session.StartAt + StartBar.Current.Countdown);
         }
 
         /// <summary>The host's skills packet: the states at once (D-S4), the moments queued to play with the bodies.</summary>
@@ -885,7 +1020,7 @@ namespace ChessFight.RagdollLab.Net
             var newest = buffer[buffer.Count - 1];
             double target = newest.hostTimeMs - delay.Milliseconds;
             if (playback <= 0d) playback = target;
-            playback = PlaybackDelay.Advance(playback, target, newest.hostTimeMs, Time.unscaledDeltaTime * 1000d, out _, out _);
+            playback = PlaybackDelay.Advance(playback, target, newest.hostTimeMs, Time.unscaledDeltaTime * 1000d, out double rate, out _);
             var from = buffer[0];
             var to = from;
             foreach (var snapshot in buffer)
@@ -895,6 +1030,8 @@ namespace ChessFight.RagdollLab.Net
                 from = snapshot;
             }
             float t = Mathf.Clamp01((float)((playback - from.hostTimeMs) / Math.Max(1, (double)to.hostTimeMs - from.hostTimeMs)));
+            // Obstacles on the same timeline as the pawns drawn this frame.
+            hostObstacles.Sample(HostObstacleClock.Interpolate(from.obstacleTime, to.obstacleTime, t), Time.timeAsDouble, rate);
             for (int i = 0; i < to.count; i++)
             {
                 var b = to.At(i);

@@ -1,3 +1,4 @@
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.PawnRush
@@ -7,7 +8,7 @@ namespace ChessFight.PawnRush
     // climbing face (a rest ledge, design doc §3). A pawn of the team standing on a top rings its
     // bell, unless one of the other team stands there too; a rung bell stays rung. All six: the
     // gate opens.
-    public sealed class MgBells : MiniGameBase
+    public sealed class MgBells : MiniGameBase, IProgressCount
     {
         public const float Top = 2.4f, Ledge = .8f, Reach = 1.3f;
         public static readonly Vector3[] Towers =
@@ -23,6 +24,8 @@ namespace ChessFight.PawnRush
         int count;
 
         public int Rung => count;
+        public int Done => count;
+        public int Total => Towers.Length;
 
         static Vector3 V(float x, float y, float z) => MissionGames.V(x, y, z);
 
@@ -57,26 +60,23 @@ namespace ChessFight.PawnRush
         static bool OnTop(Vector3 local, Vector3 tower) =>
             Mathf.Abs(local.x - tower.x) <= Reach && Mathf.Abs(local.z - tower.z) <= Reach && local.y >= tower.y - .2f && local.y <= tower.y + 2f;
 
-        public override ulong StateBits
+        public override void WriteNet(ref NetBlock block)
         {
-            get
-            {
-                ulong bits = 0;
-                for (int i = 0; i < rung.Length; i++) if (rung[i]) bits |= 1UL << i;
-                return bits;
-            }
+            int bits = 0;
+            for (int i = 0; i < rung.Length; i++) if (rung[i]) bits |= 1 << i;
+            block.U8(bits);
         }
 
-        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        public override void ReadNet(ref NetBlock block)
         {
+            int bits = block.ReadU8();
             count = 0;
             for (int i = 0; i < rung.Length; i++)
             {
-                rung[i] = (bits >> i & 1UL) != 0;
+                rung[i] = (bits >> i & 1) != 0;
                 if (rung[i]) count++;
                 if (bells[i] != null) bells[i].sharedMaterial = rung[i] ? station.Kit.rankGold : station.Kit.hazard;
             }
-            base.ApplyRemote(progress, completed, bits);
         }
 
         void FixedUpdate()

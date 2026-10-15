@@ -13,7 +13,11 @@ namespace ChessFight.PawnRush
     //
     // Carried planks are pictures over the carrier's head, laid ones fixed boxes: no physics props
     // (mini-game spec: at most ten moving props per game, and twenty planks a plaza would be more).
-    public sealed class MgPlanks : MiniGameBase
+    //
+    // Online (R126): the block carries who is carrying (their roster seats), so every PC draws the plank
+    // over the carrier's head - before R126 only the host saw them, and on every other screen the pawns
+    // walked from the pile to the bridge empty-handed.
+    public sealed class MgPlanks : MiniGameBase, IProgressCount
     {
         public const int Rows = 5, Columns = 2, PerPile = 5;
         public const float PickSeconds = 1f, LaySeconds = 1.5f, ReturnSeconds = 5f;
@@ -45,6 +49,8 @@ namespace ChessFight.PawnRush
         int count;
 
         public int Laid => count;
+        public int Done => count;
+        public int Total => Rows * Columns;
 
         public static MgPlanks Build(CourseBuilder b, MissionStation station)
         {
@@ -84,31 +90,59 @@ namespace ChessFight.PawnRush
             return Rows;
         }
 
-        // Laid slots in bits 0..9, the piles' stock in 10..12 and 13..15. Carried planks are not sent:
-        // online they show only on the host for now.
-        public override ulong StateBits
+        // The block: laid slots (2 bytes), the piles' stock (1), then the carriers' seats (a count and one
+        // byte each, at most WorkerCap).
+        public override void WriteNet(ref NetBlock block)
         {
-            get
+            int bits = 0;
+            for (int i = 0; i < laid.Length; i++) if (laid[i]) bits |= 1 << i;
+            block.U16(bits);
+            block.U8((stock[0] & 7) | (stock[1] & 7) << 3);
+            int n = 0;
+            foreach (var kv in carriers) if (Seat(kv.Key) != NoSeat) n++;
+            n = Mathf.Min(n, PawnRushMissions.WorkerCap);
+            block.U8(n);
+            foreach (var kv in carriers)
             {
-                ulong bits = 0;
-                for (int i = 0; i < laid.Length; i++) if (laid[i]) bits |= 1UL << i;
-                return bits | (ulong)(stock[0] & 7) << 10 | (ulong)(stock[1] & 7) << 13;
+                byte seat = Seat(kv.Key);
+                if (seat == NoSeat || n-- <= 0) continue;
+                block.U8(seat);
             }
         }
 
-        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        readonly HashSet<ICharacterDriver> heldNow = new HashSet<ICharacterDriver>();
+
+        public override void ReadNet(ref NetBlock block)
         {
+            int bits = block.ReadU16();
             count = 0;
             for (int i = 0; i < laid.Length; i++)
             {
-                laid[i] = (bits >> i & 1UL) != 0;
+                laid[i] = (bits >> i & 1) != 0;
                 if (laid[i]) count++;
                 if (slots[i] != null && slots[i].activeSelf != laid[i]) slots[i].SetActive(laid[i]);
             }
-            stock[0] = (int)(bits >> 10 & 7UL);
-            stock[1] = (int)(bits >> 13 & 7UL);
+            int piles = block.ReadU8();
+            stock[0] = piles & 7;
+            stock[1] = piles >> 3 & 7;
             ShowPiles();
-            base.ApplyRemote(progress, completed, bits);
+            // Whoever carries now gets a plank over the head; whoever stopped loses theirs.
+            heldNow.Clear();
+            int n = Mathf.Min(block.ReadU8(), PawnRushMissions.WorkerCap);
+            for (int i = 0; i < n; i++)
+            {
+                var who = Driver((byte)block.ReadU8());
+                if (who == null) continue;
+                heldNow.Add(who);
+                if (!carriers.ContainsKey(who)) carriers[who] = new Carry { Board = MakeBoard(), Pile = 0 };
+            }
+            dropped.Clear();
+            foreach (var kv in carriers) if (!heldNow.Contains(kv.Key)) dropped.Add(kv.Key);
+            foreach (var d in dropped)
+            {
+                if (carriers[d].Board != null) Destroy(carriers[d].Board);
+                carriers.Remove(d);
+            }
         }
 
         void FixedUpdate()
@@ -187,13 +221,19 @@ namespace ChessFight.PawnRush
             stock[pile]--;
             ShowPiles();
             picking.Remove(who);
+            carriers[who] = new Carry { Board = MakeBoard(), Pile = pile, Velocity = velocity };
+        }
+
+        // A plank over a carrier's head: a picture (no collider, nothing to push other pawns with).
+        GameObject MakeBoard()
+        {
             var board = GameObject.CreatePrimitive(PrimitiveType.Cube);
             board.name = "Plank (carried)";
-            Destroy(board.GetComponent<Collider>());
+            DestroyImmediate(board.GetComponent<Collider>());
             board.transform.SetParent(transform, false);
             board.transform.localScale = new Vector3(PlankWidth, .12f, Row);
             board.GetComponent<Renderer>().sharedMaterial = station.Kit.boardDark;
-            carriers[who] = new Carry { Board = board, Pile = pile, Velocity = velocity };
+            return board;
         }
 
         void Lay(ICharacterDriver who, Carry carry, int row, float x)

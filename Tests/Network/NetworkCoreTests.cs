@@ -26,16 +26,16 @@ public static class NetworkCoreTests
                 {
                     var d = PawnRushMissions.Choose(seed);
                     Check(d.First != d.Second, "two different games");
-                    Check(d.First >= 0 && d.First < 5 && d.Second >= 0 && d.Second < 5, "in the pool");
+                    Check(d.First >= 0 && d.First < PawnRushMissions.Count && d.Second >= 0 && d.Second < PawnRushMissions.Count, "in the pool");
                     var e = PawnRushMissions.Choose(seed + 1000, d.First, d.Second);
                     Check(e.First != d.First && e.First != d.Second && e.Second != d.First && e.Second != d.Second, "shuffle bag");
                     seen.Add(d.First); seen.Add(d.Second);
                 }
-                Check(seen.Count == 5, "every game comes up");
+                Check(seen.Count == PawnRushMissions.Count, "every game comes up");
                 var a = PawnRushMissions.Choose(77, 1, 3); var b = PawnRushMissions.Choose(77, 1, 3);
                 Check(a.First == b.First && a.Second == b.Second, "same seed, same draw"); });
             Test("Pawn Rush draw falls back to 'different games' when too few are enabled", () => {
-                var on = new[] { true, false, true, false, false };
+                var on = new[] { true, false, true, false, false, false, false, false, false, false };
                 for (int seed = 0; seed < 50; seed++)
                 {
                     var d = PawnRushMissions.Choose(seed, 0, 2, on);
@@ -44,6 +44,22 @@ public static class NetworkCoreTests
                 bool threw = false;
                 try { PawnRushMissions.Choose(1, -1, -1, new[] { true, false, false, false, false }); } catch (ArgumentException) { threw = true; }
                 Check(threw, "one game cannot fill two plazas"); });
+            Test("Pawn Rush draw (v1.0 §2.5): never two games of the same group in a round, 1,000 seeds", () => {
+                Check(PawnRushMissions.Group.Length == PawnRushMissions.Count && PawnRushMissions.Ids.Length == PawnRushMissions.Count
+                      && PawnRushMissions.Names.Length == PawnRushMissions.Count && PawnRushMissions.Hints.Length == PawnRushMissions.Count, "tables");
+                int last1 = -1, last2 = -1;
+                for (int seed = 0; seed < 1000; seed++)
+                {
+                    var d = PawnRushMissions.Choose(seed, last1, last2);
+                    Check(d.First != d.Second && PawnRushMissions.Group[d.First] != PawnRushMissions.Group[d.Second], "same group, seed " + seed);
+                    Check(d.First != last1 && d.First != last2 && d.Second != last1 && d.Second != last2, "previous round, seed " + seed);
+                    last1 = d.First; last2 = d.Second;
+                }
+                // Only pulling games on: the group rule gives way, two different games still.
+                var pulls = new bool[PawnRushMissions.Count];
+                pulls[PawnRushMissions.Drawbridge] = pulls[PawnRushMissions.Capstan] = true;
+                var p = PawnRushMissions.Choose(5, PawnRushMissions.Drawbridge, PawnRushMissions.Capstan, pulls);
+                Check(p.First != p.Second, "a short pool still gives two"); });
             Test("Pawn Rush mini-game progress keeps its quarter latches and caps workers at four", () => {
                 Check(PawnRushMissions.Latched(.30, .20) == .25, "back to the latch only");
                 Check(PawnRushMissions.Latched(.30, .27) == .27, "above the latch it goes back");
@@ -358,40 +374,219 @@ public static class NetworkCoreTests
                 t.Acknowledged(3,0.099+0.1); Check(Math.Abs(t.Milliseconds-100)<0.5,"first sample "+t.Milliseconds);
                 t.Acknowledged(2,1.0); Check(Math.Abs(t.Milliseconds-100)<0.5,"stale ack changed estimate");
                 t.Acknowledged(5,0.165+0.180); Check(t.Milliseconds>100&&t.Milliseconds<180,"smoothing "+t.Milliseconds); });
-            Test("Pawn Rush course state round-trips and refuses other matches and damaged packets", () => {
-                var a = new PawnRushNetState { Tick = 77, First = 3, Second = 0 };
+            Test("Pawn Rush course state (CFP4) round-trips stations with their blocks and refuses damaged packets", () => {
+                var a = new PawnRushNetState { Tick = 77, HostTimeMs = 123456, First = 3, Second = 0 };
+                a.Game[0] = 3; a.Game[1] = 3; a.Game[2] = 0; a.Game[3] = 0;
                 a.Progress[0] = .25f; a.Progress[3] = 1f; a.Completed[3] = true;
-                a.Bits[0] = 0xFFFFFFFFFFFFFFFFUL; a.Bits[2] = 0x1234;
+                var w = new NetBlock(a.Block[0], 0, PawnRushNetState.BlockBytes);
+                w.U16(0x2A5); w.U8(0x1D); w.U8(2); w.U8(SkillWire.Ref(0, 1)); w.U8(SkillWire.Ref(0, 4)); w.Unit16(271.5f, 360f);
+                a.BlockLength[0] = w.Written;
+                var full = new NetBlock(a.Block[2], 0, PawnRushNetState.BlockBytes);
+                for (int k = 0; k < PawnRushNetState.BlockBytes; k++) full.U8(k + 1);
+                full.U8(99);   // past the end: dropped, never written
+                a.BlockLength[2] = full.Written;
+                Check(a.BlockLength[0] == 8 && a.BlockLength[2] == PawnRushNetState.BlockBytes, "block lengths " + a.BlockLength[0] + " " + a.BlockLength[2]);
                 byte[] bytes = a.Write(42UL);
-                Check(bytes.Length == PawnRushNetState.FixedBytes && bytes.Length == a.Bytes, "size " + bytes.Length);
+                Check(bytes.Length == a.Bytes && bytes.Length <= PawnRushNetState.MaxBytes, "size " + bytes.Length);
                 var b = new PawnRushNetState();
                 Check(PawnRushNetState.Read(bytes, 42UL, b), "read");
-                Check(b.Tick == 77 && b.First == 3 && b.Second == 0, "header");
-                Check(b.Progress[0] == .25f && b.Progress[3] == 1f && b.Completed[3] && !b.Completed[0], "stations");
-                Check(b.Bits[0] == 0xFFFFFFFFFFFFFFFFUL && b.Bits[2] == 0x1234 && b.Bits[1] == 0, "bits");
+                Check(b.Tick == 77 && b.HostTimeMs == 123456 && b.First == 3 && b.Second == 0, "header");
+                Check(b.Game[0] == 3 && b.Game[2] == 0 && Math.Abs(b.Progress[0] - .25f) < 1e-4f && b.Progress[3] == 1f && b.Completed[3] && !b.Completed[0], "stations");
+                var r = new NetBlock(b.Block[0], 0, b.BlockLength[0]);
+                Check(r.ReadU16() == 0x2A5 && r.ReadU8() == 0x1D && r.ReadU8() == 2 && r.ReadU8() == SkillWire.Ref(0, 1) && r.ReadU8() == SkillWire.Ref(0, 4)
+                      && Math.Abs(r.ReadUnit16(360f) - 271.5f) < .01f && r.ReadU8() == 0, "block 0 fields, then nothing");
+                Check(b.BlockLength[2] == PawnRushNetState.BlockBytes && b.Block[2][31] == 32 && b.BlockLength[1] == 0, "a full block and an empty one");
+                var copy = new PawnRushNetState(); copy.CopyFrom(b);
+                Check(copy.Write(42UL).SequenceEqual(bytes), "copy writes the same bytes");
                 Check(!PawnRushNetState.Read(bytes, 43UL, b), "another match");
                 var cut = new byte[bytes.Length - 1]; Array.Copy(bytes, cut, cut.Length);
                 Check(!PawnRushNetState.Read(cut, 42UL, b), "short packet");
+                var longer = new byte[bytes.Length + 1]; Array.Copy(bytes, longer, bytes.Length);
+                Check(!PawnRushNetState.Read(longer, 42UL, b), "long packet");
                 bytes[0] ^= 1; Check(!PawnRushNetState.Read(bytes, 42UL, b), "wrong magic"); });
-            Test("Pawn Rush course state (CFP2) carries the pads, the winner, the clock and the crown finishers", () => {
+            Test("Pawn Rush course state (CFP4) carries the pads and their choosers, the winner, the clock and the crown finishers", () => {
                 var a = new PawnRushNetState { Tick = 9, First = 1, Second = 4, PadFirst = (byte)PieceKind.Knight, PadSecond = (byte)PieceKind.Queen,
                                                PadsUsed = 0x5, Winner = 1, Clock = 187.25f, FinisherCount = 3 };
+                a.PadChooser[2] = SkillWire.Ref(0, 3);
                 a.FinisherSeat[0] = SkillWire.Ref(1, 0); a.FinisherTime[0] = 170.04f;
                 a.FinisherSeat[1] = SkillWire.Ref(1, 2); a.FinisherTime[1] = 181.5f;
                 a.FinisherSeat[2] = SkillWire.Ref(0, 5); a.FinisherTime[2] = 186.96f;
                 byte[] bytes = a.Write(7UL);
-                Check(bytes.Length == PawnRushNetState.FixedBytes + 3 * PawnRushNetState.FinisherBytes, "size " + bytes.Length);
+                Check(bytes.Length == PawnRushNetState.HeaderBytes + 3 * PawnRushNetState.FinisherBytes + 4 * PawnRushNetState.StationFixedBytes, "size " + bytes.Length);
                 var b = new PawnRushNetState();
                 Check(PawnRushNetState.Read(bytes, 7UL, b), "read");
                 Check(b.PadFirst == (byte)PieceKind.Knight && b.PadSecond == (byte)PieceKind.Queen && b.PadsUsed == 0x5, "pads");
+                Check(b.PadChooser[2] == SkillWire.Ref(0, 3) && b.PadChooser[0] == PawnRushNetState.NoChooser && b.PadChooser[3] == PawnRushNetState.NoChooser, "choosers");
                 Check(b.Winner == 1 && Math.Abs(b.Clock - 187.25f) < 1e-4f, "winner and clock");
                 Check(b.FinisherCount == 3 && b.FinisherSeat[1] == SkillWire.Ref(1, 2) && Math.Abs(b.FinisherTime[0] - 170f) < 0.051f
                       && Math.Abs(b.FinisherTime[2] - 187f) < 0.051f, "finishers to a tenth");
                 var none = new PawnRushNetState().Write(7UL);
                 Check(PawnRushNetState.Read(none, 7UL, b) && b.Winner == -1 && b.FinisherCount == 0, "a fresh state: nobody yet");
-                var longer = new byte[bytes.Length + 1]; Array.Copy(bytes, longer, bytes.Length);
-                Check(!PawnRushNetState.Read(longer, 7UL, b), "a count that disagrees with the length");
-                bytes[PawnRushNetState.FixedBytes - 1] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
+                bytes[PawnRushNetState.HeaderBytes - 1] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
+            Test("Board (v1.0 A/G/H/I): a1 dark, h1 light, 32 of each, index and square round trips", () => {
+                Check(!PawnRushBoard.IsLight(0, 1) && PawnRushBoard.IsLight(7, 1) && PawnRushBoard.IsLight(0, 8) && !PawnRushBoard.IsLight(7, 8), "corners");
+                int light = 0;
+                for (int f = 0; f < 8; f++)
+                    for (int r = 1; r <= 8; r++)
+                    {
+                        if (PawnRushBoard.IsLight(f, r)) light++;
+                        int i = PawnRushBoard.Index(f, r);
+                        Check(PawnRushBoard.FileOf(i) == f && PawnRushBoard.RankOf(i) == r, "index " + i);
+                        Check(PawnRushBoard.SquareAt(PawnRushBoard.Center(f, r), out int f2, out int r2) && f2 == f && r2 == r, "square at the middle");
+                        Check(PawnRushBoard.Parse(PawnRushBoard.Name(f, r), out f2, out r2) && f2 == f && r2 == r, "name");
+                    }
+                Check(light == 32, "32 light squares");
+                Check(Math.Abs(PawnRushBoard.Center(0, 1).V + 7.875f) < 1e-4f && Math.Abs(PawnRushBoard.Center(0, 1).U - 3.125f) < 1e-4f, "a1's middle");
+                Check(!PawnRushBoard.SquareAt(new StationPoint(-9.5f, 5f), out _, out _) && !PawnRushBoard.SquareAt(new StationPoint(0f, 1.9f), out _, out _), "off the board"); });
+            Test("F en passant: sixteen different offsets, capture only in the window, a function of the clock", () => {
+                var offsets = new HashSet<float>();
+                for (int i = 0; i < EnPassantRules.Statues; i++) offsets.Add(EnPassantRules.Offset(i));
+                Check(offsets.Count == 16, "offsets " + offsets.Count);
+                Check(!EnPassantRules.InWindow(.1f) && EnPassantRules.InWindow(.31f) && EnPassantRules.InWindow(1.5f) && !EnPassantRules.InWindow(1.6f)
+                      && EnPassantRules.InWindow(1.6f, EnPassantRules.Grace) && !EnPassantRules.InWindow(2f, EnPassantRules.Grace) && !EnPassantRules.InWindow(10f, .15f), "window");
+                Check(Math.Abs(EnPassantRules.Displacement(1f) - 2.2f) < 1e-4f && EnPassantRules.Displacement(8f) == 0f
+                      && Math.Abs(EnPassantRules.Displacement(3f) - 1.1f) < 1e-3f && EnPassantRules.Displacement(0f) == 0f, "displacement");
+                Check(EnPassantRules.Captures(.7f, true, 0f, 1f) && EnPassantRules.Captures(.7f, false, 5.2f, 1f) && !EnPassantRules.Captures(.7f, false, 3f, 1f)
+                      && !EnPassantRules.Captures(.9f, true, 0f, 1f) && !EnPassantRules.Captures(.5f, true, 0f, 6f), "capture rule");
+                var p = EnPassantRules.Position(100.0, 3); var q = EnPassantRules.Position(100.0, 3);
+                Check(p.V == q.V && p.U == q.U && p.V == EnPassantRules.Columns[3], "same time, same place");
+                int open = 0; for (int i = 0; i < 16; i++) if (EnPassantRules.InWindow(EnPassantRules.Phase(57.3, i))) open++;
+                Check(open <= 3, "a handful open at once: " + open); });
+            Test("C drawbridge rope: the spec's speeds, a lone puller never stopped", () => {
+                Check(Math.Abs(DrawbridgeRope.Speed(1, 0) - .045f) < .001f && Math.Abs(DrawbridgeRope.Speed(2, 0) - .115f) < .002f
+                      && Math.Abs(DrawbridgeRope.Speed(3, 0) - .199f) < .002f && Math.Abs(DrawbridgeRope.Speed(4, 0) - .292f) < .003f, "table");
+                Check(Math.Abs(DrawbridgeRope.Speed(1, .5f) - .04f) < 1e-4f && DrawbridgeRope.Speed(0, .5f) == 0f && DrawbridgeRope.Speed(7.2f, 0) <= .35f, "minimum and cap");
+                Check(DrawbridgeRope.Speed(1.8f, 0) > DrawbridgeRope.Speed(1, 0) * 1.8f, "sprinting pulls harder than it costs"); });
+            Test("J knight's road: every square a knight's move from the last, d1 to f8, pieces on the road", () => {
+                Check(KnightRoute.Joined(), "joined by knight moves");
+                Check(KnightRoute.Squares[0] == "d1" && KnightRoute.Squares[KnightRoute.Squares.Length - 1] == "f8", "entrance to gate");
+                Check(KnightRoute.PieceSquares.Length == KnightRoute.PieceKinds.Length, "a kind per piece");
+                foreach (var q in KnightRoute.PieceSquares) Check(Array.IndexOf(KnightRoute.Squares, q) > 0, "piece on the road: " + q);
+                Check(KnightRoute.SquareAt(KnightRoute.Center("c5")) == 3 && KnightRoute.SquareAt(new StationPoint(0f, 10f)) < 0, "squares and water");
+                Check(KnightRoute.Takes(.5f, true, 0f, false) && KnightRoute.Takes(.5f, false, 0f, true) && !KnightRoute.Takes(.5f, false, 2.5f, false) && !KnightRoute.Takes(1.2f, true, 9f, true), "takes"); });
+            Test("G king escort: a road of fifteen joined squares, 32.9 m, six turntables, the speed table", () => {
+                Check(KingEscortPath.Connected() && KingEscortPath.Cells.Length == 15, "joined");
+                Check(Math.Abs(KingEscortPath.Length - 32.925f) < .01f, "length " + KingEscortPath.Length);
+                int turns = 0; for (int i = 0; i < KingEscortPath.Cells.Length; i++) if (KingEscortPath.Turns(i)) turns++;
+                Check(turns == 6, "turntables " + turns);
+                var p = KingEscortPath.Position(0f, out float dv, out float du);
+                Check(Math.Abs(p.V - PawnRushBoard.Center(3, 1).V) < 1e-4f && dv == 0f && du == 1f, "starts on d1 going north");
+                var g = KingEscortPath.Position(KingEscortPath.Length, out dv, out du);
+                Check(Math.Abs(g.U - KingEscortPath.GateU) < 1e-3f, "ends at the gate");
+                Check(Math.Abs(KingEscortPath.Speed(1.5f, false) - .735f) < 1e-4f && KingEscortPath.Speed(.5f, true) == .11f && KingEscortPath.Speed(9f, false) == 1.1f, "speeds");
+                Check(KingEscortPath.IsSand(KingEscortPath.At(5)) && !KingEscortPath.IsSand(KingEscortPath.At(0)), "sand");
+                Check(KingEscortPath.RookStop(0) < KingEscortPath.At(8) && KingEscortPath.RookStop(1) < KingEscortPath.At(12), "rooks stop the sled short"); });
+            Test("H checkmate hunt: mate in a corner, stalemate with nowhere to go, four checks freeze, deterministic", () => {
+                var hunt = new CheckmateHunt();
+                foreach (var k in hunt.All) k.State = CheckmateHunt.KingState.Captured;
+                var king = hunt.All[0]; king.State = CheckmateHunt.KingState.Free; king.File = 0; king.Rank = 1; king.NextTurn = 0;
+                hunt.Step(.1, new[] { PawnRushBoard.Center(1, 2) }, new StationPoint[0]);
+                Check(king.State == CheckmateHunt.KingState.Frozen && king.Mated, "a pawn diagonally inside mates a1");
+                Check(!hunt.TryCapture(0, PawnRushBoard.Center(5, 5), true, 0f) && hunt.TryCapture(0, PawnRushBoard.Center(0, 1), true, 0f), "a dive captures a frozen king");
+                // Stalemate: a1 with its three neighbours held by other kings, a pawn just off the board.
+                hunt = new CheckmateHunt();
+                for (int i = 0; i < 6; i++) hunt.All[i].State = CheckmateHunt.KingState.Captured;
+                string[] at = { "a1", "a2", "b1", "b2" };
+                for (int i = 0; i < 4; i++) { var k = hunt.All[i]; k.State = CheckmateHunt.KingState.Free; PawnRushBoard.Parse(at[i], out k.File, out k.Rank); k.NextTurn = i == 0 ? 0 : 99; }
+                hunt.Step(.1, new[] { new StationPoint(-9.8f, 3f) }, new StationPoint[0]);
+                Check(hunt.All[0].State == CheckmateHunt.KingState.Free && !(hunt.All[0].File == 0 && hunt.All[0].Rank == 1), "stalemate moves it away");
+                // Four checks: a pawn next to the king every time its immunity is over.
+                hunt = new CheckmateHunt();
+                for (int i = 1; i < 6; i++) hunt.All[i].State = CheckmateHunt.KingState.Captured;
+                king = hunt.All[0]; king.File = 3; king.Rank = 4; king.NextTurn = 0;
+                double t = 0;
+                for (int n = 0; n < 4; n++)
+                {
+                    var below = PawnRushBoard.Center(king.File, king.Rank); below.U -= PawnRushBoard.Cell;
+                    hunt.Step(t += .05, new[] { below }, new StationPoint[0]);
+                    hunt.Step(t += .3, new[] { below }, new StationPoint[0]);   // its turn comes 0.2 s after the attack
+                    hunt.Step(t += 3.5, new[] { new StationPoint(9.9f, 1f) }, new StationPoint[0]);
+                }
+                Check(king.State == CheckmateHunt.KingState.Frozen && king.Checks == 4 && !king.Mated, "four checks freeze: " + king.Checks + " " + king.State);
+                hunt.Step(t += .05, new StationPoint[0], new[] { PawnRushBoard.Center(king.File, king.Rank) });
+                Check(king.State == CheckmateHunt.KingState.Free && king.Checks == 0, "an enemy frees it");
+                // Same pawns in, same moves out.
+                var a = new CheckmateHunt(); var b = new CheckmateHunt();
+                var walk = new List<StationPoint>();
+                for (int i = 0; i < 400; i++)
+                {
+                    var pawn = new StationPoint((float)Math.Sin(i * .05) * 7f, 11f + (float)Math.Cos(i * .037) * 8f);
+                    a.Step(i * .05, new[] { pawn }, new StationPoint[0]); b.Step(i * .05, new[] { pawn }, new StationPoint[0]);
+                }
+                for (int i = 0; i < 6; i++) Check(CheckmateHunt.Pack(a.All[i]) == CheckmateHunt.Pack(b.All[i]), "deterministic king " + i);
+                var u = new CheckmateHunt.King(); CheckmateHunt.Unpack(CheckmateHunt.Pack(a.All[2]), u);
+                Check(u.File == a.All[2].File && u.Rank == a.All[2].Rank && u.Checks == a.All[2].Checks && u.State == a.All[2].State, "pack round trip"); });
+            Test("H checkmate hunt: one pawn running at the nearest king finishes within ten minutes", () => {
+                var hunt = new CheckmateHunt();
+                var me = new StationPoint(0f, 1f);
+                double t = 0; const float dt = .05f;
+                while (!hunt.Done && t < 600)
+                {
+                    int target = -1; float best = 1e9f;
+                    for (int k = 0; k < 6; k++)
+                    {
+                        if (hunt.All[k].State == CheckmateHunt.KingState.Captured) continue;
+                        float d = PawnRushBoard.Center(hunt.All[k].File, hunt.All[k].Rank).DistanceTo(me);
+                        if (d < best) { best = d; target = k; }
+                    }
+                    var king = hunt.All[target];
+                    var goal = PawnRushBoard.Center(king.File, king.Rank);
+                    float stop = king.State == CheckmateHunt.KingState.Frozen ? 0f : 1.2f;
+                    float dist = goal.DistanceTo(me);
+                    if (dist > stop + .01f)
+                    {
+                        float step = Math.Min(2.5f * dt, dist - stop);
+                        me.V += (goal.V - me.V) / dist * step;
+                        me.U += (goal.U - me.U) / dist * step;
+                    }
+                    if (king.State == CheckmateHunt.KingState.Frozen) hunt.TryCapture(target, me, true, 0f);
+                    hunt.Step(t += dt, new[] { me }, new StationPoint[0]);
+                }
+                Check(hunt.Done, "captured " + hunt.Captured + " of 6 in 10 minutes");
+                Console.WriteLine("    (one pawn caught all six kings in " + (int)t + " s)"); });
+            Test("I check block: seeds 0..999 all give a position; rails off every line, escape off the new lines, same seed same position", () => {
+                int doubles = 0, knights = 0, pawns = 0;
+                for (int seed = 0; seed < 1000; seed++)
+                {
+                    var l = CheckBlockGenerator.Generate(seed);
+                    Check(l.King.Rank == 7 && l.King.File >= 2 && l.King.File <= 5, "king on c7..f7, seed " + seed);
+                    Check(l.Points >= CheckBlockGenerator.MinPoints && l.Points <= CheckBlockGenerator.MaxPoints, "budget " + l.Points);
+                    var line = new HashSet<int>();
+                    var stand = new List<int>();
+                    int rails = 0;
+                    foreach (var s in l.Situations)
+                    {
+                        stand.Add(PawnRushBoard.Index(s.From.File, s.From.Rank));
+                        if (s.Kind == CheckBlockGenerator.Kind.Knight) knights++;
+                        if (s.Kind == CheckBlockGenerator.Kind.Pawn) pawns++;
+                        if (s.Kind != CheckBlockGenerator.Kind.Rail) continue;
+                        rails++;
+                        foreach (var q in l.LineSquares(s)) line.Add(PawnRushBoard.Index(q.File, q.Rank));
+                        Check(l.LineSquares(s).Any(q => q.Is(s.Block.File, s.Block.Rank)), "block square on its line, seed " + seed);
+                        bool diagonal = s.DirF != 0 && s.DirR != 0;
+                        Check(diagonal ? (s.Shield == PieceKind.Bishop || s.Shield == PieceKind.Queen) : (s.Shield == PieceKind.Rook || s.Shield == PieceKind.Queen || s.Shield == PieceKind.Pawn), "shield moves the rail's way");
+                        if (s.Attacker == PieceKind.Queen) Check(s.Shield == (diagonal ? PieceKind.Queen : PieceKind.Rook), "a queen's line needs a heavy shield");
+                        if (s.Shield == PieceKind.Pawn) Check(s.Block.Rank > s.RailStart.Rank && s.Block.File == s.RailStart.File, "a pawn only pushes north");
+                    }
+                    Check(rails == 2 || rails == 3, "rails " + rails);
+                    foreach (var s in l.Situations)
+                    {
+                        if (s.Kind != CheckBlockGenerator.Kind.Rail) continue;
+                        Check(!line.Contains(PawnRushBoard.Index(s.RailStart.File, s.RailStart.Rank)) && !line.Contains(PawnRushBoard.Index(s.RailMid.File, s.RailMid.Rank)), "a rail square on a line, seed " + seed);
+                        stand.Add(PawnRushBoard.Index(s.RailStart.File, s.RailStart.Rank)); stand.Add(PawnRushBoard.Index(s.RailMid.File, s.RailMid.Rank)); stand.Add(PawnRushBoard.Index(s.Block.File, s.Block.Rank));
+                    }
+                    Check(stand.Distinct().Count() == stand.Count, "two things on one square, seed " + seed);
+                    if (l.Double)
+                    {
+                        doubles++;
+                        Check(l.Escape.File != l.DoubleRook.File && Math.Abs(l.Escape.File - l.DoubleBishop.File) != Math.Abs(l.Escape.Rank - l.DoubleBishop.Rank), "escape square attacked, seed " + seed);
+                        Check(Math.Abs(l.Escape.File - l.King.File) <= 1 && Math.Abs(l.Escape.Rank - l.King.Rank) <= 1, "escape next to the king");
+                    }
+                    var again = CheckBlockGenerator.Generate(seed);
+                    Check(again.King.File == l.King.File && again.Situations.Count == l.Situations.Count && again.Double == l.Double
+                          && again.Situations.Zip(l.Situations, (x, y) => x.From.Is(y.From.File, y.From.Rank) && x.Kind == y.Kind).All(ok => ok), "same seed, seed " + seed);
+                }
+                Check(doubles > 50 && knights > 100 && pawns > 50, "every kind comes up: double " + doubles + ", knight " + knights + ", pawn " + pawns); });
             Test("Promotion pads: two different pieces a round, the same for every seed holder, never the pawn or the king", () => {
                 var seen = new HashSet<PieceKind>();
                 for (int seed = 0; seed < 400; seed++)

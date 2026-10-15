@@ -84,6 +84,8 @@ namespace ChessFight.PawnRush
         void Update()
         {
             if (Driver == null || course == null) return;
+            MissionStation.LocalTeam = Mathf.Max(0, Team);
+            MiniGameBase.LocalDriver = Driver;
             RegisterOffline();
             var picker = Online ? null : course.Missions;   // no development keys in a match
             if (!Online && LegacyKeys.Down(KeyCode.F5))
@@ -221,7 +223,7 @@ namespace ChessFight.PawnRush
             var picker = course.Missions;
             string games = picker != null ? $"광장 ① {MissionPicker.Name(picker.First)} · 광장 ② {MissionPicker.Name(picker.Second)}" : "미니게임 없음";
             string piece = Driver is IPromotable promotable ? ChessPieces.Name(promotable.Piece) : "폰";
-            string pads = picker != null ? $" · 승격 발판 ① {ChessPieces.Name(picker.PadFirst)} ② {ChessPieces.Name(picker.PadSecond)}" : "";
+            string pads = picker != null ? " · 승격 발판: 원하는 기물 선택" : "";
             string text = $"<b>폰 러시 코스 01 v0.4</b> · {Teams.Name(Team)}팀{(Online ? " · 온라인 경기 (Esc 나가기)" : " (F5 팀 바꾸기)")}\n" +
                           $"구간 {section} · 진행 {along:0} / {total:0} m · 지금 기물 <b>{piece}</b> (F 스킬)\n" +
                           $"{games}{pads}\n" +

@@ -22,6 +22,10 @@ namespace ChessFight.Gameplay
         [SerializeField] float respawnDelay = 5f;
         public float RespawnDelay => respawnDelay;
 
+        [Tooltip("Off: characters float in it but nobody is told (J's pads put them back themselves, not the course).")]
+        [SerializeField] bool report = true;
+        public bool Report { get => report; set => report = value; }
+
         // The top of the box: where the water ends and the air begins.
         public float SurfaceHeight => Box.bounds.max.y;
 
@@ -66,7 +70,7 @@ namespace ChessFight.Gameplay
             if (driver == null) return;
             inside.TryGetValue(driver, out int count);
             inside[driver] = count + 1;
-            if (count == 0) Entered?.Invoke(driver, this);
+            if (count == 0 && report) Entered?.Invoke(driver, this);
         }
 
         void OnTriggerExit(Collider other)

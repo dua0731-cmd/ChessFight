@@ -343,6 +343,7 @@ namespace ChessFight.RagdollLab
             if (matchActive)
             {
                 ObstacleClock.Use(null);
+                ObstacleClock.Authority = true;
                 DropRemoteWires();
                 if (game != null)
                 {
@@ -1156,6 +1157,7 @@ namespace ChessFight.RagdollLab
             hostObstacles.Clear();
             steamClockErrorMs = 0d;
             ObstacleClock.Use(MatchObstacleTime);
+            ObstacleClock.Authority = NetIsHost;
             pawns.Clear();
             idOf.Clear();
             game.DespawnAll();
@@ -1177,6 +1179,7 @@ namespace ChessFight.RagdollLab
             matchActive = false;
             StopHostingGuard();
             ObstacleClock.Use(null);
+            ObstacleClock.Authority = true;
             var queen = QueenHillMatch.Current;
             if (queen != null)
             {
@@ -1257,6 +1260,7 @@ namespace ChessFight.RagdollLab
                 message = $"호스트가 {NetName(next)} 님으로 바뀌었어요.";
             }
             if (game != null) game.NetworkHost = nowHost;
+            ObstacleClock.Authority = nowHost;
             var queen = QueenHillMatch.Current;
             if (queen != null) queen.Authority = nowHost;
             while (buffer.Count > 0) Recycle(0);
