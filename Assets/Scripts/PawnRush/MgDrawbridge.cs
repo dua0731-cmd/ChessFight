@@ -22,7 +22,7 @@ namespace ChessFight.PawnRush
         [Tooltip("The hinge on the far bank; the deck turns about its x axis.")]
         [SerializeField] Rigidbody hinge;
 
-        float progress;
+        float progress, shownProgress;
 
         public static MgDrawbridge Build(CourseBuilder b, MissionStation station)
         {
@@ -94,24 +94,26 @@ namespace ChessFight.PawnRush
 
         // StateDrivenMover: the deck follows the game's progress, not the shared obstacle clock (offline only
         // until the host sends the station's state).
-        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        public override void ApplyRemote(float progress, bool completed)
         {
             this.progress = progress;
-            base.ApplyRemote(progress, completed, bits);
+            base.ApplyRemote(progress, completed);
         }
 
         void Pose()
         {
             if (hinge == null) return;
+            // A client eases toward the host's number (it arrives 30 times a second).
+            shownProgress = Remote ? Mathf.MoveTowards(shownProgress, Progress01, Time.fixedDeltaTime * .5f) : Progress01;
             var parent = hinge.transform.parent;
-            var local = Quaternion.Euler(90f * (1f - Progress01), 0f, 0f);
+            var local = Quaternion.Euler(90f * (1f - shownProgress), 0f, 0f);
             hinge.MoveRotation(parent != null ? parent.rotation * local : local);
         }
 
         public override void ResetGame()
         {
             base.ResetGame();
-            progress = 0f;
+            progress = shownProgress = 0f;
             if (hinge != null) hinge.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
         }
     }

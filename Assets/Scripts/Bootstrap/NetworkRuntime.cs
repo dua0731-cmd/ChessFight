@@ -238,7 +238,7 @@ namespace ChessFight.Game
                     loading = inMatchScene = false;
                     matchScene = "";
                     PlaytestSpawner.NetworkDriven = false;
-                    ObstacleClock.Use(null);
+                    ObstacleClock.Use(null); ObstacleClock.Authority = true;
                     Session.Abort(mode.Name + " 경기 씬을 불러오지 못했습니다.");
                 }
             }
@@ -247,7 +247,7 @@ namespace ChessFight.Game
                 inMatchScene = false;
                 matchScene = "";
                 PlaytestSpawner.NetworkDriven = false;
-                ObstacleClock.Use(null);
+                ObstacleClock.Use(null); ObstacleClock.Authority = true;
                 loader.Cancel();
                 Load(SceneNames.Lobby);
             }
@@ -271,7 +271,7 @@ namespace ChessFight.Game
             SceneManager.sceneLoaded -= OnSceneLoaded;
             PlayerProfile.Changed -= OnNameChanged;
             loader?.Cancel();
-            ObstacleClock.Use(null);
+            ObstacleClock.Use(null); ObstacleClock.Authority = true;
             PlaytestSpawner.NetworkDriven = false;
             Controls?.Disable();
             // Motion must go before the session: it unregisters from SessionChanged.

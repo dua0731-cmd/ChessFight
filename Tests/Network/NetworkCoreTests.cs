@@ -358,29 +358,44 @@ public static class NetworkCoreTests
                 t.Acknowledged(3,0.099+0.1); Check(Math.Abs(t.Milliseconds-100)<0.5,"first sample "+t.Milliseconds);
                 t.Acknowledged(2,1.0); Check(Math.Abs(t.Milliseconds-100)<0.5,"stale ack changed estimate");
                 t.Acknowledged(5,0.165+0.180); Check(t.Milliseconds>100&&t.Milliseconds<180,"smoothing "+t.Milliseconds); });
-            Test("Pawn Rush course state round-trips and refuses other matches and damaged packets", () => {
-                var a = new PawnRushNetState { Tick = 77, First = 3, Second = 0 };
+            Test("Pawn Rush course state (CFP3) round-trips stations with their blocks and refuses damaged packets", () => {
+                var a = new PawnRushNetState { Tick = 77, HostTimeMs = 123456, First = 3, Second = 0 };
+                a.Game[0] = 3; a.Game[1] = 3; a.Game[2] = 0; a.Game[3] = 0;
                 a.Progress[0] = .25f; a.Progress[3] = 1f; a.Completed[3] = true;
-                a.Bits[0] = 0xFFFFFFFFFFFFFFFFUL; a.Bits[2] = 0x1234;
+                var w = new NetBlock(a.Block[0], 0, PawnRushNetState.BlockBytes);
+                w.U16(0x2A5); w.U8(0x1D); w.U8(2); w.U8(SkillWire.Ref(0, 1)); w.U8(SkillWire.Ref(0, 4)); w.Unit16(271.5f, 360f);
+                a.BlockLength[0] = w.Written;
+                var full = new NetBlock(a.Block[2], 0, PawnRushNetState.BlockBytes);
+                for (int k = 0; k < PawnRushNetState.BlockBytes; k++) full.U8(k + 1);
+                full.U8(99);   // past the end: dropped, never written
+                a.BlockLength[2] = full.Written;
+                Check(a.BlockLength[0] == 8 && a.BlockLength[2] == PawnRushNetState.BlockBytes, "block lengths " + a.BlockLength[0] + " " + a.BlockLength[2]);
                 byte[] bytes = a.Write(42UL);
-                Check(bytes.Length == PawnRushNetState.FixedBytes && bytes.Length == a.Bytes, "size " + bytes.Length);
+                Check(bytes.Length == a.Bytes && bytes.Length <= PawnRushNetState.MaxBytes, "size " + bytes.Length);
                 var b = new PawnRushNetState();
                 Check(PawnRushNetState.Read(bytes, 42UL, b), "read");
-                Check(b.Tick == 77 && b.First == 3 && b.Second == 0, "header");
-                Check(b.Progress[0] == .25f && b.Progress[3] == 1f && b.Completed[3] && !b.Completed[0], "stations");
-                Check(b.Bits[0] == 0xFFFFFFFFFFFFFFFFUL && b.Bits[2] == 0x1234 && b.Bits[1] == 0, "bits");
+                Check(b.Tick == 77 && b.HostTimeMs == 123456 && b.First == 3 && b.Second == 0, "header");
+                Check(b.Game[0] == 3 && b.Game[2] == 0 && Math.Abs(b.Progress[0] - .25f) < 1e-4f && b.Progress[3] == 1f && b.Completed[3] && !b.Completed[0], "stations");
+                var r = new NetBlock(b.Block[0], 0, b.BlockLength[0]);
+                Check(r.ReadU16() == 0x2A5 && r.ReadU8() == 0x1D && r.ReadU8() == 2 && r.ReadU8() == SkillWire.Ref(0, 1) && r.ReadU8() == SkillWire.Ref(0, 4)
+                      && Math.Abs(r.ReadUnit16(360f) - 271.5f) < .01f && r.ReadU8() == 0, "block 0 fields, then nothing");
+                Check(b.BlockLength[2] == PawnRushNetState.BlockBytes && b.Block[2][31] == 32 && b.BlockLength[1] == 0, "a full block and an empty one");
+                var copy = new PawnRushNetState(); copy.CopyFrom(b);
+                Check(copy.Write(42UL).SequenceEqual(bytes), "copy writes the same bytes");
                 Check(!PawnRushNetState.Read(bytes, 43UL, b), "another match");
                 var cut = new byte[bytes.Length - 1]; Array.Copy(bytes, cut, cut.Length);
                 Check(!PawnRushNetState.Read(cut, 42UL, b), "short packet");
+                var longer = new byte[bytes.Length + 1]; Array.Copy(bytes, longer, bytes.Length);
+                Check(!PawnRushNetState.Read(longer, 42UL, b), "long packet");
                 bytes[0] ^= 1; Check(!PawnRushNetState.Read(bytes, 42UL, b), "wrong magic"); });
-            Test("Pawn Rush course state (CFP2) carries the pads, the winner, the clock and the crown finishers", () => {
+            Test("Pawn Rush course state (CFP3) carries the pads, the winner, the clock and the crown finishers", () => {
                 var a = new PawnRushNetState { Tick = 9, First = 1, Second = 4, PadFirst = (byte)PieceKind.Knight, PadSecond = (byte)PieceKind.Queen,
                                                PadsUsed = 0x5, Winner = 1, Clock = 187.25f, FinisherCount = 3 };
                 a.FinisherSeat[0] = SkillWire.Ref(1, 0); a.FinisherTime[0] = 170.04f;
                 a.FinisherSeat[1] = SkillWire.Ref(1, 2); a.FinisherTime[1] = 181.5f;
                 a.FinisherSeat[2] = SkillWire.Ref(0, 5); a.FinisherTime[2] = 186.96f;
                 byte[] bytes = a.Write(7UL);
-                Check(bytes.Length == PawnRushNetState.FixedBytes + 3 * PawnRushNetState.FinisherBytes, "size " + bytes.Length);
+                Check(bytes.Length == PawnRushNetState.HeaderBytes + 3 * PawnRushNetState.FinisherBytes + 4 * PawnRushNetState.StationFixedBytes, "size " + bytes.Length);
                 var b = new PawnRushNetState();
                 Check(PawnRushNetState.Read(bytes, 7UL, b), "read");
                 Check(b.PadFirst == (byte)PieceKind.Knight && b.PadSecond == (byte)PieceKind.Queen && b.PadsUsed == 0x5, "pads");
@@ -389,9 +404,7 @@ public static class NetworkCoreTests
                       && Math.Abs(b.FinisherTime[2] - 187f) < 0.051f, "finishers to a tenth");
                 var none = new PawnRushNetState().Write(7UL);
                 Check(PawnRushNetState.Read(none, 7UL, b) && b.Winner == -1 && b.FinisherCount == 0, "a fresh state: nobody yet");
-                var longer = new byte[bytes.Length + 1]; Array.Copy(bytes, longer, bytes.Length);
-                Check(!PawnRushNetState.Read(longer, 7UL, b), "a count that disagrees with the length");
-                bytes[PawnRushNetState.FixedBytes - 1] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
+                bytes[PawnRushNetState.HeaderBytes - 1] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
             Test("Promotion pads: two different pieces a round, the same for every seed holder, never the pawn or the king", () => {
                 var seen = new HashSet<PieceKind>();
                 for (int seed = 0; seed < 400; seed++)

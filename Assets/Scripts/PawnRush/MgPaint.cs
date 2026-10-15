@@ -49,19 +49,17 @@ namespace ChessFight.PawnRush
             return ix < 0 || iz < 0 || ix >= N || iz >= N ? -1 : iz * N + ix;
         }
 
-        public override ulong StateBits
+        public override void WriteNet(ref NetBlock block)
         {
-            get
-            {
-                ulong bits = 0;
-                for (int s = 0; s < painted.Length; s++) if (painted[s]) bits |= 1UL << s;
-                return bits;
-            }
+            ulong bits = 0;
+            for (int s = 0; s < painted.Length; s++) if (painted[s]) bits |= 1UL << s;
+            block.U64(bits);
         }
 
         // Online, not the host: the host's squares (and the count the host would take over from).
-        public override void ApplyRemote(float progress, bool completed, ulong bits)
+        public override void ReadNet(ref NetBlock block)
         {
+            ulong bits = block.ReadU64();
             count = 0;
             for (int s = 0; s < painted.Length; s++)
             {
@@ -73,7 +71,6 @@ namespace ChessFight.PawnRush
                 if (squares[s] != null)
                     squares[s].sharedMaterial = on ? station.Kit.rankGold : ((ix + iz) & 1) == 0 ? station.Kit.boardDark : station.Kit.boardLight;
             }
-            base.ApplyRemote(progress, completed, bits);
         }
 
         void FixedUpdate()
