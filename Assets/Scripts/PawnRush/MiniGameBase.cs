@@ -39,6 +39,8 @@ namespace ChessFight.PawnRush
         // does something (who carries a plank) sends this byte.
         public static Func<ICharacterDriver, byte> SeatOf;
         public static Func<byte, ICharacterDriver> DriverOf;
+        // The pawn of the person at this PC (what only they see: J's aiming arc). Set by the course's playtest.
+        public static ICharacterDriver LocalDriver;
         public const byte NoSeat = 255;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -47,6 +49,7 @@ namespace ChessFight.PawnRush
             Remote = false;
             SeatOf = null;
             DriverOf = null;
+            LocalDriver = null;
         }
 
         protected static byte Seat(ICharacterDriver driver) => driver != null && SeatOf != null ? SeatOf(driver) : NoSeat;
