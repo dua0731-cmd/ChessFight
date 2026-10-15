@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-15 | R128 | G 킹 호위를 밧줄·손잡이 없이(썰매·룩 자체를 잡거나 밀기, 썰매 안 돎), I도 같은 방식, 새 `GrabOnlySurface`(잡기만, 벽타기 안 됨)와 래그돌 연결, 모든 `GrabHandle` 잡기 전용, 검증기, 문서 |
+| (이 커밋) | 10-15 | R129 | J를 나이트의 길로(Core `KnightRoute`, 나이트 경로 8칸만 바닥, 방향 없는 점프대, 다이빙으로 상대 기물 6개 잡기), 예전 섬·조준·깃발 없앰, 문서 |
+| `baaa1ea` | 10-15 | R128 | G 킹 호위를 밧줄·손잡이 없이(썰매·룩 자체를 잡거나 밀기, 썰매 안 돎), I도 같은 방식, 새 `GrabOnlySurface`(잡기만, 벽타기 안 됨)와 래그돌 연결, 모든 `GrabHandle` 잡기 전용, 검증기, 문서 |
 | `a27d110` | 10-15 | R126 | 문서: HANDOFF·REQUIREMENTS·DECISIONS P10~P14·T11·PITFALLS 39~41·VALIDATION R126 표·PAWN_RUSH_COURSE01 §4-3. 시험: Core 115·세션 41 |
 | `1c21f1c` | 10-15 | R126 | 11단계: 검증기 v1.0 검사(입구 띠·승격 발판·손잡이·움직이는 것 `NoClimbSurface`), B·E 문 위 개수, H 울타리 u 2.75부터 |
 | `afec51f` | 10-15 | R126 | J 나이트 도약대(`MgKnightPads`, 조준·준비·랩 던지기·착지·충돌·깃발, `MgWaterReturn`), `WaterZone.Report`, `MiniGameBase.LocalDriver` |

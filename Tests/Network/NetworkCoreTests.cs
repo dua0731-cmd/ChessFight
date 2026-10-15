@@ -455,13 +455,13 @@ public static class NetworkCoreTests
                       && Math.Abs(DrawbridgeRope.Speed(3, 0) - .199f) < .002f && Math.Abs(DrawbridgeRope.Speed(4, 0) - .292f) < .003f, "table");
                 Check(Math.Abs(DrawbridgeRope.Speed(1, .5f) - .04f) < 1e-4f && DrawbridgeRope.Speed(0, .5f) == 0f && DrawbridgeRope.Speed(7.2f, 0) <= .35f, "minimum and cap");
                 Check(DrawbridgeRope.Speed(1.8f, 0) > DrawbridgeRope.Speed(1, 0) * 1.8f, "sprinting pulls harder than it costs"); });
-            Test("J knight pads: eight landings, off the grid is water, every flag reachable from c1", () => {
-                Check(KnightPads.Destination(2, 0, 0, out int c, out int r) && c == 3 && r == 2, "c1 + (1,2) = d3");
-                Check(!KnightPads.Destination(0, 0, 4, out _, out _), "a1 south-west is water");
-                var reach = KnightPads.Reachable();
-                foreach (var f in KnightPads.Flags) { Check(KnightPads.Parse(f, out c, out r) && reach[KnightPads.Index(c, r)], "flag " + f); }
-                Check(new HashSet<string>(KnightPads.Flags).Count == 16, "sixteen flags");
-                Check(KnightPads.Nearest(.45f, .9f) == 0 && KnightPads.Nearest(-.9f, -.45f) == 5, "nearest direction"); });
+            Test("J knight's road: every square a knight's move from the last, d1 to f8, pieces on the road", () => {
+                Check(KnightRoute.Joined(), "joined by knight moves");
+                Check(KnightRoute.Squares[0] == "d1" && KnightRoute.Squares[KnightRoute.Squares.Length - 1] == "f8", "entrance to gate");
+                Check(KnightRoute.PieceSquares.Length == KnightRoute.PieceKinds.Length, "a kind per piece");
+                foreach (var q in KnightRoute.PieceSquares) Check(Array.IndexOf(KnightRoute.Squares, q) > 0, "piece on the road: " + q);
+                Check(KnightRoute.SquareAt(KnightRoute.Center("c5")) == 3 && KnightRoute.SquareAt(new StationPoint(0f, 10f)) < 0, "squares and water");
+                Check(KnightRoute.Takes(.5f, true, 0f, false) && KnightRoute.Takes(.5f, false, 0f, true) && !KnightRoute.Takes(.5f, false, 2.5f, false) && !KnightRoute.Takes(1.2f, true, 9f, true), "takes"); });
             Test("G king escort: a road of fifteen joined squares, 32.9 m, six turntables, the speed table", () => {
                 Check(KingEscortPath.Connected() && KingEscortPath.Cells.Length == 15, "joined");
                 Check(Math.Abs(KingEscortPath.Length - 32.925f) < .01f, "length " + KingEscortPath.Length);

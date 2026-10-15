@@ -124,73 +124,53 @@ namespace ChessFight.Network
         }
     }
 
-    // J, the knight pads (spec §8): 25 islands, 5 x 5, 3 m apart; a launch goes a knight's move in islands.
-    public static class KnightPads
+    // J, the knight's road (R129, replacing the spec's 25 islands and aimed launches): floor only on board squares
+    // that follow one another by a knight's move, from d1 at the entrance to f8 by the gate; water everywhere
+    // else. A pad in the middle of every square only jumps higher (no direction): the pawn runs the way it wants,
+    // jumps on the pad and dives to reach the next square. Enemy pieces stand on six of the squares; a dive (or a
+    // pad jump) onto one takes it. All six: the gate opens.
+    public static class KnightRoute
     {
-        public const int Columns = 5, Rows = 5;
-        public const float Spacing = 3f, FirstV = -6f, FirstU = 5f;
-        public const float Charge = .9f, KnightCharge = .2f, Flight = 1.3f, Apex = 2.2f, Wobble = .6f, PadRadius = .55f;
-        public const float FallBackSeconds = 1.2f, FlagDownSeconds = 4f;
-        // The eight knight moves (columns, rows), clockwise from north-north-east.
-        public static readonly int[] DCol = { 1, 2, 2, 1, -1, -2, -2, -1 };
-        public static readonly int[] DRow = { 2, 1, -1, -2, -2, -1, 1, 2 };
-        public static readonly string[] Flags = { "a5", "e5", "b3", "d4", "a2", "e2", "c5", "d1", "b1", "a3", "e4", "c3", "b5", "d2", "a1", "e1" };
-        public const int StartColumn = 2, StartRow = 0;   // c1
+        public static readonly string[] Squares = { "d1", "b2", "a4", "c5", "e4", "g5", "h7", "f8" };
+        // The pieces to take: on the squares between the first and the last, and what they are.
+        public static readonly string[] PieceSquares = { "b2", "a4", "c5", "e4", "g5", "h7" };
+        public static readonly PieceKind[] PieceKinds = { PieceKind.Pawn, PieceKind.Bishop, PieceKind.Knight, PieceKind.Rook, PieceKind.Queen, PieceKind.King };
+        // The pad's jump: straight up this fast, the pawn's own run carried along (about 1.4 s in the air).
+        public const float PadRadius = .8f, PadUp = 7f, Reach = .9f, Speed = 4.5f, JumpCatch = 2f, SquareSize = 2.05f;
 
-        public static int Index(int col, int row) => row * Columns + col;
-        public static bool OnGrid(int col, int row) => col >= 0 && col < Columns && row >= 0 && row < Rows;
-        public static StationPoint Island(int col, int row) => new StationPoint(FirstV + col * Spacing, FirstU + row * Spacing);
-
-        public static bool Parse(string name, out int col, out int row)
+        // Every square a knight's move from the one before.
+        public static bool Joined()
         {
-            col = name[0] - 'a';
-            row = name[1] - '1';
-            return OnGrid(col, row);
-        }
-
-        // Where a launch from (col, row) in direction d lands, and whether there is an island there.
-        public static bool Destination(int col, int row, int d, out int toCol, out int toRow)
-        {
-            toCol = col + DCol[d];
-            toRow = row + DRow[d];
-            return OnGrid(toCol, toRow);
-        }
-
-        // The knight direction closest to a flat direction (dv, du).
-        public static int Nearest(float dv, float du)
-        {
-            int best = 0;
-            float bestDot = float.MinValue;
-            for (int d = 0; d < 8; d++)
+            for (int i = 1; i < Squares.Length; i++)
             {
-                float len = (float)Math.Sqrt(DCol[d] * DCol[d] + DRow[d] * DRow[d]);
-                float dot = (dv * DCol[d] + du * DRow[d]) / len;
-                if (dot > bestDot) { bestDot = dot; best = d; }
+                PawnRushBoard.Parse(Squares[i - 1], out int f0, out int r0);
+                PawnRushBoard.Parse(Squares[i], out int f1, out int r1);
+                int df = Math.Abs(f1 - f0), dr = Math.Abs(r1 - r0);
+                if (!(df == 1 && dr == 2 || df == 2 && dr == 1)) return false;
             }
-            return best;
+            return true;
         }
 
-        // Every island a knight can reach from c1 (breadth first), for the flag check.
-        public static bool[] Reachable()
+        public static StationPoint Center(string square)
         {
-            var seen = new bool[Columns * Rows];
-            var queue = new Queue<int>();
-            seen[Index(StartColumn, StartRow)] = true;
-            queue.Enqueue(Index(StartColumn, StartRow));
-            while (queue.Count > 0)
-            {
-                int at = queue.Dequeue();
-                for (int d = 0; d < 8; d++)
-                {
-                    if (!Destination(at % Columns, at / Columns, d, out int c, out int r)) continue;
-                    int i = Index(c, r);
-                    if (seen[i]) continue;
-                    seen[i] = true;
-                    queue.Enqueue(i);
-                }
-            }
-            return seen;
+            PawnRushBoard.Parse(square, out int f, out int r);
+            return PawnRushBoard.Center(f, r);
         }
+
+        // The route square a point stands on (within its floor), or -1.
+        public static int SquareAt(StationPoint p)
+        {
+            for (int i = 0; i < Squares.Length; i++)
+            {
+                var c = Center(Squares[i]);
+                if (Math.Abs(p.V - c.V) <= SquareSize * .5f && Math.Abs(p.U - c.U) <= SquareSize * .5f) return i;
+            }
+            return -1;
+        }
+
+        // A take: our pawn's hips within reach of the piece, diving, fast, or still in the air from a pad jump.
+        public static bool Takes(float flatDistance, bool diving, float flatSpeed, bool padJump) =>
+            flatDistance <= Reach && (diving || flatSpeed >= Speed || padJump);
     }
 
     // G, the king escort (spec §5): the sled's road of fifteen board squares to the gate, as one distance s.
