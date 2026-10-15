@@ -43,7 +43,7 @@ namespace ChessFight.RagdollLab.Net
     /// ago, so a hammer was drawn hitting where the host's had long passed;</item>
     /// <item>only the host's obstacles push anyone (ObstacleClock.Authority; they pushed nobody anywhere before);</item>
     /// <item>the start bar sinks at the match's shared start on every PC (StartBar.ReleaseAtClock);</item>
-    /// <item>the course state carries the host's time and each station's game block (CFP3); a client applies it when
+    /// <item>the course state carries the host's time and each station's game block (CFP3; CFP4 adds the pads' choosers); a client applies it when
     /// its playback reaches that time, so gates, bridges, capstans and carried planks move with the bodies.</item>
     /// </list>
     ///
@@ -101,6 +101,8 @@ namespace ChessFight.RagdollLab.Net
             public bool Synced, AckSet, InteractLatch;
             public byte Jumps, Shoves, Abilities, Abilities2, Skills;
             public int Jump, Shove, Ability, Ability2, Skill;
+            // The last promotion choice heard (R130: the lab input's pieceSeq).
+            public byte PieceSeq;
             public ushort EventAck;
         }
 
@@ -211,6 +213,8 @@ namespace ChessFight.RagdollLab.Net
                 var pawn = PawnOf(seat);
                 return pawn != null && byPawn.TryGetValue(pawn, out var r) ? r.Driver : null;
             };
+            // R130: a client's promotion choice rides its input (pieceAsk / pieceSeq) to the host.
+            PromotionChooser.Asked = authority ? null : (Action<PieceKind>)AskPiece;
             Checkpoint.Reached += OnCheckpoint;
             KillVolume.Entered += OnKill;
             FallDistanceRespawn.Fell += OnFell;
@@ -233,6 +237,7 @@ namespace ChessFight.RagdollLab.Net
             if (finish != null) finish.Decided -= OnDecided;
             Course01Playtest.NetworkDriver = null;
             MiniGameBase.Remote = false;
+            PromotionChooser.Asked = null;
             MiniGameBase.SeatOf = null;
             MiniGameBase.DriverOf = null;
             if (sharedClock != null) ObstacleClock.Use(sharedClock);
@@ -637,6 +642,7 @@ namespace ChessFight.RagdollLab.Net
             state.PadFirst = (byte)picker.PadFirst;
             state.PadSecond = (byte)picker.PadSecond;
             state.PadsUsed = picker.PadsUsed;
+            picker.Choosers(state.PadChooser);
             state.Winner = (sbyte)(finish != null ? finish.Winner : PawnRushFinish.None);
             state.Clock = finish != null ? (finish.Winner != PawnRushFinish.None ? finish.WinClock : finish.Clock) : 0f;
             state.FinisherCount = 0;
@@ -722,6 +728,13 @@ namespace ChessFight.RagdollLab.Net
                 r.Abilities = fresh.abilities;
                 r.Abilities2 = fresh.abilities2;
                 r.Skills = fresh.skills;
+                r.PieceSeq = fresh.pieceSeq;
+            }
+            // A new promotion choice: the pad it is for checks that this pawn is the one choosing.
+            if (fresh.pieceSeq != 0 && fresh.pieceSeq != r.PieceSeq)
+            {
+                r.PieceSeq = fresh.pieceSeq;
+                if (r.Driver != null) StationPromotion.Choose(r.Driver, (PieceKind)fresh.pieceAsk);
             }
             r.Jump = Mathf.Min(4, r.Jump + PressCount.Take(fresh.jumps, ref r.Jumps));
             r.Shove = Mathf.Min(4, r.Shove + PressCount.Take(fresh.shoves, ref r.Shoves));
@@ -737,6 +750,13 @@ namespace ChessFight.RagdollLab.Net
                 r.EventAck = fresh.eventAck;
                 r.AckSet = true;
             }
+        }
+
+        // Not the host: my promotion choice, sent in every input from now on with a new number (never 0).
+        void AskPiece(PieceKind piece)
+        {
+            pending.pieceAsk = (byte)piece;
+            pending.pieceSeq = (byte)(pending.pieceSeq == 255 ? 1 : pending.pieceSeq + 1);
         }
 
         // Not the host: count my presses, draw my own press and aim at once (D-S3), send 60 times a second.
@@ -810,7 +830,7 @@ namespace ChessFight.RagdollLab.Net
                 game.ReadNet(ref block);
                 game.ApplyRemote(s.Progress[k], s.Completed[k]);
             }
-            picker.ApplyPads((PieceKind)s.PadFirst, (PieceKind)s.PadSecond, s.PadsUsed);
+            picker.ApplyPads((PieceKind)s.PadFirst, (PieceKind)s.PadSecond, s.PadsUsed, s.PadChooser);
             if (finish != null) finish.ApplyRemote(s.Winner, s.Clock, s.FinisherSeat, s.FinisherTime, s.FinisherCount);
         }
 

@@ -57,7 +57,9 @@ namespace ChessFight.Network
         //      state is "CFP2" (pads, race clock, finishers, winner), skill positions span +-320 m ("CFRB").
         // v21 (R126): the 폰 러쉬 course state is "CFP3" (the host's time, each station's game block), the snapshot
         //      carries the host's obstacle time, the start bar drops on the shared start, mini-games v1.0.
-        public const string Protocol = "chessfight.dua0731.network.v21";
+        // v22 (R130): the course state is "CFP4" (who chooses a piece on each promotion pad), and a client's lab
+        //      input's pieceAsk / pieceSeq is that player's chosen piece in the 폰 러쉬 match.
+        public const string Protocol = "chessfight.dua0731.network.v22";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

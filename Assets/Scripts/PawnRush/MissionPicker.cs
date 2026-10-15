@@ -81,14 +81,25 @@ namespace ChessFight.PawnRush
             }
         }
 
-        // The host's word on the pads (online, not the host).
-        public void ApplyPads(PieceKind first, PieceKind second, byte used)
+        // Who is choosing a piece on each station's pad (R130, the course state's CFP4 seats).
+        public void Choosers(byte[] seats)
+        {
+            for (int i = 0; i < seats.Length; i++)
+                seats[i] = i < stations.Length && stations[i] != null && stations[i].Promotion != null ? stations[i].Promotion.ChooserSeat : PawnRushNetState.NoChooser;
+        }
+
+        // The host's word on the pads (online, not the host): pieces, spent, and who chooses on each.
+        public void ApplyPads(PieceKind first, PieceKind second, byte used, byte[] choosers = null)
         {
             if (PawnRushPromotion.Gives(first)) PadFirst = first;
             if (PawnRushPromotion.Gives(second)) PadSecond = second;
             for (int i = 0; i < stations.Length; i++)
-                if (stations[i] != null && stations[i].Promotion != null)
-                    stations[i].Promotion.ApplyRemote(i < 2 ? PadFirst : PadSecond, (used & (1 << i)) != 0);
+            {
+                if (stations[i] == null || stations[i].Promotion == null) continue;
+                byte seat = choosers != null && i < choosers.Length ? choosers[i] : PawnRushNetState.NoChooser;
+                var who = seat != PawnRushNetState.NoChooser && MiniGameBase.DriverOf != null ? MiniGameBase.DriverOf(seat) : null;
+                stations[i].Promotion.ApplyRemote(i < 2 ? PadFirst : PadSecond, (used & (1 << i)) != 0, who);
+            }
         }
 
         public void Install(int first, int second)
