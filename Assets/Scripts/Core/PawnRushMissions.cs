@@ -29,7 +29,7 @@ namespace ChessFight.Network
         public static readonly string[] Names =
         {
             "A 체스판 칠하기", "B 판자 다리 놓기", "C 도개교", "D 캡스턴 성문", "E 종탑 여섯 개",
-            "F 앙파상 사냥", "G 킹 호위", "H 체크메이트 몰이", "I 체크 막기", "J 나이트 도약대",
+            "F 앙파상 사냥", "G 킹 호위", "H 체크메이트 몰이", "I 체크 막기", "J 나이트의 길",
         };
         // The picture card's one line (mini-game spec: never more than one line).
         public static readonly string[] Hints =
@@ -43,7 +43,7 @@ namespace ChessFight.Network
             "밧줄을 잡고(우클릭) 킹의 썰매를 끌어 문까지. 길을 막은 룩은 옆 차고로 끌어 넣어라",
             "우리 폰 둘레 3×3칸이 공격 칸. 킹을 몰아 체크 4번이나 체크메이트로 굳히고 다이빙으로 잡아라",
             "방패 수레를 밀어 공격선을 막고, 나이트는 끌어내리고, 폰은 들이받아 모든 체크를 풀어라",
-            "도약대에 올라 방향을 고르고 Space: 나이트처럼 ㄱ자로 날아 깃발 16개를 모아라",
+            "나이트 길에만 바닥이 있다: 점프대에서 Space로 높이 뛰고 다이빙으로 건너가, 길 위 상대 기물 6개를 다이빙으로 잡아라",
         };
 
         // §2.5 groups: pulling, painting, carrying, climbing, diving, chasing, flying.
