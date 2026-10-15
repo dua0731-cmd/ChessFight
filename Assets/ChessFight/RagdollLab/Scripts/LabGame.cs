@@ -72,6 +72,19 @@ namespace ChessFight.RagdollLab
             NetPieceSeq = (byte)(NetPieceSeq == 255 ? 1 : NetPieceSeq + 1);
         }
 
+        /// <summary>Online, the Pawn Rush king's picks from his list (R146): the link sends them to the host a few times over,
+        /// with a number that changes with every call.</summary>
+        public RagdollPawn NetKingCallA { get; private set; }
+        public RagdollPawn NetKingCallB { get; private set; }
+        public byte NetKingCallSeq { get; private set; }
+
+        public void AskKingCall(RagdollPawn a, RagdollPawn b)
+        {
+            NetKingCallA = a;
+            NetKingCallB = b;
+            NetKingCallSeq = (byte)(NetKingCallSeq == 255 ? 1 : NetKingCallSeq + 1);
+        }
+
         /// <summary>Development only (the loopback test link's commands): presses added to P1's next input, and a move and
         /// a right-click held until a time.</summary>
         public PawnInput DevPress;
@@ -85,6 +98,12 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Another on-screen panel needs the mouse; keep the cursor free so its buttons work.</summary>
         public bool UiWantsCursor { get; set; }
+        /// <summary>A skill's list is open and is clicked (R146, the Pawn Rush king's call): the cursor stays free. Its own flag:
+        /// the network panel sets <see cref="UiWantsCursor"/> every frame.</summary>
+        public bool SkillListOpen { get; set; }
+        /// <summary>The test screen's panels hidden, the game alone (R146, for recording the network test: launched with
+        /// -labCleanView, or the development command "panels off").</summary>
+        public static bool CleanView = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-labCleanView") >= 0;
 
         /// <summary>
         /// The skill network test (R112, branch skill-network-test): the skill test scenes are only for trying the skills
@@ -382,7 +401,7 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.RightBracket)) slots.Vote(true);
             }
 
-            if (PanelOpen || UiWantsCursor) Cursor.lockState = CursorLockMode.None;
+            if (PanelOpen || UiWantsCursor || SkillListOpen) Cursor.lockState = CursorLockMode.None;
             else if (Cursor.lockState != CursorLockMode.Locked && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))
             {
                 Cursor.lockState = CursorLockMode.Locked;

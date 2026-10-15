@@ -26,6 +26,7 @@ namespace ChessFight.RagdollLab
         static readonly string[] DetailCodes =
         {
             "", "조준 (좌클릭 발동 · 우클릭 취소)", "예고", "예고 · 고정", "예고 · 적 조준", "도약", "받아내기", "반격", "빈틈", "후딜", "돌진", "충격파", "손",
+            "막힘",   // R130: the queen's thrust stopped by a king's guard (appended: the codes before it stay)
         };
         static readonly string[] EdgeDetailCodes =
         {
@@ -157,7 +158,7 @@ namespace ChessFight.RagdollLab
                 if (!NetOwn) PinCandidate = null;
             }
             if (Piece == PieceKind.Knight && ((stage == SfStage.Aim && !NetOwn) || stage == SfStage.Active))
-                KnightSpotsAt(stage == SfStage.Aim ? AimPoint : Point, stage == SfStage.Aim ? AimDir : Dir);
+                KnightSquaresAt(stage == SfStage.Aim ? AimPoint : Point, stage == SfStage.Aim ? AimDir : Dir);
             float pin = w.Skill ? w.Pin : 0f, slow = w.Skill ? w.Slow : 0f;
             if (pin <= 0f && pinLeft > 0f && Time.unscaledTime - pinSetAt > 0.3f) pinLeft = 0f;
             if (slow <= 0f && slowLeft > 0f && Time.unscaledTime - slowSetAt > 0.3f) slowLeft = 0f;
@@ -264,9 +265,11 @@ namespace ChessFight.RagdollLab
                     // What Go() does with the aim.
                     Dir = AimDir;
                     Point = AimPoint;
+                    bool wall = false;
                     Reach = Piece == PieceKind.Queen ? DashDistance(Origin, Dir, S.queenLength)
-                          : Piece == PieceKind.Rook ? WallDistance(Origin, Dir, S.rookLength) : AimReach;
-                    WaveBlocked = Piece == PieceKind.Rook && Reach < S.rookLength - 0.01f;
+                          : Piece == PieceKind.Rook ? RookReach(Origin, Dir, out wall) : AimReach;
+                    WaveBlocked = Piece == PieceKind.Rook && wall;
+                    if (Piece == PieceKind.Knight) KnightSquaresAt(Point, Dir);
                     Predict(Piece == PieceKind.Knight ? SfStage.Active : SfStage.Windup, hold);
                     break;
                 case 2:
@@ -357,14 +360,6 @@ namespace ChessFight.RagdollLab
             Clearance(null, false);
             if (carried != null && carried.OuterFlying) carried.EndFlight();
             NetPuppet = true;
-        }
-
-        void KnightSpotsAt(Vector3 point, Vector3 along)
-        {
-            if (S == null) return;
-            float a = S.knightSpotAngle;
-            KnightSpots[0] = Floor(point + Quaternion.AngleAxis(-a, Vector3.up) * along * S.knightSpotOffset);
-            KnightSpots[1] = Floor(point + Quaternion.AngleAxis(a, Vector3.up) * along * S.knightSpotOffset);
         }
 
         // ---------------------------------------------------------------- the codes

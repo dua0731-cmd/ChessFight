@@ -781,7 +781,16 @@ namespace ChessFight.RagdollLab
                         bool fast = travel.magnitude >= p.diveGetUpSpeed;
                         bool slowed = stateTimer >= p.diveMinTime && !fast;
                         bool timeUp = stateTimer >= p.diveMaxTime && !(steep > 0.5f && fast);
-                        if (((slowed || timeUp) && settled) || stateTimer >= p.diveMaxTime * 4f) BeginGetUp(p);
+                        // R130 (승규 님 10-13: "벽이나 폰들이랑 부딪히거나 이럴 때 좌클릭 우클릭 무슨 키를 눌러도 낑긴 것 같은
+                        // 거"): a dive that ended propped against a wall or a crowd of pieces never lay flat, so it waited
+                        // out four times diveMaxTime (6 s) limp, whatever was pressed. Stopped is enough now: hardly
+                        // moving for DiveStuckTime after diveMinTime it gets up, and a key (jump, a click, grab) pressed
+                        // once it is slow gets it up at once.
+                        bool still = travel.magnitude < p.diveGetUpSpeed * 0.6f && Mathf.Abs(bodies[0].linearVelocity.y) < 0.8f;
+                        diveStill = still ? diveStill + dt : 0f;
+                        bool stuck = stateTimer >= p.diveMinTime && diveStill >= DiveStuckTime;
+                        bool asked = (input.jump || input.shove || input.grab) && stateTimer >= p.diveMinTime * 0.6f && !fast;
+                        if (((slowed || timeUp) && settled) || stuck || asked || stateTimer >= p.diveMaxTime * 2f) BeginGetUp(p);
                     }
                     else if (knockdownHold > 0f)
                     {
@@ -789,7 +798,10 @@ namespace ChessFight.RagdollLab
                         // flies for most of a second, and counting from the hit had the pawn back up the
                         // moment it landed (playtest, 09-26). Counts anyway if it never comes to rest.
                         bool down = groundFound && bodies[0].position.y - groundY < standHeight + 0.05f;
-                        if (down || stateTimer > knockdownHold + 3f) knockdownLying += dt;
+                        // R130: propped against a wall or a crowd it never lies low; at rest counts as lying all the same
+                        // (it waited knockdownHold + 3 s limp before).
+                        bool resting = HorizontalSpeed < 0.5f && Mathf.Abs(bodies[0].linearVelocity.y) < 0.5f;
+                        if (down || resting || stateTimer > knockdownHold + 3f) knockdownLying += dt;
                         if (knockdownLying >= knockdownHold) BeginGetUp(p);
                     }
                     else if (stateTimer >= p.getUpDelay) BeginGetUp(p);
@@ -817,6 +829,7 @@ namespace ChessFight.RagdollLab
         public void Knockdown(string cause, float hold)
         {
             if (Floating) return;   // the water catches it
+            if (KingCallShielded) return;   // on its way in to its king (R146)
             if (WardCatchesKnockdown(cause)) return;   // a Queen of the Hill king's guard (R89): a stagger instead
             DropHook();
             DropRope();
@@ -853,6 +866,7 @@ namespace ChessFight.RagdollLab
             StateFactor = 0f;
             Diving = dive;
             diveLying = 0f;
+            diveStill = 0f;
             handL.Release();
             handR.Release();
             shoveTimer = 0f;
@@ -937,6 +951,9 @@ namespace ChessFight.RagdollLab
         }
 
         const float DiveSideBleed = 3f;   // 1/s
+        /// <summary>R130: a dive that has hardly moved this long (after diveMinTime) gets up, propped or not (s).</summary>
+        const float DiveStuckTime = 0.3f;
+        float diveStill;
         const float UpSettleTime = 0.4f;  // s after getting up that the run waits for an upright body
 
         /// <summary>
@@ -3146,6 +3163,15 @@ namespace ChessFight.RagdollLab
         public void TakeHit(Vector3 push, float knockdownSeconds, float staminaDamage, bool drop)
         {
             if (NetworkPuppet) return;
+            if (KingCallShielded) return;   // on its way in to its king (R146)
+            // A Queen of the Hill king its guards stand round: the nearest guard takes the hit, the king nothing.
+            var cover = Cover();
+            if (cover != null)
+            {
+                cover.TakeHit(push, knockdownSeconds, staminaDamage, false);
+                LastHit = $"{cover.DisplayName}이(가) 대신 막음";
+                return;
+            }
             var p = P;
             if (stamina < 0f) stamina = p.climbStaminaMax;
             Hits++;

@@ -55,7 +55,8 @@ namespace ChessFight.Network
                 case PieceKind.Rook: return new PieceStats(1.5f, 1f, 0.7f, true, false);
                 case PieceKind.Bishop: return new PieceStats(1f, 1f, 1f, true, false);
                 case PieceKind.Knight: return new PieceStats(0.8f, 1f, 1f, true, false);
-                case PieceKind.King: return new PieceStats(3f, 0.8f, 1f, false, true);
+                // R145 (승규 님 10-15: "왕도 shift를 누르면 뛸 수 있게 해줘"): the king may sprint too (at its 0.8).
+                case PieceKind.King: return new PieceStats(3f, 0.8f, 1f, true, true);
                 case PieceKind.Queen: return new PieceStats(2f, 1f, 1f, true, false);
                 default: return PawnStats;
             }

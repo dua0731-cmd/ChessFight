@@ -102,6 +102,7 @@ namespace ChessFight.RagdollLab
             RagdollPawn.SkillLog -= OnSkill;
             RagdollPawn.QueenHillFx -= OnSkillMoment;
             if (built != null) Destroy(built.gameObject);
+            QueenHillGround.Clear();
         }
 
         static void OnSkill(RagdollPawn pawn, string line) => Report(line);
@@ -113,6 +114,9 @@ namespace ChessFight.RagdollLab
             built = new GameObject("Queen of the Hill skill test").transform;
             BuildHill(built);
             BuildWall(built);
+            // R137: every floor a chessboard, every block breakable (QueenHillSkillGround.cs).
+            int dressed = QueenHillGround.DressLab();
+            if (dressed == 0) Debug.LogWarning("[QotH 스킬 시험] 체스판 바닥 셰이더(ChessFight/Skill Ground)를 못 찾아 랩 바닥 그대로");
             fx = GetComponent<QueenHillSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<QueenHillSkillFx>();
             sfx = GetComponent<QueenHillSkillSfx>();
@@ -481,9 +485,14 @@ namespace ChessFight.RagdollLab
         {
             var root = new GameObject("Hill (3 tiers)").transform;
             root.SetParent(parent, false);
-            var board = Board();
-            var side = Mat(new Color(0.43f, 0.29f, 0.18f));
-            var trim = Mat(new Color(0.93f, 0.86f, 0.7f));
+            // R137: the tiers are blocks of the scene's ground (their tops the chessboard, lined up with every other floor's
+            // squares; the bishop's strike can break them); the lab's own look only if that shader is missing.
+            bool ground = QueenHillGround.Ready;
+            var sideColor = new Color(0.43f, 0.29f, 0.18f);
+            var trimColor = new Color(0.93f, 0.86f, 0.7f);
+            var board = ground ? null : Board();
+            var side = ground ? QueenHillGround.Make(sideColor, true, QueenHillGround.RawWood) : Mat(sideColor);
+            var trim = ground ? QueenHillGround.Make(trimColor, false, trimColor * 0.85f, null, 0.2f) : Mat(trimColor);
             Vector3 c = QueenHillLayout.HillCenter;
             for (int i = 0; i < QueenHillLayout.TierSize.Length; i++)
             {
@@ -494,17 +503,21 @@ namespace ChessFight.RagdollLab
                 block.transform.SetParent(root, false);
                 block.transform.position = new Vector3(c.x, (bottom + top) * 0.5f, c.z);
                 block.transform.localScale = new Vector3(size, top - bottom, size);
-                block.GetComponent<MeshRenderer>().sharedMaterial = side;
-                // The top: board squares, 1.5 m each (the texture holds two across).
-                var face = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                face.name = "Board";
-                Object.Destroy(face.GetComponent<Collider>());
-                face.transform.SetParent(root, false);
-                face.transform.SetPositionAndRotation(new Vector3(c.x, top + 0.002f, c.z), Quaternion.Euler(90f, 0f, 0f));
-                face.transform.localScale = new Vector3(size, size, 1f);
-                var m = Mat(Color.white, board, 0.35f);
-                m.mainTextureScale = new Vector2(size / 3f, size / 3f);
-                face.GetComponent<MeshRenderer>().sharedMaterial = m;
+                if (ground) QueenHillGround.Wear(block.GetComponent<MeshRenderer>(), side);
+                else
+                {
+                    block.GetComponent<MeshRenderer>().sharedMaterial = side;
+                    // The top: board squares, 1.5 m each (the texture holds two across).
+                    var face = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    face.name = "Board";
+                    Object.Destroy(face.GetComponent<Collider>());
+                    face.transform.SetParent(root, false);
+                    face.transform.SetPositionAndRotation(new Vector3(c.x, top + 0.002f, c.z), Quaternion.Euler(90f, 0f, 0f));
+                    face.transform.localScale = new Vector3(size, size, 1f);
+                    var m = Mat(Color.white, board, 0.35f);
+                    m.mainTextureScale = new Vector2(size / 3f, size / 3f);
+                    face.GetComponent<MeshRenderer>().sharedMaterial = m;
+                }
                 // A light lip round the top edge.
                 foreach (var (at, scale) in new[]
                          {
@@ -520,7 +533,8 @@ namespace ChessFight.RagdollLab
                     lip.transform.SetParent(root, false);
                     lip.transform.position = new Vector3(c.x, top - 0.03f, c.z) + at;
                     lip.transform.localScale = scale;
-                    lip.GetComponent<MeshRenderer>().sharedMaterial = trim;
+                    if (ground) QueenHillGround.Wear(lip.GetComponent<MeshRenderer>(), trim);
+                    else lip.GetComponent<MeshRenderer>().sharedMaterial = trim;
                 }
             }
             // The promotion pad on top (only to be seen: the second half's gate is not part of this test).
@@ -541,7 +555,11 @@ namespace ChessFight.RagdollLab
             var size = QueenHillLayout.WallSize;
             wall.transform.position = QueenHillLayout.WallCenter + Vector3.up * size.y * 0.5f;
             wall.transform.localScale = size;
-            wall.GetComponent<MeshRenderer>().sharedMaterial = Mat(new Color(0.72f, 0.68f, 0.62f));
+            // R137: of the ground too (the bishop's strike breaks pieces out of it).
+            var stone = new Color(0.72f, 0.68f, 0.62f);
+            var m = QueenHillGround.Make(stone, false, stone * 0.88f, null, 0.05f);
+            if (m != null) QueenHillGround.Wear(wall.GetComponent<MeshRenderer>(), m);
+            else wall.GetComponent<MeshRenderer>().sharedMaterial = Mat(stone);
         }
 
         // ---------------------------------------------------------------- the panel
@@ -549,10 +567,10 @@ namespace ChessFight.RagdollLab
         static string HowTo(PieceKind kind) => kind switch
         {
             PieceKind.Pawn => "F = 몸을 낮추고 짧게 가속 (방향키 방향, 없으면 카메라 방향, 2.6 m)\n다리를 앞뒤로 벌려 골반이 내려감 · 무적 없음 · 벽 통과 없음\n지나가며 부딪힌 적은 옆으로 비킴",
-            PieceKind.King => "F = 홀을 들었다 내리꽂음 (0.3초) → 반경 2.5 m 아군에게 2초 호위\n호위: 넘어지지 않고 밀림도 1/4 · 몸에 초록 윤곽선 · 킹 자신은 빠짐 (B)\n시험 도우미: F를 누르면 아군 폰 3명이 앞에 서고 5 m 앞 적 퀸이 검격",
+            PieceKind.King => "F = 홀을 들었다 내리꽂음 (0.3초) → 반경 2.5 m 아군에게 2.5초 호위\n호위: 넘어지지 않고 밀림도 1/4 · 몸에 금색 윤곽선 · 킹 자신은 무적이 아님: 곁(2.5 m)의 호위 아군이 킹 대신 맞아 줌 (B)\n시험 도우미: F를 누르면 아군 폰 3명이 앞에 서고 5 m 앞 적 퀸이 검격",
             PieceKind.Queen => "F = 조준: 검격 줄(체스판 4칸)이 마우스 방향을 따라감 (걸을 수 있음)\n좌클릭 = 칼을 오른쪽 아래 뒤로 내려 0.45초 준비 → 아래에서 위로 올려 베며 6 m 검기\n경고 칸은 바닥에 붙어 깔리고(경사로도) 검기는 그 칸을 따라감: 경사로는 오르내리고, 아래층으로 내려가고, 한 층 턱은 타고 오름 · 칸 위 적은 넘어짐 (A)\n돌벽처럼 한 층보다 높은 벽에 막힘 · 회복 0.6초 · 우클릭/F = 취소",
             PieceKind.Rook => "F = 조준: 마우스 방향 9 m 안의 아군을 고름 (폰도 됨, B)\n좌클릭 = 교대 요청 → 상대가 수락하면(더미는 0.4초 뒤 자동) 둘이 날아 자리 바꿈\n길이나 설 자리가 막히면 안 됨 · 수락 없으면 취소(쿨 없음)\n시험 도우미: F를 누르면 앞쪽 한 층 위에 아군 1명(기물 무작위 → 리본 색 확인)",
-            PieceKind.Bishop => "F = 1.3 m 떠오름 (조준 3초, 더 오를 수 없음) · 마우스로 조준\n좌클릭 = 견제탄 → 맞은 곳에 X자 파동 · 2발: 첫 발이 떨어지면 다시 조준\n맞은 적은 밀려 넘어짐: 벽·탑 가장자리면 떨어짐 (B) · 우클릭/F = 내려옴",
+            PieceKind.Bishop => "F = 1.3 m 떠오름 (조준 3초, 더 오를 수 없음) · 마우스로 조준\n좌클릭 = 은색 주교관 포탄 → 떨어지며 X로 쪼개져 네 조각이 대각선으로 미끄러짐 (조준 중엔 바닥에 옅은 X와 반투명 주교관) · 2발: 첫 발이 떨어지면 다시 조준\n맞은 적은 밀려 넘어짐: 벽·탑 가장자리면 떨어짐 (B) · 우클릭/F = 내려옴",
             PieceKind.Knight => "F = 착지점 조준 (6 m, 지금 바닥보다 한 층 0.9 m까지만, 그보다 높으면 회색)\n조준점 1.05 m 안에 적이 있으면 그 머리 위로 자동 조준 (말굽 표식이 머리 위)\n좌클릭 = 높게 도약 → 머리를 밟거나 착지 원 1.3 m 안 적은 0.7초 납작 + 밀림\n높은 곳 가장자리에서 납작해지면 떨어짐 (B)",
             _ => "",
         };
@@ -564,9 +582,9 @@ namespace ChessFight.RagdollLab
         {
             bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
             string how = (p1.Piece != PieceKind.King && p1.Piece != PieceKind.Pawn) ? $"{skillKey} 조준 → 좌클릭" : $"{skillKey} 사용";
-            SkillKeyCard.Draw(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.QueenHillSkillName(p1.Piece),
-                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), SkillKeyCard.Colors(p1.Piece),
-                ready || running, false, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
+            QueenHillSkillFx.SkillCard(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.QueenHillSkillName(p1.Piece),
+                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), p1.Piece,
+                ready || running, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
         }
 
         static string StageName(RagdollPawn pawn)

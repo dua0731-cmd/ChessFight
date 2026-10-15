@@ -7,8 +7,8 @@ namespace ChessFight.RagdollLab
     /// Promotion and what each piece is made of (Queen of the Hill M11; RagdollDriver forwards IPromotable
     /// here). The ragdoll stays the pawn's - the same size and the same physics - and a piece only scales it:
     /// pushes, hits, tackles and bumps by 1 / weight, the run and the sprint by its move, climbing walls and
-    /// ropes by its climb; the king may not sprint and shrugs off squashes and staggers. Until the pieces have
-    /// their own art, a small gold marker on the head shows which piece it is.
+    /// ropes by its climb; the king may not sprint and shrugs off squashes and staggers. A piece wears its own
+    /// model where there is one (ShowPieceModel); otherwise a small gold marker on the head shows which it is.
     /// </summary>
     public partial class RagdollPawn
     {
@@ -16,6 +16,9 @@ namespace ChessFight.RagdollLab
         PieceStats pieceStats = ChessPieces.Stats(PieceKind.Pawn);
         Transform pieceMarker;
         static Material markerMaterial;
+        // While a piece's mesh is worn: the pawn's own, to put back.
+        Mesh pawnMesh;
+        Material pawnSkinMaterial;
 
         public PieceKind Piece => piece;
         public PieceStats PieceStats => pieceStats;
@@ -47,12 +50,14 @@ namespace ChessFight.RagdollLab
             ShowPiece();
         }
 
-        /// <summary>A small gold marker on the head: battlements, a mitre, a horse's head, a cross, a crown.</summary>
+        /// <summary>The piece's own model where there is one (Resources/PieceModels), else a small gold marker on
+        /// the head: battlements, a mitre, a horse's head, a cross, a crown.</summary>
         void ShowPiece()
         {
             if (pieceMarker != null) Destroy(pieceMarker.gameObject);
             pieceMarker = null;
-            if (piece == PieceKind.Pawn) return;
+            if (piece == PieceKind.Pawn || !ShowPieceModel()) ShowPawnMesh();
+            if (piece == PieceKind.Pawn || skin != null && pawnMesh != null) return;
             Transform head = bodies[(int)BodyId.Head].transform;
             var headCollider = bodies[(int)BodyId.Head].GetComponent<Collider>();
             float top = headCollider != null ? headCollider.bounds.extents.y : 0.12f;
@@ -98,6 +103,47 @@ namespace ChessFight.RagdollLab
                     break;
             }
         }
+
+        /// <summary>
+        /// The artist's model for this piece, worn on the pawn's own skeleton: Resources/PieceModels/&lt;piece&gt;
+        /// is a prefab whose SkinnedMeshRenderer holds the piece mesh weighted onto the pawn's Mixamo bones,
+        /// part by part (body by height, each stub on its arm, each mitten on its hand, each foot on its
+        /// foot, a short leg between foot and base), in the pawn skin's space and with the pawn's bind poses
+        /// (Art/Pieces/*_Rigged.fbx, baked in the editor). RagdollVisualSync keeps driving the same bones,
+        /// as a stiffer wooden piece with its arms on its own shoulders and its feet under its base, from
+        /// the prefab's marks (RagdollVisualSync.PoseAsPiece). A piece without a model keeps the marker.
+        /// The pawn's own mesh, material and pose come back when it is a pawn again.
+        /// </summary>
+        bool ShowPieceModel()
+        {
+            if (skin == null) return false;
+            var prefab = Resources.Load<GameObject>("PieceModels/" + piece);
+            var look = prefab != null ? prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
+            if (look == null || look.sharedMesh == null) return false;
+            if (look.sharedMesh.bindposes.Length != skin.sharedMesh.bindposes.Length && pawnMesh == null) return false;
+            if (pawnMesh == null)
+            {
+                pawnMesh = skin.sharedMesh;
+                pawnSkinMaterial = skin.sharedMaterial;
+            }
+            skin.sharedMesh = look.sharedMesh;
+            skin.sharedMaterial = look.sharedMaterial;
+            if (VisualSync != null) VisualSync.SetPieceLook(look.transform);
+            return true;
+        }
+
+        void ShowPawnMesh()
+        {
+            if (skin == null || pawnMesh == null) return;
+            skin.sharedMesh = pawnMesh;
+            skin.sharedMaterial = pawnSkinMaterial;
+            pawnMesh = null;
+            pawnSkinMaterial = null;
+            if (VisualSync != null) VisualSync.ClearPieceLook();
+        }
+
+        RagdollVisualSync visualSync;
+        RagdollVisualSync VisualSync => visualSync != null ? visualSync : visualSync = GetComponent<RagdollVisualSync>();
 
         void Part(PrimitiveType shape, Vector3 at, Vector3 size)
         {

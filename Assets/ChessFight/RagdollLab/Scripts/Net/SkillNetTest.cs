@@ -63,6 +63,7 @@ namespace ChessFight.RagdollLab
             if (game == null && sword == null) return;
             if (game != null && game.AutoTest) return;
             if (sword != null && SwordFightSkillFilm.Rolling) return;
+            if (LabGame.CleanView) return;
             EnsureStyles();
             // The Sword Fight scene's own HUD has the top left (its side) and the top middle (the score): its key line
             // goes at the top of the numbers instead.

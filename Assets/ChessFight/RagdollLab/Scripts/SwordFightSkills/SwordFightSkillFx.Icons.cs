@@ -242,13 +242,30 @@ namespace ChessFight.RagdollLab
             return (p - (a + ab * t)).magnitude;
         }
 
-        /// <summary>Pop the piece's mark up over <paramref name="pawn"/>'s head (again, if it is still up: white, and bigger
-        /// for a moment).</summary>
+        /// <summary>The 3D piece's height over the head, m (R130 0.42; R132, 승규 님: "아이콘 사이즈 줄여줘" — smaller, and
+        /// the squat icon pieces of SkillMeshes.PieceIcon so it still reads).</summary>
+        const float PieceMarkHeight = 0.3f;
+        /// <summary>How far over the head collider's top the 3D piece's foot stands (m): clear of the drawn head, which is
+        /// a little bigger than its collider.</summary>
+        const float PieceMarkLift = 0.26f;
+
+        /// <summary>
+        /// Pop the piece's mark up over <paramref name="pawn"/>'s head (again, if it is still up: white, and bigger for a
+        /// moment). R130 (승규 님: "아이콘 바꿔줘 지금은 입체감이 떨어져 전에 보냈던 스킬 아이콘 사진으로 하지 말고 입체감 있는
+        /// 3D 아이콘으로 다시 만들어줘"): the mark is a solid chess piece now (SkillMeshes.Piece: a turned Staunton king,
+        /// queen, rook or bishop, the knight's horse head a rounded cut-out on its turned base), not a token cut from the
+        /// traced pictures. It is glossy (Skill Gloss in the piece's own polished colours, an ink edge round it, a soft
+        /// light round its rim), it spins a whole turn as it pops in, then keeps turning slowly and bobbing so its depth
+        /// always shows.
+        /// R132 (승규 님 10-13: "아이콘 사이즈 줄여줘 … 킹이면 킹 아이콘 퀸이면 퀸 아이콘으로 나와야 돼 … 아이콘이 지금 2번
+        /// 나와 f를 누르고 스킬을 사용할 때만 나와야 돼"): smaller, the icon pieces (SkillMeshes.PieceIcon: the king's big
+        /// cross, the queen's spiked crown, the rook's battlements), facing the eye and swaying a little either way after the
+        /// pop's turn (it no longer turns round on and on, so the piece is always seen whole, the knight side on), and only
+        /// with the cast: nothing pops it again (the king's block and counter, the edge skills' landings, the grade).
+        /// </summary>
         void HeadMark(RagdollPawn pawn, PieceKind kind)
         {
             if (pawn == null || kind == PieceKind.Pawn) return;
-            var tex = IconTexture(kind);
-            if (tex == null) return;
             if (headMarks.TryGetValue(pawn, out var live) && live.fx != null && !live.fx.dead)
             {
                 live.born = kit.Clock;
@@ -256,17 +273,21 @@ namespace ChessFight.RagdollLab
                 live.pops++;
                 return;
             }
-            var pal = SwordFightSkills.Colors(kind);
+            var pal = PieceColors(kind);
             var state = new HeadMarkState { born = kit.Clock, until = kit.Clock + MarkLife };
-            var go = new GameObject($"Skill head mark ({kind})");
-            go.transform.SetParent(kit.root, false);
-            go.AddComponent<MeshFilter>().sharedMesh = iconMeshes.TryGetValue(kind, out var token) && token != null ? token : kit.meshQuad;
-            var r = go.AddComponent<MeshRenderer>();
-            r.sharedMaterial = IconMaterial();
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = false;
-            r.enabled = false;
-            var block = new MaterialPropertyBlock();
+            var piece = new Kit.Prop(kit, SkillMeshes.PieceIcon(kind), pal, $"Skill head mark ({kind})") { inkWidth = 0.012f };
+            piece.Show(false);
+            // The bishop's mitre has its slit: a dark disc tilted across it, its rim just showing round the mitre (R132:
+            // without it the small bishop read as a pawn).
+            Kit.Prop slit = null;
+            if (kind == PieceKind.Bishop)
+            {
+                slit = new Kit.Prop(kit, kit.meshBall, Obsidian, "Skill head mark (bishop slit)", piece.t) { inkWidth = 0f };
+                slit.t.localPosition = new Vector3(-0.028f, 0.663f, 0f);
+                slit.t.localRotation = Quaternion.Euler(0f, 0f, 32f);
+                slit.t.localScale = new Vector3(0.41f, 0.032f, 0.47f);
+                slit.Show(false);
+            }
             var head = pawn.bodies[(int)BodyId.Head];
             var headCollider = head.GetComponent<Collider>();
             state.fx = kit.Run(float.MaxValue, (fx, d) =>
@@ -286,30 +307,37 @@ namespace ChessFight.RagdollLab
                 }
                 float top = headCollider != null ? headCollider.bounds.max.y : head.position.y + 0.12f;
                 float rise = first ? Kit.EaseOutBack(Mathf.Min(1f, a / 8f)) : 1f;
-                Vector3 at = new Vector3(head.position.x, top + 0.2f + MarkHeight * 0.5f - 0.12f * (1f - rise) + 0.012f * Mathf.Sin(age * 6.5f), head.position.z);
-                // R108, a solid token: it faces the camera upright, spins one whole turn as it pops in (every pop, the
-                // king's second one too: fast, then settling), then sways ±25° so its thickness shows.
+                float h = PieceMarkHeight * Mathf.Max(0.001f, s);
+                Vector3 foot = new Vector3(head.position.x, top + PieceMarkLift - 0.12f * (1f - rise) + 0.014f * Mathf.Sin(age * 6.5f), head.position.z);
+                // A whole turn as it pops in (every pop), then facing the eye, swaying a little either way (R132: whole to
+                // the eye, the knight side on); a slight tilt toward the eye so its top shows.
                 var cam = ViewCamera;
                 Vector3 look = cam != null ? Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up) : Vector3.forward;
                 if (look.sqrMagnitude < 1e-6f) look = Vector3.forward;
                 float spin = 360f * (1f - Kit.EaseOut(Mathf.Min(1f, a / 14f)));
-                float sway = 25f * Mathf.Sin(age * 2.8f) * Mathf.Min(1f, a / 14f);
-                go.transform.SetPositionAndRotation(at, Quaternion.LookRotation(look, Vector3.up) * Quaternion.Euler(0f, spin + sway, 0f));
-                go.transform.localScale = Vector3.one * (MarkHeight * Mathf.Max(0.001f, s));
-                block.SetTexture("_MainTex", tex);
-                block.SetColor("_Fill", pal.main);
-                block.SetColor("_Lines", pal.light);
-                block.SetColor("_InkColor", pal.ink);
-                block.SetFloat("_Spread", IconSpread);
-                block.SetFloat("_InkWidth", IconInk);
-                block.SetFloat("_Flash", a < 2f ? 1f : 0f);
-                r.SetPropertyBlock(block);
-                r.enabled = s > 0.01f;
+                float sway = 24f * Mathf.Sin(age * 2.4f) * Mathf.Clamp01((a - 10f) / 12f);
+                Quaternion face = Quaternion.LookRotation(-look, Vector3.up);
+                Quaternion tilt = Quaternion.AngleAxis(-10f, Vector3.Cross(Vector3.up, look.normalized));
+                // Grown and shrunk about its middle (a pop), so its foot moves with the scale.
+                piece.t.SetPositionAndRotation(foot + Vector3.up * (PieceMarkHeight - h) * 0.5f, tilt * face * Quaternion.Euler(0f, spin + sway, 0f));
+                piece.t.localScale = Vector3.one * h;
+                piece.flash = a < 2f ? 1f : 0f;
+                piece.rim = new Color(pal.light.r * 0.55f, pal.light.g * 0.55f, pal.light.b * 0.55f);
+                piece.rimPower = 2.6f;
+                piece.Show(s > 0.01f);
+                piece.Apply();
+                if (slit != null)
+                {
+                    slit.flash = piece.flash;
+                    slit.Show(s > 0.01f);
+                    slit.Apply();
+                }
                 return true;
             });
+            state.fx.props.Add(piece);
+            if (slit != null) state.fx.props.Add(slit);
             state.fx.end = () =>
             {
-                if (go != null) Destroy(go);
                 if (headMarks.TryGetValue(pawn, out var now) && now == state) headMarks.Remove(pawn);
             };
             headMarks[pawn] = state;

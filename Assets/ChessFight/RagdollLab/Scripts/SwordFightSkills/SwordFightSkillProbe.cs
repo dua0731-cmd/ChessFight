@@ -58,12 +58,20 @@ namespace ChessFight.RagdollLab
                 "king" => King(false),
                 "king-whiff" => King(true),
                 "king-mid" => KingMid(),
+                // R130: an enemy's skill at the king in his guard (the block answers each one).
+                "king-queen" => KingVs(PieceKind.Queen, false),
+                "king-rook" => KingVs(PieceKind.Rook, false),
+                "king-bishop" => KingVs(PieceKind.Bishop, false),
+                "king-knight" => KingVs(PieceKind.Knight, false),
+                "king-edge-queen" => KingVs(PieceKind.Queen, true),
+                "king-edge-knight" => KingVs(PieceKind.Knight, true),
                 "queen" => Line(PieceKind.Queen, Vector3.right, null),
+                "queen-fall" => QueenFall(),
                 "rook" => Line(PieceKind.Rook, Vector3.right, null),
                 "bishop" => Bishop(),
                 "bishop-mid" => BishopMid(false),
                 "bishop-miss" => BishopMid(true),
-                "knight" => Line(PieceKind.Knight, Vector3.right, new Vector3(5.0f, 0f, 0f)),
+                "knight" => Line(PieceKind.Knight, Vector3.right, new Vector3(4.5f, 0f, 0f)),
                 // The edge skills (R103, E).
                 "edge-king" => EdgeKing(false),
                 "edge-king-cut" => EdgeKing(true),
@@ -74,10 +82,14 @@ namespace ChessFight.RagdollLab
                 "edge-bishop" => EdgeBishop(false),
                 "edge-bishop-hit" => EdgeBishop(true),
                 "edge-bishop-close" => EdgeBishop(false, true),
+                // R130 ("완전히 죽은 거 아니면 살릴 수 있어야 돼"): E only once the ally is 2.6 m down (it is out at 3 m).
+                "edge-bishop-late" => EdgeBishop(false, false, -2.6f),
                 "edge-knight" => EdgeKnight(false),
                 "edge-knight-back" => EdgeKnight(true),
                 "edge-knight-side" => EdgeKnight(false, 1),
                 "edge-knight-fall" => EdgeKnight(false, 2),
+                // R132 ("테스트 용이라 여기 브랜치에서만 죽었을 때 부활 시간 없게"): back at once in this test scene.
+                "respawn" => Respawn(),
                 _ => null,
             };
             if (body == null) { Status = "done: unknown run " + name; yield break; }
@@ -202,7 +214,8 @@ namespace ChessFight.RagdollLab
             Show("F · 받아내기 자세");
             me.Skills.PressKey();
             yield return new WaitForFixedUpdate();
-            if (whiff) yield return new WaitForSeconds(0.62f);
+            // (Just after the guard has run out: 0.5 s, 0.9 s since R130.)
+            if (whiff) yield return new WaitForSeconds(bed.skills.kingGuard + 0.12f);
             else yield return new WaitForSeconds(0.04f);
             Show(whiff ? "적이 늦게 벰" : "적이 벰");
             bed.Cut(enemy, me.Pawn.Hips.position);
@@ -230,6 +243,67 @@ namespace ChessFight.RagdollLab
             bed.EnemyCuts();
             yield return new WaitForSeconds(2.6f);
             Moves(from, "king-mid");
+        }
+
+        /// <summary>
+        /// R130: an enemy dummy of <paramref name="kind"/> uses its F skill (or with <paramref name="edge"/> its edge skill: the
+        /// queen's checkmate cut, the knight's flip and kick) on the king, who goes into his guard just before it lands: it
+        /// is blocked (the attacker thrown off where it came close, the bishop's hands cut, the rook's wave cleaved) and he
+        /// counters. Reports whether the king was hit, what the guard took, and how everyone moved.
+        /// </summary>
+        IEnumerator KingVs(PieceKind kind, bool edge)
+        {
+            if (edge) yield return StageEdgeFor(PieceKind.King);
+            else yield return StageFor(PieceKind.King);
+            var me = bed.Local;
+            var foes = bed.Dummies(1);
+            var foe = foes[0];
+            bed.SetPieceNow(foe, kind);
+            // The king faces west; the enemy comes from the west (the edge skills: the king stands by the east edge, x = 7).
+            // (The knight's edge skill: it stands with its back to the east edge and the king 2.4 m in front of it.)
+            bool edgeKnight = edge && kind == PieceKind.Knight;
+            Vector3 king = edgeKnight ? new Vector3(4.0f, 0f, 0f) : edge ? new Vector3(5.9f, 0f, 0f) : new Vector3(1.2f, 0f, 0f);
+            Vector3 foeAt = edgeKnight ? new Vector3(6.4f, 0f, 0f) : edge ? new Vector3(2.6f, 0f, 0f)
+                : kind == PieceKind.Bishop ? new Vector3(-4.5f, 0f, 0f) : new Vector3(-3.0f, 0f, 0f);
+            SwordFightSkillBed.Place(me, king, edgeKnight ? Vector3.right : Vector3.left);
+            SwordFightSkillBed.Place(foe, foeAt, edgeKnight ? Vector3.left : Vector3.right);
+            for (int i = 1; i < foes.Count; i++) SwordFightSkillBed.Place(foes[i], new Vector3(-5f + 2f * i, 0f, -5.5f), Vector3.forward);
+            foreach (var a in bed.Dummies(0)) SwordFightSkillBed.Place(a, new Vector3(-5.5f, 0f, 5.5f), Vector3.right);
+            yield return new WaitForSeconds(0.6f);
+            var from = Starts();
+            int hits = me.Pawn.Hits;
+            var fs = foe.Skills;
+            Vector3 toKing = (me.Pawn.Hips.position - foe.Pawn.Hips.position);
+            toKing.y = 0f;
+            float guardAfter;
+            if (edge)
+            {
+                fs.OverrideAim(toKing.normalized);
+                Show(kind == PieceKind.Queen ? "적 퀸 · E 체크메이트 일섬" : "적 나이트 · E 벼랑 끝 역전");
+                fs.PressEdge();
+                guardAfter = kind == PieceKind.Queen ? 0.15f : 0.55f;
+            }
+            else
+            {
+                fs.OverrideAim(toKing.normalized, kind == PieceKind.Bishop || kind == PieceKind.Knight ? me.Pawn.Hips.position : (Vector3?)null);
+                Show($"적 {ChessPieces.Name(kind)} · F 조준 → 좌클릭");
+                fs.PressKey();
+                yield return new WaitForSeconds(0.25f);
+                fs.Confirm();
+                guardAfter = kind == PieceKind.Queen ? 0.25f : kind == PieceKind.Rook ? 0.3f : 0.1f;
+            }
+            yield return new WaitForSeconds(guardAfter);
+            Show("F · 왕의 반격 자세");
+            me.Skills.PressKey();
+            float t = 0f;
+            while (t < 2.2f && !me.Skills.KingCountered) { t += Time.deltaTime; yield return null; }
+            var took = me.Skills.Blocked;
+            Say($"king-{(edge ? "edge-" : "")}{kind.ToString().ToLower()}: 막음 {(me.Skills.KingCountered ? "됨" : "안 됨")} ({took}) · 자세 후 {t:0.00}초 · 킹 맞음 {me.Pawn.Hits - hits}번");
+            yield return new WaitForSeconds(2.4f);
+            Say($"  킹 맞음 (끝까지) {me.Pawn.Hits - hits}번 · 킹 상태 {me.Pawn.State} · 적 {foe.Pawn.DisplayName} 상태 {foe.Pawn.State} · 묶임 {me.Skills.PinLeft:0.00} 감속 {me.Skills.SlowLeft:0.00}");
+            Moves(from, $"king-{(edge ? "edge-" : "")}{kind.ToString().ToLower()}");
+            fs.OverrideAim(null);
+            bed.SetPieceNow(foe, PieceKind.Pawn);
         }
 
         /// <summary>The bishop aims at an enemy standing in the middle of the platform (nothing behind it but floor), or at an
@@ -403,7 +477,7 @@ namespace ChessFight.RagdollLab
         /// <summary>An ally pushed off the east edge, the bishop E. With <paramref name="hit"/> an enemy cuts the bishop during
         /// the pull; with <paramref name="close"/> the bishop stands where the ally would be set down (R109: it used to be set
         /// on him and shoved back off).</summary>
-        IEnumerator EdgeBishop(bool hit, bool close = false)
+        IEnumerator EdgeBishop(bool hit, bool close = false, float lateY = 1f)
         {
             yield return StageEdgeFor(PieceKind.Bishop);
             var me = bed.Local;
@@ -414,6 +488,8 @@ namespace ChessFight.RagdollLab
             bed.PushOff(foes[0], ally);
             float t = 0f;
             while (ally.Skills.FallTime < 0.15f && t < 2.5f) { t += Time.deltaTime; yield return null; }
+            // Late (R130): wait until the ally has fallen this far (or is about to be out).
+            if (lateY < 0f) while (ally.Alive && ally.Pawn.Hips.position.y > lateY && t < 4f) { t += Time.deltaTime; yield return null; }
             Say($"edge-bishop: 아군이 떨어진 지 {ally.Skills.FallTime:0.00}초 · 골반 {ally.Pawn.Hips.position.y:0.00} m");
             if (close)
             {
@@ -482,6 +558,43 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(2.0f);
             Say($"  나이트: {(me.Alive ? "살아 있음" : "장외")} · 골반 ({me.Pawn.Hips.position.x:0.0}, {me.Pawn.Hips.position.y:0.00}, {me.Pawn.Hips.position.z:0.0}) · 적: {(foe.Alive ? "살아 있음" : "장외")}");
             Moves(from, back ? "edge-knight-back" : mode == 1 ? "edge-knight-side" : mode == 2 ? "edge-knight-fall" : "edge-knight");
+        }
+
+        /// <summary>R129: the queen aimed past the east edge (from 4.4 m short of it): she runs off it and falls.</summary>
+        IEnumerator QueenFall()
+        {
+            yield return StageFor(PieceKind.Queen);
+            var me = bed.Local;
+            SwordFightSkillBed.Place(me, new Vector3(2.6f, 0f, 1.3f), Vector3.right);
+            yield return new WaitForSeconds(0.4f);
+            me.Skills.OverrideAim(Vector3.right, null);
+            var from = Starts();
+            yield return Press(me.Skills, 0.7f);
+            yield return new WaitForSeconds(2.4f);
+            Moves(from, "queen-fall");
+        }
+
+        /// <summary>R132 (승규 님: "지금은 테스트 용이라 여기 브랜치에서만 죽었을 때 부활 시간 없게 해줘 나중에 병합 할 때는
+        /// 있게"): an enemy dummy put over the void past the east edge falls out and comes back at its start at once — this
+        /// test scene's <c>respawnDelay</c> is 0 (the rules make it 0.1 s); the match scene keeps its 3 s.</summary>
+        IEnumerator Respawn()
+        {
+            yield return StageFor(PieceKind.Queen);
+            var foe = bed.Dummies(1)[0];
+            SwordFightSkillBed.Place(foe, new Vector3(8.4f, 0f, 0f), Vector3.left);
+            Show("적 더미가 장 밖으로 떨어짐 → 바로 부활");
+            float t = 0f, diedAt = -1f, backAt = -1f;
+            while (t < 6f)
+            {
+                t += Time.deltaTime;
+                if (diedAt < 0f && !foe.Alive) diedAt = t;
+                if (diedAt >= 0f && foe.Alive) { backAt = t; break; }
+                yield return null;
+            }
+            Say(diedAt < 0f ? "respawn: 장외가 안 됨"
+                : backAt < 0f ? $"respawn: 장외 {diedAt:0.00}초 → 6초 안에 안 돌아옴"
+                : $"respawn: 장외 {diedAt:0.00}초 → {backAt - diedAt:0.00}초 뒤 다시 나타남 (씬 respawnDelay {bed.Game.respawnDelay:0.##}) · 자리 {foe.Pawn.Hips.position:F1}");
+            yield return new WaitForSeconds(1.2f);
         }
 
         IEnumerator Bishop()

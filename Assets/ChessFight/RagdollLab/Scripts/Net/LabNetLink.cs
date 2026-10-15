@@ -152,6 +152,11 @@ namespace ChessFight.RagdollLab
         // A client's own presses, counted (D-S7), and the rest of its input waiting for the next send.
         RagdollLabInput pending;
         byte myJumps, myShoves, myAbilities, myAbilities2, mySkills, ownPieceSeq;
+        // R146: the king's picks, sent with the next few inputs after he calls (a lost one does not matter); the host acts on
+        // each call's number once.
+        byte kingCallSent;
+        int kingCallRepeats;
+        readonly Dictionary<ulong, byte> kingCallTaken = new Dictionary<ulong, byte>();
         bool grabWasDown;
 
         int sentBytes, receivedBytes, snapshotsIn, skillBytes;
@@ -751,6 +756,7 @@ namespace ChessFight.RagdollLab
                 pending.delayMs = (byte)Mathf.Clamp((int)Math.Round(delay.Milliseconds), 0, 255);
                 pending.lossPercent = (byte)Mathf.Clamp((int)Math.Round(delay.LossShare * 100d), 0, 100);
                 Send(NetHost, RagdollNetProtocol.LabInput(NetMatch, ++sequence, NowMs(), pending));
+                SendKingCall();
                 pending.interact = false;
             }
 
@@ -1389,6 +1395,7 @@ namespace ChessFight.RagdollLab
             if (NetIsHost)
             {
                 if (type == RagdollNetProtocol.TypeLabInput || type == RagdollNetProtocol.TypeSwordInput) ReceiveInput(sender, bytes);
+                else if (type == RagdollNetProtocol.TypeKingCall) ReceiveKingCall(sender, bytes);
                 return;
             }
             if (sender != NetHost) return;
@@ -1410,6 +1417,33 @@ namespace ChessFight.RagdollLab
                     if (AcceptsDev && RagdollNetProtocol.ReadDev(bytes, NetMatch, out string command)) RunDev(command);
                     break;
             }
+        }
+
+        /// <summary>A client king's picks (R146), with the next few inputs after a call.</summary>
+        void SendKingCall()
+        {
+            if (game == null || game.NetKingCallSeq == 0) return;
+            if (game.NetKingCallSeq != kingCallSent)
+            {
+                kingCallSent = game.NetKingCallSeq;
+                kingCallRepeats = 6;
+            }
+            if (kingCallRepeats <= 0) return;
+            kingCallRepeats--;
+            Send(NetHost, RagdollNetProtocol.KingCall(NetMatch, kingCallSent, RefOf(game.NetKingCallA), RefOf(game.NetKingCallB)));
+        }
+
+        /// <summary>The host: a client king's picks, acted on once per call (his piece judges them, RagdollPawn.AskKingCall).</summary>
+        void ReceiveKingCall(ulong sender, byte[] bytes)
+        {
+            if (!NetRoster.ContainsKey(sender) || !RagdollNetProtocol.ReadKingCall(bytes, NetMatch, out byte seq, out byte a, out byte b)) return;
+            if (kingCallTaken.TryGetValue(sender, out byte taken) && taken == seq) return;
+            kingCallTaken[sender] = seq;
+            var king = PawnFor(sender);
+            if (king == null) return;
+            RagdollPawn first = PawnOf(a), second = PawnOf(b);
+            king.AskKingCall(first, second);
+            if (Trace) Log($"king call {seq} from {king.DisplayName}: {(first != null ? first.DisplayName : "-")}, {(second != null ? second.DisplayName : "-")}");
         }
 
         void Recycle(int index)
@@ -1544,6 +1578,27 @@ namespace ChessFight.RagdollLab
                 case "skill":
                     game.DevPress.skill = true;
                     break;
+                case "panels":
+                    LabGame.CleanView = p.Length > 1 && p[1] == "off";
+                    break;
+                case "kingcall":
+                {
+                    // R146: this PC's king picks from his list: kingcall host|client|clientN [second].
+                    RagdollPawn DevPawn(int i)
+                    {
+                        if (i >= p.Length) return null;
+                        string w = p[i];
+                        if (w == "host") return PawnFor(NetHost);
+                        int n = w == "client" ? 1 : int.TryParse(w.Substring(Math.Min(6, w.Length)), out int k) ? k : 0;
+                        return n > 0 ? PawnFor(NetHost + (ulong)n) : null;
+                    }
+                    var me = game.LocalPawn;
+                    if (me == null) break;
+                    RagdollPawn first = DevPawn(1), second = DevPawn(2);
+                    if (me.NetworkPuppet) game.AskKingCall(first, second);
+                    else me.AskKingCall(first, second);
+                    break;
+                }
                 case "click":
                     game.DevPress.shove = true;
                     break;

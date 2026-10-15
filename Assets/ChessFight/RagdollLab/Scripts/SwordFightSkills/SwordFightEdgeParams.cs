@@ -71,9 +71,9 @@ namespace ChessFight.RagdollLab
         [Header("비숍 · 구원의 손")]
         public float bishopCooldown = 18f;
         [Tooltip("떨어지는 아군이 이 거리 안이면 씀 (m)")]
-        public float bishopRange = 6f;
+        public float bishopRange = 8f;   // R130: 6 → 8 ("완전히 죽은 거 아니면 살릴 수 있어야 돼")
         [Tooltip("아군이 떨어지기 시작하고 이 시간 안")]
-        public float bishopFallWindow = 1f;
+        public float bishopFallWindow = 1f;   // R130: no longer used — an ally can be caught until it is out (−3 m)
         [Tooltip("손이 아군에게 닿기까지")]
         public float bishopReach = 0.15f;
         [Tooltip("끌어당겨 발판 위에 내려놓기까지")]

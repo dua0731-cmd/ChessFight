@@ -31,6 +31,7 @@ namespace ChessFight.RagdollLab
         const float OutWatch = 2.5f;       // a hit enemy that falls within this long was put out by it
         const float OutDrop = 5f;          // ... falling this far below where it was hit (m)
         const float SelfDrop = 7f;         // the caster falling this far below where it cast (m)
+        const float SelfWatchTime = 2.2f;  // ... within this long of its last moment
         const float SwordOutY = -2.5f;     // Sword Fight: off the board on the way to its ring-out at -3 m (SwordFightGame)
 
         enum Mode { PawnRush, QueenHill, SwordF, SwordEdge }
@@ -53,10 +54,14 @@ namespace ChessFight.RagdollLab
             public Vector3 lastHips;
             public readonly List<Watched> watched = new List<Watched>();
             public readonly HashSet<RagdollPawn> enemies = new HashSet<RagdollPawn>();
-            public int helped;
-            public bool failed, cancelled, selfFell, closed, pending;
+            public int helped, hits0;
+            public bool failed, cancelled, selfFell, closed, pending, struck;
+            /// <summary>Nobody else has knocked it about since it cast: a fall now is its own doing.</summary>
+            public bool Own => !struck && (by == null || by.Hits == hits0);
             public SkillGrade shown;
             public bool Watching(float now) { foreach (var w in watched) if (!w.fell && now < w.until) return true; return false; }
+            /// <summary>The caster's own fall is still watched a while after its last moment.</summary>
+            public bool SelfWatch(float now) => !selfFell && now - last < SelfWatchTime;
         }
 
         readonly Dictionary<RagdollPawn, Cast> open = new Dictionary<RagdollPawn, Cast>();
@@ -137,6 +142,7 @@ namespace ChessFight.RagdollLab
 
         void OnPawnRush(SkillFxEvent e)
         {
+            Struck(e.target, e.by);
             var c = Touch(e.by, Mode.PawnRush, PieceOf(e.kind.ToString(), e.by));
             if (c == null) return;
             switch (e.kind)
@@ -154,6 +160,7 @@ namespace ChessFight.RagdollLab
 
         void OnQueenHill(QueenHillFxEvent e)
         {
+            Struck(e.target, e.by);
             var c = Touch(e.by, Mode.QueenHill, PieceOf(e.kind.ToString(), e.by));
             if (c == null) return;
             switch (e.kind)
@@ -187,6 +194,7 @@ namespace ChessFight.RagdollLab
         void OnSword(SfFxEvent e)
         {
             var by = e.by != null ? e.by.Pawn : null;
+            Struck(e.target, by);
             bool edge = e.kind >= SfFxKind.EdgeCast;
             var c = Touch(by, edge ? Mode.SwordEdge : Mode.SwordF, e.by != null ? e.by.Piece : PieceKind.Pawn);
             if (c == null) return;
@@ -237,10 +245,19 @@ namespace ChessFight.RagdollLab
                 c.last = Now;
                 return c;
             }
-            c = new Cast { by = by, mode = mode, piece = piece, start = Now, last = Now };
+            c = new Cast { by = by, mode = mode, piece = piece, start = Now, last = Now, hits0 = by.Hits };
             if (by.Hips != null) { c.startY = by.Hips.position.y; c.lastHips = by.Hips.position; }
             open[by] = c;
             return c;
+        }
+
+        /// <summary>Another's skill landed on <paramref name="target"/>: a cast of its own still watched no longer blames it
+        /// for falling.</summary>
+        void Struck(RagdollPawn target, RagdollPawn by)
+        {
+            if (target == null || target == by) return;
+            if (open.TryGetValue(target, out var c)) c.struck = true;
+            foreach (var a in after) if (a.by == target) a.struck = true;
         }
 
         void Hit(Cast c, RagdollPawn target)
@@ -341,15 +358,31 @@ namespace ChessFight.RagdollLab
                 if (c.cancelled) continue;
                 var g = SkillGrades.Decide(TallyOf(c), RuleOf(c));
                 // The edge skills are there to put someone out: wait for the fall rather than stamp ! and then !!.
-                c.pending = c.mode == Mode.SwordEdge && g != SkillGrade.Brilliant && c.Watching(now);
+                // ... and a caster still falling (run off an edge) is not stamped ? on the way down to its ??.
+                c.pending = g != SkillGrade.Brilliant && ((c.mode == Mode.SwordEdge && c.Watching(now)) || Falling(c.by));
                 if (!c.pending && (c.shown == SkillGrade.None || SkillGrades.Raises(c.shown, g))) Show(c, g);
-                if (c.Watching(now)) after.Add(c);
+                if (c.Watching(now) || c.SelfWatch(now)) after.Add(c);
             }
             for (int i = after.Count - 1; i >= 0; i--)
             {
                 var c = after[i];
                 if (c.by == null) { after.RemoveAt(i); continue; }
-                if (!c.Watching(now))
+                bool fellBefore = c.selfFell;
+                TrackSelf(c);
+                if (c.pending && !c.selfFell && !Falling(c.by) && !(c.mode == Mode.SwordEdge && c.Watching(now)))
+                {
+                    // Down safely after all: the grade it was waiting with.
+                    c.pending = false;
+                    var held = SkillGrades.Decide(TallyOf(c), RuleOf(c));
+                    if (c.shown == SkillGrade.None) Show(c, held);
+                }
+                if (!fellBefore && c.selfFell)
+                {
+                    // It fell after its cast went quiet: its ?? (or !? if it had paid off), unless !! was already shown.
+                    var late = SkillGrades.Decide(TallyOf(c), RuleOf(c));
+                    if (c.shown != SkillGrade.Brilliant && c.shown != late) { c.pending = false; Show(c, late); }
+                }
+                if (!c.Watching(now) && !c.SelfWatch(now))
                 {
                     if (c.pending) { c.pending = false; var last = SkillGrades.Decide(TallyOf(c), RuleOf(c)); if (c.shown == SkillGrade.None) Show(c, last); }
                     after.RemoveAt(i);
@@ -361,9 +394,17 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>The caster's fall after its cast closed (Track only watches it while the cast is open).</summary>
+        void TrackSelf(Cast c)
+        {
+            if (!c.closed || c.selfFell || c.by.Hips == null || !c.SelfWatch(Now) || !c.Own) return;
+            Vector3 h = c.by.Hips.position;
+            if (h.y < (Sword(c) ? SwordOutY : c.startY - SelfDrop)) c.selfFell = true;
+        }
+
         void Track(Cast c, float now)
         {
-            if (c.by.Hips != null && !c.selfFell && !c.closed)
+            if (c.by.Hips != null && !c.selfFell && !c.closed && c.Own)
             {
                 Vector3 h = c.by.Hips.position;
                 if (h.y < (Sword(c) ? SwordOutY : c.startY - SelfDrop)) c.selfFell = true;
@@ -380,6 +421,9 @@ namespace ChessFight.RagdollLab
         }
 
         static bool Sword(Cast c) => c.mode == Mode.SwordF || c.mode == Mode.SwordEdge;
+
+        /// <summary>In the air and coming down (not a hop: falling faster than 1 m/s).</summary>
+        static bool Falling(RagdollPawn p) => p != null && p.Hips != null && !p.Grounded && p.Hips.linearVelocity.y < -1f;
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
     }

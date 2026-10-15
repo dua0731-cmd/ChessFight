@@ -80,16 +80,17 @@ namespace ChessFight.RagdollLab
             bool sprinted = false;
             yield return Sim(1.5f, () =>
             {
-                pawn.SetInput(new PawnInput { move = Vector3.right });
+                // R145: the king sprints too (both hold Shift), still at 0.8 of the pawn.
+                pawn.SetInput(new PawnInput { move = Vector3.right, sprint = true });
                 king.SetInput(new PawnInput { move = Vector3.right, sprint = true });
                 sprinted |= king.Sprinting;
             });
             float vPawn = Flat(pawn.Hips.linearVelocity).magnitude, vKing = Flat(king.Hips.linearVelocity).magnitude;
             float ratio = vKing / Mathf.Max(0.1f, vPawn);
             bool immune = !king.GetComponent<IStatusReceiver>().Squash(1.2f, 1f);
-            Report("M11 킹: 이동 0.8배, Shift를 눌러도 전력질주 없음, 찌그러짐 면역",
-                Mathf.Abs(ratio - 0.8f) < 0.08f && !sprinted && immune,
-                $"폰 {vPawn:F2} m/s, 킹(Shift 누름) {vKing:F2} m/s = {ratio:F2}배, 전력질주 {sprinted}, 찌그러짐 안 먹힘 {immune}");
+            Report("M11 킹: 이동 0.8배, Shift로 전력질주 (R145), 찌그러짐 면역",
+                Mathf.Abs(ratio - 0.8f) < 0.08f && sprinted && immune,
+                $"폰(Shift) {vPawn:F2} m/s, 킹(Shift) {vKing:F2} m/s = {ratio:F2}배, 전력질주 {sprinted}, 찌그러짐 안 먹힘 {immune}");
             yield return Clear();
         }
 

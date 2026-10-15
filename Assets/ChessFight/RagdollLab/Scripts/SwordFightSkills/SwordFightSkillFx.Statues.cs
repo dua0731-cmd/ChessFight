@@ -134,7 +134,7 @@ namespace ChessFight.RagdollLab
             Mortar(.62f, .385f);
             Mortar(.86f, .325f);
             var (band, bandLine) = LatheMesh(new[] { V(0f, -.045f), V(.34f, -.045f), V(.34f, .045f), V(0f, .045f) }, 12, true);
-            Add(band, bandLine, Kit.Rook, 0.016f, new Vector3(0f, 1.075f, 0f), Quaternion.identity, Vector3.one);
+            Add(band, bandLine, kit.rook, 0.016f, new Vector3(0f, 1.075f, 0f), Quaternion.identity, Vector3.one);
             var (disc, discLine) = LatheMesh(new[] { V(0f, -.04f), V(.38f, -.04f), V(.38f, .04f), V(0f, .04f) }, 12, true);
             Add(disc, discLine, StoneLight, 0.016f, new Vector3(0f, 1.155f, 0f), Quaternion.identity, Vector3.one);
             var ball = SmoothSphere();

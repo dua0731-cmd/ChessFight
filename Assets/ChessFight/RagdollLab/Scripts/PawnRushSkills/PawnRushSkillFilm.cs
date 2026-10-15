@@ -26,6 +26,12 @@ namespace ChessFight.RagdollLab
         /// <summary>Film each shot again slowed round its hits (false: the full-speed takes only, e.g. to keep every
         /// frame as a still and look at an effect frame by frame, R86).</summary>
         public static bool SlowTakes = true;
+        /// <summary>R139 (승규 님 10-14: "동영상은 찍지 마"): keep the stills only and hand no frame on, so no video is written.</summary>
+        public static bool StillsOnly;
+        /// <summary>R143: film every shot from here instead (e.g. where the player's camera would be, as 승규 님 saw the
+        /// queen in play), with this field of view (0: the film's 45°).</summary>
+        public static Vector3? EyeOverride, LookOverride;
+        public static float FovOverride;
         /// <summary>The frame numbers the hits fell on in the last film (to find them among the stills).</summary>
         public static readonly List<int> HitFrames = new List<int>();
 
@@ -41,25 +47,32 @@ namespace ChessFight.RagdollLab
         static readonly Shot[] Shots =
         {
             // R90: every Pawn Rush skill in design A.
-            new Shot { run = "pawn-angles", title = "폰 · 첫 두 걸음", note = "밟은 칸이 우리 색으로 찍힘 · 곧게 밀면 C자 고리 · 대각선으로 치면 넘어지고 잡힌 칸",
+            new Shot { run = "pawn-angles", title = "폰 · 첫 두 걸음", note = "밟은 칸이 우리 색으로 찍힘 · 곧게 밀면 밀림 · 대각선으로 치면 넘어지며 먼지 (R138: 반원 고리 없음, 실제 먼지)",
                 eye = new Vector3(2.8f, 2.6f, -11.6f), look = new Vector3(0f, 0.4f, -7f), lead = 0.4f },
             new Shot { run = "pawn-help", title = "폰 · 일으켜 세우기", note = "넘어진 팀원 칸이 솟아 들어 올림 · 둘 다 발에 청록 띠",
                 eye = new Vector3(2.8f, 2.6f, -11.6f), look = new Vector3(0f, 0.4f, -7f), lead = 0.4f },
-            new Shot { run = "queen", title = "퀸 · 팔방 밀치기", note = "바닥 경고 원이 차오름 · 금색 체스말이 가슴 불덩이로 모였다가 팡 → 진주 8개 왕관 고리",
+            new Shot { run = "queen", title = "퀸 · 팔방 밀치기", note = "R142: 모일 때 체스말에서 가슴으로 번개 · 펑! 팔방 번개 + 충격파 돔·바닥 물결 세 겹, 물결 앞에서 번개가 튐 · 맞은 기물에 번개 · 체스말이 쓸려 넘어짐 (폭발·먼지 없음)",
                 eye = new Vector3(2.4f, 3.6f, -13f), look = new Vector3(-0.2f, 0.3f, -7.8f), lead = 0.5f },
-            new Shot { run = "rook-cluster", title = "룩 · 직선 돌파", note = "앞으로 네 칸이 차례로 켜짐 · 잠그면 돌 먼지 고리 · 번개 돌진 → 맞을 때마다 C자 고리, 잡힌 칸",
+            new Shot { run = "rook-cluster", title = "룩 · 직선 돌파", note = "앞으로 네 칸이 같이 켜지고 점이 같이 차오름 (R133) · 잠그면 돌 먼지 고리 · 번개 돌진 → 맞으면 번쩍·먼지 (R138: 반원 고리 없음)",
                 eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.4f },
             new Shot { run = "rook-wall-slant", title = "룩 · 벽에 비스듬히 쾅", note = "비스듬히 부딪혀도 성벽 톱니 고리가 벽면에 납작하게 붙음 · 벽 끝이 가까우면 안쪽으로 밀리고 작아짐",
                 eye = new Vector3(13.6f, 2.4f, -1.6f), look = new Vector3(19.8f, 1.1f, 1.6f), lead = 0.4f },
             new Shot { run = "rook-barricade", title = "룩 · 바리케이드 부수기", note = "부서지는 바리케이드 자리에 작은 성벽 톱니 고리 · 바닥에 묻히지 않음",
                 eye = new Vector3(-3.4f, 2.6f, -3.2f), look = new Vector3(-8.4f, 0.9f, 2f), lead = 0.4f },
-            new Shot { run = "rook-wall", title = "룩 · 벽에 쾅", note = "마지막 칸이 벽에 세워짐 · 벽에 성벽 톱니 고리 · 돌 먼지",
+            new Shot { run = "rook-wall", title = "룩 · 벽에 쾅", note = "마지막 칸이 벽에 세워짐 · 벽에 성벽 톱니 고리 · 돌 먼지 · R130: 벽 칸도 바닥처럼 반투명, 점이 차오름",
                 eye = new Vector3(16.2f, 2.6f, -5.2f), look = new Vector3(19.2f, 0.9f, 0f), lead = 0.4f },
-            new Shot { run = "bishop-trip", title = "비숍 · 교차 밧줄", note = "보라 작은 칸으로 조준 · X를 던짐 · 걸리면 발밑 보라 초승달과 잡힌 칸 · 쉬는 동안 40% 밝기",
-                eye = new Vector3(-3.6f, 4.4f, -13f), look = new Vector3(0f, 0.2f, -7.3f), lead = 0.45f },
-            new Shot { run = "knight-turn", title = "나이트 · 꺾어 도약", note = "가는 길 칸과 말굽 착지 표시(내려올수록 작아짐) · 공중에서 꺾으면 ㄱ자 바람 띠와 파란 초승달",
+            // R130 (승규 님: "벽이나 폰들이랑 부딪히거나 이럴 때 … 무슨 키를 눌러도 낑긴 것 같은 거").
+            new Shot { run = "stuck-dive", title = "벽 앞 좌클릭 다이빙 — 낑김 없앰 (R130)", note = "벽에 막혀 기대 있어도 멈추면 0.3초 뒤 일어나 바로 뒤로 걸어감 (전에는 최대 6초 동안 어떤 키도 안 먹힘)",
+                eye = new Vector3(15.2f, 2.3f, -3.8f), look = new Vector3(18.6f, 0.5f, 0f), lead = 0.3f },
+            // R146: the king's call (two dummies on his team: one through the 3 m wall at x 20, one in the open).
+            new Shot { run = "king-call", title = "킹 · 왕의 부름", note = "F 목록 → 두 명 → F · 왕관 신호 · 불린 팀원이 F (더미는 스스로) → 킹 색으로 빛나며 살짝 떠서 0.6초 만에 킹 뒤 두 칸으로, 벽 통과 · 오는 동안 무적",
+                eye = new Vector3(12.4f, 3.2f, -5.4f), look = new Vector3(16.4f, 0.6f, 0.8f), lead = 0.5f },
+            new Shot { run = "bishop-trip", title = "비숍 · 교차 밧줄", note = "조준 · X를 던짐 · R142: 나무 말뚝이 박히고 밧줄이 매듭으로 묶임 · 세 가닥 꼰 마 밧줄 · 걸리면 넘어지지 않고 네 줄이 허리로 모여 꽁꽁 묶임 → 풀림",
+                // R138: closer, so the tie can be seen (it was filmed from 7 m).
+                eye = new Vector3(-2.7f, 2.5f, -10.4f), look = new Vector3(-0.5f, 0.35f, -6.5f), lead = 0.45f },
+            new Shot { run = "knight-turn", title = "나이트 · 꺾어 도약", note = "R139: 앞발 들고 뛰어오름 · 뒷발로 차는 검정·금 힘줄 선 · 발굽 자국·먼지 · 착지에만 광택 검정·금 편자 로고+화살표 · 꺾으면 힘줄 선",
                 eye = new Vector3(3.6f, 6f, -18.2f), look = new Vector3(3.4f, 0.4f, -10.4f), lead = 0.45f },
-            new Shot { run = "knight-stomp", title = "나이트 · 머리 밟기", note = "적 발밑 빨간 고리 → 밟으면 납작 · 파란 고리 · 잡힌 칸 · 머리 위 작은 크림 폰 3개",
+            new Shot { run = "knight-stomp", title = "나이트 · 머리 밟기", note = "적 발밑 빨간 칸 → 밟으면 납작 · R140: 발굽 밑에서 먼지가 옆으로 짜여 나오고 발밑 먼지 · 흰→은색 번쩍 (로고·선 없음) · 머리 위 작은 크림 폰 3개",
                 eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
         };
 
@@ -100,7 +113,7 @@ namespace ChessFight.RagdollLab
             var go = new GameObject("Skill film camera");
             cam = go.AddComponent<Camera>();
             if (game != null && game.labCamera != null) cam.CopyFrom(game.labCamera.Cam);
-            cam.fieldOfView = 45f;
+            cam.fieldOfView = FovOverride > 0f ? FovOverride : 45f;
             cam.rect = new Rect(0f, 0f, 1f, 1f);
             cam.enabled = false;
             PawnRushSkillFx.PrepareCamera(cam);   // depth for soft edges, HDR and bloom (R79)
@@ -124,7 +137,7 @@ namespace ChessFight.RagdollLab
             LabCamera.GameTimeClock = true;
             Frames = 0;
             HitFrames.Clear();
-            Began?.Invoke(path, w, h, fps);
+            if (!StillsOnly) Began?.Invoke(path, w, h, fps);
             RagdollPawn.SkillFx += OnSkillFx;
             foreach (var shot in Shots)
             {
@@ -133,8 +146,8 @@ namespace ChessFight.RagdollLab
                 foreach (bool slow in SlowTakes ? new[] { false, true } : new[] { false })
                 {
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";
-                    eye = shot.eye;
-                    look = shot.look;
+                    eye = EyeOverride ?? shot.eye;
+                    look = LookOverride ?? shot.look;
                     SetCaption(shot.title, slow ? $"느리게 ×{(game != null ? game.slowMotionScale : 0.3f):0.0#}" : shot.note);
                     if (game != null) game.SetSlowMotion(false);
                     // A bishop's wire from the shot before would still be lying there.
@@ -167,7 +180,7 @@ namespace ChessFight.RagdollLab
                 }
             }
             RagdollPawn.SkillFx -= OnSkillFx;
-            Ended?.Invoke();
+            if (!StillsOnly) Ended?.Invoke();
             if (game != null) game.SuppressInput = false;
             Time.captureFramerate = 0;
             LabCamera.GameTimeClock = false;
@@ -243,7 +256,7 @@ namespace ChessFight.RagdollLab
                 frame.ReadPixels(new Rect(0, 0, width, height), 0, 0);
                 frame.Apply();
                 RenderTexture.active = null;
-                Frame?.Invoke(frame);
+                if (!StillsOnly) Frame?.Invoke(frame);
                 if (StillEvery > 0 && Frames % StillEvery == 0) File.WriteAllBytes(Path.Combine(stills, $"f_{Frames:D4}.jpg"), frame.EncodeToJPG(85));
                 Frames++;
             }

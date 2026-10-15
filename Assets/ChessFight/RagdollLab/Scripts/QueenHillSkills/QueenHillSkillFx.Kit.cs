@@ -28,14 +28,30 @@ namespace ChessFight.RagdollLab
         public struct Palette
         {
             public Color main, light, deep, ink;
-            public Palette(string main, string light, string deep, string ink)
+            /// <summary>Polished metal (the board look's gold and silver); 0 for design A's paint.</summary>
+            public float metal;
+            public Palette(string main, string light, string deep, string ink, float metal = 0f)
             {
                 this.main = Hex(main);
                 this.light = Hex(light);
                 this.deep = Hex(deep);
                 this.ink = Hex(ink);
+                this.metal = metal;
             }
         }
+
+        /// <summary>The colours the effects paint with: design A's, unless the board look sets its own.</summary>
+        class Look
+        {
+            public Palette King = QueenHillSkillFx.King, Queen = QueenHillSkillFx.Queen, Rook = QueenHillSkillFx.Rook,
+                Bishop = QueenHillSkillFx.Bishop, Knight = QueenHillSkillFx.Knight, TeamAlly = QueenHillSkillFx.TeamAlly,
+                TeamEnemy = QueenHillSkillFx.TeamEnemy, Dust = QueenHillSkillFx.Dust, Grey = QueenHillSkillFx.Grey,
+                Stone = QueenHillSkillFx.Stone;
+            public Color SelfFill = QueenHillSkillFx.SelfFill, SelfInk = QueenHillSkillFx.SelfInk, SocketColor = QueenHillSkillFx.SocketColor,
+                Walnut = QueenHillSkillFx.Walnut, GoldAccent = QueenHillSkillFx.GoldAccent;
+        }
+
+        readonly Look look = new Look();
 
         static readonly Palette King = new Palette("#34B85A", "#E2FFE6", "#1A7A36", "#0A3318");
         static readonly Palette Queen = new Palette("#FFD34D", "#FFF0A8", "#E89B1A", "#3A2208");
@@ -43,7 +59,7 @@ namespace ChessFight.RagdollLab
         static readonly Palette Bishop = new Palette("#994DFF", "#E6D6FF", "#6A2FC9", "#2A0F57");
         static readonly Palette Knight = new Palette("#6BB3FF", "#DBF2FF", "#1F5CF2", "#0A144D");
         static readonly Palette TeamAlly = new Palette("#2EC4E6", "#FFF1D2", "#1593B0", "#0B4F5C");
-        static readonly Palette TeamEnemy = new Palette("#FF3B4E", "#FFE1E4", "#C81E33", "#5A0F1A");
+        static readonly Palette TeamEnemy = new Palette("#D9473F", "#FFD9D2", "#A12A2A", "#4A1416");   // R130: a softer red
         static readonly Palette Dust = new Palette("#D9C3A0", "#FFF1D2", "#8F7A63", "#2B1A0E");
         static readonly Palette Grey = new Palette("#9AA3B5", "#DDE2EC", "#6B7385", "#2D3344");
         static readonly Palette Stone = new Palette("#8E8A96", "#C9C4D1", "#4D4757", "#1E1A26");
@@ -65,15 +81,15 @@ namespace ChessFight.RagdollLab
         /// <summary>A piece's own colours; the pawn has none of its own and wears its side's (teal us, red them).</summary>
         Palette PieceColors(RagdollPawn pawn)
         {
-            if (pawn == null) return Grey;
+            if (pawn == null) return look.Grey;
             switch (pawn.Piece)
             {
-                case PieceKind.King: return King;
-                case PieceKind.Queen: return Queen;
-                case PieceKind.Rook: return Rook;
-                case PieceKind.Bishop: return Bishop;
-                case PieceKind.Knight: return Knight;
-                default: return SideOf(pawn) == Side.Enemy ? TeamEnemy : TeamAlly;
+                case PieceKind.King: return look.King;
+                case PieceKind.Queen: return look.Queen;
+                case PieceKind.Rook: return look.Rook;
+                case PieceKind.Bishop: return look.Bishop;
+                case PieceKind.Knight: return look.Knight;
+                default: return SideOf(pawn) == Side.Enemy ? look.TeamEnemy : look.TeamAlly;
             }
         }
 
@@ -275,11 +291,41 @@ namespace ChessFight.RagdollLab
             meshPuff = Icosphere(3);
             meshBall = Icosphere(1);
             meshTorus = Torus(0.09f);
+            // The bishop's giant sword seen through (its aim, its fading away).
+            var ghost = Find("ChessFight/Skill Ghost", "QueenHillSkillFx/SkillGhost");
+            if (ghost != null) matGhost = new Material(ghost) { hideFlags = HideFlags.HideAndDontSave };
+        }
+
+        Material matGhost;
+
+        // ---------------------------------------------------------------- the board look (the Pawn Rush R126 look)
+
+        /// <summary>The board look is on (its shaders were found): squares stand up as pads on a navy block (Skill Tile
+        /// Board), props are glossy toys and polished metal (Skill Gloss).</summary>
+        bool board;
+        Material matBoard, matGloss;
+        /// <summary>A pad's thickness (m), its block and ink colour, my side's rim, the plain (pawn's) pad.</summary>
+        const float TileThick = 0.045f;
+        Color boardBase = Hex("#24242F"), boardInk = Hex("#24242F"), allyRim = Hex("#F2D9BD");
+        Palette boardTile;
+
+        /// <summary>How far a lying pad's top stands over the floor (what lies on top of one is raised by it).</summary>
+        float PadTop => board ? TileThick : 0f;
+
+        bool UseBoardLook()
+        {
+            var b = Find("ChessFight/Skill Tile Board", "PawnRushSkillFx/SkillTileBoard");
+            var g = Find("ChessFight/Skill Gloss", "PawnRushSkillFx/SkillGloss");
+            if (b == null || g == null) return false;
+            matBoard = new Material(b) { hideFlags = HideFlags.HideAndDontSave };
+            matGloss = new Material(g) { hideFlags = HideFlags.HideAndDontSave };
+            board = true;
+            return true;
         }
 
         void DestroyKit()
         {
-            foreach (var m in new Object[] { matTile, matInk, matLine, matBand, matToon, matWardLine, matWardInk, meshQuad, meshPuff, meshTorus, meshBall })
+            foreach (var m in new Object[] { matTile, matInk, matLine, matBand, matToon, matWardLine, matWardInk, matBoard, matGloss, matGhost, meshQuad, meshPuff, meshTorus, meshBall })
                 if (m != null) Destroy(m);
             foreach (var m in roundBoxes.Values) if (m != null) Destroy(m);
             foreach (var m in flatMats.Values) if (m != null) Destroy(m);
@@ -315,15 +361,35 @@ namespace ChessFight.RagdollLab
             Mesh drape;
             Vector3[] drapeVerts;
 
+            // The board look: a pad this thick (below 0: the look's own when lying, half of it standing; 0 = flat), on a
+            // block of this colour, a darker bevel band, polished metal, a soft shadow on the floor (below 0: when lying).
+            // A tile draped over the floor stays flat but just as solid. Ghost: how much of a solid pad shows (faint ones).
+            readonly QueenHillSkillFx fx;
+            public readonly bool board;
+            public float thick = -1f, thickScale = 1f, metal, bevelWidth = 0.07f, shadow = -1f, shadowWidth = 0.12f, ghost = 1f;
+            public Color baseColor, bevel;
+            /// <summary>R130: the charging dots (see-through squares, SkillInkKit.Tile's): how far they have swept (below 0:
+            /// none), their colour and spacing; the neon edge and its halo.</summary>
+            public float charge = -1f, dotStep = 0.1f, glowWidth = 0.12f;
+            public Color dot, glow;
+            /// <summary>R141: the horseshoe badge lit as glossy black lacquer and polished gold (Skill Tile Board's _Gloss, as
+            /// SkillInkKit.Tile's), and where its sheen is (below 0: sweeping by itself with the clock).</summary>
+            public float gloss, sheenAt = -1f;
+            readonly float sheenSeed = Random.value;
+            bool lying, draped;
+
             public Tile(QueenHillSkillFx fx, string name)
             {
+                this.fx = fx;
+                board = fx.board && fx.matBoard != null;
+                baseColor = fx.boardBase;
                 var go = new GameObject(name);
                 go.transform.SetParent(fx.root, false);
                 quad = fx.meshQuad;
                 filter = go.AddComponent<MeshFilter>();
                 filter.sharedMesh = quad;
                 r = go.AddComponent<MeshRenderer>();
-                r.sharedMaterial = fx.matTile;
+                r.sharedMaterial = board ? fx.matBoard : fx.matTile;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = false;
                 r.enabled = false;   // nothing until it is placed and painted (Apply)
@@ -337,7 +403,17 @@ namespace ChessFight.RagdollLab
                 if (along.sqrMagnitude < 1e-6f) along = Vector3.forward;
                 filter.sharedMesh = quad;
                 t.SetPositionAndRotation(at, Quaternion.LookRotation(Vector3.up, along.normalized));
+                Lay(true, false);
                 Size(metres);
+            }
+
+            void Lay(bool flat, bool onDrape)
+            {
+                lying = flat;
+                if (draped == onDrape) return;
+                draped = onDrape;
+                // The pad shader draws a slab over a flat quad; bent over the floor it stays a flat painted square.
+                if (board) r.sharedMaterial = draped ? fx.matTile : fx.matBoard;
             }
 
             /// <summary>Standing up, facing along <paramref name="normal"/> (an impact ring facing the hit).</summary>
@@ -347,6 +423,7 @@ namespace ChessFight.RagdollLab
                 Vector3 up = Mathf.Abs(Vector3.Dot(normal.normalized, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
                 filter.sharedMesh = quad;
                 t.SetPositionAndRotation(at, Quaternion.LookRotation(normal.normalized, up));
+                Lay(false, false);
                 Size(metres);
             }
 
@@ -368,6 +445,7 @@ namespace ChessFight.RagdollLab
                 size = new Vector2(Mathf.Max(metres.x, 1e-3f), Mathf.Max(metres.y, 1e-3f));
                 if (drape == null) MakeDrape();
                 filter.sharedMesh = drape;
+                Lay(true, true);
                 t.SetPositionAndRotation(at, Quaternion.identity);
                 t.localScale = Vector3.one;
                 for (int j = 0; j <= DrapeAlong; j++)
@@ -433,12 +511,56 @@ namespace ChessFight.RagdollLab
                 t.localScale = new Vector3(size.x, size.y, 1f);
             }
 
+            /// <summary>This pad's thickness as drawn (0 when flat).</summary>
+            float Thickness => !board || draped || SeeThrough ? 0f : (thick >= 0f ? thick : lying ? TileThick : TileThick * 0.5f) * thickScale;
+
+            /// <summary>This square shows the floor through it (R129, <see cref="SkillInkKit.GlassFloor"/>): lying (or draped
+            /// over a slope), a box, the board look.</summary>
+            bool SeeThrough => board && lying && shape < 0.5f && SkillInkKit.GlassFloor;
+
             public void Apply()
             {
-                b.SetColor("_Fill", fill);
+                bool see = SeeThrough;
+                float th = Thickness;
+                if (board && !draped)
+                {
+                    // The quad is the slab's foot, grown so its walls and its shadow fit (the eye sees the top shifted).
+                    // A pad going away sinks into the board (and fades only at the very end, below).
+                    if (th > 0f) th *= Mathf.Lerp(0.2f, 1f, Mathf.Clamp01(fade));
+                    float sh = see ? 0f : shadow >= 0f ? shadow : lying ? 0.22f : 0f;
+                    bool neon = see && SkillInkKit.ChargeDots && glow.a > 0.001f;
+                    float pad = (th > 0f ? 0.1f + th * 8f : 0.02f) + (sh > 0f ? shadowWidth : 0f) + (neon ? glowWidth : 0f);
+                    var quadSize = new Vector2(size.x + 2f * pad, size.y + 2f * pad);
+                    t.localScale = new Vector3(quadSize.x, quadSize.y, 1f);
+                    b.SetVector("_Quad", new Vector4(quadSize.x, quadSize.y, 0f, 0f));
+                    b.SetFloat("_Thick", th);
+                    b.SetColor("_Base", baseColor);
+                    // See-through, a polished pad (no bevel of its own) gets one in a darker shade of its fill.
+                    b.SetColor("_Bevel", see && bevel.a < 0.5f ? new Color(fill.r * 0.62f, fill.g * 0.62f, fill.b * 0.62f, 0.9f) : bevel);
+                    b.SetFloat("_Glass", see ? 1f : 0f);
+                    b.SetFloat("_BevelWidth", bevelWidth);
+                    b.SetFloat("_Metal", metal);
+                    b.SetFloat("_Sheen", sheenAt >= 0f ? sheenAt : fx.clock * 0.3f + sheenSeed);
+                    b.SetFloat("_Gloss", gloss);
+                    b.SetColor("_Chevron", Color.clear);
+                    b.SetFloat("_Shadow", sh);
+                    b.SetFloat("_ShadowWidth", shadowWidth);
+                    b.SetFloat("_GlowWidth", glowWidth);
+                }
+                // R130: charging dots and the neon edge, on a pad or draped (Skill Tile has them too, without the halo).
+                bool lit = see && SkillInkKit.ChargeDots;
+                b.SetFloat("_Charge", lit ? charge : -1f);
+                b.SetColor("_Dot", A(dot, dot.a * ghost));
+                b.SetFloat("_DotStep", dotStep);
+                b.SetColor("_Glow", lit && glow.a > 0.001f ? A(glow, glow.a * ghost) : Color.clear);
+                // A pad is solid paint, see-through only as a whole (R126: a see-through pad over the chessboard floor
+                // looked muddy): top, walls and shadow fade together, the board never shows through its top.
+                bool solid = !see && board && (th > 0f || draped && fill.a > 0.5f);
+                float opacity = solid ? Mathf.Clamp01(Mathf.Max(fill.a, ink.a * 0.8f)) * ghost : 1f;
+                b.SetColor("_Fill", solid ? A(fill, 1f) : see ? A(fill, fill.a * SkillInkKit.GlassFill * ghost) : fill);
                 b.SetColor("_Core", core);
                 b.SetFloat("_CoreWidth", coreWidth);
-                b.SetColor("_InkColor", ink);
+                b.SetColor("_InkColor", solid && ink.a > 0f ? A(ink, 1f) : ink);
                 b.SetFloat("_Ink", inkWidth);
                 b.SetColor("_Rim", rim);
                 b.SetFloat("_RimWidth", rimWidth);
@@ -451,9 +573,11 @@ namespace ChessFight.RagdollLab
                 b.SetFloat("_Gap", gap);
                 b.SetFloat("_Arc", arc);
                 b.SetFloat("_Flash", flash);
-                b.SetFloat("_Fade", Mathf.Clamp01(fade));
+                // A solid pad stays solid while it sinks and goes in the last moments of its fade.
+                float shown = solid ? Mathf.Clamp01(fade / 0.18f) * opacity : Mathf.Clamp01(fade);
+                b.SetFloat("_Fade", shown);
                 r.SetPropertyBlock(b);
-                r.enabled = fade > 0.001f;
+                r.enabled = shown > 0.001f;
             }
 
             public void Destroy()
@@ -617,19 +741,36 @@ namespace ChessFight.RagdollLab
             readonly MaterialPropertyBlock bf = new MaterialPropertyBlock(), bl = new MaterialPropertyBlock();
             public Palette colors;
             public float inkWidth = 0.018f, flash;
+            // The board look: glossy (Skill Gloss): polished metal from the palette, or a slab's sides in their own
+            // colour (a pad on its block).
+            readonly bool board;
+            public bool twoTone;
+            public Color sideColor;
+            // Seen through (Skill Ghost) when above 0: how solid, its colour and edge light, the world height of its band
+            // of light. No ink line then.
+            public float ghost, ghostScanY = -1e4f;
+            public Color ghostColor = new Color(0.86f, 0.92f, 1f), ghostEdge = new Color(1.25f, 1.35f, 1.55f);
+            readonly Material solid, see;
+            bool shown = true;
 
-            public Prop(QueenHillSkillFx fx, Mesh mesh, Palette colors, string name, Transform parent = null)
+            /// <param name="lineMesh">The mesh its ink line is drawn round (smooth normals, so the line has no cracks) when
+            /// the prop itself is faceted.</param>
+            public Prop(QueenHillSkillFx fx, Mesh mesh, Palette colors, string name, Transform parent = null, Mesh lineMesh = null)
             {
+                board = fx.board && fx.matGloss != null;
+                sideColor = fx.boardBase;
+                solid = board ? fx.matGloss : fx.matInk;
+                see = fx.matGhost;
                 var go = new GameObject(name);
                 go.transform.SetParent(parent != null ? parent : fx.root, false);
                 t = go.transform;
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 fill = go.AddComponent<MeshRenderer>();
-                fill.sharedMaterial = fx.matInk;
+                fill.sharedMaterial = solid;
                 fill.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 var lineGo = new GameObject("Ink");
                 lineGo.transform.SetParent(go.transform, false);
-                lineGo.AddComponent<MeshFilter>().sharedMesh = mesh;
+                lineGo.AddComponent<MeshFilter>().sharedMesh = lineMesh != null ? lineMesh : mesh;
                 line = lineGo.AddComponent<MeshRenderer>();
                 line.sharedMaterial = fx.matLine;
                 line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -639,10 +780,34 @@ namespace ChessFight.RagdollLab
 
             public void Apply()
             {
+                bool seeThrough = ghost > 0f && see != null;
+                var want = seeThrough ? see : solid;
+                if (fill.sharedMaterial != want) fill.sharedMaterial = want;
+                line.enabled = shown && !seeThrough && inkWidth > 0f;
+                if (seeThrough)
+                {
+                    bf.SetColor("_Color", A(ghostColor, Mathf.Clamp01(ghost)));
+                    bf.SetColor("_Edge", ghostEdge);
+                    bf.SetFloat("_ScanY", ghostScanY);
+                    bf.SetFloat("_Flash", flash);
+                    fill.SetPropertyBlock(bf);
+                    return;
+                }
+                bf.SetColor("_Color", Color.white);   // (the see-through colour must not tint or fade the solid one)
                 bf.SetColor("_Lit", colors.light);
                 bf.SetColor("_Mid", colors.main);
                 bf.SetColor("_Shade", colors.deep);
                 bf.SetFloat("_Flash", flash);
+                if (board)
+                {
+                    bf.SetFloat("_Metal", colors.metal);
+                    bf.SetColor("_Spec", colors.metal > 0.5f ? new Color(1.45f, 1.42f, 1.32f) : new Color(0.75f, 0.75f, 0.72f));
+                    bf.SetFloat("_Gloss", colors.metal > 0.5f ? 60f : 38f);
+                    bf.SetFloat("_Ink", 0.1f);
+                    bf.SetColor("_InkColor", colors.ink);
+                    bf.SetFloat("_TwoTone", twoTone ? 1f : 0f);
+                    bf.SetColor("_SideColor", sideColor);
+                }
                 fill.SetPropertyBlock(bf);
                 bl.SetColor("_InkColor", colors.ink);
                 bl.SetFloat("_Width", inkWidth);
@@ -651,7 +816,9 @@ namespace ChessFight.RagdollLab
 
             public void Show(bool on)
             {
-                fill.enabled = line.enabled = on;
+                shown = on;
+                fill.enabled = on;
+                line.enabled = on && !(ghost > 0f && see != null) && inkWidth > 0f;
             }
 
             public void Destroy()
@@ -659,6 +826,54 @@ namespace ChessFight.RagdollLab
                 if (t != null) Object.Destroy(t.gameObject);
             }
         }
+
+        /// <summary>
+        /// The beaded arc of an aim (R141: the rook's castling arch, the bishop's shot). 승규 님 10-14, of the dots on both:
+        /// "저 돌같은 거를 조금 더 그래픽 좋게 생성해줘" — they were low balls (an icosahedron cut once) in cartoon bands with a
+        /// thick ink edge and read as stones. Now beads of polished metal (Skill Gloss in the board look: the sky's
+        /// reflection, a sharp horizon glint and a crisp highlight), smooth and with no ink edge, and a gleam that runs along
+        /// them: each swells a little and lights up white as it passes.
+        /// </summary>
+        class Beads
+        {
+            readonly List<Prop> beads = new List<Prop>();
+
+            public Beads(QueenHillSkillFx fx, Fx owner, int n, string name)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    var p = new Prop(fx, fx.meshPuff, fx.BeadSilver, name) { inkWidth = 0f };
+                    p.Show(false);
+                    owner.props.Add(p);
+                    beads.Add(p);
+                }
+            }
+
+            public int Count => beads.Count;
+
+            /// <summary>Bead <paramref name="i"/> at <paramref name="at"/>, <paramref name="size"/> metres across, in
+            /// <paramref name="colors"/>, lit by the gleam (<paramref name="gleam"/> 0..1).</summary>
+            public void Place(int i, Vector3 at, float size, float gleam, Palette colors)
+            {
+                var p = beads[i];
+                p.t.SetPositionAndRotation(at, Quaternion.identity);
+                p.t.localScale = Vector3.one * (size * (1f + 0.3f * gleam));
+                p.colors = colors;
+                p.flash = 0.55f * gleam;
+                p.Show(size > 0.002f);
+                p.Apply();
+            }
+
+            public void Hide()
+            {
+                foreach (var p in beads) p.Show(false);
+            }
+        }
+
+        /// <summary>R141: the beads' polished silver (the castling arch) and gold (the bishop's arc, the mitre's gold);
+        /// design A's own colours without the board look.</summary>
+        Palette BeadSilver => board ? BSilver : new Palette("#FFF8EC", "#FFFFFF", "#CBBBA4", "#24242F");
+        Palette BeadGold => board ? BGold : look.Bishop;
 
         // ---------------------------------------------------------------- timed effects
 

@@ -574,7 +574,7 @@ namespace ChessFight.RagdollLab.Editor
             }
         }
 
-        static void ApplyBindPose(SkinnedMeshRenderer skin)
+        internal static void ApplyBindPose(SkinnedMeshRenderer skin)
         {
             var bones = skin.bones;
             var bind = skin.sharedMesh.bindposes;

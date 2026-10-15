@@ -25,6 +25,8 @@ namespace ChessFight.RagdollLab
         KnightTurn, KnightHome,
         KnightLeap, RookSlam,
         PawnStep, PawnHit, PawnHelp,
+        // R146: the king's call, by the king on the one called (count: its place; size: the seconds it has, or takes).
+        KingCall, KingCallGo, KingCallLand, KingCallEnd,
     }
 
     public struct SkillFxEvent
@@ -45,7 +47,8 @@ namespace ChessFight.RagdollLab
 
     /// <summary>
     /// The Pawn Rush piece skills (Docs/Skills/DESIGN.md §3-7): pawn "first two steps", knight "bent leap",
-    /// bishop "crossed tripwire", rook "straight charge", queen "ring shove". The king's is not made yet (D1).
+    /// bishop "crossed tripwire", rook "straight charge", queen "ring shove"; R146 the king "왕의 부름"
+    /// (RagdollPawn.KingCall.cs).
     ///
     /// Off unless something hands the pawn its numbers (<see cref="PawnRushSkills"/>): only the Pawn Rush skill
     /// test scene does, so Queen of the Hill, Sword Fight and the network match run exactly as before. The skill
@@ -142,7 +145,8 @@ namespace ChessFight.RagdollLab
         public static bool SkillMarksHidden { get; set; }
 
         bool Aiming => skillStage == SkillStage.Windup && !aimLocked
-                       && (QueenHillSkills != null ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop);
+                       && (QueenHillSkills != null ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop
+                           || piece == PieceKind.King);   // R146: the king's list, its clicks the list's
 
         /// <summary>A skill is moving this pawn into others, or has just stopped doing so: contacts between
         /// pawns are the skill's to judge, not the collision knockdown's.</summary>
@@ -158,7 +162,8 @@ namespace ChessFight.RagdollLab
             PieceKind.Bishop => "교차 밧줄",
             PieceKind.Rook => "직선 돌파",
             PieceKind.Queen => "팔방 밀치기",
-            _ => "(킹 스킬은 아직 없음)",
+            PieceKind.King => "왕의 부름",
+            _ => "",
         };
 
         /// <summary>The skill key went down this frame (kept until the next physics step reads it). The aim's
@@ -170,12 +175,85 @@ namespace ChessFight.RagdollLab
         {
             ClearSkills();
             skillCooldownLeft = cooldownTotal = 0f;
+            bindLeft = 0f;
         }
 
         void Log(string text) => SkillLog?.Invoke(this, text);
 
         /// <summary>This bishop's wire tripped <paramref name="target"/> (SkillTripwire).</summary>
         public string SkillTrip(RagdollPawn target, Vector3 push) => SkillHit(target, push, true, "교차 밧줄");
+
+        // ---------------------------------------------------------------- tied up (R138)
+
+        // R138 (승규 님 10-14: "비숍이 스킬을 사용 할 때 밧줄에 걸려서 넘어 지는 게 아니라 밧줄에 묶이게 해줘 (실제 밧줄에 묶이는게
+        // 잘 보여야 돼)"): a piece the bishop's wire catches is tied up where it stands, not tripped: held on the spot, its
+        // arms bound to its sides, its keys doing nothing, until the rope lets go (or a knockdown frees it).
+        float bindLeft, bindTotal;
+        Vector3 bindAt;
+
+        /// <summary>Tied up by a bishop's rope now (R138; the host's own pieces: a client's puppet does not know).</summary>
+        public bool SkillBound => bindLeft > 0f;
+        public float SkillBindLeft => Mathf.Max(0f, bindLeft);
+        public float SkillBindTotal => bindTotal;
+
+        /// <summary>This bishop's wire ties <paramref name="target"/> up for <paramref name="seconds"/> (R138, SkillTripwire): it
+        /// stands where it was caught. A piece already down is not tied; one just up from a fall only staggers.</summary>
+        public string SkillBind(RagdollPawn target, float seconds, string cause)
+        {
+            if (target == null || target.NetworkPuppet) return "-";
+            if (target.KingCallShielded)
+            {
+                // On its way in to its king (R146): nothing takes.
+                target.LastSkillHit = $"{cause}: 무적 (왕의 부름)";
+                return "무적";
+            }
+            string result;
+            if (target.State != PawnState.Active)
+                result = "넘어져 있어 안 묶임";
+            else if (target.getUpGuardLeft > 0f)
+            {
+                target.Stagger(PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f);
+                result = "기상 보호 → 휘청";
+            }
+            else
+            {
+                target.BeBound(seconds);
+                result = $"묶임 {seconds:0.0}초";
+            }
+            target.LastSkillHit = $"{cause}: {result}";
+            return result;
+        }
+
+        /// <summary>The rope that tied it is gone (its wire broken or replaced): free at once (R138).</summary>
+        public void SkillUnbind() => bindLeft = 0f;
+
+        void BeBound(float seconds)
+        {
+            bindLeft = bindTotal = Mathf.Max(0.1f, seconds);
+            bindAt = bodies[0].position;
+            LetGo(0.3f);
+            if (hookPhase == HookPhase.Charging) DropHook();
+            if (PawnRushSkills != null && skillStage != SkillStage.None)
+            {
+                // Tied mid-skill: it ends here, and the cooldown runs as if it had finished.
+                Log($"{DisplayName}: {SkillName(piece)} 끊김 (묶임)");
+                bool firedAlready = piece == PieceKind.Bishop && skillStage == SkillStage.Active;
+                ClearSkills();
+                if (!firedAlready) StartCooldown(PieceCooldown(PawnRushSkills));
+            }
+        }
+
+        /// <summary>Tied up (R138): pulled back to where the rope caught it and held there, standing.</summary>
+        void HoldBound(float dt)
+        {
+            Vector3 own = Flat(bodies[0].linearVelocity) - carryVel;
+            Vector3 want = Vector3.ClampMagnitude(Flat(bindAt - bodies[0].position) * 8f, 2f);
+            AddVelocity(want - own);
+            anchorVel = want + carryVel;
+            Vector3 hp = bodies[0].position;
+            anchorPos = new Vector3(hp.x + anchorVel.x * dt, anchorPos.y, hp.z + anchorVel.z * dt);
+            anchor.MovePosition(anchorPos);
+        }
 
         // ---------------------------------------------------------------- the step hooks
 
@@ -185,6 +263,7 @@ namespace ChessFight.RagdollLab
             if (PawnRushSkills == null) return;
             skillMoveRaw = input.move;
             skillGrabRaw = input.grab;
+            HoldKeysForKingCall();   // R146: on its way in to its king
             if (Aiming)
             {
                 // Aiming: the left click (the dive) fires the skill and the right click (the grab) calls it off.
@@ -195,6 +274,16 @@ namespace ChessFight.RagdollLab
             // A right click that was down when the aim began, or that called it off, grabs nothing until let go.
             if (skillGrabLatch && !input.grab) skillGrabLatch = false;
             if (Aiming || skillGrabLatch) input.grab = false;
+            if (bindLeft > 0f)
+            {
+                // Tied up (R138): the keys still arrive, they just do nothing.
+                input.move = Vector3.zero;
+                input.jump = false;
+                input.sprint = false;
+                input.shove = false;
+                input.shoveHeld = false;
+                input.grab = false;
+            }
             if (QueenHillSkills != null)
             {
                 PreQueenHillSkills();   // the Queen of the Hill skills take it from here (R89)
@@ -230,10 +319,24 @@ namespace ChessFight.RagdollLab
             getUpGuardLeft -= dt;
             skillGrace -= dt;
             blastFlash -= dt;
+            if (bindLeft > 0f)
+            {
+                // Tied up (R138): held on the spot until the rope lets go; a knockdown (or the water) frees it at once.
+                bindLeft -= dt;
+                if (State != PawnState.Active || Floating) bindLeft = 0f;
+                else HoldBound(dt);
+            }
             TrackGetUp(s);
             if (QueenHillSkills != null)
             {
                 UpdateQueenHillSkills(QueenHillSkills, press, confirm, cancel, dt);   // Queen of the Hill skills (R89)
+                return;
+            }
+            // R146: a king's call answered (its own key), or the trip in to him.
+            press = UpdateKingCallMate(s, press, dt);
+            if (kingCarry)
+            {
+                DrawSkillMarks(s);
                 return;
             }
 
@@ -253,9 +356,7 @@ namespace ChessFight.RagdollLab
                 case PieceKind.Bishop: UpdateBishopSkill(s, press, confirm, cancel, dt); break;
                 case PieceKind.Rook: UpdateRookSkill(s, press, confirm, cancel, dt); break;
                 case PieceKind.Queen: UpdateQueenSkill(s, press, dt); break;
-                default:
-                    if (press) Log("킹 스킬은 아직 만들지 않았어요 (D1)");
-                    break;
+                case PieceKind.King: UpdateKingCall(s, press, cancel, dt); break;
             }
             DrawSkillMarks(s);
         }
@@ -276,6 +377,7 @@ namespace ChessFight.RagdollLab
             SkillDetail = "";
             HideSkillMarks();
             ClearQueenHill();
+            ClearKingCall();
         }
 
         float PieceCooldown(PawnRushSkillParams s) => piece switch
@@ -285,6 +387,7 @@ namespace ChessFight.RagdollLab
             PieceKind.Bishop => s.bishopCooldown,
             PieceKind.Rook => s.rookCooldown,
             PieceKind.Queen => s.queenCooldown,
+            PieceKind.King => s.kingCooldown,
             _ => 0f,
         };
 
@@ -298,7 +401,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Free to start a skill: on the ground, or anywhere for one that works in the air (the rook, R80).</summary>
         bool CanStartSkill(bool inAir = false) =>
-            State == PawnState.Active && !Climbing && rope == null && !Floating && !BeingHeld && !Squashed && !Staggered
+            State == PawnState.Active && !Climbing && rope == null && !Floating && !BeingHeld && !Squashed && !Staggered && bindLeft <= 0f
             && (hookPhase == HookPhase.None || hookPhase == HookPhase.Held) && skillCooldownLeft <= 0f
             && (inAir || Grounded || coyote > 0f);
 
@@ -355,6 +458,20 @@ namespace ChessFight.RagdollLab
         string SkillHit(RagdollPawn target, Vector3 push, bool knockdown, string cause)
         {
             if (target == null || target.NetworkPuppet) return "-";
+            if (target.KingCallShielded)
+            {
+                // On its way in to its king (R146): nothing takes.
+                target.LastSkillHit = $"{cause}: 무적 (왕의 부름)";
+                return "무적";
+            }
+            var cover = target.Cover();
+            if (cover != null)
+            {
+                // A Queen of the Hill king its guards stand round: the nearest one takes the hit for it.
+                target.LastSkillHit = $"{cause}: {cover.DisplayName}이(가) 대신 막음";
+                SkillHit(cover, push, knockdown, cause);
+                return $"{cover.DisplayName}이(가) 대신 막음";
+            }
             if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
             {
                 // Guarded by a Queen of the Hill king (R89): no knockdown, a much smaller push (TakeHit scales it).
@@ -728,15 +845,23 @@ namespace ChessFight.RagdollLab
 
         void KnightStomp(PawnRushSkillParams s)
         {
-            if (bodies[0].linearVelocity.y > -1f) return;
             Vector3 feet = bodies[0].position - Vector3.up * standHeight;
+            float vy = bodies[0].linearVelocity.y;
             foreach (var other in All)
             {
                 if (other == null || other == this || !IsEnemyOf(other) || other.State == PawnState.Ragdoll || skillHitSet.Contains(other)) continue;
+                // R129 (승규 님: "상대가 점프하면 캔슬 돼"): the knight's fall is judged against the head, not the floor. Before,
+                // only a knight falling at 1 m/s or more could stomp, so a target jumping up into its feet (its head pushing
+                // them up, or the homing steering up to meet it) was never taken. Now closing on each other counts, from a
+                // little further, and the head the second press flew at counts through its own jump.
+                bool locked = other == knightTarget;
+                float closing = vy - other.bodies[0].linearVelocity.y;
+                if (locked ? closing > 1.5f : vy > 1f || closing > -1f) continue;
                 var headCollider = other.bodies[(int)BodyId.Head].GetComponent<Collider>();
                 Vector3 head = other.bodies[(int)BodyId.Head].position;
                 float top = headCollider != null ? headCollider.bounds.max.y : head.y + 0.12f;
-                if (Flat(feet - head).magnitude > s.knightStompReach || feet.y < top - 0.15f || feet.y > top + 0.35f) continue;
+                float reach = s.knightStompReach + (locked ? 0.25f : 0.1f);
+                if (Flat(feet - head).magnitude > reach || feet.y < top - (locked ? 0.45f : 0.25f) || feet.y > top + (locked ? 0.5f : 0.35f)) continue;
                 skillHitSet.Add(other);
                 string result = SkillHit(other, Flat(facing) * 1f + Vector3.down * 1f, true, "나이트 밟기");
                 Fx(SkillFxKind.KnightStomp, other, new Vector3(head.x, top, head.z), Flat(facing));
@@ -1342,9 +1467,54 @@ namespace ChessFight.RagdollLab
                        ref Quaternion thighL, ref Quaternion thighR, ref Quaternion footL, ref Quaternion footR)
         {
             if (PawnRushSkills == null || State != PawnState.Active) return;
+            if (bindLeft > 0f)
+            {
+                // Tied up (R138): the arms bound tight to its sides, the legs together, wriggling against the rope.
+                float t = Time.time;
+                float w = Mathf.Sin(t * 11f), w2 = Mathf.Sin(t * 7.3f + 1.1f);
+                armL = Quaternion.Euler(0f, 4f * w2, 74f + 4f * w);
+                armR = Quaternion.Euler(0f, -4f * w2, -74f + 4f * w);
+                chest = Quaternion.Euler(3f * w2, 9f * w, 7f * w2);
+                head = Quaternion.Euler(-6f + 4f * w, -10f * w, -6f * w2);
+                thighL = Quaternion.Euler(2f * w, 0f, 3f);
+                thighR = Quaternion.Euler(-2f * w, 0f, -3f);
+                footL = footR = Quaternion.identity;
+                return;
+            }
             if (QueenHillSkills != null)
             {
                 QueenHillPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);   // R89
+                return;
+            }
+            if (piece == PieceKind.Knight && skillStage == SkillStage.Windup)
+            {
+                // R138 (승규 님: "좀 더 나이트다! 라는 연출"): it rears up like a horse before it springs: leaning back, head up,
+                // the arms (its front legs) up in front pawing the air, then drops into the crouch.
+                float w = Mathf.Max(0.05f, PawnRushSkills.knightWindup);
+                float rear = Mathf.Clamp01(stageTime / (w * 0.6f)), gather = Mathf.Clamp01((stageTime - w * 0.6f) / (w * 0.4f));
+                float r = rear * rear * (3f - 2f * rear), paw = Mathf.Sin(stageTime * 40f);
+                chest = Quaternion.Slerp(Quaternion.Slerp(chest, Quaternion.Euler(-30f, 0f, 0f), r), Quaternion.Euler(24f, 0f, 0f), gather);
+                head = Quaternion.Slerp(Quaternion.Slerp(head, Quaternion.Euler(-24f, 0f, 0f), r), Quaternion.Euler(-10f, 0f, 0f), gather);
+                armR = Quaternion.Slerp(Quaternion.Slerp(armR, Quaternion.Euler(0f, -80f, 40f + 28f * paw), r), Quaternion.Euler(0f, 50f, -30f), gather);
+                armL = Quaternion.Slerp(Quaternion.Slerp(armL, Quaternion.Euler(0f, 80f, -(40f - 28f * paw)), r), Quaternion.Euler(0f, -50f, 30f), gather);
+                thighL = Quaternion.Slerp(Quaternion.Euler(-8f * r, 0f, -4f), Quaternion.Euler(-22f, 0f, -6f), gather);
+                thighR = Quaternion.Slerp(Quaternion.Euler(-8f * r, 0f, 4f), Quaternion.Euler(-22f, 0f, 6f), gather);
+                footL = footR = Quaternion.Slerp(Quaternion.identity, Quaternion.Euler(22f, 0f, 0f), gather);
+                return;
+            }
+            if (piece == PieceKind.Knight && skillStage == SkillStage.Active && knightKick <= 0f && !OnFloor)
+            {
+                // R138: a jumping horse. Going up the front legs fold under the chest and it looks up; over the top it
+                // stretches out level; coming down the front legs reach for the ground and it looks at where it lands.
+                float vy = bodies[0].linearVelocity.y;
+                float up = Mathf.Clamp01(vy / 3f), down = Mathf.Clamp01(-vy / 3f);
+                chest = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(14f, 0f, 0f), Quaternion.Euler(-14f, 0f, 0f), up), Quaternion.Euler(28f, 0f, 0f), down);
+                head = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(-6f, 0f, 0f), Quaternion.Euler(-22f, 0f, 0f), up), Quaternion.Euler(14f, 0f, 0f), down);
+                armR = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(0f, -70f, -48f), Quaternion.Euler(0f, -85f, -4f), up), Quaternion.Euler(0f, -84f, -38f), down);
+                armL = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(0f, 70f, 48f), Quaternion.Euler(0f, 85f, 4f), up), Quaternion.Euler(0f, 84f, 38f), down);
+                thighL = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(-6f, 0f, -4f), Quaternion.Euler(22f, 0f, -4f), up), Quaternion.Euler(-20f, 0f, -5f), down);
+                thighR = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(-6f, 0f, 4f), Quaternion.Euler(22f, 0f, 4f), up), Quaternion.Euler(-20f, 0f, 5f), down);
+                footL = footR = Quaternion.Euler(16f, 0f, 0f);
                 return;
             }
             if (piece == PieceKind.Rook && rookAir && dashing)

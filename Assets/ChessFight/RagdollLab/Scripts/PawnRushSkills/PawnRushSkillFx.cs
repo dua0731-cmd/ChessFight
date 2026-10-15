@@ -158,6 +158,11 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.PawnStep: PawnStepStamp(e); break;
                 case SkillFxKind.PawnHit: PawnHit(e); break;
                 case SkillFxKind.PawnHelp: PawnHelp(e); break;
+                // R146: the king's call (PawnRushSkillFx.KingCall.cs).
+                case SkillFxKind.KingCall: KingCallFx(e); break;
+                case SkillFxKind.KingCallGo: KingCallGoFx(e); break;
+                case SkillFxKind.KingCallLand: KingCallLandFx(e); break;
+                case SkillFxKind.KingCallEnd: KingCallEndFx(e); break;
             }
         }
 
@@ -175,7 +180,7 @@ namespace ChessFight.RagdollLab
                 bool crouching = effects && pawn.Piece == PieceKind.Knight && pawn.SkillStage == SkillStage.Windup;
                 if (charging && !w.charging) QueenCharge(pawn);
                 if (dashing && !w.dashing) RookCharge(pawn);
-                if (leaping && !w.leaping) KnightLeap(pawn);
+                // R138: no wind ribbon from the knight's hips while it leaps (승규 님: "엉덩이 부분에 흰색을 빼주고").
                 if (crouching && !w.crouching) KnightGather(pawn);
                 w.charging = charging;
                 w.dashing = dashing;
@@ -212,41 +217,28 @@ namespace ChessFight.RagdollLab
         // crown ring of eight pearls riding their rim, a thick gold ring at the knockdown edge and a thin one at her
         // reach, the eight pieces bursting back out and burning away; the fireball cools to charcoal smoke, the cracks
         // run out (R86). No sparks, embers, flare or red/cyan edges. Her warning rings: PawnRushSkillFx.DesignA.cs.
-
-        static readonly Color FireGlow = new Color(1f, 0.55f, 0.12f);
-
-        /// <summary>The cracks under a charging queen, carried on into her blast.</summary>
-        readonly Dictionary<RagdollPawn, Crack> queenCracks = new Dictionary<RagdollPawn, Crack>();
+        // R138 (승규 님: "저 폭발 같은 거 빼주고 퀸 스킬에 맞는 충격파 같은 게 펑~하고"): no fire at all any more — the knot of
+        // fire, the fireball, the ring of fire puffs, the cracks and the scorch are gone; the air gathers into her while she
+        // charges and goes out as a shock wave (PawnRushSkillFx.Shock.cs); her pieces swirl in polished and are swept out.
+        // R142 (승규 님: "지금 공기 충격파 좋은데 전기+공기 충격파 같은 거였으면 좋겠어"): the air is charged: electric arcs
+        // (SkillArc) crackle round her as she charges, shoot out along her eight ways and run along the ring's front at the
+        // "펑", and over each piece it hits.
+        // R143 (승규 님, a screen recording of her in play: "적용 된거야 난 안된거 같은데"): in play the arcs were two faint pale
+        // flickers a tenth of a second each. Now solid gold, longer, staying round her (down to the floor as she charges,
+        // flickering on, crawling over the floor and crackling on her after the "펑"), and lighting what is round them.
 
         void QueenCharge(RagdollPawn q)
         {
             float windup = Params != null ? Params.queenWindup : 0.35f;
             Vector3 floor = FloorUnder(q);
-            // At her chest (A; R88 held it up over her head), grown bigger than her middle so it shows round her.
+            // At her chest (A; R88 held it up over her head).
             Vector3 Heart() => q != null ? ChestOf(q) + Vector3.up * 0.05f : floor + Vector3.up;
             // How far into her charge she is, in game time, 1 once it is over (R88: timed by her stage, so a slowed
             // film shows it in step with her).
             bool Charging() => QueenCharging(q);
             float Charge() => Charging() ? Mathf.Clamp01(q.SkillStageTime / windup) : 1f;
-            // The knot of fire: small and boiling, growing faster towards the end (A: 0.2 → 0.85 m across).
-            Add(new Puff(root, "Queen gathering fire", meshPuff, matFire)
-            {
-                life = 10f,
-                lump = 0.42f,
-                flow = 6f,
-                heat = 0.62f,
-                rim = Hdr(FireGlow, 1.3f),
-                animate = (p, t) =>
-                {
-                    if (!Charging()) { p.life = p.Age; p.scale = Vector3.zero; return; }
-                    float k = Charge();
-                    p.at = Heart();
-                    p.scale = Vector3.one * Mathf.Lerp(0.2f, 0.85f, EaseOut(k * 1.15f)) * (1f + 0.08f * Mathf.Sin(p.Age * 75f));
-                },
-            });
+            ShockGather(q, Charging, Charge, Heart, floor);
             GatherChess(Charging, Charge, () => q != null ? Flat(q.Hips.position) + Vector3.up * floor.y : floor, Heart);
-            if (queenCracks.TryGetValue(q, out var old)) old.life = 0f;
-            queenCracks[q] = QueenCracks(floor, Charge, Charging);
         }
 
         /// <summary>
@@ -254,7 +246,8 @@ namespace ChessFight.RagdollLab
         /// round her at about her inner reach, at uneven angles (not a compass), and spiral in 1.25 turns, standing and
         /// spinning like tops (R81's "회전하면서"), easing in, up into <paramref name="heart"/>, shrinking to 60% and
         /// heating up as they come (fire glowing in their creases, a hot edge); a short inked gold trail behind each shows
-        /// the swirl. Timed by <paramref name="charge"/> (her charge, 0..1 in game time), gone if the charge is called off.
+        /// the swirl. R142: an electric arc leaps from each to her chest every 0.08–0.16 s once it is a fifth of the way in.
+        /// Timed by <paramref name="charge"/> (her charge, 0..1 in game time), gone if the charge is called off.
         /// </summary>
         void GatherChess(Func<bool> charging, Func<float> charge, Func<Vector3> feet, Func<Vector3> heart)
         {
@@ -268,7 +261,8 @@ namespace ChessFight.RagdollLab
                 // The share of the charge by which it has arrived.
                 float arrive = Random.Range(0.85f, 0.95f), size = ChessKing * ChessHeights[kind];
                 float yaw0 = Random.Range(0f, 360f), spin = Random.Range(700f, 1000f) * way;
-                var piece = Add(new Puff(root, "Queen gathering chess piece", chessMeshes[kind], matChess)
+                float nextArc = Random.Range(0.06f, 0.2f);
+                var piece = Add(new Puff(root, "Queen gathering chess piece", chessMeshes[kind], ChessMaterial(i))
                 {
                     life = 10f,
                     lump = 0f,
@@ -290,175 +284,30 @@ namespace ChessFight.RagdollLab
                         p.rotation = Quaternion.Euler(0f, yaw0 + spin * (age + age * age * 2f), 0f) * Quaternion.Euler(8f * Mathf.Sin(age * 20f), 0f, 0f);
                         float pop = age < 0.08f ? 1f + 0.3f * Mathf.Sin(age / 0.08f * Mathf.PI) : 1f;
                         p.scale = Vector3.one * size * Mathf.Clamp01(age / 0.04f) * pop * Mathf.Lerp(1f, 0.6f, e);
-                        p.heat = Keys(k, 0.45f, 0f, 1f, 0.75f);
-                        p.rim = Hdr(FireGlow, 1.3f * k * k);
-                    },
-                });
-                if (kit != null) InkTrail(() => piece.Alive ? piece.at : (Vector3?)null, Kit.Queen, 0.1f, 0.07f);
-            }
-        }
-
-        /// <summary>
-        /// The queen's chess pieces bursting back out of the blast (R88, the swirl the same way round as R81's): hot at
-        /// first, tumbling, falling and bouncing over the floor, cooling to gold, burning away at the end.
-        /// </summary>
-        void BurstChess(Vector3 pop, float floorY)
-        {
-            const int count = 8;   // A: the eight that gathered
-            float way = Random.value < 0.5f ? -1f : 1f;
-            for (int i = 0; i < count; i++)
-            {
-                int kind = i % chessMeshes.Length;
-                float a = i * Mathf.PI * 2f / count + Random.Range(-0.12f, 0.12f);
-                var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                var around = new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a)) * way;
-                // Kept within about 3 m (faster ones flew into the camera, R81).
-                Vector3 pos = pop + radial * 0.25f;
-                Vector3 vel = radial * Random.Range(3f, 5f) + around * Random.Range(1.5f, 3f) + Vector3.up * Random.Range(2.5f, 4.5f);
-                Quaternion rot = Random.rotation;
-                Vector3 tumble = Random.onUnitSphere * Random.Range(400f, 800f);
-                float size = ChessKing * ChessHeights[kind], last = 0f;
-                Add(new Puff(root, "Queen burst chess piece", chessMeshes[kind], matChess)
-                {
-                    life = Random.Range(1.05f, 1.2f),   // A: gone into a small gold puff by 1.2 s
-                    lump = 0f,
-                    flow = 2f,
-                    animate = (p, t) =>
-                    {
-                        float dt = p.Age - last;
-                        last = p.Age;
-                        vel += Physics.gravity * dt;
-                        pos += vel * dt;
-                        float rest = floorY + size * 0.5f;
-                        if (pos.y < rest && vel.y < 0f)
+                        // R138: no fire: polished, catching a little more light as they come in.
+                        p.heat = 0f;
+                        p.rim = Hdr(board ? BQueen.light : Gold, 0.6f * k * k);
+                        // R142: charged: an arc leaps from it to her chest every 0.08–0.16 s once a fifth of the way in.
+                        if (arc != null && k > 0.2f && age >= nextArc)
                         {
-                            pos.y = rest;
-                            vel.y = -vel.y * 0.42f;
-                            vel.x *= 0.65f;
-                            vel.z *= 0.65f;
-                            tumble *= 0.55f;
+                            nextArc = age + Random.Range(0.08f, 0.16f);
+                            arc.Strike(p.at, heart() + Random.insideUnitSphere * 0.06f, ArcGold, 0.13f, 0.08f, 0.6f + 0.4f * k, 0.18f, 0);
                         }
-                        rot = Quaternion.Euler(tumble * dt) * rot;
-                        p.at = pos;
-                        p.rotation = rot;
-                        p.scale = Vector3.one * size * Mathf.Lerp(1.3f, 1f, Mathf.Clamp01(p.Age / 0.1f));
-                        p.heat = Keys(p.Age, 0.03f, 0.7f, 0.25f, 0f);
-                        p.rim = Hdr(FireGlow, 1.5f * Mathf.Clamp01(1f - p.Age / 0.5f));
-                        p.dissolve = Keys(t, 0.72f, 0f, 1f, 1f);
                     },
                 });
+                if (kit != null) InkTrail(() => piece.Alive ? piece.at : (Vector3?)null, kit.queen, 0.1f, 0.07f);
             }
-        }
-
-        /// <summary>The queen's cracks: creeping out dimly as her charge goes on (<paramref name="charge"/>, 0..1; fading
-        /// if it ends with no blast), then, once blasted, running right out hot, cooling to scorch lines and fading.</summary>
-        Crack QueenCracks(Vector3 floor, Func<float> charge, Func<bool> charging)
-        {
-            var crack = new Crack(root, meshQuad, matCrack) { at = floor, radius = 2.4f, life = 10f, paint = 0.3f };
-            float endedAt = -1f;
-            crack.animate = (c, t) =>
-            {
-                if (c.BlastAt < 0f)
-                {
-                    float k = charge();
-                    c.reveal = 0.3f * k * k;
-                    c.hot = Hdr(Gold, 1f + 0.6f * k);
-                    if (endedAt < 0f && !charging()) endedAt = c.Age;
-                    if (endedAt >= 0f && c.Age - endedAt > 0.25f) c.fade = Mathf.Clamp01(1f - (c.Age - endedAt - 0.25f) / 0.2f);
-                    if (c.fade <= 0f) c.life = c.Age;
-                    return;
-                }
-                float b = c.Age - c.BlastAt;
-                c.reveal = Mathf.Lerp(c.RevealAtBlast, 1.02f, EaseOut(b / 0.09f));
-                c.hot = Hdr(Gold, Keys(b, 0f, 2f, 0.3f, 1.4f));
-                c.cool = Keys(b, 0.25f, 0f, 0.9f, 1f);
-                c.fade = Keys(b, 1.1f, 1f, 1.7f, 0f);
-                if (b > 1.72f) c.life = c.Age;
-            };
-            anims.Add(crack);
-            return crack;
         }
 
         void QueenBlast(SkillFxEvent e)
         {
             Vector3 c = Ground(e.at);
             float inner = Params != null ? Params.queenInner : 1.5f, outer = e.size > 0f ? e.size : 3f;
-            Vector3 pop = e.by != null ? ChestOf(e.by) + Vector3.up * 0.05f : c + Vector3.up * 0.5f;
-
-            // The cracks under her run right out (from now, if her charge was not seen).
-            if (e.by == null || !queenCracks.TryGetValue(e.by, out var crack) || crack.Gone) crack = QueenCracks(c, () => 1f, () => false);
-            if (e.by != null) queenCracks.Remove(e.by);
-            crack.Blast();
-            Add(new Shape(root, "Queen scorch", meshQuad, matScorch)
-            {
-                life = 1.9f,
-                at = c + Vector3.up * 0.015f,
-                rotation = FlatOnFloor() * Quaternion.Euler(0f, 0f, Random.Range(0f, 360f)),
-                color = new Color(0.06f, 0.035f, 0.02f),
-                paint = 0.55f,
-                animate = (s, t) =>
-                {
-                    s.scale = Vector3.one * 4.4f * Mathf.Lerp(0.5f, 1f, EaseOut(s.Age / 0.1f));
-                    s.bright = Keys(s.Age, 0.9f, 1f, 1.9f, 0f);
-                },
-            });
-
-            // She springs open with a white ball round her for two frames (A).
+            // R138: the air goes out of her as a shock wave ("펑"), not a fireball: the dome and the floor rings of bent air
+            // and the swept chess pieces (PawnRushSkillFx.Shock.cs), the crown ring of pearls riding the front. She springs
+            // open. R139: no dust anywhere in it; the shock wave easier to see.
             if (e.by != null) kit.AddSquash(e.by, Kit.SquashKind.Spring);
-            WhiteBall(pop, 0.55f);
-            BurstChess(pop, c.y);
-
-            // The fireball: lumpy puffs bursting up and out, burning, cooling to charcoal smoke with fire in its creases
-            // and hot edges, billowing up and out, eaten away from the edges in.
-            for (int i = 0; i < 6; i++)
-            {
-                Vector3 dir = i < 2 ? (Vector3.up + Random.insideUnitSphere * 0.3f).normalized : OnSphere(0.15f);
-                float reach = Random.Range(0.4f, 0.8f), size = Random.Range(0.5f, 0.75f), rise = Random.Range(0.6f, 0.95f);
-                Vector3 from = pop + dir * 0.15f, to = pop + dir * reach + Vector3.up * Random.Range(0f, 0.3f);
-                Add(new Puff(root, "Queen fireball", meshPuff, matFire)
-                {
-                    life = Random.Range(0.7f, 0.9f),
-                    lump = Random.Range(0.32f, 0.45f),
-                    flow = 1.6f,
-                    rotation = Random.rotation,
-                    animate = (p, t) =>
-                    {
-                        float a = p.Age;
-                        p.at = Vector3.Lerp(from, to, EaseOut(a / 0.32f)) + Vector3.up * rise * a;
-                        p.scale = Vector3.one * size * Mathf.Lerp(0.3f, 1f, EaseOut(a / 0.25f)) * Mathf.Lerp(1f, 1.35f, t);
-                        p.heat = Keys(a, 0.03f, 1f, 0.12f, 0.5f, 0.32f, 0.18f, 0.6f, 0f);
-                        p.rim = Hdr(FireGlow, 1.4f * Sq(Mathf.Clamp01(1f - a / 0.75f)));
-                        p.dissolve = Keys(t, 0.25f, 0f, 1f, 1f);
-                    },
-                });
-            }
-
-            // A ring of sixteen cel fire puffs racing out to her reach in eight frames (A), the crown ring on its rim.
-            const int ring = 16;
-            float turn = Random.Range(0f, 360f);
-            for (int i = 0; i < ring; i++)
-            {
-                float a = (turn + (i + Random.Range(-0.3f, 0.3f)) * 360f / ring) * Mathf.Deg2Rad;
-                var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                float reach = outer * Random.Range(0.9f, 1f), size = Random.Range(0.32f, 0.46f);
-                // Fire, not smoke: they stay hot and are eaten away within a third of a second.
-                Add(new Puff(root, "Queen fire ring", meshPuff, matFire)
-                {
-                    life = Random.Range(0.3f, 0.36f),
-                    lump = 0.4f,
-                    flow = 2f,
-                    rotation = Quaternion.LookRotation(radial),
-                    animate = (p, t) =>
-                    {
-                        float k = EaseOut(p.Age / (8f / 60f));
-                        p.at = c + radial * Mathf.Lerp(0.3f, reach, k) + Vector3.up * (0.12f + 0.15f * k);
-                        p.scale = new Vector3(size, size * 0.85f, size * 1.15f) * Mathf.Lerp(0.4f, 1f, k);
-                        p.heat = Keys(p.Age, 0.03f, 0.95f, 0.3f, 0.55f);
-                        p.rim = Hdr(FireGlow, 1.2f * Mathf.Clamp01(1f - p.Age / 0.25f));
-                        p.dissolve = Keys(t, 0.35f, 0f, 1f, 1f);
-                    },
-                });
-            }
+            ShockBlast(c, outer, e.by);
             QueenCrown(c, inner, outer);
             HitStop(6f * Frame);
             Shake(0.16f, 10f * Frame);
@@ -470,9 +319,13 @@ namespace ChessFight.RagdollLab
             // under it once it lies (the inner ring knocks down).
             Vector3 at = e.target != null ? ChestOf(e.target) : e.at + Vector3.up * 0.3f;
             Vector3 away = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
-            kit.FlashBody(e.target, Kit.Queen.main);
-            kit.Drops(at, away + Vector3.up * 0.25f, Kit.Queen, 3, 6f);
-            if (e.count == 1) kit.Down(e.target, Kit.Queen, e.at, Square);
+            kit.FlashBody(e.target, kit.queen.main);
+            kit.Drops(at, away + Vector3.up * 0.25f, kit.queen, 3, 6f);
+            // R139: a piece she knocks down throws up no dust ("퀸이 팔방 밀치기 사용 할 때 먼지 vfx 지워주고").
+            if (e.count == 1) kit.Down(e.target, kit.queen, e.at, Square, false);
+            // R142: her shock is charged ("전기+공기 충격파"): its electricity runs over the piece, R143 for 0.6 s (a third of a
+            // second went by unseen in play).
+            ArcThrough(e.target, 0.6f);
         }
 
         // ---- Rook (R86, after the reference's electric dash; it was a shield and a tail of fire): while it charges, a
@@ -494,8 +347,8 @@ namespace ChessFight.RagdollLab
         {
             Vector3? Where() => RookDashing(r) ? r.Hips.position : (Vector3?)null;
             Vector3? Chest() => RookDashing(r) ? ChestOf(r) : (Vector3?)null;
-            anims.Add(new Streak(root, matTrail, Hdr(Fire, 1.25f), 0.75f, 0.2f, Where) { paint = 0.8f });
-            anims.Add(new Streak(root, matTrail, Hdr(Volt, 3.4f), 0.16f, 0.32f, Where) { paint = 0.25f });
+            anims.Add(new Streak(root, matTrail, board ? Hdr(BOrange.main, 1.05f) : Hdr(Fire, 1.25f), 0.75f, 0.2f, Where) { paint = board ? 0.85f : 0.8f });
+            anims.Add(new Streak(root, matTrail, board ? Hdr(new Color(0.92f, 0.95f, 1f), 2.2f) : Hdr(Volt, 3.4f), 0.16f, 0.32f, Where) { paint = 0.25f });
             anims.Add(new PathBolts(root, matVolt, Chest, 1.6f));
             Vector3 heading = Flat(r.transform.forward).sqrMagnitude > 0.01f ? Flat(r.transform.forward).normalized : Vector3.forward;
             float endedAt = -1f;
@@ -503,7 +356,7 @@ namespace ChessFight.RagdollLab
             Add(new Beam(root, matFlare)
             {
                 life = 5f,
-                color = Hdr(Fire, 1.4f),
+                color = board ? Hdr(BOrange.main, 1.15f) : Hdr(Fire, 1.4f),
                 paint = 0.7f,
                 animate = (b, t) =>
                 {
@@ -540,7 +393,7 @@ namespace ChessFight.RagdollLab
                 if (r.Grounded)
                     for (kick += dt * 25f; kick >= 1f; kick -= 1f)
                         smoke.Emit(Ground(r.Hips.position) - heading * 0.3f + Random.insideUnitSphere * 0.2f, -heading * Random.Range(0.5f, 1.5f) + Vector3.up * 0.4f,
-                            Random.Range(0.35f, 0.55f), Random.Range(0.5f, 0.8f), (Color32)Dust, Random.Range(-60f, 60f));
+                            Random.Range(0.35f, 0.55f), Random.Range(0.5f, 0.8f), (Color32)(board ? new Color(0.92f, 0.84f, 0.74f) : Dust), Random.Range(-60f, 60f));
                 return true;
             }));
         }
@@ -548,10 +401,10 @@ namespace ChessFight.RagdollLab
         void RookHit(SkillFxEvent e)
         {
             int i = Mathf.Clamp(e.count, 1, 3);
-            var p = Kit.Rook;
+            var p = kit.rook;
             Vector3 fly = RookFlight(e);
             Vector3 at = e.target != null ? ChestOf(e.target) : e.at;
-            kit.HalfRing(at, fly, p, 0.55f * (1f + 0.2f * (i - 1)), 0.15f);
+            // R138 (승규 님: "모든 기물이 스킬 사용 후 적 맞출 때 나오는 반원 이펙트인데 빼주고"): no C half ring.
             InkHit(e.target, at, fly, p, 2 + i, 0.04f * (1f + 0.5f * (i - 1)), 3 + i);
             anims.Add(new Bolts(root, matVolt, 3 + i, () => e.at, Hdr(Volt, 2f), 0.6f + 0.15f * i, 0.12f) { toon = true });
             kit.Down(e.target, p, e.at, Square);
@@ -570,13 +423,13 @@ namespace ChessFight.RagdollLab
         /// <summary>The piece that stops the charge (the one after its last): the strongest hit of the rook's.</summary>
         void RookStop(SkillFxEvent e)
         {
-            var p = Kit.Rook;
+            var p = kit.rook;
             Vector3 along = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             Vector3 at = e.target != null ? ChestOf(e.target) : e.at;
-            kit.HalfRing(at, along, p, 0.8f, 0.18f);
+            // R138: no C half ring.
             InkHit(e.target, at, along, p, 5, 0.12f, 8, 4);
             anims.Add(new Bolts(root, matVolt, 6, () => e.at, Hdr(Volt, 2f), 1f, 0.16f) { toon = true });
-            kit.PuffBurst(Ground(e.at) + Vector3.up * 0.15f, Kit.Dust, 4, 0.5f, 0.25f);
+            kit.PuffBurst(Ground(e.at) + Vector3.up * 0.15f, kit.dust, 4, 0.5f, 0.25f);
             kit.Down(e.target, p, e.at, Square);
         }
 
@@ -617,6 +470,11 @@ namespace ChessFight.RagdollLab
         // stab the floor, a team rim round the squares, a white band as it arms, half bright while arming, 40% at rest
         // and three blinks in its last second; a trip flashes the piece white then violet, a violet crescent sweeps under
         // its feet with a small ring at shin height, a 4-frame stop, and its captured square (no pillar, sparks or flare).
+        // R138 (승규 님: "밧줄에 걸려서 넘어 지는 게 아니라 밧줄에 묶이게 해줘 (실제 밧줄에 묶이는게 잘 보여야 돼)"): the catch ties
+        // the piece up: the wire's lines close on its waist from all four pegs and a rope winds round it
+        // (PawnRushSkillFx.Rope.cs); no crescent, ring or fall.
+        // R142 (승규 님: "밧줄 지탱하는 곳을 좀 더 사실 적으로 묘사해줘"): the rope is tied with clove hitches to wooden stakes
+        // driven into the floor as the X lands (PawnRushSkillFx.Stake.cs), not to grey cylinders.
 
         void BishopWire(SkillFxEvent e)
         {
@@ -670,16 +528,13 @@ namespace ChessFight.RagdollLab
 
         void BishopTrip(SkillFxEvent e)
         {
-            var p = Kit.Bishop;
+            var p = kit.bishop;
             Vector3 run = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
             if (e.source != null && tileSets.TryGetValue(e.source, out var set)) set.Pop(e.at);
-            Vector3 feet = (e.target != null ? Ground(e.target.Hips.position) : Ground(e.at)) + Vector3.up * 0.03f;
-            float shin = Params != null ? Params.bishopHeight : 0.25f;
-            // A: a violet crescent sweeping under its feet (160°, centred on the way it ran), a small ring at shin height.
-            Crescent(feet, Quaternion.Euler(0f, 80f, 0f) * run, p, 0.7f, 0.08f, 160f, 6);
-            kit.ImpactRing(feet + Vector3.up * shin, run, p, 0.2f, 0.5f);
-            InkHit(e.target, feet + Vector3.up * shin, run, p, 4, 0.08f, 6, 3);
-            kit.Down(e.target, p, e.at, Square);
+            Vector3 waist = e.target != null ? SkillTripwire.Waist(e.target) : e.at + Vector3.up * 0.5f;
+            // R138: the piece is tied up (e.size = how long; 0 = it could not be: down, or just up and only staggered).
+            InkHit(e.target, waist, run, p, 4, 0.08f, 6, 0);
+            if (e.size > 0f) TieUp(e, e.size);
         }
 
         // ---- Knight (R86, after the reference's hand-drawn wind burst; it was trails, rings and walls of blue light):
@@ -696,31 +551,47 @@ namespace ChessFight.RagdollLab
         // blue ring at head height, three drops, a 5-frame stop, its captured square and three little cream pawns over
         // its head (no stars); a landing rolls eight puffs out to 1.5 m and stamps a horseshoe scuff, and each piece it
         // staggers flashes. Its squares and horseshoe landing mark: PawnRushSkillFx.DesignA.cs.
+        // R138 (승규 님: "나이트 스킬 쓸 때 엉덩이 부분에 흰색을 빼주고 좀 더 나이트다! 라는 연출을 보여줘. 그리고 착지 할 때 지금
+        // 있는 원 모양 말고 마지막 사진 같은 로고로 해줘"): no wind ribbon from its hips, no wind puffs, swooshes, white rings
+        // or crescents. It is a horse: it rears before it springs and flies in a jumping horse's pose (RagdollPawn's skill
+        // pose); a ghost of a chess knight rears up behind it and lunges after it as it springs, its hind hooves leave their
+        // prints and kick dust back; the kick off the air stamps a horseshoe badge on the air; the landing mark is the
+        // horseshoe badge with an arrow over it, stamped when it comes down with dust and its front hooves' prints; a head it
+        // stamps on gets the badge. PawnRushSkillFx.Knight.cs.
+        // R139 (승규 님: "뒤에 말 같은 거 지워주고 뭘 생성은 하지마 그냥 vfx만 다른 연출로 … 테두리는 광택나는 검은 색 안에는 광택나는
+        // 어두운 금색으로 … 머리를 밟을 때나 꺾을 때 하지마 착지 할 때만 … 밟았다! 라는 느낌으로"): no chess knight rising behind
+        // it (nothing is made, only effects, and nothing round): its hooves kick back force lines (brush strokes of black
+        // lacquer with a dark gold core); the badge glossy black and dark gold, and only where it lands; the stomp slams the
+        // same strokes down onto the head and two shoot out sideways as it flattens.
+        // R140 (승규 님: "나이트 위에 사진 좀 어색해 자연스러운 걸로 바꿔줘"): the stomp is told by the bodies, with no strokes and no
+        // black flash: the head squashed flat, dust squeezed out from under the hooves and round its feet, the usual hit flash.
+        // R141 (승규 님, Pawn Rush and Queen of the Hill both: "f 키를 누르면 뒤에(엉덩이 부분)에 임펙트가 나가는데 다른 임펙트로
+        // 해줘(공기 임팩트)"): no force lines: the air its spring shoves back from behind its hips (SkillAir: bent air and white
+        // vapour), at the take-off and where it kicks off the air.
 
-        void KnightLeap(RagdollPawn k)
-        {
-            // A: a ribbon of wind from its hips (0.45 s, 0.42 m at the head to nothing), white core, sky, navy ink.
-            InkTrail(() => KnightLeaping(k) ? k.Hips.position : (Vector3?)null, Kit.Knight, 0.45f, 0.42f, Color.white);
-        }
-
-        /// <summary>"다": the leap's take-off (A): a white ring at the feet for two frames, five wind puffs squashing out
-        /// to 1 m in eight frames, two swooshes curling up round the knight; off the air (R81) the same under its feet.</summary>
+        /// <summary>"다": the leap's take-off. R138: the hind hooves' prints where it pushed off and dust kicked back off them.
+        /// R141: and the air its spring shoves back and down from behind its hips (in place of R139's four force lines);
+        /// off the air (R81) the air it kicks back.</summary>
         void KnightTakeOff(SkillFxEvent e)
         {
             var k = e.by;
             Vector3 floor = Ground(e.at + Vector3.up * 0.3f);
             if (k != null) leapPaths[k] = new LeapPath { start = floor, launchedAt = Clock };
             Shake(0.04f, 4f * Frame);
-            Vector3 at = (e.count == 1 ? e.at : floor) + Vector3.up * 0.02f;
-            kit.FlashRing(at, 0.4f, Kit.Knight);
-            kit.DustRing(at, 5, 1f, Kit.Knight, 0.3f, 0.45f, 8f);
-            WindArc(at + Vector3.up * 0.05f, Vector3.up, 0.6f, 0.75f, 0.22f, 420f, 0.38f, 0f, 0.85f, 1.2f, () => k != null ? k.Hips.position - Vector3.up * 0.6f : at);
-            WindArc(at + Vector3.up * 0.05f, Vector3.up, 0.5f, 0.68f, 0.18f, 380f, 0.36f, 0.05f, 0.85f, 1.1f, () => k != null ? k.Hips.position - Vector3.up * 0.6f : at);
+            Vector3 dir = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : k != null ? Kit.FlatDir(k.Facing, Vector3.forward) : Vector3.forward;
+            bool fromFloor = e.count != 1;
+            if (fromFloor)
+            {
+                Hoofprints(floor, dir, -0.2f, 1.3f);
+                HoofDust(floor, -dir, 0.8f);
+                AirKick(k != null ? k.Hips.position : floor + Vector3.up * 0.55f, dir, 1f, 0.3f);
+            }
+            else AirKick(k != null ? k.Hips.position : e.at, dir, 0.85f, 0.2f);
         }
 
-        /// <summary>"당" (R80): the second press kicks off the air, turned or straight on (A): a two-frame pause, a blue
-        /// crescent sweeping round the knight, a small ring opening at the corner across the new way (its trail keeps
-        /// the corner: an L in the sky).</summary>
+        /// <summary>"당" (R80): the second press kicks off the air, turned or straight on: a two-frame pause. R141: the air it
+        /// kicks back off (R139's three force lines; the badge it stamped on the air in R138 is gone: "꺾을 때 하지마"; its
+        /// way's squares keep the corner: an L).</summary>
         void KnightTurn(SkillFxEvent e)
         {
             var k = e.by;
@@ -732,8 +603,7 @@ namespace ChessFight.RagdollLab
             }
             HitStop(2f * Frame);
             Shake(0.06f, 6f * Frame);
-            Crescent(e.at, Quaternion.Euler(0f, 45f, 0f) * Flat(d).normalized, Kit.Knight, 0.75f, 0.1f, 90f, 6);
-            FlatImpactRing(e.at, Kit.Knight, 0.05f, 0.45f, d);
+            AirKick(k != null ? k.Hips.position : e.at, Flat(d).sqrMagnitude > 1e-4f ? Flat(d).normalized : Vector3.forward, 0.85f, 0.15f);
         }
 
         void KnightHome(SkillFxEvent e)
@@ -744,12 +614,16 @@ namespace ChessFight.RagdollLab
 
         void KnightStomp(SkillFxEvent e)
         {
-            var p = Kit.Knight;
-            // A: flat in four frames (to 60%), a level blue ring at head height, three drops down and out, the body
-            // white then sky, a 5-frame stop; then its captured square and three little cream pawns over its head.
-            kit.AddSquash(e.target, Kit.SquashKind.Flatten, 0.5f);
-            FlatImpactRing(e.at, p, 0.3f, 0.75f);
-            InkHit(e.target, e.at, Vector3.down + Flat(e.dir) * 0.6f, p, 5, 0.12f, 8, 3);
+            var p = kit.knight;
+            // A: flat in four frames (to 60%), three drops down and out, the body white then sky, a 5-frame stop; then three
+            // little cream pawns over its head. R138: no ring at head height: the horseshoe badge stamped on its head.
+            // R139 ("밟을 때 나오는 vfx도 다른 그래픽 디자인으로 만들어줘 밟았다! 라는 느낌으로"; no badge on a head): no drops, a
+            // 6-frame stop and a harder shake, flat a little longer. R140 ("어색해 자연스러운 걸로"): R139's force lines slamming
+            // down and white-then-black flash gone; dust squeezed out from under the hooves and round its feet
+            // (StompImpact), the body white then the knight's colour as any hit.
+            kit.AddSquash(e.target, Kit.SquashKind.Flatten, 0.6f);
+            StompImpact(e.target, e.at, Flat(e.dir));
+            InkHit(e.target, e.at, Vector3.down, p, 6, 0.15f, 9, 0);
             kit.Down(e.target, p, e.at, Square);
             kit.Daze(e.target, 0.3f, 1.2f);
         }
@@ -758,23 +632,19 @@ namespace ChessFight.RagdollLab
         {
             var k = e.by;
             if (k != null) leapPaths.Remove(k);
-            Vector3 g = Ground(e.at) + Vector3.up * 0.02f;
+            // R139: the floor under it, past any piece lying there (Ground stops at a piece and gives the knight's feet: the
+            // badge stamped beside a head it had stomped floated over the fallen piece).
+            Vector3 g = Kit.FloorUnder(e.at, 0.8f) + Vector3.up * 0.02f;
             float radius = e.size > 0f ? e.size : 1.5f;
-            var p = Kit.Knight;
-            // A: eight wind puffs rolling out to the stagger reach in ten frames, a horseshoe scuff stamped where it came
-            // down (sky, ink) fading over a second; each piece it staggers flashes, with a 3-frame stop.
-            kit.DustRing(g, 8, radius, p, 0.32f, 0.6f, 10f);
-            var scuff = new Kit.Tile(kit, "Horseshoe scuff");
+            var p = kit.knight;
+            // R138: the horseshoe badge it was coming down on stamps (white for two frames, a little pop) and fades over a
+            // second; dust rolls out to the stagger reach; its front hooves' two prints just ahead. Each piece it staggers
+            // flashes, with a 3-frame stop. R139: the badge glossy black and dark gold with its sheen sweeping over it, and
+            // less dust (nothing round: "착지 할 때 지금 있는 원 모양 말고").
             Vector3 along = Flat(e.dir).sqrMagnitude > 1e-4f ? Flat(e.dir).normalized : Vector3.forward;
-            var f = kit.Run(60f * Frame, (fx, d) =>
-            {
-                scuff.Floor(g, along, Vector2.one * Kit.Pop(fx.age, 1.1f, 0.6f));
-                Kit.Horseshoe(scuff, p, 0.6f);
-                scuff.fade = 1f - fx.age / fx.life;
-                scuff.Apply();
-                return true;
-            });
-            f.tiles.Add(scuff);
+            kit.DustRing(g, 5, radius * 0.85f, kit.dust, 0.26f, 0.55f, 10f);
+            BadgeStamp(g, along, k);
+            Hoofprints(g, along, 0.45f, 1.5f);
             Shake(0.08f, 6f * Frame);
             if (e.count > 0)
             {
@@ -894,6 +764,15 @@ namespace ChessFight.RagdollLab
             public RagdollPawn owner;
             readonly List<(Shape tile, Shape box, int ring, Vector3 at)> squares = new List<(Shape, Shape, int, Vector3)>();
             readonly List<Shape> wires = new List<Shape>();
+            /// <summary>R139: the lines as hemp rope (design A and the board look), and a knot round each peg.</summary>
+            readonly List<RopeSpan> ropes = new List<RopeSpan>();
+            readonly List<SkillInkKit.Prop> knots = new List<SkillInkKit.Prop>();
+            /// <summary>R142: the wooden stakes the rope is tied to (SkillTripwire's own pegs hidden), and how high it is tied.</summary>
+            readonly List<SkillInkKit.Prop> stakes = new List<SkillInkKit.Prop>();
+            float stakeTie;
+            /// <summary>The board look's pads (R125): one per square.</summary>
+            readonly List<SkillInkKit.Tile> pads = new List<SkillInkKit.Tile>();
+            Vector3 along = Vector3.forward;
             public Object source;
             public float square;
             public bool hidden;
@@ -909,12 +788,14 @@ namespace ChessFight.RagdollLab
                     var tile = new Shape(fx.root, "Bishop square", fx.meshQuad, fx.matTile) { life = float.MaxValue, paint = ghost ? 0.5f : 0.9f };
                     var box = ghost ? null : new Shape(fx.root, "Bishop light box", fx.meshBox, fx.matCurtain) { life = float.MaxValue, paint = 0.55f };
                     squares.Add((tile, box, ring, at));
+                    if (fx.board && !ghost) pads.Add(new SkillInkKit.Tile(fx.kit, "Bishop board square"));
                 }
                 Place(center, forward, length);
             }
 
             public void Place(Vector3 center, Vector3 forward, float length)
             {
+                along = Flat(forward).sqrMagnitude > 1e-4f ? Flat(forward).normalized : Vector3.forward;
                 int i = 0;
                 foreach (var (at, ring, size, rotation) in Squares(center, forward, length))
                 {
@@ -933,11 +814,90 @@ namespace ChessFight.RagdollLab
             }
 
             /// <summary>The two lines of the wire as thin beams of light, each in two halves that bend where the wire is
-            /// pulled (R81); placed from the wire every frame.</summary>
+            /// pulled (R81); placed from the wire every frame. R139: with design A's kit, as the tie's hemp rope instead
+            /// (승규 님: "비숍의 x자 줄도 실제 밧줄 모양으로 바꿔줘 (상대 묶는 밧줄이랑 동일)"), knotted round the pegs. R142: the
+            /// pegs are wooden stakes, the knots clove hitches (PawnRushSkillFx.Stake.cs).</summary>
             public void AddWires(Vector3 center, Vector3 forward, float length, float height)
             {
+                if (fx.kit != null)
+                {
+                    stakeTie = height;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        ropes.Add(new RopeSpan(fx, "Bishop rope"));
+                        var knot = fx.RopeProp(fx.RopeKnotMesh(), "Bishop rope hitch", 0.006f);
+                        knot.Show(false);
+                        knots.Add(knot);
+                        var stake = fx.StakeProp(height, "Bishop stake");
+                        stake.Show(false);
+                        stakes.Add(stake);
+                    }
+                    return;
+                }
                 for (int i = 0; i < 4; i++)
-                    wires.Add(new Shape(fx.root, "Bishop wire light", fx.meshCylinder, fx.matRod) { life = float.MaxValue, paint = 0.3f });
+                    wires.Add(new Shape(fx.root, "Bishop wire light", fx.meshCylinder, fx.board ? fx.matRodBoard : fx.matRod) { life = float.MaxValue, paint = 0.3f });
+            }
+
+            /// <summary>
+            /// The rope lines this frame (R139): each half from its peg to where the line's middle is now, hanging 3.5 cm
+            /// at the middle while slack and straight once pulled or tied; the second line lies over the first where they
+            /// cross (its middle a rope's thickness higher); the knots on the pegs' tops. R142: each peg a wooden stake
+            /// leaning out a little from the X's middle (and in with the line's pull), driven in as the X lands; the hitch
+            /// on it turned to its line, the line leaving it from the stake's side.
+            /// </summary>
+            void StepRopes(SkillTripwire tripwire, float fade)
+            {
+                if (tripwire == null)
+                {
+                    foreach (var r in ropes) r.Place(Vector3.zero, Vector3.zero, 0f, 0f);
+                    foreach (var k in knots) k.Show(false);
+                    foreach (var s in stakes) s.Show(false);
+                    return;
+                }
+                // Its own thin lines and pegs stay hidden while these show (its pegs still lean).
+                tripwire.LinesDrawnElsewhere = true;
+                tripwire.PegsDrawnElsewhere = stakes.Count > 0;
+                float shown = hidden ? 0f : fade;
+                // Driven in as the X lands: falling faster and faster, into the floor in three frames.
+                float driven = Mathf.Clamp01(age / (StakeDriveFrames * Frame));
+                Vector3 drive = Vector3.up * (StakeDrive * (1f - driven * driven));
+                Vector3 middle = tripwire.Center;
+                for (int line = 0; line < 2; line++)
+                {
+                    tripwire.LinePoints(line, out _, out var mid, out _);
+                    float taut = Mathf.Clamp01(tripwire.Tension(line) * 3f);
+                    bool tied = tripwire.BoundTo(line) != null;
+                    float sag = tied ? 0f : 0.035f * (1f - taut);
+                    if (!tied) mid += Vector3.up * (line == 1 ? RopeThick * (1f - taut) : 0f);
+                    for (int end = 0; end < 2; end++)
+                    {
+                        int i = line * 2 + end;
+                        // The stake: leaning out, and in with the line's pull (the peg's lean).
+                        tripwire.PegTie(line, end, out var pull);
+                        Vector3 foot = tripwire.PegFoot(line, end) + drive;
+                        Quaternion stand = StakeStand(foot, middle, pull);
+                        Vector3 tie = foot + stand * (Vector3.up * stakeTie);
+                        if (i < stakes.Count)
+                        {
+                            var stake = stakes[i];
+                            stake.t.SetPositionAndRotation(foot, stand * Quaternion.Euler(0f, StakeYaw(i), 0f));
+                            stake.fade = shown;
+                            stake.Show(shown > 0.02f);
+                            stake.Apply();
+                        }
+                        // The hitch turned to its line; the line leaves it from the stake's side.
+                        Vector3 toLine = mid - tie;
+                        toLine.y = 0f;
+                        if (toLine.sqrMagnitude < 1e-6f) toLine = new Vector3(middle.x - foot.x, 0f, middle.z - foot.z);
+                        Quaternion hitch = stand * Quaternion.LookRotation(toLine.sqrMagnitude > 1e-8f ? toLine.normalized : Vector3.forward, Vector3.up);
+                        ropes[i].Place(tie + hitch * HitchExit, mid, sag, shown);
+                        var knot = knots[i];
+                        knot.t.SetPositionAndRotation(tie, hitch);
+                        knot.fade = shown;
+                        knot.Show(shown > 0.02f);
+                        knot.Apply();
+                    }
+                }
             }
 
             static void Rod(Shape rod, Vector3 from, Vector3 to)
@@ -1000,8 +960,35 @@ namespace ChessFight.RagdollLab
                     // A popped square turns pink rather than white-hot (it washed the pull out up close, R81).
                     tile.color = Hdr(Color.Lerp(Violet, Magenta, pop), 1.5f + 0.7f * pop);
                     tile.bright = bright;
+                    if (pads.Count > 0)
+                    {
+                        // The board look: a dark board square standing as a pad, lifted and turned orange as it pops (the
+                        // box of light did that before), a silver band inside it lit with the wire's level.
+                        tile.bright = 0f;
+                        var pad = pads[i];
+                        float lift = 0.22f * Mathf.Sin(Mathf.Clamp01(pop) * Mathf.PI);
+                        pad.Floor(at + Vector3.up * (0.004f + lift), along, Vector2.one * (square * 0.94f));
+                        pad.shape = 0f;
+                        pad.round = 0.05f;
+                        pad.fill = SkillInkKit.A(Color.Lerp(BSquare.main, BOrange.main, pop), 0.94f);
+                        pad.bevel = SkillInkKit.A(Color.Lerp(BSquare.light, BOrange.deep, pop), 0.8f);
+                        pad.bevelWidth = 0.05f;
+                        pad.ink = SkillInkKit.A(BNavy, 1f);
+                        pad.inkWidth = 0.03f;
+                        fx.kit.BoardSide(pad, owner);
+                        pad.core = SkillInkKit.A(BSilver.light, Mathf.Clamp01((level - 0.45f) / 0.55f));
+                        pad.coreWidth = 0.05f;
+                        pad.thick = 0.045f + 0.05f * pop;
+                        pad.fade = hidden ? 0f : on * fade * Mathf.Clamp01(0.8f + 0.3f * level);
+                        pad.Apply();
+                    }
                     tile.Step(dt, cam);
-                    if (box != null)
+                    if (box != null && pads.Count > 0)
+                    {
+                        box.bright = 0f;
+                        box.Step(dt, cam);
+                    }
+                    else if (box != null)
                     {
                         float lift = 0.22f * Mathf.Sin(Mathf.Clamp01(pop) * Mathf.PI);
                         box.at = at + Vector3.up * lift;
@@ -1013,6 +1000,7 @@ namespace ChessFight.RagdollLab
                 }
                 float wireBright = (fx.kit != null ? level : armed ? 1f : 0.4f) * (0.8f + 0.2f * Mathf.Sin(age * 9f)) * fade;
                 var tripwire = source as SkillTripwire;
+                if (ropes.Count > 0) StepRopes(tripwire, fade);
                 for (int i = 0; i < wires.Count; i++)
                 {
                     var wire = wires[i];
@@ -1029,9 +1017,15 @@ namespace ChessFight.RagdollLab
                     // out it bloomed the stretched line away), and whiter where it is pulled (A: violet → white).
                     wire.color = Hdr(Color.Lerp(Color.Lerp(Violet, Magenta, 0.5f), Color.white, 0.55f * tension), 3f + 0.3f * tension);
                     wire.bright = wireBright;
+                    if (fx.board)
+                    {
+                        // The board look: a polished silver wire (Skill Gloss: rgb tints, alpha fades by a dither).
+                        wire.color = Color.white;
+                        wire.bright = fade;
+                    }
                     wire.Step(dt, cam);
                 }
-                if (!ghost && !hidden && squares.Count > 0)
+                if (!ghost && !hidden && squares.Count > 0 && !fx.board)
                     for (rise += dt * 14f * fade * Mathf.Min(1f, level); rise >= 1f; rise -= 1f)
                     {
                         var s = squares[Random.Range(0, squares.Count)];
@@ -1045,8 +1039,16 @@ namespace ChessFight.RagdollLab
             {
                 foreach (var s in squares) { s.tile.Destroy(); s.box?.Destroy(); }
                 foreach (var w in wires) w.Destroy();
+                foreach (var r in ropes) r.Destroy();
+                foreach (var k in knots) k.Destroy();
+                foreach (var s in stakes) s.Destroy();
+                foreach (var pad in pads) pad.Destroy();
+                pads.Clear();
                 squares.Clear();
                 wires.Clear();
+                ropes.Clear();
+                knots.Clear();
+                stakes.Clear();
             }
         }
 
@@ -1143,6 +1145,8 @@ namespace ChessFight.RagdollLab
                 kit.Step(dt);
             }
             else GhostSquares(dt, cam);
+            air?.Step(dt);
+            arc?.Step(dt, cam);
 
             if (shakeLeft > 0f && cam != null)
             {

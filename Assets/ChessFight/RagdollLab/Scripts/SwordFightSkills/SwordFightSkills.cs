@@ -23,7 +23,13 @@ namespace ChessFight.RagdollLab
         RookBreak,
         BishopReach, BishopCatch, BishopSet, BishopDrop,
         KnightCrouch, KnightFlip, KnightKick, KnightKickHit,
+        // R130, the king's counter: the spin cut a beat after the block, and an attacker thrown off by the block.
+        KingCounterSpin, KingRepel,
     }
+
+    /// <summary>R130: what the king's guard took (the block's effects answer each one: a cut, the queen's thrust or her
+    /// edge cut, the rook's wave, the bishop's hands, the knight's dive or its kick).</summary>
+    public enum SfBlock : byte { None, Sword, Queen, Rook, Bishop, Knight, QueenEdge, KnightEdge }
 
     public struct SfFxEvent
     {
@@ -84,8 +90,17 @@ namespace ChessFight.RagdollLab
         /// <summary>The rook's wave front, metres from where it started (Active).</summary>
         public float WaveFront { get; private set; }
         public bool WaveBlocked { get; private set; }
-        public Vector3[] KnightSpots { get; } = new Vector3[2];
+        /// <summary>The knight (R129, the fork dive): the eight squares it attacks from the square it comes down on, and
+        /// whether each has floor under it (one off the board is not attacked).</summary>
+        public Vector3[] KnightSquares { get; } = new Vector3[8];
+        public bool[] KnightSquareOn { get; } = new bool[8];
         public bool KingCountered { get; private set; }
+        /// <summary>R130: what the king's guard took this time (None before it took anything).</summary>
+        public SfBlock Blocked { get; private set; }
+        /// <summary>R130: how far round the king's counter spin is (0..1; 0 until the beat after the block is over).</summary>
+        public float CounterSpin => Piece == PieceKind.King && Stage == SfStage.Active && KingCountered && S != null
+            ? Mathf.Clamp01((StageTime - S.kingCounterBeat) / Mathf.Max(0.05f, S.kingCounterTime)) : 0f;
+        bool counterDone;
         /// <summary>The queen's and the rook's line as aimed now: how far it runs before an edge (the queen) or a wall.</summary>
         public float AimReach { get; private set; }
         /// <summary>The queen's dash: where her hips started and how far along the line they are now.</summary>
@@ -173,15 +188,78 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Called by the sword when an enemy's cut is about to land on this piece: the king's guard takes it.</summary>
-        public bool Parry(SwordFightPawn attacker, Vector3 at)
+        public bool Parry(SwordFightPawn attacker, Vector3 at) =>
+            attacker != null && Block(attacker.Skills, attacker.Pawn, at, SfBlock.Sword);
+
+        /// <summary>The king is in his guard (the stance after F): the next attack on him is blocked and answered.</summary>
+        public bool Guarding => Piece == PieceKind.King && Stage == SfStage.Windup && S != null && Fighter != null && Fighter.Alive;
+
+        /// <summary>
+        /// R130 (승규 님 10-13: "킹이 왕의 반격을 할 때 … 아 막고 반격한다! 라는 연출을 그리고 cc 기들을 실제로 막아내는
+        /// 장면을 연출 해줘 … 각종 기물이 공격 할 때 반격 하는 걸 상호작용 하듯"): the king's guard takes any attack, not only a
+        /// sword's cut: the queen's thrust and her edge cut, the bishop's hands, the knight's dive and its kick (R132, 승규 님:
+        /// "왕은 룩의 F 스킬을 막지 못해" — not the rook's wave: it throws him as anyone). The attack does nothing to him; whoever came at him close is thrown off it at once (<see cref="Repel"/>);
+        /// he turns to face it, holds a beat (<see cref="SwordFightSkillParams.kingCounterBeat"/>), then spins round once
+        /// cutting everyone near him away (<see cref="Counter"/>). False when this piece is not a king in his guard.
+        /// </summary>
+        public bool Block(SwordFightSkills attacker, RagdollPawn attackerPawn, Vector3 at, SfBlock kind)
         {
-            if (Piece != PieceKind.King || Stage != SfStage.Windup || S == null) return false;
+            if (!Guarding) return false;
             KingCountered = true;
-            Raise(SfFxKind.KingParry, null, at, Flat(at - Pawn.Hips.position), 0f);
-            Say($"{Pawn.DisplayName}: 왕의 반격 — {attacker.Pawn.DisplayName}의 칼을 받아냄");
+            Blocked = kind;
+            counterDone = false;
+            Vector3 from = attackerPawn != null ? attackerPawn.Hips.position : at;
+            Vector3 toward = Flat(from - Pawn.Hips.position);
+            if (toward.sqrMagnitude > 1e-4f) Dir = toward.normalized;
+            Pawn.Face(Dir);
+            Raise(SfFxKind.KingParry, attackerPawn, at, Dir, 0f, (int)kind);
+            Say($"{Pawn.DisplayName}: 왕의 반격 — {(attackerPawn != null ? attackerPawn.DisplayName : "?")}의 {BlockName(kind)}을(를) 막음");
             SetStage(SfStage.Active, "반격");
-            Counter();
+            if (attacker != null && attackerPawn != null) Repel(attacker, attackerPawn, kind);
             return true;
+        }
+
+        static string BlockName(SfBlock kind) => kind switch
+        {
+            SfBlock.Sword => "칼",
+            SfBlock.Queen => "꼬치 베기",
+            SfBlock.Rook => "충격파",
+            SfBlock.Bishop => "관통 핀(손)",
+            SfBlock.Knight => "포크 강하",
+            SfBlock.QueenEdge => "체크메이트 일섬",
+            SfBlock.KnightEdge => "뒷발차기",
+            _ => "공격",
+        };
+
+        /// <summary>The attacker thrown off the king's block where it came at him (R130): the queen's thrust stops dead and
+        /// she is flung back (her edge cut much harder: she flies), the knight bounces off its dive or its kick. The bishop's
+        /// hands come from afar: nothing comes back at them.</summary>
+        void Repel(SwordFightSkills attacker, RagdollPawn pawn, SfBlock kind)
+        {
+            float metres, up;
+            switch (kind)
+            {
+                // (The counter a beat later pushes it again if it is still near: these are kept short.)
+                case SfBlock.Queen: metres = 1.6f; up = 1.4f; break;
+                case SfBlock.QueenEdge: metres = 3.6f; up = 3.6f; break;
+                case SfBlock.Knight: metres = 1.4f; up = 2.4f; break;
+                case SfBlock.KnightEdge: metres = 1.6f; up = 1.8f; break;
+                default: return;
+            }
+            Vector3 away = Flat(pawn.Hips.position - Pawn.Hips.position);
+            away = away.sqrMagnitude > 1e-4f ? away.normalized : -Dir;
+            pawn.StopDash(0f);
+            if (pawn.OuterFlying) pawn.EndFlight();
+            pawn.TakeHit(away * (metres * S.pushPerMetre) + Vector3.up * up, S.knockdownSeconds, 0f, true);
+            attacker.Fighter.StopCombat();
+            attacker.pinLeft = 0f;
+            if (kind == SfBlock.Queen && attacker.Stage != SfStage.None)
+            {
+                attacker.PassThrough(false);
+                attacker.SetStage(SfStage.Recovery, "막힘");
+            }
+            Raise(SfFxKind.KingRepel, pawn, pawn.bodies[(int)BodyId.Chest].position, away, metres, (int)kind);
+            Say($"{pawn.DisplayName}: 왕의 반격에 튕겨 나감 ({metres:0.0} m)");
         }
 
         /// <summary>The test bed's F8 while the king is in his guard: a dummy's cut is on its way, so the guard waits for it
@@ -288,6 +366,8 @@ namespace ChessFight.RagdollLab
             WaveFront = 0f;
             WaveBlocked = false;
             KingCountered = false;
+            Blocked = SfBlock.None;
+            counterDone = false;
             guardUntil = 0f;
         }
 
@@ -311,7 +391,7 @@ namespace ChessFight.RagdollLab
             Vector3 dir = aimOverride ?? rawAim;
             AimDir = Flat(dir).sqrMagnitude > 1e-4f ? Flat(dir).normalized : Flat(Pawn.Facing).normalized;
             if (Piece == PieceKind.Queen) AimReach = DashDistance(Origin, AimDir, S.queenLength);
-            else if (Piece == PieceKind.Rook) AimReach = WallDistance(Origin, AimDir, S.rookLength);
+            else if (Piece == PieceKind.Rook) AimReach = RookReach(Origin, AimDir, out _);
             if (Piece != PieceKind.Bishop && Piece != PieceKind.Knight) { AimValid = true; return; }
 
             float range = Piece == PieceKind.Bishop ? S.bishopRange : S.knightRange;
@@ -335,12 +415,7 @@ namespace ChessFight.RagdollLab
             AimDir = along;
             AimValid = true;
 
-            if (Piece == PieceKind.Knight)
-            {
-                float a = S.knightSpotAngle;
-                KnightSpots[0] = Floor(AimPoint + Quaternion.AngleAxis(-a, Vector3.up) * along * S.knightSpotOffset);
-                KnightSpots[1] = Floor(AimPoint + Quaternion.AngleAxis(a, Vector3.up) * along * S.knightSpotOffset);
-            }
+            if (Piece == PieceKind.Knight) KnightSquaresAt(AimPoint, along);
             else
             {
                 // The enemy on the point is shown before the hands go (to both sides).
@@ -378,8 +453,8 @@ namespace ChessFight.RagdollLab
                     break;
                 case PieceKind.Rook:
                     SetStage(SfStage.Windup, "예고 · 고정");
-                    Reach = WallDistance(Origin, Dir, S.rookLength);
-                    WaveBlocked = Reach < S.rookLength - 0.01f;
+                    Reach = RookReach(Origin, Dir, out bool wall);
+                    WaveBlocked = wall;
                     Say($"{Pawn.DisplayName}: 열린 파일 포격 예고" + (WaveBlocked ? $" (장애물 {Reach:0.0} m)" : ""));
                     break;
                 case PieceKind.Bishop:
@@ -387,7 +462,7 @@ namespace ChessFight.RagdollLab
                     Say($"{Pawn.DisplayName}: 관통 핀 예고" + (PinCandidate != null ? $" ({PinCandidate.DisplayName})" : ""));
                     break;
                 case PieceKind.Knight:
-                    KnightLeap();
+                    KnightGo();
                     break;
             }
             // A rooted piece cannot turn by walking: face the way it goes (standing, where it stands). Not the knight: it
@@ -433,8 +508,23 @@ namespace ChessFight.RagdollLab
                     }
                     break;
                 case SfStage.Active:
-                    if (StageTime >= S.kingCounterTime) SetStage(SfStage.Recovery, "후딜");
+                {
+                    // R130: the block holds a beat, then he spins round once, cutting everyone near him away.
+                    if (!counterDone && StageTime >= S.kingCounterBeat)
+                    {
+                        counterDone = true;
+                        Raise(SfFxKind.KingCounterSpin, null, Floor(Pawn.Hips.position), Dir, S.kingCounterRadius, (int)Blocked);
+                        Counter();
+                    }
+                    float k = CounterSpin;
+                    if (counterDone) Pawn.Face(Quaternion.AngleAxis(-360f * (k * k * (3f - 2f * k)), Vector3.up) * Dir);
+                    if (StageTime >= S.kingCounterBeat + S.kingCounterTime + 0.04f)
+                    {
+                        Pawn.Face(Dir);
+                        SetStage(SfStage.Recovery, "후딜");
+                    }
                     break;
+                }
                 case SfStage.Recovery:
                     if (StageTime >= (KingCountered ? S.kingRecovery : S.kingWhiff)) Finish();
                     break;
@@ -479,6 +569,15 @@ namespace ChessFight.RagdollLab
                 case SfStage.Active:
                 {
                     DashProgress = Mathf.Max(DashProgress, Vector3.Dot(Flat(Pawn.Hips.position - DashStart), Dir));
+                    // R129 (승규 님 10-13: "플레이어가 거리 조절을 실패하면 장 밖을 떨어져 나갈 수 있게"): past the floor's
+                    // edge she does not plant her feet: the dash lets go with most of its speed and she sails out and falls.
+                    if (DashProgress > 0.3f && !Pawn.Grounded && !HasFloor(Flat(Pawn.Hips.position)))
+                    {
+                        Pawn.StopDash(S.queenFallCarry);
+                        Say($"{Pawn.DisplayName}: 꼬치 베기 — 가장자리 밖으로 달려 나감 ({DashProgress:0.0} m)");
+                        SetStage(SfStage.Recovery, "후딜");
+                        break;
+                    }
                     Vector3 perp = Vector3.Cross(Vector3.up, Dir);
                     foreach (var (p, along) in InLine(Origin, Dir, 0.3f, Reach + S.queenHitAhead, S.queenWidth * 0.5f + 0.25f))
                     {
@@ -489,7 +588,8 @@ namespace ChessFight.RagdollLab
                         float side = Vector3.Dot(Flat(p.Hips.position - Origin), perp) >= 0f ? 1f : -1f;
                         Vector3 dir = (Dir + perp * (side * S.queenSideShare)).normalized;
                         int n = hitSet.Count;
-                        Hit(other, dir, S.queenPush[Mathf.Min(n, S.queenPush.Length - 1)], "꼬치 베기", SfFxKind.QueenHit, n);
+                        // R130: a king in his guard stops her thrust dead (she is thrown back, her skill is over).
+                        if (!Hit(other, dir, S.queenPush[Mathf.Min(n, S.queenPush.Length - 1)], "꼬치 베기", SfFxKind.QueenHit, n)) return;
                     }
                     // She plants her feet where the line ends (short of an edge); a wall or a fall ends it sooner. The
                     // pieces she passed stay passable until her recovery is over (they are flying off by then).
@@ -509,13 +609,29 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        /// <summary>How far the queen can dash down a line: to its end, or short of the floor's edge or a wall.</summary>
+        /// <summary>How far the queen dashes down a line: to its end, or short of a wall. Not short of the floor's edge
+        /// (R129): aimed past it, she runs off it (<see cref="FloorDistance"/> says where the floor ends).</summary>
         float DashDistance(Vector3 from, Vector3 dir, float length)
         {
             float best = Mathf.Min(length, WallDistance(from, dir, length) - 0.45f);
-            for (float s = 0.25f; s <= length + 1e-3f; s += 0.25f)
-                if (!HasFloor(Flat(from) + dir * s)) { best = Mathf.Min(best, s - S.queenEdgeMargin); break; }
             return Mathf.Max(0f, best);
+        }
+
+        /// <summary>How far the floor goes on along a line (to <paramref name="length"/> at most): where it first ends.</summary>
+        public static float FloorDistance(Vector3 from, Vector3 dir, float length, float start = 0.25f)
+        {
+            for (float s = start; s <= length + 1e-3f; s += 0.25f)
+                if (!HasFloor(Flat(from) + dir * s)) return Mathf.Max(0f, s - 0.25f);
+            return length;
+        }
+
+        /// <summary>How far the rook's wave runs: to its end, a wall, or the floor's edge (R129: its squares and towers
+        /// no longer hang out over the void past the edge). <paramref name="wall"/>: a wall stops it first.</summary>
+        float RookReach(Vector3 from, Vector3 dir, out bool wall)
+        {
+            float walls = WallDistance(from, dir, S.rookLength), floor = FloorDistance(from, dir, S.rookLength, 0.6f);
+            wall = walls < S.rookLength - 0.01f && walls <= floor;
+            return Mathf.Max(1.2f, Mathf.Min(walls, floor - 0.1f));
         }
 
         // The dashing queen goes through the pieces she cuts instead of running into them.
@@ -563,6 +679,7 @@ namespace ChessFight.RagdollLab
                         var other = p.GetComponent<SwordFightSkills>();
                         if (other == null || hitSet.Contains(p)) continue;
                         // A tower comes up under it: thrown up as well as back (the queen's cut only slides them).
+                        // R132: a king's guard does not stop it (BlockOf).
                         Hit(other, Dir, along <= S.rookNear ? S.rookPushNear : S.rookPushFar, "열린 파일 포격", SfFxKind.RookHit, hitSet.Count, S.rookLift, S.rookLiftCarry);
                     }
                     if (WaveFront >= Reach - 1e-3f)
@@ -609,6 +726,8 @@ namespace ChessFight.RagdollLab
                         var taken = new List<SwordFightSkills>();
                         foreach (var other in All)
                             if (IsEnemy(other) && Flat(other.Pawn.Hips.position - Point).magnitude <= S.bishopRadius + 0.25f) taken.Add(other);
+                        // R130: a king in his guard cuts the hands that come for him (no pin, no slow: he counters).
+                        taken.RemoveAll(o => o.Block(this, Pawn, Floor(o.Pawn.Hips.position), SfBlock.Bishop));
                         Raise(SfFxKind.BishopFire, null, Point, Dir, S.bishopRadius, taken.Count);
                         foreach (var other in taken)
                         {
@@ -633,17 +752,80 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- knight
 
-        void KnightLeap()
+        // R129 (승규 님 10-13: "나이트의 F 스킬을 아예 다른 연출과 액션으로 해줘 (포크 강하라는 이름에 맞게)"): the knight
+        // springs high, hangs a beat at the top (the squares it forks show), then dives straight down onto the aimed square.
+        // A chess fork: from the square it lands on, every enemy on one of the eight squares a knight attacks (an L: two
+        // squares one way, one the other; the squares next to it are jumped over) is struck at once, and whoever stands on
+        // the square itself is stamped down. Its flight is the skill's own (RagdollPawn.Fly), not a throw: the same arc on
+        // every PC and every time, landing exactly on the square.
+
+        /// <summary>The eight knight moves (across to the right, along the aim) in board squares.</summary>
+        public static readonly Vector2Int[] KnightMoves =
+        {
+            new Vector2Int(1, 2), new Vector2Int(2, 1), new Vector2Int(2, -1), new Vector2Int(1, -2),
+            new Vector2Int(-1, -2), new Vector2Int(-2, -1), new Vector2Int(-2, 1), new Vector2Int(-1, 2),
+        };
+
+        Vector3 knightFrom, knightLand, knightApex;
+
+        /// <summary>The eight squares a knight on <paramref name="point"/> facing <paramref name="along"/> attacks.</summary>
+        public void KnightSquaresAt(Vector3 point, Vector3 along)
+        {
+            if (S == null) return;
+            along = Flat(along).sqrMagnitude > 1e-4f ? Flat(along).normalized : Vector3.forward;
+            Vector3 right = Vector3.Cross(Vector3.up, along);
+            for (int i = 0; i < KnightMoves.Length; i++)
+            {
+                Vector3 p = point + (right * KnightMoves[i].x + along * KnightMoves[i].y) * S.knightCell;
+                KnightSquareOn[i] = HasFloor(Flat(p));
+                KnightSquares[i] = Floor(p);
+            }
+        }
+
+        /// <summary>
+        /// Where the knight's hips are <paramref name="t"/> s into its dive, and how far it is tipped forward (degrees):
+        /// a spring up and on to the top (fast off the floor, slowing into it), a beat at the top tipping over, then a dive
+        /// gathering speed straight down onto the square. The same arithmetic draws its path while it aims.
+        /// </summary>
+        public static Vector3 KnightFlight(SwordFightSkillParams S, Vector3 from, Vector3 land, Vector3 dir, float t, out float tip)
+        {
+            Vector3 mid = Vector3.Lerp(Flat(from), Flat(land), S.knightApexAt);
+            var apex = new Vector3(mid.x, Mathf.Max(from.y, land.y) + S.knightApex, mid.z);
+            Vector3 drift = apex + Flat(dir).normalized * 0.12f;
+            float up = Mathf.Max(0.05f, S.knightRise), hold = Mathf.Max(0f, S.knightHover), dive = Mathf.Max(0.05f, S.knightDive);
+            if (t < up)
+            {
+                float u = t / up, eh = 1f - (1f - u) * (1f - u), ev = 1f - (1f - u) * (1f - u) * (1f - u);
+                tip = -18f * u;   // rearing back as it springs
+                return new Vector3(Mathf.Lerp(from.x, apex.x, eh), Mathf.Lerp(from.y, apex.y, ev), Mathf.Lerp(from.z, apex.z, eh));
+            }
+            if (t < up + hold)
+            {
+                float h = (t - up) / Mathf.Max(1e-4f, hold);
+                tip = Mathf.Lerp(-18f, 38f, h * h * (3f - 2f * h));   // tipping over into the dive
+                return Vector3.Lerp(apex, drift, h) + Vector3.up * (0.05f * Mathf.Sin(h * Mathf.PI));
+            }
+            float k = Mathf.Clamp01((t - up - hold) / dive);
+            tip = Mathf.Lerp(38f, 6f, k);
+            return Vector3.Lerp(drift, land, k * k);   // gathering speed all the way down
+        }
+
+        /// <summary>The whole flight, take-off to impact (s).</summary>
+        public float KnightTime => S != null ? S.knightRise + S.knightHover + S.knightDive : 0.6f;
+
+        void KnightGo()
         {
             SetStage(SfStage.Active, "도약");
-            float t = S.knightAir, g = -Physics.gravity.y;
-            Vector3 from = Pawn.Hips.position;
-            Vector3 flat = Flat(Point - from);
-            // Measured (probe "knight"): the standing body adds its own push to the throw and flies about 15% long.
-            Vector3 v = flat / t * 0.875f + Vector3.up * ((Point.y - Origin.y) / t + 0.5f * g * t) * 1.02f;
-            Pawn.Launch(v);
-            Raise(SfFxKind.KnightLeap, null, Origin, Dir, flat.magnitude);
-            Say($"{Pawn.DisplayName}: 포크 강하 {flat.magnitude:0.0} m");
+            knightFrom = Pawn.Hips.position;
+            knightLand = Point + Vector3.up * (Pawn.standHeight + 0.03f);
+            KnightSquaresAt(Point, Dir);
+            Pawn.Face(Dir);
+            // It comes down through the pieces under it instead of onto their heads (they are thrown off as it lands).
+            PassThrough(true);
+            int on = 0;
+            foreach (bool b in KnightSquareOn) on += b ? 1 : 0;
+            Raise(SfFxKind.KnightLeap, null, Origin, Dir, Flat(Point - Origin).magnitude);
+            Say($"{Pawn.DisplayName}: 포크 강하 — {Flat(Point - Origin).magnitude:0.0} m 앞 칸으로 (노리는 칸 {on}개)");
         }
 
         void StepKnight()
@@ -651,30 +833,56 @@ namespace ChessFight.RagdollLab
             switch (Stage)
             {
                 case SfStage.Active:
-                    bool landed = StageTime > 0.25f && (Pawn.Grounded || Pawn.State != PawnState.Active);
-                    if (landed || StageTime > S.knightAir + 0.35f)
+                {
+                    float dt = Time.fixedDeltaTime;
+                    if (StageTime < KnightTime)
                     {
-                        Vector3 land = Floor(Pawn.Hips.position);
-                        Raise(SfFxKind.KnightLand, null, land, Dir, S.knightSpotRadius);
-                        int n = 0;
-                        foreach (var other in All)
-                        {
-                            if (!IsEnemy(other)) continue;
-                            Vector3 o = Flat(other.Pawn.Hips.position);
-                            bool inSpot = false;
-                            foreach (var spot in KnightSpots) inSpot |= Flat(o - spot).magnitude <= S.knightSpotRadius + 0.2f;
-                            if (!inSpot) continue;
-                            Vector3 d = o - Flat(land);
-                            Hit(other, d.sqrMagnitude > 1e-4f ? d.normalized : Dir, S.knightPush, "포크 강하", SfFxKind.KnightHit, n++);
-                        }
-                        Say($"{Pawn.DisplayName}: 착지 — 두 자리에서 적 {n}명");
-                        SetStage(SfStage.Recovery, "후딜");
+                        Vector3 pos = KnightFlight(S, knightFrom, knightLand, Dir, StageTime, out float tip);
+                        Vector3 next = KnightFlight(S, knightFrom, knightLand, Dir, StageTime + dt, out _);
+                        Pawn.Fly(pos, (next - pos) / dt, tip, default, 26f);
+                        break;
                     }
+                    Pawn.EndFlight(Vector3.down * 3.5f);
+                    KnightImpact();
+                    SetStage(SfStage.Recovery, "후딜");
                     break;
+                }
                 case SfStage.Recovery:
                     if (StageTime >= S.knightRecovery) Finish();
                     break;
             }
+        }
+
+        /// <summary>The landing: the square under it stamped, then the fork: the eight squares at once.</summary>
+        void KnightImpact()
+        {
+            Vector3 land = Floor(Pawn.Hips.position);
+            Raise(SfFxKind.KnightLand, null, land, Dir, S.knightCell);
+            int n = 0, stamped = 0;
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other)) continue;
+                Vector3 d = Flat(other.Pawn.Hips.position - land);
+                if (d.magnitude > S.knightStomp || Mathf.Abs(other.Pawn.Hips.position.y - Pawn.Hips.position.y) > 1.2f) continue;
+                Hit(other, d.sqrMagnitude > 1e-4f ? d.normalized : Dir, S.knightStompPush, "포크 강하 · 내리찍기", SfFxKind.KnightHit, n++);
+                stamped++;
+            }
+            int forked = 0;
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other) || hitSet.Contains(other.Pawn)) continue;
+                Vector3 o = Flat(other.Pawn.Hips.position);
+                for (int i = 0; i < KnightMoves.Length; i++)
+                {
+                    if (!KnightSquareOn[i] || Flat(o - KnightSquares[i]).magnitude > S.knightSquare + 0.15f) continue;
+                    if (Mathf.Abs(other.Pawn.Hips.position.y - Pawn.standHeight - KnightSquares[i].y) > 1.4f) continue;
+                    Vector3 d = o - Flat(land);
+                    Hit(other, d.sqrMagnitude > 1e-4f ? d.normalized : Dir, S.knightPush, "포크 강하 · 포크", SfFxKind.KnightHit, n++);
+                    forked++;
+                    break;
+                }
+            }
+            Say($"{Pawn.DisplayName}: 내리꽂음 — 착지 칸 {stamped}명 · L자 칸 {forked}명" + (forked >= 2 ? " (포크!)" : ""));
         }
 
         // ---------------------------------------------------------------- hits
@@ -683,10 +891,15 @@ namespace ChessFight.RagdollLab
             other != null && other != this && other.Fighter != null && other.Fighter.Alive && other.Pawn != null
             && other.Pawn.Team != Pawn.Team && other.Fighter.Protection <= 0f;
 
-        void Hit(SwordFightSkills other, Vector3 dir, float metres, string cause, SfFxKind kind, int order, float lift = -1f, float carry = 1f)
+        /// <summary>A skill's hit on <paramref name="other"/>. False if a king's guard blocked it (R130: nothing happens to
+        /// him, the attacker may be thrown off; the king counters).</summary>
+        bool Hit(SwordFightSkills other, Vector3 dir, float metres, string cause, SfFxKind kind, int order, float lift = -1f, float carry = 1f)
         {
             var target = other.Pawn;
             hitSet.Add(target);
+            var block = BlockOf(kind);
+            if (block != SfBlock.None && other.Block(this, Pawn, Vector3.Lerp(Pawn.bodies[(int)BodyId.Chest].position, target.bodies[(int)BodyId.Chest].position, 0.75f), block))
+                return false;
             dir = Flat(dir).normalized;
             Vector3 push = dir * (metres * S.pushPerMetre * carry) + Vector3.up * (lift >= 0f ? lift : S.pushLift);
             target.TakeHit(push, S.knockdownSeconds, 0f, true);
@@ -696,7 +909,20 @@ namespace ChessFight.RagdollLab
             if (other.Stage != SfStage.None) other.Clear();
             Raise(kind, target, Vector3.Lerp(Pawn.bodies[(int)BodyId.Chest].position, target.bodies[(int)BodyId.Chest].position, 0.7f), dir, metres, order);
             Say($"{Pawn.DisplayName} → {target.DisplayName}: {cause} {metres:0.0} m 밀림");
+            return true;
         }
+
+        /// <summary>Which of a king's blocks a skill's hit is (R130); the king's own counter is never blocked, nor (R132,
+        /// 승규 님: "왕은 룩의 F 스킬을 막지 못해") the rook's wave.</summary>
+        static SfBlock BlockOf(SfFxKind kind) => kind switch
+        {
+            SfFxKind.QueenHit => SfBlock.Queen,
+            SfFxKind.RookHit => SfBlock.None,
+            SfFxKind.KnightHit => SfBlock.Knight,
+            SfFxKind.KnightKickHit => SfBlock.KnightEdge,
+            SfFxKind.KingCounterHit => SfBlock.None,
+            _ => SfBlock.Sword,
+        };
 
         /// <summary>Enemies along a line on the floor: from <paramref name="from"/> to <paramref name="to"/> metres ahead,
         /// within <paramref name="half"/> to the side, nearest first.</summary>
@@ -745,7 +971,13 @@ namespace ChessFight.RagdollLab
                 switch (Piece)
                 {
                     case PieceKind.King when Stage == SfStage.Windup: return (-side + Vector3.up * 0.15f).normalized;
-                    case PieceKind.King when Stage == SfStage.Active: return (f + side * 0.6f).normalized;
+                    case PieceKind.King when Stage == SfStage.Active:
+                    {
+                        // R130: held up across his front through the block's beat, then swept once round with the spin.
+                        float k = CounterSpin;
+                        if (k <= 0f) return (side + Vector3.up * 0.55f + f * 0.25f).normalized;
+                        return Quaternion.AngleAxis(-360f * (k * k * (3f - 2f * k)), Vector3.up) * (f + side * 0.6f).normalized;
+                    }
                     case PieceKind.Queen when Stage == SfStage.Windup: return (f + Vector3.up * 0.1f).normalized;
                     case PieceKind.Queen when Stage == SfStage.Active || Stage == SfStage.Recovery: return f;
                     case PieceKind.Rook when Stage == SfStage.Windup: return (Vector3.up - f * 0.35f).normalized;
@@ -765,11 +997,11 @@ namespace ChessFight.RagdollLab
             {
                 if (HasSkill && EdgeStage != SfEdge.None)
                 {
-                    var e = Colors(Piece);
+                    var e = SwordFightSkillFx.CardColors(Piece);
                     return Color.Lerp(e.main, Color.white, 0.25f + 0.25f * Mathf.Sin(Time.time * 36f));
                 }
                 if (!HasSkill || (Stage != SfStage.Windup && Stage != SfStage.Active)) return null;
-                var p = Colors(Piece);
+                var p = SwordFightSkillFx.CardColors(Piece);
                 // Brighter toward the release, white in the windup's last frames (it is about to go).
                 float k = Stage == SfStage.Active ? 1f : Mathf.Clamp01(StageTime / 0.25f);
                 return Color.Lerp(p.main, p.light, 0.5f + 0.5f * Mathf.Sin(Time.time * 30f) * k);
