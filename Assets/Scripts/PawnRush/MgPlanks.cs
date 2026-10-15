@@ -17,7 +17,7 @@ namespace ChessFight.PawnRush
     // Online (R126): the block carries who is carrying (their roster seats), so every PC draws the plank
     // over the carrier's head - before R126 only the host saw them, and on every other screen the pawns
     // walked from the pile to the bridge empty-handed.
-    public sealed class MgPlanks : MiniGameBase
+    public sealed class MgPlanks : MiniGameBase, IProgressCount
     {
         public const int Rows = 5, Columns = 2, PerPile = 5;
         public const float PickSeconds = 1f, LaySeconds = 1.5f, ReturnSeconds = 5f;
@@ -49,6 +49,8 @@ namespace ChessFight.PawnRush
         int count;
 
         public int Laid => count;
+        public int Done => count;
+        public int Total => Rows * Columns;
 
         public static MgPlanks Build(CourseBuilder b, MissionStation station)
         {

@@ -85,7 +85,8 @@ namespace ChessFight.PawnRush
             // wall; the south is open). Pawns walk between them.
             var wood = Arena.Wood(false);
             float edge = PawnRushBoard.N * PawnRushBoard.Cell * .5f + .2f;
-            for (float u = PawnRushBoard.U0; u <= 20f - .3f; u += 1.5f)
+            // From u 2.75: nothing solid in the entrance band (u 0..2.5, mini-games v1.0 §1.5).
+            for (float u = PawnRushBoard.U0 + .75f; u <= 20f - .3f; u += 1.5f)
                 foreach (float side in new[] { -1f, 1f })
                     b.Box("Fence post", new Vector3(side * edge - .075f, 0f, u - .075f), new Vector3(side * edge + .075f, .55f, u + .075f), wood, true);
 
