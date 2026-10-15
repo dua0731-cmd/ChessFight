@@ -27,6 +27,7 @@ namespace ChessFight.PawnRush
                 case PawnRushMissions.Drawbridge: built = MgDrawbridge.Build(b, station); break;
                 case PawnRushMissions.Capstan: built = MgCapstan.Build(b, station); break;
                 case PawnRushMissions.Bells: built = MgBells.Build(b, station); break;
+                case PawnRushMissions.EnPassant: built = MgEnPassant.Build(b, station); break;
             }
             root.SetActive(true);
             return built;
