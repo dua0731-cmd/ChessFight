@@ -60,15 +60,21 @@ namespace ChessFight.PawnRush
         void Awake()
         {
             voices = new AudioSource[Voices];
-            for (int i = 0; i < Voices; i++)
-            {
-                var a = gameObject.AddComponent<AudioSource>();
-                a.playOnAwake = false;
-                a.rolloffMode = AudioRolloffMode.Linear;
-                a.minDistance = 3f;
-                a.maxDistance = 30f;
-                voices[i] = a;
-            }
+            // Each voice on its own child: a voice is moved to where its sound is, and moving the effects' root
+            // would carry every ring and beam with it.
+            for (int i = 0; i < Voices; i++) voices[i] = NewVoice("SFX voice");
+        }
+
+        AudioSource NewVoice(string name)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            var a = go.AddComponent<AudioSource>();
+            a.playOnAwake = false;
+            a.rolloffMode = AudioRolloffMode.Linear;
+            a.minDistance = 3f;
+            a.maxDistance = 30f;
+            return a;
         }
 
         void OnDestroy()
@@ -211,6 +217,38 @@ namespace ChessFight.PawnRush
             voice.pitch = pitch * Random.Range(.95f, 1.05f);
             voice.PlayOneShot(clip, volume);
         }
+
+        // A sound the caller may cut short (A's charge stops when the pawn steps off): its own voice, or null when
+        // the file is missing. Stop it with Cut.
+        public static AudioSource Hold(string name, Vector3 at, float pitch = 1f, float volume = 1f)
+        {
+            var fx = Get();
+            if (fx == null || string.IsNullOrEmpty(name)) return null;
+            var clip = fx.Clip(name);
+            if (clip == null) return null;
+            AudioSource voice = null;
+            foreach (var v in fx.held) if (!v.isPlaying) { voice = v; break; }
+            if (voice == null)
+            {
+                if (fx.held.Count >= 16) return null;
+                voice = fx.NewVoice("SFX held voice");
+                fx.held.Add(voice);
+            }
+            voice.transform.position = at;
+            voice.spatialBlend = 1f;
+            voice.clip = clip;
+            voice.volume = volume;
+            voice.pitch = pitch * Random.Range(.95f, 1.05f);
+            voice.Play();
+            return voice;
+        }
+
+        public static void Cut(AudioSource voice)
+        {
+            if (voice != null) voice.Stop();
+        }
+
+        readonly List<AudioSource> held = new List<AudioSource>();
 
         AudioClip Clip(string name)
         {
