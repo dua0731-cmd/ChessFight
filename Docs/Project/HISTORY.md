@@ -7,7 +7,10 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-15 | R126 | 문서: HANDOFF·REQUIREMENTS·DECISIONS P10~P14·T11·PITFALLS 39~41·VALIDATION R126 표·PAWN_RUSH_COURSE01 §4-3. 시험: Core 115·세션 41 |
+| (이 커밋) | 10-15 | R126 | 병합: `claude/adoring-lamport-7l6uib`에 다른 채팅(승규 님)이 올린 R126(스킬 그림 체스판 발판)·R127(칠하기 칸 6 mm) 두 커밋. `MgPaint`는 새 공유 판 쪽을 쓰고 R127의 뜻(스킬 경고가 칸 위에)은 `PaintBoard` 칸 높이로 유지. 이 병합은 그 브랜치에만(`main`에는 아직 안 넣음) |
+| `9f3cedf` | 10-12 | R127(승규 님) | 미니게임 A 칠하기 칸 3 cm → 6 mm(스킬 경고가 묻히지 않게) |
+| `be937c3` | 10-12 | R126(승규 님, 다른 요청) | 폰 러쉬 스킬 그림을 체스판 발판 모양으로(`SkillTileBoard`·`SkillGloss` 셰이더, `PawnRushSkillFx.Board`, F 카드) |
+| `a27d110` | 10-15 | R126 | 문서: HANDOFF·REQUIREMENTS·DECISIONS P10~P14·T11·PITFALLS 39~41·VALIDATION R126 표·PAWN_RUSH_COURSE01 §4-3. 시험: Core 115·세션 41 |
 | `1c21f1c` | 10-15 | R126 | 11단계: 검증기 v1.0 검사(입구 띠·승격 발판·손잡이·움직이는 것 `NoClimbSurface`), B·E 문 위 개수, H 울타리 u 2.75부터 |
 | `afec51f` | 10-15 | R126 | J 나이트 도약대(`MgKnightPads`, 조준·준비·랩 던지기·착지·충돌·깃발, `MgWaterReturn`), `WaterZone.Report`, `MiniGameBase.LocalDriver` |
 | `977fc41` | 10-15 | R126 | I 체크 막기(`MgCheckBlock`, 방장 씨앗 → 같은 배치, 레일 수레·나이트·폰·이중 체크) |

@@ -143,7 +143,9 @@ namespace ChessFight.PawnRush
                 sq.localPosition = new Vector3(c.V, 0f, c.U);
                 squares[s] = sq;
                 float h = Tile * .5f;
-                tiles[s] = Arena.Picture(sq, "Tile", new Vector3(-h, 0f, -h), new Vector3(h, TileHeight + .005f, h), slate).GetComponent<Renderer>();
+                // The tiles' top is the collider's (+2 mm): skill warnings, which sit 1.4-2 cm over the floor they find,
+                // lie on top of them (the other session's R127 for the old squares).
+                tiles[s] = Arena.Picture(sq, "Tile", new Vector3(-h, 0f, -h), new Vector3(h, TileHeight + .002f, h), slate).GetComponent<Renderer>();
                 // The colour dots in the south-west and north-east corners: the board's colours before any paint.
                 var dot = TeamOf(s) == Teams.White ? lightDot : darkDot;
                 MiniGameParts.Part(sq, PrimitiveType.Cylinder, new Vector3(-.8f, TileHeight + .01f, -.8f), new Vector3(.26f, .005f, .26f), dot);

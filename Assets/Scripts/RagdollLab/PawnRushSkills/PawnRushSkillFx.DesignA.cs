@@ -38,6 +38,7 @@ namespace ChessFight.RagdollLab
                 pawnMesh = chessMeshes != null && chessMeshes.Length > 0 ? chessMeshes[0] : null,
             };
             RagdollPawn.SkillMarksHidden = true;
+            BuildBoardLook();
         }
 
         void DestroyDesignA()
@@ -122,6 +123,7 @@ namespace ChessFight.RagdollLab
                 t.shape = 1f;
                 t.inner = Mathf.Clamp01(1f - band / Mathf.Max(0.05f, radius));
                 t.fill = Kit.A(p.main, 1f);
+                t.metal = p.metal;
                 t.core = Kit.A(p.light, 1f);
                 t.coreWidth = Mathf.Min(0.035f, band * 0.3f);
                 t.ink = Kit.A(p.ink, 1f);
@@ -153,6 +155,7 @@ namespace ChessFight.RagdollLab
                 t.shape = 1f;
                 t.inner = 0.7f;
                 t.fill = Kit.A(p.main, 1f);
+                t.metal = p.metal;
                 t.core = Kit.A(Color.white, 1f);
                 t.coreWidth = 0.04f;
                 t.ink = Kit.A(p.ink, 1f);
@@ -207,24 +210,34 @@ namespace ChessFight.RagdollLab
                     if (released < 0f) k = Kit.Charge(q.SkillStageTime, windup);
                     float flash = a >= 0f && a < 2f ? 1f : 0f;
                     float fade = released < 0f ? Mathf.Clamp01(x.age / (4f * Frame)) : 1f - Mathf.Clamp01((a - 2f) / 4f);
-                    var p = Kit.Queen;
+                    var p = kit.queen;
                     // The inner disc and the band round it.
                     var disc = x.tiles[0];
                     disc.Floor(c, Vector3.forward, Vector2.one * (2f * inner));
                     disc.shape = 2f;
+                    disc.thick = 0f;
+                    disc.shadow = 0f;
                     disc.fade = fade;
                     WarnFill(disc, q, 0.25f * Mathf.Lerp(0.5f, 1f, k), k, 0f);
                     disc.inkWidth = 0f;
                     disc.rim = Color.clear;
+                    disc.metal = 0f;
+                    disc.bevel = Color.clear;
+                    if (board) BoardZone(disc, q, 0.4f * k, flash);
                     disc.Apply();
                     var band = x.tiles[1];
                     band.Floor(c - Vector3.up * 0.002f, Vector3.forward, Vector2.one * (2f * outer));
                     band.shape = 1f;
                     band.inner = inner / outer;
+                    band.thick = 0f;
+                    band.shadow = 0f;
                     band.fade = fade;
                     WarnFill(band, q, 0.15f * Mathf.Lerp(0.5f, 1f, k), k, 0f);
                     band.inkWidth = 0f;
                     band.rim = Color.clear;
+                    band.metal = 0f;
+                    band.bevel = Color.clear;
+                    if (board) BoardZone(band, q, 0.24f * k, flash);
                     band.Apply();
                     // The solid inner ring, 0.18 m.
                     var ring = x.tiles[2];
@@ -249,6 +262,8 @@ namespace ChessFight.RagdollLab
                     sweep.rim = Color.clear;
                     sweep.stripe = Color.clear;
                     sweep.arc = 0.07f;
+                    sweep.baseColor = Color.clear;   // board look: no walls of its own, it lies on the ring's top
+                    sweep.shadow = 0f;
                     sweep.fade = released < 0f ? fade : 0f;
                     sweep.Apply();
                     // Sixteen dashes at her reach, 0.12 m wide.
@@ -271,6 +286,16 @@ namespace ChessFight.RagdollLab
             });
         }
 
+        /// <summary>The board look's zone (R126): no fill, only sliding stripes (gold for mine and my side's, mauve for
+        /// the other side's), so the board's own squares stay clean under it.</summary>
+        void BoardZone(Kit.Tile t, RagdollPawn q, float alpha, float flash)
+        {
+            bool enemy = kit.SideOf(q) == Kit.Side.Enemy;
+            t.fill = Kit.A(Color.white, flash > 0f ? 0.6f : 0f);
+            t.stripe = Kit.A(enemy ? kit.enemy.main : kit.queen.main, alpha);
+            t.stripePhase = kit.Clock * 0.5f;
+        }
+
         /// <summary>
         /// The queen's crown ring (A): riding the rim of her ring of fire puffs as it races out to her reach in eight
         /// frames, a gold ring with eight round pearls at the queen's eight ways (a crown seen from above); the knockdown
@@ -278,7 +303,7 @@ namespace ChessFight.RagdollLab
         /// </summary>
         void QueenCrown(Vector3 c, float inner, float outer)
         {
-            var p = Kit.Queen;
+            var p = kit.queen;
             var f = kit.Run(0.55f, (fx, d) =>
             {
                 float a = fx.age / Frame;
@@ -290,6 +315,7 @@ namespace ChessFight.RagdollLab
                 ring.shape = 1f;
                 ring.inner = Mathf.Clamp01(1f - 0.16f / Mathf.Max(0.3f, r));
                 ring.fill = Kit.A(p.main, 1f);
+                ring.metal = p.metal;
                 ring.core = Kit.A(p.light, 1f);
                 ring.coreWidth = 0.035f;
                 ring.ink = Kit.A(p.ink, 1f);
@@ -314,6 +340,7 @@ namespace ChessFight.RagdollLab
                 thick.shape = 1f;
                 thick.inner = Mathf.Clamp01(1f - 0.35f / inner);
                 thick.fill = Kit.A(p.main, 1f);
+                thick.metal = p.metal;
                 thick.core = Kit.A(p.light, 1f);
                 thick.coreWidth = 0.06f;
                 thick.ink = Kit.A(p.ink, 1f);
@@ -328,6 +355,7 @@ namespace ChessFight.RagdollLab
                 thin.shape = 1f;
                 thin.inner = Mathf.Clamp01(1f - 0.1f / outer);
                 thin.fill = Kit.A(p.main, 1f);
+                thin.metal = p.metal;
                 thin.core = Color.clear;
                 thin.ink = Kit.A(p.ink, 1f);
                 thin.inkWidth = 0.025f;
@@ -340,7 +368,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < 3; i++) f.tiles.Add(new Kit.Tile(kit, "Queen crown"));
             for (int i = 0; i < 8; i++)
             {
-                var pearl = new Kit.Prop(kit, kit.meshBall, p, "Queen pearl") { inkWidth = 0.014f };
+                var pearl = new Kit.Prop(kit, kit.meshBall, board ? BPearl : p, "Queen pearl") { inkWidth = 0.014f };
                 pearl.Show(false);
                 f.props.Add(pearl);
             }
@@ -349,7 +377,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The queen's flash as she springs open (A): a white ball round her for two frames.</summary>
         void WhiteBall(Vector3 at, float radius)
         {
-            var ball = new Kit.Prop(kit, kit.meshPuff, Kit.Queen, "White flash") { inkWidth = 0.02f, flash = 1f };
+            var ball = new Kit.Prop(kit, kit.meshPuff, kit.queen, "White flash") { inkWidth = 0.02f, flash = 1f };
             ball.Apply();
             var f = kit.Run(2f * Frame, (fx, d) =>
             {
@@ -386,7 +414,7 @@ namespace ChessFight.RagdollLab
             {
                 var fx = new Kit.Fx();
                 for (int i = 0; i < 4; i++) fx.tiles.Add(new Kit.Tile(kit, "Rook warning"));
-                for (int i = 0; i < 2; i++) fx.strips.Add(new Kit.Strip(kit, Kit.Rook));
+                for (int i = 0; i < 2; i++) fx.strips.Add(new Kit.Strip(kit, kit.rook));
                 float released = -1f, lockedAt = -1f;
                 Vector3 dir = Vector3.forward;
                 var squares = new List<Vector3>();
@@ -432,6 +460,16 @@ namespace ChessFight.RagdollLab
                         t.core = lockedAt >= 0f ? Kit.A(Color.white, 0.9f) : Color.clear;
                         t.coreWidth = 0.05f;
                         if (blink) t.rim = Kit.A(Color.white, 1f);
+                        if (board)
+                        {
+                            // The board look: the sliding chevron runs over the pads (the course's arrow pads): the same
+                            // one-every-0.4 s run along the file, drawn on whichever pad it is over.
+                            int pads = Mathf.Max(1, wall ? squares.Count - 1 : squares.Count);
+                            float slide = Mathf.Lerp(Square * 0.5f, Square * (pads - 0.3f), released < 0f ? (x.age % 0.4f) / 0.4f : 0f);
+                            t.chevron = onWall ? Color.clear : Kit.A(BNavy, released < 0f ? 0.85f * Mathf.Clamp01(x.age / (6f * Frame)) : 0f);
+                            t.chevronPhase = slide - Square * (i + 0.5f);
+                            t.chevronStep = 100f;
+                        }
                         t.Apply();
                     }
                     // The chevron sliding along the file, looping every 0.4 s.
@@ -444,6 +482,7 @@ namespace ChessFight.RagdollLab
                     for (int i = 0; i < 2; i++)
                     {
                         var st = x.strips[i];
+                        if (board) { st.Hide(); continue; }
                         Vector3 back = tip - dir * 0.3f + side * (i == 0 ? -0.3f : 0.3f);
                         st.colors = pal;
                         st.core = pal.light;
@@ -491,7 +530,7 @@ namespace ChessFight.RagdollLab
             kit.Keep(r, "rook air line", () =>
             {
                 var fx = new Kit.Fx();
-                fx.strips.Add(new Kit.Strip(kit, Kit.Rook));
+                fx.strips.Add(new Kit.Strip(kit, kit.rook));
                 fx.tiles.Add(new Kit.Tile(kit, "Rook air landing"));
                 float released = -1f;
                 fx.step = (x, d) =>
@@ -529,7 +568,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The rook digging in (A's lock): eight square stone puffs pushed out round its base and sinking away.</summary>
         void StoneRing(Vector3 feet)
         {
-            var mesh = kit.RoundBox(Vector3.one, 0.22f);
+            var mesh = board ? kit.RoundBox(new Vector3(1f, 0.45f, 1f), 0.1f) : kit.RoundBox(Vector3.one, 0.22f);
             var f = kit.Run(0.4f, (fx, d) =>
             {
                 float a = fx.age / Frame;
@@ -549,7 +588,8 @@ namespace ChessFight.RagdollLab
             });
             for (int i = 0; i < 8; i++)
             {
-                var p = new Kit.Prop(kit, mesh, Kit.Stone, "Stone puff") { inkWidth = 0.014f };
+                var p = new Kit.Prop(kit, mesh, board ? BOrange : Kit.Stone, "Stone puff") { inkWidth = 0.014f, twoTone = board };
+                p.Apply();
                 p.Show(false);
                 f.props.Add(p);
             }
@@ -562,7 +602,7 @@ namespace ChessFight.RagdollLab
         /// </summary>
         void BattlementRing(Vector3 at, Vector3 normal, float radius)
         {
-            var p = Kit.Rook;
+            var p = board ? BSilver : kit.rook;
             normal = normal.sqrMagnitude > 1e-4f ? normal.normalized : Vector3.up;
             Vector3 up = Mathf.Abs(Vector3.Dot(normal, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
             var f = kit.Run(42f * Frame, (fx, d) =>
@@ -575,7 +615,8 @@ namespace ChessFight.RagdollLab
                 ring.shape = 1f;
                 ring.inner = 0.72f;
                 ring.fill = Kit.A(p.main, 1f);
-                ring.core = Kit.A(p.light, 1f);
+                ring.metal = p.metal;
+                ring.core = Kit.A(board ? BOrange.main : p.light, 1f);
                 ring.coreWidth = 0.05f;
                 ring.ink = Kit.A(p.ink, 1f);
                 ring.inkWidth = 0.035f;
@@ -595,7 +636,8 @@ namespace ChessFight.RagdollLab
                     tooth.shape = 0f;
                     tooth.round = 0.04f;
                     tooth.fill = Kit.A(p.main, 1f);
-                    tooth.core = Kit.A(p.light, 1f);
+                    tooth.metal = p.metal;
+                    tooth.core = Kit.A(board ? BOrange.main : p.light, 1f);
                     tooth.coreWidth = 0.03f;
                     tooth.ink = Kit.A(p.ink, 1f);
                     tooth.inkWidth = 0.03f;
@@ -608,6 +650,8 @@ namespace ChessFight.RagdollLab
                 var flash = fx.tiles[9];
                 flash.Facing(at + normal * 0.035f, normal, Vector2.one * (radius * 1.3f), up);
                 flash.shape = 2f;
+                flash.thick = 0f;
+                flash.shadow = 0f;
                 flash.fill = Kit.A(Color.white, 1f);
                 flash.ink = Color.clear;
                 flash.core = Color.clear;
@@ -618,7 +662,7 @@ namespace ChessFight.RagdollLab
                 return true;
             });
             for (int i = 0; i < 10; i++) f.tiles.Add(new Kit.Tile(kit, "Battlement ring"));
-            kit.PuffBurst(at + normal * 0.25f, Kit.Stone, 6, 0.6f, 0.26f, 0.5f, 0.2f);
+            kit.PuffBurst(at + normal * 0.25f, board ? kit.dust : Kit.Stone, 6, 0.6f, 0.26f, 0.5f, 0.2f);
         }
 
         /// <summary>The face a charge met, pointing back out of it (R92): a ray along the charge finds the face itself
@@ -723,7 +767,7 @@ namespace ChessFight.RagdollLab
                     Vector3 c = b.BishopAimPoint + Vector3.up * 0.02f, yaw = Kit.FlatDir(b.BishopAimYaw, Vector3.forward);
                     Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * yaw, d2 = Quaternion.Euler(0f, -45f, 0f) * yaw;
                     int k = 0;
-                    var p = Kit.Bishop;
+                    var p = kit.bishop;
                     foreach (var line in new[] { d1, d2 })
                         for (int i = -3; i <= 3; i++)
                         {
@@ -741,6 +785,14 @@ namespace ChessFight.RagdollLab
                             t.rim = Color.clear;
                             t.stripe = Color.clear;
                             t.fade = valid ? fade : 0f;
+                            if (board)
+                            {
+                                t.fill = Kit.A(BSquare.main, 0.85f);
+                                t.bevel = Kit.A(BSquare.light, 0.8f);
+                                t.bevelWidth = 0.04f;
+                                t.ink = Kit.A(BNavy, 0.9f);
+                                t.thick = 0.03f;
+                            }
                             t.Apply();
                         }
                     var mitre = x.tiles[12];
@@ -755,18 +807,27 @@ namespace ChessFight.RagdollLab
                     mitre.rim = Color.clear;
                     mitre.stripe = Color.clear;
                     mitre.fade = valid ? fade : 0f;
+                    if (board)
+                    {
+                        mitre.fill = Kit.A(BSilver.main, 1f);
+                        mitre.metal = 1f;
+                        mitre.core = Color.clear;
+                        mitre.ink = Kit.A(BNavy, 1f);
+                    }
                     mitre.Apply();
                     var reach = x.tiles[13];
                     reach.Floor(b.FeetPoint + Vector3.up * 0.012f, Vector3.forward, Vector2.one * (2f * range));
                     reach.shape = 1f;
                     reach.inner = 1f - 0.05f / range;
-                    reach.fill = Kit.A(Kit.SelfFill, 0.5f);
-                    reach.ink = Kit.A(Kit.SelfInk, 0.35f);
+                    reach.fill = Kit.A(kit.selfFill, 0.5f);
+                    reach.ink = Kit.A(kit.selfInk, 0.35f);
                     reach.inkWidth = 0.012f;
                     reach.core = Color.clear;
                     reach.rim = Color.clear;
                     reach.stripe = Color.clear;
                     reach.fade = fade * 0.8f;
+                    reach.thick = 0f;
+                    reach.shadow = 0f;
                     reach.Apply();
                     return true;
                 };
@@ -784,15 +845,15 @@ namespace ChessFight.RagdollLab
                 var fx = new Kit.Fx();
                 var pivot = new GameObject("Bishop X").transform;
                 pivot.SetParent(kit.root, false);
-                var p = Kit.Bishop;
+                var p = kit.bishop;
                 var rod = kit.RoundBox(new Vector3(0.07f, 0.07f, 0.9f), 0.03f);
                 for (int i = 0; i < 2; i++)
                 {
-                    var r = new Kit.Prop(kit, rod, p, "Bishop rod", pivot) { inkWidth = 0.012f };
+                    var r = new Kit.Prop(kit, rod, board ? BSquare : p, "Bishop rod", pivot) { inkWidth = 0.012f };
                     r.t.localRotation = Quaternion.Euler(0f, i == 0 ? 45f : -45f, 0f);
                     fx.props.Add(r);
                 }
-                var capColors = new Kit.Palette { main = p.light, light = Color.white, deep = p.main, ink = p.ink };
+                var capColors = board ? BSilver : new Kit.Palette { main = p.light, light = Color.white, deep = p.main, ink = p.ink };
                 for (int i = 0; i < 4; i++)
                 {
                     var cap = new Kit.Prop(kit, kit.meshBall, capColors, "Bishop cap", pivot) { inkWidth = 0.012f };
@@ -827,7 +888,7 @@ namespace ChessFight.RagdollLab
             float half = length * 0.5f;
             Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * f, d2 = Quaternion.Euler(0f, -45f, 0f) * f;
             foreach (var end in new[] { center - d1 * half, center + d1 * half, center - d2 * half, center + d2 * half })
-                kit.PuffBurst(end + Vector3.up * 0.08f, Kit.Bishop, 2, 0.15f, 0.12f, 0.35f, 0.1f);
+                kit.PuffBurst(end + Vector3.up * 0.08f, board ? kit.dust : kit.bishop, 2, 0.15f, 0.12f, 0.35f, 0.1f);
         }
 
         /// <summary>
@@ -846,7 +907,7 @@ namespace ChessFight.RagdollLab
             {
                 var fx = new Kit.Fx();
                 foreach (var _ in set.SquarePoints) fx.tiles.Add(new Kit.Tile(kit, "Wire team rim"));
-                for (int i = 0; i < 4; i++) fx.strips.Add(new Kit.Strip(kit, Kit.Bishop) { core = Color.white });
+                for (int i = 0; i < 4; i++) fx.strips.Add(new Kit.Strip(kit, kit.bishop) { core = Color.white });
                 float armedAt = -1f;
                 var ends = new Vector3[4];
                 var owner = set.owner;
@@ -873,17 +934,18 @@ namespace ChessFight.RagdollLab
                     foreach (var (at, size, rotation) in set.SquarePoints)
                     {
                         var t = x.tiles[i++];
+                        if (board) { t.Hide(); continue; }
                         t.t.SetPositionAndRotation(at + Vector3.up * 0.004f, rotation * Quaternion.LookRotation(Vector3.down, Vector3.forward));
                         t.Size(Vector2.one * size * 1.0f);
                         t.shape = 0f;
                         t.round = 0.05f;
                         t.fill = Color.clear;
                         t.core = Color.clear;
-                        t.rim = Kit.A(side == Kit.Side.Self ? Kit.SelfFill : side == Kit.Side.Ally ? Kit.TeamAlly.main : Kit.TeamEnemy.main, 0.9f);
+                        t.rim = Kit.A(side == Kit.Side.Self ? kit.selfFill : side == Kit.Side.Ally ? kit.ally.main : kit.enemy.main, 0.9f);
                         t.rimWidth = 0.06f;
-                        t.ink = Kit.A(side == Kit.Side.Self ? Kit.SelfInk : side == Kit.Side.Ally ? Kit.TeamAlly.ink : Kit.TeamEnemy.ink, 0.9f);
+                        t.ink = Kit.A(side == Kit.Side.Self ? kit.selfInk : side == Kit.Side.Ally ? kit.ally.ink : kit.enemy.ink, 0.9f);
                         t.inkWidth = 0.025f;
-                        t.stripe = side == Kit.Side.Enemy ? Kit.A(Kit.TeamEnemy.deep, 0.5f) : Color.clear;
+                        t.stripe = side == Kit.Side.Enemy ? Kit.A(kit.enemy.deep, 0.5f) : Color.clear;
                         t.stripePhase = kit.Clock * 0.5f;
                         t.fade = Mathf.Clamp01(level / 0.4f) * Mathf.Clamp01(x.age / 0.1f);
                         t.Apply();
@@ -899,7 +961,7 @@ namespace ChessFight.RagdollLab
                         Vector3 end = k % 2 == 0 ? a : b, from = (a + b) * 0.5f;
                         Vector3 head = Vector3.Lerp(from, end, Mathf.Clamp01(run)), tail = Vector3.Lerp(from, end, Mathf.Clamp01(run - 0.3f / Mathf.Max(0.1f, Vector3.Distance(from, end))));
                         st.Build(new List<Vector3> { tail, head }, q => 0.07f, kit.Eye);
-                        st.colors = new Kit.Palette { main = Color.white, light = Color.white, deep = Kit.Bishop.main, ink = Kit.Bishop.ink };
+                        st.colors = new Kit.Palette { main = Color.white, light = Color.white, deep = kit.bishop.main, ink = kit.bishop.ink };
                         st.core = Color.white;
                         st.taper = 0.5f;
                         st.fade = 1f - Mathf.Clamp01((run - 1f) / 0.2f);
@@ -933,7 +995,7 @@ namespace ChessFight.RagdollLab
         {
             if (kit == null) return;
             var mesh = kit.RoundBox(new Vector3(0.07f, 1f, 0.07f), 0.03f);
-            var cream = new Kit.Palette { main = Kit.Hex("#EBE6D1"), light = Color.white, deep = Kit.Hex("#B8B09A"), ink = Kit.Bishop.ink };
+            var cream = board ? BSilver : new Kit.Palette { main = Kit.Hex("#EBE6D1"), light = Color.white, deep = Kit.Hex("#B8B09A"), ink = kit.bishop.ink };
             var f = kit.Run(8f * Frame, (fx, d) =>
             {
                 float k = Mathf.Clamp01(fx.age / (8f * Frame));
@@ -953,7 +1015,7 @@ namespace ChessFight.RagdollLab
                 if (ends[i] == Vector3.zero) continue;
                 var p = new Kit.Prop(kit, mesh, cream, "Sinking peg") { inkWidth = 0.01f };
                 f.props.Add(p);
-                kit.PuffBurst(ends[i] - Vector3.up * (height - 0.05f), Kit.Bishop, 2, 0.15f, 0.12f, 0.35f, 0.1f);
+                kit.PuffBurst(ends[i] - Vector3.up * (height - 0.05f), board ? kit.dust : kit.bishop, 2, 0.15f, 0.12f, 0.35f, 0.1f);
             }
         }
 
@@ -1004,17 +1066,30 @@ namespace ChessFight.RagdollLab
                             t.round = 0.07f;
                             t.fade = Mathf.Clamp01(x.age / (6f * Frame));
                             kit.Warn(t, k, 0.38f);
+                            if (board)
+                            {
+                                t.chevron = Kit.A(BNavy, 0.7f);
+                                t.chevronPhase = 0f;
+                                t.chevronStep = 100f;
+                                t.Apply();
+                            }
                         }
                         // The horseshoe: 1.4 m across at take-off, 1 m at touchdown, turning 90°/s.
                         var shoe = x.tiles[8];
                         float r = Mathf.Lerp(0.7f, 0.5f, KnightFlightShare(k));
                         shoe.Floor(floorSpot + Vector3.up * 0.006f, Quaternion.Euler(0f, kit.Clock * 90f, 0f) * Vector3.forward, Vector2.one * (2f * r));
-                        Kit.Horseshoe(shoe, Kit.Knight, 1f);
+                        Kit.Horseshoe(shoe, kit.knight, 1f);
                         var side = kit.SideOf(k);
-                        if (side == Kit.Side.Enemy)
+                        if (side == Kit.Side.Enemy && board)
                         {
-                            shoe.ink = Kit.A(Kit.TeamEnemy.main, 1f);
-                            shoe.stripe = Kit.A(Kit.TeamEnemy.deep, 0.5f);
+                            shoe.baseColor = kit.enemy.deep;
+                            shoe.stripe = Kit.A(kit.enemy.main, 0.45f);
+                            shoe.stripePhase = kit.Clock * 0.5f;
+                        }
+                        else if (side == Kit.Side.Enemy)
+                        {
+                            shoe.ink = Kit.A(kit.enemy.main, 1f);
+                            shoe.stripe = Kit.A(kit.enemy.deep, 0.5f);
                             shoe.stripePhase = kit.Clock * 0.5f;
                         }
                         shoe.fade = Mathf.Clamp01(x.age / (4f * Frame));
@@ -1031,7 +1106,7 @@ namespace ChessFight.RagdollLab
                 {
                     var fx = new Kit.Fx();
                     fx.tiles.Add(new Kit.Tile(kit, "Knight lock ring"));
-                    fx.strips.Add(new Kit.Strip(kit, Kit.TeamEnemy));
+                    fx.strips.Add(new Kit.Strip(kit, board ? BOrange : kit.enemy));
                     fx.step = (x, d) =>
                     {
                         var m = k != null ? k.KnightMarked : null;
@@ -1041,20 +1116,25 @@ namespace ChessFight.RagdollLab
                         ring.Floor(m.FeetPoint + Vector3.up * 0.02f, Vector3.forward, Vector2.one * 1.0f * Kit.Pop(x.age, 1.15f));
                         ring.shape = 1f;
                         ring.inner = 0.72f;
-                        ring.fill = Kit.A(Kit.TeamEnemy.main, blink);
+                        ring.fill = Kit.A(kit.enemy.main, blink);
                         ring.core = Kit.A(Color.white, blink);
                         ring.coreWidth = 0.03f;
-                        ring.ink = Kit.A(Kit.TeamEnemy.ink, 1f);
+                        ring.ink = Kit.A(kit.enemy.ink, 1f);
                         ring.inkWidth = 0.03f;
                         ring.rim = Color.clear;
                         ring.stripe = Color.clear;
                         ring.fade = 1f;
+                        if (board)
+                        {
+                            ring.fill = Kit.A(BOrange.main, blink);
+                            ring.ink = Kit.A(BNavy, 1f);
+                        }
                         ring.Apply();
                         var pointer = x.strips[0];
                         Vector3 over = m.bodies[(int)BodyId.Head].position + Vector3.up * 0.32f;
                         pointer.Build(new List<Vector3> { over, over + Vector3.up * 0.4f }, q => 0.22f, kit.Eye);
                         pointer.taper = 1f;
-                        pointer.core = Kit.TeamEnemy.main;
+                        pointer.core = board ? BOrange.main : kit.enemy.main;
                         pointer.coreShare = 0f;
                         pointer.fade = blink;
                         pointer.Apply();
@@ -1103,7 +1183,7 @@ namespace ChessFight.RagdollLab
             {
                 float ang = i * 72f * Mathf.Deg2Rad + 0.4f;
                 Vector3 dir = new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang));
-                var puff = new Kit.Puff(kit, Kit.Knight) { ink = 0.32f };
+                var puff = new Kit.Puff(kit, kit.knight) { ink = 0.32f };
                 var f = kit.Run(Mathf.Max(0.12f, windup + 0.04f), (fx, d) =>
                 {
                     float t = fx.age / fx.life;
@@ -1142,13 +1222,28 @@ namespace ChessFight.RagdollLab
                 t.shape = 0f;
                 t.round = 0.07f;
                 t.fill = Kit.A(p.main, 0.7f);
-                t.core = Kit.A(Kit.Dust.light, 0.95f);
+                t.core = Kit.A(kit.dust.light, 0.95f);
                 t.coreWidth = 0.06f;
                 t.ink = Kit.A(p.ink, 1f);
                 t.inkWidth = 0.05f;
                 t.rim = Color.clear;
                 t.stripe = Color.clear;
                 t.fade = a < 6f ? 1f : 1f - (a - 6f) / 45f;
+                if (board)
+                {
+                    // The board look: an orange pad on its block with an arrow forward (the opening's two squares).
+                    t.fill = Kit.A(BOrange.main, 0.96f);
+                    t.bevel = Kit.A(BOrange.deep, 0.85f);
+                    t.core = Color.clear;
+                    t.ink = Kit.A(BNavy, 1f);
+                    t.inkWidth = 0.04f;
+                    kit.BoardSide(t, pawn);
+                    t.chevron = Kit.A(BNavy, 0.8f);
+                    t.chevronPhase = 0f;
+                    t.chevronStep = 100f;
+                    t.chevronSize = 0.55f;
+                    t.chevronWidth = 0.13f;
+                }
                 t.Apply();
                 return true;
             });
@@ -1157,7 +1252,7 @@ namespace ChessFight.RagdollLab
             Vector3 heel = at - dir * 0.25f;
             for (int i = 0; i < 2; i++)
             {
-                var puff = new Kit.Puff(kit, Kit.Dust) { ink = 0.3f };
+                var puff = new Kit.Puff(kit, kit.dust) { ink = 0.3f };
                 Vector3 kick = (-dir + Vector3.Cross(Vector3.up, dir) * (i == 0 ? -0.5f : 0.5f)).normalized;
                 var pf = kit.Run(20f * Frame, (fx, d) =>
                 {
@@ -1194,7 +1289,7 @@ namespace ChessFight.RagdollLab
                 }
                 return true;
             });
-            for (int i = 0; i < 3; i++) f.strips.Add(new Kit.Strip(kit, p) { core = Kit.Dust.light, coreShare = 0.35f, inkShare = 0.24f });
+            for (int i = 0; i < 3; i++) f.strips.Add(new Kit.Strip(kit, p) { core = kit.dust.light, coreShare = 0.35f, inkShare = 0.24f });
         }
 
         /// <summary>The pawn's hit (A): straight on, a shove (3-frame stop, a C half ring flung the way it goes, three
@@ -1220,7 +1315,14 @@ namespace ChessFight.RagdollLab
             Vector3 along = Kit.FlatDir(e.dir, Vector3.forward);
             // The top catches the light: a light tint of the side's colour (its sides the colour itself).
             var colors = new Kit.Palette { main = p.main, light = Color.Lerp(p.main, Color.white, 0.45f), deep = p.deep, ink = p.ink };
+            if (board) colors = BOrange;
             var tile = new Kit.Prop(kit, kit.RoundBox(new Vector3(Square, 0.12f, Square), 0.04f), colors, "Help tile") { inkWidth = 0.02f };
+            if (board)
+            {
+                tile.twoTone = true;
+                tile.sideColor = kit.SideOf(e.by) == Kit.Side.Enemy ? kit.enemy.deep : BNavy;
+                tile.Apply();
+            }
             var f = kit.Run(0.55f, (fx, d) =>
             {
                 float a = fx.age / Frame;
@@ -1251,7 +1353,7 @@ namespace ChessFight.RagdollLab
                 foreach (var foot in new[] { BodyId.FootL, BodyId.FootR })
                 {
                     var id = foot;
-                    InkTrail(() => on && pawn != null && pawn.HasteLeft > 0f ? pawn.bodies[(int)id].position : (Vector3?)null, p, 0.2f, 0.12f, Kit.Dust.light);
+                    InkTrail(() => on && pawn != null && pawn.HasteLeft > 0f ? pawn.bodies[(int)id].position : (Vector3?)null, p, 0.2f, 0.12f, kit.dust.light);
                 }
                 return fx;
             });

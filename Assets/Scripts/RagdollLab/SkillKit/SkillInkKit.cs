@@ -37,12 +37,15 @@ namespace ChessFight.RagdollLab
         public struct Palette
         {
             public Color main, light, deep, ink;
-            public Palette(string main, string light, string deep, string ink)
+            /// <summary>Polished metal (the board look's gold and silver, R126); 0 for design A's paint.</summary>
+            public float metal;
+            public Palette(string main, string light, string deep, string ink, float metal = 0f)
             {
                 this.main = Hex(main);
                 this.light = Hex(light);
                 this.deep = Hex(deep);
                 this.ink = Hex(ink);
+                this.metal = metal;
             }
         }
 
@@ -60,6 +63,12 @@ namespace ChessFight.RagdollLab
 
         public enum Side { Self, Ally, Enemy }
 
+        // The colours this kit paints with: design A's, unless a mode sets its own (R126, the Pawn Rush board look).
+        public Palette king = King, queen = Queen, rook = Rook, bishop = Bishop, knight = Knight, ally = TeamAlly, enemy = TeamEnemy, dust = Dust, grey = Grey;
+        public Color selfFill = SelfFill, selfInk = SelfInk;
+        /// <summary>The little pawns over a dazed head.</summary>
+        public Palette daze = new Palette { main = Dust.light, light = Color.white, deep = Dust.main, ink = Dust.ink };
+
         /// <summary>Whose it is, as the viewer sees it: mine, my side's or the other side's.</summary>
         public Side SideOf(RagdollPawn pawn)
         {
@@ -71,19 +80,19 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The colours of the side a piece is on as the viewer sees it: teal for mine and my side's, red for the
         /// other side's (the pawn's own colours: it has none of its own).</summary>
-        public Palette SideColors(RagdollPawn pawn) => SideOf(pawn) == Side.Enemy ? TeamEnemy : TeamAlly;
+        public Palette SideColors(RagdollPawn pawn) => SideOf(pawn) == Side.Enemy ? enemy : ally;
 
         /// <summary>A piece's own colours; the pawn wears its side's.</summary>
         public Palette PieceColors(RagdollPawn pawn)
         {
-            if (pawn == null) return Grey;
+            if (pawn == null) return grey;
             switch (pawn.Piece)
             {
-                case PieceKind.King: return King;
-                case PieceKind.Queen: return Queen;
-                case PieceKind.Rook: return Rook;
-                case PieceKind.Bishop: return Bishop;
-                case PieceKind.Knight: return Knight;
+                case PieceKind.King: return king;
+                case PieceKind.Queen: return queen;
+                case PieceKind.Rook: return rook;
+                case PieceKind.Bishop: return bishop;
+                case PieceKind.Knight: return knight;
                 default: return SideColors(pawn);
             }
         }
@@ -130,6 +139,34 @@ namespace ChessFight.RagdollLab
             meshTorus = Torus(0.09f);
         }
 
+        // ---------------------------------------------------------------- the board look (R126, Pawn Rush only)
+
+        /// <summary>
+        /// The board look (R126, 승규 님 10-12: "스킬 그래픽이 체스 느낌이 났으면 … 사진 색과 같이 … 광택 있는 골드색
+        /// 실버색도", Pawn Rush only): tiles stand up as slabs on a darker base (Skill Tile Board: the course's orange arrow
+        /// pads on their navy blocks, with chevrons and polished gold and silver), props are glossy toys and polished metal
+        /// (Skill Gloss), warnings are orange pads (the other side's on a mauve base with a mauve rim and stripes). Off, the
+        /// kit draws design A exactly as before.
+        /// </summary>
+        public bool Board { get; private set; }
+        public Material matBoard, matGloss;
+        /// <summary>The board look's slab thickness (m), its base and ink colour, its plain pad and its ally rim.</summary>
+        public float tileThick = 0.045f;
+        public Color boardBase = Hex("#24242F"), boardInk = Hex("#24242F"), allyRim = Hex("#F2D9BD");
+        public Palette boardTile = new Palette("#FDA23D", "#FFD08A", "#D28833", "#24242F");
+
+        /// <summary>Turn the board look on (before any part is made). False if its shaders are missing (design A stays).</summary>
+        public bool UseBoardLook()
+        {
+            var board = Find("ChessFight/Skill Tile Board", "PawnRushSkillFx/SkillTileBoard");
+            var gloss = Find("ChessFight/Skill Gloss", "PawnRushSkillFx/SkillGloss");
+            if (board == null || gloss == null) return false;
+            matBoard = new Material(board) { hideFlags = HideFlags.HideAndDontSave };
+            matGloss = new Material(gloss) { hideFlags = HideFlags.HideAndDontSave };
+            Board = true;
+            return true;
+        }
+
         public void Destroy()
         {
             foreach (var f in live) f.Destroy();
@@ -138,7 +175,7 @@ namespace ChessFight.RagdollLab
             flashes.Clear();
             foreach (var s in squashes.Values) s.Restore();
             squashes.Clear();
-            foreach (var m in new Object[] { matTile, matInk, matLine, matBand, matToon, meshQuad, meshPuff, meshTorus, meshBall })
+            foreach (var m in new Object[] { matTile, matInk, matLine, matBand, matToon, matBoard, matGloss, meshQuad, meshPuff, meshTorus, meshBall })
                 if (m != null) Object.Destroy(m);
             foreach (var m in roundBoxes.Values) if (m != null) Object.Destroy(m);
             foreach (var m in flatMats.Values) if (m != null) Object.Destroy(m);
@@ -364,13 +401,25 @@ namespace ChessFight.RagdollLab
             public float inkWidth = 0.05f, rimWidth = 0.08f, coreWidth, round = 0.06f, shape, inner = 0.8f, gap, arc = 1f, flash, fade = 1f, stripePhase;
             public Vector2 size = Vector2.one;
 
+            // The board look (R126): a slab this thick (below 0: the kit's, half of it standing up), on a base of this
+            // colour, a darker bevel band, polished metal, chevrons, a soft shadow on the floor (below 0: when lying).
+            readonly SkillInkKit kit;
+            public readonly bool board;
+            public float thick = -1f, thickScale = 1f, metal, bevelWidth = 0.07f, chevronPhase, chevronSize = 0.42f, chevronWidth = 0.11f, chevronStep = 0.75f, shadow = -1f, shadowWidth = 0.12f;
+            public Color baseColor, bevel, chevron;
+            readonly float sheenSeed = Random.value;
+            bool lying;
+
             public Tile(SkillInkKit kit, string name)
             {
+                this.kit = kit;
+                board = kit.Board && kit.matBoard != null;
+                baseColor = kit.boardBase;
                 var go = new GameObject(name);
                 go.transform.SetParent(kit.root, false);
                 go.AddComponent<MeshFilter>().sharedMesh = kit.meshQuad;
                 r = go.AddComponent<MeshRenderer>();
-                r.sharedMaterial = kit.matTile;
+                r.sharedMaterial = board ? kit.matBoard : kit.matTile;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = false;
                 r.enabled = false;   // nothing until it is placed and painted (Apply)
@@ -383,6 +432,7 @@ namespace ChessFight.RagdollLab
                 along.y = 0f;
                 if (along.sqrMagnitude < 1e-6f) along = Vector3.forward;
                 t.SetPositionAndRotation(at, Quaternion.LookRotation(Vector3.up, along.normalized));
+                lying = true;
                 Size(metres);
             }
 
@@ -392,6 +442,7 @@ namespace ChessFight.RagdollLab
                 if (normal.sqrMagnitude < 1e-6f) normal = Vector3.up;
                 if (up.sqrMagnitude < 1e-6f) up = Mathf.Abs(Vector3.Dot(normal.normalized, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
                 t.SetPositionAndRotation(at, Quaternion.LookRotation(normal.normalized, up));
+                lying = false;
                 Size(metres);
             }
 
@@ -403,10 +454,41 @@ namespace ChessFight.RagdollLab
 
             public void Apply()
             {
-                b.SetColor("_Fill", fill);
+                if (board)
+                {
+                    // The quad is the slab's foot, grown so its walls and its shadow fit (the eye sees the top shifted).
+                    float th = (thick >= 0f ? thick : lying ? kit.tileThick : kit.tileThick * 0.5f) * thickScale;
+                    // A slab going away sinks into the board (and fades only at the very end, below).
+                    if (th > 0f) th *= Mathf.Lerp(0.2f, 1f, Mathf.Clamp01(fade));
+                    float sh = shadow >= 0f ? shadow : lying ? 0.22f : 0f;
+                    float pad = (th > 0f ? 0.1f + th * 8f : 0.02f) + (sh > 0f ? shadowWidth : 0f);
+                    var quad = new Vector2(size.x + 2f * pad, size.y + 2f * pad);
+                    t.localScale = new Vector3(quad.x, quad.y, 1f);
+                    b.SetVector("_Quad", new Vector4(quad.x, quad.y, 0f, 0f));
+                    b.SetFloat("_Thick", th);
+                    var baseC = baseColor;
+                    b.SetColor("_Base", baseC);
+                    b.SetColor("_Bevel", bevel);
+                    b.SetFloat("_BevelWidth", bevelWidth);
+                    b.SetFloat("_Metal", metal);
+                    b.SetFloat("_Sheen", kit.Clock * 0.3f + sheenSeed);
+                    b.SetColor("_Chevron", chevron);
+                    b.SetFloat("_ChevronPhase", chevronPhase);
+                    b.SetFloat("_ChevronSize", chevronSize);
+                    b.SetFloat("_ChevronWidth", chevronWidth);
+                    b.SetFloat("_ChevronStep", chevronStep);
+                    b.SetFloat("_Shadow", sh);
+                    b.SetFloat("_ShadowWidth", shadowWidth);
+                }
+                // A slab is solid paint, see-through only as a whole (R126, 승규 님: the pawn's see-through pad was not
+                // cleanly see-through): the top, the walls and the shadow fade together by how solid it is meant to be,
+                // so the board never shows through its top while its walls stay dark.
+                bool solid = board && (thick >= 0f ? thick : lying ? kit.tileThick : kit.tileThick * 0.5f) > 0f;
+                float opacity = solid ? Mathf.Clamp01(Mathf.Max(fill.a, ink.a * 0.8f)) : 1f;
+                b.SetColor("_Fill", solid ? A(fill, 1f) : fill);
                 b.SetColor("_Core", core);
                 b.SetFloat("_CoreWidth", coreWidth);
-                b.SetColor("_InkColor", ink);
+                b.SetColor("_InkColor", solid && ink.a > 0f ? A(ink, 1f) : ink);
                 b.SetFloat("_Ink", inkWidth);
                 b.SetColor("_Rim", rim);
                 b.SetFloat("_RimWidth", rimWidth);
@@ -419,9 +501,11 @@ namespace ChessFight.RagdollLab
                 b.SetFloat("_Gap", gap);
                 b.SetFloat("_Arc", arc);
                 b.SetFloat("_Flash", flash);
-                b.SetFloat("_Fade", Mathf.Clamp01(fade));
+                // A slab stays solid while it sinks and goes in the last moments of its fade (the board never shows through it).
+                float shown = solid ? Mathf.Clamp01(fade / 0.18f) * opacity : Mathf.Clamp01(fade);
+                b.SetFloat("_Fade", shown);
                 r.SetPropertyBlock(b);
-                r.enabled = fade > 0.001f;
+                r.enabled = shown > 0.001f;
             }
 
             public void Hide() => r.enabled = false;
@@ -575,15 +659,22 @@ namespace ChessFight.RagdollLab
             readonly MaterialPropertyBlock bf = new MaterialPropertyBlock(), bl = new MaterialPropertyBlock();
             public Palette colors;
             public float inkWidth = 0.018f, flash;
+            // The board look (R126): glossy (Skill Gloss): polished metal from the palette, or a slab's sides in their
+            // own colour (the course's pads on their blocks).
+            public readonly bool board;
+            public bool twoTone;
+            public Color sideColor;
 
             public Prop(SkillInkKit kit, Mesh mesh, Palette colors, string name, Transform parent = null)
             {
+                board = kit.Board && kit.matGloss != null;
+                sideColor = kit.boardBase;
                 var go = new GameObject(name);
                 go.transform.SetParent(parent != null ? parent : kit.root, false);
                 t = go.transform;
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 fill = go.AddComponent<MeshRenderer>();
-                fill.sharedMaterial = kit.matInk;
+                fill.sharedMaterial = board ? kit.matGloss : kit.matInk;
                 fill.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 var lineGo = new GameObject("Ink");
                 lineGo.transform.SetParent(go.transform, false);
@@ -601,6 +692,16 @@ namespace ChessFight.RagdollLab
                 bf.SetColor("_Mid", colors.main);
                 bf.SetColor("_Shade", colors.deep);
                 bf.SetFloat("_Flash", flash);
+                if (board)
+                {
+                    bf.SetFloat("_Metal", colors.metal);
+                    bf.SetColor("_Spec", colors.metal > 0.5f ? new Color(1.45f, 1.42f, 1.32f) : new Color(0.75f, 0.75f, 0.72f));
+                    bf.SetFloat("_Gloss", colors.metal > 0.5f ? 60f : 38f);
+                    bf.SetFloat("_Ink", 0.1f);
+                    bf.SetColor("_InkColor", colors.ink);
+                    bf.SetFloat("_TwoTone", twoTone ? 1f : 0f);
+                    bf.SetColor("_SideColor", sideColor);
+                }
                 fill.SetPropertyBlock(bf);
                 bl.SetColor("_InkColor", colors.ink);
                 bl.SetFloat("_Width", inkWidth);
@@ -743,9 +844,14 @@ namespace ChessFight.RagdollLab
         /// </summary>
         public void Warn(Tile t, RagdollPawn caster, float strength, float flash = 0f, Palette? fillOverride = null)
         {
+            if (t.board)
+            {
+                BoardWarn(t, caster, strength, flash, fillOverride);
+                return;
+            }
             var side = SideOf(caster);
-            Color sideFill = side == Side.Self ? SelfFill : side == Side.Ally ? TeamAlly.main : TeamEnemy.main;
-            Color sideInk = side == Side.Self ? SelfInk : side == Side.Ally ? TeamAlly.ink : TeamEnemy.ink;
+            Color sideFill = side == Side.Self ? selfFill : side == Side.Ally ? ally.main : enemy.main;
+            Color sideInk = side == Side.Self ? selfInk : side == Side.Ally ? ally.ink : enemy.ink;
             float sideAlpha = side == Side.Self ? 0.35f : side == Side.Ally ? 0.3f : 0.4f;
             bool pawn = caster != null && caster.Piece == PieceKind.Pawn && fillOverride == null;
             if (pawn)
@@ -763,10 +869,43 @@ namespace ChessFight.RagdollLab
             }
             t.inkWidth = 0.05f;
             t.rimWidth = 0.09f;
-            t.stripe = side == Side.Enemy ? A(TeamEnemy.deep, 0.55f * strength) : Color.clear;
+            t.stripe = side == Side.Enemy ? A(enemy.deep, 0.55f * strength) : Color.clear;
             t.stripePhase = Clock * 0.5f;
             t.flash = flash;
             t.Apply();
+        }
+
+        /// <summary>
+        /// A warning in the board look (R126): an orange pad (the queen's in polished gold) on a navy block with a darker
+        /// bevel inside its edge, like the course's arrow pads; mine plain, my side's with a cream rim, the other side's on
+        /// a mauve block with a thick mauve rim and mauve stripes sliding over it. It grows more solid as the windup fills it.
+        /// </summary>
+        void BoardWarn(Tile t, RagdollPawn caster, float strength, float flash, Palette? fillOverride)
+        {
+            bool pawn = caster != null && caster.Piece == PieceKind.Pawn && fillOverride == null;
+            var p = fillOverride ?? (pawn ? boardTile : PieceColors(caster));
+            t.fill = A(p.main, Mathf.Lerp(0.9f, 1f, strength));
+            t.thickScale = Mathf.Lerp(0.45f, 1f, strength);
+            t.metal = p.metal;
+            t.bevel = A(p.deep, p.metal > 0.5f ? 0f : 0.85f);
+            t.bevelWidth = 0.07f;
+            t.ink = A(boardInk, Mathf.Lerp(0.65f, 1f, strength));
+            t.inkWidth = 0.035f;
+            BoardSide(t, caster, strength);
+            t.flash = flash;
+            t.Apply();
+        }
+
+        /// <summary>The board look's side marks on a pad (R126): its block navy, a cream rim for my side's, a mauve block,
+        /// a thick mauve rim and sliding mauve stripes for the other side's.</summary>
+        public void BoardSide(Tile t, RagdollPawn owner, float strength = 1f)
+        {
+            var side = SideOf(owner);
+            t.baseColor = side == Side.Enemy ? enemy.deep : boardBase;
+            t.rim = side == Side.Enemy ? A(enemy.main, Mathf.Lerp(0.7f, 1f, strength)) : side == Side.Ally ? A(allyRim, Mathf.Lerp(0.7f, 1f, strength)) : Color.clear;
+            t.rimWidth = side == Side.Enemy ? 0.13f : 0.07f;
+            t.stripe = side == Side.Enemy ? A(enemy.main, 0.5f * strength) : Color.clear;
+            t.stripePhase = Clock * 0.5f;
         }
 
         /// <summary>Squares of the board along a flat line from <paramref name="from"/>, each on the floor under it.</summary>
@@ -907,6 +1046,7 @@ namespace ChessFight.RagdollLab
                 t.shape = 1f;
                 t.inner = 0.62f;
                 t.fill = A(p.main, 1f);
+                t.metal = p.metal;
                 t.core = A(Color.white, 1f);
                 t.coreWidth = 0.035f;
                 t.ink = A(p.ink, 1f);
@@ -951,6 +1091,7 @@ namespace ChessFight.RagdollLab
                 t.shape = 1f;
                 t.inner = Mathf.Clamp01(1f - band / Mathf.Max(0.05f, r));
                 t.fill = A(p.main, 1f);
+                t.metal = p.metal;
                 t.core = A(Color.white, 1f);
                 t.coreWidth = Mathf.Min(0.04f, band * 0.25f);
                 t.ink = A(p.ink, 1f);
@@ -1000,7 +1141,7 @@ namespace ChessFight.RagdollLab
             {
                 float ang = (start + i * 360f / n + Random.Range(-25f, 25f)) * Mathf.Deg2Rad;
                 Vector3 dir = new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang));
-                var puff = new Puff(this, colors ?? Dust) { ink = 0.32f };
+                var puff = new Puff(this, colors ?? dust) { ink = 0.32f };
                 float r = size * Random.Range(0.8f, 1.2f), far = radius * Random.Range(0.75f, 1.1f);
                 var f = Run(life, (fx, d) =>
                 {
@@ -1045,6 +1186,8 @@ namespace ChessFight.RagdollLab
             var f = Run(8f * F, (fx, d) =>
             {
                 ring.Floor(at, Vector3.forward, Vector2.one * (2f * radius) * (1f + fx.age / fx.life * 0.4f));
+                ring.thick = 0f;
+                ring.shadow = 0f;
                 ring.shape = 1f;
                 ring.inner = 0.72f;
                 ring.fill = A(Color.white, 1f);
@@ -1099,13 +1242,25 @@ namespace ChessFight.RagdollLab
                 tile.rim = Color.clear;
                 tile.stripe = Color.clear;
                 tile.round = 0.06f;
+                if (tile.board)
+                {
+                    // The board look: a pad of the hitter's colour (polished for gold and silver) on its navy block.
+                    tile.fill = A(p.main, 0.96f);
+                    tile.metal = p.metal;
+                    tile.bevel = A(p.deep, p.metal > 0.5f ? 0f : 0.85f);
+                    tile.ink = A(boardInk, 1f);
+                    tile.inkWidth = 0.04f;
+                    tile.baseColor = boardBase;
+                }
                 tile.fade = a < 36f ? 1f : 1f - (a - 36f) / 15f;
                 tile.Apply();
                 float rr = Mathf.Lerp(0.3f, 0.9f, EaseOut(a / 10f));
                 ring.Floor(at + Vector3.up * 0.003f, Vector3.forward, Vector2.one * (2f * rr));
+                ring.thick = 0f;
+                ring.shadow = 0f;
                 ring.shape = 1f;
                 ring.inner = Mathf.Max(0.01f, 1f - 0.06f / rr);
-                ring.fill = A(Dust.ink, 0.6f);
+                ring.fill = A(dust.ink, 0.6f);
                 ring.ink = Color.clear;
                 ring.core = Color.clear;
                 ring.rim = Color.clear;
@@ -1144,8 +1299,8 @@ namespace ChessFight.RagdollLab
             });
             for (int i = 0; i < 3; i++)
             {
-                var prop = new Prop(this, pawnMesh, Dust, "Daze pawn") { inkWidth = 0.012f };
-                prop.colors = new Palette { main = Dust.light, light = Color.white, deep = Dust.main, ink = Dust.ink };
+                var prop = new Prop(this, pawnMesh, daze, "Daze pawn") { inkWidth = 0.012f };
+                prop.colors = daze;
                 prop.Apply();
                 prop.Show(false);
                 f.props.Add(prop);
@@ -1160,6 +1315,7 @@ namespace ChessFight.RagdollLab
             t.gap = gap;
             t.arc = 1f;
             t.fill = A(p.main, alpha);
+            t.metal = p.metal;
             t.core = A(Color.white, alpha > 0.9f ? 1f : alpha);
             t.coreWidth = 0.04f;
             t.ink = A(p.ink, 1f);

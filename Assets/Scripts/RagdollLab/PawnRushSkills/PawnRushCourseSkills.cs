@@ -105,9 +105,9 @@ namespace ChessFight.RagdollLab
             bool running = me.SkillStage != SkillStage.None, ready = !running && me.SkillCooldown <= 0f;
             string how = me.Piece == PieceKind.Rook || me.Piece == PieceKind.Bishop ? "F 조준 → 좌클릭" : "F 사용";
             if (me.Piece == PieceKind.Pawn) how += " · 승격 발판에 서서 승격";
-            SkillKeyCard.Draw(SkillKeyCard.Slot(0), "F", $"{ChessPieces.Name(me.Piece)} · {RagdollPawn.SkillName(me.Piece)}",
-                SkillKeyCard.Line(running ? PawnRushSkillBed.StageName(me) : null, me.SkillCooldown, how), SkillKeyCard.Colors(me.Piece),
-                ready || running, false, me.SkillCooldownTotal > 0f ? me.SkillCooldown / me.SkillCooldownTotal : 0f);
+            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), "F", $"{ChessPieces.Name(me.Piece)} · {RagdollPawn.SkillName(me.Piece)}",
+                SkillKeyCard.Line(running ? PawnRushSkillBed.StageName(me) : null, me.SkillCooldown, how), me.Piece,
+                ready || running, me.SkillCooldownTotal > 0f ? me.SkillCooldown / me.SkillCooldownTotal : 0f);
         }
     }
 }
