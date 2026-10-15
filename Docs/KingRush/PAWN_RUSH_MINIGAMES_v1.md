@@ -815,3 +815,11 @@ A는 두 팀이 한 판을 같이 쓰므로(3절) 뽑히면 그 광장의 두 �
 - [ ] J 혼자 시간이 짧으면 깃발 20개 또는 출발 섬 귀환 (8.3절)
 - [ ] C 잡은 상태에서 질주가 안 되면 게임이 직접 처리할지 (9.2절 6번)
 - [ ] 폰 전진 새 안 (10절)
+
+## 12. 구현 현황 (R126, 2026-10-15, 저장소 기록)
+
+이 절은 원문이 아니라 구현 기록이다. 11절 순서대로 모두 코드로 만들었고 **Unity·Steam에서는 아직 아무도 보지 않았다.** 게임별 구현, 이 문서와 다르게 한 곳, 온라인 방식은 [PAWN_RUSH_COURSE01 §4-3](PAWN_RUSH_COURSE01.md), 확인 목록은 [VALIDATION R126 표](../Network/VALIDATION.md), \[결정 필요\] 기본값은 [DECISIONS P14](../Project/DECISIONS.md).
+
+- \[확인\] 결과: 시계 이름 = `ObstacleClock`. 팀 강조색은 저장소에 없어 이 문서의 하늘색·주황을 그대로 씀(`Arena.White/Black`). 손 관절이 쥔 콜라이더는 래그돌이 알려 줌(`IMiniGamePawn.Held`), 손 위치는 스냅샷에 있음. 잡은 채 질주·스테미나 소모는 래그돌이 이미 함(C는 세기만). "던지기" = `ILaunchable.Launch`(도약대 `LaunchPad.ArcVelocity`). 해자 낙하는 지금처럼 체크포인트(`KillVolume`), J의 물은 코스에 알리지 않는 `WaterZone`. 넘어짐은 `IHitReceiver.ApplyHit`(넉다운 초 지정).
+- 상태 패킷: 이 문서의 "스테이션당 24바이트" 대신 `CFP3`의 스테이션 블록 32바이트 상한(게임별 실제 4~28바이트).
+
