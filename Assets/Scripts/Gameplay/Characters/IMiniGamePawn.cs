@@ -17,6 +17,9 @@ namespace ChessFight.Gameplay
         // The latest move input: world, flat, length 0..1 (zero when there is none).
         Vector3 MoveInput { get; }
         bool SprintHeld { get; }
+        // Really sprinting now (held, moving, stamina left, not worn out). The character spends its own stamina
+        // for it, holding a rope or not: a game that counts a sprint (C) reads this and spends nothing itself.
+        bool Sprinting { get; }
         // 0..1 of the stamina pool.
         float Stamina01 { get; }
         // Spends stamina in the pool's own unit (a second of sprinting costs about 1).
