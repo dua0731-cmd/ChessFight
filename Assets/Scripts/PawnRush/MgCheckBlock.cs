@@ -7,8 +7,8 @@ namespace ChessFight.PawnRush
 {
     // I, check block (mini-games v1.0 §7): our king on rank 7 is in check from three to five sides, a different
     // position every round (CheckBlockGenerator, from a 2-byte seed). A rook's, bishop's or queen's line is blocked
-    // by pushing (or pulling by its handle) a shield cart along its rail onto the square between; a knight is
-    // dragged off by the ring on its neck; a pawn is taken by a dive. With all that done a hidden double check
+    // by pushing (or holding and pulling, R128) a shield cart along its rail onto the square between; a knight is
+    // held and dragged off (R128: the piece itself, no ring); a pawn is taken by a dive. With all that done a hidden double check
     // rises, and the king is dragged on its base to the safe square. Every check solved: the gate opens.
     //
     // Network (§7.7): the host draws the seed and sends it with each situation's progress, the solved bits and the
@@ -17,7 +17,7 @@ namespace ChessFight.PawnRush
     // kinematic and moved by those numbers.
     public sealed class MgCheckBlock : MiniGameBase, IProgressCount
     {
-        public const float KnightDrag = 2.25f, Reach = .8f, Speed = 5f, Cart = 1.25f, PushDepth = 1.2f, BeamHeight = 1.1f;
+        public const float KnightDrag = 2.25f, Reach = .8f, Speed = 5f, Cart = 1.25f, BeamHeight = 1.1f;
         const int MaxSituations = 6;
 
         [SerializeField] MissionStation station;
@@ -32,17 +32,13 @@ namespace ChessFight.PawnRush
         float kingDrag, kingShown, doubleAt = -1f;
         readonly float[] solvedAt = new float[MaxSituations], lastShown = new float[MaxSituations];
 
-        // Per situation: the thing that moves (cart, knight, pawn), its handle, the attack beam.
+        // Per situation: the thing that moves (cart, knight, pawn) and the attack beam.
         readonly Rigidbody[] movers = new Rigidbody[MaxSituations];
         readonly Transform[] moverLooks = new Transform[MaxSituations];
-        readonly GrabHandle[] handles = new GrabHandle[MaxSituations];
-        readonly Rigidbody[] handleBodies = new Rigidbody[MaxSituations];
         readonly Transform[] beams = new Transform[MaxSituations];
         readonly Renderer[] beamLooks = new Renderer[MaxSituations];
         readonly AudioSource[] hums = new AudioSource[MaxSituations + 2];
         Rigidbody kingBase;
-        GrabHandle kingRing;
-        Rigidbody kingRingBody;
         LineRenderer checkRing;
         readonly Transform[] doublePieces = new Transform[2];
         readonly Transform[] doubleBeams = new Transform[2];
@@ -121,7 +117,7 @@ namespace ChessFight.PawnRush
             var railFloor = Arena.Lit("M_RailFloor", Arena.Hex("#6A6152"), 0f, .8f);
             var groove = Arena.Lit("M_Groove", Arena.Hex("#1D2028"), 0f, .8f);
 
-            // Our king on its base, with the red check ring round it and the base's gold ring (the double check's handle).
+            // Our king on its base, with the red check ring round it; the base is what the double check drags (by hand).
             var kingAt = At(layout.King);
             var baseGo = new GameObject("King base");
             baseGo.transform.SetParent(root, false);
@@ -134,12 +130,11 @@ namespace ChessFight.PawnRush
             col.radius = .9f;
             col.height = 2.25f;
             col.center = new Vector3(0f, 1.125f, 0f);
-            baseGo.AddComponent<NoClimbSurface>();
+            // R128: held and pushed itself, never climbed (no separate gold ring to catch).
+            baseGo.AddComponent<GrabOnlySurface>();
             MiniGameParts.Part(baseGo.transform, PrimitiveType.Cylinder, new Vector3(0f, .175f, 0f), new Vector3(1.8f, .175f, 1.8f), Arena.Lit("M_PillarStone", Arena.Hex("#857E74"), 0f, .9f));
             MiniGameParts.Piece(baseGo.transform, "Our king", PieceKind.King, 1.9f, usMat, Arena.TeamColor(station.Team), false).transform.localPosition = new Vector3(0f, .35f, 0f);
             checkRing = MiniGameParts.Loop(baseGo.transform, "Check ring", new Vector3(0f, .05f, 0f), 1.3f, .3f, Arena.Red, true, 48);
-            kingRing = MiniGameParts.Handle(root, "King ring", kingAt + Vector3.up * .3f, new Vector3(1.95f, .1f, 1.95f), this, 7, GrabHandle.HandleKind.Drag);
-            kingRingBody = kingRing.GetComponent<Rigidbody>();
 
             var list = layout.Situations;
             for (int i = 0; i < list.Count && i < MaxSituations; i++)
@@ -147,8 +142,8 @@ namespace ChessFight.PawnRush
                 var s = list[i];
                 var from = At(s.From);
                 float tall = s.Attacker == PieceKind.Pawn ? 1f : 1.5f;
-                bool solid = true;
-                var attacker = MiniGameParts.Piece(root, "Attacker " + (i + 1), s.Attacker, tall, themMat, ring, solid, .4f);
+                // A knight is dragged off by hand: it is grab-only (R128). The others are never held.
+                var attacker = MiniGameParts.Piece(root, "Attacker " + (i + 1), s.Attacker, tall, themMat, ring, true, .4f, grabbable: s.Kind == CheckBlockGenerator.Kind.Knight);
                 attacker.transform.localPosition = from;
                 Face(attacker.transform, kingAt);
                 beams[i] = Beam("Beam " + (i + 1), s.Attacker == PieceKind.Queen ? .34f : .12f, out beamLooks[i]);
@@ -172,7 +167,7 @@ namespace ChessFight.PawnRush
                         line.transform.localScale = new Vector3(.36f, .01f, (z - a).magnitude);
                         var diamond = MiniGameParts.Loop(root, "Block diamond", z + Vector3.up * .07f, 1.02f, .13f, Arena.Gold, true, 4);
                         diamond.transform.localRotation = Quaternion.Euler(0f, 45f, 0f);
-                        // The shield: a walnut cart with our piece on it and a gold handle on its front.
+                        // The shield: a walnut cart with our piece on it, pushed or held and pulled (grab-only, R128).
                         var cart = new GameObject("Shield cart " + (i + 1));
                         cart.transform.SetParent(root, false);
                         cart.transform.localPosition = a;
@@ -184,7 +179,7 @@ namespace ChessFight.PawnRush
                         var box = cart.AddComponent<BoxCollider>();
                         box.center = new Vector3(0f, .4f, 0f);
                         box.size = new Vector3(Cart, .8f, Cart);
-                        cart.AddComponent<NoClimbSurface>();
+                        cart.AddComponent<GrabOnlySurface>();
                         var look = new GameObject("Look").transform;
                         look.SetParent(cart.transform, false);
                         MiniGameParts.Part(look, PrimitiveType.Cube, new Vector3(0f, .4f, 0f), new Vector3(Cart, .8f, Cart), Arena.Wood(false));
@@ -194,9 +189,6 @@ namespace ChessFight.PawnRush
                         MiniGameParts.Piece(look, "Shield", s.Shield, 1.2f, usMat, Arena.TeamColor(station.Team), false).transform.localPosition = new Vector3(0f, .8f, 0f);
                         movers[i] = body;
                         moverLooks[i] = look;
-                        var h = MiniGameParts.Handle(root, "Cart handle " + (i + 1), Vector3.zero, new Vector3(.5f, .14f, .14f), this, (byte)i, GrabHandle.HandleKind.Pull);
-                        handles[i] = h;
-                        handleBodies[i] = h.GetComponent<Rigidbody>();
                         break;
                     }
                     case CheckBlockGenerator.Kind.Knight:
@@ -204,9 +196,6 @@ namespace ChessFight.PawnRush
                         var body = attacker.GetComponent<Rigidbody>();
                         movers[i] = body;
                         moverLooks[i] = attacker.transform.Find("Look");
-                        var h = MiniGameParts.Handle(root, "Knight ring " + (i + 1), Vector3.zero, new Vector3(.9f, .12f, .9f), this, (byte)i, GrabHandle.HandleKind.Drag);
-                        handles[i] = h;
-                        handleBodies[i] = h.GetComponent<Rigidbody>();
                         break;
                     }
                     default:   // the pawn
@@ -292,15 +281,9 @@ namespace ChessFight.PawnRush
                 if (movers[i] == null || s.Kind == CheckBlockGenerator.Kind.Pawn) continue;
                 var p = World(MoverAt(i, shown[i]));
                 if (snap) movers[i].transform.position = p; else movers[i].MovePosition(p);
-                if (handleBodies[i] == null) continue;
-                var hp = s.Kind == CheckBlockGenerator.Kind.Rail
-                    ? p + transform.TransformDirection(RailDir(s)) * (Cart * .5f + .1f) + transform.up * .6f
-                    : p + transform.up * 1.05f;
-                if (snap) handleBodies[i].transform.position = hp; else handleBodies[i].MovePosition(hp);
             }
             var k = World(KingAt(kingShown));
-            if (snap) { kingBase.transform.position = k; kingRingBody.transform.position = k + transform.up * .3f; }
-            else { kingBase.MovePosition(k); kingRingBody.MovePosition(k + transform.up * .3f); }
+            if (snap) kingBase.transform.position = k; else kingBase.MovePosition(k);
         }
 
         // ------------------------------------------------------------------ host
@@ -328,16 +311,14 @@ namespace ChessFight.PawnRush
                     case CheckBlockGenerator.Kind.Rail:
                     {
                         var dir = RailDir(s);
-                        if (handles[i] != null) handles[i].PullAxis = transform.TransformDirection(dir);
-                        Count(pawns, i, MoverAt(i, progress[i]), dir, true, out int own, out int against);
+                        Count(pawns, movers[i], MoverAt(i, progress[i]), dir, Cart * .5f, out int own, out int against);
                         progress[i] = Drive(progress[i], own, against, s.SoloSpeed, s.SoloSpeed * 1.8f, s.RailLength, dt);
                         break;
                     }
                     case CheckBlockGenerator.Kind.Knight:
                     {
                         var dir = KnightDir(s);
-                        if (handles[i] != null) handles[i].PullAxis = transform.TransformDirection(dir);
-                        Count(pawns, i, MoverAt(i, progress[i]), dir, false, out int own, out int against);
+                        Count(pawns, movers[i], MoverAt(i, progress[i]), dir, .45f, out int own, out int against);
                         progress[i] = Drive(progress[i], own, against, .35f, .65f, KnightDrag, dt);
                         break;
                     }
@@ -357,8 +338,7 @@ namespace ChessFight.PawnRush
             if (doubleUp && !doubleDone)
             {
                 var dir = (At(layout.Escape) - At(layout.King)).normalized;
-                kingRing.PullAxis = transform.TransformDirection(dir);
-                Count(pawns, -1, KingAt(kingDrag), dir, false, out int own, out int against);
+                Count(pawns, kingBase, KingAt(kingDrag), dir, .9f, out int own, out int against);
                 kingDrag = Drive(kingDrag, own, against, .25f, .45f, KingDistance, dt);
                 if (kingDrag >= 1f) doubleDone = true;
             }
@@ -375,29 +355,15 @@ namespace ChessFight.PawnRush
             return sum;
         }
 
-        // Who moves situation i's thing (i -1: the king): our pawns gripping its handle and pulling along `dir`, or
-        // (a cart) pushing from the box behind it; the other team's the other way, each taking one off. At most two
-        // of ours count.
-        void Count(List<MissionStation.Pawn> pawns, int i, Vector3 at, Vector3 dir, bool push, out int own, out int against)
+        // Who moves a thing (a cart, a knight, the king on its base) along `dir` (R128: no handles): our pawns holding
+        // it or pressing on it from behind with their input along `dir`, the other team's the other way, each taking
+        // one off (MiniGameParts.Shove). At most two of ours count.
+        void Count(List<MissionStation.Pawn> pawns, Rigidbody body, Vector3 at, Vector3 dir, float half, out int own, out int against)
         {
             own = against = 0;
-            var handle = i < 0 ? kingRing : handles[i];
-            var across = new Vector3(dir.z, 0f, -dir.x);
             foreach (var p in pawns)
             {
-                var mg = p.Driver as IMiniGamePawn;
-                if (mg == null || mg.Down) continue;
-                int effort = handle != null ? handle.Effort(p.Driver) : 0;
-                if (effort == 0 && push)
-                {
-                    var rel = p.Local - at;
-                    float along = Vector3.Dot(rel, dir), side = Mathf.Abs(Vector3.Dot(rel, across));
-                    var input = transform.InverseTransformDirection(mg.MoveInput);
-                    input.y = 0f;
-                    float into = input.sqrMagnitude > .01f ? Vector3.Dot(input.normalized, dir) : 0f;
-                    if (side <= Cart * .5f && p.Own && along <= -Cart * .5f && along >= -Cart * .5f - PushDepth && into >= GrabHandle.Along) effort = 1;
-                    if (side <= Cart * .5f && !p.Own && along >= Cart * .5f && along <= Cart * .5f + PushDepth && into <= -GrabHandle.Along) effort = -1;
-                }
+                int effort = MiniGameParts.Shove(p, transform, body, at, dir, half);
                 if (p.Own && effort > 0) own++;
                 else if (!p.Own && effort < 0) against++;
             }

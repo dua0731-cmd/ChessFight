@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-15 | R126 | 병합: `claude/adoring-lamport-7l6uib`에 다른 채팅(승규 님)이 올린 R126(스킬 그림 체스판 발판)·R127(칠하기 칸 6 mm) 두 커밋. `MgPaint`는 새 공유 판 쪽을 쓰고 R127의 뜻(스킬 경고가 칸 위에)은 `PaintBoard` 칸 높이로 유지. 이 병합은 그 브랜치에만(`main`에는 아직 안 넣음) |
+| (이 커밋) | 10-15 | R128 | G 킹 호위를 밧줄·손잡이 없이(썰매·룩 자체를 잡거나 밀기, 썰매 안 돎), I도 같은 방식, 새 `GrabOnlySurface`(잡기만, 벽타기 안 됨)와 래그돌 연결, 모든 `GrabHandle` 잡기 전용, 검증기, 문서 |
+| `26063ee` | 10-15 | R126 | 병합: `claude/adoring-lamport-7l6uib`에 다른 채팅(승규 님)이 올린 R126(스킬 그림 체스판 발판)·R127(칠하기 칸 6 mm) 두 커밋. `MgPaint`는 새 공유 판 쪽을 쓰고 R127의 뜻(스킬 경고가 칸 위에)은 `PaintBoard` 칸 높이로 유지. 이 병합은 그 브랜치에만(`main`에는 아직 안 넣음) |
 | `9f3cedf` | 10-12 | R127(승규 님) | 미니게임 A 칠하기 칸 3 cm → 6 mm(스킬 경고가 묻히지 않게) |
 | `be937c3` | 10-12 | R126(승규 님, 다른 요청) | 폰 러쉬 스킬 그림을 체스판 발판 모양으로(`SkillTileBoard`·`SkillGloss` 셰이더, `PawnRushSkillFx.Board`, F 카드) |
 | `a27d110` | 10-15 | R126 | 문서: HANDOFF·REQUIREMENTS·DECISIONS P10~P14·T11·PITFALLS 39~41·VALIDATION R126 표·PAWN_RUSH_COURSE01 §4-3. 시험: Core 115·세션 41 |
