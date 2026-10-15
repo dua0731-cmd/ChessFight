@@ -374,7 +374,7 @@ public static class NetworkCoreTests
                 t.Acknowledged(3,0.099+0.1); Check(Math.Abs(t.Milliseconds-100)<0.5,"first sample "+t.Milliseconds);
                 t.Acknowledged(2,1.0); Check(Math.Abs(t.Milliseconds-100)<0.5,"stale ack changed estimate");
                 t.Acknowledged(5,0.165+0.180); Check(t.Milliseconds>100&&t.Milliseconds<180,"smoothing "+t.Milliseconds); });
-            Test("Pawn Rush course state (CFP3) round-trips stations with their blocks and refuses damaged packets", () => {
+            Test("Pawn Rush course state (CFP4) round-trips stations with their blocks and refuses damaged packets", () => {
                 var a = new PawnRushNetState { Tick = 77, HostTimeMs = 123456, First = 3, Second = 0 };
                 a.Game[0] = 3; a.Game[1] = 3; a.Game[2] = 0; a.Game[3] = 0;
                 a.Progress[0] = .25f; a.Progress[3] = 1f; a.Completed[3] = true;
@@ -404,9 +404,10 @@ public static class NetworkCoreTests
                 var longer = new byte[bytes.Length + 1]; Array.Copy(bytes, longer, bytes.Length);
                 Check(!PawnRushNetState.Read(longer, 42UL, b), "long packet");
                 bytes[0] ^= 1; Check(!PawnRushNetState.Read(bytes, 42UL, b), "wrong magic"); });
-            Test("Pawn Rush course state (CFP3) carries the pads, the winner, the clock and the crown finishers", () => {
+            Test("Pawn Rush course state (CFP4) carries the pads and their choosers, the winner, the clock and the crown finishers", () => {
                 var a = new PawnRushNetState { Tick = 9, First = 1, Second = 4, PadFirst = (byte)PieceKind.Knight, PadSecond = (byte)PieceKind.Queen,
                                                PadsUsed = 0x5, Winner = 1, Clock = 187.25f, FinisherCount = 3 };
+                a.PadChooser[2] = SkillWire.Ref(0, 3);
                 a.FinisherSeat[0] = SkillWire.Ref(1, 0); a.FinisherTime[0] = 170.04f;
                 a.FinisherSeat[1] = SkillWire.Ref(1, 2); a.FinisherTime[1] = 181.5f;
                 a.FinisherSeat[2] = SkillWire.Ref(0, 5); a.FinisherTime[2] = 186.96f;
@@ -415,6 +416,7 @@ public static class NetworkCoreTests
                 var b = new PawnRushNetState();
                 Check(PawnRushNetState.Read(bytes, 7UL, b), "read");
                 Check(b.PadFirst == (byte)PieceKind.Knight && b.PadSecond == (byte)PieceKind.Queen && b.PadsUsed == 0x5, "pads");
+                Check(b.PadChooser[2] == SkillWire.Ref(0, 3) && b.PadChooser[0] == PawnRushNetState.NoChooser && b.PadChooser[3] == PawnRushNetState.NoChooser, "choosers");
                 Check(b.Winner == 1 && Math.Abs(b.Clock - 187.25f) < 1e-4f, "winner and clock");
                 Check(b.FinisherCount == 3 && b.FinisherSeat[1] == SkillWire.Ref(1, 2) && Math.Abs(b.FinisherTime[0] - 170f) < 0.051f
                       && Math.Abs(b.FinisherTime[2] - 187f) < 0.051f, "finishers to a tenth");

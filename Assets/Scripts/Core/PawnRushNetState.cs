@@ -13,14 +13,17 @@ namespace ChessFight.Network
     // progress, done, and a block of up to BlockBytes the game writes itself (MiniGameBase.WriteNet): planks
     // carried and by whom, squares painted, a sled's place on its path. The mini-game spec budgets 24 bytes
     // a station; the block takes up to 32 so a game never has to squeeze.
+    // CFP4 (R130): who is choosing a piece on each station's promotion pad (a seat, 255 nobody), so that player's PC
+    // shows the choice and sends the piece back (the lab input's pieceAsk / pieceSeq).
     public sealed class PawnRushNetState
     {
-        public const uint Magic = 0x43465033;   // "CFP3"
+        public const uint Magic = 0x43465034;   // "CFP4"
         public const int Stations = 4;
         public const int MaxFinishers = 12;
         public const int BlockBytes = 32;
-        // magic, match, tick, host time, the two games, the pads (3), the winner, the clock, the finisher count
-        public const int HeaderBytes = 4 + 8 + 4 + 4 + 1 + 1 + 3 + 1 + 4 + 1;   // 31
+        // magic, match, tick, host time, the two games, the pads (3), the choosers (4), the winner, the clock, the finisher count
+        public const int HeaderBytes = 4 + 8 + 4 + 4 + 1 + 1 + 3 + 4 + 1 + 4 + 1;   // 35
+        public const byte NoChooser = 255;
         public const int FinisherBytes = 1 + 2;   // the seat (SkillWire.Ref) and the time, 0.1 s
         public const int StationFixedBytes = 1 + 2 + 1 + 1;   // game, progress, flags, block length
         public const int MaxBytes = HeaderBytes + MaxFinishers * FinisherBytes + Stations * (StationFixedBytes + BlockBytes);
@@ -31,6 +34,8 @@ namespace ChessFight.Network
         public sbyte First = -1, Second = -1;
         // The round's pad pieces (plaza 1, plaza 2; PieceKind) and the spent pads, a bit per station.
         public byte PadFirst, PadSecond, PadsUsed;
+        // The seat choosing a piece on each station's pad (plaza 1 white, plaza 1 black, plaza 2 white, plaza 2 black).
+        public readonly byte[] PadChooser = { NoChooser, NoChooser, NoChooser, NoChooser };
         // 0 white, 1 black, -1 nobody yet (PawnRushFinish).
         public sbyte Winner = -1;
         // Seconds since the race started, on the host.
@@ -70,6 +75,7 @@ namespace ChessFight.Network
             b[i++] = PadFirst;
             b[i++] = PadSecond;
             b[i++] = PadsUsed;
+            for (int s = 0; s < Stations; s++) b[i++] = PadChooser[s];
             b[i++] = (byte)Winner;
             PutU32(b, ref i, (uint)BitConverter.SingleToInt32Bits(Clock));
             b[i++] = (byte)finishers;
@@ -101,6 +107,8 @@ namespace ChessFight.Network
             uint tick = U32(b, ref i), hostTime = U32(b, ref i);
             sbyte first = (sbyte)b[i++], second = (sbyte)b[i++];
             byte padFirst = b[i++], padSecond = b[i++], padsUsed = (byte)(b[i++] & 0x0f);
+            int choosersAt = i;
+            i += Stations;
             sbyte winner = (sbyte)b[i++];
             float clock = BitConverter.Int32BitsToSingle((int)U32(b, ref i));
             int finishers = b[i++];
@@ -123,6 +131,7 @@ namespace ChessFight.Network
             into.PadFirst = padFirst;
             into.PadSecond = padSecond;
             into.PadsUsed = padsUsed;
+            for (int s = 0; s < Stations; s++) into.PadChooser[s] = b[choosersAt + s];
             into.Winner = winner == 0 || winner == 1 ? winner : (sbyte)-1;
             into.Clock = float.IsNaN(clock) || float.IsInfinity(clock) ? 0f : Math.Max(0f, clock);
             into.FinisherCount = finishers;
@@ -148,6 +157,7 @@ namespace ChessFight.Network
         {
             Tick = o.Tick; HostTimeMs = o.HostTimeMs; First = o.First; Second = o.Second;
             PadFirst = o.PadFirst; PadSecond = o.PadSecond; PadsUsed = o.PadsUsed; Winner = o.Winner; Clock = o.Clock;
+            Array.Copy(o.PadChooser, PadChooser, Stations);
             FinisherCount = o.FinisherCount;
             Array.Copy(o.FinisherSeat, FinisherSeat, MaxFinishers);
             Array.Copy(o.FinisherTime, FinisherTime, MaxFinishers);
