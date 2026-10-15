@@ -311,26 +311,29 @@ namespace ChessFight.RagdollLab
         {
             if (PawnRushSkills == null || State != PawnState.Active) return;
             bool qh = QueenHillSkills != null;
-            bool aims = qh ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop;
+            bool aims = qh ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King;
             bool aiming = skillStage == SkillStage.Windup && !aimLocked && aims;
             switch (key)
             {
                 case 0:
-                    // Asked to swap by a rook (Queen of the Hill): the key is the yes, not a skill of its own.
-                    if (castleAsker != null) break;
+                    // Asked to swap by a rook (Queen of the Hill), or called by a king (R146): the key is the yes, not a
+                    // skill of its own.
+                    if (castleAsker != null || KingCallSeen) break;
                     if (CouldStartSkill)
                     {
                         // The pieces whose skill opens with a warning or an aim; a dash or a leap is the body's to show.
                         // R118: every Queen of the Hill skill starts on the floor only (the host refused the guesses made in
                         // the air, mostly the pawn's: ten taken back out of 57 in the first two-PC test).
                         bool windup = (qh && Grounded) || piece == PieceKind.Queen || piece == PieceKind.Rook || piece == PieceKind.Bishop
+                                      || piece == PieceKind.King
                                       || (piece == PieceKind.Knight && Grounded);
                         if (windup) Predict(SkillStage.Windup, false, hold, true);
                     }
                     else if (aiming && !(qh && piece == PieceKind.Bishop)) Predict(SkillStage.None, false, hold, false);
                     break;
                 case 1:
-                    if (!aiming || (qh && piece == PieceKind.Bishop)) break;
+                    // R146: the king's list takes its clicks on the screen (the picks go with its key).
+                    if (!aiming || (qh && piece == PieceKind.Bishop) || (!qh && piece == PieceKind.King)) break;
                     bool valid = qh ? qhValid : piece != PieceKind.Bishop || bishopValid;
                     if (!valid) break;
                     // The Pawn Rush bishop throws at once (its X in flight); the others lock their aim and wind up.

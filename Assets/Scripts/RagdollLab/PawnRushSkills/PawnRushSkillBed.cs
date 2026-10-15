@@ -32,8 +32,9 @@ namespace ChessFight.RagdollLab
         public float clusterAhead = 3.5f;
         public float clusterGap = 0.7f;
 
-        /// <summary>The pieces Pawn Rush promotes to, the pawn first (no king, D1).</summary>
-        public static readonly PieceKind[] Pieces = { PieceKind.Pawn, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight };
+        /// <summary>The pieces Pawn Rush promotes to, the pawn first (no king, D1). R144 (승규 님 10-15: "이제 폰 러쉬 에서도
+        /// 왕 스킬 구현 할 건데 왕 캐릭터 넣어줘"): the king can be picked too, last, ahead of its skill (F does nothing yet).</summary>
+        public static readonly PieceKind[] Pieces = { PieceKind.Pawn, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.King };
 
         static readonly List<string> log = new List<string>();
         const int LogLines = 9;
@@ -76,6 +77,8 @@ namespace ChessFight.RagdollLab
             // The skills' sounds (R114, 승규 님's picks on the R107 page).
             sfx = GetComponent<PawnRushSkillSfx>();
             if (sfx == null) sfx = gameObject.AddComponent<PawnRushSkillSfx>();
+            // R146: the king's call on screen (mockup D, the chess clock).
+            if (GetComponent<PawnRushKingCallUi>() == null) gameObject.AddComponent<PawnRushKingCallUi>();
             // F is the skills' key here, not the lab's interact (bells, levers, cutting a hook).
             if (game != null && skillKey == KeyCode.F) game.InteractKeyOff = true;
             // The key goes in with the rest of P1's input (R111): offline straight to the pawn, online to the host.
@@ -95,6 +98,9 @@ namespace ChessFight.RagdollLab
             if (game == null || game.AutoTest) return;
             foreach (var pawn in RagdollPawn.All)
                 if (pawn != null && pawn.PawnRushSkills == null) pawn.PawnRushSkills = skills;
+            // R146: the dummies answer a king's call by themselves (standing in for the other PC's F).
+            foreach (var d in game.dummies)
+                if (d != null) d.SkillBot = true;
             if (game.SkillKey != skillKey) game.SkillKey = skillKey;
 
             var me = Me;
@@ -200,6 +206,28 @@ namespace ChessFight.RagdollLab
             Report($"{d.DisplayName}: {(ally ? "적 (팀 없음)" : "내 팀 (부축 시험)")}");
         }
 
+        /// <summary>R146: every dummy on this player's team, so the king has teammates to call.</summary>
+        void AllDummiesMine(RagdollPawn p1)
+        {
+            if (p1 == null || p1.Team == Teams.None) return;
+            foreach (var d in game.dummies)
+            {
+                if (d == null) continue;
+                d.Team = p1.Team;
+                if (d.skin != null) d.skin.sharedMaterial = game.TeamMaterial(p1.Team);
+            }
+            Report($"더미 {game.dummies.Count}명 모두 내 팀 (왕의 부름 시험)");
+        }
+
+        /// <summary>R146: the scene as one checkpoint section, or two split at x = 0 (to see the list keep to the king's).</summary>
+        static void ToggleSections()
+        {
+            RagdollPawn.KingCallSection = RagdollPawn.KingCallSection == null
+                ? (a, b) => (a.Hips.position.x >= 0f) == (b.Hips.position.x >= 0f)
+                : (System.Func<RagdollPawn, RagdollPawn, bool>)null;
+            Report(RagdollPawn.KingCallSection == null ? "구간: 씬 전체가 한 구간" : "구간: x = 0을 경계로 둘 (같은 쪽 팀원만 목록에)");
+        }
+
         void KnockDummies()
         {
             foreach (var d in game.dummies)
@@ -231,7 +259,8 @@ namespace ChessFight.RagdollLab
             PieceKind.Rook => "F = 조준: 반투명 선이 마우스 방향을 따라감 (걸을 수 있음, Shift 질주 X)\n좌클릭 = 방향 고정 0.3초 뒤 4칸 돌진 · 우클릭/F = 취소\n공중에서도 F: 마우스 위아래로 위·아래 조준, 좌클릭 = 잠깐 멈췄다 슈퍼맨처럼 그 방향으로 돌진 (아래면 바닥에 내리꽂음)\n적 3명까지 옆으로 튕김 · 벽은 휘청 · 바리케이드 부숨 (x −9, z 2)",
             PieceKind.Bishop => "F = 조준: 반투명 X가 마우스 위치를 따라감 (근거리 4.5 m 안)\n좌클릭 = 설치 · 우클릭/F = 취소\n0.5초 뒤 무장, 6초 · 적이 지나가면 줄이 다리를 따라 늘어났다 잡아채 앞으로 넘어뜨림 · 적 2명 걸면 끊김",
             PieceKind.Knight => "F = 도약 (카메라 방향, 높이 1.6 m · 약 5.5 m) · 점프 중에도 F = 공중에서 바로 도약\n공중에서 F: 3 m 안 적에 주황 표시가 뜨면 자동으로 머리 찍고 착지\n적이 없으면 F = 다시 차고 나감 (\"다~당\", 방향키로 최대 90° 꺾기, 1회) · 착지 1.5 m 안 휘청",
-            _ => "킹 스킬은 아직 만들지 않았어요 (D1)",
+            PieceKind.King => "F = 같은 구간 팀원 목록 → 좌클릭으로 2명까지 고르기 → F로 부르기 · 우클릭 = 닫기\n불린 팀원이 3초 안에 자기 F → 12 cm 떠서 0.6초 만에 킹 뒤 칸으로 (벽 통과 · 오는 동안 무적)\n부르는 동안 킹이 맞으면 출발 안 한 팀원 취소 · 더미는 0.8초 뒤 스스로 대답",
+            _ => "",
         };
 
         /// <summary>The skill key card at the bottom right of the view, the same card as Sword Fight's F and E
@@ -239,12 +268,12 @@ namespace ChessFight.RagdollLab
         /// draining it from the top otherwise; under the name, what it is doing, the cooldown left, or how to use it.</summary>
         void KeyCard(RagdollPawn p1)
         {
-            if (p1.Piece == PieceKind.King) return;
             bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
-            string how = (p1.Piece == PieceKind.Rook || p1.Piece == PieceKind.Bishop) ? $"{skillKey} 조준 → 좌클릭" : $"{skillKey} 사용";
-            SkillKeyCard.Draw(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
-                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), SkillKeyCard.Colors(p1.Piece),
-                ready || running, false, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
+            string how = (p1.Piece == PieceKind.Rook || p1.Piece == PieceKind.Bishop) ? $"{skillKey} 조준 → 좌클릭"
+                       : p1.Piece == PieceKind.King ? $"{skillKey} 목록 → 고르고 {skillKey}" : $"{skillKey} 사용";
+            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
+                SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), p1.Piece,
+                ready || running, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
         }
 
         public static string StageName(RagdollPawn pawn)
@@ -296,6 +325,7 @@ namespace ChessFight.RagdollLab
             EnsureStyles();
             DrawOverheads();
             KeyCard(p1);
+            if (LabGame.CleanView) return;
 
             const float width = 360f;
             panelRect = new Rect(8f, 44f, width, Mathf.Min(Screen.height - 180f, 640f));
@@ -363,6 +393,14 @@ namespace ChessFight.RagdollLab
             if (GUILayout.Button("더미 기물 바꾸기", button)) CycleDummyPiece();
             GUILayout.EndHorizontal();
             if (GUILayout.Button($"룩 시험: 앞에 4명 뭉치기 ({clusterKey})", button)) ClusterDummies(p1);
+            if (p1.Piece == PieceKind.King)
+            {
+                // R146: the king's call needs teammates (and, to see the rule, two sections).
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("더미 모두 내 팀 (부름 시험)", button)) AllDummiesMine(p1);
+                if (GUILayout.Button(RagdollPawn.KingCallSection == null ? "구간: 하나" : "구간: x=0으로 둘", button)) ToggleSections();
+                GUILayout.EndHorizontal();
+            }
             if (Cursor.lockState == CursorLockMode.Locked) GUILayout.Label("버튼을 누르려면 Esc로 마우스를 풀어요", small);
 
             GUILayout.Space(6f);
@@ -400,7 +438,10 @@ namespace ChessFight.RagdollLab
                         : pawn.SkillCooldown > 0f ? $"{RagdollPawn.SkillName(pawn.Piece)} {pawn.SkillCooldown:0.0}" : "";
                 else
                 {
-                    line = pawn.State == PawnState.Ragdoll ? "넘어짐" : pawn.Staggered ? "휘청" : pawn.GetUpGuardLeft > 0f ? "기상 보호" : "";
+                    line = pawn.SkillBound ? "묶임" : pawn.State == PawnState.Ragdoll ? "넘어짐" : pawn.Staggered ? "휘청" : pawn.GetUpGuardLeft > 0f ? "기상 보호" : "";
+                    // R146: a king's call to it, and its trip in.
+                    if (pawn.KingCarried) line = "오는 중 · 무적";
+                    else if (pawn.KingCaller != null) line = $"부름 {pawn.KingCallLeft:0.0}";
                     if (pawn.Piece != PieceKind.Pawn) line = ChessPieces.Name(pawn.Piece) + (line.Length > 0 ? " · " + line : "");
                 }
                 if (string.IsNullOrEmpty(line)) continue;

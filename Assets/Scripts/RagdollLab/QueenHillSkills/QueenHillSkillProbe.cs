@@ -18,7 +18,7 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class QueenHillSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "queen-high", "queen-low", "queen-slope-up", "queen-slope-down", "queen-slope30-up", "queen-slope30-down", "bishop-wait", "all" };
+        public static readonly string[] Names = { "king", "queen", "rook", "bishop", "knight", "pawn", "pawn-squeeze", "king-help", "rook-up", "rook-far", "queen-high", "queen-low", "queen-slope-up", "queen-slope-down", "queen-slope30-up", "queen-slope30-down", "bishop-wait", "bishop-glide", "bishop-dig", "bishop-hill", "bishop-wall", "knight-jump", "knight-e", "knight-land", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>A run is under way (the bed's test helpers stay out of it unless the run asks for them).</summary>
         public static bool Busy => Status.StartsWith("running");
@@ -37,7 +37,7 @@ namespace ChessFight.RagdollLab
         class Drive
         {
             public Vector3 move, aim = Vector3.forward;
-            public bool tap, click, grab;
+            public bool tap, click, grab, jump, ability;
         }
 
         readonly Dictionary<RagdollPawn, Drive> drives = new Dictionary<RagdollPawn, Drive>();
@@ -60,7 +60,8 @@ namespace ChessFight.RagdollLab
         public static PieceKind[] rookPartners = { PieceKind.Bishop, PieceKind.Queen, PieceKind.Knight };
 
         /// <summary>Stop the clock (time scale 0, frames still drawn) this many game seconds after the next run is
-        /// staged, to look at a moment from several cameras; set Time.timeScale back to 1 to go on.</summary>
+        /// staged, to look at a moment from several cameras; set Time.timeScale back to 1 to go on. The effects hold still
+        /// with it (R137: they kept on in their own time and had healed by the time a picture was taken).</summary>
         public static void FreezeAfter(float seconds) => freezeAfter = seconds;
 
         /// <summary>Game seconds since the current run was staged.</summary>
@@ -70,11 +71,13 @@ namespace ChessFight.RagdollLab
 
         void LateUpdate()
         {
+            if (QueenHillSkillFx.Hold && Time.timeScale > 0f) QueenHillSkillFx.Hold = false;
             if (!Staged) { SinceStaged = 0f; return; }
             SinceStaged += Time.deltaTime;
             if (freezeAfter >= 0f && SinceStaged >= freezeAfter)
             {
                 Time.timeScale = 0f;
+                QueenHillSkillFx.Hold = true;
                 freezeAfter = -1f;
             }
         }
@@ -87,9 +90,9 @@ namespace ChessFight.RagdollLab
                 var p = kv.Key;
                 var d = kv.Value;
                 if (p == null) continue;
-                p.SetInput(new PawnInput { move = d.move, aim = d.aim, shove = d.click, grab = d.grab });
+                p.SetInput(new PawnInput { move = d.move, aim = d.aim, shove = d.click, grab = d.grab, jump = d.jump, ability = d.ability });
                 p.SetSkillInput(d.tap);
-                d.tap = d.click = false;
+                d.tap = d.click = d.jump = d.ability = false;
             }
         }
 
@@ -160,7 +163,15 @@ namespace ChessFight.RagdollLab
                     "rook" => Rook(),
                     "bishop" => Bishop(),
                     "bishop-wait" => BishopWait(),
+                    "bishop-glide" => BishopGlide(),
+                    "bishop-dig" => BishopDig(),
+                    "bishop-hill" => BishopHill(),
+                    "bishop-wall" => BishopWall(),
                     "knight" => Knight(),
+                    "knight-jump" => KnightJump(0.22f),
+                    "knight-jump-late" => KnightJump(0.38f),
+                    "knight-e" => KnightE(),
+                    "knight-land" => KnightLand(),
                     "pawn" => PawnDodge(),
                     "pawn-squeeze" => PawnSqueeze(),
                     "king-help" => KingHelper(),
@@ -601,6 +612,125 @@ namespace ChessFight.RagdollLab
             finally { RagdollPawn.QueenHillFx -= Count; }
         }
 
+        // R133 (승규 님 10-14: "비숍 양탄자를 타서 움직일 때 너무 펄럭펄럭 거려 자연스럽게"): the carpet gliding: sideways
+        // to the aim, a shot, then on toward the enemy while the aim sweeps round (it turns and banks), let go (it coasts),
+        // the second shot, and down.
+        IEnumerator BishopGlide()
+        {
+            Vector3 enemyAt = new Vector3(-3.5f, 0f, 3.2f);
+            yield return Stage(PieceKind.Bishop, new Vector3(1.3f, 0f, 3.2f), Vector3.left,
+                (PieceKind.Pawn, false, enemyAt, Vector3.right));
+            var bishop = P1;
+            var enemy = bed.Dummy(0);
+            for (float w = 0f; (bishop.SkillStage != SkillStage.None || bishop.SkillCooldown > 0f) && w < 12f; w += Time.deltaTime) yield return null;
+            Tap(bishop, "F (떠오름)");
+            for (float a = 0f; a < 0.5f; a += Time.deltaTime) { AimAt(bishop, enemy.FeetPoint); yield return null; }
+            Vector3 from = bishop.Hips.position;
+            Of(bishop).move = Vector3.forward;
+            Say("W (옆으로 천천히)");
+            for (float a = 0f; a < 1.1f; a += Time.deltaTime) { AimAt(bishop, enemy.FeetPoint); yield return null; }
+            Vector3 side = bishop.Hips.position - from;
+            Click(bishop, "좌클릭 (1발)");
+            yield return Wait(0.3f);
+            Of(bishop).move = Vector3.left;
+            Say("A (적 쪽으로) · 조준을 오른쪽으로 돌림");
+            Vector3 mid = bishop.Hips.position;
+            for (float a = 0f; a < 1.3f; a += Time.deltaTime)
+            {
+                AimAt(bishop, enemy.FeetPoint + Vector3.forward * (3.5f * Mathf.SmoothStep(0f, 1f, a / 1.3f)));
+                yield return null;
+            }
+            Vector3 ahead = bishop.Hips.position - mid;
+            Of(bishop).move = Vector3.zero;
+            Say("손 뗌 (미끄러지다 멈춤)");
+            for (float a = 0f; a < 0.8f; a += Time.deltaTime) { AimAt(bishop, enemy.FeetPoint + Vector3.forward * 3.5f); yield return null; }
+            Click(bishop, "좌클릭 (2발)");
+            yield return Wait(2.2f);
+            Add($"양탄자: 옆으로 {new Vector2(side.x, side.z).magnitude:0.00} m · 앞으로 {new Vector2(ahead.x, ahead.z).magnitude:0.00} m, 비숍 {(bishop.SkillStage == SkillStage.None ? "착지" : bishop.SkillDetail)}");
+        }
+
+        // R134 (승규 님 10-14: "실제 던졌을 때 오브젝트가 좀 미흡 … 실제로 바닥이 파이는 연출이랑 x 자도 좀 더 사실 적으로"):
+        // two shots on the open floor up close: one on bare floor, one at an enemy standing on it.
+        IEnumerator BishopDig()
+        {
+            Vector3 enemyAt = new Vector3(-3.9f, 0f, 5.0f);
+            yield return Stage(PieceKind.Bishop, new Vector3(1.3f, 0f, 3.2f), Vector3.left,
+                (PieceKind.Pawn, false, enemyAt, Vector3.right));
+            var bishop = P1;
+            var enemy = bed.Dummy(0);
+            for (float w = 0f; (bishop.SkillStage != SkillStage.None || bishop.SkillCooldown > 0f) && w < 12f; w += Time.deltaTime) yield return null;
+            Tap(bishop, "F (떠오름)");
+            Vector3 spot = new Vector3(-1.6f, 0f, 2.6f);
+            for (float a = 0f; a < 0.7f; a += Time.deltaTime) { AimAt(bishop, spot); yield return null; }
+            Add($"1발 조준(빈 바닥): {(bishop.QhAimValid ? "됨" : bishop.QhAimWhy)}");
+            Click(bishop, "좌클릭 (1발: 빈 바닥)");
+            // Held on the spot a moment: the click is read on the bishop's next step, with the aim it has then.
+            for (float a = 0f; a < 0.2f; a += Time.deltaTime) { AimAt(bishop, spot); yield return null; }
+            for (float a = 0f; a < 1.5f; a += Time.deltaTime) { AimAt(bishop, enemy.FeetPoint); yield return null; }
+            Click(bishop, "좌클릭 (2발: 적)");
+            yield return Wait(3.4f);
+            Add($"2발 뒤: 적 {StateOf(enemy)}, 비숍 {(bishop.SkillStage == SkillStage.None ? "착지" : bishop.SkillDetail)}");
+        }
+
+        // R137 (승규 님 10-14: "언덕도 자연스럽게 파괴가 되게 해줘 벽도 마찬가지로 벽도 임팩트가 있게 파괴 되게끔"): the strike
+        // on the hill — on tier 1 beside tier 2's riser (a piece knocked out of the riser's foot, two blades slam into it, two
+        // go off tier 1's edge, fall and plough on along the ground), then right on tier 1's edge (the edge breaks off).
+        IEnumerator BishopHill()
+        {
+            float east = QueenHillLayout.HillCenter.x + QueenHillLayout.TierHalf(0);   // tier 1's east face
+            float y1 = QueenHillLayout.TierTop(0);
+            yield return Stage(PieceKind.Bishop, new Vector3(1.3f, 0f, 3.2f), Vector3.left);
+            var bishop = P1;
+            Add($"바닥: 체스판 블록 {QueenHillGround.Worn}개");
+            for (float w = 0f; (bishop.SkillStage != SkillStage.None || bishop.SkillCooldown > 0f) && w < 12f; w += Time.deltaTime) yield return null;
+            Tap(bishop, "F (떠오름)");
+            yield return Wait(0.5f);
+            Vector3 second = new Vector3(east - 0.3f, y1, 7.2f);
+            yield return Shoot(bishop, new Vector3(east - 0.9f, y1, 4.0f), "좌클릭 (1발: 1층, 2층 턱 옆)");
+            // Aiming on at the next spot (the aim's see-through mitre would stand in the crater it just made).
+            yield return AimFor(bishop, second, 1.4f);
+            Add($"1발: {QueenHillSkillFx.LastBreak}");
+            yield return Shoot(bishop, second, "좌클릭 (2발: 1층 가장자리)");
+            yield return Wait(3.4f);
+            Add($"2발: {QueenHillSkillFx.LastBreak}");
+        }
+
+        // R137: the strike beside a wall — the stone wall, then the lab's blue 3 m wall (승규 님's picture): a big piece knocked
+        // out of its foot, cracks up it, chunks flying, a harder shake; two blades slam into it and stick.
+        IEnumerator BishopWall()
+        {
+            var wall = QueenHillLayout.WallCenter;
+            float face = wall.x + QueenHillLayout.WallSize.x * 0.5f;   // the stone wall's east face
+            yield return Stage(PieceKind.Bishop, new Vector3(12f, 0f, 2f), Vector3.left);
+            var bishop = P1;
+            for (float w = 0f; (bishop.SkillStage != SkillStage.None || bishop.SkillCooldown > 0f) && w < 12f; w += Time.deltaTime) yield return null;
+            Tap(bishop, "F (떠오름)");
+            yield return Wait(0.5f);
+            Vector3 second = new Vector3(19.6f, 0f, 0.6f);
+            yield return Shoot(bishop, new Vector3(face + 0.4f, 0f, wall.z), "좌클릭 (1발: 돌벽 옆)");
+            yield return AimFor(bishop, second, 1.4f);
+            Add($"1발: {QueenHillSkillFx.LastBreak}");
+            yield return Shoot(bishop, second, "좌클릭 (2발: 파란 3 m 벽 옆)");
+            yield return Wait(3.4f);
+            Add($"2발: {QueenHillSkillFx.LastBreak}");
+        }
+
+        /// <summary>Aim at <paramref name="spot"/> for <paramref name="seconds"/>.</summary>
+        IEnumerator AimFor(RagdollPawn p, Vector3 spot, float seconds)
+        {
+            for (float a = 0f; a < seconds; a += Time.deltaTime) { AimAt(p, spot); yield return null; }
+        }
+
+        /// <summary>Aim at <paramref name="spot"/> a moment, click, and hold the aim while the click is read (on the bishop's
+        /// next step, with the aim it has then).</summary>
+        IEnumerator Shoot(RagdollPawn bishop, Vector3 spot, string hint)
+        {
+            for (float a = 0f; a < 0.7f; a += Time.deltaTime) { AimAt(bishop, spot); yield return null; }
+            Add($"조준 ({spot.x:0.0}, {spot.y:0.0}, {spot.z:0.0}): {(bishop.QhAimValid ? "됨" : bishop.QhAimWhy)}");
+            Click(bishop, hint);
+            for (float a = 0f; a < 0.2f; a += Time.deltaTime) { AimAt(bishop, spot); yield return null; }
+        }
+
         // ---------------------------------------------------------------- 5.B knight: one tier up, flattened off the ledge
 
         IEnumerator Knight()
@@ -649,6 +779,81 @@ namespace ChessFight.RagdollLab
             }
             Add($"나이트 골반 최고 {apex - QueenHillLayout.TierTop(0):+0.0;-0.0} m (1층 바닥 기준), 착지 높이 {knight.FeetPoint.y:0.0} m, 적 폰: {enemy.LastSkillHit}, 넘어짐 {enemy.Knockdowns - downs}번, 지금 높이 {enemy.FeetPoint.y:0.0} m");
             yield return Wait(0.9f);
+        }
+
+        /// <summary>R129 (승규 님: "상대가 점프하면 캔슬 돼"): the leap aimed onto an enemy's head on flat ground, and the
+        /// enemy jumps <paramref name="after"/> s into the leap.</summary>
+        IEnumerator KnightJump(float after)
+        {
+            Vector3 at = new Vector3(-4f, 0f, -7f), enemyAt = at + Vector3.right * 4.2f;
+            yield return Stage(PieceKind.Knight, at, Vector3.right, (PieceKind.Pawn, false, enemyAt, Vector3.left));
+            var knight = P1;
+            var enemy = bed.Dummy(0);
+            yield return Wait(0.3f);
+            AimAt(knight, enemyAt + Vector3.left * 0.3f);
+            Tap(knight, "F (조준)");
+            yield return Wait(0.35f);
+            AimAt(knight, enemyAt + Vector3.left * 0.3f);
+            yield return Wait(0.1f);
+            bool caught = knight.QhAimTarget == enemy;
+            Click(knight, "좌클릭 (도약)");
+            yield return Wait(bed.skills.knightWindup + after);
+            Of(enemy).jump = true;
+            Say("적 점프");
+            float top = enemy.Hips.position.y;
+            int squashes = enemy.Squashes;
+            for (float t = 0f; t < 1.6f; t += Time.deltaTime)
+            {
+                top = Mathf.Max(top, enemy.Hips.position.y);
+                yield return null;
+            }
+            Add($"나이트 머리 밟기 + 적 점프 (도약 {after:0.00}초 뒤): 머리 조준 {(caught ? "됨" : "안 됨")} → 적 골반 최고 {top:0.00} m → "
+                + $"납작 {enemy.Squashes - squashes}번 · {enemy.LastSkillHit}");
+            yield return Wait(0.8f);
+        }
+
+        /// <summary>R141 (승규 님 10-14: "나이트 E키를 누르면 높이 나는 버그가 있어 고쳐 줘"): E pressed with the knight. The lab's
+        /// L-jump (6 m up) is off with the skills on; the knight stays on the floor.</summary>
+        IEnumerator KnightE()
+        {
+            yield return Stage(PieceKind.Knight, new Vector3(-4f, 0f, -7f), Vector3.right);
+            var knight = P1;
+            yield return Wait(0.3f);
+            float start = knight.Hips.position.y, top = start;
+            int jumps = knight.KnightJumps;
+            Of(knight).ability = true;
+            Say("E");
+            for (float t = 0f; t < 1.2f; t += Time.deltaTime)
+            {
+                top = Mathf.Max(top, knight.Hips.position.y);
+                yield return null;
+            }
+            Add($"나이트 E: L자 점프 {knight.KnightJumps - jumps}번, 골반 최고 {top - start:+0.00;-0.00} m (뜨지 않아야 함), {StateOf(knight)}");
+            yield return Wait(0.3f);
+        }
+
+        /// <summary>R141: the leap onto bare floor, no one near (the Pawn Rush badge stamps where it lands; the air its spring
+        /// shoves back as it goes).</summary>
+        IEnumerator KnightLand()
+        {
+            Vector3 at = new Vector3(-4f, 0f, -7f), spot = at + Vector3.right * 4.5f;
+            yield return Stage(PieceKind.Knight, at, Vector3.right);
+            var knight = P1;
+            yield return Wait(0.3f);
+            AimAt(knight, spot);
+            Tap(knight, "F (조준)");
+            yield return Wait(0.45f);
+            AimAt(knight, spot);
+            yield return Wait(0.1f);
+            Click(knight, "좌클릭 (도약)");
+            float top = knight.Hips.position.y;
+            for (float t = 0f; t < 1.8f; t += Time.deltaTime)
+            {
+                top = Mathf.Max(top, knight.Hips.position.y);
+                yield return null;
+            }
+            Add($"나이트 빈 바닥 착지: {StateOf(knight)}, 조준점에서 {Vector3.Distance(knight.FeetPoint, spot):0.0} m, 골반 최고 {top:0.0} m");
+            yield return Wait(0.6f);
         }
 
         // ---------------------------------------------------------------- 6.B pawn: crouch and slip the rook's charge

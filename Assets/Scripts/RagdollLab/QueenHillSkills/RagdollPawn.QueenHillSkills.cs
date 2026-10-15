@@ -85,7 +85,7 @@ namespace ChessFight.RagdollLab
         // Queen: the slash runs along the floor (R97), sampled every SlashPathStep metres from her feet.
         Vector3 slashFrom, slashDir = Vector3.forward, slashStop;
         float slashReach;
-        bool slashBlocked;
+        bool slashBlocked, slashGuarded;
         readonly System.Collections.Generic.List<Vector3> slashPath = new System.Collections.Generic.List<Vector3>();
         public const float SlashPathStep = 0.25f;
         // Bishop: shots still to throw in this hover (R95: two).
@@ -300,7 +300,7 @@ namespace ChessFight.RagdollLab
             qhValid = false;
             qhWhy = "";
             qhCrouch = 0f;
-            slashBlocked = false;
+            slashBlocked = slashGuarded = false;
             shellOut = shellLanded = false;
             hoverLeft = hoverLinger = 0f;
             leapTarget = flyHome = null;
@@ -312,6 +312,14 @@ namespace ChessFight.RagdollLab
         string QhHit(RagdollPawn target, Vector3 push, bool knockdown, string cause, QueenHillFxKind kind, Vector3 at)
         {
             if (target == null || target.NetworkPuppet) return "-";
+            var cover = target.Cover();
+            if (cover != null)
+            {
+                // A king its guards stand round: the nearest one takes the hit for it (and staggers), the king nothing.
+                target.LastSkillHit = $"{cause}: {cover.DisplayName}이(가) 대신 막음";
+                QhHit(cover, push, knockdown, cause, kind, cover.bodies[(int)BodyId.Chest].position);
+                return $"{cover.DisplayName}이(가) 대신 막음";
+            }
             if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
             {
                 // (TakeHit itself scales a guarded piece's push down: WardPushScale.)
@@ -337,6 +345,14 @@ namespace ChessFight.RagdollLab
         /// <summary>Guarded by the king: knockdowns from anything (a tackle, a bump) become a short stagger.</summary>
         bool WardCatchesKnockdown(string cause)
         {
+            var cover = Cover();
+            if (cover != null && State != PawnState.Ragdoll && !Floating)
+            {
+                // The king's guard takes the fall for it: the guard staggers, the king stays up.
+                cover.WardCatchesKnockdown(cause);
+                LastSkillHit = $"{cause}: {cover.DisplayName}이(가) 대신 막음";
+                return true;
+            }
             if (wardLeft <= 0f || State == PawnState.Ragdoll || Floating) return false;
             Stagger(QueenHillSkills != null ? QueenHillSkills.wardStagger : 0.2f);
             LastSkillHit = $"{cause}: 호위로 버팀";
@@ -346,6 +362,32 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Guarded by the king: pushes (TakeHit) are this much smaller.</summary>
         float WardPushScale => wardLeft > 0f ? (QueenHillSkills != null ? QueenHillSkills.wardPush : 0.25f) : 1f;
+
+        /// <summary>
+        /// The guard that takes a hit for this king (10-12, 승규 님: "상대가 공격을 하면 내 주위에 아군이 있고 아군이 그
+        /// 공격을 대신 막아주는 … 나 자체는 무적이 아닌데 아군이 나를 막아줘서 킹은 안 맞게"): an ally this king's close
+        /// guard is still on, standing, within the guard's reach of it — the nearest one. None (null) when no guard is near:
+        /// then the king is hit like anyone.
+        /// </summary>
+        RagdollPawn Cover()
+        {
+            if (Piece != PieceKind.King || State == PawnState.Ragdoll) return null;
+            var s = QueenHillSkills;
+            float radius = s != null ? s.kingRadius : 2.5f, height = s != null ? s.kingHeight : 2f;
+            RagdollPawn best = null;
+            float bestD = float.MaxValue;
+            foreach (var other in All)
+            {
+                if (other == null || other == this || other.wardBy != this || other.wardLeft <= 0f || other.NetworkPuppet) continue;
+                if (other.State == PawnState.Ragdoll || other.Floating || !IsAllyOf(other)) continue;
+                Vector3 d = other.bodies[0].position - bodies[0].position;
+                float flat = Flat(d).magnitude;
+                if (flat > radius || Mathf.Abs(d.y) > height || flat >= bestD) continue;
+                best = other;
+                bestD = flat;
+            }
+            return best;
+        }
 
         // ---------------------------------------------------------------- king: close guard (B)
 
@@ -453,11 +495,12 @@ namespace ChessFight.RagdollLab
                     if (stageTime >= s.queenWindup)
                     {
                         SlashLine(s);
+                        StopAtGuard(s);
                         skillHitSet.Clear();
                         skillStage = SkillStage.Active;
                         stageTime = 0f;
                         SkillDetail = "검격";
-                        QhFx(QueenHillFxKind.QueenSlash, null, slashFrom, slashDir, slashReach, slashBlocked ? 1 : 0, slashStop);
+                        QhFx(QueenHillFxKind.QueenSlash, null, slashFrom, slashDir, slashReach, slashBlocked ? 1 : slashGuarded ? 2 : 0, slashStop);
                     }
                     break;
                 case SkillStage.Active:
@@ -538,26 +581,53 @@ namespace ChessFight.RagdollLab
             high = Mathf.Max(slashPath[a].y, slashPath[b].y);
         }
 
+        /// <summary>The slash stops at the first piece on its way that the other side's king guards (10-12, 승규 님: queen,
+        /// pawn, king in a row — "퀸이 공격할 때 임팩트가 폰에서 끝나야 돼, 지금 킹까지 넣어 와"): the guard takes it
+        /// and staggers, nothing behind it is cut, and the crescent ends there.</summary>
+        void StopAtGuard(QueenHillSkillParams s)
+        {
+            slashGuarded = false;
+            float nearest = float.MaxValue;
+            foreach (var other in All)
+            {
+                if (other == null || other == this || !IsEnemyOf(other) || other.wardLeft <= 0f || other.State == PawnState.Ragdoll) continue;
+                if (!OnSlash(other, s, slashReach, out float along) || along >= nearest) continue;
+                nearest = along;
+            }
+            if (nearest == float.MaxValue) return;
+            slashReach = Mathf.Max(0.3f, nearest);
+            slashGuarded = true;
+            Log($"퀸: 검기가 {slashReach:0.0} m의 호위 아군에게 막힘");
+        }
+
+        /// <summary>A piece on the slash's way up to <paramref name="front"/> m, and how far along it stands.</summary>
+        bool OnSlash(RagdollPawn other, QueenHillSkillParams s, float front, out float along)
+        {
+            Vector3 start = slashPath.Count > 0 ? slashPath[0] : FeetPoint;
+            Vector3 rel = other.bodies[0].position - start;
+            along = Vector3.Dot(Flat(rel), slashDir);
+            if (along < -0.3f || along > front + 0.25f || along > slashReach + 0.2f) return false;
+            float across = (Flat(rel) - slashDir * along).magnitude;
+            if (across > s.queenWidth * 0.5f + 0.3f) return false;
+            // On the slash's way (R97): standing on the floor it runs along there — a tier below or above her included —
+            // or jumping over it. R98: or on the floor right under the piece, found the same way (a slope tilted
+            // across the line, the lower floor beside a step's edge): its square lies there too.
+            SlashFloorAround(Mathf.Max(0f, along), out float low, out float high);
+            float under = SlashFloorAt(other.bodies[0].position, SlashPathFloor(slashPath, Mathf.Max(0f, along)));
+            low = Mathf.Min(low, under);
+            high = Mathf.Max(high, under);
+            float feet = other.FeetPoint.y;
+            return feet >= low - s.queenDrop && feet <= high + s.queenHeight;
+        }
+
         void QueenSlashHits(QueenHillSkillParams s, float front)
         {
             foreach (var other in All)
             {
                 if (other == null || other == this || other.NetworkPuppet || !IsEnemyOf(other) || skillHitSet.Contains(other)) continue;
-                Vector3 start = slashPath.Count > 0 ? slashPath[0] : FeetPoint;
-                Vector3 rel = other.bodies[0].position - start;
-                float along = Vector3.Dot(Flat(rel), slashDir);
-                if (along < -0.3f || along > front + 0.25f || along > slashReach + 0.2f) continue;
-                float across = (Flat(rel) - slashDir * along).magnitude;
-                if (across > s.queenWidth * 0.5f + 0.3f) continue;
-                // On the slash's way (R97): standing on the floor it runs along there — a tier below or above her included —
-                // or jumping over it. R98: or on the floor right under the piece, found the same way (a slope tilted
-                // across the line, the lower floor beside a step's edge): its square lies there too.
-                SlashFloorAround(Mathf.Max(0f, along), out float low, out float high);
-                float under = SlashFloorAt(other.bodies[0].position, SlashPathFloor(slashPath, Mathf.Max(0f, along)));
-                low = Mathf.Min(low, under);
-                high = Mathf.Max(high, under);
-                float feet = other.FeetPoint.y;
-                if (feet < low - s.queenDrop || feet > high + s.queenHeight) continue;
+                if (!OnSlash(other, s, front, out float along)) continue;
+                // Stopped by a guard: nothing past it (the king behind it included).
+                if (slashGuarded && along > slashReach + 0.05f) continue;
                 skillHitSet.Add(other);
                 string result = QhHit(other, slashDir * s.queenPush + Vector3.up * s.queenLift, true, "퀸 팔방 검격",
                     QueenHillFxKind.QueenHit, other.bodies[(int)BodyId.Chest].position);
@@ -915,9 +985,20 @@ namespace ChessFight.RagdollLab
             }
             if (flyHome != null && flyHome.State == PawnState.Active)
             {
-                // Coming down on a head: the end of the arc follows the head if the piece moves (a little at a time).
+                // Coming down on a head: the end of the arc follows the head if the piece moves (a little at a time;
+                // R129: 3 → 5 m/s, a jump carries it further).
                 Vector3 head = flyHome.bodies[(int)BodyId.Head].position;
-                flyTo = Vector3.MoveTowards(flyTo, new Vector3(head.x, flyTo.y, head.z), 3f * dt);
+                flyTo = Vector3.MoveTowards(flyTo, new Vector3(head.x, flyTo.y, head.z), 5f * dt);
+                // R129 (승규 님: "상대가 점프하면 캔슬 돼"): a head jumping up into the knight on its way down is met where
+                // it is: the flight ends on it there and the landing takes it (before, the arc went on to where the head
+                // had been, the jump knocked the knight off it and the landing missed).
+                Vector3 feet = bodies[0].position - Vector3.up * standHeight;
+                float top = HeadTop(flyHome);
+                if (flyT > flyTime * 0.4f && Flat(feet - head).magnitude < 0.75f && feet.y <= top + 0.3f && feet.y >= top - 0.6f)
+                {
+                    EndFly(true);
+                    return;
+                }
             }
             Launch(FlyVelocity(dt));
             facing = FlatDir(flyTo - flyFrom);
@@ -1045,7 +1126,8 @@ namespace ChessFight.RagdollLab
         {
             Vector3 v = bodies[0].linearVelocity;
             float y = bodies[0].position.y;
-            float bob = stageTime > s.bishopRise ? Mathf.Sin((stageTime - s.bishopRise) * Mathf.PI * 3f) * 0.04f : 0f;
+            // R133 (승규 님: the carpet "너무 펄럭펄럭"): a slow float, 0.6 a second (it bobbed 1.5 times a second, 4 cm).
+            float bob = stageTime > s.bishopRise ? Mathf.Sin((stageTime - s.bishopRise) * Mathf.PI * 1.2f) * 0.035f : 0f;
             float wantUp = Mathf.Clamp((hoverHipY + bob - y) * 7f, -2.5f, 4.5f);
             Vector3 drift = stageTime > s.bishopRise ? Vector3.ClampMagnitude(Flat(hoverMove), 1f) * s.bishopDrift : Vector3.zero;
             // The carpet's speed eases toward the drift (still air: it carries on a moment when let go); the body is
@@ -1353,11 +1435,12 @@ namespace ChessFight.RagdollLab
             {
                 if (other == null || other == this || other.NetworkPuppet || !IsEnemyOf(other) || other.State != PawnState.Active) continue;
                 Vector3 d = other.bodies[0].position - bodies[0].position;
-                // The piece it came down on is under its feet: caught whatever the circle says.
-                bool stomped = other == leapTarget && Flat(other.bodies[(int)BodyId.Head].position - bodies[0].position).magnitude < 0.8f;
+                // The piece it came down on is under its feet: caught whatever the circle says (R129: in the air too, a
+                // jump under way; 0.8 → 0.95 m across).
+                bool stomped = other == leapTarget && Flat(other.bodies[(int)BodyId.Head].position - bodies[0].position).magnitude < 0.95f;
                 if (!stomped && (Flat(d).magnitude > s.knightRadius || Mathf.Abs(other.FeetPoint.y - feet.y) > 1f)) continue;
                 Vector3 out_ = Flat(d).sqrMagnitude > 0.01f ? Flat(d).normalized : Flat(facing).normalized;
-                if (other.wardLeft > 0f)
+                if (other.wardLeft > 0f || other.Cover() != null)
                 {
                     QhHit(other, out_ * s.knightSlide, false, "나이트 압착", QueenHillFxKind.KnightFlatten, other.bodies[(int)BodyId.Head].position);
                     continue;
@@ -1551,18 +1634,26 @@ namespace ChessFight.RagdollLab
             {
                 case PieceKind.King when skillStage == SkillStage.Windup:
                 {
-                    float k = Mathf.Clamp01(stageTime / 0.12f);
-                    armR = Quaternion.Slerp(armR, Quaternion.Euler(0f, -20f, 78f), k);
-                    armL = Quaternion.Slerp(armL, Quaternion.Euler(0f, 0f, -30f), k);
-                    chest = Quaternion.Slerp(chest, Quaternion.Euler(-10f, 0f, 0f), k);
-                    head = Quaternion.Slerp(head, Quaternion.Euler(-14f, 0f, 0f), k);
+                    // R130 ("짧게 팡~만 하는데 그 연출을 살짝만 길게"): the sceptre goes up over 0.2 s, he leans back with it,
+                    // and it trembles a little while the guard gathers, then comes down.
+                    float up = Mathf.Clamp01(stageTime / 0.2f);
+                    float k = up * up * (3f - 2f * up);
+                    float tremble = stageTime > 0.2f ? Mathf.Sin(stageTime * 75f) * 3.5f : 0f;
+                    armR = Quaternion.Slerp(armR, Quaternion.Euler(0f, -20f, 80f + tremble), k);
+                    armL = Quaternion.Slerp(armL, Quaternion.Euler(0f, 0f, -34f), k);
+                    chest = Quaternion.Slerp(chest, Quaternion.Euler(-14f, 0f, 0f), k);
+                    head = Quaternion.Slerp(head, Quaternion.Euler(-18f, 0f, 0f), k);
                     break;
                 }
                 case PieceKind.King when skillStage == SkillStage.Recovery:
-                    armR = Quaternion.Euler(0f, -80f, -10f);
+                {
+                    // Planted: his weight over the sceptre driven down in front of him, straightening a little at the end.
+                    float rise = Mathf.Clamp01((stageTime - 0.25f) / 0.2f);
+                    armR = Quaternion.Slerp(Quaternion.Euler(0f, -80f, -10f), Quaternion.Euler(0f, -72f, -2f), rise);
                     armL = Quaternion.Euler(0f, 0f, 30f);
-                    chest = Quaternion.Euler(16f, 0f, 0f);
+                    chest = Quaternion.Slerp(Quaternion.Euler(20f, 0f, 0f), Quaternion.Euler(10f, 0f, 0f), rise);
                     break;
+                }
                 case PieceKind.Queen when skillStage != SkillStage.None:
                     QueenPose(ref armL, ref armR, ref chest, ref head);
                     break;
@@ -1582,13 +1673,45 @@ namespace ChessFight.RagdollLab
                     break;
                 }
                 case PieceKind.Knight when skillStage == SkillStage.Windup && aimLocked:
-                    thighL = Quaternion.Euler(-24f, 0f, -6f);
-                    thighR = Quaternion.Euler(-24f, 0f, 6f);
-                    footL = footR = Quaternion.Euler(24f, 0f, 0f);
-                    chest = Quaternion.Euler(28f, 0f, 0f);
-                    armL = Quaternion.Euler(0f, -50f, 30f);
-                    armR = Quaternion.Euler(0f, 50f, -30f);
+                {
+                    // R130 (승규 님: "나이트의 연출과 액션을 좀 더 실제 말 같이"): it rears up first — leaning back, head up,
+                    // the arms (its front legs) up in front pawing the air in turn — then drops into a crouch and springs.
+                    float w = QueenHillSkills != null ? Mathf.Max(0.1f, QueenHillSkills.knightWindup) : 0.3f;
+                    float rear = Mathf.Clamp01(stageTime / (w * 0.6f));
+                    float gather = Mathf.Clamp01((stageTime - w * 0.6f) / (w * 0.4f));
+                    float paw = Mathf.Sin(stageTime * 26f);
+                    var rearChest = Quaternion.Euler(-34f, 0f, 0f);
+                    var rearArmR = Quaternion.Euler(0f, -80f, 42f + 30f * paw);
+                    var rearArmL = Quaternion.Euler(0f, 80f, -(42f - 30f * paw));
+                    float r = rear * rear * (3f - 2f * rear);
+                    chest = Quaternion.Slerp(Quaternion.Slerp(chest, rearChest, r), Quaternion.Euler(30f, 0f, 0f), gather);
+                    head = Quaternion.Slerp(Quaternion.Slerp(head, Quaternion.Euler(-26f, 0f, 0f), r), Quaternion.Euler(-12f, 0f, 0f), gather);
+                    armR = Quaternion.Slerp(Quaternion.Slerp(armR, rearArmR, r), Quaternion.Euler(0f, 50f, -30f), gather);
+                    armL = Quaternion.Slerp(Quaternion.Slerp(armL, rearArmL, r), Quaternion.Euler(0f, -50f, 30f), gather);
+                    thighL = Quaternion.Slerp(Quaternion.Euler(-8f * r, 0f, -4f), Quaternion.Euler(-24f, 0f, -6f), gather);
+                    thighR = Quaternion.Slerp(Quaternion.Euler(-8f * r, 0f, 4f), Quaternion.Euler(-24f, 0f, 6f), gather);
+                    footL = footR = Quaternion.Slerp(Quaternion.identity, Quaternion.Euler(24f, 0f, 0f), gather);
                     break;
+                }
+                case PieceKind.Knight when skillStage == SkillStage.Active && flying:
+                {
+                    // R130: a jumping horse. Going up the front legs fold up under the chest and it looks up; over the top
+                    // it stretches out level; coming down the front legs reach for the ground and it looks down at it.
+                    float k = QhFlyProgress;
+                    float up = 1f - Mathf.Clamp01(k / 0.45f), down = Mathf.Clamp01((k - 0.55f) / 0.45f);
+                    var chestUp = Quaternion.Euler(-14f, 0f, 0f);
+                    var chestTop = Quaternion.Euler(16f, 0f, 0f);
+                    var chestDown = Quaternion.Euler(30f, 0f, 0f);
+                    chest = Quaternion.Slerp(Quaternion.Slerp(chestTop, chestUp, up), chestDown, down);
+                    head = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(-6f, 0f, 0f), Quaternion.Euler(-22f, 0f, 0f), up), Quaternion.Euler(14f, 0f, 0f), down);
+                    // Front legs: folded up (forward and down, close in) -> straight out ahead -> reaching down to land.
+                    armR = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(0f, -85f, -4f), Quaternion.Euler(0f, -70f, -48f), up), Quaternion.Euler(0f, -84f, -38f), down);
+                    armL = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(0f, 85f, 4f), Quaternion.Euler(0f, 70f, 48f), up), Quaternion.Euler(0f, 84f, 38f), down);
+                    // Hind legs: pushed back off the ground going up, tucked under coming down.
+                    thighL = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(-6f, 0f, -4f), Quaternion.Euler(22f, 0f, -4f), up), Quaternion.Euler(-20f, 0f, -5f), down);
+                    thighR = Quaternion.Slerp(Quaternion.Slerp(Quaternion.Euler(-6f, 0f, 4f), Quaternion.Euler(22f, 0f, 4f), up), Quaternion.Euler(-20f, 0f, 5f), down);
+                    break;
+                }
             }
         }
     }

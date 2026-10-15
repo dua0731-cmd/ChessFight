@@ -487,7 +487,7 @@ MonoBehaviour:
   tuning: {fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}
   targetScore: 999
   roundSeconds: 3600
-  respawnDelay: 3
+  respawnDelay: 0
 --- !u!114 &1122090110
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -557,10 +557,10 @@ MonoBehaviour:
     knockdownSeconds: 0.65
     pushLift: 1
     kingCooldown: 8
-    kingGuard: 0.5
+    kingGuard: 0.9
     kingCounterRadius: 2.5
     kingCounterPush: 2.8
-    kingCounterTime: 0.15
+    kingCounterTime: 0.34
     kingRecovery: 0.4
     kingWhiff: 0.6
     queenCooldown: 8

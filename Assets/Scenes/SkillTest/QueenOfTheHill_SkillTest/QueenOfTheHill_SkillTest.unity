@@ -658,6 +658,9 @@ MonoBehaviour:
   physicsRate: 120
   solverIterations: 24
   slowMotionScale: 0.3
+  DevMove: {x: 0, y: 0, z: 0}
+  DevMoveUntil: 0
+  DevGrabUntil: 0
 --- !u!4 &140281373
 Transform:
   m_ObjectHideFlags: 0
@@ -689,13 +692,13 @@ MonoBehaviour:
     testCooldown: 2
     square: 1.5
     downHold: 1
-    kingWindup: 0.3
+    kingWindup: 0.45
     kingRadius: 2.5
     kingHeight: 2
-    wardTime: 2
+    wardTime: 2.9
     wardPush: 0.25
     wardStagger: 0.2
-    kingRecovery: 0.2
+    kingRecovery: 0.45
     kingCooldown: 9
     queenWindup: 0.45
     queenSwing: 0.12
@@ -721,12 +724,14 @@ MonoBehaviour:
     bishopHover: 1.3
     bishopRise: 0.25
     bishopHoverTime: 3
+    bishopDrift: 0.7
+    bishopDriftEase: 0.9
     bishopShots: 2
     bishopRange: 9
     bishopFlight: 0.5
-    bishopArm: 2.25
-    bishopArmWidth: 0.7
-    bishopCenter: 0.9
+    bishopArm: 1.6
+    bishopArmWidth: 0.6
+    bishopCenter: 0.75
     bishopPush: 4.5
     bishopLift: 2
     bishopCooldown: 9
@@ -734,7 +739,7 @@ MonoBehaviour:
     knightMaxRise: 1.05
     knightArc: 1.6
     knightGravity: 1.6
-    knightWindup: 0.12
+    knightWindup: 0.3
     knightRadius: 1.3
     knightSnap: 1.05
     knightFlatten: 0.7
@@ -743,7 +748,7 @@ MonoBehaviour:
     knightRecovery: 0.3
     knightCooldown: 7
     pawnCrouch: 0.08
-    pawnDistance: 2.6
+    pawnDistance: 1.8
     pawnSpeed: 8
     pawnRise: 0.22
     pawnDrop: 0.075

@@ -71,6 +71,7 @@ namespace ChessFight.RagdollLab
             game = GetComponent<SwordFightGame>();
             if (game == null) game = FindFirstObjectByType<SwordFightGame>();
             kit = new Kit(new GameObject("Sword Fight skill effects").transform, () => Viewer, () => Eye);
+            BuildBoardLook();
             SwordFightSkills.Fx += OnFx;
             SwordFightEdgeFloor.Changed += OnFloor;
         }
@@ -85,6 +86,9 @@ namespace ChessFight.RagdollLab
             if (tintMat != null) Destroy(tintMat);
             if (tintTex != null) Destroy(tintTex);
             if (ghostMat != null) Destroy(ghostMat);
+            DestroyBishopParts();
+            DestroyShieldParts();
+            DestroyBreaches();
             kit?.Destroy();
             DestroyIcons();
             DestroyStatues();
@@ -382,7 +386,7 @@ namespace ChessFight.RagdollLab
         void Cast(SfFxEvent e)
         {
             var pawn = e.by.Pawn;
-            var pal = SwordFightSkills.Colors(e.by.Piece);
+            var pal = PieceColors(e.by.Piece);
             Vector3 floor = Kit.FloorUnder(pawn.Hips.position, 0.6f);
             HeadMark(pawn, e.by.Piece);
             Afterimage(pawn, pal, 1.6f, 0.3f, 0.7f, true);
@@ -410,7 +414,7 @@ namespace ChessFight.RagdollLab
         /// turning opposite ways at its feet, closing in as it fills and blinking white at the very end.</summary>
         void ChargeUp(SwordFightSkills s, SwordFightSkillParams S)
         {
-            var pal = SwordFightSkills.Colors(s.Piece);
+            var pal = PieceColors(s.Piece);
             if (!moteNext.TryGetValue(s, out float next) || kit.Clock >= next || next - kit.Clock > 1f)
             {
                 moteNext[s] = kit.Clock + 2.5f * F;
@@ -521,6 +525,8 @@ namespace ChessFight.RagdollLab
             /// <summary>An aim: when it ends (the skill goes, or is called off) it only fades, the white is the warning's.</summary>
             public bool quiet;
             public Kit.Palette? fill;
+            /// <summary>Danger (R129, the queen's squares over the void): red stripes sliding over it.</summary>
+            public bool danger;
         }
 
         readonly Dictionary<(object, string), Warning> warnings = new Dictionary<(object, string), Warning>();
@@ -558,6 +564,12 @@ namespace ChessFight.RagdollLab
                         t.round = 0.07f;
                         t.fade = fade * cur.alpha;
                         kit.Warn(t, caster, released >= 0f ? 1f : cur.k, m.shape == 2f ? 0f : flash, cur.fill);   // a big disc going white floods the view
+                        if (cur.danger)
+                        {
+                            t.stripe = Kit.A(Danger.deep, 0.7f);
+                            t.stripePhase = kit.Clock * 0.9f;
+                            t.Apply();
+                        }
                     }
                     return true;
                 };
@@ -635,10 +647,10 @@ namespace ChessFight.RagdollLab
                         if (open.Pawn == null || !kit.Held(x)) return false;
                         var t = x.tiles[0];
                         t.Floor(Kit.FloorUnder(open.Pawn.Hips.position, 0.6f) + Vector3.up * 0.02f, Vector3.forward, Vector2.one * 1.3f * Kit.Pop(x.age, 1.15f, 0.5f));
-                        Kit.Horseshoe(t, Kit.Grey, 0.95f, 0f);
+                        Kit.Horseshoe(t, kit.grey, 0.95f, 0f);
                         t.gap = 0f;
                         t.inner = 0.6f;
-                        t.stripe = Kit.A(Kit.TeamEnemy.deep, 0.6f);
+                        t.stripe = Kit.A(kit.enemy.deep, 0.6f);
                         t.stripePhase = kit.Clock * 0.8f;
                         t.fade = 1f;
                         t.Apply();
@@ -648,39 +660,21 @@ namespace ChessFight.RagdollLab
                 });
                 return;
             }
+            // R132 (승규 님: "킹 주변을 위에는 제외 하고 양 옆 앞 뒤 전체가 방어 쉴드 구축 된 거 마냥"): a shield wall all round
+            // him, open above, through the guard and the beat after a block (the counter bursts it); no arch in front any more
+            // (SwordFightSkillFx.King.cs). R133: the gold shards circle him again with it; both are let go of as the counter
+            // spin starts (it bursts them): held through the spin, the burst wall was made again for its last moments.
+            if (s.Stage == SfStage.Windup || s.Stage == SfStage.Active && s.KingCountered && s.StageTime < S.kingCounterBeat)
+            {
+                GuardShield(s, S);
+                GuardShards(s, S);
+            }
             if (s.Stage != SfStage.Windup) return;
             Vector3 floor = Kit.FloorUnder(s.Pawn.Hips.position, 0.6f);
             var w = new Warning { k = Kit.Charge(s.StageTime, S.kingGuard), alpha = 0.9f };
             w.marks.Add(Ring(floor, S.kingCounterRadius, 0.16f));
             Warn(s, "king reach", w);
             kit.Coil(s.Pawn, Mathf.Clamp01(s.StageTime / 0.12f) * 0.6f);
-            // The guard: an emerald arc standing in front of him, thick, pulsing a little.
-            var pawn = s.Pawn;
-            kit.Keep(s, "king guard", () =>
-            {
-                var fx = new Kit.Fx();
-                fx.tiles.Add(new Kit.Tile(kit, "King guard"));
-                float released = -1f;
-                fx.step = (x, d) =>
-                {
-                    if (pawn == null) return false;
-                    if (!kit.Held(x) && released < 0f) released = x.age;
-                    float a = released >= 0f ? (x.age - released) / F : -1f;
-                    if (a >= 6f) return false;
-                    Vector3 f = Kit.FlatDir(pawn.Facing, Vector3.forward);
-                    var t = x.tiles[0];
-                    float pop = Kit.Pop(x.age, 1.15f, 0.4f) * (1f + 0.03f * Mathf.Sin(x.age * 40f));
-                    // Local +x up (the horseshoe opens to −x): an arch over the top, open at his feet.
-                    t.Facing(pawn.bodies[(int)BodyId.Chest].position + f * 0.42f + Vector3.up * 0.05f, f, Vector2.one * (1.5f * pop), Vector3.Cross(f, Vector3.up));
-                    Kit.Horseshoe(t, Kit.King, 0.95f, 150f);
-                    t.inner = 0.72f;
-                    t.flash = a >= 0f && a < 2f ? 1f : 0f;
-                    t.fade = released < 0f ? 1f : 1f - Mathf.Clamp01((a - 2f) / 4f);
-                    t.Apply();
-                    return true;
-                };
-                return fx;
-            });
         }
 
         // ---------------------------------------------------------------- queen
@@ -692,9 +686,9 @@ namespace ChessFight.RagdollLab
             Vector3 dir = aim ? s.AimDir : s.Dir;
             float reach = aim ? s.AimReach : s.Reach;
             var w = new Warning { k = Charge(s, S.queenWindup), alpha = alpha, quiet = aim };
-            // Her way: the squares she dashes over and her sword's reach past them, and a ring where she stops.
-            w.marks.AddRange(Lane(s.Origin, dir, 0.3f, Mathf.Max(1f, reach + S.queenHitAhead), S.queenWidth));
-            w.marks.Add(Ring(Kit.FloorUnder(s.Origin + dir * Mathf.Max(0.4f, reach), 1.5f) + Vector3.up * 0.004f, 0.45f, 0.13f, dir));
+            // Her way: the squares she dashes over and her sword's reach past them, and a ring where she stops; past the
+            // floor's edge (R129) the rest hangs red over the void (QueenLane).
+            QueenLane(s, S, w, dir, reach, alpha, aim);
             Warn(s, aim ? "queen aim" : "queen line", w);
             if (aim) return;
             kit.Coil(s.Pawn, Mathf.Clamp01(s.StageTime / S.queenWindup));
@@ -708,10 +702,10 @@ namespace ChessFight.RagdollLab
         {
             var s = e.by;
             var pawn = s.Pawn;
-            var pal = Kit.Queen;
+            var pal = kit.queen;
             Vector3 start = Kit.FloorUnder(e.at, 1.5f), dir = e.dir;
             kit.FlashRing(start, 0.75f, pal);
-            kit.PuffBurst(start - dir * 0.3f + Vector3.up * 0.15f, Kit.Dust, 5, 0.6f, 0.2f, 0.4f, 0.2f);
+            kit.PuffBurst(start - dir * 0.3f + Vector3.up * 0.15f, kit.dust, 5, 0.6f, 0.2f, 0.4f, 0.2f);
             kit.AddSquash(pawn, Kit.SquashKind.Spring);
             Afterimage(pawn, pal, 1.35f, 0.22f, 0.7f, true);
             HitStop(2);
@@ -764,10 +758,10 @@ namespace ChessFight.RagdollLab
         {
             var s = e.by;
             Vector3 at = Kit.FloorUnder(e.at, 1.5f);
-            kit.PuffBurst(at + e.dir * 0.35f + Vector3.up * 0.12f, Kit.Dust, 5, 0.55f, 0.2f, 0.45f, 0.2f);
-            kit.FlashRing(at, 0.6f, Kit.Queen);
+            kit.PuffBurst(at + e.dir * 0.35f + Vector3.up * 0.12f, kit.dust, 5, 0.55f, 0.2f, 0.45f, 0.2f);
+            kit.FlashRing(at, 0.6f, kit.queen);
             kit.AddSquash(s.Pawn, Kit.SquashKind.Down);
-            if (e.size > 0.8f) kit.Release(Kit.SquaresAlong(s.Origin + e.dir * 0.3f, e.dir, e.size, 1.2f), e.dir, s.Pawn, 1.15f, Kit.Queen);
+            if (e.size > 0.8f) kit.Release(Kit.SquaresAlong(s.Origin + e.dir * 0.3f, e.dir, e.size, 1.2f), e.dir, s.Pawn, 1.15f, kit.queen);
             Shake(s.Pawn, null, 0.07f, 5);
         }
 
@@ -780,7 +774,9 @@ namespace ChessFight.RagdollLab
             Vector3 dir = aim ? s.AimDir : s.Dir;
             float reach = aim ? s.AimReach : s.Reach;
             var w = new Warning { k = Charge(s, S.rookWindup), alpha = alpha, quiet = aim };
-            w.marks.AddRange(Lane(s.Origin, dir, 0.6f, Mathf.Max(1.2f, reach), S.rookWidth));
+            // R129 (승규 님: "장 밖으로 미리보기가 나가 있어"): only over the floor (its reach stops at the edge as well).
+            reach = Mathf.Min(reach, SwordFightSkills.FloorDistance(s.Origin, dir, reach, 0.6f) - 0.1f);
+            if (reach > 0.8f) w.marks.AddRange(Lane(s.Origin, dir, 0.6f, reach, S.rookWidth));
             Warn(s, aim ? "rook aim" : "rook lane", w);
             if (aim) return;
             kit.Coil(s.Pawn, Mathf.Clamp01(s.StageTime / S.rookWindup) * 0.7f);
@@ -795,7 +791,7 @@ namespace ChessFight.RagdollLab
             kit.Keep(s, "rook crack", () =>
             {
                 var fx = new Kit.Fx();
-                var crack = new Kit.Strip(kit, new Kit.Palette { main = Kit.Rook.ink, light = Kit.Rook.deep, deep = Kit.Rook.ink, ink = Kit.Rook.ink }) { core = Kit.Rook.main, coreShare = 0.34f, inkShare = 0.3f };
+                var crack = new Kit.Strip(kit, new Kit.Palette { main = kit.rook.ink, light = kit.rook.deep, deep = kit.rook.ink, ink = kit.rook.ink }) { core = kit.rook.main, coreShare = 0.34f, inkShare = 0.3f };
                 fx.strips.Add(crack);
                 var pts = new List<Vector3>();
                 float released = -1f;
@@ -831,14 +827,14 @@ namespace ChessFight.RagdollLab
         {
             var s = e.by;
             Vector3 at = Kit.FloorUnder(e.at, 1.5f);
-            FloorShock(at, 0.3f, 1.7f, Kit.Rook, 7, 15, 0.3f);
+            FloorShock(at, 0.3f, 1.7f, kit.rook, 7, 15, 0.3f);
             kit.PuffBurst(at + Vector3.up * 0.2f, Kit.Stone, 6, 0.7f, 0.26f, 0.5f);
             kit.Drops(at + Vector3.up * 0.2f, Vector3.up, Kit.Stone, 5, 6f);
             kit.AddSquash(s.Pawn, Kit.SquashKind.Down);
             HitStop(5);
             Shake(s.Pawn, null, 0.17f, 9);
             Punch(s.Pawn, null, 6f, 16);
-            Tint(s.Pawn, null, Kit.Rook.main, 0.34f, 20);
+            Tint(s.Pawn, null, kit.rook.main, 0.34f, 20);
             float stamped = 0.6f, reach = s.Reach;
             Vector3 origin = s.Origin, dir = s.Dir;
             var caster = s.Pawn;
@@ -874,12 +870,22 @@ namespace ChessFight.RagdollLab
             bool aim = s.Stage == SfStage.Aim;
             Vector3 p = aim ? s.AimPoint : s.Point, dir = aim ? s.AimDir : s.Dir;
             // Gold when there is an enemy on the point to take; the X is the bishop's diagonals.
-            var w = new Warning { k = Charge(s, S.bishopWindup), alpha = alpha, quiet = aim, fill = s.PinCandidate != null ? Kit.Queen : (Kit.Palette?)null };
             Vector3 c = Kit.FloorUnder(p, 1.5f);
-            w.marks.Add(new Mark { at = c + Vector3.up * 0.02f, along = Quaternion.AngleAxis(45f, Vector3.up) * dir, size = new Vector2(0.24f, 2.1f) });
-            w.marks.Add(new Mark { at = c + Vector3.up * 0.021f, along = Quaternion.AngleAxis(-45f, Vector3.up) * dir, size = new Vector2(0.24f, 2.1f) });
-            w.marks.Add(Ring(c, S.bishopRadius, 0.12f, dir));
-            Warn(s, aim ? "bishop aim" : "bishop x", w);
+            float k = aim ? 0f : Kit.Charge(s.StageTime, S.bishopWindup);
+            // R130 (승규 님: "검은 색 부분을 그래픽 좋은 광택 나는 검은 색으로 … 불 사진에서 검은 색 불로 … 원형 부분에"): the X
+            // and the ring in polished obsidian, black fire standing round the ring (SwordFightSkillFx.Bishop.cs); the old
+            // warning squares only if the glossy look is missing.
+            if (!BishopObsidian(s, c, dir, S.bishopRadius, k, alpha, aim, s.PinCandidate != null))
+            {
+                var w = new Warning { k = Charge(s, S.bishopWindup), alpha = alpha, quiet = aim, fill = s.PinCandidate != null ? kit.queen : BishopWarnFill };
+                w.marks.Add(new Mark { at = c + Vector3.up * 0.02f, along = Quaternion.AngleAxis(45f, Vector3.up) * dir, size = new Vector2(0.24f, 2.1f) });
+                w.marks.Add(new Mark { at = c + Vector3.up * 0.021f, along = Quaternion.AngleAxis(-45f, Vector3.up) * dir, size = new Vector2(0.24f, 2.1f) });
+                w.marks.Add(Ring(c, S.bishopRadius, 0.12f, dir));
+                Warn(s, aim ? "bishop aim" : "bishop x", w);
+            }
+            // R132 (승규 님's picture of a glowing orb trailing strands of light): balls of energy circling the ring, their
+            // strands of light the smoke now (SwordFightSkillFx.Bishop.cs).
+            BishopEnergy(s, c, S.bishopRadius, k, alpha, aim);
             if (aim) return;
             ChargeUp(s, S);
             // The two hands wait by its shoulders, open and wriggling, the way they will go drawn faint on ahead of them;
@@ -889,8 +895,8 @@ namespace ChessFight.RagdollLab
             {
                 var fx = new Kit.Fx();
                 var hands = new[] { new GrabHand(kit, "Bishop hand L"), new GrabHand(kit, "Bishop hand R") };
-                fx.strips.Add(new Kit.Strip(kit, Kit.Bishop) { core = Color.white, coreShare = 0.3f });
-                fx.strips.Add(new Kit.Strip(kit, Kit.Bishop) { core = Color.white, coreShare = 0.3f });
+                fx.strips.Add(new Kit.Strip(kit, kit.bishop) { core = Color.white, coreShare = 0.3f });
+                fx.strips.Add(new Kit.Strip(kit, kit.bishop) { core = Color.white, coreShare = 0.3f });
                 fx.end = () => { foreach (var h in hands) h.Destroy(); };
                 var pts = new List<Vector3>();
                 fx.step = (x, d) =>
@@ -987,7 +993,7 @@ namespace ChessFight.RagdollLab
         static float FlyEase(float a) => a >= HandFly ? 1f : 1f - (1f - a / HandFly) * (1f - a / HandFly);
 
         /// <summary>A violet arm stretching behind a hand (the bishop's sleeve: light inside, inked).</summary>
-        Kit.Strip ArmStrip() => new Kit.Strip(kit, Kit.Bishop) { core = Color.Lerp(Kit.Bishop.main, Kit.Bishop.light, 0.4f), coreShare = 0.34f, inkShare = 0.24f };
+        Kit.Strip ArmStrip() => new Kit.Strip(kit, kit.bishop) { core = Color.Lerp(kit.bishop.main, kit.bishop.light, 0.4f), coreShare = 0.34f, inkShare = 0.24f };
 
         /// <summary>The hands go (the pinned pieces' own effects fly them: <see cref="PinMarks"/>); here the push off beside
         /// the bishop, and when they get there the hit on the point: a ring bursting along the floor, an impact ring, a
@@ -999,22 +1005,23 @@ namespace ChessFight.RagdollLab
             var caster = s.Pawn;
             Vector3 c = Kit.FloorUnder(e.at, 1.5f);
             bool got = e.order > 0;
-            for (int i = 0; i < 2; i++) kit.PuffBurst(HandStart(s, i == 0 ? -1f : 1f), Kit.Bishop, 3, 0.3f, 0.1f, 0.3f, 0.2f);
+            for (int i = 0; i < 2; i++) kit.PuffBurst(HandStart(s, i == 0 ? -1f : 1f), kit.bishop, 3, 0.3f, 0.1f, 0.3f, 0.2f);
             Punch(caster, null, 3f, 10);
-            if (!got) MissedHands(s);
-            var pal = got ? Kit.Queen : Kit.Bishop;
+            // R130: hands a king's guard cut off are drawn by the king's block (CutHands), not as a miss.
+            if (!got && !(handsCut.TryGetValue(s, out float cutAt) && kit.Clock - cutAt < 0.1f)) MissedHands(s);
+            var pal = got ? kit.queen : kit.bishop;
             float r = e.size;
             kit.Run(1f, (fx, d) =>
             {
                 if (fx.age < HandFly * F) return true;
                 kit.FlashRing(c, r, pal);
                 kit.ImpactRing(c + Vector3.up * 0.4f, Vector3.up, pal, 0.2f, 0.7f);
-                FloorShock(c, 0.2f, r + 0.5f, Kit.Bishop, 6, 14, 0.24f);
-                kit.PuffBurst(c + Vector3.up * 0.1f, Kit.Bishop, 5, 0.6f, 0.14f, 0.4f, 0.3f);
+                FloorShock(c, 0.2f, r + 0.5f, kit.bishop, 6, 14, 0.24f);
+                kit.PuffBurst(c + Vector3.up * 0.1f, kit.bishop, 5, 0.6f, 0.14f, 0.4f, 0.3f);
                 HitStop(got ? 4 : 2, caster);
                 Shake(caster, null, got ? 0.08f : 0.05f, 5);
                 Punch(caster, null, 4f, 12);
-                Tint(caster, null, Kit.Bishop.main, 0.3f, 18);
+                Tint(caster, null, kit.bishop.main, 0.3f, 18);
                 return false;
             });
         }
@@ -1066,7 +1073,7 @@ namespace ChessFight.RagdollLab
                 if (!slapped && a >= HandFly)
                 {
                     slapped = true;
-                    for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] + Vector3.up * 0.05f, Kit.Dust, 3, 0.3f, 0.1f, 0.3f, 0.15f);
+                    for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] + Vector3.up * 0.05f, kit.dust, 3, 0.3f, 0.1f, 0.3f, 0.15f);
                 }
                 return true;
             });
@@ -1089,7 +1096,7 @@ namespace ChessFight.RagdollLab
                     Vector3 at = Kit.FloorUnder(pawn.Hips.position, 0.6f) + Vector3.up * 0.02f;
                     var r = x.tiles[0];
                     r.Floor(at, Vector3.forward, Vector2.one * 1.1f * Kit.Pop(x.age, 1.15f, 0.4f));
-                    Kit.Horseshoe(r, Kit.Bishop, 0.9f, 0f);
+                    Kit.Horseshoe(r, kit.bishop, 0.9f, 0f);
                     r.gap = 0f;
                     r.fade = Mathf.Clamp01(owner.SlowLeft / 0.2f);
                     r.Apply();
@@ -1098,8 +1105,8 @@ namespace ChessFight.RagdollLab
                     rip.Floor(at - Vector3.up * 0.002f, Vector3.forward, Vector2.one * (1.1f + 0.9f * w));
                     rip.shape = 1f;
                     rip.inner = 0.88f;
-                    rip.fill = Kit.A(Kit.Bishop.main, 0.6f * (1f - w));
-                    rip.ink = Kit.A(Kit.Bishop.ink, 0.6f * (1f - w));
+                    rip.fill = Kit.A(kit.bishop.main, 0.6f * (1f - w));
+                    rip.ink = Kit.A(kit.bishop.ink, 0.6f * (1f - w));
                     rip.inkWidth = 0.02f;
                     rip.core = Color.clear;
                     rip.rim = Color.clear;
@@ -1205,22 +1212,22 @@ namespace ChessFight.RagdollLab
                     if (!grabbed && r < 0f && a >= HandFly)
                     {
                         grabbed = true;
-                        for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] - Vector3.Cross(Vector3.up, dir).normalized * ((i == 0 ? -1f : 1f) * 0.2f) + Vector3.up * 0.1f, Kit.Bishop, 3, 0.3f, 0.09f, 0.3f, 0.15f);
-                        kit.ImpactRing(centre + Vector3.up * 0.12f, Vector3.up, Kit.Bishop, 0.15f, 0.55f, false);
-                        kit.FlashBody(pawn, Kit.Bishop.main);
+                        for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] - Vector3.Cross(Vector3.up, dir).normalized * ((i == 0 ? -1f : 1f) * 0.2f) + Vector3.up * 0.1f, kit.bishop, 3, 0.3f, 0.09f, 0.3f, 0.15f);
+                        kit.ImpactRing(centre + Vector3.up * 0.12f, Vector3.up, kit.bishop, 0.15f, 0.55f, false);
+                        kit.FlashBody(pawn, kit.bishop.main);
                         kit.AddSquash(pawn, Kit.SquashKind.Bump);
                         Shake(by != null ? by.Pawn : null, pawn, 0.06f, 5);
                     }
                     if (!puffed && r >= 4f)
                     {
                         puffed = true;
-                        for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] + Vector3.up * 0.15f, Kit.Bishop, 3, 0.3f, 0.1f, 0.3f);
+                        for (int i = 0; i < 2; i++) kit.PuffBurst(ends[i] + Vector3.up * 0.15f, kit.bishop, 3, 0.3f, 0.1f, 0.3f);
                     }
                     var ring = x.tiles[0];
                     if (a >= HandFly)
                     {
                         ring.Floor(centre + Vector3.up * 0.022f, Vector3.forward, Vector2.one * 1.4f * Kit.Pop(x.age - HandFly * F, 1.1f, 0.6f));
-                        Kit.Horseshoe(ring, Kit.Queen, 0.95f, 0f);
+                        Kit.Horseshoe(ring, kit.queen, 0.95f, 0f);
                         ring.inner = 0.86f;
                         ring.gap = 0f;
                         ring.flash = a < HandFly + 2f ? 1f : 0f;
@@ -1249,7 +1256,7 @@ namespace ChessFight.RagdollLab
                 root = new GameObject(name).transform;
                 root.SetParent(kit.root, false);
                 root.position = Vector3.down * 1000f;   // out of sight until it is first placed
-                var pal = Kit.Queen;   // gold: the pin's colour, and it reads on the violet arms and rings
+                var pal = kit.queen;   // gold: the pin's colour, and it reads on the violet arms and rings
                 Add(kit, kit.RoundBox(new Vector3(0.13f, 0.15f, 0.055f), 0.024f), pal, root, new Vector3(0f, 0.075f, 0f));
                 for (int i = 0; i < 4; i++)
                 {
@@ -1260,7 +1267,7 @@ namespace ChessFight.RagdollLab
                 }
                 thumb = Joint(root, new Vector3(0.07f, 0.055f, 0.005f));
                 Add(kit, kit.RoundBox(new Vector3(0.034f, 0.075f, 0.036f), 0.015f), pal, thumb, new Vector3(0f, 0.034f, 0f));
-                var cuff = Add(kit, kit.meshTorus, Kit.Bishop, root, new Vector3(0f, 0.012f, 0f));
+                var cuff = Add(kit, kit.meshTorus, kit.bishop, root, new Vector3(0f, 0.012f, 0f));
                 cuff.t.localScale = new Vector3(0.085f, 0.3f, 0.045f);
                 cuff.inkWidth = 0.008f;
             }
@@ -1308,168 +1315,7 @@ namespace ChessFight.RagdollLab
             }
         }
 
-        // ---------------------------------------------------------------- knight
-
-        void KnightMarks(SwordFightSkills s, SwordFightSkillParams S, float alpha)
-        {
-            bool aim = s.Stage == SfStage.Aim, air = s.Stage == SfStage.Active;
-            if (!aim && !air) return;
-            Vector3 p = aim ? s.AimPoint : s.Point, dir = aim ? s.AimDir : s.Dir;
-            var w = new Warning { k = aim ? 0.3f : Kit.Charge(s.StageTime, S.knightAir), alpha = alpha, quiet = aim };
-            foreach (var spot in s.KnightSpots)
-            {
-                w.marks.Add(Disc(spot, S.knightSpotRadius));
-                w.marks.Add(Ring(spot, S.knightSpotRadius, 0.13f));
-            }
-            Warn(s, aim ? "knight aim" : "knight spots", w);
-            // The landing: a horseshoe open behind, shrinking to the touchdown.
-            var owner = s;
-            kit.Keep(s, aim ? "knight shoe aim" : "knight shoe", () =>
-            {
-                var fx = new Kit.Fx();
-                fx.tiles.Add(new Kit.Tile(kit, "Knight landing"));
-                fx.step = (x, d) =>
-                {
-                    if (owner == null || !kit.Held(x)) return false;
-                    bool a2 = owner.Stage == SfStage.Aim;
-                    Vector3 at = Kit.FloorUnder(a2 ? owner.AimPoint : owner.Point, 1.5f) + Vector3.up * 0.024f;
-                    float k = a2 ? 0f : Mathf.Clamp01(owner.StageTime / S.knightAir);
-                    var t = x.tiles[0];
-                    t.Floor(at, -(a2 ? owner.AimDir : owner.Dir), Vector2.one * Mathf.Lerp(1.3f, 0.75f, k) * Kit.Pop(x.age, 1.1f, 0.5f));
-                    Kit.Horseshoe(t, Kit.Knight, a2 ? 0.6f : 0.95f);
-                    t.fade = a2 ? 0.7f : 1f;
-                    t.Apply();
-                    return true;
-                };
-                return fx;
-            });
-            if (aim)
-            {
-                // The arc it will fly, a thin dotted line for its owner.
-                kit.Keep(s, "knight arc", () =>
-                {
-                    var fx = new Kit.Fx();
-                    fx.strips.Add(new Kit.Strip(kit, Kit.Knight) { core = Color.white, coreShare = 0.3f });
-                    fx.step = (x, d) =>
-                    {
-                        if (owner == null || !kit.Held(x) || owner.Stage != SfStage.Aim) return false;
-                        var pts = new List<Vector3>();
-                        Vector3 a = owner.Origin + Vector3.up * 0.6f, b = owner.AimPoint + Vector3.up * 0.25f;
-                        for (int i = 0; i <= 16; i++)
-                        {
-                            float u = i / 16f;
-                            pts.Add(Vector3.Lerp(a, b, u) + Vector3.up * (4f * 1.4f * u * (1f - u)));
-                        }
-                        x.strips[0].Build(pts, j => 0.07f, kit.Eye);
-                        x.strips[0].opacity = 0.75f;
-                        x.strips[0].Apply();
-                        return true;
-                    };
-                    return fx;
-                });
-            }
-        }
-
-        void KnightLeap(SfFxEvent e)
-        {
-            kit.FlashRing(e.at, 0.6f, Kit.Knight);
-            kit.DustRing(e.at, 4, 0.7f);
-            var pawn = e.by.Pawn;
-            var owner = e.by;
-            // The horseshoe it kicks off from, stamped on the floor behind it.
-            var shoe = new Kit.Tile(kit, "Knight take-off");
-            Vector3 from = e.at + Vector3.up * 0.03f, back = -e.dir;
-            var fs = kit.Run(24f * F, (fx, d) =>
-            {
-                float a = fx.age / F;
-                shoe.Floor(from, back, Vector2.one * 1.2f * Kit.Pop(fx.age, 1.2f, 0.4f));
-                Kit.Horseshoe(shoe, Kit.Knight, 1f);
-                shoe.flash = a < 2f ? 1f : 0f;
-                shoe.fade = a < 12f ? 1f : 1f - (a - 12f) / 12f;
-                shoe.Apply();
-                return true;
-            });
-            fs.tiles.Add(shoe);
-            Punch(pawn, null, 5f, 14);
-            var strip = new Kit.Strip(kit, Kit.Knight) { core = Color.white, coreShare = 0.3f, inkShare = 0.22f };
-            var pts = new List<Vector3>();
-            float nextGhost = 2f * F;
-            var f = kit.Run(1.2f, (fx, d) =>
-            {
-                bool flying = owner != null && owner.Stage == SfStage.Active && pawn != null;
-                if (flying && fx.age >= nextGhost)
-                {
-                    Afterimage(pawn, Kit.Knight, 1f, 0.2f, 0.45f);
-                    nextGhost = fx.age + 3f * F;
-                }
-                if (flying) pts.Add(pawn.Hips.position);
-                else if (pts.Count > 0) pts.RemoveAt(0);
-                while (pts.Count > 14) pts.RemoveAt(0);
-                if (pts.Count < 2) { strip.Hide(); return flying || fx.age < 0.1f; }
-                strip.Build(pts, i => 0.32f * i / Mathf.Max(1f, pts.Count - 1f), kit.Eye);
-                strip.Apply();
-                return true;
-            });
-            f.strips.Add(strip);
-        }
-
-        void KnightLand(SfFxEvent e)
-        {
-            var s = e.by;
-            kit.FlashRing(e.at, 0.8f, Kit.Knight);
-            kit.DustRing(e.at, 5, 0.9f);
-            FloorShock(e.at, 0.3f, 1.4f, Kit.Knight, 6, 14, 0.24f);
-            Afterimage(s.Pawn, Kit.Knight, 1.45f, 0.26f, 0.7f, true);
-            Punch(s.Pawn, null, 6f, 16);
-            Tint(s.Pawn, null, Kit.Knight.main, 0.3f, 18);
-            foreach (var spot in s.KnightSpots)
-            {
-                // The fork: a line shooting out along the floor from where it lands to each spot.
-                var prong = new Kit.Strip(kit, Kit.Knight) { core = Color.white, coreShare = 0.45f, inkShare = 0.2f };
-                Vector3 a0 = e.at + Vector3.up * 0.036f, b0 = spot + Vector3.up * 0.036f;
-                var line = new List<Vector3> { a0, Vector3.Lerp(a0, b0, 0.5f), b0 };
-                var fp = kit.Run(16f * F, (fx, d) =>
-                {
-                    float a = fx.age / F;
-                    prong.Build(line, j => 0.22f, kit.Eye, true);
-                    prong.head = Kit.EaseOut(a / 3f);
-                    prong.tail = a < 8f ? 0f : Kit.EaseIn((a - 8f) / 8f);
-                    prong.core = a < 2f ? Color.white : Kit.Knight.light;
-                    prong.Apply();
-                    return true;
-                });
-                fp.strips.Add(prong);
-                kit.ImpactRing(spot + Vector3.up * 0.35f, Vector3.up, Kit.Knight, 0.2f, 0.6f, false);
-                var ring = new Kit.Tile(kit, "Knight impact");
-                Vector3 c = spot + Vector3.up * 0.03f;
-                float r1 = e.size;
-                var f = kit.Run(14f * F, (fx, d) =>
-                {
-                    float a = fx.age / F;
-                    float r = r1 * Kit.Pop(fx.age, 1.12f, 0.3f);
-                    ring.Floor(c, s.Dir, Vector2.one * (2f * r));
-                    ring.shape = 1f;
-                    ring.inner = Mathf.Clamp01(1f - 0.28f / r);
-                    ring.fill = Kit.A(Kit.Knight.main, 1f);
-                    ring.core = Kit.A(Color.white, 1f);
-                    ring.coreWidth = 0.04f;
-                    ring.ink = Kit.A(Kit.Knight.ink, 1f);
-                    ring.inkWidth = 0.035f;
-                    ring.rim = Color.clear;
-                    ring.stripe = Color.clear;
-                    ring.flash = a < 2f ? 1f : 0f;
-                    ring.arc = a < 6f ? 1f : 1f - (a - 6f) / 8f;
-                    ring.fade = 1f;
-                    ring.Apply();
-                    return true;
-                });
-                f.tiles.Add(ring);
-                kit.DustRing(spot, 4, 0.9f, null, 0.3f, 0.5f);
-            }
-            kit.AddSquash(s.Pawn, Kit.SquashKind.Down);
-            HitStop(5);
-            Shake(s.Pawn, null, 0.14f, 7);
-        }
+        // ---------------------------------------------------------------- knight: SwordFightSkillFx.Knight.cs (R129)
 
         // ---------------------------------------------------------------- events
 
@@ -1482,37 +1328,32 @@ namespace ChessFight.RagdollLab
             switch (e.kind)
             {
                 case SfFxKind.Cast: Cast(e); break;
-                case SfFxKind.KingParry:
-                    kit.ImpactRing(e.at, e.dir, Kit.King, 0.15f, 0.5f);
-                    kit.FlashBody(e.by.Pawn, Kit.King.main);
-                    KingWave(e.by);
-                    SpinCut(e.by.Pawn, Kit.King, S != null ? Mathf.Min(1.3f, S.kingCounterRadius * 0.5f) : 1.2f);
-                    HeadMark(e.by.Pawn, PieceKind.King);   // his mark pops again (R99's crown is this now)
-                    Afterimage(e.by.Pawn, Kit.King, 1.7f, 0.32f, 0.7f, true);
-                    HitStop(7);
-                    Shake(e.by.Pawn, null, 0.18f, 9);
-                    Punch(e.by.Pawn, null, 7f, 18);
-                    Tint(e.by.Pawn, null, Kit.King.main, 0.36f, 22);
-                    break;
-                case SfFxKind.KingCounterHit: Hit(e, Kit.King, 0, 0.16f); break;
+                // R130: the block (what it took answered: SwordFightSkillFx.King.cs), a beat later the spin counter, and an
+                // attacker thrown off the block.
+                case SfFxKind.KingParry: KingBlock(e); break;
+                case SfFxKind.KingCounterSpin: KingSpin(e); break;
+                case SfFxKind.KingRepel: KingRepelFx(e); break;
+                case SfFxKind.KingCounterHit: Hit(e, kit.king, 0, 0.16f); break;
                 case SfFxKind.KingWhiff:
-                    kit.PuffBurst(e.by.Pawn.bodies[(int)BodyId.Chest].position + e.dir * 0.4f, Kit.Grey, 4, 0.4f, 0.16f, 0.4f);
+                    kit.PuffBurst(e.by.Pawn.bodies[(int)BodyId.Chest].position + e.dir * 0.4f, kit.grey, 4, 0.4f, 0.16f, 0.4f);
                     break;
                 case SfFxKind.QueenThrust: QueenDash(e); break;
                 case SfFxKind.QueenHit:
-                    if (e.target != null) Slash(e.target.bodies[(int)BodyId.Chest].position, e.by.Dir, Kit.Queen);
-                    Hit(e, Kit.Queen, e.order == 0 ? 5 : 3, e.order == 0 ? 0.16f : 0.1f);
+                    if (e.target != null) Slash(e.target.bodies[(int)BodyId.Chest].position, e.by.Dir, kit.queen);
+                    Hit(e, kit.queen, e.order == 0 ? 5 : 3, e.order == 0 ? 0.16f : 0.1f);
                     break;
                 case SfFxKind.QueenStop: QueenStop(e); break;
                 case SfFxKind.RookSlam: RookSlam(e); break;
                 case SfFxKind.RookHit:
-                    Hit(e, Kit.Rook, 4, 0.14f);
+                    // R132: the king's guard cannot stop the rook's wave: it shatters his shield and throws him.
+                    if (e.target != null) ShieldShatter(e.target, e.dir);
+                    Hit(e, kit.rook, 4, 0.14f);
                     if (e.target != null) kit.Drops(Kit.FloorUnder(e.target.Hips.position, 0.6f) + Vector3.up * 0.2f, Vector3.up, Kit.Stone, 4, 7f);
                     break;
                 case SfFxKind.RookBlocked:
                 {
                     Vector3 at = Kit.FloorUnder(e.at, 1.5f) + Vector3.up * 0.5f;
-                    kit.ImpactRing(at, -e.dir, Kit.Rook, 0.3f, 0.85f);
+                    kit.ImpactRing(at, -e.dir, kit.rook, 0.3f, 0.85f);
                     kit.Drops(at, -e.dir + Vector3.up * 0.5f, Kit.Stone, 4);
                     kit.DustRing(at - Vector3.up * 0.5f, 5, 0.8f);
                     HitStop(4);
@@ -1522,12 +1363,14 @@ namespace ChessFight.RagdollLab
                 case SfFxKind.BishopSlow: break;   // the hands say it when they get there (PinMarks)
                 case SfFxKind.BishopPin:
                     if (e.target != null) pinnedBy[e.target] = (e.by, e.dir, kit.Clock);
+                    // R132: the energy round the ring is drawn into whoever the hands took, and binds its ankles.
+                    EnergyTaken(e.by, e.target, e.size);
                     break;
                 case SfFxKind.KnightLeap: KnightLeap(e); break;
                 case SfFxKind.KnightLand: KnightLand(e); break;
-                case SfFxKind.KnightHit: Hit(e, Kit.Knight, 0, 0.12f); break;
+                case SfFxKind.KnightHit: Hit(e, kit.knight, 0, 0.12f); break;
                 case SfFxKind.Interrupted:
-                    kit.PuffBurst(e.at, Kit.Grey, 4, 0.4f, 0.16f, 0.4f);
+                    kit.PuffBurst(e.at, kit.grey, 4, 0.4f, 0.16f, 0.4f);
                     break;
             }
         }
@@ -1537,7 +1380,7 @@ namespace ChessFight.RagdollLab
             var S = this.S;
             float R = S != null ? S.kingCounterRadius : 2.5f;
             Vector3 c = Kit.FloorUnder(s.Pawn.Hips.position, 0.6f);
-            FloorShock(c, 0.4f, R, Kit.King, 8, 16, 0.32f);
+            FloorShock(c, 0.4f, R, kit.king, 8, 16, 0.32f);
             kit.DustRing(c + Vector3.up * 0.03f, 6, R * 0.7f);
             kit.AddSquash(s.Pawn, Kit.SquashKind.Spring);
         }

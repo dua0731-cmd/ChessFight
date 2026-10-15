@@ -26,7 +26,7 @@ namespace ChessFight.RagdollLab
 
         public bool Squash(float seconds, float immunity)
         {
-            if (NetworkPuppet || StatusImmune || seconds <= 0f || squashImmune > 0f || State == PawnState.Ragdoll) return false;
+            if (NetworkPuppet || StatusImmune || KingCallShielded || seconds <= 0f || squashImmune > 0f || State == PawnState.Ragdoll) return false;
             LetGo(0.3f);
             squashTimer = seconds;
             squashImmune = seconds + Mathf.Max(0f, immunity);
@@ -36,7 +36,7 @@ namespace ChessFight.RagdollLab
 
         public bool Stagger(float seconds)
         {
-            if (NetworkPuppet || StatusImmune || seconds <= 0f || State == PawnState.Ragdoll) return false;
+            if (NetworkPuppet || StatusImmune || KingCallShielded || seconds <= 0f || State == PawnState.Ragdoll) return false;
             staggerTimer = Mathf.Max(staggerTimer, seconds);
             // A swing in progress goes back in the hand: with the button forced up it would be thrown.
             if (hookPhase == HookPhase.Charging) DropHook();

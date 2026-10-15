@@ -37,25 +37,42 @@ namespace ChessFight.RagdollLab
         {
             new Shot { run = "king", title = "킹 · 왕의 반격", note = "가장자리를 등지고 받아내기 자세 → 적의 칼을 막고 반경 2.5 m를 밀어냄 → 가장자리 쪽 적은 장외",
                 eye = new Vector3(3.0f, 3.6f, -3.6f), look = new Vector3(5.2f, 0.2f, -0.2f), fov = 46f },
-            new Shot { run = "king-whiff", title = "킹 · 왕의 반격 (상대가 늦게 벨 때)", note = "칼이 안 오면 자세가 풀리고 0.6초 빈틈 → 그때 맞음 · 쿨타임은 그대로",
+            new Shot { run = "king-whiff", title = "킹 · 왕의 반격 (상대가 늦게 벨 때)", note = "자세 0.9초 동안 칼이 안 오면 방패(3층)가 회색으로 무너지고 조각이 작아져 사라짐 · 0.6초 빈틈 → 그때 맞음 (R133)",
                 eye = new Vector3(3.0f, 3.6f, -3.6f), look = new Vector3(5.2f, 0.2f, -0.2f), fov = 46f },
             new Shot { run = "king-mid", title = "킹 · 왕의 반격 (맵 가운데)", note = "가운데에서 F → 0.3초 뒤 F8: 가장 가까운 적이 옆으로 와서 벰 → 받아내고 밀어냄 · 머리 위에 왕관 표시",
                 eye = new Vector3(-2.6f, 2.7f, -4.9f), look = new Vector3(-0.1f, 0.3f, -1.1f), fov = 44f },
-            new Shot { run = "queen", title = "퀸 · 꼬치 베기", note = "줄 예고 0.4초 → 퀸이 줄을 따라 돌진하며 지나가는 적을 벰 (첫째 3.0 m · 둘째 2.1 m, 앞·바깥으로) → 가장자리 앞에서 멈춤",
+            // R130: the king's guard takes every piece's attack and answers it.
+            new Shot { run = "king-queen", title = "킹 · 왕의 반격 — 퀸 꼬치 베기를 막음", note = "F → 킹 둘레에 3층 방패벽(위는 열림) + 금색 네모 조각이 둘레를 돎 (R133) → 퀸을 막아 방패에 물결 → 한 바퀴 반격, 방패·조각이 바깥으로 터짐",
+                eye = new Vector3(-0.8f, 2.6f, -5.4f), look = new Vector3(-0.4f, 0.6f, 0f), fov = 50f },
+            new Shot { run = "king-bishop", title = "킹 · 왕의 반격 — 비숍 관통 핀의 손을 잘라냄", note = "발목을 잡으러 온 손 두 개를 칼로 잘라냄, 방패 아래쪽에 물결 (묶임·감속 없음) → 한 바퀴 반격",
+                eye = new Vector3(-1.4f, 2.6f, -5.6f), look = new Vector3(-1.2f, 0.5f, 0f), fov = 52f },
+            new Shot { run = "king-rook", title = "킹 · 왕의 반격 — 룩 충격파는 못 막음 (R132)", note = "룩 F는 막지 못함: 충격파가 방패를 깨뜨리고 킹도 다른 기물처럼 띄워 밀어냄",
+                eye = new Vector3(-0.8f, 2.6f, -5.4f), look = new Vector3(0.2f, 0.6f, 0f), fov = 50f },
+            new Shot { run = "king-knight", title = "킹 · 왕의 반격 — 나이트 포크 강하를 받아침 (R130)", note = "내리꽂는 나이트를 받아쳐 튕겨 냄 → 한 바퀴 반격",
+                eye = new Vector3(-0.8f, 2.8f, -5.6f), look = new Vector3(0.2f, 1.0f, 0f), fov = 52f },
+            new Shot { run = "king-edge-queen", title = "킹 · 왕의 반격 — 체크메이트 일섬을 막음 (R130)", note = "순간이동해 벤 퀸을 막아 퀸이 금빛 꼬리를 끌며 날아감 → 한 바퀴 반격",
+                eye = new Vector3(3.4f, 2.8f, -5.6f), look = new Vector3(4.6f, 0.6f, 0f), fov = 52f },
+            new Shot { run = "king-edge-knight", title = "킹 · 왕의 반격 — 벼랑 끝 역전 뒷발차기를 막음 (R130)", note = "공중제비로 넘어와 찬 나이트를 막아 튕겨 냄 → 한 바퀴 반격",
+                eye = new Vector3(4.8f, 2.6f, -5.6f), look = new Vector3(4.6f, 0.7f, 0f), fov = 52f },
+            new Shot { run = "queen", title = "퀸 · 꼬치 베기", note = "줄 예고 0.4초 → 퀸이 줄을 따라 돌진하며 지나가는 적을 벰 (첫째 3.0 m · 둘째 2.1 m, 앞·바깥으로) → 줄 끝에서 멈춤",
                 eye = new Vector3(1.1f, 5.5f, -5.6f), look = new Vector3(3.6f, 0f, 0.5f), fov = 46f },
+            new Shot { run = "queen-fall", title = "퀸 · 꼬치 베기 (거리를 잘못 재면)", note = "가장자리 밖까지 겨누면 빨간 칸이 보임 → 그대로 달려 나가 장 밖으로 떨어짐",
+                eye = new Vector3(2.2f, 3.2f, -4.6f), look = new Vector3(6.4f, -0.4f, 1.2f), fov = 50f },
             new Shot { run = "rook", title = "룩 · 열린 파일 포격", note = "칼을 들면 통로가 갈라짐 0.5초 → 내려치면 칸마다 체스 말 모양 돌탑이 솟아(순서는 매번 무작위) 적을 띄워 밀어냄 (가까이 2.6 m · 멀리 1.6 m)",
                 eye = new Vector3(-6.0f, 4.4f, -7.5f), look = new Vector3(1.2f, 0.2f, -1.9f), fov = 44f },
             new Shot { run = "bishop", title = "비숍 · 관통 핀", note = "손 두 개가 대각선으로 뻗어 두 발목을 잡음 → 묶임 0.8초 + 감속 → 아군이 와서 칼 한 번에 장외",
                 eye = new Vector3(8.6f, 2.0f, -2.0f), look = new Vector3(5.2f, 0.15f, 0.6f), fov = 46f },
-            new Shot { run = "bishop-mid", title = "비숍 · 관통 핀 (맵 가운데)", note = "가장자리가 아니어도 묶임: 손이 대각선으로 뻗어 발목을 잡음 → 아군이 와서 벰",
-                eye = new Vector3(-6.9f, 4.4f, -3.6f), look = new Vector3(-0.2f, 0.1f, -0.3f), fov = 46f },
-            new Shot { run = "bishop-miss", title = "비숍 · 관통 핀 (빗나감)", note = "점에 적이 없으면 손이 바닥을 치고 주먹을 쥔 뒤 돌아옴",
-                eye = new Vector3(-6.9f, 4.4f, -3.6f), look = new Vector3(-0.6f, 0.1f, 0.6f), fov = 46f },
-            new Shot { run = "knight", title = "나이트 · 포크 강하", note = "착지점과 두 자리를 미리 보여 줌 → 도약 0.55초 → 착지 때 두 자리의 적을 함께 밀어냄",
-                eye = new Vector3(1.3f, 5.3f, -5.6f), look = new Vector3(3.6f, 0.3f, 0.2f), fov = 46f },
+            new Shot { run = "bishop-mid", title = "비숍 · 관통 핀 — 에너지 구슬이 빨려 듦 (R132)", note = "원 둘레에 같은 간격·같은 크기의 보라 구슬 8개와 빛 가닥 → 손이 발목을 잡는 순간 구슬이 가닥을 끌며 적에게 모여 터지고, 묶인 동안 작은 구슬이 발목을 돎",
+                eye = new Vector3(-1.0f, 3.0f, -5.2f), look = new Vector3(-0.6f, 0.3f, -0.3f), fov = 56f },
+            new Shot { run = "bishop-miss", title = "비숍 · 관통 핀 (빗나감)", note = "점에 적이 없으면 손이 바닥을 치고 돌아옴 · 구슬은 원 가운데로 모여 터짐 (R132)",
+                eye = new Vector3(-1.2f, 3.2f, -4.6f), look = new Vector3(-0.6f, 0.3f, 0.8f), fov = 58f },
+            new Shot { run = "respawn", title = "시험 씬 — 장외 뒤 바로 부활 (R132)", note = "이 브랜치 시험 씬만 부활 시간 0 (경기 씬은 3초 그대로)",
+                eye = new Vector3(1.5f, 5.2f, -7.4f), look = new Vector3(4.2f, -0.6f, 1.6f), fov = 60f },
+            new Shot { run = "knight", title = "나이트 · 포크 강하", note = "내리꽂을 칸과 L자 여덟 칸이 같이 차오름 (적이 선 칸은 금색, R133) → 높이 솟아 꼭대기에서 L자가 그려짐 → 내리꽂으면 L자 칸의 적이 한꺼번에 (포크)",
+                eye = new Vector3(-2.6f, 4.6f, -8.4f), look = new Vector3(3.4f, 1.5f, 0f), fov = 50f },
             // The edge skills (R103, E).
-            new Shot { run = "edge-king", title = "킹 · 왕의 귀환 (E)", note = "밀려 떨어지는 0.6초 안에 E → 칼을 가장자리에 박고 0.4초 매달림(착지 자리 미리 보임) → 뛰어올라 착지, 반경 2 m 적을 밀어냄",
-                eye = new Vector3(9.6f, 1.2f, -3.3f), look = new Vector3(6.6f, -0.1f, 0.1f), fov = 46f },
+            new Shot { run = "edge-king", title = "킹 · 왕의 귀환 (E)", note = "밀려 떨어지는 0.6초 안에 E → 칼을 가장자리에 박고 0.4초 매달림 → 칼을 뽑으며 힘차게 뛰어올라 쿵 착지, 반경 2 m 적을 밀어냄",
+                eye = new Vector3(10.6f, 2.3f, -4.6f), look = new Vector3(6.3f, 0.5f, 0.1f), fov = 50f },
             new Shot { run = "edge-king-cut", title = "킹 · 왕의 귀환 (박힌 칼을 베면)", note = "매달린 동안 적이 박힌 칼을 베면 그대로 떨어짐",
                 eye = new Vector3(9.6f, 1.2f, -3.3f), look = new Vector3(6.6f, -0.3f, 0.1f), fov = 46f },
             new Shot { run = "edge-queen", title = "퀸 · 체크메이트 일섬 (E)", note = "가장자리 구역의 적이 5 m 안 → 금색 선 0.5초 → 순식간에 다가가 한 번 베어 바깥 위로 날려 보냄",
@@ -66,8 +83,10 @@ namespace ChessFight.RagdollLab
                 eye = new Vector3(2.2f, 4.0f, -6.2f), look = new Vector3(5.2f, 0.3f, 0.3f), fov = 50f },
             new Shot { run = "edge-rook", title = "룩 · 성벽 붕괴 (E)", note = "가장자리를 내려쳐 3 × 2 m에 0.8초 금 → 무너져 위의 기물이 모두 떨어짐(룩은 걸어 나옴) → 5초 뒤 바닥이 다시 솟음",
                 eye = new Vector3(10.4f, 2.3f, -3.6f), look = new Vector3(5.9f, -0.5f, -0.3f), fov = 50f },
-            new Shot { run = "edge-bishop", title = "비숍 · 구원의 손 (E)", note = "아군이 떨어지는 1초 안에 E → 가장자리 보라 구멍에서 손이 뻗어 잡고 0.6초 끌어올려 내려놓음",
+            new Shot { run = "edge-bishop", title = "비숍 · 구원의 손 (E)", note = "아군이 떨어지면 장외 전 언제든 E → 그 자리에서 멈추고 가장자리 보라 구멍에서 손이 뻗어 잡아 0.6초 끌어올려 내려놓음",
                 eye = new Vector3(9.8f, 1.7f, -3.5f), look = new Vector3(6.3f, -0.1f, 0.2f), fov = 48f },
+            new Shot { run = "edge-bishop-late", title = "비숍 · 구원의 손 — 장외 직전에도 (R130)", note = "아군이 2.6 m 떨어진 뒤에 E (장외는 3 m) → 그 자리에서 멈추고 손이 잡아 끌어올려 발판 위에",
+                eye = new Vector3(12.6f, -0.4f, -6.2f), look = new Vector3(6.8f, -1.1f, 0.2f), fov = 56f },
             new Shot { run = "edge-bishop-hit", title = "비숍 · 구원의 손 (비숍을 치면)", note = "끌어올리는 동안 비숍이 맞으면 손이 놓쳐 아군이 떨어짐",
                 eye = new Vector3(9.8f, 1.7f, -3.5f), look = new Vector3(6.1f, -0.2f, 0.5f), fov = 48f },
             new Shot { run = "edge-knight", title = "나이트 · 벼랑 끝 역전 (E)", note = "가장자리를 등지고 앞 3 m 적 → 0.35초 웅크림 → 벼랑 밖으로 뛰어 공중제비로 적을 넘어 착지 → 뒷발차기로 벼랑 쪽으로",
@@ -169,8 +188,9 @@ namespace ChessFight.RagdollLab
                 Began?.Invoke(file, w, h, fps);
                 foreach (var shot in Shots)
                 {
-                    // "f" = the F skills only (every shot but the edge ones), else a prefix of the runs.
-                    if (only == "f" ? shot.run.StartsWith("edge") : !string.IsNullOrEmpty(only) && !shot.run.StartsWith(only)) continue;
+                    // "f" = the F skills only (every shot but the edge ones), "a,b,c" = those runs (R132), else a prefix of the runs.
+                    if (only == "f" ? shot.run.StartsWith("edge")
+                        : !string.IsNullOrEmpty(only) && (only.Contains(",") ? System.Array.IndexOf(only.Split(','), shot.run) < 0 : !shot.run.StartsWith(only))) continue;
                     Status = $"filming {shot.run}{(slow ? " (slow)" : "")}";
                     eye = shot.eye;
                     look = shot.look;

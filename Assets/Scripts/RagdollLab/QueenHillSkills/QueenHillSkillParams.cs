@@ -20,19 +20,21 @@ namespace ChessFight.RagdollLab
         [Tooltip("스킬에 넘어지면 이 시간 동안 누워 있음 (초). 0이면 래그돌 기본(킹은 0.3초쯤에 일어나 잘 안 보였음)")]
         public float downHold = 1f;
 
-        [Header("킹 — 근접 호위 (B: 킹 자신은 빠짐)")]
-        public float kingWindup = 0.3f;
-        [Tooltip("이 반경(땅 위, m) 안의 아군이 호위를 받는다. 기획서 '짧은 원형 범위'의 시험값")]
+        [Header("킹 — 근접 호위 (B: 킹 자신은 빠짐, 대신 곁의 호위 아군이 킹 대신 맞음)")]
+        [Tooltip("홀을 들어 올렸다 내리꽂기까지 (초). R130: 0.3 → 0.45 (승규 님: \"짧게 팡~만 하는데 그 연출을 살짝만 길게\")")]
+        public float kingWindup = 0.45f;
+        [Tooltip("이 반경(땅 위, m) 안의 아군이 호위를 받는다. 호위 중인 아군이 킹에게서 이 반경 안에 있으면 킹이 맞을 공격을 대신 받는다 (10-12). 기획서 '짧은 원형 범위'의 시험값")]
         public float kingRadius = 2.5f;
         [Tooltip("위아래로 이만큼 안이면 받는다 (탑 위·아래 층, m)")]
         public float kingHeight = 2f;
         [Tooltip("호위 시간 (초)")]
-        public float wardTime = 2f;
+        public float wardTime = 2.9f;   // 10-12: 2 → 2.5 (승규 님: "아주 조금만 늘려"); R130: 2.5 → 2.9 ("아군 보호도 0.4초 정도 늘려줘")
         [Tooltip("호위 중 밀림 배율: 스킬·부딪힘의 미는 힘에 곱한다")]
         public float wardPush = 0.25f;
         [Tooltip("호위 중 넘어질 일이 대신 이만큼 휘청 (초)")]
         public float wardStagger = 0.2f;
-        public float kingRecovery = 0.2f;
+        [Tooltip("내리꽂은 홀을 짚고 서 있는 시간 (초). R130: 0.2 → 0.45 (물결이 퍼지고 머리 위 왕관이 뜨는 동안)")]
+        public float kingRecovery = 0.45f;
         public float kingCooldown = 9f;
 
         [Header("퀸 — 팔방 검격 (A: 조준한 한 방향으로 긴 검격)")]
@@ -91,12 +93,12 @@ namespace ChessFight.RagdollLab
         public float bishopRange = 9f;
         [Tooltip("견제탄이 날아가는 시간 (초)")]
         public float bishopFlight = 0.5f;
-        [Tooltip("X자 파동 한쪽 팔 길이 (m) = 체스판 1.5칸")]
-        public float bishopArm = 2.25f;
+        [Tooltip("X자 파동 한쪽 팔 길이 (m)")]
+        public float bishopArm = 1.6f;   // 10-12: 2.25 → 1.6 (승규 님: "범위가 좀 커, 좁혀")
         [Tooltip("X자 팔의 폭 (m)")]
-        public float bishopArmWidth = 0.7f;
+        public float bishopArmWidth = 0.6f;
         [Tooltip("가운데(조준점)에서 이 반경 안은 맞는다 (m)")]
-        public float bishopCenter = 0.9f;
+        public float bishopCenter = 0.75f;
         public float bishopPush = 4.5f;
         public float bishopLift = 2f;
         public float bishopCooldown = 9f;
@@ -110,7 +112,8 @@ namespace ChessFight.RagdollLab
         public float knightArc = 1.6f;
         [Tooltip("도약 호를 이만큼 무거운 중력으로 날아 짧고 굵게 (1 = 진짜 중력)")]
         public float knightGravity = 1.6f;
-        public float knightWindup = 0.12f;
+        [Tooltip("좌클릭 뒤 도약까지 (초). R130: 0.12 → 0.3 (승규 님: \"실제 말 같이\" — 앞발을 들고 일어섰다가 웅크려 뜀)")]
+        public float knightWindup = 0.3f;
         [Tooltip("착지 원 반경 (m)")]
         public float knightRadius = 1.3f;
         [Tooltip("조준점에서 이 거리(땅 위, m) 안에 적이 있으면 그 적의 머리 위로 자동 조준해 머리를 밟는다 (R93 1.3 → R94 1.15 → R95 1.05)")]
@@ -126,7 +129,8 @@ namespace ChessFight.RagdollLab
         [Header("폰 — 비집고 돌파 (B: 몸을 낮추는 새 동작)")]
         [Tooltip("몸을 낮추는 시간 (초)")]
         public float pawnCrouch = 0.08f;
-        public float pawnDistance = 2.6f;
+        [Tooltip("돌파 거리 (m). R129: 2.6 → 1.8 (승규 님 \"폰 스킬 시 거리를 좁혀줘\")")]
+        public float pawnDistance = 1.8f;
         public float pawnSpeed = 8f;
         [Tooltip("일어나는 시간 (초)")]
         public float pawnRise = 0.22f;

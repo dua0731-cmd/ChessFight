@@ -1,5 +1,9 @@
 # 폰 러쉬 스킬 효과음 — 시안 (R101 · 기물별 2차 R107) · 넣기 (R114)
 
+## R122 퀸 오브 더 힐 나이트 = 폰 러쉬 나이트 소리 (2026-10-13)
+
+승규 님 "퀸 오브 더 힐 나이트 스킬 소리 바꿔줘" → 퀸 오브 더 힐 나이트 5개(`KnightLock`·`KnightLeap`·`KnightLand`·`KnightFlatten`·`KnightFall`)를 이 문서의 폰 러쉬 나이트 E "묵직한 말" 파일(`KnightTurn`·`KnightLeap`·`KnightLand`·`KnightStomp`·`KnightDaze`)로 복사. 자세한 표는 [QUEEN_HILL §R122](QUEEN_HILL.md).
+
 ## R119 소리 줄이기·칼 소리 바꾸기 (2026-10-11, 승규 님: "온라인 테스트 해 봤는데 기물들 칼 소리가 강하고 기본 사운드가 크다는 평이 있어, 교체해 줘" → 세 모드 모두)
 
 세 모드(퀸 오브 더 힐·소드 파이트·폰 러쉬) 스킬 소리를 같이 고쳤다(`skill-network-test`).

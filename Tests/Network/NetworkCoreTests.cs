@@ -872,7 +872,7 @@ public static class NetworkCoreTests
             Test("Queen of the Hill pieces: the starting values of DESIGN 6.2", () => {
                 var pawn=ChessPieces.Stats(PieceKind.Pawn); Check(pawn.Weight==1f&&pawn.Move==1f&&pawn.Climb==1f&&pawn.Sprint&&!pawn.StatusImmune,"pawn");
                 var rook=ChessPieces.Stats(PieceKind.Rook); Check(rook.Weight==1.5f&&rook.Climb==0.7f&&rook.Sprint,"rook");
-                var king=ChessPieces.Stats(PieceKind.King); Check(king.Weight==3f&&king.Move==0.8f&&!king.Sprint&&king.StatusImmune,"king");
+                var king=ChessPieces.Stats(PieceKind.King); Check(king.Weight==3f&&king.Move==0.8f&&king.Sprint&&king.StatusImmune,"king");
                 Check(ChessPieces.Stats(PieceKind.Knight).Weight==0.8f&&ChessPieces.Stats(PieceKind.Queen).Weight==2f,"knight, queen");
                 Check(ChessPieces.Stats((PieceKind)9).Weight==1f&&!ChessPieces.IsValid(6)&&ChessPieces.IsValid(5)&&!ChessPieces.IsValid(-1),"out of range");
                 Check(ChessPieces.Name(PieceKind.Knight)=="나이트"&&ChessPieces.Name(PieceKind.Pawn)=="폰","names"); });
@@ -1172,6 +1172,28 @@ public static class NetworkCoreTests
                 var loud = new VoiceStream(8000, .001, .2);   // starts at once
                 loud.Write(pcm, pcm.Length, 4f, 0);
                 Check(loud.Read(mono, 1, 1, 1, .5f) == 1 && Math.Abs(mono[0] - .5f) < 1e-4, "gain clipped to 1, then volume"); });
+            Test("Skill grades: a ring-out or a crowd is !!, a lone hit earns nothing, a miss on an attack is ?", () => {
+                var attack=SkillGradeRule.Attack(3); var move=SkillGradeRule.Move(2);
+                Check(SkillGrades.Decide(new SkillTally{Enemies=1,RingOuts=1},attack)==SkillGrade.Brilliant,"ring-out");
+                Check(SkillGrades.Decide(new SkillTally{Enemies=3},attack)==SkillGrade.Brilliant,"three at once");
+                Check(SkillGrades.Decide(new SkillTally{Enemies=2},attack)==SkillGrade.Great,"two of a big three");
+                Check(SkillGrades.Decide(new SkillTally{Enemies=1},attack)==SkillGrade.None,"one is plain");
+                Check(SkillGrades.Decide(new SkillTally{Enemies=1},move)==SkillGrade.None&&SkillGrades.Decide(new SkillTally{Enemies=2},move)==SkillGrade.Brilliant,"big two");
+                Check(SkillGrades.Decide(new SkillTally(),attack)==SkillGrade.Mistake&&SkillGrades.Decide(new SkillTally(),move)==SkillGrade.None,"miss: attacks only");
+                Check(SkillGrades.Decide(new SkillTally{Failed=true},move)==SkillGrade.Mistake,"a skill's own whiff");
+                Check(SkillGrades.Decide(new SkillTally{Helped=1},move)==SkillGrade.Great,"a save");
+                Check(SkillGrades.Decide(new SkillTally{Enemies=1},new SkillGradeRule{Big=3,OneIsGreat=true})==SkillGrade.Great,"edge skills: one is enough"); });
+            Test("Skill grades: the caster's fall is ?? or !?, allies' falls ??, and only !! shows to everyone", () => {
+                var attack=SkillGradeRule.Attack(3);
+                Check(SkillGrades.Decide(new SkillTally{SelfFell=true},attack)==SkillGrade.Blunder,"fell for nothing");
+                Check(SkillGrades.Decide(new SkillTally{SelfFell=true,Enemies=1,RingOuts=1},attack)==SkillGrade.Interesting,"took one with it");
+                Check(SkillGrades.Decide(new SkillTally{AllyFalls=1},attack)==SkillGrade.Blunder,"only allies fell");
+                Check(SkillGrades.Decide(new SkillTally{AllyFalls=1,RingOuts=1,Enemies=1},attack)==SkillGrade.Brilliant,"an enemy out outweighs");
+                Check(SkillGrades.ShowsTo(SkillGrade.Brilliant,false)&&!SkillGrades.ShowsTo(SkillGrade.Mistake,false)&&SkillGrades.ShowsTo(SkillGrade.Mistake,true),"who sees");
+                Check(!SkillGrades.ShowsTo(SkillGrade.None,true)&&!SkillGrades.ShowsTo(SkillGrade.Missed,true),"nothing to show");
+                Check(SkillGrades.Raises(SkillGrade.Mistake,SkillGrade.Brilliant)&&SkillGrades.Raises(SkillGrade.None,SkillGrade.Brilliant),"a late ring-out raises");
+                Check(!SkillGrades.Raises(SkillGrade.Brilliant,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.Interesting,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.None,SkillGrade.Great),"only to !!, once");
+                Check(SkillGrades.Symbol(SkillGrade.Interesting)=="!?"&&SkillGrades.Symbol(SkillGrade.Blunder)=="??","symbols"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

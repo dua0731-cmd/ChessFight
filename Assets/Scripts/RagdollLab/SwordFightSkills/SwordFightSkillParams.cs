@@ -23,10 +23,13 @@ namespace ChessFight.RagdollLab
 
         [Header("킹 · 왕의 반격")]
         public float kingCooldown = 8f;
-        public float kingGuard = 0.5f;
+        public float kingGuard = 0.9f;   // R130: 0.5 → 0.9 (승규 님: "왕의 반격을 할 때 시간을 더 늘려주고")
         public float kingCounterRadius = 2.5f;
         public float kingCounterPush = 2.8f;
-        public float kingCounterTime = 0.15f;
+        [Tooltip("R130: 막은 뒤 반격(한 바퀴 베기)까지 멈칫하는 박자 (초)")]
+        public float kingCounterBeat = 0.16f;
+        [Tooltip("반격: 한 바퀴 돌며 베는 시간 (초). R130: 0.15 → 0.34 (\"더 연출과 액션을\")")]
+        public float kingCounterTime = 0.34f;
         public float kingRecovery = 0.4f;
         [Tooltip("받아낼 칼이 오지 않았을 때의 빈틈")]
         public float kingWhiff = 0.6f;
@@ -36,10 +39,12 @@ namespace ChessFight.RagdollLab
         public float queenLength = 6f;
         public float queenWidth = 1.2f;
         public float queenWindup = 0.4f;
-        [Tooltip("줄을 따라 발로 달리는 돌진 속도 m/s (줄 끝이나 가장자리·벽 앞에서 멈춤)")]
+        [Tooltip("줄을 따라 발로 달리는 돌진 속도 m/s (줄 끝이나 벽 앞에서 멈춤. R129: 가장자리에서는 안 멈춤 — 거리를 잘못 재면 장 밖으로)")]
         public float queenDashSpeed = 15f;
-        [Tooltip("돌진이 가장자리 앞 이만큼에서 멈춤")]
+        [Tooltip("R129부터 쓰지 않음 (돌진이 가장자리 앞에서 멈추던 여유)")]
         public float queenEdgeMargin = 0.8f;
+        [Tooltip("장 밖으로 달려 나갔을 때 남는 속도 (돌진 속도의 몫)")]
+        public float queenFallCarry = 0.6f;
         [Tooltip("퀸 몸보다 이만큼 앞에 있는 적이 베임 (칼끝)")]
         public float queenHitAhead = 0.9f;
         [Tooltip("밀리는 방향: 줄 방향 + 옆으로 이만큼")]
@@ -75,15 +80,30 @@ namespace ChessFight.RagdollLab
         [Tooltip("손이 발목을 잡고 있는 시간 (맵 어디서든, R102)")]
         public float bishopPinTime = 0.8f;
 
-        [Header("나이트 · 포크 강하")]
+        [Header("나이트 · 포크 강하 (R129 새 동작)")]
         public float knightCooldown = 7f;
         public float knightRange = 6f;
         public float knightMinRange = 1.5f;
-        public float knightAir = 0.55f;
-        public float knightSpotOffset = 1.8f;
-        public float knightSpotAngle = 50f;
-        public float knightSpotRadius = 1.2f;
+        [Tooltip("체스판 한 칸 (m): 착지한 칸에서 나이트가 노리는 여덟 칸 (L자: 두 칸 가고 한 칸 꺾은 자리)")]
+        public float knightCell = 1.25f;
+        [Tooltip("높이 날아오르는 시간 (s)")]
+        public float knightRise = 0.3f;
+        [Tooltip("꼭대기에 머무는 시간 (s): 노리는 칸들이 드러남")]
+        public float knightHover = 0.14f;
+        [Tooltip("내리꽂는 시간 (s)")]
+        public float knightDive = 0.16f;
+        [Tooltip("꼭대기 높이 (출발·착지 중 높은 바닥 위 m)")]
+        public float knightApex = 3.2f;
+        [Tooltip("꼭대기가 길의 몇 % 지점 위에 오나 (클수록 거의 수직으로 내리꽂음)")]
+        public float knightApexAt = 0.72f;
+        [Tooltip("L자 칸 하나의 판정 반지름 (m)")]
+        public float knightSquare = 0.65f;
+        [Tooltip("내리찍은 칸 (착지점)의 판정 반지름 (m)")]
+        public float knightStomp = 0.85f;
+        [Tooltip("L자 칸의 적이 밀리는 거리 (m)")]
         public float knightPush = 2.4f;
+        [Tooltip("착지점의 적이 밀리는 거리 (m)")]
+        public float knightStompPush = 1.6f;
         public float knightRecovery = 0.35f;
 
         public float Cooldown(ChessFight.Network.PieceKind kind) => kind switch

@@ -10,7 +10,8 @@ namespace ChessFight.RagdollLab
     ///
     /// Knight. E: the L-jump, "up two, over one" - 6 m up and 3 m on along the aim, on the launch pads' fixed
     /// arc (M7), every 5 s. Where it will come down is worked out at take-off and marked on the ground for
-    /// everyone to see. Passive: landing on an enemy's head squashes it (M13) and the knight bounces off.
+    /// everyone to see. Passive: landing on an enemy's head squashes it (M13) and the knight bounces off. Not with the
+    /// piece skills on (R141): there the knight's leap is its F skill.
     /// </summary>
     public partial class RagdollPawn
     {
@@ -33,13 +34,11 @@ namespace ChessFight.RagdollLab
             switch (piece)
             {
                 case PieceKind.Knight:
-                    // With the Pawn Rush skills on, the bent leap (F) takes over from the L-jump (E, 6 m up, which
-                    // would skip a race course, R125) and its own head stomp (a knockdown) from this one.
-                    if (PawnRushSkills == null)
-                    {
-                        if (input.ability) KnightJump(p);
-                        Stomp(p);
-                    }
+                    // R141 (승규 님 10-14: "나이트 E키를 누르면 높이 나는 버그가 있어 고쳐 줘"): with the skills on (the Pawn
+                    // Rush and Queen of the Hill skill tests) the knight's leap is its F skill, so E's L-jump is off there.
+                    if (input.ability && PawnRushSkills == null) KnightJump(p);
+                    // With the Pawn Rush skills on, the bent leap's own head stomp (a knockdown) takes over.
+                    if (PawnRushSkills == null) Stomp(p);
                     break;
             }
             // The marker stays until the knight is down again (or anything else took it off the arc).

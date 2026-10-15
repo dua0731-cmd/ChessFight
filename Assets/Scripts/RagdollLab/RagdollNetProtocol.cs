@@ -206,6 +206,11 @@ namespace ChessFight.RagdollLab
         // snapshot; and a client's input, the lab input with the aimed point after it.
         public const byte TypeSword = 7;
         public const byte TypeSwordInput = 8;
+        // R146: the Pawn Rush king's picks from his list, a client's to the host: a number that changes with every call and
+        // the two pieces (roster places, SkillWire.None for none), sent a few times over. A host without it ignores the type
+        // (CFR9 and the other packets unchanged: an older build still meets this one).
+        public const byte TypeKingCall = 9;
+        public const int KingCallBytes = 4 + 1 + 8 + 1 + 1 + 1;   // 16
         public const int HeaderBytes = 4 + 1 + 8;
         public const int MatchHeaderBytes = 4 + 1 + 8 + 2;
         public const int MaxMatchText = 400;
@@ -449,6 +454,35 @@ namespace ChessFight.RagdollLab
         }
 
         // ---------------------------------------------------------------- development (loopback test link)
+
+        public static byte[] KingCall(ulong session, byte seq, byte a, byte b)
+        {
+            using (var stream = new MemoryStream(KingCallBytes))
+            using (var w = new BinaryWriter(stream))
+            {
+                w.Write(Magic);
+                w.Write(TypeKingCall);
+                w.Write(session);
+                w.Write(seq);
+                w.Write(a);
+                w.Write(b);
+                return stream.ToArray();
+            }
+        }
+
+        public static bool ReadKingCall(byte[] bytes, ulong session, out byte seq, out byte a, out byte b)
+        {
+            seq = a = b = 0;
+            if (bytes == null || bytes.Length != KingCallBytes) return false;
+            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            {
+                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeKingCall || r.ReadUInt64() != session) return false;
+                seq = r.ReadByte();
+                a = r.ReadByte();
+                b = r.ReadByte();
+                return seq != 0;
+            }
+        }
 
         public static byte[] Dev(ulong session, string text)
         {

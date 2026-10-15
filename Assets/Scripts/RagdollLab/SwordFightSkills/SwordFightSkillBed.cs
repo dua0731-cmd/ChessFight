@@ -332,12 +332,14 @@ namespace ChessFight.RagdollLab
                     Report("비숍 시험: 가장자리 1 m 앞 적 · 그 옆 아군 — 묶은 뒤 F8은 아군이 와서 벰 (묶기는 맵 어디서든)");
                     break;
                 case PieceKind.Knight:
+                    // R129, the fork dive: aimed 4.1 m east (x 4.5), two enemies on knight-move squares from there (one
+                    // ahead and two across either way: a fork) and one on the landing square (stamped).
                     Place(me, new Vector3(0.4f, 0f, 0f), east);
-                    Place(enemies[0], new Vector3(6.3f, 0f, 1.4f), west);
-                    Place(enemies[1], new Vector3(5.5f, 0f, -1.5f), west);
-                    Place(enemies[2], new Vector3(-2f, 0f, 3.5f), east);
+                    Place(enemies[0], new Vector3(5.75f, 0f, 2.5f), west);
+                    Place(enemies[1], new Vector3(5.75f, 0f, -2.5f), west);
+                    Place(enemies[2], new Vector3(4.7f, 0f, -0.3f), west);
                     Place(allies[0], far, east);
-                    Report("나이트 시험: 착지점 동쪽 5 m 앞 두 자리에 적 2");
+                    Report("나이트 시험: 착지점 (동쪽 4.1 m) 칸에 적 1 · 그 칸에서 나이트 행마(L자) 두 칸에 적 2 = 포크");
                     break;
                 default:
                     Home();
@@ -398,7 +400,7 @@ namespace ChessFight.RagdollLab
                     Place(enemies[1], new Vector3(-3f, 0f, 4f), east);
                     Place(enemies[2], new Vector3(-4f, 0f, -4f), east);
                     look = east;
-                    Report("구원의 손 시험: Shift+F8 = 적이 아군을 밀어 떨어뜨림 → 1초 안에 E");
+                    Report("구원의 손 시험: Shift+F8 = 적이 아군을 밀어 떨어뜨림 → 장외(−3 m) 전이면 E");
                     break;
                 case PieceKind.Knight:
                     Place(me, new Vector3(6.0f, 0f, 0f), west);
@@ -448,7 +450,7 @@ namespace ChessFight.RagdollLab
                     var foe = NearestTo(ally, me.Pawn.Team, false);
                     if (foe == null) return;
                     PushOff(foe, ally);
-                    Report($"{foe.Pawn.DisplayName} → {ally.Pawn.DisplayName}: 밀어 떨어뜨림 — 1초 안에 E");
+                    Report($"{foe.Pawn.DisplayName} → {ally.Pawn.DisplayName}: 밀어 떨어뜨림 — 장외 전이면 E");
                     break;
                 }
                 case PieceKind.Knight:
@@ -582,20 +584,20 @@ namespace ChessFight.RagdollLab
 
         static string HowTo(PieceKind kind) => kind switch
         {
-            PieceKind.King => "F = 받아내기 자세 0.5초 (제자리, 조준 없음)\n그 사이 적 칼이 오면 막고 반경 2.5 m 적을 2.8 m 밀어냄 · 후딜 0.4초\n안 오면 빈틈 0.6초 · F8 = 가장 가까운 적이 옆으로 와서 벰 (맵 어디서든, 받아내기 중이면 그 칼을 기다림)",
-            PieceKind.Queen => "F = 조준: 6 m × 1.2 m 줄 (걸을 수 있음)\n좌클릭 = 0.4초 예고 → 줄을 따라 돌진하며 벰: 첫째 3.0 m · 둘째 2.1 m · 셋째 1.5 m 밀림\n가장자리·벽 앞에서 멈춤 · 후딜 0.45초 · 우클릭(또는 F) = 취소",
-            PieceKind.Rook => "F = 조준: 10 m × 1.5 m 통로\n좌클릭 = 0.5초 예고(제자리) → 칸마다 체스 말 모양 돌탑이 솟음(순서는 매번 무작위): 4 m 안 2.6 m · 그 뒤 1.6 m 밀림\n장애물에서 끊김 · 발동 중 방향 못 바꿈 · 후딜 0.4초 · 우클릭 = 취소",
+            PieceKind.King => "F = 받아내기 자세 0.9초 (제자리, 조준 없음) — 칼뿐 아니라 퀸·룩·비숍·나이트 스킬과 퀸·나이트 가장자리 스킬도 막음\n막으면 0.16초 멈칫한 뒤 한 바퀴 돌며 반경 2.5 m 적을 2.8 m 밀어냄 (가까이 온 퀸·나이트는 막는 순간 튕겨 나감) · 후딜 0.4초\n안 오면 빈틈 0.6초 · F8 = 가장 가까운 적이 옆으로 와서 벰 (맵 어디서든, 받아내기 중이면 그 칼을 기다림)",
+            PieceKind.Queen => "F = 조준: 6 m × 1.2 m 줄 (걸을 수 있음)\n좌클릭 = 0.4초 예고 → 줄을 따라 돌진하며 벰: 첫째 3.0 m · 둘째 2.1 m · 셋째 1.5 m 밀림\n벽 앞에서 멈춤 · 가장자리 밖까지 겨누면 달려 나가 떨어짐 (빨간 칸) · 후딜 0.45초 · 우클릭(또는 F) = 취소",
+            PieceKind.Rook => "F = 조준: 10 m × 1.5 m 통로\n좌클릭 = 0.5초 예고(제자리) → 칸마다 체스 말 모양 돌탑이 솟음(순서는 매번 무작위): 4 m 안 2.6 m · 그 뒤 1.6 m 밀림\n장애물·가장자리에서 끊김 · 발동 중 방향 못 바꿈 · 후딜 0.4초 · 우클릭 = 취소",
             PieceKind.Bishop => "F = 조준: 화면 가운데가 가리키는 바닥 (8 m까지)\n좌클릭 = 0.4초 예고 → 손 두 개가 대각선으로 뻗어 반경 1 m 적의 발목을 잡음\n묶임 0.8초 + 감속 40% 1.5초 (맵 어디서든) · 우클릭 = 취소",
-            PieceKind.Knight => "F = 조준: 착지점 (1.5~6 m)\n좌클릭 = 0.55초 도약 → 착지 때 앞쪽 두 자리(반경 1.2 m) 적 2.4 m 밀림\n두 자리는 뛰기 전부터 보임 · 후딜 0.35초 · 우클릭 = 취소",
+            PieceKind.Knight => "F = 조준: 내리꽂을 칸 (1.5~6 m) · 그 칸에서 나이트 행마(L자) 여덟 칸이 보임 (적이 선 칸은 금색)\n좌클릭 = 높이 솟음 0.3초 → 꼭대기 0.14초 → 내리꽂음 0.16초: 착지 칸의 적 1.6 m · L자 칸의 적 모두 2.4 m 밀림 (둘 이상이면 포크)\n바로 옆 칸은 뛰어넘음 · 후딜 0.35초 · 우클릭 = 취소",
             _ => "폰은 스킬이 없어요 (소드 파이트 규칙)",
         };
 
         static string EdgeHowTo(PieceKind kind, SwordFightEdgeParams e) => kind switch
         {
-            PieceKind.King => $"밀려 떨어지는 {e.fallWindow:0.#}초 안에 E → 칼을 가장자리에 박고 {e.kingHang:0.#}초 매달림 → 뛰어올라 착지, 반경 {e.kingLandRadius:0.#} m 적 {e.kingLandPush:0.#} m 밀림\n매달린 동안 착지 자리가 보임 · 박힌 칼을 베면(F8) 떨어짐",
+            PieceKind.King => $"밀려 떨어지는 {e.fallWindow:0.#}초 안에 E → 칼을 가장자리에 박고 {e.kingHang:0.#}초 매달림 → 힘차게 뛰어올라 쿵 착지, 반경 {e.kingLandRadius:0.#} m 적 {e.kingLandPush:0.#} m 밀림\n박힌 칼을 베면(F8) 떨어짐",
             PieceKind.Queen => $"가장자리 구역({e.edgeZone:0.#} m) 적이 {e.queenRange:0.#} m 안: E → 금색 선 {e.queenLine:0.#}초 → 순식간에 다가가 바깥 위로 {e.queenFling:0.#} m\n그 사이 적이 구역 밖으로 들어오면 취소(쿨 반) · 점프로 피함 · 킹 받아내기로 막힘",
             PieceKind.Rook => $"가장자리 구역에서 E → 보는 쪽 가장자리 {e.rookChunkWidth:0.#} × {e.rookChunkDepth:0.#} m에 {e.rookCrack:0.#}초 금 → 무너져 위의 기물이 모두 떨어짐(룩·아군도)\n{e.rookRestore:0.#}초 뒤 바닥이 다시 솟음",
-            PieceKind.Bishop => $"가장자리 구역에서, {e.bishopRange:0.#} m 안 아군이 떨어지는 {e.bishopFallWindow:0.#}초 안에 E → 손이 잡아 {e.bishopPull:0.#}초 끌어올려 발판 위에\n끌어올리는 동안 비숍이 맞으면 놓침",
+            PieceKind.Bishop => $"{e.bishopRange:0.#} m 안 아군이 떨어지면 장외(−3 m) 전 언제든 E → 그 자리에서 멈추고 손이 잡아 {e.bishopPull:0.#}초 끌어올려 발판 위에\n끌어올리는 동안 비숍이 맞으면 놓침",
             PieceKind.Knight => $"가장자리를 등지고({e.knightBackEdge:0.#} m) 앞 {e.knightFront:0.#} m 안 적: E → {e.knightCrouch:0.##}초 웅크림 → 벼랑 밖으로 뛰어 공중제비로 적을 넘어 착지 → 뒷발차기 {e.knightKick:0.#} m\n웅크린 동안 적이 3 m 밖으로 물러나면 취소(쿨 반)",
             _ => "폰은 스킬이 없어요",
         };
@@ -704,18 +706,20 @@ namespace ChessFight.RagdollLab
         void EdgeBadge(SwordFightSkills s)
         {
             if (!s.HasSkill) return;
-            var pal = SwordFightSkills.Colors(s.Piece);
+            // The board look's card (R126 colours: the pads' navy, the key in the piece's pad colour), or design A's.
+            var pal = SwordFightSkillFx.CardColors(s.Piece);
+            bool board = SwordFightSkillFx.BoardLook;
             bool fRunning = s.Stage != SfStage.None, fReady = !fRunning && s.Cooldown <= 0f;
             string fHow = s.Piece == PieceKind.King ? $"{skillKey} 받아내기 자세" : $"{skillKey} 조준 → 좌클릭";
             SkillKeyCard.Draw(SkillKeyCard.Slot(0), skillKey.ToString(), SwordFightSkills.Name(s.Piece),
                 SkillKeyCard.Line(fRunning ? StageName(s) : null, s.Cooldown, fHow), pal, fReady || fRunning, false,
-                s.CooldownTotal > 0f ? s.Cooldown / s.CooldownTotal : 0f);
+                s.CooldownTotal > 0f ? s.Cooldown / s.CooldownTotal : 0f, board);
             if (s.EdgeParams == null) return;
             bool ready = s.EdgeReady, running = s.EdgeStage != SfEdge.None;
             string line = SkillKeyCard.Line(running ? s.EdgeDetail : null, s.EdgeCooldown,
                 ready ? "<color=#FFE07A><b>지금 쓸 수 있어요!</b></color>" : s.EdgeWhy);
             SkillKeyCard.Draw(SkillKeyCard.Slot(1), "E", SwordFightSkills.EdgeName(s.Piece), line, pal, ready || running, ready,
-                s.EdgeCooldownTotal > 0f ? s.EdgeCooldown / s.EdgeCooldownTotal : 0f);
+                s.EdgeCooldownTotal > 0f ? s.EdgeCooldown / s.EdgeCooldownTotal : 0f, board);
         }
 
         void Bar(float fill, Color color, string label)

@@ -18,6 +18,12 @@ namespace ChessFight.RagdollLab
     ///
     /// The trip is checked by hand from the feet each physics step, not from trigger callbacks: a knockdown
     /// from inside OnTrigger is what HANDOFF rule 14 forbids.
+    ///
+    /// R138 (승규 님 10-14: "비숍이 스킬을 사용 할 때 밧줄에 걸려서 넘어 지는 게 아니라 밧줄에 묶이게 해줘 (실제 밧줄에 묶이는게 잘
+    /// 보여야 돼)"): the trip is a tie now. Where it tripped, the runner is tied up standing (RagdollPawn.SkillBind,
+    /// bishopBind seconds): the line that caught it, and the other one if it holds no one, close on its waist from all four
+    /// pegs and stay there while it is bound (the effects wind the rope round it), then let go and twang back. The wire
+    /// stays until the last tie is let go, even past its time.
     /// </summary>
     public class SkillTripwire : MonoBehaviour
     {
@@ -76,6 +82,7 @@ namespace ChessFight.RagdollLab
         {
             public RagdollPawn by;      // the legs it is caught on (null once let go)
             public bool trip;           // caught by an enemy running on the ground: it trips when pulled out far enough
+            public bool bind;           // R138: tied round a bound piece's waist until it is free
             public float along = 0.5f;  // where along the line the legs hold it, 0..1
             public Vector3 side;        // the way they go through it (flat, across the line)
             public float depth;         // how far past the straight line the legs are now (m)
@@ -104,6 +111,13 @@ namespace ChessFight.RagdollLab
             Vector3 up = Vector3.up * height;
             a = (line == 0 ? a1 : a2) + up;
             b = (line == 0 ? b1 : b2) + up;
+            var tied = BoundTo(line);
+            if (tied != null)
+            {
+                // R138: tied round a bound piece: both halves run from their pegs up to its waist.
+                mid = Waist(tied);
+                return;
+            }
             if (Remote)
             {
                 mid = Vector3.Lerp(a, b, netAlong[line]) + Across(line) * netOut[line];
@@ -113,10 +127,43 @@ namespace ChessFight.RagdollLab
             mid = Vector3.Lerp(a, b, Bent(line) ? p.along : 0.5f) + p.side * Out(line);
         }
 
-        /// <summary>How far a line is pulled out of straight now, 0..1 (the effects glow it harder).</summary>
-        public float Tension(int line) => Mathf.Clamp01(Mathf.Abs(Remote ? netOut[line] : Out(line)) / 0.5f);
+        /// <summary>How far a line is pulled out of straight now, 0..1 (the effects glow it harder). Tied round a piece: taut.</summary>
+        public float Tension(int line) => BoundTo(line) != null ? 1f : Mathf.Clamp01(Mathf.Abs(Remote ? netOut[line] : Out(line)) / 0.5f);
 
-        bool Bent(int line) => Remote ? Mathf.Abs(netOut[line]) > 0.005f : pulls[line].by != null || age - pulls[line].letGoAt < TwangTime;
+        bool Bent(int line) => BoundTo(line) != null || (Remote ? Mathf.Abs(netOut[line]) > 0.005f : pulls[line].by != null || age - pulls[line].letGoAt < TwangTime);
+
+        // R138: a client's copy is told of a tie by the host's moment (BishopTrip): both lines close on the piece until
+        // its time is up or it is knocked down (the host's lines do the same).
+        readonly RagdollPawn[] netBind = new RagdollPawn[2];
+        readonly float[] netBindUntil = new float[2];
+
+        /// <summary>The piece a line is tied round now (R138), or null.</summary>
+        public RagdollPawn BoundTo(int line)
+        {
+            if (Remote)
+            {
+                var n = netBind[line];
+                return n != null && n.State == PawnState.Active && age < netBindUntil[line] ? n : null;
+            }
+            var p = pulls[line];
+            return p.bind && p.by != null && p.by.SkillBound ? p.by : null;
+        }
+
+        /// <summary>Where the rope closes on a tied piece: its waist.</summary>
+        public static Vector3 Waist(RagdollPawn pawn) => pawn.Hips.position + Vector3.up * 0.04f;
+
+        /// <summary>A client's copy (R138): the host tied <paramref name="pawn"/> for <paramref name="seconds"/>; both lines close
+        /// on it (the one already tied round someone else stays).</summary>
+        public void NetBind(RagdollPawn pawn, float seconds)
+        {
+            if (!Remote || pawn == null) return;
+            for (int line = 0; line < 2; line++)
+            {
+                if (BoundTo(line) != null && netBind[line] != pawn) continue;
+                netBind[line] = pawn;
+                netBindUntil[line] = age + seconds;
+            }
+        }
 
         /// <summary>Square to a line, flat: the way "pulled out" is measured on the wire.</summary>
         Vector3 Across(int line)
@@ -289,12 +336,48 @@ namespace ChessFight.RagdollLab
 
         void OnDestroy() => Live.Remove(this);
 
+        /// <summary>R139: the effects draw the two lines themselves (as rope), so its own thin lines stay hidden; its pegs
+        /// still lean.</summary>
+        public bool LinesDrawnElsewhere { get; set; }
+
+        /// <summary>R142: the effects draw the pegs too (as wooden stakes), so its own stay hidden (they still lean: where the
+        /// lines are tied, <see cref="PegTie"/>).</summary>
+        public bool PegsDrawnElsewhere
+        {
+            get => pegsElsewhere;
+            set
+            {
+                if (pegsElsewhere == value) return;
+                pegsElsewhere = value;
+                foreach (var peg in pegs)
+                {
+                    var r = peg != null ? peg.GetComponent<MeshRenderer>() : null;
+                    if (r != null) r.enabled = !value;
+                }
+            }
+        }
+        bool pegsElsewhere;
+
+        /// <summary>R142: where a line's peg stands on the floor (<paramref name="end"/> 0 = its a end, 1 = its b end).</summary>
+        public Vector3 PegFoot(int line, int end)
+        {
+            int i = line * 2 + end;
+            if (pegFoot != null && i < pegFoot.Length) return pegFoot[i];
+            LinePoints(line, out var a, out _, out var b);
+            return (end == 0 ? a : b) - Vector3.up * height;
+        }
+
         void Draw(Color color, float width)
         {
             for (int line = 0; line < 2; line++)
             {
                 LinePoints(line, out var a, out var mid, out var b);
                 var lr = line == 0 ? line1 : line2;
+                if (LinesDrawnElsewhere)
+                {
+                    SkillMarks.Hide(lr);
+                    continue;
+                }
                 // Stretched, a line thins a little, like rubber.
                 if (Bent(line)) SkillMarks.Polyline(lr, new[] { a, mid, b }, color, width * (1f - 0.35f * Tension(line)));
                 else SkillMarks.Segment(lr, a, b, color, width, false);
@@ -308,20 +391,48 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < pegs.Count; i++)
             {
                 if (pegs[i] == null) continue;
-                int line = i / 2;
-                LinePoints(line, out var a, out var mid, out var b);
-                Vector3 toward = Flat3(mid - (i % 2 == 0 ? a : b));
-                float lean = 12f * Tension(line);
-                var tilt = lean > 0.01f && toward.sqrMagnitude > 1e-4f
-                    ? Quaternion.AngleAxis(lean, Vector3.Cross(Vector3.up, toward.normalized))
-                    : Quaternion.identity;
+                var tilt = PegTilt(i);
                 pegs[i].rotation = tilt;
                 pegs[i].position = pegFoot[i] + tilt * (Vector3.up * (height * 0.5f + 0.02f));
             }
         }
 
+        /// <summary>How peg <paramref name="i"/> (line × 2 + end) leans now: in toward where its line is pulled.</summary>
+        Quaternion PegTilt(int i)
+        {
+            int line = i / 2;
+            LinePoints(line, out var a, out var mid, out var b);
+            Vector3 toward = Flat3(mid - (i % 2 == 0 ? a : b));
+            float lean = 12f * Tension(line);
+            return lean > 0.01f && toward.sqrMagnitude > 1e-4f
+                ? Quaternion.AngleAxis(lean, Vector3.Cross(Vector3.up, toward.normalized))
+                : Quaternion.identity;
+        }
+
+        /// <summary>R139: where a line is tied on to its peg (<paramref name="end"/> 0 = its a end, 1 = its b end), leaning with
+        /// the peg, and the peg's lean (the effects' rope and its knot follow the peg).</summary>
+        public Vector3 PegTie(int line, int end, out Quaternion lean)
+        {
+            int i = line * 2 + end;
+            if (pegFoot == null || i >= pegFoot.Length)
+            {
+                LinePoints(line, out var a, out _, out var b);
+                lean = Quaternion.identity;
+                return end == 0 ? a : b;
+            }
+            lean = PegTilt(i);
+            return pegFoot[i] + lean * (Vector3.up * height);
+        }
+
         void Update()
         {
+            if (LinesDrawnElsewhere)
+            {
+                SkillMarks.Hide(line1);
+                SkillMarks.Hide(line2);
+                if (armed) LeanPegs();
+                return;
+            }
             if (!armed)
             {
                 // Drawn once at the start; nothing pulls it before it is armed.
@@ -338,7 +449,9 @@ namespace ChessFight.RagdollLab
             if (Remote) return;   // a client's copy: the host judges the trips (and its packets set the age)
             if (spent)
             {
-                // The last trip's yank and twang, then it goes.
+                // R138: its last ties held until their pieces are free, then the twang, then it goes.
+                if (HoldTies()) return;
+                if (snapAt < 0f) snapAt = age + TwangTime;
                 if (age >= snapAt) Snap("끊어짐");
                 return;
             }
@@ -349,6 +462,8 @@ namespace ChessFight.RagdollLab
             }
             if (age >= skills.bishopArm + skills.bishopActive)
             {
+                // R138: not while a piece is still tied in it.
+                if (HoldTies()) return;
                 Snap("시간 끝 (사라짐)");
                 return;
             }
@@ -381,6 +496,19 @@ namespace ChessFight.RagdollLab
 
         bool Holds(RagdollPawn pawn) => pulls[0].by == pawn || pulls[1].by == pawn;
 
+        /// <summary>R138: the lines tied round a bound piece this step (let go once it is free). True while any still holds.</summary>
+        bool HoldTies()
+        {
+            bool tying = false;
+            for (int line = 0; line < 2; line++)
+                if (pulls[line].bind && pulls[line].by != null)
+                {
+                    Hold(line);
+                    tying |= pulls[line].bind;
+                }
+            return tying;
+        }
+
         bool Rested(RagdollPawn pawn) => !restUntil.TryGetValue(pawn, out float until) || age >= until;
 
         /// <summary>A line caught on someone's legs: from now on it is drawn out after them (R82).</summary>
@@ -409,6 +537,19 @@ namespace ChessFight.RagdollLab
             if (pawn == null)
             {
                 LetGo(line);
+                return false;
+            }
+            if (p.bind)
+            {
+                // R138: tied round a bound piece's waist until it is free (its time, a knockdown), then it twangs back.
+                if (!pawn.SkillBound)
+                {
+                    p.bind = false;
+                    restUntil[pawn] = age + TwangTime + Rest;
+                    LetGo(line);
+                    return false;
+                }
+                Follow(line);
                 return false;
             }
             Follow(line);
@@ -462,34 +603,59 @@ namespace ChessFight.RagdollLab
             LastHold = age - p.caughtAt;
             p.released = Mathf.Max(0f, p.depth);
             p.by = null;
+            p.bind = false;
             p.letGoAt = age;
         }
 
-        /// <summary>The trip (R81, R82): the legs are yanked back, the body goes on over them face first, and the line
-        /// they pulled out lets go and twangs back with them. True when it was the wire's last trip.</summary>
+        /// <summary>The catch (R81, R82; R138 a tie, not a trip): the runner is tied up where it stands for bishopBind seconds,
+        /// and the line that caught it closes on its waist with the other one (if that holds no one), from all four pegs;
+        /// they let go and twang back when it is free. One that cannot be tied (down, just up) is let go. True when it was the
+        /// wire's last catch.</summary>
         bool Trip(RagdollPawn pawn, int line, Vector3 runDir)
         {
             tripped.Add(pawn);
-            Vector3 push = runDir * 1.6f + Vector3.up * 0.3f;
-            string result = owner != null ? owner.SkillTrip(pawn, push) : "-";
-            foreach (var id in Legs)
-                pawn.bodies[(int)id].linearVelocity += -runDir * 4.5f + Vector3.down * 0.8f;
+            float seconds = skills.bishopBind;
+            string result = owner != null ? owner.SkillBind(pawn, seconds, "교차 밧줄") : "-";
+            bool tied = pawn.SkillBound;
             float stretched = 0f, held = 0f;
             if (line >= 0)
             {
                 stretched = pulls[line].most;
                 held = age - pulls[line].caughtAt;
+            }
+            if (tied)
+            {
+                for (int l = 0; l < 2; l++)
+                {
+                    var p = pulls[l];
+                    if (l != line && p.by != null) continue;   // the other line holds someone else: it stays theirs
+                    if (p.by == null)
+                    {
+                        p.side = Across(l);
+                        if (Vector3.Dot(Flat3(pawn.Hips.position - (l == 0 ? a1 : a2)), p.side) < 0f) p.side = -p.side;
+                        p.along = 0.5f;
+                        p.most = 0f;
+                    }
+                    p.by = pawn;
+                    p.trip = false;
+                    p.bind = true;
+                    p.caughtAt = age;
+                    Follow(l);
+                }
+            }
+            else if (line >= 0)
+            {
                 LetGo(line);
                 restUntil[pawn] = age + TwangTime + Rest;
             }
             trips++;
             Vector3 trippedAt = pawn.Hips.position;
             trippedAt.y = center.y;
-            RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = SkillFxKind.BishopTrip, by = owner, target = pawn, at = trippedAt, dir = runDir, count = trips, source = this });
-            Report($"{pawn.DisplayName} 걸림 ({trips}/{skills.bishopTrips}) → {result}, 줄이 {held:0.00}초 동안 {stretched:0.00} m 늘어났다 다리를 잡아채고 튕김");
+            RagdollPawn.RaiseSkillFx(new SkillFxEvent { kind = SkillFxKind.BishopTrip, by = owner, target = pawn, at = trippedAt, dir = runDir, count = trips, size = tied ? seconds : 0f, source = this });
+            Report($"{pawn.DisplayName} 걸림 ({trips}/{skills.bishopTrips}) → {result}, 줄이 {held:0.00}초 동안 {stretched:0.00} m 늘어났다 " + (tied ? "몸을 감아 묶음" : "튕김"));
             if (trips < skills.bishopTrips) return false;
             spent = true;
-            snapAt = age + TwangTime;
+            snapAt = -1f;   // once its last tie is let go (FixedUpdate)
             return true;
         }
 
@@ -546,6 +712,10 @@ namespace ChessFight.RagdollLab
         void Snap(string why)
         {
             if (why != null) Report(why);
+            // R138: a wire that goes (broken by a blast or a landing, replaced) frees whoever it still has tied.
+            if (!Remote)
+                for (int line = 0; line < 2; line++)
+                    if (pulls[line].bind && pulls[line].by != null) pulls[line].by.SkillUnbind();
             Destroy(gameObject);
         }
 

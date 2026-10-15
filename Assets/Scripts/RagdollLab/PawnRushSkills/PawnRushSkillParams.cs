@@ -21,7 +21,8 @@ namespace ChessFight.RagdollLab
         public float guardStagger = 0.3f;
 
         [Header("폰 — 첫 두 걸음")]
-        public float pawnStepDistance = 1.5f;
+        [Tooltip("한 걸음 거리 (m). R129: 1.5 → 1.1 (승규 님 \"폰 스킬 시 거리를 좁혀줘\")")]
+        public float pawnStepDistance = 1.1f;
         public float pawnStepSpeed = 7.5f;
         [Tooltip("첫 걸음이 끝나고 두 번째를 받는 시간 (초): 이보다 빨리 누르면 이때 나간다")]
         public float pawnLinkMin = 0.1f;
@@ -81,6 +82,8 @@ namespace ChessFight.RagdollLab
         public float bishopArm = 0.5f;
         public float bishopActive = 6f;
         public int bishopTrips = 2;
+        [Tooltip("R138: 줄에 걸린 적은 넘어지지 않고 그 자리에 묶여 서 있다 (초). 그동안 움직이지도, 뛰지도, 스킬을 쓰지도 못한다")]
+        public float bishopBind = 1.6f;
         public float bishopCooldown = 8f;
         [Tooltip("이보다 가파른 바닥에는 깔리지 않는다 (도)")]
         public float bishopMaxSlope = 30f;
@@ -120,5 +123,24 @@ namespace ChessFight.RagdollLab
         public float queenHeight = 1.5f;
         public float queenRecovery = 0.45f;
         public float queenCooldown = 8f;
+
+        [Header("킹 — 왕의 부름 (R146)")]
+        [Tooltip("목록에서 고를 수 있는 팀원 수 (최대 2)")]
+        public int kingCallMax = 2;
+        [Tooltip("불린 팀원이 자기 F로 대답할 시간 (초)")]
+        public float kingCallWindow = 3f;
+        [Tooltip("대답하면 그 자리에서 떠오르는 시간 (초)")]
+        public float kingCallLift = 0.15f;
+        [Tooltip("킹 뒤 칸까지 오는 시간 (초): 사인 곡선, 가운데가 가장 빠름")]
+        public float kingCallDash = 0.6f;
+        [Tooltip("오는 동안 바닥에서 뜨는 높이 (m)")]
+        public float kingCallHover = 0.12f;
+        [Tooltip("도착 칸: 킹 뒤로 이만큼 (m), 두 명이면 서로 이만큼 떨어진 두 칸 (m). 한 칸 1.5 m")]
+        public float kingCallBehind = 1.5f;
+        public float kingCallSpread = 1.5f;
+        [Tooltip("시험 더미가 스스로 대답하는 데 걸리는 시간 (초)")]
+        public float kingCallDummyAnswer = 0.8f;
+        [Tooltip("쿨타임 (초): 아직 안 정함, 시험용 2초")]
+        public float kingCooldown = 2f;
     }
 }
