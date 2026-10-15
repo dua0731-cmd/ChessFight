@@ -30,6 +30,7 @@ namespace ChessFight.PawnRush
                 case PawnRushMissions.EnPassant: built = MgEnPassant.Build(b, station); break;
                 case PawnRushMissions.KingEscort: built = MgKingEscort.Build(b, station); break;
                 case PawnRushMissions.Checkmate: built = MgCheckmate.Build(b, station); break;
+                case PawnRushMissions.CheckBlock: built = MgCheckBlock.Build(b, station); break;
             }
             root.SetActive(true);
             return built;
