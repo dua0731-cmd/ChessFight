@@ -21,8 +21,8 @@ namespace ChessFight.PawnRush
     //      north blocks, the clock gate walls and the tower's marble are unclimbable
     //   7. a kill volume under the course
     //   8. mini-games v1.0 §2.6: nothing solid of a game but its floors in the entrance band (u < 2.5) or on
-    //      the promotion pad (u 0..2, v +-4.5, 2 x 2 m); every grab handle has its collider and is climbable,
-    //      every other moving (kinematic) part is not; C, G and I have handles
+    //      the promotion pad (u 0..2, v +-4.5, 2 x 2 m); every grab handle has its collider and is grab-only;
+    //      every moving (kinematic) part is unclimbable or grab-only (R128); C has handles, G and I grab-only things
     public static class Course01Validator
     {
         public const float MaxRequiredGap = 1.5f, PathTolerance = .1f, SpanTolerance = .05f;
@@ -243,14 +243,19 @@ namespace ChessFight.PawnRush
                 if (h.GetComponent<Collider>() == null) errors.Add($"{who}: {id}의 손잡이 {h.name}에 콜라이더가 없습니다");
                 if (h.GetComponent<NoClimbSurface>() != null) errors.Add($"{who}: {id}의 손잡이 {h.name}을(를) 잡을 수 없습니다 (NoClimbSurface)");
             }
-            if ((g == PawnRushMissions.Drawbridge || g == PawnRushMissions.KingEscort || g == PawnRushMissions.CheckBlock) && handles == 0)
-                errors.Add($"{who}: {id}에 GrabHandle이 없습니다");
+            if (g == PawnRushMissions.Drawbridge && handles == 0) errors.Add($"{who}: {id}에 GrabHandle이 없습니다");
+            // R128: G and I move their things by hand without handles - the things themselves are grab-only.
+            if ((g == PawnRushMissions.KingEscort || g == PawnRushMissions.CheckBlock) && game.GetComponentInChildren<GrabOnlySurface>(true) == null)
+                errors.Add($"{who}: {id}에 잡기 전용(GrabOnlySurface) 물체가 없습니다");
+            foreach (var h in game.GetComponentsInChildren<GrabHandle>(true))
+                if (h.GetComponent<GrabOnlySurface>() == null) errors.Add($"{who}: {id}의 손잡이 {h.name}에 GrabOnlySurface가 없습니다(잡으면 벽타기가 됨)");
+            // Anything moving is never climbed: unclimbable (NoClimbSurface) or held only (GrabOnlySurface).
             foreach (var rb in game.GetComponentsInChildren<Rigidbody>(true))
             {
-                if (!rb.isKinematic || rb.GetComponent<GrabHandle>() != null) continue;
+                if (!rb.isKinematic) continue;
                 foreach (var c in rb.GetComponentsInChildren<Collider>(true))
-                    if (!c.isTrigger && c.GetComponentInParent<GrabHandle>() == null && c.GetComponent<NoClimbSurface>() == null && c.GetComponentInParent<NoClimbSurface>() == null)
-                        errors.Add($"{who}: {id}의 움직이는 {Name(c.transform)}에 NoClimbSurface가 없습니다");
+                    if (!c.isTrigger && c.GetComponentInParent<NoClimbSurface>() == null && c.GetComponentInParent<GrabOnlySurface>() == null)
+                        errors.Add($"{who}: {id}의 움직이는 {Name(c.transform)}에 NoClimbSurface도 GrabOnlySurface도 없습니다");
             }
         }
 

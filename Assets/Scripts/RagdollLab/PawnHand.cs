@@ -121,7 +121,8 @@ namespace ChessFight.RagdollLab
             joint.enableCollision = false;
             HeldCollider = target;
             HeldBody = target.attachedRigidbody;
-            HoldingLedge = IsEnvironment(target) && IsLedge(target, point);
+            // A grab-only thing (R128) is held, never hung from: no vault over a statue or a cart.
+            HoldingLedge = IsEnvironment(target) && IsLedge(target, point) && !GrabOnlySurface.Marks(target);
             Vector3 away = Center - point;
             GripNormal = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.up;
         }

@@ -30,8 +30,9 @@ namespace ChessFight.PawnRush
         public static Material PieceMaterial(int team) => Arena.Lit(team == Teams.Black ? "M_PieceBlack" : "M_PieceWhite", PieceColor(team), 0f, .45f);
 
         // A chess piece `height` tall standing on `at` (its base) in `parent`, with a ring of `ring` round its base.
-        // solid: a kinematic body with a capsule collider and NoClimbSurface. The picture parts have no colliders.
-        public static GameObject Piece(Transform parent, string name, PieceKind kind, float height, Material body, Color ring, bool solid, float radius = .35f)
+        // solid: a kinematic body with a capsule collider, never climbed: NoClimbSurface (no hand holds it either),
+        // or, grabbable, GrabOnlySurface (pushed and pulled by hand, R128). The picture parts have no colliders.
+        public static GameObject Piece(Transform parent, string name, PieceKind kind, float height, Material body, Color ring, bool solid, float radius = .35f, bool grabbable = false)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent, false);
@@ -88,7 +89,8 @@ namespace ChessFight.PawnRush
                 capsule.radius = radius;
                 capsule.height = Mathf.Max(height, radius * 2f);
                 capsule.center = new Vector3(0f, capsule.height * .5f, 0f);
-                root.AddComponent<NoClimbSurface>();
+                if (grabbable) root.AddComponent<GrabOnlySurface>();
+                else root.AddComponent<NoClimbSurface>();
             }
             return root;
         }
@@ -137,6 +139,7 @@ namespace ChessFight.PawnRush
             rb.isKinematic = true;
             rb.useGravity = false;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
+            go.AddComponent<GrabOnlySurface>();
             var h = go.AddComponent<GrabHandle>();
             h.Owner = owner;
             h.Id = id;
@@ -155,5 +158,42 @@ namespace ChessFight.PawnRush
         }
 
         public static PieceKind PieceOf(ICharacterDriver driver) => driver is IPromotable p ? p.Piece : PieceKind.Pawn;
+
+        // Does a hand of this pawn hold any collider of `body`?
+        public static bool Holds(IMiniGamePawn pawn, Rigidbody body)
+        {
+            if (pawn == null || body == null) return false;
+            for (int hand = 0; hand < 2; hand++)
+            {
+                var c = pawn.Held(hand);
+                if (c != null && c.attachedRigidbody == body) return true;
+            }
+            return false;
+        }
+
+        public const float Along = .5f, HoldReach = 2.2f, TouchGap = .75f, TouchSide = .45f;
+
+        // R128: a grab-only thing moved along `dir` by the pawns on it, no handles. +1: the pawn moves it along
+        // `dir` - holding it (any side) with its move input along `dir` (dot >= 0.5), or pressing on it from behind
+        // (within 0.75 m of the back face) with its input along `dir`. -1: the same against `dir` (holding it and
+        // pulling back, or pressing on its front). 0: neither, or down. `at` and the pawn in the game's frame
+        // (`frame`), `dir` flat and unit; `half` the thing's half size across its footprint.
+        public static int Shove(MissionStation.Pawn p, Transform frame, Rigidbody body, Vector3 at, Vector3 dir, float half)
+        {
+            var mg = p.Driver as IMiniGamePawn;
+            if (mg == null || mg.Down) return 0;
+            var input = frame.InverseTransformDirection(mg.MoveInput);
+            input.y = 0f;
+            if (input.sqrMagnitude < .01f) return 0;
+            float dot = Vector3.Dot(input.normalized, dir);
+            if (dot > -Along && dot < Along) return 0;
+            var rel = p.Local - at;
+            rel.y = 0f;
+            float along = Vector3.Dot(rel, dir), side = Mathf.Abs(Vector3.Dot(rel, new Vector3(dir.z, 0f, -dir.x)));
+            bool holding = Holds(mg, body) && rel.magnitude <= half + HoldReach;
+            bool touching = side <= half + TouchSide && Mathf.Abs(along) <= half + TouchGap;
+            if (dot >= Along) return holding || touching && along < 0f ? 1 : 0;
+            return holding || touching && along > 0f ? -1 : 0;
+        }
     }
 }

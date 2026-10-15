@@ -32,6 +32,8 @@ namespace ChessFight.PawnRush
 
         void Awake()
         {
+            // A handle is held, never climbed (R128): without this, grab + forward into it started a climb.
+            if (GetComponent<GrabOnlySurface>() == null) gameObject.AddComponent<GrabOnlySurface>();
             look = GetComponent<Renderer>();
             if (look != null)
             {
