@@ -32,8 +32,15 @@ namespace ChessFight.PawnRush
             return built;
         }
 
-        // Station floor slab between u0 and u1, the full 20 m across.
-        public static void Floor(CourseBuilder b, float u0, float u1) => b.Floor("Station floor", -MissionStation.Half, MissionStation.Half, u0, u1, 0f);
+        // Station floor slab between u0 and u1, the full 20 m across: the arena dais (v1.0 §2.1), a dark slate
+        // slab down to the plaza floor with the gold rim on its outer edges.
+        public static GameObject Floor(CourseBuilder b, float u0, float u1)
+        {
+            var floor = b.Floor("Station floor", -MissionStation.Half, MissionStation.Half, u0, u1, 0f);
+            floor.GetComponent<Renderer>().sharedMaterial = Arena.DaisMaterial;
+            Arena.Rim(b, u0, u1);
+            return floor;
+        }
 
         public static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
     }

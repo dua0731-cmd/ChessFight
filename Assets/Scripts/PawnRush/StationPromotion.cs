@@ -49,7 +49,7 @@ namespace ChessFight.PawnRush
         public ICharacterDriver Standing => standing;
 
         // Black's station is the mirror of white's: the pad on the outer side of both.
-        public static Vector3 LocalMiddle(bool mirrored) => new Vector3((mirrored ? 1f : -1f) * VOuter, 0f, U);
+        public static Vector3 LocalMiddle(bool mirrored) => new Vector3((mirrored ? 1f : -1f) * VOuter, Arena.DaisHeight, U);
 
         public static StationPromotion Make(MissionStation station)
         {

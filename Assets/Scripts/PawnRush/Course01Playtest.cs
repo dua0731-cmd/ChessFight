@@ -84,6 +84,7 @@ namespace ChessFight.PawnRush
         void Update()
         {
             if (Driver == null || course == null) return;
+            MissionStation.LocalTeam = Mathf.Max(0, Team);
             RegisterOffline();
             var picker = Online ? null : course.Missions;   // no development keys in a match
             if (!Online && LegacyKeys.Down(KeyCode.F5))

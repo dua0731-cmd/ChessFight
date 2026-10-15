@@ -20,6 +20,12 @@ namespace ChessFight.PawnRush
         // design doc wants a switch in test builds (the playtest's F7).
         public static bool ReverseSabotage = true;
 
+        // The team of the person at this PC (the playtest, or the match link's own pawn): whose fanfare is loud.
+        public static int LocalTeam = Teams.White;
+
+        // Mini-games v1.0 §2.1: every station is a dais Arena.DaisHeight over the plaza floor. The game socket
+        // (the games' own frame, floor top at 0) sits that much up; Pawns() gives heights from the dais top.
+
         [SerializeField, Range(0, 1)] int team = Teams.White;
         [SerializeField, Range(1, 2)] int plaza = 1;
         [Tooltip("Black's station is the mirror of white's: D's capstan turns the other way.")]
@@ -68,13 +74,41 @@ namespace ChessFight.PawnRush
         // Builds the given game in place of the current one (a new round, or the playtest's keys).
         public MiniGameBase Install(int game)
         {
+            RaiseSocket();
             for (int i = gameSocket.childCount - 1; i >= 0; i--) DestroyImmediate(gameSocket.GetChild(i).gameObject);
             gameIndex = game;
             if (gate != null && Application.isPlaying) gate.Close();
             var built = MissionGames.Build(game, this);
-            if (Application.isPlaying) Hook(built);
+            if (Application.isPlaying)
+            {
+                Hook(built);
+                // §2.4: the game rises out of the dais, dust rings the floor, the sign nods.
+                if (built != null) InstallRise.Play(built.transform);
+                var at = transform.TransformPoint(new Vector3(0f, Arena.DaisHeight, 10f));
+                ArenaFx.Ring(at, 2f, 9f, .8f, new Color(.85f, .78f, .65f));
+                ArenaFx.Sfx("sfx_mg_install", at);
+                var dressing = Dressing;
+                if (dressing != null) dressing.Installed(game);
+            }
             last.Clear();
             return built;
+        }
+
+        void RaiseSocket()
+        {
+            if (gameSocket != null) gameSocket.localPosition = new Vector3(0f, Arena.DaisHeight, 0f);
+        }
+
+        ArenaDressing dressing;
+
+        // The ramp, flags, sign and gate bar (built the first time it is asked for in Play).
+        public ArenaDressing Dressing
+        {
+            get
+            {
+                if (dressing == null && Application.isPlaying && kit != null) dressing = Arena.Dress(this);
+                return dressing;
+            }
         }
 
         MiniGameBase hooked;
@@ -82,7 +116,9 @@ namespace ChessFight.PawnRush
         // The game built in the Editor (saved with the scene) opens the gate too.
         void Start()
         {
+            RaiseSocket();
             if (Promotion == null) Debug.LogWarning("[PawnRush] 스테이션에 승격 발판을 만들지 못했습니다: " + name);
+            if (Dressing != null && dressing.isActiveAndEnabled) dressing.Installed(gameIndex);
             if (hooked == null) Hook(Game);
         }
 
@@ -131,14 +167,14 @@ namespace ChessFight.PawnRush
             gatheredAt = Time.fixedTime;
             pawns.Clear();
             next.Clear();
-            var center = transform.TransformPoint(new Vector3(0f, 6f, Half));
+            var center = transform.TransformPoint(new Vector3(0f, 6f + Arena.DaisHeight, Half));
             int n = Physics.OverlapBoxNonAlloc(center, new Vector3(Half + .5f, 9f, Half + .5f), buffer, transform.rotation, ~0, QueryTriggerInteraction.Ignore);
             float dt = Mathf.Max(Time.fixedDeltaTime, 1e-4f);
             for (int i = 0; i < n; i++)
             {
                 var driver = buffer[i].GetComponentInParent<ICharacterDriver>();
                 if (driver == null || next.ContainsKey(driver) || driver.FollowTarget == null) continue;
-                var local = transform.InverseTransformPoint(driver.FollowTarget.position);
+                var local = transform.InverseTransformPoint(driver.FollowTarget.position) - new Vector3(0f, Arena.DaisHeight, 0f);
                 if (Mathf.Abs(local.x) > Half + .3f || local.z < -.3f || local.z > Size + .3f) { next[driver] = local; continue; }
                 var velocity = last.TryGetValue(driver, out var before) ? (local - before) / dt : Vector3.zero;
                 // A respawn or a throw across the map is not a walk.
