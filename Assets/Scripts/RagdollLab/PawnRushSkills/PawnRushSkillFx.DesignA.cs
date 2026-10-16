@@ -897,7 +897,9 @@ namespace ChessFight.RagdollLab
             float half = length * 0.5f;
             Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * f, d2 = Quaternion.Euler(0f, -45f, 0f) * f;
             foreach (var end in new[] { center - d1 * half, center + d1 * half, center - d2 * half, center + d2 * half })
-                kit.PuffBurst(end + Vector3.up * 0.08f, board ? kit.dust : kit.bishop, 2, 0.15f, 0.12f, 0.35f, 0.1f);
+                // R149: on the floor under each end (a dais edge), as the pegs.
+                kit.PuffBurst((Kit.FloorUnder(end, 1f, out Vector3 floor) && Mathf.Abs(floor.y - end.y) <= 1f ? floor : end) + Vector3.up * 0.08f,
+                              board ? kit.dust : kit.bishop, 2, 0.15f, 0.12f, 0.35f, 0.1f);
         }
 
         /// <summary>

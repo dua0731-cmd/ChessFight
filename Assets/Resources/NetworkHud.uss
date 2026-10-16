@@ -431,43 +431,39 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
                            border-color: rgba(217, 174, 98, 0.4); font-size: 17px;
                            background-color: rgba(12, 7, 4, 0.7); color: rgb(255, 255, 255); }
 
-/* ---------- title screen (over IntroStage's wooden chessboard) ----------
-   The R58 layout (title block left) with R63's wood and brass: a walnut shade,
-   a brass rule, walnut plates (texture from IntroController) and a walnut
-   slab key (ChunkyButtons). */
+/* ---------- title screen (over IntroStage's castle hall race) ----------
+   R150 (2026-10-16): the title block from the chosen mockup (BrawlShove): Exo 2
+   Black Italic, CHESS ivory over ebony with a gold edge, FIGHT in gold, a dashed
+   road line that runs (IntroController), the gold start plate (ChunkyButtons'
+   default look), an outlined "이름 바꾸기" and a bare Steam line. */
 .intro { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .intro-shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; -unity-background-scale-mode: stretch-to-fill; }
-.intro-block { position: absolute; left: 64px; top: 158px; }
-.intro-kicker { font-size: 13px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 201, 61);
-                text-shadow: 0 2px 6px rgba(30, 16, 6, 0.6); }
-.intro-title { font-size: 104px; -unity-font-style: bold-and-italic; color: rgb(255, 248, 236);
-               margin-top: -16px; margin-bottom: -20px; text-shadow: 0 7px 0 rgb(62, 34, 16); }
-.intro-title-b { color: rgb(255, 201, 61); }
-.intro-rule { margin-top: 26px; align-items: center; }
-.intro-rule-gold { width: 46px; height: 3px; background-color: rgb(255, 201, 61); }
-.intro-rule-brass { width: 300px; height: 1px; background-color: rgba(217, 174, 98, 0.75); }
-.intro-subs { margin-top: 14px; padding: 12px 18px 8px 16px; border-left-width: 3px; border-color: rgb(217, 174, 98);
-              background-color: rgba(52, 33, 19, 0.88); -unity-background-scale-mode: scale-and-crop; }
-.intro-sub { font-size: 16px; -unity-font-style: bold; color: rgb(246, 236, 223); margin-bottom: 6px; }
-.intro-actions { position: absolute; left: 64px; top: 584px; align-items: center; }
-.intro-press { padding: 9px 18px 13px 10px; }
-/* "이름 바꾸기" beside the start plate (R85): a walnut plate like the Steam chip. */
-.intro-rename { height: 40px; margin: 0 0 4px 14px; padding: 0 16px 0 13px; align-items: center;
-                border-width: 1px; border-color: rgba(217, 174, 98, 0.45); background-color: rgba(52, 33, 19, 0.95);
-                -unity-background-scale-mode: scale-and-crop;
+.intro-block { position: absolute; left: 112px; top: 79px; }
+.intro-title { font-size: 112px; color: rgb(243, 233, 210); margin: 0 0 -26px 0; padding: 0;
+               -unity-text-outline-width: 2px; -unity-text-outline-color: rgb(201, 160, 79);
+               text-shadow: 0 8px 12px rgba(0, 0, 0, 0.7); white-space: nowrap; }
+.intro-two { position: relative; }
+.intro-two-low { position: absolute; left: 0; right: -40px; overflow: hidden; }
+.intro-title-dark { position: absolute; left: 0; top: 0; color: rgb(42, 36, 32); text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.intro-title-b { color: rgb(242, 193, 78); -unity-text-outline-width: 1px; -unity-text-outline-color: rgb(122, 78, 20);
+                 text-shadow: 0 4px 0 rgb(90, 58, 18); }
+.intro-road { margin-top: 30px; width: 330px; height: 9px; overflow: hidden; }
+.intro-road-run { position: absolute; left: 0; top: 0; height: 9px; }
+.intro-road-dash { width: 34px; height: 8px; margin-right: 6px; rotate: 0; }
+.intro-actions { position: absolute; left: 112px; top: 352px; align-items: center; }
+.intro-press { padding: 9px 26px 13px 26px; }
+.intro-hint { font-size: 18px; -unity-font-style: bold; color: rgb(43, 26, 13); }
+/* "이름 바꾸기" beside the start plate (R85): a dark plate with a gold edge. */
+.intro-rename { height: 46px; margin: 0 0 4px 12px; padding: 0 20px; align-items: center;
+                border-width: 2px; border-radius: 4px; border-color: rgb(201, 160, 79); background-color: rgba(20, 12, 6, 0.75);
                 transition-property: scale, border-color; transition-duration: 0.12s; }
 .intro-rename:hover { border-color: rgb(255, 214, 120); }
 .intro-rename:active { scale: 0.96 0.96; }
-.intro-rename-crown { width: 16px; height: 12px; margin-right: 8px; flex-shrink: 0; }
 .intro-rename-text { font-size: 15px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
-.intro-key { width: 30px; height: 30px; margin-right: 12px; border-radius: 6px; font-size: 12px; -unity-font-style: bold;
-             -unity-text-align: middle-center; color: rgb(52, 33, 19); background-color: rgb(255, 201, 61); }
-.intro-hint { font-size: 18px; -unity-font-style: bold; color: rgb(255, 248, 236); }
-.intro-chip { position: absolute; left: 64px; top: 648px; height: 34px; padding: 0 14px 0 13px;
-              border-width: 1px; border-color: rgba(217, 174, 98, 0.45); background-color: rgba(52, 33, 19, 0.95);
-              -unity-background-scale-mode: scale-and-crop; }
-.intro-dot { width: 8px; height: 8px; margin-right: 8px; border-radius: 4px; background-color: rgb(255, 200, 80); }
-.intro-status { font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
+.intro-chip { position: absolute; left: 112px; top: 424px; height: 24px; padding: 0; }
+.intro-dot { width: 9px; height: 9px; margin-right: 8px; border-radius: 5px; background-color: rgb(255, 200, 80); }
+.intro-status { font-size: 13px; -unity-font-style: bold; color: rgb(226, 207, 175); white-space: nowrap;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
 
 /* ---------- match HUD (MatchHud.uxml) ---------- */
 .screen { flex-grow: 1; flex-direction: row; padding: 20px; }

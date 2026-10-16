@@ -24,9 +24,9 @@ namespace ChessFight.Game
         // Each team's spots (white; black mirrored), front row first.
         static readonly Vector2[] Spots =
             { new Vector2(-1.05f, 1.7f), new Vector2(-2.1f, 1.7f), new Vector2(-3.15f, 1.7f), new Vector2(-1.55f, -1.2f), new Vector2(-2.6f, -1.2f), new Vector2(-3.65f, -1.2f) };
-        // Who stands on each spot, as in the lobby lineup; bots are pawns.
+        // Who stands on each spot: a pawn, as everyone starts the match (R148, as in the lobby lineup).
         public static readonly PieceKind[] Kinds =
-            { PieceKind.Knight, PieceKind.Queen, PieceKind.King, PieceKind.Rook, PieceKind.Bishop, PieceKind.Pawn };
+            { PieceKind.Pawn, PieceKind.Pawn, PieceKind.Pawn, PieceKind.Pawn, PieceKind.Pawn, PieceKind.Pawn };
 
         sealed class Player
         {

@@ -97,17 +97,19 @@ namespace ChessFight.RagdollLab
                 if (pawn != null && pawn.PawnRushSkills == null) pawn.PawnRushSkills = skills;
         }
 
-        /// <summary>The skill key card at the bottom right (the test bed's, SkillKeyCard).</summary>
+        /// <summary>The skill key card at the bottom right, in the same colours as the skill test bed's (PawnRushSkillFx.SkillCard,
+        /// the board look). Not while the entrance screen still covers the course (R148: it showed through at 100 %).</summary>
         void OnGUI()
         {
+            if (ChessFight.Game.LoadingScreenView.Showing) return;
             var me = Viewer;
             if (me == null || me.PawnRushSkills == null || me.Piece == PieceKind.King) return;
             bool running = me.SkillStage != SkillStage.None, ready = !running && me.SkillCooldown <= 0f;
             string how = me.Piece == PieceKind.Rook || me.Piece == PieceKind.Bishop ? "F 조준 → 좌클릭" : "F 사용";
             if (me.Piece == PieceKind.Pawn) how += " · 승격 발판에 서서 승격";
-            SkillKeyCard.Draw(SkillKeyCard.Slot(0), "F", $"{ChessPieces.Name(me.Piece)} · {RagdollPawn.SkillName(me.Piece)}",
-                SkillKeyCard.Line(running ? PawnRushSkillBed.StageName(me) : null, me.SkillCooldown, how), SkillKeyCard.Colors(me.Piece),
-                ready || running, false, me.SkillCooldownTotal > 0f ? me.SkillCooldown / me.SkillCooldownTotal : 0f);
+            PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), "F", $"{ChessPieces.Name(me.Piece)} · {RagdollPawn.SkillName(me.Piece)}",
+                SkillKeyCard.Line(running ? PawnRushSkillBed.StageName(me) : null, me.SkillCooldown, how), me.Piece,
+                ready || running, me.SkillCooldownTotal > 0f ? me.SkillCooldown / me.SkillCooldownTotal : 0f);
         }
     }
 }

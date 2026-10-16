@@ -508,7 +508,13 @@ namespace ChessFight.RagdollLab
             var rotation = Quaternion.LookRotation(f, Vector3.up);
             for (int i = -2; i <= 2; i++)
                 foreach (int j in i == 0 ? new[] { 0 } : new[] { i, -i })
-                    yield return (center + (r * j + f * i) * size + Vector3.up * 0.02f, Mathf.Abs(i), size, rotation);
+                {
+                    // R149: each square on the floor under it (up or down a step within 1 m), as the wire's pegs: laid at
+                    // the middle's height, a square past a mini-game dais edge was inside the dais.
+                    Vector3 at = center + (r * j + f * i) * size;
+                    if (Kit.FloorUnder(at, 1f, out Vector3 floor) && Mathf.Abs(floor.y - at.y) <= 1f) at = floor;
+                    yield return (at + Vector3.up * 0.02f, Mathf.Abs(i), size, rotation);
+                }
         }
 
         /// <summary>While a bishop aims, its squares show faintly where the X would go (B's preview).</summary>

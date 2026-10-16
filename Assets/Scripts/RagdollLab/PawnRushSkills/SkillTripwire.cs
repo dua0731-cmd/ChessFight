@@ -314,6 +314,10 @@ namespace ChessFight.RagdollLab
             Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * forward, d2 = Quaternion.Euler(0f, -45f, 0f) * forward;
             a1 = at - d1 * half; b1 = at + d1 * half;
             a2 = at - d2 * half; b2 = at + d2 * half;
+            // R149: each peg stands on the floor under it (up or down a step within 1 m): laid flat at the bishop's own
+            // floor, the pegs across a mini-game station's dais edge stood inside the dais. The trips only use the wire's
+            // flat positions and its middle's height, so this moves only what is drawn (and the same on every PC).
+            a1 = Seat(a1); b1 = Seat(b1); a2 = Seat(a2); b2 = Seat(b2);
             Color c = Wire;
             line1 = SkillMarks.Line(transform, "Line 1");
             line2 = SkillMarks.Line(transform, "Line 2");
@@ -333,6 +337,9 @@ namespace ChessFight.RagdollLab
             }
             Draw(new Color(c.r, c.g, c.b, 0.35f), 0.025f);
         }
+
+        static Vector3 Seat(Vector3 p) =>
+            SkillInkKit.FloorUnder(p, 1f, out Vector3 floor) && Mathf.Abs(floor.y - p.y) <= 1f ? floor : p;
 
         void OnDestroy() => Live.Remove(this);
 

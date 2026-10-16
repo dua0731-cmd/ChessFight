@@ -79,12 +79,16 @@ namespace ChessFight.RagdollLab
             readonly Transform t;
             readonly MeshRenderer r;
             readonly MaterialPropertyBlock b = new MaterialPropertyBlock();
+            // A floor ring laid over a raised floor it reaches (R149, SkillInkKit.FloorDrape).
+            readonly SkillInkKit.FloorDrape drape;
 
             public Air(PawnRushSkillFx fx, bool ring, string name)
             {
                 var go = new GameObject(name);
                 go.transform.SetParent(fx.root, false);
-                go.AddComponent<MeshFilter>().sharedMesh = ring ? fx.kit.meshQuad : fx.kit.meshPuff;
+                var filter = go.AddComponent<MeshFilter>();
+                filter.sharedMesh = ring ? fx.kit.meshQuad : fx.kit.meshPuff;
+                if (ring) drape = new SkillInkKit.FloorDrape(go.transform, filter, fx.kit.meshQuad);
                 r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = ring ? fx.matShockRing : fx.matShockShell;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -127,6 +131,7 @@ namespace ChessFight.RagdollLab
                 b.SetColor("_Front", front);
                 b.SetColor("_Tint", new Color(ShockTint.r, ShockTint.g, ShockTint.b, tint));
                 b.SetFloat("_Fade", Mathf.Clamp01(fade));
+                if (fade > 0.001f) drape?.Fit(true);
                 r.SetPropertyBlock(b);
                 r.enabled = fade > 0.001f;
             }
@@ -135,6 +140,7 @@ namespace ChessFight.RagdollLab
 
             public void Destroy()
             {
+                drape?.Dispose();
                 if (t != null) UnityEngine.Object.Destroy(t.gameObject);
             }
         }

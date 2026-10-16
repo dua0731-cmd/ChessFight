@@ -64,6 +64,15 @@ namespace ChessFight.Game
 
         public readonly LoadingState State = new LoadingState();
         public bool Hiding => hideAt >= 0;
+        // True while an entrance screen covers the view, fading out included: what
+        // sits on the match underneath (the skill card) waits until it is gone.
+        public static bool Showing => open > 0;
+        static int open;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOpen() => open = 0;
+
+        void Awake() => open++;
         // "매칭 취소" clicked while matching (R64: not Esc, which is the settings window).
         public event Action CancelRequested;
         // "봇 추가" while matching: one more bot in the room.
@@ -416,6 +425,7 @@ namespace ChessFight.Game
 
         void OnDestroy()
         {
+            open = Mathf.Max(0, open - 1);
             studio.Dispose();
             if (ownedPanel != null) Destroy(ownedPanel);
             if (shade != null) Destroy(shade);

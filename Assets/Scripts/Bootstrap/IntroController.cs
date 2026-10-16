@@ -9,7 +9,7 @@ namespace ChessFight.Game
 {
     // Title screen. NetworkRuntime starts Steam while this is on screen, and a
     // click on the start plate moves on (R64: no longer any key, so Esc can open
-    // the settings window). The chess set behind the title is IntroStage, built
+    // the settings window). The castle hall race behind the title (R150) is IntroStage, built
     // here at run time so the scene file stays untouched.
     //
     // R84: the opening logo plays over it once per run of the game; the first
@@ -54,13 +54,7 @@ namespace ChessFight.Game
                 shade = Shade();
                 shadeElement.style.backgroundImage = new StyleBackground(shade);
             }
-            // Lacquered walnut under the lines below the title and the Steam chip.
-            var walnut = new StyleBackground(MenuArt.PanelTexture());
-            var subs = root?.Q<VisualElement>("intro-subs");
-            if (subs != null) subs.style.backgroundImage = walnut;
-            if (chip != null) chip.style.backgroundImage = walnut;
-            if (rename != null) rename.style.backgroundImage = walnut;
-            root?.Q("intro-rename-crown")?.Add(new MenuMarks.CrownMark(PieceFigure.Hex(0xE2B866), Color.clear, 0f));
+            Title();
             if (press != null) ChunkyButtons.Make(press);
             shownAt = Time.unscaledTime;
             // The opening logo, once per run; the title counts its minimum time
@@ -78,6 +72,7 @@ namespace ChessFight.Game
                 dot.style.backgroundColor = session.Online ? Ready : string.IsNullOrEmpty(session.Error) ? Waiting : Failed;
 
             bool ready = logoDone && Time.unscaledTime - shownAt >= MinimumShow;
+            RunRoad();
             if (press != null) press.style.opacity = ready ? 1f : .55f;
             if (rename != null) rename.style.opacity = ready ? 1f : .55f;
             // Nothing here takes input under the logo, the transition or the name
@@ -102,6 +97,68 @@ namespace ChessFight.Game
                     armed = false;
                     NameChange.Begin(Fraction(rename), () => Fraction(rename), "시작 화면");
                 }
+            }
+        }
+
+        // R150: the title in Exo 2, CHESS's lower half in ebony (a clip over a copy of
+        // the word, sized once it is laid out), and the road line drawn as slanted dashes.
+        VisualElement road;
+        float roadOffset;
+        static readonly Color[] RoadColors =
+        {
+            PieceFigure.Hex(0xF3E9D2), PieceFigure.Hex(0x1C1612), PieceFigure.Hex(0xF2C14E), PieceFigure.Hex(0x1C1612)
+        };
+        const float DashWidth = 34f, DashGap = 6f, DashSlant = 4f, RoadSpeed = 70f;
+
+        void Title()
+        {
+            if (root == null) return;
+            var font = RuntimePanels.TitleFont;
+            if (font != null)
+                root.Query<Label>(className: "intro-title").ForEach(l => { l.style.unityFont = font; l.style.unityFontStyleAndWeight = FontStyle.Normal; });
+            var chess = root.Q<VisualElement>("intro-chess");
+            var low = root.Q<VisualElement>("intro-chess-low");
+            var dark = root.Q<Label>("intro-chess-dark");
+            if (chess != null && low != null && dark != null)
+                chess.RegisterCallback<GeometryChangedEvent>(_ =>
+                {
+                    // The word's own height, not the margin that pulls FIGHT up under it.
+                    float h = chess.resolvedStyle.height, cut = Mathf.Round(h * .59f);
+                    low.style.top = cut;
+                    low.style.height = Mathf.Max(0, h - cut + 30f);
+                    dark.style.top = -cut;
+                });
+            road = root.Q<VisualElement>("intro-road-run");
+            if (road != null)
+            {
+                road.style.width = 700f;
+                road.generateVisualContent += DrawRoad;
+            }
+        }
+
+        void RunRoad()
+        {
+            if (road == null) return;
+            roadOffset += Time.unscaledDeltaTime * RoadSpeed;
+            road.MarkDirtyRepaint();
+        }
+
+        void DrawRoad(MeshGenerationContext context)
+        {
+            var painter = context.painter2D;
+            float h = road.resolvedStyle.height, step = DashWidth + DashGap, cycle = step * RoadColors.Length;
+            float start = Mathf.Repeat(roadOffset, cycle) - cycle;
+            for (int i = 0; start + i * step < 700f; i++)
+            {
+                float x = start + i * step;
+                painter.fillColor = RoadColors[i % RoadColors.Length];
+                painter.BeginPath();
+                painter.MoveTo(new Vector2(x + DashSlant, 0));
+                painter.LineTo(new Vector2(x + DashWidth + DashSlant, 0));
+                painter.LineTo(new Vector2(x + DashWidth - DashSlant, h));
+                painter.LineTo(new Vector2(x - DashSlant, h));
+                painter.ClosePath();
+                painter.Fill();
             }
         }
 

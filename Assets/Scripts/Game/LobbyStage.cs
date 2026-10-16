@@ -22,9 +22,9 @@ namespace ChessFight.Game
     // (MenuArt.Web: +Z towards the camera there).
     //
     // Display only. Nothing here moves by input or by the network; the pieces bob
-    // in place. Each member gets a different chess piece (me the knight, bigger,
-    // in front), bots are charcoal pawns, and an empty spot is a turning brass
-    // ring for the HUD's "+ 친구 초대".
+    // in place. Everyone stands as a pawn, the piece every match starts as, in the
+    // match's own model (R148; me bigger, in front), bots are charcoal pawns, and
+    // an empty spot is a turning brass ring for the HUD's "+ 친구 초대".
     public sealed class LobbyStage : MonoBehaviour
     {
         public const int Spots = 6;
@@ -37,9 +37,6 @@ namespace ChessFight.Game
         // either side, then the back row in the gaps. Sample coordinates (x, z).
         static readonly Vector2[] Places =
             { new Vector2(0, .5f), new Vector2(-2.4f, .5f), new Vector2(2.4f, .5f), new Vector2(-1.2f, -1.5f), new Vector2(1.2f, -1.5f), new Vector2(-3.6f, -1.5f) };
-        // Who stands where, spot by spot.
-        static readonly PieceKind[] Kinds =
-            { PieceKind.Knight, PieceKind.Queen, PieceKind.King, PieceKind.Rook, PieceKind.Bishop, PieceKind.Pawn };
 
         Camera view;
         readonly GameObject[] bodies = new GameObject[Spots];
@@ -50,7 +47,7 @@ namespace ChessFight.Game
 
         public Camera View => view;
 
-        // Where the player's own knight stands on screen (its chest), as a fraction
+        // Where the player's own pawn stands on screen (its chest), as a fraction
         // of the screen from the top left: the scene transition opens there (R84).
         public Vector2 SelfOnScreen()
         {
@@ -170,10 +167,9 @@ namespace ChessFight.Game
             Vector3 at = SpotPosition(index);
             if (entry.Invite) { bodies[index] = InviteSpot(index, at); return; }
 
-            var kind = entry.Bot ? PieceKind.Pawn : Kinds[index];
-            // Me turned out to the right so the knight's head reads; the others face
-            // the camera, a little towards the middle.
-            var lookAt = index == 0 ? MenuArt.Web(7.5f, Top, 8.5f) : MenuArt.Web(Places[index].x * .5f, Top, 9f);
+            var kind = PieceKind.Pawn;
+            // Everyone faces the camera, a little towards the middle (me straight on).
+            var lookAt = MenuArt.Web(Places[index].x * .5f, Top, 9f);
             var figure = MenuArt.Figure(transform, kind, entry.Bot ? 1 : 0, at, lookAt, index == 0 ? MeScale : MemberScale);
             figure.Root.name = "Lineup " + (entry.Bot ? "Bot " : "") + entry.Id;
             figures[index] = figure;
