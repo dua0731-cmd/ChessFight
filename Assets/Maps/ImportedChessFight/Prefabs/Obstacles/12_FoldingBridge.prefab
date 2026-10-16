@@ -1288,7 +1288,7 @@ Transform:
   m_GameObject: {fileID: 1749160701734388709}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.55, y: -0.15, z: 0}
+  m_LocalPosition: {x: -5.9, y: -0.15, z: 0}
   m_LocalScale: {x: 3, y: 0.3, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1801,7 +1801,7 @@ Transform:
   m_GameObject: {fileID: 2289556399092668889}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.55, y: -0.15, z: 0}
+  m_LocalPosition: {x: 5.9, y: -0.15, z: 0}
   m_LocalScale: {x: 3, y: 0.3, z: 6}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2871,19 +2871,16 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 253194480a86ffe44904baf717a96bf1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ChessFight.ProtectKing.FoldingBridge
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.FoldingBridge
   context: {fileID: 137355394170985732}
   LeftPivot: {fileID: 447902591359176875}
   RightPivot: {fileID: 1608288595538073982}
-  OpenDuration: 5
-  WarningDuration: 1.5
-  FoldDuration: 2.5
-  ClosedDuration: 2
   FoldAngle: 70
-  StartDelay: 1
-  Repeat: 1
-  Simultaneous: 1
-  RightDelay: 0.6
+  panelMass: 12
+  returnSpring: 1500
+  returnDamper: 250
+  maximumFoldSpeed: 45
+  warningFraction: 0.75
   WarningVisuals:
   - {fileID: 971774116868433019}
   - {fileID: 3391137105680939876}
@@ -5061,7 +5058,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6896316000931571602}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 12
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -5075,8 +5072,8 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 3
@@ -5777,7 +5774,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8388404637379631023}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 12
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -5791,8 +5788,8 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 3

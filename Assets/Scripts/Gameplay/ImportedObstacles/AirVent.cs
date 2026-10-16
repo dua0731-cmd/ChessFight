@@ -5,9 +5,11 @@ using UnityEngine.Events;
 
 namespace ChessFight.ProtectKing
 {
+    public enum AirVentShape { Box, Cylinder }
     public enum AirVentState { Idle, Warning, Blowing }
     public sealed class AirVent : Obstacle
     {
+        [SerializeField, HideInInspector] AirVentShape shape = AirVentShape.Box;
         public ObstacleContext context;
         public BoxCollider WindTrigger;
         public GameObject WarningVisual, WindVisual;
@@ -70,6 +72,7 @@ namespace ChessFight.ProtectKing
             visited.Clear();
             for (int i = 0; i < count; i++)
             {
+                if (shape == AirVentShape.Cylinder && !OverlapsCylinder(buffer[i])) continue;
                 var motor = ImportedObstacleActor.Find(buffer[i]);
                 if (motor == null || !motor.CanReceiveObstacle || !visited.Add(motor)) continue;
                 float multiplier = motor.Grounded ? Mathf.Max(0,GroundedMultiplier) : Mathf.Max(0,AirborneMultiplier);
@@ -79,6 +82,38 @@ namespace ChessFight.ProtectKing
                 PeakWindContribution=Mathf.Max(PeakWindContribution,change.magnitude);
 
             }
+        }
+        bool OverlapsCylinder(Collider other)
+        {
+            // Box broad phase, then test actual body contact against the round cross-section.
+            var volume = WindTrigger.transform;
+            Vector3 half = WindTrigger.size * .5f;
+            Vector3 local = volume.InverseTransformPoint(other.bounds.center) - WindTrigger.center;
+            Vector3 axis = WindTrigger.center + Vector3.forward * Mathf.Clamp(local.z, -half.z, half.z);
+            Vector3 closest = volume.InverseTransformPoint(other.ClosestPoint(volume.TransformPoint(axis))) - WindTrigger.center;
+            float x = closest.x / Mathf.Max(.001f, half.x), y = closest.y / Mathf.Max(.001f, half.y);
+            return x * x + y * y <= 1.0001f && Mathf.Abs(closest.z) <= half.z + .001f;
+        }
+        void OnDrawGizmosSelected()
+        {
+            if (WindTrigger == null) return;
+            var saved = Gizmos.matrix; Gizmos.matrix = WindTrigger.transform.localToWorldMatrix;
+            Gizmos.color = Color.cyan;
+            if (shape == AirVentShape.Box) Gizmos.DrawWireCube(WindTrigger.center, WindTrigger.size);
+            else
+            {
+                Vector3 half = WindTrigger.size * .5f, centre = WindTrigger.center;
+                for (int i = 0; i < 32; i++)
+                {
+                    float a = i * 2f * Mathf.PI / 32f, b = (i + 1) * 2f * Mathf.PI / 32f;
+                    Vector3 p = new Vector3(Mathf.Cos(a) * half.x, Mathf.Sin(a) * half.y, 0f);
+                    Vector3 q = new Vector3(Mathf.Cos(b) * half.x, Mathf.Sin(b) * half.y, 0f);
+                    Gizmos.DrawLine(centre + p - Vector3.forward * half.z, centre + q - Vector3.forward * half.z);
+                    Gizmos.DrawLine(centre + p + Vector3.forward * half.z, centre + q + Vector3.forward * half.z);
+                    if (i % 8 == 0) Gizmos.DrawLine(centre + p - Vector3.forward * half.z, centre + p + Vector3.forward * half.z);
+                }
+            }
+            Gizmos.matrix = saved;
         }
         void Visuals(bool warning, bool wind)
         {

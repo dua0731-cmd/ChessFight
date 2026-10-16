@@ -301,6 +301,66 @@ class ObstacleAssets(unittest.TestCase):
         for path in self.scripts.values():
             self.assertNotRegex(path.read_text(), r"\[SerializeField\] public \w+ \w+\s*=>", str(path))
 
+    def test_folding_panels_use_downward_gravity_hinges_with_mount_clearance(self):
+        prefab = PREFABS / "12_FoldingBridge.prefab"
+        records = blocks(prefab.read_text())
+        component, = [b for b in records.values() if "::ChessFight.ProtectKing.FoldingBridge\n" in b]
+        data = fields(component)
+        self.assertTrue({"OpenDuration", "FoldDuration", "Simultaneous"}.isdisjoint(data))
+        for field in ("LeftPivot", "RightPivot"):
+            body_id = re.search(r"fileID: (\d+)", data[field])[1]
+            body = fields(records[body_id])
+            self.assertEqual(body["m_IsKinematic"], "0")
+            self.assertEqual(body["m_UseGravity"], "1")
+            self.assertGreater(float(body["m_Mass"]), 0)
+        for mount in ("6861347175342721897", "728252298897654261"):
+            value = fields(records[mount])["m_LocalPosition"]
+            self.assertGreaterEqual(abs(float(re.search(r"x: ([\d.-]+)", value)[1])) - 1.5 - 4, .35)
+        source = (CODE / "FoldingBridge.cs").read_text()
+        self.assertNotIn("MoveRotation", source)
+        self.assertNotIn("Evaluate(float elapsed)", source)
+        self.assertIn("body.ResetCenterOfMass()", source)
+        self.assertIn("limits.min = left ? -Mathf.Clamp", source)
+        self.assertIn("limits.max = left ? 0f", source)
+
+    def test_floor_piston_is_a_bounded_acceleration_lift_without_launch(self):
+        source = (CODE / "FloorPiston.cs").read_text()
+        for old in ("LaunchFromObstacle", "LaunchAbove", "LaunchForce", "HorizontalForce"):
+            self.assertNotIn(old, source)
+        self.assertIn("Mathf.Abs(Physics.gravity.y) * .5f", source)
+        self.assertIn("Mathf.Sqrt(6f * Mathf.Max(0f, RiseHeight) / SafeAcceleration)", source)
+        records = blocks((PREFABS / "13_FloorPiston.prefab").read_text())
+        component, = [b for b in records.values() if "::ChessFight.ProtectKing.FloorPiston\n" in b]
+        data = fields(component)
+        self.assertTrue({"LaunchForce", "HorizontalForce", "HitArea"}.isdisjoint(data))
+        height, acceleration = float(data["RiseHeight"]), min(float(data["maximumAcceleration"]), 9.81 * .5)
+        for duration in ("RiseDuration", "FallDuration"):
+            actual = max(float(data[duration]), math.sqrt(6 * height / acceleration))
+            self.assertLessEqual(6 * height / actual ** 2, 9.81 * .5)
+
+    def test_box_and_round_vent_variants_share_logic_and_match_wind_shapes(self):
+        values = []
+        for filename, shape, mesh in (("15_AirVent.prefab", "0", "10202"), ("AirVent_Round.prefab", "1", "10206")):
+            records = blocks((PREFABS / filename).read_text())
+            component, = [b for b in records.values() if "::ChessFight.ProtectKing.AirVent\n" in b]
+            data = fields(component); values.append(data)
+            self.assertEqual(data["shape"], shape)
+            volume_mesh = records["9008100000000000002"]
+            self.assertIn("m_Mesh: {fileID: " + mesh, volume_mesh)
+            trigger = fields(records[re.search(r"fileID: (\d+)", data["WindTrigger"])[1]])
+            self.assertEqual(trigger["m_Size"], "{x: 3, y: 3, z: 6}")
+        for setting in ("WindStrength", "WindDirection", "MaxPushSpeed", "VerticalForce", "IdleDuration", "BlowDuration", "WarningDuration"):
+            self.assertEqual(values[0][setting], values[1][setting])
+        source = (CODE / "AirVent.cs").read_text()
+        self.assertIn("shape == AirVentShape.Cylinder && !OverlapsCylinder(buffer[i])", source)
+        self.assertIn("other.ClosestPoint", source)
+        self.assertIn("x * x + y * y <=", source)
+        scene = (ASSETS / "Scenes/ObstacleRagdollTest.unity").read_text()
+        for filename in ("15_AirVent.prefab", "AirVent_Round.prefab"):
+            guid = re.search(r"guid: (\w+)", (PREFABS / (filename + ".meta")).read_text())[1]
+            self.assertIn("m_SourcePrefab: {fileID: 100100000, guid: " + guid, scene)
+        self.assertEqual(len(re.findall(r"^--- !u!\d+ &(\d+)", scene, re.M)), len(blocks(scene)))
+
     def test_clock_gates_and_rotating_hands_keep_separate_motion_types(self):
         prefab, = PREFABS.glob("09_*.prefab")
         records = list(blocks(prefab.read_text()).values())

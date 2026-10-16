@@ -6,106 +6,101 @@ namespace ChessFight.ProtectKing
 {
     public enum FoldingBridgeState { Open, Warning, Folding, Closed, Unfolding }
 
-    // Two kinematic panels reuse ImportedObstacleActor's existing moving-support handling.
+    // StateDrivenMover: gravity and actual contact torque fold each panel downward. Offline physics.
+    [DefaultExecutionOrder(-100)]
     public sealed class FoldingBridge : Obstacle
     {
-        float RuntimeTime => SampleTime(SharedTime);
-        float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,CycleDuration,Repeat);
         public ObstacleContext context;
-        public Rigidbody LeftPivot;
-        public Rigidbody RightPivot;
-        [Min(0)] [SerializeField] public float OpenDuration = 5;
-        [Min(0)] [SerializeField] public float WarningDuration = 1.5f;
-        [Min(.25f)] [SerializeField] public float FoldDuration = 2.5f;
-        [Min(0)] [SerializeField] public float ClosedDuration = 2;
-        [Range(0, 80)] [SerializeField] public float FoldAngle = 70;
-        [Min(0)] [SerializeField] public float StartDelay = 1;
-        [SerializeField] public bool Repeat = true;
-        [SerializeField] public bool Simultaneous = true;
-        [Min(0), Tooltip("Right panel delay when Simultaneous is disabled.")]
-        [SerializeField] public float RightDelay = .6f;
+        public Rigidbody LeftPivot, RightPivot;
+        [SerializeField, Range(0f, 85f), Tooltip("Maximum downward folding angle of each panel.")] public float FoldAngle = 70f;
+        [SerializeField, Min(1f)] float panelMass = 12f;
+        [SerializeField, Min(0f), Tooltip("Return spring balancing the panel and rider weight. Lower values fold more easily.")] float returnSpring = 1500f;
+        [SerializeField, Min(0f)] float returnDamper = 250f;
+        [SerializeField, Min(1f)] float maximumFoldSpeed = 45f;
+        [SerializeField, Range(0f, 1f)] float warningFraction = .75f;
         public Renderer[] WarningVisuals;
-        [Min(.1f)] [SerializeField] public float WarningFlashRate = 4;
+        [SerializeField, Min(.1f)] public float WarningFlashRate = 4f;
         public AudioSource WarningAudio;
         public AudioClip WarningClip;
-        public UnityEvent OnWarning = new UnityEvent();
-        public UnityEvent OnFolding = new UnityEvent();
-        public UnityEvent OnClosed = new UnityEvent();
-        public UnityEvent OnOpened = new UnityEvent();
+        public UnityEvent OnWarning = new UnityEvent(), OnFolding = new UnityEvent(), OnClosed = new UnityEvent(), OnOpened = new UnityEvent();
         public FoldingBridgeState State { get; private set; }
-        public float LeftAngle { get; private set; }
-        public float RightAngle { get; private set; }
+        public float LeftAngle => leftJoint != null ? Mathf.Abs(leftJoint.angle) : 0f;
+        public float RightAngle => rightJoint != null ? Mathf.Abs(rightJoint.angle) : 0f;
         public bool WarningLit { get; private set; }
-        [SerializeField, Min(1f), Tooltip("Peak folding speed cap in degrees per second. Fold Duration sets the motion time.")] float maximumFoldSpeed = 60f;
-        public float EffectiveFoldDuration => Mathf.Max(.25f, FoldDuration, Mathf.Clamp(FoldAngle, 0, 80) * 1.5f / Mathf.Max(1f, maximumFoldSpeed));
-        float Delay => Simultaneous ? 0 : Mathf.Max(0, RightDelay);
-        public float CycleDuration => Mathf.Max(0, OpenDuration) + Mathf.Max(0, WarningDuration) +
-            2 * (EffectiveFoldDuration + Delay) + Mathf.Max(0, ClosedDuration);
-        Quaternion leftRest, rightRest;
-        bool ready;
-        float previousTime;
+        HingeJoint leftJoint, rightJoint;
+        bool ready, dirty = true;
+        bool Simulating => isActiveAndEnabled && (context == null || (context.Running && context.Authority));
 
-        public struct Sample
-        {
-            public FoldingBridgeState state;
-            [SerializeField] public float left, right;
-        }
-        public Sample Evaluate(float elapsed)
-        {
-            float t = elapsed - Mathf.Max(0, StartDelay);
-            if (t < 0 || (!Repeat && t >= CycleDuration)) return new Sample { state = FoldingBridgeState.Open };
-            if (Repeat) t = Mathf.Repeat(t, CycleDuration);
-            if (t < Mathf.Max(0, OpenDuration)) return new Sample { state = FoldingBridgeState.Open };
-            t -= Mathf.Max(0, OpenDuration);
-            if (t < Mathf.Max(0, WarningDuration)) return new Sample { state = FoldingBridgeState.Warning };
-            t -= Mathf.Max(0, WarningDuration);
-            float duration = EffectiveFoldDuration, angle = Mathf.Clamp(FoldAngle, 0, 80);
-            if (t < duration + Delay) return new Sample { state = FoldingBridgeState.Folding,
-                left = angle * Smooth(t / duration), right = angle * Smooth((t - Delay) / duration) };
-            t -= duration + Delay;
-            if (t < Mathf.Max(0, ClosedDuration)) return new Sample { state = FoldingBridgeState.Closed, left = angle, right = angle };
-            t -= Mathf.Max(0, ClosedDuration);
-            return new Sample { state = FoldingBridgeState.Unfolding,
-                left = angle * (1 - Smooth(t / duration)), right = angle * (1 - Smooth((t - Delay) / duration)) };
-        }
-        static float Smooth(float t) { t = Mathf.Clamp01(t); return t * t * (3 - 2 * t); }
         void Awake()
         {
             if (context == null) context = GetComponent<ObstacleContext>();
             if (LeftPivot == null || RightPivot == null || LeftPivot == RightPivot)
             { Debug.LogError("FoldingBridge requires two distinct pivot Rigidbodies.", this); enabled = false; return; }
-            leftRest = LeftPivot.transform.localRotation; rightRest = RightPivot.transform.localRotation;
-            Configure(LeftPivot); Configure(RightPivot);
-            ImportedMovingSurface.Bind(LeftPivot,t=>new Pose(LeftPivot.position,Rotation(LeftPivot,leftRest,Evaluate(SampleTime(t)).left)),()=>isActiveAndEnabled && (context==null || context.Running));
-            ImportedMovingSurface.Bind(RightPivot,t=>new Pose(RightPivot.position,Rotation(RightPivot,rightRest,-Evaluate(SampleTime(t)).right)),()=>isActiveAndEnabled && (context==null || context.Running));
-            previousTime = RuntimeTime;
-            var pose = Evaluate(previousTime); LeftAngle = pose.left; RightAngle = pose.right;
-            LeftPivot.rotation = Rotation(LeftPivot, leftRest, LeftAngle);
-            RightPivot.rotation = Rotation(RightPivot, rightRest, -RightAngle);
-            ready = true; SetWarning(false);
+            leftJoint = ConfigurePivot(LeftPivot);
+            rightJoint = ConfigurePivot(RightPivot);
+            ready = true;
+            ApplySettings(); SetWarning(false);
         }
-        static void Configure(Rigidbody body)
+        HingeJoint ConfigurePivot(Rigidbody body)
         {
-            body.isKinematic = true; body.useGravity = false; body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.useGravity = true;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            body.solverIterations = 24; body.solverVelocityIterations = 12;
+            var joint = body.GetComponent<HingeJoint>();
+            if (joint == null) joint = body.gameObject.AddComponent<HingeJoint>();
+            joint.connectedBody = null; joint.autoConfigureConnectedAnchor = false;
+            joint.anchor = Vector3.zero; joint.axis = Vector3.forward;
+            joint.connectedAnchor = body.position; joint.useMotor = false;
+            ImportedMovingSurface.BindDynamic(body, point => SurfaceVelocity(body, point),
+                () => AngularStep(body), () => Simulating);
+            return joint;
         }
-        static Quaternion Rotation(Rigidbody body, Quaternion rest, float angle) =>
-            (body.transform.parent != null ? body.transform.parent.rotation : Quaternion.identity) * rest * Quaternion.AngleAxis(angle, Vector3.forward);
+        static Vector3 SurfaceVelocity(Rigidbody body, Vector3 point)
+        {
+            Vector3 normal = body.rotation * Vector3.up, offset = point - body.position;
+            offset -= normal * Vector3.Dot(offset, normal); // The authored top is at the hinge's local y=0.
+            return body.GetPointVelocity(body.position + offset);
+        }
+        static Quaternion AngularStep(Rigidbody body) => body.angularVelocity.sqrMagnitude > .000001f
+            ? Quaternion.AngleAxis(body.angularVelocity.magnitude * Time.fixedDeltaTime * Mathf.Rad2Deg, body.angularVelocity.normalized)
+            : Quaternion.identity;
+        void OnValidate() { dirty = true; }
+        void ApplySettings()
+        {
+            if (!ready) return;
+            ApplyPanel(LeftPivot, leftJoint, true); ApplyPanel(RightPivot, rightJoint, false);
+            dirty = false;
+        }
+        void ApplyPanel(Rigidbody body, HingeJoint joint, bool left)
+        {
+            body.mass = Mathf.Max(1f, panelMass);
+            body.maxAngularVelocity = Mathf.Max(1f, maximumFoldSpeed) * Mathf.Deg2Rad;
+            // Left panel extends +X, right panel -X: only downward rotation is allowed.
+            var limits = joint.limits;
+            limits.min = left ? -Mathf.Clamp(FoldAngle, 0f, 85f) : 0f;
+            limits.max = left ? 0f : Mathf.Clamp(FoldAngle, 0f, 85f);
+            limits.bounciness = 0f; limits.contactDistance = .5f;
+            joint.limits = limits; joint.useLimits = true;
+            var spring = joint.spring;
+            spring.spring = Mathf.Max(0f, returnSpring); spring.damper = Mathf.Max(0f, returnDamper); spring.targetPosition = 0f;
+            joint.spring = spring; joint.useSpring = returnSpring > 0f;
+            body.isKinematic = !Simulating;
+            // Unlike the balanced bridge, each panel's centre of mass must remain away from its hinge.
+            body.ResetCenterOfMass(); body.ResetInertiaTensor();
+            if (!body.isKinematic) body.WakeUp();
+        }
         void FixedUpdate()
         {
             if (!ready) return;
-            float time = RuntimeTime;
-            bool reset = time < previousTime; previousTime = time;
-            bool parked = false;
-            if (context != null && !context.Running && !reset && !parked) { SetWarning(false); return; }
-            var sample = parked ? new Sample { state = FoldingBridgeState.Open } : Evaluate(time);
-            LeftAngle = sample.left;
-            RightAngle = sample.right;
-            LeftPivot.MoveRotation(Rotation(LeftPivot, leftRest, LeftAngle));
-            RightPivot.MoveRotation(Rotation(RightPivot, rightRest, -RightAngle));
-            if (State != sample.state)
+            if (dirty || LeftPivot.isKinematic == Simulating || RightPivot.isKinematic == Simulating) ApplySettings();
+            if (!Simulating) { SetWarning(false); return; }
+            float angle = Mathf.Max(LeftAngle, RightAngle);
+            var next = angle < .5f ? FoldingBridgeState.Open : angle >= Mathf.Max(0f, FoldAngle - 1f)
+                ? FoldingBridgeState.Closed : angle >= FoldAngle * warningFraction ? FoldingBridgeState.Warning : FoldingBridgeState.Folding;
+            if (State != next)
             {
-                State = sample.state;
+                State = next;
                 if (State == FoldingBridgeState.Warning)
                 {
                     OnWarning.Invoke();
@@ -115,14 +110,18 @@ namespace ChessFight.ProtectKing
                 else if (State == FoldingBridgeState.Closed) OnClosed.Invoke();
                 else if (State == FoldingBridgeState.Open) OnOpened.Invoke();
             }
-            SetWarning(State == FoldingBridgeState.Warning && Mathf.Repeat(time * Mathf.Max(.1f, WarningFlashRate), 1) < .5f);
+            SetWarning(FoldAngle > .5f && angle >= FoldAngle * warningFraction && Mathf.Repeat(Time.time * Mathf.Max(.1f, WarningFlashRate), 1f) < .5f);
         }
         void SetWarning(bool lit)
         {
             WarningLit = lit;
-            if (WarningVisuals == null) return;
-            foreach (var visual in WarningVisuals) if (visual != null) visual.enabled = lit;
+            if (WarningVisuals != null) foreach (var visual in WarningVisuals) if (visual != null) visual.enabled = lit;
         }
-        void OnDisable() { SetWarning(false); }
+        void OnEnable() { dirty = true; }
+        void OnDisable()
+        {
+            SetWarning(false); dirty = true;
+            if (ready) { LeftPivot.isKinematic = true; RightPivot.isKinematic = true; }
+        }
     }
 }

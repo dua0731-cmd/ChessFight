@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using ChessFight.Gameplay;
 using UnityEngine.Events;
@@ -14,30 +13,26 @@ namespace ChessFight.ProtectKing
         public ObstacleContext context;
         public Rigidbody Piston;
         public GameObject WarningArea;
-        [Tooltip("Query volume above the retracted top. Kept separate from the solid piston collider.")]
-        public BoxCollider HitArea;
         [Min(0)] [SerializeField] public float IdleDuration = 3;
         [Min(0)] [SerializeField] public float WarningDuration = .8f;
-        [Min(.1f)] [SerializeField] public float RiseDuration = .25f;
+        [Min(.1f)] [SerializeField] public float RiseDuration = 2f;
         [Min(0)] [SerializeField] public float HoldDuration = .6f;
-        [Min(.1f)] [SerializeField] public float FallDuration = 1;
+        [Min(.1f)] [SerializeField] public float FallDuration = 2f;
         [Min(0)] [SerializeField] public float RiseHeight = 2.5f;
-        [Min(0)] [SerializeField] public float LaunchForce = 18;
-        [Min(0)] [SerializeField] public float HorizontalForce = 4;
+        [SerializeField, Min(.1f), Tooltip("Acceleration cap in m/s squared, also capped below gravity to avoid throwing riders off at the top.")]
+        float maximumAcceleration = 4f;
+        float SafeAcceleration => Mathf.Min(Mathf.Max(.1f, maximumAcceleration), Mathf.Max(.1f, Mathf.Abs(Physics.gravity.y) * .5f));
+        public float EffectiveRiseDuration => Mathf.Max(.1f, RiseDuration, Mathf.Sqrt(6f * Mathf.Max(0f, RiseHeight) / SafeAcceleration));
+        public float EffectiveFallDuration => Mathf.Max(.1f, FallDuration, Mathf.Sqrt(6f * Mathf.Max(0f, RiseHeight) / SafeAcceleration));
         [Min(0)] [SerializeField] public float StartDelay = .5f;
         [SerializeField] public bool Repeat = true;
         public UnityEvent OnWarning = new UnityEvent();
         public UnityEvent OnRise = new UnityEvent();
         public FloorPistonState State { get; private set; }
         public float Height { get; private set; }
-        public int LaunchesThisCycle => launched.Count;
         public float CycleDuration => Mathf.Max(0, IdleDuration) + Mathf.Max(0, WarningDuration) +
-            Mathf.Max(.1f, RiseDuration) + Mathf.Max(0, HoldDuration) + Mathf.Max(.1f, FallDuration);
-        readonly HashSet<ImportedObstacleActor> launched = new HashSet<ImportedObstacleActor>();
-        readonly Collider[] overlaps = new Collider[512];
-        Vector3 pistonRest, hitRest, hitCenter, hitSize;
-        float previousTime;
-        int cycle = -1;
+            EffectiveRiseDuration + Mathf.Max(0, HoldDuration) + EffectiveFallDuration;
+        Vector3 pistonRest;
         bool ready;
         public struct Sample { public FloorPistonState state; public float height; public int cycle; }
         public Sample Evaluate(float elapsed)
@@ -50,31 +45,26 @@ namespace ChessFight.ProtectKing
             t -= Mathf.Max(0, IdleDuration);
             if (t < Mathf.Max(0, WarningDuration)) { sample.state = FloorPistonState.Warning; return sample; }
             t -= Mathf.Max(0, WarningDuration);
-            if (t < Mathf.Max(.1f, RiseDuration))
-            { sample.state = FloorPistonState.Rising; sample.height = Mathf.Max(0, RiseHeight) * Smooth(t / Mathf.Max(.1f, RiseDuration)); return sample; }
-            t -= Mathf.Max(.1f, RiseDuration);
+            if (t < EffectiveRiseDuration)
+            { sample.state = FloorPistonState.Rising; sample.height = Mathf.Max(0, RiseHeight) * Smooth(t / EffectiveRiseDuration); return sample; }
+            t -= EffectiveRiseDuration;
             if (t < Mathf.Max(0, HoldDuration)) { sample.state = FloorPistonState.Hold; sample.height = Mathf.Max(0, RiseHeight); return sample; }
             t -= Mathf.Max(0, HoldDuration);
             sample.state = FloorPistonState.Falling;
-            sample.height = Mathf.Max(0, RiseHeight) * (1 - Smooth(t / Mathf.Max(.1f, FallDuration)));
+            sample.height = Mathf.Max(0, RiseHeight) * (1 - Smooth(t / EffectiveFallDuration));
             return sample;
         }
         static float Smooth(float t) { t = Mathf.Clamp01(t); return t * t * (3 - 2 * t); }
         void Awake()
         {
             if (context == null) context = GetComponent<ObstacleContext>();
-            if (Piston == null || HitArea == null)
-            { Debug.LogError("FloorPiston requires Piston and HitArea references.", this); enabled = false; return; }
+            if (Piston == null)
+            { Debug.LogError("FloorPiston requires a Piston reference.", this); enabled = false; return; }
             Piston.isKinematic = true; Piston.useGravity = false; Piston.interpolation = RigidbodyInterpolation.Interpolate;
             Piston.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             pistonRest = transform.InverseTransformPoint(Piston.position);
-            hitRest = HitArea.transform.localPosition;
-            hitCenter = transform.InverseTransformPoint(HitArea.transform.TransformPoint(HitArea.center));
-            hitSize = Vector3.Scale(HitArea.size, HitArea.transform.localScale);
-            previousTime = RuntimeTime;
-            var sample = Evaluate(previousTime); Height = sample.height; cycle = sample.cycle;
+            var sample = Evaluate(RuntimeTime); Height = sample.height;
             Piston.position = transform.TransformPoint(pistonRest + Vector3.up * Height);
-            HitArea.transform.localPosition = hitRest + Vector3.up * Height;
             ImportedMovingSurface.Bind(Piston,t=>new Pose(transform.TransformPoint(pistonRest+Vector3.up*Evaluate(SampleTime(t)).height),Piston.rotation),()=>isActiveAndEnabled && (context==null || context.Running));
             ready = true; if (WarningArea != null) WarningArea.SetActive(false);
         }
@@ -82,13 +72,9 @@ namespace ChessFight.ProtectKing
         {
             if (!ready) return;
             float time = RuntimeTime;
-            bool reset = time < previousTime; previousTime = time;
-            bool parked = false;
-            if (context != null && !context.Running && !parked)
+            if (context != null && !context.Running)
             { if (WarningArea != null) WarningArea.SetActive(false); return; }
-            var sample = parked ? new Sample { state = FloorPistonState.Idle, cycle = -1 } : Evaluate(time);
-            if (reset || sample.cycle != cycle) { launched.Clear(); cycle = sample.cycle; }
-            float previousHeight = Height;
+            var sample = Evaluate(time);
             Height = sample.height;
             if (State != sample.state)
             {
@@ -96,42 +82,9 @@ namespace ChessFight.ProtectKing
                 if (State == FloorPistonState.Warning) OnWarning.Invoke();
                 if (State == FloorPistonState.Rising) OnRise.Invoke();
             }
-            // Sweep the top over this physics step instead of relying on a fast trigger entering a stationary controller.
-            if (State == FloorPistonState.Rising && Height > previousHeight && (context == null || context.Authority))
-                LaunchAbove(previousHeight, Height);
             Piston.MovePosition(transform.TransformPoint(pistonRest + Vector3.up * Height));
-            HitArea.transform.localPosition = hitRest + Vector3.up * Height;
             if (WarningArea != null) WarningArea.SetActive(State == FloorPistonState.Warning);
         }
-        void LaunchAbove(float previousHeight, float nextHeight)
-        {
-            var center = hitCenter + Vector3.up * ((previousHeight + nextHeight) * .5f);
-            var size = hitSize + Vector3.up * (nextHeight - previousHeight + .15f);
-            var scale = transform.lossyScale;
-            var half = Vector3.Scale(size * .5f, new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
-            int count = Physics.OverlapBoxNonAlloc(transform.TransformPoint(center), half, overlaps, transform.rotation, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
-            {
-                var motor = ImportedObstacleActor.Find(overlaps[i]);
-                if (motor == null || !motor.CanReceiveObstacle || launched.Contains(motor)) continue;
-                var feet = transform.InverseTransformPoint(motor.Position);
-                float bottom = hitCenter.y - hitSize.y * .5f + previousHeight;
-                float top = hitCenter.y + hitSize.y * .5f + nextHeight;
-                var radial = new Vector3(feet.x - hitCenter.x, 0, feet.z - hitCenter.z);
-                // A side contact with a player's torso must never count as standing on the top.
-                if (feet.y < bottom - .12f || feet.y > top || Mathf.Abs(radial.x) > hitSize.x * .5f || Mathf.Abs(radial.z) > hitSize.z * .5f) continue;
-                float edge = Mathf.Clamp01(Mathf.Max(Mathf.Abs(radial.x) / Mathf.Max(.01f, hitSize.x * .5f), Mathf.Abs(radial.z) / Mathf.Max(.01f, hitSize.z * .5f)));
-                var horizontal = Vector3.ProjectOnPlane(transform.TransformDirection(radial), Vector3.up).normalized;
-                launched.Add(motor);
-                motor.LaunchFromObstacle(Vector3.up * Mathf.Max(0, LaunchForce) + horizontal * (Mathf.Max(0, HorizontalForce) * edge));
-            }
-        }
         void OnDisable() { if (WarningArea != null) WarningArea.SetActive(false); }
-        void OnDrawGizmosSelected()
-        {
-            if (HitArea == null) return;
-            Gizmos.color = Color.red; Gizmos.matrix = HitArea.transform.localToWorldMatrix;
-            Gizmos.DrawWireCube(HitArea.center, HitArea.size); Gizmos.matrix = Matrix4x4.identity;
-        }
     }
 }

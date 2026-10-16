@@ -700,19 +700,17 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 80f138784c2d8064ea17d2f89af50adf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ChessFight.ProtectKing.FloorPiston
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.FloorPiston
   context: {fileID: 829159095343575360}
   Piston: {fileID: 5261159540130694746}
   WarningArea: {fileID: 2918317835890112671}
-  HitArea: {fileID: 5620530940765376513}
   IdleDuration: 3
   WarningDuration: 0.8
-  RiseDuration: 0.25
+  RiseDuration: 2
   HoldDuration: 0.6
-  FallDuration: 1
+  FallDuration: 2
+  maximumAcceleration: 4
   RiseHeight: 2.5
-  LaunchForce: 18
-  HorizontalForce: 4
   StartDelay: 0.5
   Repeat: 1
   OnWarning:
@@ -827,7 +825,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1142294159166975577
 Transform:
   m_ObjectHideFlags: 0

@@ -53,7 +53,7 @@ namespace ChessFight.Maps.Editor
                 }
                 finally{PrefabUtility.UnloadPrefabContents(go);}
             }
-            if(prefabs!=19)throw new Exception("Expected 19 obstacle prefabs, found "+prefabs);
+            if(prefabs!=20)throw new Exception("Expected 19 base prefabs and one round vent variant, found "+prefabs);
             // Reuse the destination's existing offline driver and ragdoll prefab.
             // It is a scene fixture, not an imported player implementation.
             var fixture=roots.FirstOrDefault(g=>g.name=="Core Playtest");
