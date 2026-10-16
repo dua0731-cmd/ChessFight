@@ -605,7 +605,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.1
-  period: 5
+  moveSpeed: 11.0404542
   phase: 0.5
   useLocalTranslationAxes: 1
 --- !u!1 &3858729628946136721
@@ -1736,7 +1736,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.1
-  period: 5
+  moveSpeed: 11.0404542
   phase: 0
   useLocalTranslationAxes: 1
 --- !u!1 &8628876997124440836

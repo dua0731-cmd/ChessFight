@@ -8,7 +8,7 @@ namespace ChessFight.ProtectKing
     {
         [SerializeField] Vector3 axis = Vector3.forward;
         [SerializeField, Tooltip("Offset in cycles.")] float phase;
-        [SerializeField, Tooltip("Degrees per second.")] float degreesPerSecond = -72f;
+        [SerializeField, InspectorName("Rotation Speed"), Tooltip("Degrees per second. Negative reverses rotation; zero stops it.")] float degreesPerSecond = -72f;
         protected override Pose Evaluate(double time)
         {
             var unit = axis.sqrMagnitude > .001f ? axis.normalized : Vector3.right;

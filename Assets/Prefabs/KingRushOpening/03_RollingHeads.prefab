@@ -678,6 +678,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1692014541035606178}
+  - component: {fileID: 9008000000000000001}
   m_Layer: 0
   m_Name: 03_RollingHeads
   m_TagString: Untagged
@@ -1275,3 +1276,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.RagdollHazard
   alwaysKnockdown: 1
   minImpact: 1
+--- !u!114 &9008000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2545709779396339795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51800a4d884108a42b841b2f0608128e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleContext

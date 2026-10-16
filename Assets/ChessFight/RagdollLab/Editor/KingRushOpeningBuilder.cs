@@ -77,6 +77,9 @@ namespace ChessFight.RagdollLab.Editor
             var saved = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (saved != null) return (GameObject)PrefabUtility.InstantiatePrefab(saved, parent);
             var root = new GameObject(name); root.transform.SetParent(parent); build(root.transform);
+            if (root.GetComponent<Obstacle>() == null && root.GetComponentsInChildren<Obstacle>(true).Length > 0 &&
+                root.GetComponent<ChessFight.ProtectKing.ObstacleContext>() == null)
+                root.AddComponent<ChessFight.ProtectKing.ObstacleContext>();
             PrefabUtility.SaveAsPrefabAssetAndConnect(root, path, InteractionMode.AutomatedAction); return root;
         }
         static void PawnProp(Transform t, string name, Vector3 at, Material m, bool moving)

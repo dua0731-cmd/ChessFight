@@ -4234,7 +4234,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &69624324
@@ -6005,7 +6005,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &94566476
@@ -11341,7 +11341,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &155944028
@@ -22053,7 +22053,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0.5
   useLocalTranslationAxes: 0
 --- !u!54 &310015874
@@ -22211,7 +22211,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 11
-  period: 5
+  moveSpeed: 13.8230077
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &316067065
@@ -23342,7 +23342,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0.5
   useLocalTranslationAxes: 0
 --- !u!54 &328315084
@@ -35415,7 +35415,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 12
-  period: 6
+  moveSpeed: 12.5663706
   phase: 0.5
   useLocalTranslationAxes: 0
 --- !u!54 &513684731
@@ -50234,7 +50234,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0.5
   useLocalTranslationAxes: 0
 --- !u!54 &727031090
@@ -60772,7 +60772,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 0.55
-  period: 4
+  moveSpeed: 0.86393798
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &844763555
@@ -63959,7 +63959,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &890141761
@@ -89585,7 +89585,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 2.6
-  period: 4
+  moveSpeed: 4.08407045
   phase: 0.2
   useLocalTranslationAxes: 0
 --- !u!54 &1266991461
@@ -89923,7 +89923,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 0.55
-  period: 4
+  moveSpeed: 0.86393798
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &1269121958
@@ -93773,7 +93773,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0.5
   useLocalTranslationAxes: 0
 --- !u!54 &1326461980
@@ -95402,7 +95402,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 2.6
-  period: 4
+  moveSpeed: 4.08407045
   phase: 0.4
   useLocalTranslationAxes: 0
 --- !u!54 &1353956166
@@ -103500,7 +103500,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &1463065313
@@ -114376,7 +114376,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ChessClockGate
   axis: {x: 0, y: 1, z: 0}
   distance: 4.6
-  period: 5
+  moveSpeed: 12.386851
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &1657135675
@@ -122089,7 +122089,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 2.6
-  period: 4
+  moveSpeed: 4.08407045
   phase: 0.4
   useLocalTranslationAxes: 0
 --- !u!54 &1782586198
@@ -124662,7 +124662,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 2.6
-  period: 4
+  moveSpeed: 4.08407045
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &1829746994
@@ -126012,7 +126012,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 2.6
-  period: 4
+  moveSpeed: 4.08407045
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &1855551516
@@ -129752,7 +129752,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 2.6
-  period: 4
+  moveSpeed: 4.08407045
   phase: 0.2
   useLocalTranslationAxes: 0
 --- !u!54 &1913803031
@@ -135174,7 +135174,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 1, y: 0, z: 0}
   distance: 12
-  period: 6
+  moveSpeed: 12.5663706
   phase: 0
   useLocalTranslationAxes: 0
 --- !u!54 &2002680169

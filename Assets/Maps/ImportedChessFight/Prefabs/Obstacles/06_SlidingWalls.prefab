@@ -170,7 +170,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.SlidingWall
   axis: {x: -1, y: 0, z: 0}
   distance: 3.5
-  period: 4.5
+  moveSpeed: 10.4719755
   phase: 0.5
   useLocalTranslationAxes: 1
   strength: 5
@@ -1211,7 +1211,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.SlidingWall
   axis: {x: 1, y: -0, z: -0}
   distance: 3.5
-  period: 4.5
+  moveSpeed: 10.4719755
   phase: 0
   useLocalTranslationAxes: 1
   strength: 5

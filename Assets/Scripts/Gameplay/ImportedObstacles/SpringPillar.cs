@@ -14,15 +14,15 @@ namespace ChessFight.ProtectKing
         public Rigidbody Pillar;
         public BoxCollider TriggerArea, HitArea;
         public GameObject WarningVisual;
-        [Min(0)] public float WarningDuration = .5f;
-        [Min(0)] public float ExtendDistance = 3;
-        [Min(.1f)] public float ExtendDuration = .2f;
-        [Min(0)] public float HoldDuration = .6f;
-        [Min(.1f)] public float RetractDuration = .8f;
-        [Min(.1f)] public float Cooldown = 2;
-        [Min(0)] public float KnockbackForce = 12;
-        [Min(0)] public float UpwardForce = 1.5f;
-        public bool AutoTrigger = true, Repeat = true, RequireReentry = true;
+        [Min(0)] [SerializeField] public float WarningDuration = .5f;
+        [Min(0)] [SerializeField] public float ExtendDistance = 3;
+        [Min(.1f)] [SerializeField] public float ExtendDuration = .2f;
+        [Min(0)] [SerializeField] public float HoldDuration = .6f;
+        [Min(.1f)] [SerializeField] public float RetractDuration = .8f;
+        [Min(.1f)] [SerializeField] public float Cooldown = 2;
+        [Min(0)] [SerializeField] public float KnockbackForce = 12;
+        [Min(0)] [SerializeField] public float UpwardForce = 1.5f;
+        [SerializeField] public bool AutoTrigger = true, Repeat = true, RequireReentry = true;
         public UnityEvent OnWarning = new UnityEvent();
         public UnityEvent OnExtend = new UnityEvent();
         public SpringPillarState State { get; private set; }

@@ -144,3 +144,20 @@ R77의 지지 판정 보정 후에도 사용자 실기에서 끝 탑승 판정�
 사용자 Unity에서 WeightedBridge.cs의 `WeightedBridgeSurface`를 찾지 못하는 CS0103 컴파일 오류가 발생했다. 저장소에는 타입이 존재했지만 사용자 환경에서 인식되지 않은 구체적인 파일/import 원인은 확인하지 못했다. 전용 스크립트 의존성을 제거하고 기존 ImportedMovingSurface에 동적 표면 바인딩 BindDynamic을 통합했다. 판 Rigidbody에만 속도/회전 콜백을 바인딩하고, 일반 시간 기반 Bind는 기존 계산을 유지한다. 프리팹의 표면 컴포넌트 ID는 보존하면서 기존 스크립트 GUID로 바꾸었다. 불필요해진 전용 스크립트와 meta는 제거했다. 실제 힌지 물리/질량/스프링 설정은 유지한다.
 
 구조16·Core83·모의 세션39·7개 런타임 컴파일 통과. 사용자 최신 main Pull 후 Unity 컴파일 및 하중 실기 확인은 대기 중이다.
+
+## R80 — 모든 장애물 루트 Inspector (2026-10-16)
+
+이식 18종(시험장 15종 포함), 기존 킹러시 11개 구간과 기본 이동 장애물 3개를 포함해 장애물을 가진 기존 프리팹 32개의 루트 선택 경로를 정리했다. 직접 루트에 붙은 Obstacle은 전용 Inspector, 자식에만 있는 장애물은 루트 Obstacle Context의 부품 설정 패널로 편집한다. 자식 부품의 원래 SerializedObject를 편집하므로 값 복사나 별도 물리 설정을 중복 저장하지 않는다. 자식 클래스가 물리 수치를 소유하는 기존 상속 구조는 유지한다. Undo·씬 저장·프리팹 override는 실제 필드에 적용된다. 부품 Enabled도 루트에서 전환할 수 있다.
+
+기본 화면에는 수치·벡터·방향·곡선 등 조절값을 표시하고, 내부 Transform/Rigidbody 참조·배열·이벤트는 기타 설정 토글로 표시한다. 킹러시 자식 전용 구간 10개의 루트에는 설정 패널용 ObstacleContext를 추가했다. 기존 움직이는 자식과 Rigidbody는 옮기지 않았다. 새 구간을 생성하는 KingRushOpeningBuilder도 같은 루트 구성을 만든다.
+
+- 05 승강 타일: Move Speed 최고 3.14159265 m/s, 중심→끝 거리 3 m(기존 6초 왕복).
+- 06 미닫이 벽: Move Speed 최고 10.4719755 m/s, 이동 거리 3.5 m(기존 4.5초). Push Force는 수평 추가 밀치기, Lift는 수직 추가 속도.
+- 09 시계 문: Move Speed 최고 11.0404542 m/s, 이동 거리 4.1 m(기존 5초). 바늘의 Rotation Speed는 별도다.
+- 위 3종은 Move Speed 0이면 Phase 위치에서 정지한다. 예전 Period는 숨겨진 legacyPeriod로 읽어 속도로 환산하며, 기존 프리팹·맵은 저장 값을 이전했다.
+- 11 진자: Swing Angle과 Swing Duration, Knockback/Upward Force. Duration이 작을수록 빠르다.
+- 12 접이식 다리: Fold Angle/Fold Duration 및 Maximum Fold Speed(기본 60°/초 상한). 기존 상한을 Inspector로 노출했다.
+- 10·13·14: 낙하/상승/확장 거리·높이와 각 동작 Duration, 타격/발사 힘을 조절한다. 15 바람은 Wind Strength/Direction·Max Push Speed·분사 시간을 조절한다.
+- 16~18 및 킹러시: 기존 전용 클래스의 붕괴 시간·돌진/왕복/회전·이동 범위·힘 등 실제 저장값을 부품별로 편집한다. 자체 밀치기가 없는 발판에는 별도 타격 힘을 추가하지 않았다.
+
+구조18·Core83·모의 세션39·7개 런타임 컴파일 통과. 자동 검사는 32개 루트 연결 및 기존 주기를 보존한 속도 이전을 포함한다. **Unity Editor Inspector와 Editor 생성기는 이 환경에서 실행/컴파일하지 않았다.** 실제 표시·값 저장·Undo/Apply·Play 반영은 사용자 재확인 대기다.

@@ -14,18 +14,18 @@ namespace ChessFight.ProtectKing
         public ObstacleContext context;
         public Rigidbody LeftPivot;
         public Rigidbody RightPivot;
-        [Min(0)] public float OpenDuration = 5;
-        [Min(0)] public float WarningDuration = 1.5f;
-        [Min(.25f)] public float FoldDuration = 2.5f;
-        [Min(0)] public float ClosedDuration = 2;
-        [Range(0, 80)] public float FoldAngle = 70;
-        [Min(0)] public float StartDelay = 1;
-        public bool Repeat = true;
-        public bool Simultaneous = true;
+        [Min(0)] [SerializeField] public float OpenDuration = 5;
+        [Min(0)] [SerializeField] public float WarningDuration = 1.5f;
+        [Min(.25f)] [SerializeField] public float FoldDuration = 2.5f;
+        [Min(0)] [SerializeField] public float ClosedDuration = 2;
+        [Range(0, 80)] [SerializeField] public float FoldAngle = 70;
+        [Min(0)] [SerializeField] public float StartDelay = 1;
+        [SerializeField] public bool Repeat = true;
+        [SerializeField] public bool Simultaneous = true;
         [Min(0), Tooltip("Right panel delay when Simultaneous is disabled.")]
-        public float RightDelay = .6f;
+        [SerializeField] public float RightDelay = .6f;
         public Renderer[] WarningVisuals;
-        [Min(.1f)] public float WarningFlashRate = 4;
+        [Min(.1f)] [SerializeField] public float WarningFlashRate = 4;
         public AudioSource WarningAudio;
         public AudioClip WarningClip;
         public UnityEvent OnWarning = new UnityEvent();
@@ -36,8 +36,8 @@ namespace ChessFight.ProtectKing
         public float LeftAngle { get; private set; }
         public float RightAngle { get; private set; }
         public bool WarningLit { get; private set; }
-        const float MaxDegreesPerSecond = 60;
-        public float EffectiveFoldDuration => Mathf.Max(.25f, FoldDuration, Mathf.Clamp(FoldAngle, 0, 80) * 1.5f / MaxDegreesPerSecond);
+        [SerializeField, Min(1f), Tooltip("Peak folding speed cap in degrees per second. Fold Duration sets the motion time.")] float maximumFoldSpeed = 60f;
+        public float EffectiveFoldDuration => Mathf.Max(.25f, FoldDuration, Mathf.Clamp(FoldAngle, 0, 80) * 1.5f / Mathf.Max(1f, maximumFoldSpeed));
         float Delay => Simultaneous ? 0 : Mathf.Max(0, RightDelay);
         public float CycleDuration => Mathf.Max(0, OpenDuration) + Mathf.Max(0, WarningDuration) +
             2 * (EffectiveFoldDuration + Delay) + Mathf.Max(0, ClosedDuration);
@@ -48,7 +48,7 @@ namespace ChessFight.ProtectKing
         public struct Sample
         {
             public FoldingBridgeState state;
-            public float left, right;
+            [SerializeField] public float left, right;
         }
         public Sample Evaluate(float elapsed)
         {

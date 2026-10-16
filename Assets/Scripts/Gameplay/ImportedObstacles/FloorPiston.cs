@@ -16,16 +16,16 @@ namespace ChessFight.ProtectKing
         public GameObject WarningArea;
         [Tooltip("Query volume above the retracted top. Kept separate from the solid piston collider.")]
         public BoxCollider HitArea;
-        [Min(0)] public float IdleDuration = 3;
-        [Min(0)] public float WarningDuration = .8f;
-        [Min(.1f)] public float RiseDuration = .25f;
-        [Min(0)] public float HoldDuration = .6f;
-        [Min(.1f)] public float FallDuration = 1;
-        [Min(0)] public float RiseHeight = 2.5f;
-        [Min(0)] public float LaunchForce = 18;
-        [Min(0)] public float HorizontalForce = 4;
-        [Min(0)] public float StartDelay = .5f;
-        public bool Repeat = true;
+        [Min(0)] [SerializeField] public float IdleDuration = 3;
+        [Min(0)] [SerializeField] public float WarningDuration = .8f;
+        [Min(.1f)] [SerializeField] public float RiseDuration = .25f;
+        [Min(0)] [SerializeField] public float HoldDuration = .6f;
+        [Min(.1f)] [SerializeField] public float FallDuration = 1;
+        [Min(0)] [SerializeField] public float RiseHeight = 2.5f;
+        [Min(0)] [SerializeField] public float LaunchForce = 18;
+        [Min(0)] [SerializeField] public float HorizontalForce = 4;
+        [Min(0)] [SerializeField] public float StartDelay = .5f;
+        [SerializeField] public bool Repeat = true;
         public UnityEvent OnWarning = new UnityEvent();
         public UnityEvent OnRise = new UnityEvent();
         public FloorPistonState State { get; private set; }

@@ -10,16 +10,16 @@ namespace ChessFight.ProtectKing
         float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,2 * (Mathf.Max(.3f,SwingDuration)+Mathf.Max(0,PauseAtEnds)),true);
         public ObstacleContext context;
         public Transform Ball;
-        [Range(0, 85)] public float SwingAngle = 55;
+        [Range(0, 85)] [SerializeField] public float SwingAngle = 55;
         [Min(.3f), Tooltip("Seconds from one extreme to the other, excluding end pauses.")]
-        public float SwingDuration = 2;
-        [Min(0)] public float StartDelay = .5f;
-        [Min(0)] public float PauseAtEnds = .2f;
-        [Min(0)] public float KnockbackForce = 14;
-        [Min(0)] public float UpwardForce = 3;
+        [SerializeField] public float SwingDuration = 2;
+        [Min(0)] [SerializeField] public float StartDelay = .5f;
+        [Min(0)] [SerializeField] public float PauseAtEnds = .2f;
+        [Min(0)] [SerializeField] public float KnockbackForce = 14;
+        [Min(0)] [SerializeField] public float UpwardForce = 3;
         [SerializeField, Min(.05f)] float hitCooldown = .35f;
         public float HitCooldown => hitCooldown;
-        public bool Active = true;
+        [SerializeField] public bool Active = true;
         public float Angle { get; private set; }
         public Vector3 BallVelocity { get; private set; }
         public bool CanHit => isActiveAndEnabled && Active && (context == null || context.Running);

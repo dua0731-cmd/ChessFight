@@ -94,3 +94,94 @@ namespace ChessFight.Maps.Editor
         }
     }
 }
+
+namespace ChessFight.Maps.Editor
+{
+    // Edit the original serialized fields so Undo, prefab overrides and runtime reads agree.
+    // A root with multiple moving parts keeps independent values for each part.
+    static class ObstacleAuthoringInspector
+    {
+        public static void DrawFields(UnityEngine.Object component, bool connections)
+        {
+            var data = new SerializedObject(component);
+            data.Update();
+            var property = data.GetIterator();
+            bool enter = true;
+            while (property.NextVisible(enter))
+            {
+                enter = false;
+                if (property.name == "m_Script") continue;
+                if (!connections && (property.propertyType == SerializedPropertyType.ObjectReference ||
+                    property.isArray || property.propertyType == SerializedPropertyType.Generic)) continue;
+                string label = property.displayName;
+                if (property.name == "strength" || property.name == "knockback") label = "Push Force";
+                if (property.name == "degreesPerSecond") label = "Rotation Speed";
+                EditorGUILayout.PropertyField(property, new GUIContent(label, property.tooltip), true);
+            }
+            data.ApplyModifiedProperties();
+        }
+
+        public static void DrawParts(Transform root, bool connections,
+            System.Collections.Generic.Dictionary<int, bool> expanded)
+        {
+            foreach (var part in root.GetComponentsInChildren<Obstacle>(true))
+            {
+                if (part.transform == root) continue; // Root obstacle components already have their own inspector.
+                int id = part.GetInstanceID();
+                bool open;
+                if (!expanded.TryGetValue(id, out open)) open = true;
+                string path = part.name;
+                for (var parent = part.transform.parent; parent != null && parent != root; parent = parent.parent)
+                    path = parent.name + " / " + path;
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                open = EditorGUILayout.Foldout(open, path + " · " + ObjectNames.NicifyVariableName(part.GetType().Name), true);
+                expanded[id] = open;
+                if (open)
+                {
+                    EditorGUI.indentLevel++;
+                    bool enabled = EditorGUILayout.Toggle("Enabled", part.enabled);
+                    if (enabled != part.enabled)
+                    {
+                        Undo.RecordObject(part, "Toggle obstacle part");
+                        part.enabled = enabled;
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(part);
+                    }
+                    DrawFields(part, connections);
+                    EditorGUI.indentLevel--;
+                }
+                EditorGUILayout.EndVertical();
+            }
+        }
+    }
+
+    [CustomEditor(typeof(ChessFight.ProtectKing.ObstacleContext))]
+    public sealed class ObstacleRootSettingsEditor : UnityEditor.Editor
+    {
+        bool connections;
+        readonly System.Collections.Generic.Dictionary<int, bool> expanded = new System.Collections.Generic.Dictionary<int, bool>();
+        public override void OnInspectorGUI()
+        {
+            var context = (ChessFight.ProtectKing.ObstacleContext)target;
+            EditorGUILayout.LabelField("장애물 부품 설정", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("아래 값은 각 부품의 실제 저장 값입니다. Move Speed는 이동 속도, Push/Knockback Force는 밀침, Distance/Angle은 이동 범위입니다. Duration은 작을수록 빠릅니다.", MessageType.Info);
+            connections = EditorGUILayout.Toggle("기타 설정·연결 참조 보기", connections);
+            ObstacleAuthoringInspector.DrawParts(context.transform, connections, expanded);
+        }
+    }
+
+    [CustomEditor(typeof(Obstacle), true)]
+    public sealed class ObstacleSettingsEditor : UnityEditor.Editor
+    {
+        bool connections;
+        readonly System.Collections.Generic.Dictionary<int, bool> expanded = new System.Collections.Generic.Dictionary<int, bool>();
+        public override void OnInspectorGUI()
+        {
+            var obstacle = (Obstacle)target;
+            connections = EditorGUILayout.Toggle("기타 설정·연결 참조 보기", connections);
+            ObstacleAuthoringInspector.DrawFields(obstacle, connections);
+            // A context component on the same root draws its child parts once.
+            if (obstacle.GetComponent<ChessFight.ProtectKing.ObstacleContext>() == null)
+                ObstacleAuthoringInspector.DrawParts(obstacle.transform, connections, expanded);
+        }
+    }
+}

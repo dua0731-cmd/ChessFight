@@ -76,7 +76,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 3
-  period: 6
+  moveSpeed: 3.14159265
   phase: 0
   useLocalTranslationAxes: 1
 --- !u!1 &985059668005996932
@@ -267,7 +267,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 3
-  period: 6
+  moveSpeed: 3.14159265
   phase: 0.5
   useLocalTranslationAxes: 1
 --- !u!1 &1230537047522706613
@@ -570,7 +570,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 3
-  period: 6
+  moveSpeed: 3.14159265
   phase: 0.5
   useLocalTranslationAxes: 1
 --- !u!1 &2296574602347217726
@@ -1510,7 +1510,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.RisingFallingTiles
   axis: {x: 0, y: 1, z: 0}
   distance: 3
-  period: 6
+  moveSpeed: 3.14159265
   phase: 0
   useLocalTranslationAxes: 1
 --- !u!1 &8006030178723606348

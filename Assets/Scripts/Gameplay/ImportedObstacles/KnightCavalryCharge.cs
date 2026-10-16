@@ -19,15 +19,15 @@ namespace ChessFight.ProtectKing
         public BoxCollider BodyCollider;
         public GameObject LandingWarning, ChargeWarning;
         public Transform LandingVFXPoint, ChargeVFXPoint;
-        public bool Active = true, Repeat = true;
-        [Min(0)] public float StartDelay = 1, IdleDuration = 1;
-        [Min(.05f)] public float WarningDuration = 1.3f, LeapDuration = 1;
-        [Min(0)] public float LeapHeight = 4;
-        [Min(.05f)] public float LandingPauseDuration = .12f, ChargeWindupDuration = .6f, ChargeDuration = 1.1f;
-        [Min(.05f)] public float RecoveryDuration = .5f, CooldownDuration = 2;
-        [Min(.1f)] public float LandingRadius = 2;
-        [Min(0)] public float LandingKnockbackForce = 9, LandingUpwardForce = 3;
-        [Min(0)] public float ChargeKnockbackForce = 13, ChargeUpwardForce = 2;
+        [SerializeField] public bool Active = true, Repeat = true;
+        [Min(0)] [SerializeField] public float StartDelay = 1, IdleDuration = 1;
+        [Min(.05f)] [SerializeField] public float WarningDuration = 1.3f, LeapDuration = 1;
+        [Min(0)] [SerializeField] public float LeapHeight = 4;
+        [Min(.05f)] [SerializeField] public float LandingPauseDuration = .12f, ChargeWindupDuration = .6f, ChargeDuration = 1.1f;
+        [Min(.05f)] [SerializeField] public float RecoveryDuration = .5f, CooldownDuration = 2;
+        [Min(.1f)] [SerializeField] public float LandingRadius = 2;
+        [Min(0)] [SerializeField] public float LandingKnockbackForce = 9, LandingUpwardForce = 3;
+        [Min(0)] [SerializeField] public float ChargeKnockbackForce = 13, ChargeUpwardForce = 2;
         public LayerMask PlayerLayerMask = ~0;
         public UnityEvent OnWarning = new UnityEvent(), OnLanding = new UnityEvent(), OnCharge = new UnityEvent();
         public CavalryState State { get; private set; }

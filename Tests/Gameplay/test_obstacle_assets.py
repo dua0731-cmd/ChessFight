@@ -260,6 +260,47 @@ class ObstacleAssets(unittest.TestCase):
             length = float(re.search(r"z: ([\d.-]+)", transform["m_LocalScale"])[1])
             self.assertGreaterEqual(z - length / 2, 6.5)
 
+    def test_all_obstacle_prefab_roots_expose_a_settings_inspector(self):
+        def is_obstacle(name):
+            visited = set()
+            while name not in visited:
+                if name == "Obstacle": return True
+                visited.add(name); name = self.parents.get(name, "")
+            return False
+        checked = 0
+        for prefab in ASSETS.rglob("*.prefab"):
+            records = blocks(prefab.read_text())
+            obstacle_owners, settings_owners = set(), set()
+            for block in records.values():
+                match = re.search(r"m_Script: .*guid: (\w+)", block)
+                if match is None or match[1] not in self.scripts: continue
+                name = self.scripts[match[1]].stem
+                owner = fields(block)["m_GameObject"]
+                if is_obstacle(name): obstacle_owners.add(owner)
+                if name == "ObstacleContext": settings_owners.add(owner)
+            if not obstacle_owners: continue
+            roots = [b for b in records.values() if b.startswith("--- !u!4") and fields(b).get("m_Father") == "{fileID: 0}"]
+            if not roots: continue
+            root = fields(roots[0])["m_GameObject"]
+            self.assertIn(root, obstacle_owners | settings_owners, str(prefab))
+            checked += 1
+        self.assertGreaterEqual(checked, 32)
+
+    def test_platform_wall_gate_speed_migration_preserves_original_periods(self):
+        for number, name, original, factor in ((5, "RisingFallingTiles", 6, 1),
+            (6, "SlidingWall", 4.5, 1.5/.7), (9, "ChessClockGate", 5, 1.5/.7)):
+            prefab, = PREFABS.glob(f"{number:02}_*.prefab")
+            values = [fields(b) for b in blocks(prefab.read_text()).values()
+                      if "::ChessFight.ProtectKing." + name + "\n" in b]
+            self.assertTrue(values)
+            for data in values:
+                self.assertNotIn("period", data)
+                period = 2 * math.pi * float(data["distance"]) * factor / float(data["moveSpeed"])
+                self.assertAlmostEqual(period, original, places=6)
+        # Unity permits SerializeField on fields, not on expression-bodied properties.
+        for path in self.scripts.values():
+            self.assertNotRegex(path.read_text(), r"\[SerializeField\] public \w+ \w+\s*=>", str(path))
+
     def test_clock_gates_and_rotating_hands_keep_separate_motion_types(self):
         prefab, = PREFABS.glob("09_*.prefab")
         records = list(blocks(prefab.read_text()).values())

@@ -17,12 +17,12 @@ namespace ChessFight.ProtectKing
         public BoxCollider SolidCollider, OccupancyArea, RestoreClearanceArea;
         public GameObject CrackVisual, WarningVisual;
         public Transform VFXPoint;
-        public bool Active = true, Repeat = true;
-        [Min(.05f)] public float CrackDuration = 1.5f;
-        [Min(.05f)] public float CollapseVisualDuration = .35f;
-        [Min(.05f)] public float MissingDuration = 4;
-        [Min(.05f)] public float RestoreWarningDuration = .8f;
-        [Min(0)] public float VisualDrop = 1.2f;
+        [SerializeField] public bool Active = true, Repeat = true;
+        [Min(.05f)] [SerializeField] public float CrackDuration = 1.5f;
+        [Min(.05f)] [SerializeField] public float CollapseVisualDuration = .35f;
+        [Min(.05f)] [SerializeField] public float MissingDuration = 4;
+        [Min(.05f)] [SerializeField] public float RestoreWarningDuration = .8f;
+        [Min(0)] [SerializeField] public float VisualDrop = 1.2f;
         public LayerMask PlayerLayerMask = ~0;
         public UnityEvent OnCrack = new UnityEvent(), OnCollapse = new UnityEvent(), OnRestored = new UnityEvent();
         public RoyalFloorState State { get; private set; }

@@ -16,11 +16,11 @@ namespace ChessFight.ProtectKing
         public BoxCollider DeckA, DeckB;
         public Transform LeftDock, RightDock, StaticStructure;
         public GameObject[] WarningVisuals;
-        public bool Active = true, Repeat = true;
-        [Min(0)] public float StartDelay = 1;
-        [Min(.1f)] public float DockedDuration = 4, WarningDuration = 1.2f, SwapDuration = 10, SettlingDuration = .4f;
-        [Min(.1f)] public float DetourDistance = 8;
-        [Min(.05f)] public float MinimumClearance = .1f;
+        [SerializeField] public bool Active = true, Repeat = true;
+        [Min(0)] [SerializeField] public float StartDelay = 1;
+        [Min(.1f)] [SerializeField] public float DockedDuration = 4, WarningDuration = 1.2f, SwapDuration = 10, SettlingDuration = .4f;
+        [Min(.1f)] [SerializeField] public float DetourDistance = 8;
+        [Min(.05f)] [SerializeField] public float MinimumClearance = .1f;
         [Tooltip("Monotonic 0..1 curve; applied separately to each of the three non-intersecting path legs.")]
         public AnimationCurve MovementCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
         public UnityEvent OnWarning = new UnityEvent(), OnSwap = new UnityEvent(), OnDocked = new UnityEvent();
