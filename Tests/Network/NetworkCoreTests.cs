@@ -69,6 +69,25 @@ public static class NetworkCoreTests
                 Check(r.PressedTeam == 1 && r.Teams[1].Remaining == red, "two riders pause solo team");
                 r.Reset(); Check(!r.Teams[0].Complete && r.Teams[0].Remaining == 20 && r.PressedTeam == -1, "full reset");
             });
+            Test("Chess timer completion emits once and the opponent keeps playing", () => {
+                var r = new ChessTimerRules(30, 1, 3, 0);
+                for (int i = 0; i < 3; i++) r.Step(1, 1, 0, 1, 0);
+                Check(r.CompletedTeams == 1 && r.Teams[0].Complete, "blue completion event");
+                float red = r.Teams[1].Remaining;
+                r.Step(.25f, 0, 0, 0, 1);
+                Check(r.CompletedTeams == 0 && r.Teams[1].Remaining < red && r.Teams[1].Work > 0, "no repeat or match freeze");
+                for (int i = 0; i < 3; i++) r.Step(1, 0, 2, 0, 1);
+                Check(r.CompletedTeams == 2 && r.Teams[0].Complete && r.Teams[1].Complete, "other team may still finish");
+                r.Step(1, 0, 0, 0, 0);
+                Check(r.CompletedTeams == 0, "both finished without repeated blasts");
+            });
+            Test("Chess timer simultaneous completions notify both sides and reset clears events", () => {
+                var r = new ChessTimerRules(30, 1, 3, 0);
+                for (int i = 0; i < 3; i++) r.Step(1, 0, 0, 1, 1);
+                Check(r.CompletedTeams == 3, "both completion events retained");
+                r.Reset();
+                Check(r.CompletedTeams == 0 && !r.Teams[0].Complete && !r.Teams[1].Complete, "fresh round");
+            });
             Test("Chess timer expiry wins simultaneous work and rejects invalid time steps", () => {
                 var r = new ChessTimerRules(1, 1, 3, 0);
                 Check(r.Step(1, 0, 0, 3, 3) == 3 && r.Teams[0].Stage == 0, "both explode before work");

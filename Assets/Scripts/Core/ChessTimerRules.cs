@@ -15,6 +15,7 @@ namespace ChessFight.Network
             public bool Complete => Stage >= 3;
         }
         public readonly TeamState[] Teams = { new TeamState(), new TeamState() };
+        public int CompletedTeams { get; private set; }
         public int PressedTeam { get; private set; } = -1;
         public readonly float Limit, WorkSeconds, RecoverySeconds, SwitchDelay;
         public readonly int SoloRiders;
@@ -32,11 +33,12 @@ namespace ChessFight.Network
         {
             foreach (var team in Teams)
             { team.Remaining = Limit; team.Recovery = team.Work = 0; team.Stage = team.Explosions = 0; }
-            PressedTeam = candidate = -1; stable = 0;
+            PressedTeam = candidate = -1; stable = 0; CompletedTeams = 0;
         }
         // Returns an explosion bit mask. Timer expiry takes priority over work on the same step.
         public int Step(float dt, int blueRiders, int redRiders, int blueWorkers, int redWorkers)
         {
+            CompletedTeams = 0;
             if (dt <= 0 || float.IsNaN(dt) || float.IsInfinity(dt)) return 0;
             int blue = Teams[0].Complete ? 0 : Math.Max(0, blueRiders);
             int red = Teams[1].Complete ? 0 : Math.Max(0, redRiders);
@@ -65,7 +67,11 @@ namespace ChessFight.Network
                 if (team.Work >= WorkSeconds)
                 {
                     team.Stage++; team.Work = 0;
-                    if (team.Complete && PressedTeam == i) PressedTeam = -1;
+                    if (team.Complete)
+                    {
+                        CompletedTeams |= 1 << i;
+                        if (PressedTeam == i) PressedTeam = -1;
+                    }
                 }
             }
             return explosions;

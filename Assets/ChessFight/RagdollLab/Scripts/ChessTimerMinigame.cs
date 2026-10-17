@@ -41,6 +41,7 @@ namespace ChessFight.RagdollLab
         readonly TextMesh[] clocks = new TextMesh[2], clockStatus = new TextMesh[2], crowdDisplays = new TextMesh[2];
         readonly TextMesh[,] panelLabels = new TextMesh[2, 3];
         readonly Material[] teamMaterials = new Material[2];
+        Material blastMaterial;
         ChessTimerRules rules;
         LabCamera cameraRig;
         Vector3 savedGravity;
@@ -63,6 +64,7 @@ namespace ChessFight.RagdollLab
             initialized = true;
             rules = new ChessTimerRules(timeLimit, secondsPerStage, stunSeconds + retryGrace, switchDelay, soloRequiredRiders);
             BuildArena();
+            blastMaterial = Mat(new Color(1f, .45f, .08f));
         }
         void Start()
         {
@@ -94,12 +96,13 @@ namespace ChessFight.RagdollLab
         void Assign(int index, int role)
         {
             int team = index / 6;
-            if (rules.Teams[team].Recovery > 0 || rules.Teams[team].Complete) return;
+            if (rules.Teams[team].Recovery > 0 || players[index].State != PawnState.Active) return;
+            if (role == 2 && rules.Teams[team].Complete) return;
             roles[index] = role;
             if (role == 1 || role == 4)
             {
                 int side = role == 4 ? 1 - team : team;
-                Place(index, rocker.position + rocker.rotation * new Vector3(TeamX(side) + (index % 3 - 1) * 1.6f, RockerLocalTop, -1 + index % 2 * 2));
+                Place(index, rocker.transform.TransformPoint(new Vector3(TeamX(side) + (index % 3 - 1) * 1.6f, RockerLocalTop, -1 + index % 2 * 2)));
             }
             else if (role == 2) PlaceAtPanel(index);
             else Place(index, Waiting(index));
@@ -140,7 +143,7 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.Alpha3)) Assign(selected, 0);
                 if (Input.GetKeyDown(KeyCode.Alpha4)) Assign(selected, 4);
                 if (Input.GetKeyDown(KeyCode.B)) sparringBots = !sparringBots;
-                if (Input.GetKeyDown(KeyCode.R) && rules.Teams[selected / 6].Recovery <= 0)
+                if (Input.GetKeyDown(KeyCode.R) && rules.Teams[selected / 6].Recovery <= 0 && players[selected].State == PawnState.Active)
                 { roles[selected] = 0; Place(selected, Waiting(selected)); }
             }
             foreach (var pawn in players) pawn.SetInput(default);
@@ -197,16 +200,42 @@ namespace ChessFight.RagdollLab
                         if (recovered) Assign(i, roles[i]);
                         else if (roles[i] == 2) PlaceAtPanel(i);
             }
+            // Apply completion hits after both teams' stage transitions and test placements.
+            for (int team = 0; team < 2; team++)
+                if ((rules.CompletedTeams & (1 << team)) != 0)
+                {
+                    Explode(1 - team, true);
+                    notice = (team == 0 ? "청팀" : "홍팀") + " 해체 성공! 문 열림 · 맵 안 적팀 폭발/기절 · 계속 플레이";
+                }
         }
-        void Explode(int team)
+        void Explode(int team, bool completion = false)
         {
-            notice = (team == 0 ? "청팀" : "홍팀") + " 폭발! 완료 단계 유지 · 현재 단계 초기화";
+            if (!completion) notice = (team == 0 ? "청팀" : "홍팀") + " 폭발! 완료 단계 유지 · 현재 단계 초기화";
             for (int i = team * 6; i < team * 6 + 6; i++)
             {
-                var away = players[i].Hips.position - new Vector3(TeamX(team), 0, 3);
+                var position = players[i].Hips.position;
+                // Completion affects enemy allegiance anywhere inside this arena, including the roof.
+                if (completion && (Mathf.Abs(position.x) > ArenaWidth * .5f ||
+                    Mathf.Abs(position.z) > ArenaDepth * .5f || position.y < -5 || position.y > 30)) continue;
+                var away = position - new Vector3(TeamX(team), 0, 3);
                 away.y = 0;
+                StartCoroutine(BlastFlash(position));
                 players[i].TakeHit(away.normalized * blastSpeed + Vector3.up * blastSpeed, stunSeconds, 0, true);
             }
+        }
+        System.Collections.IEnumerator BlastFlash(Vector3 position)
+        {
+            var flash = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            flash.name = "Bomb burst"; flash.transform.SetParent(transform, true);
+            flash.transform.position = position;
+            var collider = flash.GetComponent<Collider>(); collider.enabled = false; Destroy(collider);
+            flash.GetComponent<Renderer>().sharedMaterial = blastMaterial;
+            for (float elapsed = 0; elapsed < .35f; elapsed += Time.deltaTime)
+            {
+                flash.transform.localScale = Vector3.one * Mathf.Lerp(.3f, 2f, elapsed / .35f);
+                yield return null;
+            }
+            Destroy(flash);
         }
         void DriveSparringBots()
         {
@@ -215,7 +244,7 @@ namespace ChessFight.RagdollLab
             {
                 var pawn = players[i];
                 if (i == selected || (roles[i] != 1 && roles[i] != 4) || rules.Teams[i / 6].Recovery > 0 ||
-                    rules.Teams[i / 6].Complete || pawn.State != PawnState.Active || pawn.Hips.position.y < 5.2f) continue;
+                    pawn.State != PawnState.Active || pawn.Hips.position.y < 5.2f) continue;
                 RagdollPawn enemy = null; float nearest = float.PositiveInfinity;
                 foreach (var other in players)
                 {
