@@ -323,6 +323,21 @@ class ObstacleAssets(unittest.TestCase):
         self.assertIn("limits.min = left ? -Mathf.Clamp", source)
         self.assertIn("limits.max = left ? 0f", source)
 
+    def test_folding_warning_settings_and_empty_reference_toggle_are_removed(self):
+        prefab = (PREFABS / "12_FoldingBridge.prefab").read_text()
+        source = (CODE / "FoldingBridge.cs").read_text()
+        for obsolete in ("warningFraction", "WarningFlashRate", "WarningVisuals", "OnWarning"):
+            self.assertNotIn(obsolete, source)
+            self.assertNotIn(obsolete + ":", prefab)
+        records = blocks(prefab)
+        for block in records.values():
+            if "m_Name: Warning strip" in block:
+                self.assertEqual(fields(block)["m_IsActive"], "0")
+        editor = (ROOT / "Assets/Maps/ImportedChessFight/Editor/ImportedMapTools.cs").read_text()
+        self.assertNotIn("기타 설정·연결 참조 보기", editor)
+        self.assertNotIn("if (!connections", editor)
+        self.assertIn("if (!hasChildParts)", editor)
+
     def test_floor_piston_is_a_bounded_acceleration_lift_without_launch(self):
         source = (CODE / "FloorPiston.cs").read_text()
         for old in ("LaunchFromObstacle", "LaunchAbove", "LaunchForce", "HorizontalForce"):

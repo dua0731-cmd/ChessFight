@@ -1520,7 +1520,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6442198522889552199
 Transform:
   m_ObjectHideFlags: 0
@@ -2877,19 +2877,9 @@ MonoBehaviour:
   RightPivot: {fileID: 1608288595538073982}
   FoldAngle: 70
   panelMass: 12
-  returnSpring: 1500
+  returnSpring: 150
   returnDamper: 250
   maximumFoldSpeed: 45
-  warningFraction: 0.75
-  WarningVisuals:
-  - {fileID: 971774116868433019}
-  - {fileID: 3391137105680939876}
-  WarningFlashRate: 4
-  WarningAudio: {fileID: 5922195280803463010}
-  WarningClip: {fileID: 0}
-  OnWarning:
-    m_PersistentCalls:
-      m_Calls: []
   OnFolding:
     m_PersistentCalls:
       m_Calls: []
@@ -3456,7 +3446,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6324342652676493911
 Transform:
   m_ObjectHideFlags: 0

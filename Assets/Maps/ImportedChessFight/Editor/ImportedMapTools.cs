@@ -101,7 +101,7 @@ namespace ChessFight.Maps.Editor
     // A root with multiple moving parts keeps independent values for each part.
     static class ObstacleAuthoringInspector
     {
-        public static void DrawFields(UnityEngine.Object component, bool connections)
+        public static void DrawFields(UnityEngine.Object component)
         {
             var data = new SerializedObject(component);
             data.Update();
@@ -111,8 +111,6 @@ namespace ChessFight.Maps.Editor
             {
                 enter = false;
                 if (property.name == "m_Script") continue;
-                if (!connections && (property.propertyType == SerializedPropertyType.ObjectReference ||
-                    property.isArray || property.propertyType == SerializedPropertyType.Generic)) continue;
                 string label = property.displayName;
                 if (property.name == "strength" || property.name == "knockback") label = "Push Force";
                 if (property.name == "degreesPerSecond") label = "Rotation Speed";
@@ -121,7 +119,7 @@ namespace ChessFight.Maps.Editor
             data.ApplyModifiedProperties();
         }
 
-        public static void DrawParts(Transform root, bool connections,
+        public static void DrawParts(Transform root,
             System.Collections.Generic.Dictionary<int, bool> expanded)
         {
             foreach (var part in root.GetComponentsInChildren<Obstacle>(true))
@@ -146,7 +144,7 @@ namespace ChessFight.Maps.Editor
                         part.enabled = enabled;
                         PrefabUtility.RecordPrefabInstancePropertyModifications(part);
                     }
-                    DrawFields(part, connections);
+                    DrawFields(part);
                     EditorGUI.indentLevel--;
                 }
                 EditorGUILayout.EndVertical();
@@ -157,31 +155,46 @@ namespace ChessFight.Maps.Editor
     [CustomEditor(typeof(ChessFight.ProtectKing.ObstacleContext))]
     public sealed class ObstacleRootSettingsEditor : UnityEditor.Editor
     {
-        bool connections;
         readonly System.Collections.Generic.Dictionary<int, bool> expanded = new System.Collections.Generic.Dictionary<int, bool>();
         public override void OnInspectorGUI()
         {
             var context = (ChessFight.ProtectKing.ObstacleContext)target;
+            bool hasChildParts = false;
+            foreach (var part in context.GetComponentsInChildren<Obstacle>(true))
+                if (part.transform != context.transform) { hasChildParts = true; break; }
+            if (!hasChildParts)
+            {
+                EditorGUILayout.HelpBox("시간·활성 상태·권한을 제공하는 Context입니다. 장애물 수치는 같은 오브젝트의 장애물 컴포넌트에서 조절하세요.", MessageType.Info);
+                return;
+            }
             EditorGUILayout.LabelField("장애물 부품 설정", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("아래 값은 각 부품의 실제 저장 값입니다. Move Speed는 이동 속도, Push/Knockback Force는 밀침, Distance/Angle은 이동 범위입니다. Duration은 작을수록 빠릅니다.", MessageType.Info);
-            connections = EditorGUILayout.Toggle("기타 설정·연결 참조 보기", connections);
-            ObstacleAuthoringInspector.DrawParts(context.transform, connections, expanded);
+            ObstacleAuthoringInspector.DrawParts(context.transform, expanded);
         }
     }
 
     [CustomEditor(typeof(Obstacle), true)]
     public sealed class ObstacleSettingsEditor : UnityEditor.Editor
     {
-        bool connections;
         readonly System.Collections.Generic.Dictionary<int, bool> expanded = new System.Collections.Generic.Dictionary<int, bool>();
         public override void OnInspectorGUI()
         {
             var obstacle = (Obstacle)target;
-            connections = EditorGUILayout.Toggle("기타 설정·연결 참조 보기", connections);
-            ObstacleAuthoringInspector.DrawFields(obstacle, connections);
+            ObstacleAuthoringInspector.DrawFields(obstacle);
+            var bridge = obstacle as ChessFight.ProtectKing.FoldingBridge;
+            if (bridge != null && Application.isPlaying)
+            {
+                using (new EditorGUI.DisabledScope(true))
+                {
+                    EditorGUILayout.FloatField("Current Left Angle", bridge.LeftAngle);
+                    EditorGUILayout.FloatField("Current Right Angle", bridge.RightAngle);
+                }
+                EditorGUILayout.HelpBox("Fold Angle은 최대 제한입니다. 그 전에 멈추면 Return Spring을 낮추세요. 0이면 자동 복귀하지 않습니다.", MessageType.Info);
+                Repaint();
+            }
             // A context component on the same root draws its child parts once.
             if (obstacle.GetComponent<ChessFight.ProtectKing.ObstacleContext>() == null)
-                ObstacleAuthoringInspector.DrawParts(obstacle.transform, connections, expanded);
+                ObstacleAuthoringInspector.DrawParts(obstacle.transform, expanded);
         }
     }
 }
