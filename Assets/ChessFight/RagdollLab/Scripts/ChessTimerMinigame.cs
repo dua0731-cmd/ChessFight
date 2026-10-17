@@ -29,9 +29,14 @@ namespace ChessFight.RagdollLab
         readonly int[] roles = new int[12]; // 0: manual, 1: own plate, 2: defuse, 4: opposite plate.
         readonly int[] riders = new int[2], workers = new int[2];
         readonly bool[] exited = new bool[12];
-        readonly Collider[] pads = new Collider[2];
-        readonly ChessTimerPlate[] occupancy = new ChessTimerPlate[2];
-        readonly Rigidbody[] plateBodies = new Rigidbody[2];
+        Rigidbody rocker;
+        ChessTimerPlate occupancy;
+        readonly Rigidbody[] entryFlaps = new Rigidbody[2];
+        Quaternion rockerDelta = Quaternion.identity;
+        Vector3 rockerAngularVelocity;
+        float rockerAngle;
+        [SerializeField, Range(0f, 3f)] float rockerTilt = 3f;
+        [SerializeField, Min(.1f)] float rockerSpeed = 3f;
         readonly GameObject[] gates = new GameObject[2];
         readonly TextMesh[] clocks = new TextMesh[2], clockStatus = new TextMesh[2], crowdDisplays = new TextMesh[2];
         readonly TextMesh[,] panelLabels = new TextMesh[2, 3];
@@ -44,9 +49,9 @@ namespace ChessFight.RagdollLab
         int selected;
         GUIStyle text, title, buttonStyle;
         string notice = "준비 완료 · Enter로 시작";
-        static float TeamX(int team) => team == 0 ? -11 : 11;
+        static float TeamX(int team) => team == 0 ? -5.5f : 5.5f;
         static Vector3 Panel(int team, int stage) => new Vector3(TeamX(team) + (stage - 1) * 3f, .7f, 12);
-        static Vector3 Waiting(int index) => new Vector3(TeamX(index / 6) + (index < 6 ? -7.5f : 7.5f) + (index % 3 - 1) * 1.6f, 0, -21 - index % 2 * 1.5f);
+        static Vector3 Waiting(int index) => new Vector3(TeamX(index / 6) + (index < 6 ? -9.5f : 9.5f) + (index % 3 - 1) * 1.6f, 0, -24 - index % 2);
 
         void Awake()
         {
@@ -94,7 +99,7 @@ namespace ChessFight.RagdollLab
             if (role == 1 || role == 4)
             {
                 int side = role == 4 ? 1 - team : team;
-                Place(index, new Vector3(TeamX(side) + (index % 3 - 1) * 1.6f, pads[side].bounds.max.y, 2 + index % 2 * 2));
+                Place(index, rocker.position + rocker.rotation * new Vector3(TeamX(side) + (index % 3 - 1) * 1.6f, .25f, -1 + index % 2 * 2));
             }
             else if (role == 2) PlaceAtPanel(index);
             else Place(index, Waiting(index));
@@ -110,13 +115,13 @@ namespace ChessFight.RagdollLab
             started = false; notice = "준비 완료 · Enter로 시작";
             for (int i = 0; i < players.Count; i++)
             { exited[i] = false; roles[i] = 0; Place(i, Waiting(i)); }
+            occupancy.ClearContacts();
             // Equal initial allocation. Switch to each teammate to change it with 1/2/3.
             for (int team = 0; team < 2; team++)
             { Assign(team * 6 + 1, 1); Assign(team * 6 + 2, 1); Assign(team * 6 + 3, 2); }
             for (int side = 0; side < 2; side++)
             {
                 gates[side].SetActive(true);
-                occupancy[side].ClearContacts();
                 riders[side] = workers[side] = 0;
             }
         }
@@ -165,12 +170,8 @@ namespace ChessFight.RagdollLab
         void FixedUpdate()
         {
             if (players.Count != 12) return;
-            for (int team = 0; team < 2; team++)
-            {
-                var target = new Vector3(TeamX(team), rules.PressedTeam == team ? 3.8f : 4f, 3);
-                plateBodies[team].MovePosition(Vector3.MoveTowards(plateBodies[team].position, target, .3f * Time.fixedDeltaTime));
-            }
-            riders[0] = occupancy[0].Occupants; riders[1] = occupancy[1].Occupants;
+            MoveRocker();
+            occupancy.Count(out riders[0], out riders[1]);
             workers[0] = workers[1] = 0;
             for (int i = 0; i < players.Count; i++)
             {
@@ -214,20 +215,17 @@ namespace ChessFight.RagdollLab
             {
                 var pawn = players[i];
                 if (i == selected || (roles[i] != 1 && roles[i] != 4) || rules.Teams[i / 6].Recovery > 0 ||
-                    rules.Teams[i / 6].Complete || pawn.State != PawnState.Active || pawn.Hips.position.y < 3.9f) continue;
+                    rules.Teams[i / 6].Complete || pawn.State != PawnState.Active || pawn.Hips.position.y < 5.2f) continue;
                 RagdollPawn enemy = null; float nearest = float.PositiveInfinity;
                 foreach (var other in players)
                 {
-                    if (other.Team == pawn.Team || other.Hips.position.y < 3.9f) continue;
+                    if (other.Team == pawn.Team || other.Hips.position.y < 5.2f) continue;
                     float distance = (other.Hips.position - pawn.Hips.position).sqrMagnitude;
                     if (distance < nearest) { enemy = other; nearest = distance; }
                 }
                 if (enemy == null) continue;
                 Vector3 delta = enemy.Hips.position - pawn.Hips.position; delta.y = 0;
                 Vector3 walk = delta;
-                // Cross the open central bridge via its centre, never diagonally through its side gap.
-                if (pawn.Hips.position.x * enemy.Hips.position.x < 0 && Mathf.Abs(pawn.Hips.position.z - 3) > .7f)
-                    walk = new Vector3(0, 0, 3 - pawn.Hips.position.z);
                 bool shove = delta.magnitude < 1.4f && Time.time >= nextShove[i];
                 if (shove) nextShove[i] = Time.time + 1.3f;
                 pawn.SetInput(new PawnInput { move = delta.magnitude > .7f ? walk.normalized * .65f : Vector3.zero,
@@ -299,7 +297,7 @@ namespace ChessFight.RagdollLab
             if (menu)
             {
                 GUI.Box(new Rect(12, 275, 780, 170), GUIContent.none);
-                GUI.Label(new Rect(24, 282, 745, 65), $"발판 위 인원은 적·아군 모두 셉니다. 동수면 양쪽 시간 감소. 대련 봇: {(sparringBots ? "켜짐" : "꺼짐")} (B)\n양쪽 경사로로 올라가 연결 발판에서 싸우세요. 가장자리에는 난간이 없습니다.\n시계 뒤쪽 PAWN → KNIGHT → ROOK에서 F 해체. 숫자키 배치는 시험용 순간이동입니다.", text);
+                GUI.Label(new Rect(24, 282, 745, 65), $"발판 위 인원은 적·아군 모두 셉니다. 동수면 양쪽 시간 감소. 대련 봇: {(sparringBots ? "켜짐" : "꺼짐")} (B)\n한 타이머 위에서 싸웁니다. 상대 쪽으로 가면 우리 시간이 흐를 수 있습니다.\n타이머 뒤쪽 PAWN → KNIGHT → ROOK에서 F 해체. 숫자키 배치는 시험용 순간이동입니다.", text);
                 if (GUI.Button(new Rect(24, 363, 235, 55), started ? "계속 조작" : "게임 시작", buttonStyle))
                 { started = true; notice = "해체 진행 중 · 발판과 해체 인원을 배분하세요"; menu = false; RefreshCursor(); }
                 if (GUI.Button(new Rect(275, 363, 235, 55), "다음 팀원", buttonStyle)) Select(selected + 1);

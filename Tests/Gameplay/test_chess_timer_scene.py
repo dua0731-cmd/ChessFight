@@ -38,6 +38,14 @@ class ChessTimerSceneTests(unittest.TestCase):
         self.assertNotIn('"Access step"', layout)
         self.assertNotIn('"Team divider"', layout)
 
+    def test_single_clock_uses_one_coupled_rocker_without_interclock_bridge(self):
+        layout = (ROOT / 'Assets/ChessFight/RagdollLab/Scripts/ChessTimerMinigame.Arena.cs').read_text()
+        self.assertEqual(layout.count('RoundedBox("Single chess clock housing"'), 1)
+        self.assertEqual(layout.count('RoundedBox("Coupled white rocker"'), 1)
+        self.assertNotIn('"Open duel bridge"', layout)
+        self.assertNotIn('plateBodies[', layout)
+        self.assertIn('rocker.MoveRotation(rotation)', layout)
+
     def test_scene_local_references_and_menu_target_resolve(self):
         path = ROOT / 'Assets/Scenes/ChessTimerMinigame.unity'
         scene = path.read_text()

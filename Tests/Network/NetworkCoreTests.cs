@@ -47,6 +47,17 @@ public static class NetworkCoreTests
                 Check(r.PressedTeam == 1, "switch follows occupied side");
                 r.Step(.1f, 2, 2, 0, 0); Check(r.PressedTeam == -1, "mixed-team tie");
             });
+            Test("Chess timer attacking the other half trades own time protection for disruption", () => {
+                var r = new ChessTimerRules(30, 10, 3, 0);
+                r.Step(1, 4, 2, 0, 0);
+                Check(r.PressedTeam == 0 && r.Teams[0].Remaining == 30 && r.Teams[1].Remaining == 29, "defending own half pauses own time");
+                r.Step(1, 3, 3, 0, 0); // One blue player crosses to the red half.
+                Check(r.PressedTeam == -1 && r.Teams[0].Remaining == 29, "first attacker sacrifices protection");
+                r.Step(1, 2, 4, 0, 0); // A second blue player follows, counted on red.
+                Check(r.PressedTeam == 1 && r.Teams[0].Remaining == 28 && r.Teams[1].Remaining == 28, "attackers protect opposing clock");
+                r.Step(1, 4, 2, 0, 0);
+                Check(r.PressedTeam == 0 && r.Teams[0].Remaining == 28, "returning restores protection");
+            });
             Test("Chess timer completion is permanent and unlocks solo switch rule", () => {
                 var r = new ChessTimerRules(20, 1, 3, 0, 2);
                 for (int i = 0; i < 3; i++) r.Step(1, 1, 0, 1, 0);

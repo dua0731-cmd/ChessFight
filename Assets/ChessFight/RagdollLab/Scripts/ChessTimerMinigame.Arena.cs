@@ -4,13 +4,14 @@ using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
+    // StateDrivenMover: offline clock rocker and entry flaps follow the occupied side.
     public sealed partial class ChessTimerMinigame
     {
         // 54 x 54 = 2916 m², versus the original 24 x 24 = 576 m² (5.0625 times).
         readonly GameObject[,,] digits = new GameObject[2, 4, 7];
         static readonly int[] DigitMasks = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f };
         const float ArenaWidth = 54f, ArenaDepth = 54f;
-        const float ApproachStartZ = -18f, ApproachEndZ = -.7f, ApproachHeight = 4.3f;
+        const float ApproachStartZ = -22f, ApproachEndZ = -.7f, ApproachHeight = 5.9f;
 
         void BuildArena()
         {
@@ -20,7 +21,6 @@ namespace ChessFight.RagdollLab
             var rubber = Mat(new Color(.035f, .04f, .045f));
             var cream = Mat(new Color(.98f, .96f, .88f));
             var lcd = Mat(new Color(.63f, .72f, .64f));
-            var gold = Mat(new Color(.94f, .69f, .24f));
             teamMaterials[0] = Mat(new Color(.30f, .64f, .92f));
             teamMaterials[1] = Mat(new Color(.96f, .47f, .39f));
             foreach (var material in materials) material.SetFloat("_Glossiness", .24f);
@@ -28,50 +28,49 @@ namespace ChessFight.RagdollLab
                 Box("Chess floor", new Vector3((x - 8.5f) * 3, -.25f, (z - 8.5f) * 3),
                     new Vector3(ArenaWidth / 18, .5f, ArenaDepth / 18), (x + z) % 2 == 0 ? ivory : walnut);
 
+            // One clock and one mechanically coupled rocker; the two teams occupy its halves.
+            RoundedBox("Clock rubber base", new Vector3(0, .25f, 3), new Vector3(22.4f, .5f, 10.4f), .23f, rubber, false);
+            RoundedBox("Single chess clock housing", new Vector3(0, 2.6f, 3), new Vector3(22, 5.2f, 10), 1.1f, charcoal);
+            var top = RoundedBox("Coupled white rocker", new Vector3(0, 5.65f, 3), new Vector3(20.4f, .5f, 8.5f), .24f, cream);
+            occupancy = top.AddComponent<ChessTimerPlate>();
+            rocker = top.AddComponent<Rigidbody>(); rocker.isKinematic = true; rocker.useGravity = false;
+            rocker.interpolation = RigidbodyInterpolation.Interpolate;
+            ImportedMovingSurface.BindDynamic(rocker, point => Vector3.Cross(rockerAngularVelocity, point - rocker.position),
+                () => rockerDelta, () => isActiveAndEnabled);
+            var seam = Box("Button centre seam", new Vector3(0, 5.905f, 3), new Vector3(.10f, .012f, 8.1f), rubber, false);
+            seam.transform.SetParent(top.transform, true);
+            RoundedBox("Shared LCD bezel", new Vector3(0, 2.1f, -2.06f), new Vector3(19.8f, 1.9f, .24f), .11f, rubber, false);
+            for (int control = 0; control < 4; control++)
+            {
+                float cx = (control - 1.5f) * 1.4f;
+                RoundedBox("Clock control button", new Vector3(cx, .85f, -1.9f), new Vector3(.85f, .4f, .35f), .16f, cream, false);
+                var icon = Label("Clock control icon", new Vector3(cx, .85f, -2.09f), new[] { "+", "O", ">", "-" }[control], .2f);
+                icon.color = Color.black;
+            }
             for (int side = 0; side < 2; side++)
             {
                 float x = TeamX(side); var accent = teamMaterials[side];
-                // Photo-inspired silhouette: soft black housing, broad white top rocker, twin LCD windows.
-                RoundedBox("Clock rubber base", new Vector3(x, .25f, 3), new Vector3(11.4f, .5f, 10.4f), .23f, rubber, false);
-                RoundedBox("Clock rounded housing", new Vector3(x, 1.9f, 3), new Vector3(11, 3.8f, 10), .9f, charcoal);
-                RoundedBox("Clock shoulder trim", new Vector3(x, 3.55f, 3), new Vector3(10.6f, .35f, 9.4f), .17f, accent, false);
-                var pad = RoundedBox("Clock white battle button", new Vector3(x, 4, 3), new Vector3(9.8f, .5f, 8.5f), .24f, cream);
-                pads[side] = pad.GetComponent<Collider>();
-                occupancy[side] = pad.AddComponent<ChessTimerPlate>();
-                var body = pad.AddComponent<Rigidbody>(); body.isKinematic = true; body.useGravity = false;
-                body.interpolation = RigidbodyInterpolation.Interpolate; plateBodies[side] = body;
-                ImportedMovingSurface.BindDynamic(body, point => body.GetPointVelocity(point), () => Quaternion.identity, () => started);
-                // Decorative colour stripe is attached to the moving button and never blocks feet.
-                var stripe = RoundedBox("Team button stripe", new Vector3(x, 4.255f, 6.6f), new Vector3(8, .015f, .18f), .006f, accent, false);
-                stripe.transform.SetParent(pad.transform, true);
-
-                RoundedBox("LCD bezel", new Vector3(x, 2.1f, -2.06f), new Vector3(9.7f, 1.8f, .24f), .11f, rubber, false);
-                for (int window = 0; window < 2; window++)
-                    RoundedBox("LCD window", new Vector3(x + (window == 0 ? -2.35f : 2.35f), 2.1f, -2.2f),
-                        new Vector3(4.4f, 1.5f, .1f), .045f, lcd, false);
-                clocks[side] = Label("LCD countdown", new Vector3(x - 2.35f, 2.15f, -2.27f), "00:45", .62f);
-                crowdDisplays[side] = Label("LCD occupant count", new Vector3(x + 2.35f, 2.1f, -2.27f), "00\nPLAYERS", .32f);
-                clocks[side].color = crowdDisplays[side].color = new Color(.06f, .10f, .08f);
+                var stripe = RoundedBox("Button side colour", new Vector3(x, 5.91f, 6.6f), new Vector3(8, .015f, .18f), .006f, accent, false);
+                stripe.transform.SetParent(top.transform, true);
+                RoundedBox("Team LCD window", new Vector3(x, 2.1f, -2.2f), new Vector3(8.8f, 1.5f, .1f), .045f, lcd, false);
+                clocks[side] = Label("LCD countdown", new Vector3(x - 1.8f, 2.15f, -2.27f), "00:45", .62f);
+                crowdDisplays[side] = Label("LCD occupant count", new Vector3(x + 2.4f, 2.1f, -2.27f), "00\nPLAYERS", .32f);
                 clocks[side].GetComponent<Renderer>().enabled = false;
-                BuildDigits(side, x - 2.35f, rubber);
-                clockStatus[side] = Label("Clock status", new Vector3(x, 3.25f, -2.32f), "", .25f);
-                for (int control = 0; control < 4; control++)
-                {
-                    float cx = x + (control - 1.5f) * 1.25f;
-                    RoundedBox("Clock control button", new Vector3(cx, .85f, -1.9f), new Vector3(.85f, .4f, .35f), .16f, cream, false);
-                    var icon = Label("Clock control icon", new Vector3(cx, .85f, -2.09f), new[] { "+", "O", ">", "-" }[control], .2f);
-                    icon.color = Color.black;
-                }
-                Label("Top team marker", new Vector3(x, 5.8f, 7), side == 0 ? "BLUE CLOCK" : "RED CLOCK", .45f);
-
-                // Continuous surfaces: no risers, vertical step lips or jump-only final landing.
-                float outside = side == 0 ? -1 : 1;
-                float approachX = x + outside * 7.5f;
-                // Approach outside the housing so neither LCD is hidden behind a ramp.
+                crowdDisplays[side].color = new Color(.06f, .10f, .08f);
+                BuildDigits(side, x - 1.8f, rubber);
+                clockStatus[side] = Label("Clock status", new Vector3(x, 3.5f, -2.32f), "", .25f);
+                Label("Top team marker", new Vector3(x, 7.2f, 7), side == 0 ? "BLUE BUTTON" : "RED BUTTON", .35f);
+                float approachX = side == 0 ? -15 : 15;
                 Ramp("Walk-up approach", new Vector3(approachX, 0, ApproachStartZ), new Vector3(approachX, ApproachHeight, ApproachEndZ), 5, accent);
                 Box("Walk-up landing", new Vector3(approachX, ApproachHeight - .25f, 1.15f), new Vector3(5, .5f, 3.7f), cream);
-                Ramp("Walk-up button blend", new Vector3(approachX, ApproachHeight, 3), new Vector3(x + outside * 3, 3.95f, 3), 5, cream);
-                Label("Approach sign", new Vector3(approachX, .8f, -19), "WALK UP", .3f);
+                var flap = Box("Following entry flap", Vector3.zero, Vector3.one, cream);
+                var body = flap.AddComponent<Rigidbody>(); body.isKinematic = true; body.useGravity = false;
+                body.interpolation = RigidbodyInterpolation.Interpolate; entryFlaps[side] = body;
+                ImportedMovingSurface.BindDynamic(body, point => body.GetPointVelocity(point),
+                    () => body.angularVelocity.sqrMagnitude < .000001f ? Quaternion.identity :
+                        Quaternion.AngleAxis(body.angularVelocity.magnitude * Time.fixedDeltaTime * Mathf.Rad2Deg, body.angularVelocity.normalized), () => isActiveAndEnabled);
+                PositionEntryFlap(side, Quaternion.identity, true);
+                Label("Approach sign", new Vector3(approachX, .8f, -23), "WALK UP", .3f);
 
                 for (int stage = 0; stage < 3; stage++)
                 {
@@ -81,17 +80,38 @@ namespace ChessFight.RagdollLab
                 gates[side] = Box("Team exit gate", new Vector3(x, 2, 23), new Vector3(5, 4, .5f), accent);
                 Label("Exit label", new Vector3(x, 4.6f, 22.6f), "NEXT STAGE", .35f);
             }
-            // One shared rooftop arena. Both exposed sides permit knock-offs to the lower floor.
-            Box("Open duel bridge", new Vector3(0, 4.2f, 3), new Vector3(10.4f, .5f, 6), ivory);
-            Ramp("Blue bridge blend", new Vector3(-7.7f, 3.95f, 3), new Vector3(-5.2f, 4.45f, 3), 6, ivory);
-            Ramp("Red bridge blend", new Vector3(7.7f, 3.95f, 3), new Vector3(5.2f, 4.45f, 3), 6, ivory);
             // Perimeter only; there is no wall between teams.
-            Box("Exit wall centre", new Vector3(0, 2, 23), new Vector3(17, 4, .5f), walnut);
-            Box("Exit wall left", new Vector3(-20.25f, 2, 23), new Vector3(13.5f, 4, .5f), walnut);
-            Box("Exit wall right", new Vector3(20.25f, 2, 23), new Vector3(13.5f, 4, .5f), walnut);
+            Box("Exit wall centre", new Vector3(0, 2, 23), new Vector3(6, 4, .5f), walnut);
+            Box("Exit wall left", new Vector3(-17.5f, 2, 23), new Vector3(19, 4, .5f), walnut);
+            Box("Exit wall right", new Vector3(17.5f, 2, 23), new Vector3(19, 4, .5f), walnut);
             Box("Outer left boundary", new Vector3(-27, 1.5f, 0), new Vector3(.5f, 3, 54), walnut);
             Box("Outer right boundary", new Vector3(27, 1.5f, 0), new Vector3(.5f, 3, 54), walnut);
             Box("Outer front boundary", new Vector3(0, 1.5f, -27), new Vector3(54, 3, .5f), walnut);
+        }
+
+        void MoveRocker()
+        {
+            float tilt = Mathf.Clamp(rockerTilt, 0, 3);
+            float target = rules.PressedTeam == 0 ? tilt : rules.PressedTeam == 1 ? -tilt : 0;
+            float next = Mathf.MoveTowards(rockerAngle, target, Mathf.Max(.1f, rockerSpeed) * Time.fixedDeltaTime);
+            rockerDelta = Quaternion.AngleAxis(next - rockerAngle, Vector3.forward);
+            rockerAngularVelocity = Vector3.forward * ((next - rockerAngle) * Mathf.Deg2Rad / Time.fixedDeltaTime);
+            rockerAngle = next;
+            var rotation = Quaternion.AngleAxis(next, Vector3.forward);
+            rocker.MoveRotation(rotation);
+            for (int side = 0; side < 2; side++) PositionEntryFlap(side, rotation, false);
+        }
+        void PositionEntryFlap(int side, Quaternion rotation, bool immediate)
+        {
+            float sign = side == 0 ? -1 : 1;
+            var from = new Vector3(sign * 15, ApproachHeight, 3);
+            var to = rocker.position + rotation * new Vector3(sign * 9.8f, .25f, 0);
+            var facing = Quaternion.LookRotation((to - from).normalized, Vector3.up);
+            var centre = (from + to) * .5f - facing * Vector3.up * .10f;
+            var body = entryFlaps[side];
+            body.transform.localScale = new Vector3(5, .2f, Vector3.Distance(from, to));
+            if (immediate) { body.position = centre; body.rotation = facing; }
+            else { body.MovePosition(centre); body.MoveRotation(facing); }
         }
 
         void BuildDigits(int side, float centre, Material ink)

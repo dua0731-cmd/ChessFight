@@ -351,7 +351,7 @@ GameObject:
   - component: {fileID: 1667498619}
   - component: {fileID: 1667498618}
   m_Layer: 0
-  m_Name: Chess Timer Minigame - Shared Rooftop Arena
+  m_Name: Chess Timer Minigame - Single Coupled Clock
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

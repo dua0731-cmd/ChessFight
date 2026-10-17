@@ -11,7 +11,12 @@ namespace ChessFight.RagdollLab
         readonly HashSet<RagdollPawn> unique = new HashSet<RagdollPawn>();
         readonly List<Collider> stale = new List<Collider>();
         Collider surface;
-        void Awake() { surface = GetComponent<Collider>(); }
+        float localTop;
+        void Awake()
+        {
+            surface = GetComponent<Collider>();
+            localTop = ((MeshCollider)surface).sharedMesh.bounds.max.y;
+        }
         void OnCollisionEnter(Collision collision) { Track(collision); }
         void OnCollisionStay(Collision collision) { Track(collision); }
         void OnCollisionExit(Collision collision) { contacts.Remove(collision.collider); }
@@ -22,27 +27,28 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < collision.contactCount; i++)
             {
                 var contact = collision.GetContact(i);
-                if (Mathf.Abs(contact.normal.y) > .55f && contact.point.y >= surface.bounds.max.y - .12f)
+                if (Mathf.Abs(Vector3.Dot(contact.normal, transform.up)) > .55f && transform.InverseTransformPoint(contact.point).y >= localTop - .12f)
                 { contacts[collision.collider] = pawn; return; }
             }
             contacts.Remove(collision.collider);
         }
-        public int Occupants
+        public void Count(out int left, out int right)
         {
-            get
+            left = right = 0;
+            unique.Clear(); stale.Clear();
+            var contactBounds = surface.bounds; contactBounds.Expand(.15f);
+            foreach (var pair in contacts)
             {
-                unique.Clear(); stale.Clear();
-                var contactBounds = surface.bounds; contactBounds.Expand(.15f);
-                foreach (var pair in contacts)
-                {
-                    if (pair.Key == null || !pair.Key.enabled || !pair.Key.gameObject.activeInHierarchy ||
-                        pair.Value == null || !pair.Value.isActiveAndEnabled || !pair.Key.bounds.Intersects(contactBounds))
-                        stale.Add(pair.Key);
-                    else unique.Add(pair.Value);
-                }
-                foreach (var key in stale) contacts.Remove(key);
-                return unique.Count;
+                if (pair.Key == null || !pair.Key.enabled || !pair.Key.gameObject.activeInHierarchy ||
+                    pair.Value == null || !pair.Value.isActiveAndEnabled || !pair.Key.bounds.Intersects(contactBounds))
+                    stale.Add(pair.Key);
+                else unique.Add(pair.Value);
             }
+            foreach (var key in stale) contacts.Remove(key);
+            // A straddling ragdoll counts once, on the side containing its hips.
+            foreach (var pawn in unique)
+                if (transform.InverseTransformPoint(pawn.Hips.position).x <= 0) left++;
+                else right++;
         }
         public void ClearContacts() { contacts.Clear(); }
         void OnDisable() { contacts.Clear(); }
