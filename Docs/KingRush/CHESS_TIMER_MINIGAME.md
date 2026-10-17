@@ -2,6 +2,10 @@
 
 R90 · 2026-10-17. **실제 체스 시계처럼 한 몸체에 두 시간창과 서로 연동되는 좌우 버튼**이 있다. 같은 타이머 위에서 싸우며, 공격하러 상대 쪽으로 이동하면 우리 시간 보호를 잃을 수 있다는 기획을 시험한다. R85의 두 타이머/사이 연결 다리 구성은 제거했다. 독립 오프라인 시험장이다.
 
+## 기획서와 컨셉아트
+
+2026-10-18 · [체스 타이머 미니게임 기획서 PDF](CHESS_TIMER_DESIGN.pdf), 6쪽. 상단 난투/하부 해체 컨셉아트, 공간·인원 판정, 최신 폭발/동시 해체 규칙과 **삼색 전선 + 체스 공격 범위 퍼즐 기획안**을 포함한다. 실제 퍼즐은 아직 미구현이며, 3단계 난이도·오답5초/잠금2초·1초 절단은 제안값이다. 제작 원본: Tools/Documents/build_chess_timer_design.py, 이미지 원본: Concepts/CHESS_TIMER_CONCEPT.png.
+
 ## 실행
 
 Unity 메뉴 **ChessFight → Minigames → Open Chess Timer Prototype**, 또는 `Assets/Scenes/ChessTimerMinigame.unity` → Play → Enter. 업데이트한 배치를 보려면 Play를 종료하고 다시 실행한다. 경기장/타이머/기존 래그돌12명은 실행 시 생성된다. 기존 캐릭터 프리팹·tuning·LabCamera·PhysicsProfile을 사용한다. 정식 경기·Steam 동기화·다음 맵 로딩은 연결하지 않았다.
