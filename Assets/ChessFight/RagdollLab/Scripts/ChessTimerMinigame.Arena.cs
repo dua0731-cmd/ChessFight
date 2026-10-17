@@ -90,7 +90,7 @@ namespace ChessFight.RagdollLab
             Box("Exit wall right", new Vector3(17.5f, 2, 23), new Vector3(19, 4, .5f), walnut);
             Box("Outer left boundary", new Vector3(-27, 1.5f, 0), new Vector3(.5f, 3, 54), walnut);
             Box("Outer right boundary", new Vector3(27, 1.5f, 0), new Vector3(.5f, 3, 54), walnut);
-            rocker.transform.localScale = Vector3.one * .7f;
+            rocker.transform.localScale = new Vector3(1f, .7f, 1f);
             for (int side = 0; side < 2; side++) PositionEntryFlap(side, Quaternion.identity, true);
             Box("Outer front boundary", new Vector3(0, 1.5f, -27), new Vector3(54, 3, .5f), walnut);
         }

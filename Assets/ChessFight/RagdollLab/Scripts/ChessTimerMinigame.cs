@@ -23,6 +23,9 @@ namespace ChessFight.RagdollLab
         [SerializeField, Min(.1f)] float interactDistance = 1.8f;
         readonly List<RagdollPawn> players = new List<RagdollPawn>();
         [SerializeField, Tooltip("B toggles rooftop sparring for unselected switch occupants.")] bool sparringBots = true;
+        [SerializeField, Min(1)] float successBlastSpeed = 22f;
+        [SerializeField, Range(.5f, 2.8f)] float successRespawnSeconds = 2.4f;
+        readonly float[] respawnAt = new float[12];
         readonly float[] nextShove = new float[12];
         readonly List<Mesh> meshes = new List<Mesh>();
         readonly List<Material> materials = new List<Material>();
@@ -65,6 +68,8 @@ namespace ChessFight.RagdollLab
             rules = new ChessTimerRules(timeLimit, secondsPerStage, stunSeconds + retryGrace, switchDelay, soloRequiredRiders);
             BuildArena();
             blastMaterial = Mat(new Color(1f, .45f, .08f));
+            blastMaterial.EnableKeyword("_EMISSION");
+            blastMaterial.SetColor("_EmissionColor", new Color(3f, 1.2f, .1f));
         }
         void Start()
         {
@@ -96,7 +101,7 @@ namespace ChessFight.RagdollLab
         void Assign(int index, int role)
         {
             int team = index / 6;
-            if (rules.Teams[team].Recovery > 0 || players[index].State != PawnState.Active) return;
+            if (respawnAt[index] > 0 || rules.Teams[team].Recovery > 0 || players[index].State != PawnState.Active) return;
             if (role == 2 && rules.Teams[team].Complete) return;
             roles[index] = role;
             if (role == 1 || role == 4)
@@ -117,7 +122,7 @@ namespace ChessFight.RagdollLab
             rules = new ChessTimerRules(timeLimit, secondsPerStage, stunSeconds + retryGrace, switchDelay, soloRequiredRiders);
             started = false; notice = "준비 완료 · Enter로 시작";
             for (int i = 0; i < players.Count; i++)
-            { exited[i] = false; roles[i] = 0; Place(i, Waiting(i)); }
+            { respawnAt[i] = 0; exited[i] = false; roles[i] = 0; Place(i, Waiting(i)); }
             occupancy.ClearContacts();
             // Equal initial allocation. Switch to each teammate to change it with 1/2/3.
             for (int team = 0; team < 2; team++)
@@ -131,6 +136,12 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             if (players.Count == 0) return;
+            for (int i = 0; i < players.Count; i++)
+                if (respawnAt[i] > 0 && Time.time >= respawnAt[i])
+                {
+                    respawnAt[i] = 0; roles[i] = 0; exited[i] = false;
+                    Place(i, Waiting(i));
+                }
             if (Application.isFocused)
             {
                 if (Input.GetKeyDown(KeyCode.Escape)) { menu = !menu; RefreshCursor(); }
@@ -143,13 +154,13 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.Alpha3)) Assign(selected, 0);
                 if (Input.GetKeyDown(KeyCode.Alpha4)) Assign(selected, 4);
                 if (Input.GetKeyDown(KeyCode.B)) sparringBots = !sparringBots;
-                if (Input.GetKeyDown(KeyCode.R) && rules.Teams[selected / 6].Recovery <= 0 && players[selected].State == PawnState.Active)
+                if (Input.GetKeyDown(KeyCode.R) && respawnAt[selected] <= 0 && rules.Teams[selected / 6].Recovery <= 0 && players[selected].State == PawnState.Active)
                 { roles[selected] = 0; Place(selected, Waiting(selected)); }
             }
             foreach (var pawn in players) pawn.SetInput(default);
             DriveSparringBots();
             var local = players[selected];
-            if (Application.isFocused && !menu && rules.Teams[selected / 6].Recovery <= 0)
+            if (Application.isFocused && !menu && respawnAt[selected] <= 0 && rules.Teams[selected / 6].Recovery <= 0)
             {
                 var move = GameSettings.Move;
                 if (move.sqrMagnitude > .01f) roles[selected] = 0;
@@ -163,7 +174,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i];
-                if (!pawn.IsFinite() || pawn.Hips.position.y < -5)
+                if (!pawn.IsFinite() || (respawnAt[i] <= 0 && pawn.Hips.position.y < -5))
                 { roles[i] = 0; Place(i, Waiting(i)); }
                 if (rules.Teams[i / 6].Complete && pawn.Hips.position.z > 24 && Mathf.Abs(pawn.Hips.position.x - TeamX(i / 6)) < 2.5f)
                     exited[i] = true;
@@ -179,7 +190,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i]; int team = i / 6;
-                if (rules.Teams[team].Complete || rules.Teams[team].Recovery > 0 || pawn.State != PawnState.Active) continue;
+                if (respawnAt[i] > 0 || rules.Teams[team].Complete || rules.Teams[team].Recovery > 0 || pawn.State != PawnState.Active) continue;
                 var origin = pawn.Hips.position;
                 bool working = roles[i] == 2 || (i == selected && !menu && Application.isFocused && Input.GetKey(KeyCode.F));
                 if (working && pawn.Grounded && Vector3.Distance(origin, Panel(team, rules.Teams[team].Stage)) <= interactDistance)
@@ -197,45 +208,95 @@ namespace ChessFight.RagdollLab
                 if (rules.Teams[team].Complete) { gates[team].SetActive(false); continue; }
                 if (recovered || changed)
                     for (int i = team * 6; i < team * 6 + 6; i++)
-                        if (recovered) Assign(i, roles[i]);
+                        if (respawnAt[i] > 0) continue;
+                        else if (recovered) Assign(i, roles[i]);
                         else if (roles[i] == 2) PlaceAtPanel(i);
             }
-            // Apply completion hits after both teams' stage transitions and test placements.
-            for (int team = 0; team < 2; team++)
-                if ((rules.CompletedTeams & (1 << team)) != 0)
-                {
-                    Explode(1 - team, true);
-                    notice = (team == 0 ? "청팀" : "홍팀") + " 해체 성공! 문 열림 · 맵 안 적팀 폭발/기절 · 계속 플레이";
-                }
+            if (rules.CompletedTeams != 0) CompletionBlast(rules.CompletedTeams);
         }
-        void Explode(int team, bool completion = false)
+        void Explode(int team)
         {
-            if (!completion) notice = (team == 0 ? "청팀" : "홍팀") + " 폭발! 완료 단계 유지 · 현재 단계 초기화";
+            notice = (team == 0 ? "청팀" : "홍팀") + " 폭발! 완료 단계 유지 · 현재 단계 초기화";
             for (int i = team * 6; i < team * 6 + 6; i++)
             {
+                if (respawnAt[i] > 0) continue;
                 var position = players[i].Hips.position;
-                // Completion affects enemy allegiance anywhere inside this arena, including the roof.
-                if (completion && (Mathf.Abs(position.x) > ArenaWidth * .5f ||
-                    Mathf.Abs(position.z) > ArenaDepth * .5f || position.y < -5 || position.y > 30)) continue;
-                var away = position - new Vector3(TeamX(team), 0, 3);
-                away.y = 0;
+                var away = position - new Vector3(TeamX(team), 0, 3); away.y = 0;
                 StartCoroutine(BlastFlash(position));
                 players[i].TakeHit(away.normalized * blastSpeed + Vector3.up * blastSpeed, stunSeconds, 0, true);
             }
         }
+        static bool Holds(PawnHand hand, RagdollPawn target) =>
+            hand != null && hand.IsHolding && hand.HeldCollider != null &&
+            RagdollPawn.ColliderOwner.TryGetValue(hand.HeldCollider, out var owner) && owner == target;
+
+        void CompletionBlast(int completedTeams)
+        {
+            var direct = new bool[players.Count];
+            var impulses = new Vector3[players.Count];
+            float delay = Mathf.Clamp(successRespawnSeconds, .5f, 2.8f);
+            float speed = Mathf.Max(1, successBlastSpeed);
+            // Snapshot victims and grips before knockdown releases any hands.
+            for (int i = 0; i < players.Count; i++)
+            {
+                var position = players[i].Hips.position;
+                direct[i] = (completedTeams & (1 << (1 - i / 6))) != 0 &&
+                    Mathf.Abs(position.x) <= ArenaWidth * .5f && Mathf.Abs(position.z) <= ArenaDepth * .5f &&
+                    position.y >= -5 && position.y <= 30;
+                if (!direct[i]) continue;
+                var direction = Waiting(i) - position; direction.y = 0;
+                impulses[i] = direction.normalized * speed + Vector3.up * speed;
+            }
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (direct[i]) continue;
+                for (int victim = 0; victim < players.Count; victim++)
+                    if (direct[victim] && (Holds(players[i].handL, players[victim]) || Holds(players[i].handR, players[victim])))
+                    {
+                        // Transfer the held victim's launch once, without detonating or respawning the holder.
+                        impulses[i] = impulses[victim]; break;
+                    }
+            }
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (direct[i])
+                {
+                    roles[i] = 0;
+                    respawnAt[i] = Time.time + delay;
+                    StartCoroutine(BlastFlash(players[i].Hips.position));
+                    players[i].TakeHit(impulses[i], delay, 0, true);
+                }
+                else if (impulses[i].sqrMagnitude > 0)
+                    players[i].TakeHit(impulses[i], 0, 0, false);
+            }
+            notice = "해체 성공! 문 열림 · 적팀 폭발 후 입구 복귀 · 잡고 있으면 함께 날아갑니다";
+        }
         System.Collections.IEnumerator BlastFlash(Vector3 position)
         {
-            var flash = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            flash.name = "Bomb burst"; flash.transform.SetParent(transform, true);
-            flash.transform.position = position;
-            var collider = flash.GetComponent<Collider>(); collider.enabled = false; Destroy(collider);
-            flash.GetComponent<Renderer>().sharedMaterial = blastMaterial;
-            for (float elapsed = 0; elapsed < .35f; elapsed += Time.deltaTime)
+            var root = new GameObject("Bomb explosion");
+            root.transform.SetParent(transform, false); root.transform.position = position;
+            var sparks = new Transform[12];
+            var directions = new Vector3[12];
+            for (int i = 0; i < sparks.Length; i++)
             {
-                flash.transform.localScale = Vector3.one * Mathf.Lerp(.3f, 2f, elapsed / .35f);
+                var spark = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                spark.transform.SetParent(root.transform, false);
+                var collider = spark.GetComponent<Collider>(); collider.enabled = false; Destroy(collider);
+                spark.GetComponent<Renderer>().sharedMaterial = blastMaterial;
+                sparks[i] = spark.transform;
+                directions[i] = Quaternion.Euler(i * 137.5f, i * 67f, 0) * Vector3.up;
+            }
+            for (float elapsed = 0; elapsed < .9f; elapsed += Time.deltaTime)
+            {
+                float t = elapsed / .9f;
+                for (int i = 0; i < sparks.Length; i++)
+                {
+                    sparks[i].localPosition = directions[i] * (t * 5f);
+                    sparks[i].localScale = Vector3.one * Mathf.Lerp(1.4f, .05f, t);
+                }
                 yield return null;
             }
-            Destroy(flash);
+            Destroy(root);
         }
         void DriveSparringBots()
         {
@@ -243,7 +304,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i];
-                if (i == selected || (roles[i] != 1 && roles[i] != 4) || rules.Teams[i / 6].Recovery > 0 ||
+                if (respawnAt[i] > 0 || i == selected || (roles[i] != 1 && roles[i] != 4) || rules.Teams[i / 6].Recovery > 0 ||
                     pawn.State != PawnState.Active || pawn.Hips.position.y < 5.2f) continue;
                 RagdollPawn enemy = null; float nearest = float.PositiveInfinity;
                 foreach (var other in players)
