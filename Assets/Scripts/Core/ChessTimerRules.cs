@@ -2,7 +2,7 @@ using System;
 
 namespace ChessFight.Network
 {
-    // Offline prototype rules. Inputs are unique grounded riders and nearby defusers per team.
+    // Offline prototype rules. Inputs are all occupants of each plate (either allegiance), plus defusers per team.
     public sealed class ChessTimerRules
     {
         public sealed class TeamState
@@ -38,8 +38,8 @@ namespace ChessFight.Network
         public int Step(float dt, int blueRiders, int redRiders, int blueWorkers, int redWorkers)
         {
             if (dt <= 0 || float.IsNaN(dt) || float.IsInfinity(dt)) return 0;
-            int blue = Teams[0].Complete || Teams[0].Recovery > 0 ? 0 : Math.Max(0, blueRiders);
-            int red = Teams[1].Complete || Teams[1].Recovery > 0 ? 0 : Math.Max(0, redRiders);
+            int blue = Teams[0].Complete ? 0 : Math.Max(0, blueRiders);
+            int red = Teams[1].Complete ? 0 : Math.Max(0, redRiders);
             int next = Teams[0].Complete ? (red >= SoloRiders ? 1 : -1)
                 : Teams[1].Complete ? (blue >= SoloRiders ? 0 : -1)
                 : blue == red ? -1 : blue > red ? 0 : 1;

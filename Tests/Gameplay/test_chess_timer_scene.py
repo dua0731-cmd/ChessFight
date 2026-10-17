@@ -1,5 +1,6 @@
 """Saved prototype wiring checks. Rule behavior is exercised by NetworkCoreTests."""
 import re
+import math
 import unittest
 from pathlib import Path
 
@@ -22,6 +23,20 @@ class ChessTimerSceneTests(unittest.TestCase):
             self.assertEqual(len(matches), 1, field)
             target = Path(str(matches[0])[:-5]).read_text()
             self.assertIn('&' + reference[1], target, field)
+
+    def test_larger_arena_and_walkup_slope_below_existing_slide_threshold(self):
+        layout = (ROOT / 'Assets/ChessFight/RagdollLab/Scripts/ChessTimerMinigame.Arena.cs').read_text()
+        def number(name):
+            return float(re.search(r'\b' + name + r' = ([\d.-]+)f', layout)[1])
+        ratio = number('ArenaWidth') * number('ArenaDepth') / (24 * 24)
+        self.assertGreaterEqual(ratio, 5)
+        self.assertLess(ratio, 5.2)
+        slope = math.degrees(math.atan2(number('ApproachHeight'), number('ApproachEndZ') - number('ApproachStartZ')))
+        tuning = (ROOT / 'Assets/ChessFight/RagdollLab/Settings/RagdollTuning.asset').read_text()
+        threshold = float(re.search(r'slopeAngleThreshold: ([\d.]+)', tuning)[1])
+        self.assertLess(slope, threshold)
+        self.assertNotIn('"Access step"', layout)
+        self.assertNotIn('"Team divider"', layout)
 
     def test_scene_local_references_and_menu_target_resolve(self):
         path = ROOT / 'Assets/Scenes/ChessTimerMinigame.unity'

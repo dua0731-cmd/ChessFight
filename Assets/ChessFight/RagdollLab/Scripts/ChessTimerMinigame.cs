@@ -8,7 +8,7 @@ namespace ChessFight.RagdollLab
 {
     // StateDrivenMover: standalone offline fixture. Switches respond to unique rider counts.
     // Assignment keys place test teammates, not network players.
-    public sealed class ChessTimerMinigame : MonoBehaviour
+    public sealed partial class ChessTimerMinigame : MonoBehaviour
     {
         public RagdollPawn pawnPrefab;
         public RagdollTuning tuning;
@@ -22,14 +22,18 @@ namespace ChessFight.RagdollLab
         [SerializeField, Min(1)] int soloRequiredRiders = 2;
         [SerializeField, Min(.1f)] float interactDistance = 1.8f;
         readonly List<RagdollPawn> players = new List<RagdollPawn>();
+        [SerializeField, Tooltip("B toggles rooftop sparring for unselected switch occupants.")] bool sparringBots = true;
+        readonly float[] nextShove = new float[12];
+        readonly List<Mesh> meshes = new List<Mesh>();
         readonly List<Material> materials = new List<Material>();
-        readonly int[] roles = new int[12]; // 0: wait/manual, 1: switch, 2: auto-defuse fixture.
+        readonly int[] roles = new int[12]; // 0: manual, 1: own plate, 2: defuse, 4: opposite plate.
         readonly int[] riders = new int[2], workers = new int[2];
         readonly bool[] exited = new bool[12];
-        readonly BoxCollider[] pads = new BoxCollider[2];
+        readonly Collider[] pads = new Collider[2];
+        readonly ChessTimerPlate[] occupancy = new ChessTimerPlate[2];
         readonly Rigidbody[] plateBodies = new Rigidbody[2];
         readonly GameObject[] gates = new GameObject[2];
-        readonly TextMesh[] clocks = new TextMesh[2];
+        readonly TextMesh[] clocks = new TextMesh[2], clockStatus = new TextMesh[2], crowdDisplays = new TextMesh[2];
         readonly TextMesh[,] panelLabels = new TextMesh[2, 3];
         readonly Material[] teamMaterials = new Material[2];
         ChessTimerRules rules;
@@ -40,9 +44,9 @@ namespace ChessFight.RagdollLab
         int selected;
         GUIStyle text, title, buttonStyle;
         string notice = "준비 완료 · Enter로 시작";
-        static float TeamX(int team) => team == 0 ? -5 : 5;
-        static Vector3 Panel(int team, int stage) => new Vector3(TeamX(team) + (stage - 1) * 2.5f, .7f, -2.5f);
-        static Vector3 Waiting(int index) => new Vector3(TeamX(index / 6) + (index % 3 - 1) * 1.2f, 0, -6 - index % 2);
+        static float TeamX(int team) => team == 0 ? -11 : 11;
+        static Vector3 Panel(int team, int stage) => new Vector3(TeamX(team) + (stage - 1) * 3f, .7f, 12);
+        static Vector3 Waiting(int index) => new Vector3(TeamX(index / 6) + (index < 6 ? -7.5f : 7.5f) + (index % 3 - 1) * 1.6f, 0, -21 - index % 2 * 1.5f);
 
         void Awake()
         {
@@ -87,8 +91,11 @@ namespace ChessFight.RagdollLab
             int team = index / 6;
             if (rules.Teams[team].Recovery > 0 || rules.Teams[team].Complete) return;
             roles[index] = role;
-            if (role == 1)
-                Place(index, new Vector3(TeamX(team) + (index % 3 - 1) * 1.3f, pads[team].bounds.max.y, 1 + index % 2 * 1.4f));
+            if (role == 1 || role == 4)
+            {
+                int side = role == 4 ? 1 - team : team;
+                Place(index, new Vector3(TeamX(side) + (index % 3 - 1) * 1.6f, pads[side].bounds.max.y, 2 + index % 2 * 2));
+            }
             else if (role == 2) PlaceAtPanel(index);
             else Place(index, Waiting(index));
         }
@@ -106,7 +113,12 @@ namespace ChessFight.RagdollLab
             // Equal initial allocation. Switch to each teammate to change it with 1/2/3.
             for (int team = 0; team < 2; team++)
             { Assign(team * 6 + 1, 1); Assign(team * 6 + 2, 1); Assign(team * 6 + 3, 2); }
-            for (int team = 0; team < 2; team++) gates[team].SetActive(true);
+            for (int side = 0; side < 2; side++)
+            {
+                gates[side].SetActive(true);
+                occupancy[side].ClearContacts();
+                riders[side] = workers[side] = 0;
+            }
         }
         void Update()
         {
@@ -121,10 +133,13 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.Alpha1)) Assign(selected, 1);
                 if (Input.GetKeyDown(KeyCode.Alpha2)) Assign(selected, 2);
                 if (Input.GetKeyDown(KeyCode.Alpha3)) Assign(selected, 0);
+                if (Input.GetKeyDown(KeyCode.Alpha4)) Assign(selected, 4);
+                if (Input.GetKeyDown(KeyCode.B)) sparringBots = !sparringBots;
                 if (Input.GetKeyDown(KeyCode.R) && rules.Teams[selected / 6].Recovery <= 0)
                 { roles[selected] = 0; Place(selected, Waiting(selected)); }
             }
             foreach (var pawn in players) pawn.SetInput(default);
+            DriveSparringBots();
             var local = players[selected];
             if (Application.isFocused && !menu && rules.Teams[selected / 6].Recovery <= 0)
             {
@@ -142,7 +157,7 @@ namespace ChessFight.RagdollLab
                 var pawn = players[i];
                 if (!pawn.IsFinite() || pawn.Hips.position.y < -5)
                 { roles[i] = 0; Place(i, Waiting(i)); }
-                if (rules.Teams[i / 6].Complete && pawn.Hips.position.z > 9 && Mathf.Abs(pawn.Hips.position.x - TeamX(i / 6)) < 2)
+                if (rules.Teams[i / 6].Complete && pawn.Hips.position.z > 24 && Mathf.Abs(pawn.Hips.position.x - TeamX(i / 6)) < 2.5f)
                     exited[i] = true;
             }
             UpdateViews();
@@ -152,17 +167,16 @@ namespace ChessFight.RagdollLab
             if (players.Count != 12) return;
             for (int team = 0; team < 2; team++)
             {
-                var target = new Vector3(TeamX(team), rules.PressedTeam == team ? 3f : 3.2f, 2);
+                var target = new Vector3(TeamX(team), rules.PressedTeam == team ? 3.8f : 4f, 3);
                 plateBodies[team].MovePosition(Vector3.MoveTowards(plateBodies[team].position, target, .3f * Time.fixedDeltaTime));
             }
-            riders[0] = riders[1] = workers[0] = workers[1] = 0;
+            riders[0] = occupancy[0].Occupants; riders[1] = occupancy[1].Occupants;
+            workers[0] = workers[1] = 0;
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i]; int team = i / 6;
                 if (rules.Teams[team].Complete || rules.Teams[team].Recovery > 0 || pawn.State != PawnState.Active) continue;
-                // Check the actual plate collider, counting each pawn only once.
                 var origin = pawn.Hips.position;
-                if (pawn.Grounded && pads[team].Raycast(new Ray(origin, Vector3.down), out var hit, pawn.standHeight + .35f)) riders[team]++;
                 bool working = roles[i] == 2 || (i == selected && !menu && Application.isFocused && Input.GetKey(KeyCode.F));
                 if (working && pawn.Grounded && Vector3.Distance(origin, Panel(team, rules.Teams[team].Stage)) <= interactDistance)
                     workers[team]++;
@@ -188,9 +202,36 @@ namespace ChessFight.RagdollLab
             notice = (team == 0 ? "청팀" : "홍팀") + " 폭발! 완료 단계 유지 · 현재 단계 초기화";
             for (int i = team * 6; i < team * 6 + 6; i++)
             {
-                var away = players[i].Hips.position - new Vector3(TeamX(team), 0, 2);
+                var away = players[i].Hips.position - new Vector3(TeamX(team), 0, 3);
                 away.y = 0;
                 players[i].TakeHit(away.normalized * blastSpeed + Vector3.up * blastSpeed, stunSeconds, 0, true);
+            }
+        }
+        void DriveSparringBots()
+        {
+            if (!started || !sparringBots) return;
+            for (int i = 0; i < players.Count; i++)
+            {
+                var pawn = players[i];
+                if (i == selected || (roles[i] != 1 && roles[i] != 4) || rules.Teams[i / 6].Recovery > 0 ||
+                    rules.Teams[i / 6].Complete || pawn.State != PawnState.Active || pawn.Hips.position.y < 3.9f) continue;
+                RagdollPawn enemy = null; float nearest = float.PositiveInfinity;
+                foreach (var other in players)
+                {
+                    if (other.Team == pawn.Team || other.Hips.position.y < 3.9f) continue;
+                    float distance = (other.Hips.position - pawn.Hips.position).sqrMagnitude;
+                    if (distance < nearest) { enemy = other; nearest = distance; }
+                }
+                if (enemy == null) continue;
+                Vector3 delta = enemy.Hips.position - pawn.Hips.position; delta.y = 0;
+                Vector3 walk = delta;
+                // Cross the open central bridge via its centre, never diagonally through its side gap.
+                if (pawn.Hips.position.x * enemy.Hips.position.x < 0 && Mathf.Abs(pawn.Hips.position.z - 3) > .7f)
+                    walk = new Vector3(0, 0, 3 - pawn.Hips.position.z);
+                bool shove = delta.magnitude < 1.4f && Time.time >= nextShove[i];
+                if (shove) nextShove[i] = Time.time + 1.3f;
+                pawn.SetInput(new PawnInput { move = delta.magnitude > .7f ? walk.normalized * .65f : Vector3.zero,
+                    aim = delta.normalized, shove = shove, shoveHeld = shove });
             }
         }
         void RefreshCursor() { Cursor.lockState = menu ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = menu; }
@@ -201,7 +242,11 @@ namespace ChessFight.RagdollLab
             {
                 var state = rules.Teams[team];
                 string status = state.Complete ? "해체 완료 / 문 열림" : state.Recovery > 0 ? "폭발 / 재정비" : rules.PressedTeam == team ? "시간 정지" : "시간 감소";
-                clocks[team].text = (team == 0 ? "BLUE" : "RED") + $"  {state.Remaining:00.0}\n{status}";
+                int seconds = Mathf.CeilToInt(state.Remaining);
+                clocks[team].text = $"{seconds / 60:00}:{seconds % 60:00}";
+                UpdateDigits(team, seconds);
+                crowdDisplays[team].text = $"{riders[team]:00}\nPLAYERS";
+                clockStatus[team].text = (team == 0 ? "BLUE · " : "RED · ") + status;
                 for (int stage = 0; stage < 3; stage++)
                     panelLabels[team, stage].text = (stage == 0 ? "PAWN" : stage == 1 ? "KNIGHT" : "ROOK") + "\n" +
                         (stage < state.Stage ? "OK" : stage == state.Stage ? $"F : {state.Work / rules.WorkSeconds:P0}" : "LOCKED");
@@ -228,43 +273,6 @@ namespace ChessFight.RagdollLab
             if (label.font != null) go.GetComponent<Renderer>().sharedMaterial = label.font.material;
             return label;
         }
-        void BuildArena()
-        {
-            var ivory = Mat(new Color(.83f, .76f, .60f)); var dark = Mat(new Color(.12f, .10f, .09f));
-            var gold = Mat(new Color(.9f, .65f, .15f));
-            teamMaterials[0] = Mat(new Color(.2f, .55f, .95f)); teamMaterials[1] = Mat(new Color(.95f, .3f, .25f));
-            for (int x = 0; x < 12; x++) for (int z = 0; z < 12; z++)
-                Box("Chess floor", new Vector3((x - 5.5f) * 2, -.25f, (z - 5.5f) * 2), new Vector3(2, .5f, 2), (x + z) % 2 == 0 ? ivory : dark);
-            Box("Shared giant chess clock", new Vector3(0, 1.5f, 3), new Vector3(18, 3, 3), dark);
-            for (int team = 0; team < 2; team++)
-            {
-                float x = TeamX(team); var color = teamMaterials[team];
-                var pad = Box("Team switch standing plate", new Vector3(x, 3.2f, 2), new Vector3(4.8f, .5f, 3.6f), color);
-                pads[team] = pad.GetComponent<BoxCollider>();
-                var body = pad.AddComponent<Rigidbody>(); body.isKinematic = true; body.useGravity = false;
-                body.interpolation = RigidbodyInterpolation.Interpolate; plateBodies[team] = body;
-                ImportedMovingSurface.BindDynamic(body, point => body.GetPointVelocity(point), () => Quaternion.identity, () => started);
-                Box("Switch rim", new Vector3(x, 3.05f, 3.9f), new Vector3(4.8f, .15f, .15f), gold, false);
-                for (int step = 0; step < 12; step++)
-                    Box("Access step", new Vector3(x + (team == 0 ? -3.5f : 3.5f), (step + 1) * .14f, -5.5f + step * .6f),
-                        new Vector3(1.8f, (step + 1) * .28f, .65f), ivory);
-                Box("Top access landing", new Vector3(x + (team == 0 ? -2.8f : 2.8f), 3.2f, 1.7f), new Vector3(1.4f, .5f, 2), ivory);
-                clocks[team] = Label("Clock display", new Vector3(x, 2, 1.46f), "45.0", .5f);
-                for (int stage = 0; stage < 3; stage++)
-                {
-                    Box("Defuse console " + stage, Panel(team, stage), new Vector3(1.2f, 1.4f, .65f), color);
-                    panelLabels[team, stage] = Label("Console instruction", Panel(team, stage) + new Vector3(0, 1.2f, -.4f), "", .18f);
-                }
-                // A wall across the full arena makes the team's gate a physical exit.
-                Box("Exit wall left", new Vector3(x - 4f, 2, 8), new Vector3(4, 4, .5f), dark);
-                Box("Exit wall right", new Vector3(x + 4f, 2, 8), new Vector3(4, 4, .5f), dark);
-                gates[team] = Box("Team exit gate", new Vector3(x, 2, 8), new Vector3(4, 4, .5f), color);
-                Label("Exit label", new Vector3(x, 4.5f, 7.7f), "NEXT STAGE", .25f);
-            }
-            Box("Team divider", new Vector3(0, 2, 0), new Vector3(.25f, 4, 24), dark);
-            Box("Left boundary", new Vector3(-11, 2, 0), new Vector3(.5f, 4, 24), dark);
-            Box("Right boundary", new Vector3(11, 2, 0), new Vector3(.5f, 4, 24), dark);
-        }
         void OnGUI()
         {
             if (players.Count == 0) return;
@@ -283,15 +291,15 @@ namespace ChessFight.RagdollLab
                 var state = rules.Teams[team]; int escaped = 0;
                 for (int i = team * 6; i < team * 6 + 6; i++) if (exited[i]) escaped++;
                 GUI.Label(new Rect(24, 58 + team * 38, 750, 36),
-                    $"{(team == 0 ? "청팀" : "홍팀")} {state.Remaining:0.0}초 | 발판 {riders[team]}명 · 해체 {workers[team]}명 | {state.Stage}/3단계 · {state.Work / rules.WorkSeconds:P0} | " +
+                    $"{(team == 0 ? "청팀" : "홍팀")} {state.Remaining:0.0}초 | 발판 전체 {riders[team]}명 · 해체 {workers[team]}명 | {state.Stage}/3단계 · {state.Work / rules.WorkSeconds:P0} | " +
                     (state.Complete ? $"문 열림 · 통과 {escaped}/6" : state.Recovery > 0 ? $"재정비 {state.Recovery:0.0}초" : rules.PressedTeam == team ? "시간 정지" : "시간 감소"), text);
             }
-            GUI.Label(new Rect(24, 138, 750, 40), $"선택: {players[selected].DisplayName} · {(roles[selected] == 1 ? "발판" : roles[selected] == 2 ? "자동 해체" : "직접 조작 / 대기")}\n{notice}", text);
-            GUI.Label(new Rect(24, 183, 750, 74), "WASD 이동 · Space 점프 · F 길게 해체 · Tab 다음 팀원 · T 팀 전환\n시험 배치: 1 발판 / 2 자동 해체 / 3 대기 · R 복귀 · F3 전체 초기화\nEnter 시작 · Esc 마우스 해제 (진행은 계속됨) · 이동하면 자동 역할 해제", text);
+            GUI.Label(new Rect(24, 138, 750, 40), $"선택: {players[selected].DisplayName} · {(roles[selected] == 1 ? "발판" : roles[selected] == 2 ? "자동 해체" : roles[selected] == 4 ? "상대 발판" : "직접 조작 / 대기")}\n{notice}", text);
+            GUI.Label(new Rect(24, 183, 750, 74), "WASD 이동 · Space 점프 · 좌클릭 밀치기 · 우클릭 잡기 · F 해체\nTab 팀원 · T 팀 변경 · 1 우리 발판 / 2 해체 / 3 대기 / 4 상대 발판\nB 대련 봇 · R 복귀 · F3 초기화 · Enter 시작 · Esc 메뉴", text);
             if (menu)
             {
                 GUI.Box(new Rect(12, 275, 780, 170), GUIContent.none);
-                GUI.Label(new Rect(24, 282, 745, 65), "동수면 양쪽 시간이 감소합니다. 발판 다수 팀은 시간이 멈춥니다.\n아래 PAWN → KNIGHT → ROOK 장치에서 해체하세요. 폭발 시 현재 단계만 초기화됩니다.\n시험 배치 키는 팀원을 순간 이동시킵니다. 자동 해체 팀원은 단계가 끝나면 다음 장치로 이동합니다.", text);
+                GUI.Label(new Rect(24, 282, 745, 65), $"발판 위 인원은 적·아군 모두 셉니다. 동수면 양쪽 시간 감소. 대련 봇: {(sparringBots ? "켜짐" : "꺼짐")} (B)\n양쪽 경사로로 올라가 연결 발판에서 싸우세요. 가장자리에는 난간이 없습니다.\n시계 뒤쪽 PAWN → KNIGHT → ROOK에서 F 해체. 숫자키 배치는 시험용 순간이동입니다.", text);
                 if (GUI.Button(new Rect(24, 363, 235, 55), started ? "계속 조작" : "게임 시작", buttonStyle))
                 { started = true; notice = "해체 진행 중 · 발판과 해체 인원을 배분하세요"; menu = false; RefreshCursor(); }
                 if (GUI.Button(new Rect(275, 363, 235, 55), "다음 팀원", buttonStyle)) Select(selected + 1);
@@ -303,6 +311,7 @@ namespace ChessFight.RagdollLab
         {
             if (!initialized) return;
             Physics.gravity = savedGravity; Cursor.lockState = savedLock; Cursor.visible = savedCursor;
+            foreach (var mesh in meshes) if (mesh != null) Destroy(mesh);
             foreach (var material in materials) if (material != null) Destroy(material);
         }
     }

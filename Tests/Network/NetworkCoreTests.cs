@@ -38,6 +38,15 @@ public static class NetworkCoreTests
                 r.Step(1, 5, 0, 3, 0);
                 Check(r.Teams[0].Remaining == 5 && r.Teams[0].Work == 0 && r.Teams[0].Recovery == 2, "grace blocks work and ticking");
             });
+            Test("Chess timer compares occupied sides even during recovery without allegiance filtering", () => {
+                var r = new ChessTimerRules(1, 10, 3, 0);
+                r.Step(1, 0, 0, 0, 0); // Both bombs enter recovery.
+                r.Step(.1f, 3, 1, 0, 0); // Three bodies on blue, including any opponents.
+                Check(r.PressedTeam == 0, "recovery does not erase physical occupants");
+                r.Step(.1f, 1, 3, 0, 0);
+                Check(r.PressedTeam == 1, "switch follows occupied side");
+                r.Step(.1f, 2, 2, 0, 0); Check(r.PressedTeam == -1, "mixed-team tie");
+            });
             Test("Chess timer completion is permanent and unlocks solo switch rule", () => {
                 var r = new ChessTimerRules(20, 1, 3, 0, 2);
                 for (int i = 0; i < 3; i++) r.Step(1, 1, 0, 1, 0);
