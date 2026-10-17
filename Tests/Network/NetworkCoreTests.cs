@@ -18,6 +18,43 @@ public static class NetworkCoreTests
     {
         try
         {
+            Test("Chess timer ties run both clocks and a stable majority pauses only its team", () => {
+                var r = new ChessTimerRules(10, 2, 3, .35f);
+                r.Step(.1f, 2, 2, 0, 0);
+                Check(r.PressedTeam == -1 && Math.Abs(r.Teams[0].Remaining - 9.9f) < .001f, "tie ticks");
+                r.Step(.2f, 3, 2, 0, 0); Check(r.PressedTeam == -1, "debounce");
+                float before = r.Teams[0].Remaining;
+                r.Step(.2f, 3, 2, 0, 0);
+                Check(r.PressedTeam == 0 && r.Teams[0].Remaining == before && r.Teams[1].Remaining < before, "blue paused");
+                r.Step(.1f, 2, 3, 0, 0); Check(r.PressedTeam == -1, "old protection ends immediately");
+            });
+            Test("Chess timer explosion retains finished stages and resets only active work", () => {
+                var r = new ChessTimerRules(5, 1, 3, 0);
+                r.Step(1, 1, 0, 1, 0); r.Step(.4f, 1, 0, 1, 0);
+                Check(r.Teams[0].Stage == 1 && r.Teams[0].Work > 0, "work before blast");
+                int mask = r.Step(5, 0, 0, 0, 0);
+                Check((mask & 1) != 0 && r.Teams[0].Stage == 1 && r.Teams[0].Work == 0, "partial reset");
+                Check(r.Teams[0].Remaining == 5 && r.Teams[0].Recovery == 3, "rearm");
+                r.Step(1, 5, 0, 3, 0);
+                Check(r.Teams[0].Remaining == 5 && r.Teams[0].Work == 0 && r.Teams[0].Recovery == 2, "grace blocks work and ticking");
+            });
+            Test("Chess timer completion is permanent and unlocks solo switch rule", () => {
+                var r = new ChessTimerRules(20, 1, 3, 0, 2);
+                for (int i = 0; i < 3; i++) r.Step(1, 1, 0, 1, 0);
+                Check(r.Teams[0].Complete, "three stages");
+                float blue = r.Teams[0].Remaining, red = r.Teams[1].Remaining;
+                r.Step(1, 6, 1, 3, 0);
+                Check(r.PressedTeam == -1 && r.Teams[0].Remaining == blue && r.Teams[1].Remaining < red, "completed side ignored");
+                red = r.Teams[1].Remaining; r.Step(1, 6, 2, 0, 0);
+                Check(r.PressedTeam == 1 && r.Teams[1].Remaining == red, "two riders pause solo team");
+                r.Reset(); Check(!r.Teams[0].Complete && r.Teams[0].Remaining == 20 && r.PressedTeam == -1, "full reset");
+            });
+            Test("Chess timer expiry wins simultaneous work and rejects invalid time steps", () => {
+                var r = new ChessTimerRules(1, 1, 3, 0);
+                Check(r.Step(1, 0, 0, 3, 3) == 3 && r.Teams[0].Stage == 0, "both explode before work");
+                r.Reset(); r.Step(float.NaN, 3, 0, 3, 0); r.Step(float.PositiveInfinity, 3, 0, 3, 0); r.Step(-1, 3, 0, 3, 0);
+                Check(r.Teams[0].Remaining == 1 && r.Teams[0].Work == 0, "invalid dt ignored");
+            });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
                 r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");

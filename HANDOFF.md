@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R84(사용자, 10-17): 체스 타이머 폭탄 프로토타입.** 독립 `ChessTimerMinigame.unity`, 래그돌12명·타이머 발판·3단계 해체·팀 폭발/재정비·팀별 문/통과·시험 배치. [실행](Docs/KingRush/CHESS_TIMER_MINIGAME.md). 구조24·Core87·세션39·7개 런타임 컴파일 통과(검사 환경 복구). **Unity/Editor·온라인 미확인/미연결**.
+
 > **R83(사용자, 10-17): 접이식 무부하 수평.** 판 자체중력만 제외·실제 외부 하중/관성 유지. 기본 스프링으로 하차 후 수평 복귀(0은 복귀 없음). 구조22 통과·C#/Unity 미검증.
 
 > **R82(사용자, 10-17): 접이식 경고 제거·각도/Inspector 보강.** Warning Flash/fraction 제거, Fold Angle 제한 실시간 갱신/실제각도 표시·기본 복귀강도150. 빈 연결 참조 토글 제거·참조 직접 표시. 구조22 통과. 이번 환경 Mono/dotnet/Unity 없어 C# 컴파일·실기 미검증.
@@ -100,9 +102,11 @@
 
 | 항목 | 상태 |
 |---|---|
+| **체스 타이머 미니게임(R84)** | 오프라인 프로토타입·자동 검사 통과·Unity 대기 | [실행](Docs/KingRush/CHESS_TIMER_MINIGAME.md) |
 | **접이식 무부하 수평(R83)** | 구조22 통과·C#/Unity 미검증 | [상세](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **접이식 경고/각도·Inspector(R82)** | 구조22 통과·C#/Unity 미검증 | [상세](Docs/KingRush/OBSTACLE_CLASSES.md) |
 | **접이식·피스톤·바람(R81)** | 하향 하중 접힘·승강 발판·사각/원형 바람. Unity 대기 |
+| **체스 타이머 미니게임(R84)** | 독립 시험 씬·역할 분배·폭발/해체/문. 구조24·Core87·세션39·런타임7 통과, Unity 대기 |
 | **접이식 무부하 수평(R83)** | 판 자체중력 제외·추가 접촉 하중/스프링 복귀 유지. 구조22·Unity 대기 |
 | **접이식 각도·빈 Inspector(R82)** | 경고 제거·기본스프링150·최대각도 실시간 반영. 구조22, C#/Unity 미검증 |
 | **전체 장애물 루트 설정(R80)** | 프리팹32개·부품별 실제 값 편집·이동 속도 이전. Unity 대기 |
@@ -183,6 +187,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R84:** 메뉴 ChessFight → Minigames → Open Chess Timer Prototype → Play/Enter. 발판 경쟁·해체/F·폭발·역할 배치·문 통과 확인. 현재 3단계 해체는 누르기 작업이며 퍼즐/온라인은 후속. 클라우드 `source /workspace/.chessfight-cloud/activate.sh` 후 `bash /workspace/.chessfight-cloud/run-tests.sh --compile` 복구됨.
 
 **R83:** Unity에서 접이식 다리 무부하 수평·경첩/끝/상자 하중·하차 후 복귀 확인. Return Spring 0은 복귀하지 않음. C# 컴파일도 필요.
 
