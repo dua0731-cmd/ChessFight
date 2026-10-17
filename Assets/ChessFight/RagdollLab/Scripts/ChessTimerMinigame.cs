@@ -99,7 +99,7 @@ namespace ChessFight.RagdollLab
             if (role == 1 || role == 4)
             {
                 int side = role == 4 ? 1 - team : team;
-                Place(index, rocker.position + rocker.rotation * new Vector3(TeamX(side) + (index % 3 - 1) * 1.6f, .25f, -1 + index % 2 * 2));
+                Place(index, rocker.position + rocker.rotation * new Vector3(TeamX(side) + (index % 3 - 1) * 1.6f, RockerLocalTop, -1 + index % 2 * 2));
             }
             else if (role == 2) PlaceAtPanel(index);
             else Place(index, Waiting(index));

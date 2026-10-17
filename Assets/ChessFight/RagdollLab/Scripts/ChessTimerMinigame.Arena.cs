@@ -11,7 +11,10 @@ namespace ChessFight.RagdollLab
         readonly GameObject[,,] digits = new GameObject[2, 4, 7];
         static readonly int[] DigitMasks = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f };
         const float ArenaWidth = 54f, ArenaDepth = 54f;
-        const float ApproachStartZ = -22f, ApproachEndZ = -.7f, ApproachHeight = 5.9f;
+        const float ApproachStartZ = -22f, ApproachEndZ = -.7f, ApproachHeight = 6f;
+
+        const float RockerHeight = 5f, RockerThickness = 2f;
+        const float RockerLocalTop = RockerThickness * .5f;
 
         void BuildArena()
         {
@@ -31,13 +34,13 @@ namespace ChessFight.RagdollLab
             // One clock and one mechanically coupled rocker; the two teams occupy its halves.
             RoundedBox("Clock rubber base", new Vector3(0, .25f, 3), new Vector3(22.4f, .5f, 10.4f), .23f, rubber, false);
             RoundedBox("Single chess clock housing", new Vector3(0, 2.6f, 3), new Vector3(22, 5.2f, 10), 1.1f, charcoal);
-            var top = RoundedBox("Coupled white rocker", new Vector3(0, 5.65f, 3), new Vector3(20.4f, .5f, 8.5f), .24f, cream);
+            var top = RoundedBox("Coupled white rocker", new Vector3(0, RockerHeight, 3), new Vector3(20.4f, RockerThickness, 8.5f), .24f, cream);
             occupancy = top.AddComponent<ChessTimerPlate>();
             rocker = top.AddComponent<Rigidbody>(); rocker.isKinematic = true; rocker.useGravity = false;
             rocker.interpolation = RigidbodyInterpolation.Interpolate;
             ImportedMovingSurface.BindDynamic(rocker, point => Vector3.Cross(rockerAngularVelocity, point - rocker.position),
                 () => rockerDelta, () => isActiveAndEnabled);
-            var seam = Box("Button centre seam", new Vector3(0, 5.905f, 3), new Vector3(.10f, .012f, 8.1f), rubber, false);
+            var seam = Box("Button centre seam", new Vector3(0, RockerHeight + RockerLocalTop + .005f, 3), new Vector3(.10f, .012f, 8.1f), rubber, false);
             seam.transform.SetParent(top.transform, true);
             RoundedBox("Shared LCD bezel", new Vector3(0, 2.1f, -2.06f), new Vector3(19.8f, 1.9f, .24f), .11f, rubber, false);
             for (int control = 0; control < 4; control++)
@@ -50,7 +53,7 @@ namespace ChessFight.RagdollLab
             for (int side = 0; side < 2; side++)
             {
                 float x = TeamX(side); var accent = teamMaterials[side];
-                var stripe = RoundedBox("Button side colour", new Vector3(x, 5.91f, 6.6f), new Vector3(8, .015f, .18f), .006f, accent, false);
+                var stripe = RoundedBox("Button side colour", new Vector3(x, RockerHeight + RockerLocalTop + .01f, 6.6f), new Vector3(8, .015f, .18f), .006f, accent, false);
                 stripe.transform.SetParent(top.transform, true);
                 RoundedBox("Team LCD window", new Vector3(x, 2.1f, -2.2f), new Vector3(8.8f, 1.5f, .1f), .045f, lcd, false);
                 clocks[side] = Label("LCD countdown", new Vector3(x - 1.8f, 2.15f, -2.27f), "00:45", .62f);
@@ -80,7 +83,8 @@ namespace ChessFight.RagdollLab
                 gates[side] = Box("Team exit gate", new Vector3(x, 2, 23), new Vector3(5, 4, .5f), accent);
                 Label("Exit label", new Vector3(x, 4.6f, 22.6f), "NEXT STAGE", .35f);
             }
-            // Perimeter only; there is no wall between teams.
+            // Separate the ground-level consoles, leaving the shared rooftop open.
+            Box("Defuse area divider", new Vector3(0, 2.25f, 15.5f), new Vector3(.5f, 4.5f, 15.5f), walnut);
             Box("Exit wall centre", new Vector3(0, 2, 23), new Vector3(6, 4, .5f), walnut);
             Box("Exit wall left", new Vector3(-17.5f, 2, 23), new Vector3(19, 4, .5f), walnut);
             Box("Exit wall right", new Vector3(17.5f, 2, 23), new Vector3(19, 4, .5f), walnut);
@@ -105,7 +109,7 @@ namespace ChessFight.RagdollLab
         {
             float sign = side == 0 ? -1 : 1;
             var from = new Vector3(sign * 15, ApproachHeight, 3);
-            var to = rocker.position + rotation * new Vector3(sign * 9.8f, .25f, 0);
+            var to = rocker.position + rotation * new Vector3(sign * 9.8f, RockerLocalTop, 0);
             var facing = Quaternion.LookRotation((to - from).normalized, Vector3.up);
             var centre = (from + to) * .5f - facing * Vector3.up * .10f;
             var body = entryFlaps[side];
