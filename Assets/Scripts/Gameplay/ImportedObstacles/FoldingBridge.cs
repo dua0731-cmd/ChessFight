@@ -6,7 +6,7 @@ namespace ChessFight.ProtectKing
 {
     public enum FoldingBridgeState { Open = 0, Folding = 2, Closed = 3 }
 
-    // StateDrivenMover: gravity and actual contact torque fold each panel downward. Offline physics.
+    // StateDrivenMover: external contact loads fold each panel downward. Offline physics.
     [DefaultExecutionOrder(-100)]
     public sealed class FoldingBridge : Obstacle
     {
@@ -14,7 +14,7 @@ namespace ChessFight.ProtectKing
         public Rigidbody LeftPivot, RightPivot;
         [SerializeField, Range(0f, 85f), Tooltip("Maximum downward angle, not a forced target. Reduce Return Spring if the panel stops before this limit.")] public float FoldAngle = 70f;
         [SerializeField, Min(1f)] float panelMass = 12f;
-        [SerializeField, Min(0f), Tooltip("Return spring balancing the panel and rider weight. Lower values fold more easily.")] float returnSpring = 150f;
+        [SerializeField, Min(0f), Tooltip("Returns an unloaded panel to horizontal. Lower values fold more easily under external load; zero disables return.")] float returnSpring = 150f;
         [SerializeField, Min(0f)] float returnDamper = 250f;
         [SerializeField, Min(1f)] float maximumFoldSpeed = 45f;
         public UnityEvent OnFolding = new UnityEvent(), OnClosed = new UnityEvent(), OnOpened = new UnityEvent();
@@ -38,7 +38,9 @@ namespace ChessFight.ProtectKing
         }
         HingeJoint ConfigurePivot(Rigidbody body)
         {
-            body.useGravity = true;
+            // The hinge supports the panel's own weight. Other bodies retain their
+            // gravity and transmit their load through the normal collision solver.
+            body.useGravity = false;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             body.solverIterations = 24; body.solverVelocityIterations = 12;
@@ -82,7 +84,7 @@ namespace ChessFight.ProtectKing
             spring.spring = Mathf.Max(0f, returnSpring); spring.damper = Mathf.Max(0f, returnDamper); spring.targetPosition = 0f;
             joint.spring = spring; joint.useSpring = returnSpring > 0f;
             body.isKinematic = !Simulating;
-            // Unlike the balanced bridge, each panel's centre of mass must remain away from its hinge.
+            // Preserve the actual mass distribution and rotational inertia for contact loads.
             body.ResetCenterOfMass(); body.ResetInertiaTensor();
             if (!body.isKinematic) body.WakeUp();
         }

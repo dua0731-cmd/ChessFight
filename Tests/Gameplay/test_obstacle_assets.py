@@ -301,7 +301,7 @@ class ObstacleAssets(unittest.TestCase):
         for path in self.scripts.values():
             self.assertNotRegex(path.read_text(), r"\[SerializeField\] public \w+ \w+\s*=>", str(path))
 
-    def test_folding_panels_use_downward_gravity_hinges_with_mount_clearance(self):
+    def test_folding_panels_ignore_self_weight_but_keep_dynamic_load_hinges(self):
         prefab = PREFABS / "12_FoldingBridge.prefab"
         records = blocks(prefab.read_text())
         component, = [b for b in records.values() if "::ChessFight.ProtectKing.FoldingBridge\n" in b]
@@ -311,12 +311,14 @@ class ObstacleAssets(unittest.TestCase):
             body_id = re.search(r"fileID: (\d+)", data[field])[1]
             body = fields(records[body_id])
             self.assertEqual(body["m_IsKinematic"], "0")
-            self.assertEqual(body["m_UseGravity"], "1")
+            self.assertEqual(body["m_UseGravity"], "0")
             self.assertGreater(float(body["m_Mass"]), 0)
         for mount in ("6861347175342721897", "728252298897654261"):
             value = fields(records[mount])["m_LocalPosition"]
             self.assertGreaterEqual(abs(float(re.search(r"x: ([\d.-]+)", value)[1])) - 1.5 - 4, .35)
         source = (CODE / "FoldingBridge.cs").read_text()
+        self.assertIn("body.useGravity = false", source)
+        self.assertNotIn("body.centerOfMass = Vector3.zero", source)
         self.assertNotIn("MoveRotation", source)
         self.assertNotIn("Evaluate(float elapsed)", source)
         self.assertIn("body.ResetCenterOfMass()", source)
