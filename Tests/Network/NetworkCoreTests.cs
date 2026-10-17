@@ -19,7 +19,7 @@ public static class NetworkCoreTests
         try
         {
             Test("Chess timer ties run both clocks and a stable majority pauses only its team", () => {
-                var r = new ChessTimerRules(10, 2, 3, .35f);
+                var r = new ChessTimerRules(10, 2, .35f);
                 r.Step(.1f, 2, 2, 0, 0);
                 Check(r.PressedTeam == -1 && Math.Abs(r.Teams[0].Remaining - 9.9f) < .001f, "tie ticks");
                 r.Step(.2f, 3, 2, 0, 0); Check(r.PressedTeam == -1, "debounce");
@@ -28,27 +28,24 @@ public static class NetworkCoreTests
                 Check(r.PressedTeam == 0 && r.Teams[0].Remaining == before && r.Teams[1].Remaining < before, "blue paused");
                 r.Step(.1f, 2, 3, 0, 0); Check(r.PressedTeam == -1, "old protection ends immediately");
             });
-            Test("Chess timer explosion retains finished stages and resets only active work", () => {
-                var r = new ChessTimerRules(5, 1, 3, 0);
+            Test("Chess timer expiry opens its gate once without rearming or completing defuse", () => {
+                var r = new ChessTimerRules(5, 1, 0);
                 r.Step(1, 1, 0, 1, 0); r.Step(.4f, 1, 0, 1, 0);
-                Check(r.Teams[0].Stage == 1 && r.Teams[0].Work > 0, "work before blast");
                 int mask = r.Step(5, 0, 0, 0, 0);
-                Check((mask & 1) != 0 && r.Teams[0].Stage == 1 && r.Teams[0].Work == 0, "partial reset");
-                Check(r.Teams[0].Remaining == 5 && r.Teams[0].Recovery == 3, "rearm");
-                r.Step(1, 5, 0, 3, 0);
-                Check(r.Teams[0].Remaining == 5 && r.Teams[0].Work == 0 && r.Teams[0].Recovery == 2, "grace blocks work and ticking");
+                Check(mask == 3 && r.ExpiredTeams == 3, "both expiry events");
+                Check(r.Teams[0].GateOpen && r.Teams[0].Expired && !r.Teams[0].Complete, "timeout is not successful defuse");
+                Check(r.Teams[0].Remaining == 0 && r.Teams[0].Stage == 1, "zero retained");
+                Check(r.Step(5, 0, 0, 3, 3) == 0 && r.Teams[0].Stage == 1, "no repeated explosion or work after expiry");
             });
-            Test("Chess timer compares occupied sides even during recovery without allegiance filtering", () => {
-                var r = new ChessTimerRules(1, 10, 3, 0);
-                r.Step(1, 0, 0, 0, 0); // Both bombs enter recovery.
-                r.Step(.1f, 3, 1, 0, 0); // Three bodies on blue, including any opponents.
-                Check(r.PressedTeam == 0, "recovery does not erase physical occupants");
-                r.Step(.1f, 1, 3, 0, 0);
-                Check(r.PressedTeam == 1, "switch follows occupied side");
-                r.Step(.1f, 2, 2, 0, 0); Check(r.PressedTeam == -1, "mixed-team tie");
+            Test("Chess timer one expired side leaves the other clock playable", () => {
+                var r = new ChessTimerRules(2, 30, 0);
+                Check(r.Step(2, 3, 1, 0, 0) == 2, "only red expires");
+                Check(!r.Teams[0].GateOpen && r.Teams[1].GateOpen, "only expired door opens");
+                r.Step(.5f, 2, 5, 1, 0);
+                Check(r.PressedTeam == 0 && r.Teams[0].Remaining == 2 && r.Teams[0].Work > 0, "remaining team can play");
             });
             Test("Chess timer attacking the other half trades own time protection for disruption", () => {
-                var r = new ChessTimerRules(30, 10, 3, 0);
+                var r = new ChessTimerRules(30, 10, 0);
                 r.Step(1, 4, 2, 0, 0);
                 Check(r.PressedTeam == 0 && r.Teams[0].Remaining == 30 && r.Teams[1].Remaining == 29, "defending own half pauses own time");
                 r.Step(1, 3, 3, 0, 0); // One blue player crosses to the red half.
@@ -59,7 +56,7 @@ public static class NetworkCoreTests
                 Check(r.PressedTeam == 0 && r.Teams[0].Remaining == 28, "returning restores protection");
             });
             Test("Chess timer completion is permanent and unlocks solo switch rule", () => {
-                var r = new ChessTimerRules(20, 1, 3, 0, 2);
+                var r = new ChessTimerRules(20, 1, 0, 2);
                 for (int i = 0; i < 3; i++) r.Step(1, 1, 0, 1, 0);
                 Check(r.Teams[0].Complete, "three stages");
                 float blue = r.Teams[0].Remaining, red = r.Teams[1].Remaining;
@@ -70,7 +67,7 @@ public static class NetworkCoreTests
                 r.Reset(); Check(!r.Teams[0].Complete && r.Teams[0].Remaining == 20 && r.PressedTeam == -1, "full reset");
             });
             Test("Chess timer completion emits once and the opponent keeps playing", () => {
-                var r = new ChessTimerRules(30, 1, 3, 0);
+                var r = new ChessTimerRules(30, 1, 0);
                 for (int i = 0; i < 3; i++) r.Step(1, 1, 0, 1, 0);
                 Check(r.CompletedTeams == 1 && r.Teams[0].Complete, "blue completion event");
                 float red = r.Teams[1].Remaining;
@@ -82,14 +79,39 @@ public static class NetworkCoreTests
                 Check(r.CompletedTeams == 0, "both finished without repeated blasts");
             });
             Test("Chess timer simultaneous completions notify both sides and reset clears events", () => {
-                var r = new ChessTimerRules(30, 1, 3, 0);
+                var r = new ChessTimerRules(30, 1, 0);
                 for (int i = 0; i < 3; i++) r.Step(1, 0, 0, 1, 1);
                 Check(r.CompletedTeams == 3, "both completion events retained");
                 r.Reset();
                 Check(r.CompletedTeams == 0 && !r.Teams[0].Complete && !r.Teams[1].Complete, "fresh round");
             });
+            Test("Chess timer simultaneous defuse selects the team with more remaining time", () => {
+                for (int winner = 0; winner < 2; winner++)
+                {
+                    var r = new ChessTimerRules(30, 1, 0);
+                    int blasts = 0;
+                    for (int i = 0; i < 3; i++) blasts = r.Step(1, winner == 0 ? 3 : 1, winner == 1 ? 3 : 1, 1, 1);
+                    Check(r.CompletedTeams == 3 && r.Winner == winner, "remaining time determines winner");
+                    Check(blasts == (1 << (1 - winner)), "only loser explodes");
+                    Check(r.Teams[0].GateOpen && r.Teams[1].GateOpen, "both doors open");
+                    Check(r.Step(1, 0, 0, 0, 0) == 0 && r.Winner == winner, "result and doors persist");
+                }
+            });
+            Test("Chess timer identical remaining time on simultaneous defuse explodes both", () => {
+                var r = new ChessTimerRules(30, 1, 0);
+                r.Step(1, 0, 0, 1, 1); r.Step(1, 0, 0, 1, 1);
+                Check(r.Step(1, 0, 0, 1, 1) == 3 && r.Winner == -1, "tie explodes both once");
+                Check(r.Teams[0].GateOpen && r.Teams[1].GateOpen, "tie still opens doors");
+                r.Reset(); Check(r.Winner == -2 && !r.Teams[0].GateOpen, "reset clears result");
+            });
+            Test("Chess timer default single worker cannot finish before unprotected timeout", () => {
+                var r = new ChessTimerRules();
+                int blasts = 0;
+                for (int i = 0; i < 45; i++) blasts |= r.Step(1, 0, 0, 1, 1);
+                Check(blasts == 3 && r.Teams[0].Expired && !r.Teams[0].Complete, "45 second clock versus 90 worker seconds");
+            });
             Test("Chess timer expiry wins simultaneous work and rejects invalid time steps", () => {
-                var r = new ChessTimerRules(1, 1, 3, 0);
+                var r = new ChessTimerRules(1, 1, 0);
                 Check(r.Step(1, 0, 0, 3, 3) == 3 && r.Teams[0].Stage == 0, "both explode before work");
                 r.Reset(); r.Step(float.NaN, 3, 0, 3, 0); r.Step(float.PositiveInfinity, 3, 0, 3, 0); r.Step(-1, 3, 0, 3, 0);
                 Check(r.Teams[0].Remaining == 1 && r.Teams[0].Work == 0, "invalid dt ignored");

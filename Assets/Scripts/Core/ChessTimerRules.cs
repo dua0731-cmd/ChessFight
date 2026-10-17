@@ -8,42 +8,45 @@ namespace ChessFight.Network
         public sealed class TeamState
         {
             public float Remaining { get; internal set; }
-            public float Recovery { get; internal set; }
             public float Work { get; internal set; }
             public int Stage { get; internal set; }
             public int Explosions { get; internal set; }
             public bool Complete => Stage >= 3;
+            public bool Expired { get; internal set; }
+            public bool GateOpen => Complete || Expired;
         }
         public readonly TeamState[] Teams = { new TeamState(), new TeamState() };
+        public int Winner { get; private set; } = -2; // -2 undecided, -1 tied, otherwise team index.
+        public int ExpiredTeams { get; private set; }
         public int CompletedTeams { get; private set; }
         public int PressedTeam { get; private set; } = -1;
-        public readonly float Limit, WorkSeconds, RecoverySeconds, SwitchDelay;
+        public readonly float Limit, WorkSeconds, SwitchDelay;
         public readonly int SoloRiders;
         int candidate = -1;
         float stable;
 
-        public ChessTimerRules(float limit = 45, float workSeconds = 10, float recoverySeconds = 6,
+        public ChessTimerRules(float limit = 45, float workSeconds = 30,
             float switchDelay = .35f, int soloRiders = 2)
         {
             Limit = Math.Max(1, limit); WorkSeconds = Math.Max(1, workSeconds);
-            RecoverySeconds = Math.Max(0, recoverySeconds); SwitchDelay = Math.Max(0, switchDelay);
+            SwitchDelay = Math.Max(0, switchDelay);
             SoloRiders = Math.Max(1, soloRiders); Reset();
         }
         public void Reset()
         {
             foreach (var team in Teams)
-            { team.Remaining = Limit; team.Recovery = team.Work = 0; team.Stage = team.Explosions = 0; }
-            PressedTeam = candidate = -1; stable = 0; CompletedTeams = 0;
+            { team.Remaining = Limit; team.Work = 0; team.Expired = false; team.Stage = team.Explosions = 0; }
+            PressedTeam = candidate = -1; stable = 0; CompletedTeams = ExpiredTeams = 0; Winner = -2;
         }
         // Returns an explosion bit mask. Timer expiry takes priority over work on the same step.
         public int Step(float dt, int blueRiders, int redRiders, int blueWorkers, int redWorkers)
         {
-            CompletedTeams = 0;
+            CompletedTeams = ExpiredTeams = 0;
             if (dt <= 0 || float.IsNaN(dt) || float.IsInfinity(dt)) return 0;
-            int blue = Teams[0].Complete ? 0 : Math.Max(0, blueRiders);
-            int red = Teams[1].Complete ? 0 : Math.Max(0, redRiders);
-            int next = Teams[0].Complete ? (red >= SoloRiders ? 1 : -1)
-                : Teams[1].Complete ? (blue >= SoloRiders ? 0 : -1)
+            int blue = Teams[0].GateOpen ? 0 : Math.Max(0, blueRiders);
+            int red = Teams[1].GateOpen ? 0 : Math.Max(0, redRiders);
+            int next = Teams[0].GateOpen ? (red >= SoloRiders ? 1 : -1)
+                : Teams[1].GateOpen ? (blue >= SoloRiders ? 0 : -1)
                 : blue == red ? -1 : blue > red ? 0 : 1;
             if (next != candidate) { candidate = next; stable = 0; }
             stable += dt;
@@ -54,12 +57,11 @@ namespace ChessFight.Network
             for (int i = 0; i < 2; i++)
             {
                 var team = Teams[i];
-                if (team.Complete) continue;
-                if (team.Recovery > 0) { team.Recovery = Math.Max(0, team.Recovery - dt); continue; }
+                if (team.GateOpen) continue;
                 if (PressedTeam != i) team.Remaining = Math.Max(0, team.Remaining - dt);
                 if (team.Remaining <= 0)
                 {
-                    team.Explosions++; team.Remaining = Limit; team.Recovery = RecoverySeconds; team.Work = 0;
+                    team.Expired = true; ExpiredTeams |= 1 << i;
                     explosions |= 1 << i; continue;
                 }
                 int workers = Math.Max(0, i == 0 ? blueWorkers : redWorkers);
@@ -74,6 +76,20 @@ namespace ChessFight.Network
                     }
                 }
             }
+            // Resolve both completions together, after both clocks have advanced.
+            if (CompletedTeams != 0 && Winner == -2)
+            {
+                if (CompletedTeams == 3)
+                {
+                    float difference = Teams[0].Remaining - Teams[1].Remaining;
+                    Winner = Math.Abs(difference) <= .001f ? -1 : difference > 0 ? 0 : 1;
+                }
+                else Winner = CompletedTeams == 1 ? 0 : 1;
+                explosions |= Winner == -1 ? 3 : 1 << (1 - Winner);
+            }
+            for (int i = 0; i < 2; i++)
+                if ((explosions & (1 << i)) != 0) Teams[i].Explosions++;
+            if (Teams[0].GateOpen && Teams[1].GateOpen) PressedTeam = -1;
             return explosions;
         }
     }

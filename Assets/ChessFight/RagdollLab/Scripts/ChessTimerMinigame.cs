@@ -14,11 +14,8 @@ namespace ChessFight.RagdollLab
         public RagdollTuning tuning;
         [Header("Round settings (F3 applies changes)")]
         [SerializeField, Min(1)] float timeLimit = 45;
-        [SerializeField, Min(1)] float secondsPerStage = 10;
+        [SerializeField, Min(1)] float secondsPerStage = 30;
         [SerializeField, Min(0)] float switchDelay = .35f;
-        [SerializeField, Min(0)] float stunSeconds = 3;
-        [SerializeField, Min(0)] float retryGrace = 3;
-        [SerializeField, Min(0)] float blastSpeed = 5;
         [SerializeField, Min(1)] int soloRequiredRiders = 2;
         [SerializeField, Min(.1f)] float interactDistance = 1.8f;
         readonly List<RagdollPawn> players = new List<RagdollPawn>();
@@ -65,7 +62,7 @@ namespace ChessFight.RagdollLab
             savedGravity = Physics.gravity; savedLock = Cursor.lockState; savedCursor = Cursor.visible;
             Physics.gravity = Vector3.down * 9.81f * tuning.values.gravityScale;
             initialized = true;
-            rules = new ChessTimerRules(timeLimit, secondsPerStage, stunSeconds + retryGrace, switchDelay, soloRequiredRiders);
+            rules = new ChessTimerRules(timeLimit, secondsPerStage, switchDelay, soloRequiredRiders);
             BuildArena();
             blastMaterial = Mat(new Color(1f, .45f, .08f));
             blastMaterial.EnableKeyword("_EMISSION");
@@ -101,8 +98,8 @@ namespace ChessFight.RagdollLab
         void Assign(int index, int role)
         {
             int team = index / 6;
-            if (respawnAt[index] > 0 || rules.Teams[team].Recovery > 0 || players[index].State != PawnState.Active) return;
-            if (role == 2 && rules.Teams[team].Complete) return;
+            if (respawnAt[index] > 0 || players[index].State != PawnState.Active) return;
+            if (role == 2 && rules.Teams[team].GateOpen) return;
             roles[index] = role;
             if (role == 1 || role == 4)
             {
@@ -119,7 +116,7 @@ namespace ChessFight.RagdollLab
         }
         void ResetRound()
         {
-            rules = new ChessTimerRules(timeLimit, secondsPerStage, stunSeconds + retryGrace, switchDelay, soloRequiredRiders);
+            rules = new ChessTimerRules(timeLimit, secondsPerStage, switchDelay, soloRequiredRiders);
             started = false; notice = "준비 완료 · Enter로 시작";
             for (int i = 0; i < players.Count; i++)
             { respawnAt[i] = 0; exited[i] = false; roles[i] = 0; Place(i, Waiting(i)); }
@@ -154,13 +151,13 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.Alpha3)) Assign(selected, 0);
                 if (Input.GetKeyDown(KeyCode.Alpha4)) Assign(selected, 4);
                 if (Input.GetKeyDown(KeyCode.B)) sparringBots = !sparringBots;
-                if (Input.GetKeyDown(KeyCode.R) && respawnAt[selected] <= 0 && rules.Teams[selected / 6].Recovery <= 0 && players[selected].State == PawnState.Active)
+                if (Input.GetKeyDown(KeyCode.R) && respawnAt[selected] <= 0 && players[selected].State == PawnState.Active)
                 { roles[selected] = 0; Place(selected, Waiting(selected)); }
             }
             foreach (var pawn in players) pawn.SetInput(default);
             DriveSparringBots();
             var local = players[selected];
-            if (Application.isFocused && !menu && respawnAt[selected] <= 0 && rules.Teams[selected / 6].Recovery <= 0)
+            if (Application.isFocused && !menu && respawnAt[selected] <= 0)
             {
                 var move = GameSettings.Move;
                 if (move.sqrMagnitude > .01f) roles[selected] = 0;
@@ -176,7 +173,7 @@ namespace ChessFight.RagdollLab
                 var pawn = players[i];
                 if (!pawn.IsFinite() || (respawnAt[i] <= 0 && pawn.Hips.position.y < -5))
                 { roles[i] = 0; Place(i, Waiting(i)); }
-                if (rules.Teams[i / 6].Complete && pawn.Hips.position.z > 24 && Mathf.Abs(pawn.Hips.position.x - TeamX(i / 6)) < 2.5f)
+                if (rules.Teams[i / 6].GateOpen && pawn.Hips.position.z > 24 && Mathf.Abs(pawn.Hips.position.x - TeamX(i / 6)) < 2.5f)
                     exited[i] = true;
             }
             UpdateViews();
@@ -190,7 +187,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i]; int team = i / 6;
-                if (respawnAt[i] > 0 || rules.Teams[team].Complete || rules.Teams[team].Recovery > 0 || pawn.State != PawnState.Active) continue;
+                if (respawnAt[i] > 0 || rules.Teams[team].GateOpen || pawn.State != PawnState.Active) continue;
                 var origin = pawn.Hips.position;
                 bool working = roles[i] == 2 || (i == selected && !menu && Application.isFocused && Input.GetKey(KeyCode.F));
                 if (working && pawn.Grounded && Vector3.Distance(origin, Panel(team, rules.Teams[team].Stage)) <= interactDistance)
@@ -198,39 +195,27 @@ namespace ChessFight.RagdollLab
             }
             if (!started) return;
             int blueStage = rules.Teams[0].Stage, redStage = rules.Teams[1].Stage;
-            float blueRecovery = rules.Teams[0].Recovery, redRecovery = rules.Teams[1].Recovery;
             int blasts = rules.Step(Time.fixedDeltaTime, riders[0], riders[1], workers[0], workers[1]);
             for (int team = 0; team < 2; team++)
             {
-                if ((blasts & (1 << team)) != 0) Explode(team);
-                bool recovered = (team == 0 ? blueRecovery : redRecovery) > 0 && rules.Teams[team].Recovery <= 0;
                 bool changed = (team == 0 ? blueStage : redStage) != rules.Teams[team].Stage;
-                if (rules.Teams[team].Complete) { gates[team].SetActive(false); continue; }
-                if (recovered || changed)
+                if (rules.Teams[team].GateOpen) { gates[team].SetActive(false); continue; }
+                if (changed)
                     for (int i = team * 6; i < team * 6 + 6; i++)
                         if (respawnAt[i] > 0) continue;
-                        else if (recovered) Assign(i, roles[i]);
                         else if (roles[i] == 2) PlaceAtPanel(i);
             }
-            if (rules.CompletedTeams != 0) CompletionBlast(rules.CompletedTeams);
-        }
-        void Explode(int team)
-        {
-            notice = (team == 0 ? "청팀" : "홍팀") + " 폭발! 완료 단계 유지 · 현재 단계 초기화";
-            for (int i = team * 6; i < team * 6 + 6; i++)
-            {
-                if (respawnAt[i] > 0) continue;
-                var position = players[i].Hips.position;
-                var away = position - new Vector3(TeamX(team), 0, 3); away.y = 0;
-                StartCoroutine(BlastFlash(position));
-                players[i].TakeHit(away.normalized * blastSpeed + Vector3.up * blastSpeed, stunSeconds, 0, true);
-            }
+            if (blasts != 0) TeamBlast(blasts, rules.ExpiredTeams);
+            if (rules.CompletedTeams != 0)
+                notice = rules.Winner == -1 ? "동시 해체 · 남은 시간 동일 · 양 팀 폭발 / 문 열림" :
+                    (rules.Winner == 0 ? "청팀" : "홍팀") + " 승리 · 해체 완료 / 문 열림";
+            else if (rules.ExpiredTeams != 0) notice = "시간 만료 · 해당 팀 전원 폭발 / 문 열림 · 입구 복귀 후 계속 진행";
         }
         static bool Holds(PawnHand hand, RagdollPawn target) =>
             hand != null && hand.IsHolding && hand.HeldCollider != null &&
             RagdollPawn.ColliderOwner.TryGetValue(hand.HeldCollider, out var owner) && owner == target;
 
-        void CompletionBlast(int completedTeams)
+        void TeamBlast(int blastTeams, int expiredTeams)
         {
             var direct = new bool[players.Count];
             var impulses = new Vector3[players.Count];
@@ -240,9 +225,10 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var position = players[i].Hips.position;
-                direct[i] = (completedTeams & (1 << (1 - i / 6))) != 0 &&
-                    Mathf.Abs(position.x) <= ArenaWidth * .5f && Mathf.Abs(position.z) <= ArenaDepth * .5f &&
+                bool inArena = Mathf.Abs(position.x) <= ArenaWidth * .5f && Mathf.Abs(position.z) <= ArenaDepth * .5f &&
                     position.y >= -5 && position.y <= 30;
+                direct[i] = (blastTeams & (1 << (i / 6))) != 0 &&
+                    ((expiredTeams & (1 << (i / 6))) != 0 || inArena);
                 if (!direct[i]) continue;
                 var direction = Waiting(i) - position; direction.y = 0;
                 impulses[i] = direction.normalized * speed + Vector3.up * speed;
@@ -269,7 +255,6 @@ namespace ChessFight.RagdollLab
                 else if (impulses[i].sqrMagnitude > 0)
                     players[i].TakeHit(impulses[i], 0, 0, false);
             }
-            notice = "해체 성공! 문 열림 · 적팀 폭발 후 입구 복귀 · 잡고 있으면 함께 날아갑니다";
         }
         System.Collections.IEnumerator BlastFlash(Vector3 position)
         {
@@ -304,8 +289,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i];
-                if (respawnAt[i] > 0 || i == selected || (roles[i] != 1 && roles[i] != 4) || rules.Teams[i / 6].Recovery > 0 ||
-                    pawn.State != PawnState.Active || pawn.Hips.position.y < 5.2f) continue;
+                if (respawnAt[i] > 0 || i == selected || (roles[i] != 1 && roles[i] != 4) || pawn.State != PawnState.Active || pawn.Hips.position.y < 5.2f) continue;
                 RagdollPawn enemy = null; float nearest = float.PositiveInfinity;
                 foreach (var other in players)
                 {
@@ -329,7 +313,7 @@ namespace ChessFight.RagdollLab
             for (int team = 0; team < 2; team++)
             {
                 var state = rules.Teams[team];
-                string status = state.Complete ? "해체 완료 / 문 열림" : state.Recovery > 0 ? "폭발 / 재정비" : rules.PressedTeam == team ? "시간 정지" : "시간 감소";
+                string status = state.Expired ? "시간 만료 / 문 열림" : state.Complete ? "해체 완료 / 문 열림" : rules.PressedTeam == team ? "시간 정지" : "시간 감소";
                 int seconds = Mathf.CeilToInt(state.Remaining);
                 clocks[team].text = $"{seconds / 60:00}:{seconds % 60:00}";
                 UpdateDigits(team, seconds);
@@ -337,7 +321,7 @@ namespace ChessFight.RagdollLab
                 clockStatus[team].text = (team == 0 ? "BLUE · " : "RED · ") + status;
                 for (int stage = 0; stage < 3; stage++)
                     panelLabels[team, stage].text = (stage == 0 ? "PAWN" : stage == 1 ? "KNIGHT" : "ROOK") + "\n" +
-                        (stage < state.Stage ? "OK" : stage == state.Stage ? $"F : {state.Work / rules.WorkSeconds:P0}" : "LOCKED");
+                        (state.Expired ? "TIME OUT" : stage < state.Stage ? "OK" : stage == state.Stage ? $"F : {state.Work / rules.WorkSeconds:P0}" : "LOCKED");
             }
         }
         Material Mat(Color color)
@@ -373,14 +357,14 @@ namespace ChessFight.RagdollLab
             var previous = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one * Mathf.Min(Screen.width / 1200f, Screen.height / 800f));
             GUI.Box(new Rect(12, 12, 780, 250), GUIContent.none);
-            GUI.Label(new Rect(24, 20, 750, 30), "체스 타이머 폭탄 · 오프라인 6 대 6 프로토타입", title);
+            GUI.Label(new Rect(24, 20, 750, 30), "체스 타이머 폭탄 · 임시 F 해체 테스트", title);
             for (int team = 0; team < 2; team++)
             {
                 var state = rules.Teams[team]; int escaped = 0;
                 for (int i = team * 6; i < team * 6 + 6; i++) if (exited[i]) escaped++;
                 GUI.Label(new Rect(24, 58 + team * 38, 750, 36),
                     $"{(team == 0 ? "청팀" : "홍팀")} {state.Remaining:0.0}초 | 발판 전체 {riders[team]}명 · 해체 {workers[team]}명 | {state.Stage}/3단계 · {state.Work / rules.WorkSeconds:P0} | " +
-                    (state.Complete ? $"문 열림 · 통과 {escaped}/6" : state.Recovery > 0 ? $"재정비 {state.Recovery:0.0}초" : rules.PressedTeam == team ? "시간 정지" : "시간 감소"), text);
+                    (state.GateOpen ? $"문 열림 · 통과 {escaped}/6" : rules.PressedTeam == team ? "시간 정지" : "시간 감소"), text);
             }
             GUI.Label(new Rect(24, 138, 750, 40), $"선택: {players[selected].DisplayName} · {(roles[selected] == 1 ? "발판" : roles[selected] == 2 ? "자동 해체" : roles[selected] == 4 ? "상대 발판" : "직접 조작 / 대기")}\n{notice}", text);
             GUI.Label(new Rect(24, 183, 750, 74), "WASD 이동 · Space 점프 · 좌클릭 밀치기 · 우클릭 잡기 · F 해체\nTab 팀원 · T 팀 변경 · 1 우리 발판 / 2 해체 / 3 대기 / 4 상대 발판\nB 대련 봇 · R 복귀 · F3 초기화 · Enter 시작 · Esc 메뉴", text);
