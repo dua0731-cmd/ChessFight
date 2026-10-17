@@ -40,7 +40,7 @@ public static class NetworkCoreTests
             Test("Chess timer one expired side leaves the other clock playable", () => {
                 var r = new ChessTimerRules(2, 30, 0);
                 Check(r.Step(2, 3, 1, 0, 0) == 2, "only red expires");
-                Check(!r.Teams[0].GateOpen && r.Teams[1].GateOpen, "only expired door opens");
+                Check(r.Teams[0].GateOpen && r.Teams[1].GateOpen && !r.Teams[0].Finished, "both doors open without completing opponent");
                 r.Step(.5f, 2, 5, 1, 0);
                 Check(r.PressedTeam == 0 && r.Teams[0].Remaining == 2 && r.Teams[0].Work > 0, "remaining team can play");
             });
@@ -115,6 +115,55 @@ public static class NetworkCoreTests
                 Check(r.Step(1, 0, 0, 3, 3) == 3 && r.Teams[0].Stage == 0, "both explode before work");
                 r.Reset(); r.Step(float.NaN, 3, 0, 3, 0); r.Step(float.PositiveInfinity, 3, 0, 3, 0); r.Step(-1, 3, 0, 3, 0);
                 Check(r.Teams[0].Remaining == 1 && r.Teams[0].Work == 0, "invalid dt ignored");
+            });
+            Test("Physical rook puzzle has exactly one safe wire on an 8x8 board", () => {
+                int safe = 0;
+                for (int i = 0; i < 3; i++)
+                {
+                    Check(ChessWirePuzzle.File(i) >= 0 && ChessWirePuzzle.File(i) < 8 && ChessWirePuzzle.Rank(i) >= 0 && ChessWirePuzzle.Rank(i) < 8, "valid cell");
+                    if (!ChessWirePuzzle.Attacked(ChessWirePuzzle.File(i), ChessWirePuzzle.Rank(i))) safe++;
+                }
+                Check(safe == 1 && !ChessWirePuzzle.Attacked(6, 6), "G7 only safe endpoint");
+            });
+            Test("Wire cutting requires a tool and continuous same-worker contact", () => {
+                var p = new ChessWirePuzzle(1, 2);
+                Check(p.Step(2, 0, 2, false) == ChessWirePuzzle.Result.None && !p.Solved, "no tool or eligibility");
+                p.Step(.6f, 0, 2, true); p.Step(.1f, -1, -1, false);
+                Check(p.Progress == 0, "release or leaving range resets");
+                p.Step(.6f, 0, 2, true); p.Step(.5f, 1, 2, true);
+                Check(!p.Solved, "different worker cannot inherit hold");
+                Check(p.Step(.5f, 1, 2, true) == ChessWirePuzzle.Result.Solved && p.Cut(2), "continuous hold cuts safe wire");
+                Check(p.Step(5, 1, 2, true) == ChessWirePuzzle.Result.None, "one-shot success");
+            });
+            Test("Wrong wire applies a lock and cannot be cut repeatedly", () => {
+                var p = new ChessWirePuzzle(1, 2);
+                Check(p.Step(1, 0, 0, true) == ChessWirePuzzle.Result.Wrong && p.LockLeft == 2, "wrong cut event");
+                Check(p.Step(1, 0, 2, true) == ChessWirePuzzle.Result.None && !p.Solved, "locked tool");
+                p.Step(1, 0, 2, true);
+                Check(p.Step(1, 0, 0, true) == ChessWirePuzzle.Result.None, "already severed cable cannot penalize again");
+                Check(p.Step(1, 0, 2, true) == ChessWirePuzzle.Result.Solved, "can finish after lock");
+            });
+            Test("Physical puzzle results preserve simultaneous timer comparison", () => {
+                var r = new ChessTimerRules(90, switchDelay: 0);
+                r.StepPuzzle(5, 3, 1, false, false);
+                int blast = r.StepPuzzle(.1f, 0, 0, true, true);
+                Check(r.CompletedTeams == 3 && r.Winner == 0 && blast == 2, "more time wins simultaneous physical puzzle");
+                Check(r.StepPuzzle(.1f, 0, 0, true, true) == 0, "results do not repeat");
+            });
+            Test("Wrong wire drains even paused clock and expiry opens both doors before success", () => {
+                var r = new ChessTimerRules(5, switchDelay: 0);
+                int blast = r.StepPuzzle(.1f, 3, 1, true, false, 5, 0);
+                Check(blast == 1 && r.Teams[0].Expired && !r.Teams[0].Complete, "penalty expiry beats same-tick success");
+                Check(r.Teams[0].GateOpen && r.Teams[1].GateOpen && !r.Teams[1].Finished, "exit availability separate from puzzle state");
+                Check(r.StepPuzzle(.1f, 0, 2, false, true) == 1 && r.Teams[1].Complete, "other team can still solve");
+                r.Reset(); Check(!r.Teams[0].GateOpen && !r.Teams[1].GateOpen, "reset closes both");
+            });
+            Test("Physical mode never auto-defuses from elapsed time", () => {
+                var r = new ChessTimerRules(90, switchDelay: 0);
+                for (int i = 0; i < 80; i++) r.StepPuzzle(1, 0, 0, false, false);
+                Check(!r.Teams[0].Complete && r.Teams[0].Stage == 0 && r.Teams[0].Remaining == 10, "manual solution required");
+                var p = new ChessWirePuzzle(); p.Step(float.NaN, 0, 2, true); p.Step(-1, 0, 2, true);
+                Check(p.Progress == 0 && !p.Solved, "invalid time ignored");
             });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");

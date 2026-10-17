@@ -7,10 +7,11 @@ namespace ChessFight.RagdollLab
     // StateDrivenMover: offline clock rocker and entry flaps follow the occupied side.
     public sealed partial class ChessTimerMinigame
     {
-        // 54 x 54 = 2916 m², versus the original 24 x 24 = 576 m² (5.0625 times).
+        // Keep the entrance and clock fixed; expand only the rear into two square puzzle courts.
         readonly GameObject[,,] digits = new GameObject[2, 4, 7];
         static readonly int[] DigitMasks = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f };
-        const float ArenaWidth = 54f, ArenaDepth = 54f;
+        const float ArenaWidth = 84f, ArenaDepth = 85f, ArenaCentreZ = 15.5f;
+        const float DefuseSize = 42f, DefuseStartZ = 9f, ExitZ = 51f, TileSize = 4f;
         const float ApproachStartZ = -22f, ApproachEndZ = -.7f, ApproachHeight = 5.7f;
 
         const float RockerHeight = 5f, RockerThickness = 2f;
@@ -27,9 +28,12 @@ namespace ChessFight.RagdollLab
             teamMaterials[0] = Mat(new Color(.30f, .64f, .92f));
             teamMaterials[1] = Mat(new Color(.96f, .47f, .39f));
             foreach (var material in materials) material.SetFloat("_Glossiness", .24f);
-            for (int x = 0; x < 18; x++) for (int z = 0; z < 18; z++)
-                Box("Chess floor", new Vector3((x - 8.5f) * 3, -.25f, (z - 8.5f) * 3),
-                    new Vector3(ArenaWidth / 18, .5f, ArenaDepth / 18), (x + z) % 2 == 0 ? ivory : walnut);
+            for (int x = 0; x < 18; x++) for (int z = 0; z < 12; z++)
+                Box("Entrance chess floor", new Vector3((x - 8.5f) * 3, -.25f, -25.5f + z * 3),
+                    new Vector3(3, .5f, 3), (x + z) % 2 == 0 ? ivory : walnut);
+            Box("Square defuse court foundation", new Vector3(0, -.3f, DefuseStartZ + DefuseSize * .5f),
+                new Vector3(ArenaWidth, .6f, DefuseSize), walnut);
+            Box("Exit apron", new Vector3(0, -.25f, 54.5f), new Vector3(84, .5f, 7), ivory);
 
             // One clock and one mechanically coupled rocker; the two teams occupy its halves.
             RoundedBox("Clock rubber base", new Vector3(0, .25f, 3), new Vector3(22.4f, .5f, 10.4f), .23f, rubber, false);
@@ -75,21 +79,21 @@ namespace ChessFight.RagdollLab
                 PositionEntryFlap(side, Quaternion.identity, true);
                 Label("Approach sign", new Vector3(approachX, .8f, -23), "WALK UP", .3f);
 
-                for (int stage = 0; stage < 3; stage++)
-                {
-                    RoundedBox("Defuse console " + stage, Panel(side, stage), new Vector3(1.4f, 1.4f, .9f), .25f, accent);
-                    panelLabels[side, stage] = Label("Console instruction", Panel(side, stage) + new Vector3(0, 1.3f, -.5f), "", .19f);
-                }
-                gates[side] = Box("Team exit gate", new Vector3(x, 2, 23), new Vector3(5, 4, .5f), accent);
-                Label("Exit label", new Vector3(x, 4.6f, 22.6f), "NEXT STAGE", .35f);
+                gates[side] = Box("Team exit gate", new Vector3(BoardCentreX(side), 2, ExitZ), new Vector3(6, 4, .5f), accent);
+                Label("Exit label", new Vector3(BoardCentreX(side), 4.6f, ExitZ - .4f), "NEXT STAGE", .35f);
             }
-            // Separate the ground-level consoles, leaving the shared rooftop open.
-            Box("Defuse area divider", new Vector3(0, 2.25f, 15.5f), new Vector3(.5f, 4.5f, 15.5f), walnut);
-            Box("Exit wall centre", new Vector3(0, 2, 23), new Vector3(6, 4, .5f), walnut);
-            Box("Exit wall left", new Vector3(-17.5f, 2, 23), new Vector3(19, 4, .5f), walnut);
-            Box("Exit wall right", new Vector3(17.5f, 2, 23), new Vector3(19, 4, .5f), walnut);
-            Box("Outer left boundary", new Vector3(-27, 1.5f, 0), new Vector3(.5f, 3, 54), walnut);
-            Box("Outer right boundary", new Vector3(27, 1.5f, 0), new Vector3(.5f, 3, 54), walnut);
+            BuildDefuseBoards(ivory, walnut, cream, charcoal);
+            Box("Defuse area divider", new Vector3(0, 2.25f, 29.5f), new Vector3(.5f, 4.5f, 43.5f), walnut);
+            Box("Exit wall centre", new Vector3(0, 2, ExitZ), new Vector3(36, 4, .5f), walnut);
+            Box("Exit wall left", new Vector3(-33, 2, ExitZ), new Vector3(18, 4, .5f), walnut);
+            Box("Exit wall right", new Vector3(33, 2, ExitZ), new Vector3(18, 4, .5f), walnut);
+            for (int side = 0; side < 2; side++)
+            {
+                float sign = side == 0 ? -1 : 1;
+                Box("Entrance side boundary", new Vector3(sign * 27, 1.5f, -9), new Vector3(.5f, 3, 36), walnut);
+                Box("Court shoulder boundary", new Vector3(sign * 34.5f, 1.5f, 9), new Vector3(15, 3, .5f), walnut);
+                Box("Court outer boundary", new Vector3(sign * 42, 1.5f, 33.5f), new Vector3(.5f, 3, 49), walnut);
+            }
             rocker.transform.localScale = new Vector3(1f, .7f, 1f);
             for (int side = 0; side < 2; side++) PositionEntryFlap(side, Quaternion.identity, true);
             Box("Outer front boundary", new Vector3(0, 1.5f, -27), new Vector3(54, 3, .5f), walnut);
