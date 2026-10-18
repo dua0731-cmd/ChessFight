@@ -150,7 +150,7 @@ namespace ChessFight.RagdollLab
                 workers[team] = worker >= 0 ? 1 : 0;
                 var result = puzzles[team].Step(dt, worker, wire, worker >= 0);
                 if (result == ChessWirePuzzle.Result.Wrong)
-                { penalties[team] = rules.WrongWirePenalty; notice = $"오답! 전체 제한시간의 1/3인 {rules.WrongWirePenalty:0.##}초 차감 / 잠시 잠금"; }
+                { penalties[team] = rules.WrongWirePenalty; notice = $"오답! 전체 제한시간의 1/9인 {rules.WrongWirePenalty:0.##}초 차감 / 잠시 잠금"; }
                 solved[team] = result == ChessWirePuzzle.Result.Solved;
                 if (wire >= 0 && puzzles[team].Cut(wire)) wireCentres[team, wire].SetActive(false);
             }

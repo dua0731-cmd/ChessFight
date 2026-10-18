@@ -23,7 +23,7 @@ namespace ChessFight.Network
         public int PressedTeam { get; private set; } = -1;
         public readonly float Limit, WorkSeconds, SwitchDelay;
         public readonly int SoloRiders;
-        public float WrongWirePenalty => Limit / 3f;
+        public float WrongWirePenalty => Limit / 9f;
         int candidate = -1;
         float stable;
 
