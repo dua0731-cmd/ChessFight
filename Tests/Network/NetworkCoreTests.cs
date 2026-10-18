@@ -20,11 +20,13 @@ public static class NetworkCoreTests
     {
         Check(board.PieceCount == count, "piece count");
         var occupied = new HashSet<int>(); var counts = new int[4];
+        var pawnFiles = new HashSet<int>();
         for (int i = 0; i < count; i++)
         {
             int x = board.PieceFile(i), y = board.PieceRank(i);
             Check(x >= 0 && x < 8 && y >= 0 && y < 8 && occupied.Add(y * 8 + x), "distinct on-board pieces");
             counts[(int)board.PieceKind(i)]++;
+            if (board.PieceKind(i) == ChessWirePuzzle.Kind.Pawn) Check(pawnFiles.Add(x), "pawns occupy distinct files");
         }
         Check(counts[0] == 2 && counts[1] == 2 && counts[2] == (count == 4 ? 0 : 1) && counts[3] == (count == 4 ? 0 : 6), "exact composition");
         // Independent ray/offset oracle rather than target-to-piece line-of-sight.

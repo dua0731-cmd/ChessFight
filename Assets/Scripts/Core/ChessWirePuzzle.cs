@@ -102,8 +102,9 @@ namespace ChessFight.Network
                 var pieces = new int[11]; var cells = new List<int>();
                 for (int i = 0; i < 4; i++) pieces[i] = first.PieceRank(i) * 8 + first.PieceFile(i);
                 for (int cell = 0; cell < 64; cell++) if (!first.Occupied(cell % 8, cell / 8)) cells.Add(cell);
-                for (int i = 4; i < 11; i++)
-                { int pick = random.Next(cells.Count); pieces[i] = cells[pick]; cells.RemoveAt(pick); }
+                int knightPick = random.Next(cells.Count);
+                pieces[4] = cells[knightPick]; cells.RemoveAt(knightPick);
+                if (!PlacePawns(random, cells, pieces)) continue;
                 var result = WithWires(random, pieces, SecondKinds);
                 if (result != null) return result;
             }
@@ -132,11 +133,25 @@ namespace ChessFight.Network
                 // Reserve two knight targets as guaranteed unoccupied dangerous wire candidates.
                 pieces[4] = knight;
                 var pawns = new List<int>(cells); pawns.Remove(knight); pawns.Remove(targets[0]); pawns.Remove(targets[1]);
-                for (int i = 5; i < 11; i++)
-                { int pick = random.Next(pawns.Count); pieces[i] = pawns[pick]; pawns.RemoveAt(pick); }
+                if (!PlacePawns(random, pawns, pieces)) continue;
                 return WithWires(random, pieces, SecondKinds);
             }
             throw new InvalidOperationException("No safe extension found.");
+        }
+        // Pick six distinct files first, then a free square within each selected file.
+        static bool PlacePawns(Random random, List<int> cells, int[] pieces)
+        {
+            var files = new List<int>();
+            for (int file = 0; file < Size; file++)
+                if (cells.Exists(cell => cell % Size == file)) files.Add(file);
+            if (files.Count < 6) return false;
+            for (int i = 5; i < 11; i++)
+            {
+                int pick = random.Next(files.Count), file = files[pick]; files.RemoveAt(pick);
+                var candidates = cells.FindAll(cell => cell % Size == file);
+                pieces[i] = candidates[random.Next(candidates.Count)];
+            }
+            return true;
         }
         public sealed class Course
         {
