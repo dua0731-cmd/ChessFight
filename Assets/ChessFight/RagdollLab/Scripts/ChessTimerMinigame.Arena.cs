@@ -92,7 +92,7 @@ namespace ChessFight.RagdollLab
                 float sign = side == 0 ? -1 : 1;
                 Box("Entrance side boundary", new Vector3(sign * 27, 1.5f, -9), new Vector3(.5f, 3, 36), walnut);
                 Box("Court shoulder boundary", new Vector3(sign * 34.5f, 1.5f, 9), new Vector3(15, 3, .5f), walnut);
-                Box("Court outer boundary", new Vector3(sign * 42, 1.5f, 33.5f), new Vector3(.5f, 3, 49), walnut);
+                Box("Court outer boundary", new Vector3(sign * 42, 2.5f, 33.5f), new Vector3(.5f, 5, 49), walnut);
             }
             rocker.transform.localScale = new Vector3(1f, .7f, 1f);
             for (int side = 0; side < 2; side++) PositionEntryFlap(side, Quaternion.identity, true);

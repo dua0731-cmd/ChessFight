@@ -57,7 +57,7 @@ namespace ChessFight.RagdollLab
                 for (int piece = 0; piece < ChessWirePuzzle.PieceCount; piece++)
                 {
                     var rook = BoardSquare(team, ChessWirePuzzle.PieceFile(piece), ChessWirePuzzle.PieceRank(piece));
-                    BuildPieceGuide(rook, ChessWirePuzzle.IsBishop(piece), walnut, cream, charcoal);
+                    BuildPieceGuide(team, piece, ChessWirePuzzle.IsBishop(piece), walnut, cream, charcoal);
                     if (ChessWirePuzzle.IsBishop(piece)) { BuildBishop(rook, cream, charcoal); continue; }
                     var rookRoot = new GameObject("Puzzle rook");
                     rookRoot.transform.SetParent(transform, false); rookRoot.transform.position = rook;
@@ -91,38 +91,36 @@ namespace ChessFight.RagdollLab
                 Label("Court route", new Vector3(BoardCentreX(team), .8f, 8), "해체 구역 / 절단기 → 전선 → 출구", .3f);
             }
         }
-        void BuildPieceGuide(Vector3 piecePosition, bool bishop, Material frame, Material paper, Material ink)
+        void BuildPieceGuide(int team, int piece, bool bishop, Material frame, Material paper, Material ink)
         {
-            // One double-sided frame beside each piece; non-solid so the lesson does not block walking/cutting.
-            var centre = piecePosition + new Vector3(2.7f, 2.1f, -1.6f);
+            // Mount on the inner face of the outer wall, outside the playable chessboard.
+            float side = team == 0 ? -1f : 1f;
+            var centre = new Vector3(side * (ArenaWidth * .5f - .36f), 2.5f, 18f + piece * 12f);
             var root = new GameObject(bishop ? "Bishop movement guide" : "Rook movement guide");
             root.transform.SetParent(transform, false); root.transform.position = centre;
             Box("Guide frame", centre, new Vector3(3.2f, 3.8f, .18f), frame, false).transform.SetParent(root.transform, true);
-            Box("Guide stand", centre + Vector3.down * 1.95f, new Vector3(.16f, .3f, .3f), frame, false).transform.SetParent(root.transform, true);
-            for (int face = 0; face < 2; face++)
+            var content = new GameObject("Guide face"); content.transform.SetParent(root.transform, false);
+            Box("Guide paper", centre + Vector3.back * .105f, new Vector3(3f, 3.6f, .025f), paper, false).transform.SetParent(content.transform, true);
+            var title = Label("Guide title", centre + new Vector3(0, 1.45f, -.13f), bishop ? "비숍 · 대각선" : "룩 · 가로와 세로", .25f);
+            title.color = Color.black; title.transform.SetParent(content.transform, true);
+            for (int x = -2; x <= 2; x++) for (int y = -2; y <= 2; y++)
             {
-                var content = new GameObject("Guide face"); content.transform.SetParent(root.transform, false);
-                Box("Guide paper", centre + Vector3.back * .105f, new Vector3(3f, 3.6f, .025f), paper, false).transform.SetParent(content.transform, true);
-                var title = Label("Guide title", centre + new Vector3(0, 1.45f, -.13f), bishop ? "비숍 · 대각선" : "룩 · 가로와 세로", .25f);
-                title.color = Color.black; title.transform.SetParent(content.transform, true);
-                for (int x = -2; x <= 2; x++) for (int y = -2; y <= 2; y++)
-                {
-                    bool middle = x == 0 && y == 0;
-                    bool reachable = bishop ? Mathf.Abs(x) == Mathf.Abs(y) : x == 0 || y == 0;
-                    var pos = centre + new Vector3(x * .33f, .28f + y * .33f, -.135f);
-                    Box("Movement diagram cell", pos, new Vector3(.30f, .30f, .012f),
-                        middle ? ink : reachable ? toolGrip : frame, false).transform.SetParent(content.transform, true);
-                }
-                var symbol = Label("Diagram piece", centre + new Vector3(0, .28f, -.15f), bishop ? "B" : "R", .22f);
-                symbol.color = Color.white; symbol.transform.SetParent(content.transform, true);
-                string explanation = (bishop ? "대각선으로 이동" : "가로·세로로 이동") +
-                    "\n막힐 때까지 여러 칸\n다른 기물은 넘지 못함";
-                var caption = Label("Guide explanation", centre + new Vector3(0, -1.18f, -.13f), explanation, .18f);
-                caption.color = Color.black; caption.transform.SetParent(content.transform, true);
-                var legend = Label("Diagram legend", centre + new Vector3(0, -.66f, -.13f), "금색 칸 = 이동 방향", .15f);
-                legend.color = Color.black; legend.transform.SetParent(content.transform, true);
-                content.transform.localRotation = Quaternion.Euler(0, face * 180, 0);
+                bool middle = x == 0 && y == 0;
+                bool reachable = bishop ? Mathf.Abs(x) == Mathf.Abs(y) : x == 0 || y == 0;
+                var pos = centre + new Vector3(x * .33f, .28f + y * .33f, -.135f);
+                Box("Movement diagram cell", pos, new Vector3(.30f, .30f, .012f),
+                    middle ? ink : reachable ? toolGrip : frame, false).transform.SetParent(content.transform, true);
             }
+            var symbol = Label("Diagram piece", centre + new Vector3(0, .28f, -.15f), bishop ? "B" : "R", .22f);
+            symbol.color = Color.white; symbol.transform.SetParent(content.transform, true);
+            string explanation = (bishop ? "대각선으로 이동" : "가로·세로로 이동") +
+                "\n막힐 때까지 여러 칸\n다른 기물은 넘지 못함";
+            var caption = Label("Guide explanation", centre + new Vector3(0, -1.18f, -.13f), explanation, .18f);
+            caption.color = Color.black; caption.transform.SetParent(content.transform, true);
+            var legend = Label("Diagram legend", centre + new Vector3(0, -.66f, -.13f), "금색 칸 = 이동 방향", .15f);
+            legend.color = Color.black; legend.transform.SetParent(content.transform, true);
+            // Text faces local -Z; turn the complete frame toward its team court.
+            root.transform.localRotation = Quaternion.Euler(0, side * 90f, 0);
         }
         void BuildBishop(Vector3 position, Material cream, Material dark)
         {
