@@ -25,8 +25,8 @@ namespace ChessFight.RagdollLab
             var rubber = Mat(new Color(.035f, .04f, .045f));
             var cream = Mat(new Color(.98f, .96f, .88f));
             var lcd = Mat(new Color(.63f, .72f, .64f));
-            teamMaterials[0] = Mat(new Color(.30f, .64f, .92f));
-            teamMaterials[1] = Mat(new Color(.96f, .47f, .39f));
+            teamMaterials[0] = Mat(new Color(.90f, .91f, .92f));
+            teamMaterials[1] = Mat(new Color(.13f, .14f, .16f));
             foreach (var material in materials) material.SetFloat("_Glossiness", .24f);
             for (int x = 0; x < 18; x++) for (int z = 0; z < 12; z++)
                 Box("Entrance chess floor", new Vector3((x - 8.5f) * 3, -.25f, -25.5f + z * 3),
@@ -66,7 +66,7 @@ namespace ChessFight.RagdollLab
                 crowdDisplays[side].color = new Color(.06f, .10f, .08f);
                 BuildDigits(side, x - 1.8f, rubber);
                 clockStatus[side] = Label("Clock status", new Vector3(x, 3.5f, -2.32f), "", .25f);
-                Label("Top team marker", new Vector3(x, 7.2f, 7), side == 0 ? "BLUE BUTTON" : "RED BUTTON", .35f);
+                Label("Top team marker", new Vector3(x, 7.2f, 7), side == 0 ? "WHITE BUTTON" : "BLACK BUTTON", .35f);
                 float approachX = side == 0 ? -15 : 15;
                 Ramp("Walk-up approach", new Vector3(approachX, 0, ApproachStartZ), new Vector3(approachX, ApproachHeight, ApproachEndZ), 5, accent);
                 Box("Walk-up landing", new Vector3(approachX, ApproachHeight - .25f, 1.15f), new Vector3(5, .5f, 3.7f), cream);
