@@ -13,7 +13,7 @@ namespace ChessFight.RagdollLab
         public RagdollPawn pawnPrefab;
         public RagdollTuning tuning;
         [Header("Round settings (F3 applies changes)")]
-        [SerializeField, Min(1)] float timeLimit = 90;
+        [SerializeField, Min(1)] float timeLimit = 45;
         [SerializeField, Min(0)] float switchDelay = .35f;
         [SerializeField, Min(1)] int soloRequiredRiders = 2;
         [SerializeField, Min(.1f)] float interactDistance = 1.8f;
@@ -360,7 +360,7 @@ namespace ChessFight.RagdollLab
             var previous = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one * Mathf.Min(Screen.width / 1200f, Screen.height / 800f));
             GUI.Box(new Rect(12, 12, 780, 250), GUIContent.none);
-            GUI.Label(new Rect(24, 20, 750, 30), "체스 타이머 · 8×8 전선 퍼즐 / 목표 약 90초", title);
+            GUI.Label(new Rect(24, 20, 750, 30), "체스 타이머 · 8×8 전선 퍼즐", title);
             for (int team = 0; team < 2; team++)
             {
                 var state = rules.Teams[team]; int escaped = 0;

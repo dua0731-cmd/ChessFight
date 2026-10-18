@@ -6,7 +6,7 @@ namespace ChessFight.RagdollLab
     public sealed partial class ChessTimerMinigame
     {
         [Header("Physical wire puzzle (F3 resets)")]
-        [SerializeField, Min(.1f)] float cutSeconds = 1.5f;
+        [SerializeField, Min(.1f)] float cutSeconds = 7f;
         [SerializeField, Range(.2f, 1f), Tooltip("Puzzle piece visual and collision scale; restart Play to apply.")] float rookScale = .6f;
         [SerializeField, Min(0)] float wrongWireLock = 2f;
         readonly ChessWirePuzzle[] puzzles = new ChessWirePuzzle[2];

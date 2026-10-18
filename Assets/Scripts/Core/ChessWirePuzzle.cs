@@ -15,7 +15,7 @@ namespace ChessFight.Network
         public float LockLeft { get; private set; }
         readonly bool[] cut = new bool[3];
         int actor = -1, wire = -1;
-        public ChessWirePuzzle(float cutSeconds = 1.5f, float lockSeconds = 2f)
+        public ChessWirePuzzle(float cutSeconds = 7f, float lockSeconds = 2f)
         { CutSeconds = Math.Max(.1f, cutSeconds); LockSeconds = Math.Max(0, lockSeconds); }
         public static int File(int index) => Files[index];
         public static int Rank(int index) => Ranks[index];

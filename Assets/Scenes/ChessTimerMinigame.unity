@@ -372,8 +372,8 @@ MonoBehaviour:
   pawnPrefab: {fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}
   tuning: {fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}
   sparringBots: 1
-  timeLimit: 90
-  cutSeconds: 1.5
+  timeLimit: 45
+  cutSeconds: 7
   rookScale: 0.6
   wrongWireLock: 2
 --- !u!114 &1667498619
