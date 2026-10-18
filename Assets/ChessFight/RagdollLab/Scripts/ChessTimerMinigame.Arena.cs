@@ -84,7 +84,7 @@ namespace ChessFight.RagdollLab
                 gates[side] = Box("Team exit gate", new Vector3(BoardCentreX(side), 2, ExitZ), new Vector3(6, 4, .5f), accent);
                 Label("Exit label", new Vector3(BoardCentreX(side), 4.6f, ExitZ - .4f), "NEXT STAGE", .35f);
             }
-            BuildDefuseBoards(ivory, walnut, cream, charcoal);
+            boardMaterials = new[] { ivory, walnut, cream, charcoal };
             Box("Defuse area divider", new Vector3(0, 2.25f, 29.5f), new Vector3(.5f, 4.5f, 43.5f), walnut);
             Box("Exit wall centre", new Vector3(0, 2, ExitZ), new Vector3(36, 4, .5f), walnut);
             Box("Exit wall left", new Vector3(-33, 2, ExitZ), new Vector3(18, 4, .5f), walnut);

@@ -366,7 +366,7 @@ namespace ChessFight.RagdollLab
                 var state = rules.Teams[team]; int escaped = 0;
                 for (int i = team * 6; i < team * 6 + 6; i++) if (exited[i]) escaped++;
                 GUI.Label(new Rect(24, 58 + team * 38, 750, 36),
-                    $"{(team == 0 ? "백팀" : "흑팀")} {state.Remaining:0.0}초 | 발판 전체 {riders[team]}명 · 해체 {workers[team]}명 | {(state.Complete ? "해체 성공" : state.Expired ? "시간 만료" : "룩2·비숍1 퍼즐")} · 절단 {puzzles[team].Progress / puzzles[team].CutSeconds:P0} | " +
+                    $"{(team == 0 ? "백팀" : "흑팀")} {state.Remaining:0.0}초 | 발판 전체 {riders[team]}명 · 해체 {workers[team]}명 | {(state.Complete ? "해체 성공" : state.Expired ? "시간 만료" : "룩·비숍 무작위 퍼즐")} · 절단 {puzzles[team].Progress / puzzles[team].CutSeconds:P0} | " +
                     (state.GateOpen ? $"문 열림 · 통과 {escaped}/6" + (solveTimes[team] >= 0 ? $" · 해체 {solveTimes[team]:0.0}초" : "") : rules.PressedTeam == team ? "시간 정지" : "시간 감소"), text);
             }
             GUI.Label(new Rect(24, 138, 750, 40), $"경과 {elapsed:0.0}초 · 절단기 {(hasCutter[selected] ? "있음" : "없음")} · {players[selected].DisplayName} · {(roles[selected] == 1 ? "발판" : roles[selected] == 2 ? "도구대 시험 배치" : roles[selected] == 4 ? "상대 발판" : "직접 조작 / 대기")}\n{notice}", text);

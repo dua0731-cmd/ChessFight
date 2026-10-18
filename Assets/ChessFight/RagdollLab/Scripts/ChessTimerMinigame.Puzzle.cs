@@ -19,19 +19,30 @@ namespace ChessFight.RagdollLab
         readonly GameObject[] cuttingTools = new GameObject[2];
         readonly int[] cuttingWire = { -1, -1 };
         readonly float[] solveTimes = { -1f, -1f };
+        ChessWirePuzzle.Layout puzzleLayout;
+        readonly System.Random puzzleRandom = new System.Random();
+        Material[] boardMaterials, wireMaterials;
+        Material hintMaterial;
+        GameObject boardRoot;
+        readonly System.Collections.Generic.List<Mesh> boardMeshes = new System.Collections.Generic.List<Mesh>();
         float elapsed;
         Material toolMetal, toolGrip;
         static float BoardCentreX(int team) => team == 0 ? -21f : 21f;
         static Vector3 BoardSquare(int team, int file, int rank) =>
             new Vector3(BoardCentreX(team) + (file - 3.5f) * TileSize, .06f, 30 + (rank - 3.5f) * TileSize);
         static Vector3 ToolStation(int team) => new Vector3(BoardCentreX(team), .9f, 11.5f);
-        static Vector3 WirePoint(int team, int wire) => BoardSquare(team, ChessWirePuzzle.File(wire), ChessWirePuzzle.Rank(wire)) + Vector3.up * .7f;
+        Vector3 WirePoint(int team, int wire) => BoardSquare(team, puzzleLayout.File(wire), puzzleLayout.Rank(wire)) + Vector3.up * .7f;
 
         void BuildDefuseBoards(Material ivory, Material walnut, Material cream, Material charcoal)
         {
-            toolMetal = charcoal; toolGrip = Mat(new Color(1f, .68f, .15f));
-            var colors = new[] { Mat(new Color(.92f, .16f, .12f)), Mat(new Color(.12f, .4f, 1f)), Mat(new Color(1f, .75f, .05f)) };
-            var hint = Mat(new Color(.8f, .28f, .19f));
+            int firstChild = transform.childCount, firstMesh = meshes.Count;
+            if (wireMaterials == null)
+            {
+                toolMetal = charcoal; toolGrip = Mat(new Color(1f, .68f, .15f));
+                wireMaterials = new[] { Mat(new Color(.92f, .16f, .12f)), Mat(new Color(.12f, .4f, 1f)), Mat(new Color(1f, .75f, .05f)) };
+                hintMaterial = Mat(new Color(.8f, .28f, .19f));
+            }
+            var colors = wireMaterials; var hint = hintMaterial;
             for (int team = 0; team < 2; team++)
             {
                 attackHints[team] = new GameObject("Piece attack hints"); attackHints[team].transform.SetParent(transform, false);
@@ -41,7 +52,7 @@ namespace ChessFight.RagdollLab
                     // Flush walking surface: tile graphics have no extra collision lips.
                     Box("Board tile " + (char)('A' + file) + (rank + 1), new Vector3(centre.x, .015f, centre.z),
                         new Vector3(TileSize, .03f, TileSize), (file + rank) % 2 == 0 ? ivory : walnut, false);
-                    if (ChessWirePuzzle.Attacked(file, rank))
+                    if (puzzleLayout.Attacked(file, rank))
                     {
                         var mark = Box("Attack hint", new Vector3(centre.x, .04f, centre.z), new Vector3(TileSize - .2f, .015f, .18f), hint, false);
                         mark.transform.SetParent(attackHints[team].transform, true);
@@ -56,9 +67,9 @@ namespace ChessFight.RagdollLab
                 }
                 for (int piece = 0; piece < ChessWirePuzzle.PieceCount; piece++)
                 {
-                    var rook = BoardSquare(team, ChessWirePuzzle.PieceFile(piece), ChessWirePuzzle.PieceRank(piece));
-                    BuildPieceGuide(team, piece, ChessWirePuzzle.IsBishop(piece), walnut, cream, charcoal);
-                    if (ChessWirePuzzle.IsBishop(piece)) { BuildBishop(rook, cream, charcoal); continue; }
+                    var rook = BoardSquare(team, puzzleLayout.PieceFile(piece), puzzleLayout.PieceRank(piece));
+                    BuildPieceGuide(team, piece, puzzleLayout.IsBishop(piece), walnut, cream, charcoal);
+                    if (puzzleLayout.IsBishop(piece)) { BuildBishop(rook, piece, cream, charcoal); continue; }
                     var rookRoot = new GameObject("Puzzle rook");
                     rookRoot.transform.SetParent(transform, false); rookRoot.transform.position = rook;
                     RoundedBox("Giant rook base", rook + Vector3.up * .4f, new Vector3(2.8f, .8f, 2.8f), .25f, cream).transform.SetParent(rookRoot.transform, true);
@@ -68,7 +79,7 @@ namespace ChessFight.RagdollLab
                         Box("Rook battlement", rook + new Vector3(corner % 2 == 0 ? -1 : 1, 6.1f, corner < 2 ? -1 : 1), new Vector3(.65f, .7f, .65f), cream).transform.SetParent(rookRoot.transform, true);
                     float scale = Mathf.Clamp(rookScale, .2f, 1f);
                     rookRoot.transform.localScale = Vector3.one * scale;
-                    Label("Rook location", rook + new Vector3(0, 6.45f * scale + .6f, 0), "ROOK / " + (char)('A' + ChessWirePuzzle.PieceFile(piece)) + (ChessWirePuzzle.PieceRank(piece) + 1), .35f);
+                    Label("Rook location", rook + new Vector3(0, 6.45f * scale + .6f, 0), "ROOK / " + (char)('A' + puzzleLayout.PieceFile(piece)) + (puzzleLayout.PieceRank(piece) + 1), .35f);
                 }
                 for (int wire = 0; wire < 3; wire++)
                 {
@@ -87,9 +98,15 @@ namespace ChessFight.RagdollLab
                 displayTool.transform.position = ToolStation(team) + Vector3.up * .15f;
                 displayTool.transform.localScale = Vector3.one * 2;
                 boardSigns[team] = Label("Puzzle briefing", ToolStation(team) + new Vector3(0, 2.4f, 1.8f),
-                    "8 x 8 / ROOK x2 + BISHOP\n세 기물 모두에게 안전한 칸의 전선을 자르세요\nF: 절단기 획득 / H: 공격 방향 힌트", .25f);
+                    "8 x 8 / 룩 + 비숍 · 총 3개\n세 기물 모두에게 안전한 칸의 전선을 자르세요\nF: 절단기 획득 / H: 공격 방향 힌트", .25f);
                 Label("Court route", new Vector3(BoardCentreX(team), .8f, 8), "해체 구역 / 절단기 → 전선 → 출구", .3f);
             }
+            // Own all generated board objects, labels and meshes so F3 leaves no stale colliders or hints.
+            var children = new System.Collections.Generic.List<Transform>();
+            for (int i = firstChild; i < transform.childCount; i++) children.Add(transform.GetChild(i));
+            boardRoot = new GameObject("Round puzzle boards"); boardRoot.transform.SetParent(transform, false);
+            foreach (var child in children) child.SetParent(boardRoot.transform, true);
+            for (int i = firstMesh; i < meshes.Count; i++) boardMeshes.Add(meshes[i]);
         }
         void BuildPieceGuide(int team, int piece, bool bishop, Material frame, Material paper, Material ink)
         {
@@ -122,7 +139,7 @@ namespace ChessFight.RagdollLab
             // Text faces local -Z; turn the complete frame toward its team court.
             root.transform.localRotation = Quaternion.Euler(0, side * 90f, 0);
         }
-        void BuildBishop(Vector3 position, Material cream, Material dark)
+        void BuildBishop(Vector3 position, int piece, Material cream, Material dark)
         {
             var root = new GameObject("Puzzle bishop"); root.transform.SetParent(transform, false); root.transform.position = position;
             RoundedBox("Bishop base", position + Vector3.up * .4f, new Vector3(2.8f, .8f, 2.8f), .3f, cream).transform.SetParent(root.transform, true);
@@ -134,7 +151,7 @@ namespace ChessFight.RagdollLab
             var slit = Box("Bishop diagonal slit", position + new Vector3(0, 5.2f, -.96f), new Vector3(.13f, 1.4f, .06f), dark, false);
             slit.transform.rotation = Quaternion.Euler(0, 0, -30); slit.transform.SetParent(root.transform, true);
             float scale = Mathf.Clamp(rookScale, .2f, 1f); root.transform.localScale = Vector3.one * scale;
-            Label("Bishop location", position + Vector3.up * (6.3f * scale + .6f), "BISHOP / C6", .35f);
+            Label("Bishop location", position + Vector3.up * (6.3f * scale + .6f), "BISHOP / " + (char)('A' + puzzleLayout.PieceFile(piece)) + (puzzleLayout.PieceRank(piece) + 1), .35f);
         }
         GameObject MakeCutter(string name, Transform parent)
         {
@@ -154,9 +171,18 @@ namespace ChessFight.RagdollLab
         void ResetPuzzle()
         {
             elapsed = 0;
+            if (boardRoot != null)
+            {
+                boundedLabels.RemoveAll(entry => entry.text == null || entry.text.transform.IsChildOf(boardRoot.transform));
+                boardRoot.SetActive(false); Destroy(boardRoot);
+                foreach (var mesh in boardMeshes) { meshes.Remove(mesh); Destroy(mesh); }
+                boardMeshes.Clear();
+            }
+            puzzleLayout = ChessWirePuzzle.Generate(puzzleRandom, puzzleLayout);
+            BuildDefuseBoards(boardMaterials[0], boardMaterials[1], boardMaterials[2], boardMaterials[3]);
             for (int team = 0; team < 2; team++)
             {
-                puzzles[team] = new ChessWirePuzzle(cutSeconds, wrongWireLock); solveTimes[team] = -1; cuttingWire[team] = -1;
+                puzzles[team] = new ChessWirePuzzle(cutSeconds, wrongWireLock, puzzleLayout); solveTimes[team] = -1; cuttingWire[team] = -1;
                 cuttingTools[team].SetActive(false);
                 attackHints[team].SetActive(false);
                 for (int wire = 0; wire < 3; wire++) wireCentres[team, wire].SetActive(true);
@@ -225,7 +251,7 @@ namespace ChessFight.RagdollLab
             }
             for (int team = 0; team < 2; team++) for (int wire = 0; wire < 3; wire++)
             {
-                string coord = ((char)('A' + ChessWirePuzzle.File(wire))).ToString() + (ChessWirePuzzle.Rank(wire) + 1);
+                string coord = ((char)('A' + puzzleLayout.File(wire))).ToString() + (puzzleLayout.Rank(wire) + 1);
                 string color = wire == 0 ? "빨강" : wire == 1 ? "파랑" : "노랑";
                 wireLabels[team, wire].text = (wire + 1) + " / " + color + " / " + coord + "\n" +
                     (rules.Teams[team].Finished ? "종료" : puzzles[team].Cut(wire) ? "절단됨" : puzzles[team].LockLeft > 0 ? "잠금" : "절단기 + F 길게");

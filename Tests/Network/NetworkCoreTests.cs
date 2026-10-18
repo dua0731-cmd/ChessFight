@@ -120,18 +120,81 @@ public static class NetworkCoreTests
                 int safe = 0;
                 for (int i = 0; i < 3; i++)
                 {
-                    Check(ChessWirePuzzle.File(i) >= 0 && ChessWirePuzzle.File(i) < 8 && ChessWirePuzzle.Rank(i) >= 0 && ChessWirePuzzle.Rank(i) < 8, "valid cell");
-                    if (!ChessWirePuzzle.Attacked(ChessWirePuzzle.File(i), ChessWirePuzzle.Rank(i))) safe++;
+                    Check(ChessWirePuzzle.Training.File(i) >= 0 && ChessWirePuzzle.Training.File(i) < 8 && ChessWirePuzzle.Training.Rank(i) >= 0 && ChessWirePuzzle.Training.Rank(i) < 8, "valid cell");
+                    if (!ChessWirePuzzle.Training.Attacked(ChessWirePuzzle.Training.File(i), ChessWirePuzzle.Training.Rank(i))) safe++;
                 }
-                Check(safe == 1 && !ChessWirePuzzle.Attacked(2, 6), "C7 only safe endpoint");
+                Check(safe == 1 && !ChessWirePuzzle.Training.Attacked(2, 6), "C7 only safe endpoint");
             });
             Test("Rook and bishop attack rays stop at intervening pieces", () => {
-                Check(ChessWirePuzzle.PieceCount == 3 && !ChessWirePuzzle.IsBishop(0) && !ChessWirePuzzle.IsBishop(1) && ChessWirePuzzle.IsBishop(2), "two rooks one bishop");
-                Check(ChessWirePuzzle.Attacked(2, 3), "C3 rook attacks C4");
-                Check(ChessWirePuzzle.Attacked(5, 1), "F6 rook attacks red F2");
-                Check(ChessWirePuzzle.Attacked(4, 3), "C6 bishop attacks blue E4");
-                Check(!ChessWirePuzzle.Attacked(2, 6), "C6 bishop blocks rook ray to yellow C7");
-                Check(!ChessWirePuzzle.Attacked(2, 7), "rook cannot see past blocker to C8");
+                Check(ChessWirePuzzle.PieceCount == 3 && !ChessWirePuzzle.Training.IsBishop(0) && !ChessWirePuzzle.Training.IsBishop(1) && ChessWirePuzzle.Training.IsBishop(2), "two rooks one bishop");
+                Check(ChessWirePuzzle.Training.Attacked(2, 3), "C3 rook attacks C4");
+                Check(ChessWirePuzzle.Training.Attacked(5, 1), "F6 rook attacks red F2");
+                Check(ChessWirePuzzle.Training.Attacked(4, 3), "C6 bishop attacks blue E4");
+                Check(!ChessWirePuzzle.Training.Attacked(2, 6), "C6 bishop blocks rook ray to yellow C7");
+                Check(!ChessWirePuzzle.Training.Attacked(2, 7), "rook cannot see past blocker to C8");
+            });
+            Test("Generated puzzles have distinct pieces, both types, blocked rays and one safe wire", () => {
+                ChessWirePuzzle.Layout previous = null;
+                var random = new System.Random(102);
+                var answers = new System.Collections.Generic.HashSet<int>();
+                var compositions = new System.Collections.Generic.HashSet<int>();
+                for (int round = 0; round < 2000; round++)
+                {
+                    var board = ChessWirePuzzle.Generate(random, previous);
+                    var occupied = new System.Collections.Generic.HashSet<int>();
+                    int bishops = 0;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        int x = board.PieceFile(i), y = board.PieceRank(i);
+                        Check(x >= 0 && x < 8 && y >= 0 && y < 8 && occupied.Add(y * 8 + x), "unique on-board piece");
+                        if (board.IsBishop(i)) bishops++;
+                        for (int j = 0; previous != null && j < 3; j++)
+                            Check(x != previous.PieceFile(j) || y != previous.PieceRank(j), "all piece locations change next round");
+                    }
+                    Check(bishops == 1 || bishops == 2, "both types present"); compositions.Add(bishops);
+                    // Independent target-to-piece line-of-sight oracle, rather than ray marching.
+                    for (int x = 0; x < 8; x++) for (int y = 0; y < 8; y++)
+                    {
+                        bool attacked = occupied.Contains(y * 8 + x);
+                        for (int i = 0; i < 3; i++)
+                        {
+                            int dx = x - board.PieceFile(i), dy = y - board.PieceRank(i);
+                            bool aligned = board.IsBishop(i) ? Math.Abs(dx) == Math.Abs(dy) : dx == 0 || dy == 0;
+                            if (!aligned || (dx == 0 && dy == 0)) continue;
+                            bool blocked = false;
+                            int steps = Math.Max(Math.Abs(dx), Math.Abs(dy));
+                            for (int step = 1; step < steps; step++)
+                                if (occupied.Contains((board.PieceRank(i) + Math.Sign(dy) * step) * 8 + board.PieceFile(i) + Math.Sign(dx) * step)) blocked = true;
+                            if (!blocked) attacked = true;
+                        }
+                        Check(board.Attacked(x, y) == attacked, "independent attack oracle");
+                    }
+                    var wires = new System.Collections.Generic.HashSet<int>(); int safe = 0;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        int x = board.File(i), y = board.Rank(i);
+                        Check(x >= 0 && x < 8 && y >= 0 && y < 8 && wires.Add(y * 8 + x) && !occupied.Contains(y * 8 + x), "distinct unoccupied wire");
+                        if (!board.Attacked(x, y)) { safe++; answers.Add(i); }
+                    }
+                    Check(safe == 1, "exactly one safe wire"); previous = board;
+                }
+                Check(answers.Count == 3 && compositions.Count == 2, "both compositions and all answer colors occur");
+            });
+            Test("Shared generated layout has independent team progress and reproducible seeds", () => {
+                var board = ChessWirePuzzle.Generate(new System.Random(77));
+                var replay = ChessWirePuzzle.Generate(new System.Random(77));
+                int safe = -1, wrong = -1;
+                for (int i = 0; i < 3; i++)
+                {
+                    Check(board.File(i) == replay.File(i) && board.Rank(i) == replay.Rank(i) &&
+                        board.PieceFile(i) == replay.PieceFile(i) && board.PieceRank(i) == replay.PieceRank(i) && board.IsBishop(i) == replay.IsBishop(i), "seed reproduces layout");
+                    if (!board.Attacked(board.File(i), board.Rank(i))) safe = i; else wrong = i;
+                }
+                var white = new ChessWirePuzzle(7, 2, board); var black = new ChessWirePuzzle(7, 2, board);
+                Check(white.Step(6, 0, safe, true) == ChessWirePuzzle.Result.None, "not complete before seven seconds");
+                Check(white.Step(1, 0, safe, true) == ChessWirePuzzle.Result.Solved && !black.Solved && !black.Cut(safe), "team state isolated");
+                Check(black.Step(7, 6, wrong, true) == ChessWirePuzzle.Result.Wrong, "generated danger wire penalizes");
+                Check(black.LockLeft == 2 && white.LockLeft == 0, "locks isolated");
             });
             Test("Wire cutting requires a tool and continuous same-worker contact", () => {
                 var p = new ChessWirePuzzle(1, 2);
