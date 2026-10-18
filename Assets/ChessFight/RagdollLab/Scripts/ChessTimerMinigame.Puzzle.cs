@@ -30,7 +30,7 @@ namespace ChessFight.RagdollLab
         Material toolMetal, toolGrip;
         static float BoardCentreX(int team) => team == 0 ? -21f : 21f;
         static Vector3 BoardSquare(int team, int file, int rank) =>
-            new Vector3(BoardCentreX(team) + (file - 3.5f) * TileSize, .06f, 30 + ((team == 0 ? rank : 7 - rank) - 3.5f) * TileSize);
+            new Vector3(BoardCentreX(team) + (file - 3.5f) * TileSize, .06f, 30 + ((team == 0 ? 7 - rank : rank) - 3.5f) * TileSize);
         static Vector3 ToolStation(int team) => new Vector3(BoardCentreX(team), .9f, 11.5f);
         Vector3 WirePoint(int team, int wire) => BoardSquare(team, puzzles[team].Board.File(wire), puzzles[team].Board.Rank(wire)) + Vector3.up * .7f;
 
@@ -64,7 +64,7 @@ namespace ChessFight.RagdollLab
                 cuttingTools[team] = MakeCutter("Cutter at wire", transform); cuttingTools[team].SetActive(false);
                 for (int index = 0; index < 8; index++)
                 {
-                    Label("File coordinate", BoardSquare(team, index, 0) + new Vector3(0, .15f, team == 0 ? -2.5f : 2.5f), ((char)('A' + index)).ToString(), .5f);
+                    Label("File coordinate", BoardSquare(team, index, 0) + new Vector3(0, .15f, team == 0 ? 2.5f : -2.5f), ((char)('A' + index)).ToString(), .5f);
                     Label("Rank coordinate", BoardSquare(team, 0, index) + new Vector3(-2.6f, .15f, 0), (index + 1).ToString(), .5f);
                 }
                 for (int piece = 0; piece < puzzleLayout.PieceCount; piece++)
@@ -133,7 +133,7 @@ namespace ChessFight.RagdollLab
             for (int x = -2; x <= 2; x++) for (int y = -2; y <= 2; y++)
             {
                 bool middle = x == 0 && y == 0;
-                bool reachable = kind == ChessWirePuzzle.Kind.Pawn ? Mathf.Abs(x) == 1 && y == -1 :
+                bool reachable = kind == ChessWirePuzzle.Kind.Pawn ? Mathf.Abs(x) == 1 && y == 1 :
                         kind == ChessWirePuzzle.Kind.Knight ? Mathf.Abs(x * y) == 2 :
                         bishop ? Mathf.Abs(x) == Mathf.Abs(y) : x == 0 || y == 0;
                 var pos = centre + new Vector3(x * .33f, .28f + y * .33f, -.135f);
@@ -143,7 +143,7 @@ namespace ChessFight.RagdollLab
             var symbol = Label("Diagram piece", centre + new Vector3(0, .28f, -.15f), kind == ChessWirePuzzle.Kind.Rook ? "R" : bishop ? "B" : kind == ChessWirePuzzle.Kind.Knight ? "N" : "P", .22f, .26f, .26f);
             symbol.color = Color.white; symbol.transform.SetParent(content.transform, true);
             string explanation = kind == ChessWirePuzzle.Kind.Pawn ?
-                "앞 대각선 한 칸 공격\n직진은 공격 아님\n이 판에서는 입구 방향" :
+                "앞 대각선 한 칸 공격\n직진은 공격 아님\n이 판에서는 출구 방향" :
                 kind == ChessWirePuzzle.Kind.Knight ? "두 칸 + 옆 한 칸 (L자)\n다른 기물을 뛰어넘음" :
                 (bishop ? "대각선으로 이동" : "가로·세로로 이동") + "\n막힐 때까지 여러 칸\n다른 기물은 넘지 못함";
             var caption = Label("Guide explanation", centre + new Vector3(0, -1.18f, -.13f), explanation, .18f, 2.7f, .65f);
@@ -177,8 +177,8 @@ namespace ChessFight.RagdollLab
                 var head = GameObject.CreatePrimitive(PrimitiveType.Sphere); head.name = "Pawn head";
                 head.transform.SetParent(root.transform, false); head.transform.localPosition = Vector3.up * 3f;
                 head.transform.localScale = Vector3.one * 1.7f; head.GetComponent<Renderer>().sharedMaterial = material;
-                // Pawns on both physically equivalent boards attack toward the entry.
-                Box("Pawn forward marker", position + new Vector3(0, .65f, -1f), new Vector3(.25f, .1f, .8f), toolGrip, false).transform.SetParent(root.transform, true);
+                // Pawns on both physically equivalent boards attack toward the exit.
+                Box("Pawn forward marker", position + new Vector3(0, .65f, 1f), new Vector3(.25f, .1f, .8f), toolGrip, false).transform.SetParent(root.transform, true);
             }
             else
             {
