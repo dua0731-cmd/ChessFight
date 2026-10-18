@@ -374,7 +374,7 @@ MonoBehaviour:
   sparringBots: 1
   timeLimit: 90
   cutSeconds: 1.5
-  wrongWireSeconds: 5
+  rookScale: 0.6
   wrongWireLock: 2
 --- !u!114 &1667498619
 MonoBehaviour:

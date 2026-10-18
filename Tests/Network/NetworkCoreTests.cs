@@ -150,6 +150,17 @@ public static class NetworkCoreTests
                 Check(r.CompletedTeams == 3 && r.Winner == 0 && blast == 2, "more time wins simultaneous physical puzzle");
                 Check(r.StepPuzzle(.1f, 0, 0, true, true) == 0, "results do not repeat");
             });
+            Test("Wrong wire subtracts a third of the configured limit, not remaining time", () => {
+                var r = new ChessTimerRules(90, switchDelay: 0);
+                r.StepPuzzle(10, 0, 0, false, false);
+                Check(r.WrongWirePenalty == 30, "ninety second limit costs thirty");
+                r.StepPuzzle(.1f, 3, 1, false, false, r.WrongWirePenalty, 0);
+                Check(r.Teams[0].Remaining == 50, "subtract thirty from eighty even when paused");
+                r.StepPuzzle(.1f, 3, 1, false, false, r.WrongWirePenalty, 0);
+                Check(r.Teams[0].Remaining == 20, "second error still costs thirty");
+                Check(r.StepPuzzle(.1f, 3, 1, false, false, r.WrongWirePenalty, 0) == 1 && r.Teams[0].Remaining == 0, "clamp to zero and explode");
+                Check(new ChessTimerRules(60).WrongWirePenalty == 20, "follows configured limit");
+            });
             Test("Wrong wire drains even paused clock and expiry opens both doors before success", () => {
                 var r = new ChessTimerRules(5, switchDelay: 0);
                 int blast = r.StepPuzzle(.1f, 3, 1, true, false, 5, 0);

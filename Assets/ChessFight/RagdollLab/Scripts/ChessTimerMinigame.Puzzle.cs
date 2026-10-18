@@ -7,7 +7,7 @@ namespace ChessFight.RagdollLab
     {
         [Header("Physical wire puzzle (F3 resets)")]
         [SerializeField, Min(.1f)] float cutSeconds = 1.5f;
-        [SerializeField, Min(0)] float wrongWireSeconds = 5f;
+        [SerializeField, Range(.2f, 1f), Tooltip("Rook visual and collision scale; restart Play to apply.")] float rookScale = .6f;
         [SerializeField, Min(0)] float wrongWireLock = 2f;
         readonly ChessWirePuzzle[] puzzles = new ChessWirePuzzle[2];
         readonly bool[] hasCutter = new bool[12];
@@ -55,12 +55,16 @@ namespace ChessFight.RagdollLab
                     Label("Rank coordinate", BoardSquare(team, 0, index) + new Vector3(-2.6f, .15f, 0), (index + 1).ToString(), .5f);
                 }
                 var rook = BoardSquare(team, ChessWirePuzzle.RookFile, ChessWirePuzzle.RookRank);
-                RoundedBox("Giant rook base", rook + Vector3.up * .4f, new Vector3(2.8f, .8f, 2.8f), .25f, cream);
-                RoundedBox("Giant rook tower", rook + Vector3.up * 3f, new Vector3(1.9f, 4.8f, 1.9f), .2f, cream);
-                Box("Giant rook crown", rook + Vector3.up * 5.5f, new Vector3(2.7f, .6f, 2.7f), cream);
+                var rookRoot = new GameObject("Puzzle rook");
+                rookRoot.transform.SetParent(transform, false); rookRoot.transform.position = rook;
+                RoundedBox("Giant rook base", rook + Vector3.up * .4f, new Vector3(2.8f, .8f, 2.8f), .25f, cream).transform.SetParent(rookRoot.transform, true);
+                RoundedBox("Giant rook tower", rook + Vector3.up * 3f, new Vector3(1.9f, 4.8f, 1.9f), .2f, cream).transform.SetParent(rookRoot.transform, true);
+                Box("Giant rook crown", rook + Vector3.up * 5.5f, new Vector3(2.7f, .6f, 2.7f), cream).transform.SetParent(rookRoot.transform, true);
                 for (int corner = 0; corner < 4; corner++)
-                    Box("Rook battlement", rook + new Vector3(corner % 2 == 0 ? -1 : 1, 6.1f, corner < 2 ? -1 : 1), new Vector3(.65f, .7f, .65f), cream);
-                Label("Rook location", rook + new Vector3(0, 7, 0), "ROOK / C3", .45f);
+                    Box("Rook battlement", rook + new Vector3(corner % 2 == 0 ? -1 : 1, 6.1f, corner < 2 ? -1 : 1), new Vector3(.65f, .7f, .65f), cream).transform.SetParent(rookRoot.transform, true);
+                float scale = Mathf.Clamp(rookScale, .2f, 1f);
+                rookRoot.transform.localScale = Vector3.one * scale;
+                Label("Rook location", rook + new Vector3(0, 6.45f * scale + .6f, 0), "ROOK / C3", .35f);
                 for (int wire = 0; wire < 3; wire++)
                 {
                     var p = WirePoint(team, wire);
@@ -146,7 +150,7 @@ namespace ChessFight.RagdollLab
                 workers[team] = worker >= 0 ? 1 : 0;
                 var result = puzzles[team].Step(dt, worker, wire, worker >= 0);
                 if (result == ChessWirePuzzle.Result.Wrong)
-                { penalties[team] = Mathf.Max(0, wrongWireSeconds); notice = "오답! 룩과 같은 행/열입니다 · 시간 차감 / 잠시 잠금"; }
+                { penalties[team] = rules.WrongWirePenalty; notice = $"오답! 전체 제한시간의 1/3인 {rules.WrongWirePenalty:0.##}초 차감 / 잠시 잠금"; }
                 solved[team] = result == ChessWirePuzzle.Result.Solved;
                 if (wire >= 0 && puzzles[team].Cut(wire)) wireCentres[team, wire].SetActive(false);
             }
