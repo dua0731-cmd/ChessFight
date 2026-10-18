@@ -7,7 +7,7 @@ namespace ChessFight.RagdollLab
     {
         [Header("Physical wire puzzle (F3 resets)")]
         [SerializeField, Min(.1f)] float cutSeconds = 1.5f;
-        [SerializeField, Range(.2f, 1f), Tooltip("Rook visual and collision scale; restart Play to apply.")] float rookScale = .6f;
+        [SerializeField, Range(.2f, 1f), Tooltip("Puzzle piece visual and collision scale; restart Play to apply.")] float rookScale = .6f;
         [SerializeField, Min(0)] float wrongWireLock = 2f;
         readonly ChessWirePuzzle[] puzzles = new ChessWirePuzzle[2];
         readonly bool[] hasCutter = new bool[12];
@@ -34,7 +34,7 @@ namespace ChessFight.RagdollLab
             var hint = Mat(new Color(.8f, .28f, .19f));
             for (int team = 0; team < 2; team++)
             {
-                attackHints[team] = new GameObject("Rook attack hints"); attackHints[team].transform.SetParent(transform, false);
+                attackHints[team] = new GameObject("Piece attack hints"); attackHints[team].transform.SetParent(transform, false);
                 for (int file = 0; file < ChessWirePuzzle.Size; file++) for (int rank = 0; rank < ChessWirePuzzle.Size; rank++)
                 {
                     var centre = BoardSquare(team, file, rank);
@@ -54,17 +54,21 @@ namespace ChessFight.RagdollLab
                     Label("File coordinate", BoardSquare(team, index, 0) + new Vector3(0, .15f, -2.5f), ((char)('A' + index)).ToString(), .5f);
                     Label("Rank coordinate", BoardSquare(team, 0, index) + new Vector3(-2.6f, .15f, 0), (index + 1).ToString(), .5f);
                 }
-                var rook = BoardSquare(team, ChessWirePuzzle.RookFile, ChessWirePuzzle.RookRank);
-                var rookRoot = new GameObject("Puzzle rook");
-                rookRoot.transform.SetParent(transform, false); rookRoot.transform.position = rook;
-                RoundedBox("Giant rook base", rook + Vector3.up * .4f, new Vector3(2.8f, .8f, 2.8f), .25f, cream).transform.SetParent(rookRoot.transform, true);
-                RoundedBox("Giant rook tower", rook + Vector3.up * 3f, new Vector3(1.9f, 4.8f, 1.9f), .2f, cream).transform.SetParent(rookRoot.transform, true);
-                Box("Giant rook crown", rook + Vector3.up * 5.5f, new Vector3(2.7f, .6f, 2.7f), cream).transform.SetParent(rookRoot.transform, true);
-                for (int corner = 0; corner < 4; corner++)
-                    Box("Rook battlement", rook + new Vector3(corner % 2 == 0 ? -1 : 1, 6.1f, corner < 2 ? -1 : 1), new Vector3(.65f, .7f, .65f), cream).transform.SetParent(rookRoot.transform, true);
-                float scale = Mathf.Clamp(rookScale, .2f, 1f);
-                rookRoot.transform.localScale = Vector3.one * scale;
-                Label("Rook location", rook + new Vector3(0, 6.45f * scale + .6f, 0), "ROOK / C3", .35f);
+                for (int piece = 0; piece < ChessWirePuzzle.PieceCount; piece++)
+                {
+                    var rook = BoardSquare(team, ChessWirePuzzle.PieceFile(piece), ChessWirePuzzle.PieceRank(piece));
+                    if (ChessWirePuzzle.IsBishop(piece)) { BuildBishop(rook, cream, charcoal); continue; }
+                    var rookRoot = new GameObject("Puzzle rook");
+                    rookRoot.transform.SetParent(transform, false); rookRoot.transform.position = rook;
+                    RoundedBox("Giant rook base", rook + Vector3.up * .4f, new Vector3(2.8f, .8f, 2.8f), .25f, cream).transform.SetParent(rookRoot.transform, true);
+                    RoundedBox("Giant rook tower", rook + Vector3.up * 3f, new Vector3(1.9f, 4.8f, 1.9f), .2f, cream).transform.SetParent(rookRoot.transform, true);
+                    Box("Giant rook crown", rook + Vector3.up * 5.5f, new Vector3(2.7f, .6f, 2.7f), cream).transform.SetParent(rookRoot.transform, true);
+                    for (int corner = 0; corner < 4; corner++)
+                        Box("Rook battlement", rook + new Vector3(corner % 2 == 0 ? -1 : 1, 6.1f, corner < 2 ? -1 : 1), new Vector3(.65f, .7f, .65f), cream).transform.SetParent(rookRoot.transform, true);
+                    float scale = Mathf.Clamp(rookScale, .2f, 1f);
+                    rookRoot.transform.localScale = Vector3.one * scale;
+                    Label("Rook location", rook + new Vector3(0, 6.45f * scale + .6f, 0), "ROOK / " + (char)('A' + ChessWirePuzzle.PieceFile(piece)) + (ChessWirePuzzle.PieceRank(piece) + 1), .35f);
+                }
                 for (int wire = 0; wire < 3; wire++)
                 {
                     var p = WirePoint(team, wire);
@@ -82,9 +86,23 @@ namespace ChessFight.RagdollLab
                 displayTool.transform.position = ToolStation(team) + Vector3.up * .15f;
                 displayTool.transform.localScale = Vector3.one * 2;
                 boardSigns[team] = Label("Puzzle briefing", ToolStation(team) + new Vector3(0, 2.4f, 1.8f),
-                    "8 x 8 / ROOK\n룩이 공격하지 않는 칸의 전선을 자르세요\nF: 절단기 획득 / H: 공격 방향 힌트", .25f);
+                    "8 x 8 / ROOK x2 + BISHOP\n세 기물 모두에게 안전한 칸의 전선을 자르세요\nF: 절단기 획득 / H: 공격 방향 힌트", .25f);
                 Label("Court route", new Vector3(BoardCentreX(team), .8f, 8), "해체 구역 / 절단기 → 전선 → 출구", .3f);
             }
+        }
+        void BuildBishop(Vector3 position, Material cream, Material dark)
+        {
+            var root = new GameObject("Puzzle bishop"); root.transform.SetParent(transform, false); root.transform.position = position;
+            RoundedBox("Bishop base", position + Vector3.up * .4f, new Vector3(2.8f, .8f, 2.8f), .3f, cream).transform.SetParent(root.transform, true);
+            RoundedBox("Bishop stem", position + Vector3.up * 2.4f, new Vector3(1.3f, 3.4f, 1.3f), .5f, cream).transform.SetParent(root.transform, true);
+            var head = GameObject.CreatePrimitive(PrimitiveType.Sphere); head.name = "Bishop mitre";
+            head.transform.SetParent(root.transform, false); head.transform.localPosition = Vector3.up * 4.9f;
+            head.transform.localScale = new Vector3(2, 2.8f, 2);
+            head.GetComponent<Renderer>().sharedMaterial = cream;
+            var slit = Box("Bishop diagonal slit", position + new Vector3(0, 5.2f, -.96f), new Vector3(.13f, 1.4f, .06f), dark, false);
+            slit.transform.rotation = Quaternion.Euler(0, 0, -30); slit.transform.SetParent(root.transform, true);
+            float scale = Mathf.Clamp(rookScale, .2f, 1f); root.transform.localScale = Vector3.one * scale;
+            Label("Bishop location", position + Vector3.up * (6.3f * scale + .6f), "BISHOP / C6", .35f);
         }
         GameObject MakeCutter(string name, Transform parent)
         {

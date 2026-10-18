@@ -116,14 +116,22 @@ public static class NetworkCoreTests
                 r.Reset(); r.Step(float.NaN, 3, 0, 3, 0); r.Step(float.PositiveInfinity, 3, 0, 3, 0); r.Step(-1, 3, 0, 3, 0);
                 Check(r.Teams[0].Remaining == 1 && r.Teams[0].Work == 0, "invalid dt ignored");
             });
-            Test("Physical rook puzzle has exactly one safe wire on an 8x8 board", () => {
+            Test("Two rooks and one bishop have exactly one safe wire on an 8x8 board", () => {
                 int safe = 0;
                 for (int i = 0; i < 3; i++)
                 {
                     Check(ChessWirePuzzle.File(i) >= 0 && ChessWirePuzzle.File(i) < 8 && ChessWirePuzzle.Rank(i) >= 0 && ChessWirePuzzle.Rank(i) < 8, "valid cell");
                     if (!ChessWirePuzzle.Attacked(ChessWirePuzzle.File(i), ChessWirePuzzle.Rank(i))) safe++;
                 }
-                Check(safe == 1 && !ChessWirePuzzle.Attacked(6, 6), "G7 only safe endpoint");
+                Check(safe == 1 && !ChessWirePuzzle.Attacked(2, 6), "C7 only safe endpoint");
+            });
+            Test("Rook and bishop attack rays stop at intervening pieces", () => {
+                Check(ChessWirePuzzle.PieceCount == 3 && !ChessWirePuzzle.IsBishop(0) && !ChessWirePuzzle.IsBishop(1) && ChessWirePuzzle.IsBishop(2), "two rooks one bishop");
+                Check(ChessWirePuzzle.Attacked(2, 3), "C3 rook attacks C4");
+                Check(ChessWirePuzzle.Attacked(5, 1), "F6 rook attacks red F2");
+                Check(ChessWirePuzzle.Attacked(4, 3), "C6 bishop attacks blue E4");
+                Check(!ChessWirePuzzle.Attacked(2, 6), "C6 bishop blocks rook ray to yellow C7");
+                Check(!ChessWirePuzzle.Attacked(2, 7), "rook cannot see past blocker to C8");
             });
             Test("Wire cutting requires a tool and continuous same-worker contact", () => {
                 var p = new ChessWirePuzzle(1, 2);
