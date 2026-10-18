@@ -1,106 +1,157 @@
 using System;
+using System.Collections.Generic;
 
 namespace ChessFight.Network
 {
-    // Physical 8x8 wire puzzles. Coordinates are zero-based; both teams receive the same layout.
     public sealed class ChessWirePuzzle
     {
-        public const int Size = 8, PieceCount = 3;
-        // Immutable layout is shared by both teams; cutting state remains per team.
+        public const int Size = 8;
+        public enum Kind { Rook, Bishop, Knight, Pawn }
+        // Immutable board data; each team owns separate cutting state.
         public sealed class Layout
         {
             readonly int[] pieces, wires;
-            readonly bool[] bishops;
-            internal Layout(int[] pieces, bool[] bishops, int[] wires)
-            { this.pieces = (int[])pieces.Clone(); this.bishops = (bool[])bishops.Clone(); this.wires = (int[])wires.Clone(); }
-            public int File(int index) => wires[index] % Size;
-            public int Rank(int index) => wires[index] / Size;
-            public int PieceFile(int index) => pieces[index] % Size;
-            public int PieceRank(int index) => pieces[index] / Size;
-            public bool IsBishop(int index) => bishops[index];
-            public bool Occupied(int file, int rank)
+            readonly Kind[] kinds;
+            public int PieceCount => pieces.Length;
+            public int PawnDirection { get; }
+            internal Layout(int[] pieces, Kind[] kinds, int[] wires, int pawnDirection = -1)
+            { this.pieces = (int[])pieces.Clone(); this.kinds = (Kind[])kinds.Clone(); this.wires = (int[])wires.Clone(); PawnDirection = pawnDirection; }
+            public int File(int i) => wires[i] % Size;
+            public int Rank(int i) => wires[i] / Size;
+            public int PieceFile(int i) => pieces[i] % Size;
+            public int PieceRank(int i) => pieces[i] / Size;
+            public Kind PieceKind(int i) => kinds[i];
+            public bool IsBishop(int i) => kinds[i] == Kind.Bishop;
+            public bool Occupied(int x, int y) => Array.IndexOf(pieces, y * Size + x) >= 0;
+            public Layout MirrorRanks()
             {
-                for (int i = 0; i < PieceCount; i++)
-                    if (PieceFile(i) == file && PieceRank(i) == rank) return true;
-                return false;
+                int[] p = new int[PieceCount], w = new int[3];
+                for (int i = 0; i < p.Length; i++) p[i] = (7 - PieceRank(i)) * 8 + PieceFile(i);
+                for (int i = 0; i < 3; i++) w[i] = (7 - Rank(i)) * 8 + File(i);
+                return new Layout(p, kinds, w, -PawnDirection);
             }
-            public bool Attacked(int file, int rank)
+            public bool Attacked(int x, int y)
             {
-                if (file < 0 || file >= Size || rank < 0 || rank >= Size) return false;
-                if (Occupied(file, rank)) return true;
+                if (x < 0 || x >= 8 || y < 0 || y >= 8) return false;
+                if (Occupied(x, y)) return true;
                 for (int i = 0; i < PieceCount; i++)
-                    for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
-                    {
-                        bool diagonal = dx != 0 && dy != 0;
-                        if ((dx == 0 && dy == 0) || IsBishop(i) != diagonal) continue;
-                        int x = PieceFile(i) + dx, y = PieceRank(i) + dy;
-                        while (x >= 0 && x < Size && y >= 0 && y < Size)
-                        {
-                            if (x == file && y == rank) return true;
-                            if (Occupied(x, y)) break;
-                            x += dx; y += dy;
-                        }
-                    }
+                {
+                    int dx = x - PieceFile(i), dy = y - PieceRank(i);
+                    if (kinds[i] == Kind.Pawn)
+                    { if (Math.Abs(dx) == 1 && dy == PawnDirection) return true; continue; }
+                    if (kinds[i] == Kind.Knight)
+                    { if (Math.Abs(dx) * Math.Abs(dy) == 2) return true; continue; }
+                    bool aligned = kinds[i] == Kind.Rook ? dx == 0 || dy == 0 : Math.Abs(dx) == Math.Abs(dy);
+                    if (!aligned) continue;
+                    bool blocked = false;
+                    for (int step = 1; step < Math.Max(Math.Abs(dx), Math.Abs(dy)); step++)
+                        if (Occupied(PieceFile(i) + Math.Sign(dx) * step, PieceRank(i) + Math.Sign(dy) * step)) { blocked = true; break; }
+                    if (!blocked) return true;
+                }
                 return false;
             }
         }
-        public static Layout Training => new Layout(new[] { 18, 45, 42 },
-            new[] { false, false, true }, new[] { 13, 28, 50 });
+        // Fixed valid fixture also used as a bounded-generation fallback.
+        public static Layout Training => new Layout(new[] { 18, 45, 42, 7 },
+            new[] { Kind.Rook, Kind.Rook, Kind.Bishop, Kind.Bishop }, new[] { 13, 28, 50 });
+        static readonly Kind[] FirstKinds = { Kind.Rook, Kind.Rook, Kind.Bishop, Kind.Bishop };
+        static readonly Kind[] SecondKinds = { Kind.Rook, Kind.Rook, Kind.Bishop, Kind.Bishop, Kind.Knight,
+            Kind.Pawn, Kind.Pawn, Kind.Pawn, Kind.Pawn, Kind.Pawn, Kind.Pawn };
+        static Layout WithWires(Random random, int[] pieces, Kind[] kinds)
+        {
+            var board = new Layout(pieces, kinds, new int[3]);
+            var safe = new List<int>(); var danger = new List<int>();
+            for (int cell = 0; cell < 64; cell++)
+                if (!board.Occupied(cell % 8, cell / 8))
+                    (board.Attacked(cell % 8, cell / 8) ? danger : safe).Add(cell);
+            if (safe.Count == 0 || danger.Count < 2) return null;
+            var wires = new int[3]; wires[0] = safe[random.Next(safe.Count)];
+            for (int i = 1; i < 3; i++)
+            { int pick = random.Next(danger.Count); wires[i] = danger[pick]; danger.RemoveAt(pick); }
+            for (int i = 2; i > 0; i--)
+            { int pick = random.Next(i + 1); int t = wires[i]; wires[i] = wires[pick]; wires[pick] = t; }
+            return new Layout(pieces, kinds, wires);
+        }
         public static Layout Generate(Random random, Layout previous = null)
         {
             if (random == null) throw new ArgumentNullException(nameof(random));
             for (int attempt = 0; attempt < 128; attempt++)
             {
-                var cells = new System.Collections.Generic.List<int>();
-                for (int cell = 0; cell < Size * Size; cell++)
-                {
-                    bool old = false;
-                    for (int i = 0; previous != null && i < PieceCount; i++)
-                        if (cell == previous.PieceRank(i) * Size + previous.PieceFile(i)) old = true;
-                    if (!old) cells.Add(cell);
-                }
-                var pieces = new int[PieceCount];
-                for (int i = 0; i < PieceCount; i++)
+                var cells = new List<int>();
+                for (int cell = 0; cell < 64; cell++)
+                    if (previous == null || !previous.Occupied(cell % 8, cell / 8)) cells.Add(cell);
+                var pieces = new int[4];
+                for (int i = 0; i < 4; i++)
                 { int pick = random.Next(cells.Count); pieces[i] = cells[pick]; cells.RemoveAt(pick); }
-                var bishops = new[] { false, true, random.Next(2) == 0 };
-                var candidate = new Layout(pieces, bishops, new int[3]);
-                var safe = new System.Collections.Generic.List<int>();
-                var danger = new System.Collections.Generic.List<int>();
-                for (int cell = 0; cell < Size * Size; cell++)
-                    if (!candidate.Occupied(cell % Size, cell / Size))
-                        (candidate.Attacked(cell % Size, cell / Size) ? danger : safe).Add(cell);
-                if (safe.Count == 0 || danger.Count < 2) continue;
-                var wires = new int[3];
-                wires[0] = safe[random.Next(safe.Count)];
-                for (int i = 1; i < 3; i++)
-                { int pick = random.Next(danger.Count); wires[i] = danger[pick]; danger.RemoveAt(pick); }
-                for (int i = 2; i > 0; i--)
-                { int pick = random.Next(i + 1); int tmp = wires[i]; wires[i] = wires[pick]; wires[pick] = tmp; }
-                return new Layout(pieces, bishops, wires);
+                var result = WithWires(random, pieces, FirstKinds);
+                if (result != null) return result;
             }
-            // Translations of the verified training board preserve blocking and a unique safe wire.
-            // Each previous piece excludes at most three of these 12 translations.
-            for (int dx = -2; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
+            // Two verified mirrored fixtures guarantee a different overall layout on fallback.
+            var fallback = Training;
+            if (previous != null && previous.Occupied(2, 2)) fallback = fallback.MirrorRanks();
+            var fixedPieces = new int[4];
+            for (int i = 0; i < 4; i++) fixedPieces[i] = fallback.PieceRank(i) * 8 + fallback.PieceFile(i);
+            return WithWires(random, fixedPieces, FirstKinds);
+        }
+        public static Layout GenerateSecond(Random random, Layout first)
+        {
+            if (random == null || first == null) throw new ArgumentNullException();
+            if (first.PieceCount != 4 || first.PawnDirection != -1) throw new ArgumentException("A canonical first-stage layout is required.");
+            for (int attempt = 0; attempt < 128; attempt++)
             {
-                var basis = Training;
-                var pieces = new int[3]; var wires = new int[3]; bool overlap = false;
-                // C4 (rook), E4 (bishop), C7 (safe) fit every translation.
-                int[] baseWires = { 26, 28, 50 };
-                for (int i = 0; i < 3; i++)
-                {
-                    pieces[i] = (basis.PieceRank(i) + dy) * Size + basis.PieceFile(i) + dx;
-                    wires[i] = baseWires[i] + dy * Size + dx;
-                    for (int j = 0; previous != null && j < 3; j++)
-                        if (pieces[i] == previous.PieceRank(j) * Size + previous.PieceFile(j)) overlap = true;
-                }
-                if (!overlap)
-                {
-                    for (int i = 2; i > 0; i--)
-                    { int pick = random.Next(i + 1); int tmp = wires[i]; wires[i] = wires[pick]; wires[pick] = tmp; }
-                    return new Layout(pieces, new[] { false, false, true }, wires);
-                }
+                var pieces = new int[11]; var cells = new List<int>();
+                for (int i = 0; i < 4; i++) pieces[i] = first.PieceRank(i) * 8 + first.PieceFile(i);
+                for (int cell = 0; cell < 64; cell++) if (!first.Occupied(cell % 8, cell / 8)) cells.Add(cell);
+                for (int i = 4; i < 11; i++)
+                { int pick = random.Next(cells.Count); pieces[i] = cells[pick]; cells.RemoveAt(pick); }
+                var result = WithWires(random, pieces, SecondKinds);
+                if (result != null) return result;
             }
-            throw new InvalidOperationException("No fallback layout available.");
+            return SafeSecond(random, first);
+        }
+        internal static Layout SafeSecond(Random random, Layout first)
+        {
+            int safe = -1;
+            for (int i = 0; i < 3; i++) if (!first.Attacked(first.File(i), first.Rank(i))) safe = first.Rank(i) * 8 + first.File(i);
+            if (safe < 0) throw new ArgumentException("No safe first-stage wire.");
+            var pieces = new int[11]; var cells = new List<int>();
+            for (int i = 0; i < 4; i++) pieces[i] = first.PieceRank(i) * 8 + first.PieceFile(i);
+            // Keep the old safe cell free and exclude incoming pawn/knight attacks.
+            for (int cell = 0; cell < 64; cell++)
+            {
+                int dx = Math.Abs(cell % 8 - safe % 8), dy = cell / 8 - safe / 8;
+                if (!first.Occupied(cell % 8, cell / 8) && cell != safe &&
+                    !(dx * Math.Abs(dy) == 2 || dx == 1 && dy == 1)) cells.Add(cell);
+            }
+            foreach (int knight in cells)
+            {
+                var targets = new List<int>();
+                foreach (int cell in cells)
+                    if (Math.Abs(cell % 8 - knight % 8) * Math.Abs(cell / 8 - knight / 8) == 2) targets.Add(cell);
+                if (targets.Count < 2) continue;
+                // Reserve two knight targets as guaranteed unoccupied dangerous wire candidates.
+                pieces[4] = knight;
+                var pawns = new List<int>(cells); pawns.Remove(knight); pawns.Remove(targets[0]); pawns.Remove(targets[1]);
+                for (int i = 5; i < 11; i++)
+                { int pick = random.Next(pawns.Count); pieces[i] = pawns[pick]; pawns.RemoveAt(pick); }
+                return WithWires(random, pieces, SecondKinds);
+            }
+            throw new InvalidOperationException("No safe extension found.");
+        }
+        public sealed class Course
+        {
+            public readonly Layout[] Stages;
+            public int Stage { get; private set; }
+            public ChessWirePuzzle Current { get; private set; }
+            public bool Complete => Stage == 1 && Current.Solved;
+            readonly float cutSeconds, lockSeconds;
+            public Course(Layout first, Layout second, float cutSeconds = 7, float lockSeconds = 2)
+            { Stages = new[] { first, second }; this.cutSeconds = cutSeconds; this.lockSeconds = lockSeconds; Current = new ChessWirePuzzle(cutSeconds, lockSeconds, first); }
+            public bool Advance()
+            {
+                if (Stage != 0 || !Current.Solved) return false;
+                Stage = 1; Current = new ChessWirePuzzle(cutSeconds, lockSeconds, Stages[1]); return true;
+            }
         }
         public enum Result { None, Wrong, Solved }
         public readonly float CutSeconds, LockSeconds;
