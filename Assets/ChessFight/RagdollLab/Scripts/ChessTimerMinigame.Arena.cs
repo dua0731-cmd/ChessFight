@@ -51,7 +51,7 @@ namespace ChessFight.RagdollLab
             {
                 float cx = (control - 1.5f) * 1.4f;
                 RoundedBox("Clock control button", new Vector3(cx, .85f, -1.9f), new Vector3(.85f, .4f, .35f), .16f, cream, false);
-                var icon = Label("Clock control icon", new Vector3(cx, .85f, -2.09f), new[] { "+", "O", ">", "-" }[control], .2f);
+                var icon = Label("Clock control icon", new Vector3(cx, .85f, -2.09f), new[] { "+", "O", ">", "-" }[control], .2f, .65f, .28f);
                 icon.color = Color.black;
             }
             for (int side = 0; side < 2; side++)
@@ -60,12 +60,14 @@ namespace ChessFight.RagdollLab
                 var stripe = RoundedBox("Button side colour", new Vector3(x, RockerHeight + RockerLocalTop + .01f, 6.6f), new Vector3(8, .015f, .18f), .006f, accent, false);
                 stripe.transform.SetParent(top.transform, true);
                 RoundedBox("Team LCD window", new Vector3(x, 2.1f, -2.2f), new Vector3(8.8f, 1.5f, .1f), .045f, lcd, false);
-                clocks[side] = Label("LCD countdown", new Vector3(x - 1.8f, 2.15f, -2.27f), "00:45", .62f);
-                crowdDisplays[side] = Label("LCD occupant count", new Vector3(x + 2.4f, 2.1f, -2.27f), "00\nPLAYERS", .32f);
+                clocks[side] = Label("LCD countdown", new Vector3(x - 1.8f, 2.15f, -2.27f), "00:45", .62f, 4f, 1.15f);
+                crowdDisplays[side] = Label("LCD occupant count", new Vector3(x + 2.4f, 2.1f, -2.27f), "00\nPLAYERS", .32f, 2.6f, 1.1f);
                 clocks[side].GetComponent<Renderer>().enabled = false;
                 crowdDisplays[side].color = new Color(.06f, .10f, .08f);
                 BuildDigits(side, x - 1.8f, rubber);
-                clockStatus[side] = Label("Clock status", new Vector3(x, 3.5f, -2.32f), "", .25f);
+                RoundedBox("Clock status frame", new Vector3(x, 3.5f, -2.2f), new Vector3(8.8f, .65f, .1f), .04f, lcd, false);
+                clockStatus[side] = Label("Clock status", new Vector3(x, 3.5f, -2.32f), "", .25f, 8.2f, .45f);
+                clockStatus[side].color = new Color(.06f, .10f, .08f);
                 Label("Top team marker", new Vector3(x, 7.2f, 7), side == 0 ? "WHITE BUTTON" : "BLACK BUTTON", .35f);
                 float approachX = side == 0 ? -15 : 15;
                 Ramp("Walk-up approach", new Vector3(approachX, 0, ApproachStartZ), new Vector3(approachX, ApproachHeight, ApproachEndZ), 5, accent);

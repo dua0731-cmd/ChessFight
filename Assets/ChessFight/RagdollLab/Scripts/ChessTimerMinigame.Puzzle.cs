@@ -101,7 +101,7 @@ namespace ChessFight.RagdollLab
             Box("Guide frame", centre, new Vector3(3.2f, 3.8f, .18f), frame, false).transform.SetParent(root.transform, true);
             var content = new GameObject("Guide face"); content.transform.SetParent(root.transform, false);
             Box("Guide paper", centre + Vector3.back * .105f, new Vector3(3f, 3.6f, .025f), paper, false).transform.SetParent(content.transform, true);
-            var title = Label("Guide title", centre + new Vector3(0, 1.45f, -.13f), bishop ? "비숍 · 대각선" : "룩 · 가로와 세로", .25f);
+            var title = Label("Guide title", centre + new Vector3(0, 1.45f, -.13f), bishop ? "비숍 · 대각선" : "룩 · 가로와 세로", .25f, 2.7f, .4f);
             title.color = Color.black; title.transform.SetParent(content.transform, true);
             for (int x = -2; x <= 2; x++) for (int y = -2; y <= 2; y++)
             {
@@ -111,13 +111,13 @@ namespace ChessFight.RagdollLab
                 Box("Movement diagram cell", pos, new Vector3(.30f, .30f, .012f),
                     middle ? ink : reachable ? toolGrip : frame, false).transform.SetParent(content.transform, true);
             }
-            var symbol = Label("Diagram piece", centre + new Vector3(0, .28f, -.15f), bishop ? "B" : "R", .22f);
+            var symbol = Label("Diagram piece", centre + new Vector3(0, .28f, -.15f), bishop ? "B" : "R", .22f, .26f, .26f);
             symbol.color = Color.white; symbol.transform.SetParent(content.transform, true);
             string explanation = (bishop ? "대각선으로 이동" : "가로·세로로 이동") +
                 "\n막힐 때까지 여러 칸\n다른 기물은 넘지 못함";
-            var caption = Label("Guide explanation", centre + new Vector3(0, -1.18f, -.13f), explanation, .18f);
+            var caption = Label("Guide explanation", centre + new Vector3(0, -1.18f, -.13f), explanation, .18f, 2.7f, .65f);
             caption.color = Color.black; caption.transform.SetParent(content.transform, true);
-            var legend = Label("Diagram legend", centre + new Vector3(0, -.66f, -.13f), "금색 칸 = 이동 방향", .15f);
+            var legend = Label("Diagram legend", centre + new Vector3(0, -.66f, -.13f), "금색 칸 = 이동 방향", .15f, 2.7f, .23f);
             legend.color = Color.black; legend.transform.SetParent(content.transform, true);
             // Text faces local -Z; turn the complete frame toward its team court.
             root.transform.localRotation = Quaternion.Euler(0, side * 90f, 0);

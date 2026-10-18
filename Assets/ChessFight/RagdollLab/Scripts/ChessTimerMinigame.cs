@@ -311,14 +311,42 @@ namespace ChessFight.RagdollLab
             if (!solid) { var collider = box.GetComponent<Collider>(); collider.enabled = false; Destroy(collider); }
             return box;
         }
-        TextMesh Label(string name, Vector3 pos, string value, float size = .3f)
+        TextMesh Label(string name, Vector3 pos, string value, float size = .3f, float width = 8f, float height = 0f)
         {
             var go = new GameObject(name); go.transform.SetParent(transform, false); go.transform.localPosition = pos;
-            var label = go.AddComponent<TextMesh>(); label.text = value; label.characterSize = size; label.fontSize = 48;
+            var label = go.AddComponent<TextMesh>(); label.text = value; label.fontSize = 48; label.characterSize = size * 10f / label.fontSize;
             label.anchor = TextAnchor.MiddleCenter; label.alignment = TextAlignment.Center;
             label.font = RuntimePanels.KoreanFont;
             if (label.font != null) go.GetComponent<Renderer>().sharedMaterial = label.font.material;
+            boundedLabels.Add(new LabelBounds { text = label, width = width,
+                height = height > 0 ? height : size * 1.4f * Mathf.Max(1, value.Split('\n').Length) });
             return label;
+        }
+        sealed class LabelBounds
+        {
+            public TextMesh text;
+            public float width, height;
+            public string fittedText;
+        }
+        readonly List<LabelBounds> boundedLabels = new List<LabelBounds>();
+        void LateUpdate()
+        {
+            foreach (var entry in boundedLabels)
+            {
+                var label = entry.text;
+                if (label == null || entry.fittedText == label.text) continue;
+                // Measure unrotated geometry, including Korean glyphs and multiline captions.
+                var t = label.transform;
+                var rotation = t.rotation;
+                t.rotation = Quaternion.identity;
+                t.localScale = Vector3.one;
+                var bounds = label.GetComponent<Renderer>().bounds;
+                float scale = Mathf.Min(1f, entry.width / Mathf.Max(.001f, bounds.size.x),
+                    entry.height / Mathf.Max(.001f, bounds.size.y));
+                t.localScale = Vector3.one * scale;
+                t.rotation = rotation;
+                entry.fittedText = label.text;
+            }
         }
         void OnGUI()
         {
