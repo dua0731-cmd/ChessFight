@@ -15,11 +15,11 @@ public static class NetworkCoreTests
     static HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
     static int SafeWire(ChessWirePuzzle.Layout board)
-    { for (int i = 0; i < 3; i++) if (!board.Attacked(board.File(i), board.Rank(i))) return i; throw new Exception("No safe wire"); }
+    { for (int i = 0; i < board.WireCount; i++) if (!board.Attacked(board.File(i), board.Rank(i))) return i; throw new Exception("No safe wire"); }
     static void CheckWireBoard(ChessWirePuzzle.Layout board, int count, HashSet<int> answers)
     {
         Check(board.PieceCount == count, "piece count");
-        var occupied = new HashSet<int>(); var counts = new int[4];
+        var occupied = new HashSet<int>(); var counts = new int[5];
         var pawnFiles = new HashSet<int>();
         for (int i = 0; i < count; i++)
         {
@@ -28,7 +28,7 @@ public static class NetworkCoreTests
             counts[(int)board.PieceKind(i)]++;
             if (board.PieceKind(i) == ChessWirePuzzle.Kind.Pawn) Check(pawnFiles.Add(x), "pawns occupy distinct files");
         }
-        Check(counts[0] == 2 && counts[1] == 2 && counts[2] == (count == 4 ? 0 : 1) && counts[3] == (count == 4 ? 0 : 6), "exact composition");
+        Check(counts[0] == 2 && counts[1] == 2 && counts[2] == (count == 4 ? 0 : count == 11 ? 1 : 2) && counts[3] == (count == 4 ? 0 : count == 11 ? 6 : 8) && counts[4] == (count == 15 ? 1 : 0), "exact composition");
         // Independent ray/offset oracle rather than target-to-piece line-of-sight.
         var attacks = new HashSet<int>(occupied);
         for (int i = 0; i < count; i++)
@@ -37,9 +37,10 @@ public static class NetworkCoreTests
             var kind = board.PieceKind(i);
             for (int dx = -2; dx <= 2; dx++) for (int dy = -2; dy <= 2; dy++)
             {
-                bool slider = kind == ChessWirePuzzle.Kind.Rook || kind == ChessWirePuzzle.Kind.Bishop;
+                bool slider = kind == ChessWirePuzzle.Kind.Rook || kind == ChessWirePuzzle.Kind.Bishop || kind == ChessWirePuzzle.Kind.Queen;
                 bool valid = kind == ChessWirePuzzle.Kind.Pawn ? Math.Abs(dx) == 1 && dy == board.PawnDirection :
                     kind == ChessWirePuzzle.Kind.Knight ? Math.Abs(dx) * Math.Abs(dy) == 2 :
+                    kind == ChessWirePuzzle.Kind.Queen ? Math.Abs(dx) + Math.Abs(dy) == 1 || Math.Abs(dx) == 1 && Math.Abs(dy) == 1 :
                     kind == ChessWirePuzzle.Kind.Rook ? Math.Abs(dx) + Math.Abs(dy) == 1 : Math.Abs(dx) == 1 && Math.Abs(dy) == 1;
                 if (!valid) continue;
                 int x = px + dx, y = py + dy;
@@ -54,13 +55,13 @@ public static class NetworkCoreTests
         for (int x = 0; x < 8; x++) for (int y = 0; y < 8; y++)
             Check(board.Attacked(x, y) == attacks.Contains(y * 8 + x), "independent attack oracle");
         var wires = new HashSet<int>(); int safe = 0;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < board.WireCount; i++)
         {
             int x = board.File(i), y = board.Rank(i);
             Check(x >= 0 && x < 8 && y >= 0 && y < 8 && wires.Add(y * 8 + x) && !occupied.Contains(y * 8 + x), "distinct unoccupied wires");
             if (!board.Attacked(x, y)) { safe++; answers.Add(i); }
         }
-        Check(safe == 1, "exactly one safe wire");
+        Check(safe == board.RequiredCuts && board.WireCount - safe == 2, "exact safe quota and two dangerous wires");
     }
     public static int Main()
     {
@@ -164,121 +165,110 @@ public static class NetworkCoreTests
                 r.Reset(); r.Step(float.NaN, 3, 0, 3, 0); r.Step(float.PositiveInfinity, 3, 0, 3, 0); r.Step(-1, 3, 0, 3, 0);
                 Check(r.Teams[0].Remaining == 1 && r.Teams[0].Work == 0, "invalid dt ignored");
             });
-            Test("Two rooks and two bishops have exactly one safe wire on an 8x8 board", () => {
-                int safe = 0;
-                for (int i = 0; i < 3; i++)
-                {
-                    Check(ChessWirePuzzle.Training.File(i) >= 0 && ChessWirePuzzle.Training.File(i) < 8 && ChessWirePuzzle.Training.Rank(i) >= 0 && ChessWirePuzzle.Training.Rank(i) < 8, "valid cell");
-                    if (!ChessWirePuzzle.Training.Attacked(ChessWirePuzzle.Training.File(i), ChessWirePuzzle.Training.Rank(i))) safe++;
-                }
-                Check(safe == 1 && !ChessWirePuzzle.Training.Attacked(2, 6), "C7 only safe endpoint");
-            });
-            Test("Rook and bishop attack rays stop at intervening pieces", () => {
-                Check(ChessWirePuzzle.Training.PieceCount == 4 && !ChessWirePuzzle.Training.IsBishop(0) && !ChessWirePuzzle.Training.IsBishop(1) && ChessWirePuzzle.Training.IsBishop(2), "two rooks two bishops");
-                Check(ChessWirePuzzle.Training.Attacked(2, 3), "C3 rook attacks C4");
-                Check(ChessWirePuzzle.Training.Attacked(5, 1), "F6 rook attacks red F2");
-                Check(ChessWirePuzzle.Training.Attacked(4, 3), "C6 bishop attacks blue E4");
-                Check(!ChessWirePuzzle.Training.Attacked(2, 6), "C6 bishop blocks rook ray to yellow C7");
-                Check(!ChessWirePuzzle.Training.Attacked(2, 7), "rook cannot see past blocker to C8");
-            });
-            Test("Both random stages have exact composition, unique answer and mirrored attack equivalence", () => {
-                ChessWirePuzzle.Layout previous = null;
-                var random = new Random(103);
-                var answers = new HashSet<int>(); var secondAnswers = new HashSet<int>();
-                var additions = new HashSet<string>();
+            Test("Three random stages have exact piece and wire counts and equivalent opposite-color boards", () => {
+                var random = new Random(106); ChessWirePuzzle.Layout previous = null;
+                var answerIndices = new HashSet<int>(); var thirdPositions = new HashSet<string>();
                 for (int round = 0; round < 2000; round++)
                 {
-                    var first = ChessWirePuzzle.Generate(random, previous);
-                    var second = ChessWirePuzzle.GenerateSecond(random, first);
-                    CheckWireBoard(first, 4, answers); CheckWireBoard(second, 11, secondAnswers);
-                    additions.Add(string.Join(",", Enumerable.Range(4, 7).Select(i => (second.PieceRank(i) * 8 + second.PieceFile(i)).ToString()).ToArray()));
+                    var boards = ChessWirePuzzle.GenerateCourse(random, previous);
+                    for (int stage = 0; stage < 3; stage++)
+                    {
+                        var board = boards[stage]; CheckWireBoard(board, stage == 0 ? 4 : stage == 1 ? 11 : 15, answerIndices);
+                        Check(board.WireCount == stage + 4 && board.RequiredCuts == stage + 2, "stage wire quota");
+                        var mirror = board.MirrorRanks(); CheckWireBoard(mirror, board.PieceCount, answerIndices);
+                        for (int x = 0; x < 8; x++) for (int y = 0; y < 8; y++)
+                            Check(board.Attacked(x, y) == mirror.Attacked(x, 7 - y), "mirror attacks equivalent");
+                        for (int i = 0; i < board.WireCount; i++) Check(board.File(i) == mirror.File(i) && board.Rank(i) == 7 - mirror.Rank(i), "wire equivalence");
+                    }
                     for (int i = 0; i < 4; i++)
                     {
-                        Check(first.PieceFile(i) == second.PieceFile(i) && first.PieceRank(i) == second.PieceRank(i), "preserve first-stage pieces");
-                        Check(previous == null || !previous.Occupied(first.PieceFile(i), first.PieceRank(i)), "new first-stage locations");
+                        Check(boards[0].PieceFile(i) == boards[1].PieceFile(i) && boards[0].PieceRank(i) == boards[1].PieceRank(i), "stage two preserves original four");
+                        Check(previous == null || !previous.Occupied(boards[0].PieceFile(i), boards[0].PieceRank(i)), "new first-stage positions");
                     }
-                    foreach (var board in new[] { first, second })
+                    thirdPositions.Add(string.Join(",", Enumerable.Range(0, 15).Select(i => (boards[2].PieceRank(i) * 8 + boards[2].PieceFile(i)).ToString()).ToArray()));
+                    previous = boards[0];
+                }
+                Check(answerIndices.Count == 6 && thirdPositions.Count > 1000, "all wire indices can be safe and third-stage layouts vary");
+            });
+            Test("Bounded generator fallback meets all three quotas and file-spread constraints", () => {
+                var random = new Random(88); var answers = new HashSet<int>(); ChessWirePuzzle.Layout previous = null;
+                for (int i = 0; i < 500; i++)
+                {
+                    var boards = ChessWirePuzzle.FallbackCourse(random, previous);
+                    for (int stage = 0; stage < 3; stage++) CheckWireBoard(boards[stage], stage == 0 ? 4 : stage == 1 ? 11 : 15, answers);
+                    Check(previous == null || boards[0].PieceFile(0) != previous.PieceFile(0), "fallback round changes");
+                    for (int p = 0; p < 4; p++) Check(boards[0].PieceFile(p) == boards[1].PieceFile(p) && boards[0].PieceRank(p) == boards[1].PieceRank(p), "fallback preserves original four");
+                    previous = boards[0];
+                }
+            });
+            Test("Pawn direction, knight jumps and queen blocked straight and diagonal attacks", () => {
+                var pawn = new ChessWirePuzzle.Layout(new[] { 27 }, new[] { ChessWirePuzzle.Kind.Pawn }, new[] { 0, 1, 2, 3 });
+                Check(pawn.Attacked(2, 2) && pawn.Attacked(4, 2) && !pawn.Attacked(3, 2) && !pawn.Attacked(2, 4), "black pawn diagonals only");
+                var white = pawn.MirrorRanks(); Check(white.Attacked(2, 5) && !white.Attacked(3, 5) && !white.Attacked(2, 3), "white direction");
+                var knight = new ChessWirePuzzle.Layout(new[] { 27, 35, 28 }, new[] { ChessWirePuzzle.Kind.Knight, ChessWirePuzzle.Kind.Pawn, ChessWirePuzzle.Kind.Pawn }, new[] { 0, 1, 2, 3 });
+                Check(knight.Attacked(4, 5) && knight.Attacked(5, 4), "jump over blockers");
+                var queen = new ChessWirePuzzle.Layout(new[] { 27, 43, 45 }, new[] { ChessWirePuzzle.Kind.Queen, ChessWirePuzzle.Kind.Pawn, ChessWirePuzzle.Kind.Pawn }, new[] { 0, 1, 2, 3 });
+                Check(queen.Attacked(3, 4) && queen.Attacked(4, 4) && queen.Attacked(6, 3), "queen straight and diagonal");
+                Check(!queen.Attacked(3, 6) && !queen.Attacked(6, 6), "queen cannot attack past blockers");
+            });
+            Test("Every safe wire is required, wrong wires do not count and repeat cuts do not score", () => {
+                foreach (var board in ChessWirePuzzle.GenerateCourse(new Random(19)))
+                {
+                    var puzzle = new ChessWirePuzzle(7, 2, board);
+                    int wrong = Enumerable.Range(0, board.WireCount).First(i => board.Attacked(board.File(i), board.Rank(i)));
+                    Check(puzzle.Step(7, 0, wrong, true) == ChessWirePuzzle.Result.Wrong && puzzle.CorrectCuts == 0, "dangerous cut penalizes");
+                    puzzle.Step(2, -1, -1, false);
+                    Check(puzzle.Step(7, 0, wrong, true) == ChessWirePuzzle.Result.None && puzzle.LockLeft == 0, "no duplicate penalty");
+                    int correct = 0;
+                    for (int wire = 0; wire < board.WireCount; wire++)
                     {
-                        var mirror = board.MirrorRanks();
-                        Check(mirror.PawnDirection == 1, "white pawns increase ranks");
-                        for (int x = 0; x < 8; x++) for (int y = 0; y < 8; y++)
-                            Check(board.Attacked(x, y) == mirror.Attacked(x, 7 - y), "equivalent attacks for opposite colors");
-                        for (int i = 0; i < 3; i++) Check(board.File(i) == mirror.File(i) && board.Rank(i) == 7 - mirror.Rank(i), "same answer colors");
+                        if (board.Attacked(board.File(wire), board.Rank(wire))) continue;
+                        Check(puzzle.Step(6, 0, wire, true) == ChessWirePuzzle.Result.None, "seven seconds required");
+                        var result = puzzle.Step(1, 0, wire, true); correct++;
+                        Check(result == (correct == board.RequiredCuts ? ChessWirePuzzle.Result.Solved : ChessWirePuzzle.Result.Correct), "partial versus complete result");
+                        Check(puzzle.CorrectCuts == correct && puzzle.Solved == (correct == board.RequiredCuts), "exact quota");
+                        Check(puzzle.Step(7, 0, wire, true) == ChessWirePuzzle.Result.None && puzzle.CorrectCuts == correct, "no repeat scoring");
                     }
-                    previous = first;
-                }
-                Check(answers.Count == 3 && secondAnswers.Count == 3, "all answer colors in both stages");
-                Check(additions.Count > 1000, "stage-two knight and pawn locations vary between rounds");
-            });
-            Test("Bounded-generation fallback preserves stage one and a unique safe second-stage wire", () => {
-                var random = new Random(104); var answers = new HashSet<int>();
-                for (int round = 0; round < 500; round++)
-                {
-                    var first = ChessWirePuzzle.Generate(random);
-                    var second = ChessWirePuzzle.SafeSecond(random, first);
-                    CheckWireBoard(second, 11, answers);
-                    for (int i = 0; i < 4; i++) Check(first.PieceFile(i) == second.PieceFile(i) && first.PieceRank(i) == second.PieceRank(i), "fallback keeps original pieces");
                 }
             });
-            Test("Pawns attack forward diagonals only and knights jump blockers", () => {
-                var pawn = new ChessWirePuzzle.Layout(new[] { 27 }, new[] { ChessWirePuzzle.Kind.Pawn }, new[] { 0, 1, 2 });
-                Check(pawn.Attacked(2, 2) && pawn.Attacked(4, 2), "black pawn diagonals");
-                Check(!pawn.Attacked(3, 2) && !pawn.Attacked(2, 4) && !pawn.Attacked(3, 1), "not forward or backwards");
-                var white = pawn.MirrorRanks();
-                Check(white.Attacked(2, 5) && white.Attacked(4, 5) && !white.Attacked(3, 5) && !white.Attacked(2, 3), "white direction reversed");
-                var knight = new ChessWirePuzzle.Layout(new[] { 27, 35, 28 },
-                    new[] { ChessWirePuzzle.Kind.Knight, ChessWirePuzzle.Kind.Pawn, ChessWirePuzzle.Kind.Pawn }, new[] { 0, 1, 2 });
-                Check(knight.Attacked(4, 5) && knight.Attacked(5, 4), "knight ignores adjacent blockers");
-            });
-            Test("Only stage two completes the timer and each team advances independently", () => {
-                var random = new Random(55); var first = ChessWirePuzzle.Generate(random); var second = ChessWirePuzzle.GenerateSecond(random, first);
-                var white = new ChessWirePuzzle.Course(first, second); var black = new ChessWirePuzzle.Course(first.MirrorRanks(), second.MirrorRanks());
+            Test("Only all three stages complete the timer and team progress is independent", () => {
+                var layouts = ChessWirePuzzle.GenerateCourse(new Random(55));
+                var own = new ChessWirePuzzle.Course(layouts); var other = new ChessWirePuzzle.Course(layouts.Select(b => b.MirrorRanks()).ToArray());
                 var timer = new ChessTimerRules(45, switchDelay: 0);
-                Check(!white.Advance(), "cannot skip unsolved stage");
-                white.Current.Step(7, 0, SafeWire(first), true);
-                Check(white.Current.Solved && !white.Complete, "stage one is not final success");
-                Check(timer.StepPuzzle(7, 0, 0, white.Complete, black.Complete) == 0 && !timer.Teams[0].GateOpen && timer.Winner == -2, "no premature blast or door");
-                Check(white.Advance() && white.Stage == 1 && black.Stage == 0 && white.Current.Progress == 0, "independent fresh next stage");
-                Check(timer.Teams[0].Remaining == 38, "no time refill on transition");
-                white.Current.Step(7, 0, SafeWire(second), true);
-                Check(white.Complete && !white.Advance(), "final stage cannot advance again");
-                Check(timer.StepPuzzle(7, 0, 0, white.Complete, black.Complete) == 2 && timer.Teams[0].GateOpen, "final completion blasts enemy");
-                var timeout = new ChessTimerRules(1, switchDelay: 0);
-                Check(timeout.StepPuzzle(1, 0, 0, true, false) == 3 && !timeout.Teams[0].Complete, "expiry retains priority");
-            });
-            Test("Shared generated layout has independent team progress and reproducible seeds", () => {
-                var board = ChessWirePuzzle.Generate(new System.Random(77));
-                var replay = ChessWirePuzzle.Generate(new System.Random(77));
-                int safe = -1, wrong = -1;
-                for (int i = 0; i < 3; i++)
+                for (int stage = 0; stage < 3; stage++)
                 {
-                    Check(board.File(i) == replay.File(i) && board.Rank(i) == replay.Rank(i) &&
-                        board.PieceFile(i) == replay.PieceFile(i) && board.PieceRank(i) == replay.PieceRank(i) && board.IsBishop(i) == replay.IsBishop(i), "seed reproduces layout");
-                    if (!board.Attacked(board.File(i), board.Rank(i))) safe = i; else wrong = i;
+                    Check(!own.Advance(), "cannot skip unsolved stage");
+                    var board = own.Current.Board;
+                    for (int wire = 0; wire < board.WireCount; wire++)
+                        if (!board.Attacked(board.File(wire), board.Rank(wire))) own.Current.Step(7, 0, wire, true);
+                    Check(other.Stage == 0 && other.Current.CorrectCuts == 0, "other team untouched");
+                    int blasts = timer.StepPuzzle(1, 0, 0, own.Complete, other.Complete);
+                    if (stage < 2)
+                    {
+                        Check(blasts == 0 && !timer.Teams[0].GateOpen && timer.Winner == -2, "intermediate stages do not end match");
+                        Check(own.Advance() && own.Current.CorrectCuts == 0 && own.Current.Progress == 0, "next stage resets cuts only");
+                    }
+                    else Check(blasts == 2 && timer.Teams[0].GateOpen && !own.Advance(), "third stage completes match");
                 }
-                var white = new ChessWirePuzzle(7, 2, board); var black = new ChessWirePuzzle(7, 2, board);
-                Check(white.Step(6, 0, safe, true) == ChessWirePuzzle.Result.None, "not complete before seven seconds");
-                Check(white.Step(1, 0, safe, true) == ChessWirePuzzle.Result.Solved && !black.Solved && !black.Cut(safe), "team state isolated");
-                Check(black.Step(7, 6, wrong, true) == ChessWirePuzzle.Result.Wrong, "generated danger wire penalizes");
-                Check(black.LockLeft == 2 && white.LockLeft == 0, "locks isolated");
+                Check(timer.Teams[0].Remaining == 42, "no timer refill");
             });
-            Test("Wire cutting requires a tool and continuous same-worker contact", () => {
-                var p = new ChessWirePuzzle(1, 2);
-                Check(p.Step(2, 0, 2, false) == ChessWirePuzzle.Result.None && !p.Solved, "no tool or eligibility");
-                p.Step(.6f, 0, 2, true); p.Step(.1f, -1, -1, false);
-                Check(p.Progress == 0, "release or leaving range resets");
-                p.Step(.6f, 0, 2, true); p.Step(.5f, 1, 2, true);
-                Check(!p.Solved, "different worker cannot inherit hold");
-                Check(p.Step(.5f, 1, 2, true) == ChessWirePuzzle.Result.Solved && p.Cut(2), "continuous hold cuts safe wire");
-                Check(p.Step(5, 1, 2, true) == ChessWirePuzzle.Result.None, "one-shot success");
+            Test("Three-stage generation is reproducible from a seed", () => {
+                var a = ChessWirePuzzle.GenerateCourse(new Random(77)); var b = ChessWirePuzzle.GenerateCourse(new Random(77));
+                for (int stage = 0; stage < 3; stage++)
+                {
+                    for (int i = 0; i < a[stage].PieceCount; i++) Check(a[stage].PieceFile(i) == b[stage].PieceFile(i) && a[stage].PieceRank(i) == b[stage].PieceRank(i), "same pieces");
+                    for (int i = 0; i < a[stage].WireCount; i++) Check(a[stage].File(i) == b[stage].File(i) && a[stage].Rank(i) == b[stage].Rank(i), "same wires");
+                }
             });
-            Test("Wrong wire applies a lock and cannot be cut repeatedly", () => {
-                var p = new ChessWirePuzzle(1, 2);
-                Check(p.Step(1, 0, 0, true) == ChessWirePuzzle.Result.Wrong && p.LockLeft == 2, "wrong cut event");
-                Check(p.Step(1, 0, 2, true) == ChessWirePuzzle.Result.None && !p.Solved, "locked tool");
-                p.Step(1, 0, 2, true);
-                Check(p.Step(1, 0, 0, true) == ChessWirePuzzle.Result.None, "already severed cable cannot penalize again");
-                Check(p.Step(1, 0, 2, true) == ChessWirePuzzle.Result.Solved, "can finish after lock");
+            Test("Interrupted holds reset but already-cut safe wires remain credited", () => {
+                var puzzle = new ChessWirePuzzle(7, 2); var board = puzzle.Board;
+                Check(puzzle.Step(7, 0, 0, false) == ChessWirePuzzle.Result.None, "requires tool and eligibility");
+                Check(puzzle.Step(7, 0, 0, true) == ChessWirePuzzle.Result.Correct, "first safe wire");
+                puzzle.Step(6, 0, 1, true); puzzle.Step(.1f, -1, -1, false);
+                Check(puzzle.Progress == 0 && puzzle.CorrectCuts == 1, "release resets hold but not previous cuts");
+                puzzle.Step(6, 0, 1, true); puzzle.Step(1, 1, 1, true);
+                Check(!puzzle.Solved && puzzle.Progress == 1, "new worker restarts hold");
+                Check(puzzle.Step(6, 1, 1, true) == ChessWirePuzzle.Result.Solved, "remaining safe wire completes");
             });
             Test("Physical puzzle results preserve simultaneous timer comparison", () => {
                 var r = new ChessTimerRules(90, switchDelay: 0);

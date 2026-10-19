@@ -366,7 +366,7 @@ namespace ChessFight.RagdollLab
                 var state = rules.Teams[team]; int escaped = 0;
                 for (int i = team * 6; i < team * 6 + 6; i++) if (exited[i]) escaped++;
                 GUI.Label(new Rect(24, 58 + team * 38, 750, 36),
-                    $"{(team == 0 ? "백팀" : "흑팀")} {state.Remaining:0.0}초 | 발판 전체 {riders[team]}명 · 해체 {workers[team]}명 | {(state.Complete ? "해체 성공" : state.Expired ? "시간 만료" : ($"{courses[team].Stage + 1}/2단계 퍼즐"))} · 절단 {puzzles[team].Progress / puzzles[team].CutSeconds:P0} | " +
+                    $"{(team == 0 ? "백팀" : "흑팀")} {state.Remaining:0.0}초 | 발판 전체 {riders[team]}명 · 해체 {workers[team]}명 | {(state.Complete ? "해체 성공" : state.Expired ? "시간 만료" : ($"{courses[team].Stage + 1}/3단계 · 정답 {puzzles[team].CorrectCuts}/{puzzles[team].Board.RequiredCuts}"))} · 절단 {puzzles[team].Progress / puzzles[team].CutSeconds:P0} | " +
                     (state.GateOpen ? $"문 열림 · 통과 {escaped}/6" + (solveTimes[team] >= 0 ? $" · 해체 {solveTimes[team]:0.0}초" : "") : rules.PressedTeam == team ? "시간 정지" : "시간 감소"), text);
             }
             GUI.Label(new Rect(24, 138, 750, 40), $"경과 {elapsed:0.0}초 · 절단기 {(hasCutter[selected] ? "있음" : "없음")} · {players[selected].DisplayName} · {(roles[selected] == 1 ? "발판" : roles[selected] == 2 ? "도구대 시험 배치" : roles[selected] == 4 ? "상대 발판" : "직접 조작 / 대기")}\n{notice}", text);
@@ -374,7 +374,7 @@ namespace ChessFight.RagdollLab
             if (menu)
             {
                 GUI.Box(new Rect(12, 275, 780, 170), GUIContent.none);
-                GUI.Label(new Rect(24, 282, 745, 65), $"발판 위 인원은 적·아군 모두 셉니다. 동수면 양쪽 시간 감소. 대련 봇: {(sparringBots ? "켜짐" : "꺼짐")} (B)\n한 타이머 위에서 싸웁니다. 상대 쪽으로 가면 우리 시간이 흐를 수 있습니다.\n뒤쪽 8×8 판: 절단기 획득 → 1·2단계 안전 전선 절단. 숫자키는 이동 측정에서 제외하세요.", text);
+                GUI.Label(new Rect(24, 282, 745, 65), $"발판 위 인원은 적·아군 모두 셉니다. 동수면 양쪽 시간 감소. 대련 봇: {(sparringBots ? "켜짐" : "꺼짐")} (B)\n한 타이머 위에서 싸웁니다. 상대 쪽으로 가면 우리 시간이 흐를 수 있습니다.\n뒤쪽 8×8 판: 절단기 획득 → 1~3단계 안전 전선 모두 절단. 숫자키는 이동 측정에서 제외하세요.", text);
                 if (GUI.Button(new Rect(24, 363, 235, 55), started ? "계속 조작" : "게임 시작", buttonStyle))
                 { started = true; notice = "해체 진행 중 · 발판과 해체 인원을 배분하세요"; menu = false; RefreshCursor(); }
                 if (GUI.Button(new Rect(275, 363, 235, 55), "다음 팀원", buttonStyle)) Select(selected + 1);

@@ -12,8 +12,8 @@ namespace ChessFight.RagdollLab
         readonly ChessWirePuzzle[] puzzles = new ChessWirePuzzle[2];
         readonly bool[] hasCutter = new bool[12];
         readonly GameObject[] carriedCutters = new GameObject[12];
-        readonly GameObject[,] wireCentres = new GameObject[2, 3];
-        readonly TextMesh[,] wireLabels = new TextMesh[2, 3];
+        readonly GameObject[,] wireCentres = new GameObject[2, 6];
+        readonly TextMesh[,] wireLabels = new TextMesh[2, 6];
         readonly TextMesh[] boardSigns = new TextMesh[2];
         readonly GameObject[] attackHints = new GameObject[2];
         readonly GameObject[] cuttingTools = new GameObject[2];
@@ -26,6 +26,7 @@ namespace ChessFight.RagdollLab
         Material hintMaterial;
         readonly GameObject[] boardRoots = new GameObject[2];
         readonly System.Collections.Generic.List<Mesh>[] boardMeshes = { new System.Collections.Generic.List<Mesh>(), new System.Collections.Generic.List<Mesh>() };
+        static readonly string[] WireColorNames = { "빨강", "파랑", "노랑", "초록", "보라", "주황" };
         float elapsed;
         Material toolMetal, toolGrip;
         static float BoardCentreX(int team) => team == 0 ? -21f : 21f;
@@ -40,7 +41,8 @@ namespace ChessFight.RagdollLab
             if (wireMaterials == null)
             {
                 toolMetal = charcoal; toolGrip = Mat(new Color(1f, .68f, .15f));
-                wireMaterials = new[] { Mat(new Color(.92f, .16f, .12f)), Mat(new Color(.12f, .4f, 1f)), Mat(new Color(1f, .75f, .05f)) };
+                wireMaterials = new[] { Mat(new Color(.92f, .16f, .12f)), Mat(new Color(.12f, .4f, 1f)), Mat(new Color(1f, .75f, .05f)),
+                    Mat(new Color(.15f, .8f, .3f)), Mat(new Color(.65f, .2f, .9f)), Mat(new Color(1f, .45f, .08f)) };
                 hintMaterial = Mat(new Color(.8f, .28f, .19f));
             }
             var colors = wireMaterials; var hint = hintMaterial;
@@ -76,6 +78,7 @@ namespace ChessFight.RagdollLab
                     if (firstOfKind) BuildPieceGuide(team, kind, walnut, cream, charcoal);
                     string coordinate = ((char)('A' + puzzleLayout.PieceFile(piece))).ToString() + (puzzleLayout.PieceRank(piece) + 1);
                     if (kind == ChessWirePuzzle.Kind.Bishop) { BuildBishop(rook, coordinate, pieceMaterial, team == 0 ? cream : charcoal); continue; }
+                    if (kind == ChessWirePuzzle.Kind.Queen) { BuildQueen(rook, coordinate, pieceMaterial); continue; }
                     if (kind == ChessWirePuzzle.Kind.Knight || kind == ChessWirePuzzle.Kind.Pawn)
                     { BuildSmallPiece(rook, kind, coordinate, pieceMaterial); continue; }
                     var rookRoot = new GameObject("Puzzle rook");
@@ -89,7 +92,7 @@ namespace ChessFight.RagdollLab
                     rookRoot.transform.localScale = Vector3.one * scale;
                     Label("Rook location", rook + new Vector3(0, 6.45f * scale + .6f, 0), "ROOK / " + (char)('A' + puzzleLayout.PieceFile(piece)) + (puzzleLayout.PieceRank(piece) + 1), .35f);
                 }
-                for (int wire = 0; wire < 3; wire++)
+                for (int wire = 0; wire < puzzles[team].Board.WireCount; wire++)
                 {
                     var p = WirePoint(team, wire);
                     RoundedBox("Wire cutting pedestal", p + Vector3.down * .38f, new Vector3(2.8f, .6f, 1.4f), .15f, charcoal);
@@ -106,7 +109,7 @@ namespace ChessFight.RagdollLab
                 displayTool.transform.position = ToolStation(team) + Vector3.up * .15f;
                 displayTool.transform.localScale = Vector3.one * 2;
                 boardSigns[team] = Label("Puzzle briefing", ToolStation(team) + new Vector3(0, 2.4f, 1.8f),
-                    $"{courses[team].Stage + 1}/2단계 · {(team == 0 ? "흑 기물" : "백 기물")} {puzzleLayout.PieceCount}개\n공격받지 않는 전선을 자르세요\nF: 절단기 / H: 공격 힌트", .25f);
+                    $"{courses[team].Stage + 1}/3단계 · {(team == 0 ? "흑 기물" : "백 기물")} {puzzleLayout.PieceCount}개\n안전 전선 {puzzleLayout.RequiredCuts}/{puzzleLayout.WireCount}개를 모두 자르세요\nF: 절단기 / H: 공격 힌트", .25f);
                 Label("Court route", new Vector3(BoardCentreX(team), .8f, 8), "해체 구역 / 절단기 → 전선 → 출구", .3f);
             }
             // Own all generated board objects, labels and meshes so F3 leaves no stale colliders or hints.
@@ -120,9 +123,9 @@ namespace ChessFight.RagdollLab
         {
             // Mount on the inner face of the outer wall, outside the playable chessboard.
             bool bishop = kind == ChessWirePuzzle.Kind.Bishop;
-            string pieceName = kind == ChessWirePuzzle.Kind.Rook ? "룩" : bishop ? "비숍" : kind == ChessWirePuzzle.Kind.Knight ? "나이트" : "폰";
+            string pieceName = kind == ChessWirePuzzle.Kind.Rook ? "룩" : bishop ? "비숍" : kind == ChessWirePuzzle.Kind.Knight ? "나이트" : kind == ChessWirePuzzle.Kind.Queen ? "퀸" : "폰";
             float side = team == 0 ? -1f : 1f;
-            var centre = new Vector3(side * (ArenaWidth * .5f - .36f), 2.5f, 18f + (int)kind * 8f);
+            var centre = new Vector3(side * (ArenaWidth * .5f - .36f), 2.5f, 18f + (int)kind * 6f);
             var root = new GameObject(kind + " movement guide");
             root.transform.SetParent(transform, false); root.transform.position = centre;
             Box("Guide frame", centre, new Vector3(3.2f, 3.8f, .18f), frame, false).transform.SetParent(root.transform, true);
@@ -135,17 +138,18 @@ namespace ChessFight.RagdollLab
                 bool middle = x == 0 && y == 0;
                 bool reachable = kind == ChessWirePuzzle.Kind.Pawn ? Mathf.Abs(x) == 1 && y == 1 :
                         kind == ChessWirePuzzle.Kind.Knight ? Mathf.Abs(x * y) == 2 :
+                        kind == ChessWirePuzzle.Kind.Queen ? Mathf.Abs(x) == Mathf.Abs(y) || x == 0 || y == 0 :
                         bishop ? Mathf.Abs(x) == Mathf.Abs(y) : x == 0 || y == 0;
                 var pos = centre + new Vector3(x * .33f, .28f + y * .33f, -.135f);
                 Box("Movement diagram cell", pos, new Vector3(.30f, .30f, .012f),
                     middle ? ink : reachable ? toolGrip : frame, false).transform.SetParent(content.transform, true);
             }
-            var symbol = Label("Diagram piece", centre + new Vector3(0, .28f, -.15f), kind == ChessWirePuzzle.Kind.Rook ? "R" : bishop ? "B" : kind == ChessWirePuzzle.Kind.Knight ? "N" : "P", .22f, .26f, .26f);
+            var symbol = Label("Diagram piece", centre + new Vector3(0, .28f, -.15f), kind == ChessWirePuzzle.Kind.Rook ? "R" : bishop ? "B" : kind == ChessWirePuzzle.Kind.Knight ? "N" : kind == ChessWirePuzzle.Kind.Queen ? "Q" : "P", .22f, .26f, .26f);
             symbol.color = Color.white; symbol.transform.SetParent(content.transform, true);
             string explanation = kind == ChessWirePuzzle.Kind.Pawn ?
                 "앞 대각선 한 칸 공격\n직진은 공격 아님\n이 판에서는 출구 방향" :
                 kind == ChessWirePuzzle.Kind.Knight ? "두 칸 + 옆 한 칸 (L자)\n다른 기물을 뛰어넘음" :
-                (bishop ? "대각선으로 이동" : "가로·세로로 이동") + "\n막힐 때까지 여러 칸\n다른 기물은 넘지 못함";
+                (kind == ChessWirePuzzle.Kind.Queen ? "직선·대각선으로 이동" : bishop ? "대각선으로 이동" : "가로·세로로 이동") + "\n막힐 때까지 여러 칸\n다른 기물은 넘지 못함";
             var caption = Label("Guide explanation", centre + new Vector3(0, -1.18f, -.13f), explanation, .18f, 2.7f, .65f);
             caption.color = Color.black; caption.transform.SetParent(content.transform, true);
             var legend = Label("Diagram legend", centre + new Vector3(0, -.66f, -.13f), "금색 칸 = 공격 방향", .15f, 2.7f, .23f);
@@ -189,6 +193,22 @@ namespace ChessFight.RagdollLab
             root.transform.localScale = Vector3.one * Mathf.Clamp(rookScale, .2f, 1f);
             Label("Piece location", position + Vector3.up * 3.2f, (kind == ChessWirePuzzle.Kind.Pawn ? "PAWN / " : "KNIGHT / ") + coordinate, .3f);
         }
+        void BuildQueen(Vector3 position, string coordinate, Material material)
+        {
+            var root = new GameObject("Puzzle Queen"); root.transform.SetParent(transform, false); root.transform.position = position;
+            RoundedBox("Queen base", position + Vector3.up * .4f, new Vector3(2.8f, .8f, 2.8f), .3f, material).transform.SetParent(root.transform, true);
+            RoundedBox("Queen stem", position + Vector3.up * 2.7f, new Vector3(1.4f, 4f, 1.4f), .4f, material).transform.SetParent(root.transform, true);
+            RoundedBox("Queen crown", position + Vector3.up * 4.8f, new Vector3(2.7f, .5f, 2.7f), .2f, material).transform.SetParent(root.transform, true);
+            for (int i = 0; i < 5; i++)
+            {
+                float angle = i * Mathf.PI * 2f / 5f;
+                var tip = GameObject.CreatePrimitive(PrimitiveType.Sphere); tip.name = "Queen crown tip";
+                tip.transform.SetParent(root.transform, false); tip.transform.localPosition = new Vector3(Mathf.Cos(angle), 5.45f, Mathf.Sin(angle));
+                tip.transform.localScale = new Vector3(.5f, .9f, .5f); tip.GetComponent<Renderer>().sharedMaterial = material;
+            }
+            root.transform.localScale = Vector3.one * Mathf.Clamp(rookScale, .2f, 1f);
+            Label("Queen location", position + Vector3.up * (5.9f * Mathf.Clamp(rookScale, .2f, 1f) + .6f), "QUEEN / " + coordinate, .35f);
+        }
         GameObject MakeCutter(string name, Transform parent)
         {
             var root = new GameObject(name); root.transform.SetParent(parent, false);
@@ -220,13 +240,13 @@ namespace ChessFight.RagdollLab
         void ResetPuzzle()
         {
             elapsed = 0;
-            var first = ChessWirePuzzle.Generate(puzzleRandom, previousFirst);
-            var second = ChessWirePuzzle.GenerateSecond(puzzleRandom, first);
-            previousFirst = first;
+            var layouts = ChessWirePuzzle.GenerateCourse(puzzleRandom, previousFirst);
+            previousFirst = layouts[0];
             for (int team = 0; team < 2; team++)
             {
-                courses[team] = new ChessWirePuzzle.Course(team == 0 ? first : first.MirrorRanks(),
-                    team == 0 ? second : second.MirrorRanks(), cutSeconds, wrongWireLock);
+                var teamLayouts = new ChessWirePuzzle.Layout[layouts.Length];
+                for (int stage = 0; stage < layouts.Length; stage++) teamLayouts[stage] = team == 0 ? layouts[stage] : layouts[stage].MirrorRanks();
+                courses[team] = new ChessWirePuzzle.Course(teamLayouts, cutSeconds, wrongWireLock);
                 puzzles[team] = courses[team].Current; solveTimes[team] = -1;
                 RebuildBoard(team);
             }
@@ -245,7 +265,7 @@ namespace ChessFight.RagdollLab
                         players[i].standHeight + .04f, 10.1f), Vector3.forward);
             }
             RebuildBoard(team);
-            notice = (team == 0 ? "백팀" : "흑팀") + " 1단계 완료 · 2단계 시작 (도구 유지 / 판 입구로 이동)";
+            notice = (team == 0 ? "백팀" : "흑팀") + $" {courses[team].Stage}단계 완료 · {courses[team].Stage + 1}단계 시작 (도구 유지 / 판 입구로 이동)";
         }
         void LoseCutter(int index)
         {
@@ -276,7 +296,7 @@ namespace ChessFight.RagdollLab
                     !menu && Application.isFocused && Input.GetKey(KeyCode.F) && hasCutter[selected] &&
                     players[selected].State == PawnState.Active && players[selected].Grounded)
                 {
-                    for (int n = 0; n < 3; n++)
+                    for (int n = 0; n < puzzles[team].Board.WireCount; n++)
                         if (!puzzles[team].Cut(n) && Near(players[selected].Hips.position, WirePoint(team, n)))
                         { wire = n; worker = selected; break; }
                 }
@@ -292,7 +312,7 @@ namespace ChessFight.RagdollLab
             for (int team = 0; team < 2; team++)
             {
                 if ((rules.CompletedTeams & (1 << team)) != 0) solveTimes[team] = elapsed;
-                if (!rules.Teams[team].Finished && puzzles[team].Solved && courses[team].Stage == 0) AdvancePuzzle(team);
+                if (!rules.Teams[team].Finished && puzzles[team].Solved && !courses[team].Complete) AdvancePuzzle(team);
             }
             return blasts;
         }
@@ -310,10 +330,10 @@ namespace ChessFight.RagdollLab
                 cuttingTools[team].transform.GetChild(1).localRotation = Quaternion.Euler(0, opening, 0);
                 cuttingTools[team].transform.GetChild(3).localRotation = Quaternion.Euler(0, -opening, 0);
             }
-            for (int team = 0; team < 2; team++) for (int wire = 0; wire < 3; wire++)
+            for (int team = 0; team < 2; team++) for (int wire = 0; wire < puzzles[team].Board.WireCount; wire++)
             {
                 string coord = ((char)('A' + puzzles[team].Board.File(wire))).ToString() + (puzzles[team].Board.Rank(wire) + 1);
-                string color = wire == 0 ? "빨강" : wire == 1 ? "파랑" : "노랑";
+                string color = WireColorNames[wire];
                 wireLabels[team, wire].text = (wire + 1) + " / " + color + " / " + coord + "\n" +
                     (rules.Teams[team].Finished ? "종료" : puzzles[team].Cut(wire) ? "절단됨" : puzzles[team].LockLeft > 0 ? "잠금" : "절단기 + F 길게");
             }
