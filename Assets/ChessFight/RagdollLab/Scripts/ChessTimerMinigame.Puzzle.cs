@@ -16,7 +16,7 @@ namespace ChessFight.RagdollLab
         readonly TextMesh[,] wireLabels = new TextMesh[2, 6];
         readonly TextMesh[] boardSigns = new TextMesh[2];
         readonly GameObject[] attackHints = new GameObject[2];
-        readonly GameObject[] cuttingTools = new GameObject[2];
+        readonly GameObject[,] cuttingTools = new GameObject[2, 6];
         readonly int[] cuttingWire = { -1, -1 };
         readonly float[] solveTimes = { -1f, -1f };
         ChessWirePuzzle.Layout previousFirst;
@@ -63,7 +63,6 @@ namespace ChessFight.RagdollLab
                     }
                 }
                 attackHints[team].SetActive(false);
-                cuttingTools[team] = MakeCutter("Cutter at wire", transform); cuttingTools[team].SetActive(false);
                 for (int index = 0; index < 8; index++)
                 {
                     Label("File coordinate", BoardSquare(team, index, 0) + new Vector3(0, .15f, team == 0 ? 2.5f : -2.5f), ((char)('A' + index)).ToString(), .5f);
@@ -94,6 +93,8 @@ namespace ChessFight.RagdollLab
                 }
                 for (int wire = 0; wire < puzzles[team].Board.WireCount; wire++)
                 {
+                    cuttingTools[team, wire] = MakeCutter("Cutter at wire " + (wire + 1), transform);
+                    cuttingTools[team, wire].SetActive(false);
                     var p = WirePoint(team, wire);
                     RoundedBox("Wire cutting pedestal", p + Vector3.down * .38f, new Vector3(2.8f, .6f, 1.4f), .15f, charcoal);
                     // Two fixed ends and a removable central segment clearly show the cut.
@@ -236,6 +237,7 @@ namespace ChessFight.RagdollLab
             }
             BuildDefuseBoards(team, boardMaterials[0], boardMaterials[1], boardMaterials[2], boardMaterials[3]);
             cuttingWire[team] = -1;
+            ResetHelperRoutes(team);
         }
         void ResetPuzzle()
         {
@@ -274,16 +276,29 @@ namespace ChessFight.RagdollLab
             carriedCutters[index] = null;
         }
         bool Near(Vector3 a, Vector3 b) => Mathf.Abs(a.y - b.y) < 2f && new Vector2(a.x - b.x, a.z - b.z).magnitude <= interactDistance;
+        bool TryEquipCutter(int index)
+        {
+            int team = index / 6;
+            if (!started || respawnAt[index] > 0 || rules.Teams[team].Finished ||
+                players[index].State != PawnState.Active || !players[index].Grounded || hasCutter[index] ||
+                !Near(players[index].Hips.position, ToolStation(team))) return false;
+            hasCutter[index] = true;
+            carriedCutters[index] = MakeCutter("Equipped wire cutter", players[index].handR.transform);
+            carriedCutters[index].transform.localPosition = new Vector3(0, 0, .2f);
+            return true;
+        }
         void PickupCutter()
         {
-            int team = selected / 6;
-            if (!started || menu || respawnAt[selected] > 0 || rules.Teams[team].Finished ||
-                players[selected].State != PawnState.Active || !players[selected].Grounded || hasCutter[selected] ||
-                !Near(players[selected].Hips.position, ToolStation(team))) return;
-            hasCutter[selected] = true;
-            carriedCutters[selected] = MakeCutter("Equipped wire cutter", players[selected].handR.transform);
-            carriedCutters[selected].transform.localPosition = new Vector3(0, 0, .2f);
-            notice = "절단기 획득 · 체스판으로 이동해 안전한 전선 앞에서 F를 길게 누르세요";
+            if (!menu && TryEquipCutter(selected)) notice = "절단기 획득 · 안전한 전선 앞에서 F를 길게 누르세요";
+        }
+        int ManualCutWire(int team)
+        {
+            if (selected / 6 != team || rules.Teams[team].Finished || respawnAt[selected] > 0 ||
+                menu || !Application.isFocused || !Input.GetKey(KeyCode.F) || !hasCutter[selected] ||
+                players[selected].State != PawnState.Active || !players[selected].Grounded) return -1;
+            for (int n = 0; n < puzzles[team].Board.WireCount; n++)
+                if (!puzzles[team].Cut(n) && Near(players[selected].Hips.position, WirePoint(team, n))) return n;
+            return -1;
         }
         int TickPhysicalPuzzle(float dt)
         {
@@ -291,22 +306,26 @@ namespace ChessFight.RagdollLab
             bool[] solved = new bool[2]; float[] penalties = new float[2];
             for (int team = 0; team < 2; team++)
             {
-                int wire = -1, worker = -1;
-                if (selected / 6 == team && !rules.Teams[team].Finished && respawnAt[selected] <= 0 &&
-                    !menu && Application.isFocused && Input.GetKey(KeyCode.F) && hasCutter[selected] &&
-                    players[selected].State == PawnState.Active && players[selected].Grounded)
+                var requests = new System.Collections.Generic.List<ChessWirePuzzle.CutRequest>();
+                int manual = ManualCutWire(team);
+                if (manual >= 0) requests.Add(new ChessWirePuzzle.CutRequest(selected, manual));
+                for (int i = team * 6; i < team * 6 + 6; i++)
                 {
-                    for (int n = 0; n < puzzles[team].Board.WireCount; n++)
-                        if (!puzzles[team].Cut(n) && Near(players[selected].Hips.position, WirePoint(team, n)))
-                        { wire = n; worker = selected; break; }
+                    int target = helperCutWire[i];
+                    if (i == selected || !IsCuttingHelper(i) || menu || !Application.isFocused ||
+                        target < 0 || target >= puzzles[team].Board.WireCount || target == manual ||
+                        respawnAt[i] > 0 || !hasCutter[i] || !players[i].Grounded || players[i].State != PawnState.Active ||
+                        rules.Teams[team].Finished || !Near(players[i].Hips.position, WirePoint(team, target))) continue;
+                    requests.Add(new ChessWirePuzzle.CutRequest(i, target));
                 }
-                cuttingWire[team] = wire;
-                workers[team] = worker >= 0 ? 1 : 0;
-                var result = puzzles[team].Step(dt, worker, wire, worker >= 0);
-                if (result == ChessWirePuzzle.Result.Wrong)
-                { penalties[team] = rules.WrongWirePenalty; notice = $"오답! 전체 제한시간의 1/9인 {rules.WrongWirePenalty:0.##}초 차감 / 잠시 잠금"; }
+                cuttingWire[team] = manual;
+                workers[team] = requests.Count;
+                var result = puzzles[team].StepAll(dt, requests.ToArray());
+                if (result.WrongCuts > 0)
+                { penalties[team] = rules.WrongWirePenalty * result.WrongCuts; notice = $"오답 전선 {result.WrongCuts}개 · {penalties[team]:0}초 차감 / 잠시 잠금"; }
                 solved[team] = courses[team].Complete;
-                if (wire >= 0 && puzzles[team].Cut(wire)) wireCentres[team, wire].SetActive(false);
+                for (int wire = 0; wire < puzzles[team].Board.WireCount; wire++)
+                    if (puzzles[team].Cut(wire)) wireCentres[team, wire].SetActive(false);
             }
             int blasts = rules.StepPuzzle(dt, riders[0], riders[1], solved[0], solved[1], penalties[0], penalties[1]);
             for (int team = 0; team < 2; team++)
@@ -319,23 +338,30 @@ namespace ChessFight.RagdollLab
         void UpdatePuzzleViews()
         {
             for (int i = 0; i < players.Count; i++)
-                if (carriedCutters[i] != null) carriedCutters[i].SetActive(i != selected || puzzles[i / 6].Progress <= 0);
-            for (int team = 0; team < 2; team++)
             {
-                bool cutting = cuttingWire[team] >= 0 && puzzles[team].Progress > 0 && !rules.Teams[team].Finished;
-                cuttingTools[team].SetActive(cutting);
+                bool working = false;
+                var puzzle = puzzles[i / 6];
+                for (int wire = 0; wire < puzzle.Board.WireCount; wire++)
+                    if (puzzle.WorkerAt(wire) == i && puzzle.WireProgress(wire) > 0) working = true;
+                if (carriedCutters[i] != null) carriedCutters[i].SetActive(!working);
+            }
+            for (int team = 0; team < 2; team++) for (int wire = 0; wire < puzzles[team].Board.WireCount; wire++)
+            {
+                float progress = puzzles[team].WireProgress(wire);
+                bool cutting = progress > 0 && !rules.Teams[team].Finished;
+                var tool = cuttingTools[team, wire]; tool.SetActive(cutting);
                 if (!cutting) continue;
-                cuttingTools[team].transform.position = WirePoint(team, cuttingWire[team]) + new Vector3(0, .1f, -.19f);
-                float opening = 20 * (1 - Mathf.Clamp01(puzzles[team].Progress / puzzles[team].CutSeconds));
-                cuttingTools[team].transform.GetChild(1).localRotation = Quaternion.Euler(0, opening, 0);
-                cuttingTools[team].transform.GetChild(3).localRotation = Quaternion.Euler(0, -opening, 0);
+                tool.transform.position = WirePoint(team, wire) + new Vector3(0, .1f, -.19f);
+                float opening = 20 * (1 - Mathf.Clamp01(progress / puzzles[team].CutSeconds));
+                tool.transform.GetChild(1).localRotation = Quaternion.Euler(0, opening, 0);
+                tool.transform.GetChild(3).localRotation = Quaternion.Euler(0, -opening, 0);
             }
             for (int team = 0; team < 2; team++) for (int wire = 0; wire < puzzles[team].Board.WireCount; wire++)
             {
                 string coord = ((char)('A' + puzzles[team].Board.File(wire))).ToString() + (puzzles[team].Board.Rank(wire) + 1);
                 string color = WireColorNames[wire];
                 wireLabels[team, wire].text = (wire + 1) + " / " + color + " / " + coord + "\n" +
-                    (rules.Teams[team].Finished ? "종료" : puzzles[team].Cut(wire) ? "절단됨" : puzzles[team].LockLeft > 0 ? "잠금" : "절단기 + F 길게");
+                    (rules.Teams[team].Finished ? "종료" : puzzles[team].Cut(wire) ? "절단됨" : puzzles[team].LockLeft > 0 ? "잠금" : puzzles[team].WireProgress(wire) > 0 ? $"절단 {puzzles[team].WireProgress(wire):0.0}/{puzzles[team].CutSeconds:0}초" : "절단기 + F 길게");
             }
         }
     }

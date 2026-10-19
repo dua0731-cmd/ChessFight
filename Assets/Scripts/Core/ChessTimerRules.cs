@@ -23,11 +23,11 @@ namespace ChessFight.Network
         public int PressedTeam { get; private set; } = -1;
         public readonly float Limit, WorkSeconds, SwitchDelay;
         public readonly int SoloRiders;
-        public float WrongWirePenalty => Limit / 9f;
+        public float WrongWirePenalty => 5f;
         int candidate = -1;
         float stable;
 
-        public ChessTimerRules(float limit = 45, float workSeconds = 30,
+        public ChessTimerRules(float limit = 60, float workSeconds = 30,
             float switchDelay = .35f, int soloRiders = 2)
         {
             Limit = Math.Max(1, limit); WorkSeconds = Math.Max(1, workSeconds);

@@ -25,6 +25,38 @@ namespace ChessFight.Network
             public Kind PieceKind(int i) => kinds[i];
             public bool IsBishop(int i) => kinds[i] == Kind.Bishop;
             public bool Occupied(int x, int y) => Array.IndexOf(pieces, y * Size + x) >= 0;
+            // Half-tile navigation nodes use canonical board coordinates, independent of Unity/world orientation.
+            public int[] RouteToWire(float startX, float startY, int wire)
+            {
+                const int width = 17;
+                if (wire < 0 || wire >= WireCount) return new int[0];
+                var blocked = new bool[width * width];
+                for (int i = 0; i < PieceCount; i++) blocked[(PieceRank(i) * 2 + 1) * width + PieceFile(i) * 2 + 1] = true;
+                for (int i = 0; i < WireCount; i++) if (i != wire) blocked[(Rank(i) * 2 + 1) * width + File(i) * 2 + 1] = true;
+                int goal = (Rank(wire) * 2 + 1) * width + File(wire) * 2 + 1;
+                int start = -1; float nearest = float.PositiveInfinity;
+                for (int node = 0; node < blocked.Length; node++)
+                {
+                    int x = node % width, y = node / width;
+                    if (blocked[node] || startY < 0 && y != 0 || startY > 16 && y != 16) continue;
+                    float distance = (x - startX) * (x - startX) + (y - startY) * (y - startY);
+                    if (distance < nearest) { nearest = distance; start = node; }
+                }
+                if (start < 0) return new int[0];
+                var parent = new int[blocked.Length]; for (int i = 0; i < parent.Length; i++) parent[i] = -1;
+                var queue = new Queue<int>(); queue.Enqueue(start); parent[start] = start;
+                while (queue.Count > 0 && parent[goal] < 0)
+                {
+                    int node = queue.Dequeue(), x = node % width, y = node / width;
+                    foreach (int next in new[] { x > 0 ? node - 1 : -1, x < 16 ? node + 1 : -1,
+                        y > 0 ? node - width : -1, y < 16 ? node + width : -1 })
+                        if (next >= 0 && !blocked[next] && parent[next] < 0) { parent[next] = node; queue.Enqueue(next); }
+                }
+                if (parent[goal] < 0) return new int[0];
+                var path = new List<int>();
+                for (int node = goal; ; node = parent[node]) { path.Add(node); if (node == start) break; }
+                path.Reverse(); return path.ToArray();
+            }
             public Layout MirrorRanks()
             {
                 int[] p = new int[PieceCount], w = new int[WireCount];
@@ -167,6 +199,12 @@ namespace ChessFight.Network
             }
         }
         public enum Result { None, Wrong, Correct, Solved }
+        public struct CutRequest
+        {
+            public int Worker, Wire;
+            public CutRequest(int worker, int wire) { Worker = worker; Wire = wire; }
+        }
+        public struct BatchResult { public int WrongCuts, CorrectCuts; public bool Solved; }
         public readonly float CutSeconds, LockSeconds;
         public readonly Layout Board;
         public int CorrectCuts { get; private set; }
@@ -174,26 +212,62 @@ namespace ChessFight.Network
         public float Progress { get; private set; }
         public float LockLeft { get; private set; }
         readonly bool[] cut;
-        int actor = -1, wire = -1;
+        readonly float[] progress;
+        readonly int[] owners;
         public ChessWirePuzzle(float cutSeconds = 7f, float lockSeconds = 2f, Layout layout = null)
-        { CutSeconds = Math.Max(.1f, cutSeconds); LockSeconds = Math.Max(0, lockSeconds); Board = layout ?? Training; cut = new bool[Board.WireCount]; }
+        {
+            CutSeconds = Math.Max(.1f, cutSeconds); LockSeconds = Math.Max(0, lockSeconds); Board = layout ?? Training;
+            cut = new bool[Board.WireCount]; progress = new float[cut.Length]; owners = new int[cut.Length];
+            for (int i = 0; i < owners.Length; i++) owners[i] = -1;
+        }
         public bool Cut(int index) => index >= 0 && index < cut.Length && cut[index];
-        // One worker per team per tick; changing worker/wire, releasing, leaving range or losing a tool resets the hold.
+        public float WireProgress(int index) => index >= 0 && index < progress.Length ? progress[index] : 0;
+        public int WorkerAt(int index) => index >= 0 && index < owners.Length ? owners[index] : -1;
+        // Submit every eligible worker together once per tick; one worker per wire, no speed stacking.
+        public BatchResult StepAll(float dt, CutRequest[] requests)
+        {
+            var result = new BatchResult();
+            if (dt <= 0 || float.IsNaN(dt) || float.IsInfinity(dt)) return result;
+            if (LockLeft > 0) { LockLeft = Math.Max(0, LockLeft - dt); Interrupt(); return result; }
+            if (Solved) { Interrupt(); return result; }
+            Progress = 0;
+            for (int wire = 0; wire < cut.Length; wire++)
+            {
+                int worker = -1;
+                for (int n = 0; requests != null && n < requests.Length; n++)
+                {
+                    var request = requests[n];
+                    if (request.Worker < 0 || request.Wire != wire || cut[wire]) continue;
+                    bool duplicate = false;
+                    for (int earlier = 0; earlier < n; earlier++)
+                        if (requests[earlier].Worker == request.Worker) { duplicate = true; break; }
+                    if (!duplicate) { worker = request.Worker; break; }
+                }
+                if (worker < 0) { owners[wire] = -1; progress[wire] = 0; continue; }
+                if (owners[wire] != worker) { owners[wire] = worker; progress[wire] = 0; }
+                progress[wire] += dt;
+                if (progress[wire] >= CutSeconds)
+                {
+                    cut[wire] = true; owners[wire] = -1; progress[wire] = 0;
+                    if (Board.Attacked(Board.File(wire), Board.Rank(wire))) result.WrongCuts++;
+                    else { CorrectCuts++; result.CorrectCuts++; }
+                }
+                Progress = Math.Max(Progress, progress[wire]);
+            }
+            if (result.WrongCuts > 0) { LockLeft = LockSeconds; Interrupt(); }
+            result.Solved = Solved;
+            return result;
+        }
         public Result Step(float dt, int worker, int target, bool canUse)
         {
-            if (dt <= 0 || float.IsNaN(dt) || float.IsInfinity(dt)) return Result.None;
-            if (LockLeft > 0) { LockLeft = Math.Max(0, LockLeft - dt); Interrupt(); return Result.None; }
-            if (Solved || !canUse || worker < 0 || target < 0 || target >= cut.Length || cut[target])
-            { Interrupt(); return Result.None; }
-            if (actor != worker || wire != target) { Progress = 0; actor = worker; wire = target; }
-            Progress += dt;
-            if (Progress < CutSeconds) return Result.None;
-            cut[target] = true; Interrupt();
-            if (!Board.Attacked(Board.File(target), Board.Rank(target)))
-            { CorrectCuts++; return Solved ? Result.Solved : Result.Correct; }
-            LockLeft = LockSeconds;
-            return Result.Wrong;
+            var batch = StepAll(dt, canUse ? new[] { new CutRequest(worker, target) } : null);
+            return batch.WrongCuts > 0 ? Result.Wrong : batch.Solved && batch.CorrectCuts > 0 ? Result.Solved :
+                batch.CorrectCuts > 0 ? Result.Correct : Result.None;
         }
-        void Interrupt() { Progress = 0; actor = wire = -1; }
+        void Interrupt()
+        {
+            Progress = 0;
+            for (int i = 0; i < progress.Length; i++) { progress[i] = 0; owners[i] = -1; }
+        }
     }
 }

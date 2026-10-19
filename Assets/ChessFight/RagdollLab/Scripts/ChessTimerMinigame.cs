@@ -13,7 +13,7 @@ namespace ChessFight.RagdollLab
         public RagdollPawn pawnPrefab;
         public RagdollTuning tuning;
         [Header("Round settings (F3 applies changes)")]
-        [SerializeField, Min(1)] float timeLimit = 45;
+        [SerializeField, Min(1)] float timeLimit = 60;
         [SerializeField, Min(0)] float switchDelay = .35f;
         [SerializeField, Min(1)] int soloRequiredRiders = 2;
         [SerializeField, Min(.1f)] float interactDistance = 1.8f;
@@ -152,6 +152,7 @@ namespace ChessFight.RagdollLab
             }
             foreach (var pawn in players) pawn.SetInput(default);
             DriveSparringBots();
+            DriveCuttingBots();
             var local = players[selected];
             if (Application.isFocused && !menu && respawnAt[selected] <= 0)
             {
@@ -369,7 +370,7 @@ namespace ChessFight.RagdollLab
                     $"{(team == 0 ? "백팀" : "흑팀")} {state.Remaining:0.0}초 | 발판 전체 {riders[team]}명 · 해체 {workers[team]}명 | {(state.Complete ? "해체 성공" : state.Expired ? "시간 만료" : ($"{courses[team].Stage + 1}/3단계 · 정답 {puzzles[team].CorrectCuts}/{puzzles[team].Board.RequiredCuts}"))} · 절단 {puzzles[team].Progress / puzzles[team].CutSeconds:P0} | " +
                     (state.GateOpen ? $"문 열림 · 통과 {escaped}/6" + (solveTimes[team] >= 0 ? $" · 해체 {solveTimes[team]:0.0}초" : "") : rules.PressedTeam == team ? "시간 정지" : "시간 감소"), text);
             }
-            GUI.Label(new Rect(24, 138, 750, 40), $"경과 {elapsed:0.0}초 · 절단기 {(hasCutter[selected] ? "있음" : "없음")} · {players[selected].DisplayName} · {(roles[selected] == 1 ? "발판" : roles[selected] == 2 ? "도구대 시험 배치" : roles[selected] == 4 ? "상대 발판" : "직접 조작 / 대기")}\n{notice}", text);
+            GUI.Label(new Rect(24, 138, 750, 40), $"경과 {elapsed:0.0}초 · 절단기 {(hasCutter[selected] ? "있음" : "없음")} · {players[selected].DisplayName} · {(roles[selected] == 1 ? "발판" : roles[selected] == 2 ? "도구대 시험 배치" : roles[selected] == 4 ? "상대 발판" : roles[selected] == 5 ? "절단 지원 봇" : "직접 조작 / 대기")}\n{notice}", text);
             GUI.Label(new Rect(24, 183, 750, 74), "WASD 이동 · Space 점프 · 좌클릭 밀치기 · 우클릭 잡기 · F 도구 획득/길게 절단 · H 힌트\nTab 팀원 · T 팀 변경 · 1 우리 발판 / 2 도구대(시험) / 3 대기 / 4 상대 발판\nB 대련 봇 · R 복귀 · F3 초기화 · Enter 시작 · Esc 메뉴", text);
             if (menu)
             {

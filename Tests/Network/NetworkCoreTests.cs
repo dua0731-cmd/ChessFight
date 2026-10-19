@@ -156,8 +156,8 @@ public static class NetworkCoreTests
             Test("Chess timer default single worker cannot finish before unprotected timeout", () => {
                 var r = new ChessTimerRules();
                 int blasts = 0;
-                for (int i = 0; i < 45; i++) blasts |= r.Step(1, 0, 0, 1, 1);
-                Check(blasts == 3 && r.Teams[0].Expired && !r.Teams[0].Complete, "45 second clock versus 90 worker seconds");
+                for (int i = 0; i < 60; i++) blasts |= r.Step(1, 0, 0, 1, 1);
+                Check(blasts == 3 && r.Teams[0].Expired && !r.Teams[0].Complete, "60 second clock versus 90 worker seconds");
             });
             Test("Chess timer expiry wins simultaneous work and rejects invalid time steps", () => {
                 var r = new ChessTimerRules(1, 1, 0);
@@ -277,17 +277,65 @@ public static class NetworkCoreTests
                 Check(r.CompletedTeams == 3 && r.Winner == 0 && blast == 2, "more time wins simultaneous physical puzzle");
                 Check(r.StepPuzzle(.1f, 0, 0, true, true) == 0, "results do not repeat");
             });
-            Test("Wrong wire subtracts a ninth of the configured limit, not remaining time", () => {
-                var r = new ChessTimerRules(90, switchDelay: 0);
+            Test("Wrong wire costs a fixed five seconds at every configured time limit", () => {
+                var r = new ChessTimerRules(60, switchDelay: 0);
                 r.StepPuzzle(10, 0, 0, false, false);
-                Check(r.WrongWirePenalty == 10, "ninety second limit costs ten");
+                Check(r.WrongWirePenalty == 5 && new ChessTimerRules().Limit == 60, "one minute default and five second penalty");
                 r.StepPuzzle(.1f, 3, 1, false, false, r.WrongWirePenalty, 0);
-                Check(r.Teams[0].Remaining == 70, "subtract ten from eighty even when paused");
+                Check(r.Teams[0].Remaining == 45, "subtract five from fifty even when paused");
                 r.StepPuzzle(.1f, 3, 1, false, false, r.WrongWirePenalty, 0);
-                Check(r.Teams[0].Remaining == 60, "second error still costs ten");
-                r.StepPuzzle(55, 0, 2, false, false);
+                Check(r.Teams[0].Remaining == 40, "second error costs five");
+                r.StepPuzzle(36, 0, 2, false, false);
                 Check(r.StepPuzzle(.1f, 3, 1, false, false, r.WrongWirePenalty, 0) == 1 && r.Teams[0].Remaining == 0, "clamp to zero and explode");
-                Check(new ChessTimerRules(180).WrongWirePenalty == 20, "follows configured limit");
+                Check(new ChessTimerRules(180).WrongWirePenalty == 5, "penalty independent of limit");
+            });
+            Test("Helper routes reach every wire through clear half-tile lanes", () => {
+                var random = new Random(108);
+                for (int round = 0; round < 200; round++) foreach (var original in ChessWirePuzzle.GenerateCourse(random))
+                    foreach (var board in new[] { original, original.MirrorRanks() })
+                    for (int wire = 0; wire < board.WireCount; wire++)
+                    {
+                        var path = board.RouteToWire(8, board.PawnDirection < 0 ? 18 : -2, wire);
+                        Check(path.Length > 0 && path[path.Length - 1] == (board.Rank(wire) * 2 + 1) * 17 + board.File(wire) * 2 + 1, "route reaches wire");
+                        for (int step = 0; step < path.Length; step++)
+                        {
+                            int x = path[step] % 17, y = path[step] / 17;
+                            Check(x >= 0 && x <= 16 && y >= 0 && y <= 16, "inside board");
+                            if (step > 0) Check(Math.Abs(x - path[step - 1] % 17) + Math.Abs(y - path[step - 1] / 17) == 1, "adjacent route nodes");
+                            if (x % 2 == 1 && y % 2 == 1)
+                            {
+                                Check(!board.Occupied(x / 2, y / 2), "avoid piece centres");
+                                for (int other = 0; other < board.WireCount; other++)
+                                    if (other != wire) Check(board.File(other) != x / 2 || board.Rank(other) != y / 2, "avoid other pedestals");
+                            }
+                        }
+                    }
+            });
+            Test("Three helpers cut different wires concurrently without multiplying same-wire speed", () => {
+                var boards = ChessWirePuzzle.GenerateCourse(new Random(107));
+                var board = boards[1]; var puzzle = new ChessWirePuzzle(7, 2, board);
+                var safe = Enumerable.Range(0, board.WireCount).Where(i => !board.Attacked(board.File(i), board.Rank(i))).ToArray();
+                var requests = safe.Select((wire, i) => new ChessWirePuzzle.CutRequest(i + 3, wire)).ToArray();
+                Check(puzzle.StepAll(6, requests).CorrectCuts == 0 && !puzzle.Solved, "six seconds insufficient");
+                var result = puzzle.StepAll(1, requests);
+                Check(result.CorrectCuts == 3 && result.Solved && puzzle.CorrectCuts == 3, "three wires finish together after seven seconds");
+                var same = new ChessWirePuzzle(7, 2, board);
+                var duplicate = new[] { new ChessWirePuzzle.CutRequest(3, safe[0]), new ChessWirePuzzle.CutRequest(4, safe[0]), new ChessWirePuzzle.CutRequest(5, safe[0]) };
+                Check(same.StepAll(3, duplicate).CorrectCuts == 0 && same.WireProgress(safe[0]) == 3, "same wire not sped up");
+                Check(same.StepAll(4, duplicate).CorrectCuts == 1 && !same.Solved, "same wire scores once");
+            });
+            Test("Parallel workers release and switch independently and cannot work two wires", () => {
+                var puzzle = new ChessWirePuzzle();
+                puzzle.StepAll(5, new[] { new ChessWirePuzzle.CutRequest(3, 0), new ChessWirePuzzle.CutRequest(4, 1) });
+                puzzle.StepAll(1, new[] { new ChessWirePuzzle.CutRequest(4, 1) });
+                Check(puzzle.WireProgress(0) == 0 && puzzle.WireProgress(1) == 6, "release only resets its own wire");
+                puzzle.StepAll(1, new[] { new ChessWirePuzzle.CutRequest(5, 1) });
+                Check(puzzle.WireProgress(1) == 1, "changing worker resets hold");
+                puzzle.StepAll(1, new[] { new ChessWirePuzzle.CutRequest(5, 0), new ChessWirePuzzle.CutRequest(5, 1) });
+                Check(puzzle.WireProgress(0) == 1 && puzzle.WireProgress(1) == 0, "one worker cannot cut two wires");
+                var batch = puzzle.StepAll(7, new[] { new ChessWirePuzzle.CutRequest(3, 2), new ChessWirePuzzle.CutRequest(4, 3) });
+                Check(batch.WrongCuts == 2 && puzzle.LockLeft == 2 && puzzle.CorrectCuts == 0, "parallel wrong cuts count separately");
+                puzzle.StepAll(1, null); Check(puzzle.LockLeft == 1, "lock ticks once per batch");
             });
             Test("Wrong wire drains even paused clock and expiry opens both doors before success", () => {
                 var r = new ChessTimerRules(5, switchDelay: 0);
