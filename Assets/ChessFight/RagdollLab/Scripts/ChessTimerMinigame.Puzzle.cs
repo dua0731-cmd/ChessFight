@@ -76,6 +76,7 @@ namespace ChessFight.RagdollLab
                     for (int earlier = 0; earlier < piece; earlier++) if (puzzleLayout.PieceKind(earlier) == kind) firstOfKind = false;
                     if (firstOfKind) BuildPieceGuide(team, kind, walnut, cream, charcoal);
                     string coordinate = ((char)('A' + puzzleLayout.PieceFile(piece))).ToString() + (puzzleLayout.PieceRank(piece) + 1);
+                    if (BuildDetailedPiece(rook, kind, coordinate, team == 0)) continue;
                     if (kind == ChessWirePuzzle.Kind.Bishop) { BuildBishop(rook, coordinate, pieceMaterial, team == 0 ? cream : charcoal); continue; }
                     if (kind == ChessWirePuzzle.Kind.Queen) { BuildQueen(rook, coordinate, pieceMaterial); continue; }
                     if (kind == ChessWirePuzzle.Kind.Knight || kind == ChessWirePuzzle.Kind.Pawn)
