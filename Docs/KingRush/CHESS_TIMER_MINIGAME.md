@@ -1,6 +1,6 @@
 # 체스 타이머 폭탄 미니게임 프로토타입
 
-R108 · 2026-10-21. **단일 체스 타이머 위 난투 + 거대한 8×8 판에서 도구로 전선을 자르는 무작위 퍼즐 3단계**. 6 대 6 독립 오프라인 시험장이다. 기존 래그돌/스폰/타이머 위치를 유지하고 뒤쪽 해체 구역만 확장했다. 자동 해체는 제거했다. 온라인·실제 다음 코스 전환은 미연결이다.
+R109 · 2026-10-21. **단일 체스 타이머 위 난투 + 거대한 8×8 판에서 도구로 전선을 자르는 무작위 퍼즐 3단계**. 6 대 6 독립 오프라인 시험장이다. 기존 래그돌/스폰/타이머 위치를 유지하고 뒤쪽 해체 구역만 확장했다. 자동 해체는 제거했다. 온라인·실제 다음 코스 전환은 미연결이다.
 
 팀 표시는 **왼쪽 백팀(기존 파란 팀), 오른쪽 흑팀(기존 빨간 팀)**으로 통일했다. 캐릭터·버튼 표시·진입로·출구·HUD/LCD·승리 문구에 적용한다. 전선은 번호와 빨강/파랑/노랑/초록/보라/주황으로 구분하며 색 자체가 정답을 뜻하지 않는다.
 
@@ -129,6 +129,8 @@ Inspector: Rook Scale=0.6(Stop→Play로 적용), Time Limit=90, Cut Seconds=1.5
 
 퍼즐 판의 폰·룩·비숍·나이트·퀸을 전용 FBX 메시로 교체했다. 룩은 성벽형 탑, 비숍은 실제 홈이 파인 머리, 나이트는 말머리/귀/갈기, 퀸은 왕관으로 구분한다. 흑백 몸체와 금속 장식을 공유 재질로 적용하고 이름과 칸 좌표를 표시한다. [실제 메시의 Blender 렌더](CHESS_TIMER_PIECES.png)는 Unity 화면 캡처가 아니다.
 
-원본 제작 스크립트: `Tools/Art/build_chess_timer_pieces.py` (Blender 4.3, `blender -b --threads 6 --python Tools/Art/build_chess_timer_pieces.py`). 결과: `Assets/Resources/ChessTimerPieces/{Pawn,Rook,Bishop,Knight,Queen}.fbx`. `ChessTimerMinigame.PieceArt.cs`에서 로드하며 누락 시 기존 단순 도형으로 대체한다. 모델 폭을2.8m로 정규화한 뒤 기존 `rookScale`(기본0.6)을 적용한다. 기물당 하나의 단순 BoxCollider를 사용하여 장식에 봇이 걸리지 않게 한다. FBX 메시와 런타임 재질은 공유하며, 기존 판 재생성 경로에서 인스턴스를 정리한다. 공격/퍼즐 규칙은 그대로다.
+원본 제작 스크립트: `Tools/Art/build_chess_timer_pieces.py` (Blender 4.3, `blender -b --threads 6 --python Tools/Art/build_chess_timer_pieces.py`). 결과: `Assets/Resources/ChessTimerPieces/{Pawn,Rook,Bishop,Knight,Queen}.fbx`. `ChessTimerMinigame.PieceArt.cs`에서 로드하며 누락 시 기존 단순 도형으로 대체한다. 모델 폭을2.8m로 정규화한 뒤 기존 `rookScale`(기본0.9, R109)을 적용한다. 기물당 하나의 단순 BoxCollider를 사용하여 장식에 봇이 걸리지 않게 한다. FBX 메시와 런타임 재질은 공유하며, 기존 판 재생성 경로에서 인스턴스를 정리한다. 공격/퍼즐 규칙은 그대로다.
 
 구조26·Core108·모의 세션39 및 런타임7개 호환 컴파일 통과(Input/Editor 제외). 모델 재수입과 Blender 렌더를 확인했다. Unity에서 실제 재질·조명·카메라 시점·봇 이동은 아직 미확인이다. Stop 후 Play로 새 모델을 생성한다.
+
+R109: 사용자가 Unity에서 기물 눕힘/작은 크기를 보고했다. 인스턴스의 `localRotation`을 identity로 덮어쓰던 부분을 제거하여 FBX의 축 보정 회전을 보존한다. 수직 자세에서 폭을 정규화하고 코드/씬 모두 원래 기준0.9배로 설정했다(직전0.6배 대비1.5배). Unity 재확인 대기.

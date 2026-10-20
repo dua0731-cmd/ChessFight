@@ -32,7 +32,9 @@ namespace ChessFight.RagdollLab
             root.transform.position = position;
             var model = Instantiate(detailedPieceAssets[index], root.transform, false);
             model.name = kind + " sculpted model";
-            model.transform.localPosition = Vector3.zero; model.transform.localRotation = Quaternion.identity;
+            // Preserve the imported FBX axis correction (Blender Z-up to Unity Y-up).
+            // Clearing this rotation lays the mesh down and also corrupts width normalization.
+            model.transform.localPosition = Vector3.zero;
             model.transform.localScale = Vector3.one;
             var renderers = model.GetComponentsInChildren<Renderer>();
             if (renderers.Length == 0) { Destroy(root); return false; }

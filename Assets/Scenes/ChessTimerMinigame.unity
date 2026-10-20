@@ -375,7 +375,7 @@ MonoBehaviour:
   timeLimit: 60
   cutSeconds: 7
   cuttingHelpersPerTeam: 3
-  rookScale: 0.6
+  rookScale: 0.9
   wrongWireLock: 2
 --- !u!114 &1667498619
 MonoBehaviour:
