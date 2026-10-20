@@ -33,7 +33,7 @@ namespace ChessFight.RagdollLab
                     new Vector3(3, .5f, 3), (x + z) % 2 == 0 ? ivory : walnut);
             Box("Square defuse court foundation", new Vector3(0, -.3f, DefuseStartZ + DefuseSize * .5f),
                 new Vector3(ArenaWidth, .6f, DefuseSize), walnut);
-            Box("Exit apron", new Vector3(0, -.25f, 54.5f), new Vector3(84, .5f, 7), ivory);
+            BuildExitConfluence(ivory, walnut, cream);
 
             // One clock and one mechanically coupled rocker; the two teams occupy its halves.
             RoundedBox("Clock rubber base", new Vector3(0, .25f, 3), new Vector3(22.4f, .5f, 10.4f), .23f, rubber, false);
@@ -99,6 +99,35 @@ namespace ChessFight.RagdollLab
             rocker.transform.localScale = new Vector3(1f, .7f, 1f);
             for (int side = 0; side < 2; side++) PositionEntryFlap(side, Quaternion.identity, true);
             Box("Outer front boundary", new Vector3(0, 1.5f, -27), new Vector3(54, 3, .5f), walnut);
+        }
+
+        // Both team exits meet on a shared landing before the single next-stage entrance.
+        void BuildExitConfluence(Material floor, Material rail, Material trim)
+        {
+            for (int team = 0; team < 2; team++)
+            {
+                float x = BoardCentreX(team);
+                Box("Team exit approach", new Vector3(x, -.25f, 55), new Vector3(6, .5f, 8), floor);
+                for (int edge = -1; edge <= 1; edge += 2)
+                    Box("Approach guardrail", new Vector3(x + edge * 3.25f, .75f, 54.5f),
+                        new Vector3(.5f, 1.5f, 7), rail);
+                Box("Team route stripe", new Vector3(x, .015f, 55), new Vector3(.25f, .02f, 7), teamMaterials[team], false);
+                float sign = team == 0 ? -1 : 1;
+                Box("Landing front guardrail", new Vector3(sign * 9, .75f, 58), new Vector3(18, 1.5f, .5f), rail);
+                Box("Landing rear guardrail", new Vector3(sign * 14.25f, .75f, 66), new Vector3(20, 1.5f, .5f), rail);
+                Box("Landing end guardrail", new Vector3(sign * 24.25f, .75f, 62), new Vector3(.5f, 1.5f, 8.5f), rail);
+                Box("Shared path guardrail", new Vector3(sign * 4.25f, .75f, 77), new Vector3(.5f, 1.5f, 22), rail);
+                Box("Next stage arch pillar", new Vector3(sign * 4.75f, 3, 86), new Vector3(1, 6, 1), rail);
+            }
+            Box("Shared merge landing", new Vector3(0, -.25f, 62), new Vector3(48, .5f, 8), floor);
+            Box("Shared next stage path", new Vector3(0, -.25f, 77), new Vector3(8, .5f, 22), floor);
+            Box("Next stage entrance header", new Vector3(0, 6, 86), new Vector3(10.5f, 1, 1), rail);
+            Label("Shared next stage sign", new Vector3(0, 6, 85.45f), "다음 스테이지", .4f, 8, .7f);
+            // A short receiving platform makes the prototype entrance walkable without a scene transition.
+            Box("Next stage receiving platform", new Vector3(0, -.25f, 92), new Vector3(14, .5f, 8), trim);
+            Box("Prototype end boundary", new Vector3(0, .75f, 96), new Vector3(14, 1.5f, .5f), rail);
+            for (int side = -1; side <= 1; side += 2)
+                Box("Receiving platform guardrail", new Vector3(side * 7, .75f, 92), new Vector3(.5f, 1.5f, 8), rail);
         }
 
         void MoveRocker()
