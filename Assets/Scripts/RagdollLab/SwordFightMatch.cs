@@ -21,6 +21,7 @@ namespace ChessFight.RagdollLab
     /// </list>
     /// The HUD, the board's pictures and the development keys are this class's other files.
     /// </summary>
+    [DefaultExecutionOrder(200)]   // after the player's camera (LabCamera, 150): the wide shots and the shake
     public sealed partial class SwordFightMatch : MonoBehaviour
     {
         public SwordFightSkillParams skills = new SwordFightSkillParams { testCooldown = 0f };
@@ -198,7 +199,6 @@ namespace ChessFight.RagdollLab
             StepBoard(Clock, view.Seed);
             StepPictures();
             StepFeed();
-            StepProtection();
             StepClockSound();
         }
 
@@ -327,6 +327,10 @@ namespace ChessFight.RagdollLab
 
         void OnSkillFx(SfFxEvent e)
         {
+            // Every screen: the demo's named stamps, the shake, the pawn's capture ring.
+            ShakeFor(e.kind);
+            NamedStamp(e);
+            if (e.kind == SfFxKind.PawnHit && e.target != null) Ring(e.target.Hips.position, 1f, "#ffffff");
             if (!Authority || e.by == null || e.by.Fighter == null || e.target == null) return;
             var victim = e.target.GetComponent<SwordFightPawn>();
             if (victim == null) return;

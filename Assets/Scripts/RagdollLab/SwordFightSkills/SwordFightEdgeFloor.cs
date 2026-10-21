@@ -62,6 +62,12 @@ namespace ChessFight.RagdollLab
         /// open collapse (no floor, their sides are edges) and nothing ever fills them again, a rook's chunk included.</summary>
         public readonly List<Rect> Erased = new List<Rect>();
 
+        /// <summary>R149: someone else draws the floor (the prototype match's own squares, SwordFightArena): the platform,
+        /// the boxes round the holes and the chunks are colliders only here.</summary>
+        public bool Hidden;
+        /// <summary>R149: a rook's chunk is cut along this grid (the board's squares), 0 = anywhere.</summary>
+        public float Snap;
+
         public bool Found { get; private set; }
         /// <summary>The floor's top, x / z.</summary>
         public Rect Area { get; private set; }
@@ -276,6 +282,15 @@ namespace ChessFight.RagdollLab
             lip = new Vector3(c.x, Top, c.z);
             Vector3 p0 = c - t * half, p1 = c + t * half - n * depth;
             var rect = Rect.MinMaxRect(Mathf.Min(p0.x, p1.x), Mathf.Min(p0.z, p1.z), Mathf.Max(p0.x, p1.x), Mathf.Max(p0.z, p1.z));
+            if (Snap > 0f)
+            {
+                // Whole squares, at least one each way (the prototype's board breaks along its squares).
+                float x0 = Mathf.Round(rect.xMin / Snap) * Snap, x1 = Mathf.Round(rect.xMax / Snap) * Snap;
+                float z0 = Mathf.Round(rect.yMin / Snap) * Snap, z1 = Mathf.Round(rect.yMax / Snap) * Snap;
+                if (x1 - x0 < Snap) { if (Mathf.Abs(rect.xMax - x1) < Mathf.Abs(rect.xMin - x0)) x1 = x0 + Snap; else x0 = x1 - Snap; }
+                if (z1 - z0 < Snap) { if (Mathf.Abs(rect.yMax - z1) < Mathf.Abs(rect.yMin - z0)) z1 = z0 + Snap; else z0 = z1 - Snap; }
+                rect = Rect.MinMaxRect(x0, z0, x1, z1);
+            }
             return Rect.MinMaxRect(Mathf.Max(rect.xMin, r.xMin), Mathf.Max(rect.yMin, r.yMin), Mathf.Min(rect.xMax, r.xMax), Mathf.Min(rect.yMax, r.yMax));
         }
 
@@ -352,11 +367,16 @@ namespace ChessFight.RagdollLab
             foreach (var e in Erased) if (Mathf.Abs(e.xMin - square.xMin) < 0.01f && Mathf.Abs(e.yMin - square.yMin) < 0.01f) return;
             Erased.Add(square);
             Rebuild();
+            if (Hidden) { if (knock) Knock(square); return; }
             var look = Box(transform, new Vector3(square.center.x, (Top + Bottom) * 0.5f, square.center.y),
                 new Vector3(square.width, Top - Bottom, square.height), "Erased square", false);
             var falling = look.AddComponent<FallingSquare>();
             falling.spin = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0f, UnityEngine.Random.Range(-1f, 1f)).normalized;
-            if (!knock) return;
+            if (knock) Knock(square);
+        }
+
+        void Knock(Rect square)
+        {
             foreach (var p in RagdollPawn.All)
             {
                 if (p == null) continue;
@@ -500,7 +520,7 @@ namespace ChessFight.RagdollLab
             foreach (var go in rest) if (go != null) Destroy(go);
             rest.Clear();
             if (platformCollider != null) platformCollider.enabled = true;
-            if (platformRenderer != null) platformRenderer.enabled = true;
+            if (platformRenderer != null) platformRenderer.enabled = !Hidden;
             edgesDirty = true;
         }
 
@@ -589,6 +609,7 @@ namespace ChessFight.RagdollLab
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterial = floorMaterial;
+            mr.enabled = !Hidden;
             if (platformRenderer != null)
             {
                 mr.shadowCastingMode = platformRenderer.shadowCastingMode;

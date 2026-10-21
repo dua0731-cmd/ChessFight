@@ -5,6 +5,7 @@
 | 기준 문서 | [명세 v1.0 원문](PROTOTYPE_SPEC_v1.0.md) (사용자 10-21). 이 문서와 다른 문서가 다르면 **명세가 이긴다** |
 | 상태 | **코드·Core 시험·컴파일까지.** Unity·Steam에서 사람이 본 것은 없다 → [VALIDATION R149 표](../../Network/VALIDATION.md) |
 | 씬 | `Assets/Scenes/SwordFight.unity`(로비에서 소드 파이트를 고르면 들어가는 경기 씬). 에디터에서 이 씬을 바로 Play하면 혼자 + 더미 3명으로 같은 경기 |
+| 연출 (R150) | 경기장·애니메이션·HUD는 시연 HTML을 따름 → [DEMO](DEMO.md) |
 | 스킬 시험 씬 | `SkillTest/SwordFight_SkillTest`는 **예전 그대로**(시험 쿨 2초, 킹 F가 스킬도 막음, 폰 스킬 없음) |
 
 ## 1. 작업 전 저장소 확인 (명세 §2)

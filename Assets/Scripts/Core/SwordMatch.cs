@@ -25,8 +25,8 @@ namespace ChessFight.Network
         public double RespawnDelay = 3;
         public double CreditWindow = 3;
         public double SuddenDeathLimit = 60;
-        /// <summary>The respawn tile is chosen this long before the piece comes back (the light ring, §11).</summary>
-        public double RingLead = 0.8;
+        /// <summary>The respawn tile is chosen this long before the piece comes back (the hand lowering it, the demo).</summary>
+        public double RingLead = 0.9;
     }
 
     /// <summary>One line of the kill feed. <see cref="Stolen"/> is the piece the credit took (a pawn's steal), or
@@ -458,14 +458,22 @@ namespace ChessFight.Network
         public static int Y(int cell) => cell / Size;
         public static bool Rim(int cell) => X(cell) == 0 || Y(cell) == 0 || X(cell) == Size - 1 || Y(cell) == Size - 1;
 
-        /// <summary>Where slot <paramref name="slot"/> of a team starts: the middle files of its two home ranks, one each.</summary>
+        /// <summary>The four rook-shaped stone pedestals (R149, the demo's board): b2, g2, b7, g7. Their squares are never
+        /// erased and nobody starts or comes back on them.</summary>
+        public static readonly int[] Obstacles = { 1 * Size + 1, 1 * Size + 6, 6 * Size + 1, 6 * Size + 6 };
+        public static bool Obstacle(int cell) => Array.IndexOf(Obstacles, cell) >= 0;
+
+        /// <summary>The low wooden rails (the demo's board): the outer side of files a and h, ranks 3–6.</summary>
+        public static bool Rail(int cell) => (X(cell) == 0 || X(cell) == Size - 1) && Y(cell) >= 2 && Y(cell) <= 5;
+
+        /// <summary>Where slot <paramref name="slot"/> of a team starts: its second rank's middle files, then its first
+        /// rank's (the demo lines up on the second rank), never a pedestal.</summary>
         public static int StartCell(int team, int slot)
         {
-            int[] files = { 3, 4, 2, 5, 1, 6, 0, 7 };
-            int s = Math.Max(0, slot) % 16;
-            int x = files[s % 8], rank = s % 2 == 0 ? 1 : 0;
-            if (s >= 8) rank = 1 - rank;
-            return Cell(x, team == 0 ? rank : Size - 1 - rank);
+            int[] files = { 3, 4, 2, 5, 3, 4, 2, 5, 1, 6, 0, 7 };
+            int[] ranks = { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int s = Math.Max(0, slot) % files.Length;
+            return Cell(files[s], team == 0 ? ranks[s] : Size - 1 - ranks[s]);
         }
 
         /// <summary>The squares a team may come back on: its ranks 2–3 (6–7 for black); once the queen has cleared the
@@ -475,7 +483,7 @@ namespace ChessFight.Network
             var list = new List<int>();
             for (int c = 0; c < Count; c++)
             {
-                if (erased != null && erased[c]) continue;
+                if ((erased != null && erased[c]) || Obstacle(c)) continue;
                 int y = Y(c), x = X(c);
                 int own = team == 0 ? y : Size - 1 - y;
                 if (queenDone) { if (own >= 1 && own <= 3 && x >= 1 && x <= 6) list.Add(c); }
@@ -492,7 +500,7 @@ namespace ChessFight.Network
         {
             var cells = SpawnCells(team, erased, queenDone);
             if (cells.Count == 0)
-                for (int c = 0; c < Count; c++) if (erased == null || !erased[c]) cells.Add(c);
+                for (int c = 0; c < Count; c++) if ((erased == null || !erased[c]) && !Obstacle(c)) cells.Add(c);
             int best = -1, crowdedBest = -1;
             double bestScore = double.MinValue, crowdedScore = double.MinValue;
             foreach (int c in cells)
@@ -595,7 +603,9 @@ namespace ChessFight.Network
                     for (int attempt = 0; attempt < 20; attempt++)
                     {
                         int[] cells = wave == 0 ? RookLine(rng) : wave == 1 ? BishopDiagonal(rng) : KnightL(rng);
-                        if (cells == null || !Fits(erased, cells)) continue;
+                        if (cells == null) continue;
+                        cells = WithoutPedestals(cells);
+                        if (cells.Length == 0 || !Fits(erased, cells)) continue;
                         g.Cells = cells;
                         break;
                     }
@@ -604,6 +614,14 @@ namespace ChessFight.Network
                 plan.Add(g);
             }
             return plan;
+        }
+
+        /// <summary>A pass goes over a pedestal's square but leaves it (the demo: the stone stays).</summary>
+        static int[] WithoutPedestals(int[] cells)
+        {
+            var kept = new List<int>();
+            foreach (int c in cells) if (!SwordBoard.Obstacle(c)) kept.Add(c);
+            return kept.ToArray();
         }
 
         /// <summary>Erasing <paramref name="cells"/> now keeps the board whole with two respawn squares a side, and so does

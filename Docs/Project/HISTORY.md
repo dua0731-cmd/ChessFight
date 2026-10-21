@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-21 | R149 | 고침: `SwordFightMatch`의 `MaterialPropertyBlock` 필드 초기화 → 처음 쓸 때 만듦(경기 시작 때 CreateImpl 예외, PITFALLS 45) |
+| (이 커밋) | 10-21 | R150 | 시연 HTML 연출: `SwordFightArena`·`SwordFightShapes`, 유령·쟁반·부활 손·방울·빛기둥·고리·흔들림·카메라, 시연 HUD(도장·패널·이름표·자막·끝 화면), Core 받침 칸, 시연 자료 `Docs/GameModes/SwordFight/Demo/`. 시험: Core 129·세션 41 |
+| `a3f9b30` | 10-21 | R149 | 고침: `SwordFightMatch`의 `MaterialPropertyBlock` 필드 초기화 → 처음 쓸 때 만듦(경기 시작 때 CreateImpl 예외, PITFALLS 45) |
 | `e69a7ff` | 10-21 | R149 | 소드 파이트 프로토타입(명세 v1.0): Core `SwordMatch`(규칙·판·유령 기물·상태 글자, 시험 4개), `SwordFightMatch`(+Board·Hud·Dev), 폰 F·킹 F 칼만·기획 쿨, 지운 칸·일반 가장자리, `SteamMatchLabLink`(로비 경기에 스킬 온라인), 소드 파이트 3 대 3 시작, 프로토콜 v23, 문서. 시험: Core 129·세션 41 |
 | `4ec62ec` | 10-21 | R148 | 경기 중 Esc 메뉴(`GameMenu`: 돌아가기·설정·나가기 확인), 폰 러쉬 공개 방 3 대 3부터 방장 "게임 시작"(`ReadyEarly`·`CanStartEarly`·입장 화면 버튼), 문서. 시험: Core 125·세션 41 |
 | `51fddd0` | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |

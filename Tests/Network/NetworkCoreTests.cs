@@ -1247,7 +1247,8 @@ public static class NetworkCoreTests
                 for (int seed = 0; seed < 20; seed++)
                 {
                     var plan = SwordGhosts.Plan(seed); Check(plan.Count == 4 && plan[3].Cells.Length == 28, "four passes, the rim " + seed);
-                    Check(plan[0].Cells.Length == 6 && (plan[1].Cells.Length == 4 || plan[1].Cells.Length == 0) && (plan[2].Cells.Length == 3 || plan[2].Cells.Length == 0), "rook 6, bishop 4, knight 3 (or skipped after 20 tries) " + seed);
+                    Check(plan[0].Cells.Length >= 4 && plan[0].Cells.Length <= 6 && plan[1].Cells.Length <= 4 && plan[2].Cells.Length <= 3, "rook 6, bishop 4, knight 3 less pedestals (or skipped after 20 tries) " + seed);
+                    foreach (var g in plan) foreach (int cell in g.Cells) Check(!SwordBoard.Obstacle(cell), "a pedestal's square stays " + seed);
                     var again = SwordGhosts.Plan(seed); Check(string.Join(",", again[1].Cells) == string.Join(",", plan[1].Cells), "same seed, same squares");
                     foreach (double t in new[] { 0.0, 121.6, 151.6, 181.6, 211.6 })
                     {
@@ -1257,6 +1258,9 @@ public static class NetworkCoreTests
                     }
                 }
                 Check(SwordBoard.StartCell(0, 0) == SwordBoard.Cell(3, 1) && SwordBoard.StartCell(1, 0) == SwordBoard.Cell(3, 6), "start squares");
+                for (int t2 = 0; t2 < 2; t2++) for (int sl = 0; sl < 12; sl++) Check(!SwordBoard.Obstacle(SwordBoard.StartCell(t2, sl)), "no start on a pedestal");
+                foreach (int cell in SwordBoard.SpawnCells(0, new bool[64], false)) Check(!SwordBoard.Obstacle(cell), "no respawn on a pedestal");
+                Check(SwordBoard.Rail(SwordBoard.Cell(0, 2)) && SwordBoard.Rail(SwordBoard.Cell(7, 5)) && !SwordBoard.Rail(SwordBoard.Cell(0, 1)), "rails on a3-a6, h3-h6");
                 var none = new bool[64];
                 int c = SwordBoard.ChooseSpawn(0, none, false, 2, new double[] { 0 }, new double[] { -5 }, new double[] { -7 }, new double[] { -3 });
                 double cx, cz; SwordBoard.Centre(c, 2, out cx, out cz); Check(SwordBoard.Y(c) == 1 || SwordBoard.Y(c) == 2, "own ranks"); Check(cx > 0, "away from the enemy");

@@ -105,7 +105,7 @@ namespace ChessFight.RagdollLab
         {
             var go = new GameObject("Debug line");
             var l = go.AddComponent<LineRenderer>();
-            l.sharedMaterial = GlowMat();
+            l.sharedMaterial = Made(SwordFightShapes.Glow("#ffffff", 1f));
             l.startColor = l.endColor = c;
             l.startWidth = l.endWidth = 0.04f;
             l.useWorldSpace = true;
@@ -150,7 +150,7 @@ namespace ChessFight.RagdollLab
         {
             Vector3 p = f.Pawn.Hips.position;
             bool off = !floor.OnFloor(p) || p.y - f.Pawn.standHeight < floor.Top - 0.25f;
-            if (off) Shadowed(new Rect(screen.x - 110f, h - screen.y - 80f, 220f, 22f), "떨어지기 시작", head, new Color(1f, 0.35f, 0.3f));
+            if (off) Text(new Rect(screen.x - 110f, h - screen.y - 44f, 220f, 22f), "떨어지기 시작", bodyStyle, 13, new Color(1f, 0.35f, 0.3f));
         }
     }
 }
