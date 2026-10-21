@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |
+| (이 커밋) | 10-21 | R148 | 경기 중 Esc 메뉴(`GameMenu`: 돌아가기·설정·나가기 확인), 폰 러쉬 공개 방 3 대 3부터 방장 "게임 시작"(`ReadyEarly`·`CanStartEarly`·입장 화면 버튼), 문서. 시험: Core 125·세션 41 |
+| `51fddd0` | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |
 | `86a34de` | 10-15 | R129 | J를 나이트의 길로(Core `KnightRoute`, 나이트 경로 8칸만 바닥, 방향 없는 점프대, 다이빙으로 상대 기물 6개 잡기), 예전 섬·조준·깃발 없앰, 문서 |
 | `baaa1ea` | 10-15 | R128 | G 킹 호위를 밧줄·손잡이 없이(썰매·룩 자체를 잡거나 밀기, 썰매 안 돎), I도 같은 방식, 새 `GrabOnlySurface`(잡기만, 벽타기 안 됨)와 래그돌 연결, 모든 `GrabHandle` 잡기 전용, 검증기, 문서 |
 | `a27d110` | 10-15 | R126 | 문서: HANDOFF·REQUIREMENTS·DECISIONS P10~P14·T11·PITFALLS 39~41·VALIDATION R126 표·PAWN_RUSH_COURSE01 §4-3. 시험: Core 115·세션 41 |

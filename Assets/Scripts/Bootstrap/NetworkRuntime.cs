@@ -39,7 +39,7 @@ namespace ChessFight.Game
 
         // True while nobody may move: the loading screen before the shared start, or the chat open.
         // A scene that reads its own input (a match it simulates itself) checks this.
-        public bool InputBlocked => loading || loader == null || loader.Blocking || ChatBox.KeysHeld;
+        public bool InputBlocked => loading || loader == null || loader.Blocking || ChatBox.KeysHeld || GameMenu.IsOpen;
 
         bool inMatchScene, loading, customSimulation, escapeLeaves;
         // The scene the running match loaded, from its game mode.
@@ -172,6 +172,8 @@ namespace ChessFight.Game
             // A mode scene opened as the match scene shows the networked pawns
             // instead of its offline playtest.
             if (inMatchScene && scene.name == matchScene && !customSimulation) Host(scene).AddComponent<MatchSceneView>();
+            // A match scene without a menu of its own: Esc is the in-game menu, and leaving it leaves the match.
+            if (inMatchScene && scene.name == matchScene && escapeLeaves) GameMenu.Use(Host(scene), () => Session.Cancel(), true);
         }
 
         // The scene's GameSceneConfig object when it has one, so the controller
@@ -207,13 +209,11 @@ namespace ChessFight.Game
             if (MovementGate != null && !MovementGate()) intent = default;
             // Nobody moves before the shared start behind the loading screen, nor
             // while typing a chat line.
-            if (loader.Blocking || ChatBox.KeysHeld) intent = default;
+            if (loader.Blocking || ChatBox.KeysHeld || GameMenu.IsOpen) intent = default;
             if (!customSimulation)
                 Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
-            // A scene that runs its own match without a menu (Pawn Rush course 01) leaves on Esc here
-            // (not the Esc that closes the chat, nor behind the loading screen).
-            if (inMatchScene && escapeLeaves && !InputBlocked && !VoiceHud.EscapeHeld && LegacyKeys.Down(KeyCode.Escape))
-                Session.Cancel();
+            // R148: a scene that runs its own match without a menu (Pawn Rush course 01) no longer leaves on Esc:
+            // Esc opens the in-game menu (GameMenu, installed in Attach), whose "게임 나가기" asks first.
 
             // Development aid for the network review: F8 cycles extra delay and
             // loss on this machine, so one tester can play on a bad connection.

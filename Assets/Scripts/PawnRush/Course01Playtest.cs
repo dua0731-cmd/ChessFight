@@ -68,6 +68,9 @@ namespace ChessFight.PawnRush
             noHook.AddComponent<HookStartZone>();
             runStart = Time.time;
             if (writeCsv) OpenCsv();
+            // R148: Esc is the in-game menu. A network match installed its own (leaving the match); offline the
+            // menu's "게임 나가기" goes back to the lobby.
+            GameMenu.UseIfNone(gameObject, () => UnityEngine.SceneManagement.SceneManager.LoadScene(SceneNames.Lobby), false);
         }
 
         // Offline: this PC's one pawn is the race (online the match link registers the roster).

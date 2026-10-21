@@ -130,7 +130,7 @@ namespace ChessFight.Gameplay
         {
             if (driver == null) return;
             bool flying = orbitCamera != null && orbitCamera.FreeFly;
-            var intent = Application.isFocused && !flying ? input.Read() : default;
+            var intent = Application.isFocused && !flying && !GameMenu.IsOpen ? input.Read() : default;
             Vector3 move, aim;
             if (orbitCamera != null)
             {

@@ -30,6 +30,7 @@ namespace ChessFight.Game
         {
             runtime = NetworkRuntime.Instance;
             if (runtime == null) { enabled = false; return; }
+            GameMenu.Use(gameObject, () => runtime.Session.Cancel(), true);
 
             var config = GetComponent<GameSceneConfig>();
             if (config == null) config = gameObject.AddComponent<GameSceneConfig>();
@@ -51,15 +52,14 @@ namespace ChessFight.Game
             var title = root?.Q<Label>("match-title");
             if (title != null) title.text = (runtime.Session.MatchMode ?? GameModes.Default).Name;
 
-            gate = () => Application.isFocused;
+            gate = () => Application.isFocused && !GameMenu.IsOpen;
             runtime.MovementGate = gate;
         }
 
         void Update()
         {
             var session = runtime.Session;
-            // Esc that closes the chat (ChatBox) or the match sheet (VoiceHud) does not also leave the match.
-            if (!ChatBox.KeysHeld && !VoiceHud.EscapeHeld && LegacyKeys.Down(KeyCode.Escape)) session.Cancel();
+            // R148: Esc is the in-game menu (GameMenu, installed in Awake); its "게임 나가기" asks before it leaves.
 
             float dt = Time.unscaledDeltaTime;
             if (runtime.Motion != null) spawner.Sync(runtime.Motion.States, dt);

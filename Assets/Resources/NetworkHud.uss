@@ -561,6 +561,8 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .load-ticks { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .load-cancel-row { position: absolute; left: 0; right: 0; bottom: 112px; align-items: center; justify-content: center; }
 .load-add-bot { margin-right: 12px; }
+.load-start { margin-right: 12px; }
+.load-start-note { position: absolute; left: 0; right: 0; bottom: 84px; -unity-text-align: middle-center; font-size: 14px; color: rgb(242, 226, 190); }
 .load-cancel { padding: 10px 20px 14px 20px; font-size: 18px; }
 .load-tick { position: absolute; top: -5px; width: 1px; height: 16px; background-color: rgba(255, 226, 180, 0.35); }
 .load-tick-label { position: absolute; top: 18px; left: -4px; font-size: 10px; -unity-font-style: bold; color: rgb(156, 138, 115); }

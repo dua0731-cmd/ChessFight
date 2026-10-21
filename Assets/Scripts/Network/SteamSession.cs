@@ -89,7 +89,11 @@ namespace ChessFight.Network
         public bool CanAddRoomBot => CanUseRoomBots && Roster.ContainsKey(Self) && reservations.Count < 12;
         public bool CanEditTestBots => IsHost && privateRoom && !Started && Roster.ContainsKey(Self);
         public bool CanStartGame => IsHost && !Started && reservations.Groups.All(g => g.Committed) &&
-            (privateRoom ? Roster.Count >= 2 : reservations.Ready);
+            (privateRoom ? Roster.Count >= 2 : reservations.Ready || CanStartEarly);
+        // R148: a public 폰 러쉬 room's host may start it short of twelve - three or more a side, the sides even.
+        public bool EarlyStartMode => !privateRoom && Match != 0 && (MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key;
+        public bool CanStartEarly => EarlyStartMode && reservations.ReadyEarly;
+        public int TeamCount(int team) => reservations.Used(team);
         public int TestBots(int team) => reservations.FillerBots(team);
         public bool CanAddTestBot(int team) => CanEditTestBots && team >= 0 && team <= 1 && reservations.Used(team) < TeamReservations.TeamSize;
         public bool Busy => pending || Searching || Match != 0 || Route(Party) != "idle";

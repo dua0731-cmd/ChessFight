@@ -169,7 +169,7 @@ namespace ChessFight.RagdollLab
                 me.KingCallList(candidates);
                 picks.RemoveAll(p => p == null || !candidates.Contains(p));
                 // Not on the press that opened it (a client draws its own press at once).
-                if (openBefore && !game.SuppressInput)
+                if (openBefore && !game.SuppressInput && !ChessFight.Game.GameMenu.IsOpen)
                 {
                     if (game.SkillKey != KeyCode.None && Input.GetKeyDown(game.SkillKey))
                         Ask(me, picks.Count > 0 ? picks[0] : null, picks.Count > 1 ? picks[1] : null);

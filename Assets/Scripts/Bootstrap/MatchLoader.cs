@@ -104,6 +104,7 @@ namespace ChessFight.Game
                 screen.Build(content);
                 screen.CancelRequested += () => runtime.Session.Cancel();
                 screen.AddBotRequested += () => runtime.Session.AddRoomBot();
+                screen.StartRequested += () => runtime.Session.StartGame();
                 return screen;
             }
             catch (Exception e)
@@ -151,6 +152,15 @@ namespace ChessFight.Game
             // the button from the start, usable once it hosts the room it made.
             state.ShowAddBot = session.AllowPublicBots && (session.Match == 0 ? session.IsLeader : session.IsHost);
             state.CanAddBot = session.CanAddRoomBot;
+            // R148: the 폰 러쉬 room's host may start short of twelve (3+ a side, even sides).
+            state.ShowStart = session.EarlyStartMode && session.IsHost && !session.Started;
+            state.CanStart = session.CanStartGame;
+            int white = session.TeamCount(0), black = session.TeamCount(1), min = TeamReservations.MinTeamToStart;
+            state.StartNote = !session.EarlyStartMode || session.Started ? ""
+                : state.CanStart ? (session.IsHost ? $"{white} 대 {black} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)" : $"{white} 대 {black} · 방장이 시작할 수 있어요")
+                : white < min || black < min ? $"{white} 대 {black} · 팀마다 {min}명 이상이면 시작할 수 있어요"
+                : white != black ? $"{white} 대 {black} · 두 팀 인원이 같아야 시작할 수 있어요"
+                : $"{white} 대 {black} · 모두 입장하면 시작할 수 있어요";
             int seconds = Mathf.FloorToInt(Time.unscaledTime - matchingSince);
             state.Clock = $"{seconds / 60:00}:{seconds % 60:00}";
             state.Step = session.JoiningLive ? "진행 중인 경기에 들어가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";

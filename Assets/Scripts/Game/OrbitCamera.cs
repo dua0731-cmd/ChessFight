@@ -65,7 +65,8 @@ namespace ChessFight.Game
         {
             try
             {
-                if (Input.GetKeyDown(KeyCode.Escape)) Cursor.lockState = CursorLockMode.None;
+                // Esc frees the mouse, unless the scene has the in-game menu (R148): then the menu takes it.
+                if (Input.GetKeyDown(KeyCode.Escape) && !GameMenu.Installed) Cursor.lockState = CursorLockMode.None;
                 // Not while the match sheet holds the mouse (R131): its clicks are its own.
                 else if (Cursor.lockState != CursorLockMode.Locked && Application.isFocused && !GameSettings.PointerTaken
                          && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))

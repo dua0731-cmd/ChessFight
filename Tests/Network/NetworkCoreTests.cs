@@ -239,6 +239,14 @@ public static class NetworkCoreTests
             Test("3+3+2+2+1+1 fills exactly six per side", () => {
                 var r = new TeamReservations(); int id = 1; foreach (int n in new[] {3,3,2,2,1,1}) { Check(Reserve(r,id,n), "no fit"); id += n; }
                 r.Reconcile(new HashSet<ulong>(Ids(1,12)), 1); Check(r.Ready, "not ready"); });
+            Test("Pawn Rush early start (R148): three or more a side, even sides, everyone arrived", () => {
+                var r = new TeamReservations(); Reserve(r, 1, 3); Reserve(r, 4, 2);
+                r.Reconcile(new HashSet<ulong>(Ids(1, 5)), 1); Check(!r.ReadyEarly, "3 v 2");
+                Reserve(r, 6, 1); Check(!r.ReadyEarly, "the last one still connecting");
+                r.Reconcile(new HashSet<ulong>(Ids(1, 6)), 2); Check(r.Used(0) == 3 && r.Used(1) == 3 && r.ReadyEarly && !r.Ready, "3 v 3");
+                Reserve(r, 7, 1); r.Reconcile(new HashSet<ulong>(Ids(1, 7)), 3); Check(!r.ReadyEarly, "4 v 3");
+                var two = new TeamReservations(); Reserve(two, 1, 2); Reserve(two, 3, 2); two.Reconcile(new HashSet<ulong>(Ids(1, 4)), 1);
+                Check(!two.ReadyEarly, "2 v 2 is too few"); });
             Test("Reservations count members still connecting", () => {
                 var r = new TeamReservations(); Reserve(r, 1, 6); Reserve(r, 7, 6);
                 r.Reconcile(new HashSet<ulong> {1,7}, 1); Check(!r.Ready && !Reserve(r,13,1), "premature fill"); });

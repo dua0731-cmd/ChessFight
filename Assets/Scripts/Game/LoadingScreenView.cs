@@ -16,6 +16,10 @@ namespace ChessFight.Game
         // "봇 추가" while matching: shown to whoever may fill the room (ShowAddBot),
         // clickable once there is a room with a free seat (CanAddBot).
         public bool ShowAddBot, CanAddBot;
+        // "게임 시작" while matching (R148, 폰 러쉬): the room's host may start once each side has three or more
+        // and the sides are even; StartNote says why it cannot yet.
+        public bool ShowStart, CanStart;
+        public string StartNote = "";
         public string Step = "", Clock = "";
         public int Percent;
         // Players the match will hold (12 for a public match): one card per seat,
@@ -68,6 +72,8 @@ namespace ChessFight.Game
         public event Action CancelRequested;
         // "봇 추가" while matching: one more bot in the room.
         public event Action AddBotRequested;
+        // "게임 시작" while matching (R148).
+        public event Action StartRequested;
 
         sealed class Card
         {
@@ -83,7 +89,8 @@ namespace ChessFight.Game
         readonly LoadingStudio studio = new LoadingStudio();
         readonly List<Texture2D> washes = new List<Texture2D>();
         VisualElement screen, fill, allIn, ticks;
-        Button cancel, addBot;
+        Button cancel, addBot, start;
+        Label startNote;
         readonly VisualElement[] rosters = new VisualElement[2];
         Label kicker, step, percent, tipTitle, tipText;
         readonly Label[] counts = new Label[2];
@@ -139,6 +146,13 @@ namespace ChessFight.Game
                 addBot.focusable = false;
                 addBot.clicked += () => AddBotRequested?.Invoke();
             }
+            start = root.Q<Button>("load-start");
+            if (start != null)
+            {
+                start.focusable = false;
+                start.clicked += () => { if (State.CanStart) StartRequested?.Invoke(); };
+            }
+            startNote = root.Q<Label>("load-start-note");
             ChunkyButtons.Attach(root);
 
             tipTitle = root.Q<Label>("load-tip-kicker");
@@ -220,6 +234,17 @@ namespace ChessFight.Game
             {
                 addBot.style.display = matching && State.ShowAddBot && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
                 addBot.SetEnabled(State.CanAddBot);
+            }
+            if (start != null)
+            {
+                start.style.display = matching && State.ShowStart && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
+                start.SetEnabled(State.CanStart);
+            }
+            if (startNote != null)
+            {
+                bool note = matching && !Hiding && !string.IsNullOrEmpty(State.StartNote);
+                startNote.style.display = note ? DisplayStyle.Flex : DisplayStyle.None;
+                if (note) startNote.text = State.StartNote;
             }
 
             studio.Sync(State.Teams, State.Joined, State.Bots, now);
