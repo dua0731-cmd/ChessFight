@@ -157,10 +157,13 @@ namespace ChessFight.RagdollLab
             return glowMat;
         }
 
-        static readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+        // Made on first use: Unity refuses a MaterialPropertyBlock made while a MonoBehaviour is being constructed
+        // (a field initializer, static ones included).
+        static MaterialPropertyBlock block;
 
         static void SetColor(GameObject go, Color c)
         {
+            if (block == null) block = new MaterialPropertyBlock();
             block.SetColor("_Color", c);
             foreach (var r in go.GetComponentsInChildren<Renderer>()) r.SetPropertyBlock(block);
         }

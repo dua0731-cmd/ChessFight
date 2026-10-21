@@ -48,6 +48,7 @@
 | 42 | 미니게임 손잡이를 잡고 밀면 **벽타기로 바뀌고**, 밀어야 할 조각상은 **아예 안 잡힘** | 우클릭 = 잡기 + 벽타기. 잡은 채 가파른 면 쪽으로 이동 입력이면 벽타기가 시작됨(키네마틱 물체도 오를 수 있는 면). 오르지 못하게 `NoClimbSurface`를 붙이면 손도 못 잡음(손잡이 블록을 따로 둔 이유) | `GrabOnlySurface`(잡히지만 안 오름, 볼트도 안 됨). **손으로 미는 물체에는 `NoClimbSurface`를 쓰지 않는다** | R128 |
 | 43 | 새 HUD의 USS가 **하나도 안 먹음**: 모든 글자가 왼쪽 위에 줄줄이 쌓이고 판은 화면 가득 늘어남. 오류 메시지 없음 | `Resources.Load<StyleSheet>("VoiceHud")`가 같은 이름의 `VoiceHud.uxml` 안에 Unity가 만든 하위 에셋 **`inlineStyle`**(StyleSheet)을 돌려줌. `.uss`는 읽히지 않았다 | 코드에서 직접 읽는 `.uss`는 **UXML과 다른 이름**으로(`VoiceChat.uss`). 이름이 같은 짝(KingRushHud 등)은 `.tss` 테마가 `@import`로 읽어서 괜찮았다. 읽은 뒤 `AssetDatabase.GetAssetPath`로 어느 파일인지 확인하면 바로 보인다 | R131 |
 | 44 | MCP 화면 캡처가 **3D 장면만 찍히고 UI가 하나도 없음**(새로 연 에디터) | Game 뷰가 다른 탭 뒤에 있어 그려지지 않았다. 캡처는 Game 뷰의 그림을 쓰므로 UI Toolkit 패널이 빠진다 | `execute_code`로 `EditorApplication.ExecuteMenuItem("Window/General/Game")` 뒤 Game 뷰 `Focus()`를 하고 찍는다 | R131 |
+| 45 | 소드 파이트 경기 시작 때 `UnityException: CreateImpl is not allowed to be called from a MonoBehaviour constructor` (`SwordFightMatch`) | `static readonly MaterialPropertyBlock block = new …` 필드 초기화: 클래스의 정적 초기화가 컴포넌트를 만드는 순간(생성자) 돌아서 Unity가 거부. Linux 컴파일 검사로는 안 잡힘 | Unity 객체(`MaterialPropertyBlock`·`Material`·`Texture2D`·`Mesh`…)는 필드 초기화에서 만들지 않는다. 처음 쓸 때(`Awake`·`OnGUI`·`??=`) 만든다 | R149 |
 
 ## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
 
