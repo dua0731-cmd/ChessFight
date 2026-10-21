@@ -111,9 +111,18 @@ namespace ChessFight.RagdollLab
             var r = part.GetComponent<Renderer>(); r.sharedMaterial = material; return r;
         }
 
+        /// <summary>R149: someone's sword knocked someone down (the prototype match's credit for a fall).</summary>
+        public static event System.Action<SwordFightPawn, SwordFightPawn> Struck;
+        internal static void RaiseStruck(SwordFightPawn by, SwordFightPawn victim) => Struck?.Invoke(by, victim);
+
+        /// <summary>R149: the respawn protection ends at once (the piece attacked: a skill, spec §8.4).</summary>
+        public void EndProtection() => Protection = 0f;
+
         public void SetInput(PawnInput raw)
         {
             if (!Authority) return;
+            // R149: the countdown and the result hold everyone still (the prototype match); the control style stays.
+            if (SwordFightGame.InputLocked) raw = new PawnInput { ability2 = raw.ability2, aim = raw.aim };
             if (Skills != null) raw = Skills.Filter(raw);
             // This mode reserves ability2 as an absolute control-style bit. Never forward it
             // to the shared pawn, and never encode a lossy toggle edge over the network.
@@ -297,6 +306,7 @@ namespace ChessFight.RagdollLab
             // FixedUpdate, not a physics callback. Downed follow-ups remain legal.
             target.TakeHit(direction.normalized * strength + Vector3.up * .7f, .65f, 0, true);
             victim.StopCombat(); victim.HitFlash = .16f; HitFlash = .1f; HitsLanded++;
+            RaiseStruck(this, victim);
         }
 
         Quaternion? SwordPose(int part)

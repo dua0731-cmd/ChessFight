@@ -58,6 +58,7 @@ namespace ChessFight.RagdollLab
                 Vector3 push = (swingDirection * .6f + away.normalized * .4f).normalized;
                 target.TakeHit(push * 3.4f + Vector3.up * 1.05f, .65f, 0, true);
                 victim.StopCombat(); victim.HitFlash = .14f; HitFlash = .1f; HitsLanded++;
+                RaiseStruck(this, victim);
             }
         }
 

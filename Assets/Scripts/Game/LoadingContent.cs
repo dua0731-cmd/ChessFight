@@ -48,13 +48,14 @@ namespace ChessFight.Game
                     return new LoadingContent
                     {
                         Title = title,
-                        Kicker = versus + " · 팀 데스매치",
-                        Rule = "칼로 상대를 넘어뜨려 장외로 보내세요",
-                        Note = "지금은 폰으로 플레이해요",
+                        Kicker = versus + " · 떨어뜨리고 빼앗기",
+                        Rule = "상대를 판 밖으로 떨어뜨리면 1점 · 먼저 10점 또는 4분",
+                        Note = "시작할 때 기물을 고르고, 떨어지면 폰으로 돌아와요",
                         Tips = new[]
                         {
-                            new LoadingTip("TIP · 발도", "좌클릭을 누르고 있으면 칼을 빼 들어요. 떼면 허리에 넣어요.", PieceKind.Knight),
-                            new LoadingTip("TIP · 조작 전환", "F6으로 클릭 베기와 물리 드래그를 바꿀 수 있어요.", PieceKind.Pawn)
+                            new LoadingTip("TIP · 빼앗기", "폰일 때 친 상대가 떨어지면 그 기물을 빼앗아요.", PieceKind.Pawn),
+                            new LoadingTip("TIP · 스킬", "F는 기물 스킬(조준은 좌클릭으로 발동), E는 떨어질 때 쓰는 가장자리 스킬이에요.", PieceKind.Knight),
+                            new LoadingTip("TIP · 판 축소", "2분부터 30초마다 유령 기물이 칸을 지워요. 빛나는 칸에서 피하세요.", PieceKind.Rook)
                         }
                     };
                 default:

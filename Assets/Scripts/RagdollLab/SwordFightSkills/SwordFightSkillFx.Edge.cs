@@ -18,7 +18,8 @@ namespace ChessFight.RagdollLab
     /// </summary>
     public partial class SwordFightSkillFx
     {
-        SwordFightEdgeParams EdgeS => GetComponent<SwordFightSkillBed>() is SwordFightSkillBed b ? b.edge : null;
+        SwordFightEdgeParams EdgeS => GetComponent<SwordFightSkillBed>() is SwordFightSkillBed b ? b.edge
+            : GetComponent<SwordFightMatch>() is SwordFightMatch m ? m.edge : null;   // R149: the prototype match
 
         Kit.Palette Spark = new Kit.Palette("#FFE38A", "#FFFFFF", "#F2A51A", "#4A2A06");
         static readonly Kit.Palette Ember = new Kit.Palette("#FF8A1F", "#FFE7B0", "#C2410C", "#2B1206");

@@ -1202,6 +1202,65 @@ public static class NetworkCoreTests
                 Check(SkillGrades.Raises(SkillGrade.Mistake,SkillGrade.Brilliant)&&SkillGrades.Raises(SkillGrade.None,SkillGrade.Brilliant),"a late ring-out raises");
                 Check(!SkillGrades.Raises(SkillGrade.Brilliant,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.Interesting,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.None,SkillGrade.Great),"only to !!, once");
                 Check(SkillGrades.Symbol(SkillGrade.Interesting)=="!?"&&SkillGrades.Symbol(SkillGrade.Blunder)=="??","symbols"); });
+            Test("Sword Fight prototype: pick, countdown, every fall a point, ten wins, and the respawn is always a pawn", () => {
+                var r = new SwordMatchRules(7); r.Add(1, 0); r.Add(2, 0); r.Add(3, 1);
+                Check(r.Pick(1, PieceKind.Knight) && !r.Pick(2, PieceKind.Knight) && r.Pick(3, PieceKind.Knight), "no doubles in a team, across teams fine");
+                Check(!r.Pick(1, PieceKind.Queen) && !r.Pick(2, PieceKind.Pawn), "one pick, never a pawn");
+                Check(r.InputLocked && r.RingOut(3).Valid == false, "no points before play");
+                r.Advance(15.01); Check(r.Phase == SwordPhase.Countdown && r.Get(2).Picked && r.Get(2).Piece != PieceKind.Knight && r.Get(2).Piece != PieceKind.Pawn, "time up: the rest picked");
+                r.Advance(3.01); Check(r.Phase == SwordPhase.Playing && !r.InputLocked, "playing");
+                for (int i = 0; i < 9; i++)
+                {
+                    var o = r.RingOut(3); Check(o.Valid && !o.Stole && o.Feed.Cause == SwordCause.Self, "self fall " + i);
+                    Check(!r.RingOut(3).Valid, "once per life " + i);
+                    Check(!r.TryRespawn(3), "not before 3 s"); r.Advance(3.01); Check(r.TryRespawn(3) && r.Get(3).Piece == PieceKind.Pawn && r.Get(3).Alive, "back as a pawn, flag cleared " + i);
+                }
+                Check(r.White == 9 && r.Phase == SwordPhase.Playing, "nine");
+                r.RingOut(3); Check(r.Phase == SwordPhase.Result && r.Winner == 0 && r.Outs[0] == 10, "ten wins"); });
+            Test("Sword Fight prototype: the last enemy within 3 s takes the credit, a pawn steals the piece, an ally or a stale hit does not", () => {
+                var r = new SwordMatchRules(1); r.Add(1, 0); r.Add(2, 1); r.Add(3, 1); r.Pick(1, PieceKind.Rook); r.Pick(2, PieceKind.Queen); r.Pick(3, PieceKind.King);
+                r.Advance(1); r.Advance(15); r.Advance(3.01);
+                r.Get(1).Piece = PieceKind.Pawn;
+                r.Hit(1, 2, SwordCause.PawnStep, 0); r.Advance(2.5);
+                var o = r.RingOut(2); Check(o.Credit == 1 && o.Stole && o.NewPiece == PieceKind.Queen && r.Get(1).Piece == PieceKind.Queen && r.Steals[0] == 1, "steal");
+                Check(o.Feed.Stolen == (byte)PieceKind.Queen && o.Feed.Cause == SwordCause.PawnStep, "feed");
+                r.Hit(1, 3, SwordCause.Sword, 5); o = r.RingOut(3); Check(o.Credit == 1 && !o.Stole && r.Get(1).Piece == PieceKind.Queen, "not a pawn: no steal");
+                r.Advance(3.1); r.TryRespawn(2); r.TryRespawn(3);
+                r.Hit(3, 2, SwordCause.Sword, 0); o = r.RingOut(2); Check(o.Credit == 0 && o.Feed.Cause == SwordCause.Self, "an ally's hit is no credit");
+                r.Advance(3.1); r.TryRespawn(2);
+                r.Get(1).Piece = PieceKind.Pawn; r.Hit(1, 3, SwordCause.Sword, 0); r.Advance(3.2); o = r.RingOut(3); Check(o.Credit == 0 && !o.Stole, "stale after 3 s");
+                r.Advance(3.1); r.TryRespawn(3); r.Hit(1, 3, SwordCause.Sword, 0); o = r.RingOut(3); Check(o.Credit == 1 && !o.Stole, "a pawn that fell is no steal"); });
+            Test("Sword Fight prototype: a tie at 4:00 goes to sudden death, the next point wins, 60 s more is a draw; the wire carries it", () => {
+                var r = new SwordMatchRules(3); r.Add(1, 0); r.Add(2, 1); r.Advance(15.1); r.Advance(3.1);
+                r.RingOut(2); r.RingOut(1); for (int i = 0; i < 2401; i++) r.Advance(.1);
+                Check(r.Phase == SwordPhase.SuddenDeath, "tie → sudden death");
+                r.Advance(3.1); r.TryRespawn(1); r.TryRespawn(2); r.RingOut(1); Check(r.Phase == SwordPhase.Result && r.Winner == 1, "next point wins");
+                var d = new SwordMatchRules(3); d.Add(1, 0); d.Add(2, 1); d.Advance(15.1); d.Advance(3.1); d.Advance(240); Check(d.Phase == SwordPhase.SuddenDeath, "0:0 tie");
+                d.Advance(60.1); Check(d.Draw, "60 s → draw");
+                var w = new SwordMatchRules(5); w.Add(1, 0); w.Add(2, 1); w.Advance(15.1); w.Advance(3.1); w.Advance(200); w.RingOut(2); w.RingOut(1); w.Advance(10);
+                Check(w.Phase == SwordPhase.Playing && w.Remaining > 29 && w.Remaining < 31, "clock");
+                string text = SwordMatchWire.Encode(w.State(), id => (byte)id); SwordMatchState back = null;
+                Check(text.Length < 400 && SwordMatchWire.Decode(text, b => (ulong)b, out back), "round trip " + text);
+                Check(back.White == 1 && back.Black == 1 && back.Phase == SwordPhase.Playing && Math.Abs(back.Clock - w.Clock) < .01 && back.Fighters.Count == 2 && back.Feed.Count == 2 && back.Feed[0].Victim == 2, "same state");
+                Check(!SwordMatchWire.Decode("9,0,0|", b => 1, out back) && !SwordMatchWire.Decode("x", b => 1, out back), "junk refused"); });
+            Test("Sword Fight board: the ghost passes over 20 seeds never leave an island and keep two respawn squares a side", () => {
+                for (int seed = 0; seed < 20; seed++)
+                {
+                    var plan = SwordGhosts.Plan(seed); Check(plan.Count == 4 && plan[3].Cells.Length == 28, "four passes, the rim " + seed);
+                    Check(plan[0].Cells.Length == 6 && (plan[1].Cells.Length == 4 || plan[1].Cells.Length == 0) && (plan[2].Cells.Length == 3 || plan[2].Cells.Length == 0), "rook 6, bishop 4, knight 3 (or skipped after 20 tries) " + seed);
+                    var again = SwordGhosts.Plan(seed); Check(string.Join(",", again[1].Cells) == string.Join(",", plan[1].Cells), "same seed, same squares");
+                    foreach (double t in new[] { 0.0, 121.6, 151.6, 181.6, 211.6 })
+                    {
+                        var e = SwordGhosts.ErasedAt(plan, t); bool q = SwordGhosts.QueenDone(plan, t);
+                        Check(SwordBoard.Connected(e), "one piece at " + t + " seed " + seed);
+                        Check(SwordBoard.SpawnCells(0, e, q).Count >= 2 && SwordBoard.SpawnCells(1, e, q).Count >= 2, "respawn squares " + seed);
+                    }
+                }
+                Check(SwordBoard.StartCell(0, 0) == SwordBoard.Cell(3, 1) && SwordBoard.StartCell(1, 0) == SwordBoard.Cell(3, 6), "start squares");
+                var none = new bool[64];
+                int c = SwordBoard.ChooseSpawn(0, none, false, 2, new double[] { 0 }, new double[] { -5 }, new double[] { -7 }, new double[] { -3 });
+                double cx, cz; SwordBoard.Centre(c, 2, out cx, out cz); Check(SwordBoard.Y(c) == 1 || SwordBoard.Y(c) == 2, "own ranks"); Check(cx > 0, "away from the enemy");
+                Check(SwordBoard.At(cx, cz, 2) == c && SwordBoard.At(9, 0, 2) == -1, "square under a point"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

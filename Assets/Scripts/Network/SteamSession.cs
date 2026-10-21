@@ -59,7 +59,9 @@ namespace ChessFight.Network
         //      carries the host's obstacle time, the start bar drops on the shared start, mini-games v1.0.
         // v22 (R130): the course state is "CFP4" (who chooses a piece on each promotion pad), and a client's lab
         //      input's pieceAsk / pieceSeq is that player's chosen piece in the 폰 러쉬 match.
-        public const string Protocol = "chessfight.dua0731.network.v22";
+        // v23 (R149): the Sword Fight match is the prototype (spec v1.0) on the lab's link over this session
+        //      (SteamMatchLabLink, channel 35): the skills online, and its match state as text (TypeMatch).
+        public const string Protocol = "chessfight.dua0731.network.v23";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }
@@ -91,7 +93,9 @@ namespace ChessFight.Network
         public bool CanStartGame => IsHost && !Started && reservations.Groups.All(g => g.Committed) &&
             (privateRoom ? Roster.Count >= 2 : reservations.Ready || CanStartEarly);
         // R148: a public 폰 러쉬 room's host may start it short of twelve - three or more a side, the sides even.
-        public bool EarlyStartMode => !privateRoom && Match != 0 && (MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key;
+        // R149: a 소드 파이트 room too (its prototype is played three against three).
+        public bool EarlyStartMode => !privateRoom && Match != 0 && ((MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key
+                                                                    || (MatchMode ?? PartyMode)?.Key == GameModes.SwordFight.Key);
         public bool CanStartEarly => EarlyStartMode && reservations.ReadyEarly;
         public int TeamCount(int team) => reservations.Used(team);
         public int TestBots(int team) => reservations.FillerBots(team);

@@ -89,6 +89,24 @@ namespace ChessFight.RagdollLab
         protected abstract string NetKind { get; }
         /// <summary>Development commands from the host are taken (loopback tests only).</summary>
         protected virtual bool AcceptsDev => false;
+        /// <summary>R149: a real match from the lobby (the Sword Fight prototype): the sides are the room's seats, there is
+        /// no test panel (F3), no lag simulator key (F12 is the match's debug view) and no team draw (F5).</summary>
+        protected virtual bool RealMatch => false;
+        /// <summary>R149: the host's match is over (the room takes no more players).</summary>
+        protected virtual void NetMatchOver() { }
+
+        /// <summary>R149: the host tells the room the match is over (SwordFightMatch, once it has a result).</summary>
+        public void ReportMatchOver() { if (matchActive && NetIsHost) NetMatchOver(); }
+
+        /// <summary>R149: a player's roster place (SkillWire.Ref) and back, for the Sword Fight match state.</summary>
+        public byte SwordRef(ulong id) => NetRoster.TryGetValue(id, out var seat) ? SkillWire.Ref(seat.Team, seat.Slot) : SkillWire.None;
+        public ulong SwordIdOf(byte reference)
+        {
+            if (reference == SkillWire.None) return 0;
+            SkillWire.Place(reference, out int team, out int slot);
+            foreach (var pair in NetRoster) if (pair.Value.Team == team && pair.Value.Slot == slot) return pair.Key;
+            return 0;
+        }
 
         // ---------------------------------------------------------------- state
 
@@ -365,14 +383,14 @@ namespace ChessFight.RagdollLab
             if (game == null && sword == null) return;
             float dtMs = Mathf.Min(Time.unscaledDeltaTime * 1000f, 250f);
             frameMs = frameMs < 0f ? dtMs : frameMs + (dtMs - frameMs) * 0.05f;
-            if (Input.GetKeyDown(KeyCode.F3)) hudOpen = !hudOpen;
-            if (Input.GetKeyDown(KeyCode.F12)) SetLag((lagPreset + 1) % LinkProfile.Presets.Length);
+            if (!RealMatch && Input.GetKeyDown(KeyCode.F3)) hudOpen = !hudOpen;
+            if (!RealMatch && Input.GetKeyDown(KeyCode.F12)) SetLag((lagPreset + 1) % LinkProfile.Presets.Length);
             // A closed panel has no text field typing into it (the room code's focus must not hold the keys after a join).
             if (!hudOpen && KeysTaken) SuppressKeys(false);
             // The lab locks the cursor for mouse-look; this panel needs it back or its buttons never get clicked. Only
             // while it is open, though: F3 closes it and the clicks go back to the pawn.
             if (game != null) game.UiWantsCursor = hudOpen && !game.AutoTest;
-            else sword.UiWantsCursor = hudOpen;
+            else if (!RealMatch) sword.UiWantsCursor = hudOpen;   // R149: the match sets it itself
             NetTick();
             if (!NetOnline) return;
             // A client's skill timers run before this frame's packets overwrite them.
@@ -1415,7 +1433,10 @@ namespace ChessFight.RagdollLab
                     if (sword != null) ReceiveSwordState(bytes);
                     break;
                 case RagdollNetProtocol.TypeMatch:
-                    if (RagdollNetProtocol.ReadMatch(bytes, NetMatch, out string text)) QueenHillMatch.Current?.ApplyRemote(text);
+                    if (!RagdollNetProtocol.ReadMatch(bytes, NetMatch, out string text)) break;
+                    // R149: the Sword Fight prototype's match state, else Queen of the Hill's.
+                    if (sword != null) { if (sword.Match != null) sword.Match.ApplyRemote(text); }
+                    else QueenHillMatch.Current?.ApplyRemote(text);
                     break;
                 case RagdollNetProtocol.TypeDev:
                     if (AcceptsDev && RagdollNetProtocol.ReadDev(bytes, NetMatch, out string command)) RunDev(command);
@@ -1679,6 +1700,7 @@ namespace ChessFight.RagdollLab
         protected virtual void OnGUI()
         {
             if (game == null && sword == null) return;
+            if (RealMatch) return;   // R149: the match's own HUD only
             if (game != null && game.AutoTest) return;
             EnsureStyles();
             // Keep clear of the tuning panel, which owns the left edge while it is open (the Sword Fight test bed's panel).

@@ -106,8 +106,23 @@ namespace ChessFight.RagdollLab
         public float knightStompPush = 1.6f;
         public float knightRecovery = 0.35f;
 
+        [Header("폰 · 첫 두 걸음 (R149 프로토타입 경기, 명세 §7.2)")]
+        public float pawnCooldown = 5f;
+        public float pawnStepSpeed = 7.5f;    // 1.5 m in 0.2 s
+        public float pawnStepTime = 0.2f;
+        public float pawnStepGap = 0.22f;
+        [Tooltip("부딪힘 판정 거리 (몸 겹침 방지 0.76 m보다 커야 함)")]
+        public float pawnReach = 0.84f;
+        public float pawnPush = 4.5f, pawnPushUp = 1.2f;
+        [Tooltip("정면 (진행 방향과 이 각도 미만): 둘 다 튕김")]
+        public float pawnHeadOn = 25f;
+        [Tooltip("이 각도까지는 대각선 (넘어뜨림), 넘으면 판정 없음")]
+        public float pawnDiagonal = 75f;
+        public float pawnBounce = 2f;
+
         public float Cooldown(ChessFight.Network.PieceKind kind) => kind switch
         {
+            ChessFight.Network.PieceKind.Pawn => pawnCooldown,
             ChessFight.Network.PieceKind.King => kingCooldown,
             ChessFight.Network.PieceKind.Queen => queenCooldown,
             ChessFight.Network.PieceKind.Rook => rookCooldown,

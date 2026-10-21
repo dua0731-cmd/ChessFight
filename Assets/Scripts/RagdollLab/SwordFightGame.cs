@@ -22,10 +22,19 @@ namespace ChessFight.RagdollLab
         public readonly Dictionary<ulong, SwordFightPawn> Fighters = new Dictionary<ulong, SwordFightPawn>();
         public SwordFightRules Rules { get; private set; }
         public LabCamera CameraRig { get; private set; }
-        public int White => Authority ? Rules.White : remoteWhite;
-        public int Black => Authority ? Rules.Black : remoteBlack;
-        public float Remaining => Authority ? Mathf.Max(0, roundSeconds - (float)Rules.Elapsed) : remoteRemaining;
-        public bool Finished => Authority ? Rules.Finished : remoteFinished;
+        public int White => Match != null ? Match.White : Authority ? Rules.White : remoteWhite;
+        public int Black => Match != null ? Match.Black : Authority ? Rules.Black : remoteBlack;
+        public float Remaining => Match != null ? Match.Remaining : Authority ? Mathf.Max(0, roundSeconds - (float)Rules.Elapsed) : remoteRemaining;
+        public bool Finished => Match != null ? Match.Finished : Authority ? Rules.Finished : remoteFinished;
+        /// <summary>R149: the prototype match (spec v1.0) runs this scene: the match scene from the lobby, or played alone
+        /// in the editor. Null in the skill test scene (its bed) and the automated sword checks.</summary>
+        public SwordFightMatch Match { get; private set; }
+        /// <summary>R149: the countdown and the result hold every fighter still (SwordFightPawn.SetInput, the skills).</summary>
+        public static bool InputLocked;
+        /// <summary>R149: a player asks for a piece (online: LabNetLink hands a client's ask to this on the host).</summary>
+        public Func<ulong, PieceKind, bool> PieceRequest;
+        /// <summary>This PC's keys go to its fighter: no menu, no chat, the window in front with the mouse taken.</summary>
+        public bool KeysFree => !MenuOpen && !Finished && !ChatBox.KeysHeld && Application.isFocused && Cursor.lockState == CursorLockMode.Locked;
         public SwordFightPawn Local => Fighters.TryGetValue(LocalId, out var f) ? f : null;
         public bool MenuOpen { get; private set; }
         public bool ClassicControls { get; private set; }
@@ -55,10 +64,18 @@ namespace ChessFight.RagdollLab
             CameraRig = FindFirstObjectByType<LabCamera>();
             Automated = Array.IndexOf(Environment.GetCommandLineArgs(), "-swordFightTest") >= 0;
             if (Automated) Application.runInBackground = true;
+            InputLocked = false;
+            // R149: the match scene plays the prototype match (the skill test scene has its bed instead).
+            if (!Automated && FindFirstObjectByType<SwordFightSkillBed>() == null)
+            {
+                Match = gameObject.AddComponent<SwordFightMatch>();
+                ClassicControls = true;   // spec §6: the click cut only (the drag stays in the code, switched off)
+            }
         }
         void Start()
         {
             hud = gameObject.AddComponent<SwordFightHud>();
+            if (Match != null) hud.SetVisible(false);   // the match draws its own HUD
             hud.Resume += () => SetMenu(false);
             hud.Leave += Exit;
             hud.SwitchControls += ToggleControls;
@@ -93,6 +110,7 @@ namespace ChessFight.RagdollLab
             remoteRemaining = roundSeconds;
             remoteFinished = false;
             Revision++;
+            Match?.Restart();
         }
 
         /// <summary>This PC became the host mid-round (R121): the round goes on from the score and the clock the old host
@@ -103,6 +121,7 @@ namespace ChessFight.RagdollLab
             Rules.Restore(remoteWhite, remoteBlack, roundSeconds - remoteRemaining);
             foreach (var f in Fighters.Values) if (f != null && !f.Alive) Rules.Wait(f.Id, f.RespawnSeconds);
             Revision++;
+            Match?.TakeOver();
         }
 
         public static Vector3 SpawnPoint(int team, int slot) => new Vector3((slot % 3 - 1) * 1.8f, 0, (team == 0 ? -1 : 1) * (3.3f + slot / 3 * 1.4f));
@@ -110,20 +129,22 @@ namespace ChessFight.RagdollLab
         public SwordFightPawn Add(ulong id, int team, int slot, bool bot, string displayName)
         {
             if (Fighters.TryGetValue(id, out var old)) return old;
-            var pawn = Instantiate(pawnPrefab, SpawnPoint(team, slot) + Vector3.up * .02f, Quaternion.LookRotation(Facing(team)));
+            Vector3 at = Match != null ? Match.StartPoint(team, slot) : SpawnPoint(team, slot);
+            var pawn = Instantiate(pawnPrefab, at + Vector3.up * .02f, Quaternion.LookRotation(Facing(team)));
             pawn.name = displayName; pawn.DisplayName = displayName; pawn.tuning = tuning; pawn.Team = team;
             pawn.skin.sharedMaterial = team == 0 ? white : black;
             foreach (var rb in pawn.bodies) { rb.solverIterations = 24; rb.solverVelocityIterations = 6; }
             var fighter = pawn.gameObject.AddComponent<SwordFightPawn>();
-            fighter.Initialize(id, slot, bot); fighter.Respawn(SpawnPoint(team, slot), Facing(team), Authority);
+            fighter.Initialize(id, slot, bot); fighter.Respawn(at, Facing(team), Authority);
             Fighters.Add(id, fighter);
+            Match?.Joined(fighter);
             if (id == LocalId && CameraRig != null) CameraRig.soloTarget = pawn;
             return fighter;
         }
         public void Remove(ulong id)
         {
             if (!Fighters.TryGetValue(id, out var f)) return;
-            Destroy(f.gameObject); Fighters.Remove(id); Rules.Remove(id);
+            Destroy(f.gameObject); Fighters.Remove(id); Rules.Remove(id); Match?.Left(id);
         }
 
         void Update()
@@ -141,7 +162,7 @@ namespace ChessFight.RagdollLab
             if (GameMenu.IsOpen != MenuOpen) SetMenu(GameMenu.IsOpen);
             bool online = Networked || LeaveMatch != null;
             if (online != menuOnline) { menuOnline = online; GameMenu.Use(gameObject, Exit, online); }
-            if (!Finished && !ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
+            if (Match == null && !Finished && !ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
             if (!Networked && !Finished && Local != null) Local.SetInput(ReadLocalInput());
             if (Finished) RefreshCursor();
         }
@@ -166,7 +187,7 @@ namespace ChessFight.RagdollLab
         }
         void FixedUpdate()
         {
-            if (!Authority || Automated) return;
+            if (!Authority || Automated || Match != null) return;   // the prototype match steps its own round
             StepRound(Time.fixedDeltaTime);
         }
         public void StepRound(float dt)
@@ -199,7 +220,7 @@ namespace ChessFight.RagdollLab
             bool free = MenuOpen || Finished || Automated || UiWantsCursor || GameSettings.PointerTaken;
             Cursor.lockState = free ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = free;
         }
-        void Exit()
+        public void Exit()
         {
             if (LeaveMatch != null) LeaveMatch();
             else SceneManager.LoadScene("Lobby");
@@ -226,6 +247,7 @@ namespace ChessFight.RagdollLab
                     }
                 CameraRig.soloTarget = focus.Pawn;
             }
+            if (Match != null) return;   // R149: the match draws its own HUD
             string status = local == null ? "입장 중" : !local.Alive ? $"{local.RespawnSeconds:0.0}초 뒤 부활"
                 : local.Protection > 0 ? "부활 보호 (발도 / 공격 시 해제)" : local.Pawn.State != PawnState.Active ? "넘어짐 · 일어나는 중"
                 : ClassicControls ? "좌클릭 한 번 → 정해진 궤도로 베기" : local.Drawn ? "넓고 빠르게 휘두르면 넘어뜨립니다 · 무게감 있는 드래그" : "좌클릭을 누르고 드래그 → 물리 칼 휘두르기";
@@ -235,6 +257,7 @@ namespace ChessFight.RagdollLab
         void OnDestroy()
         {
             ResetSwordLook();
+            InputLocked = false;
             Physics.gravity = savedGravity; Cursor.lockState = savedLock; Cursor.visible = savedCursor;
             if (white != null) Destroy(white); if (black != null) Destroy(black);
         }

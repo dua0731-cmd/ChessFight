@@ -25,6 +25,8 @@ namespace ChessFight.RagdollLab
         KnightCrouch, KnightFlip, KnightKick, KnightKickHit,
         // R130, the king's counter: the spin cut a beat after the block, and an attacker thrown off by the block.
         KingCounterSpin, KingRepel,
+        // R149, the prototype match: the pawn's first two steps (a step, a diagonal hit, a head-on bounce).
+        PawnStep, PawnHit, PawnBounce,
     }
 
     /// <summary>R130: what the king's guard took (the block's effects answer each one: a cut, the queen's thrust or her
@@ -161,6 +163,7 @@ namespace ChessFight.RagdollLab
         public PawnInput Filter(PawnInput raw)
         {
             if (raw.aim.sqrMagnitude > 0.01f) rawAim = raw.aim;
+            rawMove = raw.move;   // the pawn's second step may turn (R149), read before the step roots the piece
             if (Stage == SfStage.Aim && raw.shove)
             {
                 confirmEdge = true;
@@ -205,6 +208,8 @@ namespace ChessFight.RagdollLab
         public bool Block(SwordFightSkills attacker, RagdollPawn attackerPawn, Vector3 at, SfBlock kind)
         {
             if (!Guarding) return false;
+            // R149, the prototype match (spec §7.3): the guard takes only a sword's cut; skills land as they are.
+            if (GuardTakesSwordOnly && kind != SfBlock.Sword) return false;
             KingCountered = true;
             Blocked = kind;
             counterDone = false;
@@ -302,15 +307,21 @@ namespace ChessFight.RagdollLab
             }
             cooldownLeft -= dt;
             StageTime += dt;
+            // R149: the countdown and the result hold every key (the prototype match).
+            if (SwordFightGame.InputLocked) pressEdge = confirmEdge = cancelEdge = edgeKey = false;
             bool press = pressEdge, confirm = confirmEdge, cancel = cancelEdge, edge = edgeKey;
             pressEdge = confirmEdge = cancelEdge = edgeKey = false;
             TrackFall(dt);
             // A leap, a dash or an edge flight lands its piece standing (RagdollPawn.SkillLanding, 10-11).
             if ((Stage != SfStage.None && Stage != SfStage.Aim) || EdgeStage != SfEdge.None) Pawn.KeepSkillLandingSafe();
 
+            // R149: attacking ends the respawn protection (spec §8.4).
+            if ((press || confirm || edge) && Fighter.Protection > 0f) Fighter.EndProtection();
             if (!HasSkill)
             {
-                if (press || edge) Say($"{Pawn.DisplayName}: 폰은 스킬이 없어요");
+                // The pawn's F is its first two steps in the prototype match (R149, SwordFightSkills.Match.cs).
+                if (PawnSteps) StepPawn(press, dt);
+                else if (press || edge) Say($"{Pawn.DisplayName}: 폰은 스킬이 없어요");
                 return;
             }
             // The edge skill (its own key and cooldown, R103) first: it is used falling, knocked down. While it runs the

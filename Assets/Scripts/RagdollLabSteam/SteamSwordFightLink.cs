@@ -46,6 +46,12 @@ namespace ChessFight.RagdollLab.Net
             var runtime = NetworkRuntime.Instance;
             var game = FindFirstObjectByType<SwordFightGame>();
             if (game == null || game.GetComponent<SteamSwordFightLink>() != null || runtime == null || !runtime.Session.Started) return;
+            // R149: the prototype match runs on the lab's link (skills online) over the lobby's session instead.
+            if (game.Match != null)
+            {
+                if (FindFirstObjectByType<SteamMatchLabLink>() == null) new GameObject("ChessFight Sword Fight Net").AddComponent<SteamMatchLabLink>();
+                return;
+            }
             game.gameObject.AddComponent<SteamSwordFightLink>();
         }
         void Awake()

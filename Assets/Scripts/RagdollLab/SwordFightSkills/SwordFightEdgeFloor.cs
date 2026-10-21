@@ -55,6 +55,12 @@ namespace ChessFight.RagdollLab
 
         public static SwordFightEdgeFloor Current { get; private set; }
         public static event Action<Collapse> Changed;
+        /// <summary>R149: a piece knocked loose by a chunk falling under it (the prototype match credits the rook).</summary>
+        public static event Action<Collapse, RagdollPawn> KnockedLoose;
+
+        /// <summary>R149, the prototype match's ghost pieces (spec §9): squares gone for good. They are holes like an
+        /// open collapse (no floor, their sides are edges) and nothing ever fills them again, a rook's chunk included.</summary>
+        public readonly List<Rect> Erased = new List<Rect>();
 
         public bool Found { get; private set; }
         /// <summary>The floor's top, x / z.</summary>
@@ -62,6 +68,8 @@ namespace ChessFight.RagdollLab
         public float Top { get; private set; }
         public float Bottom { get; private set; }
         public readonly List<Collapse> Collapses = new List<Collapse>();
+        /// <summary>R149: the platform box itself (the prototype match sizes it and dresses it as a chessboard).</summary>
+        public Transform Platform { get { Find(); return platform; } }
 
         Transform platform;
         Collider platformCollider;
@@ -126,7 +134,25 @@ namespace ChessFight.RagdollLab
             if (!Area.Contains(v)) return false;
             foreach (var c in Collapses)
                 if ((c.phase == Phase.Open || c.phase == Phase.Rise && c.Rise < 0.9f) && c.rect.Contains(v)) return false;
+            foreach (var e in Erased) if (e.Contains(v)) return false;
             return true;
+        }
+
+        /// <summary>The floor's top is there for the edges: on the platform, not in an open (or rising) hole, not erased.</summary>
+        bool Solid(Vector2 v)
+        {
+            if (!Area.Contains(v)) return false;
+            foreach (var c in Collapses)
+                if ((c.phase == Phase.Open || c.phase == Phase.Rise) && c.rect.Contains(v)) return false;
+            foreach (var e in Erased) if (e.Contains(v)) return false;
+            return true;
+        }
+
+        /// <summary>Find the floor again (R149: the prototype match sizes the board before the match starts).</summary>
+        public void Refind()
+        {
+            Found = false;
+            Find();
         }
 
         /// <summary>The nearest point of the edge (the rim, and the sides of any open hole) to <paramref name="p"/>.</summary>
@@ -171,60 +197,68 @@ namespace ChessFight.RagdollLab
             return false;
         }
 
+        /// <summary>
+        /// Every edge of what is left of the floor (R149, general since the ghost pieces erase squares: before it was
+        /// the rim less the holes plus each hole's sides, which put a false edge between two holes side by side). Every
+        /// x and z where the rim or a hole starts or ends cuts the floor into a grid; a grid line's stretch is an edge
+        /// where floor lies on one side of it and none on the other, the way out toward the void. Stretches in a row
+        /// with the same way out are joined.
+        /// </summary>
         void BuildEdges()
         {
             edgesDirty = false;
             edges.Clear();
             var r = Area;
-            // The rim, less the stretches an open hole has taken away.
-            AddRim(new Vector3(r.xMin, 0f, r.yMin), new Vector3(r.xMax, 0f, r.yMin), Vector3.back);
-            AddRim(new Vector3(r.xMax, 0f, r.yMin), new Vector3(r.xMax, 0f, r.yMax), Vector3.right);
-            AddRim(new Vector3(r.xMax, 0f, r.yMax), new Vector3(r.xMin, 0f, r.yMax), Vector3.forward);
-            AddRim(new Vector3(r.xMin, 0f, r.yMax), new Vector3(r.xMin, 0f, r.yMin), Vector3.left);
+            var xs = new List<float> { r.xMin, r.xMax };
+            var zs = new List<float> { r.yMin, r.yMax };
             foreach (var c in Collapses)
             {
                 if (c.phase != Phase.Open && c.phase != Phase.Rise) continue;
-                // A hole's three inner sides; the void is inside the hole.
-                var h = c.rect;
-                Vector3 a = new Vector3(h.xMin, 0f, h.yMin), b = new Vector3(h.xMax, 0f, h.yMin), d = new Vector3(h.xMax, 0f, h.yMax), e = new Vector3(h.xMin, 0f, h.yMax);
-                var sides = new[] { (a, b, Vector3.forward), (b, d, Vector3.left), (d, e, Vector3.back), (e, a, Vector3.right) };
-                foreach (var (s0, s1, n) in sides)
+                xs.Add(c.rect.xMin); xs.Add(c.rect.xMax); zs.Add(c.rect.yMin); zs.Add(c.rect.yMax);
+            }
+            foreach (var e in Erased) { xs.Add(e.xMin); xs.Add(e.xMax); zs.Add(e.yMin); zs.Add(e.yMax); }
+            xs = Sorted(xs);
+            zs = Sorted(zs);
+            const float eps = 0.01f;
+            // Lines of constant z (their way out is forward or back).
+            foreach (float z in zs)
+            {
+                Vector3? from = null, to = null, way = null;
+                for (int i = 0; i + 1 < xs.Count; i++)
                 {
-                    // Not the side lying on the rim (that is open to the void).
-                    Vector3 mid = (s0 + s1) * 0.5f - n * 0.05f;
-                    if (!Area.Contains(new Vector2(mid.x, mid.z))) continue;
-                    edges.Add((s0, s1, n));
+                    float mid = (xs[i] + xs[i + 1]) * 0.5f;
+                    bool below = Solid(new Vector2(mid, z - eps)), above = Solid(new Vector2(mid, z + eps));
+                    Vector3? n = below == above ? (Vector3?)null : below ? Vector3.forward : Vector3.back;
+                    if (n != null && way != null && n.Value == way.Value && Mathf.Abs(to.Value.x - xs[i]) < 1e-4f) { to = new Vector3(xs[i + 1], 0f, z); continue; }
+                    if (way != null) Edge(from.Value, to.Value, way.Value);
+                    way = n;
+                    from = new Vector3(xs[i], 0f, z);
+                    to = new Vector3(xs[i + 1], 0f, z);
                 }
+                if (way != null) Edge(from.Value, to.Value, way.Value);
+            }
+            // Lines of constant x (right or left).
+            foreach (float x in xs)
+            {
+                Vector3? from = null, to = null, way = null;
+                for (int j = 0; j + 1 < zs.Count; j++)
+                {
+                    float mid = (zs[j] + zs[j + 1]) * 0.5f;
+                    bool left = Solid(new Vector2(x - eps, mid)), right = Solid(new Vector2(x + eps, mid));
+                    Vector3? n = left == right ? (Vector3?)null : left ? Vector3.right : Vector3.left;
+                    if (n != null && way != null && n.Value == way.Value && Mathf.Abs(to.Value.z - zs[j]) < 1e-4f) { to = new Vector3(x, 0f, zs[j + 1]); continue; }
+                    if (way != null) Edge(from.Value, to.Value, way.Value);
+                    way = n;
+                    from = new Vector3(x, 0f, zs[j]);
+                    to = new Vector3(x, 0f, zs[j + 1]);
+                }
+                if (way != null) Edge(from.Value, to.Value, way.Value);
             }
         }
 
-        void AddRim(Vector3 a, Vector3 b, Vector3 outward)
+        void Edge(Vector3 a, Vector3 b, Vector3 outward)
         {
-            // Cut out every open hole's span along this side.
-            var spans = new List<(float, float)> { (0f, (b - a).magnitude) };
-            Vector3 dir = (b - a).normalized;
-            foreach (var c in Collapses)
-            {
-                if (c.phase != Phase.Open && c.phase != Phase.Rise) continue;
-                // Only a hole reaching this side (one by a corner may reach two).
-                float reach = float.MinValue;
-                foreach (var corner in new[] { new Vector3(c.rect.xMin, 0f, c.rect.yMin), new Vector3(c.rect.xMax, 0f, c.rect.yMax) })
-                    reach = Mathf.Max(reach, Vector3.Dot(corner - a, outward));
-                if (reach < -1e-3f) continue;
-                Vector2 lo = c.rect.min, hi = c.rect.max;
-                float t0 = Vector3.Dot(new Vector3(lo.x, 0f, lo.y) - a, dir), t1 = Vector3.Dot(new Vector3(hi.x, 0f, hi.y) - a, dir);
-                if (t0 > t1) (t0, t1) = (t1, t0);
-                var next = new List<(float, float)>();
-                foreach (var (s, e) in spans)
-                {
-                    if (t1 <= s || t0 >= e) { next.Add((s, e)); continue; }
-                    if (t0 > s) next.Add((s, t0));
-                    if (t1 < e) next.Add((t1, e));
-                }
-                spans = next;
-            }
-            foreach (var (s, e) in spans)
-                if (e - s > 0.05f) edges.Add((a + dir * s, a + dir * e, outward));
+            if ((b - a).magnitude > 0.05f) edges.Add((a, b, outward));
         }
 
         // ---------------------------------------------------------------- collapsing
@@ -300,7 +334,55 @@ namespace ChessFight.RagdollLab
         {
             foreach (var c in Collapses) if (c.chunk != null) Destroy(c.chunk);
             Collapses.Clear();
+            Erased.Clear();
             Rebuild();
+        }
+
+        bool OverErased(Rect r)
+        {
+            foreach (var e in Erased) if (e.Overlaps(Shrink(r))) return true;
+            return false;
+        }
+
+        /// <summary>R149: a square gone for good (a ghost piece's pass). Its picture falls away; if <paramref name="knock"/>
+        /// (the host) every piece standing on it is knocked loose and falls with it.</summary>
+        public void Erase(Rect square, bool knock)
+        {
+            if (!Find()) return;
+            foreach (var e in Erased) if (Mathf.Abs(e.xMin - square.xMin) < 0.01f && Mathf.Abs(e.yMin - square.yMin) < 0.01f) return;
+            Erased.Add(square);
+            Rebuild();
+            var look = Box(transform, new Vector3(square.center.x, (Top + Bottom) * 0.5f, square.center.y),
+                new Vector3(square.width, Top - Bottom, square.height), "Erased square", false);
+            var falling = look.AddComponent<FallingSquare>();
+            falling.spin = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0f, UnityEngine.Random.Range(-1f, 1f)).normalized;
+            if (!knock) return;
+            foreach (var p in RagdollPawn.All)
+            {
+                if (p == null) continue;
+                var hips = p.Hips.position;
+                if (!square.Contains(new Vector2(hips.x, hips.z)) || hips.y < Bottom - 0.2f || hips.y > Top + 1.5f) continue;
+                var f = p.GetComponent<SwordFightPawn>();
+                if (f != null && !f.Alive) continue;
+                p.TakeHit(Vector3.down * 1.5f, 0.65f, 0f, true);
+                if (f != null) f.StopCombat();
+            }
+        }
+
+        /// <summary>An erased square's picture tumbling down and gone.</summary>
+        sealed class FallingSquare : MonoBehaviour
+        {
+            public Vector3 spin;
+            float age;
+            Vector3 home;
+            void Start() => home = transform.position;
+            void Update()
+            {
+                age += Time.deltaTime;
+                transform.position = home + Vector3.down * (0.5f * 14f * age * age + 0.4f * age);
+                transform.rotation = Quaternion.AngleAxis(age * 70f, Vector3.Cross(Vector3.up, spin));
+                if (age > 1.6f) Destroy(gameObject);
+            }
         }
 
         void FixedUpdate()
@@ -324,7 +406,18 @@ namespace ChessFight.RagdollLab
                         }
                         break;
                     case Phase.Open:
-                        if (c.age >= c.crack + c.open)
+                        if (c.age >= c.crack + c.open && OverErased(c.rect))
+                        {
+                            // R149 (spec §7.4 rule 5): a chunk under a ghost's squares does not rise again; the rest of
+                            // its floor comes back at once.
+                            c.phase = Phase.Done;
+                            edgesDirty = true;
+                            Changed?.Invoke(c);
+                            Destroy(c.chunk);
+                            Collapses.RemoveAt(i);
+                            rebuild = true;
+                        }
+                        else if (c.age >= c.crack + c.open)
                         {
                             c.phase = Phase.Rise;
                             // Back from below: solid again, pushing up whatever is in the way.
@@ -397,6 +490,7 @@ namespace ChessFight.RagdollLab
                 if (f != null && !f.Alive) continue;
                 p.TakeHit(Vector3.down * 1.5f + c.outward * 0.4f, 0.65f, 0f, true);
                 if (f != null) f.StopCombat();
+                KnockedLoose?.Invoke(c, p);
             }
         }
 
@@ -416,7 +510,7 @@ namespace ChessFight.RagdollLab
             foreach (var go in rest) if (go != null) Destroy(go);
             rest.Clear();
             edgesDirty = true;
-            if (Collapses.Count == 0)
+            if (Collapses.Count == 0 && Erased.Count == 0)
             {
                 Restore();
                 return;
@@ -431,6 +525,11 @@ namespace ChessFight.RagdollLab
                 xs.Add(c.rect.xMin); xs.Add(c.rect.xMax);
                 zs.Add(c.rect.yMin); zs.Add(c.rect.yMax);
             }
+            foreach (var e in Erased)
+            {
+                xs.Add(e.xMin); xs.Add(e.xMax);
+                zs.Add(e.yMin); zs.Add(e.yMax);
+            }
             xs = Sorted(xs);
             zs = Sorted(zs);
             // Cells not in any hole, merged along x into strips, then strips of the same span merged along z.
@@ -444,6 +543,7 @@ namespace ChessFight.RagdollLab
                     var cell = Rect.MinMaxRect(xs[i], z0, xs[i + 1], z1);
                     bool hole = false;
                     foreach (var c in Collapses) hole |= c.rect.Overlaps(Shrink(cell));
+                    foreach (var e in Erased) hole |= e.Overlaps(Shrink(cell));
                     if (!hole && start == null) start = xs[i];
                     if (hole && start != null) { strips.Add(Rect.MinMaxRect(start.Value, z0, xs[i], z1)); start = null; }
                 }

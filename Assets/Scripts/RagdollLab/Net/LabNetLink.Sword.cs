@@ -170,11 +170,12 @@ namespace ChessFight.RagdollLab
             TeamDraws = 0;
             if (NetIsHost)
             {
-                DrawTeams();
+                if (!RealMatch) DrawTeams();
                 StartHostingGuard();
             }
             // Hand the mouse to the fighter: the panel would otherwise keep the cursor free all match.
             hudOpen = false;
+            swordMatchSent = 0f;
             message = NetIsHost
                 ? "방장으로 소드 파이트 시험을 시작했어요. 팀은 무작위예요 (F5로 다시 섞기)."
                 : "방장에 접속했어요. 팀은 방장이 무작위로 나눠요.";
@@ -252,6 +253,7 @@ namespace ChessFight.RagdollLab
 
         int SwordTeamOf(ulong id, LabSeat seat)
         {
+            if (RealMatch) return seat.Team;   // R149: the room's sides (parties together, SESSION.md)
             if (NetIsHost) return swordTeams.TryGetValue(id, out int t) ? t : -1;
             byte place = SkillWire.Ref(seat.Team, seat.Slot);
             return remoteTeams.TryGetValue(place, out int team) ? team : -1;
@@ -261,7 +263,7 @@ namespace ChessFight.RagdollLab
         {
             int slot = 0;
             foreach (var other in sword.Fighters.Values) if (other != null && other.Pawn.Team == team) slot++;
-            var f = sword.Add(id, team, Mathf.Min(slot, 5), false, NetName(id));
+            var f = sword.Add(id, team, Mathf.Min(slot, 5), RealMatch && BotIdentity.IsBot(id), NetName(id));
             pawns[id] = f.Pawn;
             idOf[f.Pawn] = id;
             if (NetIsHost && swordPieces.TryGetValue(id, out var piece) && piece != f.Pawn.Piece)
@@ -351,6 +353,8 @@ namespace ChessFight.RagdollLab
         void ApplySwordPiece(ulong id, PieceKind kind)
         {
             if (sword == null || !ChessPieces.IsValid((byte)kind)) return;
+            // R149: the prototype match decides (a pick, or the development key F8).
+            if (sword.PieceRequest != null) { sword.PieceRequest(id, kind); return; }
             swordPieces[id] = kind;
             if (!sword.Fighters.TryGetValue(id, out var f) || f == null || f.Pawn.Piece == kind) return;
             if (swordBed != null) swordBed.SetPieceNow(f, kind);
@@ -370,8 +374,8 @@ namespace ChessFight.RagdollLab
         PawnInput SwordReadLocal(bool keys, out bool skill, out bool edge, out bool cancel)
         {
             var input = sword.ReadLocalInput();
-            bool free = keys && swordBed != null && swordBed.KeysFree;
-            skill = (free && Input.GetKeyDown(swordBed.skillKey)) || devSkill;
+            bool free = keys && (swordBed != null ? swordBed.KeysFree : sword.KeysFree && !KeysTaken);
+            skill = (free && Input.GetKeyDown(swordBed != null ? swordBed.skillKey : KeyCode.F)) || devSkill;
             edge = (free && GameSettings.Pressed(GameKey.Skill)) || devEdge;
             cancel = (free && GameSettings.Pressed(GameKey.Grab)) || devCancel;
             float now = Time.unscaledTime;
@@ -446,8 +450,24 @@ namespace ChessFight.RagdollLab
                     if (cancel) me.Skills.CancelAim();
                 }
             }
-            if (Input.GetKeyDown(KeyCode.F5) && !KeysTaken && !ChatBox.KeysHeld) DrawSwordTeams();
+            if (!RealMatch && Input.GetKeyDown(KeyCode.F5) && !KeysTaken && !ChatBox.KeysHeld) DrawSwordTeams();
             SendWorld();
+            SendSwordMatch();
+        }
+
+        float swordMatchSent;
+
+        /// <summary>R149: the prototype match's state (phase, clock, seed, score, pieces, the feed) as text, ten times a
+        /// second (unreliable: the next one replaces a lost one).</summary>
+        void SendSwordMatch()
+        {
+            if (sword.Match == null) return;
+            float now = Time.realtimeSinceStartup;
+            if (now - swordMatchSent < 0.1f) return;
+            swordMatchSent = now;
+            byte[] bytes = RagdollNetProtocol.Match(NetMatch, sword.Match.WireText(SwordRef));
+            if (bytes == null) return;
+            foreach (ulong id in NetRoster.Keys) if (id != NetSelf) Send(id, bytes);
         }
 
         /// <summary>With every snapshot: every fighter's side, life, sword and skills, and the floor's collapses.</summary>

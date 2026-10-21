@@ -64,7 +64,8 @@ namespace ChessFight.RagdollLab
         RagdollPawn Viewer => game != null && game.Local != null ? game.Local.Pawn : null;
         public Camera ViewCamera => ViewOverride != null ? ViewOverride : game != null && game.CameraRig != null ? game.CameraRig.Cam : Camera.main;
         Vector3 Eye => ViewCamera != null ? ViewCamera.transform.position : Vector3.up * 5f;
-        SwordFightSkillParams S => GetComponent<SwordFightSkillBed>() is SwordFightSkillBed b ? b.skills : null;
+        SwordFightSkillParams S => GetComponent<SwordFightSkillBed>() is SwordFightSkillBed b ? b.skills
+            : GetComponent<SwordFightMatch>() is SwordFightMatch m ? m.skills : null;   // R149: the prototype match
 
         void Awake()
         {
