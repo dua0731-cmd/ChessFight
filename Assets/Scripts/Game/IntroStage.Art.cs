@@ -7,7 +7,7 @@ namespace ChessFight.Game
     // cloth with a gold border, a swallowtail and the piece glyph in gold.
     public sealed partial class IntroStage
     {
-        static Texture2D stone, window;
+        static Texture2D stone;
 
         static Texture2D Make(string name, int w, int h, Color[] px, TextureWrapMode wrap)
         {
@@ -17,13 +17,14 @@ namespace ChessFight.Game
             return texture;
         }
 
-        // Rows of grey-brown blocks, every other row offset by half a block, dark mortar.
+        // Rows of cream castle blocks (10-17: the lobby castle's stone, was grey-brown), every other row
+        // offset by half a block, light mortar; each block its own shade, a lit top edge and a darker foot.
         static Texture2D StoneTexture()
         {
             if (stone != null) return stone;
             const int w = 512, h = 256, bw = 64, bh = 32;
             var px = new Color[w * h];
-            Color a = MenuArt.Hex(0x4A3A2C), b = MenuArt.Hex(0x3A2D22), mortar = MenuArt.Hex(0x1E160F);
+            Color a = MenuArt.Hex(0xE9DCC0), b = MenuArt.Hex(0xCDBB98), mortar = MenuArt.Hex(0xA8977A);
             var random = new System.Random(150);
             var shade = new float[(w / bw + 1) * (h / bh)];
             for (int i = 0; i < shade.Length; i++) shade[i] = (float)random.NextDouble();
@@ -37,51 +38,20 @@ namespace ChessFight.Game
                     float n = Mathf.PerlinNoise(x * .09f, y * .09f) * .5f + Mathf.PerlinNoise(x * .31f, y * .31f) * .25f;
                     var c = Color.Lerp(a, b, shade[row * (w / bw + 1) + col] * .8f + n * .4f);
                     // A lighter top edge on each block, a darker bottom one.
-                    if (y % bh == bh - 3) c = Color.Lerp(c, Color.white, .06f);
-                    if (y % bh == 2) c = Color.Lerp(c, Color.black, .15f);
+                    if (y % bh >= bh - 4) c = Color.Lerp(c, Color.white, .12f);
+                    if (y % bh <= 3) c = Color.Lerp(c, MenuArt.Hex(0x8A7658), .25f);
                     px[y * w + x] = joint ? mortar : c;
                 }
             }
             return stone = Make("Intro stone", w, h, px, TextureWrapMode.Repeat);
         }
 
-        // A lancet window: a round arched top, a dark frame and two columns of amber
-        // panes in a checker of light and deep, with lead between them.
-        static Texture2D WindowTexture()
-        {
-            if (window != null) return window;
-            const int w = 64, h = 320, frame = 5, cols = 2, rows = 9;
-            var px = new Color[w * h];
-            Color light = MenuArt.Hex(0xFFE2AA), deep = MenuArt.Hex(0xF0AA64), lead = MenuArt.Hex(0x2A1E15);
-            float r = w / 2f;
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    float fx = x + .5f - r, fy = y + .5f - (h - r);
-                    bool inside = y < h - r || fx * fx + fy * fy <= r * r;
-                    bool glass = x >= frame && x < w - frame && y >= frame && (y < h - r || fx * fx + fy * fy <= (r - frame) * (r - frame));
-                    Color c;
-                    if (!inside) c = new Color(0, 0, 0, 0);
-                    else if (!glass) c = lead;
-                    else
-                    {
-                        float gx = (x - frame) / (float)(w - 2 * frame), gy = (y - frame) / (float)(h - 2 * frame);
-                        int col = Mathf.Clamp((int)(gx * cols), 0, cols - 1), row = Mathf.Clamp((int)(gy * rows), 0, rows - 1);
-                        c = (col + row) % 2 == 0 ? light : deep;
-                        // Lead cames between the panes.
-                        float ex = gx * cols % 1f, ey = gy * rows % 1f;
-                        if (ex < .04f || ex > .96f || ey < .03f || ey > .97f) c = lead;
-                        // Brighter low in the window, as the sun sets behind it.
-                        c = Color.Lerp(c, Color.white, .12f * (1f - gy));
-                    }
-                    px[y * w + x] = c;
-                }
-            return window = Make("Intro window", w, h, px, TextureWrapMode.Clamp);
-        }
+        // The wall's stone material (the piers copy it with their own tiling).
+        static Material StoneMaterial(Vector2 tiling) => LastSceneArt.Textured("intro stone", StoneTexture(), .12f, tiling);
 
         // Cloth in `cloth` with soft folds, a gold line inside each long edge and
         // along the swallowtail, a dark hem at the top, and the glyph in gold.
-        static Texture2D PennantTexture(string glyph, int cloth)
+        internal static Texture2D PennantTexture(string glyph, int cloth)
         {
             const int w = 128, h = 256;
             const float notch = .2f;
@@ -121,7 +91,7 @@ namespace ChessFight.Game
         // drawn once with a TextMesh in an OS symbol font; null where no such font is.
         static Font symbols;
 
-        static float[] GlyphMask(string glyph, int width, int height)
+        internal static float[] GlyphMask(string glyph, int width, int height)
         {
             if (symbols == null)
             {

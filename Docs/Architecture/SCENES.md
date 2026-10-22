@@ -70,7 +70,7 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 
 ## 4. 렌더링
 
-`Game/RenderPipelineOverride.cs`가 `BeforeSceneLoad`에 URP 에셋 참조를 비워 Built-in으로 그리고 종료 때 되돌린다. 어느 씬을 직접 열어도 보인다. `NetworkColor` 셰이더는 Unlit이라 조명이 화면에 영향을 주지 않는다.
+R151(10-16)부터 URP 17.3으로 그린다(`Settings/PC_RPAsset`, 낮은 품질 `Mobile_RPAsset`). 예전 `Game/RenderPipelineOverride.cs`(Play 동안 Built-in으로 바꾸던 우회)는 지웠다. 어느 씬을 직접 열어도 보인다. `NetworkColor` 셰이더는 Unlit이라 조명이 화면에 영향을 주지 않는다.
 
 ## 5. 새 게임 씬(모드)을 추가하려면
 

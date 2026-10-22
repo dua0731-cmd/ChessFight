@@ -191,7 +191,7 @@ namespace ChessFight.RagdollLab
             return double.IsInfinity(left) ? "미완료" : left <= 0 ? "열림" : $"{left:0.0}초 뒤";
         }
         Material Mat(Color color)
-        { var m = new Material(Shader.Find("Standard")) { color = color }; materials.Add(m); return m; }
+        { var m = new Material(LitMaterials.Lit) { color = color }; materials.Add(m); return m; }
         GameObject Box(string name, Vector3 position, Vector3 size, Material material)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.SetParent(transform);

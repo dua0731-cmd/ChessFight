@@ -549,9 +549,9 @@ namespace ChessFight.Game
             lampSpot.transform.rotation = Quaternion.LookRotation(W(0, H, 0) - shade);
             MenuArt.Aim(lampCone, shade, new Vector3(shade.x * .4f, H, shade.z * .4f));
             float cool = win ? 0f : EaseIO((rt - 2.4f) / 1.6f);
-            lampSpot.intensity = 2.1f * flick * (1 - .25f * cool);
+            lampSpot.intensity = MenuArt.SpotIntensity(lampSpot, 2.1f * flick * (1 - .25f * cool));
             var cone = coneMaterial.color; cone.a = .06f * flick * (1 - .4f * cool); coneMaterial.color = cone;
-            cold.intensity = 1.6f * cool;
+            cold.intensity = MenuArt.SpotIntensity(cold, 1.6f * cool);
             glows.Set(0, lamp.TransformPoint(new Vector3(0, -8.1f, 0)), Lin(0xFFF0D8) * .9f * flick, 3.4f);
 
             // cold motes drifting over the losers after a defeat
@@ -624,29 +624,18 @@ namespace ChessFight.Game
             return r;
         }
 
-        // Additive light that ignores the lamp: Standard with a black albedo, its emission (set per
+        // Additive light that ignores the lamp: Lit with a black albedo, its emission (set per
         // renderer) blended One + One, as the page's additive square lights and rings.
         static Material Additive(string key)
         {
-            var shader = Shader.Find("Standard");
+            var shader = LitMaterials.Lit;
             if (shader == null) return MenuArt.Glow("result " + key, null, Color.white);
             var m = new Material(shader) { name = "Result " + key, color = Color.black };
-            m.SetFloat("_Glossiness", 0f);
-            m.SetFloat("_Metallic", 0f);
-            m.SetFloat("_SpecularHighlights", 0f);
-            m.SetFloat("_GlossyReflections", 0f);
-            m.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
-            m.EnableKeyword("_GLOSSYREFLECTIONS_OFF");
-            m.SetInt("_SrcBlend", (int)BlendMode.One);
-            m.SetInt("_DstBlend", (int)BlendMode.One);
-            m.SetInt("_ZWrite", 0);
-            m.DisableKeyword("_ALPHATEST_ON");
-            m.DisableKeyword("_ALPHABLEND_ON");
-            m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            m.EnableKeyword("_EMISSION");
-            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
-            m.SetColor("_EmissionColor", Color.black);
-            m.renderQueue = (int)RenderQueue.Transparent + 5;
+            LitMaterials.SetSmoothness(m, 0f);
+            LitMaterials.SetMetallic(m, 0f);
+            LitMaterials.Matte(m);
+            LitMaterials.MakeTransparent(m, additive: true, (int)RenderQueue.Transparent + 5);
+            LitMaterials.SetEmission(m, Color.black);
             return m;
         }
 
@@ -827,20 +816,22 @@ namespace ChessFight.Game
             readonly float[] sizes;
             readonly bool additive;
 
-            // The page's additive points; a build without the legacy particle shader blends instead.
+            // The page's additive points (URP's particle shader, added); a build without it blends instead.
+            // As bright as the legacy additive particle shader made them: 2 x its tint (.5 grey, linear .21).
             public static Material AdditiveMaterial()
             {
-                var shader = Shader.Find("Legacy Shaders/Particles/Additive");
-                if (shader == null) return MenuArt.Glow("result sparks", MenuArt.RadialTexture(), Color.white);
-                var m = new Material(shader) { name = "Result sparks", mainTexture = MenuArt.RadialTexture() };
-                m.SetColor("_TintColor", new Color(.5f, .5f, .5f, .5f));
+                var m = LitMaterials.NewAdditiveParticles(MenuArt.RadialTexture(), (2f * new Color(.5f, .5f, .5f, .5f).linear).gamma);
+                if (m == null) return MenuArt.Glow("result sparks", MenuArt.RadialTexture(), Color.white);
+                m.name = "Result sparks";
                 m.renderQueue = (int)RenderQueue.Transparent + 20;
                 return m;
             }
 
             public Dots(Transform parent, string name, int count, float size, Material material)
             {
-                additive = material.shader != null && material.shader.name.Contains("Additive");
+                additive = material.HasProperty("_DstBlend")
+                    ? material.GetFloat("_DstBlend") == (float)BlendMode.One
+                    : material.shader != null && material.shader.name.Contains("Additive");
                 centers = new Vector3[count];
                 colors = new Color[count];
                 sizes = Enumerable.Repeat(size, count).ToArray();

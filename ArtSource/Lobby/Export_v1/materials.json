@@ -1,0 +1,354 @@
+{
+ "materials": {
+  "Arch Stones": {
+   "objects": 78,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Arch_Stones_Albedo.png",
+   "normal": "Arch_Stones_Normal.png",
+   "metalsmooth": "Arch_Stones_MetalSmooth.png"
+  },
+  "Brazier_Baked": {
+   "objects": 2,
+   "kind": "image",
+   "albedo": "Brazier_Baked_Albedo.png",
+   "metalsmooth": "Brazier_Baked_MetalSmooth.png",
+   "normal": "Brazier_Baked_Normal.png",
+   "emission": "Brazier_Baked_Emission.png",
+   "emission_k": 1.5,
+   "alpha_clip": false
+  },
+  "Candelabra": {
+   "objects": 2,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "Candelabra_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Candelabra_MetalSmooth.png",
+   "emission": "Candelabra_Emission.png",
+   "emission_k": 1.0
+  },
+  "Carpet": {
+   "objects": 28,
+   "kind": "solid",
+   "color": [
+    0.6588,
+    0.1255,
+    0.1647
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.2
+  },
+  "Castle Stone X": {
+   "objects": 85,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Castle_Stone_X_Albedo.png",
+   "normal": "Castle_Stone_X_Normal.png",
+   "metalsmooth": "Castle_Stone_X_MetalSmooth.png"
+  },
+  "Castle Stone Y": {
+   "objects": 42,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Castle_Stone_Y_Albedo.png",
+   "normal": "Castle_Stone_Y_Normal.png",
+   "metalsmooth": "Castle_Stone_Y_MetalSmooth.png"
+  },
+  "Cream Block": {
+   "objects": 26,
+   "kind": "solid",
+   "color": [
+    0.9529,
+    0.9098,
+    0.8157
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.65
+  },
+  "Door Walnut": {
+   "objects": 6,
+   "kind": "solid",
+   "color": [
+    0.2902,
+    0.1725,
+    0.0941
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.5
+  },
+  "Ebony": {
+   "objects": 6,
+   "kind": "solid",
+   "color": [
+    0.0824,
+    0.0667,
+    0.0549
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.78
+  },
+  "Gate Curtain": {
+   "objects": 2,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "Gate_Curtain_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Gate_Curtain_MetalSmooth.png"
+  },
+  "Gate Hinge Iron": {
+   "objects": 2,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "Gate_Hinge_Iron_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Gate_Hinge_Iron_MetalSmooth.png"
+  },
+  "Gate Light": {
+   "objects": 1,
+   "kind": "solid",
+   "color": [
+    1.0,
+    0.949,
+    0.8157
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.0
+  },
+  "Gold": {
+   "objects": 82,
+   "kind": "solid",
+   "color": [
+    0.851,
+    0.6706,
+    0.2902
+   ],
+   "metallic": 1.0,
+   "smoothness": 0.72
+  },
+  "Groove": {
+   "objects": 8,
+   "kind": "solid",
+   "color": [
+    0.1412,
+    0.0824,
+    0.0471
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.4
+  },
+  "Grout": {
+   "objects": 1,
+   "kind": "solid",
+   "color": [
+    0.3529,
+    0.3137,
+    0.2824
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.2
+  },
+  "Heraldic Shield": {
+   "objects": 2,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "Heraldic_Shield_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Heraldic_Shield_MetalSmooth.png"
+  },
+  "Iron Rod": {
+   "objects": 6,
+   "kind": "solid",
+   "color": [
+    0.2275,
+    0.2078,
+    0.1882
+   ],
+   "metallic": 0.6,
+   "smoothness": 0.5
+  },
+  "Ivory Marble": {
+   "objects": 6,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "Ivory_Marble_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Ivory_Marble_MetalSmooth.png"
+  },
+  "King Marble 1e1a18": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "King_Marble_1e1a18_Albedo.png",
+   "normal": null,
+   "metalsmooth": "King_Marble_1e1a18_MetalSmooth.png"
+  },
+  "King Marble efe6d4": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "King_Marble_efe6d4_Albedo.png",
+   "normal": null,
+   "metalsmooth": "King_Marble_efe6d4_MetalSmooth.png"
+  },
+  "KingPost_Baked": {
+   "objects": 2,
+   "kind": "image",
+   "albedo": "KingPost_Baked_Albedo.png",
+   "metalsmooth": "KingPost_Baked_MetalSmooth.png",
+   "normal": "KingPost_Baked_Normal.png",
+   "alpha_clip": false
+  },
+  "Knight 1e1a18": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Knight_1e1a18_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Knight_1e1a18_MetalSmooth.png"
+  },
+  "Knight efe6d4": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Knight_efe6d4_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Knight_efe6d4_MetalSmooth.png"
+  },
+  "Pennant 1C1612": {
+   "objects": 3,
+   "kind": "image",
+   "albedo": "Pennant_1C1612_Albedo.png",
+   "metallic": 0.0,
+   "smoothness": 0.2,
+   "alpha_clip": true
+  },
+  "Pennant 7A1F24": {
+   "objects": 3,
+   "kind": "image",
+   "albedo": "Pennant_7A1F24_Albedo.png",
+   "metallic": 0.0,
+   "smoothness": 0.2,
+   "alpha_clip": true
+  },
+  "Plinth Stone": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Plinth_Stone_Albedo.png",
+   "normal": "Plinth_Stone_Normal.png",
+   "metalsmooth": "Plinth_Stone_MetalSmooth.png"
+  },
+  "Red Block": {
+   "objects": 32,
+   "kind": "solid",
+   "color": [
+    0.7843,
+    0.1961,
+    0.2275
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.65
+  },
+  "Royal Crown": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "Royal_Crown_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Royal_Crown_MetalSmooth.png"
+  },
+  "Side Door": {
+   "objects": 2,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Side_Door_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Side_Door_MetalSmooth.png"
+  },
+  "Stage Wood": {
+   "objects": 5,
+   "kind": "solid",
+   "color": [
+    0.1647,
+    0.102,
+    0.0627
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.5
+  },
+  "Statue Ebony": {
+   "objects": 1,
+   "kind": "solid",
+   "color": [
+    0.1176,
+    0.102,
+    0.0941
+   ],
+   "metallic": 0.0,
+   "smoothness": 0.72
+  },
+  "Step Stone": {
+   "objects": 51,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Step_Stone_Albedo.png",
+   "normal": "Step_Stone_Normal.png",
+   "metalsmooth": "Step_Stone_MetalSmooth.png"
+  },
+  "Tile Cream": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Tile_Cream_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Tile_Cream_MetalSmooth.png"
+  },
+  "Tile Slate": {
+   "objects": 1,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "Tile_Slate_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Tile_Slate_MetalSmooth.png"
+  },
+  "Topiary": {
+   "objects": 2,
+   "kind": "baked",
+   "size": 1024,
+   "albedo": "Topiary_Albedo.png",
+   "normal": null,
+   "metalsmooth": "Topiary_MetalSmooth.png"
+  },
+  "WallLantern_Baked": {
+   "objects": 4,
+   "kind": "image",
+   "albedo": "WallLantern_Baked_Albedo.png",
+   "metalsmooth": "WallLantern_Baked_MetalSmooth.png",
+   "normal": "WallLantern_Baked_Normal.png",
+   "emission": "WallLantern_Baked_Emission.png",
+   "emission_k": 1.5,
+   "alpha_clip": false
+  },
+  "White Marble": {
+   "objects": 62,
+   "kind": "baked",
+   "size": 2048,
+   "albedo": "White_Marble_Albedo.png",
+   "normal": null,
+   "metalsmooth": "White_Marble_MetalSmooth.png"
+  }
+ },
+ "leaves_blender": {
+  "GateLeaf_L": [
+   -1.6,
+   17.45,
+   1.68
+  ],
+  "GateLeaf_R": [
+   1.6,
+   17.45,
+   1.68
+  ]
+ }
+}

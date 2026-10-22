@@ -68,15 +68,26 @@ namespace ChessFight.Game
             }
         }
 
-        // The run as the samples were rendered: turned 30 degrees to screen right, leaning
-        // into it, legs and arms swinging in turn.
+        // A real run (10-17, 승규 님: they waddled — the old stride rolled the body from side to side and
+        // flapped the arms out sideways): leaning forward into the run, legs driving in a long stride,
+        // arms pumping forward and back against the legs, the body highest in the flight between steps
+        // and squashing a little as each foot lands, a slight twist of the shoulders and no side roll.
+        // Turned 40 degrees to screen right so the stride reads from the camera.
         static FigurePose Stride(float t, float seed)
         {
-            float ph = t * 10f + seed * 1.7f, s = Mathf.Sin(ph);
+            float ph = t * 12f + seed * 1.7f, s = Mathf.Sin(ph), a = Mathf.Abs(s);
+            float leg = Mathf.Sign(s) * Mathf.Pow(a, .7f);
             return new FigurePose
             {
-                Yaw = -30f * Mathf.Deg2Rad, Tip = .25f + .04f * s, Leg = s * .8f,
-                ArmLeft = .55f + s * .85f, ArmRight = .55f - s * .85f, Jump = Mathf.Abs(Mathf.Cos(ph)) * .1f
+                Yaw = -40f * Mathf.Deg2Rad + s * .07f,
+                Lean = .22f + .06f * (1f - a),
+                Tip = .025f * s,
+                Leg = leg * 1.0f,
+                ArmSwing = -leg * 1.05f,
+                ArmLeft = .3f, ArmRight = .3f,
+                // Lowest as a foot passes under the body, highest in the flight with the legs spread.
+                Jump = .15f * Mathf.Pow(a, 1.5f),
+                Squash = .07f * Mathf.Pow(1f - a, 6f) - .03f * a
             };
         }
 
@@ -224,13 +235,15 @@ namespace ChessFight.Game
 
         // A swallowtail pennant hung from the rod: a grid of cloth that ripples down its
         // length, more so further from the rod. The mouse passing over it whips up a gust.
-        sealed class Pennant
+        // Also hung in the lobby castle (LobbyStage.Castle.cs, 10-17).
+        internal sealed class Pennant
         {
             const int Cols = 8, Rows = 18;
             const float Width = 1.25f, Height = 2.4f, WallGap = .26f;
             readonly Mesh mesh;
             readonly Vector3[] rest, moved;
             readonly Transform shape;
+            public Transform Shape => shape;
             readonly Material material;
             readonly Texture2D texture;
             readonly float phase;
@@ -268,6 +281,9 @@ namespace ChessFight.Game
                 mesh.RecalculateNormals();
                 mesh.MarkDynamic();
                 material = new Material(LastSceneArt.Cutout("intro pennant " + index, texture, .2f));
+                // The shared template keeps the first pennant's texture (the title screen's, destroyed with it):
+                // every pennant sets its own, or the lobby's lost their cloth after the title screen.
+                material.mainTexture = texture;
                 if (material.HasProperty("_Cull")) material.SetInt("_Cull", (int)CullMode.Off);
                 var go = LastSceneArt.Part(parent, "Pennant", mesh, material, top, null, null, true);
                 shape = go.transform;

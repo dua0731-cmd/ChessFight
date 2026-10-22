@@ -1,3 +1,4 @@
+using ChessFight.Game;
 using ChessFight.Network;
 using UnityEngine;
 
@@ -36,7 +37,7 @@ namespace ChessFight.Gameplay
                 solids[i].enabled = alive;
                 float fall = alive ? 0 : Mathf.Min(15, (float)((elapsed - drop) * (elapsed - drop) * 5));
                 tiles[i].position = origins[i] + Vector3.down * fall + (warn ? Vector3.up * Mathf.Sin((float)elapsed * 40) * .035f : Vector3.zero);
-                tint.Clear(); if (warn) tint.SetColor("_Color", Color.Lerp(Color.red, Color.yellow, .5f + .5f * Mathf.Sin((float)elapsed * 12)));
+                tint.Clear(); if (warn) LitMaterials.SetColor(tint, Color.Lerp(Color.red, Color.yellow, .5f + .5f * Mathf.Sin((float)elapsed * 12)));
                 visuals[i].SetPropertyBlock(tint);
             }
         }

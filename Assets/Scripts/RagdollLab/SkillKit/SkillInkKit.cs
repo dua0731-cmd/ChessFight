@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -421,8 +422,8 @@ namespace ChessFight.RagdollLab
         {
             c.a = 1f;
             if (flatMats.TryGetValue(c, out var m) && m != null) return m;
-            // R111: Unlit/Color is not in a player build (only the editor finds it); Sprites/Default always is.
-            var shader = Shader.Find("Unlit/Color");
+            // R111: a shader only the editor finds is not in a player build; Sprites/Default always is.
+            var shader = LitMaterials.Unlit;
             if (shader == null) shader = Shader.Find("Sprites/Default");
             m = new Material(shader) { color = c, hideFlags = HideFlags.HideAndDontSave };
             flatMats[c] = m;
@@ -740,6 +741,9 @@ namespace ChessFight.RagdollLab
             public readonly bool board;
             public bool twoTone;
             public Color sideColor;
+            /// <summary>R153: a second part of the same object in its own colours (the bishop's stake's iron band), parented
+            /// to this one: shown, faded and flashed with it.</summary>
+            public Prop child;
 
             /// <summary><paramref name="material"/>: a fill of its own that reads the same properties (R140, the Pawn Rush
             /// rope's Skill Rope); the kit's otherwise.</summary>
@@ -789,6 +793,12 @@ namespace ChessFight.RagdollLab
                 line.SetPropertyBlock(bl);
                 // The ink hull cannot fade by dither: it goes with the prop's last third.
                 line.enabled = shown && fade > 0.33f;
+                if (child != null)
+                {
+                    child.fade = fade;
+                    child.flash = flash;
+                    child.Apply();
+                }
             }
 
             bool shown = true;
@@ -798,6 +808,7 @@ namespace ChessFight.RagdollLab
                 shown = on;
                 fill.enabled = on;
                 line.enabled = on && fade > 0.33f;
+                child?.Show(on);
             }
 
             public void Destroy()

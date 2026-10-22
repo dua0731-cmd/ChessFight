@@ -29,6 +29,8 @@
             <ui:Label text="기물 도감" class="a-tab" picking-mode="Ignore" />
             <ui:Label text="전적" class="a-tab" picking-mode="Ignore" />
             <ui:VisualElement class="grow" picking-mode="Ignore" />
+            <!-- 10-17: the party (count, code, bots, join by code, private room, leave) opens from here. -->
+            <ui:Button name="party-open" text="파티" class="a-btn a-top" />
             <ui:Button name="friends-open" text="친구" class="a-btn a-top" />
             <ui:Button name="details-open" text="정보" class="a-btn a-top" />
             <!-- My name; pressing it changes the name (R85, NameChange). -->
@@ -88,40 +90,6 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Bottom left: direct entry and the party bar. -->
-        <ui:VisualElement class="bottom-left" picking-mode="Ignore">
-            <ui:VisualElement class="row tools" picking-mode="Ignore">
-                <ui:Button name="code-open" text="코드로 참가" class="a-btn a-tool" />
-                <ui:Button name="create-test" text="비공개 방" class="a-btn a-tool" />
-            </ui:VisualElement>
-            <ui:VisualElement class="party-bar row a-panel">
-                <ui:VisualElement class="party-count">
-                    <ui:Label text="PARTY" class="a-kicker" />
-                    <ui:Label name="party-count" text="1 / 6" class="disp party-number" />
-                </ui:VisualElement>
-                <ui:VisualElement class="party-sep" />
-                <ui:VisualElement class="party-section">
-                    <ui:Label text="파티 코드" class="a-label" />
-                    <ui:VisualElement class="row">
-                        <ui:Label name="party-code" text="—" class="party-code" />
-                        <ui:Button name="copy-party" text="복사" class="a-btn a-sm party-copy" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                <ui:VisualElement class="party-sep" />
-                <ui:VisualElement class="party-section">
-                    <ui:Label name="party-bots-title" text="AI 봇" class="a-label" />
-                    <ui:VisualElement class="row">
-                        <ui:Button name="bots-less" text="−" class="a-btn a-sq" />
-                        <ui:Label name="bots" text="0" class="bot-count" />
-                        <ui:Button name="bots-more" text="+" class="a-btn a-sq" />
-                    </ui:VisualElement>
-                    <ui:Label name="bots-note" class="bots-note" />
-                </ui:VisualElement>
-                <ui:VisualElement class="grow" />
-                <ui:Button name="leave-party" text="나가기" class="a-btn a-sm a-danger party-leave" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-
         <!-- Bottom right: the start button, or the busy card, and the key hints. The
              mode card is hidden now that the right rail lists every mode; it stays
              because the view binds it by name. -->
@@ -175,6 +143,35 @@
             <ui:VisualElement name="rail-title" class="rail-title" picking-mode="Ignore" />
             <ui:VisualElement name="rail-rule" class="rail-rule" picking-mode="Ignore" />
             <ui:VisualElement name="mode-rail-list" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <!-- The party (10-17, was the bar along the bottom): count, code, AI bots and the ways in and out. -->
+        <ui:VisualElement name="party-card" class="side-card party-card a-panel">
+            <ui:VisualElement class="row panel-head">
+                <ui:VisualElement class="grow">
+                    <ui:Label text="PARTY" class="a-kicker" />
+                    <ui:Label name="party-count" text="1 / 6" class="disp panel-title" />
+                </ui:VisualElement>
+                <ui:Button name="party-close" text="✕" class="a-btn a-sq" />
+            </ui:VisualElement>
+            <ui:Label text="파티 코드" class="a-label" />
+            <ui:VisualElement class="row party-line">
+                <ui:Label name="party-code" text="—" class="party-code" />
+                <ui:VisualElement class="grow" />
+                <ui:Button name="copy-party" text="복사" class="a-btn a-sm party-copy" />
+            </ui:VisualElement>
+            <ui:Label name="party-bots-title" text="AI 봇" class="a-label party-gap" />
+            <ui:VisualElement class="row party-line">
+                <ui:Button name="bots-less" text="−" class="a-btn a-sq" />
+                <ui:Label name="bots" text="0" class="bot-count" />
+                <ui:Button name="bots-more" text="+" class="a-btn a-sq" />
+            </ui:VisualElement>
+            <ui:Label name="bots-note" class="bots-note" />
+            <ui:VisualElement class="row party-actions">
+                <ui:Button name="code-open" text="코드로 참가" class="a-btn a-sm party-action" />
+                <ui:Button name="create-test" text="비공개 방" class="a-btn a-sm party-action" />
+            </ui:VisualElement>
+            <ui:Button name="leave-party" text="파티 나가기" class="a-btn a-sm a-danger party-leave" />
         </ui:VisualElement>
 
         <!-- Developer details, toggled from the top bar. -->

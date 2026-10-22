@@ -85,7 +85,7 @@
 | S2 | `Core`는 Unity·Steam 무의존(`noEngineReferences`). `Game`·`Gameplay`는 Steam 무의존 | Unity 없이 테스트, Steam 패키지 없이도 프리팹 스크립트가 컴파일 | 프리팹에 missing script, Safe Mode |
 | S3 | 선택 패키지 코드는 **전용 asmdef + versionDefines + defineConstraints**로 가둔다. `ENABLE_INPUT_SYSTEM`을 설치 여부로 쓰지 않는다 | Safe Mode에서는 설치 스크립트가 못 돈다(R4, R5) | 패키지 없는 PC가 Safe Mode에 갇힌다 |
 | S4 | UPM 의존성은 manifest/lock에 **고정**하고 결과를 커밋한다. Steamworks.NET = git 커밋 `c21a8f0e…`, Input System = 1.20.0 | 설치 결과가 PC마다 달라 변경점이 계속 생겼다(R6) | 변경점 무한 반복 — **2026-09-25(R20, `JY-lobby`): Input System 패키지 제거.** 설치돼 있으면 에디터가 켤 때마다 백엔드를 켜라는 창을 띄우고, 켜면 HUD가 죽는다. `Scripts/Input/`은 패키지가 있을 때만 컴파일되므로 영향 없음. 다시 들이려면 uGUI → EventSystem → 설정 변경 순서 |
-| S5 | URP 에셋은 있지만 URP 패키지는 없다. `RenderPipelineOverride`가 Play 동안 Built-in으로 그린다 | 템플릿 잔재. 렌더 파이프라인 결정은 아직 안 함 | URP를 들이면 재질·셰이더·이 우회를 함께 정리 |
+| S5 | **URP 17.3을 쓴다**(R151, 10-16, 승규 님 "URP로 변환해줘", `urp-conversion` 브랜치). 템플릿 URP 에셋을 그대로 쓰고 `RenderPipelineOverride`는 지웠다 | 10-12 컨셉 아트 때 URP로 정함. 스킬 수정이 1주일 쉬는 틈에 바꿈 | 새 셰이더·재질은 [Skills/EFFECTS 'URP에서 셰이더·재질 쓰기'](../Skills/EFFECTS.md) 규칙대로. `Packages/manifest.json`의 URP 줄은 합칠 때 정한다 |
 | C1 | 씬 흐름 **Intro → Lobby → KingRush → Lobby**, 세션 소유자는 `DontDestroyOnLoad`의 `NetworkRuntime` 하나 | 씬을 바꿔도 파티·경기가 끊기지 않아야 한다(R11) | 씬 전환 때 Steam 종료 |
 | C2 | 씬 컨트롤러는 **씬에 저장하지 않고** `NetworkRuntime`이 `sceneLoaded` 때 붙인다. 씬 파일은 Steam 어셈블리를 참조하지 않는다 | Steam 패키지 없는 PC에서도 씬이 깨지지 않는다 | missing script |
 | C3 | KingRush·RagdollTest를 **직접 Play하면 오프라인 플레이테스트**(Steam 없이) | 맵·래그돌 작업자가 매칭 없이 바로 시험 | — |

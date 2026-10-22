@@ -59,7 +59,8 @@ namespace ChessFight.PawnRush
             b.Box("Moat wall W", V(-10f, -1.6f, Moat0), V(-9.8f, -Arena.DaisHeight, Moat1), stone, true);
             b.Box("Moat wall E", V(9.8f, -1.6f, Moat0), V(10f, -Arena.DaisHeight, Moat1), stone, true);
             b.Box("Moat bottom", V(-10f, -2.6f, Moat0), V(10f, -1.6f, Moat1), stone, true);
-            b.Box("Water", V(-9.8f, -.95f, Moat0), V(9.8f, -.9f, Moat1), k.glass, false, false);
+            var moatWater = b.Box("Water", V(-9.8f, -.95f, Moat0), V(9.8f, -.9f, Moat1), k.glass, false, false);
+            if (MapLook.Water != null) moatWater.GetComponent<Renderer>().sharedMaterial = MapLook.Water; // real water (10-22)
             b.Trigger<KillVolume>("Moat (fall)", V(-10f, -1.6f, Moat0), V(10f, -.7f, Moat1));
 
             // The bridge: 4 x 4.1 m of walnut with planks across, hinged at u 15.95, standing up until lowered.

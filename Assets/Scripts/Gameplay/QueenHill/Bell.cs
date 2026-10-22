@@ -1,3 +1,4 @@
+using ChessFight.Game;
 using ChessFight.Network;
 using UnityEngine;
 
@@ -56,7 +57,7 @@ namespace ChessFight.Gameplay
             shownTeam = team;
             if (renderers == null) renderers = GetComponentsInChildren<Renderer>();
             if (block == null) block = new MaterialPropertyBlock();
-            block.SetColor("_Color", team == Teams.White ? WhiteTeam : team == Teams.Black ? BlackTeam : Unrung);
+            LitMaterials.SetColor(block, team == Teams.White ? WhiteTeam : team == Teams.Black ? BlackTeam : Unrung);
             foreach (var r in renderers) r.SetPropertyBlock(block);
         }
     }

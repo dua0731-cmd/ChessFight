@@ -267,7 +267,9 @@ namespace ChessFight.Game
             return string.IsNullOrEmpty(session.Error) ? "Steam 연결 중..." : session.Error;
         }
 
-        // Walnut fading out left to right: strong behind the title, gone by the board.
+        // Walnut fading out left to right: light behind the title, gone by the board. R150: the
+        // hall behind is dark already, and a strong shade (.66 at the left) made the left column
+        // grey beside the right one, so it is only a faint .26 now.
         static Texture2D Shade()
         {
             const int width = 256;
@@ -279,7 +281,7 @@ namespace ChessFight.Game
             for (int x = 0; x < width; x++)
             {
                 float u = x / (width - 1f);
-                walnut.a = StageKit.Darkening(u < .48f ? Mathf.Lerp(.66f, .18f, u / .48f) : Mathf.Lerp(.18f, 0f, (u - .48f) / .52f));
+                walnut.a = StageKit.Darkening(u < .48f ? Mathf.Lerp(.5f, .1f, u / .48f) : Mathf.Lerp(.1f, 0f, (u - .48f) / .52f));
                 texture.SetPixel(x, 0, walnut);
             }
             texture.Apply();

@@ -110,7 +110,7 @@ N4 원문이 참조하는 **9/19 기획개발 핸드오프**(기물 능력 3-3�
 지켜야 할 기술 규칙(자세히는 [HANDOFF §4](../../../HANDOFF.md)):
 - 래그돌 씬은 **`PhysicsProfile`**(120 Hz, 솔버 24회)을 둔다.
 - 움직이는 장애물은 **`ObstacleClock` 시간의 순수 함수**로만 만든다(누적 금지).
-- URP 컴포넌트를 씬에 넣지 않는다. 재질은 `ChessFight/NetworkColor` 또는 Built-in `Standard` 셰이더를 쓴다.
+- 재질은 `ChessFight/NetworkColor` 또는 URP `Lit`(코드에서는 `LitMaterials`)을 쓴다(R151부터 URP).
 - Unity 밖에서 파일을 만들면 `.meta`를 `Tools/Generators/mkmeta.py`로 함께 만든다.
 - **씬 YAML을 손으로 쓰지 않는다.** 사용자가 Unity에서 한 번 저장한 씬을 생성기로 덮어쓰지 않는다.
 - `Core`(`Assets/Scripts/Core`)는 Unity 없이 Mono `mcs`로 테스트한다. 그래서 **최신 C# 문법(이름 있는 튜플 등)을 쓰지 않는다.**

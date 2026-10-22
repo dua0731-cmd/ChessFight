@@ -186,7 +186,7 @@ namespace ChessFight.PawnRush
         void Build()
         {
             var kit = station.Kit;
-            var shader = Shader.Find("Standard");
+            var shader = LitMaterials.Lit;
             slabOn = kit != null && kit.rankGold != null ? kit.rankGold : new Material(shader) { color = new Color(.95f, .78f, .25f) };
             slabOff = kit != null && kit.trimBlack != null ? kit.trimBlack : new Material(shader) { color = new Color(.25f, .25f, .27f) };
             fillMaterial = new Material(shader) { color = new Color(1f, .97f, .85f) };
@@ -262,6 +262,13 @@ namespace ChessFight.PawnRush
         // A plain gold piece, a little under a metre tall, from primitives (no colliders).
         static void BuildPiece(Transform at, PieceKind kind, Material gold)
         {
+            // a real turned piece in polished gold when the map kit is in (10-22)
+            var real = MapLook.PieceBody(at, "Gold piece", kind, .95f, MapLook.Gold);
+            if (real != null)
+            {
+                real.transform.localPosition = new Vector3(0f, -.48f, 0f);
+                return;
+            }
             Part(PrimitiveType.Cylinder, at, new Vector3(0f, -.42f, 0f), new Vector3(.5f, .06f, .5f), gold);
             switch (kind)
             {
@@ -297,6 +304,7 @@ namespace ChessFight.PawnRush
         static GameObject Part(PrimitiveType type, Transform parent, Vector3 at, Vector3 size, Material material)
         {
             var go = GameObject.CreatePrimitive(type);
+            MapLook.Smooth(go); // round parts as true circles (10-22)
             var collider = go.GetComponent<Collider>();
             if (collider != null) DestroyImmediate(collider);
             go.transform.SetParent(parent, false);

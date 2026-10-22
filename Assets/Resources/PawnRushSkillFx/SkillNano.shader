@@ -6,7 +6,7 @@
 // - the body: its own texture, lit, turned the king's colour (keeping its light and shade, the face still showing), a
 //   bright edge, faint bands running up it, a white flash as it takes the boost.
 // _Glow takes it in and out (0: the piece as it was). Drawn after the solid world (Geometry+60) so walls are in the depth
-// for the first pass. Built-in render pipeline.
+// for the first pass. URP.
 Shader "ChessFight/Skill Nano"
 {
     Properties
@@ -28,7 +28,7 @@ Shader "ChessFight/Skill Nano"
         // Behind what stands in front of it.
         Pass
         {
-            Tags { "LightMode" = "Always" }
+            // Untagged: URP draws it (SRPDefaultUnlit) before the body pass below.
             ZTest Greater
             ZWrite Off
             Blend SrcAlpha OneMinusSrcAlpha
@@ -72,7 +72,7 @@ Shader "ChessFight/Skill Nano"
         // The body.
         Pass
         {
-            Tags { "LightMode" = "ForwardBase" }
+            Tags { "LightMode" = "UniversalForward" }
             ZTest LEqual
             ZWrite On
             Cull Back
@@ -80,9 +80,8 @@ Shader "ChessFight/Skill Nano"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma multi_compile_fwdbase
             #include "UnityCG.cginc"
-            #include "Lighting.cginc"
+            float4 _MainLightPosition, _MainLightColor;   // URP's main light
 
             sampler2D _MainTex;
             float4 _MainTex_ST, _Color, _Tint, _RimColor;
@@ -111,8 +110,8 @@ Shader "ChessFight/Skill Nano"
                 float3 n = normalize(i.n), v = normalize(_WorldSpaceCameraPos - i.w);
                 float3 albedo = tex2D(_MainTex, i.uv).rgb * _Color.rgb;
                 // Its own light: soft wrap from the sun and the sky's ambient.
-                float ndl = saturate(dot(n, normalize(_WorldSpaceLightPos0.xyz)) * 0.7 + 0.3);
-                float3 lit = albedo * (ShadeSH9(float4(n, 1)) + _LightColor0.rgb * ndl);
+                float ndl = saturate(dot(n, normalize(_MainLightPosition.xyz)) * 0.7 + 0.3);
+                float3 lit = albedo * (ShadeSH9(float4(n, 1)) + _MainLightColor.rgb * ndl);
                 // The king's colour, keeping the body's light and shade (so the face and the folds still show).
                 float lum = dot(lit, float3(0.3, 0.59, 0.11));
                 // (The first take lifted it to a pale cream on a white piece: now his deep gold.)
@@ -129,7 +128,21 @@ Shader "ChessFight/Skill Nano"
             }
             ENDCG
         }
+
+        // Its shadow.
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+            ZWrite On ZTest LEqual ColorMask 0
+
+            HLSLPROGRAM
+            #pragma vertex CFShadowVertex
+            #pragma fragment CFShadowFragment
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_instancing
+            #include "Assets/Shaders/URP/CFShadowCaster.hlsl"
+            ENDHLSL
+        }
     }
-    // Its shadow.
-    Fallback "Legacy Shaders/VertexLit"
 }

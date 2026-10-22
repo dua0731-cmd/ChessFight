@@ -136,6 +136,7 @@ namespace ChessFight.Game
             fill = root.Q<VisualElement>("load-fill");
             if (fill != null) fill.style.backgroundImage = new StyleBackground(MenuArt.Line(MenuArt.Hex(MenuArt.Cyan), MenuArt.Hex(MenuArt.Gold), MenuArt.Hex(MenuArt.Red)));
             ticks = Ticks(root.Q<VisualElement>("load-line"));
+            BuildSquares(root.Q<VisualElement>("load-line"));
             cancel = root.Q<Button>("load-cancel");
             if (cancel != null)
             {
@@ -186,6 +187,115 @@ namespace ChessFight.Game
             screen.AddToClassList("loading-out");
         }
 
+        // 10-18 (승규 님, loading design 2): instead of the thin line, a row of twelve chess squares, ivory and
+        // walnut, that turn gold one by one as players come in (or as this PC loads), with a gold knight that
+        // hops on the next square and leaps ahead when it fills. The line stays in the layout, hidden, so
+        // the row takes its place.
+        const int SquareCount = 12;
+        readonly List<VisualElement> squares = new List<VisualElement>();
+        VisualElement knight;
+        float knightAt = -1f, knightFrom, knightLeap = -10f;
+        int squaresLit = -1, popIndex = -1;
+        float popAt = -10f;
+        static Texture2D knightTexture;
+
+        void BuildSquares(VisualElement line)
+        {
+            if (line == null || line.parent == null) return;
+            line.style.display = DisplayStyle.None;
+            var row = new VisualElement { name = "load-squares", pickingMode = PickingMode.Ignore };
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.height = 22;
+            row.style.marginTop = 2;
+            line.parent.Add(row);
+            for (int i = 0; i < SquareCount; i++)
+            {
+                var sq = new VisualElement { pickingMode = PickingMode.Ignore };
+                sq.style.flexGrow = 1;
+                sq.style.marginLeft = sq.style.marginRight = 2;
+                sq.style.backgroundColor = i % 2 == 0 ? new Color(.93f, .87f, .76f, .85f) : new Color(.35f, .23f, .14f, .85f);
+                sq.style.borderTopWidth = sq.style.borderBottomWidth = sq.style.borderLeftWidth = sq.style.borderRightWidth = 1;
+                var rim = new Color(.79f, .6f, .27f, .7f);
+                sq.style.borderTopColor = sq.style.borderBottomColor = sq.style.borderLeftColor = sq.style.borderRightColor = rim;
+                sq.style.transitionProperty = new List<StylePropertyName> { "background-color", "scale" };
+                sq.style.transitionDuration = new List<TimeValue> { new TimeValue(.25f), new TimeValue(.25f) };
+                sq.style.transitionTimingFunction = new List<EasingFunction> { new EasingFunction(EasingMode.EaseOut), new EasingFunction(EasingMode.EaseOutBack) };
+                row.Add(sq);
+                squares.Add(sq);
+            }
+            knight = new VisualElement { pickingMode = PickingMode.Ignore };
+            knight.style.position = Position.Absolute;
+            knight.style.width = 40; knight.style.height = 40;
+            knight.style.bottom = 20;
+            knight.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0);
+            var tex = KnightTexture();
+            if (tex != null) knight.style.backgroundImage = new StyleBackground(tex);
+            row.Add(knight);
+        }
+
+        void TickSquares(float lit, float now)
+        {
+            if (squares.Count == 0) return;
+            int n = Mathf.Clamp(Mathf.FloorToInt(lit + .001f), 0, SquareCount);
+            if (n != squaresLit)
+            {
+                for (int i = 0; i < squares.Count; i++)
+                {
+                    bool on = i < n;
+                    squares[i].style.backgroundColor = on ? new Color(.91f, .77f, .42f, 1f) : (i % 2 == 0 ? new Color(.93f, .87f, .76f, .85f) : new Color(.35f, .23f, .14f, .85f));
+                    squares[i].style.scale = new Scale(Vector2.one);
+                }
+                if (squaresLit >= 0 && n > squaresLit)
+                {
+                    // the square just won pops up, then settles (below)
+                    knightFrom = knightAt; knightLeap = now;
+                    popIndex = n - 1; popAt = now;
+                    squares[popIndex].style.scale = new Scale(new Vector2(1.08f, 1.3f));
+                }
+                squaresLit = n;
+            }
+            if (popIndex >= 0 && now - popAt > .22f) { squares[popIndex].style.scale = new Scale(Vector2.one); popIndex = -1; }
+            if (knight == null) return;
+            // The knight stands on the next square (the last one once all are gold); it leaps there in an arc.
+            float target = Mathf.Min(n, SquareCount - 1) + .5f;
+            if (knightAt < 0) knightAt = knightFrom = target;
+            float k = Mathf.Clamp01((now - knightLeap) / .45f);
+            float x = k < 1f ? Mathf.Lerp(knightFrom, target, k * k * (3 - 2 * k)) : target;
+            knightAt = x;
+            float hop = k < 1f ? Mathf.Sin(k * Mathf.PI) * 26f : Mathf.Abs(Mathf.Sin(now * 4.2f)) * 7f;
+            knight.style.left = new Length(x / SquareCount * 100f, LengthUnit.Percent);
+            knight.style.bottom = 20 + hop;
+        }
+
+        // A gold knight with a dark rim, from the symbol font (as the title screen's pennant glyphs).
+        static Texture2D KnightTexture()
+        {
+            if (knightTexture != null) return knightTexture;
+            const int n = 64;
+            var mask = IntroStage.GlyphMask("♞", n, n);
+            if (mask == null) return null;
+            var px = new Color[n * n];
+            Color gold = new Color(.95f, .8f, .4f, 1f), rim = new Color(.16f, .1f, .06f, 1f);
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float m = mask[y * n + x];
+                    float near = 0f;
+                    for (int dy = -2; dy <= 2; dy++)
+                        for (int dx = -2; dx <= 2; dx++)
+                        {
+                            int xx = x + dx, yy = y + dy;
+                            if (xx >= 0 && xx < n && yy >= 0 && yy < n) near = Mathf.Max(near, mask[yy * n + xx]);
+                        }
+                    var c = Color.Lerp(rim, Color.Lerp(gold, Color.white, (y / (float)n) * .25f), m);
+                    c.a = Mathf.Max(m, near);
+                    px[y * n + x] = c;
+                }
+            knightTexture = new Texture2D(n, n, TextureFormat.RGBA32, false) { name = "Loading knight", wrapMode = TextureWrapMode.Clamp };
+            knightTexture.SetPixels(px); knightTexture.Apply();
+            return knightTexture;
+        }
+
         // A tick on the line for each rank a pawn passes, numbered 2 to 8 (loading only).
         static VisualElement Ticks(VisualElement line)
         {
@@ -223,6 +333,7 @@ namespace ChessFight.Game
             if (percent != null) percent.text = matching ? State.Clock : State.Percent + "%";
             float filled = matching ? (State.Expected > 0 ? 100f * joined / State.Expected : 0f) : Mathf.Clamp(State.Percent, 0, 100);
             if (fill != null) fill.style.width = new Length(filled, LengthUnit.Percent);
+            TickSquares(filled / 100f * SquareCount, now);
             if (ticks != null) ticks.style.display = matching ? DisplayStyle.None : DisplayStyle.Flex;
             if (cancel != null) cancel.style.display = matching && State.CanCancel && !Hiding ? DisplayStyle.Flex : DisplayStyle.None;
             if (addBot != null)

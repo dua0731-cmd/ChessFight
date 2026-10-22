@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -65,7 +66,8 @@ namespace ChessFight.RagdollLab
         QueenHillSkillSfx sfx;
         // The machinery's own switch (stages, dashes, the aim's clicks): the Pawn Rush skill object, its cooldown kept
         // in step with ours. The Pawn Rush numbers in it are only used by PawnRushOnly pieces.
-        readonly PawnRushSkillParams machinery = new PawnRushSkillParams();
+        // (R153: the Pawn Rush guard after getting up went to 1.0 s; Queen of the Hill keeps its 1.1 s.)
+        readonly PawnRushSkillParams machinery = new PawnRushSkillParams { getUpGuard = 1.1f };
         Transform built;
         GUIStyle text, small, header, button, selected, box;
         Texture2D panelTexture, barTexture;
@@ -460,9 +462,8 @@ namespace ChessFight.RagdollLab
 
         static Material Mat(Color c, Texture tex = null, float smooth = 0.25f)
         {
-            var m = new Material(Shader.Find("Standard")) { color = c };
+            var m = LitMaterials.NewLit(c, smooth);
             if (tex != null) m.mainTexture = tex;
-            m.SetFloat("_Glossiness", smooth);
             return m;
         }
 

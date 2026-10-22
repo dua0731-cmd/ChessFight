@@ -330,9 +330,9 @@ namespace ChessFight.Gameplay
                 "WASD 이동 · Space 점프 · 좌클릭 밀치기 · 우클릭 잡기\n" +
                 (orbitCamera != null
                     ? "Shift 질주 · E 능력(폰: 갈고리) · 좌클릭 꾹 = 게이지, 떼면 던짐 · F 종·승격·앙파상\n" +
-                      "마우스 시점(게임 화면 클릭) · 휠 줌 · Esc 커서 · V 자유 카메라(WASD·Space·C)\n"
+                      "마우스 시점(게임 화면 클릭) · 휠 줌 · Esc 커서 · F1 자유 카메라(WASD·Space·C·Shift 빠르게)\n"
                     : "") +
-                (orbitCamera != null && orbitCamera.FreeFly ? "<b>자유 카메라</b> — V로 캐릭터에게 돌아가기\n" : "") +
+                (orbitCamera != null && orbitCamera.FreeFly ? "<b>자유 카메라</b> — F1로 캐릭터에게 돌아가기\n" : "") +
                 (respawnAt >= 0f ? (caughtFalling ? "<b>추락!</b>" : "<b>물에 빠졌어요!</b>") + " 곧 체크포인트로 돌아갑니다\n" : "") +
                 "R 체크포인트로 · Backspace 처음부터\n" +
                 $"기록 {(finished ? result : (Time.time - runStart).ToString("0.0") + "초")}";

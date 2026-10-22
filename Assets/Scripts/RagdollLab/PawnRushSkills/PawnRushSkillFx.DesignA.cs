@@ -59,6 +59,7 @@ namespace ChessFight.RagdollLab
             DestroyRope();
             DestroyStake();
             DestroyKingCall();
+            DestroyChainMeshes();
             air?.Destroy();
             air = null;
             kit?.Destroy();
@@ -66,7 +67,7 @@ namespace ChessFight.RagdollLab
             RagdollPawn.SkillMarksHidden = false;
         }
 
-        /// <summary>What each piece's skill shows while its state lasts: the warnings, the bishop's throw, the haste.</summary>
+        /// <summary>What each piece's skill shows while its state lasts: the warnings, the bishop's throw, the targets.</summary>
         void WatchDesignA()
         {
             if (kit == null) return;
@@ -78,11 +79,11 @@ namespace ChessFight.RagdollLab
                 switch (pawn.Piece)
                 {
                     case PieceKind.Queen: QueenWarning(pawn); break;
-                    case PieceKind.Rook: RookWarning(pawn); break;
+                    case PieceKind.Rook: RookChainFx(pawn); break;   // R153: the chain (PawnRushSkillFx.Chain.cs)
                     case PieceKind.Bishop: BishopAimTiles(pawn); BishopThrowProp(pawn); break;
-                    case PieceKind.Knight: KnightMarks(pawn); break;
+                    case PieceKind.Knight: KnightMarks(pawn); KnightTargetRing(pawn); break;
+                    case PieceKind.Pawn: PawnTargetRing(pawn); break;
                 }
-                if (pawn.HasteLeft > 0f) HeelRibbons(pawn);
             }
             foreach (var kv in tileSets) WireWrapper(kv.Key, kv.Value);
         }
@@ -394,186 +395,6 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- rook
 
-        /// <summary>
-        /// The rook's warning (A): while it aims, the four squares of its charge light along its line (R133: together,
-        /// charging as one; they lit one by one, every six frames), the last one standing up against a wall if one is in the
-        /// way (it stops there), with a rounded chevron
-        /// sliding along them; locked, they snap full with a white inner band and a ring of square stone puffs kicks out
-        /// round its base; its white edges blink in the last six frames; as it charges they flash white and are gone. In
-        /// the air its line leaves the chest (an inked band) to a square where it would meet the floor.
-        /// </summary>
-        void RookWarning(RagdollPawn r)
-        {
-            if (r.SkillStage != SkillStage.Windup) return;
-            var s = Params;
-            float length = s != null ? s.rookSpeed * s.rookTime : 6f;
-            bool locked = !r.SkillAiming;
-            if (r.RookInAir || (!locked && !r.OnTheFloor))
-            {
-                RookAirLine(r, length, locked);
-                return;
-            }
-            kit.Keep(r, "rook file", () =>
-            {
-                var fx = new Kit.Fx();
-                for (int i = 0; i < 4; i++) fx.tiles.Add(new Kit.Tile(kit, "Rook warning"));
-                for (int i = 0; i < 2; i++) fx.strips.Add(new Kit.Strip(kit, kit.rook));
-                float released = -1f, lockedAt = -1f;
-                Vector3 dir = Vector3.forward;
-                var squares = new List<Vector3>();
-                bool wall = false;
-                Vector3 wallPoint = Vector3.zero, wallNormal = Vector3.back;
-                fx.step = (x, d) =>
-                {
-                    if (r == null) return false;
-                    bool held = kit.Held(x);
-                    if (!held && released < 0f) released = x.age;
-                    float a = released >= 0f ? (x.age - released) / Frame : -1f;
-                    if (a >= 6f) return false;
-                    bool isLocked = held && !r.SkillAiming;
-                    if (isLocked && lockedAt < 0f)
-                    {
-                        lockedAt = x.age;
-                        StoneRing(r.FeetPoint);
-                    }
-                    if (released < 0f && !isLocked)
-                    {
-                        // Aiming: the squares follow the aim.
-                        dir = Kit.FlatDir(r.SkillDirection, r.Facing);
-                        PlanFile(r.FeetPoint, dir, length, squares, out wall, out wallPoint, out wallNormal);
-                    }
-                    float lockTime = s != null ? s.rookLock : 0.3f;
-                    float sinceLock = lockedAt >= 0f ? x.age - lockedAt : 0f;
-                    for (int i = 0; i < x.tiles.Count; i++)
-                    {
-                        var t = x.tiles[i];
-                        if (i >= squares.Count) { t.Hide(); continue; }
-                        bool onWall = wall && i == squares.Count - 1;
-                        if (onWall) t.Facing(wallPoint + wallNormal * 0.02f + Vector3.up * (Square * 0.5f), wallNormal, Vector2.one * Square);
-                        else t.Floor(squares[i], dir, Vector2.one * Square);
-                        // R130 (승규 님: "폰 러쉬 룩에서 벽도 바닥 미리보기 같이"): the square on the wall is see-through too.
-                        t.glass = onWall;
-                        // R133 (승규 님 10-14: "스킬 미리 보기가 각 칸마다 따로 차징이 돼 4칸이 있으면 4개 칸이 같이 차징 되게"):
-                        // the squares no longer light one by one: all of them come on together and charge as one, a little
-                        // while it aims (to a third), then up to full through the lock (full in its last six frames).
-                        float lit = Mathf.Clamp01(x.age / (6f * Frame));
-                        float strength = lockedAt < 0f ? Mathf.Lerp(0.2f, 0.55f, Mathf.Clamp01(x.age / (24f * Frame)))
-                            : Mathf.Max(0.55f, Kit.Charge(sinceLock, lockTime));
-                        float flash = a >= 0f && a < 2f ? 1f : 0f;
-                        t.shape = 0f;
-                        t.round = 0.07f;
-                        t.fade = (released < 0f ? lit : 1f - Mathf.Clamp01((a - 2f) / 4f));
-                        kit.Warn(t, r, strength, flash);
-                        // Locked: a white band inside the rim; its white edges blink in the last six frames.
-                        bool blink = lockedAt >= 0f && sinceLock >= lockTime - 6f * Frame && ((int)((sinceLock - (lockTime - 6f * Frame)) / (2f * Frame)) % 2 == 0);
-                        t.core = lockedAt >= 0f ? Kit.A(Color.white, 0.9f) : Color.clear;
-                        t.coreWidth = 0.05f;
-                        if (blink) t.rim = Kit.A(Color.white, 1f);
-                        if (board)
-                        {
-                            // The board look: the sliding chevron runs over the pads (the course's arrow pads): the same
-                            // one-every-0.4 s run along the file, drawn on whichever pad it is over.
-                            int pads = Mathf.Max(1, wall ? squares.Count - 1 : squares.Count);
-                            float slide = Mathf.Lerp(Square * 0.5f, Square * (pads - 0.3f), released < 0f ? (x.age % 0.4f) / 0.4f : 0f);
-                            t.chevron = onWall ? Color.clear : Kit.A(BNavy, released < 0f ? 0.85f * Mathf.Clamp01(x.age / (6f * Frame)) : 0f);
-                            t.chevronPhase = slide - Square * (i + 0.5f);
-                            t.chevronStep = 100f;
-                        }
-                        t.Apply();
-                    }
-                    // The chevron sliding along the file, looping every 0.4 s.
-                    float run = (released < 0f) ? (x.age % 0.4f) / 0.4f : 0f;
-                    int n = Mathf.Max(1, wall ? squares.Count - 1 : squares.Count);
-                    Vector3 from = r.FeetPoint + Vector3.up * 0.03f;
-                    Vector3 tip = from + dir * Mathf.Lerp(Square * 0.5f, Square * (n - 0.3f), run) + Vector3.up * 0.005f;
-                    Vector3 side = Vector3.Cross(Vector3.up, dir);
-                    var pal = kit.PieceColors(r);
-                    for (int i = 0; i < 2; i++)
-                    {
-                        var st = x.strips[i];
-                        if (board) { st.Hide(); continue; }
-                        Vector3 back = tip - dir * 0.3f + side * (i == 0 ? -0.3f : 0.3f);
-                        st.colors = pal;
-                        st.core = pal.light;
-                        st.Build(new List<Vector3> { back, tip }, k => 0.14f, kit.Eye, true);
-                        st.taper = 0f;
-                        st.fade = released < 0f ? Mathf.Clamp01(x.age / (6f * Frame)) * 0.9f : 0f;
-                        st.Apply();
-                    }
-                    return true;
-                };
-                return fx;
-            });
-        }
-
-        /// <summary>The four squares of a straight charge on the floor (the last one on a wall in the way, if any).</summary>
-        static void PlanFile(Vector3 feet, Vector3 dir, float length, List<Vector3> squares, out bool wall, out Vector3 wallPoint, out Vector3 wallNormal)
-        {
-            squares.Clear();
-            wall = false;
-            wallPoint = Vector3.zero;
-            wallNormal = -dir;
-            float reach = length;
-            var hits = Physics.RaycastAll(feet + Vector3.up * 0.5f, dir, length, ~0, QueryTriggerInteraction.Ignore);
-            float best = float.MaxValue;
-            foreach (var h in hits)
-            {
-                if (RagdollPawn.ColliderOwner.ContainsKey(h.collider) || h.normal.y > 0.5f || h.distance >= best) continue;
-                var rb = h.collider.attachedRigidbody;
-                if (rb != null && !rb.isKinematic) continue;
-                best = h.distance;
-                wall = true;
-                wallPoint = new Vector3(h.point.x, feet.y, h.point.z);
-                wallNormal = Kit.FlatDir(h.normal, -dir);
-            }
-            if (wall) reach = best;
-            int n = Mathf.Clamp(Mathf.FloorToInt(reach / Square + 0.25f), 0, 4);
-            for (int i = 0; i < n; i++) squares.Add(Kit.FloorUnder(feet + dir * (Square * (i + 0.5f)), 1.5f) + Vector3.up * 0.016f);
-            if (wall) squares.Add(wallPoint);
-        }
-
-        /// <summary>The rook's line in the air (R80's 3D aim) in A: an inked band from the chest along the aim and a
-        /// warning square where it would meet the floor.</summary>
-        void RookAirLine(RagdollPawn r, float length, bool locked)
-        {
-            kit.Keep(r, "rook air line", () =>
-            {
-                var fx = new Kit.Fx();
-                fx.strips.Add(new Kit.Strip(kit, kit.rook));
-                fx.tiles.Add(new Kit.Tile(kit, "Rook air landing"));
-                float released = -1f;
-                fx.step = (x, d) =>
-                {
-                    if (r == null) return false;
-                    if (!kit.Held(x) && released < 0f) released = x.age;
-                    float a = released >= 0f ? (x.age - released) / Frame : -1f;
-                    if (a >= 6f) return false;
-                    Vector3 from = r.bodies[(int)BodyId.Chest].position, dir = r.SkillDirection.sqrMagnitude > 1e-4f ? r.SkillDirection.normalized : r.Facing;
-                    var st = x.strips[0];
-                    var pal = kit.PieceColors(r);
-                    st.colors = pal;
-                    st.core = Color.white;
-                    st.Build(new List<Vector3> { from, from + dir * length }, k => locked ? 0.16f : 0.11f, kit.Eye);
-                    st.taper = 0f;
-                    st.opacity = locked ? 1f : 0.6f;
-                    st.fade = released < 0f ? 1f : 1f - Mathf.Clamp01((a - 2f) / 4f);
-                    st.Apply();
-                    var t = x.tiles[0];
-                    if (Physics.Raycast(from, dir, out var hit, length, ~0, QueryTriggerInteraction.Ignore) && hit.normal.y > 0.5f && !RagdollPawn.ColliderOwner.ContainsKey(hit.collider))
-                    {
-                        t.Floor(hit.point + Vector3.up * 0.016f, Kit.FlatDir(dir, r.Facing), Vector2.one * Square);
-                        t.shape = 0f;
-                        t.round = 0.07f;
-                        t.fade = released < 0f ? 1f : 1f - Mathf.Clamp01((a - 2f) / 4f);
-                        kit.Warn(t, r, locked ? 1f : 0.5f, a >= 0f && a < 2f ? 1f : 0f);
-                    }
-                    else t.Hide();
-                    return true;
-                };
-                return fx;
-            });
-        }
-
         /// <summary>The rook digging in (A's lock): eight square stone puffs pushed out round its base and sinking away.</summary>
         void StoneRing(Vector3 feet)
         {
@@ -855,21 +676,36 @@ namespace ChessFight.RagdollLab
                 var pivot = new GameObject("Bishop X").transform;
                 pivot.SetParent(kit.root, false);
                 var p = kit.bishop;
-                var rod = kit.RoundBox(new Vector3(0.07f, 0.07f, 0.9f), 0.03f);
-                for (int i = 0; i < 2; i++)
+                // R153 4th (승규 님 10-22, Tripo "wooden cross stake"): the stakes it throws, crossed and tied with hemp, lying
+                // flat and 0.9 m across; the violet rods and caps stand in when the model is missing.
+                EnsureChainMeshes();
+                if (crossParts.Count == 0) LoadChainModel("BishopCross", crossParts, "SkillModels");
+                if (crossParts.Count > 0)
+                    foreach (var (mesh, colors) in crossParts)
+                    {
+                        var part = new Kit.Prop(kit, mesh, colors.main == Walnut.main ? StakeWood : colors, "Bishop cross stake", pivot) { inkWidth = 0.008f };
+                        part.t.localRotation = Quaternion.Euler(90f, 45f, 0f);
+                        part.t.localScale = Vector3.one * 0.9f;
+                        fx.props.Add(part);
+                    }
+                else
                 {
-                    var r = new Kit.Prop(kit, rod, board ? BSquare : p, "Bishop rod", pivot) { inkWidth = 0.012f };
-                    r.t.localRotation = Quaternion.Euler(0f, i == 0 ? 45f : -45f, 0f);
-                    fx.props.Add(r);
-                }
-                var capColors = board ? BSilver : new Kit.Palette { main = p.light, light = Color.white, deep = p.main, ink = p.ink };
-                for (int i = 0; i < 4; i++)
-                {
-                    var cap = new Kit.Prop(kit, kit.meshBall, capColors, "Bishop cap", pivot) { inkWidth = 0.012f };
-                    float ang = (45f + 90f * i) * Mathf.Deg2Rad;
-                    cap.t.localPosition = new Vector3(Mathf.Sin(ang), 0f, Mathf.Cos(ang)) * 0.45f;
-                    cap.t.localScale = Vector3.one * 0.13f;
-                    fx.props.Add(cap);
+                    var rod = kit.RoundBox(new Vector3(0.07f, 0.07f, 0.9f), 0.03f);
+                    for (int i = 0; i < 2; i++)
+                    {
+                        var r = new Kit.Prop(kit, rod, board ? BSquare : p, "Bishop rod", pivot) { inkWidth = 0.012f };
+                        r.t.localRotation = Quaternion.Euler(0f, i == 0 ? 45f : -45f, 0f);
+                        fx.props.Add(r);
+                    }
+                    var capColors = board ? BSilver : new Kit.Palette { main = p.light, light = Color.white, deep = p.main, ink = p.ink };
+                    for (int i = 0; i < 4; i++)
+                    {
+                        var cap = new Kit.Prop(kit, kit.meshBall, capColors, "Bishop cap", pivot) { inkWidth = 0.012f };
+                        float ang = (45f + 90f * i) * Mathf.Deg2Rad;
+                        cap.t.localPosition = new Vector3(Mathf.Sin(ang), 0f, Mathf.Cos(ang)) * 0.45f;
+                        cap.t.localScale = Vector3.one * 0.13f;
+                        fx.props.Add(cap);
+                    }
                 }
                 Vector3 from = b.BishopThrowFrom, to = b.BishopAimPoint;
                 float flight = Mathf.Max(0.05f, b.BishopThrowTime);
@@ -1117,58 +953,6 @@ namespace ChessFight.RagdollLab
                     return fx;
                 });
             }
-            var marked = k.KnightMarked;
-            if (marked != null)
-            {
-                kit.Keep(k, "knight lock", () =>
-                {
-                    var fx = new Kit.Fx();
-                    fx.tiles.Add(new Kit.Tile(kit, "Knight lock ring"));
-                    fx.strips.Add(new Kit.Strip(kit, board ? BOrange : kit.enemy));
-                    fx.step = (x, d) =>
-                    {
-                        var m = k != null ? k.KnightMarked : null;
-                        if (m == null || !kit.Held(x)) return false;
-                        float blink = k.KnightHoming ? 1f : 0.55f + 0.45f * Mathf.Sin(kit.Clock * 14f);
-                        // R139: where it will come down (a head) is marked with a red square at its feet, square to the
-                        // knight (R138 put the horseshoe badge there; the badge is the landing's only now).
-                        var ring = x.tiles[0];
-                        Vector3 toward = Kit.FlatDir(m.FeetPoint - k.FeetPoint, Vector3.forward);
-                        ring.Floor(m.FeetPoint + Vector3.up * 0.03f, toward, Vector2.one * (Square * 0.7f * Kit.Pop(x.age, 1.15f)));
-                        ring.shape = 0f;
-                        ring.round = 0.08f;
-                        ring.gloss = 0f;
-                        ring.sheenAt = -1f;
-                        ring.metal = 0f;
-                        ring.fill = Kit.A(kit.enemy.main, Mathf.Lerp(0.55f, 0.9f, blink));
-                        ring.core = Color.clear;
-                        ring.ink = Kit.A(board ? BNavy : kit.enemy.ink, 1f);
-                        ring.inkWidth = 0.04f;
-                        ring.rim = Color.clear;
-                        ring.stripe = Color.clear;
-                        ring.bevel = Kit.A(kit.enemy.deep, board ? 0.6f : 0f);
-                        ring.bevelWidth = 0.05f;
-                        ring.chevron = Color.clear;
-                        ring.glow = Color.clear;
-                        ring.charge = -1f;
-                        ring.thick = board ? 0.03f : 0f;
-                        ring.shadow = board ? 0.2f : 0f;
-                        ring.baseColor = board ? BNavy : kit.boardBase;
-                        ring.fade = 1f;
-                        ring.Apply();
-                        var pointer = x.strips[0];
-                        Vector3 over = m.bodies[(int)BodyId.Head].position + Vector3.up * 0.32f;
-                        pointer.Build(new List<Vector3> { over, over + Vector3.up * 0.4f }, q => 0.22f, kit.Eye);
-                        pointer.taper = 1f;
-                        pointer.core = board ? BOrange.main : kit.enemy.main;
-                        pointer.coreShare = 0f;
-                        pointer.fade = blink;
-                        pointer.Apply();
-                        return true;
-                    };
-                    return fx;
-                });
-            }
         }
 
         static void AddWay(Vector3 a, Vector3 b, List<Vector3> squares, List<Vector3> dirs)
@@ -1371,28 +1155,6 @@ namespace ChessFight.RagdollLab
             Vector3 side = Vector3.Cross(Vector3.up, along);
             foreach (var corner in new[] { along + side, -along + side, -side + along })
                 kit.PuffBurst(at + corner * (Square * 0.42f) + Vector3.up * 0.12f, p, 1, 0.12f, 0.15f, 0.4f, 0.2f);
-        }
-
-        /// <summary>The haste after a help-up (A): a short ribbon of the side's colour trailing each foot.</summary>
-        void HeelRibbons(RagdollPawn pawn)
-        {
-            kit.Keep(pawn, "heel ribbons", () =>
-            {
-                var fx = new Kit.Fx();
-                var p = kit.SideColors(pawn);
-                bool on = true;
-                fx.step = (x, d) =>
-                {
-                    on = pawn != null && kit.Held(x);
-                    return x.age < 0.25f || on;
-                };
-                foreach (var foot in new[] { BodyId.FootL, BodyId.FootR })
-                {
-                    var id = foot;
-                    InkTrail(() => on && pawn != null && pawn.HasteLeft > 0f ? pawn.bodies[(int)id].position : (Vector3?)null, p, 0.2f, 0.12f, kit.dust.light);
-                }
-                return fx;
-            });
         }
     }
 }

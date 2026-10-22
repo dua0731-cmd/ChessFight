@@ -48,6 +48,11 @@
 | 42 | 미니게임 손잡이를 잡고 밀면 **벽타기로 바뀌고**, 밀어야 할 조각상은 **아예 안 잡힘** | 우클릭 = 잡기 + 벽타기. 잡은 채 가파른 면 쪽으로 이동 입력이면 벽타기가 시작됨(키네마틱 물체도 오를 수 있는 면). 오르지 못하게 `NoClimbSurface`를 붙이면 손도 못 잡음(손잡이 블록을 따로 둔 이유) | `GrabOnlySurface`(잡히지만 안 오름, 볼트도 안 됨). **손으로 미는 물체에는 `NoClimbSurface`를 쓰지 않는다** | R128 |
 | 43 | 새 HUD의 USS가 **하나도 안 먹음**: 모든 글자가 왼쪽 위에 줄줄이 쌓이고 판은 화면 가득 늘어남. 오류 메시지 없음 | `Resources.Load<StyleSheet>("VoiceHud")`가 같은 이름의 `VoiceHud.uxml` 안에 Unity가 만든 하위 에셋 **`inlineStyle`**(StyleSheet)을 돌려줌. `.uss`는 읽히지 않았다 | 코드에서 직접 읽는 `.uss`는 **UXML과 다른 이름**으로(`VoiceChat.uss`). 이름이 같은 짝(KingRushHud 등)은 `.tss` 테마가 `@import`로 읽어서 괜찮았다. 읽은 뒤 `AssetDatabase.GetAssetPath`로 어느 파일인지 확인하면 바로 보인다 | R131 |
 | 44 | MCP 화면 캡처가 **3D 장면만 찍히고 UI가 하나도 없음**(새로 연 에디터) | Game 뷰가 다른 탭 뒤에 있어 그려지지 않았다. 캡처는 Game 뷰의 그림을 쓰므로 UI Toolkit 패널이 빠진다 | `execute_code`로 `EditorApplication.ExecuteMenuItem("Window/General/Game")` 뒤 Game 뷰 `Focus()`를 하고 찍는다 | R131 |
+| 45 | URP를 깔았는데 **Play만 하면 거의 모든 것이 분홍**(편집 모드에서는 정상, 하늘·스프라이트·글자만 보임) | `Game/RenderPipelineOverride.cs`(URP 패키지가 없던 때의 우회)가 Play 시작(`BeforeSceneLoad`)에 URP 에셋 참조를 비워 Built-in으로 URP 셰이더를 그렸다 | 지움(R151). 렌더 파이프라인을 런타임에 바꾸는 코드를 두지 않는다. `Camera.Render()`는 URP 17에서도 그대로 된다 | R151 |
+| 46 | URP에서 **스킬 블룸이 붙는 씬만 색이 바램**(하늘·바닥이 회색빛, 후처리를 끄면 정상) | 템플릿 URP 에셋(`PC_RPAsset`·`Mobile_RPAsset`)의 Volume Profile 칸에 `SampleSceneProfile`(Neutral 톤매핑·비네트 0.2)이 들어 있었다 | 에셋의 Volume Profile을 비웠다. 남은 것은 전역 기본 프로필(모두 중립)뿐 | R151 |
+| 47 | URP로 바꾸니 **로비·결과 화면이 어두움**(스포트라이트 무대) | Built-in 점·스포트 빛은 1 / (1 + 25 (거리/범위)²)로, URP는 1 / 거리²로 줄어든다(먼 빛은 훨씬 어둡고, 가까운 빛은 훨씬 밝다) | `MenuArt.SpotIntensity`(비추는 곳에서 같게)·`PipelineSettings.PointIntensity`(범위 1/4에서 같게)로 세기를 준다 | R151 |
+| 48 | 코드와 같은 설정으로 만든 **URP 재질 에셋을 저장하면 키워드가 바뀜**(검은 발광이면 `_EMISSION` 꺼짐, 반투명이면 `_ALPHAPREMULTIPLY_ON` 켜짐, 큐가 3000으로) | URP는 재질 에셋을 가져올 때 인스펙터와 같은 규칙으로 다시 맞춘다(반투명은 "반사 유지" = 셰이더에서 알파 곱하기) | `LitMaterials.MakeTransparent`를 URP 규칙과 같게 하고, 빌드용 조합 재질(`Resources/URPVariants`)의 발광은 검정이 아닌 값으로 둔다 | R151 |
+| 49 | **기물 모양이 바뀐 직후 그 기물이 안 그려짐**(콘솔: `SkinnedMeshRenderer: Rendering stopped because the data for mesh ... does not match the expected mesh data size and vertex stride`) | 켜진 채로 `skin.sharedMesh`를 정점 수가 다른 메시로 바꾸면 GPU 스키닝 버퍼가 옛 크기로 남는다. 같은 프레임에 또 그리는 일(정지 화면 캡처·렌더 텍스처)이 있으면 Unity가 그 스킨 그리기를 멈춘다 | `RagdollPawn.SwapSkinMesh`: 바꾸는 동안 스킨을 껐다 켠다(버퍼를 새로 만든다) | R157 |
 
 ## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
 

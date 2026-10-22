@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ChessFight.Game;
 using UnityEngine;
 
 namespace ChessFight.Gameplay
@@ -98,7 +99,7 @@ namespace ChessFight.Gameplay
                 if (r == null) continue;
                 if (exclusive)
                 {
-                    block.SetColor("_Color", team == Teams.Black ? BlackTeam : WhiteTeam);
+                    LitMaterials.SetColor(block, team == Teams.Black ? BlackTeam : WhiteTeam);
                     r.SetPropertyBlock(block);
                 }
                 else r.SetPropertyBlock(null);

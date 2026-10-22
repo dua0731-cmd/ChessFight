@@ -170,6 +170,10 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.KingCallGo: KingCallGoFx(e); break;
                 case SkillFxKind.KingCallLand: KingCallLandFx(e); break;
                 case SkillFxKind.KingCallEnd: KingCallEndFx(e); break;
+                // R153: the rook's chain (PawnRushSkillFx.Chain.cs).
+                case SkillFxKind.RookThrow: RookThrowFx(e); break;
+                case SkillFxKind.RookHook: RookHookFx(e); break;
+                case SkillFxKind.RookPullEnd: RookPullEndFx(e); break;
             }
         }
 
@@ -638,7 +642,7 @@ namespace ChessFight.RagdollLab
             StompImpact(e.target, e.at, Flat(e.dir));
             InkHit(e.target, e.at, Vector3.down, p, 6, 0.15f, 9, 0);
             kit.Down(e.target, p, e.at, Square);
-            kit.Daze(e.target, 0.3f, 1.2f);
+            // R153 (승규 님 10-22: "머리 빙빙 돌리게 하는 거 지워줘"): no little pawns circling its head any more.
         }
 
         void KnightLand(SkillFxEvent e)

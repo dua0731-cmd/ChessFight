@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ChessFight.Game;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
@@ -80,6 +81,7 @@ namespace ChessFight.RagdollLab
             glow.range = LightRange;
             glow.shadows = LightShadows.None;
             glow.renderMode = LightRenderMode.ForcePixel;
+            PipelineSettings.LightPiecesOnly(glow);   // R157: the pieces round the arcs take their gold, the board does not
             glow.enabled = false;
         }
 
@@ -189,7 +191,7 @@ namespace ChessFight.RagdollLab
                 glow.transform.position = lightAt / power + Vector3.up * LightLift;
                 Color tint = lightTint / power;
                 glow.color = Color.Lerp(new Color(tint.r, tint.g, tint.b, 1f), Color.white, 0.25f);
-                glow.intensity = Mathf.Min(LightMost, power * LightGain);
+                glow.intensity = PipelineSettings.PointIntensity(Mathf.Min(LightMost, power * LightGain), LightRange);
             }
         }
 

@@ -59,7 +59,8 @@ namespace ChessFight.Network
         //      carries the host's obstacle time, the start bar drops on the shared start, mini-games v1.0.
         // v22 (R130): the course state is "CFP4" (who chooses a piece on each promotion pad), and a client's lab
         //      input's pieceAsk / pieceSeq is that player's chosen piece in the 폰 러쉬 match.
-        public const string Protocol = "chessfight.dua0731.network.v22";
+        // v23 (from skill-network-test): the lab input carries the emote ask ("CFRC").
+        public const string Protocol = "chessfight.dua0731.network.v23";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

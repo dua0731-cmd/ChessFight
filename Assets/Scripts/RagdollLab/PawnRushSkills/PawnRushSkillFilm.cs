@@ -49,31 +49,35 @@ namespace ChessFight.RagdollLab
             // R90: every Pawn Rush skill in design A.
             new Shot { run = "pawn-angles", title = "폰 · 첫 두 걸음", note = "밟은 칸이 우리 색으로 찍힘 · 곧게 밀면 밀림 · 대각선으로 치면 넘어지며 먼지 (R138: 반원 고리 없음, 실제 먼지)",
                 eye = new Vector3(2.8f, 2.6f, -11.6f), look = new Vector3(0f, 0.4f, -7f), lead = 0.4f },
-            new Shot { run = "pawn-help", title = "폰 · 일으켜 세우기", note = "넘어진 팀원 칸이 솟아 들어 올림 · 둘 다 발에 청록 띠",
+            new Shot { run = "pawn-help", title = "폰 · 일으켜 세우기", note = "넘어진 팀원 칸이 솟아 들어 올림 (R153: 부축 버프 없음)",
                 eye = new Vector3(2.8f, 2.6f, -11.6f), look = new Vector3(0f, 0.4f, -7f), lead = 0.4f },
+            // R153: the second step goes for an enemy ahead (a little to the side) and bends onto it.
+            new Shot { run = "pawn-home", title = "폰 · 두 번째 걸음 유도", note = "첫 걸음 1.5 m → 두 번째 F는 앞쪽 적에게 꺾어 들어가 밀침 · 뒤에 넘어진 팀원에게 가면 일으켜 세움",
+                eye = new Vector3(3.2f, 2.8f, -14.4f), look = new Vector3(0.4f, 0.4f, -9.6f), lead = 0.4f },
             new Shot { run = "queen", title = "퀸 · 팔방 밀치기", note = "R142: 모일 때 체스말에서 가슴으로 번개 · 펑! 팔방 번개 + 충격파 돔·바닥 물결 세 겹, 물결 앞에서 번개가 튐 · 맞은 기물에 번개 · 체스말이 쓸려 넘어짐 (폭발·먼지 없음)",
                 eye = new Vector3(2.4f, 3.6f, -13f), look = new Vector3(-0.2f, 0.3f, -7.8f), lead = 0.5f },
-            new Shot { run = "rook-cluster", title = "룩 · 직선 돌파", note = "앞으로 네 칸이 같이 켜지고 점이 같이 차오름 (R133) · 잠그면 돌 먼지 고리 · 번개 돌진 → 맞으면 번쩍·먼지 (R138: 반원 고리 없음)",
-                eye = new Vector3(-2.8f, 3.8f, -14.6f), look = new Vector3(-6.8f, 0.2f, -9.6f), lead = 0.4f },
-            new Shot { run = "rook-wall-slant", title = "룩 · 벽에 비스듬히 쾅", note = "비스듬히 부딪혀도 성벽 톱니 고리가 벽면에 납작하게 붙음 · 벽 끝이 가까우면 안쪽으로 밀리고 작아짐",
-                eye = new Vector3(13.6f, 2.4f, -1.6f), look = new Vector3(19.8f, 1.1f, 1.6f), lead = 0.4f },
-            new Shot { run = "rook-barricade", title = "룩 · 바리케이드 부수기", note = "부서지는 바리케이드 자리에 작은 성벽 톱니 고리 · 바닥에 묻히지 않음",
-                eye = new Vector3(-3.4f, 2.6f, -3.2f), look = new Vector3(-8.4f, 0.9f, 2f), lead = 0.4f },
-            new Shot { run = "rook-wall", title = "룩 · 벽에 쾅", note = "마지막 칸이 벽에 세워짐 · 벽에 성벽 톱니 고리 · 돌 먼지 · R130: 벽 칸도 바닥처럼 반투명, 점이 차오름",
-                eye = new Vector3(16.2f, 2.6f, -5.2f), look = new Vector3(19.2f, 0.9f, 0f), lead = 0.4f },
+            // R153: the rook's straight chain pull (skill plan v0.3), in place of the straight charge.
+            new Shot { run = "rook-chain-enemy", title = "룩 · 직선 사슬 견인 (적)", note = "F 조준 흰 선 → 좌클릭 사슬 → 적이 걸려 룩 앞 1.5 m로 끌려옴 → 휘청 · 두 번째는 퀸(무게 2) = 1.3배 느림",
+                eye = new Vector3(4.6f, 2.4f, -11.2f), look = new Vector3(0f, 0.6f, -9f), lead = 0.4f },
+            new Shot { run = "rook-chain-ally", title = "룩 · 직선 사슬 견인 (팀원)", note = "팀원에게 T자 손잡이 → 우클릭으로 잡으면 낮은 포물선으로 룩 옆 1 m · 두 번째는 안 잡음 → 2초 뒤 되감기 (쿨 4초)",
+                eye = new Vector3(4.6f, 2.4f, -11.2f), look = new Vector3(0f, 0.6f, -9.5f), lead = 0.4f },
+            new Shot { run = "rook-chain-cancel", title = "룩 · 사슬 끊김", note = "끌어오는 중 룩이 넘어지면 사슬이 끊겨 적은 그 자리에 놓임",
+                eye = new Vector3(4.6f, 2.4f, -11.2f), look = new Vector3(0f, 0.6f, -9f), lead = 0.4f },
+            new Shot { run = "rook-chain-wall", title = "룩 · 사슬이 벽에", note = "벽에 닿으면 0.2초 되감기 · 아무도 안 끌려옴",
+                eye = new Vector3(16.8f, 2.6f, -4.4f), look = new Vector3(18f, 0.9f, 0f), lead = 0.4f },
             // R130 (승규 님: "벽이나 폰들이랑 부딪히거나 이럴 때 … 무슨 키를 눌러도 낑긴 것 같은 거").
             new Shot { run = "stuck-dive", title = "벽 앞 좌클릭 다이빙 — 낑김 없앰 (R130)", note = "벽에 막혀 기대 있어도 멈추면 0.3초 뒤 일어나 바로 뒤로 걸어감 (전에는 최대 6초 동안 어떤 키도 안 먹힘)",
                 eye = new Vector3(15.2f, 2.3f, -3.8f), look = new Vector3(18.6f, 0.5f, 0f), lead = 0.3f },
-            // R146: the king's call (two dummies on his team: one through the 3 m wall at x 20, one in the open).
-            new Shot { run = "king-call", title = "킹 · 왕의 부름", note = "F 목록 → 두 명 → F · 왕관 신호 · 불린 팀원이 F (더미는 스스로) → 킹 색으로 빛나며 살짝 떠서 0.6초 만에 킹 뒤 두 칸으로, 벽 통과 · 오는 동안 무적",
-                eye = new Vector3(12.4f, 3.2f, -5.4f), look = new Vector3(16.4f, 0.6f, 0.8f), lead = 0.5f },
             new Shot { run = "bishop-trip", title = "비숍 · 교차 밧줄", note = "조준 · X를 던짐 · R142: 나무 말뚝이 박히고 밧줄이 매듭으로 묶임 · 세 가닥 꼰 마 밧줄 · 걸리면 넘어지지 않고 네 줄이 허리로 모여 꽁꽁 묶임 → 풀림",
                 // R138: closer, so the tie can be seen (it was filmed from 7 m).
                 eye = new Vector3(-2.7f, 2.5f, -10.4f), look = new Vector3(-0.5f, 0.35f, -6.5f), lead = 0.45f },
-            new Shot { run = "knight-turn", title = "나이트 · 꺾어 도약", note = "R139: 앞발 들고 뛰어오름 · 뒷발로 차는 검정·금 힘줄 선 · 발굽 자국·먼지 · 착지에만 광택 검정·금 편자 로고+화살표 · 꺾으면 힘줄 선",
-                eye = new Vector3(3.6f, 6f, -18.2f), look = new Vector3(3.4f, 0.4f, -10.4f), lead = 0.45f },
-            new Shot { run = "knight-stomp", title = "나이트 · 머리 밟기", note = "적 발밑 빨간 칸 → 밟으면 납작 · R140: 발굽 밑에서 먼지가 옆으로 짜여 나오고 발밑 먼지 · 흰→은색 번쩍 (로고·선 없음) · 머리 위 작은 크림 폰 3개",
-                eye = new Vector3(7f, 2.8f, -11f), look = new Vector3(1f, 1f, -9.2f), lead = 0.5f },
+            // R153: the knight's fork (skill plan v0.3) in place of the turned leap and the head stomp.
+            new Shot { run = "knight-fork", title = "나이트 · 포크", note = "F로 앞쪽 적 표시 → 머리 위로 뛰어 밟아 넘어뜨림 → 옆에 착지, 옆의 적은 휘청 · 발굽 자국(R157 바닥 데칼)·먼지 · 착지에 편자 로고",
+                eye = new Vector3(3.8f, 3.0f, -13.6f), look = new Vector3(0.4f, 0.4f, -8.4f), lead = 0.45f },
+            new Shot { run = "knight-whiff", title = "나이트 · 빗나감", note = "뛰는 사이 대상이 3 m 넘게 피함 → 초당 3 m까지만 따라가 빈 자리에 착지 · 아무도 안 휘청 · 쿨은 그대로 7초",
+                eye = new Vector3(2.2f, 3.4f, -14.6f), look = new Vector3(2.0f, 0.4f, -8.4f), lead = 0.45f },
+            new Shot { run = "bishop-leash", title = "비숍 · 덫 유지 거리", note = "X를 깔고 뒤로 걸어 6 m를 넘으면 밧줄이 풀려 사라짐 · 다시 깔고 비숍이 넘어지면 바로 사라짐",
+                eye = new Vector3(3.6f, 3.2f, -14f), look = new Vector3(0f, 0.3f, -9f), lead = 0.45f },
         };
 
         LabGame game;

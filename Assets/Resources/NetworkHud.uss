@@ -56,12 +56,12 @@
    light lines and washes on dark through the sRGB curve (.38 -> .12), dark
    fills through StageKit.Darkening (.78 -> .96), or they read too strong or too thin. */
 .a-btn { flex-direction: row; align-items: center; justify-content: center; flex-shrink: 0; height: 34px; margin: 0;
-         padding: 0 12px; border-width: 1px; border-radius: 0; border-color: rgba(217, 174, 98, 0.12);
-         background-color: rgba(255, 240, 220, 0.003); color: rgb(227, 211, 184); font-size: 13px; -unity-font-style: bold;
+         padding: 0 12px; border-width: 1px; border-radius: 0; border-color: rgba(201, 154, 69, 0.55);
+         background-color: rgba(21, 17, 14, 0.78); color: rgb(243, 235, 221); font-size: 13px; -unity-font-style: bold;
          -unity-text-align: middle-center; white-space: nowrap;
          transition-property: scale, background-color, border-color, color; transition-duration: 0.12s; }
-.a-btn:hover { background-color: rgba(255, 240, 220, 0.01); border-color: rgba(226, 184, 102, 0.6); color: rgb(255, 243, 218); }
-.a-btn:active { scale: 0.96 0.96; background-color: rgba(226, 184, 102, 0.033); }
+.a-btn:hover { background-color: rgba(46, 36, 27, 0.94); border-color: rgb(201, 154, 69); color: rgb(243, 235, 221); }
+.a-btn:active { scale: 0.96 0.96; background-color: rgba(62, 48, 35, 0.95); }
 .a-btn:disabled { opacity: 0.2; }
 .a-btn-text { font-size: 13px; -unity-font-style: bold; white-space: nowrap; }
 .a-icon { width: 16px; height: 16px; margin-right: 7px; flex-shrink: 0; }
@@ -70,14 +70,14 @@
 .a-sm .a-icon { width: 13px; height: 13px; margin-right: 5px; }
 .a-sq { width: 26px; height: 26px; padding: 0; font-size: 15px; }
 .a-gap { margin: 0 3px; }
-.a-danger { border-color: rgba(240, 160, 140, 0.21); color: rgb(240, 160, 140); }
-.a-danger:hover { border-color: rgba(240, 160, 140, 0.69); background-color: rgba(240, 160, 140, 0.01); color: rgb(255, 196, 180); }
+.a-danger { border-color: rgba(255, 150, 130, 0.7); color: rgb(255, 196, 180); }
+.a-danger:hover { border-color: rgb(255, 150, 130); background-color: rgba(120, 30, 40, 0.85); color: rgb(255, 230, 222); }
 .a-ivory { border-width: 0; background-color: rgb(240, 226, 200); color: rgb(36, 23, 13); }
 .a-ivory:hover { background-color: rgb(250, 240, 220); color: rgb(36, 23, 13); }
 .a-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 4px; color: rgb(217, 174, 98); }
 .a-kicker-wide { font-size: 11px; }
-.a-label { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(185, 165, 140); margin-bottom: 4px; }
-.a-panel { border-width: 1px; border-color: rgba(217, 174, 98, 0.047); background-color: rgba(0, 0, 0, 0);
+.a-label { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(185, 166, 138); margin-bottom: 4px; }
+.a-panel { border-width: 1px; border-color: rgba(201, 154, 69, 0.45); background-color: rgba(0, 0, 0, 0);
            -unity-background-scale-mode: stretch-to-fill; }
 .a-panel-rule { position: absolute; left: -1px; top: -1px; }
 .a-cta { height: 70px; margin: 0; padding: 0; border-width: 0; border-radius: 0; background-color: rgba(0, 0, 0, 0);
@@ -86,14 +86,14 @@
 .a-cta:hover { background-color: rgba(0, 0, 0, 0); }
 .a-cta:active { translate: 0 1px; }
 .a-cta:disabled { opacity: 0.2; }
-.a-cta-text { font-size: 24px; -unity-font-style: bold; letter-spacing: 3px; color: rgb(36, 23, 13); white-space: nowrap; }
+.a-cta-text { font-size: 24px; -unity-font-style: bold-and-italic; letter-spacing: 3px; color: rgb(21, 17, 14); white-space: nowrap; }
 .a-cta-arrow { width: 24px; height: 24px; margin-left: 14px; }
 .a-cta-sm { height: 44px; margin-top: 12px; }
 .a-cta-sm .a-cta-text { font-size: 17px; letter-spacing: 2px; }
 .a-hints { margin-top: 10px; justify-content: flex-end; }
-.a-cap { padding: 1px 6px 2px 6px; margin-right: 6px; border-width: 1px; border-color: rgba(217, 174, 98, 0.1);
-         font-size: 10px; -unity-font-style: bold; color: rgb(227, 211, 184); }
-.a-hint { font-size: 11px; color: rgb(160, 142, 119); margin-right: 16px; }
+.a-cap { padding: 1px 6px 2px 6px; margin-right: 6px; border-width: 1px; border-color: rgba(201, 154, 69, 0.6);
+         background-color: rgba(21, 17, 14, 0.85); font-size: 10px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.a-hint { font-size: 11px; -unity-font-style: bold; color: rgb(243, 235, 221); margin-right: 16px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
 .a-hint-last { margin-right: 0; }
 
 /* ---------- lobby frame ---------- */
@@ -108,15 +108,24 @@
           padding-left: 26px; padding-right: 24px; }
 .a-logo { width: 76px; height: 53px; margin-right: 30px; flex-shrink: 0; background-image: resource("Menu/LobbyLogo");
           -unity-background-scale-mode: scale-to-fit; }
-.a-tab { height: 64px; margin-right: 30px; font-size: 15px; -unity-font-style: bold; color: rgb(168, 147, 122);
-         -unity-text-align: middle-left; }
-.a-tab-on { color: rgb(255, 243, 218); }
+.a-tab { height: 64px; margin-right: 30px; font-size: 16px; -unity-font-style: bold-and-italic; color: rgb(185, 166, 138);
+         -unity-text-align: middle-left; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); }
+.a-tab-on { color: rgb(243, 235, 221); }
 .a-tab-box { height: 64px; margin-right: 30px; }
 .a-tab-box .a-tab { margin-right: 0; }
 .a-tab-rule { position: absolute; left: 0; bottom: 14px; }
-.a-top { margin-left: 8px; }
-.a-profile { padding: 0 14px 0 12px; border-color: rgba(226, 184, 102, 0.45); background-color: rgba(226, 184, 102, 0.01);
-             color: rgb(255, 243, 218); }
+/* 10-17 ("글자만"): no boxes at the top right - icon, word and a gold number over the top shade;
+   my name underlined in gold. */
+.a-top { margin-left: 22px; padding: 0 2px; border-width: 0; background-color: rgba(0, 0, 0, 0); color: rgb(243, 235, 221);
+         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85); }
+.a-top:hover { background-color: rgba(0, 0, 0, 0); color: rgb(255, 255, 255); }
+.a-top:active { background-color: rgba(0, 0, 0, 0); }
+#details-open { width: auto; }
+#details-open .a-btn-text { display: none; }
+#details-open .a-icon { margin-right: 0; width: 18px; height: 18px; }
+.a-profile { margin-left: 26px; height: 30px; padding: 0 2px 2px 2px; border-width: 0 0 2px 0; border-color: rgb(217, 177, 92);
+             background-color: rgba(0, 0, 0, 0); color: rgb(243, 235, 221); }
+.a-profile:hover { border-color: rgb(240, 205, 120); background-color: rgba(0, 0, 0, 0); }
 .a-crown { width: 16px; height: 12px; margin-right: 8px; flex-shrink: 0; }
 
 /* ---------- top centre: notices and the matchmaking banner ---------- */
@@ -160,12 +169,12 @@
 .a-tool { height: 36px; padding: 0 14px; margin-right: 8px; }
 .party-bar { width: 644px; height: 104px; padding: 0 14px 0 20px; align-items: center; }
 .party-count { flex-shrink: 0; justify-content: center; }
-.party-number { font-size: 34px; color: rgb(255, 243, 218); margin-top: 2px; }
-.party-sep { width: 1px; height: 52px; margin: 0 15px; background-color: rgba(217, 174, 98, 0.04); }
+.party-number { font-size: 34px; -unity-font-style: bold-and-italic; color: rgb(243, 235, 221); margin-top: 2px; }
+.party-sep { width: 1px; height: 52px; margin: 0 15px; background-color: rgba(201, 154, 69, 0.4); }
 .party-section { justify-content: center; flex-shrink: 0; }
-.party-code { font-size: 16px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(255, 243, 218); white-space: nowrap; }
+.party-code { font-size: 16px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(243, 235, 221); white-space: nowrap; }
 .party-copy { margin-left: 10px; }
-.bot-count { font-size: 18px; -unity-font-style: bold; color: rgb(255, 243, 218); width: 30px; -unity-text-align: middle-center; }
+.bot-count { font-size: 18px; -unity-font-style: bold; color: rgb(243, 235, 221); width: 30px; -unity-text-align: middle-center; }
 .bots-note { font-size: 10px; color: rgb(255, 190, 90); margin-top: 3px; }
 .party-leave { margin-left: 10px; }
 
@@ -188,47 +197,52 @@
 .busy-sub { font-size: 12px; color: rgb(220, 200, 172); margin-top: 3px; }
 
 .version { position: absolute; left: 0; right: 0; bottom: 4px; font-size: 10px; -unity-text-align: middle-center;
-           color: rgba(246, 236, 223, 0.07); }
+           color: rgba(255, 255, 255, 0.35); }
 
 /* ---------- right rail: the game modes ---------- */
-.mode-rail { position: absolute; right: 24px; top: 80px; width: 400px; }
-.rail-head { align-items: center; }
-.rail-hint { font-size: 11px; -unity-font-style: bold; color: rgb(168, 147, 122); }
-.rail-title { height: 32px; margin-top: 2px; }
-.rail-rule { margin: 6px 0 12px 0; }
-.rail-card { height: 118px; margin: 0 0 10px 0; padding: 0; border-radius: 0; border-width: 1px; border-color: rgba(217, 174, 98, 0.04);
+.mode-rail { position: absolute; right: 24px; bottom: 130px; width: 400px; }
+/* 10-17: the cards wait below until the pointer rests on "모드 선택"; they rise one by one (delays set in code). */
+.rail-head { transition-property: opacity; transition-duration: 0.25s; }
+.mode-rail.rail-closed .rail-head { opacity: 0; }
+/* The cards themselves slide and fade from code (NetworkHudView.SetRail): up with a bounce, down into Sword Fight. */
+.rail-head { align-items: center; margin-bottom: 8px; }
+.rail-hint { font-size: 11px; -unity-font-style: bold; color: rgb(243, 235, 221); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.rail-title { display: none; }
+.rail-rule { display: none; }
+.rail-card { height: 74px; margin: 0 0 8px 0; padding: 0; border-radius: 0; border-width: 1px; border-color: rgba(201, 154, 69, 0.3);
              overflow: hidden; background-color: rgba(0, 0, 0, 0); -unity-background-scale-mode: stretch-to-fill;
-             transition-property: translate; transition-duration: 0.3s; transition-timing-function: ease-out-back; }
+             transition-property: translate, top, opacity; transition-duration: 0.3s, 0.34s, 0.22s;
+             transition-timing-function: ease-out-back, ease-out-back, ease-out; }
 .rail-card:hover { translate: -4px 0; }
 .rail-card:disabled { translate: 0 0; }
-.rail-card.rail-on { border-color: rgb(226, 184, 102); }
-.rail-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background-color: rgb(226, 184, 102); display: none; }
+.rail-card.rail-on { border-width: 2px; border-color: rgb(233, 196, 106); }
+.rail-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background-color: rgb(233, 196, 106); display: none; }
 .rail-on .rail-bar { display: flex; }
-.rail-art { position: absolute; right: -6px; bottom: -26px; width: 156px; height: 156px; -unity-background-scale-mode: scale-to-fit; }
-.rail-text { position: absolute; left: 20px; top: 15px; width: 246px; height: 92px; }
+.rail-art { position: absolute; right: -2px; bottom: -20px; width: 104px; height: 104px; -unity-background-scale-mode: scale-to-fit; }
+.rail-text { position: absolute; left: 18px; top: 9px; width: 280px; height: 58px; }
 .rail-foot { position: absolute; left: 0; bottom: 0; flex-direction: row; align-items: center; }
-.rail-name { font-size: 24px; color: rgb(246, 236, 223); }
-.rail-on .rail-name { color: rgb(255, 243, 218); }
-.rail-locked .rail-name { color: rgb(233, 219, 196); }
-.rail-summary { font-size: 12px; color: rgb(205, 187, 160); white-space: normal; margin-top: 8px; }
-.rail-on .rail-summary { color: rgb(214, 196, 168); }
-.rail-locked .rail-summary { color: rgb(185, 165, 140); }
-.rail-tagline { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(201, 168, 110); }
-.rail-on .rail-tagline { color: rgb(217, 174, 98); }
-.rail-locked .rail-tagline { color: rgb(168, 147, 122); }
+.rail-name { font-size: 21px; -unity-font-style: bold-and-italic; color: rgb(243, 235, 221); }
+.rail-on .rail-name { color: rgb(243, 235, 221); }
+.rail-locked .rail-name { color: rgb(220, 208, 188); }
+.rail-summary { display: none; }
+.rail-on .rail-summary { color: rgb(243, 235, 221); }
+.rail-locked .rail-summary { color: rgb(170, 152, 126); }
+.rail-tagline { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(233, 196, 106); }
+.rail-on .rail-tagline { color: rgb(233, 196, 106); }
+.rail-locked .rail-tagline { color: rgb(190, 160, 104); }
 .rail-badge { margin-left: 10px; padding: 1px 7px 2px 7px; border-width: 1px; font-size: 10px; -unity-font-style: bold; letter-spacing: 1px;
-              color: rgb(168, 147, 122); border-color: rgba(168, 147, 122, 0.21); background-color: rgba(0, 0, 0, 0); }
-.rail-badge-on { color: rgb(36, 23, 13); border-color: rgb(226, 184, 102); background-color: rgb(226, 184, 102); }
-.rail-badge-ok { color: rgb(227, 211, 184); border-color: rgba(217, 174, 98, 0.17); }
+              color: rgb(185, 166, 138); border-color: rgba(185, 166, 138, 0.4); background-color: rgba(0, 0, 0, 0); }
+.rail-badge-on { color: rgb(21, 17, 14); border-color: rgb(233, 196, 106); background-color: rgb(233, 196, 106); }
+.rail-badge-ok { color: rgb(243, 235, 221); border-color: rgba(233, 196, 106, 0.6); }
 
 /* ---------- lineup nameplates, positioned over the 3D pieces from code ---------- */
 .plate { position: absolute; width: 200px; height: 64px; align-items: center; justify-content: flex-end; }
-.plate-row { flex-direction: row; align-items: center; padding: 6px 16px 7px 14px; border-width: 1px;
-             border-color: rgba(217, 174, 98, 0.17); background-color: rgba(18, 11, 6, 0.96); }
+.plate-row { flex-direction: row; align-items: center; padding: 0 2px; border-width: 0; background-color: rgba(0, 0, 0, 0); }
 .plate-crown { width: 18px; height: 13px; margin-right: 8px; }
-.plate-name { font-size: 17px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(255, 243, 218); white-space: nowrap; }
-.plate-tag { margin-top: 5px; font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(217, 174, 98);
-             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); white-space: nowrap; }
+.plate-name { font-size: 20px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(243, 235, 221); white-space: nowrap;
+              text-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.95); }
+.plate-tag { margin-top: 5px; padding-top: 4px; border-top-width: 2px; border-color: rgb(217, 177, 92); font-size: 11px;
+             -unity-font-style: bold; letter-spacing: 1px; color: rgb(243, 235, 221); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); white-space: nowrap; }
 /* Voice chat on the nameplates (R131): the loudspeaker before the name, its spreading ring while the
    member talks, the invisible button over another member's plate, and its one-button mute menu. */
 .plate-voice { width: 17px; height: 17px; margin-right: 8px; }
@@ -249,16 +263,22 @@
 .plate-menu-icon { width: 15px; height: 15px; margin-right: 8px; }
 .plate-menu-text { font-size: 13px; -unity-font-style: bold; color: rgb(239, 228, 204); white-space: nowrap; }
 .plate-menu-btn-on .plate-menu-text { color: rgb(26, 20, 16); }
-.invite-spot { position: absolute; width: 120px; align-items: center; }
-.invite-plus { width: 54px; height: 54px; border-radius: 27px; border-width: 2px; border-color: rgb(231, 190, 114); padding: 0;
-               font-size: 32px; color: rgb(255, 230, 184); background-color: rgba(255, 190, 100, 0.16); -unity-text-align: middle-center;
-               transition-property: scale; transition-duration: 0.3s; transition-timing-function: ease-out-back; }
-.invite-plus:hover { scale: 1.1 1.1; background-color: rgba(255, 190, 100, 0.28); }
-.invite-plus:active { scale: 0.9 0.9; }
-.invite-label { margin-top: 8px; font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 217, 138);
-                text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+.invite-spot { position: absolute; width: 140px; align-items: center; }
+/* 10-17: one pill, navy with a gold rim and white bold text (the concept art's banners), not a glowing ring */
+.invite-plus { height: 36px; padding: 0 16px; border-radius: 18px; border-width: 2px; border-color: rgb(231, 190, 114);
+               font-size: 14px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(255, 255, 255);
+               background-color: rgba(26, 36, 82, 0.9); -unity-text-align: middle-center; white-space: nowrap;
+               transition-property: scale, background-color; transition-duration: 0.2s; transition-timing-function: ease-out-back; }
+.invite-plus:hover { scale: 1.06 1.06; background-color: rgba(38, 54, 118, 0.96); }
+.invite-plus:active { scale: 0.95 0.95; }
 
-/* ---------- side cards (friends, details) ---------- */
+/* ---------- side cards (party, friends, details) ---------- */
+.party-card { width: 340px; }
+.party-line { align-items: center; margin-bottom: 4px; }
+.party-gap { margin-top: 14px; }
+.party-actions { margin-top: 16px; }
+.party-action { flex-grow: 1; margin-right: 6px; }
+.party-leave { margin-top: 10px; }
 .side-card { display: none; position: absolute; right: 24px; top: 94px; width: 360px; padding: 16px; }
 .details-card { width: 320px; }
 .panel-head { align-items: center; margin-bottom: 8px; }
@@ -457,7 +477,7 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .intro-rename { height: 46px; margin: 0 0 4px 12px; padding: 0 20px; align-items: center;
                 border-width: 2px; border-radius: 4px; border-color: rgb(201, 160, 79); background-color: rgba(20, 12, 6, 0.75);
                 transition-property: scale, border-color; transition-duration: 0.12s; }
-.intro-rename:hover { border-color: rgb(255, 214, 120); }
+.intro-rename:hover { border-color: rgb(233, 196, 106); }
 .intro-rename:active { scale: 0.96 0.96; }
 .intro-rename-text { font-size: 15px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
 .intro-chip { position: absolute; left: 112px; top: 424px; height: 24px; padding: 0; }
@@ -574,7 +594,8 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
    everyone gold; my own name gold. */
 .chat-screen { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .chat { position: absolute; justify-content: flex-end; }
-.chat-lobby { left: 24px; bottom: 192px; width: 430px; }
+/* 10-17: no chat in the lobby (승규). */
+.chat-lobby { display: none; left: 24px; bottom: 24px; width: 430px; }
 .chat-match { right: 24px; bottom: 28px; width: 440px; }
 
 /* closed */
@@ -592,10 +613,10 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
             font-size: 10px; -unity-font-style: bold; color: rgb(246, 236, 223); }
 .chat-closed-text { margin-left: 8px; font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); }
 /* The lobby's closed chat line in design A (R83): a thin gold frame on dark glass. */
-.chat-lobby .chat-closed { padding: 4px 11px 4px 7px; border-color: rgba(217, 174, 98, 0.08); border-top-color: rgba(217, 174, 98, 0.08);
-                           background-color: rgba(18, 11, 6, 0.83); }
-.chat-lobby .chat-closed .chat-key { border-width: 1px; border-radius: 0; border-color: rgba(217, 174, 98, 0.17); color: rgb(227, 211, 184); }
-.chat-lobby .chat-closed-text { font-size: 12px; color: rgb(227, 211, 184); }
+.chat-lobby .chat-closed { padding: 4px 11px 4px 7px; border-color: rgba(201, 154, 69, 0.55); border-top-color: rgba(201, 154, 69, 0.55);
+                           background-color: rgba(21, 17, 14, 0.85); }
+.chat-lobby .chat-closed .chat-key { border-width: 1px; border-radius: 0; border-color: rgba(201, 154, 69, 0.6); color: rgb(243, 235, 221); }
+.chat-lobby .chat-closed-text { font-size: 12px; color: rgb(243, 235, 221); }
 
 /* open */
 .chat-panel { height: 270px; border-width: 1px; border-color: rgba(217, 174, 98, 0.26); border-top-color: rgba(255, 220, 170, 0.34);
@@ -631,7 +652,7 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .chat-name { flex-shrink: 0; margin-right: 8px; font-size: 14px; -unity-font-style: bold; }
 .chat-name-party { color: rgb(75, 224, 143); }
 .chat-name-team { color: rgb(60, 208, 255); }
-.chat-name-all { color: rgb(255, 214, 120); }
+.chat-name-all { color: rgb(233, 196, 106); }
 .chat-name-me { color: rgb(255, 201, 61); }
 .chat-text { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; font-size: 14px; color: rgb(241, 228, 210); white-space: normal; }
 .chat-notice { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; font-size: 12px; -unity-font-style: italic;

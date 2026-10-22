@@ -93,6 +93,7 @@ namespace ChessFight.Game
         // A spotlight from `from` onto `to`. `angle` is the half angle in radians and
         // `penumbra` the soft share of it, as on the samples. The range is long so the
         // light barely fades over the stage, like the samples' lights without decay.
+        // Its intensity is set through SpotIntensity (URP's spot fades with the square of the distance).
         public static Light Spot(Transform parent, Vector3 from, Vector3 to, int rgb, float intensity, float angle, float penumbra, bool shadow = false)
         {
             var go = new GameObject("Spot");
@@ -102,8 +103,8 @@ namespace ChessFight.Game
             var light = go.AddComponent<Light>();
             light.type = LightType.Spot;
             light.color = Hex(rgb);
-            light.intensity = intensity;
             light.range = (to - from).magnitude * 6f;
+            light.intensity = SpotIntensity(light, intensity);
             light.spotAngle = angle * 2f * Mathf.Rad2Deg;
             light.innerSpotAngle = light.spotAngle * (1f - penumbra);
             light.renderMode = LightRenderMode.ForcePixel;
@@ -115,6 +116,18 @@ namespace ChessFight.Game
                 light.shadowNormalBias = .3f;
             }
             return light;
+        }
+
+        /// <summary>
+        /// The intensity to give a <see cref="Spot"/> for it to light its target as the Built-in pipeline lit it at
+        /// <paramref name="intensity"/>: the Built-in spot faded as 1 / (1 + 25 (d / range)^2), 0.59 at the target (a
+        /// sixth of its range); URP's fades as 1 / d^2, so it needs 0.59 d^2 more.
+        /// </summary>
+        public static float SpotIntensity(Light spot, float intensity)
+        {
+            if (GraphicsSettings.currentRenderPipeline == null) return intensity;
+            float d = spot.range / 6f;
+            return intensity * .59f * d * d;
         }
 
         // A soft beam of light: an open cone from `from` (narrow) to `to` (wide),

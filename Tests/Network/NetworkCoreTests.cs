@@ -1194,6 +1194,20 @@ public static class NetworkCoreTests
                 Check(SkillGrades.Raises(SkillGrade.Mistake,SkillGrade.Brilliant)&&SkillGrades.Raises(SkillGrade.None,SkillGrade.Brilliant),"a late ring-out raises");
                 Check(!SkillGrades.Raises(SkillGrade.Brilliant,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.Interesting,SkillGrade.Brilliant)&&!SkillGrades.Raises(SkillGrade.None,SkillGrade.Great),"only to !!, once");
                 Check(SkillGrades.Symbol(SkillGrade.Interesting)=="!?"&&SkillGrades.Symbol(SkillGrade.Blunder)=="??","symbols"); });
+            Test("Piece emotes: slots 1 and 2 play for every piece but the pawn, 3 and 4 stay locked, slot 0 is none", () => {
+                foreach (PieceKind kind in new[] { PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.King, PieceKind.Queen })
+                {
+                    Check(PieceEmotes.Available(kind, 1) && PieceEmotes.Available(kind, 2), "first two open " + kind);
+                    Check(!PieceEmotes.Available(kind, 0) && !PieceEmotes.Available(kind, 3) && !PieceEmotes.Available(kind, 4) && !PieceEmotes.Available(kind, 5), "rest locked " + kind);
+                }
+                for (int slot = 0; slot <= 5; slot++) Check(!PieceEmotes.Available(PieceKind.Pawn, slot), "pawn has none yet");
+                Check(!PieceEmotes.Available((PieceKind)9, 1), "unknown piece"); });
+            Test("Piece emotes: every piece names all four slots and each slot has a length", () => {
+                for (int kind = 0; kind < ChessPieces.Count; kind++)
+                    for (int slot = 1; slot <= PieceEmotes.Slots; slot++)
+                        Check(PieceEmotes.Name((PieceKind)kind, slot).Length > 0, "name " + kind + "/" + slot);
+                for (int slot = 1; slot <= PieceEmotes.Slots; slot++) Check(PieceEmotes.Duration(slot) > 0.5f, "length " + slot);
+                Check(PieceEmotes.Name(PieceKind.Rook, 0) == "" && PieceEmotes.Duration(0) == 0f && PieceEmotes.Duration(5) == 0f, "slot 0 and 5 are nothing"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

@@ -72,7 +72,7 @@ namespace ChessFight.PawnRush
             b.Box("Water wall N", new Vector3(-10f, Bottom, North), new Vector3(10f, -Arena.DaisHeight, North + .1f), stone, true);
             b.Box("Water wall W", new Vector3(-10f, Bottom, South), new Vector3(-9.9f, -Arena.DaisHeight, North), stone, true);
             b.Box("Water wall E", new Vector3(9.9f, Bottom, South), new Vector3(10f, -Arena.DaisHeight, North), stone, true);
-            Arena.Picture(b.parent, "Water", new Vector3(-9.9f, Surface - .05f, South), new Vector3(9.9f, Surface, North), Arena.Glow(new Color(.35f, .62f, .78f, .6f)));
+            Arena.Picture(b.parent, "Water", new Vector3(-9.9f, Surface - .05f, South), new Vector3(9.9f, Surface, North), MapLook.Water != null ? MapLook.Water : Arena.Glow(new Color(.35f, .62f, .78f, .6f)));
             MgWaterReturn.Make(transform, station, Surface, Bottom, South, North);
 
             // The road: eight squares standing out of the water on their own pillars, numbered, each with a pad.

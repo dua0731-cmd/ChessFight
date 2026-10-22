@@ -36,6 +36,12 @@ namespace ChessFight.RagdollLab
     /// curve and plough on below, the edge chipped where they went over; a face in their way they slam into and stick in), and
     /// what they and the crater break is broken out of the world itself (QueenHillSkillFx.Dig.cs, Skill Ground): the hill's
     /// edges and faces, a wall's foot.
+    ///
+    /// R154 (승규 님 10-22: a Tripo model of the mitre, "폴리곤 수 실사 처럼 높여주고 저 사진과 같이 광택과 때깔 나오게"): the
+    /// solid mitre is drawn with that model (Resources/QueenHillSkillFx/MitreModel: subdivided to 240k triangles in Blender,
+    /// cut into its four quarters and its ball, polished silver, gold and violet gem Standard materials). The quarters and
+    /// the ball of the model ride on the procedural ones, so the flight, the split and the ploughing are as they were; the
+    /// see-through aim and the white flashes still draw the procedural mitre.
     /// </summary>
     public partial class QueenHillSkillFx
     {
@@ -296,6 +302,42 @@ namespace ChessFight.RagdollLab
             /// <summary>The ball is placed by its owner (it springs off as the mitre splits), not with the mitre.</summary>
             public bool ballFree;
 
+            /// <summary>R154: the model's quarters (each riding on its procedural quarter) and its ball (on the procedural
+            /// ball), or nulls when the model is missing.</summary>
+            readonly GameObject[] pieces = new GameObject[4];
+            GameObject ballModel;
+
+            /// <summary>The ball's middle sits this far (in its own size) below where the procedural ball goes: the model's
+            /// ball is on its point, a little lower.</summary>
+            const float ModelBallDrop = 0.9f;
+
+            static GameObject model;
+            static bool modelTried;
+
+            static GameObject Model()
+            {
+                if (!modelTried)
+                {
+                    modelTried = true;
+                    model = Resources.Load<GameObject>("QueenHillSkillFx/MitreModel/BishopMitre");
+                }
+                return model;
+            }
+
+            /// <summary>A copy of the model's part <paramref name="from"/> on <paramref name="on"/>, turned by
+            /// <paramref name="turn"/>, hidden until Paint shows it.</summary>
+            static GameObject Piece(MeshFilter from, Transform on, Quaternion turn, Vector3 at)
+            {
+                var go = new GameObject(from.name);
+                go.transform.SetParent(on, false);
+                go.transform.localPosition = at;
+                go.transform.localRotation = turn;
+                go.AddComponent<MeshFilter>().sharedMesh = from.sharedMesh;
+                go.AddComponent<MeshRenderer>().sharedMaterials = from.GetComponent<MeshRenderer>().sharedMaterials;
+                go.SetActive(false);
+                return go;
+            }
+
             public Mitre(QueenHillSkillFx fx, Fx owner)
             {
                 if (fx.meshMitre == null)
@@ -321,6 +363,27 @@ namespace ChessFight.RagdollLab
                 owner.props.Add(ball);
                 glow = new Prop(fx, fx.meshPuff, MitreLight, "Mitre light") { inkWidth = 0f };
                 owner.props.Add(glow);
+                // R154: each model quarter turned so its middle faces its quarter's way (+Z), its base on the quarter's.
+                var m = Model();
+                if (m != null)
+                {
+                    int next = 0;
+                    foreach (var mf in m.GetComponentsInChildren<MeshFilter>(true))
+                    {
+                        if (mf.name.Contains("Ball"))
+                            ballModel = Piece(mf, ball.t, Quaternion.identity, Vector3.down * ModelBallDrop);
+                        else if (next < 4)
+                        {
+                            Vector3 way = mf.sharedMesh.bounds.center;
+                            way.y = 0f;
+                            // (about the axis only: FromToRotation flips a piece facing straight back over sideways)
+                            var turn = Quaternion.AngleAxis(Vector3.SignedAngle(way, Vector3.forward, Vector3.up), Vector3.up);
+                            pieces[next] = Piece(mf, quarters[next].t, turn, Vector3.zero);
+                            next++;
+                        }
+                    }
+                    if (next < 4 || ballModel == null) Debug.LogWarning("[QueenHillSkillFx] The mitre model has " + next + " quarters and " + (ballModel != null ? "a" : "no") + " ball.");
+                }
                 Paint(0f, true, 0f, false, 0f, false);
             }
 
@@ -371,6 +434,24 @@ namespace ChessFight.RagdollLab
                 foreach (var set in new[] { quarters, golds, gems })
                     foreach (var p in set) PaintPart(p, ghost, valid, flash, on);
                 PaintPart(ball, ghost, valid, flash, on && ballOn);
+                // R154: solid and not flashing white, the model is drawn in place of the procedural quarters and ball.
+                bool real = pieces[3] != null && ghost <= 0f && flash < 0.5f;
+                for (int i = 0; i < 4; i++)
+                {
+                    if (pieces[i] == null) continue;
+                    pieces[i].SetActive(real && on);
+                    if (real)
+                    {
+                        quarters[i].Show(false);
+                        golds[i].Show(false);
+                        gems[i].Show(false);
+                    }
+                }
+                if (ballModel != null)
+                {
+                    ballModel.SetActive(real && on && ballOn);
+                    if (real) ball.Show(false);
+                }
                 glow.flash = lightFlash;
                 glow.Show(lightOn);
                 glow.Apply();

@@ -5,7 +5,7 @@
 // outline (no rim, so it reads as neither a bubble nor a glass ball, as the first refraction rings did in R139). A noise
 // streaked along the burst and scrolling back with it ripples that shift and lays a faint white haze over the thick of
 // it, so it looks like air rushing back; a little shade there too, as a heat shimmer darkens what is behind it.
-// Built-in render pipeline (GrabPass).
+// URP (the opaque texture stands in for the GrabPass).
 Shader "ChessFight/Skill Air"
 {
     Properties
@@ -23,7 +23,7 @@ Shader "ChessFight/Skill Air"
     {
         // The object's own space is used for the ray through it: no batching (it would bake the transform away).
         Tags { "Queue" = "Transparent+4" "RenderType" = "Transparent" "IgnoreProjector" = "True" "DisableBatching" = "True" }
-        GrabPass { "_SkillAirGrab" }
+        // URP: what is behind comes from the camera's copy of the opaque picture (_CameraOpaqueTexture), not a GrabPass.
 
         Pass
         {
@@ -38,7 +38,7 @@ Shader "ChessFight/Skill Air"
             #include "UnityCG.cginc"
             #include "SkillNoise.cginc"
 
-            sampler2D _SkillAirGrab;
+            sampler2D _CameraOpaqueTexture;
             float4 _HazeColor;
             float _Bend, _Haze, _Shade, _Streak, _Phase, _FloorY, _Fade;
 
@@ -60,7 +60,7 @@ Shader "ChessFight/Skill Air"
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.grab = ComputeGrabScreenPos(o.pos);
+                o.grab = ComputeScreenPos(o.pos);
                 o.obj = v.vertex.xyz;
                 o.eye = mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1)).xyz;
                 float3 axis = mul((float3x3)UNITY_MATRIX_V, normalize(mul((float3x3)unity_ObjectToWorld, float3(0, 0, 1))));
@@ -92,18 +92,15 @@ Shader "ChessFight/Skill Air"
                 float n = SkillNoise(float3(c.z * _Streak * 0.9 - _Phase, c.x * _Streak * 1.2, c.y * _Streak * 1.2)) * 0.4 + 0.6;
                 float m = SkillNoise(float3(c.z * _Streak * 1.3 - _Phase * 1.4, c.x * _Streak * 2 + 7.3, c.y * _Streak * 2 - 3.1));
 
-                // Its way on the screen (the grab texture's v runs down where the screen's starts at the top).
+                // Its way on the screen (the opaque texture runs the same way up as the view).
                 float2 way = i.way.xy;
                 float len = length(way);
                 way = len > 1e-4 ? way / len : float2(0, 1);
-                #if UNITY_UV_STARTS_AT_TOP
-                way.y = -way.y;
-                #endif
                 // A burst of the same size bends less the further away it is (3.5 m: as set).
                 float near = saturate(3.5 / max(i.way.z, 0.5));
                 float push = _Bend * body * near * _Fade;
                 float2 uv = i.grab.xy / i.grab.w + way * push * (0.45 + 0.9 * n) + float2(-way.y, way.x) * push * 0.45 * m;
-                float3 col = tex2D(_SkillAirGrab, uv).rgb;
+                float3 col = tex2D(_CameraOpaqueTexture, uv).rgb;
                 col *= 1 - _Shade * body * _Fade;
                 col = lerp(col, _HazeColor.rgb, saturate(_Haze * body * n * _Fade));
                 return float4(col, 1);

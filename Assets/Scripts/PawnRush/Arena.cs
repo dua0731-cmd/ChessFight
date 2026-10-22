@@ -19,9 +19,10 @@ namespace ChessFight.PawnRush
 
         public static readonly Color Dais = Hex("#2C303B"), Trim = Hex("#D9A83A"), Gold = Hex("#E2B23C"), Red = Hex("#E0483B");
         public static readonly Color Maple = Hex("#E3C391"), Walnut = Hex("#6B4428"), Slate = Hex("#4A5060"), Groove = Hex("#1C1F26");
-        // Placeholders (§2.1 "[확인]"): the repository has no team accent colours (TeamTint swaps white and black trim
-        // materials), so these are the spec's sky blue and orange.
-        public static readonly Color White = Hex("#3FC1D9"), Black = Hex("#F08A2C");
+        // Team accents. Were the spec's sky blue / orange placeholders (§2.1 "[확인]"); 10-17 the map kit takes
+        // concept art 2's team colours: royal blue for white, crimson for black (deeper than the warning Red above,
+        // which flashes, so the two stay apart).
+        public static readonly Color White = Hex("#3D7BF0"), Black = Hex("#B8233A");
 
         public static Color TeamColor(int team) => team == Teams.Black ? Black : White;
 
@@ -33,20 +34,50 @@ namespace ChessFight.PawnRush
 
         static readonly Dictionary<string, Material> cache = new Dictionary<string, Material>();
 
+        // Map-kit look (concept art 2, 10-17): the stations' structural surfaces take the course kit's palette
+        // (cream block stone, glossy black/white tiles, navy signs). Only surfaces: team colours, warnings,
+        // paint, dots and anything a game reads by colour keep the spec's colours above.
+        static readonly Dictionary<string, (Color color, float roughness)> KitLook = new Dictionary<string, (Color, float)>
+        {
+            { "M_ArenaDais", (new Color(.80f, .73f, .60f), .85f) },
+            { "M_PillarStone", (new Color(.80f, .73f, .60f), .8f) },
+            { "M_LightStone", (new Color(.84f, .78f, .66f), .75f) },
+            { "M_MoatStone", (new Color(.64f, .58f, .48f), .85f) },
+            { "M_TowerBase", (new Color(.84f, .78f, .66f), .75f) },
+            { "M_Curb", (new Color(.84f, .78f, .66f), .75f) },
+            { "M_KnightPad", (new Color(.84f, .78f, .66f), .6f) },
+            { "M_CheckBoardLight", (new Color(.80f, .79f, .76f), .3f) },
+            { "M_CheckBoardDark", (new Color(.10f, .10f, .13f), .2f) },
+            { "M_SignBack", (new Color(.13f, .22f, .52f), .7f) },
+            { "M_BarGroove", (new Color(.10f, .16f, .38f), .7f) },
+            // the pieces as a real tournament set (10-22): lacquered boxwood and ebony
+            { "M_PieceWhite", (new Color(.9f, .81f, .63f), .22f) },
+            { "M_PieceBlack", (new Color(.1f, .075f, .06f), .2f) },
+        };
+
+        // Real surfaces for the same materials (승규 10-22 "사실적으로"): sand with ripples and grains, wood with
+        // grain and rings, block stone with grit. Texture set (MapLook, Resources), tiles per face, bump.
+        static readonly Dictionary<string, (string set, float tiling, float bump)> KitSurface = new Dictionary<string, (string, float, float)>
+        {
+            { "M_Sand", ("PR_Sand", 3f, 1f) }, { "M_SandRipple", ("PR_Sand", 2f, 1f) },
+            { "M_Maple", ("PR_Wood", 1f, .6f) }, { "M_Walnut", ("PR_Wood", 1f, .6f) }, { "M_Runner", ("PR_Wood", 1f, .4f) },
+            { "M_ArenaDais", ("PR_StoneGrain", 2f, .8f) }, { "M_PillarStone", ("PR_StoneGrain", 1f, .8f) },
+            { "M_LightStone", ("PR_StoneGrain", 1f, .8f) }, { "M_MoatStone", ("PR_StoneGrain", 1f, .8f) },
+            { "M_TowerBase", ("PR_StoneGrain", 1f, .8f) }, { "M_Curb", ("PR_StoneGrain", 1f, .8f) },
+            { "M_KnightPad", ("PR_StoneGrain", 1f, .6f) },
+            { "M_PieceWhite", ("PR_Boxwood", 1f, .25f) }, { "M_PieceBlack", ("PR_Ebony", 1f, .25f) },
+        };
+
         // A lit material: colour, emission strength (0 = none) and roughness.
         public static Material Lit(string name, Color color, float emission = 0f, float roughness = .6f)
         {
+            if (emission <= 0f && KitLook.TryGetValue(name, out var look)) (color, roughness) = look;
             string key = name + ColorUtility.ToHtmlStringRGBA(color) + emission + roughness;
             if (cache.TryGetValue(key, out var m) && m != null) return m;
-            var shader = Shader.Find("Standard");
-            m = new Material(shader != null ? shader : Shader.Find("Legacy Shaders/Diffuse")) { name = name, color = color };
-            m.SetFloat("_Glossiness", 1f - roughness);
-            if (emission > 0f)
-            {
-                m.EnableKeyword("_EMISSION");
-                m.SetColor("_EmissionColor", color * emission);
-                m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-            }
+            m = LitMaterials.NewLit(color, 1f - roughness);
+            m.name = name;
+            if (emission > 0f) LitMaterials.SetEmission(m, color * emission, realtimeGI: true);
+            if (KitSurface.TryGetValue(name, out var surface)) MapLook.Surface(m, surface.set, surface.tiling, surface.bump);
             cache[key] = m;
             return m;
         }
@@ -63,7 +94,7 @@ namespace ChessFight.PawnRush
             string key = "glow" + ColorUtility.ToHtmlStringRGBA(color);
             if (cache.TryGetValue(key, out var m) && m != null) return m;
             var shader = Shader.Find("Sprites/Default");
-            m = new Material(shader != null ? shader : Shader.Find("Unlit/Color")) { name = "M_Glow", color = color };
+            m = new Material(shader != null ? shader : LitMaterials.Unlit) { name = "M_Glow", color = color };
             cache[key] = m;
             return m;
         }

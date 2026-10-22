@@ -24,7 +24,8 @@ namespace ChessFight.Game
         static readonly Vector3 CameraAt = new Vector3(0f, 2.2f, 9f);
         const float CameraPitch = 6f, CameraFov = 30f;
         const float WallZ = -5f;
-        const float BaseSpeed = 4f;          // floor speed in m/s
+        const float RodHeight = 2.62f, PennantScale = .74f;
+        const float BaseSpeed = 2.5f;        // floor speed in m/s (4 until 승규 님 asked for slower)
         const float Square = 1f;             // one square of the floor board
 
         static float Sx(float right) => -right;
@@ -75,7 +76,7 @@ namespace ChessFight.Game
             RenderSettings.fogStartDistance = 16f;
             RenderSettings.fogEndDistance = 40f;
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = MenuArt.Hex(0x9A7A5A) * .9f;
+            RenderSettings.ambientSkyColor = MenuArt.Hex(0x9A7A5A) * .75f;
             RenderSettings.ambientEquatorColor = MenuArt.Hex(0x5A4030) * .75f;
             RenderSettings.ambientGroundColor = MenuArt.Hex(0x1E140C);
             RenderSettings.reflectionIntensity = .5f;
@@ -93,6 +94,22 @@ namespace ChessFight.Game
             key.shadowStrength = .6f;
             key.shadowBias = .03f;
             key.shadowNormalBias = .3f;
+            // 10-17: the sunset behind the wall, low and warm, the main (shadow-casting) light: the wall
+            // keeps it out except through the great window, whose mullions lay bars of light on the board.
+            var sunset = new GameObject("Sunset Light").AddComponent<Light>();
+            sunset.transform.SetParent(transform, false);
+            // From the sun low on the right of the window (the sky image), steep enough to reach the board.
+            sunset.transform.rotation = Quaternion.LookRotation(new Vector3(.34f, -.5f, .8f));
+            sunset.type = LightType.Directional;
+            sunset.color = MenuArt.Hex(0xFF9C58);
+            sunset.intensity = 3.6f;
+            sunset.shadows = LightShadows.Soft;
+            sunset.shadowStrength = 1f;
+            sunset.shadowBias = .03f;
+            sunset.shadowNormalBias = .3f;
+            RenderSettings.sun = sunset;
+            key.intensity = .62f;
+            key.shadows = LightShadows.None;
             var fill = new GameObject("Fill Light").AddComponent<Light>();
             fill.transform.SetParent(transform, false);
             fill.transform.rotation = Quaternion.LookRotation(new Vector3(.5f, -.3f, -.8f));
@@ -105,49 +122,41 @@ namespace ChessFight.Game
             front.transform.rotation = Quaternion.LookRotation(new Vector3(.15f, -.35f, -1f));
             front.type = LightType.Directional;
             front.color = MenuArt.Hex(0xFFF4E6);
-            front.intensity = .45f;
+            front.intensity = .38f;
         }
 
         // Stone wall, gold rail and dark plinth, battlements, three lancet windows
         // with sunset glass between the pennants, the iron rod and the pennants.
         void Wall()
         {
-            var stone = LastSceneArt.Textured("intro stone", StoneTexture(), .12f, new Vector2(6f, 3f));
-            MenuArt.Slab(transform, "Wall", new Vector3(0, 4.5f, WallZ - .25f), new Vector3(30f, 9f, .5f), stone);
-            MenuArt.Slab(transform, "Plinth", new Vector3(0, .3f, WallZ + .05f), new Vector3(30f, .6f, .3f), LastSceneArt.Lit(0x1E150E, .3f));
+            var stone = StoneMaterial(new Vector2(6f, 3f));
+            // 10-17: the wall in pieces round the great window (IntroStage.Window.cs), the sky world
+            // beyond it (IntroStage.Vista.cs); real blocks over the part the camera sees
+            // (IntroStage.Pier.cs) on a mortar-coloured backing.
+            var opening = new[] { GreatCentre };
+            WallWithHoles("Wall", WallZ - .25f, .5f, -15f, 15f, 0f, 9f, stone, opening, GreatHalfWidth, GreatBottom, GreatTop);
+            WallWithHoles("Wall Mortar", WallZ + .006f, .01f, -8.5f, 8.5f, .65f, 4.45f, LastSceneArt.Lit(0x6E5A42, .05f), opening,
+                          GreatHalfWidth, GreatBottom, GreatTop);
+            WallBlocks(WallZ);
+            GreatWindow();
+            Vista();
+            // 10-17: the lobby castle's cream stone (was dark brown): a heavier plinth course.
+            MenuArt.Slab(transform, "Plinth", new Vector3(0, .3f, WallZ + .05f), new Vector3(30f, .6f, .3f), LastSceneArt.Lit(0xC9B48C, .25f));
             MenuArt.Slab(transform, "Rail", new Vector3(0, .62f, WallZ + .12f), new Vector3(30f, .07f, .12f), MenuArt.BrassMetal());
-            // The battlements along the top of the wall.
-            var dark = LastSceneArt.Lit(0x2A1E15, .15f);
-            MenuArt.Slab(transform, "Battlement Band", new Vector3(0, 4.55f, WallZ + .1f), new Vector3(30f, .25f, .4f), dark);
-            for (float x = -15f; x <= 15f; x += .9f)
-                MenuArt.Slab(transform, "Merlon", new Vector3(x, 4.85f, WallZ + .1f), new Vector3(.45f, .4f, .4f), dark);
-            MenuArt.Slab(transform, "Battlement Trim", new Vector3(0, 4.43f, WallZ + .32f), new Vector3(30f, .04f, .04f), MenuArt.BrassMetal());
-
-            var glass = MenuArt.Glow("intro window", WindowTexture(), Color.white);
-            glass.renderQueue = (int)RenderQueue.Geometry + 1;
-            foreach (float right in new[] { .1f, 1.99f, 3.87f })
-            {
-                float x = Sx(right);
-                LastSceneArt.Part(transform, "Window", LastSceneArt.Panel(.5f, 2.45f), glass, new Vector3(x, 2.07f, WallZ + .02f),
-                                  Quaternion.Euler(0, 180f, 0), null, false);
-                MenuArt.Slab(transform, "Sill", new Vector3(x, .82f, WallZ + .1f), new Vector3(.75f, .1f, .25f), dark);
-                var glow = new GameObject("Window Light").AddComponent<Light>();
-                glow.transform.SetParent(transform, false);
-                glow.transform.localPosition = new Vector3(x, 2.1f, WallZ + 1.2f);
-                glow.type = LightType.Point;
-                glow.color = MenuArt.Hex(0xFFB066);
-                glow.intensity = 1.1f;
-                glow.range = 4.5f;
-            }
 
             var iron = LastSceneArt.Lit(0x3A3530, .5f, .6f);
             LastSceneArt.Part(transform, "Rod", LastSceneArt.Cylinder(.035f, .035f, 7.6f, 12), iron,
-                              new Vector3(Sx(1.95f), 4.02f, WallZ + .35f), Quaternion.Euler(0, 0, 90f), null, true);
+                              new Vector3(Sx(1.95f), RodHeight + .04f, WallZ + .35f), Quaternion.Euler(0, 0, 90f), null, true);
             var glyphs = new[] { "♕", "♘", "♖", "♗" };
             var colors = new[] { 0x7A1F24, 0x1C1612, 0x7A1F24, 0x1C1612 };
             float[] at = { -.84f, 1.05f, 2.93f, 4.82f };
             for (int i = 0; i < 4; i++)
-                pennants.Add(new Pennant(transform, new Vector3(Sx(at[i]), 3.98f, WallZ + .38f), PennantTexture(glyphs[i], colors[i]), i));
+            {
+                // 10-17: hung lower and a little smaller, under the great window's sill.
+                var pennant = new Pennant(transform, new Vector3(Sx(at[i]), RodHeight, WallZ + .38f), PennantTexture(glyphs[i], colors[i]), i);
+                pennant.Shape.localScale *= PennantScale;
+                pennants.Add(pennant);
+            }
         }
 
         // The race track: the board floor scrolls under the runners; faint dashed
@@ -156,36 +165,32 @@ namespace ChessFight.Game
         {
             var board = Instantiate(MenuArt.BoardTexture(2));
             board.wrapMode = TextureWrapMode.Repeat;
-            floorMaterial = new Material(PieceFigure.Lit(Color.white, .5f, .05f)) { name = "Intro track", mainTexture = board };
+            floorMaterial = new Material(PieceFigure.Lit(Color.white, .82f, .05f)) { name = "Intro track", mainTexture = board };
             const float width = 44f, depth = 18f;
             floorMaterial.mainTextureScale = new Vector2(width / (2 * Square), depth / (2 * Square));
             var floor = LastSceneArt.Part(transform, "Track", LastSceneArt.Panel(width, depth), floorMaterial,
                                           new Vector3(0, 0, WallZ + depth / 2f), Quaternion.Euler(90f, 0, 0), null, false);
             floor.GetComponent<MeshRenderer>().receiveShadows = true;
+            floor.layer = FloorLayer;
+            Gloss(width, depth, new Vector3(0, 0, WallZ + depth / 2f));
 
             // Dashes rather than a scrolled texture: the blended shader ignores tiling.
             laneMaterial = MenuArt.Glow("intro lane", null, new Color(1f, .97f, .9f, .3f), false);
             foreach (float z in new[] { -3.5f, -1.9f, 1.1f })
                 for (int i = 0; i < DashCount; i++)
-                    dashes.Add(LastSceneArt.Part(transform, "Lane Dash", LastSceneArt.Panel(DashLength, .07f), laneMaterial,
-                                                 new Vector3(0, .012f, z), Quaternion.Euler(90f, 0, 0), null, false).transform);
+                {
+                    var dash = LastSceneArt.Part(transform, "Lane Dash", LastSceneArt.Panel(DashLength, .07f), laneMaterial,
+                                                 new Vector3(0, .012f, z), Quaternion.Euler(90f, 0, 0), null, false);
+                    dash.layer = FloorLayer;
+                    dashes.Add(dash.transform);
+                }
             // Darker towards the wall so the floor meets it softly.
             var shade = MenuArt.Glow("intro floor shade", MenuArt.VerticalFade(new Color(0, 0, 0, 0), new Color(.07f, .04f, .02f, .75f)), Color.white);
             LastSceneArt.Part(transform, "Floor Shade", LastSceneArt.Panel(width, 3f), shade,
-                              new Vector3(0, .015f, WallZ + 1.5f), Quaternion.Euler(90f, 0, 0), null, false);
+                              new Vector3(0, .015f, WallZ + 1.5f), Quaternion.Euler(90f, 0, 0), null, false).layer = FloorLayer;
         }
 
-        // Ivory columns framing the hall at both edges of the screen.
-        void Pillars()
-        {
-            var ivory = LastSceneArt.Lit(0xEFE4CC, .35f);
-            foreach (float right in new[] { -4.9f, 4.9f })
-            {
-                var x = Sx(right);
-                LastSceneArt.Part(transform, "Pillar", LastSceneArt.Cylinder(.36f, .36f, 9f, 28), ivory, new Vector3(x, 4.5f, -.6f), null, null, true);
-                MenuArt.Slab(transform, "Pillar Base", new Vector3(x, .15f, -.6f), new Vector3(.95f, .3f, .95f), ivory);
-            }
-        }
+        // The piers framing the hall: IntroStage.Pier.cs.
 
         // ---------- the camera ----------
 
@@ -209,6 +214,7 @@ namespace ChessFight.Game
             Vector2 mouse = Pointer(out bool clicked);
             Vector2 centred = new Vector2(mouse.x / Mathf.Max(1, Screen.width) * 2f - 1f, mouse.y / Mathf.Max(1, Screen.height) * 2f - 1f);
             Aim(new Vector2(Mathf.Clamp(centred.x, -1, 1), Mathf.Clamp(centred.y, -1, 1)));
+            Mirror();
 
             // The floor and its lanes move towards screen left (+X) under the runners.
             if (floorMaterial != null) floorMaterial.mainTextureOffset = new Vector2(-travelled / (2 * Square), 0);
@@ -263,10 +269,13 @@ namespace ChessFight.Game
         void OnDestroy()
         {
             foreach (var p in pennants) p.Dispose();
+            DisposePiers();
             if (floorMaterial != null) Destroy(floorMaterial);
             if (laneMaterial != null) Destroy(laneMaterial);
             if (puffMaterial != null) Destroy(puffMaterial);
             if (streakMaterial != null) Destroy(streakMaterial);
+            DisposeGloss();
+            DisposeVista();
         }
     }
 }

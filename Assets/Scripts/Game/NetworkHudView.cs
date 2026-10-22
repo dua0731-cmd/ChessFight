@@ -67,7 +67,7 @@ namespace ChessFight.Game
         Func<bool> chatBlocker;
 
         Label status, details, profile, version, toast, offlineText;
-        Button friendsOpen, profileOpen, retry, play, cancel, start, codeOpen, createTest, leaveParty, copyParty;
+        Button partyOpen, friendsOpen, profileOpen, retry, play, cancel, start, codeOpen, createTest, leaveParty, copyParty;
         Button botsLess, botsMore, fillRoom, clearRoomBots, modeOpen, joinParty, joinMatch;
         Label partyCount, partyCode, bots, botsNote, busyTitle, busySub;
         Label modeName, modeTagline, modeBadge, modeChange, modeHint;
@@ -81,7 +81,7 @@ namespace ChessFight.Game
         readonly List<VisualElement> ourSlots = new List<VisualElement>(), theirSlots = new List<VisualElement>();
         TextField code;
 
-        VisualElement friendsPanel, detailsPanel, codeModal, modeModal;
+        VisualElement friendsPanel, partyPanel, detailsPanel, codeModal, modeModal;
         VisualElement friendsList;
         Label friendsInfo, friendsPage;
         Button friendsOnline, friendsAll;
@@ -95,7 +95,98 @@ namespace ChessFight.Game
         readonly Dictionary<string, Button> modeButtons = new Dictionary<string, Button>();
 
         // The game-mode rail down the right, one card per mode.
-        VisualElement railList;
+        VisualElement railList, rail;
+        Label playLabel, startHintLabel;
+        bool railOpen;
+
+        // 10-17 (승규 님): the mode cards wait below the screen. The pointer resting on "모드 선택" brings them
+        // up one after another from the bottom, and they stay while it moves onto them; when it leaves both
+        // they sink back, top one first. While they are up the button reads "게임 시작" and a click starts
+        // the game. (Enter does the same in two presses: the first brings them up.)
+        int railHover;
+        IVisualElementScheduledItem railClose;
+
+        void PlayPressed()
+        {
+            if (!railOpen) { SetRail(true); return; }
+            Play?.Invoke();
+        }
+
+        void HoverRail(VisualElement element)
+        {
+            if (element == null) return;
+            element.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                railHover++;
+                railClose?.Pause();
+                if (Usable(play)) SetRail(true);
+            });
+            element.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                railHover = Mathf.Max(0, railHover - 1);
+                // A moment's grace, so moving from the button up to the cards does not close them.
+                railClose?.Pause();
+                railClose = element.schedule.Execute(() => { if (railHover == 0) SetRail(false); }).StartingIn(250);
+            });
+        }
+
+        const float RailStep = 82f;   // a card's height and the gap under it (NetworkHud.uss)
+        IVisualElementScheduledItem railReset;
+
+        // A rail card's slide (top) and fade, each with its own delay, length and easing.
+        static void Card(VisualElement card, float topDelay, float topTime, float fadeTime, float fadeDelay, float unused,
+                         float extraDelay, EasingMode topEase, EasingMode fadeEase, float top, float opacity)
+        {
+            card.style.transitionProperty = new List<StylePropertyName> { "translate", "top", "opacity" };
+            card.style.transitionDuration = new List<TimeValue> { new TimeValue(.3f), new TimeValue(topTime), new TimeValue(fadeTime) };
+            card.style.transitionDelay = new List<TimeValue> { new TimeValue(0f), new TimeValue(topDelay), new TimeValue(fadeDelay + extraDelay) };
+            card.style.transitionTimingFunction = new List<EasingFunction>
+                { new EasingFunction(EasingMode.EaseOutBack), new EasingFunction(topEase), new EasingFunction(fadeEase) };
+            card.style.top = top;
+            card.style.opacity = opacity;
+        }
+
+        void SetRail(bool open, bool force = false)
+        {
+            if (!force && railOpen == open && rail != null && rail.ClassListContains("rail-closed") == !open) return;
+            railOpen = open;
+            if (rail != null)
+            {
+                rail.EnableInClassList("rail-closed", !open);
+                // Not disabled while closed (that switched the cards to their disabled look at once); the
+                // hidden cards just stop taking the pointer.
+                if (railList != null)
+                {
+                    int n = railList.childCount;
+                    for (int i = 0; i < n; i++)
+                    {
+                        var card = railList[i];
+                        card.pickingMode = open ? PickingMode.Position : PickingMode.Ignore;
+                        if (force) { Card(card, 0f, 0f, 0f, .3f, .3f, 0f, EasingMode.Linear, EasingMode.Linear, 70f, 0f); continue; }
+                        if (open)
+                            // Up one after another from below, the bottom card first, with a little bounce.
+                            Card(card, (n - 1 - i) * .06f, .34f, .22f, 0f, 0f, (n - 1 - i) * .06f, EasingMode.EaseOutBack, EasingMode.EaseOut, 0f, 1f);
+                        else
+                        {
+                            // Down: the bottom card (Sword Fight) stays; the ones above slide softly down into it,
+                            // the nearest first, and then they all fade out together.
+                            float drop = (n - 1 - i) * RailStep;
+                            Card(card, (n - 1 - i) == 0 ? 0f : (i == 0 ? .06f : 0f), .5f, .3f, .38f, .38f, 0f, EasingMode.EaseInOutSine, EasingMode.EaseIn, drop, 0f);
+                        }
+                    }
+                    // Once it has faded, move the hidden cards back below (unseen), ready to rise again.
+                    railReset?.Pause();
+                    if (!open && !force)
+                        railReset = railList.schedule.Execute(() =>
+                        {
+                            if (railOpen) return;
+                            foreach (var card in railList.Children()) Card(card, 0f, 0f, 0f, 0f, 0f, 0f, EasingMode.Linear, EasingMode.Linear, 70f, 0f);
+                        }).StartingIn(800);
+                }
+            }
+            if (playLabel != null) playLabel.text = open ? "게임 시작" : "모드 선택";
+            if (startHintLabel != null) startHintLabel.text = open ? "게임 시작" : "모드 선택";
+        }
         Label railHint;
         readonly Dictionary<string, Button> railButtons = new Dictionary<string, Button>();
         // Each card's two looks (design A): picked and not, and which one it shows.
@@ -171,6 +262,7 @@ namespace ChessFight.Game
             slotsOurs = root.Q<VisualElement>("slots-ours"); slotsTheirs = root.Q<VisualElement>("slots-theirs");
             code = root.Q<TextField>("code");
             friendsPanel = root.Q<VisualElement>("friends"); detailsPanel = root.Q<VisualElement>("details-card");
+            partyPanel = root.Q<VisualElement>("party-card");
             codeModal = root.Q<VisualElement>("code-modal"); modeModal = root.Q<VisualElement>("mode-modal");
             friendsList = root.Q<VisualElement>("friends-list");
             friendsInfo = root.Q<Label>("friends-info"); friendsPage = root.Q<Label>("friends-page");
@@ -202,7 +294,15 @@ namespace ChessFight.Game
                 if (target != code && (target == null || !code.Contains(target))) root.Focus();
             }, TrickleDown.TrickleDown);
 
-            play = Bind(root, "play", () => Play?.Invoke());
+            play = Bind(root, "play", PlayPressed);
+            // 10-17 (승규 님): the mode cards wait below the screen; the button reads "모드 선택" until they
+            // slide up, then "게임 시작".
+            rail = root.Q<VisualElement>("mode-rail");
+            playLabel = play?.Q<Label>(className: "a-cta-text");
+            startHintLabel = root.Q("start-hints")?.Q<Label>(className: "a-hint");
+            HoverRail(play);
+            HoverRail(rail);
+            SetRail(false);
             start = Bind(root, "start", () => StartGame?.Invoke());
             cancel = Bind(root, "cancel", () => Cancel?.Invoke());
             leaveParty = Bind(root, "leave-party", () => LeaveParty?.Invoke());
@@ -219,6 +319,8 @@ namespace ChessFight.Game
             copyParty = Bind(root, "copy-party", () => CopyParty?.Invoke());
             Bind(root, "copy-match", () => CopyMatch?.Invoke());
 
+            partyOpen = Bind(root, "party-open", () => TogglePanel(partyPanel));
+            Bind(root, "party-close", () => Close(partyPanel));
             friendsOpen = Bind(root, "friends-open", () => { if (FriendsOpen) Close(friendsPanel); else OpenFriends(); });
             profileOpen = Bind(root, "profile-open", () => Rename?.Invoke());
             Bind(root, "details-open", () => TogglePanel(detailsPanel));
@@ -244,6 +346,7 @@ namespace ChessFight.Game
 
             BuildModeList();
             BuildModeRail();
+            SetRail(false, true);   // the cards exist now: hide them and stop them taking the pointer
             BuildVoiceMenu();
             Dress();
             // The chat (ChatBox, on the runtime) stays shut while the room-number
@@ -271,15 +374,17 @@ namespace ChessFight.Game
 
         void Dress()
         {
-            Color shade = new Color(14 / 255f, 9 / 255f, 5 / 255f), floor = new Color(12 / 255f, 7 / 255f, 4 / 255f);
+            // 10-17, the lobby castle, option B "ebony lacquer and gold leaf": ebony shades only where
+            // text sits, ebony panels with a gold rule over the bright courtyard (was warm dark glass, R83).
+            Color shade = new Color(18 / 255f, 14 / 255f, 11 / 255f), floor = new Color(16 / 255f, 12 / 255f, 9 / 255f);
             const MenuArt.HudBlend dark = MenuArt.HudBlend.Shade;
-            Paint(root.Q("scrim-top"), MenuArt.Ramp(true, dark, (0f, Alpha(shade, .94f)), (.46f, Alpha(shade, .78f)), (1f, Alpha(shade, 0f))));
-            Paint(root.Q("scrim-right"), MenuArt.Ramp(false, dark, (0f, Alpha(shade, 0f)), (.3f, Alpha(shade, .9f)), (1f, Alpha(shade, .95f))));
-            Paint(root.Q("scrim-bottom"), MenuArt.Ramp(true, dark, (0f, Alpha(floor, 0f)), (.58f, Alpha(floor, .82f)), (1f, Alpha(floor, .96f))));
+            Paint(root.Q("scrim-top"), MenuArt.Ramp(true, dark, (0f, Alpha(shade, .85f)), (.46f, Alpha(shade, .44f)), (1f, Alpha(shade, 0f))));
+            Paint(root.Q("scrim-right"), MenuArt.Ramp(false, dark, (0f, Alpha(shade, 0f)), (.35f, Alpha(shade, .38f)), (1f, Alpha(shade, .55f))));
+            Paint(root.Q("scrim-bottom"), MenuArt.Ramp(true, dark, (0f, Alpha(floor, 0f)), (.58f, Alpha(floor, .4f)), (1f, Alpha(floor, .62f))));
 
-            var panel = MenuArt.Ramp(true, dark, (0f, new Color(36 / 255f, 23 / 255f, 13 / 255f, .84f)), (1f, new Color(20 / 255f, 12 / 255f, 7 / 255f, .88f)));
+            var panel = MenuArt.Ramp(true, dark, (0f, new Color(26 / 255f, 21 / 255f, 17 / 255f, .9f)), (1f, new Color(17 / 255f, 13 / 255f, 10 / 255f, .94f)));
             // Windows that open over other HUD (friends, details, the pickers) are nearly solid.
-            var cover = MenuArt.Ramp(true, dark, (0f, new Color(36 / 255f, 23 / 255f, 13 / 255f, .97f)), (1f, new Color(20 / 255f, 12 / 255f, 7 / 255f, .98f)));
+            var cover = MenuArt.Ramp(true, dark, (0f, new Color(26 / 255f, 21 / 255f, 17 / 255f, .98f)), (1f, new Color(17 / 255f, 13 / 255f, 10 / 255f, .99f)));
             root.Query<VisualElement>(className: "a-panel").ForEach(e =>
             {
                 Paint(e, e.ClassListContains("side-card") || e.ClassListContains("modal-card") ? cover : panel);
@@ -307,8 +412,8 @@ namespace ChessFight.Game
             var arrow = new MenuMarks.IconMark(MenuMarks.Icon.Arrow, 2.4f, Ink);
             arrow.style.flexGrow = 1;
             root.Q("play-arrow")?.Add(arrow);
-            IvoryFace(play);
-            IvoryFace(start);
+            GoldFace(play);
+            GoldFace(start);
             startHints = root.Q("start-hints");
             // Whatever still carries the slab class (nothing in the lobby since R83).
             ChunkyButtons.Attach(root);
@@ -398,7 +503,8 @@ namespace ChessFight.Game
         // sand from top to bottom over a soft shadow, lighter under the pointer and
         // darker while pressed (USS moves it down a pixel). Vertex colours, no
         // Painter2D gradients, so the Linux compile check needs nothing new.
-        static void IvoryFace(Button button)
+        // 10-17 (option B): the start plate in gold leaf with ebony letters and an ebony rim; was ivory.
+        static void GoldFace(Button button)
         {
             if (button == null) return;
             bool hover = false, down = false;
@@ -409,8 +515,9 @@ namespace ChessFight.Game
                 const float cut = 10f;
                 for (int i = 4; i >= 1; i--)
                     Plate(context, -i * 2f, 5f + i * 3f, w + i * 4f, h, cut + i, new Color(0, 0, 0, .075f), new Color(0, 0, 0, .075f));
-                Color top = down ? PieceFigure.Hex(0xEADBBE) : hover ? PieceFigure.Hex(0xFFF8EA) : PieceFigure.Hex(0xF7EDDB);
-                Color bottom = down ? PieceFigure.Hex(0xDAC5A0) : hover ? PieceFigure.Hex(0xF0DFC0) : PieceFigure.Hex(0xE8D6B6);
+                Plate(context, -2f, -2f, w + 4f, h + 4f, cut + 1f, PieceFigure.Hex(0x15110E), PieceFigure.Hex(0x0E0B09));
+                Color top = down ? PieceFigure.Hex(0xE6C066) : hover ? PieceFigure.Hex(0xFBE08E) : PieceFigure.Hex(0xF3D27A);
+                Color bottom = down ? PieceFigure.Hex(0xB2873A) : hover ? PieceFigure.Hex(0xD9A955) : PieceFigure.Hex(0xC99A45);
                 Plate(context, 0f, 0f, w, h, cut, top, bottom);
             };
             void Redraw() => button.MarkDirtyRepaint();
@@ -491,6 +598,7 @@ namespace ChessFight.Game
                 if (SettingsWindow.IsOpen) SettingsWindow.Back();
                 else if (voiceMenuIndex >= 0) CloseVoiceMenu();
                 else if (Visible(modeModal)) Close(modeModal);
+                else if (railOpen && Usable(play)) SetRail(false);
                 else if (Visible(codeModal)) Close(codeModal);
                 else if (Visible(friendsPanel)) Close(friendsPanel);
                 else if (Visible(detailsPanel)) Close(detailsPanel);
@@ -502,7 +610,7 @@ namespace ChessFight.Game
             if (!modal && (LegacyKeys.Down(KeyCode.Return) || LegacyKeys.Down(KeyCode.KeypadEnter)))
             {
                 if (Usable(start)) StartGame?.Invoke();
-                else if (Usable(play)) Play?.Invoke();
+                else if (Usable(play)) PlayPressed();
             }
             if (!modal && LegacyKeys.Down(KeyCode.F)) { if (FriendsOpen) Close(friendsPanel); else if (canInvite) OpenFriends(); }
             if (!modal && LegacyKeys.Down(KeyCode.M) && Usable(modeOpen)) Open(modeModal);
@@ -568,6 +676,7 @@ namespace ChessFight.Game
         {
             if (!canInvite) return;
             Close(detailsPanel);
+            Close(partyPanel);
             Open(friendsPanel);
             FriendsOpened?.Invoke();
         }
@@ -576,7 +685,10 @@ namespace ChessFight.Game
 
         void Open(VisualElement panel)
         {
-            if (panel == detailsPanel) Close(friendsPanel);
+            // One side card at a time (party, friends, details share the right edge).
+            if (panel == detailsPanel || panel == partyPanel) Close(friendsPanel);
+            if (panel != detailsPanel) Close(detailsPanel);
+            if (panel != partyPanel) Close(partyPanel);
             Show(panel, true);
         }
         void Close(VisualElement panel) => Show(panel, false);
@@ -690,7 +802,8 @@ namespace ChessFight.Game
         {
             var spot = new VisualElement { pickingMode = PickingMode.Ignore };
             spot.AddToClassList("invite-spot");
-            var plus = new Button { text = "+", focusable = false };
+            // 10-17: one pill button "+ 친구 초대" (was a round "+" with a label under it)
+            var plus = new Button { text = "+  친구 초대", focusable = false };
             plus.AddToClassList("invite-plus");
             RuntimePanels.Display(plus);
             Action open = OpenFriends;
@@ -698,9 +811,6 @@ namespace ChessFight.Game
             actions[plus] = open;
             inviteButtons.Add(plus);
             spot.Add(plus);
-            var label = new Label("친구 초대") { pickingMode = PickingMode.Ignore };
-            label.AddToClassList("invite-label");
-            spot.Add(label);
             return spot;
         }
 
@@ -716,8 +826,8 @@ namespace ChessFight.Game
                 if (!front) continue;
                 Vector2 at = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, world, lineupCamera);
                 // Fixed widths from the USS, so centring needs no layout pass.
-                plates[i].style.left = at.x - (invite ? 60f : 100f);
-                plates[i].style.top = at.y - (invite ? 27f : 64f);
+                plates[i].style.left = at.x - (invite ? 70f : 100f);
+                plates[i].style.top = at.y - (invite ? 18f : 64f);
             }
             for (int i = 0; i < plateVoices.Count && i < lineup.Count; i++) DrawVoice(i);
             PlaceVoiceMenu();
@@ -876,7 +986,9 @@ namespace ChessFight.Game
                 var card = new Button { focusable = false };
                 card.AddToClassList("rail-card");
                 if (!mode.Playable) card.AddToClassList("rail-locked");
-                var looks = (MenuArt.LineCard(ModeTint(mode.Key), false), MenuArt.LineCard(ModeTint(mode.Key), true));
+                // 10-17 (option B): ebony lacquer cards fading to the right; the picked one lighter, with its gold edge from the USS.
+                var looks = (MenuArt.Ramp(false, MenuArt.HudBlend.Shade, (0f, new Color(22 / 255f, 18 / 255f, 15 / 255f, .94f)), (1f, new Color(22 / 255f, 18 / 255f, 15 / 255f, .8f))),
+                             MenuArt.Ramp(false, MenuArt.HudBlend.Shade, (0f, new Color(36 / 255f, 29 / 255f, 22 / 255f, .96f)), (1f, new Color(28 / 255f, 22 / 255f, 17 / 255f, .9f))));
                 railLooks[mode.Key] = looks;
                 railShown[mode.Key] = false;
                 card.style.backgroundImage = new StyleBackground(looks.Item1);
@@ -938,18 +1050,6 @@ namespace ChessFight.Game
                 line += width;
             }
             return wrapped.ToString();
-        }
-
-        // Each mode's tint behind its piece on a design A card: sage, slate blue, oxblood.
-        static Color ModeTint(string key)
-        {
-            switch (key)
-            {
-                case "kingrush": return new Color(124 / 255f, 178 / 255f, 120 / 255f);
-                case "queenhill": return new Color(120 / 255f, 140 / 255f, 200 / 255f);
-                case "swordfight": return new Color(200 / 255f, 96 / 255f, 80 / 255f);
-                default: return new Color(.7f, .6f, .45f);
-            }
         }
 
         // The piece that stars in each mode, posed as on the design sample: a pawn
@@ -1128,7 +1228,8 @@ namespace ChessFight.Game
 
             RenderMode(model);
 
-            if (partyCount != null) partyCount.text = $"{model.PartySize}<color=#8E7A62> / 6</color>";
+            if (partyCount != null) partyCount.text = $"{model.PartySize}<color=#E7BE72> / 6</color>";
+            SetText(partyOpen, $"파티 <color=#E9C46A><b>{model.PartySize}</b></color>/6");
             if (partyCode != null) partyCode.text = model.PartyCode;
             if (bots != null) bots.text = model.Bots;
             if (botsNote != null) { botsNote.text = model.BotsNote; Show(botsNote, !string.IsNullOrEmpty(model.BotsNote)); }

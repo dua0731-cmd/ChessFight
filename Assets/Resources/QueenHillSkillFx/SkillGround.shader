@@ -12,7 +12,7 @@
 //   the block's inside (the board's thickness, then its body), rough, lit as it faces the sun, shadowed by the rest of the
 //   block, darker the deeper, its broken edge pale. A ray that leaves the block first sees through it. Faces round a cut
 //   get its dark broken edge, the grit thrown out of it and cracks.
-// Built-in render pipeline. The blocks are boxes: per block its mesh's bounds (_BoxMin, _BoxMax), the world into its own
+// URP (lit like it: the sun and its shadows, the other lights, the sky). The blocks are boxes: per block its mesh's bounds (_BoxMin, _BoxMax), the world into its own
 // space (_WorldToBox) and its scale, set from its transform — not unity_WorldToObject, which batching changes (the hill's
 // tiers were drawn as one and a hole in one saw straight through it).
 Shader "ChessFight/Skill Ground"
@@ -36,10 +36,10 @@ Shader "ChessFight/Skill Ground"
     }
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "Queue" = "Geometry" "DisableBatching" = "True" }
+        Tags { "RenderType" = "Opaque" "Queue" = "Geometry" "DisableBatching" = "True" "RenderPipeline" = "UniversalPipeline" }
 
-        CGINCLUDE
-        #include "UnityCG.cginc"
+        HLSLINCLUDE
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
         #define BREAKS 96
         #define DIGS 4
@@ -329,20 +329,32 @@ Shader "ChessFight/Skill Ground"
             float3 tm = max(t0, t1);
             return min(min(tm.x, tm.y), tm.z);
         }
-        ENDCG
+        ENDHLSL
 
         Pass
         {
-            Tags { "LightMode" = "ForwardBase" }
-            CGPROGRAM
+            Name "ForwardLit"
+            Tags { "LightMode" = "UniversalForward" }
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 5.0
-            #pragma multi_compile_fwdbase
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile_fog
             #pragma multi_compile _ CF_BREAKS
-            #include "Lighting.cginc"
-            #include "AutoLight.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float3 normal : NORMAL;
+                float2 texcoord : TEXCOORD0;
+            };
 
             struct v2f
             {
@@ -355,29 +367,61 @@ Shader "ChessFight/Skill Ground"
                 float3 wpos : TEXCOORD0;
                 float3 wnrm : TEXCOORD1;
                 float2 uv : TEXCOORD2;
-                SHADOW_COORDS(3)
-                UNITY_FOG_COORDS(4)
+                float fogCoord : TEXCOORD3;
             };
 
-            v2f vert(appdata_base v)
+            v2f vert(appdata v)
             {
                 v2f o;
-                o.pos = UnityObjectToClipPos(v.vertex);
-                o.wpos = mul(unity_ObjectToWorld, v.vertex).xyz;
-                o.wnrm = UnityObjectToWorldNormal(v.normal);
+                o.wpos = TransformObjectToWorld(v.vertex.xyz);
+                o.pos = TransformWorldToHClip(o.wpos);
+                o.wnrm = TransformObjectToWorldNormal(v.normal);
                 o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
-                TRANSFER_SHADOW(o);
-                UNITY_TRANSFER_FOG(o, o.pos);
+                o.fogCoord = ComputeFogFactor(o.pos.z);
                 return o;
+            }
+
+            // URP's screen-space ambient occlusion where it is on (1 where it is off), set per pixel in frag.
+            static float gAoDirect = 1.0, gAoIndirect = 1.0;
+
+            // The sun's shadow on a point (URP's main light, faded out with its shadow distance).
+            float SunShadow(float3 P)
+            {
+                return GetMainLight(TransformWorldToShadowCoord(P), P, half4(1, 1, 1, 1)).shadowAttenuation;
             }
 
             float3 Lit(float3 albedo, float3 N, float3 V, float shadow, float gloss)
             {
-                float3 L = normalize(_WorldSpaceLightPos0.xyz);
+                Light sun = GetMainLight();
+                float3 L = sun.direction;
                 float ndl = saturate(dot(N, L));
-                float3 col = albedo * (_LightColor0.rgb * ndl * shadow + ShadeSH9(float4(N, 1.0)));
+                float3 col = albedo * (sun.color * ndl * shadow * gAoDirect + SampleSH(N) * gAoIndirect);
                 float3 H = normalize(L - V);
-                return col + _LightColor0.rgb * gloss * pow(saturate(dot(N, H)), 40.0) * shadow * ndl;
+                return col + sun.color * gloss * pow(saturate(dot(N, H)), 40.0) * shadow * ndl;
+            }
+
+            // The other lights on a face, plain diffuse (what the Built-in ForwardAdd pass added).
+            float3 OtherLights(float3 albedo, float3 N, float3 P, float4 pos)
+            {
+                float3 c = 0.0;
+#if defined(_ADDITIONAL_LIGHTS)
+                InputData inputData = (InputData)0;
+                inputData.positionWS = P;
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(pos);
+#if USE_CLUSTER_LIGHT_LOOP
+                [loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
+                {
+                    Light l = GetAdditionalLight(lightIndex, P, half4(1, 1, 1, 1));
+                    c += albedo * l.color * saturate(dot(N, l.direction)) * l.distanceAttenuation * l.shadowAttenuation;
+                }
+#endif
+                uint pixelLightCount = GetAdditionalLightsCount();
+                LIGHT_LOOP_BEGIN(pixelLightCount)
+                    Light l = GetAdditionalLight(lightIndex, P, half4(1, 1, 1, 1));
+                    c += albedo * l.color * saturate(dot(N, l.direction)) * l.distanceAttenuation * l.shadowAttenuation;
+                LIGHT_LOOP_END
+#endif
+                return c;
             }
 
 #ifdef CF_BREAKS
@@ -402,7 +446,12 @@ Shader "ChessFight/Skill Ground"
                 float3 grid = _Color.rgb * tex2D(_MainTex, i.uv).rgb;
                 float3 albedo = top ? BoardAt(P.xz, w) : grid;
                 float gloss = top ? _Gloss : _Gloss * 0.3;
-                UNITY_LIGHT_ATTENUATION(atten, i, P);
+                float atten = SunShadow(P);
+#if defined(_SCREEN_SPACE_OCCLUSION)
+                AmbientOcclusionFactor aoAt = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(i.pos));
+                gAoDirect = aoAt.directAmbientOcclusion;
+                gAoIndirect = aoAt.indirectAmbientOcclusion;
+#endif
                 float3 col;
 #ifdef CF_BREAKS
                 outDepth = i.pos.z;
@@ -455,7 +504,7 @@ Shader "ChessFight/Skill Ground"
                     float3 inside = (_Board > 0.5 && inb.y < _Inlay) ? BoardAt(E.xz, w) * 0.8 : _Body.rgb;
                     inside *= 0.78 + 0.42 * GNoise3(E * 24.0) * (0.55 + 0.45 * GNoise3(E * 7.0));
                     // Shadowed by the rest of the block.
-                    float3 Ls = normalize(_WorldSpaceLightPos0.xyz);
+                    float3 Ls = normalize(_MainLightPosition.xyz);
                     float self = 1.0;
                     [loop] for (int k = 1; k <= 6; k++)
                     {
@@ -479,7 +528,7 @@ Shader "ChessFight/Skill Ground"
 #else
                     outDepth = cp.z / cp.w * 0.5 + 0.5;
 #endif
-                    UNITY_APPLY_FOG(i.fogCoord, col);
+                    col = MixFog(col, i.fogCoord);
                     return float4(col, 1.0);
                 }
                 // Round a cut: its broken edge, the grit thrown out round a crater, cracks.
@@ -489,85 +538,39 @@ Shader "ChessFight/Skill Ground"
                 grit *= 0.45 + 0.55 * GNoise2(P.xz * 7.0 + 3.0);
                 albedo *= 1.0 - 0.2 * grit;
                 albedo = lerp(albedo, albedo * 0.28, crack * 0.75);
-                col = Lit(albedo, N0, V, atten, gloss) * (1.0 - 0.72 * edge);
+                col = Lit(albedo, N0, V, atten, gloss) * (1.0 - 0.72 * edge) + OtherLights(albedo, N0, P, i.pos);
 #else
-                col = Lit(albedo, N0, V, atten, gloss);
+                col = Lit(albedo, N0, V, atten, gloss) + OtherLights(albedo, N0, P, i.pos);
 #endif
-                UNITY_APPLY_FOG(i.fogCoord, col);
+                col = MixFog(col, i.fogCoord);
                 return float4(col, 1.0);
             }
-            ENDCG
+            ENDHLSL
         }
 
         Pass
         {
-            Tags { "LightMode" = "ForwardAdd" }
-            Blend One One
-            ZWrite Off
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma target 3.5
-            #pragma multi_compile_fwdadd
-            #pragma multi_compile _ CF_BREAKS
-            #include "Lighting.cginc"
-            #include "AutoLight.cginc"
-
-            struct v2f
-            {
-                float4 pos : SV_POSITION;
-                float3 wpos : TEXCOORD0;
-                float3 wnrm : TEXCOORD1;
-                float2 uv : TEXCOORD2;
-                SHADOW_COORDS(3)
-            };
-
-            v2f vert(appdata_base v)
-            {
-                v2f o;
-                o.pos = UnityObjectToClipPos(v.vertex);
-                o.wpos = mul(unity_ObjectToWorld, v.vertex).xyz;
-                o.wnrm = UnityObjectToWorldNormal(v.normal);
-                o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
-                TRANSFER_SHADOW(o);
-                return o;
-            }
-
-            float4 frag(v2f i) : SV_Target
-            {
-                float3 P = i.wpos;
-#ifdef CF_BREAKS
-                if (Carve(P) < 0.0) discard;
-#endif
-                float3 N0 = normalize(i.wnrm);
-                bool top = _Board > 0.5 && N0.y > 0.7;
-                float3 albedo = top ? BoardAt(P.xz, fwidth(P.xz)) : _Color.rgb * tex2D(_MainTex, i.uv).rgb;
-                float3 L = normalize(UnityWorldSpaceLightDir(P));
-                UNITY_LIGHT_ATTENUATION(atten, i, P);
-                return float4(albedo * _LightColor0.rgb * saturate(dot(N0, L)) * atten, 0.0);
-            }
-            ENDCG
-        }
-
-        Pass
-        {
+            Name "ShadowCaster"
             Tags { "LightMode" = "ShadowCaster" }
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_shadowcaster
+            ZWrite On ZTest LEqual ColorMask 0
+            HLSLPROGRAM
+            #pragma vertex CFShadowVertex
+            #pragma fragment CFShadowFragment
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #include "Assets/Shaders/URP/CFShadowCaster.hlsl"
+            ENDHLSL
+        }
 
-            struct v2f { V2F_SHADOW_CASTER; };
-
-            v2f vert(appdata_base v)
-            {
-                v2f o;
-                TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
-                return o;
-            }
-
-            float4 frag(v2f i) : SV_Target { SHADOW_CASTER_FRAGMENT(i) }
-            ENDCG
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+            ZWrite On ColorMask R
+            HLSLPROGRAM
+            #pragma vertex CFDepthVertex
+            #pragma fragment CFShadowFragment
+            #include "Assets/Shaders/URP/CFShadowCaster.hlsl"
+            ENDHLSL
         }
     }
     Fallback Off

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Kit = ChessFight.RagdollLab.SkillInkKit;
 using Random = UnityEngine.Random;
@@ -33,6 +34,9 @@ namespace ChessFight.RagdollLab
     public partial class PawnRushSkillFx
     {
         Mesh meshArrow;
+        // R153 4th: the bishop's thrown cross stake (Tripo, PawnRushSkillFx.DesignA BishopThrowProp). The Tripo horseshoe was
+        // tried on the knight's landing mark and taken back (승규 님 10-22: "나이트는 전에 있는 코드로 하는 게 좋다").
+        readonly List<(Mesh mesh, Kit.Palette colors)> crossParts = new List<(Mesh, Kit.Palette)>();
 
         /// <summary>R139: the badge's polished dark gold and the black lacquer round it (the board look's metal palette).</summary>
         static readonly Kit.Palette BadgeGold = new Kit.Palette("#8C6524", "#D9B45A", "#4A320C", "#141418", 1f);
@@ -181,6 +185,8 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < 2; i++)
             {
                 Vector3 p = Kit.FloorUnder(at + dir * ahead + side * (i == 0 ? -0.17f : 0.17f), 0.8f) + Vector3.up * 0.015f;
+                // R157: pressed into the floor as a decal (it follows a step or a slope); the tile where there is none.
+                if (SkillDecals.Stamp("Hoof", p, dir, 0.32f, life)) continue;
                 var t = new Kit.Tile(kit, "Hoof print");
                 var f = kit.Run(life, (fx, d) =>
                 {

@@ -71,9 +71,8 @@ namespace ChessFight.Game
                          && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))
                     Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = Cursor.lockState != CursorLockMode.Locked;
-                // V is push to talk while voice chat runs (R131): then it does not fly.
-                bool talkKey = VoiceBoard.Running && (GameSettings.Key(GameKey.Talk, 0) == KeyCode.V || GameSettings.Key(GameKey.Talk, 1) == KeyCode.V);
-                if (Input.GetKeyDown(KeyCode.V) && !talkKey)
+                // F1 flies the free camera (승규 10-22; was V, which push-to-talk took over in R131).
+                if (Input.GetKeyDown(KeyCode.F1))
                 {
                     FreeFly = !FreeFly;
                     if (!FreeFly) initialized = false;

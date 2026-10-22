@@ -1,3 +1,4 @@
+using ChessFight.Game;
 using ChessFight.Network;
 using UnityEngine;
 
@@ -67,8 +68,7 @@ namespace ChessFight.RagdollLab
             pieceMarker.localRotation = Quaternion.Inverse(head.rotation) * Quaternion.LookRotation(Flat(facing).normalized, Vector3.up);
             if (markerMaterial == null)
             {
-                var shader = Shader.Find("Standard");
-                markerMaterial = new Material(shader != null ? shader : Shader.Find("Legacy Shaders/Diffuse")) { color = new Color(0.95f, 0.78f, 0.25f) };
+                markerMaterial = new Material(LitMaterials.Lit) { color = new Color(0.95f, 0.78f, 0.25f) };
             }
             switch (piece)
             {
@@ -126,7 +126,7 @@ namespace ChessFight.RagdollLab
                 pawnMesh = skin.sharedMesh;
                 pawnSkinMaterial = skin.sharedMaterial;
             }
-            skin.sharedMesh = look.sharedMesh;
+            SwapSkinMesh(look.sharedMesh);
             skin.sharedMaterial = look.sharedMaterial;
             if (VisualSync != null) VisualSync.SetPieceLook(look.transform);
             return true;
@@ -135,11 +135,22 @@ namespace ChessFight.RagdollLab
         void ShowPawnMesh()
         {
             if (skin == null || pawnMesh == null) return;
-            skin.sharedMesh = pawnMesh;
+            SwapSkinMesh(pawnMesh);
             skin.sharedMaterial = pawnSkinMaterial;
             pawnMesh = null;
             pawnSkinMaterial = null;
             if (VisualSync != null) VisualSync.ClearPieceLook();
+        }
+
+        // The skin is switched off for the swap so its GPU skinning buffer is made again for the new mesh: swapped
+        // while on, a render in the same frame (a capture or a render texture) still has the old mesh's vertex count
+        // and Unity stops drawing the skin ("does not match the expected mesh data size and vertex stride").
+        void SwapSkinMesh(Mesh mesh)
+        {
+            bool on = skin.enabled;
+            skin.enabled = false;
+            skin.sharedMesh = mesh;
+            skin.enabled = on;
         }
 
         RagdollVisualSync visualSync;

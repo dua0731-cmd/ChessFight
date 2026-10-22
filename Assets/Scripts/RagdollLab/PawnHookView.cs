@@ -1,4 +1,5 @@
 using System;
+using ChessFight.Game;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -191,15 +192,15 @@ namespace ChessFight.RagdollLab
         {
             if (ropeMaterial != null) return;
             Shader unlit = Shader.Find("Sprites/Default");
-            Shader lit = Shader.Find("Standard");
+            Shader lit = LitMaterials.Lit;
             ropeMaterial = new Material(unlit) { color = new Color(0.46f, 0.33f, 0.19f) };
             arcMaterial = new Material(unlit) { color = new Color(1f, 1f, 1f, 0.55f) };
             markerMaterial = new Material(lit != null ? lit : unlit) { color = new Color(1f, 0.85f, 0.3f) };
             metalMaterial = new Material(lit != null ? lit : unlit) { color = new Color(0.32f, 0.33f, 0.36f) };
             if (lit != null)
             {
-                metalMaterial.SetFloat("_Metallic", 0.7f);
-                metalMaterial.SetFloat("_Glossiness", 0.55f);
+                LitMaterials.SetMetallic(metalMaterial, 0.7f);
+                LitMaterials.SetSmoothness(metalMaterial, 0.55f);
             }
         }
     }

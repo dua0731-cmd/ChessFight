@@ -17,7 +17,9 @@ namespace ChessFight.RagdollLab
     [DefaultExecutionOrder(50)]
     public class PawnRushSkillProbe : MonoBehaviour
     {
-        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "rook", "rook-free", "rook-wall", "rook-wall-slant", "rook-barricade", "rook-cluster", "rook-air", "queen", "knight", "knight-turn", "knight-straight", "knight-air", "knight-stomp", "knight-stomp-jump", "knight-land", "knight-e", "bishop", "bishop-trip", "king-call", "king-call-hit", "king-call-miss", "all" };
+        // R153 (skill plan v0.3 §9.3): the rook's chain and the knight's fork in place of the charge and the bent leap; the
+        // king is out of Pawn Rush.
+        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "pawn-home", "pawn-none", "rook-chain-enemy", "rook-chain-ally", "rook-chain-cancel", "rook-chain-wall", "queen", "knight-fork", "knight-whiff", "knight-none", "knight-e", "bishop", "bishop-trip", "bishop-leash", "rook-ground", "rook-aim", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>The current run has set its pieces down and settled them (the film records from here).</summary>
         public static bool Staged { get; private set; }
@@ -120,22 +122,16 @@ namespace ChessFight.RagdollLab
                     "pawn" => PawnSteps(),
                     "pawn-angles" => PawnAngles(),
                     "pawn-help" => PawnHelp(),
-                    "rook" => Rook(),
-                    "rook-free" => RookFree(),
-                    "rook-wall" => RookWall(),
-                    "rook-wall-slant" => RookWallSlant(),
-                    "rook-barricade" => RookBarricade(),
-                    "rook-cluster" => RookCluster(),
-                    "rook-air" => RookAir(),
+                    "pawn-home" => PawnHome(),
+                    "pawn-none" => PawnNone(),
+                    "rook-chain-enemy" => RookChainEnemy(),
+                    "rook-chain-ally" => RookChainAlly(),
+                    "rook-chain-cancel" => RookChainCancel(),
+                    "rook-chain-wall" => RookChainWall(),
                     "queen" => Queen(),
-                    "knight" => Knight(false),
-                    "knight-turn" => Knight(true),
-                    "knight-straight" => KnightStraight(),
-                    "knight-air" => KnightAir(),
-                    "knight-stomp" => KnightStomp(),
-                    "knight-stomp-jump" => KnightStompJump(0.12f),
-                    "knight-stomp-jump-late" => KnightStompJump(0.3f),
-                    "knight-land" => KnightLand(),
+                    "knight-fork" => KnightFork(),
+                    "knight-whiff" => KnightWhiff(),
+                    "knight-none" => KnightNone(),
                     "knight-e" => KnightE(),
                     // R130 (승규 님: "벽이나 폰들이랑 부딪히거나 이럴 때 좌클릭 우클릭 무슨 키를 눌러도 낑긴 것 같은 거"):
                     // press into a wall or a crowd of pawns, then try to get away (and click, and grab) and log the body.
@@ -144,9 +140,9 @@ namespace ChessFight.RagdollLab
                     "stuck-dive" => StuckDive(),
                     "bishop" => Bishop(),
                     "bishop-trip" => BishopTrip(),
-                    "king-call" => KingCall(),
-                    "king-call-hit" => KingCallHit(),
-                    "king-call-miss" => KingCallMiss(),
+                    "bishop-leash" => BishopLeash(),
+                    "rook-ground" => RookGroundRun(),
+                    "rook-aim" => RookAimRun(),
                     _ => null,
                 };
                 if (run == null) { Add($"모르는 시험: {n}"); continue; }
@@ -382,7 +378,7 @@ namespace ChessFight.RagdollLab
         {
             foreach (float angle in new[] { 0f, 45f, 90f, 180f })
             {
-                yield return Ready(PieceKind.Pawn, new Vector3(0f, 0f, -7.9f), Vector3.forward, 1);   // R129: 0.4 m closer (the step is 1.1 m now)
+                yield return Ready(PieceKind.Pawn, new Vector3(0f, 0f, -8.3f), Vector3.forward, 1);   // R153: the step is 1.5 m again
                 var d = game.dummies[0];
                 Place(d, new Vector3(0f, 0f, -6f), Quaternion.Euler(0f, angle, 0f) * Vector3.back);
                 yield return new WaitForSeconds(0.6f);
@@ -396,7 +392,7 @@ namespace ChessFight.RagdollLab
 
         IEnumerator PawnHelp()
         {
-            yield return Ready(PieceKind.Pawn, new Vector3(0f, 0f, -7.9f), Vector3.forward, 1);   // R129: 0.4 m closer (the step is 1.1 m now)
+            yield return Ready(PieceKind.Pawn, new Vector3(0f, 0f, -8.3f), Vector3.forward, 1);   // R153: the step is 1.5 m again
             var p1 = P1;
             var d = game.dummies[0];
             d.Team = p1.Team;
@@ -408,128 +404,11 @@ namespace ChessFight.RagdollLab
             Tap();
             yield return Until(() => d.State != PawnState.Ragdoll, 0.6f);
             string after = StateText(d);
-            float haste = p1.HasteLeft;
             yield return Until(() => d.State == PawnState.Active, 2f);
             float guard = d.GetUpGuardLeft;
             yield return Until(() => p1.SkillStage == SkillStage.None, 1.5f);
-            Add($"폰 부축: 팀원 {before} → {after}, 진군 {haste:0.0}초 (나·팀원 모두), 일어선 팀원 기상 보호 {guard:0.0}초 (기대 1.6), 쿨 {p1.SkillCooldown:0.0}초 (한 걸음 3.5 − 1.5 = 2.0 기대)");
+            Add($"폰 부축: 팀원 {before} → {after}, 일어선 팀원 기상 보호 {guard:0.0}초 (기대 1.5, 속도 버프 없음), 쿨 {p1.SkillCooldown:0.0}초 (한 걸음 3.5 − 1.5 = 2.0 기대)");
             d.Team = Teams.None;
-        }
-
-        IEnumerator Rook()
-        {
-            yield return Ready(PieceKind.Rook, new Vector3(0f, 0f, -10f), Vector3.forward, 4);
-            float[] z = { -7.6f, -6.6f, -5.6f, -4.6f };
-            for (int i = 0; i < 4; i++) Place(game.dummies[i], new Vector3(i % 2 == 0 ? 0.2f : -0.2f, 0f, z[i]), Vector3.back);
-            yield return new WaitForSeconds(0.7f);
-            var p1 = P1;
-            Vector3 start = p1.Hips.position;
-            yield return AimThenClick(0.4f);
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
-            Vector3 charge = p1.Hips.position;
-            yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
-            int down = 0;
-            foreach (var d in game.dummies) if (d.State == PawnState.Ragdoll) down++;
-            Add($"룩 돌진: 예고 동안 움직인 거리 {FlatDistance(start, charge):0.00} m, 돌진 거리 {FlatDistance(charge, p1.Hips.position):0.00} m, 넘어진 더미 {down}/4 (기대 3, 4번째는 밀림)");
-            yield return Until(() => p1.SkillStage == SkillStage.None, 1.5f);
-            Add($"  룩 쿨 {p1.SkillCooldown:0.0}초 (기대 7)");
-        }
-
-        /// <summary>The bed's 2 x 2 lump (key V) in front of the rook, then the charge, with the bed's test cooldown.</summary>
-        IEnumerator RookCluster()
-        {
-            yield return Ready(PieceKind.Rook, new Vector3(-6f, 0f, -12f), Vector3.forward, 4);
-            var p1 = P1;
-            bed.ClusterDummies(p1);
-            yield return new WaitForSeconds(0.8f);
-            Tap();
-            yield return new WaitForSeconds(0.2f);
-            // Aiming, it walks (R75): to the left and back, the line swinging with the mouse. Shift is held the
-            // whole time; aiming, it must not sprint.
-            aimTopSpeed = 0f;
-            aimSprinted = false;
-            sprint = true;
-            move = Vector3.left;
-            yield return Sweep(Vector3.forward, 30f, 0.6f, "조준 중 걷기 (Shift 질주 X)");
-            move = Vector3.right;
-            yield return new WaitForSeconds(0.4f);
-            move = Vector3.zero;
-            sprint = false;
-            Vector3 lump = Vector3.zero;
-            for (int i = 0; i < 4; i++) lump += game.dummies[i].Hips.position;
-            yield return AimAt(lump / 4f, 0.35f);
-            yield return new WaitForSeconds(0.15f);
-            float aimTop = aimTopSpeed;
-            Click();
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
-            Vector3 from = p1.Hips.position;
-            yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
-            Vector3 end = p1.Hips.position;
-            int down = 0, staggered = 0;
-            for (int i = 0; i < 4; i++)
-            {
-                var d = game.dummies[i];
-                if (d.State == PawnState.Ragdoll) down++;
-                else if (d.Staggered) staggered++;
-            }
-            yield return new WaitForSeconds(0.6f);
-            float spread = 0f;
-            for (int i = 0; i < 4; i++) spread = Mathf.Max(spread, FlatDistance(game.dummies[i].Hips.position, p1.Hips.position));
-            Add($"룩 조준 중 걷기: 최고 {aimTop:0.0} m/s, 질주 상태 {(aimSprinted ? "켜짐 (막히지 않음!)" : "한 번도 안 켜짐")} (Shift를 누르고 있었음, 달리기 약 5.6 · 질주 약 9.8 m/s)");
-            Add($"룩 4명 뭉치 돌진: 돌진 {FlatDistance(from, end):0.00} m, 돌진이 끝날 때 넘어짐 {down}/4 (기대 3), 휘청 {staggered}, 0.6초 뒤 가장 멀리 날아간 더미 {spread:0.0} m (룩에서)");
-        }
-
-        /// <summary>The rook's charge in the air (R80): a jump, F near the top, the mouse up 30° (then down 45°), the
-        /// left click; it holds still a moment and charges along the aim (down: into the floor, a slam).</summary>
-        IEnumerator RookAir()
-        {
-            foreach (float up in new[] { 30f, -45f })
-            {
-                yield return Ready(PieceKind.Rook, new Vector3(-6f, 0f, -12f), Vector3.forward, 1);
-                var p1 = P1;
-                Vector3 ground = p1.Hips.position;
-                jumpEdge = true;
-                Say("스페이스 (점프)");
-                yield return Until(() => p1.Hips.linearVelocity.y > 1f, 0.5f);
-                yield return Until(() => p1.Hips.linearVelocity.y < 1f, 1f);
-                // The camera's look: neutral pitch = level; up = the mouse pushed up (the camera looks less down).
-                aim = Quaternion.Euler(bed.skills.rookAirNeutralPitch - up, 0f, 0f) * Vector3.forward;
-                Tap();
-                yield return new WaitForSeconds(0.1f);
-                Say(up > 0f ? "마우스 위로" : "마우스 아래로");
-                yield return new WaitForSeconds(0.12f);
-                bool aimingInAir = p1.SkillAiming && !p1.Grounded;
-                Click();
-                yield return Until(() => p1.SkillStage == SkillStage.Active || p1.SkillStage == SkillStage.Recovery, 1f);
-                Vector3 from = p1.Hips.position;
-                float top = from.y;
-                yield return Until(() =>
-                {
-                    top = Mathf.Max(top, p1.Hips.position.y);
-                    return p1.SkillStage != SkillStage.Active;
-                }, 2f);
-                Vector3 end = p1.Hips.position;
-                string how = p1.SkillDetail;
-                yield return Until(() => p1.SkillStage == SkillStage.None && p1.Grounded, 3f);
-                Add($"룩 공중 돌진 ({(up > 0f ? "위" : "아래")} {Mathf.Abs(up):0}°): 공중에서 조준 {(aimingInAir ? "됨" : "안 됨")}, 돌진 {Vector3.Distance(from, end):0.00} m (앞 {end.z - from.z:0.00} · 높이 {end.y - from.y:+0.00;-0.00}), 골반 최고 바닥 위 +{top - ground.y:0.00} m, 끝 {how}, 착지 뒤 {StateText(p1)}");
-                aim = Vector3.forward;
-                yield return new WaitForSeconds(0.6f);
-            }
-        }
-
-        IEnumerator RookFree()
-        {
-            yield return Ready(PieceKind.Rook, new Vector3(-6f, 0f, -12f), Vector3.forward, 1);
-            var p1 = P1;
-            yield return AimThenClick(0.4f);
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
-            Vector3 from = p1.Hips.position;
-            float t = 0f, top = 0f;
-            yield return Until(() => { t += Time.fixedDeltaTime; top = Mathf.Max(top, p1.HorizontalSpeed); return p1.SkillStage != SkillStage.Active; }, 2f);
-            Vector3 end = p1.Hips.position;
-            yield return Until(() => p1.SkillStage == SkillStage.None, 1.5f);
-            Add($"룩 빈 바닥 돌진: {FlatDistance(from, end):0.00} m (기대 5.95), 돌진 {t:0.00}초 (기대 0.7), 최고 {top:0.0} m/s (기대 8.5), 후딜이 끝날 때까지 미끄러져 총 {FlatDistance(from, p1.Hips.position):0.00} m");
-            yield return new WaitForSeconds(0.5f);
         }
 
         /// <summary>R130: walk (and sprint) into the 3 m wall at x 20, or into four dummies packed in front; then each way
@@ -620,45 +499,6 @@ namespace ChessFight.RagdollLab
             move = Vector3.zero;
         }
 
-        IEnumerator RookWall()
-        {
-            // [3] the walls at x 20..25 (the 3 m one at z 0).
-            yield return Ready(PieceKind.Rook, new Vector3(15.5f, 0f, 0f), Vector3.right, 1);
-            var p1 = P1;
-            yield return AimThenClick(0.4f);
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
-            yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
-            Add($"룩 → 벽: 멈춘 곳 x {p1.Hips.position.x:0.00} (벽 앞면 20), 상태 {StateText(p1)}, 휘청 남은 {p1.StaggerLeft:0.00}초");
-            yield return new WaitForSeconds(1.2f);
-        }
-
-        /// <summary>R92: the same 3 m wall met at 35° and 0.7 m from its end (z 3), as in 승규's screenshot, where the
-        /// battlement ring, square to the charge, sank half into the wall.</summary>
-        IEnumerator RookWallSlant()
-        {
-            Vector3 run = Quaternion.Euler(0f, -35f, 0f) * Vector3.right;
-            yield return Ready(PieceKind.Rook, new Vector3(15.8f, 0f, -0.45f), run, 1);
-            var p1 = P1;
-            yield return AimThenClick(0.4f);
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
-            yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
-            Add($"룩 → 벽 35°: 멈춘 곳 x {p1.Hips.position.x:0.00} · z {p1.Hips.position.z:0.00} (벽 앞면 x 20, 끝 z 3), 상태 {StateText(p1)}");
-            yield return new WaitForSeconds(1.2f);
-        }
-
-        IEnumerator RookBarricade()
-        {
-            var barricade = FindFirstObjectByType<SkillBarricade>();
-            Vector3 at = barricade != null ? barricade.transform.position : bed.barricadeAt;
-            yield return Ready(PieceKind.Rook, at + new Vector3(4.6f, 0f, 0f), Vector3.left, 1);
-            var p1 = P1;
-            yield return AimThenClick(0.4f);
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1.5f);
-            yield return Until(() => p1.SkillStage != SkillStage.Active, 1.5f);
-            Add($"룩 → 바리케이드: 바리케이드 {(barricade != null && !barricade.Standing ? "부서짐" : "그대로")}, 룩 x {p1.Hips.position.x:0.00} (바리케이드 x {at.x:0.0}, 지나갔으면 더 작음)");
-            yield return new WaitForSeconds(0.8f);
-        }
-
         IEnumerator Queen()
         {
             yield return Ready(PieceKind.Queen, new Vector3(0f, 0f, -8f), Vector3.forward, 3);
@@ -678,163 +518,6 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < 3; i++)
                 Add($"퀸 → 더미 {label[i]}: {StateText(game.dummies[i])}, 밀려난 거리 {FlatDistance(before[i], game.dummies[i].Hips.position):0.00} m");
             Add($"  퀸이 예고 동안 움직인 거리 {FlatDistance(queenAt, queenMid):0.00} m (제자리 기대)");
-            yield return new WaitForSeconds(1f);
-        }
-
-        IEnumerator Knight(bool turn)
-        {
-            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
-            var p1 = P1;
-            Vector3 start = p1.Hips.position;
-            Tap();
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
-            Vector3 takeoff = p1.Hips.position;
-            float peak = takeoff.y, air = 0f;
-            bool turned = false;
-            Vector3 land = takeoff;
-            bool down = false;
-            while (p1.SkillStage == SkillStage.Active && air < 3f)
-            {
-                peak = Mathf.Max(peak, p1.Hips.position.y);
-                air += Time.fixedDeltaTime;
-                if (!down && air > 0.2f && p1.Hips.linearVelocity.y < 0f && p1.Hips.position.y <= takeoff.y + 0.01f)
-                {
-                    land = p1.Hips.position;
-                    down = true;
-                }
-                if (turn && !turned && air >= 0.3f)
-                {
-                    move = Vector3.right;   // held first: the key is read in the step that takes the press
-                    yield return null;
-                    yield return null;
-                    Tap("F + 오른쪽(D)");
-                    turned = true;
-                }
-                yield return new WaitForFixedUpdate();
-            }
-            if (!down) land = p1.Hips.position;
-            move = Vector3.zero;
-            if (!turn)
-                Add($"나이트 도약: 골반 최고 +{peak - takeoff.y:0.00} m (기대 1.6), 비거리 {FlatDistance(takeoff, land):0.00} m (골반이 출발 높이로 돌아올 때, 기대 약 {bed.skills.knightDistance:0.0}), 착지 판정까지 {air:0.00}초 (기대 약 1.14)");
-            else
-            {
-                Vector3 d = land - takeoff;
-                Add($"나이트 꺾기: 착지 앞 {d.z:0.00} m · 옆 {d.x:0.00} m (0.35초에 오른쪽으로 꺾음), 체공 {air:0.00}초");
-            }
-            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
-            Add($"  착지 후딜 뒤 쿨 {p1.SkillCooldown:0.0}초 (기대 7)");
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        /// <summary>The knight's second press with no turn (R80, "다~당"): it kicks off again straight on.</summary>
-        IEnumerator KnightStraight()
-        {
-            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
-            var p1 = P1;
-            Tap();
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
-            Vector3 takeoff = p1.Hips.position;
-            yield return new WaitForSeconds(0.35f);
-            Tap("F (그대로 앞)");
-            float peak = takeoff.y;
-            yield return Until(() => { peak = Mathf.Max(peak, p1.Hips.position.y); return p1.SkillStage != SkillStage.Active; }, 3f);
-            Vector3 d = p1.Hips.position - takeoff;
-            Add($"나이트 직진 두 번 F: 착지 앞 {d.z:0.00} m · 옆 {d.x:0.00} m (한 번 도약은 약 {bed.skills.knightDistance:0.0} m), 골반 최고 +{peak - takeoff.y:0.00} m, 상태 {StateText(p1)}");
-            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        /// <summary>The knight's leap from the air (R81): a jump, F near the top, it leaps on from there.</summary>
-        IEnumerator KnightAir()
-        {
-            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
-            var p1 = P1;
-            Vector3 ground = p1.Hips.position;
-            jumpEdge = true;
-            Say("스페이스 (점프)");
-            yield return Until(() => p1.Hips.linearVelocity.y > 1f, 0.5f);
-            yield return Until(() => p1.Hips.linearVelocity.y < 0.8f, 1f);
-            float jumped = p1.Hips.position.y - ground.y;
-            Tap("F (공중)");
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 0.5f);
-            bool leapt = p1.SkillStage == SkillStage.Active;
-            Vector3 takeoff = p1.Hips.position;
-            float peak = takeoff.y;
-            yield return Until(() => { peak = Mathf.Max(peak, p1.Hips.position.y); return p1.SkillStage != SkillStage.Active; }, 3f);
-            Add($"나이트 공중 도약: 점프 {jumped:0.00} m에서 F → {(leapt ? "바로 도약" : "도약 안 됨")}, 골반 최고 바닥 위 +{peak - ground.y:0.00} m, 착지까지 앞 {FlatDistance(takeoff, p1.Hips.position):0.00} m, 상태 {StateText(p1)}");
-            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        IEnumerator KnightStomp()
-        {
-            // An enemy off to the side of the leap's line: in the air it is found (within knightLockRange), the
-            // second F flies the knight onto its head, and it lands beside it.
-            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
-            var d = game.dummies[0];
-            Place(d, new Vector3(2f, 0f, -7.6f), Vector3.back);
-            yield return new WaitForSeconds(0.7f);
-            var p1 = P1;
-            Tap();
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
-            yield return Until(() => p1.KnightMarked != null || p1.SkillStage != SkillStage.Active, 1.5f);
-            float found = p1.SkillStageTime;
-            bool marked = p1.KnightMarked == d;
-            yield return new WaitForSeconds(0.15f);
-            Tap();
-            yield return Until(() => d.State == PawnState.Ragdoll || p1.SkillStage != SkillStage.Active, 2f);
-            string hit = d.State == PawnState.Ragdoll ? d.LastSkillHit : "안 맞음";
-            yield return Until(() => p1.SkillStage != SkillStage.Active, 3f);
-            Add($"나이트 머리 찍기: 공중 {found:0.00}초에 {(marked ? "더미 감지" : "감지 못함")} → F → 더미 {StateText(d)} · {hit}, 착지 지점이 더미에서 {FlatDistance(p1.Hips.position, d.Hips.position):0.0} m");
-            yield return new WaitForSeconds(1f);
-        }
-
-        /// <summary>R129 (승규 님: "상대가 점프하면 캔슬 돼"): as knight-stomp, and the enemy jumps <paramref name="after"/>
-        /// s after the second F (just as the knight flies at it, or as it comes down).</summary>
-        IEnumerator KnightStompJump(float after)
-        {
-            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
-            var d = game.dummies[0];
-            Place(d, new Vector3(2f, 0f, -7.6f), Vector3.back);
-            yield return new WaitForSeconds(0.7f);
-            var p1 = P1;
-            Tap();
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
-            yield return Until(() => p1.KnightMarked != null || p1.SkillStage != SkillStage.Active, 1.5f);
-            bool marked = p1.KnightMarked == d;
-            yield return new WaitForSeconds(0.15f);
-            Tap();
-            yield return new WaitForSeconds(after);
-            walker = d;
-            walkerMove = Vector3.zero;
-            walkerJump = true;
-            float top = d.Hips.position.y;
-            for (float t = 0f; t < 0.45f && d.State != PawnState.Ragdoll; t += Time.deltaTime)
-            {
-                top = Mathf.Max(top, d.Hips.position.y);
-                yield return null;
-            }
-            yield return Until(() => d.State == PawnState.Ragdoll || p1.SkillStage != SkillStage.Active, 2f);
-            string hit = d.State == PawnState.Ragdoll ? d.LastSkillHit : "안 맞음";
-            StopWalker();
-            yield return Until(() => p1.SkillStage != SkillStage.Active, 3f);
-            Add($"나이트 머리 찍기 + 적 점프 ({after:0.00}초 뒤): {(marked ? "더미 감지" : "감지 못함")} → 더미 골반 {top - 0.0f:0.00} m까지 뜀 → {StateText(d)} · {hit}");
-            yield return new WaitForSeconds(1f);
-        }
-
-        IEnumerator KnightLand()
-        {
-            // Landing about 5 m on; a dummy 1 m beside that spot, another 2.5 m off.
-            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 2);
-            Place(game.dummies[0], new Vector3(1f, 0f, -7f), Vector3.back);
-            Place(game.dummies[1], new Vector3(-2.5f, 0f, -7f), Vector3.back);
-            yield return new WaitForSeconds(0.7f);
-            var p1 = P1;
-            Tap();
-            bool near = false, far = false;
-            yield return Until(() => p1.SkillStage == SkillStage.Recovery, 3f);
-            yield return Until(() => { near |= game.dummies[0].Staggered; far |= game.dummies[1].Staggered; return false; }, 0.3f);
-            Add($"나이트 착지 충격: 1 m 옆 더미 {(near ? "휘청" : "그대로")} (기대 휘청), 2.5 m 옆 더미 {(far ? "휘청" : "그대로")} (기대 그대로)");
             yield return new WaitForSeconds(1f);
         }
 
@@ -865,122 +548,6 @@ namespace ChessFight.RagdollLab
             yield return Until(() => !d.SkillBound, 2f);
             Add($"  풀림: {StateText(d)} (기대 서 있음)");
             yield return new WaitForSeconds(0.9f);
-        }
-
-        // ---------------------------------------------------------------- the king's call (R146)
-
-        /// <summary>The king (x 15.5, facing the 3 m wall at x 20) and two dummies on his team, one behind the wall (x 26.5),
-        /// one out in the open. The king opens his list, calls both; they answer by themselves (0.8 s) and come in to the two
-        /// squares behind him, the first through the wall. On the way the first is hit (a knockdown, a push): it must not take.</summary>
-        IEnumerator KingCall()
-        {
-            yield return Ready(PieceKind.King, new Vector3(15.5f, 0f, 0f), Vector3.right, 2);
-            var p1 = P1;
-            var a = game.dummies[0];
-            var b = game.dummies[1];
-            KingMates(p1, a, b);
-            Place(a, new Vector3(26.5f, 0f, 0f), Vector3.left);
-            Place(b, new Vector3(11f, 0f, 6.5f), Vector3.back);
-            yield return new WaitForSeconds(0.6f);
-            Tap();
-            yield return Until(() => p1.KingListOpen, 1f);
-            var list = new List<RagdollPawn>();
-            p1.KingCallList(list);
-            Add($"킹 목록: {list.Count}명 ({string.Join(", ", list.ConvertAll(p => p.DisplayName))})");
-            yield return new WaitForSeconds(0.4f);
-            p1.AskKingCall(a, b);
-            Say("좌클릭 두 명 → F");
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
-            Vector3 spotA = p1.KingSpot(0, 2), spotB = p1.KingSpot(1, 2);
-            float called = Time.time, goneA = -1f, landA = -1f, landB = -1f, minX = 99f;
-            bool hitTaken = false;
-            while (Time.time - called < 4f && (landA < 0f || landB < 0f))
-            {
-                if (a.KingCarried)
-                {
-                    if (goneA < 0f) goneA = Time.time;
-                    minX = Mathf.Min(minX, a.Hips.position.x);
-                    if (!hitTaken && Time.time - goneA > 0.3f)
-                    {
-                        hitTaken = true;
-                        a.Knockdown("시험: 오는 중에 맞힘");
-                        a.TakeHit(Vector3.right * 6f, 1f, 0f, false);
-                    }
-                }
-                else if (goneA >= 0f && landA < 0f) landA = Time.time;
-                if (b.KingCarried && landB < -0.5f) landB = -0.25f;
-                else if (!b.KingCarried && landB == -0.25f) landB = Time.time;
-                yield return null;
-            }
-            yield return new WaitForSeconds(0.4f);
-            Add($"  더미 A (벽 뒤 x 26.5): 대답 {(goneA >= 0f ? goneA - called : -1f):0.00}초 · 오는 데 {(landA > 0f ? landA - goneA : -1f):0.00}초 · 도착 칸까지 {FlatDistance(a.Hips.position, spotA):0.00} m · 지나간 가장 작은 x {minX:0.0} (벽 20~25 통과) · {StateText(a)} · 오는 중 맞힘: {a.LastSkillHit}");
-            Add($"  더미 B (빈 바닥): 도착 칸까지 {FlatDistance(b.Hips.position, spotB):0.00} m · {StateText(b)}");
-            Add($"  킹: {StateText(p1)}, 쿨 {p1.SkillCooldown:0.0}초 (기대 {bed.skills.kingCooldown:0.#}) · 두 칸 사이 {FlatDistance(a.Hips.position, b.Hips.position):0.00} m");
-            yield return new WaitForSeconds(1f);
-        }
-
-        /// <summary>Hit while he calls: a dummy is called, and before it answers (0.8 s) the king is knocked down. It must not
-        /// set out.</summary>
-        IEnumerator KingCallHit()
-        {
-            yield return Ready(PieceKind.King, new Vector3(0f, 0f, -8f), Vector3.forward, 1);
-            var p1 = P1;
-            var a = game.dummies[0];
-            KingMates(p1, a, null);
-            Place(a, new Vector3(3f, 0f, -12f), Vector3.forward);
-            yield return new WaitForSeconds(0.5f);
-            Tap();
-            yield return Until(() => p1.KingListOpen, 1f);
-            p1.AskKingCall(a, null);
-            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
-            yield return new WaitForSeconds(0.3f);
-            p1.Knockdown("시험: 부르는 킹을 넘어뜨림");
-            float t = 0f;
-            bool went = false;
-            while (t < 1.5f)
-            {
-                went |= a.KingCarried;
-                t += Time.deltaTime;
-                yield return null;
-            }
-            Add($"킹이 부르는 중 넘어짐: 더미 출발 {(went ? "함 (틀림)" : "안 함")} · 더미의 부름 {(a.KingCaller != null ? "남음 (틀림)" : "없어짐")} · 킹 쿨 {p1.SkillCooldown:0.0}초");
-            yield return new WaitForSeconds(2.5f);
-        }
-
-        /// <summary>No answer: the dummy is told not to answer; after three seconds the call runs out, the cooldown starts.</summary>
-        IEnumerator KingCallMiss()
-        {
-            yield return Ready(PieceKind.King, new Vector3(0f, 0f, -8f), Vector3.forward, 1);
-            var p1 = P1;
-            var a = game.dummies[0];
-            KingMates(p1, a, null);
-            Place(a, new Vector3(-3f, 0f, -12f), Vector3.forward);
-            RagdollPawn.KingCallBotsAnswer = false;
-            try
-            {
-                yield return new WaitForSeconds(0.5f);
-                Tap();
-                yield return Until(() => p1.KingListOpen, 1f);
-                p1.AskKingCall(a, null);
-                yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
-                float called = Time.time;
-                yield return Until(() => p1.SkillStage == SkillStage.None, 4.5f);
-                Add($"대답 없음: 부름이 끝난 때 {Time.time - called:0.00}초 (기대 {bed.skills.kingCallWindow:0.#}) · 더미 출발 {(a.KingCarried ? "함 (틀림)" : "안 함")} · 킹 쿨 {p1.SkillCooldown:0.0}초");
-            }
-            finally { RagdollPawn.KingCallBotsAnswer = true; }
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        /// <summary>The dummies on the king's team, answering by themselves.</summary>
-        void KingMates(RagdollPawn king, RagdollPawn a, RagdollPawn b)
-        {
-            foreach (var d in new[] { a, b })
-            {
-                if (d == null) continue;
-                d.Team = king.Team;
-                d.SkillBot = true;
-                if (d.skin != null) d.skin.sharedMaterial = game.TeamMaterial(king.Team);
-            }
         }
 
         IEnumerator Bishop()
@@ -1015,21 +582,379 @@ namespace ChessFight.RagdollLab
             bool pulled = wire != null && wire.Pulls > pulls;
             Add($"  일어나 다시 지나간 더미: {StateText(d)}, 줄 {(pulled ? $"{wire.LastPull:0.00} m 늘어났다 빠져나감" : wire == null ? "없음" : "안 늘어남")} (R138부터 기대: 묶은 줄은 다 써서 안 늘어나거나 없음, 안 넘어짐)");
             yield return new WaitForSeconds(0.5f);
-            // A fresh wire; a rook runs through it: it snaps.
-            p1.ResetSkill();
-            yield return AimThenClick(0.4f);
-            yield return new WaitForSeconds(0.9f);
-            d.SetPiece(PieceKind.Rook);
-            Place(d, new Vector3(3.5f, 0f, -6f), Vector3.left);
             yield return new WaitForSeconds(0.5f);
-            walker = d;
-            walkerMove = Vector3.left;
-            yield return new WaitForSeconds(1.6f);
-            StopWalker();
-            wire = FindFirstObjectByType<SkillTripwire>();
-            Add($"  룩 더미가 지나감: {StateText(d)}, 밧줄 {(wire == null ? "끊어짐" : "남아 있음")}");
+        }
+
+        // ---------------------------------------------------------------- R153 (skill plan v0.3)
+
+        /// <summary>The dummies on P1's team (the rook's chain offers them its handle; they grab it by themselves).</summary>
+        void Mates(RagdollPawn p1, params RagdollPawn[] dummies)
+        {
+            foreach (var d in dummies)
+            {
+                d.Team = p1.Team;
+                d.SkillBot = true;
+                if (d.skin != null) d.skin.sharedMaterial = game.TeamMaterial(p1.Team);
+            }
+        }
+
+        /// <summary>The pawn's second step homes (plan §3): an enemy ahead and off to the right; after the first step the
+        /// second goes for it and bends onto it. Then a downed teammate off to the left: helped up.</summary>
+        IEnumerator PawnHome()
+        {
+            yield return Ready(PieceKind.Pawn, new Vector3(0f, 0f, -12f), Vector3.forward, 2);
+            var p1 = P1;
+            var d = game.dummies[0];
+            Place(d, new Vector3(1.1f, 0f, -8.9f), Vector3.back);   // about 1.9 m ahead and 30° right of where the first step ends
+            yield return new WaitForSeconds(0.6f);
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.Link, 1f);
+            var target = p1.PawnTarget;
+            Vector3 one = p1.Hips.position;
+            yield return new WaitForSeconds(0.12f);
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1.2f);
+            yield return new WaitForSeconds(0.1f);
+            Add($"폰 두 번째 걸음 (적): 대상 {(target == d ? "더미" : target != null ? target.DisplayName : "없음")}, 두 번째 걸음 {FlatDistance(one, p1.Hips.position):0.00} m, 더미 {StateText(d)} · {d.LastSkillHit}, 쿨 {p1.SkillCooldown:0.0}초 (기대 5)");
+            yield return new WaitForSeconds(1.5f);
+            // A downed teammate ahead to the left.
+            yield return Ready(PieceKind.Pawn, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
+            p1 = P1;
+            d = game.dummies[0];
+            Mates(p1, d);
+            Place(d, new Vector3(-1.2f, 0f, -8.8f), Vector3.back);
+            yield return new WaitForSeconds(0.5f);
+            d.Knockdown("시험: 넘어뜨리기", 4f);
+            yield return new WaitForSeconds(0.8f);
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.Link, 1f);
+            target = p1.PawnTarget;
+            yield return new WaitForSeconds(0.12f);
+            Tap();
+            yield return Until(() => d.State != PawnState.Ragdoll || p1.SkillStage == SkillStage.None, 1.2f);
+            Add($"폰 두 번째 걸음 (넘어진 팀원): 대상 {(target == d ? "팀원" : target != null ? target.DisplayName : "없음")} → 팀원 {StateText(d)} (부축 기대)");
+            d.Team = Teams.None;
+            d.SkillBot = false;
+            yield return new WaitForSeconds(1f);
+        }
+
+        /// <summary>No one to go for: the second F is ignored (a short "no" sound), only the first step counts (3.5 s).</summary>
+        IEnumerator PawnNone()
+        {
+            yield return Ready(PieceKind.Pawn, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
+            var p1 = P1;
+            Vector3 start = p1.Hips.position;
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.Link, 1f);
+            Vector3 one = p1.Hips.position;
+            yield return new WaitForSeconds(0.12f);
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1.5f);
+            Add($"폰 대상 없음: 첫 걸음 {FlatDistance(start, one):0.00} m (기대 1.5), 두 번째 F 뒤 움직임 {FlatDistance(one, p1.Hips.position):0.00} m (기대 0 근처), 쿨 {p1.SkillCooldown:0.0}초 (기대 3.5)");
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        /// <summary>The rook's chain at an enemy 5 m ahead (plan §5.3): hooked, pulled in about 0.35 s to 1.5 m in front,
+        /// staggered; the rook does not move. Then the same at a queen (weight 2): 1.3 times as long.</summary>
+        IEnumerator RookChainEnemy()
+        {
+            foreach (bool queen in new[] { false, true })
+            {
+                yield return Ready(PieceKind.Rook, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
+                var p1 = P1;
+                var d = game.dummies[0];
+                if (queen) d.SetPiece(PieceKind.Queen);
+                Place(d, new Vector3(0f, 0f, -7f), Vector3.back);
+                yield return new WaitForSeconds(0.6f);
+                Vector3 rookAt = p1.Hips.position;
+                Tap();
+                yield return new WaitForSeconds(0.3f);
+                Click();
+                yield return Until(() => p1.RookChainPhase == ChainPhase.Pull || (p1.SkillStage == SkillStage.None && p1.SkillCooldown > 0f), 1.5f);
+                float hookAt = Time.time;
+                bool pulled = p1.RookChainPhase == ChainPhase.Pull;
+                bool staggered = false;
+                yield return Until(() => !d.ChainCarried && p1.RookChainPhase != ChainPhase.Pull, 1.5f);
+                float took = Time.time - hookAt;
+                yield return Until(() => { staggered |= d.Staggered; return false; }, 0.15f);
+                Vector3 fwd = p1.Facing;
+                Add($"룩 사슬 → {(queen ? "퀸 더미" : "폰 더미")} 5 m: {(pulled ? "걸림" : "안 걸림")}, 끌려온 시간 {took:0.00}초 (기대 {(queen ? 0.46f : 0.35f):0.00}), 룩에서 {FlatDistance(d.Hips.position, p1.Hips.position):0.00} m (기대 1.5), 더미 {(staggered ? "휘청" : StateText(d))}, 룩 움직임 {FlatDistance(rookAt, p1.Hips.position):0.00} m, 쿨 {p1.SkillCooldown:0.0}초 (기대 8)");
+                if (queen) d.SetPiece(PieceKind.Pawn);
+                yield return new WaitForSeconds(0.8f);
+            }
+        }
+
+        /// <summary>The chain to a teammate 4 m ahead (plan §5.4): its handle held out, the dummy grabs it (0.6 s), it rides in
+        /// 0.5 s to 1 m beside the rook and lands standing. Then with the dummies told not to grab: wound back, 4 s.</summary>
+        IEnumerator RookChainAlly()
+        {
+            foreach (bool grabs in new[] { true, false })
+            {
+                yield return Ready(PieceKind.Rook, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
+                var p1 = P1;
+                var d = game.dummies[0];
+                Mates(p1, d);
+                Place(d, new Vector3(0.3f, 0f, -8f), Vector3.back);
+                RagdollPawn.RookChainBotsGrab = grabs;
+                try
+                {
+                    yield return new WaitForSeconds(0.6f);
+                    Tap();
+                    yield return new WaitForSeconds(0.3f);
+                    Click();
+                    yield return Until(() => p1.RookChainPhase == ChainPhase.Offer, 1f);
+                    float offered = Time.time;
+                    bool wasOffered = p1.RookChainPhase == ChainPhase.Offer;
+                    yield return Until(() => p1.RookChainPhase != ChainPhase.Offer, 3f);
+                    float waited = Time.time - offered;
+                    bool rode = p1.RookChainPhase == ChainPhase.Pull;
+                    float rideAt = Time.time, top = d.Hips.position.y, start = d.Hips.position.y;
+                    yield return Until(() => { top = Mathf.Max(top, d.Hips.position.y); return !d.ChainCarried && p1.RookChainPhase != ChainPhase.Pull; }, 1.5f);
+                    float ride = Time.time - rideAt;
+                    yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
+                    yield return new WaitForSeconds(0.2f);
+                    if (grabs)
+                        Add($"룩 사슬 → 팀원 4 m: 손잡이 {(wasOffered ? "내밂" : "안 내밂")}, 잡기까지 {waited:0.00}초, {(rode ? "끌려옴" : "안 끌려옴")} {ride:0.00}초 (기대 0.5), 골반 최고 +{top - start:0.00} m (기대 0.6 안), 룩 옆 {FlatDistance(d.Hips.position, p1.Hips.position):0.00} m (기대 1.0 근처), 팀원 {StateText(d)} (서 있음 기대), 쿨 {p1.SkillCooldown:0.0}초 (기대 8)");
+                    else
+                        Add($"  팀원이 안 잡음: 손잡이 {waited:0.00}초 (기대 2.0) 뒤 되감기, 팀원 움직임 없음 {FlatDistance(d.Hips.position, new Vector3(0.3f, d.Hips.position.y, -8f)):0.00} m, 쿨 {p1.SkillCooldown:0.0}초 (기대 4)");
+                }
+                finally { RagdollPawn.RookChainBotsGrab = true; }
+                d.Team = Teams.None;
+                d.SkillBot = false;
+                yield return new WaitForSeconds(0.6f);
+            }
+        }
+
+        /// <summary>The rook knocked down while it pulls (plan §5.6): the chain breaks, the enemy drops where it is.</summary>
+        IEnumerator RookChainCancel()
+        {
+            yield return Ready(PieceKind.Rook, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
+            var p1 = P1;
+            var d = game.dummies[0];
+            d.SetPiece(PieceKind.Queen);   // the slower pull, to catch it half way
+            Place(d, new Vector3(0f, 0f, -6.5f), Vector3.back);
+            yield return new WaitForSeconds(0.6f);
+            Tap();
+            yield return new WaitForSeconds(0.3f);
+            Click();
+            yield return Until(() => p1.RookChainPhase == ChainPhase.Pull, 1.5f);
+            yield return new WaitForSeconds(0.15f);
+            Vector3 dropAt = d.Hips.position;
+            p1.Knockdown("시험: 끄는 중인 룩을 넘어뜨림");
+            yield return new WaitForSeconds(0.6f);
+            Add($"룩이 끄는 중 넘어짐: 사슬 {(p1.RookChainPhase == ChainPhase.None ? "끊김" : "남음 (틀림)")}, 더미 끌림 {(d.ChainCarried ? "계속 (틀림)" : "멈춤")}, 끊긴 곳에서 {FlatDistance(d.Hips.position, dropAt):0.00} m · 룩에서 {FlatDistance(d.Hips.position, p1.Hips.position):0.00} m (1.5보다 멀면 도중에 놓임), 더미 {StateText(d)}, 룩 쿨 {p1.SkillCooldown:0.0}초");
             d.SetPiece(PieceKind.Pawn);
+            yield return new WaitForSeconds(2.5f);
+        }
+
+        /// <summary>The chain into the 3 m wall at x 20 (4.5 m ahead): it winds back from the wall, no one pulled.</summary>
+        IEnumerator RookChainWall()
+        {
+            yield return Ready(PieceKind.Rook, new Vector3(15.5f, 0f, 0f), Vector3.right, 0);
+            var p1 = P1;
+            yield return new WaitForSeconds(0.4f);
+            Tap();
+            yield return new WaitForSeconds(0.3f);
+            Click();
+            yield return Until(() => p1.RookChainPhase == ChainPhase.Rewind, 1f);
+            float tipX = p1.RookChainTip.x;
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
+            Add($"룩 사슬 → 벽: 사슬 끝 x {tipX:0.00} (벽 앞면 20), 되감고 끝, 쿨 {p1.SkillCooldown:0.0}초 (기대 8)");
             yield return new WaitForSeconds(0.5f);
+        }
+
+        /// <summary>The knight's fork (plan §7): an enemy 4 m ahead (the target) and one beside it; F leaps onto the target's
+        /// head (it falls), the knight lands beside it, the other staggers.</summary>
+        IEnumerator KnightFork()
+        {
+            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 2);
+            var p1 = P1;
+            var target = game.dummies[0];
+            var other = game.dummies[1];
+            Place(target, new Vector3(0f, 0f, -8f), Vector3.back);
+            Place(other, new Vector3(1.0f, 0f, -7.2f), Vector3.back);   // beside the target, a little past it (where the knight comes down)
+            yield return new WaitForSeconds(0.7f);
+            var marked = p1.KnightMarked;
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
+            float off = Time.time;
+            bool forked = false;
+            yield return Until(() => target.State == PawnState.Ragdoll || p1.SkillStage != SkillStage.Active, 2.5f);
+            float toHead = Time.time - off;
+            string atStomp = StateText(target);
+            yield return Until(() => p1.SkillStage != SkillStage.Active, 2.5f);
+            Vector3 land = p1.Hips.position, targetAt = target.Hips.position;
+            yield return Until(() => { forked |= other.Staggered; return false; }, 0.3f);
+            Add($"나이트 포크: 대상 표시 {(marked == target ? "더미 1" : marked != null ? marked.DisplayName : "없음")}, 머리까지 {toHead:0.00}초 (0.8~1.14) → 대상 {atStomp} · {target.LastSkillHit}, 착지는 대상에서 {FlatDistance(land, targetAt):0.0} m · 옆 더미에서 {FlatDistance(land, other.Hips.position):0.0} m, 옆 더미 {(forked ? "휘청" : StateText(other))} (휘청 기대)");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
+            Add($"  쿨 {p1.SkillCooldown:0.0}초 (기대 7)");
+            yield return new WaitForSeconds(0.6f);
+        }
+
+        /// <summary>The target dodges far (plan §7.2): moved 3 m aside as the knight takes off; the knight follows at most
+        /// 3 m/s, comes down on its last spot, nothing staggers (a dummy stands close to that spot).</summary>
+        IEnumerator KnightWhiff()
+        {
+            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 2);
+            var p1 = P1;
+            var target = game.dummies[0];
+            var near = game.dummies[1];
+            Place(target, new Vector3(0f, 0f, -8f), Vector3.back);
+            Place(near, new Vector3(-1.4f, 0f, -8.3f), Vector3.back);
+            yield return new WaitForSeconds(0.7f);
+            Tap();
+            yield return Until(() => p1.SkillStage == SkillStage.Active, 1f);
+            Place(target, new Vector3(5f, 0f, -8f), Vector3.back);
+            target.LastSkillHit = "-";
+            bool staggered = false;
+            yield return Until(() => p1.SkillStage != SkillStage.Active, 2.5f);
+            yield return Until(() => { staggered |= near.Staggered; return false; }, 0.3f);
+            Add($"나이트 빗나감: 대상 {StateText(target)} · {target.LastSkillHit} (서 있음 기대), 착지 x {p1.Hips.position.x:0.0} (대상은 x 5로 피함, 따라가기 초당 3 m), 가까운 더미 {(staggered ? "휘청 (틀림)" : StateText(near))}");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
+            Add($"  쿨 {p1.SkillCooldown:0.0}초 (빗나가도 7)");
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        /// <summary>No enemy in range: F does nothing (no leap, no cooldown).</summary>
+        IEnumerator KnightNone()
+        {
+            yield return Ready(PieceKind.Knight, new Vector3(0f, 0f, -12f), Vector3.forward, 1);
+            var p1 = P1;
+            yield return new WaitForSeconds(0.4f);
+            Vector3 start = p1.Hips.position;
+            Tap();
+            yield return new WaitForSeconds(0.8f);
+            Add($"나이트 대상 없음: 단계 {StageName()} · 움직임 {FlatDistance(start, p1.Hips.position):0.00} m · 쿨 {p1.SkillCooldown:0.0}초 (모두 0 기대)");
+            string StageName() => p1.SkillStage.ToString();
+        }
+
+        /// <summary>R153: the bed's rook test ground (H, J): the chain at the enemy behind the crate (it is dropped at the
+        /// crate), then from the 1.4 m ledge (J) down to the teammate at its foot (it comes up onto the ledge).</summary>
+        IEnumerator RookGroundRun()
+        {
+            Stop();
+            driving = true;
+            var p1 = P1;
+            bed.RookGround(p1, false);
+            yield return new WaitForSeconds(0.9f);
+            Staged = true;
+            var crateEnemy = game.dummies[1];
+            Vector3 eye = p1.bodies[(int)BodyId.Chest].position;
+            aim = (crateEnemy.bodies[(int)BodyId.Chest].position - eye).normalized;
+            yield return AimThenClick(0.35f);
+            yield return Until(() => p1.RookChainPhase == ChainPhase.Pull, 1.5f);
+            bool hooked = p1.RookChainPhase == ChainPhase.Pull;
+            yield return Until(() => !crateEnemy.ChainCarried, 1.5f);
+            yield return new WaitForSeconds(0.4f);
+            Add($"룩 시험장 · 낮은 벽 뒤 적: {(hooked ? "걸림 (틀림)" : "안 걸림 (벽에 막힘)")}, 적은 룩에서 {FlatDistance(crateEnemy.Hips.position, p1.Hips.position):0.0} m, {StateText(crateEnemy)}");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 2f);
+            // The enemy 7 m ahead (the reach is 8 m).
+            p1.ResetSkill();
+            var far = game.dummies[0];
+            float farFrom = FlatDistance(far.Hips.position, p1.Hips.position);
+            aim = (far.bodies[(int)BodyId.Chest].position - p1.bodies[(int)BodyId.Chest].position).normalized;
+            yield return AimThenClick(0.35f);
+            Vector3 lastTip = Vector3.zero;
+            float maxOut = 0f;
+            yield return Until(() =>
+            {
+                if (p1.RookChainPhase == ChainPhase.Fly) { lastTip = p1.RookChainTip; maxOut = Mathf.Max(maxOut, FlatDistance(lastTip, p1.Hips.position)); }
+                return p1.RookChainPhase == ChainPhase.Pull || p1.RookChainPhase == ChainPhase.Rewind;
+            }, 1.5f);
+            Add($"  7 m 사슬: 단계 {p1.RookChainPhase}, 날아간 끝 {lastTip:F2} (룩에서 {maxOut:0.0} m), 적 가슴 {far.bodies[(int)BodyId.Chest].position:F2}, 쿨 {p1.SkillCooldown:0.0}, 단계 {p1.SkillStage}");
+            bool farHooked = p1.RookChainPhase == ChainPhase.Pull;
+            yield return Until(() => !far.ChainCarried && p1.RookChainPhase != ChainPhase.Pull, 1.5f);
+            Add($"룩 시험장 · 앞 {farFrom:0.0} m 적: {(farHooked ? "걸림" : "안 걸림")}, 룩에서 {FlatDistance(far.Hips.position, p1.Hips.position):0.00} m로 끌려옴 (기대 1.5)");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 3f);
+            p1.ResetSkill();
+            bed.RookGround(p1, true);
+            yield return new WaitForSeconds(0.9f);
+            var below = game.dummies[3];
+            eye = p1.bodies[(int)BodyId.Chest].position;
+            aim = (below.bodies[(int)BodyId.Chest].position - eye).normalized;
+            float startY = below.FeetPoint.y;
+            yield return AimThenClick(0.35f);
+            yield return Until(() => p1.RookChainPhase == ChainPhase.Offer || p1.RookChainPhase == ChainPhase.Rewind, 1.5f);
+            var phase = p1.RookChainPhase;
+            Vector3 tipAt = p1.RookChainTip;
+            yield return Until(() => p1.SkillStage == SkillStage.None, 3f);
+            yield return new WaitForSeconds(0.4f);
+            Add($"  사슬 끝 {tipAt:F2}, 룩 가슴 {p1.bodies[(int)BodyId.Chest].position:F2}, 팀원 가슴 {below.bodies[(int)BodyId.Chest].position:F2}");
+            Add($"룩 시험장 · 단 위에서 아래 팀원: 사슬 {(phase == ChainPhase.Offer ? "손잡이 내밂" : phase.ToString())}, 팀원 발 높이 {startY:0.0} → {below.FeetPoint.y:0.0} m (단 0.8), 룩에서 {FlatDistance(below.Hips.position, p1.Hips.position):0.0} m, {StateText(below)}");
+        }
+
+        /// <summary>R153 (승규 님 10-22: "마우스를 좀 많이 내려야 걸려"): aimed like a player — the camera's look (14° down), a
+        /// little off to the side of the enemy 7 m ahead — the chain still takes it; aimed at no one, it goes out level.</summary>
+        IEnumerator RookAimRun()
+        {
+            Stop();
+            driving = true;
+            var p1 = P1;
+            bed.RookGround(p1, false);
+            yield return new WaitForSeconds(0.9f);
+            Staged = true;
+            var far = game.dummies[0];
+            Vector3 flat = far.Hips.position - p1.Hips.position;
+            flat.y = 0f;
+            aim = Quaternion.LookRotation(flat.normalized) * Quaternion.Euler(14f, 6f, 0f) * Vector3.forward;   // camera pitch 14, 6° off
+            Tap();
+            yield return new WaitForSeconds(0.3f);
+            var marked = p1.RookChainAimTarget;
+            Click();
+            yield return Until(() => p1.RookChainPhase == ChainPhase.Pull || p1.RookChainPhase == ChainPhase.Rewind, 1.5f);
+            Add($"룩 조준 도움: 카메라처럼 14° 아래 · 6° 옆으로 조준 → 표시 {(marked == far ? "7 m 적" : marked != null ? marked.DisplayName : "없음")}, 사슬 {(p1.RookChainPhase == ChainPhase.Pull ? "걸림" : "안 걸림")}");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 3f);
+            p1.ResetSkill();
+            // Aimed where no one stands (east), at the camera's own pitch: the chain goes out level.
+            aim = Quaternion.Euler(14f, 90f, 0f) * Vector3.forward;
+            Tap();
+            yield return new WaitForSeconds(0.3f);
+            Click();
+            yield return Until(() => p1.RookChainPhase == ChainPhase.Fly, 0.6f);
+            float chestY = p1.bodies[(int)BodyId.Chest].position.y, tipY = 0f, outMost = 0f;
+            yield return Until(() =>
+            {
+                if (p1.RookChainPhase == ChainPhase.Fly) { tipY = p1.RookChainTip.y; outMost = FlatDistance(p1.RookChainTip, p1.Hips.position); }
+                return p1.RookChainPhase == ChainPhase.Rewind || p1.RookChainPhase == ChainPhase.None;
+            }, 1.5f);
+            Add($"  아무도 없는 쪽: 사슬이 {outMost:0.0} m 나감, 끝 높이 {tipY:0.00} m (가슴 {chestY:0.00} — 수평이면 비슷)");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 3f);
+        }
+
+        /// <summary>The bishop's leash (plan §6): its X laid 4.5 m ahead, then it walks away; past 6 m from the middle the
+        /// rope comes loose and goes. Then a fresh one and the bishop knocked down: it goes too.</summary>
+        IEnumerator BishopLeash()
+        {
+            yield return Ready(PieceKind.Bishop, new Vector3(0f, 0f, -11f), Vector3.forward, 0);
+            var p1 = P1;
+            aim = (new Vector3(0f, 0f, -6.5f) - p1.bodies[(int)BodyId.Head].position).normalized;
+            yield return AimThenClick(0.4f);
+            yield return new WaitForSeconds(0.7f);
+            var wire = FindFirstObjectByType<SkillTripwire>();
+            float laid = wire != null ? wire.LeashDistance : -1f;
+            move = Vector3.back;
+            Say("S · 뒤로 걷기");
+            float lastSeen = laid;
+            yield return Until(() =>
+            {
+                if (wire != null) lastSeen = wire.LeashDistance;
+                return wire == null;
+            }, 4f);
+            move = Vector3.zero;
+            Add($"비숍 덫 유지 거리: 깔 때 {laid:0.0} m → 뒤로 걷다 풀린 거리 {lastSeen:0.00} m (기대 6), 덫 {(wire == null ? "사라짐" : "남음 (틀림)")}");
+            yield return new WaitForSeconds(0.5f);
+            p1.ResetSkill();
+            Place(p1, new Vector3(0f, 0f, -11f), Vector3.forward);
+            yield return new WaitForSeconds(0.5f);
+            aim = (new Vector3(0f, 0f, -6.5f) - p1.bodies[(int)BodyId.Head].position).normalized;
+            yield return AimThenClick(0.4f);
+            yield return new WaitForSeconds(0.7f);
+            wire = FindFirstObjectByType<SkillTripwire>();
+            bool there = wire != null;
+            p1.Knockdown("시험: 비숍을 넘어뜨림");
+            yield return new WaitForSeconds(0.2f);
+            Add($"  비숍이 넘어짐: 덫 {(there ? (wire == null ? "사라짐" : "남음 (틀림)") : "안 깔림")}");
+            yield return new WaitForSeconds(2.5f);
         }
     }
 }

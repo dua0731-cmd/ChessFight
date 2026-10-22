@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ChessFight.Game;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -167,7 +168,7 @@ namespace ChessFight.RagdollLab.Editor
         static Material Mat(string name, Color color, Texture texture, float gloss)
         {
             string path = $"{MaterialDir}/{name}.mat";
-            var shader = Shader.Find("Standard");
+            var shader = LitMaterials.Lit;
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (mat == null)
             {
@@ -177,8 +178,8 @@ namespace ChessFight.RagdollLab.Editor
             mat.shader = shader;
             mat.color = color;
             mat.mainTexture = texture;
-            mat.SetFloat("_Glossiness", gloss);
-            mat.SetFloat("_Metallic", 0f);
+            LitMaterials.SetSmoothness(mat, gloss);
+            LitMaterials.SetMetallic(mat, 0f);
             EditorUtility.SetDirty(mat);
             return mat;
         }

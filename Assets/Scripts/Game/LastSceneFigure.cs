@@ -8,6 +8,9 @@ namespace ChessFight.Game
     public struct FigurePose
     {
         public float Jump, Yaw, Tip, Pitch, Flip, Lean, Sit, Squash, Arm, Leg, Dx, Dz;
+        // Arms swung forward (+) and back about the shoulders, the left arm one way and the right the other
+        // (10-17, the title screen's run: arms pumping against the legs instead of flapping sideways).
+        public float ArmSwing;
         public float? ArmLeft, ArmRight;
     }
 
@@ -263,7 +266,8 @@ namespace ChessFight.Game
                 for (int i = 0; i < 2; i++)
                 {
                     float lift = Mathf.Clamp(((i == 0 ? left : right) - ModelArmRest) * ModelArmGain, -ModelArmDown, ModelArmUp);
-                    var turn = Quaternion.AngleAxis((i == 0 ? -lift : lift) * Mathf.Rad2Deg, Vector3.forward);
+                    var turn = Quaternion.AngleAxis((i == 0 ? p.ArmSwing : -p.ArmSwing) * Mathf.Rad2Deg, Vector3.left)
+                             * Quaternion.AngleAxis((i == 0 ? -lift : lift) * Mathf.Rad2Deg, Vector3.forward);
                     arms[i].rotation = r * turn * armRest[i];
                     arms[i].position = rig.TransformPoint(shoulder[i] + turn * (armAt[i] - shoulder[i]));
                 }
@@ -271,8 +275,8 @@ namespace ChessFight.Game
                 legs[1].rotation = r * Quaternion.AngleAxis(-p.Leg * Mathf.Rad2Deg, Vector3.right) * legRest[1];
                 return;
             }
-            arms[0].localRotation = Quaternion.Euler(0, 0, -left * Mathf.Rad2Deg);
-            arms[1].localRotation = Quaternion.Euler(0, 0, right * Mathf.Rad2Deg);
+            arms[0].localRotation = Quaternion.Euler(-p.ArmSwing * Mathf.Rad2Deg, 0, -left * Mathf.Rad2Deg);
+            arms[1].localRotation = Quaternion.Euler(p.ArmSwing * Mathf.Rad2Deg, 0, right * Mathf.Rad2Deg);
             legs[0].localRotation = Quaternion.Euler(p.Leg * Mathf.Rad2Deg, 0, 0);
             legs[1].localRotation = Quaternion.Euler(-p.Leg * Mathf.Rad2Deg, 0, 0);
         }
