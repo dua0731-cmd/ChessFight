@@ -371,6 +371,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.GiantChessCourse
   pawnPrefab: {fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}
   tuning: {fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}
+  replaySpeed: 2
   tileSize: 18
   moveSeconds: 3
   warningSeconds: 5

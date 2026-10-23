@@ -12,6 +12,7 @@ namespace ChessFight.RagdollLab
         public RagdollPawn pawnPrefab;
         public RagdollTuning tuning;
         [SerializeField, Min(10)] float tileSize = 18;
+        [SerializeField, Range(.25f, 4f), Tooltip("Replay speed only; does not speed up players or physics.")] float replaySpeed = 2;
         [SerializeField, Min(1)] float moveSeconds = 3;
         [SerializeField, Min(1)] float warningSeconds = 5;
         [SerializeField, Min(.5f)] float restSeconds = 2;
@@ -21,6 +22,7 @@ namespace ChessFight.RagdollLab
         readonly List<Material> materials = new List<Material>();
         readonly List<RagdollPawn> players = new List<RagdollPawn>();
         readonly GameObject[] pieces = new GameObject[64], warnings = new GameObject[64];
+        readonly GameObject[] occupiedMarks = new GameObject[64];
         readonly bool[] finished = new bool[12];
         readonly Vector3[] botGoals = new Vector3[12];
         readonly float[] nextShove = new float[12];
@@ -38,7 +40,18 @@ namespace ChessFight.RagdollLab
         CursorLockMode savedLock;
         bool savedCursor;
         GUIStyle hud;
-        Vector3 Square(int square) => new Vector3((square % 8 - 3.5f) * tileSize, 0, (square / 8 + .5f) * tileSize);
+        // Rotate chess coordinates 90 degrees: white home rank faces the left GM.
+        Vector3 Square(int square) => new Vector3((square / 8 - 3.5f) * tileSize, 0, (7 - square % 8 + .5f) * tileSize);
+        int BoardSquare(Vector3 p)
+        {
+            int rank = Mathf.FloorToInt(p.x / tileSize + 4), row = Mathf.FloorToInt(p.z / tileSize);
+            return rank >= 0 && rank < 8 && row >= 0 && row < 8 ? rank * 8 + 7 - row : -1;
+        }
+        bool Occupied(int s) => pieces[s] && !(phase == 1 && pieces[s] == moving);
+        void RefreshOccupiedMarks()
+        {
+            for (int s = 0; s < 64; s++) occupiedMarks[s].SetActive(Occupied(s));
+        }
         Vector3 Spawn(int i) => new Vector3((i / 6 == 0 ? -1 : 1) * tileSize + (i % 3 - 1) * 2.5f, 0, -10 - i % 2 * 3);
         Material Mat(Color color) { var m = new Material(Shader.Find("Standard")) { color = color }; materials.Add(m); return m; }
         GameObject Shape(string name, Vector3 pos, Vector3 size, Material mat, PrimitiveType type = PrimitiveType.Cube, bool solid = true)
@@ -65,6 +78,15 @@ namespace ChessFight.RagdollLab
                     new Vector3(tileSize, .8f, tileSize), (s % 8 + s / 8) % 2 == 0 ? white : black);
                 warnings[s] = Shape("Attack warning", Square(s) + Vector3.up * .025f, new Vector3(tileSize - .3f, .04f, tileSize - .3f), red, solid: false);
                 warnings[s].SetActive(false);
+                var mark = new GameObject("Occupied square border"); mark.transform.SetParent(transform, false);
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    var edge = Shape("Blocked square edge", Square(s) + new Vector3(side * (tileSize * .5f - .2f), .09f, 0), new Vector3(.35f, .12f, tileSize), gold, solid: false);
+                    edge.transform.SetParent(mark.transform, true);
+                    edge = Shape("Blocked square edge", Square(s) + new Vector3(0, .09f, side * (tileSize * .5f - .2f)), new Vector3(tileSize, .12f, .35f), gold, solid: false);
+                    edge.transform.SetParent(mark.transform, true);
+                }
+                occupiedMarks[s] = mark;
             }
             Shape("Entry platform", new Vector3(0, -.4f, -10), new Vector3(tileSize * 8, .8f, 20), gold);
             Shape("Exit platform", new Vector3(0, -.4f, tileSize * 8 + 10), new Vector3(tileSize * 8, .8f, 20), gold);
@@ -110,6 +132,7 @@ namespace ChessFight.RagdollLab
             string setup = "RNBQKBNRPPPPPPPP................................pppppppprnbqkbnr";
             for (int s = 0; s < 64; s++) if (setup[s] != '.') pieces[s] = BuildPiece(setup[s], s);
             ply = phase = 0; elapsed = 0; attack = 0; moving = null; running = false;
+            RefreshOccupiedMarks();
         }
         GameObject BuildPiece(char code, int square)
         {
@@ -144,7 +167,8 @@ namespace ChessFight.RagdollLab
                 var cross = Shape("King cross vertical", Square(square) + Vector3.up * (height + 2), new Vector3(1, 5, 1), gold, solid: false); cross.transform.SetParent(root.transform, true);
                 cross = Shape("King cross horizontal", Square(square) + Vector3.up * (height + 2.5f), new Vector3(4, 1, 1), gold, solid: false); cross.transform.SetParent(root.transform, true);
             }
-            var collider = root.AddComponent<BoxCollider>(); collider.size = new Vector3(tileSize * .48f, height, tileSize * .48f); collider.center = Vector3.up * height * .5f;
+            var collider = root.AddComponent<BoxCollider>(); collider.size = new Vector3(tileSize, Mathf.Max(32, height), tileSize); collider.center = Vector3.up * collider.size.y * .5f;
+            root.transform.rotation = Quaternion.Euler(0, light ? -90 : 90, 0);
             return root;
         }
         void ResetPlayers() { for (int i = 0; i < players.Count; i++) { finished[i] = false; Place(i); } }
@@ -158,13 +182,32 @@ namespace ChessFight.RagdollLab
             var row = score[ply]; from = int.Parse(row[0]); to = int.Parse(row[1]); rookFrom = int.Parse(row[2]); rookTo = int.Parse(row[3]);
             moving = pieces[from]; moving.GetComponent<Collider>().enabled = false;
             phase = 1; elapsed = 0; warnings[to].SetActive(true);
+            if (rookTo >= 0) warnings[rookTo].SetActive(true);
+            RefreshOccupiedMarks();
         }
         void Land()
         {
-            if (pieces[to]) Destroy(pieces[to]);
+            if (pieces[to]) { pieces[to].GetComponent<Collider>().enabled = false; Destroy(pieces[to]); }
             pieces[to] = moving; pieces[from] = null; moving.transform.position = Square(to); moving.GetComponent<Collider>().enabled = true;
             if (rookFrom >= 0) { pieces[rookTo] = pieces[rookFrom]; pieces[rookFrom] = null; pieces[rookTo].transform.position = Square(rookTo); }
-            for (int i = 0; i < players.Count; i++) if (OnSquare(players[i], to)) players[i].TakeHit(Vector3.back * knockbackSpeed + Vector3.up * upwardSpeed, 1, 0, true);
+            // Evacuate before the next physics step: a full-square collider must not spawn inside a ragdoll.
+            phase = 2;
+            for (int i = 0; i < players.Count; i++)
+                if (OnSquare(players[i], to) || (rookTo >= 0 && OnSquare(players[i], rookTo)))
+                {
+                    Vector3 p = players[i].Hips.position;
+                    Vector3 safe = new Vector3(Mathf.Clamp(p.x, -tileSize * 4 + 2, tileSize * 4 - 2), 0, -3);
+                    float distance = (safe - p).sqrMagnitude;
+                    for (int s = 0; s < 64; s++) if (!Occupied(s))
+                    {
+                        Vector3 candidate = Square(s);
+                        float score = (candidate - p).sqrMagnitude + (candidate.z > p.z ? tileSize : 0);
+                        if (score < distance) { distance = score; safe = candidate; }
+                    }
+                    players[i].Teleport(safe + Vector3.up * (players[i].standHeight + .1f), Vector3.forward);
+                    players[i].TakeHit(Vector3.back * knockbackSpeed + Vector3.up * upwardSpeed, 1, 0, true);
+                }
+            RefreshOccupiedMarks();
             attack = ulong.Parse(score[ply][4], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             for (int s = 0; s < 64; s++) warnings[s].SetActive((attack & (1UL << s)) != 0);
             phase = 2; elapsed = 0;
@@ -176,8 +219,8 @@ namespace ChessFight.RagdollLab
         }
         bool Dangerous(Vector3 p)
         {
-            int x = Mathf.FloorToInt(p.x / tileSize + 4), z = Mathf.FloorToInt(p.z / tileSize);
-            return x >= 0 && x < 8 && z >= 0 && z < 8 && ((phase == 1 && z * 8 + x == to) || (attack & (1UL << (z * 8 + x))) != 0);
+            int s = BoardSquare(p);
+            return s >= 0 && ((phase == 1 && (s == to || s == rookTo)) || (attack & (1UL << s)) != 0);
         }
         void Update()
         {
@@ -195,7 +238,7 @@ namespace ChessFight.RagdollLab
             bool active = running && !menu && Application.isFocused;
             if (active)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.deltaTime * Mathf.Clamp(replaySpeed, .25f, 4f);
                 if (phase == 0 && elapsed >= restSeconds) BeginMove();
                 else if (phase == 1)
                 {
@@ -246,8 +289,8 @@ namespace ChessFight.RagdollLab
                 var d = Quaternion.Euler(0, direction * 22.5f, 0) * Vector3.forward;
                 var future = p + d * 4;
                 if (Mathf.Abs(future.x) > tileSize * 4 - 2 || future.z < -17) continue;
-                bool blocked = false;
-                foreach (var piece in pieces) if (piece && !(phase == 1 && piece == moving) && piece.GetComponent<Collider>().bounds.Contains(new Vector3(future.x, 2, future.z))) { blocked = true; break; }
+                int square = BoardSquare(future);
+                bool blocked = square >= 0 && Occupied(square);
                 if (blocked) continue;
                 float value = d.z * 2 - (Dangerous(future) ? 8 : 0) + Vector3.Dot(d, botGoals[i]) * .2f;
                 if (value > bestScore) { bestScore = value; best = d; }
