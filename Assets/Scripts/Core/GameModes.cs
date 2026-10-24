@@ -11,7 +11,7 @@ namespace ChessFight.Network
         // renamed: a new key is a new mode to every build that has not seen it.
         public string Key { get; }
         public string Name { get; }
-        // One line under the name on the mode card, e.g. "6 VS 6 · 팀 레이스".
+        // One line under the name on the mode card, e.g. "팀 레이스".
         public string Tagline { get; }
         // A sentence for the mode picker.
         public string Summary { get; }
@@ -35,11 +35,11 @@ namespace ChessFight.Network
         // 폰 러쉬 since 2026-10-03, and its match is Pawn Rush course 01 since
         // 2026-10-08 (the KingRush capsule scene is gone).
         public static readonly GameModeInfo KingRush = new GameModeInfo(
-            "kingrush", "폰 러쉬", "6 VS 6 · 팀 레이스",
+            "kingrush", "폰 러쉬", "팀 레이스",
             "장애물 코스를 달려 팀원 4명이 먼저 결승선을 넘으면 승리", "PR", "PawnRush_Course01");
 
         public static readonly GameModeInfo QueenOfTheHill = new GameModeInfo(
-            "queenhill", "퀸 오브 더 힐", "6 VS 6 · 정상 쟁탈",
+            "queenhill", "퀸 오브 더 힐", "정상 쟁탈",
             "가운데 성을 올라 정상에 먼저 닿은 폰이 퀸으로 승격", "QH", null);
 
         public static readonly GameModeInfo SwordFight = new GameModeInfo(

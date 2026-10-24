@@ -157,8 +157,8 @@ namespace ChessFight.RagdollLab
             spot.transform.LookAt(Vector3.zero);
             spot.type = LightType.Spot;
             spot.color = SwordFightShapes.Hex("#ffcf8a");
-            spot.intensity = 1.6f;
             spot.range = 46f;
+            spot.intensity = ChessFight.Game.MenuArt.SpotIntensity(spot, 1.6f);   // URP: the spot fades with the distance squared
             spot.spotAngle = 0.8f * 2f * Mathf.Rad2Deg;
             spot.innerSpotAngle = spot.spotAngle * 0.4f;
             // The trays.

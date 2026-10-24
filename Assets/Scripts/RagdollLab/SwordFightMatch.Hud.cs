@@ -212,7 +212,7 @@ namespace ChessFight.RagdollLab
             dimTex.Apply();
         }
 
-        GUIStyle sliced;   // made in OnGUI: no Unity object in a field initializer (PITFALLS 45)
+        GUIStyle sliced;   // made in OnGUI: no Unity object in a field initializer (PITFALLS 50)
 
         void Panel(Rect r, Texture2D tex, int border = 10)
         {

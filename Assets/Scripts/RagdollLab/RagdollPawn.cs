@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using UnityEngine;
 
@@ -33,6 +34,9 @@ namespace ChessFight.RagdollLab
         /// <summary>Pressed: the piece skill key (the skill test scenes' F, LabGame.SkillKey). R111: it travels with the
         /// rest of the input, so a network match carries it to the host like a jump.</summary>
         public bool skill;
+        /// <summary>Pressed: the emote slot (1..4) to play, 0 for none (RagdollPawn.Emote). Online it travels as an ask
+        /// with a changing number, like the piece ask.</summary>
+        public byte emote;
     }
 
     /// <summary>
@@ -125,8 +129,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The speed the pawn is running at right now, between moveSpeed and sprintSpeed.</summary>
         public float TopSpeed => Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
-                                 * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move
-                                 * SkillSpeedScale;   // 1 unless a Pawn Rush pawn's help is speeding it up
+                                 * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move;
 
         /// <summary>Steps in which the jump rise guard gave vertical speed back (GuardJumpRise).</summary>
         public int RiseTopUps { get; private set; }
@@ -372,6 +375,8 @@ namespace ChessFight.RagdollLab
         void Awake()
         {
             All.Add(this);
+            // R157: on the pieces' light layer (the skills' glow lights light only that).
+            PipelineSettings.MarkPiece(gameObject);
             if (GetComponent<PawnHookView>() == null) gameObject.AddComponent<PawnHookView>();
             EnsureMaterials();
             // Per-pawn foot material: grip while standing, slide while running (friction set each step).
@@ -527,6 +532,7 @@ namespace ChessFight.RagdollLab
             input.shoveHeld = next.shoveHeld;
             input.aim = next.aim;
             if (next.skill) skillPressed = true;   // the skill key, kept until the next physics step reads it
+            if (next.emote != 0) PlayEmote(next.emote);
         }
 
         const float InteractReach = 1.3f;
@@ -649,6 +655,7 @@ namespace ChessFight.RagdollLab
             freeFlight -= dt;
             bumpCooldown -= dt;
             UpdateStatus(dt);
+            UpdateEmote(dt);
 
             SenseGround();
             SenseWater(p);
@@ -2744,6 +2751,7 @@ namespace ChessFight.RagdollLab
             SkillPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);   // Pawn Rush skills only
             HookPose(p, ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
             RopeHangPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);
+            EmotePose(ref armL, ref armR, ref chest, ref head);
             StatusPose(ref armL, ref armR, ref chest, ref head);
 
             SetPuppet(BodyId.Chest, chest);
@@ -3108,7 +3116,6 @@ namespace ChessFight.RagdollLab
             // knockdown by its own rules); a wall ends a dash without flooring the dasher.
             if (other != null && (SkillShielded || other.SkillShielded)) return;
             if (other == null && dashing && Mathf.Abs(normal.y) < 0.6f) return;
-            if (other == null && SkillLandsOnFloor && normal.y > 0.6f) return;   // the rook's slam out of the air (R80)
             if (other == null && SkillLandingSafe && normal.y > 0.6f) return;   // landing from a skill (10-11)
             if (Diving && other != null)
             {

@@ -91,16 +91,16 @@ namespace ChessFight.RagdollLab
         public int bishopShots = 2;
         [Tooltip("조준 최대 거리 (땅 위, m)")]
         public float bishopRange = 9f;
-        [Tooltip("견제탄이 날아가는 시간 (초)")]
-        public float bishopFlight = 0.5f;
+        [Tooltip("견제탄이 날아가는 시간 (초). R155: 0.5 → 0.65 (승규 님: 조금 빠름)")]
+        public float bishopFlight = 0.65f;
         [Tooltip("X자 파동 한쪽 팔 길이 (m)")]
         public float bishopArm = 1.6f;   // 10-12: 2.25 → 1.6 (승규 님: "범위가 좀 커, 좁혀")
         [Tooltip("X자 팔의 폭 (m)")]
         public float bishopArmWidth = 0.6f;
         [Tooltip("가운데(조준점)에서 이 반경 안은 맞는다 (m)")]
         public float bishopCenter = 0.75f;
-        public float bishopPush = 4.5f;
-        public float bishopLift = 2f;
+        public float bishopPush = 6.5f;   // R156: 4.5 → 6.5, lift 2 → 2.8 (승규 님: "맞으면 상대 기물이 좀 더 멀리")
+        public float bishopLift = 2.8f;
         public float bishopCooldown = 9f;
 
         [Header("나이트 — 도약 압착 (B: 한 층 높이까지, 높은 곳에서 납작하면 떨어짐)")]

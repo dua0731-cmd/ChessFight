@@ -131,6 +131,7 @@ namespace ChessFight.PawnRush
                                    bool solid = true, bool noClimb = false)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            MapLook.Smooth(go); // round parts as true circles (10-22)
             go.name = name;
             go.transform.SetParent(parent, false);
             go.transform.localPosition = baseCenter + Vector3.up * (height * .5f);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ChessFight.Game;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -63,8 +64,8 @@ namespace ChessFight.RagdollLab
             Pawn.PoseOverride = SwordPose;
             var root = new GameObject("Physical sword");
             root.transform.SetParent(transform); sword = root.transform;
-            bladeMaterial = new Material(Shader.Find("Standard")) { color = new Color(.69f, .82f, .94f) };
-            hiltMaterial = new Material(Shader.Find("Standard")) { color = new Color(.85f, .60f, .21f) };
+            bladeMaterial = new Material(LitMaterials.Lit) { color = new Color(.69f, .82f, .94f) };
+            hiltMaterial = new Material(LitMaterials.Lit) { color = new Color(.85f, .60f, .21f) };
             blade = Part("Blade", new Vector3(0, 0, .50f), new Vector3(.12f, .055f, .76f), bladeMaterial);
             Part("Guard", new Vector3(0, 0, .09f), new Vector3(.25f, .075f, .07f), hiltMaterial);
             Part("Grip", new Vector3(0, 0, -.015f), new Vector3(.07f, .075f, .16f), hiltMaterial);

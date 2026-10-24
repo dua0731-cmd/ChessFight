@@ -116,6 +116,7 @@ namespace ChessFight.RagdollLab
         public Vector3 aim;
         public byte jumps, shoves, abilities, abilities2, skills;   // press counts (wrapping)
         public byte pieceAsk, pieceSeq;  // the piece asked for, and a number that changes with every ask (0 = none yet)
+        public byte emoteAsk, emoteSeq;  // the emote slot asked for (1..4), and a number that changes with every ask (0 = none yet)
         public ushort eventAck;          // skill moments: everything up to this one has arrived
         // How the link looks from the client (R112, the skill network test screen): the host shows it per player.
         public ushort roundTripMs;       // measured on the snapshots' echo of this player's input times
@@ -190,7 +191,8 @@ namespace ChessFight.RagdollLab
         // CFRA: positions span +-320 m instead of +-80 m (R124). Pawn Rush course 01 runs to z 246 m, and clients drew
         // every pawn past 80 m pinned at 80 m while the host saw them where they were.
         // CFRB: the skill packet's positions span +-320 m as well (SkillWire.PositionRange, R125: the skills on course 01).
-        public const uint Magic = 0x43465242;   // "CFRB"
+        // CFRC: the emote ask (slot and a changing number) in the lab input, two bytes (emotes, from skill-network-test).
+        public const uint Magic = 0x43465243;   // "CFRC"
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = 2;
         // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
@@ -223,7 +225,7 @@ namespace ChessFight.RagdollLab
         public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 1 + 4;  // 74
         public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 8 + 1;        // 30
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
-        public const int LabInputBytes = 4 + 1 + 8 + 4 + 4 + 2 + 1 + 3 + 5 + 2 + 2 + 4;   // 40
+        public const int LabInputBytes = 4 + 1 + 8 + 4 + 4 + 2 + 1 + 3 + 5 + 2 + 2 + 4 + 2;   // 42
         public const int SwordInputBytes = LabInputBytes + 6;   // 46
 
         const float SmallestThreeRange = 0.70710678f;
@@ -323,6 +325,8 @@ namespace ChessFight.RagdollLab
                 w.Write(input.skills);
                 w.Write(input.pieceAsk);
                 w.Write(input.pieceSeq);
+                w.Write(input.emoteAsk);
+                w.Write(input.emoteSeq);
                 w.Write(input.eventAck);
                 w.Write(input.roundTripMs);
                 w.Write(input.delayMs);
@@ -374,12 +378,15 @@ namespace ChessFight.RagdollLab
                 input.skills = r.ReadByte();
                 input.pieceAsk = r.ReadByte();
                 input.pieceSeq = r.ReadByte();
+                input.emoteAsk = r.ReadByte();
+                input.emoteSeq = r.ReadByte();
                 input.eventAck = r.ReadUInt16();
                 input.roundTripMs = r.ReadUInt16();
                 input.delayMs = r.ReadByte();
                 input.lossPercent = r.ReadByte();
                 if (sword) input.aimPoint = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
                 if (input.pieceSeq != 0 && !ChessPieces.IsValid(input.pieceAsk)) return false;
+                if (input.emoteSeq != 0 && !PieceEmotes.IsValidSlot(input.emoteAsk)) return false;
                 if (input.lossPercent > 100) return false;
                 return true;
             }

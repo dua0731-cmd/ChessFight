@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -443,8 +444,7 @@ namespace ChessFight.RagdollLab
 
         static Material NewMaterial(Color color)
         {
-            var shader = Shader.Find("Standard");
-            var m = new Material(shader != null ? shader : Shader.Find("Legacy Shaders/Diffuse")) { color = color };
+            var m = new Material(LitMaterials.Lit) { color = color };
             return m;
         }
 

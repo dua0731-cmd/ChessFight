@@ -7,72 +7,70 @@ namespace ChessFight.RagdollLab
     /// The Pawn Rush piece skills' numbers (Docs/Skills/DESIGN.md). They are the previz v0.1 values, kept as
     /// they are (decision D2, 2026-10-07): the only change is that a step, a charge or a leap never makes the
     /// piece slower than it was already going. One copy lives on the skill test bed, so they can be changed in
-    /// the Inspector while playing. The king's skill is not here yet (D1).
+    /// the Inspector while playing. R153 (기획서 v0.3, 10-16): the pawn's homing second step, the rook's chain pull,
+    /// the bishop's guarded trap and the knight's fork leap; the king is out of Pawn Rush (its numbers stay for its code).
     /// </summary>
     [Serializable]
     public class PawnRushSkillParams
     {
         [Header("공통")]
-        [Tooltip("시험용: 0보다 크면 모든 기물의 쿨타임을 이 값(초)으로 바꾼다. 0이면 아래 기획 쿨타임(v0.1)을 쓴다")]
+        [Tooltip("시험용: 0보다 크면 모든 기물의 쿨타임을 이 값(초)으로 바꾼다. 0이면 아래 기획 쿨타임을 쓴다")]
         public float testCooldown = 2f;
-        [Tooltip("넘어졌다 일어난 뒤 이 시간 동안 스킬에 넘어지지 않고 휘청만 (초)")]
-        public float getUpGuard = 1.1f;
+        [Tooltip("넘어졌다 일어난 뒤 이 시간 동안 스킬에 넘어지지 않고 휘청만 (초). R153 기획서 v0.3: 1.1 → 1.0")]
+        public float getUpGuard = 1.0f;
         [Tooltip("기상 보호 중 넘어짐이 낮아진 휘청 (초)")]
         public float guardStagger = 0.3f;
+        [Tooltip("부활 직후 스킬 대상이 되지 않는 시간 (초, 기획서 v0.3 §2.5)")]
+        public float respawnGuard = 2f;
 
-        [Header("폰 — 첫 두 걸음")]
-        [Tooltip("한 걸음 거리 (m). R129: 1.5 → 1.1 (승규 님 \"폰 스킬 시 거리를 좁혀줘\")")]
-        public float pawnStepDistance = 1.1f;
+        [Header("폰 — 첫 두 걸음 (유도형, R153)")]
+        [Tooltip("한 걸음 거리 (m). R129 1.5 → 1.1, R153 기획서 v0.3에서 다시 1.5 (승규 님 10-16)")]
+        public float pawnStepDistance = 1.5f;
         public float pawnStepSpeed = 7.5f;
         [Tooltip("첫 걸음이 끝나고 두 번째를 받는 시간 (초): 이보다 빨리 누르면 이때 나간다")]
         public float pawnLinkMin = 0.1f;
         public float pawnLinkMax = 0.8f;
         public float pawnCooldown = 5f;
         public float pawnCooldownOneStep = 3.5f;
+        [Tooltip("두 번째 걸음의 대상: 조준 방향 좌우 이 각도 안 (도), 이 거리 안 (m)의 넘어진 팀원 또는 서 있는 적")]
+        public float pawnSeekAngle = 60f;
+        public float pawnSeekRange = 3f;
+        [Tooltip("두 번째 걸음: 대상 쪽으로 최대 이만큼 (m), 닿으면 멈춤")]
+        public float pawnSeekStep = 1.5f;
         [Tooltip("이 각도까지는 곧게 = 밀치기, 대각 각도까지는 넘어뜨리기 (상대 몸의 앞뒤 선 기준, 도)")]
         public float pawnFrontAngle = 20f;
         public float pawnDiagonalAngle = 80f;
         public float pawnFrontPush = 3.5f;
         public float pawnHitRadius = 0.5f;
-        [Tooltip("부축: 일어난 팀원의 기상 보호, 둘 다 빨라지는 시간과 배율, 폰 쿨 감소")]
-        public float helpGuard = 1.6f;
-        public float hasteTime = 1.5f;
-        public float hasteScale = 1.15f;
+        [Tooltip("부축: 일어난 팀원의 기상 보호 (R153: 1.6 → 1.5, 속도 버프는 지움), 폰 쿨 감소")]
+        public float helpGuard = 1.5f;
         public float helpCooldownCut = 1.5f;
 
-        [Header("나이트 — 꺾어 도약")]
+        [Header("나이트 — 포크 도약 (R153)")]
         public float knightWindup = 0.15f;
-        [Tooltip("최고 높이 (골반이 이만큼 오른다, m)")]
+        [Tooltip("최고 높이 (m)")]
         public float knightHeight = 1.6f;
-        [Tooltip("평지 비거리 (m): 높이와 함께 출발 속도를 정한다. v0.1은 5.5 m, R92 승규 \"사거리 조금만 줄여\" → 4.5 m(3칸)")]
-        public float knightDistance = 4.5f;
-        [Tooltip("래그돌 몸이 공중에서 잃는 만큼 출발 속도를 더한다 (위·앞 배율). 10-07 실측: 보정 없이 높이 1.53 m · 비거리 5.05 m")]
-        public float knightLiftCorrection = 1.03f;
-        public float knightCarryCorrection = 1.07f;
-        public float knightTurnMax = 90f;
-        [Tooltip("이륙 뒤 이 시간부터 꺾을 수 있다 (초)")]
-        public float knightTurnAfter = 0.2f;
+        [Tooltip("대상: 조준 방향 좌우 이 각도 안 (도), 땅 위 거리 이 사이 (m), 높이 차 이 안 (m), 가려지지 않은 서 있는 적")]
+        public float knightTargetAngle = 60f;
+        public float knightTargetMin = 1.5f;
+        public float knightTargetMax = 5f;
+        public float knightTargetHeight = 2f;
+        [Tooltip("체공: 가까울 때와 멀 때 (초)")]
+        public float knightFlightNear = 0.8f;
+        public float knightFlightFar = 1.14f;
+        [Tooltip("체공 중 대상의 지금 위치로 착지점을 옮기는 최대 빠르기 (m/s)")]
+        public float knightCorrection = 3f;
         public float knightStompReach = 0.45f;
+        [Tooltip("머리 찍은 뒤 위로 튀는 속도와 옆으로 비키는 속도 (m/s)")]
         public float knightStompBounce = 4f;
+        public float knightStompHop = 0.3f;
+        [Tooltip("포크: 착지 반경 안의 다른 적이 휘청 (m, 초). 빗나가면 없음")]
         public float knightLandRadius = 1.5f;
         public float knightLandStagger = 0.4f;
         public float knightLandRecovery = 0.35f;
         public float knightCooldown = 7f;
-        [Tooltip("공중에서 두 번째 F: 이 거리(땅 위, m) 안에 서 있는 적이 있으면 그 머리로 자동으로 날아가 찍는다. 없으면 90° 꺾기 (R74 4 m → R75 3 m, 시험값)")]
-        public float knightLockRange = 3f;
-        [Tooltip("머리 찍기: 머리까지 날아가는 땅 위 빠르기 (m/s)")]
-        public float knightHomingSpeed = 7f;
-        [Tooltip("머리 찍기: 머리 위로 내려오는 최소 속도 (m/s). 옆에서 박지 않고 위에서 찍게")]
-        public float knightHomingFall = 2.5f;
-        [Tooltip("머리 찍은 뒤 콩 튀어 바로 옆에 착지: 위 속도와 앞 속도 (m/s)")]
-        public float knightHomingBounce = 2.5f;
-        public float knightHomingHop = 2f;
-        [Tooltip("공중 두 번째 F(적이 없을 때): 새 방향(곧게 또는 최대 90° 꺾어)으로 적어도 이 빠르기로 다시 차고 나간다 (m/s). R80: 꺾은 뒤 거리가 짧고 직진이면 아무 느낌이 없어서 \"다~당\"으로 7.5. R92: 비거리와 같은 비율로 6.2")]
-        public float knightTurnSpeed = 6.2f;
-        [Tooltip("그때 위로 다시 차오르는 속도 (m/s): 두 번째 구간의 체공")]
-        public float knightTurnLift = 4f;
 
-        [Header("비숍 — 교차 밧줄")]
+        [Header("비숍 — 지키는 X자 덫 (R153)")]
         [Tooltip("최대 거리 (m). v0.1은 9 m(6칸), R74 근거리로 4.5 m(3칸)")]
         public float bishopRange = 4.5f;
         public float bishopLineLength = 4.2f;
@@ -82,36 +80,48 @@ namespace ChessFight.RagdollLab
         public float bishopArm = 0.5f;
         public float bishopActive = 6f;
         public int bishopTrips = 2;
-        [Tooltip("R138: 줄에 걸린 적은 넘어지지 않고 그 자리에 묶여 서 있다 (초). 그동안 움직이지도, 뛰지도, 스킬을 쓰지도 못한다")]
-        public float bishopBind = 1.6f;
+        [Tooltip("줄에 걸린 적은 그 자리에 묶여 서 있다 (초). R138 1.6초 → R153 1.0초 (승규 님 10-16)")]
+        public float bishopBind = 1.0f;
         public float bishopCooldown = 8f;
         [Tooltip("이보다 가파른 바닥에는 깔리지 않는다 (도)")]
         public float bishopMaxSlope = 30f;
+        [Tooltip("유지 거리: 비숍이 덫 가운데에서 이보다 멀어지면 줄이 풀려 사라진다 (m). 이 거리를 넘으면 실이 팽팽해지며 깜빡인다 (m)")]
+        public float bishopLeash = 6f;
+        public float bishopLeashWarn = 5f;
 
-        [Header("룩 — 직선 돌파")]
-        [Tooltip("좌클릭 뒤 방향을 고정하고 돌진하기까지 (초). R74부터 그 앞 조준은 F에서 좌클릭까지 마음대로")]
+        [Header("룩 — 직선 사슬 견인 (R153)")]
+        [Tooltip("사슬이 닿는 거리 (m), 위아래 조준 한계 (도). 기획서 6 m → 10-22 승규 님 \"룩 사거리가 좀 많이 짧은 거 같아 많이 늘려줘\" 12 m → \"8m로 줄여줘\" 8 m")]
+        public float rookChainRange = 8f;
+        public float rookChainPitch = 45f;
+        [Tooltip("조준 도움 (10-22 승규 님 \"마우스를 좀 많이 내려야 걸려\"): 조준 방향 좌우 이 각도 안 (도)에 걸 수 있는 기물이 있으면 사슬이 그 가슴으로. 없으면 카메라 기본 각도(내려다보는 각도, 도)일 때 수평으로 나감")]
+        public float rookAimAssist = 10f;
+        public float rookAimNeutralPitch = 14f;
+        [Tooltip("좌클릭 뒤 팔 휘두르기 (초), 사슬 빠르기 (m/s), 빗나가면 되감기 (초)")]
+        public float rookSwing = 0.1f;
+        public float rookChainSpeed = 32f;   // 24 → 32 with the longer reach (8 m in 0.25 s)
+        public float rookRewind = 0.2f;
+        [Tooltip("사슬 끝이 사람에게 걸리는 굵기 (m)")]
+        public float rookChainRadius = 0.2f;   // (the pieces' chests are only 0.32 m up)
+        [Tooltip("적: 이 시간 동안 룩 앞 이 거리까지, 바닥에서 이만큼 뜬 낮은 길로 (초, m). 놓이면 휘청")]
+        public float rookPullTime = 0.35f;
+        public float rookPullFront = 1.5f;
+        public float rookPullHover = 0.3f;
+        public float rookPullStagger = 0.3f;
+        [Tooltip("이 무게 이상(퀸 2)은 끌려오는 시간이 이 배로 늘어남 (도착 지점은 같음)")]
+        public float rookHeavyWeight = 2f;
+        public float rookHeavySlow = 1.3f;
+        [Tooltip("팀원: 사슬 손잡이가 떠 있는 시간 (초) — 그 안에 우클릭으로 잡기. 잡으면 이 시간 동안 룩 옆 이 거리까지, 최고 이 높이의 포물선 (초, m)")]
+        public float rookAllyWindow = 2f;
+        public float rookAllyPull = 0.5f;
+        public float rookAllyBeside = 1f;
+        public float rookAllyArc = 0.6f;
+        [Tooltip("시험 더미가 사슬 손잡이를 스스로 잡는 데 걸리는 시간 (초)")]
+        public float rookAllyDummyGrab = 0.6f;
+        [Tooltip("쿨타임 (초), 팀원이 안 잡아 되감겼을 때 (초)")]
+        public float rookCooldown = 8f;
+        public float rookUngrabbedCooldown = 4f;
+        [Tooltip("퀸 오브 더 힐 룩이 이 기계를 빌려 쓰는 예고 시간 (초): 폰 러쉬 룩은 쓰지 않음")]
         public float rookLock = 0.3f;
-        public float rookSpeed = 8.5f;
-        public float rookTime = 0.7f;
-        public int rookMaxHits = 3;
-        public float rookSlowPerHit = 0.2f;
-        public float rookBarricadeSlow = 0.4f;
-        public float rookWallStagger = 0.6f;
-        public float rookRecovery = 0.4f;
-        public float rookCooldown = 7f;
-        [Tooltip("튕겨낼 때 옆·위 속도 (m/s). v0.1에 숫자가 없어 제안값")]
-        public float rookSidePush = 5f;
-        public float rookUpPush = 1f;
-        public float rookWidth = 0.8f;
-        [Tooltip("부서진 바리케이드가 다시 생기는 시간 (초)")]
-        public float barricadeRegrow = 15f;
-        [Tooltip("공중에서 좌클릭 뒤 돌진까지 (초): 그동안 공중에 멈춘다 (R80 공중 돌진)")]
-        public float rookAirLock = 0.15f;
-        [Tooltip("공중 조준: 카메라가 이 각도(아래로, 도)를 볼 때 수평으로 돌진. 마우스를 올리면 위로, 내리면 아래로 (기본 카메라 14°)")]
-        public float rookAirNeutralPitch = 14f;
-        [Tooltip("공중 돌진이 오를 수 있는 최대 각도와 내리꽂는 최대 각도 (도)")]
-        public float rookAirMaxUp = 45f;
-        public float rookAirMaxDown = 60f;
 
         [Header("퀸 — 팔방 밀치기")]
         public float queenWindup = 0.35f;

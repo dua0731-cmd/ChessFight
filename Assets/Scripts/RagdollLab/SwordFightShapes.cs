@@ -147,13 +147,12 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- materials
 
-        /// <summary>The Standard shader in a colour (three.js roughness / metalness as glossiness / metallic).</summary>
+        /// <summary>URP Lit in a colour (the project draws with URP since R151; three.js roughness / metalness as
+        /// smoothness / metallic).</summary>
         public static Material Lit(string hex, float roughness = 0.6f, float metal = 0f)
         {
-            var m = new Material(Shader.Find("Standard")) { name = "Demo " + hex };
-            m.color = Hex(hex);
-            m.SetFloat("_Glossiness", 1f - roughness);
-            m.SetFloat("_Metallic", metal);
+            var m = ChessFight.Game.LitMaterials.NewLit(Hex(hex), 1f - roughness, metal);
+            m.name = "Demo " + hex;
             return m;
         }
 

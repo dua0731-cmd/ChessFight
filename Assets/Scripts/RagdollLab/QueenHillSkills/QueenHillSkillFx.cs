@@ -727,6 +727,8 @@ namespace ChessFight.RagdollLab
             if (king == null) return;
             var head = king.bodies[(int)BodyId.Head];
             var crown = new Prop(this, SkillMeshes.SceptreCrown(), look.King, "Guard crown") { inkWidth = 0.02f };
+            // R155: the Tripo crown (about 1 m across) over the procedural one (0.17 m), a little wider.
+            var real = ModelOn(LoadModel("KingModels/KingCrown"), crown.t, 0.2f);
             var f = Run(0.9f, (fx, d) =>
             {
                 if (king == null || head == null) return false;
@@ -738,8 +740,8 @@ namespace ChessFight.RagdollLab
                 crown.t.SetPositionAndRotation(at, Quaternion.Euler(0f, fx.age * 150f, 0f));
                 crown.t.localScale = Vector3.one * (2.3f * Mathf.Max(0.001f, s));
                 crown.flash = a < 3f ? 1f : 0f;
-                crown.Show(s > 0.01f);
                 crown.Apply();
+                ShowModel(real, s > 0.01f, crown.flash, crown);
                 return true;
             });
             f.props.Add(crown);
@@ -1102,6 +1104,9 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < 2; i++)
             {
                 Vector3 p = FloorUnder(at + dir * ahead + side * (i == 0 ? -0.17f : 0.17f), 0.8f) + Vector3.up * 0.015f;
+                PuffBurst(p + Vector3.up * 0.05f, look.Dust, 2, 0.25f, 0.1f, 0.35f, 0.15f);
+                // R157: pressed into the floor as a decal (it follows a step or a slope); the tile where there is none.
+                if (SkillDecals.Stamp("Hoof", p, dir, 0.32f, life)) continue;
                 var t = new Tile(this, "Hoofprint");
                 var f = Run(life, (fx, d) =>
                 {
@@ -1124,7 +1129,6 @@ namespace ChessFight.RagdollLab
                     return true;
                 });
                 f.tiles.Add(t);
-                PuffBurst(p + Vector3.up * 0.05f, look.Dust, 2, 0.25f, 0.1f, 0.35f, 0.15f);
             }
         }
 
@@ -1309,6 +1313,8 @@ namespace ChessFight.RagdollLab
                 f.props.Add(h.b);
                 f.props.Add(h.c);
                 f.end = () => scepters.Remove(king);
+                // R155: the Tripo sceptre (0.98 m, its foot at the rod's) in place of rod, band and crown (1.01 m).
+                var real = ModelOn(LoadModel("KingModels/KingSceptre"), h.a.t, 1.04f);
                 float mote = 0f;
                 f.step = (fx, d) =>
                 {
@@ -1341,6 +1347,7 @@ namespace ChessFight.RagdollLab
                     h.a.Apply();
                     h.b.Apply();
                     h.c.Apply();
+                    ShowModel(real, true, flash, h.a, h.b, h.c);
                     return true;
                 };
             }

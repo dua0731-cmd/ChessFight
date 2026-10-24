@@ -7,7 +7,7 @@
 // white bubble on the white floor: _Tint colours what is behind it a little where the air is thickest (it multiplies, so it
 // never goes past white: a light gold on a white floor). (A colour split tried first threw rainbow bands: "무지개 띠처럼
 // ㄴㄴ".)
-// Built-in render pipeline (GrabPass).
+// URP (the opaque texture stands in for the GrabPass).
 Shader "ChessFight/Skill Shock"
 {
     Properties
@@ -29,7 +29,7 @@ Shader "ChessFight/Skill Shock"
     SubShader
     {
         Tags { "Queue" = "Transparent+4" "RenderType" = "Transparent" "IgnoreProjector" = "True" }
-        GrabPass { "_SkillShockGrab" }
+        // URP: what is behind comes from the camera's copy of the opaque picture (_CameraOpaqueTexture), not a GrabPass.
 
         Pass
         {
@@ -44,7 +44,7 @@ Shader "ChessFight/Skill Shock"
             #pragma target 3.0
             #include "UnityCG.cginc"
 
-            sampler2D _SkillShockGrab;
+            sampler2D _CameraOpaqueTexture;
             float4 _Rim, _Front, _Tint;
             float _Bend, _Shade, _RimPower, _Fade, _Mode, _Radius, _Width, _Size, _FloorY;
 
@@ -68,7 +68,7 @@ Shader "ChessFight/Skill Shock"
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.grab = ComputeGrabScreenPos(o.pos);
+                o.grab = ComputeScreenPos(o.pos);
                 o.world = mul(unity_ObjectToWorld, v.vertex).xyz;
                 o.normal = UnityObjectToWorldNormal(v.normal);
                 o.uv = v.uv;
@@ -120,8 +120,12 @@ Shader "ChessFight/Skill Shock"
                     // R139: the front coloured gold, fading back through the band.
                     tint = max(front, band * saturate(0.4 - d) * 0.6);
                 }
+                // Bent the same way as under the GrabPass it had (whose v ran down the screen).
+                #if UNITY_UV_STARTS_AT_TOP
+                dir.y = -dir.y;
+                #endif
                 float2 uv = i.grab.xy / i.grab.w + dir * (_Bend * bend * _Fade);
-                float3 col = tex2D(_SkillShockGrab, uv).rgb * (1 - shade * _Fade) * lerp(float3(1, 1, 1), _Tint.rgb, saturate(tint * _Tint.a * _Fade)) + glow * _Fade;
+                float3 col = tex2D(_CameraOpaqueTexture, uv).rgb * (1 - shade * _Fade) * lerp(float3(1, 1, 1), _Tint.rgb, saturate(tint * _Tint.a * _Fade)) + glow * _Fade;
                 return float4(col, 1);
             }
             ENDCG

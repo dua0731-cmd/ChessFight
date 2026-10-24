@@ -1,33 +1,32 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <!-- Title screen over the 3D chessboard (IntroStage). The start plate is the
+    <!-- Title screen over the castle hall race (IntroStage). The start plate is the
          thing to click (R64: Esc is the settings window, so no any key); beside it
          "이름 바꾸기" opens the name screen (R85). IntroController looks up every name.
-         Since R63 (2026-10-03) the same layout with wood and brass: a walnut
-         shade, a brass rule under the title, walnut plates for the lines below. -->
+         R150 (2026-10-16): the title in Exo 2 Black Italic, CHESS half ivory and half
+         ebony under a gold edge, FIGHT in gold, and a dashed road line under it that
+         IntroController keeps running; no lines of text under the title. -->
     <ui:VisualElement class="intro" picking-mode="Ignore">
         <!-- Darkens the left of the frame so the title reads; texture set in code. -->
         <ui:VisualElement name="intro-shade" class="intro-shade" picking-mode="Ignore" />
         <ui:VisualElement class="intro-block" picking-mode="Ignore">
-            <ui:Label text="6 VS 6 · CHESS PARTY BRAWL" class="intro-kicker" picking-mode="Ignore" />
-            <ui:Label text="CHESS" class="intro-title" picking-mode="Ignore" />
-            <ui:Label text="FIGHT" class="intro-title intro-title-b" picking-mode="Ignore" />
-            <ui:VisualElement class="row intro-rule" picking-mode="Ignore">
-                <ui:VisualElement class="intro-rule-gold" picking-mode="Ignore" />
-                <ui:VisualElement class="intro-rule-brass" picking-mode="Ignore" />
+            <ui:VisualElement name="intro-chess" class="intro-two" picking-mode="Ignore">
+                <ui:Label text="CHESS" class="intro-title intro-title-a" picking-mode="Ignore" />
+                <!-- The lower half of CHESS in ebony: a clip over a copy of the word. -->
+                <ui:VisualElement name="intro-chess-low" class="intro-two-low" picking-mode="Ignore">
+                    <ui:Label name="intro-chess-dark" text="CHESS" class="intro-title intro-title-dark" picking-mode="Ignore" />
+                </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement name="intro-subs" class="intro-subs" picking-mode="Ignore">
-                <ui:Label text="체스 말 6종을 골라 팀원과 함께" class="intro-sub" picking-mode="Ignore" />
-                <ui:Label text="레이스, 탑 오르기, 칼싸움으로 겨루세요" class="intro-sub" picking-mode="Ignore" />
+            <ui:Label text="FIGHT" class="intro-title intro-title-b" picking-mode="Ignore" />
+            <ui:VisualElement name="intro-road" class="intro-road" picking-mode="Ignore">
+                <ui:VisualElement name="intro-road-run" class="row intro-road-run" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement class="row intro-actions" picking-mode="Ignore">
-            <ui:VisualElement name="intro-press" class="row chunky ch-wood ch-sm intro-press">
-                <ui:Label text="▶" class="intro-key" picking-mode="Ignore" />
+            <ui:VisualElement name="intro-press" class="row chunky ch-sm intro-press">
                 <ui:Label text="클릭해서 시작" class="intro-hint" picking-mode="Ignore" />
             </ui:VisualElement>
             <!-- R85: the name screen again at any time (NameChange), then back here. -->
             <ui:VisualElement name="intro-rename" class="row intro-rename">
-                <ui:VisualElement name="intro-rename-crown" class="intro-rename-crown" picking-mode="Ignore" />
                 <ui:Label text="이름 바꾸기" class="intro-rename-text" picking-mode="Ignore" />
             </ui:VisualElement>
         </ui:VisualElement>

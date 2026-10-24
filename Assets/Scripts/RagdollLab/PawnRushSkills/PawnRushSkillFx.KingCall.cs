@@ -319,10 +319,14 @@ namespace ChessFight.RagdollLab
             if (original == null) return null;
             if (nanoOf.TryGetValue(original, out var m) && m != null) return m;
             m = new Material(nanoShader) { hideFlags = HideFlags.HideAndDontSave, name = original.name + " (Nano)" };
-            if (original.HasProperty("_MainTex")) m.SetTexture("_MainTex", original.GetTexture("_MainTex"));
-            if (original.HasProperty("_MainTex")) m.SetTextureScale("_MainTex", original.GetTextureScale("_MainTex"));
-            if (original.HasProperty("_MainTex")) m.SetTextureOffset("_MainTex", original.GetTextureOffset("_MainTex"));
-            m.SetColor("_Color", original.HasProperty("_Color") ? original.GetColor("_Color") : Color.white);
+            // Its main texture and colour, whatever they are called (URP's Lit: _BaseMap, _BaseColor; ours: _MainTex, _Color).
+            if (original.mainTexture != null)
+            {
+                m.SetTexture("_MainTex", original.mainTexture);
+                m.SetTextureScale("_MainTex", original.mainTextureScale);
+                m.SetTextureOffset("_MainTex", original.mainTextureOffset);
+            }
+            m.SetColor("_Color", original.HasProperty("_BaseColor") || original.HasProperty("_Color") ? original.color : Color.white);
             nanoOf[original] = m;
             return m;
         }

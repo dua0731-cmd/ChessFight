@@ -39,7 +39,7 @@ namespace ChessFight.Game
         WarmupMeter warmup;
         ThreadPriority loadingPriority;
         bool skipFrame;
-        float shownAt, readyAt = -1, hostSince = -1, matchingSince;
+        float shownAt, readyAt = -1, hostSince = -1, matchingSince, gateSince = -1;
 
         public MatchLoader(NetworkRuntime runtime, Func<double> clock)
         {
@@ -134,14 +134,34 @@ namespace ChessFight.Game
             bool wanted = PublicMatching(session);
             if (phase == Phase.Idle)
             {
-                if (!wanted) return;
+                // The lobby castle's walk in (LobbyStage.EnterGate): the party goes
+                // through the great gate first, then the matchmaking screen comes up.
+                // Only the screen waits; the search is already running.
+                var stage = LobbyStage.Current;
+                if (!wanted)
+                {
+                    if (gateSince >= 0) { gateSince = -1; if (stage != null) stage.LeaveGate(); }
+                    return;
+                }
+                if (stage != null && stage.HasGate)
+                {
+                    if (gateSince < 0) { gateSince = Time.unscaledTime; stage.EnterGate(); }
+                    if (!stage.GateEntered && Time.unscaledTime - gateSince < LobbyStage.MaxWalkSeconds) return;
+                }
+                gateSince = -1;
                 var mode = session.MatchMode ?? session.PartyMode;
                 // Built once per search: if it fails, the busy card under it still cancels.
                 view = Show(LoadingContent.For(mode, TeamReservations.TeamSize));
                 phase = Phase.Matching;
                 matchingSince = Time.unscaledTime;
             }
-            else if (!wanted) { Finish(); return; }
+            else if (!wanted)
+            {
+                Finish();
+                // Back in the lobby: the party stands on the stage again, the gate shuts.
+                if (LobbyStage.Current != null) LobbyStage.Current.LeaveGate();
+                return;
+            }
             if (view == null) return;
 
             var state = view.State;

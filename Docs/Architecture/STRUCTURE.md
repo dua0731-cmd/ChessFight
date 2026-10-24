@@ -22,8 +22,9 @@ Assets/
   Scenes/             Intro · Lobby · PawnRush_Course01(폰 러쉬 경기) · PawnRush_SkillTest · PawnRushVictory · PawnRushLose ·
                       SwordFight · QueenOfTheHill(그레이박스) · RagdollTest(래그돌 랩)
   Scripts/            ↓ 폴더 하나 = 어셈블리 하나 (2절)
-  Settings/           RagdollTuning.asset·preset_*.json(래그돌 튜닝), Course01Kit.asset(폰 러시 코스 재료 목록), 템플릿 URP 에셋(미사용,
-                      프로젝트 설정이 참조해 남김)
+  Settings/           RagdollTuning.asset·preset_*.json(래그돌 튜닝), Course01Kit.asset(폰 러시 코스 재료 목록), URP 에셋(R151부터 씀:
+                      PC_RPAsset·PC_Renderer·Mobile_*·전역 설정)
+  Shaders/URP/        우리 셰이더가 함께 쓰는 URP HLSL(CFLit 조명, CFShadowCaster 그림자) (R151)
   StreamingAssets/    시작 로고 영상
   InputSystem_Actions.inputactions   템플릿 파일(빌드 설정이 참조해 남김)
 Docs/                 문서 트리 (HANDOFF.md에서 시작)

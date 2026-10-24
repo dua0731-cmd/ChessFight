@@ -1,3 +1,4 @@
+using ChessFight.Game;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -30,8 +31,7 @@ namespace ChessFight.RagdollLab
             if (lineMaterial == null)
             {
                 var shader = Shader.Find("Sprites/Default");
-                if (shader == null) shader = Shader.Find("Legacy Shaders/Particles/Alpha Blended");
-                if (shader == null) shader = Shader.Find("Standard");
+                if (shader == null) shader = LitMaterials.Unlit;
                 lineMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
             }
             return lineMaterial;

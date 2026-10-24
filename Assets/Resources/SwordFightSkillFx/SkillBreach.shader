@@ -10,7 +10,7 @@
 // - What the wall is made of comes from the wall itself (the screen grabbed under the quad, softened): darker and rougher
 //   inside, lit by how each broken face turns to the sun, shadowed where the stone is in the way, darker the deeper; a pale
 //   chipped band at the break; a fresh break glows a moment (_Glow); it all heals (_Heal).
-// Pixels of untouched stone with no crack are dropped. Built-in render pipeline, after the opaque world.
+// Pixels of untouched stone with no crack are dropped. URP, right after the opaque world.
 Shader "ChessFight/Skill Breach"
 {
     Properties
@@ -35,11 +35,12 @@ Shader "ChessFight/Skill Breach"
     }
     SubShader
     {
-        Tags { "Queue" = "Geometry+100" "RenderType" = "Opaque" "IgnoreProjector" = "True" "DisableBatching" = "True" }
-        GrabPass { "_SkillBreachGrab" }
+        Tags { "Queue" = "Transparent-499" "RenderType" = "Opaque" "IgnoreProjector" = "True" "DisableBatching" = "True" }
+        // URP: the wall under it comes from the camera's copy of the opaque picture (_CameraOpaqueTexture), which is only
+        // ready after the opaque pass, so it is drawn first thing after it (Transparent-499) instead of at Geometry+100.
         Pass
         {
-            Tags { "LightMode" = "ForwardBase" }
+            // Its own lighting from the main light (URP's _MainLightPosition); an untagged pass draws in URP.
             ZWrite Off
             ZTest LEqual
             Cull Off
@@ -52,8 +53,9 @@ Shader "ChessFight/Skill Breach"
             float _Surface, _Heal, _Debug, _BladeOn;
             float4 _Origin, _Normal, _Box, _Crater, _Cracks, _Tint, _Glow;
             float4 _BladePos, _BladeX, _BladeY, _BladeZ, _BladeColor, _GuardColor;
-            sampler2D _SkillBreachGrab;
-            float4 _SkillBreachGrab_TexelSize;
+            sampler2D _CameraOpaqueTexture;
+            float4 _MainLightPosition;
+            #define _SkillBreachGrab_TexelSize float4(1.0 / _ScreenParams.xy, _ScreenParams.xy)
 
             // The frame at the sword: out of the face, along the edge, up.
             static float3 gN, gU;
@@ -70,7 +72,7 @@ Shader "ChessFight/Skill Breach"
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.world = mul(unity_ObjectToWorld, v.vertex).xyz;
-                o.grab = ComputeGrabScreenPos(o.pos);
+                o.grab = ComputeScreenPos(o.pos);
                 return o;
             }
 
@@ -225,9 +227,9 @@ Shader "ChessFight/Skill Breach"
             float3 GrabSoft(float2 uv)
             {
                 float2 px = _SkillBreachGrab_TexelSize.xy * 5.0;
-                return (tex2D(_SkillBreachGrab, uv).rgb * 2.0
-                    + tex2D(_SkillBreachGrab, uv + float2(px.x, px.y)).rgb + tex2D(_SkillBreachGrab, uv + float2(-px.x, px.y)).rgb
-                    + tex2D(_SkillBreachGrab, uv + float2(px.x, -px.y)).rgb + tex2D(_SkillBreachGrab, uv + float2(-px.x, -px.y)).rgb) / 6.0;
+                return (tex2D(_CameraOpaqueTexture, uv).rgb * 2.0
+                    + tex2D(_CameraOpaqueTexture, uv + float2(px.x, px.y)).rgb + tex2D(_CameraOpaqueTexture, uv + float2(-px.x, px.y)).rgb
+                    + tex2D(_CameraOpaqueTexture, uv + float2(px.x, -px.y)).rgb + tex2D(_CameraOpaqueTexture, uv + float2(-px.x, -px.y)).rgb) / 6.0;
             }
 
             // The ray against a box (centre c, axes, half sizes h): its entry, or -1.
@@ -262,7 +264,7 @@ Shader "ChessFight/Skill Breach"
                 if (top ? f0.z < 0 : (P0.y > _Box.x || P0.y < _Box.y)) discard;
 
                 float2 uv = i.grab.xy / i.grab.w;
-                float3 under = tex2D(_SkillBreachGrab, uv).rgb;
+                float3 under = tex2D(_CameraOpaqueTexture, uv).rgb;
                 float keep = 1.0 - _Heal;
                 float d0 = Depth(f0.xy);
                 bool broken = d0 > f0.z + 0.002;
@@ -333,7 +335,7 @@ Shader "ChessFight/Skill Breach"
                     if (tS >= 0 && (!hit || tS < tB) && (!gone || tS < tB))
                     {
                         float3 Ps = P0 + V * tS;
-                        float3 L = normalize(_WorldSpaceLightPos0.xyz + float3(0, 1e-4, 0));
+                        float3 L = normalize(_MainLightPosition.xyz + float3(0, 1e-4, 0));
                         float lit = saturate(dot(nS, L)) * 0.6 + 0.4;
                         float spec = pow(saturate(dot(reflect(V, nS), L)), 24.0) * 0.6;
                         float deep = saturate(Frame(Ps).z / max(_Crater.y, 0.05));
@@ -360,7 +362,7 @@ Shader "ChessFight/Skill Breach"
 
                 // Lit as each broken face turns to the sun, against the surface it broke out of (the grabbed colour is
                 // already lit), never brighter than it; shadowed where the stone is in the way.
-                float3 L = normalize(_WorldSpaceLightPos0.xyz + float3(0, 1e-4, 0));
+                float3 L = normalize(_MainLightPosition.xyz + float3(0, 1e-4, 0));
                 float3 Nsurf = top ? float3(0, 1, 0) : gN;
                 float faceLit = saturate(dot(Nsurf, L) * 0.75 + 0.25);
                 float lit = clamp(saturate(dot(Nw, L) * 0.75 + 0.25) / max(faceLit, 0.05), 0.62, 1.15);

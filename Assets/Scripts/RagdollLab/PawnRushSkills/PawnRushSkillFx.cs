@@ -170,6 +170,10 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.KingCallGo: KingCallGoFx(e); break;
                 case SkillFxKind.KingCallLand: KingCallLandFx(e); break;
                 case SkillFxKind.KingCallEnd: KingCallEndFx(e); break;
+                // R153: the rook's chain (PawnRushSkillFx.Chain.cs).
+                case SkillFxKind.RookThrow: RookThrowFx(e); break;
+                case SkillFxKind.RookHook: RookHookFx(e); break;
+                case SkillFxKind.RookPullEnd: RookPullEndFx(e); break;
             }
         }
 
@@ -508,7 +512,13 @@ namespace ChessFight.RagdollLab
             var rotation = Quaternion.LookRotation(f, Vector3.up);
             for (int i = -2; i <= 2; i++)
                 foreach (int j in i == 0 ? new[] { 0 } : new[] { i, -i })
-                    yield return (center + (r * j + f * i) * size + Vector3.up * 0.02f, Mathf.Abs(i), size, rotation);
+                {
+                    // R149: each square on the floor under it (up or down a step within 1 m), as the wire's pegs: laid at
+                    // the middle's height, a square past a mini-game dais edge was inside the dais.
+                    Vector3 at = center + (r * j + f * i) * size;
+                    if (Kit.FloorUnder(at, 1f, out Vector3 floor) && Mathf.Abs(floor.y - at.y) <= 1f) at = floor;
+                    yield return (at + Vector3.up * 0.02f, Mathf.Abs(i), size, rotation);
+                }
         }
 
         /// <summary>While a bishop aims, its squares show faintly where the X would go (B's preview).</summary>
@@ -632,7 +642,7 @@ namespace ChessFight.RagdollLab
             StompImpact(e.target, e.at, Flat(e.dir));
             InkHit(e.target, e.at, Vector3.down, p, 6, 0.15f, 9, 0);
             kit.Down(e.target, p, e.at, Square);
-            kit.Daze(e.target, 0.3f, 1.2f);
+            // R153 (승규 님 10-22: "머리 빙빙 돌리게 하는 거 지워줘"): no little pawns circling its head any more.
         }
 
         void KnightLand(SkillFxEvent e)

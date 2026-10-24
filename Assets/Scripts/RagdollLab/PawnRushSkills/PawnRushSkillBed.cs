@@ -23,6 +23,14 @@ namespace ChessFight.RagdollLab
         public KeyCode nextPieceKey = KeyCode.X;
         [Tooltip("룩 시험: 더미 4명을 내 앞에 뭉쳐 세운다")]
         public KeyCode clusterKey = KeyCode.V;
+        [Tooltip("R153 (승규 님 10-16: \"테스트 해볼 수 있게 적과 아군 소환 하게 해줘\"): 내 앞에 적 / 아군 더미 하나 부르기")]
+        public KeyCode summonEnemyKey = KeyCode.B;
+        public KeyCode summonAllyKey = KeyCode.N;
+        [Tooltip("소환: 내 앞 거리 (m)")]
+        public float summonAhead = 4.5f;
+        [Tooltip("R153 (승규 님 10-22: \"스킬넷에서 룩 시험 해볼 수 있는 환경 만들어줘\"): 룩 시험장으로 가기 / 시험장의 높은 단 위로")]
+        public KeyCode rookGroundKey = KeyCode.H;
+        public KeyCode rookLedgeKey = KeyCode.J;
 
         [Header("시험 장치")]
         [Tooltip("룩만 부수는 바리케이드 (바닥 가운데)")]
@@ -34,7 +42,8 @@ namespace ChessFight.RagdollLab
 
         /// <summary>The pieces Pawn Rush promotes to, the pawn first (no king, D1). R144 (승규 님 10-15: "이제 폰 러쉬 에서도
         /// 왕 스킬 구현 할 건데 왕 캐릭터 넣어줘"): the king can be picked too, last, ahead of its skill (F does nothing yet).</summary>
-        public static readonly PieceKind[] Pieces = { PieceKind.Pawn, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.King };
+        // R153 (skill plan v0.3): the king is out of Pawn Rush (its call's code stays, the rook's chain moves pieces its way).
+        public static readonly PieceKind[] Pieces = { PieceKind.Pawn, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight };
 
         static readonly List<string> log = new List<string>();
         const int LogLines = 9;
@@ -71,14 +80,13 @@ namespace ChessFight.RagdollLab
         {
             game = GetComponent<LabGame>();
             if (game == null) game = FindFirstObjectByType<LabGame>();
-            SkillBarricade.Build(barricadeAt, barricadeFacing, "Pawn Rush 바리케이드 (룩만 부숨)");
             fx = GetComponent<PawnRushSkillFx>();
             if (fx == null) fx = gameObject.AddComponent<PawnRushSkillFx>();
             // The skills' sounds (R114, 승규 님's picks on the R107 page).
             sfx = GetComponent<PawnRushSkillSfx>();
             if (sfx == null) sfx = gameObject.AddComponent<PawnRushSkillSfx>();
-            // R146: the king's call on screen (mockup D, the chess clock).
-            if (GetComponent<PawnRushKingCallUi>() == null) gameObject.AddComponent<PawnRushKingCallUi>();
+            // R153: a teammate rook's chain handle held out to the piece played here ("우클릭: 잡기").
+            if (GetComponent<PawnRushChainPrompt>() == null) gameObject.AddComponent<PawnRushChainPrompt>();
             // F is the skills' key here, not the lab's interact (bells, levers, cutting a hook).
             if (game != null && skillKey == KeyCode.F) game.InteractKeyOff = true;
             // The key goes in with the rest of P1's input (R111): offline straight to the pawn, online to the host.
@@ -108,6 +116,10 @@ namespace ChessFight.RagdollLab
             if (Input.GetKeyDown(previousPieceKey)) StepPiece(me, -1);
             if (Input.GetKeyDown(nextPieceKey)) StepPiece(me, 1);
             if (!Online && Input.GetKeyDown(clusterKey)) ClusterDummies(me);
+            if (!Online && Input.GetKeyDown(summonEnemyKey)) Summon(me, false);
+            if (!Online && Input.GetKeyDown(summonAllyKey)) Summon(me, true);
+            if (!Online && Input.GetKeyDown(rookGroundKey)) RookGround(me, false);
+            if (!Online && Input.GetKeyDown(rookLedgeKey)) RookGround(me, true);
             // The skill key itself: LabGame.ReadInput puts it into P1's input (R111).
         }
 
@@ -195,6 +207,115 @@ namespace ChessFight.RagdollLab
             Report($"더미 4명을 앞 {clusterAhead:0.#} m에 뭉쳐 세움 (간격 {clusterGap:0.#} m, 적) — {clusterKey}로 다시");
         }
 
+        int summoned;
+
+        /// <summary>R153: a dummy of the other side (no team) or of this player's team, standing summonAhead in front of it
+        /// and facing it, a little to one side then the other each time. Teammates grab a rook's chain handle by themselves.</summary>
+        public void Summon(RagdollPawn p1, bool ally)
+        {
+            if (game == null || p1 == null) return;
+            int before = game.dummies.Count;
+            game.AddDummy();
+            // The lab has room for so many dummies: past that, the oldest one is called again.
+            var d = game.dummies.Count > before ? game.dummies[game.dummies.Count - 1]
+                  : game.dummies.Count > 0 ? game.dummies[summoned % game.dummies.Count] : null;
+            if (d == null) return;
+            Vector3 ahead = Flat(p1.Facing, Vector3.forward);
+            Vector3 side = Vector3.Cross(Vector3.up, ahead);
+            float off = ((summoned++ % 5) - 2) * 0.9f;
+            Vector3 ground = new Vector3(p1.Hips.position.x, p1.FeetPoint.y, p1.Hips.position.z) + ahead * summonAhead + side * off;
+            d.Team = ally && p1.Team != Teams.None ? p1.Team : Teams.None;
+            if (d.skin != null) d.skin.sharedMaterial = ally ? game.TeamMaterial(p1.Team) : game.dummyMaterial;
+            d.SkillBot = true;
+            d.ResetSkill();
+            d.SetInput(new PawnInput());
+            d.Teleport(ground + Vector3.up * (d.standHeight + 0.02f), -ahead);
+            Report($"{(ally ? "아군" : "적")} 소환: {d.DisplayName} — 앞 {summonAhead:0.#} m ({(ally ? summonAllyKey : summonEnemyKey)})");
+        }
+
+        // ---------------------------------------------------------------- the rook's test ground (R153)
+
+        /// <summary>Where the rook's test ground is: the open floor west of the start (x −14..−4, z −14..−4).</summary>
+        static readonly Vector3 RookGroundStart = new Vector3(-9f, 0f, -13f);
+        static readonly Vector3 RookLedgeAt = new Vector3(-12.6f, 0f, -12.6f);
+        const float RookLedgeHeight = 0.8f;   // the pieces stand about 0.6 m
+        Transform rookGround;
+
+        /// <summary>
+        /// R153: the rook's test ground. P1 turns rook and stands at its start facing north; the lab's four dummies take
+        /// their places: an enemy 7 m straight ahead, an enemy behind a low wall ahead to the right (the chain meets the wall
+        /// and winds back), a teammate 4 m to the right (it grabs the handle by itself), and a teammate at the foot of a 0.8 m
+        /// ledge to the left (<paramref name="onLedge"/>: P1 stands on the ledge facing it, to pull it up, plan v0.3 §5.7).
+        /// (A crate the chain passes over and the pulled piece does not cannot be had on flat floor: the pull's low path runs
+        /// above the chain's line, so an obstacle in its way meets the chain first.)
+        /// The ground's props are built once and stay.
+        /// </summary>
+        public void RookGround(RagdollPawn p1, bool onLedge)
+        {
+            if (game == null || p1 == null) return;
+            BuildRookGround();
+            if (p1.Piece != PieceKind.Rook) SetPiece(p1, PieceKind.Rook);
+            p1.ResetSkill();
+            while (game.dummies.Count < 4) { int n = game.dummies.Count; game.AddDummy(); if (game.dummies.Count == n) break; }
+            var spots = new (Vector3 at, bool ally)[]
+            {
+                (new Vector3(-9f, 0f, -6f), false),     // enemy, 7 m straight ahead (the reach is 8 m)
+                (new Vector3(-5.4f, 0f, -8.6f), false),  // enemy behind the low wall, ahead to the right
+                (new Vector3(-5.2f, 0f, -11.2f), true),  // teammate, 4 m to the right
+                (new Vector3(-12.6f, 0f, -9.8f), true),  // teammate at the foot of the ledge
+            };
+            for (int i = 0; i < game.dummies.Count; i++)
+            {
+                var d = game.dummies[i];
+                if (d == null) continue;
+                bool ally = i < spots.Length && spots[i].ally;
+                Vector3 at = i < spots.Length ? spots[i].at : new Vector3(-10.6f + i, 0f, -6.5f);
+                d.Team = ally && p1.Team != Teams.None ? p1.Team : Teams.None;
+                if (d.skin != null) d.skin.sharedMaterial = ally ? game.TeamMaterial(p1.Team) : game.dummyMaterial;
+                d.SkillBot = true;
+                d.ResetSkill();
+                d.SetInput(new PawnInput());
+                Vector3 face = Flat((onLedge ? RookLedgeAt : RookGroundStart) - at, Vector3.back);
+                d.Teleport(at + Vector3.up * (d.standHeight + 0.02f), face);
+            }
+            if (onLedge)
+            {
+                // On the ledge's edge, facing the teammate below.
+                Vector3 top = RookLedgeAt + new Vector3(0f, RookLedgeHeight, 0.9f);
+                p1.Teleport(top + Vector3.up * (p1.standHeight + 0.02f), Vector3.forward);
+                Report($"룩 시험장: 높이 {RookLedgeHeight:0.#} m 단 위 — 아래 팀원에게 사슬 (F → 아래로 조준 → 좌클릭), {rookGroundKey}로 처음 자리");
+            }
+            else
+            {
+                p1.Teleport(RookGroundStart + Vector3.up * (p1.standHeight + 0.02f), Vector3.forward);
+                Report($"룩 시험장: 앞 7 m 적 · 오른쪽 앞 낮은 벽 뒤 적 (사슬이 벽에 막힘) · 오른쪽 4 m 팀원 · 왼쪽 단 아래 팀원 — {rookLedgeKey}로 단 위");
+            }
+        }
+
+        void BuildRookGround()
+        {
+            if (rookGround != null) return;
+            rookGround = new GameObject("룩 시험장 (R153)").transform;
+            var stone = new Material(Shader.Find("Standard")) { color = new Color(0.78f, 0.72f, 0.62f) };
+            var wood = new Material(Shader.Find("Standard")) { color = new Color(0.55f, 0.38f, 0.22f) };
+            void Block(string label, Vector3 center, Vector3 size, Material m)
+            {
+                var b = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                b.name = label;
+                b.transform.SetParent(rookGround, false);
+                b.transform.position = center;
+                b.transform.localScale = size;
+                b.GetComponent<MeshRenderer>().sharedMaterial = m;
+            }
+            // The ledge (to pull a teammate up onto), and a step up to it.
+            Block("높은 단 1.4 m", RookLedgeAt + new Vector3(0f, RookLedgeHeight * 0.5f, 0f), new Vector3(2.4f, RookLedgeHeight, 2.4f), stone);
+            Block("단 계단", RookLedgeAt + new Vector3(1.8f, 0.2f, -0.6f), new Vector3(1.2f, 0.4f, 1.2f), stone);
+            // A low wall in the way (the chain meets it and winds back), square to the line to the enemy behind it.
+            var crate = new Vector3(-6.9f, 0.45f, -10.4f);
+            Block("낮은 벽 0.9 m", crate, new Vector3(1.6f, 0.9f, 0.3f), wood);
+            rookGround.Find("낮은 벽 0.9 m").rotation = Quaternion.LookRotation(Flat(new Vector3(-5.4f, 0f, -8.6f) - RookGroundStart, Vector3.forward));
+        }
+
         void ToggleFirstDummyTeam()
         {
             var p1 = P1;
@@ -254,11 +375,11 @@ namespace ChessFight.RagdollLab
 
         static string HowTo(PieceKind kind) => kind switch
         {
-            PieceKind.Pawn => "F = 1칸 걸음 · 0.1~0.8초 안에 F 한 번 더 = 두 번째 걸음\n(걸음마다 방향키 방향) · 곧게 부딪히면 밀침, 대각선이면 넘어뜨림\n넘어진 팀원에게 닿으면 부축 (둘 다 +15%)",
+            PieceKind.Pawn => "F = 1.5 m 걸음 (방향키 방향) · 0.1~0.8초 안에 F 한 번 더 = 두 번째 걸음\n두 번째 걸음은 앞쪽 ±60°·3 m 안의 넘어진 팀원(청록 고리)이나 서 있는 적(주황 고리)에게 휘어 들어감 · 대상 없으면 안 나감\n곧게 부딪히면 밀침, 대각선이면 넘어뜨림 · 넘어진 팀원은 부축 (기상 보호 1.5초)",
             PieceKind.Queen => "F = 0.35초 예고(금빛 원이 조여들고 작은 불빛이 피어오름) 뒤 반경 3 m 충격파\n1.5 m 안은 넘어지고 바깥은 밀림 · 후딜 0.45초",
-            PieceKind.Rook => "F = 조준: 반투명 선이 마우스 방향을 따라감 (걸을 수 있음, Shift 질주 X)\n좌클릭 = 방향 고정 0.3초 뒤 4칸 돌진 · 우클릭/F = 취소\n공중에서도 F: 마우스 위아래로 위·아래 조준, 좌클릭 = 잠깐 멈췄다 슈퍼맨처럼 그 방향으로 돌진 (아래면 바닥에 내리꽂음)\n적 3명까지 옆으로 튕김 · 벽은 휘청 · 바리케이드 부숨 (x −9, z 2)",
-            PieceKind.Bishop => "F = 조준: 반투명 X가 마우스 위치를 따라감 (근거리 4.5 m 안)\n좌클릭 = 설치 · 우클릭/F = 취소\n0.5초 뒤 무장, 6초 · 적이 지나가면 줄이 다리를 따라 늘어났다 잡아채 앞으로 넘어뜨림 · 적 2명 걸면 끊김",
-            PieceKind.Knight => "F = 도약 (카메라 방향, 높이 1.6 m · 약 5.5 m) · 점프 중에도 F = 공중에서 바로 도약\n공중에서 F: 3 m 안 적에 주황 표시가 뜨면 자동으로 머리 찍고 착지\n적이 없으면 F = 다시 차고 나감 (\"다~당\", 방향키로 최대 90° 꺾기, 1회) · 착지 1.5 m 안 휘청",
+            PieceKind.Rook => "F = 조준: 8 m 흰 선이 마우스 방향을 따라감 (걸을 수 있음, Shift 질주 X, 위아래 ±45°)\n좌클릭 = 사슬 던지기 · 우클릭/F = 취소 · 던진 순간부터 끝날 때까지 룩은 제자리\n적: 자동으로 걸려 룩 앞 1.5 m로 끌려오고 휘청 · 팀원: 2초 안에 우클릭으로 잡으면 룩 옆으로\n룩이 맞거나 휘청하면 사슬이 끊김 · 쿨 8초 (팀원이 안 잡으면 4초)",
+            PieceKind.Bishop => "F = 조준: 반투명 X가 마우스 위치를 따라감 (근거리 4.5 m 안)\n좌클릭 = 설치 · 우클릭/F = 취소 · 0.5초 뒤 무장, 6초\n걸린 적은 1.0초 묶임 · 적 2명 걸면 끊김\n비숍이 덫에서 6 m 넘게 멀어지거나 넘어지면 줄이 풀려 사라짐 (5 m부터 실이 팽팽하게 깜빡임)",
+            PieceKind.Knight => "앞쪽 ±60°·1.5~5 m 안의 서 있는 적 머리 위에 빨간 고리가 뜨면 F = 그 적에게 도약 (대상 없으면 F 무시)\n체공 0.8~1.14초 동안 적을 따라감 (초당 3 m) · 머리 찍기 = 넘어뜨림, 옆에 착지\n포크: 착지 1.5 m 안 다른 적 휘청 0.4초 · 빗나가면 휘청 없음 · 점프 중에도 대상 있으면 가능 · 쿨 7초",
             PieceKind.King => "F = 같은 구간 팀원 목록 → 좌클릭으로 2명까지 고르기 → F로 부르기 · 우클릭 = 닫기\n불린 팀원이 3초 안에 자기 F → 12 cm 떠서 0.6초 만에 킹 뒤 칸으로 (벽 통과 · 오는 동안 무적)\n부르는 동안 킹이 맞으면 출발 안 한 팀원 취소 · 더미는 0.8초 뒤 스스로 대답",
             _ => "",
         };
@@ -269,8 +390,11 @@ namespace ChessFight.RagdollLab
         void KeyCard(RagdollPawn p1)
         {
             bool running = p1.SkillStage != SkillStage.None, ready = !running && p1.SkillCooldown <= 0f;
+            // R153: the knight's key lights only with an enemy to leap at.
+            if (p1.Piece == PieceKind.Knight && p1.KnightMarked == null && !running) ready = false;
             string how = (p1.Piece == PieceKind.Rook || p1.Piece == PieceKind.Bishop) ? $"{skillKey} 조준 → 좌클릭"
-                       : p1.Piece == PieceKind.King ? $"{skillKey} 목록 → 고르고 {skillKey}" : $"{skillKey} 사용";
+                       : p1.Piece == PieceKind.Knight ? (p1.KnightMarked != null ? $"{skillKey} → {p1.KnightMarked.DisplayName}" : "대상 없음")
+                       : $"{skillKey} 사용";
             PawnRushSkillFx.SkillCard(SkillKeyCard.Slot(0), skillKey.ToString(), RagdollPawn.SkillName(p1.Piece),
                 SkillKeyCard.Line(running ? StageName(p1) : null, p1.SkillCooldown, how), p1.Piece,
                 ready || running, p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f);
@@ -349,9 +473,8 @@ namespace ChessFight.RagdollLab
             float cd = p1.SkillCooldownTotal > 0f ? p1.SkillCooldown / p1.SkillCooldownTotal : 0f;
             Bar(1f - cd, cd > 0f ? new Color(0.45f, 0.5f, 0.6f) : new Color(0.3f, 0.85f, 1f),
                 cd > 0f ? $"쿨타임 {p1.SkillCooldown:0.0}초" : "사용 가능");
-            GUILayout.Label(skills.testCooldown > 0f ? $"시험용 쿨타임 {skills.testCooldown:0.#}초 (기획 쿨은 Inspector 시험용 쿨을 0으로)" : "기획 쿨타임 (v0.1)", small);
+            GUILayout.Label(skills.testCooldown > 0f ? $"시험용 쿨타임 {skills.testCooldown:0.#}초 (기획 쿨은 Inspector 시험용 쿨을 0으로)" : "기획 쿨타임 (v0.3)", small);
             string extra = "";
-            if (p1.HasteLeft > 0f) extra += $"진군 +{(skills.hasteScale - 1f) * 100f:0}% {p1.HasteLeft:0.0}초   ";
             if (p1.GetUpGuardLeft > 0f) extra += $"기상 보호 {p1.GetUpGuardLeft:0.0}초   ";
             if (!string.IsNullOrEmpty(extra)) GUILayout.Label(extra, small);
             GUILayout.Label("E · Q · 마우스는 랩의 원래 기능 그대로 (이 씬에서 F는 스킬만)", small);
@@ -393,6 +516,14 @@ namespace ChessFight.RagdollLab
             if (GUILayout.Button("더미 기물 바꾸기", button)) CycleDummyPiece();
             GUILayout.EndHorizontal();
             if (GUILayout.Button($"룩 시험: 앞에 4명 뭉치기 ({clusterKey})", button)) ClusterDummies(p1);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button($"적 소환 ({summonEnemyKey})", button)) Summon(p1, false);
+            if (GUILayout.Button($"아군 소환 ({summonAllyKey})", button)) Summon(p1, true);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button($"룩 시험장 ({rookGroundKey})", button)) RookGround(p1, false);
+            if (GUILayout.Button($"단 위로 ({rookLedgeKey})", button)) RookGround(p1, true);
+            GUILayout.EndHorizontal();
             if (p1.Piece == PieceKind.King)
             {
                 // R146: the king's call needs teammates (and, to see the rule, two sections).

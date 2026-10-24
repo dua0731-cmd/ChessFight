@@ -38,7 +38,7 @@
 | 다른 씬에 끼어드는 코드 | `RuntimeInitializeOnLoadMethod`, `DontDestroyOnLoad`, `[InitializeOnLoad]` 없음. 빌더는 메뉴를 눌렀을 때만 동작 | 코드 확인 |
 | 프로젝트 설정 변경 | 병합은 새 파일만 추가했다. ProjectSettings·Packages·레이어·태그 변경 없음. 모든 오브젝트가 Default 레이어 | 병합 diff 확인 |
 | 입력 백엔드 | 랩은 레거시 `Input`과 XInput(Windows DLL, 없으면 조용히 무시)을 쓴다. Active Input Handling = Old와 맞는다 | [DECISIONS U2](../Project/DECISIONS.md) |
-| 렌더링 | 랩 재질은 Built-in `Standard` 셰이더. 프로젝트의 Built-in 우회로 그대로 보인다 | `RenderPipelineOverride` |
+| 렌더링 | 랩 재질은 URP `Lit`(R151에 Standard에서 바꿈). 코드로 만드는 재질은 `LitMaterials` | `Game/LitMaterials` |
 | 폴더 메타 변경점 반복 | `Assets/ChessFight.meta`가 없으면 Unity가 PC마다 다른 GUID로 만든다. 원래 GUID로 되살려 커밋했다 | 커밋 |
 
 **멀티를 위한 준비:** `RagdollPawn`은 입력을 직접 읽지 않고 `SetInput(PawnInput)`(월드 좌표)으로만 움직인다. `RagdollDriver`가 이것을 게임 공통 계약 `ICharacterDriver`로 연결하므로, 오프라인 플레이테스트·네트워크 호스트·봇이 같은 방식으로 래그돌을 움직일 수 있다.

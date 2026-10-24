@@ -405,8 +405,7 @@ namespace ChessFight.Gameplay
         {
             if (string.IsNullOrEmpty(key)) key = "marble";
             if (materials.TryGetValue(key, out var m)) return m;
-            var shader = Shader.Find("Standard");
-            m = new Material(shader != null ? shader : Shader.Find("Legacy Shaders/Diffuse")) { name = "QueenHill " + key };
+            m = new Material(LitMaterials.Lit) { name = "QueenHill " + key };
             if (key == "checker")
             {
                 // Lapis and pale gold, one-metre squares (box UVs run one unit per two metres).
@@ -423,7 +422,7 @@ namespace ChessFight.Gameplay
                 m.color = Color.white;
             }
             else m.color = Colours.TryGetValue(key, out var c) ? c : Color.magenta;
-            if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", 0.12f);
+            LitMaterials.SetSmoothness(m, 0.12f);
             owned.Add(m);
             materials[key] = m;
             return m;

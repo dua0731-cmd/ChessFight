@@ -39,6 +39,22 @@ namespace ChessFight.PawnRush
             var look = new GameObject("Look").transform;
             look.SetParent(root.transform, false);
             float h = height;
+            // A real turned piece when the map kit is in (10-22): the body and a slim team band round its foot,
+            // named as before ("Ring") for the games that recolour it.
+            if (MapLook.PieceBody(look, "Body", kind, h, body) != null)
+            {
+                if (ring.a > 0f && MapLook.RingMesh != null)
+                {
+                    var band = new GameObject("Ring", typeof(MeshFilter), typeof(MeshRenderer));
+                    band.transform.SetParent(look, false);
+                    band.transform.localPosition = new Vector3(0f, .018f * h, 0f);
+                    band.transform.localScale = Vector3.one * (MapLook.FootRadius(kind) * h * 1.01f);
+                    band.GetComponent<MeshFilter>().sharedMesh = MapLook.RingMesh;
+                    band.GetComponent<MeshRenderer>().sharedMaterial = Arena.Lit("M_PieceRing", ring, .4f, .5f);
+                }
+                if (solid) MakeSolid(root, height, radius, grabbable);
+                return root;
+            }
             Part(look, PrimitiveType.Cylinder, new Vector3(0f, .05f * h, 0f), new Vector3(.55f * h, .05f * h, .55f * h), body);
             switch (kind)
             {
@@ -79,25 +95,28 @@ namespace ChessFight.PawnRush
             }
             if (ring.a > 0f)
                 Part(look, PrimitiveType.Cylinder, new Vector3(0f, .015f, 0f), new Vector3(.7f * h, .015f, .7f * h), Arena.Lit("M_PieceRing", ring, .4f, .5f)).name = "Ring";
-            if (solid)
-            {
-                var rb = root.AddComponent<Rigidbody>();
-                rb.isKinematic = true;
-                rb.useGravity = false;
-                rb.interpolation = RigidbodyInterpolation.Interpolate;
-                var capsule = root.AddComponent<CapsuleCollider>();
-                capsule.radius = radius;
-                capsule.height = Mathf.Max(height, radius * 2f);
-                capsule.center = new Vector3(0f, capsule.height * .5f, 0f);
-                if (grabbable) root.AddComponent<GrabOnlySurface>();
-                else root.AddComponent<NoClimbSurface>();
-            }
+            if (solid) MakeSolid(root, height, radius, grabbable);
             return root;
+        }
+
+        static void MakeSolid(GameObject root, float height, float radius, bool grabbable)
+        {
+            var rb = root.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            var capsule = root.AddComponent<CapsuleCollider>();
+            capsule.radius = radius;
+            capsule.height = Mathf.Max(height, radius * 2f);
+            capsule.center = new Vector3(0f, capsule.height * .5f, 0f);
+            if (grabbable) root.AddComponent<GrabOnlySurface>();
+            else root.AddComponent<NoClimbSurface>();
         }
 
         public static GameObject Part(Transform parent, PrimitiveType type, Vector3 at, Vector3 size, Material material)
         {
             var go = GameObject.CreatePrimitive(type);
+            MapLook.Smooth(go); // round parts as true circles (10-22)
             Object.DestroyImmediate(go.GetComponent<Collider>());
             go.transform.SetParent(parent, false);
             go.transform.localPosition = at;

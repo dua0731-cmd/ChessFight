@@ -65,8 +65,8 @@ namespace ChessFight.Game
             }
             // Keep the show running when the window is behind another (as NetworkRuntime does).
             Application.runInBackground = true;
-            savedShadowDistance = QualitySettings.shadowDistance;
-            QualitySettings.shadowDistance = 90f;
+            savedShadowDistance = PipelineSettings.ShadowDistance;
+            PipelineSettings.ShadowDistance = 90f;
 
             // Loaded by a race that just ended (R125): its match, and the way back to the lobby.
             if (PawnRushResultFlow.Take(out var raced, out int racedTeam))
@@ -147,7 +147,7 @@ namespace ChessFight.Game
 
         void OnDestroy()
         {
-            if (savedShadowDistance >= 0) QualitySettings.shadowDistance = savedShadowDistance;
+            if (savedShadowDistance >= 0) PipelineSettings.ShadowDistance = savedShadowDistance;
         }
     }
 }

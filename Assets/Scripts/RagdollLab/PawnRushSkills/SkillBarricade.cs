@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ChessFight.Game;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -52,7 +53,7 @@ namespace ChessFight.RagdollLab
             box = gameObject.AddComponent<BoxCollider>();
             box.size = size;
             box.center = new Vector3(0f, size.y * 0.5f, 0f);
-            var wood = new Material(Shader.Find("Standard")) { color = new Color(0.55f, 0.36f, 0.2f) };
+            var wood = new Material(LitMaterials.Lit) { color = new Color(0.55f, 0.36f, 0.2f) };
             int rows = 4;
             planks = new Renderer[rows + 2];
             for (int i = 0; i < rows; i++)
@@ -61,7 +62,7 @@ namespace ChessFight.RagdollLab
                 plank.localRotation = Quaternion.Euler(0f, 0f, (i % 2 == 0 ? 2f : -2f));
                 planks[i] = plank.GetComponent<Renderer>();
             }
-            var post = new Material(Shader.Find("Standard")) { color = new Color(0.4f, 0.25f, 0.13f) };
+            var post = new Material(LitMaterials.Lit) { color = new Color(0.4f, 0.25f, 0.13f) };
             planks[rows] = Plank(new Vector3(-size.x * 0.5f, size.y * 0.5f, 0f), new Vector3(0.18f, size.y + 0.2f, size.z), post).GetComponent<Renderer>();
             planks[rows + 1] = Plank(new Vector3(size.x * 0.5f, size.y * 0.5f, 0f), new Vector3(0.18f, size.y + 0.2f, size.z), post).GetComponent<Renderer>();
         }

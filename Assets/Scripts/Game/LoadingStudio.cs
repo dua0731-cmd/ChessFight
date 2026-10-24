@@ -5,6 +5,10 @@ using UnityEngine.Rendering;
 
 namespace ChessFight.Game
 {
+    // 10-18 (승규 님, background B "성문 앞 광장"): behind the stage now stands the chess castle rendered in
+    // Blender (ArtSource/Lobby/GateCastle, Resources/Loading/GateCastle.png) on a card that fills the camera's
+    // view; the wooden hall's floor, the coloured light shafts and their glows are gone.
+    //
     // The entrance screen's moving picture (design C revised, 2026-10-03): a round
     // maple and walnut stage in the wooden hall where each player walks in from
     // the side as they join the match, hops onto their spot with a flash in the
@@ -24,9 +28,9 @@ namespace ChessFight.Game
         // Each team's spots (white; black mirrored), front row first.
         static readonly Vector2[] Spots =
             { new Vector2(-1.05f, 1.7f), new Vector2(-2.1f, 1.7f), new Vector2(-3.15f, 1.7f), new Vector2(-1.55f, -1.2f), new Vector2(-2.6f, -1.2f), new Vector2(-3.65f, -1.2f) };
-        // Who stands on each spot, as in the lobby lineup; bots are pawns.
+        // Who stands on each spot: a pawn, as everyone starts the match (R148, as in the lobby lineup).
         public static readonly PieceKind[] Kinds =
-            { PieceKind.Knight, PieceKind.Queen, PieceKind.King, PieceKind.Rook, PieceKind.Bishop, PieceKind.Pawn };
+            { PieceKind.Pawn, PieceKind.Pawn, PieceKind.Pawn, PieceKind.Pawn, PieceKind.Pawn, PieceKind.Pawn };
 
         sealed class Player
         {
@@ -70,32 +74,25 @@ namespace ChessFight.Game
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = MenuArt.Hex(MenuArt.HallColor);
             camera.fieldOfView = 30f;
+            // 10-22 (승규 님: "체스판을 아예 빼주고 돌계단 쪽에서"): with the castle picture the camera is the Blender
+            // render's own (at (0, -18, 5) looking at (0, 46.5, 23), 72 degrees across a 16:9 frame) and the players
+            // stand on the stone steps in it; the round stage and its coloured lights are gone.
+            // 10-22: the castle backdrop was dropped (승규 님 chose background A, the study); the stair path stays unused.
+            onStairs = false;
+            if (onStairs)
+            {
+                float aspect = width / Mathf.Max(1f, height), across = Mathf.Tan(36f * Mathf.Deg2Rad);
+                camera.fieldOfView = 2f * Mathf.Atan(aspect >= 16f / 9f ? across / aspect : across * 9f / 16f) * Mathf.Rad2Deg;
+            }
             camera.nearClipPlane = .3f;
             camera.farClipPlane = 90f;
             camera.allowHDR = false;
             camera.targetTexture = Texture;
             Aim(0f);
 
-            MenuArt.Floor(t);
-            // The stage: mahogany sides, the board on top, a brass rim and an LED ring.
-            LastSceneArt.Part(t, "Stage", LastSceneArt.Cylinder(StageRadius + .15f, StageRadius, StageHeight, 96),
-                              MenuArt.Wood(MenuArt.Mahogany, .6f, new Vector2(6f, 1f)), new Vector3(0, StageHeight / 2, 0));
-            LastSceneArt.Part(t, "Stage Top", MenuArt.Disc(StageRadius), MenuArt.Board(8), new Vector3(0, StageHeight + .004f, 0), null, null, false)
-                        .GetComponent<MeshRenderer>().receiveShadows = true;
-            LastSceneArt.Part(t, "Stage Rim", MenuArt.Torus(StageRadius + .02f, .06f, 128, 10), MenuArt.BrassMetal(), new Vector3(0, StageHeight, 0));
-            LastSceneArt.Part(t, "Stage Light", MenuArt.Torus(StageRadius + .2f, .04f, 128), MenuArt.Lamp(MenuArt.Led), new Vector3(0, .05f, 0), null, null, false);
-            MenuArt.Slab(t, "Centre Line", new Vector3(0, StageHeight + .01f, 0), new Vector3(.05f, .012f, StageRadius * 1.85f), MenuArt.Lamp(0xFFE2A8))
-                   .GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
-
-            MenuArt.Spot(t, MenuArt.Web(0, 12, 6), MenuArt.Web(0, .5f, 0), 0xFFE6C2, 1.9f, .42f, .6f, true);
-            MenuArt.Spot(t, MenuArt.Web(-9, 7, 4), MenuArt.Web(-2.4f, .5f, .6f), MenuArt.Cyan, 2f, .4f, .6f);
-            MenuArt.Spot(t, MenuArt.Web(9, 7, 4), MenuArt.Web(2.4f, .5f, .6f), MenuArt.Red, 2f, .4f, .6f);
-            MenuArt.Spot(t, MenuArt.Web(0, 8, -8), MenuArt.Web(0, 1.5f, 0), 0xFFE2B8, 1.4f, .5f, .6f);
-            MenuArt.Beam(t, MenuArt.Web(-10, 0, -12), MenuArt.Web(-1, 12, -3), MenuArt.Cyan, 2.2f, .06f);
-            MenuArt.Beam(t, MenuArt.Web(10, 0, -12), MenuArt.Web(1, 12, -3), MenuArt.Red, 2.2f, .06f);
-            MenuArt.Beam(t, MenuArt.Web(0, 14, 2), MenuArt.Web(0, StageHeight, .4f), 0xFFE8C8, 3.4f, .06f);
-            MenuArt.Halo(t, MenuArt.Web(-10, .3f, -12), MenuArt.Cyan, 3f, .8f, camera);
-            MenuArt.Halo(t, MenuArt.Web(10, .3f, -12), MenuArt.Red, 3f, .8f, camera);
+            camera.backgroundColor = MenuArt.Hex(0x0E0906);
+            if (onStairs) StairLights(t);
+            else Study(t);
 
             // Every spot glows faintly in its team colour, waiting for its player.
             for (int team = 0; team < 2; team++)
@@ -104,10 +101,10 @@ namespace ChessFight.Game
                     var p = new Player { Team = team, Spot = spot, Side = team == 0 ? 1f : -1f };
                     var s = Spots[spot];
                     float x = team == 0 ? s.x : -s.x;
-                    p.At = MenuArt.Web(x, StageHeight, s.y);
-                    p.StartX = p.Side * -10.5f;
+                    p.At = onStairs ? StairSpot(team, spot) : MenuArt.Web(x, StageHeight, s.y);
+                    p.StartX = onStairs ? p.Side * -6.6f : p.Side * -10.5f;
                     int color = team == 0 ? MenuArt.Cyan : MenuArt.Red, light = team == 0 ? 0x9BE8FF : 0xFF9AA6;
-                    var disc = MenuArt.FloorGlow(t, p.At + Vector3.up * .012f, color, .52f, .22f);
+                    var disc = Blob(t, p.At + Vector3.up * .03f);
                     p.Disc = disc.GetComponent<Renderer>().sharedMaterial;
                     p.RingT = LastSceneArt.Part(t, "Spot Ring", MenuArt.Torus(.5f, .035f, 48), MenuArt.Glow("ring", null, MenuArt.Hex(light), false),
                                                 p.At + Vector3.up * .02f, null, null, false).transform;
@@ -117,6 +114,106 @@ namespace ChessFight.Game
                     SetAlpha(p.Ring, 0);
                     players[team * PerTeam + spot] = p;
                 }
+        }
+
+
+        // Background A (10-22, 승규 님): a dark study at night. A big walnut table, on it a raised wooden chessboard
+        // (maple and walnut squares, mahogany frame, brass inlay) the players walk onto, lit from straight above by
+        // one brass reading lamp in a warm pool that falls off into the dark; behind, the shelves of books and a
+        // window with a little cold moonlight, barely there. No coloured stage lights.
+        void Study(Transform t)
+        {
+            const float tile = 1.15f;
+            var tableWood = MenuArt.Wood(MenuArt.DarkWood, .55f, new Vector2(4f, 2f));
+            MenuArt.Slab(t, "Table", new Vector3(0, -.3f, 1f), new Vector3(30f, .6f, 18f), tableWood);
+            MenuArt.WoodBoard(t, "Board", 8, tile, new Vector3(0, 0, 0), StageHeight - .02f, .7f);
+            // the shelves behind: dark wood carcass, rows of books in muted leather colours
+            var shelfWood = MenuArt.Wood(MenuArt.DarkWood, .35f, new Vector2(3f, 1f), true);
+            var rng = new System.Random(22);
+            int[] leather = { 0x4A1E18, 0x2E2A22, 0x5A3A1E, 0x1E2A26, 0x6B4A2A, 0x3A1A22, 0x2A2420 };
+            for (int col = -3; col <= 3; col++)
+            {
+                float cx = col * 3.2f, z = 11f;
+                MenuArt.Slab(t, "Shelf Side", new Vector3(cx - 1.55f, 4f, z), new Vector3(.12f, 9f, 1.2f), shelfWood);
+                for (int row = 0; row < 6; row++)
+                {
+                    float y = .4f + row * 1.45f;
+                    MenuArt.Slab(t, "Shelf", new Vector3(cx, y, z), new Vector3(3.1f, .08f, 1.2f), shelfWood);
+                    float x = cx - 1.45f;
+                    while (x < cx + 1.4f)
+                    {
+                        float w = .12f + (float)rng.NextDouble() * .12f, h = .9f + (float)rng.NextDouble() * .4f;
+                        if (rng.NextDouble() < .08) { x += .3f; continue; }
+                        MenuArt.Slab(t, "Book", new Vector3(x + w / 2, y + .04f + h / 2, z - .1f), new Vector3(w - .01f, h, .8f),
+                                     LastSceneArt.Lit(leather[rng.Next(leather.Length)], .25f));
+                        x += w;
+                    }
+                }
+            }
+            // a tall window between the shelves with a cold glow
+            MenuArt.Slab(t, "Window", new Vector3(0, 5.2f, 11.4f), new Vector3(2.4f, 5.2f, .05f), MenuArt.Glow("study window", null, MenuArt.Hex(0x3A4A6A), false));
+            // the reading lamp: a brass shade hanging over the board on a rod, its bulb and the pool of light
+            var brass = MenuArt.BrassMetal();
+            LastSceneArt.Part(t, "Lamp Rod", LastSceneArt.Cylinder(.03f, .03f, 6f, 12), brass, new Vector3(0, 12.2f, 0), null, null, false);
+            LastSceneArt.Part(t, "Lamp Shade", LastSceneArt.Cone(1.2f, 1.0f, 48), LastSceneArt.Lit(0x1E3A2A, .5f, .3f), new Vector3(0, 9.0f, 0), null, null, false);
+            LastSceneArt.Part(t, "Lamp Bulb", LastSceneArt.Sphere(.28f), MenuArt.Lamp(0xFFE6B0), new Vector3(0, 8.55f, 0), null, null, false);
+            MenuArt.Spot(t, new Vector3(0, 8.5f, 0), new Vector3(0, 0, .3f), 0xFFD9A0, 3.2f, .95f, .8f, true);
+            // faint warm bounce from the table and cold moonlight from behind, so the shelves just read
+            MenuArt.Spot(t, new Vector3(0, 2f, -12f), new Vector3(0, 2f, 0), 0xC08A5A, .5f, .8f, .9f);
+            MenuArt.Spot(t, new Vector3(0, 6f, 10f), new Vector3(0, 1f, -2f), 0x6A86B8, .7f, .7f, .9f);
+        }
+
+        Material backdrop, blob;
+        bool onStairs;
+        Light sun;
+
+        // Blender's castle coordinates (x right, y away from the camera, z up) in the studio's.
+        static Vector3 Stair(float x, float y, float z) => new Vector3(x, z, y);
+
+        // The steps the players stand on (build_gate_castle.py: 16 steps of .3 m by 1 m from y 0): white on the
+        // left of the middle, black on the right, a front row on the 8th step and a back row on the 11th.
+        static Vector3 StairSpot(int team, int spot)
+        {
+            // on the landing between the two flights (y 16..23, 4.8 m up): clear of the progress row and the cards
+            int row = spot < 3 ? 0 : 1;
+            float x = (1.6f + (spot % 3) * 1.9f + row * .9f) * (team == 0 ? -1f : 1f);
+            return Stair(x, row == 0 ? 17.6f : 20.4f, 4.8f);
+        }
+
+        // The render's sun (from the left and a little in front); the sky's light is the ambient.
+        void StairLights(Transform t)
+        {
+            sun = new GameObject("Stair Sun").AddComponent<Light>();
+            sun.transform.SetParent(t, false);
+            sun.type = LightType.Directional;
+            sun.transform.rotation = Quaternion.LookRotation(Stair(.55f, .55f, -.62f));
+            sun.color = MenuArt.Hex(0xFFEACC);
+            sun.intensity = 2.4f;
+            sun.shadows = LightShadows.None;
+            sun.enabled = false;
+        }
+
+        // A soft dark patch under a player on the steps, as if they cast a shadow on the stone.
+        Transform Blob(Transform t, Vector3 at)
+        {
+            if (blob == null)
+                blob = new Material(Shader.Find("Sprites/Default")) { name = "Stair contact shadow", mainTexture = MenuArt.RadialTexture(), color = new Color(0, 0, 0, 1), renderQueue = 2400 };
+            return LastSceneArt.Part(t, "Contact Shadow", LastSceneArt.Panel(1.3f, 1.0f), new Material(blob), at, Quaternion.Euler(90f, 0, 0), null, false).transform;
+        }
+
+        // The castle picture on a card far behind the stage, held by the camera so it always fills the view
+        // (covering it, cropped to the picture's own shape). Unlit, drawn first, no fog.
+        void Backdrop(Transform rig, int width, int height)
+        {
+            var image = Resources.Load<Texture2D>("Loading/GateCastle");
+            var shader = Shader.Find("Sprites/Default");
+            if (image == null || shader == null || camera == null) return;
+            backdrop = new Material(shader) { name = "Loading castle", mainTexture = image, renderQueue = 1000 };
+            const float distance = 70f;
+            float h = 2f * distance * Mathf.Tan(camera.fieldOfView * .5f * Mathf.Deg2Rad), w = h * width / Mathf.Max(1f, height);
+            float aspect = image.width / (float)image.height;
+            if (w / h > aspect) h = w / aspect; else w = h * aspect;
+            LastSceneArt.Part(rig, "Castle Backdrop", LastSceneArt.Panel(w, h), backdrop, new Vector3(0, 0, distance), null, null, false);
         }
 
         // Hands over who is in the match and who has loaded. Lists are in roster
@@ -146,8 +243,8 @@ namespace ChessFight.Game
                     // Facing the camera, turned towards the middle.
                     var s = Spots[spot];
                     float x = team == 0 ? s.x : -s.x;
-                    var look = MenuArt.Web(x + 3 * p.Side, StageHeight, s.y + 6);
-                    p.Figure = MenuArt.Figure(root.transform, kind, team, p.At, look, 1.05f);
+                    var look = onStairs ? p.At + new Vector3(p.Side * 1.6f, 0, -6f) : MenuArt.Web(x + 3 * p.Side, StageHeight, s.y + 6);
+                    p.Figure = MenuArt.Figure(root.transform, kind, team, p.At, look, onStairs ? 1.7f : 1.05f);
                     p.SpotYaw = Mathf.Atan2(look.x - p.At.x, look.z - p.At.z);
                     p.Figure.Root.SetActive(false);
                 }
@@ -191,7 +288,7 @@ namespace ChessFight.Game
                 var p = players[i];
                 if (p.Figure == null || p.EnterAt < 0)
                 {
-                    SetAlpha(p.Disc, .18f + .06f * Mathf.Sin(now * 3 + i));
+                    SetAlpha(p.Disc, 0f);
                     continue;
                 }
                 float age = now - p.EnterAt, walk = Mathf.Abs(p.StartX - p.At.x) / Walk;
@@ -203,7 +300,7 @@ namespace ChessFight.Game
                     run.Yaw = walkYaw;
                     run.Lean = .24f;
                     p.Figure.Pose(run);
-                    SetAlpha(p.Disc, .2f + .25f * (age / walk));
+                    SetAlpha(p.Disc, .35f * (age / walk));
                     continue;
                 }
                 float a = age - walk;
@@ -222,15 +319,23 @@ namespace ChessFight.Game
                 p.FlashT.localScale = Vector3.one * (a < .7f ? .5f + a * 4.2f : .01f);
                 SetAlpha(p.Ring, a < .8f ? Mathf.Max(0, 1 - a * 1.25f) : 0);
                 p.RingT.localScale = Vector3.one * (1 + Mathf.Min(a, .8f) * 2.6f);
-                SetAlpha(p.Disc, .55f + .1f * Mathf.Sin(now * 3 + i));
+                SetAlpha(p.Disc, .45f);
             }
         }
 
         void Aim(float now)
         {
             if (camera == null) return;
-            camera.transform.localPosition = MenuArt.Web(Mathf.Sin(now * .18f) * .5f, 5.6f, 15.5f);
-            camera.transform.LookAt(Origin + MenuArt.Web(0, 1.4f, 0));
+            // 10-22 (승규 님: the board hid the scene): further back and a little higher, so the round stage sits
+            // in the lower part of the frame in front of the castle's stair and the castle shows above it.
+            if (onStairs)
+            {
+                camera.transform.localPosition = Stair(0f, -18f, 5f);
+                camera.transform.LookAt(Origin + Stair(0f, 46.5f, 23f));
+                return;
+            }
+            camera.transform.localPosition = MenuArt.Web(Mathf.Sin(now * .18f) * .5f, 6.2f, 17.5f);
+            camera.transform.LookAt(Origin + MenuArt.Web(0, 1.6f, -1f));
         }
 
         // Draws one frame into Texture with the hall's settings, then restores the
@@ -259,7 +364,17 @@ namespace ChessFight.Game
                 if (light != null && light.enabled) { light.enabled = false; on.Add(light); }
 
             MenuArt.HallLighting(24f, 80f);
+            if (onStairs)
+            {
+                RenderSettings.fog = false;
+                RenderSettings.ambientMode = AmbientMode.Trilight;
+                RenderSettings.ambientSkyColor = MenuArt.Hex(0xB9CDE6) * 1.0f;
+                RenderSettings.ambientEquatorColor = MenuArt.Hex(0xCDBFA6) * .85f;
+                RenderSettings.ambientGroundColor = MenuArt.Hex(0x6B5E4E) * .5f;
+            }
+            if (sun != null) sun.enabled = true;
             camera.Render();
+            if (sun != null) sun.enabled = false;
 
             foreach (var light in on) light.enabled = true;
             RenderSettings.fog = fog;
@@ -277,6 +392,8 @@ namespace ChessFight.Game
 
         public void Dispose()
         {
+            if (backdrop != null) Object.Destroy(backdrop);
+            if (blob != null) Object.Destroy(blob);
             if (root != null) Object.Destroy(root);
             root = null;
             camera = null;

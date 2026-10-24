@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -336,8 +337,8 @@ namespace ChessFight.RagdollLab
         {
             c.a = 1f;
             if (flatMats.TryGetValue(c, out var m) && m != null) return m;
-            // R111: Unlit/Color is not in a player build (only the editor finds it); Sprites/Default always is.
-            var shader = Shader.Find("Unlit/Color");
+            // R111: a shader only the editor finds is not in a player build; Sprites/Default always is.
+            var shader = LitMaterials.Unlit;
             if (shader == null) shader = Shader.Find("Sprites/Default");
             m = new Material(shader) { color = c, hideFlags = HideFlags.HideAndDontSave };
             flatMats[c] = m;

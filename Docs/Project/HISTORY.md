@@ -7,10 +7,14 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-21 | R150 | 시연 HTML 연출: `SwordFightArena`·`SwordFightShapes`, 유령·쟁반·부활 손·방울·빛기둥·고리·흔들림·카메라, 시연 HUD(도장·패널·이름표·자막·끝 화면), Core 받침 칸, 시연 자료 `Docs/GameModes/SwordFight/Demo/`. 시험: Core 129·세션 41 |
-| `a3f9b30` | 10-21 | R149 | 고침: `SwordFightMatch`의 `MaterialPropertyBlock` 필드 초기화 → 처음 쓸 때 만듦(경기 시작 때 CreateImpl 예외, PITFALLS 45) |
+| (이 병합) | 10-24 | R158 | `urp-conversion`(승규 님, URP·메뉴·스킬 R148~R157)과 소드 파이트(R149·R150)를 `main`에 병합. 프로토콜 v23 두 개 → v24, 문서 충돌은 양쪽 모두 남김(R148~R150 번호가 두 계열에 겹침) |
+| `2e304c4` | 10-21 | R150 | 시연 HTML 연출: `SwordFightArena`·`SwordFightShapes`, 유령·쟁반·부활 손·방울·빛기둥·고리·흔들림·카메라, 시연 HUD(도장·패널·이름표·자막·끝 화면), Core 받침 칸, 시연 자료 `Docs/GameModes/SwordFight/Demo/`. 시험: Core 129·세션 41 |
+| `a3f9b30` | 10-21 | R149 | 고침: `SwordFightMatch`의 `MaterialPropertyBlock` 필드 초기화 → 처음 쓸 때 만듦(경기 시작 때 CreateImpl 예외, PITFALLS 50) |
 | `e69a7ff` | 10-21 | R149 | 소드 파이트 프로토타입(명세 v1.0): Core `SwordMatch`(규칙·판·유령 기물·상태 글자, 시험 4개), `SwordFightMatch`(+Board·Hud·Dev), 폰 F·킹 F 칼만·기획 쿨, 지운 칸·일반 가장자리, `SteamMatchLabLink`(로비 경기에 스킬 온라인), 소드 파이트 3 대 3 시작, 프로토콜 v23, 문서. 시험: Core 129·세션 41 |
 | `4ec62ec` | 10-21 | R148 | 경기 중 Esc 메뉴(`GameMenu`: 돌아가기·설정·나가기 확인), 폰 러쉬 공개 방 3 대 3부터 방장 "게임 시작"(`ReadyEarly`·`CanStartEarly`·입장 화면 버튼), 문서. 시험: Core 125·세션 41 |
+| `51fddd0` | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |
+| `62552df`·`cb36113` | 10-22 | R151~R157 | `urp-conversion`: URP 17.3 전환·화면 느낌·스킬 R153~R156·지도·로비 그림, manifest에 URP |
+| `a3fa728` | 10-16 | R148~R150 (승규 님 계열) | 메뉴 화면 기물 = 경기 모델(`Bake Menu Pieces`)·스킬 카드, 높은 바닥에 눕는 스킬 이펙트(`SkillInkKit.FloorDrape`), 시작 화면 성벽 대회장 레이스(Exo 2) |
 | `51fddd0` | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |
 | `86a34de` | 10-15 | R129 | J를 나이트의 길로(Core `KnightRoute`, 나이트 경로 8칸만 바닥, 방향 없는 점프대, 다이빙으로 상대 기물 6개 잡기), 예전 섬·조준·깃발 없앰, 문서 |
 | `baaa1ea` | 10-15 | R128 | G 킹 호위를 밧줄·손잡이 없이(썰매·룩 자체를 잡거나 밀기, 썰매 안 돎), I도 같은 방식, 새 `GrabOnlySurface`(잡기만, 벽타기 안 됨)와 래그돌 연결, 모든 `GrabHandle` 잡기 전용, 검증기, 문서 |

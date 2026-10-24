@@ -457,14 +457,9 @@ namespace ChessFight.Game
         {
             int levels = QualitySettings.names.Length;
             if (Has("preset") && levels > 0) QualitySettings.SetQualityLevel(Preset == 0 ? 0 : levels - 1, true);
-            if (Has("shadow"))
-            {
-                int s = Mathf.Clamp(Shadow, 0, 3);
-                QualitySettings.shadows = s == 0 ? ShadowQuality.Disable : s == 1 ? ShadowQuality.HardOnly : ShadowQuality.All;
-                QualitySettings.shadowResolution = s <= 1 ? ShadowResolution.Low : s == 2 ? ShadowResolution.Medium : ShadowResolution.High;
-                QualitySettings.shadowDistance = new[] { 0f, 25f, 50f, 90f }[s];
-            }
-            if (Has("aa")) QualitySettings.antiAliasing = new[] { 0, 2, 4, 8 }[Mathf.Clamp(Antialias, 0, 3)];
+            // Shadows and multisampling are the URP asset's (PipelineSettings), not QualitySettings'.
+            if (Has("shadow")) PipelineSettings.SetShadows(Shadow);
+            if (Has("aa")) PipelineSettings.SetMsaa(new[] { 1, 2, 4, 8 }[Mathf.Clamp(Antialias, 0, 3)]);
             if (Has("detail")) QualitySettings.lodBias = new[] { .6f, 1f, 1.6f }[Mathf.Clamp(Detail, 0, 2)];
             // A quality level carries its own vsync; keep the player's.
             if (Has("vsync")) QualitySettings.vSyncCount = Bool("vsync", true) ? 1 : 0;

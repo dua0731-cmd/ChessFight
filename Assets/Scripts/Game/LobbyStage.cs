@@ -22,10 +22,10 @@ namespace ChessFight.Game
     // (MenuArt.Web: +Z towards the camera there).
     //
     // Display only. Nothing here moves by input or by the network; the pieces bob
-    // in place. Each member gets a different chess piece (me the knight, bigger,
-    // in front), bots are charcoal pawns, and an empty spot is a turning brass
-    // ring for the HUD's "+ 친구 초대".
-    public sealed class LobbyStage : MonoBehaviour
+    // in place. Everyone stands as a pawn, the piece every match starts as, in the
+    // match's own model (R148; me bigger, in front), bots are charcoal pawns, and
+    // an empty spot is a turning brass ring for the HUD's "+ 친구 초대".
+    public sealed partial class LobbyStage : MonoBehaviour
     {
         public const int Spots = 6;
         const float StageSize = 10.8f, BaseHeight = .9f, FrameHeight = .34f, BoardSize = 9.6f;
@@ -37,9 +37,6 @@ namespace ChessFight.Game
         // either side, then the back row in the gaps. Sample coordinates (x, z).
         static readonly Vector2[] Places =
             { new Vector2(0, .5f), new Vector2(-2.4f, .5f), new Vector2(2.4f, .5f), new Vector2(-1.2f, -1.5f), new Vector2(1.2f, -1.5f), new Vector2(-3.6f, -1.5f) };
-        // Who stands where, spot by spot.
-        static readonly PieceKind[] Kinds =
-            { PieceKind.Knight, PieceKind.Queen, PieceKind.King, PieceKind.Rook, PieceKind.Bishop, PieceKind.Pawn };
 
         Camera view;
         readonly GameObject[] bodies = new GameObject[Spots];
@@ -50,7 +47,7 @@ namespace ChessFight.Game
 
         public Camera View => view;
 
-        // Where the player's own knight stands on screen (its chest), as a fraction
+        // Where the player's own pawn stands on screen (its chest), as a fraction
         // of the screen from the top left: the scene transition opens there (R84).
         public Vector2 SelfOnScreen()
         {
@@ -72,24 +69,31 @@ namespace ChessFight.Game
             }
             view.fieldOfView = 30f;
             var root = transform;
-            MenuArt.Hall(root, view, 22f, 72f);
+            // The chess castle made in Blender (LobbyStage.Castle.cs); the old
+            // dark hall with its lamp pillars only when the castle is missing.
+            bool castle = Castle(root);
+            if (!castle) MenuArt.Hall(root, view, 22f, 72f);
             Aim(0f);
             Stage(root);
-            Lamps(root);
+            if (castle) KeyLight(root);
+            else Lamps(root);
         }
 
         void Stage(Transform root)
         {
             MenuArt.Slab(root, "Stage", new Vector3(0, BaseHeight / 2, 0), new Vector3(StageSize, BaseHeight, StageSize),
                          MenuArt.Wood(MenuArt.DarkWood, .55f, new Vector2(3f, 1f)));
-            var led = MenuArt.Lamp(MenuArt.Led);
+            // In the castle's daylight the glowing edge strip and its halo sprites
+            // read as fake: the edge becomes a plain brass trim the sun lights.
+            var led = castle != null ? MenuArt.BrassMetal() : MenuArt.Lamp(MenuArt.Led);
             for (int s = -1; s <= 1; s += 2)
             {
                 MenuArt.Slab(root, "Stage Light", new Vector3(0, BaseHeight - .02f, s * StageSize / 2), new Vector3(StageSize + .06f, .05f, .05f), led);
                 MenuArt.Slab(root, "Stage Light", new Vector3(s * StageSize / 2, BaseHeight - .02f, 0), new Vector3(.05f, .05f, StageSize + .06f), led);
             }
-            for (int i = -4; i <= 4; i++)
-                MenuArt.Halo(root, MenuArt.Web(i * 1.3f, BaseHeight, StageSize / 2 + .02f), MenuArt.Warm, .6f, .28f, view);
+            if (castle == null)
+                for (int i = -4; i <= 4; i++)
+                    MenuArt.Halo(root, MenuArt.Web(i * 1.3f, BaseHeight, StageSize / 2 + .02f), MenuArt.Warm, .6f, .28f, view);
 
             MenuArt.Slab(root, "Frame", new Vector3(0, BaseHeight + FrameHeight / 2, 0), new Vector3(10.4f, FrameHeight, 10.4f),
                          MenuArt.Wood(MenuArt.Mahogany, .68f, new Vector2(2f, 1f)));
@@ -132,8 +136,11 @@ namespace ChessFight.Game
         void Aim(float t)
         {
             if (view == null) return;
-            view.transform.position = MenuArt.Web(.6f + Mathf.Sin(t * .1f) * .3f, 7f, 18.6f);
-            view.transform.LookAt(MenuArt.Web(.6f, 1.75f, 0));
+            var at = MenuArt.Web(.6f + Mathf.Sin(t * .1f) * .3f, 7f, 18.6f);
+            var look = MenuArt.Web(.6f, 1.75f, 0);
+            WalkCamera(ref at, ref look);   // the close-up into the gate (LobbyStage.Castle.cs)
+            view.transform.position = at;
+            view.transform.LookAt(look);
         }
 
         // Rebuilds only the spots whose occupant changed, so a party member joining
@@ -170,11 +177,11 @@ namespace ChessFight.Game
             Vector3 at = SpotPosition(index);
             if (entry.Invite) { bodies[index] = InviteSpot(index, at); return; }
 
-            var kind = entry.Bot ? PieceKind.Pawn : Kinds[index];
-            // Me turned out to the right so the knight's head reads; the others face
-            // the camera, a little towards the middle.
-            var lookAt = index == 0 ? MenuArt.Web(7.5f, Top, 8.5f) : MenuArt.Web(Places[index].x * .5f, Top, 9f);
+            var kind = PieceKind.Pawn;
+            // Everyone faces the camera, a little towards the middle (me straight on).
+            var lookAt = MenuArt.Web(Places[index].x * .5f, Top, 9f);
             var figure = MenuArt.Figure(transform, kind, entry.Bot ? 1 : 0, at, lookAt, index == 0 ? MeScale : MemberScale);
+            homes[index] = (at, lookAt);
             figure.Root.name = "Lineup " + (entry.Bot ? "Bot " : "") + entry.Id;
             figures[index] = figure;
             bodies[index] = figure.Root;
@@ -185,6 +192,12 @@ namespace ChessFight.Game
             var spot = new GameObject("Invite Spot " + index);
             spot.transform.SetParent(transform, false);
             spot.transform.localPosition = at + Vector3.up * .01f;
+            if (castle != null)
+            {
+                // In the castle's daylight: a thin brass ring set in the board, no glow (the HUD pill says what it is).
+                LastSceneArt.Part(spot.transform, "Ring", MenuArt.Torus(.62f, .028f, 64), MenuArt.BrassMetal(), new Vector3(0, .02f, 0), null, null, false);
+                return spot;
+            }
             LastSceneArt.Part(spot.transform, "Ring", MenuArt.Torus(.72f, .045f, 64), MenuArt.Lamp(0xFFD08A), new Vector3(0, .04f, 0), null, null, false);
             MenuArt.FloorGlow(spot.transform, new Vector3(0, .03f, 0), MenuArt.Warm, .7f, .42f);
             return spot;
@@ -194,9 +207,13 @@ namespace ChessFight.Game
         {
             float t = Time.unscaledTime;
             Aim(t);
+            TickGate(Time.unscaledDeltaTime);
+            TickPennants(t, Time.unscaledDeltaTime);
+            TickFires(t);
             for (int i = 0; i < Spots; i++)
             {
                 if (bodies[i] == null) continue;
+                if (TickWalk(i, t)) continue;
                 if (shown[i].Invite)
                 {
                     bodies[i].transform.localRotation = Quaternion.Euler(0, t * .8f * Mathf.Rad2Deg, 0);

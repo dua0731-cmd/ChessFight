@@ -1,3 +1,4 @@
+using ChessFight.Game;
 using UnityEngine;
 
 namespace ChessFight.Gameplay
@@ -31,7 +32,7 @@ namespace ChessFight.Gameplay
             // Hide collision during the instantaneous reset, never sweep a returning part through players.
             foreach (var solid in solids) solid.enabled = cycle >= .15f && cycle < (hand ? 3.5f : 4);
             if (surface != null)
-            { tint.Clear(); if (!hand && cycle >= 3 && cycle < 4) tint.SetColor("_Color", Color.red); surface.SetPropertyBlock(tint); }
+            { tint.Clear(); if (!hand && cycle >= 3 && cycle < 4) LitMaterials.SetColor(tint, Color.red); surface.SetPropertyBlock(tint); }
             if (shadow != null) shadow.SetActive(cycle < 3.5f);
             base.FixedUpdate();
         }

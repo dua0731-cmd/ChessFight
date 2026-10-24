@@ -118,33 +118,15 @@ Shader "ChessFight/Skill Rope"
             ZWrite On
             ZTest LEqual
 
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma target 3.0
-            #pragma multi_compile_shadowcaster
-            #include "UnityCG.cginc"
-
+            HLSLPROGRAM
+            #pragma vertex CFShadowVertex
+            #pragma fragment CFShadowFragment
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_instancing
             float4 _Color;
-
-            struct v2f
-            {
-                V2F_SHADOW_CASTER;
-            };
-
-            v2f vert (appdata_base v)
-            {
-                v2f o;
-                TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
-                return o;
-            }
-
-            float4 frag (v2f i) : SV_Target
-            {
-                clip(_Color.a - 0.5);
-                SHADOW_CASTER_FRAGMENT(i)
-            }
-            ENDCG
+            #define CF_SHADOW_CLIP clip(_Color.a - 0.5);
+            #include "Assets/Shaders/URP/CFShadowCaster.hlsl"
+            ENDHLSL
         }
     }
 }

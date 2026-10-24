@@ -49,6 +49,10 @@ namespace ChessFight.RagdollLab
             { "BishopTrip", 0.95f }, { "BishopEnd", 0.6f },
             { "KnightLeap", 0.7f }, { "KnightTurn", 0.7f }, { "KnightLand", 0.8f }, { "KnightStomp", 1f },
             { "KnightDaze", 0.4f }, { "KnightAir", 0.3f },
+            // R153 2nd (승규 님 10-16: "그에 맞는 사슬 소리 모든 sfx 적용 해줘"): the rook's chain, one heavy iron chain for every
+            // moment (ElevenLabs, low-passed and taken 2-3 semitones down so no bright jingle rings), and the "no target" knock.
+            { "ChainThrow", 0.7f }, { "ChainRun", 0.45f }, { "ChainBite", 0.9f }, { "ChainPull", 0.75f }, { "ChainOffer", 0.5f },
+            { "ChainGrab", 0.7f }, { "ChainLand", 0.8f }, { "ChainRewind", 0.6f }, { "ChainBreak", 0.8f }, { "SkillFail", 0.5f },
         };
 
         public const string Folder = "PawnRushSkillSfx";
@@ -75,6 +79,7 @@ namespace ChessFight.RagdollLab
             public SkillStage stage;
             public bool aiming, dashing;
             public Held charge, flight;
+            public ChainPhase chain;
         }
         readonly Dictionary<RagdollPawn, Watch> watched = new Dictionary<RagdollPawn, Watch>();
 
@@ -152,13 +157,24 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.KnightHome: Play("KnightTurn", e.at, 2f); break;
                 case SkillFxKind.KnightStomp:
                     Play("KnightStomp", e.at);
-                    PlayLater(0.1f, "KnightDaze", e.at);
                     EndHeld(OwnerWatch(e.by)?.flight, true);
                     break;
                 case SkillFxKind.KnightLand:
                     Play("KnightLand", e.at);
                     EndHeld(OwnerWatch(e.by)?.flight, true);
                     break;
+                // R153 2nd: the rook's chain. Thrown: the whip; an enemy hooked: the bite, then the haul; the handle held out:
+                // the chain swaying; a teammate grabbing it: the grip, then a lighter haul; set down: the thud and the links;
+                // broken: the slack clunk. (The chain running out and back in is held below.)
+                case SkillFxKind.RookThrow: Play("ChainThrow", e.at); break;
+                case SkillFxKind.RookHook:
+                    if (e.count == 0) { Play("ChainBite", e.at); PlayLater(0.06f, "ChainPull", e.at, 0f); }
+                    else if (e.count == 1) Play("ChainOffer", e.at);
+                    else { Play("ChainGrab", e.at); PlayLater(0.05f, "ChainPull", e.at, 2f, 0.7f); }
+                    break;
+                case SkillFxKind.RookPullEnd: Play("ChainLand", e.at, e.count == 1 ? 2f : 0f, e.count == 1 ? 0.75f : 1f); break;
+                case SkillFxKind.RookChainBreak: Play("ChainBreak", e.at); break;
+                case SkillFxKind.SkillFail: Play("SkillFail", e.at); break;
             }
         }
 
@@ -190,16 +206,18 @@ namespace ChessFight.RagdollLab
                         break;
                     case PieceKind.Rook:
                     {
-                        // Aim: four ticks rising (its four squares). Lock: the aim ends with the rook still winding up.
+                        // R153: the aim, one tick; the chain running out, a held rattle, faded when it stops; wound back,
+                        // the ratchet.
                         bool aiming = pawn.SkillAiming;
-                        if (aiming && !w.aiming)
-                            for (int t = 0; t < 4; t++) PlayLater(0.1f * t, "RookTick", at, TickSteps[t]);
-                        if (!aiming && w.aiming && stage == SkillStage.Windup) Play("RookLock", at);
-                        bool dashing = pawn.SkillDashing;
-                        if (dashing && !w.dashing) w.charge = StartHeld("RookDash", at);
-                        if (!dashing && w.dashing) EndHeld(w.charge, false);
+                        if (aiming && !w.aiming) Play("RookTick", at);
+                        var phase = pawn.RookChainPhase;
+                        bool running = phase == ChainPhase.Fly;
+                        if (running && !w.dashing) w.charge = StartHeld("ChainRun", at);
+                        if (!running && w.dashing) EndHeld(w.charge, false);
+                        if (phase == ChainPhase.Rewind && w.chain != ChainPhase.Rewind) Play("ChainRewind", at);
                         w.aiming = aiming;
-                        w.dashing = dashing;
+                        w.dashing = running;
+                        w.chain = phase;
                         break;
                     }
                     case PieceKind.Bishop:

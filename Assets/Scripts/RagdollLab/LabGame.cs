@@ -85,6 +85,17 @@ namespace ChessFight.RagdollLab
             NetKingCallSeq = (byte)(NetKingCallSeq == 255 ? 1 : NetKingCallSeq + 1);
         }
 
+        /// <summary>Online, the emote slot the person here asked for and a number that changes with every ask (like the piece
+        /// ask), so a lost input packet does not lose the emote. The keys 1..4 ask for it in the skill network test.</summary>
+        public byte NetEmoteAsk { get; private set; }
+        public byte NetEmoteSeq { get; private set; }
+
+        public void AskEmote(int slot)
+        {
+            NetEmoteAsk = (byte)slot;
+            NetEmoteSeq = (byte)(NetEmoteSeq == 255 ? 1 : NetEmoteSeq + 1);
+        }
+
         /// <summary>Development only (the loopback test link's commands): presses added to P1's next input, and a move and
         /// a right-click held until a time.</summary>
         public PawnInput DevPress;
@@ -104,6 +115,14 @@ namespace ChessFight.RagdollLab
         /// <summary>The test screen's panels hidden, the game alone (R146, for recording the network test: launched with
         /// -labCleanView, or the development command "panels off").</summary>
         public static bool CleanView = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-labCleanView") >= 0;
+
+        /// <summary>The emote wheel (G) is open: the cursor stays free for it and the clicks do not reach the pawn.</summary>
+        public bool EmoteWheelOpen { get; set; }
+
+        byte queuedEmote;
+
+        /// <summary>The emote wheel's pick, added to P1's next input (<see cref="PawnInput.emote"/>).</summary>
+        public void QueueEmote(int slot) => queuedEmote = (byte)slot;
 
         /// <summary>
         /// The skill network test (R112, branch skill-network-test): the skill test scenes are only for trying the skills
@@ -314,6 +333,8 @@ namespace ChessFight.RagdollLab
             if (pawn == null) return;
             var spot = spawnOf.TryGetValue(pawn, out var s) ? s : (LabLayout.SpawnP1, Vector3.forward);
             pawn.Teleport(spot.Item1 + Vector3.up * (pawn.standHeight + 0.02f), spot.Item2);
+            // R153 (Pawn Rush skill plan v0.3 §2.5): no skill takes a piece for a moment after it respawns.
+            if (pawn.PawnRushSkills != null && pawn.QueenHillSkills == null) pawn.GuardFromSkills(pawn.PawnRushSkills.respawnGuard);
         }
 
         public void RespawnAll()
@@ -401,7 +422,7 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.RightBracket)) slots.Vote(true);
             }
 
-            if (PanelOpen || UiWantsCursor || SkillListOpen) Cursor.lockState = CursorLockMode.None;
+            if (PanelOpen || UiWantsCursor || SkillListOpen || EmoteWheelOpen) Cursor.lockState = CursorLockMode.None;
             else if (Cursor.lockState != CursorLockMode.Locked && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))
             {
                 Cursor.lockState = CursorLockMode.Locked;
@@ -433,6 +454,10 @@ namespace ChessFight.RagdollLab
                     input.ability2 = Input.GetKeyDown(KeyCode.Q);
                     input.interact = !InteractKeyOff && Input.GetKey(KeyCode.F);
                     input.skill = SkillKey != KeyCode.None && Input.GetKeyDown(SkillKey);
+                    // The emotes: 1..4 in the skill network test, where the lab's own number-key slots are gone.
+                    if (NetTestMode)
+                        for (int e = 0; e < ChessFight.Network.PieceEmotes.Slots; e++)
+                            if (Input.GetKeyDown(KeyCode.Alpha1 + e)) input.emote = (byte)(e + 1);
                     // The clicks only count once the cursor is locked to the game (click the view once;
                     // Esc frees it again). Otherwise the click that locks it would also dive.
                     if (Cursor.lockState == CursorLockMode.Locked && !PanelOpen && !swallowMouse)
@@ -479,6 +504,11 @@ namespace ChessFight.RagdollLab
             input.move = cam.FlatRight * mv.x + cam.FlatForward * mv.y;
             input.aim = cam.AimForward;
             if (slotIndex == 0) AddDevInput(ref input);
+            if (slotIndex == 0 && queuedEmote != 0)
+            {
+                input.emote = queuedEmote;
+                queuedEmote = 0;
+            }
             return input;
         }
 
@@ -488,6 +518,7 @@ namespace ChessFight.RagdollLab
             input.jump |= DevPress.jump;
             input.shove |= DevPress.shove;
             input.skill |= DevPress.skill;
+            if (DevPress.emote != 0) input.emote = DevPress.emote;
             input.ability |= DevPress.ability;
             input.ability2 |= DevPress.ability2;
             DevPress = default;

@@ -39,6 +39,11 @@ namespace ChessFight.RagdollLab
         float age, height;
         bool armed;
         int trips;
+        // R153: the thin thread from the nearest peg to the bishop's hand (its leash, drawn on every PC).
+        LineRenderer leash;
+
+        /// <summary>How far the bishop is from the wire's middle, across the floor (R153: past bishopLeash the wire goes).</summary>
+        public float LeashDistance => owner != null ? Vector2.Distance(Flat(owner.Hips.position), Flat(center)) : float.MaxValue;
 
         // ---- online (R111): the host's wires are sent whole in every skills packet; a client draws its copy of each
         // (Remote: no trips judged here, the lines bent where the host's are).
@@ -314,6 +319,10 @@ namespace ChessFight.RagdollLab
             Vector3 d1 = Quaternion.Euler(0f, 45f, 0f) * forward, d2 = Quaternion.Euler(0f, -45f, 0f) * forward;
             a1 = at - d1 * half; b1 = at + d1 * half;
             a2 = at - d2 * half; b2 = at + d2 * half;
+            // R149: each peg stands on the floor under it (up or down a step within 1 m): laid flat at the bishop's own
+            // floor, the pegs across a mini-game station's dais edge stood inside the dais. The trips only use the wire's
+            // flat positions and its middle's height, so this moves only what is drawn (and the same on every PC).
+            a1 = Seat(a1); b1 = Seat(b1); a2 = Seat(a2); b2 = Seat(b2);
             Color c = Wire;
             line1 = SkillMarks.Line(transform, "Line 1");
             line2 = SkillMarks.Line(transform, "Line 2");
@@ -333,6 +342,9 @@ namespace ChessFight.RagdollLab
             }
             Draw(new Color(c.r, c.g, c.b, 0.35f), 0.025f);
         }
+
+        static Vector3 Seat(Vector3 p) =>
+            SkillInkKit.FloorUnder(p, 1f, out Vector3 floor) && Mathf.Abs(floor.y - p.y) <= 1f ? floor : p;
 
         void OnDestroy() => Live.Remove(this);
 
@@ -426,6 +438,7 @@ namespace ChessFight.RagdollLab
 
         void Update()
         {
+            DrawLeash();
             if (LinesDrawnElsewhere)
             {
                 SkillMarks.Hide(line1);
@@ -455,6 +468,13 @@ namespace ChessFight.RagdollLab
                 if (age >= snapAt) Snap("끊어짐");
                 return;
             }
+            // R153 (skill plan v0.3 §6): the trap holds only while its bishop guards it: the bishop more than bishopLeash from
+            // its middle, or knocked down, and its rope comes loose and goes.
+            if (owner == null || owner.State == PawnState.Ragdoll || LeashDistance > skills.bishopLeash)
+            {
+                Snap(owner == null ? "비숍이 없음 (사라짐)" : owner.State == PawnState.Ragdoll ? "비숍이 넘어져 풀림" : $"비숍이 {skills.bishopLeash:0} m 넘게 멀어져 풀림");
+                return;
+            }
             if (!armed && age >= skills.bishopArm)
             {
                 armed = true;
@@ -476,12 +496,7 @@ namespace ChessFight.RagdollLab
                 int line = LineUnderFoot(pawn);
                 if (line < 0) continue;
                 // Running on the ground into it for the first time: the trip. Jumping, flying or down: over it.
-                bool runner = pawn.State == PawnState.Active && pawn.Grounded && !tripped.Contains(pawn);
-                if (runner && pawn.Piece == PieceKind.Rook)
-                {
-                    Snap($"{pawn.DisplayName}(룩)이 걸리지 않고 끊음");
-                    return;
-                }
+                bool runner = pawn.State == PawnState.Active && pawn.Grounded && !tripped.Contains(pawn) && !pawn.SkillUntargetable;
                 if (pulls[line].by != null && pulls[1 - line].by == null && NearLine(pawn, 1 - line)) line = 1 - line;
                 if (pulls[line].by != null)
                 {
@@ -720,6 +735,52 @@ namespace ChessFight.RagdollLab
         }
 
         void Report(string text) => PawnRushSkillBed.Report($"비숍 밧줄: {text}");
+
+        /// <summary>
+        /// R153: the leash, a thin hemp thread from the peg nearest the bishop to its hand. Slack it sags; past
+        /// bishopLeashWarn it is drawn straight and taut, flickering brighter the nearer the bishop is to letting it go.
+        /// </summary>
+        void DrawLeash()
+        {
+            if (owner == null || skills == null || owner.State == PawnState.Ragdoll)
+            {
+                SkillMarks.Hide(leash);
+                return;
+            }
+            if (leash == null) leash = SkillMarks.Line(transform, "Leash");
+            Vector3 hand = owner.bodies[(int)BodyId.HandR].position;
+            Vector3 tie = PegTie(0, 0, out _);
+            float bestD = float.MaxValue;
+            for (int line = 0; line < 2; line++)
+                for (int end = 0; end < 2; end++)
+                {
+                    var t = PegTie(line, end, out _);
+                    float d = (t - hand).sqrMagnitude;
+                    if (d < bestD) { bestD = d; tie = t; }
+                }
+            float dist = LeashDistance;
+            float taut = Mathf.InverseLerp(skills.bishopLeashWarn, skills.bishopLeash, dist);
+            // Hemp, like the trap's rope (an undyed white thread was lost on the light floor).
+            var thread = new Color(0.62f, 0.48f, 0.3f, 0.95f);
+            if (dist <= skills.bishopLeashWarn)
+            {
+                // Slack: a low curve between the peg and the hand.
+                const int N = 10;
+                var pts = new Vector3[N + 1];
+                float span = Vector3.Distance(tie, hand);
+                float sag = Mathf.Lerp(0.6f, 0.05f, Mathf.Clamp01(dist / Mathf.Max(0.1f, skills.bishopLeashWarn))) * Mathf.Min(1f, span / 3f);
+                for (int i = 0; i <= N; i++)
+                {
+                    float u = i / (float)N;
+                    pts[i] = Vector3.Lerp(tie, hand, u) + Vector3.down * (4f * sag * u * (1f - u));
+                }
+                SkillMarks.Polyline(leash, pts, thread, 0.022f);
+                return;
+            }
+            float blink = 0.5f + 0.5f * Mathf.Sin(Time.time * Mathf.Lerp(10f, 26f, taut));
+            var hot = Color.Lerp(thread, new Color(1f, 0.93f, 0.7f, 1f), blink);
+            SkillMarks.Segment(leash, tie, hand, hot, Mathf.Lerp(0.022f, 0.016f, taut), false);
+        }
 
         static Vector2 Flat(Vector3 v) => new Vector2(v.x, v.z);
 

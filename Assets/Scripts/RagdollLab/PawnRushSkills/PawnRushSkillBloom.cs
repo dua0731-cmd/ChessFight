@@ -1,76 +1,80 @@
 using UnityEngine;
+#if CF_URP
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+#endif
 
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// Bloom on a camera of the skill test scene (R79): the skill effects are drawn brighter than white (HDR) and
-    /// this makes them glow, spilling their colour around them. The project uses the built-in render pipeline with
-    /// no post-process package, so it is a hand-made one (Resources/PawnRushSkillFx/SkillBloom.shader): light above
-    /// <see cref="threshold"/> is blurred down a chain of half-size copies and back up and added over the picture.
-    /// The lit test floor measures up to 1.7 (mean 0.9), so the threshold sits above it and only the effects' hot
-    /// cores bloom (a first try at 1.15 washed the whole picture white). The test bed adds it; nothing else does.
+    /// Bloom on a camera of the skill test scenes (R79): the skill effects are drawn brighter than white (HDR) and
+    /// this makes them glow, spilling their colour around them. Since the URP move it is URP's own Bloom: a global
+    /// volume with a Bloom override, and post-processing turned on for this camera while it is enabled (it was a
+    /// hand-made bloom through OnRenderImage, which URP does not call). Light above <see cref="threshold"/> (linear,
+    /// as before; URP takes it in gamma) blooms. The lit test floor measures up to 1.7 (mean 0.9), so the threshold sits
+    /// above it and only the effects' hot cores bloom (a first try at 1.15 washed the whole picture white). The test bed
+    /// adds it; nothing else does. Without the URP package (the Linux compile check) it does nothing.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class PawnRushSkillBloom : MonoBehaviour
     {
         public float threshold = 2.2f;
-        [Range(0f, 1f)] public float softKnee = 0.3f;
         public float intensity = 0.55f;
-        [Range(1, 8)] public int steps = 5;
+        [Range(0f, 1f)] public float scatter = 0.7f;
 
-        static Material material;
-        readonly RenderTexture[] copies = new RenderTexture[8];
+#if CF_URP
+        GameObject holder;
+        Volume volume;
+        VolumeProfile profile;
+        Bloom bloom;
+        UniversalAdditionalCameraData cameraData;
+        bool hadPostProcessing;
 
-        static Material Material
+        void OnEnable()
         {
-            get
+            cameraData = GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null) cameraData = gameObject.AddComponent<UniversalAdditionalCameraData>();
+            hadPostProcessing = cameraData.renderPostProcessing;
+            cameraData.renderPostProcessing = true;
+            if (volume == null)
             {
-                if (material != null) return material;
-                var shader = Shader.Find("Hidden/ChessFight/Skill Bloom");
-                if (shader == null) shader = Resources.Load<Shader>("PawnRushSkillFx/SkillBloom");
-                if (shader == null || !shader.isSupported) return null;
-                material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
-                return material;
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                profile.hideFlags = HideFlags.HideAndDontSave;
+                bloom = profile.Add<Bloom>(true);
+                holder = new GameObject("Skill Bloom (volume)");
+                holder.transform.SetParent(transform, false);
+                holder.layer = 0;
+                volume = holder.AddComponent<Volume>();
+                volume.isGlobal = true;
+                volume.priority = 100f;
+                volume.sharedProfile = profile;
             }
+            volume.enabled = true;
+            Apply();
         }
 
-        void OnRenderImage(RenderTexture source, RenderTexture destination)
-        {
-            var m = Material;
-            if (m == null || intensity <= 0f)
-            {
-                Graphics.Blit(source, destination);
-                return;
-            }
-            float knee = threshold * softKnee + 1e-5f;
-            m.SetVector("_Filter", new Vector4(threshold, threshold - knee, 2f * knee, 0.25f / knee));
-            m.SetFloat("_Intensity", intensity);
+        void LateUpdate() => Apply();
 
-            int width = source.width / 2, height = source.height / 2;
-            var format = RenderTextureFormat.DefaultHDR;
-            var current = copies[0] = RenderTexture.GetTemporary(width, height, 0, format);
-            Graphics.Blit(source, current, m, 0);
-            int i = 1;
-            for (; i < steps; i++)
-            {
-                width /= 2;
-                height /= 2;
-                if (height < 2) break;
-                copies[i] = RenderTexture.GetTemporary(width, height, 0, format);
-                Graphics.Blit(current, copies[i], m, 1);
-                current = copies[i];
-            }
-            for (i -= 2; i >= 0; i--)
-            {
-                Graphics.Blit(current, copies[i], m, 2);
-                RenderTexture.ReleaseTemporary(current);
-                copies[i + 1] = null;
-                current = copies[i];
-            }
-            m.SetTexture("_SourceTex", source);
-            Graphics.Blit(current, destination, m, 3);
-            RenderTexture.ReleaseTemporary(current);
-            copies[0] = null;
+        void Apply()
+        {
+            if (bloom == null) return;
+            bloom.active = intensity > 0f;
+            bloom.threshold.value = Mathf.LinearToGammaSpace(threshold);
+            bloom.intensity.value = intensity;
+            bloom.scatter.value = scatter;
         }
+
+        void OnDisable()
+        {
+            if (volume != null) volume.enabled = false;
+            if (cameraData != null) cameraData.renderPostProcessing = hadPostProcessing;
+        }
+
+        void OnDestroy()
+        {
+            if (holder != null) Destroy(holder);
+            if (profile != null) Destroy(profile);
+        }
+#endif
     }
 }

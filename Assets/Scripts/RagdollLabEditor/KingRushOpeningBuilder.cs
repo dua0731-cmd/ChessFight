@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -28,8 +29,7 @@ namespace ChessFight.RagdollLab.Editor
             string path = Folder + "/Materials/" + name + ".mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null) return material;
-            material = new Material(Shader.Find("Standard")) { color = color };
-            material.SetFloat("_Glossiness", .15f); AssetDatabase.CreateAsset(material, path); return material;
+            material = LitMaterials.NewLit(color, .15f); AssetDatabase.CreateAsset(material, path); return material;
         }
         static void Palette()
         {

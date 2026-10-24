@@ -37,6 +37,8 @@ namespace ChessFight.RagdollLab
             if (game == null) game = FindFirstObjectByType<LabGame>();
             if (game != null) game.NetTestMode = true;
             else sword = FindFirstObjectByType<SwordFightGame>();
+            // R125: the emote wheel (G) in the Pawn Rush and Queen of the Hill test scenes.
+            if (game != null && game.GetComponent<EmoteWheel>() == null) game.gameObject.AddComponent<EmoteWheel>();
         }
 
         void OnDestroy()
@@ -89,8 +91,8 @@ namespace ChessFight.RagdollLab
             var link = LabNetLink.Current;
             bool online = link != null && link.MatchActive;
             string text = online
-                ? "스킬 네트워크 시험   ·   F3 온라인 창   ·   F12 지연 시뮬레이터   ·   Esc 마우스 풀기"
-                : "스킬 네트워크 시험   ·   F3 온라인 창: Steam 방 만들기·참가 또는 로컬 시험(이 PC 두 창)   ·   R 리스폰   ·   Esc 마우스 풀기";
+                ? "스킬 네트워크 시험   ·   G 꾹: 감정 표현   ·   F3 온라인 창   ·   F12 지연 시뮬레이터   ·   Esc 마우스 풀기"
+                : "스킬 네트워크 시험   ·   G 꾹: 감정 표현   ·   F3 온라인 창: Steam 방 만들기·참가 또는 로컬 시험(이 PC 두 창)   ·   R 리스폰   ·   Esc 마우스 풀기";
             if (Cursor.lockState != CursorLockMode.Locked && !game.UiWantsCursor)
                 text = "▶ 화면을 클릭하면 마우스 조작(시점 · 좌클릭 · 우클릭)이 켜져요     " + text;
             else if (game.UiWantsCursor)

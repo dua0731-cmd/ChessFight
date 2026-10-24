@@ -2,6 +2,20 @@
 
 > 효과음은 [SOUND.md](SOUND.md)(R101 시안, ElevenLabs, 10-10)에 따로 있다.
 
+## URP에서 셰이더·재질 쓰기 (R151, 10-16 — `urp-conversion` 브랜치부터)
+
+렌더가 URP 17.3이다(전에는 Built-in). 새 이펙트를 만들 때:
+
+- **무조명 셰이더**(색·텍스처를 코드로 정하는 것): 지금처럼 `CGPROGRAM` + `UnityCG.cginc`, 패스에 `LightMode` 태그를 **달지 않으면** URP가 그린다(`SRPDefaultUnlit`). `"Always"`·`"ForwardBase"`·`"ForwardAdd"`·`"Vertex"` 태그는 URP에서 안 그려지거나 분홍.
+- **빛을 받는 셰이더**: 패스 태그 `"UniversalForward"` + `HLSLPROGRAM` + `#include "Assets/Shaders/URP/CFLit.hlsl"`(`CFLitVertex`·`CFShade(i, 색, 금속, 매끄러움, 알파)`, 필요한 `multi_compile`은 그 파일 머리에). 예: `Materials/CoursePattern.shader`. 직접 계산할 때 주광은 `_MainLightPosition`·`_MainLightColor`(CG에서는 `float4`로 선언), 하늘빛은 `ShadeSH9`/`SampleSH` 그대로.
+- **그림자를 드리우려면**: `"ShadowCaster"` 패스를 `Assets/Shaders/URP/CFShadowCaster.hlsl`로(그 파일 머리의 예, 알파로 빼려면 `CF_SHADOW_CLIP`). Built-in의 `V2F_SHADOW_CASTER` 매크로·`Fallback "VertexLit"` 그림자는 쓰지 않는다.
+- **뒤 화면을 비트는 것**(공기·충격파·굴절): `GrabPass`는 URP에 없다 → `sampler2D _CameraOpaqueTexture;` + `ComputeScreenPos`(위아래가 화면과 같다, `ComputeGrabScreenPos`의 뒤집힘 없음). 불투명 물체를 다 그린 뒤에만 채워지므로 큐는 `Transparent` 쪽(예: `Skill Breach`는 `Transparent-499`).
+- **깊이**(`_CameraDepthTexture`): URP 에셋에서 켜 둠. 그대로 쓴다.
+- **코드로 재질 만들기**: `Shader.Find("Standard")`·`"Legacy Shaders/…"`·`"Unlit/Color"` 대신 `ChessFight.Game.LitMaterials`(`NewLit`·`NewUnlit`·`MakeTransparent`·`MakeCutout`·`SetEmission`·`NewAdditiveParticles`). `material.color`·`mainTexture`는 그대로 되지만 `_Glossiness`·`_Mode`는 Lit에 없다(`_Smoothness`·`_Surface`). 속성 블록으로 색을 줄 때는 `LitMaterials.SetColor(block, 색)`(Lit의 `_BaseColor`와 우리 셰이더의 `_Color`를 함께).
+- **빌드**: 코드로 만든 재질의 키워드 조합은 에셋이 쓰지 않으면 빌드에서 빠진다. 새 조합(예: Lit + 다른 키워드)을 쓰면 `Resources/URPVariants`에 같은 조합 재질을 하나 더 둔다.
+- **점 조명**: URP 빛은 거리 제곱으로 줄어 가까이서 Built-in보다 훨씬 밝다. Built-in 때 맞춘 세기는 `PipelineSettings.PointIntensity(세기, 범위)`로 준다.
+- **블룸**: `PawnRushSkillBloom`(카메라에 붙음)이 URP Bloom 볼륨을 켠다. 문턱은 예전처럼 선형 값(2.2)으로 적고 안에서 감마로 바꾼다.
+
 2026-10-07, 승규 님 요청: "각 기물별로 타격감 좋게 시안 3개 정도". 아직 **시안만** 있고 만든 것은 없다. 고르면 `PawnRush_SkillTest`에서 만든다.
 
 아트 방향(10-01부터)에 맞춘다: 체스판 길, 빨강/크림 블록, 팔다리 달린 체스 말, 밝은 장난감 느낌. 그래서 피·사실적 폭발 대신 **장난감이 부딪히는 소리·만화 같은 과장·체스판 칸**을 쓴다.
@@ -296,3 +310,12 @@ R78에 넣은 이펙트 공방 그림(평평한 연속 그림 10장)은 승규 �
 - 나이트 **B**(밟기가 이 스킬의 보상)
 
 공통 재료(히트스톱·흔들기·번쩍·소리)를 먼저 만들면 모든 시안에 같이 쓰인다.
+
+## R149 (10-16): 높낮이가 있는 바닥 위의 바닥 이펙트
+
+승규 님 화면 녹화: 미니게임 광장 옆 통로에서 퀸 스킬을 쓰니 경고 원판·링·대시가 광장 단상(통로보다 0.4 m 높음) 쪽에서 잘려 보였다. 바닥에 눕는 이펙트는 시전자 발밑 높이의 평평한 사각형 하나였기 때문이다.
+
+- `SkillInkKit.FloorDrape`(`SkillKit/SkillInkKit.FloorDrape.cs`): 눕힌(위를 보는) 사각형의 가운데가 바닥에서 0.2 m 안이면, 그 아래 바닥을 0.3 m 간격(한 변 최대 24칸)으로 잰다. 모두 2 cm 안으로 평평하면 원래 사각형 그대로, 아니면 각 점을 그 아래 바닥 위 같은 높이에 놓은 격자로 바꾼다(QotH `Tile.Drape`, R98과 같은 방식). 턱의 옆면에 걸리는 칸은 빼서 위·아래 바닥에 둘 다 보인다. 모양은 uv로 그리므로 원·링·체스판 모양 판(두께)은 그대로. 움직이거나 크기가 바뀔 때만 다시 잰다. 기물·움직이는 몸은 바닥으로 치지 않는다.
+- 쓰는 곳: `SkillInkKit.Tile`의 `Apply`(폰 러쉬·소드 파이트의 모든 바닥 칸), 폰 러쉬 퀸의 공기 고리(`PawnRushSkillFx.Shock` `Air.Ring`). 퀸 오브 더 힐은 자기 부품이라 그대로.
+- 확인: AI가 코스 01 체크메이트 광장 옆 통로(x 46.9)에서 퀸·나이트를 써서 정지 화면으로 봄(경고 대시와 금빛 링이 양쪽 단상 위로 올라감). 사용자 미확인.
+- 이어서 (승규 님 "다른 스킬도 하나하나 다 확인해줘"): 같은 자리(광장 단상 앞 통로, 단상 0.4 m · 그 위 판 0.5 m)에서 폰·룩·비숍·나이트·퀸·킹을 하나씩 써서 정지 화면으로 봤다. 폰(밟은 칸), 룩(조준 칸이 아래 바닥 → 단상 → 판으로 올라감, 돌진은 단상 벽에서 멈춤), 나이트(길 칸이 턱을 넘고 편자가 판 위에), 퀸(링·대시가 양쪽 단상 위로)은 그대로 괜찮았다. **비숍**은 밧줄 X 전체(말뚝 4개·칸 9개·착지 먼지)를 비숍 발밑 높이 한 평면에 깔아 단상 쪽 말뚝과 칸이 단상 속에 묻혔다 → 말뚝(`SkillTripwire.Build`의 `Seat`)·칸(`PawnRushSkillFx.Squares`)·먼지(`WireLanding`)를 각자 아래 바닥(위아래 1 m 안)에 놓는다. 걸림·묶임 판정은 원래도 평면 위치와 가운데 높이만 써서 그대로이고, 모든 PC가 같은 바닥으로 같은 자리를 계산한다. 킹(왕의 부름)은 오프라인 코스에 팀원이 없어 고르기 화면까지만 봤다(부른 팀원 착지 칸은 같은 `Tile`이라 휘는 처리를 받는다).

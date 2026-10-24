@@ -116,7 +116,7 @@ namespace ChessFight.RagdollLab
             public uint sequence, clientTimeMs;
             public float received;
             public bool synced;
-            public byte jumps, shoves, abilities, abilities2, skills, pieceSeq;   // counts already taken
+            public byte jumps, shoves, abilities, abilities2, skills, pieceSeq, emoteSeq;   // counts already taken
             public int jump, shove, ability, ability2, skill;                    // presses waiting for a physics step
             public bool interactLatch, interactNow;
             public ushort eventAck;
@@ -674,6 +674,7 @@ namespace ChessFight.RagdollLab
                 r.abilities2 = fresh.abilities2;
                 r.skills = fresh.skills;
                 r.pieceSeq = 0;
+                r.emoteSeq = fresh.emoteSeq;   // an emote asked for before the host heard this client is not played late
             }
             r.jump = Mathf.Min(4, r.jump + PressCount.Take(fresh.jumps, ref r.jumps));
             r.shove = Mathf.Min(4, r.shove + PressCount.Take(fresh.shoves, ref r.shoves));
@@ -698,6 +699,12 @@ namespace ChessFight.RagdollLab
                 if (sword != null) ApplySwordPiece(sender, (PieceKind)fresh.pieceAsk);
                 else if (pawns.TryGetValue(sender, out var pawn)) ApplyPieceAsk(pawn, (PieceKind)fresh.pieceAsk);
             }
+            if (fresh.emoteSeq != 0 && fresh.emoteSeq != r.emoteSeq)
+            {
+                // The emote is played by the host's pawn and reaches everyone through the bones, like a step.
+                r.emoteSeq = fresh.emoteSeq;
+                if (sword == null && pawns.TryGetValue(sender, out var emoter) && emoter != null) emoter.PlayEmote(fresh.emoteAsk);
+            }
             if (!r.ackSet || SkillWire.Newer(fresh.eventAck, r.eventAck))
             {
                 r.eventAck = fresh.eventAck;
@@ -715,6 +722,7 @@ namespace ChessFight.RagdollLab
             if (local.ability) myAbilities = PressCount.Add(myAbilities);
             if (local.ability2) myAbilities2 = PressCount.Add(myAbilities2);
             if (local.skill) mySkills = PressCount.Add(mySkills);
+            if (local.emote != 0) game.AskEmote(local.emote);
             pending.Hold(local);
             // Held, but latched until sent: a tap shorter than one send interval still reaches the host.
             pending.interact |= local.interact;
@@ -769,6 +777,8 @@ namespace ChessFight.RagdollLab
                 pending.skills = mySkills;
                 pending.pieceAsk = (byte)game.NetPieceAsk;
                 pending.pieceSeq = game.NetPieceSeq;
+                pending.emoteAsk = game.NetEmoteAsk;
+                pending.emoteSeq = game.NetEmoteSeq;
                 pending.eventAck = inbox.Started ? inbox.Acked : (ushort)0;
                 // The link as this PC sees it, for the host's test screen (R112).
                 pending.roundTripMs = (ushort)Mathf.Clamp(Mathf.RoundToInt(roundTripMs), 0, ushort.MaxValue);

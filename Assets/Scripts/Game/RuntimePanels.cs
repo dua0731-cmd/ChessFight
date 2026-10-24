@@ -45,6 +45,25 @@ namespace ChessFight.Game
             root.Query<VisualElement>(className: DisplayClass).ForEach(Display);
         }
 
+        // Exo 2 Black Italic (SIL OFL 1.1, Resources/Fonts with its licence), the
+        // title screen's CHESS FIGHT since R150. Latin only; null if missing.
+        static Font title;
+        static bool titleTried;
+
+        public static Font TitleFont
+        {
+            get
+            {
+                if (title == null && !titleTried)
+                {
+                    titleTried = true;
+                    title = Resources.Load<Font>("Fonts/Exo2-BlackItalic");
+                    if (title == null) Debug.LogWarning("[ChessFight] 시작 화면 제목 글꼴(Resources/Fonts/Exo2-BlackItalic)을 찾지 못했습니다.");
+                }
+                return title;
+            }
+        }
+
         public static void Display(VisualElement element)
         {
             if (element == null || DisplayFont == null) return;

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dcf7605148768771413bfd099af19121, type: 3}
   m_Name: Course01Kit
   m_EditorClassIdentifier: 
-  floorChecker: {fileID: 2100000, guid: 466003e3f949f9caaccaf42351846074, type: 2}
-  wallClimbable: {fileID: 2100000, guid: 160a744919712151285d51b54c8009dc, type: 2}
-  wallNoClimb: {fileID: 2100000, guid: 2c3cc59a04a6e960d23dbaba6a39334f, type: 2}
+  floorChecker: {fileID: 2100000, guid: 18bb40a5449b4e24aba6032f02ddee8d, type: 2}
+  wallClimbable: {fileID: 2100000, guid: 3c43a11ab7f1e0347a2dd7f1deafd86d, type: 2}
+  wallNoClimb: {fileID: 2100000, guid: c00127aa896fa864cb0b0c1442bdda60, type: 2}
   glass: {fileID: 2100000, guid: 59ad616ed820961261c0211ebd4b98e6, type: 2}
   trimWhite: {fileID: 2100000, guid: 15984cc263ea347d549609356ca2d63a, type: 2}
   trimBlack: {fileID: 2100000, guid: dca4bea5282b05eb6142aa58fbebbb7b, type: 2}

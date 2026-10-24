@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -23,7 +24,7 @@ namespace ChessFight.RagdollLab
     /// squashes of the skin. Everything is a thick painted shape with a dark ink edge in its own darkest colour, no glow.
     /// Every shape is made in code; no node graphs (built-in render pipeline).
     /// </summary>
-    public class SkillInkKit
+    public partial class SkillInkKit
     {
         // ---------------------------------------------------------------- colours (design A, viewer-relative sides)
 
@@ -421,8 +422,8 @@ namespace ChessFight.RagdollLab
         {
             c.a = 1f;
             if (flatMats.TryGetValue(c, out var m) && m != null) return m;
-            // R111: Unlit/Color is not in a player build (only the editor finds it); Sprites/Default always is.
-            var shader = Shader.Find("Unlit/Color");
+            // R111: a shader only the editor finds is not in a player build; Sprites/Default always is.
+            var shader = LitMaterials.Unlit;
             if (shader == null) shader = Shader.Find("Sprites/Default");
             m = new Material(shader) { color = c, hideFlags = HideFlags.HideAndDontSave };
             flatMats[c] = m;
@@ -468,7 +469,9 @@ namespace ChessFight.RagdollLab
                 baseColor = kit.boardBase;
                 var go = new GameObject(name);
                 go.transform.SetParent(kit.root, false);
-                go.AddComponent<MeshFilter>().sharedMesh = kit.meshQuad;
+                var filter = go.AddComponent<MeshFilter>();
+                filter.sharedMesh = kit.meshQuad;
+                drape = new FloorDrape(go.transform, filter, kit.meshQuad);
                 r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = board ? kit.matBoard : kit.matTile;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -570,6 +573,7 @@ namespace ChessFight.RagdollLab
                 // A slab stays solid while it sinks and goes in the last moments of its fade (the board never shows through it).
                 float shown = solid ? Mathf.Clamp01(fade / 0.18f) * opacity : Mathf.Clamp01(fade);
                 b.SetFloat("_Fade", shown);
+                if (shown > 0.001f) drape.Fit(lying);
                 r.SetPropertyBlock(b);
                 r.enabled = shown > 0.001f;
             }
@@ -578,8 +582,11 @@ namespace ChessFight.RagdollLab
 
             public void Destroy()
             {
+                drape.Dispose();
                 if (t != null) Object.Destroy(t.gameObject);
             }
+
+            readonly FloorDrape drape;
         }
 
         /// <summary>A cartoon puff or drop (Skill Toon): hard colour bands, an ink edge, eaten away as it goes.</summary>
@@ -734,6 +741,9 @@ namespace ChessFight.RagdollLab
             public readonly bool board;
             public bool twoTone;
             public Color sideColor;
+            /// <summary>R153: a second part of the same object in its own colours (the bishop's stake's iron band), parented
+            /// to this one: shown, faded and flashed with it.</summary>
+            public Prop child;
 
             /// <summary><paramref name="material"/>: a fill of its own that reads the same properties (R140, the Pawn Rush
             /// rope's Skill Rope); the kit's otherwise.</summary>
@@ -783,6 +793,12 @@ namespace ChessFight.RagdollLab
                 line.SetPropertyBlock(bl);
                 // The ink hull cannot fade by dither: it goes with the prop's last third.
                 line.enabled = shown && fade > 0.33f;
+                if (child != null)
+                {
+                    child.fade = fade;
+                    child.flash = flash;
+                    child.Apply();
+                }
             }
 
             bool shown = true;
@@ -792,6 +808,7 @@ namespace ChessFight.RagdollLab
                 shown = on;
                 fill.enabled = on;
                 line.enabled = on && fade > 0.33f;
+                child?.Show(on);
             }
 
             public void Destroy()

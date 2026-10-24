@@ -1,3 +1,4 @@
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -130,8 +131,7 @@ namespace ChessFight.RagdollLab
                 go.name = $"{name} landing";
                 if (landingMaterial == null)
                 {
-                    var shader = Shader.Find("Standard");
-                    landingMaterial = new Material(shader != null ? shader : Shader.Find("Legacy Shaders/Diffuse")) { color = new Color(1f, 0.3f, 0.2f) };
+                    landingMaterial = new Material(LitMaterials.Lit) { color = new Color(1f, 0.3f, 0.2f) };
                 }
                 go.GetComponent<MeshRenderer>().sharedMaterial = landingMaterial;
                 go.transform.localScale = new Vector3(1f, 0.01f, 1f);

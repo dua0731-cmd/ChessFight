@@ -33,27 +33,81 @@ namespace ChessFight.RagdollLab
         Mesh meshStake;
         float meshStakeTie = -1f;
         Material matWood;
+        // R153 4th (승규 님 10-22, Tripo "wooden stake": "이거 3개만 적용 시켜줘 봐"): the stake model, its point at the origin and
+        // 1 tall (Wood, Band); sized per tie height into these meshes (the rope tied a little above the iron band, near its top).
+        readonly List<(Mesh mesh, Kit.Palette colors)> stakeParts = new List<(Mesh, Kit.Palette)>();
+        Mesh stakeModelWood, stakeModelBand;
+        float stakeModelTie = -1f;
+        /// <summary>Where on the model (0 point .. 1 top) the rope is tied, and how wide the model is there (its 1 tall).</summary>
+        const float StakeModelTieAt = 0.86f, StakeModelWideAt = 0.3f;
+        /// <summary>Where on the model the floor comes: its point and the taper are driven in, the squared top and the band show.</summary>
+        const float StakeModelFloorAt = 0.45f;
 
         void BuildStake()
         {
             var shader = Shader.Find("ChessFight/Skill Wood");
             if (shader == null) shader = Resources.Load<Shader>("PawnRushSkillFx/SkillWood");
             if (shader != null) matWood = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+            LoadChainModel("BishopStake", stakeParts, "SkillModels");
         }
 
         void DestroyStake()
         {
             if (matWood != null) Destroy(matWood);
             if (meshStake != null) Destroy(meshStake);
+            if (stakeModelWood != null) Destroy(stakeModelWood);
+            if (stakeModelBand != null) Destroy(stakeModelBand);
         }
 
         /// <summary>A stake standing with its rope tied on at <paramref name="tie"/> metres up (its own wood, its dark ink edge,
         /// a shadow).</summary>
         Kit.Prop StakeProp(float tie, string name)
         {
+            if (StakeModel(tie))
+            {
+                var wood = new Kit.Prop(kit, stakeModelWood, StakeWood, name, null, matWood) { inkWidth = 0.006f };
+                CastShadow(wood);
+                if (stakeModelBand != null)
+                {
+                    wood.child = new Kit.Prop(kit, stakeModelBand, Iron, name + " band", wood.t) { inkWidth = 0.006f };
+                    CastShadow(wood.child);
+                }
+                return wood;
+            }
             var prop = new Kit.Prop(kit, StakeMesh(tie), StakeWood, name, null, matWood) { inkWidth = 0.007f };
             CastShadow(prop);
             return prop;
+        }
+
+        /// <summary>The Tripo stake sized for a rope tied <paramref name="tie"/> m up: where it meets the floor at the origin,
+        /// driven in up to StakeModelFloorAt of its length (the point and taper under the floor), the tie at StakeModelTieAt,
+        /// about as wide there as the stake it replaces. False when the model is missing (the built stake stands in).</summary>
+        bool StakeModel(float tie)
+        {
+            if (stakeParts.Count == 0) return false;
+            if (stakeModelWood != null && Mathf.Abs(stakeModelTie - tie) < 1e-4f) return true;
+            stakeModelTie = tie;
+            float up = tie / (StakeModelTieAt - StakeModelFloorAt), across = StakeWide * 1.05f / StakeModelWideAt;
+            float sunk = StakeModelFloorAt * up;
+            Mesh Sized(Mesh src, ref Mesh into, string label)
+            {
+                if (into == null) into = new Mesh { name = label };
+                var v = src.vertices;
+                for (int i = 0; i < v.Length; i++) v[i] = new Vector3(v[i].x * across, v[i].y * up - sunk, v[i].z * across);
+                into.Clear();
+                into.vertices = v;
+                into.triangles = src.triangles;
+                into.RecalculateNormals();
+                into.RecalculateBounds();
+                return into;
+            }
+            foreach (var (mesh, colors) in stakeParts)
+            {
+                if (colors.main == Iron.main) Sized(mesh, ref stakeModelBand, "Bishop stake band");
+                else Sized(mesh, ref stakeModelWood, "Bishop stake (Tripo)");
+            }
+            if (matWood != null) matWood.SetFloat("_Top", up - sunk);
+            return stakeModelWood != null;
         }
 
         /// <summary>The prop's fill casts a shadow (its ink edge does not).</summary>

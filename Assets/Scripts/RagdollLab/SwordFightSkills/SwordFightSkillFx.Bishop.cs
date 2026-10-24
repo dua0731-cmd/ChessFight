@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChessFight.Game;
 using ChessFight.Network;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -347,6 +348,7 @@ namespace ChessFight.RagdollLab
                 light.type = LightType.Point;
                 light.color = most > 1e-3f ? new Color(energy.r / most, energy.g / most, energy.b / most) : Color.white;
                 light.shadows = LightShadows.None;
+                PipelineSettings.LightPiecesOnly(light);   // R157: the orbs colour the pieces, not the floor
                 light.intensity = 0f;
                 light.range = radius + 1.8f;
             }
@@ -655,7 +657,7 @@ namespace ChessFight.RagdollLab
                 // The light: on the floor round the ring while it is up, after the balls as they go, a flash where they land.
                 float want = state == State.Ring ? glow * 2.4f : 0f;
                 lightNow = Mathf.MoveTowards(lightNow, want, dt * 10f);
-                light.intensity = lightNow * (0.9f + 0.1f * Mathf.Sin(clock * 9f)) * fade;
+                light.intensity = PipelineSettings.PointIntensity(lightNow * (0.9f + 0.1f * Mathf.Sin(clock * 9f)) * fade, radius + 1.8f);
                 Vector3 lightAt = center;
                 if (state != State.Ring && targets.Count > 0) lightAt = Vector3.Lerp(center, targets[0].at(), Mathf.Clamp01(stateClock / 0.15f));
                 light.transform.position = lightAt + Vector3.up * (height + 0.15f);
