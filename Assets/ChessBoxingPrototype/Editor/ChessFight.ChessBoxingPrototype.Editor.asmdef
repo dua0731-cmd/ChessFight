@@ -1,0 +1,7 @@
+{
+  "name": "ChessFight.ChessBoxingPrototype.Editor",
+  "rootNamespace": "ChessFight.ChessBoxingPrototype",
+  "references": ["ChessFight.ChessBoxingPrototype"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}
