@@ -57,6 +57,8 @@ namespace ChessFight.RagdollLab
         void DestroyDesignA()
         {
             DestroyShock();
+            DestroyReal();
+            DestroyLasso();
             DestroyKnightFx();
             DestroyRope();
             DestroyStake();
@@ -80,9 +82,21 @@ namespace ChessFight.RagdollLab
                 if (pawn == null || pawn.PawnRushSkills == null) continue;
                 switch (pawn.Piece)
                 {
-                    case PieceKind.Queen: QueenWarning(pawn); break;
+                    case PieceKind.Queen: if (Real(PieceKind.Queen)) RealQueenWarning(pawn); else QueenWarning(pawn); break;
                     case PieceKind.Rook: RookChainFx(pawn); break;   // R153: the chain (PawnRushSkillFx.Chain.cs)
-                    case PieceKind.Bishop: BishopAimTiles(pawn); BishopThrowProp(pawn); break;
+                    case PieceKind.Bishop:
+                        if (Params != null && Params.bishopRope)
+                        {
+                            // 10-26: the X rope (PawnRushSkillFx.BishopRope.cs).
+                            BishopLassoAim(pawn);
+                            BishopLassoFx(pawn);
+                        }
+                        else
+                        {
+                            if (Real(PieceKind.Bishop)) RealBishopAim(pawn); else BishopAimTiles(pawn);
+                            BishopThrowProp(pawn);
+                        }
+                        break;
                     case PieceKind.Knight: KnightMarks(pawn); KnightTargetRing(pawn); break;
                     case PieceKind.Pawn: PawnTargetRing(pawn); break;
                 }

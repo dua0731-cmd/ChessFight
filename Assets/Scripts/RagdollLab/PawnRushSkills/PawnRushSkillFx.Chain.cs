@@ -120,7 +120,13 @@ namespace ChessFight.RagdollLab
         void RookChainFx(RagdollPawn r)
         {
             var s = Params;
-            if (r.SkillStage == SkillStage.Windup && r.RookChainPhase == ChainPhase.None) ChainAimLine(r, s);
+            if (r.SkillStage == SkillStage.Windup && r.RookChainPhase == ChainPhase.None)
+            {
+                // 10-25: the aim drawn for real (PawnRushSkillFx.RealRook.cs).
+                // 10-25: the aim drawn for real (PawnRushSkillFx.RealRook.cs).
+                if (Real(PieceKind.Rook)) RealRookAim(r, s);
+                else ChainAimLine(r, s);
+            }
             if (r.RookChainPhase != ChainPhase.None) ChainLinks(r, s);
         }
 

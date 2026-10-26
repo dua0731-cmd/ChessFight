@@ -43,7 +43,7 @@ namespace ChessFight.RagdollLab
         static readonly Dictionary<string, float> Level = new Dictionary<string, float>
         {
             { "PawnDash", 0.6f }, { "PawnBump", 0.85f }, { "PawnCrouch", 0.65f },
-            { "QueenWindup", 0.7f }, { "QueenBlast", 1f },
+            { "QueenWindup", 0.7f }, { "QueenBlast", 1f }, { "QueenHit", 0.8f },
             { "RookTick", 0.35f }, { "RookLock", 0.6f }, { "RookDash", 0.6f }, { "RookHit", 0.85f }, { "RookWall", 1f },
             { "BishopThrow", 0.6f }, { "BishopLand", 0.7f }, { "BishopArm", 0.7f }, { "BishopHum", 0.35f },
             { "BishopTrip", 0.95f }, { "BishopEnd", 0.6f },
@@ -53,6 +53,11 @@ namespace ChessFight.RagdollLab
             // moment (ElevenLabs, low-passed and taken 2-3 semitones down so no bright jingle rings), and the "no target" knock.
             { "ChainThrow", 0.7f }, { "ChainRun", 0.45f }, { "ChainBite", 0.9f }, { "ChainPull", 0.75f }, { "ChainOffer", 0.5f },
             { "ChainGrab", 0.7f }, { "ChainLand", 0.8f }, { "ChainRewind", 0.6f }, { "ChainBreak", 0.8f }, { "SkillFail", 0.5f },
+            // 10-26 (승규 님: "그에 맞는 사운드도 실사에 맞게"): the bishop's X rope, a real hemp rope for every moment (ElevenLabs):
+            // thrown, wrapped round the waist, creaking under strain (held, louder the more it is stretched), hauled in or let
+            // out a hand at a time, let go slapping down, snapped.
+            { "BishopRopeThrow", 0.7f }, { "BishopRopeHook", 0.85f }, { "BishopRopeStrain", 0.55f }, { "BishopRopeReel", 0.5f },
+            { "BishopRopeRelease", 0.75f }, { "BishopRopeSnap", 1f },
         };
 
         public const string Folder = "PawnRushSkillSfx";
@@ -80,6 +85,9 @@ namespace ChessFight.RagdollLab
             public bool aiming, dashing;
             public Held charge, flight;
             public ChainPhase chain;
+            // 10-26: the bishop's rope: its strain (held), the length the last haul was heard at, when.
+            public Held strain;
+            public float strainBase, lastRest = -1f, reelAt;
         }
         readonly Dictionary<RagdollPawn, Watch> watched = new Dictionary<RagdollPawn, Watch>();
 
@@ -136,6 +144,9 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.PawnHit: Play("PawnBump", e.at, e.count == 1 ? -3f : 0f, e.count == 1 ? 1.1f : 1f); break;
                 case SkillFxKind.PawnHelp: Play("PawnCrouch", e.at, 2f); break;
                 case SkillFxKind.QueenBlast: Play("QueenBlast", e.at); break;
+                // 10-25 (the queen drawn for real): each piece her shock hits, the knocked-down one lower and heavier. Silent
+                // until Resources/PawnRushSkillSfx/QueenHit is there.
+                case SkillFxKind.QueenHit: Play("QueenHit", e.at, e.count == 1 ? -2f : 0f, e.count == 1 ? 1.1f : 0.85f); break;
                 // The charge keeps sounding under its hits (it ends with the dash). R115: one impact, no rising pitch —
                 // hits one, two, three a whole tone apart sounded like a piano scale (승규 님 "피아노 같은 소리 말고
                 // 임펙트 있는 소리"); later hits are only a little louder, the stopping fourth a little lower and heavier.
@@ -175,10 +186,63 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.RookPullEnd: Play("ChainLand", e.at, e.count == 1 ? 2f : 0f, e.count == 1 ? 0.75f : 1f); break;
                 case SkillFxKind.RookChainBreak: Play("ChainBreak", e.at); break;
                 case SkillFxKind.SkillFail: Play("SkillFail", e.at); break;
+                // 10-26: the bishop's X rope (its strain and hauls are held below).
+                case SkillFxKind.BishopRopeThrow: Play("BishopRopeThrow", e.at); break;
+                case SkillFxKind.BishopRopeHook: Play("BishopRopeHook", e.at); break;
+                case SkillFxKind.BishopRopeRelease:
+                    Play("BishopRopeRelease", e.at, e.count == 1 ? -1f : 1f, e.count == 1 ? 1f : 0.7f);
+                    EndStrain(e.by);
+                    break;
+                case SkillFxKind.BishopRopeSnap:
+                    Play("BishopRopeSnap", e.at);
+                    EndStrain(e.by);
+                    break;
             }
         }
 
         Watch OwnerWatch(RagdollPawn by) => by != null && watched.TryGetValue(by, out var w) ? w : null;
+
+        void EndStrain(RagdollPawn by)
+        {
+            var w = OwnerWatch(by);
+            if (w == null || w.strain == null) return;
+            EndHeld(w.strain, true);
+            w.strain = null;
+        }
+
+        /// <summary>10-26: a bishop holding its rope: the strain creaks louder (and a little lower) the more the rope is
+        /// stretched, silent while it hangs slack; every 0.2 m it is hauled in or let out, a hand's worth of rope through
+        /// the hands (higher hauling in).</summary>
+        void WatchLasso(RagdollPawn pawn, Watch w, Vector3 at, float now)
+        {
+            bool holding = pawn.BishopLassoPhase == LassoPhase.Hold;
+            if (holding && w.strain == null)
+            {
+                w.strain = StartHeld("BishopRopeStrain", at);
+                if (w.strain != null)
+                {
+                    w.strain.voice.loop = true;
+                    w.strainBase = w.strain.gain;
+                }
+            }
+            if (!holding && w.strain != null) EndStrain(pawn);
+            if (w.strain != null && w.strain.voice != null && w.strain.fadeFrom < 0f)
+            {
+                float k = Mathf.Clamp01((pawn.BishopLassoStretch + 0.05f) / 0.8f);
+                w.strain.gain = w.strainBase * k;
+                w.strain.voice.volume = w.strain.gain;
+                w.strain.voice.pitch = 1f - 0.08f * k;
+            }
+            float rest = pawn.BishopLassoRest;
+            if (!holding) { w.lastRest = -1f; return; }
+            if (w.lastRest < 0f) w.lastRest = rest;
+            if (Mathf.Abs(rest - w.lastRest) >= 0.2f && now - w.reelAt > 0.14f)
+            {
+                Play("BishopRopeReel", at, rest < w.lastRest ? 1f : -2f, rest < w.lastRest ? 1f : 0.75f);
+                w.lastRest = rest;
+                w.reelAt = now;
+            }
+        }
 
         // ---------------------------------------------------------------- the skill stages
 
@@ -221,7 +285,8 @@ namespace ChessFight.RagdollLab
                         break;
                     }
                     case PieceKind.Bishop:
-                        if (stage == SkillStage.Active && w.stage == SkillStage.Windup) Play("BishopThrow", at);
+                        if (pawn.PawnRushSkills.bishopRope) WatchLasso(pawn, w, at, now);
+                        else if (stage == SkillStage.Active && w.stage == SkillStage.Windup) Play("BishopThrow", at);
                         break;
                     case PieceKind.Knight:
                         if (stage == SkillStage.Active && w.stage != SkillStage.Active) w.flight = StartHeld("KnightAir", at);
@@ -282,6 +347,7 @@ namespace ChessFight.RagdollLab
             var a = FreeVoice();
             a.Stop();
             a.clip = s.clip;
+            a.loop = false;
             a.volume = gain;
             a.pitch = Mathf.Pow(2f, semitones / 12f);
             a.panStereo = pan;

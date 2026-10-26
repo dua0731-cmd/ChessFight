@@ -31,6 +31,9 @@ namespace ChessFight.RagdollLab
         // that grabbed it; the pull's end: count 1 a teammate; broken), and a skill key pressed with nothing to aim at (the
         // pawn's second step, the knight's leap: count = the piece).
         RookThrow, RookHook, RookPullEnd, RookChainBreak, SkillFail,
+        // 10-26: the bishop's X rope (RagdollPawn.BishopLasso.cs): thrown; round a piece's waist (size: its length); let go
+        // (count 1: a taut rope threw the piece; size: how far it was stretched); snapped; come back empty.
+        BishopRopeThrow, BishopRopeHook, BishopRopeRelease, BishopRopeSnap, BishopRopeMiss,
     }
 
     public struct SkillFxEvent
@@ -270,6 +273,7 @@ namespace ChessFight.RagdollLab
             if (PawnRushSkills == null) return;
             skillMoveRaw = input.move;
             skillGrabRaw = input.grab;
+            PreLassoDrag();          // 10-26: a bishop's rope's drag of the last step taken off before the run
             HoldKeysForKingCall();   // R146: on its way in to its king
             ChainGrabKey();          // R153: a rook's chain handle held out to it (the right click), or riding the chain
             if (Aiming)
@@ -278,6 +282,15 @@ namespace ChessFight.RagdollLab
                 skillConfirm |= input.shove;
                 skillCancel |= input.grab && !skillGrabLatch;
                 input.shove = false;
+            }
+            if (piece == PieceKind.Bishop && lassoPhase != LassoPhase.None)
+            {
+                // 10-26: holding its rope, the right click lets go; the left click does nothing; it walks (no sprint).
+                if (lassoPhase == LassoPhase.Hold) skillCancel |= input.grab && !skillGrabLatch;
+                input.sprint = false;
+                input.shove = false;
+                input.shoveHeld = false;
+                input.grab = false;
             }
             // A right click that was down when the aim began, or that called it off, grabs nothing until let go.
             if (skillGrabLatch && !input.grab) skillGrabLatch = false;
@@ -328,6 +341,7 @@ namespace ChessFight.RagdollLab
                 if (State != PawnState.Active || Floating) bindLeft = 0f;
                 else HoldBound(dt);
             }
+            UpdateLassoDrag(s, dt);   // 10-26: a bishop's rope round its waist, or held taut by it
             TrackGetUp(s);
             if (QueenHillSkills != null)
             {
@@ -382,6 +396,7 @@ namespace ChessFight.RagdollLab
             ClearQueenHill();
             ClearKingCall();
             ClearRookChain();
+            ClearLasso();
         }
 
         float PieceCooldown(PawnRushSkillParams s) => piece switch
@@ -1007,6 +1022,11 @@ namespace ChessFight.RagdollLab
 
         void UpdateBishopSkill(PawnRushSkillParams s, bool press, bool confirm, bool cancel, float dt)
         {
+            if (s.bishopRope)
+            {
+                UpdateBishopLasso(s, press, confirm, cancel, dt);   // 10-26: the X rope (RagdollPawn.BishopLasso.cs)
+                return;
+            }
             switch (skillStage)
             {
                 case SkillStage.None:
@@ -1231,6 +1251,16 @@ namespace ChessFight.RagdollLab
                     }
                     break;
                 }
+                case PieceKind.Bishop when s.bishopRope:
+                {
+                    // 10-26: the X rope, plain: a line from the hands to where it would go, or to where it is.
+                    if (skillStage == SkillStage.None) break;
+                    Vector3 hands = LassoHands;
+                    Vector3 end = lassoPhase != LassoPhase.None ? lassoTip
+                        : lassoAim != null ? lassoAim.LassoBelly : hands + lassoDir * s.bishopRopeRange;
+                    SkillMarks.Segment(Mark(ref markC, "Bishop rope"), hands, end, new Color(0.75f, 0.6f, 0.4f, lassoPhase == LassoPhase.Hold ? 1f : 0.6f), 0.04f, false);
+                    break;
+                }
                 case PieceKind.Bishop when skillStage == SkillStage.Windup:
                 {
                     // The reach (close range) around the bishop, and the X where it would go: the two lines at shin
@@ -1310,6 +1340,8 @@ namespace ChessFight.RagdollLab
                 QueenHillPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);   // R89
                 return;
             }
+            // 10-26: the bishop on its rope (RagdollPawn.BishopLasso.cs).
+            if (LassoPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR)) return;
             if (piece == PieceKind.Knight && skillStage == SkillStage.Windup)
             {
                 // R138 (승규 님: "좀 더 나이트다! 라는 연출"): it rears up like a horse before it springs: leaning back, head up,

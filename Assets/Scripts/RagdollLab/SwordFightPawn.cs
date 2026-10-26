@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ChessFight.Network;
 using ChessFight.Game;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
