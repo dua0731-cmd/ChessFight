@@ -2,8 +2,8 @@ using System;
 
 namespace ChessFight.Network
 {
-    // Offline prototype rules. Inputs are all occupants of each plate (either allegiance), plus defusers per team.
-    public sealed class ChessTimerRules
+    // Authoritative rules shared by the offline prototype and network recovery. Inputs are all occupants of each plate (either allegiance), plus defusers per team.
+    public sealed partial class ChessTimerRules
     {
         public sealed class TeamState
         {

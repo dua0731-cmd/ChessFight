@@ -34,6 +34,19 @@ public static class SessionFlowTests
     {
         try
         {
+            Test("Standalone chess timer room joins by code, shares start and survives host leave",()=>{
+                Setup(2, i=>new SteamSession("chess-timer-v1/test",false));
+                As(clients[0],()=>clients[0].FindMatch(true));Step();
+                As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);
+                Check(clients[0].Roster.Count==2&&clients[1].Match==clients[0].Match,"direct scene code join");
+                var host=clients.First(c=>c.IsHost);As(host,host.StartGame);Step();
+                Check(clients.All(c=>c.Started),"start without scene transition");
+                foreach(var c in clients)As(c,()=>c.ReportLoading(100));Step();
+                host=clients.First(c=>c.IsHost);As(host,()=>host.AnnounceStart(SteamUtils.GetServerRealTime()+2));Step();
+                double start=host.StartAt;Check(start>0&&clients.All(c=>c.StartAt==start),"shared start");
+                var survivor=clients.First(c=>c!=host);As(host,host.Cancel);Step(20);
+                Check(survivor.Started&&survivor.IsHost&&survivor.StartAt==start,"scene session continues on successor");
+            });
             Test("Private two-player party joins together and retains party after cancel",()=>{
                 Setup(2);JoinParty(1,0);var leader=clients[0];As(leader,()=>leader.FindMatch(true));Step(20);
                 Check(leader.Match!=0&&clients[1].Match==leader.Match&&leader.Roster.Count==2,"party follow failed");

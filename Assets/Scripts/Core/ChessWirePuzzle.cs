@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ChessFight.Network
 {
-    public sealed class ChessWirePuzzle
+    public sealed partial class ChessWirePuzzle
     {
         public const int Size = 8;
         public enum Kind { Rook, Bishop, Knight, Pawn, Queen }
@@ -177,7 +177,7 @@ namespace ChessFight.Network
             }
             return result;
         }
-        public sealed class Course
+        public sealed partial class Course
         {
             readonly Layout[] stages;
             public int Stage { get; private set; }

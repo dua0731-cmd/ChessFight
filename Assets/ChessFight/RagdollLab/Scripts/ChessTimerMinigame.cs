@@ -117,7 +117,7 @@ namespace ChessFight.RagdollLab
             occupancy.ClearContacts();
             // Equal initial allocation. Switch to each teammate to change it with 1/2/3.
             for (int team = 0; team < 2; team++)
-            { Assign(team * 6 + 1, 1); Assign(team * 6 + 2, 1); }
+            { if (!Networked) { Assign(team * 6 + 1, 1); Assign(team * 6 + 2, 1); } }
             for (int side = 0; side < 2; side++)
             {
                 gates[side].SetActive(true);
@@ -127,13 +127,14 @@ namespace ChessFight.RagdollLab
         void Update()
         {
             if (players.Count == 0) return;
+            if (Networked) { NetworkUpdate(); return; }
             for (int i = 0; i < players.Count; i++)
                 if (respawnAt[i] > 0 && Time.time >= respawnAt[i])
                 {
                     respawnAt[i] = 0; roles[i] = 0; exited[i] = false;
                     Place(i, Waiting(i));
                 }
-            if (Application.isFocused)
+            if (Application.isFocused && !NetworkPanelOpen)
             {
                 if (Input.GetKeyDown(KeyCode.Escape)) { menu = !menu; RefreshCursor(); }
                 if (Input.GetKeyDown(KeyCode.Return)) { started = true; notice = "해체 진행 중 · 발판과 해체 인원을 배분하세요"; menu = false; RefreshCursor(); }
@@ -154,7 +155,7 @@ namespace ChessFight.RagdollLab
             DriveSparringBots();
             DriveCuttingBots();
             var local = players[selected];
-            if (Application.isFocused && !menu && respawnAt[selected] <= 0)
+            if (Application.isFocused && !menu && !NetworkPanelOpen && respawnAt[selected] <= 0)
             {
                 var move = GameSettings.Move;
                 if (move.sqrMagnitude > .01f) roles[selected] = 0;
@@ -177,7 +178,7 @@ namespace ChessFight.RagdollLab
         }
         void FixedUpdate()
         {
-            if (players.Count != 12) return;
+            if (players.Count != 12 || Networked && (!Authority || !NetworkReady)) return;
             MoveRocker();
             occupancy.Count(out riders[0], out riders[1]);
             if (!started) return;
@@ -205,7 +206,7 @@ namespace ChessFight.RagdollLab
                 var position = players[i].Hips.position;
                 bool inArena = Mathf.Abs(position.x) <= ArenaWidth * .5f && Mathf.Abs(position.z - ArenaCentreZ) <= ArenaDepth * .5f &&
                     position.y >= -5 && position.y <= 30;
-                direct[i] = (blastTeams & (1 << (i / 6))) != 0 &&
+                direct[i] = Present(i) && (blastTeams & (1 << (i / 6))) != 0 &&
                     ((expiredTeams & (1 << (i / 6))) != 0 || inArena);
                 if (!direct[i]) continue;
                 var direction = Waiting(i) - position; direction.y = 0;
@@ -213,7 +214,7 @@ namespace ChessFight.RagdollLab
             }
             for (int i = 0; i < players.Count; i++)
             {
-                if (direct[i]) continue;
+                if (direct[i] || !Present(i)) continue;
                 for (int victim = 0; victim < players.Count; victim++)
                     if (direct[victim] && (Holds(players[i].handL, players[victim]) || Holds(players[i].handR, players[victim])))
                     {
@@ -227,6 +228,7 @@ namespace ChessFight.RagdollLab
                 {
                     roles[i] = 0; LoseCutter(i);
                     respawnAt[i] = Time.time + delay;
+                    blastSerial[i]++; blastPositions[i] = players[i].Hips.position;
                     StartCoroutine(BlastFlash(players[i].Hips.position));
                     players[i].TakeHit(impulses[i], delay, 0, true);
                 }
@@ -267,11 +269,11 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i];
-                if (respawnAt[i] > 0 || i == selected || (roles[i] != 1 && roles[i] != 4) || pawn.State != PawnState.Active || pawn.Hips.position.y < 5.2f) continue;
+                if (respawnAt[i] > 0 || !CanDriveBot(i) || (roles[i] != 1 && roles[i] != 4) || pawn.State != PawnState.Active || pawn.Hips.position.y < 5.2f) continue;
                 RagdollPawn enemy = null; float nearest = float.PositiveInfinity;
                 foreach (var other in players)
                 {
-                    if (other.Team == pawn.Team || other.Hips.position.y < 5.2f) continue;
+                    if (!other.gameObject.activeInHierarchy || other.Team == pawn.Team || other.Hips.position.y < 5.2f) continue;
                     float distance = (other.Hips.position - pawn.Hips.position).sqrMagnitude;
                     if (distance < nearest) { enemy = other; nearest = distance; }
                 }
@@ -284,7 +286,7 @@ namespace ChessFight.RagdollLab
                     aim = delta.normalized, shove = shove, shoveHeld = shove });
             }
         }
-        void RefreshCursor() { Cursor.lockState = menu ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = menu; }
+        void RefreshCursor() { bool free = menu || NetworkPanelOpen; Cursor.lockState = free ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = free; }
         void OnApplicationFocus(bool focus) { if (initialized && !focus) { menu = true; RefreshCursor(); } }
         void UpdateViews()
         {
@@ -352,7 +354,8 @@ namespace ChessFight.RagdollLab
         void OnGUI()
         {
             if (players.Count == 0) return;
-            if (text == null)
+            if (Networked) { DrawNetworkHud(); return; }
+            if (text == null || title == null || buttonStyle == null)
             {
                 text = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 16, wordWrap = true };
                 title = new GUIStyle(text) { fontSize = 22, fontStyle = FontStyle.Bold };

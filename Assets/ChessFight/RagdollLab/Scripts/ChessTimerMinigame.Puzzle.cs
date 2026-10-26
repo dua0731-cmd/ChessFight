@@ -294,6 +294,7 @@ namespace ChessFight.RagdollLab
         }
         int ManualCutWire(int team)
         {
+            if (Networked) return -1;
             if (selected / 6 != team || rules.Teams[team].Finished || respawnAt[selected] > 0 ||
                 menu || !Application.isFocused || !Input.GetKey(KeyCode.F) || !hasCutter[selected] ||
                 players[selected].State != PawnState.Active || !players[selected].Grounded) return -1;
@@ -309,11 +310,14 @@ namespace ChessFight.RagdollLab
             {
                 var requests = new System.Collections.Generic.List<ChessWirePuzzle.CutRequest>();
                 int manual = ManualCutWire(team);
+                if (Networked)
+                    for (int i = team * 6; i < team * 6 + 6; i++)
+                    { int wire = NetworkCutWire(i); if (wire >= 0) requests.Add(new ChessWirePuzzle.CutRequest(i, wire)); }
                 if (manual >= 0) requests.Add(new ChessWirePuzzle.CutRequest(selected, manual));
                 for (int i = team * 6; i < team * 6 + 6; i++)
                 {
                     int target = helperCutWire[i];
-                    if (i == selected || !IsCuttingHelper(i) || menu || !Application.isFocused ||
+                    if (!IsCuttingHelper(i) || !Networked && (menu || !Application.isFocused) ||
                         target < 0 || target >= puzzles[team].Board.WireCount || target == manual ||
                         respawnAt[i] > 0 || !hasCutter[i] || !players[i].Grounded || players[i].State != PawnState.Active ||
                         rules.Teams[team].Finished || !Near(players[i].Hips.position, WirePoint(team, target))) continue;

@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R114(사용자, 10-26):** 체스타이머 씬 직접 Steam 방 생성/코드 참가(F2)·방장 물리/퍼즐 판정·입력/자세/전체 상태 공유·방장 이전 복구, 로비 연결 제외. 구조26·Core113·세션40·런타임7 통과, 실제2PC 미확인. [실행](Docs/KingRush/CHESS_TIMER_MULTIPLAYER.md).
+
 > **R113(사용자, 10-26):** 거인 체스 진행을 직전의4배(Replay Speed 2→8)로 변경, Inspector/런타임 상한16으로 확장. Unity 재확인 대기.
 
 > **R112(사용자, 10-23):** 거인 체스 기보2배속·좌표/공격90도 회전(백 왼쪽/흑 오른쪽), 기물 칸 전체 차단·금색 테두리·착지 겹침 탈출/봇 점유 회피. Unity 재확인 대기.
@@ -160,6 +162,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **체스타이머 멀티(R114)** | 씬 Play→F2 방 코드 연결·상태 동기화/방장 복구, 2PC 대기 |
 | **거인 체스 속도(R113)** | 원본8배속(직전의4배), Unity 대기 |
 | **거인 체스 조정(R112)** | 2배속·좌우 대국·기물 칸 통행 차단 |
 | **거인 체스(R111)** | 독립 GiantChessCourse 씬·82반수·빨간 칸 충격, Unity 대기 |
@@ -235,6 +238,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **체스타이머 멀티(R114)** | 기존 SteamSession/래그돌 프로토콜·전용 상태 채널34 | [실행](Docs/KingRush/CHESS_TIMER_MULTIPLAYER.md) |
 | **거인 체스 속도(R113)** | 코드/씬 기본8·상한16 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
 | **거인 체스 조정(R112)** | 좌표/공격 동기화·점유 칸 차단 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
 | **거인 체스(R111)** | GM 이동·기보/공격·12명·출구, 온라인 미연결 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
@@ -301,6 +305,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R114:** 같은 버전/서로 다른 Steam 계정2PC에서 체스타이머 씬 직접Play→F2 생성/참가→함께 시작. 판/타이머/잡기/절단/폭발/문·방장 종료 후 복구 확인. 로비 연결은 사용자 정정으로 제외.
 
 **R113:** Stop→Play, Replay Speed8·이동0.375초/경고0.625초의 실제 체감 확인.
 
@@ -452,7 +458,7 @@
 2. **프로젝트는 선택 패키지가 하나도 없어도 컴파일되어야 한다.** Safe Mode에서는 설치 스크립트가 돌지 않는다. 선택 패키지 코드는 전용 asmdef + `versionDefines` + `defineConstraints`로 가둔다. `ENABLE_INPUT_SYSTEM`을 패키지 설치 여부로 쓰지 않는다.
 3. **`Packages/manifest.json`·`packages-lock.json`이 바뀌면 Discard하지 말고 커밋한다.**
 4. **폴더 하나 = 어셈블리 하나.** `Game`·`Gameplay`는 Steam을 참조하지 않는다. `Core`는 Unity도 참조하지 않는다. → [Architecture/STRUCTURE](Docs/Architecture/STRUCTURE.md)
-5. **Steam 초기화·종료 소유자는 `NetworkRuntime` 하나다.** SteamManager를 따로 추가하지 않는다.
+5. **온라인 씬 흐름의 Steam 초기화·종료 소유자는 `NetworkRuntime` 하나다.** SteamManager를 따로 추가하지 않는다. R114 사용자 요청의 체스타이머 단독 Play는 기존 래그돌 테스트 씬처럼 독립 세션을 소유하되, `NetworkRuntime`이 있으면 접속기를 붙이지 않아 중복 초기화를 금지한다.
 6. **HUD에는 기본 테마가 없다.** ScrollView·Dropdown 같은 복합 컨트롤은 보이지 않는다. 평범한 VisualElement만 쓴다.
 7. **장애물 위치·회전은 `ObstacleClock` 시간의 순수 함수로만 계산한다(스스로 움직이는 kinematic 물체는 `KinematicObstacle : Obstacle`을 상속(R70, 이식 장치는 `ObstacleMotion : Obstacle`), 테스트 스크립트가 검사. 플레이어 상태로 움직이는 것은 `StateDrivenMover:` 주석을 달고 오프라인 전용).** 프레임마다 누적하지 않는다. 온라인 래그돌 참가자는 방장이 스냅샷에 실은 장애물 시각을 쓴다(R51).
 8. **클라이언트는 입력만 보낸다.** 좌표를 권위로 받지 않는다. 파티는 같은 팀에 통째로 예약한다.

@@ -10,7 +10,7 @@ namespace ChessFight.RagdollLab
         readonly int[] helperTarget = new int[12], helperCutWire = new int[12];
         readonly List<Vector3>[] helperPaths = new List<Vector3>[12];
         readonly int[] helperPathIndex = new int[12];
-        bool IsCuttingHelper(int index) => index % 6 >= 3 && index % 6 < 3 + cuttingHelpersPerTeam &&
+        bool IsCuttingHelper(int index) => CanDriveBot(index) && index % 6 >= 3 && index % 6 < 3 + cuttingHelpersPerTeam &&
             roles[index] != 1 && roles[index] != 4;
         void ResetHelperRoutes(int team)
         {
@@ -20,22 +20,24 @@ namespace ChessFight.RagdollLab
         void DriveCuttingBots()
         {
             for (int i = 0; i < helperCutWire.Length; i++) helperCutWire[i] = -1;
-            if (!started || menu || !Application.isFocused) return;
+            if (!started || !Networked && (menu || !Application.isFocused)) return;
             for (int team = 0; team < 2; team++)
             {
                 if (rules.Teams[team].Finished) continue;
                 var reserved = new HashSet<int>();
                 int manual = ManualCutWire(team); if (manual >= 0) reserved.Add(manual);
+                if (Networked) for (int i = team * 6; i < team * 6 + 6; i++)
+                { int wire = NetworkCutWire(i); if (wire >= 0) reserved.Add(wire); }
                 // Keep ongoing assignments before handing free wires to idle helpers.
                 for (int i = team * 6 + 3; i < team * 6 + 6; i++)
                 {
-                    if (i == selected || !IsCuttingHelper(i) || respawnAt[i] > 0 || players[i].State != PawnState.Active) continue;
+                    if (!IsCuttingHelper(i) || respawnAt[i] > 0 || players[i].State != PawnState.Active) continue;
                     if (hasCutter[i] && AvailableHelperWire(team, helperTarget[i], reserved)) reserved.Add(helperTarget[i]);
                     else { helperTarget[i] = -1; helperPaths[i] = null; }
                 }
                 for (int i = team * 6 + 3; i < team * 6 + 6; i++)
                 {
-                    if (i == selected || !IsCuttingHelper(i) || respawnAt[i] > 0 || players[i].State != PawnState.Active) continue;
+                    if (!IsCuttingHelper(i) || respawnAt[i] > 0 || players[i].State != PawnState.Active) continue;
                     roles[i] = 5;
                     var pos = players[i].Hips.position;
                     if (!hasCutter[i])

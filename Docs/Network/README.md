@@ -11,6 +11,10 @@
 | [PLAN_V0.1_STATUS.md](PLAN_V0.1_STATUS.md) | 승규 기획안 v0.1 항목별 상태, 승규 다음 작업 |
 | [VALIDATION.md](VALIDATION.md) | 실제 확인 기록과 Unity 확인 목록 |
 
+## 체스타이머 단독 씬 접속 (R114, 2026-10-26)
+
+로비를 거치지 않고 `ChessTimerMinigame.unity` Play→F2에서 방 생성/코드 참가한다. 기존 SteamSession/래그돌 입력·자세를 재사용하며 전용 채널34로 퍼즐/타이머 전체 상태를 공유한다. [실행 및 방장 복구](../KingRush/CHESS_TIMER_MULTIPLAYER.md). 실제2PC 확인 대기. 아래 초기 개요의 프로토콜/방장 이전 설명은 과거 기록이며 최신 동작은 HOST/SESSION 및 위 문서를 따른다.
+
 ## 1. 한눈에
 
 - **서버 없음.** Steam 로비로 파티(최대 6)와 경기 방(12)을 만들고, 경기 방을 만든 PC가 **호스트**로 모든 이동을 판정한다. 나머지는 입력만 보낸다.

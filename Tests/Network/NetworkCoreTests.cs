@@ -14,6 +14,25 @@ public static class NetworkCoreTests
     static HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
     static HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
+    static ChessTimerState TimerSnapshot(int seed = 114)
+    {
+        var boards = ChessWirePuzzle.GenerateCourse(new Random(seed));
+        var s = new ChessTimerState { Tick = 19, Round = 1, Started = true, Elapsed = 4, Rocker = -2, Rules = new ChessTimerRules() };
+        s.Courses[0] = new ChessWirePuzzle.Course(boards);
+        s.Courses[1] = new ChessWirePuzzle.Course(boards.Select(b => b.MirrorRanks()).ToArray());
+        for (int i = 0; i < 12; i++) s.Players[i] = new ChessTimerPlayerState { Id = (ulong)(i + 1), Role = i % 6 == 1 ? 1 : 0 };
+        return s;
+    }
+    static ChessTimerState TimerCopy(ChessTimerState s)
+    {
+        Check(ChessTimerProtocol.Read(ChessTimerProtocol.Write(91, s), 91, out var copy), "valid timer snapshot"); return copy;
+    }
+    static void SolveTimerStage(ChessWirePuzzle.Course c, int team)
+    {
+        var b = c.Current.Board;
+        var safe = Enumerable.Range(0, b.WireCount).Where(i => !b.Attacked(b.File(i), b.Rank(i))).ToArray();
+        c.Current.StepAll(7, safe.Select((wire, i) => new ChessWirePuzzle.CutRequest(team * 6 + i, wire)).ToArray());
+    }
     static int SafeWire(ChessWirePuzzle.Layout board)
     { for (int i = 0; i < board.WireCount; i++) if (!board.Attacked(board.File(i), board.Rank(i))) return i; throw new Exception("No safe wire"); }
     static void CheckWireBoard(ChessWirePuzzle.Layout board, int count, HashSet<int> answers)
@@ -344,6 +363,75 @@ public static class NetworkCoreTests
                 Check(r.Teams[0].GateOpen && r.Teams[1].GateOpen && !r.Teams[1].Finished, "exit availability separate from puzzle state");
                 Check(r.StepPuzzle(.1f, 0, 2, false, true) == 1 && r.Teams[1].Complete, "other team can still solve");
                 r.Reset(); Check(!r.Teams[0].GateOpen && !r.Teams[1].GateOpen, "reset closes both");
+            });
+            Test("Timer snapshot preserves both generated courses through all stages", () => {
+                for (int seed = 0; seed < 40; seed++)
+                {
+                    var state = TimerSnapshot(seed);
+                    for (int stage = 0; stage < 3; stage++)
+                    {
+                        var copy = TimerCopy(state);
+                        for (int team = 0; team < 2; team++)
+                        {
+                            var a = state.Courses[team].Current.Board; var b = copy.Courses[team].Current.Board;
+                            Check(copy.Courses[team].Stage == stage && a.PawnDirection == b.PawnDirection, "stage/direction");
+                            for (int i = 0; i < a.PieceCount; i++) Check(a.PieceKind(i) == b.PieceKind(i) && a.PieceFile(i) == b.PieceFile(i) && a.PieceRank(i) == b.PieceRank(i), "piece identity and position");
+                            for (int i = 0; i < a.WireCount; i++) Check(a.File(i) == b.File(i) && a.Rank(i) == b.Rank(i), "wire position");
+                            SolveTimerStage(state.Courses[team], team); SolveTimerStage(copy.Courses[team], team);
+                            if (stage < 2) Check(state.Courses[team].Advance() && copy.Courses[team].Advance(), "future board retained");
+                            else Check(copy.Courses[team].Complete, "final complete");
+                        }
+                        state = copy;
+                    }
+                }
+            });
+            Test("Timer migration resumes partial parallel cuts and switch settling", () => {
+                var s = TimerSnapshot(); var p = s.Courses[0].Current; int wire = SafeWire(p.Board);
+                p.StepAll(3.25f, new[] { new ChessWirePuzzle.CutRequest(2, wire) });
+                s.Rules.StepPuzzle(.2f, 3, 1, false, false);
+                var copy = TimerCopy(s); var remote = copy.Courses[0].Current;
+                Check(remote.WorkerAt(wire) == 2 && remote.WireProgress(wire) == 3.25f, "ongoing owner and seconds");
+                p.StepAll(3.75f, new[] { new ChessWirePuzzle.CutRequest(2, wire) });
+                remote.StepAll(3.75f, new[] { new ChessWirePuzzle.CutRequest(2, wire) });
+                Check(remote.Cut(wire) && remote.CorrectCuts == p.CorrectCuts, "continues exactly, no replay/extra cut");
+                s.Rules.StepPuzzle(.2f, 3, 1, false, false); copy.Rules.StepPuzzle(.2f, 3, 1, false, false);
+                Check(copy.Rules.PressedTeam == 0 && copy.Rules.Teams[0].Remaining == s.Rules.Teams[0].Remaining, "switch stability retained");
+            });
+            Test("Timer snapshots retain wrong-wire lock, blast, respawn and exits", () => {
+                var s = TimerSnapshot(); var p = s.Courses[0].Current;
+                int wrong = Enumerable.Range(0, p.Board.WireCount).First(i => p.Board.Attacked(p.Board.File(i), p.Board.Rank(i)));
+                p.StepAll(7, new[] { new ChessWirePuzzle.CutRequest(0, wrong) });
+                s.Rules.StepPuzzle(.1f, 0, 0, false, false, 60, 0);
+                s.Players[0].Cutter = true; s.Players[0].Blast = 3; s.Players[0].Respawn = 1.4f; s.Players[0].BlastX = -18; s.Players[0].Exited = true;
+                var c = TimerCopy(s);
+                Check(c.Courses[0].Current.LockLeft == 2 && c.Courses[0].Current.Cut(wrong), "lock and cut retained");
+                Check(c.Rules.Teams[0].Expired && c.Rules.Teams[0].GateOpen && c.Rules.Teams[1].GateOpen, "expiry and both gates");
+                Check(c.Players[0].Cutter && c.Players[0].Blast == 3 && c.Players[0].Respawn == 1.4f && c.Players[0].BlastX == -18 && c.Players[0].Exited, "player state");
+                Check(c.Rules.StepPuzzle(.1f, 0, 0, false, false) == 0, "migration must not replay expiry explosion");
+            });
+            Test("Timer simultaneous final cuts resolve identically after migration", () => {
+                var s = TimerSnapshot();
+                for (int t = 0; t < 2; t++) for (int stage = 0; stage < 2; stage++) { SolveTimerStage(s.Courses[t], t); Check(s.Courses[t].Advance(), "advance"); }
+                var c = TimerCopy(s);
+                for (int t = 0; t < 2; t++) SolveTimerStage(c.Courses[t], t);
+                Check(c.Rules.StepPuzzle(.1f, 0, 0, c.Courses[0].Complete, c.Courses[1].Complete) == 3 && c.Rules.Winner == -1, "tied finish blasts both");
+                var restored = TimerCopy(c);
+                Check(restored.Rules.Winner == -1 && restored.Rules.StepPuzzle(.1f, 0, 0, true, true) == 0, "winner persisted, no duplicate blast");
+            });
+            Test("Timer protocol rejects wrong rooms, truncation, duplicates and nonfinite state", () => {
+                var s = TimerSnapshot(); byte[] bytes = ChessTimerProtocol.Write(91, s);
+                Check(bytes.Length <= ChessTimerProtocol.MaxBytes, "bounded packet");
+                Check(!ChessTimerProtocol.Read(bytes, 92, out _), "wrong room");
+                for (int length = 0; length < bytes.Length; length++) Check(!ChessTimerProtocol.Read(bytes.Take(length).ToArray(), 91, out _), "truncated packet");
+                Check(!ChessTimerProtocol.Read(bytes.Concat(new byte[] { 0 }).ToArray(), 91, out _), "trailing bytes");
+                s.Players[1].Id = s.Players[0].Id; Check(!ChessTimerProtocol.Read(ChessTimerProtocol.Write(91, s), 91, out _), "duplicate owner");
+                s = TimerSnapshot(); s.Elapsed = float.NaN; Check(!ChessTimerProtocol.Read(ChessTimerProtocol.Write(91, s), 91, out _), "NaN");
+                s = TimerSnapshot(); s.Courses[0].Current.StepAll(1, new[] { new ChessWirePuzzle.CutRequest(8, 0) });
+                Check(!ChessTimerProtocol.Read(ChessTimerProtocol.Write(91, s), 91, out _), "opponent cannot own this cut");
+                bytes[20] = 2; Check(!ChessTimerProtocol.Read(bytes, 91, out _), "nonboolean started");
+                var fuzz = new Random(114); var valid = ChessTimerProtocol.Write(91, TimerSnapshot());
+                for (int n = 0; n < 500; n++)
+                { var changed = (byte[])valid.Clone(); changed[fuzz.Next(changed.Length)] = (byte)fuzz.Next(256); ChessTimerProtocol.Read(changed, 91, out _); }
             });
             Test("Physical mode never auto-defuses from elapsed time", () => {
                 var r = new ChessTimerRules(90, switchDelay: 0);
