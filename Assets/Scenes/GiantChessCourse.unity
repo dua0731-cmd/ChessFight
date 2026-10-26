@@ -245,7 +245,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 28d4f0ab3cd25124fa2163b4f19b7dd5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.LabCamera
   game: {fileID: 0}
   playerIndex: 0
@@ -367,16 +367,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18e0b0bb71737c1ad271adfc5d919d2a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.GiantChessCourse
   pawnPrefab: {fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}
   tuning: {fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}
-  replaySpeed: 8
-  tileSize: 18
+  tileSize: 16
+  replaySpeed: 5
   moveSeconds: 3
   warningSeconds: 5
   restSeconds: 2
-  knockbackSpeed: 24
+  knockbackSpeed: 12
   upwardSpeed: 9
   botsEnabled: 1
 --- !u!114 &1667498619
@@ -389,7 +389,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1bc1bc7506fbab4907fec6173c092907, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PhysicsProfile
   physicsRate: 120
   solverIterations: 24
