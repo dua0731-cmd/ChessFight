@@ -12,7 +12,7 @@ namespace ChessFight.RagdollLab
         public RagdollPawn pawnPrefab;
         public RagdollTuning tuning;
         [SerializeField, Min(10)] float tileSize = 18;
-        [SerializeField, Range(.25f, 4f), Tooltip("Replay speed only; does not speed up players or physics.")] float replaySpeed = 2;
+        [SerializeField, Range(.25f, 16f), Tooltip("Replay speed only; does not speed up players or physics.")] float replaySpeed = 8;
         [SerializeField, Min(1)] float moveSeconds = 3;
         [SerializeField, Min(1)] float warningSeconds = 5;
         [SerializeField, Min(.5f)] float restSeconds = 2;
@@ -238,7 +238,7 @@ namespace ChessFight.RagdollLab
             bool active = running && !menu && Application.isFocused;
             if (active)
             {
-                elapsed += Time.deltaTime * Mathf.Clamp(replaySpeed, .25f, 4f);
+                elapsed += Time.deltaTime * Mathf.Clamp(replaySpeed, .25f, 16f);
                 if (phase == 0 && elapsed >= restSeconds) BeginMove();
                 else if (phase == 1)
                 {

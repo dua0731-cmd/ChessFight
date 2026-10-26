@@ -4,10 +4,12 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-23**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-26**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R113(사용자, 10-26):** 거인 체스 진행을 직전의4배(Replay Speed 2→8)로 변경, Inspector/런타임 상한16으로 확장. Unity 재확인 대기.
+
 > **R112(사용자, 10-23):** 거인 체스 기보2배속·좌표/공격90도 회전(백 왼쪽/흑 오른쪽), 기물 칸 전체 차단·금색 테두리·착지 겹침 탈출/봇 점유 회피. Unity 재확인 대기.
 
 > **R111(사용자, 10-23):** 사용자41수/82반수 기보 기반 거인 GM 통과 씬: 18m 칸·기물 이동/착지·실제 공격 경고/밀치기·래그돌12명·시험 봇·출구. 기보/자동 검사 통과, Unity 미확인. [실행](Docs/KingRush/GIANT_CHESS_COURSE.md).
@@ -158,6 +160,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **거인 체스 속도(R113)** | 원본8배속(직전의4배), Unity 대기 |
 | **거인 체스 조정(R112)** | 2배속·좌우 대국·기물 칸 통행 차단 |
 | **거인 체스(R111)** | 독립 GiantChessCourse 씬·82반수·빨간 칸 충격, Unity 대기 |
 | **출구 합류(R110)** | 양 팀 출구→공용 통로→단일 다음 입구, Unity 대기 |
@@ -232,6 +235,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **거인 체스 속도(R113)** | 코드/씬 기본8·상한16 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
 | **거인 체스 조정(R112)** | 좌표/공격 동기화·점유 칸 차단 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
 | **거인 체스(R111)** | GM 이동·기보/공격·12명·출구, 온라인 미연결 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
 | **출구 합류(R110)** | 수평 바닥·난간·공용 입구 | [설명](Docs/KingRush/CHESS_TIMER_MINIGAME.md) |
@@ -297,6 +301,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R113:** Stop→Play, Replay Speed8·이동0.375초/경고0.625초의 실제 체감 확인.
 
 **R112:** Stop→Play, 좌우 백/흑 배치·2배속·공격 표시/피격 일치·기물 칸 차단·착지 탈출·캐슬링/F3 확인.
 
