@@ -54,10 +54,11 @@ namespace ChessFight.RagdollLab
 
         void KnightMarks(SwordFightSkills s, SwordFightSkillParams S, float alpha)
         {
+            if (Real(PieceKind.Knight)) { RealKnightMarks(s, S, alpha); return; }   // 10-25: outlines of light (RealKnight.cs)
             bool aim = s.Stage == SfStage.Aim, air = s.Stage == SfStage.Active;
             if (!aim && !air) return;
             Vector3 p = aim ? s.AimPoint : s.Point, dir = aim ? s.AimDir : s.Dir;
-            float k = aim ? 0.3f : Kit.Charge(s.StageTime, S.knightRise + S.knightHover);
+            float k = aim ? 0.3f : Kit.Charge(s.KnightClock, S.knightRise + S.knightHover);
             float cell = S.knightCell;
             // The square it comes down on.
             var land = new Warning { k = k, alpha = alpha, quiet = aim, fill = kit.knight };
@@ -139,7 +140,7 @@ namespace ChessFight.RagdollLab
                     if (owner == null || owner.Pawn == null) return false;
                     if (!kit.Held(x) && released < 0f) released = x.age;
                     if (released >= 0f) return false;   // it has landed: the impact draws them now
-                    float show = Mathf.Clamp01((owner.StageTime - S.knightRise) / Mathf.Max(0.05f, S.knightHover));
+                    float show = Mathf.Clamp01((owner.KnightClock - S.knightRise) / Mathf.Max(0.05f, S.knightHover));
                     Vector3 c = Kit.FloorUnder(owner.Point, 1.5f) + Vector3.up * 0.03f;
                     for (int i = 0; i < x.strips.Count; i++)
                     {
@@ -184,7 +185,7 @@ namespace ChessFight.RagdollLab
                 bool flying = s != null && pawn != null && s.Stage == SfStage.Active && s.Piece == PieceKind.Knight;
                 if (flying)
                 {
-                    float t = s.StageTime;
+                    float t = s.KnightClock;
                     if (!top && t >= rise)
                     {
                         top = true;
@@ -211,7 +212,7 @@ namespace ChessFight.RagdollLab
                 }
                 else if (pts.Count > 0) pts.RemoveAt(0);
                 while (pts.Count > 18) pts.RemoveAt(0);
-                if (pts.Count < 2) { trail.Hide(); return flying || fx.age < 0.1f; }
+                if (pts.Count < 2 || !BodyTrails) { trail.Hide(); return flying || fx.age < 0.1f; }
                 trail.Build(pts, i => (dive ? 0.44f : 0.3f) * i / Mathf.Max(1f, pts.Count - 1f), kit.Eye);
                 trail.Apply();
                 return true;

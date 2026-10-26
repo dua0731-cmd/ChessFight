@@ -28,11 +28,24 @@ namespace ChessFight.RagdollLab
     {
         /// <summary>The crater's radius and depth, how far its cracks run (m); how long it all stays once the sword is out and
         /// how long it takes to heal (s).</summary>
-        const float BreachRadius = 0.38f, BreachDepth = 0.2f, BreachCracks = 0.75f, BreachHold = 2.4f, BreachHeal = 0.6f;
+        // 10-25 (승규 님: "왕 바깥 원 부분을 조금 줄여줘"): the crater 0.38 → 0.3 m round, its cracks 0.75 → 0.55 m.
+        const float BreachRadius = 0.3f, BreachDepth = 0.2f, BreachCracks = 0.55f, BreachHold = 2.4f, BreachHeal = 0.6f;
 
         /// <summary>The wall's chips: the platform's pale stone.</summary>
         static readonly Kit.Palette ChipPale = new Kit.Palette("#CDD1D6", "#EEF0F3", "#9CA1A8", "#3A3A44");
         static readonly Kit.Palette ChipShade = new Kit.Palette("#B3B8BF", "#D5D9DE", "#80858C", "#3A3A44");
+        /// <summary>10-25 (승규 님: "파티클이 지금 회색이야 실제 부서진 벽 색에 따라서"): this breach's chips, from the wall
+        /// it broke - on the prototype board its brass trim (<see cref="chipA"/>) and the square's wood under it, else the
+        /// platform's own colour. <see cref="chipShare"/> of them are <see cref="chipA"/>.</summary>
+        Kit.Palette chipA = ChipPale, chipB = ChipShade;
+        float chipShare = 0.6f;
+
+        static Kit.Palette ChipsOf(Color c, float shade = 1f)
+        {
+            c = new Color(c.r * shade, c.g * shade, c.b * shade, 1f);
+            return new Kit.Palette { main = c, light = Color.Lerp(c, Color.white, 0.3f), deep = new Color(c.r * 0.62f, c.g * 0.62f, c.b * 0.62f, 1f),
+                ink = new Color(c.r * 0.3f, c.g * 0.3f, c.b * 0.3f, 1f) };
+        }
 
         /// <summary>Sparks off the blade in the stone: hot white-gold, no ink (the kit's gold drops read as coins here).</summary>
         static readonly Kit.Palette HotSpark = new Kit.Palette
@@ -110,7 +123,31 @@ namespace ChessFight.RagdollLab
             Vector3 at = Mathf.Abs(den) > 1e-3f ? hilt + d * (Vector3.Dot(s.EdgeAt - hilt, o) / den) : s.EdgeAt + Vector3.down * 0.16f;
             at.y = Mathf.Min(at.y, floor.Top - 0.04f);
             foreach (var old in breaches) if (old.king == s && old.released < 0f) old.released = kit.Clock;
-            var g = new Breach { king = s, uses = s.EdgeUses, at = at, outward = o, topY = floor.Top, bottomY = floor.Bottom, seed = Random.Range(0f, 40f) };
+            // What the wall is: on the prototype board (SwordFightArena, the platform hidden under it) its face is the brass
+            // trim, 6 cm thick, standing 3 cm out of the platform and 1 cm over its top, the square's wood behind it.
+            float top = floor.Top;
+            var arena = floor.Hidden ? FindFirstObjectByType<SwordFightArena>() : null;
+            Color wood = Color.white;
+            bool brass = arena != null && arena.Brass != null && arena.WoodAt(at, out wood);
+            if (brass)
+            {
+                at += o * 0.03f;
+                top += 0.01f;
+                chipA = ChipsOf(arena.Brass.color);
+                chipB = ChipsOf(wood);
+                chipShare = 0.5f;
+            }
+            else
+            {
+                var pr = floor.Platform != null ? floor.Platform.GetComponent<Renderer>() : null;
+                Color wall = pr != null && pr.sharedMaterial != null ? pr.sharedMaterial.color : new Color(0.8f, 0.82f, 0.84f);
+                chipA = ChipsOf(wall);
+                chipB = ChipsOf(wall, 0.85f);
+                chipShare = 0.6f;
+            }
+            var g = new Breach { king = s, uses = s.EdgeUses, at = at, outward = o, topY = top, bottomY = floor.Bottom, seed = Random.Range(0f, 40f) };
+            if (brass) { g.b.SetColor("_Inside", new Color(wood.r, wood.g, wood.b, 1f)); g.b.SetFloat("_Skin", 0.06f); }
+            else { g.b.SetColor("_Inside", new Color(1f, 1f, 1f, 0f)); g.b.SetFloat("_Skin", 0f); }
             if (s.Fighter != null && s.Fighter.SwordBody != null)
             {
                 var sw = s.Fighter.SwordBody.transform;
@@ -126,14 +163,14 @@ namespace ChessFight.RagdollLab
                 g.face.transform.SetPositionAndRotation(at + o * 0.002f, Quaternion.LookRotation(o, Vector3.up));
                 g.face.transform.localScale = new Vector3(2f * half, 2f * half, 1f);
                 g.top = BreachQuad("King breach (top)", out g.rt);
-                Vector3 lipTop = new Vector3(at.x, floor.Top + 0.002f, at.z);
+                Vector3 lipTop = new Vector3(at.x, top + 0.002f, at.z);
                 g.top.transform.SetPositionAndRotation(lipTop - o * (half * 0.5f), Quaternion.LookRotation(Vector3.up, -o));
                 g.top.transform.localScale = new Vector3(2f * half, half, 1f);
             }
             breaches.Add(g);
 
             // What breaks off: a spray of grit and chips, a few heavy chunks, the lip bursting, two pieces of it, dust.
-            Vector3 lip = new Vector3(at.x, floor.Top - 0.04f, at.z);
+            Vector3 lip = new Vector3(at.x, top - 0.04f, at.z);
             WallChips(at + o * 0.04f, o + Vector3.up * 0.5f, 26, 4.4f, 0.75f, 0.012f, 0.05f);
             WallChips(at + o * 0.05f, o * 0.9f + Vector3.up * 0.25f, 7, 2.4f, 0.5f, 0.055f, 0.11f);
             WallChips(lip + o * 0.03f, o * 0.5f + Vector3.up, 8, 2.8f, 0.5f, 0.02f, 0.055f);
@@ -198,6 +235,8 @@ namespace ChessFight.RagdollLab
                 float cracks = BreachCracks * Kit.EaseOut(age / (5f * F));
                 // A fresh break glows gold a moment (the stab's heat), then it is stone.
                 float glow = 1f - age / 0.22f;
+                // 10-25, for real: no glow - the break is stone and wood from the first frame, its cracks dark.
+                if (RealEdge(ChessFight.Network.PieceKind.King)) glow = 0f;
                 var gold = kit.king;
                 var b = g.b;
                 b.SetVector("_Origin", g.at);
@@ -249,6 +288,19 @@ namespace ChessFight.RagdollLab
         /// <paramref name="max"/>: tumbling, falling away past the edge. One that comes down on the top lies there a moment, or,
         /// with <paramref name="stayWith"/>, until that breach heals (rubble round it).
         /// </summary>
+        Material chipMat;
+
+        /// <summary>10-25 (Sword Fight for real): chips, lip pieces and rim shards are lit as the board is (URP Lit, their own
+        /// colour, no ink, no bands).</summary>
+        Material ChipMaterial()
+        {
+            if (chipMat != null) return chipMat;
+            chipMat = ChessFight.Game.LitMaterials.NewLit(Color.white, 0.25f);
+            chipMat.hideFlags = HideFlags.HideAndDontSave;
+            chipMat.name = "Real chips";
+            return chipMat;
+        }
+
         void WallChips(Vector3 at, Vector3 dir, int n, float speed, float spread, float min, float max, Breach stayWith = null)
         {
             var floor = SwordFightEdgeFloor.Current;
@@ -257,7 +309,7 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < n; i++)
             {
                 var mesh = kit.RoundBox(new Vector3(1f, Random.Range(0.4f, 0.8f), Random.Range(0.55f, 1f)), 0.1f);
-                var chip = new Kit.Prop(kit, mesh, Random.value < 0.6f ? ChipPale : ChipShade, "Wall chip") { inkWidth = 0.006f };
+                var chip = new Kit.Prop(kit, mesh, Random.value < chipShare ? chipA : chipB, "Wall chip", null, ChipMaterial()) { inkWidth = 0f };
                 Vector3 v = (dir + Random.insideUnitSphere * spread).normalized * speed * Random.Range(0.5f, 1.1f);
                 float size = Random.Range(min, max);
                 Vector3 p = at;
@@ -336,7 +388,7 @@ namespace ChessFight.RagdollLab
         void LipPiece(Vector3 at, Vector3 o, float size, float power)
         {
             var mesh = kit.RoundBox(new Vector3(1f, 0.55f, 0.7f), 0.08f);
-            var piece = new Kit.Prop(kit, mesh, ChipPale, "Lip piece") { inkWidth = 0.007f };
+            var piece = new Kit.Prop(kit, mesh, chipA, "Lip piece", null, ChipMaterial()) { inkWidth = 0f };
             Vector3 side = Vector3.Cross(Vector3.up, o);
             Vector3 v = (o * 1.3f + Vector3.up * 1.4f + side * Random.Range(-0.5f, 0.5f)) * power;
             Vector3 p = at;
@@ -371,7 +423,7 @@ namespace ChessFight.RagdollLab
                 Vector3 p = g.at + r * (BreachRadius * Random.Range(0.92f, 1.1f));
                 // None over the lip (no wall there) or past the bottom.
                 if (p.y > g.topY - 0.035f || p.y < g.bottomY + 0.04f) continue;
-                var shard = new Kit.Prop(kit, mesh, i % 3 == 0 ? ChipShade : ChipPale, "Rim shard") { inkWidth = 0.006f };
+                var shard = new Kit.Prop(kit, mesh, i % 3 == 0 ? chipB : chipA, "Rim shard", null, ChipMaterial()) { inkWidth = 0f };
                 float size = Random.Range(0.09f, 0.16f), tilt = Random.Range(18f, 38f), yaw = Random.Range(-25f, 25f), roll = Random.Range(-15f, 15f);
                 float delay = Random.Range(0f, 2f) * F;
                 var f = kit.Run(60f, (fx, d) =>

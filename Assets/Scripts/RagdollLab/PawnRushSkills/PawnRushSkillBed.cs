@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
@@ -66,6 +67,9 @@ namespace ChessFight.RagdollLab
         void Awake()
         {
             log.Clear();
+            // The numbers come from the code every Play (10-25): the scene saves none of them, but an open scene kept the
+            // old ones in memory, so a changed default (the bishop's bind) did not show until the scene was reopened.
+            JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(new PawnRushSkillParams()), skills);
             RagdollPawn.SkillLog += OnSkill;
             // The skill network test (R112, branch skill-network-test): the lab's tools stand down before LabGame.Start,
             // and the test screen draws the numbers.
@@ -296,8 +300,8 @@ namespace ChessFight.RagdollLab
         {
             if (rookGround != null) return;
             rookGround = new GameObject("룩 시험장 (R153)").transform;
-            var stone = new Material(Shader.Find("Standard")) { color = new Color(0.78f, 0.72f, 0.62f) };
-            var wood = new Material(Shader.Find("Standard")) { color = new Color(0.55f, 0.38f, 0.22f) };
+            var stone = new Material(LitMaterials.Lit) { color = new Color(0.78f, 0.72f, 0.62f) };
+            var wood = new Material(LitMaterials.Lit) { color = new Color(0.55f, 0.38f, 0.22f) };
             void Block(string label, Vector3 center, Vector3 size, Material m)
             {
                 var b = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -378,7 +382,7 @@ namespace ChessFight.RagdollLab
             PieceKind.Pawn => "F = 1.5 m 걸음 (방향키 방향) · 0.1~0.8초 안에 F 한 번 더 = 두 번째 걸음\n두 번째 걸음은 앞쪽 ±60°·3 m 안의 넘어진 팀원(청록 고리)이나 서 있는 적(주황 고리)에게 휘어 들어감 · 대상 없으면 안 나감\n곧게 부딪히면 밀침, 대각선이면 넘어뜨림 · 넘어진 팀원은 부축 (기상 보호 1.5초)",
             PieceKind.Queen => "F = 0.35초 예고(금빛 원이 조여들고 작은 불빛이 피어오름) 뒤 반경 3 m 충격파\n1.5 m 안은 넘어지고 바깥은 밀림 · 후딜 0.45초",
             PieceKind.Rook => "F = 조준: 8 m 흰 선이 마우스 방향을 따라감 (걸을 수 있음, Shift 질주 X, 위아래 ±45°)\n좌클릭 = 사슬 던지기 · 우클릭/F = 취소 · 던진 순간부터 끝날 때까지 룩은 제자리\n적: 자동으로 걸려 룩 앞 1.5 m로 끌려오고 휘청 · 팀원: 2초 안에 우클릭으로 잡으면 룩 옆으로\n룩이 맞거나 휘청하면 사슬이 끊김 · 쿨 8초 (팀원이 안 잡으면 4초)",
-            PieceKind.Bishop => "F = 조준: 반투명 X가 마우스 위치를 따라감 (근거리 4.5 m 안)\n좌클릭 = 설치 · 우클릭/F = 취소 · 0.5초 뒤 무장, 6초\n걸린 적은 1.0초 묶임 · 적 2명 걸면 끊김\n비숍이 덫에서 6 m 넘게 멀어지거나 넘어지면 줄이 풀려 사라짐 (5 m부터 실이 팽팽하게 깜빡임)",
+            PieceKind.Bishop => "F = 조준: 반투명 X가 마우스 위치를 따라감 (근거리 4.5 m 안)\n좌클릭 = 설치 · 우클릭/F = 취소 · 0.5초 뒤 무장, 6초\n걸린 적은 3.0초 묶임 · 적 2명 걸면 끊김\n비숍이 덫에서 6 m 넘게 멀어지거나 넘어지면 줄이 풀려 사라짐 (5 m부터 실이 팽팽하게 깜빡임)",
             PieceKind.Knight => "앞쪽 ±60°·1.5~5 m 안의 서 있는 적 머리 위에 빨간 고리가 뜨면 F = 그 적에게 도약 (대상 없으면 F 무시)\n체공 0.8~1.14초 동안 적을 따라감 (초당 3 m) · 머리 찍기 = 넘어뜨림, 옆에 착지\n포크: 착지 1.5 m 안 다른 적 휘청 0.4초 · 빗나가면 휘청 없음 · 점프 중에도 대상 있으면 가능 · 쿨 7초",
             PieceKind.King => "F = 같은 구간 팀원 목록 → 좌클릭으로 2명까지 고르기 → F로 부르기 · 우클릭 = 닫기\n불린 팀원이 3초 안에 자기 F → 12 cm 떠서 0.6초 만에 킹 뒤 칸으로 (벽 통과 · 오는 동안 무적)\n부르는 동안 킹이 맞으면 출발 안 한 팀원 취소 · 더미는 0.8초 뒤 스스로 대답",
             _ => "",

@@ -418,7 +418,8 @@ namespace ChessFight.RagdollLab
         {
             if (bishop == null || bishop.Pawn == null || king == null)
             {
-                if (king != null) BlockBeat(king, bishop != null ? bishop.Pawn : null);
+                if (king != null && Real(PieceKind.King)) RealBlockBeat(king, bishop != null ? bishop.Pawn : null);
+                else if (king != null) BlockBeat(king, bishop != null ? bishop.Pawn : null);
                 return;
             }
             var hands = new[] { new GrabHand(kit, "Bishop hand L (cut)"), new GrabHand(kit, "Bishop hand R (cut)") };
@@ -467,6 +468,19 @@ namespace ChessFight.RagdollLab
                         arms[i].Apply();
                     }
                     else arms[i].Hide();
+                }
+                if (!cut && a >= HandFly && Real(PieceKind.King))
+                {
+                    // 10-25, for real: his blade through both wrists at his ankles, steel sparks off it, the beat.
+                    cut = true;
+                    for (int i = 0; i < 2; i++)
+                    {
+                        Vector3 h = ends[i] + Vector3.up * 0.12f;
+                        SteelClash(h, -ins[i], 0.6f);
+                        off[i] = (-ins[i] + Vector3.Cross(Vector3.up, ins[i]) * (i == 0 ? 0.6f : -0.6f)).normalized * 2.2f;
+                        spin[i] = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), Random.Range(-1f, 1f)) * 60f;
+                    }
+                    RealBlockBeat(king, bishop.Pawn);
                 }
                 if (!cut && a >= HandFly)
                 {
@@ -537,7 +551,6 @@ namespace ChessFight.RagdollLab
             kit.Drops(e.at, e.dir + Vector3.up * 0.5f, kit.king, hard ? 6 : 4, 8f);
             float until = hard ? 0.9f : 0.55f;
             Trail(e.by, pawn, kit.king, hard ? 0.5f : 0.36f, null, 2, until + 0.35f);
-            if (hard) Afterimage(pawn, kit.king, 1.3f, 0.3f, 0.6f, true);
         }
 
         // ---------------------------------------------------------------- the counter

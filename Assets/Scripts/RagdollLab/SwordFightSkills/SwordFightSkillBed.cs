@@ -281,6 +281,14 @@ namespace ChessFight.RagdollLab
         public static void Place(SwordFightPawn f, Vector3 ground, Vector3 face)
         {
             if (f == null || !f.Alive) return;
+            // The spots are laid out for the 14 m platform: on a wider floor (the 16 m board, SwordFightArenaStage) they
+            // spread out with it, so an edge test still stands as near its edge.
+            var floor = SwordFightEdgeFloor.Current;
+            if (floor != null && floor.Found && floor.Area.width > 2f * Half + 0.1f)
+            {
+                float k = floor.Area.width * 0.5f / Half;
+                ground = new Vector3(ground.x * k, ground.y, ground.z * k);
+            }
             f.Pawn.Teleport(ground + Vector3.up * (f.Pawn.standHeight + 0.02f), face);
             f.SetInput(default);
             f.Skills?.ResetSkill();

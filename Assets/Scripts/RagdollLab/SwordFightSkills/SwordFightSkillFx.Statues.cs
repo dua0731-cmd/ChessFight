@@ -17,9 +17,138 @@ namespace ChessFight.RagdollLab
     /// </summary>
     public partial class SwordFightSkillFx
     {
-        static readonly PieceKind[] StatueKinds = { PieceKind.Pawn, PieceKind.Rook, PieceKind.Knight, PieceKind.Bishop };
+        /// <summary>10-25 (승규 님's four Tripo towers: "실제 체스 색갈에 맞게 구어주고 폴리곤 수 조정해주고 실사에 맞게 넣어줘",
+        /// then "광택 재질 말고 무광으로, 소드 파이트 바닥 색으로 잘 조합해줘"): the knight, bishop, king and queen come up as
+        /// carved masonry pieces, Resources/SwordFightStatues (25k triangles each from about 225k, normal map and AO baked
+        /// from the full mesh, a turned-wood grain), matte, boxwood for white and walnut-ebony for black (a shade lighter
+        /// and darker than the board's maple and walnut, so they stand apart from the squares). The procedural pawn and rook
+        /// below stay for a piece without a model.</summary>
+        static readonly PieceKind[] StatueKinds = { PieceKind.Knight, PieceKind.Bishop, PieceKind.King, PieceKind.Queen };
         /// <summary>The statues stand this big next to the menu figures (about 1.4 m tall: a tower over the fighters).</summary>
         const float StatueScale = 0.75f;
+        /// <summary>A model tower's height (m): the procedural ones' 2.1 × <see cref="StatueScale"/>.</summary>
+        const float StatueModelHeight = 1.6f;
+
+        /// <summary>A model tower: its body, the rubble round its foot (each stone on its own, where it lay, 승규 님 10-25:
+        /// "바닥에 나올 때 저 부품들이 실제 파편처럼 튀겼으면"), which way its front faces (the knight's snout is along +x), its
+        /// materials.</summary>
+        struct StatueModel
+        {
+            public Mesh mesh;
+            public List<(Mesh mesh, Vector3 at)> rubble;
+            public float yaw;
+            public Material white, black;
+        }
+
+        readonly Dictionary<PieceKind, StatueModel> statueModels = new Dictionary<PieceKind, StatueModel>();
+
+        bool StatueModelOf(PieceKind kind, out StatueModel model)
+        {
+            if (statueModels.TryGetValue(kind, out model)) return model.mesh != null;
+            string path = "SwordFightStatues/" + kind;
+            var go = Resources.Load<GameObject>(path);
+            model = new StatueModel
+            {
+                rubble = new List<(Mesh, Vector3)>(),
+                yaw = kind == PieceKind.Knight ? -90f : 0f,
+                white = Resources.Load<Material>(path + "_White"),
+                black = Resources.Load<Material>(path + "_Black"),
+            };
+            // Tools: the body is "Body", the rubble "Chunk_NN" (each centred on its own origin, placed where it lay).
+            if (go != null)
+                foreach (var mf in go.GetComponentsInChildren<MeshFilter>())
+                {
+                    if (mf.name.StartsWith("Chunk")) model.rubble.Add((mf.sharedMesh, mf.transform.localPosition));
+                    else if (model.mesh == null || mf.name == "Body") model.mesh = mf.sharedMesh;
+                }
+            if (model.white == null || model.black == null) model.mesh = null;
+            statueModels[kind] = model;
+            return model.mesh != null;
+        }
+
+        /// <summary>The rubble at a tower's foot thrown off as it bursts up: each stone out from the tower and up, tumbling,
+        /// bouncing on the board and coming to rest, then sinking out of sight a while after the tower has gone.</summary>
+        void StatueRubble(StatueModel model, Vector3 floor, Quaternion yaw, float scale, Material mat)
+        {
+            var turn = yaw * Quaternion.Euler(0f, model.yaw, 0f);
+            Vector3 axis = model.mesh.bounds.center;
+            axis.y = 0f;
+            var stones = new List<RubbleStone>();
+            foreach (var (mesh, at) in model.rubble)
+            {
+                var t = new GameObject("Statue rubble", typeof(MeshFilter), typeof(MeshRenderer)).transform;
+                t.SetParent(kit.root, false);
+                t.GetComponent<MeshFilter>().sharedMesh = mesh;
+                t.GetComponent<MeshRenderer>().sharedMaterial = mat;
+                t.SetPositionAndRotation(floor + turn * (at * scale), turn);
+                t.localScale = Vector3.one * scale;
+                Vector3 e = mesh.bounds.extents;
+                // Its thinnest way: what it lies on when it comes to rest (a slab flat, not up on its edge).
+                Vector3 thin = e.x <= e.y && e.x <= e.z ? Vector3.right : e.y <= e.z ? Vector3.up : Vector3.forward;
+                e *= scale;
+                float half = Mathf.Min(e.x, e.y, e.z);
+                // Out along where it lay (the bigger the stone, the less far it goes), and up.
+                Vector3 out_ = turn * new Vector3(at.x - axis.x, 0f, at.z - axis.z);
+                out_.y = 0f;
+                out_ = out_.sqrMagnitude > 1e-6f ? out_.normalized : Vector3.forward;
+                float heft = Mathf.Clamp01(e.magnitude / 0.25f);
+                Vector3 v = Quaternion.AngleAxis(Random.Range(-25f, 25f), Vector3.up) * out_ * Random.Range(0.7f, 1.7f) * (1.2f - 0.5f * heft)
+                    + Vector3.up * Random.Range(1.7f, 3.0f) * (1.15f - 0.4f * heft);
+                stones.Add(new RubbleStone { t = t, v = v, spin = Random.onUnitSphere * Random.Range(300f, 900f), half = half, thin = thin });
+            }
+            const float Life = 2.4f, Sink = 0.5f;
+            var f = kit.Run(Life, (fx, d) =>
+            {
+                foreach (var s in stones)
+                {
+                    if (s.t == null) continue;
+                    if (!s.still)
+                    {
+                        s.v += Physics.gravity * d;
+                        s.t.position += s.v * d;
+                        s.t.rotation = Quaternion.AngleAxis(s.spin.magnitude * d, s.spin.normalized) * s.t.rotation;
+                        float low = floor.y + s.half * 0.6f;
+                        if (s.t.position.y < low && s.v.y < 0f)
+                        {
+                            // A bounce: most of the fall lost to the wood, the slide and the spin cut down.
+                            s.t.position = new Vector3(s.t.position.x, low, s.t.position.z);
+                            s.v = new Vector3(s.v.x * 0.45f, -s.v.y * 0.28f, s.v.z * 0.45f);
+                            s.spin *= 0.4f;
+                            if (s.v.y < 0.5f)
+                            {
+                                // At rest: tipped over onto its broad side, sitting on the board.
+                                s.still = true;
+                                s.slide = new Vector3(s.v.x, 0f, s.v.z);
+                                Vector3 w = s.t.rotation * s.thin;
+                                s.rest = Quaternion.FromToRotation(w, Vector3.Dot(w, Vector3.up) >= 0f ? Vector3.up : Vector3.down) * s.t.rotation;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        float k = 1f - Mathf.Exp(-18f * d);
+                        s.t.rotation = Quaternion.Slerp(s.t.rotation, s.rest, k);
+                        s.slide *= Mathf.Exp(-8f * d);
+                        Vector3 p = s.t.position + s.slide * d;
+                        p.y = Mathf.Lerp(p.y, floor.y + s.half, k);
+                        s.t.position = p;
+                    }
+                    if (fx.age > Life - Sink) s.t.position += Vector3.down * (s.half * 2.6f / Sink) * d;
+                }
+                return true;
+            });
+            f.end = () => { foreach (var s in stones) if (s.t != null) Destroy(s.t.gameObject); };
+        }
+
+        /// <summary>One stone of a tower's rubble in flight or at rest.</summary>
+        sealed class RubbleStone
+        {
+            public Transform t;
+            public Vector3 v, spin, slide, thin;
+            public float half;
+            public bool still;
+            public Quaternion rest;
+        }
 
         static readonly Kit.Palette StoneLight = new Kit.Palette("#CFC7B8", "#EEEAE0", "#8F877A", "#2B2620");
         static readonly Kit.Palette StoneDark = new Kit.Palette("#8F877A", "#B7AE9F", "#6F6658", "#2B2620");
@@ -64,28 +193,50 @@ namespace ChessFight.RagdollLab
         void Statue(PieceKind kind, Vector3 c, Vector3 dir, RagdollPawn caster)
         {
             if (!FloorAt(c, out Vector3 floor)) return;   // no floor there: nothing comes up
-            var parts = StatueParts(kind);
             var root = new GameObject($"Rook statue ({kind})").transform;
             root.SetParent(kit.root, false);
             var props = new List<Kit.Prop>();
-            foreach (var part in parts)
+            float height = 0f, scale = StatueScale;
+            bool modelled = StatueModelOf(kind, out var model);
+            Material stone = null;
+            if (modelled)
             {
-                var p = new Kit.Prop(kit, part.fill, part.colors, "Statue part", root) { inkWidth = part.ink };
-                p.t.GetChild(0).GetComponent<MeshFilter>().sharedMesh = part.line;
-                p.t.localPosition = part.at;
-                p.t.localRotation = part.rot;
-                p.t.localScale = part.scale;
-                props.Add(p);
+                // The carved tower: lit as the board is, no ink rim and no white flash.
+                var body = new GameObject("Statue model", typeof(MeshFilter), typeof(MeshRenderer)).transform;
+                body.SetParent(root, false);
+                body.localRotation = Quaternion.Euler(0f, model.yaw, 0f);
+                body.GetComponent<MeshFilter>().sharedMesh = model.mesh;
+                stone = caster != null && caster.Team == ChessFight.Gameplay.Teams.Black ? model.black : model.white;
+                body.GetComponent<MeshRenderer>().sharedMaterial = stone;
+                height = model.mesh.bounds.max.y;
+                scale = StatueModelHeight / height;
+            }
+            else
+            {
+                var parts = StatueParts(kind);
+                foreach (var part in parts)
+                {
+                    var p = new Kit.Prop(kit, part.fill, part.colors, "Statue part", root) { inkWidth = part.ink };
+                    p.t.GetChild(0).GetComponent<MeshFilter>().sharedMesh = part.line;
+                    p.t.localPosition = part.at;
+                    p.t.localRotation = part.rot;
+                    p.t.localScale = part.scale;
+                    props.Add(p);
+                }
+                foreach (var part in parts) height = Mathf.Max(height, part.at.y + part.fill.bounds.max.y * part.scale.y);
             }
             // How far down it starts: its whole height, stretched as it is in its first frame, under the floor.
-            float height = 0f;
-            foreach (var part in parts) height = Mathf.Max(height, part.at.y + part.fill.bounds.max.y * part.scale.y);
-            float H = (height * 1.16f + 0.05f) * StatueScale;
+            float H = (height * 1.16f + 0.05f) * scale;
             Vector3 back = -Kit.FlatDir(dir, Vector3.forward);
             Quaternion yaw = Quaternion.LookRotation(Quaternion.AngleAxis(Random.Range(-22f, 22f), Vector3.up) * back, Vector3.up);
-            kit.Release(new List<Vector3> { floor + Vector3.up * 0.016f }, dir, caster, 1.45f);
-            kit.DustRing(floor, 5, 0.85f, null, 0.28f, 0.5f);
-            kit.Drops(floor + Vector3.up * 0.3f, Vector3.up, Kit.Stone, 3, 6f);
+            if (!Real(PieceKind.Rook)) kit.Release(new List<Vector3> { floor + Vector3.up * 0.016f }, dir, caster, 1.45f);   // 10-25, for real: no lit square
+            // Splinters of the square it breaks out of (the board's maple or walnut), not grey stone.
+            var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
+            Color wood = FloorWood(floor);
+            chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
+            WallChips(floor + Vector3.up * 0.04f, Vector3.up, 9, 3.4f, 0.8f, 0.012f, 0.045f);
+            chipA = keepA; chipB = keepB; chipShare = keepShare;
+            if (modelled) StatueRubble(model, floor, yaw, scale, stone);
             float wobble = Random.Range(0f, 6.28f);
             void Pose(float a)
             {
@@ -96,7 +247,7 @@ namespace ChessFight.RagdollLab
                 float sy = 1f + 0.16f * stretch - 0.12f * squash, sxz = 1f - 0.07f * stretch + 0.07f * squash;
                 float lean = a >= 7f && a < 20f ? Mathf.Sin(a * 0.45f + wobble) * 3f * (1f - (a - 7f) / 13f) : 0f;
                 root.SetPositionAndRotation(floor + Vector3.up * (H * (up - 1f) - 0.02f), yaw * Quaternion.Euler(0f, 0f, lean));
-                root.localScale = new Vector3(sxz, sy, sxz) * StatueScale;
+                root.localScale = new Vector3(sxz, sy, sxz) * scale;
                 foreach (var p in props)
                 {
                     p.flash = a < 2f ? 1f : 0f;
@@ -334,6 +485,7 @@ namespace ChessFight.RagdollLab
             foreach (var m in statueMeshes) if (m != null) Destroy(m);
             statueMeshes.Clear();
             statues.Clear();
+            statueModels.Clear();   // the meshes and materials are assets: only forgotten
             smoothSphere = null;
         }
     }

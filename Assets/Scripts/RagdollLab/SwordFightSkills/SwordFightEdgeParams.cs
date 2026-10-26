@@ -52,6 +52,8 @@ namespace ChessFight.RagdollLab
         [Tooltip("베인 적이 위로 뜨는 속도 (m/s)")]
         public float queenFlingUp = 4.5f;
         public float queenRecovery = 0.4f;
+        [Tooltip("10-25 (승규 님: \"베인 뒤 한 박자 늦게 반응\"): 베고 지나간 뒤 적이 반응(날아감)하기까지 (초). 그동안 적은 그 자리에 굳음")]
+        public float queenDelay = 0.35f;
 
         [Header("룩 · 성벽 붕괴")]
         public float rookCooldown = 18f;

@@ -28,8 +28,12 @@ namespace ChessFight.RagdollLab
         public float kingCounterPush = 2.8f;
         [Tooltip("R130: 막은 뒤 반격(한 바퀴 베기)까지 멈칫하는 박자 (초)")]
         public float kingCounterBeat = 0.16f;
-        [Tooltip("반격: 한 바퀴 돌며 베는 시간 (초). R130: 0.15 → 0.34 (\"더 연출과 액션을\")")]
+        [Tooltip("반격: 막은 상대 쪽으로 크게 한 번 베는 시간 (초). R130: 0.15 → 0.34 (\"더 연출과 액션을\"). 10-25: 한 바퀴 돌기 → 앞으로 대각선 베기")]
         public float kingCounterTime = 0.34f;
+        [Tooltip("10-25 (승규 님: \"회전하는 것 보다 움직이면서도 막을 수 있게\"): 받아내기 자세·반격 중 걷는 빠르기 (1 = 평소)")]
+        public float kingGuardMove = 0.7f;
+        [Tooltip("10-25: 반격이 닿는 앞쪽 부채꼴 (도, 막은 상대 쪽 가운데)")]
+        public float kingCounterArc = 150f;
         public float kingRecovery = 0.4f;
         [Tooltip("받아낼 칼이 오지 않았을 때의 빈틈")]
         public float kingWhiff = 0.6f;
@@ -86,6 +90,8 @@ namespace ChessFight.RagdollLab
         public float knightMinRange = 1.5f;
         [Tooltip("체스판 한 칸 (m): 착지한 칸에서 나이트가 노리는 여덟 칸 (L자: 두 칸 가고 한 칸 꺾은 자리)")]
         public float knightCell = 1.25f;
+        [Tooltip("뛰기 전 웅크리는 시간 (s): 0이면 바로 뜀 (10-26 몸 동작)")]
+        public float knightGather = 0.07f;
         [Tooltip("높이 날아오르는 시간 (s)")]
         public float knightRise = 0.3f;
         [Tooltip("꼭대기에 머무는 시간 (s): 노리는 칸들이 드러남")]

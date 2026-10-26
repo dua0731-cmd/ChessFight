@@ -59,18 +59,34 @@ namespace ChessFight.RagdollLab
             { "QueenThrust", 0.8f }, { "QueenHit", 0.85f }, { "QueenStop", 0.55f },
             { "RookSlam", 0.9f }, { "RookHit", 0.8f }, { "RookBlocked", 0.7f },
             { "BishopFire", 0.75f }, { "BishopPin", 0.85f }, { "BishopSet", 0.7f },
-            { "KnightLeap", 0.75f }, { "KnightLand", 0.85f }, { "KnightHit", 0.8f },
+            { "KnightLeap", 1f }, { "KnightLand", 0.85f }, { "KnightHit", 0.8f },
             { "Interrupted", 0.55f },
-            { "KingStab", 0.9f }, { "QueenMark", 0.9f }, { "RookCollapse", 0.95f }, { "BishopReach", 0.85f }, { "KnightFlip", 0.9f },
+            { "KingStab", 0.9f }, { "QueenMark", 0.9f }, { "RookCollapse", 0.95f }, { "BishopReach", 0.85f }, { "KnightFlip", 1f },
+            // 10-25 (승규 님: "칼집에서 뽑는 소리, 베인 뒤 한 박자 늦게 반응"): the queen's draw as she goes through, and the cut a beat later.
+            { "QueenBlink", 0.9f }, { "QueenCut", 0.9f },
+            // 10-26 later (승규 님): KnightFlip, QueenThrust, KingVault (stronger, cinematic), BishopReach and BishopSet are
+            // new realistic takes in place of the old ones.
+            // 10-26, the realistic effects' own sounds (ElevenLabs): the knight's kick landing,
+            // the queen's sparks on the thrust and on the hit, the king's vault off the sword and its landing, the bishop's catch.
+            { "KnightKickHit", 0.85f }, { "QueenThrustSparks", 0.55f }, { "QueenHitSparks", 0.6f },
+            { "KingVault", 0.75f }, { "KingLand", 0.85f }, { "BishopCatch", 0.75f }, { "RookTremble", 0.85f },
+        };
+
+        /// <summary>Sounds laid over a moment's own, started with it and never delayed (10-26): the queen's sparks.</summary>
+        static readonly Dictionary<string, string[]> Layers = new Dictionary<string, string[]>
+        {
+            { "QueenThrust", new[] { "QueenThrustSparks" } },
+            { "QueenHit", new[] { "QueenHitSparks" } },
         };
 
         /// <summary>The edge skills' sounds (R116): each belongs to its skill while it runs and stops if that is called off.
         /// The rook's plays when its chunk falls (the floor's news, not a skill moment).</summary>
         static readonly HashSet<string> Edge = new HashSet<string> { "KingStab", "QueenMark", "RookCollapse", "BishopReach", "KnightFlip" };
 
-        /// <summary>Seconds (game time, the skill's own clock) after its moment a sound starts: the knight's hit lands 0.35 s
-        /// into its clip, on the kick 0.8 s into the somersault.</summary>
-        static readonly Dictionary<string, float> Delay = new Dictionary<string, float> { { "KnightFlip", 0.45f } };
+        /// <summary>Seconds (game time, the skill's own clock) after its moment a sound starts. 10-26: none now - the knight's
+        /// somersault sound is its spin from the start (승규 님: "기존 소리 말고 다른 소리"), and its kick has its own
+        /// KnightKickHit; it was 0.45 s for the old clip whose hit was the kick.</summary>
+        static readonly Dictionary<string, float> Delay = new Dictionary<string, float>();
 
         public const string Folder = "SwordFightSkillSfx";
         const int Voices = 12;
@@ -83,8 +99,8 @@ namespace ChessFight.RagdollLab
 
         struct Waiting { public string name; public Vector3 at; public SwordFightSkills by; public float left; }
         readonly List<Waiting> waiting = new List<Waiting>();
-        // The edge skill sound each piece has going: its voice and sound.
-        readonly Dictionary<SwordFightSkills, (int voice, Sound sound)> edgeVoice = new Dictionary<SwordFightSkills, (int, Sound)>();
+        // The edge skill sounds each piece has going (the moment's own and its layers): their voices and sounds.
+        readonly Dictionary<SwordFightSkills, List<(int voice, Sound sound)>> edgeVoice = new Dictionary<SwordFightSkills, List<(int, Sound)>>();
         SwordFightSkillFx fx;
 
         /// <summary>The bed's sounds, for the probe's report.</summary>
@@ -133,6 +149,8 @@ namespace ChessFight.RagdollLab
         {
             if (e.kind == SfFxKind.EdgeCancel || e.kind == SfFxKind.BishopDrop) { CutEdge(e.by); return; }
             string name = ClipName(e);
+            if (name != null && Layers.TryGetValue(name, out var layers))
+                foreach (var layer in layers) Play(layer, e.at, e.by);
             if (name != null && Delay.TryGetValue(name, out float wait) && wait > 0f)
             {
                 if (sound && sounds.ContainsKey(name)) waiting.Add(new Waiting { name = name, at = e.at, by = e.by, left = wait });
@@ -143,6 +161,8 @@ namespace ChessFight.RagdollLab
 
         void OnFloor(SwordFightEdgeFloor.Collapse c)
         {
+            // 10-26 (승규 님: "그 특정 땅이 흔들리는데 그 소리가 없어"): the chunk's tremble before it falls has its rumble.
+            if (c.phase == SwordFightEdgeFloor.Phase.Crack) Play("RookTremble", c.lip, c.by);
             if (c.phase == SwordFightEdgeFloor.Phase.Open) Play("RookCollapse", c.lip, c.by);
         }
 
@@ -173,10 +193,13 @@ namespace ChessFight.RagdollLab
             waiting.RemoveAll(w => w.by == by);
             if (!edgeVoice.TryGetValue(by, out var held)) return;
             edgeVoice.Remove(by);
-            var a = voices[held.voice];
-            if (!a.isPlaying || a.clip != held.sound.clip) return;
-            fading[held.voice] = a.volume / CutFade;
-            Cut?.Invoke(held.sound, CutFade);
+            foreach (var (voice, s) in held)
+            {
+                var a = voices[voice];
+                if (!a.isPlaying || a.clip != s.clip) continue;
+                fading[voice] = a.volume / CutFade;
+                Cut?.Invoke(s, CutFade);
+            }
         }
 
         void Play(string name, Vector3 at, SwordFightSkills by)
@@ -196,7 +219,12 @@ namespace ChessFight.RagdollLab
             a.volume = gain;
             a.panStereo = pan;
             a.Play();
-            if (by != null && Edge.Contains(name)) edgeVoice[by] = (voice, s);
+            if (by != null && Edge.Contains(name))
+            {
+                if (!edgeVoice.TryGetValue(by, out var held)) edgeVoice[by] = held = new List<(int, Sound)>();
+                held.RemoveAll(h => !voices[h.voice].isPlaying || voices[h.voice].clip != h.sound.clip || h.voice == voice);
+                held.Add((voice, s));
+            }
             Played?.Invoke(s, gain, pan);
         }
 

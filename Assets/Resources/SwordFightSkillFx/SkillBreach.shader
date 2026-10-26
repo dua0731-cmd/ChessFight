@@ -23,6 +23,8 @@ Shader "ChessFight/Skill Breach"
         _Surface ("Which quad: 0 the face, 1 the top", Float) = 0
         _Heal ("Healed (0 broken .. 1 gone)", Range(0, 1)) = 0
         _Tint ("Inside the stone (times the wall's colour)", Color) = (0.86, 0.85, 0.84, 1)
+        _Inside ("Under the face's skin (alpha: how much; 0 = the grabbed wall all the way in)", Color) = (1, 1, 1, 0)
+        _Skin ("How deep the face's own skin goes before _Inside (m)", Float) = 0
         [HDR] _Glow ("A fresh break's glow (alpha: how much)", Color) = (2.2, 1.5, 0.45, 0)
         _BladeOn ("The sword is in it (1) or out (0)", Float) = 0
         _BladePos ("The sword's grip (world)", Vector) = (0, 0, 0, 0)
@@ -51,7 +53,8 @@ Shader "ChessFight/Skill Breach"
             #include "UnityCG.cginc"
 
             float _Surface, _Heal, _Debug, _BladeOn;
-            float4 _Origin, _Normal, _Box, _Crater, _Cracks, _Tint, _Glow;
+            float4 _Origin, _Normal, _Box, _Crater, _Cracks, _Tint, _Glow, _Inside;
+            float _Skin;
             float4 _BladePos, _BladeX, _BladeY, _BladeZ, _BladeColor, _GuardColor;
             sampler2D _CameraOpaqueTexture;
             float4 _MainLightPosition;
@@ -348,7 +351,7 @@ Shader "ChessFight/Skill Breach"
                 {
                     // Out through the bitten lip's open side (seen from above): the shadowed broken stone deep in the bite (what is
                     // past the edge there is not on the screen; sampling the screen elsewhere showed sky through the floor).
-                    return float4(GrabSoft(uv) * _Tint.rgb * 0.42, 1);
+                    return float4(lerp(GrabSoft(uv), _Inside.rgb, _Inside.a) * _Tint.rgb * 0.42, 1);
                 }
 
                 float3 Ph = P0 + V * tB;
@@ -377,7 +380,10 @@ Shader "ChessFight/Skill Breach"
                 float deep = saturate(depth / max(_Crater.y, 0.05));
                 if (top) deep = max(deep, saturate((_Box.x - Ph.y) / 0.2));
                 float ao = lerp(1.0, 0.66, pow(deep, 0.8));
-                float3 mat = GrabSoft(uv) * _Tint.rgb;
+                // 10-25 (승규 님: "밖에 금색으로 칠해진 부분도 부서지고"): a face with a skin of its own (the board's brass
+                // trim) shows what is under it past its thickness (the square's wood).
+                float under2 = top ? (_Box.x - Ph.y) : depth;
+                float3 mat = lerp(GrabSoft(uv), _Inside.rgb, _Inside.a * saturate((max(depth, under2) - _Skin) / 0.012)) * _Tint.rgb;
                 float grain = 0.74 + 0.5 * Noise2(fh.xy * 26.0 + 5.1) * (0.55 + 0.45 * Noise2(fh.xy * 9.0 + 1.3));
                 float3 col = mat * grain * lit * sunShade * ao;
                 // The chipped edge of the break: a thin pale band right inside the surface.

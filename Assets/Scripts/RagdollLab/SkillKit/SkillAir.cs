@@ -22,7 +22,7 @@ namespace ChessFight.RagdollLab
             public MeshRenderer r;
             public readonly MaterialPropertyBlock b = new MaterialPropertyBlock();
             public Vector3 from, way;
-            public float age, life, reach, size, strength, floorY;
+            public float age, life, reach, size, strength, floorY, haze = 1f, bend = 1f, streak = 3f;
         }
 
         /// <summary>The vapour's lit and shaded white (a cool grey in its shade, so it shows on the cream floor).</summary>
@@ -56,9 +56,12 @@ namespace ChessFight.RagdollLab
         /// <summary>
         /// A burst of air thrown from <paramref name="from"/> (just behind the hips) along <paramref name="way"/> (back, and
         /// down for a leap off the floor); <paramref name="strength"/> about 1 for a spring, less for a step. With
-        /// <paramref name="vapour"/>, a few wisps of white vapour torn back out of it.
+        /// <paramref name="vapour"/>, a few wisps of white vapour torn back out of it. <paramref name="haze"/> scales its
+        /// white haze (10-26: 0 for air that only bends what is behind it - on a dark board the haze read as smoke);
+        /// <paramref name="bend"/> scales how hard it bends and how wide it spreads (the Sword Fight knight's turn: 2);
+        /// <paramref name="last"/> how long it lasts and how far it carries (and, past 1, how drawn out its streaks are).
         /// </summary>
-        public void Kick(Vector3 from, Vector3 way, float strength = 1f, SkillDust vapour = null)
+        public void Kick(Vector3 from, Vector3 way, float strength = 1f, SkillDust vapour = null, float haze = 1f, float bend = 1f, float last = 1f)
         {
             if (!Ready) return;
             if (way.sqrMagnitude < 1e-6f) way = Vector3.back;
@@ -84,6 +87,14 @@ namespace ChessFight.RagdollLab
             burst.reach = 0.45f + 0.75f * burst.strength;
             burst.size = Mathf.Lerp(0.85f, 1.3f, Mathf.InverseLerp(0.3f, 1.6f, burst.strength));
             burst.floorY = float.IsNegativeInfinity(floor) ? -1e4f : floor;
+            burst.haze = Mathf.Max(0f, haze);
+            burst.bend = Mathf.Clamp(bend, 0.2f, 3f);
+            burst.size *= Mathf.Lerp(1f, burst.bend, 0.35f);
+            burst.reach *= Mathf.Lerp(1f, burst.bend, 0.3f);
+            last = Mathf.Clamp(last, 0.5f, 3f);
+            burst.life *= last;
+            burst.reach *= Mathf.Lerp(1f, last, 0.7f);
+            burst.streak = 3f * Mathf.Lerp(1f, last, 0.5f);
             burst.go.SetActive(true);
             live.Add(burst);
             Place(burst);
@@ -135,10 +146,10 @@ namespace ChessFight.RagdollLab
             t.SetPositionAndRotation(at, Quaternion.LookRotation(b.way, Mathf.Abs(b.way.y) > 0.95f ? Vector3.forward : Vector3.up));
             t.localScale = new Vector3(wide, wide * 0.85f, length);
             float rise = Mathf.Clamp01(b.age / 0.03f), left = 1f - k;
-            b.b.SetFloat("_Bend", 0.045f * b.strength * rise * Mathf.Pow(left, 1.4f));
-            b.b.SetFloat("_Haze", 0.42f * Mathf.Min(1f, b.strength) * rise * Mathf.Pow(left, 1.5f));
-            b.b.SetFloat("_Shade", 0.13f * left);
-            b.b.SetFloat("_Streak", 3f);
+            b.b.SetFloat("_Bend", 0.045f * b.bend * b.strength * rise * Mathf.Pow(left, 1.4f));
+            b.b.SetFloat("_Haze", 0.42f * b.haze * Mathf.Min(1f, b.strength) * rise * Mathf.Pow(left, 1.5f));
+            b.b.SetFloat("_Shade", 0.13f * left * Mathf.Min(1f, b.haze));
+            b.b.SetFloat("_Streak", b.streak);
             b.b.SetFloat("_Phase", b.age * 7f);
             b.b.SetFloat("_FloorY", b.floorY);
             b.b.SetFloat("_Fade", 1f);

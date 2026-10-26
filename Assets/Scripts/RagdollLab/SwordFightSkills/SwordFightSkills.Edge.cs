@@ -177,6 +177,14 @@ namespace ChessFight.RagdollLab
 
         void ClearEdge()
         {
+            // 10-25: a queen's cut that has gone through someone lands even if she is cut short before its beat.
+            if (queenCut != null)
+            {
+                var cut = queenCut;
+                queenCut = null;
+                if (cut.Fighter != null && cut.Fighter.Alive && cut.Pawn != null && EdgeParams != null)
+                    Fling(cut, queenPush, "체크메이트 일섬", SfFxKind.QueenCut, EdgeParams.queenFling);
+            }
             if (Pawn != null && Pawn.OuterFlying) Pawn.EndFlight();
             if (carried != null && carried.OuterFlying) carried.EndFlight();
             ReleaseClearance(0.3f);
@@ -596,6 +604,10 @@ namespace ChessFight.RagdollLab
             float t = EdgeTime, c = X.kingCatch, h = X.kingHang, v = X.kingVault;
             if (EdgeStage == SfEdge.Recovery)
             {
+                // 10-26 (SwordFightSkills.Motion): the landing taken in the legs - held on the spot, the hips down by what
+                // the split legs lose, tipped over the chop - then up; let go once he stands.
+                if (BodyMotion && t < 0.30f && Pawn.OuterFlying) FlyKingLanding(t);
+                else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
                 if (t >= 0.35f) FinishEdge();
                 return;
             }
@@ -612,9 +624,11 @@ namespace ChessFight.RagdollLab
                 else
                 {
                     if (EdgeDetail != "매달림") EdgeDetail = "매달림";
-                    // A short swing on the hilt as the fall is caught.
+                    // A short swing on the hilt as the fall is caught. 10-26: in its last moment he tips back with his
+                    // soles to the face (into the vault's own start), his hips held: the stub has no elbow to give.
                     float s = Mathf.Sin((t - c) * 15f) * Mathf.Exp(-(t - c) * 6f) * 0.07f;
-                    Pawn.Fly(hangHips + EdgeOut * s, Vector3.zero, 0f, default, 18f);
+                    float plant = BodyMotion ? Smooth((t - (c + h - 0.12f)) / 0.12f) : 0f;
+                    Pawn.Fly(hangHips + EdgeOut * s, Vector3.zero, -10f * plant, default, 18f);
                 }
                 return;
             }
@@ -638,8 +652,24 @@ namespace ChessFight.RagdollLab
                 Pawn.Fly(pos, (next - pos) / dt, tip, default, 22f);
                 return;
             }
+            if (BodyMotion)
+            {
+                // A dead stop on the spot, taken in the legs (Recovery goes on flying it).
+                KingLands();
+                FlyKingLanding(0f);
+                return;
+            }
             Pawn.EndFlight(Vector3.down * 3f);
             KingLands();
+        }
+
+        /// <summary>10-26: the king held on his landing spot <paramref name="t"/> s after it, his hips down by what his split
+        /// legs lose (SwordFightSkills.Motion: KingLandSplit), tipped forward over his chop.</summary>
+        void FlyKingLanding(float t)
+        {
+            float dt = Time.fixedDeltaTime;
+            float dip = StanceDrop(KingLandSplit(t)), next = StanceDrop(KingLandSplit(t + dt));
+            Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f - dip), Vector3.down * ((next - dip) / dt), KingLandTip(t), default, 20f);
         }
 
         /// <summary>The king's vault (R129): the top 1.25 m over the higher end at 42% of the way; up fast and slowing (ease
@@ -718,8 +748,23 @@ namespace ChessFight.RagdollLab
                 if (EdgeTime >= X.queenLine) QueenStrikes(floor);
                 return;
             }
-            if (EdgeStage == SfEdge.Recovery && EdgeTime >= X.queenRecovery) FinishEdge();
+            if (EdgeStage == SfEdge.Recovery)
+            {
+                // 10-25: the cut lands a beat after she has gone past (QueenStrikes): now it is thrown.
+                if (queenCut != null && EdgeTime >= X.queenDelay)
+                {
+                    var cut = queenCut;
+                    queenCut = null;
+                    if (cut.Fighter != null && cut.Fighter.Alive && cut.Pawn != null)
+                        Fling(cut, queenPush, "체크메이트 일섬", SfFxKind.QueenCut, X.queenFling);
+                }
+                if (queenCut == null && EdgeTime >= Mathf.Max(X.queenRecovery, X.queenDelay + 0.05f)) FinishEdge();
+            }
         }
+
+        /// <summary>10-25: whoever her cut went through, standing a beat before it lands (and how it will be thrown).</summary>
+        SwordFightSkills queenCut;
+        Vector3 queenPush;
 
         bool QueenHolds(SwordFightEdgeFloor floor, RagdollPawn target, out string why)
         {
@@ -751,7 +796,9 @@ namespace ChessFight.RagdollLab
             EdgeStart = Pawn.Hips.position;
             EdgeAt = target.Hips.position;
             EdgeOut = e.outward;
-            Pawn.Teleport(ground + Vector3.up * (Pawn.standHeight + 0.02f), face);
+            // 10-26 (SwordFightSkills.Motion): she arrives already through the cut, low in her stance - not upright in a
+            // T-pose her arms then sink out of.
+            QueenArrives(ground, face, target);
             Raise(SfFxKind.QueenBlink, target, ground, face, Vector3.Distance(from, spot));
             // R130: a king in his guard blocks it and the queen is flung off him (SwordFightSkills.Block).
             if (ts != null && ts.Block(this, Pawn, target.bodies[(int)BodyId.Chest].position, SfBlock.QueenEdge))
@@ -769,7 +816,15 @@ namespace ChessFight.RagdollLab
                 return;
             }
             Vector3 dir = Flat(e.outward * 0.85f + face * 0.15f).normalized;
-            Fling(ts, dir * (X.queenFling / 0.9f) + Vector3.up * X.queenFlingUp, "체크메이트 일섬", SfFxKind.QueenCut, X.queenFling);
+            // 10-25 (승규 님: "베인 뒤 한 박자 늦게 반응 … 멀티 플레이 고려해서"): she has gone through it; it stands where it
+            // is, held (the pin everyone's copy already carries) and out of the fight, and is thrown a beat later
+            // (StepQueenEdge) - on the host, so every screen sees the same beat.
+            queenCut = ts;
+            queenPush = dir * (X.queenFling / 0.9f) + Vector3.up * X.queenFlingUp;
+            ts.pinLeft = Mathf.Max(ts.pinLeft, X.queenDelay + 0.05f);
+            ts.Fighter.StopCombat();
+            // 10-26: and held as it stood - it does not know yet.
+            ts.HoldStruck(X.queenDelay + 0.05f);
             SetEdge(SfEdge.Recovery, "후딜");
         }
 
@@ -780,6 +835,7 @@ namespace ChessFight.RagdollLab
             target.TakeHit(push, S.knockdownSeconds, 0f, true);
             other.Fighter.StopCombat();
             other.pinLeft = 0f;
+            other.struckLeft = 0f;
             if (other.Stage != SfStage.None && other.Stage != SfStage.Aim) other.StartCooldown();
             if (other.Stage != SfStage.None) other.Clear();
             Raise(kind, target, Vector3.Lerp(Pawn.bodies[(int)BodyId.Chest].position, target.bodies[(int)BodyId.Chest].position, 0.7f), Flat(push).normalized, size);
@@ -871,7 +927,10 @@ namespace ChessFight.RagdollLab
                 {
                     // In the air it is held where it caught itself (and is getting up from a knock meanwhile).
                     if (Pawn.Hits != edgeHits || (!knightAir && Pawn.State != PawnState.Active)) { InterruptEdge("웅크린 채 맞음"); return; }
-                    if (knightAir) Pawn.Fly(hangHips, Vector3.zero);
+                    // 10-26 (SwordFightSkills.Motion): it sinks into its coil, tipped forward over its legs.
+                    float sink = BodyMotion ? Smooth(EdgeTime / 0.2f) : 0f;
+                    if (knightAir) Pawn.Fly(hangHips, Vector3.zero, KnightCoilTip * sink);
+                    else if (BodyMotion) Pawn.Fly(EdgeStart + Vector3.down * (0.025f * sink), Vector3.zero, KnightCoilTip * sink, default, 20f);
                     var target = EdgeTarget;
                     var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
                     float reach = X.knightFront + (knightAir ? KnightAirReach : 0f);
@@ -901,8 +960,9 @@ namespace ChessFight.RagdollLab
                     if (k < 1f)
                     {
                         FlipPath(floor, k, out var pos, out var vel);
-                        // A forward somersault over the top (nose down about its right).
-                        float turn = 360f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(FlipOut + 0.05f, 0.86f, k));
+                        // A forward somersault over the top (nose down about its right). 10-26: thrown back off the lip
+                        // first, held there for the look, then over and on into the buck (KnightFlipTurn).
+                        float turn = KnightFlipTurn(k);
                         Pawn.Fly(pos, vel, turn, Vector3.Cross(Vector3.up, dir), 24f);
                         return;
                     }
@@ -915,8 +975,22 @@ namespace ChessFight.RagdollLab
                 {
                     // The kick: head down, hind legs up behind it for a moment.
                     Vector3 dir = Flat(EdgeLand - flipFrom).normalized;
-                    if (EdgeTime < 0.18f)
-                        Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f), Vector3.zero, 55f * Mathf.Sin(EdgeTime / 0.18f * Mathf.PI), Vector3.Cross(Vector3.up, dir), 16f);
+                    float t = EdgeTime;
+                    if (BodyMotion)
+                    {
+                        // 10-26: it lands already kicking (the flip's turn ran on into the buck), follows through, then the
+                        // weight comes down and rocks back onto the hind legs.
+                        if (t < 0.26f)
+                        {
+                            float tip = t < 0.09f ? Mathf.Lerp(KnightBuckTip, KnightBuckTip + 8f, Out2(t / 0.06f))
+                                : t < 0.22f ? Mathf.Lerp(KnightBuckTip + 8f, -6f, 1f - Mathf.Pow(1f - (t - 0.09f) / 0.13f, 3f))
+                                : Mathf.Lerp(-6f, 0f, (t - 0.22f) / 0.04f);
+                            Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f), Vector3.zero, tip, Vector3.Cross(Vector3.up, dir), 16f);
+                        }
+                        else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
+                    }
+                    else if (t < 0.18f)
+                        Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f), Vector3.zero, 55f * Mathf.Sin(t / 0.18f * Mathf.PI), Vector3.Cross(Vector3.up, dir), 16f);
                     else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
                     if (EdgeTime >= X.knightRecovery) FinishEdge();
                     return;
@@ -978,15 +1052,33 @@ namespace ChessFight.RagdollLab
             switch (Piece)
             {
                 case PieceKind.King:
+                {
                     if (KingHanging) return KingBladeNow();   // in the stone
-                    if (EdgeStage == SfEdge.Active) return (Vector3.up + f * 0.3f).normalized;   // the vault: held high
-                    return (f - Vector3.up * 0.75f).normalized;
+                    Vector3 held = (Vector3.up + f * 0.3f).normalized, chop = (f * 0.8f - Vector3.up * 0.6f).normalized;
+                    if (!BodyMotion) return EdgeStage == SfEdge.Active ? held : (f - Vector3.up * 0.75f).normalized;
+                    // 10-26 (SwordFightSkills.Motion): torn out of the stone and swung up as he springs, drawn back over his
+                    // head at the top, then chopped down to arrive with his feet; held down, then handed back.
+                    if (EdgeStage == SfEdge.Active)
+                    {
+                        var X = EdgeParams;
+                        Vector3 cocked = (Vector3.up * 0.9f - f * 0.35f).normalized;
+                        float u = Mathf.Clamp01((EdgeTime - X.kingCatch - X.kingHang) / Mathf.Max(0.05f, X.kingVault));
+                        if (u < 0.16f) return Vector3.Slerp(StuckBlade, held, Out2(u / 0.16f));
+                        if (u < 0.42f) return Vector3.Slerp(held, cocked, Smooth((u - 0.16f) / 0.26f));
+                        return u < 0.8f ? cocked : Vector3.Slerp(cocked, chop, In2((u - 0.8f) / 0.2f));
+                    }
+                    return EdgeTime < 0.15f || Fighter == null ? chop : Vector3.Slerp(chop, Fighter.HomeBlade, Smooth((EdgeTime - 0.15f) / 0.2f));
+                }
                 case PieceKind.Queen:
-                    return EdgeStage == SfEdge.Windup ? (f + Vector3.up * 0.35f - side * 0.4f).normalized : (f - Vector3.up * 0.1f + side * 0.7f).normalized;
+                    return QueenEdgeBlade(f, side);
                 case PieceKind.Rook:
+                    // 10-26 (SwordFightSkills.Motion): brought down hard on the lip, not laid on it.
+                    if (BodyMotion) return RookEdgeBlade();
                     return (Flat(EdgeAt - Pawn.Hips.position).normalized - Vector3.up * 0.9f).normalized;
                 case PieceKind.Bishop:
                     return (Vector3.up + f * 0.4f).normalized;
+                case PieceKind.Knight when BodyMotion:
+                    return KnightEdgeBlade(f, side);
                 case PieceKind.Knight:
                     return EdgeStage == SfEdge.Windup ? (-f + Vector3.up * 0.25f).normalized
                          : EdgeStage == SfEdge.Active ? (Vector3.up + f * 0.25f).normalized
@@ -996,7 +1088,10 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The sword arm reaching somewhere else than along the blade: the king's hand on his hilt in the stone.</summary>
-        public Vector3? Arm => KingHanging && Pawn != null ? (Hilt - Pawn.bodies[(int)BodyId.Chest].position).normalized : (Vector3?)null;
+        public Vector3? Arm => KingHanging && Pawn != null
+            // 10-26: from his own shoulder to the grip as it drives in (it aimed at the hilt from the chest: the fist was off it).
+            ? (BodyMotion ? (KingGrip() - Pivot(BodyId.ArmR)).normalized : (Hilt - Pawn.bodies[(int)BodyId.Chest].position).normalized)
+            : (Vector3?)null;
 
         /// <summary>The sword stays put where its hilt is (the king's, stuck in the stone), not in the hand. 10-14 (승규 님: "실제로
         /// 칼이 박히는 연출"): it drives the last 0.3 m in over the first three frames, then quivers (KingBladeNow).</summary>

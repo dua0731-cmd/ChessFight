@@ -94,7 +94,7 @@ namespace ChessFight.RagdollLab
         {
             if (air == null || pawn == null) return;
             Vector3 way = FlatDir(dir, pawn.Facing);
-            air.Kick(pawn.Hips.position - way * 0.26f - Vector3.up * 0.04f, (-way + Vector3.down * down).normalized, strength, dust);
+            air.Kick(pawn.Hips.position - way * 0.26f - Vector3.up * 0.04f, (-way + Vector3.down * down).normalized, strength, NoDust ? null : dust);
         }
 
         void OnDestroy()
@@ -468,8 +468,12 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Cream dust puffs rolling out on the floor at uneven angles and eaten from below. R138: real dust rolling
         /// out over the floor (<see cref="SkillDust"/>).</summary>
+        const bool NoDust = true;
+
         void DustRing(Vector3 at, int n, float radius, Palette? colors = null, float size = 0.3f)
         {
+            // 10-25 (승규 님: "폰 러쉬 퀸 오브 더 힐 먼지 퍼프도 다 지워줘"): no dust at all.
+            if (NoDust) return;
             if (dust != null)
             {
                 var c = colors ?? look.Dust;
@@ -501,6 +505,7 @@ namespace ChessFight.RagdollLab
         /// tinted by the palette (<see cref="SkillDust"/>).</summary>
         void PuffBurst(Vector3 at, Palette colors, int n, float radius, float size, float life = 0.45f, float up = 0.3f)
         {
+            if (NoDust) return;
             if (dust != null)
             {
                 dust.Burst(at, colors.light, colors.deep, n, radius, size, life, up);
@@ -910,8 +915,8 @@ namespace ChessFight.RagdollLab
                 Vector3 side = Vector3.Cross(Vector3.up, along);
                 if (air != null)
                 {
-                    air.Kick(mid + side * 0.2f, side, 0.75f, dust);
-                    air.Kick(mid - side * 0.2f, -side, 0.75f, dust);
+                    air.Kick(mid + side * 0.2f, side, 0.75f, NoDust ? null : dust);
+                    air.Kick(mid - side * 0.2f, -side, 0.75f, NoDust ? null : dust);
                 }
                 FlashBody(rook, Color.white);
                 FlashBody(ally, Color.white);
@@ -930,7 +935,7 @@ namespace ChessFight.RagdollLab
         {
             Vector3 floor = FloorUnder(feet, 0.6f);
             DustRing(floor + Vector3.up * 0.02f, 3, 0.45f, look.Dust, 0.24f);
-            air?.Kick(pawn.Hips.position - along * 0.2f - Vector3.up * 0.1f, (Vector3.down * 0.8f - along * 0.6f).normalized, 0.85f, dust);
+            air?.Kick(pawn.Hips.position - along * 0.2f - Vector3.up * 0.1f, (Vector3.down * 0.8f - along * 0.6f).normalized, 0.85f, NoDust ? null : dust);
         }
 
 

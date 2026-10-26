@@ -28,6 +28,30 @@ namespace ChessFight.RagdollLab
             public float spin;
             public double warn = double.NaN, drop = double.NaN;
             public Collider rail;
+            /// <summary>10-25: its brass (edge squares only): hidden while a rook's collapse throws it (the skill effects draw
+            /// it buckling and falling on its own, SwordFightSkillFx.RealEdge.cs).</summary>
+            public readonly List<Renderer> brass = new List<Renderer>();
+        }
+
+        /// <summary>10-25: the brass along the board's edge on the squares inside <paramref name="rect"/> (x / z), as
+        /// (middle, its long way, its length); <paramref name="hide"/> hides those pieces while they are away.</summary>
+        public List<(Vector3 at, Vector3 along, float length)> BrassIn(Rect rect, bool hide)
+        {
+            var list = new List<(Vector3, Vector3, float)>();
+            foreach (var s in squares)
+            {
+                if (!rect.Contains(new Vector2(s.home.x, s.home.z))) continue;
+                foreach (var r in s.brass)
+                {
+                    if (r == null) continue;
+                    var t = r.transform;
+                    Vector3 sc = t.localScale;
+                    Vector3 along = sc.x > sc.z ? s.t.TransformDirection(Vector3.right) : s.t.TransformDirection(Vector3.forward);
+                    list.Add((t.position, along, Mathf.Max(sc.x, sc.z)));
+                    r.forceRenderingOff = hide;
+                }
+            }
+            return list;
         }
 
         readonly List<Square> squares = new List<Square>();
@@ -39,6 +63,8 @@ namespace ChessFight.RagdollLab
 
         public Material Brass { get; private set; }
         public Material Stone { get; private set; }
+        /// <summary>Half the board's side (m): the brass runs round it at ±this, its top at the squares' top (y 0).</summary>
+        public float HalfSize => SwordBoard.Size * cell * 0.5f;
 
         /// <summary>The tray a team's fallen pieces lie on (white left, black right), slot by slot.</summary>
         public Vector3 TrayPoint(int team, int slot) => new Vector3((team == 0 ? -12f : 12f) * cell / 2f, DeskY + 0.15f, (-3f + (slot % 6) * 1.6f) * cell / 2f);
@@ -72,10 +98,10 @@ namespace ChessFight.RagdollLab
                 sq.t = go.transform;
                 SwordFightShapes.Part(PrimitiveType.Cube, mat, sq.t, Vector3.zero, new Vector3(cell - 0.04f, 0.6f, cell - 0.04f));
                 // Brass round the board's edge.
-                if (i == 0) SwordFightShapes.Part(PrimitiveType.Cube, Brass, sq.t, new Vector3(-k, 0f, 0f), new Vector3(0.06f, 0.62f, cell));
-                if (i == SwordBoard.Size - 1) SwordFightShapes.Part(PrimitiveType.Cube, Brass, sq.t, new Vector3(k, 0f, 0f), new Vector3(0.06f, 0.62f, cell));
-                if (j == 0) SwordFightShapes.Part(PrimitiveType.Cube, Brass, sq.t, new Vector3(0f, 0f, -k), new Vector3(cell, 0.62f, 0.06f));
-                if (j == SwordBoard.Size - 1) SwordFightShapes.Part(PrimitiveType.Cube, Brass, sq.t, new Vector3(0f, 0f, k), new Vector3(cell, 0.62f, 0.06f));
+                if (i == 0) sq.brass.Add(SwordFightShapes.Part(PrimitiveType.Cube, Brass, sq.t, new Vector3(-k, 0f, 0f), new Vector3(0.06f, 0.62f, cell)).GetComponent<Renderer>());
+                if (i == SwordBoard.Size - 1) sq.brass.Add(SwordFightShapes.Part(PrimitiveType.Cube, Brass, sq.t, new Vector3(k, 0f, 0f), new Vector3(0.06f, 0.62f, cell)).GetComponent<Renderer>());
+                if (j == 0) sq.brass.Add(SwordFightShapes.Part(PrimitiveType.Cube, Brass, sq.t, new Vector3(0f, 0f, -k), new Vector3(cell, 0.62f, 0.06f)).GetComponent<Renderer>());
+                if (j == SwordBoard.Size - 1) sq.brass.Add(SwordFightShapes.Part(PrimitiveType.Cube, Brass, sq.t, new Vector3(0f, 0f, k), new Vector3(cell, 0.62f, 0.06f)).GetComponent<Renderer>());
                 // A band on each home rank (dark on white's, light on black's, toward the middle).
                 if (j == 0 || j == SwordBoard.Size - 1)
                     SwordFightShapes.Part(PrimitiveType.Quad, j == 0 ? bandDark : bandLight, sq.t, new Vector3(0f, 0.305f, j == 0 ? 0.75f * k : -0.75f * k),
@@ -204,6 +230,20 @@ namespace ChessFight.RagdollLab
         void OnDestroy() => Clear();
 
         /// <summary>A ghost's warning and drop for a square (the board's plan); NaN for none.</summary>
+        /// <summary>The wood of the square under <paramref name="p"/> (its maple or walnut), the nearest one off the board's
+        /// edge (10-25: the king's breach shows it under the brass and throws its chips). False before the board is built.</summary>
+        public bool WoodAt(Vector3 p, out Color wood)
+        {
+            wood = Color.white;
+            float best = float.MaxValue;
+            foreach (var s in squares)
+            {
+                float d = new Vector2(s.home.x - p.x, s.home.z - p.z).sqrMagnitude;
+                if (d < best) { best = d; wood = s.baseColor; }
+            }
+            return squares.Count > 0;
+        }
+
         public void Plan(int cell, double warn, double drop)
         {
             foreach (var s in squares) if (s.cell == cell) { s.warn = warn; s.drop = drop; }

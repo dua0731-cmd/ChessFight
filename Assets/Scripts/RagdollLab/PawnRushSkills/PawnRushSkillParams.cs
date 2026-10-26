@@ -80,8 +80,8 @@ namespace ChessFight.RagdollLab
         public float bishopArm = 0.5f;
         public float bishopActive = 6f;
         public int bishopTrips = 2;
-        [Tooltip("줄에 걸린 적은 그 자리에 묶여 서 있다 (초). R138 1.6초 → R153 1.0초 (승규 님 10-16)")]
-        public float bishopBind = 1.0f;
+        [Tooltip("줄에 걸린 적은 그 자리에 묶여 서 있다 (초). R138 1.6초 → R151 1.0초 (승규 님 10-16) → 10-25 \"묶음을 0.6초 늘려줘\" 1.6초 → \"2초로 늘려줘\" 2.0초 → \"3초로 해줘\" 3.0초")]
+        public float bishopBind = 3.0f;
         public float bishopCooldown = 8f;
         [Tooltip("이보다 가파른 바닥에는 깔리지 않는다 (도)")]
         public float bishopMaxSlope = 30f;
