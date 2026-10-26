@@ -245,6 +245,8 @@ namespace ChessFight.RagdollLab
         /// <summary>The 3D piece's height over the head, m (R130 0.42; R132, 승규 님: "아이콘 사이즈 줄여줘" — smaller, and
         /// the squat icon pieces of SkillMeshes.PieceIcon so it still reads).</summary>
         const float PieceMarkHeight = 0.3f;
+        /// <summary>The marks over the heads (the piece token and the grade stamp); off since 10-25.</summary>
+        public static bool HeadMarks = false;
         /// <summary>How far over the head collider's top the 3D piece's foot stands (m): clear of the drawn head, which is
         /// a little bigger than its collider.</summary>
         const float PieceMarkLift = 0.26f;
@@ -262,10 +264,12 @@ namespace ChessFight.RagdollLab
         /// cross, the queen's spiked crown, the rook's battlements), facing the eye and swaying a little either way after the
         /// pop's turn (it no longer turns round on and on, so the piece is always seen whole, the knight side on), and only
         /// with the cast: nothing pops it again (the king's block and counter, the edge skills' landings, the grade).
+        /// 10-25 (승규 님: "스킬을 쓰면 위에 아이콘이 뜨잖아 그거 다 지워줘"): off (<see cref="HeadMarks"/>), and the grade stamps
+        /// over Sword Fight heads with it (SkillGradeStamps).
         /// </summary>
         void HeadMark(RagdollPawn pawn, PieceKind kind)
         {
-            if (pawn == null || kind == PieceKind.Pawn) return;
+            if (!HeadMarks || pawn == null || kind == PieceKind.Pawn) return;
             if (headMarks.TryGetValue(pawn, out var live) && live.fx != null && !live.fx.dead)
             {
                 live.born = kit.Clock;

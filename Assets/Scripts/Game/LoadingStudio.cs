@@ -20,7 +20,7 @@ namespace ChessFight.Game
     // scenes, and its own camera draws it into a texture every frame. The match
     // scene's haze, ambient light and sun would change it as it loads, so Render
     // swaps the hall's settings in around its own draw and puts them back.
-    public sealed class LoadingStudio
+    public sealed partial class LoadingStudio
     {
         public const int PerTeam = 6;
         const float StageRadius = 5.6f, StageHeight = .5f, Walk = 6.4f, Hop = .45f, Stagger = .25f;
@@ -99,6 +99,9 @@ namespace ChessFight.Game
                 for (int spot = 0; spot < PerTeam; spot++)
                 {
                     var p = new Player { Team = team, Spot = spot, Side = team == 0 ? 1f : -1f };
+                    players[team * PerTeam + spot] = p;
+                    // 10-26 (승규 님: "플레이어가 들어오는 건 넣지마"): nobody walks onto the course model, so no spots
+                    if (courseModel) continue;
                     var s = Spots[spot];
                     float x = team == 0 ? s.x : -s.x;
                     p.At = onStairs ? StairSpot(team, spot) : MenuArt.Web(x, StageHeight, s.y);
@@ -112,7 +115,6 @@ namespace ChessFight.Game
                     p.FlashT = MenuArt.Halo(t, p.At + Vector3.up * .9f, light, 1f, 0f, camera);
                     p.Flash = p.FlashT.GetComponent<Renderer>().sharedMaterial;
                     SetAlpha(p.Ring, 0);
-                    players[team * PerTeam + spot] = p;
                 }
         }
 
@@ -121,12 +123,15 @@ namespace ChessFight.Game
         // (maple and walnut squares, mahogany frame, brass inlay) the players walk onto, lit from straight above by
         // one brass reading lamp in a warm pool that falls off into the dark; behind, the shelves of books and a
         // window with a little cold moonlight, barely there. No coloured stage lights.
+        // 10-25/26: the chessboard and the players walking onto it gave way to the course hologram over its LED plate
+        // (LoadingStudio.Course.cs).
         void Study(Transform t)
         {
-            const float tile = 1.15f;
             var tableWood = MenuArt.Wood(MenuArt.DarkWood, .55f, new Vector2(4f, 2f));
             MenuArt.Slab(t, "Table", new Vector3(0, -.3f, 1f), new Vector3(30f, .6f, 18f), tableWood);
-            MenuArt.WoodBoard(t, "Board", 8, tile, new Vector3(0, 0, 0), StageHeight - .02f, .7f);
+            // 10-25: the course model on its plate instead of the chessboard (LoadingStudio.Course.cs)
+            courseModel = true;
+            CourseModel(t);
             // the shelves behind: dark wood carcass, rows of books in muted leather colours
             var shelfWood = MenuArt.Wood(MenuArt.DarkWood, .35f, new Vector2(3f, 1f), true);
             var rng = new System.Random(22);
@@ -157,7 +162,8 @@ namespace ChessFight.Game
             LastSceneArt.Part(t, "Lamp Rod", LastSceneArt.Cylinder(.03f, .03f, 6f, 12), brass, new Vector3(0, 12.2f, 0), null, null, false);
             LastSceneArt.Part(t, "Lamp Shade", LastSceneArt.Cone(1.2f, 1.0f, 48), LastSceneArt.Lit(0x1E3A2A, .5f, .3f), new Vector3(0, 9.0f, 0), null, null, false);
             LastSceneArt.Part(t, "Lamp Bulb", LastSceneArt.Sphere(.28f), MenuArt.Lamp(0xFFE6B0), new Vector3(0, 8.55f, 0), null, null, false);
-            MenuArt.Spot(t, new Vector3(0, 8.5f, 0), new Vector3(0, 0, .3f), 0xFFD9A0, 3.2f, .95f, .8f, true);
+            // 10-26: 60 % of what it was, so the course hologram and its LEDs stand out on the plate
+            MenuArt.Spot(t, new Vector3(0, 8.5f, 0), new Vector3(0, 0, .3f), 0xFFD9A0, 1.9f, .95f, .8f, true);
             // faint warm bounce from the table and cold moonlight from behind, so the shelves just read
             MenuArt.Spot(t, new Vector3(0, 2f, -12f), new Vector3(0, 2f, 0), 0xC08A5A, .5f, .8f, .9f);
             MenuArt.Spot(t, new Vector3(0, 6f, 10f), new Vector3(0, 1f, -2f), 0x6A86B8, .7f, .7f, .9f);
@@ -236,6 +242,12 @@ namespace ChessFight.Game
                 if (!isIn) { if (p.Queued) Reset(p); continue; }
                 listed[team * PerTeam + spot] = true;
                 total++;
+                // nobody walks onto the course model: everyone listed is in at once
+                if (courseModel)
+                {
+                    entered++;
+                    continue;
+                }
                 if (p.Figure == null)
                 {
                     p.Bot = bot;
@@ -264,6 +276,7 @@ namespace ChessFight.Game
                 lastStart = now;
             }
             AllIn = total > 0 && entered == total && waiting.Count == 0;
+            routeTarget = Mathf.Clamp01(total / (float)(PerTeam * 2));
         }
 
         // Clears a spot: the figure goes (a new one is built for whoever comes).
@@ -282,6 +295,7 @@ namespace ChessFight.Game
 
         public void Animate(float now)
         {
+            TickRoute(Time.unscaledDeltaTime);
             Aim(now);
             for (int i = 0; i < players.Length; i++)
             {
@@ -394,6 +408,7 @@ namespace ChessFight.Game
         {
             if (backdrop != null) Object.Destroy(backdrop);
             if (blob != null) Object.Destroy(blob);
+            DisposeCourse();
             if (root != null) Object.Destroy(root);
             root = null;
             camera = null;

@@ -906,7 +906,8 @@ public static class NetworkCoreTests
                 Check(HostElection.Rank(new[] { C(1, 900, 60), C(2, 800, 10) }).SequenceEqual(new ulong[] { 1, 2 }), "within the ping budget only fitness counts");
                 Check(HostElection.Rank(new[] { C(1, 0), C(2, 400) }).SequenceEqual(new ulong[] { 2, 1 }), "unmeasured below measured");
                 Check(!HostElection.Rank(new[] { C(BotIdentity.Id(7, 0), 99999), C(0, 5000), C(4, 1) }).Any(id => id != 4), "bots and zero never rank");
-                Check(HostElection.Worth(C(1, 500), C(2, 575), HostElection.StartMargin) && !HostElection.Worth(C(1, 500), C(2, 574), HostElection.StartMargin), "start margin");
+                // R159: before the match the best PC simply hosts (no 15% lead needed any more).
+                Check(HostElection.Worth(C(1, 500), C(2, 501), HostElection.StartMargin) && !HostElection.Worth(C(1, 500), C(2, 499), HostElection.StartMargin), "start: the better PC");
                 Check(!HostElection.Worth(C(1, 500), C(1, 5000), 1), "never worth handing to yourself"); });
             Test("Host election: a slow host goes only to a clearly stronger machine, so the role cannot bounce back", () => {
                 var host = M(1, 150, 400);   // bogged down by hosting
@@ -915,6 +916,28 @@ public static class NetworkCoreTests
                 // After the move the new host bogs down in turn; the old one looks fast again, but its machine is weaker.
                 Check(HostElection.Takeover(M(2, 150, 900), new[] { M(1, 1000, 400) }, HostElection.StruggleMargin) == 0, "no bounce back");
                 Check(HostElection.Takeover(M(1, 150, 0), new[] { M(2, 900, 900) }, HostElection.StruggleMargin) == 0, "unmeasured host keeps it"); });
+            Test("Host election at the start (R159): a stronger PC that came in later takes the role, a moment's slow frame does not stop it", () => {
+                // The room's creator (1) and a stronger machine (2) that just came in: its frame time dipped as it joined.
+                Check(HostElection.StartHost(1, new[] { M(1, 1000, 1000), M(2, 600, 1400) }, HostElection.StartMargin) == 2, "machines compared alone");
+                Check(HostElection.StartHost(1, new[] { M(1, 1000, 1000), M(2, 1100, 1100) }, HostElection.StartMargin) == 2, "first place hosts even by a small lead");
+                Check(HostElection.StartHost(1, new[] { M(1, 1100, 1100), M(2, 1000, 1000) }, HostElection.StartMargin) == 1, "first place keeps it");
+                Check(HostElection.StartHost(2, new[] { M(1, 1000, 1000), M(2, 1000, 1000) }, HostElection.StartMargin) == 1 &&
+                      HostElection.StartHost(1, new[] { M(1, 1000, 1000), M(2, 1000, 1000) }, HostElection.StartMargin) == 1, "a tie goes to the lower ID on every PC");
+                var bed = new TeamReservations(); TeamReservations.Group g1, g2;
+                bool first = bed.Reserve(10, 100, "a", new ulong[] { 10, 11 }, 0, out g1);
+                bool second = bed.Reserve(20, 200, "b", new ulong[] { 20 }, 0, out g2);
+                Check(first && second, "setup");
+                g1.Committed = true;
+                var moved = new TeamReservations(); moved.Restore(bed.Groups);
+                Check(moved.Count == 3 && moved.Find(11).Leader == 10 && moved.Find(11).Committed && moved.Find(20).Team == g2.Team && !moved.Find(20).Committed, "reservations move whole");
+                moved.Restore(new[] { g1, new TeamReservations.Group { Leader = 30, Party = 300, Ticket = "c", Members = new ulong[] { 11, 30 }, Team = 0 } });
+                Check(moved.Count == 2 && moved.Find(30) == null, "a clashing group is dropped");
+                Check(HostElection.StartHost(1, new[] { M(1, 1000, 1000), M(2, 0, 0) }, HostElection.StartMargin) == 1, "an unknown machine never takes it");
+                Check(HostElection.Unknown(M(2, 0, 0)) && !HostElection.Unknown(M(2, 0, 900)) && !HostElection.Unknown(M(2, 700, 0)), "unknown = nothing published yet");
+                Check(HostElection.StartHost(1, new[] { M(1, 1000, 1000), M(BotIdentity.Id(1, 0), 9000, 9000) }, HostElection.StartMargin) == 1, "bots never host");
+                Check(HostElection.StartHost(1, new[] { M(2, 1400, 1400) }, HostElection.StartMargin) == 2, "the creator without a score counts as unknown");
+                var far = new HostElection.Candidate { Id = 2, Fitness = 1400, BaseFitness = 1400, PingMs = 200 };
+                Check(HostElection.StartHost(1, new[] { new HostElection.Candidate { Id = 1, Fitness = 1000, BaseFitness = 1000, PingMs = 40 }, far }, HostElection.StartMargin) == 1, "a far-away PC is still discounted"); });
             Test("Host election: the successor is the first published player still here, else the fittest", () => {
                 var fallback = new[] { new HostElection.Candidate { Id = 2, Fitness = 300 }, new HostElection.Candidate { Id = 3, Fitness = 900 } };
                 Check(HostElection.Successor(new ulong[] { 3, 2 }, new HashSet<ulong> { 1, 2 }, 1, fallback) == 2, "absent published player skipped");

@@ -68,9 +68,13 @@ namespace ChessFight.Network
         // Every other player's packets pass through the host, so its links are
         // everyone's delay once they go past this.
         public const int PingBudgetMs = 60;
-        // How much fitter a player must be before the host role moves: at the
-        // start, and mid-match when the host is struggling. Moving costs a hitch.
-        public const double StartMargin = 1.15, StruggleMargin = 1.5;
+        // How much fitter a player must be before the host role moves. Before the
+        // match (the waiting room, and its start) the best PC simply hosts (R159,
+        // 승규: "1등이 방장"): machine scores are measured once, so the order does not
+        // flicker, and nothing is simulated yet, so a move costs nothing. Mid-match,
+        // when the host is struggling, only a clearly stronger machine takes over:
+        // moving then costs a hitch.
+        public const double StartMargin = 1.0, StruggleMargin = 1.5;
 
         public static double Rating(Candidate c)
         {
@@ -87,6 +91,27 @@ namespace ChessFight.Network
 
         public static bool Worth(Candidate current, Candidate best, double margin) =>
             best.Id != 0 && best.Id != current.Id && Rating(best) >= Rating(current) * margin;
+
+        // R159: a player whose machine score has not reached the host yet: one who
+        // has just come in (the last seat filling the room starts it in the same poll).
+        public static bool Unknown(Candidate c) => c.BaseFitness <= 0 && c.Fitness <= 0;
+
+        // R159: the host at the start of a match. Machines are compared alone (the
+        // probe and the hardware), the same measurement on every PC: a player's live
+        // frame time dips for a moment as it comes into the room, and a dip read then
+        // kept the room's creator as host over a clearly stronger PC that came in
+        // later. A slow frame rate during the match still moves the role (Takeover).
+        // Unknown machines count as HostFitness.Unknown, as everywhere else.
+        public static ulong StartHost(ulong self, IList<Candidate> candidates, double margin)
+        {
+            var alone = candidates.Select(c => c.BaseFitness > 0 ? new Candidate { Id = c.Id, Fitness = c.BaseFitness, BaseFitness = c.BaseFitness, PingMs = c.PingMs } : c).ToList();
+            var ranked = Rank(alone);
+            if (ranked.Count == 0) return self;
+            var current = alone.FirstOrDefault(c => c.Id == self);
+            if (current.Id == 0) current = new Candidate { Id = self };
+            var best = alone.First(c => c.Id == ranked[0]);
+            return Worth(current, best, margin) ? best.Id : self;
+        }
 
         // Who takes over from a host that has stayed slow: the best-rated player
         // whose machine alone is clearly stronger, 0 when there is none. Machines

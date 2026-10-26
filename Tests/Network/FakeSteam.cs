@@ -8,6 +8,7 @@ using System.Web.Script.Serialization;
 namespace UnityEngine
 {
     public static class Time { public static float realtimeSinceStartup; }
+    public static class Debug { public static readonly List<string> Lines = new List<string>(); public static void Log(object message) => Lines.Add(message?.ToString() ?? ""); }
     public static class Random { public static float Range(float a,float b) => (a+b)/2; }
     public static class JsonUtility
     {

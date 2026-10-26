@@ -57,9 +57,16 @@ public static class SessionFlowTests
             Test("Party member join failure cancels whole reservation",()=>{
                 Setup(2);JoinParty(1,0);FakeSteam.Denied.Add(2);As(clients[0],()=>clients[0].FindMatch(true));Step(40);
                 Check(clients.All(c=>c.Match==0&&!c.Searching),"partial party remained");});
-            Test("Host departure aborts session without accidental host migration",()=>{
+            // Before R159 any waiting-room host's departure ended the room. Now a host that quits hands it on
+            // with the reservations; only a crash (no word, nothing handed over) still ends it.
+            Test("A waiting-room host that quits hands the room to the next player, who can start it",()=>{
                 Setup(2);As(clients[0],()=>clients[0].FindMatch(true));Step();As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);
-                var host=clients[0];As(host,host.Dispose);clients.Remove(host);Step(20);
+                var host=clients[0];var next=clients[1];ulong room=host.Match;As(host,host.Dispose);clients.Remove(host);Step(20);
+                Check(next.Match==room&&next.IsHost&&Owner(next)==next.Self&&next.Roster.Count==1&&next.Roster.ContainsKey(next.Self),"the room did not go on under the next player");
+                bool ok=false;As(next,()=>ok=next.AddTestBot(1));Check(ok&&next.CanStartGame,"the new host cannot run the room");});
+            Test("A crashed waiting-room host still ends the room without accidental host migration",()=>{
+                Setup(2);As(clients[0],()=>clients[0].FindMatch(true));Step();As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);
+                var host=clients[0];FakeSteam.Crash(host.Self);clients.Remove(host);Step(20);
                 Check(clients[0].Match==0,"new lobby owner incorrectly became game host");});
             Test("Twelve simultaneous solo searches converge and start six versus six",()=>{
                 Setup(12);foreach(var c in clients)As(c,()=>c.FindMatch());Step(400);
@@ -153,22 +160,56 @@ public static class SessionFlowTests
                 As(c,c.Cancel);As(c,()=>c.FindMatch(true));Step();
                 As(c,()=>ok=c.AddTestBot(2));Check(!ok,"invalid team");
                 As(c,()=>ok=c.AddTestBot(1));Check(ok&&c.CanStartGame,"release private refused");});
-            Test("Match start hands the host role to a clearly fitter PC",()=>{
-                Room(new[]{500,900,700});int changes=0;foreach(var c in clients)c.HostChanged+=(a,b)=>changes++;
-                var creator=clients[0];var fit=clients[1];As(creator,creator.StartGame);Step(10);
+            // R159 (승규: "입장씬부터 PC 성능 1등이 방장"): the waiting room already hands the role to the best PC,
+            // reservations and all; the start keeps it there.
+            Test("The waiting room hands the host role to the best PC, and the start keeps it",()=>{
+                int changes=0;Room(new[]{500,900,700},()=>{foreach(var c in clients)c.HostChanged+=(a,b)=>changes++;});
+                var creator=clients[0];var fit=clients[1];
+                Check(clients.All(c=>c.Host==fit.Self&&!c.Started)&&Owner(fit)==fit.Self&&fit.CanStartGame&&!creator.CanStartGame,"the waiting room did not go to the best PC");
+                As(fit,fit.StartGame);Step(10);
                 Check(clients.All(c=>c.Started&&c.Host==fit.Self),"host did not move to the fittest PC");
                 Check(fit.IsHost&&!creator.IsHost&&Owner(fit)==fit.Self,"lobby ownership did not follow the host");
                 Check(clients.All(c=>c.Epoch==1)&&RoomData(fit,"host")==fit.Self.ToString(),"host record");
                 Check(RoomData(fit,"successors")==$"{clients[2].Self},{creator.Self}","successor order: "+RoomData(fit,"successors"));
                 Check(clients.All(c=>c.Roster.Count==3)&&changes==3,"roster or HostChanged: "+changes);});
-            Test("A small fitness lead does not move the host",()=>{
-                Room(new[]{800,850});As(clients[0],clients[0].StartGame);Step(10);
-                Check(clients.All(c=>c.Started&&c.Host==clients[0].Self)&&Owner(clients[0])==clients[0].Self,"host moved for 6%");});
+            // R159 (승규, 10-25): the room's creator kept the host role although a stronger PC came in later.
+            Test("A stronger PC that came in later takes the host role though its frame rate dipped as it joined",()=>{
+                Setup(2);var creator=clients[0];var strong=clients[1];creator.LocalFitness=1000;strong.LocalFitness=1400;
+                // Coming into the room: the entrance screen and the gate walk cost frames (60 ms on average).
+                for(int i=0;i<60;i++)strong.ReportFrame(60);
+                As(creator,()=>creator.FindMatch(true));Step();As(strong,()=>strong.JoinPrivateMatch(creator.Match));Step(20);
+                Check(strong.CurrentFitness<1000,"the dip should show in the live score: "+strong.CurrentFitness);
+                Check(clients.All(c=>c.Host==strong.Self),"the waiting room stayed with the creator");
+                As(strong,strong.StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==strong.Self)&&Owner(strong)==strong.Self,"host stayed with the creator");});
+            Test("The start waits for a newcomer's machine score, and goes on without it after a while",()=>{
+                Room(new[]{1000,0});var creator=clients[0];var strong=clients[1];
+                As(creator,creator.StartGame);Step(2);
+                Check(!creator.Started&&creator.Status.Contains("방장을 맡을 PC"),"started before knowing the newcomer: "+creator.Status);
+                strong.LocalFitness=1400;Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==strong.Self),"the score that came in late was not used");
+                Room(new[]{1000,0});creator=clients[0];
+                As(creator,creator.StartGame);Step(25);
+                Check(clients.All(c=>c.Started&&c.Host==creator.Self),"a newcomer that never reports must not hold the start up");});
+            Test("Nobody leaves: a better PC that comes in later becomes the waiting room's host, then a still better one",()=>{
+                Setup(3);var creator=clients[0];var mid=clients[1];var best=clients[2];
+                creator.LocalFitness=900;mid.LocalFitness=1000;best.LocalFitness=1400;
+                As(creator,()=>creator.FindMatch(true));Step();
+                Check(creator.IsHost,"setup: the creator hosts alone");
+                As(mid,()=>mid.JoinPrivateMatch(creator.Match));Step(20);
+                Check(new[]{creator,mid}.All(c=>c.Host==mid.Self&&c.Match==creator.Match)&&Owner(mid)==mid.Self&&creator.Match!=0,"the better newcomer did not take the room");
+                As(best,()=>best.JoinPrivateMatch(creator.Match));Step(20);
+                Check(clients.All(c=>c.Host==best.Self&&c.Roster.Count==3)&&Owner(best)==best.Self,"the best newcomer did not take the room");
+                As(best,best.StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==best.Self),"the start moved the host away from first place");});
+            Test("The best PC hosts even by a small lead (R159: no 15% rule before the match)",()=>{
+                Room(new[]{800,850});var best=clients[1];As(best,best.StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==best.Self)&&Owner(best)==best.Self,"the 6% better PC does not host");});
             Test("Ping weighs in: a fast PC far from everyone does not host",()=>{
                 Room(new[]{500,900,600},()=>{
                     FakeSteam.PingLocations[1]="a";FakeSteam.PingLocations[2]="b";FakeSteam.PingLocations[3]="c";
                     FakeSteam.Pings[("a","b")]=200;FakeSteam.Pings[("b","c")]=190;FakeSteam.Pings[("a","c")]=20;});
-                As(clients[0],clients[0].StartGame);Step(10);
+                var host=clients.First(c=>c.IsHost);As(host,host.StartGame);Step(10);
                 Check(clients.All(c=>c.Host==clients[2].Self),"expected the near PC to host, got "+clients[0].Host);});
             Test("A crashed host is replaced by its published successor and the match goes on",()=>{
                 Room(new[]{900,700,500});var host=clients[0];var next=clients[1];var other=clients[2];
@@ -199,11 +240,12 @@ public static class SessionFlowTests
             Test("A host that stays slow hands the match to a much stronger machine, not to a slightly stronger one",()=>{
                 foreach(int other in new[]{1000,500})
                 {
-                    // The stronger machine happens to be busy in the lobby (100 ms frames), so the
-                    // weaker creator keeps the host at the start; then the creator bogs down.
-                    Room(new[]{400,other});var a=clients[0];var b=clients[1];
-                    for(int t=0;t<10;t++){As(b,()=>b.ReportFrame(100));Step(1);}
-                    As(a,a.StartGame);Step(2);Check(a.IsHost,"setup: the creator keeps the host");
+                    // The stronger machine has no score yet at the start (its probe still running, past the
+                    // start's wait), so the weaker creator keeps the host; then the creator bogs down.
+                    // (Before R159 a stronger machine busy in the lobby did this; the start now compares machines alone.)
+                    Room(new[]{400,0});var a=clients[0];var b=clients[1];
+                    As(a,a.StartGame);Step(20);Check(a.IsHost&&a.Started,"setup: the creator keeps the host");
+                    b.LocalFitness=other;
                     for(int t=0;t<180;t++){As(a,()=>a.ReportFrame(60));As(b,()=>b.ReportFrame(16));Step(1);}
                     bool moved=b.IsHost&&a.Host==b.Self;
                     Check(moved==(other==1000),$"slow host with a {other} peer: moved={moved}");

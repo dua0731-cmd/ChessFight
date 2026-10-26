@@ -114,6 +114,23 @@ namespace ChessFight.Network
             else group.Members = group.Members.Take(group.Members.Length - 1).ToArray();
             return true;
         }
+        // R159: the waiting room's host role moves to the best PC in it, and the
+        // reservations move with it (the room carries them, "resv"). The new host
+        // takes them as they are; a group that does not fit (a clash, a full team)
+        // is dropped, and its party asks again on its next try.
+        public void Restore(IEnumerable<Group> list)
+        {
+            groups.Clear();
+            foreach (var g in list ?? Enumerable.Empty<Group>())
+            {
+                if (g == null || g.Leader == 0 || g.Members == null || g.Members.Length < 1 || g.Members.Length > TeamSize ||
+                    g.Team < 0 || g.Team > 1 || g.Members.Any(id => id == 0) || g.Members.Distinct().Count() != g.Members.Length ||
+                    g.Members.Any(id => Find(id) != null) || groups.Any(o => o.Leader == g.Leader) ||
+                    Used(g.Team) + g.Members.Length > TeamSize) continue;
+                groups.Add(new Group { Leader = g.Leader, Party = g.Party, Ticket = g.Ticket ?? "", Members = (ulong[])g.Members.Clone(),
+                                       Team = g.Team, Deadline = g.Deadline, Committed = g.Committed });
+            }
+        }
         public void Remove(ulong leader) => groups.RemoveAll(g => g.Leader == leader);
         public void RemoveFillerBots() => groups.RemoveAll(g => BotIdentity.IsBot(g.Leader));
         public void Clear() => groups.Clear();

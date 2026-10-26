@@ -37,6 +37,9 @@ namespace ChessFight.RagdollLab
         /// <summary>Pressed: the emote slot (1..4) to play, 0 for none (RagdollPawn.Emote). Online it travels as an ask
         /// with a changing number, like the piece ask.</summary>
         public byte emote;
+        /// <summary>The mouse wheel's notches this frame (up positive): the Pawn Rush bishop's rope (10-26). The local
+        /// player's only (not sent online yet: a client works the rope with W/S).</summary>
+        public float reel;
     }
 
     /// <summary>
@@ -255,6 +258,12 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Test hook: return a pose for a body index to override the procedural puppet.</summary>
         public Func<int, Quaternion?> PoseOverride;
+        /// <summary>Degrees the drawn body is turned about up from its facing (a sword sweep's turn, SwordFightPawn); the way
+        /// it walks is unchanged.</summary>
+        public float BodyTurn;
+        /// <summary>A piece model's right arm is drawn wherever its arm body goes, not calmed (RagdollVisualSync.PoseAsPiece):
+        /// it holds a sword (SwordFightPawn).</summary>
+        public bool RightArmFree;
 
         public RagdollParams P => tuning != null ? tuning.values : fallback;
         readonly RagdollParams fallback = new RagdollParams();
@@ -532,6 +541,7 @@ namespace ChessFight.RagdollLab
             input.shoveHeld = next.shoveHeld;
             input.aim = next.aim;
             if (next.skill) skillPressed = true;   // the skill key, kept until the next physics step reads it
+            if (next.reel != 0f) AddSkillWheel(next.reel);   // the wheel's notches, kept until the next physics step
             if (next.emote != 0) PlayEmote(next.emote);
         }
 
@@ -1135,7 +1145,7 @@ namespace ChessFight.RagdollLab
             float footFriction = sliding ? p.footFrictionMoving : p.footFrictionIdle;
             ownFootMaterial.dynamicFriction = footFriction;
             ownFootMaterial.staticFriction = footFriction * 1.15f;
-            if (moving && !Grabbing && hookPhase != HookPhase.Charging)   // swinging the hook, it faces the aim
+            if (moving && !Grabbing && hookPhase != HookPhase.Charging && !LassoFacesTarget)   // swinging the hook, it faces the aim; holding the bishop's rope, the piece on it
             {
                 float current = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
                 float target = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;
@@ -1289,10 +1299,11 @@ namespace ChessFight.RagdollLab
             float lean = (Posture(p.runLean, p.sprintLean) * speedN + drive) * leanAlign;
             if (shoveTimer > 0f) lean += p.shoveLean;
             else if (input.grab && !Grabbing) lean += p.grabLean;
+            lean -= LassoLeanBack;   // 10-26: the Pawn Rush bishop hauling on its rope leans back (RagdollPawn.BishopLasso.cs)
             // Rolling toward the stance leg reads as weight when the legs alternate. With both legs
             // together there is no stance side, so the same roll reads as a limp - fade it out.
             float roll = Posture(p.stepRoll, p.sprintRoll) * Mathf.Sin(gait) * speedN * (1f - p.boundGait) * leanAlign;
-            anchor.MoveRotation(LeanIntoAcceleration(p, dt) * Quaternion.LookRotation(facing, Vector3.up)
+            anchor.MoveRotation(LeanIntoAcceleration(p, dt) * Quaternion.AngleAxis(BodyTurn, Vector3.up) * Quaternion.LookRotation(facing, Vector3.up)
                                 * Quaternion.Euler(lean, 0f, roll));
             ClampOverspeed(p, dt);
         }

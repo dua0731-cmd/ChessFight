@@ -19,7 +19,7 @@ namespace ChessFight.RagdollLab
     {
         // R153 (skill plan v0.3 §9.3): the rook's chain and the knight's fork in place of the charge and the bent leap; the
         // king is out of Pawn Rush.
-        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "pawn-home", "pawn-none", "rook-chain-enemy", "rook-chain-ally", "rook-chain-cancel", "rook-chain-wall", "queen", "knight-fork", "knight-whiff", "knight-none", "knight-e", "bishop", "bishop-trip", "bishop-leash", "rook-ground", "rook-aim", "all" };
+        public static readonly string[] Names = { "jump", "pawn", "pawn-angles", "pawn-help", "pawn-home", "pawn-none", "rook-chain-enemy", "rook-chain-ally", "rook-chain-cancel", "rook-chain-wall", "queen", "knight-fork", "knight-whiff", "knight-none", "knight-e", "bishop", "bishop-trip", "bishop-rope", "bishop-leash", "rook-ground", "rook-aim", "all" };
         public static string Status { get; private set; } = "idle";
         /// <summary>The current run has set its pieces down and settled them (the film records from here).</summary>
         public static bool Staged { get; private set; }
@@ -103,6 +103,9 @@ namespace ChessFight.RagdollLab
 
         RagdollPawn P1 => game != null && game.players.Length > 0 ? game.players[0].pawn : null;
 
+        /// <summary>The bed's test cooldown while a probe has it at 0 (null when none does).</summary>
+        static float? keptCooldown;
+
         IEnumerator Main(string name)
         {
             game = GetComponent<LabGame>();
@@ -110,7 +113,9 @@ namespace ChessFight.RagdollLab
             yield return null;
             if (P1 == null) { Status = "no P1"; yield break; }
             driving = true;
-            float testCooldown = bed.skills.testCooldown;
+            // 10-25: kept once, so a probe started over one cut short does not take the 0 for the bed's own (the test
+            // scene was left on the design cooldowns, 8 s for the queen, after shots were taken back to back).
+            if (!keptCooldown.HasValue) keptCooldown = bed.skills.testCooldown;
             bed.skills.testCooldown = 0f;   // the probe checks the design cooldowns
             string[] list = name == "all" ? Array.FindAll(Names, n => n != "all") : new[] { name };
             foreach (var n in list)
@@ -140,6 +145,7 @@ namespace ChessFight.RagdollLab
                     "stuck-dive" => StuckDive(),
                     "bishop" => Bishop(),
                     "bishop-trip" => BishopTrip(),
+                    "bishop-rope" => BishopRope(),
                     "bishop-leash" => BishopLeash(),
                     "rook-ground" => RookGroundRun(),
                     "rook-aim" => RookAimRun(),
@@ -151,7 +157,8 @@ namespace ChessFight.RagdollLab
                 Staged = false;
             }
             Stop();
-            bed.skills.testCooldown = testCooldown;
+            bed.skills.testCooldown = keptCooldown ?? bed.skills.testCooldown;
+            keptCooldown = null;
             Status = "done " + name;
         }
 
@@ -519,6 +526,60 @@ namespace ChessFight.RagdollLab
                 Add($"퀸 → 더미 {label[i]}: {StateText(game.dummies[i])}, 밀려난 거리 {FlatDistance(before[i], game.dummies[i].Hips.position):0.00} m");
             Add($"  퀸이 예고 동안 움직인 거리 {FlatDistance(queenAt, queenMid):0.00} m (제자리 기대)");
             yield return new WaitForSeconds(1f);
+        }
+
+        /// <summary>
+        /// 10-26, the bishop's X rope (second take): thrown at an enemy 4.5 m ahead, it wraps round its waist; the bishop walks
+        /// away with it for 1.2 s (the enemy is towed); the wheel down 4 notches takes it in (tighter: the enemy comes in); the
+        /// wheel up 4 lets it out (looser); the enemy runs away against it (a tug of war); taken in again and let go with F,
+        /// the taut rope throws it toward the bishop.
+        /// </summary>
+        IEnumerator BishopRope()
+        {
+            yield return Ready(PieceKind.Bishop, new Vector3(0f, 0f, -11f), Vector3.forward, 1);
+            var p1 = P1;
+            var d = game.dummies[0];
+            Place(d, new Vector3(0.4f, 0f, -6.5f), Vector3.back);
+            yield return new WaitForSeconds(0.4f);
+            Vector3 toward = d.Hips.position - p1.Hips.position;
+            toward.y = 0f;
+            aim = toward.normalized;
+            yield return AimThenClick(0.35f);
+            yield return Until(() => p1.BishopLassoPhase == LassoPhase.Hold || p1.SkillStage == SkillStage.None, 1.5f);
+            bool hooked = p1.BishopLassoPhase == LassoPhase.Hold && p1.BishopLassoOn == d;
+            Add($"비숍 밧줄: {(hooked ? $"적 허리에 걸림 (길이 {p1.BishopLassoRest:0.0} m)" : "안 걸림")}");
+            if (!hooked) yield break;
+            Vector3 dummyAt = d.Hips.position, bishopAt = p1.Hips.position;
+            Say("S = 뒤로 걸어 끌고 가기");
+            move = -aim;
+            yield return new WaitForSeconds(1.2f);
+            move = Vector3.zero;
+            Add($"  1.2초 뒤로 걸음: 비숍 {FlatDistance(bishopAt, p1.Hips.position):0.0} m · 적이 끌려온 거리 {FlatDistance(dummyAt, d.Hips.position):0.0} m, 늘어남 {p1.BishopLassoStretch:0.00} m");
+            float d0 = FlatDistance(p1.Hips.position, d.Hips.position);
+            Say("휠↓ 4칸 = 팽팽하게");
+            p1.AddSkillWheel(-4f);
+            yield return new WaitForSeconds(0.8f);
+            Add($"  휠↓ 4칸: 길이 {p1.BishopLassoRest:0.0} m, 비숍-적 거리 {d0:0.0} → {FlatDistance(p1.Hips.position, d.Hips.position):0.0} m (가까워지면 OK)");
+            Say("휠↑ 4칸 = 느슨하게");
+            p1.AddSkillWheel(4f);
+            yield return new WaitForSeconds(0.6f);
+            Add($"  휠↑ 4칸: 길이 {p1.BishopLassoRest:0.0} m, 늘어남 {p1.BishopLassoStretch:0.00} m (느슨하면 0 이하)");
+            Vector3 bishopBefore = p1.Hips.position;
+            walker = d;
+            walkerMove = aim;
+            yield return new WaitForSeconds(1.2f);
+            StopWalker();
+            Add($"  적이 1.2초 반대로 달림: 늘어남 {p1.BishopLassoStretch:0.00} m, 비숍이 끌려간 거리 {FlatDistance(bishopBefore, p1.Hips.position):0.00} m, 밧줄 {p1.BishopLassoPhase}");
+            if (p1.BishopLassoPhase != LassoPhase.Hold) yield break;
+            Say("휠↓ 6칸 = 세게 감기");
+            p1.AddSkillWheel(-6f);
+            yield return new WaitForSeconds(0.15f);
+            float before = FlatDistance(p1.Hips.position, d.Hips.position);
+            Tap("F = 놓기");
+            yield return new WaitForSeconds(0.5f);
+            Add($"  팽팽할 때 F로 놓음: 비숍-적 거리 {before:0.0} → {FlatDistance(p1.Hips.position, d.Hips.position):0.0} m (튕겨 오면 줄어듦), 밧줄 {p1.BishopLassoPhase}");
+            yield return Until(() => p1.SkillStage == SkillStage.None, 1f);
+            Add($"  끝: 쿨 {p1.SkillCooldown:0.0}초");
         }
 
         /// <summary>Only the first half of "bishop": the wire, and an enemy tripping on it (for the film).</summary>

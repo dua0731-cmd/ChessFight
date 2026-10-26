@@ -65,6 +65,8 @@ namespace ChessFight.RagdollLab
         public void Stamp(RagdollPawn pawn, SkillGrade g, bool sword)
         {
             if (pawn == null || g == SkillGrade.None) return;
+            // Sword Fight shows no marks over the heads (10-25, 승규 님: "위에 아이콘이 뜨잖아 그거 다 지워줘").
+            if (sword && !SwordFightSkillFx.HeadMarks) return;
             if (!Ready()) return;
             if (live.TryGetValue(pawn, out var old)) Drop(old);
             var s = new Live { pawn = pawn, g = g, sword = sword, born = clock };

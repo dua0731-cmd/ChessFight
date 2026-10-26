@@ -110,7 +110,8 @@ namespace ChessFight.RagdollLab
                 yaw += GameSettings.LookX * mouseSensitivity;
                 AddPitch(-GameSettings.LookY * mouseSensitivity);
                 float wheel = Input.mouseScrollDelta.y;
-                if (Mathf.Abs(wheel) > 0.01f) Zoom(wheel);
+                // 10-26: not while the followed bishop holds its rope (the wheel pulls it in and lets it out then).
+                if (Mathf.Abs(wheel) > 0.01f && (Target == null || !Target.WheelOnSkill)) Zoom(wheel);
             }
 
             var pawn = Target;

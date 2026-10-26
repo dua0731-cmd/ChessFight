@@ -181,6 +181,9 @@ namespace ChessFight.RagdollLab
         /// (<see cref="SkillDust"/>) and a knockdown leaves no ink ring on the floor. Off (null), they draw as before.
         /// </summary>
         public SkillDust realDust;
+        /// <summary>10-25 (승규 님, Sword Fight: "기물들이 스킬 사용 할 때 저런 vfx 다 지워줘"): no dust or puffs at all -
+        /// <see cref="DustRing"/> and <see cref="PuffBurst"/> draw nothing (the lumps read as rocks).</summary>
+        public bool NoPuffs;
         /// <summary>The camera the dust faces (it is drawn as quads turned to it); the main camera if not given.</summary>
         public Func<Camera> View;
 
@@ -1256,6 +1259,7 @@ namespace ChessFight.RagdollLab
         /// R138: real dust rolling out over the floor while <see cref="realDust"/> is on.</summary>
         public void DustRing(Vector3 at, int n, float radius, Palette? colors = null, float size = 0.3f, float life = 0.5f, float roll = 10f)
         {
+            if (NoPuffs) return;
             if (realDust != null)
             {
                 var c = colors ?? dust;
@@ -1287,6 +1291,7 @@ namespace ChessFight.RagdollLab
         /// palette, while <see cref="realDust"/> is on.</summary>
         public void PuffBurst(Vector3 at, Palette colors, int n, float radius, float size, float life = 0.45f, float up = 0.3f)
         {
+            if (NoPuffs) return;
             if (realDust != null)
             {
                 realDust.Burst(at, colors.light, colors.deep, n, radius, size, life, up);

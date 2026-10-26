@@ -44,6 +44,8 @@ namespace ChessFight.RagdollLab
             // ghost is gone); R140 the bishop's rope (Skill Rope).
             kit.View = () => ViewCamera;
             kit.UseRealDust();
+            // 10-25 (승규 님: "폰 러쉬 퀸 오브 더 힐 먼지 퍼프도 다 지워줘"): no dust or puffs at all.
+            kit.NoPuffs = true;
             BuildShock();
             BuildKnightFx();
             BuildRope();
@@ -55,6 +57,8 @@ namespace ChessFight.RagdollLab
         void DestroyDesignA()
         {
             DestroyShock();
+            DestroyReal();
+            DestroyLasso();
             DestroyKnightFx();
             DestroyRope();
             DestroyStake();
@@ -78,9 +82,21 @@ namespace ChessFight.RagdollLab
                 if (pawn == null || pawn.PawnRushSkills == null) continue;
                 switch (pawn.Piece)
                 {
-                    case PieceKind.Queen: QueenWarning(pawn); break;
+                    case PieceKind.Queen: if (Real(PieceKind.Queen)) RealQueenWarning(pawn); else QueenWarning(pawn); break;
                     case PieceKind.Rook: RookChainFx(pawn); break;   // R153: the chain (PawnRushSkillFx.Chain.cs)
-                    case PieceKind.Bishop: BishopAimTiles(pawn); BishopThrowProp(pawn); break;
+                    case PieceKind.Bishop:
+                        if (Params != null && Params.bishopRope)
+                        {
+                            // 10-26: the X rope (PawnRushSkillFx.BishopRope.cs).
+                            BishopLassoAim(pawn);
+                            BishopLassoFx(pawn);
+                        }
+                        else
+                        {
+                            if (Real(PieceKind.Bishop)) RealBishopAim(pawn); else BishopAimTiles(pawn);
+                            BishopThrowProp(pawn);
+                        }
+                        break;
                     case PieceKind.Knight: KnightMarks(pawn); KnightTargetRing(pawn); break;
                     case PieceKind.Pawn: PawnTargetRing(pawn); break;
                 }
@@ -990,6 +1006,7 @@ namespace ChessFight.RagdollLab
         void KnightGather(RagdollPawn k)
         {
             float windup = Params != null ? Params.knightWindup : 0.15f;
+            if (kit.NoPuffs) return;   // 10-25: no dust at all
             if (kit.realDust != null && k != null)
             {
                 SkillDust.Tint(kit.dust.light, kit.dust.deep, out var lit, out var shade);
@@ -1077,6 +1094,7 @@ namespace ChessFight.RagdollLab
             f.tiles.Add(t);
             AirKick(pawn.Hips.position, dir, e.count >= 2 ? 0.8f : 0.65f, 0.12f);
             Vector3 heel = at - dir * 0.25f;
+            if (kit.NoPuffs) return;   // 10-25: no dust at all
             if (kit.realDust != null)
             {
                 // R138: real dust kicked back off the heel (no cartoon puffs).
@@ -1110,7 +1128,7 @@ namespace ChessFight.RagdollLab
         {
             if (air == null) return;
             Vector3 way = Kit.FlatDir(dir, Vector3.forward);
-            air.Kick(hips - way * 0.26f - Vector3.up * 0.04f, (-way + Vector3.down * down).normalized, strength, kit != null ? kit.realDust : null);
+            air.Kick(hips - way * 0.26f - Vector3.up * 0.04f, (-way + Vector3.down * down).normalized, strength, kit != null && !kit.NoPuffs ? kit.realDust : null);
         }
 
         /// <summary>The pawn's hit (A): straight on, a shove (3-frame stop, three drops); on the diagonal, a knockdown (4

@@ -172,6 +172,9 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>After the skeleton is drawn this frame: what is held in a drawn hand is placed now, not a frame behind it.</summary>
+        public event Action Posed;
+
         void LateUpdate()
         {
             // A per-screen hit stop (R111, online): the picture holds still while the bodies go on.
@@ -179,8 +182,15 @@ namespace ChessFight.RagdollLab
             if (pieceLook)
             {
                 PoseAsPiece();
+                Posed?.Invoke();
                 return;
             }
+            PoseAsPawn();
+            Posed?.Invoke();
+        }
+
+        void PoseAsPawn()
+        {
             var bodies = pawn.bodies;
             for (int i = 0; i < entries.Length; i++)
             {
@@ -242,7 +252,9 @@ namespace ChessFight.RagdollLab
                             if (pawn.ArmsStretched) k = Mathf.Max(1f, reach);
                             else if (pawn.Grabbing) k = Mathf.Clamp(reach, 1f, PieceArmDraw);
                             Quaternion inChest = Quaternion.Inverse(chestBody.rotation) * a.rotation;
-                            if (!reaching)
+                            // 10-25 (승규 님: "이 모션이랑 팔 각도를 자연스럽게"): a sword arm goes all the way with its cut.
+                            bool free = e.driverA == (int)BodyId.ArmR && pawn.RightArmFree;
+                            if (!reaching && !free)
                             {
                                 Quaternion swing = Quaternion.Slerp(Quaternion.identity, Quaternion.Inverse(armRest[i]) * inChest, PieceArmSwing);
                                 inChest = armRest[i] * Quaternion.RotateTowards(Quaternion.identity, swing, PieceArmMost);

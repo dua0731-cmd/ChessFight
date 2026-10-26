@@ -72,6 +72,7 @@ namespace ChessFight.RagdollLab
             game = GetComponent<SwordFightGame>();
             if (game == null) game = FindFirstObjectByType<SwordFightGame>();
             kit = new Kit(new GameObject("Sword Fight skill effects").transform, () => Viewer, () => Eye);
+            kit.NoPuffs = true;
             BuildBoardLook();
             SwordFightSkills.Fx += OnFx;
             SwordFightEdgeFloor.Changed += OnFloor;

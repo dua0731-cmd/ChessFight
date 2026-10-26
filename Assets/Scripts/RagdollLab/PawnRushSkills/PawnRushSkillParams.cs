@@ -80,14 +80,44 @@ namespace ChessFight.RagdollLab
         public float bishopArm = 0.5f;
         public float bishopActive = 6f;
         public int bishopTrips = 2;
-        [Tooltip("줄에 걸린 적은 그 자리에 묶여 서 있다 (초). R138 1.6초 → R153 1.0초 (승규 님 10-16)")]
-        public float bishopBind = 1.0f;
+        [Tooltip("줄에 걸린 적은 그 자리에 묶여 서 있다 (초). R138 1.6초 → R151 1.0초 (승규 님 10-16) → 10-25 \"묶음을 0.6초 늘려줘\" 1.6초 → \"2초로 늘려줘\" 2.0초 → \"3초로 해줘\" 3.0초")]
+        public float bishopBind = 3.0f;
         public float bishopCooldown = 8f;
         [Tooltip("이보다 가파른 바닥에는 깔리지 않는다 (도)")]
         public float bishopMaxSlope = 30f;
         [Tooltip("유지 거리: 비숍이 덫 가운데에서 이보다 멀어지면 줄이 풀려 사라진다 (m). 이 거리를 넘으면 실이 팽팽해지며 깜빡인다 (m)")]
         public float bishopLeash = 6f;
         public float bishopLeashWarn = 5f;
+
+        [Header("비숍 — X자 밧줄 걸기 (10-26)")]
+        [Tooltip("10-26 승규 님: \"소드파이트에서 비숍이 구원의 손 할 때 밧줄 그걸로 비숍 손에서 x 자로 상대 배에다가 걸고 wasd나 마우스 휠로 밧줄 탄력을 늘렸다 줄였다\". 켜면 X자 밧줄 걸기, 끄면 예전 X자 덫")]
+        public bool bishopRope = true;
+        [Tooltip("밧줄이 닿는 거리 (m), 날아가는 빠르기 (m/s), 조준 도움: 조준 방향 좌우 이 각도 안 (도)의 적에게")]
+        public float bishopRopeRange = 7f;
+        public float bishopRopeSpeed = 16f;
+        public float bishopRopeAssist = 12f;
+        [Tooltip("걸고 있을 수 있는 시간 (초). 그동안 비숍은 WASD로 걸어 다니며 끌고 다닌다 (질주 X)")]
+        public float bishopRopeHold = 6f;
+        [Tooltip("밧줄 길이 범위 (m): 휠로 이보다 짧게(팽팽하게) 감거나 길게(느슨하게) 풀 수 없다. 1~6 m → 10-26 승규 님 \"상한선과 하안선 범위가 넓어 많이 좁혀야 돼\" 1.5~3.5 m")]
+        public float bishopRopeMin = 1.5f;
+        public float bishopRopeMax = 3.5f;
+        [Tooltip("10-26 승규 님 \"마우스 휠을 올리면 올릴 수록 느슨해지고 내리면 내릴 수록 줄이 팽팽해져\": 휠 한 칸에 길이가 변하는 만큼 (m, 위 = 길게; 0.4 → 0.25), 길이가 따라가는 빠르기 (m/s)")]
+        public float bishopRopeWheel = 0.25f;
+        public float bishopRopeReel = 4f;
+        [Tooltip("걸리는 순간 밧줄 길이를 상대까지 거리보다 이만큼 짧게 잡는다 (m): 걸자마자 조금 팽팽하게 (10-26 \"조금 더 팽팽하게\")")]
+        public float bishopRopeTighten = 0.5f;
+        [Tooltip("탄력: 밧줄이 1 m 늘어날 때마다 상대가 끌려오는 빠르기 (m/s), 그 최대 (m/s). 4 → 10-26 \"조금 더 팽팽하게\" 6")]
+        public float bishopRopeStiffness = 6f;
+        public float bishopRopePull = 6f;
+        [Tooltip("비숍도 이 비율만큼 상대 쪽으로 끌려간다 (끌고 걸으면 그만큼 느려진다)")]
+        public float bishopRopeBrace = 0.3f;
+        [Tooltip("휠로 감아서 만들 수 있는 늘어남 (m): 상대가 버티면 이보다 더 감아 들일 수 없다 (끊어짐보다 작게)")]
+        public float bishopRopeHaul = 1.5f;
+        [Tooltip("밧줄이 제 길이보다 이만큼 (m) 넘게 늘어나면 끊어진다 (상대가 반대로 달리거나 날아갈 때)")]
+        public float bishopRopeBreak = 3f;
+        [Tooltip("팽팽할 때 놓으면 늘어난 1 m마다 이 빠르기로 비숍 쪽으로 튕겨 온다 (m/s), 그 최대 (m/s)")]
+        public float bishopRopeFling = 3f;
+        public float bishopRopeFlingMax = 7f;
 
         [Header("룩 — 직선 사슬 견인 (R153)")]
         [Tooltip("사슬이 닿는 거리 (m), 위아래 조준 한계 (도). 기획서 6 m → 10-22 승규 님 \"룩 사거리가 좀 많이 짧은 거 같아 많이 늘려줘\" 12 m → \"8m로 줄여줘\" 8 m")]
