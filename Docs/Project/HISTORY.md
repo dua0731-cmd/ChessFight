@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-28 | R190 | `skill-network-test`: 소드 파이트 스킬 몸동작 Mixamo 클립 1단계 — `SkillClipRig`, `Core/SkillClipTiming`(+시험), `SwordFightClipSet`, `SwordFightSkills.Clips.cs`, 에디터 `SwordFightClipImporter`, 클립 폴더 README, 문서 |
+| (이 커밋, 로컬) | 10-28 | R191 | 룩 F 후딜 칼이 `HomeBlade`로 천천히 돌아감, R160~R171 문서 커밋 표기 정정 |
+| `a127643` | 10-28 | R190 | `skill-network-test`: 소드 파이트 스킬 몸동작 Mixamo 클립 1단계 — `SkillClipRig`, `Core/SkillClipTiming`(+시험), `SwordFightClipSet`, `SwordFightSkills.Clips.cs`, 에디터 `SwordFightClipImporter`, 클립 폴더 README, 문서 |
 | `5600a01` | 10-27 | — | 경기장 스킬 시험 씬에 Unity가 더한 URP 카메라 · 빛 데이터 |
 | `7507810` | 10-27 | R160~R171 | 소드 파이트 스킬 VFX(킹 · 룩 · 퀸 · 비숍 1 · 2층), 공용 `Vfx*` 부품 · 셰이더, `ChessFight.VFX.Editor` |
 | `06c7c93` | 10-27 | R159 | Unity가 VFX Graph를 설치하며 채운 `ProjectSettings/VFXManager.asset`(VFX 런타임 셰이더 · 리소스 참조) |

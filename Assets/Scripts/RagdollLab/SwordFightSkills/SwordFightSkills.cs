@@ -1073,7 +1073,14 @@ namespace ChessFight.RagdollLab
                         Vector3 low = (f * 0.55f - Vector3.up * 0.85f).normalized, high = (f * 0.3f + Vector3.up).normalized;
                         return Vector3.Slerp(low, high, k * k * (3f - 2f * k));
                     }
-                    case PieceKind.Rook when Stage == SfStage.Recovery: return (f * 0.3f + Vector3.up).normalized;
+                    case PieceKind.Rook when Stage == SfStage.Recovery:
+                    {
+                        // 10-28 (R190 review): held up while the wave runs, then handed back to the sword's own pose as his
+                        // body lets go (RookKey), not snapped down when the recovery ends.
+                        Vector3 up = (f * 0.3f + Vector3.up).normalized;
+                        if (!BodyMotion || Fighter == null || S == null) return up;
+                        return Vector3.Slerp(up, Fighter.HomeBlade, Smooth((StageTime - 0.1f) / Mathf.Max(0.05f, S.rookRecovery - 0.1f)));
+                    }
                     case PieceKind.Bishop when Stage == SfStage.Windup || Stage == SfStage.Active: return (f + Vector3.up * 0.3f).normalized;
                     case PieceKind.Knight when BodyMotion && (Stage == SfStage.Active || Stage == SfStage.Recovery): return KnightDiveBlade(f, side);
                     case PieceKind.Knight when Stage == SfStage.Active: return (Vector3.up - f * 0.2f).normalized;
