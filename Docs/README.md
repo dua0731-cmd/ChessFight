@@ -33,6 +33,7 @@ Docs/
 │  └─ RAGDOLL.md           래그돌 병합·어댑터·멀티 조건
 ├─ GameModes/README.md 게임 모드 목록, 모드별 매칭, 새 모드 추가법
 │  └─ QueenOfTheHill/     퀸 오브 더 힐 인수인계(README: 기획 결정·개발 순서·시작 프롬프트), N4 참고 원문
+├─ VFX/README.md       VFX 작업대(기물별 이펙트 폴더 · 키 · VfxCue 규칙), 밀도, HDR · 블룸 공통 기준, 다음 순서 (R159)
 ├─ Skills/             기물 스킬: 인수인계(README), 기획서(DESIGN, 폰 러쉬 v0.2 상세판)
 ├─ KingRush/           첫 미니게임
 │  ├─ README.md            씬 배치, 코스 컴포넌트, 네트워크 한계, 협업 규칙

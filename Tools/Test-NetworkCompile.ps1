@@ -31,6 +31,11 @@ $game = Get-ChildItem "$projectRoot/Assets/Scripts/Game" -Filter '*.cs' | ForEac
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.Game.dll") + @($game)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Game (view/input/HUD) compilation failed.' }
+# The VFX workbench and cues. VisualEffect is the engine's VFX module, not the VFX Graph package.
+$vfx = Get-ChildItem "$projectRoot/Assets/Scripts/VFX" -Filter '*.cs' | ForEach-Object FullName
+$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.VFX.dll") + @($vfx)
+& $mono $compiler @compileArgs
+if ($LASTEXITCODE -ne 0) { throw 'VFX workbench compilation failed.' }
 $gameplay = Get-ChildItem "$projectRoot/Assets/Scripts/Gameplay" -Recurse -Filter '*.cs' | ForEach-Object FullName
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.Gameplay.dll") + @($gameplay)
 & $mono $compiler @compileArgs
@@ -61,5 +66,5 @@ $editor = Get-ChildItem "$projectRoot/Assets/Scripts/Editor" -Filter '*.cs' | Fo
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-out:$output/ChessFight.Network.Editor.dll") + @($editor)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Editor utility compilation failed.' }
-Write-Output 'PASS: Steamworks, Core, Steam adapter, Game, Gameplay, RagdollLab (+ Steam bridge, builder), Pawn Rush, Bootstrap and Editor assemblies compiled.'
+Write-Output 'PASS: Steamworks, Core, Steam adapter, Game, VFX, Gameplay, RagdollLab (+ Steam bridge, builder), Pawn Rush, Bootstrap and Editor assemblies compiled.'
 Write-Output 'NOTE: Assets/Scripts/Input is skipped; it needs the Input System package and compiles inside Unity.'

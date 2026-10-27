@@ -1,5 +1,20 @@
 # Network 구현 검증 기록
 
+## ★ 2026-10-27 VFX 작업대 (R159) — 확인 목록
+
+[VFX](../VFX/README.md). `skill-network-test`에서 Unity를 연 뒤, 패키지 관리자가 VFX Graph 17.3.0을 설치하고 나서 확인한다.
+
+| # | 할 일 | 기대 | 결과 |
+|---|---|---|---|
+| 1 | 프로젝트 열기 | 컴파일 오류 없음, Package Manager에 Visual Effect Graph 17.3.0. `manifest.json`·`packages-lock.json`이 바뀌었으면 커밋 | 미확인 |
+| 2 | `Assets/VFX/Scenes/VFX_Workbench.unity` 열기 (Play 전) | 어두운 바닥에 킹, 앞 6 m에 과녁 폰. 씬이 저장할 것 있음(*) 표시가 되지 않음 | 미확인 |
+| 3 | `VFX Workbench`의 Piece를 Queen으로 | 무대 기물이 퀸으로 바뀜. 씬을 저장하고 다시 열어도 `VFX Workbench Stage`가 파일에 들어가지 않음 | 미확인 |
+| 4 | Play | 왼쪽 위 한글 패널, 이펙트 `[공용] 00_HDR_BloomCheck` | 미확인 |
+| 5 | Space | 가슴 높이에 주황 구슬이 0 · 0.4 · 0.8초에 하나씩, ×1은 번지지 않고 ×2.5 · ×6은 번짐, 4.5초 뒤 사라짐 | 미확인 |
+| 6 | B → Space | 패널 "작업대 볼륨", ×1도 살짝 번짐 | 미확인 |
+| 7 | 1~6 · L · T · P · V · 마우스 | 기물 바뀜, 반복, 느리게, 멈춤, 과녁 숨김, 회전 · 이동 · 거리 | 미확인 |
+| 8 | Play 끝 | Time Scale이 1로 돌아옴(다른 씬이 느려지지 않음) | 미확인 |
+
 ## ★ 2026-10-21 소드 파이트 시연 연출 (R150) — 확인 목록
 
 [DEMO](../GameModes/SwordFight/DEMO.md). 시연 HTML(`Docs/GameModes/SwordFight/Demo/drop_and_steal_demo.html`)을 브라우저로 옆에 띄우고 `SwordFight.unity` Play와 비교.
