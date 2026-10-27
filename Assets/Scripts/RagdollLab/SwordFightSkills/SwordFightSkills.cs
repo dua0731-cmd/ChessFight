@@ -141,6 +141,7 @@ namespace ChessFight.RagdollLab
         {
             All.Remove(this);
             if (Fighter != null && Fighter.Skills == this) Fighter.Skills = null;
+            DropClipRig();
         }
 
         // ---------------------------------------------------------------- input

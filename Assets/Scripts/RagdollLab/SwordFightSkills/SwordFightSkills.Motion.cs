@@ -6,7 +6,8 @@ namespace ChessFight.RagdollLab
     /// <summary>
     /// 10-26 (승규 님: "기물이 스킬 쓸 때 연출과 모션이 필요하다고 하면 추가해도 돼"): the pieces' own bodies through their skills,
     /// so a skill reads as the piece doing it - set before the release, the release, the blow held, the follow-through,
-    /// the settle - and not only as effects appearing. The king, the queen and the knight so far.
+    /// the settle - and not only as effects appearing. All five pieces' F and edge skills (R190: a skill with a Mixamo clip
+    /// plays it over this, SwordFightSkills.Clips; this stays for the rest and for the aims the clips leave to it).
     /// <list type="bullet">
     /// <item>Everything that moves a body is the host's: joint targets through <see cref="SkillBodyPose"/> (asked by
     /// SwordFightPawn.SwordPose, RagdollPawn.PoseOverride) and the whole body through RagdollPawn.SkillTurn / SkillLean /
@@ -144,6 +145,8 @@ namespace ChessFight.RagdollLab
             Pawn.SkillLean = on ? bodyKey.lean * bodyKey.w : 0f;
             Pawn.SkillStance = on && bodyKey.legs && Pawn.Grounded
                 ? StanceDrop(Mathf.Max(Mathf.Abs(GroundThigh(bodyKey.thighL)), Mathf.Abs(GroundThigh(bodyKey.thighR))) * bodyKey.w) : 0f;
+            // R190: a skill with a Mixamo clip plays it over this (SwordFightSkills.Clips).
+            StepClip(dt, active);
         }
 
         bool BuildKey(out BodyKey k)
@@ -172,9 +175,10 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- what the drives are asked (host)
 
-        /// <summary>The part's local rotation in its parent body for the skill's motion now (host only), or null for the
-        /// puppet's own. A piece the queen's edge cut went through is held as it stood (<see cref="HoldStruck"/>).</summary>
-        public Quaternion? SkillBodyPose(int part)
+        /// <summary>The part's local rotation in its parent body for the skill's motion in code now (host only), or null
+        /// for the puppet's own. A piece the queen's edge cut went through is held as it stood (<see cref="HoldStruck"/>).
+        /// A clip (R190) is laid over it in <see cref="SkillBodyPose"/>.</summary>
+        Quaternion? CodeBodyPose(int part)
         {
             if (NetPuppet || Pawn == null) return null;
             if (struckLeft > 0f && Pawn.State == PawnState.Active && part >= (int)BodyId.Chest && part <= (int)BodyId.HandR)
@@ -278,6 +282,7 @@ namespace ChessFight.RagdollLab
             get
             {
                 if (!BodyMotion || Pawn == null || Pawn.State != PawnState.Active || CarriedByBishop) return false;
+                if (ClipMovesFreeArm) return true;
                 switch (Piece)
                 {
                     case PieceKind.King:

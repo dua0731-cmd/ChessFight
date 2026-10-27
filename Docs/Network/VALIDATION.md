@@ -1,5 +1,19 @@
 # Network 구현 검증 기록
 
+## ★ 2026-10-28 소드 파이트 스킬 몸동작 Mixamo 클립 1단계 (R190) — 확인 목록
+
+`skill-network-test`. AI는 Unity를 못 켰다: 코드 · 컴파일 · Core 시험만. 받는 법은 `Assets/Art/SwordFight/Mixamo/README.md`.
+
+| # | 할 일 | 기대 | 결과 |
+|---|---|---|---|
+| 1 | 클립 없이 소드 파이트 스킬 시험 씬 · 다섯 기물 F · E | 전과 같음(클립이 없으면 코드 동작), 콘솔에 경고 없음 | 미확인 |
+| 2 | Mixamo 클립(예: `King_F.fbx`)을 `Assets/Art/SwordFight/Mixamo/`에 넣음 | 가져오기 설정이 Rig = Humanoid, 클립 Loop Time 꺼짐 | 미확인 |
+| 3 | 메뉴 ChessFight → Sword Fight → Skill Clips → Fill From Mixamo Folder | `Assets/Resources/SwordFightClips.asset` 생기고 선택됨, 콘솔 `[SkillClips] King F ← … marks set` | 미확인 |
+| 4 | 그 스킬을 씀 | 몸(가슴 · 머리 · 왼팔 · 다리)이 클립처럼 움직이고, 칼 든 오른팔은 전처럼 칼 자세. 콘솔에 `no skill clips` 경고가 뜨면 그 이유를 알려 주기 | 미확인 |
+| 5 | marks 1번을 클립에서 내리치기 시작하는 순간에 맞춤 | 클립의 타격과 게임의 타격 · VFX가 같은 때 | 미확인 |
+| 6 | 서 있는 다리 | 발이 기물 받침에 파묻히거나 바닥을 차지 않음 | 미확인 |
+| 7 | 두 PC(온라인) | 상대 화면에서도 같은 동작(새 패킷 없음) | 미확인 |
+
 ## ★ 2026-10-27 킹 착지를 9번으로 교체 (R171) — 확인 목록
 
 `skill-network-test` Unity 폴더(커밋 안 함).
