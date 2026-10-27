@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 문서 커밋, 로컬 main) | 10-27 | R159 | 폰 러시 공간별 미니게임 구상: 10종 대표 장소·솔로/협동·완료 연출·구간별 변형 30개·조합, 기본 미션 2곳/후반 추가 구별, 최신 G·I·J 반영. 문서만, 사용자 선택 전. Core 131·모의 세션 41 통과(테마 실기 검증 아님). 원격 푸시는 GitHub 인증 오류로 실패, Desktop Push 필요 |
 | (이 병합) | 10-24 | R158 | `urp-conversion`(승규 님, URP·메뉴·스킬 R148~R157)과 소드 파이트(R149·R150)를 `main`에 병합. 프로토콜 v23 두 개 → v24, 문서 충돌은 양쪽 모두 남김(R148~R150 번호가 두 계열에 겹침) |
 | `2e304c4` | 10-21 | R150 | 시연 HTML 연출: `SwordFightArena`·`SwordFightShapes`, 유령·쟁반·부활 손·방울·빛기둥·고리·흔들림·카메라, 시연 HUD(도장·패널·이름표·자막·끝 화면), Core 받침 칸, 시연 자료 `Docs/GameModes/SwordFight/Demo/`. 시험: Core 129·세션 41 |
 | `a3f9b30` | 10-21 | R149 | 고침: `SwordFightMatch`의 `MaterialPropertyBlock` 필드 초기화 → 처음 쓸 때 만듦(경기 시작 때 CreateImpl 예외, PITFALLS 50) |

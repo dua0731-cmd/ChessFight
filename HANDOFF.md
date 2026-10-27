@@ -4,7 +4,13 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-24**(R158 열흘 안에 갱신된 브랜치를 `main`에 병합: `urp-conversion`(승규 님 R148~R157 — **렌더가 URP 17.3**, 메뉴 기물 모델·시작 화면·스킬 R153~R156)과 `claude/magical-keller-xbcr9q`(사용자 R149·R150 소드 파이트 프로토타입·시연 연출). **번호 주의: R148·R149·R150은 `main` 계열(사용자: Esc 메뉴·소드 파이트)과 승규 님 계열(메뉴 기물·스킬 이펙트 바닥·시작 화면)이 따로 썼다 — 날짜·요청자로 구별.** 두 쪽 모두 프로토콜 v23을 썼으므로 **v24**. `JY-ragdoll_v2`(지성 님 맵, 10-15)는 `main`과 공통 이력이 없고 옛 폴더 구조라 병합하지 않음(아래 R158). 다음 빈 번호 R159.)
+최종 갱신: **2026-10-27**(R159 폰 러시 미니게임 10종의 성 입구·성 내부·왕실 공간 테마 구상. **문서 제안만, 코드·씬 변경 없음.** 다음 빈 번호 R160.)
+
+> **R159(사용자, 10-27): 폰 러시 시각자료에 미니게임을 녹이는 구상.** 초반 성 입구 → 중반 성 내부 → 후반 왕 근처 중요 공간, 구간 사이 미니게임은 혼자 완료 가능·협동 시 가속. [공간별 구상](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md)에 10종 대표 장소·솔로/협동 행동·완료 연출·구간별 변형 30개·조합을 정리. 기본 미션 2곳 / 첨부 배치도의 후반 미션은 선택 확장. G·I는 R128, J는 R129 기준. J 단일 경로의 약한 협동 가속과 A·H·I 무한 방해 가능성은 후속 설계 과제로 구분. **기획 제안, 사용자 선택 전.** Core 131·모의 세션 41 통과는 기존 코드 검사이며 이 구상의 Unity·Steam 확인이 아님.
+
+직전 구현 갱신: **2026-10-24 R158** — `urp-conversion`(승규 님 R148~R157, URP 17.3·메뉴·스킬)과 `claude/magical-keller-xbcr9q`(사용자 R149·R150, 소드 파이트)를 `main`에 병합. 프로토콜 **v24**. R148~R150은 두 계열이 따로 쓴 번호이므로 날짜·요청자로 구별. `JY-ragdoll_v2`는 공통 이력·폴더 구조 문제로 병합하지 않음(아래 R158).
+
+**R159 전달 상태:** 로컬 `main`에 문서 커밋. 원격 푸시는 GitHub `Invalid username or token` 인증 오류로 실패(10-27). 자격증명을 바꾸거나 재시도하지 않았다. GitHub Desktop에서 Push 필요.
 
 > **R158(사용자, 10-24): 열흘 안 브랜치 병합.** `main` ← `claude/magical-keller-xbcr9q`(앞으로 감기) ← `urp-conversion`(병합 커밋, 충돌 8파일: 코드 3 = 모드 문구는 소드 파이트 쪽·프로토콜 v24·시험 둘 다, 문서 5 = 양쪽 다 남김, PITFALLS 소드 파이트 줄은 50번으로, UI 승규 님 절은 18·19번으로). `skill-network-test`·`bold-johnson`·`adoring-lamport`는 이미 같음. **URP 뒤 소드 파이트의 코드 재질**: `Shader.Find("Standard")` → `LitMaterials`(URP Lit) 로 바꿈. **`JY-ragdoll_v2` 안 함:** 공통 조상 없음, `Assets/ChessFight/…`·`Assets/Maps/…` 옛 배치와 R90에 지운 `ImportedChessFightMap` 씬에 기댐 → 그대로 합치면 지운 파일이 되살아남. 지성 님 새 작업(10-09 작업환경, 10-11 장애물 구역1 `O04_RoyalGateRush`, 10-15 왕실 연결 회랑 `O05_RoyalFountainHall`)은 지금 구조로 옮기는 작업이 따로 필요(결정 대기). Unity 미확인.
 
@@ -265,6 +271,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **폰 러시 공간별 미니게임 구상(10-27, R159)** | [PAWN_RUSH_MINIGAME_THEMES](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md): 기존 10종의 장소·장치·완료 연출·솔로/협동·구간별 변형. 기본 미션 2곳, 후반 미션 추가는 선택안. **기획 제안만, 코드·씬 변경 없음, 사용자 선택 전** |
 | **소드 파이트 프로토타입(10-21, R149)** | 명세 v1.0. Core `SwordMatch.cs`(`SwordMatchRules`·`SwordBoard`·`SwordGhosts`·`SwordMatchWire`), `RagdollLab/SwordFightMatch.cs`(+`.Board`·`.Hud`·`.Dev`), `SwordFightSkills/SwordFightSkills.Match.cs`(폰 F·`Ready`), `SwordFightEdgeFloor`(`Erased`·일반 가장자리), `RagdollLabSteam/SteamMatchLabLink.cs`, `LabNetLink.RealMatch`, `SteamSession` v23·소드 파이트 조기 시작. Core 129·세션 41·컴파일 통과. **Unity·Steam 미확인** |
 | **URP 전환(10-16, R151, `urp-conversion` 브랜치, 커밋 안 함)** | URP 17.3 패키지(manifest 줄은 커밋 안 함), 템플릿 URP 에셋 사용, `RenderPipelineOverride` 지움, 재질 33개 Lit, 셰이더 9개 손봄(공통 `Shaders/URP/*.hlsl`), 코드 재질 `LitMaterials`, 설정 창 그림자·MSAA `PipelineSettings`, 스킬 블룸 = URP Bloom. AI 정지 화면 비교만. Core 124·세션 41·어셈블리 컴파일 통과. **Unity(사람)·빌드·Steam 미확인, `main`에 안 합침** |
 | **미니게임 v1.0·온라인 물리(10-15, R126)** | 게임 10종(`MgEnPassant`·`PaintBoard`/`MgPaint`·`MgCheckmate`·`MgDrawbridge`·`MgKingEscort`·`MgCheckBlock`·`MgKnightPads`·`MgWaterReturn` + B·D·E), 묶음 뽑기, 아레나 단·간판·막대·공통 연출(`Arena`·`ArenaFx`·`InstallRise`), `GrabHandle`·`IMiniGamePawn`, Core 규칙(`PawnRushGames`·`CheckmateHunt`·`CheckBlockGenerator`), 장애물 판정 `ObstacleClock.Authority`·참가자 장애물 시각, `CFP3`(스테이션 블록), 든 판자 동기화, 검증기 v1.0 검사, 프로토콜 v21. Core 115·세션 41·컴파일 통과. **Unity·Steam 미확인** |
@@ -319,6 +326,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **폰 러시 성 입구·성 내부·왕실 테마**(R159) | 구상 문서만. Unity 적용·사용자 플레이 확인 없음 | [공간별 미니게임 구상](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md) |
 | **소드 파이트 프로토타입**(R149): 고르기 → 3·2·1 → 장외 점수·빼앗기·폰 부활·판 축소 → 결과 → 로비, 기물 F·E·폰 F, 온라인(로비 방) | 코드·Core 시험·컴파일, Unity·Steam 미확인 | [SwordFight/PROTOTYPE](Docs/GameModes/SwordFight/PROTOTYPE.md) |
 | **음성 채팅**(R131): Steam 음성, 파티·팀(파티 있으면 파티, 없으면 팀 전체, P에서 바꿈), 누르고 말하기 V·자동, 같은 크기, 사람별 음소거. 경기 중 왼쪽 위 말하는 사람, P 기보지, 로비 이름표, 설정 → 음성 채팅 | 코드·Core 시험·AI의 Unity 화면 확인(커밋 전). 소리·두 PC·사용자 미확인 | [UI §16](Docs/Architecture/UI.md#16-음성-채팅-r131-2026-10-13) |
 | **소드 파이트 스킬 시험 씬 온라인**(R121): F3 Steam 테스트 방·로컬 시험, 방장이 팀 무작위(5명 3:2, F5), F·E 스킬 10개가 모든 화면에 같은 연출·소리, 무너지는 바닥 동기화, 온라인 슬로모션 대신 짧은 멈춤 + 화면 당김 | 코드·Core 시험·AI의 PC 한 대 로컬 시험(F 4개·E 5개, 소리 재생 횟수, R123에 칼 맞기·킹 F 받아내기·zip 그대로 다시 봄), **사람·Steam 5명 미확인**. 실제 소드 파이트 경기의 연결에는 스킬 없음 | [Network/SKILLS_ONLINE §15](Docs/Network/SKILLS_ONLINE.md#15-r121-소드-파이트-스킬-시험-씬-온라인-10-11) |
@@ -358,6 +366,10 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**폰 러시 공간 테마 구상(R159, 10-27)**
+- [공간별 구상](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md)의 대표안 C 해자 도개교·A 연회장 바닥·H 작전실 몰이와 10종 장소 후보를 사용자와 고른다. 미션은 두 곳이 기본이며 후반 세 번째 미션은 미확정.
+- 구현 요청이 오면 선택한 장소의 동선·조작 공간·팀별 문부터 설계한다. J의 협동 가속, A·H·I의 지속 방해 대응은 외형만으로 해결되지 않는 별도 과제다. 이번 요청은 구상이므로 자동 구현하지 않는다.
 
 **소드 파이트 스킬 온라인 5명 시험 (R121, 10-11 저녁, 승규 님 + 팀원)**
 - 5명 시험용 최신 빌드 세 개(10-11 21시, `7eedc08`, 모두 v18 + R123): `C:\Work\ChessFight-SkillNet\Builds\SkillNet_PawnRush_1011c.zip` · `SkillNet_QueenOfTheHill_1011c.zip` · `SkillNet_SwordFight_1011c.zip`. 같은 모드는 모두 같은 zip을 쓴다. 폰 러쉬·퀸 오브 더 힐의 예전 zip(v17)과는 안 만난다. 소드 파이트 `_1011b`는 `_1011c`와 코드가 같다. 예전 `_1011`도 같이 접속은 되지만 방장이 멈춘 뒤 그 PC 화면이 오래 늦는다. 순서와 볼 것은 [VALIDATION R121 표](Docs/Network/VALIDATION.md).
