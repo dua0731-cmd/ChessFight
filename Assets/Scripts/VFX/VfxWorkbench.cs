@@ -28,7 +28,7 @@ namespace ChessFight.VFX
         static readonly float[] Speeds = { 1f, .5f, .25f, .1f };
         static readonly float[] Densities = { 1f, .6f, .35f };
         // An effect is cleared this long after its cue ends (its last particles fade out) and replayed this long after.
-        const float Linger = 2f, ReplayGap = .6f, NoCueLength = 3f;
+        const float Linger = VfxCue.Linger, ReplayGap = .6f, NoCueLength = 3f;
 
         [Tooltip("The piece on the stage. Its effects are the prefabs in Assets/VFX/Prefabs/<Piece>/ and .../Common/.")]
         public Piece piece = Piece.King;

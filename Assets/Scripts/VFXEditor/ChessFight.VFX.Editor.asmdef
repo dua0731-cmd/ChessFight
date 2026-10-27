@@ -1,0 +1,7 @@
+{
+  "name": "ChessFight.VFX.Editor",
+  "rootNamespace": "ChessFight.VFX.Editor",
+  "references": ["ChessFight.VFX"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

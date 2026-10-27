@@ -141,7 +141,7 @@ compile_all() {
   # Player defines: its UNITY_EDITOR blocks need UnityEditor.dll, which the reference package lacks.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
-       -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/Scripts/RagdollLab" -name '*.cs')
+       -r:"$build/ChessFight.VFX.dll" -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/Scripts/RagdollLab" -name '*.cs')
   # Pawn Rush course 01 (Assets/Scripts/PawnRush). Player defines here; its UNITY_EDITOR blocks and
   # its editor assembly (Assets/Scripts/PawnRushEditor) are compiled against UnityEditor.dll below.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
@@ -174,6 +174,9 @@ compile_pawnrush_editor() {
   # The VFX workbench's editor-only folder scan (AssetDatabase).
   $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" \
        -out:"$build/ChessFight.VFX.EditorBuild.dll" "$src"/Scripts/VFX/*.cs
+  # The VFX builders (Assets/Scripts/VFXEditor), editor only.
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.VFX.EditorBuild.dll" \
+       -out:"$build/ChessFight.VFX.Editor.dll" "$src"/Scripts/VFXEditor/*.cs
 }
 
 # Assembly boundaries that keep gameplay work from reaching into the network layer.

@@ -74,7 +74,12 @@ namespace ChessFight.RagdollLab
             Vector3 axis = model.mesh.bounds.center;
             axis.y = 0f;
             var stones = new List<RubbleStone>();
-            foreach (var (mesh, at) in model.rubble)
+            // R165 ("파편 조각을 줄여줘"): only the biggest stones, RookDebris of them (two at least).
+            var rubble = new List<(Mesh mesh, Vector3 at)>(model.rubble);
+            rubble.Sort((a, b) => b.mesh.bounds.size.sqrMagnitude.CompareTo(a.mesh.bounds.size.sqrMagnitude));
+            int keep = Mathf.Clamp(Mathf.CeilToInt(rubble.Count * RookDebris), Mathf.Min(2, rubble.Count), rubble.Count);
+            rubble.RemoveRange(keep, rubble.Count - keep);
+            foreach (var (mesh, at) in rubble)
             {
                 var t = new GameObject("Statue rubble", typeof(MeshFilter), typeof(MeshRenderer)).transform;
                 t.SetParent(kit.root, false);
@@ -234,9 +239,12 @@ namespace ChessFight.RagdollLab
             var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
             Color wood = FloorWood(floor);
             chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
-            WallChips(floor + Vector3.up * 0.04f, Vector3.up, 9, 3.4f, 0.8f, 0.012f, 0.045f);
+            WallChips(floor + Vector3.up * 0.04f, Vector3.up, RookChips(9), 3.4f, 0.8f, 0.012f, 0.045f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
             if (modelled) StatueRubble(model, floor, yaw, scale, stone);
+            // R165: as it starts down, a dark copy of it stays and burns away (SwordFightSkillFx.RookFVfx.cs).
+            var carved = modelled ? root.GetComponentInChildren<MeshRenderer>() : null;
+            bool left = !(Real(PieceKind.Rook) && RookVfxOn);
             float wobble = Random.Range(0f, 6.28f);
             void Pose(float a)
             {
@@ -259,6 +267,11 @@ namespace ChessFight.RagdollLab
             var f = kit.Run(36f * F, (fx, d) =>
             {
                 Pose(fx.age / F);
+                if (!left && fx.age >= 20f * F)
+                {
+                    left = true;
+                    RookPhantom(carved, dir);
+                }
                 return true;
             });
             foreach (var p in props) f.props.Add(p);

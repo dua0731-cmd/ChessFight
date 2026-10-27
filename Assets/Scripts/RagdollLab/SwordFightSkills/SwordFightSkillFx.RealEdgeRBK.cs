@@ -241,6 +241,8 @@ namespace ChessFight.RagdollLab
             chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
             WallChips(lip + Vector3.up * 0.04f, Vector3.up + e.dir * 0.3f, 10, 3f, 0.7f, 0.01f, 0.035f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
+            // The effect's crack line lies where the chunk breaks off, 2 m in from the lip (e.dir points out of the board).
+            RookVfx("E_Break", Kit.FloorUnder(e.at + Vector3.up * 0.5f, 1f), Kit.FlatDir(e.dir, Vector3.forward));
             HitStop(4);
             Shake(s.Pawn, null, 0.15f, 9);
             Punch(s.Pawn, null, 6f, 16);

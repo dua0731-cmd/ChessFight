@@ -661,16 +661,31 @@ namespace ChessFight.RagdollLab
             tipLight.range = 1.6f;
             tipLight.shadows = LightShadows.None;
             tipLight.intensity = 0f;
-            float nextGhost = 0f, nextAir = 0.06f, nextSpark = 0f;
+            // R162 · R164 (사용자: "1번째 사진 퀸이 꼬치 베기를 했을 때 그게 잔상이였으면", then "흰 노란이 아니라 검은색과
+            // 빨간색(완전한 빨간색 x)이 바닥에 그어지고 잔상도 다시 디자인해줘"): the way she runs is burnt into the floor
+            // behind her - black char with dark red embers, from where she pushes off to under her as she goes, cooling
+            // once she stops - and dark copies of her with a dark red rim are left every third frame, burning away
+            // (SwordFightSkillFx.QueenVfx.cs), in place of the see-through copies.
+            var line = BeamOf(QueenVfx("F_Thrust", start, dir));
+            if (line != null) line.Reach(start);
+            float nextGhost = 0f, nextPhantom = 0f, nextAir = 0.06f, nextSpark = 0f;
             var dash = kit.Run(2f, (fx, d) =>
             {
                 bool dashing = s != null && pawn != null && s.Stage == SfStage.Active && s.Piece == PieceKind.Queen;
                 if (!dashing) return false;
-                if (fx.age >= nextGhost)
+                if (QueenCopies && fx.age >= nextGhost)
                 {
                     RealGhost(pawn, 0.32f, 0.2f, -dir);
                     nextGhost = fx.age + 2f * F;
                 }
+                if (QueenVfxOn && fx.age >= nextPhantom)
+                {
+                    QueenPhantom(pawn, dir);
+                    nextPhantom = fx.age + 3f * F;
+                }
+                // The mark stops at the lip if she runs off it.
+                if (line != null && Kit.FloorUnder(pawn.Hips.position, 1.5f, out Vector3 under) && Mathf.Abs(under.y - start.y) < 0.35f)
+                    line.Reach(under);
                 if (fx.age >= nextAir)
                 {
                     Air.Kick(pawn.bodies[(int)BodyId.Chest].position - dir * 0.35f, -dir, 0.7f);
@@ -696,7 +711,11 @@ namespace ChessFight.RagdollLab
                 }
                 return true;
             });
-            dash.end = () => { if (tipLightGo != null) Destroy(tipLightGo); };
+            dash.end = () =>
+            {
+                if (tipLightGo != null) Destroy(tipLightGo);
+                if (line != null) line.Release();
+            };
         }
 
         /// <summary>
@@ -730,6 +749,7 @@ namespace ChessFight.RagdollLab
             RealSparks(at, e.dir + Vector3.up * 0.35f, first ? 20 : 12, 5.2f, 0.6f, 1.25f);
             RealSparks(at, normal + Vector3.up * 0.5f, first ? 8 : 5, 2.6f, 0.7f, 1.1f);
             SparkLight(at + normal * 0.1f, first ? 2.6f : 1.8f, 0.12f, 2.4f);
+            QueenVfx("F_Hit", at + normal * 0.04f, e.dir);
             CutMark(e.target, at, normal, e.dir);
             Air.Kick(e.target.bodies[(int)BodyId.Chest].position, e.by.Dir, first ? 1.1f : 0.8f);
             var real = e;
@@ -760,14 +780,15 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>A sword's cut landing on a piece for real: chips of its own wood knocked off where it was struck and
-        /// thrown on the way it goes, a hold, a shake and a kick of the view. No flash, no ring, nothing in a colour.</summary>
-        void RealHit(SfFxEvent e, int stopFrames, float shakeMetres)
+        /// thrown on the way it goes (<paramref name="chips"/> of them), a hold, a shake and a kick of the view. No flash, no
+        /// ring, nothing in a colour.</summary>
+        void RealHit(SfFxEvent e, int stopFrames, float shakeMetres, int chips = 10)
         {
             if (e.target == null) return;
             var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
             Color c = BodyColor(e.target);
             chipA = ChipsOf(c); chipB = ChipsOf(c, 0.75f); chipShare = 0.6f;
-            WallChips(e.at, e.dir + Vector3.up * 0.5f, 10, 3.2f, 0.6f, 0.008f, 0.03f);
+            WallChips(e.at, e.dir + Vector3.up * 0.5f, chips, 3.2f, 0.6f, 0.008f, 0.03f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
             HitStop(Mathf.Max(stopFrames, 3));
             Shake(e.by.Pawn, e.target, shakeMetres, 7);
@@ -801,6 +822,7 @@ namespace ChessFight.RagdollLab
                 foreach (var w in new[] { fwd, -fwd, side, -side })
                     Air.Kick(feet + w * 0.2f, w + Vector3.down * 0.1f, 0.9f, null, 0.04f, 1.6f, 1.4f);
                 SparkLight(king.bodies[(int)BodyId.Chest].position + fwd * 0.4f, 1.6f, 0.45f, 2.4f, KingGold);
+                KingVfx("F_Guard", Kit.FloorUnder(king.Hips.position, 1.5f), fwd);
             }
         }
 
@@ -832,6 +854,7 @@ namespace ChessFight.RagdollLab
             Air.Kick(at, toward, 1.5f, null, 0.06f, 2.2f, 1.5f);
             Air.Kick(at, Vector3.Slerp(toward, Vector3.up, 0.45f), 1.1f, null, 0.05f, 1.6f, 1.2f);
             SparkLight(at, 3f, 0.22f, 3f, KingGold);
+            KingVfx("F_Block", at, toward);
             LensShock(king, attacker, 0.75f, 0.2f);
             RealBlockBeat(king, attacker);
         }
@@ -882,6 +905,7 @@ namespace ChessFight.RagdollLab
                 return fx.age < cut;
             });
             SparkLight(king.bodies[(int)BodyId.Chest].position + Kit.FlatDir(king.Facing, Vector3.forward) * 0.6f, 2.4f, cut, 3f, KingGold);
+            KingVfx("F_Counter", Kit.FloorUnder(king.Hips.position, 1.5f), Kit.FlatDir(king.Facing, Vector3.forward));
             LensShock(king, null, 0.55f, 0.16f);
             // (No bent air here: on the board's dark it read as grey smoke.) 10-26: no stop at the top of the swing either -
             // the block before it holds, and the hit as the blade crosses his front has its own (a second stop read as a stutter).

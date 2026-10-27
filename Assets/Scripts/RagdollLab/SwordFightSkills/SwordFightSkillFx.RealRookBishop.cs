@@ -191,14 +191,20 @@ namespace ChessFight.RagdollLab
             var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
             Color wood = FloorWood(at);
             chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
-            WallChips(at + Vector3.up * 0.04f, Vector3.up, 12, 3.4f, 0.8f, 0.012f, 0.04f);
+            WallChips(at + Vector3.up * 0.04f, Vector3.up, RookChips(12), 3.4f, 0.8f, 0.012f, 0.04f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
+            RookVfx("F_Slam", at, Kit.FlatDir(e.dir, Vector3.forward));
             HitStop(5);
             Shake(s.Pawn, null, 0.17f, 9);
             Punch(s.Pawn, null, 6f, 16);
             float stamped = 0.6f, reach = s.Reach;
             Vector3 origin = s.Origin, way = s.Dir;
             var caster = s.Pawn;
+            // R165 (사용자: "룩은 f 스킬을 쓸 때 퀸 처럼 vfx", in the rook's own beige): the wave burns a line down the middle
+            // of its lane as it runs, stopping at the board's edge (SwordFightSkillFx.RookFVfx.cs).
+            Vector3 lineFrom = Kit.FloorUnder(origin + way * 0.6f + Vector3.up * 0.5f, 1.5f);
+            var line = BeamOf(RookFVfx("F_Line", lineFrom, Kit.FlatDir(way, Vector3.forward)));
+            if (line != null) line.Reach(lineFrom);
             var order = StatueOrder(Mathf.Max(1, Mathf.CeilToInt((reach - 0.6f) / 1.5f)));
             int next = 0;
             // Where the wave meets the board's edge, if it gets that far.
@@ -208,14 +214,21 @@ namespace ChessFight.RagdollLab
             float edgeDist = float.MaxValue;
             if (arena != null && BoardEdge(arena, origin, way, out edgeAt, out edgeOut, out edgeDist)) edge = edgeDist <= reach + 0.9f;
             bool buckled = false;
-            kit.Run(3f, (fx, d) =>
+            var wave = kit.Run(3f, (fx, d) =>
             {
                 bool running = s != null && s.Stage == SfStage.Active && s.Piece == PieceKind.Rook;
                 float front = running ? s.WaveFront : reach;
+                if (line != null)
+                {
+                    if (!running) line.Release();
+                    else if (Kit.FloorUnder(origin + way * front + Vector3.up * 0.5f, 1.5f, out Vector3 under) && Mathf.Abs(under.y - lineFrom.y) < 0.35f)
+                        line.Reach(under);
+                }
                 while (stamped < reach - 0.3f && stamped + 0.35f <= front + 0.01f)
                 {
                     float len = Mathf.Min(1.5f, reach - stamped);
                     Statue(order[Mathf.Min(next++, order.Count - 1)], origin + way * (stamped + len * 0.5f), way, caster);
+                    RookVfx("F_Stamp", Kit.FloorUnder(origin + way * (stamped + len * 0.5f) + Vector3.up * 0.5f, 1.5f), way);
                     stamped += 1.5f;
                 }
                 if (edge && !buckled && (front >= edgeDist - 0.5f || !running))
@@ -225,6 +238,7 @@ namespace ChessFight.RagdollLab
                 }
                 return running || stamped < reach - 0.3f || (edge && !buckled);
             });
+            wave.end = () => { if (line != null) line.Release(); };
         }
 
         /// <summary>Where a line from <paramref name="from"/> along <paramref name="dir"/> crosses the board's edge: the point on
@@ -305,7 +319,7 @@ namespace ChessFight.RagdollLab
             var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
             Color wood = FloorWood(at - outward * 0.3f);
             chipA = ChipsOf(arena.Brass.color); chipB = ChipsOf(wood); chipShare = 0.35f;
-            WallChips(at + Vector3.up * 0.05f, outward + Vector3.up * 0.8f, 9, 3f, 0.6f, 0.01f, 0.035f);
+            WallChips(at + Vector3.up * 0.05f, outward + Vector3.up * 0.8f, RookChips(9), 3f, 0.6f, 0.01f, 0.035f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
             HitStop(3);
             var f2 = kit.Run(4.2f, (fx, d) =>
@@ -324,8 +338,12 @@ namespace ChessFight.RagdollLab
         /// <summary>Whoever the wave throws: chips of their wood, a hold, a shake (no colour, no ring).</summary>
         void RealRookHit(SfFxEvent e)
         {
-            if (e.target != null) ShieldShatter(e.target, e.dir);
-            RealHit(e, 4, 0.14f);
+            if (e.target != null)
+            {
+                ShieldShatter(e.target, e.dir);
+                RookVfx("F_Hit", e.target.Hips.position, e.dir);
+            }
+            RealHit(e, 4, 0.14f, RookChips(10));
         }
 
         /// <summary>The wave stopped (by a king's guard or a wall): splinters thrown back off where it broke.</summary>
@@ -335,7 +353,7 @@ namespace ChessFight.RagdollLab
             var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
             Color wood = FloorWood(at);
             chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
-            WallChips(at + Vector3.up * 0.1f, -e.dir + Vector3.up * 0.6f, 9, 2.8f, 0.6f, 0.012f, 0.035f);
+            WallChips(at + Vector3.up * 0.1f, -e.dir + Vector3.up * 0.6f, RookChips(9), 2.8f, 0.6f, 0.012f, 0.035f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
             HitStop(4);
         }
@@ -618,6 +636,8 @@ namespace ChessFight.RagdollLab
                 if (!bit && t >= 1f)
                 {
                     bit = true;
+                    // R167: an X sigil on the board where they bite, along his diagonals (SwordFightSkillFx.BishopVfx.cs).
+                    BishopVfx("F_Pin", feet, Kit.FlatDir(dir, Vector3.forward));
                     var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
                     Color wood = FloorWood(feet);
                     chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;

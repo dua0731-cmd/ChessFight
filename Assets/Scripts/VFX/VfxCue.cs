@@ -51,6 +51,25 @@ namespace ChessFight.VFX
         float clock;
         int next;
 
+        /// <summary>Seconds an effect is kept after its cue ends, for its last particles to fade.</summary>
+        public const float Linger = 2f;
+
+        /// <summary>
+        /// Plays an effect prefab from game code: a copy at <paramref name="at"/> turned to <paramref name="facing"/> (+Z
+        /// is the way it goes), under <paramref name="parent"/> if given, aimed at <paramref name="target"/>, and removed
+        /// once its cue has run (three seconds for a prefab without one) plus <see cref="Linger"/>.
+        /// </summary>
+        public static GameObject Spawn(GameObject prefab, Vector3 at, Quaternion facing, Transform parent = null, Vector3? target = null)
+        {
+            if (prefab == null) return null;
+            var go = Instantiate(prefab, at, facing, parent);
+            go.name = prefab.name;
+            var cue = go.GetComponent<VfxCue>();
+            if (cue != null && target.HasValue) cue.Aim(target.Value);
+            Destroy(go, (cue != null ? cue.length : 3f) + Linger);
+            return go;
+        }
+
         void OnEnable() => Play();
 
         public void Play()

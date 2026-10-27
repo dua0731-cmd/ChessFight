@@ -89,6 +89,7 @@ namespace ChessFight.RagdollLab
             {
                 ClashFlash(at + dir * 0.05f, 0.8f);
                 SparkLight(at + dir * 0.2f, 1.2f, 0.08f, 1.8f, new Color(0.95f, 0.95f, 1f));
+                KingVfx("E_Stab", at, dir);
                 KingBreach(s);
                 HitStop(5, s.Pawn);
                 Shake(s.Pawn, null, 0.2f, 12);
@@ -114,6 +115,10 @@ namespace ChessFight.RagdollLab
             if (pawn == null) return;
             ReleaseBreach(s, true);
             Air.Kick(pawn.Hips.position + Vector3.down * 0.3f, Vector3.down + s.EdgeOut * 0.3f, 1.1f);
+            KingVfx("E_Vault", pawn.Hips.position + Vector3.down * 0.45f, Kit.FlatDir(pawn.Facing, Vector3.forward));
+            // R163: on the spot he will land on (every screen has it), the swirl drawn in while he is up; it bursts as he lands
+            // (E_Land in RealKingLand).
+            KingVfx("E_Gather", Kit.FloorUnder(s.EdgeLand + Vector3.up * 0.5f, 1f), -s.EdgeOut);
             BladeBlur(s.Fighter, 0.2f, 0.9f);
             HitStop(3);
             Punch(pawn, null, 7f, 16);
@@ -142,6 +147,7 @@ namespace ChessFight.RagdollLab
             chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
             WallChips(c + Vector3.up * 0.05f, Vector3.up, 14, 3.6f, 0.85f, 0.012f, 0.045f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
+            KingVfx("E_Land", c, s.Pawn != null ? Kit.FlatDir(s.Pawn.Facing, Vector3.forward) : Vector3.forward);
             BladeBlur(s.Fighter, 0.3f, 1.2f);
             BladeGlint(s.Fighter, 0.24f, 0.9f);
             HitStop(7);
@@ -194,20 +200,36 @@ namespace ChessFight.RagdollLab
             if (pawn == null) return;
             Vector3 now = pawn.Hips.position, from = s.EdgeStart;
             Vector3 way = from - now;
-            for (int i = 1; i <= 5; i++)
+            if (QueenCopies)
+                for (int i = 1; i <= 5; i++)
+                {
+                    float k = i / 6f;
+                    RealGhost(pawn, 0.32f * (1f - k * 0.6f), 0.14f + 0.05f * i, Vector3.zero, way * k);
+                }
+            // R162 · R164: the way she crossed burnt into the floor all at once (black char, dark red embers) and dark copies
+            // of her along it, the ones nearer where she started going first (SwordFightSkillFx.QueenVfx.cs).
+            Vector3 a = Kit.FloorUnder(from, 1.5f), b = Kit.FloorUnder(now, 1.5f), went = Kit.FlatDir(now - from, Vector3.forward);
+            var line = BeamOf(QueenVfx("E_Blink", a, went));
+            if (line != null)
             {
-                float k = i / 6f;
-                RealGhost(pawn, 0.32f * (1f - k * 0.6f), 0.14f + 0.05f * i, Vector3.zero, way * k);
+                line.Reach(b);
+                line.Release();
             }
+            if (QueenVfxOn)
+                for (int i = 1; i <= 5; i++)
+                {
+                    float k = i / 6f;
+                    QueenPhantom(pawn, went, way * k, 1f - k * 0.5f, 1f - k * 0.5f);
+                }
             BladeBlur(s.Fighter, 0.18f, 1.2f);
             BladeGlint(s.Fighter, 0.2f, 1f);
             HitStop(3, pawn, e.target);
             Punch(pawn, e.target, 5f, 12);
             Beat(pawn, e.target, 8f);
-            // As light off steel (warm white), not the queen's gold.
-            var steel = new Kit.Palette("#FFF4E2", "#FFFFFF", "#E9DCC6", "#9C8E78");
+            // As light off steel (warm white), not the queen's gold; R164: dark red with her effects on.
+            var steel = QueenVfxOn ? new Kit.Palette("#9E1A16", "#C2302A", "#4A0907", "#140303") : new Kit.Palette("#FFF4E2", "#FFFFFF", "#E9DCC6", "#9C8E78");
             ScreenSlash(pawn, e.target, steel, true);
-            Tint(pawn, e.target, new Color(1f, 0.95f, 0.85f), 0.2f, 16);
+            Tint(pawn, e.target, QueenVfxOn ? new Color(0.75f, 0.2f, 0.18f) : new Color(1f, 0.95f, 0.85f), QueenVfxOn ? 0.14f : 0.2f, 16);
         }
 
         /// <summary>A beat after she went through it, the cut lands (the host throws it; every screen sees it then): a flash
@@ -215,6 +237,13 @@ namespace ChessFight.RagdollLab
         void RealQueenCut(SfFxEvent e)
         {
             RealKnightHit(e);
+            if (e.target != null)
+            {
+                // R162 · R164: a dark red flash, a black and red ring and red sparks where the cut opens.
+                Vector3 from = e.by != null && e.by.Pawn != null ? e.by.Pawn.Hips.position : e.at - e.dir;
+                Vector3 at = OnBody(e.target, from, out Vector3 normal);
+                QueenVfx("E_Cut", at + normal * 0.04f, e.dir);
+            }
             Shake(e.by.Pawn, e.target, 0.14f, 9);
             Punch(e.by.Pawn, e.target, 5f, 12);
         }
