@@ -103,7 +103,9 @@ namespace ChessFight.Game
             startArrow.generateVisualContent += PaintArrow;
             var backArrow = root.Q<VisualElement>("name-back-arrow");
             if (backArrow != null) backArrow.generateVisualContent += PaintBackArrow;
-            ChunkyButtons.Make(startButton);
+            // 10-27 (승규 님): flat smoked glass with a thin gold edge, as the lobby (design A), no slab
+            GlassPlate.Button(startButton, 12f);
+            ChunkyButtons.Springy(startButton);
             ChunkyButtons.Springy(suggestButton);
             ChunkyButtons.Springy(bubble);
             ChunkyButtons.Springy(backButton);

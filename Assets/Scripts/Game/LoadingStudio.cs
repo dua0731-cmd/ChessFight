@@ -58,8 +58,10 @@ namespace ChessFight.Game
         float lastStart = -10f;
         int sceneHandle = -1;
 
-        public void Build(Transform parent, int width, int height)
+        // `course`: the course hologram on its LED plate (Pawn Rush) instead of the chessboard the players walk onto.
+        public void Build(Transform parent, int width, int height, bool course = false)
         {
+            courseModel = course;
             root = new GameObject("Loading Studio");
             root.transform.SetParent(parent, false);
             root.transform.position = Origin;
@@ -123,15 +125,16 @@ namespace ChessFight.Game
         // (maple and walnut squares, mahogany frame, brass inlay) the players walk onto, lit from straight above by
         // one brass reading lamp in a warm pool that falls off into the dark; behind, the shelves of books and a
         // window with a little cold moonlight, barely there. No coloured stage lights.
-        // 10-25/26: the chessboard and the players walking onto it gave way to the course hologram over its LED plate
+        // 10-25/26: for Pawn Rush the chessboard and the players walking onto it gave way to the course hologram over its LED plate
         // (LoadingStudio.Course.cs).
         void Study(Transform t)
         {
             var tableWood = MenuArt.Wood(MenuArt.DarkWood, .55f, new Vector2(4f, 2f));
             MenuArt.Slab(t, "Table", new Vector3(0, -.3f, 1f), new Vector3(30f, .6f, 18f), tableWood);
-            // 10-25: the course model on its plate instead of the chessboard (LoadingStudio.Course.cs)
-            courseModel = true;
-            CourseModel(t);
+            // 10-25: Pawn Rush's course model on its plate instead of the chessboard (LoadingStudio.Course.cs); the other
+            // modes keep the board (10-27, 승규 님: no hologram for them until their designs are settled)
+            if (!courseModel) MenuArt.WoodBoard(t, "Board", 8, 1.15f, new Vector3(0, 0, 0), StageHeight - .02f, .7f);
+            else CourseModel(t);
             // the shelves behind: dark wood carcass, rows of books in muted leather colours
             var shelfWood = MenuArt.Wood(MenuArt.DarkWood, .35f, new Vector2(3f, 1f), true);
             var rng = new System.Random(22);
@@ -162,8 +165,8 @@ namespace ChessFight.Game
             LastSceneArt.Part(t, "Lamp Rod", LastSceneArt.Cylinder(.03f, .03f, 6f, 12), brass, new Vector3(0, 12.2f, 0), null, null, false);
             LastSceneArt.Part(t, "Lamp Shade", LastSceneArt.Cone(1.2f, 1.0f, 48), LastSceneArt.Lit(0x1E3A2A, .5f, .3f), new Vector3(0, 9.0f, 0), null, null, false);
             LastSceneArt.Part(t, "Lamp Bulb", LastSceneArt.Sphere(.28f), MenuArt.Lamp(0xFFE6B0), new Vector3(0, 8.55f, 0), null, null, false);
-            // 10-26: 60 % of what it was, so the course hologram and its LEDs stand out on the plate
-            MenuArt.Spot(t, new Vector3(0, 8.5f, 0), new Vector3(0, 0, .3f), 0xFFD9A0, 1.9f, .95f, .8f, true);
+            // 10-26: 60 % of what it was with the course hologram, so it and its LEDs stand out on the plate
+            MenuArt.Spot(t, new Vector3(0, 8.5f, 0), new Vector3(0, 0, .3f), 0xFFD9A0, courseModel ? 1.9f : 3.2f, .95f, .8f, true);
             // faint warm bounce from the table and cold moonlight from behind, so the shelves just read
             MenuArt.Spot(t, new Vector3(0, 2f, -12f), new Vector3(0, 2f, 0), 0xC08A5A, .5f, .8f, .9f);
             MenuArt.Spot(t, new Vector3(0, 6f, 10f), new Vector3(0, 1f, -2f), 0x6A86B8, .7f, .7f, .9f);

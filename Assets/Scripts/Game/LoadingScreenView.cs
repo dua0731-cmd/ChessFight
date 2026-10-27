@@ -88,6 +88,7 @@ namespace ChessFight.Game
         {
             public VisualElement Root, Avatar, Flash;
             public Label Name, Sub, Status;
+            public GlassPlate Plate;
             public int Team, Spot;
             public float Side, OnAt = -1;
             public bool Present, Bot;
@@ -105,7 +106,6 @@ namespace ChessFight.Game
         readonly Label[] counts = new Label[2];
         readonly List<Card>[] cards = { new List<Card>(), new List<Card>() };
         LoadingTip[] tips = Array.Empty<LoadingTip>();
-        string kickerText = "";
         int tipIndex = -1;
         float shownAt, hideAt = -1;
 
@@ -120,7 +120,7 @@ namespace ChessFight.Game
 
             int width = Mathf.Clamp(Screen.width, 960, 1920);
             int height = Mathf.Max(360, Mathf.RoundToInt(width * (float)Screen.height / Mathf.Max(1, Screen.width)));
-            studio.Build(transform, width, height);
+            studio.Build(transform, width, height, content != null && content.CourseModel);
             var stage = root.Q<VisualElement>("load-stage");
             if (stage != null && studio.Texture != null) stage.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(studio.Texture));
             Wash(root.Q<VisualElement>("load-side-white"), MenuArt.Hex(0x1E78BE), false);
@@ -179,7 +179,6 @@ namespace ChessFight.Game
         void SetContent(LoadingContent content, VisualElement root)
         {
             if (root == null || content == null) return;
-            kickerText = content.Kicker ?? "";
             SetText(root.Q<Label>("load-title"), content.Title);
             SetText(root.Q<Label>("load-title-hi"), content.Title);
             SetText(root.Q<Label>("load-rule"), content.Rule);
@@ -204,14 +203,11 @@ namespace ChessFight.Game
         // 10-18 (승규 님, loading design 2): instead of the thin line, a row of twelve chess squares, ivory and
         // walnut, that turn gold one by one as players come in (or as this PC loads), with a gold knight that
         // hops on the next square and leaps ahead when it fills. The line stays in the layout, hidden, so
-        // the row takes its place.
+        // the row takes its place. 10-27 (design A): thin gold segments under the middle of the screen; the knight went.
         const int SquareCount = 12;
         readonly List<VisualElement> squares = new List<VisualElement>();
-        VisualElement knight;
-        float knightAt = -1f, knightFrom, knightLeap = -10f;
         int squaresLit = -1, popIndex = -1;
         float popAt = -10f;
-        static Texture2D knightTexture;
 
         void BuildSquares(VisualElement line)
         {
@@ -219,17 +215,19 @@ namespace ChessFight.Game
             line.style.display = DisplayStyle.None;
             var row = new VisualElement { name = "load-squares", pickingMode = PickingMode.Ignore };
             row.style.flexDirection = FlexDirection.Row;
-            row.style.height = 22;
+            row.style.height = 9;
             row.style.marginTop = 2;
             line.parent.Add(row);
+            // 10-27 (design A): thin rounded glass segments with a gold edge, turning gold; no knight on them
             for (int i = 0; i < SquareCount; i++)
             {
                 var sq = new VisualElement { pickingMode = PickingMode.Ignore };
                 sq.style.flexGrow = 1;
                 sq.style.marginLeft = sq.style.marginRight = 2;
-                sq.style.backgroundColor = i % 2 == 0 ? new Color(.93f, .87f, .76f, .85f) : new Color(.35f, .23f, .14f, .85f);
+                sq.style.backgroundColor = SquareOff;
                 sq.style.borderTopWidth = sq.style.borderBottomWidth = sq.style.borderLeftWidth = sq.style.borderRightWidth = 1;
-                var rim = new Color(.79f, .6f, .27f, .7f);
+                sq.style.borderTopLeftRadius = sq.style.borderTopRightRadius = sq.style.borderBottomLeftRadius = sq.style.borderBottomRightRadius = 3;
+                var rim = new Color(.91f, .78f, .48f, .22f);
                 sq.style.borderTopColor = sq.style.borderBottomColor = sq.style.borderLeftColor = sq.style.borderRightColor = rim;
                 sq.style.transitionProperty = new List<StylePropertyName> { "background-color", "scale" };
                 sq.style.transitionDuration = new List<TimeValue> { new TimeValue(.25f), new TimeValue(.25f) };
@@ -237,15 +235,9 @@ namespace ChessFight.Game
                 row.Add(sq);
                 squares.Add(sq);
             }
-            knight = new VisualElement { pickingMode = PickingMode.Ignore };
-            knight.style.position = Position.Absolute;
-            knight.style.width = 40; knight.style.height = 40;
-            knight.style.bottom = 20;
-            knight.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0);
-            var tex = KnightTexture();
-            if (tex != null) knight.style.backgroundImage = new StyleBackground(tex);
-            row.Add(knight);
         }
+
+        static readonly Color SquareOff = new Color(1f, .93f, .8f, .1f), SquareOn = new Color(.96f, .82f, .5f, 1f);
 
         void TickSquares(float lit, float now)
         {
@@ -256,58 +248,18 @@ namespace ChessFight.Game
                 for (int i = 0; i < squares.Count; i++)
                 {
                     bool on = i < n;
-                    squares[i].style.backgroundColor = on ? new Color(.91f, .77f, .42f, 1f) : (i % 2 == 0 ? new Color(.93f, .87f, .76f, .85f) : new Color(.35f, .23f, .14f, .85f));
+                    squares[i].style.backgroundColor = on ? SquareOn : SquareOff;
                     squares[i].style.scale = new Scale(Vector2.one);
                 }
                 if (squaresLit >= 0 && n > squaresLit)
                 {
                     // the square just won pops up, then settles (below)
-                    knightFrom = knightAt; knightLeap = now;
                     popIndex = n - 1; popAt = now;
                     squares[popIndex].style.scale = new Scale(new Vector2(1.08f, 1.3f));
                 }
                 squaresLit = n;
             }
             if (popIndex >= 0 && now - popAt > .22f) { squares[popIndex].style.scale = new Scale(Vector2.one); popIndex = -1; }
-            if (knight == null) return;
-            // The knight stands on the next square (the last one once all are gold); it leaps there in an arc.
-            float target = Mathf.Min(n, SquareCount - 1) + .5f;
-            if (knightAt < 0) knightAt = knightFrom = target;
-            float k = Mathf.Clamp01((now - knightLeap) / .45f);
-            float x = k < 1f ? Mathf.Lerp(knightFrom, target, k * k * (3 - 2 * k)) : target;
-            knightAt = x;
-            float hop = k < 1f ? Mathf.Sin(k * Mathf.PI) * 26f : Mathf.Abs(Mathf.Sin(now * 4.2f)) * 7f;
-            knight.style.left = new Length(x / SquareCount * 100f, LengthUnit.Percent);
-            knight.style.bottom = 20 + hop;
-        }
-
-        // A gold knight with a dark rim, from the symbol font (as the title screen's pennant glyphs).
-        static Texture2D KnightTexture()
-        {
-            if (knightTexture != null) return knightTexture;
-            const int n = 64;
-            var mask = IntroStage.GlyphMask("♞", n, n);
-            if (mask == null) return null;
-            var px = new Color[n * n];
-            Color gold = new Color(.95f, .8f, .4f, 1f), rim = new Color(.16f, .1f, .06f, 1f);
-            for (int y = 0; y < n; y++)
-                for (int x = 0; x < n; x++)
-                {
-                    float m = mask[y * n + x];
-                    float near = 0f;
-                    for (int dy = -2; dy <= 2; dy++)
-                        for (int dx = -2; dx <= 2; dx++)
-                        {
-                            int xx = x + dx, yy = y + dy;
-                            if (xx >= 0 && xx < n && yy >= 0 && yy < n) near = Mathf.Max(near, mask[yy * n + xx]);
-                        }
-                    var c = Color.Lerp(rim, Color.Lerp(gold, Color.white, (y / (float)n) * .25f), m);
-                    c.a = Mathf.Max(m, near);
-                    px[y * n + x] = c;
-                }
-            knightTexture = new Texture2D(n, n, TextureFormat.RGBA32, false) { name = "Loading knight", wrapMode = TextureWrapMode.Clamp };
-            knightTexture.SetPixels(px); knightTexture.Apply();
-            return knightTexture;
         }
 
         // A tick on the line for each rank a pawn passes, numbered 2 to 8 (loading only).
@@ -342,7 +294,8 @@ namespace ChessFight.Game
                 if (i < State.Ready.Count && State.Ready[i]) ready++;
             }
 
-            if (kicker != null) SetText(kicker, matching ? "빠른 매칭 · " + kickerText : kickerText);
+            // 10-27 (승규 님): the line over the mode's name ("빠른 매칭 · 6 VS 6 · 팀 레이스") is taken off
+            if (kicker != null) SetText(kicker, "");
             if (step != null) step.text = State.Step;
             if (percent != null) percent.text = matching ? State.Clock : State.Percent + "%";
             float filled = matching ? (State.Expected > 0 ? 100f * joined / State.Expected : 0f) : Mathf.Clamp(State.Percent, 0, 100);
@@ -405,6 +358,7 @@ namespace ChessFight.Game
                 bool isReady = i < State.Ready.Count && State.Ready[i];
                 SetCard(card, isIn, bot, i < State.Names.Count ? State.Names[i] : "", now);
                 card.Root.EnableInClassList("load-me", i == State.Me);
+                card.Plate.Set(isIn && i == State.Me, !isIn);
                 if (isIn) joined[team]++;
                 if (isReady) ready[team]++;
                 float age = card.OnAt >= 0 ? now - card.OnAt : -1;
@@ -421,6 +375,7 @@ namespace ChessFight.Game
                     var empty = CardAt(team, k);
                     SetCard(empty, false, false, "", now);
                     empty.Root.RemoveFromClassList("load-me");
+                    empty.Plate.Set(false, true);
                     empty.Status.text = "찾는 중";
                     Slide(empty, -1);
                 }
@@ -478,7 +433,9 @@ namespace ChessFight.Game
             var card = new Card { Team = team, Spot = spot, Side = team == 0 ? 1f : -1f };
             card.Root = new VisualElement { pickingMode = PickingMode.Ignore };
             card.Root.AddToClassList("load-card");
-            card.Root.style.backgroundImage = new StyleBackground(MenuArt.PanelTexture());
+            // 10-27 (design A): smoked glass with a gold hairline; an empty seat only a dashed edge
+            card.Plate = GlassPlate.On(card.Root, 10f);
+            card.Plate.Set(false, true);
             var bar = new VisualElement { pickingMode = PickingMode.Ignore };
             bar.AddToClassList("load-card-bar");
             card.Root.Add(bar);

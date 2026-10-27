@@ -691,3 +691,68 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
              -unity-font-style: bold; color: rgb(255, 179, 188); background-color: rgba(255, 77, 98, 0.16);
              border-left-width: 3px; border-color: rgb(255, 77, 98); }
 .chat-note-error { color: rgb(255, 179, 188); }
+
+/* ---------- 10-27 design A (승규 님 chose "연기 유리 + 가는 금선"): smoked glass and gold hairlines ----------
+   The glass and its gold edge are drawn by GlassPlate (the vector painter) on the matching card, the banner, the
+   start buttons, the mode cards and the entrance screen's seats; these rules clear the old fills and borders under
+   it and set the text, the small buttons and the badges to match. Later rules here win over the ones above. */
+.glass { border-width: 0; background-color: rgba(0, 0, 0, 0); border-radius: 12px; }
+.a-btn { border-radius: 8px; border-color: rgba(233, 198, 122, 0.55); background-color: rgba(30, 22, 14, 0.62); color: rgb(243, 220, 164); }
+.a-btn:hover { background-color: rgba(52, 38, 24, 0.82); border-color: rgb(233, 198, 122); color: rgb(255, 236, 196); }
+.a-danger { border-color: rgba(239, 141, 141, 0.7); color: rgb(255, 179, 179); }
+.a-danger:hover { border-color: rgb(239, 141, 141); background-color: rgba(110, 30, 34, 0.8); color: rgb(255, 225, 222); }
+.a-cta { transition-property: translate, scale; transition-duration: 0.12s; }
+.a-cta:hover { translate: 0 -2px; }
+.a-cta:active { translate: 0 0; scale: 0.98 0.98; }
+.a-cta-text { -unity-font-style: bold; letter-spacing: 6px; color: rgb(255, 233, 184); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7); }
+.a-cta-sm .a-cta-text { letter-spacing: 3px; }
+.spinner { border-color: rgba(233, 198, 122, 0.16); border-top-color: rgb(255, 226, 160); }
+.a-kicker-wide { letter-spacing: 5px; }
+.rail-card { border-width: 0; border-radius: 12px; }
+.rail-card.rail-on { border-width: 0; }
+.rail-card:hover { translate: -4px -1px; }
+.rail-on .rail-bar { display: none; }
+.rail-name { -unity-font-style: bold; color: rgb(251, 239, 213); }
+.rail-tagline { color: rgb(217, 192, 138); }
+.rail-badge { border-radius: 9px; padding: 1px 8px 2px 8px; border-color: rgba(233, 198, 122, 0.5); color: rgb(255, 220, 149); }
+.rail-badge-on { color: rgb(42, 28, 12); border-color: rgb(233, 198, 122); background-color: rgb(233, 198, 122); }
+.rail-badge-ok { color: rgb(255, 220, 149); border-color: rgba(233, 198, 122, 0.5); }
+
+/* the entrance screen: glass seats with a team line, a dashed edge for an empty one, a gold VS between hairlines */
+.load-card { border-radius: 10px; opacity: 1; background-color: rgba(0, 0, 0, 0); }
+.load-card-bar { left: 0; top: 13px; bottom: 13px; width: 3px; border-radius: 2px; }
+.load-roster-black .load-card-bar { left: auto; right: 0; }
+.load-roster-white .load-card-on .load-card-bar { background-color: rgb(142, 197, 240); }
+.load-roster-black .load-card-on .load-card-bar { background-color: rgb(239, 141, 141); }
+.load-avatar { border-radius: 19px; border-width: 2px; border-color: rgba(233, 198, 122, 0.6); opacity: 0; }
+.load-card-on .load-avatar { opacity: 1; }
+.load-card .load-name { color: rgba(255, 255, 255, 0.3); }   /* an empty seat: no gold (10-27) */
+.load-card-on .load-name { color: rgb(251, 239, 213); }
+.load-card-on.load-me .load-name { color: rgb(255, 217, 143); }
+.load-state { color: rgba(255, 255, 255, 0.3); }
+.load-roster-white .load-card-on .load-state { color: rgb(233, 198, 122); }
+.load-roster-black .load-card-on .load-state { color: rgb(233, 198, 122); }
+.load-vs-row { position: absolute; left: 0; right: 0; top: 156px; justify-content: center; align-items: center; }
+.load-vs { position: relative; left: auto; right: auto; top: auto; margin: 0 20px; font-size: 64px; color: rgb(233, 198, 122);
+           text-shadow: 0 3px 10px rgba(0, 0, 0, 0.7); }
+.load-vs-line { width: 110px; height: 1px; background-color: rgba(233, 198, 122, 0.55); }
+.load-btn { height: 40px; padding: 0 22px; font-size: 15px; }
+.load-btn-gold { border-color: rgb(233, 198, 122); color: rgb(255, 233, 184); }
+.load-line { border-radius: 3px; }
+.load-allin { border-radius: 10px; }
+.load-tip-kicker { border-radius: 6px; border-width: 1px; border-color: rgba(233, 198, 122, 0.4); background-color: rgba(233, 198, 122, 0.18);
+                   color: rgb(255, 217, 143); }
+/* the bar and the tip under the middle, between the rosters, as in the design A sample */
+.load-progress { left: 340px; right: 340px; }
+.load-step { font-size: 16px; }
+.load-percent { font-size: 24px; }
+.load-tip { left: 340px; right: 340px; justify-content: center; }
+.load-tip-text { font-size: 12px; }
+/* 10-27 (승규 님: "입체감 빼줘"): the settings window's top line, the title's start and the name screen's start as
+   flat smoked glass with a thin gold edge (GlassPlate), like the lobby; no gold slabs ("클릭해서 시작" keeps its slab). */
+.s2-top-line { height: 1px; background-color: rgb(233, 198, 122); }
+.s2-brand { color: rgb(233, 198, 122); }
+.s2-tab { border-radius: 8px; }
+.s2-tab-on .s2-tab-text { color: rgb(255, 233, 184); }
+.s2-tab-on:hover .s2-tab-text { color: rgb(255, 233, 184); }
+.intro-rename { border-width: 0; border-radius: 10px; background-color: rgba(0, 0, 0, 0); }

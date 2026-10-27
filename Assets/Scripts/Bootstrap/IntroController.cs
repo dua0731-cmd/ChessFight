@@ -55,7 +55,9 @@ namespace ChessFight.Game
                 shadeElement.style.backgroundImage = new StyleBackground(shade);
             }
             Title();
+            // 10-27 (승규 님): "클릭해서 시작" keeps its gold slab (they liked its colour); "이름 바꾸기" is glass as the lobby
             if (press != null) ChunkyButtons.Make(press);
+            if (rename != null) GlassPlate.Button(rename, 10f);
             shownAt = Time.unscaledTime;
             // The opening logo, once per run; the title counts its minimum time
             // from when the logo is gone.

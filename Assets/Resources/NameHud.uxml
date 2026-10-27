@@ -38,7 +38,7 @@
                     <ui:VisualElement class="name-bubble-tail" picking-mode="Ignore" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Button name="name-start" class="row chunky ch-ivory ch-lg name-start">
+            <ui:Button name="name-start" class="row name-start">
                 <ui:Label name="name-start-text" text="이 이름으로 시작" class="name-start-text" picking-mode="Ignore" />
                 <ui:VisualElement name="name-start-arrow" class="name-start-arrow" picking-mode="Ignore" />
             </ui:Button>

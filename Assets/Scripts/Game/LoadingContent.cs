@@ -18,6 +18,9 @@ namespace ChessFight.Game
         // Title: the mode's name, big and gold. Kicker: the small line above it.
         public string Title = "", Kicker = "", Rule = "", Note = "";
         public LoadingTip[] Tips = Array.Empty<LoadingTip>();
+        // The entrance screen shows the course hologram (Pawn Rush only, 10-27: the other modes keep the chessboard
+        // until their own designs are settled).
+        public bool CourseModel;
 
         // `teamSize`: players on the larger team, for the rules that count heads.
         public static LoadingContent For(GameModeInfo mode, int teamSize)
@@ -32,6 +35,7 @@ namespace ChessFight.Game
                 case "kingrush":
                     return new LoadingContent
                     {
+                        CourseModel = true,
                         Title = title,
                         Kicker = versus + " · 팀 레이스",
                         Rule = "팀원 <color=#FFC93D>" + need + "명</color>이 먼저 결승선을 넘으면 승리",

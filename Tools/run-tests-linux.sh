@@ -86,16 +86,17 @@ namespace UnityEngine.UIElements
     public class Painter2D
     {
         public Color fillColor, strokeColor; public float lineWidth; public LineCap lineCap; public LineJoin lineJoin;
-        public FillGradient fillGradient;
+        public FillGradient fillGradient, strokeFillGradient;
         public void BeginPath() { } public void ClosePath() { } public void MoveTo(Vector2 p) { } public void LineTo(Vector2 p) { }
         public void Arc(Vector2 center, float radius, Angle start, Angle end) { } public void ArcTo(Vector2 p1, Vector2 p2, float radius) { }
         public void Fill() { } public void Fill(FillRule rule) { } public void Stroke() { }
     }
     public enum FillRule { NonZero, OddEven }
-    // Unity 6 gradient fills (the Pawn Rush result screen). AddressMode is in the 2021.3 references.
+    // Unity 6 gradient fills (the Pawn Rush result screen, the glass menus). AddressMode is in the 2021.3 references.
     public struct FillGradient
     {
         public static FillGradient MakeLinearGradient(Gradient gradient, Vector2 start, Vector2 end, AddressMode mode) => default;
+        public static FillGradient MakeLinearGradient(Color startColor, Color endColor, Vector2 start, Vector2 end, AddressMode mode) => default;
         public static FillGradient MakeRadialGradient(Gradient gradient, Vector2 center, float radius, Vector2 focus, AddressMode mode) => default;
     }
     public static class Painter2DStandInExtensions { public static Painter2D Painter2DStandIn(this MeshGenerationContext c) => null; }

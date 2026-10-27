@@ -90,7 +90,7 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Bottom right: the start button, or the busy card, and the key hints. The
+        <!-- Bottom right: the start button, or the busy card (10-27: no arrow, no key hints). The
              mode card is hidden now that the right rail lists every mode; it stays
              because the view binds it by name. -->
         <ui:VisualElement class="bottom-right" picking-mode="Ignore">
@@ -107,7 +107,6 @@
             </ui:Button>
             <ui:Button name="play" class="a-cta start-btn">
                 <ui:Label text="게임 시작" class="a-cta-text" picking-mode="Ignore" />
-                <ui:VisualElement name="play-arrow" class="a-cta-arrow" picking-mode="Ignore" />
             </ui:Button>
             <ui:VisualElement name="busy" class="busy-card a-panel">
                 <ui:VisualElement class="row busy-row">
@@ -122,12 +121,6 @@
                     <ui:Label text="경기 시작" class="a-cta-text" picking-mode="Ignore" />
                 </ui:Button>
             </ui:VisualElement>
-            <ui:VisualElement name="start-hints" class="row a-hints" picking-mode="Ignore">
-                <ui:Label text="ENTER" class="a-cap" picking-mode="Ignore" />
-                <ui:Label text="게임 시작" class="a-hint" picking-mode="Ignore" />
-                <ui:Label text="ESC" class="a-cap" picking-mode="Ignore" />
-                <ui:Label text="설정" class="a-hint a-hint-last" picking-mode="Ignore" />
-            </ui:VisualElement>
         </ui:VisualElement>
         <ui:Label name="version" class="version" picking-mode="Ignore" />
 
@@ -137,7 +130,7 @@
             <ui:VisualElement class="row rail-head" picking-mode="Ignore">
                 <ui:Label text="GAME MODE" class="a-kicker a-kicker-wide" picking-mode="Ignore" />
                 <ui:VisualElement class="grow" picking-mode="Ignore" />
-                <ui:Label name="mode-rail-hint" text="모드마다 따로 매칭돼요" class="rail-hint" picking-mode="Ignore" />
+                <ui:Label name="mode-rail-hint" class="rail-hint" picking-mode="Ignore" />
             </ui:VisualElement>
             <!-- "게임 모드" in the name screen's silver, and its gold and silver rule. -->
             <ui:VisualElement name="rail-title" class="rail-title" picking-mode="Ignore" />

@@ -43,7 +43,7 @@ namespace ChessFight.Network
             "가운데 성을 올라 정상에 먼저 닿은 폰이 퀸으로 승격", "QH", null);
 
         public static readonly GameModeInfo SwordFight = new GameModeInfo(
-            "swordfight", "소드 파이트", "3 VS 3 · 떨어뜨리고 빼앗기",
+            "swordfight", "소드 파이트", "대난투",   // 10-27 (승규 님): was "3 VS 3 · 떨어뜨리고 빼앗기"
             "상대를 판 밖으로 떨어뜨리면 1점, 먼저 10점. 폰으로 떨어뜨리면 그 기물을 빼앗아요", "SF", "SwordFight");
 
         public static readonly GameModeInfo[] All = { KingRush, QueenOfTheHill, SwordFight };
