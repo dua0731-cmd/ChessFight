@@ -41,8 +41,9 @@ namespace ChessFight.RagdollLab
                     pts.Clear();
                     Vector3 a = new Vector3(r.xMin, y, r.yMin), b = new Vector3(r.xMax, y, r.yMin), c = new Vector3(r.xMax, y, r.yMax), dd = new Vector3(r.xMin, y, r.yMax);
                     foreach (var p in new[] { a, b, c, dd, a }) pts.Add(p);
-                    x.strips[0].Build(pts, j => 0.022f, kit.Eye, true);
-                    x.strips[0].opacity = 0.32f + 0.08f * Mathf.Sin(kit.Clock * 5f);
+                    // 10-27 (승규 님: "흰색이 좀 더 뚜껍게 잘 보였으면"): a thick, plain white line.
+                    x.strips[0].Build(pts, j => 0.06f, kit.Eye, true);
+                    x.strips[0].opacity = 0.8f + 0.15f * Mathf.Sin(kit.Clock * 5f);
                     x.strips[0].Apply();
                     return true;
                 };
@@ -79,9 +80,15 @@ namespace ChessFight.RagdollLab
                 Vector3 a = lipMid - t * (width * 0.5f), b = back - t * (width * 0.5f), cc = back + t * (width * 0.5f), dd = lipMid + t * (width * 0.5f);
                 foreach (var (p0, p1) in new[] { (a, b), (b, cc), (cc, dd) }) seams.Add(CrackPath(p0, p1 - p0, (p1 - p0).magnitude, 0.012f));
                 float crack = Mathf.Max(0.05f, c.crack);
-                bool Holding(float age) => c != null && (c.phase == SwordFightEdgeFloor.Phase.Crack || c.phase == SwordFightEdgeFloor.Phase.Open);
-                Cracks(grain, age => Mathf.InverseLerp(0f, 0.6f, age / crack), Holding, 0.6f, 0.016f);
-                Cracks(seams, age => Mathf.InverseLerp(0.25f, 0.9f, age / crack), Holding, 0.6f, 0.024f);
+                // Only while it cracks: once it falls they went with it (10-27: they were left lying over the hole).
+                bool Holding(float age) => c != null && c.phase == SwordFightEdgeFloor.Phase.Crack;
+                // 10-27 (승규 님: "스크래치 지워주고"): no lines drawn on it any more - where the arena's squares break up their
+                // own pieces part as it shakes (BreakUp); the drawn splits stay only for a floor with no squares.
+                if (!shardSet.Contains(c))
+                {
+                    Cracks(grain, age => Mathf.InverseLerp(0f, 0.6f, age / crack), Holding, 0.6f, 0.016f);
+                    Cracks(seams, age => Mathf.InverseLerp(0.25f, 0.9f, age / crack), Holding, 0.6f, 0.024f);
+                }
                 holder.step = (x, d) => kit.Held(x);
                 return holder;
             });
@@ -172,8 +179,15 @@ namespace ChessFight.RagdollLab
             var arena = FindFirstObjectByType<SwordFightArena>();
             switch (c.phase)
             {
+                case SwordFightEdgeFloor.Phase.Crack:
+                    BreakUp(c, top);
+                    break;
                 case SwordFightEdgeFloor.Phase.Open:
                 {
+                    // The crack line the blow left lies on the chunk: it goes with it.
+                    if (c.by != null && rookBreakFx.TryGetValue(c.by, out var crackFx)) { if (crackFx != null) Destroy(crackFx); rookBreakFx.Remove(c.by); }
+                    if (shardSet.Contains(c)) ShowChunk(c, false);   // its pieces fall on their own
+                    else ShatterChunk(c, top);
                     for (int i = 0; i < 8; i++)
                     {
                         Vector3 p = SeamPoint(c, top, (i + 0.5f) / 8f);
@@ -187,12 +201,315 @@ namespace ChessFight.RagdollLab
                     break;
                 }
                 case SwordFightEdgeFloor.Phase.Rise:
-                    if (arena != null) arena.BrassIn(c.rect, false);
+                    shardSet.Remove(c);
+                    if (arena != null) { arena.BrassIn(c.rect, false); arena.SquaresIn(c.rect, false); }
+                    ShowChunk(c, true);
                     break;
                 case SwordFightEdgeFloor.Phase.Done:
-                    if (arena != null) arena.BrassIn(c.rect, false);
+                    shardSet.Remove(c);
+                    if (arena != null) { arena.BrassIn(c.rect, false); arena.SquaresIn(c.rect, false); }
+                    ShowChunk(c, true);
                     Shake(rook, null, 0.06f, 5);
                     break;
+            }
+        }
+
+        /// <summary>The E_Break crack line each rook's blow left, to take away when its chunk falls.</summary>
+        readonly Dictionary<SwordFightSkills, GameObject> rookBreakFx = new Dictionary<SwordFightSkills, GameObject>();
+
+        /// <summary>The chunk's own picture on or off (off while its pieces fall; the floor moves it, this only hides it).</summary>
+        static void ShowChunk(SwordFightEdgeFloor.Collapse c, bool on)
+        {
+            if (c == null || c.chunk == null) return;
+            foreach (var r in c.chunk.GetComponentsInChildren<Renderer>(true)) r.enabled = on;
+        }
+
+        /// <summary>
+        /// 10-27 (승규 님: "블록이 쪼개지면서 땅에 꺼지게", then "실제 체스판 블록이 쪼개지면서"): as it gives way the chunk itself
+        /// breaks up - its picture goes and in its place the same board, cut into uneven blocks along splits that do not
+        /// line up (each block drawn as the floor is where it was: its squares, its edges, its sides), which part and drop,
+        /// the ones at the lip first, opening a little before they fall, turning and spreading as they go, gone below.
+        /// </summary>
+        /// <summary>The collapses whose squares are already broken into pieces (BreakUp).</summary>
+        readonly HashSet<SwordFightEdgeFloor.Collapse> shardSet = new HashSet<SwordFightEdgeFloor.Collapse>();
+
+        /// <summary>
+        /// 10-27 (승규 님: "무작위로 해주고 땅이 흔들릴 때 갈라지는 조짐이 보여야 돼"): the moment the chunk starts to shake its
+        /// squares are swapped for the same squares already broken - each cut at random into a handful of uneven shards
+        /// (a Voronoi of scattered points, so no two breaks alike), lying tight together in its own wood. As it shakes the
+        /// cracks between them open (they spread and settle a little, each tilting its own way, trembling more and more),
+        /// so the break shows before it goes; when it gives way they drop, the lip's first, tipping and spreading, gone
+        /// below. If it is called off they are taken away and the squares are whole again.
+        /// </summary>
+        void BreakUp(SwordFightEdgeFloor.Collapse c, float top)
+        {
+            if (shardSet.Contains(c)) return;
+            var arena = FindFirstObjectByType<SwordFightArena>();
+            var squares = arena != null ? arena.SquaresIn(c.rect, true) : null;
+            if (squares == null || squares.Count == 0) return;
+            shardSet.Add(c);
+            Vector3 o = c.outward, t = c.along;
+            bool alongX = Mathf.Abs(o.x) > 0.5f;
+            float chunkDepth = alongX ? c.rect.width : c.rect.height;
+            Vector3 chunkLip = new Vector3(c.rect.center.x, top, c.rect.center.y) + o * (chunkDepth * 0.5f);
+            foreach (var (area, wood, thick) in squares)
+            {
+                Vector2 mid = area.center;
+                foreach (var poly in VoronoiCells(area, UnityEngine.Random.Range(6, 11)))
+                {
+                    // A hair in from its neighbours so the seams are there (shut), then they open.
+                    Vector2 cen = Vector2.zero;
+                    foreach (var q in poly) cen += q;
+                    cen /= poly.Count;
+                    for (int k = 0; k < poly.Count; k++) poly[k] = cen + (poly[k] - cen) * 0.995f - (poly[k] - cen).normalized * 0.004f;
+                    var mesh = Prism(poly, cen, thick, area);
+                    var go = new GameObject("Board shard", typeof(MeshFilter), typeof(MeshRenderer));
+                    go.transform.SetParent(kit.root, false);
+                    Vector3 at = new Vector3(cen.x, top - thick * 0.5f, cen.y);
+                    go.transform.position = at;
+                    go.GetComponent<MeshFilter>().sharedMesh = mesh;
+                    var mr = go.GetComponent<MeshRenderer>();
+                    mr.sharedMaterial = wood;
+                    mr.shadowCastingMode = ShadowCastingMode.On;
+                    float lateness = Mathf.Clamp01(Vector3.Dot(chunkLip - at, o) / Mathf.Max(0.01f, chunkDepth));
+                    // Spreading out from its square's middle (the cracks open between them), a little toward the lip.
+                    Vector2 away = cen - mid;
+                    Vector3 spread = new Vector3(away.x, 0f, away.y).normalized * Mathf.Min(1f, away.magnitude) + o * (1f - lateness) * 0.4f;
+                    Vector3 tiltAxis = Random.onUnitSphere; tiltAxis.y = 0f;
+                    if (tiltAxis.sqrMagnitude < 1e-4f) tiltAxis = t;
+                    tiltAxis.Normalize();
+                    float tilt = Random.Range(1.5f, 4.5f), phase = Random.value * 10f;
+                    float delay = lateness * 0.14f + Random.Range(0f, 0.06f);
+                    Vector3 v = o * Random.Range(0.2f, 0.6f) * (1f - 0.6f * lateness) + t * Random.Range(-0.25f, 0.25f) + Vector3.down * Random.Range(0.05f, 0.35f);
+                    Vector3 spin = (Vector3.Cross(Vector3.up, o) * Random.Range(0.6f, 1f) + t * Random.Range(-0.4f, 0.4f)).normalized * Random.Range(50f, 160f);
+                    Vector3 p = at;
+                    Quaternion rot = Quaternion.identity;
+                    float openAt = -1f;
+                    var f = kit.Run(c.crack + 3f, (fx, d) =>
+                    {
+                        if (go == null) return false;
+                        if (c.phase == SwordFightEdgeFloor.Phase.Crack)
+                        {
+                            // The warning: the cracks between the shards open, the shards settle and tip, trembling more.
+                            float k = Mathf.Clamp01(c.age / Mathf.Max(0.05f, c.crack)), kk = k * k;
+                            float shake = (0.002f + 0.01f * k) * Mathf.Sin(kit.Clock * 70f + phase);
+                            p = at + spread * (0.05f * kk) + Vector3.down * (0.02f * kk) + new Vector3(shake, 0f, -shake);
+                            rot = Quaternion.AngleAxis(tilt * kk, tiltAxis);
+                        }
+                        else if (openAt < 0f && c.phase != SwordFightEdgeFloor.Phase.Open) return false;   // called off: whole again
+                        else
+                        {
+                            if (openAt < 0f) openAt = fx.age;
+                            if (fx.age - openAt > delay)
+                            {
+                                v += Physics.gravity * d;
+                                p += v * d;
+                                rot = Quaternion.AngleAxis(spin.magnitude * d, spin.normalized) * rot;
+                            }
+                        }
+                        go.transform.SetPositionAndRotation(p, rot);
+                        return p.y > SwordFightArena.DeskY + 0.3f;
+                    });
+                    f.end = () => { if (go != null) Destroy(go); Destroy(mesh); };
+                }
+            }
+        }
+
+        /// <summary>A rectangle cut at random into <paramref name="n"/> convex cells (a Voronoi of points scattered over a
+        /// jittered grid, so the cells are uneven but none is a sliver), each a polygon counter-clockwise in x / z.</summary>
+        static List<List<Vector2>> VoronoiCells(Rect area, int n)
+        {
+            int cols = Mathf.Max(2, Mathf.RoundToInt(Mathf.Sqrt(n * area.width / Mathf.Max(0.01f, area.height))));
+            int rows = Mathf.Max(2, Mathf.CeilToInt(n / (float)cols));
+            var sites = new List<Vector2>();
+            for (int i = 0; i < cols; i++)
+                for (int j = 0; j < rows; j++)
+                    sites.Add(new Vector2(area.xMin + area.width * (i + Random.Range(0.15f, 0.85f)) / cols,
+                                          area.yMin + area.height * (j + Random.Range(0.15f, 0.85f)) / rows));
+            while (sites.Count > n) sites.RemoveAt(Random.Range(0, sites.Count));
+            var cells = new List<List<Vector2>>();
+            foreach (var a in sites)
+            {
+                var poly = new List<Vector2> { new Vector2(area.xMin, area.yMin), new Vector2(area.xMax, area.yMin), new Vector2(area.xMax, area.yMax), new Vector2(area.xMin, area.yMax) };
+                foreach (var b in sites)
+                {
+                    if (b == a) continue;
+                    // Keep the side nearer a: (x - m) . (b - a) <= 0.
+                    poly = ClipHalf(poly, (a + b) * 0.5f, b - a);
+                    if (poly.Count < 3) break;
+                }
+                if (poly.Count >= 3) cells.Add(poly);
+            }
+            return cells;
+        }
+
+        static List<Vector2> ClipHalf(List<Vector2> poly, Vector2 m, Vector2 n)
+        {
+            var outp = new List<Vector2>();
+            for (int i = 0; i < poly.Count; i++)
+            {
+                Vector2 p = poly[i], q = poly[(i + 1) % poly.Count];
+                float dp = Vector2.Dot(p - m, n), dq = Vector2.Dot(q - m, n);
+                if (dp <= 0f) outp.Add(p);
+                if ((dp < 0f) != (dq < 0f) && Mathf.Abs(dp - dq) > 1e-7f) outp.Add(p + (q - p) * (dp / (dp - dq)));
+            }
+            return outp;
+        }
+
+        /// <summary>A convex polygon (x / z, counter-clockwise) stood up as a block <paramref name="thick"/> deep, about its
+        /// middle (<paramref name="cen"/> at its centre's height): flat-shaded top, bottom and sides, its texture laid on as
+        /// the whole square's (<paramref name="square"/>) was, so a shard looks just like the part of the square it was
+        /// (10-27, 승규 님: "부서질 때 재질이 좀 달라져" - with no texture coordinates its wood had gone flat).</summary>
+        static Mesh Prism(List<Vector2> poly, Vector2 cen, float thick, Rect square)
+        {
+            var v = new List<Vector3>();
+            var nrm = new List<Vector3>();
+            var uv = new List<Vector2>();
+            var tri = new List<int>();
+            Vector2 Flat(Vector3 q) => new Vector2((q.x + cen.x - square.xMin) / square.width, (q.z + cen.y - square.yMin) / square.height);
+            float h = thick * 0.5f;
+            int n = poly.Count;
+            Vector3 P(int i, float y) => new Vector3(poly[i].x - cen.x, y, poly[i].y - cen.y);
+            // Winding: counter-clockwise seen from above in x / z is clockwise in Unity's left-handed view from +y.
+            float area = 0f;
+            for (int i = 0; i < n; i++) area += poly[i].x * poly[(i + 1) % n].y - poly[(i + 1) % n].x * poly[i].y;
+            bool ccw = area > 0f;
+            // Top.
+            int b0 = v.Count;
+            for (int i = 0; i < n; i++) { v.Add(P(i, h)); nrm.Add(Vector3.up); uv.Add(Flat(P(i, h))); }
+            for (int i = 1; i < n - 1; i++) { if (ccw) { tri.Add(b0); tri.Add(b0 + i + 1); tri.Add(b0 + i); } else { tri.Add(b0); tri.Add(b0 + i); tri.Add(b0 + i + 1); } }
+            // Bottom.
+            b0 = v.Count;
+            for (int i = 0; i < n; i++) { v.Add(P(i, -h)); nrm.Add(Vector3.down); uv.Add(Flat(P(i, -h))); }
+            for (int i = 1; i < n - 1; i++) { if (ccw) { tri.Add(b0); tri.Add(b0 + i); tri.Add(b0 + i + 1); } else { tri.Add(b0); tri.Add(b0 + i + 1); tri.Add(b0 + i); } }
+            // Sides.
+            for (int i = 0; i < n; i++)
+            {
+                int j = (i + 1) % n;
+                Vector3 a = P(i, h), b = P(j, h), cc = P(j, -h), dd = P(i, -h);
+                Vector3 side = Vector3.Cross(b - a, dd - a).normalized;
+                Vector3 outward = new Vector3((poly[i].x + poly[j].x) * 0.5f - cen.x, 0f, (poly[i].y + poly[j].y) * 0.5f - cen.y);
+                bool flip = Vector3.Dot(side, outward) < 0f;
+                int s0 = v.Count;
+                v.Add(a); v.Add(b); v.Add(cc); v.Add(dd);
+                // Across the side: where along the square's own side it lies (x or z, whichever the face runs along), and up it.
+                bool runsX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
+                float U(Vector3 q) => runsX ? (q.x + cen.x - square.xMin) / square.width : (q.z + cen.y - square.yMin) / square.height;
+                float V(Vector3 q) => (q.y + h) / Mathf.Max(0.01f, thick);
+                uv.Add(new Vector2(U(a), V(a))); uv.Add(new Vector2(U(b), V(b))); uv.Add(new Vector2(U(cc), V(cc))); uv.Add(new Vector2(U(dd), V(dd)));
+                Vector3 nn = flip ? -side : side;
+                for (int k = 0; k < 4; k++) nrm.Add(nn);
+                if (!flip) { tri.Add(s0); tri.Add(s0 + 1); tri.Add(s0 + 2); tri.Add(s0); tri.Add(s0 + 2); tri.Add(s0 + 3); }
+                else { tri.Add(s0); tri.Add(s0 + 2); tri.Add(s0 + 1); tri.Add(s0); tri.Add(s0 + 3); tri.Add(s0 + 2); }
+            }
+            var m = new Mesh { name = "Board shard", hideFlags = HideFlags.HideAndDontSave };
+            m.SetVertices(v);
+            m.SetNormals(nrm);
+            m.SetUVs(0, uv);
+            m.SetTriangles(tri, 0);
+            m.RecalculateBounds();
+            m.RecalculateTangents();
+            return m;
+        }
+
+        void ShatterChunk(SwordFightEdgeFloor.Collapse c, float top)
+        {
+            var floor = SwordFightEdgeFloor.Current;
+            if (floor == null || c.chunk == null) return;
+            ShowChunk(c, false);
+            Vector3 o = c.outward, t = c.along;
+            bool alongX = Mathf.Abs(o.x) > 0.5f;
+            float thick = Mathf.Max(0.05f, floor.Top - floor.Bottom);
+            // On the arena what shows is its squares (maple and walnut blocks over the hidden floor): break those, each in
+            // its own wood; elsewhere the floor's own box, drawn as the floor is.
+            var arena = FindFirstObjectByType<SwordFightArena>();
+            var squares = arena != null ? arena.SquaresIn(c.rect, true) : null;
+            if (squares != null && squares.Count > 0)
+                foreach (var (area, wood, depthOf) in squares) Shatter(area, depthOf, top, o, t, alongX, c.rect, (at, size) =>
+                {
+                    var go = new GameObject("Board piece", typeof(MeshFilter), typeof(MeshRenderer));
+                    go.transform.SetParent(kit.root, false);
+                    go.transform.position = at;
+                    go.GetComponent<MeshFilter>().sharedMesh = kit.RoundBox(Quant(size), 0.015f);
+                    var mr = go.GetComponent<MeshRenderer>();
+                    mr.sharedMaterial = wood;
+                    mr.shadowCastingMode = ShadowCastingMode.On;
+                    return (go, (Mesh)null);
+                });
+            else
+                Shatter(c.rect, thick, top, o, t, alongX, c.rect, (at, size) =>
+                {
+                    var go = floor.FloorPiece(at, size, out var mesh);
+                    go.transform.SetParent(kit.root, true);
+                    return (go, mesh);
+                });
+        }
+
+        /// <summary>A size rounded to 5 cm (the kit keeps one mesh per size).</summary>
+        static Vector3 Quant(Vector3 v) => new Vector3(Mathf.Max(0.05f, Mathf.Round(v.x / 0.05f) * 0.05f), Mathf.Max(0.05f, Mathf.Round(v.y / 0.05f) * 0.05f), Mathf.Max(0.05f, Mathf.Round(v.z / 0.05f) * 0.05f));
+
+        /// <summary>One block (<paramref name="area"/> its top, <paramref name="thick"/> deep, its top at
+        /// <paramref name="top"/>) cut into uneven pieces along splits that do not line up, which part and drop: the ones
+        /// nearer the lip of the whole <paramref name="chunk"/> first, opening a little before they fall, tipping over the
+        /// way they fall and spreading, gone below. <paramref name="make"/> builds a piece (and the mesh it owns, or null).</summary>
+        void Shatter(Rect area, float thick, float top, Vector3 o, Vector3 t, bool alongX, Rect chunk,
+                     System.Func<Vector3, Vector3, (GameObject go, Mesh mesh)> make)
+        {
+            float depth = alongX ? area.width : area.height, width = alongX ? area.height : area.width;
+            float chunkDepth = alongX ? chunk.width : chunk.height;
+            Vector3 centre = new Vector3(area.center.x, top - thick * 0.5f, area.center.y);
+            Vector3 chunkLip = new Vector3(chunk.center.x, top, chunk.center.y) + o * (chunkDepth * 0.5f);
+            int nw = Mathf.Clamp(Mathf.RoundToInt(width / 0.7f), 2, 6), nd = Mathf.Clamp(Mathf.RoundToInt(depth / 0.7f), 2, 5);
+            float[] Cuts(int n, float len)
+            {
+                var cuts = new float[n + 1];
+                cuts[0] = 0f; cuts[n] = len;
+                for (int k = 1; k < n; k++) cuts[k] = len * (k + Random.Range(-0.3f, 0.3f)) / n;
+                return cuts;
+            }
+            var wc = Cuts(nw, width);
+            const float Gap = 0.012f;
+            for (int i = 0; i < nw; i++)
+            {
+                // Each strip its own splits across, so no seam runs straight through.
+                var dc = Cuts(nd, depth);
+                for (int j = 0; j < nd; j++)
+                {
+                    float w0 = wc[i], w1 = wc[i + 1], d0 = dc[j], d1 = dc[j + 1];
+                    float sw = Mathf.Max(0.05f, w1 - w0 - Gap), sd = Mathf.Max(0.05f, d1 - d0 - Gap);
+                    Vector3 at = centre + t * ((w0 + w1) * 0.5f - width * 0.5f) + o * (depth * 0.5f - (d0 + d1) * 0.5f);
+                    Vector3 size = alongX ? new Vector3(sd, thick, sw) : new Vector3(sw, thick, sd);
+                    var (go, mesh) = make(at, size);
+                    if (go == null) continue;
+                    // How far in from the lip of the whole chunk: the lip goes first, the further in the later and slower.
+                    float lateness = Mathf.Clamp01(Vector3.Dot(chunkLip - at, o) / Mathf.Max(0.01f, chunkDepth));
+                    float delay = 0.03f + lateness * 0.14f + Random.Range(0f, 0.05f);
+                    Vector3 part = (t * ((w0 + w1) * 0.5f / width - 0.5f) + o * (0.5f - lateness) * 0.6f) * 0.25f;
+                    Vector3 v = o * Random.Range(0.2f, 0.6f) * (1f - 0.6f * lateness) + t * Random.Range(-0.25f, 0.25f) + Vector3.down * Random.Range(0.05f, 0.35f);
+                    // They tip over the way they fall, the lip side down first.
+                    Vector3 spin = (Vector3.Cross(Vector3.up, o) * Random.Range(0.6f, 1f) + t * Random.Range(-0.4f, 0.4f)).normalized * Random.Range(50f, 150f);
+                    Vector3 p = at;
+                    Quaternion rot = Quaternion.identity;
+                    var f = kit.Run(2.4f, (fx, d) =>
+                    {
+                        if (go == null) return false;
+                        if (fx.age < delay)
+                        {
+                            // Parting: the cracks open a few centimetres, a slight sag.
+                            float k = fx.age / delay;
+                            p = at + part * k * 0.15f + Vector3.down * 0.02f * k;
+                        }
+                        else
+                        {
+                            v += Physics.gravity * d;
+                            p += v * d;
+                            rot = Quaternion.AngleAxis(spin.magnitude * d, spin.normalized) * rot;
+                        }
+                        go.transform.SetPositionAndRotation(p, rot);
+                        return p.y > SwordFightArena.DeskY + 0.3f;
+                    });
+                    f.end = () => { if (go != null) Destroy(go); if (mesh != null) Destroy(mesh); };
+                }
             }
         }
 
@@ -242,7 +559,7 @@ namespace ChessFight.RagdollLab
             WallChips(lip + Vector3.up * 0.04f, Vector3.up + e.dir * 0.3f, 10, 3f, 0.7f, 0.01f, 0.035f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
             // The effect's crack line lies where the chunk breaks off, 2 m in from the lip (e.dir points out of the board).
-            RookVfx("E_Break", Kit.FloorUnder(e.at + Vector3.up * 0.5f, 1f), Kit.FlatDir(e.dir, Vector3.forward));
+            // 10-27: its drawn crack line is not played any more (승규 님: "스크래치 지워주고"); the chunk's own pieces show it.
             HitStop(4);
             Shake(s.Pawn, null, 0.15f, 9);
             Punch(s.Pawn, null, 6f, 16);

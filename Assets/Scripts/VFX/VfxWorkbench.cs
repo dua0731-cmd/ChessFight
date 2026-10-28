@@ -16,7 +16,8 @@ namespace ChessFight.VFX
     /// AssetDatabase) and the scene is not in the build. In edit mode it shows the chosen piece and the target, not
     /// saved with the scene, so effects can be placed against them; in Play mode the panel's keys play, repeat, slow and
     /// compare. The bench volume (B) holds the bloom being tried; off, the picture is the game's own look
-    /// (Settings/GameLook.asset under GameLook's soft volume).
+    /// (Settings/GameLook.asset under GameLook's soft volume). The neutral volume (N, R172) swaps only the tonemapping
+    /// for Neutral to compare with the game's ACES; the game itself is not changed.
     /// </summary>
     [ExecuteAlways]
     public sealed class VfxWorkbench : MonoBehaviour
@@ -37,6 +38,8 @@ namespace ChessFight.VFX
         public bool showTarget = true;
         [Tooltip("The bench's own global volume (the bloom being tried); B turns it on and off in Play mode.")]
         public GameObject benchVolume;
+        [Tooltip("A global volume that swaps only the tonemapping for Neutral (the game keeps ACES); N turns it on and off in Play mode.")]
+        public GameObject neutralVolume;
         public Material floorMaterial;
         public Camera view;
 
@@ -221,6 +224,7 @@ namespace ChessFight.VFX
                 VfxCue.Density = Densities[density];
             }
             if (Input.GetKeyDown(KeyCode.B) && benchVolume != null) benchVolume.SetActive(!benchVolume.activeSelf);
+            if (Input.GetKeyDown(KeyCode.N) && neutralVolume != null) neutralVolume.SetActive(!neutralVolume.activeSelf);
             if (Input.GetKeyDown(KeyCode.V) && dummy != null)
             {
                 showTarget = !showTarget;
@@ -329,8 +333,9 @@ namespace ChessFight.VFX
             text.Append("Space 재생 · L 반복 ").Append(loop ? "<b>켜짐</b>" : "꺼짐").Append(" · C 지우기\n");
             text.Append("T 속도 ×").Append(Speeds[speed].ToString("0.##")).Append(" · P ").Append(paused ? "<b>멈춤</b>" : "멈추기")
                 .Append(" · G 밀도 ").Append(Densities[density].ToString("0.00")).Append('\n');
-            text.Append("B 블룸: ").Append(benchVolume != null && benchVolume.activeSelf ? "<b>작업대 볼륨</b>" : "게임 기준")
-                .Append(" · V 과녁 ").Append(showTarget ? "보임" : "숨김").Append('\n');
+            text.Append("B 블룸: ").Append(benchVolume != null && benchVolume.activeSelf ? "<b>작업대 볼륨</b>" : "게임 기준");
+            if (neutralVolume != null) text.Append(" · N 톤매핑: ").Append(neutralVolume.activeSelf ? "<b>Neutral</b>" : "ACES(게임)");
+            text.Append(" · V 과녁 ").Append(showTarget ? "보임" : "숨김").Append('\n');
             text.Append("오른쪽 드래그 회전 · 가운데 드래그 이동 · 휠 거리 · F 처음 시점");
             var content = new GUIContent(text.ToString());
             const float width = 470f;

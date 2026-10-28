@@ -11,8 +11,9 @@ namespace ChessFight.RagdollLab
     /// <summary>
     /// The knight's fork dive for real (10-25, 승규 님: "나이트 f 도 실사로 바꿔줘", then "판 갈라짐 안해도 되고 네모 칸에 적이
     /// 들어오면 표시를 더 명확하게 … 맞으면 적 기물이 맞았다고도 표시 될 수 있게 사실적으로"): its squares are outlines of
-    /// light lying on the board, and a square with an enemy in it lights up warm - a thick amber outline and a pool of
-    /// light on the wood under them, breathing - so it is plain at a glance who the fork will take; its flight is a faint
+    /// light lying on the board, and a square with an enemy in it lights up red - a thick red outline and a pool of light
+    /// on the wood under them, breathing (amber until 10-28, 사용자 "적 칸은 빨강으로": the knight's own light is
+    /// bronze now) - so it is plain at a glance who the fork will take; its flight is a faint
     /// line of light while it aims. It springs off with the air knocked down out from under it, dives leaving see-through
     /// copies of itself with its blade blurring, and lands hard (splinters, a long hold, a heavy shake; the board does not
     /// split). Whoever it strikes shows it: a flash where the blade met them and a fresh cut left in their wood, light
@@ -20,8 +21,9 @@ namespace ChessFight.RagdollLab
     /// </summary>
     public partial class SwordFightSkillFx
     {
-        /// <summary>The warm light of a fork square with an enemy in it.</summary>
-        static readonly Color ForkFoe = new Color(1f, 0.62f, 0.26f);
+        /// <summary>The light of a fork square with an enemy in it: red (#C24A41, King of the Hill's enemy colour; 사용자
+        /// 10-28 "적 칸은 빨강으로"), clear of the knight's bronze.</summary>
+        static readonly Color ForkFoe = new Color(0.761f, 0.29f, 0.255f);
 
         /// <summary>A square of light lying on the board: its four edges.</summary>
         void LightSquare(Kit.Strip strip, Vector3 c, Vector3 dir, float side, float opacity, float width = 0.026f)
@@ -63,7 +65,7 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>Its squares while it aims and flies: the square it comes down on and the eight it forks, outlines of
-        /// light; a square with an enemy in it warm and plain (thick amber edges, a pool of light under them, breathing);
+        /// light; a square with an enemy in it red and plain (thick red edges, a pool of light under them, breathing);
         /// its flight for its owner while it aims; at the top of its flight the L to each square, faint lines of light.</summary>
         /// <summary>The pool of light under someone the knight will take (on or off).</summary>
         static void ForkGlow(GameObject glow, MaterialPropertyBlock block, bool on, Vector3 at, Vector3 dir, float cell, float alpha, float breathe)

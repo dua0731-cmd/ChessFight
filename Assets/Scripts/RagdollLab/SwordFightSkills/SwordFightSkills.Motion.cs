@@ -290,8 +290,9 @@ namespace ChessFight.RagdollLab
                         return EdgeStage == SfEdge.Windup
                             || (EdgeStage == SfEdge.None && (Stage == SfStage.Windup || Stage == SfStage.Active || Stage == SfStage.Recovery));
                     case PieceKind.Bishop:
+                        // 10-27: and while he aims (the second sword is in that hand from F).
                         return EdgeStage == SfEdge.Active || EdgeStage == SfEdge.Recovery
-                            || (EdgeStage == SfEdge.None && (Stage == SfStage.Windup || Stage == SfStage.Active || Stage == SfStage.Recovery));
+                            || (EdgeStage == SfEdge.None && (Stage == SfStage.Aim || Stage == SfStage.Windup || Stage == SfStage.Active || Stage == SfStage.Recovery));
                     case PieceKind.Knight:
                         return EdgeStage != SfEdge.None || Stage == SfStage.Active || Stage == SfStage.Recovery;
                 }
@@ -856,52 +857,106 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- bishop · 관통 핀, 구원의 손
 
+        /// <summary>
+        /// 10-27, the bishop's X cut: a sword in each hand, mirrored across him; he stays where he is.
+        /// - Aiming: both held low and forward, a little apart (a V), the chest square, the legs his own (he walks).
+        /// - Drawing back: both swords up and back over his shoulders, leaning back, a foot forward.
+        /// - The throw: both arms whip forward and out (the swords leave his hands); then held out ahead of him while they fly.
+        /// - Their way back: his hands open out to take them, and close on them as they come in (the catch: a little give),
+        ///   then let go.
+        /// </summary>
         bool BishopKey(ref BodyKey k)
         {
             float t = StageTime;
-            Transform chest = Pawn.bodies[(int)BodyId.Chest].transform;
-            Vector3 target = Point + Vector3.up * 0.3f;
-            Vector3 atTarget = chest.InverseTransformDirection(target - Pivot(BodyId.ArmL));
-            // Cocked: leaning back, the sword drawn up behind his shoulder, the free hand sighting the target, the free-side
-            // foot forward - a thrower, deliberate. Thrown: the arm whips through as the windup ends (the blades leave the
-            // hand at the release), the body unwinds and leans into it, the free hand pulled back to the hip; the empty
-            // hand follows through, then he lets it go.
-            var cocked = new BodyKey
+            Vector3 look = PinCandidate != null ? PinCandidate.bodies[(int)BodyId.Chest].position
+                : (Stage == SfStage.Aim ? AimPoint : Point) + Vector3.up * 0.4f;
+            if (Stage != SfStage.Aim && bishopTarget != null) look = bishopTarget.bodies[(int)BodyId.Chest].position;
+            BodyKey Two(Vector3 chest, Vector3 arm, float lean, float thigh, bool legs) => new BodyKey
             {
-                w = 1f, chest = new Vector3(-8f, 26f, 6f), look = target, nod = 2f, armL = atTarget, armW = 1f,
-                armR = new Vector3(0.45f, 0.7f, -0.55f), swordW = 1f, legs = true, thighL = -16f, thighR = 16f, turn = 16f, lean = -5f,
+                w = 1f, chest = chest, look = look, nod = 4f, armR = arm, swordW = 1f, armL = new Vector3(-arm.x, arm.y, arm.z), armW = 1f,
+                legs = legs, thighL = -thigh, thighR = legs ? thigh * 0.6f : 0f, lean = lean,
             };
-            var thrown = new BodyKey
-            {
-                w = 1f, chest = new Vector3(16f, -22f, -4f), look = target, nod = 6f, armL = new Vector3(-0.7f, -0.5f, -0.45f), armW = 1f,
-                armR = new Vector3(0.35f, -0.15f, 0.92f), swordW = 1f, legs = true, thighL = -20f, thighR = 20f, turn = -14f, lean = 8f,
-            };
+            var ready = Two(new Vector3(4f, 0f, 0f), new Vector3(0.35f, -0.35f, 0.87f), 0f, 0f, false);
+            var cocked = Two(new Vector3(-8f, 0f, 0f), new Vector3(0.55f, 0.55f, -0.6f), -4f, 14f, true);
+            var thrown = Two(new Vector3(14f, 0f, 0f), new Vector3(0.45f, 0.05f, 0.89f), 6f, 16f, true);
+            var guiding = Two(new Vector3(6f, 0f, 0f), new Vector3(0.4f, 0.18f, 0.9f), 2f, 12f, true);
+            var open = Two(new Vector3(2f, 0f, 0f), new Vector3(0.7f, 0.2f, 0.68f), 0f, 12f, true);
+            var caught = Two(new Vector3(-4f, 0f, 0f), new Vector3(0.5f, 0.35f, 0.79f), -2f, 12f, true);
             switch (Stage)
             {
+                case SfStage.Aim:
+                    k = ready;
+                    k.w = k.armW = k.swordW = Out2(t / 0.12f);
+                    return true;
                 case SfStage.Windup:
+                    k = Mix(ready, cocked, Out2(t / Mathf.Max(0.05f, S.bishopThrowWindup)));
+                    return true;
+                case SfStage.Active:
                 {
-                    float whip = Mathf.Max(0.2f, S.bishopWindup - 0.12f);
-                    if (t < whip)
-                    {
-                        k = cocked;
-                        k.w = k.armW = k.swordW = Out2(t / 0.18f);
-                        return true;
-                    }
-                    k = Mix(cocked, thrown, Smooth((t - whip) / 0.12f));
+                    float back = BishopOutTime + S.bishopCrossTime, all = BishopThrowTime;
+                    if (t < 0.1f) { k = Mix(cocked, thrown, Out2(t / 0.1f)); return true; }
+                    if (t < back) { k = Mix(thrown, guiding, Smooth((t - 0.1f) / 0.2f)); return true; }
+                    // Hands out for them, then on them as they come in.
+                    k = Mix(guiding, open, Smooth((t - back) / 0.25f));
+                    float near = Smooth((t - (all - 0.18f)) / 0.18f);
+                    if (near > 0f) k = Mix(k, caught, near);
                     return true;
                 }
-                case SfStage.Active:
-                    k = thrown;
-                    return true;
                 case SfStage.Recovery:
                 {
-                    k = thrown;
-                    float r = Smooth((t - 0.08f) / Mathf.Max(0.05f, S.bishopRecovery - 0.08f));
+                    // The catch gives a little, then he lets the pose go.
+                    float give = Mathf.Sin(Mathf.PI * Mathf.Clamp01(t / 0.12f));
+                    k = caught;
+                    k.chest.x -= 4f * give;
+                    float r = Smooth((t - 0.1f) / Mathf.Max(0.05f, S.bishopCatchAfter - 0.1f));
                     k.w = k.armW = k.swordW = 1f - r;
                     return true;
                 }
             }
             return false;
+        }
+
+        /// <summary>The right sword's line (world): in his hand while he aims and draws back; while it is thrown the hand's
+        /// own line is where it will be caught (the thrown copy turns into it as it comes in); then handed back.</summary>
+        Vector3 BishopBlade(Vector3 f, Vector3 side)
+        {
+            Vector3 up = Vector3.up;
+            Vector3 ready = (f * 0.75f - up * 0.35f + side * 0.25f).normalized;
+            Vector3 cocked = (-f * 0.6f + up * 0.55f + side * 0.3f).normalized;
+            Vector3 caught = BishopCatchBlade(f, side);
+            float t = StageTime;
+            switch (Stage)
+            {
+                case SfStage.Aim: return ready;
+                case SfStage.Windup: return Vector3.Slerp(ready, cocked, Out2(t / Mathf.Max(0.05f, S != null ? S.bishopThrowWindup : 0.2f)));
+                case SfStage.Active: return caught;
+                case SfStage.Recovery:
+                {
+                    float after = S != null ? S.bishopCatchAfter : 0.35f;
+                    Vector3 home = Fighter != null ? Fighter.HomeBlade : ready;
+                    return Vector3.Slerp(caught, home, Smooth((t - 0.1f) / Mathf.Max(0.05f, after - 0.1f)));
+                }
+            }
+            return ready;
+        }
+
+        /// <summary>
+        /// 10-27: the bishop's second sword, in his left hand from F to the end of the cut (every machine, from the skill's
+        /// replicated state; SwordFightPawn.OffHand draws it): his right sword mirrored across him, so the two make an X
+        /// where they cross. Null when he has only the one.
+        /// </summary>
+        public Vector3? OffBlade
+        {
+            get
+            {
+                if (!BodyMotion || Piece != PieceKind.Bishop || EdgeStage != SfEdge.None || Stage == SfStage.None || Pawn == null || Pawn.State != PawnState.Active)
+                    return null;
+                if (!(Blade is Vector3 b)) return null;
+                Vector3 f = Flat(Stage == SfStage.Aim ? AimDir : Dir);
+                if (f.sqrMagnitude < 1e-4f) f = Flat(Pawn.Facing);
+                Vector3 side = Vector3.Cross(Vector3.up, f.normalized);
+                return b - 2f * Vector3.Dot(b, side) * side;
+            }
         }
 
         bool BishopEdgeKey(ref BodyKey k)

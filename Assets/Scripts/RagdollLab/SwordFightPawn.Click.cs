@@ -362,10 +362,10 @@ namespace ChessFight.RagdollLab
         float profileLo;
         const float ProfileStep = .03f;
         const int ProfileSectors = 32;
-        // The kukri's centre line off its straight line, toward its edge (model -X), every 5 cm up the model (its tip 16 cm
-        // over); the other swords are straight to under 1 cm.
-        static readonly float[] KukriBend = { .004f, .006f, .002f, -.003f, -.003f, -.018f, -.021f, -.028f, -.036f, -.046f,
-            -.057f, -.068f, -.083f, -.100f, -.121f, -.139f, -.158f, -.17f };
+        // The knight's curved blade's centre line off its straight line, toward its edge (model -X), every 5 cm up the model;
+        // the other swords are straight to under 1 cm. 10-27: measured again for the new cavalry sabre (its tip 28 cm over).
+        static readonly float[] KukriBend = { 0f, 0f, 0f, 0f, 0f, .001f, .001f, 0f, -.003f, -.008f,
+            -.017f, -.029f, -.048f, -.074f, -.14f, -.17f, -.213f, -.278f };
         float modelLift, modelScale = 1f;
 
         int InsideProfile(Vector3 grip, Vector3 d)

@@ -1008,8 +1008,10 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>A gold slash across the whole view (the queen's cut, R103): an inked band with a white core sweeping
-        /// corner to corner in three frames, held, then thinning away. Only the two pieces' own screens.</summary>
-        void ScreenSlash(RagdollPawn a, RagdollPawn b, Kit.Palette p, bool soft = false)
+        /// corner to corner in three frames, held, then thinning away. Only the two pieces' own screens.
+        /// <paramref name="thickness"/> scales the band; <paramref name="motes"/> small motes in the palette's light are
+        /// thrown off it as the sweep passes (10-27), drifting out from the band and fading.</summary>
+        void ScreenSlash(RagdollPawn a, RagdollPawn b, Kit.Palette p, bool soft = false, float thickness = 1f, int motes = 0)
         {
             if (!Sees(a, b)) return;
             var parts = soft
@@ -1026,7 +1028,29 @@ namespace ChessFight.RagdollLab
                     Band(Color.white, 4003, 0.007f),
                 };
             const float Angle = -22f;
-            var f = kit.Run(18f * F, (fx, d) =>
+            // The motes: where along the band (-0.5..0.5), when they come off (frames, as the sweep passes), which side and
+            // how fast, how big (of the view's height) and how long; one material each so each fades on its own.
+            var dots = new List<(GameObject go, Material mat, float u, float born, float side, float speed, float size, float life, Color c)>();
+            for (int i = 0; i < motes; i++)
+            {
+                float u = UnityEngine.Random.Range(-0.5f, 0.5f);
+                // Added light (so they glow on the pale board too), brighter than white.
+                var mat = new Material(Shader.Find(ChessFight.Game.LitMaterials.ParticlesUnlitName)) { hideFlags = HideFlags.HideAndDontSave };
+                ChessFight.Game.LitMaterials.MakeTransparent(mat, true);
+                mat.SetTexture("_BaseMap", SoftDot());
+                mat.renderQueue = 4004;
+                var go = new GameObject("Screen slash mote");
+                go.AddComponent<MeshFilter>().sharedMesh = kit.meshQuad;
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = mat;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+                go.SetActive(false);
+                Color c = Color.Lerp(p.main, Color.Lerp(p.light, Color.white, 0.4f), UnityEngine.Random.value);
+                dots.Add((go, mat, u, (u + 0.5f) * 2f + UnityEngine.Random.Range(0f, 2.5f), UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(0.25f, 1f),
+                          UnityEngine.Random.Range(0.009f, 0.024f), UnityEngine.Random.Range(10f, 26f), c));
+            }
+            var f = kit.Run((motes > 0 ? 32f : 18f) * F, (fx, d) =>
             {
                 var cam = ViewCamera;
                 if (cam == null) return false;
@@ -1040,21 +1064,57 @@ namespace ChessFight.RagdollLab
                 Vector3 mid = cam.transform.position + cam.transform.forward * dist;
                 foreach (var (go, mat, c, thick) in parts)
                 {
-                    go.SetActive(true);
+                    go.SetActive(t < 18f);
                     go.transform.SetPositionAndRotation(mid + axis * (-len * 0.5f + len * sweep * 0.5f), turn);
-                    go.transform.localScale = new Vector3(len * sweep, h * thick * thin * (t < 2f ? 1.5f : 1f), 1f);
+                    go.transform.localScale = new Vector3(len * sweep, h * thick * thickness * Mathf.Max(0f, thin) * (t < 2f ? 1.5f : 1f), 1f);
                     mat.color = Kit.A(c, c.a * Mathf.Clamp01(thin * 1.4f));
+                }
+                Vector3 across = turn * Vector3.up;
+                foreach (var m in dots)
+                {
+                    float age = t - m.born, k = age / m.life;
+                    if (age < 0f || k >= 1f) { m.go.SetActive(false); continue; }
+                    m.go.SetActive(true);
+                    // Off the band's edge, flung out fast and slowing, drifting a little along the cut.
+                    float flung = Kit.EaseOut(k) * m.speed * h * 0.09f;
+                    Vector3 at = mid + axis * (m.u * len * 0.9f + Kit.EaseOut(k) * h * 0.04f * m.speed)
+                               + across * (Mathf.Sign(m.side) * (h * 0.02f * thickness * Mathf.Abs(m.side) + flung));
+                    float size = h * m.size * (1f - 0.5f * k);
+                    m.go.transform.SetPositionAndRotation(at, turn);
+                    m.go.transform.localScale = new Vector3(size, size, 1f);
+                    m.mat.SetColor(ChessFight.Game.LitMaterials.BaseColorId, Kit.A(m.c * 1.6f, (k < 0.15f ? k / 0.15f : 1f) * (1f - k) * (1f - k)));
                 }
                 return true;
             });
             f.end = () =>
             {
+                foreach (var m in dots)
+                {
+                    if (m.go != null) Destroy(m.go);
+                    if (m.mat != null) Destroy(m.mat);
+                }
                 foreach (var (go, mat, _, _) in parts)
                 {
                     if (go != null) Destroy(go);
                     if (mat != null) Destroy(mat);
                 }
             };
+        }
+
+        /// <summary>A soft round dot: opaque in its middle, falling off smoothly to nothing at its rim.</summary>
+        static Texture2D softDot;
+        static Texture2D SoftDot()
+        {
+            if (softDot != null) return softDot;
+            softDot = new Texture2D(32, 32, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            for (int y = 0; y < 32; y++)
+                for (int x = 0; x < 32; x++)
+                {
+                    float dx = (x + 0.5f) / 16f - 1f, dy = (y + 0.5f) / 16f - 1f, a = Mathf.Exp(-(dx * dx + dy * dy) * 4f);
+                    softDot.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            softDot.Apply();
+            return softDot;
         }
 
         /// <summary>A strip's soft edge: opaque along its middle, falling off smoothly to nothing at both sides (v).</summary>
@@ -1114,10 +1174,14 @@ namespace ChessFight.RagdollLab
                 case SfFxKind.BishopCatch when RealEdge(PieceKind.Bishop): RealBishopCatch(e); return true;
                 case SfFxKind.BishopSet when RealEdge(PieceKind.Bishop): Shake(e.by.Pawn, e.target, 0.06f, 5); return true;
                 case SfFxKind.BishopDrop when RealEdge(PieceKind.Bishop): Shake(e.by.Pawn, e.target, 0.08f, 6); return true;
-                case SfFxKind.KnightCrouch when RealEdge(PieceKind.Knight): return true;
-                case SfFxKind.KnightFlip when RealEdge(PieceKind.Knight): RealKnightFlip(e); return true;
+                // R195: the light drawn in to its hooves as it crouches (SwordFightSkillFx.KnightVfx.cs; nothing realistic here).
+                case SfFxKind.KnightCrouch when RealEdge(PieceKind.Knight): KnightVfxCoil(e); return true;
+                // R182: the crescent its hind hooves draw over the somersault, over the realistic flip, and R192 the flash where
+                // they kick off (SwordFightSkillFx.KnightVfx.cs).
+                case SfFxKind.KnightFlip when RealEdge(PieceKind.Knight): RealKnightFlip(e); KnightVfxSpring(e); KnightVfxFlip(e); return true;
                 case SfFxKind.KnightKick when RealEdge(PieceKind.Knight): RealKnightKick(e); return true;
-                case SfFxKind.KnightKickHit when RealEdge(PieceKind.Knight): RealKnightKickHit(e); return true;
+                // R189: the star where its hind hooves strike whoever its buck takes, over the realistic hit (SwordFightSkillFx.KnightVfx.cs).
+                case SfFxKind.KnightKickHit when RealEdge(PieceKind.Knight): RealKnightKickHit(e); KnightVfxKick(e); return true;
                 case SfFxKind.EdgeCancel:
                     kit.PuffBurst(e.at, kit.grey, 5, 0.4f, 0.16f, 0.45f, 0.2f);
                     if (e.by.Pawn != null) Afterimage(e.by.Pawn, kit.grey, 1.3f, 0.2f, 0.45f);

@@ -822,7 +822,7 @@ namespace ChessFight.RagdollLab
                 foreach (var w in new[] { fwd, -fwd, side, -side })
                     Air.Kick(feet + w * 0.2f, w + Vector3.down * 0.1f, 0.9f, null, 0.04f, 1.6f, 1.4f);
                 SparkLight(king.bodies[(int)BodyId.Chest].position + fwd * 0.4f, 1.6f, 0.45f, 2.4f, KingGold);
-                KingVfx("F_Guard", Kit.FloorUnder(king.Hips.position, 1.5f), fwd);
+                KingGuardVfx(e.by);
             }
         }
 

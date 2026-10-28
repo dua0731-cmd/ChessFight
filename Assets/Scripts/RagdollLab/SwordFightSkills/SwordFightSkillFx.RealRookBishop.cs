@@ -636,8 +636,6 @@ namespace ChessFight.RagdollLab
                 if (!bit && t >= 1f)
                 {
                     bit = true;
-                    // R167: an X sigil on the board where they bite, along his diagonals (SwordFightSkillFx.BishopVfx.cs).
-                    BishopVfx("F_Pin", feet, Kit.FlatDir(dir, Vector3.forward));
                     var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
                     Color wood = FloorWood(feet);
                     chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;

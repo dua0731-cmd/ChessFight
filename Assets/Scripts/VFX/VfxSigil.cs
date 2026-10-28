@@ -10,7 +10,7 @@ namespace ChessFight.VFX
     /// VFX_SigilAdd material) is on the same object; every value is here to tune in the inspector.
     /// </summary>
     [RequireComponent(typeof(MeshRenderer))]
-    public sealed class VfxSigil : MonoBehaviour
+    public sealed class VfxSigil : MonoBehaviour, IVfxSeekable
     {
         static readonly int FadeId = Shader.PropertyToID("_Fade"), IntensityId = Shader.PropertyToID("_Intensity"),
             RevealId = Shader.PropertyToID("_Reveal");
@@ -57,6 +57,15 @@ namespace ChessFight.VFX
                 return;
             }
             Draw();
+        }
+
+        /// <summary>As it is <paramref name="at"/> seconds after it was turned on (R172; edit mode too, where Awake has not run).</summary>
+        public void Seek(float at)
+        {
+            if (view == null) Awake();
+            age = at;
+            view.enabled = age >= 0f && age < duration;
+            if (view.enabled) Draw();
         }
 
         void Draw()

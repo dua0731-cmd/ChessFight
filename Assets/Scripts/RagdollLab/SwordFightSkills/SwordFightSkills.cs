@@ -27,6 +27,8 @@ namespace ChessFight.RagdollLab
         KingCounterSpin, KingRepel,
         // R149, the prototype match: the pawn's first two steps (a step, a diagonal hit, a head-on bounce).
         PawnStep, PawnHit, PawnBounce,
+        // 10-27, the bishop's new F (X자 베기): the leap off, the two swords' cross landing, a piece it took.
+        BishopLeap, BishopCross, BishopHit,
     }
 
     /// <summary>R130: what the king's guard took (the block's effects answer each one: a cut, the queen's thrust or her
@@ -485,8 +487,11 @@ namespace ChessFight.RagdollLab
                     Say($"{Pawn.DisplayName}: 열린 파일 포격 예고" + (WaveBlocked ? $" (장애물 {Reach:0.0} m)" : ""));
                     break;
                 case PieceKind.Bishop:
-                    SetStage(SfStage.Windup, PinCandidate != null ? "예고 · 적 조준" : "예고");
-                    Say($"{Pawn.DisplayName}: 관통 핀 예고" + (PinCandidate != null ? $" ({PinCandidate.DisplayName})" : ""));
+                    // 10-27: locked on whoever was on the point when he let go (or on the point itself).
+                    bishopTarget = PinCandidate;
+                    bishopStruck = false;
+                    SetStage(SfStage.Windup, bishopTarget != null ? "예고 · 적 조준" : "예고");
+                    Say($"{Pawn.DisplayName}: X자 베기 — 칼을 젖힘" + (bishopTarget != null ? $" → {bishopTarget.DisplayName}" : " (빈 곳)"));
                     break;
                 case PieceKind.Knight:
                     KnightGo();
@@ -758,7 +763,192 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- bishop
 
+        // 10-27 (승규 님: "F 누르면 칼이 양 손에 두개가 되고 상대를 조준한 다음 …", then "비숍은 가만히 있고 칼이 멋있게 윙윙
+        // 날아가면서 상대 앞에(여유공간 vfx로 처리) 해주고 칼이 돌아 올때 도 무작위로 휭~ 돌아다니면서 내 손에 와야돼"): with F the
+        // bishop holds a second sword in his left hand (drawn only, SwordFightPawn.OffHand) and aims as before. Let go, he
+        // stays where he is: he draws both swords back and throws them. They fly out wide on either side, whirling, and
+        // meet a little short of whoever was on the point (bishopClear: they do not reach them - the hit is the skill's,
+        // its effect will show it), cutting across each other in an X; everyone round where they cross is struck and
+        // pushed. Then they wander back on their own (random curves, the same on every screen) and drop into his hands.
+        // The old pin (손) is kept below for reference, unused. Every machine draws the swords from the replicated stage,
+        // its time, the point where they cross (Point), the way (Dir), where he stands (Origin) and the throw's length (Reach).
+        RagdollPawn bishopTarget;
+        bool bishopStruck;
+
+        /// <summary>The way out (s), from the replicated distance <see cref="Reach"/>.</summary>
+        public float BishopOutTime => S != null ? Mathf.Clamp(Reach / Mathf.Max(1f, S.bishopThrowSpeed), S.bishopOutMin, S.bishopOutMax) : 0.4f;
+        /// <summary>The whole throw (s): out, the X, back to the hands.</summary>
+        public float BishopThrowTime => BishopOutTime + (S != null ? S.bishopCrossTime + S.bishopBackTime : 1f);
+        /// <summary>His swords are out of his hands (thrown, on their way back).</summary>
+        public bool BishopSwordsOut => BodyMotion && Piece == PieceKind.Bishop && EdgeStage == SfEdge.None && Stage == SfStage.Active
+                                       && Pawn != null && Pawn.State == PawnState.Active && StageTime < BishopThrowTime;
+
         void StepBishop()
+        {
+            switch (Stage)
+            {
+                case SfStage.Windup:
+                    if (StageTime >= S.bishopThrowWindup) BishopThrow();
+                    break;
+                case SfStage.Active:
+                {
+                    float t = StageTime, tOut = BishopOutTime;
+                    // After them for most of the way out, then committed.
+                    if (t < tOut * 0.65f) Point = BishopCrossPoint();
+                    if (!bishopStruck && t >= tOut + S.bishopCrossTime * 0.5f)
+                    {
+                        bishopStruck = true;
+                        BishopCross();
+                    }
+                    if (t >= BishopThrowTime) SetStage(SfStage.Recovery, "후딜");
+                    break;
+                }
+                case SfStage.Recovery:
+                    if (StageTime >= S.bishopCatchAfter) Finish();
+                    break;
+            }
+        }
+
+        /// <summary>The swords leave his hands: where they will cross (as it is now) and how far that is.</summary>
+        void BishopThrow()
+        {
+            Point = BishopCrossPoint();
+            Vector3 way = Flat(Point - Pawn.Hips.position);
+            if (way.sqrMagnitude > 1e-4f) Dir = way.normalized;
+            Reach = way.magnitude;
+            bishopStruck = false;
+            SetStage(SfStage.Active, "손");
+            Raise(SfFxKind.BishopLeap, bishopTarget, Point, Dir, Reach);
+            Say($"{Pawn.DisplayName}: 두 칼을 던짐 {Reach:0.0} m ({BishopOutTime:0.00}초)");
+        }
+
+        /// <summary>Where the swords cross (on the floor): <see cref="SwordFightSkillParams.bishopClear"/> short of the target
+        /// (where they are now), but never nearer him than 0.9 m; the aimed point with no one taken (or the target gone).</summary>
+        Vector3 BishopCrossPoint()
+        {
+            Vector3 bp = Flat(Pawn.Hips.position), goal = Flat(Point);
+            var ts = bishopTarget != null ? bishopTarget.GetComponent<SwordFightSkills>() : null;
+            if (ts != null && ts.Fighter != null && ts.Fighter.Alive)
+            {
+                Vector3 to = Flat(bishopTarget.Hips.position) - bp;
+                float dist = to.magnitude;
+                Vector3 dir = dist > 1e-3f ? to / dist : Flat(Dir).normalized;
+                goal = bp + dir * Mathf.Max(0.9f, dist - S.bishopClear);
+            }
+            return Floor(goal + Vector3.up * 0.5f);
+        }
+
+        /// <summary>The X: everyone round where the swords cross is struck (its effect will show it; a king's guard takes it
+        /// like a sword) and pushed away from him.</summary>
+        void BishopCross()
+        {
+            Vector3 c = Flat(Point), f = Flat(Dir).normalized;
+            int n = 0;
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other)) continue;
+                Vector3 d = Flat(other.Pawn.Hips.position) - c;
+                if (d.magnitude > S.bishopCrossRadius || Mathf.Abs(other.Pawn.Hips.position.y - (Point.y + Pawn.standHeight)) > 1.4f) continue;
+                Hit(other, f, S.bishopPush, "X자 베기", SfFxKind.BishopHit, n++);
+            }
+            Raise(SfFxKind.BishopCross, bishopTarget, Point + Vector3.up * S.bishopCrossHeight, f, S.bishopCrossRadius, n);
+            if (n == 0) Say($"{Pawn.DisplayName}: X자 베기 — 맞은 적 없음");
+        }
+
+        // ---------------------------------------------------------------- the thrown swords' way (every machine)
+
+        /// <summary>A number in 0..1 from a seed (the same on every machine).</summary>
+        static float Hash01(int seed, int k)
+        {
+            float x = Mathf.Sin(seed * 0.0001237f + k * 78.233f + seed % 9973 * 0.731f) * 43758.5453f;
+            return x - Mathf.Floor(x);
+        }
+
+        static Vector3 HashDir(int seed, int k) =>
+            new Vector3(Hash01(seed, k) * 2f - 1f, Hash01(seed, k + 1) * 2f - 1f, Hash01(seed, k + 2) * 2f - 1f);
+
+        /// <summary>Half a thrown sword's length: they turn about their middle (the flight's effect follows that, R181).</summary>
+        public const float BishopSwordHalf = 0.38f;
+
+        /// <summary>
+        /// Where one of the bishop's thrown swords is now (<paramref name="hand"/> 0 his right, 1 his left; its
+        /// <paramref name="grip"/> - the hilt, as a held sword's - and the turn, blade along +Z), given where that hand is
+        /// drawn (<paramref name="handGrip"/>); false while it is in his hand. Out: released along the way, out wide to its
+        /// own side on a curve, whirling flat (bishopSpin turns a second), turning into its cut as it gets there. The X:
+        /// each comes down across from high on its own side to low on the other, its blade along the other diagonal and
+        /// its flat to him - the two cross in the middle. Back: on a curve of its own (random, the same on every machine),
+        /// whirling and slowing, turned at the end to drop into his hand as he holds it.
+        /// </summary>
+        public bool BishopSwordPose(int hand, Vector3 handGrip, out Vector3 grip, out Quaternion turn)
+        {
+            grip = handGrip;
+            turn = Quaternion.identity;
+            if (!BishopSwordsOut || S == null) return false;
+            float sgn = hand == 0 ? 1f : -1f;
+            Vector3 up = Vector3.up, f = Flat(Dir);
+            if (f.sqrMagnitude < 1e-4f) f = Flat(Pawn.Facing);
+            f.Normalize();
+            Vector3 side = Vector3.Cross(up, f);
+            Vector3 cross = Point + up * S.bishopCrossHeight;
+            Vector3 path = (side * sgn + up).normalized, blade = (-side * sgn + up).normalized;
+            Vector3 s0 = cross + path * 0.45f, s1 = cross - path * 0.45f;
+            Quaternion cutTurn = Quaternion.LookRotation(blade, f);
+            const float half = BishopSwordHalf;
+            float t = StageTime, tOut = BishopOutTime, tCross = S.bishopCrossTime, tBack = S.bishopBackTime;
+            if (t < tOut)
+            {
+                float u = t / tOut, e = 1f - Mathf.Pow(1f - u, 1.6f);
+                Vector3 p0 = handGrip + f * half;
+                float d = Flat(s0 - p0).magnitude;
+                Vector3 p1 = p0 + f * (0.3f * d) + side * sgn * (0.45f + 0.22f * d) + up * 0.35f;
+                Vector3 p2 = s0 + side * sgn * (0.35f + 0.1f * d) - f * (0.15f * d) + up * 0.25f;
+                Vector3 mid = Bezier(p0, p1, p2, s0, e);
+                Quaternion whirl = Quaternion.AngleAxis(360f * S.bishopSpin * t * sgn, (up + side * sgn * 0.35f).normalized) * Quaternion.LookRotation(f, up);
+                turn = Quaternion.Slerp(whirl, cutTurn, Mathf.SmoothStep(0f, 1f, (u - 0.78f) / 0.22f));
+                grip = mid - turn * Vector3.forward * half;
+                return true;
+            }
+            t -= tOut;
+            if (t < tCross)
+            {
+                float u = t / tCross;
+                Vector3 mid = Vector3.Lerp(s0, s1, Mathf.SmoothStep(0f, 1f, u)) + f * (0.08f * Mathf.Sin(Mathf.PI * u));
+                turn = cutTurn;
+                grip = mid - turn * Vector3.forward * half;
+                return true;
+            }
+            t -= tCross;
+            {
+                float u = Mathf.Clamp01(t / tBack), e = Mathf.SmoothStep(0f, 1f, u);
+                int seed = Mathf.RoundToInt(Origin.x * 37f) * 73856093 ^ Mathf.RoundToInt(Origin.z * 37f) * 19349663 ^ (hand + 1) * 83492791;
+                Vector3 catchBlade = BishopCatchBlade(f, side);
+                if (hand == 1) catchBlade -= 2f * Vector3.Dot(catchBlade, side) * side;
+                Vector3 handMid = handGrip + catchBlade * half;
+                float floorY = Point.y;
+                Vector3 q1 = s1 - path * 0.9f - f * 0.2f + HashDir(seed, 0) * 1.1f;
+                q1.y = Mathf.Max(q1.y, floorY + 0.4f);
+                Vector3 behind = -f * (0.4f + 0.8f * Hash01(seed, 3)) + side * sgn * (0.3f + 0.9f * Hash01(seed, 4));
+                Vector3 q2 = handMid + behind + up * (0.5f + 0.7f * Hash01(seed, 5)) + HashDir(seed, 6) * 0.5f;
+                q2.y = Mathf.Max(q2.y, floorY + 0.4f);
+                Vector3 mid = Bezier(s1, q1, q2, handMid, e);
+                // A wobble of its own on the way (none at the ends).
+                Vector3 wob = Vector3.Cross(up, (handMid - s1).normalized);
+                mid += wob * (0.18f * Mathf.Sin(u * Mathf.PI * (2f + Hash01(seed, 9)) + Hash01(seed, 10) * 6.28f) * Mathf.Sin(Mathf.PI * u));
+                // Whirling on its way, slowing; turned at the end as his hand holds it.
+                Vector3 axis = (up + HashDir(seed, 11) * 0.5f).normalized;
+                float spin = 360f * S.bishopSpin * 0.8f * t * sgn * (1f - 0.45f * u);
+                Quaternion whirl = Quaternion.AngleAxis(spin, axis) * cutTurn;
+                turn = Quaternion.Slerp(whirl, Quaternion.LookRotation(catchBlade, up), Mathf.SmoothStep(0f, 1f, (u - 0.7f) / 0.3f));
+                grip = mid - turn * Vector3.forward * half;
+                return true;
+            }
+        }
+
+        /// <summary>The line his right sword is held along as it drops back into his hand (the left one mirrored).</summary>
+        static Vector3 BishopCatchBlade(Vector3 f, Vector3 side) => (f * 0.6f + Vector3.up * 0.55f + side * 0.35f).normalized;
+
+        /// <summary>The old pin (R91 관통 핀), kept for reference: unused since 10-27.</summary>
+        void StepBishopPin()
         {
             switch (Stage)
             {
@@ -1073,6 +1263,8 @@ namespace ChessFight.RagdollLab
                         return Vector3.Slerp(low, high, k * k * (3f - 2f * k));
                     }
                     case PieceKind.Rook when Stage == SfStage.Recovery: return (f * 0.3f + Vector3.up).normalized;
+                    // 10-27: the new X cut (SwordFightSkills.Motion, BishopBlade); the old pin's line without the motion.
+                    case PieceKind.Bishop when BodyMotion && Stage != SfStage.None: return BishopBlade(f, side);
                     case PieceKind.Bishop when Stage == SfStage.Windup || Stage == SfStage.Active: return (f + Vector3.up * 0.3f).normalized;
                     case PieceKind.Knight when BodyMotion && (Stage == SfStage.Active || Stage == SfStage.Recovery): return KnightDiveBlade(f, side);
                     case PieceKind.Knight when Stage == SfStage.Active: return (Vector3.up - f * 0.2f).normalized;

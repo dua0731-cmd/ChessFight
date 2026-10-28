@@ -618,6 +618,7 @@ namespace ChessFight.RagdollLab
             foreach (var s in SwordFightSkills.All)
             {
                 if (s == null || s.Pawn == null || s.Fighter == null || !s.Fighter.Alive) continue;
+                BishopDrawWatch(s);   // R194: his second sword forming as he calls the X cut (every screen)
                 EdgeMarks(s, s.Pawn == Viewer);   // the edge skills (R103): offline only the player's own can be used
                 bool mine = s.Pawn == Viewer || ViewOverride != null;
                 if (s.Stage == SfStage.Aim && !mine) continue;   // the aim is the owner's own
@@ -1393,17 +1394,24 @@ namespace ChessFight.RagdollLab
             if (OnEdgeFx(e)) return;
             switch (e.kind)
             {
-                case SfFxKind.Cast: if (e.by.Piece == PieceKind.King && Real(PieceKind.King)) RealKingCast(e); else if (Real(e.by.Piece)) RealCast(e); else Cast(e); break;
+                case SfFxKind.Cast:
+                    if (e.by.Piece == PieceKind.King && Real(PieceKind.King)) RealKingCast(e); else if (Real(e.by.Piece)) RealCast(e); else Cast(e);
+                    // R188: light running up the bishop's two blades as he draws them back (SwordFightSkillFx.BishopVfx.cs).
+                    if (e.by.Piece == PieceKind.Bishop) BishopWindup(e);
+                    break;
                 // R130: the block (what it took answered: SwordFightSkillFx.King.cs), a beat later the spin counter, and an
                 // attacker thrown off the block.
                 // 10-25: drawn for real (SwordFightSkillFx.Real.cs): the clash of steel, the turn of the blade, chips
-                // off whoever it cuts; the repel and a guard that came to nothing show nothing of their own.
+                // off whoever it cuts; the repel shows nothing of its own.
                 case SfFxKind.KingParry: if (Real(PieceKind.King)) RealKingBlock(e); else KingBlock(e); break;
                 case SfFxKind.KingCounterSpin: if (Real(PieceKind.King)) RealKingSpin(e); else KingSpin(e); break;
                 case SfFxKind.KingRepel: if (!Real(PieceKind.King)) KingRepelFx(e); break;
-                case SfFxKind.KingCounterHit: if (Real(PieceKind.King)) RealHit(e, 0, 0.14f); else Hit(e, kit.king, 0, 0.16f); break;
+                // R187: and on whoever the counter strikes, the gold cut of F4 (KingHitVfx).
+                case SfFxKind.KingCounterHit: if (Real(PieceKind.King)) { RealHit(e, 0, 0.14f); KingHitVfx(e); } else Hit(e, kit.king, 0, 0.16f); break;
                 case SfFxKind.KingWhiff:
-                    if (!Real(PieceKind.King)) kit.PuffBurst(e.by.Pawn.bodies[(int)BodyId.Chest].position + e.dir * 0.4f, kit.grey, 4, 0.4f, 0.16f, 0.4f);
+                    // R193 (F5): the gold on his blade scatters off it as the point drops (KingWhiffVfx).
+                    if (Real(PieceKind.King)) KingWhiffVfx(e);
+                    else kit.PuffBurst(e.by.Pawn.bodies[(int)BodyId.Chest].position + e.dir * 0.4f, kit.grey, 4, 0.4f, 0.16f, 0.4f);
                     break;
                 // 10-25: the queen for real (SwordFightSkillFx.Real.cs): her own see-through copies, the blade's blur, bent air.
                 case SfFxKind.QueenThrust: if (Real(PieceKind.Queen)) RealQueenDash(e); else QueenDash(e); break;
@@ -1443,9 +1451,32 @@ namespace ChessFight.RagdollLab
                     // R132: the energy round the ring is drawn into whoever the hands took, and binds its ankles.
                     EnergyTaken(e.by, e.target, e.size);
                     break;
+                // R181: a blur round each of his thrown swords and a trail along its way, to the X (SwordFightSkillFx.BishopVfx.cs).
+                // R191: and a flash at each hand with the air split from it to its sword as they leave his hands.
+                case SfFxKind.BishopLeap: BishopFlight(e); BishopRelease(e); break;
+                // R175: the X of light where his two swords cross (SwordFightSkillFx.BishopVfx.cs); e.at is the crossing,
+                // the effect's root goes on the floor under it. R186: and a trail after each sword on its way back.
+                case SfFxKind.BishopCross:
+                    BishopVfx("F_Cross", e.at - Vector3.up * (S != null ? S.bishopCrossHeight : 0.55f), e.dir);
+                    BishopReturn(e);
+                    break;
+                // R178: whoever the X struck: the X cut on his front, sparks and air the way he is pushed (e.at is between
+                // the two of them, so it goes on his chest instead), hung on his chest so it goes with him.
+                case SfFxKind.BishopHit:
+                    if (e.target != null)
+                    {
+                        var chest = e.target.bodies[(int)BodyId.Chest];
+                        var cut = BishopVfx("F_Hit", chest.position, e.dir);
+                        if (cut != null) cut.transform.SetParent(chest.transform, true);
+                    }
+                    break;
                 // 10-25: the knight for real (SwordFightSkillFx.RealKnight.cs).
                 case SfFxKind.KnightLeap: if (Real(PieceKind.Knight)) RealKnightLeap(e); else KnightLeap(e); break;
-                case SfFxKind.KnightLand: if (Real(PieceKind.Knight)) RealKnightLand(e); else KnightLand(e); break;
+                // R179: the fork drawn out from where it lands over the realistic landing (SwordFightSkillFx.KnightVfx.cs).
+                case SfFxKind.KnightLand:
+                    if (Real(PieceKind.Knight)) { RealKnightLand(e); KnightVfxFork(e); }
+                    else KnightLand(e);
+                    break;
                 case SfFxKind.KnightHit: if (Real(PieceKind.Knight)) RealKnightHit(e); else Hit(e, kit.knight, 0, 0.12f); break;
                 case SfFxKind.Interrupted:
                     kit.PuffBurst(e.at, kit.grey, 4, 0.4f, 0.16f, 0.4f);

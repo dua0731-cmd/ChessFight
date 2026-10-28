@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries:
   - key: F_Guard
-    prefab: {fileID: 100, guid: a9f1e792e25d0842d483e7f365670c98, type: 3}
+    prefab: {fileID: 6472073344000900146, guid: c59de105a4d235743a9eb7da67cd0963, type: 3}
   - key: F_Block
-    prefab: {fileID: 100, guid: a44430a2b238a876cd42bf4ab169d8e3, type: 3}
+    prefab: {fileID: 3098044458694650886, guid: 12ad2c9eb280ac34b9326488f88b3036, type: 3}
   - key: F_Counter
-    prefab: {fileID: 100, guid: fc7ca7809c905be087917cb4c1720767, type: 3}
+    prefab: {fileID: 1690309238414435383, guid: 0eab3e790cc3b97489cf53cb73cf1b05, type: 3}
   - key: E_Stab
     prefab: {fileID: 100, guid: bdbf4b1df4adfd468fb41f2c75f8e75c, type: 3}
   - key: E_Vault
@@ -29,3 +29,7 @@ MonoBehaviour:
     prefab: {fileID: 100, guid: 3a6be074360a8adfd5e012b7749a35a8, type: 3}
   - key: E_Return
     prefab: {fileID: 100, guid: dd6364a9225baf4bda1bcd703a07d044, type: 3}
+  - key: F_Hit
+    prefab: {fileID: 580762707016479213, guid: a1dc2c4ba30d89149afd7654c97bfe9c, type: 3}
+  - key: F_Whiff
+    prefab: {fileID: 2276085328707787826, guid: 0d58d46476760eb428a9b1bbd9991148, type: 3}

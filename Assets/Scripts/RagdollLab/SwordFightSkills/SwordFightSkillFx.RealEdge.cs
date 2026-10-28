@@ -226,10 +226,12 @@ namespace ChessFight.RagdollLab
             HitStop(3, pawn, e.target);
             Punch(pawn, e.target, 5f, 12);
             Beat(pawn, e.target, 8f);
-            // As light off steel (warm white), not the queen's gold; R164: dark red with her effects on.
-            var steel = QueenVfxOn ? new Kit.Palette("#9E1A16", "#C2302A", "#4A0907", "#140303") : new Kit.Palette("#FFF4E2", "#FFFFFF", "#E9DCC6", "#9C8E78");
-            ScreenSlash(pawn, e.target, steel, true);
-            Tint(pawn, e.target, QueenVfxOn ? new Color(0.75f, 0.2f, 0.18f) : new Color(1f, 0.95f, 0.85f), QueenVfxOn ? 0.14f : 0.2f, 16);
+            // As light off steel (warm white), not the queen's gold; R164: dark red with her effects on. 10-27 (승규 님: "퀸 색을
+            // 고유 색이 밝은 금색으로 … 가로로 된 화면 처리 좀 더 굵게 하고 그 주위에 금색 파티클"): her own bright gold, the
+            // band twice as thick, gold motes thrown off it.
+            var steel = QueenVfxOn ? new Kit.Palette("#E8B53A", "#FFE6A0", "#7A5410", "#1C1204") : new Kit.Palette("#FFF4E2", "#FFFFFF", "#E9DCC6", "#9C8E78");
+            ScreenSlash(pawn, e.target, steel, true, QueenVfxOn ? 2f : 1f, QueenVfxOn ? 90 : 0);
+            Tint(pawn, e.target, QueenVfxOn ? new Color(1f, 0.8f, 0.36f) : new Color(1f, 0.95f, 0.85f), QueenVfxOn ? 0.14f : 0.2f, 16);
         }
 
         /// <summary>A beat after she went through it, the cut lands (the host throws it; every screen sees it then): a flash

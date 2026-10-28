@@ -364,12 +364,19 @@ namespace ChessFight.RagdollLab
             sword.gameObject.SetActive(Alive);
             if (!Alive) { SwordAway = false; return; }
             UpdateSwordModel();
+            // 10-27: the bishop's sword is out of his hand while it is thrown (its copy flies, SwordFightPawn.OffHand.cs).
+            if (Skills != null && Pawn.Piece == PieceKind.Bishop) SwordAway = Skills.BishopSwordsOut;
             if (swordModel != null && swordModel.gameObject.activeSelf == SwordAway) swordModel.gameObject.SetActive(!SwordAway);
             // The click sword is placed in the drawn hand once the skeleton is drawn this frame (10-25: a frame behind
             // it, the sword left the hand in a fast cut once the arm went all the way with it). Hooked afresh each
             // frame: a hook made when the pawn was set up did not last into play.
             if (visualSync == null) visualSync = Pawn.GetComponentInChildren<RagdollVisualSync>();
-            if (visualSync != null) { visualSync.Posed -= PoseAfterSkeleton; visualSync.Posed += PoseAfterSkeleton; }
+            if (visualSync != null)
+            {
+                visualSync.Posed -= PoseAfterSkeleton; visualSync.Posed += PoseAfterSkeleton;
+                // 10-27: and a skill's second sword in the left hand (SwordFightPawn.OffHand.cs), on every machine.
+                visualSync.Posed -= PoseOffHand; visualSync.Posed += PoseOffHand;
+            }
             Pawn.RightArmFree = ClassicControls || Drawn || (Skills != null && Skills.Blade != null);
             // 10-26: a skill that poses the free arm has it drawn where it goes (every machine, from the skill's state).
             Pawn.LeftArmShare = Mathf.MoveTowards(Pawn.LeftArmShare, Skills != null && Skills.LeftArmPosed ? 1f : 0f, Time.deltaTime / 0.12f);
@@ -414,14 +421,19 @@ namespace ChessFight.RagdollLab
             if (prefab == null) return;
             // 10-25 (승규 님: "퀸 나이트 폰 빼고 나머지 기물의 칼 크기가 커"): the king's, rook's and bishop's a size smaller.
             // Then ("왕이 몸에 비해 칼이 좀 커"): the king's smaller again, 0.8 → 0.65.
-            float size = Pawn.Piece == PieceKind.King ? .65f : Pawn.Piece == PieceKind.Rook || Pawn.Piece == PieceKind.Bishop ? .8f : 1f;
+            // 10-27 ("킹이랑 룩 칼 좀 더 키워줘" → "룩이 아니라 비숍, 비숍 킹을 1.5배로"): king 0.65 → 1, bishop 0.8 → 1.2,
+            // rook back to 0.8. Then ("퀸은 10퍼 작게"): queen 0.9.
+            float size = Pawn.Piece == PieceKind.King ? 1f : Pawn.Piece == PieceKind.Bishop ? 1.2f : Pawn.Piece == PieceKind.Rook ? .8f
+                : Pawn.Piece == PieceKind.Queen ? .9f : 1f;
             // The models' guards sit 0.09 m up from their origin and their pommels hang below it (the model stands along
             // +Y). 10-25 (승규 님: "손잡이 위쪽에 잡아져 있어" → "모든 기물이 손잡이 부분 잡게"): the hand held it just under
             // the guard; now the model goes up the blade so the hand is round the grip's lower end, just above the pommel's
             // knob (about 6 cm), with only the knob behind it - so the hilt no longer pokes into a wide body's side.
             var mf = prefab.GetComponentInChildren<MeshFilter>();
             float below = mf != null && mf.sharedMesh != null ? -mf.sharedMesh.bounds.min.y : .1f;
-            float up = Mathf.Max(0f, below - .095f) * size;
+            // 10-27: the rook's new fortress sword ends in a tower base ~12 cm tall, so its hand sits just above that.
+            float knob = Pawn.Piece == PieceKind.Rook ? .14f : .095f;
+            float up = Mathf.Max(0f, below - knob) * size;
             hiltBack = Mathf.Max(.06f, below * size - up);
             modelLift = up; modelScale = size;
             var go = Instantiate(prefab, sword, false);
@@ -502,7 +514,8 @@ namespace ChessFight.RagdollLab
 
         void OnDestroy()
         {
-            if (visualSync != null) visualSync.Posed -= PoseAfterSkeleton;
+            if (visualSync != null) { visualSync.Posed -= PoseAfterSkeleton; visualSync.Posed -= PoseOffHand; }
+            DestroyOffSword();
             if (bladeCollider != null) RagdollPawn.ColliderOwner.Remove(bladeCollider);
             if (Pawn != null) Pawn.PoseOverride = null;
             if (bladeMaterial != null) Destroy(bladeMaterial);

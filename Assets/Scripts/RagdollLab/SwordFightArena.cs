@@ -28,6 +28,8 @@ namespace ChessFight.RagdollLab
             public float spin;
             public double warn = double.NaN, drop = double.NaN;
             public Collider rail;
+            /// <summary>10-27: hidden while a rook's collapse breaks it up (the skill effects draw its pieces falling).</summary>
+            public bool broken;
             /// <summary>10-25: its brass (edge squares only): hidden while a rook's collapse throws it (the skill effects draw
             /// it buckling and falling on its own, SwordFightSkillFx.RealEdge.cs).</summary>
             public readonly List<Renderer> brass = new List<Renderer>();
@@ -50,6 +52,22 @@ namespace ChessFight.RagdollLab
                     list.Add((t.position, along, Mathf.Max(sc.x, sc.z)));
                     r.forceRenderingOff = hide;
                 }
+            }
+            return list;
+        }
+
+        /// <summary>10-27 (승규 님: "실제 체스판 블록이 쪼개지면서 떨어져야 돼"): the squares inside <paramref name="rect"/>
+        /// (x / z) as (their top's area, their wood, their depth); <paramref name="broken"/> hides them (whole) while their
+        /// pieces fall, false brings them back with the chunk.</summary>
+        public List<(Rect area, Material wood, float depth)> SquaresIn(Rect rect, bool broken)
+        {
+            var list = new List<(Rect, Material, float)>();
+            float side = cell - 0.04f;
+            foreach (var s in squares)
+            {
+                if (!rect.Contains(new Vector2(s.home.x, s.home.z))) continue;
+                s.broken = broken;
+                list.Add((new Rect(s.home.x - side * 0.5f, s.home.z - side * 0.5f, side, side), s.mat, 0.6f));
             }
             return list;
         }
@@ -311,6 +329,7 @@ namespace ChessFight.RagdollLab
                         }
                         else if (c.phase == SwordFightEdgeFloor.Phase.Rise) p.y = Mathf.Lerp(-4f, -0.3f, Ease(c.Rise));
                     }
+                if (s.broken) shown = false;
                 if (s.t.gameObject.activeSelf != shown) s.t.gameObject.SetActive(shown);
                 s.t.localPosition = new Vector3(p.x + jit, p.y, p.z - jit);
                 s.t.localRotation = turn;

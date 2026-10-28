@@ -13,5 +13,17 @@ MonoBehaviour:
   m_Name: Bishop
   m_EditorClassIdentifier: ChessFight.VFX::ChessFight.VFX.VfxSet
   entries:
-  - key: F_Pin
-    prefab: {fileID: 6865028371008835839, guid: 4a471569d052dac44aee552fc22855c3, type: 3}
+  - key: F_Cross
+    prefab: {fileID: 4120654158581366022, guid: 044ccab365c60fd42a13490beb4cdd54, type: 3}
+  - key: F_Hit
+    prefab: {fileID: 178884775466303957, guid: f59c37c878a8a96419c7989a14d8d567, type: 3}
+  - key: F_Flight
+    prefab: {fileID: 4169399240807676646, guid: f14d7b3e5884a4a42bbb7fb2cf32dcb2, type: 3}
+  - key: F_Return
+    prefab: {fileID: 5852869659929236828, guid: 797954836917e4647a0d4e4b6c896c4b, type: 3}
+  - key: F_Windup
+    prefab: {fileID: 1679614634989980675, guid: dd2b8336cac6f0e4f9d24ec38cf02ea9, type: 3}
+  - key: F_Throw
+    prefab: {fileID: 6582147325128380330, guid: 6ebf24a1181f70e41bfb609e7cb63373, type: 3}
+  - key: F_Draw
+    prefab: {fileID: 8310428465761139665, guid: 075c5f60f830fe9468a9abdd5fcfcf09, type: 3}
