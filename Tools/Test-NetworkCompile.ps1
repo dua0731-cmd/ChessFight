@@ -64,7 +64,7 @@ $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$o
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab Steam bridge compilation failed.' }
 $ragdollEditor = Get-ChildItem "$projectRoot/Assets/Scripts/RagdollLabEditor" -Filter '*.cs' | ForEach-Object FullName
-$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.RagdollLab.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-out:$output/ChessFight.RagdollLab.Editor.dll") + @($ragdollEditor)
+$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.RagdollLab.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.RagdollLab.Editor.dll") + @($ragdollEditor)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab builder compilation failed.' }
 $editor = Get-ChildItem "$projectRoot/Assets/Scripts/Editor" -Filter '*.cs' | ForEach-Object FullName

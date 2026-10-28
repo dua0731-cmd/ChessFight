@@ -168,7 +168,8 @@ namespace ChessFight.RagdollLab
         /// <summary>
         /// The chunk goes: long splinters torn off along its seams, the beat (a hold, the slow moment, a heavy shake); on the
         /// study board its brass is not carried down straight with it but buckles off the edge and falls on its own, bowing
-        /// out and twisting as it goes (the squares' own brass is hidden while it is away and back when the chunk rises).
+        /// out and twisting as it goes (the squares' own brass is hidden while it is away and back when the chunk rises;
+        /// R191: on the kit's board the walnut frame is thrown whole instead, FallingFrame).
         /// It comes back up: a little grit off the seams. It is whole again: nothing drawn.
         /// </summary>
         void RealOnFloor(SwordFightEdgeFloor.Collapse c)
@@ -517,6 +518,12 @@ namespace ChessFight.RagdollLab
         /// (wrenched off), then falling and turning over, gone below the board.</summary>
         void FallingBrass(SwordFightArena arena, Vector3 at, Vector3 along, Vector3 outward, float length)
         {
+            var loose = arena.LooseFrame(kit.root, length);
+            if (loose != null)
+            {
+                FallingFrame(arena, loose, at, along, outward);
+                return;
+            }
             var mesh = new Mesh { name = "Falling brass", hideFlags = HideFlags.HideAndDontSave };
             mesh.MarkDynamic();
             var go = new GameObject("Falling brass", typeof(MeshFilter), typeof(MeshRenderer));
@@ -545,6 +552,42 @@ namespace ChessFight.RagdollLab
                 return top.y > SwordFightArena.DeskY + 0.5f;
             });
             f.end = () => { if (go != null) Destroy(go); Destroy(mesh); };
+            HitStop(2);
+        }
+
+        /// <summary>R191: on the kit's board the edge is a walnut frame. Wood does not bow as the brass did: a length of it is
+        /// wrenched off whole, leaning out in its first few frames with a few splinters where it tore, then falls turning
+        /// over, gone below the board (the same throw as the brass).</summary>
+        void FallingFrame(SwordFightArena arena, Transform piece, Vector3 at, Vector3 along, Vector3 outward)
+        {
+            // The piece's own frame: x out, y up, z along; at sits on the edge line at the square's middle height (-0.3),
+            // the frame's bottom 0.32 below it.
+            Quaternion rot = Quaternion.LookRotation(along, Vector3.up);
+            if (Vector3.Dot(rot * Vector3.right, outward) < 0f)
+            {
+                along = -along;
+                rot = Quaternion.LookRotation(along, Vector3.up);
+            }
+            Vector3 pos = at + outward * SwordFightArena.FrameMiddle.x + Vector3.up * (SwordFightArena.FrameMiddle.y - 0.32f);
+            float lean = Random.Range(12f, 22f);
+            Vector3 v = outward * Random.Range(0.6f, 1.2f) + Vector3.up * Random.Range(0.4f, 1.2f);
+            Vector3 spin = along * Random.Range(-60f, 60f) + outward * Random.Range(40f, 120f);
+            Splinters(pos + outward * 0.08f + Vector3.up * 0.3f, outward + Vector3.up, 3, arena.FrameWood, 3f);
+            var f = kit.Run(1.8f, (fx, d) =>
+            {
+                float a = fx.age;
+                // Its top tips out round its length (a negative turn round "along" moves +y toward +x).
+                var tilt = Quaternion.AngleAxis(-lean * Kit.EaseOut(Mathf.Clamp01(a / 0.12f)), along);
+                if (a > 0.06f)
+                {
+                    v += Physics.gravity * d;
+                    pos += v * d;
+                    rot = Quaternion.AngleAxis(spin.magnitude * d, spin.normalized) * rot;
+                }
+                piece.SetPositionAndRotation(pos, tilt * rot);
+                return pos.y > SwordFightArena.DeskY + 0.5f;
+            });
+            f.end = () => { if (piece != null) Destroy(piece.gameObject); };
             HitStop(2);
         }
 

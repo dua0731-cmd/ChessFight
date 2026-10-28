@@ -126,16 +126,17 @@ namespace ChessFight.RagdollLab
             Vector3 at = Mathf.Abs(den) > 1e-3f ? hilt + d * (Vector3.Dot(s.EdgeAt - hilt, o) / den) : s.EdgeAt + Vector3.down * 0.16f;
             at.y = Mathf.Min(at.y, floor.Top - 0.04f);
             foreach (var old in breaches) if (old.king == s && old.released < 0f) old.released = kit.Clock;
-            // What the wall is: on the prototype board (SwordFightArena, the platform hidden under it) its face is the brass
-            // trim, 6 cm thick, standing 3 cm out of the platform and 1 cm over its top, the square's wood behind it.
+            // What the wall is: on the prototype board (SwordFightArena, the platform hidden under it) its face is the edge
+            // trim, standing EdgeOut out of the platform and EdgeLip over its top (the demo's brass 3 cm / 1 cm, R191's
+            // walnut frame 15 cm / 4 cm), the square's wood behind it.
             float top = floor.Top;
             var arena = floor.Hidden ? FindFirstObjectByType<SwordFightArena>() : null;
             Color wood = Color.white;
             bool brass = arena != null && arena.Brass != null && arena.WoodAt(at, out wood);
             if (brass)
             {
-                at += o * 0.03f;
-                top += 0.01f;
+                at += o * arena.EdgeOut;
+                top += arena.EdgeLip;
                 chipA = ChipsOf(arena.Brass.color);
                 chipB = ChipsOf(wood);
                 chipShare = 0.5f;

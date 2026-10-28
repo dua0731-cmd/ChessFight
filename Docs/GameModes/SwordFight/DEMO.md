@@ -14,7 +14,7 @@
 
 | 시연 | Unity | 코드 |
 |---|---|---|
-| 판: 8×8, 칸 2 m, 칸마다 0.6 m 두께 상자(메이플 `#ad9c80` / 월넛 `#5a3d2a`, a1이 밝은 칸), 판 가장자리 놋쇠 테, 1랭크 어두운 띠·8랭크 밝은 띠 | 같은 64칸(그림만, 서는 바닥은 숨긴 플랫폼) | `SwordFightArena.Build` |
+| 판: 8×8, 칸 2 m, 칸마다 0.6 m 두께 상자(메이플 `#ad9c80` / 월넛 `#5a3d2a`, a1이 밝은 칸), 판 가장자리 놋쇠 테, 1랭크 어두운 띠·8랭크 밝은 띠 | 같은 64칸(그림만, 서는 바닥은 숨긴 플랫폼). **R191(10-28)부터 Blender 모델**: 밝은 오크 · 월넛 텍스처 칸, 둥근 월넛 테두리 + 청동 줄(놋쇠 테 대신), 청동 마개 난간 → [ArtSource/SwordFight](../../../ArtSource/SwordFight/README.md) | `SwordFightArena.Build`(`Model`, `UseModels`) |
 | 룩 모양 돌 받침 4개(b2·g2·b7·g7, 시연 lathe 수치 ×0.85·0.5) | 같은 모양 + 볼록 메시 충돌체. 유령 기물이 그 칸은 안 지움, 출발·부활 칸 아님 | `SwordFightShapes.Pedestal`, Core `SwordBoard.Obstacles` |
 | 낮은 나무 난간(a·h 파일 3~6랭크 바깥, 높이 0.42 m) | 그림 + 충돌체(칸이 떨어지면 꺼짐). 시연의 "느리면 튕기고 5.2 m/s 넘으면 넘어감"은 래그돌 물리에 맡김 | `SwordFightArena`, `SwordBoard.Rail` |
 | 판 아래 6 m 책상, 네 모서리 책 더미 기둥, 체스 시계(바늘이 경기 시계로 돎), 초록 램프와 따뜻한 스포트라이트, 양옆 놋쇠 쟁반 | 같음 | `SwordFightArena.Build` |
