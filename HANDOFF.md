@@ -4,13 +4,15 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-27**(R159 폰 러시 미니게임 10종의 성 입구·성 내부·왕실 공간 테마 구상. **문서 제안만, 코드·씬 변경 없음.** 다음 빈 번호 R160.)
+최종 갱신: **2026-10-28**(R160 폰 러시 30개 장소의 장애물 컨셉아트: 초반·중반·후반 각 10곳, 5곳씩 6장. **공간·외형 제안만, Unity 코드·씬 변경 없음.** 다음 빈 번호 R161.)
+
+> **R160(사용자, 10-28): 기존 장애물로 30개 장소의 컨셉아트.** 첨부 「폰 러쉬 장애물 목록.md」의 기존 22종을 재료로 공간별 외형을 구상하고, 사용자가 **30곳 전체를 5곳씩 묶은 6장**으로 선택. [장소별 장애물 구상·이미지 목록](Docs/KingRush/PAWN_RUSH_OBSTACLE_CONCEPTS.md), 이미지·프롬프트는 `Docs/KingRush/ConceptArt/R160/`. 오프라인 전용 07·14·16은 제외. 신규는 중앙계단의 **탑승 샹들리에 그네**와 접견실의 **세로 경첩 회전 병풍문** 두 종류로 분리. 금고는 13 피스톤 대신 02 발사판, 집무실 인장은 10 낙하·충격파. **치수·난이도·온라인 동작을 확인한 결과가 아닌 시각 제안, Unity 적용 없음.** 자동 검사 결과는 상세 문서에 기록한다.
 
 > **R159(사용자, 10-27): 폰 러시 시각자료에 미니게임을 녹이는 구상.** 초반 성 입구 → 중반 성 내부 → 후반 왕 근처 중요 공간, 구간 사이 미니게임은 혼자 완료 가능·협동 시 가속. [공간별 구상](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md)에 10종 대표 장소·솔로/협동 행동·완료 연출·구간별 변형 30개·조합을 정리. 기본 미션 2곳 / 첨부 배치도의 후반 미션은 선택 확장. G·I는 R128, J는 R129 기준. J 단일 경로의 약한 협동 가속과 A·H·I 무한 방해 가능성은 후속 설계 과제로 구분. **기획 제안, 사용자 선택 전.** Core 131·모의 세션 41 통과는 기존 코드 검사이며 이 구상의 Unity·Steam 확인이 아님.
 
 직전 구현 갱신: **2026-10-24 R158** — `urp-conversion`(승규 님 R148~R157, URP 17.3·메뉴·스킬)과 `claude/magical-keller-xbcr9q`(사용자 R149·R150, 소드 파이트)를 `main`에 병합. 프로토콜 **v24**. R148~R150은 두 계열이 따로 쓴 번호이므로 날짜·요청자로 구별. `JY-ragdoll_v2`는 공통 이력·폴더 구조 문제로 병합하지 않음(아래 R158).
 
-**R159 전달 상태:** 로컬 `main`에 문서 커밋. 원격 푸시는 GitHub `Invalid username or token` 인증 오류로 실패(10-27). 자격증명을 바꾸거나 재시도하지 않았다. GitHub Desktop에서 Push 필요.
+**R159·R160 전달 상태:** 로컬 `main`에 R159 문서 커밋 `ddea471`과 R160 컨셉아트·문서를 기록. R159 원격 푸시는 GitHub `Invalid username or token` 인증 오류로 실패(10-27). R160에서도 자격증명을 바꾸거나 재시도하지 않았다. GitHub Desktop에서 Push 필요.
 
 > **R158(사용자, 10-24): 열흘 안 브랜치 병합.** `main` ← `claude/magical-keller-xbcr9q`(앞으로 감기) ← `urp-conversion`(병합 커밋, 충돌 8파일: 코드 3 = 모드 문구는 소드 파이트 쪽·프로토콜 v24·시험 둘 다, 문서 5 = 양쪽 다 남김, PITFALLS 소드 파이트 줄은 50번으로, UI 승규 님 절은 18·19번으로). `skill-network-test`·`bold-johnson`·`adoring-lamport`는 이미 같음. **URP 뒤 소드 파이트의 코드 재질**: `Shader.Find("Standard")` → `LitMaterials`(URP Lit) 로 바꿈. **`JY-ragdoll_v2` 안 함:** 공통 조상 없음, `Assets/ChessFight/…`·`Assets/Maps/…` 옛 배치와 R90에 지운 `ImportedChessFightMap` 씬에 기댐 → 그대로 합치면 지운 파일이 되살아남. 지성 님 새 작업(10-09 작업환경, 10-11 장애물 구역1 `O04_RoyalGateRush`, 10-15 왕실 연결 회랑 `O05_RoyalFountainHall`)은 지금 구조로 옮기는 작업이 따로 필요(결정 대기). Unity 미확인.
 
@@ -271,6 +273,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **폰 러시 30개 장소 장애물 컨셉아트(10-28, R160)** | [PAWN_RUSH_OBSTACLE_CONCEPTS](Docs/KingRush/PAWN_RUSH_OBSTACLE_CONCEPTS.md): 5곳씩 6장, 기존 장애물 외형 매핑과 신규 탑승 그네·회전 병풍문 분리. 07·14·16 제외. **시각 제안, Unity 코드·씬 변경 없음, 사용자 검토 전** |
 | **폰 러시 공간별 미니게임 구상(10-27, R159)** | [PAWN_RUSH_MINIGAME_THEMES](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md): 기존 10종의 장소·장치·완료 연출·솔로/협동·구간별 변형. 기본 미션 2곳, 후반 미션 추가는 선택안. **기획 제안만, 코드·씬 변경 없음, 사용자 선택 전** |
 | **소드 파이트 프로토타입(10-21, R149)** | 명세 v1.0. Core `SwordMatch.cs`(`SwordMatchRules`·`SwordBoard`·`SwordGhosts`·`SwordMatchWire`), `RagdollLab/SwordFightMatch.cs`(+`.Board`·`.Hud`·`.Dev`), `SwordFightSkills/SwordFightSkills.Match.cs`(폰 F·`Ready`), `SwordFightEdgeFloor`(`Erased`·일반 가장자리), `RagdollLabSteam/SteamMatchLabLink.cs`, `LabNetLink.RealMatch`, `SteamSession` v23·소드 파이트 조기 시작. Core 129·세션 41·컴파일 통과. **Unity·Steam 미확인** |
 | **URP 전환(10-16, R151, `urp-conversion` 브랜치, 커밋 안 함)** | URP 17.3 패키지(manifest 줄은 커밋 안 함), 템플릿 URP 에셋 사용, `RenderPipelineOverride` 지움, 재질 33개 Lit, 셰이더 9개 손봄(공통 `Shaders/URP/*.hlsl`), 코드 재질 `LitMaterials`, 설정 창 그림자·MSAA `PipelineSettings`, 스킬 블룸 = URP Bloom. AI 정지 화면 비교만. Core 124·세션 41·어셈블리 컴파일 통과. **Unity(사람)·빌드·Steam 미확인, `main`에 안 합침** |
@@ -326,6 +329,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **폰 러시 30개 장소 장애물 컨셉아트**(R160) | 6장 구성의 공간·외형 제안. 신규 장애물 2종 미구현. Unity 적용·통과 가능성·온라인 실기 확인 없음 | [장소별 장애물 구상](Docs/KingRush/PAWN_RUSH_OBSTACLE_CONCEPTS.md) |
 | **폰 러시 성 입구·성 내부·왕실 테마**(R159) | 구상 문서만. Unity 적용·사용자 플레이 확인 없음 | [공간별 미니게임 구상](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md) |
 | **소드 파이트 프로토타입**(R149): 고르기 → 3·2·1 → 장외 점수·빼앗기·폰 부활·판 축소 → 결과 → 로비, 기물 F·E·폰 F, 온라인(로비 방) | 코드·Core 시험·컴파일, Unity·Steam 미확인 | [SwordFight/PROTOTYPE](Docs/GameModes/SwordFight/PROTOTYPE.md) |
 | **음성 채팅**(R131): Steam 음성, 파티·팀(파티 있으면 파티, 없으면 팀 전체, P에서 바꿈), 누르고 말하기 V·자동, 같은 크기, 사람별 음소거. 경기 중 왼쪽 위 말하는 사람, P 기보지, 로비 이름표, 설정 → 음성 채팅 | 코드·Core 시험·AI의 Unity 화면 확인(커밋 전). 소리·두 PC·사용자 미확인 | [UI §16](Docs/Architecture/UI.md#16-음성-채팅-r131-2026-10-13) |
@@ -366,6 +370,11 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**폰 러시 장소별 장애물 컨셉아트(R160, 10-28)**
+- [6장과 장소별 매핑](Docs/KingRush/PAWN_RUSH_OBSTACLE_CONCEPTS.md)에서 외형을 고른 뒤 실제 크기·착지대·장애물 간격·미니게임 연결을 설계한다. 30곳 전체를 한 판에 넣는 결정은 아니다.
+- 신규 탑승 샹들리에 그네·회전 병풍문은 제안이다. 기존 01의 표면 힘, 12의 위로 들리는 안쪽 끝, 03의 수평 왕복, 17의 도약 후 직선 돌격과 혼동하지 않는다. 이미지의 구조를 그대로 구현하지 않고 원문 목록·저장소 동작과 대조한다.
+- 코드·씬 자동 구현은 하지 않는다. 기존 R159의 미션 2곳/선택 3곳과 J 협동 가속 등 미정 사항은 그대로 남는다.
 
 **폰 러시 공간 테마 구상(R159, 10-27)**
 - [공간별 구상](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md)의 대표안 C 해자 도개교·A 연회장 바닥·H 작전실 몰이와 10종 장소 후보를 사용자와 고른다. 미션은 두 곳이 기본이며 후반 세 번째 미션은 미확정.

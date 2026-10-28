@@ -1,0 +1,26 @@
+Use case: stylized-concept.
+Create a finished, high quality environment-and-obstacle concept art board for the medieval party platformer PAWN RUSH. This is NEW concept art, not a screenshot and not a technical diagram.
+FORMAT: very large portrait 2:3 image. EXACTLY FIVE separated scene panels: one full-width panoramic panel across the upper third, two equal panels in the middle row, two equal panels in the bottom row. Thin warm ivory gutters. Narrow ivory title band at top; narrow ivory caption bands beneath each panel. Fill the canvas, five scenes only. Korean labels must be crisp and correct; no other text.
+VISUAL STYLE: polished stylized 3D game art, charming faceted forms, rich but readable materials, warm cream limestone and chunky oak/brass/iron machinery. The supplied visual direction is an inviting medieval castle race with deep vertical atriums, gaps, elevated traversable walkways, red/blue heraldic banners. Keep obstacles substantial and mechanically believable with visible hinges, rails, pivots and supports. Every panel must show an obvious entry ledge in the foreground, a main obstacle crossing in the middle, and a reachable exit doorway/ledge in the background. No uniformly repeated generic wooden bridge in every scene.
+CHARACTERS: 2 or 3 small cute ivory pawn adventurers per scene, spherical subtly faceted heads, simple flared pawn-shaped bodies, short black mitten hands and feet, blue or red collar. Most seen from behind or three-quarter view. Use them as scale and to demonstrate waiting, jumping, or riding. They are around 1m tall; ordinary jump gaps are small (~1–1.5 pawn heights), giant shafts are crossed by moving devices. No realistic humans.
+READABILITY: obstacle mechanism is the focal point, foreground unobscured, camera elevated three-quarter view wide enough to see route. One small elegant pale amber movement arrow near each main device is allowed, no UI overlays, no dense diagrams, no paragraphs. Warm high detail, clear silhouettes. Avoid photorealism, sci-fi, modern plastic, gore, random floating structures, huge impossible jumps, invisible support machinery, watermarks.
+BOARD TITLE (verbatim): "후반 A · 왕실의 중요한 공간".
+PANEL 1 (top full width):
+Caption verbatim: "01 침실 · 천개 장식 진자".
+Luxurious private royal bedchamber, red velvet canopy bed, fireplace, cream stone balcony with sun. An enormous rounded padded velvet-and-brass canopy counterweight on a long decorative chain swings across a narrow red-carpet gallery over the room's open atrium; visible anchored canopy mechanism. A short ornate service bridge beyond lifts its center ends upward. The bed remains a regal backdrop, obstacle is elegant and readable, not an ordinary iron wrecking ball.
+
+PANEL 2 (middle left):
+Caption verbatim: "02 금고 · 황동 보안 관문".
+Secure royal vault, dark emerald treasure cabinets, brass locks, warm shafts of light. Two richly crafted brass barred gates rise ALTERNATELY beneath mechanical clock dials, one open one shut. A coin-emblem SPRING LAUNCH PLATE flush in the floor near the entry sends a small pawn in a modest controlled arc to the next higher safe stone ledge; use a compressed brass spring housing and a short arc, not a huge piston column. Clear landing platform, treasure stays orderly.
+
+PANEL 3 (middle right):
+Caption verbatim: "03 천문관측소 · 천체 회전대".
+Open upper castle observatory at warm dusk with pale sky, star tapestry, golden armillary spheres. A giant level circular navy-and-gold celestial observation floor rotates horizontally on a central brass bearing; star inlay and zodiac motifs, pawn riding. Two narrow curved-support observation bridges around it swap stations using visibly separate inner/outer detour tracks, no crossing-through each other. Exit is a stone balcony with astrolabe, not outer space.
+
+PANEL 4 (bottom left):
+Caption verbatim: "04 집무실 · 왕실 인장 낙하".
+King's private study, carved dark oak desk, wax-sealed papers, burgundy carpet, tall windows. A colossal brass ROYAL SEAL stamp hangs vertically on a rigid guide over the walkway and descends onto an amber warning circle, creating a stylized short circular dust ripple; stamp head carved crown motif. Solid low oak cabinets at the sides provide shockwave cover. A nearby document cabinet retracts sideways on rails to reveal a passage. This is clockwork furniture, not magical flying debris.
+
+PANEL 5 (bottom right):
+Caption verbatim: "05 비밀정원 · 연꽃 승강석".
+Secluded private royal courtyard with lemon tree, white flowers, emerald ivy, shallow turquoise lily pools. Four round-edged square stone stepping platforms with lotus medallions lift vertically at different heights on carved stone pistons/guide columns; pawn rides one toward a carved doorway. A small fish-shaped fountain nozzle blows a lateral jet across a second crossing, gentle splash indicating push. Calm precious garden, polished cream/teal/brass, strong clear safe route.

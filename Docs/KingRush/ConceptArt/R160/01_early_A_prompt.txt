@@ -1,0 +1,26 @@
+Use case: stylized-concept.
+Create a finished, high quality environment-and-obstacle concept art board for the medieval party platformer PAWN RUSH. This is NEW concept art, not a screenshot and not a technical diagram.
+FORMAT: very large portrait 2:3 image. EXACTLY FIVE separated scene panels: one full-width panoramic panel across the upper third, two equal panels in the middle row, two equal panels in the bottom row. Thin warm ivory gutters. Narrow ivory title band at top; narrow ivory caption bands beneath each panel. Fill the canvas, five scenes only. Korean labels must be crisp and correct; no other text.
+VISUAL STYLE: polished stylized 3D game art, charming faceted forms, rich but readable materials, warm cream limestone and chunky oak/brass/iron machinery. The supplied visual direction is an inviting medieval castle race with deep vertical atriums, gaps, elevated traversable walkways, red/blue heraldic banners. Keep obstacles substantial and mechanically believable with visible hinges, rails, pivots and supports. Every panel must show an obvious entry ledge in the foreground, a main obstacle crossing in the middle, and a reachable exit doorway/ledge in the background. No uniformly repeated generic wooden bridge in every scene.
+CHARACTERS: 2 or 3 small cute ivory pawn adventurers per scene, spherical subtly faceted heads, simple flared pawn-shaped bodies, short black mitten hands and feet, blue or red collar. Most seen from behind or three-quarter view. Use them as scale and to demonstrate waiting, jumping, or riding. They are around 1m tall; ordinary jump gaps are small (~1–1.5 pawn heights), giant shafts are crossed by moving devices. No realistic humans.
+READABILITY: obstacle mechanism is the focal point, foreground unobscured, camera elevated three-quarter view wide enough to see route. One small elegant pale amber movement arrow near each main device is allowed, no UI overlays, no dense diagrams, no paragraphs. Warm high detail, clear silhouettes. Avoid photorealism, sci-fi, modern plastic, gore, random floating structures, huge impossible jumps, invisible support machinery, watermarks.
+BOARD TITLE (verbatim): "초반 A · 성 입구의 장애물".
+PANEL 1 (top full width):
+Caption verbatim: "01 정원 · 분수 회전봉".
+Sunlit formal rose garden with cream stone balustrades, turquoise fountain pool and trimmed hedges. Main: a central fountain maintenance spindle rotates two LOW rounded oak arms with brass end caps horizontally just above the garden paving; a pawn clearly jumps over one low arm, another waits at a safe stone pad. Secondary: small square flower-bordered stepping platforms rise and lower on visible stone plinths around the water. Show the rotating arm across the route, not a high arm impossible to jump.
+
+PANEL 2 (middle left):
+Caption verbatim: "02 수련장 · 기마 표적 돌격".
+Sandy castle training courtyard, straw bales, red/blue targets. Main: oversized wooden rocking-horse-like KNIGHT training dummy on a guided straight charging track, poised just after a short hop with a marked landing circle and a clear straight charge lane; no rider. Secondary: round straw sack swinging on a long chain across a separate narrow training beam. A pawn waits on an off-lane safe platform.
+
+PANEL 3 (middle right):
+Caption verbatim: "03 수로 · 수문 징검발판".
+Bright cascading castle canal and large turning wooden waterwheel. Four square pale stone stepping platforms supported on visible vertical guide columns rise in alternating pairs above clear water; one pawn rides a low platform toward an upper ledge. Include a small circular stone platform with swirling surface water inset that carries feet around; the solid stone platform itself stays still. Strong readable stepped vertical route.
+
+PANEL 4 (bottom left):
+Caption verbatim: "04 마굿간 · 건초 진자".
+Warm timber stable, hay racks and stalls with small friendly horse heads as background. Two huge ROUND netted hay bundles swing by overhead ropes across a solid narrow timber catwalk at different phases. Beyond, a short paired stable-service bridge is hinged at its outside ends so its two inner ends lift UPWARD, one shown raised. Pawns can shelter at broad post landings.
+
+PANEL 5 (bottom right):
+Caption verbatim: "05 성벽 · 이동 성가퀴".
+Open high castle battlement beneath blue sky. A chunky cream stone rook-shaped crenellated barricade on visible horizontal iron rails slides SIDEWAYS across the battlement route, leaving a safe side opening. Behind it, wind issues sideways from a stone arrow slit with fluttering banners and pale air streaks. Show the moving wall's stone blocks and brass guide shoes, not a floating wall.
