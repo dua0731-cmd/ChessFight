@@ -73,6 +73,9 @@ namespace ChessFight.RagdollLab
             if (game == null) game = FindFirstObjectByType<SwordFightGame>();
             kit = new Kit(new GameObject("Sword Fight skill effects").transform, () => Viewer, () => Eye);
             kit.NoPuffs = true;
+            // 10-28: the puffs stay off; the rook F's dust (DustSpread) is its own real dust (the kit's would also take the
+            // knockdown's floor ring away).
+            jetDust = new SkillDust(kit.root);
             BuildBoardLook();
             SwordFightSkills.Fx += OnFx;
             SwordFightEdgeFloor.Changed += OnFloor;
@@ -91,6 +94,7 @@ namespace ChessFight.RagdollLab
             DestroyBishopParts();
             DestroyShieldParts();
             DestroyBreaches();
+            jetDust?.Destroy();
             kit?.Destroy();
             DestroyIcons();
             DestroyStatues();
@@ -189,6 +193,7 @@ namespace ChessFight.RagdollLab
             if (kit == null) return;
             if (effects) Watch();
             kit.Step(dt);
+            jetDust?.Step(dt, ViewCamera);
             StepReal();
             var cam = ViewCamera;
             if (shakeLeft > 0f && cam != null)

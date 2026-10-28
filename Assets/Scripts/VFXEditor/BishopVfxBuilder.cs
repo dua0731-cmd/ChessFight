@@ -52,7 +52,7 @@ namespace ChessFight.VFX.Editor
         const string ReturnRight = "F8 Sword R", ReturnLeft = "F8 Sword L";
         const string WindupRight = "F3 Blade R", WindupLeft = "F3 Blade L";
         const string ThrowRight = "F4 Hand R", ThrowLeft = "F4 Hand L";
-        const string DrawLeft = "F1 Blade L";
+        const string DrawLeft = "F1 Blade L", DrawRight = "F1 Blade R";
         /// <summary>How many shards fly in to make the second sword (F1).</summary>
         const int Shards = 44;
         /// <summary>How high over the point the swords cross (SwordFightSkillParams.bishopCrossHeight).</summary>
@@ -211,6 +211,15 @@ namespace ChessFight.VFX.Editor
                 ("_RayThin", 60f), ("_RayStrength", 1.2f), ("_ShortRays", .5f), ("_Core", .1f));
             var steel = PreviewSteel();
             Draw(root, DrawLeft, 1, form, shard, tip, steel, old);
+            // 10-28 (사용자 "비숍 f 누를 때 왼쪽 칼에만 vfx가 적용 돼 양쪽 칼 vfx 적용 되게 해줘"): the same on the sword in his
+            // right hand, its tuned values taken from the left's (a first build has no right part of its own to keep).
+            Draw(root, DrawRight, 0, form, shard, tip, steel, old);
+            if (old == null || old.transform.Find(DrawRight) == null)
+            {
+                var right = root.transform.Find(DrawRight).GetComponent<VfxBladeForm>();
+                EditorUtility.CopySerialized(root.transform.Find(DrawLeft).GetComponent<VfxBladeForm>(), right);
+                right.hand = 0;
+            }
 
             var prefab = VfxAssets.Prefab(DrawPrefab, root);
             Register("F_Draw", prefab);

@@ -7,8 +7,8 @@ namespace ChessFight.VFX.Editor
     /// <summary>
     /// The knight's F and E effects, made the new way, one layer a prefab (R179, 10-28; DECISIONS FX7), for the sword
     /// fight's fork dive (the layer plan F1..F6 and E1..E5, the timing and the reference prompts are in
-    /// Docs/VFX/VFX_Progress.md), in the knight's deep warm bronze (#A8703D, a deeper shade of the rook's beige: 사용자
-    /// "룩 고유 색보다 진한 색으로") with a warm white core, a square with an enemy on it red (#C24A41, the enemy colour of
+    /// Docs/VFX/VFX_Progress.md), in the knight's deep warm bronze (#7A3E10 with a warm amber core #FFD9A8 since R213, deeper than R177's #A8703D: 사용자 "나이트 vfx 색을 더 진하게" · "B로 해줘"; first a deeper shade of the rook's beige: 사용자
+    /// "룩 고유 색보다 진한 색으로"), a square with an enemy on it red (#C24A41, the enemy colour of
     /// King of the Hill: 사용자 "적 칸은 빨강으로"). Menu ChessFight/VFX/Knight/Build writes the generated mesh and materials,
     /// the prefabs of Prefabs/Knight built so far and their names in Resources/VfxSets/Knight; play them in the VFX
     /// workbench (piece 5) or take frames of them with VfxCapture. Values tuned in a prefab's parts are kept when it is
@@ -50,7 +50,7 @@ namespace ChessFight.VFX.Editor
         const float Reach = 2.75f;
         /// <summary>The floor a hair over the board, in squares (about a centimetre and a half).</summary>
         const float Lift = .012f;
-        static readonly Color Bronze = new Color(.659f, .439f, .239f), WarmWhite = new Color(1f, .945f, .867f);
+        static readonly Color Bronze = new Color(.478f, .243f, .063f), WarmWhite = new Color(1f, .851f, .659f);
         static readonly Color FoeRed = new Color(.761f, .29f, .255f), FoeCore = new Color(1f, .851f, .812f);
         /// <summary>The eight knight moves (across to its right, along its way), in the order of SwordFightSkills.KnightMoves.</summary>
         static readonly Vector2Int[] Moves =

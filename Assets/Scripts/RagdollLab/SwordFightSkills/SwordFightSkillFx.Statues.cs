@@ -86,11 +86,11 @@ namespace ChessFight.RagdollLab
                 t.GetComponent<MeshFilter>().sharedMesh = mesh;
                 t.GetComponent<MeshRenderer>().sharedMaterial = mat;
                 t.SetPositionAndRotation(floor + turn * (at * scale), turn);
-                t.localScale = Vector3.one * scale;
+                t.localScale = Vector3.one * (scale * RookRubbleSize);
                 Vector3 e = mesh.bounds.extents;
                 // Its thinnest way: what it lies on when it comes to rest (a slab flat, not up on its edge).
                 Vector3 thin = e.x <= e.y && e.x <= e.z ? Vector3.right : e.y <= e.z ? Vector3.up : Vector3.forward;
-                e *= scale;
+                e *= scale * RookRubbleSize;
                 float half = Mathf.Min(e.x, e.y, e.z);
                 // Out along where it lay (the bigger the stone, the less far it goes), and up.
                 Vector3 out_ = turn * new Vector3(at.x - axis.x, 0f, at.z - axis.z);
@@ -239,8 +239,11 @@ namespace ChessFight.RagdollLab
             var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
             Color wood = FloorWood(floor);
             chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
-            WallChips(floor + Vector3.up * 0.04f, Vector3.up, RookChips(9), 3.4f, 0.8f, 0.012f, 0.045f);
+            // 10-28 (승규 님: "파편 크길 줄여주고", "더 줄이고"): smaller chips (1.2 to 4.5 cm until then), and a thin
+            // layer of dust swept out over the board round it.
+            WallChips(floor + Vector3.up * 0.04f, Vector3.up, RookChips(9), 3.4f, 0.8f, 0.005f, 0.015f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
+            DustSpread(floor, 2, 0.5f, 0.12f, wood);   // "먼지 더 많이 줄여주고": 6 billows of 0.16 m until then
             if (modelled) StatueRubble(model, floor, yaw, scale, stone);
             // R165: as it starts down, a dark copy of it stays and burns away (SwordFightSkillFx.RookFVfx.cs).
             var carved = modelled ? root.GetComponentInChildren<MeshRenderer>() : null;

@@ -38,8 +38,33 @@ namespace ChessFight.VFX.Editor
         // E2: the crown on his landing spot. Its band is a circle on the board; the outline stands in the plane the
         // camera looks across (VfxCrownMark turns it), its base on the band.
         const float BandRadius = .62f, BandLift = .035f;
-        static readonly Vector2[] CrownHalf =
-            { new Vector2(-.52f, .04f), new Vector2(-.6f, .52f), new Vector2(-.3f, .3f), new Vector2(0f, .66f) };
+        // E4: the seal's size as it bursts open and as it settles, when first built (m across; 3.7 and 4 until 10-28,
+        // 사용자 "그려지는 원 범위를 4분의 3만큼 줄여줘"); a rebuild keeps what the prefab has.
+        const float SealStart = 2.775f, SealEnd = 3f;
+        // The seal's crown (its -1..1 units, KingVfxBuilder.Seal.cs) stood up in metres, its foot on the band.
+        const float CrownSize = 1.45f, CrownFoot = -.32f;
+
+        static Vector3 Upright(Vector2 p) => new Vector3(p.x * CrownSize, (p.y - CrownFoot) * CrownSize, 0f);
+
+        /// <summary>The right half of the seal's crown's outline, in its units: from the middle of the band's foot out
+        /// along it, up its end, in to the body, up the body's side, then over the tops of the lobes to the middle.</summary>
+        static List<Vector2> CrownOutline()
+        {
+            var pts = new List<Vector2> { new Vector2(0f, -.32f), new Vector2(.3f, -.32f), new Vector2(.3f, -.2f), new Vector2(.28f, -.2f), new Vector2(.357f, .06f) };
+            float[] at = { -.3f, -.15f, 0f, .15f, .3f }, top = { .06f, .13f, .17f, .13f, .06f };
+            const float Lobe = .082f;
+            for (float x = .3f + Lobe; x > -.001f; x -= .01f)
+            {
+                float y = float.MinValue;
+                for (int k = 0; k < 5; k++)
+                {
+                    float dx = x - at[k];
+                    if (Mathf.Abs(dx) <= Lobe) y = Mathf.Max(y, top[k] + Mathf.Sqrt(Lobe * Lobe - dx * dx));
+                }
+                if (y > float.MinValue) pts.Add(new Vector2(Mathf.Max(0f, x), y));
+            }
+            return pts;
+        }
         // The spring, from his hips as it starts (where the game plays E3, +Z the way he faces, onto the board): his hips
         // as he hangs are 0.42 m under the lip and 0.22 m out; the landing spot 1.5 m in (SwordFightEdgeParams.kingLandIn),
         // his hips then about 0.78 m over it; the top 1.25 m over the higher end (SwordFightSkills.VaultPoint).
@@ -114,8 +139,9 @@ namespace ChessFight.VFX.Editor
         /// <summary>
         /// E2, the landing foretold (SfFxKind.KingStab, as the blade goes home; the game plays it on his landing spot, +Z
         /// onto the board away from the edge, and ends it when he lands or falls): a crown of thin gold light draws itself
-        /// in on the spot - its band, a circle 1.24 m across on the board, from the edge side round both ways; then its
-        /// three points, up from the band to the middle one from both sides; then the cross on that - and breathes until
+        /// in on the spot - its band, a circle 1.24 m across on the board, from the edge side round both ways; then the
+        /// outline of the seal's king's crown (10-28), up from the band over its five lobes to the middle one from both
+        /// sides; then the orb and the cross on that - and breathes until
         /// he lands, when it flares and is gone as the seal bursts (E4). A soft gold glow breathes where his sword is
         /// buried (<see cref="VfxCrownMark"/>). No ring round it, nothing that grows or ripples. Takes over E_Gather (the
         /// old way's 07_King_E_Gather swirl, which played from the spring).
@@ -150,28 +176,41 @@ namespace ChessFight.VFX.Editor
                 Line(root, old, side < 0 ? "E2 Band L" : "E2 Band R", mat, pts, times, 4, .04f);
             }
 
-            // The outline, turned to the camera by VfxCrownMark: from the band up both sides to the middle point, then
-            // the cross on it.
+            // The outline of the seal's king's crown (E4, CrownPieces; 10-28 사용자 "올라갈 때 그려지는 문양도 교체해줘"),
+            // turned to the camera by VfxCrownMark: from the middle of the band's foot out and up both sides, over the
+            // lobes to the top of the middle one; then the band's top, the orb and the cross.
             var crown = new GameObject(VfxCrownMark.CrownName);
             crown.transform.SetParent(root.transform, false);
+            var half = CrownOutline();
             for (int side = -1; side <= 1; side += 2)
             {
                 var pts = new List<Vector3>();
-                var times = new List<float>();
                 float run = 0f, total = 0f;
-                for (int i = 1; i < CrownHalf.Length; i++) total += (CrownHalf[i] - CrownHalf[i - 1]).magnitude;
-                for (int i = 0; i < CrownHalf.Length; i++)
+                for (int i = 1; i < half.Count; i++) total += (half[i] - half[i - 1]).magnitude;
+                var times = new List<float>();
+                for (int i = 0; i < half.Count; i++)
                 {
-                    if (i > 0) run += (CrownHalf[i] - CrownHalf[i - 1]).magnitude;
-                    pts.Add(new Vector3(side * -CrownHalf[i].x, CrownHalf[i].y, 0f));
+                    if (i > 0) run += (half[i] - half[i - 1]).magnitude;
+                    pts.Add(Upright(new Vector2(side * half[i].x, half[i].y)));
                     times.Add(Mathf.Lerp(.27f, .5f, run / total));
                 }
                 Line(crown, old, side < 0 ? "E2 Crown L" : "E2 Crown R", mat, pts, times, 1, .045f);
             }
-            Line(crown, old, "E2 Cross", mat, new List<Vector3> { new Vector3(0f, .66f, 0f), new Vector3(0f, .98f, 0f) },
-                new List<float> { .5f, .58f }, 1, .045f);
-            Line(crown, old, "E2 Cross Bar", mat, new List<Vector3> { new Vector3(-.11f, .87f, 0f), new Vector3(.11f, .87f, 0f) },
-                new List<float> { .56f, .62f }, 1, .045f);
+            Line(crown, old, "E2 Crown Band", mat, new List<Vector3> { Upright(new Vector2(-.3f, -.2f)), Upright(new Vector2(.3f, -.2f)) },
+                new List<float> { .32f, .44f }, 1, .04f);
+            var orb = new List<Vector3>();
+            var orbTimes = new List<float>();
+            for (int i = 0; i <= 16; i++)
+            {
+                float a = -Mathf.PI * .5f + 2f * Mathf.PI * i / 16f;
+                orb.Add(Upright(new Vector2(Mathf.Cos(a) * .045f, .27f + Mathf.Sin(a) * .045f)));
+                orbTimes.Add(Mathf.Lerp(.5f, .56f, i / 16f));
+            }
+            Line(crown, old, "E2 Orb", mat, orb, orbTimes, 1, .04f);
+            Line(crown, old, "E2 Cross", mat, new List<Vector3> { Upright(new Vector2(0f, .315f)), Upright(new Vector2(0f, .48f)) },
+                new List<float> { .55f, .6f }, 1, .045f);
+            Line(crown, old, "E2 Cross Bar", mat, new List<Vector3> { Upright(new Vector2(-.08f, .41f)), Upright(new Vector2(.08f, .41f)) },
+                new List<float> { .58f, .63f }, 1, .045f);
 
             // Where the sword is buried: the edge is 1.5 m behind the spot; the hilt 0.18 m out and 0.12 m under the lip.
             var glow = new GameObject(VfxCrownMark.GlowName);
@@ -339,8 +378,8 @@ namespace ChessFight.VFX.Editor
 
         /// <summary>
         /// E4, the landing (SfFxKind.KingLand, as he comes down in his chop; the game plays it on the board under him, +Z the
-        /// way he faces): the king's seal bursts open under him, about 4 m across, the crown and its cross at its middle
-        /// and its rims (the old way's seal pattern, T_King_LandSeal), flashing as it opens and settling, then dying away
+        /// way he faces): the king's seal bursts open under him, 3 m across, the crown and its cross at its middle
+        /// and its rims (T_King_CrownSeal, after the user's picture, 10-28), flashing as it opens and settling, then dying away
         /// (<see cref="VfxSigil"/>, not turning); a white-hot flash at his feet; a long thin level streak of light across
         /// him at chest height; and four thin ribbons of gold light winding up off the seal's rim (<see cref="VfxPathRibbon"/>),
         /// gone from their tails in a third of a second. No smoke, no dust, no ring that grows out. Takes over E_Land (the
@@ -362,7 +401,8 @@ namespace ChessFight.VFX.Editor
             seal.AddComponent<MeshFilter>().sharedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(FloorMesh);
             var sealView = seal.AddComponent<MeshRenderer>();
             var sealMat = Material(SealMaterial, "ChessFight/VFX/Sigil Additive", new[] { ("_Color", Gold) }, ("_Intensity", 1.6f), ("_EdgeGlow", 2.5f));
-            if (sealMat.GetTexture("_MainTex") == null) sealMat.SetTexture("_MainTex", AssetDatabase.LoadAssetAtPath<Texture2D>(SealTexture));
+            // 10-28: the seal of the user's picture (KingVfxBuilder.Seal.cs) in place of the old way's T_King_LandSeal.
+            sealMat.SetTexture("_MainTex", VfxAssets.Mask(CrownSealTexture, 512, CrownSeal(512)));
             sealView.sharedMaterial = sealMat;
             Quiet(sealView);
             var sigil = seal.AddComponent<VfxSigil>();
@@ -371,8 +411,8 @@ namespace ChessFight.VFX.Editor
             sigil.flashIntensity = 4f;
             sigil.intensity = 1.5f;
             sigil.flashTime = .22f;
-            sigil.startScale = 3.7f;
-            sigil.endScale = 4f;
+            sigil.startScale = SealStart;
+            sigil.endScale = SealEnd;
             sigil.spin = 0f;
             sigil.fadeOut = .55f;
             Keep(old, SealPart, sigil);
@@ -436,7 +476,7 @@ namespace ChessFight.VFX.Editor
                 float a0 = k * 90f + 30f, delay = .03f + .03f * (k % 2);
                 for (int i = 0; i <= 16; i++)
                 {
-                    float u = i / 16f, a = (a0 + 200f * u) * Mathf.Deg2Rad, r = Mathf.Lerp(1.75f, 1.1f, u);
+                    float u = i / 16f, a = (a0 + 200f * u) * Mathf.Deg2Rad, r = Mathf.Lerp(1.75f, 1.1f, u) * SealEnd / 4f;
                     ribbon.points.Add(new Vector3(Mathf.Sin(a) * r, Mathf.Lerp(.05f, 1.7f, u), Mathf.Cos(a) * r));
                     ribbon.times.Add(delay + .42f * (1f - (1f - u) * (1f - u)));
                 }

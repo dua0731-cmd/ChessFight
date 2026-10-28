@@ -42,9 +42,16 @@ namespace ChessFight.RagdollLab
             var blade = go.GetComponentInChildren<VfxBladeGlow>();
             var P = s.S != null ? s.S : S;
             float guard = P != null ? P.kingGuard : 0.9f;
-            // A square is drawn where there is floor at about his height (not over a drop).
+            // A square is drawn where there is floor at about his height (not over a drop). 10-28: on a board it is the
+            // border of the board square he stands on (the board's own cell, not a square of the knight's measure).
             if (grid != null)
-                grid.Begin(P != null ? P.knightCell : 1.25f, p => Kit.FloorUnder(p, 0.6f, out var under) && Mathf.Abs(under.y - p.y) < 0.6f);
+            {
+                var arena = FindFirstObjectByType<SwordFightArena>();
+                grid.Begin(P != null ? P.knightCell : 1.25f, p => Kit.FloorUnder(p, 0.6f, out var under) && Mathf.Abs(under.y - p.y) < 0.6f,
+                    arena != null ? (BoardSquareFinder)arena.SquareAt : null);
+                // The wave off the border rises as far as his belly (a little over his hips).
+                grid.waveHeight = Mathf.Clamp(king.Hips.position.y - Kit.FloorUnder(king.Hips.position, 1.5f).y + 0.1f, 0.4f, 1.6f);
+            }
             var f = s.Fighter;
             if (blade != null)
                 blade.Follow((out Vector3 hilt, out Vector3 point) =>

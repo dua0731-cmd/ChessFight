@@ -163,6 +163,8 @@ namespace ChessFight.RagdollLab
             bool online = Networked || LeaveMatch != null;
             if (online != menuOnline) { menuOnline = online; GameMenu.Use(gameObject, Exit, online); }
             if (Match == null && !Finished && !ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
+            // 10-29 test key (승규 님): B puts my sword in the black team's look, again back to my own team's.
+            if (Match == null && !ChatBox.KeysHeld && Local != null && Input.GetKeyDown(KeyCode.B)) Local.BlackSwordTest = !Local.BlackSwordTest;
             if (!Networked && !Finished && Local != null) Local.SetInput(ReadLocalInput());
             if (Finished) RefreshCursor();
         }
@@ -250,7 +252,7 @@ namespace ChessFight.RagdollLab
             if (Match != null) return;   // R149: the match draws its own HUD
             string status = local == null ? "입장 중" : !local.Alive ? $"{local.RespawnSeconds:0.0}초 뒤 부활"
                 : local.Protection > 0 ? "부활 보호 (발도 / 공격 시 해제)" : local.Pawn.State != PawnState.Active ? "넘어짐 · 일어나는 중"
-                : ClassicControls ? "좌클릭 → 기물마다 3연속 베기 (누를 때마다 방향이 바뀜)" : local.Drawn ? "넓고 빠르게 휘두르면 넘어뜨립니다 · 무게감 있는 드래그" : "좌클릭을 누르고 드래그 → 물리 칼 휘두르기";
+                : ClassicControls ? "좌클릭 → 기물마다 4연속 베기 (누를 때마다 방향이 바뀜)" : local.Drawn ? "넓고 빠르게 휘두르면 넘어뜨립니다 · 무게감 있는 드래그" : "좌클릭을 누르고 드래그 → 물리 칼 휘두르기";
             // The HUD's own menu now shows only at the end (Esc opens GameMenu instead).
             hud.Draw(White, Black, Remaining, targetScore, local == null ? -1 : local.Pawn.Team, status, false, Finished, ClassicControls);
         }

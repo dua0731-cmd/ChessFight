@@ -98,11 +98,11 @@ namespace ChessFight.RagdollLab
 
         void Place(ref Transform copy, ref int piece, string name, Vector3 grip, Quaternion turn)
         {
-            if (copy == null || piece != modelPiece)
+            if (copy == null || piece != modelBuild)
             {
                 if (copy != null) Destroy(copy.gameObject);
                 copy = BuildSwordCopy(name);
-                piece = modelPiece;
+                piece = modelBuild;
             }
             if (copy == null) return;
             copy.SetPositionAndRotation(grip, turn);

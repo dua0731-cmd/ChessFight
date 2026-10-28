@@ -23,6 +23,36 @@ namespace ChessFight.RagdollLab
 
         static int RookChips(int n) => Mathf.Max(1, Mathf.RoundToInt(n * RookDebris));
 
+        /// <summary>How big the towers' rubble stones are against the model's own (10-28, 승규 님: "룩 f 스킬 쓸 때 파편
+        /// 크길 줄여주고", then "더 줄이고": half, then 0.3).</summary>
+        public static float RookRubbleSize = .3f;
+
+        /// <summary>The rook F's dust (its own real dust: the kit's puffs are off in this mode).</summary>
+        SkillDust jetDust;
+
+        /// <summary>10-28 (승규 님: "먼지가 뿜어져 나오게 해", "먼지가 많아 줄여", then "먼지는 바닥에 좌악 깔려야돼"): a thin
+        /// layer of real dust (<see cref="SkillDust"/>) swept out flat over the board from <paramref name="at"/> all round,
+        /// <paramref name="n"/> low billows out to about <paramref name="radius"/>, hugging the floor, spreading wide and
+        /// thinning as they slow, the board's wood in their grey.</summary>
+        void DustSpread(Vector3 at, int n, float radius, float size, Color wood)
+        {
+            var dust = jetDust;
+            if (dust == null || !dust.Ready || n <= 0) return;
+            SkillDust.Tint(Color.Lerp(wood, Color.white, 0.4f), wood * 0.45f, out var lit, out var shade, 0.2f);
+            float floor = SkillDust.FloorY(at + Vector3.up * 0.2f);
+            if (float.IsNegativeInfinity(floor)) floor = at.y;
+            float start = Random.Range(0f, 360f);
+            for (int i = 0; i < n; i++)
+            {
+                float ang = (start + (i + Random.Range(-0.4f, 0.4f)) * 360f / n) * Mathf.Deg2Rad;
+                var dir = new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang));
+                float s = size * Random.Range(0.7f, 1.1f);
+                // Flat out (its speed is how far it goes before the air stops it), barely lifting: a sheet along the floor.
+                dust.Emit(new Vector3(at.x, floor + s * 0.3f, at.z) + dir * (s * 0.3f), dir * (radius * Random.Range(0.7f, 1.1f) * 4.5f) + Vector3.up * 0.05f,
+                          s, Random.Range(0.7f, 1.1f), lit, shade, Random.Range(1.6f, 2.1f), Random.Range(0f, 0.05f), Random.Range(0.25f, 0.35f), floor);
+            }
+        }
+
         /// <summary>Plays the rook's effect <paramref name="key"/>; the copy, or null.</summary>
         GameObject RookFVfx(string key, Vector3 at, Vector3 forward) => RookVfxOn ? SetVfx("Rook", key, at, forward) : null;
 

@@ -6,7 +6,9 @@
 // squares _Cell metres. The lines are drawn out from his square to _Reveal squares (the farther of across and along,
 // from the middle of his) with a bright head. A square with no floor (its bit in _Floor 0: bit (row + 1) * 3 + column + 1,
 // counted from behind him on his left) has no fill, and a line is not drawn where neither square beside it has floor.
-// _Intensity, _Reveal, _Phase, _Floor, _Cell, _Span and _Fade are set per renderer by VfxSquareGrid.
+// _Own 1 (10-28, the user asked for only the square he stands on): only the four sides of the square he stands on are drawn,
+// no lines round the eight, none running on past them, no fill. _Intensity, _Reveal, _Phase, _Floor, _Cell, _Span, _Own
+// and _Fade are set per renderer by VfxSquareGrid.
 Shader "ChessFight/VFX/Square Grid Additive"
 {
     Properties
@@ -27,6 +29,7 @@ Shader "ChessFight/VFX/Square Grid Additive"
         _Reveal ("Drawn out (squares)", Float) = 3
         _Phase ("Band angle (radians)", Float) = 0
         _Floor ("Squares with floor (bits)", Float) = 511
+        _Own ("His own square only (0 or 1)", Range(0, 1)) = 0
         _Intensity ("Intensity", Float) = 1
         _Fade ("Fade", Range(0, 1)) = 1
     }
@@ -63,6 +66,7 @@ Shader "ChessFight/VFX/Square Grid Additive"
                 float _Reveal;
                 float _Phase;
                 float _Floor;
+                half _Own;
                 half _Intensity;
                 half _Fade;
             CBUFFER_END
@@ -99,6 +103,14 @@ Shader "ChessFight/VFX/Square Grid Additive"
             // (alongX: the lines run along x, so b is the column). run is 1 on the lines and dies along the run on.
             float Lines(float a, float b, bool alongX, out half run)
             {
+                if (_Own > 0.5)
+                {
+                    // His own square only: its sides at a = -0.5 and 0.5, from b = -0.5 to 0.5 (a hair on past, so the
+                    // corners are whole); the floor under him is his own, so it is always lit.
+                    float own = a < 0.0 ? -0.5 : 0.5;
+                    run = 1.0;
+                    return lerp(1e4, abs(a - own) * _Cell, step(max(abs(b) - 0.5, 0.0), 0.03));
+                }
                 float at = clamp(floor(a) + 0.5, -1.5, 1.5);
                 float past = max(abs(b) - 1.5, 0.0);
                 run = 1.0 - saturate(past / max(_Overrun, 1e-3));
@@ -129,7 +141,7 @@ Shader "ChessFight/VFX/Square Grid Additive"
                 float ring = max(abs(square.x), abs(square.y));
                 float2 inSquare = abs(q - square);
                 float inside = (0.5 - max(inSquare.x, inSquare.y)) * _Cell;
-                half fill = _Fill * step(0.5, ring) * step(ring, 1.5) * On(square.x, square.y) * (0.35 + 0.65 * exp(-inside / _FillEdge));
+                half fill = _Fill * (1.0 - step(0.5, _Own)) * step(0.5, ring) * step(ring, 1.5) * On(square.x, square.y) * (0.35 + 0.65 * exp(-inside / _FillEdge));
 
                 // Drawn out from his square, a bright head running with the lines' ends until they are all out.
                 float far = max(abs(q.x), abs(q.y));

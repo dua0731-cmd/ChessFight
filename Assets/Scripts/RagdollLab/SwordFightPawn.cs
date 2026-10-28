@@ -55,7 +55,11 @@ namespace ChessFight.RagdollLab
         // boxes; the boxes stay (not drawn) for the tests and the effects that read them.
         Transform swordModel;
         Material modelMaterial;
-        int modelPiece = -1;
+        int modelPiece = -1, modelTeam = -2, modelBuild;   // modelBuild counts model rebuilds (piece or team), so held copies rebuild too
+        Color modelBase = ModelPlain;
+        /// <summary>Test key B (10-29, 승규 님): this pawn's sword wears the black team's look whatever its team.</summary>
+        public bool BlackSwordTest;
+        int SwordLookTeam => BlackSwordTest ? Gameplay.Teams.Black : Pawn.Team;
         static readonly Color ModelPlain = new Color(.8f, .8f, .8f);
         Collider bladeCollider;
         Collider[] ownerColliders;
@@ -407,7 +411,7 @@ namespace ChessFight.RagdollLab
             // The model is plain grey; it takes the blade's colour only for a skill's tint. 10-25 (승규 님: skills "마법 없이
             // 완전 실사"): no yellow flash on a hit or a parry any more - a steel blade stays steel (the sparks show the blow).
             if (modelMaterial != null)
-                modelMaterial.color = Skills != null && Skills.BladeTint is Color mt ? Color.Lerp(ModelPlain, mt, .7f) : ModelPlain;
+                modelMaterial.color = Skills != null && Skills.BladeTint is Color mt ? Color.Lerp(modelBase, mt, .7f) : modelBase;
         }
 
         /// <summary>Swap in the sword of the piece this pawn is now (Resources/SwordFightSwords/&lt;piece&gt;), or the boxes if
@@ -415,8 +419,8 @@ namespace ChessFight.RagdollLab
         void UpdateSwordModel()
         {
             int piece = (int)Pawn.Piece;
-            if (piece == modelPiece) return;
-            modelPiece = piece;
+            if (piece == modelPiece && SwordLookTeam == modelTeam) return;
+            modelPiece = piece; modelTeam = SwordLookTeam; modelBuild++;
             if (swordModel != null) Destroy(swordModel.gameObject);
             swordModel = null;
             var prefab = Resources.Load<GameObject>("SwordFightSwords/" + Pawn.Piece);
@@ -446,11 +450,17 @@ namespace ChessFight.RagdollLab
             go.transform.SetLocalPositionAndRotation(new Vector3(0f, 0f, up), Quaternion.Euler(90f, 0f, 0f));
             go.transform.localScale = Vector3.one * size;
             foreach (var c in go.GetComponentsInChildren<Collider>(true)) Destroy(c);
-            if (modelMaterial == null)
+            // 10-29 (승규 님: "백팀과 흑팀 칼을 다르게"): a piece with a painted look per team (Resources/SwordFightSwords/
+            // Team/<piece>_<White|Black>, baked in Blender) wears it; the rest stay plain grey.
+            var look = Resources.Load<Material>("SwordFightSwords/Team/" + Pawn.Piece + (modelTeam == Gameplay.Teams.Black ? "_Black" : "_White"));
+            if (modelMaterial != null) Destroy(modelMaterial);
+            if (look != null) modelMaterial = new Material(look);
+            else
             {
                 modelMaterial = new Material(LitMaterials.Lit) { color = ModelPlain };
                 LitMaterials.SetSmoothness(modelMaterial, .45f);
             }
+            modelBase = modelMaterial.color;
             foreach (var t in go.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = sword.gameObject.layer;
             // No shadows received: the fine engraved mesh speckled with shadow acne under the match light.
             foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.sharedMaterial = modelMaterial; r.receiveShadows = false; }

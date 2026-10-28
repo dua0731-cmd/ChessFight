@@ -27,7 +27,9 @@ namespace ChessFight.VFX.Editor
         const string TipMaterial = VfxAssets.Root + "/Materials/M_King_Guard_Tip.mat";
         const string FloorMesh = VfxAssets.Root + "/Meshes/VFX_FloorQuad.asset";
         const string BillboardMesh = VfxAssets.Root + "/Meshes/SM_BillboardQuad.asset";
-        const string SquaresPart = "F1 Squares", BladePart = "F1 Blade";
+        const string SquaresPart = "F1 Squares", BladePart = "F1 Blade", GuardMotesPart = "F1 Motes", WavePart = "F1 Wave";
+        const string WaveMaterial = VfxAssets.Root + "/Materials/M_King_Guard_Wave.mat";
+        const string WaveMesh = VfxAssets.Root + "/Meshes/SM_King_GuardWave.asset";
         const string CounterPrefab = VfxAssets.Root + "/Prefabs/King/23_King_F_Counter.prefab";
         const string CounterMaterial = VfxAssets.Root + "/Materials/M_King_Counter.mat";
         const string CounterMesh = VfxAssets.Root + "/Meshes/SM_King_Counter.asset";
@@ -180,6 +182,32 @@ namespace ChessFight.VFX.Editor
             squares.transform.localRotation = Quaternion.identity;
             squares.transform.localScale = Vector3.one * ((3f + 2f * grid.overrun) * grid.cell + .2f);
 
+            // 10-28: gold specks lifting off the four sides of his square. The grid emits them itself along the sides
+            // (VfxSquareGrid.EmitMotes), so this system has no emission of its own and keeps running until the cue ends.
+            var specks = new GameObject(GuardMotesPart);
+            specks.transform.SetParent(root.transform, false);
+            var speckSystem = Motes(specks, 1f, new Vector2(.6f, 1.1f), Vector2.zero, new Vector2(.024f, .046f), -.04f);
+            var speckMain = speckSystem.main;
+            speckMain.loop = true;
+            speckMain.maxParticles = 96;
+            Embers(speckSystem, MoteMat());
+            KeepParticles(old, GuardMotesPart, specks);
+            // After Keep: it copies the old prefab's field values, the old emitter reference among them.
+            grid.motes = speckSystem;
+
+            // 10-28 (the user: a ripple like water rising softly off the border as far as his belly): a wall of gold light on
+            // the four sides of his square, an open box 1 m on a side and 1 m high that the grid sizes (VfxSquareGrid.DrawWave).
+            var wave = new GameObject(WavePart);
+            wave.transform.SetParent(root.transform, false);
+            wave.AddComponent<MeshFilter>().sharedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(WaveMesh) ?? VfxAssets.SaveMesh(WaveMesh, WaveTube());
+            var waveView = wave.AddComponent<MeshRenderer>();
+            waveView.sharedMaterial = Material(WaveMaterial, "ChessFight/VFX/Square Wave Additive", new[] { ("_Color", Gold) });
+            Quiet(waveView);
+            wave.transform.localPosition = Vector3.zero;
+            wave.transform.localRotation = Quaternion.identity;
+            wave.transform.localScale = new Vector3(grid.cell, grid.waveHeight, grid.cell);
+            grid.wave = waveView;
+
             var blade = new GameObject(BladePart);
             blade.transform.SetParent(root.transform, false);
             var line = blade.AddComponent<LineRenderer>();
@@ -214,6 +242,42 @@ namespace ChessFight.VFX.Editor
             var prefab = VfxAssets.Prefab(GuardPrefab, root);
             Register("F_Guard", prefab);
             return prefab;
+        }
+
+        /// <summary>An open box on its side: four walls round a unit square on the floor, 1 m high, u running once round them
+        /// (0 to 4) and v up them (0 floor to 1 top), for the wave rising off the sides of his square.</summary>
+        static Mesh WaveTube()
+        {
+            var mesh = new Mesh { name = "SM_King_GuardWave" };
+            var corners = new[] { new Vector3(-.5f, 0f, -.5f), new Vector3(.5f, 0f, -.5f), new Vector3(.5f, 0f, .5f), new Vector3(-.5f, 0f, .5f) };
+            var vertices = new Vector3[16];
+            var uv = new Vector2[16];
+            var triangles = new int[24];
+            for (int side = 0; side < 4; side++)
+            {
+                Vector3 a = corners[side], b = corners[(side + 1) % 4];
+                int v = side * 4, t = side * 6;
+                vertices[v] = a;
+                vertices[v + 1] = b;
+                vertices[v + 2] = a + Vector3.up;
+                vertices[v + 3] = b + Vector3.up;
+                uv[v] = new Vector2(side, 0f);
+                uv[v + 1] = new Vector2(side + 1f, 0f);
+                uv[v + 2] = new Vector2(side, 1f);
+                uv[v + 3] = new Vector2(side + 1f, 1f);
+                triangles[t] = v;
+                triangles[t + 1] = v + 2;
+                triangles[t + 2] = v + 1;
+                triangles[t + 3] = v + 2;
+                triangles[t + 4] = v + 3;
+                triangles[t + 5] = v + 1;
+            }
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         // ---------------------------------------------------------------- F2: the block

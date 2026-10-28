@@ -988,6 +988,23 @@ namespace ChessFight.RagdollLab
             return squares.Count > 0;
         }
 
+        /// <summary>10-28 (the user: the king's guard lit on "the border of the one board square he stands on"): the board
+        /// square under <paramref name="p"/> (x / z) as it lies - its middle (at the height of <paramref name="p"/>) and its
+        /// side, the board's own cell. False off the board (or before it is built).</summary>
+        public bool SquareAt(Vector3 p, out Vector3 centre, out float size)
+        {
+            centre = p;
+            size = cell;
+            float half = cell * 0.5f;
+            foreach (var s in squares)
+            {
+                if (Mathf.Abs(p.x - s.home.x) > half || Mathf.Abs(p.z - s.home.z) > half) continue;
+                centre = new Vector3(s.home.x, p.y, s.home.z);
+                return true;
+            }
+            return false;
+        }
+
         public void Plan(int cell, double warn, double drop)
         {
             foreach (var s in squares) if (s.cell == cell) { s.warn = warn; s.drop = drop; }

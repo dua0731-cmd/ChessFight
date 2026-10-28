@@ -191,8 +191,11 @@ namespace ChessFight.RagdollLab
             var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
             Color wood = FloorWood(at);
             chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
-            WallChips(at + Vector3.up * 0.04f, Vector3.up, RookChips(12), 3.4f, 0.8f, 0.012f, 0.04f);
+            // 10-28 (승규 님: "파편 크길 줄여주고", "더 줄이고"): smaller chips (1.2 to 4 cm until then), and a thin
+            // layer of dust swept out flat over the board all round.
+            WallChips(at + Vector3.up * 0.04f, Vector3.up, RookChips(12), 3.4f, 0.8f, 0.005f, 0.014f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
+            DustSpread(at, 4, 0.9f, 0.14f, wood);   // "먼지 더 많이 줄여주고": 10 billows of 0.2 m until then
             RookVfx("F_Slam", at, Kit.FlatDir(e.dir, Vector3.forward));
             HitStop(5);
             Shake(s.Pawn, null, 0.17f, 9);

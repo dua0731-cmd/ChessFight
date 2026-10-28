@@ -47,8 +47,8 @@ Material:
     - _SquaresLit: 1
     - _TeeReveal: 1
     m_Colors:
-    - _Color: {r: 0.659, g: 0.439, b: 0.239, a: 1}
-    - _CoreColor: {r: 1, g: 0.945, b: 0.867, a: 1}
+    - _Color: {r: 0.478, g: 0.243, b: 0.063, a: 1}
+    - _CoreColor: {r: 1, g: 0.851, b: 0.659, a: 1}
     - _FoeColor: {r: 0.761, g: 0.29, b: 0.255, a: 1}
     - _FoeCoreColor: {r: 1, g: 0.851, b: 0.812, a: 1}
     - _SquareFoeA: {r: 0, g: 0, b: 0, a: 0}
