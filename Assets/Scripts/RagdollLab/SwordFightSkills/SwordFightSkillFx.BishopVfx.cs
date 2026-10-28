@@ -48,6 +48,8 @@ namespace ChessFight.RagdollLab
         {
             var fighter = s.Fighter;
             if (fighter == null) return;
+            // 10-28: its sound (no SfFxKind for this moment).
+            SwordFightSkillSfx.Moment("BishopDraw", s.Pawn.Hips.position, s);
             var go = BishopVfx("F_Draw", Kit.FloorUnder(s.Pawn.Hips.position, 1.5f), s.AimDir);
             if (go == null) return;
             foreach (var form in go.GetComponentsInChildren<VfxBladeForm>())

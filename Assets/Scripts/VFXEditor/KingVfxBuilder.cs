@@ -15,9 +15,10 @@ namespace ChessFight.VFX.Editor
     /// sits) are kept when it is built again; a material is only made when missing, so its tuned colours stay too. The
     /// landing builders (KingLandBuilder) are separate. Built so far: F3, the counter cut (F_Counter), F2, the block
     /// (F_Block, R185), F4, whoever the counter strikes (F_Hit, R187), F1, the guard (F_Guard, R190), F5, the guard
-    /// that came to nothing (F_Whiff, R193), and E1, the sword into the wall (E_Stab, R196).
+    /// that came to nothing (F_Whiff, R193), E1, the sword into the wall (E_Stab, R196; its sparks R198), and E2 .. E6
+    /// (KingVfxBuilder.Edge.cs, R199 .. R203).
     /// </summary>
-    public static class KingVfxBuilder
+    public static partial class KingVfxBuilder
     {
         const string SetPath = "Assets/Resources/VfxSets/King.asset";
         const string GuardPrefab = VfxAssets.Root + "/Prefabs/King/21_King_F_Guard.prefab";
@@ -81,11 +82,18 @@ namespace ChessFight.VFX.Editor
             var hit = BuildHit();
             var whiff = BuildWhiff();
             var stab = BuildStab();
+            var mark = BuildMark();
+            var vault = BuildVault();
+            var land = BuildLand();
+            var landHit = BuildLandHit();
+            var drop = BuildDrop();
             AssetDatabase.SaveAssets();
             Selection.activeObject = counter;
             Debug.Log("[VFX] King built: F1 the guard (F_Guard), F3 the counter cut (F_Counter), F2 the block (F_Block), "
-                + "F4 whoever the counter strikes (F_Hit), F5 the whiff (F_Whiff), E1 the stab (E_Stab). Workbench: piece 1, "
-                + guard.name + ", " + counter.name + ", " + parry.name + ", " + hit.name + ", " + whiff.name + ", " + stab.name);
+                + "F4 whoever the counter strikes (F_Hit), F5 the whiff (F_Whiff), E1 the stab (E_Stab), E2 the crown foretold (E_Gather), E3 the spring (E_Vault), "
+                + "E4 the landing (E_Land), E5 whoever it throws (E_Hit), E6 the fall (E_Drop). Workbench: piece 1, "
+                + guard.name + ", " + counter.name + ", " + parry.name + ", " + hit.name + ", " + whiff.name + ", " + stab.name + ", "
+                + mark.name + ", " + vault.name + ", " + land.name + ", " + landHit.name + ", " + drop.name);
         }
 
         /// <summary>The menu is greyed out in Play mode.</summary>
@@ -692,6 +700,7 @@ namespace ChessFight.VFX.Editor
             Quad(wall, VfxCrackGlow.StoneTopName, quad, stone, new Vector3(0f, up, -half * .5f), flat, new Vector3(2f * half, half, 1f));
             Quad(wall, VfxCrackGlow.FaceName, quad, breach, new Vector3(0f, 0f, .002f), Quaternion.identity, new Vector3(2f * half, 2f * half, 1f));
             Quad(wall, VfxCrackGlow.TopName, quad, breach, new Vector3(0f, up + .002f, -half * .5f), flat, new Vector3(2f * half, half, 1f));
+            StabSparks(root, old);
 
             var prefab = VfxAssets.Prefab(StabPrefab, root);
             // Takes over the old way's 04_King_E_Stab, which stays until the user says to remove it.

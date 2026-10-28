@@ -58,7 +58,9 @@ namespace ChessFight.RagdollLab
             { "KingParry", 0.95f }, { "KingCounterHit", 0.8f }, { "KingWhiff", 0.55f },
             { "QueenThrust", 0.8f }, { "QueenHit", 0.85f }, { "QueenStop", 0.55f },
             { "RookSlam", 0.9f }, { "RookHit", 0.8f }, { "RookBlocked", 0.7f },
-            { "BishopFire", 0.75f }, { "BishopPin", 0.85f }, { "BishopSet", 0.7f },
+            // 10-28 (사용자 "비숍 f 기존에 있던 사운드는 지우고 아예 새롭게"): the old F's BishopFire and BishopPin clips are
+            // gone and CastBishop is a new take - the X cut's moments below are one family of airy steel swishes.
+            { "BishopSet", 0.7f },
             { "KnightLeap", 1f }, { "KnightLand", 0.85f }, { "KnightHit", 0.8f },
             { "Interrupted", 0.55f },
             { "KingStab", 0.9f }, { "QueenMark", 0.9f }, { "RookCollapse", 0.95f }, { "BishopReach", 0.85f }, { "KnightFlip", 1f },
@@ -70,6 +72,23 @@ namespace ChessFight.RagdollLab
             // the queen's sparks on the thrust and on the hit, the king's vault off the sword and its landing, the bishop's catch.
             { "KnightKickHit", 0.85f }, { "QueenThrustSparks", 0.55f }, { "QueenHitSparks", 0.6f },
             { "KingVault", 0.75f }, { "KingLand", 0.85f }, { "BishopCatch", 0.75f }, { "RookTremble", 0.85f },
+            // 10-28 (the king's edge effects E2, E5, E6): the crown drawn on his landing spot, the enemies his landing hits
+            // (under KingLand), the fall when his sword is cut out.
+            { "KingMark", 0.55f }, { "KingLandHit", 0.6f }, { "KingDrop", 0.6f },
+            // 10-28, the moments the new effects (R172 - R203) drew without a sound: the bishop's X cut (the second sword
+            // forming, the throw, the cross, a piece it took), the king's counter cut, the knight's crouch and kick on the
+            // edge, the queen's edge cut missing.
+            { "BishopDraw", 0.6f }, { "BishopLeap", 0.75f }, { "BishopCross", 0.85f }, { "BishopHit", 0.8f },
+            { "KingCounterSpin", 0.8f }, { "KnightCrouch", 0.6f }, { "KnightKick", 0.75f }, { "QueenMiss", 0.5f },
+        };
+
+        /// <summary>Moments that play another moment's clip (10-28): the king's landing hit is his counter's hit, his fall
+        /// when the sword is cut out is his whiff (the gold falling from the blade) - one family of sounds for the king.</summary>
+        static readonly Dictionary<string, string> Alias = new Dictionary<string, string>
+        {
+            { "KingLandHit", "KingCounterHit" }, { "KingDrop", "KingWhiff" },
+            // The queen's edge cut finding no one ends like her thrust stopping short.
+            { "QueenMiss", "QueenStop" },
         };
 
         /// <summary>Sounds laid over a moment's own, started with it and never delayed (10-26): the queen's sparks.</summary>
@@ -77,11 +96,13 @@ namespace ChessFight.RagdollLab
         {
             { "QueenThrust", new[] { "QueenThrustSparks" } },
             { "QueenHit", new[] { "QueenHitSparks" } },
+            // 10-28: the king's sword going in starts the swell of the crown drawn where he will land (E2).
+            { "KingStab", new[] { "KingMark" } },
         };
 
         /// <summary>The edge skills' sounds (R116): each belongs to its skill while it runs and stops if that is called off.
         /// The rook's plays when its chunk falls (the floor's news, not a skill moment).</summary>
-        static readonly HashSet<string> Edge = new HashSet<string> { "KingStab", "QueenMark", "RookCollapse", "BishopReach", "KnightFlip" };
+        static readonly HashSet<string> Edge = new HashSet<string> { "KingStab", "KingMark", "QueenMark", "RookCollapse", "BishopReach", "KnightCrouch", "KnightFlip", "KnightKick" };
 
         /// <summary>Seconds (game time, the skill's own clock) after its moment a sound starts. 10-26: none now - the knight's
         /// somersault sound is its spin from the start (승규 님: "기존 소리 말고 다른 소리"), and its kick has its own
@@ -148,6 +169,8 @@ namespace ChessFight.RagdollLab
         void OnFx(SfFxEvent e)
         {
             if (e.kind == SfFxKind.EdgeCancel || e.kind == SfFxKind.BishopDrop) { CutEdge(e.by); return; }
+            // 10-28: the king's sword cut out - the crown's swell stops, then his fall plays.
+            if (e.kind == SfFxKind.KingDrop) CutEdge(e.by);
             string name = ClipName(e);
             if (name != null && Layers.TryGetValue(name, out var layers))
                 foreach (var layer in layers) Play(layer, e.at, e.by);
@@ -202,9 +225,17 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>A moment that is no <see cref="SfFxKind"/> (the effects see it themselves, like the bishop's second
+        /// sword forming): its sound, if a bed's sounds are up.</summary>
+        public static void Moment(string name, Vector3 at, SwordFightSkills by)
+        {
+            if (Current != null) Current.Play(name, at, by);
+        }
+
         void Play(string name, Vector3 at, SwordFightSkills by)
         {
-            if (!sound || name == null || !sounds.TryGetValue(name, out var s)) return;
+            if (!sound || name == null) return;
+            if (!sounds.TryGetValue(Alias.TryGetValue(name, out string other) ? other : name, out var s)) return;
             if (lastFrame.TryGetValue(name, out int f) && f == Time.frameCount) return;
             lastFrame[name] = Time.frameCount;
             Count[name] = Count.TryGetValue(name, out int n) ? n + 1 : 1;

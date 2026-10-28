@@ -26,7 +26,7 @@ namespace ChessFight.RagdollLab
         public int HitsLanded { get; private set; }
         public int SoftContacts { get; private set; }
         public const float StrongCutEnergy = .65f, MinimumStroke = 18f;
-        public bool Attacking => Alive && (ClassicControls ? SwingAge < style.Length : Drawn && gesture > 0 && drawAge >= DrawTime);
+        public bool Attacking => Alive && (ClassicControls ? SwingAge < CutLength : Drawn && gesture > 0 && drawAge >= DrawTime);
         public bool WeaponVisible => sword != null && sword.gameObject.activeInHierarchy && blade.enabled;
         public Rigidbody SwordBody { get; private set; }
         /// <summary>10-25 (승규 님, the bishop's F: "그떄 비숍의 칼은 가지고 있지 않아"): the sword is out of the hand (thrown,
@@ -146,7 +146,9 @@ namespace ChessFight.RagdollLab
             if (!Alive) return;
             if (!raw.shoveHeld && !raw.shove) waitForRelease = false;
             held = raw.shoveHeld && !waitForRelease;
-            if (ClassicControls && raw.shove && !waitForRelease) { inputBuffer = .13f; bufferedAim = raw.aim; }
+            if (ClassicControls && raw.shove && !waitForRelease) { inputBuffer = ClickBuffer; bufferedAim = raw.aim; }
+            // A click waiting for the cut before it to end takes the aim it has when it starts.
+            else if (inputBuffer > 0 && Finite(raw.aim) && raw.aim.sqrMagnitude > .01f) bufferedAim = raw.aim;
             if (Finite(raw.aim) && raw.aim.sqrMagnitude > .01f) requestedAim = raw.aim.normalized;
             Pawn.SetInput(new PawnInput { move = raw.move, jump = raw.jump, sprint = raw.sprint, aim = raw.aim });
         }
@@ -378,8 +380,10 @@ namespace ChessFight.RagdollLab
                 visualSync.Posed -= PoseOffHand; visualSync.Posed += PoseOffHand;
             }
             Pawn.RightArmFree = ClassicControls || Drawn || (Skills != null && Skills.Blade != null);
-            // 10-26: a skill that poses the free arm has it drawn where it goes (every machine, from the skill's state).
-            Pawn.LeftArmShare = Mathf.MoveTowards(Pawn.LeftArmShare, Skills != null && Skills.LeftArmPosed ? 1f : 0f, Time.deltaTime / 0.12f);
+            // 10-26: a skill that poses the free arm has it drawn where it goes (every machine, from the skill's state);
+            // 10-28: and so do the click cuts as it swings with them (StepOffArmShare).
+            float offShare = StepOffArmShare();
+            Pawn.LeftArmShare = Mathf.MoveTowards(Pawn.LeftArmShare, Skills != null && Skills.LeftArmPosed ? 1f : offShare, Time.deltaTime / 0.12f);
             if (!Authority)
                 sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
             else if (Skills != null && Skills.Blade is Vector3 skillBlade)

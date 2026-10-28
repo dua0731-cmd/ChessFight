@@ -1161,7 +1161,8 @@ namespace ChessFight.RagdollLab
                 case SfFxKind.KingStab when RealEdge(PieceKind.King): RealKingStab(e); return true;
                 case SfFxKind.KingVault when RealEdge(PieceKind.King): RealKingVault(e); return true;
                 case SfFxKind.KingLand when RealEdge(PieceKind.King): RealKingLand(e); return true;
-                case SfFxKind.KingLandHit when RealEdge(PieceKind.King): RealKnightHit(e); return true;
+                // R202 (E5): and the king's gold on whoever it throws.
+                case SfFxKind.KingLandHit when RealEdge(PieceKind.King): RealKnightHit(e); KingLandHitVfx(e); return true;
                 case SfFxKind.KingDrop when RealEdge(PieceKind.King): RealKingDrop(e); return true;
                 // 10-25: the queen's checkmate cut for real (SwordFightSkillFx.RealEdge.cs).
                 case SfFxKind.QueenMark when RealEdge(PieceKind.Queen): Punch(e.by.Pawn, e.target, 3f, 10); return true;

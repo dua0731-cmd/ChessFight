@@ -92,6 +92,8 @@ namespace ChessFight.RagdollLab
                 KingBreach(s);
                 // R196 (E1): after the breach, which its star and its cracks' glow go to.
                 KingStabVfx(s, at, dir);
+                // R199 (E2): the crown foretold on his landing spot while he hangs.
+                KingMarkVfx(s);
                 HitStop(5, s.Pawn);
                 Shake(s.Pawn, null, 0.2f, 12);
                 Beat(s.Pawn, null, 9f);
@@ -116,10 +118,9 @@ namespace ChessFight.RagdollLab
             if (pawn == null) return;
             ReleaseBreach(s, true);
             Air.Kick(pawn.Hips.position + Vector3.down * 0.3f, Vector3.down + s.EdgeOut * 0.3f, 1.1f);
-            KingVfx("E_Vault", pawn.Hips.position + Vector3.down * 0.45f, Kit.FlatDir(pawn.Facing, Vector3.forward));
-            // R163: on the spot he will land on (every screen has it), the swirl drawn in while he is up; it bursts as he lands
-            // (E_Land in RealKingLand).
-            KingVfx("E_Gather", Kit.FloorUnder(s.EdgeLand + Vector3.up * 0.5f, 1f), -s.EdgeOut);
+            // R200 (E3): the burst and spit at the crater, the trail along his spring. (E_Gather, the crown on his landing
+            // spot, is drawn from the stab now: R199.)
+            KingVaultVfx(s);
             BladeBlur(s.Fighter, 0.2f, 0.9f);
             HitStop(3);
             Punch(pawn, null, 7f, 16);
@@ -149,6 +150,8 @@ namespace ChessFight.RagdollLab
             WallChips(c + Vector3.up * 0.05f, Vector3.up, 14, 3.6f, 0.85f, 0.012f, 0.045f);
             chipA = keepA; chipB = keepB; chipShare = keepShare;
             KingVfx("E_Land", c, s.Pawn != null ? Kit.FlatDir(s.Pawn.Facing, Vector3.forward) : Vector3.forward);
+            // R199: the crown foretold there flares and is gone as the seal (E4, R201) bursts.
+            KingMarkEnd(s, true);
             BladeBlur(s.Fighter, 0.3f, 1.2f);
             BladeGlint(s.Fighter, 0.24f, 0.9f);
             HitStop(7);
@@ -256,6 +259,8 @@ namespace ChessFight.RagdollLab
         void RealKingDrop(SfFxEvent e)
         {
             var s = e.by;
+            // R203 (E6): the gold goes out and a few motes fall with him (before the breach lets go of the sword).
+            KingDropVfx(s, e);
             ReleaseBreach(s, false);
             WallChips(e.at + e.dir * 0.05f, e.dir + Vector3.up * 0.4f, 8, 2.2f, 0.6f, 0.01f, 0.03f);
             HitStop(3);

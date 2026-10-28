@@ -40,6 +40,8 @@ namespace ChessFight.VFX
         public float reach = .55f;
         [Range(0f, 1f), Tooltip("Share of the glow the crater's broken stone takes (all of it glowed white-hot, R196).")]
         public float inside = .2f;
+        [Min(.01f), Tooltip("R203 (E6): seconds it goes out in when he falls (Quench).")]
+        public float quench = .12f;
 
         [Header("Preview (the workbench and the captures; the game glows its own wall)")]
         [Min(.05f), Tooltip("The crater's radius and depth (m; SwordFightSkillFx.BreachRadius, BreachDepth).")]
@@ -56,6 +58,7 @@ namespace ChessFight.VFX
 
         Transform preview;
         MeshRenderer face, top;
+        float quenchedAt = -1f;
         MaterialPropertyBlock block;
         float age;
         bool live;
@@ -63,6 +66,7 @@ namespace ChessFight.VFX
         void OnEnable()
         {
             age = 0f;
+            quenchedAt = -1f;
             Draw();
         }
 
@@ -86,12 +90,19 @@ namespace ChessFight.VFX
             Draw();
         }
 
+        /// <summary>R203 (E6): he fell, his sword knocked loose - the glow goes out over <see cref="quench"/> from now.</summary>
+        public void Quench()
+        {
+            if (quenchedAt < 0f) quenchedAt = age;
+        }
+
         /// <summary>How hot the cracks are (0..1) and how far out past the rim the glow has run (m),
         /// <paramref name="at"/> seconds after the blade went in.</summary>
         public void Glow(float at, out float strength, out float front)
         {
             float up = Mathf.Clamp01(at / rise), down = 1f - Mathf.Clamp01((at - seep - hold) / cool);
             strength = at < 0f ? 0f : up * down * down;
+            if (quenchedAt >= 0f) strength *= 1f - Mathf.Clamp01((age - quenchedAt) / quench);
             float s = Mathf.Clamp01(at / seep);
             front = reach * (1f - (1f - s) * (1f - s));
         }
