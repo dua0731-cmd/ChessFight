@@ -153,6 +153,7 @@ namespace ChessFight.RagdollLab
             HitStop(7);
             Shake(s.Pawn, null, 0.26f, 12);
             Punch(s.Pawn, null, 10f, 22);
+            FindFirstObjectByType<SwordFightArena>()?.Jolt(0.8f);   // R191: the study's lamp sways with the landing
         }
 
         // ---------------------------------------------------------------- the queen's checkmate cut, for real
