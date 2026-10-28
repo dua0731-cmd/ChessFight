@@ -12,7 +12,7 @@ namespace ChessFight.RagdollLab
     /// the stone, the air and the shake stay the main thing. Every screen draws them (they hang off the same events).
     /// <list type="bullet">
     /// <item>King, in his gold: the stance (F_Guard), the block (F_Block), the counter (F_Counter), whoever it strikes
-    /// (F_Hit, R187), the guard that came to nothing (F_Whiff, R193), the sword into the wall (E_Stab), the spring off it (E_Vault), the landing (E_Land).</item>
+    /// (F_Hit, R187), the guard that came to nothing (F_Whiff, R193), the sword into the wall (E_Stab, R196), the spring off it (E_Vault), the landing (E_Land).</item>
     /// <item>Rook, in warm stone: the slam (F_Slam), each square the wave raises a tower on (F_Stamp), whoever it throws
     /// (F_Hit), the blow on the lip with the crack and the fall of the chunk (E_Break).</item>
     /// </list>
@@ -94,6 +94,26 @@ namespace ChessFight.RagdollLab
             // Before its first frame too, so the first motes leave the blade and not where the workbench has it.
             OnBlade();
             kit.Run(0.5f, (fx, d) => OnBlade() && fx.age < 0.45f);
+        }
+
+        /// <summary>R196 (E1): the sword goes into the stone. A star where the blade meets it, and the cracks of the breach
+        /// KingBreach has just broken glowing gold out from the rim, then cooling (the prefab's VfxCrackGlow, which the
+        /// breach reads each frame). Both parts (named as KingVfxBuilder names them) go to that breach; with none (no
+        /// floor found) the star stays by the hilt and nothing glows.</summary>
+        void KingStabVfx(SwordFightSkills s, Vector3 at, Vector3 dir)
+        {
+            var go = KingVfx("E_Stab", at, dir);
+            if (go == null) return;
+            Transform star = go.transform.Find("E1 Star"), cracks = go.transform.Find("E1 Cracks");
+            var glow = cracks != null ? cracks.GetComponent<VfxCrackGlow>() : null;
+            if (glow != null) glow.Live();
+            Breach g = null;
+            for (int i = breaches.Count - 1; i >= 0 && g == null; i--)
+                if (breaches[i].king == s && breaches[i].released < 0f) g = breaches[i];
+            if (g == null) return;
+            if (star != null) star.position = g.at + g.outward * 0.06f;
+            if (cracks != null) cracks.SetPositionAndRotation(g.at, Quaternion.LookRotation(g.outward, Vector3.up));
+            g.gild = glow;
         }
 
         /// <summary>R187 (F4): the gold cut across the front of whoever the counter struck, with slivers and air the way he

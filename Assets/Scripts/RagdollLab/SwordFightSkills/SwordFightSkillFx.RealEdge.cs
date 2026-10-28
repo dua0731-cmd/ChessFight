@@ -89,8 +89,9 @@ namespace ChessFight.RagdollLab
             {
                 ClashFlash(at + dir * 0.05f, 0.8f);
                 SparkLight(at + dir * 0.2f, 1.2f, 0.08f, 1.8f, new Color(0.95f, 0.95f, 1f));
-                KingVfx("E_Stab", at, dir);
                 KingBreach(s);
+                // R196 (E1): after the breach, which its star and its cracks' glow go to.
+                KingStabVfx(s, at, dir);
                 HitStop(5, s.Pawn);
                 Shake(s.Pawn, null, 0.2f, 12);
                 Beat(s.Pawn, null, 9f);

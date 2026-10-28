@@ -26,6 +26,8 @@ Shader "ChessFight/Skill Breach"
         _Inside ("Under the face's skin (alpha: how much; 0 = the grabbed wall all the way in)", Color) = (1, 1, 1, 0)
         _Skin ("How deep the face's own skin goes before _Inside (m)", Float) = 0
         [HDR] _Glow ("A fresh break's glow (alpha: how much)", Color) = (2.2, 1.5, 0.45, 0)
+        _GlowFront ("How far out past the crater's rim the cracks' glow has run (m)", Float) = 100
+        _GlowInside ("Share of the glow the crater's broken stone takes", Float) = 1
         _BladeOn ("The sword is in it (1) or out (0)", Float) = 0
         _BladePos ("The sword's grip (world)", Vector) = (0, 0, 0, 0)
         _BladeX ("The sword's x (world)", Vector) = (1, 0, 0, 0)
@@ -54,7 +56,7 @@ Shader "ChessFight/Skill Breach"
 
             float _Surface, _Heal, _Debug, _BladeOn;
             float4 _Origin, _Normal, _Box, _Crater, _Cracks, _Tint, _Glow, _Inside;
-            float _Skin;
+            float _Skin, _GlowFront, _GlowInside;
             float4 _BladePos, _BladeX, _BladeY, _BladeZ, _BladeColor, _GuardColor;
             sampler2D _CameraOpaqueTexture;
             float4 _MainLightPosition;
@@ -296,8 +298,9 @@ Shader "ChessFight/Skill Breach"
                     float3 col = under * (1.0 - 0.18 * grit);
                     col = lerp(col, under * 0.28, crack * _Cracks.w);
                     col = lerp(col, under * 0.3, edge * 0.8);
-                    // A fresh crack glows a moment.
-                    col += _Glow.rgb * _Glow.a * crack * 0.6;
+                    // A fresh crack glows a moment, as far out along it as the glow has run (R196, the king's E1: it seeps
+                    // out from the rim; the default runs all the way).
+                    col += _Glow.rgb * _Glow.a * crack * 0.6 * saturate((_GlowFront - (r - R0 * 0.9)) / 0.06);
                     return float4(col, 1);
                 }
 
@@ -390,7 +393,7 @@ Shader "ChessFight/Skill Breach"
                 float lip = 1.0 - smoothstep(0.003, 0.018, top ? (_Box.x - Ph.y) : depth);
                 col = lerp(col, under * 0.95, lip * 0.7);
                 // A fresh break glows a moment, deep in round the blade.
-                col += _Glow.rgb * _Glow.a * deep * deep;
+                col += _Glow.rgb * _Glow.a * deep * deep * _GlowInside;
                 return float4(col, 1);
             }
             ENDCG

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using ChessFight.VFX;
 using Kit = ChessFight.RagdollLab.SkillInkKit;
 using Random = UnityEngine.Random;
 
@@ -74,6 +75,8 @@ namespace ChessFight.RagdollLab
             public bool gone;
             public Renderer blade, guard;
             public float trickle;
+            /// <summary>R196 (E1): the stab's effect, whose glow its cracks take (<see cref="KingStabVfx"/>); null: none.</summary>
+            public VfxCrackGlow gild;
         }
 
         readonly List<Breach> breaches = new List<Breach>();
@@ -234,10 +237,18 @@ namespace ChessFight.RagdollLab
                 float grown = Kit.EaseOut(age / (3f * F));
                 float cracks = BreachCracks * Kit.EaseOut(age / (5f * F));
                 // A fresh break glows gold a moment (the stab's heat), then it is stone.
-                float glow = 1f - age / 0.22f;
+                float glow = 1f - age / 0.22f, front = 100f, inside = 1f;
                 // 10-25, for real: no glow - the break is stone and wood from the first frame, its cracks dark.
                 if (RealEdge(ChessFight.Network.PieceKind.King)) glow = 0f;
                 var gold = kit.king;
+                var heat = new Color(gold.main.r * 1.6f, gold.main.g * 1.3f, gold.main.b * 0.7f);
+                // R196 (E1): with the stab's effect playing, its cracks glow gold, the glow seeping out from the rim.
+                if (g.gild != null)
+                {
+                    g.gild.Glow(age, out glow, out front);
+                    heat = g.gild.colour;
+                    inside = g.gild.inside;
+                }
                 var b = g.b;
                 b.SetVector("_Origin", g.at);
                 b.SetVector("_Normal", g.outward);
@@ -245,7 +256,9 @@ namespace ChessFight.RagdollLab
                 b.SetVector("_Crater", new Vector4(BreachRadius, BreachDepth, grown, g.seed));
                 b.SetVector("_Cracks", new Vector4(11f, cracks, 0.008f, 0.8f));
                 b.SetFloat("_Heal", heal);
-                b.SetColor("_Glow", new Color(gold.main.r * 1.6f, gold.main.g * 1.3f, gold.main.b * 0.7f, Mathf.Clamp01(glow) * (1f - heal)));
+                b.SetColor("_Glow", new Color(heat.r, heat.g, heat.b, Mathf.Clamp01(glow) * (1f - heal)));
+                b.SetFloat("_GlowFront", front);
+                b.SetFloat("_GlowInside", inside);
                 b.SetFloat("_Debug", BreachDebug ? 1f : 0f);
                 bool blade = inStone && alive && s.Fighter != null && s.Fighter.SwordBody != null && s.SwordAt != null;
                 b.SetFloat("_BladeOn", blade ? 1f : 0f);

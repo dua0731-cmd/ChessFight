@@ -20,7 +20,7 @@ MonoBehaviour:
   - key: F_Counter
     prefab: {fileID: 1690309238414435383, guid: 0eab3e790cc3b97489cf53cb73cf1b05, type: 3}
   - key: E_Stab
-    prefab: {fileID: 100, guid: bdbf4b1df4adfd468fb41f2c75f8e75c, type: 3}
+    prefab: {fileID: 2420582488781491399, guid: 5b9b44493e1341b4c94b0f5c07b1ea46, type: 3}
   - key: E_Vault
     prefab: {fileID: 100, guid: b3173d051861ffd11e2155a4ea81a595, type: 3}
   - key: E_Land

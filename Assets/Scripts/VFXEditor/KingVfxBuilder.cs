@@ -14,8 +14,8 @@ namespace ChessFight.VFX.Editor
     /// VFX workbench (piece 1) or take frames of them with VfxCapture. Values tuned in a prefab's parts (and where a part
     /// sits) are kept when it is built again; a material is only made when missing, so its tuned colours stay too. The
     /// landing builders (KingLandBuilder) are separate. Built so far: F3, the counter cut (F_Counter), F2, the block
-    /// (F_Block, R185), F4, whoever the counter strikes (F_Hit, R187), F1, the guard (F_Guard, R190), and F5, the guard
-    /// that came to nothing (F_Whiff, R193).
+    /// (F_Block, R185), F4, whoever the counter strikes (F_Hit, R187), F1, the guard (F_Guard, R190), F5, the guard
+    /// that came to nothing (F_Whiff, R193), and E1, the sword into the wall (E_Stab, R196).
     /// </summary>
     public static class KingVfxBuilder
     {
@@ -52,6 +52,15 @@ namespace ChessFight.VFX.Editor
         static readonly Vector3 DroppedTip = DroppedHilt + new Vector3(.2f, -.75f, .6f).normalized * BladeLength;
         // F4's cut stands this far out from his chest toward the king, so it lies on his front (the bishop's F7 does the same).
         const float CutOut = .3f;
+        const string StabPrefab = VfxAssets.Root + "/Prefabs/King/31_King_E_Stab.prefab";
+        const string StabWallMaterial = VfxAssets.Root + "/Materials/M_King_StabWall.mat";
+        const string StabStoneMaterial = VfxAssets.Root + "/Materials/M_King_StabStone.mat";
+        // The game finds these two by name (SwordFightSkillFx.KingStabVfx) and moves them to the breach it has broken.
+        const string StabStarPart = "E1 Star", CracksPart = "E1 Cracks";
+        // Where the blade crosses the wall's face, from his hilt (where the game plays it, +Z out of the wall): the
+        // platform's face is 0.18 m in from it (SwordFightSkills.Hilt), the board's brass trim stands 3 cm out of that, and
+        // the blade slants down into it.
+        static readonly Vector3 StabCrater = new Vector3(0f, -.04f, -.15f);
         // The glow is given a deeper, more orange gold (#CC851F) than the one it should show as: ACES lifts the green of a
         // bright gold toward yellow and white (R179, the knight), and under it this one shows as the king's #C9952F.
         static readonly Color Gold = new Color(.8f, .52f, .12f), WarmWhite = new Color(1f, .957f, .839f);
@@ -71,11 +80,12 @@ namespace ChessFight.VFX.Editor
             var parry = BuildParry();
             var hit = BuildHit();
             var whiff = BuildWhiff();
+            var stab = BuildStab();
             AssetDatabase.SaveAssets();
             Selection.activeObject = counter;
             Debug.Log("[VFX] King built: F1 the guard (F_Guard), F3 the counter cut (F_Counter), F2 the block (F_Block), "
-                + "F4 whoever the counter strikes (F_Hit), F5 the whiff (F_Whiff). Workbench: piece 1, " + guard.name + ", "
-                + counter.name + ", " + parry.name + ", " + hit.name + ", " + whiff.name);
+                + "F4 whoever the counter strikes (F_Hit), F5 the whiff (F_Whiff), E1 the stab (E_Stab). Workbench: piece 1, "
+                + guard.name + ", " + counter.name + ", " + parry.name + ", " + hit.name + ", " + whiff.name + ", " + stab.name);
         }
 
         /// <summary>The menu is greyed out in Play mode.</summary>
@@ -105,6 +115,12 @@ namespace ChessFight.VFX.Editor
 
         [MenuItem("ChessFight/VFX/King/Build F5 (whiff only)", true)]
         static bool CanBuildF5() => !EditorApplication.isPlaying;
+
+        [MenuItem("ChessFight/VFX/King/Build E1 (stab only)")]
+        public static void BuildE1() => BuildOne(BuildStab, "E1 the stab (E_Stab)");
+
+        [MenuItem("ChessFight/VFX/King/Build E1 (stab only)", true)]
+        static bool CanBuildE1() => !EditorApplication.isPlaying;
 
         /// <summary>Only one layer, the other layers' prefabs left as they are.</summary>
         static void BuildOne(System.Func<GameObject> build, string what)
@@ -615,6 +631,84 @@ namespace ChessFight.VFX.Editor
             view.sharedMaterial = mat;
             Quiet(view);
             view.renderMode = ParticleSystemRenderMode.Billboard;
+        }
+
+        // ---------------------------------------------------------------- E1: the stab
+
+        /// <summary>
+        /// E1, the sword into the wall (SfFxKind.KingStab as the blade goes home in the stone; the game plays it at his hilt,
+        /// +Z out of the wall, and moves both parts to the breach it has broken): a small gold star where the blade meets the
+        /// stone, blazing a tenth of a second (<see cref="VfxStarFlash"/>, F2's star smaller and quicker), and the cracks the
+        /// stab breaks into the wall glowing gold, the glow seeping out along them from the crater's rim and cooling to dark
+        /// stone within a second (<see cref="VfxCrackGlow"/>, which the game's breach reads; for the workbench and the
+        /// captures it draws a breach of its own in a plain brass wall). No dust, no ring.
+        /// </summary>
+        static GameObject BuildStab()
+        {
+            var old = AssetDatabase.LoadAssetAtPath<GameObject>(StabPrefab);
+            var root = new GameObject("31_King_E_Stab");
+            var cue = root.AddComponent<VfxCue>();
+            cue.anchor = VfxCue.Anchor.Chest;
+            cue.length = 1.2f;
+            // The blade going in, the star, the glow running out, held, cooling, gone.
+            cue.captureTimes = new[] { 0f, .02f, .05f, .1f, .2f, .3f, .45f, .65f, .9f };
+            // Its preview wall reaches 0.64 m below the hilt: this keeps it over the capture floor.
+            cue.captureHeight = .7f;
+
+            var star = new GameObject(StabStarPart);
+            star.transform.SetParent(root.transform, false);
+            star.transform.localPosition = StabCrater + Vector3.forward * .06f;
+            star.AddComponent<MeshFilter>().sharedMesh = VfxAssets.SaveMesh(StarMesh, StarQuad());
+            var view = star.AddComponent<MeshRenderer>();
+            view.sharedMaterial = Material(StarMaterial, "ChessFight/VFX/Star Flash Additive", new[] { ("_Color", Gold), ("_CoreColor", WarmWhite) });
+            Quiet(view);
+            var burst = star.AddComponent<VfxStarFlash>();
+            // Steel into stone: smaller and quicker than F2's blade on blade.
+            burst.duration = .1f;
+            burst.streakTime = .14f;
+            burst.intensity = 3f;
+            burst.startSize = .8f;
+            burst.endSize = .35f;
+            burst.turnRange = 20f;
+            Keep(old, StabStarPart, burst);
+            star.transform.localScale = Vector3.one * burst.startSize;
+
+            var cracks = new GameObject(CracksPart);
+            cracks.transform.SetParent(root.transform, false);
+            cracks.transform.localPosition = StabCrater;
+            var glow = cracks.AddComponent<VfxCrackGlow>();
+            Keep(old, CracksPart, glow);
+            // The preview: a plain brass wall face and top with the breach's two quads over them, as the game lays its own.
+            var wall = new GameObject(VfxCrackGlow.PreviewName);
+            wall.transform.SetParent(cracks.transform, false);
+            var quad = AssetDatabase.LoadAssetAtPath<Mesh>(BillboardMesh);
+            var stone = Material(StabStoneMaterial, "Universal Render Pipeline/Unlit", new[] { ("_BaseColor", new Color(.55f, .42f, .24f)) },
+                ("_Cull", 0f));
+            var breach = Material(StabWallMaterial, "ChessFight/Skill Breach", new (string, Color)[0]);
+            float half = glow.previewRadius * 1.2f + glow.previewCracks + .08f, up = glow.previewTop;
+            var flat = Quaternion.LookRotation(Vector3.up, Vector3.back);
+            Quad(wall, VfxCrackGlow.StoneName, quad, stone, new Vector3(0f, (up - glow.previewBottom) * .5f, 0f), Quaternion.identity,
+                new Vector3(2f * half, up + glow.previewBottom, 1f));
+            Quad(wall, VfxCrackGlow.StoneTopName, quad, stone, new Vector3(0f, up, -half * .5f), flat, new Vector3(2f * half, half, 1f));
+            Quad(wall, VfxCrackGlow.FaceName, quad, breach, new Vector3(0f, 0f, .002f), Quaternion.identity, new Vector3(2f * half, 2f * half, 1f));
+            Quad(wall, VfxCrackGlow.TopName, quad, breach, new Vector3(0f, up + .002f, -half * .5f), flat, new Vector3(2f * half, half, 1f));
+
+            var prefab = VfxAssets.Prefab(StabPrefab, root);
+            // Takes over the old way's 04_King_E_Stab, which stays until the user says to remove it.
+            Register("E_Stab", prefab);
+            return prefab;
+        }
+
+        static void Quad(GameObject parent, string name, Mesh mesh, Material mat, Vector3 at, Quaternion turn, Vector3 size)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            go.transform.SetLocalPositionAndRotation(at, turn);
+            go.transform.localScale = size;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var view = go.AddComponent<MeshRenderer>();
+            view.sharedMaterial = mat;
+            Quiet(view);
         }
 
         // ---------------------------------------------------------------- shared
