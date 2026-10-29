@@ -41,6 +41,26 @@ namespace ChessFight.Game
 
         public bool FreeFly { get; private set; }
         public float Yaw => yaw;
+        // The key that toggles the free camera (승규 님's test scene takes F1 and flies with F2 itself: None).
+        public static KeyCode FlyKey = KeyCode.F1;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => FlyKey = KeyCode.F1;
+
+        // Fly from a given place and view (the test scene's look over the whole map).
+        public void FlyAt(Vector3 position, float yawDegrees, float pitchDegrees)
+        {
+            FreeFly = true;
+            yaw = yawDegrees;
+            pitch = Mathf.Clamp(pitchDegrees, -85f, 85f);
+            transform.SetPositionAndRotation(position, Quaternion.Euler(pitch, yaw, 0f));
+        }
+
+        public void StopFly()
+        {
+            FreeFly = false;
+            initialized = false;
+        }
 
         // Where the player aims: along the view, pitch included.
         public Vector3 AimForward => FreeFly ? transform.forward : Quaternion.Euler(pitch, yaw, 0f) * Vector3.forward;
@@ -73,7 +93,7 @@ namespace ChessFight.Game
                     Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = Cursor.lockState != CursorLockMode.Locked;
                 // F1 flies the free camera (승규 10-22; was V, which push-to-talk took over in R131).
-                if (Input.GetKeyDown(KeyCode.F1))
+                if (FlyKey != KeyCode.None && Input.GetKeyDown(FlyKey))
                 {
                     FreeFly = !FreeFly;
                     if (!FreeFly) initialized = false;
