@@ -148,7 +148,9 @@ namespace ChessFight.RagdollLab
                     }
                     break;
                 case PieceKind.Bishop:
-                    if (s.EdgeStage == SfEdge.Active) { if (RealEdge(PieceKind.Bishop)) RealRescue(s); else RescueHands(s, X); }
+                    // R236: the diagonal slide (대각선 미끄럼) in place of the rescue. RealRescue and RescueHands stay (the Pawn
+                    // Rush lasso draws its rope the same way) but nothing calls them here any more.
+                    BishopSlideMarks(s, mine);
                     break;
             }
         }

@@ -295,9 +295,9 @@ namespace ChessFight.RagdollLab
                         return EdgeStage == SfEdge.Windup
                             || (EdgeStage == SfEdge.None && (Stage == SfStage.Windup || Stage == SfStage.Active || Stage == SfStage.Recovery));
                     case PieceKind.Bishop:
-                        // 10-27: and while he aims (the second sword is in that hand from F).
-                        return EdgeStage == SfEdge.Active || EdgeStage == SfEdge.Recovery
-                            || (EdgeStage == SfEdge.None && (Stage == SfStage.Aim || Stage == SfStage.Windup || Stage == SfStage.Active || Stage == SfStage.Recovery));
+                        // 10-27: and while he aims (the second sword is in that hand from F). R236: all through his slide.
+                        return EdgeStage != SfEdge.None
+                            || Stage == SfStage.Aim || Stage == SfStage.Windup || Stage == SfStage.Active || Stage == SfStage.Recovery;
                     case PieceKind.Knight:
                         return EdgeStage != SfEdge.None || Stage == SfStage.Active || Stage == SfStage.Recovery;
                 }
@@ -964,44 +964,65 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>
+        /// R236, the bishop's diagonal slide (대각선 미끄럼):
+        /// - Picking (E held): a low ready crouch toward the way he would go, his sword low ahead of him.
+        /// - The push off: sunk lower, tipped into it, the sword swinging back.
+        /// - The glide: his arms out to the sides for balance (the sword trailing behind on its side), the legs apart and
+        ///   still, his chest up; as he stops he sits back on his heels.
+        /// - Then he lets the pose go.
+        /// </summary>
         bool BishopEdgeKey(ref BodyKey k)
         {
             var X = EdgeParams;
-            if (X == null || (EdgeStage != SfEdge.Active && EdgeStage != SfEdge.Recovery)) return false;
+            if (X == null || EdgeStage == SfEdge.None) return false;
             float t = EdgeTime;
-            Transform chest = Pawn.bodies[(int)BodyId.Chest].transform;
-            var ally = Carried;
-            Vector3 allyAt = ally != null ? ally.bodies[(int)BodyId.Chest].position : EdgeAt + EdgeOut * 0.5f;
-            Vector3 toAlly = chest.InverseTransformDirection(allyAt - Pivot(BodyId.ArmL));
-            // The throw: the free arm whips the rope out at the ally, his free shoulder leading. The haul: he leans back and
-            // turns away from it, drawing the rope arm back past his hip, the legs braced; then he lets it go.
-            var thrown = new BodyKey
+            Vector3 look = EdgeLand + Vector3.up * 0.4f;
+            var ready = new BodyKey
             {
-                w = 1f, chest = new Vector3(8f, -18f, 0f), look = allyAt, nod = 4f, armL = toAlly, armW = 1f,
-                legs = true, thighL = -14f, thighR = 14f, lean = 6f,
+                w = 1f, chest = new Vector3(8f, 0f, 0f), look = look, nod = 6f, armR = new Vector3(0.3f, -0.45f, 0.84f), swordW = 1f,
+                armL = new Vector3(-0.55f, -0.35f, 0.4f), armW = 1f, legs = true, thighL = -10f, thighR = 6f, lean = 2f,
             };
-            var hauled = new BodyKey
+            var push = new BodyKey
             {
-                w = 1f, chest = new Vector3(-12f, 12f, 0f), look = allyAt, nod = 2f, armL = new Vector3(-0.45f, -0.35f, -0.8f), armW = 1f,
-                legs = true, thighL = -22f, thighR = 22f, lean = -8f,
+                w = 1f, chest = new Vector3(16f, 0f, 0f), look = look, nod = 6f, armR = new Vector3(0.75f, -0.25f, -0.45f), swordW = 1f,
+                armL = new Vector3(-0.5f, 0.0f, 0.75f), armW = 1f, legs = true, thighL = -20f, thighR = 18f, lean = 6f,
             };
-            if (EdgeStage == SfEdge.Active)
+            var glide = new BodyKey
             {
-                if (t < X.bishopReach)
+                w = 1f, chest = new Vector3(4f, 0f, 0f), look = look, nod = 2f, armR = new Vector3(0.88f, -0.15f, -0.3f), swordW = 1f,
+                armL = new Vector3(-0.9f, 0.05f, 0.25f), armW = 1f, legs = true, thighL = -12f, thighR = 12f, lean = 2f,
+            };
+            var stop = glide;
+            stop.chest = new Vector3(-6f, 0f, 0f);
+            stop.lean = -4f;
+            stop.thighL = -16f;
+            stop.thighR = 16f;
+            switch (EdgeStage)
+            {
+                case SfEdge.Aim:
+                    k = ready;
+                    k.w = k.armW = k.swordW = Out2(t / 0.12f);
+                    return true;
+                case SfEdge.Windup:
+                    k = Mix(ready, push, Out2(t / Mathf.Max(0.05f, X.bishopPushOff)));
+                    return true;
+                case SfEdge.Active:
                 {
-                    float e = Smooth(t / Mathf.Max(0.05f, X.bishopReach));
-                    k = thrown;
-                    k.w = k.armW = e;
-                    k.armL = SlerpDir(new Vector3(-0.6f, 0.3f, -0.6f), toAlly, e);
+                    float u = Mathf.Clamp01(t / Mathf.Max(0.1f, BishopSlideTime));
+                    k = Mix(push, glide, Smooth(u / 0.3f));
+                    if (u > 0.6f) k = Mix(k, stop, Smooth((u - 0.6f) / 0.4f));
                     return true;
                 }
-                k = Mix(thrown, hauled, Smooth((t - X.bishopReach) / Mathf.Max(0.1f, X.bishopPull)));
-                return true;
+                case SfEdge.Recovery:
+                {
+                    k = stop;
+                    float r = Smooth(t / Mathf.Max(0.1f, X.bishopRecovery));
+                    k.w = k.armW = k.swordW = 1f - r;
+                    return true;
+                }
             }
-            k = hauled;
-            float r = Smooth(t / Mathf.Max(0.1f, X.bishopRecovery));
-            k.w = k.armW = 1f - r;
-            return true;
+            return false;
         }
 
         // ---------------------------------------------------------------- knight · 포크 강하

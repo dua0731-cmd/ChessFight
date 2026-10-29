@@ -135,6 +135,9 @@ namespace ChessFight.RagdollLab
         public static event System.Action<SwordFightPawn, SwordFightPawn> Struck;
         internal static void RaiseStruck(SwordFightPawn by, SwordFightPawn victim) => Struck?.Invoke(by, victim);
 
+        /// <summary>10-29: a sword cut landed on this piece (every machine, with the hit sound): the hit effect.</summary>
+        public static event System.Action<SwordFightPawn> Cut;
+
         /// <summary>R149: the respawn protection ends at once (the piece attacked: a skill, spec §8.4).</summary>
         public void EndProtection() => Protection = 0f;
 
@@ -330,7 +333,7 @@ namespace ChessFight.RagdollLab
             float strength = Mathf.Lerp(2.8f, 4.5f, Mathf.InverseLerp(StrongCutEnergy, 2.5f, energy));
             // FixedUpdate, not a physics callback. Downed follow-ups remain legal.
             target.TakeHit(direction.normalized * strength + Vector3.up * .7f, .65f, 0, true);
-            victim.StopCombat(); victim.HitFlash = .16f; HitFlash = .1f; HitsLanded++;
+            victim.StopCombat(); victim.FlashHit(.16f); HitFlash = .1f; HitsLanded++;
             RaiseStruck(this, victim);
         }
 
@@ -492,12 +495,25 @@ namespace ChessFight.RagdollLab
             if (ClassicControls) PoseClickSword(); else PoseHolstered();
             foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
         }
+        /// <summary>10-29 (승규 님: "상대맞출 때 sfx … 모든 기물 동일하게"): this piece's hit flash set, by the sword that cut it
+        /// here or by the wire. A jump up to a hit's flash (a click cut's .14, a drag cut's .16; the board's ring reads it
+        /// the same way) is a new hit, so every machine plays the one sword-hit sound for every piece at its chest.</summary>
+        void FlashHit(float flash)
+        {
+            if (Alive && flash >= .13f && flash > HitFlash + .02f)
+            {
+                SwordFightSkillSfx.Moment("SwordHit", Pawn.bodies[(int)BodyId.Chest].position, Skills, Random.Range(.94f, 1.06f));
+                Cut?.Invoke(this);
+            }
+            HitFlash = flash;
+        }
+
         public void ApplyRemote(bool alive, bool drawn, float protection, Vector3 offset, Quaternion rotation, float respawn, float flash, bool classic = false)
         {
             Authority = false; bladeCollider.enabled = false; SwordBody.isKinematic = true;
             gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Free;
             bool changed = Alive != alive;
-            Alive = alive; Drawn = drawn && alive; ClassicControls = classic; Protection = protection; RespawnSeconds = respawn; HitFlash = flash;
+            Alive = alive; Drawn = drawn && alive; ClassicControls = classic; Protection = protection; RespawnSeconds = respawn; FlashHit(flash);
             remoteOffset = offset; remoteRotation = rotation;
             if (changed) foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = alive;
         }

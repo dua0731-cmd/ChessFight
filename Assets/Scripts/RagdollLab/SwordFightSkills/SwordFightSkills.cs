@@ -29,6 +29,8 @@ namespace ChessFight.RagdollLab
         PawnStep, PawnHit, PawnBounce,
         // 10-27, the bishop's new F (X자 베기): the leap off, the two swords' cross landing, a piece it took.
         BishopLeap, BishopCross, BishopHit,
+        // R236, the bishop's new E (대각선 미끄럼): he pushes off, an enemy pushed aside on his way, he stops.
+        BishopSlide, BishopSlideHit, BishopSlideStop,
     }
 
     /// <summary>R130: what the king's guard took (the block's effects answer each one: a cut, the queen's thrust or her
@@ -157,6 +159,10 @@ namespace ChessFight.RagdollLab
         /// <summary>Call the aim off (the right click while aiming).</summary>
         public void CancelAim() => cancelEdge = true;
 
+        /// <summary>Scripted runs: a left click while the bishop picks his diagonal (R236; players' come in through
+        /// <see cref="Filter"/>).</summary>
+        public void ClickEdge() { if (EdgeStage == SfEdge.Aim) bishopClick = true; }
+
         /// <summary>The camera the point aims (the bishop's and the knight's) are taken from: its centre ray onto the floor.</summary>
         public void SetAimCamera(Camera cam) => aimCamera = cam;
 
@@ -178,6 +184,8 @@ namespace ChessFight.RagdollLab
                 confirmEdge = true;
                 raw.shove = raw.shoveHeld = false;
             }
+            // R236: a left click while the bishop picks his diagonal sends him along it.
+            if (EdgeStage == SfEdge.Aim && raw.shove) bishopClick = true;
             if (Stage != SfStage.None || EdgeStage != SfEdge.None)
             {
                 raw.shove = raw.shoveHeld = false;
@@ -344,7 +352,7 @@ namespace ChessFight.RagdollLab
             }
             // The edge skill (its own key and cooldown, R103) first: it is used falling, knocked down. While it runs the
             // F skill waits.
-            if (StepEdge(edge, dt)) return;
+            if (StepEdge(edge, cancel, dt)) return;
             // Knocked down mid-skill: it ends here (the knight's leap goes on: it is already thrown - once it has left the
             // board; knocked out of its gather it is a windup like any other).
             if (Stage != SfStage.None && Pawn.State != PawnState.Active && !(Piece == PieceKind.Knight && Stage == SfStage.Active && KnightClock >= 0f))

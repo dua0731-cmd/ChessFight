@@ -10,7 +10,7 @@ namespace ChessFight.RagdollLab
     /// cream panels with a brass line; at the top the score panel (each side's pieces as round pips, dim and dropped while
     /// out; "3 : 2" and the clock "1:23 / 4:00", red for the last 30 s, a tick each of the last 10); a pill name tag over
     /// every head (the piece, the name, a gold "E" when its edge skill is ready, enemies' too); the big tilted stamp
-    /// ("장외!" with who and how, "빼앗음!", "반격!", "귀환!", "역전!", "구원!", "성벽 붕괴!", the winner) that pops in and
+    /// ("장외!" with who and how, "빼앗음!", "반격!", "귀환!", "역전!", "탈출!", "성벽 붕괴!", the winner) that pops in and
     /// fades; the caption panel at the bottom (here: what this player can do now); the pick cards, the 3·2·1 and the end
     /// card.
     /// </summary>
@@ -95,7 +95,7 @@ namespace ChessFight.RagdollLab
                 case SfFxKind.KingParry: Stamp("반격!", "칼을 받아냄", 0.9f); break;
                 case SfFxKind.KingStab: Stamp("귀환!", "칼을 박고 매달림", 0.9f); break;
                 case SfFxKind.KnightFlip: Stamp("역전!", "나이트가 머리를 넘는다", 0.9f); break;
-                case SfFxKind.BishopCatch: Stamp("구원!", "금색 손이 붙잡음", 0.9f); break;
+                case SfFxKind.BishopSlide: Stamp("탈출!", "비숍이 대각선으로 빠져나간다", 0.9f); break;   // R236, was the rescue's "구원!"
                 case SfFxKind.RookBreak: Stamp("성벽 붕괴!", "바닥째 무너진다", 0.9f); break;
             }
         }

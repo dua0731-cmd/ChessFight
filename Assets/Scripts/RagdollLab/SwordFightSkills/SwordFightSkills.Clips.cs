@@ -37,6 +37,7 @@ namespace ChessFight.RagdollLab
             if (!ClipMotion || !BodyMotion || Pawn == null) return null;
             var set = SwordFightClipSet.Current;
             if (set == null) return null;
+            if (EdgeStage == SfEdge.Aim) return null;   // R236: the bishop picking his way (no clip)
             if (EdgeStage != SfEdge.None)
             {
                 if (EdgeStage == SfEdge.Windup) stage = SkillClipTiming.Windup;
@@ -88,7 +89,7 @@ namespace ChessFight.RagdollLab
                 case PieceKind.King: return stage == SfEdge.Active ? X.kingCatch + X.kingHang + X.kingVault : 0f;
                 case PieceKind.Queen: return stage == SfEdge.Windup ? X.queenLine : 0f;
                 case PieceKind.Bishop:
-                    return stage == SfEdge.Active ? X.bishopReach + X.bishopPull : stage == SfEdge.Recovery ? X.bishopRecovery : 0f;
+                    return stage == SfEdge.Windup ? X.bishopPushOff : stage == SfEdge.Active ? BishopSlideTime : stage == SfEdge.Recovery ? X.bishopRecovery : 0f;
                 case PieceKind.Knight:
                     return stage == SfEdge.Windup ? X.knightCrouch : stage == SfEdge.Active ? X.knightFlip : stage == SfEdge.Recovery ? X.knightRecovery : 0f;
             }

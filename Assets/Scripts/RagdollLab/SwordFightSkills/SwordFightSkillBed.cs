@@ -105,13 +105,15 @@ namespace ChessFight.RagdollLab
 
             bool free = KeysFree;
             // F starts the aim (or is the king's guard); the left click uses it (it comes with the match's input); the right
-            // click calls it off. E (the settings' skill key) is the edge skill, one press. Online a client's presses go
-            // to the host instead (LabNetLink.Sword.cs reads them); the host's own act here, as offline.
+            // click calls it off. E (the settings' skill key) is the edge skill, one press (R236: the bishop's held: he picks
+            // his diagonal while it is down and goes when it comes up). Online a client's presses go to the host instead
+            // (LabNetLink.Sword.cs reads them); the host's own act here, as offline.
             if (!LabNetLink.SwordClient)
             {
                 if (free && Input.GetKeyDown(skillKey)) me.Skills.PressKey();
                 if (free && GameSettings.Pressed(GameKey.Grab)) me.Skills.CancelAim();
                 if (free && GameSettings.Pressed(GameKey.Skill)) me.Skills.PressEdge();
+                me.Skills.HoldEdge(free && GameSettings.Held(GameKey.Skill));
             }
             if (ChatBox.KeysHeld || LabNetLink.KeysTaken) return;
             for (int i = 0; i < Pieces.Length; i++)
@@ -402,13 +404,14 @@ namespace ChessFight.RagdollLab
                     Report("성벽 붕괴 시험: 동쪽 가장자리를 보고 E → 0.8초 안에 안쪽으로 걸어 나와야 룩도 안 떨어짐 (덩어리 위 적 2 · 아군 1)");
                     break;
                 case PieceKind.Bishop:
-                    Place(me, new Vector3(5.3f, 0f, 2.0f), east);
-                    Place(allies[0], new Vector3(6.0f, 0f, -0.5f), west);
-                    Place(enemies[0], new Vector3(5.15f, 0f, -0.55f), east);
-                    Place(enemies[1], new Vector3(-3f, 0f, 4f), east);
+                    // R236: cornered on the east edge's last file (on the board, h5's middle), one enemy in front of him
+                    // and one on the square his north-west diagonal goes through first.
+                    Place(me, new Vector3(6.1f, 0f, 0.9f), west);
+                    Place(enemies[0], new Vector3(4.9f, 0f, 0.7f), east);
+                    Place(enemies[1], new Vector3(4.0f, 0f, 3.0f), east);
                     Place(enemies[2], new Vector3(-4f, 0f, -4f), east);
-                    look = east;
-                    Report("구원의 손 시험: Shift+F8 = 적이 아군을 밀어 떨어뜨림 → 장외(−3 m) 전이면 E");
+                    Place(allies[0], far, east);
+                    Report("대각선 미끄럼 시험: 가장자리에 몰린 비숍 — E → 안쪽 대각선 2칸이 은색 (마우스 쪽이 진하게) → 좌클릭 = 미끄러짐 · E 한 번 더 또는 우클릭 = 취소 · Shift+F8 = 앞의 적이 다가옴");
                     break;
                 case PieceKind.Knight:
                     Place(me, new Vector3(6.0f, 0f, 0f), west);
@@ -452,13 +455,10 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Bishop:
                 {
-                    SwordFightPawn ally = null;
-                    foreach (var f in Dummies(me.Pawn.Team)) if (f.Alive) { ally = f; break; }
-                    if (ally == null) return;
-                    var foe = NearestTo(ally, me.Pawn.Team, false);
+                    var foe = NearestTo(me, me.Pawn.Team, false);
                     if (foe == null) return;
-                    PushOff(foe, ally);
-                    Report($"{foe.Pawn.DisplayName} → {ally.Pawn.DisplayName}: 밀어 떨어뜨림 — 장외 전이면 E");
+                    Walk(foe, Dir(foe.Pawn.Hips.position, me.Pawn.Hips.position), 0.8f);
+                    Report($"{foe.Pawn.DisplayName}: 비숍에게 다가옴 — E를 누르고 대각선을 골라 떼기");
                     break;
                 }
                 case PieceKind.Knight:
@@ -605,7 +605,7 @@ namespace ChessFight.RagdollLab
             PieceKind.King => $"밀려 떨어지는 {e.fallWindow:0.#}초 안에 E → 칼을 가장자리에 박고 {e.kingHang:0.#}초 매달림 → 힘차게 뛰어올라 쿵 착지, 반경 {e.kingLandRadius:0.#} m 적 {e.kingLandPush:0.#} m 밀림\n박힌 칼을 베면(F8) 떨어짐",
             PieceKind.Queen => $"가장자리 구역({e.edgeZone:0.#} m) 적이 {e.queenRange:0.#} m 안: E → 금색 선 {e.queenLine:0.#}초 → 순식간에 다가가 바깥 위로 {e.queenFling:0.#} m\n그 사이 적이 구역 밖으로 들어오면 취소(쿨 반) · 점프로 피함 · 킹 받아내기로 막힘",
             PieceKind.Rook => $"가장자리 구역에서 E → 보는 쪽 가장자리 {e.rookChunkWidth:0.#} × {e.rookChunkDepth:0.#} m에 {e.rookCrack:0.#}초 금 → 무너져 위의 기물이 모두 떨어짐(룩·아군도)\n{e.rookRestore:0.#}초 뒤 바닥이 다시 솟음",
-            PieceKind.Bishop => $"{e.bishopRange:0.#} m 안 아군이 떨어지면 장외(−3 m) 전 언제든 E → 그 자리에서 멈추고 손이 잡아 {e.bishopPull:0.#}초 끌어올려 발판 위에\n끌어올리는 동안 비숍이 맞으면 놓침",
+            PieceKind.Bishop => $"가장자리 구역({e.edgeZone:0.#} m)에서 E → 비숍 칸부터 안쪽 대각선 {e.bishopSquares}칸이 은색 (마우스 쪽에 가까운 것이 진하게)\n좌클릭 = 그 대각선 끝 칸까지 미끄러짐 · E 한 번 더 또는 우클릭 = 취소(쿨 안 돎) · 길 위 적은 옆으로 {e.bishopPush:0.#} m 밀림 · 미끄러지다 맞으면 멈춤",
             PieceKind.Knight => $"가장자리를 등지고({e.knightBackEdge:0.#} m) 앞 {e.knightFront:0.#} m 안 적: E → {e.knightCrouch:0.##}초 웅크림 → 벼랑 밖으로 뛰어 공중제비로 적을 넘어 착지 → 뒷발차기 {e.knightKick:0.#} m\n웅크린 동안 적이 3 m 밖으로 물러나면 취소(쿨 반)",
             _ => "폰은 스킬이 없어요",
         };

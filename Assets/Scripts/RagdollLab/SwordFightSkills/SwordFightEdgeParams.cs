@@ -70,19 +70,19 @@ namespace ChessFight.RagdollLab
         [Tooltip("조준한 쪽 가장자리를 찾는 거리 (m)")]
         public float rookAimReach = 4.5f;
 
-        [Header("비숍 · 구원의 손")]
+        [Header("비숍 · 대각선 미끄럼 (R236, 구원의 손 대신)")]
         public float bishopCooldown = 18f;
-        [Tooltip("떨어지는 아군이 이 거리 안이면 씀 (m)")]
-        public float bishopRange = 8f;   // R130: 6 → 8 ("완전히 죽은 거 아니면 살릴 수 있어야 돼")
-        [Tooltip("아군이 떨어지기 시작하고 이 시간 안")]
-        public float bishopFallWindow = 1f;   // R130: no longer used — an ally can be caught until it is out (−3 m)
-        [Tooltip("손이 아군에게 닿기까지")]
-        public float bishopReach = 0.15f;
-        [Tooltip("끌어당겨 발판 위에 내려놓기까지")]
-        public float bishopPull = 0.6f;
-        [Tooltip("내려놓는 자리: 가장자리에서 안쪽으로 (m)")]
-        public float bishopSetIn = 1.2f;
-        public float bishopRecovery = 0.3f;
+        [Tooltip("대각선으로 몇 칸까지 (승규 님: \"칠하는 범위는 대각선 2칸\"). 판 밖·구멍·받침대 앞에서 멈춤")]
+        public int bishopSquares = 2;
+        [Tooltip("미끄러지는 평균 빠르기 (m/s). 2칸(약 5.7 m)이면 약 0.63초")]
+        public float bishopSlideSpeed = 9f;
+        [Tooltip("E를 뗀 뒤 박차고 나가기까지 (초)")]
+        public float bishopPushOff = 0.1f;
+        [Tooltip("지나가며 옆으로 밀어내는 거리 (m). 0 = 밀지 않고 그냥 통과")]
+        public float bishopPush = 1.5f;
+        [Tooltip("이만큼 가까이 지나가는 적을 밀어냄 (m)")]
+        public float bishopPushReach = 0.9f;
+        public float bishopRecovery = 0.25f;
 
         [Header("나이트 · 벼랑 끝 역전")]
         public float knightCooldown = 16f;

@@ -210,6 +210,7 @@ namespace ChessFight.RagdollLab
             }
             StepOrbit(cam);
             StepView(cam);
+            TrackTips();
         }
 
         // ---------------------------------------------------------------- the view: a zoom kick and a colour edge
