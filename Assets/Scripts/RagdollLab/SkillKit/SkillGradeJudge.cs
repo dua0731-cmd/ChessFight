@@ -203,8 +203,10 @@ namespace ChessFight.RagdollLab
             {
                 case SfFxKind.KingCounterHit: case SfFxKind.QueenHit: case SfFxKind.RookHit: case SfFxKind.BishopPin:
                 case SfFxKind.KnightHit: case SfFxKind.KingLandHit: case SfFxKind.QueenCut: case SfFxKind.KnightKickHit:
+                case SfFxKind.BishopSlideHit:
                     Hit(c, e.target); break;
                 case SfFxKind.KingParry: case SfFxKind.BishopCatch:
+                case SfFxKind.BishopSlideStop:   // R236: got out of the corner (saved himself, like the king's landing)
                     c.helped++; break;
                 case SfFxKind.KingStab: c.holdUntil = Now + 4f; break;              // hanging on the sword
                 case SfFxKind.KingLand: c.helped++; c.holdUntil = 0f; break;        // saved himself

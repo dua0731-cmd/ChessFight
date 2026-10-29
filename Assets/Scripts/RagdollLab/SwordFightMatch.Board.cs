@@ -237,7 +237,8 @@ namespace ChessFight.RagdollLab
                 lastHips[f.Id] = hips;
                 // A sword's hit (its victim's flash jumps up: the host's own and every client's from the wire).
                 lastFlash.TryGetValue(f.Id, out float flashBefore);
-                if (alive && f.HitFlash >= 0.13f && f.HitFlash > flashBefore + 0.02f)
+                // 10-29: the sword-hit effect (SwordFightSkillFx.SwordHit) takes its place: no ring of glowing balls.
+                if (alive && f.HitFlash >= 0.13f && f.HitFlash > flashBefore + 0.02f && !SwordFightSkillFx.SwordHitVfxOn)
                     Ring(f.Pawn.bodies[(int)BodyId.Chest].position, 0.7f, "#fff3c8");
                 lastFlash[f.Id] = f.HitFlash;
                 Bubble(f, alive && f.Protection > 0f);

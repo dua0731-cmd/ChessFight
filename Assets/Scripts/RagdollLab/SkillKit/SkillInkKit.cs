@@ -231,15 +231,19 @@ namespace ChessFight.RagdollLab
         public void Step(float dt)
         {
             Clock += dt;
-            for (int i = live.Count - 1; i >= 0; i--)
+            stepping = true;
+            addedWhileStepping = 0;
+            for (int i = live.Count - 1; i >= 0; i--) StepAt(i, dt);
+            // 10-26: an effect started from inside another's step this frame (a chip from a hit, a spark from a scrape) is
+            // stepped now too, as one started before the step is - it was drawn once unplaced first (at the kit's root, the
+            // board's middle, a metre across) and placed only the next frame. Those it starts in turn, likewise.
+            for (int pass = 0; addedWhileStepping > 0 && pass < 4; pass++)
             {
-                var f = live[i];
-                f.age += dt;
-                bool alive = !f.dead && f.age <= f.life && f.step(f, dt);
-                if (alive) continue;
-                f.Destroy();
-                live.RemoveAt(i);
+                int from = live.Count - addedWhileStepping;
+                addedWhileStepping = 0;
+                for (int i = live.Count - 1; i >= from; i--) StepAt(i, dt);
             }
+            stepping = false;
             var gone = new List<(object, string)>();
             foreach (var kv in kept) if (kv.Value.dead) gone.Add(kv.Key);
             foreach (var k in gone) kept.Remove(k);
@@ -790,12 +794,15 @@ namespace ChessFight.RagdollLab
                     bf.SetColor("_Rim", rim);
                     bf.SetFloat("_RimPower", rimPower);
                 }
+                // 10-25 (Sword Fight for real): a prop given a lit material of its own (URP Lit) takes its colour from here,
+                // and one with no ink has no hull drawn at all.
+                bf.SetColor("_BaseColor", colors.main);
                 fill.SetPropertyBlock(bf);
                 bl.SetColor("_InkColor", colors.ink);
                 bl.SetFloat("_Width", inkWidth);
                 line.SetPropertyBlock(bl);
                 // The ink hull cannot fade by dither: it goes with the prop's last third.
-                line.enabled = shown && fade > 0.33f;
+                line.enabled = shown && fade > 0.33f && inkWidth > 0f;
                 if (child != null)
                 {
                     child.fade = fade;
@@ -810,7 +817,7 @@ namespace ChessFight.RagdollLab
             {
                 shown = on;
                 fill.enabled = on;
-                line.enabled = on && fade > 0.33f;
+                line.enabled = on && fade > 0.33f && inkWidth > 0f;
                 child?.Show(on);
             }
 
@@ -861,6 +868,7 @@ namespace ChessFight.RagdollLab
         {
             var f = new Fx { life = life, step = step };
             live.Add(f);
+            if (stepping) addedWhileStepping++;
             return f;
         }
 
@@ -874,9 +882,24 @@ namespace ChessFight.RagdollLab
                 f.life = float.MaxValue;
                 kept[k] = f;
                 live.Add(f);
+                if (stepping) addedWhileStepping++;
             }
             f.touched = frame;
             return f;
+        }
+
+        bool stepping;
+        int addedWhileStepping;
+
+        /// <summary>One effect's step (<see cref="Step"/>): ended and taken away once its life is over or its step says no.</summary>
+        void StepAt(int i, float dt)
+        {
+            var f = live[i];
+            f.age += dt;
+            bool alive = !f.dead && f.age <= f.life && f.step(f, dt);
+            if (alive) return;
+            f.Destroy();
+            live.RemoveAt(i);
         }
 
         public bool Held(Fx f) => f.touched == frame;

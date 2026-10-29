@@ -100,14 +100,27 @@ namespace ChessFight.RagdollLab
             // Ready: the edge it would use glows, its target is ringed (the owner's view; offline only the player has it).
             if (mine && s.EdgeStage == SfEdge.None && s.EdgeCondition && s.HasEdgeGlow && s.EdgeCooldown <= 0f)
             {
-                GlowEdge(s, "edge glow", s.EdgeGlow, pal, 0.75f);
-                if (s.EdgeTarget != null) TargetRing(s, s.EdgeTarget, s.Piece == PieceKind.Bishop ? kit.bishop : pal);
-                if (s.Piece == PieceKind.Rook) ChunkPreview(s, X);
+                if (RealEdge(s.Piece)) RealGlowEdge(s, "edge glow", s.EdgeGlow, 1f);   // 10-25: one faint line of light
+                else GlowEdge(s, "edge glow", s.EdgeGlow, pal, 0.75f);
+                if (RealEdge(s.Piece))
+                {
+                    // 10-25, for real: its target a faint circle of light, the rook's chunk a faint outline.
+                    var who = s.EdgeTarget;
+                    var owner = s;
+                    if (who != null) RealCircle(s, "edge real target", () => owner.EdgeTarget == who && who != null ? who.Hips.position : (Vector3?)null, 0.55f, 0.35f);
+                    if (s.Piece == PieceKind.Rook) RealChunkPreview(s);
+                }
+                else
+                {
+                    if (s.EdgeTarget != null) TargetRing(s, s.EdgeTarget, s.Piece == PieceKind.Bishop ? kit.bishop : pal);
+                    if (s.Piece == PieceKind.Rook) ChunkPreview(s, X);
+                }
             }
             switch (s.Piece)
             {
                 case PieceKind.King:
-                    if (s.KingHanging)
+                    if (s.KingHanging && RealEdge(PieceKind.King)) RealKingHang(s);
+                    else if (s.KingHanging)
                     {
                         // Either side of the broken lip (10-14: over it, it hid the bite the sword took out of the edge).
                         Vector3 along = Vector3.Cross(Vector3.up, s.EdgeOut), from = s.EdgeAt - along * 1.6f;
@@ -119,7 +132,10 @@ namespace ChessFight.RagdollLab
                     }
                     break;
                 case PieceKind.Queen:
-                    if (s.EdgeStage == SfEdge.Windup && s.EdgeTarget != null) QueenLine(s, X);
+                    if (s.EdgeStage == SfEdge.Windup && s.EdgeTarget != null) { if (RealEdge(PieceKind.Queen)) RealQueenLine(s, X); else QueenLine(s, X); }
+                    break;
+                case PieceKind.Knight when RealEdge(PieceKind.Knight):
+                    if (s.EdgeStage == SfEdge.Windup) RealKnightEdgeLand(s);
                     break;
                 case PieceKind.Knight:
                     if (s.EdgeStage == SfEdge.Windup)
@@ -132,7 +148,9 @@ namespace ChessFight.RagdollLab
                     }
                     break;
                 case PieceKind.Bishop:
-                    if (s.EdgeStage == SfEdge.Active) RescueHands(s, X);
+                    // R236: the diagonal slide (대각선 미끄럼) in place of the rescue. RealRescue and RescueHands stay (the Pawn
+                    // Rush lasso draws its rope the same way) but nothing calls them here any more.
+                    BishopSlideMarks(s, mine);
                     break;
             }
         }
@@ -234,6 +252,18 @@ namespace ChessFight.RagdollLab
             var pal = PieceColors(s.Piece);
             HeadMark(pawn, s.Piece);
             // 10-14: not for the king's stab - it hid the sword going into the wall and the wall breaking (KingBreach).
+            // 10-25 (승규 님: "퀸 체크메이트 일섬을 플레이어 화면에 좀 더 사실적으로"): the queen's goes without the cartoon
+            // cast - no flash copy, no ring on the floor, no gold over the screen; only the view's kick and the hold.
+            bool real = s.Piece == PieceKind.Queen;
+            if (real)
+            {
+                HitStop(2);
+                Punch(pawn, null, 4f, 12);
+                // The screen's warm light as she goes (승규 님: "화면에 이펙트 나온 거 좋았는데 거기서 수정"): kept, softer and
+                // shorter than the cartoon gold, a warm light rather than paint.
+                Tint(pawn, null, Color.Lerp(pal.light, Color.white, 0.35f), 0.22f, 16);
+                return;
+            }
             if (s.Piece != PieceKind.King) Afterimage(pawn, pal, 1.75f, 0.34f, 0.7f, true);
             kit.FlashBody(pawn, pal.main);
             if (s.HasEdgeGlow) EdgeFlash(s.EdgeGlow, pal);
@@ -409,39 +439,64 @@ namespace ChessFight.RagdollLab
             });
         }
 
-        /// <summary>She is there in an instant: gold copies of her all along the way, and her way drawn on the floor.</summary>
+        /// <summary>She is there in an instant. 10-25 (승규 님: "퀸 체크메이트 일섬을 플레이어 화면에 좀 더 사실적으로"): no gold
+        /// copies and no cut drawn on the floor - only the blur of her going, a few faint copies of her own colour that are
+        /// gone in a few frames.</summary>
         void QueenBlink(SfFxEvent e)
         {
             var s = e.by;
-            GhostTrail(s.Pawn, s.EdgeStart, s.Pawn.Hips.position, 5, kit.queen);
-            Vector3 a = Kit.FloorUnder(s.EdgeStart, 0.8f), b = e.at;
-            var pts = new List<Vector3>();
-            for (int i = 0; i <= 10; i++) pts.Add(Vector3.Lerp(a, b, i / 10f) + Vector3.up * 0.036f);
-            var cut = new Kit.Strip(kit, kit.queen) { core = Color.white, coreShare = 0.45f, inkShare = 0.18f };
-            var f = kit.Run(22f * F, (fx, d) =>
-            {
-                float t = fx.age / F;
-                cut.Build(pts, i => 0.05f + 0.22f * Mathf.Sin(Mathf.PI * Mathf.Lerp(0.06f, 0.94f, i / 10f)), kit.Eye, true);
-                cut.tail = t < 8f ? 0f : Kit.EaseIn((t - 8f) / 14f);
-                cut.Apply();
-                return true;
-            });
-            f.strips.Add(cut);
-            kit.PuffBurst(a + Vector3.up * 0.12f, kit.dust, 4, 0.4f, 0.16f, 0.4f, 0.2f);
+            var own = s.Pawn != null && s.Pawn.skin != null && s.Pawn.skin.sharedMaterial != null ? s.Pawn.skin.sharedMaterial.color : Color.white;
+            GhostTrail(s.Pawn, s.EdgeStart, s.Pawn.Hips.position, 3, new Kit.Palette { main = own, light = own, deep = own, ink = own }, 0.2f, 0f, 7f);
         }
 
+        /// <summary>The cut, as a real one: the blade's own smear where it went, sparks and splinters where it bit, the beat
+        /// (a hit stop, the slow moment, the view pulled and shaken) - no screen band, no gold over the screen, no rings.</summary>
         void QueenCut(SfFxEvent e)
         {
             var s = e.by;
             var target = e.target;
-            if (target != null) Slash(target.bodies[(int)BodyId.Chest].position, e.dir, kit.queen, 2.6f);
-            Hit(e, kit.queen, 4, 0.2f);
-            ScreenSlash(s.Pawn, target, kit.queen);
+            BladeSmear(s.Fighter, 0.16f);
+            if (target != null)
+            {
+                Vector3 at = e.at;
+                HotSparks(at, e.dir + Vector3.up * 0.2f, 7, 3.2f);
+                var wood = target.skin != null && target.skin.sharedMaterial != null ? target.skin.sharedMaterial.color : new Color(0.8f, 0.72f, 0.6f);
+                var keep = chipA; var keepB = chipB; float keepShare = chipShare;
+                chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.8f); chipShare = 0.5f;
+                WallChips(at, e.dir + Vector3.up * 0.35f, 9, 3.6f, 0.6f, 0.012f, 0.035f);
+                chipA = keep; chipB = keepB; chipShare = keepShare;
+                kit.FlashBody(target, Color.white);
+            }
+            HitStop(4);
+            Shake(s.Pawn, target, 0.12f, 8);
+            Punch(s.Pawn, target, 4f, 10);
             Beat(s.Pawn, target, 10f);
-            Tint(s.Pawn, target, kit.queen.main, 0.42f, 26);
-            Afterimage(s.Pawn, kit.queen, 1.5f, 0.3f, 0.7f, true);
-            if (s.EdgeTarget != null || target != null) EdgeFlashAt(target != null ? target.Hips.position : e.at, kit.queen);
-            if (target != null) Trail(s, target, kit.queen, 0.4f, null, 0, 1.3f);
+            // The cut across the screen, kept (승규 님: "전에 있던 것처럼 화면에 이펙트 나온 거 좋았는데 거기서 수정"), as light:
+            // a white-hot line, gold round it and a soft glow, edges that fade - no black outline, no flat bands.
+            ScreenSlash(s.Pawn, target, kit.queen, true);
+            Tint(s.Pawn, target, Color.Lerp(kit.queen.light, Color.white, 0.4f), 0.26f, 18);
+        }
+
+        /// <summary>The blade's own smear: where its edge goes over <paramref name="seconds"/>, a thin pale sheet with no
+        /// outline that thins and fades in a few frames behind it.</summary>
+        void BladeSmear(SwordFightPawn f, float seconds)
+        {
+            if (f == null || f.SwordBody == null) return;
+            var strip = new Kit.Strip(kit, new Kit.Palette { main = new Color(0.95f, 0.93f, 0.88f), light = Color.white, deep = new Color(0.8f, 0.78f, 0.74f), ink = new Color(0.8f, 0.78f, 0.74f) })
+            { core = Color.white, coreShare = 0.7f, inkShare = 0f };
+            var pts = new List<Vector3>();
+            var run = kit.Run(seconds + 8f * F, (fx, d) =>
+            {
+                if (fx.age < seconds && f != null && f.SwordBody != null) pts.Add(Vector3.Lerp(f.BladeRoot, f.BladeTip, 0.8f));
+                else if (pts.Count > 0) pts.RemoveAt(0);
+                while (pts.Count > 12) pts.RemoveAt(0);
+                if (pts.Count < 2) { strip.Hide(); return fx.age < seconds + 0.02f; }
+                strip.Build(pts, i => 0.11f * i / Mathf.Max(1f, pts.Count - 1f), kit.Eye);
+                strip.opacity = 0.55f;
+                strip.Apply();
+                return true;
+            });
+            run.strips.Add(strip);
         }
 
         void QueenMiss(SfFxEvent e)
@@ -479,6 +534,7 @@ namespace ChessFight.RagdollLab
         /// the lip in and round its three inner sides.</summary>
         void CollapseMarks(SwordFightEdgeFloor.Collapse c)
         {
+            if (RealEdge(PieceKind.Rook)) { RealCollapseMarks(c); return; }   // 10-25: the grain splitting (RealEdgeRBK.cs)
             var floor = SwordFightEdgeFloor.Current;
             if (floor == null || c.by == null || c.phase != SwordFightEdgeFloor.Phase.Crack) return;
             float k = Mathf.Clamp01(c.age / Mathf.Max(0.05f, c.crack));
@@ -579,6 +635,7 @@ namespace ChessFight.RagdollLab
             var rook = c.by != null ? c.by.Pawn : null;
             stopBy = rook;
             stopTarget = null;
+            if (RealEdge(PieceKind.Rook)) { RealOnFloor(c); return; }   // 10-25: splinters, buckled brass (RealEdgeRBK.cs)
             switch (c.phase)
             {
                 case SwordFightEdgeFloor.Phase.Open:
@@ -731,7 +788,6 @@ namespace ChessFight.RagdollLab
                 kit.FlashBody(e.target, kit.bishop.main);
                 kit.ImpactRing(e.target.bodies[(int)BodyId.Chest].position, -s.EdgeOut, kit.queen, 0.15f, 0.6f);
                 kit.PuffBurst(e.target.Hips.position, kit.bishop, 4, 0.35f, 0.12f, 0.35f, 0.1f);
-                Afterimage(e.target, kit.bishop, 1.35f, 0.24f, 0.55f);
             }
             HitStop(3);
             Shake(s.Pawn, e.target, 0.09f, 7);
@@ -874,6 +930,9 @@ namespace ChessFight.RagdollLab
         /// while <paramref name="going"/> says so, or for <paramref name="life"/> seconds.</summary>
         void Trail(SwordFightSkills s, RagdollPawn pawn, Kit.Palette pal, float width, System.Func<bool> going, int ghostEvery, float life = 2f)
         {
+            // 10-25 (승규 님: "스킬을 사용 할 때 엉덩이 부분에서 VFX가 나오는 거 지워줘 상대가 맞고 날아갈 때도 지워줘"): no
+            // ribbon after a piece any more, the caster's or one flung.
+            if (!BodyTrails) return;
             var strip = new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.36f, inkShare = 0.22f };
             var pts = new List<Vector3>();
             float nextGhost = ghostEvery * F;
@@ -901,7 +960,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Copies of a piece all along a way it went in an instant (the queen's blink): see-through, the far ones
         /// fading first.</summary>
-        void GhostTrail(RagdollPawn pawn, Vector3 from, Vector3 to, int n, Kit.Palette p)
+        void GhostTrail(RagdollPawn pawn, Vector3 from, Vector3 to, int n, Kit.Palette p, float alpha = 0.55f, float ink = 0.3f, float frames = 18f)
         {
             if (pawn == null || pawn.skin == null) return;
             var mesh = new Mesh { name = "Skill ghost trail" };
@@ -927,17 +986,17 @@ namespace ChessFight.RagdollLab
                 r.enabled = false;
                 gos.Add((go, r, new MaterialPropertyBlock(), k));
             }
-            var f = kit.Run(18f * F, (fx, d) =>
+            var f = kit.Run(frames * F, (fx, d) =>
             {
                 float a = fx.age / F;
                 foreach (var (go, r, b, k) in gos)
                 {
-                    float life = Mathf.Lerp(16f, 6f, k);
+                    float life = Mathf.Lerp(frames - 2f, frames / 3f, k);
                     float fade = 1f - Mathf.Clamp01(a / life);
-                    b.SetColor("_Color", a < 2f ? Color.white : p.main);
+                    b.SetColor("_Color", a < 2f && ink > 0f ? Color.white : p.main);
                     b.SetColor("_InkColor", p.ink);
-                    b.SetFloat("_Ink", 0.3f);
-                    b.SetFloat("_Alpha", 0.55f * fade * fade);
+                    b.SetFloat("_Ink", ink);
+                    b.SetFloat("_Alpha", alpha * fade * fade);
                     r.SetPropertyBlock(b);
                     r.enabled = fade > 0.01f;
                 }
@@ -951,18 +1010,49 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>A gold slash across the whole view (the queen's cut, R103): an inked band with a white core sweeping
-        /// corner to corner in three frames, held, then thinning away. Only the two pieces' own screens.</summary>
-        void ScreenSlash(RagdollPawn a, RagdollPawn b, Kit.Palette p)
+        /// corner to corner in three frames, held, then thinning away. Only the two pieces' own screens.
+        /// <paramref name="thickness"/> scales the band; <paramref name="motes"/> small motes in the palette's light are
+        /// thrown off it as the sweep passes (10-27), drifting out from the band and fading.</summary>
+        void ScreenSlash(RagdollPawn a, RagdollPawn b, Kit.Palette p, bool soft = false, float thickness = 1f, int motes = 0)
         {
             if (!Sees(a, b)) return;
-            var parts = new List<(GameObject go, Material mat, Color c, float thick)>
-            {
-                Band(p.ink, 4001, 0.032f),
-                Band(p.main, 4002, 0.02f),
-                Band(Color.white, 4003, 0.007f),
-            };
+            var parts = soft
+                ? new List<(GameObject go, Material mat, Color c, float thick)>
+                {
+                    Band(Kit.A(Color.Lerp(p.light, Color.white, 0.3f), 0.32f), 4001, 0.11f, SoftEdge()),
+                    Band(Kit.A(new Color(p.main.r * 1.25f, p.main.g * 1.15f, p.main.b * 0.9f), 0.7f), 4002, 0.028f, SoftEdge()),
+                    Band(Color.white, 4003, 0.008f, SoftEdge()),
+                }
+                : new List<(GameObject go, Material mat, Color c, float thick)>
+                {
+                    Band(p.ink, 4001, 0.032f),
+                    Band(p.main, 4002, 0.02f),
+                    Band(Color.white, 4003, 0.007f),
+                };
             const float Angle = -22f;
-            var f = kit.Run(18f * F, (fx, d) =>
+            // The motes: where along the band (-0.5..0.5), when they come off (frames, as the sweep passes), which side and
+            // how fast, how big (of the view's height) and how long; one material each so each fades on its own.
+            var dots = new List<(GameObject go, Material mat, float u, float born, float side, float speed, float size, float life, Color c)>();
+            for (int i = 0; i < motes; i++)
+            {
+                float u = UnityEngine.Random.Range(-0.5f, 0.5f);
+                // Added light (so they glow on the pale board too), brighter than white.
+                var mat = new Material(Shader.Find(ChessFight.Game.LitMaterials.ParticlesUnlitName)) { hideFlags = HideFlags.HideAndDontSave };
+                ChessFight.Game.LitMaterials.MakeTransparent(mat, true);
+                mat.SetTexture("_BaseMap", SoftDot());
+                mat.renderQueue = 4004;
+                var go = new GameObject("Screen slash mote");
+                go.AddComponent<MeshFilter>().sharedMesh = kit.meshQuad;
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = mat;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+                go.SetActive(false);
+                Color c = Color.Lerp(p.main, Color.Lerp(p.light, Color.white, 0.4f), UnityEngine.Random.value);
+                dots.Add((go, mat, u, (u + 0.5f) * 2f + UnityEngine.Random.Range(0f, 2.5f), UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(0.25f, 1f),
+                          UnityEngine.Random.Range(0.009f, 0.024f), UnityEngine.Random.Range(10f, 26f), c));
+            }
+            var f = kit.Run((motes > 0 ? 32f : 18f) * F, (fx, d) =>
             {
                 var cam = ViewCamera;
                 if (cam == null) return false;
@@ -976,15 +1066,35 @@ namespace ChessFight.RagdollLab
                 Vector3 mid = cam.transform.position + cam.transform.forward * dist;
                 foreach (var (go, mat, c, thick) in parts)
                 {
-                    go.SetActive(true);
+                    go.SetActive(t < 18f);
                     go.transform.SetPositionAndRotation(mid + axis * (-len * 0.5f + len * sweep * 0.5f), turn);
-                    go.transform.localScale = new Vector3(len * sweep, h * thick * thin * (t < 2f ? 1.5f : 1f), 1f);
-                    mat.color = Kit.A(c, Mathf.Clamp01(thin * 1.4f));
+                    go.transform.localScale = new Vector3(len * sweep, h * thick * thickness * Mathf.Max(0f, thin) * (t < 2f ? 1.5f : 1f), 1f);
+                    mat.color = Kit.A(c, c.a * Mathf.Clamp01(thin * 1.4f));
+                }
+                Vector3 across = turn * Vector3.up;
+                foreach (var m in dots)
+                {
+                    float age = t - m.born, k = age / m.life;
+                    if (age < 0f || k >= 1f) { m.go.SetActive(false); continue; }
+                    m.go.SetActive(true);
+                    // Off the band's edge, flung out fast and slowing, drifting a little along the cut.
+                    float flung = Kit.EaseOut(k) * m.speed * h * 0.09f;
+                    Vector3 at = mid + axis * (m.u * len * 0.9f + Kit.EaseOut(k) * h * 0.04f * m.speed)
+                               + across * (Mathf.Sign(m.side) * (h * 0.02f * thickness * Mathf.Abs(m.side) + flung));
+                    float size = h * m.size * (1f - 0.5f * k);
+                    m.go.transform.SetPositionAndRotation(at, turn);
+                    m.go.transform.localScale = new Vector3(size, size, 1f);
+                    m.mat.SetColor(ChessFight.Game.LitMaterials.BaseColorId, Kit.A(m.c * 1.6f, (k < 0.15f ? k / 0.15f : 1f) * (1f - k) * (1f - k)));
                 }
                 return true;
             });
             f.end = () =>
             {
+                foreach (var m in dots)
+                {
+                    if (m.go != null) Destroy(m.go);
+                    if (m.mat != null) Destroy(m.mat);
+                }
                 foreach (var (go, mat, _, _) in parts)
                 {
                     if (go != null) Destroy(go);
@@ -993,9 +1103,41 @@ namespace ChessFight.RagdollLab
             };
         }
 
-        (GameObject, Material, Color, float) Band(Color c, int queue, float thick)
+        /// <summary>A soft round dot: opaque in its middle, falling off smoothly to nothing at its rim.</summary>
+        static Texture2D softDot;
+        static Texture2D SoftDot()
+        {
+            if (softDot != null) return softDot;
+            softDot = new Texture2D(32, 32, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            for (int y = 0; y < 32; y++)
+                for (int x = 0; x < 32; x++)
+                {
+                    float dx = (x + 0.5f) / 16f - 1f, dy = (y + 0.5f) / 16f - 1f, a = Mathf.Exp(-(dx * dx + dy * dy) * 4f);
+                    softDot.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            softDot.Apply();
+            return softDot;
+        }
+
+        /// <summary>A strip's soft edge: opaque along its middle, falling off smoothly to nothing at both sides (v).</summary>
+        static Texture2D softEdge;
+        static Texture2D SoftEdge()
+        {
+            if (softEdge != null) return softEdge;
+            softEdge = new Texture2D(4, 64, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            for (int y = 0; y < 64; y++)
+            {
+                float v = (y + 0.5f) / 64f * 2f - 1f, a = Mathf.Exp(-v * v * 5f);
+                for (int x = 0; x < 4; x++) softEdge.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+            }
+            softEdge.Apply();
+            return softEdge;
+        }
+
+        (GameObject, Material, Color, float) Band(Color c, int queue, float thick, Texture2D edge = null)
         {
             var mat = new Material(Shader.Find("Sprites/Default")) { hideFlags = HideFlags.HideAndDontSave, renderQueue = queue, color = c };
+            if (edge != null) mat.mainTexture = edge;
             var go = new GameObject("Screen slash");
             go.AddComponent<MeshFilter>().sharedMesh = kit.meshQuad;
             var mr = go.AddComponent<MeshRenderer>();
@@ -1011,9 +1153,38 @@ namespace ChessFight.RagdollLab
         /// <summary>The edge skills' events (from <see cref="OnFx"/>); false if it is not one of them.</summary>
         bool OnEdgeFx(SfFxEvent e)
         {
+            // 10-25: the bishop's rescue moments, for the rope held in the ally's hand (SwordFightSkillFx.RopeHand.cs).
+            if (e.kind == SfFxKind.BishopReach || e.kind == SfFxKind.BishopCatch || e.kind == SfFxKind.BishopSet || e.kind == SfFxKind.BishopDrop) StampRescue(e);
             switch (e.kind)
             {
-                case SfFxKind.EdgeCast: EdgeCast(e); return true;
+                case SfFxKind.EdgeCast: if (RealEdge(e.by.Piece)) RealEdgeCast(e); else EdgeCast(e); return true;
+                case SfFxKind.EdgeCancel when RealEdge(e.by.Piece): return true;
+                // 10-25: the king's return for real (SwordFightSkillFx.RealEdge.cs).
+                case SfFxKind.KingStab when RealEdge(PieceKind.King): RealKingStab(e); return true;
+                case SfFxKind.KingVault when RealEdge(PieceKind.King): RealKingVault(e); return true;
+                case SfFxKind.KingLand when RealEdge(PieceKind.King): RealKingLand(e); return true;
+                // R202 (E5): and the king's gold on whoever it throws.
+                case SfFxKind.KingLandHit when RealEdge(PieceKind.King): RealKnightHit(e); KingLandHitVfx(e); return true;
+                case SfFxKind.KingDrop when RealEdge(PieceKind.King): RealKingDrop(e); return true;
+                // 10-25: the queen's checkmate cut for real (SwordFightSkillFx.RealEdge.cs).
+                case SfFxKind.QueenMark when RealEdge(PieceKind.Queen): Punch(e.by.Pawn, e.target, 3f, 10); return true;
+                case SfFxKind.QueenBlink when RealEdge(PieceKind.Queen): RealQueenBlink(e); return true;
+                case SfFxKind.QueenCut when RealEdge(PieceKind.Queen): RealQueenCut(e); return true;
+                case SfFxKind.QueenMiss when RealEdge(PieceKind.Queen): Shake(e.by.Pawn, e.target, 0.06f, 5); return true;
+                // 10-25: the rook, the bishop and the knight for real (SwordFightSkillFx.RealEdgeRBK.cs).
+                case SfFxKind.RookBreak when RealEdge(PieceKind.Rook): RealRookBreak(e); return true;
+                case SfFxKind.BishopReach when RealEdge(PieceKind.Bishop): Punch(e.by.Pawn, e.target, 4f, 12); return true;
+                case SfFxKind.BishopCatch when RealEdge(PieceKind.Bishop): RealBishopCatch(e); return true;
+                case SfFxKind.BishopSet when RealEdge(PieceKind.Bishop): Shake(e.by.Pawn, e.target, 0.06f, 5); return true;
+                case SfFxKind.BishopDrop when RealEdge(PieceKind.Bishop): Shake(e.by.Pawn, e.target, 0.08f, 6); return true;
+                // R195: the light drawn in to its hooves as it crouches (SwordFightSkillFx.KnightVfx.cs; nothing realistic here).
+                case SfFxKind.KnightCrouch when RealEdge(PieceKind.Knight): KnightVfxCoil(e); return true;
+                // R182: the crescent its hind hooves draw over the somersault, over the realistic flip, and R192 the flash where
+                // they kick off (SwordFightSkillFx.KnightVfx.cs).
+                case SfFxKind.KnightFlip when RealEdge(PieceKind.Knight): RealKnightFlip(e); KnightVfxSpring(e); KnightVfxFlip(e); return true;
+                case SfFxKind.KnightKick when RealEdge(PieceKind.Knight): RealKnightKick(e); return true;
+                // R189: the star where its hind hooves strike whoever its buck takes, over the realistic hit (SwordFightSkillFx.KnightVfx.cs).
+                case SfFxKind.KnightKickHit when RealEdge(PieceKind.Knight): RealKnightKickHit(e); KnightVfxKick(e); return true;
                 case SfFxKind.EdgeCancel:
                     kit.PuffBurst(e.at, kit.grey, 5, 0.4f, 0.16f, 0.45f, 0.2f);
                     if (e.by.Pawn != null) Afterimage(e.by.Pawn, kit.grey, 1.3f, 0.2f, 0.45f);

@@ -28,8 +28,12 @@ namespace ChessFight.RagdollLab
         public float kingCounterPush = 2.8f;
         [Tooltip("R130: 막은 뒤 반격(한 바퀴 베기)까지 멈칫하는 박자 (초)")]
         public float kingCounterBeat = 0.16f;
-        [Tooltip("반격: 한 바퀴 돌며 베는 시간 (초). R130: 0.15 → 0.34 (\"더 연출과 액션을\")")]
+        [Tooltip("반격: 막은 상대 쪽으로 크게 한 번 베는 시간 (초). R130: 0.15 → 0.34 (\"더 연출과 액션을\"). 10-25: 한 바퀴 돌기 → 앞으로 대각선 베기")]
         public float kingCounterTime = 0.34f;
+        [Tooltip("10-25 (승규 님: \"회전하는 것 보다 움직이면서도 막을 수 있게\"): 받아내기 자세·반격 중 걷는 빠르기 (1 = 평소)")]
+        public float kingGuardMove = 0.7f;
+        [Tooltip("10-25: 반격이 닿는 앞쪽 부채꼴 (도, 막은 상대 쪽 가운데)")]
+        public float kingCounterArc = 150f;
         public float kingRecovery = 0.4f;
         [Tooltip("받아낼 칼이 오지 않았을 때의 빈틈")]
         public float kingWhiff = 0.6f;
@@ -80,12 +84,38 @@ namespace ChessFight.RagdollLab
         [Tooltip("손이 발목을 잡고 있는 시간 (맵 어디서든, R102)")]
         public float bishopPinTime = 0.8f;
 
+        [Header("비숍 · X자 베기 (10-27: 양손에 칼 두 자루 → 조준 → 비숍은 그 자리, 두 칼이 날아가 상대 앞에서 X자로 → 무작위로 돌아 손에)")]
+        [Tooltip("발동하고 두 칼을 뒤로 젖혀 던질 준비 (s)")]
+        public float bishopThrowWindup = 0.2f;
+        [Tooltip("칼이 날아가는 빠르기 (m/s): 거리를 이것으로 나눈 시간 (아래 최소·최대 사이)")]
+        public float bishopThrowSpeed = 14f;
+        public float bishopOutMin = 0.28f;
+        public float bishopOutMax = 0.6f;
+        [Tooltip("두 칼이 X자로 엇갈리는 곳과 상대 사이의 여유 (m): 칼은 상대에 닿지 않음 - 맞음은 이펙트로")]
+        public float bishopClear = 0.8f;
+        [Tooltip("X자가 엇갈리는 높이 (바닥에서, m)")]
+        public float bishopCrossHeight = 0.55f;
+        [Tooltip("X자로 엇갈려 베는 시간 (s): 그 한가운데에 맞음")]
+        public float bishopCrossTime = 0.14f;
+        [Tooltip("X자가 맞히는 반경 (엇갈리는 곳에서, m)")]
+        public float bishopCrossRadius = 1.45f;
+        [Tooltip("X자 베기에 밀리는 거리 (m)")]
+        public float bishopPush = 3.2f;
+        [Tooltip("칼이 무작위로 돌아다니며 손으로 돌아오는 시간 (s)")]
+        public float bishopBackTime = 0.85f;
+        [Tooltip("날아가는 칼이 도는 빠르기 (초당 바퀴)")]
+        public float bishopSpin = 6f;
+        [Tooltip("칼을 받고 자세를 푸는 시간 (s)")]
+        public float bishopCatchAfter = 0.35f;
+
         [Header("나이트 · 포크 강하 (R129 새 동작)")]
         public float knightCooldown = 7f;
         public float knightRange = 6f;
         public float knightMinRange = 1.5f;
         [Tooltip("체스판 한 칸 (m): 착지한 칸에서 나이트가 노리는 여덟 칸 (L자: 두 칸 가고 한 칸 꺾은 자리)")]
         public float knightCell = 1.25f;
+        [Tooltip("뛰기 전 웅크리는 시간 (s): 0이면 바로 뜀 (10-26 몸 동작)")]
+        public float knightGather = 0.07f;
         [Tooltip("높이 날아오르는 시간 (s)")]
         public float knightRise = 0.3f;
         [Tooltip("꼭대기에 머무는 시간 (s): 노리는 칸들이 드러남")]

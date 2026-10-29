@@ -27,7 +27,7 @@ namespace ChessFight.RagdollLab
         public int Promotions { get; private set; }
 
         /// <summary>How far a push moves this piece against a pawn: 1 / weight.</summary>
-        float PushScale => 1f / Mathf.Max(0.1f, pieceStats.Weight);
+        internal float PushScale => 1f / Mathf.Max(0.1f, pieceStats.Weight);
 
         float ClimbScale => pieceStats.Climb;
 

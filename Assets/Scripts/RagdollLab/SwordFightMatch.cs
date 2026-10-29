@@ -192,6 +192,8 @@ namespace ChessFight.RagdollLab
                     if (GameSettings.Pressed(GameKey.Grab)) me.Skills.CancelAim();
                     if (GameSettings.Pressed(GameKey.Skill)) me.Skills.PressEdge();
                 }
+                // R236: the bishop picks his diagonal while E is held (let go: he goes).
+                if (!LabNetLink.SwordClient) me.Skills.HoldEdge(game.KeysFree && !SwordFightGame.InputLocked && GameSettings.Held(GameKey.Skill));
             }
             if (phase == SwordPhase.Pick) PickKeys();
             DevKeys();

@@ -112,7 +112,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>A rope along a run of points (R142), measured along them; its strands turned from the stake's axis (the
         /// mesh's y) outward; <paramref name="capEnd"/>: its far end closed.</summary>
-        static void RopeAlong(Mesh mesh, List<Vector3> pts, float thick, bool capEnd = true)
+        internal static void RopeAlong(Mesh mesh, List<Vector3> pts, float thick, bool capEnd = true)
         {
             int n = pts.Count;
             var run = new float[n];
@@ -281,7 +281,7 @@ namespace ChessFight.RagdollLab
         /// A rope wound round the local y axis (R138): <paramref name="turns"/> turns of it <paramref name="thick"/> across at
         /// <paramref name="radius"/>, rising <paramref name="height"/> from end to end, centred on the origin.
         /// </summary>
-        static void RopeCoil(Mesh mesh, float radius, float height, float turns, float thick)
+        internal static void RopeCoil(Mesh mesh, float radius, float height, float turns, float thick)
         {
             float sweep = turns * Mathf.PI * 2f;
             float length = Mathf.Sqrt(radius * sweep * radius * sweep + height * height);

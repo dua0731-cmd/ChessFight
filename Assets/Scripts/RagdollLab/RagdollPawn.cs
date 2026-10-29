@@ -264,6 +264,16 @@ namespace ChessFight.RagdollLab
         /// <summary>A piece model's right arm is drawn wherever its arm body goes, not calmed (RagdollVisualSync.PoseAsPiece):
         /// it holds a sword (SwordFightPawn).</summary>
         public bool RightArmFree;
+        /// <summary>0..1: how much of a piece model's left arm is drawn where its arm body goes rather than calmed (a Sword
+        /// Fight skill poses it, SwordFightSkills.Motion; eased by the mode on every machine).</summary>
+        public float LeftArmShare;
+        /// <summary>A skill's hold on the whole body (Sword Fight, SwordFightSkills.Motion), written every step on the host:
+        /// degrees it turns the body (+ toward the sword hand) and leans it (+ forward) on top of the walk's own, and metres
+        /// it lowers the hips for legs split apart (a stance: a straight leg swung out reaches less far down). 0 = none.</summary>
+        public float SkillTurn, SkillLean, SkillStance;
+        float stanceNow;
+        /// <summary>The one-piece leg's length, hip to sole.</summary>
+        public float LegReach => legReach;
 
         public RagdollParams P => tuning != null ? tuning.values : fallback;
         readonly RagdollParams fallback = new RagdollParams();
@@ -1275,10 +1285,15 @@ namespace ChessFight.RagdollLab
             float legDrop = legReach * (1f - Mathf.Cos(legAngle * Mathf.Deg2Rad));
             float runBob = p.stepBob * (1f - spread) - p.runLegDrop * legDrop;
             float bob = Gait(runBob, p.sprintBob * sprintWave) * speedN;
+            // A skill's stance (Sword Fight): the hips come down by what its split legs lose, eased (down faster than back
+            // up, so a stance let go never pops the hips); its legs are not the gait's, so the gait's bob is left out.
+            float stanceWant = planted && groundFound ? Mathf.Clamp(SkillStance, 0f, 0.12f) : 0f;
+            stanceNow = Mathf.MoveTowards(stanceNow, stanceWant, (stanceWant > stanceNow ? 0.5f : 0.3f) * dt);
+            float gaitShare = 1f - Mathf.Clamp01(stanceNow / 0.01f);
             // On a lift the floor will have moved by the end of this step; aim for where it will be.
             next.y = planted && groundFound
                 // (SkillCrouch / SkillCrouchDrop: a Queen of the Hill pawn crouching for its dash, R89; 0 otherwise.)
-                ? groundY + surfaceVel.y * dt + standHeight + (lift + bob) * (1f - SkillCrouch) - landDip - strideDrop - SkillCrouchDrop
+                ? groundY + surfaceVel.y * dt + standHeight + (lift + bob) * (1f - SkillCrouch) * gaitShare - landDip - strideDrop - SkillCrouchDrop - stanceNow
                 : hp.y + hips.linearVelocity.y * dt
                   // Thrown by a pad, lead by where gravity will have the hips, not where they would coast to:
                   // the step-ahead anchor held a thrown body up a little (0.15 m higher, 0.1 s longer, 0.2 m long).
@@ -1303,8 +1318,8 @@ namespace ChessFight.RagdollLab
             // Rolling toward the stance leg reads as weight when the legs alternate. With both legs
             // together there is no stance side, so the same roll reads as a limp - fade it out.
             float roll = Posture(p.stepRoll, p.sprintRoll) * Mathf.Sin(gait) * speedN * (1f - p.boundGait) * leanAlign;
-            anchor.MoveRotation(LeanIntoAcceleration(p, dt) * Quaternion.AngleAxis(BodyTurn, Vector3.up) * Quaternion.LookRotation(facing, Vector3.up)
-                                * Quaternion.Euler(lean, 0f, roll));
+            anchor.MoveRotation(LeanIntoAcceleration(p, dt) * Quaternion.AngleAxis(BodyTurn + SkillTurn, Vector3.up) * Quaternion.LookRotation(facing, Vector3.up)
+                                * Quaternion.Euler(lean + Mathf.Clamp(SkillLean, -12f, 15f), 0f, roll));
             ClampOverspeed(p, dt);
         }
 
@@ -3341,6 +3356,37 @@ namespace ChessFight.RagdollLab
             stamina = -1f;          // refilled on the next step
             Exhausted = false;
             SetRagdollFriction(false);
+            stanceNow = 0f;
+            NetworkSnap = true;
+        }
+
+        /// <summary>The hips straight down to the skill's stance (after a Teleport into it), not eased there.</summary>
+        public void SnapStance() => stanceNow = Mathf.Clamp(SkillStance, 0f, 0.12f);
+
+        /// <summary>
+        /// Right after a <see cref="Teleport"/> (every body at its bind pose): the bodies placed at once in a pose, each part
+        /// turned to <paramref name="local"/>'s rotation in its parent (null = the bind's), about its own joint, parent first.
+        /// The next drive targets start from it, so the piece arrives in that pose instead of a T-pose it then moves out of.
+        /// </summary>
+        public void SnapPose(Func<int, Quaternion?> local)
+        {
+            if (NetworkPuppet || local == null) return;
+            for (int i = 1; i < Count; i++)
+            {
+                var parent = bodies[ParentOf[i]];
+                var j = joints[i];
+                Quaternion r = parent.rotation * (local(i) ?? Quaternion.identity);
+                // The joint's pivot stays where the parent holds it; the part turns about it.
+                Vector3 pivot = j != null ? parent.transform.TransformPoint(j.connectedAnchor) : parent.position + parent.rotation * jointOffset[i];
+                Vector3 pos = j != null ? pivot - r * j.anchor : pivot;
+                var rb = bodies[i];
+                rb.transform.SetPositionAndRotation(pos, r);
+                rb.position = pos;
+                rb.rotation = r;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            targetsPrimed = false;
             NetworkSnap = true;
         }
 

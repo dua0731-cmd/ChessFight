@@ -27,6 +27,10 @@ namespace ChessFight.RagdollLab
         KingCounterSpin, KingRepel,
         // R149, the prototype match: the pawn's first two steps (a step, a diagonal hit, a head-on bounce).
         PawnStep, PawnHit, PawnBounce,
+        // 10-27, the bishop's new F (X자 베기): the leap off, the two swords' cross landing, a piece it took.
+        BishopLeap, BishopCross, BishopHit,
+        // R236, the bishop's new E (대각선 미끄럼): he pushes off, an enemy pushed aside on his way, he stops.
+        BishopSlide, BishopSlideHit, BishopSlideStop,
     }
 
     /// <summary>R130: what the king's guard took (the block's effects answer each one: a cut, the queen's thrust or her
@@ -130,11 +134,18 @@ namespace ChessFight.RagdollLab
         }
 
         void OnEnable() { if (!All.Contains(this)) All.Add(this); }
-        void OnDisable() { All.Remove(this); PassThrough(false); Clearance(null, false); }
+        void OnDisable()
+        {
+            All.Remove(this);
+            PassThrough(false);
+            Clearance(null, false);
+            if (Pawn != null) Pawn.SkillTurn = Pawn.SkillLean = Pawn.SkillStance = 0f;
+        }
         void OnDestroy()
         {
             All.Remove(this);
             if (Fighter != null && Fighter.Skills == this) Fighter.Skills = null;
+            DropClipRig();
         }
 
         // ---------------------------------------------------------------- input
@@ -147,6 +158,10 @@ namespace ChessFight.RagdollLab
 
         /// <summary>Call the aim off (the right click while aiming).</summary>
         public void CancelAim() => cancelEdge = true;
+
+        /// <summary>Scripted runs: a left click while the bishop picks his diagonal (R236; players' come in through
+        /// <see cref="Filter"/>).</summary>
+        public void ClickEdge() { if (EdgeStage == SfEdge.Aim) bishopClick = true; }
 
         /// <summary>The camera the point aims (the bishop's and the knight's) are taken from: its centre ray onto the floor.</summary>
         public void SetAimCamera(Camera cam) => aimCamera = cam;
@@ -169,13 +184,18 @@ namespace ChessFight.RagdollLab
                 confirmEdge = true;
                 raw.shove = raw.shoveHeld = false;
             }
+            // R236: a left click while the bishop picks his diagonal sends him along it.
+            if (EdgeStage == SfEdge.Aim && raw.shove) bishopClick = true;
             if (Stage != SfStage.None || EdgeStage != SfEdge.None)
             {
                 raw.shove = raw.shoveHeld = false;
                 raw.sprint = false;
             }
-            bool rooted = Stage == SfStage.Windup || Stage == SfStage.Recovery || (Stage == SfStage.Active && Piece != PieceKind.Knight)
-                          || EdgeStage != SfEdge.None;   // an edge skill holds the piece where it is (or carries it)
+            // 10-25 (승규 님: "회전하는 것 보다 움직이면서도 막을 수 있게"): the king walks in his guard and through his counter
+            // (slower); a guard that came to nothing still roots him (the opening).
+            bool kingWalks = Piece == PieceKind.King && EdgeStage == SfEdge.None && (Stage == SfStage.Windup || Stage == SfStage.Active || Stage == SfStage.Recovery && KingCountered);
+            bool rooted = !kingWalks && (Stage == SfStage.Windup || Stage == SfStage.Recovery || (Stage == SfStage.Active && Piece != PieceKind.Knight)
+                          || EdgeStage != SfEdge.None);   // an edge skill holds the piece where it is (or carries it)
             if (rooted || pinLeft > 0f)
             {
                 raw.move = Vector3.zero;
@@ -186,6 +206,11 @@ namespace ChessFight.RagdollLab
             {
                 raw.move *= S != null ? S.bishopSlow : 0.6f;
                 raw.sprint = false;
+            }
+            if (kingWalks && !rooted)
+            {
+                raw.move *= S != null ? S.kingGuardMove : 0.7f;
+                raw.jump = false;
             }
             return raw;
         }
@@ -212,7 +237,7 @@ namespace ChessFight.RagdollLab
             if (GuardTakesSwordOnly && kind != SfBlock.Sword) return false;
             KingCountered = true;
             Blocked = kind;
-            counterDone = false;
+            counterDone = spinRaised = false;
             Vector3 from = attackerPawn != null ? attackerPawn.Hips.position : at;
             Vector3 toward = Flat(from - Pawn.Hips.position);
             if (toward.sqrMagnitude > 1e-4f) Dir = toward.normalized;
@@ -287,7 +312,8 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- the step
 
-        void FixedUpdate()
+        /// <summary>The skills' step (FixedUpdate, SwordFightSkills.Motion: the bodies' motion follows it).</summary>
+        void StepSkills()
         {
             if (Fighter == null || S == null) return;
             // Online a client's copy only draws what the host sends (R121, SwordFightSkills.Net.cs).
@@ -326,9 +352,10 @@ namespace ChessFight.RagdollLab
             }
             // The edge skill (its own key and cooldown, R103) first: it is used falling, knocked down. While it runs the
             // F skill waits.
-            if (StepEdge(edge, dt)) return;
-            // Knocked down mid-skill: it ends here (the knight's leap goes on: it is already thrown).
-            if (Stage != SfStage.None && Pawn.State != PawnState.Active && !(Piece == PieceKind.Knight && Stage == SfStage.Active))
+            if (StepEdge(edge, cancel, dt)) return;
+            // Knocked down mid-skill: it ends here (the knight's leap goes on: it is already thrown - once it has left the
+            // board; knocked out of its gather it is a windup like any other).
+            if (Stage != SfStage.None && Pawn.State != PawnState.Active && !(Piece == PieceKind.Knight && Stage == SfStage.Active && KnightClock >= 0f))
             {
                 bool started = Stage != SfStage.Aim;
                 Raise(SfFxKind.Interrupted, null, Pawn.Hips.position, Vector3.zero, 0f);
@@ -378,7 +405,7 @@ namespace ChessFight.RagdollLab
             WaveBlocked = false;
             KingCountered = false;
             Blocked = SfBlock.None;
-            counterDone = false;
+            counterDone = spinRaised = false;
             guardUntil = 0f;
         }
 
@@ -469,8 +496,11 @@ namespace ChessFight.RagdollLab
                     Say($"{Pawn.DisplayName}: 열린 파일 포격 예고" + (WaveBlocked ? $" (장애물 {Reach:0.0} m)" : ""));
                     break;
                 case PieceKind.Bishop:
-                    SetStage(SfStage.Windup, PinCandidate != null ? "예고 · 적 조준" : "예고");
-                    Say($"{Pawn.DisplayName}: 관통 핀 예고" + (PinCandidate != null ? $" ({PinCandidate.DisplayName})" : ""));
+                    // 10-27: locked on whoever was on the point when he let go (or on the point itself).
+                    bishopTarget = PinCandidate;
+                    bishopStruck = false;
+                    SetStage(SfStage.Windup, bishopTarget != null ? "예고 · 적 조준" : "예고");
+                    Say($"{Pawn.DisplayName}: X자 베기 — 칼을 젖힘" + (bishopTarget != null ? $" → {bishopTarget.DisplayName}" : " (빈 곳)"));
                     break;
                 case PieceKind.Knight:
                     KnightGo();
@@ -479,7 +509,11 @@ namespace ChessFight.RagdollLab
             // A rooted piece cannot turn by walking: face the way it goes (standing, where it stands). Not the knight: it
             // is already thrown.
             if (Piece != PieceKind.Knight && Vector3.Angle(Flat(Pawn.Facing), Dir) > 35f && Pawn.Grounded)
+            {
                 Pawn.Teleport(Pawn.Hips.position, Dir);
+                // 10-26: straight into the puppet's own stance, not the bind's T-pose it would then move out of.
+                if (BodyMotion) Pawn.SnapPose(part => Pawn.puppet[part] != null ? Pawn.puppet[part].localRotation : (Quaternion?)null);
+            }
         }
 
         void BeginKing()
@@ -489,6 +523,10 @@ namespace ChessFight.RagdollLab
             Raise(SfFxKind.Cast, null, Floor(Pawn.Hips.position), Dir, 0f);
             SetStage(SfStage.Windup, "받아내기");
             guardUntil = 0f;
+            // 10-26: the guard is drawn up from wherever the sword was (holstered, or the click guard); a click cut still
+            // running would go on turning the body under it.
+            kingPressBlade = Fighter.SwordBody != null ? Fighter.SwordBody.transform.forward : Vector3.zero;
+            Fighter.CancelSwing();
             Say($"{Pawn.DisplayName}: 왕의 반격 자세");
         }
 
@@ -511,6 +549,8 @@ namespace ChessFight.RagdollLab
             switch (Stage)
             {
                 case SfStage.Windup:
+                    // 10-25: he walks in his guard; it faces where he does.
+                    if (Flat(Pawn.Facing).sqrMagnitude > 1e-4f) Dir = Flat(Pawn.Facing).normalized;
                     if (StageTime >= Mathf.Max(S.kingGuard, guardUntil))
                     {
                         SetStage(SfStage.Recovery, "빈틈");
@@ -520,15 +560,20 @@ namespace ChessFight.RagdollLab
                     break;
                 case SfStage.Active:
                 {
-                    // R130: the block holds a beat, then he spins round once, cutting everyone near him away.
-                    if (!counterDone && StageTime >= S.kingCounterBeat)
+                    // R130: the block holds a beat, then he cuts (10-25: one big diagonal cut, it was a turn round). 10-26:
+                    // the hits land where the blade crosses his front, not as it starts (it was up on his right then).
+                    if (!spinRaised && StageTime >= S.kingCounterBeat)
+                    {
+                        spinRaised = true;
+                        Raise(SfFxKind.KingCounterSpin, null, Floor(Pawn.Hips.position), Dir, S.kingCounterRadius, (int)Blocked);
+                    }
+                    if (!counterDone && StageTime >= S.kingCounterBeat + (BodyMotion ? S.kingCounterTime * KingStrikeAt : 0f))
                     {
                         counterDone = true;
-                        Raise(SfFxKind.KingCounterSpin, null, Floor(Pawn.Hips.position), Dir, S.kingCounterRadius, (int)Blocked);
                         Counter();
                     }
-                    float k = CounterSpin;
-                    if (counterDone) Pawn.Face(Quaternion.AngleAxis(-360f * (k * k * (3f - 2f * k)), Vector3.up) * Dir);
+                    // 10-25: one big cut at whoever he blocked, facing them (it was a full turn round).
+                    Pawn.Face(Dir);
                     if (StageTime >= S.kingCounterBeat + S.kingCounterTime + 0.04f)
                     {
                         Pawn.Face(Dir);
@@ -551,6 +596,8 @@ namespace ChessFight.RagdollLab
                 if (!IsEnemy(other)) continue;
                 Vector3 d = Flat(other.Pawn.Hips.position) - c;
                 if (d.magnitude > S.kingCounterRadius) continue;
+                // 10-25: the cut goes out in front of him (toward whoever he blocked), not all round.
+                if (d.sqrMagnitude > 0.09f && Vector3.Angle(Dir, d) > S.kingCounterArc * 0.5f) continue;
                 Vector3 dir = d.sqrMagnitude > 1e-4f ? d.normalized : Dir;
                 Hit(other, dir, S.kingCounterPush, "왕의 반격", SfFxKind.KingCounterHit, n++);
             }
@@ -601,6 +648,7 @@ namespace ChessFight.RagdollLab
                         int n = hitSet.Count;
                         // R130: a king in his guard stops her thrust dead (she is thrown back, her skill is over).
                         if (!Hit(other, dir, S.queenPush[Mathf.Min(n, S.queenPush.Length - 1)], "꼬치 베기", SfFxKind.QueenHit, n)) return;
+                        queenHitAt = StageTime;   // the blade bites: a jolt back through her (SwordFightSkills.Motion)
                     }
                     // She plants her feet where the line ends (short of an edge); a wall or a fall ends it sooner. The
                     // pieces she passed stay passable until her recovery is over (they are flying off by then).
@@ -724,7 +772,192 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- bishop
 
+        // 10-27 (승규 님: "F 누르면 칼이 양 손에 두개가 되고 상대를 조준한 다음 …", then "비숍은 가만히 있고 칼이 멋있게 윙윙
+        // 날아가면서 상대 앞에(여유공간 vfx로 처리) 해주고 칼이 돌아 올때 도 무작위로 휭~ 돌아다니면서 내 손에 와야돼"): with F the
+        // bishop holds a second sword in his left hand (drawn only, SwordFightPawn.OffHand) and aims as before. Let go, he
+        // stays where he is: he draws both swords back and throws them. They fly out wide on either side, whirling, and
+        // meet a little short of whoever was on the point (bishopClear: they do not reach them - the hit is the skill's,
+        // its effect will show it), cutting across each other in an X; everyone round where they cross is struck and
+        // pushed. Then they wander back on their own (random curves, the same on every screen) and drop into his hands.
+        // The old pin (손) is kept below for reference, unused. Every machine draws the swords from the replicated stage,
+        // its time, the point where they cross (Point), the way (Dir), where he stands (Origin) and the throw's length (Reach).
+        RagdollPawn bishopTarget;
+        bool bishopStruck;
+
+        /// <summary>The way out (s), from the replicated distance <see cref="Reach"/>.</summary>
+        public float BishopOutTime => S != null ? Mathf.Clamp(Reach / Mathf.Max(1f, S.bishopThrowSpeed), S.bishopOutMin, S.bishopOutMax) : 0.4f;
+        /// <summary>The whole throw (s): out, the X, back to the hands.</summary>
+        public float BishopThrowTime => BishopOutTime + (S != null ? S.bishopCrossTime + S.bishopBackTime : 1f);
+        /// <summary>His swords are out of his hands (thrown, on their way back).</summary>
+        public bool BishopSwordsOut => BodyMotion && Piece == PieceKind.Bishop && EdgeStage == SfEdge.None && Stage == SfStage.Active
+                                       && Pawn != null && Pawn.State == PawnState.Active && StageTime < BishopThrowTime;
+
         void StepBishop()
+        {
+            switch (Stage)
+            {
+                case SfStage.Windup:
+                    if (StageTime >= S.bishopThrowWindup) BishopThrow();
+                    break;
+                case SfStage.Active:
+                {
+                    float t = StageTime, tOut = BishopOutTime;
+                    // After them for most of the way out, then committed.
+                    if (t < tOut * 0.65f) Point = BishopCrossPoint();
+                    if (!bishopStruck && t >= tOut + S.bishopCrossTime * 0.5f)
+                    {
+                        bishopStruck = true;
+                        BishopCross();
+                    }
+                    if (t >= BishopThrowTime) SetStage(SfStage.Recovery, "후딜");
+                    break;
+                }
+                case SfStage.Recovery:
+                    if (StageTime >= S.bishopCatchAfter) Finish();
+                    break;
+            }
+        }
+
+        /// <summary>The swords leave his hands: where they will cross (as it is now) and how far that is.</summary>
+        void BishopThrow()
+        {
+            Point = BishopCrossPoint();
+            Vector3 way = Flat(Point - Pawn.Hips.position);
+            if (way.sqrMagnitude > 1e-4f) Dir = way.normalized;
+            Reach = way.magnitude;
+            bishopStruck = false;
+            SetStage(SfStage.Active, "손");
+            Raise(SfFxKind.BishopLeap, bishopTarget, Point, Dir, Reach);
+            Say($"{Pawn.DisplayName}: 두 칼을 던짐 {Reach:0.0} m ({BishopOutTime:0.00}초)");
+        }
+
+        /// <summary>Where the swords cross (on the floor): <see cref="SwordFightSkillParams.bishopClear"/> short of the target
+        /// (where they are now), but never nearer him than 0.9 m; the aimed point with no one taken (or the target gone).</summary>
+        Vector3 BishopCrossPoint()
+        {
+            Vector3 bp = Flat(Pawn.Hips.position), goal = Flat(Point);
+            var ts = bishopTarget != null ? bishopTarget.GetComponent<SwordFightSkills>() : null;
+            if (ts != null && ts.Fighter != null && ts.Fighter.Alive)
+            {
+                Vector3 to = Flat(bishopTarget.Hips.position) - bp;
+                float dist = to.magnitude;
+                Vector3 dir = dist > 1e-3f ? to / dist : Flat(Dir).normalized;
+                goal = bp + dir * Mathf.Max(0.9f, dist - S.bishopClear);
+            }
+            return Floor(goal + Vector3.up * 0.5f);
+        }
+
+        /// <summary>The X: everyone round where the swords cross is struck (its effect will show it; a king's guard takes it
+        /// like a sword) and pushed away from him.</summary>
+        void BishopCross()
+        {
+            Vector3 c = Flat(Point), f = Flat(Dir).normalized;
+            int n = 0;
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other)) continue;
+                Vector3 d = Flat(other.Pawn.Hips.position) - c;
+                if (d.magnitude > S.bishopCrossRadius || Mathf.Abs(other.Pawn.Hips.position.y - (Point.y + Pawn.standHeight)) > 1.4f) continue;
+                Hit(other, f, S.bishopPush, "X자 베기", SfFxKind.BishopHit, n++);
+            }
+            Raise(SfFxKind.BishopCross, bishopTarget, Point + Vector3.up * S.bishopCrossHeight, f, S.bishopCrossRadius, n);
+            if (n == 0) Say($"{Pawn.DisplayName}: X자 베기 — 맞은 적 없음");
+        }
+
+        // ---------------------------------------------------------------- the thrown swords' way (every machine)
+
+        /// <summary>A number in 0..1 from a seed (the same on every machine).</summary>
+        static float Hash01(int seed, int k)
+        {
+            float x = Mathf.Sin(seed * 0.0001237f + k * 78.233f + seed % 9973 * 0.731f) * 43758.5453f;
+            return x - Mathf.Floor(x);
+        }
+
+        static Vector3 HashDir(int seed, int k) =>
+            new Vector3(Hash01(seed, k) * 2f - 1f, Hash01(seed, k + 1) * 2f - 1f, Hash01(seed, k + 2) * 2f - 1f);
+
+        /// <summary>Half a thrown sword's length: they turn about their middle (the flight's effect follows that, R181).</summary>
+        public const float BishopSwordHalf = 0.38f;
+
+        /// <summary>
+        /// Where one of the bishop's thrown swords is now (<paramref name="hand"/> 0 his right, 1 his left; its
+        /// <paramref name="grip"/> - the hilt, as a held sword's - and the turn, blade along +Z), given where that hand is
+        /// drawn (<paramref name="handGrip"/>); false while it is in his hand. Out: released along the way, out wide to its
+        /// own side on a curve, whirling flat (bishopSpin turns a second), turning into its cut as it gets there. The X:
+        /// each comes down across from high on its own side to low on the other, its blade along the other diagonal and
+        /// its flat to him - the two cross in the middle. Back: on a curve of its own (random, the same on every machine),
+        /// whirling and slowing, turned at the end to drop into his hand as he holds it.
+        /// </summary>
+        public bool BishopSwordPose(int hand, Vector3 handGrip, out Vector3 grip, out Quaternion turn)
+        {
+            grip = handGrip;
+            turn = Quaternion.identity;
+            if (!BishopSwordsOut || S == null) return false;
+            float sgn = hand == 0 ? 1f : -1f;
+            Vector3 up = Vector3.up, f = Flat(Dir);
+            if (f.sqrMagnitude < 1e-4f) f = Flat(Pawn.Facing);
+            f.Normalize();
+            Vector3 side = Vector3.Cross(up, f);
+            Vector3 cross = Point + up * S.bishopCrossHeight;
+            Vector3 path = (side * sgn + up).normalized, blade = (-side * sgn + up).normalized;
+            Vector3 s0 = cross + path * 0.45f, s1 = cross - path * 0.45f;
+            Quaternion cutTurn = Quaternion.LookRotation(blade, f);
+            const float half = BishopSwordHalf;
+            float t = StageTime, tOut = BishopOutTime, tCross = S.bishopCrossTime, tBack = S.bishopBackTime;
+            if (t < tOut)
+            {
+                float u = t / tOut, e = 1f - Mathf.Pow(1f - u, 1.6f);
+                Vector3 p0 = handGrip + f * half;
+                float d = Flat(s0 - p0).magnitude;
+                Vector3 p1 = p0 + f * (0.3f * d) + side * sgn * (0.45f + 0.22f * d) + up * 0.35f;
+                Vector3 p2 = s0 + side * sgn * (0.35f + 0.1f * d) - f * (0.15f * d) + up * 0.25f;
+                Vector3 mid = Bezier(p0, p1, p2, s0, e);
+                Quaternion whirl = Quaternion.AngleAxis(360f * S.bishopSpin * t * sgn, (up + side * sgn * 0.35f).normalized) * Quaternion.LookRotation(f, up);
+                turn = Quaternion.Slerp(whirl, cutTurn, Mathf.SmoothStep(0f, 1f, (u - 0.78f) / 0.22f));
+                grip = mid - turn * Vector3.forward * half;
+                return true;
+            }
+            t -= tOut;
+            if (t < tCross)
+            {
+                float u = t / tCross;
+                Vector3 mid = Vector3.Lerp(s0, s1, Mathf.SmoothStep(0f, 1f, u)) + f * (0.08f * Mathf.Sin(Mathf.PI * u));
+                turn = cutTurn;
+                grip = mid - turn * Vector3.forward * half;
+                return true;
+            }
+            t -= tCross;
+            {
+                float u = Mathf.Clamp01(t / tBack), e = Mathf.SmoothStep(0f, 1f, u);
+                int seed = Mathf.RoundToInt(Origin.x * 37f) * 73856093 ^ Mathf.RoundToInt(Origin.z * 37f) * 19349663 ^ (hand + 1) * 83492791;
+                Vector3 catchBlade = BishopCatchBlade(f, side);
+                if (hand == 1) catchBlade -= 2f * Vector3.Dot(catchBlade, side) * side;
+                Vector3 handMid = handGrip + catchBlade * half;
+                float floorY = Point.y;
+                Vector3 q1 = s1 - path * 0.9f - f * 0.2f + HashDir(seed, 0) * 1.1f;
+                q1.y = Mathf.Max(q1.y, floorY + 0.4f);
+                Vector3 behind = -f * (0.4f + 0.8f * Hash01(seed, 3)) + side * sgn * (0.3f + 0.9f * Hash01(seed, 4));
+                Vector3 q2 = handMid + behind + up * (0.5f + 0.7f * Hash01(seed, 5)) + HashDir(seed, 6) * 0.5f;
+                q2.y = Mathf.Max(q2.y, floorY + 0.4f);
+                Vector3 mid = Bezier(s1, q1, q2, handMid, e);
+                // A wobble of its own on the way (none at the ends).
+                Vector3 wob = Vector3.Cross(up, (handMid - s1).normalized);
+                mid += wob * (0.18f * Mathf.Sin(u * Mathf.PI * (2f + Hash01(seed, 9)) + Hash01(seed, 10) * 6.28f) * Mathf.Sin(Mathf.PI * u));
+                // Whirling on its way, slowing; turned at the end as his hand holds it.
+                Vector3 axis = (up + HashDir(seed, 11) * 0.5f).normalized;
+                float spin = 360f * S.bishopSpin * 0.8f * t * sgn * (1f - 0.45f * u);
+                Quaternion whirl = Quaternion.AngleAxis(spin, axis) * cutTurn;
+                turn = Quaternion.Slerp(whirl, Quaternion.LookRotation(catchBlade, up), Mathf.SmoothStep(0f, 1f, (u - 0.7f) / 0.3f));
+                grip = mid - turn * Vector3.forward * half;
+                return true;
+            }
+        }
+
+        /// <summary>The line his right sword is held along as it drops back into his hand (the left one mirrored).</summary>
+        static Vector3 BishopCatchBlade(Vector3 f, Vector3 side) => (f * 0.6f + Vector3.up * 0.55f + side * 0.35f).normalized;
+
+        /// <summary>The old pin (R91 관통 핀), kept for reference: unused since 10-27.</summary>
+        void StepBishopPin()
         {
             switch (Stage)
             {
@@ -835,9 +1068,13 @@ namespace ChessFight.RagdollLab
             PassThrough(true);
             int on = 0;
             foreach (bool b in KnightSquareOn) on += b ? 1 : 0;
-            Raise(SfFxKind.KnightLeap, null, Origin, Dir, Flat(Point - Origin).magnitude);
+            // 10-26: it gathers itself first (SwordFightSkills.Motion, KnightGather); the leap is raised as it leaves.
+            leapRaised = KnightGather <= 0f;
+            if (leapRaised) Raise(SfFxKind.KnightLeap, null, Origin, Dir, Flat(Point - Origin).magnitude);
             Say($"{Pawn.DisplayName}: 포크 강하 — {Flat(Point - Origin).magnitude:0.0} m 앞 칸으로 (노리는 칸 {on}개)");
         }
+
+        bool leapRaised;
 
         void StepKnight()
         {
@@ -845,20 +1082,46 @@ namespace ChessFight.RagdollLab
             {
                 case SfStage.Active:
                 {
-                    float dt = Time.fixedDeltaTime;
-                    if (StageTime < KnightTime)
+                    float dt = Time.fixedDeltaTime, t = KnightClock;
+                    if (t < 0f)
                     {
-                        Vector3 pos = KnightFlight(S, knightFrom, knightLand, Dir, StageTime, out float tip);
-                        Vector3 next = KnightFlight(S, knightFrom, knightLand, Dir, StageTime + dt, out _);
+                        // 10-26: the gather - a little down and tipped forward into its spring, turned to the square.
+                        float e = Out2(StageTime / 0.04f);
+                        Pawn.Fly(knightFrom + Vector3.down * (0.03f * e), Vector3.zero, 10f * e, default, 26f);
+                        break;
+                    }
+                    if (!leapRaised)
+                    {
+                        leapRaised = true;
+                        Raise(SfFxKind.KnightLeap, null, Origin, Dir, Flat(Point - Origin).magnitude);
+                    }
+                    if (t < KnightTime)
+                    {
+                        Vector3 pos = KnightFlight(S, knightFrom, knightLand, Dir, t, out float tip);
+                        Vector3 next = KnightFlight(S, knightFrom, knightLand, Dir, t + dt, out _);
+                        // Out of the gather's forward pitch into the rear.
+                        if (KnightGather > 0f) tip += 10f * (1f - Out2(t / 0.08f));
                         Pawn.Fly(pos, (next - pos) / dt, tip, default, 26f);
                         break;
                     }
-                    Pawn.EndFlight(Vector3.down * 3.5f);
+                    // 10-26: held on its square bowed over the blow (a dead stop), not let go to bounce; over the void it
+                    // falls as before.
+                    if (BodyMotion && HasFloor(Flat(knightLand))) Pawn.Fly(knightLand + Vector3.down * 0.035f, Vector3.zero, 12f, default, 30f);
+                    else Pawn.EndFlight(Vector3.down * 3.5f);
                     KnightImpact();
                     SetStage(SfStage.Recovery, "후딜");
                     break;
                 }
                 case SfStage.Recovery:
+                    if (Pawn.OuterFlying)
+                    {
+                        if (StageTime < 0.24f)
+                        {
+                            float r = Out2(Mathf.InverseLerp(0.10f, 0.24f, StageTime));
+                            Pawn.Fly(knightLand + Vector3.down * (0.035f * (1f - r)), Vector3.zero, 12f * (1f - r), default, 30f);
+                        }
+                        else Pawn.EndFlight(Vector3.zero);
+                    }
                     if (StageTime >= S.knightRecovery) Finish();
                     break;
             }
@@ -916,6 +1179,7 @@ namespace ChessFight.RagdollLab
             target.TakeHit(push, S.knockdownSeconds, 0f, true);
             other.Fighter.StopCombat();
             other.pinLeft = 0f;
+            other.struckLeft = 0f;
             if (other.Stage != SfStage.None && other.Stage != SfStage.Aim) other.StartCooldown();
             if (other.Stage != SfStage.None) other.Clear();
             Raise(kind, target, Vector3.Lerp(Pawn.bodies[(int)BodyId.Chest].position, target.bodies[(int)BodyId.Chest].position, 0.7f), dir, metres, order);
@@ -981,19 +1245,37 @@ namespace ChessFight.RagdollLab
                 Vector3 side = Vector3.Cross(Vector3.up, f);   // the piece's right
                 switch (Piece)
                 {
+                    // 10-26 (SwordFightSkills.Motion): the guard drawn up across his front, the blow taken on it, wound up
+                    // over his right shoulder in the beat, one diagonal cut through whoever he blocked, and handed back.
+                    case PieceKind.King when BodyMotion: return KingBlade(f, side);
                     case PieceKind.King when Stage == SfStage.Windup: return (-side + Vector3.up * 0.15f).normalized;
                     case PieceKind.King when Stage == SfStage.Active:
                     {
-                        // R130: held up across his front through the block's beat, then swept once round with the spin.
+                        // R130: held up across his front through the block's beat; 10-25: then one big diagonal cut at
+                        // whoever he blocked, from high on his right down across to low on his left (it was a full turn).
                         float k = CounterSpin;
-                        if (k <= 0f) return (side + Vector3.up * 0.55f + f * 0.25f).normalized;
-                        return Quaternion.AngleAxis(-360f * (k * k * (3f - 2f * k)), Vector3.up) * (f + side * 0.6f).normalized;
+                        Vector3 high = (side * 0.55f + Vector3.up * 0.75f + f * 0.25f).normalized;
+                        if (k <= 0f) return high;
+                        Vector3 low = (-side * 0.65f - Vector3.up * 0.35f + f * 0.65f).normalized;
+                        float e = k * k * (3f - 2f * k);
+                        return Vector3.Slerp(high, low, e);
                     }
-                    case PieceKind.Queen when Stage == SfStage.Windup: return (f + Vector3.up * 0.1f).normalized;
-                    case PieceKind.Queen when Stage == SfStage.Active || Stage == SfStage.Recovery: return f;
-                    case PieceKind.Rook when Stage == SfStage.Windup: return (Vector3.up - f * 0.35f).normalized;
-                    case PieceKind.Rook when Stage == SfStage.Active || Stage == SfStage.Recovery: return (f - Vector3.up * 0.8f).normalized;
+                    case PieceKind.Queen: return QueenBlade(f);
+                    // 10-25 (승규 님: "룩이 F 스킬을 쓸 때 아래에서 위로 올라오니까 칼도 아래에서 위로"): the wall comes up out
+                    // of the floor, so the sword goes the same way - held low and dragged behind through the windup, then
+                    // swept up from the floor in front to high over it as the wave goes (a fifth of a second), held up.
+                    case PieceKind.Rook when Stage == SfStage.Windup: return (-f * 0.35f + side * 0.3f - Vector3.up * 0.85f).normalized;
+                    case PieceKind.Rook when Stage == SfStage.Active:
+                    {
+                        float k = Mathf.Clamp01(StageTime / 0.2f);
+                        Vector3 low = (f * 0.55f - Vector3.up * 0.85f).normalized, high = (f * 0.3f + Vector3.up).normalized;
+                        return Vector3.Slerp(low, high, k * k * (3f - 2f * k));
+                    }
+                    case PieceKind.Rook when Stage == SfStage.Recovery: return (f * 0.3f + Vector3.up).normalized;
+                    // 10-27: the new X cut (SwordFightSkills.Motion, BishopBlade); the old pin's line without the motion.
+                    case PieceKind.Bishop when BodyMotion && Stage != SfStage.None: return BishopBlade(f, side);
                     case PieceKind.Bishop when Stage == SfStage.Windup || Stage == SfStage.Active: return (f + Vector3.up * 0.3f).normalized;
+                    case PieceKind.Knight when BodyMotion && (Stage == SfStage.Active || Stage == SfStage.Recovery): return KnightDiveBlade(f, side);
                     case PieceKind.Knight when Stage == SfStage.Active: return (Vector3.up - f * 0.2f).normalized;
                     case PieceKind.Knight when Stage == SfStage.Recovery: return (f - Vector3.up * 0.8f).normalized;
                 }
@@ -1006,6 +1288,9 @@ namespace ChessFight.RagdollLab
         {
             get
             {
+                // 10-25: a skill drawn for real leaves the steel as it is (no glow in the piece's colour).
+                if (EdgeStage == SfEdge.None && SwordFightSkillFx.Real(Piece)) return null;
+                if (EdgeStage != SfEdge.None && SwordFightSkillFx.RealEdge(Piece)) return null;
                 if (HasSkill && EdgeStage != SfEdge.None)
                 {
                     var e = SwordFightSkillFx.CardColors(Piece);
@@ -1031,7 +1316,8 @@ namespace ChessFight.RagdollLab
         };
 
         /// <summary>How far the hand is pulled back (−) or thrust out (+) along the skill's line.</summary>
-        public float Reach01 => Piece == PieceKind.Queen ? Stage == SfStage.Windup ? -0.25f : Stage == SfStage.Active ? 0.35f : Stage == SfStage.Recovery ? 0.3f : 0f : 0f;
+        // 10-26: none with the body motions on - her arm draws back and drives out itself (SwordFightSkills.Motion).
+        public float Reach01 => Piece == PieceKind.Queen && !BodyMotion ? Stage == SfStage.Windup ? -0.25f : Stage == SfStage.Active ? 0.35f : Stage == SfStage.Recovery ? 0.3f : 0f : 0f;
 
         // ---------------------------------------------------------------- small things
 

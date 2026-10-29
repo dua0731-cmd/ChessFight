@@ -1302,6 +1302,21 @@ public static class NetworkCoreTests
                         Check(PieceEmotes.Name((PieceKind)kind, slot).Length > 0, "name " + kind + "/" + slot);
                 for (int slot = 1; slot <= PieceEmotes.Slots; slot++) Check(PieceEmotes.Duration(slot) > 0.5f, "length " + slot);
                 Check(PieceEmotes.Name(PieceKind.Rook, 0) == "" && PieceEmotes.Duration(0) == 0f && PieceEmotes.Duration(5) == 0f, "slot 0 and 5 are nothing"); });
+            Test("Skill clips (R190): each stage plays its span of the clip, stretched over a set length or at 1x and held", () => {
+                var m = new[] { 0f, 0.6f, 0.9f, 1.5f };
+                Func<float, float, bool> Near = (a, b) => Math.Abs(a - b) < 1e-4f;
+                Check(Near(SkillClipTiming.At(m, SkillClipTiming.Windup, 0f, 0.4f, 1.5f), 0f), "windup starts at mark 0");
+                Check(Near(SkillClipTiming.At(m, SkillClipTiming.Windup, 0.2f, 0.4f, 1.5f), 0.3f), "windup stretched: half way");
+                Check(Near(SkillClipTiming.At(m, SkillClipTiming.Windup, 0.9f, 0.4f, 1.5f), 0.6f), "windup over: held at mark 1");
+                Check(Near(SkillClipTiming.At(m, SkillClipTiming.Active, 0.1f, 0f, 1.5f), 0.7f), "active of no set length: 1x");
+                Check(Near(SkillClipTiming.At(m, SkillClipTiming.Active, 2f, 0f, 1.5f), 0.9f), "active held at mark 2");
+                Check(Near(SkillClipTiming.At(m, SkillClipTiming.Recovery, 0.45f, 0.45f, 1.5f), 1.5f), "recovery ends at the clip's end");
+                Check(Near(SkillClipTiming.At(null, SkillClipTiming.Active, 0f, 0f, 3f), 1f), "no marks: thirds");
+                var bad = new[] { 0f, 2f, 1f, 9f };
+                Check(Near(SkillClipTiming.At(bad, SkillClipTiming.Active, 5f, 0f, 1.5f), 1.5f), "out of order and out of the clip: in order, inside it");
+                Check(Near(SkillClipTiming.At(m, SkillClipTiming.Recovery, -1f, 0.3f, 1.5f), 0.9f), "no time before a stage");
+                Check(Near(SkillClipTiming.In(0f, 0.1f, 0.8f), 0f) && Near(SkillClipTiming.In(0.05f, 0.1f, 0.8f), 0.4f)
+                      && Near(SkillClipTiming.In(1f, 0.1f, 0.8f), 0.8f) && Near(SkillClipTiming.In(0f, 0f, 2f), 1f), "blend in, capped"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

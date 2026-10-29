@@ -126,6 +126,9 @@ namespace ChessFight.RagdollLab
         // floor, the bishop's and the knight's aimed point (the host has no camera of theirs to take it from).
         public Vector3 aimPoint;
         public bool aimPointSet;
+        /// <summary>R236: the edge skill's key (E) is held (the Sword Fight bishop picks his diagonal while it is). It rides in
+        /// the grab bit, which a Sword Fight packet never uses (its right click travels as the cancel press).</summary>
+        public bool edgeHeld;
 
         /// <summary>The held part of a pawn's input (the presses are counted separately).</summary>
         public void Hold(PawnInput input)
@@ -312,8 +315,8 @@ namespace ChessFight.RagdollLab
                 w.Write(clientTimeMs);
                 w.Write(Signed(input.move.x));
                 w.Write(Signed(input.move.y));
-                w.Write((byte)((input.grab ? 1 : 0) | (input.sprint ? 2 : 0) | (input.interact ? 4 : 0) | (input.shoveHeld ? 8 : 0)
-                               | (sword && input.aimPointSet ? 16 : 0)));
+                w.Write((byte)(((sword ? input.edgeHeld : input.grab) ? 1 : 0) | (input.sprint ? 2 : 0) | (input.interact ? 4 : 0)
+                               | (input.shoveHeld ? 8 : 0) | (sword && input.aimPointSet ? 16 : 0)));
                 Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
                 w.Write(Signed(aim.x));
                 w.Write(Signed(aim.y));
@@ -362,7 +365,8 @@ namespace ChessFight.RagdollLab
                 input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
                 byte held = r.ReadByte();
                 if (held > (sword ? 31 : 15)) return false;
-                input.grab = (held & 1) != 0;
+                input.grab = !sword && (held & 1) != 0;
+                input.edgeHeld = sword && (held & 1) != 0;
                 input.sprint = (held & 2) != 0;
                 input.interact = (held & 4) != 0;
                 input.shoveHeld = (held & 8) != 0;

@@ -133,13 +133,16 @@ compile_all() {
   # Game too (SettingsWindow's quit stops play mode in the Editor): player defines.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs        -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Game.dll" "$src"/Scripts/Game/*.cs
   $csc $sym $refs -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Gameplay.dll" $(find "$src/Scripts/Gameplay" -name '*.cs')
+  # The VFX workbench and cues (Assets/Scripts/VFX). Player defines; its UNITY_EDITOR folder scan is compiled below.
+  $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
+       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.VFX.dll" "$src"/Scripts/VFX/*.cs
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
        -out:"$build/ChessFight.Game.Steam.dll" "$src"/Scripts/Bootstrap/*.cs
   # Player defines: its UNITY_EDITOR blocks need UnityEditor.dll, which the reference package lacks.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
-       -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/Scripts/RagdollLab" -name '*.cs')
+       -r:"$build/ChessFight.VFX.dll" -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/Scripts/RagdollLab" -name '*.cs')
   # Pawn Rush course 01 (Assets/Scripts/PawnRush). Player defines here; its UNITY_EDITOR blocks and
   # its editor assembly (Assets/Scripts/PawnRushEditor) are compiled against UnityEditor.dll below.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
@@ -149,7 +152,7 @@ compile_all() {
        -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Game.Steam.dll" \
        -r:"$build/ChessFight.PawnRush.dll" -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/Scripts/RagdollLabSteam" -name '*.cs')
   compile_pawnrush_editor
-  echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap, RagdollLab, RagdollLabSteam and PawnRush compiled with Roslyn (Input/ and other Editor code skipped)."
+  echo "PASS: Core, Network.Steam, Game, VFX, Gameplay, Bootstrap, RagdollLab, RagdollLabSteam and PawnRush compiled with Roslyn (Input/ and other Editor code skipped)."
 }
 
 # The Pawn Rush editor tools (and the course scripts' UNITY_EDITOR blocks) against a UnityEditor.dll
@@ -169,6 +172,12 @@ compile_pawnrush_editor() {
        -out:"$build/ChessFight.PawnRush.EditorBuild.dll" $(find "$src/Scripts/PawnRush" -name '*.cs')
   $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
        -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.PawnRush.EditorBuild.dll" -out:"$build/ChessFight.PawnRush.Editor.dll" $(find "$src/Scripts/PawnRushEditor" -name '*.cs')
+  # The VFX workbench's editor-only folder scan (AssetDatabase).
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" \
+       -out:"$build/ChessFight.VFX.EditorBuild.dll" "$src"/Scripts/VFX/*.cs
+  # The VFX builders (Assets/Scripts/VFXEditor), editor only.
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.VFX.EditorBuild.dll" \
+       -out:"$build/ChessFight.VFX.Editor.dll" "$src"/Scripts/VFXEditor/*.cs
 }
 
 # Assembly boundaries that keep gameplay work from reaching into the network layer.
@@ -181,13 +190,13 @@ check_boundaries() {
   # Bootstrap-style bridge, which is why it is its own assembly beside RagdollLab/).
   hits=$(code_refs 'Steamworks|ChessFight\.Network\.Steam|SteamSession|SteamMotion' \
          Assets/Scripts/Core Assets/Scripts/Game Assets/Scripts/Gameplay Assets/Scripts/Input Assets/Scripts/RagdollLab \
-         Assets/Scripts/PawnRush)
+         Assets/Scripts/PawnRush Assets/Scripts/VFX)
   if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Steam referenced outside Network/ and Bootstrap/"; bad=1; fi
   # The network layer and scene flow never depend on a character implementation.
   # (The lab's own folders, RagdollLab/, RagdollLabEditor/ and RagdollLabSteam/, sit in Assets/Scripts
   # since the 10-08 folder cleanup; the rule is about the network and game folders beside them.)
   hits=$(code_refs 'RagdollLab|RagdollPawn|LabGame' Assets/Scripts/Core Assets/Scripts/Network Assets/Scripts/Game \
-         Assets/Scripts/Gameplay Assets/Scripts/Bootstrap Assets/Scripts/Input Assets/Scripts/Editor)
+         Assets/Scripts/Gameplay Assets/Scripts/Bootstrap Assets/Scripts/Input Assets/Scripts/Editor Assets/Scripts/VFX)
   if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: the network and game code depends on the ragdoll lab"; bad=1; fi
   [ $bad -eq 0 ] && echo "PASS: assembly boundaries (Steam only in Network/Bootstrap, the network and game code does not depend on the ragdoll)"
   return $bad
