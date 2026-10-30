@@ -10,6 +10,7 @@ Options:
                                 mp4: timing preview; full: all of them)
     --size <w>x<h>, --samples <n>
                                 cut size and EEVEE samples (default 1280x720 and 24, full: 1920x1080 and 48)
+    --only S1,S4                render only these cuts
     --check                     interference, path, safe windows and budget reports
     --export                    FBX per part (LOD0-2, UV1), part .blend files, PR_EG_manifest.json
     --parts <dir>               where the part folders go (default <out dir>/parts; the repo keeps them here, next to
@@ -53,6 +54,8 @@ def args():
         opt["size"] = tuple(int(v) for v in argv[argv.index("--size") + 1].lower().split("x"))
     if "--samples" in argv:
         opt["samples"] = int(argv[argv.index("--samples") + 1])
+    if "--only" in argv:
+        opt["only"] = argv[argv.index("--only") + 1].split(",")
     return opt
 
 
@@ -172,7 +175,7 @@ def shot_list(L):
     zc = [d for d in L.devices if d["type"] == "fallingpiece"][0]["pos"][2]
     zb = [d for d in L.devices if d["type"] == "foldingbridge"][0]["pos"][2]
     return {
-        "S1": ((-4.6, 5.6, -3.0), (1.0, 0.3, 17.0), 24, 1.0),
+        "S1": ((-4.6, 5.2, -0.3), (1.0, 0.3, 17.0), 20, 1.0),     # over the back wall, so it stays out of frame
         "R1": ((-13.0, 9.0, 13.5), (0.5, 0.0, 25.0), 24, 2.0),
         "S2": ((-10.5, 6.5, 35.0), (0.0, 0.0, 51.0), 24, 3.0),
         "S3": ((-4.5, 5.0, gate + 2.5), (0.5, 0.8, gate + 21.0), 22, 1.2),
@@ -256,7 +259,7 @@ def main():
         smp = opt.get("samples", smp)
         if opt["renders"] != "cuts":
             layout_overview(L, review, opt["out"], px_per_m=8 if opt["renders"] == "quick" else 20)
-        shots(L, rigs, review, opt["out"], w, h, smp)
+        shots(L, rigs, review, opt["out"], w, h, smp, only=opt.get("only"))
     if opt["renders"] in ("full", "sheets"):
         import eg_bl_annot as A
         notes = B.collection("EG_Notes")

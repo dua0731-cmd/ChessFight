@@ -11,7 +11,7 @@ blender --background --factory-startup --python build_endgame_v1.py -- Review --
 ```
 
 - `--renders none|quick|cuts|sheets|skins|turntable|mp4|full`: quick = 전체 배치도 + 컷 6장(1280 × 720), cuts = 컷 6장만, sheets = 비트별 배치도(1 px = 2 cm, Grease Pencil 치수선), skins = 장치 스킨 22종 단독 시트, turntable = 같은 22종을 90°마다 네 방향, mp4 = 장치 타이밍 미리보기, full = 전부(컷 1920 × 1080).
-- `--size 1920x1080 --samples 32`: 컷 크기와 EEVEE 샘플(기본 1280 × 720 · 24, full은 1920 × 1080 · 48). `Review/`의 최종 컷은 `--renders cuts --size 1920x1080 --samples 32`.
+- `--size 1920x1080 --samples 32`: 컷 크기와 EEVEE 샘플(기본 1280 × 720 · 24, full은 1920 × 1080 · 48). `Review/`의 최종 컷은 `--renders cuts --size 1920x1080 --samples 32`. `--only S1,S4`는 그 컷만.
 - `--check`: 간섭(장치마다 한 주기를 0.05초로 표본, 스킨을 2 cm 줄여 BVH 겹침) · 경로 · 안전 창 · 예산 → `Review/validation_v1.json`.
 - `--export --parts <폴더>`: 부품마다 `<폴더>/<Part>/<Part>.fbx`(LOD0 · LOD1 · LOD2, UV0 + UV1_Lightmap)와 `<Part>_work.blend`, `<폴더>/PR_EG_manifest.json`.
 - GPU 없는 리눅스(클라우드)에서는 Mesa(llvmpipe)를 깔고 `EGL_PLATFORM=surfaceless`로 돌린다. Blender 대신 PyPI `bpy==5.2.3`도 같다(`python build_endgame_v1.py -- …`).
