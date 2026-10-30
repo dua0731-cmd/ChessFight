@@ -58,6 +58,7 @@ namespace ChessFight.RagdollLab
             if (pieceMarker != null) Destroy(pieceMarker.gameObject);
             pieceMarker = null;
             if (piece == PieceKind.Pawn || !ShowPieceModel()) ShowPawnMesh();
+            if (piece == PieceKind.Pawn) ShowPawnRushPawnMesh();
             if (piece == PieceKind.Pawn || skin != null && pawnMesh != null) return;
             Transform head = bodies[(int)BodyId.Head].transform;
             var headCollider = bodies[(int)BodyId.Head].GetComponent<Collider>();
@@ -117,7 +118,9 @@ namespace ChessFight.RagdollLab
         bool ShowPieceModel()
         {
             if (skin == null) return false;
-            var prefab = Resources.Load<GameObject>("PieceModels/" + piece);
+            // On Pawn Rush the set weighted again for it (R251, Tools/PieceRig/rig_pawnrush.py), else the shared one.
+            GameObject prefab = PawnRushPhysics != null ? Resources.Load<GameObject>("PieceModels/PawnRush/" + piece) : null;
+            if (prefab == null) prefab = Resources.Load<GameObject>("PieceModels/" + piece);
             var look = prefab != null ? prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
             if (look == null || look.sharedMesh == null) return false;
             if (look.sharedMesh.bindposes.Length != skin.sharedMesh.bindposes.Length && pawnMesh == null) return false;
@@ -130,6 +133,25 @@ namespace ChessFight.RagdollLab
             skin.sharedMaterial = look.sharedMaterial;
             if (VisualSync != null) VisualSync.SetPieceLook(look.transform);
             return true;
+        }
+
+        /// <summary>
+        /// On Pawn Rush the pawn wears its own mesh weighted again (R251: the shoes blend into the hips, the head turns
+        /// on a short neck blend, the face details move as one): Resources/PieceModels/PawnRush/Pawn. Its material stays
+        /// (the team's colour). Elsewhere, or without the asset, the pawn's own mesh as it is.
+        /// </summary>
+        void ShowPawnRushPawnMesh()
+        {
+            if (skin == null || PawnRushPhysics == null) return;
+            var prefab = Resources.Load<GameObject>("PieceModels/PawnRush/Pawn");
+            var look = prefab != null ? prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
+            if (look == null || look.sharedMesh == null || look.sharedMesh.bindposes.Length != skin.sharedMesh.bindposes.Length) return;
+            if (pawnMesh == null)
+            {
+                pawnMesh = skin.sharedMesh;
+                pawnSkinMaterial = skin.sharedMaterial;
+            }
+            SwapSkinMesh(look.sharedMesh);
         }
 
         void ShowPawnMesh()
