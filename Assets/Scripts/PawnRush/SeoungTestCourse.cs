@@ -193,7 +193,7 @@ namespace ChessFight.PawnRush
         }
 
         // The first zone the code builds that `root` lacks (its id), or null.
-        static string Missing(Transform root)
+        public static string Missing(Transform root)
         {
             foreach (var id in Course01v4Builder.ZoneSections)
                 if (root.Find("Zone " + id) == null) return id;
