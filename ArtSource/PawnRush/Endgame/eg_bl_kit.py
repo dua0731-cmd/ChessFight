@@ -622,9 +622,11 @@ def skin_shelf_wall(width=6.0):
     o = B.mesh_object("PR_EG_ShelfWall6", bm, mats("EG_Walnut", "EG_Gold", "EG_Teal"), KIT)
     for sy in (-1, 1):
         books = bookshelf_unit(seed=7 + sy, width=width - 0.6, shelves=4, pitch=0.7)
+        # a bay opens towards local -y: turn it so the books face out of each long side, the gold lips flush with
+        # the collider face and the bay's back buried in the core
         for v in books.data.vertices:
-            v.co = Vector((v.co.x * sy, v.co.y * sy, v.co.z - 1.4))
-        join(o, books, offset=Vector((0, sy * 1.2, 0)))
+            v.co = Vector((v.co.x * -sy, v.co.y * -sy, v.co.z - 1.4))
+        join(o, books, offset=Vector((0, sy * 1.18, 0)))
     return finish(o)
 
 

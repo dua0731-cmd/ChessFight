@@ -5,6 +5,7 @@ Blender reports (Review/validation_v1.json, Review/export_report.json).
 """
 import json
 import os
+import struct
 import subprocess
 import sys
 
@@ -26,6 +27,18 @@ def load(path):
         return json.load(f)
 
 
+def png_size(path):
+    """(width, height) of a PNG under this folder, None when it is not there (renders are LFS files)."""
+    p = os.path.join(HERE, path)
+    if not os.path.exists(p):
+        return None
+    with open(p, "rb") as f:
+        head = f.read(24)
+    if head[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    return struct.unpack(">II", head[16:24])
+
+
 def blender_section():
     val = load("Review/validation_v1.json")
     exp = load("Review/export_report.json")
@@ -40,7 +53,11 @@ def blender_section():
     lines.append("| 부품 FBX(LOD0–2, UV1) + _work.blend | `ArtSource/PawnRush/Endgame/PR_EG_*/` |")
     lines.append("| 배치 목록 | `ArtSource/PawnRush/Endgame/PR_EG_manifest.json` (Unity 축) |")
     lines.append("| 텍스처 | `ArtSource/PawnRush/Endgame/Textures/` (URP Lit 채널 묶음, 트림 시트, 데칼 아틀라스) |")
-    lines.append("| 리뷰 렌더 | `Review/plan_overview.png`, `Review/sheet_<비트>.png`(1 px = 2 cm), `Review/cut_<S1 · R1 · S2 · S3 · R5 · S4>.png`, `Review/timing_preview.mp4` |")
+    cut = png_size("Review/cut_S1.png")
+    cut_txt = f"({cut[0]} × {cut[1]})" if cut else ""
+    lines.append(f"| 리뷰 렌더 | `Review/plan_overview.png`, `Review/sheet_<비트>.png`(1 px = 2 cm), `Review/cut_<S1 · R1 · S2 · S3 · R5 · S4>.png`{cut_txt}, "
+                 "`Review/timing_preview.mp4`(장치 타이밍, 52 s) |")
+    lines.append("| 장치 스킨 시트 · 턴테이블 | `Review/skins_sheet.png`(스킨 22종 단독), `Review/turntable_sheet.png`(같은 22종을 90°마다 네 방향) |")
     lines.append("")
     if exp:
         skins = [r for r in exp if any(k in r["part"] for k in ("WarTable", "SweepBar", "Ferry", "Hurdle", "ShelfWall", "Gate",
@@ -64,6 +81,7 @@ def blender_section():
         lines.append("  - 처음 돌렸을 때 걸린 것(고친 뒤 0건): 06 벽 ↔ 홈 끝 난간 기둥, 룩 차폐판 ↔ 난간 금 덮개(안쪽 8 cm), 회전판 장식 테 ↔ 다리, "
                      "사슬 상자 바퀴 ↔ 레일(13 cm), 접이식 다리 경첩 ↔ 착지대(6 cm), 낙하 말 ↔ 벨트 윗면(2.9 cm).")
         lines.append("  - 09 시계 문이 위로 열릴 때 아치 상자를 지나가는 것은 프리팹 설계라 검사에서 뺐다.")
+        lines.append("  - 스킨 시트 검토에서 R2 06 책장 벽의 책이 양쪽 모두 벽 속(안쪽)을 향한 것을 찾아 바깥으로 돌렸다(겉 크기 · 충돌체와의 간격은 그대로, 다시 검사해 0건).")
         p = val["path"]
         bad_gaps = [g for g in p["gaps"] if not g["ok"]]
         lines.append(f"- **경로**: 필수 틈 {'모두 1.5 m 이하' if not bad_gaps else '초과 ' + str(len(bad_gaps)) + '곳'}, 올라가는 턱 없음, "
@@ -89,7 +107,12 @@ def blender_section():
     lines.append("")
     lines.append("### 아직 안 한 것")
     lines.append("")
-    lines.append("- 장치 턴테이블 렌더, 컷 6장의 1920 × 1080 최종본(지금 1280 × 720).")
+    if not png_size("Review/turntable_sheet.png"):
+        lines.append("- 장치 턴테이블 렌더.")
+    else:
+        lines.append("- 턴테이블은 90°마다 네 방향 정지 시트다. 도는 동영상은 만들지 않았다.")
+    if not cut or cut[0] < 1920:
+        lines.append("- 컷 6장의 1920 × 1080 최종본" + (f"(지금 {cut[0]} × {cut[1]})." if cut else "."))
     lines.append("- Unity에 넣어 확인하기(이 문서의 어떤 것도 Unity에서 보지 않았다).")
     return "\n".join(lines)
 

@@ -161,8 +161,11 @@ def kit_sheet(objs, coll, path, cols=8, gap=2.0, width=2400, height=1350, sample
     return render(cam, path)
 
 
-def skin_tiles(objs, outdir, size=480, samples=16, angles=(35.0,), names=None):
-    """Each device skin alone, framed from a 3/4 view (one tile per angle), then a contact sheet with labels."""
+def skin_tiles(objs, outdir, size=480, samples=16, angles=(35.0,), names=None, sheet="skins_sheet.png", cols=6):
+    """Each device skin alone, framed from a 3/4 view (one tile per angle), then a contact sheet with labels.
+
+    With several angles the tiles of one skin sit side by side (a turntable sheet): the first tile carries the name,
+    the others how far the camera went round."""
     from mathutils import Vector as V
     sc = bpy.context.scene
     hidden = [o for o in bpy.data.objects if not o.hide_render]
@@ -191,28 +194,34 @@ def skin_tiles(objs, outdir, size=480, samples=16, angles=(35.0,), names=None):
             cam = camera("Tile cam", centre + d * radius * 3.1, centre, lens=50, coll=coll)
             path = os.path.join(outdir, "skins", f"{o.name}_{int(a)}.png")
             render(cam, path)
-            paths.append((o.name, path))
+            paths.append((o.name, a, path))
             bpy.data.objects.remove(cam)
         bpy.data.objects.remove(c)
+    bpy.data.objects.remove(sun)
+    bpy.data.objects.remove(fill)
     for o in hidden:
         o.hide_render = False
     try:
         from PIL import Image, ImageDraw, ImageFont
-        cols = 6
         rows = (len(paths) + cols - 1) // cols
-        sheet = Image.new("RGB", (cols * size, rows * (size + 40)), (24, 30, 31))
+        img = Image.new("RGB", (cols * size, rows * (size + 40)), (24, 30, 31))
         font = None
         for f in ("/usr/share/fonts/truetype/nanum/NanumSquareB.ttf", "C:/Windows/Fonts/malgunbd.ttf"):
             if os.path.exists(f):
                 font = ImageFont.truetype(f, 22)
                 break
-        draw = ImageDraw.Draw(sheet)
-        for i, (name, path) in enumerate(paths):
+        draw = ImageDraw.Draw(img)
+        for i, (name, a, path) in enumerate(paths):
             x, y = (i % cols) * size, (i // cols) * (size + 40)
-            sheet.paste(Image.open(path).convert("RGB"), (x, y))
-            label = (names or {}).get(name, name)
-            draw.text((x + 10, y + size + 8), label, fill=(239, 230, 212), font=font)
-        sheet.save(os.path.join(outdir, "skins_sheet.png"))
+            img.paste(Image.open(path).convert("RGB"), (x, y))
+            if a == angles[0]:
+                draw.text((x + 10, y + size + 8), (names or {}).get(name, name), fill=(239, 230, 212), font=font)
+            if len(angles) > 1:
+                draw.text((x + 10, y + 8), f"{int(round(a - angles[0]))}°", fill=(239, 230, 212), font=font)
+        if len(angles) > 1 and cols % len(angles) == 0:
+            for c in range(len(angles), cols, len(angles)):
+                draw.line([(c * size, 0), (c * size, img.height)], fill=(239, 230, 212), width=2)
+        img.save(os.path.join(outdir, sheet))
     except ImportError:
         pass
     return paths

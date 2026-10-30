@@ -4664,7 +4664,15 @@
    "EG_Window_Emissive"
   ],
   "material_count": 11,
-  "textures": [],
+  "textures": [
+   {
+    "name": "T_EG_Trim_BaseColor.png",
+    "size": [
+     2048,
+     2048
+    ]
+   }
+  ],
   "scene_tris": 1465632
  }
 }

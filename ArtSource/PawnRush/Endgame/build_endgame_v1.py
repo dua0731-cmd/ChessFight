@@ -4,9 +4,12 @@
     python build_endgame_v1.py -- <out dir> [options]          (with the bpy module, Blender 5.2)
 
 Options:
-    --renders none|quick|cuts|sheets|skins|mp4|full
+    --renders none|quick|cuts|sheets|skins|turntable|mp4|full
                                 review renders (quick: layout + 6 cuts at 1280 x 720; sheets: per-beat plans at
-                                1 px = 2 cm; skins: every device skin alone; mp4: timing preview; full: all of them)
+                                1 px = 2 cm; skins: every device skin alone; turntable: every skin from four sides;
+                                mp4: timing preview; full: all of them)
+    --size <w>x<h>, --samples <n>
+                                cut size and EEVEE samples (default 1280x720 and 24, full: 1920x1080 and 48)
     --check                     interference, path, safe windows and budget reports
     --export                    FBX per part (LOD0-2, UV1), part .blend files, PR_EG_manifest.json
     --parts <dir>               where the part folders go (default <out dir>/parts; the repo keeps them here, next to
@@ -46,6 +49,10 @@ def args():
         opt["renders"] = argv[argv.index("--renders") + 1]
     if "--time" in argv:
         opt["time"] = float(argv[argv.index("--time") + 1])
+    if "--size" in argv:
+        opt["size"] = tuple(int(v) for v in argv[argv.index("--size") + 1].lower().split("x"))
+    if "--samples" in argv:
+        opt["samples"] = int(argv[argv.index("--samples") + 1])
     return opt
 
 
@@ -245,6 +252,8 @@ def main():
 
     if opt["renders"] in ("quick", "full", "cuts"):
         w, h, smp = (1280, 720, 24) if opt["renders"] != "full" else (1920, 1080, 48)
+        w, h = opt.get("size", (w, h))
+        smp = opt.get("samples", smp)
         if opt["renders"] != "cuts":
             layout_overview(L, review, opt["out"], px_per_m=8 if opt["renders"] == "quick" else 20)
         shots(L, rigs, review, opt["out"], w, h, smp)
@@ -254,10 +263,15 @@ def main():
         A.annotate(L, notes)
         A.beat_sheets(L, review, opt["out"])
         bpy.data.collections["EG_Notes"].hide_render = True
-    if opt["renders"] in ("full", "skins"):
+    if opt["renders"] in ("full", "skins", "turntable"):
         import eg_bl_export as X
         skins = [o for o in kit_coll.objects if o.type == "MESH" and o.name in X.DESCRIBE]
-        R.skin_tiles(skins, opt["out"], names={k: v[0] for k, v in X.DESCRIBE.items()})
+        names = {k: v[0] for k, v in X.DESCRIBE.items()}
+        if opt["renders"] != "turntable":
+            R.skin_tiles(skins, opt["out"], names=names)
+        if opt["renders"] != "skins":
+            R.skin_tiles(skins, opt["out"], size=360, angles=(35.0, 125.0, 215.0, 305.0), names=names,
+                         sheet="turntable_sheet.png", cols=8)
     if opt["renders"] in ("full", "mp4"):
         import eg_bl_anim as AN
         AN.timing_mp4(L, rigs, review, os.path.join(opt["out"], "timing_preview.mp4"))

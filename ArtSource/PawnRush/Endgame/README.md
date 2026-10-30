@@ -10,7 +10,8 @@
 blender --background --factory-startup --python build_endgame_v1.py -- Review --renders quick --check --export --parts .
 ```
 
-- `--renders none|quick|cuts|sheets|mp4|full`: quick = 전체 배치도 + 컷 6장(1280 × 720), sheets = 비트별 배치도(1 px = 2 cm, Grease Pencil 치수선), mp4 = 장치 타이밍 미리보기, full = 전부(컷 1920 × 1080).
+- `--renders none|quick|cuts|sheets|skins|turntable|mp4|full`: quick = 전체 배치도 + 컷 6장(1280 × 720), cuts = 컷 6장만, sheets = 비트별 배치도(1 px = 2 cm, Grease Pencil 치수선), skins = 장치 스킨 22종 단독 시트, turntable = 같은 22종을 90°마다 네 방향, mp4 = 장치 타이밍 미리보기, full = 전부(컷 1920 × 1080).
+- `--size 1920x1080 --samples 32`: 컷 크기와 EEVEE 샘플(기본 1280 × 720 · 24, full은 1920 × 1080 · 48). `Review/`의 최종 컷은 `--renders cuts --size 1920x1080 --samples 32`.
 - `--check`: 간섭(장치마다 한 주기를 0.05초로 표본, 스킨을 2 cm 줄여 BVH 겹침) · 경로 · 안전 창 · 예산 → `Review/validation_v1.json`.
 - `--export --parts <폴더>`: 부품마다 `<폴더>/<Part>/<Part>.fbx`(LOD0 · LOD1 · LOD2, UV0 + UV1_Lightmap)와 `<Part>_work.blend`, `<폴더>/PR_EG_manifest.json`.
 - GPU 없는 리눅스(클라우드)에서는 Mesa(llvmpipe)를 깔고 `EGL_PLATFORM=surfaceless`로 돌린다. Blender 대신 PyPI `bpy==5.2.3`도 같다(`python build_endgame_v1.py -- …`).
@@ -32,13 +33,13 @@ python make_textures.py        # Textures/ (numpy + Pillow)
 | `eg_timing.py` | 폰(0.7 × 1.0 m 캡슐)이 2.5 m/s로 지날 때 한 주기의 안전 창 |
 | `eg_estimate.py` · `eg_doc_tables.py` | 시간 추정, 문서 표 |
 | `build_endgame_v1.py` | 진입점 |
-| `eg_bl_util.py` · `eg_bl_materials.py` | 장면 · 메시 도구, 절차적 재질 11개 |
+| `eg_bl_util.py` · `eg_bl_materials.py` | 장면 · 메시 도구, 절차적 재질 11개 + 트림 시트 재질 `EG_Trim` |
 | `eg_bl_kit.py` | 키트(난간 · 기둥 · 지도 탁자 · 룩 조각상 · 홀 장식)와 장치 스킨 21종 |
 | `eg_bl_scene.py` | 배치(비트별 바닥 · 벽 메시, 난간 인스턴스, 장치 루트 + 스킨, 홀), 시계로 자세 잡기 |
 | `eg_bl_check.py` · `eg_bl_annot.py` · `eg_bl_anim.py` · `eg_bl_render.py` · `eg_bl_export.py` | 검증, 배치도 주석, 타이밍 MP4, 렌더, 내보내기 |
 | `make_textures.py` → `Textures/` | 이음새 없는 텍스처(URP Lit 채널 묶음), 트림 시트, 데칼 아틀라스 |
 | `PR_EG_*/` | 부품 FBX + _work.blend (Git LFS) |
-| `Review/` | 렌더, 검증 보고, 전체 장면 `Endgame_work.blend` |
+| `Review/` | 렌더(배치도 · 비트별 배치도 · 컷 · 스킨 시트 · 턴테이블 · 타이밍 MP4), 검증 보고, 전체 장면 `Endgame_work.blend` |
 | `checks/` | 안전 창 · 시간 추정 JSON, 문서 표 |
 
 ## Unity로 넘기기 (지시서 §10)
