@@ -18,7 +18,7 @@ namespace ChessFight.PawnRush
     //   H       help on / off
     //
     // The menu ChessFight > SeoungTest > Build Pawn Rush Test Scene builds the zones into the scene (hand edits are kept
-    // until the next build); a scene without them builds them when Play starts.
+    // until the next build); a scene without them, or without some zone the code has, builds them when Play starts.
     [DefaultExecutionOrder(-500)]
     public sealed class SeoungTestCourse : MonoBehaviour
     {
@@ -48,7 +48,20 @@ namespace ChessFight.PawnRush
             CourseSkills.PawnRush = true;
             MissionStation.LocalTeam = Teams.White;
             OrbitCamera.FlyKey = KeyCode.None;
-            if (buildOnPlayIfEmpty && transform.Find(RootName) == null && kit != null) Build(transform, kit);
+            var saved = transform.Find(RootName);
+            // A scene built before zones were added to the code (a pull with new sections, R241): built again for this
+            // Play only; the scene file keeps its old zones until the menu builds it again.
+            string missing = saved != null && buildOnPlayIfEmpty && kit != null ? Missing(saved) : null;
+            if (missing != null)
+            {
+                Debug.Log("[SeoungTest] 씬에 없는 구역(" + missing + ")이 있어 이번 Play에서 구역을 모두 다시 지었습니다. " +
+                          "씬에 저장하려면 ChessFight > SeoungTest > Build Pawn Rush Test Scene.");
+                saved.gameObject.SetActive(false);
+                saved.SetParent(null);
+                Destroy(saved.gameObject);
+                saved = null;
+            }
+            if (buildOnPlayIfEmpty && saved == null && kit != null) Build(transform, kit);
             zones = GetComponentsInChildren<SeoungTestZone>(true);
             for (int i = 0; i < zones.Length; i++)
                 if (i == 0) all = zones[i].bounds;
@@ -177,6 +190,16 @@ namespace ChessFight.PawnRush
             Physics.SyncTransforms();
             foreach (var zone in made) Ground(zone);
             return root;
+        }
+
+        // The first zone the code builds that `root` lacks (its id), or null.
+        static string Missing(Transform root)
+        {
+            foreach (var id in Course01v4Builder.ZoneSections)
+                if (root.Find("Zone " + id) == null) return id;
+            foreach (var id in PawnRushMissions.Ids)
+                if (root.Find("Zone " + id) == null) return id;
+            return null;
         }
 
         static Transform Zone(Transform root, string name)

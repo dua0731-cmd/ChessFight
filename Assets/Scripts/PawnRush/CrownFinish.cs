@@ -45,6 +45,7 @@ namespace ChessFight.PawnRush
 
         readonly List<Runner> runners = new List<Runner>();
         Vector3 middle;
+        float radius = PawnRushFinish.Radius;
         bool found;
         float raceStart;
         float decidedAt = -1f;
@@ -57,6 +58,7 @@ namespace ChessFight.PawnRush
         public IReadOnlyList<Runner> Runners => runners;
         public bool Found => found;
         public Vector3 Middle => middle;
+        public float Radius => radius;
 
         void Awake()
         {
@@ -71,27 +73,41 @@ namespace ChessFight.PawnRush
 
         void Start() => FindPlatform();
 
-        // The platform: the course's finish circle (its trigger's middle, on its floor).
+        // The platform: the course's finish circle (its trigger's middle, on its floor, and its radius).
         void FindPlatform()
         {
             foreach (var zone in FindObjectsByType<FinishZone>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             {
-                var collider = zone.GetComponent<Collider>();
-                if (collider == null) continue;
-                // The circle is a cylinder primitive (CourseBuilder.Cylinder): its collider is a capsule, which Unity rounds
-                // into a ball when it is wider than tall, so its bounds are not the circle. A cylinder's half height is its
-                // y scale.
-                if (collider is CapsuleCollider)
-                    middle = zone.transform.position - Vector3.up * Mathf.Abs(zone.transform.lossyScale.y);
-                else
-                {
-                    var b = collider.bounds;
-                    middle = new Vector3(b.center.x, b.min.y, b.center.z);
-                }
+                if (!Platform(zone, out middle, out radius)) continue;
                 found = true;
                 return;
             }
             Debug.LogWarning("[PawnRush] 결승 왕관 발판(FinishZone)을 찾지 못했습니다. 승리 판정이 꺼집니다.");
+        }
+
+        // A finish circle's middle on its floor and its radius: the tower's 6 m crown circle, the endgame throne's 8.5 m.
+        public static bool Platform(FinishZone zone, out Vector3 middle, out float radius)
+        {
+            middle = default;
+            radius = PawnRushFinish.Radius;
+            var collider = zone != null ? zone.GetComponent<Collider>() : null;
+            if (collider == null) return false;
+            // The circle is a cylinder primitive (CourseBuilder.Cylinder): its collider is a capsule, which Unity rounds
+            // into a ball when it is wider than tall, so its bounds are not the circle. A cylinder's half height is its
+            // y scale and its diameter its x scale.
+            if (collider is CapsuleCollider)
+            {
+                var scale = zone.transform.lossyScale;
+                middle = zone.transform.position - Vector3.up * Mathf.Abs(scale.y);
+                radius = Mathf.Abs(scale.x) * .5f;
+            }
+            else
+            {
+                var b = collider.bounds;
+                middle = new Vector3(b.center.x, b.min.y, b.center.z);
+                radius = Mathf.Min(b.extents.x, b.extents.z);
+            }
+            return true;
         }
 
         // ------------------------------------------------------------------ who runs
@@ -147,7 +163,7 @@ namespace ChessFight.PawnRush
             foreach (var r in runners)
             {
                 var hips = r.Driver != null ? r.Driver.FollowTarget : null;
-                r.On = hips != null && PawnRushFinish.OnPlatform(hips.position.x - middle.x, hips.position.y - middle.y, hips.position.z - middle.z);
+                r.On = hips != null && PawnRushFinish.OnPlatform(hips.position.x - middle.x, hips.position.y - middle.y, hips.position.z - middle.z, radius);
                 if (!Authority) continue;
                 if (r.On && r.FirstOn < 0f && Winner == PawnRushFinish.None) r.FirstOn = Clock;
                 if (!r.Counts) continue;
