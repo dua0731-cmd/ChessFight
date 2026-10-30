@@ -24,6 +24,9 @@ namespace ChessFight.PawnRush
     public sealed class SeoungTestCourse : MonoBehaviour
     {
         public const string RootName = "SeoungTest_Zones";
+        // Raised whenever a zone's build changes, so a scene built before it is built again (R244: the war room v2).
+        public const int Version = 2;
+        static string VersionMark => "Zones v" + Version;
         // Wide gaps (10-30, 승규 님: room to widen the course sections): 80 m between zones, the mini-games 160 m in front.
         const float Gap = 80f, MiniRowZ = -160f;
 
@@ -171,6 +174,7 @@ namespace ChessFight.PawnRush
             var root = new GameObject(RootName);
             root.SetActive(false);
             root.transform.SetParent(parent, false);
+            new GameObject(VersionMark).transform.SetParent(root.transform, false);
             var made = new List<SeoungTestZone>();
             float x = 0f;
             for (int i = 0; i < Course01v4Builder.ZoneSections.Length; i++)
@@ -193,17 +197,19 @@ namespace ChessFight.PawnRush
             return root;
         }
 
-        // How `root`'s zones differ from the code's: the first zone the code builds that it lacks ("E 없음") or the first
-        // it has that the code no longer builds ("A 빠짐"); null when they are the same.
+        // How `root`'s zones differ from the code's: built by an older version of the code ("옛 버전"), the first zone the
+        // code builds that it lacks ("E 없음") or the first it has that the code no longer builds ("A 빠짐"); null when
+        // they are the same.
         public static string Mismatch(Transform root)
         {
+            if (root.Find(VersionMark) == null) return "옛 버전, 지금 v" + Version;
             var names = new HashSet<string>();
             foreach (var id in Course01v4Builder.ZoneSections) names.Add("Zone " + id);
             foreach (var id in PawnRushMissions.Ids) names.Add("Zone " + id);
             foreach (var name in names)
                 if (root.Find(name) == null) return name.Substring(5) + " 없음";
             foreach (Transform zone in root)
-                if (!names.Contains(zone.name)) return zone.name.Replace("Zone ", "") + " 빠짐";
+                if (zone.name.StartsWith("Zone ") && !names.Contains(zone.name)) return zone.name.Replace("Zone ", "") + " 빠짐";
             return null;
         }
 
