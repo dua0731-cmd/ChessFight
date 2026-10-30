@@ -40,8 +40,7 @@ def beat_floor_mesh(L, beat, coll):
             if z > z0 + 0.1:
                 B.box_bm(bm, x0 + 0.3, x1 - 0.3, z - 0.06, z + 0.06, top, top + 0.012, mat=2)
             z += FLOOR_INLAY
-    o = B.mesh_object(f"PR_EG_Floor_{beat}", bm, [K.M["EG_Marble_Cream"], K.M["EG_Teal"], K.M["EG_Gold"]], coll,
-                      uv_scale=4.0)
+    o = B.mesh_object(f"PR_EG_Floor_{beat}", bm, [K.M["EG_Marble_Cream"], K.M["EG_Teal"], K.M["EG_Gold"]], coll)
     B.weighted_normals(o)
     record(o, o.name, "static", pivot="world origin (Unity 0,0,0); vertices in course coordinates")
     return o
@@ -58,7 +57,7 @@ def beat_wall_mesh(L, beat, coll):
     for w in walls + decor:
         mi = names.index(w["mat"]) if w["mat"] in names else 0
         B.box_bm(bm, w["x0"], w["x1"], w["z0"], w["z1"], w["y0"], w["y1"], bevel=0.03, segments=2, mat=mi)
-    o = B.mesh_object(f"PR_EG_Walls_{beat}", bm, [K.M[n] for n in names], coll, uv_scale=4.0)
+    o = B.mesh_object(f"PR_EG_Walls_{beat}", bm, [K.M[n] for n in names], coll)
     B.weighted_normals(o)
     record(o, o.name, "static", pivot="world origin; vertices in course coordinates")
     return o

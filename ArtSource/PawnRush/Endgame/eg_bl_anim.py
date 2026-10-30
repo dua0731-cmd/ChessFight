@@ -77,14 +77,20 @@ def key_piecewise(rigs, f0, f1):
                 kp.interpolation = "LINEAR"
 
 
-SEGMENTS = [
-    # (title, seconds, camera Unity pos, target, overlay function name)
-    ("S2 첫 작전교: 탑승 창 2.55 s / 12 s, 걸림 막대", 12.0, (-11.0, 7.0, 36.0), (0.0, 0.0, 51.0), "s2"),
-    ("R3 깃발 다리: 진자 2개, 폭 6 m", 8.8, (-12.0, 8.0, 112.0), (0.0, 1.5, 122.0), "r3"),
-    ("R5 벨트 · 낙하 말: 같은 쪽이 친 직후 올라타기", 9.1, (-10.0, 10.0, 147.0), (0.0, 3.0, 161.0), "r5"),
-    ("R5b 사슬 상자: 뛰기 창 2.25–2.45 s", 8.8, (-12.0, 9.0, 171.0), (0.0, 3.0, 181.0), "r5b"),
-    ("S4 마지막 작전교: 다리 + 차폐판 2.5 s", 13.5, (-12.0, 10.0, 199.0), (0.0, 3.0, 213.0), "s4"),
-]
+def segments(L):
+    """(title, seconds, camera Unity pos, target, overlay) for each preview cut, placed from the layout."""
+    zb = [d for d in L.devices if d["type"] == "foldingbridge"][0]["pos"][2]
+    zc = [d for d in L.devices if d["type"] == "fallingpiece"][0]["pos"][2]
+    pz = [d["pos"][2] for d in L.devices if d["type"] == "pendulum"]
+    cz = [d["pos"][2] for d in L.devices if d["type"] == "crate"]
+    p_mid, c_mid = sum(pz) / len(pz), sum(cz) / len(cz)
+    return [
+        ("S2 첫 작전교: 탑승 창 2.55 s / 12 s, 걸림 막대", 12.0, (-11.0, 7.0, 36.0), (0.0, 0.0, 51.0), "s2"),
+        ("R3 깃발 다리: 진자 2개, 폭 6 m", 8.8, (-11.0, 8.0, p_mid - 15.0), (0.0, 1.5, p_mid), "r3"),
+        ("R5 벨트 · 낙하 말: 같은 쪽이 친 직후 올라타기", 9.1, (-10.0, 10.0, zc - 14.0), (0.0, 3.0, zc), "r5"),
+        ("R5b 사슬 상자: 뛰기 창 2.25–2.45 s", 8.8, (-12.0, 10.0, c_mid - 14.0), (0.0, 3.0, c_mid), "r5b"),
+        ("S4 마지막 작전교: 다리 + 차폐판 2.5 s", 13.5, (-12.0, 10.0, zb - 12.0), (0.0, 3.0, zb + 1.5), "s4"),
+    ]
 
 
 def overlay_text(L, which, t):
@@ -122,7 +128,7 @@ def timing_mp4(L, rigs, coll, path, width=854, height=480):
     drive(rigs)
     frame = 1
     plan = []
-    for title, secs, cp, tp, which in SEGMENTS:
+    for title, secs, cp, tp, which in segments(L):
         n = int(round(secs * FPS))
         cam = R.camera(f"Cam timing {which}", B.U(*cp), B.U(*tp), lens=24, coll=coll)
         m = sc.timeline_markers.new(which, frame=frame)

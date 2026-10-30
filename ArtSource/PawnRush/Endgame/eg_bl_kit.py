@@ -504,7 +504,7 @@ def hall_floor_tile(size=12.0):
             x0, y0 = -size / 2 + i * 3, -size / 2 + j * 3
             B.box_bm(bm, x0 + 0.02, x0 + 2.98, y0 + 0.02, y0 + 2.98, -0.3, 0.0, bevel=0.02, segments=1,
                      mat=(i + j) % 2)
-    return finish(B.mesh_object("PR_EG_HallFloorTile", bm, mats("EG_Marble_Cream", "EG_Walnut"), KIT, uv_scale=4.0))
+    return finish(B.mesh_object("PR_EG_HallFloorTile", bm, mats("EG_Marble_Cream", "EG_Walnut"), KIT))
 
 
 def ceiling_beam(length=60.0):
@@ -558,7 +558,7 @@ def skin_war_table():
         p = Vector((7.7 * math.cos(a), 7.7 * math.sin(a), 0.0))
         v = B.box_bm(bm, -0.18, 0.18, -0.18, 0.18, -0.005, 0.012, mat=2)
         bmesh.ops.translate(bm, verts=v, vec=p)
-    o = B.mesh_object("PR_EG_WarTable16", bm, mats("EG_Walnut", "EG_MapPaper", "EG_Gold"), KIT, uv_scale=16.0)
+    o = B.mesh_object("PR_EG_WarTable16", bm, mats("EG_Walnut", "EG_MapPaper", "EG_Gold"), KIT)
     return finish(o)
 
 
@@ -587,8 +587,7 @@ def skin_ferry(frame_h=0.12):
             B.box_bm(bm, sx * 3.6 - 0.25, sx * 3.6 + 0.25, sy - 0.25, sy + 0.25, -1.1, -0.5, bevel=0.03, mat=3)
     for y in (-2.0, 0.0, 2.0):
         B.box_bm(bm, -3.9, 3.9, y - 0.18, y + 0.18, -0.9, -0.5, bevel=0.03, mat=2)
-    return finish(B.mesh_object("PR_EG_FerryDeck", bm, mats("EG_Walnut", "EG_MapPaper", "EG_Teal", "EG_Gold"), KIT,
-                                uv_scale=8.0))
+    return finish(B.mesh_object("PR_EG_FerryDeck", bm, mats("EG_Walnut", "EG_MapPaper", "EG_Teal", "EG_Gold"), KIT))
 
 
 def skin_hurdle(x0=-5.6, x1=5.6, y0=0.2, y1=0.52, thick=0.45):
@@ -817,8 +816,7 @@ def skin_map_belt(length=10.0):
         pts = [(-0.9, y), (-0.9, y - 0.25), (0.0, y - 0.85), (0.9, y - 0.25), (0.9, y), (0.0, y - 0.6)]
         B.prism_bm(bm, pts, 0.4, 0.404, mat=2)
         y -= 2.0
-    return finish(B.mesh_object("PR_EG_MapBelt", bm, mats("EG_Walnut", "EG_MapPaper", "EG_Gold", "EG_Iron"), KIT,
-                                uv_scale=6.0))
+    return finish(B.mesh_object("PR_EG_MapBelt", bm, mats("EG_Walnut", "EG_MapPaper", "EG_Gold", "EG_Iron"), KIT))
 
 
 def skin_giant_pawn():
@@ -938,7 +936,7 @@ def skin_compass_disc():
                 if f.normal.z < 0:
                     f.normal_flip()
             prev = p
-    return finish(B.mesh_object("PR_EG_CompassDisc", bm, mats("EG_Teal", "EG_MapPaper", "EG_Gold"), KIT, uv_scale=8.0))
+    return finish(B.mesh_object("PR_EG_CompassDisc", bm, mats("EG_Teal", "EG_MapPaper", "EG_Gold"), KIT))
 
 
 def skin_bridge_panel():

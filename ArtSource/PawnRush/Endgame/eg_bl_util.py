@@ -152,8 +152,8 @@ def prism_bm(bm, outline, z0, z1, mat=0):
 
 
 # ---------------------------------------------------------------------------------------------- objects
-def mesh_object(name, bm, materials, coll, uv_scale=1.0, uv_world=True, smooth_angle=35.0, origin=(0, 0, 0)):
-    """Make an object from a bmesh: UV0 box-mapped in metres (world-aligned), materials by index."""
+def mesh_object(name, bm, materials, coll, uv_scale=4.0, uv_world=True, smooth_angle=35.0, origin=(0, 0, 0)):
+    """Make an object from a bmesh: UV0 box-mapped, 1 UV = 4 m everywhere (world-aligned), materials by index."""
     me = bpy.data.meshes.new(name)
     if uv_world:
         box_uv(bm, uv_scale)
@@ -170,8 +170,8 @@ def mesh_object(name, bm, materials, coll, uv_scale=1.0, uv_world=True, smooth_a
     return o
 
 
-def box_uv(bm, metres=1.0):
-    """Box-project UV0 in metres: 1 UV unit = `metres` m (512 px/m on a 2048 sheet with metres = 4)."""
+def box_uv(bm, metres=4.0):
+    """Box-project UV0: 1 UV unit = `metres` m (4 m: a 2048 texture at 512 px/m tiles once, a 1024 one twice)."""
     uv = bm.loops.layers.uv.verify()
     for f in bm.faces:
         n = f.normal

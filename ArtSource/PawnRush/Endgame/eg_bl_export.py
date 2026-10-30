@@ -12,6 +12,12 @@ import eg_bl_util as B
 LOD_RATIOS = (1.0, 0.5, 0.2)
 UV1 = "UV1_Lightmap"
 
+# Trim sheet T_EG_Trim_* (2048, eight 256 px bands from the top, see make_textures.trim_sheet). Thin moulding faces of
+# these materials move to EG_Trim with UV0 in their band; bigger faces keep their material and the tiling UV0.
+TRIM_BANDS = {"EG_Gold": 0, "EG_Teal": 2, "EG_Walnut": 4, "EG_Stone": 5, "EG_Iron": 6, "EG_MapPaper": 7}
+TRIM_THIN = 0.35        # metres across: a face this narrow is a moulding, a band or an edge
+TRIM_U_METRES = 4.0     # the sheet repeats along U every 4 m (512 px/m)
+
 DESCRIBE = {
     "PR_EG_WarTable16": ("R1 회전 작전 탁자 판", "윗면 가운데(판 윗면 y 0), 회전축"),
     "PR_EG_SweepBar": ("R1 스윕 막대", "회전축(판 윗면에서 0.65 m 위)"),
@@ -46,11 +52,64 @@ def _select_only(objs):
     bpy.context.view_layer.objects.active = objs[0]
 
 
+def trim_remap(me):
+    """Move thin faces of the trim materials to EG_Trim and lay their UV0 into the material's band: U along the
+    face's long side in metres / 4, V across the band from one edge of the face to the other."""
+    import bmesh
+    trim = bpy.data.materials.get("EG_Trim")
+    if trim is None:
+        return 0
+    names = [m.name if m else "" for m in me.materials]
+    if not any(n in TRIM_BANDS for n in names):
+        return 0
+    if "EG_Trim" not in names:
+        me.materials.append(trim)
+        names.append("EG_Trim")
+    ti = names.index("EG_Trim")
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    uv = bm.loops.layers.uv.verify()
+    moved = 0
+    for f in bm.faces:
+        name = names[f.material_index] if f.material_index < len(names) else ""
+        if name not in TRIM_BANDS:
+            continue
+        n = f.normal
+        ax = max(range(3), key=lambda i: abs(n[i]))
+        pts = [l.vert.co for l in f.loops]
+        if ax == 2:
+            a = [(p.x, p.y) for p in pts]
+        elif ax == 1:
+            a = [(p.x, p.z) for p in pts]
+        else:
+            a = [(p.y, p.z) for p in pts]
+        us, vs = [q[0] for q in a], [q[1] for q in a]
+        du, dv = max(us) - min(us), max(vs) - min(vs)
+        if min(du, dv) > TRIM_THIN:
+            continue
+        long_u = du >= dv
+        lo = min(vs) if long_u else min(us)
+        span = max(1e-4, dv if long_u else du)
+        band = TRIM_BANDS[name]
+        v0, v1 = 1.0 - (band + 1) / 8.0 + 0.004, 1.0 - band / 8.0 - 0.004
+        for l, (pu, pv) in zip(f.loops, a):
+            along = pu if long_u else pv
+            across = ((pv if long_u else pu) - lo) / span
+            l[uv].uv = (along / TRIM_U_METRES, v0 + across * (v1 - v0))
+        f.material_index = ti
+        moved += 1
+    bm.to_mesh(me)
+    bm.free()
+    return moved
+
+
 def make_lods(src, coll):
-    """Copies of `src` (modifiers applied): _LOD0 as is, _LOD1 / _LOD2 decimated (collapse 0.5 / 0.2)."""
+    """Copies of `src` (modifiers applied): _LOD0 as is, _LOD1 / _LOD2 decimated (collapse 0.5 / 0.2).
+    Thin trim faces get the trim sheet first, so every LOD shares it."""
     out = []
     dg = bpy.context.evaluated_depsgraph_get()
     base = bpy.data.meshes.new_from_object(src.evaluated_get(dg))
+    trim_remap(base)
     for i, ratio in enumerate(LOD_RATIOS):
         me = base.copy() if i else base
         o = bpy.data.objects.new(f"{src.name}_LOD{i}", me)

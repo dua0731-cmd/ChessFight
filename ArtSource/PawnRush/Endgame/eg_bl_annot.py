@@ -156,8 +156,9 @@ def annotate(L, coll):
 def beat_sheets(L, coll, outdir, px_per_m=50, samples=8, beats=None):
     """One sheet per beat, north up, 1 px = 1 / px_per_m m (50 = 2 cm)."""
     paths = []
+    # the hall is left out: the course reads best on the dark of the drop
     hall = bpy.data.collections.get("EG_Hall")
-    overhead = [o for o in (hall.objects if hall else []) if not o.name.startswith("Hall floor")]
+    overhead = list(hall.objects) if hall else []
     overhead += [o for o in bpy.data.objects if o.name.startswith("R5b crane rail")]
     for o in overhead:
         o.hide_render = True

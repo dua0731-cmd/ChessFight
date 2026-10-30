@@ -11,7 +11,7 @@ PALETTE = dict(
 )
 
 NAMES = ["EG_Marble_Cream", "EG_Gold", "EG_Teal", "EG_Walnut", "EG_MapPaper", "EG_BannerNavy", "EG_Stone",
-         "EG_Lamp_Emissive", "EG_Iron", "EG_Books", "EG_Window_Emissive"]
+         "EG_Lamp_Emissive", "EG_Iron", "EG_Books", "EG_Window_Emissive", "EG_Trim"]
 
 
 def srgb(hexstr, a=1.0):
@@ -265,8 +265,25 @@ def books():
     return m
 
 
+def trim():
+    """The trim sheet (Textures/T_EG_Trim_*): exported mouldings use it; renders show it when the texture exists."""
+    import os
+    m, nt, b = _new("EG_Trim")
+    b.inputs["Base Color"].default_value = srgb(PALETTE["gold"])
+    b.inputs["Metallic"].default_value = 0.6
+    b.inputs["Roughness"].default_value = 0.35
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Textures", "T_EG_Trim_BaseColor.png")
+    if os.path.exists(path):
+        img = bpy.data.images.load(path, check_existing=True)
+        tex = _n(nt, "ShaderNodeTexImage", (-300, 0))
+        tex.image = img
+        nt.links.new(tex.outputs["Color"], b.inputs["Base Color"])
+    return m
+
+
 def build_all():
     mats = {
+        "EG_Trim": trim(),
         "EG_Marble_Cream": marble(),
         "EG_Gold": gold(),
         "EG_Teal": painted("EG_Teal", PALETTE["teal"], 0.4, "#6E9A98"),
