@@ -14,6 +14,10 @@ namespace ChessFight.RagdollLab
         public RagdollTuning tuning;
         public int targetScore = 20;
         public float roundSeconds = 240, respawnDelay = 3;
+        /// <summary>승규 님's sandbox (seoungtest, 10-30): none of the game's rules, for the skills' balance. No score, no
+        /// clock, no end; a fighter who falls off is back on its spot at once. N adds an enemy dummy (Shift: a teammate),
+        /// M takes the last dummy away, Esc's leave starts the scene again.</summary>
+        public bool sandbox;
         public bool Networked { get; set; }
         public bool Authority { get; set; } = true;
         public bool Automated { get; set; }
@@ -90,6 +94,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The offline line-up: me and three dummies (also what an online skill test goes back to, R121).</summary>
         public void SpawnOffline()
         {
+            if (sandbox) { SpawnSandbox(); return; }
             Add(1, 0, 0, false, "나 · 폰");
             Add(2, 0, 1, true, "아군 더미");
             Add(3, 1, 0, true, "적군 더미 1");
@@ -165,6 +170,7 @@ namespace ChessFight.RagdollLab
             if (Match == null && !Finished && !ChatBox.KeysHeld && Input.GetKeyDown(KeyCode.F6)) ToggleControls();
             // 10-29 test key (승규 님): B puts my sword in the black team's look, again back to my own team's.
             if (Match == null && !ChatBox.KeysHeld && Local != null && Input.GetKeyDown(KeyCode.B)) Local.BlackSwordTest = !Local.BlackSwordTest;
+            if (sandbox && !Networked) SandboxKeys();
             if (!Networked && !Finished && Local != null) Local.SetInput(ReadLocalInput());
             if (Finished) RefreshCursor();
         }
@@ -194,6 +200,7 @@ namespace ChessFight.RagdollLab
         }
         public void StepRound(float dt)
         {
+            if (sandbox) { StepSandbox(); return; }
             Rules.Advance(dt);
             foreach (var f in Fighters.Values)
             {
@@ -212,6 +219,57 @@ namespace ChessFight.RagdollLab
                 if (f.Bot && f.Alive && !f.Scripted) f.SetInput(default);
             }
         }
+        static readonly PieceKind[] SandboxPieces =
+            { PieceKind.King, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.Pawn };
+
+        /// <summary>The sandbox line-up (10-30, 승규 님): six a side, one of each piece; I am white's king.</summary>
+        void SpawnSandbox()
+        {
+            ulong id = 1;
+            for (int team = 0; team < 2; team++)
+                for (int slot = 0; slot < SandboxPieces.Length; slot++)
+                {
+                    var kind = SandboxPieces[slot];
+                    bool me = team == 0 && slot == 0;
+                    string name = me ? "나 · " + ChessPieces.Name(kind) : (team == 0 ? "백 " : "흑 ") + ChessPieces.Name(kind);
+                    var f = Add(id++, team, slot, !me, name);
+                    f.Pawn.SetPiece(kind);
+                }
+        }
+
+        void StepSandbox()
+        {
+            foreach (var f in Fighters.Values)
+            {
+                if (!f.Alive || f.Pawn.Hips.position.y < -3 || !f.Pawn.IsFinite())
+                {
+                    f.Respawn(SpawnPoint(f.Pawn.Team, f.Slot), Facing(f.Pawn.Team), true);
+                    Revision++;
+                }
+                if (f.Bot && f.Alive && !f.Scripted) f.SetInput(default);
+            }
+        }
+
+        void SandboxKeys()
+        {
+            if (ChatBox.KeysHeld || !Application.isFocused) return;
+            if (Input.GetKeyDown(KeyCode.N))
+            {
+                bool ally = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+                int team = ally ? 0 : 1, slot = 0;
+                foreach (var f in Fighters.Values) if (f.Pawn.Team == team) slot = Mathf.Max(slot, f.Slot + 1);
+                ulong id = 1;
+                foreach (var key in Fighters.Keys) if (key >= id) id = key + 1;
+                Add(id, team, slot, true, (ally ? "아군 더미 " : "적군 더미 ") + id);
+            }
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                ulong last = 0;
+                foreach (var f in Fighters.Values) if (f.Bot && f.Id > last) last = f.Id;
+                if (last != 0) Remove(last);
+            }
+        }
+
         public void ApplyScore(int w, int b, float remaining, bool finished)
         { remoteWhite = w; remoteBlack = b; remoteRemaining = remaining; remoteFinished = finished; }
 
@@ -225,6 +283,7 @@ namespace ChessFight.RagdollLab
         public void Exit()
         {
             if (LeaveMatch != null) LeaveMatch();
+            else if (sandbox) SceneManager.LoadScene(gameObject.scene.name);
             else SceneManager.LoadScene("Lobby");
         }
         void LateUpdate()

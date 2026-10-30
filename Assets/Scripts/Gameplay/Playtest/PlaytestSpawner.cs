@@ -210,6 +210,18 @@ namespace ChessFight.Gameplay
             if (orbitCamera != null) orbitCamera.Cut();
         }
 
+        // A new start (승규 님's test scene putting the pawn into a zone): R, Backspace and a fall all come back here.
+        public void SetStart(Vector3 position, Quaternion rotation)
+        {
+            reachedCheckpoint = int.MinValue;
+            startPosition = respawnPosition = position;
+            startRotation = respawnRotation = rotation;
+            finished = false;
+            result = "";
+            runStart = Time.time;
+            MoveTo(position, rotation);
+        }
+
         void Respawn()
         {
             respawnAt = -1f;
