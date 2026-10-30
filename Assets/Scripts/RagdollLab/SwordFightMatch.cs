@@ -378,12 +378,30 @@ namespace ChessFight.RagdollLab
         }
 
         PieceKind? pickAsked;
+        // 10-30 (사용자: "마우스를 누르면 바로 시작 하지 말고 더블클릭으로 하거나 마우스 한 번 터치 후 엔터 키로"): a click or
+        // 1~5 only marks a card; Enter or a double click (DrawPick) sends it.
+        PieceKind? pickChosen;
 
         void PickKeys()
         {
             if (ChatBox.KeysHeld || game.MenuOpen) return;
             for (int i = 0; i < SwordMatchRules.Pickable.Length; i++)
-                if (Input.GetKeyDown(KeyCode.Alpha1 + i)) PickLocal(SwordMatchRules.Pickable[i]);
+                if (Input.GetKeyDown(KeyCode.Alpha1 + i)) pickChosen = SwordMatchRules.Pickable[i];
+            if (pickChosen.HasValue && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+            {
+                var mine = view.Find(game.LocalId);
+                if (!(mine.HasValue && mine.Value.Picked) && !TakenByTeammate(pickChosen.Value)) PickLocal(pickChosen.Value);
+            }
+        }
+
+        // A teammate already holds this piece (the pick screen greys it out).
+        bool TakenByTeammate(PieceKind kind)
+        {
+            var me = game.Local;
+            int myTeam = me != null ? me.Pawn.Team : 0;
+            foreach (var f in view.Fighters)
+                if (f.Picked && f.Piece == kind && f.Id != game.LocalId && game.Fighters.TryGetValue(f.Id, out var o) && o != null && o.Pawn.Team == myTeam) return true;
+            return false;
         }
 
         // ---------------------------------------------------------------- the wire

@@ -755,4 +755,62 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .s2-tab { border-radius: 8px; }
 .s2-tab-on .s2-tab-text { color: rgb(255, 233, 184); }
 .s2-tab-on:hover .s2-tab-text { color: rgb(255, 233, 184); }
+/* 10-30 design A (사용자 picked A of three samples, https://claude.ai/artifact/GA6MaACNmS8iCFmLj5StYu):
+   tabs underlined instead of a glass plate, narrower page list, the lines in one rounded box (name left,
+   value a fixed 300 px on the right, boxed drop-downs, on/off as a switch), the description on the right. */
+.s2-tab { border-radius: 0; padding: 11px 18px 12px 18px; border-bottom-width: 3px; border-color: rgba(0, 0, 0, 0); }
+.s2-tab-on { border-color: rgb(242, 182, 50); }
+.s2-tab-text { color: rgb(168, 149, 124); }
+.s2-tab-on .s2-tab-text { color: rgb(255, 244, 220); }
+.s2-tab-on:hover .s2-tab-text { color: rgb(255, 244, 220); }
+.s2-side { width: 176px; }
+.s2-sub { border-width: 1px; border-radius: 8px; border-color: rgba(0, 0, 0, 0); background-color: rgba(0, 0, 0, 0);
+          color: rgb(185, 166, 139); -unity-font-style: normal; }
+.s2-sub:hover { background-color: rgba(242, 182, 50, 0.07); }
+.s2-sub-on { border-color: rgb(242, 182, 50); background-color: rgba(242, 182, 50, 0.14); color: rgb(255, 244, 220); -unity-font-style: bold; }
+.s2-sub-on:hover { background-color: rgba(242, 182, 50, 0.18); }
+.s2-view { left: 228px; width: 752px; }
+.s2-desc { position: absolute; right: 28px; top: 134px; width: 252px; margin-top: 0; padding: 16px 18px; border-radius: 10px;
+           border-color: rgba(242, 182, 50, 0.18); background-color: rgba(20, 13, 8, 0.78); }
+.s2-kicker { color: rgb(242, 182, 50); }
+.s2-desc-title { margin-top: 8px; font-size: 17px; }
+.s2-desc-text { margin-top: 6px; font-size: 13px; color: rgb(205, 189, 165); }
+.s2-desc-note { margin-top: 10px; padding-top: 8px; border-top-width: 1px; border-color: rgba(255, 255, 255, 0.08);
+                font-size: 11px; color: rgb(168, 149, 124); white-space: normal; }
+.s2-section-title { color: rgb(242, 182, 50); }
+.s2-group { border-width: 1px; border-radius: 10px; border-color: rgba(242, 182, 50, 0.18); background-color: rgba(20, 13, 8, 0.72);
+            overflow: hidden; }
+.s2-row { height: 44px; margin-bottom: 0; padding: 0 16px 0 18px; align-items: center;
+          border-bottom-width: 1px; border-color: rgba(255, 255, 255, 0.06); }
+.s2-row:hover { background-color: rgba(242, 182, 50, 0.08); }
+.s2-lab { width: auto; flex-grow: 1; height: 100%; padding: 0; border-left-width: 0; background-color: rgba(0, 0, 0, 0); }
+.s2-lab-text { font-size: 15px; }
+.s2-row:hover > .s2-lab { background-color: rgba(0, 0, 0, 0); }
+.s2-row:hover .s2-lab-text { color: rgb(255, 244, 220); -unity-font-style: bold; }
+.s2-val { flex-grow: 0; flex-shrink: 0; width: 300px; height: 32px; margin-left: 12px; padding: 0; background-color: rgba(0, 0, 0, 0); }
+.s2-row:hover > .s2-val { background-color: rgba(0, 0, 0, 0); }
+.s2-dd { height: 32px; padding: 0 12px; border-width: 1px; border-radius: 6px; border-color: rgb(74, 56, 38); background-color: rgb(43, 32, 23); }
+.s2-dd:hover { border-color: rgba(242, 182, 50, 0.6); background-color: rgb(52, 39, 28); }
+.s2-dd-text { font-size: 14px; }
+.s2-dd-mark { font-size: 11px; color: rgb(242, 182, 50); }
+.s2-num { width: 48px; padding-left: 0; padding-right: 0; margin-left: 14px; -unity-text-align: middle-right; font-size: 14px; }
+.s2-slide { flex-direction: row-reverse; }
+.s2-track { margin-right: 0; }
+.s2-fill { background-color: rgb(242, 182, 50); }
+.s2-knob { top: -6px; width: 18px; height: 18px; margin-left: -9px; border-radius: 9px; border-width: 3px;
+           border-color: rgba(242, 182, 50, 0.45); background-color: rgb(255, 244, 220); }
+.s2-vt { font-size: 14px; }
+.s2-val-toggle { justify-content: flex-end; }
+.s2-toggle-text { margin-right: 12px; font-size: 13px; color: rgb(168, 149, 124); }
+.s2-switch { width: 50px; height: 26px; margin: 0; padding: 3px; border-width: 1px; border-radius: 13px;
+             border-color: rgb(90, 70, 48); background-color: rgb(43, 32, 23); flex-direction: row; }
+.s2-switch:hover { border-color: rgba(242, 182, 50, 0.6); background-color: rgb(52, 39, 28); }
+.s2-switch-knob { width: 18px; height: 18px; border-radius: 9px; background-color: rgb(141, 122, 98); }
+.s2-switch-on { justify-content: flex-end; border-color: rgb(242, 182, 50); background-color: rgb(242, 182, 50); }
+.s2-switch-on:hover { border-color: rgb(255, 211, 107); background-color: rgb(255, 211, 107); }
+.s2-switch-on > .s2-switch-knob { background-color: rgb(28, 18, 0); }
+.s2-on .s2-toggle-text { color: rgb(255, 244, 220); }
+.s2-foot { height: 56px; }
+.s2-reset { height: 36px; padding: 0 14px 0 6px; margin-right: 0; border-width: 1px; border-radius: 8px; border-color: rgb(90, 70, 48); }
+.s2-reset:hover { border-color: rgba(242, 182, 50, 0.6); }
 .intro-rename { border-width: 0; border-radius: 10px; background-color: rgba(0, 0, 0, 0); }
