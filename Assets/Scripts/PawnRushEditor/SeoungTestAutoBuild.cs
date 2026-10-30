@@ -12,7 +12,7 @@ namespace ChessFight.PawnRush.Editor
     [InitializeOnLoad]
     static class SeoungTestAutoBuild
     {
-        const string Asked = "SeoungTestAutoBuild.Asked.R243";
+        static string Asked => "SeoungTestAutoBuild.Asked.v" + SeoungTestCourse.Version;
 
         static SeoungTestAutoBuild()
         {
