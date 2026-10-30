@@ -9,12 +9,19 @@ namespace ChessFight.PawnRush
     {
         // The sections the test scene stands in a row, in running order: id, name, and where a pawn starts it (design
         // doc world coordinates, facing north; checked against the floor when the zone is built). Since 10-30 (R243)
-        // only 승규 님's endgame: course 01's A, B, C and tower (T) are out of the test scene; Section() still builds
-        // them, and adding their ids back here (starts A (0, 0, 2), B (46, 0, 105), C (-3, 3, 165), T (-3, 6, 207))
-        // brings them back.
-        public static readonly string[] ZoneSections = { "E", "F" };
-        public static readonly string[] ZoneSectionNames = { "E 엔드게임 · 전략회의실 (S1–S4)", "F 최종 코스 · 알현실 · 왕좌 (원 8.5 m)" };
-        static readonly Vector3[] ZoneStarts = { V(0f, 0f, 3f), V(0f, 0f, 3f) };
+        // 승규 님's endgame (E, F) in place of course 01's A, B, C and tower (T), but only on 승규 님's laptop (R257):
+        // every other PC that opens the branch gets course 01's sections, so the endgame map is not shown there.
+        public const string EndgameMachine = "KKND1236_LENOVO";
+        public static readonly bool ShowsEndgame =
+            string.Equals(System.Environment.MachineName, EndgameMachine, System.StringComparison.OrdinalIgnoreCase);
+
+        public static readonly string[] ZoneSections = ShowsEndgame ? new[] { "E", "F" } : new[] { "A", "B", "C", "T" };
+        public static readonly string[] ZoneSectionNames = ShowsEndgame
+            ? new[] { "E 엔드게임 · 전략회의실 (S1–S4)", "F 최종 코스 · 알현실 · 왕좌 (원 8.5 m)" }
+            : new[] { "A 구간 (출발 → 광장 1)", "B 구간 (광장 1 → 광장 2)", "C 구간 (광장 2 → 탑)", "T 탑" };
+        static readonly Vector3[] ZoneStarts = ShowsEndgame
+            ? new[] { V(0f, 0f, 3f), V(0f, 0f, 3f) }
+            : new[] { V(0f, 0f, 2f), V(46f, 0f, 105f), V(-3f, 3f, 165f), V(-3f, 6f, 207f) };
 
         public static Vector3 ZoneStart(string id) => ZoneStarts[System.Array.IndexOf(ZoneSections, id)];
 

@@ -2,6 +2,8 @@
 
 ## ★ 2026-10-30 엔드게임 고난이도 LD v1 (R255 설계, R256 Unity 반영) — 확인 목록
 
+R257(10-30): 엔드게임 E · F는 **승규 님 노트북(`KKND1236_LENOVO`)에서만** 지어진다. 다른 PC에서 시험 씬을 열면 코스 01 A · B · C · 탑 + 미니게임이 나와야 하고(엔드게임 없음), 폰 러쉬 물리 · 자세는 같아야 한다. 아무도 안 봄.
+
 R256(10-30): [반영 목록](../KingRush/ENDGAME_LD_HARD_v1.md#6-unity-반영-목록-course01v4builderwarroomcs)을 `Course01v4Builder.WarRoom.cs`에 옮기고, Blender 모델 1127개(장치 스킨 53개)를 `Course01v4Builder.WarRoomModels.cs`가 붙인다. AI는 Unity 편집기에서 컴파일 오류 0, 임시 씬에 구역 E만 지어 모델이 모두 놓이는 것(FBX 없음 0 · 장치 못 찾음 0)과 정지 화면 4장만 봤다. **Play · 움직임은 아무도 안 봄.**
 
 준비(한 번): Unity 메뉴 **ChessFight → Pawn Rush → Endgame: Import Blender Models (R255)** → **ChessFight → SeoungTest → Build Pawn Rush Test Scene**(시험 씬을 다시 지음, 씬 안 손 편집은 사라짐). Play 시작 때 콘솔에 `엔드게임 Blender 모델: 1127개 배치(장치 스킨 53개), FBX 없음 0개`.
