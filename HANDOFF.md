@@ -390,7 +390,7 @@
 - Unity 쪽 채팅이 [ENDGAME_LD_HARD_v1 §6 Unity 반영 목록](Docs/KingRush/ENDGAME_LD_HARD_v1.md#6-unity-반영-목록-course01v4builderwarroomcs)을 `Course01v4Builder.WarRoom.cs`에 옮긴다(새 장치: S2 걸림 막대 · R4 옆바람 2 · R5b 사슬 상자 4 · S4 차폐판, 바뀐 z · 주기 · 위상). 값의 출처는 `ArtSource/PawnRush/Endgame/eg_layout.py`.
 - 그다음 `PR_EG_manifest.json`대로 스킨 FBX(`ArtSource/PawnRush/Endgame/PR_EG_*/`)를 `Assets/Art/PawnRushMap/Endgame/`로 가져와 장치 루트 아래에 붙이고, 재질은 이름별 URP Lit + `Textures/`. [VALIDATION](Docs/Network/VALIDATION.md) 맨 위 R255 표로 플레이 확인.
 - FBX · .blend · 텍스처 PNG · 리뷰 렌더 · MP4는 Git LFS 서버(`lfs.github.com`)가 이 세션의 네트워크 정책에 막혀 **저장소에 없다**(스크립트 · 배치 목록 · 검증 보고만 커밋). 다시 만들기(`ArtSource/PawnRush/Endgame/`에서, Blender 5.2 또는 PyPI `bpy==5.2.3`): `python make_textures.py` → `blender --background --factory-startup --python build_endgame_v1.py -- Review --renders full --check --export --parts .`. 클라우드 세션에서 올리려면 환경 Network access에 `lfs.github.com`을 허용한다.
-- 리뷰 렌더: 전체 배치도, 비트별 치수 배치도 12장(1 px = 2 cm), 컷 6장(1280 × 720), 장치 스킨 시트, 타이밍 MP4는 끝. 4방향 턴테이블 시트와 컷 6장 1920 × 1080 최종본은 이 세션에서 렌더 중(끝나면 이 줄을 고친다). 스킨 시트 검토에서 R2 책장 벽의 책이 벽 속을 향한 것을 고쳤다. 실패 포함 평균 추정 3:07은 목표 3:30보다 짧다(조정 순서는 문서 §3).
+- 리뷰 렌더는 다 했다: 전체 배치도, 비트별 치수 배치도 12장(1 px = 2 cm), 컷 6장(1920 × 1080), 장치 스킨 시트, 4방향 턴테이블 시트(도는 동영상은 아님), 타이밍 MP4. 스킨 시트 검토에서 R2 책장 벽의 책이 벽 속을 향한 것을 고쳤다. 실패 포함 평균 추정 3:07은 목표 3:30보다 짧다(조정 순서는 문서 §3).
 
 **소드 파이트 스킬 몸동작 Mixamo 클립 (R190, 10-28, `skill-network-test`)**
 - 사용자가 Mixamo에서 클립을 받아 `Assets/Art/SwordFight/Mixamo/`에 넣는다(이름 `<기물>_<F|E>`, 받는 법 · 검색어는 그 폴더 README). 룩 F는 **아래에서 위로 퍼올리기**(사용자 확정).

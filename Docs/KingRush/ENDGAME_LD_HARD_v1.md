@@ -244,7 +244,7 @@
 | 부품 FBX(LOD0–2, UV1) + _work.blend | `ArtSource/PawnRush/Endgame/PR_EG_*/` |
 | 배치 목록 | `ArtSource/PawnRush/Endgame/PR_EG_manifest.json` (Unity 축) |
 | 텍스처 | `ArtSource/PawnRush/Endgame/Textures/` (URP Lit 채널 묶음, 트림 시트, 데칼 아틀라스) |
-| 리뷰 렌더 | `Review/plan_overview.png`, `Review/sheet_<비트>.png`(1 px = 2 cm), `Review/cut_<S1 · R1 · S2 · S3 · R5 · S4>.png`(1280 × 720), `Review/timing_preview.mp4`(장치 타이밍, 52 s) |
+| 리뷰 렌더 | `Review/plan_overview.png`, `Review/sheet_<비트>.png`(1 px = 2 cm), `Review/cut_<S1 · R1 · S2 · S3 · R5 · S4>.png`(1920 × 1080), `Review/timing_preview.mp4`(장치 타이밍, 52 s) |
 | 장치 스킨 시트 · 턴테이블 | `Review/skins_sheet.png`(스킨 22종 단독), `Review/turntable_sheet.png`(같은 22종을 90°마다 네 방향) |
 
 내보낸 부품 63개(장치 스킨 19개). LOD0 삼각형이 가장 많은 것:
@@ -280,8 +280,7 @@
 
 ### 아직 안 한 것
 
-- 장치 턴테이블 렌더.
-- 컷 6장의 1920 × 1080 최종본(지금 1280 × 720).
+- 턴테이블은 90°마다 네 방향 정지 시트다. 도는 동영상은 만들지 않았다.
 - Unity에 넣어 확인하기(이 문서의 어떤 것도 Unity에서 보지 않았다).
 
 ## 8. 질문 (5개 이하)
