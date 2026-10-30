@@ -6,9 +6,10 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // 승규 님's Pawn Rush test scene (seoungtest branch, 10-30): course 01's road sections and its ten mini-games, each
-    // built alone and stood side by side instead of chained (sections in one row, mini-games in the row in front), to
-    // test the pieces' physics and redesign the course between the plazas.
+    // 승규 님's Pawn Rush test scene (seoungtest branch, 10-30): the sections of Course01v4Builder.ZoneSections (since R243
+    // only the endgame's E and F; course 01's A, B, C and tower are out) and the ten mini-games, each built alone and stood
+    // side by side instead of chained (sections in one row, mini-games in the row in front), to test the pieces' physics
+    // and redesign the course.
     //
     //   F1      into the zone the camera looks at (flying: the one under the view; walking: the zone again from its start)
     //   [ ]     the previous / next zone
@@ -49,12 +50,12 @@ namespace ChessFight.PawnRush
             MissionStation.LocalTeam = Teams.White;
             OrbitCamera.FlyKey = KeyCode.None;
             var saved = transform.Find(RootName);
-            // A scene built before zones were added to the code (a pull with new sections, R241): built again for this
-            // Play only; the scene file keeps its old zones until the menu builds it again.
-            string missing = saved != null && buildOnPlayIfEmpty && kit != null ? Missing(saved) : null;
-            if (missing != null)
+            // A scene whose zones are not the code's (a pull that added or took out sections, R241 / R243): built again
+            // for this Play only; the scene file keeps its old zones until the menu builds it again.
+            string mismatch = saved != null && buildOnPlayIfEmpty && kit != null ? Mismatch(saved) : null;
+            if (mismatch != null)
             {
-                Debug.Log("[SeoungTest] 씬에 없는 구역(" + missing + ")이 있어 이번 Play에서 구역을 모두 다시 지었습니다. " +
+                Debug.Log("[SeoungTest] 씬의 구역이 코드와 달라(" + mismatch + ") 이번 Play에서 구역을 모두 다시 지었습니다. " +
                           "씬에 저장하려면 ChessFight > SeoungTest > Build Pawn Rush Test Scene.");
                 saved.gameObject.SetActive(false);
                 saved.SetParent(null);
@@ -192,13 +193,17 @@ namespace ChessFight.PawnRush
             return root;
         }
 
-        // The first zone the code builds that `root` lacks (its id), or null.
-        public static string Missing(Transform root)
+        // How `root`'s zones differ from the code's: the first zone the code builds that it lacks ("E 없음") or the first
+        // it has that the code no longer builds ("A 빠짐"); null when they are the same.
+        public static string Mismatch(Transform root)
         {
-            foreach (var id in Course01v4Builder.ZoneSections)
-                if (root.Find("Zone " + id) == null) return id;
-            foreach (var id in PawnRushMissions.Ids)
-                if (root.Find("Zone " + id) == null) return id;
+            var names = new HashSet<string>();
+            foreach (var id in Course01v4Builder.ZoneSections) names.Add("Zone " + id);
+            foreach (var id in PawnRushMissions.Ids) names.Add("Zone " + id);
+            foreach (var name in names)
+                if (root.Find(name) == null) return name.Substring(5) + " 없음";
+            foreach (Transform zone in root)
+                if (!names.Contains(zone.name)) return zone.name.Replace("Zone ", "") + " 빠짐";
             return null;
         }
 
