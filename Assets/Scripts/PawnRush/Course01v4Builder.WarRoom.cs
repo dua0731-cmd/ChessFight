@@ -7,9 +7,11 @@ namespace ChessFight.PawnRush
     // three-phase level design, "read the next crossing, break through together" (Docs/KingRush/PAWN_RUSH_ENDGAME_RESEARCH.md).
     // Six a side, so the way is 12 m wide (x -6..6), running north from z 0 on y 0:
     //
-    //   S1  z  0 .. 12    entry corridor: see both crossings and the others before going           CP 1
+    //   S1  z  0 .. 12    entry corridor: see both crossings and the others before going; the map table
+    //                     beside it shows where the ferry is and which S4 bridge is open (CrossingSignal) CP 1
     //   S2  z 12 .. 32.4  first crossing: an 8 m ferry shuttling over the drop (ride it or wait)
-    //   S3  z 32.4 .. 56.4 command landing: fixed floor, two rook walls each closing half the way   CP 2
+    //   S3  z 32.4 .. 56.4 command landing: fixed floor, two rook walls each closing half the way; a second
+    //                     map table at its end shows the two S4 bridges                                 CP 2
     //   S4  z 56.4 .. 70.5 last crossing: two 12 folding bridges side by side, half a cycle apart
     //   exit z 70.5 .. 94.5 runout, the 12 x 6 m terrace (CP 3), the open arch and four steps 1 m down
     //
@@ -24,6 +26,8 @@ namespace ChessFight.PawnRush
         static void WarRoom(CourseBuilder b)
         {
             var k = b.kit;
+            Transform ferry = null, ferryAtS1 = null, ferryAtS3 = null;
+            var bridges = new FoldingBridge[2];
             b.In("S1 Entry", () =>
             {
                 b.Floor("S1 floor", -WarHalf, WarHalf, 0f, S1End, 0f);
@@ -38,9 +42,9 @@ namespace ChessFight.PawnRush
                 // rotating boards). At either end it stops 0.2 m short of the floor; in the middle 6 m of
                 // drop lies on each side. Max speed 6 * 2pi / 14 = 2.7 m/s, about a run.
                 float middle = (S1End + S3Start) * .5f;
-                var ferry = b.Box("Device_Ferry", V(-FerryHalf, -.5f, middle - FerryHalf), V(FerryHalf, 0f, middle + FerryHalf), k.trimWhite);
-                ferry.AddComponent<CourseFloor>();
-                var motion = ferry.AddComponent<ObstacleMotion>();
+                var slab = b.Box("Device_Ferry", V(-FerryHalf, -.5f, middle - FerryHalf), V(FerryHalf, 0f, middle + FerryHalf), k.trimWhite);
+                slab.AddComponent<CourseFloor>();
+                var motion = slab.AddComponent<ObstacleMotion>();
                 motion.kind = MotionKind.Translate;
                 motion.axis = Vector3.forward;
                 motion.distance = FerryTravel;
@@ -48,6 +52,12 @@ namespace ChessFight.PawnRush
                 motion.shove = false;
                 // Start at S1's edge (sin = -1 a quarter period before 0).
                 motion.phase = .75f;
+                ferry = slab.transform;
+                // Where its middle is at either landing, for the map tables.
+                ferryAtS1 = b.Group("Ferry middle at S1");
+                ferryAtS1.localPosition = V(0f, -.25f, middle - FerryTravel);
+                ferryAtS3 = b.Group("Ferry middle at S3");
+                ferryAtS3.localPosition = V(0f, -.25f, middle + FerryTravel);
             });
 
             b.In("S3 Command landing", () =>
@@ -65,8 +75,8 @@ namespace ChessFight.PawnRush
                 // 12 is 14.1 m along its x (3 m landings either end, two 3.9 m panels) and 6 m wide; turned 90 it
                 // crosses north. Half a cycle (13.5 s) apart, so one of the two is nearly always open.
                 float middle = S3End + BridgeHalf;
-                Hazard(b, k.foldingBridge, "12 FoldingBridge S4 W", V(-3f, 0f, middle), 90f, 0f);
-                Hazard(b, k.foldingBridge, "12 FoldingBridge S4 E", V(3f, 0f, middle), 90f, 6.75f);
+                bridges[0] = Hazard(b, k.foldingBridge, "12 FoldingBridge S4 W", V(-3f, 0f, middle), 90f, 0f).GetComponentInChildren<FoldingBridge>();
+                bridges[1] = Hazard(b, k.foldingBridge, "12 FoldingBridge S4 E", V(3f, 0f, middle), 90f, 6.75f).GetComponentInChildren<FoldingBridge>();
             });
 
             b.In("Exit", () =>
@@ -86,7 +96,33 @@ namespace ChessFight.PawnRush
                 b.Floor("Entry strip", -WarHalf, WarHalf, arch + 2f, arch + 6f, -1f);
                 b.Wall("Mission room (not built) wall", -WarHalf - .5f, WarHalf + .5f, -1f, 4f, arch + 6f, arch + 6.5f, false);
             });
+
+            b.In("Signals", () =>
+            {
+                // The map tables stand outside the east rail, their tops (1.3 m) just over it.
+                var s1 = MapTable(b, "S1 map table", 4f, 10f);
+                b.Box("Ferry strip", V(7.35f, 1.3f, 5f), V(7.65f, 1.33f, 8.4f), k.trimWhite, false, false);
+                var from = b.Group("Ferry strip S1 end");
+                from.localPosition = V(7.5f, 1.42f, 5.3f);
+                var to = b.Group("Ferry strip S3 end");
+                to.localPosition = V(7.5f, 1.42f, 8.1f);
+                var marker = b.Box("Ferry marker", V(7.2f, 1.34f, 5f), V(7.8f, 1.5f, 5.6f), k.trimWhite, false, false);
+                var ferryLamp = Lamp(b, "Ferry lamp", V(7.5f, 1.3f, 4.5f), .6f);
+                s1.ShowFerry(ferry, ferryAtS1, ferryAtS3, marker.transform, from, to, ferryLamp);
+                s1.ShowBridges(bridges, new[] { Lamp(b, "Bridge W lamp", V(7f, 1.3f, 9.3f), .6f), Lamp(b, "Bridge E lamp", V(8f, 1.3f, 9.3f), .6f) });
+
+                var s3 = MapTable(b, "S3 map table", S3End - 7f, S3End - 1f);
+                s3.ShowBridges(bridges, new[] { Lamp(b, "Bridge W lamp", V(7f, 1.3f, S3End - 2.5f), .9f), Lamp(b, "Bridge E lamp", V(8f, 1.3f, S3End - 2.5f), .9f) });
+            });
         }
+
+        // A map table outside the east rail, z0 .. z1, carrying a CrossingSignal.
+        static CrossingSignal MapTable(CourseBuilder b, string name, float z0, float z1) =>
+            b.Box(name, V(WarHalf + .5f, -1f, z0), V(WarHalf + 2.5f, 1.3f, z1), b.kit.trimBlack, true).AddComponent<CrossingSignal>();
+
+        // A lamp on a map table (dark until its CrossingSignal lights it).
+        static Renderer Lamp(CourseBuilder b, string name, Vector3 at, float diameter) =>
+            b.Cylinder(name, at, diameter, .2f, b.kit.trimBlack, false).GetComponent<Renderer>();
 
         // 1.2 m marble rails along both sides of a fixed floor.
         static void WarRails(CourseBuilder b, string name, float z0, float z1)

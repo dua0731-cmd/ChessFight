@@ -619,7 +619,9 @@ public static class NetworkCoreTests
                 Check(PawnRushFinish.Winner(2, 3, 2, 3) == PawnRushFinish.None, "both at once, level: nobody yet");
                 Check(PawnRushFinish.Winner(0, 0, 0, 3) == PawnRushFinish.None && !PawnRushFinish.Reached(1, 0), "a team with no players never wins");
                 Check(PawnRushFinish.OnPlatform(2f, 0.9f, 2f) && !PawnRushFinish.OnPlatform(2.2f, 0.9f, 2.2f) && !PawnRushFinish.OnPlatform(0f, -1f, 0f)
-                      && !PawnRushFinish.OnPlatform(0f, 4f, 0f), "on the platform"); });
+                      && !PawnRushFinish.OnPlatform(0f, 4f, 0f), "on the platform");
+                Check(PawnRushFinish.OnPlatform(3f, 0.9f, 2f, 4.25f) && !PawnRushFinish.OnPlatform(3.1f, 0.9f, 3.1f, 4.25f)
+                      && !PawnRushFinish.OnPlatform(3f, 0.9f, 2f), "a wider platform (the 8.5 m throne circle)"); });
             Test("Game mode catalog: unique lobby keys, a playable default, safe lookups", () => {
                 Check(GameModes.All.Select(m => m.Key).Distinct().Count() == GameModes.All.Length, "duplicate key");
                 Check(GameModes.All.All(m => m.Key.Length > 0 && m.Key.Length <= 16 && m.Key.All(ch => ch >= 'a' && ch <= 'z')), "lobby keys are short lowercase words");
