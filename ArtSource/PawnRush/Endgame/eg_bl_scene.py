@@ -15,7 +15,12 @@ FLOOR_INLAY = 4.0
 
 
 def record(obj, part, role, skins="", pivot="", attach="", unity_euler=None):
-    loc = obj.matrix_world.to_translation()
+    # matrix_world is only brought up to date by a depsgraph update, which has not run for an object just placed:
+    # reading it here wrote every static and decor row at (0, 0, 0) (R255, found in Unity).
+    if obj.parent is None:
+        loc = obj.location.copy()
+    else:
+        loc = (obj.parent.matrix_world @ obj.matrix_parent_inverse @ obj.matrix_basis).to_translation()
     eul = unity_euler if unity_euler is not None else [0.0, round(-math.degrees(obj.rotation_euler.z), 3), 0.0]
     PLACED.append(dict(name=obj.name, fbx=f"{part}/{part}.fbx", position=B.unity_pos(loc), euler=eul,
                        scale=[round(obj.scale.x, 4), round(obj.scale.z, 4), round(obj.scale.y, 4)], role=role,

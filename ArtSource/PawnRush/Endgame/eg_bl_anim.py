@@ -186,4 +186,15 @@ def timing_mp4(L, rigs, coll, path, width=854, height=480):
     if hasattr(sc.render.image_settings, "media_type"):
         sc.render.image_settings.media_type = "IMAGE"
     sc.render.image_settings.file_format = "PNG"
+    clear(rigs)
     return path
+
+
+def clear(rigs):
+    """Take the preview's drivers, keys and frame handler off again. Left on, they override S.pose and the export's
+    rest pose, and PR_EG_manifest.json records the devices where the preview's clock had them (R255 local run)."""
+    bpy.app.handlers.frame_change_pre.clear()
+    for r in rigs:
+        for p in [r.root] + r.parts:
+            p.animation_data_clear()
+    bpy.context.scene.frame_set(bpy.context.scene.frame_start)

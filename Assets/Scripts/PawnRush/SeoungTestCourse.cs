@@ -24,8 +24,8 @@ namespace ChessFight.PawnRush
     public sealed class SeoungTestCourse : MonoBehaviour
     {
         public const string RootName = "SeoungTest_Zones";
-        // Raised whenever a zone's build changes, so a scene built before it is built again (R244: the war room v2).
-        public const int Version = 2;
+        // Raised whenever a zone's build changes, so a scene built before it is built again (R244: the war room v2, R255: hard LD v1 and its Blender models).
+        public const int Version = 3;
         static string VersionMark => "Zones v" + Version;
         // Wide gaps (10-30, 승규 님: room to widen the course sections): 80 m between zones, the mini-games 160 m in front.
         const float Gap = 80f, MiniRowZ = -160f;

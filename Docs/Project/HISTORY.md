@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| `3f20a91` … (이 커밋) | 10-30 | R255 | `claude/eloquent-ptolemy-bhtpfr`(`seoungtest` 위): 엔드게임 고난이도 LD v1 문서, `ArtSource/PawnRush/Endgame/` Blender 빌드 스크립트(키트 · 배치 · 검증 · 렌더 · 내보내기) · 검증 보고 · 배치 목록. FBX 63개 · 텍스처 · 리뷰 렌더 · .blend는 Git LFS 서버가 네트워크 정책에 막혀 커밋 안 함(스크립트로 다시 만듦) |
+| (이 커밋) | 10-30 | R256 | `seoungtest`: 엔드게임 LD v1 §6을 `Course01v4Builder.WarRoom.cs`에, Blender 모델 붙이기 `Course01v4Builder.WarRoomModels.cs` · 가져오기 메뉴 `EndgameModelImport`, `Assets/Art/PawnRushMap/Endgame/`(FBX 63 · 텍스처 · 재질 · 배치 목록, LFS), Blender 배치 목록 버그 둘 고침(`eg_bl_scene.record` · `eg_bl_anim.clear`), `SeoungTestCourse.Version` 3. ArtSource의 FBX · .blend · 렌더는 커밋 안 함(스크립트로 다시 만듦), 승규 님의 시험 씬 변경도 안 넣음 |
+| `3f20a91` … | 10-30 | R255 | `claude/eloquent-ptolemy-bhtpfr`(`seoungtest` 위): 엔드게임 고난이도 LD v1 문서, `ArtSource/PawnRush/Endgame/` Blender 빌드 스크립트(키트 · 배치 · 검증 · 렌더 · 내보내기) · 검증 보고 · 배치 목록. FBX 63개 · 텍스처 · 리뷰 렌더 · .blend는 Git LFS 서버가 네트워크 정책에 막혀 커밋 안 함(스크립트로 다시 만듦) |
 | (이 커밋) | 10-28 | R191 | `skill-network-test`: 소드 파이트 경기장을 Blender · Tripo 모델로 — 판 부품(오크 · 월넛 칸, 둥근 월넛 테두리 + 청동 줄, 난간, 책상, 쟁반), Tripo 책 더미 · 체스 시계 · 램프 · 룩(폭 1.45 · 높이 0.9 m, 오크/월넛) · 아치 창 + 달 배경, 램프 빛줄기 · 먼지 · 흔들림, 서재 배경 · 달빛, 칸 착지 · 흔들림 먼지, 시험 씬 K · L 키. `Assets/Resources/SwordFightMap`, `SwordFightArena.cs`, `ArtSource/SwordFight`(Blender 스크립트 · 렌더 · Tripo 원본). Core 132 · 세션 41 · 전 어셈블리 컴파일 |
 | `a127643` | 10-28 | R190 | `skill-network-test`: 소드 파이트 스킬 몸동작 Mixamo 클립 1단계 — `SkillClipRig`, `Core/SkillClipTiming`(+시험), `SwordFightClipSet`, `SwordFightSkills.Clips.cs`, 에디터 `SwordFightClipImporter`, 클립 폴더 README, 문서 |
 | `5600a01` | 10-27 | — | 경기장 스킬 시험 씬에 Unity가 더한 URP 카메라 · 빛 데이터 |

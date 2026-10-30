@@ -187,6 +187,8 @@
 
 회색 상자 → v1. Unity 쪽 채팅이 그대로 옮길 수 있게 값만 적는다. 좌표는 구역 원점 기준.
 
+> **R256(10-30): 이 목록 전부를 `Course01v4Builder.WarRoom.cs`에 옮겼다**(Unity 컴파일 · 임시 씬 배치만 확인, Play는 아직). 다른 점 하나: 2번 목록의 `Wall housing`은 `eg_layout.py`대로 **±12.3**(판의 가운데, ±12.6은 바깥 면). R5b 상자에는 회색 상자용 사슬 두 줄(보이기만)을 더 달았다. Blender 모델은 `Course01v4Builder.WarRoomModels.cs`가 붙인다(§7).
+
 상수 · 구간 경계(모두 z, m):
 
 | 항목 | 회색 상자 | v1 |
@@ -278,10 +280,16 @@
 - UV1_Lightmap: Lightmap Pack(겹침 없음, 여백 있음). 데칼 아틀라스(1024)는 나침반 · 룩 문장 · » 화살표 · 왕관 원 · 지도 인쇄.
 - 굽기: 지시서는 Cycles 굽기였지만, 절차적 무늬를 이음새 없이 타일로 만들려고 같은 무늬를 주기적 잡음(numpy, `make_textures.py`)으로 다시 만들었다. Blender 재질은 렌더 기준으로 남김.
 
+### Unity로 가져오기 (R256)
+
+- Unity 메뉴 **ChessFight → Pawn Rush → Endgame: Import Blender Models (R255)**: FBX 63개 · 텍스처 · 배치 목록을 `Assets/Art/PawnRushMap/Endgame/`(모델은 `Resources/PawnRushEndgame/`)로 복사, URP Lit 재질 10개(`Materials/`), FBX 재질을 이름으로 연결. `EG_Books` · `EG_Window_Emissive`는 텍스처가 없어 FBX 색 그대로.
+- 구역 E를 지을 때 `WarRoomModels`가 정적 · 장식은 `Blender models (R255)` 묶음에, 장치 스킨은 그 장치의 움직이는 부분(06 벽 · 09 문 · 진자 `Pivot` · 05 타일 · 낙하 말 · 12 판 등, 가장 가까운 이름) 아래에 놓고 회색 상자 렌더러를 끈다(충돌체 그대로). 모델이 없으면 회색 상자 그대로.
+- 이 PC에서 다시 만들며 찾은 것: **배치 목록의 정적 · 장식 1058개 행이 모두 (0, 0, 0)**이었다(`record()`가 갱신 전 `matrix_world`를 읽음), `--renders full`과 `--export`를 같이 돌리면 장치 스킨 행이 미리보기 시계 자리로 적혔다(MP4 드라이버). 둘 다 고치고 배치 목록을 다시 내보냈다. 또 Blender FBX는 Unity에서 Y축 180° 돌아 들어와 Unity 쪽에서 180° 더 돌려 놓는다([PITFALLS §24](../Environment/PITFALLS.md)).
+
 ### 아직 안 한 것
 
 - 턴테이블은 90°마다 네 방향 정지 시트다. 도는 동영상은 만들지 않았다.
-- Unity에 넣어 확인하기(이 문서의 어떤 것도 Unity에서 보지 않았다).
+- Unity에서 사람이 Play로 확인하기(R256: AI가 편집기 정지 화면만 봄 → [VALIDATION](../Network/VALIDATION.md) 맨 위 표).
 
 ## 8. 질문 (5개 이하)
 

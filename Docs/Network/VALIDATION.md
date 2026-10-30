@@ -1,11 +1,15 @@
 # Network 구현 검증 기록
 
-## ★ 2026-10-30 엔드게임 고난이도 LD v1 (R255) — 확인 목록
+## ★ 2026-10-30 엔드게임 고난이도 LD v1 (R255 설계, R256 Unity 반영) — 확인 목록
 
-설계와 Blender 산출물만 있고 Unity에는 아직 없다. Unity 쪽에서 [반영 목록](../KingRush/ENDGAME_LD_HARD_v1.md#6-unity-반영-목록-course01v4builderwarroomcs)을 옮긴 뒤:
+R256(10-30): [반영 목록](../KingRush/ENDGAME_LD_HARD_v1.md#6-unity-반영-목록-course01v4builderwarroomcs)을 `Course01v4Builder.WarRoom.cs`에 옮기고, Blender 모델 1127개(장치 스킨 53개)를 `Course01v4Builder.WarRoomModels.cs`가 붙인다. AI는 Unity 편집기에서 컴파일 오류 0, 임시 씬에 구역 E만 지어 모델이 모두 놓이는 것(FBX 없음 0 · 장치 못 찾음 0)과 정지 화면 4장만 봤다. **Play · 움직임은 아무도 안 봄.**
+
+준비(한 번): Unity 메뉴 **ChessFight → Pawn Rush → Endgame: Import Blender Models (R255)** → **ChessFight → SeoungTest → Build Pawn Rush Test Scene**(시험 씬을 다시 지음, 씬 안 손 편집은 사라짐). Play 시작 때 콘솔에 `엔드게임 Blender 모델: 1127개 배치(장치 스킨 53개), FBX 없음 0개`.
 
 | # | 할 일 | 기대(계산값) | 결과 |
 |---|---|---|---|
+| 0 | 시험 씬 구역 E를 F2로 날며 보기 | 회색 상자 대신 대리석 · 책장 홀 · 난간 · 장치 스킨, 회색 상자와 겹쳐 깜빡이는 곳 없음, 바닥 · 벽에 빈 곳 없음 | 미확인 |
+| 0b | 장치가 움직일 때 스킨이 함께 움직이는지(R1 판 · 막대, S2 갑판, R2 책장 벽 · 시계 문, S3 · S4 차폐판, R3 진자, R4 타일, R5 낙하 말, R5b 상자, S4 다리 판) | 스킨이 제자리에 남지 않고 회색 상자 자리를 그대로 따라감 | 미확인 |
 | 1 | S2 갑판 탑승 · 하선, 걸림 막대 넘기 | 12 s마다 2.55 s 탈 수 있음, 막대에 걸리면 갑판 뒤로 떨어짐 | 미확인 |
 | 2 | R3 다리(폭 6 m) 가장자리로 달리기 | 진자를 피하는 줄이 없음 | 미확인 |
 | 3 | R4 바람이 부는 세트 · 안 부는 세트 | 바람 없는 세트로 1.75 s 안에 내릴 수 있음 | 미확인 |

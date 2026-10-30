@@ -45,6 +45,8 @@ python make_textures.py        # Textures/ (numpy + Pillow)
 ## Unity로 넘기기 (지시서 §10)
 
 - 축: Blender X = Unity X, Blender Y = Unity Z(진행 방향), Blender Z = Unity Y. 원점은 S1 바닥 앞 가운데. FBX 설정은 소드 파이트 경기장과 같다.
+- **FBX는 Unity에서 Y축 180° 돌아 들어온다**(메시 (x, y, z) → (−x, y, −z)). 배치 목록의 값은 Unity 축 그대로라, Unity 쪽에서 놓을 때 180°를 더 돌린다(`Course01v4Builder.WarRoomModels.FbxTurn`, R256).
+- Unity로 가져오기: 메뉴 **ChessFight → Pawn Rush → Endgame: Import Blender Models (R255)**(`EndgameModelImport`), 그다음 **SeoungTest → Build Pawn Rush Test Scene**. 다시 만든 뒤에도 같은 순서.
 - 재질은 이름만(EG_Marble_Cream · EG_Gold · EG_Teal · EG_Walnut · EG_MapPaper · EG_BannerNavy · EG_Stone · EG_Lamp_Emissive · EG_Iron · EG_Books · EG_Window_Emissive · EG_Trim, 12개). Unity에서 URP Lit에 `Textures/`를 끼운다: `_BaseMap` ← `_BaseColor`, `_MetallicGlossMap` ← `_MetallicSmoothness`(R 금속, A 매끄러움), `_BumpMap` ← `_Normal`, `_OcclusionMap` ← `_Occlusion`(G). UV0은 모든 부품이 1 = 4 m라, 2048 텍스처(대리석 · 지도 · 트림)는 타일링 1, 1024 텍스처(금 · 청록 · 호두나무 · 돌 · 쇠 · 남색)는 타일링 2로 두면 모두 512 px/m.
 - `EG_Trim`은 `T_EG_Trim_*`(트림 시트). 내보낼 때 너비 0.35 m 이하의 몰딩 · 띠 · 베벨 면이 이 재질로 옮겨져 UV0이 띠 안에 깔린다.
 - 충돌체는 넣지 않았다. Unity 빌더가 기본 도형 충돌체를 만든다. 밟거나 닿는 스킨 면은 충돌체와 ±2 cm.
