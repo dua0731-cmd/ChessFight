@@ -23,7 +23,8 @@ namespace ChessFight.PawnRush
     public sealed class SeoungTestCourse : MonoBehaviour
     {
         public const string RootName = "SeoungTest_Zones";
-        const float Gap = 20f, MiniRowZ = -90f;
+        // Wide gaps (10-30, 승규 님: room to widen the course sections): 80 m between zones, the mini-games 160 m in front.
+        const float Gap = 80f, MiniRowZ = -160f;
 
         static readonly PieceKind[] PieceKeys =
             { PieceKind.Pawn, PieceKind.Knight, PieceKind.Bishop, PieceKind.Rook, PieceKind.Queen, PieceKind.King };
