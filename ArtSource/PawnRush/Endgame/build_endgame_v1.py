@@ -4,7 +4,9 @@
     python build_endgame_v1.py -- <out dir> [options]          (with the bpy module, Blender 5.2)
 
 Options:
-    --renders none|quick|full   review renders (quick: layout + 6 cuts at 1280 x 720; full: + per-beat sheets)
+    --renders none|quick|cuts|sheets|skins|mp4|full
+                                review renders (quick: layout + 6 cuts at 1280 x 720; sheets: per-beat plans at
+                                1 px = 2 cm; skins: every device skin alone; mp4: timing preview; full: all of them)
     --check                     interference, path, safe windows and budget reports
     --export                    FBX per part (LOD0-2, UV1), part .blend files, PR_EG_manifest.json
     --parts <dir>               where the part folders go (default <out dir>/parts; the repo keeps them here, next to
@@ -252,6 +254,10 @@ def main():
         A.annotate(L, notes)
         A.beat_sheets(L, review, opt["out"])
         bpy.data.collections["EG_Notes"].hide_render = True
+    if opt["renders"] in ("full", "skins"):
+        import eg_bl_export as X
+        skins = [o for o in kit_coll.objects if o.type == "MESH" and o.name in X.DESCRIBE]
+        R.skin_tiles(skins, opt["out"], names={k: v[0] for k, v in X.DESCRIBE.items()})
     if opt["renders"] in ("full", "mp4"):
         import eg_bl_anim as AN
         AN.timing_mp4(L, rigs, review, os.path.join(opt["out"], "timing_preview.mp4"))

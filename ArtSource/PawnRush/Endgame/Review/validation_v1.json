@@ -425,16 +425,6 @@
     "length": 2.0
    },
    {
-    "floor": "R2 floor",
-    "side": "W",
-    "length": 6.0
-   },
-   {
-    "floor": "R2 floor",
-    "side": "E",
-    "length": 6.0
-   },
-   {
     "floor": "R3 bridge",
     "side": "W",
     "length": 20.0
@@ -443,56 +433,6 @@
     "floor": "R3 bridge",
     "side": "E",
     "length": 20.0
-   },
-   {
-    "floor": "Step 1",
-    "side": "W",
-    "length": 0.5
-   },
-   {
-    "floor": "Step 1",
-    "side": "E",
-    "length": 0.5
-   },
-   {
-    "floor": "Step 2",
-    "side": "W",
-    "length": 0.5
-   },
-   {
-    "floor": "Step 2",
-    "side": "E",
-    "length": 0.5
-   },
-   {
-    "floor": "Step 3",
-    "side": "W",
-    "length": 0.5
-   },
-   {
-    "floor": "Step 3",
-    "side": "E",
-    "length": 0.5
-   },
-   {
-    "floor": "Step 4",
-    "side": "W",
-    "length": 0.5
-   },
-   {
-    "floor": "Step 4",
-    "side": "E",
-    "length": 0.5
-   },
-   {
-    "floor": "Entry strip",
-    "side": "W",
-    "length": 4.0
-   },
-   {
-    "floor": "Entry strip",
-    "side": "E",
-    "length": 4.0
    }
   ],
   "checkpoints": [

@@ -386,6 +386,12 @@
 
 ## 3. 진행 중인 일과 다음 할 일
 
+**폰 러시 엔드게임 고난이도 LD v1 + Blender 맵 (R255, 10-30, `claude/eloquent-ptolemy-bhtpfr` ← `seoungtest`)**
+- Unity 쪽 채팅이 [ENDGAME_LD_HARD_v1 §6 Unity 반영 목록](Docs/KingRush/ENDGAME_LD_HARD_v1.md#6-unity-반영-목록-course01v4builderwarroomcs)을 `Course01v4Builder.WarRoom.cs`에 옮긴다(새 장치: S2 걸림 막대 · R4 옆바람 2 · R5b 사슬 상자 4 · S4 차폐판, 바뀐 z · 주기 · 위상). 값의 출처는 `ArtSource/PawnRush/Endgame/eg_layout.py`.
+- 그다음 `PR_EG_manifest.json`대로 스킨 FBX(`ArtSource/PawnRush/Endgame/PR_EG_*/`)를 `Assets/Art/PawnRushMap/Endgame/`로 가져와 장치 루트 아래에 붙이고, 재질은 이름별 URP Lit + `Textures/`. [VALIDATION](Docs/Network/VALIDATION.md) 맨 위 R255 표로 플레이 확인.
+- FBX · .blend · PNG · MP4는 이 세션에서 Git LFS 서버(`lfs.github.com`)가 네트워크 정책에 막혀 못 올렸을 수 있다. 브랜치에 바이너리 커밋이 없으면 클라우드 환경 Network access에 `lfs.github.com`을 허용하고 다시 푸시한다.
+- 남은 아트: 키트 UV를 트림 시트 띠에 맞추기, 장치 턴테이블, 컷 6장 1920 × 1080 최종본. 실패 포함 평균 추정 3:07은 목표 3:30보다 짧다(조정 순서는 문서 §3).
+
 **소드 파이트 스킬 몸동작 Mixamo 클립 (R190, 10-28, `skill-network-test`)**
 - 사용자가 Mixamo에서 클립을 받아 `Assets/Art/SwordFight/Mixamo/`에 넣는다(이름 `<기물>_<F|E>`, 받는 법 · 검색어는 그 폴더 README). 룩 F는 **아래에서 위로 퍼올리기**(사용자 확정).
 - Unity: 메뉴 ChessFight → Sword Fight → Skill Clips → Fill From Mixamo Folder → `SwordFightClips` 에셋의 marks(1번 = 클립에서 내리치기 시작)와 부위 비율을 눈으로 맞춘다. [VALIDATION](Docs/Network/VALIDATION.md) 맨 위 R190 표.

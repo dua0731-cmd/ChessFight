@@ -196,12 +196,21 @@ def path_check(L):
     out["widths"].append(dict(beat="R5b", narrowest_floor="crates 6.0", ok=True))
     out["widths"].append(dict(beat="R2", narrowest_floor="gate doors 3.8 m over 0.6 m (short)", ok=True))
     # unrailed walked edges
-    railed = [(r["x0"], r["x1"], r["z0"], r["z1"], r["floor"]) for r in L.rails]
+    railed = [(r["x0"], r["x1"], r["z0"], r["z1"], r["floor"], r["floor"] + r["h"]) for r in L.rails]
+    # a side wall at least 1.2 m over the floor does the rail's job (the exit steps, the 06 housings)
+    railed += [(w["x0"], w["x1"], w["z0"], w["z1"], None, w["y1"]) for w in L.walls]
+    for d in L.devices:
+        if d["type"] == "sliding":
+            for side in (-1, 1):
+                z = d["pos"][2] + side * 1.8
+                railed.append((side * 6.0 - 0.5 if side < 0 else 6.0, side * 6.0 + 0.5 if side > 0 else -6.0, z - 1.5, z + 1.5, None, 9.0))
     for f in L.floors:
         for side, x in (("W", f["x0"]), ("E", f["x1"])):
             covered = 0.0
-            for rx0, rx1, rz0, rz1, ry in railed:
-                if abs(ry - f["top"]) < 0.01 and (abs(rx1 - x) < 0.6 or abs(rx0 - x) < 0.6):
+            for rx0, rx1, rz0, rz1, ry, ytop in railed:
+                near = abs(rx1 - x) < 0.6 or abs(rx0 - x) < 0.6
+                high = (abs(ry - f["top"]) < 0.01) if ry is not None else ytop >= f["top"] + 1.19
+                if near and high:
                     covered += max(0.0, min(rz1, f["z1"]) - max(rz0, f["z0"]))
             if covered < (f["z1"] - f["z0"]) - 0.05:
                 out["unrailed"].append(dict(floor=f["name"], side=side, length=round(f["z1"] - f["z0"] - covered, 2)))

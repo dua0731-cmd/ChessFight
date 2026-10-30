@@ -70,7 +70,8 @@ def blender_section():
                      f"난간 {len(p['rails'])}개 모두 1.2 m, 가장 좁은 곳 6 m(R3 · R5b), CP 8개 모두 장치 범위 밖, "
                      f"마지막 밀어내기 뒤 정리 구간 {p['notes'][0]['metres'] if p['notes'] else '?'} m.")
         unr = sorted({u["floor"] for u in p["unrailed"]})
-        lines.append(f"  - 난간 없는 가장자리(의도): {', '.join(unr)}. 계단 · 입구 띠는 옆 대리석 벽이 난간 노릇을 한다(검사는 난간만 셈).")
+        lines.append(f"  - 난간 없는 바닥 가장자리(의도): {', '.join(unr)}. 장치 위(S2 갑판, R5 벨트 구간, R5b 상자, R6 원판, S4 다리 판)도 난간이 없다. "
+                     "06 벽 홈은 벽 자체가, 계단 · 입구 띠는 옆 대리석 벽이 막는다.")
         b = val["budget"]
         worst = max(b["views"], key=lambda v: v["visible_tris"])
         lines.append(f"- **예산**: 리뷰 카메라 6대 중 가장 많은 화면 {worst['camera'].replace('Budget cam ', '')} {worst['visible_tris']:,} 삼각형(기준 1,500,000), "

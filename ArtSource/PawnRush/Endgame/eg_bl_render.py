@@ -159,3 +159,60 @@ def kit_sheet(objs, coll, path, cols=8, gap=2.0, width=2400, height=1350, sample
     setup("EEVEE", width, height, samples)
     world(0.6, "#4A5456")
     return render(cam, path)
+
+
+def skin_tiles(objs, outdir, size=480, samples=16, angles=(35.0,), names=None):
+    """Each device skin alone, framed from a 3/4 view (one tile per angle), then a contact sheet with labels."""
+    from mathutils import Vector as V
+    sc = bpy.context.scene
+    hidden = [o for o in bpy.data.objects if not o.hide_render]
+    for o in hidden:
+        o.hide_render = True
+    coll = bpy.data.collections.get("EG_SkinTiles") or bpy.data.collections.new("EG_SkinTiles")
+    if coll.name not in sc.collection.children:
+        sc.collection.children.link(coll)
+    sun = light("Tile sun", "SUN", (0, 0, 50), 3.0, "#FFF0DA", rot=(math.radians(52), 0, math.radians(35)), size=3, coll=coll)
+    fill = light("Tile fill", "SUN", (0, 0, 50), 0.9, "#BFD6E6", rot=(math.radians(65), 0, math.radians(-150)), size=10, coll=coll)
+    sun.hide_render = fill.hide_render = False
+    setup("EEVEE", size, size, samples)
+    world(0.5, "#3B4547")
+    paths = []
+    for o in objs:
+        c = bpy.data.objects.new(o.name + " tile", o.data)
+        coll.objects.link(c)
+        c.location = (1000.0, 0.0, 0.0)
+        bpy.context.view_layer.update()
+        bb = [c.matrix_world @ V(v) for v in c.bound_box]
+        lo = V((min(v.x for v in bb), min(v.y for v in bb), min(v.z for v in bb)))
+        hi = V((max(v.x for v in bb), max(v.y for v in bb), max(v.z for v in bb)))
+        centre, radius = (lo + hi) / 2, max((hi - lo).length / 2, 0.5)
+        for a in angles:
+            d = V((math.cos(math.radians(a + 200)), math.sin(math.radians(a + 200)), 0.55)).normalized()
+            cam = camera("Tile cam", centre + d * radius * 3.1, centre, lens=50, coll=coll)
+            path = os.path.join(outdir, "skins", f"{o.name}_{int(a)}.png")
+            render(cam, path)
+            paths.append((o.name, path))
+            bpy.data.objects.remove(cam)
+        bpy.data.objects.remove(c)
+    for o in hidden:
+        o.hide_render = False
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        cols = 6
+        rows = (len(paths) + cols - 1) // cols
+        sheet = Image.new("RGB", (cols * size, rows * (size + 40)), (24, 30, 31))
+        font = None
+        for f in ("/usr/share/fonts/truetype/nanum/NanumSquareB.ttf", "C:/Windows/Fonts/malgunbd.ttf"):
+            if os.path.exists(f):
+                font = ImageFont.truetype(f, 22)
+                break
+        draw = ImageDraw.Draw(sheet)
+        for i, (name, path) in enumerate(paths):
+            x, y = (i % cols) * size, (i // cols) * (size + 40)
+            sheet.paste(Image.open(path).convert("RGB"), (x, y))
+            label = (names or {}).get(name, name)
+            draw.text((x + 10, y + size + 8), label, fill=(239, 230, 212), font=font)
+        sheet.save(os.path.join(outdir, "skins_sheet.png"))
+    except ImportError:
+        pass
+    return paths
