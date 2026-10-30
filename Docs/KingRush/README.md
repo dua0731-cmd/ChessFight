@@ -101,6 +101,7 @@ Builds/KingRushPrototype/ChessFight.exe -kingRushTest -screen-fullscreen 0 -scre
 | [PAWN_RUSH_COURSE01.md](PAWN_RUSH_COURSE01.md) | **폰 러시 코스 01 구현**(R68 v0.1 → R69 v0.2 → R86 v0.4): 씬 `PawnRush_Course01`(공용 길 + 미션 광장 2곳, 판마다 미니게임 A~E 중 두 개), 메뉴 ChessFight → Pawn Rush, 씬 구조·코드, 미니게임, 검증기, 기획서와 다른 곳. 기획서 원문 [v0.4](PAWN_RUSH_COURSE01_DESIGN_v0.4.md) · [v0.2](PAWN_RUSH_COURSE01_DESIGN_v0.2.md) · [v0.1](PAWN_RUSH_COURSE01_DESIGN_v0.1.md) |
 | [PAWN_RUSH_3PHASE_RESEARCH.md](PAWN_RUSH_3PHASE_RESEARCH.md) | **폰 러시 3페이즈 재디자인 자료조사**(R238, 승규 님): 정원 · 제빵소 · 전략회의실 자료와 지금 코스 01 · 장치 대응, 새로 필요한 것, 정해야 할 것. 문서만 |
 | [PAWN_RUSH_ENDGAME_RESEARCH.md](PAWN_RUSH_ENDGAME_RESEARCH.md) | **폰 러시 엔드게임(3페이즈) 자료조사**(R238, 승규 님 담당): 전략회의실 S1–S4 · 작전교 장치 비교 · 윗궁 후보 5곳 · 공유 미션 3 · 최종 코스 · 알현실 · 왕좌(6명 중 4명). 문서만 |
+| [PAWN_RUSH_ENDGAME_BLENDER_PROMPT.md](PAWN_RUSH_ENDGAME_BLENDER_PROMPT.md) | **엔드게임 Blender · 고난이도 LD 작업 지시서**(R245): 다른 채팅에 붙여 넣는 프롬프트. 이동 수치 · 장치 표 · E v2 좌표 · 아트 방향 · Blender 기술 · Unity 넘김 규칙 · 산출물 |
 | [PAWN_RUSH_MAP_KIT.md](PAWN_RUSH_MAP_KIT.md) | **폰 러시 맵 기획 재료집**(R67): 장애물 시험 씬의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치, 채팅 AI용 프롬프트와 결과 양식 |
 | [MAP_IMPORT.md](MAP_IMPORT.md) | R65 별도 프로젝트 맵·19 장애물 이식: 열기, 기존 래그돌 연결, 검사와 미연결 범위 |
 | 이 문서 | 씬 구성, 코스 컴포넌트, 오프라인 플레이테스트, 네트워크 한계 |
