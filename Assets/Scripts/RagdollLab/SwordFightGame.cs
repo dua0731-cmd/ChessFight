@@ -94,6 +94,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The offline line-up: me and three dummies (also what an online skill test goes back to, R121).</summary>
         public void SpawnOffline()
         {
+            if (sandbox) { SpawnSandbox(); return; }
             Add(1, 0, 0, false, "나 · 폰");
             Add(2, 0, 1, true, "아군 더미");
             Add(3, 1, 0, true, "적군 더미 1");
@@ -218,6 +219,24 @@ namespace ChessFight.RagdollLab
                 if (f.Bot && f.Alive && !f.Scripted) f.SetInput(default);
             }
         }
+        static readonly PieceKind[] SandboxPieces =
+            { PieceKind.King, PieceKind.Queen, PieceKind.Rook, PieceKind.Bishop, PieceKind.Knight, PieceKind.Pawn };
+
+        /// <summary>The sandbox line-up (10-30, 승규 님): six a side, one of each piece; I am white's king.</summary>
+        void SpawnSandbox()
+        {
+            ulong id = 1;
+            for (int team = 0; team < 2; team++)
+                for (int slot = 0; slot < SandboxPieces.Length; slot++)
+                {
+                    var kind = SandboxPieces[slot];
+                    bool me = team == 0 && slot == 0;
+                    string name = me ? "나 · " + ChessPieces.Name(kind) : (team == 0 ? "백 " : "흑 ") + ChessPieces.Name(kind);
+                    var f = Add(id++, team, slot, !me, name);
+                    f.Pawn.SetPiece(kind);
+                }
+        }
+
         void StepSandbox()
         {
             foreach (var f in Fighters.Values)
