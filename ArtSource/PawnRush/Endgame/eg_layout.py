@@ -368,6 +368,11 @@ def _exit(L, start, y, runout):
     for i in range(4):
         _war_floor(L, f"Step {i + 1}", "EX", -6, 6, arch + i * 0.5, arch + (i + 1) * 0.5, y - 0.25 * (i + 1))
     _war_floor(L, "Entry strip", "EX", -6, 6, arch + 2.0, arch + 6.0, y - 1.0)
+    if L.name != "graybox":
+        # v1: the steps and the entry strip get side walls 1.2 m over the top step (marble, not climbed)
+        for side in (-1, 1):
+            L.wall(f"Exit side wall {'W' if side < 0 else 'E'}", "EX", min(side * 6.0, side * 6.5), max(side * 6.0, side * 6.5),
+                   y - 2.0, y + 1.2, arch + 0.5, arch + 6.0, mat="EG_Marble_Cream")
     L.wall("Mission room (not built) wall", "EX", -6.5, 6.5, y - 2, y + 4, arch + 6.0, arch + 6.5)
     L.exit = dict(terrace=terrace, arch=arch, end=arch + 6.0, y=y)
 
@@ -379,6 +384,7 @@ V1 = dict(
     ferry_period=12.0,                # S2 (gray box 14 s): boarding window 3.0 -> 2.6 s
     ferry_frame_h=0.12,               # S2 deck rim flush, under the hurdle bar (gray box 0.5 m beams, 0.9 m posts)
     hurdle=(0.2, 0.52, 0.45),         # S2 fixed hurdle across the chasm middle: bottom, top, thickness
+    walls_b_phase=2.75,               # R2 second wall pair: each pair 1.95 s, both in one go only 0.75 s (the pocket between is the wait)
     screen_period=5.0,                # S3 rook screens, the 09 gate's 5 s
     screen_phase=(0.25, 2.25),        # seconds: a runner leaving a gate door meets the open half (1.55 s)
     r3_half=3.0,                      # R3 bridge 6 m wide (gray box 10 m: lanes |x| > 3.4 never met a ball)
@@ -389,6 +395,7 @@ V1 = dict(
     s4_bridge_phase=(0.0, 6.75),
     s4_screen_period=13.5, s4_screen_phase=7.25,  # one sweep per bridge cycle: 2.5 s to cross bridge and screen in one go
     vent_phase=(0.0, 3.4),
+    runout=15.0,                      # exit: 15 m with nothing pushing (rule: 12-18 m)
 )
 
 
@@ -430,49 +437,64 @@ def ld_v1():
         L.wall(f"S2 hurdle pier {'W' if side < 0 else 'E'}", "S2", min(side * 5.6, side * 6.4),
                max(side * 5.6, side * 6.4), -16, 1.0, mid - 0.4, mid + 0.4, mat="EG_Stone")
 
-    # R2: the bookshelf hall: 06 walls stretched to the 12 m way, a pocket, 09 gates ----------------------------
-    L.beat("R2", "책장 회랑", ferry_gap1, 88, 0, 3)
-    _war_floor(L, "R2 floor", "R2", -6, 6, ferry_gap1, 88, 0)
-    # rails stop where a wall slides through them (W 66.7..69.7, E 70.3..73.3)
-    L.rail("R2 rail W south", "R2", -1, ferry_gap1, 66.7, 0)
-    L.rail("R2 rail W north", "R2", -1, 69.7, 88, 0)
-    L.rail("R2 rail E south", "R2", 1, ferry_gap1, 70.3, 0)
-    L.rail("R2 rail E north", "R2", 1, 73.3, 88, 0)
+    # R2: the bookshelf hall: two pairs of 06 walls stretched to the 12 m way (half a cycle apart), a pocket,
+    # the 09 gates -----------------------------------------------------------------------------------------------
+    r2_end = 98.0
+    L.beat("R2", "책장 회랑", ferry_gap1, r2_end, 0, 3)
+    _war_floor(L, "R2 floor", "R2", -6, 6, ferry_gap1, r2_end, 0)
+    walls_z = (70.0, 79.5)
+    # rails stop where a wall slides through them (W at z - 3.3 .. z - 0.3, E at z + 0.3 .. z + 3.3)
+    cuts_w = [(z - 3.3, z - 0.3) for z in walls_z]
+    cuts_e = [(z + 0.3, z + 3.3) for z in walls_z]
+    for side, cuts, tag in ((-1, cuts_w, "W"), (1, cuts_e, "E")):
+        z = ferry_gap1
+        for k, (c0, c1) in enumerate(cuts):
+            L.rail(f"R2 rail {tag} {k}", "R2", side, z, c0, 0)
+            z = c1
+        L.rail(f"R2 rail {tag} {len(cuts)}", "R2", side, z, r2_end, 0)
     L.cp(3, ferry_gap1 + 2)
-    L.device(id="R2_walls", beat="R2", type="sliding", pos=(0, 0, 70), yaw=0, wall_w=6.0, rest=9.0, travel=6.0,
-             housing=12.3, phase_s=0.0)
-    L.device(id="R2_gates", beat="R2", type="clockgates", pos=(0, 0, 80), yaw=0, phase_s=0.0)
-    L.wall("R2 gate side W", "R2", -6, -4.3, 0, 6, 79.4, 80.6)
-    L.wall("R2 gate side E", "R2", 4.3, 6, 0, 6, 79.4, 80.6)
+    for tag, z, ph in (("A", walls_z[0], 0.0), ("B", walls_z[1], V1["walls_b_phase"])):
+        L.device(id=f"R2_walls_{tag}", beat="R2", type="sliding", pos=(0, 0, z), yaw=0, wall_w=6.0, rest=9.0, travel=6.0,
+                 housing=12.3, phase_s=ph)
+    gate_z = 90.0
+    L.device(id="R2_gates", beat="R2", type="clockgates", pos=(0, 0, gate_z), yaw=0, phase_s=0.0)
+    L.wall("R2 gate side W", "R2", -6, -4.3, 0, 6, gate_z - 0.6, gate_z + 0.6)
+    L.wall("R2 gate side E", "R2", 4.3, 6, 0, 6, gate_z - 0.6, gate_z + 0.6)
 
     # S3: the command landing: CP 4 keeps the lead, two rook screens chained to the gate's 5 s -------------------
-    L.beat("S3", "지휘 착지면 · 중앙 견제", 88, 112, 0, 4)
-    _war_floor(L, "S3 floor", "S3", -6, 6, 88, 112, 0)
-    L.rails_both("S3", "S3", 88, 112, 0)
-    L.cp(4, 90)
-    for z, ph in zip((95.0, 106.0), V1["screen_phase"]):
+    s3_end = r2_end + 26.0
+    L.beat("S3", "지휘 착지면 · 중앙 견제", r2_end, s3_end, 0, 4)
+    _war_floor(L, "S3 floor", "S3", -6, 6, r2_end, s3_end, 0)
+    L.rails_both("S3", "S3", r2_end, s3_end, 0)
+    L.cp(4, r2_end + 2.0)
+    L.compass_z = gate_z + 20.5
+    for z, ph in zip((gate_z + 15.0, gate_z + 26.0), V1["screen_phase"]):
         L.device(id=f"S3_screen_{int(z)}", beat="S3", type="rookscreen", pos=(0, 0, z), yaw=0, length=6.0, depth=2.0,
                  height=3.2, timing=Motion("translate", distance=3.0, period=V1["screen_period"]).shift(ph))
 
     # R3: the banner bridge, 6 m wide, two pendulums ------------------------------------------------------------
     h3 = V1["r3_half"]
-    L.beat("R3", "깃발 다리", 112, 132, 0, None)
-    _war_floor(L, "R3 bridge", "R3", -h3, h3, 112, 132, 0)
-    for z, ph in zip((118.0, 126.0), V1["r3_pend_phase"]):
+    r3_end = s3_end + 20.0
+    L.beat("R3", "깃발 다리", s3_end, r3_end, 0, None)
+    _war_floor(L, "R3 bridge", "R3", -h3, h3, s3_end, r3_end, 0)
+    for z, ph in zip((s3_end + 6.0, s3_end + 14.0), V1["r3_pend_phase"]):
         L.device(id=f"R3_pendulum_{int(z)}", beat="R3", type="pendulum", pos=(0, 0, z), yaw=0, timing=Pendulum(ph))
+        # the frame's posts stay colliders in Unity (outside the way); the gantry skin draws them
         L.wall(f"R3 frame post W {int(z)}", "R3", -7.8, -7, -3, 8.3, z - 0.4, z + 0.4, mat="EG_Teal")
         L.wall(f"R3 frame post E {int(z)}", "R3", 7, 7.8, -3, 8.3, z - 0.4, z + 0.4, mat="EG_Teal")
         L.wall(f"R3 frame beam {int(z)}", "R3", -7.8, 7.8, 7.8, 8.3, z - 0.4, z + 0.4, mat="EG_Gold")
 
     # R4: the lift tiles up to y 3, a side gust over the top row --------------------------------------------------
-    L.beat("R4", "승강 지도함 · 옆바람", 132, 144, 0, 5)
-    _war_floor(L, "R4 floor", "R4", -6, 6, 132, 136, 0)
-    L.rails_both("R4", "R4", 132, 136, 0)
-    L.cp(5, 133)
-    L.device(id="R4_tiles_W", beat="R4", type="lifttiles", pos=(-3.35, 0, 139.6), yaw=0, phase_s=0.0)
-    L.device(id="R4_tiles_E", beat="R4", type="lifttiles", pos=(3.35, 0, 139.6), yaw=0, phase_s=3.0)
-    L.wall("R4 upper front", "R4", -6, 6, -2, U, 143, 144, top_walk=True)
-    north_row = 139.6 + 1.575
+    r4_end = r3_end + 12.0
+    lift_z = r3_end + 7.6
+    L.beat("R4", "승강 지도함 · 옆바람", r3_end, r4_end, 0, 5)
+    _war_floor(L, "R4 floor", "R4", -6, 6, r3_end, r3_end + 4.0, 0)
+    L.rails_both("R4", "R4", r3_end, r3_end + 4.0, 0)
+    L.cp(5, r3_end + 1.0)
+    L.device(id="R4_tiles_W", beat="R4", type="lifttiles", pos=(-3.35, 0, lift_z), yaw=0, phase_s=0.0)
+    L.device(id="R4_tiles_E", beat="R4", type="lifttiles", pos=(3.35, 0, lift_z), yaw=0, phase_s=3.0)
+    L.wall("R4 upper front", "R4", -6, 6, -2, U, r4_end - 1.0, r4_end, top_walk=True)
+    north_row = lift_z + 1.575
     for side, ph in zip((-1, 1), V1["vent_phase"]):
         # 15 on a stone bracket outside the way, blowing across the top of its set's north row, toward the middle
         L.device(id=f"R4_vent_{'W' if side < 0 else 'E'}", beat="R4", type="vent", pos=(side * 6.85, U, north_row),
@@ -483,38 +505,47 @@ def ld_v1():
     # R5: two belts run north through a pair of falling pieces landing on them, half a cycle apart. A pawn waits on
     # the floor, steps on when its side has just struck and rides through at 4 m/s; a late step carries it into
     # the next shock. The seam between the belts is under both pieces (a strike every 2.3 s): no way through there.
-    zc = 161.0
-    L.beat("R5", "벨트 · 낙하 말", 144, 172.6, U, None)
-    _war_floor(L, "R5 floor 1", "R5", -6, 6, 144, zc - 5.0, U)
+    # No rails along the belts: a shock there throws a pawn off the edge.
+    zc = r4_end + 17.0
+    r5_end = zc + 11.6
+    L.beat("R5", "벨트 · 낙하 말", r4_end, r5_end, U, None)
+    _war_floor(L, "R5 floor 1", "R5", -6, 6, r4_end, zc - 5.0, U)
     for x in (-3.0, 3.0):
         L.device(id=f"R5_belt_{'W' if x < 0 else 'E'}", beat="R5", type="conveyor", pos=(x, U - 0.4, zc), yaw=180,
                  width=6.0, length=10.0, speed=V1["belt_speed"])
     L.box("R5 conveyor bed", "R5", -6, 6, U - 2, U - 1, zc - 5.0, zc + 5.0, "EG_Walnut")
-    _war_floor(L, "R5 floor 2", "R5", -6, 6, zc + 5.0, 172.6, U)
-    L.rails_both("R5", "R5", 144, 172.6, U)
+    _war_floor(L, "R5 floor 2", "R5", -6, 6, zc + 5.0, r5_end, U)
+    L.rails_both("R5 south", "R5", r4_end, zc - 5.0, U)
+    L.rails_both("R5 north", "R5", zc + 5.0, r5_end, U)
     for x, ph in zip((-3.0, 3.0), V1["piece_phase"]):
         L.device(id=f"R5_piece_{'W' if x < 0 else 'E'}", beat="R5", type="fallingpiece", pos=(x, U, zc), yaw=0,
                  timing=FallingPiece(ph))
-    L.cp(6, 170, U)
+    L.cp(6, r5_end - 2.6, U)
 
-    # R5b: three crates hanging on chains over the drop, each hop opening in turn ---------------------------------
-    L.beat("R5b", "사슬 상자 징검다리", 172.6, 187.4, U, 6)
-    for i, (z, ph) in enumerate(((175.5, 0.0), (180.0, 0.5), (184.5, 0.0))):
+    # R5b: four crates hanging on chains over the drop, each hop opening in turn -----------------------------------
+    crates = [r5_end + 2.9 + 4.5 * i for i in range(4)]
+    r5b_end = crates[-1] + 2.9
+    L.beat("R5b", "사슬 상자 징검다리", r5_end, r5b_end, U, 6)
+    for i, z in enumerate(crates):
         L.device(id=f"R5b_crate_{i + 1}", beat="R5b", type="crate", pos=(0, U, z), yaw=0, half_x=3.0, half_z=1.5,
-                 timing=Motion("translate", distance=V1["crate_amp"], period=V1["crate_period"], phase=ph))
+                 timing=Motion("translate", distance=V1["crate_amp"], period=V1["crate_period"], phase=0.5 * (i % 2)))
+    L.crane_z = (crates[0] + crates[-1]) / 2
+    L.crane_len = r5b_end - r5_end + 1.2
 
     # R6: the spinning disc, the second map table ------------------------------------------------------------------
-    L.beat("R6", "회전 원판", 187.4, 204, U, 7)
-    _war_floor(L, "R6 ledge", "R6", -6, 6, 187.4, 190, U)
-    L.rails_both("R6 ledge", "R6", 187.4, 190, U)
-    L.device(id="R6_disc", beat="R6", type="disc", pos=(0, U - 0.4, 194), yaw=0, diameter=8.0)
-    _war_floor(L, "R6 landing", "R6", -6, 6, 198, 204, U)
-    L.rails_both("R6 landing", "R6", 198, 204, U)
-    L.wall("R6 map table", "R6", 6.5, 8.5, U - 1, U + 1.3, 198, 203.5, mat="EG_Walnut")
-    L.cp(7, 199.5, U)
+    disc_z = r5b_end + 2.6 + 4.0
+    r6_end = disc_z + 4.0 + 6.0
+    L.beat("R6", "회전 원판", r5b_end, r6_end, U, 7)
+    _war_floor(L, "R6 ledge", "R6", -6, 6, r5b_end, disc_z - 4.0, U)
+    L.rails_both("R6 ledge", "R6", r5b_end, disc_z - 4.0, U)
+    L.device(id="R6_disc", beat="R6", type="disc", pos=(0, U - 0.4, disc_z), yaw=0, diameter=8.0)
+    _war_floor(L, "R6 landing", "R6", -6, 6, disc_z + 4.0, r6_end, U)
+    L.rails_both("R6 landing", "R6", disc_z + 4.0, r6_end, U)
+    L.wall("R6 map table", "R6", 6.5, 8.5, U - 1, U + 1.3, disc_z + 4.0, r6_end - 0.5, mat="EG_Walnut")
+    L.cp(7, disc_z + 5.5, U)
 
     # S4: the last crossing: two folding bridges, a rook screen on the far side -----------------------------------
-    s4_start, bridge_half = 204.0, 7.05
+    s4_start, bridge_half = r6_end, 7.05
     s4_end = s4_start + 2 * bridge_half
     L.beat("S4", "마지막 작전교 (결정적 건넘 2)", s4_start, s4_end + 2.5, U, None)
     for x, ph, tag in ((-3, V1["s4_bridge_phase"][0], "W"), (3, V1["s4_bridge_phase"][1], "E")):
@@ -526,7 +557,7 @@ def ld_v1():
     _war_floor(L, "S4 far floor", "S4", -6, 6, s4_end, screen_z + 1.0, U)
     L.rails_both("S4 far floor", "S4", s4_end, screen_z + 1.0, U)
 
-    _exit(L, screen_z + 1.0, U, runout=12.0)
+    _exit(L, screen_z + 1.0, U, runout=V1["runout"])
     return L
 
 

@@ -282,10 +282,22 @@ def check_s2(L):
 
 
 def check_r2(L):
-    walls, gates = L.device_by_id("R2_walls"), L.device_by_id("R2_gates")
+    walls = [d for d in L.devices if d["type"] == "sliding"]
+    gates = L.device_by_id("R2_gates")
     lanes = [round(-5.5 + 0.5 * i, 2) for i in range(23)]
-    zw = walls["pos"][2]
-    out = dict(walls=lanes_table([walls], lanes, zw - 4.0, zw + 4.0, 0.0, 4.5))
+    out = dict(walls=[])
+    for w in walls:
+        zw = w["pos"][2]
+        out["walls"].append(dict(id=w["id"], **lanes_table([w], lanes, zw - 4.0, zw + 4.0, 0.0, 4.5)))
+    if len(walls) > 1:
+        # the two pairs one after the other, a pawn free to switch halves between them
+        za, zb = walls[0]["pos"][2], walls[1]["pos"][2]
+        routes = []
+        for a in (-3.0, 3.0):
+            for b in (-3.0, 3.0):
+                routes.append((f"A {'W' if a < 0 else 'E'} -> B {'W' if b < 0 else 'E'}",
+                               [(a, za - 4.0), (a, za + 3.6), (b, zb - 3.6), (b, zb + 4.0)]))
+        out["walls_chain"] = route_table(walls, routes, 0.0, 4.5)
     zg = gates["pos"][2]
     glanes = [round(-3.6 + 0.4 * i, 2) for i in range(19)]
     out["gates"] = lanes_table([gates], glanes, zg - 1.2, zg + 1.2, 0.0, 5.0)
@@ -556,11 +568,15 @@ def summary(res):
     s2 = res["S2"]
     lines.append(f"S2 ferry {s2['period']} s, max {s2['max_speed']} m/s: board {s2['board']['longest']} s, alight {s2['alight']['longest']} s, min gap {s2['min_gap']}"
                  + (f"; hurdle tolerance standing {s2['hurdle']['jump_tolerance_standing']} s, running {s2['hurdle']['jump_tolerance_running_at_it']} s" if "hurdle" in s2 else ""))
-    for key in ("walls", "gates"):
-        t = res["R2"][key]
+    for t in res["R2"]["walls"]:
         best = max(t["lanes"], key=lambda r: r["longest"])
-        worst = min(t["lanes"], key=lambda r: r["longest"])
-        lines.append(f"R2 {key}: union {t['union_longest']} s ({t['union_share']}), best lane {best['lane']} {best['longest']} s, worst lane {worst['lane']} {worst['longest']} s")
+        lines.append(f"R2 {t['id']}: union {t['union_longest']} s ({t['union_share']}), best lane {best['lane']} {best['longest']} s")
+    if "walls_chain" in res["R2"]:
+        lines.append("R2 walls A -> B: " + ", ".join(f"{r['route']} {r['longest']}s" for r in res["R2"]["walls_chain"]["routes"])
+                     + f" | union {res['R2']['walls_chain']['union_longest']} s")
+    t = res["R2"]["gates"]
+    best = max(t["lanes"], key=lambda r: r["longest"])
+    lines.append(f"R2 gates: union {t['union_longest']} s ({t['union_share']}), best lane {best['lane']} {best['longest']} s")
     for i, t in enumerate(res["S3"]["each"]):
         worst = min(t["lanes"], key=lambda r: r["longest"])
         lines.append(f"S3 screen {i + 1}: union {t['union_longest']} s, worst lane {worst['lane']} {worst['longest']} s")

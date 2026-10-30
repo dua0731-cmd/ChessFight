@@ -1,0 +1,632 @@
+[
+ {
+  "part": "PR_EG_Rail_4p0m",
+  "fbx": "PR_EG_Rail_4p0m/PR_EG_Rail_4p0m.fbx",
+  "blend": "PR_EG_Rail_4p0m/PR_EG_Rail_4p0m_work.blend",
+  "lod_tris": [
+   420,
+   210,
+   84
+  ]
+ },
+ {
+  "part": "PR_EG_Rail_2p0m",
+  "fbx": "PR_EG_Rail_2p0m/PR_EG_Rail_2p0m.fbx",
+  "blend": "PR_EG_Rail_2p0m/PR_EG_Rail_2p0m_work.blend",
+  "lod_tris": [
+   372,
+   186,
+   74
+  ]
+ },
+ {
+  "part": "PR_EG_Rail_1p0m",
+  "fbx": "PR_EG_Rail_1p0m/PR_EG_Rail_1p0m.fbx",
+  "blend": "PR_EG_Rail_1p0m/PR_EG_Rail_1p0m_work.blend",
+  "lod_tris": [
+   372,
+   186,
+   74
+  ]
+ },
+ {
+  "part": "PR_EG_Rail_0p5m",
+  "fbx": "PR_EG_Rail_0p5m/PR_EG_Rail_0p5m.fbx",
+  "blend": "PR_EG_Rail_0p5m/PR_EG_Rail_0p5m_work.blend",
+  "lod_tris": [
+   372,
+   186,
+   74
+  ]
+ },
+ {
+  "part": "PR_EG_RailPost",
+  "fbx": "PR_EG_RailPost/PR_EG_RailPost.fbx",
+  "blend": "PR_EG_RailPost/PR_EG_RailPost_work.blend",
+  "lod_tris": [
+   444,
+   222,
+   88
+  ]
+ },
+ {
+  "part": "PR_EG_MapTable",
+  "fbx": "PR_EG_MapTable/PR_EG_MapTable.fbx",
+  "blend": "PR_EG_MapTable/PR_EG_MapTable_work.blend",
+  "lod_tris": [
+   792,
+   396,
+   158
+  ]
+ },
+ {
+  "part": "PR_EG_RookStatue",
+  "fbx": "PR_EG_RookStatue/PR_EG_RookStatue.fbx",
+  "blend": "PR_EG_RookStatue/PR_EG_RookStatue_work.blend",
+  "lod_tris": [
+   1632,
+   816,
+   326
+  ]
+ },
+ {
+  "part": "PR_EG_CompassInlay",
+  "fbx": "PR_EG_CompassInlay/PR_EG_CompassInlay.fbx",
+  "blend": "PR_EG_CompassInlay/PR_EG_CompassInlay_work.blend",
+  "lod_tris": [
+   302,
+   151,
+   60
+  ]
+ },
+ {
+  "part": "PR_EG_ArrowSign",
+  "fbx": "PR_EG_ArrowSign/PR_EG_ArrowSign.fbx",
+  "blend": "PR_EG_ArrowSign/PR_EG_ArrowSign_work.blend",
+  "lod_tris": [
+   472,
+   236,
+   94
+  ]
+ },
+ {
+  "part": "PR_EG_HallPillar",
+  "fbx": "PR_EG_HallPillar/PR_EG_HallPillar.fbx",
+  "blend": "PR_EG_HallPillar/PR_EG_HallPillar_work.blend",
+  "lod_tris": [
+   1032,
+   516,
+   232
+  ]
+ },
+ {
+  "part": "PR_EG_Lamp",
+  "fbx": "PR_EG_Lamp/PR_EG_Lamp.fbx",
+  "blend": "PR_EG_Lamp/PR_EG_Lamp_work.blend",
+  "lod_tris": [
+   414,
+   206,
+   82
+  ]
+ },
+ {
+  "part": "PR_EG_Bookshelf_0",
+  "fbx": "PR_EG_Bookshelf_0/PR_EG_Bookshelf_0.fbx",
+  "blend": "PR_EG_Bookshelf_0/PR_EG_Bookshelf_0_work.blend",
+  "lod_tris": [
+   1644,
+   822,
+   328
+  ]
+ },
+ {
+  "part": "PR_EG_Bookshelf_1",
+  "fbx": "PR_EG_Bookshelf_1/PR_EG_Bookshelf_1.fbx",
+  "blend": "PR_EG_Bookshelf_1/PR_EG_Bookshelf_1_work.blend",
+  "lod_tris": [
+   1644,
+   822,
+   328
+  ]
+ },
+ {
+  "part": "PR_EG_Bookshelf_2",
+  "fbx": "PR_EG_Bookshelf_2/PR_EG_Bookshelf_2.fbx",
+  "blend": "PR_EG_Bookshelf_2/PR_EG_Bookshelf_2_work.blend",
+  "lod_tris": [
+   1644,
+   822,
+   328
+  ]
+ },
+ {
+  "part": "PR_EG_Bookshelf_3",
+  "fbx": "PR_EG_Bookshelf_3/PR_EG_Bookshelf_3.fbx",
+  "blend": "PR_EG_Bookshelf_3/PR_EG_Bookshelf_3_work.blend",
+  "lod_tris": [
+   1644,
+   822,
+   328
+  ]
+ },
+ {
+  "part": "PR_EG_Banner",
+  "fbx": "PR_EG_Banner/PR_EG_Banner.fbx",
+  "blend": "PR_EG_Banner/PR_EG_Banner_work.blend",
+  "lod_tris": [
+   3206,
+   1602,
+   640
+  ]
+ },
+ {
+  "part": "PR_EG_ArchWindow",
+  "fbx": "PR_EG_ArchWindow/PR_EG_ArchWindow.fbx",
+  "blend": "PR_EG_ArchWindow/PR_EG_ArchWindow_work.blend",
+  "lod_tris": [
+   776,
+   388,
+   154
+  ]
+ },
+ {
+  "part": "PR_EG_Ladder",
+  "fbx": "PR_EG_Ladder/PR_EG_Ladder.fbx",
+  "blend": "PR_EG_Ladder/PR_EG_Ladder_work.blend",
+  "lod_tris": [
+   1064,
+   532,
+   212
+  ]
+ },
+ {
+  "part": "PR_EG_Balcony",
+  "fbx": "PR_EG_Balcony/PR_EG_Balcony.fbx",
+  "blend": "PR_EG_Balcony/PR_EG_Balcony_work.blend",
+  "lod_tris": [
+   564,
+   282,
+   112
+  ]
+ },
+ {
+  "part": "PR_EG_Chandelier",
+  "fbx": "PR_EG_Chandelier/PR_EG_Chandelier.fbx",
+  "blend": "PR_EG_Chandelier/PR_EG_Chandelier_work.blend",
+  "lod_tris": [
+   2092,
+   1046,
+   418
+  ]
+ },
+ {
+  "part": "PR_EG_HallFloorTile",
+  "fbx": "PR_EG_HallFloorTile/PR_EG_HallFloorTile.fbx",
+  "blend": "PR_EG_HallFloorTile/PR_EG_HallFloorTile_work.blend",
+  "lod_tris": [
+   704,
+   352,
+   140
+  ]
+ },
+ {
+  "part": "PR_EG_CeilingBeam",
+  "fbx": "PR_EG_CeilingBeam/PR_EG_CeilingBeam.fbx",
+  "blend": "PR_EG_CeilingBeam/PR_EG_CeilingBeam_work.blend",
+  "lod_tris": [
+   324,
+   162,
+   64
+  ]
+ },
+ {
+  "part": "PR_EG_HallWallPanel",
+  "fbx": "PR_EG_HallWallPanel/PR_EG_HallWallPanel.fbx",
+  "blend": "PR_EG_HallWallPanel/PR_EG_HallWallPanel_work.blend",
+  "lod_tris": [
+   3756,
+   1878,
+   750
+  ]
+ },
+ {
+  "part": "PR_EG_WarTable16",
+  "fbx": "PR_EG_WarTable16/PR_EG_WarTable16.fbx",
+  "blend": "PR_EG_WarTable16/PR_EG_WarTable16_work.blend",
+  "lod_tris": [
+   2488,
+   1244,
+   496
+  ]
+ },
+ {
+  "part": "PR_EG_SweepBar",
+  "fbx": "PR_EG_SweepBar/PR_EG_SweepBar.fbx",
+  "blend": "PR_EG_SweepBar/PR_EG_SweepBar_work.blend",
+  "lod_tris": [
+   1280,
+   640,
+   256
+  ]
+ },
+ {
+  "part": "PR_EG_FerryDeck",
+  "fbx": "PR_EG_FerryDeck/PR_EG_FerryDeck.fbx",
+  "blend": "PR_EG_FerryDeck/PR_EG_FerryDeck_work.blend",
+  "lod_tris": [
+   1740,
+   870,
+   348
+  ]
+ },
+ {
+  "part": "PR_EG_HurdleBaton",
+  "fbx": "PR_EG_HurdleBaton/PR_EG_HurdleBaton.fbx",
+  "blend": "PR_EG_HurdleBaton/PR_EG_HurdleBaton_work.blend",
+  "lod_tris": [
+   584,
+   292,
+   116
+  ]
+ },
+ {
+  "part": "PR_EG_ShelfWall6",
+  "fbx": "PR_EG_ShelfWall6/PR_EG_ShelfWall6.fbx",
+  "blend": "PR_EG_ShelfWall6/PR_EG_ShelfWall6_work.blend",
+  "lod_tris": [
+   5420,
+   2710,
+   1084
+  ]
+ },
+ {
+  "part": "PR_EG_ShelfHousing",
+  "fbx": "PR_EG_ShelfHousing/PR_EG_ShelfHousing.fbx",
+  "blend": "PR_EG_ShelfHousing/PR_EG_ShelfHousing_work.blend",
+  "lod_tris": [
+   648,
+   324,
+   128
+  ]
+ },
+ {
+  "part": "PR_EG_GateFrame",
+  "fbx": "PR_EG_GateFrame/PR_EG_GateFrame.fbx",
+  "blend": "PR_EG_GateFrame/PR_EG_GateFrame_work.blend",
+  "lod_tris": [
+   1936,
+   968,
+   386
+  ]
+ },
+ {
+  "part": "PR_EG_GateDoor",
+  "fbx": "PR_EG_GateDoor/PR_EG_GateDoor.fbx",
+  "blend": "PR_EG_GateDoor/PR_EG_GateDoor_work.blend",
+  "lod_tris": [
+   252,
+   126,
+   50
+  ]
+ },
+ {
+  "part": "PR_EG_RookScreen6",
+  "fbx": "PR_EG_RookScreen6/PR_EG_RookScreen6.fbx",
+  "blend": "PR_EG_RookScreen6/PR_EG_RookScreen6_work.blend",
+  "lod_tris": [
+   792,
+   396,
+   158
+  ]
+ },
+ {
+  "part": "PR_EG_PendulumWeight",
+  "fbx": "PR_EG_PendulumWeight/PR_EG_PendulumWeight.fbx",
+  "blend": "PR_EG_PendulumWeight/PR_EG_PendulumWeight_work.blend",
+  "lod_tris": [
+   2904,
+   1452,
+   580
+  ]
+ },
+ {
+  "part": "PR_EG_PendulumGantry",
+  "fbx": "PR_EG_PendulumGantry/PR_EG_PendulumGantry.fbx",
+  "blend": "PR_EG_PendulumGantry/PR_EG_PendulumGantry_work.blend",
+  "lod_tris": [
+   672,
+   336,
+   134
+  ]
+ },
+ {
+  "part": "PR_EG_MapChestTile",
+  "fbx": "PR_EG_MapChestTile/PR_EG_MapChestTile.fbx",
+  "blend": "PR_EG_MapChestTile/PR_EG_MapChestTile_work.blend",
+  "lod_tris": [
+   576,
+   288,
+   114
+  ]
+ },
+ {
+  "part": "PR_EG_LiftShaft",
+  "fbx": "PR_EG_LiftShaft/PR_EG_LiftShaft.fbx",
+  "blend": "PR_EG_LiftShaft/PR_EG_LiftShaft_work.blend",
+  "lod_tris": [
+   480,
+   240,
+   96
+  ]
+ },
+ {
+  "part": "PR_EG_WindVent",
+  "fbx": "PR_EG_WindVent/PR_EG_WindVent.fbx",
+  "blend": "PR_EG_WindVent/PR_EG_WindVent_work.blend",
+  "lod_tris": [
+   1096,
+   548,
+   218
+  ]
+ },
+ {
+  "part": "PR_EG_MapBelt",
+  "fbx": "PR_EG_MapBelt/PR_EG_MapBelt.fbx",
+  "blend": "PR_EG_MapBelt/PR_EG_MapBelt_work.blend",
+  "lod_tris": [
+   620,
+   310,
+   124
+  ]
+ },
+ {
+  "part": "PR_EG_GiantPawn",
+  "fbx": "PR_EG_GiantPawn/PR_EG_GiantPawn.fbx",
+  "blend": "PR_EG_GiantPawn/PR_EG_GiantPawn_work.blend",
+  "lod_tris": [
+   1432,
+   716,
+   286
+  ]
+ },
+ {
+  "part": "PR_EG_CrownCircle",
+  "fbx": "PR_EG_CrownCircle/PR_EG_CrownCircle.fbx",
+  "blend": "PR_EG_CrownCircle/PR_EG_CrownCircle_work.blend",
+  "lod_tris": [
+   407,
+   203,
+   81
+  ]
+ },
+ {
+  "part": "PR_EG_HangingCrate",
+  "fbx": "PR_EG_HangingCrate/PR_EG_HangingCrate.fbx",
+  "blend": "PR_EG_HangingCrate/PR_EG_HangingCrate_work.blend",
+  "lod_tris": [
+   2180,
+   1090,
+   436
+  ]
+ },
+ {
+  "part": "PR_EG_CraneRail",
+  "fbx": "PR_EG_CraneRail/PR_EG_CraneRail.fbx",
+  "blend": "PR_EG_CraneRail/PR_EG_CraneRail_work.blend",
+  "lod_tris": [
+   768,
+   384,
+   152
+  ]
+ },
+ {
+  "part": "PR_EG_CompassDisc",
+  "fbx": "PR_EG_CompassDisc/PR_EG_CompassDisc.fbx",
+  "blend": "PR_EG_CompassDisc/PR_EG_CompassDisc_work.blend",
+  "lod_tris": [
+   2288,
+   1144,
+   457
+  ]
+ },
+ {
+  "part": "PR_EG_BridgePanel",
+  "fbx": "PR_EG_BridgePanel/PR_EG_BridgePanel.fbx",
+  "blend": "PR_EG_BridgePanel/PR_EG_BridgePanel_work.blend",
+  "lod_tris": [
+   288,
+   144,
+   56
+  ]
+ },
+ {
+  "part": "PR_EG_BridgeLanding",
+  "fbx": "PR_EG_BridgeLanding/PR_EG_BridgeLanding.fbx",
+  "blend": "PR_EG_BridgeLanding/PR_EG_BridgeLanding_work.blend",
+  "lod_tris": [
+   144,
+   72,
+   28
+  ]
+ },
+ {
+  "part": "PR_EG_Plinth",
+  "fbx": "PR_EG_Plinth/PR_EG_Plinth.fbx",
+  "blend": "PR_EG_Plinth/PR_EG_Plinth_work.blend",
+  "lod_tris": [
+   216,
+   108,
+   42
+  ]
+ },
+ {
+  "part": "PR_EG_ArchCrest",
+  "fbx": "PR_EG_ArchCrest/PR_EG_ArchCrest.fbx",
+  "blend": "PR_EG_ArchCrest/PR_EG_ArchCrest_work.blend",
+  "lod_tris": [
+   192,
+   96,
+   38
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_EX",
+  "fbx": "PR_EG_Floor_EX/PR_EG_Floor_EX.fbx",
+  "blend": "PR_EG_Floor_EX/PR_EG_Floor_EX_work.blend",
+  "lod_tris": [
+   1196,
+   598,
+   238
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_R1",
+  "fbx": "PR_EG_Floor_R1/PR_EG_Floor_R1.fbx",
+  "blend": "PR_EG_Floor_R1/PR_EG_Floor_R1_work.blend",
+  "lod_tris": [
+   504,
+   252,
+   100
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_R2",
+  "fbx": "PR_EG_Floor_R2/PR_EG_Floor_R2.fbx",
+  "blend": "PR_EG_Floor_R2/PR_EG_Floor_R2_work.blend",
+  "lod_tris": [
+   272,
+   136,
+   54
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_R3",
+  "fbx": "PR_EG_Floor_R3/PR_EG_Floor_R3.fbx",
+  "blend": "PR_EG_Floor_R3/PR_EG_Floor_R3_work.blend",
+  "lod_tris": [
+   212,
+   106,
+   42
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_R4",
+  "fbx": "PR_EG_Floor_R4/PR_EG_Floor_R4.fbx",
+  "blend": "PR_EG_Floor_R4/PR_EG_Floor_R4_work.blend",
+  "lod_tris": [
+   164,
+   82,
+   32
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_R5",
+  "fbx": "PR_EG_Floor_R5/PR_EG_Floor_R5.fbx",
+  "blend": "PR_EG_Floor_R5/PR_EG_Floor_R5_work.blend",
+  "lod_tris": [
+   376,
+   188,
+   74
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_R6",
+  "fbx": "PR_EG_Floor_R6/PR_EG_Floor_R6.fbx",
+  "blend": "PR_EG_Floor_R6/PR_EG_Floor_R6_work.blend",
+  "lod_tris": [
+   352,
+   176,
+   70
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_S1",
+  "fbx": "PR_EG_Floor_S1/PR_EG_Floor_S1.fbx",
+  "blend": "PR_EG_Floor_S1/PR_EG_Floor_S1_work.blend",
+  "lod_tris": [
+   200,
+   100,
+   40
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_S3",
+  "fbx": "PR_EG_Floor_S3/PR_EG_Floor_S3.fbx",
+  "blend": "PR_EG_Floor_S3/PR_EG_Floor_S3_work.blend",
+  "lod_tris": [
+   236,
+   118,
+   46
+  ]
+ },
+ {
+  "part": "PR_EG_Floor_S4",
+  "fbx": "PR_EG_Floor_S4/PR_EG_Floor_S4.fbx",
+  "blend": "PR_EG_Floor_S4/PR_EG_Floor_S4_work.blend",
+  "lod_tris": [
+   176,
+   88,
+   34
+  ]
+ },
+ {
+  "part": "PR_EG_Walls_EX",
+  "fbx": "PR_EG_Walls_EX/PR_EG_Walls_EX.fbx",
+  "blend": "PR_EG_Walls_EX/PR_EG_Walls_EX_work.blend",
+  "lod_tris": [
+   648,
+   324,
+   128
+  ]
+ },
+ {
+  "part": "PR_EG_Walls_R2",
+  "fbx": "PR_EG_Walls_R2/PR_EG_Walls_R2.fbx",
+  "blend": "PR_EG_Walls_R2/PR_EG_Walls_R2_work.blend",
+  "lod_tris": [
+   216,
+   108,
+   42
+  ]
+ },
+ {
+  "part": "PR_EG_Walls_R4",
+  "fbx": "PR_EG_Walls_R4/PR_EG_Walls_R4.fbx",
+  "blend": "PR_EG_Walls_R4/PR_EG_Walls_R4_work.blend",
+  "lod_tris": [
+   324,
+   162,
+   64
+  ]
+ },
+ {
+  "part": "PR_EG_Walls_R5",
+  "fbx": "PR_EG_Walls_R5/PR_EG_Walls_R5.fbx",
+  "blend": "PR_EG_Walls_R5/PR_EG_Walls_R5_work.blend",
+  "lod_tris": [
+   108,
+   54,
+   20
+  ]
+ },
+ {
+  "part": "PR_EG_Walls_S1",
+  "fbx": "PR_EG_Walls_S1/PR_EG_Walls_S1.fbx",
+  "blend": "PR_EG_Walls_S1/PR_EG_Walls_S1_work.blend",
+  "lod_tris": [
+   108,
+   54,
+   20
+  ]
+ },
+ {
+  "part": "PR_EG_Walls_S2",
+  "fbx": "PR_EG_Walls_S2/PR_EG_Walls_S2.fbx",
+  "blend": "PR_EG_Walls_S2/PR_EG_Walls_S2_work.blend",
+  "lod_tris": [
+   216,
+   108,
+   42
+  ]
+ }
+]

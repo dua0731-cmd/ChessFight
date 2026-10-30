@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋) | 10-30 | R255 | `claude/eloquent-ptolemy-bhtpfr`(`seoungtest` 위): 엔드게임 고난이도 LD v1 문서, `ArtSource/PawnRush/Endgame/` Blender 빌드 스크립트 · 키트 · 장치 스킨 FBX 63개 · 텍스처 · 검증 · 리뷰 렌더 |
 | (이 커밋) | 10-28 | R191 | `skill-network-test`: 소드 파이트 경기장을 Blender · Tripo 모델로 — 판 부품(오크 · 월넛 칸, 둥근 월넛 테두리 + 청동 줄, 난간, 책상, 쟁반), Tripo 책 더미 · 체스 시계 · 램프 · 룩(폭 1.45 · 높이 0.9 m, 오크/월넛) · 아치 창 + 달 배경, 램프 빛줄기 · 먼지 · 흔들림, 서재 배경 · 달빛, 칸 착지 · 흔들림 먼지, 시험 씬 K · L 키. `Assets/Resources/SwordFightMap`, `SwordFightArena.cs`, `ArtSource/SwordFight`(Blender 스크립트 · 렌더 · Tripo 원본). Core 132 · 세션 41 · 전 어셈블리 컴파일 |
 | `a127643` | 10-28 | R190 | `skill-network-test`: 소드 파이트 스킬 몸동작 Mixamo 클립 1단계 — `SkillClipRig`, `Core/SkillClipTiming`(+시험), `SwordFightClipSet`, `SwordFightSkills.Clips.cs`, 에디터 `SwordFightClipImporter`, 클립 폴더 README, 문서 |
 | `5600a01` | 10-27 | — | 경기장 스킬 시험 씬에 Unity가 더한 URP 카메라 · 빛 데이터 |
