@@ -9,9 +9,9 @@ namespace ChessFight.PawnRush
     {
         // The road sections between the plazas, in running order: id, name, and where a pawn starts it (design doc
         // world coordinates, facing north; checked against the floor when the zone is built).
-        public static readonly string[] ZoneSections = { "A", "B", "C", "T" };
-        public static readonly string[] ZoneSectionNames = { "A 구간 (출발 → 광장 1)", "B 구간 (광장 1 → 광장 2)", "C 구간 (광장 2 → 탑)", "T 탑" };
-        static readonly Vector3[] ZoneStarts = { V(0f, 0f, 2f), V(46f, 0f, 105f), V(-3f, 3f, 165f), V(-3f, 6f, 207f) };
+        public static readonly string[] ZoneSections = { "A", "B", "C", "T", "E" };
+        public static readonly string[] ZoneSectionNames = { "A 구간 (출발 → 광장 1)", "B 구간 (광장 1 → 광장 2)", "C 구간 (광장 2 → 탑)", "T 탑", "E 엔드게임 · 전략회의실 (S1–S4)" };
+        static readonly Vector3[] ZoneStarts = { V(0f, 0f, 2f), V(46f, 0f, 105f), V(-3f, 3f, 165f), V(-3f, 6f, 207f), V(0f, 0f, 3f) };
 
         public static Vector3 ZoneStart(string id) => ZoneStarts[System.Array.IndexOf(ZoneSections, id)];
 
@@ -28,6 +28,7 @@ namespace ChessFight.PawnRush
                     b.Floor("Approach (test only)", -13f, 7f, 200f, 210f, 6f);
                     Tower(b);
                     break;
+                case "E": WarRoom(b); break;
             }
         }
 
