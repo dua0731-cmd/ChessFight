@@ -4,7 +4,8 @@
     "references": [
         "ChessFight.RagdollLab",
         "ChessFight.Game",
-        "ChessFight.Gameplay"
+        "ChessFight.Gameplay",
+        "ChessFight.Network.Core"
     ],
     "includePlatforms": [
         "Editor"

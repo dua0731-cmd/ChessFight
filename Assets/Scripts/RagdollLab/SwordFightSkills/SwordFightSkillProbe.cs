@@ -79,11 +79,11 @@ namespace ChessFight.RagdollLab
                 "edge-queen-step" => EdgeQueen(1),
                 "edge-queen-jump" => EdgeQueen(2),
                 "edge-rook" => EdgeRook(),
-                "edge-bishop" => EdgeBishop(false),
-                "edge-bishop-hit" => EdgeBishop(true),
-                "edge-bishop-close" => EdgeBishop(false, true),
-                // R130 ("완전히 죽은 거 아니면 살릴 수 있어야 돼"): E only once the ally is 2.6 m down (it is out at 3 m).
-                "edge-bishop-late" => EdgeBishop(false, false, -2.6f),
+                // R236: the diagonal slide (the rescue's runs went with it).
+                "edge-bishop" => EdgeBishop(0),
+                "edge-bishop-other" => EdgeBishop(1),
+                "edge-bishop-cancel" => EdgeBishop(2),
+                "edge-bishop-twice" => EdgeBishop(3),
                 "edge-knight" => EdgeKnight(false),
                 "edge-knight-back" => EdgeKnight(true),
                 "edge-knight-side" => EdgeKnight(false, 1),
@@ -110,7 +110,7 @@ namespace ChessFight.RagdollLab
                 Say($"  소리 ({sfx.Sounds.Count}개 불러옴): " + (heard.Count > 0 ? string.Join(", ", heard) : "없음"));
             }
             var me = bed.Local;
-            if (me != null && me.Skills != null) { me.Skills.CancelAim(); me.Skills.OverrideAim(null); }
+            if (me != null && me.Skills != null) { me.Skills.CancelAim(); me.Skills.OverrideAim(null); me.Skills.OverrideHold(null); }
             SwordFightSkillBed.Scripted = false;
             Staged = false;
             Status = "done " + name;
@@ -472,53 +472,48 @@ namespace ChessFight.RagdollLab
             yield return new WaitForSeconds(0.4f);
         }
 
-        /// <summary>An enemy pushes the bishop's ally off the edge; once it has been falling 0.15 s, E. With
-        /// <paramref name="hit"/>, an enemy comes up and cuts the bishop while the hands pull.</summary>
-        /// <summary>An ally pushed off the east edge, the bishop E. With <paramref name="hit"/> an enemy cuts the bishop during
-        /// the pull; with <paramref name="close"/> the bishop stands where the ally would be set down (R109: it used to be set
-        /// on him and shoved back off).</summary>
-        IEnumerator EdgeBishop(bool hit, bool close = false, float lateY = 1f)
+        /// <summary>R236, the diagonal slide: the bishop cornered on the east edge presses E, looking north-west (mode 0) or
+        /// south-west (1), then left clicks; 2 = right click while he picks (called off, no cooldown); 3 = E twice (called
+        /// off the same way, 10-29).</summary>
+        IEnumerator EdgeBishop(int mode)
         {
             yield return StageEdgeFor(PieceKind.Bishop);
             var me = bed.Local;
-            var ally = bed.Dummies(0)[0];
-            var foes = bed.Dummies(1);
+            var s = me.Skills;
+            s.OverrideAim(mode == 1 ? new Vector3(-1f, 0f, -1f).normalized : new Vector3(-1f, 0f, 1f).normalized);
+            yield return new WaitForSeconds(0.25f);
             var from = Starts();
-            Show("적이 아군을 밀어 떨어뜨림");
-            bed.PushOff(foes[0], ally);
-            float t = 0f;
-            while (ally.Skills.FallTime < 0.15f && t < 2.5f) { t += Time.deltaTime; yield return null; }
-            // Late (R130): wait until the ally has fallen this far (or is about to be out).
-            if (lateY < 0f) while (ally.Alive && ally.Pawn.Hips.position.y > lateY && t < 4f) { t += Time.deltaTime; yield return null; }
-            Say($"edge-bishop: 아군이 떨어진 지 {ally.Skills.FallTime:0.00}초 · 골반 {ally.Pawn.Hips.position.y:0.00} m");
-            if (close)
+            EdgeState(s, "E 직전");
+            Show("E · 대각선 고르기");
+            s.PressEdge();
+            yield return new WaitForSeconds(0.5f);
+            var ways = new int[SwordFightSkills.BishopDiagonals.Length];
+            int pick = s.BishopWays(out var square, out float cell, ways);
+            Say($"  칸 가운데 ({square.x:0.0}, {square.z:0.0}) · 칸 {cell:0.0} m · 대각선 (+x+z {ways[0]}, +x-z {ways[1]}, -x-z {ways[2]}, -x+z {ways[3]}) · 진한 것 {pick}");
+            EdgeState(s, "조준 0.5초 (그대로여야 함)");
+            if (mode == 2 || mode == 3)
             {
-                // Where the ally would be set down (1.2 m in from the east edge, by the ally): the bishop stands there.
-                Vector3 spot = ally.Pawn.Hips.position;
-                spot.x = 7f - bed.edge.bishopSetIn;
-                spot.y = 0f;
-                SwordFightSkillBed.Place(me, spot, Vector3.right);
-                yield return new WaitForSeconds(0.08f);
+                Show(mode == 2 ? "우클릭 · 취소" : "E 한 번 더 · 취소");
+                if (mode == 2) s.CancelAim();
+                else s.PressEdge();
+                yield return new WaitForSeconds(0.1f);
+                EdgeState(s, "취소 뒤");
+                yield return new WaitForSeconds(0.4f);
+                Moves(from, mode == 2 ? "edge-bishop-cancel" : "edge-bishop-twice");
+                s.OverrideAim(null);
+                yield break;
             }
-            EdgeState(me.Skills, "E 직전");
-            Show("E · 구원의 손");
-            me.Skills.PressEdge();
-            if (hit)
-            {
-                yield return new WaitForSeconds(bed.edge.bishopReach + 0.05f);
-                Show("적이 비숍을 벰");
-                // From the edge's side, so the cut throws the bishop in (not off the platform as well).
-                Vector3 at = me.Pawn.Hips.position + Vector3.right * 0.9f;
-                at.y = 0f;
-                SwordFightSkillBed.Place(foes[1], at, Vector3.left);
-                bed.Cut(foes[1], me.Pawn.Hips.position);
-            }
-            yield return new WaitForSeconds(1.2f);
-            EdgeState(me.Skills, "뒤");
-            Say($"  아군: {(ally.Alive ? "살아 있음" : "장외")} · 골반 ({ally.Pawn.Hips.position.x:0.0}, {ally.Pawn.Hips.position.y:0.00}, {ally.Pawn.Hips.position.z:0.0}) · {ally.Pawn.State}");
-            yield return new WaitForSeconds(1.4f);
-            Say($"  비숍 ↔ 아군 {Vector3.ProjectOnPlane(me.Pawn.Hips.position - ally.Pawn.Hips.position, Vector3.up).magnitude:0.00} m · 비숍 {me.Pawn.State}");
-            Moves(from, hit ? "edge-bishop-hit" : close ? "edge-bishop-close" : "edge-bishop");
+            Vector3 start = me.Pawn.Hips.position;
+            Show("좌클릭 · 미끄러짐");
+            s.ClickEdge();
+            yield return new WaitForSeconds(0.1f + s.BishopSlideTime + 0.1f);
+            Vector3 d = me.Pawn.Hips.position - start;
+            d.y = 0f;
+            Say($"  미끄러진 거리 {d.magnitude:0.00} m (방향 {d.normalized.x:0.00}, {d.normalized.z:0.00}) · 도착 칸 ({s.EdgeLand.x:0.0}, {s.EdgeLand.z:0.0})");
+            yield return new WaitForSeconds(1.0f);
+            EdgeState(s, "뒤");
+            s.OverrideAim(null);
+            Moves(from, mode == 1 ? "edge-bishop-other" : "edge-bishop");
         }
 
         /// <summary>The knight with its back to the east edge, an enemy 1.9 m ahead: E. With <paramref name="back"/>, the

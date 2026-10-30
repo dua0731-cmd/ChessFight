@@ -18,6 +18,9 @@ namespace ChessFight.Game
         // Title: the mode's name, big and gold. Kicker: the small line above it.
         public string Title = "", Kicker = "", Rule = "", Note = "";
         public LoadingTip[] Tips = Array.Empty<LoadingTip>();
+        // The entrance screen shows the course hologram (Pawn Rush only, 10-27: the other modes keep the chessboard
+        // until their own designs are settled).
+        public bool CourseModel;
 
         // `teamSize`: players on the larger team, for the rules that count heads.
         public static LoadingContent For(GameModeInfo mode, int teamSize)
@@ -32,6 +35,7 @@ namespace ChessFight.Game
                 case "kingrush":
                     return new LoadingContent
                     {
+                        CourseModel = true,
                         Title = title,
                         Kicker = versus + " · 팀 레이스",
                         Rule = "팀원 <color=#FFC93D>" + need + "명</color>이 먼저 결승선을 넘으면 승리",
@@ -41,7 +45,16 @@ namespace ChessFight.Game
                             new LoadingTip("TIP · 부축", "두 걸음으로 넘어진 팀원에게 닿으면 바로 일으켜요. 둘 다 1.5초 동안 빨라져요.", PieceKind.Pawn),
                             new LoadingTip("TIP · 승격", "승격 지점에 팀에서 가장 먼저 닿은 폰이 발판을 밟아 기물을 골라요.", PieceKind.Queen),
                             new LoadingTip("TIP · 과반 승리", "1등 혼자로는 못 이겨요. 우리 팀 " + need + "명이 먼저 결승선을 넘어야 해요.", PieceKind.Rook),
-                            new LoadingTip("TIP · 몸싸움", "결승 직전 8m에서는 잡기가 안 돼요. 밀기는 돼요.", PieceKind.Knight)
+                            new LoadingTip("TIP · 몸싸움", "결승 직전 8m에서는 잡기가 안 돼요. 밀기는 돼요.", PieceKind.Knight),
+                            // 10-25 (승규 님: more tips useful to players), from course 01 v0.4
+                            new LoadingTip("TIP · 벽타기", "줄눈이 보이는 돌 블록 벽은 오를 수 있어요. 매끈한 대리석 벽은 못 올라가요.", PieceKind.Rook),
+                            new LoadingTip("TIP · 점핑 발판", "벽 앞 발판을 밟으면 3m 위로 튀어 올라요. 벽타기보다 빠를 때가 많아요.", PieceKind.Pawn),
+                            new LoadingTip("TIP · 미션 광장", "팀 문은 우리 팀 미니게임을 끝내야 열려요. 여럿이 같이 하면 훨씬 빨라요.", PieceKind.Bishop),
+                            new LoadingTip("TIP · 방해", "상대 팀 스테이션에 들어가 밀고 막을 수 있어요. 대신 그동안 우리 팀 일은 못 해요.", PieceKind.Knight),
+                            new LoadingTip("TIP · 회전 막대", "낮게 도는 막대는 점프로 넘어요. 턱 위에 서 있어도 맞아요.", PieceKind.Pawn),
+                            new LoadingTip("TIP · 룩 벽", "C 구간의 룩 벽은 길 절반을 막고 좌우로 오가요. 열린 쪽을 보고 달리세요.", PieceKind.Rook),
+                            new LoadingTip("TIP · 체크포인트", "떨어지면 마지막으로 지난 체크포인트에서 다시 시작해요. 낭떠러지 옆에선 침착하게.", PieceKind.Pawn),
+                            new LoadingTip("TIP · 8랭크 탑", "결승 탑은 남쪽 벽을 9m 기어오르거나 양옆 경사로로 올라요. 경사로엔 해머가 돌아요.", PieceKind.Queen)
                         }
                     };
                 case "swordfight":

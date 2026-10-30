@@ -370,13 +370,15 @@ namespace ChessFight.RagdollLab
 
         /// <summary>This PC's input: the game's own reading (mouse and keys, nothing while a menu or the panel has the
         /// mouse), with the development presses on top. <paramref name="keys"/>: also read the skill keys here (a client;
-        /// on the host the bed presses them itself, as offline).</summary>
-        PawnInput SwordReadLocal(bool keys, out bool skill, out bool edge, out bool cancel)
+        /// on the host the bed presses them itself, as offline). <paramref name="edgeHeld"/>: E held now (R236, the bishop's
+        /// aim; a development press is a tap).</summary>
+        PawnInput SwordReadLocal(bool keys, out bool skill, out bool edge, out bool cancel, out bool edgeHeld)
         {
             var input = sword.ReadLocalInput();
             bool free = keys && (swordBed != null ? swordBed.KeysFree : sword.KeysFree && !KeysTaken);
             skill = (free && Input.GetKeyDown(swordBed != null ? swordBed.skillKey : KeyCode.F)) || devSkill;
             edge = (free && GameSettings.Pressed(GameKey.Skill)) || devEdge;
+            edgeHeld = free && GameSettings.Held(GameKey.Skill);
             cancel = (free && GameSettings.Pressed(GameKey.Grab)) || devCancel;
             float now = Time.unscaledTime;
             if (devSkill || devEdge || devCancel || devClick || devJump || now < devHoldUntil || now < devMoveUntil || now < devAimUntil)
@@ -405,6 +407,7 @@ namespace ChessFight.RagdollLab
                 {
                     // Nothing heard for a moment: the sword goes back and the piece stands (as the match's link does).
                     f.StopCombat();
+                    f.Skills?.HoldEdge(false);
                     continue;
                 }
                 var held = r.input;
@@ -416,6 +419,7 @@ namespace ChessFight.RagdollLab
                 {
                     // The bishop's and the knight's point: where that player's camera aims, not this PC's.
                     if (held.aimPointSet) s.OverrideAim(null, held.aimPoint);
+                    s.HoldEdge(held.edgeHeld);
                     if (Take(ref r.skill)) { s.PressKey(); key = true; }
                     else if (Take(ref r.ability)) { s.PressEdge(); key = true; }
                     else if (Take(ref r.ability2)) { s.CancelAim(); key = true; }
@@ -439,7 +443,7 @@ namespace ChessFight.RagdollLab
         void SwordHostFrame()
         {
             var me = sword.Local;
-            var local = SwordReadLocal(false, out bool skill, out bool edge, out bool cancel);
+            var local = SwordReadLocal(false, out bool skill, out bool edge, out bool cancel, out _);
             if (me != null)
             {
                 me.SetInput(local);
@@ -540,7 +544,7 @@ namespace ChessFight.RagdollLab
 
         void SwordClientFrame()
         {
-            var local = SwordReadLocal(true, out bool skill, out bool edge, out bool cancel);
+            var local = SwordReadLocal(true, out bool skill, out bool edge, out bool cancel, out bool edgeHeld);
             if (local.jump) myJumps = PressCount.Add(myJumps);
             if (local.shove) myShoves = PressCount.Add(myShoves);
             if (skill) mySkills = PressCount.Add(mySkills);
@@ -548,6 +552,7 @@ namespace ChessFight.RagdollLab
             if (cancel) myAbilities2 = PressCount.Add(myAbilities2);
             pending.Hold(local);
             pending.grab = false;
+            pending.edgeHeld = edgeHeld;
             pending.interact = local.ability2;   // the control style (F6), absolute: never a toggle that a lost packet flips
 
             var me = sword.Local;

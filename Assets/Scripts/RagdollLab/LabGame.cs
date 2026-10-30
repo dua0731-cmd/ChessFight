@@ -465,6 +465,8 @@ namespace ChessFight.RagdollLab
                         input.shove = Input.GetMouseButtonDown(0);
                         input.shoveHeld = Input.GetMouseButton(0);
                         input.grab = Input.GetMouseButton(1);
+                        // 10-26: the wheel works the Pawn Rush bishop's rope while it holds one (the camera's zoom otherwise).
+                        input.reel = Input.mouseScrollDelta.y;
                     }
                     break;
                 case LabDevice.KeyboardArrows:

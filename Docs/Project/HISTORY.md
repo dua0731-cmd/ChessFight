@@ -9,6 +9,13 @@
 |---|---|---|---|
 | (이 문서 커밋, 로컬 main) | 10-28 | R160 | 폰 러시 30개 장소의 장애물 컨셉아트 PNG 6장(각 1024×1536)·프롬프트·장소별 기존 동작과 외형 매핑, 신규 탑승 샹들리에 그네·회전 병풍문 구분. 오프라인 전용 07·14·16 제외. Unity 코드·씬 변경 없음. Core 131·모의 세션 41 통과(컨셉의 Unity·Steam 실기 확인 아님). R159 인증 오류 뒤 푸시 재시도 안 함, Desktop Push 필요 |
 | `ddea471` (로컬 main) | 10-27 | R159 | 폰 러시 공간별 미니게임 구상: 10종 대표 장소·솔로/협동·완료 연출·구간별 변형 30개·조합, 기본 미션 2곳/후반 추가 구별, 최신 G·I·J 반영. 문서만, 사용자 선택 전. Core 131·모의 세션 41 통과(테마 실기 검증 아님). 원격 푸시는 GitHub 인증 오류로 실패, Desktop Push 필요 |
+| (이 커밋) | 10-28 | R191 | `skill-network-test`: 소드 파이트 경기장을 Blender · Tripo 모델로 — 판 부품(오크 · 월넛 칸, 둥근 월넛 테두리 + 청동 줄, 난간, 책상, 쟁반), Tripo 책 더미 · 체스 시계 · 램프 · 룩(폭 1.45 · 높이 0.9 m, 오크/월넛) · 아치 창 + 달 배경, 램프 빛줄기 · 먼지 · 흔들림, 서재 배경 · 달빛, 칸 착지 · 흔들림 먼지, 시험 씬 K · L 키. `Assets/Resources/SwordFightMap`, `SwordFightArena.cs`, `ArtSource/SwordFight`(Blender 스크립트 · 렌더 · Tripo 원본). Core 132 · 세션 41 · 전 어셈블리 컴파일 |
+| (이 커밋) | 10-30 | R237 | 룩 F 후딜 칼이 `HomeBlade`로 천천히 돌아감, R160~R171 문서 커밋 표기 정정. `skill-clips-wip`(`22cb0b3`, 그 브랜치에서는 R191)을 main에 병합 |
+| `a127643` | 10-28 | R190 | `skill-network-test`: 소드 파이트 스킬 몸동작 Mixamo 클립 1단계 — `SkillClipRig`, `Core/SkillClipTiming`(+시험), `SwordFightClipSet`, `SwordFightSkills.Clips.cs`, 에디터 `SwordFightClipImporter`, 클립 폴더 README, 문서 |
+| `5600a01` | 10-27 | — | 경기장 스킬 시험 씬에 Unity가 더한 URP 카메라 · 빛 데이터 |
+| `7507810` | 10-27 | R160~R171 | 소드 파이트 스킬 VFX(킹 · 룩 · 퀸 · 비숍 1 · 2층), 공용 `Vfx*` 부품 · 셰이더, `ChessFight.VFX.Editor` |
+| `06c7c93` | 10-27 | R159 | Unity가 VFX Graph를 설치하며 채운 `ProjectSettings/VFXManager.asset`(VFX 런타임 셰이더 · 리소스 참조) |
+| `4d581e3` | 10-27 | R159 | `skill-network-test`: VFX Graph 17.3.0, `Assets/VFX/`(기물별 `Prefabs/<기물>/`), `ChessFight.VFX`(`VfxCue`, `VfxWorkbench`), 작업대 씬 · 시험 블룸 볼륨 · HDR 견본, 컴파일 검사에 VFX 추가, 문서 VFX · FX1~FX4. 시험: Core 131 · 세션 41 · 전 어셈블리 컴파일 |
 | (이 병합) | 10-24 | R158 | `urp-conversion`(승규 님, URP·메뉴·스킬 R148~R157)과 소드 파이트(R149·R150)를 `main`에 병합. 프로토콜 v23 두 개 → v24, 문서 충돌은 양쪽 모두 남김(R148~R150 번호가 두 계열에 겹침) |
 | `2e304c4` | 10-21 | R150 | 시연 HTML 연출: `SwordFightArena`·`SwordFightShapes`, 유령·쟁반·부활 손·방울·빛기둥·고리·흔들림·카메라, 시연 HUD(도장·패널·이름표·자막·끝 화면), Core 받침 칸, 시연 자료 `Docs/GameModes/SwordFight/Demo/`. 시험: Core 129·세션 41 |
 | `a3f9b30` | 10-21 | R149 | 고침: `SwordFightMatch`의 `MaterialPropertyBlock` 필드 초기화 → 처음 쓸 때 만듦(경기 시작 때 CreateImpl 예외, PITFALLS 50) |

@@ -31,6 +31,7 @@ namespace ChessFight.RagdollLab
         static readonly string[] EdgeDetailCodes =
         {
             "", "칼 박기", "매달림", "귀환", "착지", "금색 선", "막힘", "헛벰", "후딜", "내려치기", "손", "웅크림", "공중제비", "뒷발차기",
+            AimLine, "준비", "미끄럼",   // R236: the bishop's slide (appended: the codes before it stay)
         };
         string[] whyTexts;
 
@@ -379,7 +380,7 @@ namespace ChessFight.RagdollLab
                 $"가장자리 구역({X.edgeZone:0.#} m)에 있는 적이 {X.queenRange:0.#} m 안에 없음",
                 $"가장자리 구역({X.edgeZone:0.#} m)에 서야 함",
                 "그 자리는 이미 무너지는 중",
-                $"{X.bishopRange:0.#} m 안에 떨어지는 아군이 없음",
+                "갈 수 있는 대각선 칸이 없음",   // R236 (it was the rescue's: no ally falling in range)
                 $"가장자리를 등지고({X.knightBackEdge:0.#} m 안) 서야 함",
                 "떨어진 지 너무 오래됨",
                 "넘어져 있음",

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using ChessFight.Network;
 using ChessFight.Game;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.RagdollLab
@@ -24,9 +26,15 @@ namespace ChessFight.RagdollLab
         public int HitsLanded { get; private set; }
         public int SoftContacts { get; private set; }
         public const float StrongCutEnergy = .65f, MinimumStroke = 18f;
-        public bool Attacking => Alive && (ClassicControls ? SwingAge < SwingDuration : Drawn && gesture > 0 && drawAge >= DrawTime);
+        public bool Attacking => Alive && (ClassicControls ? SwingAge < CutLength : Drawn && gesture > 0 && drawAge >= DrawTime);
         public bool WeaponVisible => sword != null && sword.gameObject.activeInHierarchy && blade.enabled;
         public Rigidbody SwordBody { get; private set; }
+        /// <summary>10-25 (승규 님, the bishop's F: "그떄 비숍의 칼은 가지고 있지 않아"): the sword is out of the hand (thrown,
+        /// in the board at someone's feet): its model is not drawn until it comes back. Drawing only.</summary>
+        public bool SwordAway { get; set; }
+        /// <summary>The sword model as drawn (its mesh and how big), for a copy of it; null with the boxes.</summary>
+        public Transform SwordModel => swordModel;
+        public float SwordModelScale => modelScale;
         public Vector3 BladeRoot => SwordBody.position + SwordBody.rotation * Vector3.forward * .13f;
         public Vector3 BladeTip => SwordBody.position + SwordBody.rotation * Vector3.forward * .88f;
         public Vector3 WeaponOffset => Alive ? Pawn.Hips.transform.InverseTransformPoint(sword.position) : Vector3.zero;
@@ -42,7 +50,17 @@ namespace ChessFight.RagdollLab
         struct HitRecord { public float Time, Travel; }
         struct Contact { public Collider Other; public Vector3 Point, Velocity, Angular; }
         Transform sword;
-        Renderer blade;
+        Renderer blade, guard, grip;
+        // Each piece's own sword (10-25, 승규 님: Tripo models refined in Blender, no colour yet), drawn in place of the three
+        // boxes; the boxes stay (not drawn) for the tests and the effects that read them.
+        Transform swordModel;
+        Material modelMaterial;
+        int modelPiece = -1, modelTeam = -2, modelBuild;   // modelBuild counts model rebuilds (piece or team), so held copies rebuild too
+        Color modelBase = ModelPlain;
+        /// <summary>Test key B (10-29, 승규 님): this pawn's sword wears the black team's look whatever its team.</summary>
+        public bool BlackSwordTest;
+        int SwordLookTeam => BlackSwordTest ? Gameplay.Teams.Black : Pawn.Team;
+        static readonly Color ModelPlain = new Color(.8f, .8f, .8f);
         Collider bladeCollider;
         Collider[] ownerColliders;
         ConfigurableJoint gripJoint;
@@ -56,6 +74,7 @@ namespace ChessFight.RagdollLab
         int contactCount;
         float drawAge, gesture, travel, strokeTravel, intentSpeed;
         Rigidbody Hand => Pawn.bodies[(int)BodyId.HandR];
+        RagdollVisualSync visualSync;
 
         public void Initialize(ulong id, int slot, bool bot)
         {
@@ -67,8 +86,8 @@ namespace ChessFight.RagdollLab
             bladeMaterial = new Material(LitMaterials.Lit) { color = new Color(.69f, .82f, .94f) };
             hiltMaterial = new Material(LitMaterials.Lit) { color = new Color(.85f, .60f, .21f) };
             blade = Part("Blade", new Vector3(0, 0, .50f), new Vector3(.12f, .055f, .76f), bladeMaterial);
-            Part("Guard", new Vector3(0, 0, .09f), new Vector3(.25f, .075f, .07f), hiltMaterial);
-            Part("Grip", new Vector3(0, 0, -.015f), new Vector3(.07f, .075f, .16f), hiltMaterial);
+            guard = Part("Guard", new Vector3(0, 0, .09f), new Vector3(.25f, .075f, .07f), hiltMaterial);
+            grip = Part("Grip", new Vector3(0, 0, -.015f), new Vector3(.07f, .075f, .16f), hiltMaterial);
             var shape = root.AddComponent<CapsuleCollider>();
             shape.direction = 2; shape.center = new Vector3(0, 0, .5f); shape.height = .8f; shape.radius = .065f;
             bladeCollider = shape;
@@ -116,6 +135,9 @@ namespace ChessFight.RagdollLab
         public static event System.Action<SwordFightPawn, SwordFightPawn> Struck;
         internal static void RaiseStruck(SwordFightPawn by, SwordFightPawn victim) => Struck?.Invoke(by, victim);
 
+        /// <summary>10-29: a sword cut landed on this piece (every machine, with the hit sound): the hit effect.</summary>
+        public static event System.Action<SwordFightPawn> Cut;
+
         /// <summary>R149: the respawn protection ends at once (the piece attacked: a skill, spec §8.4).</summary>
         public void EndProtection() => Protection = 0f;
 
@@ -131,7 +153,9 @@ namespace ChessFight.RagdollLab
             if (!Alive) return;
             if (!raw.shoveHeld && !raw.shove) waitForRelease = false;
             held = raw.shoveHeld && !waitForRelease;
-            if (ClassicControls && raw.shove && !waitForRelease) { inputBuffer = .13f; bufferedAim = raw.aim; }
+            if (ClassicControls && raw.shove && !waitForRelease) { inputBuffer = ClickBuffer; bufferedAim = raw.aim; }
+            // A click waiting for the cut before it to end takes the aim it has when it starts.
+            else if (inputBuffer > 0 && Finite(raw.aim) && raw.aim.sqrMagnitude > .01f) bufferedAim = raw.aim;
             if (Finite(raw.aim) && raw.aim.sqrMagnitude > .01f) requestedAim = raw.aim.normalized;
             Pawn.SetInput(new PawnInput { move = raw.move, jump = raw.jump, sprint = raw.sprint, aim = raw.aim });
         }
@@ -265,7 +289,10 @@ namespace ChessFight.RagdollLab
             int count = Physics.RaycastNonAlloc(grip + Vector3.up * .2f, Vector3.down, groundHits, 1.4f, ~0, QueryTriggerInteraction.Ignore);
             float floor = float.NegativeInfinity;
             for (int i = 0; i < count; i++)
-                if (!RagdollPawn.ColliderOwner.ContainsKey(groundHits[i].collider) && groundHits[i].normal.y > .6f)
+                // A piece's own body is not the floor (the piece-model bodies are not in ColliderOwner: the arm under the
+                // hand held the blade level through the cut) - only static ground counts.
+                if (!RagdollPawn.ColliderOwner.ContainsKey(groundHits[i].collider) && groundHits[i].normal.y > .6f
+                    && (groundHits[i].rigidbody == null || groundHits[i].rigidbody.isKinematic))
                     floor = Mathf.Max(floor, groundHits[i].point.y);
             float minY = Mathf.Clamp((floor + margin - grip.y) / .88f, -1f, .95f);
             if (direction.y >= minY) return direction;
@@ -306,14 +333,28 @@ namespace ChessFight.RagdollLab
             float strength = Mathf.Lerp(2.8f, 4.5f, Mathf.InverseLerp(StrongCutEnergy, 2.5f, energy));
             // FixedUpdate, not a physics callback. Downed follow-ups remain legal.
             target.TakeHit(direction.normalized * strength + Vector3.up * .7f, .65f, 0, true);
-            victim.StopCombat(); victim.HitFlash = .16f; HitFlash = .1f; HitsLanded++;
+            victim.StopCombat(); victim.FlashHit(.16f); HitFlash = .1f; HitsLanded++;
             RaiseStruck(this, victim);
         }
 
         Quaternion? SwordPose(int part)
         {
-            if (Alive && Skills != null && Pawn.State == PawnState.Active && Skills.Blade is Vector3 skillBlade)
-                return part == (int)BodyId.ArmR ? Quaternion.FromToRotation(Vector3.right, Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(Skills.Arm ?? AboveFloor(Hand.position, skillBlade))) : (Quaternion?)null;
+            if (Alive && Skills != null)
+            {
+                // 10-26 (승규 님: "기물이 스킬 쓸 때 연출과 모션이 필요하다고 하면 추가해도 돼"): the piece's own body through its
+                // skill - chest, head, free arm, legs (SwordFightSkills.Motion) - and a piece the queen's edge cut went
+                // through held as it stood. Null: the puppet's own, or the sword arm below.
+                if (Skills.SkillBodyPose(part) is Quaternion own) return own;
+                // The king's hand goes to his hilt in the stone even while he is still getting up from the push.
+                if ((Pawn.State == PawnState.Active || Skills.KingHanging) && Skills.Blade is Vector3 skillBlade)
+                {
+                    if (part != (int)BodyId.ArmR) return null;
+                    Vector3 along = Pawn.bodies[(int)BodyId.Chest].transform.InverseTransformDirection(Skills.Arm ?? AboveFloor(Hand.position, skillBlade));
+                    // A skill's motion may take the arm off the blade's line (a fist drawn back, a hand before the chest).
+                    if (Skills.SkillSwordArm(out Vector3 arm, out float w)) along = Vector3.Slerp(along.normalized, arm.normalized, w);
+                    return Quaternion.FromToRotation(Vector3.right, along);
+                }
+            }
             if (ClassicControls) return ClickSwordPose(part);
             if (!Alive || !Drawn || Pawn.State != PawnState.Active) return null;
             if (part == (int)BodyId.Chest)
@@ -330,7 +371,26 @@ namespace ChessFight.RagdollLab
         {
             if (sword == null || Pawn == null) return;
             sword.gameObject.SetActive(Alive);
-            if (!Alive) return;
+            if (!Alive) { SwordAway = false; return; }
+            UpdateSwordModel();
+            // 10-27: the bishop's sword is out of his hand while it is thrown (its copy flies, SwordFightPawn.OffHand.cs).
+            if (Skills != null && Pawn.Piece == PieceKind.Bishop) SwordAway = Skills.BishopSwordsOut;
+            if (swordModel != null && swordModel.gameObject.activeSelf == SwordAway) swordModel.gameObject.SetActive(!SwordAway);
+            // The click sword is placed in the drawn hand once the skeleton is drawn this frame (10-25: a frame behind
+            // it, the sword left the hand in a fast cut once the arm went all the way with it). Hooked afresh each
+            // frame: a hook made when the pawn was set up did not last into play.
+            if (visualSync == null) visualSync = Pawn.GetComponentInChildren<RagdollVisualSync>();
+            if (visualSync != null)
+            {
+                visualSync.Posed -= PoseAfterSkeleton; visualSync.Posed += PoseAfterSkeleton;
+                // 10-27: and a skill's second sword in the left hand (SwordFightPawn.OffHand.cs), on every machine.
+                visualSync.Posed -= PoseOffHand; visualSync.Posed += PoseOffHand;
+            }
+            Pawn.RightArmFree = ClassicControls || Drawn || (Skills != null && Skills.Blade != null);
+            // 10-26: a skill that poses the free arm has it drawn where it goes (every machine, from the skill's state);
+            // 10-28: and so do the click cuts as it swings with them (StepOffArmShare).
+            float offShare = StepOffArmShare();
+            Pawn.LeftArmShare = Mathf.MoveTowards(Pawn.LeftArmShare, Skills != null && Skills.LeftArmPosed ? 1f : offShare, Time.deltaTime / 0.12f);
             if (!Authority)
                 sword.SetPositionAndRotation(Pawn.Hips.transform.TransformPoint(remoteOffset), Pawn.Hips.rotation * remoteRotation);
             else if (Skills != null && Skills.Blade is Vector3 skillBlade)
@@ -344,11 +404,70 @@ namespace ChessFight.RagdollLab
                 }
             }
             else if (ClassicControls)
-                PoseClickSword();
+            {
+                if (visualSync == null || !visualSync.isActiveAndEnabled) PoseClickSword();
+            }
             else if (!Drawn)
                 PoseHolstered();
             bladeMaterial.color = HitFlash > 0 ? new Color(1f, .8f, .24f) : Skills != null && Skills.BladeTint is Color tint ? tint
                 : Attacking ? new Color(.94f, .94f, .75f) : new Color(.69f, .82f, .94f);
+            // The model is plain grey; it takes the blade's colour only for a skill's tint. 10-25 (승규 님: skills "마법 없이
+            // 완전 실사"): no yellow flash on a hit or a parry any more - a steel blade stays steel (the sparks show the blow).
+            if (modelMaterial != null)
+                modelMaterial.color = Skills != null && Skills.BladeTint is Color mt ? Color.Lerp(modelBase, mt, .7f) : modelBase;
+        }
+
+        /// <summary>Swap in the sword of the piece this pawn is now (Resources/SwordFightSwords/&lt;piece&gt;), or the boxes if
+        /// there is none. A model's grip is at the sword's origin and its blade along +Z, like the boxes.</summary>
+        void UpdateSwordModel()
+        {
+            int piece = (int)Pawn.Piece;
+            if (piece == modelPiece && SwordLookTeam == modelTeam) return;
+            modelPiece = piece; modelTeam = SwordLookTeam; modelBuild++;
+            if (swordModel != null) Destroy(swordModel.gameObject);
+            swordModel = null;
+            var prefab = Resources.Load<GameObject>("SwordFightSwords/" + Pawn.Piece);
+            foreach (var r in new[] { blade, guard, grip }) if (r != null) r.forceRenderingOff = prefab != null;
+            hiltBack = .1f;
+            if (prefab == null) return;
+            // 10-25 (승규 님: "퀸 나이트 폰 빼고 나머지 기물의 칼 크기가 커"): the king's, rook's and bishop's a size smaller.
+            // Then ("왕이 몸에 비해 칼이 좀 커"): the king's smaller again, 0.8 → 0.65.
+            // 10-27 ("킹이랑 룩 칼 좀 더 키워줘" → "룩이 아니라 비숍, 비숍 킹을 1.5배로"): king 0.65 → 1, bishop 0.8 → 1.2,
+            // rook back to 0.8. Then ("퀸은 10퍼 작게"): queen 0.9.
+            float size = Pawn.Piece == PieceKind.King ? 1f : Pawn.Piece == PieceKind.Bishop ? 1.2f : Pawn.Piece == PieceKind.Rook ? .8f
+                : Pawn.Piece == PieceKind.Queen ? .9f : 1f;
+            // The models' guards sit 0.09 m up from their origin and their pommels hang below it (the model stands along
+            // +Y). 10-25 (승규 님: "손잡이 위쪽에 잡아져 있어" → "모든 기물이 손잡이 부분 잡게"): the hand held it just under
+            // the guard; now the model goes up the blade so the hand is round the grip's lower end, just above the pommel's
+            // knob (about 6 cm), with only the knob behind it - so the hilt no longer pokes into a wide body's side.
+            var mf = prefab.GetComponentInChildren<MeshFilter>();
+            float below = mf != null && mf.sharedMesh != null ? -mf.sharedMesh.bounds.min.y : .1f;
+            // 10-27: the rook's new fortress sword ends in a tower base ~12 cm tall, so its hand sits just above that.
+            float knob = Pawn.Piece == PieceKind.Rook ? .14f : .095f;
+            float up = Mathf.Max(0f, below - knob) * size;
+            hiltBack = Mathf.Max(.06f, below * size - up);
+            modelLift = up; modelScale = size;
+            var go = Instantiate(prefab, sword, false);
+            go.name = "Sword model";
+            // Exported standing up (+Y): turned so the blade runs along the sword's +Z.
+            go.transform.SetLocalPositionAndRotation(new Vector3(0f, 0f, up), Quaternion.Euler(90f, 0f, 0f));
+            go.transform.localScale = Vector3.one * size;
+            foreach (var c in go.GetComponentsInChildren<Collider>(true)) Destroy(c);
+            // 10-29 (승규 님: "백팀과 흑팀 칼을 다르게"): a piece with a painted look per team (Resources/SwordFightSwords/
+            // Team/<piece>_<White|Black>, baked in Blender) wears it; the rest stay plain grey.
+            var look = Resources.Load<Material>("SwordFightSwords/Team/" + Pawn.Piece + (modelTeam == Gameplay.Teams.Black ? "_Black" : "_White"));
+            if (modelMaterial != null) Destroy(modelMaterial);
+            if (look != null) modelMaterial = new Material(look);
+            else
+            {
+                modelMaterial = new Material(LitMaterials.Lit) { color = ModelPlain };
+                LitMaterials.SetSmoothness(modelMaterial, .45f);
+            }
+            modelBase = modelMaterial.color;
+            foreach (var t in go.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = sword.gameObject.layer;
+            // No shadows received: the fine engraved mesh speckled with shadow acne under the match light.
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.sharedMaterial = modelMaterial; r.receiveShadows = false; }
+            swordModel = go.transform;
         }
         void PoseHolstered()
         {
@@ -376,23 +495,62 @@ namespace ChessFight.RagdollLab
             if (ClassicControls) PoseClickSword(); else PoseHolstered();
             foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
         }
+        /// <summary>10-29 (승규 님: "상대맞출 때 sfx … 모든 기물 동일하게"): this piece's hit flash set, by the sword that cut it
+        /// here or by the wire. A jump up to a hit's flash (a click cut's .14, a drag cut's .16; the board's ring reads it
+        /// the same way) is a new hit, so every machine plays the one sword-hit sound for every piece at its chest.</summary>
+        void FlashHit(float flash)
+        {
+            if (Alive && flash >= .13f && flash > HitFlash + .02f)
+            {
+                SwordFightSkillSfx.Moment("SwordHit", Pawn.bodies[(int)BodyId.Chest].position, Skills, Random.Range(.94f, 1.06f));
+                Cut?.Invoke(this);
+            }
+            HitFlash = flash;
+        }
+
         public void ApplyRemote(bool alive, bool drawn, float protection, Vector3 offset, Quaternion rotation, float respawn, float flash, bool classic = false)
         {
             Authority = false; bladeCollider.enabled = false; SwordBody.isKinematic = true;
             gripJoint.xMotion = gripJoint.yMotion = gripJoint.zMotion = ConfigurableJointMotion.Free;
             bool changed = Alive != alive;
-            Alive = alive; Drawn = drawn && alive; ClassicControls = classic; Protection = protection; RespawnSeconds = respawn; HitFlash = flash;
+            Alive = alive; Drawn = drawn && alive; ClassicControls = classic; Protection = protection; RespawnSeconds = respawn; FlashHit(flash);
             remoteOffset = offset; remoteRotation = rotation;
             if (changed) foreach (var r in Pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = alive;
         }
         static bool Finite(Vector3 v) => !float.IsNaN(v.x) && !float.IsInfinity(v.x)
             && !float.IsNaN(v.y) && !float.IsInfinity(v.y) && !float.IsNaN(v.z) && !float.IsInfinity(v.z);
+        void PoseAfterSkeleton()
+        {
+            if (sword == null || Pawn == null || !Alive || !Authority) return;
+            if (Skills != null && Skills.Blade is Vector3 skillBlade)
+            {
+                // 10-26: a skill's sword is held in the drawn mitten too. Its motion turns the chest, and the piece is drawn
+                // with half the chest's turn, so the physical hand is off the mitten by then (the click sword does this).
+                if (Skills.SwordAt == null)
+                {
+                    Vector3 grip = ClickGrip() + skillBlade * Skills.Reach01;
+                    sword.SetPositionAndRotation(grip, Quaternion.LookRotation(AboveFloor(grip, skillBlade)));
+                }
+                return;
+            }
+            if (!ClassicControls) return;
+            PoseClickSword();
+        }
+
+        /// <summary>10-26: the line a skill hands the sword back along as it ends - the click guard's (classic controls) or
+        /// the holster's - so the sword does not jump when the match takes it back.</summary>
+        public Vector3 HomeBlade => ClassicControls ? ClickBladeDirection()
+            : Pawn.Hips.transform.TransformDirection(new Vector3(.18f, -.35f, -1f)).normalized;
+
         void OnDestroy()
         {
+            if (visualSync != null) { visualSync.Posed -= PoseAfterSkeleton; visualSync.Posed -= PoseOffHand; }
+            DestroyOffSword();
             if (bladeCollider != null) RagdollPawn.ColliderOwner.Remove(bladeCollider);
             if (Pawn != null) Pawn.PoseOverride = null;
             if (bladeMaterial != null) Destroy(bladeMaterial);
             if (hiltMaterial != null) Destroy(hiltMaterial);
+            if (modelMaterial != null) Destroy(modelMaterial);
             if (contactMaterial != null) Destroy(contactMaterial);
         }
     }

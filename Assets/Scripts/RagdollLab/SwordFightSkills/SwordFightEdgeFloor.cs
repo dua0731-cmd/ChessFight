@@ -284,12 +284,19 @@ namespace ChessFight.RagdollLab
             var rect = Rect.MinMaxRect(Mathf.Min(p0.x, p1.x), Mathf.Min(p0.z, p1.z), Mathf.Max(p0.x, p1.x), Mathf.Max(p0.z, p1.z));
             if (Snap > 0f)
             {
-                // Whole squares, at least one each way (the prototype's board breaks along its squares).
-                float x0 = Mathf.Round(rect.xMin / Snap) * Snap, x1 = Mathf.Round(rect.xMax / Snap) * Snap;
-                float z0 = Mathf.Round(rect.yMin / Snap) * Snap, z1 = Mathf.Round(rect.yMax / Snap) * Snap;
-                if (x1 - x0 < Snap) { if (Mathf.Abs(rect.xMax - x1) < Mathf.Abs(rect.xMin - x0)) x1 = x0 + Snap; else x0 = x1 - Snap; }
-                if (z1 - z0 < Snap) { if (Mathf.Abs(rect.yMax - z1) < Mathf.Abs(rect.yMin - z0)) z1 = z0 + Snap; else z0 = z1 - Snap; }
-                rect = Rect.MinMaxRect(x0, z0, x1, z1);
+                // Whole squares (the prototype's board breaks along its squares), always as many: 10-27 (승규 님: "언제는 1칸
+                // 언제는 2칸이라 2칸으로") the width and the depth each round up to whole squares once, and the run of squares
+                // is the one nearest where it was, kept on the board (shifted in, never cut short).
+                bool alongX = Mathf.Abs(t.x) > 0.5f;
+                int across = Mathf.Max(1, Mathf.CeilToInt(width / Snap - 0.01f)), inward = Mathf.Max(1, Mathf.CeilToInt(depth / Snap - 0.01f));
+                float Span(float mid, int count, float min, float max)
+                {
+                    float len = count * Snap, a0 = Mathf.Round((mid - len * 0.5f) / Snap) * Snap;
+                    return Mathf.Clamp(a0, Mathf.Ceil(min / Snap - 0.001f) * Snap, Mathf.Floor(max / Snap + 0.001f) * Snap - len);
+                }
+                float x0 = Span(rect.center.x, alongX ? across : inward, r.xMin, r.xMax);
+                float z0 = Span(rect.center.y, alongX ? inward : across, r.yMin, r.yMax);
+                rect = new Rect(x0, z0, (alongX ? across : inward) * Snap, (alongX ? inward : across) * Snap);
             }
             return Rect.MinMaxRect(Mathf.Max(rect.xMin, r.xMin), Mathf.Max(rect.yMin, r.yMin), Mathf.Min(rect.xMax, r.xMax), Mathf.Min(rect.yMax, r.yMax));
         }
@@ -598,6 +605,28 @@ namespace ChessFight.RagdollLab
 
         /// <summary>A box of floor at <paramref name="centre"/>: the floor's material, each face's texture where the original
         /// box had it; with a collider if <paramref name="solid"/>.</summary>
+        /// <summary>
+        /// 10-27 (승규 님: "실제 체스판 블록이 쪼개지면서 떨어져야 돼"): a block cut out of the floor, drawn exactly as the floor
+        /// is where it was cut (its squares, its edges, its sides), with no collider; for a chunk breaking up. The caller owns
+        /// it and its <paramref name="mesh"/> and destroys both.
+        /// </summary>
+        public GameObject FloorPiece(Vector3 centre, Vector3 size, out Mesh mesh)
+        {
+            var go = new GameObject("Floor piece");
+            go.transform.position = centre;
+            go.layer = platform != null ? platform.gameObject.layer : 0;
+            mesh = BoxMesh(centre, size);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = floorMaterial;
+            if (platformRenderer != null)
+            {
+                mr.shadowCastingMode = platformRenderer.shadowCastingMode;
+                mr.receiveShadows = platformRenderer.receiveShadows;
+            }
+            return go;
+        }
+
         GameObject Box(Transform parent, Vector3 centre, Vector3 size, string name, bool solid)
         {
             var go = new GameObject(name);

@@ -112,7 +112,7 @@ namespace ChessFight.RagdollLab
 
         /// <summary>A rope along a run of points (R142), measured along them; its strands turned from the stake's axis (the
         /// mesh's y) outward; <paramref name="capEnd"/>: its far end closed.</summary>
-        static void RopeAlong(Mesh mesh, List<Vector3> pts, float thick, bool capEnd = true)
+        internal static void RopeAlong(Mesh mesh, List<Vector3> pts, float thick, bool capEnd = true)
         {
             int n = pts.Count;
             var run = new float[n];
@@ -281,7 +281,7 @@ namespace ChessFight.RagdollLab
         /// A rope wound round the local y axis (R138): <paramref name="turns"/> turns of it <paramref name="thick"/> across at
         /// <paramref name="radius"/>, rising <paramref name="height"/> from end to end, centred on the origin.
         /// </summary>
-        static void RopeCoil(Mesh mesh, float radius, float height, float turns, float thick)
+        internal static void RopeCoil(Mesh mesh, float radius, float height, float turns, float thick)
         {
             float sweep = turns * Mathf.PI * 2f;
             float length = Mathf.Sqrt(radius * sweep * radius * sweep + height * height);
@@ -359,10 +359,13 @@ namespace ChessFight.RagdollLab
                     var p = RopePoint(at, side, across, s, a, thick);
                     var pa = RopePoint(at, side, across, s, a + da, thick) - RopePoint(at, side, across, s, a - da, thick);
                     var ps = RopePoint(at1, side1, across1, s1, a, thick) - RopePoint(at0, side0, across0, s0, a, thick);
-                    var normal = Vector3.Cross(ps, pa);
+                    // Scaled up before the cross product and divided by its own length (10-26): the differences are a few
+                    // millimetres, the cross product came to 5e-6, and Vector3.normalized gives zero under 1e-5 - a zero
+                    // normal, a NaN in URP's lit shader and a white blob in the bloom (승규 님's "빛이 나는 버그").
+                    var normal = Vector3.Cross(ps * 1000f, pa * 1000f);
                     if (Vector3.Dot(normal, p - at) < 0f) normal = -normal;
                     ropeVerts.Add(p);
-                    ropeNormals.Add(normal.sqrMagnitude > 1e-12f ? normal.normalized : (p - at).normalized);
+                    ropeNormals.Add(SafeNormal(normal, p - at, along));
                     ropeUvs.Add(new Vector2(s / RopeLay, j / (float)around));
                 }
             }
@@ -385,11 +388,22 @@ namespace ChessFight.RagdollLab
             mesh.RecalculateBounds();
         }
 
+        /// <summary><paramref name="v"/> of length 1, or <paramref name="fallback"/>, or <paramref name="last"/> - never zero.</summary>
+        static Vector3 SafeNormal(Vector3 v, Vector3 fallback, Vector3 last)
+        {
+            float m = v.magnitude;
+            if (m > 1e-12f && !float.IsNaN(m)) return v / m;
+            m = fallback.magnitude;
+            if (m > 1e-12f && !float.IsNaN(m)) return fallback / m;
+            m = last.magnitude;
+            return m > 1e-12f && !float.IsNaN(m) ? last / m : Vector3.up;
+        }
+
         static void Cap(int first, Vector3 middle, Vector3 facing, int ring)
         {
             int c = ropeVerts.Count;
             ropeVerts.Add(middle);
-            ropeNormals.Add(facing);
+            ropeNormals.Add(SafeNormal(facing, Vector3.up, Vector3.forward));
             ropeUvs.Add(new Vector2(0f, 0.5f));
             for (int j = 0; j < ring - 1; j++)
             {

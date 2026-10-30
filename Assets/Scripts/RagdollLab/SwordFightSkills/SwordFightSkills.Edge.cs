@@ -4,7 +4,9 @@ using UnityEngine;
 
 namespace ChessFight.RagdollLab
 {
-    public enum SfEdge : byte { None, Windup, Active, Recovery }
+    /// <summary>R236: Aim (appended, the codes before it stay) is the bishop's while E is held: his diagonals show and the
+    /// mouse picks one; letting E go slides him along it.</summary>
+    public enum SfEdge : byte { None, Windup, Active, Recovery, Aim }
 
     /// <summary>
     /// The edge skills (R103, 승규 님 2026-10-10 "가장자리 스킬"): a second skill per piece on its own key (E, the settings'
@@ -21,10 +23,13 @@ namespace ChessFight.RagdollLab
     /// guard.</item>
     /// <item>룩 · 성벽 붕괴: standing in the edge zone he hacks the edge he aims at: a 3 × 2 m chunk cracks for 0.8 s and
     /// falls away with whoever is on it (him too); it rises back after 5 s (<see cref="SwordFightEdgeFloor"/>).</item>
-    /// <item>비숍 · 구원의 손: an ally falling within 8 m, any time until it is out (R130, 승규 님: "완전히 죽은 거 아니면 살릴
-    /// 수 있어야 돼"; it was the edge zone, 6 m and the fall's first second): it stops in the air the moment E goes, two
-    /// hands reach out of a hole in the edge, catch it, pull it in over 0.6 s and set it down; hitting the bishop meanwhile
-    /// makes them let go.</item>
+    /// <item>비숍 · 대각선 미끄럼 (R236, 10-29, 승규 님: "가장자리에서 비숍이 궁지에 몰렸을 때 비숍이 서 있는 자리부터 색칠된
+    /// 대각선이 보이고 미끄러지듯이 가는 건데", then "바깥으로 가는 대각선은 안 보이게. 칠하는 범위는 대각선 2칸. 색은 비숍의
+    /// 고유 색으로"; it was 구원의 손, the hands that caught a falling ally): standing in the edge zone, E held shows his
+    /// diagonals from his square, two squares each, in his silver - only those that stay on the board (not over a hole,
+    /// not into a pedestal) - the one nearest where the camera looks bold, the others faint. Letting E go slides him along
+    /// it to the far square, pushing enemies on the way aside (<see cref="SwordFightEdgeParams.bishopPush"/>, 0 = off);
+    /// the right click calls it off (no cooldown).</item>
     /// <item>나이트 · 벼랑 끝 역전: its back to the edge (1.5 m) and an enemy within 3 m ahead: it crouches 0.35 s (the
     /// landing mark shows behind the enemy), springs out over the cliff and somersaults over the enemy's head, lands
     /// behind it and kicks it back toward the cliff 3.5 m. Backing off past 3 m calls it off; a hit stops it.</item>
@@ -72,7 +77,8 @@ namespace ChessFight.RagdollLab
         /// <summary>The hips where it set off (the queen's blink, the king's catch, the knight's flip).</summary>
         public Vector3 EdgeStart { get; private set; }
         public SwordFightEdgeFloor.Collapse EdgeCollapse { get; private set; }
-        /// <summary>The bishop's ally in its hands.</summary>
+        /// <summary>The bishop's ally in its hands. R236: nothing any more (the rescue is gone); kept for the rescue rope's
+        /// drawing (SwordFightSkillFx.RopeHand), whose look the Pawn Rush bishop's lasso copies.</summary>
         public RagdollPawn Carried => carried;
         public bool CarriedHeld => held;
         /// <summary>The king's sword is in the stone (catching and hanging), not yet pulled out for the vault.</summary>
@@ -110,18 +116,31 @@ namespace ChessFight.RagdollLab
         bool edgeKey, held, vaulted, knightAir;
         float edgeCooldownLeft;
         int edgeHits;
-        Vector3 hangHips, catchFrom, flipFrom, flipOver, rookLip, rookOut, rookAlong;
+        Vector3 hangHips, flipFrom, flipOver, rookLip, rookOut, rookAlong;
         RagdollPawn carried;
 
         /// <summary>The edge skill's key went down (E). Kept until the next step.</summary>
         public void PressEdge() => edgeKey = true;
+
+        /// <summary>R236: whether E is held now (online a client's comes in its input). 10-29: no skill acts on it any more
+        /// (the bishop's aim goes on a left click, E again calls it off); kept with its wire bit for a later hold skill.</summary>
+        public void HoldEdge(bool down) => edgeDown = down;
+
+        /// <summary>Scripted runs: E held (or not) whatever the keyboard says, until called with null.</summary>
+        public void OverrideHold(bool? down) => holdOverride = down;
+
+        /// <summary>E held now (see <see cref="HoldEdge"/>).</summary>
+        public bool EdgeHeld => holdOverride ?? edgeDown;
+
+        bool edgeDown;
+        bool? holdOverride;
 
         public static string EdgeName(PieceKind kind) => kind switch
         {
             PieceKind.King => "왕의 귀환",
             PieceKind.Queen => "체크메이트 일섬",
             PieceKind.Rook => "성벽 붕괴",
-            PieceKind.Bishop => "구원의 손",
+            PieceKind.Bishop => "대각선 미끄럼",
             PieceKind.Knight => "벼랑 끝 역전",
             _ => "(폰은 스킬 없음)",
         };
@@ -137,8 +156,9 @@ namespace ChessFight.RagdollLab
             FallTime = over ? (FallTime < 0f ? 0f : FallTime + dt) : -1f;
         }
 
-        /// <summary>The edge skill's part of the step; true while one runs (the F skill waits).</summary>
-        bool StepEdge(bool press, float dt)
+        /// <summary>The edge skill's part of the step; true while one runs (the F skill waits). <paramref name="cancel"/>:
+        /// the right click (R236: calls the bishop's aim off).</summary>
+        bool StepEdge(bool press, bool cancel, float dt)
         {
             var X = EdgeParams;
             if (X == null) return false;
@@ -161,7 +181,7 @@ namespace ChessFight.RagdollLab
                 case PieceKind.King: StepKingEdge(); break;
                 case PieceKind.Queen: StepQueenEdge(); break;
                 case PieceKind.Rook: StepRookEdge(); break;
-                case PieceKind.Bishop: StepBishopEdge(); break;
+                case PieceKind.Bishop: StepBishopEdge(press, cancel); break;
                 case PieceKind.Knight: StepKnightEdge(); break;
                 default: ClearEdge(); break;
             }
@@ -177,8 +197,18 @@ namespace ChessFight.RagdollLab
 
         void ClearEdge()
         {
+            // 10-25: a queen's cut that has gone through someone lands even if she is cut short before its beat.
+            if (queenCut != null)
+            {
+                var cut = queenCut;
+                queenCut = null;
+                if (cut.Fighter != null && cut.Fighter.Alive && cut.Pawn != null && EdgeParams != null)
+                    Fling(cut, queenPush, "체크메이트 일섬", SfFxKind.QueenCut, EdgeParams.queenFling);
+            }
             if (Pawn != null && Pawn.OuterFlying) Pawn.EndFlight();
             if (carried != null && carried.OuterFlying) carried.EndFlight();
+            // R236: the bishop's slide went through the enemies on its way.
+            if (EdgeStage != SfEdge.None && Piece == PieceKind.Bishop) PassThrough(false);
             ReleaseClearance(0.3f);
             carried = null;
             held = vaulted = knightAir = false;
@@ -269,12 +299,11 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Bishop:
                 {
-                    // R130: wherever it stands on the floor (it was the edge zone): the range to the falling ally is enough.
+                    // R236: in the edge zone, as the rook, with somewhere to slide.
                     if (!Standing(floor)) return;
-                    var ally = BishopPick(floor, out var e);
-                    if (ally == null) { EdgeWhy = $"{X.bishopRange:0.#} m 안에 떨어지는 아군이 없음"; return; }
-                    EdgeTarget = ally;
-                    Glow(e);
+                    if (!floor.Nearest(hips, out var near) || near.distance > X.edgeZone) { EdgeWhy = $"가장자리 구역({X.edgeZone:0.#} m)에 서야 함"; return; }
+                    Glow(near);
+                    if (BishopWays(out _, out _, null) < 0) { EdgeWhy = "갈 수 있는 대각선 칸이 없음"; return; }
                     EdgeCondition = true;
                     return;
                 }
@@ -356,32 +385,64 @@ namespace ChessFight.RagdollLab
             return best;
         }
 
-        /// <summary>The bishop's ally: falling and not out yet (R130: any time until the match takes it at −3 m; it was the
-        /// fall's first second and 2.8 m down), within range, the nearest.</summary>
-        RagdollPawn BishopPick(SwordFightEdgeFloor floor, out EdgeHit edge)
+        /// <summary>The four diagonals, in square steps along x and z.</summary>
+        public static readonly Vector2Int[] BishopDiagonals = { new Vector2Int(1, 1), new Vector2Int(1, -1), new Vector2Int(-1, -1), new Vector2Int(-1, 1) };
+
+        /// <summary>
+        /// R236, any machine (the host's step and its owner's preview run the same): the bishop's diagonals from the square he
+        /// stands on (<paramref name="square"/>, its middle on the floor; <paramref name="cell"/> its side: the board's
+        /// squares, or squares round where he stands on a floor without them). <paramref name="ways"/> (4, or null) gets
+        /// how many squares each goes, up to <see cref="SwordFightEdgeParams.bishopSquares"/>: it stops at the first square
+        /// that is off the board or over a hole, or has something solid standing on it (a rook's pedestal). Returns the one
+        /// nearest where the camera looks (-1: none goes anywhere).
+        /// </summary>
+        public int BishopWays(out Vector3 square, out float cell, int[] ways)
         {
             var X = EdgeParams;
-            edge = default;
-            RagdollPawn best = null;
-            float bestDistance = float.MaxValue;
-            foreach (var other in All)
+            var floor = SwordFightEdgeFloor.Current;
+            square = Pawn != null ? Pawn.Hips.position : Vector3.zero;
+            cell = 2f;
+            if (X == null || floor == null || !floor.Find() || Pawn == null) return -1;
+            Vector3 hips = Pawn.Hips.position;
+            if (floor.Snap > 0f)
             {
-                if (other == this || other.Fighter == null || !other.Fighter.Alive || other.Pawn == null || other.Pawn.Team != Pawn.Team) continue;
-                if (other.FallTime < 0f || other.EdgeStage != SfEdge.None) continue;
-                Vector3 h = other.Pawn.Hips.position;
-                if (h.y < RingOutY + 0.04f) continue;
-                float d = Flat(h - Pawn.Hips.position).magnitude;
-                if (d > X.bishopRange || d >= bestDistance || !floor.Nearest(h, out var e)) continue;
-                bestDistance = d;
-                best = other.Pawn;
-                edge = e;
+                cell = floor.Snap;
+                square = new Vector3((Mathf.Floor(hips.x / cell) + 0.5f) * cell, floor.Top, (Mathf.Floor(hips.z / cell) + 0.5f) * cell);
+            }
+            else square = new Vector3(hips.x, floor.Top, hips.z);
+            Vector3 aim = AimFlat();
+            int best = -1;
+            float bestDot = -2f;
+            for (int i = 0; i < BishopDiagonals.Length; i++)
+            {
+                var d = BishopDiagonals[i];
+                int n = 0;
+                while (n < X.bishopSquares)
+                {
+                    Vector3 at = square + new Vector3(d.x, 0f, d.y) * (cell * (n + 1));
+                    if (!floor.OnFloor(at) || SquareTaken(at, cell)) break;
+                    n++;
+                }
+                if (ways != null) ways[i] = n;
+                if (n == 0) continue;
+                float dot = Vector3.Dot(new Vector3(d.x, 0f, d.y).normalized, aim);
+                if (dot > bestDot) { bestDot = dot; best = i; }
             }
             return best;
         }
 
-        /// <summary>The knight's enemy: standing ahead of it (within 60° of where it looks), within range, the nearest.</summary>
-        /// <summary>The height the match takes a piece out at (SwordFightGame: hips below −3 m).</summary>
-        const float RingOutY = -3f;
+        /// <summary>Something solid stands on the square (a rook's pedestal): not a piece, nothing loose.</summary>
+        static bool SquareTaken(Vector3 at, float cell)
+        {
+            var half = new Vector3(cell * 0.3f, 0.35f, cell * 0.3f);
+            foreach (var c in Physics.OverlapBox(at + Vector3.up * 0.6f, half, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (RagdollPawn.ColliderOwner.ContainsKey(c) || c.attachedRigidbody != null) continue;
+                if (c.GetComponentInParent<SwordFightPawn>() != null) continue;
+                return true;
+            }
+            return false;
+        }
 
         /// <summary>How far past the lip the knight's hips may be and still count as standing at the edge (R109).</summary>
         const float KnightLipSlack = 0.6f;
@@ -464,19 +525,12 @@ namespace ChessFight.RagdollLab
                 }
                 case PieceKind.Bishop:
                 {
-                    carried = EdgeTarget;
-                    // R130: it stops falling the moment E goes (held where it is while the hands reach it), so an ally
-                    // caught just above the out line is not lost on the way.
-                    catchFrom = carried.Hips.position;
-                    carried.Fly(catchFrom, Vector3.zero, 0f, default, 24f);
-                    EdgeAt = EdgeGlow.point;
-                    EdgeOut = EdgeGlow.outward;
-                    EdgeLand = RescueLanding(floor, EdgeGlow, X.bishopSetIn);
-                    Clearance(carried, true);
-                    SetEdge(SfEdge.Active, "손");
-                    Raise(SfFxKind.EdgeCast, carried, Floor(hips), EdgeOut, 0f);
-                    Raise(SfFxKind.BishopReach, carried, carried.Hips.position, EdgeOut, X.bishopReach);
-                    Say($"{Pawn.DisplayName}: 구원의 손 → {carried.DisplayName}");
+                    // R236: the diagonals show and the mouse picks; a left click slides him, E again or a right click
+                    // calls it off (StepBishopEdge).
+                    SetEdge(SfEdge.Aim, AimLine);
+                    bishopClick = false;
+                    BishopAims();
+                    Say($"{Pawn.DisplayName}: 대각선 미끄럼 — {AimLine}");
                     break;
                 }
                 case PieceKind.Knight:
@@ -501,7 +555,7 @@ namespace ChessFight.RagdollLab
                     break;
                 }
             }
-            if (EdgeStage != SfEdge.None) EdgeUses++;
+            if (EdgeStage != SfEdge.None && EdgeStage != SfEdge.Aim) EdgeUses++;
         }
 
         /// <summary>A spot on the floor <paramref name="inward"/> in from an edge (less if the floor is not there).</summary>
@@ -515,31 +569,8 @@ namespace ChessFight.RagdollLab
             return Floor(e.point - e.outward * 0.3f);
         }
 
-        /// <summary>Where the bishop sets the ally down (R109): <paramref name="inward"/> inside the edge, but never on the
-        /// bishop — the ally set on him was shoved back over the edge (승규 님: "아군이 올라오면 나 때문에 다시 떨어져").
-        /// If the spot is within <see cref="RescueRoom"/> of the bishop it slides along the edge, away from him first.</summary>
-        Vector3 RescueLanding(SwordFightEdgeFloor floor, EdgeHit e, float inward)
-        {
-            Vector3 me = Flat(Pawn.Hips.position);
-            Vector3 along = Vector3.Cross(Vector3.up, e.outward).normalized;
-            float away = Vector3.Dot(Flat(e.point) - me, along) >= 0f ? 1f : -1f;
-            foreach (float side in new[] { 0f, 0.5f, 1f, 1.5f, 2f })
-                foreach (float sign in new[] { away, -away })
-                {
-                    if (side == 0f && sign != away) continue;
-                    var shifted = e;
-                    shifted.point = e.point + along * (side * sign);
-                    if (!floor.OnFloor(shifted.point - e.outward * 0.3f)) continue;
-                    Vector3 p = Inward(floor, shifted, inward);
-                    if ((Flat(p) - me).magnitude >= RescueRoom) return p;
-                }
-            return Inward(floor, e, inward);
-        }
-
-        const float RescueRoom = 1.0f;
-
-        // While the bishop's hands pull an ally up, and a moment after it is set down, the two do not collide (bodies and
-        // swords): the ally comes up past him and lands by him, not on him.
+        // While the knight goes over its enemy's head, and a moment after, the two do not collide (bodies and swords; it was
+        // the bishop's hands pulling an ally up past him until R236).
         readonly List<(Collider, Collider)> clearance = new List<(Collider, Collider)>();
         RagdollPawn clearedFrom;
         float clearanceLeft;
@@ -596,6 +627,10 @@ namespace ChessFight.RagdollLab
             float t = EdgeTime, c = X.kingCatch, h = X.kingHang, v = X.kingVault;
             if (EdgeStage == SfEdge.Recovery)
             {
+                // 10-26 (SwordFightSkills.Motion): the landing taken in the legs - held on the spot, the hips down by what
+                // the split legs lose, tipped over the chop - then up; let go once he stands.
+                if (BodyMotion && t < 0.30f && Pawn.OuterFlying) FlyKingLanding(t);
+                else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
                 if (t >= 0.35f) FinishEdge();
                 return;
             }
@@ -612,9 +647,11 @@ namespace ChessFight.RagdollLab
                 else
                 {
                     if (EdgeDetail != "매달림") EdgeDetail = "매달림";
-                    // A short swing on the hilt as the fall is caught.
+                    // A short swing on the hilt as the fall is caught. 10-26: in its last moment he tips back with his
+                    // soles to the face (into the vault's own start), his hips held: the stub has no elbow to give.
                     float s = Mathf.Sin((t - c) * 15f) * Mathf.Exp(-(t - c) * 6f) * 0.07f;
-                    Pawn.Fly(hangHips + EdgeOut * s, Vector3.zero, 0f, default, 18f);
+                    float plant = BodyMotion ? Smooth((t - (c + h - 0.12f)) / 0.12f) : 0f;
+                    Pawn.Fly(hangHips + EdgeOut * s, Vector3.zero, -10f * plant, default, 18f);
                 }
                 return;
             }
@@ -638,8 +675,24 @@ namespace ChessFight.RagdollLab
                 Pawn.Fly(pos, (next - pos) / dt, tip, default, 22f);
                 return;
             }
+            if (BodyMotion)
+            {
+                // A dead stop on the spot, taken in the legs (Recovery goes on flying it).
+                KingLands();
+                FlyKingLanding(0f);
+                return;
+            }
             Pawn.EndFlight(Vector3.down * 3f);
             KingLands();
+        }
+
+        /// <summary>10-26: the king held on his landing spot <paramref name="t"/> s after it, his hips down by what his split
+        /// legs lose (SwordFightSkills.Motion: KingLandSplit), tipped forward over his chop.</summary>
+        void FlyKingLanding(float t)
+        {
+            float dt = Time.fixedDeltaTime;
+            float dip = StanceDrop(KingLandSplit(t)), next = StanceDrop(KingLandSplit(t + dt));
+            Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f - dip), Vector3.down * ((next - dip) / dt), KingLandTip(t), default, 20f);
         }
 
         /// <summary>The king's vault (R129): the top 1.25 m over the higher end at 42% of the way; up fast and slowing (ease
@@ -718,8 +771,23 @@ namespace ChessFight.RagdollLab
                 if (EdgeTime >= X.queenLine) QueenStrikes(floor);
                 return;
             }
-            if (EdgeStage == SfEdge.Recovery && EdgeTime >= X.queenRecovery) FinishEdge();
+            if (EdgeStage == SfEdge.Recovery)
+            {
+                // 10-25: the cut lands a beat after she has gone past (QueenStrikes): now it is thrown.
+                if (queenCut != null && EdgeTime >= X.queenDelay)
+                {
+                    var cut = queenCut;
+                    queenCut = null;
+                    if (cut.Fighter != null && cut.Fighter.Alive && cut.Pawn != null)
+                        Fling(cut, queenPush, "체크메이트 일섬", SfFxKind.QueenCut, X.queenFling);
+                }
+                if (queenCut == null && EdgeTime >= Mathf.Max(X.queenRecovery, X.queenDelay + 0.05f)) FinishEdge();
+            }
         }
+
+        /// <summary>10-25: whoever her cut went through, standing a beat before it lands (and how it will be thrown).</summary>
+        SwordFightSkills queenCut;
+        Vector3 queenPush;
 
         bool QueenHolds(SwordFightEdgeFloor floor, RagdollPawn target, out string why)
         {
@@ -751,7 +819,9 @@ namespace ChessFight.RagdollLab
             EdgeStart = Pawn.Hips.position;
             EdgeAt = target.Hips.position;
             EdgeOut = e.outward;
-            Pawn.Teleport(ground + Vector3.up * (Pawn.standHeight + 0.02f), face);
+            // 10-26 (SwordFightSkills.Motion): she arrives already through the cut, low in her stance - not upright in a
+            // T-pose her arms then sink out of.
+            QueenArrives(ground, face, target);
             Raise(SfFxKind.QueenBlink, target, ground, face, Vector3.Distance(from, spot));
             // R130: a king in his guard blocks it and the queen is flung off him (SwordFightSkills.Block).
             if (ts != null && ts.Block(this, Pawn, target.bodies[(int)BodyId.Chest].position, SfBlock.QueenEdge))
@@ -769,7 +839,15 @@ namespace ChessFight.RagdollLab
                 return;
             }
             Vector3 dir = Flat(e.outward * 0.85f + face * 0.15f).normalized;
-            Fling(ts, dir * (X.queenFling / 0.9f) + Vector3.up * X.queenFlingUp, "체크메이트 일섬", SfFxKind.QueenCut, X.queenFling);
+            // 10-25 (승규 님: "베인 뒤 한 박자 늦게 반응 … 멀티 플레이 고려해서"): she has gone through it; it stands where it
+            // is, held (the pin everyone's copy already carries) and out of the fight, and is thrown a beat later
+            // (StepQueenEdge) - on the host, so every screen sees the same beat.
+            queenCut = ts;
+            queenPush = dir * (X.queenFling / 0.9f) + Vector3.up * X.queenFlingUp;
+            ts.pinLeft = Mathf.Max(ts.pinLeft, X.queenDelay + 0.05f);
+            ts.Fighter.StopCombat();
+            // 10-26: and held as it stood - it does not know yet.
+            ts.HoldStruck(X.queenDelay + 0.05f);
             SetEdge(SfEdge.Recovery, "후딜");
         }
 
@@ -780,6 +858,7 @@ namespace ChessFight.RagdollLab
             target.TakeHit(push, S.knockdownSeconds, 0f, true);
             other.Fighter.StopCombat();
             other.pinLeft = 0f;
+            other.struckLeft = 0f;
             if (other.Stage != SfStage.None && other.Stage != SfStage.Aim) other.StartCooldown();
             if (other.Stage != SfStage.None) other.Clear();
             Raise(kind, target, Vector3.Lerp(Pawn.bodies[(int)BodyId.Chest].position, target.bodies[(int)BodyId.Chest].position, 0.7f), Flat(push).normalized, size);
@@ -795,68 +874,148 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- bishop
 
-        void StepBishopEdge()
+        /// <summary>The bishop's aim line on the key card (R236).</summary>
+        public const string AimLine = "조준 (좌클릭 = 미끄러짐 · E 또는 우클릭 = 취소)";
+
+        readonly int[] bishopWays = new int[4];
+        /// <summary>A left click came in while he picks (taken from the input in <see cref="Filter"/>, so a client's click
+        /// on the host too): it sends him.</summary>
+        bool bishopClick;
+        readonly HashSet<RagdollPawn> slideHit = new HashSet<RagdollPawn>();
+
+        /// <summary>
+        /// R236, the slide's time (any machine, from the replicated start and end): its length at
+        /// <see cref="SwordFightEdgeParams.bishopSlideSpeed"/> on average - a push off, a long glide, a soft stop.
+        /// </summary>
+        public float BishopSlideTime
         {
-            var X = EdgeParams;
-            if (EdgeStage == SfEdge.Recovery)
+            get
             {
-                if (EdgeTime >= X.bishopRecovery) FinishEdge();
-                return;
+                var X = EdgeParams;
+                float metres = Flat(EdgeLand - EdgeStart).magnitude;
+                return X != null ? Mathf.Clamp(metres / Mathf.Max(1f, X.bishopSlideSpeed), 0.25f, 1.2f) : 0.6f;
             }
-            var cs = carried != null ? carried.GetComponent<SwordFightSkills>() : null;
-            if (Pawn.Hits != edgeHits || Pawn.State != PawnState.Active) { BishopDrops("비숍이 맞아서 손을 놓침"); return; }
-            if (cs == null || cs.Fighter == null || !cs.Fighter.Alive) { BishopDrops("아군이 먼저 떨어짐"); return; }
-            float t = EdgeTime;
-            if (t < X.bishopReach)
-            {
-                // The hands are on their way (the effects); the ally hangs where E caught it.
-                carried.Fly(catchFrom, Vector3.zero, 0f, default, 24f);
-                return;
-            }
-            if (!held)
-            {
-                held = true;
-                catchFrom = carried.Hips.position;
-                carried.StandUp();
-                cs.FallTime = -1f;
-                Raise(SfFxKind.BishopCatch, carried, catchFrom, EdgeOut, X.bishopPull);
-                Say($"{Pawn.DisplayName} → {carried.DisplayName}: 구원의 손이 잡음");
-            }
-            float k = Mathf.Clamp01((t - X.bishopReach) / X.bishopPull);
-            // Up first, still outside the lip, and only over it toward the end: hit the bishop before then and the ally
-            // goes back down into the void.
-            Vector3 p0 = catchFrom, p3 = EdgeLand + Vector3.up * (carried.standHeight + 0.03f);
-            Vector3 p1 = p0 + Vector3.up * 1.1f, p2 = new Vector3(EdgeAt.x, p3.y, EdgeAt.z) + EdgeOut * 0.4f + Vector3.up * 0.9f;
-            if (k < 1f)
-            {
-                float s = k * k * (3f - 2f * k), ds = 6f * k * (1f - k) / X.bishopPull;
-                carried.Fly(Bezier(p0, p1, p2, p3, s), BezierTangent(p0, p1, p2, p3, s) * ds, 0f, default, 20f);
-                carried.Face(-EdgeOut);
-                return;
-            }
-            carried.EndFlight(Vector3.down * 0.5f);
-            ReleaseClearance(0.8f);
-            Raise(SfFxKind.BishopSet, carried, EdgeLand, -EdgeOut, 0f);
-            Say($"{Pawn.DisplayName} → {carried.DisplayName}: 구원 — 발판 위에 내려놓음");
-            held = false;
-            carried = null;
-            SetEdge(SfEdge.Recovery, "후딜");
         }
 
-        void BishopDrops(string why)
+        /// <summary>The slide's share of its way at <paramref name="u"/> (0..1 of its time): it pushes off at once, glides
+        /// and comes to a stop (part ease-out, part smooth step).</summary>
+        public static float Glide(float u)
         {
-            if (carried != null && carried.OuterFlying)
+            u = Mathf.Clamp01(u);
+            return 0.4f * u * u * (3f - 2f * u) + 0.6f * (1f - (1f - u) * (1f - u));
+        }
+
+        static float GlideRate(float u)
+        {
+            u = Mathf.Clamp01(u);
+            return 0.4f * 6f * u * (1f - u) + 0.6f * 2f * (1f - u);
+        }
+
+        void StepBishopEdge(bool press, bool cancel)
+        {
+            var X = EdgeParams;
+            switch (EdgeStage)
             {
-                // Let go: it drops back the way it came, limp (not carried on over the lip by the pull's speed).
-                float vy = Mathf.Min(carried.Hips.linearVelocity.y, 0.5f);
-                carried.EndFlight(new Vector3(EdgeOut.x * 0.8f, vy, EdgeOut.z * 0.8f));
-                carried.Knockdown("구원의 손 놓침", 0.65f);
+                case SfEdge.Aim:
+                {
+                    // Knocked over or hit while he picks: called off, no cooldown (it never went).
+                    if (Pawn.State != PawnState.Active || Pawn.Hits != edgeHits) { BishopCallsOff("넘어짐"); return; }
+                    if (cancel) { BishopCallsOff("우클릭"); return; }
+                    // 10-29 (승규 님: "e 쓰고 e 두번 쓰면 취소. e 쓰고 좌클릭 시 스킬 사용, 우클릭도 스킬 취소"): E again calls
+                    // the aim off like the right click; only a left click sends him.
+                    if (press) { BishopCallsOff("E 한 번 더"); return; }
+                    int pick = BishopAims();
+                    bool click = bishopClick;
+                    bishopClick = false;
+                    if (!click) return;
+                    if (pick < 0) { BishopCallsOff("갈 수 있는 대각선 칸이 없음"); return; }
+                    // He pushes off along the bold one.
+                    EdgeStart = Pawn.Hips.position;
+                    slideHit.Clear();
+                    Pawn.Face(EdgeOut);
+                    SetEdge(SfEdge.Windup, "준비");
+                    EdgeUses++;
+                    Raise(SfFxKind.EdgeCast, null, Floor(EdgeStart), EdgeOut, 0f);
+                    Say($"{Pawn.DisplayName}: 대각선 미끄럼 — {bishopWays[pick]}칸 ({Flat(EdgeLand - EdgeStart).magnitude:0.0} m)");
+                    return;
+                }
+                case SfEdge.Windup:
+                {
+                    if (Pawn.State != PawnState.Active || Pawn.Hits != edgeHits) { InterruptEdge("미끄러지기 전에 맞음"); return; }
+                    // The push off: down a little, tipped into the way.
+                    float k = Smooth(EdgeTime / Mathf.Max(0.02f, X.bishopPushOff));
+                    Pawn.Fly(EdgeStart + Vector3.down * (0.04f * k), Vector3.zero, 8f * k, Vector3.Cross(Vector3.up, EdgeOut), 22f);
+                    if (EdgeTime < X.bishopPushOff) return;
+                    EdgeStart = Pawn.Hips.position;
+                    PassThrough(true);
+                    SetEdge(SfEdge.Active, "미끄럼");
+                    Raise(SfFxKind.BishopSlide, null, Floor(EdgeStart), EdgeOut, Flat(EdgeLand - EdgeStart).magnitude);
+                    return;
+                }
+                case SfEdge.Active:
+                {
+                    if (Pawn.Hits != edgeHits) { InterruptEdge("미끄러지다 맞음"); return; }
+                    float time = BishopSlideTime, u = Mathf.Clamp01(EdgeTime / time);
+                    Vector3 a = EdgeStart, b = EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f);
+                    Vector3 pos = Vector3.Lerp(a, b, Glide(u)), vel = (b - a) * (GlideRate(u) / time);
+                    // Into the way at the push, upright through the glide, back on his heels as he stops.
+                    float tip = u < 0.15f ? Mathf.Lerp(8f, 3f, u / 0.15f) : Mathf.Lerp(3f, -6f, Smooth((u - 0.6f) / 0.4f));
+                    if (u < 1f)
+                    {
+                        Pawn.Fly(pos, vel, tip, Vector3.Cross(Vector3.up, EdgeOut), 22f);
+                        BishopPushes(pos);
+                        return;
+                    }
+                    Pawn.EndFlight(Vector3.zero);
+                    PassThrough(false);
+                    Raise(SfFxKind.BishopSlideStop, null, EdgeLand, EdgeOut, slideHit.Count);
+                    Say($"{Pawn.DisplayName}: 대각선 미끄럼 도착" + (slideHit.Count > 0 ? $" (적 {slideHit.Count}명 밀어냄)" : ""));
+                    SetEdge(SfEdge.Recovery, "후딜");
+                    return;
+                }
+                case SfEdge.Recovery:
+                    if (EdgeTime >= X.bishopRecovery) FinishEdge();
+                    return;
             }
-            ReleaseClearance(0.3f);
-            Raise(SfFxKind.BishopDrop, carried, carried != null ? carried.Hips.position : EdgeAt, EdgeOut, held ? 1f : 0f);
-            Say($"{Pawn.DisplayName}: 구원의 손 놓침 ({why})");
+        }
+
+        /// <summary>The diagonals as he stands now: the bold one's way and its far square (replicated, so every screen
+        /// can draw it), him turned to it. Returns the bold one (-1: none).</summary>
+        int BishopAims()
+        {
+            int pick = BishopWays(out var square, out float cell, bishopWays);
+            EdgeAt = square;
+            if (pick < 0) return -1;
+            var d = BishopDiagonals[pick];
+            EdgeOut = new Vector3(d.x, 0f, d.y).normalized;
+            EdgeLand = square + new Vector3(d.x, 0f, d.y) * (cell * bishopWays[pick]);
+            Pawn.Face(EdgeOut);
+            return pick;
+        }
+
+        /// <summary>The aim called off before he went: no cooldown.</summary>
+        void BishopCallsOff(string why)
+        {
+            Say($"{Pawn.DisplayName}: 대각선 미끄럼 조준 취소 ({why})");
             ClearEdge();
-            StartEdgeCooldown(1f);
+        }
+
+        /// <summary>Enemies he passes close to are pushed aside off his way (once each; <see cref="SwordFightEdgeParams.bishopPush"/>
+        /// 0 = he only slides through them).</summary>
+        void BishopPushes(Vector3 hips)
+        {
+            var X = EdgeParams;
+            if (X.bishopPush <= 0f) return;
+            Vector3 side = Vector3.Cross(Vector3.up, EdgeOut);
+            foreach (var other in All)
+            {
+                if (!IsEnemy(other) || slideHit.Contains(other.Pawn)) continue;
+                Vector3 d = Flat(other.Pawn.Hips.position - hips);
+                if (d.magnitude > X.bishopPushReach) continue;
+                slideHit.Add(other.Pawn);
+                float s = Vector3.Dot(d, side) >= 0f ? 1f : -1f;
+                Hit(other, side * s + EdgeOut * 0.35f, X.bishopPush, "대각선 미끄럼", SfFxKind.BishopSlideHit, slideHit.Count - 1);
+            }
         }
 
         // ---------------------------------------------------------------- knight
@@ -871,7 +1030,10 @@ namespace ChessFight.RagdollLab
                 {
                     // In the air it is held where it caught itself (and is getting up from a knock meanwhile).
                     if (Pawn.Hits != edgeHits || (!knightAir && Pawn.State != PawnState.Active)) { InterruptEdge("웅크린 채 맞음"); return; }
-                    if (knightAir) Pawn.Fly(hangHips, Vector3.zero);
+                    // 10-26 (SwordFightSkills.Motion): it sinks into its coil, tipped forward over its legs.
+                    float sink = BodyMotion ? Smooth(EdgeTime / 0.2f) : 0f;
+                    if (knightAir) Pawn.Fly(hangHips, Vector3.zero, KnightCoilTip * sink);
+                    else if (BodyMotion) Pawn.Fly(EdgeStart + Vector3.down * (0.025f * sink), Vector3.zero, KnightCoilTip * sink, default, 20f);
                     var target = EdgeTarget;
                     var ts = target != null ? target.GetComponent<SwordFightSkills>() : null;
                     float reach = X.knightFront + (knightAir ? KnightAirReach : 0f);
@@ -901,8 +1063,9 @@ namespace ChessFight.RagdollLab
                     if (k < 1f)
                     {
                         FlipPath(floor, k, out var pos, out var vel);
-                        // A forward somersault over the top (nose down about its right).
-                        float turn = 360f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(FlipOut + 0.05f, 0.86f, k));
+                        // A forward somersault over the top (nose down about its right). 10-26: thrown back off the lip
+                        // first, held there for the look, then over and on into the buck (KnightFlipTurn).
+                        float turn = KnightFlipTurn(k);
                         Pawn.Fly(pos, vel, turn, Vector3.Cross(Vector3.up, dir), 24f);
                         return;
                     }
@@ -915,8 +1078,22 @@ namespace ChessFight.RagdollLab
                 {
                     // The kick: head down, hind legs up behind it for a moment.
                     Vector3 dir = Flat(EdgeLand - flipFrom).normalized;
-                    if (EdgeTime < 0.18f)
-                        Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f), Vector3.zero, 55f * Mathf.Sin(EdgeTime / 0.18f * Mathf.PI), Vector3.Cross(Vector3.up, dir), 16f);
+                    float t = EdgeTime;
+                    if (BodyMotion)
+                    {
+                        // 10-26: it lands already kicking (the flip's turn ran on into the buck), follows through, then the
+                        // weight comes down and rocks back onto the hind legs.
+                        if (t < 0.26f)
+                        {
+                            float tip = t < 0.09f ? Mathf.Lerp(KnightBuckTip, KnightBuckTip + 8f, Out2(t / 0.06f))
+                                : t < 0.22f ? Mathf.Lerp(KnightBuckTip + 8f, -6f, 1f - Mathf.Pow(1f - (t - 0.09f) / 0.13f, 3f))
+                                : Mathf.Lerp(-6f, 0f, (t - 0.22f) / 0.04f);
+                            Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f), Vector3.zero, tip, Vector3.Cross(Vector3.up, dir), 16f);
+                        }
+                        else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
+                    }
+                    else if (t < 0.18f)
+                        Pawn.Fly(EdgeLand + Vector3.up * (Pawn.standHeight + 0.03f), Vector3.zero, 55f * Mathf.Sin(t / 0.18f * Mathf.PI), Vector3.Cross(Vector3.up, dir), 16f);
                     else if (Pawn.OuterFlying) Pawn.EndFlight(Vector3.zero);
                     if (EdgeTime >= X.knightRecovery) FinishEdge();
                     return;
@@ -978,15 +1155,42 @@ namespace ChessFight.RagdollLab
             switch (Piece)
             {
                 case PieceKind.King:
+                {
                     if (KingHanging) return KingBladeNow();   // in the stone
-                    if (EdgeStage == SfEdge.Active) return (Vector3.up + f * 0.3f).normalized;   // the vault: held high
-                    return (f - Vector3.up * 0.75f).normalized;
+                    Vector3 held = (Vector3.up + f * 0.3f).normalized, chop = (f * 0.8f - Vector3.up * 0.6f).normalized;
+                    if (!BodyMotion) return EdgeStage == SfEdge.Active ? held : (f - Vector3.up * 0.75f).normalized;
+                    // 10-26 (SwordFightSkills.Motion): torn out of the stone and swung up as he springs, drawn back over his
+                    // head at the top, then chopped down to arrive with his feet; held down, then handed back.
+                    if (EdgeStage == SfEdge.Active)
+                    {
+                        var X = EdgeParams;
+                        Vector3 cocked = (Vector3.up * 0.9f - f * 0.35f).normalized;
+                        float u = Mathf.Clamp01((EdgeTime - X.kingCatch - X.kingHang) / Mathf.Max(0.05f, X.kingVault));
+                        if (u < 0.16f) return Vector3.Slerp(StuckBlade, held, Out2(u / 0.16f));
+                        if (u < 0.42f) return Vector3.Slerp(held, cocked, Smooth((u - 0.16f) / 0.26f));
+                        return u < 0.8f ? cocked : Vector3.Slerp(cocked, chop, In2((u - 0.8f) / 0.2f));
+                    }
+                    return EdgeTime < 0.15f || Fighter == null ? chop : Vector3.Slerp(chop, Fighter.HomeBlade, Smooth((EdgeTime - 0.15f) / 0.2f));
+                }
                 case PieceKind.Queen:
-                    return EdgeStage == SfEdge.Windup ? (f + Vector3.up * 0.35f - side * 0.4f).normalized : (f - Vector3.up * 0.1f + side * 0.7f).normalized;
+                    return QueenEdgeBlade(f, side);
                 case PieceKind.Rook:
+                    // 10-26 (SwordFightSkills.Motion): brought down hard on the lip, not laid on it.
+                    if (BodyMotion) return RookEdgeBlade();
                     return (Flat(EdgeAt - Pawn.Hips.position).normalized - Vector3.up * 0.9f).normalized;
                 case PieceKind.Bishop:
-                    return (Vector3.up + f * 0.4f).normalized;
+                {
+                    // R236: low ahead toward the way he picks; held out behind his sword side as he glides (a counterweight
+                    // to his free arm); let back to his guard as he stops.
+                    Vector3 low = (f * 0.75f - Vector3.up * 0.45f + side * 0.2f).normalized;
+                    Vector3 trail = (side * 0.65f - f * 0.6f - Vector3.up * 0.2f).normalized;
+                    if (EdgeStage == SfEdge.Aim) return low;
+                    if (EdgeStage == SfEdge.Windup) return Vector3.Slerp(low, trail, Smooth(EdgeTime / 0.1f));
+                    if (EdgeStage == SfEdge.Active) return trail;
+                    return Fighter == null ? trail : Vector3.Slerp(trail, Fighter.HomeBlade, Smooth(EdgeTime / 0.2f));
+                }
+                case PieceKind.Knight when BodyMotion:
+                    return KnightEdgeBlade(f, side);
                 case PieceKind.Knight:
                     return EdgeStage == SfEdge.Windup ? (-f + Vector3.up * 0.25f).normalized
                          : EdgeStage == SfEdge.Active ? (Vector3.up + f * 0.25f).normalized
@@ -996,7 +1200,10 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The sword arm reaching somewhere else than along the blade: the king's hand on his hilt in the stone.</summary>
-        public Vector3? Arm => KingHanging && Pawn != null ? (Hilt - Pawn.bodies[(int)BodyId.Chest].position).normalized : (Vector3?)null;
+        public Vector3? Arm => KingHanging && Pawn != null
+            // 10-26: from his own shoulder to the grip as it drives in (it aimed at the hilt from the chest: the fist was off it).
+            ? (BodyMotion ? (KingGrip() - Pivot(BodyId.ArmR)).normalized : (Hilt - Pawn.bodies[(int)BodyId.Chest].position).normalized)
+            : (Vector3?)null;
 
         /// <summary>The sword stays put where its hilt is (the king's, stuck in the stone), not in the hand. 10-14 (승규 님: "실제로
         /// 칼이 박히는 연출"): it drives the last 0.3 m in over the first three frames, then quivers (KingBladeNow).</summary>

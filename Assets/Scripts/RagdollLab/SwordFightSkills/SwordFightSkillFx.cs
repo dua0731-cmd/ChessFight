@@ -72,6 +72,10 @@ namespace ChessFight.RagdollLab
             game = GetComponent<SwordFightGame>();
             if (game == null) game = FindFirstObjectByType<SwordFightGame>();
             kit = new Kit(new GameObject("Sword Fight skill effects").transform, () => Viewer, () => Eye);
+            kit.NoPuffs = true;
+            // 10-28: the puffs stay off; the rook F's dust (DustSpread) is its own real dust (the kit's would also take the
+            // knockdown's floor ring away).
+            jetDust = new SkillDust(kit.root);
             BuildBoardLook();
             SwordFightSkills.Fx += OnFx;
             SwordFightEdgeFloor.Changed += OnFloor;
@@ -90,9 +94,11 @@ namespace ChessFight.RagdollLab
             DestroyBishopParts();
             DestroyShieldParts();
             DestroyBreaches();
+            jetDust?.Destroy();
             kit?.Destroy();
             DestroyIcons();
             DestroyStatues();
+            DestroyReal();
         }
 
         // ---------------------------------------------------------------- time, hit stop, shake
@@ -187,6 +193,8 @@ namespace ChessFight.RagdollLab
             if (kit == null) return;
             if (effects) Watch();
             kit.Step(dt);
+            jetDust?.Step(dt, ViewCamera);
+            StepReal();
             var cam = ViewCamera;
             if (shakeLeft > 0f && cam != null)
             {
@@ -202,6 +210,7 @@ namespace ChessFight.RagdollLab
             }
             StepOrbit(cam);
             StepView(cam);
+            TrackTips();
         }
 
         // ---------------------------------------------------------------- the view: a zoom kick and a colour edge
@@ -316,6 +325,9 @@ namespace ChessFight.RagdollLab
         /// <summary>A copy of the piece's body as it stands now: a see-through silhouette of a colour with an ink edge
         /// (Skill Ghost), swelling round its chest by <paramref name="grow"/> and fading over <paramref name="life"/>;
         /// white for its first two frames if <paramref name="flash"/>.</summary>
+        /// <summary>10-25: ribbons after a piece's hips (Trail, the knight's jump) are off.</summary>
+        const bool BodyTrails = false;
+
         void Afterimage(RagdollPawn pawn, Kit.Palette p, float grow, float life, float alpha = 0.6f, bool flash = false)
         {
             if (pawn == null || pawn.skin == null) return;
@@ -612,6 +624,7 @@ namespace ChessFight.RagdollLab
             foreach (var s in SwordFightSkills.All)
             {
                 if (s == null || s.Pawn == null || s.Fighter == null || !s.Fighter.Alive) continue;
+                BishopDrawWatch(s);   // R194: his second sword forming as he calls the X cut (every screen)
                 EdgeMarks(s, s.Pawn == Viewer);   // the edge skills (R103): offline only the player's own can be used
                 bool mine = s.Pawn == Viewer || ViewOverride != null;
                 if (s.Stage == SfStage.Aim && !mine) continue;   // the aim is the owner's own
@@ -624,8 +637,8 @@ namespace ChessFight.RagdollLab
                     case PieceKind.Bishop: BishopMarks(s, S, aimAlpha); break;
                     case PieceKind.Knight: KnightMarks(s, S, aimAlpha); break;
                 }
-                if (s.SlowLeft > 0f && s.PinLeft <= 0f) SlowRing(s);   // pinned, the hands say it
-                if (s.PinLeft > 0f) PinMarks(s);
+                if (s.SlowLeft > 0f && s.PinLeft <= 0f && !Real(PieceKind.Bishop)) SlowRing(s);   // pinned, the hands say it
+                if (s.PinLeft > 0f) { if (Real(PieceKind.Bishop)) RealPin(s); else PinMarks(s); }
             }
         }
 
@@ -635,6 +648,8 @@ namespace ChessFight.RagdollLab
 
         void KingMarks(SwordFightSkills s, SwordFightSkillParams S)
         {
+            // 10-25, for real: no shield, no shards, no rings on the floor - his stance is all there is to see.
+            if (Real(PieceKind.King)) return;
             if (s.Stage == SfStage.Recovery && !s.KingCountered)
             {
                 // The guard came to nothing: a grey ring with sliding stripes at his feet while he is open (빈틈).
@@ -686,6 +701,8 @@ namespace ChessFight.RagdollLab
             bool aim = s.Stage == SfStage.Aim;
             Vector3 dir = aim ? s.AimDir : s.Dir;
             float reach = aim ? s.AimReach : s.Reach;
+            // 10-25, for real: faint lines of light on the board in place of the gold squares, and nothing else.
+            if (Real(PieceKind.Queen)) { RealLane(s, S, aim, alpha); return; }
             var w = new Warning { k = Charge(s, S.queenWindup), alpha = alpha, quiet = aim };
             // Her way: the squares she dashes over and her sword's reach past them, and a ring where she stops; past the
             // floor's edge (R129) the rest hangs red over the void (QueenLane).
@@ -705,7 +722,8 @@ namespace ChessFight.RagdollLab
             var pawn = s.Pawn;
             var pal = kit.queen;
             Vector3 start = Kit.FloorUnder(e.at, 1.5f), dir = e.dir;
-            kit.FlashRing(start, 0.75f, pal);
+            // 10-25 (승규 님: "퀸 F 쓸 떄 바닥에 노란색 임펙트 말고 좀 더 사실 적인 이펙트로"): no gold ring where she pushes
+            // off, no gold cut on the floor - her base scuffs the board (FloorScuff) and it fades.
             kit.PuffBurst(start - dir * 0.3f + Vector3.up * 0.15f, kit.dust, 5, 0.6f, 0.2f, 0.4f, 0.2f);
             kit.AddSquash(pawn, Kit.SquashKind.Spring);
             Afterimage(pawn, pal, 1.35f, 0.22f, 0.7f, true);
@@ -714,9 +732,8 @@ namespace ChessFight.RagdollLab
             Punch(pawn, null, 7f, 16);
             Tint(pawn, null, pal.main, 0.34f, 20);
             var trail = new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.4f, inkShare = 0.2f };
-            var cut = new Kit.Strip(kit, pal) { core = Color.white, coreShare = 0.45f, inkShare = 0.18f };
             var pts = new List<Vector3>();
-            var line = new List<Vector3>();
+            FloorScuff(s, start, dir);
             float nextGhost = 0f, stopped = -1f, run = 0f;
             var f = kit.Run(2.5f, (fx, d) =>
             {
@@ -734,24 +751,59 @@ namespace ChessFight.RagdollLab
                 else if (stopped < 0f) stopped = fx.age;
                 while (pts.Count > 12) pts.RemoveAt(0);
                 if (!dashing && pts.Count > 0) pts.RemoveAt(0);
-                if (pts.Count >= 2)
+                // 10-25 (승규 님: "퀸 F 스킬 쓸 때도 엉덩이에 리본 지워"): no ribbon off her (BodyTrails).
+                if (pts.Count >= 2 && BodyTrails)
                 {
                     trail.Build(pts, i => 0.4f * i / Mathf.Max(1f, pts.Count - 1f), kit.Eye);
                     trail.Apply();
                 }
                 else trail.Hide();
-                if (run > 0.5f)
-                {
-                    line.Clear();
-                    for (int i = 0; i <= 10; i++) line.Add(Kit.FloorUnder(start + dir * (0.3f + (run - 0.3f) * i / 10f), 1.5f) + Vector3.up * 0.034f);
-                    cut.Build(line, i => 0.04f + 0.3f * Mathf.Sin(Mathf.PI * Mathf.Lerp(0.06f, 0.94f, i / 10f)), kit.Eye, true);
-                    cut.tail = stopped < 0f ? 0f : Kit.EaseIn(Mathf.Clamp01((fx.age - stopped - 0.4f) / 0.25f));
-                    cut.Apply();
-                }
                 return stopped < 0f || fx.age - stopped < 0.7f;
             });
             f.strips.Add(trail);
-            f.strips.Add(cut);
+        }
+
+        /// <summary>Where her base slid: two dark scuffs a hand apart and a faint polished streak between them, laid down
+        /// behind her as she goes, lying a while, then fading - the board's own wear, no paint.</summary>
+        void FloorScuff(SwordFightSkills s, Vector3 start, Vector3 dir)
+        {
+            var pawn = s.Pawn;
+            dir = Kit.FlatDir(dir, Vector3.forward);
+            Vector3 side = Vector3.Cross(Vector3.up, dir);
+            Color dark = new Color(0.1f, 0.075f, 0.06f), sheen = new Color(1f, 0.97f, 0.9f);
+            Kit.Palette Of(Color c) => new Kit.Palette { main = c, light = c, deep = c, ink = c };
+            var marks = new[]
+            {
+                (strip: new Kit.Strip(kit, Of(dark)) { core = dark, coreShare = 1f, inkShare = 0f }, off: -0.1f, w: 0.03f, a: 0.8f),
+                (strip: new Kit.Strip(kit, Of(dark)) { core = dark, coreShare = 1f, inkShare = 0f }, off: 0.1f, w: 0.03f, a: 0.8f),
+                (strip: new Kit.Strip(kit, Of(sheen)) { core = sheen, coreShare = 1f, inkShare = 0f }, off: 0f, w: 0.1f, a: 0.05f),
+            };
+            var along = new List<float>();
+            float stopped = -1f;
+            var f = kit.Run(3.2f, (fx, d) =>
+            {
+                bool going = s != null && pawn != null && s.Stage == SfStage.Active && s.Piece == PieceKind.Queen;
+                if (going)
+                {
+                    float at = Vector3.Dot(pawn.Hips.position - start, dir);
+                    if (at > 0.05f && (along.Count == 0 || at - along[along.Count - 1] > 0.08f)) along.Add(at);
+                }
+                else if (stopped < 0f) stopped = fx.age;
+                if (along.Count < 2) { foreach (var m in marks) m.strip.Hide(); return stopped < 0f || fx.age - stopped < 0.1f; }
+                float fade = stopped < 0f ? 1f : 1f - Mathf.Clamp01((fx.age - stopped - 1.2f) / 1.4f);
+                foreach (var m in marks)
+                {
+                    var line = new List<Vector3>();
+                    foreach (float a in along) line.Add(Kit.FloorUnder(start + dir * a, 1.5f) + side * m.off + Vector3.up * 0.012f);
+                    int n = line.Count;
+                    // Lighter where she first bit in and where she came off it, wobbling a little like a real slide.
+                    m.strip.Build(line, i => m.w * (0.55f + 0.45f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((i + 0.5f) / n))) * (0.85f + 0.3f * Mathf.PerlinNoise(i * 0.7f, m.off * 10f)), kit.Eye, true);
+                    m.strip.opacity = m.a * fade;
+                    m.strip.Apply();
+                }
+                return fade > 0.01f;
+            });
+            foreach (var m in marks) f.strips.Add(m.strip);
         }
 
         /// <summary>She plants: dust thrown on ahead, a ring, and every square of her way flashing white at once.</summary>
@@ -760,10 +812,28 @@ namespace ChessFight.RagdollLab
             var s = e.by;
             Vector3 at = Kit.FloorUnder(e.at, 1.5f);
             kit.PuffBurst(at + e.dir * 0.35f + Vector3.up * 0.12f, kit.dust, 5, 0.55f, 0.2f, 0.45f, 0.2f);
-            kit.FlashRing(at, 0.6f, kit.queen);
-            kit.AddSquash(s.Pawn, Kit.SquashKind.Down);
-            if (e.size > 0.8f) kit.Release(Kit.SquaresAlong(s.Origin + e.dir * 0.3f, e.dir, e.size, 1.2f), e.dir, s.Pawn, 1.15f, kit.queen);
+            if (!Real(PieceKind.Queen)) kit.AddSquash(s.Pawn, Kit.SquashKind.Down);
+            // 10-25: no gold ring and no squares flashing white - splinters of the board kicked on ahead where she skids.
+            var keepA = chipA; var keepB = chipB; float keepShare = chipShare;
+            Color wood = FloorWood(at);
+            chipA = ChipsOf(wood); chipB = ChipsOf(wood, 0.7f); chipShare = 0.6f;
+            WallChips(at + e.dir * 0.2f + Vector3.up * 0.03f, e.dir + Vector3.up * 0.6f, 7, 2.2f, 0.5f, 0.01f, 0.03f);
+            chipA = keepA; chipB = keepB; chipShare = keepShare;
             Shake(s.Pawn, null, 0.07f, 5);
+        }
+
+        /// <summary>The colour of the floor at <paramref name="at"/>: the board square's maple or walnut, else the platform's.</summary>
+        static Color FloorWood(Vector3 at)
+        {
+            var arena = FindFirstObjectByType<SwordFightArena>();
+            Color wood = new Color(0.68f, 0.6f, 0.5f);
+            if (arena == null || !arena.WoodAt(at, out wood))
+            {
+                var fl = SwordFightEdgeFloor.Current;
+                var pr = fl != null && fl.Platform != null ? fl.Platform.GetComponent<Renderer>() : null;
+                if (pr != null && pr.sharedMaterial != null) wood = pr.sharedMaterial.color;
+            }
+            return wood;
         }
 
         // ---------------------------------------------------------------- rook
@@ -774,6 +844,7 @@ namespace ChessFight.RagdollLab
             bool aim = s.Stage == SfStage.Aim;
             Vector3 dir = aim ? s.AimDir : s.Dir;
             float reach = aim ? s.AimReach : s.Reach;
+            if (Real(PieceKind.Rook)) { RealRookMarks(s, S, aim, alpha); return; }
             var w = new Warning { k = Charge(s, S.rookWindup), alpha = alpha, quiet = aim };
             // R129 (승규 님: "장 밖으로 미리보기가 나가 있어"): only over the floor (its reach stops at the edge as well).
             reach = Mathf.Min(reach, SwordFightSkills.FloorDistance(s.Origin, dir, reach, 0.6f) - 0.1f);
@@ -869,6 +940,7 @@ namespace ChessFight.RagdollLab
         {
             if (s.Stage != SfStage.Aim && s.Stage != SfStage.Windup) return;
             bool aim = s.Stage == SfStage.Aim;
+            if (Real(PieceKind.Bishop)) { RealBishopMarks(s, S, aim, alpha); return; }
             Vector3 p = aim ? s.AimPoint : s.Point, dir = aim ? s.AimDir : s.Dir;
             // Gold when there is an enemy on the point to take; the X is the bishop's diagonals.
             Vector3 c = Kit.FloorUnder(p, 1.5f);
@@ -1328,23 +1400,41 @@ namespace ChessFight.RagdollLab
             if (OnEdgeFx(e)) return;
             switch (e.kind)
             {
-                case SfFxKind.Cast: Cast(e); break;
+                case SfFxKind.Cast:
+                    if (e.by.Piece == PieceKind.King && Real(PieceKind.King)) RealKingCast(e); else if (Real(e.by.Piece)) RealCast(e); else Cast(e);
+                    // R188: light running up the bishop's two blades as he draws them back (SwordFightSkillFx.BishopVfx.cs).
+                    if (e.by.Piece == PieceKind.Bishop) BishopWindup(e);
+                    break;
                 // R130: the block (what it took answered: SwordFightSkillFx.King.cs), a beat later the spin counter, and an
                 // attacker thrown off the block.
-                case SfFxKind.KingParry: KingBlock(e); break;
-                case SfFxKind.KingCounterSpin: KingSpin(e); break;
-                case SfFxKind.KingRepel: KingRepelFx(e); break;
-                case SfFxKind.KingCounterHit: Hit(e, kit.king, 0, 0.16f); break;
+                // 10-25: drawn for real (SwordFightSkillFx.Real.cs): the clash of steel, the turn of the blade, chips
+                // off whoever it cuts; the repel shows nothing of its own.
+                case SfFxKind.KingParry: if (Real(PieceKind.King)) RealKingBlock(e); else KingBlock(e); break;
+                case SfFxKind.KingCounterSpin: if (Real(PieceKind.King)) RealKingSpin(e); else KingSpin(e); break;
+                case SfFxKind.KingRepel: if (!Real(PieceKind.King)) KingRepelFx(e); break;
+                // R187: and on whoever the counter strikes, the gold cut of F4 (KingHitVfx).
+                case SfFxKind.KingCounterHit: if (Real(PieceKind.King)) { RealHit(e, 0, 0.14f); KingHitVfx(e); } else Hit(e, kit.king, 0, 0.16f); break;
                 case SfFxKind.KingWhiff:
-                    kit.PuffBurst(e.by.Pawn.bodies[(int)BodyId.Chest].position + e.dir * 0.4f, kit.grey, 4, 0.4f, 0.16f, 0.4f);
+                    // R193 (F5): the gold on his blade scatters off it as the point drops (KingWhiffVfx).
+                    if (Real(PieceKind.King)) KingWhiffVfx(e);
+                    else kit.PuffBurst(e.by.Pawn.bodies[(int)BodyId.Chest].position + e.dir * 0.4f, kit.grey, 4, 0.4f, 0.16f, 0.4f);
                     break;
-                case SfFxKind.QueenThrust: QueenDash(e); break;
+                // 10-25: the queen for real (SwordFightSkillFx.Real.cs): her own see-through copies, the blade's blur, bent air.
+                case SfFxKind.QueenThrust: if (Real(PieceKind.Queen)) RealQueenDash(e); else QueenDash(e); break;
                 case SfFxKind.QueenHit:
+                    if (Real(PieceKind.Queen)) { RealQueenHit(e); break; }
                     if (e.target != null) Slash(e.target.bodies[(int)BodyId.Chest].position, e.by.Dir, kit.queen);
                     Hit(e, kit.queen, e.order == 0 ? 5 : 3, e.order == 0 ? 0.16f : 0.1f);
                     break;
                 case SfFxKind.QueenStop: QueenStop(e); break;
-                case SfFxKind.RookSlam: RookSlam(e); break;
+                // 10-25: the rook and the bishop for real (SwordFightSkillFx.RealRookBishop.cs).
+                case SfFxKind.RookSlam: if (Real(PieceKind.Rook)) RealRookSlam(e); else RookSlam(e); break;
+                case SfFxKind.RookHit when Real(PieceKind.Rook): RealRookHit(e); break;
+                case SfFxKind.RookBlocked when Real(PieceKind.Rook): RealRookBlocked(e); break;
+                case SfFxKind.BishopFire when Real(PieceKind.Bishop): RealBishopFire(e); break;
+                case SfFxKind.BishopPin when Real(PieceKind.Bishop):
+                    if (e.target != null) pinnedBy[e.target] = (e.by, e.dir, kit.Clock);
+                    break;
                 case SfFxKind.RookHit:
                     // R132: the king's guard cannot stop the rook's wave: it shatters his shield and throws him.
                     if (e.target != null) ShieldShatter(e.target, e.dir);
@@ -1367,9 +1457,33 @@ namespace ChessFight.RagdollLab
                     // R132: the energy round the ring is drawn into whoever the hands took, and binds its ankles.
                     EnergyTaken(e.by, e.target, e.size);
                     break;
-                case SfFxKind.KnightLeap: KnightLeap(e); break;
-                case SfFxKind.KnightLand: KnightLand(e); break;
-                case SfFxKind.KnightHit: Hit(e, kit.knight, 0, 0.12f); break;
+                // R181: a blur round each of his thrown swords and a trail along its way, to the X (SwordFightSkillFx.BishopVfx.cs).
+                // R191: and a flash at each hand with the air split from it to its sword as they leave his hands.
+                case SfFxKind.BishopLeap: BishopFlight(e); BishopRelease(e); break;
+                // R175: the X of light where his two swords cross (SwordFightSkillFx.BishopVfx.cs); e.at is the crossing,
+                // the effect's root goes on the floor under it. R186: and a trail after each sword on its way back.
+                case SfFxKind.BishopCross:
+                    BishopVfx("F_Cross", e.at - Vector3.up * (S != null ? S.bishopCrossHeight : 0.55f), e.dir);
+                    BishopReturn(e);
+                    break;
+                // R178: whoever the X struck: the X cut on his front, sparks and air the way he is pushed (e.at is between
+                // the two of them, so it goes on his chest instead), hung on his chest so it goes with him.
+                case SfFxKind.BishopHit:
+                    if (e.target != null)
+                    {
+                        var chest = e.target.bodies[(int)BodyId.Chest];
+                        var cut = BishopVfx("F_Hit", chest.position, e.dir);
+                        if (cut != null) cut.transform.SetParent(chest.transform, true);
+                    }
+                    break;
+                // 10-25: the knight for real (SwordFightSkillFx.RealKnight.cs).
+                case SfFxKind.KnightLeap: if (Real(PieceKind.Knight)) RealKnightLeap(e); else KnightLeap(e); break;
+                // R179: the fork drawn out from where it lands over the realistic landing (SwordFightSkillFx.KnightVfx.cs).
+                case SfFxKind.KnightLand:
+                    if (Real(PieceKind.Knight)) { RealKnightLand(e); KnightVfxFork(e); }
+                    else KnightLand(e);
+                    break;
+                case SfFxKind.KnightHit: if (Real(PieceKind.Knight)) RealKnightHit(e); else Hit(e, kit.knight, 0, 0.12f); break;
                 case SfFxKind.Interrupted:
                     kit.PuffBurst(e.at, kit.grey, 4, 0.4f, 0.16f, 0.4f);
                     break;

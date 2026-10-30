@@ -217,6 +217,7 @@ namespace ChessFight.RagdollLab
         /// spreading a little, with a fleck or two of grit (R138, real dust; R139 fewer).</summary>
         void HoofDust(Vector3 floorAt, Vector3 back, float strength)
         {
+            if (kit.NoPuffs) return;   // 10-25: no dust at all
             var dust = kit.realDust;
             back = Kit.FlatDir(back, Vector3.back);
             if (dust == null)

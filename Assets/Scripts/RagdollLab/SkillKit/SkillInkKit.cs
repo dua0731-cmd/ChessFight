@@ -181,6 +181,9 @@ namespace ChessFight.RagdollLab
         /// (<see cref="SkillDust"/>) and a knockdown leaves no ink ring on the floor. Off (null), they draw as before.
         /// </summary>
         public SkillDust realDust;
+        /// <summary>10-25 (승규 님, Sword Fight: "기물들이 스킬 사용 할 때 저런 vfx 다 지워줘"): no dust or puffs at all -
+        /// <see cref="DustRing"/> and <see cref="PuffBurst"/> draw nothing (the lumps read as rocks).</summary>
+        public bool NoPuffs;
         /// <summary>The camera the dust faces (it is drawn as quads turned to it); the main camera if not given.</summary>
         public Func<Camera> View;
 
@@ -228,15 +231,19 @@ namespace ChessFight.RagdollLab
         public void Step(float dt)
         {
             Clock += dt;
-            for (int i = live.Count - 1; i >= 0; i--)
+            stepping = true;
+            addedWhileStepping = 0;
+            for (int i = live.Count - 1; i >= 0; i--) StepAt(i, dt);
+            // 10-26: an effect started from inside another's step this frame (a chip from a hit, a spark from a scrape) is
+            // stepped now too, as one started before the step is - it was drawn once unplaced first (at the kit's root, the
+            // board's middle, a metre across) and placed only the next frame. Those it starts in turn, likewise.
+            for (int pass = 0; addedWhileStepping > 0 && pass < 4; pass++)
             {
-                var f = live[i];
-                f.age += dt;
-                bool alive = !f.dead && f.age <= f.life && f.step(f, dt);
-                if (alive) continue;
-                f.Destroy();
-                live.RemoveAt(i);
+                int from = live.Count - addedWhileStepping;
+                addedWhileStepping = 0;
+                for (int i = live.Count - 1; i >= from; i--) StepAt(i, dt);
             }
+            stepping = false;
             var gone = new List<(object, string)>();
             foreach (var kv in kept) if (kv.Value.dead) gone.Add(kv.Key);
             foreach (var k in gone) kept.Remove(k);
@@ -787,12 +794,15 @@ namespace ChessFight.RagdollLab
                     bf.SetColor("_Rim", rim);
                     bf.SetFloat("_RimPower", rimPower);
                 }
+                // 10-25 (Sword Fight for real): a prop given a lit material of its own (URP Lit) takes its colour from here,
+                // and one with no ink has no hull drawn at all.
+                bf.SetColor("_BaseColor", colors.main);
                 fill.SetPropertyBlock(bf);
                 bl.SetColor("_InkColor", colors.ink);
                 bl.SetFloat("_Width", inkWidth);
                 line.SetPropertyBlock(bl);
                 // The ink hull cannot fade by dither: it goes with the prop's last third.
-                line.enabled = shown && fade > 0.33f;
+                line.enabled = shown && fade > 0.33f && inkWidth > 0f;
                 if (child != null)
                 {
                     child.fade = fade;
@@ -807,7 +817,7 @@ namespace ChessFight.RagdollLab
             {
                 shown = on;
                 fill.enabled = on;
-                line.enabled = on && fade > 0.33f;
+                line.enabled = on && fade > 0.33f && inkWidth > 0f;
                 child?.Show(on);
             }
 
@@ -858,6 +868,7 @@ namespace ChessFight.RagdollLab
         {
             var f = new Fx { life = life, step = step };
             live.Add(f);
+            if (stepping) addedWhileStepping++;
             return f;
         }
 
@@ -871,9 +882,24 @@ namespace ChessFight.RagdollLab
                 f.life = float.MaxValue;
                 kept[k] = f;
                 live.Add(f);
+                if (stepping) addedWhileStepping++;
             }
             f.touched = frame;
             return f;
+        }
+
+        bool stepping;
+        int addedWhileStepping;
+
+        /// <summary>One effect's step (<see cref="Step"/>): ended and taken away once its life is over or its step says no.</summary>
+        void StepAt(int i, float dt)
+        {
+            var f = live[i];
+            f.age += dt;
+            bool alive = !f.dead && f.age <= f.life && f.step(f, dt);
+            if (alive) return;
+            f.Destroy();
+            live.RemoveAt(i);
         }
 
         public bool Held(Fx f) => f.touched == frame;
@@ -1256,6 +1282,7 @@ namespace ChessFight.RagdollLab
         /// R138: real dust rolling out over the floor while <see cref="realDust"/> is on.</summary>
         public void DustRing(Vector3 at, int n, float radius, Palette? colors = null, float size = 0.3f, float life = 0.5f, float roll = 10f)
         {
+            if (NoPuffs) return;
             if (realDust != null)
             {
                 var c = colors ?? dust;
@@ -1287,6 +1314,7 @@ namespace ChessFight.RagdollLab
         /// palette, while <see cref="realDust"/> is on.</summary>
         public void PuffBurst(Vector3 at, Palette colors, int n, float radius, float size, float life = 0.45f, float up = 0.3f)
         {
+            if (NoPuffs) return;
             if (realDust != null)
             {
                 realDust.Burst(at, colors.light, colors.deep, n, radius, size, life, up);

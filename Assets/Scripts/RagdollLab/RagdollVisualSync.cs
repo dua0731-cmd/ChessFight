@@ -67,6 +67,7 @@ namespace ChessFight.RagdollLab
         Quaternion[] armRest;      // per arm entry: the arm body's rest rotation in the chest body's
         Vector3[] handRest;        // per hand entry: the hand body at rest in its arm body's space
         readonly Quaternion[] armDrawn = new Quaternion[2];   // this frame's drawn arm, left and right
+        float rightShare;                                     // how free the drawn sword arm is (RightArmFree, eased off)
 
         void Awake() => Setup();
 
@@ -172,6 +173,9 @@ namespace ChessFight.RagdollLab
             }
         }
 
+        /// <summary>After the skeleton is drawn this frame: what is held in a drawn hand is placed now, not a frame behind it.</summary>
+        public event Action Posed;
+
         void LateUpdate()
         {
             // A per-screen hit stop (R111, online): the picture holds still while the bodies go on.
@@ -179,8 +183,15 @@ namespace ChessFight.RagdollLab
             if (pieceLook)
             {
                 PoseAsPiece();
+                Posed?.Invoke();
                 return;
             }
+            PoseAsPawn();
+            Posed?.Invoke();
+        }
+
+        void PoseAsPawn()
+        {
             var bodies = pawn.bodies;
             for (int i = 0; i < entries.Length; i++)
             {
@@ -213,6 +224,8 @@ namespace ChessFight.RagdollLab
             Vector3 waist = chestBody.position;
             // Reaching for something the arms go where their bodies are; otherwise they are calmed (R145).
             bool reaching = pawn.ArmsStretched || pawn.Grabbing;
+            // The sword arm is drawn free at once (the sword is in its hand) and calmed again over a moment.
+            rightShare = pawn.RightArmFree ? 1f : Mathf.MoveTowards(rightShare, 0f, Time.deltaTime / 0.12f);
             for (int i = 0; i < entries.Length; i++)
             {
                 Entry e = entries[i];
@@ -242,10 +255,15 @@ namespace ChessFight.RagdollLab
                             if (pawn.ArmsStretched) k = Mathf.Max(1f, reach);
                             else if (pawn.Grabbing) k = Mathf.Clamp(reach, 1f, PieceArmDraw);
                             Quaternion inChest = Quaternion.Inverse(chestBody.rotation) * a.rotation;
-                            if (!reaching)
+                            // 10-25 (승규 님: "이 모션이랑 팔 각도를 자연스럽게"): a sword arm goes all the way with its cut.
+                            // 10-26: and a skill's free arm with its pose (LeftArmShare); each eases back to calm, so the
+                            // arm does not pop down when a skill lets it go.
+                            float share = e.driverA == (int)BodyId.ArmR ? rightShare : pawn.LeftArmShare;
+                            if (!reaching && share < 1f)
                             {
                                 Quaternion swing = Quaternion.Slerp(Quaternion.identity, Quaternion.Inverse(armRest[i]) * inChest, PieceArmSwing);
-                                inChest = armRest[i] * Quaternion.RotateTowards(Quaternion.identity, swing, PieceArmMost);
+                                Quaternion calm = armRest[i] * Quaternion.RotateTowards(Quaternion.identity, swing, PieceArmMost);
+                                inChest = share > 0f ? Quaternion.Slerp(calm, inChest, share) : calm;
                             }
                             Quaternion arm = chest * inChest;
                             armDrawn[e.driverA == (int)BodyId.ArmL ? 0 : 1] = arm;

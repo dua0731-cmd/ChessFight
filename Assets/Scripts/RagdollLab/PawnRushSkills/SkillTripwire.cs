@@ -39,8 +39,9 @@ namespace ChessFight.RagdollLab
         float age, height;
         bool armed;
         int trips;
-        // R153: the thin thread from the nearest peg to the bishop's hand (its leash, drawn on every PC).
+        // R153: the thin thread from the nearest peg to the bishop's hand (its leash). Not drawn since 10-25 (ShowLeash).
         LineRenderer leash;
+        static readonly bool ShowLeash = false;
 
         /// <summary>How far the bishop is from the wire's middle, across the floor (R153: past bishopLeash the wire goes).</summary>
         public float LeashDistance => owner != null ? Vector2.Distance(Flat(owner.Hips.position), Flat(center)) : float.MaxValue;
@@ -742,6 +743,10 @@ namespace ChessFight.RagdollLab
         /// </summary>
         void DrawLeash()
         {
+            // 10-25 승규 님 (picture of the thread running into the bishop's hand: "비숍 스킬 쓸 때 자기손에 들어 있는 줄은 빼줘"): the
+            // thread is not drawn any more; the leash itself (6 m, SkillTripwire.FixedUpdate) still holds.
+            SkillMarks.Hide(leash);
+            if (ShowLeash == false) return;
             if (owner == null || skills == null || owner.State == PawnState.Ragdoll)
             {
                 SkillMarks.Hide(leash);

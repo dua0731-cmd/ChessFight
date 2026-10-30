@@ -85,7 +85,7 @@ namespace ChessFight.RagdollLab
         public bool SkillNetIdle =>
             PawnRushSkills == null
             || (skillStage == SkillStage.None && skillCooldownLeft <= 0f && getUpGuardLeft <= 0f && chainPhase == ChainPhase.None
-                && wardLeft <= 0f && castleAsker == null && !flying && qhCrouch <= 0.001f);
+                && lassoPhase == LassoPhase.None && wardLeft <= 0f && castleAsker == null && !flying && qhCrouch <= 0.001f);
 
         /// <summary>This piece's skill as the others need to draw it. <paramref name="refOf"/> turns a piece into its
         /// roster place.</summary>
@@ -133,6 +133,16 @@ namespace ChessFight.RagdollLab
                 RagdollPawn target = null;
                 switch (piece)
                 {
+                    case PieceKind.Bishop when PawnRushSkills != null && PawnRushSkills.bishopRope:
+                        // 10-26, the X rope: D its phase, A its length, P its tip, Q where it left from, Target the piece
+                        // it is round (or, aiming, the enemy it would go to).
+                        dir = lassoDir;
+                        p = lassoTip;
+                        q = lassoFrom;
+                        s.D = (byte)lassoPhase;
+                        s.A = lassoRest;
+                        target = lassoOn != null ? lassoOn : skillStage == SkillStage.Windup ? lassoAim : null;
+                        break;
                     case PieceKind.Bishop:
                         p = bishopPoint;
                         q = bishopFrom;
@@ -215,7 +225,19 @@ namespace ChessFight.RagdollLab
                 bishopValid = (s.Flags & NetValid) != 0;
                 knightTapped = (s.Flags & NetTapped) != 0;
                 netKicked = knightTapped;
-                if (piece == PieceKind.Bishop)
+                if (piece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope)
+                {
+                    // 10-26, the X rope (see the host's side above).
+                    bishopYaw = FlatDir(dir, bishopYaw);
+                    if (dir.sqrMagnitude > 0.5f) lassoDir = dir.normalized;
+                    lassoPhase = (LassoPhase)s.D;
+                    lassoRest = s.A;
+                    lassoFrom = q;
+                    lassoOn = lassoPhase == LassoPhase.Hold ? target : null;
+                    if (skillStage == SkillStage.Windup && !IsLocalView) lassoAim = target;
+                    lassoTip = lassoPhase == LassoPhase.Hold && target != null ? target.LassoBelly : p;
+                }
+                else if (piece == PieceKind.Bishop)
                 {
                     bishopYaw = FlatDir(dir, bishopYaw);
                     bishopPoint = p;
@@ -259,7 +281,7 @@ namespace ChessFight.RagdollLab
         public void ClearSkillNet()
         {
             if (netStage == SkillStage.None && skillStage == SkillStage.None && skillCooldownLeft <= 0f && !flying && castleAsker == null
-                && wardLeft <= 0f && qhCrouch <= 0f && chainPhase == ChainPhase.None) return;
+                && wardLeft <= 0f && qhCrouch <= 0f && chainPhase == ChainPhase.None && lassoPhase == LassoPhase.None) return;
             netStage = SkillStage.None;
             netLocked = netKicked = false;
             skillStage = SkillStage.None;
@@ -271,6 +293,8 @@ namespace ChessFight.RagdollLab
             castleAsker = null;
             knightTarget = qhTarget = leapTarget = pawnTarget = chainOn = null;
             chainPhase = ChainPhase.None;
+            lassoOn = null;
+            lassoPhase = LassoPhase.None;
             stageTime = 0f;
             ApplyPrediction();
         }
@@ -288,6 +312,11 @@ namespace ChessFight.RagdollLab
             {
                 chainT += dt;
                 if (chainPhase == ChainPhase.Pull && chainOn != null) chainTip = chainOn.bodies[(int)BodyId.Chest].position;
+            }
+            if (lassoPhase != LassoPhase.None)
+            {
+                lassoT += dt;
+                if (lassoPhase == LassoPhase.Hold && lassoOn != null) lassoTip = lassoOn.LassoBelly;
             }
             if (castleAsker != null) castleAskAge += dt;
             if (predictLeft > 0f)

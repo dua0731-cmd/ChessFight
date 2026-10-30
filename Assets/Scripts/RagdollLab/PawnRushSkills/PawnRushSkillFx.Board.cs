@@ -50,6 +50,10 @@ namespace ChessFight.RagdollLab
             return p;
         }
         static readonly Kit.Palette BSilver = Pal("#C2C9D3", "#FAFBFD", "#7B8491", 1f);
+        /// <summary>The knight's own colour, as in Sword Fight (10-29, 승규 님: "소드 파이트에 있는 나이트 고유색을 폰 러쉬
+        /// 스킬 나이트 바닥 색에도"): the deep warm bronze #7A3E10 with its warm amber #FFD9A8 (KnightVfxBuilder, R213);
+        /// it was the bishop's silver.</summary>
+        static readonly Kit.Palette BKnight = Pal("#7A3E10", "#FFD9A8", "#4A2408", 1f);
         /// <summary>The bishop's squares: the board's dark squares.</summary>
         static readonly Kit.Palette BSquare = Pal("#2E3142", "#5A5F75", "#1C1D26");
         /// <summary>Board dust: cream, walnut in the shade.</summary>
@@ -72,7 +76,7 @@ namespace ChessFight.RagdollLab
             kit.king = BKing;
             kit.rook = BOrange;
             kit.bishop = BSilver;
-            kit.knight = BSilver;
+            kit.knight = BKnight;
             kit.ally = BOrange;
             kit.enemy = Kit.EnemyRed;   // R130: red, not mauve ("빨간색 계열로")
             kit.dust = BCream;
@@ -137,7 +141,7 @@ namespace ChessFight.RagdollLab
         }
 
         /// <summary>The bottom-right skill card in the board look (10-12, 승규 님: "f 스킬 설명 UI 색깔도 그에 맞게"): the key in
-        /// the piece's pad colour (pawn and rook the soft orange pad, queen gold, bishop and knight silver) on the pads' navy.</summary>
+        /// the piece's pad colour (pawn and rook the soft orange pad, queen gold, bishop silver, knight bronze) on the pads' navy.</summary>
         public static void SkillCard(Rect r, string key, string name, string line, PieceKind kind, bool lit, float cooldown01)
         {
             if (!BoardLook)
@@ -145,7 +149,7 @@ namespace ChessFight.RagdollLab
                 SkillKeyCard.Draw(r, key, name, line, SkillKeyCard.Colors(kind), lit, false, cooldown01);
                 return;
             }
-            var pal = kind == PieceKind.Queen ? BQueen : kind == PieceKind.King ? BKing : kind == PieceKind.Bishop || kind == PieceKind.Knight ? BSilver : BOrange;
+            var pal = kind == PieceKind.Queen ? BQueen : kind == PieceKind.King ? BKing : kind == PieceKind.Bishop ? BSilver : kind == PieceKind.Knight ? BKnight : BOrange;
             SkillKeyCard.Draw(r, key, name, line, pal, lit, false, cooldown01, true);
         }
 

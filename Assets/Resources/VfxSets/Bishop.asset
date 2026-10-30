@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cdc53bce073d78ca1b4a3fa0ac4c736, type: 3}
+  m_Name: Bishop
+  m_EditorClassIdentifier: ChessFight.VFX::ChessFight.VFX.VfxSet
+  entries:
+  - key: F_Cross
+    prefab: {fileID: 4120654158581366022, guid: 044ccab365c60fd42a13490beb4cdd54, type: 3}
+  - key: F_Hit
+    prefab: {fileID: 178884775466303957, guid: f59c37c878a8a96419c7989a14d8d567, type: 3}
+  - key: F_Flight
+    prefab: {fileID: 4169399240807676646, guid: f14d7b3e5884a4a42bbb7fb2cf32dcb2, type: 3}
+  - key: F_Return
+    prefab: {fileID: 5852869659929236828, guid: 797954836917e4647a0d4e4b6c896c4b, type: 3}
+  - key: F_Windup
+    prefab: {fileID: 1679614634989980675, guid: dd2b8336cac6f0e4f9d24ec38cf02ea9, type: 3}
+  - key: F_Throw
+    prefab: {fileID: 6582147325128380330, guid: 6ebf24a1181f70e41bfb609e7cb63373, type: 3}
+  - key: F_Draw
+    prefab: {fileID: 8310428465761139665, guid: 075c5f60f830fe9468a9abdd5fcfcf09, type: 3}

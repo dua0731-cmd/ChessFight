@@ -58,19 +58,76 @@ namespace ChessFight.RagdollLab
             { "KingParry", 0.95f }, { "KingCounterHit", 0.8f }, { "KingWhiff", 0.55f },
             { "QueenThrust", 0.8f }, { "QueenHit", 0.85f }, { "QueenStop", 0.55f },
             { "RookSlam", 0.9f }, { "RookHit", 0.8f }, { "RookBlocked", 0.7f },
-            { "BishopFire", 0.75f }, { "BishopPin", 0.85f }, { "BishopSet", 0.7f },
-            { "KnightLeap", 0.75f }, { "KnightLand", 0.85f }, { "KnightHit", 0.8f },
+            // 10-28 (사용자 "비숍 f 기존에 있던 사운드는 지우고 아예 새롭게"): the old F's BishopFire and BishopPin clips are
+            // gone and CastBishop is a new take - the X cut's moments below are one family of airy steel swishes.
+            { "BishopSet", 0.7f },
+            { "KnightLeap", 1f }, { "KnightLand", 0.85f }, { "KnightHit", 0.8f },
             { "Interrupted", 0.55f },
-            { "KingStab", 0.9f }, { "QueenMark", 0.9f }, { "RookCollapse", 0.95f }, { "BishopReach", 0.85f }, { "KnightFlip", 0.9f },
+            { "KingStab", 0.9f }, { "QueenMark", 0.9f }, { "RookCollapse", 0.95f }, { "BishopReach", 0.85f }, { "KnightFlip", 1f },
+            // 10-25 (승규 님: "칼집에서 뽑는 소리, 베인 뒤 한 박자 늦게 반응"): the queen's draw as she goes through, and the cut a beat later.
+            { "QueenBlink", 0.9f }, { "QueenCut", 0.9f },
+            // 10-26 later (승규 님): KnightFlip, QueenThrust, KingVault (stronger, cinematic), BishopReach and BishopSet are
+            // new realistic takes in place of the old ones.
+            // 10-26, the realistic effects' own sounds (ElevenLabs): the knight's kick landing,
+            // the queen's sparks on the thrust and on the hit, the king's vault off the sword and its landing, the bishop's catch.
+            { "KnightKickHit", 0.85f }, { "QueenThrustSparks", 0.55f }, { "QueenHitSparks", 0.6f },
+            { "KingVault", 0.75f }, { "KingLand", 0.85f }, { "BishopCatch", 0.75f }, { "RookTremble", 0.85f },
+            // 10-28 (the king's edge effects E2, E5, E6): the crown drawn on his landing spot, the enemies his landing hits
+            // (under KingLand), the fall when his sword is cut out.
+            { "KingMark", 0.55f }, { "KingLandHit", 0.6f }, { "KingDrop", 0.6f },
+            // 10-28, the moments the new effects (R172 - R203) drew without a sound: the bishop's X cut (the second sword
+            // forming, the throw, the cross, a piece it took), the king's counter cut, the knight's crouch and kick on the
+            // edge, the queen's edge cut missing.
+            { "BishopDraw", 0.6f }, { "BishopLeap", 0.75f }, { "BishopCross", 0.85f }, { "BishopHit", 0.8f },
+            { "KingCounterSpin", 0.8f }, { "KnightCrouch", 0.6f }, { "KnightKick", 0.75f }, { "QueenMiss", 0.5f },
+            // 10-29: each piece's sword whoosh on a click cut (SwordFightPawn.SwingSound), under the skills' moments.
+            // The rook's heavy blade (rook_c in code) a little under its old level (승규 님: "룩 휘두르는 소리 아주 살짝만 낮추고"), then it and the queen's a little
+            // lower again ("퀸이랑 룩 칼 휘두르는 소리 조금만 낮춰").
+            // The rook's louder (승규 님: "룩 사운드를 키워주고"): its low rumble reads quiet at the same level. So does the bishop's
+            // thin flick (the A made in code: "B로해서 소리 키워줘", then "A로 해줘").
+            // 10-29 later ("비숍 칼 휘두르는 사운드 다시"): the bishop's is a fuller blade now (pawn_swing.py bishop_d), so
+            // less of a lift than the thin flick had.
+            { "SwingKing", 0.5f }, { "SwingQueen", 0.42f }, { "SwingRook", 0.7f }, { "SwingBishop", 0.75f },
+            { "SwingKnight", 0.5f }, { "SwingPawn", 0.5f },
+            // 10-29 (승규 님: "상대맞출 때 sfx … 모든 기물 동일하게"): one sword hit for every piece (SwordFightPawn.FlashHit).
+            // A touch louder (승규 님: "상대 맞을 때 소리 아주아주 살짝만 키워줘").
+            // 10-29 later (승규 님: the old one sounded like blade on blade): now a blade striking a wooden figure, ElevenLabs
+            // take B (a whoosh into a dull wooden thunk). 10-30 (승규 님: "0.9까지 키워"), then
+            // "좀 더 굵직하게": SwordHit.wav is B with more low body (Tools/Sfx/SwordFightSwing/sword_hit_thick.py).
+            { "SwordHit", 0.9f },
+            // R236 10-29 (승규 님: "알맞는 sfx 넣어줘 일레븐렙스에서"): the bishop's diagonal slide in his edge family (wind
+            // energy, R116 E): the aim opening and called off (his own screen, from SwordFightSkillFx.BishopSlide), the
+            // glide, an enemy shoved off his way, the stop.
+            { "BishopSlideAim", 0.5f }, { "BishopSlideCancel", 0.45f }, { "BishopSlide", 0.85f }, { "BishopSlideHit", 0.75f },
+            { "BishopSlideStop", 0.55f },
+        };
+
+        /// <summary>Moments that play another moment's clip (10-28): the king's landing hit is his counter's hit, his fall
+        /// when the sword is cut out is his whiff (the gold falling from the blade) - one family of sounds for the king.</summary>
+        static readonly Dictionary<string, string> Alias = new Dictionary<string, string>
+        {
+            { "KingLandHit", "KingCounterHit" }, { "KingDrop", "KingWhiff" },
+            // (10-29: the queen's edge cut finding no one has its own QueenMiss now, not her thrust's stop - 승규 님 "퀸 E
+            // 스킬 sfx 하나하나 다시".)
+        };
+
+        /// <summary>Sounds laid over a moment's own, started with it and never delayed (10-26): the queen's sparks.</summary>
+        static readonly Dictionary<string, string[]> Layers = new Dictionary<string, string[]>
+        {
+            { "QueenThrust", new[] { "QueenThrustSparks" } },
+            { "QueenHit", new[] { "QueenHitSparks" } },
+            // 10-28: the king's sword going in starts the swell of the crown drawn where he will land (E2).
+            { "KingStab", new[] { "KingMark" } },
         };
 
         /// <summary>The edge skills' sounds (R116): each belongs to its skill while it runs and stops if that is called off.
         /// The rook's plays when its chunk falls (the floor's news, not a skill moment).</summary>
-        static readonly HashSet<string> Edge = new HashSet<string> { "KingStab", "QueenMark", "RookCollapse", "BishopReach", "KnightFlip" };
+        static readonly HashSet<string> Edge = new HashSet<string> { "KingStab", "KingMark", "QueenMark", "RookCollapse", "BishopReach", "KnightCrouch", "KnightFlip", "KnightKick", "BishopSlide" };
 
-        /// <summary>Seconds (game time, the skill's own clock) after its moment a sound starts: the knight's hit lands 0.35 s
-        /// into its clip, on the kick 0.8 s into the somersault.</summary>
-        static readonly Dictionary<string, float> Delay = new Dictionary<string, float> { { "KnightFlip", 0.45f } };
+        /// <summary>Seconds (game time, the skill's own clock) after its moment a sound starts. 10-26: none now - the knight's
+        /// somersault sound is its spin from the start (승규 님: "기존 소리 말고 다른 소리"), and its kick has its own
+        /// KnightKickHit; it was 0.45 s for the old clip whose hit was the kick.</summary>
+        static readonly Dictionary<string, float> Delay = new Dictionary<string, float>();
 
         public const string Folder = "SwordFightSkillSfx";
         const int Voices = 12;
@@ -83,8 +140,8 @@ namespace ChessFight.RagdollLab
 
         struct Waiting { public string name; public Vector3 at; public SwordFightSkills by; public float left; }
         readonly List<Waiting> waiting = new List<Waiting>();
-        // The edge skill sound each piece has going: its voice and sound.
-        readonly Dictionary<SwordFightSkills, (int voice, Sound sound)> edgeVoice = new Dictionary<SwordFightSkills, (int, Sound)>();
+        // The edge skill sounds each piece has going (the moment's own and its layers): their voices and sounds.
+        readonly Dictionary<SwordFightSkills, List<(int voice, Sound sound)>> edgeVoice = new Dictionary<SwordFightSkills, List<(int, Sound)>>();
         SwordFightSkillFx fx;
 
         /// <summary>The bed's sounds, for the probe's report.</summary>
@@ -132,7 +189,11 @@ namespace ChessFight.RagdollLab
         void OnFx(SfFxEvent e)
         {
             if (e.kind == SfFxKind.EdgeCancel || e.kind == SfFxKind.BishopDrop) { CutEdge(e.by); return; }
+            // 10-28: the king's sword cut out - the crown's swell stops, then his fall plays.
+            if (e.kind == SfFxKind.KingDrop) CutEdge(e.by);
             string name = ClipName(e);
+            if (name != null && Layers.TryGetValue(name, out var layers))
+                foreach (var layer in layers) Play(layer, e.at, e.by);
             if (name != null && Delay.TryGetValue(name, out float wait) && wait > 0f)
             {
                 if (sound && sounds.ContainsKey(name)) waiting.Add(new Waiting { name = name, at = e.at, by = e.by, left = wait });
@@ -143,6 +204,8 @@ namespace ChessFight.RagdollLab
 
         void OnFloor(SwordFightEdgeFloor.Collapse c)
         {
+            // 10-26 (승규 님: "그 특정 땅이 흔들리는데 그 소리가 없어"): the chunk's tremble before it falls has its rumble.
+            if (c.phase == SwordFightEdgeFloor.Phase.Crack) Play("RookTremble", c.lip, c.by);
             if (c.phase == SwordFightEdgeFloor.Phase.Open) Play("RookCollapse", c.lip, c.by);
         }
 
@@ -173,15 +236,26 @@ namespace ChessFight.RagdollLab
             waiting.RemoveAll(w => w.by == by);
             if (!edgeVoice.TryGetValue(by, out var held)) return;
             edgeVoice.Remove(by);
-            var a = voices[held.voice];
-            if (!a.isPlaying || a.clip != held.sound.clip) return;
-            fading[held.voice] = a.volume / CutFade;
-            Cut?.Invoke(held.sound, CutFade);
+            foreach (var (voice, s) in held)
+            {
+                var a = voices[voice];
+                if (!a.isPlaying || a.clip != s.clip) continue;
+                fading[voice] = a.volume / CutFade;
+                Cut?.Invoke(s, CutFade);
+            }
         }
 
-        void Play(string name, Vector3 at, SwordFightSkills by)
+        /// <summary>A moment that is no <see cref="SfFxKind"/> (the effects see it themselves, like the bishop's second
+        /// sword forming): its sound, if a bed's sounds are up.</summary>
+        public static void Moment(string name, Vector3 at, SwordFightSkills by, float pitch = 1f)
         {
-            if (!sound || name == null || !sounds.TryGetValue(name, out var s)) return;
+            if (Current != null) Current.Play(name, at, by, pitch);
+        }
+
+        void Play(string name, Vector3 at, SwordFightSkills by, float pitch = 1f)
+        {
+            if (!sound || name == null) return;
+            if (!sounds.TryGetValue(Alias.TryGetValue(name, out string other) ? other : name, out var s)) return;
             if (lastFrame.TryGetValue(name, out int f) && f == Time.frameCount) return;
             lastFrame[name] = Time.frameCount;
             Count[name] = Count.TryGetValue(name, out int n) ? n + 1 : 1;
@@ -195,8 +269,14 @@ namespace ChessFight.RagdollLab
             a.clip = s.clip;
             a.volume = gain;
             a.panStereo = pan;
+            a.pitch = pitch;
             a.Play();
-            if (by != null && Edge.Contains(name)) edgeVoice[by] = (voice, s);
+            if (by != null && Edge.Contains(name))
+            {
+                if (!edgeVoice.TryGetValue(by, out var held)) edgeVoice[by] = held = new List<(int, Sound)>();
+                held.RemoveAll(h => !voices[h.voice].isPlaying || voices[h.voice].clip != h.sound.clip || h.voice == voice);
+                held.Add((voice, s));
+            }
             Played?.Invoke(s, gain, pan);
         }
 

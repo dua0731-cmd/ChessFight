@@ -489,7 +489,8 @@ namespace ChessFight.Game
                 text.AddToClassList("disp");
                 text.AddToClassList("s2-tab-text");
                 tab.Add(text);
-                tab.generateVisualContent += DrawTabPlate;
+                // 10-27 (승규 님): the chosen tab on flat smoked glass with a thin gold edge, as the lobby (design A)
+                tab.userData = GlassPlate.On(tab, 8f);
                 tab.clicked += () => { if (tabIndex != index) { tabIndex = index; pageIndex = 0; ShowTab(); } };
                 ChunkyButtons.Springy(tab);
                 tabsBox?.Add(tab);
@@ -512,33 +513,6 @@ namespace ChessFight.Game
             ChunkyButtons.Springy(button);
         }
 
-        // The chosen tab sits on a gold slab with clipped corners.
-        static void DrawTabPlate(MeshGenerationContext context)
-        {
-            var e = context.visualElement;
-            if (!e.ClassListContains("s2-tab-on")) return;
-            float w = e.layout.width, h = e.layout.height, d = 4f, cut = 7f;
-            var painter = context.painter2D;
-            void Plate(float y0, float y1, Color color)
-            {
-                painter.fillColor = color;
-                painter.BeginPath();
-                painter.MoveTo(new Vector2(cut, y0));
-                painter.LineTo(new Vector2(w - cut, y0));
-                painter.LineTo(new Vector2(w, y0 + cut));
-                painter.LineTo(new Vector2(w, y1 - cut));
-                painter.LineTo(new Vector2(w - cut, y1));
-                painter.LineTo(new Vector2(cut, y1));
-                painter.LineTo(new Vector2(0, y1 - cut));
-                painter.LineTo(new Vector2(0, y0 + cut));
-                painter.ClosePath();
-                painter.Fill();
-            }
-            Plate(d, h, PieceFigure.Hex(0x6E4300));
-            Plate(0, h - d, PieceFigure.Hex(0xFFC93D));
-            Plate(0, (h - d) * .45f, PieceFigure.Hex(0xFFE07A));
-        }
-
         void ShowTab()
         {
             CloseMenu();
@@ -549,8 +523,13 @@ namespace ChessFight.Game
                 int i = 0;
                 foreach (var tab in tabsBox.Children())
                 {
-                    tab.EnableInClassList("s2-tab-on", i++ == tabIndex);
-                    tab.MarkDirtyRepaint();
+                    bool on = i++ == tabIndex;
+                    tab.EnableInClassList("s2-tab-on", on);
+                    if (tab.userData is GlassPlate plate)
+                    {
+                        plate.Show(on);
+                        plate.Set(on, false);
+                    }
                 }
             }
             if (subsBox == null) return;

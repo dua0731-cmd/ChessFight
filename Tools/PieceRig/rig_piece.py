@@ -212,6 +212,45 @@ for name in names:
         fs = [(k * n + j, k * n + (j + 1) % n, (k + 1) * n + (j + 1) % n, (k + 1) * n + j)
               for k in range(rings - 1) for j in range(n)]
         extra.append((vs, fs, [base_uv(Vector((cx, cy, zbase)))] * len(vs), ws))
+    # Shoulders (10-25, 승규 님: "팔 각도를 자연스럽게 … 스킨닝도 이어지도록"): a sword arm is drawn all the way round its
+    # shoulder now, and the stub, its own island, swung its root out of the body, opening a gap (on the rook, the round
+    # socket it sits in). A ball on the body's chain, centred where the stub turns (PieceModelBaker's shoulder mark: the
+    # stub's inner end, 1.2 cm out) and a little wider than the stub, fills it; at rest it is inside the stub and body.
+    def chain_weight(z):
+        if z <= zs[0]: return {"Hips": 1.0}
+        if z >= zs[-1]: return {"Head": 1.0}
+        for k in range(len(zs) - 1):
+            if z <= zs[k + 1]:
+                t = smooth((z - zs[k]) / (zs[k + 1] - zs[k]))
+                return {chain[k]: 1 - t, chain[k + 1]: t}
+    under = len(extra)
+    for side in ("Left", "Right"):
+        stub = [i for i in range(len(verts)) if label[i] == side + "Arm"]
+        if not stub: continue
+        x_in = min(abs(verts[i].x) for i in stub)
+        sign = 1.0 if sum(verts[i].x for i in stub) > 0 else -1.0
+        ys = [verts[i].y for i in stub]; zs_ = [verts[i].z for i in stub]
+        c = Vector((sign * (x_in + 0.012), (min(ys) + max(ys)) / 2, (min(zs_) + max(zs_)) / 2))
+        r = 0.55 * max(max(ys) - min(ys), max(zs_) - min(zs_))
+        rings, n = 10, 16
+        vs = [Vector((c.x, c.y, c.z + r))]
+        for k in range(1, rings):
+            a = math.pi * k / rings
+            for j in range(n):
+                b = 2 * math.pi * j / n
+                vs.append(Vector((c.x + r * math.sin(a) * math.cos(b), c.y + r * math.sin(a) * math.sin(b), c.z + r * math.cos(a))))
+        vs.append(Vector((c.x, c.y, c.z - r)))
+        last = len(vs) - 1
+        fs = [(0, 1 + (j + 1) % n, 1 + j) for j in range(n)]
+        for k in range(rings - 2):
+            for j in range(n):
+                a0 = 1 + k * n + j; a1 = 1 + k * n + (j + 1) % n
+                fs.append((a0, a1, a1 + n, a0 + n))
+        base_k = 1 + (rings - 2) * n
+        fs += [(base_k + j, base_k + (j + 1) % n, last) for j in range(n)]
+        root = min(stub, key=lambda i: abs(verts[i].x))
+        extra.append((vs, fs, [uv_of[root]] * len(vs), [chain_weight(c.z)] * len(vs)))
+        print("SHOULDER", name, side, "centre %.3f %.3f %.3f" % tuple(c), "radius %.3f" % r)
     added = []
     for idx, (vs, fs, uvs, ws) in enumerate(extra):
         me2 = bpy.data.meshes.new("%s_extra%d" % (name, idx))
@@ -234,7 +273,7 @@ for name in names:
         mesh.select_set(True)
         bpy.context.view_layer.objects.active = mesh
         bpy.ops.object.join()
-    print("UNDER", name, "base bottom %.3f" % zbase, "lid" if inward > 10 else "no lid", "(%d inward faces)" % inward, "legs", len(extra) - (1 if inward > 10 else 0))
+    print("UNDER", name, "base bottom %.3f" % zbase, "lid" if inward > 10 else "no lid", "(%d inward faces)" % inward, "legs", under - (1 if inward > 10 else 0), "shoulders", len(extra) - under)
 
     mod = mesh.modifiers.new("Armature", "ARMATURE"); mod.object = arm
     mesh.parent = arm

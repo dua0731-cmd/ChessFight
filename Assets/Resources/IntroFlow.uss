@@ -84,3 +84,8 @@
 .tr-title { height: 56px; margin-top: 4px; font-size: 46px; color: rgb(255, 243, 218); -unity-text-align: middle-center; white-space: nowrap; }
 .tr-bar { width: 220px; height: 4px; margin-top: 10px; background-color: rgba(0, 0, 0, 0.73); }
 .tr-bar-fill { position: absolute; left: 0; top: 0; right: 0; bottom: 0; transform-origin: left; scale: 0 1; }
+/* 10-27 (승규 님: "입체감 빼줘"): flat smoked glass with a thin gold edge (GlassPlate), like the lobby, no arrow */
+.name-start { background-color: rgba(0, 0, 0, 0); border-width: 0; border-radius: 12px; }
+.name-start-text { color: rgb(255, 233, 184); letter-spacing: 4px; }
+.name-start-arrow { display: none; }
+.name-start:hover, .name-start:active { background-color: rgba(0, 0, 0, 0); }

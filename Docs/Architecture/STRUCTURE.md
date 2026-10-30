@@ -26,6 +26,8 @@ Assets/
                       PC_RPAsset·PC_Renderer·Mobile_*·전역 설정)
   Shaders/URP/        우리 셰이더가 함께 쓰는 URP HLSL(CFLit 조명, CFShadowCaster 그림자) (R151)
   StreamingAssets/    시작 로고 영상
+  VFX/                이펙트 한 묶음(R159, T7 예외 FX1): Scenes/VFX_Workbench · Prefabs/<기물>·Common · Graphs · Shaders · Materials ·
+                      Textures · Meshes · Settings(작업대 블룸 볼륨). [VFX](../VFX/README.md)
   InputSystem_Actions.inputactions   템플릿 파일(빌드 설정이 참조해 남김)
 Docs/                 문서 트리 (HANDOFF.md에서 시작)
 Tests/Network/        Unity 밖 테스트 (Core, 모의 Steam 세션)
@@ -51,6 +53,7 @@ Tools/                테스트 스크립트, Generators/(씬·프리팹 생성�
 | `Scripts/PawnRush/` | `ChessFight.PawnRush` | Game, Gameplay, Core | — | 폰 러시 코스 01: 코드로 만드는 코스(`Course01v4Builder`), 미션 광장·미니게임, 검증기, 오프라인 플레이(`Course01Playtest`) |
 | `Scripts/PawnRushEditor/` | `ChessFight.PawnRush.Editor` | PawnRush 등 | Editor 전용 | 메뉴 Pawn Rush(Open/Build/Validate Course01, 거울 복사) |
 | `Scripts/ImportedMapEditor/` | `ChessFight.ImportedMap.Editor` | Game, Gameplay | Editor 전용 | 가져온 장애물 프리팹 선택 메뉴(맵 씬은 10-08 삭제) |
+| `Scripts/VFX/` | `ChessFight.VFX` | Game | — | VFX 작업대(`VfxWorkbench`, 에디터 전용 폴더 읽기)와 이펙트 프리팹 루트(`VfxCue`: 시작 위치 · 시간표 · `TargetPosition`/`Density` 입력). `VisualEffect`는 엔진 모듈이라 VFX Graph 패키지 없이도 컴파일. **Steam·래그돌 무참조** (R159, [VFX](../VFX/README.md)) |
 
 Steam 게이트 어셈블리의 플랫폼은 Editor, WindowsStandalone64/32다.
 
@@ -97,3 +100,4 @@ Input (자기 등록, 아무도 참조하지 않음)
 | 폰 러쉬 결과 화면(R76, R62를 대신함) | `Scenes/PawnRushVictory.unity`·`PawnRushLose.unity`, `Scripts/Game/PawnRushResult*.cs`(진행·무대·결과판, Steam 모름), 말 `LastSceneFigure.cs`·메시 `LastSceneArt.cs`, `Scripts/Core/MatchResult.cs`(도착 순서 규칙), `Resources/PawnRushResultHud.uxml` / `.uss`, `PawnRushResultTheme.tss` ([UI §13](UI.md#13-폰-러쉬-결과-화면-r76-2026-10-06)) |
 | 이동 동기화 | `Scripts/Network/SteamMotion.cs`, `Scripts/Core/MotionProtocol.cs` |
 | 씬 흐름 | `Scripts/Bootstrap/NetworkRuntime.cs` |
+| VFX 이펙트 · 작업대(R159) | `Assets/VFX/`(T7 예외, DECISIONS FX1): 기물별 프리팹 `Prefabs/<기물>/`, 작業대 `Scenes/VFX_Workbench.unity`, 코드 `Scripts/VFX/` |

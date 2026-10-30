@@ -35,6 +35,9 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SkillTest/SwordFight_SkillTest/SwordFight_SkillTest.unity
     guid: 5c3cb39691785984cad1d300ea254d09
+  - enabled: 1
+    path: Assets/Scenes/SkillTest/SwordFight_ArenaSkillTest/SwordFight_ArenaSkillTest.unity
+    guid: c632650b7920eab4e8541e6b1c662c2a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

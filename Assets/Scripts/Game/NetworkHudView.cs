@@ -96,7 +96,7 @@ namespace ChessFight.Game
 
         // The game-mode rail down the right, one card per mode.
         VisualElement railList, rail;
-        Label playLabel, startHintLabel;
+        Label playLabel;
         bool railOpen;
 
         // 10-17 (승규 님): the mode cards wait below the screen. The pointer resting on "모드 선택" brings them
@@ -185,14 +185,15 @@ namespace ChessFight.Game
                 }
             }
             if (playLabel != null) playLabel.text = open ? "게임 시작" : "모드 선택";
-            if (startHintLabel != null) startHintLabel.text = open ? "게임 시작" : "모드 선택";
         }
         Label railHint;
         readonly Dictionary<string, Button> railButtons = new Dictionary<string, Button>();
-        // Each card's two looks (design A): picked and not, and which one it shows.
-        readonly Dictionary<string, (Texture2D off, Texture2D on)> railLooks = new Dictionary<string, (Texture2D off, Texture2D on)>();
-        readonly Dictionary<string, bool> railShown = new Dictionary<string, bool>();
-        VisualElement startHints;
+        // Each card's glass (10-27, design A): brighter, with a fuller gold edge, while its mode is picked.
+        readonly Dictionary<string, GlassPlate> railPlates = new Dictionary<string, GlassPlate>();
+        // The picked mode, and the last card clicked and when (two clicks on one card in this time: start).
+        const float DoubleClick = .4f;
+        string pickedRail, lastRailKey;
+        float lastRailClick = -10f;
 
         // Nameplates over the 3D lineup.
         VisualElement lineupLayer;
@@ -299,7 +300,6 @@ namespace ChessFight.Game
             // slide up, then "게임 시작".
             rail = root.Q<VisualElement>("mode-rail");
             playLabel = play?.Q<Label>(className: "a-cta-text");
-            startHintLabel = root.Q("start-hints")?.Q<Label>(className: "a-hint");
             HoverRail(play);
             HoverRail(rail);
             SetRail(false);
@@ -382,14 +382,20 @@ namespace ChessFight.Game
             Paint(root.Q("scrim-right"), MenuArt.Ramp(false, dark, (0f, Alpha(shade, 0f)), (.35f, Alpha(shade, .38f)), (1f, Alpha(shade, .55f))));
             Paint(root.Q("scrim-bottom"), MenuArt.Ramp(true, dark, (0f, Alpha(floor, 0f)), (.58f, Alpha(floor, .4f)), (1f, Alpha(floor, .62f))));
 
-            var panel = MenuArt.Ramp(true, dark, (0f, new Color(26 / 255f, 21 / 255f, 17 / 255f, .9f)), (1f, new Color(17 / 255f, 13 / 255f, 10 / 255f, .94f)));
             // Windows that open over other HUD (friends, details, the pickers) are nearly solid.
             var cover = MenuArt.Ramp(true, dark, (0f, new Color(26 / 255f, 21 / 255f, 17 / 255f, .98f)), (1f, new Color(17 / 255f, 13 / 255f, 10 / 255f, .99f)));
             root.Query<VisualElement>(className: "a-panel").ForEach(e =>
             {
-                Paint(e, e.ClassListContains("side-card") || e.ClassListContains("modal-card") ? cover : panel);
-                // The banner keeps its running line instead.
-                if (e != matchPanel) e.Insert(0, Rule(46f, 150f, 2f, "a-panel-rule"));
+                // 10-27 (design A): the panels over the lobby (the matching card, the banner) are smoked glass with
+                // a gold hairline; the windows that open over other HUD stay nearly solid.
+                if (!e.ClassListContains("side-card") && !e.ClassListContains("modal-card"))
+                {
+                    e.AddToClassList("glass");
+                    GlassPlate.On(e);
+                    return;
+                }
+                Paint(e, cover);
+                e.Insert(0, Rule(46f, 150f, 2f, "a-panel-rule"));
             });
             // On the tab's box, not the label: a label with children stops measuring its text.
             root.Query<VisualElement>(className: "a-tab-box").ForEach(e => e.Add(Rule(14f, 30f, 2f, "a-tab-rule")));
@@ -409,12 +415,9 @@ namespace ChessFight.Game
             IconText(copyParty, MenuMarks.Icon.Copy);
             IconText(leaveParty, MenuMarks.Icon.Exit);
             root.Q("profile-crown")?.Add(new MenuMarks.CrownMark(Brass, Color.clear, 0f));
-            var arrow = new MenuMarks.IconMark(MenuMarks.Icon.Arrow, 2.4f, Ink);
-            arrow.style.flexGrow = 1;
-            root.Q("play-arrow")?.Add(arrow);
-            GoldFace(play);
-            GoldFace(start);
-            startHints = root.Q("start-hints");
+            // 10-27 (design A): smoked glass with a polished gold edge, no arrow, no key hints under it
+            if (play != null) GlassPlate.Button(play);
+            if (start != null) GlassPlate.Button(start, 10f);
             // Whatever still carries the slab class (nothing in the lobby since R83).
             ChunkyButtons.Attach(root);
         }
@@ -497,55 +500,6 @@ namespace ChessFight.Game
             if (button == null) return;
             var label = button.Q<Label>(className: "a-btn-text") ?? button.Q<Label>(className: "a-cta-text");
             if (label != null) label.text = text; else button.text = text;
-        }
-
-        // The name screen's ivory button: a plate with 10 px clipped corners, ivory to
-        // sand from top to bottom over a soft shadow, lighter under the pointer and
-        // darker while pressed (USS moves it down a pixel). Vertex colours, no
-        // Painter2D gradients, so the Linux compile check needs nothing new.
-        // 10-17 (option B): the start plate in gold leaf with ebony letters and an ebony rim; was ivory.
-        static void GoldFace(Button button)
-        {
-            if (button == null) return;
-            bool hover = false, down = false;
-            button.generateVisualContent += context =>
-            {
-                float w = button.layout.width, h = button.layout.height;
-                if (float.IsNaN(w) || float.IsNaN(h) || w <= 0 || h <= 0) return;
-                const float cut = 10f;
-                for (int i = 4; i >= 1; i--)
-                    Plate(context, -i * 2f, 5f + i * 3f, w + i * 4f, h, cut + i, new Color(0, 0, 0, .075f), new Color(0, 0, 0, .075f));
-                Plate(context, -2f, -2f, w + 4f, h + 4f, cut + 1f, PieceFigure.Hex(0x15110E), PieceFigure.Hex(0x0E0B09));
-                Color top = down ? PieceFigure.Hex(0xE6C066) : hover ? PieceFigure.Hex(0xFBE08E) : PieceFigure.Hex(0xF3D27A);
-                Color bottom = down ? PieceFigure.Hex(0xB2873A) : hover ? PieceFigure.Hex(0xD9A955) : PieceFigure.Hex(0xC99A45);
-                Plate(context, 0f, 0f, w, h, cut, top, bottom);
-            };
-            void Redraw() => button.MarkDirtyRepaint();
-            button.RegisterCallback<PointerEnterEvent>(_ => { hover = true; Redraw(); });
-            button.RegisterCallback<PointerLeaveEvent>(_ => { hover = false; down = false; Redraw(); });
-            button.RegisterCallback<PointerDownEvent>(_ => { down = true; Redraw(); }, TrickleDown.TrickleDown);
-            button.RegisterCallback<PointerUpEvent>(_ => { down = false; Redraw(); }, TrickleDown.TrickleDown);
-            button.RegisterCallback<PointerCaptureOutEvent>(_ => { down = false; Redraw(); });
-        }
-
-        // An octagon at (x, y), w x h, corners cut by `cut`, top to bottom from one colour to the other.
-        static void Plate(MeshGenerationContext context, float x, float y, float w, float h, float cut, Color top, Color bottom)
-        {
-            Vector2[] p =
-            {
-                new Vector2(cut, 0), new Vector2(w - cut, 0), new Vector2(w, cut), new Vector2(w, h - cut),
-                new Vector2(w - cut, h), new Vector2(cut, h), new Vector2(0, h - cut), new Vector2(0, cut)
-            };
-            var mesh = context.Allocate(9, 24);
-            Vertex V(Vector2 q) => new Vertex { position = new Vector3(x + q.x, y + q.y, Vertex.nearZ), tint = Color.Lerp(top, bottom, q.y / h) };
-            mesh.SetNextVertex(V(new Vector2(w / 2f, h / 2f)));
-            foreach (var q in p) mesh.SetNextVertex(V(q));
-            for (int i = 0; i < 8; i++)
-            {
-                mesh.SetNextIndex(0);
-                mesh.SetNextIndex((ushort)(1 + i));
-                mesh.SetNextIndex((ushort)(1 + (i + 1) % 8));
-            }
         }
 
         static VisualElement Slot(VisualElement parent)
@@ -986,12 +940,8 @@ namespace ChessFight.Game
                 var card = new Button { focusable = false };
                 card.AddToClassList("rail-card");
                 if (!mode.Playable) card.AddToClassList("rail-locked");
-                // 10-17 (option B): ebony lacquer cards fading to the right; the picked one lighter, with its gold edge from the USS.
-                var looks = (MenuArt.Ramp(false, MenuArt.HudBlend.Shade, (0f, new Color(22 / 255f, 18 / 255f, 15 / 255f, .94f)), (1f, new Color(22 / 255f, 18 / 255f, 15 / 255f, .8f))),
-                             MenuArt.Ramp(false, MenuArt.HudBlend.Shade, (0f, new Color(36 / 255f, 29 / 255f, 22 / 255f, .96f)), (1f, new Color(28 / 255f, 22 / 255f, 17 / 255f, .9f))));
-                railLooks[mode.Key] = looks;
-                railShown[mode.Key] = false;
-                card.style.backgroundImage = new StyleBackground(looks.Item1);
+                // 10-27 (design A, was option B's ebony lacquer): smoked glass with a gold hairline
+                railPlates[mode.Key] = GlassPlate.On(card);
 
                 var art = new VisualElement { pickingMode = PickingMode.Ignore };
                 art.AddToClassList("rail-art");
@@ -1022,7 +972,15 @@ namespace ChessFight.Game
                 card.Add(text);
 
                 string key = mode.Key;
-                Action pick = () => PickMode?.Invoke(key);
+                // 10-27 (승규 님): a double click on a card starts the game with that mode, as "게임 시작" does
+                Action pick = () =>
+                {
+                    bool twice = lastRailKey == key && Time.unscaledTime - lastRailClick < DoubleClick;
+                    lastRailKey = twice ? null : key;
+                    lastRailClick = Time.unscaledTime;
+                    if (key != pickedRail) PickMode?.Invoke(key);
+                    if (twice) Play?.Invoke();
+                };
                 card.clicked += pick;
                 actions[card] = pick;
                 railButtons[key] = card;
@@ -1244,7 +1202,6 @@ namespace ChessFight.Game
             if (busySub != null) busySub.text = model.BusySub;
             Enable(cancel, model.CanCancel);
             Show(start, model.ShowStart);
-            Show(startHints, !model.Busy);
             Enable(start, model.CanStart);
 
             Show(matchPanel, model.ShowMatch);
@@ -1318,12 +1275,10 @@ namespace ChessFight.Game
                 var info = GameModes.Find(pair.Key);
                 bool on = pair.Key == mode.Key, playable = info != null && info.Playable;
                 pair.Value.EnableInClassList("rail-on", on);
-                if (railLooks.TryGetValue(pair.Key, out var looks) && (!railShown.TryGetValue(pair.Key, out bool shown) || shown != on))
-                {
-                    railShown[pair.Key] = on;
-                    pair.Value.style.backgroundImage = new StyleBackground(on ? looks.on : looks.off);
-                }
-                pair.Value.SetEnabled(model.CanChangeMode && playable && !on);
+                if (railPlates.TryGetValue(pair.Key, out var plate)) plate.Set(on, false);
+                if (on) pickedRail = pair.Key;
+                // the picked card stays clickable too, for the double click that starts the game
+                pair.Value.SetEnabled(model.CanChangeMode && playable);
                 var state = pair.Value.Q<Label>("state");
                 if (state != null)
                 {
@@ -1336,7 +1291,7 @@ namespace ChessFight.Game
                 railHint.text = !model.Online ? "Steam 연결이 필요해요"
                               : model.Busy ? "매칭 중엔 바꿀 수 없어요"
                               : !model.CanChangeMode ? "파티장만 바꿀 수 있어요"
-                              : "모드마다 따로 매칭돼요";
+                              : "";   // 10-27 (승규 님): "모드마다 따로 매칭돼요" taken off
         }
 
         static void Fill(List<VisualElement> slots, int filled, int team)

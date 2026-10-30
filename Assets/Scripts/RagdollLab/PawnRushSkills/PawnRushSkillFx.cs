@@ -148,8 +148,9 @@ namespace ChessFight.RagdollLab
             stopTarget = e.target;
             switch (e.kind)
             {
-                case SkillFxKind.QueenBlast: QueenBlast(e); break;
-                case SkillFxKind.QueenHit: QueenHit(e); break;
+                // 10-25: the queen drawn for real (PawnRushSkillFx.Real.cs).
+                case SkillFxKind.QueenBlast: if (Real(PieceKind.Queen)) RealQueenBlast(e); else QueenBlast(e); break;
+                case SkillFxKind.QueenHit: if (Real(PieceKind.Queen)) RealQueenHit(e); else QueenHit(e); break;
                 case SkillFxKind.RookHit: RookHit(e); break;
                 case SkillFxKind.RookStop: RookStop(e); break;
                 case SkillFxKind.RookWall: RookWall(e, 1f); break;
@@ -174,6 +175,10 @@ namespace ChessFight.RagdollLab
                 case SkillFxKind.RookThrow: RookThrowFx(e); break;
                 case SkillFxKind.RookHook: RookHookFx(e); break;
                 case SkillFxKind.RookPullEnd: RookPullEndFx(e); break;
+                // 10-26: the bishop's X rope (PawnRushSkillFx.BishopRope.cs).
+                case SkillFxKind.BishopRopeHook: BishopRopeHookFx(e); break;
+                case SkillFxKind.BishopRopeRelease: BishopRopeReleaseFx(e); break;
+                case SkillFxKind.BishopRopeSnap: BishopRopeSnapFx(e); break;
             }
         }
 
@@ -189,7 +194,7 @@ namespace ChessFight.RagdollLab
                 bool dashing = effects && RookDashing(pawn);
                 bool leaping = effects && KnightLeaping(pawn);
                 bool crouching = effects && pawn.Piece == PieceKind.Knight && pawn.SkillStage == SkillStage.Windup;
-                if (charging && !w.charging) QueenCharge(pawn);
+                if (charging && !w.charging) { if (Real(PieceKind.Queen)) RealQueenCharge(pawn); else QueenCharge(pawn); }
                 if (dashing && !w.dashing) RookCharge(pawn);
                 // R138: no wind ribbon from the knight's hips while it leaps (승규 님: "엉덩이 부분에 흰색을 빼주고").
                 if (crouching && !w.crouching) KnightGather(pawn);
