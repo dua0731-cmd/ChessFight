@@ -4,6 +4,8 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
+> **R259(승규 님, 10-31, `seoungtest`): 도서관 셔틀을 공유 시계로 직접 움직임.** R258 뒤에도 "컨베이어가 왕복을 안해" → 새 `LibraryShuttleDriver`(셔틀 루트)가 물리 스텝마다 `ObstacleClock.Now % 16초`로 클립을 샘플, 레거시 `Animation` 컴포넌트는 끔. `LibraryConveyorSurface`는 드라이버의 캐리지 속도 + 역방향 벨트 0.644 m/s. `SeoungTestCourse.Version` 6 → 씬 열면 **다시 짓기**. **승규 님 지시: 이 브랜치는 `seoungtest`에서 작업하고 AI는 커밋만, 푸시는 하지 않는다.** 컴파일 · 테스트만, **Play · 사람 확인 전.**
+
 > **R258(승규 님, 10-31, `seoungtest`): 도서관 컨베이어 셔틀 반복 · 물리 스텝.** 커밋 `4945866`이 엔드게임 E를 도서관 컨베이어 맵(`Course01v4Builder.LibraryReplacement.cs`, `Resources/PawnRushLibrary` FBX 둘)으로 바꾸고 `ShowsEndgame = true`로 고정(R257의 노트북 제한 꺼짐, main에 합칠 때 다시 정할 것). R258: 셔틀 테이크(16초 왕복)를 `WrapMode.Loop`로, `animatePhysics = true`로 물리 스텝에서 움직이고, 움직이는 덱 충돌체에 Kinematic `Rigidbody`. 벨트 역방향(목표 쪽, 0.644 m/s)은 승규 님이 맞다고 함. `SeoungTestCourse.Version` 5 → 씬 열면 **다시 짓기** 누르기. 남은 것: 도서관 맵에 골인 · 낙사 처리 없음, `WarRoom()` · `case "F"`는 이제 안 불림. 컴파일 · 테스트만, **Play · 사람 확인 전.**
 
 > **R257(승규 님, 10-30, `seoungtest`): 엔드게임 맵은 승규 님 노트북에서만.** `Course01v4Builder.ShowsEndgame` — 컴퓨터 이름이 `KKND1236_LENOVO`(승규 님 노트북)일 때만 시험 씬 길 줄에 엔드게임 E · F를 짓고, 다른 PC는 코스 01의 A · B · C · 탑을 짓는다(미니게임 줄 · 폰 러쉬 물리 · 자세 · 리깅(R245~R253)은 어디서나 그대로). 엔드게임 파일(WarRoom 코드 · Blender 모델)은 브랜치에 그대로 남는다(승규 님 선택: 게임에서만 숨김). **`SeoungTest_PawnRush.unity`에 E · F를 지어 저장한 채로 커밋하면 다른 PC에서도 보이니** 이 노트북은 그 씬 파일을 `git update-index --skip-worktree`로 커밋에서 뺐다(이 노트북 git 설정만; 풀이 그 씬을 바꾸면 `--no-skip-worktree`로 풀고 받기). 같은 날 이 노트북이 R256을 Unity를 켠 채로 받아 FBX · 텍스처 `.meta` 102개 GUID가 새로 생긴 것을 커밋 상태로 되돌림 → 이 브랜치는 **Unity를 끄고 받기**. 컴파일은 바깥에서 그 부분만 확인, **Play · 사람 확인 전.**
