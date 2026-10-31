@@ -4,10 +4,12 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-26**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-10-31**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R115(사용자, 10-31):** 첨부 최신 매니페스트의 윗궁5개를 독립 코스 프리팹으로 저장. 6구간·3체크포인트·입출구/배치 영역·교체용 미니게임 공간·기존 래그돌 시험 씬. 구조31·Core113·세션40·런타임7 통과, Unity/4분 밸런스 대기. [실행/편집](Docs/KingRush/ROYAL_PALACE_COURSES.md).
+
 > **R114(사용자, 10-26):** 체스타이머 씬 직접 Steam 방 생성/코드 참가(F2)·방장 물리/퍼즐 판정·입력/자세/전체 상태 공유·방장 이전 복구, 로비 연결 제외. 구조26·Core113·세션40·런타임7 통과, 실제2PC 미확인. [실행](Docs/KingRush/CHESS_TIMER_MULTIPLAYER.md).
 
 > **R113(사용자, 10-26):** 거인 체스 진행을 직전의4배(Replay Speed 2→8)로 변경, Inspector/런타임 상한16으로 확장. Unity 재확인 대기.
@@ -162,6 +164,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **윗궁5코스 프리팹(R115)** | 독립 저장·6구간/연결점/3체크포인트·래그돌 시험 씬, Unity 대기 |
 | **체스타이머 멀티(R114)** | 씬 Play→F2 방 코드 연결·상태 동기화/방장 복구, 2PC 대기 |
 | **거인 체스 속도(R113)** | 원본8배속(직전의4배), Unity 대기 |
 | **거인 체스 조정(R112)** | 2배속·좌우 대국·기물 칸 통행 차단 |
@@ -238,6 +241,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **윗궁5코스(R115)** | 편집용 프리팹/경계·시험 씬 구현, 자동 랜덤 조립/온라인은 별도 | [실행/편집](Docs/KingRush/ROYAL_PALACE_COURSES.md) |
 | **체스타이머 멀티(R114)** | 기존 SteamSession/래그돌 프로토콜·전용 상태 채널34 | [실행](Docs/KingRush/CHESS_TIMER_MULTIPLAYER.md) |
 | **거인 체스 속도(R113)** | 코드/씬 기본8·상한16 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
 | **거인 체스 조정(R112)** | 좌표/공격 동기화·점유 칸 차단 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
@@ -305,6 +309,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R115:** `ChessFight → Courses → Open Royal Palace Test`에서 5개 선택·승강/점프/캐슬링/상향 다리·낙사 체크포인트·끝 경계 보행·새 프리팹 저장 확인. 4분 목표는 HUD 주행 시간을 측정해 조절. 6v6/Steam 및 자동 무작위 조립은 아직 연결하지 않았다.
 
 **R114:** 같은 버전/서로 다른 Steam 계정2PC에서 체스타이머 씬 직접Play→F2 생성/참가→함께 시작. 판/타이머/잡기/절단/폭발/문·방장 종료 후 복구 확인. 로비 연결은 사용자 정정으로 제외.
 
