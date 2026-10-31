@@ -57,18 +57,17 @@ namespace ChessFight.PawnRush
             Box(pivot, "Left balcony collision", new Vector3(-11.45f, -.12f, 2f), new Vector3(7.1f, .24f, 21f));
             Box(pivot, "Right balcony collision", new Vector3(11.45f, -.12f, 2f), new Vector3(7.1f, .24f, 21f));
             Box(pivot, "Goal floor collision", new Vector3(0, 1.08f, -20f), new Vector3(29.9f, .24f, 10f));
-            // A fall (R260): the model's lower library floor is 8 m down (FBX y -8.7 .. -8.0 under the whole hall)
-            // and had no collider, so a pawn fell through the floor it could see to the spawner's y -20 limit.
-            // It is solid now, and the pit above it is a kill volume: a pawn that drops in lands on that floor
-            // and is back at the zone's start (the library has no checkpoint) after KillVolume's 1.5 s.
+            // The basement is now a return route: land on its floor, then use the outside stair to reach the start.
+            // The FBX reverses Blender X and Y into Unity X and Z before the enclosing pivot's 180-degree turn.
             Box(pivot, "Lower library floor collision", new Vector3(0, -8.35f, 0f), new Vector3(30f, .7f, 45f));
-            var pit = new GameObject("Fall (kill volume)");
-            pit.transform.SetParent(pivot, false);
-            pit.transform.localPosition = new Vector3(0, -5.5f, 0f);
-            var pitBox = pit.AddComponent<BoxCollider>();
-            pitBox.isTrigger = true;
-            pitBox.size = new Vector3(30f, 4.9f, 45f);
-            pit.AddComponent<KillVolume>();
+            Box(pivot, "Return lower landing collision", new Vector3(-16f, -8.15f, 3.6f), new Vector3(6f, .3f, 3f));
+            Box(pivot, "Return upper landing collision", new Vector3(-16f, -.15f, 16f), new Vector3(6f, .3f, 3f));
+            for (int i = 0; i < 32; i++)
+            {
+                float height = .25f * (i + 1);
+                float z = 3.8f + (i + .5f) * .375f;
+                Box(pivot, "Return stair collision " + i, new Vector3(-17.6f, -8f + height / 2f, z), new Vector3(3f, height, .38f));
+            }
             for (int i = 0; i < 8; i++)
             {
                 float h = .15f * (i + 1);
