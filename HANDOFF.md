@@ -4,7 +4,7 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-10-31**(R240 **경기 채팅 시안 B1**: 왼쪽 아래, 줄마다 채널 색 띠, 열면 패널 없이 띠가 위로 펼쳐짐 + 채널 색 입력 줄 + 채널 범례. `ChatBox.cs` · `ChatHud.uxml` · `NetworkHud.uss`, [UI §9](Docs/Architecture/UI.md#9-채팅-r61-2026-09-30). Core 133 · 세션 45, Game 컴파일 통과, **Unity 미확인**, 커밋 · 푸시, 다음 빈 번호 R241)
+최종 갱신: **2026-10-31**(R240 **경기 채팅 시안 B1**: 왼쪽 아래, 줄마다 채널 색 띠, 열면 패널 없이 띠가 위로 펼쳐짐 + 채널 색 입력 줄 + 채널 범례. `ChatBox.cs` · `ChatHud.uxml` · `NetworkHud.uss`, [UI §9](Docs/Architecture/UI.md#9-채팅-r61-2026-09-30). Core 133 · 세션 45, Game 컴파일 통과, **Unity 미확인**, 커밋함 · CLI 푸시 403(GitHub Desktop에서 Push), 다음 빈 번호 R241)
 최종 갱신: **2026-10-30**(R239 **소드 파이트 기물 고르기 · 경기 Esc 메뉴 시안 A**, 고르기는 클릭 · 1~5 = 선택, Enter · 더블클릭 = 확정: 설정 창 A와 같은 어두운 유리 · 금 테두리로 `SwordFightMatch.Hud.cs`(`DrawPick`) · `Game/GameMenu.cs`만 고침. [UI §17](Docs/Architecture/UI.md), [SwordFight/PROTOTYPE](Docs/GameModes/SwordFight/PROTOTYPE.md). Game · RagdollLab 컴파일 통과, **Unity 미확인, 커밋함, 푸시 안 함**, 다음 빈 번호 R240)
 최종 갱신: **2026-10-30**(R238 **설정 창 시안 A**: 사용자가 시안 3개 중 A를 골라 `SettingsWindow.cs` · `SettingsHud.uxml` · `NetworkHud.uss`(끝의 10-30 묶음)만 고침 — 탭 금색 밑줄, 설명 칸 오른쪽, 줄을 둥근 상자로, 끔/켬 스위치. [UI §12](Docs/Architecture/UI.md#12-설정-창-r64-2026-10-05). Core 133 · 세션 45, Game 어셈블리 컴파일 통과, **Unity 미확인, 커밋함, 푸시 안 함**, 다음 빈 번호 R239)
 최종 갱신: **2026-10-28**(R160 폰 러시 30개 장소의 장애물 컨셉아트: 초반·중반·후반 각 10곳, 5곳씩 6장. **공간·외형 제안만, Unity 코드·씬 변경 없음.** 다음 빈 번호 R161.)
