@@ -692,6 +692,66 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
              border-left-width: 3px; border-color: rgb(255, 77, 98); }
 .chat-note-error { color: rgb(255, 179, 188); }
 
+/* ---------- 10-31 chat design B1 (사용자: "채팅은 왼쪽에서", "B1 띠 그대로 위로 펼침 좋다",
+   https://claude.ai/artifact/GA6MaACNmS8iCFmLj5StYu) ----------
+   Every line is a strip: the channel's colour down its left edge (party mint, team blue, everyone white,
+   my own gold) over dark glass, as wide as its words. Closed, the newest strips float and fade with
+   "Tab 채팅" under them; open, there is no panel: more strips grow upward, the input line is a strip of
+   its channel, and the channels sit under it as a legend with the keys. Bottom left in a match too. */
+.chat-match { left: 24px; right: auto; bottom: 28px; width: 470px; }
+.chat-match .chat-recent { align-items: flex-start; }
+.chat-match .chat-line, .chat-match .chat-recent-line {
+    align-self: flex-start; max-width: 100%; margin-top: 4px; padding: 6px 12px 6px 10px; border-width: 0;
+    border-left-width: 3px; border-color: rgb(239, 228, 210); background-color: rgba(20, 13, 8, 0.82); }
+.chat-match .chat-line-party { border-color: rgb(95, 211, 163); }
+.chat-match .chat-line-team { border-color: rgb(106, 168, 240); }
+.chat-match .chat-line-all { border-color: rgb(239, 228, 210); }
+.chat-match .chat-line-me { border-color: rgb(242, 182, 50); background-color: rgba(72, 52, 22, 0.86); }
+.chat-match .chat-line-notice { border-color: rgb(242, 182, 50); background-color: rgba(20, 13, 8, 0.5); }
+.chat-match .chat-line .chat-text, .chat-match .chat-line .chat-notice { flex-grow: 0; flex-basis: auto; }
+.chat-match .chat-name { margin-right: 10px; font-size: 15px; }
+.chat-match .chat-text { font-size: 15px; color: rgb(239, 228, 210); }
+.chat-match .chat-notice { font-size: 13px; color: rgb(242, 182, 50); }
+.chat-match .chat-name-party { color: rgb(143, 240, 200); }
+.chat-match .chat-name-team { color: rgb(142, 197, 255); }
+.chat-match .chat-name-all { color: rgb(239, 228, 210); }
+.chat-match .chat-name-me { color: rgb(242, 182, 50); }
+.chat-match .chat-text, .chat-match .chat-name, .chat-match .chat-notice { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
+
+/* closed: "Tab 채팅" and the unread count, no box */
+.chat-match .chat-closed { align-self: flex-start; margin-top: 8px; padding: 0; border-width: 0; background-color: rgba(0, 0, 0, 0); }
+.chat-match .chat-key { border-width: 1px; border-color: rgb(90, 70, 48); background-color: rgba(20, 13, 8, 0.7); color: rgb(205, 189, 165); }
+.chat-match .chat-closed-text { font-size: 13px; -unity-font-style: normal; color: rgb(205, 189, 165); }
+.chat-match .chat-unread { margin-left: 6px; padding: 0 6px; border-radius: 8px; color: rgb(26, 17, 10); background-color: rgb(242, 182, 50); }
+
+/* open: no panel, the strips go on upward */
+.chat-match .chat-panel { height: 330px; border-width: 0; background-color: rgba(0, 0, 0, 0); }
+.chat-match .chat-lines { padding: 0; align-items: flex-start; }
+.chat-match .chat-entry { height: 46px; margin: 10px 0 0 0; padding: 0 10px 0 10px; border-width: 0; border-left-width: 3px;
+                          border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-color: rgb(106, 168, 240);
+                          background-color: rgba(20, 13, 8, 0.92); }
+.chat-match .chat-entry.chat-line-party { border-color: rgb(95, 211, 163); }
+.chat-match .chat-entry.chat-line-all { border-color: rgb(239, 228, 210); }
+.chat-match .chat-chip { padding: 3px 9px; margin-right: 10px; border-radius: 4px; font-size: 13px; letter-spacing: 0; text-shadow: none; }
+.chat-match .chat-chip-party { color: rgb(143, 240, 200); background-color: rgba(95, 211, 163, 0.2); }
+.chat-match .chat-chip-team { color: rgb(142, 197, 255); background-color: rgba(106, 168, 240, 0.2); }
+.chat-match .chat-chip-all { color: rgb(239, 228, 210); background-color: rgba(239, 228, 210, 0.14); }
+.chat-match .chat-hint { font-size: 12px; color: rgb(110, 93, 72); text-shadow: none; }
+.chat-match .chat-hint.chat-note-error { color: rgb(255, 154, 138); }
+.chat-match .chat-tabs { height: 26px; margin-top: 6px; padding: 0 0 0 4px; border-width: 0; }
+.chat-match .chat-tab { min-height: 20px; margin: 0 14px 0 0; padding: 0; border-width: 0; }
+.chat-match .chat-tab-text { font-size: 12px; -unity-font-style: normal; color: rgb(141, 122, 98); }
+.chat-match .chat-tab-on .chat-tab-text { color: rgb(255, 244, 220); -unity-font-style: bold; }
+.chat-match .chat-dot { width: 7px; height: 7px; margin-right: 5px; }
+.chat-match .chat-dot-party { background-color: rgb(95, 211, 163); }
+.chat-match .chat-dot-team { background-color: rgb(106, 168, 240); }
+.chat-match .chat-dot-all { background-color: rgb(239, 228, 210); }
+.chat-match .chat-close { display: none; }
+.chat-keys { display: none; }
+.chat-match .chat-keys { display: flex; font-size: 12px; color: rgb(141, 122, 98); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
+.chat-match .chat-scrolled { margin: 0 10px 0 0; font-size: 11px; }
+.chat-match .chat-note { margin-top: 6px; }
+
 /* ---------- 10-27 design A (승규 님 chose "연기 유리 + 가는 금선"): smoked glass and gold hairlines ----------
    The glass and its gold edge are drawn by GlassPlate (the vector painter) on the matching card, the banner, the
    start buttons, the mode cards and the entrance screen's seats; these rules clear the old fills and borders under

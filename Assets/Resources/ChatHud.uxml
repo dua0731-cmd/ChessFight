@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <!-- The chat (Game/ChatBox.cs, R61), chat sample A "기보 로그". One panel for
          the whole game, above every scene's HUD and under the loading screen:
-         bottom left in the lobby (chat-lobby), bottom right in any match scene
-         (chat-match). Closed, it shows the key to open it and the newest lines for
+         bottom left in the lobby (chat-lobby), bottom left in any match scene too
+         since 10-31 (chat-match, design B1 "띠 그대로 위로 펼침"). Closed, it shows the key to open it and the newest lines for
          a few seconds; Tab opens the panel. Styles: the "chat" part of
          NetworkHud.uss. Every name here is looked up by ChatBox: rename both or
          neither. The lines are added in code. -->
@@ -15,8 +15,18 @@
                 <ui:Label text="채팅" class="chat-closed-text" picking-mode="Ignore" />
                 <ui:Label name="chat-closed-unread" class="chat-unread" picking-mode="Ignore" />
             </ui:VisualElement>
-            <!-- Open: a tab per channel (Tab moves along them), the lines, the input line. -->
+            <!-- Open: the lines, the input line, then a tab per channel (Tab moves along them). -->
             <ui:VisualElement name="chat-panel" class="chat-panel">
+                <ui:VisualElement name="chat-lines" class="chat-lines" />
+                <ui:VisualElement name="chat-entry" class="row chat-entry">
+                    <ui:Label name="chat-channel" class="chat-chip" picking-mode="Ignore" />
+                    <ui:VisualElement class="chat-input" picking-mode="Ignore">
+                        <ui:TextField name="chat-field" class="chat-field" max-length="80" />
+                        <ui:Label name="chat-placeholder" class="chat-placeholder" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <ui:Label name="chat-hint" class="chat-hint" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <!-- 10-31 design B1: the channels under the input line, as a legend. -->
                 <ui:VisualElement class="row chat-tabs">
                     <ui:Button name="chat-tab-party" class="chat-tab">
                         <ui:VisualElement class="chat-dot chat-dot-party" picking-mode="Ignore" />
@@ -35,19 +45,11 @@
                     </ui:Button>
                     <ui:VisualElement class="grow" picking-mode="Ignore" />
                     <ui:Label name="chat-scrolled" text="이전 대화" class="chat-scrolled" picking-mode="Ignore" />
+                    <ui:Label name="chat-keys" text="Tab 채널 · Enter 보내기 · Esc 닫기" class="chat-keys" picking-mode="Ignore" />
                     <ui:Button name="chat-close" class="row chat-close">
                         <ui:Label text="닫기" class="chat-close-text" picking-mode="Ignore" />
                         <ui:Label text="Esc" class="chat-key" picking-mode="Ignore" />
                     </ui:Button>
-                </ui:VisualElement>
-                <ui:VisualElement name="chat-lines" class="chat-lines" />
-                <ui:VisualElement name="chat-entry" class="row chat-entry">
-                    <ui:Label name="chat-channel" class="chat-chip" picking-mode="Ignore" />
-                    <ui:VisualElement class="chat-input" picking-mode="Ignore">
-                        <ui:TextField name="chat-field" class="chat-field" max-length="80" />
-                        <ui:Label name="chat-placeholder" class="chat-placeholder" picking-mode="Ignore" />
-                    </ui:VisualElement>
-                    <ui:Label name="chat-hint" class="chat-hint" picking-mode="Ignore" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <!-- Match only, under the open panel: "입력 중 · 이동 멈춤". -->

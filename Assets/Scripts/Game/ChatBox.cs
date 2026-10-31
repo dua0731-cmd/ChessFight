@@ -7,11 +7,13 @@ using UnityEngine.UIElements;
 
 namespace ChessFight.Game
 {
-    // The chat (Docs/Architecture/UI.md "채팅", R61): chat sample A "기보 로그".
+    // The chat (Docs/Architecture/UI.md "채팅", R61; since 10-31 design B1 "띠 그대로 위로 펼침"):
+    // every line is a strip with its channel's colour down the left edge; closed, the newest strips float
+    // and fade; open, more of the same strips grow upward over the input line, the channels under it.
     //
     // One panel for the whole game, on the persistent runtime object, so every
-    // scene has it without wiring of its own: bottom left in the lobby, bottom
-    // right in any match scene (King Rush, Sword Fight and whichever mode comes
+    // scene has it without wiring of its own: bottom left in the lobby and (since
+    // 10-31) in any match scene (King Rush, Sword Fight and whichever mode comes
     // next), hidden on the title and behind the loading screen.
     //
     // Settings → 채팅 (R64) can turn it off, mask common swear words and change
@@ -37,7 +39,7 @@ namespace ChessFight.Game
         const float SortingOrder = 50f;
         // Closed, a new line floats this long, the last FadeSeconds of it fading.
         const float RecentSeconds = 8f, FadeSeconds = 2f, NoteSeconds = 3f;
-        const int PanelLines = 12, RecentLines = 4;
+        const int PanelLines = 8, RecentLines = 4;
         // An Enter pressed while the Korean IME still holds a syllable commits it
         // first, so the send waits for the composition to empty, this long at most.
         const int ImeWaitFrames = 30;
@@ -58,6 +60,7 @@ namespace ChessFight.Game
         PanelSettings ownedPanel;
         VisualElement box, panel, recent, closedHint, lines;
         TextField field;
+        VisualElement entry;
         Label chip, placeholder, hint, note, scrolled, closedUnread, closedKey;
         readonly Dictionary<ChatChannel, Button> tabs = new Dictionary<ChatChannel, Button>();
         readonly Dictionary<ChatChannel, Label> unread = new Dictionary<ChatChannel, Label>();
@@ -95,6 +98,7 @@ namespace ChessFight.Game
             closedHint = root.Q<VisualElement>("chat-closed");
             lines = root.Q<VisualElement>("chat-lines");
             field = root.Q<TextField>("chat-field");
+            entry = root.Q<VisualElement>("chat-entry");
             chip = root.Q<Label>("chat-channel");
             placeholder = root.Q<Label>("chat-placeholder");
             hint = root.Q<Label>("chat-hint");
@@ -300,6 +304,8 @@ namespace ChessFight.Game
                 chip.text = ChatText.Label(channel);
                 foreach (var c in Channels) chip.EnableInClassList("chat-chip-" + Key(c), c == channel);
             }
+            // The input line is a strip of the channel it goes to.
+            if (entry != null) foreach (var c in Channels) entry.EnableInClassList("chat-line-" + Key(c), c == channel);
             if (placeholder != null)
             {
                 placeholder.text = $"{ChatText.Label(channel)}에 말하기";
@@ -309,7 +315,8 @@ namespace ChessFight.Game
             if (!error) noteError = false;
             if (hint != null)
             {
-                hint.text = error ? noteText : "Enter 보내기 · Tab 채널";
+                // The keys are in the channel row under it (chat-keys); here the letters used.
+                hint.text = error ? noteText : $"{(field.value ?? "").Length}/{ChatText.MaxLength}";
                 hint.EnableInClassList("chat-note-error", error);
             }
             if (note != null)
@@ -329,13 +336,13 @@ namespace ChessFight.Game
             if (!open) Fade(now);
         }
 
-        // The open panel: the chosen channel's lines, numbered like a scoresheet.
+        // The open panel: the chosen channel's lines, the same strips as closed.
         void DrawPanel()
         {
             lines.Clear();
             var all = log.In(channel).ToList();
             int end = Mathf.Max(0, all.Count - scroll), start = Mathf.Max(0, end - PanelLines);
-            for (int i = start; i < end; i++) lines.Add(Row(all[i], true));
+            for (int i = start; i < end; i++) lines.Add(Row(all[i]));
         }
 
         // Closed: the newest lines of every channel, each fading on its own.
@@ -348,7 +355,7 @@ namespace ChessFight.Game
             {
                 var e = all[i];
                 if (!Usable(e.Channel)) continue;
-                var row = Row(e, false);
+                var row = Row(e);
                 row.AddToClassList("chat-recent-line");
                 recent.Add(row);
                 recentRows.Add(new KeyValuePair<ChatEntry, VisualElement>(e, row));
@@ -365,14 +372,17 @@ namespace ChessFight.Game
             }
         }
 
-        VisualElement Row(ChatEntry e, bool numbered)
+        // One strip: the channel's colour on the left edge (no "[팀]" and no line number since 10-31),
+        // gold for my own lines, the name, the words.
+        VisualElement Row(ChatEntry e)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             row.AddToClassList("chat-line");
-            if (numbered) row.Add(Text(e.Number + ".", "chat-num"));
-            if (e.Notice) { row.Add(Text(e.Text, "chat-notice")); return row; }
-            // The Steam name the line came from; outside the panel, which channel too.
-            var name = Text(numbered ? e.Name : $"[{ChatText.Label(e.Channel)}] {e.Name}", "chat-name");
+            row.AddToClassList("chat-line-" + Key(e.Channel));
+            if (e.Notice) { row.AddToClassList("chat-line-notice"); row.Add(Text(e.Text, "chat-notice")); return row; }
+            if (e.Mine) row.AddToClassList("chat-line-me");
+            // The Steam name the line came from.
+            var name = Text(e.Name, "chat-name");
             name.AddToClassList("chat-name-" + Key(e.Channel));
             if (e.Mine) name.AddToClassList("chat-name-me");
             row.Add(name);
