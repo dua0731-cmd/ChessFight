@@ -1,5 +1,14 @@
 # Network 구현 검증 기록
 
+## ★ 2026-10-31 도서관 컨베이어 맵 Blender 작업 파일 (R261, `seoungtest`) — 확인 목록
+
+[ArtSource/PawnRush/Library](../../ArtSource/PawnRush/Library/README.md). Linux `bpy` 5.2.3으로 되돌려 내보낸 FBX가 원본과 같은 것까지만 확인(아래는 사람 확인).
+
+| # | 할 일 | 기대 | 결과 |
+|---|---|---|---|
+| 1 | Windows Blender 5.2로 `PawnRushLibrary.blend` 열기, 타임라인 1 → 385 재생 | 도서관 홀 · 컨베이어가 보이고 캐리지가 16초에 한 번 왕복, 초록 와이어 상자가 바닥 · 계단 위에 겹침 | 미확인 |
+| 2 | 아무것도 고치지 않고 컬렉션 Exporters → Export(또는 `export_library_fbx.py`) → Unity | Unity가 다시 가져온 뒤 다시 짓기 → Play: 맵 · 컨베이어 왕복 · 충돌이 전과 같음 | 미확인 |
+
 ## ★ 2026-10-30 엔드게임 고난이도 LD v1 (R255 설계, R256 Unity 반영) — 확인 목록
 
 R257(10-30): 엔드게임 E · F는 **승규 님 노트북(`KKND1236_LENOVO`)에서만** 지어진다. 다른 PC에서 시험 씬을 열면 코스 01 A · B · C · 탑 + 미니게임이 나와야 하고(엔드게임 없음), 폰 러쉬 물리 · 자세는 같아야 한다. 아무도 안 봄.

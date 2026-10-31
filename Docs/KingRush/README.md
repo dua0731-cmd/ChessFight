@@ -103,6 +103,7 @@ Builds/KingRushPrototype/ChessFight.exe -kingRushTest -screen-fullscreen 0 -scre
 | [PAWN_RUSH_ENDGAME_RESEARCH.md](PAWN_RUSH_ENDGAME_RESEARCH.md) | **폰 러시 엔드게임(3페이즈) 자료조사**(R238, 승규 님 담당): 전략회의실 S1–S4 · 작전교 장치 비교 · 윗궁 후보 5곳 · 공유 미션 3 · 최종 코스 · 알현실 · 왕좌(6명 중 4명). 문서만 |
 | [PAWN_RUSH_ENDGAME_BLENDER_PROMPT.md](PAWN_RUSH_ENDGAME_BLENDER_PROMPT.md) | **엔드게임 Blender · 고난이도 LD 작업 지시서**(R254): 다른 채팅에 붙여 넣는 프롬프트. 이동 수치 · 장치 표 · E v2 좌표 · 아트 방향 · Blender 기술 · Unity 넘김 규칙 · 산출물 |
 | [ENDGAME_LD_HARD_v1.md](ENDGAME_LD_HARD_v1.md) | **엔드게임 고난이도 LD v1**(R255): 회색 상자 허점 · 비트 표 · 안전 창 · 시간 추정 · 공정성 점검 · Unity 반영 목록 · Blender 산출물(`ArtSource/PawnRush/Endgame/`). Unity 미적용 |
+| [ArtSource/PawnRush/Library](../../ArtSource/PawnRush/Library/README.md) | **폰 러쉬 도서관 컨베이어 맵 Blender 작업 파일**(R261, `seoungtest`): `PawnRushLibrary.blend` · 다시 만들기 · Unity FBX로 내보내기, Unity 코드 충돌 상자 참고 와이어 |
 | [PAWN_RUSH_MAP_KIT.md](PAWN_RUSH_MAP_KIT.md) | **폰 러시 맵 기획 재료집**(R67): 장애물 시험 씬의 구역·좌표, 장애물 19개와 씬 장치 29개의 실제 설정값, 래그돌 능력 수치, 채팅 AI용 프롬프트와 결과 양식 |
 | [MAP_IMPORT.md](MAP_IMPORT.md) | R65 별도 프로젝트 맵·19 장애물 이식: 열기, 기존 래그돌 연결, 검사와 미연결 범위 |
 | 이 문서 | 씬 구성, 코스 컴포넌트, 오프라인 플레이테스트, 네트워크 한계 |
