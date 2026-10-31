@@ -4,7 +4,7 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-> **R259(승규 님, 10-31, `seoungtest`): 도서관 셔틀을 공유 시계로 직접 움직임.** R258 뒤에도 "컨베이어가 왕복을 안해" → 새 `LibraryShuttleDriver`(셔틀 루트)가 물리 스텝마다 `ObstacleClock.Now % 16초`로 클립을 샘플, 레거시 `Animation` 컴포넌트는 끔. `LibraryConveyorSurface`는 드라이버의 캐리지 속도 + 역방향 벨트 0.644 m/s. `SeoungTestCourse.Version` 6 → 씬 열면 **다시 짓기**. **승규 님 지시: 이 브랜치는 `seoungtest`에서 작업하고 AI는 커밋만, 푸시는 하지 않는다.** 컴파일 · 테스트만, **Play · 사람 확인 전.**
+> **R259(승규 님, 10-31, `seoungtest`): 도서관 셔틀을 공유 시계로 직접 움직임.** R258 뒤에도 "컨베이어가 왕복을 안해" → 새 `LibraryShuttleDriver`(셔틀 루트)가 물리 스텝마다 `ObstacleClock.Now % 16초`로 클립을 샘플, 레거시 `Animation` 컴포넌트는 끔. `LibraryConveyorSurface`는 드라이버의 캐리지 속도 + 역방향 벨트 0.644 m/s. `SeoungTestCourse.Version` 6 → 씬 열면 **다시 짓기**. **승규 님 지시: 이 브랜치는 `seoungtest`에서 작업하고 커밋 후 `seoungtest`에 푸시한다(10-31, "앞으로 푸쉬해").** 컴파일 · 테스트만, **Play · 사람 확인 전.**
 
 > **R258(승규 님, 10-31, `seoungtest`): 도서관 컨베이어 셔틀 반복 · 물리 스텝.** 커밋 `4945866`이 엔드게임 E를 도서관 컨베이어 맵(`Course01v4Builder.LibraryReplacement.cs`, `Resources/PawnRushLibrary` FBX 둘)으로 바꾸고 `ShowsEndgame = true`로 고정(R257의 노트북 제한 꺼짐, main에 합칠 때 다시 정할 것). R258: 셔틀 테이크(16초 왕복)를 `WrapMode.Loop`로, `animatePhysics = true`로 물리 스텝에서 움직이고, 움직이는 덱 충돌체에 Kinematic `Rigidbody`. 벨트 역방향(목표 쪽, 0.644 m/s)은 승규 님이 맞다고 함. `SeoungTestCourse.Version` 5 → 씬 열면 **다시 짓기** 누르기. 남은 것: 도서관 맵에 골인 · 낙사 처리 없음, `WarRoom()` · `case "F"`는 이제 안 불림. 컴파일 · 테스트만, **Play · 사람 확인 전.**
 
