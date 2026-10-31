@@ -21,6 +21,16 @@ namespace ChessFight.PawnRush
             Object.Instantiate(environment, pivot, false).name = "Library environment";
             var shuttle = Object.Instantiate(shuttleAsset, pivot, false);
             shuttle.name = "Moving conveyor";
+            // The shuttle's take is one 16 s round trip that ends where it starts, so it loops (R258: the
+            // import leaves it at Default, which plays once). It runs in the physics step so the deck's
+            // collider and LibraryConveyorSurface's velocity move in the same step the riders read them.
+            var anim = shuttle.GetComponent<Animation>();
+            if (anim != null)
+            {
+                anim.wrapMode = WrapMode.Loop;
+                anim.animatePhysics = true;
+                anim.playAutomatically = true;
+            }
             foreach (var t in shuttle.GetComponentsInChildren<Transform>(true))
             {
                 if (!t.name.StartsWith("CONVEYOR_CARRIAGE")) continue;
@@ -30,6 +40,10 @@ namespace ChessFight.PawnRush
                 deck.transform.SetParent(t, true);
                 var box = deck.AddComponent<BoxCollider>();
                 box.size = new Vector3(3.36f, .28f, 12.6f);
+                // A collider moved every step needs a kinematic body (R258), or PhysX treats it as static.
+                var body = deck.AddComponent<Rigidbody>();
+                body.isKinematic = true;
+                body.useGravity = false;
                 deck.AddComponent<LibraryConveyorSurface>();
                 break;
             }
