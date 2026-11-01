@@ -1,5 +1,7 @@
 # ChessFight HANDOFF — 모든 작업은 여기서 시작한다
 
+> **R267(11-01): 광장 화단 디테일.** v12 Blender에 둥근 꽃잎6장 · 꽃술 · 줄기 · 개별 잎, 분홍/노랑/아이보리/보라/산호 색 변화. v11 카메라/조명 유지해 비교. `ArtSource/PawnRush/Garden/RoyalWaterGarden_v12.blend`. Unity 이전/성능/사용자 확인 전.
+
 > **R266(11-01): 회전봉 광장 디테일 첫 작업.** `ArtSource/PawnRush/Garden/RoyalWaterGarden_v11.blend`, `plaza_player_v11.png`: 엇갈린 방사형 석재 포장 · 모서리 · 색 변화, 금속 거칠기, 햇빛과 하늘빛, 높이2.5m 투시 카메라. Blender 렌더 확인만. 참고 이미지 수준까지 꽃/벽/배경 추가 작업과 Unity 이전이 남음. 게임 코드 변경 없음.
 
 > **R265(승규 님, 11-01, `seoungtest`): Blender 물 표현을 Unity에도 별도 적용.** `GardenWaterLook.Apply`가 정원 FBX의 G09 수면 슬롯만 `PR_GardenWater`(기존 URP 물 셰이더 · 이중 노멀 · 프레넬 반사 · 느린 잔물결)로, G10 폭포 슬롯만 `PR_GardenWaterfall`로 교체한다. UV 없는 합쳐진 장식 메시라 폭포는 월드 좌표로 아래로 흐름, 다른 재질 슬롯/충돌은 보존. Resources 재질로 빌드에서 셰이더 참조 유지. `SeoungTestCourse.Version` 10 → Play 재생 시 재조립 또는 Build Pawn Rush Test Scene 메뉴. **Unity FBX 배치는 v06 그대로**(v10 Blender 고저차/벽은 별도 후속). Core 133개 통과(.NET 10), Unity 편집기 미연결로 C#/셰이더 Unity 컴파일 · 화면 · 사용자 확인 전.

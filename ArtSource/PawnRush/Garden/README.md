@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R267: `RoyalWaterGarden_v12.blend` refines the plaza flower beds. Rounded six-petal flowers, pollen centres, stems and individual leaves replace the original flat plaza flower pieces. Pink, yellow, ivory, lilac and coral variations share the v11 camera and lighting for comparison. This remains a Blender art pass; Unity transfer and performance testing are pending.
+
 R266: `RoyalWaterGarden_v11.blend` and `plaza_player_v11.png` are the first plaza art benchmark pass. Added staggered radial sandstone tiles with bevels and colour variation, refined metal roughness, warm sunlight/sky fill, and a perspective camera at 2.5 m. Existing terrain and water remain. This is a Blender art study; fine flowers, wall dressing, background art, and Unity transfer are still pending. The reference look is not yet achieved.
 
 `RoyalWaterGarden_v10.blend` is the editable Blender 5.2 working file, based on the v06 FBX in `seoungtest` (R263). It incorporates the raised approach and landing, mirrored four-step C routes that descend and rise, war-room masonry panels, and animated water and waterfall previews. Play frames 1–120 at 30 fps. The water uses procedural materials and animated mesh shape keys; no external texture files are required for the water.
