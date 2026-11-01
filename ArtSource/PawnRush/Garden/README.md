@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R278: `RoyalWaterGarden_v22.blend` from v21 by `build_v22.py`: robot arms 1.25x with an IK sweep loop (weight bottom 0.25 m over the walkway at z 5.0), elbow knuckles and shoulder hinges; terrace-tank falls fitted to the tank lip with tank water; stone spout lips over the reservoir outlets. Renders: `robot_swing_v22.png` (6 moments of the loop), `falls_v22.png`.
+
 R277: `RoyalWaterGarden_v21.blend` is built from v20 by `build_v21.py` (rotor fragments of the static curb/hub ring returned to a static object, plaza entries closed with piers, hub collar, twelve stylized trees from `source_glb/`, hidden plaza collision proxy). Unity uses v21; see [UNITY.md](UNITY.md). `fix_compare_v20_v21.png`: top row v20, bottom row v21 (plaza at frame 75, south entry, trees).
 
 R276 now integrates the visible v20 course and sampled motion into Unity. See [UNITY.md](UNITY.md) for build/play instructions, export scripts and remaining checks. Historical notes below describe the earlier Blender-only work.

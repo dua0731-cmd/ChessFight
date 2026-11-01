@@ -25,7 +25,7 @@ namespace ChessFight.PawnRush
     {
         public const string RootName = "SeoungTest_Zones";
         // Raised whenever a zone's build changes, so a scene built before it is built again (R244: the war room v2, R255: hard LD v1 and its Blender models, R258: the library shuttle loops in the physics step, R259: the shuttle driven from the shared clock, R260: the library's lower floor and its fall, R263: the royal water garden G beside the library).
-        public const int Version = 12; // R277: v21 garden (rotor no longer carries curb pieces, closed plaza entries, new trees, plaza collision proxy).
+        public const int Version = 13; // R278: v22 garden (robot arm sweep at walkway height, fitted waterfalls, clear water), nearest-floor start.
         static string VersionMark => "Zones v" + Version;
         // Wide gaps (10-30, 승규 님: room to widen the course sections): 80 m between zones, the mini-games 160 m in front.
         const float Gap = 80f, MiniRowZ = -160f;
@@ -251,7 +251,11 @@ namespace ChessFight.PawnRush
 
         static bool TryFloor(SeoungTestZone zone, Vector3 from, out Vector3 top)
         {
-            foreach (var hit in Physics.RaycastAll(from, Vector3.down, 200f, ~0, QueryTriggerInteraction.Ignore))
+            // RaycastAll is unordered: take the nearest floor, not whichever one comes first (R278: the garden start
+            // could land on the base slab under the moat instead of the start pad).
+            var hits = Physics.RaycastAll(from, Vector3.down, 200f, ~0, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
                 if (hit.collider.transform.IsChildOf(zone.transform) && hit.normal.y > .7f)
                 {
                     top = hit.point;

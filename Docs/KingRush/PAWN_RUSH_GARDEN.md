@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R278 Unity v22:** `RoyalWaterGarden_v22.fbx`/`_Motion.json`. 로봇팔 1.25배·IK 6초 루프(감기1초 → 0.85초 스윙, 길 바닥 위 0.25m → 반대편 0.75초 정지 → 1.8초 복귀 → 정지, 2번 팔 3초 늦게), `V22 | robot k elbow knuckle`(팔꿈치 자식)·`shoulder hinge`(고정). 테라스 수조 폭포를 수조 높이로, `V22 | tank water`(물 재질), `V22 | reservoir … spout`(박스 충돌). 물 재질 `PR_GardenWater`는 새 셰이더 `PR_GardenClearWater`(URP 깊이·불투명 텍스처 필요), 폭포 셰이더도 굴절형. 시작점은 가장 가까운 바닥(`TryFloor` 정렬). `Version=13`. Unity 확인 전.
+
 > **R277 Unity v21:** `RoyalGarden`은 `RoyalWaterGarden_v21.fbx`/`_Motion.json`을 읽는다(v20 Resources 파일 삭제). 회전봉에 섞였던 경계석·허브 고리 조각을 고정 오브젝트로 분리(벽 뜯김 원인, [PITFALLS §25](../Environment/PITFALLS.md)), 남북 입구 절단면 제거 후 석조 기둥벽·갓돌·기둥(박스 충돌), 허브 고정 고리, 나무 12그루 → 사용자 GLB 2종(`ArtSource/PawnRush/Garden/source_glb/`, 색 유지·충돌 없음). 충돌 역할 `proxy`: 숨긴 높이장 `V21 | plaza collision proxy`가 메시 충돌체, 장식 광장과 보수 포장은 충돌 없음. `SeoungTestCourse.Version=12`. Unity 확인 전.
 
 > **R276 Unity v20:** 이제 `RoyalGarden`은 v06 대신 `Resources/PawnRushGarden/RoyalWaterGarden_v20.fbx`와 `_Motion.json`을 읽는다. 보이는 메시418/동작15트랙, 24초 반복을 공유 시계로 물리 스텝마다 보간. 이동 루트 Kinematic/`IMovingSurface`, 경사/아치/동적 메시 충돌체와 정적 모듈 상자 충돌체, 새 물 슬롯·단색 URP 재질, 저수지 낙사 높이 갱신. 시험 씬 버전11: **ChessFight > SeoungTest > Build Pawn Rush Test Scene → Play**. Blender 조명/컴포지터/멀리 있는 배경은 시험 씬에 안 넣음. Core133 및 FBX/트랙 재가져오기 점검 통과, Unity 편집기 미연결로 Unity 컴파일/화면/승선/가동간섭/충돌/성능/사용자 확인 전. 아래 v06 설명은 이전 기록이며 최신은 `ArtSource/PawnRush/Garden/UNITY.md`.

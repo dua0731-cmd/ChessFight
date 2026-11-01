@@ -6,14 +6,14 @@ namespace ChessFight.PawnRush
 {
     public static partial class Course01v4Builder
     {
-        const string GardenModel = "PawnRushGarden/RoyalWaterGarden_v21";
+        const string GardenModel = "PawnRushGarden/RoyalWaterGarden_v22";
         static void RoyalGarden(CourseBuilder b)
         {
             var model = Resources.Load<GameObject>(GardenModel);
             var motionText = Resources.Load<TextAsset>(GardenModel + "_Motion");
-            if (model == null || motionText == null) { Debug.LogError("Royal garden v21 model/motion missing: " + GardenModel); return; }
+            if (model == null || motionText == null) { Debug.LogError("Royal garden v22 model/motion missing: " + GardenModel); return; }
             var take = JsonUtility.FromJson<SampledGardenMotion.Take>(motionText.text);
-            var pivot = new GameObject("Royal garden v21").transform;
+            var pivot = new GameObject("Royal garden v22").transform;
             pivot.SetParent(b.parent, false);
             pivot.localRotation = Quaternion.Euler(0, 180, 0);
             var garden = Object.Instantiate(model, pivot, false);
@@ -26,7 +26,8 @@ namespace ChessFight.PawnRush
                 if (!nodes.TryGetValue(role.name, out var node)) continue;
                 var renderer = node.GetComponent<Renderer>();
                 bool untextured = role.source.StartsWith("V1") || role.source.StartsWith("V20")
-                    || (role.source.StartsWith("V21") && !role.source.Contains("tree"));
+                    || ((role.source.StartsWith("V21") || role.source.StartsWith("V22"))
+                        && !role.source.Contains("tree") && !role.source.Contains("water"));
                 if (renderer != null && untextured)
                 {
                     // Supplied assets and derived structures stay untextured; the R277 trees keep their trunk/leaf colours.

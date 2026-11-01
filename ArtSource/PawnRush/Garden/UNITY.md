@@ -1,4 +1,8 @@
-# Unity garden v21 (R277)
+# Unity garden v22 (R278)
+
+Unity loads `RoyalWaterGarden_v22.fbx` / `_Motion.json` (456 meshes, 15 tracks; the robot pivot/elbow tracks now carry the IK sweep). Zone version 13. Rebuild: `build_v22.py` (v21 → v22 .blend), `export_unity_v22.py`, `check_unity_export_v22.py`. New roles: `V22 | reservoir … spout` = box; knuckles, shoulder hinges and tank water = none. Unity clay covers `V22` names except water. Water uses `Assets/Art/PawnRushMap/Shaders/PR_GardenClearWater.shader` through `Resources/PR_GardenWater.mat` (needs the URP depth and opaque textures, both on); `PR_GardenWaterfall` now refracts too. Shaders were not compiled here.
+
+## v21 (R277)
 
 R277 replaces the v20 export with `RoyalWaterGarden_v21.fbx` and `RoyalWaterGarden_v21_Motion.json` (444 meshes, same 15 tracks); zone version 12. Rebuild: `blender --background --python build_v21.py` (v20 → v21 .blend), then `export_unity_v21.py` and `check_unity_export_v21.py`. Collider roles: the decorative plaza and repaired pavement are `none`; `V21 | plaza collision proxy` is `proxy` (MeshCollider, renderer disabled in Unity); entry piers/coping/posts are `box`; trees are decoration only. Unity clay applies to `V1*`, `V20*` and `V21*` except the trees, which keep their trunk/leaf material colours. Unity was not connected: rendering, collision feel and performance remain unverified.
 
