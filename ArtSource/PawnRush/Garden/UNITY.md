@@ -1,4 +1,8 @@
-# Unity garden v24 (R280)
+# Unity garden v25 (R281)
+
+Unity loads `RoyalWaterGarden_v25.fbx` / `_Motion.json` (483 meshes, 13 tracks). Zone version 16. Rebuild: `build_v25.py`, `export_unity_v25.py` (`colors_type='LINEAR'` keeps the fall data exact), `check_unity_export_v25.py`. Fall meshes carry UV0 (metres) and vertex colour (r across, g lip→landing, b seed, a stream); `GardenWaterLook.ApplyBySource` assigns `PR_GardenFallSheet` by object name. The water shader draws no white foam; boats bend the surface with a Kelvin wake and bow/stern waves.
+
+## v24 (R280)
 
 Unity loads `RoyalWaterGarden_v24.fbx` / `_Motion.json` (474 meshes, 13 tracks, `splashes`, `boats`, `bobbers`). Zone version 15. Rebuild: `build_v24.py` (v23 → v24 .blend, writes `water_interaction_v24.json`), `export_unity_v24.py`, `check_unity_export_v24.py`. The six zigzag platforms keep their Blender drivers (`0.35*(1-cos(2*pi*(frame-1)/180+phase))`), sampled like the other tracks. The water shader's swell is now Gerstner waves with the finite-depth dispersion relation; `GardenWaterInteraction` also feeds the platforms' rims and vertical speeds.
 

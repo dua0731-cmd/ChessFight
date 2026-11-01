@@ -4,7 +4,7 @@ Shader "ChessFight/Garden Spray"
 {
     Properties
     {
-        _Color ("Mist", Color) = (0.94, 0.98, 1.0, 0.75)
+        _Color ("Mist", Color) = (0.9, 0.97, 1.0, 0.3)
         _Rise ("Rise (per second)", Float) = 0.45
         _Puffs ("Puff size", Float) = 5
     }

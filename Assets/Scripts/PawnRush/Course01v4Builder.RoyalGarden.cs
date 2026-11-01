@@ -6,14 +6,14 @@ namespace ChessFight.PawnRush
 {
     public static partial class Course01v4Builder
     {
-        const string GardenModel = "PawnRushGarden/RoyalWaterGarden_v24";
+        const string GardenModel = "PawnRushGarden/RoyalWaterGarden_v25";
         static readonly string[] Coloured = { "tree", "water", "bush", "flower", "fall", "spray", "lily" };
 
-        // Blender layers V1x-V24 are untextured clay, except the parts that carry their own colour or shader.
+        // Blender layers V1x-V25 are untextured clay, except the parts that carry their own colour or shader.
         static bool Untextured(string source)
         {
             if (source.StartsWith("V1") || source.StartsWith("V20")) return true;
-            if (!source.StartsWith("V21") && !source.StartsWith("V22") && !source.StartsWith("V23") && !source.StartsWith("V24")) return false;
+            if (!source.StartsWith("V21") && !source.StartsWith("V22") && !source.StartsWith("V23") && !source.StartsWith("V24") && !source.StartsWith("V25")) return false;
             foreach (var word in Coloured) if (source.Contains(word)) return false;
             return true;
         }
@@ -21,9 +21,9 @@ namespace ChessFight.PawnRush
         {
             var model = Resources.Load<GameObject>(GardenModel);
             var motionText = Resources.Load<TextAsset>(GardenModel + "_Motion");
-            if (model == null || motionText == null) { Debug.LogError("Royal garden v24 model/motion missing: " + GardenModel); return; }
+            if (model == null || motionText == null) { Debug.LogError("Royal garden v25 model/motion missing: " + GardenModel); return; }
             var take = JsonUtility.FromJson<SampledGardenMotion.Take>(motionText.text);
-            var pivot = new GameObject("Royal garden v24").transform;
+            var pivot = new GameObject("Royal garden v25").transform;
             pivot.SetParent(b.parent, false);
             pivot.localRotation = Quaternion.Euler(0, 180, 0);
             var garden = Object.Instantiate(model, pivot, false);
@@ -44,6 +44,7 @@ namespace ChessFight.PawnRush
                 }
             }
             GardenWaterLook.Apply(garden);
+            GardenWaterLook.ApplyBySource(take, nodes);
             // Create kinematic roots before their moving mesh colliders.
             garden.AddComponent<SampledGardenMotion>().Configure(motionText, b.parent, nodes);
             // R279: boats' wakes and the falls' landing foam on the water shader.

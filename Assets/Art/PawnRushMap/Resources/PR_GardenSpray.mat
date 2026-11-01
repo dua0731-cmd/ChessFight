@@ -28,6 +28,6 @@ Material:
     - _Puffs: 5
     - _Rise: 0.45
     m_Colors:
-    - _Color: {r: 0.94, g: 0.98, b: 1, a: 0.75}
+    - _Color: {r: 0.9, g: 0.97, b: 1, a: 0.3}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

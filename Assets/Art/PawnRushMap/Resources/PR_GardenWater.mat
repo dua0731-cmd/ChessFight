@@ -30,19 +30,17 @@ Material:
     m_Ints: []
     m_Floats:
     - _Choppiness: 0.45
-    - _Clarity: 1.2
+    - _Clarity: 2.2
     - _DetailScale: 0.85
     - _DetailStrength: 0.18
-    - _FoamDepth: 0.22
     - _FresnelPower: 5
     - _Glint: 7
     - _GlintSharpness: 900
-    - _Reflection: 0.8
+    - _Reflection: 0.7
     - _Refraction: 0.04
     - _RippleHeight: 0.02
     - _Sparkle: 1.5
-    - _SplashFoam: 1
-    - _WakeFoam: 1
+    - _WakeHeight: 0.045
     - _WaterDepth: 0.6
     - _WaveHeading: 75
     - _WaveHeight: 0.045
@@ -51,9 +49,8 @@ Material:
     - _WaveSpeed: 0.04
     - _WaveStrength: 0.35
     m_Colors:
-    - _DeepColor: {r: 0.01, g: 0.17, b: 0.5, a: 1}
-    - _FoamColor: {r: 0.93, g: 0.98, b: 1, a: 1}
-    - _ShallowColor: {r: 0.36, g: 0.76, b: 0.98, a: 1}
-    - _SkyColor: {r: 0.52, g: 0.76, b: 1, a: 1}
+    - _DeepColor: {r: 0.06, g: 0.4, b: 0.56, a: 1}
+    - _ShallowColor: {r: 0.62, g: 0.9, b: 0.96, a: 1}
+    - _SkyColor: {r: 0.68, g: 0.86, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -40,6 +40,23 @@ namespace ChessFight.PawnRush
             }
         }
 
+        // R281: the waterfalls and their spray by the object they belong to, so they get their shaders even if an
+        // importer renames the material slots.
+        public static void ApplyBySource(SampledGardenMotion.Take take, System.Collections.Generic.Dictionary<string, Transform> nodes)
+        {
+            var sheet = Resources.Load<Material>("PR_GardenFallSheet");
+            var spray = Resources.Load<Material>("PR_GardenSpray");
+            if (sheet == null || spray == null) return;
+            foreach (var role in take.meshes)
+            {
+                Material use = role.source.StartsWith("V25 | fall") ? sheet : role.source.StartsWith("V23 | fall spray") ? spray : null;
+                if (use == null || !nodes.TryGetValue(role.name, out var node) || !node.TryGetComponent<Renderer>(out var renderer)) continue;
+                var slots = renderer.sharedMaterials;
+                for (int i = 0; i < slots.Length; i++) slots[i] = use;
+                renderer.sharedMaterials = slots.Length > 0 ? slots : new[] { use };
+            }
+        }
+
         static bool IsFoliage(string name)
         {
             foreach (var word in Foliage) if (name.Contains(word)) return true;

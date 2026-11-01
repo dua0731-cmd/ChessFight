@@ -1,17 +1,18 @@
-// R279 garden waterfall sheets (Blender build_v23.py: one continuous sheet per fall, curling over the lip and dropping
-// on a ballistic path). UV0 = (metres across, metres along the flow), UV1 = (0..1 across, 0..1 from lip to landing).
-// Glassy and see-through at the lip (the scene behind is refracted), streaked white as it falls, mostly white water
-// and frayed edges at the bottom where it lands; the sheet ripples a little as it falls.
+// Garden waterfalls (R279 sheets; R281: a thin curtain plus round streams, build_v25.py). Vertex colour carries the
+// fall data so nothing depends on a second UV channel: r = across the lip 0..1, g = lip -> landing 0..1, b = a seed
+// per stream, a = 1 for a stream, 0 for the curtain. UV0 = (metres across or round, metres along the flow).
+// The water is clear at the lip (the scene behind is refracted) and takes in air as it falls, so streaks of white
+// run down it; the curtain thins into strands while the streams stay whole and catch the light at their edges.
 Shader "ChessFight/Garden Fall Sheet"
 {
     Properties
     {
-        _Tint ("Clear water tint", Color) = (0.78, 0.93, 1.0, 1)
-        _FoamColor ("White water", Color) = (0.95, 0.98, 1.0, 1)
-        _Speed ("Flow (m/s)", Float) = 3.2
-        _Streaks ("Streaks", Range(0, 1)) = 0.55
-        _Refraction ("Refraction", Range(0, 0.1)) = 0.02
-        _Wobble ("Wobble (m)", Float) = 0.03
+        _Tint ("Clear water tint", Color) = (0.80, 0.95, 1.0, 1)
+        _FoamColor ("Aerated water", Color) = (0.92, 0.97, 1.0, 1)
+        _Speed ("Flow (m/s)", Float) = 3.4
+        _Refraction ("Refraction", Range(0, 0.1)) = 0.03
+        _Wobble ("Wobble (m)", Float) = 0.025
+        _Aeration ("Aeration", Range(0, 1)) = 0.6
     }
     SubShader
     {
@@ -31,16 +32,17 @@ Shader "ChessFight/Garden Fall Sheet"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             CBUFFER_START(UnityPerMaterial)
                 half4 _Tint, _FoamColor;
-                float _Speed, _Streaks, _Refraction, _Wobble;
+                float _Speed, _Refraction, _Wobble, _Aeration;
             CBUFFER_END
-            struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv0:TEXCOORD0; float2 uv1:TEXCOORD1; };
+            struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv0:TEXCOORD0; float4 color:COLOR; };
             struct Varyings
             {
                 float4 positionCS:SV_POSITION;
                 float3 positionWS:TEXCOORD0;
                 half3 normalWS:TEXCOORD1;
-                float4 uv:TEXCOORD2;
-                float fog:TEXCOORD3;
+                float2 uv:TEXCOORD2;
+                float4 data:TEXCOORD3;
+                float fog:TEXCOORD4;
             };
             float FallHash(float2 p) { return frac(sin(dot(p,float2(127.1,311.7)))*43758.5453); }
             float FallNoise(float2 p)
@@ -53,40 +55,42 @@ Shader "ChessFight/Garden Fall Sheet"
                 Varyings o;
                 float3 n=TransformObjectToWorldNormal(v.normalOS);
                 float3 ws=TransformObjectToWorld(v.positionOS.xyz);
-                // Ripples run down the sheet and grow as it falls.
-                ws+=n*sin(v.uv0.x*2.3+v.uv0.y*1.7-_Time.y*_Speed*1.4)*_Wobble*(0.25+v.uv1.y);
+                // Ripples run down the water and grow as it falls.
+                ws+=n*sin(v.uv0.x*2.1+v.uv0.y*1.9-_Time.y*_Speed*1.3+v.color.b*6.2831853)*_Wobble*(0.2+v.color.g);
                 o.positionWS=ws; o.normalWS=n;
                 o.positionCS=TransformWorldToHClip(ws);
-                o.uv=float4(v.uv0,v.uv1);
+                o.uv=v.uv0; o.data=v.color;
                 o.fog=ComputeFogFactor(o.positionCS.z);
                 return o;
             }
             half4 frag(Varyings i, bool front:SV_IsFrontFace):SV_Target
             {
-                float across=i.uv.x, down=i.uv.y-_Time.y*_Speed;      // features travel down the sheet
-                float side=i.uv.z, fall=i.uv.w;
-                float n1=FallNoise(float2(across*4.0,down*0.35));
-                float n2=FallNoise(float2(across*11.0,down*0.9+7.0));
-                float n3=FallNoise(float2(across*23.0,down*2.2+3.0));
-                float streak=smoothstep(1-_Streaks,1,n1*0.6+n2*0.4);
-                // White water grows from a third of the way down and dominates the landing.
-                float white=saturate(smoothstep(0.25,1.0,fall)*(0.55+0.6*n2)+streak*0.8);
+                float side=i.data.r, fall=i.data.g, seed=i.data.b, jet=i.data.a;
+                float flow=i.uv.y-_Time.y*_Speed*(0.85+0.3*seed);            // features travel down
+                float n1=FallNoise(float2(i.uv.x*3.5+seed*17.0,flow*0.45));
+                float n2=FallNoise(float2(i.uv.x*9.0+seed*31.0,flow*1.2));
+                float n3=FallNoise(float2(i.uv.x*23.0+seed*7.0,flow*3.1));
+                // Air is drawn in as the water falls: clear at the lip, streaked white lower down.
+                float air=saturate(fall*1.1-0.12+(n1-0.5)*0.6)*_Aeration;
+                float streak=smoothstep(0.5,0.9,n2*0.6+n3*0.4);
+                float white=saturate(air*(0.45+0.7*streak));
+                // The curtain thins into strands as it falls; the streams stay whole.
+                float strands=lerp(1.0,smoothstep(0.38,0.62,n1*0.65+n2*0.35),(1-jet)*smoothstep(0.1,0.55,fall));
                 half3 normal=normalize(i.normalWS)*(front?1:-1);
-                float2 uv=GetNormalizedScreenSpaceUV(i.positionCS);
-                half3 behind=SampleSceneColor(uv+(float2(n2,n3)-0.5)*_Refraction);
+                float2 suv=GetNormalizedScreenSpaceUV(i.positionCS);
+                half3 behind=SampleSceneColor(suv+(float2(n2,n3)-0.5)*_Refraction);
                 Light sun=GetMainLight();
-                half lit=0.8+0.2*saturate(dot(normal,sun.direction));
-                half3 glass=behind*_Tint.rgb+sun.color*0.05;
                 half3 V=normalize(GetWorldSpaceViewDir(i.positionWS));
-                half spec=pow(saturate(dot(normal,normalize(sun.direction+V))),60)*(0.3+0.7*n3);
-                // A bright roll where the water curls over the lip.
-                half lipGlow=smoothstep(0.08,0.0,fall)*0.25;
-                half3 c=lerp(glass,_FoamColor.rgb*lit*lerp(half3(1,1,1),sun.color,0.3),white)+sun.color*(spec*0.35+lipGlow);
-                // Frayed side edges and a broken-up bottom.
-                float fray=n3*0.12;
-                half edge=smoothstep(0.0,0.07+fray,side)*smoothstep(1.0,0.93-fray,side);
-                half foot=1-smoothstep(0.93,1.0,fall+n2*0.05);
-                half alpha=edge*foot*lerp(0.9,1.0,white);
+                half fres=pow(1-saturate(abs(dot(normal,V))),3);
+                half spec=pow(saturate(dot(normal,normalize(sun.direction+V))),80)*(0.4+0.6*n3);
+                half3 glass=behind*_Tint.rgb+_Tint.rgb*fres*0.35;
+                half3 aerated=_FoamColor.rgb*(0.78+0.22*saturate(dot(normal,sun.direction)));
+                half3 c=lerp(glass,aerated,white)+sun.color*spec*0.6;
+                // A veil of a curtain, fuller streams; frayed curtain sides and a soft foot.
+                half edge=lerp(smoothstep(0.0,0.06+n3*0.05,side)*smoothstep(1.0,0.94-n3*0.05,side),1.0,jet);
+                half foot=1-smoothstep(0.94,1.0,fall+(n2-0.5)*0.04);
+                half body=lerp(0.35,0.92,jet);
+                half alpha=saturate(body*strands*edge*foot*lerp(0.8,1.0,white)+fres*jet*0.1);
                 return half4(MixFog(c,i.fog),alpha);
             }
             ENDHLSL

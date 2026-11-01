@@ -25,7 +25,7 @@ namespace ChessFight.PawnRush
     {
         public const string RootName = "SeoungTest_Zones";
         // Raised whenever a zone's build changes, so a scene built before it is built again (R244: the war room v2, R255: hard LD v1 and its Blender models, R258: the library shuttle loops in the physics step, R259: the shuttle driven from the shared clock, R260: the library's lower floor and its fall, R263: the royal water garden G beside the library).
-        public const int Version = 15; // R280: v24 garden (lily pads, capped robot joints, six-platform zigzag, Gerstner water).
+        public const int Version = 16; // R281: v25 garden (waterfall streams, boats in the water, no white foam, Kelvin wakes).
         static string VersionMark => "Zones v" + Version;
         // Wide gaps (10-30, 승규 님: room to widen the course sections): 80 m between zones, the mini-games 160 m in front.
         const float Gap = 80f, MiniRowZ = -160f;
