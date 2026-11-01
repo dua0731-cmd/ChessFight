@@ -393,63 +393,7 @@ def build():
                 if i==5:c.conveyor(14);c.conveyor(33);c.bridge(57)
             c.finish_beat()
         c.save()
-    scene()
     outputs['Tools/RoyalPalace/layout_report.json']=json.dumps(reports,ensure_ascii=False,indent=2)+'\n'
-
-def scene():
-    # Preserve the known-good lab camera, directional light and physics fixture only.
-    template=(ROOT/'Assets/Scenes/ObstacleRagdollTest.unity').read_text()
-    blocks=re.split(r'(?=^--- !u!)',template,flags=re.M)
-    selected=[]
-    for block in blocks:
-        match=re.match(r'--- !u!\d+ &(\d+)',block)
-        if match and (int(match[1]) in (1,2,3,4) or 800001<=int(match[1])<=800011):
-            selected.append(block.replace('  - component: {fileID: 800494}\n','').replace('Ragdoll Obstacle Test','Royal Palace Course Test'))
-    d=Doc(900000);g=d.go('Course selection and playtest')
-    d.script(g,'RoyalPalaceCourseTest',fields(pawnPrefab='{fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}',
-        tuning='{fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}',cameraRig=ref(800005),initialInstance=ref(950002),fallHeight=-8)+
-        '  courses:\n'+''.join('  - '+external(r['component'],r['prefab'])+'\n' for r in reports))
-    first=reports[0];pguid=guid(first['prefab'])
-    instance=f'''--- !u!1001 &950000
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {{fileID: 0}}
-    m_Modifications: []
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {{fileID: 100100000, guid: {pguid}, type: 3}}
---- !u!4 &950001 stripped
-Transform:
-  m_CorrespondingSourceObject: {{fileID: {first['transform']}, guid: {pguid}, type: 3}}
-  m_PrefabInstance: {{fileID: 950000}}
-  m_PrefabAsset: {{fileID: 0}}
---- !u!114 &950002 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {{fileID: {first['component']}, guid: {pguid}, type: 3}}
-  m_PrefabInstance: {{fileID: 950000}}
-  m_PrefabAsset: {{fileID: 0}}
-  m_GameObject: {{fileID: 0}}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {{fileID: 11500000, guid: {SCRIPT['CourseModule']}, type: 3}}
-  m_Name:
-  m_EditorClassIdentifier:
---- !u!1660057539 &9223372036854775807
-SceneRoots:
-  m_ObjectHideFlags: 0
-  m_Roots:
-  - {{fileID: 800002}}
-  - {{fileID: 800007}}
-  - {{fileID: 800010}}
-  - {{fileID: {g['tr']}}}
-  - {{fileID: 950001}}
-'''
-    outputs['Assets/Scenes/RoyalPalaceCourseTest.unity']=HEAD+''.join(selected)+d.render(scene=False)[len(HEAD):]+instance
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
@@ -474,5 +418,5 @@ def main():
     for path in [*sorted(folders),*assets]:
         meta=ROOT/(path+'.meta')
         meta.write_text('\n'.join(line.rstrip() for line in meta.read_text().splitlines())+'\n')
-    print(f'Wrote {len(reports)} course prefabs, one test scene and {len(MAT)} materials.')
+    print(f'Wrote {len(reports)} course prefabs, {len(MAT)} materials.')
 if __name__=='__main__':main()

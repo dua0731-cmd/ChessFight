@@ -30,6 +30,7 @@ namespace ChessFight.RagdollLab
         readonly Vector3[] shoulders = new Vector3[2];
         Material white, black, gold, red;
         LabCamera cameraRig;
+        GiantChessApproach approach;
         string[][] score;
         int selected, ply, phase, from, to, rookFrom, rookTo;
         float elapsed;
@@ -52,7 +53,7 @@ namespace ChessFight.RagdollLab
         {
             for (int s = 0; s < 64; s++) occupiedMarks[s].SetActive(Occupied(s));
         }
-        Vector3 Spawn(int i) => new Vector3((i / 6 == 0 ? -1 : 1) * tileSize + (i % 3 - 1) * 2.5f, 0, -10 - i % 2 * 3);
+        Vector3 Spawn(int i) => approach != null && approach.Available && !approach.Entered(i) ? approach.Spawn(i) : new Vector3((i / 6 == 0 ? -1 : 1) * tileSize + (i % 3 - 1) * 2.5f, 0, -10 - i % 2 * 3);
         Material Mat(Color color) { var m = new Material(Shader.Find("Standard")) { color = color }; materials.Add(m); return m; }
         GameObject Shape(string name, Vector3 pos, Vector3 size, Material mat, PrimitiveType type = PrimitiveType.Cube, bool solid = true)
         {
@@ -64,6 +65,8 @@ namespace ChessFight.RagdollLab
         void Awake()
         {
             cameraRig = FindFirstObjectByType<LabCamera>();
+            approach = GetComponent<GiantChessApproach>();
+            if (approach != null) approach.ResetProgress();
             var data = Resources.Load<TextAsset>("GiantChessScore");
             if (!pawnPrefab || !tuning || !cameraRig || !data) { Debug.LogError("Giant chess requires pawn, tuning, camera and score.", this); enabled = false; return; }
             var lines = data.text.Trim().Split('\n'); score = new string[lines.Length][];
@@ -173,8 +176,17 @@ namespace ChessFight.RagdollLab
             root.transform.rotation = Quaternion.Euler(0, light ? -90 : 90, 0);
             return root;
         }
-        void ResetPlayers() { for (int i = 0; i < players.Count; i++) { finished[i] = false; Place(i); } }
-        void Place(int i) { players[i].SetInput(default); players[i].Teleport(Spawn(i) + Vector3.up * (players[i].standHeight + .1f), Vector3.forward); botGoals[i] = Spawn(i); }
+        void ResetPlayers() { if (approach != null) approach.ResetProgress(); for (int i = 0; i < players.Count; i++) { finished[i] = false; Place(i); } }
+        void Place(int i)
+        {
+            bool onApproach = approach != null && approach.Available && !approach.Entered(i);
+            Vector3 facing = onApproach ? approach.Facing(i) : Vector3.forward;
+            players[i].SetInput(default);
+            players[i].Teleport(Spawn(i) + Vector3.up * (players[i].standHeight + .1f), facing);
+            if (onApproach) approach.RecoverRoute(i);
+            botGoals[i] = Spawn(i);
+            if (i == selected) cameraRig.yaw = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
+        }
         void Select(int i) { selected = i % players.Count; cameraRig.soloTarget = players[selected]; cameraRig.distance = 12; cameraRig.maxDistance = 45; }
         void CursorState() { Cursor.visible = menu; Cursor.lockState = menu ? CursorLockMode.None : CursorLockMode.Locked; }
         void OnApplicationFocus(bool focus) { if (initialized && !focus) { menu = true; CursorState(); } }
@@ -235,10 +247,10 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.B)) botsEnabled = !botsEnabled;
                 if (Input.GetKeyDown(KeyCode.R)) Place(selected);
                 if (Input.GetKeyDown(KeyCode.F3)) { ResetBoard(); ResetPlayers(); }
-                if (Input.GetKeyDown(KeyCode.N) && running) elapsed = 1000; // Advance one phase, never skip a chess move.
+                if (Input.GetKeyDown(KeyCode.N) && running && (approach == null || !approach.Available || approach.ChessStarted)) elapsed = 1000; // Advance one phase, never skip a chess move.
             }
             bool active = running && !menu && Application.isFocused;
-            if (active)
+            if (active && (approach == null || !approach.Available || approach.ChessStarted))
             {
                 elapsed += Time.deltaTime * Mathf.Clamp(replaySpeed, .25f, 16f);
                 if (phase == 0 && elapsed >= restSeconds) BeginMove();
@@ -270,7 +282,8 @@ namespace ChessFight.RagdollLab
             {
                 var pawn = players[i]; pawn.SetInput(default);
                 if (!pawn.IsFinite() || pawn.Hips.position.y < -8) Place(i);
-                if (pawn.Hips.position.z > tileSize * 8 + 3 && Mathf.Abs(pawn.Hips.position.x) < tileSize * 4) finished[i] = true;
+                if (approach != null) approach.Observe(i, pawn);
+                if ((approach == null || approach.Entered(i)) && pawn.Hips.position.z > tileSize * 8 + 3 && Mathf.Abs(pawn.Hips.position.x) < tileSize * 4) finished[i] = true;
                 if (i != selected && active && botsEnabled && !finished[i]) DriveBot(i);
             }
             // Manual movement remains available after the last move and after crossing the finish.
@@ -283,7 +296,9 @@ namespace ChessFight.RagdollLab
         }
         void DriveBot(int i)
         {
-            var pawn = players[i]; var p = pawn.Hips.position;
+            var pawn = players[i];
+            if (approach != null && approach.Available && !approach.Entered(i)) { approach.DriveBot(i, pawn); return; }
+            var p = pawn.Hips.position;
             Vector3 best = Vector3.zero; float bestScore = float.NegativeInfinity;
             // Short obstacle-aware steering; bots are test opponents, not puzzle-solving teammates.
             for (int direction = 0; direction < 16; direction++)
@@ -310,7 +325,13 @@ namespace ChessFight.RagdollLab
             int a = 0, b = 0; for (int i = 0; i < 12; i++) if (finished[i]) { if (i < 6) a++; else b++; }
             GUI.Box(new Rect(12, 12, 720, 155), "");
             string move = ply < score.Length ? $"{ply / 2 + 1}. {(ply % 2 == 0 ? "백" : "흑")} {score[ply][5]}" : "Rc2# · 기보 종료";
-            GUI.Label(new Rect(24, 20, 690, 140), $"거인 작전실 워게임 · {move}\n{(phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비")} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 입구 복귀 · F3 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
+            string stage = approach != null && approach.Available && !approach.Entered(selected)
+                ? $"작전실 장애물 코스 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount}"
+                : "거인 작전실 워게임";
+            string state = approach != null && approach.Available && !approach.ChessStarted
+                ? "체스판 입구 도착 대기"
+                : phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비";
+            GUI.Label(new Rect(24, 20, 690, 140), $"{stage} · {move}\n{state} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 현재 구간 복귀 · F3 전체 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
         }
         void OnDestroy()
         {

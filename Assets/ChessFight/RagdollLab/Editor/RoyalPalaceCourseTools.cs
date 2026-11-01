@@ -7,14 +7,6 @@ namespace ChessFight.RagdollLab.Editor
 {
     public static class RoyalPalaceCourseTools
     {
-        [MenuItem("ChessFight/Courses/Open Royal Palace Test")]
-        public static void Open()
-        {
-            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-                EditorSceneManager.OpenScene("Assets/Scenes/RoyalPalaceCourseTest.unity");
-        }
-
         [MenuItem("ChessFight/Courses/Save Selected Course As Prefab")]
         public static void Save()
         {
