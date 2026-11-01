@@ -1,10 +1,12 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R264 Blender 작업본(2026-11-01):** `ArtSource/PawnRush/Garden/RoyalWaterGarden_v10.blend`는 v06 FBX를 가져와 경사로와 C자 발판의 고저차, 작전 회의실 벽 패널, 잔물결 · 폭포 애니메이션과 사실적인 물 재질을 편집한 별도 작업본이다. 30fps, 1~120프레임. **Unity FBX와 시험 씬은 여전히 아래 v06이다.** 원래 `.blend`가 아니라 FBX에서 복원했으므로 회전봉 · 진자 · 보트의 Blender 드라이버는 없다. Blender 물 재질/애니메이션을 Unity에 옮기려면 별도 셰이더와 동작 구현, 높아진 물의 낙사 범위 · 이동 피벗 · 충돌 재점검이 필요하다. Blender 렌더 · 데이터 점검만, Unity/사용자 확인 전.
+
 2026-11-01, 승규 님. 클라우드 채팅에서 Blender로 만든 정원 맵을 `seoungtest`의 폰 러쉬 시험 씬(`SeoungTest_PawnRush`)에 **도서관 컨베이어 코스(구역 E) 옆 구역 G**로 넣었다. Blender 배치 그대로의 시험용이며 최종 아트 · 밸런스가 아니다. `seoungtest`에 커밋 · 푸시, **Unity · 사람 확인 전.**
 
 ## 1. 원본과 버전
 
-맵 원본(`.blend` · 스크립트 · 렌더)은 저장소 밖(승규 님 PC의 Git 제외 폴더, 클라우드 채팅 ZIP `ChessFight_Garden_v06_Claude.zip`)에 있고, 저장소에는 Unity가 읽는 FBX만 넣었다.
+v06 당시 맵 원본(`.blend` · 스크립트 · 렌더)은 저장소 밖(승규 님 PC의 Git 제외 폴더, 클라우드 채팅 ZIP `ChessFight_Garden_v06_Claude.zip`)에 있었고 저장소에는 Unity FBX만 넣었다. 이후 v06 FBX에서 복원해 편집한 v10 Blender 작업본은 위 R264 경로에 있다.
 
 | 버전 | 한 것 |
 |---|---|
