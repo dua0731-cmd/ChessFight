@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R283 Unity v26:** 같은 이름 `RoyalWaterGarden.fbx`/`_Motion.json`(528메시). 분출구 = `V26 | spout stone …`(테두리 · 홈통 · 수조 난간벽, 상자 충돌체) + `V26 | spout shadow …`(어두운 입구, 색 유지 — `Coloured`에 `shadow`), 폭포 = `V26 | fall curtain/streams …`(소스 이름으로 `PR_GardenFallSheet`), 착수선 17개(`water_interaction_v26.json`). 물 셰이더: `_BodyDepth` · `_CrestColor` · `_ChurnColor` · `_ChurnReach`, 착수선 배열 `_GardenLanding*`(24), 배 `_GardenBoatInfo`(들썩임 m/s · 흔들림 rad/s). 폭포 셰이더: 큐 Transparent+5, `_GardenFoot`(해자 수면 높이) · `_PoolTint` · `_FootHeight`. 보트 드라이버 7cm · 0.03rad · 0.05rad. `Version=18`. Unity 확인 전.
+
 > **R281 Unity v25:** `RoyalWaterGarden_v25.fbx`/`_Motion.json`. 폭포 = `V25 | fall curtain …` + `V25 | fall streams …`(정점 색: r 가로, g 진행도, b 시드, a 물줄기=1), `GardenWaterLook.ApplyBySource`가 소스 이름으로 `PR_GardenFallSheet` 연결. 저수지 수면 +0.24m(약 3.5m), 보트 피벗 드라이버로 위아래·앞뒤·좌우 흔들림. 물 셰이더는 흰 거품 없이 굴곡만: `BoatWaves`(켈빈 항적 · 선수/선미파 · 고리), `RingSlope`(폭포 · 발판). `_WakeHeight`. `Version=16`. Unity 확인 전.
 
 > **R280 Unity v24:** `RoyalWaterGarden_v24.fbx`/`_Motion.json`(트랙13: 보트2 · 진자2 · 팔꿈치2 · 회전봉 · 지그재그 발판6, `bobbers` 발판 트랙 · 반지름3m). C발판 구역 24→28m: 입구 턱 y -13~-10 · 높이 1.95m, 경사로 y -20~-13, 발판 중심 (∓2.9, -7+4.4k), 윗면 2.05+0.5k(+0~0.7 흔들림, 위상 -60°k). 물 셰이더 Gerstner(`_WaveHeight/_WaveLength/_WaveHeading/_WaterDepth/_Choppiness`), 발판 고리 `_RippleHeight`. `Version=15`. Unity 확인 전.

@@ -9,13 +9,14 @@ namespace ChessFight.PawnRush
         // R282: one fixed name (and GUID) for every version, so a pull never leaves a saved scene pointing at a deleted
         // file; the Blender export overwrites it.
         const string GardenModel = "PawnRushGarden/RoyalWaterGarden";
-        static readonly string[] Coloured = { "tree", "water", "bush", "flower", "fall", "spray", "lily" };
+        static readonly string[] Coloured = { "tree", "water", "bush", "flower", "fall", "spray", "lily", "shadow" };
 
-        // Blender layers V1x-V25 are untextured clay, except the parts that carry their own colour or shader.
+        // Blender layers V1x-V26 are untextured clay, except the parts that carry their own colour or shader (R283: the
+        // outlets' dark mouths keep their near-black).
         static bool Untextured(string source)
         {
             if (source.StartsWith("V1") || source.StartsWith("V20")) return true;
-            if (!source.StartsWith("V21") && !source.StartsWith("V22") && !source.StartsWith("V23") && !source.StartsWith("V24") && !source.StartsWith("V25")) return false;
+            if (!source.StartsWith("V21") && !source.StartsWith("V22") && !source.StartsWith("V23") && !source.StartsWith("V24") && !source.StartsWith("V25") && !source.StartsWith("V26")) return false;
             foreach (var word in Coloured) if (source.Contains(word)) return false;
             return true;
         }

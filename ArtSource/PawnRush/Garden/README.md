@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R283: `RoyalWaterGarden_v26.blend` from v25 by `build_v26.py`: every fall leaves through an outlet (17: arched surround, dark mouth and stone trough on the reservoir walls; a parapet with arched openings on the tanks), with its own curtain, streams, landing line and spray; the old v04 lip pieces in front of the side outlets and the old lip foam curves are gone; boat sway 7 cm / 1.7 degrees / 2.9 degrees. Render: `review_v26.png`.
+
 R281: `RoyalWaterGarden_v25.blend` from v24 by `build_v25.py`: waterfalls rebuilt as a thin curtain plus 149 round streams (vertex-colour fall data), reservoir water raised 0.24 m so the boats sit in it, boat bob/pitch/roll drivers, zigzag platform feet extended 0.8 m. Export uses linear vertex colours. Render (preview material): `review_v25.png`.
 
 R280: `RoyalWaterGarden_v24.blend` from v23 by `build_v24.py`: lily pads rebuilt on the water surface, robot arm cut loops capped and elbow knuckles grown to 1.6 m, the static ripple-ring meshes hidden, the C crossing rebuilt as one six-platform zigzag with the section stretched from 24 to 28 m (entry ledge moved 4 m south and 1 m down, ramp shortened to 7 m), centre fall moved 3 m west. `water_interaction_v24.json` adds the bobbing platforms. Render: `review_v24.png`.

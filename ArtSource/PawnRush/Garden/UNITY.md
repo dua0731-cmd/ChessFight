@@ -1,3 +1,7 @@
+# Unity garden v26 (R283)
+
+Same files (`RoyalWaterGarden.fbx` / `_Motion.json`), now the v26 content: 528 meshes, 13 tracks, 17 `splashes`. Zone version 18. Rebuild: `build_v26.py`, `export_unity_v26.py` (outlet stone `V26 | spout stone …` = box), `check_unity_export_v26.py`. `V26 | spout shadow …` keeps its near-black colour; `V26 | fall …` gets `PR_GardenFallSheet` by object name. The water shader reads `_GardenLanding*` (renamed from `_GardenSplash*`, 24 entries) and `_GardenBoatInfo`; the fall shader reads `_GardenFoot` and draws after the water.
+
 # Unity garden: fixed file names (R282)
 
 From R282 the garden lives at `Assets/Resources/PawnRushGarden/RoyalWaterGarden.fbx` and `RoyalWaterGarden_Motion.json` (the v25 content, GUIDs kept). Future exports overwrite these two files instead of adding `_v2x` copies, so a pulled scene never points at a deleted model. `export_unity_v25.py` / `check_unity_export_v25.py` already use the fixed names.

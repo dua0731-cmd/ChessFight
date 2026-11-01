@@ -3,6 +3,9 @@
 // per stream, a = 1 for a stream, 0 for the curtain. UV0 = (metres across or round, metres along the flow).
 // The water is clear at the lip (the scene behind is refracted) and takes in air as it falls, so streaks of white
 // run down it; the curtain thins into strands while the streams stay whole and catch the light at their edges.
+// R283 (승규 11-02: "where the fall meets the water it looks unnatural"): drawn after the water, so the water's depth
+// hides what is under the surface; over the last half metre above the moat (_GardenFoot from
+// GardenWaterInteraction) the water spreads, slows its streaks, takes the pool's turquoise and thins out unevenly.
 Shader "ChessFight/Garden Fall Sheet"
 {
     Properties
@@ -13,10 +16,12 @@ Shader "ChessFight/Garden Fall Sheet"
         _Refraction ("Refraction", Range(0, 0.1)) = 0.03
         _Wobble ("Wobble (m)", Float) = 0.025
         _Aeration ("Aeration", Range(0, 1)) = 0.6
+        _PoolTint ("Pool water at the foot", Color) = (0.45, 0.86, 0.95, 1)
+        _FootHeight ("Foot blend height (m)", Float) = 0.55
     }
     SubShader
     {
-        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Transparent" "Queue"="Transparent" }
+        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Transparent" "Queue"="Transparent+5" }
         Blend SrcAlpha OneMinusSrcAlpha
         ZWrite Off
         Cull Off
@@ -31,9 +36,10 @@ Shader "ChessFight/Garden Fall Sheet"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             CBUFFER_START(UnityPerMaterial)
-                half4 _Tint, _FoamColor;
-                float _Speed, _Refraction, _Wobble, _Aeration;
+                half4 _Tint, _FoamColor, _PoolTint;
+                float _Speed, _Refraction, _Wobble, _Aeration, _FootHeight;
             CBUFFER_END
+            float4 _GardenFoot;   // x: world height of the moat surface, w: 1 when set (GardenWaterInteraction)
             struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv0:TEXCOORD0; float4 color:COLOR; };
             struct Varyings
             {
@@ -57,6 +63,9 @@ Shader "ChessFight/Garden Fall Sheet"
                 float3 ws=TransformObjectToWorld(v.positionOS.xyz);
                 // Ripples run down the water and grow as it falls.
                 ws+=n*sin(v.uv0.x*2.1+v.uv0.y*1.9-_Time.y*_Speed*1.3+v.color.b*6.2831853)*_Wobble*(0.2+v.color.g);
+                // At the foot the water breaks up and pushes outward a little as it hits the pool.
+                float low=_GardenFoot.w*saturate(1-(ws.y-_GardenFoot.x)/max(_FootHeight,0.05));
+                ws+=n*low*low*0.12*sin(v.uv0.x*5.3-_Time.y*7.0+v.color.b*11.0);
                 o.positionWS=ws; o.normalWS=n;
                 o.positionCS=TransformWorldToHClip(ws);
                 o.uv=v.uv0; o.data=v.color;
@@ -86,9 +95,14 @@ Shader "ChessFight/Garden Fall Sheet"
                 half3 glass=behind*_Tint.rgb+_Tint.rgb*fres*0.35;
                 half3 aerated=_FoamColor.rgb*(0.78+0.22*saturate(dot(normal,sun.direction)));
                 half3 c=lerp(glass,aerated,white)+sun.color*spec*0.6;
+                // Near the pool the water takes its colour and thins out unevenly into it, instead of ending on a line.
+                float above=(i.positionWS.y-_GardenFoot.x)/max(_FootHeight,0.05);
+                half pool=_GardenFoot.w*saturate(1-above);
+                c=lerp(c,behind*_PoolTint.rgb+_PoolTint.rgb*0.12,pool*0.7);
+                half sink=lerp(1.0,smoothstep(0.0,0.35+0.5*n2,above+(n1-0.5)*0.3),_GardenFoot.w);
                 // A veil of a curtain, fuller streams; frayed curtain sides and a soft foot.
                 half edge=lerp(smoothstep(0.0,0.06+n3*0.05,side)*smoothstep(1.0,0.94-n3*0.05,side),1.0,jet);
-                half foot=1-smoothstep(0.94,1.0,fall+(n2-0.5)*0.04);
+                half foot=(1-smoothstep(0.94,1.0,fall+(n2-0.5)*0.04))*sink;
                 half body=lerp(0.35,0.92,jet);
                 half alpha=saturate(body*strands*edge*foot*lerp(0.8,1.0,white)+fres*jet*0.1);
                 return half4(MixFog(c,i.fog),alpha);

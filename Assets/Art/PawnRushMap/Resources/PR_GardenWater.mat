@@ -29,28 +29,32 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Choppiness: 0.45
-    - _Clarity: 2.2
+    - _BodyDepth: 1.2
+    - _ChurnReach: 1.6
+    - _Choppiness: 0.6
+    - _Clarity: 1.6
     - _DetailScale: 0.85
-    - _DetailStrength: 0.18
+    - _DetailStrength: 0.28
     - _FresnelPower: 5
     - _Glint: 7
     - _GlintSharpness: 900
     - _Reflection: 0.7
     - _Refraction: 0.04
-    - _RippleHeight: 0.02
+    - _RippleHeight: 0.035
     - _Sparkle: 1.5
-    - _WakeHeight: 0.045
+    - _WakeHeight: 0.085
     - _WaterDepth: 0.6
     - _WaveHeading: 75
-    - _WaveHeight: 0.045
-    - _WaveLength: 13
+    - _WaveHeight: 0.065
+    - _WaveLength: 10
     - _WaveScale: 0.15
-    - _WaveSpeed: 0.04
-    - _WaveStrength: 0.35
+    - _WaveSpeed: 0.06
+    - _WaveStrength: 0.55
     m_Colors:
-    - _DeepColor: {r: 0.06, g: 0.4, b: 0.56, a: 1}
-    - _ShallowColor: {r: 0.62, g: 0.9, b: 0.96, a: 1}
+    - _ChurnColor: {r: 0.62, g: 0.93, b: 0.97, a: 1}
+    - _CrestColor: {r: 0.3, g: 0.92, b: 0.85, a: 1}
+    - _DeepColor: {r: 0.02, g: 0.3, b: 0.58, a: 1}
+    - _ShallowColor: {r: 0.5, g: 0.88, b: 0.98, a: 1}
     - _SkyColor: {r: 0.68, g: 0.86, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
