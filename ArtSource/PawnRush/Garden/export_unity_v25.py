@@ -53,11 +53,11 @@ for o in visible:
 bpy.ops.object.select_all(action='DESELECT')
 for o in ordered:o.hide_set(False);o.select_set(True)
 for o in ordered:o.name=names[o]
-bpy.ops.export_scene.fbx(filepath=str(target/'RoyalWaterGarden_v25.fbx'),use_selection=True,object_types={'MESH','EMPTY'},apply_unit_scale=True,apply_scale_options='FBX_SCALE_NONE',axis_forward='-Z',axis_up='Y',bake_anim=False,use_mesh_modifiers=False,mesh_smooth_type='FACE',add_leaf_bones=False,path_mode='AUTO',embed_textures=False,colors_type='LINEAR')
+bpy.ops.export_scene.fbx(filepath=str(target/'RoyalWaterGarden.fbx'),use_selection=True,object_types={'MESH','EMPTY'},apply_unit_scale=True,apply_scale_options='FBX_SCALE_NONE',axis_forward='-Z',axis_up='Y',bake_anim=False,use_mesh_modifiers=False,mesh_smooth_type='FACE',add_leaf_bones=False,path_mode='AUTO',embed_textures=False,colors_type='LINEAR')
 extra=json.loads((folder/'water_interaction_v25.json').read_text(encoding='utf8'))
 track_of={t['source']:t['name'] for t in tracks}
 boats=[dict(b,track=track_of[b['pivot']]) for b in extra['boats']]
 bobbers=[dict(b,track=track_of[b['object']]) for b in extra['bobbers']]
 manifest={'fps':30,'duration':24.0,'frames':721,'tracks':tracks,'meshes':meshes,'splashes':extra['splashes'],'boats':boats,'bobbers':bobbers}
-(target/'RoyalWaterGarden_v25_Motion.json').write_text(json.dumps(manifest,separators=(',',':'),ensure_ascii=False),encoding='utf8')
+(target/'RoyalWaterGarden_Motion.json').write_text(json.dumps(manifest,separators=(',',':'),ensure_ascii=False),encoding='utf8')
 print('EXPORTED',len(visible),'meshes',len(tracks),'motion tracks',target,flush=True)

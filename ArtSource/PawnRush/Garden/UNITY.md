@@ -1,3 +1,7 @@
+# Unity garden: fixed file names (R282)
+
+From R282 the garden lives at `Assets/Resources/PawnRushGarden/RoyalWaterGarden.fbx` and `RoyalWaterGarden_Motion.json` (the v25 content, GUIDs kept). Future exports overwrite these two files instead of adding `_v2x` copies, so a pulled scene never points at a deleted model. `export_unity_v25.py` / `check_unity_export_v25.py` already use the fixed names.
+
 # Unity garden v25 (R281)
 
 Unity loads `RoyalWaterGarden_v25.fbx` / `_Motion.json` (483 meshes, 13 tracks). Zone version 16. Rebuild: `build_v25.py`, `export_unity_v25.py` (`colors_type='LINEAR'` keeps the fall data exact), `check_unity_export_v25.py`. Fall meshes carry UV0 (metres) and vertex colour (r across, g lip→landing, b seed, a stream); `GardenWaterLook.ApplyBySource` assigns `PR_GardenFallSheet` by object name. The water shader draws no white foam; boats bend the surface with a Kelvin wake and bow/stern waves.

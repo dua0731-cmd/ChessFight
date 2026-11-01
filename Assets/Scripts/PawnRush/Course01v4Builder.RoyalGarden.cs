@@ -6,7 +6,9 @@ namespace ChessFight.PawnRush
 {
     public static partial class Course01v4Builder
     {
-        const string GardenModel = "PawnRushGarden/RoyalWaterGarden_v25";
+        // R282: one fixed name (and GUID) for every version, so a pull never leaves a saved scene pointing at a deleted
+        // file; the Blender export overwrites it.
+        const string GardenModel = "PawnRushGarden/RoyalWaterGarden";
         static readonly string[] Coloured = { "tree", "water", "bush", "flower", "fall", "spray", "lily" };
 
         // Blender layers V1x-V25 are untextured clay, except the parts that carry their own colour or shader.
@@ -21,9 +23,19 @@ namespace ChessFight.PawnRush
         {
             var model = Resources.Load<GameObject>(GardenModel);
             var motionText = Resources.Load<TextAsset>(GardenModel + "_Motion");
-            if (model == null || motionText == null) { Debug.LogError("Royal garden v25 model/motion missing: " + GardenModel); return; }
+            if (model == null || motionText == null)
+            {
+                Debug.LogError("[정원] 모델/모션을 불러오지 못했습니다: Resources/" + GardenModel + ".fbx, " + GardenModel + "_Motion.json");
+#if UNITY_EDITOR
+                // A file of a few hundred bytes is a Git LFS pointer: the real 70 MB model was not downloaded.
+                var path = "Assets/Resources/" + GardenModel + ".fbx";
+                if (System.IO.File.Exists(path) && new System.IO.FileInfo(path).Length < 4096)
+                    Debug.LogError("[정원] " + path + "이(가) Git LFS 포인터 파일입니다(실제 모델이 내려받아지지 않음). GitHub Desktop에서 다시 Pull 하거나 'git lfs pull'을 실행한 뒤 Unity에서 그 파일을 Reimport 하세요.");
+#endif
+                return;
+            }
             var take = JsonUtility.FromJson<SampledGardenMotion.Take>(motionText.text);
-            var pivot = new GameObject("Royal garden v25").transform;
+            var pivot = new GameObject("Royal garden").transform;
             pivot.SetParent(b.parent, false);
             pivot.localRotation = Quaternion.Euler(0, 180, 0);
             var garden = Object.Instantiate(model, pivot, false);

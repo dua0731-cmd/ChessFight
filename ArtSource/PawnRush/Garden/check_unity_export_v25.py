@@ -4,9 +4,9 @@ from pathlib import Path
 from mathutils import Vector
 folder=Path(__file__).resolve().parent
 target=folder.parents[2]/'Assets/Resources/PawnRushGarden'
-take=json.loads((target/'RoyalWaterGarden_v25_Motion.json').read_text(encoding='utf8'))
+take=json.loads((target/'RoyalWaterGarden_Motion.json').read_text(encoding='utf8'))
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
-bpy.ops.import_scene.fbx(filepath=str(target/'RoyalWaterGarden_v25.fbx'),use_anim=False)
+bpy.ops.import_scene.fbx(filepath=str(target/'RoyalWaterGarden.fbx'),use_anim=False)
 bpy.context.view_layer.update()
 errors=[]; worst=[]
 for role in take['meshes']:

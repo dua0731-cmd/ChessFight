@@ -25,7 +25,7 @@ namespace ChessFight.PawnRush
     {
         public const string RootName = "SeoungTest_Zones";
         // Raised whenever a zone's build changes, so a scene built before it is built again (R244: the war room v2, R255: hard LD v1 and its Blender models, R258: the library shuttle loops in the physics step, R259: the shuttle driven from the shared clock, R260: the library's lower floor and its fall, R263: the royal water garden G beside the library).
-        public const int Version = 16; // R281: v25 garden (waterfall streams, boats in the water, no white foam, Kelvin wakes).
+        public const int Version = 17; // R282: the garden model under one fixed name (no version suffix); zones built one by one.
         static string VersionMark => "Zones v" + Version;
         // Wide gaps (10-30, 승규 님: room to widen the course sections): 80 m between zones, the mini-games 160 m in front.
         const float Gap = 80f, MiniRowZ = -160f;
@@ -176,22 +176,34 @@ namespace ChessFight.PawnRush
             root.transform.SetParent(parent, false);
             new GameObject(VersionMark).transform.SetParent(root.transform, false);
             var made = new List<SeoungTestZone>();
-            float x = 0f;
-            for (int i = 0; i < Course01v4Builder.ZoneSections.Length; i++)
+            try
             {
-                string id = Course01v4Builder.ZoneSections[i];
-                var group = Zone(root.transform, "Zone " + id);
-                Course01v4Builder.Section(new CourseBuilder(kit, group), id);
-                made.Add(Place(group, Course01v4Builder.ZoneSectionNames[i], Course01v4Builder.ZoneStart(id), null, ref x, 0f));
+                float x = 0f;
+                for (int i = 0; i < Course01v4Builder.ZoneSections.Length; i++)
+                {
+                    string id = Course01v4Builder.ZoneSections[i];
+                    var group = Zone(root.transform, "Zone " + id);
+                    // R282: one zone that fails to build (a missing model, an exception) no longer leaves the whole
+                    // test scene switched off; it is reported and the other zones are built.
+                    try { Course01v4Builder.Section(new CourseBuilder(kit, group), id); }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError("[SeoungTest] 구역 " + id + "을(를) 짓다가 오류가 나서 이 구역은 비어 있습니다. 이 메시지를 알려 주세요.\n" + e);
+                    }
+                    made.Add(Place(group, Course01v4Builder.ZoneSectionNames[i], Course01v4Builder.ZoneStart(id), null, ref x, 0f));
+                }
+                x = 0f;
+                for (int game = 0; game < PawnRushMissions.Count; game++)
+                {
+                    var group = Zone(root.transform, "Zone " + PawnRushMissions.Ids[game]);
+                    var station = Course01v4Builder.SingleStation(new CourseBuilder(kit, group), game);
+                    made.Add(Place(group, "미니게임 " + PawnRushMissions.Names[game], new Vector3(0f, 0f, -3f), station, ref x, MiniRowZ));
+                }
             }
-            x = 0f;
-            for (int game = 0; game < PawnRushMissions.Count; game++)
+            finally
             {
-                var group = Zone(root.transform, "Zone " + PawnRushMissions.Ids[game]);
-                var station = Course01v4Builder.SingleStation(new CourseBuilder(kit, group), game);
-                made.Add(Place(group, "미니게임 " + PawnRushMissions.Names[game], new Vector3(0f, 0f, -3f), station, ref x, MiniRowZ));
+                root.SetActive(true);
             }
-            root.SetActive(true);
             Physics.SyncTransforms();
             foreach (var zone in made) Ground(zone);
             return root;

@@ -1,5 +1,15 @@
 # Network 구현 검증 기록
 
+## 2026-11-01 "맵이 사라졌어" 대응 (R282) — 사용자/Unity 확인 전
+
+v25 FBX/JSON을 다시 점검(13트랙 · 배 2 · 발판 6 노드 모두 FBX에 있음, 중복 이름 · NaN 없음, Assimp 가져오기가 정상 동작한 v24와 같은 구조, GitHub LFS 다운로드 가능)했지만 결함은 못 찾았다. 정원 모델 이름을 고정하고 구역별 예외 처리를 넣었다. Pull → Build Pawn Rush Test Scene → Play:
+
+| 확인 | 결과 |
+|---|---|
+| 구역 E · G가 모두 보인다 | 미확인 |
+| 안 보이면 콘솔에 `[SeoungTest] 구역 …` 또는 `[정원] …` 빨간 줄이 있다(내용을 받을 것) | 미확인 |
+| `Assets/Resources/PawnRushGarden/RoyalWaterGarden.fbx`가 약 77MB(LFS 포인터가 아님) | 미확인 |
+
 ## 2026-11-01 정원 v25 흰 거품 제거/물줄기 폭포/배 물결/물색 (R281) — 사용자/Unity 확인 전
 
 Core133, 세션45, 런타임 어셈블리 컴파일, Blender FBX 재가져오기(483메시·13트랙, 폭포 정점 색 0~1 유지) 통과, 셰이더 3개 glslang HLSL 문법 통과(Unity 컴파일 아님). Blender 미리보기 렌더(반투명 대용 재질)로 물줄기 다발·배 잠김 확인. Build Pawn Rush Test Scene → Play, 구역 G:
