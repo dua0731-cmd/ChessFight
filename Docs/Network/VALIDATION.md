@@ -1,5 +1,9 @@
 # Network 구현 검증 기록
 
+## 2026-11-01 정원 Unity 물 재질 (R265) — 미확인
+
+Core 133개 통과(.NET 10). Unity 편집기 연결/설치가 없어 새 C# · 셰이더 Unity 컴파일과 렌더는 아직 확인하지 않았다. 시험 씬 버전10으로 다시 지은 뒤: 수면 잔물결/반사, 폭포가 아래로 흐름, 꽃/석재 재질 유지, 기존 보트/낙사 동작을 사용자가 확인해야 한다. Blender v10 배치 이전은 이 변경에 포함하지 않음.
+
 ## ★ 2026-11-01 폰 러쉬 왕실 수로 정원 구역 G (R263, `seoungtest`) — 확인 목록
 
 준비: Unity를 끄고 받기(R257) → Unity로 열기 → `SeoungTest_PawnRush` 씬 → "구역이 코드와 다릅니다(옛 버전, 지금 v9)" 창에서 **다시 짓기**(또는 메뉴 **ChessFight → SeoungTest → Build Pawn Rush Test Scene**). 콘솔에 `Pawn Rush royal garden model is missing` · `... has no ...; it will not move.` 오류가 없어야 한다. 수치는 [PAWN_RUSH_GARDEN](../KingRush/PAWN_RUSH_GARDEN.md). 아무도 안 봄(AI는 Blender 렌더 · 리눅스 컴파일만).

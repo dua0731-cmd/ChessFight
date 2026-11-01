@@ -1,5 +1,7 @@
 # 사용자 요구사항 기록
 
+> **R265 (2026-11-01):** 물 표현을 Unity에 별도 적용. `GardenWaterLook`의 슬롯별 수면/폭포 재질 연결, UV 없는 폭포용 월드 좌표 셰이더, 구역 버전10. Core 133개 통과; Unity 컴파일/화면/사용자 확인 전. 상세 [정원](../KingRush/PAWN_RUSH_GARDEN.md).
+
 > **R264 (2026-11-01):** 정원 경사와 C자 발판의 고저차, 회의실 벽, 더 사실적인 움직이는 물을 Blender에서 작업하고 `seoungtest`에 푸시. `ArtSource/PawnRush/Garden/RoyalWaterGarden_v10.blend`; Blender 렌더/데이터 점검, Unity FBX 미변경 · 사용자/Unity 확인 전. 상세 [정원](../KingRush/PAWN_RUSH_GARDEN.md).
 
 사용자(메인 기획자)가 AI에게 요청한 것을 **시간순으로 전부** 적는다. 새 도구나 새 채팅은 이 표를 보고 "사용자가 무엇을 원했고, 어떻게 풀었고, 무엇이 남았는지"를 파악한다.

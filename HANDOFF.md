@@ -1,5 +1,7 @@
 # ChessFight HANDOFF — 모든 작업은 여기서 시작한다
 
+> **R265(승규 님, 11-01, `seoungtest`): Blender 물 표현을 Unity에도 별도 적용.** `GardenWaterLook.Apply`가 정원 FBX의 G09 수면 슬롯만 `PR_GardenWater`(기존 URP 물 셰이더 · 이중 노멀 · 프레넬 반사 · 느린 잔물결)로, G10 폭포 슬롯만 `PR_GardenWaterfall`로 교체한다. UV 없는 합쳐진 장식 메시라 폭포는 월드 좌표로 아래로 흐름, 다른 재질 슬롯/충돌은 보존. Resources 재질로 빌드에서 셰이더 참조 유지. `SeoungTestCourse.Version` 10 → Play 재생 시 재조립 또는 Build Pawn Rush Test Scene 메뉴. **Unity FBX 배치는 v06 그대로**(v10 Blender 고저차/벽은 별도 후속). Core 133개 통과(.NET 10), Unity 편집기 미연결로 C#/셰이더 Unity 컴파일 · 화면 · 사용자 확인 전.
+
 > **R264(승규 님, 11-01, `seoungtest`):** 정원 v06 FBX에서 만든 Blender 작업본 `ArtSource/PawnRush/Garden/RoyalWaterGarden_v10.blend`: 경사로 · 양 팀 C자 발판 고저차, 작전 회의실 벽 패널, 움직이는 물 · 폭포 및 사실적인 물 재질. 1~120프레임. **Unity FBX/씬은 v06 그대로**, FBX에서 가져와 기존 회전봉 · 진자 · 보트 Blender 드라이버는 없음. Unity 반영 시 셰이더 · 물 애니메이션, 높이별 낙사 범위 · 장애물 피벗 · 충돌 재작업 필요 → [정원 문서](Docs/KingRush/PAWN_RUSH_GARDEN.md). Blender 렌더/데이터 점검만, Unity · 사용자 확인 전.
 
 > **AI·개발자 공통 규칙:** 새 채팅, 다른 AI 도구, 새 팀원 모두 **이 파일을 가장 먼저 끝까지 읽는다.**

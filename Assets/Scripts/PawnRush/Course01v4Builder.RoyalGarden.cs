@@ -30,6 +30,7 @@ namespace ChessFight.PawnRush
             pivot.localRotation = Quaternion.Euler(0f, 180f, 0f);
             var garden = Object.Instantiate(model, pivot, false);
             garden.name = "Royal garden model";
+            GardenWaterLook.Apply(garden);
 
             foreach (var filter in garden.GetComponentsInChildren<MeshFilter>(true))
             {
