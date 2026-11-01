@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋) | 11-01 | R263 | `seoungtest`: 왕실 수로 정원을 시험 씬 구역 G로(도서관 E 옆) — Blender v06 FBX `Resources/PawnRushGarden/PawnRushRoyalWaterGarden.fbx`, `Course01v4Builder.RoyalGarden.cs`(메시 충돌체 · `Spinner` · `Pendulum` 둘 · `Oscillator` 둘 · 해자 · 저수지 `KillVolume`), 구역 목록에 G, `SeoungTestCourse.Version` 9, 문서 `Docs/KingRush/PAWN_RUSH_GARDEN.md` |
 | (이 커밋) | 10-30 | R257 | `seoungtest`: 시험 씬 길 줄의 엔드게임 E · F는 승규 님 노트북(`KKND1236_LENOVO`)에서만, 다른 PC는 코스 01 A · B · C · 탑(`Course01v4Builder.ShowsEndgame`) |
 | (이 커밋) | 11-01 | R262 | `seoungtest` 위(세션 브랜치): 도서관 맵 그레이박스 스크립트 `ArtSource/PawnRush/Library/build_graybox.py`, README §6, 문서 |
 | `5b2cba1` | 10-31 | R261 | `seoungtest` 위(세션 브랜치 `claude/upbeat-mendel-j2a14x`): 도서관 컨베이어 맵 Blender 작업 파일 `ArtSource/PawnRush/Library/`(`build_library_blend.py` · `export_library_fbx.py` · README; `.blend`는 LFS 업로드 403으로 미포함), 문서 |

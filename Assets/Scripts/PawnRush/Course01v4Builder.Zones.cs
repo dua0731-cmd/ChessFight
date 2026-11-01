@@ -11,15 +11,16 @@ namespace ChessFight.PawnRush
         // doc world coordinates, facing north; checked against the floor when the zone is built). Since 10-30 (R243)
         // 승규 님's endgame (E, F) in place of course 01's A, B, C and tower (T), but only on 승규 님's laptop (R257):
         // every other PC that opens the branch gets course 01's sections, so the endgame map is not shown there.
+        // R263 (11-01): 승규 님's royal water garden (G) stands next to the library (E).
         public const string EndgameMachine = "KKND1236_LENOVO";
         public static readonly bool ShowsEndgame = true;
 
-        public static readonly string[] ZoneSections = ShowsEndgame ? new[] { "E" } : new[] { "A", "B", "C", "T" };
+        public static readonly string[] ZoneSections = ShowsEndgame ? new[] { "E", "G" } : new[] { "A", "B", "C", "T" };
         public static readonly string[] ZoneSectionNames = ShowsEndgame
-            ? new[] { "E 도서관 컨베이어 코스" }
+            ? new[] { "E 도서관 컨베이어 코스", "G 왕실 수로 정원" }
             : new[] { "A 구간 (출발 → 광장 1)", "B 구간 (광장 1 → 광장 2)", "C 구간 (광장 2 → 탑)", "T 탑" };
         static readonly Vector3[] ZoneStarts = ShowsEndgame
-            ? new[] { V(0f, 0f, -16.5f) }
+            ? new[] { V(0f, 0f, -16.5f), V(0f, 0f, -57f) }
             : new[] { V(0f, 0f, 2f), V(46f, 0f, 105f), V(-3f, 3f, 165f), V(-3f, 6f, 207f) };
 
         public static Vector3 ZoneStart(string id) => ZoneStarts[System.Array.IndexOf(ZoneSections, id)];
@@ -39,6 +40,7 @@ namespace ChessFight.PawnRush
                     break;
                 case "E": LibraryReplacement(b); break;
                 case "F": FinalApproach(b); break;
+                case "G": RoyalGarden(b); break;
             }
         }
 
