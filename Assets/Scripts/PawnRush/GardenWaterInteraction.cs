@@ -6,28 +6,36 @@ namespace ChessFight.PawnRush
     // R279 (승규 11-01: "the waterfalls and the boats should interact with the water"): hands the garden water shader
     // (PR_GardenClearWater) what moves on or falls into the water. Each boat's position, heading, hull size and
     // speed become hull foam, a wake and ripples; each waterfall's landing line becomes churning foam and spreading
-    // rings. Read only: it never moves anything (HANDOFF rule 7); the boats are moved by SampledGardenMotion.
+    // rings. R280: each bobbing platform's rim, radius and vertical speed become rings that spread by the water's
+    // dispersion relation. Read only: it never moves anything (HANDOFF rule 7); SampledGardenMotion moves them.
     [DefaultExecutionOrder(100)]
     public sealed class GardenWaterInteraction : MonoBehaviour
     {
-        public const int MaxBoats = 2, MaxSplashes = 12;
+        public const int MaxBoats = 2, MaxSplashes = 12, MaxBobbers = 8;
+        const float MoatLevel = -1.7f;   // Blender z of the moat surface the platforms stand in
         static readonly int BoatId = Shader.PropertyToID("_GardenBoat");
         static readonly int BoatAxisId = Shader.PropertyToID("_GardenBoatAxis");
         static readonly int BoatCountId = Shader.PropertyToID("_GardenBoatCount");
         static readonly int SplashId = Shader.PropertyToID("_GardenSplash");
         static readonly int SplashInfoId = Shader.PropertyToID("_GardenSplashInfo");
         static readonly int SplashCountId = Shader.PropertyToID("_GardenSplashCount");
+        static readonly int BobberId = Shader.PropertyToID("_GardenBobber");
+        static readonly int BobberInfoId = Shader.PropertyToID("_GardenBobberInfo");
+        static readonly int BobberCountId = Shader.PropertyToID("_GardenBobberCount");
 
         [SerializeField] Transform zone;
         [SerializeField] Transform[] boats;
         [SerializeField] Vector3[] boatForward;       // zone space
         [SerializeField] Vector2[] boatHalfSize;      // half length, half width (m)
         [SerializeField] Vector3[] splashFrom, splashTo; // zone space, on the water surface
+        [SerializeField] Transform[] bobbers;
+        [SerializeField] float[] bobberRadius;
 
         readonly Vector4[] boatData = new Vector4[MaxBoats], boatAxis = new Vector4[MaxBoats];
         readonly Vector4[] splashData = new Vector4[MaxSplashes], splashInfo = new Vector4[MaxSplashes];
-        Vector3[] lastPosition, heading;
-        float[] speed;
+        readonly Vector4[] bobberData = new Vector4[MaxBobbers], bobberInfo = new Vector4[MaxBobbers];
+        Vector3[] lastPosition, heading, lastBobber;
+        float[] speed, bobberSpeed;
 
         public void Configure(SampledGardenMotion.Take take, Transform course, Dictionary<string, Transform> nodes)
         {
@@ -60,15 +68,28 @@ namespace ChessFight.PawnRush
                 }
             splashFrom = from.ToArray();
             splashTo = to.ToArray();
+            var bob = new List<Transform>();
+            var radius = new List<float>();
+            if (take.bobbers != null)
+                foreach (var b in take.bobbers)
+                {
+                    if (bob.Count == MaxBobbers || b.track == null || !nodes.TryGetValue(b.track, out var node)) continue;
+                    bob.Add(node);
+                    radius.Add(b.radius);
+                }
+            bobbers = bob.ToArray();
+            bobberRadius = radius.ToArray();
             lastPosition = null;
+            lastBobber = null;
         }
 
-        void OnEnable() => lastPosition = null;
+        void OnEnable() { lastPosition = null; lastBobber = null; }
 
         void OnDisable()
         {
             Shader.SetGlobalFloat(BoatCountId, 0f);
             Shader.SetGlobalFloat(SplashCountId, 0f);
+            Shader.SetGlobalFloat(BobberCountId, 0f);
         }
 
         void LateUpdate()
@@ -117,6 +138,27 @@ namespace ChessFight.PawnRush
             Shader.SetGlobalVectorArray(SplashId, splashData);
             Shader.SetGlobalVectorArray(SplashInfoId, splashInfo);
             Shader.SetGlobalFloat(SplashCountId, ns);
+
+            int nbob = bobbers == null ? 0 : Mathf.Min(bobbers.Length, MaxBobbers);
+            if (lastBobber == null || lastBobber.Length != nbob)
+            {
+                lastBobber = new Vector3[nbob];
+                bobberSpeed = new float[nbob];
+                for (int i = 0; i < nbob; i++) lastBobber[i] = bobbers[i] != null ? bobbers[i].position : Vector3.zero;
+            }
+            float water = zone.TransformPoint(new Vector3(0f, MoatLevel, 0f)).y;
+            for (int i = 0; i < nbob; i++)
+            {
+                if (bobbers[i] == null) { bobberData[i] = Vector4.zero; continue; }
+                var p = bobbers[i].position;
+                if (dt > 0f) bobberSpeed[i] = Mathf.Lerp(bobberSpeed[i], (p.y - lastBobber[i].y) / dt, 1f - Mathf.Exp(-dt * 4f));
+                lastBobber[i] = p;
+                bobberData[i] = new Vector4(p.x, water, p.z, bobberRadius[i]);
+                bobberInfo[i] = new Vector4(bobberSpeed[i], water, 0f, 0f);
+            }
+            Shader.SetGlobalVectorArray(BobberId, bobberData);
+            Shader.SetGlobalVectorArray(BobberInfoId, bobberInfo);
+            Shader.SetGlobalFloat(BobberCountId, nbob);
         }
 
         static Vector3 Flat(Vector3 v)

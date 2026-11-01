@@ -29,24 +29,27 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _Choppiness: 0.45
     - _Clarity: 1.2
     - _DetailScale: 0.85
-    - _DetailStrength: 0.45
+    - _DetailStrength: 0.18
     - _FoamDepth: 0.22
     - _FresnelPower: 5
     - _Glint: 7
     - _GlintSharpness: 900
     - _Reflection: 0.8
     - _Refraction: 0.04
+    - _RippleHeight: 0.02
     - _Sparkle: 1.5
     - _SplashFoam: 1
-    - _SwellHeight: 0.06
-    - _SwellLength: 7
-    - _SwellSpeed: 1.2
+    - _WakeFoam: 1
+    - _WaterDepth: 0.6
+    - _WaveHeading: 75
+    - _WaveHeight: 0.045
+    - _WaveLength: 13
     - _WaveScale: 0.15
     - _WaveSpeed: 0.04
-    - _WakeFoam: 1
-    - _WaveStrength: 0.85
+    - _WaveStrength: 0.35
     m_Colors:
     - _DeepColor: {r: 0.01, g: 0.17, b: 0.5, a: 1}
     - _FoamColor: {r: 0.93, g: 0.98, b: 1, a: 1}

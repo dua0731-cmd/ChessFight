@@ -6,6 +6,10 @@
 // angles, the sun leaves sharp glints and sparkles, and a thin foam line marks where the water meets stone.
 // R279: GardenWaterInteraction sets global arrays: boats (hull foam, a V wake, bow ripples) and waterfall landing
 // lines (churning foam, spreading rings). With no script (other scenes) the counts are 0 and nothing changes.
+// R280 (승규: "smoother, calculated, like gentle waves rolling in"): the swell is four Gerstner waves from one
+// heading whose speeds follow the finite-depth dispersion relation w^2 = g k tanh(k h); vertices move with them
+// and every pixel takes their exact normal, so the surface is smooth. The bobbing platforms send out rings by the
+// same relation instead of the old static white foam meshes.
 // Needs the URP depth and opaque textures (both on in PC_RPAsset / Mobile_RPAsset).
 Shader "ChessFight/Pawn Rush Garden Clear Water"
 {
@@ -17,13 +21,16 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
         _SkyColor ("Sky tint", Color) = (0.52, 0.76, 1.0, 1)
         [Normal] _WaveMap ("Wave normals", 2D) = "bump" {}
         _WaveScale ("Wave size (per metre)", Float) = 0.15
-        _WaveStrength ("Wave strength", Range(0, 2)) = 0.85
+        _WaveStrength ("Wave strength", Range(0, 2)) = 0.35
         _WaveSpeed ("Wave speed", Float) = 0.04
         _DetailScale ("Ripple size (per metre)", Float) = 0.85
-        _DetailStrength ("Ripple strength", Range(0, 2)) = 0.45
-        _SwellHeight ("Swell height (m)", Float) = 0.06
-        _SwellLength ("Swell length (m)", Float) = 7
-        _SwellSpeed ("Swell speed (m/s)", Float) = 1.2
+        _DetailStrength ("Ripple strength", Range(0, 2)) = 0.18
+        _WaveHeight ("Swell height (m)", Float) = 0.045
+        _WaveLength ("Main wavelength (m)", Float) = 13
+        _WaveHeading ("Swell heading (deg, from +x toward +z)", Float) = 75
+        _WaterDepth ("Water depth for wave speed (m)", Float) = 0.6
+        _Choppiness ("Gerstner steepness", Range(0, 1)) = 0.45
+        _RippleHeight ("Platform ripple height (m)", Float) = 0.02
         _Refraction ("Refraction", Range(0, 0.2)) = 0.04
         _Reflection ("Reflection", Range(0, 1)) = 0.8
         _FresnelPower ("Fresnel power", Range(1, 8)) = 5
@@ -64,7 +71,8 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 half4 _ShallowColor, _DeepColor, _SkyColor, _FoamColor;
                 float4 _WaveMap_ST;
                 float _Clarity, _WaveScale, _WaveStrength, _WaveSpeed, _DetailScale, _DetailStrength;
-                float _SwellHeight, _SwellLength, _SwellSpeed, _Refraction, _Reflection, _FresnelPower;
+                float _WaveHeight, _WaveLength, _WaveHeading, _WaterDepth, _Choppiness, _RippleHeight;
+                float _Refraction, _Reflection, _FresnelPower;
                 float _Glint, _GlintSharpness, _Sparkle, _FoamDepth, _SplashFoam, _WakeFoam;
             CBUFFER_END
 
@@ -75,6 +83,9 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
             float4 _GardenSplash[12];     // landing line: start xz, end xz
             float4 _GardenSplashInfo[12]; // x: water height, y: strength
             float _GardenSplashCount;
+            float4 _GardenBobber[8];      // world xyz of a bobbing platform, radius
+            float4 _GardenBobberInfo[8];  // x: vertical speed (m/s), y: water height
+            float _GardenBobberCount;
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
             struct Varyings
@@ -93,22 +104,34 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                             lerp(GardenHash(a + float2(0, 1)), GardenHash(a + 1), f.x), f.y);
             }
 
-            // Three crossing swells: height and its slope at p (world xz).
-            float Swell(float2 p, out float2 slope)
+            // Angular frequency of a wave of wavenumber k on water of the given depth (finite-depth dispersion).
+            float Omega(float k) { return sqrt(9.81 * k * tanh(k * _WaterDepth)); }
+
+            // Four Gerstner waves from one heading: x heading offset (deg), y wavelength and z height (fractions of
+            // the main wave), w phase. Returns the displacement at p (world xz); `normal` is the exact surface normal.
+            float3 Gerstner(float2 p, out float3 normal)
             {
-                static const float2 dirs[3] = { float2(0.83, 0.56), float2(-0.42, 0.91), float2(0.97, -0.24) };
-                static const float lens[3] = { 1.0, 0.61, 0.37 };
-                float h = 0; slope = 0;
-                [unroll] for (int k = 0; k < 3; k++)
+                static const float4 waves[4] = { float4(0, 1.0, 1.0, 0.0), float4(23, 0.62, 0.55, 1.7),
+                                                 float4(-29, 0.41, 0.33, 4.1), float4(48, 0.26, 0.18, 2.6) };
+                float3 offset = 0;
+                float sx = 0, sz = 0, sy = 0;
+                [unroll] for (int k = 0; k < 4; k++)
                 {
-                    float len = _SwellLength * lens[k];
-                    float w = 6.2831853 / len;
-                    float a = _SwellHeight * lens[k];
-                    float ph = w * (dot(dirs[k], p) - _SwellSpeed * sqrt(lens[k]) * _Time.y);
-                    h += a * sin(ph);
-                    slope += a * w * cos(ph) * dirs[k];
+                    float a = radians(_WaveHeading + waves[k].x);
+                    float2 d = float2(cos(a), sin(a));
+                    float kk = 6.2831853 / max(_WaveLength * waves[k].y, 0.1);
+                    float A = _WaveHeight * waves[k].z;
+                    float Q = _Choppiness / max(kk * A * 4, 1e-4);
+                    float f = kk * dot(d, p) - Omega(kk) * _Time.y + waves[k].w;
+                    float c = cos(f), s = sin(f);
+                    offset.xz += Q * A * d * c;
+                    offset.y += A * s;
+                    sx += d.x * kk * A * c;
+                    sz += d.y * kk * A * c;
+                    sy += Q * kk * A * s;
                 }
-                return h;
+                normal = normalize(float3(-sx, 1 - sy, -sz));
+                return offset;
             }
 
             // Foam amount and extra slope from the waterfalls and the boats at world point (p.xz, height y).
@@ -130,6 +153,23 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                     float churn = GardenNoise(p * 2.2 + float2(t * 0.8, -t * 1.1));
                     foam += (exp(-d / 0.75) * (0.7 + 0.6 * churn) + saturate(sin(ring) * 0.5 + 0.5) * exp(-d / 2.0) * 0.4 * churn)
                             * _SplashFoam * _GardenSplashInfo[k].y;
+                }
+                // Bobbing platforms: rings leave each rim at the speed the dispersion gives a 1.6 m ripple, gentle
+                // while it rests and stronger while it moves; a soft wet line where it meets the water.
+                float rk = 6.2831853 / 1.6, rw = Omega(rk);
+                [loop] for (int m = 0; m < 8; m++)
+                {
+                    if (m >= (int)_GardenBobberCount) break;
+                    if (abs(y - _GardenBobberInfo[m].y) > 1.0) continue;
+                    float2 q = p - _GardenBobber[m].xz;
+                    float dist = length(q);
+                    float r = max(dist - _GardenBobber[m].w, 0);
+                    float2 dir = q / max(dist, 1e-3);
+                    float stir = 0.25 + saturate(abs(_GardenBobberInfo[m].x) / 0.35);
+                    float env = exp(-r / 4.0) * stir * _RippleHeight;
+                    float f = rk * r - rw * t;
+                    slope += dir * env * (rk * cos(f) - sin(f) / 4.0);
+                    foam += exp(-r / 0.3) * (0.2 + 0.25 * stir) + pow(saturate(sin(f)), 6) * exp(-r / 1.0) * 0.12 * stir;
                 }
                 [loop] for (int b = 0; b < 2; b++)
                 {
@@ -172,9 +212,9 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 float3 nws = TransformObjectToWorldNormal(v.normalOS);
                 // Only the top face swells; the sides of water boxes keep still.
                 float up = saturate(nws.y * 2 - 1);
-                float2 slope;
-                ws.y += Swell(ws.xz, slope) * up;
-                nws = normalize(lerp(nws, float3(-slope.x, 1, -slope.y), up));
+                float3 gn;
+                ws += Gerstner(ws.xz, gn) * up;
+                nws = normalize(lerp(nws, gn, up));
                 o.positionWS = ws;
                 o.normalWS = nws;
                 o.positionCS = TransformWorldToHClip(ws);
@@ -192,7 +232,10 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 float2 slope = a.xy + b.xy + c.xy;
                 half up = saturate(i.normalWS.y);
                 float stir = Interaction(p, i.positionWS.y, slope) * up;
-                float3 base = normalize(i.normalWS);
+                // The swell's exact normal at this pixel (smooth), the maps only add fine ripples on top.
+                float3 gn;
+                Gerstner(p, gn);
+                float3 base = normalize(lerp(normalize(i.normalWS), gn, up));
                 float3 n = normalize(lerp(base, normalize(float3(base.x + slope.x, base.y, base.z + slope.y)), up));
 
                 float3 V = normalize(GetWorldSpaceViewDir(i.positionWS));

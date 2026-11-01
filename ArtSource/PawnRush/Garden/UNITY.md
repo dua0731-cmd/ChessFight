@@ -1,4 +1,8 @@
-# Unity garden v23 (R279)
+# Unity garden v24 (R280)
+
+Unity loads `RoyalWaterGarden_v24.fbx` / `_Motion.json` (474 meshes, 13 tracks, `splashes`, `boats`, `bobbers`). Zone version 15. Rebuild: `build_v24.py` (v23 → v24 .blend, writes `water_interaction_v24.json`), `export_unity_v24.py`, `check_unity_export_v24.py`. The six zigzag platforms keep their Blender drivers (`0.35*(1-cos(2*pi*(frame-1)/180+phase))`), sampled like the other tracks. The water shader's swell is now Gerstner waves with the finite-depth dispersion relation; `GardenWaterInteraction` also feeds the platforms' rims and vertical speeds.
+
+## v23 (R279)
 
 Unity loads `RoyalWaterGarden_v23.fbx` / `_Motion.json` (483 meshes, 15 tracks, plus `splashes` and `boats` for `GardenWaterInteraction`). Zone version 14. Rebuild: `build_v23.py` (v22 → v23 .blend, writes `water_interaction_v23.json`), `export_unity_v23.py`, `check_unity_export_v23.py`. Fall sheets carry UV0 (metres across/along) and UV1 (0..1 across/lip-to-landing) for `PR_GardenFallSheet`; spray bands UV0 for `PR_GardenSpray`. New roles: tank piers and centre spout = box; trees, bushes, flowers, sheets, spray = none. Shaders were syntax-checked with glslang only.
 

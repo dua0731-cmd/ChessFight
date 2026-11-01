@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R280: `RoyalWaterGarden_v24.blend` from v23 by `build_v24.py`: lily pads rebuilt on the water surface, robot arm cut loops capped and elbow knuckles grown to 1.6 m, the static ripple-ring meshes hidden, the C crossing rebuilt as one six-platform zigzag with the section stretched from 24 to 28 m (entry ledge moved 4 m south and 1 m down, ramp shortened to 7 m), centre fall moved 3 m west. `water_interaction_v24.json` adds the bobbing platforms. Render: `review_v24.png`.
+
 R279: `RoyalWaterGarden_v23.blend` from v22 by `build_v23.py`: plaza through-holes filled (custom normals reset), trees re-imported at 14% detail and stood on the terrace floor (3.82 m), 224 bush blobs rebuilt as leafy bushes and 1,123 flower chips as 3D flowers, waterfall ribbons/foam blocks replaced by 9 continuous UV sheets with spray bands, tank piers and a centre spout. `water_interaction_v23.json` holds the landing lines and boat hulls. Render: `review_v23.png`.
 
 R278: `RoyalWaterGarden_v22.blend` from v21 by `build_v22.py`: robot arms 1.25x with an IK sweep loop (weight bottom 0.25 m over the walkway at z 5.0), elbow knuckles and shoulder hinges; terrace-tank falls fitted to the tank lip with tank water; stone spout lips over the reservoir outlets. Renders: `robot_swing_v22.png` (6 moments of the loop), `falls_v22.png`.

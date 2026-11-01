@@ -5,7 +5,8 @@ Open `RoyalWaterGarden_v20.blend` in Blender 5.2 and press Space in the timeline
 | Section | Motion |
 |---|---|
 | Plaza | Separated raised spinner arms turn clockwise from above, one turn every 8 seconds; floor and flower beds stay fixed. Three integrated pawn props were removed and their pavement repaired. |
-| C platforms | Each mirrored pair rises 0–0.7 m on a 6-second cycle, with successive pads phase shifted. The original C layout and top slopes remain. |
+| C platforms (R280, v24) | Six platforms in one zigzag, tops 2.05-4.55 m; each rises 0-0.7 m on a 6-second cycle, 60 degrees later than the one before (a wave running forward). |
+| C platforms (R275, replaced) | Each mirrored pair rises 0–0.7 m on a 6-second cycle, with successive pads phase shifted. The original C layout and top slopes remain. |
 | Robot obstacles (R278, v22) | Arms 1.25x. IK on a weight path, 6 s loop: wind up high on its own side 1 s, sweep 0.85 s skimming 0.25 m over the walkway, hold 0.75 s on the far side, swing back 1.8 s, hold. Robot 2 mirrors robot 1, 3 s later. Elbow knuckles and fixed shoulder hinges hide the joint seams. |
 | Robot obstacles (R275, v20, replaced) | Two shoulder/elbow assemblies use repeating target poses with holds, on a 6-second cycle. Support pillars remain fixed. |
 | Team boats | Separate lanes x ±6 m; y 38–45 m on a 12-second shuttle. They start at opposite ends and pass in the middle. |
