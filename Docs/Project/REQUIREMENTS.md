@@ -1,5 +1,7 @@
 # 사용자 요구사항 기록
 
+> **R266 (2026-11-01):** 참고 이미지 그래픽을 위한 1단계(회전봉 광장 기준 구역) 시작. v11 Blender에 방사형 석재/금속/조명/투시 카메라 첫 시안, 렌더 비교. 최종 아트/Unity/사용자 확인 전.
+
 > **R265 (2026-11-01):** 물 표현을 Unity에 별도 적용. `GardenWaterLook`의 슬롯별 수면/폭포 재질 연결, UV 없는 폭포용 월드 좌표 셰이더, 구역 버전10. Core 133개 통과; Unity 컴파일/화면/사용자 확인 전. 상세 [정원](../KingRush/PAWN_RUSH_GARDEN.md).
 
 > **R264 (2026-11-01):** 정원 경사와 C자 발판의 고저차, 회의실 벽, 더 사실적인 움직이는 물을 Blender에서 작업하고 `seoungtest`에 푸시. `ArtSource/PawnRush/Garden/RoyalWaterGarden_v10.blend`; Blender 렌더/데이터 점검, Unity FBX 미변경 · 사용자/Unity 확인 전. 상세 [정원](../KingRush/PAWN_RUSH_GARDEN.md).

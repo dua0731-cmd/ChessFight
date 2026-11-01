@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R266 광장 아트 기준 1차:** `ArtSource/PawnRush/Garden/RoyalWaterGarden_v11.blend`에 방사형 포장, 모서리/색 변화, 금속 거칠기, 햇빛과 하늘빛, 높이2.5m 카메라 추가. `plaza_player_v11.png`로 비교. Blender 렌더만 확인했으며 참고 이미지 수준까지 식생/벽/배경 디테일, Unity 반영은 후속. 기존 v10 원본 보존.
+
 > **R265 Unity 물 연결(2026-11-01):** 정원 생성 직후 `GardenWaterLook.Apply`가 G09 수면을 `Resources/PR_GardenWater`, G10 폭포를 `Resources/PR_GardenWaterfall` 재질로 교체한다. 수면은 기존 `ChessFight/Pawn Rush Water` 셰이더(교차 이동 노멀 · 프레넬 하늘 반사 · 햇빛 반짝임), 폭포는 새 `ChessFight/Garden Waterfall` 셰이더(월드 좌표 · 세로 흐름)를 쓴다. 원본 폭포/꽃 합친 메시에는 UV가 없어 기존 UV용 폭포 셰이더를 직접 쓰면 안 된다. 슬롯만 교체해 꽃 · 석재 · 기존 거품/충돌을 유지한다. `SeoungTestCourse.Version = 10`: Play 시작 시 다시 조립하거나 **ChessFight > SeoungTest > Build Pawn Rush Test Scene**. FBX 배치와 낙사 범위는 기존 v06, Blender v10의 고저차/벽은 Unity에 옮기지 않음. Core 133개 통과(.NET 10); Unity 편집기 미연결로 Unity C#/셰이더 컴파일 · 화면 · 사람 확인 전.
 
 > **R264 Blender 작업본(2026-11-01):** `ArtSource/PawnRush/Garden/RoyalWaterGarden_v10.blend`는 v06 FBX를 가져와 경사로와 C자 발판의 고저차, 작전 회의실 벽 패널, 잔물결 · 폭포 애니메이션과 사실적인 물 재질을 편집한 별도 작업본이다. 30fps, 1~120프레임. **Unity FBX와 시험 씬은 여전히 아래 v06이다.** 원래 `.blend`가 아니라 FBX에서 복원했으므로 회전봉 · 진자 · 보트의 Blender 드라이버는 없다. Blender 물 재질/애니메이션을 Unity에 옮기려면 별도 셰이더와 동작 구현, 높아진 물의 낙사 범위 · 이동 피벗 · 충돌 재점검이 필요하다. Blender 렌더 · 데이터 점검만, Unity/사용자 확인 전.
