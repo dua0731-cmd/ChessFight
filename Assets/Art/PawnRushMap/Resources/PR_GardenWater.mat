@@ -29,7 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Clarity: 1.4
+    - _Clarity: 1.2
     - _DetailScale: 0.85
     - _DetailStrength: 0.45
     - _FoamDepth: 0.22
@@ -39,16 +39,18 @@ Material:
     - _Reflection: 0.8
     - _Refraction: 0.04
     - _Sparkle: 1.5
+    - _SplashFoam: 1
     - _SwellHeight: 0.06
     - _SwellLength: 7
     - _SwellSpeed: 1.2
     - _WaveScale: 0.15
     - _WaveSpeed: 0.04
+    - _WakeFoam: 1
     - _WaveStrength: 0.85
     m_Colors:
-    - _DeepColor: {r: 0.02, g: 0.33, b: 0.4, a: 1}
+    - _DeepColor: {r: 0.01, g: 0.17, b: 0.5, a: 1}
     - _FoamColor: {r: 0.93, g: 0.98, b: 1, a: 1}
-    - _ShallowColor: {r: 0.48, g: 0.9, b: 0.88, a: 1}
-    - _SkyColor: {r: 0.62, g: 0.82, b: 0.98, a: 1}
+    - _ShallowColor: {r: 0.36, g: 0.76, b: 0.98, a: 1}
+    - _SkyColor: {r: 0.52, g: 0.76, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

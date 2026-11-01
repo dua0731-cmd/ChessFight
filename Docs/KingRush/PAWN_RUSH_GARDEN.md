@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R279 Unity v23:** `RoyalWaterGarden_v23.fbx`/`_Motion.json`(+`splashes` 폭포 착수선 9개, `boats` 선체 반길이·반폭·진행축). `GardenWaterInteraction`(빌더가 붙임)이 매 프레임 `_GardenBoat*`/`_GardenSplash*` 셰이더 전역 배열을 채워 `PR_GardenClearWater`가 항적·거품·고리를 그림(읽기만, 이동 없음). 재질 매핑: `V23 | waterfall sheet` → `PR_GardenFallSheet`, `V23 | fall spray` → `PR_GardenSpray`, 잎·꽃 이름은 거칠기 .92. 클레이 제외 단어: tree/water/bush/flower/fall/spray. 물은 `ZWrite On`(폭포 발이 물 밑으로 비치지 않게). `Version=14`. Unity 확인 전.
+
 > **R278 Unity v22:** `RoyalWaterGarden_v22.fbx`/`_Motion.json`. 로봇팔 1.25배·IK 6초 루프(감기1초 → 0.85초 스윙, 길 바닥 위 0.25m → 반대편 0.75초 정지 → 1.8초 복귀 → 정지, 2번 팔 3초 늦게), `V22 | robot k elbow knuckle`(팔꿈치 자식)·`shoulder hinge`(고정). 테라스 수조 폭포를 수조 높이로, `V22 | tank water`(물 재질), `V22 | reservoir … spout`(박스 충돌). 물 재질 `PR_GardenWater`는 새 셰이더 `PR_GardenClearWater`(URP 깊이·불투명 텍스처 필요), 폭포 셰이더도 굴절형. 시작점은 가장 가까운 바닥(`TryFloor` 정렬). `Version=13`. Unity 확인 전.
 
 > **R277 Unity v21:** `RoyalGarden`은 `RoyalWaterGarden_v21.fbx`/`_Motion.json`을 읽는다(v20 Resources 파일 삭제). 회전봉에 섞였던 경계석·허브 고리 조각을 고정 오브젝트로 분리(벽 뜯김 원인, [PITFALLS §25](../Environment/PITFALLS.md)), 남북 입구 절단면 제거 후 석조 기둥벽·갓돌·기둥(박스 충돌), 허브 고정 고리, 나무 12그루 → 사용자 GLB 2종(`ArtSource/PawnRush/Garden/source_glb/`, 색 유지·충돌 없음). 충돌 역할 `proxy`: 숨긴 높이장 `V21 | plaza collision proxy`가 메시 충돌체, 장식 광장과 보수 포장은 충돌 없음. `SeoungTestCourse.Version=12`. Unity 확인 전.

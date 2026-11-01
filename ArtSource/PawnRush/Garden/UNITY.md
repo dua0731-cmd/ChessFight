@@ -1,4 +1,8 @@
-# Unity garden v22 (R278)
+# Unity garden v23 (R279)
+
+Unity loads `RoyalWaterGarden_v23.fbx` / `_Motion.json` (483 meshes, 15 tracks, plus `splashes` and `boats` for `GardenWaterInteraction`). Zone version 14. Rebuild: `build_v23.py` (v22 → v23 .blend, writes `water_interaction_v23.json`), `export_unity_v23.py`, `check_unity_export_v23.py`. Fall sheets carry UV0 (metres across/along) and UV1 (0..1 across/lip-to-landing) for `PR_GardenFallSheet`; spray bands UV0 for `PR_GardenSpray`. New roles: tank piers and centre spout = box; trees, bushes, flowers, sheets, spray = none. Shaders were syntax-checked with glslang only.
+
+## v22 (R278)
 
 Unity loads `RoyalWaterGarden_v22.fbx` / `_Motion.json` (456 meshes, 15 tracks; the robot pivot/elbow tracks now carry the IK sweep). Zone version 13. Rebuild: `build_v22.py` (v21 → v22 .blend), `export_unity_v22.py`, `check_unity_export_v22.py`. New roles: `V22 | reservoir … spout` = box; knuckles, shoulder hinges and tank water = none. Unity clay covers `V22` names except water. Water uses `Assets/Art/PawnRushMap/Shaders/PR_GardenClearWater.shader` through `Resources/PR_GardenWater.mat` (needs the URP depth and opaque textures, both on); `PR_GardenWaterfall` now refracts too. Shaders were not compiled here.
 

@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R279: `RoyalWaterGarden_v23.blend` from v22 by `build_v23.py`: plaza through-holes filled (custom normals reset), trees re-imported at 14% detail and stood on the terrace floor (3.82 m), 224 bush blobs rebuilt as leafy bushes and 1,123 flower chips as 3D flowers, waterfall ribbons/foam blocks replaced by 9 continuous UV sheets with spray bands, tank piers and a centre spout. `water_interaction_v23.json` holds the landing lines and boat hulls. Render: `review_v23.png`.
+
 R278: `RoyalWaterGarden_v22.blend` from v21 by `build_v22.py`: robot arms 1.25x with an IK sweep loop (weight bottom 0.25 m over the walkway at z 5.0), elbow knuckles and shoulder hinges; terrace-tank falls fitted to the tank lip with tank water; stone spout lips over the reservoir outlets. Renders: `robot_swing_v22.png` (6 moments of the loop), `falls_v22.png`.
 
 R277: `RoyalWaterGarden_v21.blend` is built from v20 by `build_v21.py` (rotor fragments of the static curb/hub ring returned to a static object, plaza entries closed with piers, hub collar, twelve stylized trees from `source_glb/`, hidden plaza collision proxy). Unity uses v21; see [UNITY.md](UNITY.md). `fix_compare_v20_v21.png`: top row v20, bottom row v21 (plaza at frame 75, south entry, trees).

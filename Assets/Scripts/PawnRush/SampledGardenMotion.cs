@@ -11,7 +11,10 @@ namespace ChessFight.PawnRush
     {
         [Serializable] public sealed class Track { public string name, source; public float[] samples; }
         [Serializable] public sealed class MeshRole { public string name, source, collider; }
-        [Serializable] public sealed class Take { public int fps, frames; public float duration; public Track[] tracks; public MeshRole[] meshes; }
+        [Serializable] public sealed class Splash { public float x0, y0, x1, y1, z; }
+        [Serializable] public sealed class Boat { public string track; public float halfLength, halfWidth; public float[] forward; }
+        // R279: splashes are where the waterfalls land, boats the hulls the water shader wakes (Blender coordinates).
+        [Serializable] public sealed class Take { public int fps, frames; public float duration; public Track[] tracks; public MeshRole[] meshes; public Splash[] splashes; public Boat[] boats; }
         Take take;
         [SerializeField] TextAsset motionAsset;
         [SerializeField] Transform zone;
