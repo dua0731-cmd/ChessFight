@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R269: `RoyalWaterGarden_v14.blend` adds two distant mountain ridges, four rounded cloud banks and a camera-visible sky gradient. Mountains stay outside the course; the established foreground lighting, player camera and layout are preserved. Source camera background is an art study, not a Unity sky implementation. See `plaza_backdrop_v14.png`. Unity transfer, performance and player review remain pending.
+
 R268: `RoyalWaterGarden_v13.blend` refines the plaza's 20 low wall segments and four planter bases with staggered limestone blocks, recessed joints, rounded edges and projecting coping. Five warm neutral stone variations follow the war-room palette. Previous wall meshes are hidden in Blender and retained for reference. This is a visual art revision; Unity geometry/collision remain unchanged. See `masonry_detail_v13.png`.
 
 R267: `RoyalWaterGarden_v12.blend` refines the plaza flower beds. Rounded six-petal flowers, pollen centres, stems and individual leaves replace the original flat plaza flower pieces. Pink, yellow, ivory, lilac and coral variations share the v11 camera and lighting for comparison. This remains a Blender art pass; Unity transfer and performance testing are pending.
