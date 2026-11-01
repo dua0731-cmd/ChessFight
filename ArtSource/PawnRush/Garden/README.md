@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R271: `RoyalWaterGarden_v16.blend` places the four user-provided GLBs without textures: entrance arch (1), barrel-shaped C platforms (8), royal boats (2, attached to existing team pivots), brick-block wall-end piers (4). All new asset meshes use one neutral clay material with no image nodes. Replaced source models are hidden and retained. Blender render and reopened-file checks only; Unity transfer, boarding heights/collision, boat animation and gameplay checks remain pending. See `asset_placement_v16.png`. GLB source names: fantasy castle arch / stylized barrel / royal boat / brick wall 3d model.glb.
+
 R270: `RoyalWaterGarden_v15.blend` adjusts the plaza daylight and colour finish: sun energy 3.1, warm sunlight, stronger sky fill, clearer blue camera sky, saturation 1.16 and a modest compositor contrast pass. The compositor is an editable Blender 5.2 node group; previous versions remain available for comparison. See `plaza_daylight_v15.png`. Blender render review only; this look has not been transferred to Unity.
 
 R269: `RoyalWaterGarden_v14.blend` adds two distant mountain ridges, four rounded cloud banks and a camera-visible sky gradient. Mountains stay outside the course; the established foreground lighting, player camera and layout are preserved. Source camera background is an art study, not a Unity sky implementation. See `plaza_backdrop_v14.png`. Unity transfer, performance and player review remain pending.
