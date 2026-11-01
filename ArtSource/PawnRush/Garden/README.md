@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R276 now integrates the visible v20 course and sampled motion into Unity. See [UNITY.md](UNITY.md) for build/play instructions, export scripts and remaining checks. Historical notes below describe the earlier Blender-only work.
+
 R275: `RoyalWaterGarden_v20.blend` removes the three plaza pawn props and final-section lamp stands; adds clockwise spinner rotation, vertical C-platform motion, two-joint robot-arm obstacles and opposite-phase team ferries. 1–720 frames at 30 fps. See [ANIMATION.md](ANIMATION.md) for periods and limits. Blender render/data checks only; Unity gameplay transfer remains pending.
 
 R274: `RoyalWaterGarden_v19.blend` derives remaining structural parts from the supplied brick-wall mesh: 174 original structures plus 10 small columns in merged decor. Towers are remapped to a round cross-section, flat sections reuse shared low stone modules, the approach ramp is reshaped to its 0–3 m top profile, and docks/terraces/retaining walls follow their original bounds. 241 new structural objects share simplified donor meshes (12% decimation for repetition); this is not a measured Unity performance result. Original structures are hidden and retained. All replacement parts use untextured clay. `structure_report_v19.json` records the source names. Reopened-file checks and render review only; Unity transfer, floor smoothness, collision and animation checks remain pending.

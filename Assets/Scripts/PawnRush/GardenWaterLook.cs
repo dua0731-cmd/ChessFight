@@ -22,8 +22,12 @@ namespace ChessFight.PawnRush
                 {
                     if (slots[i] == null) continue;
                     string name = slots[i].name;
-                    if (name.StartsWith("G09_")) { slots[i] = water; changed = true; }
-                    else if (name.StartsWith("G10_")) { slots[i] = fall; changed = true; }
+                    if (name.StartsWith("G09_") || name.Contains("calm water")) { slots[i] = water; changed = true; }
+                    else if (name.StartsWith("G10_") || name == "V07 | waterfall") { slots[i] = fall; changed = true; }
+                    else
+                    {
+                        slots[i] = Arena.Lit(name, slots[i].color, 0, .7f); changed = true;
+                    }
                 }
                 if (changed) renderer.sharedMaterials = slots;
             }

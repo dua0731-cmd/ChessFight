@@ -1,5 +1,7 @@
 # ChessFight HANDOFF — 모든 작업은 여기서 시작한다
 
+> **R276(11-01): v20 맵/애니메이션 Unity 연결.** `Resources/PawnRushGarden/RoyalWaterGarden_v20.fbx`(메시418) + `_Motion.json`(트랙15·30Hz·24초), `SampledGardenMotion` 공용 시계/물리 스텝 샘플과 `SampledGardenSurface` 탑승 표면, 선택 충돌체/단색 URP 재질/새 물 슬롯/저수지 낙사 높이. `SeoungTestCourse.Version=11`, **Build Pawn Rush Test Scene → Play**. 원본 Blender 파일 보존, 별도 조명/산/구름/컴포지터는 Unity 시험 씬에 미이전. Core133 + FBX 재가져오기/루프 데이터 점검 통과. **Unity 편집기 미연결, Unity 컴파일·화면·충돌·탑승·성능·사용자 확인 전.** [Unity 안내](ArtSource/PawnRush/Garden/UNITY.md).
+
 > **R275(11-01): 소품 제거/Blender 애니메이션.** v20: 광장 기물3개/마지막 촛대(후반 가로등 메시) 제거. 분리 회전봉 시계방향8초, C발판0~0.7m 상하6초, 로봇팔 어깨/팔꿈치 목표자세와 정지6초, 백/흑 보트 별도통로38↔45m 반대위상12초. 30fps·1~720(24초). `ArtSource/PawnRush/Garden/ANIMATION.md`. Blender 프레임/렌더 점검만; Unity 이전/충돌/탑승/가동간섭/사용자 확인 전.
 
 > **R274(11-01): 남은 기둥/바닥/기단도 제공 벽 에셋으로 변형 교체.** v19 Blender에서 기존 구조174개+병합 장식의 작은 기둥10개를 새 구조241개로(성탑 원형 변형, 바닥 모듈, 경사0→3m, 테라스/부두/옹벽 등). 공유 단순화 메시, 텍스처 없음. 기존원본 숨김 보존. `structure_report_v19.json`에 교체 목록. 파일재열기/렌더 점검만; Unity/성능/바닥 평탄성/충돌/동작/사용자 확인 전.
