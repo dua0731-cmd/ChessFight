@@ -100,6 +100,8 @@ namespace ChessFight.RagdollLab
             label.anchor = TextAnchor.MiddleCenter; label.font = RuntimePanels.KoreanFont;
             if (label.font) sign.GetComponent<Renderer>().sharedMaterial = label.font.material;
             for (int side = 0; side < 2; side++) BuildGiant(side);
+            var warRoom = GetComponent<GiantChessWarRoom>();
+            if (warRoom != null && warRoom.enabled) warRoom.Build(tileSize);
             ResetBoard();
         }
         void Start()
@@ -308,7 +310,7 @@ namespace ChessFight.RagdollLab
             int a = 0, b = 0; for (int i = 0; i < 12; i++) if (finished[i]) { if (i < 6) a++; else b++; }
             GUI.Box(new Rect(12, 12, 720, 155), "");
             string move = ply < score.Length ? $"{ply / 2 + 1}. {(ply % 2 == 0 ? "백" : "흑")} {score[ply][5]}" : "Rc2# · 기보 종료";
-            GUI.Label(new Rect(24, 20, 690, 140), $"거인 GM 체스판 · {move}\n{(phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비")} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 입구 복귀 · F3 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
+            GUI.Label(new Rect(24, 20, 690, 140), $"거인 작전실 워게임 · {move}\n{(phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비")} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 입구 복귀 · F3 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
         }
         void OnDestroy()
         {

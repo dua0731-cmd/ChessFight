@@ -350,6 +350,7 @@ GameObject:
   - component: {fileID: 1667498620}
   - component: {fileID: 1667498619}
   - component: {fileID: 1667498618}
+  - component: {fileID: 1667498621}
   m_Layer: 0
   m_Name: Giant GM Chess Crossing
   m_TagString: Untagged
@@ -415,3 +416,19 @@ SceneRoots:
   - {fileID: 1667498620}
   - {fileID: 1312111601}
   - {fileID: 439410733}
+--- !u!114 &1667498621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667498617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 041d0f5e8911e5196b038bc049bd2419, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.GiantChessWarRoom
+  showRoom: 1
+  wallHeight: 80
+  tableHeight: 22
+  solidEntryExitProps: 1
