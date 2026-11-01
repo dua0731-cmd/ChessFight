@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R268: `RoyalWaterGarden_v13.blend` refines the plaza's 20 low wall segments and four planter bases with staggered limestone blocks, recessed joints, rounded edges and projecting coping. Five warm neutral stone variations follow the war-room palette. Previous wall meshes are hidden in Blender and retained for reference. This is a visual art revision; Unity geometry/collision remain unchanged. See `masonry_detail_v13.png`.
+
 R267: `RoyalWaterGarden_v12.blend` refines the plaza flower beds. Rounded six-petal flowers, pollen centres, stems and individual leaves replace the original flat plaza flower pieces. Pink, yellow, ivory, lilac and coral variations share the v11 camera and lighting for comparison. This remains a Blender art pass; Unity transfer and performance testing are pending.
 
 R266: `RoyalWaterGarden_v11.blend` and `plaza_player_v11.png` are the first plaza art benchmark pass. Added staggered radial sandstone tiles with bevels and colour variation, refined metal roughness, warm sunlight/sky fill, and a perspective camera at 2.5 m. Existing terrain and water remain. This is a Blender art study; fine flowers, wall dressing, background art, and Unity transfer are still pending. The reference look is not yet achieved.
