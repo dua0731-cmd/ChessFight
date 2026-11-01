@@ -1,5 +1,7 @@
 # ChessFight HANDOFF — 모든 작업은 여기서 시작한다
 
+> **R277(11-01): 정원 v21 — 출발 광장 벽 뜯김 수정 · 나무 교체 · 바닥 충돌.** 원인: R275에서 광장 메시에서 떼어낸 회전봉에 화단 안쪽 경계석 고리 조각(반지름13.2~13.8m)과 허브 바닥 고리 조각이 섞여 회전봉과 함께 돌며 경계석에 틈을 냈다(사용자 영상). 조각 3,560면을 고정 오브젝트로 되돌림, 허브 이음새에 고정 석조 고리. R273 남북 입구의 속 빈 절단면 제거 → 양쪽 석조 기둥벽·갓돌·둥근 기둥, 바닥판 연장. 나무 12그루를 사용자 GLB 2종(감량 약8.7천면, 줄기/잎 단색)으로. 광장 충돌은 49만면 장식 메시 대신 숨긴 매끈한 높이장 프록시(0.2m, 포장면 평탄, 1.38만 삼각형), 보수 포장 턱 제거. `RoyalWaterGarden_v21.fbx`/`_Motion.json`(v20 Resources 삭제, `.blend`는 보존), `SeoungTestCourse.Version=12`. Core133·세션45·컴파일·FBX 재가져오기 통과. **Unity 화면·충돌·사용자 확인 전.** [`build_v21.py`](ArtSource/PawnRush/Garden/build_v21.py), [비교](ArtSource/PawnRush/Garden/fix_compare_v20_v21.png).
+
 > **R276(11-01): v20 맵/애니메이션 Unity 연결.** `Resources/PawnRushGarden/RoyalWaterGarden_v20.fbx`(메시418) + `_Motion.json`(트랙15·30Hz·24초), `SampledGardenMotion` 공용 시계/물리 스텝 샘플과 `SampledGardenSurface` 탑승 표면, 선택 충돌체/단색 URP 재질/새 물 슬롯/저수지 낙사 높이. `SeoungTestCourse.Version=11`, **Build Pawn Rush Test Scene → Play**. 원본 Blender 파일 보존, 별도 조명/산/구름/컴포지터는 Unity 시험 씬에 미이전. Core133 + FBX 재가져오기/루프 데이터 점검 통과. **Unity 편집기 미연결, Unity 컴파일·화면·충돌·탑승·성능·사용자 확인 전.** [Unity 안내](ArtSource/PawnRush/Garden/UNITY.md).
 
 > **R275(11-01): 소품 제거/Blender 애니메이션.** v20: 광장 기물3개/마지막 촛대(후반 가로등 메시) 제거. 분리 회전봉 시계방향8초, C발판0~0.7m 상하6초, 로봇팔 어깨/팔꿈치 목표자세와 정지6초, 백/흑 보트 별도통로38↔45m 반대위상12초. 30fps·1~720(24초). `ArtSource/PawnRush/Garden/ANIMATION.md`. Blender 프레임/렌더 점검만; Unity 이전/충돌/탑승/가동간섭/사용자 확인 전.
@@ -50,7 +52,7 @@
 
 > **R238(승규 님, 10-30): 폰 러시 3페이즈 재디자인 자료조사.** 정원 · 제빵소 · 전략회의실 3페이즈(코스 → 공유 미션 → 단일 대문) 자료와 지금 코스 01 · 장치를 맞대어 [조사 문서](Docs/KingRush/PAWN_RUSH_3PHASE_RESEARCH.md)로 정리. 작업 장소는 `seoungtest` 시험 씬. **문서만, 코드·씬 변경 없음.** **6 vs 6으로 확정**, 18곳을 디자인이 비슷한 6묶음으로 정리(§2-1). 한 판 길이는 미정. 승규 님 담당 = 엔드게임 → [엔드게임 조사](Docs/KingRush/PAWN_RUSH_ENDGAME_RESEARCH.md). **푸시:** 10-30 승규 님 "앞으로 푸쉬 해주면서 진행해줘" → 커밋마다 세션 브랜치 `claude/zen-fermi-ozuon8`에 푸시. `seoungtest`에는 엔드게임 변경(R238~R241)만 얹었다(세션 브랜치에 섞인 main의 최신 커밋은 넣지 않음). R254: 다른 채팅용 Blender · 고난이도 LD 작업 지시서([PAWN_RUSH_ENDGAME_BLENDER_PROMPT](Docs/KingRush/PAWN_RUSH_ENDGAME_BLENDER_PROMPT.md)), 그 결과의 "Unity 반영 목록"을 받아 `Course01v4Builder.WarRoom.cs`에 옮기는 것이 다음. R244: 구역 E v2 — 전략회의실 그림의 색 · 옷방 그림의 규모와 장치(12묶음, 약 230 m, `WarRoomLook`), 구역 버전 표시. R243: 시험 씬에서 코스 01의 A · B · C · 탑을 빼고 E · F만(미니게임 줄은 남김), 다음은 승규 님의 E 세부화. R242: Pull 뒤 Unity가 다시 컴파일되면 시험 씬에 없는 구역을 다시 지을지 묻는다(`SeoungTestAutoBuild`). R241: 시험 씬이 Play 때 코드에 있는데 씬에 없는 구역을 보면 그 Play에서 구역을 다시 지음(`SeoungTestCourse.Missing`). R240: 시험 씬 구역 F 최종 코스 · 알현실 · 왕좌(원 8.5 m, 잡기 허용, `Course01v4Builder.Final.cs`), 왕좌 원 크기 판정(`CrownFinish.Platform`), 구역 E 다리 예고 지도 탁자(`CrossingSignal`), Unity 미확인. R239: 추천안대로 seoungtest 시험 씬에 구역 E 전략회의실 S1–S4 그레이박스(`Course01v4Builder.WarRoom.cs`), 바깥 컴파일만, Unity 미확인.
 
-최종 갱신: **2026-11-01**(R263 왕실 수로 정원 구역 G(도서관 E 옆): Blender v06 FBX · `Course01v4Builder.RoyalGarden.cs` · 움직이는 것 · 물 낙사, `seoungtest`에 커밋 · 푸시, Play · 사람 확인 전)
+최종 갱신: **2026-11-01**(R277 정원 v21: 회전봉에 섞인 경계석 조각 분리 · 입구 마감 · 나무 GLB · 광장 충돌 프록시, `seoungtest`; 이전 R263 왕실 수로 정원 구역 G(도서관 E 옆): Blender v06 FBX · `Course01v4Builder.RoyalGarden.cs` · 움직이는 것 · 물 낙사, `seoungtest`에 커밋 · 푸시, Play · 사람 확인 전)
 최종 갱신: **2026-11-01**(R262 도서관 맵 그레이박스 `build_graybox.py`(`GRAYBOX` 컬렉션, 상자 376개), Unity 그대로, 사람 확인 전)
 최종 갱신: **2026-10-31**(R261 도서관 컨베이어 맵 Blender 작업 파일 `ArtSource/PawnRush/Library/`, Unity FBX 그대로, 사람 확인 전)
 최종 갱신: **2026-10-30**(R257 엔드게임 맵은 승규 님 노트북(`KKND1236_LENOVO`)에서만, 다른 PC는 코스 01 A · B · C · 탑, 씬 파일 skip-worktree, 사람 확인 전)
@@ -334,7 +336,7 @@
 
 | 항목 | 상태 |
 |---|---|
-| **폰 러쉬 왕실 수로 정원 구역 G(11-01, R263, `seoungtest`)** | Blender 맵(저장소 밖, v06: 실제 형태 · 벽 클레이 · 텍스처 없음 · 원뿔 나무 없음)을 FBX 하나로, `Course01v4Builder.RoyalGarden.cs`가 시험 씬의 도서관 옆에 짓는다(메시 충돌체 · 회전봉 · 진자 둘 · 팀 보트 둘 · 물 낙사). 리눅스 테스트 · 컴파일 통과. **Unity 미확인** → [PAWN_RUSH_GARDEN](Docs/KingRush/PAWN_RUSH_GARDEN.md) |
+| **폰 러쉬 왕실 수로 정원 구역 G(11-01, R263, `seoungtest`)** | **R277: v21(회전봉에 섞인 경계석 조각 분리 · 입구 마감 · 나무 GLB · 광장 충돌 프록시, Unity 미확인).** Blender 맵(저장소 밖, v06: 실제 형태 · 벽 클레이 · 텍스처 없음 · 원뿔 나무 없음)을 FBX 하나로, `Course01v4Builder.RoyalGarden.cs`가 시험 씬의 도서관 옆에 짓는다(메시 충돌체 · 회전봉 · 진자 둘 · 팀 보트 둘 · 물 낙사). 리눅스 테스트 · 컴파일 통과. **Unity 미확인** → [PAWN_RUSH_GARDEN](Docs/KingRush/PAWN_RUSH_GARDEN.md) |
 | **폰 러쉬 전용 기물 물리(10-30, R238, `seoungtest`, 커밋 안 함)** | `PawnRushPhysicsParams`(점프 · 공중 중력 · 턱 오르기 · 모서리 넘기 · 발밑 기준 서기, R239 점프 자세 · 다이빙 · 달리기 팔)를 `PawnRushCourseSkills`가 폰 러쉬 씬 기물에만 줌. 소드 파이트 등 다른 모드는 값이 없어 그대로. **Unity 미확인** → [RAGDOLL](Docs/Player/RAGDOLL.md#폰-러쉬-전용-물리-r238-2026-10-30) |
 | **소드 파이트 경기장 Blender 모델(10-28, R191, `skill-network-test`, 커밋 안 함)** | 판 부품 FBX 9개 · 텍스처 2장을 Blender 5.2.3 스크립트로(`ArtSource/SwordFight/build_arena_v1.py`, 렌더 `v1/*.png`): 밝은 오크 · 월넛 칸(둥근 모서리), 둥근 월넛 테두리 + 청동 줄, 청동 마개 난간, 룩 받침, 책상, 쟁반. `Assets/Resources/SwordFightMap`에 넣고 `SwordFightArena.Build`가 Play 때 놓음(`UseModels`). 책 더미 · 시계 · 램프는 나중에 Tripo. 실제 Unity DLL 컴파일 · Core 131 · 세션 41 통과. **사용자가 Unity에서 화면 확인(10-28)**, 룩 E도 확인, 판 축소 · 킹 E · 2.5 m 칸은 미확인 |
 | **킹 · 룩 · 퀸 F · E VFX(10-27, R160~R165, 커밋 안 함)** | 소드 파이트 킹(금색 6개) · 룩(돌색 4개) · 퀸(R164 검정 · 짙은 빨강: 바닥 탄 자국 줄 + 검은 그림자 잔상, 5개, `VfxBeam` 바닥 모드 · `VfxPhantom` · 셰이더 3개, 연결 `SwordFightSkillFx.QueenVfx.cs`) 실사 연출 위에 이펙트([VFX §9](Docs/VFX/README.md)), 연결 `SwordFightSkillFx.PieceVfx.cs`. `ChessFight.VFX`에 `VfxRing` · `VfxFlash` · `VfxSparks` · `VfxSet`, HLSL 셰이더 2개, RagdollLab → VFX 참조. 전 어셈블리 컴파일 통과. **커밋 안 함(사용자 지시), Unity 미확인** |
@@ -435,6 +437,7 @@
 ## 3. 진행 중인 일과 다음 할 일
 
 **폰 러쉬 왕실 수로 정원 (R263, 11-01, `seoungtest`)**
+- **R277(v21):** 승규 님이 Build Pawn Rush Test Scene → Play로 확인할 것: 광장 회전 중 경계석 틈/떠도는 조각 없음, 남북 입구 마감, 나무 12그루, 광장 바닥 걷기·턱 없음, 허브 고리. [VALIDATION](Docs/Network/VALIDATION.md) 맨 위 R277.
 - 승규 님: Unity를 끄고 받기 → `SeoungTest_PawnRush` 열기 → **다시 짓기** → Play → [VALIDATION](Docs/Network/VALIDATION.md) 맨 위 R263 표(9개).
 - 결정 대기: 진자 해머가 기둥과 겹침(기둥을 벌리거나 진폭을 줄이기), 회전봉 높이(넘기 · 숙이기), 체크포인트 · 골 · 팀 전용 승선을 넣을지.
 - 맵을 고치면 Blender 원본(저장소 밖)에서 새 버전 FBX를 같은 이름으로 바꿔 넣고 `SeoungTestCourse.Version`을 올린다. 피벗 · 물 이름이 바뀌면 `RoyalGarden`의 이름도 고친다([PAWN_RUSH_GARDEN](Docs/KingRush/PAWN_RUSH_GARDEN.md) §4).

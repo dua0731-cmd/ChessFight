@@ -1,4 +1,10 @@
-# Unity garden v20 (R276)
+# Unity garden v21 (R277)
+
+R277 replaces the v20 export with `RoyalWaterGarden_v21.fbx` and `RoyalWaterGarden_v21_Motion.json` (444 meshes, same 15 tracks); zone version 12. Rebuild: `blender --background --python build_v21.py` (v20 → v21 .blend), then `export_unity_v21.py` and `check_unity_export_v21.py`. Collider roles: the decorative plaza and repaired pavement are `none`; `V21 | plaza collision proxy` is `proxy` (MeshCollider, renderer disabled in Unity); entry piers/coping/posts are `box`; trees are decoration only. Unity clay applies to `V1*`, `V20*` and `V21*` except the trees, which keep their trunk/leaf material colours. Unity was not connected: rendering, collision feel and performance remain unverified.
+
+The v20 notes below are historical; the v20 FBX/motion files were removed from Resources (the v20 `.blend` remains).
+
+## v20 (R276)
 
 Pull `seoungtest` including Git LFS files. Open `Assets/Scenes/SeoungTest/SeoungTest_PawnRush.unity`, run **ChessFight > SeoungTest > Build Pawn Rush Test Scene**, then Play. Zone G is the royal garden beside the library; `]` selects the next zone. Zone version 11 also rebuilds an older saved layout on Play.
 

@@ -41,7 +41,7 @@ namespace ChessFight.PawnRush
         void InitializeSaved()
         {
             take = JsonUtility.FromJson<Take>(motionAsset.text);
-            if (targets == null || targets.Length != take.tracks.Length) { take = null; Debug.LogError("Rebuild garden v20: saved motion targets are missing."); return; }
+            if (targets == null || targets.Length != take.tracks.Length) { take = null; Debug.LogError("Rebuild the royal garden: saved motion targets are missing."); return; }
             sourceRotations = new Quaternion[targets.Length]; surfaces = new SampledGardenSurface[targets.Length];
             for (int i = 0; i < targets.Length; i++)
             {

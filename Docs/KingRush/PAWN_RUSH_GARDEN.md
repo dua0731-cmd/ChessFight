@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R277 Unity v21:** `RoyalGarden`은 `RoyalWaterGarden_v21.fbx`/`_Motion.json`을 읽는다(v20 Resources 파일 삭제). 회전봉에 섞였던 경계석·허브 고리 조각을 고정 오브젝트로 분리(벽 뜯김 원인, [PITFALLS §25](../Environment/PITFALLS.md)), 남북 입구 절단면 제거 후 석조 기둥벽·갓돌·기둥(박스 충돌), 허브 고정 고리, 나무 12그루 → 사용자 GLB 2종(`ArtSource/PawnRush/Garden/source_glb/`, 색 유지·충돌 없음). 충돌 역할 `proxy`: 숨긴 높이장 `V21 | plaza collision proxy`가 메시 충돌체, 장식 광장과 보수 포장은 충돌 없음. `SeoungTestCourse.Version=12`. Unity 확인 전.
+
 > **R276 Unity v20:** 이제 `RoyalGarden`은 v06 대신 `Resources/PawnRushGarden/RoyalWaterGarden_v20.fbx`와 `_Motion.json`을 읽는다. 보이는 메시418/동작15트랙, 24초 반복을 공유 시계로 물리 스텝마다 보간. 이동 루트 Kinematic/`IMovingSurface`, 경사/아치/동적 메시 충돌체와 정적 모듈 상자 충돌체, 새 물 슬롯·단색 URP 재질, 저수지 낙사 높이 갱신. 시험 씬 버전11: **ChessFight > SeoungTest > Build Pawn Rush Test Scene → Play**. Blender 조명/컴포지터/멀리 있는 배경은 시험 씬에 안 넣음. Core133 및 FBX/트랙 재가져오기 점검 통과, Unity 편집기 미연결로 Unity 컴파일/화면/승선/가동간섭/충돌/성능/사용자 확인 전. 아래 v06 설명은 이전 기록이며 최신은 `ArtSource/PawnRush/Garden/UNITY.md`.
 
 > **R275 애니메이션:** v20 Blender에서 기물3개/후반 촛대 제거, 회전봉 시계방향8초·C발판 상하6초(0~0.7m)·어깨/팔꿈치 로봇팔6초·양팀 보트 반대위상 왕복12초(별도 x±6 통로에서 y38~45). 광장바닥/화단/팔 지지부 고정. 30fps 1~720프레임, 설명 `ArtSource/PawnRush/Garden/ANIMATION.md`. Unity/충돌/실제 승선/가동간섭/사용자 확인 전.

@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R277: `RoyalWaterGarden_v21.blend` is built from v20 by `build_v21.py` (rotor fragments of the static curb/hub ring returned to a static object, plaza entries closed with piers, hub collar, twelve stylized trees from `source_glb/`, hidden plaza collision proxy). Unity uses v21; see [UNITY.md](UNITY.md). `fix_compare_v20_v21.png`: top row v20, bottom row v21 (plaza at frame 75, south entry, trees).
+
 R276 now integrates the visible v20 course and sampled motion into Unity. See [UNITY.md](UNITY.md) for build/play instructions, export scripts and remaining checks. Historical notes below describe the earlier Blender-only work.
 
 R275: `RoyalWaterGarden_v20.blend` removes the three plaza pawn props and final-section lamp stands; adds clockwise spinner rotation, vertical C-platform motion, two-joint robot-arm obstacles and opposite-phase team ferries. 1–720 frames at 30 fps. See [ANIMATION.md](ANIMATION.md) for periods and limits. Blender render/data checks only; Unity gameplay transfer remains pending.
