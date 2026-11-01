@@ -11,6 +11,7 @@
 | `PawnRushLibrary.blend` | 작업 파일(Blender 5.2, LFS). 여기서 고친다 — **위 안내대로 만들어 넣을 것** |
 | `build_library_blend.py` | Unity FBX 두 개 → `PawnRushLibrary.blend`를 처음부터 다시 만든다 |
 | `export_library_fbx.py` | `PawnRushLibrary.blend` → Unity FBX 두 개로 내보낸다(검사 포함) |
+| `build_graybox.py` | `.blend`에 그레이박스 컬렉션 `GRAYBOX`를 (다시) 만든다(R262, §6) |
 
 Unity가 읽는 곳(바뀌지 않음): `Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx` · `PawnRushLibraryShuttle.fbx`
 놓는 코드: `Assets/Scripts/PawnRush/Course01v4Builder.LibraryReplacement.cs`(충돌체), `LibraryShuttleDriver.cs`(셔틀 움직임)
@@ -21,6 +22,7 @@ Unity가 읽는 곳(바뀌지 않음): `Assets/Resources/PawnRushLibrary/PawnRus
 |---|---|---|
 | `PawnRushLibraryEnvironment` | 홀 · 바닥 · 계단 · 발코니 · 랜턴(빛 10) · 표시용 빈 물체(`START_spawn_zone`, `GOAL_capture_zone`, `BLOWER_*` …) 2926개 | → `PawnRushLibraryEnvironment.fbx` |
 | `PawnRushLibraryShuttle` | 움직이는 컨베이어 130개. `CONVEYOR_CARRIAGE …` 빈 물체 아래가 같이 움직인다. **16초 왕복 = 1 ~ 385 프레임, 24 fps** | → `PawnRushLibraryShuttle.fbx`(애니메이션 포함) |
+| `GRAYBOX`(R262) | 위 둘을 상자 376개로 줄인 그레이박스. `GB_Environment` · `GB_Shuttle`(같은 16초 왕복). 처음 열면 이것만 보인다 | **안 함**(아직 Unity에 안 넣음) |
 | `UNITY_Collisions_ref`(초록 와이어) | Unity 코드가 더하는 충돌 상자 56개를 같은 자리에 그린 것(바닥 · 발코니 · 골 바닥 · 아래층 · 돌아가는 계단 32칸 · 착지대 · 골 계단 16칸 · 컨베이어 덱) | **안 함**(참고용, 선택 잠금) |
 
 - 단위는 m, Z가 위. 모델의 출발은 −Y 쪽(`START_spawn_zone`, y ≈ −17.5), 골은 +Y 쪽(골 바닥 높이 1.2 m)이다.
@@ -78,3 +80,23 @@ Blender에서 고친 내용은 덮어써지니 먼저 FBX로 내보냈는지 확
 | 이름 차이 | 63자를 넘던 이름 2개(`Upper20_Goal_corner_lantern.001|GAME_KIT_…`, `V23_Inner_gallery_pier_center.001|GAME_GEO_…`)는 Blender 이름 한도로 끝이 잘린다. 다시 내보내면 Unity 노드 이름도 그렇게 바뀐다(코드가 찾는 이름 아님) |
 
 **Unity에서 확인한 것은 아직 없다.** 내보낸 FBX는 저장소에 올리지 않았다(지금 Unity FBX = 승규 님 원본 그대로).
+
+## 6. 그레이박스(R262, 2026-11-01)
+
+승규 님 요청 "블렌더에서 그레이박스화". `build_graybox.py`가 자세한 모델을 지우지 않고 옆에 `GRAYBOX` 컬렉션을 만든다. 자세한 두 컬렉션은 눈 아이콘으로만 숨긴다(내보내기는 전과 같이 자세한 모델).
+
+```
+"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background ArtSource/PawnRush/Library/PawnRushLibrary.blend --python ArtSource/PawnRush/Library/build_graybox.py
+```
+명령줄로 돌리면 저장까지 한다. Blender 안에서는 Scripting 탭 → Run Script → 저장. **다시 돌리면 `GRAYBOX`를 지우고 새로 만드니, 그레이박스를 손으로 고친 뒤에는 다시 돌리지 말 것.**
+
+| 규칙 | 값 |
+|---|---|
+| 상자 하나 = | 물체 하나(자기 방향 그대로의 경계 상자), 키트(빈 물체 + 모델: 책장 · 책상 · 기둥 · 룩 골 말 · 송풍기 …)는 통째로 하나 |
+| 뺌 | 천장(아랫면이 11 m 위), 빛, 가장 긴 변 0.6 m 미만, 가장 얇은 변 3 cm 미만, 장식 이름(트레이서리 · 몰딩 · 랜턴 · 사슬 · 리벳 · 브래킷 · 깃발 · 리브 · 보 …), 같은 색의 더 큰 상자 안에 들어가는 상자 |
+| 합침 | 같은 이름으로 붙어 있는 블록(벽돌 · 바닥돌 · 체스 칸)은 합친 상자가 60% 이상 차면 하나로 |
+| 컨베이어 | `GB CONVEYOR_CARRIAGE` 빈 물체가 자세한 캐리지와 같은 동작(1 · 97 · 193 · 289 · 385 프레임 위치 같음)을 재생, 벨트 64조각 → Unity 덱 충돌체 크기(3.36 × 12.6 × 0.28 m) 상자 하나, 고정 레일 · 출발 경사로는 제자리 |
+| 색(뷰포트 Solid → Material) | 바닥 밝은 회색 · 벽 짙은 회색 · 출발 초록 · 골 빨강 · 움직임/위험 주황 · 소품 파랑 |
+| 결과 | 물체 약 2,900개 · 면 약 76만 → 상자 376개 · 면 2,256 |
+
+렌더 4장(전체 · 출발에서 본 모습 · 위 · 옆)은 PNG가 LFS라 저장소에 없고 채팅으로 보냈다.
