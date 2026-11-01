@@ -1,5 +1,7 @@
 # Royal Water Garden Blender work file
 
+R270: `RoyalWaterGarden_v15.blend` adjusts the plaza daylight and colour finish: sun energy 3.1, warm sunlight, stronger sky fill, clearer blue camera sky, saturation 1.16 and a modest compositor contrast pass. The compositor is an editable Blender 5.2 node group; previous versions remain available for comparison. See `plaza_daylight_v15.png`. Blender render review only; this look has not been transferred to Unity.
+
 R269: `RoyalWaterGarden_v14.blend` adds two distant mountain ridges, four rounded cloud banks and a camera-visible sky gradient. Mountains stay outside the course; the established foreground lighting, player camera and layout are preserved. Source camera background is an art study, not a Unity sky implementation. See `plaza_backdrop_v14.png`. Unity transfer, performance and player review remain pending.
 
 R268: `RoyalWaterGarden_v13.blend` refines the plaza's 20 low wall segments and four planter bases with staggered limestone blocks, recessed joints, rounded edges and projecting coping. Five warm neutral stone variations follow the war-room palette. Previous wall meshes are hidden in Blender and retained for reference. This is a visual art revision; Unity geometry/collision remain unchanged. See `masonry_detail_v13.png`.
