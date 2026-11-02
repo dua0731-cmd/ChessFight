@@ -253,7 +253,7 @@ namespace ChessFight.PawnRush
             var socket = b.Group("Game socket");
             b.parent = before;
             var station = g.gameObject.AddComponent<MissionStation>();
-            station.Configure(team, plaza, team == Teams.Black, gate, socket, k);
+            station.Configure(team, plaza, team == Teams.Black, gate, socket, k as Course01Kit);
             return station;
         }
     }

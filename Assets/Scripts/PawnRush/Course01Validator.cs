@@ -135,7 +135,7 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ 1. reach
 
-        static void CheckSpan(List<ObstacleSpan> spans, List<string> errors, List<string> notes)
+        internal static void CheckSpan(List<ObstacleSpan> spans, List<string> errors, List<string> notes)
         {
             var first = spans[0];
             var axis = first.Across;
@@ -170,7 +170,7 @@ namespace ChessFight.PawnRush
             notes.Add($"{name}: 길 폭 {hi - lo + .1f:0.0} m 모두 덮음");
         }
 
-        static bool Walkable(ObstacleSpan span, Vector3 at)
+        internal static bool Walkable(ObstacleSpan span, Vector3 at)
         {
             if (span.Kind == ObstacleSpan.Probe.Face)
             {
@@ -197,7 +197,7 @@ namespace ChessFight.PawnRush
             return floor;
         }
 
-        static bool IsObstacle(Collider c) =>
+        internal static bool IsObstacle(Collider c) =>
             c.GetComponentInParent<ObstacleSpan>() != null || c.GetComponentInParent<ObstacleContext>() != null ||
             c.GetComponentInParent<ObstacleMotion>() != null;
 
@@ -263,7 +263,7 @@ namespace ChessFight.PawnRush
 
         static readonly string[] MustBeMarble = { "North block", "Clock gate wall", "Tower core", "Tower shoulder", "Outer wall", "Team gate" };
 
-        static void CheckClimbing(Transform root, Course01Kit kit, List<string> errors, List<string> notes)
+        internal static void CheckClimbing(Transform root, CourseKit kit, List<string> errors, List<string> notes)
         {
             int marble = 0;
             foreach (var r in root.GetComponentsInChildren<MeshRenderer>(true))
@@ -282,14 +282,14 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ helpers
 
-        static string Name(Transform t) => (t.parent != null ? t.parent.name + "/" : "") + t.name;
+        internal static string Name(Transform t) => (t.parent != null ? t.parent.name + "/" : "") + t.name;
 
         // The nearest solid surface under `point + up * above`, within `depth` of it.
-        static Collider FloorUnder(Vector3 point, float above, float depth) =>
+        internal static Collider FloorUnder(Vector3 point, float above, float depth) =>
             Physics.Raycast(point + Vector3.up * above, Vector3.down, out var hit, depth, ~0, QueryTriggerInteraction.Ignore) ? hit.collider : null;
 
         // Level distance between two (convex) floors: closest points found by projecting back and forth.
-        static float Between(Collider a, Collider b)
+        internal static float Between(Collider a, Collider b)
         {
             var q = b.bounds.center;
             Vector3 pa = q;
@@ -305,7 +305,7 @@ namespace ChessFight.PawnRush
 
         // Collider.ClosestPoint, but a concave mesh (the 01 disc's cylinder) is read as the upright disc
         // its bounds hold.
-        static Vector3 Closest(Collider c, Vector3 q)
+        internal static Vector3 Closest(Collider c, Vector3 q)
         {
             if (!(c is MeshCollider mesh) || mesh.convex) return c.ClosestPoint(q);
             var b = c.bounds;
@@ -316,9 +316,9 @@ namespace ChessFight.PawnRush
         }
 
         // Any solid (non-trigger) surface under `point + up * above`, within `depth` of it.
-        static bool FloorAt(Vector3 point, float above, float depth) =>
+        internal static bool FloorAt(Vector3 point, float above, float depth) =>
             Physics.RaycastNonAlloc(point + Vector3.up * above, Vector3.down, hits, depth, ~0, QueryTriggerInteraction.Ignore) > 0;
 
-        static string Fmt(Vector3 p) => string.Format(CultureInfo.InvariantCulture, "({0:0.0}, {1:0.0}, {2:0.0})", p.x, p.y, p.z);
+        internal static string Fmt(Vector3 p) => string.Format(CultureInfo.InvariantCulture, "({0:0.0}, {1:0.0}, {2:0.0})", p.x, p.y, p.z);
     }
 }

@@ -1084,6 +1084,7 @@ namespace ChessFight.RagdollLab
         {
             Rigidbody hips = bodies[0];
             Vector3 hp = hips.position;
+            UpdateWind(dt);
             if (State == PawnState.Ragdoll)
             {
                 anchorPos = hp;
@@ -1143,7 +1144,8 @@ namespace ChessFight.RagdollLab
                     if (turned.sqrMagnitude > 1e-6f) facing = turned.normalized;
                 }
             }
-            Vector3 frame = carryVel;
+            // A wind carries the frame along like a moving floor (RagdollPawn.Wind.cs).
+            Vector3 frame = carryVel + windVel;
             Vector3 ownVel = Flat(hips.linearVelocity) - frame;
             float ownSpeed = ownVel.magnitude;
             // The gait is scaled to whichever speed the pawn is going for, so a run is a whole run

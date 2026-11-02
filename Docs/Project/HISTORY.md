@@ -7,6 +7,14 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| (이 커밋) | 11-02 | R304 | `claude/bold-johnson-8ez95n`(R300~R303 대계단 현관홀·구간 프리팹)을 `main`에 병합. 브랜치의 R149~R152를 R300~R303으로 바꾼 커밋(`b7a0106` → `df3819a`, main이 R149~R157·R295를 이미 씀) 포함. 충돌: `CoursePattern.shader`(main의 URP 판에 1 m 격자 두 갈래를 옮김), HANDOFF·REQUIREMENTS·DECISIONS·HISTORY·VALIDATION(양쪽 줄 모두 둠) |
+| `df3819a` · `b7a0106` | 11-02 | R304 | 병합 전 번호 바꾸기: R149~R152 → (R295~R298) → R300~R303 |
+| `926ec24` | 11-02 | R303 | 사용자가 나선 길 + 유리 징검다리 구조를 확정("좋아 이렇게 확정하자"): DECISIONS P29·REQUIREMENTS·HANDOFF·PAWN_RUSH_SECTIONS에 적음. 코드 그대로 |
+| `f77b242` | 11-02 | R303 | 대계단 현관홀 비트 3~5를 둥근 홀 한 나선 길로(휘어 오르는 계단·떠 있는 발판·점프대·다이빙 틈·바람 길·떨어지는 말·왕실 단 탑), 유리 징검다리 `GuessBridge`, `IntendedGap` + 검증기, 비트 6을 북쪽·아래로, 둥근 벽, 날개·다리·섬·룩 탑·`SwingingStair` 없앰, 문서. 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `decc344` | 11-02 | R302 | 꺾임 계단참을 룩 탑을 도는 C자 길 + 탑 북쪽 틈 + 스위퍼 팔 2개(`ObstacleMotion` 회전 + `ObstacleImpact`)로, 날개 계단 2를 움직이는 계단(새 `SwingingStair`)으로, 새 CP2(번호 하나씩 밀림), 경로 248.3 m, 문서. 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `28535a5` | 11-02 | R301 | 첫 Unity 검증의 `Wind span W1/E1` 오류: 첫 바람이 날개 계단 2 꼭대기 위(|x| 45)에 있어 계단 안쪽 끝으로 올라오면 건너뜀 → 바람 넷을 |x| 41.5/37/32.5/28(폭 3, 쉼 1.5)로, CP2 |x| 47·CP3 25.65, 문서 |
+| `0b6bb27` | 11-02 | R301 | 대계단 현관홀 재미 검토 → 세 곳 고침: 바람이 폰을 실어 나름(새 `IWindReceiver`·`RagdollPawn.Wind`·`ImportedObstacleActor.Blow`·`AirVent.DriftSpeed`, 홀 바람 3.5 m/s·폭 3·화살표 6 m, 계단 도착 자리 밖), 날개를 11 m 바깥으로(홀 ±51·중앙 계단참 ±25·샹들리에 영역과 간격) + 다리 A·섬·다리 B(11.5초, 닫힘 3), 날개 계단 1 진자 셋·난간 없음·아래 턱·가는 들보·카펫 2 m/s, 검증기 이름 목록, 문서(§10 재미 검토). 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `1f037f1` | 11-02 | R300 | 폰 러시 구간 프리팹: 한 판 7구간(Core `PawnRushSections` 뽑기·구간 씨앗, `PawnRushSection`·`PawnRushSectionSet`·`PawnRushRound`), 2-1 대계단 현관홀(`GrandStairHall`·`GrandStairHallBuilder`, 새 장애물 `RollingSpawner`·`ChandelierRain`, Core `SeededSchedule`), `SectionValidator`·`SectionPlaytest`·메뉴 3개·시험 씬 `PawnRush_Sections`, `CourseKit` 바탕 클래스·`SectionKit`, 1 m 격자 재질, `ImportedObstacleActor.AddObstacleHit`, 기획 원문 4개, 문서. 시험: Core 130·세션 41 |
 | (이 커밋) | 11-02 | R295 | 문서: REQUIREMENTS · HOST · MOTION · SESSION · VALIDATION 맨 위 (가)~(라) · DECISIONS K8 · PITFALLS 62~64 · HANDOFF |
 | `17f45b00` | 11-02 | R295 [6] | 방장 교체 때 옛 방장과의 그 링크 채널만 닫음(`CloseChannelWithUser`: `SteamMotion` 31 · `SteamRagdollLink` 32, 새 경기 때도 랩은 채널만). 음성(40)은 그대로 |
 | `efb3c3f6` | 11-02 | R295 [2] | 폰 러쉬: 모든 PC가 `session.Host` 바뀜을 보고 받은 것을 지움(Core `HostWatch` + 시험), 새 방장은 `stateTick = lastState`, 왕복 시간도 지움 |

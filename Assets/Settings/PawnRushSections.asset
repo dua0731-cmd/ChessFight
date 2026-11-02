@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88ac589c1ecbf86139117087358f8e57, type: 3}
+  m_Name: PawnRushSections
+  m_EditorClassIdentifier: 
+  slots:
+  - name: "\uC7A5\uC560\uBB3C 1 (\uCD08\uBC18 \u00B7 \uBC14\uAE65\uB730)"
+    kind: 0
+    prefabs: []
+  - name: "\uBBF8\uB2C8\uAC8C\uC784 1"
+    kind: 1
+    prefabs: []
+  - name: "\uC7A5\uC560\uBB3C 2 (\uC911\uBC18 \u00B7 \uC544\uB7AB\uAD81)"
+    kind: 0
+    prefabs:
+    - {fileID: 1000, guid: e572d026a1c6be428f9716d3217c5699, type: 3}
+  - name: "\uBBF8\uB2C8\uAC8C\uC784 2"
+    kind: 1
+    prefabs: []
+  - name: "\uC7A5\uC560\uBB3C 3 (\uD6C4\uBC18 \u00B7 \uC717\uAD81)"
+    kind: 0
+    prefabs: []
+  - name: "\uBBF8\uB2C8\uAC8C\uC784 3"
+    kind: 1
+    prefabs: []
+  - name: "\uB9C8\uC9C0\uB9C9 \uAD6C\uAC04"
+    kind: 2
+    prefabs: []
