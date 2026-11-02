@@ -270,6 +270,39 @@ public static class SessionFlowTests
                 Step(40);As(b,()=>b.ReportHostSilence(5));Step(3);
                 Check(b.IsHost&&c.Host==b.Self&&a.Host==b.Self&&!a.IsHost,"silent host not replaced everywhere");
                 Check(Owner(b)==b.Self&&RoomData(b,"host")==b.Self.ToString()&&RoomData(b,"epoch")=="2","old host kept the room");});
+            // R295: a member's claim used to be followed whoever made it and whatever its number.
+            Test("A forged claim (outside the roster, out of turn, too large, int.MaxValue) is ignored, and the successor in line still takes over",()=>{
+                Room(new[]{900,700,500});var a=clients[0];var b=clients[1];var c=clients[2];As(a,a.StartGame);Step(20);
+                Check(a.IsHost&&RoomData(a,"successors")==$"{b.Self},{c.Self}","setup: "+RoomData(a,"successors"));
+                var room=FakeSteam.Lobbies[a.Match];
+                // Someone in the room without a seat.
+                room.Members.Add(99);room.MemberData[(99,"claim")]="2";Step(4);
+                Check(clients.All(x=>x.Host==a.Self&&x.Epoch==1),"a player outside the roster took the match");
+                room.MemberData[(c.Self,"claim")]="2";Step(4);
+                Check(clients.All(x=>x.Host==a.Self&&x.Epoch==1),"a claim out of turn took the match");
+                room.MemberData[(b.Self,"claim")]="5";Step(4);
+                Check(clients.All(x=>x.Host==a.Self&&x.Epoch==1),"too large a claim took the match");
+                room.MemberData[(c.Self,"claim")]=room.MemberData[(99,"claim")]=int.MaxValue.ToString();Step(4);
+                Check(clients.All(x=>x.Host==a.Self&&x.Epoch==1),"int.MaxValue took the match");
+                room.Members.Remove(99);FakeSteam.Crash(a.Self);clients.Remove(a);Step(10);
+                Check(b.IsHost&&c.Host==b.Self&&clients.All(x=>x.Started&&x.Epoch==2),"the successor in line did not take over: "+b.Epoch);
+                Check(Owner(b)==b.Self&&RoomData(b,"epoch")=="2"&&room.MemberData[(b.Self,"claim")]=="2","the new epoch went past the forged ones");});
+            Test("Successors missing one after another: the next in line takes over, also for a PC that never heard of the one before",()=>{
+                Room(new[]{900,800,700,600});var a=clients[0];var b=clients[1];var c=clients[2];var d=clients[3];As(a,a.StartGame);Step(20);
+                Check(RoomData(a,"successors")==$"{b.Self},{c.Self},{d.Self}","setup: "+RoomData(a,"successors"));
+                FakeSteam.Crash(a.Self);FakeSteam.Crash(b.Self);clients.Remove(a);clients.Remove(b);Step(10);
+                Check(c.IsHost&&d.Host==c.Self&&c.Epoch==2&&d.Epoch==2&&clients.All(x=>x.Started),"the second successor did not take over");
+                Check(Owner(c)==c.Self&&RoomData(c,"epoch")=="2","record");
+                Room(new[]{900,800,700,600});a=clients[0];b=clients[1];c=clients[2];d=clients[3];As(a,a.StartGame);Step(20);
+                FakeSteam.Crash(a.Self);clients.Remove(a);
+                Action<SteamSession> alone=x=>{UnityEngine.Time.realtimeSinceStartup+=.3f;As(x,x.Tick);};
+                // B steps in and C follows it, then B is gone before D has heard of it.
+                alone(b);Check(b.IsHost&&b.Epoch==2,"setup: B steps in");
+                alone(c);Check(c.Host==b.Self&&c.Epoch==2,"setup: C follows B");
+                FakeSteam.Crash(b.Self);clients.Remove(b);
+                alone(c);Check(c.IsHost&&c.Epoch==3,"C did not step in after B");
+                alone(d);Check(d.Host==c.Self&&d.Epoch==3,"D, which never heard of B, did not follow C");
+                Step(10);Check(c.IsHost&&d.Host==c.Self&&Owner(c)==c.Self&&RoomData(c,"epoch")=="3"&&clients.All(x=>x.Started),"the match did not go on under C");});
             Test("A host that stays slow hands the match to a much stronger machine, not to a slightly stronger one",()=>{
                 foreach(int other in new[]{1000,500})
                 {

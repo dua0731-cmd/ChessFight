@@ -944,6 +944,30 @@ public static class NetworkCoreTests
                 Check(HostElection.Successor(new ulong[] { 1 }, new HashSet<ulong> { 1, 2, 3 }, 1, fallback) == 3, "the leaver never succeeds itself");
                 Check(HostElection.Successor(null, new HashSet<ulong>(), 1, null) == 0, "nobody left");
                 Check(HostElection.Decode("3,x,,2,3,0").SequenceEqual(new ulong[] { 3, 2 }) && HostElection.Encode(new ulong[] { 3, 2 }) == "3,2", "encoding"); });
+            Test("Host claims (R295): only the next in line counts, one epoch up, and successors are followed one after another", () => {
+                var order = new List<ulong> { 2, 3, 4 };
+                int e;
+                var claims = new Dictionary<ulong, int> { { 2, 0 }, { 3, 2 }, { 4, 0 }, { 9, 2 } };
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 1 && e == 1, "out of turn (3 while 2 is here) or outside the order (9)");
+                claims[2] = 2;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 2 && e == 2, "the next in line takes over");
+                claims[2] = 5;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 1 && e == 1, "too large a number");
+                claims[2] = int.MaxValue;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 1 && e == 1, "int.MaxValue");
+                claims[2] = 2; claims[3] = 2;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 2 && e == 2, "two that both stepped in settle on the one in line");
+                claims[3] = 3;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 3 && e == 3, "a successor that went quiet is followed by its own");
+                // 2 took over at epoch 2 and left before this PC heard of it.
+                Check(HostElection.Follow(1, 1, 1, order, new Dictionary<ulong, int> { { 3, 3 }, { 4, 0 } }, null, out e) == 3 && e == 3, "one more for a successor gone");
+                Check(HostElection.Follow(1, 1, 1, order, new Dictionary<ulong, int> { { 3, 4 }, { 4, 0 } }, null, out e) == 1, "but not two");
+                Check(HostElection.Follow(1, 1, 2, order, new Dictionary<ulong, int> { { 2, 3 } }, null, out e) == 2 && e == 3, "this PC's own epoch counts as seen");
+                Check(HostElection.Follow(2, 3, 3, order, new Dictionary<ulong, int> { { 2, 2 }, { 3, 2 } }, null, out e) == 2 && e == 3, "old claims below the record");
+                var fallback = new[] { new HostElection.Candidate { Id = 7, Fitness = 900 }, new HostElection.Candidate { Id = 8, Fitness = 300 } };
+                Check(HostElection.Follow(1, 1, 1, order, new Dictionary<ulong, int> { { 7, 2 }, { 8, 0 } }, fallback, out e) == 7 && e == 2, "nobody published here: the fittest");
+                Check(HostElection.NextEpoch(1) == 2 && HostElection.NextEpoch(-4) == 1 && HostElection.NextEpoch(int.MaxValue) == int.MaxValue, "next epoch never wraps");
+                Check(HostElection.ClaimLimit(2, 1) == 4 && HostElection.ClaimLimit(int.MaxValue, 3) == int.MaxValue, "limit never wraps"); });
             Test("Frame monitor: five slow seconds are struggling, one loading hitch is not", () => {
                 var m = new FrameMonitor(); double t = 0;
                 for (; t < 10; t += .1) m.Add(16, t);
