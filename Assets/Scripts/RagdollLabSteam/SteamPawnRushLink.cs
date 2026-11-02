@@ -420,6 +420,7 @@ namespace ChessFight.RagdollLab.Net
                 if (runners.TryGetValue(session.Self, out var self)) self.Pawn.SetInput(local);
                 foreach (var r in runners.Values) CheckRespawn(r);
                 if (now - sentAt >= SnapshotInterval) SendSnapshot();   // the course state goes with it
+                session.ReportHostSilence(0f);
             }
             else
             {
@@ -428,7 +429,10 @@ namespace ChessFight.RagdollLab.Net
                 ApplyDueStates();
                 DispatchEvents();
                 // R295: counted from the host's first packet in this scene or the shared start, whichever comes first.
+                // The session hands a silent host's role on (HOST.md); the lobby's motion stream that used to tell it
+                // stops in this scene, so this link tells it instead. Leaving is the last resort.
                 float silence = hostSilence.Seconds(now, Started());
+                session.ReportHostSilence(silence);
                 if (silence > SilenceTimeout && !ended) session.Abort("폰 러쉬 방장 연결이 끊어졌습니다.");
             }
         }
