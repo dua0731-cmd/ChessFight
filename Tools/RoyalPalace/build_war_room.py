@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 import build_courses as kit
+from stable_prefab_ids import stabilize
 
 ROOT=kit.ROOT
 PREFAB='Assets/Maps/RoyalPalace/WarRoomComplete.prefab'
@@ -416,8 +417,13 @@ class Builder:
             if obj.get('active')==0:
                 generated[obj['go']]=generated[obj['go']].replace('m_IsActive: 1','m_IsActive: 0')
         text=kit.HEAD+''.join(generated.values())+''.join(self.raw.values())
-        self.report['root']=self.root['go'];self.report['root_transform']=self.root['tr']
-        return clean(text)
+        text,ids=stabilize(clean(text))
+        self.serialized_root=ids[self.root['tr']]
+        self.report['root']=ids[self.root['go']];self.report['root_transform']=self.serialized_root
+        self.report['solo_archive_route']=[ids[t] for t in self.report['solo_archive_route']]
+        self.report['approval_gate']=ids[self.report['approval_gate']]
+        self.report['local_id_scheme']='hierarchy-type-sha256-v2'
+        return text
 
 def scene(prefab_root):
     text=(ROOT/SCENE).read_text();data=blocks(text)
@@ -426,7 +432,7 @@ def scene(prefab_root):
     for key,b in data.items():
         if key>=9000000000000000000 or key in (1667498617,1667498618,1667498619,1667498620,1667498621,1667498622,950000,950001,950002,960000,960001):continue
         kept.append(b)
-    guid=kit.guid(PREFAB)
+    guid=re.search(r'^guid: (\w+)',(ROOT/(PREFAB+'.meta')).read_text(),re.M)[1]
     instance=f'''--- !u!1001 &960000
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -459,7 +465,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);m=parser.add_mutually_exclusive_group(required=True)
     for flag in ('write','overwrite','check'):m.add_argument('--'+flag,action='store_true')
     args=parser.parse_args();b=Builder();prefab=b.save()
-    outputs={PREFAB:prefab,SCENE:scene(b.root['tr']),REPORT:json.dumps(b.report,ensure_ascii=False,indent=2)+'\n'}
+    outputs={PREFAB:prefab,SCENE:scene(b.serialized_root),REPORT:json.dumps(b.report,ensure_ascii=False,indent=2)+'\n'}
     if args.check:
         stale=[p for p,s in outputs.items() if not (ROOT/p).exists() or (ROOT/p).read_text()!=s]
         if stale:raise SystemExit('Differs from authoring source: '+', '.join(stale))

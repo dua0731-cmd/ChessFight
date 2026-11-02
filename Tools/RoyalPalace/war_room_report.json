@@ -338,12 +338,12 @@
     ]
   ],
   "solo_archive_route": [
-    2003791,
-    2003793,
-    2003795,
-    2003797
+    591873479736636314,
+    26154211410818719,
+    273052182775009601,
+    530629989917092343
   ],
-  "approval_gate": 2003727,
+  "approval_gate": 6031101033948465616,
   "operations_footprint_m": [
     160,
     160
@@ -359,6 +359,7 @@
     180
   ],
   "timing_scope": "Entry to headquarters doorway; giant chess crossing excluded",
-  "root": 2000001,
-  "root_transform": 2000002
+  "root": 8104961798903569984,
+  "root_transform": 103023748741740860,
+  "local_id_scheme": "hierarchy-type-sha256-v2"
 }

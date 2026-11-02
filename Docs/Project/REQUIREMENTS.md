@@ -200,3 +200,8 @@
 ## R120 — 정사각형 작전실과 2~3분 통과 목표 (2026-11-02)
 
 사용자: 작전실 자체를 정사각형으로, 통과시간2~3분 정도 크기. 외벽160×160m, 주 동선4구간/639m로 단축하고 체크포인트2를 횡단 통로로 이동. 총지휘부 입장까지120~180초 목표(체스 제외), 개별 경과시간 HUD 추가. 구조46·Core113·세션40·런타임7 통과. 실제 Unity 시간은 미확인. [상세](../KingRush/WAR_ROOM_COMPLETE.md). 기록을 추가한 main 커밋.
+
+
+## R121 — Prefab mismatch 타입 불일치 오류 수정 (2026-11-02)
+
+사용자 오류: “The instance object in the scene is referencing a corresponding source object in the Prefab of a different type.” 생성기의 순번 fileID가 재생성 시 다른 타입에 재사용되는 원인 확인. 계층/클래스 기반 ID로 변경하고 GUID 일회 이전·GiantChessCourse 인스턴스 연결 동시 갱신. 49검사·Core113·세션40·런타임7 통과, 전체136원본 타입 참조 일치. Unity 재임포트/로컬 씬 확인 대기. [업데이트](../KingRush/WAR_ROOM_COMPLETE.md). 기록을 추가한 main 커밋.
