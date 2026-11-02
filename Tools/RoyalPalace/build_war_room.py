@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""R118 complete war-room prefab. --write creates it; --overwrite discards edits;
+"""R119 complete war-room prefab. --write creates it; --overwrite discards edits;
 --check is read-only. The scene keeps a single instance plus its camera and light.
 """
 import argparse
@@ -109,7 +109,7 @@ class Builder:
                 for side in (-1,1):
                     display=self.group('Department map and records',g,(x+side,0,z),kit.yaw(90 if side<0 else -90))
                     self.map(display,(0,8,0))
-                    self.shelf(display,(0,0,0))
+                    if not (x==60 and side<0 and z==62):self.shelf(display,(0,0,0))
         for x in (-16,18,54,102,136):
             self.map(g,(x,8,82.9))
             self.shelf(g,(x,0,81.8))
@@ -166,7 +166,107 @@ class Builder:
         self.beat(3);before=len(self.d.all);self.c.gate(31);self.d.all[before]['pos']=(0,3,31)
         self.beat(4);self.pointers(41)
         self.beat(5);self.press(44)
+        self.barrage();self.formations()
         self.report['new_obstacles']=self.c.units
+    def barrage(self):
+        self.beat(2)
+        g=self.c.group('Tactical map barrage - follow the green safe squares',13,kind='tactical_barrage')
+        ctx=self.c.context(g);areas=[];warn=[];safe=[];strike=[]
+        self.box(g,'Parchment map surface',(0,.015,0),(12,.025,13.5),'Ivory',False)
+        for row in range(3):
+            for col in range(3):
+                cell=self.group(f'Tactical sector {row+1}-{col+1}',g,((col-1)*4,0,(row-1)*4.5))
+                areas.append(self.d.box(cell,size=(4,6,4.5),center=(0,3,0),trigger=True))
+                self.box(cell,'Map grid outline',(0,.04,0),(3.98,.025,4.48),'Gold',False)
+                self.box(cell,'Map grid parchment',(0,.06,0),(3.8,.025,4.3),'Ivory',False)
+                warn.append(self.box(cell,'Barrage warning',(0,.08,0),(3.7,.025,4.2),'Warning',False))
+                safe.append(self.box(cell,'Safe sector',(0,.08,0),(3.7,.025,4.2),'Safe',False))
+                blast=self.group('Impact columns - visual only',cell)
+                for x in (-1.4,1.4):self.box(blast,'Map artillery flash',(x,1.5,0),(.18,3,3.4),'Gold',False)
+                strike.append(blast)
+                for v in (warn[-1],safe[-1],strike[-1]):v['active']=0
+        for z in (-8,8):self.box(g,'Map observation strip',(0,.04,z),(12,.04,1),'Safe',False)
+        body=kit.fields(context=kit.ref(ctx),columns=3,warningSeconds=2.2,strikeSeconds=.35,restSeconds=.8,phaseOffset=0,pushForce=9,upwardForce=2,localPushDirection=(0,0,-1))
+        for name,values in (('dangerAreas',areas),('warningVisuals',[v['go'] for v in warn]),('safeVisuals',[v['go'] for v in safe]),('strikeVisuals',[v['go'] for v in strike])):
+            body+='  '+name+':\n'+''.join('  - '+kit.ref(v)+'\n' for v in values)
+        self.d.script(g,'TacticalMapBarrage',body)
+    def formations(self):
+        self.beat(2)
+        # Clear the existing decorative pillars from the moving formation's swept volume.
+        beat=self.c.beat['tr']
+        for b in self.raw.values():
+            if not b.startswith('--- !u!4 ') or fid(b,'m_Father')!=beat:continue
+            go=fid(b,'m_GameObject');obj=self.raw[go]
+            if any('m_Name: '+name+'\n' in obj for name in ('Gallery pillar','Capital','Map display')):
+                pos=re.search(r'm_LocalPosition: \{x: ([^,]+), y: ([^,]+), z: ([^}]+)',b)
+                if pos and float(pos[3]) in (64,66):self.raw[go]=obj.replace('m_IsActive: 1','m_IsActive: 0')
+        for z,phase in ((59,0),(64.5,.5)):
+            g=self.c.group('Troop redeployment - moving passage',z,kind='troop_formation');ctx=self.c.context(g)
+            self.box(g,'Deployment rail',(0,.02,0),(12,.04,1.8),'Gold',False)
+            body=self.group('Pawn formation - movement and impact settings',g)
+            self.d.rigidbody(body,True)
+            motion=self.d.script(body,'TroopFormationSlide',kit.fields(travelDistance=2.5,period=6,phaseOffset=phase,pushForce=7,upwardForce=1))
+            for side in (-1,1):
+                # 3.5m gap, centre +/-2.5m. Outer ends always cover the entire 12m lane.
+                row=self.group('Linked pawn regiment',body,(side*5.125,0,0))
+                self.box(row,'Formation plinth',(0,.3,0),(6.75,.6,1.6),'Wood')
+                self.d.box(row,size=(6.75,5,1.6),center=(0,2.5,0))
+                contact=self.group('Regiment contact',row,(0,2.5,0));self.c.impact(contact,motion,ctx,(6.75,5,1.6))
+                for x in (-2.25,0,2.25):
+                    self.box(row,'Pawn base',(x,.7,0),(1.8,.3,1.8),'White',False,shape='Cylinder')
+                    self.box(row,'Pawn stem',(x,2,0),(.9,1.1,.9),'White',False,shape='Cylinder')
+                    self.box(row,'Pawn collar',(x,3.1,0),(1.5,.2,1.5),'Gold',False,shape='Cylinder')
+                    self.box(row,'Pawn head',(x,4,0),(1.6,1.6,1.6),'White',False,shape='Sphere')
+            # Pawn mouldings hint at the passage without a solid crossbar across the gap.
+            for x in (-1.75,1.75):self.box(body,'Passage boundary',(x,.05,0),(.12,.06,1.7),'Safe',False)
+    def approval_archive(self):
+        go=next(k for k,b in self.raw.items() if 'm_Name: Transition hall - fixed connection geometry' in b)
+        tid=next(k for k,b in self.raw.items() if b.startswith('--- !u!4 ') and fid(b,'m_GameObject')==go)
+        hall=self.foreign(tid);g=self.group('Orders approval archive - cooperative shortcut and solo route',hall)
+        # Keep a 6m solo passage at the far left; the central door is a bonus, never a hard lock.
+        self.box(g,'Approval archive left partition',(-10,5,14),(12,10,1.2),'Wood')
+        self.box(g,'Approval archive right partition',(13,5,14),(18,10,1.2),'Wood')
+        self.box(g,'Approval archive header',(0,8.5,14),(8,3,1.2),'Wood')
+        self.map(g,(-10,6,13.3));self.map(g,(13,6,13.3))
+        self.box(g,'Records aisle divider',(-9,4,9),(1,8,10),'Wood')
+        self.shelf(g,(-10,0,9),kit.yaw(90))
+        gate=self.group('Dual seal approval gate - two operators',g,(0,0,14));ctx=self.c.context(gate)
+        plates=[];indicators=[];leaves=[]
+        for side in (-1,1):
+            plate=self.group('Royal seal approval plate',gate,(side*3,0,-5))
+            self.box(plate,'Inset seal',(0,.035,0),(2.8,.07,2.8),'Gold',False,shape='Cylinder')
+            plates.append(self.d.box(plate,size=(2.8,1.2,2.8),center=(0,.6,0),trigger=True))
+            indicator=self.box(plate,'Occupied seal indicator',(0,.09,0),(2,.08,2),'Safe',False,shape='Cylinder');indicator['active']=0
+            indicators.append(indicator)
+            leaf=self.group('Approval door leaf',gate,(side*2,0,0));leaves.append(self.d.rigidbody(leaf,True))
+            self.box(leaf,'Sealed orders door',(0,3.5,0),(4,7,.6),'Purple')
+            self.box(leaf,'Seal emblem',(0,3.5,-.35),(1.4,1.4,.1),'Gold',False,shape='Cylinder')
+            self.box(g,'Seal to door inlay',(side*3,.035,11.5),(.15,.04,2),'Gold',False)
+        volume=self.d.box(gate,size=(10,9,5),center=(0,4.5,0),trigger=True)
+        self.d.script(gate,'DualApprovalGate',kit.fields(context=kit.ref(ctx),firstPlate=kit.ref(plates[0]),secondPlate=kit.ref(plates[1]),
+            firstIndicator=kit.ref(indicators[0]['go']),secondIndicator=kit.ref(indicators[1]['go']),doorwayVolume=kit.ref(volume),
+            leftLeaf=kit.ref(leaves[0]),rightLeaf=kit.ref(leaves[1]),approvalSeconds=1.25,openSeconds=8,openDistance=4.5,moveSpeed=3))
+        # Extend the central shortcut across the old gap; side exits remain the solo route.
+        self.box(g,'Approved dispatch bridge',(0,-.4,28),(8,.8,6),'Ivory')
+        for k,b in list(self.raw.items()):
+            if 'm_Name: Decorative central closed door' in b:self.raw[k]=b.replace('m_IsActive: 1','m_IsActive: 0')
+        route=[self.group('Solo archive route '+str(i+1),hall,p) for i,p in enumerate(((-18,0,2),(-18,0,18),(-14,0,28),(-14,0,34)))]
+        self.report['solo_archive_route']=[v['tr'] for v in route]
+        self.report['approval_gate']=gate['tr']
+        self.report['new_obstacles'].append({'beat':'archive','kind':'dual_approval','name':'Two royal seals open the dispatch shortcut'})
+        # Replace the old diagonal route through the new wall with the permanently open aisle.
+        mid,source=self.source_module
+        oldroute=refs(source,'route');oldside=next(t for t in oldroute if 'm_Name: Route side exit' in self.raw[fid(self.raw[t],'m_GameObject')])
+        ids=[]
+        for t in oldroute:ids.extend([v['tr'] for v in route] if t==oldside else [t])
+        source=re.sub(r'  route:\n(?:  - .*\n)+','  route:\n'+''.join('  - '+kit.ref(t)+'\n' for t in ids),source)
+        self.raw[mid]=source;self.source_module=(mid,source)
+        # A visible gold trail marks the solo path; two seal icons mark the central option.
+        points=[(0,0,0)]+[v['pos'] for v in route]
+        import math
+        for a,b in zip(points,points[1:]):
+            length=math.dist(a,b);angle=math.degrees(math.atan2(b[0]-a[0],b[2]-a[2]))
+            self.box(g,'Solo archive guide inlay',((a[0]+b[0])/2,.025,(a[2]+b[2])/2),(.2,.03,length),'Gold',False,kit.yaw(angle))
     def headquarters(self):
         g=self.group('Headquarters - enclosed command chamber');self.hq=g
         # Full height facade, side walls, rear wall and ceiling hide both board and giants.
@@ -242,7 +342,7 @@ class Builder:
             self.report['transition_route'].append(pos)
         self.chessEntry=self.transitions[-1]
     def save(self):
-        self.offices();self.obstacles();self.headquarters();self.vestibule()
+        self.offices();self.obstacles();self.approval_archive();self.headquarters();self.vestibule()
         self.c.context(self.root)
         self.d.script(self.root,'PhysicsProfile',kit.fields(physicsRate=120,solverIterations=24))
         self.d.script(self.root,'GiantChessCourse',kit.fields(
@@ -267,7 +367,11 @@ class Builder:
             b=b.replace('  m_Children: []\n','  m_Children:\n')
             b=b.replace('  m_Father:',add+'  m_Father:')
             self.raw[tid]=b
-        text=self.d.render(scene=False)+''.join(self.raw.values())
+        generated=blocks(self.d.render(scene=False))
+        for obj in self.d.all:
+            if obj.get('active')==0:
+                generated[obj['go']]=generated[obj['go']].replace('m_IsActive: 1','m_IsActive: 0')
+        text=kit.HEAD+''.join(generated.values())+''.join(self.raw.values())
         self.report['root']=self.root['go'];self.report['root_transform']=self.root['tr']
         return clean(text)
 

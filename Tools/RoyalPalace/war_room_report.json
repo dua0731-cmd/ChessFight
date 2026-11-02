@@ -44,6 +44,29 @@
       "kind": "stamp_press",
       "name": "Command stamp press - warning then strike",
       "local_z": 44
+    },
+    {
+      "beat": 3,
+      "kind": "tactical_barrage",
+      "name": "Tactical map barrage - follow the green safe squares",
+      "local_z": 13
+    },
+    {
+      "beat": 3,
+      "kind": "troop_formation",
+      "name": "Troop redeployment - moving passage",
+      "local_z": 59
+    },
+    {
+      "beat": 3,
+      "kind": "troop_formation",
+      "name": "Troop redeployment - moving passage",
+      "local_z": 64.5
+    },
+    {
+      "beat": "archive",
+      "kind": "dual_approval",
+      "name": "Two royal seals open the dispatch shortcut"
     }
   ],
   "occluder_boxes": [
@@ -314,6 +337,13 @@
       -4
     ]
   ],
+  "solo_archive_route": [
+    2003791,
+    2003793,
+    2003795,
+    2003797
+  ],
+  "approval_gate": 2003727,
   "root": 2000001,
   "root_transform": 2000002
 }
