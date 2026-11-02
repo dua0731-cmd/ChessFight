@@ -1205,6 +1205,95 @@ public static class NetworkCoreTests
                     if(now>5100) worst=Math.Max(worst,target-play); }
                 Check(jumps==1,"one jump: "+jumps);
                 Check(worst<60,"behind at most "+worst.ToString("0")+" ms from 0.1 s after the stop"); });
+            Test("Send schedule (R306 [1]): 30 a second at 60 fps with uneven frames, not 20-25; a slow host sends every frame; no burst after a hitch", () => {
+                var r=new Random(11); var s=new SendSchedule(); int sent=0; double last=-1; int old=0;
+                for(int f=0;f<600;f++) {
+                    double now=f/60.0+(r.NextDouble()-0.5)*0.002;   // ten seconds of frames 1 ms early or late
+                    if(s.Due(now,1.0/30)) sent++;
+                    if(last<0||now-last>=1.0/30) { old++; last=now; } }   // the old "an interval since the last send"
+                Check(sent>=299&&sent<=301,"30 a second: "+sent);
+                Check(old<270,"the old way slipped to the next frame: "+old);
+                var even=new SendSchedule(); int sixty=0;
+                for(int f=0;f<600;f++) if(even.Due(f/60.0+(r.NextDouble()-0.5)*0.002,1.0/60)) sixty++;
+                Check(sixty>=599&&sixty<=601,"60 a second at 60 fps, none skipped: "+sixty);
+                var slow=new SendSchedule(); int slowSent=0;
+                for(int f=0;f<100;f++) if(slow.Due(f*0.05,1.0/30)) slowSent++;
+                Check(slowSent==100,"20 fps: every frame, "+slowSent);
+                var hitch=new SendSchedule();
+                for(int f=0;f<60;f++) hitch.Due(f/60.0,1.0/60);
+                Check(hitch.Due(2.0,1.0/60)&&!hitch.Due(2.0,1.0/60)&&!hitch.Due(2.01,1.0/60)&&hitch.Due(2.017,1.0/60),"after a second's stop: one send, then the schedule from there"); });
+            Test("Send schedule (R306 [1]): uneven frames near the rate - 5 ms, then 30 ms - keep the beat instead of every other send", () => {
+                var s=new SendSchedule(); var before=new SendSchedule(); var g=new InputSendGate(); int sent=0, old=0, inputs=0; double now=0;
+                for(int f=0;f<572;f++) {   // ten seconds at about 57 fps (a loopback host with four clients sent 30 of 60 a second)
+                    if(s.Due(now,1.0/60)) sent++;
+                    if(before.Due(now,1.0/60,0)) old++;
+                    if(g.Due(now,false)) inputs++;
+                    now+=f%2==0?0.005:0.030; }
+                Check(sent>=520,"close to every frame: "+sent);
+                Check(old<300,"the schedule before R306 started over after each late frame: "+old);
+                Check(inputs>=520,"the input's slots too: "+inputs); });
+            Test("Input send gate (R306 [2]): 60 a second when nothing changes, a press sent in its own frame, never over 120 a second", () => {
+                var g=new InputSendGate(); int sent=0;
+                for(int f=0;f<600;f++) if(g.Due(f/60.0,false)) sent++;   // 60 fps, ten seconds
+                Check(sent>=599&&sent<=601,"60 a second: "+sent);
+                var p=new InputSendGate(); p.Due(0,false);
+                Check(!p.Due(0.005,false),"between slots, nothing new: waits");
+                Check(p.Due(0.009,true),"a press 9 ms after a send goes at once");
+                Check(!p.Due(0.0167,false)&&!p.Due(0.020,false)&&p.Due(0.022,false),"the next slot about an interval after it");
+                var busy=new InputSendGate(); int many=0;
+                for(int f=0;f<2400;f++) if(busy.Due(f/240.0,true)) many++;   // 240 fps, the input changing every frame, ten seconds
+                Check(many>700&&many<=1201,"more than 60 and at most 120 a second: "+many);
+                var fast=new InputSendGate(); fast.Due(0,false);
+                Check(!fast.Due(0.004,true)&&fast.Due(0.009,true),"two within 1/120 s: the second waits"); });
+            Test("Input change (R306 [2]): starting, stopping and turning 20 degrees are new; a turn of 10, a slower walk and the dead zone are not", () => {
+                Check(InputChange.Moved(0,0,1,0)&&InputChange.Moved(1,0,0,0),"start, stop");
+                Check(!InputChange.Moved(1,0,0.985f,0.174f),"10 degrees");
+                Check(InputChange.Moved(1,0,0.9336f,0.3584f)&&InputChange.Moved(0,1,0.7071f,0.7071f),"21 and 45 degrees");
+                Check(!InputChange.Moved(1,0,0.5f,0)&&!InputChange.Moved(0.05f,0,0,0.05f)&&!InputChange.Moved(0,0,0,0),"slower, the dead zone, standing");
+                Check(InputChange.Moved(1,0,-1,0),"turned round"); });
+            Test("Snapshot rate (R306 [5]): 60 a second up to six players or a small party with bots, 30 above", () => {
+                Check(SnapshotRate.SnapshotBytes(4)==290&&SnapshotRate.SnapshotBytes(12)==810,"sizes as HOST_AUTHORITY §6");
+                for(int players=2;players<=6;players++) Check(SnapshotRate.Interval(players-1,players)==SnapshotRate.Fast,players+" players: 60");
+                for(int players=7;players<=12;players++) Check(SnapshotRate.Interval(players-1,players)==SnapshotRate.Normal,players+" players: 30");
+                Check(SnapshotRate.Interval(1,12)==SnapshotRate.Fast&&SnapshotRate.Interval(2,12)==SnapshotRate.Fast&&SnapshotRate.Interval(3,12)==SnapshotRate.Normal,"bots filling up to twelve");
+                Check(SnapshotRate.Interval(0,1)==SnapshotRate.Fast,"nobody to send to"); });
+            Test("Playback delay (R306 [5]): the floor is two intervals and 4 ms - 70 at 30 a second, 37 at 60; a lost snapshot waits one interval more", () => {
+                var d=new PlaybackDelay(); var r=new Random(6); uint host=0;
+                for(int i=0;i<600;i++) { host=(uint)Math.Round(i*1000.0/60); d.Arrived(5000+i*1000.0/60+r.NextDouble()*2,host); }
+                Check(Math.Abs(d.IntervalMs-16.67)<0.3,"interval: "+d.IntervalMs);
+                Check(Math.Abs(d.Milliseconds-37.33)<0.5&&Math.Abs(d.FloorMs-37.33)<0.5,"60 a second: "+d.Milliseconds);
+                Check(Math.Abs(d.LeadMs-16.6)<0.6,"own pawn 16-17 ms sooner: "+d.LeadMs);
+                var thirty=new PlaybackDelay();
+                for(int i=0;i<300;i++) thirty.Arrived(1000+i*33.3,(uint)(i*33.3));
+                Check(thirty.Milliseconds==70&&Math.Abs(thirty.IntervalMs-33.3)<0.3&&Math.Abs(thirty.LeadMs-32.7)<0.4,"30 a second: "+thirty.Milliseconds+" lead "+thirty.LeadMs);
+                // The host goes from 30 to 60 a second (a player left): the floor follows within a few seconds.
+                uint t=(uint)(300*33.3); double local=1000+300*33.3;
+                for(int i=0;i<180;i++) { t+=(uint)(i%3==0?16:17); local+=i%3==0?16:17; thirty.Arrived(local,t); }
+                Check(thirty.Milliseconds<40,"down to 60 a second's floor in 3 s: "+thirty.Milliseconds);
+                // A one-second stop says nothing about the rate.
+                thirty.Arrived(local+1000,t+1000); Check(thirty.IntervalMs<17.5,"a stop is not an interval: "+thirty.IntervalMs);
+                // One in eight lost at 60 a second: one more snapshot is 17 ms, not 33.
+                var bad=new PlaybackDelay(); uint t2=0; int lost=0;
+                for(int i=0;i<1200;i++) { t2+=(uint)(i%3==0?16:17); if(i%8==7) { lost++; continue; } bad.Arrived(1000+t2,t2,lost); lost=0; }
+                Check(bad.Lossy&&Math.Abs(bad.Milliseconds-54)<1,"12% lost at 60: "+bad.Milliseconds);
+                bad.Reset(); Check(bad.Milliseconds==70&&Math.Abs(bad.IntervalMs-1000.0/30)<1e-9,"reset"); });
+            Test("Press timer (R306 [0]): answered by the first echo of the press's input or a later one, seen when the drawing reaches that snapshot", () => {
+                var p=new PressTimer();
+                p.Pressed(1000); p.Pressed(1005);   // the second is not timed: one at a time
+                p.Arrived(1010,990,5000); Check(p.Answered.Count==0,"an echo from before the press");
+                p.Arrived(1040,1000,5030); Check(p.Answered.Last==40,"answered: "+p.Answered.Last);
+                p.Drawn(1050,4990); Check(p.Seen.Count==0,"not drawn yet");
+                p.Drawn(1081,5030); Check(p.Seen.Last==81&&p.Lost==0,"seen: "+p.Seen.Last);
+                p.Pressed(2000); p.Arrived(2010,-1,6000); p.Drawn(3400,6000); Check(p.Lost==0,"not given up yet at 1.4 s");
+                p.Drawn(3600,6000); Check(p.Lost==1,"given up after 1.5 s");
+                p.Pressed(4000); p.Arrived(4030,4001,7000); Check(p.Answered.Count==2&&Math.Abs(p.Answered.Average-35)<1e-9,"timed again, averaged");
+                var a=new LatencyAverage(3); a.Add(1); a.Add(2); a.Add(3); a.Add(10); Check(a.Average==5&&a.Last==10&&a.Count==4,"the last three");
+                a.Clear(); Check(a.Average==-1&&a.Last==-1,"cleared"); });
+            Test("Latency before (R306): a development build puts items back from the command line, all or some", () => {
+                var none=LatencyBefore.Parse(new[]{"game.exe","-autopilot"}); Check(!none.Any&&none.Items=="","none");
+                var all=LatencyBefore.Parse(new[]{"-latencyBefore"}); Check(all.Slipping&&all.SlotsOnly&&all.ReadInUpdate&&all.Always30&&all.Items=="[1][2][3][5]","all");
+                var some=LatencyBefore.Parse(new[]{"x","-latencyBefore=3,5"}); Check(!some.Slipping&&!some.SlotsOnly&&some.ReadInUpdate&&some.Always30&&some.Items=="[3][5]","some");
+                Check(!LatencyBefore.Parse(null).Any&&!LatencyBefore.Parse(new[]{"-latencyBeforeX"}).Any,"nothing asked"); });
             Test("Queen of the Hill: the first team to ring a bell opens its section, 20 s for that team", () => {
                 var q=new QueenHillRules(8);
                 Check(q.TryOpen(3,QueenHillRules.Black,100)&&!q.TryOpen(3,QueenHillRules.White,101),"first ring wins");

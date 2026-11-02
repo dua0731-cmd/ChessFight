@@ -66,7 +66,9 @@ namespace ChessFight.RagdollLab.Editor
                 scenes = new[] { ScenePath },
                 locationPathName = Path.Combine(output, "RagdollLab.exe"),
                 target = BuildTarget.StandaloneWindows64,
-                options = BuildOptions.None,
+                // R306: "-labDevelopment" makes a development build, the one whose test switches (-autopilot, -latencyBefore,
+                // -queuedFrames) work; a release build ignores them.
+                options = Array.IndexOf(Environment.GetCommandLineArgs(), "-labDevelopment") >= 0 ? BuildOptions.Development : BuildOptions.None,
             });
             if (report.summary.result != BuildResult.Succeeded)
                 throw new Exception("Player build failed: " + report.summary.result);

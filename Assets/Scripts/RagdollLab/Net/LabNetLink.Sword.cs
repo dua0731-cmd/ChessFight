@@ -406,10 +406,11 @@ namespace ChessFight.RagdollLab
             return input;
         }
 
-        /// <summary>R297: the autopilot, asked for once in a match (its seed comes from this PC's id unless given).</summary>
+        /// <summary>R297: the autopilot, asked for once in a match (its seed comes from this PC's id unless given). R306: in the
+        /// lab's loopback test too, so its clients' presses can be timed.</summary>
         bool Piloted()
         {
-            if (!pilotAsked && matchActive && RealMatch)
+            if (!pilotAsked && matchActive)
             {
                 pilotAsked = true;
                 if (Debug.isDebugBuild && AutoPilot.Requested(Environment.GetCommandLineArgs(), NetSelf, out uint seed))
@@ -448,6 +449,7 @@ namespace ChessFight.RagdollLab
                     f.Skills?.HoldEdge(false);
                     continue;
                 }
+                Played(r, now);
                 var held = r.input;
                 var s = f.Skills;
                 // One skill key a step, and a click not in the same step as one: F then a quick click in one packet is
@@ -588,6 +590,8 @@ namespace ChessFight.RagdollLab
             if (skill) mySkills = PressCount.Add(mySkills);
             if (edge) myAbilities = PressCount.Add(myAbilities);
             if (cancel) myAbilities2 = PressCount.Add(myAbilities2);
+            // R306 [0]: a press timed until the host's answer comes back and until this PC draws it.
+            if (local.jump || local.shove || skill || edge || cancel) presses.Pressed(NowMs());
             pending.Hold(local);
             pending.grab = false;
             pending.edgeHeld = edgeHeld;
@@ -612,25 +616,25 @@ namespace ChessFight.RagdollLab
             if (skill || edge) SkillPresses++;
 
             float clock = Time.realtimeSinceStartup;
-            if (clock >= nextInput)
+            pending.jumps = myJumps;
+            pending.shoves = myShoves;
+            pending.abilities = myAbilities;
+            pending.abilities2 = myAbilities2;
+            pending.skills = mySkills;
+            pending.pieceAsk = (byte)swordPieceAsk;
+            pending.pieceSeq = swordPieceSeq;
+            if (InputDue())
             {
-                nextInput += InputInterval;
-                if (nextInput <= clock) nextInput = clock + InputInterval;
-                pending.jumps = myJumps;
-                pending.shoves = myShoves;
-                pending.abilities = myAbilities;
-                pending.abilities2 = myAbilities2;
-                pending.skills = mySkills;
-                pending.pieceAsk = (byte)swordPieceAsk;
-                pending.pieceSeq = swordPieceSeq;
                 pending.eventAck = inbox.Started ? inbox.Acked : (ushort)0;
                 pending.roundTripMs = (ushort)Mathf.Clamp(Mathf.RoundToInt(roundTripMs), 0, ushort.MaxValue);
                 pending.delayMs = (byte)Mathf.Clamp((int)Math.Round(delay.Milliseconds), 0, 255);
                 pending.lossPercent = (byte)Mathf.Clamp((int)Math.Round(delay.LossShare * 100d), 0, 100);
                 Send(NetHost, RagdollNetProtocol.SwordInput(NetMatch, ++sequence, NowMs(), pending));
+                lastSent = pending;
             }
 
             Playback();
+            presses.Drawn(NowMs(), playbackMs);
             SwordPlayback();
             DispatchEvents();
 

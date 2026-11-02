@@ -525,18 +525,26 @@ namespace ChessFight.Network
     /// 37 ms late; over that it grows with the measured transit jitter (RFC 3550: how much the
     /// arrival gaps differ from the host's own send gaps), up to 160 ms. The two-PC test (10-10)
     /// saw no stutter at 80..110 ms ping, so it sits near the floor: about 40 ms less between a
-    /// press and seeing it.
+    /// press and seeing it. R306 [5]: the floor is two snapshot intervals and a little
+    /// (<see cref="FloorSlackMs"/>), never over 70: 70 at 30 snapshots a second as before, 37 at
+    /// 60. The interval is read from the snapshots' host times, so the host's rate needs nothing
+    /// on the wire.
     /// </summary>
     public sealed class PlaybackDelay
     {
         public const double MinMs = 70, MaxMs = 160, FreeJitterMs = 4;
+        /// <summary>R306: the floor's margin over two intervals (a frame's timing, the host's and this PC's).</summary>
+        public const double FloorSlackMs = 4;
+        /// <summary>R306: the snapshot interval assumed until the gaps say otherwise, and the gaps that count (a host that
+        /// stopped a moment says nothing about its rate).</summary>
+        public const double DefaultIntervalMs = 1000.0 / 30, LongestGapMs = 200;
         /// <summary>Over this share of snapshots lost, two in a row get likely enough to wait one more snapshot for; it
         /// stops waiting under <see cref="LossyOffShare"/>. One line for both, and a share averaged over a second, put
         /// a 10% link right on it: the extra snapshot went on and off more than once a second (R111 loopback).</summary>
         public const double LossyShare = 0.08, LossyOffShare = 0.05;
         /// <summary>The loss share is averaged over about 128 snapshots (4 s): a lossy link stays lossy for a while.</summary>
         public const double LossAverage = 128;
-        double lastLocal = -1, jitter, loss;
+        double lastLocal = -1, jitter, loss, interval = DefaultIntervalMs;
         bool lossy;
         uint lastHost;
         public double Milliseconds { get; private set; }
@@ -544,6 +552,14 @@ namespace ChessFight.Network
         public double LossShare { get { return loss; } }
         /// <summary>Waiting one snapshot more for the losses.</summary>
         public bool Lossy { get { return lossy; } }
+        /// <summary>R306: the host's snapshot interval as its stamps space them (ms, smoothed).</summary>
+        public double IntervalMs { get { return interval; } }
+        /// <summary>R306: the floor at this interval: two of them and <see cref="FloorSlackMs"/>, at most <see cref="MinMs"/>.</summary>
+        public double FloorMs { get { return Math.Min(MinMs, 2 * interval + FloorSlackMs); } }
+        /// <summary>R306 [6] (HOST_AUTHORITY P3): how much sooner this PC's own pawn may be drawn - the one snapshot the floor
+        /// waits for in case it is lost, but never closer than an interval and the slack to the newest snapshot. A lost
+        /// snapshot then holds that pawn still for a moment instead of the drawing waiting for it.</summary>
+        public double LeadMs { get { return Math.Max(0, Math.Min(interval, Milliseconds - interval - FloorSlackMs)); } }
 
         /// <summary>R123: drawn more than this behind its target, the playback clock jumps to it instead of catching up at
         /// 1.15x. A host that stopped for a second (its window dragged, a hitch) left its clients that far behind for about
@@ -572,9 +588,13 @@ namespace ChessFight.Network
         {
             if (lastLocal >= 0)
             {
-                double d = Math.Abs((localMs - lastLocal) - unchecked((int)(hostMs - lastHost)));
+                int hostGap = unchecked((int)(hostMs - lastHost));
+                double d = Math.Abs((localMs - lastLocal) - hostGap);
                 // Up fast (a bad patch shows at once), down slowly (so it does not flicker back).
                 jitter += (d - jitter) * (d > jitter ? 0.25 : 1.0 / 32);
+                // R306: the host's interval, a lost snapshot's gap shared with it.
+                double gap = hostGap / (double)(Math.Max(0, lostBefore) + 1);
+                if (gap > 0 && gap <= LongestGapMs) interval += (gap - interval) / 16;
             }
             for (int i = 0; i < Math.Min(Math.Max(0, lostBefore), 10); i++) loss += (1 - loss) / LossAverage;
             loss -= loss / LossAverage;
@@ -582,8 +602,10 @@ namespace ChessFight.Network
             else if (loss < LossyOffShare) lossy = false;
             lastLocal = localMs;
             lastHost = hostMs;
-            double ms = MinMs + 2.5 * Math.Max(0, jitter - FreeJitterMs) + (lossy ? 1000.0 / 30 : 0);
-            Milliseconds = Math.Max(MinMs, Math.Min(MaxMs, ms));
+            // Lossy: one snapshot more (at most the 33 ms it was at 30 a second).
+            double floor = FloorMs;
+            double ms = floor + 2.5 * Math.Max(0, jitter - FreeJitterMs) + (lossy ? Math.Min(DefaultIntervalMs, interval) : 0);
+            Milliseconds = Math.Max(floor, Math.Min(MaxMs, ms));
         }
 
         public void Reset()
@@ -592,6 +614,7 @@ namespace ChessFight.Network
             jitter = 0;
             loss = 0;
             lossy = false;
+            interval = DefaultIntervalMs;
             Milliseconds = MinMs;
         }
     }

@@ -53,8 +53,15 @@ namespace ChessFight.RagdollLab.Net
     public sealed class SteamPawnRushLink : MonoBehaviour
     {
         const int Channel = 34;                 // 31 capsule motion, 32 lab, 33 sword fight
-        const float SnapshotInterval = 1f / 30f, InputInterval = 1f / 60f;
+        // R306: the snapshots go on a schedule at the host's rate (SnapshotRate: 60 a second for a few players, else 30), the
+        // course state at 30 whatever it; a client's input 60 times a second and at once when it changes (InputSendGate).
+        // InputInterval: the input's timing before R306 ("-latencyBefore=12").
+        const float InputInterval = 1f / 60f;
+        const double StateInterval = 1.0 / 30;
         const float InputTimeout = .35f, SilenceTimeout = 12f, FallLimit = -40f;
+        /// <summary>R306 [6]: a development build's switch for drawing this PC's pawn sooner, and its command-line form.</summary>
+        const KeyCode OwnLeadKey = KeyCode.F7;
+        const string OwnLeadArgument = "-ownLead";
         /// <summary>A moment played this much later than the poses it belongs to is not drawn any more (ms).</summary>
         const double StaleEventMs = 1000;
 
@@ -101,6 +108,11 @@ namespace ChessFight.RagdollLab.Net
             public bool Synced, AckSet, InteractLatch;
             public byte Jumps, Shoves, Abilities, Abilities2, Skills;
             public int Jump, Shove, Ability, Ability2, Skill;
+            // R306: the newest input a physics step has played (the snapshots echo its send time), and when the first
+            // input since then arrived.
+            public uint PlayedTimeMs;
+            public float PlayedAt = -1f;
+            public double ArrivedAt = -1d;
             // The last promotion choice heard (R130: the lab input's pieceSeq).
             public byte PieceSeq;
             public ushort EventAck;
@@ -136,6 +148,24 @@ namespace ChessFight.RagdollLab.Net
         readonly PawnRushNetState state = new PawnRushNetState(), received = new PawnRushNetState();
         uint tick, stateTick, inputSequence, lastPose, lastState;
         float sentAt, inputAt;
+        // R306 [1] [2] [5]: the host's snapshot and course state schedules and its rate, a client's input gate and the
+        // input it last sent.
+        SendSchedule snapshotSchedule, stateSchedule;
+        double snapshotInterval = SnapshotRate.Normal;
+        InputSendGate inputGate;
+        RagdollLabInput lastSent;
+        // R306 [3]: the frame whose packets were read (the host reads in the frame's first physics step).
+        int receivedFrame = -1;
+        // R306 [0]: the host's inputs' wait from arriving to a physics step playing them, a client's presses timed, and
+        // how the packets go (read once a second).
+        readonly LatencyAverage applyWait = new LatencyAverage(64);
+        readonly PressTimer presses = new PressTimer();
+        string routeLine = "";
+        // R306 [6] (HOST_AUTHORITY P3): this PC's own pawn drawn the lost-snapshot margin sooner (PlaybackDelay.LeadMs),
+        // and the obstacles with it - a development build's A/B switch, off unless F7 or -ownLead turns it on.
+        bool ownLead;
+        double ownLeadMs;
+        static LatencyBefore Before => LatencyTest.Before;
         // A client: how long the host has been silent (R295: from its first packet in this scene or the shared start).
         readonly HostSilence hostSilence = new HostSilence();
         double playback;
@@ -238,6 +268,7 @@ namespace ChessFight.RagdollLab.Net
             NetMetricsOverlay.Attach(gameObject, CurrentMetrics);
             if (Debug.isDebugBuild && AutoPilot.Requested(Environment.GetCommandLineArgs(), session.Self, out uint seed))
                 pilot = new AutoPilot(seed);
+            ownLead = Debug.isDebugBuild && Array.IndexOf(Environment.GetCommandLineArgs(), OwnLeadArgument) >= 0;
         }
 
         /// <summary>R297: the numbers of the match's metrics box (NetMetricsOverlay).</summary>
@@ -247,6 +278,11 @@ namespace ChessFight.RagdollLab.Net
             SnapshotBytes = snapshotBytesLast, SnapshotsSent = snapshotOutRate, SnapshotsReceived = snapshotInRate,
             RoundTripMs = roundTripMs, PlaybackDelayMs = delay.Milliseconds, LossShare = delay.LossShare,
             Piloted = pilot != null, PilotSeed = pilot != null ? pilot.Seed : 0u,
+            SnapshotRateTarget = (int)Math.Round(1d / snapshotInterval), JitterMs = delay.JitterMs, IntervalMs = delay.IntervalMs,
+            ApplyWaitMs = applyWait.Average, Answered = presses.Answered.Average, AnsweredLast = presses.Answered.Last,
+            Seen = presses.Seen.Average, PressesTimed = presses.Seen.Count, PressesLost = presses.Lost, Route = routeLine,
+            OwnLead = authority ? "" : ownLead ? $"내 폰 먼저 그리기 (P3, F7): 켜짐 · {ownLeadMs:F1} ms 먼저 (장애물도 내 폰 시각)"
+                                                : "내 폰 먼저 그리기 (P3, F7): 꺼짐",
         };
 
         void UpdateStats()
@@ -258,6 +294,8 @@ namespace ChessFight.RagdollLab.Net
             snapshotOutRate = snapshotsOut;
             snapshotInRate = snapshotsIn;
             sentBytes = receivedBytes = snapshotsOut = snapshotsIn = 0;
+            // R306 [0]: straight or through Steam's relays (a development build's metrics box).
+            routeLine = Debug.isDebugBuild ? SteamRoute.Line(session) : "";
         }
 
         void OnDestroy()
@@ -417,13 +455,21 @@ namespace ChessFight.RagdollLab.Net
             while (buffer.Count > 0) { spare.Push(buffer[0]); buffer.RemoveAt(0); }
             foreach (var r in runners.Values)
             {
-                r.InputAt = -1f;
+                r.InputAt = r.PlayedAt = -1f;
+                r.ArrivedAt = -1d;
                 r.Sequence = 0;
                 r.RespawnTime = -1f;
                 r.Synced = r.AckSet = false;
                 r.Jump = r.Shove = r.Ability = r.Ability2 = r.Skill = 0;
             }
             pending = default;
+            snapshotSchedule.Reset();
+            stateSchedule.Reset();
+            snapshotInterval = SnapshotRate.Normal;
+            inputGate.Reset();
+            lastSent = default;
+            presses.Reset();
+            applyWait.Clear();
             hostObstacles.Clear();
             obstacleSynced = false;
             while (stateQueue.Count > 0) { statePool.Push(stateQueue[0]); stateQueue.RemoveAt(0); }
@@ -452,18 +498,19 @@ namespace ChessFight.RagdollLab.Net
             if (!authority)
                 foreach (var r in runners.Values)
                     if (r.Pawn != null && r.Pawn.NetworkPuppet) r.Pawn.AdvanceSkillView(Time.unscaledDeltaTime);
-            Receive();
+            ReceiveOnce();
             var local = ReadLocalInput();
             float now = Time.realtimeSinceStartup;
             if (authority)
             {
                 if (runners.TryGetValue(session.Self, out var self)) self.Pawn.SetInput(local);
                 foreach (var r in runners.Values) CheckRespawn(r);
-                if (now - sentAt >= SnapshotInterval) SendSnapshot();   // the course state goes with it
+                if (SnapshotDue(now)) SendSnapshot();   // the course state goes with it, 30 a second at most
                 session.ReportHostSilence(0f);
             }
             else
             {
+                if (Debug.isDebugBuild && LegacyKeys.Down(OwnLeadKey) && !ChatBox.KeysHeld) ownLead = !ownLead;
                 ClientInput(local, now);
                 Playback();
                 ApplyDueStates();
@@ -478,11 +525,27 @@ namespace ChessFight.RagdollLab.Net
             UpdateStats();
         }
 
+        // R306 [1]: the host's snapshot on its schedule ("-latencyBefore=1": an interval since the last one, as before).
+        bool SnapshotDue(float now) => Before.Slipping ? now - sentAt >= snapshotInterval
+            : snapshotSchedule.Due(Time.realtimeSinceStartupAsDouble, snapshotInterval);
+
+        // R306 [3]: this frame's packets, read once - by the host in the frame's first physics step, so an input that
+        // arrived since the last frame plays in this frame's physics instead of the next frame's; else in Update.
+        void ReceiveOnce()
+        {
+            if (receivedFrame == Time.frameCount) return;
+            receivedFrame = Time.frameCount;
+            Receive();
+        }
+
         // Host: every other player's latest input, the presses one per physics step, or standing still once it is
         // stale. Bots stand.
         void FixedUpdate()
         {
             if (!authority) return;
+            // R306 [3]: not while a host change is still on its way to this PC's roles (Update's SetAuthority): the new
+            // host's snapshots would be read as inputs and dropped.
+            if (!Before.ReadInUpdate && session.IsHost && session.Started && session.Match != 0) ReceiveOnce();
             float now = Time.realtimeSinceStartup;
             foreach (var r in runners.Values)
             {
@@ -492,6 +555,7 @@ namespace ChessFight.RagdollLab.Net
                     r.Pawn.SetInput(default);
                     continue;
                 }
+                Played(r, now);
                 var input = r.Input.Held();
                 input.interact = false;   // F is the skill key on this course
                 input.jump = Take(ref r.Jump);
@@ -508,6 +572,17 @@ namespace ChessFight.RagdollLab.Net
             if (presses <= 0) return false;
             presses--;
             return true;
+        }
+
+        // R306 [0]: this player's newest input is in this physics step - the snapshots echo it from now on (the round trip
+        // and the press timing include the wait for the step) - and how long it waited since it arrived.
+        void Played(Runner r, float now)
+        {
+            r.PlayedTimeMs = r.ClientTimeMs;
+            r.PlayedAt = now;
+            if (r.ArrivedAt < 0d) return;
+            applyWait.Add((Time.realtimeSinceStartupAsDouble - r.ArrivedAt) * 1000d);
+            r.ArrivedAt = -1d;
         }
 
         // The local player's keys against the orbit camera, as the offline playtest reads them. Read every
@@ -623,9 +698,9 @@ namespace ChessFight.RagdollLab.Net
                 if (!poses.TryGetValue(r.Id, out var pose)) poses[r.Id] = pose = new RagdollPose();
                 r.Pawn.CaptureNetworkPose(pose);
                 pose.id = r.Id;
-                // The newest input time heard from that player, for its round trip (0 = none yet, or heard too long ago
-                // for the 16-bit echo, R297).
-                pose.ack = r.InputAt >= 0f && sentAt - r.InputAt < RagdollWire.AckFreshSeconds ? r.ClientTimeMs : 0u;
+                // The newest input time a physics step has played from that player, for its round trip (0 = none yet, or
+                // played too long ago for the 16-bit echo, R297; played rather than heard since R306).
+                pose.ack = r.PlayedAt >= 0f && sentAt - r.PlayedAt < RagdollWire.AckFreshSeconds ? r.PlayedTimeMs : 0u;
                 if (r.Pawn.NetworkSnap) { snaps[r.Id] = 4; r.Pawn.NetworkSnap = false; }
                 snaps.TryGetValue(r.Id, out int n);
                 pose.snap = n > 0;
@@ -636,9 +711,14 @@ namespace ChessFight.RagdollLab.Net
             byte[] bytes = RagdollNetProtocol.Snapshot(session.Match, tick, stamp, outgoing, ObstacleClock.Now);
             snapshotBytesLast = bytes.Length;
             snapshotsOut++;
-            foreach (var id in session.Roster.Keys) Send(id, bytes, false);
+            int receivers = 0;
+            foreach (var id in session.Roster.Keys) if (Send(id, bytes, false)) receivers++;
             SendSkills(stamp);
-            SendState(stamp);
+            // The course state 30 times a second whatever the snapshots' rate (R306 [5]): its stations and pads change
+            // slowly, and the clients play it at its host time.
+            if (snapshotInterval >= SnapshotRate.Normal || stateSchedule.Due(Time.realtimeSinceStartupAsDouble, StateInterval)) SendState(stamp);
+            // R306 [5]: 60 snapshots a second while they cost little enough (SnapshotRate), else 30.
+            snapshotInterval = Before.Always30 ? SnapshotRate.Normal : SnapshotRate.Interval(receivers, outgoing.Count);
         }
 
         /// <summary>The skills packet, to each client with every snapshot: the busy pieces, the bishops' wires, and the
@@ -731,9 +811,10 @@ namespace ChessFight.RagdollLab.Net
             foreach (var id in session.Roster.Keys) Send(id, bytes, reliable);
         }
 
-        void Send(ulong id, byte[] bytes, bool reliable)
+        /// <summary>False when <paramref name="id"/> is no one to send to (this PC, a bot, not in the room).</summary>
+        bool Send(ulong id, byte[] bytes, bool reliable)
         {
-            if (id == session.Self || !session.IsPeer(id) || BotIdentity.IsBot(id)) return;
+            if (id == session.Self || !session.IsPeer(id) || BotIdentity.IsBot(id)) return false;
             sentBytes += bytes.Length;
             var identity = new SteamNetworkingIdentity();
             identity.SetSteamID64(id);
@@ -745,6 +826,7 @@ namespace ChessFight.RagdollLab.Net
                     | Constants.k_nSteamNetworkingSend_NoNagle, Channel);
             }
             finally { handle.Free(); }
+            return true;
         }
 
         // ------------------------------------------------------------------ receiving
@@ -756,6 +838,9 @@ namespace ChessFight.RagdollLab.Net
             for (int round = 0; round < 8; round++)
             {
                 int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
+                // R306 [0]: the host times each input from Steam's receipt (its wait for the physics step), on this clock.
+                double nowSeconds = Time.realtimeSinceStartupAsDouble;
+                long nowUs = authority && count > 0 ? SteamNetworkingUtils.GetLocalTimestamp().m_SteamNetworkingMicroseconds : 0L;
                 for (int i = 0; i < count; i++)
                 {
                     try
@@ -766,7 +851,8 @@ namespace ChessFight.RagdollLab.Net
                         receivedBytes += msg.m_cbSize;
                         byte[] bytes = inbound.Get(msg.m_cbSize);
                         Marshal.Copy(msg.m_pData, bytes, 0, bytes.Length);
-                        if (authority) ReceiveInput(id, bytes);
+                        if (authority)
+                            ReceiveInput(id, bytes, nowSeconds - Math.Max(0L, nowUs - msg.m_usecTimeReceived.m_SteamNetworkingMicroseconds) / 1e6);
                         else if (id == session.Host)
                         {
                             if (PawnRushNetState.Read(bytes, session.Match, received))
@@ -798,7 +884,8 @@ namespace ChessFight.RagdollLab.Net
         }
 
         // Host: a player's input. The presses are counts: what is new since the last one heard waits for the physics.
-        void ReceiveInput(ulong id, byte[] bytes)
+        // arrivedAt: when Steam received it, on Time.realtimeSinceStartupAsDouble's clock (R306 [0]).
+        void ReceiveInput(ulong id, byte[] bytes, double arrivedAt)
         {
             if (!runners.TryGetValue(id, out var r)) return;
             if (!RagdollNetProtocol.ReadLabInput(bytes, session.Match, out uint sequence, out uint clientTime, out var fresh)) return;
@@ -829,6 +916,7 @@ namespace ChessFight.RagdollLab.Net
             r.Sequence = sequence;
             r.ClientTimeMs = clientTime;
             r.InputAt = Time.realtimeSinceStartup;
+            if (r.ArrivedAt < 0d) r.ArrivedAt = arrivedAt;
             SkillWire.TakeAck(fresh.eventAck, ref r.EventAck, ref r.AckSet);
         }
 
@@ -839,7 +927,8 @@ namespace ChessFight.RagdollLab.Net
             pending.pieceSeq = (byte)(pending.pieceSeq == 255 ? 1 : pending.pieceSeq + 1);
         }
 
-        // Not the host: count my presses, draw my own press and aim at once (D-S3), send 60 times a second.
+        // Not the host: count my presses, draw my own press and aim at once (D-S3), send 60 times a second and at once
+        // when the input changes (R306 [2]).
         void ClientInput(PawnInput local, float now)
         {
             if (local.jump) myJumps = PressCount.Add(myJumps);
@@ -847,6 +936,7 @@ namespace ChessFight.RagdollLab.Net
             if (local.ability) myAbilities = PressCount.Add(myAbilities);
             if (local.ability2) myAbilities2 = PressCount.Add(myAbilities2);
             if (local.skill) mySkills = PressCount.Add(mySkills);
+            if (local.jump || local.shove || local.ability || local.ability2 || local.skill) presses.Pressed(NowMs());
             pending.Hold(local);
             if (runners.TryGetValue(session.Self, out var me) && me.Pawn != null)
             {
@@ -857,19 +947,30 @@ namespace ChessFight.RagdollLab.Net
                 me.Pawn.ViewAim(local.aim);
             }
             grabWasDown = local.grab;
-            if (now - inputAt < InputInterval) return;
-            inputAt = now;
+            // The counts every frame: the gate compares them with the ones last sent.
             pending.jumps = myJumps;
             pending.shoves = myShoves;
             pending.abilities = myAbilities;
             pending.abilities2 = myAbilities2;
             pending.skills = mySkills;
+            if (!InputDue(now)) return;
+            inputAt = now;
             pending.eventAck = inbox.Started ? inbox.Acked : (ushort)0;
             pending.roundTripMs = (ushort)Mathf.Clamp(Mathf.RoundToInt(roundTripMs), 0, ushort.MaxValue);
             pending.delayMs = (byte)Mathf.Clamp((int)Math.Round(delay.Milliseconds), 0, 255);
             pending.lossPercent = (byte)Mathf.Clamp((int)Math.Round(delay.LossShare * 100d), 0, 100);
             // Unreliable like the lab's: a lost packet only delays a press (the counts carry it), never drops it.
             Send(session.Host, RagdollNetProtocol.LabInput(session.Match, ++inputSequence, NowMs(), pending), false);
+            lastSent = pending;
+        }
+
+        // R306 [2]: on the 60 Hz schedule, and at once when the input changed (InputSendGate). "-latencyBefore=2": the
+        // slots only; with 1 as well, the old "1/60 s since the last send" (slipping a frame each time, as before).
+        bool InputDue(float now)
+        {
+            if (Before.SlotsOnly && Before.Slipping) return now - inputAt >= InputInterval;
+            bool changed = !Before.SlotsOnly && pending.DiffersFrom(lastSent);
+            return inputGate.Due(Time.realtimeSinceStartupAsDouble, changed, Before.SlotsOnly ? 0d : SendSchedule.Early);
         }
 
         void ReceiveSnapshot(byte[] bytes)
@@ -886,14 +987,20 @@ namespace ChessFight.RagdollLab.Net
             snapshotBytesLast = bytes.Length;
             hostSilence.Heard(Time.realtimeSinceStartup);
             delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snap.hostTimeMs, lost);
-            // Round trip: my input's time as the host echoes it.
+            // Round trip: my input's time as the host echoes it (the newest one its physics played, R306).
+            uint nowMs = NowMs();
+            double echoMs = -1d;
             for (int i = 0; i < snap.count; i++)
             {
                 var pose = snap.At(i);
                 if (pose.id != session.Self || pose.ack == 0) continue;
-                int sample = RagdollWire.AckAge(NowMs(), pose.ack);
-                if (sample >= 0 && sample < 10000) roundTripMs = roundTripMs <= 0f ? sample : Mathf.Lerp(roundTripMs, sample, 0.2f);
+                int sample = RagdollWire.AckAge(nowMs, pose.ack);
+                if (sample < 0 || sample >= 10000) continue;
+                roundTripMs = roundTripMs <= 0f ? sample : Mathf.Lerp(roundTripMs, sample, 0.2f);
+                echoMs = nowMs - (double)sample;
             }
+            // R306 [0]: a press being timed is answered by the first snapshot echoing its input or a later one.
+            presses.Arrived(nowMs, echoMs, snap.hostTimeMs);
             buffer.Add(snap);
         }
 
@@ -1104,34 +1211,55 @@ namespace ChessFight.RagdollLab.Net
             double target = newest.hostTimeMs - delay.Milliseconds;
             if (playback <= 0d) playback = target;
             playback = PlaybackDelay.Advance(playback, target, newest.hostTimeMs, Time.unscaledDeltaTime * 1000d, out double rate, out _);
-            var from = buffer[0];
-            var to = from;
-            foreach (var snapshot in buffer)
-            {
-                to = snapshot;
-                if (snapshot.hostTimeMs >= playback) break;
-                from = snapshot;
-            }
-            float t = Mathf.Clamp01((float)((playback - from.hostTimeMs) / Math.Max(1, (double)to.hostTimeMs - from.hostTimeMs)));
-            // Obstacles on the same timeline as the pawns drawn this frame.
-            hostObstacles.Sample(HostObstacleClock.Interpolate(from.obstacleTime, to.obstacleTime, t), Time.timeAsDouble, rate);
+            // R306 [6] (P3, a development build's F7): this PC's own pawn drawn up to the lost-snapshot margin sooner
+            // (PlaybackDelay.LeadMs), never past the newest snapshot, and the obstacles at its time - the course it runs on
+            // where the host had it for that pose; the others are drawn that much behind the obstacles. Off by default.
+            ownLeadMs = ownLead ? delay.LeadMs : 0d;
+            double own = Math.Min(playback + ownLeadMs, newest.hostTimeMs);
+            Bracket(playback, out var from, out var to, out float t);
+            Bracket(own, out var ownFrom, out var ownTo, out float ownT);
+            // Obstacles on the same timeline as the pawns drawn this frame (with the lead, as this PC's own).
+            hostObstacles.Sample(HostObstacleClock.Interpolate(ownFrom.obstacleTime, ownTo.obstacleTime, ownT), Time.timeAsDouble, rate);
+            bool lead = ownLeadMs > 0d;
             for (int i = 0; i < to.count; i++)
-            {
-                var b = to.At(i);
-                if (!runners.TryGetValue(b.id, out var r) || r.Pawn == null) continue;
-                RagdollPose a = b;
-                for (int j = 0; j < from.count; j++) if (from.At(j).id == b.id) { a = from.At(j); break; }
-                if (b.snap) r.Pawn.ApplyNetworkPose(b);
-                else
-                {
-                    RagdollPose.Blend(a, b, t, blend);
-                    r.Pawn.ApplyNetworkPose(blend);
-                }
-            }
-            while (buffer.Count > 2 && (buffer[1].hostTimeMs < playback || buffer.Count > 16))
+                if (!lead || to.At(i).id != session.Self) Draw(to.At(i), from, t);
+            if (lead)
+                for (int i = 0; i < ownTo.count; i++)
+                    if (ownTo.At(i).id == session.Self) { Draw(ownTo.At(i), ownFrom, ownT); break; }
+            presses.Drawn(NowMs(), own);
+            // 32: a second's 60 snapshots trimmed at the playback time anyway; the cap only bounds a stalled playback.
+            while (buffer.Count > 2 && (buffer[1].hostTimeMs < playback || buffer.Count > 32))
             {
                 spare.Push(buffer[0]);
                 buffer.RemoveAt(0);
+            }
+        }
+
+        // The two buffered snapshots around host time `time`, and how far between them it is.
+        void Bracket(double time, out RagdollSnapshot from, out RagdollSnapshot to, out float t)
+        {
+            from = buffer[0];
+            to = from;
+            foreach (var snapshot in buffer)
+            {
+                to = snapshot;
+                if (snapshot.hostTimeMs >= time) break;
+                from = snapshot;
+            }
+            t = Mathf.Clamp01((float)((time - from.hostTimeMs) / Math.Max(1, (double)to.hostTimeMs - from.hostTimeMs)));
+        }
+
+        // One pawn drawn: its pose in the later snapshot, blended from the earlier one's (a snapped pose as it is).
+        void Draw(RagdollPose b, RagdollSnapshot from, float t)
+        {
+            if (!runners.TryGetValue(b.id, out var r) || r.Pawn == null) return;
+            RagdollPose a = b;
+            for (int j = 0; j < from.count; j++) if (from.At(j).id == b.id) { a = from.At(j); break; }
+            if (b.snap) r.Pawn.ApplyNetworkPose(b);
+            else
+            {
+                RagdollPose.Blend(a, b, t, blend);
+                r.Pawn.ApplyNetworkPose(blend);
             }
         }
     }

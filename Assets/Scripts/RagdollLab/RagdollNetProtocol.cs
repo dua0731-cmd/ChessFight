@@ -145,6 +145,15 @@ namespace ChessFight.RagdollLab
         {
             move = new Vector3(move.x, 0f, move.y), grab = grab, sprint = sprint, interact = interact, aim = aim, shoveHeld = shoveHeld,
         };
+
+        /// <summary>R306 [2]: whether this input should go now rather than on its next slot (InputSendGate): a press counted,
+        /// a held button changed, a piece or an emote asked for, or the move started, stopped or turned (InputChange). The
+        /// aim, the confirmations and the link figures wait for the slot.</summary>
+        public bool DiffersFrom(in RagdollLabInput sent) =>
+            jumps != sent.jumps || shoves != sent.shoves || abilities != sent.abilities || abilities2 != sent.abilities2 || skills != sent.skills
+            || grab != sent.grab || sprint != sent.sprint || shoveHeld != sent.shoveHeld || interact != sent.interact || edgeHeld != sent.edgeHeld
+            || pieceSeq != sent.pieceSeq || emoteSeq != sent.emoteSeq
+            || InputChange.Moved(sent.move.x, sent.move.y, move.x, move.y);
     }
 
     /// <summary>A decoded snapshot with reusable pose objects (no per-packet allocation).</summary>

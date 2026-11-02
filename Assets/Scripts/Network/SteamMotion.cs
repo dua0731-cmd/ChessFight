@@ -46,6 +46,9 @@ namespace ChessFight.Network
         public bool Loading { get; set; }
         // Steam's own transport ping: to the host on a client, the worst peer on the host.
         public int PingMs { get; private set; } = -1;
+        // R306: of those sessions, how many go through Steam's relays and how many straight (shown, nothing else).
+        public int RelayedPeers { get; private set; }
+        public int DirectPeers { get; private set; }
         public double ResponseMs => response.Milliseconds;
         uint sequence, tick, lastSnapshot;
         float accumulator, lastReceive, nextSnapshot, nextPingPoll;
@@ -66,8 +69,11 @@ namespace ChessFight.Network
             {
                 if (session.Match == 0) return Simulation.Active ? "지연 시뮬 " + Simulation : "";
                 string ping = PingMs < 0 ? "—" : PingMs + "ms";
-                string line = session.IsHost ? $"방장 · 최대 핑 {ping}"
-                            : $"핑 {ping} · 응답 {(ResponseMs < 0 ? "—" : Math.Round(ResponseMs) + "ms")}";
+                string route = RelayedPeers + DirectPeers == 0 ? ""
+                             : session.IsHost ? $" · 직접 {DirectPeers} · 릴레이 {RelayedPeers}"
+                             : RelayedPeers > 0 ? " · 릴레이" : " · 직접";
+                string line = session.IsHost ? $"방장 · 최대 핑 {ping}{route}"
+                            : $"핑 {ping} · 응답 {(ResponseMs < 0 ? "—" : Math.Round(ResponseMs) + "ms")}{route}";
                 return Simulation.Active ? line + " · 지연 시뮬 " + Simulation : line;
             }
         }
@@ -188,14 +194,18 @@ namespace ChessFight.Network
 
         int PollPing()
         {
-            int worst = -1;
+            int worst = -1, relayed = 0, direct = 0;
             foreach (ulong id in connected)
             {
                 if (!session.IsHost && id != session.Host) continue;
-                var remote = new SteamNetworkingIdentity(); remote.SetSteamID64(id);
-                var state = SteamNetworkingMessages.GetSessionConnectionInfo(ref remote, out _, out SteamNetConnectionRealTimeStatus_t status);
-                if (state == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connected && status.m_nPing > worst) worst = status.m_nPing;
+                // R306: the connection's route as well, which this used to throw away (SteamRoute; display only).
+                if (!SteamRoute.Read(id, out bool viaRelay, out int ping)) continue;
+                if (viaRelay) relayed++;
+                else direct++;
+                if (ping > worst) worst = ping;
             }
+            RelayedPeers = relayed;
+            DirectPeers = direct;
             return worst;
         }
 
