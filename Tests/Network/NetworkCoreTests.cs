@@ -67,6 +67,113 @@ public static class NetworkCoreTests
                 Check(PawnRushMissions.Latched(.10, .0) == .0 && PawnRushMissions.Latched(.9, 1.4) == 1.0, "clamped to 0..1");
                 Check(PawnRushMissions.Latched(.4, double.NaN) == .4, "NaN ignored");
                 Check(PawnRushMissions.Workers(6) == 4 && PawnRushMissions.Workers(3) == 3 && PawnRushMissions.Workers(-1) == 0, "four at most"); });
+            Test("Section random is mulberry32: the blockout page's numbers, same seed same stream", () => {
+                var r = new SeededRandom(1);
+                Check(r.NextUInt() == 2693262067u && r.NextUInt() == 11749833u && r.NextUInt() == 2265367787u, "mulberry32(1)");
+                var q = new SeededRandom(123456789);
+                Check(q.NextUInt() == 1107202814u && q.NextUInt() == 4169434471u, "mulberry32(123456789)");
+                var a = new SeededRandom(SeededSchedule.Hash(7, 2)); var b = new SeededRandom(SeededSchedule.Hash(7, 2));
+                for (int i = 0; i < 50; i++) Check(a.Next(10) == b.Next(10), "same seed");
+                Check(SeededSchedule.Hash(7, 2) != SeededSchedule.Hash(7, 3) && SeededSchedule.Hash(7, 2) != SeededSchedule.Hash(8, 2), "mixed");
+                Check(PawnRushSections.SectionSeed(5, 2) != PawnRushSections.SectionSeed(5, 4), "slots differ"); });
+            Test("Pawn Rush round: one prefab per section, shared games once a round, the previous pick left out", () => {
+                Check(PawnRushSections.Kind.Length == PawnRushSections.SlotCount && PawnRushSections.SlotNames.Length == PawnRushSections.SlotCount, "tables");
+                // Obstacle slots 1-x / 2-x / 3-x, the three mini-game slots share ten games, one final.
+                var games = new[] { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109 };
+                var options = new[] { new[] { 10, 11, 12 }, games, new[] { 20, 21 }, games, new[] { 30 }, games, new[] { 40 } };
+                int[] last = null;
+                var seenGames = new HashSet<int>();
+                for (int seed = 0; seed < 500; seed++)
+                {
+                    var p = PawnRushSections.Choose(seed, options, last);
+                    Check(p.Length == 7 && p[4] == 30 && p[6] == 40, "single options");
+                    Check(p[1] != p[3] && p[1] != p[5] && p[3] != p[5], "three different games, seed " + seed);
+                    for (int s = 0; s < 7; s++) Check(Array.IndexOf(options[s], p[s]) >= 0, "from its own list");
+                    if (last != null) Check(p[0] != last[0] && p[2] != last[2] && p[1] != last[1], "previous round left out, seed " + seed);
+                    seenGames.Add(p[1]); seenGames.Add(p[3]); seenGames.Add(p[5]);
+                    last = p;
+                }
+                Check(seenGames.Count == 10, "every game comes up");
+                var x = PawnRushSections.Choose(9, options); var y = PawnRushSections.Choose(9, options);
+                for (int s = 0; s < 7; s++) Check(x[s] == y[s], "same seed, same round");
+                var holes = PawnRushSections.Choose(3, new[] { new int[0], null, new[] { 5 }, new[] { 5 } });
+                Check(holes[0] == -1 && holes[1] == -1 && holes[2] == 5 && holes[3] == 5, "empty slots and a one-prefab list"); });
+            Test("Grand stair hall rolls: ten minutes keep the three rules, use all four lanes, about 40% statues", () => {
+                for (int seed = 1; seed <= 30; seed++)
+                {
+                    var s = new RollingSchedule(SeededSchedule.Hash(seed, 1), 1000.0);
+                    s.Advance(1600.0);
+                    Check(s.Count > 230 && s.Count < 380, "about one every 2.1 s: " + s.Count);
+                    var lanes = new int[4];
+                    int statues = 0;
+                    for (int i = 0; i < s.Count; i++)
+                    {
+                        var e = s[i];
+                        lanes[e.Lane]++;
+                        if (e.Statue) statues++;
+                        Check(e.Serial == i, "serials in order");
+                        if (i > 0) Check(e.Time - s[i - 1].Time >= 1.6 - 1e-9 && e.Time - s[i - 1].Time <= 2.6 + 1e-9, "gap 1.6 ~ 2.6 s");
+                        int inWindow = e.Statue ? 1 : 0;
+                        for (int j = i - 1; j >= 0 && e.Time - s[j].Time < 4.0; j--)
+                        {
+                            var o = s[j];
+                            if (e.Time - o.Time < 3.0) Check(o.Lane != e.Lane, "rule 1, seed " + seed);
+                            if (e.Statue && o.Statue && e.Time - o.Time < 1.5) Check(Math.Abs(o.Lane - e.Lane) != 1, "rule 2, seed " + seed);
+                            if (e.Statue && o.Statue) inWindow++;
+                        }
+                        Check(inWindow <= 2, "rule 3, seed " + seed);
+                    }
+                    for (int l = 0; l < 4; l++) Check(lanes[l] > 30, "lane " + l + " used");
+                    double share = statues / (double)s.Count;
+                    Check(share > .3 && share <= .41, "statue share " + share);
+                    // Same seed, same list (every PC); a later Advance does not change what was written.
+                    var t = new RollingSchedule(SeededSchedule.Hash(seed, 1), 1000.0);
+                    t.Advance(1300.0); t.Advance(1600.0);
+                    Check(t.Count == s.Count, "same count");
+                    for (int i = 0; i < s.Count; i++) Check(t[i].Time == s[i].Time && t[i].Lane == s[i].Lane && t[i].Statue == s[i].Statue, "same list");
+                }
+                var u = new RollingSchedule(SeededSchedule.Hash(1, 1), 0.0); var v = new RollingSchedule(SeededSchedule.Hash(2, 1), 0.0);
+                u.Advance(60); v.Advance(60);
+                bool differs = false;
+                for (int i = 0; i < Math.Min(u.Count, v.Count); i++) differs |= u[i].Lane != v[i].Lane || u[i].Statue != v[i].Statue;
+                Check(differs, "another seed, another order");
+                u.Prune(30.0);
+                Check(u.Count > 0 && u[0].Time >= 30.0, "pruned"); });
+            Test("Grand stair hall chandeliers: ten minutes keep 6 m apart, inside the landing, off the king's base", () => {
+                for (int seed = 1; seed <= 30; seed++)
+                {
+                    var c = new ChandelierSchedule(SeededSchedule.Hash(seed, 2), 50.0);
+                    c.Advance(650.0);
+                    Check(c.Count > 380 && c.Count < 900, "about one a second: " + c.Count);
+                    for (int i = 0; i < c.Count; i++)
+                    {
+                        var d = c[i];
+                        Check(d.X >= -13 && d.X <= 13 && d.Z >= 54 && d.Z <= 65, "in the area");
+                        Check(!(d.X > -2 && d.X < 2 && d.Z > 61 && d.Z < 65), "not on the king's base");
+                        if (i > 0) Check(d.Time - c[i - 1].Time >= .7 - 1e-9, "at least 0.7 s apart");
+                        for (int j = i - 1; j >= 0 && d.Time - c[j].Time < 2.2; j--)
+                        {
+                            double dx = d.X - c[j].X, dz = d.Z - c[j].Z;
+                            Check(dx * dx + dz * dz >= 36 - 1e-9, "6 m from a drop still warning or just fallen, seed " + seed);
+                        }
+                    }
+                }
+                var a = new ChandelierSchedule(9, 0); var b = new ChandelierSchedule(9, 0);
+                a.Advance(30); b.Advance(10); b.Advance(30);
+                Check(a.Count == b.Count, "same count");
+                for (int i = 0; i < a.Count; i++) Check(a[i].X == b[i].X && a[i].Z == b[i].Z && a[i].Time == b[i].Time, "same drops"); });
+            Test("Grand stair hall wings: one for 3 and 4 a side (either, by the seed), both from 5", () => {
+                Check(!GrandStairHallRules.BothWings(3) && !GrandStairHallRules.BothWings(4), "one wing");
+                Check(GrandStairHallRules.BothWings(5) && GrandStairHallRules.BothWings(6), "two wings");
+                var seen = new HashSet<int>();
+                for (int seed = 0; seed < 64; seed++)
+                {
+                    int open = GrandStairHallRules.OpenWing(seed);
+                    seen.Add(open);
+                    Check(GrandStairHallRules.WingOpen(open, 3, seed) && !GrandStairHallRules.WingOpen(1 - open, 3, seed), "the other is shut");
+                    Check(GrandStairHallRules.WingOpen(0, 6, seed) && GrandStairHallRules.WingOpen(1, 6, seed), "six a side: both");
+                }
+                Check(seen.Count == 2, "west and east both come up"); });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
                 r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");

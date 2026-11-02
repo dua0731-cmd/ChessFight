@@ -55,6 +55,10 @@ namespace ChessFight.ProtectKing
         static void Reset() => actors.Clear();
         public void AddObstacleImpulse(Vector3 velocity)
         { if (CanReceiveObstacle) hits.ApplyHit(velocity,0,0,true); }
+        // A hit that also knocks the character down for a while (0 = a stagger, as AddObstacleImpulse).
+        // The Pawn Rush grand stair hall's rolling statues and falling chandeliers (level design v0.3 §5).
+        public void AddObstacleHit(Vector3 velocity, float knockdownSeconds)
+        { if (CanReceiveObstacle) hits.ApplyHit(velocity,Mathf.Max(0,knockdownSeconds),0,true); }
         public void LaunchFromObstacle(Vector3 velocity)
         {
             if (!CanReceiveObstacle) return;

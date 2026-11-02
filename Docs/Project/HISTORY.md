@@ -7,7 +7,9 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 10-21 | R148 | 경기 중 Esc 메뉴(`GameMenu`: 돌아가기·설정·나가기 확인), 폰 러쉬 공개 방 3 대 3부터 방장 "게임 시작"(`ReadyEarly`·`CanStartEarly`·입장 화면 버튼), 문서. 시험: Core 125·세션 41 |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 11-02 | R149 | 폰 러시 구간 프리팹: 한 판 7구간(Core `PawnRushSections` 뽑기·구간 씨앗, `PawnRushSection`·`PawnRushSectionSet`·`PawnRushRound`), 2-1 대계단 현관홀(`GrandStairHall`·`GrandStairHallBuilder`, 새 장애물 `RollingSpawner`·`ChandelierRain`, Core `SeededSchedule`), `SectionValidator`·`SectionPlaytest`·메뉴 3개·시험 씬 `PawnRush_Sections`, `CourseKit` 바탕 클래스·`SectionKit`, 1 m 격자 재질, `ImportedObstacleActor.AddObstacleHit`, 기획 원문 4개, 문서. 시험: Core 130·세션 41 |
+| `bc2f3a8` | 10-24 | - | 트레일러 영상 `Docs/체스파이트_트레일러.mp4`(LFS, 사용자) |
+| `4ec62ec` | 10-21 | R148 | 경기 중 Esc 메뉴(`GameMenu`: 돌아가기·설정·나가기 확인), 폰 러쉬 공개 방 3 대 3부터 방장 "게임 시작"(`ReadyEarly`·`CanStartEarly`·입장 화면 버튼), 문서. 시험: Core 125·세션 41 |
 | `51fddd0` | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |
 | `86a34de` | 10-15 | R129 | J를 나이트의 길로(Core `KnightRoute`, 나이트 경로 8칸만 바닥, 방향 없는 점프대, 다이빙으로 상대 기물 6개 잡기), 예전 섬·조준·깃발 없앰, 문서 |
 | `baaa1ea` | 10-15 | R128 | G 킹 호위를 밧줄·손잡이 없이(썰매·룩 자체를 잡거나 밀기, 썰매 안 돎), I도 같은 방식, 새 `GrabOnlySurface`(잡기만, 벽타기 안 됨)와 래그돌 연결, 모든 `GrabHandle` 잡기 전용, 검증기, 문서 |

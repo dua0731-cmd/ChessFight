@@ -17,10 +17,10 @@ namespace ChessFight.PawnRush
         // the course built in the scene keeps the link to the imported obstacle prefabs.
         public static Func<GameObject, Transform, GameObject> Spawn = (prefab, parent) => Object.Instantiate(prefab, parent);
 
-        public readonly Course01Kit kit;
+        public readonly CourseKit kit;
         public Transform parent;
 
-        public CourseBuilder(Course01Kit kit, Transform parent)
+        public CourseBuilder(CourseKit kit, Transform parent)
         {
             this.kit = kit;
             this.parent = parent;
@@ -155,7 +155,7 @@ namespace ChessFight.PawnRush
         {
             if (prefab == null)
             {
-                Debug.LogError("[PawnRush] Course01Kit is missing the obstacle for " + name);
+                Debug.LogError("[PawnRush] The course kit is missing the obstacle for " + name);
                 return Group(name + " (missing obstacle)").gameObject;
             }
             var go = Spawn(prefab, parent);
