@@ -751,38 +751,49 @@ namespace ChessFight.RagdollLab.Net
 
         void Receive()
         {
-            int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
-            for (int i = 0; i < count; i++)
+            // Everything that arrived, not one buffer's worth (R297, as the other links): eleven players send 660 inputs a
+            // second, so a host below about ten frames a second read them later and later.
+            for (int round = 0; round < 8; round++)
             {
-                try
+                int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
+                for (int i = 0; i < count; i++)
                 {
-                    var msg = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
-                    ulong id = msg.m_identityPeer.GetSteamID64();
-                    if (!session.IsPeer(id) || msg.m_cbSize <= 0 || msg.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
-                    receivedBytes += msg.m_cbSize;
-                    byte[] bytes = inbound.Get(msg.m_cbSize);
-                    Marshal.Copy(msg.m_pData, bytes, 0, bytes.Length);
-                    if (authority) ReceiveInput(id, bytes);
-                    else if (id == session.Host)
+                    try
                     {
-                        if (PawnRushNetState.Read(bytes, session.Match, received))
+                        var msg = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
+                        ulong id = msg.m_identityPeer.GetSteamID64();
+                        if (!session.IsPeer(id) || msg.m_cbSize <= 0 || msg.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
+                        receivedBytes += msg.m_cbSize;
+                        byte[] bytes = inbound.Get(msg.m_cbSize);
+                        Marshal.Copy(msg.m_pData, bytes, 0, bytes.Length);
+                        if (authority) ReceiveInput(id, bytes);
+                        else if (id == session.Host)
                         {
-                            if (lastState != 0 && !RagdollNetProtocol.Newer(received.Tick, lastState)) continue;
-                            lastState = received.Tick;
-                            hostSilence.Heard(Time.realtimeSinceStartup);
-                            QueueState(received);
-                            continue;
+                            if (PawnRushNetState.Read(bytes, session.Match, received))
+                            {
+                                if (lastState != 0 && !RagdollNetProtocol.Newer(received.Tick, lastState)) continue;
+                                lastState = received.Tick;
+                                hostSilence.Heard(Time.realtimeSinceStartup);
+                                QueueState(received);
+                                continue;
+                            }
+                            byte type = RagdollNetProtocol.TypeOf(bytes);
+                            if (type == RagdollNetProtocol.TypeSkills) ReceiveSkills(bytes);
+                            else if (type == RagdollNetProtocol.TypeSnapshot) ReceiveSnapshot(bytes);
                         }
-                        byte type = RagdollNetProtocol.TypeOf(bytes);
-                        if (type == RagdollNetProtocol.TypeSkills) ReceiveSkills(bytes);
-                        else if (type == RagdollNetProtocol.TypeSnapshot) ReceiveSnapshot(bytes);
+                    }
+                    catch (Exception e)
+                    {
+                        // One message that throws must not cost the others, nor leave them unreleased (R297).
+                        ReceiveErrors.Log(Channel, e);
+                    }
+                    finally
+                    {
+                        SteamNetworkingMessage_t.Release(incoming[i]);
+                        incoming[i] = IntPtr.Zero;
                     }
                 }
-                finally
-                {
-                    SteamNetworkingMessage_t.Release(incoming[i]);
-                    incoming[i] = IntPtr.Zero;
-                }
+                if (count < incoming.Length) break;
             }
         }
 
@@ -818,11 +829,7 @@ namespace ChessFight.RagdollLab.Net
             r.Sequence = sequence;
             r.ClientTimeMs = clientTime;
             r.InputAt = Time.realtimeSinceStartup;
-            if (!r.AckSet || SkillWire.Newer(fresh.eventAck, r.EventAck))
-            {
-                r.EventAck = fresh.eventAck;
-                r.AckSet = true;
-            }
+            SkillWire.TakeAck(fresh.eventAck, ref r.EventAck, ref r.AckSet);
         }
 
         // Not the host: my promotion choice, sent in every input from now on with a new number (never 0).

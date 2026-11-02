@@ -1736,6 +1736,32 @@ public static class NetworkCoreTests
                 var pool = new PacketPool(16);
                 Check(pool.Get(10) == pool.Get(10) && pool.Get(10).Length == 10 && pool.Get(9) != pool.Get(10), "one array per length");
                 Check(pool.Get(17) != pool.Get(17) && pool.Get(0).Length == 0, "past its largest length: a new array each time"); });
+            Test("Flat motion snapshot (R297 [5]): never more than twelve pawns, so a thirteenth no longer makes it unreadable", () => {
+                var many = new List<PawnState>();
+                for (int i = 1; i <= 13; i++) many.Add(PawnMotor.Spawn((ulong)i, (i - 1) % 2, (i - 1) % 6));
+                var bytes = MotionProtocol.Snapshot(5, 1, many);
+                Check(bytes.Length == 18 + 12 * 30, "twelve pawns' bytes, got " + bytes.Length);
+                Check(MotionProtocol.ReadSnapshot(bytes, 5, out uint tick, out var got) && got.Count == 12 && got[11].Id == 12, "the first twelve, readable"); });
+            Test("Skill moments (R297 [5]): a client's 0 is nothing confirmed yet, so a host past 32767 moments still reaches it", () => {
+                var log = new SkillEventLog();
+                for (uint ms = 0; ms < 40000; ms++) { log.Add(new SkillWireEvent { Mode = SkillWire.ModePawnRush, Kind = 1 }, ms); log.Expire(ms); }
+                Check(SkillWire.Newer(log.First, 0) == false, "the log is numbered past 32767 (first " + log.First + ")");
+                var batch = new List<SkillWireEvent>();
+                log.After(0, 255, batch);
+                Check(batch.Count == 0, "taken as a number, 0 hid every moment");
+                ushort acked = 0; bool set = false;
+                SkillWire.TakeAck(0, ref acked, ref set);
+                Check(!set, "0 sets nothing");
+                log.After(set ? acked : unchecked((ushort)(log.First - 1)), 255, batch);
+                Check(batch.Count == 255, "so the client gets the moments kept, got " + batch.Count);
+                ushort confirmed = unchecked((ushort)(log.First + 9));
+                SkillWire.TakeAck(confirmed, ref acked, ref set);
+                Check(set && acked == confirmed, "its first real confirmation counts, though not newer than 0");
+                SkillWire.TakeAck(0, ref acked, ref set);
+                SkillWire.TakeAck(unchecked((ushort)(confirmed - 3)), ref acked, ref set);
+                Check(acked == confirmed, "a later 0 or an older number changes nothing");
+                SkillWire.TakeAck(unchecked((ushort)(confirmed + 5)), ref acked, ref set);
+                Check(acked == unchecked((ushort)(confirmed + 5)), "a newer one moves it on"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

@@ -724,11 +724,7 @@ namespace ChessFight.RagdollLab
                 r.emoteSeq = fresh.emoteSeq;
                 if (sword == null && pawns.TryGetValue(sender, out var emoter) && emoter != null) emoter.PlayEmote(fresh.emoteAsk);
             }
-            if (!r.ackSet || SkillWire.Newer(fresh.eventAck, r.eventAck))
-            {
-                r.eventAck = fresh.eventAck;
-                r.ackSet = true;
-            }
+            SkillWire.TakeAck(fresh.eventAck, ref r.eventAck, ref r.ackSet);
         }
 
         // ---------------------------------------------------------------- client

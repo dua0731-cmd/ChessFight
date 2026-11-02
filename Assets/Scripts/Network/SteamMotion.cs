@@ -240,6 +240,8 @@ namespace ChessFight.Network
                         if (Simulation.Active) delayedIn.Push(new Packet { Peer = sender, Bytes = (byte[])bytes.Clone() }, Time.realtimeSinceStartup);
                         else Handle(sender, bytes);
                     }
+                    // One message that throws must not cost the others, nor leave them unreleased (R297).
+                    catch (Exception e) { ReceiveErrors.Log(Channel, e); }
                     finally { SteamNetworkingMessage_t.Release(incoming[i]); incoming[i] = IntPtr.Zero; }
                 }
                 if (count < incoming.Length) break;

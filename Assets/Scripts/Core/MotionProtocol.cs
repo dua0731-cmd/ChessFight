@@ -37,6 +37,8 @@ namespace ChessFight.Network
         // "CFF2": v2 replaced the one-packet jump flag with the press count.
         const uint Magic = 0x43464632;
         public const int MaxBytes = 1024;
+        // The most a snapshot carries: a reader refuses more, so a writer never sends more (R297).
+        public const int MaxPawns = 12;
         // R297: one stream, writer and reader for every packet (a packet's array lasts until the next one of its length).
         static readonly PacketStreams streams = new PacketStreams(MaxBytes);
         public static bool Newer(uint value, uint previous) => unchecked((int)(value - previous)) > 0;
@@ -62,9 +64,11 @@ namespace ChessFight.Network
         }
         public static byte[] Snapshot(ulong session, uint tick, IReadOnlyList<PawnState> pawns)
         {
+            // A 13th pawn made the whole snapshot unreadable for everyone; now the first twelve go.
+            int count = Math.Min(pawns.Count, MaxPawns);
             var w = streams.Begin();
-            w.Write(Magic); w.Write((byte)2); w.Write(session); w.Write(tick); w.Write((byte)pawns.Count);
-            for (int i = 0; i < pawns.Count; i++)
+            w.Write(Magic); w.Write((byte)2); w.Write(session); w.Write(tick); w.Write((byte)count);
+            for (int i = 0; i < count; i++)
             { var p = pawns[i]; w.Write(p.Id); w.Write(p.Ack); w.Write(p.X); w.Write(p.Y); w.Write(p.Z); w.Write(p.Vertical); w.Write((byte)p.Team); w.Write((byte)p.Slot); }
             return streams.Finish();
         }
@@ -81,7 +85,7 @@ namespace ChessFight.Network
             var r = streams.Open(bytes);
             if (r.ReadUInt32() != Magic || r.ReadByte() != 2 || r.ReadUInt64() != session) return false;
             tick = r.ReadUInt32(); int count = r.ReadByte();
-            if (count > 12 || bytes.Length != 18 + count * 30) return false;
+            if (count > MaxPawns || bytes.Length != 18 + count * 30) return false;
             for (int i = 0; i < count; i++)
             {
                 var p = new PawnState { Id = r.ReadUInt64(), Ack = r.ReadUInt32(), X = r.ReadSingle(), Y = r.ReadSingle(), Z = r.ReadSingle(), Vertical = r.ReadSingle(), Team = r.ReadByte(), Slot = r.ReadByte() };

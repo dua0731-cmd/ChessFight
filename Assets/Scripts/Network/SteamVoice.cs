@@ -219,6 +219,11 @@ namespace ChessFight.Network
                         int bytes = Decode(compressed, length);
                         if (bytes > 0) Sink?.Invoke(sender, pcm, bytes, gain / 100f);
                     }
+                    catch (Exception e)
+                    {
+                        // One message that throws must not cost the others, nor leave them unreleased (R297).
+                        ReceiveErrors.Log(VoiceWire.SteamChannel, e);
+                    }
                     finally
                     {
                         SteamNetworkingMessage_t.Release(incoming[i]);

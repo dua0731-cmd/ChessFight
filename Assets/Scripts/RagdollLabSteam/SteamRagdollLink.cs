@@ -186,6 +186,11 @@ namespace ChessFight.RagdollLab.Net
                         Marshal.Copy(packet.m_pData, bytes, 0, bytes.Length);
                         deliver(sender, bytes);
                     }
+                    catch (Exception e)
+                    {
+                        // One message that throws must not cost the others, nor leave them unreleased (R297).
+                        ReceiveErrors.Log(Channel, e);
+                    }
                     finally
                     {
                         SteamNetworkingMessage_t.Release(incoming[i]);
