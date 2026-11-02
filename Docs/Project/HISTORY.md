@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 11-02 | R297 | 문서: VALIDATION 맨 위(빌드 두 개로 기준값 재는 순서 · Profiler 순서 · (가)~(바) · [4] · [5] 미확인) · HOST_AUTHORITY(§0 · §1.1 · W3 · W7 · §6 표 · P5 · P6 · §8.4 · 새 §10) · MOTION · SESSION(v26) · SKILLS_ONLINE · RAGDOLL · DECISIONS K13 · PITFALLS 65~66 · REQUIREMENTS · HANDOFF |
+| (이 커밋) | 11-03 | R305 | 폰 러시 1-1 왕실 수로 정원 v31 그레이박스: 슬롯 1 `Early_1-1_RoyalWaterGarden`(뿌리 프리팹, `RoyalWaterGardenBuilder`, 메뉴 Build Early 1-1 Royal Water Garden), 새 부품 `GardenGeyser` · `GardenBoat` · `BoatLanes` · `RobotSweep` · `WaterCurrent` · `TiltingPad` · `GardenHits`, Core `RoyalWaterGardenRules` + 시험 3개, 검증기 · 시험 씬 · 생성기, 문서(PAWN_RUSH_ROYAL_GARDEN · SECTIONS · VALIDATION · DECISIONS P30 · REQUIREMENTS · HANDOFF) |
+| `7b86e99a` | 11-02 | R297 | 문서: VALIDATION 맨 위(빌드 두 개로 기준값 재는 순서 · Profiler 순서 · (가)~(바) · [4] · [5] 미확인) · HOST_AUTHORITY(§0 · §1.1 · W3 · W7 · §6 표 · P5 · P6 · §8.4 · 새 §10) · MOTION · SESSION(v26) · SKILLS_ONLINE · RAGDOLL · DECISIONS K13 · PITFALLS 65~66 · REQUIREMENTS · HANDOFF |
 | `f5b21ab1` | 11-02 | R297 [5] | 받은 메시지 실패 로그마다 채널 줄(`Steam channel ○: …`)을 먼저 남김(첫 실패가 예외만 남아 `Player.log`에서 못 찾던 것) |
 | `7d248b0b` | 11-02 | R297 [5] | 모든 Steam 받기 루프가 메시지 하나의 예외만 버리고 계속 읽음(`ReceiveErrors`), 폰 러쉬 받기 최대 8번, 이동 스냅샷 12명까지만(`MotionProtocol.MaxPawns`), 스킬 받은 번호 0 = 아직 없음(`SkillWire.TakeAck`, 랩 · 폰 러쉬) |
 | `c0073862` | 11-02 | R297 [3] | 패킷 스트림 · 배열을 다시 씀(Core `PacketStreams` · `PacketPool`, 모든 Core 프로토콜 · 받기 루프), 매 프레임 목록 · 람다 · 위임 · `GetRange` 할당 없앰, 지연 시뮬레이터는 복사, 다시 쓴 스트림 시험 |

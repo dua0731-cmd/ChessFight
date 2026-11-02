@@ -37,6 +37,7 @@ namespace ChessFight.PawnRush
             KillVolume.Entered += OnFall;
             RollingSpawner.Hit += OnHit;
             ChandelierRain.Hit += OnHit;
+            GardenHits.Hit += OnHit;
         }
 
         void OnDisable()
@@ -44,6 +45,7 @@ namespace ChessFight.PawnRush
             KillVolume.Entered -= OnFall;
             RollingSpawner.Hit -= OnHit;
             ChandelierRain.Hit -= OnHit;
+            GardenHits.Hit -= OnHit;
         }
 
         void Start()

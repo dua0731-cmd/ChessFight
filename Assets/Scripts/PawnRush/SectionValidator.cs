@@ -19,6 +19,9 @@ namespace ChessFight.PawnRush
         {
             "Hall wall", "Foyer wall", "Porch wall", "Foyer pillar", "King statue", "Knight alcove", "Gate wall", "Balcony wall",
             "Royal dais", "Chandelier beam", "Wind vent post", "Glass square",
+            // The royal water garden (1-1).
+            "Garden wall", "Garden tower", "Garden terrace", "Garden island", "Plaza kerb", "Lock wall", "Lock gate post", "Lock gate beam",
+            "Dyke wall", "Robot gantry", "Reservoir wall", "Boat tunnel", "Gate arch", "Exit arch",
         };
 
         public static List<string> Run(PawnRushSection section, List<string> notes)
@@ -66,8 +69,7 @@ namespace ChessFight.PawnRush
             notes.Add($"체크포인트 {checkpoints.Length}개, 부활 자리 {spots}곳");
 
             // 4. climbing
-            var hall = section.GetComponent<GrandStairHall>();
-            Course01Validator.CheckClimbing(root, hall != null ? hall.Kit : null, errors, notes);
+            Course01Validator.CheckClimbing(root, KitOf(section), errors, notes);
             foreach (var c in root.GetComponentsInChildren<Collider>(true))
             {
                 if (c.isTrigger) continue;
@@ -86,6 +88,15 @@ namespace ChessFight.PawnRush
                 errors.Add("출구에 바닥이 없습니다 " + Course01Validator.Fmt(exit.position));
             notes.Add($"입구 {Course01Validator.Fmt(entry.position)} → 출구 {Course01Validator.Fmt(exit.position)}");
             return errors;
+        }
+
+        // The kit a built section was made with (its materials tell the grey grid from the blue).
+        static CourseKit KitOf(PawnRushSection section)
+        {
+            var hall = section.GetComponent<GrandStairHall>();
+            if (hall != null) return hall.Kit;
+            var garden = section.GetComponent<RoyalWaterGarden>();
+            return garden != null ? garden.Kit : null;
         }
 
         // NoClimbSurface on it or above it, active or not (the portcullis and the east lift's wall wait switched off).

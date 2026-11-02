@@ -15,7 +15,8 @@ MonoBehaviour:
   slots:
   - name: "\uC7A5\uC560\uBB3C 1 (\uCD08\uBC18 \u00B7 \uBC14\uAE65\uB730)"
     kind: 0
-    prefabs: []
+    prefabs:
+    - {fileID: 1000, guid: c1c3a74ebadb6049a082ae6410fe9b70, type: 3}
   - name: "\uBBF8\uB2C8\uAC8C\uC784 1"
     kind: 1
     prefabs: []

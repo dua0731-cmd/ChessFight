@@ -291,6 +291,97 @@ public static class NetworkCoreTests
                     Check(GrandStairHallRules.WingOpen(0, 6, seed) && GrandStairHallRules.WingOpen(1, 6, seed), "six a side: both");
                 }
                 Check(seen.Count == 2, "west and east both come up"); });
+            Test("Royal water garden boats: lanes from the seed, both ways, 24 m apart, sunk while they wrap", () => {
+                var speeds = new HashSet<double>(RoyalWaterGardenRules.Speeds);
+                var dirs = new int[2];
+                for (int seed = 1; seed <= 500; seed++)
+                {
+                    var lanes = RoyalWaterGardenRules.RollBoatLanes(seed);
+                    Check(lanes.Length == RoyalWaterGardenRules.Lanes, "four lanes");
+                    bool east = false, west = false;
+                    foreach (var l in lanes)
+                    {
+                        Check(l.Dir == 1 || l.Dir == -1, "a way");
+                        Check(speeds.Contains(l.Speed), "a listed speed");
+                        Check(l.Offset >= 0 && l.Offset < RoyalWaterGardenRules.Spacing, "offset inside one spacing");
+                        east |= l.Dir > 0; west |= l.Dir < 0;
+                        dirs[l.Dir > 0 ? 0 : 1]++;
+                    }
+                    Check(east && west, "both ways, seed " + seed);
+                    var again = RoyalWaterGardenRules.RollBoatLanes(seed);
+                    for (int i = 0; i < lanes.Length; i++)
+                        Check(again[i].Dir == lanes[i].Dir && again[i].Speed == lanes[i].Speed && again[i].Offset == lanes[i].Offset, "same seed, same lanes");
+                }
+                Check(dirs[0] > 600 && dirs[1] > 600, "east and west about as often: " + dirs[0] + " / " + dirs[1]);
+                Check(RoyalWaterGardenRules.WaterBetween == 18.0, "18 m of water between the boats of a lane");
+                // Along a lane: inside the loop, the two boats a spacing apart, moving at the lane's speed, and sunk
+                // whenever one wraps from one end to the other. Scene time and Unix time alike.
+                foreach (double start in new[] { 0.0, 1.7e9 })
+                    for (int seed = 1; seed <= 20; seed++)
+                        foreach (var l in RoyalWaterGardenRules.RollBoatLanes(seed))
+                        {
+                            double dt = .01, half = RoyalWaterGardenRules.Loop * .5;
+                            double[] before = { RoyalWaterGardenRules.BoatX(l, 0, start), RoyalWaterGardenRules.BoatX(l, 1, start) };
+                            for (double t = start + dt; t < start + 60; t += dt)
+                                for (int k = 0; k < 2; k++)
+                                {
+                                    double x = RoyalWaterGardenRules.BoatX(l, k, t);
+                                    Check(x >= -half - 1e-6 && x < half + 1e-6, "inside the loop");
+                                    double step = x - before[k];
+                                    if (Math.Abs(step) > 1)
+                                        Check(RoyalWaterGardenRules.BoatDrop(x) == RoyalWaterGardenRules.DiveDepth
+                                              && RoyalWaterGardenRules.BoatDrop(before[k]) == RoyalWaterGardenRules.DiveDepth, "wraps only when sunk");
+                                    else Check(Math.Abs(step - l.Dir * l.Speed * dt) < 1e-3, "lane speed, way");
+                                    before[k] = x;
+                                    if (k == 1)
+                                    {
+                                        double apart = Math.Abs(before[1] - before[0]);
+                                        apart = Math.Min(apart, RoyalWaterGardenRules.Loop - apart);
+                                        Check(Math.Abs(apart - RoyalWaterGardenRules.Spacing) < 1e-3, "a spacing apart");
+                                    }
+                                }
+                        }
+                Check(RoyalWaterGardenRules.BoatDrop(0) == 0 && RoyalWaterGardenRules.BoatDrop(-20.5) == 0, "afloat in sight");
+                Check(RoyalWaterGardenRules.BoatDrop(21.7) > 0 && RoyalWaterGardenRules.BoatDrop(21.7) < RoyalWaterGardenRules.DiveDepth, "sinking under the tunnel");
+                bool differs = false;
+                var one = RoyalWaterGardenRules.RollBoatLanes(1); var two = RoyalWaterGardenRules.RollBoatLanes(2);
+                for (int i = 0; i < one.Length; i++) differs |= one[i].Dir != two[i].Dir || one[i].Speed != two[i].Speed;
+                Check(differs, "another seed, other lanes"); });
+            Test("Royal water garden geysers: one after another, 0.8 s bubbling then 1 s jet every 5 s", () => {
+                double into;
+                for (int k = 0; k < RoyalWaterGardenRules.Geysers; k++)
+                    foreach (double cycle in new[] { 0.0, 5.0, 1.7e9 })
+                    {
+                        double t0 = cycle + k * RoyalWaterGardenRules.GeyserStep;
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .01, out into) == RoyalWaterGardenRules.Jet.Warn && Math.Abs(into - .01) < 1e-4, "bubbling first, geyser " + k);
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .79, out into) == RoyalWaterGardenRules.Jet.Warn, "0.8 s of bubbling");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + .81, out into) == RoyalWaterGardenRules.Jet.Jet, "then the jet");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.79, out into) == RoyalWaterGardenRules.Jet.Jet, "1 s of jet");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 + 1.81, out into) == RoyalWaterGardenRules.Jet.Rest, "then rest");
+                        Check(RoyalWaterGardenRules.GeyserState(k, t0 - .01, out into) == RoyalWaterGardenRules.Jet.Rest, "rest before");
+                        Check(RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + 5.01) == RoyalWaterGardenRules.GeyserCycleIndex(k, t0 + .01) + 1, "next eruption");
+                    }
+                // At any moment at most two jets are up, so there is always room between them.
+                for (double t = 0; t < 20; t += .01)
+                {
+                    int up = 0;
+                    for (int k = 0; k < RoyalWaterGardenRules.Geysers; k++) if (RoyalWaterGardenRules.GeyserState(k, t, out into) == RoyalWaterGardenRules.Jet.Jet) up++;
+                    Check(up <= 2, "at most two jets at once: " + up);
+                } });
+            Test("Royal water garden robots: rest, wind up, sweep, hold over the water, back; low only while crossing", () => {
+                double into, last = RoyalWaterGardenRules.RobotAngle(0);
+                for (double t = .001; t < 12; t += .001)
+                {
+                    double a = RoyalWaterGardenRules.RobotAngle(t);
+                    Check(a >= RoyalWaterGardenRules.RobotDown - 1e-9 && a <= RoyalWaterGardenRules.RobotWind + 1e-9, "inside its swing");
+                    Check(Math.Abs(a - last) < .5, "no jump at " + t);
+                    var phase = RoyalWaterGardenRules.RobotPhase(t, out into);
+                    if (Math.Abs(a) < 30) Check(phase == RoyalWaterGardenRules.Swing.Sweep || phase == RoyalWaterGardenRules.Swing.Back, "low only while crossing");
+                    last = a;
+                }
+                Check(RoyalWaterGardenRules.RobotAngle(2.2) == RoyalWaterGardenRules.RobotDown, "holds over the water");
+                Check(RoyalWaterGardenRules.RobotAngle(5.0) == RoyalWaterGardenRules.RobotRest, "rests raised");
+                Check(RoyalWaterGardenRules.RobotPhase(6.0 * 283333333 + 1.5, out into) == RoyalWaterGardenRules.Swing.Sweep, "Unix time"); });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
                 r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");

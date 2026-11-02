@@ -8,7 +8,11 @@
 #   Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab
 #                                                          the grand stair hall's ROOT only (GrandStairHall +
 #                                                          PawnRushSection: id, entry z -12, exit (0, 19, 132))
-#   Assets/Settings/PawnRushSections.asset                 the round's seven slots; the hall in slot 3 (중반 장애물)
+#   Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab
+#                                                          the royal water garden's ROOT only (RoyalWaterGarden +
+#                                                          PawnRushSection: entry z -61, exit (0, 2.8, 72.5); R305)
+#   Assets/Settings/PawnRushSections.asset                 the round's seven slots; the garden in slot 1 (초반 장애물),
+#                                                          the hall in slot 3 (중반 장애물)
 #   Assets/Scenes/PawnRush_Sections.unity                  camera, light, physics rate, the round (PawnRushRound)
 #                                                          and the offline playtest (ragdoll pawn, white team)
 #
@@ -23,6 +27,7 @@
 import hashlib, os, re, sys
 
 PREFAB = "Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab"
+GARDEN_PREFAB = "Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab"
 SCENE = "Assets/Scenes/PawnRush_Sections.unity"
 MATERIALS = "Assets/Materials"
 if "--overwrite" not in sys.argv and (os.path.exists(SCENE) or os.path.exists(PREFAB)):
@@ -58,6 +63,7 @@ PR = "Assets/Scripts/PawnRush"
 SCRIPT = {
     "SectionKit": script("SectionKit", PR), "PawnRushSectionSet": script("PawnRushSectionSet", PR),
     "PawnRushSection": script("PawnRushSection", PR), "GrandStairHall": script("GrandStairHall", PR),
+    "RoyalWaterGarden": script("RoyalWaterGarden", PR),
     "PawnRushRound": script("PawnRushRound", PR), "SectionPlaytest": script("SectionPlaytest", PR),
     "OrbitCamera": script("OrbitCamera", "Assets/Scripts/Game"),
     "PhysicsProfile": script("PhysicsProfile", "Assets/Scripts/Gameplay"),
@@ -131,35 +137,41 @@ kit_fields = "".join("  %s: %s\n" % (k, MAT[k]) for k in
 kit_fields += "".join("  %s: %s\n" % (k, prefab_ref(OBS + v + ".prefab")) for k, v in PREFABS.items())
 kit = scriptable("Assets/Settings/PawnRushSectionKit.asset", "SectionKit", "PawnRushSectionKit", kit_fields)
 
-# ------------------------------------------------------------------ the grand stair hall prefab (root only)
-GO, TR, SECTION, HALL = 1000, 1001, 1002, 1003
+# ------------------------------------------------------------------ the section prefabs (root only)
+GO, TR, SECTION, BUILDER = 1000, 1001, 1002, 1003
 def mono(fid, script_name, fields):
     return ("--- !u!114 &%d\nMonoBehaviour:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n"
             "  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  m_GameObject: {fileID: %d}\n  m_Enabled: 1\n"
             "  m_EditorHideFlags: 0\n  m_Script: {fileID: 11500000, guid: %s, type: 3}\n  m_Name: \n  m_EditorClassIdentifier: \n%s"
             % (fid, GO, SCRIPT[script_name], fields))
-prefab = HEAD + (
-    "--- !u!1 &%d\nGameObject:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n"
-    "  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  serializedVersion: 6\n  m_Component:\n"
-    "  - component: {fileID: %d}\n  - component: {fileID: %d}\n  - component: {fileID: %d}\n"
-    "  m_Layer: 0\n  m_Name: Mid_2-1_GrandStairHall\n  m_TagString: Untagged\n  m_Icon: {fileID: 0}\n"
-    "  m_NavMeshLayer: 0\n  m_StaticEditorFlags: 0\n  m_IsActive: 1\n") % (GO, TR, SECTION, HALL)
-prefab += ("--- !u!4 &%d\nTransform:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n"
-           "  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  m_GameObject: {fileID: %d}\n"
-           "  serializedVersion: 2\n  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}\n  m_LocalPosition: {x: 0, y: 0, z: 0}\n"
-           "  m_LocalScale: {x: 1, y: 1, z: 1}\n  m_ConstrainProportionsScale: 0\n  m_Children: []\n  m_Father: {fileID: 0}\n"
-           "  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}\n") % (TR, GO)
-prefab += mono(SECTION, "PawnRushSection",
-               "  id: Mid_2-1_GrandStairHall\n  displayName: %s\n  kind: 0\n  entry: {x: 0, y: 0, z: -12}\n"
-               "  exit: {x: 0, y: 19, z: 132}\n  exitYaw: 0\n  beats: []\n  slot: 0\n  seed: 1\n  teamSize: 6\n" % text("대계단 현관홀"))
-prefab += mono(HALL, "GrandStairHall",
-               "  kit: %s\n  buildIfEmpty: 1\n  wings:\n  - {fileID: 0}\n  - {fileID: 0}\n  portcullis:\n  - {fileID: 0}\n"
-               "  - {fileID: 0}\n  eastLift: {fileID: 0}\n  eastLiftWall: {fileID: 0}\n" % kit)
-write(PREFAB, prefab)
-hall_ref = "{fileID: %d, guid: %s, type: 3}" % (GO, meta_guid(PREFAB))
+def section_root(path, name, display, entry, exit_, builder, builder_fields):
+    """A section prefab's root: PawnRushSection + the builder's root component (it builds the rest when it wakes)."""
+    prefab = HEAD + (
+        "--- !u!1 &%d\nGameObject:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n"
+        "  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  serializedVersion: 6\n  m_Component:\n"
+        "  - component: {fileID: %d}\n  - component: {fileID: %d}\n  - component: {fileID: %d}\n"
+        "  m_Layer: 0\n  m_Name: %s\n  m_TagString: Untagged\n  m_Icon: {fileID: 0}\n"
+        "  m_NavMeshLayer: 0\n  m_StaticEditorFlags: 0\n  m_IsActive: 1\n") % (GO, TR, SECTION, BUILDER, name)
+    prefab += ("--- !u!4 &%d\nTransform:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n"
+               "  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  m_GameObject: {fileID: %d}\n"
+               "  serializedVersion: 2\n  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}\n  m_LocalPosition: {x: 0, y: 0, z: 0}\n"
+               "  m_LocalScale: {x: 1, y: 1, z: 1}\n  m_ConstrainProportionsScale: 0\n  m_Children: []\n  m_Father: {fileID: 0}\n"
+               "  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}\n") % (TR, GO)
+    prefab += mono(SECTION, "PawnRushSection",
+                   "  id: %s\n  displayName: %s\n  kind: 0\n  entry: %s\n  exit: %s\n  exitYaw: 0\n  beats: []\n"
+                   "  slot: 0\n  seed: 1\n  teamSize: 6\n" % (name, text(display), v3(entry), v3(exit_)))
+    prefab += mono(BUILDER, builder, builder_fields)
+    write(path, prefab)
+    return "{fileID: %d, guid: %s, type: 3}" % (GO, meta_guid(path))
+hall_ref = section_root(PREFAB, "Mid_2-1_GrandStairHall", "대계단 현관홀", (0, 0, -12), (0, 19, 132), "GrandStairHall",
+                        "  kit: %s\n  buildIfEmpty: 1\n  wings:\n  - {fileID: 0}\n  - {fileID: 0}\n  portcullis:\n  - {fileID: 0}\n"
+                        "  - {fileID: 0}\n  eastLift: {fileID: 0}\n  eastLiftWall: {fileID: 0}\n" % kit)
+# R305: the royal water garden v31 (early obstacle 1-1).
+garden_ref = section_root(GARDEN_PREFAB, "Early_1-1_RoyalWaterGarden", "왕실 수로 정원", (0, 0, -61), (0, 2.8, 72.5),
+                          "RoyalWaterGarden", "  kit: %s\n  buildIfEmpty: 1\n" % kit)
 
 # ------------------------------------------------------------------ the round's seven slots
-SLOTS = [("장애물 1 (초반 · 바깥뜰)", 0, []), ("미니게임 1", 1, []), ("장애물 2 (중반 · 아랫궁)", 0, [hall_ref]),
+SLOTS = [("장애물 1 (초반 · 바깥뜰)", 0, [garden_ref]), ("미니게임 1", 1, []), ("장애물 2 (중반 · 아랫궁)", 0, [hall_ref]),
          ("미니게임 2", 1, []), ("장애물 3 (후반 · 윗궁)", 0, []), ("미니게임 3", 1, []), ("마지막 구간", 2, [])]
 slots = "  slots:\n" + "".join(
     "  - name: %s\n    kind: %d\n    prefabs:%s\n" % (text(name), kind, "".join("\n    - " + p for p in prefabs) if prefabs else " []")
