@@ -53,6 +53,8 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 
 **Lobby** — 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. Play하면 `LobbyBootstrap`이 `LobbyStage`(하늘·흰 바닥·금색 원, 파티 라인업. 프리미티브와 팀 재질 복사본으로 만들어 새 에셋이 없다)와 `NetworkHudView`를 만든다. **로비는 메뉴라 캐릭터가 움직이지 않는다**(`MovementGate` = 항상 false). 예전 `Arena` 체스판 프리팹은 로비에서 더 이상 쓰지 않는다. HUD는 [UI](UI.md).
 
+**PawnRush_MapTest** (R283, 11-02, 오프라인 작업 씬, 빌드 목록에 없음) — 코스 01의 카메라 · 조명 · `Physics Profile` · `Playtest`(`PlaytestSpawner`, 도움말 끔) · `ChessFight Game Root`, 그리고 `Pawn Rush Map Test`(`PawnRushMapTest`: `Assets/Prefabs/PawnRushMaps/`의 맵 프리팹을 하나씩 지음, 폰 러쉬 물리 · 스킬)와 `Map Test Start`(스포너 시작점). 상세: [PAWN_RUSH_MAP_TEST](../KingRush/PAWN_RUSH_MAP_TEST.md).
+
 **PawnRush_Course01** (R86 코스 01 v0.4, R90부터 폰 러쉬 경기 씬) — 카메라(`OrbitCamera`)·조명·`Physics Profile`, `Pawn Rush Course01`(`PawnRushCourse`: 씬에 코스가 없으면 Play 때 코드가 만든다), `Playtest`(`PlaytestSpawner` + `Course01Playtest`), `ChessFight Game Root`(`GameSceneConfig`, `soloInMatch` 켬). 상세: [PAWN_RUSH_COURSE01](../KingRush/PAWN_RUSH_COURSE01.md).
 - 직접 Play: 오프라인 플레이테스트(백팀 폰 하나, 3초 뒤 출발).
 - 경기로 진입(R92, R90의 "각자 오프라인"을 대신함): `GameSceneConfig.customMatchSimulation`이라 `MatchSceneView`가 붙지 않고, `PlaytestSpawner`는 `NetworkDriven`이라 폰을 만들지 않는다. 대신 `RagdollLabSteam/SteamPawnRushLink`가 붙어 **명단의 모든 폰을 출발 자리(팀·자리 번호)에 만들고**, 방장은 그 래그돌을 모두 계산(입력·체크포인트·낙사 리스폰)해 초당 30번 자세를, 초당 10번 코스 상태(`Core/PawnRushNetState`: 이번 판 미니게임 둘, 스테이션 넷의 진척·완료·칸/판자/종/캡스턴 각도)를 보낸다. 참가자는 입력만 보내고(채널 34) 받은 자세를 100 ms 뒤에서 보간해 그리며, 미니게임은 `MiniGameBase.Remote`로 자기 판정을 멈추고 방장 상태를 그린다. 방장이 바뀌면 새 방장이 이어서 계산한다(체크포인트는 처음부터). HUD·광장 카드는 `Course01Playtest.NetworkDriver`(내 폰)를 따른다. Esc(채팅 닫는 Esc 말고)로 나간다. 아직 없는 것: 봇 움직임(출발 자리에 서 있음), 참가자 화면의 들고 가는 판자.

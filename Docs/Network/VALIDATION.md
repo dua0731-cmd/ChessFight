@@ -1,5 +1,17 @@
 # Network 구현 검증 기록
 
+## 2026-11-02 폰 러쉬 맵 시험 씬 (R283) — 사용자/Unity 확인 전
+
+Pull → 메뉴 **ChessFight → Pawn Rush Map Test → Open Scene** → Play ([PAWN_RUSH_MAP_TEST](../KingRush/PAWN_RUSH_MAP_TEST.md)):
+
+| 확인 | 결과 |
+|---|---|
+| 씬이 오류 없이 열리고(빠진 스크립트 없음) Play하면 기본 시험장에 폰 하나가 선다 | 미확인 |
+| 폰 러쉬 점프 · 질주 · 다이빙 · 잡기, F 스킬 · 1~6 기물 바꾸기, 오른쪽 아래 스킬 카드 | 미확인 |
+| 시험장의 턱 · 틈 · 경사 · 벽 숫자 표지판이 보이고, 회전 막대 · 움직이는 발판이 돈다/움직인다, 발판 위에서 같이 간다 | 미확인 |
+| 구덩이에 빠지면 1.5초 뒤 z 92 체크포인트, R · Backspace | 미확인 |
+| New Map Prefab → 폴더에 `NewMap` 생김 → 우클릭 Test In Pawn Rush Map Test → 그 맵으로 Play, [ ] 로 맵 바꾸기, F5 다시 짓기, T · F2 · F3 | 미확인 |
+
 ## 2026-11-01 "맵이 사라졌어" 대응 (R282) — 사용자/Unity 확인 전
 
 v25 FBX/JSON을 다시 점검(13트랙 · 배 2 · 발판 6 노드 모두 FBX에 있음, 중복 이름 · NaN 없음, Assimp 가져오기가 정상 동작한 v24와 같은 구조, GitHub LFS 다운로드 가능)했지만 결함은 못 찾았다. 정원 모델 이름을 고정하고 구역별 예외 처리를 넣었다. Pull → Build Pawn Rush Test Scene → Play:

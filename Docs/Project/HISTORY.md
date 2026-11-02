@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-02 R283: 폰 러쉬 맵 시험 씬 `PawnRush_MapTest.unity`, `PawnRushMapTest` · `PawnRushCalibrationYard` · `PawnRushMapTestMenu`, 맵 프리팹 폴더 `Assets/Prefabs/PawnRushMaps/`. Core133 · 세션45 · 컴파일 통과; Unity 미확인.
 - 2026-11-01 R282: 정원 Resources 이름 고정(`RoyalWaterGarden.fbx` · `_Motion.json`), 시험 씬 구역별 try/catch · 루트 finally 활성, 정원 모델 누락 시 LFS 포인터 안내, 시험 씬 버전17. Core133 · 컴파일 통과; Unity 미확인.
 - 2026-11-01 R281: 정원 v25 — 물 흰 거품 제거, 폭포 막+물줄기 149개(정점 색) · 소스 이름 재질 연결, 저수지 수면 +0.24m · 배 흔들림 · 켈빈 항적/선수파, 발판 밑동 연장, 맑은 청록 물, 시험 씬 버전16. Core133 · 컴파일 · FBX · HLSL 문법 통과; Unity 미확인.
 - 2026-11-01 R280: 정원 v24 — 연잎 196장 재제작, 로봇 절단면 막음 · 관절 구 1.6m, 물 Gerstner 4파(유한 수심 분산) · 발판 고리, C발판 6개 지그재그 · 구역 24→28m(입구 턱 4m 이동 · 경사로 7m), 시험 씬 버전15. Core133 · 컴파일 · FBX · HLSL 문법 통과; Unity 미확인.
