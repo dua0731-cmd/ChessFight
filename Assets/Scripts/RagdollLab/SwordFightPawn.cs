@@ -332,10 +332,16 @@ namespace ChessFight.RagdollLab
             if (direction.sqrMagnitude < .01f) direction = Pawn.Facing;
             float strength = Mathf.Lerp(2.8f, 4.5f, Mathf.InverseLerp(StrongCutEnergy, 2.5f, energy));
             // FixedUpdate, not a physics callback. Downed follow-ups remain legal.
-            target.TakeHit(direction.normalized * strength + Vector3.up * .7f, .65f, 0, true);
+            target.TakeHit((direction.normalized * strength + Vector3.up * .7f) * SameFall(target), .65f, 0, true);
             victim.StopCombat(); victim.FlashHit(.16f); HitFlash = .1f; HitsLanded++;
             RaiseStruck(this, victim);
         }
+
+        /// <summary>11-02 (승규 님: "칼베기를 할 때 기물별로 넘어지는 게 달라", then "폰 기준으로 배율 맞춰"): a sword cut throws
+        /// every piece as far as it throws a pawn, so it swaps TakeHit's weight scale (RagdollPawn.PushScale, the king a
+        /// third, the rook two thirds) for the pawn's.</summary>
+        static float SameFall(RagdollPawn target) =>
+            1f / Mathf.Max(.1f, ChessPieces.Stats(PieceKind.Pawn).Weight) / Mathf.Max(.01f, target.PushScale);
 
         Quaternion? SwordPose(int part)
         {
