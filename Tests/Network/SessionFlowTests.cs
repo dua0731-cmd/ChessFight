@@ -30,6 +30,13 @@ public static class SessionFlowTests
     }
     static ulong Owner(SteamSession c)=>FakeSteam.Lobbies[c.Match].Owner;
     static string RoomData(SteamSession c,string key)=>FakeSteam.Lobbies[c.Match].Data.TryGetValue(key,out var v)?v:"";
+    // A modified client in the host's room asks for seats with whatever members it likes; the host's answer.
+    static string Ask(SteamSession host,ulong sender,string ticket,params ulong[] members)
+    {
+        byte[] bytes=System.Text.Encoding.UTF8.GetBytes("{\"kind\":\"reserve\",\"ticket\":\""+ticket+"\",\"party\":"+sender+",\"members\":["+string.Join(",",members)+"]}");
+        FakeSteam.User=sender;SteamMatchmaking.SendLobbyChatMsg(new CSteamID(host.Match),bytes,bytes.Length);
+        Step(2);return RoomData(host,"grant_"+sender);
+    }
     public static int Main()
     {
         try
@@ -434,6 +441,49 @@ public static class SessionFlowTests
                 As(clients[2],clients[2].Cancel);Step(5);Check(RoomData(host,"open")=="1","seat not offered within the window");
                 Step((int)(Backfill.OpenSeconds/.3)+5);
                 Check(RoomData(host,"open")=="0"&&!FakeSteam.Lobbies[host.Match].Joinable&&host.EmptySeats==0,"seat still offered after the window");});
+            // Work order [4] (11-02): a modified client declares made-up party members. They hold their seats for 25 s (and keep a
+            // waiting room from starting), and the client used to ask again with new ones each time they ran out.
+            Test("Made-up party members hold waiting-room seats once: their sender waits out a cooldown while a real party and the bots go on",()=>{
+                Setup(3);var host=clients[0];var leader=clients[1];var friend=clients[2];
+                JoinParty(2,1);As(leader,()=>leader.SetPartyBots(1));As(host,()=>host.FindMatch(true));Step();
+                ulong cheat=99;FakeSteam.Lobbies[host.Match].Members.Add(cheat);
+                Check(Ask(host,cheat,"a1",cheat,501,502,503,504,505)=="a1|ok"&&host.Roster.ContainsKey(cheat)&&host.TeamCount(host.Roster[cheat].Team)==6&&!host.CanStartGame,
+                      "setup: six seats held and the room cannot start");
+                Check(Ask(host,cheat,"a2",cheat,601)=="a2|full","a second group from the same sender");
+                Step((int)(26/.3));
+                Check(RoomData(host,"grant_"+cheat)=="a1|expired"&&!host.Roster.ContainsKey(cheat)&&host.TeamCount(0)+host.TeamCount(1)==1,"setup: the made-up party ran out");
+                Check(Ask(host,cheat,"a3",cheat,701,702,703,704,705)=="a3|full"&&Ask(host,cheat,"a4",cheat)=="a4|full","asked again during the cooldown");
+                As(leader,()=>leader.JoinPrivateMatch(host.Match));Step(30);
+                Check(host.Roster.ContainsKey(leader.Self)&&host.Roster.ContainsKey(friend.Self)&&host.Roster[friend.Self].Team==host.Roster[leader.Self].Team&&
+                      host.Roster.Values.Count(p=>BotIdentity.IsBot(p.Id)&&p.Team==host.Roster[leader.Self].Team)==1,"a real party with its bot was refused or split");
+                bool ok=false;As(host,()=>ok=host.AddTestBot(1-host.Roster[host.Self].Team));
+                Check(ok&&host.CanStartGame,"the host's bots or the start were held up");
+                Step((int)(TeamReservations.Cooldown/.3));
+                Check(Ask(host,cheat,"a5",cheat)=="a5|ok"&&host.Roster.ContainsKey(cheat),"the cooldown never ended");});
+            // The same in a started match (Backfill): the sender sits down at once, so it has to leave and come back to ask
+            // again, while the seat it asked for is still held; then nobody comes for that seat.
+            Test("Empty seats of a started match: one group on the way per sender, a cooldown when nobody came, and a real party still sits down",()=>{
+                Setup(8);var host=clients[0];var leader=clients[6];var friend=clients[7];
+                JoinParty(7,6);As(host,()=>host.FindMatch(true));Step();
+                for(int i=1;i<=5;i++){var c=clients[i];As(c,()=>c.JoinPrivateMatch(host.Match));}
+                Step(20);Check(host.Roster.Count==6,"setup: six solo players");
+                As(host,host.StartGame);Step(5);Check(host.Started&&host.IsHost&&RoomData(host,"seats")=="3,3","setup: 3 v 3");
+                var leavers=clients.Skip(1).Take(5).GroupBy(c=>host.Roster[c.Self].Team).SelectMany(g=>g.Take(2)).ToList();
+                foreach(var c in leavers)As(c,c.Cancel);
+                Step(5);Check(leavers.Count==4&&RoomData(host,"free0")=="2"&&RoomData(host,"free1")=="2","setup: two empty seats a side");
+                var room=FakeSteam.Lobbies[host.Match];ulong cheat=99;room.Members.Add(cheat);
+                Check(Ask(host,cheat,"b1",cheat,501)=="b1|ok"&&host.Roster.ContainsKey(cheat)&&RoomData(host,"held").StartsWith("501:"),"setup: the sender sits down and holds a seat");
+                Ask(host,cheat,"b2",cheat,601);
+                Check(host.Roster.Count==3&&!RoomData(host,"held").Contains("601:"),"a seated sender got more seats");
+                room.Members.Remove(cheat);Step(2);Check(!host.Roster.ContainsKey(cheat),"setup: the sender left its seat");
+                room.Members.Add(cheat);
+                Check(Ask(host,cheat,"b3",cheat,701)=="b3|full"&&!host.Roster.ContainsKey(cheat)&&!RoomData(host,"held").Contains("701:"),"a second group from the same sender while its first is held");
+                Step((int)(Backfill.HoldSeconds/.3)+2);Check(RoomData(host,"held")=="","setup: nobody came for the held seat");
+                Check(Ask(host,cheat,"b4",cheat)=="b4|full"&&!host.Roster.ContainsKey(cheat),"asked again during the cooldown");
+                As(leader,()=>leader.JoinPrivateMatch(host.Match));Step(30);
+                Check(leader.Started&&friend.Started&&host.Roster[friend.Self].Team==host.Roster[leader.Self].Team,"a real party was refused or split");
+                Step((int)(TeamReservations.Cooldown/.3));
+                Check(Ask(host,cheat,"b5",cheat)=="b5|ok"&&host.Roster.ContainsKey(cheat),"the cooldown never ended");});
             Test("In a started match a party member who leaves goes alone, and the party gathers again afterwards",()=>{
                 Setup(3);var leader=clients[0];var member=clients[1];var solo=clients[2];
                 JoinParty(1,0);As(leader,()=>leader.FindMatch(true));Step(20);

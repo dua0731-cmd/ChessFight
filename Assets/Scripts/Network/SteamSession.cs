@@ -1198,7 +1198,9 @@ namespace ChessFight.Network
         // ---- Empty seats of a started match (Backfill) ----
 
         // The host's round in a started match: held seats whose player arrived are
-        // taken, expired ones are freed, and the room says what it offers.
+        // taken, expired ones are freed, and the room says what it offers. Whoever
+        // asked for an expired one waits before asking again (TeamReservations.
+        // Cooldown); a seat taken over from an earlier host has no known asker.
         void Refill(HashSet<ulong> present)
         {
             LoadHeld();
@@ -1209,7 +1211,7 @@ namespace ChessFight.Network
                 var seat = held[i];
                 if (present.Contains(seat.Id))
                 { Roster[seat.Id] = PawnMotor.Spawn(seat.Id, seat.Team, seat.Slot); arrived.Add(seat.Id); held.RemoveAt(i); }
-                else if (now > seat.Until) held.RemoveAt(i);
+                else if (now > seat.Until) { held.RemoveAt(i); reservations.StartCooldown(seat.Leader, Time.realtimeSinceStartup); }
             }
             NoteArrivals(arrived);
             PublishSeats();
@@ -1232,7 +1234,8 @@ namespace ChessFight.Network
         void SetChanged(string key, string value) { if (Data(Match, key) != value) Set(Match, key, value); }
 
         // A new host takes over the seats its predecessor held (rule 15: nothing
-        // of the match lives on the host PC alone).
+        // of the match lives on the host PC alone). Who asked for each is not match
+        // state and stays behind (Backfill.Seat.Leader).
         void LoadHeld()
         {
             if (heldLoaded) return;
@@ -1258,7 +1261,11 @@ namespace ChessFight.Network
             // The same request again while its answer is on the way.
             if (Roster.ContainsKey(sender) || held.Exists(s => s.Id == sender)) { Set(Match, grant, request.ticket + "|ok"); return; }
             int team; int[] slots;
+            // Declared members may be made up (TeamReservations.Cooldown): a sender gets
+            // no second party while seats it asked for are still held, even after it
+            // left and came back, and none while it waits out one that never came.
             if (!TeamReservations.ValidRequest(sender, request.party, request.ticket, request.members) ||
+                held.Exists(s => s.Leader == sender) || reservations.CoolingDown(sender, Time.realtimeSinceStartup) ||
                 request.members.Any(id => Roster.ContainsKey(id) || held.Exists(s => s.Id == id)) ||
                 !Backfill.Open(StartAt, ServerNow()) ||
                 !Backfill.Place(Backfill.DecodeCapacity(Data(Match, "seats")), Seats(), request.members.Length, out team, out slots))
@@ -1271,7 +1278,7 @@ namespace ChessFight.Network
                 ulong id = request.members[i];
                 // Bots never enter the Steam lobby, so they are always here.
                 if (present.Contains(id) || BotIdentity.IsBot(id)) { Roster[id] = PawnMotor.Spawn(id, team, slots[i]); seated.Add(id); }
-                else held.Add(new Backfill.Seat { Id = id, Team = team, Slot = slots[i], Until = until });
+                else held.Add(new Backfill.Seat { Id = id, Team = team, Slot = slots[i], Until = until, Leader = sender });
             }
             Set(Match, grant, request.ticket + "|ok");
             NoteArrivals(seated);

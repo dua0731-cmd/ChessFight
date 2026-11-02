@@ -399,6 +399,18 @@ public static class NetworkCoreTests
             Test("Existing party cannot change ticket or roster during admission", () => {
                 var r=new TeamReservations(); Reserve(r,1,3);
                 Check(!r.Reserve(1,101,"new",Ids(1,3),1,out _),"ticket changed"); Check(!Reserve(r,1,4),"roster changed"); });
+            // Work order [4] (11-02): made-up members hold seats for 25 s, then the same sender asks again.
+            Test("A sender whose party never came waits out the cooldown; a party that came and lost a member does not, nor do bots", () => {
+                var r=new TeamReservations(); Reserve(r,1,6); r.Reconcile(new HashSet<ulong> {1},26);
+                Check(r.Count==0&&r.CoolingDown(1,26)&&!Reserve(r,1,1,27)&&!Reserve(r,1,6,26+TeamReservations.Cooldown-.5),"asked again during the cooldown");
+                Check(Reserve(r,7,6,27)&&Reserve(r,1,1,26+TeamReservations.Cooldown+.5),"the cooldown held up others or never ended");
+                var came=new TeamReservations(); Reserve(came,1,2); came.Reconcile(new HashSet<ulong>(Ids(1,2)),1); came.Reconcile(new HashSet<ulong> {1},2);
+                Check(came.Count==0&&!came.CoolingDown(1,2)&&Reserve(came,1,1,3),"people who came were made to wait");
+                var bots=new TeamReservations(); ulong host=900;
+                Check(bots.Reserve(host,77,"t",new[] {host,BotIdentity.Id(host,0)},0,out _)&&bots.ReserveBots(host,BotIdentity.Fill(host,2,6),0,out _),"setup: bots");
+                bots.Reconcile(new HashSet<ulong> {host},26);
+                Check(bots.Count==4&&!bots.CoolingDown(host,26)&&!bots.CoolingDown(BotIdentity.Id(host,6),26),"bots made someone wait");
+                r.StartCooldown(5,0); r.Clear(); Check(!r.CoolingDown(5,1)&&!r.CoolingDown(1,1),"a new room kept the old room's cooldowns"); });
             Test("Fuzzed concurrent admissions never split or exceed team capacity", () => {
                 var random=new Random(17);
                 for(int run=0;run<1000;run++) { var r=new TeamReservations(); int id=1;
