@@ -1,4 +1,4 @@
-> 사용자가 2026-11-02에 첨부한 원문 사본(R295). 문서 안의 그림 파일(01_바깥뜰/… png)은 저장소에 없다. 경계 도식 `04_미니게임_경계_설계.svg`는 [PAWN_RUSH_MINIGAME_BOUNDARY.svg](PAWN_RUSH_MINIGAME_BOUNDARY.svg)로 보관했다.
+> 사용자가 2026-11-02에 첨부한 원문 사본(R300). 문서 안의 그림 파일(01_바깥뜰/… png)은 저장소에 없다. 경계 도식 `04_미니게임_경계_설계.svg`는 [PAWN_RUSH_MINIGAME_BOUNDARY.svg](PAWN_RUSH_MINIGAME_BOUNDARY.svg)로 보관했다.
 
 # 폰 러시 · 장소별 4분 코스 설계
 

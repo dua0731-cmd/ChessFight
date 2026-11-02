@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // A gap on the way that is meant to be wider than the validator's required 1.5 m (R298): a jump pad's flight,
+    // A gap on the way that is meant to be wider than the validator's required 1.5 m (R303): a jump pad's flight,
     // a gap only a dive crosses. SectionValidator leaves points inside it out of the gap check. A box in this
     // object's frame, centred on it.
     public sealed class IntendedGap : MonoBehaviour

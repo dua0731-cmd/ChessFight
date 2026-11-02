@@ -22,7 +22,7 @@
 | `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티 라인업(3D), 모드·파티·매칭 HUD. 이동 없음 |
 | `PawnRush_Course01.unity` (R86 코스, R90부터 폰 러쉬 경기 씬) | 2 | 경기로 들어오면 `MatchSceneView` 대신 `SteamPawnRushLink`(R92): 방장이 명단의 모든 폰(사람·봇)을 래그돌로 계산하고 참가자는 입력을 보내고 자세를 받는다. 미니게임 뽑기·진척·문도 방장 기준. Esc = 경기 나가기(`GameSceneConfig.escapeLeavesMatch`) | 직접 열면 오프라인 플레이테스트(메뉴 ChessFight → Pawn Rush → Open Course01) |
 | `PawnRush_SkillTest.unity` (R71) | 빌드 제외 | 없음 | 기물 스킬 시험장(메뉴 Pawn Rush → Open Skill Test) |
-| `PawnRush_Sections.unity` (R295) | 빌드 제외 | 없음 | 폰 러시 구간 시험: `PawnRushRound`가 7슬롯을 뽑아 구간 프리팹을 이어 붙임(지금은 2-1 대계단 현관홀만), 래그돌 폰 하나(메뉴 Pawn Rush → Open Section Test) |
+| `PawnRush_Sections.unity` (R300) | 빌드 제외 | 없음 | 폰 러시 구간 시험: `PawnRushRound`가 7슬롯을 뽑아 구간 프리팹을 이어 붙임(지금은 2-1 대계단 현관홀만), 래그돌 폰 하나(메뉴 Pawn Rush → Open Section Test) |
 | `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |
 | `RagdollTest.unity` | 비활성 | 없음 (씬 안의 `LabGame`이 동작) | 래그돌 랩. Steam 없이 2인 로컬 |
 | `QueenOfTheHill.unity` (R48, 맵 7차 R49) | 빌드 제외(아직) | 없음 | 퀸 오브 더 힐 그레이박스. `QueenHillLevel`이 맵 데이터(JSON)로 맵을 만들고 래그돌 폰 1인 오프라인 |
@@ -59,7 +59,7 @@ R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 
 - 경기로 진입(R92, R90의 "각자 오프라인"을 대신함): `GameSceneConfig.customMatchSimulation`이라 `MatchSceneView`가 붙지 않고, `PlaytestSpawner`는 `NetworkDriven`이라 폰을 만들지 않는다. 대신 `RagdollLabSteam/SteamPawnRushLink`가 붙어 **명단의 모든 폰을 출발 자리(팀·자리 번호)에 만들고**, 방장은 그 래그돌을 모두 계산(입력·체크포인트·낙사 리스폰)해 초당 30번 자세를, 초당 10번 코스 상태(`Core/PawnRushNetState`: 이번 판 미니게임 둘, 스테이션 넷의 진척·완료·칸/판자/종/캡스턴 각도)를 보낸다. 참가자는 입력만 보내고(채널 34) 받은 자세를 100 ms 뒤에서 보간해 그리며, 미니게임은 `MiniGameBase.Remote`로 자기 판정을 멈추고 방장 상태를 그린다. 방장이 바뀌면 새 방장이 이어서 계산한다(체크포인트는 처음부터). HUD·광장 카드는 `Course01Playtest.NetworkDriver`(내 폰)를 따른다. Esc(채팅 닫는 Esc 말고)로 나간다. 아직 없는 것: 봇 움직임(출발 자리에 서 있음), 참가자 화면의 들고 가는 판자.
 - **R125(10-11) 경기 끝 → 결과 → 로비:** 탑 꼭대기 왕관 발판에 한 팀의 **사람 과반**이 동시에 올라가면(방장 판정, `PawnRush/CrownFinish`) 그 팀 승리. 방장은 방을 닫고(`SteamSession.EndMatch`, 방 데이터 `ended`) 코스 상태(`CFP2`, R126부터 `CFP3`)에 승리 팀을 싣는다. 모든 PC가 3.5초 동안 "○팀 승리!"를 보여 준 뒤 **이긴 팀 PC는 `PawnRushVictory`, 진 팀 PC는 `PawnRushLose`**를 연다(`Game/PawnRushResultFlow`, 결과는 `MatchResult`). 결과 화면의 12초가 끝나거나 "로비로"·"다시 매칭"을 누르면 그 PC가 경기 방을 나가고(`Session.Cancel`) 런타임이 로비를 연다. 오프라인 플레이테스트도 같은 순서(혼자라 과반 = 1명)이고, 로비를 열 때 런타임이 그때 시작한다(`NetworkRuntime.LateStart`).
 
-**PawnRush_Sections** (R295 구간 시험, 빌드 제외) — 카메라(`OrbitCamera`)·조명·`Physics Profile`, `Pawn Rush Round`(`PawnRushRound`: 구간 목록 `Settings/PawnRushSections.asset`에서 판 씨앗으로 7슬롯을 뽑아 Play 때 이어 붙이고 출발 자리 12곳을 만듦), `Playtest`(`PlaytestSpawner` + `SectionPlaytest`: F5 팀, F8 새 판, F9 인원, CSV). 온라인 연결 없음. 상세: [PAWN_RUSH_SECTIONS](../KingRush/PAWN_RUSH_SECTIONS.md).
+**PawnRush_Sections** (R300 구간 시험, 빌드 제외) — 카메라(`OrbitCamera`)·조명·`Physics Profile`, `Pawn Rush Round`(`PawnRushRound`: 구간 목록 `Settings/PawnRushSections.asset`에서 판 씨앗으로 7슬롯을 뽑아 Play 때 이어 붙이고 출발 자리 12곳을 만듦), `Playtest`(`PlaytestSpawner` + `SectionPlaytest`: F5 팀, F8 새 판, F9 인원, CSV). 온라인 연결 없음. 상세: [PAWN_RUSH_SECTIONS](../KingRush/PAWN_RUSH_SECTIONS.md).
 
 (옛 기록, 씬은 R90에 삭제) **KingRush** — 코스 뼈대, 장애물, 스폰 12곳, 체크포인트 2개, 골인, `PhysicsProfile`(120Hz), `Playtest`(`PlaytestSpawner`), `ChessFight Game Root`. 상세: [KingRush](../KingRush/README.md).
 - 직접 Play: `PlaytestSpawner`가 임시 캐릭터를 만든다.

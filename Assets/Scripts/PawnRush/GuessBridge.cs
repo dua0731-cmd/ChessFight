@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // The grand stair hall's glass stepping stones (R298, the user: "옳바른 길은 정해져있는데 플레이어는 그 길을 직접
+    // The grand stair hall's glass stepping stones (R303, the user: "옳바른 길은 정해져있는데 플레이어는 그 길을 직접
     // 체크해서 확인해야만 알 수 있는 방식"): rows of two glass squares from the royal dais to the balcony. In every row
     // one square holds and the other gives way under a pawn, and the two look the same. Which is which comes from
     // the section's seed: the same way for the whole round and on every PC. A square that gave way stays open for

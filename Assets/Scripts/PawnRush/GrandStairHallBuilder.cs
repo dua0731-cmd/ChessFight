@@ -4,7 +4,7 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // Mid-game obstacle section 2-1, the grand stair hall (level design v0.3, Docs/KingRush/
-    // PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md, reshaped by the user in R298): the porch, the rolling grand
+    // PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md, reshaped by the user in R303): the porch, the rolling grand
     // stair and the chandelier landing of the doc lead into a round hall climbed by one spiral way - a curving
     // stair along the wall, floating stones, a jump pad, gaps to dive across, a windy way, a last stair with
     // falling pieces - up to the royal dais in its middle, then glass stones (one of each pair holds) to the
@@ -194,7 +194,7 @@ namespace ChessFight.PawnRush
             Solid(b, "Hall wall S (east)", V(21f, Deep, 12f), V(side, 26f, 14f));
             Solid(b, "Hall wall W", V(-side - 2f, Deep, 12f), V(-side, 26f, Hub.y));
             Solid(b, "Hall wall E", V(side, Deep, 12f), V(side + 2f, 26f, Hub.y));
-            // The round wall (R298), 6° at a time, 2 m thick outside 31 m: open to the south where the landing comes
+            // The round wall (R303), 6° at a time, 2 m thick outside 31 m: open to the south where the landing comes
             // in (φ 234..306) and to the north for the balcony (φ 72..108).
             for (float phi = 306f; phi < 594f - .01f; phi += 6f)
             {
@@ -214,7 +214,7 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ checkpoints, path, beats
 
-        // §8 (R298 numbering): CP0 porch, CP1 central landing, CP2 end of the curving stair, CP3 north landing, CP4
+        // §8 (R303 numbering): CP0 porch, CP1 central landing, CP2 end of the curving stair, CP3 north landing, CP4
         // after the dive gaps, CP5 start of the last stair, CP6 the dais, CP7 (CP 끝) the exit terrace. CP2 ~ CP6 are
         // built with the spiral and the dais.
         static void Checkpoints(CourseBuilder b)
@@ -224,7 +224,7 @@ namespace ChessFight.PawnRush
             b.Checkpoint(7, V(0f, 16f, 149.3f), 0f, 10f);
         }
 
-        // The one route (R298: no wings), given as both teams' route: the grand stair, the landing, the spiral's
+        // The one route (R303: no wings), given as both teams' route: the grand stair, the landing, the spiral's
         // middle line (straight across the jump and the dive gaps), the dais, the left glass squares, the balcony.
         // Each point names the beat of the leg that starts at it.
         static void Path(CourseBuilder b)

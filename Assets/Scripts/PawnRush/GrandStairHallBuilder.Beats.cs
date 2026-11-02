@@ -5,7 +5,7 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // The grand stair hall's beats in the order a pawn runs them (section frame, y = a floor's top). Beats 1, 2 and
-    // 6 are the level design's §4 tables; since R298 the hall between them is round and climbed by one spiral way
+    // 6 are the level design's §4 tables; since R303 the hall between them is round and climbed by one spiral way
     // (the user's spiral-stair picture). Where the build differs from the doc, the reason is next to it and in
     // Docs/KingRush/PAWN_RUSH_SECTIONS.md §6.
     public static partial class GrandStairHallBuilder
@@ -71,7 +71,7 @@ namespace ChessFight.PawnRush
         {
             var k = b.kit;
             // x -14..14, z 52..66 (from z 51: the upper flight's last step), railed round; at its north-east corner
-            // the spiral's foot leads on (R298).
+            // the spiral's foot leads on (R303).
             Mass(b, "Central landing", -14f, 14f, 51f, 66f, 8f);
             Rail(b, "Central landing rail N", -14f, 4f, 65.7f, 66f, 8f);
             Rail(b, "Central landing rail W", -14f, -13.7f, 51.3f, 65.7f, 8f);
@@ -92,7 +92,7 @@ namespace ChessFight.PawnRush
             SpanAt(b, "Chandelier rain span", V(0f, 8f, 55f), Vector3.right, -17.5f, 17.5f);
         }
 
-        // ------------------------------------------------------------------ beats 3 ~ 4: the spiral (R298)
+        // ------------------------------------------------------------------ beats 3 ~ 4: the spiral (R303)
 
         // The hall beyond the landing is round (wall 31 m out from Hub), the royal dais in its middle. One way climbs
         // it anticlockwise, round the wall first and inwards as it rises: 420° from φ 297° (the landing's north-east
@@ -164,7 +164,7 @@ namespace ChessFight.PawnRush
             b.Checkpoint(4, OnSpiral(569f, 14f), Heading(569f), 3f);
 
             // 4c. The windy way (φ 575 -> 640, y 14 -> 14.8): 3 m wide, no railings, two vents on posts at its inner
-            // edge blowing out over the edge, half their cycle apart. The wind carries a pawn at 3.5 m/s (R296).
+            // edge blowing out over the edge, half their cycle apart. The wind carries a pawn at 3.5 m/s (R301).
             Walkway(b, "Windy way", 575f, 640f, 14f, 14.8f, 1.5f, 1.5f);
             float[] ventPhi = { 594f, 621f }, ventPhase = { 0f, 3.4f };
             for (int i = 0; i < ventPhi.Length; i++)
@@ -272,7 +272,7 @@ namespace ChessFight.PawnRush
             box.gameObject.AddComponent<IntendedGap>().Configure(new Vector3(halfWidth * 2f, Mathf.Abs(to.y - from.y) + 8f, flat.magnitude + 2f), name);
         }
 
-        // A 15 vent's wind (R296): it carries a pawn (DriftSpeed) instead of pushing its bodies, and its arrows reach
+        // A 15 vent's wind (R301): it carries a pawn (DriftSpeed) instead of pushing its bodies, and its arrows reach
         // the far edge of what it blows over (the prefab draws them 3.7 m out of a 6.2 m wind).
         const float WindWide = 3f, WindDrift = 3.5f;
 
@@ -303,7 +303,7 @@ namespace ChessFight.PawnRush
             var inward = -Outward(717f);
             b.Checkpoint(6, Polar(717f, DaisRadius - 1f, DaisTop), Mathf.Atan2(inward.x, inward.z) * Mathf.Rad2Deg, 3.5f);
 
-            // The glass stones (R298, "오징어게임 징검다리처럼 옳바른 길은 정해져 있고 직접 밟아 봐야 안다"): seven rows of two
+            // The glass stones (R303, "오징어게임 징검다리처럼 옳바른 길은 정해져 있고 직접 밟아 봐야 안다"): seven rows of two
             // 1.8 m squares north from the dais to the balcony, 1.05 m between rows and 1.2 m between the two of a
             // row. GuessBridge picks which of each pair holds, from the section's seed.
             const int rows = 7;
@@ -327,7 +327,7 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ beat 6: the royal balcony, the gate, the way out (y 16 -> 15)
 
-        // The doc's beat 6 moved 26.3 m north and 4 m down (R298): its balcony now opens off the round wall at the end
+        // The doc's beat 6 moved 26.3 m north and 4 m down (R303): its balcony now opens off the round wall at the end
         // of the glass stones.
         static void RoyalBalcony(CourseBuilder b)
         {
