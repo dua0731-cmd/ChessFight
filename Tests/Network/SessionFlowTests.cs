@@ -296,6 +296,14 @@ public static class SessionFlowTests
                 Step(40);As(b,()=>b.ReportHostSilence(5));Step(3);
                 Check(b.IsHost&&c.Host==b.Self&&a.Host==b.Self&&!a.IsHost,"silent host not replaced everywhere");
                 Check(Owner(b)==b.Self&&RoomData(b,"host")==b.Self.ToString()&&RoomData(b,"epoch")=="2","old host kept the room");});
+            // R295: a slow PC still loading reports no silence (SteamMotion.Loading, HostSilence in the match scenes): a
+            // host that has gone on to its own scene stops the lobby's stream, which used to read as a silent host.
+            Test("A successor still loading reports no silence and does not take over, however long the load; a silent host is still replaced afterwards",()=>{
+                Room(new[]{900,700,500});var a=clients[0];var b=clients[1];var c=clients[2];As(a,a.StartGame);Step(2);
+                for(int t=0;t<200;t++){As(b,()=>{b.ReportLoading(30);b.ReportHostSilence(0);});Step(1);}
+                Check(clients.All(x=>x.Host==a.Self&&x.Started&&x.Match!=0)&&a.IsHost,"a PC still loading moved the host or left");
+                As(b,()=>{b.ReportLoading(100);b.ReportHostSilence(5);});Step(3);
+                Check(b.IsHost&&c.Host==b.Self&&a.Host==b.Self,"a silent host is no longer replaced");});
             // R295: a member's claim used to be followed whoever made it and whatever its number.
             Test("A forged claim (outside the roster, out of turn, too large, int.MaxValue) is ignored, and the successor in line still takes over",()=>{
                 Room(new[]{900,700,500});var a=clients[0];var b=clients[1];var c=clients[2];As(a,a.StartGame);Step(20);

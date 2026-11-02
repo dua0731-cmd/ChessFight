@@ -597,8 +597,9 @@ namespace ChessFight.RagdollLab
             DispatchEvents();
 
             // A host silent for a few seconds is replaced by its successor (Steam, HOST.md); leaving is the last resort.
-            NetHostSilence(clock - lastReceive);
-            if (clock - lastReceive > SilenceTimeout)
+            float silence = hostSilence.Seconds(clock, NetStarted);
+            NetHostSilence(silence);
+            if (silence > SilenceTimeout)
             {
                 message = "방장이 자세 전송을 멈췄어요. 경기를 나갑니다.";
                 NetLeave(message);

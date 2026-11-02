@@ -376,6 +376,22 @@ public static class NetworkCoreTests
             Test("Host silence escalates: unstable, frozen, lost", () => {
                 Check(LinkMonitor.Classify(.1f)==LinkHealth.Ok&&LinkMonitor.Classify(.6f)==LinkHealth.Unstable,"unstable");
                 Check(LinkMonitor.Classify(2.5f)==LinkHealth.Frozen&&LinkMonitor.Classify(12f)==LinkHealth.Lost,"frozen/lost"); });
+            Test("Host silence in a match scene (R295) counts from the host's first packet or the shared start, never while loading", () => {
+                Func<float, float, bool> Near = (a, b) => Math.Abs(a - b) < 1e-3f;
+                var s = new HostSilence();
+                s.Enter(100);
+                Check(s.Seconds(110, false) == 0, "a host still loading is not silent");
+                s.Heard(112);
+                Check(Near(s.Seconds(115, false), 3), "counted from its first packet");
+                s.Heard(116);
+                Check(Near(s.Seconds(116.5f, false), .5f), "and from each one after");
+                s.Enter(200);
+                Check(s.Seconds(205, false) == 0 && s.Seconds(206, true) == 0 && Near(s.Seconds(210, true), 4), "or from the shared start");
+                s.Enter(300);
+                float giveUp = 300 + (float)MatchStart.ClientGiveUp;
+                Check(s.Seconds(giveUp - 1, false) == 0 && s.Seconds(giveUp, false) == 0 && Near(s.Seconds(giveUp + 12, false), 12), "a host that never comes is still given up on");
+                s.Enter(400);
+                Check(s.Seconds(400, true) == 0 && Near(s.Seconds(402, true), 2), "a new host mid-match: counted from the change"); });
             Test("Response time measures send to acknowledgement and ignores stale acks", () => {
                 var t=new ResponseTimer(); Check(t.Milliseconds<0,"empty");
                 for(uint s=1;s<=5;s++) t.Sent(s,s*0.033);

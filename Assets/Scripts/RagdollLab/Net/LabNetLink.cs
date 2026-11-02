@@ -81,6 +81,10 @@ namespace ChessFight.RagdollLab
         protected virtual void NetTick() { }
         /// <summary>How long the host has been silent (a Steam session hands the host role on after a while).</summary>
         protected virtual void NetHostSilence(float seconds) { }
+        /// <summary>R295: the match's shared start has passed. Until then, or until the host's first packet in this scene,
+        /// a client does not count the host's silence (<see cref="HostSilence"/>). A carrier without a shared start (the lab
+        /// rooms, the loopback test) counts it from the match's start, as before.</summary>
+        protected virtual bool NetStarted => true;
         /// <summary>Leave the match (the host stopped sending).</summary>
         protected abstract void NetLeave(string why);
         /// <summary>The panel's part for when no match is on (making and joining a room).</summary>
@@ -162,7 +166,9 @@ namespace ChessFight.RagdollLab
 
         protected bool matchActive;
         uint tick, sequence, lastTick;
-        float nextSnapshot, nextInput, lastReceive, statsAt, lastMatchSend;
+        float nextSnapshot, nextInput, statsAt, lastMatchSend;
+        // A client: how long the host has been silent (R295: from its first packet or the shared start).
+        readonly HostSilence hostSilence = new HostSilence();
         float savedMaxFrameStep = -1f;
         double playbackMs;
         readonly PlaybackDelay delay = new PlaybackDelay();
@@ -793,8 +799,9 @@ namespace ChessFight.RagdollLab
             DispatchEvents();
 
             // A host silent for a few seconds is replaced by its successor (Steam, HOST.md); leaving is the last resort.
-            NetHostSilence(clock - lastReceive);
-            if (clock - lastReceive > SilenceTimeout)
+            float silence = hostSilence.Seconds(clock, NetStarted);
+            NetHostSilence(silence);
+            if (silence > SilenceTimeout)
             {
                 message = "호스트가 자세 전송을 멈췄어요. 경기를 나갑니다.";
                 NetLeave(message);
@@ -889,7 +896,7 @@ namespace ChessFight.RagdollLab
             }
             int lost = lastTick != 0 ? (int)Math.Min(30u, snapshot.tick - lastTick - 1) : 0;
             lastTick = snapshot.tick;
-            lastReceive = Time.realtimeSinceStartup;
+            hostSilence.Heard(Time.realtimeSinceStartup);
             snapshotsIn++;
             snapshotBytesLast = bytes.Length;
             delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snapshot.hostTimeMs, lost);
@@ -1309,7 +1316,7 @@ namespace ChessFight.RagdollLab
             roundTripMs = 0f;
             delay.Reset();
             nextSnapshot = nextInput = 0f;
-            lastReceive = Time.realtimeSinceStartup;
+            hostSilence.Enter(Time.realtimeSinceStartup);
             if (Trace) Log($"host {previous} → {next}, this PC {(nowHost ? "hosts" : "follows")}");
         }
 
@@ -1498,7 +1505,7 @@ namespace ChessFight.RagdollLab
             roundTripMs = 0f;
             hostObstacles.Clear();
             steamClockErrorMs = 0d;
-            lastReceive = Time.realtimeSinceStartup;
+            hostSilence.Enter(Time.realtimeSinceStartup);
             pending = default;
             eventLog.Clear();
             inbox.Clear();

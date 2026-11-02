@@ -131,7 +131,9 @@ namespace ChessFight.RagdollLab.Net
         readonly RagdollPose blend = new RagdollPose();
         readonly PawnRushNetState state = new PawnRushNetState(), received = new PawnRushNetState();
         uint tick, stateTick, inputSequence, lastPose, lastState;
-        float sentAt, inputAt, receivedAt;
+        float sentAt, inputAt;
+        // A client: how long the host has been silent (R295: from its first packet in this scene or the shared start).
+        readonly HostSilence hostSilence = new HostSilence();
         double playback;
         readonly PlaybackDelay delay = new PlaybackDelay();
         float roundTripMs;
@@ -171,7 +173,7 @@ namespace ChessFight.RagdollLab.Net
         {
             runtime = NetworkRuntime.Instance;
             session = runtime.Session;
-            receivedAt = Time.realtimeSinceStartup;
+            hostSilence.Enter(Time.realtimeSinceStartup);
             requests = Callback<SteamNetworkingMessagesSessionRequest_t>.Create(c =>
             {
                 if (session.IsPeer(c.m_identityRemote.GetSteamID64())) SteamNetworkingMessages.AcceptSessionWithUser(ref c.m_identityRemote);
@@ -392,7 +394,7 @@ namespace ChessFight.RagdollLab.Net
             skillsApplied = false;
             playback = 0d;
             delay.Reset();
-            receivedAt = Time.realtimeSinceStartup;
+            hostSilence.Enter(Time.realtimeSinceStartup);
         }
 
         // ------------------------------------------------------------------ frame
@@ -425,7 +427,9 @@ namespace ChessFight.RagdollLab.Net
                 Playback();
                 ApplyDueStates();
                 DispatchEvents();
-                if (now - receivedAt > SilenceTimeout && !ended) session.Abort("폰 러쉬 방장 연결이 끊어졌습니다.");
+                // R295: counted from the host's first packet in this scene or the shared start, whichever comes first.
+                float silence = hostSilence.Seconds(now, Started());
+                if (silence > SilenceTimeout && !ended) session.Abort("폰 러쉬 방장 연결이 끊어졌습니다.");
             }
         }
 
@@ -699,7 +703,7 @@ namespace ChessFight.RagdollLab.Net
                         {
                             if (lastState != 0 && !RagdollNetProtocol.Newer(received.Tick, lastState)) continue;
                             lastState = received.Tick;
-                            receivedAt = Time.realtimeSinceStartup;
+                            hostSilence.Heard(Time.realtimeSinceStartup);
                             QueueState(received);
                             continue;
                         }
@@ -805,7 +809,7 @@ namespace ChessFight.RagdollLab.Net
             }
             int lost = lastPose != 0 ? (int)Math.Min(30u, snap.tick - lastPose - 1) : 0;
             lastPose = snap.tick;
-            receivedAt = Time.realtimeSinceStartup;
+            hostSilence.Heard(Time.realtimeSinceStartup);
             delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snap.hostTimeMs, lost);
             // Round trip: my input's time as the host echoes it.
             for (int i = 0; i < snap.count; i++)
@@ -893,6 +897,10 @@ namespace ChessFight.RagdollLab.Net
             startBarSet = true;
             StartBar.Current.ReleaseAtClock(session.StartAt + StartBar.Current.Countdown);
         }
+
+        // R295: the match's shared start has passed, by the runtime's shared clock: from then on at the latest a client
+        // counts its host's silence.
+        bool Started() => session.StartAt > 0 && sharedClock != null && sharedClock() >= session.StartAt;
 
         /// <summary>The host's skills packet: the states at once (D-S4), the moments queued to play with the bodies.</summary>
         void ReceiveSkills(byte[] bytes)

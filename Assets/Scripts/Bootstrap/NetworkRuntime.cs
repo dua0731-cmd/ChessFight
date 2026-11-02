@@ -216,6 +216,8 @@ namespace ChessFight.Game
             // Nobody moves before the shared start behind the loading screen, nor
             // while typing a chat line.
             if (loader.Blocking || ChatBox.KeysHeld || GameMenu.IsOpen) intent = default;
+            // R295: nor is a host silent then: it may still be loading, or already in a scene that sends its own stream.
+            if (Motion != null) Motion.Loading = loading || loader.Blocking;
             if (!customSimulation)
                 Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
             // R148: a scene that runs its own match without a menu (Pawn Rush course 01) no longer leaves on Esc:

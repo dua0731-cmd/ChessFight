@@ -33,6 +33,11 @@ namespace ChessFight.Network
         // Client only: how long the host has been silent, in player terms.
         public LinkHealth Health { get; private set; }
         public float Silence { get; private set; }
+        // R295: the match is loading behind the loading screen. A host whose match
+        // scene runs its own simulation stops sending this stream once that scene is
+        // up, so a PC still loading would take it for a silent host, hand the role
+        // on and leave the match: while loading, the silence is not counted.
+        public bool Loading { get; set; }
         // Steam's own transport ping: to the host on a client, the worst peer on the host.
         public int PingMs { get; private set; } = -1;
         public double ResponseMs => response.Milliseconds;
@@ -148,7 +153,7 @@ namespace ChessFight.Network
 
         void UpdateHealth(float now)
         {
-            if (session.IsHost || !session.Roster.ContainsKey(session.Self)) { Health = LinkHealth.Ok; Silence = 0; listed = false; return; }
+            if (session.IsHost || Loading || !session.Roster.ContainsKey(session.Self)) { Health = LinkHealth.Ok; Silence = 0; listed = false; return; }
             // Admission can take seconds; the host only starts sending once we are
             // on its roster, so the silence clock starts there too.
             if (!listed) { listed = true; lastReceive = now; }

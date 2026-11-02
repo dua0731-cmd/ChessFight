@@ -68,6 +68,8 @@ namespace ChessFight.RagdollLab.Net
         }
 
         protected override void NetHostSilence(float seconds) => session.ReportHostSilence(seconds);
+        // R295: the room's shared start has passed, by Steam's server clock (whole seconds: at most one late).
+        protected override bool NetStarted => session != null && session.StartAt > 0 && SteamUtils.GetServerRealTime() >= session.StartAt;
         protected override void NetLeave(string why) => session.Cancel();
         protected override void NetMatchOver() => session.EndMatch();
         protected override void DrawLobby() { }
