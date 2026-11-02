@@ -48,7 +48,7 @@ namespace ChessFight.RagdollLab
 
         public void Launch(Vector3 velocity) => Pawn.Launch(velocity);
 
-        // An air vent's drift (Pawn Rush grand stair hall, R150).
+        // An air vent's drift (Pawn Rush grand stair hall, R296).
         public bool Blow(Vector3 velocity) => Pawn.Blow(velocity);
 
         // Status effects (M13).

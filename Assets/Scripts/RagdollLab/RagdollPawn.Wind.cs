@@ -5,7 +5,7 @@ namespace ChessFight.RagdollLab
 {
     /// <summary>
     /// Being carried by a wind (IWindReceiver; an air vent with a drift speed, Pawn Rush grand stair hall
-    /// R150). A vent that only pushed the bodies moved a running pawn about 0.2 m: the hips hang on the
+    /// R296). A vent that only pushed the bodies moved a running pawn about 0.2 m: the hips hang on the
     /// anchor spring (hipAnchorStrength ~4500 N/m), and 20 m/s² on a 50 kg pawn is 1000 N. Here the wind's
     /// velocity joins the frame the pawn runs in, like a moving floor's, so the anchor drifts with it. The pawn
     /// may run against it with its own speed (a sprint holds against a little less than the sprint speed).
