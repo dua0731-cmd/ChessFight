@@ -41,6 +41,98 @@ public static class NetworkCoreTests
         Array.Copy(bytes, copy, Math.Min(length, bytes.Length));
         return copy;
     }
+    // Every Core packet's bytes for a fixed input, pinned before R297 [3] reused their buffers (FNV-1a 64).
+    static string Fnv(byte[] bytes)
+    {
+        ulong h = 14695981039346656037UL;
+        foreach (byte b in bytes) { h ^= b; h *= 1099511628211UL; }
+        return h.ToString("x16");
+    }
+    static byte[] Through(Action<System.IO.BinaryWriter> write)
+    {
+        var ms = new System.IO.MemoryStream();
+        var w = new System.IO.BinaryWriter(ms);
+        write(w);
+        w.Flush();
+        return ms.ToArray();
+    }
+    static SkillWirePacket GoldenSkills()
+    {
+        var p = new SkillWirePacket { HostTimeMs = 123456, FirstSeq = 65530 };
+        p.States.Add(new SkillWireState { Pawn = SkillWire.Ref(1, 3), Stage = 2, Flags = 0xA5, Flags2 = 3, StageTime = 1.234f, Cooldown = 7.25f, CooldownTotal = 12f,
+            Dx = 0.6f, Dy = 0.8f, Px = -12.345f, Py = 1.5f, Pz = 33.3f, Qx = 4, Qy = -0.5f, Qz = 79, Target = SkillWire.Ref(0, 5), Other = SkillWire.None,
+            A = 2.5f, B = 25.5f, C = 200, D = 7 });
+        p.States.Add(new SkillWireState { Pawn = SkillWire.Ref(0, 0), Stage = 1, StageTime = 0.5f, Cooldown = 3f, CooldownTotal = 9f, Dx = -1f, Target = SkillWire.None,
+            Other = SkillWire.None });
+        p.Wires.Add(new SkillWireObject { Id = 9, Owner = SkillWire.Ref(0, 1), X = 3, Y = 0.02f, Z = -4, Yaw = 271, Age = 2.5f, Flags = 1, Trips = 1, Along0 = 0.33f,
+            Along1 = 0.5f, Out0 = 0.62f, Out1 = -0.31f });
+        p.Barricades.Add(new SkillWireBarricade { Index = 0, Standing = false, RegrowLeft = 3.4f });
+        p.Barricades.Add(new SkillWireBarricade { Index = 2, Standing = true });
+        p.Events.Add(new SkillWireEvent { Seq = 65531, TimeMs = 123000, Mode = SkillWire.ModeQueenHill, Kind = 9, By = SkillWire.Ref(1, 3), Target = SkillWire.None,
+            X = 1, Y = 2, Z = 3, Dx = 0, Dy = 0, Dz = -1, Ux = -5, Uy = 0, Uz = 5, Count = 3, Size = 6.5f, Source = 9 });
+        p.Events.Add(new SkillWireEvent { Seq = 65532, TimeMs = 123010, Mode = SkillWire.ModeSwordFight, Kind = 36, By = SkillWire.Ref(0, 2), Target = SkillWire.Ref(1, 0),
+            X = 6.5f, Y = 0.4f, Z = -1, Dx = 1, Count = 1, Size = 3.5f });
+        return p;
+    }
+    static SwordWirePacket GoldenSword()
+    {
+        var p = new SwordWirePacket { HostTimeMs = 987654, White = 3, Black = 12, Remaining = 3599.9f, Finished = false };
+        p.Fighters.Add(new SwordWireFighter { Ref = SkillWire.Ref(0, 0), Team = 1, Alive = true, Drawn = true, Protection = 1.25f, Flash = 0.16f, Wx = 0.31f, Wy = -0.42f,
+            Wz = 1.234f, WRot = 0xC0FFEE11u, EdgeCondition = true, Why = 6, EdgeTarget = SkillWire.Ref(1, 2) });
+        p.Fighters.Add(new SwordWireFighter { Ref = SkillWire.Ref(1, 2), Team = 0, Alive = true,
+            Skill = true, Stage = 3, Detail = 10, SkillFlags = 2, StageTime = 0.37f, Cooldown = 1.5f, CooldownTotal = 2f, Dx = 0.6f, Dz = 0.8f, Px = 4.5f, Py = 0.01f,
+            Pz = -6.25f, Ox = -1, Oz = 2, Reach = 5.95f, Wave = 3.3f, Dash = 2.05f, PinCandidate = SkillWire.None, Slow = 1.5f, Pin = 0.8f,
+            Edge = true, EdgeStage = 2, EdgeDetail = 12, EdgeFlags = 3, EdgeTime = 0.45f, EdgeCooldownTotal = 16f, Carried = SkillWire.Ref(0, 0), Ax = 7, Az = 1, Outx = 1,
+            Lx = 5.6f, Lz = 1.2f, Sx = 6.9f, Sy = 0.6f, Sz = 0.4f,
+            Glow = true, Gx = 7, Gz = -0.5f, GOx = 1, GAz = 1, GAt = 6.5f, GTo = 14f });
+        p.Collapses.Add(new SwordWireCollapse { Id = 7, By = SkillWire.Ref(1, 2), X0 = 5, Z0 = -1.5f, X1 = 7, Z1 = 1.5f, Ox = 1, Az = 1, Lx = 7, Age = 1.23f, Crack = 0.8f,
+            Open = 5f });
+        return p;
+    }
+    static PawnRushNetState GoldenRush()
+    {
+        var s = new PawnRushNetState { Tick = 4242, HostTimeMs = 7654321, First = 2, Second = 0, PadFirst = 3, PadSecond = 1, PadsUsed = 2, Winner = 1, Clock = 87.25f };
+        s.PadChooser[1] = SkillWire.Ref(0, 3);
+        s.PadChooser[2] = SkillWire.Ref(1, 1);
+        for (int i = 0; i < 5; i++) { s.FinisherSeat[i] = SkillWire.Ref(i % 2, i); s.FinisherTime[i] = 60f + i * 1.7f; }
+        s.FinisherCount = 5;
+        for (int st = 0; st < PawnRushNetState.Stations; st++)
+        {
+            s.Game[st] = (sbyte)(st == 3 ? -1 : st);
+            s.Progress[st] = st * 0.3f;
+            s.Completed[st] = st == 1;
+            s.BlockLength[st] = st * 9;
+            for (int k = 0; k < s.BlockLength[st]; k++) s.Block[st][k] = (byte)(st * 50 + k * 7);
+        }
+        return s;
+    }
+    static string GoldenBytes()
+    {
+        var poses = new List<PoseWire>();
+        for (int i = 0; i < 12; i++) poses.Add(WirePose(i + 1, (byte)(i % 6)));
+        var motion = new List<PawnState>();
+        for (int i = 0; i < 4; i++)
+        {
+            var m = PawnMotor.Spawn((ulong)(i + 11), i % 2, i);
+            m.Ack = (uint)(i * 1000 + 7); m.X += i * 0.37f; m.Y = 1.5f + i; m.Vertical = -2.5f * i;
+            motion.Add(m);
+        }
+        return string.Join(" ", new[]
+        {
+            Fnv(RagdollWire.Snapshot(77, 123456, 987654, 4321.25, poses, 12)),
+            Fnv(RagdollWire.Snapshot(5, 1, 1, 0, poses, 3)),
+            Fnv(MotionProtocol.Input(42, new MoveInput { Sequence = 10, X = 1, Z = -1, Jumps = 7 })),
+            Fnv(MotionProtocol.Input(9, new MoveInput { Sequence = 4000000000u, X = -0.25f, Z = 0.75f, Jumps = 255 })),
+            Fnv(MotionProtocol.Snapshot(42, 7, motion)),
+            Fnv(GoldenRush().Write(42UL)),
+            Fnv(new PawnRushNetState().Write(7UL)),
+            Fnv(Through(w => SkillWire.Write(w, GoldenSkills()))),
+            Fnv(Through(w => SkillWire.Write(w, new SkillWirePacket { HostTimeMs = 1, FirstSeq = 2 }))),
+            Fnv(Through(w => SwordWire.Write(w, GoldenSword()))),
+        });
+    }
+    const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 c1be8d7c616ed0f6 bcc5fd028cb3c436 "
+                          + "028c824dd7ab7066 0a5aaf2e798a59b6 52d23acd7ef29404";
     public static int Main()
     {
         try
@@ -1615,6 +1707,9 @@ public static class NetworkCoreTests
                 var into = new SnapshotWire();
                 Check(RagdollWire.ReadSnapshot(RagdollWire.Snapshot(1, 1, 1, 0, poses, 1), 1, into) && RagdollWire.AckAge(sent + 87, into.At(0).Ack) == 87,
                       "through a packet"); });
+            Test("Packets (R297 [3]): every Core packet's bytes for a fixed input are the ones pinned before their buffers were reused", () => {
+                string got = GoldenBytes();
+                Check(got == Golden, "bytes changed: " + got); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}
