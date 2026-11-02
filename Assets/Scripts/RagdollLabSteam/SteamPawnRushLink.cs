@@ -621,8 +621,9 @@ namespace ChessFight.RagdollLab.Net
                 if (!poses.TryGetValue(r.Id, out var pose)) poses[r.Id] = pose = new RagdollPose();
                 r.Pawn.CaptureNetworkPose(pose);
                 pose.id = r.Id;
-                // The newest input time heard from that player, for its round trip (0 = none yet).
-                pose.ack = r.InputAt >= 0f ? r.ClientTimeMs : 0u;
+                // The newest input time heard from that player, for its round trip (0 = none yet, or heard too long ago
+                // for the 16-bit echo, R297).
+                pose.ack = r.InputAt >= 0f && sentAt - r.InputAt < RagdollWire.AckFreshSeconds ? r.ClientTimeMs : 0u;
                 if (r.Pawn.NetworkSnap) { snaps[r.Id] = 4; r.Pawn.NetworkSnap = false; }
                 snaps.TryGetValue(r.Id, out int n);
                 pose.snap = n > 0;
@@ -881,7 +882,7 @@ namespace ChessFight.RagdollLab.Net
             {
                 var pose = snap.At(i);
                 if (pose.id != session.Self || pose.ack == 0) continue;
-                int sample = unchecked((int)(NowMs() - pose.ack));
+                int sample = RagdollWire.AckAge(NowMs(), pose.ack);
                 if (sample >= 0 && sample < 10000) roundTripMs = roundTripMs <= 0f ? sample : Mathf.Lerp(roundTripMs, sample, 0.2f);
             }
             buffer.Add(snap);

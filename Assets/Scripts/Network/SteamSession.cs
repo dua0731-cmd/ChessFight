@@ -64,7 +64,9 @@ namespace ChessFight.Network
         //      (SteamMatchLabLink, channel 35): the skills online, and its match state as text (TypeMatch).
         // v25 (R295): a member's "claim" counts only from the next host in line and only one epoch above what a PC
         //      can see (HostElection.Follow). A v24 build follows any claim, so the two would pick different hosts.
-        public const string Protocol = "chessfight.dua0731.network.v25";
+        // v26 (R297): the ragdoll snapshot's pawn is 65 bytes instead of 74 ("CFRD", RagdollWire): a v25 build drops
+        //      every snapshot of a v26 host, so the two must not meet in one room.
+        public const string Protocol = "chessfight.dua0731.network.v26";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

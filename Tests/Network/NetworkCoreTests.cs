@@ -16,6 +16,31 @@ public static class NetworkCoreTests
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
     // An input packet as far as the skill key goes (no tuples: mcs runs these tests on Linux).
     struct PressPacket { public uint Seq; public byte Count; }
+    // A snapshot pawn with every field set from its id, the hook's gauge and point too (R297).
+    static PoseWire WirePose(int id, byte hook)
+    {
+        var p = new PoseWire
+        {
+            Id = (ulong)id * 7919UL + 76561198000000000UL, HipsX = (short)(id * 101), HipsY = (short)-id, HipsZ = short.MaxValue,
+            Flags = (byte)((id % 3) | ((id * 37) & 0xFC)), Stamina = (byte)(id * 13), Escape = (byte)(id * 29), Hook = hook,
+            HookCharge = (byte)(id * 3 + 1), HookX = (short)(id * -77), HookY = 5, HookZ = (short)(id * 300), Piece = (byte)(id % ChessPieces.Count),
+            Ack = (ushort)(id * 977),
+        };
+        for (int b = 0; b < RagdollWire.Bodies; b++) p.Rotations[b] = (uint)id * 2654435761u + (uint)b * 40503u;
+        return p;
+    }
+    static bool SameFixed(PoseWire a, PoseWire b)
+    {
+        for (int i = 0; i < RagdollWire.Bodies; i++) if (a.Rotations[i] != b.Rotations[i]) return false;
+        return a.Id == b.Id && a.HipsX == b.HipsX && a.HipsY == b.HipsY && a.HipsZ == b.HipsZ && a.Flags == b.Flags && a.Stamina == b.Stamina
+               && a.Escape == b.Escape && a.Hook == b.Hook && a.Piece == b.Piece && a.Ack == b.Ack;
+    }
+    static byte[] Resized(byte[] bytes, int length)
+    {
+        var copy = new byte[length];
+        Array.Copy(bytes, copy, Math.Min(length, bytes.Length));
+        return copy;
+    }
     public static int Main()
     {
         try
@@ -1517,6 +1542,67 @@ public static class NetworkCoreTests
                 Check(AutoPilot.Requested(new[] { "-autopilot" }, 76561198000000001UL, out s1)
                       && AutoPilot.Requested(new[] { "-autopilot" }, 76561198000000002UL, out s2) && s1 != s2 && s1 != 0, "every PC its own");
                 Check(AutoPilot.Requested(new[] { "-autopilot" }, 0, out seed) && seed != 0, "never 0"); });
+            Test("Ragdoll snapshot (R297): 30-byte header, 65 bytes a pawn and 72 while its hook is out of the hand; 12 fit in 1024", () => {
+                Check(RagdollWire.HeaderBytes == 30 && RagdollWire.PoseBytes == 65 && RagdollWire.MaxPoseBytes == 72, "sizes");
+                Check(RagdollWire.HeaderBytes + 12 * RagdollWire.MaxPoseBytes <= RagdollWire.MaxBytes, "12 swung hooks fit");
+                var poses = new List<PoseWire>();
+                for (int i = 0; i < 14; i++) poses.Add(WirePose(i + 1, 0));
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 810, "12 pawns, hooks put away: 810 bytes (918 before)");
+                poses[3].Hook = 1;
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 810, "a hook in the hand adds nothing");
+                poses[5].Hook = 3;
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 817, "a flying hook adds its 7");
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 14).Length == 817, "never more than 12 pawns");
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 0).Length == 30, "none"); });
+            Test("Ragdoll snapshot (R297): every field comes back; a hook put away or in the hand reads 0 for its gauge and point", () => {
+                var poses = new List<PoseWire>();
+                for (int i = 0; i < 12; i++) poses.Add(WirePose(i + 1, (byte)(i % 6)));
+                byte[] bytes = RagdollWire.Snapshot(77, 123456, 987654, 4321.25, poses, 12);
+                var into = new SnapshotWire();
+                Check(RagdollWire.ReadSnapshot(bytes, 77, into), "read");
+                Check(into.Tick == 123456 && into.HostTimeMs == 987654 && into.ObstacleTime == 4321.25 && into.Count == 12, "header");
+                for (int i = 0; i < 12; i++)
+                {
+                    PoseWire a = poses[i], b = into.At(i);
+                    Check(SameFixed(a, b), "pawn " + i);
+                    bool tail = a.Hook >= RagdollWire.HookTail;
+                    Check(b.HookCharge == (tail ? a.HookCharge : 0) && b.HookX == (tail ? a.HookX : 0) && b.HookY == (tail ? a.HookY : 0)
+                          && b.HookZ == (tail ? a.HookZ : 0), "hook gauge and point, pawn " + i);
+                } });
+            Test("Ragdoll snapshot (R297): read only if it ends exactly where its last pawn does, every field in range", () => {
+                var into = new SnapshotWire();
+                byte[] good = RagdollWire.Snapshot(5, 1, 1, 0, new List<PoseWire> { WirePose(1, 0), WirePose(2, 4), WirePose(3, 1) }, 3);
+                Check(good.Length == 30 + 65 + 72 + 65 && RagdollWire.ReadSnapshot(good, 5, into), "good");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length - 1), 5, into), "a byte short");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length + 1), 5, into), "a byte over");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length - 7), 5, into), "a hook's tail short");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, 1025), 5, into) && !RagdollWire.ReadSnapshot(Resized(good, 29), 5, into), "too long, too short");
+                Check(!RagdollWire.ReadSnapshot(good, 6, into), "another match");
+                var bad = (byte[])good.Clone(); bad[0] ^= 1; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "magic");
+                bad = (byte[])good.Clone(); bad[4] = 3; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "type");
+                bad = (byte[])good.Clone(); bad[29] = 2; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 2");
+                bad = (byte[])good.Clone(); bad[29] = 4; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 4");
+                bad = (byte[])good.Clone(); bad[29] = 13; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 13");
+                // The second pawn (from byte 95): its hook at +61. As 1 its tail would be read as the third pawn.
+                bad = (byte[])good.Clone(); bad[95 + 61] = 1; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "a tail behind a hook in the hand");
+                bad = (byte[])good.Clone(); bad[95 + 61] = 6; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "hook 6");
+                bad = (byte[])good.Clone(); bad[30 + 58] = 3; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "state 3");
+                bad = (byte[])good.Clone(); bad[30 + 62] = 200; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "no such piece");
+                bad = (byte[])good.Clone(); Array.Clear(bad, 30, 8); Check(!RagdollWire.ReadSnapshot(bad, 5, into), "id 0");
+                bad = (byte[])good.Clone(); Array.Copy(bad, 30, bad, 30 + 65 + 72, 8); Check(!RagdollWire.ReadSnapshot(bad, 5, into), "an id twice");
+                Check(!RagdollWire.ReadSnapshot(RagdollWire.Snapshot(5, 1, 1, double.NaN, new List<PoseWire> { WirePose(1, 0) }, 1), 5, into), "NaN clock");
+                Check(RagdollWire.ReadSnapshot(good, 5, into) && into.Count == 3, "a refused packet leaves the next one readable"); });
+            Test("Ragdoll snapshot (R297): the 16-bit echo of a send time still gives the round trip across its wrap", () => {
+                Check(RagdollWire.AckAge(70000, 69950u & 0xFFFF) == 50, "plain");
+                Check(RagdollWire.AckAge(65540u, 65500u & 0xFFFF) == 40, "across 65536");
+                Check(RagdollWire.AckAge(4000000120u, 4000000020u & 0xFFFF) == 100, "late in the clock");
+                Check(RagdollWire.AckAge(123, 0) == -1, "no echo");
+                var poses = new List<PoseWire> { WirePose(1, 0) };
+                uint sent = 1234567890u;
+                poses[0].Ack = (ushort)sent;
+                var into = new SnapshotWire();
+                Check(RagdollWire.ReadSnapshot(RagdollWire.Snapshot(1, 1, 1, 0, poses, 1), 1, into) && RagdollWire.AckAge(sent + 87, into.At(0).Ack) == 87,
+                      "through a packet"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

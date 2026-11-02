@@ -543,8 +543,10 @@ namespace ChessFight.RagdollLab
                 pair.Value.CaptureNetworkPose(pose);
                 pose.id = pair.Key;
                 // The newest input time heard from that player, for its round trip; 0 = none yet (this PC's clock means
-                // nothing on a client's: a joining client read seconds of "round trip" from it, R111).
-                pose.ack = inputs.TryGetValue(pair.Key, out var remote) ? remote.clientTimeMs : 0u;
+                // nothing on a client's: a joining client read seconds of "round trip" from it, R111). R297: not one heard
+                // too long ago either, as the echo travels in 16 bits (RagdollWire.AckFreshSeconds).
+                pose.ack = inputs.TryGetValue(pair.Key, out var remote) && now - remote.received < RagdollWire.AckFreshSeconds
+                    ? remote.clientTimeMs : 0u;
                 if (pair.Value.NetworkSnap)
                 {
                     snapCountdown[pair.Key] = 3;   // unreliable packets: repeat the teleport flag
@@ -917,7 +919,7 @@ namespace ChessFight.RagdollLab
             var mine = Find(snapshot, NetSelf);
             if (mine != null && mine.ack != 0)
             {
-                int sample = unchecked((int)(NowMs() - mine.ack));
+                int sample = RagdollWire.AckAge(NowMs(), mine.ack);
                 if (sample >= 0 && sample < 10000)
                     roundTripMs = roundTripMs <= 0f ? sample : Mathf.Lerp(roundTripMs, sample, 0.2f);
             }
