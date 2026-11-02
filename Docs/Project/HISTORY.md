@@ -7,7 +7,14 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋) | 11-02 | R294 | 매칭 대기실 방장 = PC 성능 1등 보강(R159는 `404f44ef`): 성능 점수 다시 재기(6~120초, 오르기만), 방 주인 넘김 10초 기다림, 입장 화면 카드 "방장" · 알림, 비교 로그, 모의 시험 3개(`FakeSteam.OwnerDelay`), 문서(HOST · SESSION · VALIDATION · DECISIONS K8 · PITFALLS 60 · 61) |
+| (이 커밋) | 11-02 | R295 | 문서: REQUIREMENTS · HOST · MOTION · SESSION · VALIDATION 맨 위 (가)~(라) · DECISIONS K8 · PITFALLS 62~64 · HANDOFF |
+| `17f45b00` | 11-02 | R295 [6] | 방장 교체 때 옛 방장과의 그 링크 채널만 닫음(`CloseChannelWithUser`: `SteamMotion` 31 · `SteamRagdollLink` 32, 새 경기 때도 랩은 채널만). 음성(40)은 그대로 |
+| `efb3c3f6` | 11-02 | R295 [2] | 폰 러쉬: 모든 PC가 `session.Host` 바뀜을 보고 받은 것을 지움(Core `HostWatch` + 시험), 새 방장은 `stateTick = lastState`, 왕복 시간도 지움 |
+| `d005e578` | 11-02 | R295 [3] | 폰 러쉬: 참가자가 매 프레임 방장 침묵을 `ReportHostSilence`로 보고(첫 패킷 · 공동 시작부터), 방장은 0 |
+| `1036da2a` | 11-02 | R295 [1] | 로딩 중에는 방장 침묵을 재지 않음(`SteamMotion.Loading`), 경기 씬 링크(`LabNetLink` · `SteamMatchLabLink` · `SteamPawnRushLink`)는 첫 패킷 · 공동 시작 중 먼저 온 때부터(Core `HostSilence` + 시험, 30초 마지막 수단), 모의 시험 1개 |
+| `e05779af` | 11-02 | R295 [5] | 대기실 넘김 중 받을 PC가 나가면 넘긴 PC가 다시 방장(`resv`로 예약 되살림), 방 주인이 된 직후 나가도 예약을 들고 넘김, 모의 시험 2개 |
+| `d366f46f` | 11-02 | R295 [4] | 방장 claim은 방 기록에서 다음 순번의 것만, 볼 수 있는 번호 + 1까지만(`HostElection.Follow` · `ClaimLimit` · `NextEpoch`), 프로토콜 v25, Core · 모의 시험 |
+| `6b227192` | 11-02 | R294 | 매칭 대기실 방장 = PC 성능 1등 보강(R159는 `404f44ef`): 성능 점수 다시 재기(6~120초, 오르기만), 방 주인 넘김 10초 기다림, 입장 화면 카드 "방장" · 알림, 비교 로그, 모의 시험 3개(`FakeSteam.OwnerDelay`), 문서(HOST · SESSION · VALIDATION · DECISIONS K8 · PITFALLS 60 · 61) |
 | (이 커밋) | 10-31 | R240 | 경기 채팅 시안 B1: 왼쪽 아래, 줄마다 채널 색 띠, 열면 띠가 위로 펼쳐지고 입력 줄 · 채널 범례 |
 | (이 커밋) | 10-30 | R238 · R239 | 설정 창 시안 A(탭 밑줄 · 오른쪽 설명 칸 · 둥근 상자 줄 · 끔/켬 스위치), 소드 파이트 기물 고르기 · 경기 Esc 메뉴 시안 A(어두운 유리 · 금 테두리), 고르기는 클릭 · 1~5 선택 → Enter · 더블클릭 확정 |
 | (이 문서 커밋, 로컬 main) | 10-28 | R160 | 폰 러시 30개 장소의 장애물 컨셉아트 PNG 6장(각 1024×1536)·프롬프트·장소별 기존 동작과 외형 매핑, 신규 탑승 샹들리에 그네·회전 병풍문 구분. 오프라인 전용 07·14·16 제외. Unity 코드·씬 변경 없음. Core 131·모의 세션 41 통과(컨셉의 Unity·Steam 실기 확인 아님). R159 인증 오류 뒤 푸시 재시도 안 함, Desktop Push 필요 |
