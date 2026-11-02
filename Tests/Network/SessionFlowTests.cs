@@ -228,6 +228,32 @@ public static class SessionFlowTests
                 Check(strong.CanStartGame,"the new host cannot run the room");
                 As(strong,strong.StartGame);Step(30);
                 Check(clients.All(c=>c.Started&&c.Host==strong.Self),"the start after a slow handover");});
+            // R295: the PC a waiting room was handed to leaves (its party cancels) before Steam has moved the room to it.
+            // The old host still owns the room and takes it back; the room used to end 2 seconds later.
+            Test("A waiting-room handover whose new host leaves before the room is theirs goes back to the old host",()=>{
+                Setup(3);var creator=clients[0];var strong=clients[1];var other=clients[2];
+                creator.LocalFitness=900;strong.LocalFitness=1300;other.LocalFitness=800;FakeSteam.OwnerDelay=30;
+                As(creator,()=>creator.FindMatch(true));Step();
+                As(other,()=>other.JoinPrivateMatch(creator.Match));Step(20);
+                ulong room=creator.Match;As(strong,()=>strong.JoinPrivateMatch(room));
+                for(int i=0;i<60&&!clients.All(c=>c.Host==strong.Self);i++)Step(1);
+                Check(clients.All(c=>c.Match==room&&c.Host==strong.Self)&&Owner(creator)==creator.Self,"setup: handed over, the room not moved yet");
+                As(strong,strong.Cancel);clients.Remove(strong);Step(20);
+                Check(clients.All(c=>c.Match==room&&c.Host==creator.Self&&c.Roster.Count==2)&&Owner(creator)==creator.Self,"the room ended or did not go back to its old host");
+                Check(creator.CanStartGame,"the old host cannot run the room again");
+                As(creator,creator.StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==creator.Self),"the start after taking the room back");});
+            Test("A PC that leaves a waiting room just after it became the room's owner still hands it on with everyone's seats",()=>{
+                Setup(3);var creator=clients[0];var strong=clients[1];var other=clients[2];
+                creator.LocalFitness=900;strong.LocalFitness=1300;other.LocalFitness=800;FakeSteam.OwnerDelay=3;
+                As(creator,()=>creator.FindMatch(true));Step();
+                As(other,()=>other.JoinPrivateMatch(creator.Match));Step(20);
+                ulong room=creator.Match;As(strong,()=>strong.JoinPrivateMatch(room));
+                for(int i=0;i<60&&strong.Host!=strong.Self;i++)Step(1);
+                // Steam moves the room to the strong PC, which leaves before it has looked at the room again.
+                UnityEngine.Time.realtimeSinceStartup+=FakeSteam.OwnerDelay+1;
+                As(strong,strong.Cancel);clients.Remove(strong);Step(20);
+                Check(clients.All(c=>c.Match==room&&c.Host==creator.Self&&c.Roster.Count==2)&&Owner(creator)==creator.Self,"the room ended or lost its seats");});
             // R294: each PC measures itself again while it waits in the lobby (HostFitnessProbe). A first
             // measurement taken while the PC was busy loading reads slow; the better one, when it comes, counts.
             Test("A PC whose machine score improves later takes the waiting room then",()=>{
