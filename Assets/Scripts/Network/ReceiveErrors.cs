@@ -28,7 +28,10 @@ namespace ChessFight.Network
                 tally.Since++;
                 return;
             }
-            if (tally.Since > 0) Debug.LogWarning($"Steam channel {channel}: {tally.Since} more received messages failed since the last one logged.");
+            // The channel on every logged failure, so a tester finds them all in Player.log by "Steam channel".
+            Debug.LogWarning(tally.Since > 0
+                ? $"Steam channel {channel}: a received message failed and was dropped ({tally.Since} more since the last one logged)."
+                : $"Steam channel {channel}: a received message failed and was dropped.");
             Debug.LogException(error);
             tally.LoggedAt = now;
             tally.Since = 0;
