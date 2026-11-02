@@ -183,7 +183,9 @@ namespace ChessFight.Game
                 : $"{white} 대 {black} · 모두 입장하면 시작할 수 있어요";
             int seconds = Mathf.FloorToInt(Time.unscaledTime - matchingSince);
             state.Clock = $"{seconds / 60:00}:{seconds % 60:00}";
-            state.Step = session.JoiningLive ? "진행 중인 경기에 들어가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
+            // R294: a new host in the waiting room says so for a few seconds (who, and why: the best PC).
+            state.Step = session.NoteShowing ? session.Note
+                       : session.JoiningLive ? "진행 중인 경기에 들어가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
             state.Clear();
             if (session.Match != 0 && session.Roster.Count > 0)
             {
@@ -206,6 +208,7 @@ namespace ChessFight.Game
         static void Add(LoadingState state, SteamSession session, ulong id, int team, bool ready)
         {
             if (id == session.Self) state.Me = state.Teams.Count;
+            if (id == session.Host) state.Host = state.Teams.Count;
             state.Teams.Add(team);
             state.Joined.Add(true);
             state.Ready.Add(ready);

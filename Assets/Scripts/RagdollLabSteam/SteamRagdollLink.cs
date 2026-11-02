@@ -85,9 +85,10 @@ namespace ChessFight.RagdollLab.Net
         protected override void NetTick()
         {
             if (session == null) return;
-            // What the host election reads (HOST.md): this machine's score once measured, and every frame's time, so a
-            // host that stays slow hands the match on.
-            if (session.LocalFitness == 0) session.LocalFitness = HostFitnessProbe.BaseScore();
+            // What the host election reads (HOST.md): this machine's best score so far (the probe sits again for two
+            // minutes, R294), and every frame's time, so a host that stays slow hands the match on.
+            int fitness = HostFitnessProbe.BaseScore();
+            if (fitness > session.LocalFitness) session.LocalFitness = fitness;
             session.ReportFrame(Time.unscaledDeltaTime * 1000f);
             session.Tick();
             roster.Clear();

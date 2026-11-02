@@ -202,6 +202,39 @@ public static class SessionFlowTests
                 Check(clients.All(c=>c.Host==best.Self&&c.Roster.Count==3)&&Owner(best)==best.Self,"the best newcomer did not take the room");
                 As(best,best.StartGame);Step(10);
                 Check(clients.All(c=>c.Started&&c.Host==best.Self),"the start moved the host away from first place");});
+            // R294 (승규, 11-02: "매칭이 되면 먼저 들어온 사람이 방장"): the public matchmaking room, not only a private one.
+            Test("Public matchmaking: a stronger PC the search brings in later hosts the room, fills it with bots and starts it",()=>{
+                Setup(2);var first=clients[0];var strong=clients[1];first.LocalFitness=900;strong.LocalFitness=1300;
+                As(first,()=>first.FindMatch());Step(20);
+                Check(first.IsHost&&first.Match!=0&&!first.PrivateRoom,"setup: the first searcher makes the room");
+                int lines=UnityEngine.Debug.Lines.Count;
+                As(strong,()=>strong.FindMatch());Step(30);
+                Check(strong.Match==first.Match&&clients.All(c=>c.Host==strong.Self&&!c.Started&&c.Roster.Count==2)&&Owner(strong)==strong.Self,"the public room stayed with the first player");
+                Check(UnityEngine.Debug.Lines.Skip(lines).Any(l=>l.Contains("방장 정하기(대기실)")&&l.Contains("넘김")),"the election left no line in the log");
+                Check(strong.CanAddRoomBot&&!first.CanAddRoomBot,"the room's tools did not move with the host");
+                bool ok=true;for(int i=0;i<4;i++)As(strong,()=>ok&=strong.AddRoomBot());Step(4);
+                Check(ok&&strong.CanStartGame&&!first.CanStartGame,"the new host cannot start three against three");
+                As(strong,strong.StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==strong.Self&&c.Roster.Count==6),"the start moved the host away from first place");});
+            // Real Steam takes a moment to move a room's ownership. A waiting-room handover whose ownership comes
+            // through late must not read as a host that left: the room used to end 2 seconds into it.
+            Test("A waiting-room handover survives a slow change of the room's owner",()=>{
+                Setup(3);var creator=clients[0];var strong=clients[1];var other=clients[2];
+                creator.LocalFitness=900;strong.LocalFitness=1300;other.LocalFitness=800;FakeSteam.OwnerDelay=5;
+                As(creator,()=>creator.FindMatch(true));Step();
+                As(other,()=>other.JoinPrivateMatch(creator.Match));Step(20);
+                As(strong,()=>strong.JoinPrivateMatch(creator.Match));Step(50);
+                Check(clients.All(c=>c.Match==creator.Match&&c.Host==strong.Self&&c.Roster.Count==3)&&Owner(strong)==strong.Self,"the room ended or the host did not move");
+                Check(strong.CanStartGame,"the new host cannot run the room");
+                As(strong,strong.StartGame);Step(30);
+                Check(clients.All(c=>c.Started&&c.Host==strong.Self),"the start after a slow handover");});
+            // R294: each PC measures itself again while it waits in the lobby (HostFitnessProbe). A first
+            // measurement taken while the PC was busy loading reads slow; the better one, when it comes, counts.
+            Test("A PC whose machine score improves later takes the waiting room then",()=>{
+                Room(new[]{1000,800});var creator=clients[0];var other=clients[1];
+                Check(clients.All(c=>c.Host==creator.Self),"setup: the creator is first");
+                other.LocalFitness=1300;Step(10);
+                Check(clients.All(c=>c.Host==other.Self&&!c.Started)&&Owner(other)==other.Self,"the better measurement did not move the host");});
             Test("The best PC hosts even by a small lead (R159: no 15% rule before the match)",()=>{
                 Room(new[]{800,850});var best=clients[1];As(best,best.StartGame);Step(10);
                 Check(clients.All(c=>c.Started&&c.Host==best.Self)&&Owner(best)==best.Self,"the 6% better PC does not host");});

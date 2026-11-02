@@ -4,6 +4,7 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
+최종 갱신: **2026-11-02**(R294 **매칭 대기실 방장 = PC 성능 1등**: 승규 님 "매칭이 되면 먼저 들어온 사람이 방장이 되고 게임 시작을 누를 때까지 그 사람이 계속 방장" → "성능 좋은 pc가 매칭에서도 방장을 이어 받아야 돼" → "main에 넣어주면 돼". 대기실에서 1등에게 넘기는 코드(10-25 R159)는 이미 `main` `404f44ef`에 있었고 `JY-chessboxing_testgame`에는 없다. 이번 보강: 성능 점수를 6 · 15 · 30 · 60 · 120초에 다시 재서 가장 좋은 값, Steam의 방 주인 넘김이 늦어도 10초까지 방을 닫지 않음, 입장 화면 방장 카드에 "방장", `Player.log`에 비교 줄. [HOST](Docs/Network/HOST.md). Core 133 · 세션 48 · 실제 DLL 컴파일 통과, 빌드 `Builds/NetworkTest`(11-02), `main`에 커밋, 두 PC · Steam 미확인.)
 최종 갱신: **2026-11-02**(소드 파이트 **칼에 맞으면 모든 기물이 폰만큼 날아감**: 승규 님 "칼베기를 할 때 기물별로 넘어지는 게 달라" → "폰 기준으로 배율 맞춰". `SwordFightPawn.SameFall`이 TakeHit의 무게 배율(킹 1/3 · 퀸 1/2 · 룩 2/3 · 나이트 1.25배)을 폰 배율로 바꿈, 클릭 베기 · 끌어 베기 둘 다, 넘어지는 방향은 기물별 베기 방향 그대로. 다른 공격의 무게 차이는 그대로. Unity 컴파일 · 사람 확인 전, SkillNet에는 안 옮김.)
 최종 갱신: **2026-10-31**(R240 **경기 채팅 시안 B1**: 왼쪽 아래, 줄마다 채널 색 띠, 열면 패널 없이 띠가 위로 펼쳐짐 + 채널 색 입력 줄 + 채널 범례. `ChatBox.cs` · `ChatHud.uxml` · `NetworkHud.uss`, [UI §9](Docs/Architecture/UI.md#9-채팅-r61-2026-09-30). Core 133 · 세션 45, Game 컴파일 통과, **Unity 미확인**, 커밋함 · CLI 푸시 403(GitHub Desktop에서 Push), 다음 빈 번호 R241)
 최종 갱신: **2026-10-30**(R239 **소드 파이트 기물 고르기 · 경기 Esc 메뉴 시안 A**, 고르기는 클릭 · 1~5 = 선택, Enter · 더블클릭 = 확정: 설정 창 A와 같은 어두운 유리 · 금 테두리로 `SwordFightMatch.Hud.cs`(`DrawPick`) · `Game/GameMenu.cs`만 고침. [UI §17](Docs/Architecture/UI.md), [SwordFight/PROTOTYPE](Docs/GameModes/SwordFight/PROTOTYPE.md). Game · RagdollLab 컴파일 통과, **Unity 미확인, 커밋함, 푸시 안 함**, 다음 빈 번호 R240)
@@ -297,6 +298,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **매칭 대기실 방장 = PC 성능 1등(11-02, R294 ← 10-25 R159, `main`에 커밋)** | 대기실 방장이 1초마다 다 들어온 사람들의 기계 점수 · 핑을 비교해 1등에게 넘김(`SteamSession.ElectWaiting` → `HandOffWaiting`: 방 데이터 `resv` · `host` → 방 주인), 경기 시작도 그 1등. R294: 점수 다시 재기(`HostFitnessProbe`, 오르기만 함), 넘기는 중 10초 기다림(`WaitingHandoffGrace`), 입장 화면 카드 "방장"(`LoadingState.Host`), 로그 `방장 정하기(대기실)` · `이 PC 성능 점수`, 모의 Steam 시험 3개 추가(`FakeSteam.OwnerDelay`). **두 PC · Steam 미확인** → [VALIDATION 맨 위](Docs/Network/VALIDATION.md) |
 | **경기 채팅 시안 B1(10-31, R240)** | 왼쪽 아래, 채널 색 띠(내 줄 금색), 닫힘 = 띠 + Tab 채팅, 열림 = 띠가 위로 + 채널 띠 입력 줄 + 범례. **Unity 미확인** |
 | **기물 고르기 · Esc 메뉴 시안 A(10-30, R239, 커밋함, 푸시 안 함)** | 고르기: 남은 초 원 + 막대, 어두운 카드(올리면 떠오름, F/E 키캡), 우리 팀 칩. 메뉴: 경기 진행 중, 금색 돌아가기 · 설정 · 빨간 테두리 나가기, 확인 창 경고 상자, 화면 높이에 맞춰 커짐. **Unity 미확인** |
 | **설정 창 시안 A(10-30, R238, 커밋함, 푸시 안 함)** | [시안](https://claude.ai/artifact/GA6MaACNmS8iCFmLj5StYu) A: 탭 밑줄 · 좁은 쪽 목록 · 오른쪽 설명 칸(`Item.Note` 작은 글씨) · 둥근 상자 줄(값 300px) · 끔/켬 스위치(`ToggleLine`) · 상자형 펼침 목록. 10-27 유리 판 탭은 밑줄로 바뀜. **Unity 미확인** |
@@ -361,6 +363,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **매칭 대기실 방장 = PC 성능 1등**(R159 · R294): 입장 화면에서 더 좋은 PC가 들어오면 몇 초 안에 방장 · 게임 시작 · 봇 추가가 그 PC로, 카드에 "방장", 경기 시작도 그 1등 | 코드 · 모의 시험 · 빌드(두 개 띄워 오류 0). **두 PC · Steam 미확인**(한 PC · 한 계정으로는 못 봄) | [HOST](Docs/Network/HOST.md) · [VALIDATION 맨 위](Docs/Network/VALIDATION.md) |
 | **폰 러시 30개 장소 장애물 컨셉아트**(R160) | 6장 구성의 공간·외형 제안. 신규 장애물 2종 미구현. Unity 적용·통과 가능성·온라인 실기 확인 없음 | [장소별 장애물 구상](Docs/KingRush/PAWN_RUSH_OBSTACLE_CONCEPTS.md) |
 | **폰 러시 성 입구·성 내부·왕실 테마**(R159) | 구상 문서만. Unity 적용·사용자 플레이 확인 없음 | [공간별 미니게임 구상](Docs/KingRush/PAWN_RUSH_MINIGAME_THEMES.md) |
 | **VFX 작업대**(R159): 기물 1~6을 무대에 세우고 그 기물 폴더(+ 공용)의 이펙트 프리팹을 재생 · 반복 · 느리게 · 멈춤 · 밀도 · 블룸 비교, 편집 모드에서도 기물 · 과녁이 보임(저장 안 됨) | 코드 · 자산 · 컴파일, **Unity 미확인**. 이펙트는 아직 없음(HDR 견본만) | [VFX](Docs/VFX/README.md) |
@@ -404,6 +407,7 @@
 
 ## 3. 진행 중인 일과 다음 할 일
 
+- **R294 매칭 대기실 방장(11-02)**: PC 두 대 · Steam 계정 두 개로 [VALIDATION 최상단](Docs/Network/VALIDATION.md) 7가지 확인(성능 낮은 PC가 먼저 매칭 → 높은 PC가 들어오면 방장이 옮겨 가는지, 두 PC의 `Player.log` `방장 정하기(대기실)` · `이 PC 성능 점수`). 방장 버그 보고가 오면 먼저 어느 브랜치 · 빌드로 시험했는지 묻는다(`JY-chessboxing_testgame`에는 R159가 없다).
 - **R238 설정 창 시안 A(10-30)**: Unity에서 인트로 · 로비 Esc로 열어 [VALIDATION 최상단](Docs/Network/VALIDATION.md) 5가지를 확인. 시안 B(카드) · C(미리보기)에서 가져올 것이 있으면 다음에.
 - **R239 기물 고르기 · Esc 메뉴 시안 A(10-30)**: SwordFight 씬에서 [VALIDATION 최상단](Docs/Network/VALIDATION.md) 5가지 확인.
 - **R240 경기 채팅 B1(10-31)**: 폰 러쉬 · 소드 파이트에서 [VALIDATION 최상단](Docs/Network/VALIDATION.md) 4가지 확인.

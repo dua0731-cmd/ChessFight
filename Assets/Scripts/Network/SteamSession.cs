@@ -153,6 +153,9 @@ namespace ChessFight.Network
         public const float StartFitnessWait = 5f;
         // R159: between two moves of the waiting room's host (the record and the room's ownership settle).
         public const float WaitingHandoffCooldown = 3f;
+        // R294: how long a waiting-room handover may wait for Steam to move the room's ownership before
+        // the room counts as lost (a host that has gone gets 2 seconds, as before).
+        public const float WaitingHandoffGrace = 10f;
         // Between a start or handover and the next handover for slowness.
         public const float StruggleCooldown = 45f;
         // ---- Loading and a shared start (MatchStart) ----
@@ -213,6 +216,8 @@ namespace ChessFight.Network
         // it owns it; the next waiting-room election.
         bool startWanted, adoptReservations;
         float startWaitSince = -1, nextWaitElect;
+        // R294: what the waiting-room election last wrote to the log.
+        string lastWaitElection = "";
         float hostSilence, hostSince = -1, orphanSince = -1, nextFitPublish, nextSuccessors, nextOwnerFix, lastHandoff = -1000, noteUntil;
         readonly TeamReservations reservations = new TeamReservations();
         readonly List<IDisposable> callbacks = new List<IDisposable>();
@@ -824,7 +829,10 @@ namespace ChessFight.Network
                 // Party-route and match-close notifications can arrive in either order
                 // while the host merges an otherwise empty waiting room.
                 if (invalidHostSince < 0) invalidHostSince = now;
-                if (now - invalidHostSince > 2) Fail("방장이 나가 경기가 끝났습니다. 파티로 돌아갑니다.");
+                // R294: a waiting-room handover on its way (the record names a host still in the
+                // room, Steam has not moved the ownership yet) is not a host that has gone.
+                bool handing = phase != "closed" && Host != 0 && ParseId(Data(Match, "host")) == Host && Members(Match).Contains(Host);
+                if (now - invalidHostSince > (handing ? WaitingHandoffGrace : 2)) Fail("방장이 나가 경기가 끝났습니다. 파티로 돌아갑니다.");
                 return;
             }
             invalidHostSince = -1;
@@ -1030,18 +1038,25 @@ namespace ChessFight.Network
         // ---- The waiting room's host (R159, 승규: "입장씬부터 PC 성능 1등이 방장") ----
 
         // The waiting room's host hands the room to the best PC in it: machine
-        // scores (HostElection.StartHost), each player seated and measured. Scores
-        // are measured once per PC, so the order settles and does not flicker.
+        // scores (HostElection.StartHost), each player seated and measured. A score
+        // only rises (each PC's best sitting so far, R294), so the order settles and does not flicker.
         void ElectWaiting(HashSet<ulong> present, float now)
         {
             if (now < nextWaitElect || now - lastHandoff < WaitingHandoffCooldown || startWanted) return;
             nextWaitElect = now + 1;
             var candidates = Candidates(present).Where(c => c.Id == Self || Seated(c.Id, present)).ToList();
             ulong next = HostElection.StartHost(Self, candidates, HostElection.StartMargin);
-            if (next == Self || HostElection.Unknown(Pick(candidates, next))) return;
-            Debug.Log("[ChessFight] 방장 정하기(대기실): " + string.Join(" · ", candidates.Select(c =>
-                $"{Name(c.Id)}{(c.Id == Self ? "(방장)" : "")} 성능 {c.BaseFitness} 핑 {c.PingMs}")) + $" → {Name(next)}");
-            HandOffWaiting(next, $"PC 성능 1등인 {Name(next)} 님이 방장을 맡습니다.");
+            bool move = next != Self && !HostElection.Unknown(Pick(candidates, next));
+            // R294: what the election compared, whenever that changes (a player in or out, a new
+            // score), so Player.log on the host says why the role stayed or moved.
+            string seen = string.Join(" · ", candidates.Select(c =>
+                $"{Name(c.Id)}{(c.Id == Self ? "(방장)" : "")} 성능 {(c.BaseFitness > 0 ? c.BaseFitness.ToString() : "측정 전")} 핑 {c.PingMs}"));
+            if (seen != lastWaitElection)
+            {
+                lastWaitElection = seen;
+                Debug.Log($"[ChessFight] 방장 정하기(대기실): {seen} → " + (move ? $"{Name(next)} 님에게 넘김" : "그대로"));
+            }
+            if (move) HandOffWaiting(next, $"PC 성능 1등인 {Name(next)} 님이 방장을 맡습니다.");
         }
 
         // A player whose whole party has arrived: only they may host the waiting room
@@ -1146,7 +1161,7 @@ namespace ChessFight.Network
         {
             epoch = 0; publishedFit = publishedBase = 0; publishedLoc = ""; hostSilence = 0; hostSince = -1; orphanSince = -1;
             nextFitPublish = nextSuccessors = nextOwnerFix = noteUntil = 0; lastHandoff = -1000; Note = "";
-            startWanted = adoptReservations = false; startWaitSince = -1; nextWaitElect = 0;
+            startWanted = adoptReservations = false; startWaitSince = -1; nextWaitElect = 0; lastWaitElection = "";
             held.Clear(); heldLoaded = false; joinable = -1;
         }
 
