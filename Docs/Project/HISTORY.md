@@ -1,6 +1,5 @@
 # 변경 이력
 
-- 2026-11-02 R306: 다른 AI 전달용 컨셉 기획서 `Docs/Project/CONCEPT_BRIEF.md`. 문서만.
 - 2026-11-02 R285: `main`(R294~R304)을 `claude/nifty-tesla-8212va`에 병합. 문서 네 곳(HANDOFF · REQUIREMENTS · HISTORY · VALIDATION) 충돌을 두 쪽 기록 모두 남겨 해결, R237~R240 번호 겹침 표시. 컴파일 · 테스트 다시 통과.
 - 2026-11-02 R284: 왕실 마차뜰 맵 프리팹 `RoyalCarriageYard` · 시험장 `RoyalCarriageYard_Obstacles`, `PawnRush/CarriageYard/`(맵 빌더 · 장애물 9종 · `YardImpact` · `YardKit` · `WaterfallFlow`), 장애물 프리팹 8개, `Obstacle.JumpsBetween`. Core133 · 세션45 · Unity 6000.3 DLL 컴파일 · 경계/시계 검사 통과; Unity 미확인.
 - 2026-11-02 R283: 폰 러쉬 맵 시험 씬 `PawnRush_MapTest.unity`, `PawnRushMapTest` · `PawnRushCalibrationYard` · `PawnRushMapTestMenu`, 맵 프리팹 폴더 `Assets/Prefabs/PawnRushMaps/`. Core133 · 세션45 · 컴파일 통과; Unity 미확인.
