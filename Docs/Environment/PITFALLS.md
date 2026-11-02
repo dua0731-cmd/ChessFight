@@ -68,6 +68,8 @@
 | 62 | (코드 검토) 방장이 바뀌는 순간 옛 방장과의 음성 채팅이 잠깐 끊김 | `SteamNetworkingMessages.CloseSessionWithUser`는 그 사람과의 **모든 채널**(음성 40 포함)을 닫는다. 옛 방장은 보통 경기에 남아 있다 | 방장 교체 때는 자기 스트림 채널만 `CloseChannelWithUser(ref id, 채널)`로 닫는다(모든 채널이 닫히면 Steam이 세션도 닫는다). 세션 통째로는 상대가 명단에서 빠졌거나 경기를 나갈 때만 | R295 |
 | 63 | (코드 검토) 경기 씬을 늦게 불러오는 느린 PC가 방장을 "응답 없음"으로 보고 방장을 넘기려 나서거나 12초 뒤 파티로 나감 | 폰 러쉬 · 소드 파이트(`customMatchSimulation`) 씬은 로비 캡슐 스트림(`SteamMotion`)을 쓰지 않아, 방장이 먼저 씬에 들어가면 그 스트림이 멈춘다. 로딩 중인 PC에게는 침묵으로 보인다 | 로딩 중(`loading` 또는 `MatchLoader.Blocking`)에는 캡슐 스트림이 침묵을 재지 않고(`SteamMotion.Loading`), 경기 씬의 링크가 방장의 첫 패킷이나 공동 시작 시각(`go`) 중 먼저 온 때부터 잰다(Core `HostSilence`) | R295 |
 | 64 | (코드 검토) 폰 러쉬에서 방장이 나가면 방장을 받지 않은 셋째 PC의 시계 · 발판 · 스킬이 멈춤 | 역할이 바뀐 두 PC(`IsHost`가 바뀐 PC)만 받은 것을 지웠다. 셋째 PC는 옛 방장의 상태 번호를 들고 있어 새 방장의 작은 번호를 "옛것"으로 버렸다 | 모든 PC가 `session.Host` 바뀜을 보고(Core `HostWatch`) 받은 것을 지운다. 새 방장은 받은 번호에서 이어 센다(`stateTick = lastState`) | R295 |
+| 65 | (R297부터 지킬 것) 패킷 배열을 리스트 · 큐에 넣어 두었다가 나중에 보내거나 읽으면 **다른 패킷의 내용**이 들어 있음 | 패킷을 만드는 함수(`MotionProtocol` · `RagdollNetProtocol` · `PawnRushNetState` 등)와 받기 루프는 길이별 배열 하나를 다시 쓴다(`PacketPool`). 같은 길이의 다음 패킷이 그 배열을 덮는다 | 만든 · 받은 그 프레임에 쓰고 버린다. 쥐어야 하면 `(byte[])bytes.Clone()`(지연 시뮬레이터가 이렇게 함). 새 프로토콜도 `PacketStreams`를 쓰고, 바꾸기 전에 Core의 바이트 해시 시험(`GoldenBytes`)에 넣는다 | R297 [3] |
+| 66 | (코드 검토) 받기 루프에서 메시지 하나가 예외를 던지면 같은 묶음의 나머지 메시지를 잃고 Steam 메모리도 남음 | 메시지마다 `try`/`finally`(`Release`)만 있고 `catch`가 없어 예외가 루프 밖으로 나갔다 | 메시지마다 `catch` → `ReceiveErrors.Log(채널, 예외)`. 새 받기 루프도 같은 모양으로(31 · 32 · 33 · 34 · 35 · 40 참고) | R297 [5] |
 
 ## 22. 빠른 발도 시 물리 칼이 수납 방향으로 돌아감 (R50)
 
