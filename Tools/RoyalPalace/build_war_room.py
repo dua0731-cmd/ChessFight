@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""R119 complete war-room prefab. --write creates it; --overwrite discards edits;
+"""R120 complete war-room prefab. --write creates it; --overwrite discards edits;
 --check is read-only. The scene keeps a single instance plus its camera and light.
 """
 import argparse
@@ -267,6 +267,50 @@ class Builder:
         for a,b in zip(points,points[1:]):
             length=math.dist(a,b);angle=math.degrees(math.atan2(b[0]-a[0],b[2]-a[2]))
             self.box(g,'Solo archive guide inlay',((a[0]+b[0])/2,.025,(a[2]+b[2])/2),(.2,.03,length),'Gold',False,kit.yaw(angle))
+    def square_route(self):
+        # Keep four gameplay lanes. Two former lanes become an inaccessible staff briefing bay.
+        disabled=[]
+        for i in (3,4):
+            beat=self.beat(i);go=fid(self.raw[beat['tr']],'m_GameObject')
+            self.raw[go]=self.raw[go].replace('m_IsActive: 1','m_IsActive: 0');disabled.append(beat['tr'])
+        g=self.group('Square operations room - abbreviated north cross passage',self.prefix)
+        self.box(g,'North connecting floor',(84,-.4,72),(24,.8,12),'Slate')
+        self.box(g,'North passage guide',(84,.025,72),(72,.04,.2),'Gold',False)
+        # Explicit outer shell: X[-20,140], Z[-76,84]. The old front wall is an interior partition.
+        self.wall(g,'Square operations south facade',(47,8,-76),(134,24,1.6))
+        self.wall(g,'Square operations south return',(133,8,-76),(14,24,1.6))
+        self.wall(g,'Square operations exit header',(120,14,-76),(12,12,1.6))
+        for x in (-20,140):self.wall(g,'Square operations side extension',(x,8,-46),(1.6,24,60))
+        self.wall(g,'Square operations south roof',(60,20.4,-46),(161,.8,60))
+        # Carved back wall and briefing furniture make the retired bays read as offices.
+        self.wall(g,'Staff briefing bay north wall',(84,8,65),(48,24,1.2))
+        self.map(g,(84,10,65.7),False,True)
+        self.box(g,'Staff strategy table',(84,1,30),(30,2,22),'Wood',False)
+        self.box(g,'Staff table map',(84,2.1,30),(26,.1,18),'Ivory',False)
+        for x in (67,101):self.box(g,'Staff chair',(x,1,30),(3,2,6),'Purple',False)
+        for x in (10,50,90):self.map(g,(x,9,-74.9),False,True)
+        module,source=self.source_module
+        cps=refs(source,'checkpoints');cp=cps[1]
+        self.raw[cp]=re.sub(r'  m_LocalPosition: .*','  m_LocalPosition: {x: 96, y: 0, z: 72}',self.raw[cp])
+        self.raw[cp]=re.sub(r'  m_LocalRotation: .*','  m_LocalRotation: {x: 0, y: 0.7071067812, z: 0, w: 0.7071067812}',self.raw[cp])
+        self.box(g,'Relocated checkpoint 2',(96,.025,72),(6,.04,11),'Safe',False)
+        # Hide the old checkpoint inlay at (96,0,1).
+        for key,b in list(self.raw.items()):
+            if b.startswith('--- !u!4 ') and 'm_LocalPosition: {x: 96, y: 0.025, z: 1}' in b:
+                go=fid(b,'m_GameObject');self.raw[go]=self.raw[go].replace('m_IsActive: 1','m_IsActive: 0')
+        route=[]
+        for tid in refs(source,'route'):
+            parent=fid(self.raw[tid],'m_Father') if tid in self.raw else 0
+            if parent in disabled:continue
+            route.append(tid)
+            if tid in self.raw and 'm_Name: Route 3 end' in self.raw[fid(self.raw[tid],'m_GameObject')]:route.append(cp)
+        source=re.sub(r'  route:\n(?:  - .*\n)+','  route:\n'+''.join('  - '+kit.ref(t)+'\n' for t in route),source)
+        source=source.replace('targetSeconds: 240','targetSeconds: 150')
+        self.raw[module]=source;self.source_module=(module,source)
+        self.report['operations_footprint_m']=[160,160]
+        self.report['active_beats']=[1,2,3,6]
+        self.report['operations_target_seconds']=[120,180]
+        self.report['timing_scope']='Entry to headquarters doorway; giant chess crossing excluded'
     def headquarters(self):
         g=self.group('Headquarters - enclosed command chamber');self.hq=g
         # Full height facade, side walls, rear wall and ceiling hide both board and giants.
@@ -342,7 +386,7 @@ class Builder:
             self.report['transition_route'].append(pos)
         self.chessEntry=self.transitions[-1]
     def save(self):
-        self.offices();self.obstacles();self.approval_archive();self.headquarters();self.vestibule()
+        self.offices();self.obstacles();self.approval_archive();self.square_route();self.headquarters();self.vestibule()
         self.c.context(self.root)
         self.d.script(self.root,'PhysicsProfile',kit.fields(physicsRate=120,solverIterations=24))
         self.d.script(self.root,'GiantChessCourse',kit.fields(
@@ -355,7 +399,7 @@ class Builder:
         route=refs(source,'route')+[p['tr'] for p in self.transitions]+[self.exit['tr']]
         checkpoints=refs(source,'checkpoints')
         self.d.script(self.root,'CourseModule',kit.fields(courseId='"3-1-HQ"',displayName='"작전실 · 총지휘부"',entry=kit.ref(fid(source,'entry')),
-            exit=kit.ref(self.exit['tr']),minigameSlot=kit.ref(self.hq['tr']),targetSeconds=360,laneWidth=12)+
+            exit=kit.ref(self.exit['tr']),minigameSlot=kit.ref(self.hq['tr']),targetSeconds=240,laneWidth=12)+
             '  checkpoints:\n'+''.join('  - '+kit.ref(p)+'\n' for p in checkpoints)+
             '  route:\n'+''.join('  - '+kit.ref(p)+'\n' for p in route)+
             '  placementBounds:\n    m_Center: {x: 5, y: 20, z: -23}\n    m_Extent: {x: 133, y: 45, z: 197}\n')

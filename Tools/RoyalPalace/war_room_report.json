@@ -344,6 +344,21 @@
     2003797
   ],
   "approval_gate": 2003727,
+  "operations_footprint_m": [
+    160,
+    160
+  ],
+  "active_beats": [
+    1,
+    2,
+    3,
+    6
+  ],
+  "operations_target_seconds": [
+    120,
+    180
+  ],
+  "timing_scope": "Entry to headquarters doorway; giant chess crossing excluded",
   "root": 2000001,
   "root_transform": 2000002
 }

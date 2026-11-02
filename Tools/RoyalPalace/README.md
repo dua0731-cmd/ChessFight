@@ -14,3 +14,5 @@
 `build_war_room.py`는 3-1 원본을 읽어 벽/천장/소품/추가 장치/총지휘부를 확장하고 `WarRoomComplete.prefab`, `GiantChessCourse.unity`, `war_room_report.json`을 출력한다. `--check`는 비교, `--overwrite`는 해당 프리팹과 씬을 덮어쓴다. 원본 5개는 수정하지 않는다. Unity 직접 편집은 생성기에 역반영되지 않는다. [실행/편집 안내](../../Docs/KingRush/WAR_ROOM_COMPLETE.md).
 
 R119: 통합 생성기에 전술 지도 포격판·이동 폰 대열2줄·이중 승인문과 상시 우회로를 추가했다. 이동 범위의 원본 장식 일부는 통합본에서만 비활성화한다. 원본 5개 파일은 그대로다. `war_room_report.json`에 새 장치와 우회 경유점 ID를 기록한다.
+
+R120: `square_route()`가 통합본의 4/5구간을 비활성화하고 횡단 바닥과 체크포인트2를 재배치한다. 외벽 중심선160×160m, 활성 구간1/2/3/6, 작전실 목표120~180초. 원본5개 프리팹에는 반영하지 않는다.

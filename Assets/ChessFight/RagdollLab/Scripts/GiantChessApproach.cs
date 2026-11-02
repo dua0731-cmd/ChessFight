@@ -14,6 +14,16 @@ namespace ChessFight.RagdollLab
         readonly int[] checkpoints = new int[12];
         readonly int[] routeIndices = new int[12];
         readonly bool[] entered = new bool[12];
+        readonly float[] elapsed = new float[12];
+        bool timingStarted;
+        public void BeginTiming() => timingStarted = true;
+        public float Elapsed(int index) => elapsed[index];
+        public void AdvanceTimer(float seconds)
+        {
+            if (!Available || !timingStarted) return;
+            for (int i = 0; i < elapsed.Length; i++)
+                if (!entered[i]) elapsed[i] += Mathf.Max(0, seconds);
+        }
         public bool Available => isActiveAndEnabled && course != null && course.Entry != null && course.Exit != null;
         public bool ChessStarted { get; private set; }
         public bool Entered(int index) => !Available || entered[index];
@@ -22,9 +32,9 @@ namespace ChessFight.RagdollLab
 
         public void ResetProgress()
         {
-            ChessStarted = false;
+            ChessStarted = false; timingStarted = false;
             for (int i = 0; i < entered.Length; i++)
-            { checkpoints[i] = 0; routeIndices[i] = 1; entered[i] = false; }
+            { checkpoints[i] = 0; routeIndices[i] = 1; entered[i] = false; elapsed[i] = 0; }
         }
         Transform Recovery(int index) => checkpoints[index] == 0 ? course.Entry : course.Checkpoints[checkpoints[index] - 1];
         public Vector3 Spawn(int index)

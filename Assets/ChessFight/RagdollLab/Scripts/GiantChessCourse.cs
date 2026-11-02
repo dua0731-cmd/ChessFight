@@ -248,7 +248,7 @@ namespace ChessFight.RagdollLab
             if (players.Count == 0) return;
             if (Application.isFocused)
             {
-                if (Input.GetKeyDown(KeyCode.Return)) { running = ply < score.Length; menu = false; CursorState(); }
+                if (Input.GetKeyDown(KeyCode.Return)) { running = ply < score.Length; menu = false; if (approach != null) approach.BeginTiming(); CursorState(); }
                 if (Input.GetKeyDown(KeyCode.Escape)) { menu = !menu; CursorState(); }
                 if (Input.GetKeyDown(KeyCode.Tab)) Select((selected + 1) % 12);
                 if (Input.GetKeyDown(KeyCode.B)) botsEnabled = !botsEnabled;
@@ -257,6 +257,7 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.N) && running && (approach == null || !approach.Available || approach.ChessStarted)) elapsed = 1000; // Advance one phase, never skip a chess move.
             }
             bool active = running && !menu && Application.isFocused;
+            if (approach != null) approach.AdvanceTimer(!menu && Application.isFocused ? Time.deltaTime : 0);
             if (active && (approach == null || !approach.Available || approach.ChessStarted))
             {
                 elapsed += Time.deltaTime * Mathf.Clamp(replaySpeed, .25f, 16f);
@@ -335,9 +336,10 @@ namespace ChessFight.RagdollLab
             bool inOffices = approach != null && approach.Available && !approach.Entered(selected);
             GUI.Box(new Rect(12, 12, 720, inOffices ? 210 : 155), "");
             string move = ply < score.Length ? $"{ply / 2 + 1}. {(ply % 2 == 0 ? "백" : "흑")} {score[ply][5]}" : "Rc2# · 기보 종료";
+            int officeSeconds = approach != null ? Mathf.FloorToInt(approach.Elapsed(selected)) : 0;
             string stage = approach != null && approach.Available && !approach.Entered(selected)
-                ? $"작전실 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount}"
-                : "총지휘부 · 거인 체스";
+                ? $"작전실 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount} · {officeSeconds / 60}:{officeSeconds % 60:00} / 목표 2~3분"
+                : $"총지휘부 · 거인 체스 · 작전실 기록 {officeSeconds / 60}:{officeSeconds % 60:00}";
             string state = approach != null && approach.Available && !approach.ChessStarted
                 ? "체스판 입구 도착 대기"
                 : phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비";
