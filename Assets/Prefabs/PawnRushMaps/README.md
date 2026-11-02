@@ -21,3 +21,10 @@
 3. Project 창에서 프리팹을 우클릭하고 **ChessFight → Test In Pawn Rush Map Test**를 누르면 시험 씬이 열리고 그 맵으로 Play가 시작된다.
 
 자세한 안내는 [Docs/KingRush/PAWN_RUSH_MAP_TEST.md](../../../Docs/KingRush/PAWN_RUSH_MAP_TEST.md).
+
+## 들어 있는 맵
+
+| 프리팹 | 무엇 |
+|---|---|
+| `RoyalCarriageYard` | 왕실 마차뜰(R284): 외부 성문 · 가로 물레방아 · 마차 경기장(돌진 · 회전 마차, 세로 물레방아, 화물 경사로) · 밀어서 여는 최종 성문. Play 때 코드가 짓는 맵이라 프리팹은 컴포넌트 하나, 값은 Inspector에서 → [ROYAL_CARRIAGE_YARD](../../../Docs/KingRush/ROYAL_CARRIAGE_YARD.md) |
+| `RoyalCarriageYard_Obstacles` | 왕실 마차뜰 장애물을 하나씩 시험하는 곳(목재 다리 포함) |

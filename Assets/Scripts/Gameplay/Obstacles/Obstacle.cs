@@ -37,6 +37,11 @@ namespace ChessFight.Gameplay
         // Where the obstacle is at this time. The only thing a new obstacle type writes.
         protected abstract void Evaluate(double time, out Vector3 position, out Quaternion rotation);
 
+        // True when the pose between these two clock times is a cut, not a motion: a piece of cargo that goes back
+        // to the top of its chute (Royal Carriage Yard, 11-02). The step then puts the body there instead of sweeping
+        // it through everything in between, and nobody standing on it is told it moved. Nothing else uses it.
+        protected virtual bool JumpsBetween(double from, double to) => false;
+
         protected virtual void Awake()
         {
             body = GetComponent<Rigidbody>();
@@ -85,7 +90,7 @@ namespace ChessFight.Gameplay
             float dt = Time.fixedDeltaTime;
             // The clock itself jumped - switched to the shared match clock or back, or a long hitch:
             // go there without reporting the jump as speed to whoever stands on the obstacle.
-            jumped = !double.IsNaN(lastTime) && Math.Abs(now - lastTime - dt) > 0.25;
+            jumped = !double.IsNaN(lastTime) && (Math.Abs(now - lastTime - dt) > 0.25 || JumpsBetween(lastTime, now));
             lastTime = now;
             if (jumped)
             {

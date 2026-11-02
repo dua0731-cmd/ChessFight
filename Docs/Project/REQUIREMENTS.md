@@ -1,5 +1,7 @@
 # 사용자 요구사항 기록
 
+> **R284 (2026-11-02):** "폰러시 맵 테스트 씬에다가 맵 프리팹을 하나 추가할거야. 프롬프트에 나와있는 지시서대로 맵을 구성하고, 첨부한 이미지는 '그래픽적 컨셉'일 뿐이지 맵의 실제 구조와 장애물은 프롬프트를 참고해서" + 지시서 「ROYAL CARRIAGE YARD – 왕실 마차뜰」(4구간 · 장애물 5종 + 화물 · 성문, 미션 없음, 기존 시스템 재사용, Inspector 변수, 검수 기준). 작업 브랜치는 사용자가 `claude/nifty-tesla-8212va`로 고름(맵 시험 씬이 그 브랜치에만 있음). → 맵 프리팹 `RoyalCarriageYard`(코드로 짓는 4구간) + 시험장 `RoyalCarriageYard_Obstacles`, 장애물 컴포넌트 · 프리팹 8개(`Prefabs/Obstacles/RoyalCarriageYard/`), 넉백 `YardImpact`(기존 `IHitReceiver`), 세로 물레방아 · 최종 성문은 기존 래그돌 잡기 관절로, `Obstacle.JumpsBetween` 추가. 해석: 가로 물레방아 = 축이 진행 방향, 세로 = 서 있는 바퀴, 슬라이딩 = 다이빙, 목재 다리 기본 긴 변 경첩([ROYAL_CARRIAGE_YARD §6](KingRush/ROYAL_CARRIAGE_YARD.md)). Core133 · 세션45 · 컴파일 · 검사 통과, **Unity · 사람 확인 전.**
+
 > **R283 (2026-11-02):** "Scene에 Pawn Rush Map Test라는 새 씬을 만들어. 앞으로 만들 맵 프리팹을 직접 테스트하는 씬, 캐릭터 하나로 뛰어다니고 스킬을 쓰며 테스트하는 작업환경, 맵 프리팹 저장 폴더도 따로." → `Assets/Scenes/PawnRush_MapTest.unity` + `PawnRushMapTest`(폴더 프리팹 목록 · 맵 바꾸기 · 다시 짓기 · 보는 곳으로 이동 · 전체 보기 · 느리게 · 위치/속도 표시, 폰 러쉬 물리 · 스킬), 기본 시험장 `PawnRushCalibrationYard`, 메뉴 **ChessFight → Pawn Rush Map Test**, 폴더 `Assets/Prefabs/PawnRushMaps/`(README). 직전의 '왕실 마차뜰' 맵 지시서 요청은 사용자가 중단, 이 폴더의 프리팹으로 다음에. 컴파일 · 테스트 통과, Unity · 사람 확인 전.
 
 > **R282 (2026-11-01):** "맵이 사라졌어". → v25 데이터 재점검(이상 없음), 정원 FBX/JSON 이름 고정(씬 참조 유지), 구역별 예외 처리 · 루트 항상 켬 · LFS 포인터 안내, 버전17. 원인 미확정, 사용자 콘솔 확인 필요.

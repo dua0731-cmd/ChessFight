@@ -62,6 +62,12 @@
 | z 66 ~ 96 | 회전 막대(윗면 0.6 m, 60°/초), 좌우로 움직이는 발판(±5 m, 6초) |
 | z 96 ~ 106 | 구덩이 위 폭 2 / 1 / 0.5 m 다리, 구덩이 `KillVolume`, 체크포인트 z 92 |
 
+## 5-1. 폴더에 있는 맵
+
+| 맵 | 문서 |
+|---|---|
+| `RoyalCarriageYard`(왕실 마차뜰, R284) · `RoyalCarriageYard_Obstacles`(그 장애물 시험장) | [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) |
+
 ## 6. 아직 안 된 것
 
 - Unity에서 열어 본 적 없음: 씬 YAML은 손으로 썼다(코스 01 씬 블록 복사). 열리지 않거나 참조가 빠지면 **Rebuild Scene**.

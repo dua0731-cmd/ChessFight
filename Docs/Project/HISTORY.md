@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-02 R284: 왕실 마차뜰 맵 프리팹 `RoyalCarriageYard` · 시험장 `RoyalCarriageYard_Obstacles`, `PawnRush/CarriageYard/`(맵 빌더 · 장애물 9종 · `YardImpact` · `YardKit` · `WaterfallFlow`), 장애물 프리팹 8개, `Obstacle.JumpsBetween`. Core133 · 세션45 · Unity 6000.3 DLL 컴파일 · 경계/시계 검사 통과; Unity 미확인.
 - 2026-11-02 R283: 폰 러쉬 맵 시험 씬 `PawnRush_MapTest.unity`, `PawnRushMapTest` · `PawnRushCalibrationYard` · `PawnRushMapTestMenu`, 맵 프리팹 폴더 `Assets/Prefabs/PawnRushMaps/`. Core133 · 세션45 · 컴파일 통과; Unity 미확인.
 - 2026-11-01 R282: 정원 Resources 이름 고정(`RoyalWaterGarden.fbx` · `_Motion.json`), 시험 씬 구역별 try/catch · 루트 finally 활성, 정원 모델 누락 시 LFS 포인터 안내, 시험 씬 버전17. Core133 · 컴파일 통과; Unity 미확인.
 - 2026-11-01 R281: 정원 v25 — 물 흰 거품 제거, 폭포 막+물줄기 149개(정점 색) · 소스 이름 재질 연결, 저수지 수면 +0.24m · 배 흔들림 · 켈빈 항적/선수파, 발판 밑동 연장, 맑은 청록 물, 시험 씬 버전16. Core133 · 컴파일 · FBX · HLSL 문법 통과; Unity 미확인.
