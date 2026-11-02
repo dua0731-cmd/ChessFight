@@ -4,39 +4,39 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // Mid-game obstacle section 2-1, the grand stair hall (level design v0.3, Docs/KingRush/
-    // PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md): an imperial staircase - the grand stair up the middle, the
-    // central landing, the stair splitting into west and east wings, the window gallery along the north
-    // wall, the royal dais the wings meet on again, the royal balcony and the gate - at the design doc's
-    // coordinates (§2, §4). Section frame: origin on the porch's threshold line z 0, +z north (the way in),
-    // +x east, y = a floor's top. The section is entered at z -12 and left at z 132 (the mini-game entrance
-    // band), both 12 m wide.
+    // PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md, reshaped by the user in R152): the porch, the rolling grand
+    // stair and the chandelier landing of the doc lead into a round hall climbed by one spiral way - a curving
+    // stair along the wall, floating stones, a jump pad, gaps to dive across, a windy way, a last stair with
+    // falling pieces - up to the royal dais in its middle, then glass stones (one of each pair holds) to the
+    // royal balcony, the knights and the gate. Section frame: origin on the porch's threshold line z 0, +z north
+    // (the way in), +x east, y = a floor's top. The section is entered at z -12 and left at z 158.3 (the
+    // mini-game entrance band), both 12 m wide.
     //
     //   Mid_2-1_GrandStairHall (GrandStairHall, PawnRushSection)
     //     Content
     //       B1_GrandStair      porch, foyer and pillars, the drain, the lower flight, the middle landing, the upper
     //                          flight, four rolling holes and the lanes (RollingSpawner)
     //       B2_CentralLanding  the landing, the king statue, the falling chandeliers (ChandelierRain)
-    //       Wing_West          the ledge, wing stair 1 (3 chandelier pendulums, no railings), the turning landing
-    //       Wing_East            (a C round a rook tower, its sweeper), the moving stair, the window gallery (4 vents whose
-    //                            wind carries a pawn), bridge A, the island, bridge B to the dais; east = the mirror
-    //                            of west, built by the same code with x -> -x. Since R150 the wings stand 11 m
-    //                            further out than the doc's (WingOut) and the central landing reaches them
-    //       B5_RoyalDais       the dais, the lift landing (05 tiles x 2), the shaft
+    //       B3_Spiral          the spiral's foot, the curving stair (2 chandeliers), 8 floating stones, the north
+    //                          landing, the jump pad, the dive landings, the windy way (2 vents), the last stair
+    //                          (2 falling pieces), CP2 ~ CP5
+    //       B5_RoyalDais       the dais, CP6, the glass stones (GuessBridge) and the kill volume under them
     //       B6_RoyalBalcony    the balcony, two knights, the clock gate, the runout, the terrace, the arch, four
     //                          steps down, the mini-game entrance band
-    //       Hall               the hall's walls, the respawn floor (y -4) and its kill volume, chandeliers
-    //       Checkpoints        CP0 ~ CP5, CP 끝 (CP6)
-    //       ProgressPath       the west route ("white") and the east route ("black"), for the HUD and the validator
+    //       Hall               the round wall, the walls round the stair, the respawn floor (y -4) and its kill
+    //                          volume, chandeliers
+    //       Checkpoints        CP0, CP1, CP 끝 (CP7)
+    //       ProgressPath       the one route (given as both "white" and "black"), for the HUD and the validator
     //
-    // Everything solid is unclimbable (NoClimbSurface): this section is climbed by its stairs and its lift only
-    // (§7). The stairs are pictures of steps over an invisible walking slope along the steps' middle line: the
-    // ragdoll's hips ride 0.26 m over the ground, so a 0.25 m step is a wall to it and a 14° slope is not.
+    // Everything solid is unclimbable (NoClimbSurface). The grand stair's steps are pictures over an invisible
+    // walking slope along the steps' middle line: the ragdoll's hips ride 0.26 m over the ground, so a 0.25 m step
+    // is a wall to it and a 14° slope is not; the spiral's slopes are gentler and walked as they are drawn.
     // Built inactive and switched on at the end, so nothing inside wakes up half placed.
     public static partial class GrandStairHallBuilder
     {
         public const string DisplayName = "대계단 현관홀";
         public const float HallFloor = -4f, Deep = -5f;
-        public static readonly Vector3 Entry = new Vector3(0f, 0f, -12f), Exit = new Vector3(0f, 19f, 132f);
+        public static readonly Vector3 Entry = new Vector3(0f, 0f, -12f), Exit = new Vector3(0f, 15f, 158.3f);
 
         public static GameObject Build(GrandStairHall hall)
         {
@@ -50,17 +50,13 @@ namespace ChessFight.PawnRush
 
             b.In("B1_GrandStair", () => GrandStair(b));
             b.In("B2_CentralLanding", () => CentralLanding(b));
-            GameObject westGate = null, eastGate = null;
-            var west = b.In("Wing_West", () => westGate = Wing(b, -1f));
-            var east = b.In("Wing_East", () => eastGate = Wing(b, 1f));
-            GameObject lift = null, liftWall = null;
-            b.In("B5_RoyalDais", () => RoyalDais(b, out lift, out liftWall));
+            b.In("B3_Spiral", () => Spiral(b));
+            b.In("B5_RoyalDais", () => RoyalDais(b));
             b.In("B6_RoyalBalcony", () => RoyalBalcony(b));
             b.In("Hall", () => Shell(b));
             b.In("Checkpoints", () => Checkpoints(b));
             Path(b);
 
-            hall.Bind(west, east, westGate, eastGate, lift, liftWall);
             var section = hall.GetComponent<PawnRushSection>();
             if (section != null)
                 section.Describe(GrandStairHall.Id, DisplayName, PawnRushSection.SlotKind.Obstacle, Entry, Exit, 0f, Beats());
@@ -182,82 +178,92 @@ namespace ChessFight.PawnRush
                 if (t != go.transform && t.name == name) act(t);
         }
 
+
         // ------------------------------------------------------------------ the hall around it all
 
         static void Shell(CourseBuilder b)
         {
             var k = b.kit;
-            float h = HallHalf;   // 51 since R150 (the doc's 40): the wings stand WingOut further out
+            const float side = 34f;
             // The hall floor: falling onto it ends the try (1.5 s, back on the highest checkpoint; §8).
-            b.Box("Hall floor (respawn)", V(-h, Deep, 12f), V(h, HallFloor, 88f), CourseKit.Or(k.respawnFloor, k.trimBlack), false);
-            b.Trigger<KillVolume>("Kill volume (hall floor)", V(-h, HallFloor, 12f), V(h, HallFloor + 1.5f, 88f));
-            b.Trigger<KillVolume>("Kill volume (far below)", V(-70f, -42f, -30f), V(70f, -40f, 150f));
-            // Walls: west, east and north (the gallery's windows are in it), south beside the foyer.
-            Solid(b, "Hall wall W", V(-h - 2f, Deep, 12f), V(-h, 26f, 88f));
-            Solid(b, "Hall wall E", V(h, Deep, 12f), V(h + 2f, 26f, 88f));
-            Solid(b, "Hall wall N (west)", V(-h, Deep, 86f), V(-8f, 26f, 88f));
-            Solid(b, "Hall wall N (east)", V(8f, Deep, 86f), V(h, 26f, 88f));
-            Solid(b, "Hall wall S (west)", V(-h, Deep, 12f), V(-21f, 26f, 14f));
-            Solid(b, "Hall wall S (east)", V(21f, Deep, 12f), V(h, 26f, 14f));
-            // Chandeliers hanging over the landing (pictures; the falling ones are ChandelierRain's own).
-            foreach (var at in new[] { V(-9f, 21f, 55f), V(9f, 21f, 55f), V(-9f, 21f, 63f), V(9f, 21f, 63f), V(0f, 22f, 57f),
-                                       V(-19f, 21f, 59f), V(19f, 21f, 59f), V(-31f, 22f, 72f), V(31f, 22f, 72f) })
+            b.Box("Hall floor (respawn)", V(-side, Deep, 12f), V(side, HallFloor, 125f), CourseKit.Or(k.respawnFloor, k.trimBlack), false);
+            b.Trigger<KillVolume>("Kill volume (hall floor)", V(-side, HallFloor, 12f), V(side, HallFloor + 1.5f, 125f));
+            b.Trigger<KillVolume>("Kill volume (far below)", V(-70f, -42f, -30f), V(70f, -40f, 180f));
+            // Round the grand stair: south beside the foyer, west and east up to the round wall's widest point.
+            Solid(b, "Hall wall S (west)", V(-side, Deep, 12f), V(-21f, 26f, 14f));
+            Solid(b, "Hall wall S (east)", V(21f, Deep, 12f), V(side, 26f, 14f));
+            Solid(b, "Hall wall W", V(-side - 2f, Deep, 12f), V(-side, 26f, Hub.y));
+            Solid(b, "Hall wall E", V(side, Deep, 12f), V(side + 2f, 26f, Hub.y));
+            // The round wall (R152), 6° at a time, 2 m thick outside 31 m: open to the south where the landing comes
+            // in (φ 234..306) and to the north for the balcony (φ 72..108).
+            for (float phi = 306f; phi < 594f - .01f; phi += 6f)
+            {
+                float mid = (phi + 3f) % 360f;
+                if (mid > 72f && mid < 108f) continue;
+                b.SlopeBetween("Hall wall (round)", Polar(phi - .3f, HallRadius + 1f, Deep), Polar(phi + 6.3f, HallRadius + 1f, Deep),
+                               2f, 0f, 26f - Deep, k.wallNoClimb, true);
+            }
+            // Chandeliers hanging over the landing and the dais (pictures; the falling ones are ChandelierRain's own).
+            foreach (var at in new[] { V(-9f, 21f, 55f), V(9f, 21f, 55f), V(-9f, 21f, 63f), V(9f, 21f, 63f), V(0f, 22f, 57f), V(0f, 26f, 92f) })
             {
                 b.Cylinder("Chandelier ring", at, 2.4f, .12f, k.rankGold, false);
                 b.Cylinder("Chandelier column", at, .25f, .7f, k.rankGold, false);
-                b.Cylinder("Chandelier chain", at + Vector3.up * .7f, .08f, 26f - at.y, k.rankGold, false);
+                b.Cylinder("Chandelier chain", at + Vector3.up * .7f, .08f, 30f - at.y, k.rankGold, false);
             }
         }
 
         // ------------------------------------------------------------------ checkpoints, path, beats
 
-        // §8 (R150 numbering): CP0 porch, CP1 central landing, CP2 turning landing, CP3 gallery start, CP4 before
-        // bridge A (west and east), CP5 dais, CP6 (CP 끝) the exit terrace. Wing checkpoints are built with their wings.
+        // §8 (R152 numbering): CP0 porch, CP1 central landing, CP2 end of the curving stair, CP3 north landing, CP4
+        // after the dive gaps, CP5 start of the last stair, CP6 the dais, CP7 (CP 끝) the exit terrace. CP2 ~ CP6 are
+        // built with the spiral and the dais.
         static void Checkpoints(CourseBuilder b)
         {
             b.Checkpoint(0, V(0f, 0f, -6f), 0f, 10f);
             b.Checkpoint(1, V(0f, 8f, 53.5f), 0f, 12f);
-            b.Checkpoint(5, V(0f, 14f, 81f), 0f, 10f);
-            b.Checkpoint(6, V(0f, 20f, 123f), 0f, 10f);
+            b.Checkpoint(7, V(0f, 16f, 149.3f), 0f, 10f);
         }
 
-        // Both routes, the same length (the wings are mirrors): white = by the west wing, black = by the east.
-        // R150: the wing's points stand WingOut (11 m) further out; P9 -> P12 is the C round the rook tower on the
-        // turning landing, P12 -> P14 the moving stair lined up, P15 -> P16 bridge A, the island and bridge B.
-        static readonly Vector3[] WestRoute =
-        {
-            V(0, 0, -12), V(0, 0, -6), V(0, 0, 13.5f), V(0, 4, 29.5f), V(0, 4, 35.5f), V(0, 8, 51.5f), V(0, 8, 54),     // P0..P6
-            V(-14, 8, 60), V(-24.333f, 8, 60), V(-40.333f, 11, 60), V(-42.2f, 11, 56), V(-49.7f, 11, 56),               // P7..P11
-            V(-49.7f, 11, 65.5f), V(-48.5f, 11, 66.5f), V(-48.5f, 14, 79.5f), V(-48.5f, 14, 83), V(-24.8f, 14, 83),       // P12..P16
-            V(-6, 14, 83), V(-3.35f, 14, 87), V(-3.35f, 14, 91.35f), V(-3.35f, 20, 91.35f), V(0, 20, 96),                // P17..P21
-            V(0, 20, 102), V(0, 20, 123), V(0, 20, 126), V(0, 19, 128), V(0, 19, 132),                                   // P22..P26
-        };
-
-        static string LegBeat(int leg) =>
-            leg <= 5 ? "1" : leg <= 7 ? "2" : leg <= 14 ? "3" : leg <= 15 ? "4" : leg <= 20 ? "5" : "6";
-
+        // The one route (R152: no wings), given as both teams' route: the grand stair, the landing, the spiral's
+        // middle line (straight across the jump and the dive gaps), the dais, the left glass squares, the balcony.
+        // Each point names the beat of the leg that starts at it.
         static void Path(CourseBuilder b)
         {
-            var west = (Vector3[])WestRoute.Clone();
-            var east = new Vector3[west.Length];
-            for (int i = 0; i < west.Length; i++) east[i] = V(-west[i].x, west[i].y, west[i].z);
-            var sections = new string[west.Length];
-            for (int i = 0; i < sections.Length; i++) sections[i] = LegBeat(i);
+            var points = new System.Collections.Generic.List<Vector3>();
+            var beats = new System.Collections.Generic.List<string>();
+            System.Action<Vector3, string> add = (p, beat) => { points.Add(p); beats.Add(beat); };
+            foreach (var p in new[] { V(0, 0, -12), V(0, 0, -6), V(0, 0, 13.5f), V(0, 4, 29.5f), V(0, 4, 35.5f), V(0, 8, 51.5f) }) add(p, "1");
+            foreach (var p in new[] { V(0, 8, 54), V(8, 8, 64), V(11.5f, 8, 67.5f) }) add(p, "2");
+            for (float phi = 300f; phi <= 372f; phi += 12f) add(OnSpiral(phi, Mathf.Lerp(8f, 10f, (phi - 297f) / 75f)), "3");
+            for (int i = 0; i < 8; i++) add(OnSpiral(372f + (i + .5f) * 8.5f, 10f + 1.5f * (i + .5f) / 8f), "3");
+            add(OnSpiral(445f, 11.5f), "3");
+            add(OnSpiral(460f, 11.5f), "3");
+            foreach (float phi in new[] { 476f, 510f, 522f, 533.1f, 548f, 560.3f, 575f }) add(OnSpiral(phi, phi < 500f ? 11.5f : 14f), "4");
+            for (float phi = 590f; phi <= 635f; phi += 15f) add(OnSpiral(phi, Mathf.Lerp(14f, 14.8f, (phi - 575f) / 65f)), "4");
+            for (float phi = 650f; phi <= 710f; phi += 15f) add(OnSpiral(phi, Mathf.Lerp(14.8f, 16f, (phi - 640f) / 77f)), "4");
+            add(OnSpiral(716f, 16f), "4");
+            add(Polar(717f, DaisRadius - 1f, DaisTop), "5");
+            add(V(-1.5f, DaisTop, Hub.y + DaisRadius - .8f), "5");
+            for (int i = 0; i < 7; i++) add(V(-1.5f, DaisTop, Hub.y + DaisRadius + 1.05f + i * 2.85f + .9f), "5");
+            foreach (var p in new[] { V(-1.5f, 16, 121.5f), V(0, 16, 124.5f), V(0, 16, 128.3f), V(0, 16, 149.3f), V(0, 16, 152.3f), V(0, 15, 154.3f), V(0, 15, 158.3f) })
+                add(p, "6");
+            var route = points.ToArray();
             var go = new GameObject("ProgressPath");
             go.transform.SetParent(b.parent, false);
-            go.AddComponent<ProgressPath>().Configure(west, east, sections);
+            go.AddComponent<ProgressPath>().Configure(route, (Vector3[])route.Clone(), beats.ToArray());
         }
 
+        // Areas for the HUD and the CSV, the first that holds a pawn wins: the dais and the glass stones before the
+        // spiral's upper part (hips over y 13), the lower part last.
         public static SectionBeat[] Beats() => new[]
         {
             new SectionBeat("1 굴러떨어지는 대계단", V(-21f, -2f, -13f), V(21f, 12f, 51f)),
-            new SectionBeat("2 중앙 계단참 샹들리에 낙하", V(-LandingHalf, 6f, 51f), V(LandingHalf, 18f, 66f)),
-            new SectionBeat("3 갈라지는 날개 계단", V(-HallHalf - 1f, 6f, 51f), V(-LandingHalf, 20f, 80f)),
-            new SectionBeat("3 갈라지는 날개 계단", V(LandingHalf, 6f, 51f), V(HallHalf + 1f, 20f, 80f)),
-            new SectionBeat("4 창가 회랑 바람", V(-HallHalf - 1f, 12f, 80f), V(-13.8f - WingOut, 22f, 86f)),
-            new SectionBeat("4 창가 회랑 바람", V(13.8f + WingOut, 12f, 80f), V(HallHalf + 1f, 22f, 86f)),
-            new SectionBeat("5 다리와 승강 계단참", V(-13.8f - WingOut, 10f, 77f), V(13.8f + WingOut, 23f, 94.7f)),
-            new SectionBeat("6 왕실 발코니와 대문", V(-9f, 17f, 94.7f), V(9f, 30f, 133f)),
+            new SectionBeat("2 중앙 계단참 샹들리에 낙하", V(-14f, 6f, 51f), V(15.5f, 13f, 71.5f)),
+            new SectionBeat("5 왕실 단과 유리 징검다리", V(-5.5f, 15f, 86.5f), V(5.5f, 24f, 97.5f)),
+            new SectionBeat("5 왕실 단과 유리 징검다리", V(-3f, 13f, 97.5f), V(3f, 24f, BalconyFront)),
+            new SectionBeat("6 왕실 발코니와 대문", V(-9f, 13f, BalconyFront), V(9f, 26f, 159f)),
+            new SectionBeat("4 점프대·다이빙·바람·떨어지는 말", V(-34f, 13f, 60f), V(34f, 24f, 124f)),
+            new SectionBeat("3 휘어 오르는 계단과 떠 있는 발판", V(-34f, 6f, 60f), V(34f, 13f, 124f)),
         };
     }
 }

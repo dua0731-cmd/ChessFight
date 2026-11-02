@@ -1,23 +1,17 @@
-using System.Collections.Generic;
+using ChessFight.Gameplay;
 using ChessFight.ProtectKing;
 using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // The grand stair hall's beats in the order a pawn runs them, each line a row of the level design's §4
-    // tables (section frame, y = a floor's top). Where the build differs from the doc, the reason is next to
-    // it and in Docs/KingRush/PAWN_RUSH_SECTIONS.md §6.
+    // The grand stair hall's beats in the order a pawn runs them (section frame, y = a floor's top). Beats 1, 2 and
+    // 6 are the level design's §4 tables; since R152 the hall between them is round and climbed by one spiral way
+    // (the user's spiral-stair picture). Where the build differs from the doc, the reason is next to it and in
+    // Docs/KingRush/PAWN_RUSH_SECTIONS.md §6.
     public static partial class GrandStairHallBuilder
     {
         public static readonly float[] LaneX = { -6f, -2f, 2f, 6f };
         public const float LaneWidth = 3.6f;
-
-        // R150: each wing stands 11 m further out than the doc's (the hall is 102 m wide, not 80): the room
-        // between the gallery's end and the dais takes two bridges and an island instead of one bridge, and the
-        // central landing reaches out to the wings (x +-25).
-        public const float WingOut = 11f;
-        public const float LandingHalf = 14f + WingOut;
-        public const float HallHalf = 40f + WingOut;
 
         // ------------------------------------------------------------------ beat 1: the rolling grand stair (y 0 -> 8)
 
@@ -76,152 +70,210 @@ namespace ChessFight.PawnRush
         static void CentralLanding(CourseBuilder b)
         {
             var k = b.kit;
-            float h = LandingHalf;
-            // x -25..25 (R150; the doc's -14..14), z 52..66 (from z 51: the upper flight's last step). West and
-            // east it runs on into the wings' ledges at the same height (Wing), so those edges are open.
-            Mass(b, "Central landing", -h, h, 51f, 66f, 8f);
-            Rail(b, "Central landing rail N", -h, h, 65.7f, 66f, 8f);
-            Rail(b, "Central landing rail S (west)", -h, -8.3f, 51f, 51.3f, 8f);
-            Rail(b, "Central landing rail S (east)", 8.3f, h, 51f, 51.3f, 8f);
+            // x -14..14, z 52..66 (from z 51: the upper flight's last step), railed round; at its north-east corner
+            // the spiral's foot leads on (R152).
+            Mass(b, "Central landing", -14f, 14f, 51f, 66f, 8f);
+            Rail(b, "Central landing rail N", -14f, 4f, 65.7f, 66f, 8f);
+            Rail(b, "Central landing rail W", -14f, -13.7f, 51.3f, 65.7f, 8f);
+            Rail(b, "Central landing rail E", 13.7f, 14f, 51.3f, 63.5f, 8f);
+            Rail(b, "Central landing rail S (west)", -14f, -8.3f, 51f, 51.3f, 8f);
+            Rail(b, "Central landing rail S (east)", 8.3f, 14f, 51f, 51.3f, 8f);
             // The king statue: a 4 x 4 m base at (0, 8, 63), 6 m tall, unclimbable. The one fixed cover from the shock.
             Solid(b, "King statue base", V(-2f, 8f, 61f), V(2f, 9.2f, 65f));
             b.Cylinder("King statue body", V(0f, 9.2f, 63f), 2.4f, 2.6f, k.wallNoClimb, true, true);
             b.Cylinder("King statue collar", V(0f, 11.8f, 63f), 3f, .3f, k.wallNoClimb, true, true);
-            b.Sphere("King statue head", V(0f, 12.9f, 63f), 1.7f, k.wallNoClimb).AddComponent<Gameplay.NoClimbSurface>();
+            b.Sphere("King statue head", V(0f, 12.9f, 63f), 1.7f, k.wallNoClimb).AddComponent<NoClimbSurface>();
             Solid(b, "King statue cross (upright)", V(-.2f, 13.5f, 62.8f), V(.2f, 14f, 63.2f));
             Solid(b, "King statue cross (bar)", V(-.5f, 13.65f, 62.8f), V(.5f, 13.85f, 63.2f));
-            // The falling chandeliers (§5): ChandelierRain draws them, 1 m inside the landing's edges. The landing
-            // is 48 m across instead of 26, so they fall 1.85 times as often (0.4 ~ 0.75 s instead of 0.7 ~ 1.4)
-            // and a square metre of it sees as many as the doc's.
+            // The falling chandeliers (§5): ChandelierRain draws them.
             var rain = b.Group("Chandelier rain");
-            rain.gameObject.AddComponent<ChandelierRain>().Configure(k.rankGold, new Vector2(-(h - 1f), 54f), new Vector2(h - 1f, 65f), .4f, .75f);
-            // Measured across the way to the west wing (z), where nothing beside the rain leads on: a drop at
-            // z 54..65 reaches 4.5 m round it.
-            SpanAt(b, "Chandelier rain span", V(-12f, 8f, 58f), Vector3.forward, -8.5f, 11.5f);
+            rain.gameObject.AddComponent<ChandelierRain>().Configure(k.rankGold);
+            // A drop anywhere in x -13..13 reaches 4.5 m round it: past the landing's edges.
+            SpanAt(b, "Chandelier rain span", V(0f, 8f, 55f), Vector3.right, -17.5f, 17.5f);
         }
 
-        // ------------------------------------------------------------------ beats 3 ~ 5: a wing (s = -1 west, +1 east)
+        // ------------------------------------------------------------------ beats 3 ~ 4: the spiral (R152)
 
-        // The ledge either side of wing stair 1 (the central landing's floor running on), wing stair 1 (out from
-        // the landing, 12 steps, three chandeliers close together and no railings: a hit throws the pawn down
-        // onto the ledge), the turning landing (two carpets flowing back towards the stair), wing stair 2 (north,
-        // 12 steps), the window gallery with four vents whose wind carries a pawn, and two bridges with an island
-        // between them to the dais. The east wing is the same code with x -> -x: turning ways, the carpets' and
-        // the wind's directions follow. Returns the wing's portcullis (down only when the wing is shut). Every
-        // |x| is the doc's + WingOut (R150) but the last bridge's, onto the dais.
-        static GameObject Wing(CourseBuilder b, float s)
+        // The hall beyond the landing is round (wall 31 m out from Hub), the royal dais in its middle. One way climbs
+        // it anticlockwise, round the wall first and inwards as it rises: 420° from φ 297° (the landing's north-east
+        // corner) to φ 717° (east of the dais, 10 m out), its middle line SpiralRadius(φ). φ is measured anticlockwise
+        // from east, so 90° is north. A loop lies 13 m inside the one below it, so the way never passes over itself.
+        public static readonly Vector2 Hub = new Vector2(0f, 92f);
+        public const float HallRadius = 31f, SpiralFrom = 297f, SpiralTo = 717f, SpiralOuter = 28.75f, SpiralInner = 10f;
+        public const float DaisTop = 16f, DaisRadius = 8f, BalconyFront = 121f;
+
+        public static float SpiralRadius(float phi) => Mathf.Lerp(SpiralOuter, SpiralInner, (phi - SpiralFrom) / (SpiralTo - SpiralFrom));
+
+        static Vector3 Polar(float phi, float r, float y)
+        {
+            float a = phi * Mathf.Deg2Rad;
+            return V(Hub.x + r * Mathf.Cos(a), y, Hub.y + r * Mathf.Sin(a));
+        }
+
+        static Vector3 OnSpiral(float phi, float y, float outwards = 0f) => Polar(phi, SpiralRadius(phi) + outwards, y);
+
+        static Vector3 Outward(float phi)
+        {
+            float a = phi * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+        }
+
+        // The way's heading at φ (going anticlockwise) and the outward one, as yaws from +z.
+        static float Heading(float phi) { var o = Outward(phi); return Mathf.Atan2(-o.z, o.x) * Mathf.Rad2Deg; }
+        static float OutwardYaw(float phi) { var o = Outward(phi); return Mathf.Atan2(o.x, o.z) * Mathf.Rad2Deg; }
+
+        static void Spiral(CourseBuilder b)
         {
             var k = b.kit;
-            string side = s < 0 ? "W" : "E";
-            float d1 = 4f / 3f, o = WingOut;
-            float foot1 = 14f + o, top1 = 30f + o, outer = HallHalf;   // wing stair 1 |x| 25..41, the hall wall |x| 51
+            // The spiral's foot off the landing's north-east corner (y 8).
+            Mass(b, "Spiral foot", 4f, 15.5f, 63.5f, 71.5f, 8f);
+            Rail(b, "Spiral foot rail W", 4f, 4.3f, 66f, 71.5f, 8f);
+            Rail(b, "Spiral foot rail N", 4.3f, 10.5f, 71.2f, 71.5f, 8f);
 
-            // The ledge (y 8) beside wing stair 1, railed on the hall side and where it meets the turning landing.
-            Mass(b, "Wing ledge S " + side, s * foot1, s * top1, 51f, 57f, 8f);
-            Mass(b, "Wing ledge N " + side, s * foot1, s * top1, 63f, 66f, 8f);
-            Rail(b, "Wing ledge rail S " + side, s * foot1, s * top1, 51f, 51.3f, 8f);
-            Rail(b, "Wing ledge rail N " + side, s * foot1, s * top1, 65.7f, 66f, 8f);
-            Rail(b, "Wing ledge rail (end) " + side, s * (top1 - .3f), s * top1, 51.3f, 54f, 8f);
+            // 3a. The curving stair (φ 297 -> 372, y 8 -> 10): along the wall, its inner edge open to the hall floor
+            // 12 m down (a fall goes back to CP1). Two chandeliers swing across it, out to the wall.
+            Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, 2.25f, 0f, true, 1.2f, true);
+            Chandelier(b, "11 Pendulum (chandelier) 1", 322f, Mathf.Lerp(8f, 10f, 25f / 75f), 0f);
+            Chandelier(b, "11 Pendulum (chandelier) 2", 350f, Mathf.Lerp(8f, 10f, 53f / 75f), 1.6f);
+            b.Checkpoint(2, OnSpiral(368f, 9.9f), Heading(368f), 4.5f);
 
-            // Wing stair 1: |x| 25..41 (outwards), z 57..63 (6 m; the doc's 8), y 8 -> 11, 12 steps 0.25 x 1.33.
-            // No railings: a chandelier throws a pawn off it, 0 ~ 3 m down onto the ledge, and it walks back.
-            FlightX(b, "Wing stair 1 " + side, s, foot1, 12, d1, 57f, 63f, 8f);
-            Mass(b, "Wing stair 1 top step " + side, s * (foot1 + 11f * d1), s * top1, 57f, 63f, 11f);
-            // Three chandeliers (11 pendulums) swinging across the stair (z), 4.7 m apart: 2.5 m of rest between
-            // the balls' paths, room for two or three. Each 3.9 s (of 4.4) behind the one before, so who crosses
-            // one stops before the next whether running (2.5 m/s: 9% go straight on) or sprinting (3.6: 19%) -
-            // the doc's two, 7 m and 2.2 s apart, let a sprinter through both in one go 97% of the time.
-            float[] along = { 4f, 8.7f, 13.4f }, phase = { 0f, 3.9f, 7.8f };
-            for (int i = 0; i < along.Length; i++)
+            // 3b. The floating stones (φ 372 -> 440, y 10 -> 11.5): eight round slabs 2.6 m across, 0.75 m apart, every
+            // second one bobbing 0.45 m up and down every 3 s (ObstacleMotion, the shared clock), so some steps want
+            // a jump at the right moment.
+            for (int i = 0; i < 8; i++)
             {
-                float top = StepTopMax(along[i] - 1.1f, along[i] + 1.1f, d1, 8f);
-                float x = foot1 + along[i];
-                var pendulum = Hazard(b, k.pendulum, "11 Pendulum (chandelier) " + side + (i + 1), V(s * x, top - .1f, 60f), s < 0 ? 90f : -90f, phase[i]);
-                Span(pendulum, Vector3.forward, -6f, 6f, SlopeY(along[i], d1, 8f));
-                GantryZ(b, "Chandelier beam " + side + (i + 1), s * x, 60f, top - .1f + 7.3f, 6.4f);
+                float phi = 372f + (i + .5f) * 68f / 8f;
+                Stone(b, "Floating stone " + (i + 1), OnSpiral(phi, 10f + 1.5f * (i + .5f) / 8f), 2.6f, i % 2 == 1 ? .45f : 0f, 3f, i * .25f);
             }
 
-            // The turning landing (R150, the user: "꺾이는 부분만 사용되고 넓은쪽은 활용이 안돼", "C자로 이동"): |x| 41..51,
-            // z 54..66, y 11, round a rook tower (|x| 46, z 60, 5 m across). The way to the moving stair (its foot on
-            // the north edge, |x| 46..51) goes south and west round the tower, a C; north of the tower a 2.5 m gap
-            // (|x| 43.5..46) is a sprint jump straight across. A sweeper of two arms turns round the tower against
-            // the C (an arm every 3.6 s, 0.45 m high: jump it); the corners beyond its 5.6 m are the pockets to wait
-            // in. Its checkpoint (CP2) is the top of wing stair 1: a fall off the moving stair comes back here.
-            float hub = 35f + o, gap0 = 32.5f + o;   // |x| 46, 43.5
-            Mass(b, "Turning landing S " + side, s * top1, s * outer, 54f, 60f, 11f);
-            Mass(b, "Turning landing W " + side, s * hub, s * outer, 60f, 66f, 11f);
-            Mass(b, "Turning landing E " + side, s * top1, s * gap0, 60f, 66f, 11f);
-            Mass(b, "Turning landing (under the tower) " + side, s * gap0, s * hub, 60f, 62.5f, 11f);
-            Rail(b, "Turning landing rail S " + side, s * top1, s * outer, 53.7f, 54f, 11f);
-            Rail(b, "Turning landing rail (stair 1 side, south) " + side, s * (top1 - .3f), s * top1, 54f, 57f, 11f);
-            Rail(b, "Turning landing rail (stair 1 side, north) " + side, s * (top1 - .3f), s * top1, 63f, 66f, 11f);
-            Rail(b, "Turning landing rail N " + side, s * top1, s * gap0, 66f, 66.3f, 11f);
-            b.Cylinder("Rook tower " + side, V(s * hub, 11f, 60f), 5f, 9f, k.wallNoClimb, true, true);
-            b.Cylinder("Rook tower crown " + side, V(s * hub, 20f, 60f), 5.8f, .8f, k.wallNoClimb, true, true);
-            for (int i = 0; i < 4; i++)
+            // The north landing (φ 440 -> 482, y 11.5), under the glass stones: a rest (CP3) and the jump pad.
+            Walkway(b, "North landing", 440f, 482f, 11.5f, 11.5f, 2.5f, 2.5f);
+            b.Checkpoint(3, OnSpiral(452f, 11.5f), Heading(452f), 5f);
+
+            // 4a. The jump pad ("점프대"): from φ 476 up 2.5 m across 23° of void to the first dive landing (φ 510).
+            JumpPad(b, "02 Jump pad", OnSpiral(476f, 11.5f), OnSpiral(510f, 14f));
+
+            // 4b. The dive gaps ("다이빙해야만 넘어갈 수 있는 구간", φ 500 -> 575, y 14): three landings 3 m wide with two
+            // gaps 3.0 m on their inner side (3.3 along the middle, 3.6 outside) - more than a sprint jump carries (about 2.8 m
+            // at 3.6 m/s), less than a jump with a dive at the top. A fall goes back to CP3.
+            Walkway(b, "Dive landing 1", 500f, 522f, 14f, 14f, 1.5f, 1.5f);
+            Walkway(b, "Dive landing 2", 533.1f, 548f, 14f, 14f, 1.5f, 1.5f);
+            Walkway(b, "Dive landing 3", 560.3f, 575f, 14f, 14f, 1.5f, 1.5f);
+            Gap(b, "Dive gap 1", OnSpiral(522f, 14f), OnSpiral(533.1f, 14f), 2.5f);
+            Gap(b, "Dive gap 2", OnSpiral(548f, 14f), OnSpiral(560.3f, 14f), 2.5f);
+            b.Checkpoint(4, OnSpiral(569f, 14f), Heading(569f), 3f);
+
+            // 4c. The windy way (φ 575 -> 640, y 14 -> 14.8): 3 m wide, no railings, two vents on posts at its inner
+            // edge blowing out over the edge, half their cycle apart. The wind carries a pawn at 3.5 m/s (R150).
+            Walkway(b, "Windy way", 575f, 640f, 14f, 14.8f, 1.5f, 1.5f);
+            float[] ventPhi = { 594f, 621f }, ventPhase = { 0f, 3.4f };
+            for (int i = 0; i < ventPhi.Length; i++)
             {
-                float a = i * Mathf.PI * .5f;
-                var at = V(s * hub + 2.3f * Mathf.Cos(a), 20.8f, 60f + 2.3f * Mathf.Sin(a));
-                Solid(b, "Rook tower merlon " + side, at - V(.6f, 0f, .6f), at + V(.6f, 1f, .6f));
+                float phi = ventPhi[i], y = Mathf.Lerp(14f, 14.8f, (phi - 575f) / 65f);
+                var at = OnSpiral(phi, y, -1.6f);
+                Gust(Hazard(b, k.airVent, "15 Wind vent " + (i + 1), at, OutwardYaw(phi), ventPhase[i]));
+                var post = at - Outward(phi) * .45f;
+                Solid(b, "Wind vent post " + (i + 1), V(post.x - .45f, Deep, post.z - .45f), V(post.x + .45f, y, post.z + .45f));
+                // Its wind (3 x 3 x 6 m from the inner edge outwards) covers the way's 3 m.
+                SpanAt(b, "Wind span " + (i + 1), OnSpiral(phi, y), Outward(phi), -1.6f, 1.6f);
             }
-            Sweeper(b, "Sweeper " + side, V(s * hub, 11f, 60f), s * 50f);
-            b.Checkpoint(2, V(s * (top1 - .9f), 11f, 60f), s < 0 ? 270f : 90f, 6f);
+            b.Checkpoint(5, OnSpiral(645f, 14.9f), Heading(645f), 3.5f);
 
-            // Wing stair 2 is the moving stair (R150, "해리포터의 움직이는 계단처럼"; the doc's fixed flight with one
-            // chandelier was "너무 허전해"): |x| 46..51 from the landing's north edge, 13 m up to 0.5 m short of the
-            // gallery, turning 60° towards the hall's middle about its foot's inner corner every 16 s (lined up 5,
-            // warning 1, turning 3.5, away 3, back 3.5). Turned away its top hangs 5 m short of the gallery.
-            MovingStair(b, side, s, hub, outer);
-
-            // The window gallery: |x| 24.8..51, z 80..86, y 14, 6 wide; its south edge open to the hall 18 m below.
-            Mass(b, "Window gallery " + side, s * (13.8f + o), s * outer, 80f, 86f, 14f);
-            // Four 15 vents (the windows) in the north wall blowing into the hall, a quarter of 6.8 s apart. Their
-            // wind carries a pawn towards the edge at 3.5 m/s (4.55 off the ground): walking or running along the
-            // gallery goes over the edge inside 2 s, sprinting into it (3.6) just holds. The doc's push, 20 m/s² on
-            // the bodies, moved a running pawn about 0.2 m. 3 m wide (the prefab's) with 1.5 m rests, all of them inside
-            // |x| 43 so the stair comes up on the CP3 rest (|x| 43..51): over the doc's stair top a pawn stepped off past
-            // the first wind (the validator, R150 in Unity). The rest before bridge A is 1.7 m.
-            float[] ventX = { 30.5f + o, 26f + o, 21.5f + o, 17f + o }, ventPhase = { 0f, 1.7f, 3.4f, 5.1f };
-            Marker(b, "Rest (CP3) " + side, s * (ventX[0] + WindWide * .5f), s * outer, 80f, 86f, 14f);
-            for (int i = 0; i + 1 < ventX.Length; i++)
-                Marker(b, "Rest between the vents " + side, s * (ventX[i + 1] + WindWide * .5f), s * (ventX[i] - WindWide * .5f), 80f, 86f, 14f);
-            Marker(b, "Rest before the bridge (CP4) " + side, s * (13.8f + o), s * (ventX[3] - WindWide * .5f), 80f, 86f, 14f);
-            for (int i = 0; i < 4; i++)
+            // 4d. The last stair (φ 640 -> 717, y 14.8 -> 16) round the dais: two 10 falling chess pieces on it, half
+            // their cycle apart, then onto the dais.
+            Walkway(b, "Last stair", 640f, 717f, 14.8f, 16f, 1.75f, 1.75f, false, 1.2f, true);
+            float[] piecePhi = { 662f, 694f }, piecePhase = { 0f, 2.27f };
+            for (int i = 0; i < piecePhi.Length; i++)
             {
-                float x = s * ventX[i];
-                Gust(Hazard(b, k.airVent, "15 Wind vent (window) " + side + (i + 1), V(x, 14f, 86f), 180f, ventPhase[i]));
-                // The window over it: glass and a frame in the wall.
-                Picture(b, "Window", V(x - 1.4f, 17f, 85.9f), V(x + 1.4f, 24f, 85.98f), k.glass);
-                Picture(b, "Window frame", V(x - 1.6f, 16.8f, 85.85f), V(x + 1.6f, 17f, 86f), k.rankGold);
-                Picture(b, "Window frame", V(x - 1.6f, 24f, 85.85f), V(x + 1.6f, 24.2f, 86f), k.rankGold);
-                // Its wind (3 x 3 x 6 m) covers the gallery's 6 m.
-                SpanAt(b, "Wind span " + side + (i + 1), V(x, 14f, 83f), Vector3.forward, -3.2f, 3f);
+                float phi = piecePhi[i], y = Mathf.Lerp(14.8f, 16f, (phi - 640f) / 77f);
+                var piece = Hazard(b, k.fallingPiece, "10 Falling piece " + (i + 1), OnSpiral(phi, y), Heading(phi), piecePhase[i]);
+                Span(piece, Outward(phi), -5f, 5f, y);
             }
-            b.Checkpoint(3, V(s * (36f + o), 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
-            b.Checkpoint(4, V(s * (14.65f + o), 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
-
-            // Two 12 bridges with an island between them to the dais (R150; the doc's one bridge was 8 m, shut
-            // 0.5 s of 9, and a pawn on it as it folded slid down its panel back to the gallery or on to the dais):
-            // bridge A |x| 16.8..24.8, the island 13.8..16.8 (3 x 6 m, edges open 18 m over the hall floor; a fall
-            // goes back to CP4), bridge B 5.9..13.9 onto the dais. B runs half a cycle behind A, so whoever crosses
-            // A waits on the island with whoever else did. Both wings the same.
-            float bridgeA = 13.8f + o - 4f, islandOuter = bridgeA - 4f;   // 20.8, 16.8
-            Bridge(b, "12 Bridge A " + side, s * bridgeA, 0f);
-            Mass(b, "Island " + side, s * (islandOuter - 3f), s * islandOuter, 80f, 86f, 14f, 12f);
-            Bridge(b, "12 Bridge B to the dais " + side, s * 9.9f, BridgeCycle * .5f);
-
-            // The portcullis at this wing's entrance (|x| 25, across the landing and its ledges, z 51..66): down
-            // only when the round shuts the wing (3 or 4 a side, GrandStairHall).
-            var gate = Solid(b, "Wing portcullis " + side, V(s * (foot1 - .3f), 8f, 51.3f), V(s * (foot1 + .1f), 13f, 65.7f));
-            gate.GetComponent<Renderer>().sharedMaterial = k.trimBlack;
-            for (int i = 0; i < 9; i++)
-                Picture(b, "Portcullis bar", V(s * (foot1 - .35f), 8f, 51.8f + i * 1.65f), V(s * (foot1 + .15f), 13.2f, 52.1f + i * 1.65f), k.wallNoClimb).transform.SetParent(gate.transform, true);
-            gate.SetActive(false);
-            return gate;
+            b.SlopeBetween("Onto the dais", OnSpiral(716f, 16f), Polar(717f, DaisRadius - .5f, 16f), 3.5f, .6f, 0f, k.floorChecker, true)
+             .AddComponent<CourseFloor>();
         }
 
-        // A 15 vent's wind (R150): it carries a pawn (DriftSpeed) instead of pushing its bodies, and
-        // its arrows reach the gallery's far edge (the prefab draws them 3.7 m out of a 6.2 m wind).
+        // A way along the spiral from φA to φB rising yA -> yB, `halfIn` inside its middle line and `halfOut` outside
+        // (or out to the hall wall), made of chord slabs no more than 5° long that overlap a little. A stair gets a
+        // dark step line at each slab's start.
+        static void Walkway(CourseBuilder b, string name, float phiA, float phiB, float yA, float yB, float halfIn, float halfOut,
+                            bool toWall = false, float thickness = .6f, bool steps = false)
+        {
+            int n = Mathf.Max(1, Mathf.CeilToInt((phiB - phiA) / 5f));
+            for (int i = 0; i < n; i++)
+            {
+                float u0 = i / (float)n, u1 = (i + 1f) / n;
+                float p0 = Mathf.Lerp(phiA, phiB, u0), p1 = Mathf.Lerp(phiA, phiB, u1), pm = (p0 + p1) * .5f;
+                float inner = SpiralRadius(pm) - halfIn, outer = toWall ? HallRadius : SpiralRadius(pm) + halfOut;
+                float mid = (inner + outer) * .5f, y0 = Mathf.Lerp(yA, yB, u0), y1 = Mathf.Lerp(yA, yB, u1);
+                Vector3 a = Polar(p0, mid, y0), c = Polar(p1, mid, y1), along = (c - a).normalized * .15f;
+                var slab = b.SlopeBetween(name + " " + (i + 1), a - along, c + along, outer - inner, thickness, 0f, b.kit.floorChecker, true);
+                slab.AddComponent<CourseFloor>().sloped = !Mathf.Approximately(y0, y1);
+                if (steps && i > 0)
+                    b.SlopeBetween(name + " step line " + i, Polar(p0, inner, y0 + .02f), Polar(p0, outer, y0 + .02f), .12f, .01f, .01f, b.kit.trimBlack, false)
+                     .GetComponent<Collider>().enabled = false;
+            }
+        }
+
+        // A floating stone: a round slab with its top at `top`; `bob` > 0 makes it rise and sink that far either way.
+        static void Stone(CourseBuilder b, string name, Vector3 top, float diameter, float bob, float period, float phase)
+        {
+            var stone = b.Cylinder(name, top - Vector3.up * .5f, diameter, .5f, b.kit.floorChecker, true, true);
+            stone.AddComponent<CourseFloor>();
+            if (bob <= 0f) return;
+            var body = stone.AddComponent<Rigidbody>();
+            body.isKinematic = true;
+            body.useGravity = false;
+            var motion = stone.AddComponent<ObstacleMotion>();
+            motion.kind = MotionKind.Translate;
+            motion.axis = Vector3.up;
+            motion.useLocalTranslationAxes = false;
+            motion.distance = bob;
+            motion.period = period;
+            motion.phase = phase;
+            motion.shove = false;
+        }
+
+        // A chandelier (11 pendulum) swinging across the way at φ, 40° (4.7 m either side of the middle line, out to
+        // the wall), hung from a thin beam from a post inside the way to the hall wall.
+        static void Chandelier(CourseBuilder b, string name, float phi, float y, float phase)
+        {
+            var at = OnSpiral(phi, y + .15f);
+            var pendulum = Hazard(b, b.kit.pendulum, name, at, Heading(phi), phase);
+            var swing = pendulum != null ? pendulum.GetComponentInChildren<PendulumSwing>(true) : null;
+            if (swing != null) swing.SwingAngle = 40f;
+            Span(pendulum, Outward(phi), -5.2f, 5.2f, y);
+            float pivotY = at.y + 7.3f, postR = SpiralRadius(phi) - 6.2f;
+            var post = Polar(phi, postR, 0f);
+            Beam(b, name + " post", V(post.x - .2f, Deep, post.z - .2f), V(post.x + .2f, pivotY + .8f, post.z + .2f));
+            b.SlopeBetween(name + " beam", Polar(phi, postR, pivotY + .6f), Polar(phi, HallRadius + .5f, pivotY + .6f), .4f, .2f, .2f, b.kit.trimBlack, true);
+        }
+
+        // A 02 jump pad at `from` throwing a pawn onto `to`: 9 m/s up and forward fast enough to cover the distance in
+        // the time the arc takes to come down to `to`'s height. The flight is an intended gap.
+        static void JumpPad(CourseBuilder b, string name, Vector3 from, Vector3 to)
+        {
+            var flat = new Vector3(to.x - from.x, 0f, to.z - from.z);
+            float distance = flat.magnitude, rise = to.y - from.y, up = 9f;
+            float time = (up + Mathf.Sqrt(up * up - 2f * 9.81f * rise)) / 9.81f;
+            var pad = Hazard(b, b.kit.jumpPad, name, from, Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg);
+            var surface = pad != null ? pad.GetComponentInChildren<ObstacleSurface>(true) : null;
+            if (surface != null) surface.launchVelocity = new Vector3(0f, up, distance / time);
+            Gap(b, name + " flight", from, to, 3f);
+        }
+
+        // An intended gap between two points on the way (IntendedGap: the validator's 1.5 m rule does not apply).
+        static void Gap(CourseBuilder b, string name, Vector3 from, Vector3 to, float halfWidth)
+        {
+            var flat = new Vector3(to.x - from.x, 0f, to.z - from.z);
+            var box = b.Group(name);
+            box.localPosition = (from + to) * .5f;
+            box.localRotation = Quaternion.Euler(0f, Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg, 0f);
+            box.gameObject.AddComponent<IntendedGap>().Configure(new Vector3(halfWidth * 2f, Mathf.Abs(to.y - from.y) + 8f, flat.magnitude + 2f), name);
+        }
+
+        // A 15 vent's wind (R150): it carries a pawn (DriftSpeed) instead of pushing its bodies, and its arrows reach
+        // the far edge of what it blows over (the prefab draws them 3.7 m out of a 6.2 m wind).
         const float WindWide = 3f, WindDrift = 3.5f;
 
         static void Gust(GameObject vent)
@@ -238,175 +290,83 @@ namespace ChessFight.PawnRush
             ForChildren(vent, "Arrow tip", t => t.localPosition = new Vector3(t.localPosition.x, t.localPosition.y, 5.6f));
         }
 
-        // A 12 bridge every 11.5 s: open 4, warning 1, folding 1.75 (the prefab folds 70° no faster than that),
-        // shut 3, unfolding 1.75. Its own landings would overlap the gallery, the island and the dais.
-        const float BridgeCycle = 4f + 1f + 1.75f + 3f + 1.75f;
-
-        static void Bridge(CourseBuilder b, string name, float x, float phase)
-        {
-            var bridge = Hazard(b, b.kit.foldingBridge, name, V(x, 14f, 83f), 0f, phase);
-            var folding = bridge != null ? bridge.GetComponent<FoldingBridge>() : null;
-            if (folding != null)
-            {
-                folding.OpenDuration = 4f;
-                folding.WarningDuration = 1f;
-                folding.FoldDuration = 1.5f;
-                folding.ClosedDuration = 3f;
-            }
-            ForChildren(bridge, "LeftLanding", t => t.gameObject.SetActive(false));
-            ForChildren(bridge, "RightLanding", t => t.gameObject.SetActive(false));
-        }
-
-        // A beam over a pendulum swinging along z (posts out of the ball's reach, 6.4 m from the axis). Thin and
-        // dark: the doc-sized grey ones filled the camera on the wing stair.
-        static void GantryZ(CourseBuilder b, string name, float x, float axisZ, float pivotY, float half)
-        {
-            float lo = axisZ - half, hi = axisZ + half;
-            Beam(b, name + " post S", V(x - .2f, Deep, lo - .2f), V(x + .2f, pivotY + .8f, lo + .2f));
-            Beam(b, name + " post N", V(x - .2f, Deep, hi - .2f), V(x + .2f, pivotY + .8f, hi + .2f));
-            Beam(b, name, V(x - .2f, pivotY + .4f, lo - .2f), V(x + .2f, pivotY + .8f, hi + .2f));
-        }
-
         static GameObject Beam(CourseBuilder b, string name, Vector3 a, Vector3 c) => b.Box(name, a, c, b.kit.trimBlack, true);
 
-        // A sweeper of two arms turning round a vertical axis at `hub` (R150, the turning landing): 0.45 m high from
-        // 2.6 to 5.6 m out on a collar round the tower. Its turn is ObstacleMotion's (a function of the shared clock)
-        // and an arm knocks a pawn it meets (ObstacleImpact, as the 04 hammer's head does: 9 + up 2).
-        static void Sweeper(CourseBuilder b, string name, Vector3 hub, float degreesPerSecond)
-        {
-            var sensors = new List<GameObject>();
-            var root = b.In(name, () =>
-            {
-                b.Cylinder(name + " collar", V(0f, 0f, 0f), 5.6f, .6f, b.kit.hazard, true, true);
-                foreach (float dir in new[] { 1f, -1f })
-                {
-                    b.Box(name + " arm", V(dir * 2.6f, .05f, -.18f), V(dir * 5.6f, .45f, .18f), b.kit.hazard, true);
-                    var sensor = b.Box(name + " impact sensor", V(dir * 2.6f, 0f, -.45f), V(dir * 5.7f, .9f, .45f), null, false);
-                    Object.DestroyImmediate(sensor.GetComponent<MeshRenderer>());
-                    Object.DestroyImmediate(sensor.GetComponent<MeshFilter>());
-                    sensor.GetComponent<Collider>().isTrigger = true;
-                    sensors.Add(sensor);
-                }
-            });
-            root.localPosition = hub;
-            var body = root.gameObject.AddComponent<Rigidbody>();
-            body.isKinematic = true;
-            body.useGravity = false;
-            var context = root.gameObject.AddComponent<ObstacleContext>();
-            var motion = root.gameObject.AddComponent<ObstacleMotion>();
-            motion.kind = MotionKind.Rotate;
-            motion.axis = Vector3.up;
-            motion.degreesPerSecond = degreesPerSecond;
-            motion.shove = false;
-            foreach (var sensor in sensors)
-            {
-                var impact = sensor.AddComponent<ObstacleImpact>();
-                impact.motion = motion;
-                impact.context = context;
-                impact.strength = 9f;
-                impact.lift = 2f;
-                impact.hitCooldown = .5f;
-            }
-        }
+        // ------------------------------------------------------------------ beat 5: the royal dais and the glass stones (y 16)
 
-        // The moving stair (SwingingStair): its axis at the foot's inner corner (|x| `inner`, z 66.5, y 11), the
-        // flight out to |x| `outer`, 13 m up 3 m to 0.5 m short of the gallery. 12 steps (pictures, solid-looking
-        // 1.4 m down) over a walking ramp through their middles; an amber strip on the first step, lit while it
-        // warns and turns. It turns towards the hall's middle; both wings in step.
-        static void MovingStair(CourseBuilder b, string side, float s, float inner, float outer)
-        {
-            const float foot = 66.5f, length = 13f, rise = 3f;
-            float width = outer - inner, d = length / 12f;
-            Renderer strip = null;
-            var root = b.In("Moving stair " + side, () =>
-            {
-                for (int k = 0; k < 12; k++)
-                {
-                    float top = rise * (k + .5f) / 12f;
-                    Picture(b, "Moving stair step " + (k + 1), V(0f, top - 1.4f, k * d), V(s * width, top, (k + 1) * d), b.kit.floorChecker);
-                }
-                Walk(b.SlopeBetween("Moving stair (walking slope)", V(s * width * .5f, 0f, 0f), V(s * width * .5f, rise, length),
-                                    width, .6f, 0f, b.kit.floorChecker, true));
-                strip = Picture(b, "Moving stair warning strip", V(s * .1f, .13f, .1f), V(s * (width - .1f), .16f, .4f), b.kit.hazard).GetComponent<Renderer>();
-            });
-            root.localPosition = V(s * inner, 11f, foot);
-            var body = root.gameObject.AddComponent<Rigidbody>();
-            body.isKinematic = true;
-            body.useGravity = false;
-            root.gameObject.AddComponent<SwingingStair>().Configure(-s * 60f, 0f, new[] { strip });
-        }
-
-        // ------------------------------------------------------------------ beat 5: the royal dais and the lift landing (y 14 <-> 20)
-
-        static void RoyalDais(CourseBuilder b, out GameObject eastLift, out GameObject eastLiftWall)
+        static void RoyalDais(CourseBuilder b)
         {
             var k = b.kit;
-            // The dais floating in the middle of the hall (x -6..6, z 78..88, y 14), where the two wings meet again.
-            Mass(b, "Royal dais", -6f, 6f, 78f, 86f, 14f, 12f);
-            Mass(b, "Royal dais (north)", -6.7f, 6.7f, 86f, 88f, 14f, 12f);
-            Rail(b, "Royal dais rail S", -6f, 6f, 78f, 78.3f, 14f);
-            Rail(b, "Royal dais rail W", -6f, -5.7f, 78.3f, 80f, 14f);
-            Rail(b, "Royal dais rail E", 5.7f, 6f, 78.3f, 80f, 14f);
-            // The lift landing (x -6.7..6.7, z 88..94.7): two 05 bundles rising 14 <-> 20 every 6 s, phases 0 / 3. Low
-            // they meet the dais, high the balcony. Their sides cannot be climbed; their pit's rims are not needed.
-            eastLift = null;
-            foreach (float x in new[] { -3.35f, 3.35f })
+            // The dais: a round tower 16 m across in the middle of the hall, its top the spiral's end. CP6 where the
+            // spiral comes onto it.
+            b.Cylinder("Royal dais", V(Hub.x, Deep, Hub.y), DaisRadius * 2f, DaisTop - Deep, k.floorChecker, true, true).AddComponent<CourseFloor>();
+            var inward = -Outward(717f);
+            b.Checkpoint(6, Polar(717f, DaisRadius - 1f, DaisTop), Mathf.Atan2(inward.x, inward.z) * Mathf.Rad2Deg, 3.5f);
+
+            // The glass stones (R152, "오징어게임 징검다리처럼 옳바른 길은 정해져 있고 직접 밟아 봐야 안다"): seven rows of two
+            // 1.8 m squares north from the dais to the balcony, 1.05 m between rows and 1.2 m between the two of a
+            // row. GuessBridge picks which of each pair holds, from the section's seed.
+            const int rows = 7;
+            const float size = 1.8f, gap = 1.05f;
+            var left = new GameObject[rows];
+            var right = new GameObject[rows];
+            var stones = b.In("Glass stones", () =>
             {
-                var lift = Hazard(b, k.risingTiles, "05 Lift landing " + (x < 0 ? "W" : "E"), V(x, 17f, 91.35f), 0f, x < 0 ? 0f : 3f);
-                ForChildren(lift, "Pit edge", t => t.gameObject.SetActive(false));
-                ForChildren(lift, "Tile body", t => { if (t.GetComponent<Gameplay.NoClimbSurface>() == null) t.gameObject.AddComponent<Gameplay.NoClimbSurface>(); });
-                if (x > 0) eastLift = lift;
-            }
-            // The shaft: walls either side (a fall off a high tile lands on the dais), a floor under the tiles'
-            // lowest place so the column under a raised tile is no hole.
-            Solid(b, "Lift shaft wall W", V(-8f, 11f, 86f), V(-6.7f, 21f, 94.7f));
-            Solid(b, "Lift shaft wall E", V(6.7f, 11f, 86f), V(8f, 21f, 94.7f));
-            Solid(b, "Lift shaft floor", V(-6.7f, 13f, 88f), V(6.7f, 13.4f, 94.7f));
-            // 3 or 4 a side: one bundle (west); the east half is an unclimbable wall.
-            eastLiftWall = Solid(b, "Lift landing E (wall for 3 or 4 a side)", V(0f, 13.4f, 88f), V(6.7f, 20f, 94.7f));
-            eastLiftWall.SetActive(false);
+                for (int i = 0; i < rows; i++)
+                {
+                    float z0 = Hub.y + DaisRadius + gap + i * (size + gap);
+                    left[i] = b.Box("Glass square L" + (i + 1), V(-.6f - size, DaisTop - .3f, z0), V(-.6f, DaisTop, z0 + size), k.glass, true);
+                    right[i] = b.Box("Glass square R" + (i + 1), V(.6f, DaisTop - .3f, z0), V(.6f + size, DaisTop, z0 + size), k.glass, true);
+                }
+            });
+            stones.gameObject.AddComponent<GuessBridge>().Configure(left, right);
+            // Under them a fall goes back to the dais (CP6), not onto the spiral below. Low enough to miss a jump on
+            // the north landing (y 11.5) under it.
+            b.Trigger<KillVolume>("Kill volume (glass stones)", V(-3.5f, DaisTop - 1.4f, Hub.y + DaisRadius + .5f), V(3.5f, DaisTop - .6f, BalconyFront - .2f));
         }
 
-        // ------------------------------------------------------------------ beat 6: the royal balcony, the gate, the way out (y 20 -> 19)
+        // ------------------------------------------------------------------ beat 6: the royal balcony, the gate, the way out (y 16 -> 15)
 
+        // The doc's beat 6 moved 26.3 m north and 4 m down (R152): its balcony now opens off the round wall at the end
+        // of the glass stones.
         static void RoyalBalcony(CourseBuilder b)
         {
             var k = b.kit;
-            // The balcony: x -8..8, z 94.7..102, y 20; its south edge is the lift landing.
-            Mass(b, "Royal balcony", -8f, 8f, 94.7f, 102f, 20f, 12f);
-            Solid(b, "Balcony wall W", V(-8.6f, 12f, 94.7f), V(-8f, 26f, 102f));
-            Solid(b, "Balcony wall E", V(8f, 12f, 94.7f), V(8.6f, 26f, 102f));
+            // The balcony: x -8..8, z 121..128.3, y 16.
+            Mass(b, "Royal balcony", -8f, 8f, 121f, 128.3f, 16f, 8f);
+            Solid(b, "Balcony wall W", V(-8.6f, 8f, 121f), V(-8f, 22f, 128.3f));
+            Solid(b, "Balcony wall E", V(8f, 8f, 121f), V(8.6f, 22f, 128.3f));
             // The guard knights' alcoves either side, 3 m up, unclimbable. They fill the balcony's sides along the
             // charge lanes, so the two charges cover the way across (§7: "기병(발코니 폭 16 m를 두 돌진 띠가 나눠 덮음)").
-            Solid(b, "Knight alcove W", V(-8f, 20f, 95.6f), V(-5.2f, 23f, 101.4f));
-            Solid(b, "Knight alcove E", V(5.2f, 20f, 95.6f), V(8f, 23f, 101.4f));
-            // Two 17 knights: land at (-4, 20, 97) and charge 8 m east; land at (4, 20, 100) and charge west. Half a
-            // cycle apart (7.62 s), so one lane is always quiet. They leap from their alcoves.
-            Knight(b, "W", V(-2f, 20f, 97f), 0f, 0f);
-            Knight(b, "E", V(2f, 20f, 100f), 180f, 3.81f);
+            Solid(b, "Knight alcove W", V(-8f, 16f, 121.9f), V(-5.2f, 19f, 127.7f));
+            Solid(b, "Knight alcove E", V(5.2f, 16f, 121.9f), V(8f, 19f, 127.7f));
+            // Two 17 knights: land at (-4, 16, 123.3) and charge 8 m east; land at (4, 16, 126.3) and charge west. Half
+            // a cycle apart (7.62 s), so one lane is always quiet. They leap from their alcoves.
+            Knight(b, "W", V(-2f, 16f, 123.3f), 0f, 0f);
+            Knight(b, "E", V(2f, 16f, 126.3f), 180f, 3.81f);
             // The 09 clock gate (two doors, 5 s, out of step) and its blocking walls to the sides (5.8 m).
-            var gates = Hazard(b, k.clockGates, "09 Clock gate (the palace door)", V(0f, 20f, 102f), 0f, 0f);
-            Span(gates, Vector3.right, -4.3f, 4.3f, 20f);
-            Solid(b, "Gate wall W", V(-8f, 20f, 101.4f), V(-4.3f, 25.8f, 102.6f));
-            Solid(b, "Gate wall E", V(4.3f, 20f, 101.4f), V(8f, 25.8f, 102.6f));
+            var gates = Hazard(b, k.clockGates, "09 Clock gate (the palace door)", V(0f, 16f, 128.3f), 0f, 0f);
+            Span(gates, Vector3.right, -4.3f, 4.3f, 16f);
+            Solid(b, "Gate wall W", V(-8f, 16f, 127.7f), V(-4.3f, 21.8f, 128.9f));
+            Solid(b, "Gate wall E", V(4.3f, 16f, 127.7f), V(8f, 21.8f, 128.9f));
             // The runout: 18 m without obstacles, railed.
-            Mass(b, "Runout", -6f, 6f, 102f, 120f, 20f, 12f);
-            Rail(b, "Runout rail W", -6.3f, -6f, 102.6f, 120f, 20f);
-            Rail(b, "Runout rail E", 6f, 6.3f, 102.6f, 120f, 20f);
+            Mass(b, "Runout", -6f, 6f, 128.3f, 146.3f, 16f, 8f);
+            Rail(b, "Runout rail W", -6.3f, -6f, 128.9f, 146.3f, 16f);
+            Rail(b, "Runout rail E", 6f, 6.3f, 128.9f, 146.3f, 16f);
             // The exit terrace (12 x 6 m, CP 끝), 1 m over the mini-game.
-            Mass(b, "Exit terrace", -6f, 6f, 120f, 126f, 20f, 12f);
-            Marker(b, "Exit terrace (CP 끝)", -6f, 6f, 120f, 126f, 20f);
-            Rail(b, "Terrace rail W", -6.3f, -6f, 120f, 125.6f, 20f);
-            Rail(b, "Terrace rail E", 6f, 6.3f, 120f, 125.6f, 20f);
-            // The open arch (12 wide, 5 high, no door), four steps of 0.25 down, the entrance band (z 128..132, y 19).
-            Solid(b, "Arch pillar W", V(-7f, 19f, 125.6f), V(-6f, 26f, 126.4f));
-            Solid(b, "Arch pillar E", V(6f, 19f, 125.6f), V(7f, 26f, 126.4f));
-            Solid(b, "Arch lintel", V(-7f, 25f, 125.6f), V(7f, 26f, 126.4f));
+            Mass(b, "Exit terrace", -6f, 6f, 146.3f, 152.3f, 16f, 8f);
+            Marker(b, "Exit terrace (CP 끝)", -6f, 6f, 146.3f, 152.3f, 16f);
+            Rail(b, "Terrace rail W", -6.3f, -6f, 146.3f, 151.9f, 16f);
+            Rail(b, "Terrace rail E", 6f, 6.3f, 146.3f, 151.9f, 16f);
+            // The open arch (12 wide, 5 high, no door), four steps of 0.25 down, the entrance band (z 154.3..158.3, y 15).
+            Solid(b, "Arch pillar W", V(-7f, 15f, 151.9f), V(-6f, 22f, 152.7f));
+            Solid(b, "Arch pillar E", V(6f, 15f, 151.9f), V(7f, 22f, 152.7f));
+            Solid(b, "Arch lintel", V(-7f, 21f, 151.9f), V(7f, 22f, 152.7f));
             for (int i = 1; i <= 4; i++)
-                Mass(b, "Step down " + i, -6f, 6f, 126f + (i - 1) * .5f, 126f + i * .5f, 20f - .25f * i, 12f);
-            Mass(b, "Mini-game entrance band", -6f, 6f, 128f, 132f, 19f, 12f);
-            Rail(b, "Band rail W", -6.3f, -6f, 126.4f, 132f, 19f);
-            Rail(b, "Band rail E", 6f, 6.3f, 126.4f, 132f, 19f);
+                Mass(b, "Step down " + i, -6f, 6f, 152.3f + (i - 1) * .5f, 152.3f + i * .5f, 16f - .25f * i, 8f);
+            Mass(b, "Mini-game entrance band", -6f, 6f, 154.3f, 158.3f, 15f, 8f);
+            Rail(b, "Band rail W", -6.3f, -6f, 152.7f, 158.3f, 15f);
+            Rail(b, "Band rail E", 6f, 6.3f, 152.7f, 158.3f, 15f);
         }
 
         // A 17 knight whose root is `root` (it lands 2 m behind its root and charges 8 m along its +x), leaping

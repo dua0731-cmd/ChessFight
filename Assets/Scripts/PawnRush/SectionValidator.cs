@@ -7,18 +7,18 @@ namespace ChessFight.PawnRush
     // Checks for a section prefab (the grand stair hall level design v0.3 §8 "완료 확인"), run on a built section
     // in Edit mode (obstacles in their rest poses) from ChessFight > Pawn Rush > Validate Sections:
     //   1. every obstacle's reach covers the whole way across where it stands (ObstacleSpan, measured by rays)
-    //   2. both routes (west and east wing) the same length within 0.1 m, no gap over 1.5 m along either
+    //   2. both teams' routes the same length within 0.1 m, no gap over 1.5 m along either but where an
+    //      IntendedGap says so (a jump pad's flight, a dive)
     //   3. floor under every checkpoint's respawn spots
-    //   4. unclimbable: grey grid = NoClimbSurface, and the walls, railings, statue, alcoves, portcullis, gate
-    //      walls and lift tiles named in §7 are unclimbable
+    //   4. unclimbable: grey grid = NoClimbSurface, and the walls, statue, alcoves, gate walls, the dais, the beams,
+    //      the vent posts and the glass squares are unclimbable
     //   5. a kill volume (the respawn floor), and floor at the entry and the exit
     public static class SectionValidator
     {
         static readonly string[] MustBeUnclimbable =
         {
-            "Hall wall", "Foyer wall", "Porch wall", "Foyer pillar", "Wing ledge rail", "Rook tower", "King statue",
-            "Knight alcove", "Wing portcullis", "Lift shaft wall", "Gate wall", "Balcony wall", "Tile body", "Lift landing E (wall",
-            "Island", "Chandelier beam",
+            "Hall wall", "Foyer wall", "Porch wall", "Foyer pillar", "King statue", "Knight alcove", "Gate wall", "Balcony wall",
+            "Royal dais", "Chandelier beam", "Wind vent post", "Glass square",
         };
 
         public static List<string> Run(PawnRushSection section, List<string> notes)
@@ -47,8 +47,10 @@ namespace ChessFight.PawnRush
                 var east = path.World(Teams.Black);
                 float a = ProgressPath.Length(west), c = ProgressPath.Length(east);
                 if (Mathf.Abs(a - c) > Course01Validator.PathTolerance) errors.Add($"서쪽·동쪽 길 길이 차 {Mathf.Abs(a - c):0.00} m > {Course01Validator.PathTolerance} m");
-                Gaps(west, "서쪽 날개 길", errors, notes);
-                Gaps(east, "동쪽 날개 길", errors, notes);
+                var intended = root.GetComponentsInChildren<IntendedGap>(true);
+                Gaps(west, "백팀 길", intended, errors, notes);
+                if (!SameRoute(west, east)) Gaps(east, "흑팀 길", intended, errors, notes);
+                if (intended.Length > 0) notes.Add($"뜻한 틈 {intended.Length}곳(점프대·다이빙 등, 1.5 m 검사에서 뺌)");
             }
 
             // 3. checkpoints
@@ -95,8 +97,9 @@ namespace ChessFight.PawnRush
         }
 
         // No gap over 1.5 m along a route (a "gap": nothing within 4 m below); a long one is measured between
-        // its two banks. Straight climbs (the lift) are left out.
-        static void Gaps(List<Vector3> path, string name, List<string> errors, List<string> notes)
+        // its two banks. Straight climbs (the lift) and intended gaps (IntendedGap: a jump pad's flight, a dive) are
+        // left out.
+        static void Gaps(List<Vector3> path, string name, IntendedGap[] intended, List<string> errors, List<string> notes)
         {
             float run = 0f, worst = 0f;
             Vector3 worstAt = Vector3.zero;
@@ -111,6 +114,7 @@ namespace ChessFight.PawnRush
                 {
                     var p = Vector3.Lerp(a, c, d / len);
                     var floor = Course01Validator.FloorUnder(p, 1f, 5f);
+                    if (floor == null && Inside(intended, p)) { run = 0f; near = null; continue; }
                     if (floor == null) { run += .05f; continue; }
                     float gap = run > Course01Validator.MaxRequiredGap && near != null ? Course01Validator.Between(near, floor) : run;
                     if (gap > worst) { worst = gap; worstAt = p; }
@@ -121,6 +125,19 @@ namespace ChessFight.PawnRush
             if (worst > Course01Validator.MaxRequiredGap + .05f)
                 errors.Add($"{name} 틈 {worst:0.00} m > {Course01Validator.MaxRequiredGap} m {Course01Validator.Fmt(worstAt)}");
             notes.Add($"{name} {ProgressPath.Length(path):0.0} m, 가장 넓은 틈 {worst:0.00} m");
+        }
+
+        static bool Inside(IntendedGap[] gaps, Vector3 point)
+        {
+            foreach (var gap in gaps) if (gap != null && gap.Contains(point)) return true;
+            return false;
+        }
+
+        static bool SameRoute(List<Vector3> a, List<Vector3> b)
+        {
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++) if ((a[i] - b[i]).sqrMagnitude > 1e-4f) return false;
+            return true;
         }
     }
 }
