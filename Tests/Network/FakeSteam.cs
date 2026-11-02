@@ -74,8 +74,12 @@ namespace Steamworks
         // Relay-network ping locations per user and estimated pings between them (host election).
         public static Dictionary<ulong,string> PingLocations=new Dictionary<ulong,string>();
         public static Dictionary<(string,string),int> Pings=new Dictionary<(string,string),int>();
+        // Real Steam moves a room's ownership a moment after SetLobbyOwner: until then the old owner still
+        // owns it. Seconds of that delay (0 = at once), and the changes still on their way.
+        public static float OwnerDelay;
+        public static Dictionary<ulong,(ulong to,float at)> OwnerChanges=new Dictionary<ulong,(ulong,float)>();
         static ulong nextLobby=1000; static int nextCall;
-        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();OwnerDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
         // A game that dies without leaving: Steam drops the user from every lobby
         // and hands an owned lobby to the next member, and nothing of it runs again.
         public static void Crash(ulong user)
@@ -86,7 +90,13 @@ namespace Steamworks
         public static SteamAPICall_t Result(object value) {int id=++nextCall;Results[id]=value;return new SteamAPICall_t{Value=id};}
         public static void Enqueue(ulong user,Action action) {if(!Pending.ContainsKey(user))Pending[user]=new Queue<Action>();Pending[user].Enqueue(action);}
         public static void Dispatch() {if(!Pending.TryGetValue(User,out var q))return;int n=q.Count;for(int i=0;i<n;i++)q.Dequeue()();}
-        public static Lobby Get(CSteamID id) => Lobbies.TryGetValue(id.m_SteamID,out var l)?l:null;
+        public static Lobby Get(CSteamID id)
+        {
+            if(!Lobbies.TryGetValue(id.m_SteamID,out var l))return null;
+            if(OwnerChanges.TryGetValue(l.Id,out var change)&&UnityEngine.Time.realtimeSinceStartup>=change.at)
+            {OwnerChanges.Remove(l.Id);if(l.Members.Contains(change.to))l.Owner=change.to;}
+            return l;
+        }
         public static SteamAPICall_t Create(ELobbyType type,int limit)
         {ulong id=++nextLobby;var l=new Lobby{Id=id,Owner=User,Limit=limit,Type=type};l.Members.Add(User);Lobbies[id]=l;return Result(new LobbyCreated_t{m_ulSteamIDLobby=id,m_eResult=EResult.k_EResultOK});}
     }
@@ -136,7 +146,15 @@ namespace Steamworks
         public static void SetLobbyMemberData(CSteamID id,string key,string value)=>FakeSteam.Get(id).MemberData[(FakeSteam.User,key)]=value;
         public static bool InviteUserToLobby(CSteamID lobby,CSteamID invitee)=>true;
         public static bool SetLobbyJoinable(CSteamID id,bool value) {var l=FakeSteam.Get(id);if(l.Owner!=FakeSteam.User)return false;l.Joinable=value;return true;}
-        public static bool SetLobbyOwner(CSteamID id,CSteamID owner) {var l=FakeSteam.Get(id);if(l==null||l.Owner!=FakeSteam.User||!l.Members.Contains(owner.m_SteamID))return false;l.Owner=owner.m_SteamID;return true;}
+        public static bool SetLobbyOwner(CSteamID id,CSteamID owner)
+        {
+            var l=FakeSteam.Get(id);if(l==null||l.Owner!=FakeSteam.User||!l.Members.Contains(owner.m_SteamID))return false;
+            if(FakeSteam.OwnerDelay<=0){l.Owner=owner.m_SteamID;return true;}
+            // Asking again for the same new owner does not restart Steam's clock.
+            if(!FakeSteam.OwnerChanges.TryGetValue(l.Id,out var change)||change.to!=owner.m_SteamID)
+                FakeSteam.OwnerChanges[l.Id]=(owner.m_SteamID,UnityEngine.Time.realtimeSinceStartup+FakeSteam.OwnerDelay);
+            return true;
+        }
         public static SteamAPICall_t CreateLobby(ELobbyType type,int limit)=>FakeSteam.Create(type,limit);
         public static SteamAPICall_t JoinLobby(CSteamID id)
         {

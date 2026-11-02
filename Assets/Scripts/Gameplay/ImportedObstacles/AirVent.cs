@@ -21,6 +21,9 @@ namespace ChessFight.ProtectKing
         [Min(0)] public float AirborneMultiplier = 1.3f;
         [Min(0)] public float GroundedMultiplier = 1;
         [Range(0, 22)] public float MaxPushSpeed = 10;
+        [Min(0), Tooltip("0: push the bodies (WindStrength). Above 0: carry a character that can be carried (IWindReceiver) " +
+                         "over the ground at this speed, times the grounded/airborne multiplier - its own footing cannot cancel it.")]
+        public float DriftSpeed;
         [Min(0)] public float StartDelay = .5f;
         public bool Repeat = true;
         [Tooltip("Seconds added to the shared obstacle clock: the same cycle, earlier or later.")]
@@ -75,6 +78,7 @@ namespace ChessFight.ProtectKing
                 var motor = ImportedObstacleActor.Find(buffer[i]);
                 if (motor == null || !motor.CanReceiveObstacle || !visited.Add(motor)) continue;
                 float multiplier = motor.Grounded ? Mathf.Max(0,GroundedMultiplier) : Mathf.Max(0,AirborneMultiplier);
+                if (DriftSpeed > 0 && motor.Blow(transform.TransformDirection(WindDirection.normalized)*DriftSpeed*multiplier)) continue;
                 Vector3 acceleration = (transform.TransformDirection(WindDirection.normalized)*Mathf.Max(0,WindStrength)
                     + Vector3.up*Mathf.Max(0,VerticalForce))*multiplier;
                 var change = motor.Accelerate(acceleration,Mathf.Max(0,MaxPushSpeed),Time.fixedDeltaTime);

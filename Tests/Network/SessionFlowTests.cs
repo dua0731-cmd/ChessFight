@@ -30,6 +30,13 @@ public static class SessionFlowTests
     }
     static ulong Owner(SteamSession c)=>FakeSteam.Lobbies[c.Match].Owner;
     static string RoomData(SteamSession c,string key)=>FakeSteam.Lobbies[c.Match].Data.TryGetValue(key,out var v)?v:"";
+    // A modified client in the host's room asks for seats with whatever members it likes; the host's answer.
+    static string Ask(SteamSession host,ulong sender,string ticket,params ulong[] members)
+    {
+        byte[] bytes=System.Text.Encoding.UTF8.GetBytes("{\"kind\":\"reserve\",\"ticket\":\""+ticket+"\",\"party\":"+sender+",\"members\":["+string.Join(",",members)+"]}");
+        FakeSteam.User=sender;SteamMatchmaking.SendLobbyChatMsg(new CSteamID(host.Match),bytes,bytes.Length);
+        Step(2);return RoomData(host,"grant_"+sender);
+    }
     public static int Main()
     {
         try
@@ -202,6 +209,65 @@ public static class SessionFlowTests
                 Check(clients.All(c=>c.Host==best.Self&&c.Roster.Count==3)&&Owner(best)==best.Self,"the best newcomer did not take the room");
                 As(best,best.StartGame);Step(10);
                 Check(clients.All(c=>c.Started&&c.Host==best.Self),"the start moved the host away from first place");});
+            // R294 (승규, 11-02: "매칭이 되면 먼저 들어온 사람이 방장"): the public matchmaking room, not only a private one.
+            Test("Public matchmaking: a stronger PC the search brings in later hosts the room, fills it with bots and starts it",()=>{
+                Setup(2);var first=clients[0];var strong=clients[1];first.LocalFitness=900;strong.LocalFitness=1300;
+                As(first,()=>first.FindMatch());Step(20);
+                Check(first.IsHost&&first.Match!=0&&!first.PrivateRoom,"setup: the first searcher makes the room");
+                int lines=UnityEngine.Debug.Lines.Count;
+                As(strong,()=>strong.FindMatch());Step(30);
+                Check(strong.Match==first.Match&&clients.All(c=>c.Host==strong.Self&&!c.Started&&c.Roster.Count==2)&&Owner(strong)==strong.Self,"the public room stayed with the first player");
+                Check(UnityEngine.Debug.Lines.Skip(lines).Any(l=>l.Contains("방장 정하기(대기실)")&&l.Contains("넘김")),"the election left no line in the log");
+                Check(strong.CanAddRoomBot&&!first.CanAddRoomBot,"the room's tools did not move with the host");
+                bool ok=true;for(int i=0;i<4;i++)As(strong,()=>ok&=strong.AddRoomBot());Step(4);
+                Check(ok&&strong.CanStartGame&&!first.CanStartGame,"the new host cannot start three against three");
+                As(strong,strong.StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==strong.Self&&c.Roster.Count==6),"the start moved the host away from first place");});
+            // Real Steam takes a moment to move a room's ownership. A waiting-room handover whose ownership comes
+            // through late must not read as a host that left: the room used to end 2 seconds into it.
+            Test("A waiting-room handover survives a slow change of the room's owner",()=>{
+                Setup(3);var creator=clients[0];var strong=clients[1];var other=clients[2];
+                creator.LocalFitness=900;strong.LocalFitness=1300;other.LocalFitness=800;FakeSteam.OwnerDelay=5;
+                As(creator,()=>creator.FindMatch(true));Step();
+                As(other,()=>other.JoinPrivateMatch(creator.Match));Step(20);
+                As(strong,()=>strong.JoinPrivateMatch(creator.Match));Step(50);
+                Check(clients.All(c=>c.Match==creator.Match&&c.Host==strong.Self&&c.Roster.Count==3)&&Owner(strong)==strong.Self,"the room ended or the host did not move");
+                Check(strong.CanStartGame,"the new host cannot run the room");
+                As(strong,strong.StartGame);Step(30);
+                Check(clients.All(c=>c.Started&&c.Host==strong.Self),"the start after a slow handover");});
+            // R295: the PC a waiting room was handed to leaves (its party cancels) before Steam has moved the room to it.
+            // The old host still owns the room and takes it back; the room used to end 2 seconds later.
+            Test("A waiting-room handover whose new host leaves before the room is theirs goes back to the old host",()=>{
+                Setup(3);var creator=clients[0];var strong=clients[1];var other=clients[2];
+                creator.LocalFitness=900;strong.LocalFitness=1300;other.LocalFitness=800;FakeSteam.OwnerDelay=30;
+                As(creator,()=>creator.FindMatch(true));Step();
+                As(other,()=>other.JoinPrivateMatch(creator.Match));Step(20);
+                ulong room=creator.Match;As(strong,()=>strong.JoinPrivateMatch(room));
+                for(int i=0;i<60&&!clients.All(c=>c.Host==strong.Self);i++)Step(1);
+                Check(clients.All(c=>c.Match==room&&c.Host==strong.Self)&&Owner(creator)==creator.Self,"setup: handed over, the room not moved yet");
+                As(strong,strong.Cancel);clients.Remove(strong);Step(20);
+                Check(clients.All(c=>c.Match==room&&c.Host==creator.Self&&c.Roster.Count==2)&&Owner(creator)==creator.Self,"the room ended or did not go back to its old host");
+                Check(creator.CanStartGame,"the old host cannot run the room again");
+                As(creator,creator.StartGame);Step(10);
+                Check(clients.All(c=>c.Started&&c.Host==creator.Self),"the start after taking the room back");});
+            Test("A PC that leaves a waiting room just after it became the room's owner still hands it on with everyone's seats",()=>{
+                Setup(3);var creator=clients[0];var strong=clients[1];var other=clients[2];
+                creator.LocalFitness=900;strong.LocalFitness=1300;other.LocalFitness=800;FakeSteam.OwnerDelay=3;
+                As(creator,()=>creator.FindMatch(true));Step();
+                As(other,()=>other.JoinPrivateMatch(creator.Match));Step(20);
+                ulong room=creator.Match;As(strong,()=>strong.JoinPrivateMatch(room));
+                for(int i=0;i<60&&strong.Host!=strong.Self;i++)Step(1);
+                // Steam moves the room to the strong PC, which leaves before it has looked at the room again.
+                UnityEngine.Time.realtimeSinceStartup+=FakeSteam.OwnerDelay+1;
+                As(strong,strong.Cancel);clients.Remove(strong);Step(20);
+                Check(clients.All(c=>c.Match==room&&c.Host==creator.Self&&c.Roster.Count==2)&&Owner(creator)==creator.Self,"the room ended or lost its seats");});
+            // R294: each PC measures itself again while it waits in the lobby (HostFitnessProbe). A first
+            // measurement taken while the PC was busy loading reads slow; the better one, when it comes, counts.
+            Test("A PC whose machine score improves later takes the waiting room then",()=>{
+                Room(new[]{1000,800});var creator=clients[0];var other=clients[1];
+                Check(clients.All(c=>c.Host==creator.Self),"setup: the creator is first");
+                other.LocalFitness=1300;Step(10);
+                Check(clients.All(c=>c.Host==other.Self&&!c.Started)&&Owner(other)==other.Self,"the better measurement did not move the host");});
             Test("The best PC hosts even by a small lead (R159: no 15% rule before the match)",()=>{
                 Room(new[]{800,850});var best=clients[1];As(best,best.StartGame);Step(10);
                 Check(clients.All(c=>c.Started&&c.Host==best.Self)&&Owner(best)==best.Self,"the 6% better PC does not host");});
@@ -237,6 +303,47 @@ public static class SessionFlowTests
                 Step(40);As(b,()=>b.ReportHostSilence(5));Step(3);
                 Check(b.IsHost&&c.Host==b.Self&&a.Host==b.Self&&!a.IsHost,"silent host not replaced everywhere");
                 Check(Owner(b)==b.Self&&RoomData(b,"host")==b.Self.ToString()&&RoomData(b,"epoch")=="2","old host kept the room");});
+            // R295: a slow PC still loading reports no silence (SteamMotion.Loading, HostSilence in the match scenes): a
+            // host that has gone on to its own scene stops the lobby's stream, which used to read as a silent host.
+            Test("A successor still loading reports no silence and does not take over, however long the load; a silent host is still replaced afterwards",()=>{
+                Room(new[]{900,700,500});var a=clients[0];var b=clients[1];var c=clients[2];As(a,a.StartGame);Step(2);
+                for(int t=0;t<200;t++){As(b,()=>{b.ReportLoading(30);b.ReportHostSilence(0);});Step(1);}
+                Check(clients.All(x=>x.Host==a.Self&&x.Started&&x.Match!=0)&&a.IsHost,"a PC still loading moved the host or left");
+                As(b,()=>{b.ReportLoading(100);b.ReportHostSilence(5);});Step(3);
+                Check(b.IsHost&&c.Host==b.Self&&a.Host==b.Self,"a silent host is no longer replaced");});
+            // R295: a member's claim used to be followed whoever made it and whatever its number.
+            Test("A forged claim (outside the roster, out of turn, too large, int.MaxValue) is ignored, and the successor in line still takes over",()=>{
+                Room(new[]{900,700,500});var a=clients[0];var b=clients[1];var c=clients[2];As(a,a.StartGame);Step(20);
+                Check(a.IsHost&&RoomData(a,"successors")==$"{b.Self},{c.Self}","setup: "+RoomData(a,"successors"));
+                var room=FakeSteam.Lobbies[a.Match];
+                // Someone in the room without a seat.
+                room.Members.Add(99);room.MemberData[(99,"claim")]="2";Step(4);
+                Check(clients.All(x=>x.Host==a.Self&&x.Epoch==1),"a player outside the roster took the match");
+                room.MemberData[(c.Self,"claim")]="2";Step(4);
+                Check(clients.All(x=>x.Host==a.Self&&x.Epoch==1),"a claim out of turn took the match");
+                room.MemberData[(b.Self,"claim")]="5";Step(4);
+                Check(clients.All(x=>x.Host==a.Self&&x.Epoch==1),"too large a claim took the match");
+                room.MemberData[(c.Self,"claim")]=room.MemberData[(99,"claim")]=int.MaxValue.ToString();Step(4);
+                Check(clients.All(x=>x.Host==a.Self&&x.Epoch==1),"int.MaxValue took the match");
+                room.Members.Remove(99);FakeSteam.Crash(a.Self);clients.Remove(a);Step(10);
+                Check(b.IsHost&&c.Host==b.Self&&clients.All(x=>x.Started&&x.Epoch==2),"the successor in line did not take over: "+b.Epoch);
+                Check(Owner(b)==b.Self&&RoomData(b,"epoch")=="2"&&room.MemberData[(b.Self,"claim")]=="2","the new epoch went past the forged ones");});
+            Test("Successors missing one after another: the next in line takes over, also for a PC that never heard of the one before",()=>{
+                Room(new[]{900,800,700,600});var a=clients[0];var b=clients[1];var c=clients[2];var d=clients[3];As(a,a.StartGame);Step(20);
+                Check(RoomData(a,"successors")==$"{b.Self},{c.Self},{d.Self}","setup: "+RoomData(a,"successors"));
+                FakeSteam.Crash(a.Self);FakeSteam.Crash(b.Self);clients.Remove(a);clients.Remove(b);Step(10);
+                Check(c.IsHost&&d.Host==c.Self&&c.Epoch==2&&d.Epoch==2&&clients.All(x=>x.Started),"the second successor did not take over");
+                Check(Owner(c)==c.Self&&RoomData(c,"epoch")=="2","record");
+                Room(new[]{900,800,700,600});a=clients[0];b=clients[1];c=clients[2];d=clients[3];As(a,a.StartGame);Step(20);
+                FakeSteam.Crash(a.Self);clients.Remove(a);
+                Action<SteamSession> alone=x=>{UnityEngine.Time.realtimeSinceStartup+=.3f;As(x,x.Tick);};
+                // B steps in and C follows it, then B is gone before D has heard of it.
+                alone(b);Check(b.IsHost&&b.Epoch==2,"setup: B steps in");
+                alone(c);Check(c.Host==b.Self&&c.Epoch==2,"setup: C follows B");
+                FakeSteam.Crash(b.Self);clients.Remove(b);
+                alone(c);Check(c.IsHost&&c.Epoch==3,"C did not step in after B");
+                alone(d);Check(d.Host==c.Self&&d.Epoch==3,"D, which never heard of B, did not follow C");
+                Step(10);Check(c.IsHost&&d.Host==c.Self&&Owner(c)==c.Self&&RoomData(c,"epoch")=="3"&&clients.All(x=>x.Started),"the match did not go on under C");});
             Test("A host that stays slow hands the match to a much stronger machine, not to a slightly stronger one",()=>{
                 foreach(int other in new[]{1000,500})
                 {
@@ -334,6 +441,49 @@ public static class SessionFlowTests
                 As(clients[2],clients[2].Cancel);Step(5);Check(RoomData(host,"open")=="1","seat not offered within the window");
                 Step((int)(Backfill.OpenSeconds/.3)+5);
                 Check(RoomData(host,"open")=="0"&&!FakeSteam.Lobbies[host.Match].Joinable&&host.EmptySeats==0,"seat still offered after the window");});
+            // Work order [4] (11-02): a modified client declares made-up party members. They hold their seats for 25 s (and keep a
+            // waiting room from starting), and the client used to ask again with new ones each time they ran out.
+            Test("Made-up party members hold waiting-room seats once: their sender waits out a cooldown while a real party and the bots go on",()=>{
+                Setup(3);var host=clients[0];var leader=clients[1];var friend=clients[2];
+                JoinParty(2,1);As(leader,()=>leader.SetPartyBots(1));As(host,()=>host.FindMatch(true));Step();
+                ulong cheat=99;FakeSteam.Lobbies[host.Match].Members.Add(cheat);
+                Check(Ask(host,cheat,"a1",cheat,501,502,503,504,505)=="a1|ok"&&host.Roster.ContainsKey(cheat)&&host.TeamCount(host.Roster[cheat].Team)==6&&!host.CanStartGame,
+                      "setup: six seats held and the room cannot start");
+                Check(Ask(host,cheat,"a2",cheat,601)=="a2|full","a second group from the same sender");
+                Step((int)(26/.3));
+                Check(RoomData(host,"grant_"+cheat)=="a1|expired"&&!host.Roster.ContainsKey(cheat)&&host.TeamCount(0)+host.TeamCount(1)==1,"setup: the made-up party ran out");
+                Check(Ask(host,cheat,"a3",cheat,701,702,703,704,705)=="a3|full"&&Ask(host,cheat,"a4",cheat)=="a4|full","asked again during the cooldown");
+                As(leader,()=>leader.JoinPrivateMatch(host.Match));Step(30);
+                Check(host.Roster.ContainsKey(leader.Self)&&host.Roster.ContainsKey(friend.Self)&&host.Roster[friend.Self].Team==host.Roster[leader.Self].Team&&
+                      host.Roster.Values.Count(p=>BotIdentity.IsBot(p.Id)&&p.Team==host.Roster[leader.Self].Team)==1,"a real party with its bot was refused or split");
+                bool ok=false;As(host,()=>ok=host.AddTestBot(1-host.Roster[host.Self].Team));
+                Check(ok&&host.CanStartGame,"the host's bots or the start were held up");
+                Step((int)(TeamReservations.Cooldown/.3));
+                Check(Ask(host,cheat,"a5",cheat)=="a5|ok"&&host.Roster.ContainsKey(cheat),"the cooldown never ended");});
+            // The same in a started match (Backfill): the sender sits down at once, so it has to leave and come back to ask
+            // again, while the seat it asked for is still held; then nobody comes for that seat.
+            Test("Empty seats of a started match: one group on the way per sender, a cooldown when nobody came, and a real party still sits down",()=>{
+                Setup(8);var host=clients[0];var leader=clients[6];var friend=clients[7];
+                JoinParty(7,6);As(host,()=>host.FindMatch(true));Step();
+                for(int i=1;i<=5;i++){var c=clients[i];As(c,()=>c.JoinPrivateMatch(host.Match));}
+                Step(20);Check(host.Roster.Count==6,"setup: six solo players");
+                As(host,host.StartGame);Step(5);Check(host.Started&&host.IsHost&&RoomData(host,"seats")=="3,3","setup: 3 v 3");
+                var leavers=clients.Skip(1).Take(5).GroupBy(c=>host.Roster[c.Self].Team).SelectMany(g=>g.Take(2)).ToList();
+                foreach(var c in leavers)As(c,c.Cancel);
+                Step(5);Check(leavers.Count==4&&RoomData(host,"free0")=="2"&&RoomData(host,"free1")=="2","setup: two empty seats a side");
+                var room=FakeSteam.Lobbies[host.Match];ulong cheat=99;room.Members.Add(cheat);
+                Check(Ask(host,cheat,"b1",cheat,501)=="b1|ok"&&host.Roster.ContainsKey(cheat)&&RoomData(host,"held").StartsWith("501:"),"setup: the sender sits down and holds a seat");
+                Ask(host,cheat,"b2",cheat,601);
+                Check(host.Roster.Count==3&&!RoomData(host,"held").Contains("601:"),"a seated sender got more seats");
+                room.Members.Remove(cheat);Step(2);Check(!host.Roster.ContainsKey(cheat),"setup: the sender left its seat");
+                room.Members.Add(cheat);
+                Check(Ask(host,cheat,"b3",cheat,701)=="b3|full"&&!host.Roster.ContainsKey(cheat)&&!RoomData(host,"held").Contains("701:"),"a second group from the same sender while its first is held");
+                Step((int)(Backfill.HoldSeconds/.3)+2);Check(RoomData(host,"held")=="","setup: nobody came for the held seat");
+                Check(Ask(host,cheat,"b4",cheat)=="b4|full"&&!host.Roster.ContainsKey(cheat),"asked again during the cooldown");
+                As(leader,()=>leader.JoinPrivateMatch(host.Match));Step(30);
+                Check(leader.Started&&friend.Started&&host.Roster[friend.Self].Team==host.Roster[leader.Self].Team,"a real party was refused or split");
+                Step((int)(TeamReservations.Cooldown/.3));
+                Check(Ask(host,cheat,"b5",cheat)=="b5|ok"&&host.Roster.ContainsKey(cheat),"the cooldown never ended");});
             Test("In a started match a party member who leaves goes alone, and the party gathers again afterwards",()=>{
                 Setup(3);var leader=clients[0];var member=clients[1];var solo=clients[2];
                 JoinParty(1,0);As(leader,()=>leader.FindMatch(true));Step(20);

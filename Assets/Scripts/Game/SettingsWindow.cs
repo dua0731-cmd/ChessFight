@@ -46,7 +46,7 @@ namespace ChessFight.Game
 
         PanelSettings ownedPanel;
         VisualElement root, tabsBox, subsBox, view, content, bar, thumb, layer;
-        Label descTitle, descText, resetText;
+        Label descTitle, descText, descNote, resetText;
         readonly List<Action> refreshers = new List<Action>();
         // Built in Build, not as a field initializer: Unity refuses Screen calls in a constructor.
         List<Tab> tabs;
@@ -92,7 +92,8 @@ namespace ChessFight.Game
 
         abstract class Item
         {
-            public string Label, Desc;
+            // Note: a side remark under the description, below a thin line (the editor-only screen lines).
+            public string Label, Desc, Note;
             public bool Indent, Soon;
             public Action Reset;
             // Shown only while this holds (null: always).
@@ -197,7 +198,7 @@ namespace ChessFight.Game
         static List<Tab> Schema()
         {
             var voiceItems = VoiceItems(out string voiceNote);
-            string editorNote = Application.isEditor ? " (Unity 에디터에서는 안 바뀌고, 빌드한 게임에서 바뀌어요.)" : "";
+            string editorNote = Application.isEditor ? "Unity 에디터에서는 안 바뀌고, 빌드한 게임에서만 바뀌어요." : "";
             var res = Screen.currentResolution;
             string screenNote = $"{res.width} × {res.height} · {Mathf.RoundToInt((float)res.refreshRateRatio.value)}Hz";
 
@@ -206,19 +207,19 @@ namespace ChessFight.Game
                 new Choice
                 {
                     Label = "화면 모드", Drop = true, Options = () => GameSettings.ModeNames,
-                    Desc = "테두리 없는 창은 다른 창으로 빨리 넘어갈 수 있고, 전체 화면은 입력 지연이 조금 더 적어요." + editorNote,
+                    Desc = "테두리 없는 창은 다른 창으로 빨리 넘어갈 수 있고, 전체 화면은 입력 지연이 조금 더 적어요.", Note = editorNote,
                     Get = () => GameSettings.ScreenModeIndex, Set = GameSettings.SetScreenMode, Reset = () => GameSettings.SetScreenMode(1),
                 },
                 new Choice
                 {
-                    Label = "모니터", Drop = true, Desc = "게임을 띄울 모니터." + editorNote,
+                    Label = "모니터", Drop = true, Desc = "게임을 띄울 모니터.", Note = editorNote,
                     Options = () => GameSettings.Monitors.ToArray(), Get = () => GameSettings.MonitorIndex,
                     Set = GameSettings.SetMonitor, Reset = () => GameSettings.SetMonitor(0),
                 },
                 new Choice
                 {
                     Label = "해상도", Drop = true,
-                    Desc = "창 모드와 전체 화면에서 쓰는 크기. 테두리 없는 창은 모니터 크기를 따라가요." + editorNote,
+                    Desc = "창 모드와 전체 화면에서 쓰는 크기. 테두리 없는 창은 모니터 크기를 따라가요.", Note = editorNote,
                     Options = () => GameSettings.Sizes.ConvertAll(s => s.x + " × " + s.y).ToArray(),
                     Get = () => Mathf.Max(0, GameSettings.Sizes.IndexOf(GameSettings.CurrentSize)),
                     Set = i => GameSettings.SetSize(GameSettings.Sizes[i]),
@@ -465,6 +466,7 @@ namespace ChessFight.Game
             layer = root.Q<VisualElement>("s2-layer");
             descTitle = root.Q<Label>("s2-desc-title");
             descText = root.Q<Label>("s2-desc-text");
+            descNote = root.Q<Label>("s2-desc-note");
             resetText = root.Q<Label>("s2-reset-text");
 
             string name = null;
@@ -489,8 +491,7 @@ namespace ChessFight.Game
                 text.AddToClassList("disp");
                 text.AddToClassList("s2-tab-text");
                 tab.Add(text);
-                // 10-27 (승규 님): the chosen tab on flat smoked glass with a thin gold edge, as the lobby (design A)
-                tab.userData = GlassPlate.On(tab, 8f);
+                // 10-30 design A: the chosen tab is underlined in gold (USS), no longer on a glass plate (10-27)
                 tab.clicked += () => { if (tabIndex != index) { tabIndex = index; pageIndex = 0; ShowTab(); } };
                 ChunkyButtons.Springy(tab);
                 tabsBox?.Add(tab);
@@ -522,15 +523,7 @@ namespace ChessFight.Game
             {
                 int i = 0;
                 foreach (var tab in tabsBox.Children())
-                {
-                    bool on = i++ == tabIndex;
-                    tab.EnableInClassList("s2-tab-on", on);
-                    if (tab.userData is GlassPlate plate)
-                    {
-                        plate.Show(on);
-                        plate.Set(on, false);
-                    }
-                }
+                    tab.EnableInClassList("s2-tab-on", i++ == tabIndex);
             }
             if (subsBox == null) return;
             subsBox.Clear();
@@ -556,7 +549,7 @@ namespace ChessFight.Game
             refreshers.Clear();
             var page = tabs[tabIndex].Pages[pageIndex];
             if (resetText != null) resetText.text = page.Name + " 기본값 복원";
-            Describe(page.Name, "줄 위에 마우스를 올리면 여기에 설명이 나와요.", false);
+            Describe(page.Name, "줄 위에 마우스를 올리면 여기에 설명이 나와요.", false, null);
             // The voice page keeps the microphone running for its meters: Steam's when the game is
             // online, else Unity's (no one to talk to then, but the meter still shows the microphone).
             VoicePageOpen = page.Name == VoicePage;
@@ -582,10 +575,14 @@ namespace ChessFight.Game
             foreach (var refresh in refreshers) refresh();
         }
 
-        void Describe(string title, string text, bool soon)
+        void Describe(string title, string text, bool soon, string note)
         {
             if (descTitle != null) descTitle.text = title;
-            if (descText != null) descText.text = soon ? text + "\n\n[준비 중] " + Soon : text;
+            if (descText != null) descText.text = text;
+            if (descNote == null) return;
+            if (soon) note = string.IsNullOrEmpty(note) ? "[준비 중] " + Soon : "[준비 중] " + Soon + "\n" + note;
+            descNote.text = note ?? "";
+            descNote.style.display = string.IsNullOrEmpty(note) ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         // One line: the name (with "준비 중" when nothing reads it yet), then the value.
@@ -594,15 +591,16 @@ namespace ChessFight.Game
             var row = Add(parent, "s2-row");
             row.pickingMode = PickingMode.Position;
             var lab = Add(row, "s2-lab");
-            if (item.Indent) lab.style.paddingLeft = 44;
+            if (item.Indent) lab.style.paddingLeft = 26;
             Add(lab, "s2-lab-text", item.Label);
             if (item.Soon) Add(lab, "s2-soon", "준비 중");
             var val = Add(row, "s2-val");
-            row.RegisterCallback<PointerEnterEvent>(_ => Describe(item.Label, string.IsNullOrEmpty(item.Desc) ? "설명이 필요 없는 항목이에요." : item.Desc, item.Soon));
+            row.RegisterCallback<PointerEnterEvent>(_ => Describe(item.Label, string.IsNullOrEmpty(item.Desc) ? "설명이 필요 없는 항목이에요." : item.Desc, item.Soon, item.Note));
 
             switch (item)
             {
                 case Choice c when c.Drop: DropLine(val, c); break;
+                case Choice c when ReferenceEquals(c.Options(), OffOn): ToggleLine(val, c); break;
                 case Choice c: StepLine(val, c); break;
                 case Slide s: SlideLine(val, s); break;
                 case Keys k: KeysLine(val, k); break;
@@ -619,6 +617,7 @@ namespace ChessFight.Game
         // with the live microphone level, dim below the knob and gold once it passes (that voice goes out).
         void GateLine(VisualElement val)
         {
+            val.AddToClassList("s2-slide");
             var number = Add(val, "s2-num", "");
             var track = Add(val, "s2-track");
             track.pickingMode = PickingMode.Position;
@@ -694,6 +693,26 @@ namespace ChessFight.Game
             });
         }
 
+        // 끔 / 켬 (10-30 design A): the word, then a switch that slides gold when on.
+        void ToggleLine(VisualElement val, Choice c)
+        {
+            val.AddToClassList("s2-val-toggle");
+            var text = Add(val, "s2-toggle-text", "");
+            var button = new Button { focusable = false };
+            button.AddToClassList("s2-switch");
+            Add(button, "s2-switch-knob");
+            val.Add(button);
+            button.clicked += () => { c.Set(c.Get() == 1 ? 0 : 1); Changed(); };
+            ChunkyButtons.Springy(button);
+            refreshers.Add(() =>
+            {
+                bool on = c.Get() == 1;
+                text.text = OffOn[on ? 1 : 0];
+                button.EnableInClassList("s2-switch-on", on);
+                val.EnableInClassList("s2-on", on);
+            });
+        }
+
         void DropLine(VisualElement val, Choice c)
         {
             var button = new Button { focusable = false };
@@ -750,6 +769,8 @@ namespace ChessFight.Game
 
         void SlideLine(VisualElement val, Slide s)
         {
+            // the value right of the rail (s2-slide reverses the row)
+            val.AddToClassList("s2-slide");
             var number = Add(val, "s2-num", "");
             var track = Add(val, "s2-track");
             track.pickingMode = PickingMode.Position;

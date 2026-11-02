@@ -134,6 +134,25 @@ namespace ChessFight.Network
             }
         }
 
+        /// <summary>Which roster places a packet named (any byte, 256 bits on the stack): HashSet&lt;byte&gt;.Add without a
+        /// new set for every packet (R297).</summary>
+        struct RefSet
+        {
+            ulong a, b, c, d;
+
+            public bool Add(byte reference)
+            {
+                ulong bit = 1UL << (reference & 63);
+                switch (reference >> 6)
+                {
+                    case 0: if ((a & bit) != 0) return false; a |= bit; return true;
+                    case 1: if ((b & bit) != 0) return false; b |= bit; return true;
+                    case 2: if ((c & bit) != 0) return false; c |= bit; return true;
+                    default: if ((d & bit) != 0) return false; d |= bit; return true;
+                }
+            }
+        }
+
         // ---------------------------------------------------------------- write
 
         public static void Write(BinaryWriter w, SwordWirePacket p)
@@ -236,7 +255,7 @@ namespace ChessFight.Network
             if (finished > 1 || fighters > MaxFighters || collapses > MaxCollapses) return false;
             p.Finished = finished == 1;
             int length = HeaderBytes + collapses * CollapseBytes;
-            var refs = new HashSet<byte>();
+            var refs = new RefSet();
             for (int i = 0; i < fighters; i++)
             {
                 if (length + BaseBytes > bodyLength) return false;

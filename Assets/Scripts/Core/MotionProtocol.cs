@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace ChessFight.Network
 {
@@ -38,6 +37,10 @@ namespace ChessFight.Network
         // "CFF2": v2 replaced the one-packet jump flag with the press count.
         const uint Magic = 0x43464632;
         public const int MaxBytes = 1024;
+        // The most a snapshot carries: a reader refuses more, so a writer never sends more (R297).
+        public const int MaxPawns = 12;
+        // R297: one stream, writer and reader for every packet (a packet's array lasts until the next one of its length).
+        static readonly PacketStreams streams = new PacketStreams(MaxBytes);
         public static bool Newer(uint value, uint previous) => unchecked((int)(value - previous)) > 0;
         // Host side: true once per new press. A count that moved by several
         // presses still jumps once; the motor cannot jump twice in one tick.
@@ -46,49 +49,56 @@ namespace ChessFight.Network
         static bool Finite(float n) => !float.IsNaN(n) && !float.IsInfinity(n);
         public static byte[] Input(ulong session, MoveInput input)
         {
-            using (var stream = new MemoryStream()) using (var w = new BinaryWriter(stream))
-            { w.Write(Magic); w.Write((byte)1); w.Write(session); w.Write(input.Sequence);
-              w.Write(input.X); w.Write(input.Z); w.Write(input.Jumps); return stream.ToArray(); }
+            var w = streams.Begin();
+            w.Write(Magic); w.Write((byte)1); w.Write(session); w.Write(input.Sequence);
+            w.Write(input.X); w.Write(input.Z); w.Write(input.Jumps); return streams.Finish();
         }
         public static bool ReadInput(byte[] bytes, ulong session, out MoveInput input)
         {
             input = default;
             if (bytes == null || bytes.Length != 26) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
-            {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != 1 || r.ReadUInt64() != session) return false;
-                input.Sequence = r.ReadUInt32(); input.X = r.ReadSingle(); input.Z = r.ReadSingle(); input.Jumps = r.ReadByte();
-                return Finite(input.X) && Finite(input.Z) && Math.Abs(input.X) <= 1.01f && Math.Abs(input.Z) <= 1.01f;
-            }
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != 1 || r.ReadUInt64() != session) return false;
+            input.Sequence = r.ReadUInt32(); input.X = r.ReadSingle(); input.Z = r.ReadSingle(); input.Jumps = r.ReadByte();
+            return Finite(input.X) && Finite(input.Z) && Math.Abs(input.X) <= 1.01f && Math.Abs(input.Z) <= 1.01f;
         }
-        public static byte[] Snapshot(ulong session, uint tick, IEnumerable<PawnState> pawns)
+        public static byte[] Snapshot(ulong session, uint tick, IReadOnlyList<PawnState> pawns)
         {
-            var list = new List<PawnState>(pawns);
-            using (var stream = new MemoryStream()) using (var w = new BinaryWriter(stream))
-            {
-                w.Write(Magic); w.Write((byte)2); w.Write(session); w.Write(tick); w.Write((byte)list.Count);
-                foreach (var p in list) { w.Write(p.Id); w.Write(p.Ack); w.Write(p.X); w.Write(p.Y); w.Write(p.Z); w.Write(p.Vertical); w.Write((byte)p.Team); w.Write((byte)p.Slot); }
-                return stream.ToArray();
-            }
+            // A 13th pawn made the whole snapshot unreadable for everyone; now the first twelve go.
+            int count = Math.Min(pawns.Count, MaxPawns);
+            var w = streams.Begin();
+            w.Write(Magic); w.Write((byte)2); w.Write(session); w.Write(tick); w.Write((byte)count);
+            for (int i = 0; i < count; i++)
+            { var p = pawns[i]; w.Write(p.Id); w.Write(p.Ack); w.Write(p.X); w.Write(p.Y); w.Write(p.Z); w.Write(p.Vertical); w.Write((byte)p.Team); w.Write((byte)p.Slot); }
+            return streams.Finish();
         }
         public static bool ReadSnapshot(byte[] bytes, ulong session, out uint tick, out List<PawnState> pawns)
         {
-            tick = 0; pawns = new List<PawnState>();
+            pawns = new List<PawnState>();
+            return ReadSnapshot(bytes, session, out tick, pawns);
+        }
+        // The same into the caller's list, cleared first (R297: no new list for every snapshot); only good when true.
+        public static bool ReadSnapshot(byte[] bytes, ulong session, out uint tick, List<PawnState> into)
+        {
+            tick = 0; into.Clear();
             if (bytes == null || bytes.Length < 18 || bytes.Length > MaxBytes) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != 2 || r.ReadUInt64() != session) return false;
+            tick = r.ReadUInt32(); int count = r.ReadByte();
+            if (count > MaxPawns || bytes.Length != 18 + count * 30) return false;
+            for (int i = 0; i < count; i++)
             {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != 2 || r.ReadUInt64() != session) return false;
-                tick = r.ReadUInt32(); int count = r.ReadByte();
-                if (count > 12 || bytes.Length != 18 + count * 30) return false;
-                var ids = new HashSet<ulong>();
-                for (int i = 0; i < count; i++)
-                {
-                    var p = new PawnState { Id = r.ReadUInt64(), Ack = r.ReadUInt32(), X = r.ReadSingle(), Y = r.ReadSingle(), Z = r.ReadSingle(), Vertical = r.ReadSingle(), Team = r.ReadByte(), Slot = r.ReadByte() };
-                    if (p.Id == 0 || !ids.Add(p.Id) || p.Team > 1 || p.Slot > 5 || !Finite(p.X) || !Finite(p.Y) || !Finite(p.Z) || !Finite(p.Vertical) || Math.Abs(p.X) > 20 || Math.Abs(p.Z) > 20 || p.Y < 0 || p.Y > 10) return false;
-                    pawns.Add(p);
-                }
-                return true;
+                var p = new PawnState { Id = r.ReadUInt64(), Ack = r.ReadUInt32(), X = r.ReadSingle(), Y = r.ReadSingle(), Z = r.ReadSingle(), Vertical = r.ReadSingle(), Team = r.ReadByte(), Slot = r.ReadByte() };
+                if (p.Id == 0 || Has(into, p.Id) || p.Team > 1 || p.Slot > 5 || !Finite(p.X) || !Finite(p.Y) || !Finite(p.Z) || !Finite(p.Vertical) || Math.Abs(p.X) > 20 || Math.Abs(p.Z) > 20 || p.Y < 0 || p.Y > 10) return false;
+                into.Add(p);
             }
+            return true;
+        }
+        // Each pawn once: a scan of the at most 11 read before it, instead of a new set for every snapshot.
+        static bool Has(List<PawnState> pawns, ulong id)
+        {
+            for (int i = 0; i < pawns.Count; i++) if (pawns[i].Id == id) return true;
+            return false;
         }
     }
 }

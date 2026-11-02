@@ -28,7 +28,7 @@ namespace ChessFight.RagdollLab
         public float hookCharge;    // 0..1, the swing gauge (a byte on the wire)
         public Vector3 hookPoint;   // the flying hook, or where it is stuck
         public byte piece;          // PieceKind (M11): what the pawn has been promoted to
-        public uint ack;        // the owner's own send time echoed back, milliseconds
+        public uint ack;        // the owner's own send time echoed back, milliseconds (its low 16 bits once read: RagdollWire.AckAge)
 
         public void CopyFrom(RagdollPose other)
         {
@@ -180,24 +180,10 @@ namespace ChessFight.RagdollLab
     /// </summary>
     public static class RagdollNetProtocol
     {
-        // Bumped with each change to either packet so an older lab build's packets are dropped at the
-        // door instead of half-read. CFR2: abilities, interact and aim in the input (2026-09-26).
-        // CFR3: the struggle meter in the snapshot (2026-09-26).
-        // CFR4: the left button held in the input; the grappling hook in the snapshot (2026-09-27).
-        // CFR5: the piece kind in the snapshot (Queen of the Hill M11, 2026-09-27).
-        // CFR6: the host's obstacle time in the snapshot header (2026-09-30).
-        // CFR7: presses as counts, the piece asked for and the skill moments' confirmation in the input; the skills
-        // packet (R111, 2026-10-10).
-        // CFR8: the client's round trip, playback delay and loss in the input, for the host's test screen (R112).
-        // CFR9: the Sword Fight skill test online (R121): its state packet, its input with the aimed point, and its skill
-        // moments in the skills packet (SkillWire.ModeSwordFight).
-        // CFRA: positions span +-320 m instead of +-80 m (R124). Pawn Rush course 01 runs to z 246 m, and clients drew
-        // every pawn past 80 m pinned at 80 m while the host saw them where they were.
-        // CFRB: the skill packet's positions span +-320 m as well (SkillWire.PositionRange, R125: the skills on course 01).
-        // CFRC: the emote ask (slot and a changing number) in the lab input, two bytes (emotes, from skill-network-test).
-        public const uint Magic = 0x43465243;   // "CFRC"
+        // Bumped with each change to any packet, its history with it (RagdollWire, Core, R297: the snapshot's bytes are there).
+        public const uint Magic = RagdollWire.Magic;
         public const byte TypeInput = 1;
-        public const byte TypeSnapshot = 2;
+        public const byte TypeSnapshot = RagdollWire.TypeSnapshot;
         // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
         public const byte TypeMatch = 3;
         // The piece skills (R111): every busy piece's state, the bishops' wires, the barricades and the moments a client
@@ -219,20 +205,28 @@ namespace ChessFight.RagdollLab
         public const int HeaderBytes = 4 + 1 + 8;
         public const int MatchHeaderBytes = 4 + 1 + 8 + 2;
         public const int MaxMatchText = 400;
-        public const int MaxBytes = 1024;
-        public const int MaxPawns = 12;
+        public const int MaxBytes = RagdollWire.MaxBytes;
+        public const int MaxPawns = RagdollWire.MaxPawns;
         // Metres, symmetric around the scene origin: a 16-bit step of about 1 cm. Every map a ragdoll runs online must fit
         // inside it (Pawn Rush course 01 runs from z -6 to about 246 m); Quantize clamps anything further out.
         public const float PositionRange = 320f;
 
-        public const int PoseBytes = 8 + 6 + RagdollPawn.Count * 4 + 1 + 1 + 1 + 1 + 1 + 6 + 1 + 4;  // 74
-        public const int SnapshotHeaderBytes = 4 + 1 + 8 + 4 + 4 + 8 + 1;        // 30
+        // A pawn in the snapshot: 65 bytes, 72 while its hook is out of the hand (RagdollWire, R297; 74 before).
+        public const int PoseBytes = RagdollWire.PoseBytes;
+        public const int SnapshotHeaderBytes = RagdollWire.HeaderBytes;          // 30
+        // The wire's bodies are this pawn's: a mismatch does not compile (a constant division by zero).
+        const int BodiesMatch = 1 / (RagdollPawn.Count == RagdollWire.Bodies ? 1 : 0);
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
         public const int LabInputBytes = 4 + 1 + 8 + 4 + 4 + 2 + 1 + 3 + 5 + 2 + 2 + 4 + 2;   // 42
         public const int SwordInputBytes = LabInputBytes + 6;   // 46
 
         const float SmallestThreeRange = 0.70710678f;
 
+        // R297: one stream, writer and reader for every packet but the snapshot (RagdollWire has its own), all made and
+        // read on the main thread. A packet's array lasts until the next one of its length (PacketPool).
+        static readonly PacketStreams streams = new PacketStreams(MaxBytes);
+
+        /// <summary>A snapshot of this many pawns whose hooks are all put away or in the hand.</summary>
         public static int SnapshotBytes(int pawns) => SnapshotHeaderBytes + pawns * PoseBytes;
 
         public static bool Newer(uint value, uint previous) => unchecked((int)(value - previous)) > 0;
@@ -241,26 +235,23 @@ namespace ChessFight.RagdollLab
 
         public static byte[] Input(ulong session, uint sequence, uint clientTimeMs, in RagdollNetInput input)
         {
-            using (var stream = new MemoryStream(InputBytes))
-            using (var w = new BinaryWriter(stream))
-            {
-                w.Write(Magic);
-                w.Write(TypeInput);
-                w.Write(session);
-                w.Write(sequence);
-                w.Write(clientTimeMs);
-                w.Write(Signed(input.move.x));
-                w.Write(Signed(input.move.y));
-                w.Write((byte)((input.jump ? 1 : 0) | (input.shove ? 2 : 0) | (input.grab ? 4 : 0) | (input.sprint ? 8 : 0)
-                               | (input.ability ? 16 : 0) | (input.ability2 ? 32 : 0) | (input.interact ? 64 : 0)
-                               | (input.shoveHeld ? 128 : 0)));
-                // The aim as a direction, a byte per axis: about half a degree, plenty for a thrown hook.
-                Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
-                w.Write(Signed(aim.x));
-                w.Write(Signed(aim.y));
-                w.Write(Signed(aim.z));
-                return stream.ToArray();
-            }
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeInput);
+            w.Write(session);
+            w.Write(sequence);
+            w.Write(clientTimeMs);
+            w.Write(Signed(input.move.x));
+            w.Write(Signed(input.move.y));
+            w.Write((byte)((input.jump ? 1 : 0) | (input.shove ? 2 : 0) | (input.grab ? 4 : 0) | (input.sprint ? 8 : 0)
+                           | (input.ability ? 16 : 0) | (input.ability2 ? 32 : 0) | (input.interact ? 64 : 0)
+                           | (input.shoveHeld ? 128 : 0)));
+            // The aim as a direction, a byte per axis: about half a degree, plenty for a thrown hook.
+            Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
+            w.Write(Signed(aim.x));
+            w.Write(Signed(aim.y));
+            w.Write(Signed(aim.z));
+            return streams.Finish();
         }
 
         public static bool ReadInput(byte[] bytes, ulong session, out uint sequence, out uint clientTimeMs, out RagdollNetInput input)
@@ -269,29 +260,27 @@ namespace ChessFight.RagdollLab
             clientTimeMs = 0;
             input = default;
             if (bytes == null || bytes.Length != InputBytes) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
-            {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeInput || r.ReadUInt64() != session) return false;
-                sequence = r.ReadUInt32();
-                clientTimeMs = r.ReadUInt32();
-                input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
-                // All eight bits are buttons now (128 = the left button held).
-                byte buttons = r.ReadByte();
-                input.jump = (buttons & 1) != 0;
-                input.shove = (buttons & 2) != 0;
-                input.grab = (buttons & 4) != 0;
-                input.sprint = (buttons & 8) != 0;
-                input.ability = (buttons & 16) != 0;
-                input.ability2 = (buttons & 32) != 0;
-                input.interact = (buttons & 64) != 0;
-                input.shoveHeld = (buttons & 128) != 0;
-                if (input.move.sqrMagnitude > 1.05f) input.move = input.move.normalized;
-                var aim = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f);
-                // Anything but a unit vector or nothing at all is not an aim.
-                float length = aim.magnitude;
-                input.aim = length < 0.5f ? Vector3.zero : aim / length;
-                return true;
-            }
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeInput || r.ReadUInt64() != session) return false;
+            sequence = r.ReadUInt32();
+            clientTimeMs = r.ReadUInt32();
+            input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+            // All eight bits are buttons now (128 = the left button held).
+            byte buttons = r.ReadByte();
+            input.jump = (buttons & 1) != 0;
+            input.shove = (buttons & 2) != 0;
+            input.grab = (buttons & 4) != 0;
+            input.sprint = (buttons & 8) != 0;
+            input.ability = (buttons & 16) != 0;
+            input.ability2 = (buttons & 32) != 0;
+            input.interact = (buttons & 64) != 0;
+            input.shoveHeld = (buttons & 128) != 0;
+            if (input.move.sqrMagnitude > 1.05f) input.move = input.move.normalized;
+            var aim = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+            // Anything but a unit vector or nothing at all is not an aim.
+            float length = aim.magnitude;
+            input.aim = length < 0.5f ? Vector3.zero : aim / length;
+            return true;
         }
 
         public static byte[] LabInput(ulong session, uint sequence, uint clientTimeMs, in RagdollLabInput input) =>
@@ -305,43 +294,40 @@ namespace ChessFight.RagdollLab
         static byte[] WriteInput(byte type, ulong session, uint sequence, uint clientTimeMs, in RagdollLabInput input)
         {
             bool sword = type == TypeSwordInput;
-            using (var stream = new MemoryStream(sword ? SwordInputBytes : LabInputBytes))
-            using (var w = new BinaryWriter(stream))
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(type);
+            w.Write(session);
+            w.Write(sequence);
+            w.Write(clientTimeMs);
+            w.Write(Signed(input.move.x));
+            w.Write(Signed(input.move.y));
+            w.Write((byte)(((sword ? input.edgeHeld : input.grab) ? 1 : 0) | (input.sprint ? 2 : 0) | (input.interact ? 4 : 0)
+                           | (input.shoveHeld ? 8 : 0) | (sword && input.aimPointSet ? 16 : 0)));
+            Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
+            w.Write(Signed(aim.x));
+            w.Write(Signed(aim.y));
+            w.Write(Signed(aim.z));
+            w.Write(input.jumps);
+            w.Write(input.shoves);
+            w.Write(input.abilities);
+            w.Write(input.abilities2);
+            w.Write(input.skills);
+            w.Write(input.pieceAsk);
+            w.Write(input.pieceSeq);
+            w.Write(input.emoteAsk);
+            w.Write(input.emoteSeq);
+            w.Write(input.eventAck);
+            w.Write(input.roundTripMs);
+            w.Write(input.delayMs);
+            w.Write(input.lossPercent);
+            if (sword)
             {
-                w.Write(Magic);
-                w.Write(type);
-                w.Write(session);
-                w.Write(sequence);
-                w.Write(clientTimeMs);
-                w.Write(Signed(input.move.x));
-                w.Write(Signed(input.move.y));
-                w.Write((byte)(((sword ? input.edgeHeld : input.grab) ? 1 : 0) | (input.sprint ? 2 : 0) | (input.interact ? 4 : 0)
-                               | (input.shoveHeld ? 8 : 0) | (sword && input.aimPointSet ? 16 : 0)));
-                Vector3 aim = input.aim.sqrMagnitude > 1e-6f ? input.aim.normalized : Vector3.zero;
-                w.Write(Signed(aim.x));
-                w.Write(Signed(aim.y));
-                w.Write(Signed(aim.z));
-                w.Write(input.jumps);
-                w.Write(input.shoves);
-                w.Write(input.abilities);
-                w.Write(input.abilities2);
-                w.Write(input.skills);
-                w.Write(input.pieceAsk);
-                w.Write(input.pieceSeq);
-                w.Write(input.emoteAsk);
-                w.Write(input.emoteSeq);
-                w.Write(input.eventAck);
-                w.Write(input.roundTripMs);
-                w.Write(input.delayMs);
-                w.Write(input.lossPercent);
-                if (sword)
-                {
-                    w.Write(Quantize(input.aimPoint.x));
-                    w.Write(Quantize(input.aimPoint.y));
-                    w.Write(Quantize(input.aimPoint.z));
-                }
-                return stream.ToArray();
+                w.Write(Quantize(input.aimPoint.x));
+                w.Write(Quantize(input.aimPoint.y));
+                w.Write(Quantize(input.aimPoint.z));
             }
+            return streams.Finish();
         }
 
         public static bool ReadLabInput(byte[] bytes, ulong session, out uint sequence, out uint clientTimeMs, out RagdollLabInput input) =>
@@ -357,43 +343,41 @@ namespace ChessFight.RagdollLab
             input = default;
             bool sword = type == TypeSwordInput;
             if (bytes == null || bytes.Length != (sword ? SwordInputBytes : LabInputBytes)) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
-            {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != type || r.ReadUInt64() != session) return false;
-                sequence = r.ReadUInt32();
-                clientTimeMs = r.ReadUInt32();
-                input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
-                byte held = r.ReadByte();
-                if (held > (sword ? 31 : 15)) return false;
-                input.grab = !sword && (held & 1) != 0;
-                input.edgeHeld = sword && (held & 1) != 0;
-                input.sprint = (held & 2) != 0;
-                input.interact = (held & 4) != 0;
-                input.shoveHeld = (held & 8) != 0;
-                input.aimPointSet = (held & 16) != 0;
-                if (input.move.sqrMagnitude > 1.05f) input.move = input.move.normalized;
-                var aim = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f);
-                float length = aim.magnitude;
-                input.aim = length < 0.5f ? Vector3.zero : aim / length;
-                input.jumps = r.ReadByte();
-                input.shoves = r.ReadByte();
-                input.abilities = r.ReadByte();
-                input.abilities2 = r.ReadByte();
-                input.skills = r.ReadByte();
-                input.pieceAsk = r.ReadByte();
-                input.pieceSeq = r.ReadByte();
-                input.emoteAsk = r.ReadByte();
-                input.emoteSeq = r.ReadByte();
-                input.eventAck = r.ReadUInt16();
-                input.roundTripMs = r.ReadUInt16();
-                input.delayMs = r.ReadByte();
-                input.lossPercent = r.ReadByte();
-                if (sword) input.aimPoint = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
-                if (input.pieceSeq != 0 && !ChessPieces.IsValid(input.pieceAsk)) return false;
-                if (input.emoteSeq != 0 && !PieceEmotes.IsValidSlot(input.emoteAsk)) return false;
-                if (input.lossPercent > 100) return false;
-                return true;
-            }
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != type || r.ReadUInt64() != session) return false;
+            sequence = r.ReadUInt32();
+            clientTimeMs = r.ReadUInt32();
+            input.move = new Vector2(r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+            byte held = r.ReadByte();
+            if (held > (sword ? 31 : 15)) return false;
+            input.grab = !sword && (held & 1) != 0;
+            input.edgeHeld = sword && (held & 1) != 0;
+            input.sprint = (held & 2) != 0;
+            input.interact = (held & 4) != 0;
+            input.shoveHeld = (held & 8) != 0;
+            input.aimPointSet = (held & 16) != 0;
+            if (input.move.sqrMagnitude > 1.05f) input.move = input.move.normalized;
+            var aim = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f);
+            float length = aim.magnitude;
+            input.aim = length < 0.5f ? Vector3.zero : aim / length;
+            input.jumps = r.ReadByte();
+            input.shoves = r.ReadByte();
+            input.abilities = r.ReadByte();
+            input.abilities2 = r.ReadByte();
+            input.skills = r.ReadByte();
+            input.pieceAsk = r.ReadByte();
+            input.pieceSeq = r.ReadByte();
+            input.emoteAsk = r.ReadByte();
+            input.emoteSeq = r.ReadByte();
+            input.eventAck = r.ReadUInt16();
+            input.roundTripMs = r.ReadUInt16();
+            input.delayMs = r.ReadByte();
+            input.lossPercent = r.ReadByte();
+            if (sword) input.aimPoint = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
+            if (input.pieceSeq != 0 && !ChessPieces.IsValid(input.pieceAsk)) return false;
+            if (input.emoteSeq != 0 && !PieceEmotes.IsValidSlot(input.emoteAsk)) return false;
+            if (input.lossPercent > 100) return false;
+            return true;
         }
 
         // ---------------------------------------------------------------- the Sword Fight test's state (R121)
@@ -401,32 +385,26 @@ namespace ChessFight.RagdollLab
         /// <summary>The fighters and the floor (SwordWire, Core): this header, then its body.</summary>
         public static byte[] SwordState(ulong session, SwordWirePacket packet)
         {
-            using (var stream = new MemoryStream(256))
-            using (var w = new BinaryWriter(stream))
-            {
-                w.Write(Magic);
-                w.Write(TypeSword);
-                w.Write(session);
-                SwordWire.Write(w, packet);
-                w.Flush();
-                return stream.ToArray();
-            }
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeSword);
+            w.Write(session);
+            SwordWire.Write(w, packet);
+            return streams.Finish();
         }
 
         public static bool ReadSwordState(byte[] bytes, ulong session, SwordWirePacket into)
         {
             if (into == null || bytes == null || bytes.Length < HeaderBytes + SwordWire.HeaderBytes || bytes.Length > MaxBytes) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSword || r.ReadUInt64() != session) return false;
+            try
             {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSword || r.ReadUInt64() != session) return false;
-                try
-                {
-                    return SwordWire.Read(r, bytes.Length - HeaderBytes, into);
-                }
-                catch (EndOfStreamException)
-                {
-                    return false;
-                }
+                return SwordWire.Read(r, bytes.Length - HeaderBytes, into);
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
             }
         }
 
@@ -435,32 +413,26 @@ namespace ChessFight.RagdollLab
         /// <summary>The skills packet: this header, then SkillWire's body (Core, tested without Unity).</summary>
         public static byte[] Skills(ulong session, SkillWirePacket packet)
         {
-            using (var stream = new MemoryStream(256))
-            using (var w = new BinaryWriter(stream))
-            {
-                w.Write(Magic);
-                w.Write(TypeSkills);
-                w.Write(session);
-                SkillWire.Write(w, packet);
-                w.Flush();
-                return stream.ToArray();
-            }
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeSkills);
+            w.Write(session);
+            SkillWire.Write(w, packet);
+            return streams.Finish();
         }
 
         public static bool ReadSkills(byte[] bytes, ulong session, SkillWirePacket into)
         {
             if (into == null || bytes == null || bytes.Length < HeaderBytes + SkillWire.HeaderBytes || bytes.Length > MaxBytes) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSkills || r.ReadUInt64() != session) return false;
+            try
             {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSkills || r.ReadUInt64() != session) return false;
-                try
-                {
-                    return SkillWire.Read(r, bytes.Length - HeaderBytes, into);
-                }
-                catch (EndOfStreamException)
-                {
-                    return false;
-                }
+                return SkillWire.Read(r, bytes.Length - HeaderBytes, into);
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
             }
         }
 
@@ -468,61 +440,51 @@ namespace ChessFight.RagdollLab
 
         public static byte[] KingCall(ulong session, byte seq, byte a, byte b)
         {
-            using (var stream = new MemoryStream(KingCallBytes))
-            using (var w = new BinaryWriter(stream))
-            {
-                w.Write(Magic);
-                w.Write(TypeKingCall);
-                w.Write(session);
-                w.Write(seq);
-                w.Write(a);
-                w.Write(b);
-                return stream.ToArray();
-            }
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeKingCall);
+            w.Write(session);
+            w.Write(seq);
+            w.Write(a);
+            w.Write(b);
+            return streams.Finish();
         }
 
         public static bool ReadKingCall(byte[] bytes, ulong session, out byte seq, out byte a, out byte b)
         {
             seq = a = b = 0;
             if (bytes == null || bytes.Length != KingCallBytes) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
-            {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeKingCall || r.ReadUInt64() != session) return false;
-                seq = r.ReadByte();
-                a = r.ReadByte();
-                b = r.ReadByte();
-                return seq != 0;
-            }
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeKingCall || r.ReadUInt64() != session) return false;
+            seq = r.ReadByte();
+            a = r.ReadByte();
+            b = r.ReadByte();
+            return seq != 0;
         }
 
         public static byte[] Dev(ulong session, string text)
         {
             byte[] payload = System.Text.Encoding.UTF8.GetBytes(text ?? "");
             if (payload.Length > MaxMatchText) return null;
-            using (var stream = new MemoryStream(HeaderBytes + 2 + payload.Length))
-            using (var w = new BinaryWriter(stream))
-            {
-                w.Write(Magic);
-                w.Write(TypeDev);
-                w.Write(session);
-                w.Write((ushort)payload.Length);
-                w.Write(payload);
-                return stream.ToArray();
-            }
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeDev);
+            w.Write(session);
+            w.Write((ushort)payload.Length);
+            w.Write(payload);
+            return streams.Finish();
         }
 
         public static bool ReadDev(byte[] bytes, ulong session, out string text)
         {
             text = null;
             if (bytes == null || bytes.Length < HeaderBytes + 2 || bytes.Length > HeaderBytes + 2 + MaxMatchText) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
-            {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeDev || r.ReadUInt64() != session) return false;
-                int length = r.ReadUInt16();
-                if (bytes.Length != HeaderBytes + 2 + length) return false;
-                text = System.Text.Encoding.UTF8.GetString(r.ReadBytes(length));
-                return true;
-            }
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeDev || r.ReadUInt64() != session) return false;
+            int length = r.ReadUInt16();
+            if (bytes.Length != HeaderBytes + 2 + length) return false;
+            text = System.Text.Encoding.UTF8.GetString(r.ReadBytes(length));
+            return true;
         }
 
         /// <summary>The packet's type (0 if it is not one of ours).</summary>
@@ -537,88 +499,70 @@ namespace ChessFight.RagdollLab
 
         // ---------------------------------------------------------------- snapshot
 
+        // The poses on their way to and from the wire's bytes (RagdollWire); every packet is made and read on the main thread.
+        static readonly List<PoseWire> wireOut = new List<PoseWire>();
+        static readonly SnapshotWire wireIn = new SnapshotWire();
+
         public static byte[] Snapshot(ulong session, uint tick, uint hostTimeMs, IReadOnlyList<RagdollPose> poses,
                                       double obstacleTime = 0d)
         {
             int count = Mathf.Min(poses.Count, MaxPawns);
-            using (var stream = new MemoryStream(SnapshotBytes(count)))
-            using (var w = new BinaryWriter(stream))
-            {
-                w.Write(Magic);
-                w.Write(TypeSnapshot);
-                w.Write(session);
-                w.Write(tick);
-                w.Write(hostTimeMs);
-                w.Write(obstacleTime);
-                w.Write((byte)count);
-                for (int i = 0; i < count; i++)
-                {
-                    var pose = poses[i];
-                    w.Write(pose.id);
-                    w.Write(Quantize(pose.hips.x));
-                    w.Write(Quantize(pose.hips.y));
-                    w.Write(Quantize(pose.hips.z));
-                    for (int b = 0; b < RagdollPawn.Count; b++) w.Write(PackRotation(pose.rotations[b]));
-                    w.Write((byte)((pose.state & 3) | (pose.grounded ? 4 : 0) | (pose.grabbing ? 8 : 0) | (pose.snap ? 16 : 0)
-                                   | (pose.sprinting ? 32 : 0) | (pose.exhausted ? 64 : 0) | (pose.held ? 128 : 0)));
-                    w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.stamina * 255f), 0, 255));
-                    w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.escape * 255f), 0, 255));
-                    w.Write(pose.hook);
-                    w.Write((byte)Mathf.Clamp(Mathf.RoundToInt(pose.hookCharge * 255f), 0, 255));
-                    w.Write(Quantize(pose.hookPoint.x));
-                    w.Write(Quantize(pose.hookPoint.y));
-                    w.Write(Quantize(pose.hookPoint.z));
-                    w.Write(pose.piece);
-                    w.Write(pose.ack);
-                }
-                return stream.ToArray();
-            }
+            while (wireOut.Count < count) wireOut.Add(new PoseWire());
+            for (int i = 0; i < count; i++) ToWire(poses[i], wireOut[i]);
+            return RagdollWire.Snapshot(session, tick, hostTimeMs, obstacleTime, wireOut, count);
+        }
+
+        static void ToWire(RagdollPose pose, PoseWire w)
+        {
+            w.Id = pose.id;
+            w.HipsX = Quantize(pose.hips.x);
+            w.HipsY = Quantize(pose.hips.y);
+            w.HipsZ = Quantize(pose.hips.z);
+            for (int b = 0; b < RagdollPawn.Count; b++) w.Rotations[b] = PackRotation(pose.rotations[b]);
+            w.Flags = (byte)((pose.state & 3) | (pose.grounded ? 4 : 0) | (pose.grabbing ? 8 : 0) | (pose.snap ? 16 : 0)
+                             | (pose.sprinting ? 32 : 0) | (pose.exhausted ? 64 : 0) | (pose.held ? 128 : 0));
+            w.Stamina = (byte)Mathf.Clamp(Mathf.RoundToInt(pose.stamina * 255f), 0, 255);
+            w.Escape = (byte)Mathf.Clamp(Mathf.RoundToInt(pose.escape * 255f), 0, 255);
+            w.Hook = pose.hook;
+            w.HookCharge = (byte)Mathf.Clamp(Mathf.RoundToInt(pose.hookCharge * 255f), 0, 255);
+            w.HookX = Quantize(pose.hookPoint.x);
+            w.HookY = Quantize(pose.hookPoint.y);
+            w.HookZ = Quantize(pose.hookPoint.z);
+            w.Piece = pose.piece;
+            // Its low 16 bits: a round trip is far shorter than the 65.5 s they span (RagdollWire.AckAge).
+            w.Ack = (ushort)pose.ack;
         }
 
         public static bool ReadSnapshot(byte[] bytes, ulong session, RagdollSnapshot into)
         {
-            if (into == null || bytes == null || bytes.Length < SnapshotHeaderBytes || bytes.Length > MaxBytes) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            if (into == null || !RagdollWire.ReadSnapshot(bytes, session, wireIn)) return false;
+            for (int i = 0; i < wireIn.Count; i++)
             {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSnapshot || r.ReadUInt64() != session) return false;
-                uint tick = r.ReadUInt32();
-                uint hostTimeMs = r.ReadUInt32();
-                double obstacleTime = r.ReadDouble();
-                if (double.IsNaN(obstacleTime) || double.IsInfinity(obstacleTime)) return false;
-                int count = r.ReadByte();
-                if (count > MaxPawns || bytes.Length != SnapshotBytes(count)) return false;
-                var seen = new HashSet<ulong>();
-                for (int i = 0; i < count; i++)
-                {
-                    var pose = into.At(i);
-                    pose.id = r.ReadUInt64();
-                    if (pose.id == 0 || !seen.Add(pose.id)) return false;
-                    pose.hips = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
-                    for (int b = 0; b < RagdollPawn.Count; b++) pose.rotations[b] = UnpackRotation(r.ReadUInt32());
-                    // Every bit of the flags byte is used; the state's two bits are range-checked below.
-                    byte flags = r.ReadByte();
-                    pose.state = (byte)(flags & 3);
-                    pose.grounded = (flags & 4) != 0;
-                    pose.grabbing = (flags & 8) != 0;
-                    pose.snap = (flags & 16) != 0;
-                    pose.sprinting = (flags & 32) != 0;
-                    pose.exhausted = (flags & 64) != 0;
-                    pose.held = (flags & 128) != 0;
-                    pose.stamina = r.ReadByte() / 255f;
-                    pose.escape = r.ReadByte() / 255f;
-                    pose.hook = r.ReadByte();
-                    pose.hookCharge = r.ReadByte() / 255f;
-                    pose.hookPoint = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
-                    pose.piece = r.ReadByte();
-                    pose.ack = r.ReadUInt32();
-                    if (pose.state > 2 || pose.hook > 5 || !ChessPieces.IsValid(pose.piece)) return false;
-                }
-                into.tick = tick;
-                into.hostTimeMs = hostTimeMs;
-                into.obstacleTime = obstacleTime;
-                into.count = count;
-                return true;
+                var w = wireIn.At(i);
+                var pose = into.At(i);
+                pose.id = w.Id;
+                pose.hips = new Vector3(Dequantize(w.HipsX), Dequantize(w.HipsY), Dequantize(w.HipsZ));
+                for (int b = 0; b < RagdollPawn.Count; b++) pose.rotations[b] = UnpackRotation(w.Rotations[b]);
+                pose.state = (byte)(w.Flags & 3);
+                pose.grounded = (w.Flags & 4) != 0;
+                pose.grabbing = (w.Flags & 8) != 0;
+                pose.snap = (w.Flags & 16) != 0;
+                pose.sprinting = (w.Flags & 32) != 0;
+                pose.exhausted = (w.Flags & 64) != 0;
+                pose.held = (w.Flags & 128) != 0;
+                pose.stamina = w.Stamina / 255f;
+                pose.escape = w.Escape / 255f;
+                pose.hook = w.Hook;
+                pose.hookCharge = w.HookCharge / 255f;
+                pose.hookPoint = new Vector3(Dequantize(w.HookX), Dequantize(w.HookY), Dequantize(w.HookZ));
+                pose.piece = w.Piece;
+                pose.ack = w.Ack;
             }
+            into.tick = wireIn.Tick;
+            into.hostTimeMs = wireIn.HostTimeMs;
+            into.obstacleTime = wireIn.ObstacleTime;
+            into.count = wireIn.Count;
+            return true;
         }
 
         // ---------------------------------------------------------------- match state
@@ -632,37 +576,32 @@ namespace ChessFight.RagdollLab
         {
             byte[] payload = System.Text.Encoding.UTF8.GetBytes(text ?? "");
             if (payload.Length > MaxMatchText) return null;
-            using (var stream = new MemoryStream(MatchHeaderBytes + payload.Length))
-            using (var w = new BinaryWriter(stream))
-            {
-                w.Write(Magic);
-                w.Write(TypeMatch);
-                w.Write(session);
-                w.Write((ushort)payload.Length);
-                w.Write(payload);
-                return stream.ToArray();
-            }
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeMatch);
+            w.Write(session);
+            w.Write((ushort)payload.Length);
+            w.Write(payload);
+            return streams.Finish();
         }
 
         public static bool ReadMatch(byte[] bytes, ulong session, out string text)
         {
             text = null;
             if (bytes == null || bytes.Length < MatchHeaderBytes || bytes.Length > MatchHeaderBytes + MaxMatchText) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeMatch || r.ReadUInt64() != session) return false;
+            int length = r.ReadUInt16();
+            if (bytes.Length != MatchHeaderBytes + length) return false;
+            try
             {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeMatch || r.ReadUInt64() != session) return false;
-                int length = r.ReadUInt16();
-                if (bytes.Length != MatchHeaderBytes + length) return false;
-                try
-                {
-                    text = new System.Text.UTF8Encoding(false, true).GetString(r.ReadBytes(length));
-                }
-                catch (ArgumentException)
-                {
-                    return false;
-                }
-                return true;
+                text = new System.Text.UTF8Encoding(false, true).GetString(r.ReadBytes(length));
             }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            return true;
         }
 
         // ---------------------------------------------------------------- quantisation

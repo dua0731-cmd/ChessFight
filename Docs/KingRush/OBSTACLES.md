@@ -1,5 +1,7 @@
 # 장애물
 
+**R160 공간별 컨셉아트(2026-10-28):** 초반·중반·후반 각 10곳을 5곳씩 묶은 6장과 기존 장애물의 외형 매핑은 [PAWN_RUSH_OBSTACLE_CONCEPTS.md](PAWN_RUSH_OBSTACLE_CONCEPTS.md)를 본다. 기존 22종을 재료로 검토하되 오프라인 전용 07·14·16은 제외했고, 탑승 샹들리에 그네·세로 경첩 회전 병풍문은 신규 제안으로 분리했다. **공간·외형 구상이며 Unity 구현·치수·통과 가능성·온라인 실기 확인이 아니다.**
+
 **R56 왕의 계단:** 외나무 횡풍, 긴 계단, `KingRushSkyMotion`의 복귀하는 칸/그림자 예고 손. [기획서](Obstacles/KINGS_STAIR.md). 결승은 별도 `KingRushFinalRules`의 T0에 맞춰 `KingRushFinalBoard`가 판을 붕괴시킨다. [결승 규칙](FINAL_COURSE.md). 공통 물리 튜닝은 변경하지 않았다.
 
 **R55 성벽 코스:** `KingRushCastleMotion`의 왕복 발판/미는 벽/도개교/철퇴/성문은 모두 시간 함수다. [기획서](Obstacles/CASTLE.md). 시소 체스판은 반복 장애물이 아니라 몸 무게로 결정되는 방장 소유 미션 상태여서 `KingRushSeesawRules`/`KingRushSeesawBoard`로 분리한다. 공통 캐릭터는 기존 `IMovingSurface` 계약을 쓴다.

@@ -115,6 +115,8 @@ namespace ChessFight.RagdollLab.Net
         IMoveInputSource controls;
         Material white, black;
         bool authority;
+        // The host this PC follows, to notice a change of it on every PC (R295, SetAuthority).
+        readonly HostWatch hostWatch = new HostWatch();
         Callback<SteamNetworkingMessagesSessionRequest_t> requests;
         CrownFinish finish;
 
@@ -123,6 +125,8 @@ namespace ChessFight.RagdollLab.Net
         readonly Dictionary<RagdollPawn, Runner> byPawn = new Dictionary<RagdollPawn, Runner>();
         readonly List<ulong> gone = new List<ulong>();
         readonly IntPtr[] incoming = new IntPtr[64];
+        // Every message read into one reused array of its length (R297): nothing here keeps one past its turn.
+        readonly PacketPool inbound = new PacketPool(RagdollNetProtocol.MaxBytes);
         readonly Dictionary<ulong, RagdollPose> poses = new Dictionary<ulong, RagdollPose>();
         readonly Dictionary<ulong, int> snaps = new Dictionary<ulong, int>();
         readonly List<RagdollPose> outgoing = new List<RagdollPose>();
@@ -131,10 +135,18 @@ namespace ChessFight.RagdollLab.Net
         readonly RagdollPose blend = new RagdollPose();
         readonly PawnRushNetState state = new PawnRushNetState(), received = new PawnRushNetState();
         uint tick, stateTick, inputSequence, lastPose, lastState;
-        float sentAt, inputAt, receivedAt;
+        float sentAt, inputAt;
+        // A client: how long the host has been silent (R295: from its first packet in this scene or the shared start).
+        readonly HostSilence hostSilence = new HostSilence();
         double playback;
         readonly PlaybackDelay delay = new PlaybackDelay();
         float roundTripMs;
+        // R297: the match's metrics box (NetMetricsOverlay, a development build, F3): what went out and came in, a second.
+        int sentBytes, receivedBytes, snapshotsOut, snapshotsIn, snapshotBytesLast;
+        int sentRate, receivedRate, snapshotOutRate, snapshotInRate;
+        float statsAt;
+        // R297: a development build's autopilot (-autopilot, AutoPilot) plays this PC's pawn.
+        AutoPilot pilot;
 
         // A client's own presses, counted (D-S7), and the rest of its input waiting for the next send.
         RagdollLabInput pending;
@@ -171,7 +183,7 @@ namespace ChessFight.RagdollLab.Net
         {
             runtime = NetworkRuntime.Instance;
             session = runtime.Session;
-            receivedAt = Time.realtimeSinceStartup;
+            hostSilence.Enter(Time.realtimeSinceStartup);
             requests = Callback<SteamNetworkingMessagesSessionRequest_t>.Create(c =>
             {
                 if (session.IsPeer(c.m_identityRemote.GetSteamID64())) SteamNetworkingMessages.AcceptSessionWithUser(ref c.m_identityRemote);
@@ -193,6 +205,7 @@ namespace ChessFight.RagdollLab.Net
             controls = MoveInputSources.Create();
             controls.Enable();
             authority = session.IsHost;
+            hostWatch.Changed(session.Host, authority);
             MiniGameBase.Remote = !authority;
             finish = course != null ? course.Finish : null;
             if (finish != null)
@@ -222,6 +235,29 @@ namespace ChessFight.RagdollLab.Net
             TeamZone.Intruded += OnIntruded;
             RagdollPawn.SkillFx += OnPawnRushFx;
             SyncRoster();
+            NetMetricsOverlay.Attach(gameObject, CurrentMetrics);
+            if (Debug.isDebugBuild && AutoPilot.Requested(Environment.GetCommandLineArgs(), session.Self, out uint seed))
+                pilot = new AutoPilot(seed);
+        }
+
+        /// <summary>R297: the numbers of the match's metrics box (NetMetricsOverlay).</summary>
+        NetMetrics CurrentMetrics() => new NetMetrics
+        {
+            Host = authority, Players = runners.Count, SentBytes = sentRate, ReceivedBytes = receivedRate,
+            SnapshotBytes = snapshotBytesLast, SnapshotsSent = snapshotOutRate, SnapshotsReceived = snapshotInRate,
+            RoundTripMs = roundTripMs, PlaybackDelayMs = delay.Milliseconds, LossShare = delay.LossShare,
+            Piloted = pilot != null, PilotSeed = pilot != null ? pilot.Seed : 0u,
+        };
+
+        void UpdateStats()
+        {
+            if (Time.realtimeSinceStartup < statsAt) return;
+            statsAt = Time.realtimeSinceStartup + 1f;
+            sentRate = sentBytes;
+            receivedRate = receivedBytes;
+            snapshotOutRate = snapshotsOut;
+            snapshotInRate = snapshotsIn;
+            sentBytes = receivedBytes = snapshotsOut = snapshotsIn = 0;
         }
 
         void OnDestroy()
@@ -327,6 +363,10 @@ namespace ChessFight.RagdollLab.Net
 
         // ------------------------------------------------------------------ host change
 
+        // The host changed, or this PC's role in it (R295: on every PC, hostWatch; it used to run only on the two PCs
+        // whose roles swapped, and a third PC kept the old host's numbers and dropped the new host's course states and
+        // skills as old ones, so its race clock, pads and skills stood still). Every PC starts the stream from the host
+        // over; the new host carries on the old one's numbering.
         void SetAuthority(bool host)
         {
             authority = host;
@@ -361,6 +401,7 @@ namespace ChessFight.RagdollLab.Net
                 SkillTripwire.ReserveIds(highest);
                 remoteWires.Clear();
                 tick = lastPose;
+                stateTick = lastState;
             }
             else
             {
@@ -391,8 +432,9 @@ namespace ChessFight.RagdollLab.Net
             eventQueue.Clear();
             skillsApplied = false;
             playback = 0d;
+            roundTripMs = 0f;
             delay.Reset();
-            receivedAt = Time.realtimeSinceStartup;
+            hostSilence.Enter(Time.realtimeSinceStartup);
         }
 
         // ------------------------------------------------------------------ frame
@@ -400,7 +442,7 @@ namespace ChessFight.RagdollLab.Net
         void Update()
         {
             if (!session.Started || session.Match == 0) return;
-            if (session.IsHost != authority) SetAuthority(session.IsHost);
+            if (hostWatch.Changed(session.Host, session.IsHost) || session.IsHost != authority) SetAuthority(session.IsHost);
             SyncRoster();
             SyncObstacleClock();
             ArmStartBar();
@@ -418,6 +460,7 @@ namespace ChessFight.RagdollLab.Net
                 if (runners.TryGetValue(session.Self, out var self)) self.Pawn.SetInput(local);
                 foreach (var r in runners.Values) CheckRespawn(r);
                 if (now - sentAt >= SnapshotInterval) SendSnapshot();   // the course state goes with it
+                session.ReportHostSilence(0f);
             }
             else
             {
@@ -425,8 +468,14 @@ namespace ChessFight.RagdollLab.Net
                 Playback();
                 ApplyDueStates();
                 DispatchEvents();
-                if (now - receivedAt > SilenceTimeout && !ended) session.Abort("폰 러쉬 방장 연결이 끊어졌습니다.");
+                // R295: counted from the host's first packet in this scene or the shared start, whichever comes first.
+                // The session hands a silent host's role on (HOST.md); the lobby's motion stream that used to tell it
+                // stops in this scene, so this link tells it instead. Leaving is the last resort.
+                float silence = hostSilence.Seconds(now, Started());
+                session.ReportHostSilence(silence);
+                if (silence > SilenceTimeout && !ended) session.Abort("폰 러쉬 방장 연결이 끊어졌습니다.");
             }
+            UpdateStats();
         }
 
         // Host: every other player's latest input, the presses one per physics step, or standing still once it is
@@ -467,6 +516,7 @@ namespace ChessFight.RagdollLab.Net
         PawnInput ReadLocalInput()
         {
             var intent = controls.Read();
+            if (pilot != null) return Piloted();
             bool blocked = runtime.InputBlocked || !Application.isFocused || (orbit != null && orbit.FreeFly);
             bool use = !blocked && intent.Interact;
             bool skill = use && !useWasDown;
@@ -480,6 +530,21 @@ namespace ChessFight.RagdollLab.Net
                 aim = orbit != null ? orbit.AimForward : Vector3.forward,
                 jump = intent.Jump, shove = intent.Shove, shoveHeld = intent.ShoveHeld, grab = intent.Grab,
                 sprint = intent.Sprint, ability = intent.Ability, ability2 = intent.Ability2, skill = skill,
+            };
+        }
+
+        // R297: the autopilot's keys in place of the player's - a walk against the orbit camera, a sprint, a jump, a click
+        // and the skill key - whether the window is in front or not; nothing behind the loading screen or the chat.
+        PawnInput Piloted()
+        {
+            var f = pilot.Step(Time.unscaledDeltaTime);
+            if (runtime.InputBlocked) return default;
+            Vector3 move = orbit != null ? orbit.FlatRight * f.MoveX + orbit.FlatForward * f.MoveY : new Vector3(f.MoveX, 0f, f.MoveY);
+            return new PawnInput
+            {
+                move = Vector3.ClampMagnitude(move, 1f),
+                aim = orbit != null ? orbit.AimForward : Vector3.forward,
+                jump = f.Jump, shove = f.Click, sprint = f.Sprint, skill = f.Skill,
             };
         }
 
@@ -558,8 +623,9 @@ namespace ChessFight.RagdollLab.Net
                 if (!poses.TryGetValue(r.Id, out var pose)) poses[r.Id] = pose = new RagdollPose();
                 r.Pawn.CaptureNetworkPose(pose);
                 pose.id = r.Id;
-                // The newest input time heard from that player, for its round trip (0 = none yet).
-                pose.ack = r.InputAt >= 0f ? r.ClientTimeMs : 0u;
+                // The newest input time heard from that player, for its round trip (0 = none yet, or heard too long ago
+                // for the 16-bit echo, R297).
+                pose.ack = r.InputAt >= 0f && sentAt - r.InputAt < RagdollWire.AckFreshSeconds ? r.ClientTimeMs : 0u;
                 if (r.Pawn.NetworkSnap) { snaps[r.Id] = 4; r.Pawn.NetworkSnap = false; }
                 snaps.TryGetValue(r.Id, out int n);
                 pose.snap = n > 0;
@@ -568,6 +634,8 @@ namespace ChessFight.RagdollLab.Net
             }
             // The obstacle time these poses were simulated at: clients draw the obstacles at it.
             byte[] bytes = RagdollNetProtocol.Snapshot(session.Match, tick, stamp, outgoing, ObstacleClock.Now);
+            snapshotBytesLast = bytes.Length;
+            snapshotsOut++;
             foreach (var id in session.Roster.Keys) Send(id, bytes, false);
             SendSkills(stamp);
             SendState(stamp);
@@ -666,6 +734,7 @@ namespace ChessFight.RagdollLab.Net
         void Send(ulong id, byte[] bytes, bool reliable)
         {
             if (id == session.Self || !session.IsPeer(id) || BotIdentity.IsBot(id)) return;
+            sentBytes += bytes.Length;
             var identity = new SteamNetworkingIdentity();
             identity.SetSteamID64(id);
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
@@ -682,37 +751,49 @@ namespace ChessFight.RagdollLab.Net
 
         void Receive()
         {
-            int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
-            for (int i = 0; i < count; i++)
+            // Everything that arrived, not one buffer's worth (R297, as the other links): eleven players send 660 inputs a
+            // second, so a host below about ten frames a second read them later and later.
+            for (int round = 0; round < 8; round++)
             {
-                try
+                int count = SteamNetworkingMessages.ReceiveMessagesOnChannel(Channel, incoming, incoming.Length);
+                for (int i = 0; i < count; i++)
                 {
-                    var msg = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
-                    ulong id = msg.m_identityPeer.GetSteamID64();
-                    if (!session.IsPeer(id) || msg.m_cbSize <= 0 || msg.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
-                    byte[] bytes = new byte[msg.m_cbSize];
-                    Marshal.Copy(msg.m_pData, bytes, 0, bytes.Length);
-                    if (authority) ReceiveInput(id, bytes);
-                    else if (id == session.Host)
+                    try
                     {
-                        if (PawnRushNetState.Read(bytes, session.Match, received))
+                        var msg = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
+                        ulong id = msg.m_identityPeer.GetSteamID64();
+                        if (!session.IsPeer(id) || msg.m_cbSize <= 0 || msg.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
+                        receivedBytes += msg.m_cbSize;
+                        byte[] bytes = inbound.Get(msg.m_cbSize);
+                        Marshal.Copy(msg.m_pData, bytes, 0, bytes.Length);
+                        if (authority) ReceiveInput(id, bytes);
+                        else if (id == session.Host)
                         {
-                            if (lastState != 0 && !RagdollNetProtocol.Newer(received.Tick, lastState)) continue;
-                            lastState = received.Tick;
-                            receivedAt = Time.realtimeSinceStartup;
-                            QueueState(received);
-                            continue;
+                            if (PawnRushNetState.Read(bytes, session.Match, received))
+                            {
+                                if (lastState != 0 && !RagdollNetProtocol.Newer(received.Tick, lastState)) continue;
+                                lastState = received.Tick;
+                                hostSilence.Heard(Time.realtimeSinceStartup);
+                                QueueState(received);
+                                continue;
+                            }
+                            byte type = RagdollNetProtocol.TypeOf(bytes);
+                            if (type == RagdollNetProtocol.TypeSkills) ReceiveSkills(bytes);
+                            else if (type == RagdollNetProtocol.TypeSnapshot) ReceiveSnapshot(bytes);
                         }
-                        byte type = RagdollNetProtocol.TypeOf(bytes);
-                        if (type == RagdollNetProtocol.TypeSkills) ReceiveSkills(bytes);
-                        else if (type == RagdollNetProtocol.TypeSnapshot) ReceiveSnapshot(bytes);
+                    }
+                    catch (Exception e)
+                    {
+                        // One message that throws must not cost the others, nor leave them unreleased (R297).
+                        ReceiveErrors.Log(Channel, e);
+                    }
+                    finally
+                    {
+                        SteamNetworkingMessage_t.Release(incoming[i]);
+                        incoming[i] = IntPtr.Zero;
                     }
                 }
-                finally
-                {
-                    SteamNetworkingMessage_t.Release(incoming[i]);
-                    incoming[i] = IntPtr.Zero;
-                }
+                if (count < incoming.Length) break;
             }
         }
 
@@ -748,11 +829,7 @@ namespace ChessFight.RagdollLab.Net
             r.Sequence = sequence;
             r.ClientTimeMs = clientTime;
             r.InputAt = Time.realtimeSinceStartup;
-            if (!r.AckSet || SkillWire.Newer(fresh.eventAck, r.EventAck))
-            {
-                r.EventAck = fresh.eventAck;
-                r.AckSet = true;
-            }
+            SkillWire.TakeAck(fresh.eventAck, ref r.EventAck, ref r.AckSet);
         }
 
         // Not the host: my promotion choice, sent in every input from now on with a new number (never 0).
@@ -805,14 +882,16 @@ namespace ChessFight.RagdollLab.Net
             }
             int lost = lastPose != 0 ? (int)Math.Min(30u, snap.tick - lastPose - 1) : 0;
             lastPose = snap.tick;
-            receivedAt = Time.realtimeSinceStartup;
+            snapshotsIn++;
+            snapshotBytesLast = bytes.Length;
+            hostSilence.Heard(Time.realtimeSinceStartup);
             delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snap.hostTimeMs, lost);
             // Round trip: my input's time as the host echoes it.
             for (int i = 0; i < snap.count; i++)
             {
                 var pose = snap.At(i);
                 if (pose.id != session.Self || pose.ack == 0) continue;
-                int sample = unchecked((int)(NowMs() - pose.ack));
+                int sample = RagdollWire.AckAge(NowMs(), pose.ack);
                 if (sample >= 0 && sample < 10000) roundTripMs = roundTripMs <= 0f ? sample : Mathf.Lerp(roundTripMs, sample, 0.2f);
             }
             buffer.Add(snap);
@@ -893,6 +972,10 @@ namespace ChessFight.RagdollLab.Net
             startBarSet = true;
             StartBar.Current.ReleaseAtClock(session.StartAt + StartBar.Current.Countdown);
         }
+
+        // R295: the match's shared start has passed, by the runtime's shared clock: from then on at the latest a client
+        // counts its host's silence.
+        bool Started() => session.StartAt > 0 && sharedClock != null && sharedClock() >= session.StartAt;
 
         /// <summary>The host's skills packet: the states at once (D-S4), the moments queued to play with the bodies.</summary>
         void ReceiveSkills(byte[] bytes)
@@ -980,7 +1063,7 @@ namespace ChessFight.RagdollLab.Net
             while (n < eventQueue.Count && eventQueue[n].TimeMs <= playback + 0.5d) n++;
             // Taken off the queue first: an effect that throws must not hold up the ones after it.
             eventBatch.Clear();
-            eventBatch.AddRange(eventQueue.GetRange(0, n));
+            for (int i = 0; i < n; i++) eventBatch.Add(eventQueue[i]);   // not GetRange: a new list every frame (R297)
             eventQueue.RemoveRange(0, n);
             foreach (var e in eventBatch)
             {

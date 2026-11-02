@@ -34,6 +34,8 @@ namespace ChessFight.RagdollLab.Net
         Callback<SteamNetworkingMessagesSessionRequest_t> sessionRequests;
         Callback<SteamNetworkingMessagesSessionFailed_t> sessionFailures;
         readonly IntPtr[] incoming = new IntPtr[64];
+        // Every message read into one reused array of its length (R297): LabNetLink copies what it keeps.
+        readonly PacketPool received = new PacketPool(RagdollNetProtocol.MaxBytes);
         readonly HashSet<ulong> connected = new HashSet<ulong>();
         readonly Dictionary<ulong, LabSeat> roster = new Dictionary<ulong, LabSeat>();
         string roomCode = "";
@@ -85,9 +87,10 @@ namespace ChessFight.RagdollLab.Net
         protected override void NetTick()
         {
             if (session == null) return;
-            // What the host election reads (HOST.md): this machine's score once measured, and every frame's time, so a
-            // host that stays slow hands the match on.
-            if (session.LocalFitness == 0) session.LocalFitness = HostFitnessProbe.BaseScore();
+            // What the host election reads (HOST.md): this machine's best score so far (the probe sits again for two
+            // minutes, R294), and every frame's time, so a host that stays slow hands the match on.
+            int fitness = HostFitnessProbe.BaseScore();
+            if (fitness > session.LocalFitness) session.LocalFitness = fitness;
             session.ReportFrame(Time.unscaledDeltaTime * 1000f);
             session.Tick();
             roster.Clear();
@@ -125,27 +128,23 @@ namespace ChessFight.RagdollLab.Net
 
         void OnHostChanged(ulong previous, ulong next)
         {
-            CloseSession(previous);
+            if (connected.Remove(previous)) CloseChannel(previous);
             HostChanged(previous, next);
         }
 
         protected override void OnStreamReset()
         {
-            foreach (ulong id in connected)
-            {
-                var identity = new SteamNetworkingIdentity();
-                identity.SetSteamID64(id);
-                SteamNetworkingMessages.CloseSessionWithUser(ref identity);
-            }
+            foreach (ulong id in connected) CloseChannel(id);
             connected.Clear();
         }
 
-        void CloseSession(ulong id)
+        // R295: only this link's channel. The Steam session with a player carries other streams too (the voice), and a
+        // host change, with the old host usually still in the match, or a new match used to close all of it.
+        static void CloseChannel(ulong id)
         {
-            if (!connected.Remove(id)) return;
             var identity = new SteamNetworkingIdentity();
             identity.SetSteamID64(id);
-            SteamNetworkingMessages.CloseSessionWithUser(ref identity);
+            SteamNetworkingMessages.CloseChannelWithUser(ref identity, Channel);
         }
 
         // ---------------------------------------------------------------- transport
@@ -183,9 +182,14 @@ namespace ChessFight.RagdollLab.Net
                         var packet = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
                         ulong sender = packet.m_identityPeer.GetSteamID64();
                         if (!session.IsPeer(sender) || packet.m_cbSize <= 0 || packet.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
-                        var bytes = new byte[packet.m_cbSize];
+                        var bytes = received.Get(packet.m_cbSize);
                         Marshal.Copy(packet.m_pData, bytes, 0, bytes.Length);
                         deliver(sender, bytes);
+                    }
+                    catch (Exception e)
+                    {
+                        // One message that throws must not cost the others, nor leave them unreleased (R297).
+                        ReceiveErrors.Log(Channel, e);
                     }
                     finally
                     {

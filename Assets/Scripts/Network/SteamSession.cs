@@ -62,7 +62,11 @@ namespace ChessFight.Network
         // v23 (R153 on urp-conversion, from skill-network-test): the lab input carries the emote ask ("CFRC").
         // v24 (R149·R150, merged with v23 on 10-24): the Sword Fight match is the prototype (spec v1.0) on the lab's link over this session
         //      (SteamMatchLabLink, channel 35): the skills online, and its match state as text (TypeMatch).
-        public const string Protocol = "chessfight.dua0731.network.v24";
+        // v25 (R295): a member's "claim" counts only from the next host in line and only one epoch above what a PC
+        //      can see (HostElection.Follow). A v24 build follows any claim, so the two would pick different hosts.
+        // v26 (R297): the ragdoll snapshot's pawn is 65 bytes instead of 74 ("CFRD", RagdollWire): a v25 build drops
+        //      every snapshot of a v26 host, so the two must not meet in one room.
+        public const string Protocol = "chessfight.dua0731.network.v26";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }
@@ -153,6 +157,9 @@ namespace ChessFight.Network
         public const float StartFitnessWait = 5f;
         // R159: between two moves of the waiting room's host (the record and the room's ownership settle).
         public const float WaitingHandoffCooldown = 3f;
+        // R294: how long a waiting-room handover may wait for Steam to move the room's ownership before
+        // the room counts as lost (a host that has gone gets 2 seconds, as before).
+        public const float WaitingHandoffGrace = 10f;
         // Between a start or handover and the next handover for slowness.
         public const float StruggleCooldown = 45f;
         // ---- Loading and a shared start (MatchStart) ----
@@ -207,12 +214,20 @@ namespace ChessFight.Network
 
         readonly FrameMonitor frames = new FrameMonitor();
         int epoch, publishedFit, publishedBase;
+        // R295: the claim this PC made (Promote), read from here rather than from
+        // the member data, which Steam may not have echoed back yet.
+        int ownClaim;
         string publishedLoc = "", localLoc = "";
         // R159: a start that waits for a newcomer's machine score (StartGame); a
         // waiting-room host that took the room over and reads its reservations once
         // it owns it; the next waiting-room election.
         bool startWanted, adoptReservations;
+        // R295: the player this waiting-room host handed the room to, while the
+        // room is still ours (Steam has not moved it yet).
+        ulong waitingHandedTo;
         float startWaitSince = -1, nextWaitElect;
+        // R294: what the waiting-room election last wrote to the log.
+        string lastWaitElection = "";
         float hostSilence, hostSince = -1, orphanSince = -1, nextFitPublish, nextSuccessors, nextOwnerFix, lastHandoff = -1000, noteUntil;
         readonly TeamReservations reservations = new TeamReservations();
         readonly List<IDisposable> callbacks = new List<IDisposable>();
@@ -426,11 +441,14 @@ namespace ChessFight.Network
         // the same room data, so our own fitness here is the published one.
         ulong SuccessorOf(ulong leaving, HashSet<ulong> present)
         {
-            var humans = present.Where(id => !BotIdentity.IsBot(id) && Roster.ContainsKey(id)).ToList();
-            var fallback = humans.Select(id => new HostElection.Candidate
-            { Id = id, Fitness = id == Self ? publishedFit : ParseInt(MemberData(Match, id, "fit")), PingMs = -1 });
-            return HostElection.Successor(HostElection.Decode(Data(Match, "successors")), humans, leaving, fallback);
+            var heirs = Heirs(present);
+            return HostElection.Successor(PublishedSuccessors(), heirs.Select(c => c.Id).ToList(), leaving, heirs);
         }
+
+        // The seated players here, the only ones who can take the host role over.
+        List<HostElection.Candidate> Heirs(HashSet<ulong> present) =>
+            present.Where(id => !BotIdentity.IsBot(id) && Roster.ContainsKey(id)).Select(id => new HostElection.Candidate
+            { Id = id, Fitness = id == Self ? publishedFit : ParseInt(MemberData(Match, id, "fit")), PingMs = -1 }).ToList();
 
         public void Initialize()
         {
@@ -824,7 +842,10 @@ namespace ChessFight.Network
                 // Party-route and match-close notifications can arrive in either order
                 // while the host merges an otherwise empty waiting room.
                 if (invalidHostSince < 0) invalidHostSince = now;
-                if (now - invalidHostSince > 2) Fail("방장이 나가 경기가 끝났습니다. 파티로 돌아갑니다.");
+                // R294: a waiting-room handover on its way (the record names a host still in the
+                // room, Steam has not moved the ownership yet) is not a host that has gone.
+                bool handing = phase != "closed" && Host != 0 && ParseId(Data(Match, "host")) == Host && Members(Match).Contains(Host);
+                if (now - invalidHostSince > (handing ? WaitingHandoffGrace : 2)) Fail("방장이 나가 경기가 끝났습니다. 파티로 돌아갑니다.");
                 return;
             }
             invalidHostSince = -1;
@@ -944,21 +965,21 @@ namespace ChessFight.Network
         bool FollowHost(HashSet<ulong> present, float now)
         {
             if (hostSince < 0) hostSince = now;
-            // 1. The newest record wins: the room's own ("host", "epoch", written by
-            //    the owner) or a claim by a player still here. Equal epochs go to
-            //    the room's record, then to the lower Steam ID, so two successors
-            //    that both stepped in settle on one.
+            // 1. The room's record ("host", "epoch", written by the owner), then the
+            //    claims of the hosts that took over after it, one after another
+            //    (HostElection.Follow). A claim counts only from the next host in
+            //    line and only one epoch above what this PC can see (R295: any
+            //    member's claim of any size used to be followed). Every PC reads the
+            //    same room, so two successors that both stepped in settle on the one
+            //    in line, and a PC that stepped in on a passing view of the room
+            //    (a player it took for gone was not) steps back down.
             ulong recordHost = ParseId(Data(Match, "host"));
             int recordEpoch = ParseInt(Data(Match, "epoch"));
-            ulong newest = present.Contains(recordHost) || recordHost == Self ? recordHost : 0;
-            int newestEpoch = newest != 0 ? recordEpoch : 0;
-            foreach (ulong id in present.OrderBy(id => id))
-            {
-                int claim = ParseInt(MemberData(Match, id, "claim"));
-                if (claim <= 0) continue;
-                if (claim > newestEpoch || (claim == newestEpoch && newest != recordHost && id < newest)) { newest = id; newestEpoch = claim; }
-            }
-            if (newest != 0 && (newestEpoch > epoch || (newestEpoch == epoch && newest != Host)))
+            var heirs = Heirs(present);
+            var claims = heirs.ToDictionary(c => c.Id, c => c.Id == Self ? ownClaim : ParseInt(MemberData(Match, c.Id, "claim")));
+            ulong newest = HostElection.Follow(recordHost, recordEpoch, Math.Max(recordEpoch, epoch), PublishedSuccessors(), claims, heirs, out int newestEpoch);
+            bool here = newest != 0 && (newest == Self || present.Contains(newest));
+            if (here && (newestEpoch > epoch || (newest != Host && (newestEpoch == epoch || Host == Self))))
                 ChangeHost(newest, newestEpoch, newest == Self ? "이 PC가 방장을 맡았습니다." : $"방장이 {Name(newest)} 님으로 바뀌었습니다.");
 
             // 2. A host gone from the room, or silent past the grace period, is
@@ -972,7 +993,7 @@ namespace ChessFight.Network
                 if (gone || silent)
                 {
                     ulong next = SuccessorOf(Host, present);
-                    if (next == Self) Promote(present);
+                    if (next == Self) Promote();
                     else if (next == 0 || (gone && orphanSince >= 0 && now - orphanSince > OrphanTimeout))
                     { Fail("방장이 나가 경기가 끝났습니다. 파티로 돌아갑니다."); return false; }
                     else if (orphanSince < 0) orphanSince = now;
@@ -990,23 +1011,23 @@ namespace ChessFight.Network
             return true;
         }
 
-        // The successor steps in: one epoch above anything it can see, announced
-        // as a claim until it owns the room and can write the record itself.
-        void Promote(HashSet<ulong> present)
+        // The successor steps in: one epoch above the newest it knows (step 1 has
+        // already followed every claim that counts), announced as a claim until it
+        // owns the room and can write the record itself. Claims that do not count
+        // are not outbid (R295: a forged int.MaxValue made this one wrap round).
+        void Promote()
         {
-            int top = Math.Max(epoch, ParseInt(Data(Match, "epoch")));
-            foreach (ulong id in present) top = Math.Max(top, ParseInt(MemberData(Match, id, "claim")));
-            int claim = top + 1;
-            SteamMatchmaking.SetLobbyMemberData(Id(Match), "claim", claim.ToString());
-            ChangeHost(Self, claim, "방장 연결이 끊겨 이 PC가 방장을 이어받았습니다.");
-            if (Owner(Match) == Self) { Set(Match, "host", Self.ToString()); Set(Match, "epoch", claim.ToString()); }
+            ownClaim = HostElection.NextEpoch(Math.Max(epoch, ParseInt(Data(Match, "epoch"))));
+            SteamMatchmaking.SetLobbyMemberData(Id(Match), "claim", ownClaim.ToString());
+            ChangeHost(Self, ownClaim, "방장 연결이 끊겨 이 PC가 방장을 이어받았습니다.");
+            if (Owner(Match) == Self) { Set(Match, "host", Self.ToString()); Set(Match, "epoch", ownClaim.ToString()); }
         }
 
         // The current host gives the role away: at the start, when it is too
         // slow, or when it leaves a live match.
         void HandOff(ulong next, IEnumerable<ulong> ranked, string note, bool notify = true)
         {
-            int nextEpoch = epoch + 1;
+            int nextEpoch = HostElection.NextEpoch(epoch);
             Set(Match, "host", next.ToString()); Set(Match, "epoch", nextEpoch.ToString());
             Set(Match, "successors", HostElection.Encode(ranked.Where(id => id != next)));
             SteamMatchmaking.SetLobbyOwner(Id(Match), Id(next));
@@ -1030,18 +1051,25 @@ namespace ChessFight.Network
         // ---- The waiting room's host (R159, 승규: "입장씬부터 PC 성능 1등이 방장") ----
 
         // The waiting room's host hands the room to the best PC in it: machine
-        // scores (HostElection.StartHost), each player seated and measured. Scores
-        // are measured once per PC, so the order settles and does not flicker.
+        // scores (HostElection.StartHost), each player seated and measured. A score
+        // only rises (each PC's best sitting so far, R294), so the order settles and does not flicker.
         void ElectWaiting(HashSet<ulong> present, float now)
         {
             if (now < nextWaitElect || now - lastHandoff < WaitingHandoffCooldown || startWanted) return;
             nextWaitElect = now + 1;
             var candidates = Candidates(present).Where(c => c.Id == Self || Seated(c.Id, present)).ToList();
             ulong next = HostElection.StartHost(Self, candidates, HostElection.StartMargin);
-            if (next == Self || HostElection.Unknown(Pick(candidates, next))) return;
-            Debug.Log("[ChessFight] 방장 정하기(대기실): " + string.Join(" · ", candidates.Select(c =>
-                $"{Name(c.Id)}{(c.Id == Self ? "(방장)" : "")} 성능 {c.BaseFitness} 핑 {c.PingMs}")) + $" → {Name(next)}");
-            HandOffWaiting(next, $"PC 성능 1등인 {Name(next)} 님이 방장을 맡습니다.");
+            bool move = next != Self && !HostElection.Unknown(Pick(candidates, next));
+            // R294: what the election compared, whenever that changes (a player in or out, a new
+            // score), so Player.log on the host says why the role stayed or moved.
+            string seen = string.Join(" · ", candidates.Select(c =>
+                $"{Name(c.Id)}{(c.Id == Self ? "(방장)" : "")} 성능 {(c.BaseFitness > 0 ? c.BaseFitness.ToString() : "측정 전")} 핑 {c.PingMs}"));
+            if (seen != lastWaitElection)
+            {
+                lastWaitElection = seen;
+                Debug.Log($"[ChessFight] 방장 정하기(대기실): {seen} → " + (move ? $"{Name(next)} 님에게 넘김" : "그대로"));
+            }
+            if (move) HandOffWaiting(next, $"PC 성능 1등인 {Name(next)} 님이 방장을 맡습니다.");
         }
 
         // A player whose whole party has arrived: only they may host the waiting room
@@ -1062,6 +1090,7 @@ namespace ChessFight.Network
             reservations.Clear();
             startWanted = false; startWaitSince = -1;
             admitted = seenRoster = true;
+            waitingHandedTo = next;
             ChangeHost(next, epoch, note, notify);
         }
 
@@ -1069,15 +1098,30 @@ namespace ChessFight.Network
         // is: it numbers the hosts of a started match (StartGame writes 1).
         void FollowWaitingHost(float now)
         {
+            var members = Members(Match);
             ulong record = ParseId(Data(Match, "host"));
-            if (record != 0 && record != Host && (record == Self || Members(Match).Contains(record)))
+            // A handover is done once Steam has moved the room.
+            if (Owner(Match) != Self) waitingHandedTo = 0;
+            // R295: the player we handed the room to left before Steam moved it to
+            // them, so it is still ours: we take it back, with the reservations we
+            // published for them. A host that vanishes without a word (a crash) still
+            // ends the room (HOST.md): whoever Steam hands it to never handed it over.
+            else if (waitingHandedTo != 0 && record == waitingHandedTo && !members.Contains(record))
+            {
+                waitingHandedTo = 0;
+                Set(Match, "host", Self.ToString());
+                adoptReservations = true;
+                ChangeHost(Self, epoch, $"{Name(record)} 님이 방장을 받기 전에 나가 이 PC가 다시 방장을 맡았습니다.");
+                return;
+            }
+            if (record != 0 && record != Host && (record == Self || members.Contains(record)))
             {
                 bool mine = record == Self;
                 if (mine) adoptReservations = true;
                 ChangeHost(record, epoch, mine ? "PC 성능 1등이라 이 PC가 방장을 맡았습니다." : $"PC 성능 1등인 {Name(record)} 님이 방장을 맡았습니다.");
             }
             // An old host still owning the room passes it on (a missed SetLobbyOwner).
-            if (Host != Self && Owner(Match) == Self && Members(Match).Contains(Host) && now >= nextOwnerFix)
+            if (Host != Self && Owner(Match) == Self && members.Contains(Host) && now >= nextOwnerFix)
             { nextOwnerFix = now + 1; SteamMatchmaking.SetLobbyOwner(Id(Match), Id(Host)); }
         }
 
@@ -1144,16 +1188,19 @@ namespace ChessFight.Network
 
         void ResetHostState()
         {
-            epoch = 0; publishedFit = publishedBase = 0; publishedLoc = ""; hostSilence = 0; hostSince = -1; orphanSince = -1;
+            epoch = ownClaim = 0; publishedFit = publishedBase = 0; publishedLoc = ""; hostSilence = 0; hostSince = -1; orphanSince = -1;
+            waitingHandedTo = 0;
             nextFitPublish = nextSuccessors = nextOwnerFix = noteUntil = 0; lastHandoff = -1000; Note = "";
-            startWanted = adoptReservations = false; startWaitSince = -1; nextWaitElect = 0;
+            startWanted = adoptReservations = false; startWaitSince = -1; nextWaitElect = 0; lastWaitElection = "";
             held.Clear(); heldLoaded = false; joinable = -1;
         }
 
         // ---- Empty seats of a started match (Backfill) ----
 
         // The host's round in a started match: held seats whose player arrived are
-        // taken, expired ones are freed, and the room says what it offers.
+        // taken, expired ones are freed, and the room says what it offers. Whoever
+        // asked for an expired one waits before asking again (TeamReservations.
+        // Cooldown); a seat taken over from an earlier host has no known asker.
         void Refill(HashSet<ulong> present)
         {
             LoadHeld();
@@ -1164,7 +1211,7 @@ namespace ChessFight.Network
                 var seat = held[i];
                 if (present.Contains(seat.Id))
                 { Roster[seat.Id] = PawnMotor.Spawn(seat.Id, seat.Team, seat.Slot); arrived.Add(seat.Id); held.RemoveAt(i); }
-                else if (now > seat.Until) held.RemoveAt(i);
+                else if (now > seat.Until) { held.RemoveAt(i); reservations.StartCooldown(seat.Leader, Time.realtimeSinceStartup); }
             }
             NoteArrivals(arrived);
             PublishSeats();
@@ -1187,7 +1234,8 @@ namespace ChessFight.Network
         void SetChanged(string key, string value) { if (Data(Match, key) != value) Set(Match, key, value); }
 
         // A new host takes over the seats its predecessor held (rule 15: nothing
-        // of the match lives on the host PC alone).
+        // of the match lives on the host PC alone). Who asked for each is not match
+        // state and stays behind (Backfill.Seat.Leader).
         void LoadHeld()
         {
             if (heldLoaded) return;
@@ -1213,7 +1261,11 @@ namespace ChessFight.Network
             // The same request again while its answer is on the way.
             if (Roster.ContainsKey(sender) || held.Exists(s => s.Id == sender)) { Set(Match, grant, request.ticket + "|ok"); return; }
             int team; int[] slots;
+            // Declared members may be made up (TeamReservations.Cooldown): a sender gets
+            // no second party while seats it asked for are still held, even after it
+            // left and came back, and none while it waits out one that never came.
             if (!TeamReservations.ValidRequest(sender, request.party, request.ticket, request.members) ||
+                held.Exists(s => s.Leader == sender) || reservations.CoolingDown(sender, Time.realtimeSinceStartup) ||
                 request.members.Any(id => Roster.ContainsKey(id) || held.Exists(s => s.Id == id)) ||
                 !Backfill.Open(StartAt, ServerNow()) ||
                 !Backfill.Place(Backfill.DecodeCapacity(Data(Match, "seats")), Seats(), request.members.Length, out team, out slots))
@@ -1226,7 +1278,7 @@ namespace ChessFight.Network
                 ulong id = request.members[i];
                 // Bots never enter the Steam lobby, so they are always here.
                 if (present.Contains(id) || BotIdentity.IsBot(id)) { Roster[id] = PawnMotor.Spawn(id, team, slots[i]); seated.Add(id); }
-                else held.Add(new Backfill.Seat { Id = id, Team = team, Slot = slots[i], Until = until });
+                else held.Add(new Backfill.Seat { Id = id, Team = team, Slot = slots[i], Until = until, Leader = sender });
             }
             Set(Match, grant, request.ticket + "|ok");
             NoteArrivals(seated);
@@ -1463,6 +1515,9 @@ namespace ChessFight.Network
                     }
                     else if (Owner(Match) == Self)
                     {
+                        // R295: a room handed to us and left before we read its
+                        // reservations: they are only in the room's record so far.
+                        if (adoptReservations) { LoadReservations(); adoptReservations = false; }
                         // Our party goes with us.
                         var mine = reservations.Find(Self);
                         if (mine != null) reservations.Remove(mine.Leader);

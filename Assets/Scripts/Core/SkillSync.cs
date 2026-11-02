@@ -146,6 +146,19 @@ namespace ChessFight.Network
 
         public static bool Newer(ushort value, ushort previous) { return unchecked((short)(value - previous)) > 0; }
 
+        /// <summary>
+        /// The host takes a client's confirmed moment number (the input's eventAck). 0 is a client that has none yet: until a
+        /// real one comes, the host sends it every moment it keeps (SkillEventLog.First - 1). Taken as a number, 0 hid every
+        /// moment numbered 32768 to 65535 from it, and its real confirmations were never "newer" than 0 either, so a client
+        /// that met a host past 32767 moments got none at all (R297).
+        /// </summary>
+        public static void TakeAck(ushort fresh, ref ushort acked, ref bool set)
+        {
+            if (fresh == 0 || (set && !Newer(fresh, acked))) return;
+            acked = fresh;
+            set = true;
+        }
+
         public static int Size(int states, int wires, int barricades, int events)
         {
             return HeaderBytes + states * StateBytes + wires * WireBytes + barricades * BarricadeBytes + events * EventBytes;

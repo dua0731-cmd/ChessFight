@@ -170,10 +170,10 @@ namespace ChessFight.RagdollLab
                 if (victim.Skills != null && victim.Skills.Parry(this, c.ClosestPoint(Hand.position))) { HitFlash = .1f; CancelClickSwing(); return; }
                 Vector3 away = target.Hips.position - Pawn.Hips.position; away.y = 0;
                 CutPush(away.normalized, out Vector3 push, out Vector3 topple);
-                target.TakeHit(push, .65f, 0, true);
+                target.TakeHit(push * SameFall(target), .65f, 0, true);
                 // The upper body goes on a little faster the way the blade went than the hips, so it falls that way.
                 if (!target.NetworkPuppet)
-                    for (int b = (int)BodyId.Chest; b <= (int)BodyId.HandR; b++) target.bodies[b].linearVelocity += topple * target.PushScale;
+                    for (int b = (int)BodyId.Chest; b <= (int)BodyId.HandR; b++) target.bodies[b].linearVelocity += topple * target.PushScale * SameFall(target);
                 victim.StopCombat(); victim.FlashHit(.14f); HitFlash = .1f; HitsLanded++;
                 RaiseStruck(this, victim);
             }

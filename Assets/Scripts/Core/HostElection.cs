@@ -131,12 +131,57 @@ namespace ChessFight.Network
 
         // The next host once `leaving` is gone: the first published successor who
         // is still here, otherwise the fittest of those present.
-        public static ulong Successor(IEnumerable<ulong> published, ICollection<ulong> present, ulong leaving, IEnumerable<Candidate> fallback)
+        public static ulong Successor(IEnumerable<ulong> published, ICollection<ulong> present, ulong leaving, IEnumerable<Candidate> fallback) =>
+            Successor(published, present, leaving, fallback, out _);
+
+        // `skipped`: the published successors passed over because they are gone.
+        public static ulong Successor(IEnumerable<ulong> published, ICollection<ulong> present, ulong leaving, IEnumerable<Candidate> fallback, out int skipped)
         {
+            skipped = 0;
             foreach (ulong id in published ?? Enumerable.Empty<ulong>())
-                if (id != leaving && id != 0 && !BotIdentity.IsBot(id) && present.Contains(id)) return id;
+            {
+                if (id == leaving || id == 0 || BotIdentity.IsBot(id)) continue;
+                if (present.Contains(id)) return id;
+                skipped++;
+            }
             var ranked = Rank((fallback ?? Enumerable.Empty<Candidate>()).Where(c => c.Id != leaving && present.Contains(c.Id)));
             return ranked.Count > 0 ? ranked[0] : 0;
+        }
+
+        // One epoch up, never past int.MaxValue (R295: a claim of int.MaxValue
+        // made the next one wrap round to a negative number).
+        public static int NextEpoch(int epoch) => epoch >= int.MaxValue ? int.MaxValue : Math.Max(epoch, 0) + 1;
+
+        // The highest claim a PC accepts (R295): one above the epoch it can see,
+        // plus one for each published successor skipped as gone, who may have
+        // held the role for a moment that this PC never heard of.
+        public static int ClaimLimit(int seen, int skipped) =>
+            (int)Math.Min(int.MaxValue, (long)Math.Max(seen, 0) + 1 + Math.Max(skipped, 0));
+
+        // Who hosts once the claims are counted (R295). The room's record is the
+        // start; from there each step takes the claim of the next host in line
+        // (Successor of the host before it, by the published order), if that claim
+        // is above the epoch reached so far and within ClaimLimit. Nobody else's
+        // claim counts, so a player outside the order or a forged number cannot
+        // take a match over, and a successor that took over and then went quiet
+        // is followed by its own successor. Every PC walks the same room data, so
+        // every PC reaches the same host.
+        // claims   every seated player still here, with their claim (0 = none)
+        // seen     the highest epoch this PC knows: the room's record or its own
+        public static ulong Follow(ulong recordHost, int recordEpoch, int seen, IList<ulong> published,
+                                   IDictionary<ulong, int> claims, IEnumerable<Candidate> fallback, out int epoch)
+        {
+            ulong host = recordHost;
+            epoch = recordEpoch;
+            // Each step needs a higher claim than the last, so nobody is reached twice.
+            for (int step = 0; step < claims.Count; step++)
+            {
+                ulong next = Successor(published, claims.Keys, host, fallback, out int skipped);
+                if (next == 0 || !claims.TryGetValue(next, out int claim)) break;
+                if (claim <= epoch || claim > ClaimLimit(Math.Max(seen, epoch), skipped)) break;
+                host = next; epoch = claim;
+            }
+            return host;
         }
 
         // Lobby metadata form: "id,id,id".

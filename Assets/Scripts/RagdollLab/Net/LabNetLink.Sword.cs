@@ -78,12 +78,22 @@ namespace ChessFight.RagdollLab
         readonly List<(byte id, SwordWireCollapse data, double beginMs)> collapseWaiting = new List<(byte, SwordWireCollapse, double)>();
         readonly List<byte> collapseGone = new List<byte>();
 
+        // Not collapseWaiting.Exists with a lambda: a new closure for every collapse in every packet (R297).
+        bool CollapseWaiting(byte id)
+        {
+            for (int i = 0; i < collapseWaiting.Count; i++) if (collapseWaiting[i].id == id) return true;
+            return false;
+        }
+
         // Development presses (the loopback tests' commands, RunDev). For a while after any command the camera's aim goes
         // with every input: a test window is not in front, so the game reads no aim from it, and the aim of the one frame
         // a command came in was overwritten before the next input packet left (a queen dashing the camera's old way).
         bool devSkill, devEdge, devClick, devCancel, devJump;
         float devHoldUntil, devMoveUntil, devAimUntil;
         Vector3 devMove;
+        // R297: a development build's autopilot (-autopilot, AutoPilot) plays this PC's fighter in a match.
+        AutoPilot pilot;
+        bool pilotAsked;
 
         // A client's own press, timed until the host's state of its piece changes (the test screen).
         float swordPressAt = -1f;
@@ -392,7 +402,35 @@ namespace ChessFight.RagdollLab
                 if (now < devMoveUntil) input.move = devMove;
             }
             devSkill = devEdge = devCancel = devClick = devJump = false;
+            if (Piloted()) Pilot(ref input, ref skill);
             return input;
+        }
+
+        /// <summary>R297: the autopilot, asked for once in a match (its seed comes from this PC's id unless given).</summary>
+        bool Piloted()
+        {
+            if (!pilotAsked && matchActive && RealMatch)
+            {
+                pilotAsked = true;
+                if (Debug.isDebugBuild && AutoPilot.Requested(Environment.GetCommandLineArgs(), NetSelf, out uint seed))
+                    pilot = new AutoPilot(seed);
+            }
+            return pilot != null;
+        }
+
+        /// <summary>R297: the autopilot's step over the keys - a walk against the camera, a sprint, a jump, a swing and the
+        /// skill key - whether the window is in front or not; nothing while the chat holds the keys.</summary>
+        void Pilot(ref PawnInput input, ref bool skill)
+        {
+            var f = pilot.Step(Time.unscaledDeltaTime);
+            if (ChatBox.KeysHeld) return;
+            Vector3 forward = cam != null ? cam.FlatForward : Vector3.forward, right = cam != null ? cam.FlatRight : Vector3.right;
+            input.move = Vector3.ClampMagnitude(right * f.MoveX + forward * f.MoveY, 1f);
+            if (cam != null) input.aim = cam.AimForward;
+            input.sprint = f.Sprint;
+            input.jump |= f.Jump;
+            input.shove |= f.Click;
+            skill |= f.Skill;
         }
 
         /// <summary>The host's physics step: every other player's input, its presses one a step (two quick ones stay two).</summary>
@@ -597,8 +635,9 @@ namespace ChessFight.RagdollLab
             DispatchEvents();
 
             // A host silent for a few seconds is replaced by its successor (Steam, HOST.md); leaving is the last resort.
-            NetHostSilence(clock - lastReceive);
-            if (clock - lastReceive > SilenceTimeout)
+            float silence = hostSilence.Seconds(clock, NetStarted);
+            NetHostSilence(silence);
+            if (silence > SilenceTimeout)
             {
                 message = "방장이 자세 전송을 멈췄어요. 경기를 나갑니다.";
                 NetLeave(message);
@@ -685,7 +724,7 @@ namespace ChessFight.RagdollLab
             foreach (var c in swordIn.Collapses)
             {
                 collapseSeen[c.Id] = now;
-                if (remoteCollapses.ContainsKey(c.Id) || collapseWaiting.Exists(x => x.id == c.Id)) continue;
+                if (remoteCollapses.ContainsKey(c.Id) || CollapseWaiting(c.Id)) continue;
                 collapseWaiting.Add((c.Id, c, swordIn.HostTimeMs - c.Age * 1000d));
             }
             collapseGone.Clear();

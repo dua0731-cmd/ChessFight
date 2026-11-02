@@ -1,5 +1,6 @@
 # 변경 이력
 
+- 2026-11-02 R285: `main`(R294~R304)을 `claude/nifty-tesla-8212va`에 병합. 문서 네 곳(HANDOFF · REQUIREMENTS · HISTORY · VALIDATION) 충돌을 두 쪽 기록 모두 남겨 해결, R237~R240 번호 겹침 표시. 컴파일 · 테스트 다시 통과.
 - 2026-11-02 R284: 왕실 마차뜰 맵 프리팹 `RoyalCarriageYard` · 시험장 `RoyalCarriageYard_Obstacles`, `PawnRush/CarriageYard/`(맵 빌더 · 장애물 9종 · `YardImpact` · `YardKit` · `WaterfallFlow`), 장애물 프리팹 8개, `Obstacle.JumpsBetween`. Core133 · 세션45 · Unity 6000.3 DLL 컴파일 · 경계/시계 검사 통과; Unity 미확인.
 - 2026-11-02 R283: 폰 러쉬 맵 시험 씬 `PawnRush_MapTest.unity`, `PawnRushMapTest` · `PawnRushCalibrationYard` · `PawnRushMapTestMenu`, 맵 프리팹 폴더 `Assets/Prefabs/PawnRushMaps/`. Core133 · 세션45 · 컴파일 통과; Unity 미확인.
 - 2026-11-01 R282: 정원 Resources 이름 고정(`RoyalWaterGarden.fbx` · `_Motion.json`), 시험 씬 구역별 try/catch · 루트 finally 활성, 정원 모델 누락 시 LFS 포인터 안내, 시험 씬 버전17. Core133 · 컴파일 통과; Unity 미확인.
@@ -27,7 +28,36 @@
 | `5b2cba1` | 10-31 | R261 | `seoungtest` 위(세션 브랜치 `claude/upbeat-mendel-j2a14x`): 도서관 컨베이어 맵 Blender 작업 파일 `ArtSource/PawnRush/Library/`(`build_library_blend.py` · `export_library_fbx.py` · README; `.blend`는 LFS 업로드 403으로 미포함), 문서 |
 | `35789f3` | 10-30 | R256 | `seoungtest`: 엔드게임 LD v1 §6을 `Course01v4Builder.WarRoom.cs`에, Blender 모델 붙이기 `Course01v4Builder.WarRoomModels.cs` · 가져오기 메뉴 `EndgameModelImport`, `Assets/Art/PawnRushMap/Endgame/`(FBX 63 · 텍스처 · 재질 · 배치 목록, LFS), Blender 배치 목록 버그 둘 고침(`eg_bl_scene.record` · `eg_bl_anim.clear`), `SeoungTestCourse.Version` 3. ArtSource의 FBX · .blend · 렌더는 커밋 안 함(스크립트로 다시 만듦), 승규 님의 시험 씬 변경도 안 넣음 |
 | `3f20a91` … | 10-30 | R255 | `claude/eloquent-ptolemy-bhtpfr`(`seoungtest` 위): 엔드게임 고난이도 LD v1 문서, `ArtSource/PawnRush/Endgame/` Blender 빌드 스크립트(키트 · 배치 · 검증 · 렌더 · 내보내기) · 검증 보고 · 배치 목록. FBX 63개 · 텍스처 · 리뷰 렌더 · .blend는 Git LFS 서버가 네트워크 정책에 막혀 커밋 안 함(스크립트로 다시 만듦) |
+| (이 커밋) | 11-02 | R297 | 문서: VALIDATION 맨 위(빌드 두 개로 기준값 재는 순서 · Profiler 순서 · (가)~(바) · [4] · [5] 미확인) · HOST_AUTHORITY(§0 · §1.1 · W3 · W7 · §6 표 · P5 · P6 · §8.4 · 새 §10) · MOTION · SESSION(v26) · SKILLS_ONLINE · RAGDOLL · DECISIONS K13 · PITFALLS 65~66 · REQUIREMENTS · HANDOFF |
+| `f5b21ab1` | 11-02 | R297 [5] | 받은 메시지 실패 로그마다 채널 줄(`Steam channel ○: …`)을 먼저 남김(첫 실패가 예외만 남아 `Player.log`에서 못 찾던 것) |
+| `7d248b0b` | 11-02 | R297 [5] | 모든 Steam 받기 루프가 메시지 하나의 예외만 버리고 계속 읽음(`ReceiveErrors`), 폰 러쉬 받기 최대 8번, 이동 스냅샷 12명까지만(`MotionProtocol.MaxPawns`), 스킬 받은 번호 0 = 아직 없음(`SkillWire.TakeAck`, 랩 · 폰 러쉬) |
+| `c0073862` | 11-02 | R297 [3] | 패킷 스트림 · 배열을 다시 씀(Core `PacketStreams` · `PacketPool`, 모든 Core 프로토콜 · 받기 루프), 매 프레임 목록 · 람다 · 위임 · `GetRange` 할당 없앰, 지연 시뮬레이터는 복사, 다시 쓴 스트림 시험 |
+| `d66873e2` | 11-02 | R297 [3] | 바꾸기 전에 모든 Core 패킷 바이트를 고정 입력의 FNV-1a 해시로 고정하는 시험 |
+| `92985d5a` | 11-02 | R297 [4] | 사람이 안 온 예약의 발신자는 60초 쉼(`TeamReservations.Cooldown`), 시작한 경기의 잡아 둔 자리는 한 발신자 한 그룹(`Backfill.Seat.Leader`), SESSION §4 "보안 범위", Core · 모의 시험 |
+| `e00ea7b6` | 11-02 | R297 [2] | 래그돌 스냅샷 말 74 → 65바이트(갈고리 꼬리 · 받은 보낸 시각 16비트 · 정확한 길이), Core `RagdollWire`, magic `CFRD`, 프로토콜 v26, Core 시험 |
+| `985a8941` | 11-02 | R297 [1] | 개발 빌드 경기에 F3 측정 상자(`NetMetricsOverlay`), Core `AutoPilot`(`-autopilot`)과 시험 |
+| `0da22ed3` | 11-02 | R304 | `claude/bold-johnson-8ez95n`(R300~R303 대계단 현관홀·구간 프리팹)을 `main`에 병합. 브랜치의 R149~R152를 R300~R303으로 바꾼 커밋(`b7a0106` → `df3819a`, main이 R149~R157·R295를 이미 씀) 포함. 충돌: `CoursePattern.shader`(main의 URP 판에 1 m 격자 두 갈래를 옮김), HANDOFF·REQUIREMENTS·DECISIONS·HISTORY·VALIDATION(양쪽 줄 모두 둠) |
+| `df3819a` · `b7a0106` | 11-02 | R304 | 병합 전 번호 바꾸기: R149~R152 → (R295~R298) → R300~R303 |
+| `926ec24` | 11-02 | R303 | 사용자가 나선 길 + 유리 징검다리 구조를 확정("좋아 이렇게 확정하자"): DECISIONS P29·REQUIREMENTS·HANDOFF·PAWN_RUSH_SECTIONS에 적음. 코드 그대로 |
+| `f77b242` | 11-02 | R303 | 대계단 현관홀 비트 3~5를 둥근 홀 한 나선 길로(휘어 오르는 계단·떠 있는 발판·점프대·다이빙 틈·바람 길·떨어지는 말·왕실 단 탑), 유리 징검다리 `GuessBridge`, `IntendedGap` + 검증기, 비트 6을 북쪽·아래로, 둥근 벽, 날개·다리·섬·룩 탑·`SwingingStair` 없앰, 문서. 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `decc344` | 11-02 | R302 | 꺾임 계단참을 룩 탑을 도는 C자 길 + 탑 북쪽 틈 + 스위퍼 팔 2개(`ObstacleMotion` 회전 + `ObstacleImpact`)로, 날개 계단 2를 움직이는 계단(새 `SwingingStair`)으로, 새 CP2(번호 하나씩 밀림), 경로 248.3 m, 문서. 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `28535a5` | 11-02 | R301 | 첫 Unity 검증의 `Wind span W1/E1` 오류: 첫 바람이 날개 계단 2 꼭대기 위(|x| 45)에 있어 계단 안쪽 끝으로 올라오면 건너뜀 → 바람 넷을 |x| 41.5/37/32.5/28(폭 3, 쉼 1.5)로, CP2 |x| 47·CP3 25.65, 문서 |
+| `0b6bb27` | 11-02 | R301 | 대계단 현관홀 재미 검토 → 세 곳 고침: 바람이 폰을 실어 나름(새 `IWindReceiver`·`RagdollPawn.Wind`·`ImportedObstacleActor.Blow`·`AirVent.DriftSpeed`, 홀 바람 3.5 m/s·폭 3·화살표 6 m, 계단 도착 자리 밖), 날개를 11 m 바깥으로(홀 ±51·중앙 계단참 ±25·샹들리에 영역과 간격) + 다리 A·섬·다리 B(11.5초, 닫힘 3), 날개 계단 1 진자 셋·난간 없음·아래 턱·가는 들보·카펫 2 m/s, 검증기 이름 목록, 문서(§10 재미 검토). 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `1f037f1` | 11-02 | R300 | 폰 러시 구간 프리팹: 한 판 7구간(Core `PawnRushSections` 뽑기·구간 씨앗, `PawnRushSection`·`PawnRushSectionSet`·`PawnRushRound`), 2-1 대계단 현관홀(`GrandStairHall`·`GrandStairHallBuilder`, 새 장애물 `RollingSpawner`·`ChandelierRain`, Core `SeededSchedule`), `SectionValidator`·`SectionPlaytest`·메뉴 3개·시험 씬 `PawnRush_Sections`, `CourseKit` 바탕 클래스·`SectionKit`, 1 m 격자 재질, `ImportedObstacleActor.AddObstacleHit`, 기획 원문 4개, 문서. 시험: Core 130·세션 41 |
+| `b0a678b2` | 11-02 | R295 | 문서: REQUIREMENTS · HOST · MOTION · SESSION · VALIDATION 맨 위 (가)~(라) · DECISIONS K8 · PITFALLS 62~64 · HANDOFF |
+| `17f45b00` | 11-02 | R295 [6] | 방장 교체 때 옛 방장과의 그 링크 채널만 닫음(`CloseChannelWithUser`: `SteamMotion` 31 · `SteamRagdollLink` 32, 새 경기 때도 랩은 채널만). 음성(40)은 그대로 |
+| `efb3c3f6` | 11-02 | R295 [2] | 폰 러쉬: 모든 PC가 `session.Host` 바뀜을 보고 받은 것을 지움(Core `HostWatch` + 시험), 새 방장은 `stateTick = lastState`, 왕복 시간도 지움 |
+| `d005e578` | 11-02 | R295 [3] | 폰 러쉬: 참가자가 매 프레임 방장 침묵을 `ReportHostSilence`로 보고(첫 패킷 · 공동 시작부터), 방장은 0 |
+| `1036da2a` | 11-02 | R295 [1] | 로딩 중에는 방장 침묵을 재지 않음(`SteamMotion.Loading`), 경기 씬 링크(`LabNetLink` · `SteamMatchLabLink` · `SteamPawnRushLink`)는 첫 패킷 · 공동 시작 중 먼저 온 때부터(Core `HostSilence` + 시험, 30초 마지막 수단), 모의 시험 1개 |
+| `e05779af` | 11-02 | R295 [5] | 대기실 넘김 중 받을 PC가 나가면 넘긴 PC가 다시 방장(`resv`로 예약 되살림), 방 주인이 된 직후 나가도 예약을 들고 넘김, 모의 시험 2개 |
+| `d366f46f` | 11-02 | R295 [4] | 방장 claim은 방 기록에서 다음 순번의 것만, 볼 수 있는 번호 + 1까지만(`HostElection.Follow` · `ClaimLimit` · `NextEpoch`), 프로토콜 v25, Core · 모의 시험 |
+| `6b227192` | 11-02 | R294 | 매칭 대기실 방장 = PC 성능 1등 보강(R159는 `404f44ef`): 성능 점수 다시 재기(6~120초, 오르기만), 방 주인 넘김 10초 기다림, 입장 화면 카드 "방장" · 알림, 비교 로그, 모의 시험 3개(`FakeSteam.OwnerDelay`), 문서(HOST · SESSION · VALIDATION · DECISIONS K8 · PITFALLS 60 · 61) |
+| (이 커밋) | 10-31 | R240 | 경기 채팅 시안 B1: 왼쪽 아래, 줄마다 채널 색 띠, 열면 띠가 위로 펼쳐지고 입력 줄 · 채널 범례 |
+| (이 커밋) | 10-30 | R238 · R239 | 설정 창 시안 A(탭 밑줄 · 오른쪽 설명 칸 · 둥근 상자 줄 · 끔/켬 스위치), 소드 파이트 기물 고르기 · 경기 Esc 메뉴 시안 A(어두운 유리 · 금 테두리), 고르기는 클릭 · 1~5 선택 → Enter · 더블클릭 확정 |
+| (이 문서 커밋, 로컬 main) | 10-28 | R160 | 폰 러시 30개 장소의 장애물 컨셉아트 PNG 6장(각 1024×1536)·프롬프트·장소별 기존 동작과 외형 매핑, 신규 탑승 샹들리에 그네·회전 병풍문 구분. 오프라인 전용 07·14·16 제외. Unity 코드·씬 변경 없음. Core 131·모의 세션 41 통과(컨셉의 Unity·Steam 실기 확인 아님). R159 인증 오류 뒤 푸시 재시도 안 함, Desktop Push 필요 |
+| `ddea471` (로컬 main) | 10-27 | R159 | 폰 러시 공간별 미니게임 구상: 10종 대표 장소·솔로/협동·완료 연출·구간별 변형 30개·조합, 기본 미션 2곳/후반 추가 구별, 최신 G·I·J 반영. 문서만, 사용자 선택 전. Core 131·모의 세션 41 통과(테마 실기 검증 아님). 원격 푸시는 GitHub 인증 오류로 실패, Desktop Push 필요 |
 | (이 커밋) | 10-28 | R191 | `skill-network-test`: 소드 파이트 경기장을 Blender · Tripo 모델로 — 판 부품(오크 · 월넛 칸, 둥근 월넛 테두리 + 청동 줄, 난간, 책상, 쟁반), Tripo 책 더미 · 체스 시계 · 램프 · 룩(폭 1.45 · 높이 0.9 m, 오크/월넛) · 아치 창 + 달 배경, 램프 빛줄기 · 먼지 · 흔들림, 서재 배경 · 달빛, 칸 착지 · 흔들림 먼지, 시험 씬 K · L 키. `Assets/Resources/SwordFightMap`, `SwordFightArena.cs`, `ArtSource/SwordFight`(Blender 스크립트 · 렌더 · Tripo 원본). Core 132 · 세션 41 · 전 어셈블리 컴파일 |
+| (이 커밋) | 10-30 | R237 | 룩 F 후딜 칼이 `HomeBlade`로 천천히 돌아감, R160~R171 문서 커밋 표기 정정. `skill-clips-wip`(`22cb0b3`, 그 브랜치에서는 R191)을 main에 병합 |
 | `a127643` | 10-28 | R190 | `skill-network-test`: 소드 파이트 스킬 몸동작 Mixamo 클립 1단계 — `SkillClipRig`, `Core/SkillClipTiming`(+시험), `SwordFightClipSet`, `SwordFightSkills.Clips.cs`, 에디터 `SwordFightClipImporter`, 클립 폴더 README, 문서 |
 | `5600a01` | 10-27 | — | 경기장 스킬 시험 씬에 Unity가 더한 URP 카메라 · 빛 데이터 |
 | `7507810` | 10-27 | R160~R171 | 소드 파이트 스킬 VFX(킹 · 룩 · 퀸 · 비숍 1 · 2층), 공용 `Vfx*` 부품 · 셰이더, `ChessFight.VFX.Editor` |

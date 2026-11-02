@@ -17,6 +17,50 @@ namespace ChessFight.Network
             silence >= UnstableAfter ? LinkHealth.Unstable : LinkHealth.Ok;
     }
 
+    // R295: how long a client in a match scene has not heard its host. A slow PC
+    // is not a lost host: the count starts at the host's first packet in the
+    // scene or at the shared start (go), whichever comes first, so neither a host
+    // still loading nor a client that loaded late takes the wait for silence. A
+    // host that never comes is still given up on: once the scene has waited as
+    // long as a client waits for the start (MatchStart.ClientGiveUp), the count
+    // starts anyway.
+    public sealed class HostSilence
+    {
+        float enteredAt, heardAt = -1;
+
+        // The scene is up, or the host changed: nothing heard from this host yet.
+        public void Enter(float now) { enteredAt = now; heardAt = -1; }
+
+        // A packet from the host.
+        public void Heard(float now) => heardAt = now;
+
+        // The silence in seconds. `started`: the shared start time has passed.
+        public float Seconds(float now, bool started)
+        {
+            if (heardAt < 0 && (started || now - enteredAt >= MatchStart.ClientGiveUp)) heardAt = now;
+            return heardAt < 0 ? 0 : Math.Max(0, now - heardAt);
+        }
+    }
+
+    // R295: whether the host a match scene's link follows has changed since it
+    // last looked. Every PC starts its stream from the host over then, not only
+    // the two whose roles swap: a third PC that kept the old host's numbering
+    // dropped the new host's packets as old ones.
+    public sealed class HostWatch
+    {
+        ulong host;
+        bool hosting, seen;
+
+        // The host now, and whether it is this PC: true when either differs from
+        // the last look (never on the first).
+        public bool Changed(ulong host, bool hosting)
+        {
+            bool changed = seen && (host != this.host || hosting != this.hosting);
+            this.host = host; this.hosting = hosting; seen = true;
+            return changed;
+        }
+    }
+
     // Input-to-confirmation time: from sending an input to the snapshot that
     // acknowledges it. This is what a player feels, so it includes the host's
     // tick and snapshot spacing on top of the wire ping.

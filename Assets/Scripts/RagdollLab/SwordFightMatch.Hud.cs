@@ -22,6 +22,10 @@ namespace ChessFight.RagdollLab
         Font display;
         GUIStyle displayStyle, bodyStyle;
         Texture2D panelTex, pipW, pipB, pillW, pillB, badgeTex, dimTex, brassTex;
+        // The pick cards in the settings window's design A look (10-30): smoked dark glass, a thin gold edge.
+        static readonly Color Amber = SwordFightShapes.Hex("#f2b632"), Parch = SwordFightShapes.Hex("#efe4d2"),
+            ParchBright = SwordFightShapes.Hex("#fff4dc"), Muted = SwordFightShapes.Hex("#a8957c");
+        Texture2D pickPanelTex, cardTex, cardHotTex, cardOffTex, capTex, capDimTex, chipTex, chipMeTex, ringTex, railTex, fillTex;
         readonly Dictionary<int, Texture2D> icons = new Dictionary<int, Texture2D>();
         int feedSeen;
         AudioSource tick;
@@ -207,6 +211,17 @@ namespace ChessFight.RagdollLab
             pillB = Rounded(24, 18, 9f, new Color(32 / 255f, 27 / 255f, 24 / 255f, 0.9f), new Color(32 / 255f, 27 / 255f, 24 / 255f, 0.9f), 0f);
             badgeTex = Rounded(16, 14, 6f, Gold, Gold, 0f);
             brassTex = Rounded(16, 16, 8f, SwordFightShapes.Hex("#c9a04c"), SwordFightShapes.Hex("#b8924a"), 1f);
+            pickPanelTex = Rounded(40, 40, 16f, new Color(20 / 255f, 13 / 255f, 8 / 255f, 0.92f), new Color(Amber.r, Amber.g, Amber.b, 0.35f), 1.2f);
+            cardTex = Rounded(28, 28, 12f, SwordFightShapes.Hex("#2b2017"), SwordFightShapes.Hex("#4a3826"), 1.2f);
+            cardHotTex = Rounded(28, 28, 12f, SwordFightShapes.Hex("#3a2a18"), Amber, 2.2f);
+            cardOffTex = Rounded(28, 28, 12f, SwordFightShapes.Hex("#1a120c"), SwordFightShapes.Hex("#3d2f22"), 1.2f);
+            capTex = Rounded(12, 12, 4f, Amber, Amber, 0f);
+            capDimTex = Rounded(12, 12, 4f, SwordFightShapes.Hex("#4a3826"), SwordFightShapes.Hex("#4a3826"), 0f);
+            chipTex = Rounded(32, 32, 16f, SwordFightShapes.Hex("#2b2017"), SwordFightShapes.Hex("#2b2017"), 0f);
+            chipMeTex = Rounded(32, 32, 16f, new Color(Amber.r, Amber.g, Amber.b, 0.14f), new Color(Amber.r, Amber.g, Amber.b, 0.5f), 1.2f);
+            ringTex = Rounded(64, 64, 32f, SwordFightShapes.Hex("#1a120c"), Amber, 4f);
+            railTex = Rounded(8, 8, 4f, SwordFightShapes.Hex("#3d2f22"), SwordFightShapes.Hex("#3d2f22"), 0f);
+            fillTex = Rounded(8, 8, 4f, Amber, Amber, 0f);
             dimTex = new Texture2D(1, 1);
             dimTex.SetPixel(0, 0, new Color(18 / 255f, 12 / 255f, 8 / 255f, 0.55f));
             dimTex.Apply();
@@ -401,16 +416,32 @@ namespace ChessFight.RagdollLab
 
         void DrawPick(float w, float h, float ui, int myTeam)
         {
+            // 10-30 design A (사용자, https://claude.ai/artifact/GA6MaACNmS8iCFmLj5StYu "기물 고르기 A"): a dark glass panel,
+            // the seconds in a gold ring with a draining bar, dark cards (the one under the mouse lifts with a gold edge,
+            // the number in its corner, F and E as key caps, a teammate's pick dim with their name), and the team's picks.
             float left = Mathf.Max(0f, (float)(settings.PickSeconds - PhaseTime));
             var pieces = SwordMatchRules.Pickable;
-            float cw = 128f * ui, chh = 190f * ui, gap = 12f * ui;
-            float pw = pieces.Length * cw + (pieces.Length - 1) * gap + 48f * ui, ph = chh + 120f * ui;
+            float pad = 28f * ui, cw = 168f * ui, chh = 250f * ui, gap = 14f * ui, lift = 8f * ui;
+            float pw = pieces.Length * cw + (pieces.Length - 1) * gap + 2f * pad, ph = 452f * ui;
             var r = new Rect(w * 0.5f - pw / 2f, h * 0.5f - ph / 2f, pw, ph);
-            Panel(r, panelTex);
-            Text(new Rect(r.x, r.y + 10f * ui, pw, 34f * ui), "시작할 때 기물을 고른다", displayStyle, Mathf.RoundToInt(26 * ui), Ink);
-            Text(new Rect(r.x, r.y + 42f * ui, pw, 20f * ui), $"같은 팀 안에서는 겹치지 않는다 · {left:0}초", bodyStyle, Mathf.RoundToInt(13 * ui), InkSoft);
+            Panel(r, pickPanelTex, 16);
+
+            float x = r.x + pad, iw = pw - 2f * pad, y = r.y + 22f * ui;
+            Text(new Rect(x, y, iw, 38f * ui), "시작 기물 고르기", displayStyle, Mathf.RoundToInt(30 * ui), Amber, TextAnchor.MiddleLeft);
+            Text(new Rect(x, y + 40f * ui, iw, 20f * ui), "같은 팀 안에서는 겹치지 않아요", bodyStyle, Mathf.RoundToInt(13 * ui), Muted, TextAnchor.MiddleLeft);
+            float ring = 60f * ui;
+            var rr = new Rect(r.xMax - pad - ring, y, ring, ring);
+            Panel(rr, ringTex, 30);
+            Text(rr, Mathf.CeilToInt(left).ToString(), displayStyle, Mathf.RoundToInt(26 * ui), ParchBright);
+            float frac = settings.PickSeconds > 0 ? Mathf.Clamp01(left / (float)settings.PickSeconds) : 0f;
+            var rail = new Rect(x, y + 70f * ui, iw, 4f * ui);
+            Panel(rail, railTex, 2);
+            if (rail.width * frac >= 4f) Panel(new Rect(rail.x, rail.y, rail.width * frac, rail.height), fillTex, 2);
+
             var mine = view.Find(game.LocalId);
             bool picked = mine.HasValue && mine.Value.Picked;
+            float top = r.y + 112f * ui;
+            var mouse = Event.current.mousePosition;
             for (int i = 0; i < pieces.Length; i++)
             {
                 var p = pieces[i];
@@ -419,23 +450,76 @@ namespace ChessFight.RagdollLab
                     if (f.Picked && f.Piece == p && f.Id != game.LocalId && game.Fighters.TryGetValue(f.Id, out var o) && o != null && o.Pawn.Team == myTeam) takenBy = f.Id;
                 bool mineNow = picked && mine.Value.Piece == p;
                 bool off = takenBy != 0 || (picked && !mineNow);
-                var cr = new Rect(r.x + 24f * ui + i * (cw + gap), r.y + 72f * ui, cw, chh);
+                var cr = new Rect(x + i * (cw + gap), top, cw, chh);
+                if (pickChosen == p && (off || picked)) pickChosen = null;
+                var hit = new Rect(cr.x, top - lift, cw, chh + lift);
+                // Chosen (a click or 1~5, waiting for Enter or a double click) or mine: lifted, gold. Under the mouse: the gold edge only.
+                bool chosen = !off && (mineNow || (!picked && pickChosen == p));
+                bool hot = chosen || (!off && !picked && hit.Contains(mouse));
+                if (chosen) cr.y -= lift;
                 var old = GUI.color;
-                GUI.color = new Color(1f, 1f, 1f, off ? 0.4f : 1f);
-                Panel(cr, mineNow ? brassTex : myTeam == 0 ? pipW : pipB, 8);
-                var icon = Icon(p, myTeam == 0);
-                float ih = 64f * ui, iw = ih * icon.width / icon.height;
-                GUI.DrawTexture(new Rect(cr.center.x - iw / 2f, cr.y + 12f * ui, iw, ih), icon);
-                Color tc = myTeam == 0 || mineNow ? Ink : Cream;
-                Text(new Rect(cr.x, cr.y + 80f * ui, cw, 26f * ui), $"{i + 1}  {ChessPieces.Name(p)}", displayStyle, Mathf.RoundToInt(20 * ui), tc);
-                Text(new Rect(cr.x + 6f, cr.y + 108f * ui, cw - 12f, 34f * ui), $"F {SwordFightSkills.Name(p)}", bodyStyle, Mathf.RoundToInt(11 * ui), tc);
-                Text(new Rect(cr.x + 6f, cr.y + 136f * ui, cw - 12f, 34f * ui), $"E {SwordFightSkills.EdgeName(p)}", bodyStyle, Mathf.RoundToInt(11 * ui), tc);
-                if (takenBy != 0) Text(new Rect(cr.x, cr.yMax - 22f * ui, cw, 18f * ui), NameOf(takenBy), bodyStyle, Mathf.RoundToInt(11 * ui), tc);
+                GUI.color = new Color(1f, 1f, 1f, off ? 0.45f : 1f);
+                Panel(cr, hot ? cardHotTex : off ? cardOffTex : cardTex, 12);
+
+                var badge = new Rect(cr.x + 12f * ui, cr.y + 12f * ui, 26f * ui, 26f * ui);
+                Panel(badge, chosen ? capTex : capDimTex, 4);
+                Text(badge, (i + 1).ToString(), bodyStyle, Mathf.RoundToInt(13 * ui), chosen ? Ink : Parch);
+
+                var icon = Icon(p, false);
+                float ih = 78f * ui, icw = ih * icon.width / icon.height;
+                GUI.DrawTexture(new Rect(cr.center.x - icw / 2f, cr.y + 22f * ui, icw, ih), icon);
+                Text(new Rect(cr.x, cr.y + 108f * ui, cw, 30f * ui), ChessPieces.Name(p), displayStyle, Mathf.RoundToInt(24 * ui), hot ? ParchBright : Parch);
+                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 150f * ui, cw - 28f * ui, 24f * ui), "F", SwordFightSkills.Name(p), chosen, ui);
+                SkillLine(new Rect(cr.x + 14f * ui, cr.y + 182f * ui, cw - 28f * ui, 24f * ui), "E", SwordFightSkills.EdgeName(p), chosen, ui);
+                string foot = takenBy != 0 ? NameOf(takenBy) + " 고름" : mineNow ? "골랐어요" : chosen ? "Enter · 더블클릭으로 확정" : hot ? "클릭해서 선택" : "";
+                if (foot != "") Text(new Rect(cr.x, cr.yMax - 34f * ui, cw, 22f * ui), foot, bodyStyle, Mathf.RoundToInt(12 * ui), takenBy != 0 ? Muted : Amber);
                 GUI.color = old;
-                if (!picked && takenBy == 0 && GUI.Button(cr, GUIContent.none, GUIStyle.none)) PickLocal(p);
+                // One click marks the card, a double click sends it (Enter sends the marked one: PickKeys).
+                var e = Event.current;
+                if (!picked && takenBy == 0 && e.type == EventType.MouseDown && e.button == 0 && hit.Contains(e.mousePosition))
+                {
+                    pickChosen = p;
+                    if (e.clickCount >= 2) PickLocal(p);
+                    e.Use();
+                }
             }
-            string waiting = picked ? "골랐다. 다른 사람을 기다리는 중" : pickAsked.HasValue ? "방장에게 보내는 중" : "클릭하거나 1~5";
-            Text(new Rect(r.x, r.yMax - 36f * ui, pw, 24f * ui), waiting, bodyStyle, Mathf.RoundToInt(13 * ui), InkSoft);
+
+            // The team's picks along the bottom, me first.
+            float ly = r.yMax - 52f * ui;
+            GUI.color = new Color(1f, 1f, 1f, 0.08f);
+            GUI.DrawTexture(new Rect(x, ly - 10f * ui, iw, 1f), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            Text(new Rect(x, ly, 70f * ui, 32f * ui), "우리 팀", bodyStyle, Mathf.RoundToInt(13 * ui), Amber, TextAnchor.MiddleLeft);
+            float cx = x + 74f * ui;
+            if (mine.HasValue) cx = TeamChip(cx, ly, mine.Value.Picked ? $"나 · {ChessPieces.Name(mine.Value.Piece)}" : "나 · 고르는 중", true, ui);
+            foreach (var f in view.Fighters)
+            {
+                if (f.Id == game.LocalId || !game.Fighters.TryGetValue(f.Id, out var o) || o == null || o.Pawn.Team != myTeam) continue;
+                if (cx > x + iw * 0.5f) break;   // leave room for the hint on the right
+                cx = TeamChip(cx, ly, f.Picked ? $"{NameOf(f.Id)} · {ChessPieces.Name(f.Piece)}" : $"{NameOf(f.Id)} · 고르는 중", false, ui);
+            }
+            string waiting = picked ? "골랐어요. 다른 사람을 기다리는 중" : pickAsked.HasValue ? "방장에게 보내는 중" : pickChosen.HasValue ? $"{ChessPieces.Name(pickChosen.Value)} 선택 · Enter나 더블클릭으로 확정" : "클릭 · 1~5로 선택, Enter나 더블클릭으로 확정";
+            Text(new Rect(x, ly, iw, 32f * ui), waiting, bodyStyle, Mathf.RoundToInt(13 * ui), Muted, TextAnchor.MiddleRight);
+        }
+
+        // "F 꼬치 베기": the key as a small cap, then the skill's name.
+        void SkillLine(Rect r, string key, string name, bool hot, float ui)
+        {
+            var cap = new Rect(r.x, r.y + (r.height - 22f * ui) / 2f, 22f * ui, 22f * ui);
+            Panel(cap, hot ? capTex : capDimTex, 4);
+            Text(cap, key, bodyStyle, Mathf.RoundToInt(12 * ui), hot ? Ink : Amber);
+            Text(new Rect(cap.xMax + 8f * ui, r.y, r.width - cap.width - 8f * ui, r.height), name, bodyStyle, Mathf.RoundToInt(13 * ui), hot ? ParchBright : Parch, TextAnchor.MiddleLeft);
+        }
+
+        // A rounded chip with a teammate's pick; returns where the next one starts.
+        float TeamChip(float x, float y, string text, bool me, float ui)
+        {
+            bodyStyle.fontSize = Mathf.RoundToInt(13 * ui);
+            float tw = bodyStyle.CalcSize(new GUIContent(text)).x + 28f * ui;
+            var r = new Rect(x, y, tw, 32f * ui);
+            Panel(r, me ? chipMeTex : chipTex, 15);
+            Text(r, text, bodyStyle, Mathf.RoundToInt(13 * ui), me ? ParchBright : SwordFightShapes.Hex("#cdbda5"));
+            return r.xMax + 10f * ui;
         }
 
         void DrawEndCard(float w, float h, float ui, int myTeam)

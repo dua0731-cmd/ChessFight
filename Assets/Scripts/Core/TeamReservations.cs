@@ -9,6 +9,13 @@ namespace ChessFight.Network
     public sealed class TeamReservations
     {
         public const int TeamSize = 6;
+        // The host cannot see who is really in a party (that lobby is the party's own),
+        // so a request may declare made-up members who never come and keep their seats
+        // for a reservation's 25 seconds, or a held seat's (Backfill.HoldSeconds). A
+        // sender whose people never came waits this long before it may ask for seats
+        // again, in the waiting room and for the empty seats of a started match alike.
+        // Only the host keeps it: a new host starts without it (Docs/Network/SESSION.md §4).
+        public const double Cooldown = 60;
         public sealed class Group
         {
             public ulong Leader, Party;
@@ -23,11 +30,16 @@ namespace ChessFight.Network
         public int Count => groups.Sum(g => g.Members.Length);
         public int Used(int team) => groups.Where(g => g.Team == team).Sum(g => g.Members.Length);
         public Group Find(ulong id) => groups.Find(g => Array.IndexOf(g.Members, id) >= 0);
+        // Senders waiting out the Cooldown, with the time they may ask again.
+        readonly Dictionary<ulong, double> cooldowns = new Dictionary<ulong, double>();
+        public bool CoolingDown(ulong sender, double now) => cooldowns.TryGetValue(sender, out double until) && now < until;
+        // Also for a started match's held seat that nobody came for (SteamSession.Refill).
+        public void StartCooldown(ulong sender, double now) { if (sender != 0) cooldowns[sender] = now + Cooldown; }
 
         public bool Reserve(ulong sender, ulong party, string ticket, ulong[] members, double now, out Group result)
         {
             result = null;
-            if (!ValidRequest(sender, party, ticket, members)) return false;
+            if (!ValidRequest(sender, party, ticket, members) || CoolingDown(sender, now)) return false;
             return Admit(sender, party, ticket, members, now, out result);
         }
 
@@ -85,6 +97,8 @@ namespace ChessFight.Network
         }
 
         // Before start, a partial party failure releases the whole group atomically.
+        // A group whose people never all came also starts its sender's Cooldown; one
+        // that came and then lost a member does not (those people were real).
         public List<Group> Reconcile(HashSet<ulong> present, double now)
         {
             var removed = new List<Group>();
@@ -94,7 +108,10 @@ namespace ChessFight.Network
                 bool all = g.Members.All(id => BotIdentity.IsBot(id) || present.Contains(id));
                 if (all) g.Committed = true;
                 if ((!g.Committed && now > g.Deadline) || (g.Committed && !all))
-                { groups.Remove(g); removed.Add(g); }
+                {
+                    groups.Remove(g); removed.Add(g);
+                    if (!g.Committed) StartCooldown(g.Leader, now);
+                }
             }
             return removed;
         }
@@ -133,6 +150,7 @@ namespace ChessFight.Network
         }
         public void Remove(ulong leader) => groups.RemoveAll(g => g.Leader == leader);
         public void RemoveFillerBots() => groups.RemoveAll(g => BotIdentity.IsBot(g.Leader));
-        public void Clear() => groups.Clear();
+        // A new room, or the host role gone elsewhere: nothing reserved, nobody waiting.
+        public void Clear() { groups.Clear(); cooldowns.Clear(); }
     }
 }

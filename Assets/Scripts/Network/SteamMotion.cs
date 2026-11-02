@@ -29,10 +29,21 @@ namespace ChessFight.Network
         struct Packet { public ulong Peer; public byte[] Bytes; }
         readonly LinkSimulator<Packet> delayedOut = new LinkSimulator<Packet>();
         readonly LinkSimulator<Packet> delayedIn = new LinkSimulator<Packet>();
+        // R297: reused instead of made every frame or for every packet. A message is read into one array of its
+        // length, so the delay queues keep copies.
+        readonly PacketPool received = new PacketPool(MotionProtocol.MaxBytes);
+        readonly List<ulong> ids = new List<ulong>();
+        readonly List<PawnState> outgoing = new List<PawnState>(), arriving = new List<PawnState>();
+        readonly Action<Packet> handleLate, transmitLate;
         public string ConnectionStatus { get; private set; } = "";
         // Client only: how long the host has been silent, in player terms.
         public LinkHealth Health { get; private set; }
         public float Silence { get; private set; }
+        // R295: the match is loading behind the loading screen. A host whose match
+        // scene runs its own simulation stops sending this stream once that scene is
+        // up, so a PC still loading would take it for a silent host, hand the role
+        // on and leave the match: while loading, the silence is not counted.
+        public bool Loading { get; set; }
         // Steam's own transport ping: to the host on a client, the worst peer on the host.
         public int PingMs { get; private set; } = -1;
         public double ResponseMs => response.Milliseconds;
@@ -63,6 +74,8 @@ namespace ChessFight.Network
         public SteamMotion(SteamSession session)
         {
             this.session = session;
+            handleLate = m => Handle(m.Peer, m.Bytes);
+            transmitLate = m => Transmit(m.Peer, m.Bytes);
             session.SessionChanged += Reset;
             session.HostChanged += OnHostChanged;
             requests = Callback<SteamNetworkingMessagesSessionRequest_t>.Create(c =>
@@ -78,8 +91,8 @@ namespace ChessFight.Network
             if (session.Match == 0) return;
             float now = Time.realtimeSinceStartup;
             Receive();
-            delayedIn.Release(now, m => Handle(m.Peer, m.Bytes));
-            delayedOut.Release(now, m => Transmit(m.Peer, m.Bytes));
+            delayedIn.Release(now, handleLate);
+            delayedOut.Release(now, transmitLate);
             if (session.Match == 0) return;
             UpdateHealth(now);
             // The session replaces a host that stays silent (HOST.md).
@@ -88,7 +101,10 @@ namespace ChessFight.Network
             // so the pawn holds still instead of running on unseen.
             if (Health >= LinkHealth.Frozen) { x = z = 0; jump = false; }
             jumpQueued |= jump;
-            foreach (ulong id in States.Keys.ToArray())
+            // The keys copied out first, as some are removed: into a reused list (R297), not a new array every frame.
+            ids.Clear();
+            foreach (ulong id in States.Keys) ids.Add(id);
+            foreach (ulong id in ids)
                 if (!session.Roster.ContainsKey(id)) { States.Remove(id); inputs.Remove(id); lastInput.Remove(id); consumedJumps.Remove(id); bots.Forget(id); Close(id); }
             if (session.IsHost)
                 foreach (var p in session.Roster) if (!States.ContainsKey(p.Key)) States[p.Key] = p.Value;
@@ -113,7 +129,10 @@ namespace ChessFight.Network
                 if (session.IsHost)
                 {
                     tick++;
-                    foreach (ulong id in States.Keys.ToArray())
+                    // Copied out as well: the loop sets values, which a dictionary may count as a change to the walk.
+                    ids.Clear();
+                    foreach (ulong id in States.Keys) ids.Add(id);
+                    foreach (ulong id in ids)
                     {
                         // A bot has no network input; the host is its only source.
                         if (BotIdentity.IsBot(id))
@@ -138,7 +157,9 @@ namespace ChessFight.Network
                 // instead of bursting to catch up.
                 nextSnapshot += SnapshotInterval;
                 if (nextSnapshot <= now) nextSnapshot = now + SnapshotInterval;
-                byte[] bytes = MotionProtocol.Snapshot(session.Match, tick, States.Values);
+                outgoing.Clear();
+                foreach (var state in States.Values) outgoing.Add(state);
+                byte[] bytes = MotionProtocol.Snapshot(session.Match, tick, outgoing);
                 foreach (ulong id in session.Roster.Keys) Send(id, bytes);
             }
             if (Health == LinkHealth.Lost)
@@ -148,7 +169,7 @@ namespace ChessFight.Network
 
         void UpdateHealth(float now)
         {
-            if (session.IsHost || !session.Roster.ContainsKey(session.Self)) { Health = LinkHealth.Ok; Silence = 0; listed = false; return; }
+            if (session.IsHost || Loading || !session.Roster.ContainsKey(session.Self)) { Health = LinkHealth.Ok; Silence = 0; listed = false; return; }
             // Admission can take seconds; the host only starts sending once we are
             // on its roster, so the silence clock starts there too.
             if (!listed) { listed = true; lastReceive = now; }
@@ -182,7 +203,7 @@ namespace ChessFight.Network
         {
             // Bots have no Steam identity, so they are never a send target.
             if (id == 0 || id == session.Self || BotIdentity.IsBot(id)) return;
-            if (Simulation.Active) delayedOut.Push(new Packet { Peer = id, Bytes = bytes }, Time.realtimeSinceStartup);
+            if (Simulation.Active) delayedOut.Push(new Packet { Peer = id, Bytes = (byte[])bytes.Clone() }, Time.realtimeSinceStartup);
             else Transmit(id, bytes);
         }
         void Transmit(ulong id, byte[] bytes)
@@ -215,10 +236,12 @@ namespace ChessFight.Network
                         ulong sender = message.m_identityPeer.GetSteamID64();
                         if (BotIdentity.IsBot(sender) || !session.IsPeer(sender) ||
                             message.m_cbSize <= 0 || message.m_cbSize > MotionProtocol.MaxBytes) continue;
-                        var bytes = new byte[message.m_cbSize]; Marshal.Copy(message.m_pData, bytes, 0, bytes.Length);
-                        if (Simulation.Active) delayedIn.Push(new Packet { Peer = sender, Bytes = bytes }, Time.realtimeSinceStartup);
+                        var bytes = received.Get(message.m_cbSize); Marshal.Copy(message.m_pData, bytes, 0, bytes.Length);
+                        if (Simulation.Active) delayedIn.Push(new Packet { Peer = sender, Bytes = (byte[])bytes.Clone() }, Time.realtimeSinceStartup);
                         else Handle(sender, bytes);
                     }
+                    // One message that throws must not cost the others, nor leave them unreleased (R297).
+                    catch (Exception e) { ReceiveErrors.Log(Channel, e); }
                     finally { SteamNetworkingMessage_t.Release(incoming[i]); incoming[i] = IntPtr.Zero; }
                 }
                 if (count < incoming.Length) break;
@@ -237,19 +260,23 @@ namespace ChessFight.Network
                 if (jumpBaseline.Remove(sender)) consumedJumps[sender] = input.Jumps;
                 inputs[sender] = input; lastInput[sender] = now;
             }
-            else if (sender == session.Host && MotionProtocol.ReadSnapshot(bytes, session.Match, out uint receivedTick, out var pawns) && MotionProtocol.Newer(receivedTick, lastSnapshot))
+            else if (sender == session.Host && MotionProtocol.ReadSnapshot(bytes, session.Match, out uint receivedTick, arriving) && MotionProtocol.Newer(receivedTick, lastSnapshot))
             {
                 lastSnapshot = receivedTick; lastReceive = now;
                 if (Health != LinkHealth.Ok || ConnectionStatus == "") ConnectionStatus = "Steam으로 연결됨";
                 Health = LinkHealth.Ok;
-                foreach (var pawn in pawns)
+                foreach (var pawn in arriving)
                 {
                     if (!session.Roster.ContainsKey(pawn.Id)) continue;
                     var state = pawn;
                     if (pawn.Id == session.Self)
                     {
                         response.Acknowledged(pawn.Ack, now);
-                        unacknowledged.RemoveAll(input => !MotionProtocol.Newer(input.Sequence, pawn.Ack));
+                        // The inputs the host has taken go (not RemoveAll with a lambda: a new closure every snapshot, R297).
+                        int kept = 0;
+                        for (int k = 0; k < unacknowledged.Count; k++)
+                            if (MotionProtocol.Newer(unacknowledged[k].Sequence, pawn.Ack)) unacknowledged[kept++] = unacknowledged[k];
+                        unacknowledged.RemoveRange(kept, unacknowledged.Count - kept);
                         foreach (var input in unacknowledged) state = PawnMotor.Advance(state, input, PawnMotor.Step);
                     }
                     States[pawn.Id] = state;
@@ -261,6 +288,16 @@ namespace ChessFight.Network
             if (!connected.Remove(id)) return;
             var identity = new SteamNetworkingIdentity(); identity.SetSteamID64(id);
             SteamNetworkingMessages.CloseSessionWithUser(ref identity);
+        }
+        // R295: a host change ends only this stream with the old host. The Steam
+        // session with them also carries the voice (channel 40) and the match
+        // scenes' streams, and the old host is usually still in the match:
+        // closing the whole session cut their voice.
+        void CloseChannel(ulong id)
+        {
+            if (!connected.Remove(id)) return;
+            var identity = new SteamNetworkingIdentity(); identity.SetSteamID64(id);
+            SteamNetworkingMessages.CloseChannelWithUser(ref identity, Channel);
         }
         void Reset()
         {
@@ -277,7 +314,7 @@ namespace ChessFight.Network
         void OnHostChanged(ulong previous, ulong next)
         {
             float now = Time.realtimeSinceStartup;
-            Close(previous);
+            CloseChannel(previous);
             inputs.Clear(); lastInput.Clear(); jumpBaseline.Clear(); unacknowledged.Clear(); bots.Clear();
             delayedIn.Clear(); response.Clear();
             accumulator = 0; nextSnapshot = 0;

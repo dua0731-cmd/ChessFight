@@ -185,6 +185,8 @@ namespace ChessFight.RagdollLab.Net
                         }
                     }
                 }
+                // One message that throws must not cost the others, nor leave them unreleased (R297).
+                catch (Exception e) { ReceiveErrors.Log(Channel, e); }
                 finally { SteamNetworkingMessage_t.Release(incoming[i]); incoming[i] = IntPtr.Zero; }
             }
         }

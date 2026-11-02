@@ -1,9 +1,11 @@
 // Pawn Rush course graybox surfaces, patterned in WORLD space so a box of any size looks right
 // without textures or UVs:
-//   top faces    a 2 m checker (_Color / _Color2), or plain _SideColor when _TopStyle = 1
+//   top faces    a 2 m checker (_Color / _Color2), or plain _SideColor when _TopStyle = 1,
+//                or a _Cell grid of _LineColor lines on _Color when _TopStyle = 2
 //   side faces   _SideStyle 0 plain, 1 stone blocks with dark joints (climbable),
-//                2 smooth marble with faint veins (cannot be climbed)
-// The two wall looks are the course's rule made visible: block joints = you can climb it.
+//                2 smooth marble with faint veins (cannot be climbed), 3 a _Cell grid on _SideColor
+// The two wall looks are the course's rule made visible: block joints = you can climb it. The grid is
+// the section level designs' blockout (1 m grid: blue floor, grey unclimbable, orange obstacles).
 // URP: lit like URP's Lit (Shaders/URP/CFLit.hlsl), with its own shadow and depth passes.
 Shader "ChessFight/CoursePattern"
 {
@@ -13,9 +15,9 @@ Shader "ChessFight/CoursePattern"
         _Color2 ("Checker dark", Color) = (0.55, 0.38, 0.24, 1)
         _SideColor ("Side colour", Color) = (0.85, 0.8, 0.7, 1)
         _LineColor ("Joint / vein colour", Color) = (0.4, 0.35, 0.3, 1)
-        _TopStyle ("Top (0 checker, 1 plain)", Float) = 0
-        _SideStyle ("Side (0 plain, 1 blocks, 2 marble)", Float) = 0
-        _Cell ("Checker cell (m)", Float) = 2
+        _TopStyle ("Top (0 checker, 1 plain, 2 grid)", Float) = 0
+        _SideStyle ("Side (0 plain, 1 blocks, 2 marble, 3 grid)", Float) = 0
+        _Cell ("Checker / grid cell (m)", Float) = 2
         _Glossiness ("Smoothness", Range(0, 1)) = 0.2
         _Metallic ("Metallic", Range(0, 1)) = 0
     }
@@ -70,6 +72,11 @@ Shader "ChessFight/CoursePattern"
                         float parity = frac((floor(p.x / _Cell) + floor(p.z / _Cell)) * 0.5) * 2.0;
                         c = lerp(_Color.rgb, _Color2.rgb, parity);
                     }
+                    else if (_TopStyle > 1.5)
+                    {
+                        float grid = saturate(Joint(p.x, _Cell, 0.025) + Joint(p.z, _Cell, 0.025));
+                        c = lerp(_Color.rgb, _LineColor.rgb, grid);
+                    }
                 }
                 else
                 {
@@ -82,6 +89,11 @@ Shader "ChessFight/CoursePattern"
                         float joint = saturate(Joint(p.y, 0.5, 0.03) + Joint(shifted, 1.0, 0.03));
                         float grain = frac(sin(dot(floor(float2(shifted, row)), float2(12.9898, 78.233))) * 43758.5453);
                         c = lerp(_SideColor.rgb * (0.9 + 0.15 * grain), _LineColor.rgb, joint);
+                    }
+                    else if (_SideStyle > 2.5)
+                    {
+                        float grid = saturate(Joint(u, _Cell, 0.025) + Joint(p.y, _Cell, 0.025));
+                        c = lerp(_SideColor.rgb, _LineColor.rgb, grid);
                     }
                     else if (_SideStyle > 1.5)
                     {

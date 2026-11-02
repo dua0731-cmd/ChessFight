@@ -81,6 +81,10 @@ namespace ChessFight.RagdollLab
         protected virtual void NetTick() { }
         /// <summary>How long the host has been silent (a Steam session hands the host role on after a while).</summary>
         protected virtual void NetHostSilence(float seconds) { }
+        /// <summary>R295: the match's shared start has passed. Until then, or until the host's first packet in this scene,
+        /// a client does not count the host's silence (<see cref="HostSilence"/>). A carrier without a shared start (the lab
+        /// rooms, the loopback test) counts it from the match's start, as before.</summary>
+        protected virtual bool NetStarted => true;
         /// <summary>Leave the match (the host stopped sending).</summary>
         protected abstract void NetLeave(string why);
         /// <summary>The panel's part for when no match is on (making and joining a room).</summary>
@@ -162,7 +166,9 @@ namespace ChessFight.RagdollLab
 
         protected bool matchActive;
         uint tick, sequence, lastTick;
-        float nextSnapshot, nextInput, lastReceive, statsAt, lastMatchSend;
+        float nextSnapshot, nextInput, statsAt, lastMatchSend;
+        // A client: how long the host has been silent (R295: from its first packet or the shared start).
+        readonly HostSilence hostSilence = new HostSilence();
         float savedMaxFrameStep = -1f;
         double playbackMs;
         readonly PlaybackDelay delay = new PlaybackDelay();
@@ -326,7 +332,18 @@ namespace ChessFight.RagdollLab
             // P1's camera specifically: local split screen adds a second LabCamera for P2.
             cam = game != null && game.labCamera != null ? game.labCamera : FindFirstObjectByType<LabCamera>();
             if (game == null) SwordAwake();
+            // R297: the match's metrics box (a development build, F3); the test rooms have their own F3 panel.
+            if (RealMatch) NetMetricsOverlay.Attach(gameObject, CurrentMetrics);
         }
+
+        /// <summary>R297: the numbers of the match's metrics box (NetMetricsOverlay).</summary>
+        NetMetrics CurrentMetrics() => new NetMetrics
+        {
+            Host = IsHost, Players = pawns.Count, SentBytes = sentRate, ReceivedBytes = receivedRate,
+            SnapshotBytes = snapshotBytesLast, SnapshotsSent = snapshotOutRate, SnapshotsReceived = snapshotRate,
+            RoundTripMs = roundTripMs, PlaybackDelayMs = delay.Milliseconds, LossShare = delay.LossShare,
+            Piloted = pilot != null, PilotSeed = pilot != null ? pilot.Seed : 0u,
+        };
 
         protected virtual void OnEnable()
         {
@@ -526,8 +543,10 @@ namespace ChessFight.RagdollLab
                 pair.Value.CaptureNetworkPose(pose);
                 pose.id = pair.Key;
                 // The newest input time heard from that player, for its round trip; 0 = none yet (this PC's clock means
-                // nothing on a client's: a joining client read seconds of "round trip" from it, R111).
-                pose.ack = inputs.TryGetValue(pair.Key, out var remote) ? remote.clientTimeMs : 0u;
+                // nothing on a client's: a joining client read seconds of "round trip" from it, R111). R297: not one heard
+                // too long ago either, as the echo travels in 16 bits (RagdollWire.AckFreshSeconds).
+                pose.ack = inputs.TryGetValue(pair.Key, out var remote) && now - remote.received < RagdollWire.AckFreshSeconds
+                    ? remote.clientTimeMs : 0u;
                 if (pair.Value.NetworkSnap)
                 {
                     snapCountdown[pair.Key] = 3;   // unreliable packets: repeat the teleport flag
@@ -705,11 +724,7 @@ namespace ChessFight.RagdollLab
                 r.emoteSeq = fresh.emoteSeq;
                 if (sword == null && pawns.TryGetValue(sender, out var emoter) && emoter != null) emoter.PlayEmote(fresh.emoteAsk);
             }
-            if (!r.ackSet || SkillWire.Newer(fresh.eventAck, r.eventAck))
-            {
-                r.eventAck = fresh.eventAck;
-                r.ackSet = true;
-            }
+            SkillWire.TakeAck(fresh.eventAck, ref r.eventAck, ref r.ackSet);
         }
 
         // ---------------------------------------------------------------- client
@@ -793,8 +808,9 @@ namespace ChessFight.RagdollLab
             DispatchEvents();
 
             // A host silent for a few seconds is replaced by its successor (Steam, HOST.md); leaving is the last resort.
-            NetHostSilence(clock - lastReceive);
-            if (clock - lastReceive > SilenceTimeout)
+            float silence = hostSilence.Seconds(clock, NetStarted);
+            NetHostSilence(silence);
+            if (silence > SilenceTimeout)
             {
                 message = "호스트가 자세 전송을 멈췄어요. 경기를 나갑니다.";
                 NetLeave(message);
@@ -889,7 +905,7 @@ namespace ChessFight.RagdollLab
             }
             int lost = lastTick != 0 ? (int)Math.Min(30u, snapshot.tick - lastTick - 1) : 0;
             lastTick = snapshot.tick;
-            lastReceive = Time.realtimeSinceStartup;
+            hostSilence.Heard(Time.realtimeSinceStartup);
             snapshotsIn++;
             snapshotBytesLast = bytes.Length;
             delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snapshot.hostTimeMs, lost);
@@ -899,7 +915,7 @@ namespace ChessFight.RagdollLab
             var mine = Find(snapshot, NetSelf);
             if (mine != null && mine.ack != 0)
             {
-                int sample = unchecked((int)(NowMs() - mine.ack));
+                int sample = RagdollWire.AckAge(NowMs(), mine.ack);
                 if (sample >= 0 && sample < 10000)
                     roundTripMs = roundTripMs <= 0f ? sample : Mathf.Lerp(roundTripMs, sample, 0.2f);
             }
@@ -1039,7 +1055,7 @@ namespace ChessFight.RagdollLab
             while (n < eventQueue.Count && eventQueue[n].TimeMs <= playbackMs + 0.5d) n++;
             // Taken off the queue first: an effect that throws must not hold up the ones after it.
             eventBatch.Clear();
-            eventBatch.AddRange(eventQueue.GetRange(0, n));
+            for (int i = 0; i < n; i++) eventBatch.Add(eventQueue[i]);   // not GetRange: a new list every frame (R297)
             eventQueue.RemoveRange(0, n);
             foreach (var e in eventBatch)
             {
@@ -1309,7 +1325,7 @@ namespace ChessFight.RagdollLab
             roundTripMs = 0f;
             delay.Reset();
             nextSnapshot = nextInput = 0f;
-            lastReceive = Time.realtimeSinceStartup;
+            hostSilence.Enter(Time.realtimeSinceStartup);
             if (Trace) Log($"host {previous} → {next}, this PC {(nowHost ? "hosts" : "follows")}");
         }
 
@@ -1394,18 +1410,23 @@ namespace ChessFight.RagdollLab
             sentBytes += bytes.Length;
             if (lagOut.Profile.Active)
             {
-                lagOut.Push(new Packet { peer = id, bytes = bytes }, Time.realtimeSinceStartupAsDouble);
+                // A copy: a packet's array is reused for the next one of its length (R297, PacketPool).
+                lagOut.Push(new Packet { peer = id, bytes = (byte[])bytes.Clone() }, Time.realtimeSinceStartupAsDouble);
                 return;
             }
             NetSend(id, bytes);
         }
 
-        void PumpSend() => lagOut.Release(Time.realtimeSinceStartupAsDouble, p => NetSend(p.peer, p.bytes));
+        // Made once (R297): a method group or lambda passed every frame is a new delegate every frame.
+        Action<ulong, byte[]> onRaw;
+        Action<Packet> sendLate, deliverLate;
+
+        void PumpSend() => lagOut.Release(Time.realtimeSinceStartupAsDouble, sendLate ?? (sendLate = p => NetSend(p.peer, p.bytes)));
 
         void PumpReceive()
         {
-            NetReceive(OnRaw);
-            lagIn.Release(Time.realtimeSinceStartupAsDouble, p => Deliver(p.peer, p.bytes));
+            NetReceive(onRaw ?? (onRaw = OnRaw));
+            lagIn.Release(Time.realtimeSinceStartupAsDouble, deliverLate ?? (deliverLate = p => Deliver(p.peer, p.bytes)));
         }
 
         void OnRaw(ulong sender, byte[] bytes)
@@ -1415,7 +1436,8 @@ namespace ChessFight.RagdollLab
             // A test's own commands are not part of the link under test: never delayed or lost by F12.
             if (lagIn.Profile.Active && RagdollNetProtocol.TypeOf(bytes) != RagdollNetProtocol.TypeDev)
             {
-                lagIn.Push(new Packet { peer = sender, bytes = bytes }, Time.realtimeSinceStartupAsDouble);
+                // A copy: the link reads every message into one reused array of its length (R297).
+                lagIn.Push(new Packet { peer = sender, bytes = (byte[])bytes.Clone() }, Time.realtimeSinceStartupAsDouble);
                 return;
             }
             Deliver(sender, bytes);
@@ -1498,7 +1520,7 @@ namespace ChessFight.RagdollLab
             roundTripMs = 0f;
             hostObstacles.Clear();
             steamClockErrorMs = 0d;
-            lastReceive = Time.realtimeSinceStartup;
+            hostSilence.Enter(Time.realtimeSinceStartup);
             pending = default;
             eventLog.Clear();
             inbox.Clear();

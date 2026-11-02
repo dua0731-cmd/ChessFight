@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" style="width:100%;height:auto" role="img" aria-labelledby="title desc">
+<title id="title">폰 러시 장애물 코스와 미니게임의 공통 경계 설계</title><desc id="desc">평면 개념과 측면 높이. 마지막 장애물 뒤 12에서18미터 정리 동선, 폭12 깊이6미터 안전 테라스, 열린 아치, 25센티미터씩 네 계단을 내려가 미니게임에 진입한다. 축척도면이 아닌 설계 기준이다.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94733d"/></marker><style>text{font-family:'Malgun Gothic',sans-serif;fill:#273b33}.title{font-size:38px;font-weight:bold}.sub{font-size:20px;fill:#65746b}.head{font-size:25px;font-weight:bold}.label{font-size:21px;font-weight:bold}.small{font-size:17px}.tiny{font-size:15px}.arrow{stroke:#94733d;stroke-width:4;fill:none;marker-end:url(#arrow)}.outline{stroke:#516c5c;stroke-width:3;fill:#e6eddf}</style></defs>
+<rect width="1600" height="900" fill="#f5f1e7"/>
+<text x="65" y="68" class="title">코스의 끝에서, 다음 미니게임을 읽는다</text>
+<text x="65" y="107" class="sub">15개 장소가 함께 쓰는 연결 규칙 · 컨셉아트의 압축된 높이·거리보다 이 설계 기준을 우선</text>
+<rect x="40" y="145" width="1520" height="375" rx="14" fill="#fffdf7" stroke="#d7dbce"/>
+<text x="65" y="187" class="head">평면 개념</text>
+<rect x="70" y="275" width="150" height="125" rx="8" fill="#b6a286"/>
+<text x="145" y="319" text-anchor="middle" class="label">마지막 장치</text><text x="145" y="351" text-anchor="middle" class="small">광장 방향의</text><text x="145" y="378" text-anchor="middle" class="small">강한 넉백 금지</text>
+<path d="M225 338 H280" class="arrow"/>
+<rect x="287" y="275" width="245" height="125" class="outline"/>
+<text x="410" y="317" text-anchor="middle" class="label">정리 동선</text><text x="410" y="353" text-anchor="middle" class="small">12–18m 제안</text><text x="410" y="381" text-anchor="middle" class="tiny">새 장애물·강제 넉백 없음</text>
+<rect x="532" y="275" width="175" height="125" fill="#d9e8d3" stroke="#516c5c" stroke-width="3"/>
+<text x="620" y="312" text-anchor="middle" class="label">안전 테라스</text><text x="620" y="345" text-anchor="middle" class="small">폭12 × 깊이6m</text><text x="620" y="379" text-anchor="middle" class="small">체크포인트</text>
+<path d="M724 275 V249 H743 M724 400 V426 H743" stroke="#94733d" stroke-width="8" fill="none"/>
+<text x="735" y="224" text-anchor="middle" class="label">열린 아치</text><text x="735" y="458" text-anchor="middle" class="tiny">폭12m · 높이5m 이상</text><text x="735" y="484" text-anchor="middle" class="tiny">닫히는 문 없음</text>
+<path d="M710 338 H850" class="arrow"/>
+<rect x="858" y="242" width="71" height="191" fill="#dbe1cb" stroke="#829174"/>
+<text x="893" y="307" text-anchor="middle" class="small">진입</text><text x="893" y="337" text-anchor="middle" class="small">띠</text><text x="893" y="371" text-anchor="middle" class="small">4m</text>
+<rect x="929" y="215" width="547" height="248" fill="#ece8da" stroke="#516c5c" stroke-width="3"/>
+<rect x="944" y="232" width="517" height="75" rx="5" fill="#e1e8dc" stroke="#8a9a86"/>
+<rect x="944" y="362" width="517" height="75" rx="5" fill="#e1e8dc" stroke="#8a9a86"/>
+<text x="1203" y="279" text-anchor="middle" class="label">스테이션 A · 20 × 20m</text>
+<text x="1203" y="409" text-anchor="middle" class="label">스테이션 B · 20 × 20m</text>
+<text x="1203" y="343" text-anchor="middle" class="small">중앙 통로 · 폭4m</text>
+<text x="1203" y="490" text-anchor="middle" class="small">미니게임 광장 44 × 25m · 게임별 소품은 교체</text>
+<rect x="40" y="545" width="1520" height="260" rx="14" fill="#fffdf7" stroke="#d7dbce"/>
+<text x="65" y="586" class="head">측면 높이</text>
+<path d="M75 690 H725 V702 H756 V714 H787 V726 H818 V738 H1490 V780 H75 Z" fill="#dfe6d6" stroke="#526c5c" stroke-width="3"/>
+<path d="M670 690 V612 Q703 573 736 612 V677" fill="none" stroke="#bca477" stroke-width="13"/>
+<path d="M490 655 H653 M747 672 L870 712" class="arrow"/>
+<text x="388" y="632" text-anchor="middle" class="label">안전 테라스 · +1.0m</text>
+<text x="800" y="610" class="small">0.25m씩 4단 하강</text>
+<text x="1070" y="693" text-anchor="middle" class="label">미니게임 바닥 · 기준 0m</text>
+<text x="1105" y="771" text-anchor="middle" class="small">코스 낙하·리스폰 영역이 광장 아래로 침범하지 않음</text>
+<text x="65" y="849" class="small">정리 동선 길이는 최종 이동 속도·피격 궤적으로 검증할 제안값입니다. 이 그림은 관계를 설명하며 실제 축척을 표시하지 않습니다.</text>
+<text x="65" y="878" class="tiny">경계의 장식은 중립색. 팀색 표시는 플레이어·미니게임 스테이션에 한정합니다. 2026.10.29</text>
+</svg>

@@ -27,11 +27,15 @@
 
         <ui:VisualElement class="s2-side" picking-mode="Ignore">
             <ui:VisualElement name="s2-subs" picking-mode="Ignore" />
-            <ui:VisualElement class="s2-desc" picking-mode="Ignore">
-                <ui:Label text="설명" class="s2-kicker" picking-mode="Ignore" />
-                <ui:Label name="s2-desc-title" class="s2-desc-title" picking-mode="Ignore" />
-                <ui:Label name="s2-desc-text" class="s2-desc-text" picking-mode="Ignore" />
-            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 10-30 design A: the description box on the right of the lines; the
+             note (editor-only, 준비 중) sits under a thin line. -->
+        <ui:VisualElement class="s2-desc" picking-mode="Ignore">
+            <ui:Label text="설명" class="s2-kicker" picking-mode="Ignore" />
+            <ui:Label name="s2-desc-title" class="s2-desc-title" picking-mode="Ignore" />
+            <ui:Label name="s2-desc-text" class="s2-desc-text" picking-mode="Ignore" />
+            <ui:Label name="s2-desc-note" class="s2-desc-note" picking-mode="Ignore" />
         </ui:VisualElement>
 
         <!-- The lines scroll inside this box (wheel, or the bar on the right). -->
@@ -49,7 +53,7 @@
             </ui:Button>
             <ui:Label text="바꾸는 즉시 저장돼요" class="s2-saved" picking-mode="Ignore" />
             <ui:VisualElement class="grow" picking-mode="Ignore" />
-            <ui:Button name="s2-reset" class="row s2-foot-btn">
+            <ui:Button name="s2-reset" class="row s2-foot-btn s2-reset">
                 <ui:Label text="DEL" class="s2-cap" picking-mode="Ignore" />
                 <ui:Label name="s2-reset-text" picking-mode="Ignore" />
             </ui:Button>

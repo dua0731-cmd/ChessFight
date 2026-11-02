@@ -35,11 +35,14 @@ namespace ChessFight.Game
         public readonly List<string> Names = new List<string>();
         public readonly List<bool> Bots = new List<bool>();
         public int Me = -1;
+        // R294: which entry is the room's host (-1: none); its card says "방장" while
+        // matching, so everyone sees the role move to the best PC.
+        public int Host = -1;
 
         public void Clear()
         {
             Teams.Clear(); Joined.Clear(); Ready.Clear(); Names.Clear(); Bots.Clear();
-            Me = -1;
+            Me = -1; Host = -1;
         }
     }
 
@@ -363,7 +366,7 @@ namespace ChessFight.Game
                 if (isReady) ready[team]++;
                 float age = card.OnAt >= 0 ? now - card.OnAt : -1;
                 card.Status.text = !isIn ? "찾는 중" : age < ArrivedSeconds ? "입장!"
-                                 : State.Matching ? "대기 중" : isReady ? "준비 완료" : "불러오는 중";
+                                 : State.Matching ? (i == State.Host ? "방장" : "대기 중") : isReady ? "준비 완료" : "불러오는 중";
                 Slide(card, age);
             }
             for (int team = 0; team < 2; team++)

@@ -16,6 +16,123 @@ public static class NetworkCoreTests
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
     // An input packet as far as the skill key goes (no tuples: mcs runs these tests on Linux).
     struct PressPacket { public uint Seq; public byte Count; }
+    // A snapshot pawn with every field set from its id, the hook's gauge and point too (R297).
+    static PoseWire WirePose(int id, byte hook)
+    {
+        var p = new PoseWire
+        {
+            Id = (ulong)id * 7919UL + 76561198000000000UL, HipsX = (short)(id * 101), HipsY = (short)-id, HipsZ = short.MaxValue,
+            Flags = (byte)((id % 3) | ((id * 37) & 0xFC)), Stamina = (byte)(id * 13), Escape = (byte)(id * 29), Hook = hook,
+            HookCharge = (byte)(id * 3 + 1), HookX = (short)(id * -77), HookY = 5, HookZ = (short)(id * 300), Piece = (byte)(id % ChessPieces.Count),
+            Ack = (ushort)(id * 977),
+        };
+        for (int b = 0; b < RagdollWire.Bodies; b++) p.Rotations[b] = (uint)id * 2654435761u + (uint)b * 40503u;
+        return p;
+    }
+    static bool SameFixed(PoseWire a, PoseWire b)
+    {
+        for (int i = 0; i < RagdollWire.Bodies; i++) if (a.Rotations[i] != b.Rotations[i]) return false;
+        return a.Id == b.Id && a.HipsX == b.HipsX && a.HipsY == b.HipsY && a.HipsZ == b.HipsZ && a.Flags == b.Flags && a.Stamina == b.Stamina
+               && a.Escape == b.Escape && a.Hook == b.Hook && a.Piece == b.Piece && a.Ack == b.Ack;
+    }
+    static byte[] Resized(byte[] bytes, int length)
+    {
+        var copy = new byte[length];
+        Array.Copy(bytes, copy, Math.Min(length, bytes.Length));
+        return copy;
+    }
+    // Every Core packet's bytes for a fixed input, pinned before R297 [3] reused their buffers (FNV-1a 64).
+    static string Fnv(byte[] bytes)
+    {
+        ulong h = 14695981039346656037UL;
+        foreach (byte b in bytes) { h ^= b; h *= 1099511628211UL; }
+        return h.ToString("x16");
+    }
+    static byte[] Through(Action<System.IO.BinaryWriter> write)
+    {
+        var ms = new System.IO.MemoryStream();
+        var w = new System.IO.BinaryWriter(ms);
+        write(w);
+        w.Flush();
+        return ms.ToArray();
+    }
+    static SkillWirePacket GoldenSkills()
+    {
+        var p = new SkillWirePacket { HostTimeMs = 123456, FirstSeq = 65530 };
+        p.States.Add(new SkillWireState { Pawn = SkillWire.Ref(1, 3), Stage = 2, Flags = 0xA5, Flags2 = 3, StageTime = 1.234f, Cooldown = 7.25f, CooldownTotal = 12f,
+            Dx = 0.6f, Dy = 0.8f, Px = -12.345f, Py = 1.5f, Pz = 33.3f, Qx = 4, Qy = -0.5f, Qz = 79, Target = SkillWire.Ref(0, 5), Other = SkillWire.None,
+            A = 2.5f, B = 25.5f, C = 200, D = 7 });
+        p.States.Add(new SkillWireState { Pawn = SkillWire.Ref(0, 0), Stage = 1, StageTime = 0.5f, Cooldown = 3f, CooldownTotal = 9f, Dx = -1f, Target = SkillWire.None,
+            Other = SkillWire.None });
+        p.Wires.Add(new SkillWireObject { Id = 9, Owner = SkillWire.Ref(0, 1), X = 3, Y = 0.02f, Z = -4, Yaw = 271, Age = 2.5f, Flags = 1, Trips = 1, Along0 = 0.33f,
+            Along1 = 0.5f, Out0 = 0.62f, Out1 = -0.31f });
+        p.Barricades.Add(new SkillWireBarricade { Index = 0, Standing = false, RegrowLeft = 3.4f });
+        p.Barricades.Add(new SkillWireBarricade { Index = 2, Standing = true });
+        p.Events.Add(new SkillWireEvent { Seq = 65531, TimeMs = 123000, Mode = SkillWire.ModeQueenHill, Kind = 9, By = SkillWire.Ref(1, 3), Target = SkillWire.None,
+            X = 1, Y = 2, Z = 3, Dx = 0, Dy = 0, Dz = -1, Ux = -5, Uy = 0, Uz = 5, Count = 3, Size = 6.5f, Source = 9 });
+        p.Events.Add(new SkillWireEvent { Seq = 65532, TimeMs = 123010, Mode = SkillWire.ModeSwordFight, Kind = 36, By = SkillWire.Ref(0, 2), Target = SkillWire.Ref(1, 0),
+            X = 6.5f, Y = 0.4f, Z = -1, Dx = 1, Count = 1, Size = 3.5f });
+        return p;
+    }
+    static SwordWirePacket GoldenSword()
+    {
+        var p = new SwordWirePacket { HostTimeMs = 987654, White = 3, Black = 12, Remaining = 3599.9f, Finished = false };
+        p.Fighters.Add(new SwordWireFighter { Ref = SkillWire.Ref(0, 0), Team = 1, Alive = true, Drawn = true, Protection = 1.25f, Flash = 0.16f, Wx = 0.31f, Wy = -0.42f,
+            Wz = 1.234f, WRot = 0xC0FFEE11u, EdgeCondition = true, Why = 6, EdgeTarget = SkillWire.Ref(1, 2) });
+        p.Fighters.Add(new SwordWireFighter { Ref = SkillWire.Ref(1, 2), Team = 0, Alive = true,
+            Skill = true, Stage = 3, Detail = 10, SkillFlags = 2, StageTime = 0.37f, Cooldown = 1.5f, CooldownTotal = 2f, Dx = 0.6f, Dz = 0.8f, Px = 4.5f, Py = 0.01f,
+            Pz = -6.25f, Ox = -1, Oz = 2, Reach = 5.95f, Wave = 3.3f, Dash = 2.05f, PinCandidate = SkillWire.None, Slow = 1.5f, Pin = 0.8f,
+            Edge = true, EdgeStage = 2, EdgeDetail = 12, EdgeFlags = 3, EdgeTime = 0.45f, EdgeCooldownTotal = 16f, Carried = SkillWire.Ref(0, 0), Ax = 7, Az = 1, Outx = 1,
+            Lx = 5.6f, Lz = 1.2f, Sx = 6.9f, Sy = 0.6f, Sz = 0.4f,
+            Glow = true, Gx = 7, Gz = -0.5f, GOx = 1, GAz = 1, GAt = 6.5f, GTo = 14f });
+        p.Collapses.Add(new SwordWireCollapse { Id = 7, By = SkillWire.Ref(1, 2), X0 = 5, Z0 = -1.5f, X1 = 7, Z1 = 1.5f, Ox = 1, Az = 1, Lx = 7, Age = 1.23f, Crack = 0.8f,
+            Open = 5f });
+        return p;
+    }
+    static PawnRushNetState GoldenRush()
+    {
+        var s = new PawnRushNetState { Tick = 4242, HostTimeMs = 7654321, First = 2, Second = 0, PadFirst = 3, PadSecond = 1, PadsUsed = 2, Winner = 1, Clock = 87.25f };
+        s.PadChooser[1] = SkillWire.Ref(0, 3);
+        s.PadChooser[2] = SkillWire.Ref(1, 1);
+        for (int i = 0; i < 5; i++) { s.FinisherSeat[i] = SkillWire.Ref(i % 2, i); s.FinisherTime[i] = 60f + i * 1.7f; }
+        s.FinisherCount = 5;
+        for (int st = 0; st < PawnRushNetState.Stations; st++)
+        {
+            s.Game[st] = (sbyte)(st == 3 ? -1 : st);
+            s.Progress[st] = st * 0.3f;
+            s.Completed[st] = st == 1;
+            s.BlockLength[st] = st * 9;
+            for (int k = 0; k < s.BlockLength[st]; k++) s.Block[st][k] = (byte)(st * 50 + k * 7);
+        }
+        return s;
+    }
+    static string GoldenBytes()
+    {
+        var poses = new List<PoseWire>();
+        for (int i = 0; i < 12; i++) poses.Add(WirePose(i + 1, (byte)(i % 6)));
+        var motion = new List<PawnState>();
+        for (int i = 0; i < 4; i++)
+        {
+            var m = PawnMotor.Spawn((ulong)(i + 11), i % 2, i);
+            m.Ack = (uint)(i * 1000 + 7); m.X += i * 0.37f; m.Y = 1.5f + i; m.Vertical = -2.5f * i;
+            motion.Add(m);
+        }
+        return string.Join(" ", new[]
+        {
+            Fnv(RagdollWire.Snapshot(77, 123456, 987654, 4321.25, poses, 12)),
+            Fnv(RagdollWire.Snapshot(5, 1, 1, 0, poses, 3)),
+            Fnv(MotionProtocol.Input(42, new MoveInput { Sequence = 10, X = 1, Z = -1, Jumps = 7 })),
+            Fnv(MotionProtocol.Input(9, new MoveInput { Sequence = 4000000000u, X = -0.25f, Z = 0.75f, Jumps = 255 })),
+            Fnv(MotionProtocol.Snapshot(42, 7, motion)),
+            Fnv(GoldenRush().Write(42UL)),
+            Fnv(new PawnRushNetState().Write(7UL)),
+            Fnv(Through(w => SkillWire.Write(w, GoldenSkills()))),
+            Fnv(Through(w => SkillWire.Write(w, new SkillWirePacket { HostTimeMs = 1, FirstSeq = 2 }))),
+            Fnv(Through(w => SwordWire.Write(w, GoldenSword()))),
+        });
+    }
+    const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 c1be8d7c616ed0f6 bcc5fd028cb3c436 "
+                          + "028c824dd7ab7066 0a5aaf2e798a59b6 52d23acd7ef29404";
     public static int Main()
     {
         try
@@ -67,6 +184,113 @@ public static class NetworkCoreTests
                 Check(PawnRushMissions.Latched(.10, .0) == .0 && PawnRushMissions.Latched(.9, 1.4) == 1.0, "clamped to 0..1");
                 Check(PawnRushMissions.Latched(.4, double.NaN) == .4, "NaN ignored");
                 Check(PawnRushMissions.Workers(6) == 4 && PawnRushMissions.Workers(3) == 3 && PawnRushMissions.Workers(-1) == 0, "four at most"); });
+            Test("Section random is mulberry32: the blockout page's numbers, same seed same stream", () => {
+                var r = new SeededRandom(1);
+                Check(r.NextUInt() == 2693262067u && r.NextUInt() == 11749833u && r.NextUInt() == 2265367787u, "mulberry32(1)");
+                var q = new SeededRandom(123456789);
+                Check(q.NextUInt() == 1107202814u && q.NextUInt() == 4169434471u, "mulberry32(123456789)");
+                var a = new SeededRandom(SeededSchedule.Hash(7, 2)); var b = new SeededRandom(SeededSchedule.Hash(7, 2));
+                for (int i = 0; i < 50; i++) Check(a.Next(10) == b.Next(10), "same seed");
+                Check(SeededSchedule.Hash(7, 2) != SeededSchedule.Hash(7, 3) && SeededSchedule.Hash(7, 2) != SeededSchedule.Hash(8, 2), "mixed");
+                Check(PawnRushSections.SectionSeed(5, 2) != PawnRushSections.SectionSeed(5, 4), "slots differ"); });
+            Test("Pawn Rush round: one prefab per section, shared games once a round, the previous pick left out", () => {
+                Check(PawnRushSections.Kind.Length == PawnRushSections.SlotCount && PawnRushSections.SlotNames.Length == PawnRushSections.SlotCount, "tables");
+                // Obstacle slots 1-x / 2-x / 3-x, the three mini-game slots share ten games, one final.
+                var games = new[] { 100, 101, 102, 103, 104, 105, 106, 107, 108, 109 };
+                var options = new[] { new[] { 10, 11, 12 }, games, new[] { 20, 21 }, games, new[] { 30 }, games, new[] { 40 } };
+                int[] last = null;
+                var seenGames = new HashSet<int>();
+                for (int seed = 0; seed < 500; seed++)
+                {
+                    var p = PawnRushSections.Choose(seed, options, last);
+                    Check(p.Length == 7 && p[4] == 30 && p[6] == 40, "single options");
+                    Check(p[1] != p[3] && p[1] != p[5] && p[3] != p[5], "three different games, seed " + seed);
+                    for (int s = 0; s < 7; s++) Check(Array.IndexOf(options[s], p[s]) >= 0, "from its own list");
+                    if (last != null) Check(p[0] != last[0] && p[2] != last[2] && p[1] != last[1], "previous round left out, seed " + seed);
+                    seenGames.Add(p[1]); seenGames.Add(p[3]); seenGames.Add(p[5]);
+                    last = p;
+                }
+                Check(seenGames.Count == 10, "every game comes up");
+                var x = PawnRushSections.Choose(9, options); var y = PawnRushSections.Choose(9, options);
+                for (int s = 0; s < 7; s++) Check(x[s] == y[s], "same seed, same round");
+                var holes = PawnRushSections.Choose(3, new[] { new int[0], null, new[] { 5 }, new[] { 5 } });
+                Check(holes[0] == -1 && holes[1] == -1 && holes[2] == 5 && holes[3] == 5, "empty slots and a one-prefab list"); });
+            Test("Grand stair hall rolls: ten minutes keep the three rules, use all four lanes, about 40% statues", () => {
+                for (int seed = 1; seed <= 30; seed++)
+                {
+                    var s = new RollingSchedule(SeededSchedule.Hash(seed, 1), 1000.0);
+                    s.Advance(1600.0);
+                    Check(s.Count > 230 && s.Count < 380, "about one every 2.1 s: " + s.Count);
+                    var lanes = new int[4];
+                    int statues = 0;
+                    for (int i = 0; i < s.Count; i++)
+                    {
+                        var e = s[i];
+                        lanes[e.Lane]++;
+                        if (e.Statue) statues++;
+                        Check(e.Serial == i, "serials in order");
+                        if (i > 0) Check(e.Time - s[i - 1].Time >= 1.6 - 1e-9 && e.Time - s[i - 1].Time <= 2.6 + 1e-9, "gap 1.6 ~ 2.6 s");
+                        int inWindow = e.Statue ? 1 : 0;
+                        for (int j = i - 1; j >= 0 && e.Time - s[j].Time < 4.0; j--)
+                        {
+                            var o = s[j];
+                            if (e.Time - o.Time < 3.0) Check(o.Lane != e.Lane, "rule 1, seed " + seed);
+                            if (e.Statue && o.Statue && e.Time - o.Time < 1.5) Check(Math.Abs(o.Lane - e.Lane) != 1, "rule 2, seed " + seed);
+                            if (e.Statue && o.Statue) inWindow++;
+                        }
+                        Check(inWindow <= 2, "rule 3, seed " + seed);
+                    }
+                    for (int l = 0; l < 4; l++) Check(lanes[l] > 30, "lane " + l + " used");
+                    double share = statues / (double)s.Count;
+                    Check(share > .3 && share <= .41, "statue share " + share);
+                    // Same seed, same list (every PC); a later Advance does not change what was written.
+                    var t = new RollingSchedule(SeededSchedule.Hash(seed, 1), 1000.0);
+                    t.Advance(1300.0); t.Advance(1600.0);
+                    Check(t.Count == s.Count, "same count");
+                    for (int i = 0; i < s.Count; i++) Check(t[i].Time == s[i].Time && t[i].Lane == s[i].Lane && t[i].Statue == s[i].Statue, "same list");
+                }
+                var u = new RollingSchedule(SeededSchedule.Hash(1, 1), 0.0); var v = new RollingSchedule(SeededSchedule.Hash(2, 1), 0.0);
+                u.Advance(60); v.Advance(60);
+                bool differs = false;
+                for (int i = 0; i < Math.Min(u.Count, v.Count); i++) differs |= u[i].Lane != v[i].Lane || u[i].Statue != v[i].Statue;
+                Check(differs, "another seed, another order");
+                u.Prune(30.0);
+                Check(u.Count > 0 && u[0].Time >= 30.0, "pruned"); });
+            Test("Grand stair hall chandeliers: ten minutes keep 6 m apart, inside the landing, off the king's base", () => {
+                for (int seed = 1; seed <= 30; seed++)
+                {
+                    var c = new ChandelierSchedule(SeededSchedule.Hash(seed, 2), 50.0);
+                    c.Advance(650.0);
+                    Check(c.Count > 380 && c.Count < 900, "about one a second: " + c.Count);
+                    for (int i = 0; i < c.Count; i++)
+                    {
+                        var d = c[i];
+                        Check(d.X >= -13 && d.X <= 13 && d.Z >= 54 && d.Z <= 65, "in the area");
+                        Check(!(d.X > -2 && d.X < 2 && d.Z > 61 && d.Z < 65), "not on the king's base");
+                        if (i > 0) Check(d.Time - c[i - 1].Time >= .7 - 1e-9, "at least 0.7 s apart");
+                        for (int j = i - 1; j >= 0 && d.Time - c[j].Time < 2.2; j--)
+                        {
+                            double dx = d.X - c[j].X, dz = d.Z - c[j].Z;
+                            Check(dx * dx + dz * dz >= 36 - 1e-9, "6 m from a drop still warning or just fallen, seed " + seed);
+                        }
+                    }
+                }
+                var a = new ChandelierSchedule(9, 0); var b = new ChandelierSchedule(9, 0);
+                a.Advance(30); b.Advance(10); b.Advance(30);
+                Check(a.Count == b.Count, "same count");
+                for (int i = 0; i < a.Count; i++) Check(a[i].X == b[i].X && a[i].Z == b[i].Z && a[i].Time == b[i].Time, "same drops"); });
+            Test("Grand stair hall wings: one for 3 and 4 a side (either, by the seed), both from 5", () => {
+                Check(!GrandStairHallRules.BothWings(3) && !GrandStairHallRules.BothWings(4), "one wing");
+                Check(GrandStairHallRules.BothWings(5) && GrandStairHallRules.BothWings(6), "two wings");
+                var seen = new HashSet<int>();
+                for (int seed = 0; seed < 64; seed++)
+                {
+                    int open = GrandStairHallRules.OpenWing(seed);
+                    seen.Add(open);
+                    Check(GrandStairHallRules.WingOpen(open, 3, seed) && !GrandStairHallRules.WingOpen(1 - open, 3, seed), "the other is shut");
+                    Check(GrandStairHallRules.WingOpen(0, 6, seed) && GrandStairHallRules.WingOpen(1, 6, seed), "six a side: both");
+                }
+                Check(seen.Count == 2, "west and east both come up"); });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
                 r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");
@@ -267,6 +491,18 @@ public static class NetworkCoreTests
             Test("Existing party cannot change ticket or roster during admission", () => {
                 var r=new TeamReservations(); Reserve(r,1,3);
                 Check(!r.Reserve(1,101,"new",Ids(1,3),1,out _),"ticket changed"); Check(!Reserve(r,1,4),"roster changed"); });
+            // Work order [4] (11-02): made-up members hold seats for 25 s, then the same sender asks again.
+            Test("A sender whose party never came waits out the cooldown; a party that came and lost a member does not, nor do bots", () => {
+                var r=new TeamReservations(); Reserve(r,1,6); r.Reconcile(new HashSet<ulong> {1},26);
+                Check(r.Count==0&&r.CoolingDown(1,26)&&!Reserve(r,1,1,27)&&!Reserve(r,1,6,26+TeamReservations.Cooldown-.5),"asked again during the cooldown");
+                Check(Reserve(r,7,6,27)&&Reserve(r,1,1,26+TeamReservations.Cooldown+.5),"the cooldown held up others or never ended");
+                var came=new TeamReservations(); Reserve(came,1,2); came.Reconcile(new HashSet<ulong>(Ids(1,2)),1); came.Reconcile(new HashSet<ulong> {1},2);
+                Check(came.Count==0&&!came.CoolingDown(1,2)&&Reserve(came,1,1,3),"people who came were made to wait");
+                var bots=new TeamReservations(); ulong host=900;
+                Check(bots.Reserve(host,77,"t",new[] {host,BotIdentity.Id(host,0)},0,out _)&&bots.ReserveBots(host,BotIdentity.Fill(host,2,6),0,out _),"setup: bots");
+                bots.Reconcile(new HashSet<ulong> {host},26);
+                Check(bots.Count==4&&!bots.CoolingDown(host,26)&&!bots.CoolingDown(BotIdentity.Id(host,6),26),"bots made someone wait");
+                r.StartCooldown(5,0); r.Clear(); Check(!r.CoolingDown(5,1)&&!r.CoolingDown(1,1),"a new room kept the old room's cooldowns"); });
             Test("Fuzzed concurrent admissions never split or exceed team capacity", () => {
                 var random=new Random(17);
                 for(int run=0;run<1000;run++) { var r=new TeamReservations(); int id=1;
@@ -280,7 +516,7 @@ public static class NetworkCoreTests
                 Check(!MotionProtocol.ReadInput(new byte[25],1,out _),"truncated");
                 foreach(float x in new[]{float.NaN,float.PositiveInfinity,2f}) Check(!MotionProtocol.ReadInput(MotionProtocol.Input(1,new MoveInput {X=x}),1,out _),"invalid input"); });
             Test("Twelve-player snapshot roundtrip stays within packet budget", () => {
-                var pawns=Enumerable.Range(1,12).Select(i=>PawnMotor.Spawn((ulong)i,(i-1)/6,(i-1)%6));
+                var pawns=Enumerable.Range(1,12).Select(i=>PawnMotor.Spawn((ulong)i,(i-1)/6,(i-1)%6)).ToList();
                 var bytes=MotionProtocol.Snapshot(42,7,pawns);
                 Check(bytes.Length<MotionProtocol.MaxBytes && MotionProtocol.ReadSnapshot(bytes,42,out uint tick,out var parsed)&&tick==7&&parsed.Count==12,"snapshot"); });
             Test("Malformed snapshots never throw and never accept partial packets", () => {
@@ -376,6 +612,30 @@ public static class NetworkCoreTests
             Test("Host silence escalates: unstable, frozen, lost", () => {
                 Check(LinkMonitor.Classify(.1f)==LinkHealth.Ok&&LinkMonitor.Classify(.6f)==LinkHealth.Unstable,"unstable");
                 Check(LinkMonitor.Classify(2.5f)==LinkHealth.Frozen&&LinkMonitor.Classify(12f)==LinkHealth.Lost,"frozen/lost"); });
+            Test("Host silence in a match scene (R295) counts from the host's first packet or the shared start, never while loading", () => {
+                Func<float, float, bool> Near = (a, b) => Math.Abs(a - b) < 1e-3f;
+                var s = new HostSilence();
+                s.Enter(100);
+                Check(s.Seconds(110, false) == 0, "a host still loading is not silent");
+                s.Heard(112);
+                Check(Near(s.Seconds(115, false), 3), "counted from its first packet");
+                s.Heard(116);
+                Check(Near(s.Seconds(116.5f, false), .5f), "and from each one after");
+                s.Enter(200);
+                Check(s.Seconds(205, false) == 0 && s.Seconds(206, true) == 0 && Near(s.Seconds(210, true), 4), "or from the shared start");
+                s.Enter(300);
+                float giveUp = 300 + (float)MatchStart.ClientGiveUp;
+                Check(s.Seconds(giveUp - 1, false) == 0 && s.Seconds(giveUp, false) == 0 && Near(s.Seconds(giveUp + 12, false), 12), "a host that never comes is still given up on");
+                s.Enter(400);
+                Check(s.Seconds(400, true) == 0 && Near(s.Seconds(402, true), 2), "a new host mid-match: counted from the change"); });
+            Test("Host watch (R295): every PC notices a host change, not only the two whose roles swap", () => {
+                var w = new HostWatch();
+                Check(!w.Changed(1, false) && !w.Changed(1, false), "the first look and the same host are no change");
+                Check(w.Changed(2, false) && !w.Changed(2, false), "a third PC: the host moved from 1 to 2");
+                Check(w.Changed(3, true) && !w.Changed(3, true), "this PC took over");
+                Check(w.Changed(4, false), "and handed on");
+                var late = new HostWatch();
+                Check(!late.Changed(5, true) && late.Changed(5, false), "the role alone"); });
             Test("Response time measures send to acknowledgement and ignores stale acks", () => {
                 var t=new ResponseTimer(); Check(t.Milliseconds<0,"empty");
                 for(uint s=1;s<=5;s++) t.Sent(s,s*0.033);
@@ -405,7 +665,9 @@ public static class NetworkCoreTests
                       && Math.Abs(r.ReadUnit16(360f) - 271.5f) < .01f && r.ReadU8() == 0, "block 0 fields, then nothing");
                 Check(b.BlockLength[2] == PawnRushNetState.BlockBytes && b.Block[2][31] == 32 && b.BlockLength[1] == 0, "a full block and an empty one");
                 var copy = new PawnRushNetState(); copy.CopyFrom(b);
-                Check(copy.Write(42UL).SequenceEqual(bytes), "copy writes the same bytes");
+                // R297: a written state's array is reused for the next one of its length, so compare with a copy.
+                var sent = (byte[])bytes.Clone();
+                Check(copy.Write(42UL).SequenceEqual(sent), "copy writes the same bytes");
                 Check(!PawnRushNetState.Read(bytes, 43UL, b), "another match");
                 var cut = new byte[bytes.Length - 1]; Array.Copy(bytes, cut, cut.Length);
                 Check(!PawnRushNetState.Read(cut, 42UL, b), "short packet");
@@ -946,6 +1208,30 @@ public static class NetworkCoreTests
                 Check(HostElection.Successor(new ulong[] { 1 }, new HashSet<ulong> { 1, 2, 3 }, 1, fallback) == 3, "the leaver never succeeds itself");
                 Check(HostElection.Successor(null, new HashSet<ulong>(), 1, null) == 0, "nobody left");
                 Check(HostElection.Decode("3,x,,2,3,0").SequenceEqual(new ulong[] { 3, 2 }) && HostElection.Encode(new ulong[] { 3, 2 }) == "3,2", "encoding"); });
+            Test("Host claims (R295): only the next in line counts, one epoch up, and successors are followed one after another", () => {
+                var order = new List<ulong> { 2, 3, 4 };
+                int e;
+                var claims = new Dictionary<ulong, int> { { 2, 0 }, { 3, 2 }, { 4, 0 }, { 9, 2 } };
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 1 && e == 1, "out of turn (3 while 2 is here) or outside the order (9)");
+                claims[2] = 2;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 2 && e == 2, "the next in line takes over");
+                claims[2] = 5;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 1 && e == 1, "too large a number");
+                claims[2] = int.MaxValue;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 1 && e == 1, "int.MaxValue");
+                claims[2] = 2; claims[3] = 2;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 2 && e == 2, "two that both stepped in settle on the one in line");
+                claims[3] = 3;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 3 && e == 3, "a successor that went quiet is followed by its own");
+                // 2 took over at epoch 2 and left before this PC heard of it.
+                Check(HostElection.Follow(1, 1, 1, order, new Dictionary<ulong, int> { { 3, 3 }, { 4, 0 } }, null, out e) == 3 && e == 3, "one more for a successor gone");
+                Check(HostElection.Follow(1, 1, 1, order, new Dictionary<ulong, int> { { 3, 4 }, { 4, 0 } }, null, out e) == 1, "but not two");
+                Check(HostElection.Follow(1, 1, 2, order, new Dictionary<ulong, int> { { 2, 3 } }, null, out e) == 2 && e == 3, "this PC's own epoch counts as seen");
+                Check(HostElection.Follow(2, 3, 3, order, new Dictionary<ulong, int> { { 2, 2 }, { 3, 2 } }, null, out e) == 2 && e == 3, "old claims below the record");
+                var fallback = new[] { new HostElection.Candidate { Id = 7, Fitness = 900 }, new HostElection.Candidate { Id = 8, Fitness = 300 } };
+                Check(HostElection.Follow(1, 1, 1, order, new Dictionary<ulong, int> { { 7, 2 }, { 8, 0 } }, fallback, out e) == 7 && e == 2, "nobody published here: the fittest");
+                Check(HostElection.NextEpoch(1) == 2 && HostElection.NextEpoch(-4) == 1 && HostElection.NextEpoch(int.MaxValue) == int.MaxValue, "next epoch never wraps");
+                Check(HostElection.ClaimLimit(2, 1) == 4 && HostElection.ClaimLimit(int.MaxValue, 3) == int.MaxValue, "limit never wraps"); });
             Test("Frame monitor: five slow seconds are struggling, one loading hitch is not", () => {
                 var m = new FrameMonitor(); double t = 0;
                 for (; t < 10; t += .1) m.Add(16, t);
@@ -1319,6 +1605,165 @@ public static class NetworkCoreTests
                 Check(Near(SkillClipTiming.At(m, SkillClipTiming.Recovery, -1f, 0.3f, 1.5f), 0.9f), "no time before a stage");
                 Check(Near(SkillClipTiming.In(0f, 0.1f, 0.8f), 0f) && Near(SkillClipTiming.In(0.05f, 0.1f, 0.8f), 0.4f)
                       && Near(SkillClipTiming.In(1f, 0.1f, 0.8f), 0.8f) && Near(SkillClipTiming.In(0f, 0f, 2f), 1f), "blend in, capped"); });
+            Test("Autopilot (R297): the same seed and steps give the same keys, another seed other keys", () => {
+                var a = new AutoPilot(1234); var b = new AutoPilot(1234); var c = new AutoPilot(99);
+                bool differs = false;
+                for (int i = 0; i < 20000; i++)
+                {
+                    float dt = i % 7 == 0 ? 0.033f : 0.0167f;
+                    var x = a.Step(dt); var y = b.Step(dt); var z = c.Step(dt);
+                    Check(x.MoveX == y.MoveX && x.MoveY == y.MoveY && x.Sprint == y.Sprint && x.Jump == y.Jump && x.Skill == y.Skill
+                          && x.Click == y.Click, "same seed, step " + i);
+                    if (x.MoveX != z.MoveX || x.Jump != z.Jump || x.Skill != z.Skill) differs = true;
+                }
+                Check(differs, "another seed plays differently"); });
+            Test("Autopilot (R297): walks forward on the whole, presses now and then, a move never longer than 1", () => {
+                var p = new AutoPilot(7);
+                int jumps = 0, skills = 0, clicks = 0, moving = 0, steps = 60 * 600;   // ten minutes at 60 frames a second
+                double forward = 0;
+                for (int i = 0; i < steps; i++)
+                {
+                    var f = p.Step(1f / 60f);
+                    float length = (float)Math.Sqrt(f.MoveX * f.MoveX + f.MoveY * f.MoveY);
+                    Check(length <= 1.0001f, "length " + length);
+                    if (length > 0.5f) { moving++; forward += f.MoveY; }
+                    if (f.Sprint) Check(length > 0.5f, "no sprint standing still");
+                    if (f.Jump) jumps++;
+                    if (f.Skill) skills++;
+                    if (f.Click) clicks++;
+                }
+                double minutes = steps / 3600.0;
+                Check(moving > steps * 0.7, "mostly walking: " + moving);
+                Check(forward / moving > 0.6, "forward on the whole: " + forward / moving);
+                Check(jumps / minutes >= 20 && jumps / minutes <= 80, "jumps a minute " + jumps / minutes);
+                Check(skills / minutes >= 5 && skills / minutes <= 16, "skill presses a minute " + skills / minutes);
+                Check(clicks / minutes >= 9 && clicks / minutes <= 31, "clicks a minute " + clicks / minutes);
+                // A press is one step: the next step never repeats it.
+                var q = new AutoPilot(7);
+                bool last = false;
+                for (int i = 0; i < 6000; i++) { var f = q.Step(1f / 60f); Check(!(f.Jump && last), "jump held"); last = f.Jump; } });
+            Test("Autopilot (R297): asked on the command line, with a seed of its own or one made from the PC's id", () => {
+                uint seed, s1, s2;
+                Check(!AutoPilot.Requested(new[] { "game.exe" }, 5, out seed) && !AutoPilot.Requested(null, 5, out seed), "not asked");
+                Check(AutoPilot.Requested(new[] { "game.exe", "-autopilot=42" }, 5, out seed) && seed == 42, "given seed");
+                Check(!AutoPilot.Requested(new[] { "-autopilot=x" }, 5, out seed), "not a number");
+                Check(AutoPilot.Requested(new[] { "-autopilot" }, 76561198000000001UL, out s1)
+                      && AutoPilot.Requested(new[] { "-autopilot" }, 76561198000000002UL, out s2) && s1 != s2 && s1 != 0, "every PC its own");
+                Check(AutoPilot.Requested(new[] { "-autopilot" }, 0, out seed) && seed != 0, "never 0"); });
+            Test("Ragdoll snapshot (R297): 30-byte header, 65 bytes a pawn and 72 while its hook is out of the hand; 12 fit in 1024", () => {
+                Check(RagdollWire.HeaderBytes == 30 && RagdollWire.PoseBytes == 65 && RagdollWire.MaxPoseBytes == 72, "sizes");
+                Check(RagdollWire.HeaderBytes + 12 * RagdollWire.MaxPoseBytes <= RagdollWire.MaxBytes, "12 swung hooks fit");
+                var poses = new List<PoseWire>();
+                for (int i = 0; i < 14; i++) poses.Add(WirePose(i + 1, 0));
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 810, "12 pawns, hooks put away: 810 bytes (918 before)");
+                poses[3].Hook = 1;
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 810, "a hook in the hand adds nothing");
+                poses[5].Hook = 3;
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 12).Length == 817, "a flying hook adds its 7");
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 14).Length == 817, "never more than 12 pawns");
+                Check(RagdollWire.Snapshot(9, 1, 2, 0, poses, 0).Length == 30, "none"); });
+            Test("Ragdoll snapshot (R297): every field comes back; a hook put away or in the hand reads 0 for its gauge and point", () => {
+                var poses = new List<PoseWire>();
+                for (int i = 0; i < 12; i++) poses.Add(WirePose(i + 1, (byte)(i % 6)));
+                byte[] bytes = RagdollWire.Snapshot(77, 123456, 987654, 4321.25, poses, 12);
+                var into = new SnapshotWire();
+                Check(RagdollWire.ReadSnapshot(bytes, 77, into), "read");
+                Check(into.Tick == 123456 && into.HostTimeMs == 987654 && into.ObstacleTime == 4321.25 && into.Count == 12, "header");
+                for (int i = 0; i < 12; i++)
+                {
+                    PoseWire a = poses[i], b = into.At(i);
+                    Check(SameFixed(a, b), "pawn " + i);
+                    bool tail = a.Hook >= RagdollWire.HookTail;
+                    Check(b.HookCharge == (tail ? a.HookCharge : 0) && b.HookX == (tail ? a.HookX : 0) && b.HookY == (tail ? a.HookY : 0)
+                          && b.HookZ == (tail ? a.HookZ : 0), "hook gauge and point, pawn " + i);
+                } });
+            Test("Ragdoll snapshot (R297): read only if it ends exactly where its last pawn does, every field in range", () => {
+                var into = new SnapshotWire();
+                byte[] good = RagdollWire.Snapshot(5, 1, 1, 0, new List<PoseWire> { WirePose(1, 0), WirePose(2, 4), WirePose(3, 1) }, 3);
+                Check(good.Length == 30 + 65 + 72 + 65 && RagdollWire.ReadSnapshot(good, 5, into), "good");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length - 1), 5, into), "a byte short");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length + 1), 5, into), "a byte over");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, good.Length - 7), 5, into), "a hook's tail short");
+                Check(!RagdollWire.ReadSnapshot(Resized(good, 1025), 5, into) && !RagdollWire.ReadSnapshot(Resized(good, 29), 5, into), "too long, too short");
+                Check(!RagdollWire.ReadSnapshot(good, 6, into), "another match");
+                var bad = (byte[])good.Clone(); bad[0] ^= 1; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "magic");
+                bad = (byte[])good.Clone(); bad[4] = 3; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "type");
+                bad = (byte[])good.Clone(); bad[29] = 2; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 2");
+                bad = (byte[])good.Clone(); bad[29] = 4; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 4");
+                bad = (byte[])good.Clone(); bad[29] = 13; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "count 13");
+                // The second pawn (from byte 95): its hook at +61. As 1 its tail would be read as the third pawn.
+                bad = (byte[])good.Clone(); bad[95 + 61] = 1; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "a tail behind a hook in the hand");
+                bad = (byte[])good.Clone(); bad[95 + 61] = 6; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "hook 6");
+                bad = (byte[])good.Clone(); bad[30 + 58] = 3; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "state 3");
+                bad = (byte[])good.Clone(); bad[30 + 62] = 200; Check(!RagdollWire.ReadSnapshot(bad, 5, into), "no such piece");
+                bad = (byte[])good.Clone(); Array.Clear(bad, 30, 8); Check(!RagdollWire.ReadSnapshot(bad, 5, into), "id 0");
+                bad = (byte[])good.Clone(); Array.Copy(bad, 30, bad, 30 + 65 + 72, 8); Check(!RagdollWire.ReadSnapshot(bad, 5, into), "an id twice");
+                Check(!RagdollWire.ReadSnapshot(RagdollWire.Snapshot(5, 1, 1, double.NaN, new List<PoseWire> { WirePose(1, 0) }, 1), 5, into), "NaN clock");
+                Check(RagdollWire.ReadSnapshot(good, 5, into) && into.Count == 3, "a refused packet leaves the next one readable"); });
+            Test("Ragdoll snapshot (R297): the 16-bit echo of a send time still gives the round trip across its wrap", () => {
+                Check(RagdollWire.AckAge(70000, 69950u & 0xFFFF) == 50, "plain");
+                Check(RagdollWire.AckAge(65540u, 65500u & 0xFFFF) == 40, "across 65536");
+                Check(RagdollWire.AckAge(4000000120u, 4000000020u & 0xFFFF) == 100, "late in the clock");
+                Check(RagdollWire.AckAge(123, 0) == -1, "no echo");
+                var poses = new List<PoseWire> { WirePose(1, 0) };
+                uint sent = 1234567890u;
+                poses[0].Ack = (ushort)sent;
+                var into = new SnapshotWire();
+                Check(RagdollWire.ReadSnapshot(RagdollWire.Snapshot(1, 1, 1, 0, poses, 1), 1, into) && RagdollWire.AckAge(sent + 87, into.At(0).Ack) == 87,
+                      "through a packet"); });
+            Test("Packets (R297 [3]): every Core packet's bytes for a fixed input are the ones pinned before their buffers were reused", () => {
+                string got = GoldenBytes();
+                Check(got == Golden, "bytes changed: " + got);
+                Check(GoldenBytes() == Golden, "and again, through the reused buffers"); });
+            Test("Packets (R297 [3]): reused streams write and read like fresh ones, a short packet after a long one too", () => {
+                var streams = new PacketStreams(64);
+                var w = streams.Begin();
+                for (int i = 0; i < 40; i++) w.Write((ulong)i * 0x0101010101010101UL);   // 320 bytes: past its first capacity
+                Check(streams.Finish().Length == 320, "a long packet");
+                w = streams.Begin(); w.Write(0xDEADBEEFu); w.Write((short)-2); w.Write(1.5f); w.Write(-0.25d); w.Write((sbyte)-7); w.Write(true);
+                byte[] shortOne = streams.Finish();
+                byte[] fresh = Through(f => { f.Write(0xDEADBEEFu); f.Write((short)-2); f.Write(1.5f); f.Write(-0.25d); f.Write((sbyte)-7); f.Write(true); });
+                Check(shortOne.SequenceEqual(fresh), "the short one's bytes are a fresh writer's");
+                var r = streams.Open(new byte[300]);
+                r.ReadBytes(300);
+                r = streams.Open(shortOne);
+                Check(r.ReadUInt32() == 0xDEADBEEFu && r.ReadInt16() == -2 && r.ReadSingle() == 1.5f && r.ReadDouble() == -0.25d && r.ReadSByte() == -7 && r.ReadBoolean(), "read back");
+                bool ended = false;
+                try { r.ReadByte(); } catch (System.IO.EndOfStreamException) { ended = true; }
+                Check(ended, "the short packet ends where it does, not where the long one did");
+                r = streams.Open(new byte[] { 1, 2, 3, 4, 5 }, 3);
+                ended = false;
+                try { r.ReadUInt32(); } catch (System.IO.EndOfStreamException) { ended = true; }
+                Check(ended, "only the length asked for");
+                var pool = new PacketPool(16);
+                Check(pool.Get(10) == pool.Get(10) && pool.Get(10).Length == 10 && pool.Get(9) != pool.Get(10), "one array per length");
+                Check(pool.Get(17) != pool.Get(17) && pool.Get(0).Length == 0, "past its largest length: a new array each time"); });
+            Test("Flat motion snapshot (R297 [5]): never more than twelve pawns, so a thirteenth no longer makes it unreadable", () => {
+                var many = new List<PawnState>();
+                for (int i = 1; i <= 13; i++) many.Add(PawnMotor.Spawn((ulong)i, (i - 1) % 2, (i - 1) % 6));
+                var bytes = MotionProtocol.Snapshot(5, 1, many);
+                Check(bytes.Length == 18 + 12 * 30, "twelve pawns' bytes, got " + bytes.Length);
+                Check(MotionProtocol.ReadSnapshot(bytes, 5, out uint tick, out var got) && got.Count == 12 && got[11].Id == 12, "the first twelve, readable"); });
+            Test("Skill moments (R297 [5]): a client's 0 is nothing confirmed yet, so a host past 32767 moments still reaches it", () => {
+                var log = new SkillEventLog();
+                for (uint ms = 0; ms < 40000; ms++) { log.Add(new SkillWireEvent { Mode = SkillWire.ModePawnRush, Kind = 1 }, ms); log.Expire(ms); }
+                Check(SkillWire.Newer(log.First, 0) == false, "the log is numbered past 32767 (first " + log.First + ")");
+                var batch = new List<SkillWireEvent>();
+                log.After(0, 255, batch);
+                Check(batch.Count == 0, "taken as a number, 0 hid every moment");
+                ushort acked = 0; bool set = false;
+                SkillWire.TakeAck(0, ref acked, ref set);
+                Check(!set, "0 sets nothing");
+                log.After(set ? acked : unchecked((ushort)(log.First - 1)), 255, batch);
+                Check(batch.Count == 255, "so the client gets the moments kept, got " + batch.Count);
+                ushort confirmed = unchecked((ushort)(log.First + 9));
+                SkillWire.TakeAck(confirmed, ref acked, ref set);
+                Check(set && acked == confirmed, "its first real confirmation counts, though not newer than 0");
+                SkillWire.TakeAck(0, ref acked, ref set);
+                SkillWire.TakeAck(unchecked((ushort)(confirmed - 3)), ref acked, ref set);
+                Check(acked == confirmed, "a later 0 or an older number changes nothing");
+                SkillWire.TakeAck(unchecked((ushort)(confirmed + 5)), ref acked, ref set);
+                Check(acked == unchecked((ushort)(confirmed + 5)), "a newer one moves it on"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

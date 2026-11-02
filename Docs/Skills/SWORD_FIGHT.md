@@ -315,48 +315,48 @@ R205까지는 베기 하나가 끝날 때마다 칼 · 팔 · 가슴 · 몸 돌�
 ## R171 킹 착지를 9번으로 교체 (2026-10-27, 사용자)
 
 사용자: "킹은 적용시켜줘" → 고른 답 "9번으로 교체". 게임의 킹 E 착지(`VfxSets/King`의 `E_Land`)가 `10_King_E_Land_New`(킹 문양 · 금빛 연기 가닥 · 가로 빛줄). 6번 `06_King_E_Land`는 작업대 전용.
-9번 빌드가 `E_Land`를 다시 연결하고, 6번 빌드는 건드리지 않는다. 빌더는 Play 중에는 실행되지 않는다(Play 중 빌드하면 실행 중에 생긴 쿼드가 프리팹에 저장돼, `VfxFlash`가 그것을 다시 쓰게 고침). **Unity 미확인, 커밋 안 함.**
+9번 빌드가 `E_Land`를 다시 연결하고, 6번 빌드는 건드리지 않는다. 빌더는 Play 중에는 실행되지 않는다(Play 중 빌드하면 실행 중에 생긴 쿼드가 프리팹에 저장돼, `VfxFlash`가 그것을 다시 쓰게 고침). **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R170 비숍 VFX 2층: 핀 동안 은빛 알갱이 (2026-10-27, 사용자)
 
-사용자: "확인은 나중에 할게 2층도 바로 만들어줘". 핀이 박힌 동안 X 문양 테두리에서 은빛 알갱이가 피어올라 천천히 돌며 사라짐(1층 프리팹에 더함). [VFX §9 비숍](../VFX/README.md). 메뉴 `ChessFight/VFX/Bishop/Build`를 다시 누르면 들어간다. **Unity 미확인, 커밋 안 함.**
+사용자: "확인은 나중에 할게 2층도 바로 만들어줘". 핀이 박힌 동안 X 문양 테두리에서 은빛 알갱이가 피어올라 천천히 돌며 사라짐(1층 프리팹에 더함). [VFX §9 비숍](../VFX/README.md). 메뉴 `ChessFight/VFX/Bishop/Build`를 다시 누르면 들어간다. **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R169 킹 착지: 9번 문양을 킹 문양으로, 6번(게임 착지)을 더 멋있게 (2026-10-27, 사용자)
 
 사용자: "이펙트 9번 문양을 킹 문양으로 너무 마법 부리는 거 같아 수정해줘. 바꿔주고 6번을 더 멋있게 만들어줘 그래픽을" (작업대 목록 번호: 9 = `10_King_E_Land_New`, 6 = `06_King_E_Land`).
 9번: 룬 원형 → 왕관 · 십자가 킹 문양(돌지 않음). 6번: 새 방식 빌더로 다시 — 섬광 · 빛줄 · 금빛 균열 · 깨지는 원판 · 충격 띠 · 바닥에 튕기는 불꽃 · 먼지 링 · 불씨, 게임에 바로 연결.
-표: [VFX §9](../VFX/README.md). **Unity 미확인, 커밋 안 함.**
+표: [VFX §9](../VFX/README.md). **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R168 킹 E 착지 새로 — 룬 문양 + 금빛 연기 가닥 + 아나모픽 플레어 (2026-10-27, 사용자)
 
 사용자: "킹 착지 vfx가 밋밋해 더 멋있게 해주고 리얼리스틱으로 안해줘도 돼". 새 방식(§11)으로 다시. 이어서 "전에 보냈던 사진 보면 Ground Runes Decal랑 Golden Smoke Tendrils 랑 Anamorphic Lens Flare 합쳐줘" → 1층 룬 원형(펼쳐지며 번쩍 · 돌며 사라짐), 2층 금빛 연기 줄기 · 덩어리(Shuriken + 트레일), 3층 가로 빛줄.
-메뉴 `ChessFight/VFX/King Land (new)/Build` → 작업대 `10_King_E_Land_New`. 게임 착지는 층을 다 확인받을 때까지 예전 그대로. 표: [VFX §9 킹 착지 새로](../VFX/README.md). **Unity 미확인, 커밋 안 함.**
+메뉴 `ChessFight/VFX/King Land (new)/Build` → 작업대 `10_King_E_Land_New`. 게임 착지는 층을 다 확인받을 때까지 예전 그대로. 표: [VFX §9 킹 착지 새로](../VFX/README.md). **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R167 비숍 VFX 1층: 핀 X 문양 (2026-10-27, 사용자)
 
 사용자: "비숍은 거의 vfx가 없으니까 만들어줘 리얼리스틱하게 안해줘도 돼". 새 방식(VFX §11)으로 한 층씩. 1층: 비숍 F의 두 칼이 박히는 순간 발밑에 은빛 X 문양(비숍 대각선, 1초). 나머지 층 계획은 [VFX §9 비숍](../VFX/README.md).
 에디터 메뉴 `ChessFight/VFX/Bishop/Build`를 한 번 눌러야 나온다. 코드: `SwordFightSkillFx.BishopVfx.cs`, `.RealRookBishop.cs`(`DriveStakes`), `VFXEditor/BishopVfxBuilder.cs`.
-온라인 패킷 · 신호 그대로. **Unity 미확인, 커밋 안 함.**
+온라인 패킷 · 신호 그대로. **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R165 룩 F VFX를 퀸 모양 · 룩 고유색으로 · 파편 줄임 (2026-10-27, 사용자)
 
 사용자: "퀸 지금 너무 괜찮다 룩은 f 스킬을 쓸 때 퀸 처럼 vfx 만들어주고 파편 조각을 줄여줘". 룩 F(돌탑 파동)를 퀸(R164)과 같은 모양으로: 파동을 따라 바닥에 탄 자국 줄, 내려찍은 곳 · 돌탑 칸마다 탄 자국 고리,
 돌탑이 내려갈 때 그 모양 그림자가 남아 타 들어감, 맞은 상대 섬광 · 불꽃. 이어서 "색은 룩이 지금 고유색으로 사용하고 있는 색으로 해야지" → 색은 룩 고유색 베이지 `#D3B596` + 짙은 갈색 탄 자국(빨강 없음). 파편(나무 조각 · 돌무더기 · 놋쇠 · 맞은 상대 조각)은 35%(큰 돌만).
 표: [VFX §9 룩 F 다시](../VFX/README.md). 코드: `SwordFightSkillFx.RookFVfx.cs`, `.RealRookBishop.cs`, `.Statues.cs`, `.Real.cs`(`RealHit`), `.QueenVfx.cs`(`SetVfx`).
-룩 E는 그대로. 온라인 패킷 · 신호 그대로. **Unity 미확인, 커밋 안 함.**
+룩 E는 그대로. 온라인 패킷 · 신호 그대로. **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R164 퀸 VFX를 검정 · 빨강으로, 바닥 줄 · 잔상 다시 (2026-10-27, 사용자)
 
 사용자: "흰 노란이 아니라 검은색과 빨간색(완전한 빨간색 x) 이 바닥에 그어지고 잔상도 다시 디자인해줘". R162의 흰 노란 불빛 줄기 대신: F · E 길이 **바닥에 검은 탄 자국 + 짙은 빨강 불씨 가장자리**로 그어지고(빨강이 먼저 식음),
 잔상은 **퀸 몸 모양 검은 그림자 + 빨간 윤곽이 타 들어가며 사라짐**(F 3프레임마다, E 길 위 5개). 섬광 · 불꽃 · 고리 · E 화면 가르는 빛도 검붉은 색.
 표: [VFX §9 퀸](../VFX/README.md). 코드: `SwordFightSkillFx.QueenVfx.cs`(`QueenPhantom`), `.Real.cs`(`RealQueenDash`), `.RealEdge.cs`(`RealQueenBlink`),
-`Scripts/VFX/VfxPhantom.cs` · `VfxBeam.cs`(바닥 모드). 온라인 패킷 · 신호 그대로. **Unity 미확인, 커밋 안 함.**
+`Scripts/VFX/VfxPhantom.cs` · `VfxBeam.cs`(바닥 모드). 온라인 패킷 · 신호 그대로. **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R163 킹 E 착지를 시안 동영상처럼 (2026-10-27, 사용자)
 
 사용자: (동영상과 함께) "킹 착지 할 때 위의 동영상처럼 vfx 적용시켜주고 다듬어줘 색상은 킹 색으로". 뛰어오르는 0.5초 동안 착지 자리에 금빛 소용돌이가 모이고,
 착지 순간 섬광 · 빛 가시 · 반경 2 m 원판이 빛나다 조각으로 깨짐. 표: [VFX §9 킹 착지 다시](../VFX/README.md). 코드: `.RealEdge.cs`(`RealKingVault`에 `E_Gather` 한 줄),
-새 `VfxSwirl` · `VfxBurst` · `VfxShatter`. **Unity 미확인, 커밋 안 함.**
+새 `VfxSwirl` · `VfxBurst` · `VfxShatter`. **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R162 퀸 F · E에 VFX 얹기 (2026-10-27, 사용자)
 
@@ -364,19 +364,19 @@ R205까지는 베기 하나가 끝날 때마다 칼 · 팔 · 가슴 · 몸 돌�
 F 꼬치 베기 = 떠난 자리에서 퀸까지 따라 늘어나고 멈추면 꼬리부터 타 들어감 + 별빛 섬광 · 불꽃, 벰마다 섬광 · 불꽃.
 E 체크메이트 일섬 = 출발 → 도착 줄기가 한 번에, 한 박자 뒤 베인 곳 섬광 · 불 고리 · 불꽃. 표: [VFX §9 퀸](../VFX/README.md).
 코드: `SwordFightSkillFx.QueenVfx.cs`, `.Real.cs`(`RealQueenDash` · `RealQueenHit`), `.RealEdge.cs`(`RealQueenBlink` · `RealQueenCut`), `Scripts/VFX/VfxBeam.cs`.
-온라인 패킷 · 신호 그대로. **Unity 미확인, 커밋 안 함.**
+온라인 패킷 · 신호 그대로. **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R161 룩 F · E에 VFX 얹기 (2026-10-27, 사용자)
 
 사용자: "룩도 잡업해줘". 킹과 같은 방식, 따뜻한 돌색으로 더 어둡게: F 내려찍기 섬광 · 고리 · 돌 불꽃, 파동이 지나는 칸마다 작은 고리, 맞은 상대 섬광 · 불꽃,
 E 가장자리 섬광 · 고리 · 불꽃 + 끊어질 자리에 0.8초 빛줄 + 무너질 때 떨어지는 부스러기 빛. 표: [VFX §9 룩](../VFX/README.md).
-코드: `SwordFightSkillFx.PieceVfx.cs`(`RookVfx`), `.RealRookBishop.cs`(Slam · 칸마다 · Hit), `.RealEdgeRBK.cs`(Break). **Unity 미확인, 커밋 안 함.**
+코드: `SwordFightSkillFx.PieceVfx.cs`(`RookVfx`), `.RealRookBishop.cs`(Slam · 칸마다 · Hit), `.RealEdgeRBK.cs`(Break). **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R160 킹 F · E에 VFX 얹기 (2026-10-27, 사용자)
 
 사용자: "킹부터 작업진행해주고 F, E스킬 적용시킬 거야 적용시켜줘 근데 너무 화려하게 안해줬으면 좋겠어". 실사 연출은 그대로, 그 위에 얇은 금색 고리 · 작은 섬광 · 불꽃 몇 개.
 자세한 표와 고치는 곳: [VFX §9](../VFX/README.md). 코드: `SwordFightSkillFx.PieceVfx.cs`(R161에 `KingVfx.cs`에서 이름 바꿈), `.Real.cs`(Cast · Block · Spin 한 줄씩), `.RealEdge.cs`(Stab · Vault · Land 한 줄씩).
-온라인 패킷 · 신호 그대로. **Unity 미확인, 커밋 안 함.**
+온라인 패킷 · 신호 그대로. **Unity 미확인, `7507810`에 커밋됨.**
 
 ## R136 킹 E 왕의 귀환 — 칼이 박히고 벽이 부서짐 (2026-10-14, 승규 님)
 

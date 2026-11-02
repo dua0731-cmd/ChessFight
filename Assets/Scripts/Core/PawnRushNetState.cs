@@ -61,10 +61,13 @@ namespace ChessFight.Network
             }
         }
 
+        // R297: the written state's array, reused for the next one of its length (every byte is written again).
+        static readonly PacketPool pool = new PacketPool(MaxBytes);
+
         public byte[] Write(ulong match)
         {
             int finishers = Math.Max(0, Math.Min(FinisherCount, MaxFinishers));
-            var b = new byte[Bytes];
+            var b = pool.Get(Bytes);
             int i = 0;
             PutU32(b, ref i, Magic);
             PutU64(b, ref i, match);

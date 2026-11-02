@@ -192,9 +192,15 @@ namespace ChessFight.Game
 
         void Update()
         {
-            // What the host election reads: this machine's score once the probe has
-            // finished, and every frame's time (a slow host hands the match on).
-            if (Session.LocalFitness == 0) Session.LocalFitness = HostFitnessProbe.BaseScore();
+            // What the host election reads: this machine's best score so far (the probe
+            // sits again while the player waits in the lobby, R294), and every frame's
+            // time (a slow host hands the match on).
+            int fitness = HostFitnessProbe.BaseScore();
+            if (fitness > Session.LocalFitness)
+            {
+                Session.LocalFitness = fitness;
+                Debug.Log($"[ChessFight] 이 PC 성능 점수: {fitness} (벤치마크 {HostFitnessProbe.BenchMs:0.0}ms · 코어 {SystemInfo.processorCount} · 메모리 {SystemInfo.systemMemorySize}MB{(Application.isEditor ? " · 에디터" : "")})");
+            }
             Session.ReportFrame(Time.unscaledDeltaTime * 1000f);
             Session.Tick();
             // A successful Steam retry needs the movement layer built after the fact.
@@ -210,6 +216,8 @@ namespace ChessFight.Game
             // Nobody moves before the shared start behind the loading screen, nor
             // while typing a chat line.
             if (loader.Blocking || ChatBox.KeysHeld || GameMenu.IsOpen) intent = default;
+            // R295: nor is a host silent then: it may still be loading, or already in a scene that sends its own stream.
+            if (Motion != null) Motion.Loading = loading || loader.Blocking;
             if (!customSimulation)
                 Motion?.Update(Mathf.Clamp(intent.Move.x, -1f, 1f), Mathf.Clamp(intent.Move.y, -1f, 1f), intent.Jump);
             // R148: a scene that runs its own match without a menu (Pawn Rush course 01) no longer leaves on Esc:

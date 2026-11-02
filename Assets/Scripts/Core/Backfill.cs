@@ -13,6 +13,8 @@ namespace ChessFight.Network
     //
     // The host decides, and everything it needs lives in the lobby ("seats",
     // "held"), so a new host (Docs/Network/HOST.md) carries on with the same seats.
+    // Only who asked for a held seat (Seat.Leader) stays with the host that gave
+    // it: that limits abuse, not the match (Docs/Network/SESSION.md §4).
     public static class Backfill
     {
         // A joining party's members still on their way keep their seats this long,
@@ -23,12 +25,16 @@ namespace ChessFight.Network
         public const double OpenSeconds = 240;
 
         // Who sits on which team and spawn slot. Until is only set on a held seat:
-        // the Steam server time its player has to arrive by.
+        // the Steam server time its player has to arrive by. Leader, on a held seat
+        // too, is who asked for it, so its host holds each sender to one party on
+        // the way at a time and makes it wait when nobody comes (TeamReservations.
+        // Cooldown). The room's "held" leaves it out: a new host reads 0.
         public struct Seat
         {
             public ulong Id;
             public int Team, Slot;
             public double Until;
+            public ulong Leader;
         }
 
         // Whether a started match offers its empty seats: always while the start
