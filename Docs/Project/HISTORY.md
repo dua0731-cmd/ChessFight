@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 11-02 | R149 | 폰 러시 구간 프리팹: 한 판 7구간(Core `PawnRushSections` 뽑기·구간 씨앗, `PawnRushSection`·`PawnRushSectionSet`·`PawnRushRound`), 2-1 대계단 현관홀(`GrandStairHall`·`GrandStairHallBuilder`, 새 장애물 `RollingSpawner`·`ChandelierRain`, Core `SeededSchedule`), `SectionValidator`·`SectionPlaytest`·메뉴 3개·시험 씬 `PawnRush_Sections`, `CourseKit` 바탕 클래스·`SectionKit`, 1 m 격자 재질, `ImportedObstacleActor.AddObstacleHit`, 기획 원문 4개, 문서. 시험: Core 130·세션 41 |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 11-02 | R150 | 대계단 현관홀 재미 검토 → 세 곳 고침: 바람이 폰을 실어 나름(새 `IWindReceiver`·`RagdollPawn.Wind`·`ImportedObstacleActor.Blow`·`AirVent.DriftSpeed`, 홀 바람 3.5 m/s·폭 3.5·화살표 6 m), 날개를 11 m 바깥으로(홀 ±51·중앙 계단참 ±25·샹들리에 영역과 간격) + 다리 A·섬·다리 B(11.5초, 닫힘 3), 날개 계단 1 진자 셋·난간 없음·아래 턱·가는 들보·카펫 2 m/s, 검증기 이름 목록, 문서(§10 재미 검토). 시험: Core 130·세션 41·전 어셈블리 컴파일 |
+| `1f037f1` | 11-02 | R149 | 폰 러시 구간 프리팹: 한 판 7구간(Core `PawnRushSections` 뽑기·구간 씨앗, `PawnRushSection`·`PawnRushSectionSet`·`PawnRushRound`), 2-1 대계단 현관홀(`GrandStairHall`·`GrandStairHallBuilder`, 새 장애물 `RollingSpawner`·`ChandelierRain`, Core `SeededSchedule`), `SectionValidator`·`SectionPlaytest`·메뉴 3개·시험 씬 `PawnRush_Sections`, `CourseKit` 바탕 클래스·`SectionKit`, 1 m 격자 재질, `ImportedObstacleActor.AddObstacleHit`, 기획 원문 4개, 문서. 시험: Core 130·세션 41 |
 | `bc2f3a8` | 10-24 | - | 트레일러 영상 `Docs/체스파이트_트레일러.mp4`(LFS, 사용자) |
 | `4ec62ec` | 10-21 | R148 | 경기 중 Esc 메뉴(`GameMenu`: 돌아가기·설정·나가기 확인), 폰 러쉬 공개 방 3 대 3부터 방장 "게임 시작"(`ReadyEarly`·`CanStartEarly`·입장 화면 버튼), 문서. 시험: Core 125·세션 41 |
 | `51fddd0` | 10-15 | R130 | 승격 기물 고르기: `PromotionChooser`(카드 4장 UI), `StationPromotion` 선택 대기·10초 무작위, 코스 상태 `CFP4`(고르는 사람), 참가자 선택은 입력 `pieceAsk`, 프로토콜 v22, 문서 |

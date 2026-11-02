@@ -74,6 +74,16 @@ namespace ChessFight.PawnRush
 
         public void Configure(Material chandelier) => chandelierMaterial = chandelier;
 
+        // The landing it falls on and how often (the builder: a wider landing falls as often per square metre).
+        public void Configure(Material chandelier, Vector2 min, Vector2 max, float gapMin, float gapMax)
+        {
+            chandelierMaterial = chandelier;
+            areaMin = min;
+            areaMax = max;
+            minGap = gapMin;
+            maxGap = gapMax;
+        }
+
         public void OnSection(PawnRushSection section)
         {
             var rules = new ChandelierSchedule.Rules

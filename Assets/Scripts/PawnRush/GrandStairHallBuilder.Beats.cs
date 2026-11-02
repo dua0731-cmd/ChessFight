@@ -11,6 +11,13 @@ namespace ChessFight.PawnRush
         public static readonly float[] LaneX = { -6f, -2f, 2f, 6f };
         public const float LaneWidth = 3.6f;
 
+        // R150: each wing stands 11 m further out than the doc's (the hall is 102 m wide, not 80): the room
+        // between the gallery's end and the dais takes two bridges and an island instead of one bridge, and the
+        // central landing reaches out to the wings (x +-25).
+        public const float WingOut = 11f;
+        public const float LandingHalf = 14f + WingOut;
+        public const float HallHalf = 40f + WingOut;
+
         // ------------------------------------------------------------------ beat 1: the rolling grand stair (y 0 -> 8)
 
         static void GrandStair(CourseBuilder b)
@@ -68,16 +75,13 @@ namespace ChessFight.PawnRush
         static void CentralLanding(CourseBuilder b)
         {
             var k = b.kit;
-            // x -14..14, z 52..66 (from z 51: the upper flight's last step).
-            Mass(b, "Central landing", -14f, 14f, 51f, 66f, 8f);
-            Rail(b, "Central landing rail N", -14f, 14f, 65.7f, 66f, 8f);
-            // West and east edges are railed but for the wing entrances (z 56..64); the south edge beside the stair.
-            Rail(b, "Central landing rail W (south)", -14f, -13.7f, 51f, 56f, 8f);
-            Rail(b, "Central landing rail W (north)", -14f, -13.7f, 64f, 65.7f, 8f);
-            Rail(b, "Central landing rail E (south)", 13.7f, 14f, 51f, 56f, 8f);
-            Rail(b, "Central landing rail E (north)", 13.7f, 14f, 64f, 65.7f, 8f);
-            Rail(b, "Central landing rail S (west)", -14f, -8.3f, 51f, 51.3f, 8f);
-            Rail(b, "Central landing rail S (east)", 8.3f, 14f, 51f, 51.3f, 8f);
+            float h = LandingHalf;
+            // x -25..25 (R150; the doc's -14..14), z 52..66 (from z 51: the upper flight's last step). West and
+            // east it runs on into the wings' ledges at the same height (Wing), so those edges are open.
+            Mass(b, "Central landing", -h, h, 51f, 66f, 8f);
+            Rail(b, "Central landing rail N", -h, h, 65.7f, 66f, 8f);
+            Rail(b, "Central landing rail S (west)", -h, -8.3f, 51f, 51.3f, 8f);
+            Rail(b, "Central landing rail S (east)", 8.3f, h, 51f, 51.3f, 8f);
             // The king statue: a 4 x 4 m base at (0, 8, 63), 6 m tall, unclimbable. The one fixed cover from the shock.
             Solid(b, "King statue base", V(-2f, 8f, 61f), V(2f, 9.2f, 65f));
             b.Cylinder("King statue body", V(0f, 9.2f, 63f), 2.4f, 2.6f, k.wallNoClimb, true, true);
@@ -85,137 +89,191 @@ namespace ChessFight.PawnRush
             b.Sphere("King statue head", V(0f, 12.9f, 63f), 1.7f, k.wallNoClimb).AddComponent<Gameplay.NoClimbSurface>();
             Solid(b, "King statue cross (upright)", V(-.2f, 13.5f, 62.8f), V(.2f, 14f, 63.2f));
             Solid(b, "King statue cross (bar)", V(-.5f, 13.65f, 62.8f), V(.5f, 13.85f, 63.2f));
-            // The falling chandeliers (§5): ChandelierRain draws them.
+            // The falling chandeliers (§5): ChandelierRain draws them, 1 m inside the landing's edges. The landing
+            // is 48 m across instead of 26, so they fall 1.85 times as often (0.4 ~ 0.75 s instead of 0.7 ~ 1.4)
+            // and a square metre of it sees as many as the doc's.
             var rain = b.Group("Chandelier rain");
-            rain.gameObject.AddComponent<ChandelierRain>().Configure(k.rankGold);
-            // A drop anywhere in x -13..13 reaches 4.5 m round it: past the landing's edges.
-            SpanAt(b, "Chandelier rain span", V(0f, 8f, 55f), Vector3.right, -17.5f, 17.5f);
+            rain.gameObject.AddComponent<ChandelierRain>().Configure(k.rankGold, new Vector2(-(h - 1f), 54f), new Vector2(h - 1f, 65f), .4f, .75f);
+            // Measured across the way to the west wing (z), where nothing beside the rain leads on: a drop at
+            // z 54..65 reaches 4.5 m round it.
+            SpanAt(b, "Chandelier rain span", V(-12f, 8f, 58f), Vector3.forward, -8.5f, 11.5f);
         }
 
         // ------------------------------------------------------------------ beats 3 ~ 5: a wing (s = -1 west, +1 east)
 
-        // Wing stair 1 (out from the landing, 12 steps), the turning landing (two carpets flowing back towards
-        // the stair), wing stair 2 (north, 12 steps), the window gallery with four vents, the bridge to the
-        // dais. The east wing is the same code with x -> -x: turning ways, the carpets' and the wind's
-        // directions follow. Returns the wing's portcullis (down only when the wing is shut).
+        // The ledge either side of wing stair 1 (the central landing's floor running on), wing stair 1 (out from
+        // the landing, 12 steps, three chandeliers close together and no railings: a hit throws the pawn down
+        // onto the ledge), the turning landing (two carpets flowing back towards the stair), wing stair 2 (north,
+        // 12 steps), the window gallery with four vents whose wind carries a pawn, and two bridges with an island
+        // between them to the dais. The east wing is the same code with x -> -x: turning ways, the carpets' and
+        // the wind's directions follow. Returns the wing's portcullis (down only when the wing is shut). Every
+        // |x| is the doc's + WingOut (R150) but the last bridge's, onto the dais.
         static GameObject Wing(CourseBuilder b, float s)
         {
             var k = b.kit;
             string side = s < 0 ? "W" : "E";
-            float d1 = 4f / 3f, d2 = 14f / 12f;
+            float d1 = 4f / 3f, d2 = 14f / 12f, o = WingOut;
+            float foot1 = 14f + o, top1 = 30f + o, outer = HallHalf;   // wing stair 1 |x| 25..41, the hall wall |x| 51
 
-            // Wing stair 1: x 14..30 (outwards), z 56..64, y 8 -> 11, 12 steps 0.25 x 1.33, railed both sides.
-            FlightX(b, "Wing stair 1 " + side, s, 14f, 12, d1, 56f, 64f, 8f);
-            Mass(b, "Wing stair 1 top step " + side, s * (14f + 11f * d1), s * 30f, 56f, 64f, 11f);
-            RailAlongX(b, "Wing stair 1 rail S " + side, s, 14f, 12, d1, 55.7f, 56f, 8f);
-            RailAlongX(b, "Wing stair 1 rail N " + side, s, 14f, 12, d1, 64f, 64.3f, 8f);
-            // Two chandeliers (11 pendulums) swinging across the stair (z), axes at the stair + 7.3: phases 0 / 2.2.
-            float[] across = { 19f, 26f }, phase = { 0f, 2.2f };
-            for (int i = 0; i < 2; i++)
+            // The ledge (y 8) beside wing stair 1, railed on the hall side and where it meets the turning landing.
+            Mass(b, "Wing ledge S " + side, s * foot1, s * top1, 51f, 57f, 8f);
+            Mass(b, "Wing ledge N " + side, s * foot1, s * top1, 63f, 66f, 8f);
+            Rail(b, "Wing ledge rail S " + side, s * foot1, s * top1, 51f, 51.3f, 8f);
+            Rail(b, "Wing ledge rail N " + side, s * foot1, s * top1, 65.7f, 66f, 8f);
+            Rail(b, "Wing ledge rail (end) " + side, s * (top1 - .3f), s * top1, 51.3f, 54f, 8f);
+
+            // Wing stair 1: |x| 25..41 (outwards), z 57..63 (6 m; the doc's 8), y 8 -> 11, 12 steps 0.25 x 1.33.
+            // No railings: a chandelier throws a pawn off it, 0 ~ 3 m down onto the ledge, and it walks back.
+            FlightX(b, "Wing stair 1 " + side, s, foot1, 12, d1, 57f, 63f, 8f);
+            Mass(b, "Wing stair 1 top step " + side, s * (foot1 + 11f * d1), s * top1, 57f, 63f, 11f);
+            // Three chandeliers (11 pendulums) swinging across the stair (z), 4.7 m apart: 2.5 m of rest between
+            // the balls' paths, room for two or three. Each 3.9 s (of 4.4) behind the one before, so who crosses
+            // one stops before the next whether running (2.5 m/s: 9% go straight on) or sprinting (3.6: 19%) -
+            // the doc's two, 7 m and 2.2 s apart, let a sprinter through both in one go 97% of the time.
+            float[] along = { 4f, 8.7f, 13.4f }, phase = { 0f, 3.9f, 7.8f };
+            for (int i = 0; i < along.Length; i++)
             {
-                float x = across[i];
-                float top = StepTopMax(x - 14f - 1.1f, x - 14f + 1.1f, d1, 8f);
+                float top = StepTopMax(along[i] - 1.1f, along[i] + 1.1f, d1, 8f);
+                float x = foot1 + along[i];
                 var pendulum = Hazard(b, k.pendulum, "11 Pendulum (chandelier) " + side + (i + 1), V(s * x, top - .1f, 60f), s < 0 ? 90f : -90f, phase[i]);
-                Span(pendulum, Vector3.forward, -6f, 6f, SlopeY(x - 14f, d1, 8f));
+                Span(pendulum, Vector3.forward, -6f, 6f, SlopeY(along[i], d1, 8f));
                 GantryZ(b, "Chandelier beam " + side + (i + 1), s * x, 60f, top - .1f + 7.3f, 6.4f);
             }
 
-            // The turning landing: x 30..40, z 54..66, y 11. Two 08 conveyors (each 10 x 6 m) cover it, flowing
-            // back towards wing stair 1 at 1.5 m/s (their floor block is under them, top 10.6).
-            Mass(b, "Turning landing " + side, s * 30f, s * 40f, 54f, 66f, 10.6f);
+            // The turning landing: |x| 41..51, z 54..66, y 11. Two 08 conveyors (each 10 x 6 m) cover it, flowing
+            // back towards wing stair 1 at 2 m/s (the doc's 1.5 lost to a plain run, 2.5; against 2 a pawn sprints)
+            // on their floor block (top 10.6).
+            Mass(b, "Turning landing " + side, s * top1, s * outer, 54f, 66f, 10.6f);
             foreach (float z in new[] { 57f, 63f })
             {
-                var belt = Hazard(b, k.conveyor, "08 Carpet conveyor " + side + " z" + z, V(s * 35f, 10.6f, z), s < 0 ? -90f : 90f);
+                var belt = Hazard(b, k.conveyor, "08 Carpet conveyor " + side + " z" + z, V(s * (top1 + 5f), 10.6f, z), s < 0 ? -90f : 90f);
                 belt.transform.localScale = new Vector3(1f, 1f, 1.25f);   // 8 m -> 10 m along the flow
                 // The belt's own rims would be kerbs in the middle of the landing: the landing has its railings.
                 ForChildren(belt, "Belt rim", t => t.gameObject.SetActive(false));
+                foreach (var surface in belt.GetComponentsInChildren<ObstacleSurface>(true)) surface.conveyorSpeed = 2f;
             }
-            Rail(b, "Turning landing rail S " + side, s * 30f, s * 40f, 53.7f, 54f, 11f);
-            Rail(b, "Turning landing rail (stair 1 side, south) " + side, s * 29.7f, s * 30f, 54f, 56f, 11f);
-            Rail(b, "Turning landing rail (stair 1 side, north) " + side, s * 29.7f, s * 30f, 64f, 66f, 11f);
-            Rail(b, "Turning landing rail N " + side, s * 30f, s * 32f, 66f, 66.3f, 11f);
+            Rail(b, "Turning landing rail S " + side, s * top1, s * outer, 53.7f, 54f, 11f);
+            Rail(b, "Turning landing rail (stair 1 side, south) " + side, s * (top1 - .3f), s * top1, 54f, 57f, 11f);
+            Rail(b, "Turning landing rail (stair 1 side, north) " + side, s * (top1 - .3f), s * top1, 63f, 66f, 11f);
+            Rail(b, "Turning landing rail N " + side, s * top1, s * (top1 + 2f), 66f, 66.3f, 11f);
 
-            // Wing stair 2: x 32..40, z 66..80, y 11 -> 14, 12 steps 0.25 x 1.17; the hall wall on the outer side.
-            float x0 = s * 32f, x1 = s * 40f;
+            // Wing stair 2: |x| 43..51, z 66..80, y 11 -> 14, 12 steps 0.25 x 1.17; the hall wall on the outer side.
+            float x0 = s * (32f + o), x1 = s * outer;
             FlightZ(b, "Wing stair 2 " + side, Mathf.Min(x0, x1), Mathf.Max(x0, x1), 66f, 12, d2, 11f);
             Mass(b, "Wing stair 2 top step " + side, x0, x1, 66f + 11f * d2, 80f, 14f);
-            RailAlongZ(b, "Wing stair 2 rail " + side, Mathf.Min(s * 31.7f, s * 32f), Mathf.Max(s * 31.7f, s * 32f), 66f, 12, d2, 11f);
+            RailAlongZ(b, "Wing stair 2 rail " + side, Mathf.Min(s * (31.7f + o), s * (32f + o)), Mathf.Max(s * (31.7f + o), s * (32f + o)), 66f, 12, d2, 11f);
             // One chandelier across this stair (x), phase 1.1. 30° instead of 55°: the stair is 8 m between
             // its railing and the hall wall, and a 55° swing would put the ball 2 m into the wall.
             {
                 float top = StepTopMax(73f - 66f - 1.1f, 73f - 66f + 1.1f, d2, 11f);
-                var pendulum = Hazard(b, k.pendulum, "11 Pendulum (chandelier) " + side + "3", V(s * 36f, top - .1f, 73f), 0f, 1.1f);
+                var pendulum = Hazard(b, k.pendulum, "11 Pendulum (chandelier) " + side + "4", V(s * (36f + o), top - .1f, 73f), 0f, 1.1f);
                 var swing = pendulum != null ? pendulum.GetComponentInChildren<PendulumSwing>(true) : null;
                 if (swing != null) swing.SwingAngle = 30f;
                 Span(pendulum, Vector3.right, -4.1f, 4.1f, SlopeY(73f - 66f, d2, 11f));
-                GantryX(b, "Chandelier beam " + side + "3", s, 36f, 73f, top - .1f + 7.3f);
+                GantryX(b, "Chandelier beam " + side + "4", s, 36f + o, 73f, top - .1f + 7.3f);
             }
 
-            // The window gallery: x 13.8..40, z 80..86, y 14, 6 wide; its south edge open to the hall 18 m below.
-            Mass(b, "Window gallery " + side, s * 13.8f, s * 40f, 80f, 86f, 14f);
-            // Rest spots: CP2's (x 35.5..40), between the vents, CP3's before the bridge.
-            Marker(b, "Rest (CP2) " + side, s * 35.5f, s * 40f, 80f, 86f, 14f);
-            foreach (float x in new[] { 30.5f, 25.5f, 20.5f })
-                Marker(b, "Rest between the vents " + side, s * x, s * (x + 2f), 80f, 86f, 14f);
-            Marker(b, "Rest before the bridge (CP3) " + side, s * 13.8f, s * 17.5f, 80f, 86f, 14f);
-            // Four 15 vents (the windows) in the north wall blowing into the hall, a quarter of 6.8 s apart.
-            float[] ventX = { 34f, 29f, 24f, 19f }, ventPhase = { 0f, 1.7f, 3.4f, 5.1f };
+            // The window gallery: |x| 24.8..51, z 80..86, y 14, 6 wide; its south edge open to the hall 18 m below.
+            Mass(b, "Window gallery " + side, s * (13.8f + o), s * outer, 80f, 86f, 14f);
+            // Four 15 vents (the windows) in the north wall blowing into the hall, a quarter of 6.8 s apart. Their
+            // wind carries a pawn towards the edge at 3.5 m/s (4.55 off the ground): walking or running along the
+            // gallery goes over the edge inside 2 s, sprinting into it (3.6) just holds. The doc's push, 20 m/s² on
+            // the bodies, moved a running pawn about 0.2 m. 3.5 m wide (the prefab's 3), so 1.5 m rests.
+            float[] ventX = { 34f + o, 29f + o, 24f + o, 19f + o }, ventPhase = { 0f, 1.7f, 3.4f, 5.1f };
+            Marker(b, "Rest (CP2) " + side, s * (ventX[0] + WindWide * .5f), s * outer, 80f, 86f, 14f);
+            for (int i = 0; i + 1 < ventX.Length; i++)
+                Marker(b, "Rest between the vents " + side, s * (ventX[i + 1] + WindWide * .5f), s * (ventX[i] - WindWide * .5f), 80f, 86f, 14f);
+            Marker(b, "Rest before the bridge (CP3) " + side, s * (13.8f + o), s * (ventX[3] - WindWide * .5f), 80f, 86f, 14f);
             for (int i = 0; i < 4; i++)
             {
                 float x = s * ventX[i];
-                Hazard(b, k.airVent, "15 Wind vent (window) " + side + (i + 1), V(x, 14f, 86f), 180f, ventPhase[i]);
+                Gust(Hazard(b, k.airVent, "15 Wind vent (window) " + side + (i + 1), V(x, 14f, 86f), 180f, ventPhase[i]));
                 // The window over it: glass and a frame in the wall.
                 Picture(b, "Window", V(x - 1.4f, 17f, 85.9f), V(x + 1.4f, 24f, 85.98f), k.glass);
                 Picture(b, "Window frame", V(x - 1.6f, 16.8f, 85.85f), V(x + 1.6f, 17f, 86f), k.rankGold);
                 Picture(b, "Window frame", V(x - 1.6f, 24f, 85.85f), V(x + 1.6f, 24.2f, 86f), k.rankGold);
-                // Its wind (3 x 3 x 6 m) covers the gallery's 6 m.
+                // Its wind (3.5 x 3 x 6 m) covers the gallery's 6 m.
                 SpanAt(b, "Wind span " + side + (i + 1), V(x, 14f, 83f), Vector3.forward, -3.2f, 3f);
             }
-            b.Checkpoint(2, V(s * 38f, 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
-            b.Checkpoint(3, V(s * 15.6f, 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
+            b.Checkpoint(2, V(s * (38f + o), 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
+            b.Checkpoint(3, V(s * (15.6f + o), 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
 
-            // The 12 bridge to the dais (x 6..13.8): two plates on hinges 8 m apart, the prefab's way across (x).
-            // Cycle 9 s (open 4, warning 1, folding 1.75 - the prefab's turning-speed limit, 0.25 more than the
-            // doc's 1.5 - closed 0.5, unfolding 1.75), phase 0 in both wings. Its own landings are the gallery and
-            // the dais here.
-            var bridge = Hazard(b, k.foldingBridge, "12 Bridge to the dais " + side, V(s * 9.9f, 14f, 83f), 0f, 0f);
+            // Two 12 bridges with an island between them to the dais (R150; the doc's one bridge was 8 m, shut
+            // 0.5 s of 9, and a pawn on it as it folded slid down its panel back to the gallery or on to the dais):
+            // bridge A |x| 16.8..24.8, the island 13.8..16.8 (3 x 6 m, edges open 18 m over the hall floor; a fall
+            // goes back to CP3), bridge B 5.9..13.9 onto the dais. B runs half a cycle behind A, so whoever crosses
+            // A waits on the island with whoever else did. Both wings the same.
+            float bridgeA = 13.8f + o - 4f, islandOuter = bridgeA - 4f;   // 20.8, 16.8
+            Bridge(b, "12 Bridge A " + side, s * bridgeA, 0f);
+            Mass(b, "Island " + side, s * (islandOuter - 3f), s * islandOuter, 80f, 86f, 14f, 12f);
+            Bridge(b, "12 Bridge B to the dais " + side, s * 9.9f, BridgeCycle * .5f);
+
+            // The portcullis at this wing's entrance (|x| 25, across the landing and its ledges, z 51..66): down
+            // only when the round shuts the wing (3 or 4 a side, GrandStairHall).
+            var gate = Solid(b, "Wing portcullis " + side, V(s * (foot1 - .3f), 8f, 51.3f), V(s * (foot1 + .1f), 13f, 65.7f));
+            gate.GetComponent<Renderer>().sharedMaterial = k.trimBlack;
+            for (int i = 0; i < 9; i++)
+                Picture(b, "Portcullis bar", V(s * (foot1 - .35f), 8f, 51.8f + i * 1.65f), V(s * (foot1 + .15f), 13.2f, 52.1f + i * 1.65f), k.wallNoClimb).transform.SetParent(gate.transform, true);
+            gate.SetActive(false);
+            return gate;
+        }
+
+        // A 15 vent's wind (R150): it carries a pawn (DriftSpeed) instead of pushing its bodies, 3.5 m wide, and
+        // its arrows reach the gallery's far edge (the prefab draws them 3.7 m out of a 6.2 m wind).
+        const float WindWide = 3.5f, WindDrift = 3.5f;
+
+        static void Gust(GameObject vent)
+        {
+            var air = vent != null ? vent.GetComponentInChildren<AirVent>(true) : null;
+            if (air == null) return;
+            air.DriftSpeed = WindDrift;
+            if (air.WindTrigger != null) air.WindTrigger.size = new Vector3(WindWide, air.WindTrigger.size.y, air.WindTrigger.size.z);
+            ForChildren(vent, "Air stream", t =>
+            {
+                t.localPosition = new Vector3(t.localPosition.x, t.localPosition.y, 3.05f);
+                t.localScale = new Vector3(t.localScale.x, t.localScale.y, 5.6f);
+            });
+            ForChildren(vent, "Arrow tip", t => t.localPosition = new Vector3(t.localPosition.x, t.localPosition.y, 5.6f));
+        }
+
+        // A 12 bridge every 11.5 s: open 4, warning 1, folding 1.75 (the prefab folds 70° no faster than that),
+        // shut 3, unfolding 1.75. Its own landings would overlap the gallery, the island and the dais.
+        const float BridgeCycle = 4f + 1f + 1.75f + 3f + 1.75f;
+
+        static void Bridge(CourseBuilder b, string name, float x, float phase)
+        {
+            var bridge = Hazard(b, b.kit.foldingBridge, name, V(x, 14f, 83f), 0f, phase);
             var folding = bridge != null ? bridge.GetComponent<FoldingBridge>() : null;
             if (folding != null)
             {
                 folding.OpenDuration = 4f;
                 folding.WarningDuration = 1f;
                 folding.FoldDuration = 1.5f;
-                folding.ClosedDuration = .5f;
+                folding.ClosedDuration = 3f;
             }
             ForChildren(bridge, "LeftLanding", t => t.gameObject.SetActive(false));
             ForChildren(bridge, "RightLanding", t => t.gameObject.SetActive(false));
-
-            // The portcullis at this wing's entrance on the central landing (x 14, z 56..64): down only when the
-            // round shuts the wing (3 or 4 a side, GrandStairHall).
-            var gate = Solid(b, "Wing portcullis " + side, V(s * 13.7f, 8f, 56f), V(s * 14.1f, 13f, 64f));
-            gate.GetComponent<Renderer>().sharedMaterial = k.trimBlack;
-            for (int i = 0; i < 5; i++)
-                Picture(b, "Portcullis bar", V(s * 13.65f, 8f, 56.6f + i * 1.7f), V(s * 14.15f, 13.2f, 56.9f + i * 1.7f), k.wallNoClimb).transform.SetParent(gate.transform, true);
-            gate.SetActive(false);
-            return gate;
         }
 
-        // A beam over a pendulum swinging along z (posts out of the ball's reach, 6 m from the axis).
+        // A beam over a pendulum swinging along z (posts out of the ball's reach, 6.4 m from the axis). Thin and
+        // dark: the doc-sized grey ones filled the camera on the wing stair.
         static void GantryZ(CourseBuilder b, string name, float x, float axisZ, float pivotY, float half)
         {
             float lo = axisZ - half, hi = axisZ + half;
-            Solid(b, name + " post S", V(x - .4f, Deep, lo - .4f), V(x + .4f, pivotY + 1f, lo + .4f));
-            Solid(b, name + " post N", V(x - .4f, Deep, hi - .4f), V(x + .4f, pivotY + 1f, hi + .4f));
-            Solid(b, name, V(x - .4f, pivotY + .5f, lo - .4f), V(x + .4f, pivotY + 1f, hi + .4f));
+            Beam(b, name + " post S", V(x - .2f, Deep, lo - .2f), V(x + .2f, pivotY + .8f, lo + .2f));
+            Beam(b, name + " post N", V(x - .2f, Deep, hi - .2f), V(x + .2f, pivotY + .8f, hi + .2f));
+            Beam(b, name, V(x - .2f, pivotY + .4f, lo - .2f), V(x + .2f, pivotY + .8f, hi + .2f));
         }
 
         // A beam over a pendulum swinging along x: one post on the open side, the other end in the hall wall.
         static void GantryX(CourseBuilder b, string name, float s, float x, float z, float pivotY)
         {
             float post = x - 6.4f;
-            Solid(b, name + " post", V(s * (post - .4f), Deep, z - .4f), V(s * (post + .4f), pivotY + 1f, z + .4f));
-            Solid(b, name, V(s * (post - .4f), pivotY + .5f, z - .4f), V(s * 40f, pivotY + 1f, z + .4f));
+            Beam(b, name + " post", V(s * (post - .2f), Deep, z - .2f), V(s * (post + .2f), pivotY + .8f, z + .2f));
+            Beam(b, name, V(s * (post - .2f), pivotY + .4f, z - .2f), V(s * HallHalf, pivotY + .8f, z + .2f));
         }
+
+        static GameObject Beam(CourseBuilder b, string name, Vector3 a, Vector3 c) => b.Box(name, a, c, b.kit.trimBlack, true);
 
         // ------------------------------------------------------------------ beat 5: the royal dais and the lift landing (y 14 <-> 20)
 

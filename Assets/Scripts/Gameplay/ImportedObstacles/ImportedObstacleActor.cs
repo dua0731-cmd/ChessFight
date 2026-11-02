@@ -12,6 +12,7 @@ namespace ChessFight.ProtectKing
         readonly ICharacterDriver driver;
         readonly IHitReceiver hits;
         readonly ILaunchable launcher;
+        readonly IWindReceiver wind;
         readonly Rigidbody[] bodies;
         readonly RaycastHit[] groundHits = new RaycastHit[24];
         public GameObject gameObject => owner != null ? owner.gameObject : null;
@@ -35,7 +36,7 @@ namespace ChessFight.ProtectKing
         ImportedObstacleActor(Component owner, ICharacterDriver driver)
         {
             this.owner=owner; this.driver=driver;
-            hits=owner.GetComponent<IHitReceiver>(); launcher=owner.GetComponent<ILaunchable>();
+            hits=owner.GetComponent<IHitReceiver>(); launcher=owner.GetComponent<ILaunchable>(); wind=owner.GetComponent<IWindReceiver>();
             bodies=owner.GetComponentsInChildren<Rigidbody>();
         }
         public static ImportedObstacleActor Find(Collider collider)
@@ -65,6 +66,9 @@ namespace ChessFight.ProtectKing
             if (launcher != null) launcher.Launch(velocity);
             else hits.ApplyHit(velocity - Velocity,0,0,true);
         }
+        // A wind that carries the character over the ground (AirVent.DriftSpeed): false when it is not that
+        // kind of character or cannot be carried right now, and the vent pushes its bodies instead.
+        public bool Blow(Vector3 velocity) => CanReceiveObstacle && wind != null && wind.Blow(velocity);
         // Wind is continuous acceleration, not a repeated hit/stagger. Reject
         // puppets via their kinematic body, then push every body part equally.
         public Vector3 Accelerate(Vector3 acceleration, float limit, float dt)

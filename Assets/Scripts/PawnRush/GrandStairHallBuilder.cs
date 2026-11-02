@@ -16,9 +16,11 @@ namespace ChessFight.PawnRush
     //       B1_GrandStair      porch, foyer and pillars, the drain, the lower flight, the middle landing, the upper
     //                          flight, four rolling holes and the lanes (RollingSpawner)
     //       B2_CentralLanding  the landing, the king statue, the falling chandeliers (ChandelierRain)
-    //       Wing_West          wing stair 1 (2 chandelier pendulums), the turning landing (2 carpets = conveyors),
-    //       Wing_East            wing stair 2 (1 pendulum), the window gallery (4 wind vents), the bridge to the
-    //                            dais; east = the mirror of west, built by the same code with x -> -x
+    //       Wing_West          the ledge, wing stair 1 (3 chandelier pendulums, no railings), the turning landing
+    //       Wing_East            (2 carpets = conveyors), wing stair 2 (1 pendulum), the window gallery (4 vents whose
+    //                            wind carries a pawn), bridge A, the island, bridge B to the dais; east = the mirror
+    //                            of west, built by the same code with x -> -x. Since R150 the wings stand 11 m
+    //                            further out than the doc's (WingOut) and the central landing reaches them
     //       B5_RoyalDais       the dais, the lift landing (05 tiles x 2), the shaft
     //       B6_RoyalBalcony    the balcony, two knights, the clock gate, the runout, the terrace, the arch, four
     //                          steps down, the mini-game entrance band
@@ -185,19 +187,21 @@ namespace ChessFight.PawnRush
         static void Shell(CourseBuilder b)
         {
             var k = b.kit;
+            float h = HallHalf;   // 51 since R150 (the doc's 40): the wings stand WingOut further out
             // The hall floor: falling onto it ends the try (1.5 s, back on the highest checkpoint; §8).
-            b.Box("Hall floor (respawn)", V(-40f, Deep, 12f), V(40f, HallFloor, 88f), CourseKit.Or(k.respawnFloor, k.trimBlack), false);
-            b.Trigger<KillVolume>("Kill volume (hall floor)", V(-40f, HallFloor, 12f), V(40f, HallFloor + 1.5f, 88f));
+            b.Box("Hall floor (respawn)", V(-h, Deep, 12f), V(h, HallFloor, 88f), CourseKit.Or(k.respawnFloor, k.trimBlack), false);
+            b.Trigger<KillVolume>("Kill volume (hall floor)", V(-h, HallFloor, 12f), V(h, HallFloor + 1.5f, 88f));
             b.Trigger<KillVolume>("Kill volume (far below)", V(-70f, -42f, -30f), V(70f, -40f, 150f));
             // Walls: west, east and north (the gallery's windows are in it), south beside the foyer.
-            Solid(b, "Hall wall W", V(-42f, Deep, 12f), V(-40f, 26f, 88f));
-            Solid(b, "Hall wall E", V(40f, Deep, 12f), V(42f, 26f, 88f));
-            Solid(b, "Hall wall N (west)", V(-40f, Deep, 86f), V(-8f, 26f, 88f));
-            Solid(b, "Hall wall N (east)", V(8f, Deep, 86f), V(40f, 26f, 88f));
-            Solid(b, "Hall wall S (west)", V(-40f, Deep, 12f), V(-21f, 26f, 14f));
-            Solid(b, "Hall wall S (east)", V(21f, Deep, 12f), V(40f, 26f, 14f));
+            Solid(b, "Hall wall W", V(-h - 2f, Deep, 12f), V(-h, 26f, 88f));
+            Solid(b, "Hall wall E", V(h, Deep, 12f), V(h + 2f, 26f, 88f));
+            Solid(b, "Hall wall N (west)", V(-h, Deep, 86f), V(-8f, 26f, 88f));
+            Solid(b, "Hall wall N (east)", V(8f, Deep, 86f), V(h, 26f, 88f));
+            Solid(b, "Hall wall S (west)", V(-h, Deep, 12f), V(-21f, 26f, 14f));
+            Solid(b, "Hall wall S (east)", V(21f, Deep, 12f), V(h, 26f, 14f));
             // Chandeliers hanging over the landing (pictures; the falling ones are ChandelierRain's own).
-            foreach (var at in new[] { V(-9f, 21f, 55f), V(9f, 21f, 55f), V(-9f, 21f, 63f), V(9f, 21f, 63f), V(0f, 22f, 57f), V(-20f, 22f, 70f), V(20f, 22f, 70f) })
+            foreach (var at in new[] { V(-9f, 21f, 55f), V(9f, 21f, 55f), V(-9f, 21f, 63f), V(9f, 21f, 63f), V(0f, 22f, 57f),
+                                       V(-19f, 21f, 59f), V(19f, 21f, 59f), V(-31f, 22f, 72f), V(31f, 22f, 72f) })
             {
                 b.Cylinder("Chandelier ring", at, 2.4f, .12f, k.rankGold, false);
                 b.Cylinder("Chandelier column", at, .25f, .7f, k.rankGold, false);
@@ -218,11 +222,13 @@ namespace ChessFight.PawnRush
         }
 
         // Both routes, the same length (the wings are mirrors): white = by the west wing, black = by the east.
+        // R150: the wing's points stand WingOut (11 m) further out; P14 -> P15 crosses bridge A, the island and
+        // bridge B.
         static readonly Vector3[] WestRoute =
         {
             V(0, 0, -12), V(0, 0, -6), V(0, 0, 13.5f), V(0, 4, 29.5f), V(0, 4, 35.5f), V(0, 8, 51.5f), V(0, 8, 54),     // P0..P6
-            V(-8, 8, 60), V(-13.333f, 8, 60), V(-29.333f, 11, 60), V(-36, 11, 60), V(-36, 11, 65.417f),                  // P7..P11
-            V(-36, 14, 79.417f), V(-36, 14, 83), V(-13.8f, 14, 83), V(-6, 14, 83), V(-3.35f, 14, 87),                     // P12..P16
+            V(-14, 8, 60), V(-24.333f, 8, 60), V(-40.333f, 11, 60), V(-47, 11, 60), V(-47, 11, 65.417f),                 // P7..P11
+            V(-47, 14, 79.417f), V(-47, 14, 83), V(-24.8f, 14, 83), V(-6, 14, 83), V(-3.35f, 14, 87),                     // P12..P16
             V(-3.35f, 14, 91.35f), V(-3.35f, 20, 91.35f), V(0, 20, 96), V(0, 20, 102), V(0, 20, 123), V(0, 20, 126),    // P17..P22
             V(0, 19, 128), V(0, 19, 132),                                                                              // P23..P24
         };
@@ -245,12 +251,12 @@ namespace ChessFight.PawnRush
         public static SectionBeat[] Beats() => new[]
         {
             new SectionBeat("1 굴러떨어지는 대계단", V(-21f, -2f, -13f), V(21f, 12f, 51f)),
-            new SectionBeat("2 중앙 계단참 샹들리에 낙하", V(-14f, 6f, 51f), V(14f, 18f, 66f)),
-            new SectionBeat("3 갈라지는 날개 계단", V(-41f, 6f, 53f), V(-14f, 20f, 80f)),
-            new SectionBeat("3 갈라지는 날개 계단", V(14f, 6f, 53f), V(41f, 20f, 80f)),
-            new SectionBeat("4 창가 회랑 바람", V(-41f, 12f, 80f), V(-13.8f, 22f, 86f)),
-            new SectionBeat("4 창가 회랑 바람", V(13.8f, 12f, 80f), V(41f, 22f, 86f)),
-            new SectionBeat("5 다리와 승강 계단참", V(-13.8f, 10f, 77f), V(13.8f, 23f, 94.7f)),
+            new SectionBeat("2 중앙 계단참 샹들리에 낙하", V(-LandingHalf, 6f, 51f), V(LandingHalf, 18f, 66f)),
+            new SectionBeat("3 갈라지는 날개 계단", V(-HallHalf - 1f, 6f, 51f), V(-LandingHalf, 20f, 80f)),
+            new SectionBeat("3 갈라지는 날개 계단", V(LandingHalf, 6f, 51f), V(HallHalf + 1f, 20f, 80f)),
+            new SectionBeat("4 창가 회랑 바람", V(-HallHalf - 1f, 12f, 80f), V(-13.8f - WingOut, 22f, 86f)),
+            new SectionBeat("4 창가 회랑 바람", V(13.8f + WingOut, 12f, 80f), V(HallHalf + 1f, 22f, 86f)),
+            new SectionBeat("5 다리와 승강 계단참", V(-13.8f - WingOut, 10f, 77f), V(13.8f + WingOut, 23f, 94.7f)),
             new SectionBeat("6 왕실 발코니와 대문", V(-9f, 17f, 94.7f), V(9f, 30f, 133f)),
         };
     }

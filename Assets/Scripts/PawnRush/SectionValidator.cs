@@ -16,8 +16,9 @@ namespace ChessFight.PawnRush
     {
         static readonly string[] MustBeUnclimbable =
         {
-            "Hall wall", "Foyer wall", "Porch wall", "Foyer pillar", "Wing stair 1 rail", "Wing stair 2 rail", "King statue",
+            "Hall wall", "Foyer wall", "Porch wall", "Foyer pillar", "Wing ledge rail", "Wing stair 2 rail", "King statue",
             "Knight alcove", "Wing portcullis", "Lift shaft wall", "Gate wall", "Balcony wall", "Tile body", "Lift landing E (wall",
+            "Island", "Chandelier beam",
         };
 
         public static List<string> Run(PawnRushSection section, List<string> notes)
