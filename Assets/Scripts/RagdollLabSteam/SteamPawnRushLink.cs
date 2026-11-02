@@ -139,6 +139,12 @@ namespace ChessFight.RagdollLab.Net
         double playback;
         readonly PlaybackDelay delay = new PlaybackDelay();
         float roundTripMs;
+        // R297: the match's metrics box (NetMetricsOverlay, a development build, F3): what went out and came in, a second.
+        int sentBytes, receivedBytes, snapshotsOut, snapshotsIn, snapshotBytesLast;
+        int sentRate, receivedRate, snapshotOutRate, snapshotInRate;
+        float statsAt;
+        // R297: a development build's autopilot (-autopilot, AutoPilot) plays this PC's pawn.
+        AutoPilot pilot;
 
         // A client's own presses, counted (D-S7), and the rest of its input waiting for the next send.
         RagdollLabInput pending;
@@ -227,6 +233,29 @@ namespace ChessFight.RagdollLab.Net
             TeamZone.Intruded += OnIntruded;
             RagdollPawn.SkillFx += OnPawnRushFx;
             SyncRoster();
+            NetMetricsOverlay.Attach(gameObject, CurrentMetrics);
+            if (Debug.isDebugBuild && AutoPilot.Requested(Environment.GetCommandLineArgs(), session.Self, out uint seed))
+                pilot = new AutoPilot(seed);
+        }
+
+        /// <summary>R297: the numbers of the match's metrics box (NetMetricsOverlay).</summary>
+        NetMetrics CurrentMetrics() => new NetMetrics
+        {
+            Host = authority, Players = runners.Count, SentBytes = sentRate, ReceivedBytes = receivedRate,
+            SnapshotBytes = snapshotBytesLast, SnapshotsSent = snapshotOutRate, SnapshotsReceived = snapshotInRate,
+            RoundTripMs = roundTripMs, PlaybackDelayMs = delay.Milliseconds, LossShare = delay.LossShare,
+            Piloted = pilot != null, PilotSeed = pilot != null ? pilot.Seed : 0u,
+        };
+
+        void UpdateStats()
+        {
+            if (Time.realtimeSinceStartup < statsAt) return;
+            statsAt = Time.realtimeSinceStartup + 1f;
+            sentRate = sentBytes;
+            receivedRate = receivedBytes;
+            snapshotOutRate = snapshotsOut;
+            snapshotInRate = snapshotsIn;
+            sentBytes = receivedBytes = snapshotsOut = snapshotsIn = 0;
         }
 
         void OnDestroy()
@@ -444,6 +473,7 @@ namespace ChessFight.RagdollLab.Net
                 session.ReportHostSilence(silence);
                 if (silence > SilenceTimeout && !ended) session.Abort("폰 러쉬 방장 연결이 끊어졌습니다.");
             }
+            UpdateStats();
         }
 
         // Host: every other player's latest input, the presses one per physics step, or standing still once it is
@@ -484,6 +514,7 @@ namespace ChessFight.RagdollLab.Net
         PawnInput ReadLocalInput()
         {
             var intent = controls.Read();
+            if (pilot != null) return Piloted();
             bool blocked = runtime.InputBlocked || !Application.isFocused || (orbit != null && orbit.FreeFly);
             bool use = !blocked && intent.Interact;
             bool skill = use && !useWasDown;
@@ -497,6 +528,21 @@ namespace ChessFight.RagdollLab.Net
                 aim = orbit != null ? orbit.AimForward : Vector3.forward,
                 jump = intent.Jump, shove = intent.Shove, shoveHeld = intent.ShoveHeld, grab = intent.Grab,
                 sprint = intent.Sprint, ability = intent.Ability, ability2 = intent.Ability2, skill = skill,
+            };
+        }
+
+        // R297: the autopilot's keys in place of the player's - a walk against the orbit camera, a sprint, a jump, a click
+        // and the skill key - whether the window is in front or not; nothing behind the loading screen or the chat.
+        PawnInput Piloted()
+        {
+            var f = pilot.Step(Time.unscaledDeltaTime);
+            if (runtime.InputBlocked) return default;
+            Vector3 move = orbit != null ? orbit.FlatRight * f.MoveX + orbit.FlatForward * f.MoveY : new Vector3(f.MoveX, 0f, f.MoveY);
+            return new PawnInput
+            {
+                move = Vector3.ClampMagnitude(move, 1f),
+                aim = orbit != null ? orbit.AimForward : Vector3.forward,
+                jump = f.Jump, shove = f.Click, sprint = f.Sprint, skill = f.Skill,
             };
         }
 
@@ -585,6 +631,8 @@ namespace ChessFight.RagdollLab.Net
             }
             // The obstacle time these poses were simulated at: clients draw the obstacles at it.
             byte[] bytes = RagdollNetProtocol.Snapshot(session.Match, tick, stamp, outgoing, ObstacleClock.Now);
+            snapshotBytesLast = bytes.Length;
+            snapshotsOut++;
             foreach (var id in session.Roster.Keys) Send(id, bytes, false);
             SendSkills(stamp);
             SendState(stamp);
@@ -683,6 +731,7 @@ namespace ChessFight.RagdollLab.Net
         void Send(ulong id, byte[] bytes, bool reliable)
         {
             if (id == session.Self || !session.IsPeer(id) || BotIdentity.IsBot(id)) return;
+            sentBytes += bytes.Length;
             var identity = new SteamNetworkingIdentity();
             identity.SetSteamID64(id);
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
@@ -707,6 +756,7 @@ namespace ChessFight.RagdollLab.Net
                     var msg = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
                     ulong id = msg.m_identityPeer.GetSteamID64();
                     if (!session.IsPeer(id) || msg.m_cbSize <= 0 || msg.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
+                    receivedBytes += msg.m_cbSize;
                     byte[] bytes = new byte[msg.m_cbSize];
                     Marshal.Copy(msg.m_pData, bytes, 0, bytes.Length);
                     if (authority) ReceiveInput(id, bytes);
@@ -822,6 +872,8 @@ namespace ChessFight.RagdollLab.Net
             }
             int lost = lastPose != 0 ? (int)Math.Min(30u, snap.tick - lastPose - 1) : 0;
             lastPose = snap.tick;
+            snapshotsIn++;
+            snapshotBytesLast = bytes.Length;
             hostSilence.Heard(Time.realtimeSinceStartup);
             delay.Arrived(Time.realtimeSinceStartupAsDouble * 1000d, snap.hostTimeMs, lost);
             // Round trip: my input's time as the host echoes it.

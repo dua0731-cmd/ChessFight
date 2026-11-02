@@ -1472,6 +1472,51 @@ public static class NetworkCoreTests
                 Check(Near(SkillClipTiming.At(m, SkillClipTiming.Recovery, -1f, 0.3f, 1.5f), 0.9f), "no time before a stage");
                 Check(Near(SkillClipTiming.In(0f, 0.1f, 0.8f), 0f) && Near(SkillClipTiming.In(0.05f, 0.1f, 0.8f), 0.4f)
                       && Near(SkillClipTiming.In(1f, 0.1f, 0.8f), 0.8f) && Near(SkillClipTiming.In(0f, 0f, 2f), 1f), "blend in, capped"); });
+            Test("Autopilot (R297): the same seed and steps give the same keys, another seed other keys", () => {
+                var a = new AutoPilot(1234); var b = new AutoPilot(1234); var c = new AutoPilot(99);
+                bool differs = false;
+                for (int i = 0; i < 20000; i++)
+                {
+                    float dt = i % 7 == 0 ? 0.033f : 0.0167f;
+                    var x = a.Step(dt); var y = b.Step(dt); var z = c.Step(dt);
+                    Check(x.MoveX == y.MoveX && x.MoveY == y.MoveY && x.Sprint == y.Sprint && x.Jump == y.Jump && x.Skill == y.Skill
+                          && x.Click == y.Click, "same seed, step " + i);
+                    if (x.MoveX != z.MoveX || x.Jump != z.Jump || x.Skill != z.Skill) differs = true;
+                }
+                Check(differs, "another seed plays differently"); });
+            Test("Autopilot (R297): walks forward on the whole, presses now and then, a move never longer than 1", () => {
+                var p = new AutoPilot(7);
+                int jumps = 0, skills = 0, clicks = 0, moving = 0, steps = 60 * 600;   // ten minutes at 60 frames a second
+                double forward = 0;
+                for (int i = 0; i < steps; i++)
+                {
+                    var f = p.Step(1f / 60f);
+                    float length = (float)Math.Sqrt(f.MoveX * f.MoveX + f.MoveY * f.MoveY);
+                    Check(length <= 1.0001f, "length " + length);
+                    if (length > 0.5f) { moving++; forward += f.MoveY; }
+                    if (f.Sprint) Check(length > 0.5f, "no sprint standing still");
+                    if (f.Jump) jumps++;
+                    if (f.Skill) skills++;
+                    if (f.Click) clicks++;
+                }
+                double minutes = steps / 3600.0;
+                Check(moving > steps * 0.7, "mostly walking: " + moving);
+                Check(forward / moving > 0.6, "forward on the whole: " + forward / moving);
+                Check(jumps / minutes >= 20 && jumps / minutes <= 80, "jumps a minute " + jumps / minutes);
+                Check(skills / minutes >= 5 && skills / minutes <= 16, "skill presses a minute " + skills / minutes);
+                Check(clicks / minutes >= 9 && clicks / minutes <= 31, "clicks a minute " + clicks / minutes);
+                // A press is one step: the next step never repeats it.
+                var q = new AutoPilot(7);
+                bool last = false;
+                for (int i = 0; i < 6000; i++) { var f = q.Step(1f / 60f); Check(!(f.Jump && last), "jump held"); last = f.Jump; } });
+            Test("Autopilot (R297): asked on the command line, with a seed of its own or one made from the PC's id", () => {
+                uint seed, s1, s2;
+                Check(!AutoPilot.Requested(new[] { "game.exe" }, 5, out seed) && !AutoPilot.Requested(null, 5, out seed), "not asked");
+                Check(AutoPilot.Requested(new[] { "game.exe", "-autopilot=42" }, 5, out seed) && seed == 42, "given seed");
+                Check(!AutoPilot.Requested(new[] { "-autopilot=x" }, 5, out seed), "not a number");
+                Check(AutoPilot.Requested(new[] { "-autopilot" }, 76561198000000001UL, out s1)
+                      && AutoPilot.Requested(new[] { "-autopilot" }, 76561198000000002UL, out s2) && s1 != s2 && s1 != 0, "every PC its own");
+                Check(AutoPilot.Requested(new[] { "-autopilot" }, 0, out seed) && seed != 0, "never 0"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

@@ -332,7 +332,18 @@ namespace ChessFight.RagdollLab
             // P1's camera specifically: local split screen adds a second LabCamera for P2.
             cam = game != null && game.labCamera != null ? game.labCamera : FindFirstObjectByType<LabCamera>();
             if (game == null) SwordAwake();
+            // R297: the match's metrics box (a development build, F3); the test rooms have their own F3 panel.
+            if (RealMatch) NetMetricsOverlay.Attach(gameObject, CurrentMetrics);
         }
+
+        /// <summary>R297: the numbers of the match's metrics box (NetMetricsOverlay).</summary>
+        NetMetrics CurrentMetrics() => new NetMetrics
+        {
+            Host = IsHost, Players = pawns.Count, SentBytes = sentRate, ReceivedBytes = receivedRate,
+            SnapshotBytes = snapshotBytesLast, SnapshotsSent = snapshotOutRate, SnapshotsReceived = snapshotRate,
+            RoundTripMs = roundTripMs, PlaybackDelayMs = delay.Milliseconds, LossShare = delay.LossShare,
+            Piloted = pilot != null, PilotSeed = pilot != null ? pilot.Seed : 0u,
+        };
 
         protected virtual void OnEnable()
         {
