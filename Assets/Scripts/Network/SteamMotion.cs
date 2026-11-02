@@ -267,6 +267,16 @@ namespace ChessFight.Network
             var identity = new SteamNetworkingIdentity(); identity.SetSteamID64(id);
             SteamNetworkingMessages.CloseSessionWithUser(ref identity);
         }
+        // R295: a host change ends only this stream with the old host. The Steam
+        // session with them also carries the voice (channel 40) and the match
+        // scenes' streams, and the old host is usually still in the match:
+        // closing the whole session cut their voice.
+        void CloseChannel(ulong id)
+        {
+            if (!connected.Remove(id)) return;
+            var identity = new SteamNetworkingIdentity(); identity.SetSteamID64(id);
+            SteamNetworkingMessages.CloseChannelWithUser(ref identity, Channel);
+        }
         void Reset()
         {
             foreach (ulong id in connected.ToArray()) Close(id);
@@ -282,7 +292,7 @@ namespace ChessFight.Network
         void OnHostChanged(ulong previous, ulong next)
         {
             float now = Time.realtimeSinceStartup;
-            Close(previous);
+            CloseChannel(previous);
             inputs.Clear(); lastInput.Clear(); jumpBaseline.Clear(); unacknowledged.Clear(); bots.Clear();
             delayedIn.Clear(); response.Clear();
             accumulator = 0; nextSnapshot = 0;

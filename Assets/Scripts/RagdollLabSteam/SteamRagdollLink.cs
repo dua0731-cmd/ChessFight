@@ -126,27 +126,23 @@ namespace ChessFight.RagdollLab.Net
 
         void OnHostChanged(ulong previous, ulong next)
         {
-            CloseSession(previous);
+            if (connected.Remove(previous)) CloseChannel(previous);
             HostChanged(previous, next);
         }
 
         protected override void OnStreamReset()
         {
-            foreach (ulong id in connected)
-            {
-                var identity = new SteamNetworkingIdentity();
-                identity.SetSteamID64(id);
-                SteamNetworkingMessages.CloseSessionWithUser(ref identity);
-            }
+            foreach (ulong id in connected) CloseChannel(id);
             connected.Clear();
         }
 
-        void CloseSession(ulong id)
+        // R295: only this link's channel. The Steam session with a player carries other streams too (the voice), and a
+        // host change, with the old host usually still in the match, or a new match used to close all of it.
+        static void CloseChannel(ulong id)
         {
-            if (!connected.Remove(id)) return;
             var identity = new SteamNetworkingIdentity();
             identity.SetSteamID64(id);
-            SteamNetworkingMessages.CloseSessionWithUser(ref identity);
+            SteamNetworkingMessages.CloseChannelWithUser(ref identity, Channel);
         }
 
         // ---------------------------------------------------------------- transport
