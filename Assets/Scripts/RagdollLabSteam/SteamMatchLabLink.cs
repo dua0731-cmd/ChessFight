@@ -23,6 +23,8 @@ namespace ChessFight.RagdollLab.Net
         SteamSession session;
         Callback<SteamNetworkingMessagesSessionRequest_t> sessionRequests;
         readonly IntPtr[] incoming = new IntPtr[64];
+        // Every message read into one reused array of its length (R297): LabNetLink copies what it keeps.
+        readonly PacketPool received = new PacketPool(RagdollNetProtocol.MaxBytes);
         readonly HashSet<ulong> connected = new HashSet<ulong>();
         readonly Dictionary<ulong, LabSeat> roster = new Dictionary<ulong, LabSeat>();
 
@@ -106,7 +108,7 @@ namespace ChessFight.RagdollLab.Net
                         var packet = SteamNetworkingMessage_t.FromIntPtr(incoming[i]);
                         ulong sender = packet.m_identityPeer.GetSteamID64();
                         if (!session.IsPeer(sender) || packet.m_cbSize <= 0 || packet.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
-                        var bytes = new byte[packet.m_cbSize];
+                        var bytes = received.Get(packet.m_cbSize);
                         Marshal.Copy(packet.m_pData, bytes, 0, bytes.Length);
                         deliver(sender, bytes);
                     }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace ChessFight.Network
 {
@@ -77,104 +76,101 @@ namespace ChessFight.Network
 
         public static int PoseLength(byte hook) => hook >= HookTail ? MaxPoseBytes : PoseBytes;
 
+        // R297 [3]: one stream, writer and reader for every snapshot (a snapshot's array lasts until the next one).
+        static readonly PacketStreams streams = new PacketStreams(MaxBytes);
+
         public static byte[] Snapshot(ulong session, uint tick, uint hostTimeMs, double obstacleTime, IReadOnlyList<PoseWire> poses, int count)
         {
             count = Math.Max(0, Math.Min(Math.Min(count, poses.Count), MaxPawns));
-            int length = HeaderBytes;
-            for (int i = 0; i < count; i++) length += PoseLength(poses[i].Hook);
-            using (var stream = new MemoryStream(length))
-            using (var w = new BinaryWriter(stream))
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeSnapshot);
+            w.Write(session);
+            w.Write(tick);
+            w.Write(hostTimeMs);
+            w.Write(obstacleTime);
+            w.Write((byte)count);
+            for (int i = 0; i < count; i++)
             {
-                w.Write(Magic);
-                w.Write(TypeSnapshot);
-                w.Write(session);
-                w.Write(tick);
-                w.Write(hostTimeMs);
-                w.Write(obstacleTime);
-                w.Write((byte)count);
-                for (int i = 0; i < count; i++)
+                var p = poses[i];
+                w.Write(p.Id);
+                w.Write(p.HipsX);
+                w.Write(p.HipsY);
+                w.Write(p.HipsZ);
+                for (int b = 0; b < Bodies; b++) w.Write(p.Rotations[b]);
+                w.Write(p.Flags);
+                w.Write(p.Stamina);
+                w.Write(p.Escape);
+                w.Write(p.Hook);
+                if (p.Hook >= HookTail)
                 {
-                    var p = poses[i];
-                    w.Write(p.Id);
-                    w.Write(p.HipsX);
-                    w.Write(p.HipsY);
-                    w.Write(p.HipsZ);
-                    for (int b = 0; b < Bodies; b++) w.Write(p.Rotations[b]);
-                    w.Write(p.Flags);
-                    w.Write(p.Stamina);
-                    w.Write(p.Escape);
-                    w.Write(p.Hook);
-                    if (p.Hook >= HookTail)
-                    {
-                        w.Write(p.HookCharge);
-                        w.Write(p.HookX);
-                        w.Write(p.HookY);
-                        w.Write(p.HookZ);
-                    }
-                    w.Write(p.Piece);
-                    w.Write(p.Ack);
+                    w.Write(p.HookCharge);
+                    w.Write(p.HookX);
+                    w.Write(p.HookY);
+                    w.Write(p.HookZ);
                 }
-                return stream.ToArray();
+                w.Write(p.Piece);
+                w.Write(p.Ack);
             }
+            return streams.Finish();
         }
 
         public static bool ReadSnapshot(byte[] bytes, ulong session, SnapshotWire into)
         {
             if (into == null || bytes == null || bytes.Length < HeaderBytes || bytes.Length > MaxBytes) return false;
-            using (var r = new BinaryReader(new MemoryStream(bytes)))
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSnapshot || r.ReadUInt64() != session) return false;
+            uint tick = r.ReadUInt32();
+            uint hostTimeMs = r.ReadUInt32();
+            double obstacleTime = r.ReadDouble();
+            if (double.IsNaN(obstacleTime) || double.IsInfinity(obstacleTime)) return false;
+            int count = r.ReadByte();
+            if (count > MaxPawns || bytes.Length < HeaderBytes + count * PoseBytes || bytes.Length > HeaderBytes + count * MaxPoseBytes)
+                return false;
+            // Read so far: every pawn's length comes from its own hook, and the packet must end with the last one.
+            int at = HeaderBytes;
+            for (int i = 0; i < count; i++)
             {
-                if (r.ReadUInt32() != Magic || r.ReadByte() != TypeSnapshot || r.ReadUInt64() != session) return false;
-                uint tick = r.ReadUInt32();
-                uint hostTimeMs = r.ReadUInt32();
-                double obstacleTime = r.ReadDouble();
-                if (double.IsNaN(obstacleTime) || double.IsInfinity(obstacleTime)) return false;
-                int count = r.ReadByte();
-                if (count > MaxPawns || bytes.Length < HeaderBytes + count * PoseBytes || bytes.Length > HeaderBytes + count * MaxPoseBytes)
-                    return false;
-                // Read so far: every pawn's length comes from its own hook, and the packet must end with the last one.
-                int at = HeaderBytes;
-                var seen = new HashSet<ulong>();
-                for (int i = 0; i < count; i++)
+                if (bytes.Length - at < PoseBytes) return false;
+                var p = into.At(i);
+                p.Id = r.ReadUInt64();
+                if (p.Id == 0) return false;
+                // Each pawn once: the ones read so far, at most 11 (no new set for every snapshot, R297).
+                for (int j = 0; j < i; j++) if (into.At(j).Id == p.Id) return false;
+                p.HipsX = r.ReadInt16();
+                p.HipsY = r.ReadInt16();
+                p.HipsZ = r.ReadInt16();
+                for (int b = 0; b < Bodies; b++) p.Rotations[b] = r.ReadUInt32();
+                // Every bit of the flags byte is used; the state's two bits are range-checked.
+                p.Flags = r.ReadByte();
+                p.Stamina = r.ReadByte();
+                p.Escape = r.ReadByte();
+                p.Hook = r.ReadByte();
+                if ((p.Flags & 3) > 2 || p.Hook > MaxHook) return false;
+                if (p.Hook >= HookTail)
                 {
-                    if (bytes.Length - at < PoseBytes) return false;
-                    var p = into.At(i);
-                    p.Id = r.ReadUInt64();
-                    if (p.Id == 0 || !seen.Add(p.Id)) return false;
-                    p.HipsX = r.ReadInt16();
-                    p.HipsY = r.ReadInt16();
-                    p.HipsZ = r.ReadInt16();
-                    for (int b = 0; b < Bodies; b++) p.Rotations[b] = r.ReadUInt32();
-                    // Every bit of the flags byte is used; the state's two bits are range-checked.
-                    p.Flags = r.ReadByte();
-                    p.Stamina = r.ReadByte();
-                    p.Escape = r.ReadByte();
-                    p.Hook = r.ReadByte();
-                    if ((p.Flags & 3) > 2 || p.Hook > MaxHook) return false;
-                    if (p.Hook >= HookTail)
-                    {
-                        if (bytes.Length - at < MaxPoseBytes) return false;
-                        p.HookCharge = r.ReadByte();
-                        p.HookX = r.ReadInt16();
-                        p.HookY = r.ReadInt16();
-                        p.HookZ = r.ReadInt16();
-                    }
-                    else
-                    {
-                        p.HookCharge = 0;
-                        p.HookX = p.HookY = p.HookZ = 0;
-                    }
-                    p.Piece = r.ReadByte();
-                    p.Ack = r.ReadUInt16();
-                    if (!ChessPieces.IsValid(p.Piece)) return false;
-                    at += PoseLength(p.Hook);
+                    if (bytes.Length - at < MaxPoseBytes) return false;
+                    p.HookCharge = r.ReadByte();
+                    p.HookX = r.ReadInt16();
+                    p.HookY = r.ReadInt16();
+                    p.HookZ = r.ReadInt16();
                 }
-                if (at != bytes.Length) return false;
-                into.Tick = tick;
-                into.HostTimeMs = hostTimeMs;
-                into.ObstacleTime = obstacleTime;
-                into.Count = count;
-                return true;
+                else
+                {
+                    p.HookCharge = 0;
+                    p.HookX = p.HookY = p.HookZ = 0;
+                }
+                p.Piece = r.ReadByte();
+                p.Ack = r.ReadUInt16();
+                if (!ChessPieces.IsValid(p.Piece)) return false;
+                at += PoseLength(p.Hook);
             }
+            if (at != bytes.Length) return false;
+            into.Tick = tick;
+            into.HostTimeMs = hostTimeMs;
+            into.ObstacleTime = obstacleTime;
+            into.Count = count;
+            return true;
         }
 
         /// <summary>A client's round trip from the snapshot's echo of its own send time: the milliseconds since then on its

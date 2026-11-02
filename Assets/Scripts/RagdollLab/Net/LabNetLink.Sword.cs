@@ -78,6 +78,13 @@ namespace ChessFight.RagdollLab
         readonly List<(byte id, SwordWireCollapse data, double beginMs)> collapseWaiting = new List<(byte, SwordWireCollapse, double)>();
         readonly List<byte> collapseGone = new List<byte>();
 
+        // Not collapseWaiting.Exists with a lambda: a new closure for every collapse in every packet (R297).
+        bool CollapseWaiting(byte id)
+        {
+            for (int i = 0; i < collapseWaiting.Count; i++) if (collapseWaiting[i].id == id) return true;
+            return false;
+        }
+
         // Development presses (the loopback tests' commands, RunDev). For a while after any command the camera's aim goes
         // with every input: a test window is not in front, so the game reads no aim from it, and the aim of the one frame
         // a command came in was overwritten before the next input packet left (a queen dashing the camera's old way).
@@ -717,7 +724,7 @@ namespace ChessFight.RagdollLab
             foreach (var c in swordIn.Collapses)
             {
                 collapseSeen[c.Id] = now;
-                if (remoteCollapses.ContainsKey(c.Id) || collapseWaiting.Exists(x => x.id == c.Id)) continue;
+                if (remoteCollapses.ContainsKey(c.Id) || CollapseWaiting(c.Id)) continue;
                 collapseWaiting.Add((c.Id, c, swordIn.HostTimeMs - c.Age * 1000d));
             }
             collapseGone.Clear();

@@ -1059,7 +1059,7 @@ namespace ChessFight.RagdollLab
             while (n < eventQueue.Count && eventQueue[n].TimeMs <= playbackMs + 0.5d) n++;
             // Taken off the queue first: an effect that throws must not hold up the ones after it.
             eventBatch.Clear();
-            eventBatch.AddRange(eventQueue.GetRange(0, n));
+            for (int i = 0; i < n; i++) eventBatch.Add(eventQueue[i]);   // not GetRange: a new list every frame (R297)
             eventQueue.RemoveRange(0, n);
             foreach (var e in eventBatch)
             {
@@ -1414,18 +1414,23 @@ namespace ChessFight.RagdollLab
             sentBytes += bytes.Length;
             if (lagOut.Profile.Active)
             {
-                lagOut.Push(new Packet { peer = id, bytes = bytes }, Time.realtimeSinceStartupAsDouble);
+                // A copy: a packet's array is reused for the next one of its length (R297, PacketPool).
+                lagOut.Push(new Packet { peer = id, bytes = (byte[])bytes.Clone() }, Time.realtimeSinceStartupAsDouble);
                 return;
             }
             NetSend(id, bytes);
         }
 
-        void PumpSend() => lagOut.Release(Time.realtimeSinceStartupAsDouble, p => NetSend(p.peer, p.bytes));
+        // Made once (R297): a method group or lambda passed every frame is a new delegate every frame.
+        Action<ulong, byte[]> onRaw;
+        Action<Packet> sendLate, deliverLate;
+
+        void PumpSend() => lagOut.Release(Time.realtimeSinceStartupAsDouble, sendLate ?? (sendLate = p => NetSend(p.peer, p.bytes)));
 
         void PumpReceive()
         {
-            NetReceive(OnRaw);
-            lagIn.Release(Time.realtimeSinceStartupAsDouble, p => Deliver(p.peer, p.bytes));
+            NetReceive(onRaw ?? (onRaw = OnRaw));
+            lagIn.Release(Time.realtimeSinceStartupAsDouble, deliverLate ?? (deliverLate = p => Deliver(p.peer, p.bytes)));
         }
 
         void OnRaw(ulong sender, byte[] bytes)
@@ -1435,7 +1440,8 @@ namespace ChessFight.RagdollLab
             // A test's own commands are not part of the link under test: never delayed or lost by F12.
             if (lagIn.Profile.Active && RagdollNetProtocol.TypeOf(bytes) != RagdollNetProtocol.TypeDev)
             {
-                lagIn.Push(new Packet { peer = sender, bytes = bytes }, Time.realtimeSinceStartupAsDouble);
+                // A copy: the link reads every message into one reused array of its length (R297).
+                lagIn.Push(new Packet { peer = sender, bytes = (byte[])bytes.Clone() }, Time.realtimeSinceStartupAsDouble);
                 return;
             }
             Deliver(sender, bytes);

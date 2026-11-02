@@ -125,6 +125,8 @@ namespace ChessFight.RagdollLab.Net
         readonly Dictionary<RagdollPawn, Runner> byPawn = new Dictionary<RagdollPawn, Runner>();
         readonly List<ulong> gone = new List<ulong>();
         readonly IntPtr[] incoming = new IntPtr[64];
+        // Every message read into one reused array of its length (R297): nothing here keeps one past its turn.
+        readonly PacketPool inbound = new PacketPool(RagdollNetProtocol.MaxBytes);
         readonly Dictionary<ulong, RagdollPose> poses = new Dictionary<ulong, RagdollPose>();
         readonly Dictionary<ulong, int> snaps = new Dictionary<ulong, int>();
         readonly List<RagdollPose> outgoing = new List<RagdollPose>();
@@ -758,7 +760,7 @@ namespace ChessFight.RagdollLab.Net
                     ulong id = msg.m_identityPeer.GetSteamID64();
                     if (!session.IsPeer(id) || msg.m_cbSize <= 0 || msg.m_cbSize > RagdollNetProtocol.MaxBytes) continue;
                     receivedBytes += msg.m_cbSize;
-                    byte[] bytes = new byte[msg.m_cbSize];
+                    byte[] bytes = inbound.Get(msg.m_cbSize);
                     Marshal.Copy(msg.m_pData, bytes, 0, bytes.Length);
                     if (authority) ReceiveInput(id, bytes);
                     else if (id == session.Host)
@@ -1054,7 +1056,7 @@ namespace ChessFight.RagdollLab.Net
             while (n < eventQueue.Count && eventQueue[n].TimeMs <= playback + 0.5d) n++;
             // Taken off the queue first: an effect that throws must not hold up the ones after it.
             eventBatch.Clear();
-            eventBatch.AddRange(eventQueue.GetRange(0, n));
+            for (int i = 0; i < n; i++) eventBatch.Add(eventQueue[i]);   // not GetRange: a new list every frame (R297)
             eventQueue.RemoveRange(0, n);
             foreach (var e in eventBatch)
             {

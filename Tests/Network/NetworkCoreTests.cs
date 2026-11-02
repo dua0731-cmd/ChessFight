@@ -516,7 +516,7 @@ public static class NetworkCoreTests
                 Check(!MotionProtocol.ReadInput(new byte[25],1,out _),"truncated");
                 foreach(float x in new[]{float.NaN,float.PositiveInfinity,2f}) Check(!MotionProtocol.ReadInput(MotionProtocol.Input(1,new MoveInput {X=x}),1,out _),"invalid input"); });
             Test("Twelve-player snapshot roundtrip stays within packet budget", () => {
-                var pawns=Enumerable.Range(1,12).Select(i=>PawnMotor.Spawn((ulong)i,(i-1)/6,(i-1)%6));
+                var pawns=Enumerable.Range(1,12).Select(i=>PawnMotor.Spawn((ulong)i,(i-1)/6,(i-1)%6)).ToList();
                 var bytes=MotionProtocol.Snapshot(42,7,pawns);
                 Check(bytes.Length<MotionProtocol.MaxBytes && MotionProtocol.ReadSnapshot(bytes,42,out uint tick,out var parsed)&&tick==7&&parsed.Count==12,"snapshot"); });
             Test("Malformed snapshots never throw and never accept partial packets", () => {
@@ -665,7 +665,9 @@ public static class NetworkCoreTests
                       && Math.Abs(r.ReadUnit16(360f) - 271.5f) < .01f && r.ReadU8() == 0, "block 0 fields, then nothing");
                 Check(b.BlockLength[2] == PawnRushNetState.BlockBytes && b.Block[2][31] == 32 && b.BlockLength[1] == 0, "a full block and an empty one");
                 var copy = new PawnRushNetState(); copy.CopyFrom(b);
-                Check(copy.Write(42UL).SequenceEqual(bytes), "copy writes the same bytes");
+                // R297: a written state's array is reused for the next one of its length, so compare with a copy.
+                var sent = (byte[])bytes.Clone();
+                Check(copy.Write(42UL).SequenceEqual(sent), "copy writes the same bytes");
                 Check(!PawnRushNetState.Read(bytes, 43UL, b), "another match");
                 var cut = new byte[bytes.Length - 1]; Array.Copy(bytes, cut, cut.Length);
                 Check(!PawnRushNetState.Read(cut, 42UL, b), "short packet");
@@ -1709,7 +1711,31 @@ public static class NetworkCoreTests
                       "through a packet"); });
             Test("Packets (R297 [3]): every Core packet's bytes for a fixed input are the ones pinned before their buffers were reused", () => {
                 string got = GoldenBytes();
-                Check(got == Golden, "bytes changed: " + got); });
+                Check(got == Golden, "bytes changed: " + got);
+                Check(GoldenBytes() == Golden, "and again, through the reused buffers"); });
+            Test("Packets (R297 [3]): reused streams write and read like fresh ones, a short packet after a long one too", () => {
+                var streams = new PacketStreams(64);
+                var w = streams.Begin();
+                for (int i = 0; i < 40; i++) w.Write((ulong)i * 0x0101010101010101UL);   // 320 bytes: past its first capacity
+                Check(streams.Finish().Length == 320, "a long packet");
+                w = streams.Begin(); w.Write(0xDEADBEEFu); w.Write((short)-2); w.Write(1.5f); w.Write(-0.25d); w.Write((sbyte)-7); w.Write(true);
+                byte[] shortOne = streams.Finish();
+                byte[] fresh = Through(f => { f.Write(0xDEADBEEFu); f.Write((short)-2); f.Write(1.5f); f.Write(-0.25d); f.Write((sbyte)-7); f.Write(true); });
+                Check(shortOne.SequenceEqual(fresh), "the short one's bytes are a fresh writer's");
+                var r = streams.Open(new byte[300]);
+                r.ReadBytes(300);
+                r = streams.Open(shortOne);
+                Check(r.ReadUInt32() == 0xDEADBEEFu && r.ReadInt16() == -2 && r.ReadSingle() == 1.5f && r.ReadDouble() == -0.25d && r.ReadSByte() == -7 && r.ReadBoolean(), "read back");
+                bool ended = false;
+                try { r.ReadByte(); } catch (System.IO.EndOfStreamException) { ended = true; }
+                Check(ended, "the short packet ends where it does, not where the long one did");
+                r = streams.Open(new byte[] { 1, 2, 3, 4, 5 }, 3);
+                ended = false;
+                try { r.ReadUInt32(); } catch (System.IO.EndOfStreamException) { ended = true; }
+                Check(ended, "only the length asked for");
+                var pool = new PacketPool(16);
+                Check(pool.Get(10) == pool.Get(10) && pool.Get(10).Length == 10 && pool.Get(9) != pool.Get(10), "one array per length");
+                Check(pool.Get(17) != pool.Get(17) && pool.Get(0).Length == 0, "past its largest length: a new array each time"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}
