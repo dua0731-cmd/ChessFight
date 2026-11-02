@@ -61,9 +61,11 @@ namespace ChessFight.PawnRush
         {
             if (portcullis != null && wing < portcullis.Length && portcullis[wing] != null) portcullis[wing].SetActive(!open);
             if (wings == null || wing >= wings.Length || wings[wing] == null) return;
-            // A shut wing's obstacles stand still (level design v0.3 §3): the imported obstacles' scripts off.
+            // A shut wing's obstacles stand still (level design v0.3 §3): the imported obstacles' scripts off, and
+            // the moving stair (R150).
             foreach (var behaviour in wings[wing].GetComponentsInChildren<Behaviour>(true))
-                if (behaviour != null && behaviour.GetType().Namespace == "ChessFight.ProtectKing") behaviour.enabled = open;
+                if (behaviour != null && (behaviour.GetType().Namespace == "ChessFight.ProtectKing" || behaviour is SwingingStair))
+                    behaviour.enabled = open;
         }
     }
 }
