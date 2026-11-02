@@ -245,7 +245,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 28d4f0ab3cd25124fa2163b4f19b7dd5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.LabCamera
   game: {fileID: 0}
   playerIndex: 0
@@ -339,176 +339,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1667498617
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1667498620}
-  - component: {fileID: 1667498619}
-  - component: {fileID: 1667498618}
-  - component: {fileID: 1667498621}
-  - component: {fileID: 1667498622}
-  m_Layer: 0
-  m_Name: Giant GM Chess Crossing
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1667498618
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1667498617}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 18e0b0bb71737c1ad271adfc5d919d2a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.GiantChessCourse
-  pawnPrefab: {fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}
-  tuning: {fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}
-  tileSize: 16
-  replaySpeed: 5
-  moveSeconds: 3
-  warningSeconds: 5
-  restSeconds: 2
-  knockbackSpeed: 12
-  upwardSpeed: 9
-  botsEnabled: 1
---- !u!114 &1667498619
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1667498617}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1bc1bc7506fbab4907fec6173c092907, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.Gameplay.PhysicsProfile
-  physicsRate: 120
-  solverIterations: 24
---- !u!4 &1667498620
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1667498617}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1660057539 &9223372036854775807
-SceneRoots:
-  m_ObjectHideFlags: 0
-  m_Roots:
-  - {fileID: 1667498620}
-  - {fileID: 950001}
-  - {fileID: 1312111601}
-  - {fileID: 439410733}
---- !u!114 &1667498621
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1667498617}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 041d0f5e8911e5196b038bc049bd2419, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.GiantChessWarRoom
-  showRoom: 1
-  wallHeight: 80
-  tableHeight: 22
-  solidEntryExitProps: 1
---- !u!1001 &950000
+--- !u!1001 &960000
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 120
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -94
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 180
-      objectReference: {fileID: 0}
-    - target: {fileID: 101497, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
+    m_Modifications: []
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
---- !u!4 &950001 stripped
+  m_SourcePrefab: {fileID: 100100000, guid: d4f82243e0231ff4dee7ebe9986ff117, type: 3}
+--- !u!4 &960001 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 100002, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-  m_PrefabInstance: {fileID: 950000}
+  m_CorrespondingSourceObject: {fileID: 2000002, guid: d4f82243e0231ff4dee7ebe9986ff117, type: 3}
+  m_PrefabInstance: {fileID: 960000}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &950002 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 101657, guid: 0fc0dae442d2068dcc614dddf4d7d72d, type: 3}
-  m_PrefabInstance: {fileID: 950000}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58e151bd61e996b5b7cfeab19dfed864, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
---- !u!114 &1667498622
-MonoBehaviour:
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1667498617}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90d45f904580ac4fa040caefbd1fd31c, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: ChessFight.RagdollLab::ChessFight.RagdollLab.GiantChessApproach
-  course: {fileID: 950002}
+  m_Roots:
+  - {fileID: 960001}
+  - {fileID: 1312111601}
+  - {fileID: 439410733}

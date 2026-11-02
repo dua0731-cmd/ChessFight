@@ -88,38 +88,6 @@ class RoyalPalaceCourses(unittest.TestCase):
                     for centre,size in floors:
                         self.assertFalse(abs(sample[0]-centre[0])<size[0]/2-.01 and abs(sample[2]-centre[2])<size[2]/2-.01,(path,name,sample,centre))
 
-    def test_war_room_exit_joins_chess_entry_in_saved_scene(self):
-        scene=blocks((ROOT/'Assets/Scenes/GiantChessCourse.unity').read_text())
-        instance=scene['950000']
-        mods=dict(re.findall(r'propertyPath: (\S+)\n      value: ([^\n]+)',instance))
-        q=tuple(float(mods['m_LocalRotation.'+axis]) for axis in 'xyzw')
-        offset=tuple(float(mods['m_LocalPosition.'+axis]) for axis in 'xyz')
-        data=self.assets[next(p for p in self.prefabs if 'WarRoom' in p.name)]
-        _,module,_=self.scripts(data,'CourseModule')[0]
-        end=transform(data,number(module['exit']))
-        joined=tuple(a+b for a,b in zip(rotate(q,end),offset))
-        self.assertEqual(joined,(0,0,-20))
-        # Resolve the exit's true authored forward rather than assuming a prefab orientation.
-        ahead=transform(data,number(module['exit']),(0,0,1))
-        forward=rotate(q,tuple(a-b for a,b in zip(ahead,end)))
-        for actual,expected in zip(forward,(0,0,1)):self.assertAlmostEqual(actual,expected)
-        # All box collider corners remain before the chess entry except the 1m floor overlap.
-        owners={number(fields(b)['m_GameObject']):int(k) for k,b in data.items() if b.startswith('--- !u!4 ')}
-        for key,b in data.items():
-            if not b.startswith('--- !u!65 '):continue
-            f=fields(b);size=vector(f['m_Size']);centre=vector(f['m_Center'])
-            for x in (-1,1):
-                for y in (-1,1):
-                    for z in (-1,1):
-                        corner=tuple(c+s*d*.5 for c,s,d in zip(centre,size,(x,y,z)))
-                        p=transform(data,owners[number(f['m_GameObject'])],corner)
-                        p=tuple(a+b for a,b in zip(rotate(q,p),offset))
-                        self.assertLessEqual(p[2],-19+1e-5,(key,p))
-        _,binding,_=self.scripts(scene,'GiantChessApproach')[0]
-        self.assertEqual(number(binding['course']),950002)
-        self.assertFalse((ROOT/'Assets/Scenes/RoyalPalaceCourseTest.unity').exists())
-        self.assertFalse((ROOT/'Assets/Scenes/RoyalPalaceCourseTest.unity.meta').exists())
-
     def test_jump_pad_actual_fields_and_reachable_landing(self):
         data=self.assets[next(p for p in self.prefabs if 'Vault' in p.name)]
         pads=self.scripts(data,'JumpPad');self.assertEqual(len(pads),2)

@@ -8,6 +8,8 @@
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R118(사용자, 11-02):** 작전실→총지휘부를 WarRoomComplete 단일 프리팹으로 통합. 벽/천장·지도/군기/소품 저장, 전실/근접문으로 시야 차단, 압인기/지휘봉/돌풍/시간차 관문 추가. 구조37·Core113·세션40·런타임7 통과, Unity 주행/카메라/성능 대기. [편집](Docs/KingRush/WAR_ROOM_COMPLETE.md).
+
 > **R117(사용자, 11-02):** GiantChessCourse 씬에3-1 작전실 코스를 앞쪽으로 연결. 같은12명·개별 체크포인트/구간 복귀·첫 진입 후 기보 시작. 사용자 요청으로 RoyalPalaceCourseTest 씬/컨트롤러/생성 경로 삭제,5프리팹 유지. 구조32·Core113·세션40·런타임7 통과, Unity 대기. [실행](Docs/KingRush/GIANT_CHESS_COURSE.md).
 
 > **R116(사용자, 11-01):** 기존 거인 체스 씬을 작전실 워게임 프로토타입으로 구성. 거대 탁자/의자·전쟁 지도·군기·문서/책·포획 병력 전시대, 현재16m/5배속/밀치기12 유지. 자동검사 통과·Unity 화면/주행 대기. [실행](Docs/KingRush/GIANT_CHESS_COURSE.md).
@@ -168,6 +170,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **통합 작전실(R118)** | WarRoomComplete 단일 프리팹·벽/천장/소품·전실/문 시야 차단·새 장애물. 자동 검사 통과, Unity 대기 |
 | **작전실→체스 연결(R117)** | GiantChessCourse 한 씬·동일12명·구간별 복귀, 별도RoyalPalaceCourseTest 삭제 |
 | **작전실 워게임(R116)** | 거인 체스 Play 시 작전실 조형 생성, 기보/물리 유지, Unity 대기 |
 | **윗궁5코스 프리팹(R115)** | 독립 저장·6구간/연결점/3체크포인트·래그돌 시험 씬, Unity 대기 |
@@ -247,8 +250,9 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **통합 작전실(R118)** | 단일 프리팹·실내 벽/소품·가려진 총지휘부·추가 장애물, Unity 대기 | [편집](Docs/KingRush/WAR_ROOM_COMPLETE.md) |
 | **작전실→체스(R117)** | 저장 프리팹 연결·첫 진입까지 기보 대기, Unity 실기 대기 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
-| **작전실 워게임(R116)** | 별도 환경 컴포넌트·입출구 소품·빈 중앙판, 오프라인 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
+| **작전실 워게임(R116→R118)** | 현재 환경은 통합 프리팹에 저장, 오프라인 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
 | **윗궁5코스(R115)** | 편집용 프리팹/경계·시험 씬 구현, 자동 랜덤 조립/온라인은 별도 | [실행/편집](Docs/KingRush/ROYAL_PALACE_COURSES.md) |
 | **체스타이머 멀티(R114)** | 기존 SteamSession/래그돌 프로토콜·전용 상태 채널34 | [실행](Docs/KingRush/CHESS_TIMER_MULTIPLAYER.md) |
 | **거인 체스 속도(R113)** | 코드/씬 기본8·상한16 | [실행](Docs/KingRush/GIANT_CHESS_COURSE.md) |
@@ -317,6 +321,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R118:** WarRoomComplete 저장 벽/천장/소품 확인, Play→Enter로 압인기·지휘봉·돌풍·관문 통과, 전실 시야 차단/문 다인 통과·실내 카메라·R/F3·프리팹 이동/Y축 회전 확인. Unity 실기 미확인.
 
 **R117:** GiantChessCourse Play→Enter로 작전실 출발→3체크포인트→체스판 직접 진입/기보 시작 확인. R/낙사 전후 복귀 위치·F3 전체 초기화·12명/카메라 중복 여부 확인. R115의 별도 시험 씬/5개 선택 메뉴는 삭제됐으므로 아래 과거 실행 안내 대신 이 경로를 사용한다.
 

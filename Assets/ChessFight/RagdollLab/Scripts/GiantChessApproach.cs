@@ -7,6 +7,10 @@ namespace ChessFight.RagdollLab
     public sealed class GiantChessApproach : MonoBehaviour
     {
         [SerializeField] CourseModule course;
+        [SerializeField] Transform chessEntry;
+        [SerializeField] Transform[] transitionRoute;
+        int RouteCount => (course.Route == null ? 0 : course.Route.Length) + (transitionRoute == null ? 0 : transitionRoute.Length);
+        Transform Waypoint(int index) => index < (course.Route == null ? 0 : course.Route.Length) ? course.Route[index] : transitionRoute[index - (course.Route == null ? 0 : course.Route.Length)];
         readonly int[] checkpoints = new int[12];
         readonly int[] routeIndices = new int[12];
         readonly bool[] entered = new bool[12];
@@ -35,10 +39,10 @@ namespace ChessFight.RagdollLab
             if (!Available || entered[index] || course.Route == null) return;
             var point = Recovery(index).position;
             float closest = float.PositiveInfinity;
-            for (int i = 0; i < course.Route.Length; i++)
-                if (course.Route[i] != null)
+            for (int i = 0; i < RouteCount; i++)
+                if (Waypoint(i) != null)
                 {
-                    float distance = (course.Route[i].position - point).sqrMagnitude;
+                    float distance = (Waypoint(i).position - point).sqrMagnitude;
                     if (distance < closest) { closest = distance; routeIndices[index] = i + 1; }
                 }
         }
@@ -52,18 +56,17 @@ namespace ChessFight.RagdollLab
             if (!Available || entered[index]) return;
             if (checkpoints[index] < CheckpointCount && Near(course.Checkpoints[checkpoints[index]], pawn.Hips.position))
                 checkpoints[index]++;
-            if (checkpoints[index] == CheckpointCount && Near(course.Exit, pawn.Hips.position))
+            if (checkpoints[index] == CheckpointCount && Near(chessEntry != null ? chessEntry : course.Exit, pawn.Hips.position))
             { entered[index] = true; ChessStarted = true; }
         }
         public void DriveBot(int index, RagdollPawn pawn)
         {
-            var route = course.Route;
-            if (route == null || route.Length == 0) return;
-            int next = Mathf.Clamp(routeIndices[index], 0, route.Length - 1);
-            if (route[next] == null) return;
-            var delta = Vector3.ProjectOnPlane(route[next].position - pawn.Hips.position, Vector3.up);
-            if (delta.magnitude < 2 && next < route.Length - 1)
-            { routeIndices[index] = ++next; delta = Vector3.ProjectOnPlane(route[next].position - pawn.Hips.position, Vector3.up); }
+            if (RouteCount == 0) return;
+            int next = Mathf.Clamp(routeIndices[index], 0, RouteCount - 1);
+            if (Waypoint(next) == null) return;
+            var delta = Vector3.ProjectOnPlane(Waypoint(next).position - pawn.Hips.position, Vector3.up);
+            if (delta.magnitude < 2 && next < RouteCount - 1)
+            { routeIndices[index] = ++next; delta = Vector3.ProjectOnPlane(Waypoint(next).position - pawn.Hips.position, Vector3.up); }
             Vector3 direction = delta.normalized;
             // Basic test navigation: wait for moving decks instead of intentionally walking into gaps.
             Vector3 feet = pawn.Hips.position - Vector3.up * pawn.standHeight;

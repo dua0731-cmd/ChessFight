@@ -19,6 +19,8 @@ namespace ChessFight.RagdollLab
         [SerializeField, Min(1)] float knockbackSpeed = 24;
         [SerializeField, Min(0)] float upwardSpeed = 9;
         [SerializeField] bool botsEnabled = true;
+        [SerializeField] GameObject boardPreview;
+        [SerializeField, Min(2)] float chessSpawnDepth = 10;
         readonly List<Material> materials = new List<Material>();
         readonly List<RagdollPawn> players = new List<RagdollPawn>();
         readonly GameObject[] pieces = new GameObject[64], warnings = new GameObject[64];
@@ -42,9 +44,11 @@ namespace ChessFight.RagdollLab
         bool savedCursor;
         GUIStyle hud;
         // Rotate chess coordinates 90 degrees: white home rank faces the left GM.
-        Vector3 Square(int square) => new Vector3((square / 8 - 3.5f) * tileSize, 0, (7 - square % 8 + .5f) * tileSize);
+        Vector3 SquareLocal(int square) => new Vector3((square / 8 - 3.5f) * tileSize, 0, (7 - square % 8 + .5f) * tileSize);
+        Vector3 Square(int square) => transform.TransformPoint(SquareLocal(square));
         int BoardSquare(Vector3 p)
         {
+            p = transform.InverseTransformPoint(p);
             int rank = Mathf.FloorToInt(p.x / tileSize + 4), row = Mathf.FloorToInt(p.z / tileSize);
             return rank >= 0 && rank < 8 && row >= 0 && row < 8 ? rank * 8 + 7 - row : -1;
         }
@@ -53,7 +57,7 @@ namespace ChessFight.RagdollLab
         {
             for (int s = 0; s < 64; s++) occupiedMarks[s].SetActive(Occupied(s));
         }
-        Vector3 Spawn(int i) => approach != null && approach.Available && !approach.Entered(i) ? approach.Spawn(i) : new Vector3((i / 6 == 0 ? -1 : 1) * tileSize + (i % 3 - 1) * 2.5f, 0, -10 - i % 2 * 3);
+        Vector3 Spawn(int i) => approach != null && approach.Available && !approach.Entered(i) ? approach.Spawn(i) : transform.TransformPoint(new Vector3((i / 6 == 0 ? -1 : 1) * tileSize + (i % 3 - 1) * 2.5f, 0, -chessSpawnDepth - i % 2 * 3));
         Material Mat(Color color) { var m = new Material(Shader.Find("Standard")) { color = color }; materials.Add(m); return m; }
         GameObject Shape(string name, Vector3 pos, Vector3 size, Material mat, PrimitiveType type = PrimitiveType.Cube, bool solid = true)
         {
@@ -71,22 +75,23 @@ namespace ChessFight.RagdollLab
             if (!pawnPrefab || !tuning || !cameraRig || !data) { Debug.LogError("Giant chess requires pawn, tuning, camera and score.", this); enabled = false; return; }
             var lines = data.text.Trim().Split('\n'); score = new string[lines.Length][];
             for (int i = 0; i < lines.Length; i++) score[i] = lines[i].Trim().Split(',');
+            if (boardPreview != null) boardPreview.SetActive(false);
             savedGravity = Physics.gravity; savedLock = Cursor.lockState; savedCursor = Cursor.visible; initialized = true;
             Physics.gravity = Vector3.down * 9.81f * tuning.values.gravityScale;
             white = Mat(new Color(.88f, .85f, .74f)); black = Mat(new Color(.10f, .13f, .18f)); gold = Mat(new Color(.7f, .46f, .16f));
             red = Mat(new Color(.9f, .08f, .025f)); red.EnableKeyword("_EMISSION");
             for (int s = 0; s < 64; s++)
             {
-                Shape("Board " + (char)('a' + s % 8) + (s / 8 + 1), Square(s) - Vector3.up * .4f,
+                Shape("Board " + (char)('a' + s % 8) + (s / 8 + 1), SquareLocal(s) - Vector3.up * .4f,
                     new Vector3(tileSize, .8f, tileSize), (s % 8 + s / 8) % 2 == 0 ? white : black);
-                warnings[s] = Shape("Attack warning", Square(s) + Vector3.up * .025f, new Vector3(tileSize - .3f, .04f, tileSize - .3f), red, solid: false);
+                warnings[s] = Shape("Attack warning", SquareLocal(s) + Vector3.up * .025f, new Vector3(tileSize - .3f, .04f, tileSize - .3f), red, solid: false);
                 warnings[s].SetActive(false);
                 var mark = new GameObject("Occupied square border"); mark.transform.SetParent(transform, false);
                 for (int side = -1; side <= 1; side += 2)
                 {
-                    var edge = Shape("Blocked square edge", Square(s) + new Vector3(side * (tileSize * .5f - .2f), .09f, 0), new Vector3(.35f, .12f, tileSize), gold, solid: false);
+                    var edge = Shape("Blocked square edge", SquareLocal(s) + new Vector3(side * (tileSize * .5f - .2f), .09f, 0), new Vector3(.35f, .12f, tileSize), gold, solid: false);
                     edge.transform.SetParent(mark.transform, true);
-                    edge = Shape("Blocked square edge", Square(s) + new Vector3(0, .09f, side * (tileSize * .5f - .2f)), new Vector3(tileSize, .12f, .35f), gold, solid: false);
+                    edge = Shape("Blocked square edge", SquareLocal(s) + new Vector3(0, .09f, side * (tileSize * .5f - .2f)), new Vector3(tileSize, .12f, .35f), gold, solid: false);
                     edge.transform.SetParent(mark.transform, true);
                 }
                 occupiedMarks[s] = mark;
@@ -127,9 +132,10 @@ namespace ChessFight.RagdollLab
             Shape("GM head", new Vector3(x, 44, z), new Vector3(14, 17, 14), white, PrimitiveType.Sphere, false);
             for (int eye = -1; eye <= 1; eye += 2)
                 Shape("GM eye", new Vector3(x + (side == 0 ? 6 : -6), 46, z + eye * 3), Vector3.one * 2, black, PrimitiveType.Sphere, false);
-            shoulders[side] = new Vector3(x, 30, z - 7);
-            arms[side] = Shape("GM reaching arm", shoulders[side], Vector3.one, suit, solid: false).transform;
-            hands[side] = Shape("GM moving hand", shoulders[side], new Vector3(7, 3, 7), white, PrimitiveType.Sphere, false).transform;
+            var shoulder = new Vector3(x, 30, z - 7);
+            shoulders[side] = transform.TransformPoint(shoulder);
+            arms[side] = Shape("GM reaching arm", shoulder, Vector3.one, suit, solid: false).transform;
+            hands[side] = Shape("GM moving hand", shoulder, new Vector3(7, 3, 7), white, PrimitiveType.Sphere, false).transform;
         }
         void ResetBoard()
         {
@@ -159,32 +165,32 @@ namespace ChessFight.RagdollLab
                 }
                 model.transform.localScale *= tileSize * .48f / Mathf.Max(bounds.size.x, bounds.size.z);
                 bounds = renderers[0].bounds; foreach (var r in renderers) bounds.Encapsulate(r.bounds);
-                model.transform.position += new Vector3(root.transform.position.x - bounds.center.x, -bounds.min.y, root.transform.position.z - bounds.center.z);
+                model.transform.position += new Vector3(root.transform.position.x - bounds.center.x, root.transform.position.y - bounds.min.y, root.transform.position.z - bounds.center.z);
                 height = bounds.size.y;
             }
             else
             {
-                var fallback = Shape(name, Square(square) + Vector3.up * 7.5f, new Vector3(7, 15, 7), light ? white : black);
+                var fallback = Shape(name, SquareLocal(square) + Vector3.up * 7.5f, new Vector3(7, 15, 7), light ? white : black);
                 fallback.transform.SetParent(root.transform, true);
             }
             if (kind == 'K')
             {
-                var cross = Shape("King cross vertical", Square(square) + Vector3.up * (height + 2), new Vector3(1, 5, 1), gold, solid: false); cross.transform.SetParent(root.transform, true);
-                cross = Shape("King cross horizontal", Square(square) + Vector3.up * (height + 2.5f), new Vector3(4, 1, 1), gold, solid: false); cross.transform.SetParent(root.transform, true);
+                var cross = Shape("King cross vertical", SquareLocal(square) + Vector3.up * (height + 2), new Vector3(1, 5, 1), gold, solid: false); cross.transform.SetParent(root.transform, true);
+                cross = Shape("King cross horizontal", SquareLocal(square) + Vector3.up * (height + 2.5f), new Vector3(4, 1, 1), gold, solid: false); cross.transform.SetParent(root.transform, true);
             }
             var collider = root.AddComponent<BoxCollider>(); collider.size = new Vector3(tileSize, Mathf.Max(32, height), tileSize); collider.center = Vector3.up * collider.size.y * .5f;
-            root.transform.rotation = Quaternion.Euler(0, light ? -90 : 90, 0);
+            root.transform.rotation = transform.rotation * Quaternion.Euler(0, light ? -90 : 90, 0);
             return root;
         }
         void ResetPlayers() { if (approach != null) approach.ResetProgress(); for (int i = 0; i < players.Count; i++) { finished[i] = false; Place(i); } }
         void Place(int i)
         {
             bool onApproach = approach != null && approach.Available && !approach.Entered(i);
-            Vector3 facing = onApproach ? approach.Facing(i) : Vector3.forward;
+            Vector3 facing = onApproach ? approach.Facing(i) : transform.forward;
             players[i].SetInput(default);
             players[i].Teleport(Spawn(i) + Vector3.up * (players[i].standHeight + .1f), facing);
             if (onApproach) approach.RecoverRoute(i);
-            botGoals[i] = Spawn(i);
+            botGoals[i] = facing;
             if (i == selected) cameraRig.yaw = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
         }
         void Select(int i) { selected = i % players.Count; cameraRig.soloTarget = players[selected]; cameraRig.distance = 12; cameraRig.maxDistance = 45; }
@@ -210,16 +216,17 @@ namespace ChessFight.RagdollLab
                 if (OnSquare(players[i], to) || (rookTo >= 0 && OnSquare(players[i], rookTo)))
                 {
                     Vector3 p = players[i].Hips.position;
-                    Vector3 safe = new Vector3(Mathf.Clamp(p.x, -tileSize * 4 + 2, tileSize * 4 - 2), 0, -3);
+                    Vector3 local = transform.InverseTransformPoint(p);
+                    Vector3 safe = transform.TransformPoint(new Vector3(Mathf.Clamp(local.x, -tileSize * 4 + 2, tileSize * 4 - 2), 0, -3));
                     float distance = (safe - p).sqrMagnitude;
                     for (int s = 0; s < 64; s++) if (!Occupied(s))
                     {
                         Vector3 candidate = Square(s);
-                        float score = (candidate - p).sqrMagnitude + (candidate.z > p.z ? tileSize : 0);
+                        float score = (candidate - p).sqrMagnitude + (Vector3.Dot(candidate - p, transform.forward) > 0 ? tileSize : 0);
                         if (score < distance) { distance = score; safe = candidate; }
                     }
-                    players[i].Teleport(safe + Vector3.up * (players[i].standHeight + .1f), Vector3.forward);
-                    players[i].TakeHit(Vector3.back * knockbackSpeed + Vector3.up * upwardSpeed, 1, 0, true);
+                    players[i].Teleport(safe + Vector3.up * (players[i].standHeight + .1f), transform.forward);
+                    players[i].TakeHit(-transform.forward * knockbackSpeed + Vector3.up * upwardSpeed, 1, 0, true);
                 }
             RefreshOccupiedMarks();
             attack = ulong.Parse(score[ply][4], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
@@ -228,7 +235,7 @@ namespace ChessFight.RagdollLab
         }
         bool OnSquare(RagdollPawn pawn, int s)
         {
-            var p = pawn.Hips.position; var c = Square(s);
+            var p = transform.InverseTransformPoint(pawn.Hips.position); var c = SquareLocal(s);
             return Mathf.Abs(p.x - c.x) < tileSize * .5f && Mathf.Abs(p.z - c.z) < tileSize * .5f && p.y > -2 && p.y < 25;
         }
         bool Dangerous(Vector3 p)
@@ -262,7 +269,7 @@ namespace ChessFight.RagdollLab
                 }
                 else if (phase == 2 && elapsed >= warningSeconds)
                 {
-                    for (int i = 0; i < players.Count; i++) if (Dangerous(players[i].Hips.position)) players[i].TakeHit(Vector3.back * knockbackSpeed + Vector3.up * upwardSpeed, 1.2f, 0, true);
+                    for (int i = 0; i < players.Count; i++) if (Dangerous(players[i].Hips.position)) players[i].TakeHit(-transform.forward * knockbackSpeed + Vector3.up * upwardSpeed, 1.2f, 0, true);
                     phase = 3; elapsed = 0;
                 }
                 else if (phase == 3 && elapsed >= .5f)
@@ -281,9 +288,10 @@ namespace ChessFight.RagdollLab
             for (int i = 0; i < players.Count; i++)
             {
                 var pawn = players[i]; pawn.SetInput(default);
-                if (!pawn.IsFinite() || pawn.Hips.position.y < -8) Place(i);
+                if (!pawn.IsFinite() || transform.InverseTransformPoint(pawn.Hips.position).y < -8) Place(i);
                 if (approach != null) approach.Observe(i, pawn);
-                if ((approach == null || approach.Entered(i)) && pawn.Hips.position.z > tileSize * 8 + 3 && Mathf.Abs(pawn.Hips.position.x) < tileSize * 4) finished[i] = true;
+                var boardPosition = transform.InverseTransformPoint(pawn.Hips.position);
+                if ((approach == null || approach.Entered(i)) && boardPosition.z > tileSize * 8 + 3 && Mathf.Abs(boardPosition.x) < tileSize * 4) finished[i] = true;
                 if (i != selected && active && botsEnabled && !finished[i]) DriveBot(i);
             }
             // Manual movement remains available after the last move and after crossing the finish.
@@ -303,13 +311,14 @@ namespace ChessFight.RagdollLab
             // Short obstacle-aware steering; bots are test opponents, not puzzle-solving teammates.
             for (int direction = 0; direction < 16; direction++)
             {
-                var d = Quaternion.Euler(0, direction * 22.5f, 0) * Vector3.forward;
+                var d = transform.TransformDirection(Quaternion.Euler(0, direction * 22.5f, 0) * Vector3.forward);
                 var future = p + d * 4;
-                if (Mathf.Abs(future.x) > tileSize * 4 - 2 || future.z < -17) continue;
+                var localFuture = transform.InverseTransformPoint(future);
+                if (Mathf.Abs(localFuture.x) > tileSize * 4 - 2 || localFuture.z < -17) continue;
                 int square = BoardSquare(future);
                 bool blocked = square >= 0 && Occupied(square);
                 if (blocked) continue;
-                float value = d.z * 2 - (Dangerous(future) ? 8 : 0) + Vector3.Dot(d, botGoals[i]) * .2f;
+                float value = Vector3.Dot(d, transform.forward) * 2 - (Dangerous(future) ? 8 : 0) + Vector3.Dot(d, botGoals[i]) * .2f;
                 if (value > bestScore) { bestScore = value; best = d; }
             }
             botGoals[i] = best;
@@ -326,8 +335,8 @@ namespace ChessFight.RagdollLab
             GUI.Box(new Rect(12, 12, 720, 155), "");
             string move = ply < score.Length ? $"{ply / 2 + 1}. {(ply % 2 == 0 ? "백" : "흑")} {score[ply][5]}" : "Rc2# · 기보 종료";
             string stage = approach != null && approach.Available && !approach.Entered(selected)
-                ? $"작전실 장애물 코스 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount}"
-                : "거인 작전실 워게임";
+                ? $"작전실 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount}"
+                : "총지휘부 · 거인 체스";
             string state = approach != null && approach.Available && !approach.ChessStarted
                 ? "체스판 입구 도착 대기"
                 : phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비";

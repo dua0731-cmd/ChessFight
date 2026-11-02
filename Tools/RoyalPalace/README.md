@@ -8,3 +8,7 @@
 - `preview_layout.py`: 저장 프리팹의 기하를 읽어 상면 SVG로 그린다. Python matplotlib/PyYAML 필요. Unity 플레이 화면을 대신하지 않는다.
 
 생성기 실행 위치는 프로젝트 루트. 새로운 Assets 파일/폴더의 meta는 기존 `mkmeta.py`로 만든다. 기존 씬/기존 장애물은 출력 대상이 아니다. Unity에서 수정한 코스는 생성기에 역으로 반영되지 않는다.
+
+## R118 통합 작전실
+
+`build_war_room.py`는 3-1 원본을 읽어 벽/천장/소품/추가 장치/총지휘부를 확장하고 `WarRoomComplete.prefab`, `GiantChessCourse.unity`, `war_room_report.json`을 출력한다. `--check`는 비교, `--overwrite`는 해당 프리팹과 씬을 덮어쓴다. 원본 5개는 수정하지 않는다. Unity 직접 편집은 생성기에 역반영되지 않는다. [실행/편집 안내](../../Docs/KingRush/WAR_ROOM_COMPLETE.md).

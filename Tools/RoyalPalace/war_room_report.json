@@ -1,0 +1,319 @@
+{
+  "prefab": "Assets/Maps/RoyalPalace/WarRoomComplete.prefab",
+  "scene": "Assets/Scenes/GiantChessCourse.unity",
+  "source": "Assets/Maps/RoyalPalace/Courses/3-1_RoyalWarRoom.prefab",
+  "new_obstacles": [
+    {
+      "beat": 1,
+      "kind": "stamp_press",
+      "name": "Command stamp press - warning then strike",
+      "local_z": 35
+    },
+    {
+      "beat": 1,
+      "kind": "stamp_press",
+      "name": "Command stamp press - warning then strike",
+      "local_z": 35
+    },
+    {
+      "beat": 2,
+      "kind": "pointer_gate",
+      "name": "Opposed command pointers - read the closing gap",
+      "local_z": 9
+    },
+    {
+      "beat": 3,
+      "kind": "air_vent",
+      "name": "15 Rectangular observatory wind",
+      "local_z": 37
+    },
+    {
+      "beat": 4,
+      "kind": "clock_gate",
+      "name": "09 Paired chess-clock gate",
+      "local_z": 31
+    },
+    {
+      "beat": 5,
+      "kind": "pointer_gate",
+      "name": "Opposed command pointers - read the closing gap",
+      "local_z": 41
+    },
+    {
+      "beat": 6,
+      "kind": "stamp_press",
+      "name": "Command stamp press - warning then strike",
+      "local_z": 44
+    }
+  ],
+  "occluder_boxes": [
+    {
+      "name": "HQ front facade",
+      "center": [
+        -65,
+        24,
+        -10
+      ],
+      "size": [
+        118,
+        68,
+        2
+      ]
+    },
+    {
+      "name": "HQ front facade",
+      "center": [
+        65,
+        24,
+        -10
+      ],
+      "size": [
+        118,
+        68,
+        2
+      ]
+    },
+    {
+      "name": "HQ doorway header",
+      "center": [
+        0,
+        34,
+        -10
+      ],
+      "size": [
+        12,
+        48,
+        2
+      ]
+    },
+    {
+      "name": "HQ side wall",
+      "center": [
+        -124,
+        24,
+        80
+      ],
+      "size": [
+        2,
+        68,
+        182
+      ]
+    },
+    {
+      "name": "HQ side wall",
+      "center": [
+        124,
+        24,
+        80
+      ],
+      "size": [
+        2,
+        68,
+        182
+      ]
+    },
+    {
+      "name": "HQ rear wall",
+      "center": [
+        0,
+        24,
+        170
+      ],
+      "size": [
+        250,
+        68,
+        2
+      ]
+    },
+    {
+      "name": "HQ coffered ceiling",
+      "center": [
+        0,
+        58.5,
+        80
+      ],
+      "size": [
+        250,
+        1,
+        182
+      ]
+    },
+    {
+      "name": "Closed HQ door",
+      "center": [
+        -3,
+        5,
+        -10
+      ],
+      "size": [
+        6,
+        10,
+        0.6
+      ]
+    },
+    {
+      "name": "Closed HQ door",
+      "center": [
+        3,
+        5,
+        -10
+      ],
+      "size": [
+        6,
+        10,
+        0.6
+      ]
+    },
+    {
+      "name": "Vestibule side screen",
+      "center": [
+        -12,
+        6,
+        -36
+      ],
+      "size": [
+        1.2,
+        20,
+        56
+      ]
+    },
+    {
+      "name": "Vestibule side screen",
+      "center": [
+        48,
+        6,
+        -36
+      ],
+      "size": [
+        1.2,
+        20,
+        56
+      ]
+    },
+    {
+      "name": "Vestibule opaque roof",
+      "center": [
+        18,
+        16.4,
+        -36
+      ],
+      "size": [
+        61,
+        0.8,
+        56
+      ]
+    },
+    {
+      "name": "Archive sight screen",
+      "center": [
+        7,
+        6,
+        -38
+      ],
+      "size": [
+        38,
+        20,
+        1.6
+      ]
+    },
+    {
+      "name": "Archive screen return",
+      "center": [
+        43,
+        6,
+        -38
+      ],
+      "size": [
+        10,
+        20,
+        1.6
+      ]
+    },
+    {
+      "name": "Archive screen lintel",
+      "center": [
+        32,
+        13,
+        -38
+      ],
+      "size": [
+        12,
+        6,
+        1.6
+      ]
+    },
+    {
+      "name": "Vestibule entrance return",
+      "center": [
+        -9,
+        6,
+        -64
+      ],
+      "size": [
+        6,
+        20,
+        1.2
+      ]
+    },
+    {
+      "name": "Vestibule entrance return",
+      "center": [
+        27,
+        6,
+        -64
+      ],
+      "size": [
+        42,
+        20,
+        1.2
+      ]
+    },
+    {
+      "name": "Vestibule entrance header",
+      "center": [
+        0,
+        13,
+        -64
+      ],
+      "size": [
+        12,
+        6,
+        1.2
+      ]
+    }
+  ],
+  "transition_route": [
+    [
+      0,
+      0,
+      -60
+    ],
+    [
+      0,
+      0,
+      -44
+    ],
+    [
+      32,
+      0,
+      -44
+    ],
+    [
+      32,
+      0,
+      -24
+    ],
+    [
+      0,
+      0,
+      -24
+    ],
+    [
+      0,
+      0,
+      -4
+    ]
+  ],
+  "root": 2000001,
+  "root_transform": 2000002
+}
