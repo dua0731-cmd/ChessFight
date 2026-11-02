@@ -178,8 +178,10 @@ namespace ChessFight.PawnRush
             // Four 15 vents (the windows) in the north wall blowing into the hall, a quarter of 6.8 s apart. Their
             // wind carries a pawn towards the edge at 3.5 m/s (4.55 off the ground): walking or running along the
             // gallery goes over the edge inside 2 s, sprinting into it (3.6) just holds. The doc's push, 20 m/s² on
-            // the bodies, moved a running pawn about 0.2 m. 3.5 m wide (the prefab's 3), so 1.5 m rests.
-            float[] ventX = { 34f + o, 29f + o, 24f + o, 19f + o }, ventPhase = { 0f, 1.7f, 3.4f, 5.1f };
+            // the bodies, moved a running pawn about 0.2 m. 3 m wide (the prefab's) with 1.5 m rests, all of them west of
+            // where wing stair 2 comes up (|x| 43..51, the CP2 rest): over the stair's top a pawn stepped off at |x| 43 past
+            // the first wind (the validator, R150 in Unity). The rest before bridge A is 1.7 m.
+            float[] ventX = { 30.5f + o, 26f + o, 21.5f + o, 17f + o }, ventPhase = { 0f, 1.7f, 3.4f, 5.1f };
             Marker(b, "Rest (CP2) " + side, s * (ventX[0] + WindWide * .5f), s * outer, 80f, 86f, 14f);
             for (int i = 0; i + 1 < ventX.Length; i++)
                 Marker(b, "Rest between the vents " + side, s * (ventX[i + 1] + WindWide * .5f), s * (ventX[i] - WindWide * .5f), 80f, 86f, 14f);
@@ -192,11 +194,11 @@ namespace ChessFight.PawnRush
                 Picture(b, "Window", V(x - 1.4f, 17f, 85.9f), V(x + 1.4f, 24f, 85.98f), k.glass);
                 Picture(b, "Window frame", V(x - 1.6f, 16.8f, 85.85f), V(x + 1.6f, 17f, 86f), k.rankGold);
                 Picture(b, "Window frame", V(x - 1.6f, 24f, 85.85f), V(x + 1.6f, 24.2f, 86f), k.rankGold);
-                // Its wind (3.5 x 3 x 6 m) covers the gallery's 6 m.
+                // Its wind (3 x 3 x 6 m) covers the gallery's 6 m.
                 SpanAt(b, "Wind span " + side + (i + 1), V(x, 14f, 83f), Vector3.forward, -3.2f, 3f);
             }
-            b.Checkpoint(2, V(s * (38f + o), 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
-            b.Checkpoint(3, V(s * (15.6f + o), 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
+            b.Checkpoint(2, V(s * (36f + o), 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
+            b.Checkpoint(3, V(s * (14.65f + o), 14f, 83f), s < 0 ? 90f : 270f, 5.5f);
 
             // Two 12 bridges with an island between them to the dais (R150; the doc's one bridge was 8 m, shut
             // 0.5 s of 9, and a pawn on it as it folded slid down its panel back to the gallery or on to the dais):
@@ -218,9 +220,9 @@ namespace ChessFight.PawnRush
             return gate;
         }
 
-        // A 15 vent's wind (R150): it carries a pawn (DriftSpeed) instead of pushing its bodies, 3.5 m wide, and
+        // A 15 vent's wind (R150): it carries a pawn (DriftSpeed) instead of pushing its bodies, and
         // its arrows reach the gallery's far edge (the prefab draws them 3.7 m out of a 6.2 m wind).
-        const float WindWide = 3.5f, WindDrift = 3.5f;
+        const float WindWide = 3f, WindDrift = 3.5f;
 
         static void Gust(GameObject vent)
         {
