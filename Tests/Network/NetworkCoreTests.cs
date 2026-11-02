@@ -392,6 +392,14 @@ public static class NetworkCoreTests
                 Check(s.Seconds(giveUp - 1, false) == 0 && s.Seconds(giveUp, false) == 0 && Near(s.Seconds(giveUp + 12, false), 12), "a host that never comes is still given up on");
                 s.Enter(400);
                 Check(s.Seconds(400, true) == 0 && Near(s.Seconds(402, true), 2), "a new host mid-match: counted from the change"); });
+            Test("Host watch (R295): every PC notices a host change, not only the two whose roles swap", () => {
+                var w = new HostWatch();
+                Check(!w.Changed(1, false) && !w.Changed(1, false), "the first look and the same host are no change");
+                Check(w.Changed(2, false) && !w.Changed(2, false), "a third PC: the host moved from 1 to 2");
+                Check(w.Changed(3, true) && !w.Changed(3, true), "this PC took over");
+                Check(w.Changed(4, false), "and handed on");
+                var late = new HostWatch();
+                Check(!late.Changed(5, true) && late.Changed(5, false), "the role alone"); });
             Test("Response time measures send to acknowledgement and ignores stale acks", () => {
                 var t=new ResponseTimer(); Check(t.Milliseconds<0,"empty");
                 for(uint s=1;s<=5;s++) t.Sent(s,s*0.033);

@@ -115,6 +115,8 @@ namespace ChessFight.RagdollLab.Net
         IMoveInputSource controls;
         Material white, black;
         bool authority;
+        // The host this PC follows, to notice a change of it on every PC (R295, SetAuthority).
+        readonly HostWatch hostWatch = new HostWatch();
         Callback<SteamNetworkingMessagesSessionRequest_t> requests;
         CrownFinish finish;
 
@@ -195,6 +197,7 @@ namespace ChessFight.RagdollLab.Net
             controls = MoveInputSources.Create();
             controls.Enable();
             authority = session.IsHost;
+            hostWatch.Changed(session.Host, authority);
             MiniGameBase.Remote = !authority;
             finish = course != null ? course.Finish : null;
             if (finish != null)
@@ -329,6 +332,10 @@ namespace ChessFight.RagdollLab.Net
 
         // ------------------------------------------------------------------ host change
 
+        // The host changed, or this PC's role in it (R295: on every PC, hostWatch; it used to run only on the two PCs
+        // whose roles swapped, and a third PC kept the old host's numbers and dropped the new host's course states and
+        // skills as old ones, so its race clock, pads and skills stood still). Every PC starts the stream from the host
+        // over; the new host carries on the old one's numbering.
         void SetAuthority(bool host)
         {
             authority = host;
@@ -363,6 +370,7 @@ namespace ChessFight.RagdollLab.Net
                 SkillTripwire.ReserveIds(highest);
                 remoteWires.Clear();
                 tick = lastPose;
+                stateTick = lastState;
             }
             else
             {
@@ -393,6 +401,7 @@ namespace ChessFight.RagdollLab.Net
             eventQueue.Clear();
             skillsApplied = false;
             playback = 0d;
+            roundTripMs = 0f;
             delay.Reset();
             hostSilence.Enter(Time.realtimeSinceStartup);
         }
@@ -402,7 +411,7 @@ namespace ChessFight.RagdollLab.Net
         void Update()
         {
             if (!session.Started || session.Match == 0) return;
-            if (session.IsHost != authority) SetAuthority(session.IsHost);
+            if (hostWatch.Changed(session.Host, session.IsHost) || session.IsHost != authority) SetAuthority(session.IsHost);
             SyncRoster();
             SyncObstacleClock();
             ArmStartBar();

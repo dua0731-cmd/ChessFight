@@ -42,6 +42,25 @@ namespace ChessFight.Network
         }
     }
 
+    // R295: whether the host a match scene's link follows has changed since it
+    // last looked. Every PC starts its stream from the host over then, not only
+    // the two whose roles swap: a third PC that kept the old host's numbering
+    // dropped the new host's packets as old ones.
+    public sealed class HostWatch
+    {
+        ulong host;
+        bool hosting, seen;
+
+        // The host now, and whether it is this PC: true when either differs from
+        // the last look (never on the first).
+        public bool Changed(ulong host, bool hosting)
+        {
+            bool changed = seen && (host != this.host || hosting != this.hosting);
+            this.host = host; this.hosting = hosting; seen = true;
+            return changed;
+        }
+    }
+
     // Input-to-confirmation time: from sending an input to the snapshot that
     // acknowledges it. This is what a player feels, so it includes the host's
     // tick and snapshot spacing on top of the wire ping.
