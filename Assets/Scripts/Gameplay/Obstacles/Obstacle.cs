@@ -24,7 +24,7 @@ namespace ChessFight.Gameplay
         Rigidbody body;
         Vector3 startPosition, fromPosition, toPosition, linearVelocity, angularVelocity;
         Quaternion startRotation, fromRotation, toRotation, stepTurn = Quaternion.identity;
-        double stepKey = double.NaN, lastTime = double.NaN;
+        double stepKey = double.NaN, lastTime = double.NaN, awakeTime;
         bool jumped;
 
         // For obstacles built from code (the Queen of the Hill level): call it on an
@@ -52,7 +52,8 @@ namespace ChessFight.Gameplay
             startRotation = transform.rotation;
             // Start at the current pose, so the first step does not report a huge
             // velocity from the authored pose to wherever the clock says it is.
-            Evaluate(ObstacleClock.Now + phase, out toPosition, out toRotation);
+            awakeTime = ObstacleClock.Now + phase;
+            Evaluate(awakeTime, out toPosition, out toRotation);
             fromPosition = toPosition;
             fromRotation = toRotation;
             transform.SetPositionAndRotation(toPosition, toRotation);
@@ -89,8 +90,10 @@ namespace ChessFight.Gameplay
             Evaluate(now, out toPosition, out toRotation);
             float dt = Time.fixedDeltaTime;
             // The clock itself jumped - switched to the shared match clock or back, or a long hitch:
-            // go there without reporting the jump as speed to whoever stands on the obstacle.
-            jumped = !double.IsNaN(lastTime) && (Math.Abs(now - lastTime - dt) > 0.25 || JumpsBetween(lastTime, now));
+            // go there without reporting the jump as speed to whoever stands on the obstacle. The first
+            // step only asks the obstacle, from the pose Awake set (a roaming carriage handed a new plan).
+            jumped = double.IsNaN(lastTime) ? JumpsBetween(awakeTime, now)
+                                            : Math.Abs(now - lastTime - dt) > 0.25 || JumpsBetween(lastTime, now);
             lastTime = now;
             if (jumped)
             {

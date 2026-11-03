@@ -95,7 +95,7 @@
 | 컴포넌트 | 값 |
 |---|---|
 | `CarriageFleet` (마당의 무리) | 영역 `minX`/`maxX`/`minZ`/`maxZ`(마차 **중심**이 다니는 곳, 벽에서 `BodyRadius` 약 2.4 m + 여유) · `count` · `moveSpeed` · `speedStep` · `turnSeconds` · `minAim`/`maxAim` · `minRest`/`maxRest` · `minCharge`/`maxCharge` · `startDelay` · `seed` · `knockbackForce` · `knockdownSeconds`. 경기용 `StartAt(공유 시각)` |
-| `RoamingCarriage` (한 대) | 무리 안에서는 무리를 따른다. **혼자 놓으면** 한 대짜리 무리가 된다: `halfWidth` · `halfDepth`(자기 위치 기준 영역) · `moveSpeed` · `turnSeconds` · `minAim`/`maxAim` · `seed` · `knockbackForce` · `knockdownSeconds` · `paint` |
+| `RoamingCarriage` (한 대) | 무리 안에서는 무리를 따른다. **혼자 놓으면** 한 대짜리 무리가 된다: `halfWidth` · `halfDepth`(자기 위치 기준 영역) · `moveSpeed` · `turnSeconds` · `minAim`/`maxAim` · `seed` · `knockbackForce` · `knockdownSeconds` · `paint` · `phase`(같은 시드끼리 박자 어긋나게). 켜진 때부터 움직이므로 온라인에서는 `StartAt(공유 시각)`을 받아야 PC마다 같다(아직 부르는 곳 없음 → 지금은 오프라인 전용) |
 | `HorizontalWaterwheel` | `rotationSpeed` · `clockwise` · `wheelRadius` · `rimWidth` · `spokeCount` · `spokeWidth` · `wheelDepth` · `hubRadius` · `bucketCount` · `knockbackForce` · 길 정보 `passageOffset` · `passageWidth` · `deckBelowAxle`(콘솔에 찍는 열림 시간 계산용) |
 | 나머지 | [R284 표](#지시서-변수--실제-이름) 그대로 |
 
@@ -149,7 +149,10 @@ R284의 해석(세로 물레방아는 서 있는 바퀴, 슬라이딩 = 다이�
 
 - 거대 물레방아 · 회전 마차 · 세로 물레방아 · 화물 · 목재 다리 · 시작 성문 모양은 **공유 시계의 순수 함수**다. 그래서 패킷 없이 모든 PC가 같은 모습을 본다.
 - 돌아다니는 마차는 **시작 시각 + 시드**로 만든 계획이다. 시작 시각이 같으면 패킷 없이 모든 PC가 같은 마차를 본다(`CarriageFleet.StartAt(공유 시각)`; 바뀐 계획으로는 순간 이동 컷, 마당을 가로질러 쓸지 않음).
-- 시계가 1시간 넘게 뛰면(매치 시계로 바뀌거나 돌아올 때) 마차 계획은 그 시각에서 새로 시작한다. 그 사이 구간을 다 계산하느라 멈추거나, 돌아간 시계에서 마차가 서 버리지 않는다.
+- 시계가 1시간 넘게 뛰면(매치 시계로 바뀌거나 돌아올 때) 마차 계획은 그 시각에서 새로 시작한다. 그 사이 구간을 다 계산하느라 멈추거나, 돌아간 시계에서 마차가 서 버리지 않는다. 주의:
+  - 새로 시작하는 시각은 PC마다 자기 시계가 뛴 순간이다. 경기는 시계를 바꾼 **뒤에** `StartAt`을 불러야 PC끼리 같아진다.
+  - 1시간보다 먼 미래의 시작, 1시간 넘게 지난 시작(1시간 넘게 진행된 경기에 늦게 들어온 사람)도 지금 시각에서 새로 시작한다. 한 판이 몇 분이라 상관없다.
+  - 지금 장면 중에는 시계가 바뀌는 곳에 이 맵이 없다(맵 시험 씬은 오프라인, 폰 러쉬 경기는 씬을 열기 전에 Steam 시계로 바꿈). 안전장치로 둔 것이다.
 - 넉백 · 물레방아에서 놓아 주기 · 미끄럼 당김은 **방장(오프라인)만** 계산한다.
 - **아직 안 된 것:**
   - 최종 성문 열림 상태 전달(오프라인 전용, `StateDrivenMover`)
@@ -177,7 +180,7 @@ R284의 해석(세로 물레방아는 서 있는 바퀴, 슬라이딩 = 다이�
 | 장애물 프리팹 9개 | `Assets/Prefabs/Obstacles/RoyalCarriageYard/` (R286에 `RoamingCarriage` 추가, 혼자 놓으면 한 대짜리 무리) |
 | 맵 코드 | `Assets/Scripts/PawnRush/CarriageYard/`:<br>• 맵: `RoyalCarriageYard.cs`(+ `.Sections` · `.Scenery`)<br>• 시험장: `CarriageYardObstacleBench.cs`<br>• 장애물: `CarriageFleet` · `RoamingCarriage` · `HorizontalWaterwheel` · `RotatingCarriageGroup` · `VerticalWaterwheel` · `CargoChute` · `RollingCargo` · `ChargingCarriage` · `TiltingWoodenBridge` · `TimedGate` · `PushGate`<br>• 넉백 `YardImpact`, 도구 `YardKit`, 폭포 그림 `WaterfallFlow` |
 | 마차 무리 계획 (R286) | `Assets/Scripts/Core/RoamingFleet.cs`, 시험은 `Tests/Network/NetworkCoreTests.cs`의 "Royal Carriage Yard roaming fleet" |
-| 기존 코드 변경 | `Assets/Scripts/Gameplay/Obstacles/Obstacle.cs`(`JumpsBetween`, R284) |
+| 기존 코드 변경 | `Assets/Scripts/Gameplay/Obstacles/Obstacle.cs`(`JumpsBetween`, R284; R286부터 첫 물리 프레임도 Awake 때 자세에서 `JumpsBetween`을 물음 — 그 사이 받은 새 계획 · 다시 시작한 화물은 쓸지 않고 바로 옮김) |
 
 ## 11. 확인한 것 / 못 한 것
 
@@ -203,10 +206,10 @@ R284의 해석(세로 물레방아는 서 있는 바퀴, 슬라이딩 = 다이�
     - 기다리는 자리까지 닿던 바퀴살 넉백
     - 질주로 그냥 건너지던 틈
     - 성벽에 가려진 1구간 안내판
-  - 마차 무리 코드만 따로 두 관점(계획 · Unity 연결)으로 검토해 고친 것:
+  - 마차 무리 코드만 따로 두 관점(계획 · Unity 연결)으로 검토 + 반박 검증. 실제 결함으로 확인된 것은 혼자 놓은 마차에 `phase`가 안 먹던 것 하나이고, 나머지는 지금 장면에서는 생기지 않는 잠재 문제라 보강으로 고침:
     - 시계 출처가 바뀔 때 계획이 그 사이 구간을 전부 계산하다 멈추던 것, 돌아간 시계에서 마차가 서 버리던 것
-    - 켜지기 전에 부른 `StartAt`이 무시되던 것, 계획이 바뀔 때 마차가 마당을 가로질러 쓸고 가던 것
-    - 혼자 놓은 마차에 `phase`가 안 먹던 것, 혼자 놓은 마차에 공유 시작 시각을 줄 방법이 없던 것
+    - 켜지기 전에 부른 `StartAt`이 무시되던 것, 계획이 바뀔 때(켜진 직후 첫 물리 프레임 전 포함) 마차가 마당을 가로질러 쓸고 가던 것
+    - 혼자 놓은 마차에 공유 시작 시각을 줄 방법이 없던 것(`StartAt` 추가; 부르는 곳은 아직 없음)
     - "벽 쪽이 거의 안전하다"는 지적은 반박 검증에서 설계(벽 따라가기는 덜 맞지만 약 33 m 멂)로 판정되어 그대로 둠. 플레이해 보고 너무 안전하면 돌진 끝점 일부를 벽 쪽으로 몰 수 있음(그때는 벽에 끼이는지 따로 확인 필요)
 - **못 함:** Unity Play · 화면 · 실제 래그돌 동작. Unity에서 확인할 것은 [VALIDATION](../Network/VALIDATION.md) 맨 위 R286 표에 있다.
 - **불확실한 것:**
