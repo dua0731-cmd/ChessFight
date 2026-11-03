@@ -13,6 +13,7 @@
 | `export_library_fbx.py` | `PawnRushLibrary.blend` → Unity FBX 두 개로 내보낸다(검사 포함) |
 | `build_graybox.py` | `.blend`에 그레이박스 컬렉션 `GRAYBOX`를 (다시) 만든다(R262, §6) |
 | `air_cannons.py` | 환경 FBX의 대포 두 대에서 팬(허브 + 날개 10장)을 `BLOWER_<x>_Fan`으로 떼어 Unity가 돌릴 수 있게 한다(R291, 다시 돌려도 그대로) |
+| `armillary.py` | 골의 혼천의 두 대(`Goal_armillary_±1`, 받침 · 링 · 구가 한 덩어리)를 받침만 남기고 링 3개 + 구를 짐벌로 다시 만들어 FBX를 바로 고친다: Ring1 세로축, Ring2(적도)는 Ring1 옆 핀축, Ring3는 Ring2 핀축, 구는 35° 기운 축, 축마다 `<부품>_axis` 빈 물체(R324). R327부터 골의 두 대는 없애고 하나만 `Start_armillary`로 이름을 바꿔 출발 쪽 작전 지도 판 서쪽(x −8.98, y −19.7, 바닥 z 0)에 1.6배(꼭대기 = 지도 꼭대기 3.95 m)로 세움(`-- --preview <폴더>`로 자세 렌더만, 다시 돌려도 그대로) |
 | `inner_piers_stone.py` | 안쪽 기둥 10개(`V21/V23_Inner_gallery_pier`)를 승규 님 돌기둥 에셋(`../Endgame/source/stone_column.glb`)으로 바꿔 FBX를 바로 고친다(R315, 다시 돌려도 그대로) |
 | `rail_shoes.py` | 셔틀 FBX의 바퀴 · 바퀴 받침을 지우고 레일 윗날개를 감싸는 미끄럼 슈 `Carriage_rail_shoe` 4개를 단다(R288, FBX를 바로 고침, 다시 돌려도 그대로) |
 

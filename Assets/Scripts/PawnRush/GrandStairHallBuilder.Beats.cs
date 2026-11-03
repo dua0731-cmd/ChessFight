@@ -132,7 +132,7 @@ namespace ChessFight.PawnRush
 
             // 3a. The curving stair (φ 297 -> 372, y 8 -> 10): along the wall, its inner edge open to the hall floor
             // 12 m down (a fall goes back to CP1). Two chandeliers swing across it, out to the wall.
-            Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, 2.25f, 0f, true, 1.2f, true);
+            Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, CurvingStairHalfIn, 0f, true, 1.2f, true);
             Chandelier(b, "11 Pendulum (chandelier) 1", 322f, Mathf.Lerp(8f, 10f, 25f / 75f), 0f);
             Chandelier(b, "11 Pendulum (chandelier) 2", 350f, Mathf.Lerp(8f, 10f, 53f / 75f), 1.6f);
             b.Checkpoint(2, OnSpiral(368f, 9.9f), Heading(368f), 4.5f);
@@ -234,19 +234,57 @@ namespace ChessFight.PawnRush
             motion.shove = false;
         }
 
-        // A chandelier (11 pendulum) swinging across the way at φ, 40° (4.7 m either side of the middle line, out to
-        // the wall), hung from a thin beam from a post inside the way to the hall wall.
+        // A chandelier (11 pendulum) swinging across the way at φ, 40°, hung from a thin beam from a post inside the way
+        // to the hall wall. R326 (승규 11-03, the round hall checked in numbers): hung on the way's middle line its ball
+        // (1.1 m, 6 m under the pivot: 4.96 m out at 40°) went 1.3 m into the wall and its two swing-boundary marks (12 m
+        // in the prefab) out through the windows. Now it hangs as far in as stops the ball's outer side 0.1 m short of
+        // the wall face (r 31) at the top of its swing - its inner side swings out over the drop, so it still sweeps the
+        // whole way - and the marks run from the way's inner edge to that point.
+        const float CurvingStairHalfIn = 2.25f;
+
         static void Chandelier(CourseBuilder b, string name, float phi, float y, float phase)
         {
-            var at = OnSpiral(phi, y + .15f);
-            var pendulum = Hazard(b, b.kit.pendulum, name, at, Heading(phi), phase);
+            var pendulum = Hazard(b, b.kit.pendulum, name, OnSpiral(phi, y + .15f), Heading(phi), phase);
             var swing = pendulum != null ? pendulum.GetComponentInChildren<PendulumSwing>(true) : null;
-            if (swing != null) swing.SwingAngle = 40f;
-            Span(pendulum, Outward(phi), -5.2f, 5.2f, y);
-            float pivotY = at.y + 7.3f, postR = SpiralRadius(phi) - 6.2f;
+            float reach = 4.96f;
+            if (swing != null)
+            {
+                swing.SwingAngle = 40f;
+                reach = BallReach(swing);
+            }
+            float r = Mathf.Min(SpiralRadius(phi), HallRadius - .1f - reach), inner = SpiralRadius(phi) - CurvingStairHalfIn;
+            var at = Polar(phi, r, y + .15f);
+            if (pendulum != null)
+            {
+                pendulum.transform.localPosition = at;
+                // The marks lie along the prefab's x, across the way.
+                float outX = Mathf.Sign(Vector3.Dot(pendulum.transform.localRotation * Vector3.right, Outward(phi)));
+                float from = inner - r, to = reach;
+                ForChildren(pendulum, "Swing boundary", t =>
+                {
+                    var p = t.localPosition; p.x = outX * (from + to) * .5f; t.localPosition = p;
+                    var s = t.localScale; s.x = to - from; t.localScale = s;
+                });
+            }
+            Span(pendulum, Outward(phi), -reach, reach, y);
+            float pivotY = at.y + 7.3f, postR = r - 6.2f;
             var post = Polar(phi, postR, 0f);
             Beam(b, name + " post", V(post.x - .2f, Deep, post.z - .2f), V(post.x + .2f, pivotY + .8f, post.z + .2f));
-            b.SlopeBetween(name + " beam", Polar(phi, postR, pivotY + .6f), Polar(phi, HallRadius + .5f, pivotY + .6f), .4f, .2f, .2f, b.kit.trimBlack, true);
+            // R325: on into the Blender round wall (its face 31 .. 32.8 there, a window's recess at φ 322) as far as the
+            // window bars (r 33), so its end no longer hangs in the air in front of them.
+            b.SlopeBetween(name + " beam", Polar(phi, postR, pivotY + .6f), Polar(phi, HallRadius + 2f, pivotY + .6f), .4f, .2f, .2f, b.kit.trimBlack, true);
+        }
+
+        // How far the ball's far side swings out from under the pivot: the cable's length times sin(the swing), plus
+        // the ball's radius.
+        static float BallReach(PendulumSwing swing)
+        {
+            if (swing.Ball == null) return 4.96f;
+            float length = Vector3.Distance(swing.transform.position, swing.Ball.position);
+            var sphere = swing.Ball.GetComponent<SphereCollider>();
+            var s = swing.Ball.lossyScale;
+            float radius = sphere != null ? sphere.radius * Mathf.Max(Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z)) : 1.1f;
+            return length * Mathf.Sin(Mathf.Clamp(swing.SwingAngle, 0f, 85f) * Mathf.Deg2Rad) + radius;
         }
 
         // A 02 jump pad at `from` throwing a pawn onto `to`: 9 m/s up and forward fast enough to cover the distance in
@@ -308,6 +346,11 @@ namespace ChessFight.PawnRush
             // row. GuessBridge picks which of each pair holds, from the section's seed.
             const int rows = 7;
             const float size = 1.8f, gap = 1.05f;
+            // R333 (승규 11-03): in the Pawn Rush glass (PR_Glass.shader; R334: crystal clear colours on the ice blue sample's
+            // frost, distortion and reflection) - both of a pair alike, as the
+            // game wants - and the shards GuessBridge breaks off take the same material. The kit's glass if it is missing.
+            var glass = Resources.Load<Material>("PR_GlassStones");
+            if (glass == null) glass = k.glass;
             var left = new GameObject[rows];
             var right = new GameObject[rows];
             var stones = b.In("Glass stones", () =>
@@ -315,8 +358,8 @@ namespace ChessFight.PawnRush
                 for (int i = 0; i < rows; i++)
                 {
                     float z0 = Hub.y + DaisRadius + gap + i * (size + gap);
-                    left[i] = b.Box("Glass square L" + (i + 1), V(-.6f - size, DaisTop - .3f, z0), V(-.6f, DaisTop, z0 + size), k.glass, true);
-                    right[i] = b.Box("Glass square R" + (i + 1), V(.6f, DaisTop - .3f, z0), V(.6f + size, DaisTop, z0 + size), k.glass, true);
+                    left[i] = b.Box("Glass square L" + (i + 1), V(-.6f - size, DaisTop - .3f, z0), V(-.6f, DaisTop, z0 + size), glass, true);
+                    right[i] = b.Box("Glass square R" + (i + 1), V(.6f, DaisTop - .3f, z0), V(.6f + size, DaisTop, z0 + size), glass, true);
                 }
             });
             stones.gameObject.AddComponent<GuessBridge>().Configure(left, right);

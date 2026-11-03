@@ -22,20 +22,34 @@ namespace ChessFight.PawnRush
             hall.name = "Library environment";
             // The two blower cannons fire air across the conveyor in turn (R291); their fans are separate nodes
             // (ArtSource/PawnRush/Library/air_cannons.py).
-            // The hall's world box: inside it the cannons' fan whirr is heard everywhere (R314).
-            var room = new Bounds();
-            foreach (var r in hall.GetComponentsInChildren<Renderer>(true))
-                if (room.size == Vector3.zero) room = r.bounds;
-                else room.Encapsulate(r.bounds);
+            // Inside the hall the cannons' fan whirr is heard everywhere (R314), outside it not at all (R323): the cannon
+            // measures the hall when it plays, since the zone is moved into its row after this build.
             int cannons = 0;
             foreach (var t in hall.GetComponentsInChildren<Transform>(true))
             {
                 if (!t.name.StartsWith("BLOWER_") || t.name.EndsWith("_Fan")) continue;
                 var fan = t.Find(t.name + "_Fan");
                 if (fan == null) continue;
-                t.gameObject.AddComponent<LibraryAirCannon>().Configure(fan, cannons++ * 2.5f, room);
+                t.gameObject.AddComponent<LibraryAirCannon>().Configure(fan, cannons++ * 2.5f, hall.transform);
             }
             if (cannons == 0) Debug.LogError("Pawn Rush library cannons have no separate fan (run air_cannons.py).");
+            // The armillary turns as a gimbal (R324, ArtSource/PawnRush/Library/armillary.py); since R327 there is one,
+            // Start_armillary, scaled up beside the start's war map (the goal's pair is gone).
+            int armillaries = 0;
+            foreach (var t in hall.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name != "Start_armillary") continue;
+                string n = t.name;
+                var ring1 = t.Find(n + "_Ring1");
+                var ring2 = ring1 != null ? ring1.Find(n + "_Ring2") : null;
+                var ring3 = ring2 != null ? ring2.Find(n + "_Ring3") : null;
+                var sphere = t.Find(n + "_Sphere");
+                if (ring3 == null || sphere == null) continue;
+                var marks = new[] { t.Find(n + "_Ring1_axis"), ring1.Find(n + "_Ring2_axis"), ring2.Find(n + "_Ring3_axis"), t.Find(n + "_Sphere_axis") };
+                t.gameObject.AddComponent<LibraryArmillary>().Configure(ring1, ring2, ring3, sphere, marks, false);
+                armillaries++;
+            }
+            if (armillaries == 0) Debug.LogError("Pawn Rush library armillary has no separate rings (run armillary.py).");
             var shuttle = Object.Instantiate(shuttleAsset, pivot, false);
             shuttle.name = "Moving conveyor";
             // The shuttle's take is one 16 s round trip that ends where it starts. LibraryShuttleDriver samples it

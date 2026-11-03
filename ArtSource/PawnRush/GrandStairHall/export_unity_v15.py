@@ -7,12 +7,13 @@
 #   FallingChandelier.fbx         one v10 chandelier's 129 parts (origin = its bottom centre) and its chain (origin =
 #                                 its foot) for ChandelierRain
 # Axes as the garden's export: Unity puts the model under a 180-degree pivot. No UVs, no textures: the clay is Unity's.
-# Run: blender -b grand_stair_hall_v20.blend -P export_unity_v15.py   (v16: corner columns; v17: the outer walls in the architectural wall, windows open; v18: wider red floor, pads out on their own - pads_v18.py; v19: the entrance in the castle archway, its windows open - archway_v19.py; v20: the foyer side walls in the architectural wall - foyer_sides_v20.py)
+# Run: blender -b grand_stair_hall_v33C.blend -P export_unity_v15.py   (v33C: the walls in Palace_Wall with UVs onto the trim map - walls_v33.py; v31C: v29C's gold back, no banners - walls_v31.py; v30C: the gold along the mouldings, no banners - walls_v30.py; v29C: the walls in Palace_Stone / Palace_Gold, crown banners - walls_v29.py; v28C: pads re-exported on their own - pads_v28.py; v27C: the hub chandelier half as big again, hook 36 - chandelier_hub_v27.py; v26C: the hub chandelier in gold, crystal, wax and bulbs, a light marker per bulb - chandelier_hub_v26.py; v25C: the four statues beside the grand stair on plinths - stairside_statues_v25.py; v21..v24C: the round hall wall bent round the ring, fitted to the course, the star vault and its glass oculus - round_hall_v22/23/24.py; v16: corner columns; v17: the outer walls in the architectural wall, windows open; v18: wider red floor, pads out on their own - pads_v18.py; v19: the entrance in the castle archway, its windows open - archway_v19.py; v20: the foyer side walls in the architectural wall - foyer_sides_v20.py)
 import bpy, bmesh, os, re
 from mathutils import Matrix, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TARGET = r"C:\Work\ChessFight-SeoungTest\Assets\Resources\PawnRushGrandStairHall"
+# The repository this script sits in (it was a fixed path on one PC, C:\Work\ChessFight-SeoungTest, until R325).
+TARGET = os.path.normpath(os.path.join(HERE, "..", "..", "..", "Assets", "Resources", "PawnRushGrandStairHall"))
 os.makedirs(TARGET, exist_ok=True)
 sc = bpy.context.scene
 sc.frame_set(sc.frame_start)            # the chandeliers hanging still
@@ -28,7 +29,10 @@ def world_mesh(o, offset=Vector()):
     me.transform(Matrix.Translation(-offset) @ o.matrix_world)
     if o.matrix_world.determinant() < 0:
         me.flip_normals()
-    while me.uv_layers:
+    # No UVs (the clay needs none), but the banners keep theirs for their texture (R335) and the palace walls theirs
+    # onto the trim map (R337, walls_v33.py).
+    keep = o.name.startswith("Palace_banner") or any(m and m.name.startswith("Palace_Wall") for m in me.materials)
+    while me.uv_layers and not keep:
         me.uv_layers.remove(me.uv_layers[0])
     return me
 

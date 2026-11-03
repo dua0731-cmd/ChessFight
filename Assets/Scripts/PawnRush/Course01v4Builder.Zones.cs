@@ -13,12 +13,13 @@ namespace ChessFight.PawnRush
         // every other PC that opens the branch gets course 01's sections, so the endgame map is not shown there.
         // R263 (11-01): 승규 님's royal water garden (G) stands next to the library (E).
         // R297 (11-02): main's grand stair hall (H, Mid_2-1_GrandStairHall) stands next to the garden.
+        // R323 (11-03): E's label is the war room (승규 님: the library conveyor course is now called 작전 회의실).
         public const string EndgameMachine = "KKND1236_LENOVO";
         public static readonly bool ShowsEndgame = true;
 
         public static readonly string[] ZoneSections = ShowsEndgame ? new[] { "E", "G", "H" } : new[] { "A", "B", "C", "T" };
         public static readonly string[] ZoneSectionNames = ShowsEndgame
-            ? new[] { "E 도서관 컨베이어 코스", "G 왕실 수로 정원", "H 대계단 현관홀" }
+            ? new[] { "E 작전 회의실", "G 왕실 수로 정원", "H 대계단 현관홀" }
             : new[] { "A 구간 (출발 → 광장 1)", "B 구간 (광장 1 → 광장 2)", "C 구간 (광장 2 → 탑)", "T 탑" };
         static readonly Vector3[] ZoneStarts = ShowsEndgame
             ? new[] { V(0f, 0f, -16.5f), V(0f, 0f, -57f), V(0f, 0f, -6f) }

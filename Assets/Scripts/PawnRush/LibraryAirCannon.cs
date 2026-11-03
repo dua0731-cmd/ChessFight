@@ -17,7 +17,10 @@ namespace ChessFight.PawnRush
     // the fan is option D (soft toy whirr), the charge and blast keep the R292 sound, the blast louder and heard
     // farther. R314 (승규 님: "바람 소리 지워주고 D 팬 소리를 ... 안으로 들어가면 어디서도 들릴 수 있게"): the fan's
     // muffled far layer (it read as wind) is gone; the D whirr itself is heard at one level anywhere inside the
-    // library hall and fades out within 4 m of leaving it.
+    // library hall and fades out within 4 m of leaving it. R323 (승규 님: "대포 회전소리는 그 코스 안에서만"): the hall's
+    // box was measured at build time, before the zone was moved into its row, and was never saved, so in Play it was
+    // empty and the whirr was heard across the whole test scene. The cannon now keeps the hall and measures it on its
+    // first frame; with no hall it stays silent.
     // Only bodies this PC simulates are pushed (ImportedObstacleActor skips kinematic network puppets), the same
     // way each PC moves its own riders on the conveyor.
     public sealed class LibraryAirCannon : MonoBehaviour
@@ -30,6 +33,7 @@ namespace ChessFight.PawnRush
 
         [SerializeField] Transform fan;
         [SerializeField] float phase;
+        [SerializeField] Transform hall;
 
         Vector3 rest, muzzleLocal, dirWorld, fanCentreWorld;
         float angle, spin, lastClock = -1f;
@@ -38,6 +42,7 @@ namespace ChessFight.PawnRush
         NearFarSound chargeSound, fireSound;
         AudioSource fanSound;
         Bounds room;
+        bool roomMeasured;
         static AudioListener listener;
         const float RoomFade = 4f;
         AudioClip chargeNear, chargeFar, fireNear, fireFar;
@@ -46,12 +51,12 @@ namespace ChessFight.PawnRush
         readonly Collider[] buffer = new Collider[256];
         readonly System.Collections.Generic.HashSet<ImportedObstacleActor> pushed = new System.Collections.Generic.HashSet<ImportedObstacleActor>();
 
-        // roomBounds: the library hall in world space; inside it the fan is heard everywhere.
-        public void Configure(Transform fanPart, float phaseSeconds, Bounds roomBounds)
+        // hallRoot: the library hall's model; inside its box the fan is heard everywhere, outside it not at all.
+        public void Configure(Transform fanPart, float phaseSeconds, Transform hallRoot)
         {
             fan = fanPart;
             phase = phaseSeconds;
-            room = roomBounds;
+            hall = hallRoot;
         }
 
         void Awake()
@@ -108,11 +113,25 @@ namespace ChessFight.PawnRush
             return a;
         }
 
-        // 1 inside the library hall, down to 0 RoomFade metres outside it.
+        // The hall's world box, from its renderers where the zone stands now (on the first frame, after the test
+        // scene has moved the zone into its row).
+        void MeasureRoom()
+        {
+            roomMeasured = true;
+            room = new Bounds();
+            if (hall == null) { Debug.LogWarning("Air cannon has no library hall: its fan stays silent.", this); return; }
+            foreach (var r in hall.GetComponentsInChildren<Renderer>())
+                if (room.size == Vector3.zero) room = r.bounds;
+                else room.Encapsulate(r.bounds);
+        }
+
+        // 1 inside the library hall, down to 0 RoomFade metres outside it; 0 when the hall is unknown.
         float InRoom()
         {
+            if (!roomMeasured) MeasureRoom();
+            if (room.size == Vector3.zero) return 0f;
             if (listener == null || !listener.isActiveAndEnabled) listener = Object.FindAnyObjectByType<AudioListener>();
-            if (listener == null || room.size == Vector3.zero) return 1f;
+            if (listener == null) return 0f;
             float outside = Mathf.Sqrt(room.SqrDistance(listener.transform.position));
             return 1f - Mathf.SmoothStep(0f, 1f, outside / RoomFade);
         }

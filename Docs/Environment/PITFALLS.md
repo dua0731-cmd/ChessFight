@@ -172,3 +172,15 @@ R50 실행 로그에서 수동 설정했던 무게중심이 검날 중앙 `z=0.5
 - **원인:** collapse는 따로 떨어진 조각 사이도 합치고 경계를 지키지 않는다. 남은 큰 삼각형 위에서 부드러운 음영이 번진다.
 - **해결:** 조각 모음 메시는 줄이지 않고 원래 LOD를 쓴다(`relod_r296.py`의 `KEEP`). 줄인 뒤에는 각진 모서리를 다시 정한다(`set_sharp_from_angle`, 정원 35° · 회의실 30°). 면 뒤집힘은 메시 자기 자신에게 면 앞 2 mm에서 법선 방향으로 광선을 쏴 뒷면에 먼저 닿는 넓이로 잰다. 예전 LOD0에 대고 재면 몇 mm 가라앉은 면도 뒤집힌 것으로 잡히고, 가장 가까운 면으로 재면 얇은 판(바닥 · 책)에서 틀린다. 줄이기 전과 후를 꼭 렌더로 비교한다.
 
+
+## 34. Unity를 연 채로 LFS 바이너리를 받으면 `.meta`가 새 GUID로 바뀜 (R325)
+
+- **증상:** 11-03 이 PC(seoungtest)에서 홀 · 도서관 · 정원 · 엔드게임 FBX와 도서관 WAV 83개의 `.meta`가 지워졌다가, Unity가 새 GUID · 기본 가져오기 설정으로 다시 만들었다. Console에 "Air cannon sound missing" 등.
+- **까닭:** Unity가 켜질 때 LFS 파일이 아직 없어서 짝 없는 `.meta`를 지웠고, 파일이 들어온 뒤 새로 만들었다.
+- **고침:** 새로 생긴 `.meta`를 커밋하지 말고 저장소 것으로 되돌린다: `git checkout -- <경로>.meta`(원격에만 있으면 그 브랜치를 먼저 맞춘다). 받기 · 체크아웃은 Unity를 닫고 하거나, 끝나자마자 `git status`에서 바이너리 `.meta`가 지워지거나 바뀌었는지 본다.
+
+## 35. mkmeta로 만든 PNG `.meta`를 Unity가 큐브맵으로 가져옴 (R330)
+
+- **증상:** R329의 카펫(`Assets/Resources/PawnRushGrandStairHall/HallCarpet.png`)이 안 깔리고 Console에 "카펫을 깔지 못했습니다". `Resources.Load<Texture2D>`가 null, `Resources.Load`는 Cubemap.
+- **까닭:** `Tools/Generators/mkmeta.py`는 guid만 쓴 `.meta`를 만든다. 텍스처 설정이 없는 그 `.meta`로 Unity가 1024² PNG를 TextureCube로 가져왔다.
+- **고침:** 텍스처는 가져온 뒤 설정을 확인한다. 열린 에디터가 있으면 `unity command get_import_settings --asset <경로>` / `set_import_settings --settings '{"textureShape":"Texture2D"}'`로 바꾸면 `.meta`에 `textureShape: 1`이 저장된다.
