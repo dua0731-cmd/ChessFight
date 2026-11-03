@@ -1,0 +1,25 @@
+{
+ "fountains_removed": 6,
+ "garden": {
+  "bushes": 206,
+  "moved": 126,
+  "removed": 80,
+  "flowers_removed": 391,
+  "largest_drop_m": 1.18
+ },
+ "planter": {
+  "bushes": 18,
+  "moved": 12,
+  "removed": 6,
+  "flowers_removed": 28,
+  "largest_drop_m": 0.83
+ },
+ "V02_백팀_보트_PIVOT": {
+  "stop_low_y": 38.96,
+  "stop_high_y": 45.52
+ },
+ "V02_흑팀_보트_PIVOT": {
+  "stop_low_y": 38.96,
+  "stop_high_y": 45.52
+ }
+}

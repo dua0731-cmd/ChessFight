@@ -1,0 +1,29 @@
+{
+  "meshes": 527,
+  "tracks": 13,
+  "frames": 721,
+  "max_roundtrip_bounds_error_m": 0.0799722671508789,
+  "worst": [
+    [
+      0.0799722671508789,
+      "V07 Water | upper reservoir | gentle wave"
+    ],
+    [
+      0.0799180269241333,
+      "V07 Water | lower moat | gentle wave"
+    ],
+    [
+      9.298324584960938e-06,
+      "V24 | lily pads"
+    ],
+    [
+      8.702278137207031e-06,
+      "V21 | plaza entry post SW"
+    ],
+    [
+      8.702278137207031e-06,
+      "V21 | plaza entry post SE"
+    ]
+  ],
+  "unity_runtime_tested": false
+}

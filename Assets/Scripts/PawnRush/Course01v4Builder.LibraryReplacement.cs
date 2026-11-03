@@ -18,7 +18,24 @@ namespace ChessFight.PawnRush
             var pivot = new GameObject("Library replacement").transform;
             pivot.SetParent(b.parent, false);
             pivot.localRotation = Quaternion.Euler(0, 180, 0);
-            Object.Instantiate(environment, pivot, false).name = "Library environment";
+            var hall = Object.Instantiate(environment, pivot, false);
+            hall.name = "Library environment";
+            // The two blower cannons fire air across the conveyor in turn (R291); their fans are separate nodes
+            // (ArtSource/PawnRush/Library/air_cannons.py).
+            // The hall's world box: inside it the cannons' fan whirr is heard everywhere (R314).
+            var room = new Bounds();
+            foreach (var r in hall.GetComponentsInChildren<Renderer>(true))
+                if (room.size == Vector3.zero) room = r.bounds;
+                else room.Encapsulate(r.bounds);
+            int cannons = 0;
+            foreach (var t in hall.GetComponentsInChildren<Transform>(true))
+            {
+                if (!t.name.StartsWith("BLOWER_") || t.name.EndsWith("_Fan")) continue;
+                var fan = t.Find(t.name + "_Fan");
+                if (fan == null) continue;
+                t.gameObject.AddComponent<LibraryAirCannon>().Configure(fan, cannons++ * 2.5f, room);
+            }
+            if (cannons == 0) Debug.LogError("Pawn Rush library cannons have no separate fan (run air_cannons.py).");
             var shuttle = Object.Instantiate(shuttleAsset, pivot, false);
             shuttle.name = "Moving conveyor";
             // The shuttle's take is one 16 s round trip that ends where it starts. LibraryShuttleDriver samples it
@@ -52,7 +69,9 @@ namespace ChessFight.PawnRush
                 break;
             }
             if (carriage == null) Debug.LogError("Pawn Rush library shuttle has no CONVEYOR_CARRIAGE node.");
-            shuttle.AddComponent<LibraryShuttleDriver>().Configure(take, carriage);
+            var driver = shuttle.AddComponent<LibraryShuttleDriver>();
+            driver.Configure(take, carriage);
+            if (carriage != null) shuttle.AddComponent<LibraryConveyorSound>().Configure(driver, carriage);
             Box(pivot, "Start floor collision", new Vector3(0, -.12f, 17.5f), new Vector3(29.9f, .24f, 10f));
             Box(pivot, "Left balcony collision", new Vector3(-11.45f, -.12f, 2f), new Vector3(7.1f, .24f, 21f));
             Box(pivot, "Right balcony collision", new Vector3(11.45f, -.12f, 2f), new Vector3(7.1f, .24f, 21f));

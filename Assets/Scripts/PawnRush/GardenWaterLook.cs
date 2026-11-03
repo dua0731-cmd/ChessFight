@@ -41,15 +41,19 @@ namespace ChessFight.PawnRush
         }
 
         // R281: the waterfalls and their spray by the object they belong to, so they get their shaders even if an
-        // importer renames the material slots. R283: the v26 outlet falls too.
+        // importer renames the material slots. R283: the v26 outlet falls too. R284: the tanks hold 3 cm of water, so
+        // the swell let their floor show through in the troughs; they get the calm shallow-water material.
         public static void ApplyBySource(SampledGardenMotion.Take take, System.Collections.Generic.Dictionary<string, Transform> nodes)
         {
             var sheet = Resources.Load<Material>("PR_GardenFallSheet");
             var spray = Resources.Load<Material>("PR_GardenSpray");
-            if (sheet == null || spray == null) return;
+            var shallow = Resources.Load<Material>("PR_GardenWaterShallow");
+            if (sheet == null || spray == null || shallow == null) return;
             foreach (var role in take.meshes)
             {
-                Material use = role.source.StartsWith("V25 | fall") || role.source.StartsWith("V26 | fall") ? sheet : role.source.StartsWith("V23 | fall spray") ? spray : null;
+                Material use = role.source.StartsWith("V25 | fall") || role.source.StartsWith("V26 | fall") ? sheet
+                    : role.source.StartsWith("V23 | fall spray") ? spray
+                    : role.source.StartsWith("V22 | tank water") ? shallow : null;
                 if (use == null || !nodes.TryGetValue(role.name, out var node) || !node.TryGetComponent<Renderer>(out var renderer)) continue;
                 var slots = renderer.sharedMaterials;
                 for (int i = 0; i < slots.Length; i++) slots[i] = use;

@@ -1,3 +1,31 @@
+# Unity garden v33 (R309)
+
+Same files (424 meshes, 4 tracks, 8 bobbers). Zone G builds the v31 section inside an inactive `Royal garden layout` holder, so every `ObstacleMotion` is still at its rest pose: each mesh role with `attach` is reparented with its world pose kept (`SetParent(target, true)`; `A/B` finds child `B` of part `A`), then the holder is switched on. The covered graybox (canal walk, ramp, landings, lock, dyke, tunnels, boat hulls and decks, posts, pads, spin bar bars and hubs, geyser rims and grates, steps, exit, island, every rail and stem) stops drawing and keeps its colliders. Meshes named `V19 | V33 obstacle | …` (the stand-in obstacles: spin bars, geyser rims, shortcut posts, lotus pads, sluice gate panels, boats) get the orange `Garden obstacle placeholder` instead of clay; they are to be replaced by assets. Zone version 35. Rebuild: `build_v33.py`, `export_unity_v33.py`.
+
+# Unity garden v32 (R307)
+
+Same files. Zone G builds main's v31 graybox (`Course01Kit.royalWaterGarden` → `RoyalWaterGardenBuilder.Build`) and lays these models over it. Mesh roles carry `attach`: a drum is reparented to the named `Bobbing platform Pn` with its offset from `PlatformTop(n-1)`. The graybox parts the models cover keep their colliders and stop drawing; the v31 robot arms, gantries and axles are destroyed (the Blender arms swing instead); the garden water's kill volume goes 0.9 m down to the model water (−1.7). The castle collision proxies are not exported (the v31 code walls hold the edge). Zone version 32. Rebuild: `build_v32.py`, `export_unity_v32.py`.
+
+# Unity garden v31 (R296)
+
+Same files and node names as v30, 3.99 M triangles instead of 6.47 M (decimated V19 / V16 meshes). Zone version 27. Rebuild: `build_v31.py`, `export_unity_v31.py`, `check_unity_export_v31.py`.
+
+# Unity garden v30 (R287)
+
+Same files, v30 content (313 meshes, 13 tracks) plus a `parade` take (track = the boat pivot's node, 2111 samples of world pose in Blender coordinates, `forward` in the boat's own frame). Zone version 23. Node names are `GW_` + the first 12 hex digits of the SHA-1 of the Blender name (no longer sort numbers), so adding or removing an object does not rename the others. Rebuild: `build_v30.py`, `export_unity_v30.py`, `check_unity_export_v30.py`. The gate is a box collider; the boat and the arch water never collide. `GardenBoatParade` plays the take from `Time.time` (local only) and hides the boat between tours. The water shader's hull arrays are now `_GardenHull*` with three entries.
+
+# Unity garden v29 (R286)
+
+Same files, v29 content (391 meshes, 13 tracks). Zone version 21. Rebuild: `build_v29.py`, `export_unity_v29.py`, `check_unity_export_v29.py`. The castle walls and corner towers (`V29 | castle …`) keep their own stone, blue roof and gold materials and have no colliders; `V29 | castle collision W/E/N/S` are proxies (MeshCollider, renderer off) on the play edge.
+
+# Unity garden v28 (R285)
+
+Same files, v28 content (527 meshes, 13 tracks). Zone version 20. Rebuild: `build_v28.py`, `export_unity_v28.py`, `check_unity_export_v28.py`. The boat pivots are keyframed (knock at the quay walls); the runtime plays the samples as before.
+
+# Unity garden v27 (R284)
+
+Same files, v27 content (528 meshes, 13 tracks, same 17 `splashes`). Zone version 19. Rebuild: `build_v27.py`, `export_unity_v27.py`, `check_unity_export_v27.py`. The tank water (`V22 | tank water`) gets `PR_GardenWaterShallow` by source name: the tanks are 3 cm deep, so the moat's swell would show their floor. Water colour E; boat rings and the glow of water heaped at a hull have their own properties (`_BoatRingHeight`, `_BoatGlow`).
+
 # Unity garden v26 (R283)
 
 Same files (`RoyalWaterGarden.fbx` / `_Motion.json`), now the v26 content: 528 meshes, 13 tracks, 17 `splashes`. Zone version 18. Rebuild: `build_v26.py`, `export_unity_v26.py` (outlet stone `V26 | spout stone …` = box), `check_unity_export_v26.py`. `V26 | spout shadow …` keeps its near-black colour; `V26 | fall …` gets `PR_GardenFallSheet` by object name. The water shader reads `_GardenLanding*` (renamed from `_GardenSplash*`, 24 entries) and `_GardenBoatInfo`; the fall shader reads `_GardenFoot` and draws after the water.

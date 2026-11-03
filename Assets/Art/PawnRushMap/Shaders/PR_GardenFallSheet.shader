@@ -16,7 +16,7 @@ Shader "ChessFight/Garden Fall Sheet"
         _Refraction ("Refraction", Range(0, 0.1)) = 0.03
         _Wobble ("Wobble (m)", Float) = 0.025
         _Aeration ("Aeration", Range(0, 1)) = 0.6
-        _PoolTint ("Pool water at the foot", Color) = (0.45, 0.86, 0.95, 1)
+        _PoolTint ("Pool water at the foot", Color) = (0.66, 0.86, 1.0, 1)
         _FootHeight ("Foot blend height (m)", Float) = 0.55
     }
     SubShader

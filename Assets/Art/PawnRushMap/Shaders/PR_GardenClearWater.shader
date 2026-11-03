@@ -1,16 +1,21 @@
 // Royal garden water (R278 clear water; R279 boats/falls; R280 Gerstner swell; R281 승규 11-01: "no white where
 // things meet the water, a livelier, calculated boat interaction, cleaner and fresher blue"; R283 승규 11-02: "more
-// alive and bluer, waves that spread harder, falls that meet the water naturally, boats that rock and push waves").
+// alive and bluer, waves that spread harder, falls that meet the water naturally, boats that rock and push waves";
+// R284 승규 11-02: colour E from the mockup (one bright blue, no turquoise crests: they read as a second colour),
+// a stronger boat interaction).
 // See-through: the opaque scene behind the surface is refracted through the waves and tinted by how much water lies
 // in front of it (scene depth minus surface depth, plus a body depth so the shallow moat still reads as blue water
-// and not as a tinted floor), so it turns deeper blue with depth; light through the crests turns them turquoise.
+// and not as a tinted floor), so it turns deeper blue with depth; light through the crests makes them a lighter blue.
+// Very shallow water (the 3 cm tanks) uses PR_GardenWaterShallow: the same shader with a swell of millimetres, so the
+// floor never pokes through in the troughs.
 // The swell is four Gerstner waves from one heading whose speeds follow the finite-depth dispersion relation
 // w^2 = g k tanh(k h); vertices move with them and every pixel takes their exact normal.
 // Everything that meets the water only bends or tints its surface (no white foam): GardenWaterInteraction sets
 // global arrays for
 //  - boats: a Kelvin wake (transverse and divergent crests inside the 19.47 degree wedge, wavelength 2 pi U^2 / g
-//    for the boat's speed U), bow and stern waves round the hull, rings that grow with its bobbing and rolling;
-//  - waterfall landing lines: churned, bubbly water (lighter turquoise, rougher, more refraction) that fades out
+//    for the boat's speed U), bow and stern waves round the hull, rings that grow with its bobbing and rolling,
+//    and water heaped against the hull, lit through like a crest;
+//  - waterfall landing lines: churned, bubbly water (a lighter blue, rougher, more refraction) that fades out
 //    over a metre or two, and rings leaving them at the dispersion speed;
 //  - bobbing platforms: rings leaving them at the dispersion speed.
 // With no script (other scenes) the counts are 0 and nothing changes. Needs the URP depth and opaque textures.
@@ -18,14 +23,14 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
 {
     Properties
     {
-        _ShallowColor ("Shallow tint", Color) = (0.50, 0.88, 0.98, 1)
-        _DeepColor ("Deep colour", Color) = (0.02, 0.30, 0.58, 1)
-        _Clarity ("Clear depth (m)", Float) = 1.6
-        _BodyDepth ("Extra colour depth (m)", Float) = 1.2
-        _CrestColor ("Light through the crests", Color) = (0.30, 0.92, 0.85, 1)
-        _ChurnColor ("Churned water at the falls", Color) = (0.62, 0.93, 0.97, 1)
+        _ShallowColor ("Shallow tint", Color) = (0.75, 0.92, 1.0, 1)
+        _DeepColor ("Deep colour", Color) = (0.08, 0.42, 0.72, 1)
+        _Clarity ("Clear depth (m)", Float) = 1.8
+        _BodyDepth ("Extra colour depth (m)", Float) = 1.3
+        _CrestColor ("Light through the crests", Color) = (0.30, 0.62, 0.92, 1)
+        _ChurnColor ("Churned water at the falls", Color) = (0.66, 0.86, 1.0, 1)
         _ChurnReach ("Churn reach (m)", Float) = 1.6
-        _SkyColor ("Sky tint", Color) = (0.68, 0.86, 1.0, 1)
+        _SkyColor ("Sky tint", Color) = (0.70, 0.86, 1.0, 1)
         [Normal] _WaveMap ("Wave normals", 2D) = "bump" {}
         _WaveScale ("Wave size (per metre)", Float) = 0.15
         _WaveStrength ("Wave strength", Range(0, 2)) = 0.55
@@ -38,7 +43,9 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
         _WaterDepth ("Water depth for wave speed (m)", Float) = 0.6
         _Choppiness ("Gerstner steepness", Range(0, 1)) = 0.6
         _RippleHeight ("Ring ripple height (m)", Float) = 0.035
-        _WakeHeight ("Boat wave height (m)", Float) = 0.085
+        _WakeHeight ("Boat wave height (m)", Float) = 0.13
+        _BoatRingHeight ("Rings off a rocking boat (m)", Float) = 0.045
+        _BoatGlow ("Light through the water piled at a hull", Range(0, 1)) = 0.35
         _Refraction ("Refraction", Range(0, 0.2)) = 0.04
         _Reflection ("Reflection", Range(0, 1)) = 0.7
         _FresnelPower ("Fresnel power", Range(1, 8)) = 5
@@ -77,15 +84,17 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 float _Clarity, _BodyDepth, _ChurnReach;
                 float _WaveScale, _WaveStrength, _WaveSpeed, _DetailScale, _DetailStrength;
                 float _WaveHeight, _WaveLength, _WaveHeading, _WaterDepth, _Choppiness, _RippleHeight, _WakeHeight;
+                float _BoatRingHeight, _BoatGlow;
                 float _Refraction, _Reflection, _FresnelPower;
                 float _Glint, _GlintSharpness, _Sparkle;
             CBUFFER_END
 
-            // Globals from GardenWaterInteraction (sizes match its MaxBoats / MaxSplashes / MaxBobbers).
-            float4 _GardenBoat[2];        // world xyz, speed (m/s)
-            float4 _GardenBoatAxis[2];    // heading xz, half length, half width
-            float4 _GardenBoatInfo[2];    // x: vertical speed (m/s), y: roll + pitch rate (rad/s)
-            float _GardenBoatCount;
+            // Globals from GardenWaterInteraction (sizes match its MaxBoats / MaxSplashes / MaxBobbers). R287: three hulls (the
+            // parade boat); renamed from _GardenBoat* because Unity keeps a global array's first size for the editor session.
+            float4 _GardenHull[3];        // world xyz, speed (m/s)
+            float4 _GardenHullAxis[3];    // heading xz, half length, half width
+            float4 _GardenHullInfo[3];    // x: vertical speed (m/s), y: roll + pitch rate (rad/s)
+            float _GardenHullCount;
             float4 _GardenLanding[24];    // landing line: start xz, end xz
             float4 _GardenLandingInfo[24];// x: water height, y: strength
             float _GardenLandingCount;
@@ -140,8 +149,8 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 return height * exp(-r / reach) * (k * cos(f) - sin(f) / reach);
             }
 
-            // Height of one boat's waves at p.
-            float BoatWaves(float2 p, float4 boat, float4 axis, float4 info)
+            // Height of one boat's waves at p; `near` (0..1) is how much water is pushed up against the hull here.
+            float BoatWaves(float2 p, float4 boat, float4 axis, float4 info, out float near)
             {
                 float2 f = normalize(axis.xy), side = float2(-f.y, f.x);
                 float2 r = p - boat.xz;
@@ -155,10 +164,11 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 float e = length(float2(along / hl, across / hw));
                 float rim = max(e - 1.0, 0) * hw;          // metres out from the hull
                 float h = 0;
-                // Bow wave ahead, a trough along the sides, a stern wave behind.
-                float shell = exp(-(rim * rim) / 0.5);
+                // Bow wave ahead, a trough along the sides, a stern wave behind (R284: wider, so it reads from the
+                // quay).
+                float shell = exp(-(rim * rim) / 0.9);
                 float bow = saturate(along / hl), stern = saturate(-along / hl);
-                h += _WakeHeight * pace * shell * (1.1 * bow * bow - 0.45 * (1 - bow - stern) + 0.6 * stern * stern);
+                h += _WakeHeight * pace * shell * (1.3 * bow * bow - 0.5 * (1 - bow - stern) + 0.7 * stern * stern);
                 // Kelvin wake behind the stern: transverse crests across the track and divergent crests on the arms.
                 float x = -along - hl * 0.7;
                 if (x > 0)
@@ -172,20 +182,25 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                     float arm = exp(-off * off);
                     h += fade * 1.2 * arm * cos(k0 * 2.2 * (0.94 * y + 0.34 * x));
                 }
-                // Rings leave the hull: always a little, and much more while it heaves and rocks.
-                float stir = 0.5 + 10.0 * abs(info.x) + 4.0 * abs(info.y);
+                // Rings leave the hull: always a little, and much more while it heaves and rocks; R284: their own
+                // height and a longer reach, so they spread further across the reservoir.
+                float stir = 0.6 + 14.0 * abs(info.x) + 6.0 * abs(info.y);
                 float rk = 6.2831853 / 1.3, rk2 = 6.2831853 / 2.8;
-                h += _RippleHeight * stir * exp(-rim / 5.0) * (0.6 * sin(rk * rim - Omega(rk) * _Time.y)
-                                                              + 0.4 * sin(rk2 * rim - Omega(rk2) * _Time.y + 1.3));
+                h += _BoatRingHeight * stir * exp(-rim / 7.0) * (0.6 * sin(rk * rim - Omega(rk) * _Time.y)
+                                                                + 0.4 * sin(rk2 * rim - Omega(rk2) * _Time.y + 1.3));
+                // Water heaped against the hull: more while the boat moves, heaves or rocks.
+                near = saturate(exp(-rim / 0.9) * (0.35 + 0.2 * stir + 0.8 * pace));
                 return h;
             }
 
             // Extra surface slope from the waterfalls, the platforms and the boats at world point (p.xz, height y);
-            // `landing` is the distance (m) to the nearest landing line at this height (large when there is none).
-            float2 Interaction(float2 p, float y, out float landing)
+            // `landing` is the distance (m) to the nearest landing line at this height (large when there is none);
+            // `hull` (0..1) is the water heaped against a boat.
+            float2 Interaction(float2 p, float y, out float landing, out float hull)
             {
                 float2 slope = 0;
                 landing = 1e4;
+                hull = 0;
                 [loop] for (int k = 0; k < 24; k++)
                 {
                     if (k >= (int)_GardenLandingCount) break;
@@ -209,16 +224,18 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                     float stir = 0.25 + saturate(abs(_GardenBobberInfo[m].x) / 0.35);
                     slope -= q / max(dist, 1e-3) * RingSlope(r, 1.6, _RippleHeight * stir, 5.0);
                 }
-                [loop] for (int b = 0; b < 2; b++)
+                [loop] for (int b = 0; b < 3; b++)
                 {
-                    if (b >= (int)_GardenBoatCount) break;
-                    float4 boat = _GardenBoat[b], axis = _GardenBoatAxis[b], info = _GardenBoatInfo[b];
+                    if (b >= (int)_GardenHullCount) break;
+                    float4 boat = _GardenHull[b], axis = _GardenHullAxis[b], info = _GardenHullInfo[b];
                     if (axis.z <= 0 || abs(y - boat.y) > 1.5) continue;
                     const float e = 0.04;
-                    float h0 = BoatWaves(p, boat, axis, info);
-                    float hx = BoatWaves(p + float2(e, 0), boat, axis, info);
-                    float hz = BoatWaves(p + float2(0, e), boat, axis, info);
+                    float near, unused;
+                    float h0 = BoatWaves(p, boat, axis, info, near);
+                    float hx = BoatWaves(p + float2(e, 0), boat, axis, info, unused);
+                    float hz = BoatWaves(p + float2(0, e), boat, axis, info, unused);
                     slope -= float2(hx - h0, hz - h0) / e;
+                    hull = max(hull, near);
                 }
                 return slope;
             }
@@ -245,15 +262,16 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 float t = _Time.y * _WaveSpeed;
                 float2 p = i.positionWS.xz;
                 half up = saturate(i.normalWS.y);
-                float landing;
-                float2 touched = Interaction(p, i.positionWS.y, landing) * up;
+                float landing, hull;
+                float2 touched = Interaction(p, i.positionWS.y, landing, hull) * up;
+                hull *= up;
                 // Churned water where the falls land: rougher, bubbly, fading out over the churn reach.
                 float churn = up * exp(-landing / max(_ChurnReach, 0.05));
                 half3 a = UnpackNormalScale(SAMPLE_TEXTURE2D(_WaveMap, sampler_WaveMap, p * _WaveScale + float2(t, t * 0.6)), _WaveStrength);
                 half3 b = UnpackNormalScale(SAMPLE_TEXTURE2D(_WaveMap, sampler_WaveMap, p * _WaveScale * 1.9 + float2(-t * 0.7, t * 0.4)), _WaveStrength);
                 half3 c = UnpackNormalScale(SAMPLE_TEXTURE2D(_WaveMap, sampler_WaveMap, p * _DetailScale + float2(t * 2.1, -t * 1.6)), _DetailStrength);
                 half3 boil = UnpackNormalScale(SAMPLE_TEXTURE2D(_WaveMap, sampler_WaveMap, p * 2.6 + float2(_Time.y * 0.35, -_Time.y * 0.28)), 0.9);
-                float2 slope = a.xy + b.xy + c.xy + boil.xy * churn + touched;
+                float2 slope = a.xy + b.xy + c.xy + boil.xy * (churn + 0.5 * hull) + touched;
                 // The swell's exact normal at this pixel (smooth); the maps and the interactions bend it.
                 float3 gn;
                 float swell = Gerstner(p, gn).y;
@@ -267,9 +285,9 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 float scene = LinearEyeDepth(SampleSceneDepth(uv), _ZBufferParams);
                 float thick = max(0, scene - surface);
 
-                // Refract: bend the lookup by the waves (more in the churn), but never pick up something standing in
-                // front of the water.
-                float2 ruv = uv + n.xz * _Refraction * (1 + 2 * churn) * saturate(thick);
+                // Refract: bend the lookup by the waves (more in the churn and at a hull), but never pick up something
+                // standing in front of the water.
+                float2 ruv = uv + n.xz * _Refraction * (1 + 2 * churn + 1.5 * hull) * saturate(thick);
                 float rscene = LinearEyeDepth(SampleSceneDepth(ruv), _ZBufferParams);
                 if (rscene < surface) { ruv = uv; rscene = scene; }
                 float rthick = max(0, rscene - surface);
@@ -287,7 +305,9 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 // Sunlight through the thin top of each crest.
                 half through = crest * crest * (0.55 + 0.45 * saturate(dot(-V, sun.direction) * 0.5 + 0.5));
                 body = lerp(body, _CrestColor.rgb * shade * sun.color, through * 0.45 * up);
-                // Bubbles in the churn: lighter turquoise in drifting patches, never white.
+                // Water heaped against a hull: lit through like a crest, so the boat visibly pushes the water.
+                body = lerp(body, _CrestColor.rgb * shade * sun.color, hull * _BoatGlow);
+                // Bubbles in the churn: a lighter blue in drifting patches, never white.
                 half bubbles = saturate(churn * (0.55 + 0.6 * (length(boil.xy) - 0.3)));
                 body = lerp(body, _ChurnColor.rgb * lambert * shade * sun.color, bubbles * 0.6);
 
@@ -300,8 +320,8 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 float3 h = normalize(sun.direction + V);
                 half ndh = saturate(dot(n, h));
                 half glint = pow(ndh, _GlintSharpness) * _Glint;
-                // Sparkle: a broader highlight cut to sharp flecks on the steepest ripples (and in the churn).
-                half rough = length(c.xy) / max(_DetailStrength, 0.01) + churn * length(boil.xy);
+                // Sparkle: a broader highlight cut to sharp flecks on the steepest ripples (and in the churn, at a hull).
+                half rough = length(c.xy) / max(_DetailStrength, 0.01) + (churn + 0.5 * hull) * length(boil.xy);
                 half fleck = smoothstep(0.55, 0.9, rough) * pow(ndh, 64) * _Sparkle;
                 col += sun.color * (glint + fleck) * sun.shadowAttenuation;
 

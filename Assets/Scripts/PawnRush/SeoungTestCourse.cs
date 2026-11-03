@@ -14,7 +14,7 @@ namespace ChessFight.PawnRush
     //   F1      into the zone the camera looks at (flying: the one under the view; walking: the zone again from its start)
     //   [ ]     the previous / next zone
     //   1~6     pawn, knight, bishop, rook, queen, king
-    //   F2      fly over the whole map (WASD, Space / C, Shift fast), again back to the pawn
+    //   F2      free camera from the play view (WASD, Space / C, Shift fast), again back to the pawn
     //   G       the mini-game of this zone from the start
     //   H       help on / off
     //
@@ -25,7 +25,7 @@ namespace ChessFight.PawnRush
     {
         public const string RootName = "SeoungTest_Zones";
         // Raised whenever a zone's build changes, so a scene built before it is built again (R244: the war room v2, R255: hard LD v1 and its Blender models, R258: the library shuttle loops in the physics step, R259: the shuttle driven from the shared clock, R260: the library's lower floor and its fall, R263: the royal water garden G beside the library).
-        public const int Version = 18; // R283: garden v26 (waterfall outlets, livelier water, rocking boats).
+        public const int Version = 46; // 46 (R322): the hall H's north corner columns back (R321 undone), the south walls' cut ends closed (Unity draws no back faces, you saw through them). 45 (R321): the hall H's north corner columns gone, a stone fill from the round wall to the side walls. 44 (R320): the hall H's window bars round in section as the asset's, its south corner columns gone, the side walls reaching the south walls' outer face. 43 (R319): the hall H's windows in their old tracery drawn again in clean bars, the corner columns gone, the walls running into the foyer side walls instead. 42 (R318): the hall H's entrance bases built as masonry, the entrance corner columns thicker over the wing ends, columns where the foyer side walls meet the hall's south outer wall. 41 (R315): the library's ten inner gallery piers in 승규's stone column. 40 (R317): the hall H's outer and foyer side windows cut whole with straight new bars, corner columns where the foyer meets the archway wings, the falling pieces drawn as 승규's chess knight. 39 (R313): the foyer's side walls in the architectural wall. 38 (R312): the castle archway turned round, its arch the way in and its wings the foyer's south wall (that blockout wall gone). 37 (R312): the hall H's entrance in 승규's castle archway, its wing windows open, stone bases under the wings. 36 (R311): the hall H's red floor under its walls, 승규's flat pad models on the floating stones and the jump pad. 35 (R309): the garden obstacle stand-ins in orange. 34 (R309): the garden's v31 graybox dressed with brick modules and clay parts (v33), the boats, gates, posts, pads and spin bars riding their movers. 33 (R308): the Blender hall v15 over the blockout hall H, the falling chandeliers from its model. 32 (R307): the garden G on main's v31 layout, its models moved onto it (v32). 31 (R299): the Tripo hall withdrawn (승규 님), H is the blockout hall again. 30 (R298 v7): the Tripo hall's normals recomputed and its central landing a clean box. 29 (R298): 승규 님's Tripo hall model in H, the blockout pieces it replaces stop drawing. 28 (R297): the grand stair hall H beside the garden. R287: garden v30 (side waterfalls moved back, round islands gone, east water gate and royal boat tours); 23: node names from the Blender name, so the scene built from the first v30 export is rebuilt. 24 (R288): the library conveyor slides on rail shoes instead of wheels. 25 (R289): the conveyor's sound. 26 (R291): the blower cannons fire air, their fans spin. 27 (R296): garden v31 (decimated V19 / V16 meshes) and the war room LOD switch heights.
         static string VersionMark => "Zones v" + Version;
         // Wide gaps (10-30, 승규 님: room to widen the course sections): 80 m between zones, the mini-games 160 m in front.
         const float Gap = 80f, MiniRowZ = -160f;
@@ -87,7 +87,7 @@ namespace ChessFight.PawnRush
             if (Input.GetKeyDown(KeyCode.F1)) Enter(Looked());
             if (Input.GetKeyDown(KeyCode.LeftBracket)) Enter((current + zones.Length - 1) % zones.Length);
             if (Input.GetKeyDown(KeyCode.RightBracket)) Enter((current + 1) % zones.Length);
-            if (Input.GetKeyDown(KeyCode.F2)) Overview();
+            if (Input.GetKeyDown(KeyCode.F2)) FreeLook();
             if (Input.GetKeyDown(KeyCode.H)) help = !help;
             if (Input.GetKeyDown(KeyCode.G) && zones[current].station != null) zones[current].station.Install(zones[current].station.GameIndex);
             for (int i = 0; i < PieceKeys.Length; i++)
@@ -129,13 +129,15 @@ namespace ChessFight.PawnRush
             return best;
         }
 
-        // From high over the south edge, looking north over both rows; again back to the pawn.
-        void Overview()
+        // R308 (승규 11-03): the free camera starts where the play camera is, looking where it looks (no jump to the
+        // whole map); again back to the pawn.
+        void FreeLook()
         {
             if (orbit == null) return;
             if (orbit.FreeFly) { orbit.StopFly(); return; }
-            float span = Mathf.Max(all.size.x, all.size.z);
-            orbit.FlyAt(new Vector3(all.center.x, all.max.y + span * .3f, all.min.z - span * .25f), 0f, 40f);
+            var view = orbit.transform;
+            float pitch = Mathf.DeltaAngle(0f, view.eulerAngles.x);
+            orbit.FlyAt(view.position, view.eulerAngles.y, pitch);
         }
 
         void OnGUI()
@@ -145,7 +147,7 @@ namespace ChessFight.PawnRush
             var lines = new List<string>
             {
                 "<b>승규 시험 씬 · 폰 러쉬</b>  (H 도움말 끄기)",
-                "F1 보고 있는 구역에 들어가기 · [ ] 이전/다음 구역 · F2 맵 전체 둘러보기",
+                "F1 보고 있는 구역에 들어가기 · [ ] 이전/다음 구역 · F2 이 자리에서 카메라 움직이기",
                 "1 폰 · 2 나이트 · 3 비숍 · 4 룩 · 5 퀸 · 6 킹 · F 스킬 · G 미니게임 처음부터 · R 구역 처음으로",
                 ""
             };

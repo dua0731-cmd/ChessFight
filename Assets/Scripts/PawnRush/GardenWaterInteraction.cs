@@ -9,17 +9,19 @@ namespace ChessFight.PawnRush
     // rings. R280: each bobbing platform's rim, radius and vertical speed become rings that spread by the water's
     // dispersion relation. R283: up to 24 landing lines (one per outlet), each boat's heave and rocking speed (its rings
     // grow with them) and the moat height the falls blend into (_GardenFoot). The landing arrays were renamed from
-    // _GardenSplash* because Unity keeps a global array's first size for the whole editor session.
+    // _GardenSplash* because Unity keeps a global array's first size for the whole editor session. R287: a third hull, the
+    // parade boat, which turns: each boat's forward is kept in its own frame, and a hidden boat makes no waves (the
+    // boat arrays were renamed to _GardenHull* for the new size).
     // Read only: it never moves anything (HANDOFF rule 7); SampledGardenMotion moves them.
     [DefaultExecutionOrder(100)]
     public sealed class GardenWaterInteraction : MonoBehaviour
     {
-        public const int MaxBoats = 2, MaxSplashes = 24, MaxBobbers = 8;
+        public const int MaxBoats = 3, MaxSplashes = 24, MaxBobbers = 8;
         const float MoatLevel = -1.7f;   // Blender z of the moat surface the platforms stand in
-        static readonly int BoatId = Shader.PropertyToID("_GardenBoat");
-        static readonly int BoatAxisId = Shader.PropertyToID("_GardenBoatAxis");
-        static readonly int BoatCountId = Shader.PropertyToID("_GardenBoatCount");
-        static readonly int BoatInfoId = Shader.PropertyToID("_GardenBoatInfo");
+        static readonly int BoatId = Shader.PropertyToID("_GardenHull");
+        static readonly int BoatAxisId = Shader.PropertyToID("_GardenHullAxis");
+        static readonly int BoatCountId = Shader.PropertyToID("_GardenHullCount");
+        static readonly int BoatInfoId = Shader.PropertyToID("_GardenHullInfo");
         static readonly int FootId = Shader.PropertyToID("_GardenFoot");
         static readonly int SplashId = Shader.PropertyToID("_GardenLanding");
         static readonly int SplashInfoId = Shader.PropertyToID("_GardenLandingInfo");
@@ -30,7 +32,7 @@ namespace ChessFight.PawnRush
 
         [SerializeField] Transform zone;
         [SerializeField] Transform[] boats;
-        [SerializeField] Vector3[] boatForward;       // zone space
+        [SerializeField] Vector3[] boatForward;       // each boat's own frame
         [SerializeField] Vector2[] boatHalfSize;      // half length, half width (m)
         [SerializeField] Vector3[] splashFrom, splashTo; // zone space, on the water surface
         [SerializeField] Transform[] bobbers;
@@ -57,9 +59,20 @@ namespace ChessFight.PawnRush
                     // Blender (x, y, z) -> zone (x, z, y), as for the sampled motion.
                     var f = boat.forward != null && boat.forward.Length == 3
                         ? new Vector3(boat.forward[0], boat.forward[2], boat.forward[1]) : Vector3.forward;
-                    forward.Add(f.normalized);
+                    forward.Add(node.InverseTransformDirection(zone.TransformDirection(f.normalized)));
                     half.Add(new Vector2(boat.halfLength, boat.halfWidth));
                 }
+            var parade = take.parade;
+            if (parade != null && found.Count < MaxBoats && !string.IsNullOrEmpty(parade.track) && parade.samples != null
+                && parade.samples.Length >= 7 && nodes.TryGetValue(parade.track, out var royal))
+            {
+                // The take's first pose is the boat's rest pose: its own forward, turned by it, then into the zone.
+                var own = parade.forward != null && parade.forward.Length == 3 ? new Vector3(parade.forward[0], parade.forward[1], parade.forward[2]) : Vector3.right;
+                var w = SampledGardenMotion.Rotation(parade.samples, 0) * own;
+                found.Add(royal);
+                forward.Add(royal.InverseTransformDirection(zone.TransformDirection(new Vector3(w.x, w.z, w.y).normalized)));
+                half.Add(new Vector2(parade.halfLength, parade.halfWidth));
+            }
             boats = found.ToArray();
             boatForward = forward.ToArray();
             boatHalfSize = half.ToArray();
@@ -115,15 +128,23 @@ namespace ChessFight.PawnRush
                 {
                     lastPosition[i] = boats[i] != null ? boats[i].position : Vector3.zero;
                     lastRotation[i] = boats[i] != null ? boats[i].rotation : Quaternion.identity;
-                    heading[i] = Flat(zone.TransformDirection(boatForward[i]));
+                    heading[i] = boats[i] != null ? Flat(boats[i].TransformDirection(boatForward[i])) : Vector3.forward;
                 }
             }
             float dt = Time.deltaTime;
             for (int i = 0; i < nb; i++)
             {
-                if (boats[i] == null) { boatAxis[i] = Vector4.zero; continue; }
+                if (boats[i] == null || !boats[i].gameObject.activeInHierarchy)
+                {
+                    boatAxis[i] = Vector4.zero;
+                    speed[i] = 0f;
+                    if (boats[i] != null) lastPosition[i] = new Vector3(float.NaN, 0f, 0f);
+                    continue;
+                }
                 var p = boats[i].position;
-                var axis = Flat(zone.TransformDirection(boatForward[i]));
+                var axis = Flat(boats[i].TransformDirection(boatForward[i]));
+                // Shown again (the parade): start from here, not from where it was hidden.
+                if (float.IsNaN(lastPosition[i].x)) { lastPosition[i] = p; lastRotation[i] = boats[i].rotation; heading[i] = axis; }
                 if (dt > 0f)
                 {
                     // Boats move in the physics step: smooth the per-frame speed so frames without a step do not flicker.

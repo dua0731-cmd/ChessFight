@@ -106,6 +106,7 @@ namespace ChessFight.PawnRush
                 var s = V(p.scale[0], p.scale[1], p.scale[2]);
                 var ls = parent.lossyScale;
                 go.transform.localScale = new Vector3(s.x / ls.x, s.y / ls.y, s.z / ls.z);
+                WarLod(go, p.role == "decor");
                 foreach (var c in go.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.DestroyImmediate(c);
                 if (p.role == "skin") warSkins.Add(go.transform);
                 placed++;
@@ -116,6 +117,21 @@ namespace ChessFight.PawnRush
                         foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
             Debug.Log($"[PawnRush] 엔드게임 Blender 모델: {placed}개 배치(장치 스킨 {skins}개), FBX 없음 {missing}개" +
                       (lost.Count > 0 ? ", 붙일 장치를 못 찾음: " + string.Join(", ", lost) : ""));
+        }
+
+        // R296: switch heights for the LODGroup the FBX import builds (LOD0/1/2 from ArtSource/PawnRush/Endgame/relod_r296.py).
+        // Screen heights before the PC quality's lodBias 2: a 3 m bookshelf keeps LOD0 to about 17 m and LOD1 to about
+        // 43 m. Decor with no collider disappears below 1.5 %; floors, walls and device skins never do.
+        static void WarLod(GameObject go, bool cull)
+        {
+            if (!go.TryGetComponent<LODGroup>(out var group)) return;
+            var lods = group.GetLODs();
+            if (lods.Length != 3) return;
+            lods[0].screenRelativeTransitionHeight = .30f;
+            lods[1].screenRelativeTransitionHeight = .12f;
+            lods[2].screenRelativeTransitionHeight = cull ? .015f : 0f;
+            group.SetLODs(lods);
+            group.RecalculateBounds();
         }
 
         // The transform a device skin goes under, with the grey renderers it replaces turned off.

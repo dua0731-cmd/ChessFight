@@ -12,6 +12,9 @@
 | `build_library_blend.py` | Unity FBX 두 개 → `PawnRushLibrary.blend`를 처음부터 다시 만든다 |
 | `export_library_fbx.py` | `PawnRushLibrary.blend` → Unity FBX 두 개로 내보낸다(검사 포함) |
 | `build_graybox.py` | `.blend`에 그레이박스 컬렉션 `GRAYBOX`를 (다시) 만든다(R262, §6) |
+| `air_cannons.py` | 환경 FBX의 대포 두 대에서 팬(허브 + 날개 10장)을 `BLOWER_<x>_Fan`으로 떼어 Unity가 돌릴 수 있게 한다(R291, 다시 돌려도 그대로) |
+| `inner_piers_stone.py` | 안쪽 기둥 10개(`V21/V23_Inner_gallery_pier`)를 승규 님 돌기둥 에셋(`../Endgame/source/stone_column.glb`)으로 바꿔 FBX를 바로 고친다(R315, 다시 돌려도 그대로) |
+| `rail_shoes.py` | 셔틀 FBX의 바퀴 · 바퀴 받침을 지우고 레일 윗날개를 감싸는 미끄럼 슈 `Carriage_rail_shoe` 4개를 단다(R288, FBX를 바로 고침, 다시 돌려도 그대로) |
 
 Unity가 읽는 곳(바뀌지 않음): `Assets/Resources/PawnRushLibrary/PawnRushLibraryEnvironment.fbx` · `PawnRushLibraryShuttle.fbx`
 놓는 코드: `Assets/Scripts/PawnRush/Course01v4Builder.LibraryReplacement.cs`(충돌체), `LibraryShuttleDriver.cs`(셔틀 움직임)

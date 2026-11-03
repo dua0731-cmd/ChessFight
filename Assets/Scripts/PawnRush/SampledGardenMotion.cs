@@ -10,13 +10,17 @@ namespace ChessFight.PawnRush
     public sealed class SampledGardenMotion : MonoBehaviour
     {
         [Serializable] public sealed class Track { public string name, source; public float[] samples; }
-        [Serializable] public sealed class MeshRole { public string name, source, collider; }
+        // R307: attach names the v31 graybox part a model rides on (a drum on its bobbing platform).
+        [Serializable] public sealed class MeshRole { public string name, source, collider, attach; }
         [Serializable] public sealed class Splash { public float x0, y0, x1, y1, z; }
         [Serializable] public sealed class Boat { public string track; public float halfLength, halfWidth; public float[] forward; }
         [Serializable] public sealed class Bobber { public string track; public float radius; }
         // R279: splashes are where the waterfalls land, boats the hulls the water shader wakes (Blender coordinates).
         // R280: bobbers are the platforms that bob in the moat and send out rings.
-        [Serializable] public sealed class Take { public int fps, frames; public float duration; public Track[] tracks; public MeshRole[] meshes; public Splash[] splashes; public Boat[] boats; public Bobber[] bobbers; }
+        // R287: the royal boat's tour of the east lake, played on cue by GardenBoatParade (world poses, Blender coordinates;
+        // forward is the boat's own axis).
+        [Serializable] public sealed class Parade { public string track; public int fps, frames; public float duration, halfLength, halfWidth; public float[] samples, forward; }
+        [Serializable] public sealed class Take { public int fps, frames; public float duration; public Track[] tracks; public MeshRole[] meshes; public Splash[] splashes; public Boat[] boats; public Bobber[] bobbers; public Parade parade; }
         Take take;
         [SerializeField] TextAsset motionAsset;
         [SerializeField] Transform zone;
@@ -92,7 +96,7 @@ namespace ChessFight.PawnRush
                     zone.rotation * mapped * restRotations[i]);
             }
         }
-        static Vector3 Position(float[] a, int frame) { int i = frame * 7; return new Vector3(a[i], a[i + 1], a[i + 2]); }
-        static Quaternion Rotation(float[] a, int frame) { int i = frame * 7; return new Quaternion(a[i + 3], a[i + 4], a[i + 5], a[i + 6]); }
+        internal static Vector3 Position(float[] a, int frame) { int i = frame * 7; return new Vector3(a[i], a[i + 1], a[i + 2]); }
+        internal static Quaternion Rotation(float[] a, int frame) { int i = frame * 7; return new Quaternion(a[i + 3], a[i + 4], a[i + 5], a[i + 6]); }
     }
 }

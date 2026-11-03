@@ -31,6 +31,7 @@ Material:
     - _Wobble: 0.025
     m_Colors:
     - _FoamColor: {r: 0.92, g: 0.97, b: 1, a: 1}
+    - _PoolTint: {r: 0.66, g: 0.86, b: 1, a: 1}
     - _Tint: {r: 0.8, g: 0.95, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

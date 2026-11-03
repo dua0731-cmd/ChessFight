@@ -9,7 +9,9 @@ import bpy
 
 import eg_bl_util as B
 
-LOD_RATIOS = (1.0, 0.5, 0.2)
+# R296: the Unity files were re-LODed by relod_r296.py (heavy decor LOD0 x0.72 for a 1.2 M room, LOD1/LOD2 0.6/0.3 of
+# that). A fresh export from here starts from the full LOD0 again: run relod_r296.py on the copied FBX files after it.
+LOD_RATIOS = (1.0, 0.6, 0.3)
 UV1 = "UV1_Lightmap"
 
 # Trim sheet T_EG_Trim_* (2048, eight 256 px bands from the top, see make_textures.trim_sheet). Thin moulding faces of

@@ -41,6 +41,7 @@ python make_textures.py        # Textures/ (numpy + Pillow)
 | `PR_EG_*/` | 부품 FBX + _work.blend (Git LFS) |
 | `Review/` | 렌더(배치도 · 비트별 배치도 · 컷 · 스킨 시트 · 턴테이블 · 타이밍 MP4), 검증 보고, 전체 장면 `Endgame_work.blend` |
 | `checks/` | 안전 창 · 시간 추정 JSON, 문서 표 |
+| `pillar_r310.py` · `source/stone_column.glb` | R310: 홀 기둥 `PR_EG_HallPillar.fbx`를 승규 님 돌기둥 에셋으로(줄눈에서 잘라 쌓기, 들보까지 51.72 m, 벽에 닿는 받침, 한 칸 돌 바닥 띠). Unity FBX를 바로 덮어씀. `build_endgame_v1.py`로 다시 만들면 옛 둥근 기둥(`eg_bl_kit.hall_pillar`)으로 돌아가니 그 뒤 이 스크립트를 다시 돌린다 |
 
 ## Unity로 넘기기 (지시서 §10)
 

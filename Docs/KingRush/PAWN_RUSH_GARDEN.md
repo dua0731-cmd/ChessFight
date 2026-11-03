@@ -1,5 +1,19 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R309 Unity v33 — 남은 블록아웃 덮기:** `build_v33.py`가 v31 블록아웃 위에 모델을 더 얹음(묶음 `V33 | v31 layout dressing`, 이름 `V19 | V33 …`). 바닥 · 벽 · 둑 · 터널 · 계단 · 출구 = V19 벽돌 모듈 타일, 난간 = V21 기둥 + 갓돌, 섬 · 기둥 줄기 = 둥근 벽돌 기둥, 지름길 K1~K3 = 1.2 m 통 발판 · K4 = 2.6 m 통 + 회전봉. 새 회색 클레이: 배 8척 · 수문 판 3 · 연잎 2 · 회전봉 6 · 간헐천 테두리 8. 움직이는 것은 메시 역할의 `attach`로 코드 부품(`Boat L-N`, `Sluice gate n`, `Shortcut post Kn`, `Shortcut lotus Ln`, `Spin bar n/Arm k`, `Bobbing platform Pn`)에 붙음. V33 부품은 충돌체 없음. Version 34.
+
+> **R307 Unity v32 — main v31 배치:** 구역 G는 main의 `Early_1-1_RoyalWaterGarden` 프리팹(v31, `RoyalWaterGardenBuilder`)을 짓고 그 위에 정원 모델을 얹음. 모델 좌표 = v31 구간 좌표(Blender x, y, z → 구간 x, z, y). 옮긴 모델: 성문 묶음 · 승선 블록(높이 5.0 → 3.8), 통 발판 → P1~P8 위(`attach`, 코드 발판의 자식), 로봇 팔 2대 → 둑 남쪽 x 22.5 · 10.5. 모델이 덮는 블록아웃은 렌더러만 끄고 충돌은 그대로. 지운 모델 · 알려진 겹침은 HANDOFF R307과 `ArtSource/PawnRush/Garden/v32_report.json`. 미확인.
+
+> **R296 Unity v31:** v30과 같은 물체 · 이름 · 위치 · 충돌 역할, 삼각형만 646만 → 399만. V19 공유 메시 3개(블록 92개)가 21,404 → 2,600(35° 넘는 모서리 각지게), V16 지그재그 발판 6개 · 왕실 배 메시(배 2척)가 약 9.3만. 만든 곳 `build_v31.py` → `export_unity_v31.py` → `check_unity_export_v31.py`, Version 27.
+
+> **R287 Unity v30:** 같은 이름 FBX/JSON(313메시). 출발 대기장 바닥 = `V19 | 출발_12명대기_12x9m` 한 장(옛 `… 0.0 / 0.1 / 1.0 / 1.1` 네 장 대신, box 충돌). 둥근 섬(`V02_장식정원_독립섬` · `V19 | V02_장식섬_벽` · 화단) 없음, 양옆 테라스 · 수조 · 폭포 · 나무는 y +10.5. 새 `V30 | castle water gate`(box) · `V30 | gate channel water`(물) · `V30 | parade boat PIVOT` 아래 `V30 | parade royal boat`(충돌 없음). 매니페스트 `parade`(track · fps 30 · frames 2111 · samples 7개씩 · halfLength 3.8 · halfWidth 1.94 · forward = 배 자기 +x) → `GardenBoatParade`(Time.time 재생, 출발 대기장 |x|<7 · −61<z<−50에 들어오면 2초 뒤, 광장 |x|<19 · z −16을 북쪽으로 넘으면, 최대 2번, 쉴 때 비활성). `GardenWaterInteraction` 배 3척 · 배 자기 기준 앞 방향 · 비활성 배 무시, 셰이더 전역 `_GardenHull*[3]`.
+
+> **R286 Unity v29:** 같은 이름 FBX/JSON(391메시). 둘레 = `V29 | castle wall {변}{번호} {구간}`(구간 메시 공유, 충돌 없음) · `V29 | castle corner tower {SW/NW/NE/SE}` · 숨은 충돌 판 `V29 | castle collision {W/E/N/S}`(proxy: MeshCollider · 렌더러 끔) · `V29 | outer meadow`. 옛 `V17 | castle wall` · `V19 | 성벽_*` · `외벽_흉벽` · `V04_성벽_탑지붕` 없음. 원본 모델 `ArtSource/PawnRush/Garden/Castle/*.glb`.
+
+> **R285 Unity v28:** 같은 이름 FBX/JSON(527메시). `V04_중반_분수` 없음, `V23 | garden/planter bushes · flowers`는 건널목 · 둥근 단 덤불을 빼고 바닥에 내림. 배 PIVOT 트랙은 키 프레임(벽 앞 y 38.96 · 45.52에서 쿵 튕김), 런타임 코드는 그대로 샘플을 재생.
+
+> **R284 Unity v27:** 같은 이름 FBX/JSON. `V26 | spout shadow …` 면이 모두 벽 밖을 봄(뒷면이 잘려 막혀 보이던 4곳), 수조 물줄기는 난간벽 구멍 안에서 시작. 물 재질 = 색 E, 수조 물(`V22 | tank water`)은 `PR_GardenWaterShallow`(같은 셰이더, 물결 0.006m — 수조가 3cm 깊이). 물 셰이더 새 속성 `_BoatRingHeight` · `_BoatGlow`, `Interaction`이 선체에 쌓인 물 정도(`hull`)도 돌려줌. 배 드라이버 9cm · 0.06rad. `Version=19`. 커밋 안 함, Unity 확인 전.
+
 > **R283 Unity v26:** 같은 이름 `RoyalWaterGarden.fbx`/`_Motion.json`(528메시). 분출구 = `V26 | spout stone …`(테두리 · 홈통 · 수조 난간벽, 상자 충돌체) + `V26 | spout shadow …`(어두운 입구, 색 유지 — `Coloured`에 `shadow`), 폭포 = `V26 | fall curtain/streams …`(소스 이름으로 `PR_GardenFallSheet`), 착수선 17개(`water_interaction_v26.json`). 물 셰이더: `_BodyDepth` · `_CrestColor` · `_ChurnColor` · `_ChurnReach`, 착수선 배열 `_GardenLanding*`(24), 배 `_GardenBoatInfo`(들썩임 m/s · 흔들림 rad/s). 폭포 셰이더: 큐 Transparent+5, `_GardenFoot`(해자 수면 높이) · `_PoolTint` · `_FootHeight`. 보트 드라이버 7cm · 0.03rad · 0.05rad. `Version=18`. Unity 확인 전.
 
 > **R281 Unity v25:** `RoyalWaterGarden_v25.fbx`/`_Motion.json`. 폭포 = `V25 | fall curtain …` + `V25 | fall streams …`(정점 색: r 가로, g 진행도, b 시드, a 물줄기=1), `GardenWaterLook.ApplyBySource`가 소스 이름으로 `PR_GardenFallSheet` 연결. 저수지 수면 +0.24m(약 3.5m), 보트 피벗 드라이버로 위아래·앞뒤·좌우 흔들림. 물 셰이더는 흰 거품 없이 굴곡만: `BoatWaves`(켈빈 항적 · 선수/선미파 · 고리), `RingSlope`(폭포 · 발판). `_WakeHeight`. `Version=16`. Unity 확인 전.
