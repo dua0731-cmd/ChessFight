@@ -11,14 +11,16 @@ namespace ChessFight.PawnRush
     //      IntendedGap says so (a jump pad's flight, a dive)
     //   3. floor under every checkpoint's respawn spots
     //   4. unclimbable: grey grid = NoClimbSurface, and the walls, statue, alcoves, gate walls, the dais, the beams,
-    //      the vent posts and the glass squares are unclimbable
+    //      the vent posts and the glass squares are unclimbable (the early plaza's walls, facade and show bridge too)
     //   5. a kill volume (the respawn floor), and floor at the entry and the exit
+    //   6. a mini-game plaza (R153): two stations, each with its team gate, its own team's barrier and the plaza's game
     public static class SectionValidator
     {
         static readonly string[] MustBeUnclimbable =
         {
             "Hall wall", "Foyer wall", "Porch wall", "Foyer pillar", "King statue", "Knight alcove", "Gate wall", "Balcony wall",
             "Royal dais", "Chandelier beam", "Wind vent post", "Glass square",
+            "Forecourt wall", "Lawn hedge", "Plaza side wall", "Facade", "Gatehouse", "Vestibule wall", "Show drawbridge", "Aisle rail",
         };
 
         public static List<string> Run(PawnRushSection section, List<string> notes)
@@ -67,7 +69,8 @@ namespace ChessFight.PawnRush
 
             // 4. climbing
             var hall = section.GetComponent<GrandStairHall>();
-            Course01Validator.CheckClimbing(root, hall != null ? hall.Kit : null, errors, notes);
+            var plaza = section.GetComponent<EarlyPlaza>();
+            Course01Validator.CheckClimbing(root, hall != null ? hall.Kit : plaza != null ? plaza.Kit : null, errors, notes);
             foreach (var c in root.GetComponentsInChildren<Collider>(true))
             {
                 if (c.isTrigger) continue;
@@ -85,7 +88,28 @@ namespace ChessFight.PawnRush
             if (!Course01Validator.FloorAt(exit.position - exit.rotation * Vector3.forward * .5f, 1f, 2f))
                 errors.Add("출구에 바닥이 없습니다 " + Course01Validator.Fmt(exit.position));
             notes.Add($"입구 {Course01Validator.Fmt(entry.position)} → 출구 {Course01Validator.Fmt(exit.position)}");
+
+            // 6. a mini-game plaza's stations
+            if (plaza != null) Stations(plaza, errors, notes);
             return errors;
+        }
+
+        static void Stations(EarlyPlaza plaza, List<string> errors, List<string> notes)
+        {
+            for (int team = 0; team < 2; team++)
+            {
+                var s = plaza.Station(team);
+                string who = Teams.Name(team) + " 스테이션";
+                if (s == null) { errors.Add(who + "이 없습니다"); continue; }
+                if (s.Team != team) errors.Add($"{who}의 팀이 {Teams.Name(s.Team)}입니다");
+                if (s.Gate == null) errors.Add(who + "에 팀 문이 없습니다");
+                if (s.Socket == null) errors.Add(who + "에 미니게임 자리가 없습니다");
+                var barrier = s.GetComponentInChildren<TeamBarrier>(true);
+                if (barrier == null || barrier.Team != team) errors.Add(who + "의 팀 문 통로에 같은 팀 장벽이 없습니다");
+                if (s.Game == null) errors.Add(who + "에 미니게임이 없습니다(검사 때는 메뉴가 넣습니다)");
+                else if (s.GameIndex != plaza.Game) errors.Add($"{who}의 미니게임이 {MissionPicker.Name(s.GameIndex)}입니다({MissionPicker.Name(plaza.Game)}여야 함)");
+            }
+            notes.Add($"미니게임 광장: {MissionPicker.Name(plaza.Game)} × 스테이션 2곳");
         }
 
         // NoClimbSurface on it or above it, active or not (the portcullis and the east lift's wall wait switched off).

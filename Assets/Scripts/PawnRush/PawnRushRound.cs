@@ -113,14 +113,15 @@ namespace ChessFight.PawnRush
             Built?.Invoke(this);
         }
 
-        // Six spots a team in two rows across the first section's entry, facing the way on.
+        // Six spots a team in two rows across the first section's entry, facing the way on, within its clear floor
+        // (StartDepth: 8 m, rows at 8 and 4; the early plaza's 4 m front walk, rows at 3 and 1.5).
         void StartSpots(Transform parent, PawnRushSection first)
         {
             var entry = first.EntryWorld;
             for (int team = 0; team < 2; team++)
             {
                 int index = 0;
-                foreach (float row in new[] { 8f, 4f })
+                foreach (float row in new[] { first.StartDepth, first.StartDepth * .5f })
                     foreach (float x in new[] { 1.5f, 3f, 4.5f })
                     {
                         var spot = new GameObject("Start " + Teams.Name(team) + " " + index);

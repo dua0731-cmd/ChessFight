@@ -7,6 +7,9 @@ using UnityEngine.SceneManagement;
 namespace ChessFight.PawnRush.Editor
 {
     // The section prefabs' menus (ChessFight > Pawn Rush):
+    //   Build Early Plaza C Moat Drawbridge
+    //                                    rebuilds the early mini-game plaza with C (EarlyPlazaBuilder) into its prefab
+    //                                    (R153); the game itself is installed at Play. Then validates it.
     //   Build Mid 2-1 Grand Stair Hall   rebuilds the hall from code (GrandStairHallBuilder) into its prefab,
     //                                    keeping the links to the imported obstacle prefabs; running it twice
     //                                    gives the same prefab. Then validates it.
@@ -16,9 +19,37 @@ namespace ChessFight.PawnRush.Editor
     // Hand edits inside the prefab's Content are lost on the next build: change the builder instead.
     public static class SectionPrefabMenu
     {
+        public const string PlazaCPrefab = "Assets/Prefabs/PawnRushSections/Early_C_MoatDrawbridge.prefab";
         public const string HallPrefab = "Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab";
         public const string TestScene = "Assets/Scenes/PawnRush_Sections.unity";
         public const string SectionSet = "Assets/Settings/PawnRushSections.asset";
+
+        [MenuItem("ChessFight/Pawn Rush/Build Early Plaza C Moat Drawbridge", false, 19)]
+        public static void BuildEarlyPlazaC() => BuildPlaza(PlazaCPrefab, "Build Early Plaza C Moat Drawbridge");
+
+        static void BuildPlaza(string path, string title)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var plaza = root.GetComponent<EarlyPlaza>();
+                if (plaza == null || plaza.Kit == null)
+                {
+                    EditorUtility.DisplayDialog(title, path + "에 EarlyPlaza(키트 지정)가 없습니다.", "확인");
+                    return;
+                }
+                EarlyPlazaBuilder.Build(plaza);
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+            Debug.Log("[PawnRush] " + title + ": 프리팹을 다시 만들고 저장했습니다 (" + path + "). 미니게임은 Play 때 스테이션에 들어갑니다.");
+            var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefabAsset != null) Report(new List<GameObject> { prefabAsset }, false);
+        }
 
         [MenuItem("ChessFight/Pawn Rush/Build Mid 2-1 Grand Stair Hall", false, 20)]
         public static void BuildGrandStairHall()
@@ -89,6 +120,13 @@ namespace ChessFight.PawnRush.Editor
                     go.transform.position = new Vector3(0f, 0f, 20000f);
                     var hall = go.GetComponent<GrandStairHall>();
                     if (hall != null && !hall.HasContent) GrandStairHallBuilder.Build(hall);
+                    var plaza = go.GetComponent<EarlyPlaza>();
+                    if (plaza != null)
+                    {
+                        if (!plaza.HasContent) EarlyPlazaBuilder.Build(plaza);
+                        // The game is a Play-time part; built here only to be checked (the scratch scene goes).
+                        plaza.InstallGames();
+                    }
                     var section = go.GetComponent<PawnRushSection>();
                     if (section == null)
                     {

@@ -52,14 +52,19 @@ namespace ChessFight.PawnRush
             MissionGames.Floor(b, 0f, Moat0);
             MissionGames.Floor(b, Moat1, 20f);
             // The moat: water at -0.9, its bottom at -1.6, walls to the floor; the ends closed down to the plaza
-            // floor. Falling in counts as a fall (back to the plaza's checkpoint).
+            // floor, or left open where the plaza's own moat runs on past the station (a section plaza, R153: one
+            // moat across the plaza). Falling in counts as a fall (back to the plaza's checkpoint).
             var stone = Arena.Lit("M_MoatStone", Arena.Hex("#6E6A64"), 0f, .9f);
+            float water = station.MoatRunsOn ? 10f : 9.8f;
             b.Box("Moat wall S", V(-10f, -1.6f, Moat0 - .2f), V(10f, 0f, Moat0), stone, true);
             b.Box("Moat wall N", V(-10f, -1.6f, Moat1), V(10f, 0f, Moat1 + .2f), stone, true);
-            b.Box("Moat wall W", V(-10f, -1.6f, Moat0), V(-9.8f, -Arena.DaisHeight, Moat1), stone, true);
-            b.Box("Moat wall E", V(9.8f, -1.6f, Moat0), V(10f, -Arena.DaisHeight, Moat1), stone, true);
+            if (!station.MoatRunsOn)
+            {
+                b.Box("Moat wall W", V(-10f, -1.6f, Moat0), V(-9.8f, -Arena.DaisHeight, Moat1), stone, true);
+                b.Box("Moat wall E", V(9.8f, -1.6f, Moat0), V(10f, -Arena.DaisHeight, Moat1), stone, true);
+            }
             b.Box("Moat bottom", V(-10f, -2.6f, Moat0), V(10f, -1.6f, Moat1), stone, true);
-            b.Box("Water", V(-9.8f, -.95f, Moat0), V(9.8f, -.9f, Moat1), k.glass, false, false);
+            b.Box("Water", V(-water, -.95f, Moat0), V(water, -.9f, Moat1), k.glass, false, false);
             b.Trigger<KillVolume>("Moat (fall)", V(-10f, -1.6f, Moat0), V(10f, -.7f, Moat1));
 
             // The bridge: 4 x 4.1 m of walnut with planks across, hinged at u 15.95, standing up until lowered.

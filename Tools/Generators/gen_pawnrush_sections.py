@@ -8,7 +8,11 @@
 #   Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab
 #                                                          the grand stair hall's ROOT only (GrandStairHall +
 #                                                          PawnRushSection: id, entry z -12, exit (0, 19, 132))
-#   Assets/Settings/PawnRushSections.asset                 the round's seven slots; the hall in slot 3 (중반 장애물)
+#   Assets/Prefabs/PawnRushSections/Early_C_MoatDrawbridge.prefab
+#                                                          the early plaza with C's ROOT only (EarlyPlaza +
+#                                                          PawnRushSection: entry 0, exit (0, 0, 36); R153)
+#   Assets/Settings/PawnRushSections.asset                 the round's seven slots; the plaza in slot 2 (미니게임 1),
+#                                                          the hall in slot 3 (중반 장애물)
 #   Assets/Scenes/PawnRush_Sections.unity                  camera, light, physics rate, the round (PawnRushRound)
 #                                                          and the offline playtest (ragdoll pawn, white team)
 #
@@ -58,6 +62,7 @@ PR = "Assets/Scripts/PawnRush"
 SCRIPT = {
     "SectionKit": script("SectionKit", PR), "PawnRushSectionSet": script("PawnRushSectionSet", PR),
     "PawnRushSection": script("PawnRushSection", PR), "GrandStairHall": script("GrandStairHall", PR),
+    "EarlyPlaza": script("EarlyPlaza", PR),
     "PawnRushRound": script("PawnRushRound", PR), "SectionPlaytest": script("SectionPlaytest", PR),
     "OrbitCamera": script("OrbitCamera", "Assets/Scripts/Game"),
     "PhysicsProfile": script("PhysicsProfile", "Assets/Scripts/Gameplay"),
@@ -151,15 +156,37 @@ prefab += ("--- !u!4 &%d\nTransform:\n  m_ObjectHideFlags: 0\n  m_CorrespondingS
            "  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}\n") % (TR, GO)
 prefab += mono(SECTION, "PawnRushSection",
                "  id: Mid_2-1_GrandStairHall\n  displayName: %s\n  kind: 0\n  entry: {x: 0, y: 0, z: -12}\n"
-               "  exit: {x: 0, y: 19, z: 132}\n  exitYaw: 0\n  beats: []\n  slot: 0\n  seed: 1\n  teamSize: 6\n" % text("대계단 현관홀"))
+               "  exit: {x: 0, y: 19, z: 132}\n  exitYaw: 0\n  startDepth: 8\n  beats: []\n  slot: 0\n  seed: 1\n  teamSize: 6\n" % text("대계단 현관홀"))
 prefab += mono(HALL, "GrandStairHall",
                "  kit: %s\n  buildIfEmpty: 1\n  wings:\n  - {fileID: 0}\n  - {fileID: 0}\n  portcullis:\n  - {fileID: 0}\n"
                "  - {fileID: 0}\n  eastLift: {fileID: 0}\n  eastLiftWall: {fileID: 0}\n" % kit)
 write(PREFAB, prefab)
 hall_ref = "{fileID: %d, guid: %s, type: 3}" % (GO, meta_guid(PREFAB))
 
+# ------------------------------------------------------------------ the early plaza with C (root only, R153)
+PLAZA_C = "Assets/Prefabs/PawnRushSections/Early_C_MoatDrawbridge.prefab"
+plaza = HEAD + (
+    "--- !u!1 &%d\nGameObject:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n"
+    "  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  serializedVersion: 6\n  m_Component:\n"
+    "  - component: {fileID: %d}\n  - component: {fileID: %d}\n  - component: {fileID: %d}\n"
+    "  m_Layer: 0\n  m_Name: Early_C_MoatDrawbridge\n  m_TagString: Untagged\n  m_Icon: {fileID: 0}\n"
+    "  m_NavMeshLayer: 0\n  m_StaticEditorFlags: 0\n  m_IsActive: 1\n") % (GO, TR, SECTION, HALL)
+plaza += ("--- !u!4 &%d\nTransform:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n"
+          "  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  m_GameObject: {fileID: %d}\n"
+          "  serializedVersion: 2\n  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}\n  m_LocalPosition: {x: 0, y: 0, z: 0}\n"
+          "  m_LocalScale: {x: 1, y: 1, z: 1}\n  m_ConstrainProportionsScale: 0\n  m_Children: []\n  m_Father: {fileID: 0}\n"
+          "  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}\n") % (TR, GO)
+plaza += mono(SECTION, "PawnRushSection",
+              "  id: Early_C_MoatDrawbridge\n  displayName: %s\n  kind: 1\n  entry: {x: 0, y: 0, z: 0}\n"
+              "  exit: {x: 0, y: 0, z: 36}\n  exitYaw: 0\n  startDepth: 3\n  beats: []\n  slot: 0\n  seed: 1\n  teamSize: 6\n"
+              % text("정문 앞 광장 · C 해자 도개교"))
+plaza += mono(HALL, "EarlyPlaza",
+              "  kit: %s\n  game: 2\n  buildIfEmpty: 1\n  stations:\n  - {fileID: 0}\n  - {fileID: 0}\n  standIn: {fileID: 0}\n" % kit)
+write(PLAZA_C, plaza)
+plaza_ref = "{fileID: %d, guid: %s, type: 3}" % (GO, meta_guid(PLAZA_C))
+
 # ------------------------------------------------------------------ the round's seven slots
-SLOTS = [("장애물 1 (초반 · 바깥뜰)", 0, []), ("미니게임 1", 1, []), ("장애물 2 (중반 · 아랫궁)", 0, [hall_ref]),
+SLOTS = [("장애물 1 (초반 · 바깥뜰)", 0, []), ("미니게임 1", 1, [plaza_ref]), ("장애물 2 (중반 · 아랫궁)", 0, [hall_ref]),
          ("미니게임 2", 1, []), ("장애물 3 (후반 · 윗궁)", 0, []), ("미니게임 3", 1, []), ("마지막 구간", 2, [])]
 slots = "  slots:\n" + "".join(
     "  - name: %s\n    kind: %d\n    prefabs:%s\n" % (text(name), kind, "".join("\n    - " + p for p in prefabs) if prefabs else " []")

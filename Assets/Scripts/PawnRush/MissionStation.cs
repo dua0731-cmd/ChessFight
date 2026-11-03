@@ -32,14 +32,18 @@ namespace ChessFight.PawnRush
         [SerializeField] bool mirrored;
         [SerializeField] TeamGate gate;
         [SerializeField] Transform gameSocket;
-        [SerializeField] Course01Kit kit;
+        [Tooltip("Course 01's kit, or a section plaza's (R153).")]
+        [SerializeField] CourseKit kit;
         [SerializeField] int gameIndex = PawnRushMissions.None;
+        [Tooltip("C's moat runs on past the station's sides (a section plaza whose moat crosses the aisle, R153): no end walls.")]
+        [SerializeField] bool moatRunsOn;
 
         public int Team => team;
         public int Plaza => plaza;
         public bool Mirrored => mirrored;
         public TeamGate Gate => gate;
-        public Course01Kit Kit => kit;
+        public CourseKit Kit => kit;
+        public bool MoatRunsOn { get => moatRunsOn; set => moatRunsOn = value; }
         public int GameIndex => gameIndex;
         public MiniGameBase Game => gameSocket != null ? gameSocket.GetComponentInChildren<MiniGameBase>(true) : null;
         public Transform Socket => gameSocket;
@@ -61,7 +65,7 @@ namespace ChessFight.PawnRush
         }
         StationPromotion promotion;
 
-        public void Configure(int team, int plaza, bool mirrored, TeamGate gate, Transform gameSocket, Course01Kit kit)
+        public void Configure(int team, int plaza, bool mirrored, TeamGate gate, Transform gameSocket, CourseKit kit)
         {
             this.team = team;
             this.plaza = plaza;

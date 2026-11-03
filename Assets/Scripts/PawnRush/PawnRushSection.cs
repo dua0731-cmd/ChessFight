@@ -55,6 +55,8 @@ namespace ChessFight.PawnRush
         [Tooltip("Where the next section joins.")]
         [SerializeField] Vector3 exit = new Vector3(0f, 0f, 100f);
         [SerializeField] float exitYaw;
+        [Tooltip("Clear floor past the entry where a round that starts with this section puts its start spots (two rows).")]
+        [SerializeField] float startDepth = 8f;
         [SerializeField] SectionBeat[] beats = new SectionBeat[0];
 
         [Header("This round (the round sets these; on its own: slot 0)")]
@@ -75,6 +77,7 @@ namespace ChessFight.PawnRush
         // the section starts).
         public double StartClock => startClock;
         public SectionBeat[] Beats => beats;
+        public float StartDepth => startDepth;
 
         public Pose EntryLocal => new Pose(entry, Quaternion.identity);
         public Pose ExitLocal => new Pose(exit, Quaternion.Euler(0f, exitYaw, 0f));
@@ -82,7 +85,8 @@ namespace ChessFight.PawnRush
         public Pose ExitWorld => new Pose(transform.TransformPoint(exit), transform.rotation * Quaternion.Euler(0f, exitYaw, 0f));
 
         // The builder's description of the section.
-        public void Describe(string id, string displayName, SlotKind kind, Vector3 entry, Vector3 exit, float exitYaw, SectionBeat[] beats)
+        public void Describe(string id, string displayName, SlotKind kind, Vector3 entry, Vector3 exit, float exitYaw, SectionBeat[] beats,
+                             float startDepth = 8f)
         {
             this.id = id;
             this.displayName = displayName;
@@ -91,6 +95,7 @@ namespace ChessFight.PawnRush
             this.exit = exit;
             this.exitYaw = exitYaw;
             this.beats = beats ?? new SectionBeat[0];
+            this.startDepth = startDepth;
         }
 
         // The round's values. Applied at once when the section is running, else when it starts.

@@ -18,7 +18,8 @@ MonoBehaviour:
     prefabs: []
   - name: "\uBBF8\uB2C8\uAC8C\uC784 1"
     kind: 1
-    prefabs: []
+    prefabs:
+    - {fileID: 1000, guid: 10f159368e71ebb5166b5d3ae6cd8c7a, type: 3}
   - name: "\uC7A5\uC560\uBB3C 2 (\uC911\uBC18 \u00B7 \uC544\uB7AB\uAD81)"
     kind: 0
     prefabs:

@@ -10,6 +10,7 @@ namespace ChessFight.PawnRush
 {
     // The section test scene's extras (Assets/Scenes/PawnRush_Sections.unity), next to the PlaytestSpawner:
     //   F5         switch the pawn to the other team (and start again)
+    //   F6         finish our team's mini-game in the plaza the pawn is in (or the next plaza on): its gate opens (R153)
     //   F8         a new round: a new seed, the sections drawn again, every random obstacle on a new order
     //   F9         team size 3 -> 4 -> 5 -> 6 a side (the grand stair hall opens one wing for 3 or 4)
     //   R / Backspace   the last checkpoint / the start (the spawner's own keys)
@@ -62,6 +63,10 @@ namespace ChessFight.PawnRush
         void Update()
         {
             if (spawner == null || spawner.Driver == null || round == null) return;
+            // The plazas' games: whose fanfare is loud, whose aiming arc shows (Course01Playtest does the same).
+            MissionStation.LocalTeam = Mathf.Max(0, spawner.Team);
+            MiniGameBase.LocalDriver = spawner.Driver;
+            if (LegacyKeys.Down(KeyCode.F6)) FinishOurGame();
             if (LegacyKeys.Down(KeyCode.F5))
             {
                 spawner.SetTeam(spawner.Team == Teams.Black ? Teams.White : Teams.Black);
@@ -98,7 +103,32 @@ namespace ChessFight.PawnRush
             runStart = Time.time;
             currentBeat = null;
             falls = hits = 0;
+            // From the start again: the plazas' games back to their start, the gates shut, the pads ready.
+            foreach (var s in round.Sections)
+            {
+                var plaza = s != null ? s.GetComponent<EarlyPlaza>() : null;
+                if (plaza != null) plaza.ResetRound();
+            }
             Log("-", "restart");
+        }
+
+        // F6: our team's game in the plaza the pawn is in, or else the first plaza after it.
+        void FinishOurGame()
+        {
+            var target = spawner.Driver.FollowTarget;
+            var here = target != null ? round.SectionAt(target.position, out _) : null;
+            bool reached = here == null;
+            foreach (var s in round.Sections)
+            {
+                if (s == here) reached = true;
+                if (!reached || s == null) continue;
+                var plaza = s.GetComponent<EarlyPlaza>();
+                var game = plaza != null ? plaza.GameOf(spawner.Team) : null;
+                if (game == null) continue;
+                game.ForceComplete();
+                Log(currentBeat ?? "-", "F6 finish " + s.DisplayName);
+                return;
+            }
         }
 
         bool Mine(GameObject who) => spawner != null && spawner.Driver is Component c && who != null && (who == c.gameObject || c.transform.IsChildOf(who.transform) || who.transform.IsChildOf(c.transform));
@@ -171,7 +201,7 @@ namespace ChessFight.PawnRush
                           $"{here}\n" +
                           $"낙하 {falls} · 맞음 {hits}" + (Time.time - lastHitAt < 2f ? $" (<b>{lastHit}</b>)" : "") + "\n" +
                           $"판 구성: {string.Join(" | ", slots)}\n" +
-                          "F5 팀 바꾸기 · F8 새 판(새 씨앗) · F9 팀 인원 3~6 · R 체크포인트 · Backspace 처음";
+                          "F5 팀 바꾸기 · F6 우리 미니게임 완료 · F8 새 판(새 씨앗) · F9 팀 인원 3~6 · R 체크포인트 · Backspace 처음";
             var box = new Rect(Screen.width - 572, 12, 560, 104);
             GUI.Box(box, GUIContent.none);
             GUI.Label(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 8), text, style);

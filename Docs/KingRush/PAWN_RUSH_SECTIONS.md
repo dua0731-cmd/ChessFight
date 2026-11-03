@@ -12,12 +12,13 @@
 ## 1. 여는 법
 
 1. Unity 메뉴 **ChessFight → Pawn Rush → Build Mid 2-1 Grand Stair Hall** (처음 한 번). 코드가 홀 전체를 만들어 프리팹 `Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab`에 굽고 검증기를 돌린다(Console에 "구간 검증 통과"). 두 번 눌러도 같다. **굽기 전에는 프리팹을 열면 뿌리만 보인다**(Play하면 코드가 그때 만든다).
-2. **ChessFight → Pawn Rush → Open Section Test** → **Play**. `PawnRushRound`가 판 씨앗으로 7구간을 뽑아 이어 붙인다. 지금은 구간 프리팹이 대계단 현관홀(슬롯 3, 중반 장애물) 하나라서 그것만 놓이고 나머지 슬롯은 건너뛴다(Console "이번 판 구간 …"). 래그돌 폰(백팀)이 현관(z −12 아치 안쪽)에 선다.
+2. **ChessFight → Pawn Rush → Open Section Test** → **Play**. `PawnRushRound`가 판 씨앗으로 7구간을 뽑아 이어 붙인다. R154부터 구간 프리팹은 정문 앞 광장 · C 해자 도개교(슬롯 2)와 대계단 현관홀(슬롯 3) 둘이라 판이 광장에서 시작하고 대계단 현관홀이 광장 출구에 붙는다(나머지 슬롯은 건너뜀, Console "이번 판 구간 …"). 래그돌 폰(백팀)이 광장 앞길에 선다(광장 앞에는 임시 진입로). 광장은 [PAWN_RUSH_EARLY_PLAZA](PAWN_RUSH_EARLY_PLAZA.md).
 
 | 키 | 동작 |
 |---|---|
 | WASD·Space·Shift·좌클릭·우클릭·마우스 | 래그돌 기본 조작 |
 | **F5** | 백팀 ↔ 흑팀(처음부터) |
+| **F6** | (R154) 폰이 있는 광장(없으면 다음 광장)의 우리 팀 미니게임 완료 → 팀 문 열림 |
 | **F8** | 새 판: 새 씨앗으로 다시 뽑고 이어 붙임 — 굴러오는 순서·샹들리에 자리·유리 징검다리의 버티는 칸이 바뀜 |
 | **F9** | 팀 인원 3 → 4 → 5 → 6대(R152부터 이 구간은 인원과 상관없이 같은 길) |
 | R / Backspace | 마지막 체크포인트로 / 처음부터 |
@@ -29,6 +30,7 @@
 
 | 메뉴 | 하는 일 |
 |---|---|
+| Build Early Plaza C Moat Drawbridge | (R154) 정문 앞 광장 + C를 프리팹 Content로 다시 만들어 저장 → 검증(검사 때만 스테이션에 C를 넣어 봄; Play 때는 코드가 넣음) |
 | Build Mid 2-1 Grand Stair Hall | 프리팹 안(`Content`)을 지우고 기획서 좌표로 다시 만들어 저장(가져온 장애물은 프리팹 연결·인스턴스 값 유지) → 검증 |
 | Open Section Test | 시험 씬 `Assets/Scenes/PawnRush_Sections.unity` |
 | Validate Sections | 구간 목록의 프리팹을 하나씩 빈 임시 씬에 놓고(안 구운 것은 그 자리에서 만듦) `SectionValidator`로 검사, 결과 창. 임시 씬은 저장하지 않고 닫음 |
@@ -38,7 +40,7 @@
 | 슬롯 | 종류 | 프리팹 목록(지금) |
 |---|---|---|
 | 1 | 장애물 1 (초반 · 바깥뜰 1-x) | 없음 |
-| 2 | 미니게임 1 | 없음 (R153 구조안: [정문 앞 광장](PAWN_RUSH_EARLY_PLAZA.md), 입구 (0, 0, 0) → 출구 (0, 0, 32)) |
+| 2 | 미니게임 1 | **Early_C_MoatDrawbridge**(R154 정문 앞 광장 · C 해자 도개교, 입구 (0, 0, 0) → 출구 (0, 0, 36), [PAWN_RUSH_EARLY_PLAZA](PAWN_RUSH_EARLY_PLAZA.md)) |
 | 3 | 장애물 2 (중반 · 아랫궁 2-x) | **Mid_2-1_GrandStairHall** |
 | 4 | 미니게임 2 | 없음 |
 | 5 | 장애물 3 (후반 · 윗궁 3-x) | 없음 |
@@ -126,6 +128,7 @@ CP0 현관 (0, 0, −6) · CP1 중앙 계단참 (0, 8, 53.5) · CP2 휘어 오�
 | `PawnRush/RollingSpawner.cs`, `ChandelierRain.cs` | 새 장애물(§4) |
 | `PawnRush/SectionValidator.cs` | 구간 검사(§7) |
 | `PawnRush/SectionPlaytest.cs` | 시험 씬 키·HUD·CSV |
+| `PawnRush/EarlyPlaza.cs`, `EarlyPlazaBuilder.cs` | (R154) 초반 미니게임 구간 '정문 앞 광장'(껍데기 + C, 게임은 Play 때 설치, 임시 진입로). `PawnRushSection.StartDepth`(첫 구간 시작 자리), `MissionStation.MoatRunsOn`·키트 형 `CourseKit` — [PAWN_RUSH_EARLY_PLAZA §6](PAWN_RUSH_EARLY_PLAZA.md) |
 | `PawnRush/CourseKit.cs`, `SectionKit.cs`, `Course01Kit.cs` | 키트 필드를 바탕 클래스 `CourseKit`로 옮기고(코스 01 에셋 그대로), 구간용 `SectionKit`(+ `marker`·`respawnFloor`) |
 | `PawnRushEditor/SectionPrefabMenu.cs` | 메뉴 3개(§2) |
 | `Gameplay/ImportedObstacles/ImportedObstacleActor.cs` | `AddObstacleHit(속도, 넘어짐 초)` 추가, R150 `Blow`(바람이 실어 나름: `IWindReceiver` → `RagdollPawn.Wind`) |
