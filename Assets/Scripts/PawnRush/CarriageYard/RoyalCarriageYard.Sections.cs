@@ -14,9 +14,10 @@ namespace ChessFight.PawnRush
         const float CanalZ0 = 50f, CanalZ1 = 82f, WalkZ0 = 58f, WalkZ1 = 74f, WheelZ = 66f, CanalWater = -1.2f;
         // The walkways' inner edges, either side of the giant wheel's axle.
         const float WalkInner = 3f;
-        // Half the walkways' break at the wheel (the wheel itself is 1 m deep): 2.6 m is a jump - a run jump carries
-        // ~3.5 m, a dive adds 3 m/s - but not a step: running off at a sprint (9.6 m/s) drops ~0.6 m before the far
-        // end, more than the pawn's step-up and ledge help. And whoever waits at the edge stands 0.8 m off the spokes.
+        // Half the walkways' break at the wheel (the wheel itself is 1 m deep): 2.6 m is a jump, not a step. At the
+        // pawn's real speeds (Settings/RagdollTuning: run 2.5, sprint 3.6 m/s; ~0.69 s in the air) a sprint jump from
+        // within ~0.45 m of the edge clears it on the ledge help, a plain run jump falls short and a jump + dive
+        // (+3 m/s) has room to spare. Whoever waits at the edge stands 0.7 m off the spokes' hit shell.
         public const float WheelGapHalf = 1.3f;
         // 3 and 4, their own frame: the arena starts at z 106 there, and is moved to start where the canal ends.
         const float ArenaStart = 106f, LaterShift = CanalZ1 - ArenaStart;
