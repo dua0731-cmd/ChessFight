@@ -5,6 +5,7 @@ Unity 없이 자산을 만들 때 쓴 도구다. 프로젝트 루트에서 실�
 | 파일 | 용도 | 주의 |
 |---|---|---|
 | `mkmeta.py` | 경로마다 결정적 GUID(`md5("chessfight:"+경로)`)로 `.meta` 생성. 이미 있으면 건너뜀 | 안전. Unity 밖에서 만든 스크립트·문서에 쓴다 |
+| `early_plaza/build.py` | (R153) 폰 러시 슬롯 2 '정문 앞 광장' 도면 페이지 → `Docs/KingRush/PAWN_RUSH_EARLY_PLAZA.html`. 좌표는 `figs.py` | 덮어쓴다. 문서용, 프로젝트 파일 안 건드림 |
 | `gen_scenes.py` | Intro·KingRush 씬, 장애물·캐릭터 프리팹, 코스 재질을 Unity YAML로 생성. **RagdollTest는 2026-09-25부터 래그돌 랩 씬이라 만들지 않는다**(랩 빌더 메뉴가 만든다) | **덮어쓴다.** `--overwrite` 없이는 실행되지 않는다. Unity나 사람이 한 번이라도 저장한 뒤에는 돌리지 않는다. 현재 커밋의 파일과 바이트 단위로 같은 결과를 낸다(2026-09-24 확인) |
 | `gen_queenhill_scene.py` | 퀸 오브 더 힐 그레이박스 씬(`QueenOfTheHill.unity`): 카메라·조명·게임 루트·`QueenHillLevel`·`Playtest`(래그돌 폰). **맵 자체는 Play 때 `QueenHillLevel`이 코드로 만든다** | 씬이 이미 있으면 `--overwrite` 없이는 실행되지 않는다. Unity에서 씬을 저장한 뒤에는 돌리지 않는다 |
 | `gen_pawnrush_course01.py` | 폰 러시 코스 01 씬(`Assets/Scenes/PawnRush_Course01.unity`: 카메라·조명·물리·코스 루트·플레이테스트), `Course01Kit` 에셋, 코스 재질 8개. **코스 자체(v0.2)는 코드(`Course01v2Builder`)가 Play 때 또는 Build Course01 v2 메뉴로 만든다** | 덮어쓴다. `--overwrite` 없이는 실행되지 않는다. Build Course01 v2를 한 번 실행해 Unity가 씬·레이아웃을 저장한 뒤에는 돌리지 않는다 |
