@@ -11,33 +11,36 @@ namespace ChessFight.PawnRush
         void Scenery()
         {
             var s = Group("Scenery");
-            // Battlements on the walls a player sees from inside.
-            Merlons(s, -23f, 21f, 52f, 5f);
-            Merlons(s, 22f, 21f, 52f, 5f);
-            Merlons(s, -27f, 86f, 176f, Top + 3f);
-            Merlons(s, 26f, 86f, 176f, Top + 3f);
-            // Banners on the long walls, facing in.
-            for (float z = 26f; z < 50f; z += 8f)
+            var own = Group("Scenery (own frame)", later);
+            // Battlements on the walls a player sees from inside: the yard's and the canal's, the arena's.
+            Merlons(s, -YardHalf - 1f, 0f, CanalZ1, 5f);
+            Merlons(s, YardHalf, 0f, CanalZ1, 5f);
+            Merlons(own, -27f, ArenaStart, 176f, Top + 3f);
+            Merlons(own, 26f, ArenaStart, 176f, Top + 3f);
+            // Banners: on the gate wall's yard face (where the carriages keep off), along the arena, on the final gate's
+            // wall. None on the yard's side walls: a charging carriage would run through them.
+            foreach (float x in new[] { -17f, -10f, 10f, 17f })
+                BannerOn(s, new Vector3(x, 5.6f, YardZ0 + .02f), 0f);
+            for (float z = ArenaStart + 6f; z < 170f; z += 12f)
             {
-                BannerOn(s, new Vector3(-21.9f, 4.3f, z), 90f);
-                BannerOn(s, new Vector3(21.9f, 4.3f, z), -90f);
-            }
-            for (float z = 92f; z < 170f; z += 12f)
-            {
-                BannerOn(s, new Vector3(-25.9f, 9.5f, z), 90f);
-                BannerOn(s, new Vector3(25.9f, 9.5f, z), -90f);
+                BannerOn(own, new Vector3(-25.9f, 9.5f, z), 90f);
+                BannerOn(own, new Vector3(25.9f, 9.5f, z), -90f);
             }
             foreach (float x in new[] { -18f, -12f, 12f, 18f })
-                BannerOn(s, new Vector3(x, Top + 9.5f, 171.9f), 180f);
-            // Lamp posts along the yard and at the bridges.
-            foreach (var at in new[] { new Vector3(-6f, 0f, 24f), new Vector3(6f, 0f, 24f), new Vector3(-6f, 0f, 50f), new Vector3(6f, 0f, 50f),
-                                       new Vector3(-24.5f, 0f, 88f), new Vector3(24.5f, 0f, 88f), new Vector3(-8f, Top, 151.5f), new Vector3(8f, Top, 151.5f) })
+                BannerOn(own, new Vector3(x, Top + 9.5f, 171.9f), 180f);
+            // Lamp posts on the canal's landings, at the arena's mouth, on the platform (none in the yard: the carriages).
+            foreach (var at in new[] { new Vector3(-9f, 0f, CanalZ0 + 1f), new Vector3(9f, 0f, CanalZ0 + 1f),
+                                       new Vector3(-9f, 0f, CanalZ1 - 1f), new Vector3(9f, 0f, CanalZ1 - 1f) })
                 LampPost(s, at);
-            // Corner towers and the palace behind the finish (beyond the walls, pictures only).
-            foreach (var at in new[] { new Vector3(-23f, 0f, 21f), new Vector3(23f, 0f, 21f), new Vector3(-27f, 0f, 85f), new Vector3(27f, 0f, 85f),
-                                       new Vector3(-27f, 0f, 176f), new Vector3(27f, 0f, 176f) })
-                Tower(s, at, 4f, at.z > 100f ? 19f : 12f, false);
-            Palace(s);
+            foreach (var at in new[] { new Vector3(-24.5f, 0f, ArenaStart + 2f), new Vector3(24.5f, 0f, ArenaStart + 2f),
+                                       new Vector3(-8f, Top, 151.5f), new Vector3(8f, Top, 151.5f) })
+                LampPost(own, at);
+            // Corner towers outside the walls (pictures only) and the palace behind the finish.
+            foreach (var at in new[] { new Vector3(-24f, 0f, 0f), new Vector3(24f, 0f, 0f), new Vector3(-28f, 0f, CanalZ1), new Vector3(28f, 0f, CanalZ1) })
+                Tower(s, at, 4f, 12f, false);
+            foreach (var at in new[] { new Vector3(-28f, 0f, 176f), new Vector3(28f, 0f, 176f) })
+                Tower(own, at, 4f, 19f, false);
+            Palace(own);
         }
 
         // A round tower standing on `at`, a blue cone on top. Solid where players can reach it.

@@ -26,5 +26,5 @@
 
 | 프리팹 | 무엇 |
 |---|---|
-| `RoyalCarriageYard` | 왕실 마차뜰(R284): 외부 성문 · 가로 물레방아 · 마차 경기장(돌진 · 회전 마차, 세로 물레방아, 화물 경사로) · 밀어서 여는 최종 성문. Play 때 코드가 짓는 맵이라 프리팹은 컴포넌트 하나, 값은 Inspector에서 → [ROYAL_CARRIAGE_YARD](../../../Docs/KingRush/ROYAL_CARRIAGE_YARD.md) |
-| `RoyalCarriageYard_Obstacles` | 왕실 마차뜰 장애물을 하나씩 시험하는 곳(목재 다리 포함) |
+| `RoyalCarriageYard` | 왕실 마차뜰(R284, R286 수정): 외부 성문 → 돌아다니는 마차 4대가 있는 마당 → 길 2개가 지나가는 거대 물레방아 → 경기장(회전 마차, 세로 물레방아, 화물 경사로) → 밀어서 여는 최종 성문. Play 때 코드가 짓는 맵이라 프리팹은 컴포넌트 하나, 값은 Inspector에서 → [ROYAL_CARRIAGE_YARD](../../../Docs/KingRush/ROYAL_CARRIAGE_YARD.md) |
+| `RoyalCarriageYard_Obstacles` | 왕실 마차뜰 장애물을 하나씩 시험하는 곳(달리는 마차 · 목재 다리 포함) |

@@ -133,6 +133,24 @@ public static class NetworkCoreTests
     }
     const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 c1be8d7c616ed0f6 bcc5fd028cb3c436 "
                           + "028c824dd7ab7066 0a5aaf2e798a59b6 52d23acd7ef29404";
+    // The Royal Carriage Yard's four roaming carriages as RoyalCarriageYard and CarriageFleet build them (R286): the
+    // centres x +-(22 - keep), z 2 + keep + 2.5 .. 50 - keep (keep = the body's reach, half the 4.2 x 2.3 m diagonal,
+    // + 0.2), speeds 9 + 0.3 i, homes two to a row facing the middle, the plan starting at `start`.
+    static RoamingFleet YardFleet(double start, uint seed)
+    {
+        double reach = .5 * Math.Sqrt(4.2 * 4.2 + 2.3 * 2.3), keep = reach + .2;
+        var rules = new RoamingFleet.Rules { MinX = -(22 - keep), MaxX = 22 - keep, MinZ = 2 + keep + 2.5, MaxZ = 50 - keep, BodyRadius = reach };
+        var speeds = new double[4]; var hx = new double[4]; var hz = new double[4]; var yaw = new double[4];
+        for (int i = 0; i < 4; i++)
+        {
+            speeds[i] = 9 + .3 * i;
+            double side = i % 2 == 0 ? -1 : 1;
+            hx[i] = (rules.MinX + rules.MaxX) * .5 + side * (rules.MaxX - rules.MinX) * .25;
+            hz[i] = rules.MinZ + (i / 2 + .5) * (rules.MaxZ - rules.MinZ) / 2;
+            yaw[i] = side < 0 ? 90 : -90;
+        }
+        return new RoamingFleet(seed, start, speeds, hx, hz, yaw, rules);
+    }
     public static int Main()
     {
         try
@@ -291,6 +309,111 @@ public static class NetworkCoreTests
                     Check(GrandStairHallRules.WingOpen(0, 6, seed) && GrandStairHallRules.WingOpen(1, 6, seed), "six a side: both");
                 }
                 Check(seen.Count == 2, "west and east both come up"); });
+            Test("Royal Carriage Yard roaming fleet: four carriages share the yard, never meet, stay in it, never jump, roam all of it, one plan however it is advanced", () => {
+                foreach (double origin in new[] { 3.0, 1762000003.25 })
+                {
+                    var fleet = YardFleet(origin, 101);
+                    var r = fleet.Settings;
+                    double spacing = fleet.Spacing;
+                    const double dt = 1.0 / 60.0;
+                    int n = fleet.Count;
+                    Check(n == 4, "four carriages");
+                    var before = new RoamingFleet.Pose[n];
+                    for (int i = 0; i < n; i++) before[i] = fleet.At(i, origin - 1);
+                    var reached = new bool[n, 4];   // within 3 m of the west, east, south, north edge of the centres' area
+                    double last = origin;
+                    for (double s = -1 + dt; s < 600; s += dt)
+                    {
+                        last = origin + s;
+                        var now = new RoamingFleet.Pose[n];
+                        for (int i = 0; i < n; i++)
+                        {
+                            var p = fleet.At(i, last);
+                            now[i] = p;
+                            Check(p.X >= r.MinX - 1e-6 && p.X <= r.MaxX + 1e-6 && p.Z >= r.MinZ - 1e-6 && p.Z <= r.MaxZ + 1e-6, "inside the yard");
+                            var b = before[i];
+                            double moved = Math.Sqrt((p.X - b.X) * (p.X - b.X) + (p.Z - b.Z) * (p.Z - b.Z));
+                            Check(moved <= (9 + .3 * i) * dt * 1.02 + 1e-6, "no jump: " + moved.ToString("0.000") + " m at " + s.ToString("0.00"));
+                            Check(p.Speed <= 9 + .3 * i + 1e-6, "never over its top speed");
+                            double turned = Math.Abs(RoamingFleet.Delta(b.Yaw, p.Yaw));
+                            if (p.Stage != RoamingFleet.Stage.Turning && b.Stage != RoamingFleet.Stage.Turning)
+                                Check(turned < 1e-6, "turns only while turning");
+                            else Check(turned <= 180.0 * 1.5 / r.Turn * dt + 1e-6, "turns smoothly");
+                            if (p.Stage != RoamingFleet.Stage.Charging && b.Stage != RoamingFleet.Stage.Charging)
+                                Check(moved < 1e-9, "stands still off the charge");
+                            if (p.X < r.MinX + 3) reached[i, 0] = true;
+                            if (p.X > r.MaxX - 3) reached[i, 1] = true;
+                            if (p.Z < r.MinZ + 3) reached[i, 2] = true;
+                            if (p.Z > r.MaxZ - 3) reached[i, 3] = true;
+                        }
+                        for (int i = 0; i < n; i++)
+                            for (int j = i + 1; j < n; j++)
+                            {
+                                double d = Math.Sqrt((now[i].X - now[j].X) * (now[i].X - now[j].X) + (now[i].Z - now[j].Z) * (now[i].Z - now[j].Z));
+                                Check(d >= spacing - 1e-6, "carriages " + i + " and " + j + " never meet: " + d.ToString("0.00") + " m at " + s.ToString("0.00"));
+                            }
+                        before = now;
+                    }
+                    for (int i = 0; i < n; i++)
+                        for (int e = 0; e < 4; e++)
+                            Check(reached[i, e], "carriage " + i + " comes within 3 m of side " + e + " of its area: it roams the whole yard");
+                    // Every leg is a real charge, or now and then a short wait when nothing is free.
+                    int charges = 0, waits = 0;
+                    for (int i = 0; i < n; i++)
+                        for (int k = 0; k < fleet.LegCount(i); k++)
+                        {
+                            var l = fleet.LegAt(i, k);
+                            double d = Math.Sqrt((l.ToX - l.FromX) * (l.ToX - l.FromX) + (l.ToZ - l.FromZ) * (l.ToZ - l.FromZ));
+                            if (l.Charge > 0)
+                            {
+                                charges++;
+                                Check(d >= r.MinCharge - 1e-6 && d <= r.MaxCharge + 1e-6, "charge length " + d.ToString("0.0"));
+                            }
+                            else waits++;
+                        }
+                    Check(charges > 200 && waits * 10 < charges, "mostly charging: " + charges + " charges, " + waits + " waits");
+                    // One plan however the clock moves on: in one jump instead of step by step.
+                    var whole = YardFleet(origin, 101);
+                    whole.Advance(last);
+                    for (int i = 0; i < n; i++)
+                    {
+                        Check(whole.LegCount(i) == fleet.LegCount(i), "same number of legs");
+                        for (int k = 0; k < whole.LegCount(i); k++)
+                        {
+                            var a = whole.LegAt(i, k);
+                            var b = fleet.LegAt(i, k);
+                            Check(a.Start == b.Start && a.ToX == b.ToX && a.ToZ == b.ToZ && a.Aim == b.Aim && a.Rest == b.Rest, "same legs");
+                        }
+                    }
+                    var other = YardFleet(origin, 202);
+                    other.Advance(origin + 30);
+                    Check(other.LegAt(0, 0).ToX != fleet.LegAt(0, 0).ToX, "another seed, another plan");
+                }
+                // The segment distance the plan keeps carriages apart with.
+                Check(Math.Abs(RoamingFleet.SegmentDistance(0, 0, 10, 0, 5, -3, 5, 3)) < 1e-9, "crossing segments touch");
+                Check(Math.Abs(RoamingFleet.SegmentDistance(0, 0, 10, 0, 12, 0, 20, 0) - 2) < 1e-9, "end to end");
+                Check(Math.Abs(RoamingFleet.SegmentDistance(0, 0, 10, 0, 4, 3, 4, 3) - 3) < 1e-9, "point over a segment"); });
+            Test("Royal Carriage Yard roaming fleet: a clock leaping to the match clock or back starts the plan again there", () => {
+                var fleet = YardFleet(3.0, 101);
+                for (double t = 3.0; t < 63.0; t += .5) fleet.At(0, t);   // a minute on scene time
+                foreach (double leap in new[] { 1762000100.0, 200.0 })   // to the match clock, then back
+                {
+                    var fresh = YardFleet(leap, 101);
+                    for (double s = 0; s < 120; s += .25)
+                        for (int i = 0; i < 4; i++)
+                        {
+                            var a = fleet.At(i, leap + s);
+                            var b = fresh.At(i, leap + s);
+                            Check(a.X == b.X && a.Z == b.Z && a.Yaw == b.Yaw && a.Stage == b.Stage, "as a fleet started at the leap");
+                        }
+                    Check(fleet.StartTime == leap, "starts again at the leap");
+                }
+                // Under an hour is no leap: planned through, the same plan.
+                var gap = YardFleet(3.0, 101);
+                gap.At(0, 10.0);
+                var p = gap.At(2, 3000.0);
+                var q = YardFleet(3.0, 101).At(2, 3000.0);
+                Check(gap.StartTime == 3.0 && p.X == q.X && p.Z == q.Z && p.Yaw == q.Yaw, "a 50 minute gap is planned through"); });
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
                 r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");

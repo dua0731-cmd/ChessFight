@@ -364,7 +364,8 @@ namespace ChessFight.PawnRush
             return hips == null || !hips.isKinematic;
         }
 
-        static readonly Collider[] near = new Collider[128];
+        // Big: a lifting wheel alone has ~115 colliders and a dozen ragdolls 11 each; a full buffer would drop riders.
+        static readonly Collider[] near = new Collider[1024];
         static readonly List<ICharacterDriver> found = new List<ICharacterDriver>();
 
         // Every character with a part within `radius` of `center` (one entry each). The list is reused: read it
