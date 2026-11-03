@@ -1,0 +1,954 @@
+<meta charset="utf-8">
+<title>정문 앞 이음매 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  /* Layout: a model viewer - controls over a wide 3D stage, the pair's reading underneath. */
+  --paper:#EEF0EB; --panel:#F7F8F4; --ink:#1C2028; --ink2:#5B616C; --rule:#D3D6CE;
+  --accent:#4C55A8; --on-accent:#FFFFFF; --obst:#C9733A;
+  --good-bg:#DCEAD3; --good-fg:#24572F; --fix-bg:#F3E2B3; --fix-fg:#674700;
+  --f-disp:"Hahmlet","Noto Serif KR","Batang",serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#13161C; --panel:#1A1E26; --ink:#E6E2D7; --ink2:#A1A6AE; --rule:#2D323C;
+  --accent:#A3AAF2; --on-accent:#14172A; --obst:#E79A5F;
+  --good-bg:#21382A; --good-fg:#A9DAB3; --fix-bg:#45380F; --fix-fg:#F2D58A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#13161C; --panel:#1A1E26; --ink:#E6E2D7; --ink2:#A1A6AE; --rule:#2D323C;
+  --accent:#A3AAF2; --on-accent:#14172A; --obst:#E79A5F;
+  --good-bg:#21382A; --good-fg:#A9DAB3; --fix-bg:#45380F; --fix-fg:#F2D58A; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font:15px/1.65 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:26px 64px}
+h1,h2{font-family:var(--f-disp);font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.eyebrow{font:500 12px/1.4 var(--f-mono);letter-spacing:.08em;color:var(--ink2)}
+h1{font-size:clamp(30px,4.6vw,46px);line-height:1.1;margin:8px 0 10px}
+.lede{max-width:72ch;margin:0 0 18px;font-size:16px}
+.controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end;margin-bottom:12px}
+.group{display:grid;gap:6px;min-width:0}
+.group > span{font:500 11.5px/1 var(--f-mono);letter-spacing:.06em;color:var(--ink2)}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button,.tog{appearance:none;border:0;background:transparent;color:var(--ink);font:500 13.5px/1 var(--f-body);
+  padding:9px 12px;cursor:pointer;min-height:36px}
+.seg button + button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg button:focus-visible,.tog:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.toggles{display:flex;gap:8px;flex-wrap:wrap}
+.tog{border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+.tog[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.viewport{position:relative;width:100%;height:min(68vh,640px);min-height:380px;border-radius:6px;overflow:hidden;
+  background:#C9D8E2;border:1px solid var(--rule)}
+.viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;left:0;top:0;transform:translate(-9999px,0);white-space:nowrap;
+  font:600 11.5px/1 var(--f-body);color:#1C2028;background:rgba(247,248,244,.88);padding:4px 7px;border-radius:4px;
+  box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.lab.joint{background:#4C55A8;color:#fff}
+.lab.obst{background:#C9733A;color:#fff}
+.lab.mg{background:#2C303B;color:#E2B23C}
+.hint{position:absolute;right:10px;bottom:10px;font:500 11.5px/1.3 var(--f-mono);color:#1C2028;
+  background:rgba(247,248,244,.82);padding:5px 8px;border-radius:4px}
+.walkbar{position:absolute;left:10px;bottom:10px;font:600 12px/1.3 var(--f-body);color:#fff;background:rgba(28,32,40,.8);
+  padding:6px 9px;border-radius:4px}
+#fallback{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:#1C2028}
+.info{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:28px;margin-top:22px;align-items:start}
+@media (max-width:860px){.info{grid-template-columns:minmax(0,1fr)}}
+.pair{border-top:2px solid var(--ink);padding-top:12px}
+.pair-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.pair-head h2{font-size:21px;line-height:1.3}
+.chip{display:inline-block;font:600 12px/1 var(--f-body);padding:5px 10px;border-radius:999px}
+.chip.good{background:var(--good-bg);color:var(--good-fg)}
+.chip.ok{box-shadow:inset 0 0 0 1px var(--ink2);color:var(--ink2)}
+.chip.fix{background:var(--fix-bg);color:var(--fix-fg)}
+.pair p{margin:0 0 12px;max-width:66ch}
+dl.seam{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr);margin:0;border-top:1px solid var(--rule)}
+dl.seam dt,dl.seam dd{margin:0;padding:8px 0;border-bottom:1px solid var(--rule);font-size:14px}
+dl.seam dt{color:var(--ink2);font-size:13px;padding-right:12px}
+.changes{border-top:2px solid var(--ink);padding-top:12px}
+.changes h2{font-size:18px;margin-bottom:8px}
+.changes ol{margin:0;padding-left:1.2em;display:grid;gap:7px;font-size:14px}
+.changes b{font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+footer{margin-top:26px;font-size:13px;color:var(--ink2);max-width:92ch}
+code{font-family:var(--f-mono);font-size:.88em}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">폰 러시 레벨 디자인 · 슬롯 1 → 슬롯 2 · 3D 예시</div>
+  <h1>정문 앞 이음매 3D</h1>
+  <p class="lede">초반 장애물 구간(1-1~1-5)의 끝에서 정문 앞 광장으로 들어가는 이음매를 3D로 본다. 앞 구간과 게임을 바꿔 가며, 어느 짝이든 같은 문턱(테라스 → 아치 → 4단 → 띠 → 앞길)으로 이어지는지 확인한다.</p>
+
+  <div class="controls" role="group" aria-label="보기 설정">
+    <div class="group"><span>앞 장애물 구간</span>
+      <div class="seg" id="segPlace">
+        <button type="button" data-place="1-1" aria-pressed="true">1-1 화단 정원</button>
+        <button type="button" data-place="1-2" aria-pressed="false">1-2 마차뜰</button>
+        <button type="button" data-place="1-3" aria-pressed="false">1-3 깃발 연무뜰</button>
+        <button type="button" data-place="1-4" aria-pressed="false">1-4 마구간</button>
+        <button type="button" data-place="1-5" aria-pressed="false">1-5 성벽길</button>
+      </div></div>
+    <div class="group"><span>미니게임</span>
+      <div class="seg" id="segGame">
+        <button type="button" data-game="C" aria-pressed="true">C 해자 도개교</button>
+        <button type="button" data-game="D" aria-pressed="false">D 쇠살문 누각</button>
+        <button type="button" data-game="A" aria-pressed="false">A 의장 광장</button>
+      </div></div>
+    <div class="group"><span>시점</span>
+      <div class="seg" id="segView">
+        <button type="button" data-view="terrace" aria-pressed="true">테라스에서</button>
+        <button type="button" data-view="top" aria-pressed="false">위에서</button>
+        <button type="button" data-view="side" aria-pressed="false">가운데 자른 단면</button>
+        <button type="button" data-view="walk" aria-pressed="false">걸어 들어가기 ▶</button>
+      </div></div>
+    <div class="group"><span>표시</span>
+      <div class="toggles">
+        <button type="button" class="tog" id="togBounds" aria-pressed="false">프리팹 경계</button>
+        <button type="button" class="tog" id="togLabels" aria-pressed="true">이름표</button>
+        <button type="button" class="tog" id="togBridge" aria-pressed="false">다리 내리기</button>
+      </div></div>
+  </div>
+
+  <div class="viewport" id="vp">
+    <canvas id="cv" aria-label="장애물 구간 끝에서 정문 앞 광장으로 이어지는 3D 모형"></canvas>
+    <div id="labels"></div>
+    <div class="walkbar" id="walkbar" hidden>걸어 들어가는 중</div>
+    <div class="hint">드래그 회전 · 휠/핀치 확대 · 오른쪽 드래그 이동</div>
+    <div id="fallback" hidden>이 브라우저에서 3D(WebGL)를 켤 수 없습니다. 아래 설명과 <a href="PAWN_RUSH_EARLY_PLAZA.html">평면 도면</a>을 보세요.</div>
+  </div>
+  <div class="legend">
+    <span><i style="background:#C9733A"></i>장애물 구간 프리팹 몫</span>
+    <span><i style="background:#4C55A8"></i>이음매 (구간이 붙는 자리)</span>
+    <span><i style="background:#2C303B;box-shadow:inset 0 0 0 2px #E2B23C"></i>미니게임 구간 프리팹 몫</span>
+    <span><i style="background:#E2B23C"></i>금색 = 할 일 (아치 뒤에서만 빛남)</span>
+  </div>
+
+  <div class="info">
+    <section class="pair" aria-live="polite">
+      <div class="pair-head"><h2 id="pairTitle">1-1 리본 화단 정원 → C 해자 도개교</h2><span class="chip fix" id="pairChip">손볼 곳</span></div>
+      <p id="pairNote">수로의 청록 물이 해자로 이어져 좋다. 그런데 1-1에서 연꽃은 타고 오르는 발판이었다. 해자에 수련을 띄우면 밟으러 뛰어든다. 그래서 해자에는 수련을 두지 않았다.</p>
+      <dl class="seam">
+        <dt>마지막 장치</dt><dd id="iLast">꽃테라스 낮은 회전봉 2</dd>
+        <dt>테라스 소품 (장애물 몫)</dt><dd id="iTerr">꽃 화분 · 물뿌리개 · 돌벤치 · 담쟁이 화단</dd>
+        <dt>앞뜰 소품 (게임 몫)</dt><dd id="iFore">감아 둔 밧줄 · 예비 톱니 · 구명 부표 · 돌 화분</dd>
+        <dt>테라스에서 읽히는 것</dt><dd id="iRead">가로: 광장을 가로지르는 물 띠와 세워진 다리 둘</dd>
+      </dl>
+    </section>
+    <section class="changes">
+      <h2>문턱에서 바뀌는 것, 안 바뀌는 것</h2>
+      <ol>
+        <li><b>높이</b> 장소 바닥 +1.0 m → 0.25 m × 4단 → 띠·앞길 0 → 스테이션 단 +0.4. 모든 1-x가 같다.</li>
+        <li><b>바닥</b> 장소의 바닥(꽃밭 돌·마당 돌·모래·나무·성벽 돌)은 정리 동선까지. 테라스부터는 어느 장소든 같은 크림 문턱 돌, 앞길도 크림 포장.</li>
+        <li><b>틀</b> 아치는 미니게임 구간의 앞뜰 담장(높이 7 m)에 끼워져 '광장 담장의 문'이 된다. 담장과 잔디는 늘 같다.</li>
+        <li><b>소품</b> 테라스는 장소 소품, 아치 안쪽 잔디는 게임 소품. 돌 화분은 C·D·A 모두에 있어 늘 한 소품이 넘어온다.</li>
+        <li><b>금색</b> 정리 동선과 테라스에는 빛나는 금이 없다. 아치를 지나 처음 보이는 금(매듭·막대 끝·줄눈·승격 발판)이 할 일이다.</li>
+        <li><b>시선</b> 테라스에서 아치 밑으로 파사드 전체, 팀 문 둘, 간판 둘이 보인다. 게임을 읽는 시간은 테라스에서 쓴다.</li>
+      </ol>
+    </section>
+  </div>
+
+  <footer>좌표는 Unity 회색 박스 코드(<code>EarlyPlazaBuilder.cs</code>, 장애물 쪽 끝은 2-1 <code>RoyalBalcony</code>)와 같다. 1-1~1-5는 아직 프리팹이 없어 장소 기획(<code>PAWN_RUSH_PLACES_4MIN.md</code>)의 마지막 비트와 경계 소품만 대표로 그린 예시이고, 색은 컨셉아트 쪽이다. 평면 도면: <a href="PAWN_RUSH_EARLY_PLAZA.html">PAWN_RUSH_EARLY_PLAZA.html</a>.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  "use strict";
+  // ------------------------------------------------------------------ data
+  var PLACES = {
+    "1-1": { name: "1-1 리본 화단 정원", last: "꽃테라스 낮은 회전봉 2", props: "꽃 화분 · 물뿌리개 · 돌벤치 · 담쟁이 화단", lastLabel: "마지막 장치 · 낮은 회전봉" },
+    "1-2": { name: "1-2 왕실 마차뜰", last: "차고 미닫이벽 2", props: "고정 왕실 마차 · 바퀴 정비대 · 쌓은 빈 상자 · 등불", lastLabel: "마지막 장치 · 차고 미닫이벽" },
+    "1-3": { name: "1-3 깃발 연무뜰", last: "마지막 낮은 회전봉 2", props: "고정 표적판 · 무기 거치대 · 접은 크림 깃발 · 돌 화분", lastLabel: "마지막 장치 · 낮은 회전봉" },
+    "1-4": { name: "1-4 나이트 마구간", last: "마구 보관문 미닫이 2", props: "건초 묶음 · 마구 걸이 · 급수통 · 등불", lastLabel: "마지막 장치 · 마구 보관문" },
+    "1-5": { name: "1-5 룩 성벽길", last: "내려가는 승강대로 경계 높이 맞춤", props: "보초 방패 · 망원경 거치대 · 작은 왕관 깃발 · 돌 화분", lastLabel: "마지막 장치 · 내려가는 승강대" }
+  };
+  var GAMES = {
+    C: { name: "C 해자 도개교", sign: "C  해자 도개교", props: "감아 둔 밧줄 · 예비 톱니 · 구명 부표 · 돌 화분", read: "가로: 광장을 가로지르는 물 띠와 세워진 다리 둘" },
+    D: { name: "D 쇠살문 누각", sign: "D  쇠살문 누각", props: "예비 막대 걸이 · 사슬 더미 · 투구 올린 벤치 · 돌 화분", read: "세로: 쇠창살 문 둘과 그쪽으로 올라가는 사슬" },
+    A: { name: "A 의장 광장", sign: "A  체스판 칠하기", props: "흰·검은 칠통 · 붓 걸이 · 말아 둔 카펫 · 돌 화분", read: "바닥: 크림 포장 가운데 넓은 회청색 판" }
+  };
+  var CHIP = { good: "잘 맞음", ok: "무난", fix: "손볼 곳" };
+  var PAIRS = {
+    "1-1": { C: ["fix", "수로의 청록 물이 해자로 이어져 좋다. 그런데 1-1에서 연꽃은 타고 오르는 발판이었다. 해자에 수련을 띄우면 밟으러 뛰어든다. 그래서 해자에는 수련을 두지 않았다."],
+             D: ["fix", "바로 앞 비트가 낮은 회전봉(0.2–0.52 m)이라, 비슷한 높이(0.4–0.62 m)로 누운 캡스턴 막대가 장애물로 읽힌다. 막대는 스스로 돌지 않고, 끝 30 cm 금색과 원판의 황동 화살표로 '밀 것'임을 보인다."],
+             A: ["good", "화단에서 의장 광장으로. 꽃 화분이 앞뜰 돌 화분으로 이어진다. 판 둘레 1 m에는 화분을 들이지 않는다."] },
+    "1-2": { C: ["fix", "적재다리(#12)가 '스스로 들리는 다리'를 가르쳤다. 세워진 도개교를 보고 내려오길 기다릴 수 있다. 도개교는 주기 없이 멈춰 있고, 금 매듭이 놓인 줄 길과 앞뜰 밧줄 더미가 '당겨라'를 먼저 말한다."],
+             D: ["good", "바퀴 정비대가 캡스턴의 참고 그림이다. 스스로 도는 수직 바퀴(위험) 다음에 가만히 서 있는 수평 캡스턴(할 일)이 대비된다."],
+             A: ["ok", "넓은 석재 진입 뜰에서 크림 포장 광장으로. 바닥 재질이 그대로 이어진다."] },
+    "1-3": { C: ["ok", "훈련뜰에서 해자 앞으로. 겹치는 장치가 없다."],
+             D: ["fix", "1-1과 같다. 마지막 비트가 낮은 회전봉이라 캡스턴 막대 규칙(스스로 안 돎, 금색 끝, 원판 화살표)을 그대로 지킨다."],
+             A: ["good", "접어 둔 깃발이 판 둘레 깃대 열로 펼쳐진다. 훈련을 마치고 의장 행사장으로 들어가는 흐름."] },
+    "1-4": { C: ["ok", "진흙 수로 다음 해자. 진흙은 갈색, 해자는 청록으로 물빛을 가른다."],
+             D: ["ok", "나무와 건초에서 쇠와 돌로. 재질 대비가 분명하다."],
+             A: ["ok", "마른 목재 정리 동선에서 석재 광장으로."] },
+    "1-5": { C: ["good", "성벽에서 내려와 담장의 문(아치)을 나서면 해자 앞이다. '해자는 성 바깥 경계에만'이라는 C의 이유와 맞는다. 문루 탑 지붕은 회색 슬레이트."],
+             D: ["fix", "성벽의 시계 쌍문·문루 바로 뒤에 또 문루가 나온다. 1-5는 나무 쌍문(시계로 열림), D는 쇠살문(사슬로 위로 오름)으로 재질과 움직이는 방향을 가른다."],
+             A: ["ok", "망루에서 광장으로. 왕관 깃발이 깃대 열로 이어진다."] }
+  };
+
+  var state = { place: "1-1", game: "C", view: "terrace", bounds: false, labels: true, bridge: false };
+
+  // ------------------------------------------------------------------ the info panel (works without 3D too)
+  function $(id) { return document.getElementById(id); }
+  function refreshInfo() {
+    var p = PLACES[state.place], g = GAMES[state.game], pr = PAIRS[state.place][state.game];
+    $("pairTitle").textContent = p.name + " → " + g.name;
+    var chip = $("pairChip");
+    chip.className = "chip " + pr[0];
+    chip.textContent = CHIP[pr[0]];
+    $("pairNote").textContent = pr[1];
+    $("iLast").textContent = p.last;
+    $("iTerr").textContent = p.props;
+    $("iFore").textContent = g.props;
+    $("iRead").textContent = g.read;
+    $("togBridge").hidden = state.game !== "C";
+  }
+  function bindSeg(id, key, after) {
+    var seg = $(id);
+    seg.addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      var v = b.getAttribute("data-" + key);
+      [].forEach.call(seg.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      state[key] = v;
+      refreshInfo();
+      if (after) after(v);
+    });
+  }
+  function bindTog(id, key, after) {
+    var t = $(id);
+    t.addEventListener("click", function () {
+      state[key] = !state[key];
+      t.setAttribute("aria-pressed", state[key] ? "true" : "false");
+      if (after) after(state[key]);
+    });
+  }
+
+  var api = null;   // the 3D side, once it is up
+  bindSeg("segPlace", "place", function () { if (api) api.setPlace(); });
+  bindSeg("segGame", "game", function () { if (api) api.setGame(); });
+  bindSeg("segView", "view", function (v) { if (api) api.go(v); });
+  bindTog("togBounds", "bounds", function () { if (api) api.setBounds(); });
+  bindTog("togLabels", "labels", function () { if (api) api.setLabels(); });
+  bindTog("togBridge", "bridge", function () { if (api) api.setBridge(); });
+  refreshInfo();
+
+  if (!window.THREE || !THREE.OrbitControls) { $("fallback").hidden = false; return; }
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: $("cv"), antialias: true });
+  } catch (err) { $("fallback").hidden = false; return; }
+  api = build(renderer);
+
+  // ------------------------------------------------------------------ the 3D model
+  function build(renderer) {
+    var vp = $("vp"), cv = $("cv");
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    var scene = new THREE.Scene();
+    var SKY = lin("#C9D8E2");
+    scene.background = SKY;
+    scene.fog = new THREE.Fog(SKY, 130, 260);
+    var camera = new THREE.PerspectiveCamera(55, 1, 0.1, 600);
+    var controls = new THREE.OrbitControls(camera, cv);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.09;
+    controls.maxPolarAngle = Math.PI * 0.49;
+    controls.minDistance = 4;
+    controls.maxDistance = 170;
+
+    scene.add(new THREE.HemisphereLight(lin("#EEF3F7"), lin("#7D7562"), 0.75));
+    var sun = new THREE.DirectionalLight(lin("#FFF2DC"), 1.25);
+    sun.position.set(-45, 80, 55);
+    sun.target.position.set(0, 0, -5);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    var sc = sun.shadow.camera;
+    sc.left = -75; sc.right = 75; sc.top = 75; sc.bottom = -75; sc.near = 10; sc.far = 220;
+    sun.shadow.bias = -0.0006;
+    scene.add(sun);
+    scene.add(sun.target);
+
+    // ---------------- vocabulary (section frame: x east, y up, z north; three's z = -z so north is away)
+    function lin(hex) { return new THREE.Color(hex).convertSRGBToLinear(); }
+    var mats = {};
+    function M(hex, extra) {
+      var key = hex + (extra ? JSON.stringify(extra) : "");
+      if (!mats[key]) {
+        var o = { color: lin(hex), roughness: 0.85, metalness: 0, side: THREE.DoubleSide };
+        if (extra) for (var k in extra) o[k] = extra[k];
+        if (o.emissive) o.emissive = lin(o.emissive);
+        mats[key] = new THREE.MeshStandardMaterial(o);
+      }
+      return mats[key];
+    }
+    function mat(c, extra) { return typeof c === "string" ? M(c, extra) : c; }
+    function finish(g, m, shadow) { m.castShadow = shadow !== false; m.receiveShadow = true; g.add(m); return m; }
+    function box(g, x0, x1, y0, y1, z0, z1, c, extra) {
+      var m = new THREE.Mesh(new THREE.BoxGeometry(Math.max(Math.abs(x1 - x0), .01), Math.max(Math.abs(y1 - y0), .01), Math.max(Math.abs(z1 - z0), .01)), mat(c, extra));
+      m.position.set((x0 + x1) / 2, (y0 + y1) / 2, -(z0 + z1) / 2);
+      return finish(g, m);
+    }
+    function cyl(g, x, y0, z, r, h, c, seg) {
+      var m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg || 20), mat(c));
+      m.position.set(x, y0 + h / 2, -z);
+      return finish(g, m);
+    }
+    function cylX(g, x0, x1, y, z, r, c) {
+      var m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), 20), mat(c));
+      m.rotation.z = Math.PI / 2;
+      m.position.set((x0 + x1) / 2, y, -z);
+      return finish(g, m);
+    }
+    function cone(g, x, y0, z, r, h, c) {
+      var m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 14), mat(c));
+      m.position.set(x, y0 + h / 2, -z);
+      return finish(g, m);
+    }
+    function ball(g, x, y, z, r, c) {
+      var m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat(c));
+      m.position.set(x, y, -z);
+      return finish(g, m);
+    }
+    function ring(g, x, y, z, r, t, c, upright) {
+      var m = new THREE.Mesh(new THREE.TorusGeometry(r, t, 10, 28), mat(c));
+      if (!upright) m.rotation.x = Math.PI / 2;
+      m.position.set(x, y, -z);
+      return finish(g, m);
+    }
+    function line(g, pts, hex) {
+      var geo = new THREE.BufferGeometry().setFromPoints(pts.map(function (p) { return new THREE.Vector3(p[0], p[1], -p[2]); }));
+      var l = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: lin(hex) }));
+      g.add(l);
+      return l;
+    }
+    function group(parent) { var g = new THREE.Group(); (parent || scene).add(g); return g; }
+
+    var C = {
+      pave: "#E4DCC7", thresh: "#E6DFCF", wall: "#D6CCB4", wall2: "#C4B89D", coping: "#E9E2D2", lawn: "#8DA766", hedge: "#5C7843",
+      cypress: "#4A6639", trunk: "#6B5638", dais: "#2C303B", board: "#4A5060", gold: "#E2B23C", water: "#3A9894", walnut: "#6B4428",
+      maple: "#E3C391", lane: "#565C6B", iron: "#6E727A", marble: "#ECE7DC", slate: "#6F737B", wt: "#3FC1D9", bt: "#F08A2C",
+      door: "#3A3530", window: "#4A5562", cream: "#F3EADB", marker: "#8FD3E8", hazard: "#C8643C", terrain: "#97A487", plinth: "#A99F89",
+      groove: "#1C1F26", terra: "#B8643E", pot: "#B4A992", hay: "#D9B860"
+    };
+    var WATER = M(C.water, { roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.88 });
+    var GLASS = M("#BFE3EE", { roughness: 0.1, transparent: true, opacity: 0.25 });
+
+    // ---------------- ground and plinths (the course floats in Unity; here it stands on a field)
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: lin(C.terrain), roughness: 1 }));
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -6;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    var shell = group();
+    box(shell, -23, 23, -6, -1, -6.4, 37, C.plinth);
+
+    // ---------------- the obstacle section's end, the same for every 1-x (2-1 RoyalBalcony scheme)
+    var thresh = group();
+    box(thresh, -6, 6, -6, 1, -12, -6, C.thresh);                      // terrace +1, 12 x 6
+    box(thresh, -5, 5, 1.004, 1.03, -10, -8, C.marker);                // its checkpoint patch
+    [-1, 1].forEach(function (s) {
+      box(thresh, s * 6, s * 6.3, 1, 2.1, -12, -6.4, C.wall2);         // terrace rails
+      box(thresh, s * 6, s * 6.3, 0, 1.1, -5.6, 0, C.wall2);           // band rails
+      box(thresh, s * 6, s * 7, -1, 7, -6.4, -5.6, C.wall);            // arch pillars
+    });
+    box(thresh, -7, 7, 6, 7, -6.4, -5.6, C.wall);                      // lintel
+    box(thresh, -7.2, 7.2, 7, 7.25, -6.55, -5.45, C.coping);
+    for (var i = 1; i <= 4; i++) box(thresh, -6, 6, -6, 1 - 0.25 * i, -6 + (i - 1) * .5, -6 + i * .5, C.thresh);
+    box(thresh, -6, 6, -6, 0, -4, 0, C.thresh);                        // the 12 m band
+
+    // ---------------- the plaza shell (EarlyPlazaBuilder)
+    [-1, 1].forEach(function (s) {
+      box(shell, s * 7, s * 23, -1, 7, -6.4, -5.6, C.wall);            // forecourt wall
+      box(shell, s * 7, s * 23, 7, 7.25, -6.55, -5.45, C.coping);
+      box(shell, s * 6.3, s * 22, -1, 0.02, -5.6, 0, C.lawn);          // lawn
+      box(shell, s * 6.3, s * 22, 0, 0.5, -0.6, 0, C.hedge);           // hedge
+      [17.5, 21].forEach(function (x) {
+        cyl(shell, s * x, 0, -4.4, .16, .7, C.trunk);
+        cone(shell, s * x, .5, -4.4, .75, 4.7, C.cypress);
+      });
+      box(shell, s * 22, s * 23, -3, 6, -5.6, 24, C.wall);             // side walls
+      box(shell, s * 22, s * 23, 6, 6.25, -5.6, 24, C.coping);
+    });
+    box(shell, -22, 22, -1, 0, 0, 4, C.pave);                          // front walk 44 x 4
+    // split marks: white's to the west, black's to the east
+    [[-1, C.wt], [1, C.bt]].forEach(function (a) {
+      var s = a[0];
+      box(shell, s * 2.6, s * 6, 0.01, 0.03, 0.92, 1.08, a[1]);
+      [-1, 1].forEach(function (turn) {
+        var h = box(shell, -.4, .4, .01, .03, -.08, .08, a[1]);
+        h.position.set(s * 5.7, .02, -(1 + turn * .25));
+        h.rotation.y = s * turn * 40 * Math.PI / 180;
+      });
+    });
+    // each station's ramp, flags and sign (Arena.Dress), promotion pad
+    var signs = [];
+    [-1, 1].forEach(function (s) {
+      var cx = s * 12;
+      var ramp = box(shell, cx - 2.2, cx + 2.2, 0, .1, 2.4, 4.05, C.dais);
+      ramp.position.y = .18;
+      ramp.rotation.x = Math.atan2(.4, 1.6);
+      [cx - 2.8, cx + 2.8].forEach(function (fx) {
+        cyl(shell, fx, 0, 3.65, .05, 3.2, C.gold);
+        var out = fx > cx ? 1 : -1;
+        box(shell, fx, fx + out * .9, 2.3, 3.1, 3.63, 3.67, s < 0 ? C.wt : C.bt);
+      });
+      [cx - 2.9, cx + 2.9].forEach(function (px) { box(shell, px - .07, px + .07, 0, 3.9, 3.83, 3.97, C.walnut); });
+      box(shell, cx - 2.85, cx + 2.85, 3.15, 4.65, 3.92, 4.0, C.groove);
+      var tex = signTexture("");
+      var plane = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1.4), new THREE.MeshBasicMaterial({ map: tex }));
+      plane.position.set(cx, 3.9, -3.9);
+      shell.add(plane);
+      signs.push(tex);
+      // promotion pad (u 1, outer side)
+      var px2 = s * 16.5;
+      box(shell, px2 - 1, px2 + 1, .4, .46, 4, 6, C.gold, { emissive: C.gold, emissiveIntensity: .25 });
+      box(shell, px2 - 1.12, px2 + 1.12, .4, .44, 3.88, 6.12, s < 0 ? C.wt : C.bt);
+    });
+
+    // facade, gatehouse, doors, passages, vestibule
+    box(shell, -23, -14, -1, 12, 24, 30, C.wall);
+    box(shell, 14, 23, -1, 12, 24, 30, C.wall);
+    box(shell, -10, -5, -1, 12, 24, 30, C.wall);
+    box(shell, 5, 10, -1, 12, 24, 30, C.wall);
+    box(shell, -5, 5, -1, 16, 24, 30, C.wall2);
+    [-1, 1].forEach(function (s) { box(shell, s * 10, s * 14, 4.6, 12, 24, 30, C.wall); });
+    for (var x = -22.6; x < 22; x += 2) if (x < -5.2 || x > 4.2) box(shell, x, x + 1.1, 12, 12.8, 24, 24.8, C.wall);
+    for (var gx = -5; gx < 5; gx += 2) box(shell, gx + .3, gx + 1.5, 16, 16.9, 24, 24.8, C.wall2);
+    [-19.5, -16.5, -7.5, 7.5, 16.5, 19.5].forEach(function (wx) { box(shell, wx - .75, wx + .75, 6.4, 10.2, 23.9, 24, C.window); });
+    [-2.2, 2.2].forEach(function (wx) { box(shell, wx - .6, wx + .6, 10.4, 13.6, 23.9, 24, C.window); });
+    box(shell, -3, 3, 0, 7, 23.85, 24, C.walnut);                    // closed main gate
+    box(shell, -3.3, 3.3, 7, 7.4, 23.8, 24, C.wall2);
+    var doors = [];
+    [-1, 1].forEach(function (s) {
+      box(shell, s * 10, s * 14, -1, 0, 24, 30, C.pave);              // passage floor
+      doors.push(box(shell, s * 10, s * 14, 0, 4.6, 24, 24.4, C.door));
+      box(shell, s * 9.7, s * 14.3, 4.6, 5.2, 23.9, 23.95, s < 0 ? C.wt : C.bt);
+      box(shell, s * 10, s * 14, 5.45, 5.75, 23.85, 23.9, C.groove);
+      box(shell, s * 11.6, s * 12.4, 6.8, 11, 23.9, 23.95, C.cream);   // furled banner
+    });
+    box(shell, -14, 14, -1, 0, 30, 36, C.marble);
+    [-1, 1].forEach(function (s) {
+      box(shell, s * 14, s * 15, -1, 7, 30, 37, C.wall);
+      box(shell, s * 6, s * 14, -1, 7, 36, 37, C.wall);
+    });
+    // the next section (2-1's porch), a hint
+    box(shell, -6, 6, -6, 0, 37, 52, C.thresh);
+    [-1, 1].forEach(function (s) { box(shell, s * 6, s * 7, 0, 8, 37, 38, C.wall); });
+    box(shell, -7, 7, 7, 8, 37, 38, C.wall);
+
+    // ---------------- the three games in the same shell
+    var games = { C: group(), D: group(), A: group() };
+    function X(s, v) { return s * (12 - v); }
+    function Zu(u) { return u + 4; }
+    function stationsFloor(g, gapFrom, gapTo) {
+      [-1, 1].forEach(function (s) {
+        if (gapFrom == null) box(g, s * 2, s * 22, -0.6, .4, 4, 24, C.dais);
+        else { box(g, s * 2, s * 22, -0.6, .4, 4, gapFrom, C.dais); box(g, s * 2, s * 22, -0.6, .4, gapTo, 24, C.dais); }
+        box(g, s * 2, s * 22, .4, .5, 4, 4.22, C.gold, { emissive: C.gold, emissiveIntensity: .15 });   // front rim
+      });
+    }
+    // C: the moat across the plaza
+    (function (g) {
+      stationsFloor(g, 16, 20);
+      box(g, -2, 2, -1, 0, 4, 15.8, C.pave);
+      box(g, -2, 2, -1, 0, 20.2, 24, C.pave);
+      box(g, -2, 2, 0, 1, 15.5, 15.8, C.wall2);                        // aisle rail
+      box(g, -22, 22, -2.2, -1.2, 16, 20, "#5E5A54");                  // moat bottom
+      box(g, -22, 22, -1.2, 0, 15.8, 16, "#6E6A64");
+      box(g, -22, 22, -1.2, 0, 20, 20.2, "#6E6A64");
+      var w = new THREE.Mesh(new THREE.BoxGeometry(44, .05, 4), WATER);
+      w.position.set(0, -.52, -18);
+      w.receiveShadow = true;
+      g.add(w);
+      var plank = box(g, -2, 2, 0, 5, 20.2, 20.5, C.walnut);           // raised show bridge
+      for (var k = 0; k < 6; k++) box(g, -2, 2, .4 + k * .8, .45 + k * .8, 20.15, 20.2, "#5A3820");
+      g.userData.bridges = [];
+      g.userData.chains = [];
+      [-1, 1].forEach(function (s) {
+        var x = function (v) { return X(s, v); };
+        box(g, x(-1.2), x(1.2), .4, .42, Zu(.2), Zu(10.9), C.lane);
+        for (var t = 0; t < 8; t++) box(g, x(-1.2), x(1.2), .42, .43, Zu(3.2 + t) - .03, Zu(3.2 + t) + .03, C.gold, { emissive: C.gold, emissiveIntensity: .5 });
+        box(g, x(-1.6), x(1.6), .4, 1.4, Zu(10.8), Zu(11.8), C.walnut);  // winch frame
+        cylX(g, x(-1.1), x(1.1), 1.7, Zu(11.3), .55, C.maple);           // drum
+        ball(g, x(1.3), 1.7, Zu(11.3), .3, C.gold);                       // cogs
+        box(g, x(1.9), x(2.1), .4, 2.9, Zu(11.2), Zu(11.4), C.walnut);
+        for (var lmp = 0; lmp < 3; lmp++) ball(g, x(2.0), 1.4 + lmp * .6, Zu(11.14), .09, "#4C4535");
+        // rope and its four gold knots
+        var rope = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, 4.5, 10), M("#C9A57A"));
+        rope.rotation.x = Math.PI / 2;
+        rope.position.set(x(0), 1.2, -Zu(8.65));
+        g.add(rope);
+        for (var kn = 0; kn < 4; kn++) ball(g, x(0), 1.2, Zu(10.2 - kn), .17, C.gold).material = M(C.gold, { emissive: C.gold, emissiveIntensity: .45 });
+        // the bridge on its hinge at u 15.95, standing until lowered
+        var hinge = new THREE.Group();
+        hinge.position.set(x(0), .4, -Zu(15.95));
+        g.add(hinge);
+        var deck = new THREE.Mesh(new THREE.BoxGeometry(4, .25, 4.1), M(C.walnut));
+        deck.position.set(0, -.125, 2.05);
+        deck.castShadow = deck.receiveShadow = true;
+        hinge.add(deck);
+        for (var pl = 0; pl < 7; pl++) {
+          var ln = new THREE.Mesh(new THREE.BoxGeometry(4, .02, .05), M("#4E301B"));
+          ln.position.set(0, .005, .3 + pl * .55);
+          hinge.add(ln);
+        }
+        hinge.rotation.x = -Math.PI / 2;
+        g.userData.bridges.push(hinge);
+        [-2.4, 2.4].forEach(function (v) {
+          box(g, x(v) - .35, x(v) + .35, .4, 6.4, Zu(15.85), Zu(16.55), "#D8D0C2");
+          box(g, x(v) - .45, x(v) + .45, 6.4, 6.9, Zu(15.75), Zu(16.65), C.slate);
+        });
+        [-1.6, 1.6].forEach(function (cxv) {
+          g.userData.chains.push({ hinge: hinge, local: new THREE.Vector3(cxv, 0, 4.1), drum: new THREE.Vector3(x(0) + cxv * .6 * (s < 0 ? 1 : 1), 2.25, -Zu(11.3)), line: line(g, [[0, 0, 0], [0, 0, 0]], "#7C7F86") });
+        });
+      });
+      // lawn props: rope coil, spare cog, life buoy (cream), stone pot
+      ring(g, -9.6, .2, -2.3, .55, .2, C.maple);
+      cyl(g, -13.2, 0, -2.3, .75, .28, C.iron);
+      ring(g, 9.6, .16, -2.3, .5, .16, C.cream);
+      cyl(g, 13.2, 0, -2.3, .55, .9, C.pot); ball(g, 13.2, 1.1, -2.3, .45, C.hedge);
+    })(games.C);
+    // D: capstans and portcullises
+    (function (g) {
+      stationsFloor(g);
+      box(g, -2, 2, -1, 0, 4, 24, C.pave);
+      [-1, 1].forEach(function (s) {
+        var cx = s * 12, cz = Zu(10);
+        cyl(g, cx, .4, cz, 3.6, .04, C.board, 40);
+        for (var k = 0; k < 4; k++) {
+          var arc = new THREE.Mesh(new THREE.TorusGeometry(3.3, .05, 6, 20, 0.9), M("#C8A04A"));
+          arc.rotation.x = -Math.PI / 2;
+          arc.rotation.z = (s < 0 ? -1 : 1) * (k * Math.PI / 2) + 0.3;
+          arc.position.set(cx, .46, -cz);
+          g.add(arc);
+        }
+        cyl(g, cx, .4, cz, .62, 1.2, C.walnut);
+        cyl(g, cx, 1.6, cz, .36, .25, C.gold).material = M(C.gold, { emissive: C.gold, emissiveIntensity: .35 });
+        var cap = new THREE.Group();
+        cap.position.set(cx, .95, -cz);
+        g.add(cap);
+        for (var b = 0; b < 4; b++) {
+          var arm = new THREE.Group();
+          arm.rotation.y = Math.PI / 4 + b * Math.PI / 2;
+          cap.add(arm);
+          var bar = new THREE.Mesh(new THREE.BoxGeometry(1.95, .16, .16), M(C.maple));
+          bar.position.x = 1.72;
+          bar.castShadow = true;
+          arm.add(bar);
+          var tip = new THREE.Mesh(new THREE.BoxGeometry(.3, .17, .17), M(C.gold, { emissive: C.gold, emissiveIntensity: .45 }));
+          tip.position.x = 2.85;
+          arm.add(tip);
+        }
+        line(g, [[cx, 1.85, Zu(10.2)], [cx, 2.5, Zu(11)], [cx, 5, 23.9]], "#9A9EA6");
+        for (var gi = 1; gi < 8; gi++) box(g, s * (10 + gi * .5) - .04, s * (10 + gi * .5) + .04, 0, 4.6, 23.88, 23.95, "#2A2D33");
+        for (var gy = 1; gy <= 4; gy++) box(g, s * 10, s * 14, gy - .04, gy + .04, 23.86, 23.93, "#2A2D33");
+      });
+      box(g, -10.8, -8.4, 0, .9, -2.7, -1.9, C.walnut);
+      for (var r = 0; r < 4; r++) box(g, -10.4 + r * .6, -10.3 + r * .6, .9, 2.2, -2.35, -2.25, C.maple);
+      cyl(g, -13.2, 0, -2.3, .7, .35, C.iron);
+      box(g, 8.2, 11, 0, .5, -2.7, -1.9, C.wall2); ball(g, 9.2, .72, -2.3, .26, C.iron);
+      cyl(g, 13.2, 0, -2.3, .55, .9, C.pot); ball(g, 13.2, 1.1, -2.3, .45, C.hedge);
+    })(games.D);
+    // A: one board over both stations
+    (function (g) {
+      box(g, -22, 22, -0.6, .4, 4, 24, C.dais);
+      box(g, -22, 22, .4, .5, 4, 4.22, C.gold, { emissive: C.gold, emissiveIntensity: .15 });
+      box(g, -9, 9, .4, .45, Zu(2), Zu(20), C.gold, { emissive: C.gold, emissiveIntensity: .35 });
+      for (var f = 0; f < 8; f++) for (var rk = 0; rk < 8; rk++) {
+        var x0 = -9 + f * 2.25 + .05, z0 = 2 + rk * 2.25 + .05;
+        box(g, x0, x0 + 2.15, .45, .5, Zu(z0), Zu(z0 + 2.15), C.board);
+      }
+      [-1, 1].forEach(function (s) {
+        box(g, s * 20.2, s * 22, .4, .85, Zu(3), Zu(17), C.wall2);
+        [4, 8, 12, 16].forEach(function (z) {
+          cyl(g, s * 19.4, .4, Zu(z), .06, 5.8, "#8A8578");
+          box(g, s * 19.4, s * 19.4 - s * 1.3, 5.1, 6.1, Zu(z) - .02, Zu(z) + .02, C.cream);
+        });
+      });
+      cyl(g, -9.2, 0, -2.3, .45, .6, C.cream); cyl(g, -10.5, 0, -2.3, .45, .6, "#231E1B");
+      box(g, -14.2, -12.6, 0, 1.2, -2.9, -1.7, C.walnut);
+      cylX(g, 8.2, 11.6, .3, -2.3, .3, "#8A6F5A");
+      cyl(g, 13.2, 0, -2.3, .55, .9, C.pot); ball(g, 13.2, 1.1, -2.3, .45, C.hedge);
+    })(games.A);
+
+    // ---------------- the five early places' last beat and terrace props
+    var places = {}, anims = [];
+    function runout(g, floor, rail) {
+      box(g, -6, 6, -6, 1, -42, -12, floor);
+      if (rail) [-1, 1].forEach(function (s) { box(g, s * 6, s * 6.3, 1, 2.1, -42, -12, rail); });
+    }
+    function spinBar(g, z, color, speed, phase) {
+      cyl(g, 0, 1, z, .25, .7, "#5B4A3A");
+      var piv = new THREE.Group();
+      piv.position.set(0, 1.35, -z);
+      g.add(piv);
+      var bar = new THREE.Mesh(new THREE.BoxGeometry(11.2, .26, .26), M(color));
+      bar.castShadow = true;
+      piv.add(bar);
+      anims.push({ g: g, f: function (t) { piv.rotation.y = phase + t * speed; } });
+    }
+    function slider(g, z, color, phase) {
+      var w = box(g, -3, 3, 1, 4, z - .25, z + .25, color);
+      anims.push({ g: g, f: function (t) { w.position.x = 3 * Math.sin(t * 0.9 + phase); } });
+    }
+    function pot(g, x, z, flower) { cyl(g, x, 1, z, .45, .6, C.terra); ball(g, x, 1.8, z, .42, flower); }
+    function stonePot(g, x, z) { cyl(g, x, 1, z, .5, .85, C.pot); ball(g, x, 2.1, z, .42, C.hedge); }
+    function lantern(g, x, z) { cyl(g, x, 1, z, .05, 2.2, "#3B3833"); box(g, x - .18, x + .18, 3.0, 3.45, z - .18, z + .18, "#5A564C"); }
+
+    // 1-1 ribbon flower-bed garden
+    (function (g) {
+      runout(g, "#E6DFCF", C.wall2);
+      [-1, 1].forEach(function (s) {
+        ["#E28AA6", "#E8C860", "#A98BD0"].forEach(function (c, i) { box(g, s * (6.3 + i * 1.2), s * (7.5 + i * 1.2), -6, 1.35, -42, -14, c); });
+        box(g, s * 9.9, s * 12.8, -6, -.3, -42, -31, "#6E6A64");
+        box(g, s * 10.2, s * 12.5, -.3, .25, -42, -31, C.water).material = WATER;
+        box(g, s * 9.9, s * 10.2, -.3, .7, -42, -31, C.wall2);
+        box(g, s * 12.5, s * 12.8, -.3, .7, -42, -31, C.wall2);
+      });
+      spinBar(g, -38, C.hazard, 1.1, 0);
+      spinBar(g, -33, C.hazard, -1.1, 1.2);
+      pot(g, -5, -10.6, "#E28AA6"); pot(g, 5, -10.6, "#E8C860"); pot(g, 5, -7.4, "#A98BD0");
+      cyl(g, 4.2, 1, -8.9, .22, .4, "#6E8A7A");
+      box(g, -5.6, -4.6, 1, 1.45, -9.8, -8.2, C.wall2);
+      box(g, -5.8, -4.6, 1, 1.35, -7.8, -6.8, C.hedge);
+    })(places["1-1"] = group());
+    // 1-2 royal carriage yard
+    (function (g) {
+      runout(g, "#CFC6B2", C.wall2);
+      [-1, 1].forEach(function (s) {
+        box(g, s * 6.3, s * 13, -6, 1, -42, -14, "#C2B9A4");
+        for (var k = 0; k < 4; k++) box(g, s * 7, s * 8.6, 1, 2.6 + (k % 2) * 1.2, -40 + k * 6, -38.4 + k * 6, "#A0784C");
+      });
+      box(g, -12, -8.4, 1.9, 3.6, -26, -21, C.walnut);
+      [[-12.1, -25.4], [-8.3, -25.4], [-12.1, -21.6], [-8.3, -21.6]].forEach(function (p) {
+        ring(g, p[0], 1.8, p[1], .8, .1, "#4E3826", true).rotation.y = Math.PI / 2;
+        ball(g, p[0], 1.8, p[1], .14, "#8C7A55");
+      });
+      slider(g, -38, "#8C6A4A", 0);
+      slider(g, -34, "#8C6A4A", Math.PI);
+      ring(g, 5, 2, -10.3, .6, .08, C.walnut, true).rotation.y = Math.PI / 2;
+      box(g, 4.85, 5.15, 1, 1.5, -10.6, -10, C.walnut);
+      box(g, -5.6, -4.2, 1, 2.0, -11, -9.6, "#A0784C"); box(g, -5.4, -4.4, 2.0, 2.8, -10.8, -9.8, "#A0784C");
+      lantern(g, 5, -7.2); lantern(g, -5, -7.2);
+    })(places["1-2"] = group());
+    // 1-3 flag drill yard
+    (function (g) {
+      runout(g, "#D9C9A0", C.wall2);
+      [-1, 1].forEach(function (s) {
+        box(g, s * 6.3, s * 11.5, -6, 1, -42, -14, "#CDBB8E");
+        [-40, -34, -28, -22, -16].forEach(function (z) {
+          cyl(g, s * 8, 1, z, .07, 5.4, "#8A8578");
+          box(g, s * 8, s * 9.4, 4.6, 5.8, z - .03, z + .03, C.cream);
+        });
+        var tg = cyl(g, s * 10, 1.6, -25, .8, .1, C.cream);
+        tg.rotation.x = Math.PI / 2;
+        box(g, s * 9.8, s * 10.2, 1, 1.9, -25.15, -24.85, C.walnut);
+      });
+      spinBar(g, -38, "#9C6B3E", 1.0, .5);
+      spinBar(g, -33, "#9C6B3E", -1.0, 0);
+      var tb = cyl(g, 5, 1.8, -10.3, .65, .08, C.cream); tb.rotation.x = Math.PI / 2;
+      cyl(g, 5, 1, -10.3, .06, .9, C.walnut);
+      box(g, -5.8, -4.2, 1, 2.6, -10.5, -10.3, C.walnut);
+      for (var w = 0; w < 4; w++) cyl(g, -5.6 + w * .4, 1, -10.2, .03, 1.9, "#8A8578");
+      box(g, -5.6, -4.4, 1, 1.25, -8, -7, C.cream);
+      stonePot(g, 5, -7.4);
+    })(places["1-3"] = group());
+    // 1-4 knight stables
+    (function (g) {
+      runout(g, "#A27C55", "#7A5634");
+      [-1, 1].forEach(function (s) {
+        for (var k = 0; k < 5; k++) {
+          box(g, s * 6.3, s * 10, 1, 3.4, -42 + k * 6, -41.7 + k * 6, "#7A5634");
+          box(g, s * 6.3, s * 10, 3.4, 3.7, -42 + k * 6, -36 + k * 6, "#6B4428");
+        }
+        box(g, s * 6.3, s * 10, -6, 1, -42, -12, "#8E6B48");
+        box(g, s * 7, s * 8.2, 1, 2, -20, -18.6, C.hay);
+      });
+      slider(g, -38, "#7A5634", .4);
+      slider(g, -34, "#7A5634", .4 + Math.PI);
+      box(g, -5.8, -4.4, 1, 1.9, -11, -9.6, C.hay); box(g, -5.6, -4.6, 1.9, 2.6, -10.8, -9.8, C.hay);
+      cyl(g, 5, 1, -10.3, .08, 2.3, C.walnut); box(g, 4.6, 5.4, 2.6, 2.7, -10.35, -10.25, C.walnut);
+      box(g, 4.2, 5.6, 1, 1.6, -8, -7.2, C.walnut); box(g, 4.3, 5.5, 1.5, 1.58, -7.9, -7.3, C.water).material = WATER;
+      lantern(g, -5, -7.3);
+    })(places["1-4"] = group());
+    // 1-5 rook rampart walk
+    (function (g) {
+      box(g, -7, 7, -6, 1, -42, -12, "#B9B2A3");
+      box(g, -7.5, 7.5, -6, -2, -42, -12, "#A8A091");
+      [-1, 1].forEach(function (s) {
+        box(g, s * 6, s * 6.6, 1, 1.9, -42, -12, "#B0A898");
+        for (var z = -41.6; z < -12.4; z += 1.6) box(g, s * 6, s * 6.6, 1.9, 2.7, z, z + .8, "#B0A898");
+      });
+      [-40, -36.6].forEach(function (z0, gi) {
+        [[-3, 0], [0, 3]].forEach(function (xs, k) {
+          [0, 1].forEach(function (row) {
+            var tile = box(g, xs[0] + .05, xs[1] - .05, 0, 1, z0 + row * 1.6, z0 + row * 1.6 + 1.5, "#9AA0A8");
+            var ph = gi * 1.5 + ((k + row) % 2) * Math.PI;
+            anims.push({ g: g, f: function (t) { tile.position.y = 1.5 + Math.max(0, Math.sin(t * .9 + ph)) * 1.4 - .5; } });
+          });
+        });
+      });
+      box(g, 4.7, 5.3, 1.2, 2.6, -10.4, -10.2, C.cream); box(g, 4.8, 5.2, 1.6, 2.2, -10.45, -10.4, "#5B616C");
+      line(g, [[-5.4, 1, -10.6], [-5, 2.2, -10.3]], "#3B3833"); line(g, [[-4.6, 1, -10.6], [-5, 2.2, -10.3]], "#3B3833");
+      line(g, [[-5, 1, -9.9], [-5, 2.2, -10.3]], "#3B3833");
+      var tube = cylX(g, -5.6, -4.4, 2.35, -10.3, .09, "#7A6A4A"); tube.rotation.y = .6;
+      cyl(g, -5, 1, -7.4, .04, 2.6, "#8A8578"); box(g, -5, -4.2, 3.0, 3.6, -7.42, -7.38, C.cream);
+      stonePot(g, 5, -7.4);
+    })(places["1-5"] = group());
+
+    // ---------------- the pawn (for scale and the walk), the prefab bounds
+    var pawn = new THREE.Group();
+    var body = new THREE.Mesh(new THREE.CylinderGeometry(.24, .32, .7, 16), M(C.cream));
+    body.position.y = .35; body.castShadow = true; pawn.add(body);
+    var head = new THREE.Mesh(new THREE.SphereGeometry(.2, 16, 12), M(C.cream));
+    head.position.y = .85; head.castShadow = true; pawn.add(head);
+    var scarf = new THREE.Mesh(new THREE.TorusGeometry(.2, .05, 8, 18), M(C.wt));
+    scarf.rotation.x = Math.PI / 2; scarf.position.y = .66; pawn.add(scarf);
+    pawn.position.set(0, 1, 9);
+    scene.add(pawn);
+
+    var bounds = group();
+    function wire(x0, x1, y0, y1, z0, z1, hex) {
+      var geo = new THREE.EdgesGeometry(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0));
+      var l = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: lin(hex) }));
+      l.position.set((x0 + x1) / 2, (y0 + y1) / 2, -(z0 + z1) / 2);
+      bounds.add(l);
+      var fill = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), new THREE.MeshBasicMaterial({ color: lin(hex), transparent: true, opacity: .07, depthWrite: false }));
+      fill.position.copy(l.position);
+      bounds.add(fill);
+    }
+    wire(-7.6, 7.6, -1, 9, -42, 0, "#C9733A");
+    wire(-23.2, 23.2, -1.2, 17.2, -6.4, 36, "#3F4BB0");
+    [0, 36].forEach(function (z) {
+      var pl = new THREE.Mesh(new THREE.PlaneGeometry(12.6, 9), new THREE.MeshBasicMaterial({ color: lin("#4C55A8"), transparent: true, opacity: .28, side: THREE.DoubleSide, depthWrite: false }));
+      pl.position.set(0, 4.5, -z);
+      bounds.add(pl);
+    });
+    bounds.visible = false;
+
+    // ---------------- labels
+    var LABELS = [
+      ["last", "", [0, 4.2, -35.5], "obst", "place"],
+      ["", "정리 동선 12–18 m", [0, 2.6, -21], "obst"],
+      ["", "테라스 +1 m · CP", [0, 2.8, -9], "obst"],
+      ["", "열린 아치 12 × 5", [0, 8.1, -6], "obst"],
+      ["", "4단 · 입구 띠 (장애물 몫)", [3.2, 1.4, -3], "obst"],
+      ["", "이음매 ① (0, 0, 0)", [0, 9.6, 0], "joint"],
+      ["", "앞뜰 담장 · 잔디 (미니게임 몫)", [-15, 8.4, -6], "mg"],
+      ["", "앞길 44 × 4 · CP0", [-17, 1.4, 2], "mg"],
+      ["", "백 스테이션", [-12, 3.2, 13], "mg"],
+      ["", "흑 스테이션", [12, 3.2, 13], "mg"],
+      ["", "해자 (통로까지 한 해자)", [0, 1.3, 18], "mg", "C"],
+      ["", "팀 문", [-12, 6.6, 24], "mg"],
+      ["", "닫힌 정문 · 누각", [0, 17.8, 24], "mg"],
+      ["", "현관 회랑 · CP1", [0, 2.6, 33], "mg"],
+      ["", "이음매 ② → 2-1 대계단 현관홀", [0, 9.6, 36.5], "joint"],
+      ["bounds", "장애물 구간 프리팹 (1-x)", [0, 10.4, -26], "obst"],
+      ["bounds", "미니게임 구간 프리팹 (C · D · A 공통 껍데기)", [-15, 18.6, 18], "mg"]
+    ];
+    var labelBox = $("labels");
+    var labels = LABELS.map(function (L) {
+      var el = document.createElement("div");
+      el.className = "lab " + L[3];
+      el.textContent = L[1];
+      labelBox.appendChild(el);
+      return { el: el, kind: L[0], pos: new THREE.Vector3(L[2][0], L[2][1], -L[2][2]), only: L[4] };
+    });
+
+    // ---------------- switching
+    function setPlace() {
+      for (var k in places) places[k].visible = k === state.place;
+      labels[0].el.textContent = PLACES[state.place].lastLabel;
+    }
+    function setGame() {
+      for (var k in games) games[k].visible = k === state.game;
+      doors.forEach(function (d) { d.material = M(state.game === "D" ? "#3E4148" : C.door); });
+      signs.forEach(function (tex) { drawSign(tex, GAMES[state.game].sign); });
+      if (state.game !== "C" && state.bridge) { state.bridge = false; $("togBridge").setAttribute("aria-pressed", "false"); }
+    }
+    function setBounds() { bounds.visible = state.bounds; }
+    function setLabels() { labelBox.style.display = state.labels ? "" : "none"; }
+    var bridgeAngle = -Math.PI / 2;
+    function setBridge() { }
+
+    // ---------------- sign texture (Korean text on the dark board, gold rim)
+    function signTexture(text) {
+      var c = document.createElement("canvas");
+      c.width = 1024; c.height = 256;
+      var tex = new THREE.CanvasTexture(c);
+      tex.encoding = THREE.sRGBEncoding;
+      tex.userData = { canvas: c };
+      drawSign(tex, text);
+      return tex;
+    }
+    function drawSign(tex, text) {
+      var c = tex.userData.canvas, x = c.getContext("2d");
+      x.fillStyle = "#1C1F26"; x.fillRect(0, 0, c.width, c.height);
+      x.fillStyle = "#D9A83A"; x.fillRect(0, 0, c.width, 14); x.fillRect(0, c.height - 14, c.width, 14);
+      x.fillStyle = "#F3EADB";
+      x.font = "700 104px 'IBM Plex Sans KR', 'Malgun Gothic', sans-serif";
+      x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillText(text, c.width / 2, c.height / 2 + 6);
+      tex.needsUpdate = true;
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setGame(); });
+
+    // ---------------- views and the walk
+    var VIEWS = {
+      terrace: { pos: [0, 3.9, -12], at: [0, 3.4, 16] },
+      top: { pos: [-38, 50, -44], at: [0, 0, 0] },
+      side: { pos: [-32, 6.5, -4], at: [0, 3, -4] }
+    };
+    var tween = null, walk = null;
+    function vec(a) { return new THREE.Vector3(a[0], a[1], -a[2]); }
+    var cut = [new THREE.Plane(new THREE.Vector3(1, 0, 0), 0)];
+    renderer.localClippingEnabled = true;
+    function setCut(on) {
+      if (!!state.cut === on) return;
+      state.cut = on;
+      scene.traverse(function (o) {
+        if (!o.material || o === ground) return;
+        o.material.clippingPlanes = on ? cut : null;
+        o.material.clipShadows = on;
+        o.material.needsUpdate = true;
+      });
+    }
+    function go(name) {
+      setCut(name === "side");
+      if (name === "walk") { startWalk(); return; }
+      walk = null;
+      controls.enabled = true;
+      $("walkbar").hidden = true;
+      var v = VIEWS[name];
+      tween = { t0: performance.now(), dur: 900, p0: camera.position.clone(), a0: controls.target.clone(), p1: vec(v.pos), a1: vec(v.at) };
+    }
+    var PATH = [[0, 1, -40], [0, 1, -9.5], [0, 1, -6.2], [0, 0, -4], [0, 0, 1.5], [-6, 0, 1.6], [-12, 0, 2.0], [-12, .4, 4.6], [-12, .4, 10]];
+    var pathPts = PATH.map(vec), pathLen = [0];
+    for (var pi = 1; pi < pathPts.length; pi++) pathLen.push(pathLen[pi - 1] + pathPts[pi].distanceTo(pathPts[pi - 1]));
+    function startWalk() {
+      tween = null;
+      walk = { t0: performance.now(), speed: 3.4 };
+      $("walkbar").hidden = false;
+      controls.enabled = false;
+    }
+    function along(d) {
+      var total = pathLen[pathLen.length - 1];
+      d = Math.max(0, Math.min(total, d));
+      for (var i = 1; i < pathPts.length; i++) {
+        if (d <= pathLen[i]) {
+          var f = (d - pathLen[i - 1]) / (pathLen[i] - pathLen[i - 1]);
+          var p = pathPts[i - 1].clone().lerp(pathPts[i], f);
+          var dir = pathPts[i].clone().sub(pathPts[i - 1]); dir.y = 0; dir.normalize();
+          return { p: p, dir: dir, done: d >= total };
+        }
+      }
+      return { p: pathPts[pathPts.length - 1].clone(), dir: new THREE.Vector3(0, 0, -1), done: true };
+    }
+    var smoothDir = new THREE.Vector3(0, 0, -1);
+
+    // ---------------- loop
+    function resize() {
+      var w = vp.clientWidth, h = vp.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / Math.max(h, 1);
+      camera.updateProjectionMatrix();
+    }
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(vp); else window.addEventListener("resize", resize);
+    resize();
+
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var start = performance.now(), tmp = new THREE.Vector3();
+    camera.position.copy(vec(VIEWS.terrace.pos));
+    controls.target.copy(vec(VIEWS.terrace.at));
+    setPlace(); setGame(); setBounds(); setLabels();
+
+    function frame(now) {
+      var t = (now - start) / 1000;
+      if (!reduce) anims.forEach(function (a) { if (a.g.visible) a.f(t); });
+      // the bridge eases toward its state
+      var want = state.bridge && state.game === "C" ? 0 : -Math.PI / 2;
+      bridgeAngle += (want - bridgeAngle) * Math.min(1, .035 * 60 / 60 * 2);
+      games.C.userData.bridges.forEach(function (h) { h.rotation.x = bridgeAngle; });
+      games.C.userData.chains.forEach(function (c) {
+        c.hinge.updateMatrixWorld();
+        var a = c.hinge.localToWorld(c.local.clone());
+        var arr = c.line.geometry.attributes.position.array;
+        arr[0] = a.x; arr[1] = a.y; arr[2] = a.z; arr[3] = c.drum.x; arr[4] = c.drum.y; arr[5] = c.drum.z;
+        c.line.geometry.attributes.position.needsUpdate = true;
+      });
+      if (tween) {
+        var k = Math.min(1, (now - tween.t0) / tween.dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        camera.position.lerpVectors(tween.p0, tween.p1, e);
+        controls.target.lerpVectors(tween.a0, tween.a1, e);
+        if (k >= 1) tween = null;
+      }
+      if (walk) {
+        var s = along((now - walk.t0) / 1000 * walk.speed);
+        pawn.position.copy(s.p);
+        smoothDir.lerp(s.dir, .06).normalize();
+        pawn.rotation.y = Math.atan2(smoothDir.x, smoothDir.z);
+        camera.position.copy(s.p).addScaledVector(smoothDir, -5.6).add(tmp.set(0, 3.3, 0));
+        controls.target.copy(s.p).addScaledVector(smoothDir, 5).add(tmp.set(0, 1.1, 0));
+        if (s.done) {
+          walk = null;
+          controls.enabled = true;
+          $("walkbar").hidden = true;
+        }
+      }
+      controls.update();
+      renderer.render(scene, camera);
+      if (state.labels) placeLabels();
+      requestAnimationFrame(frame);
+    }
+    var ray = new THREE.Raycaster(), occFrame = 0, solids = [];
+    scene.traverse(function (o) { if (o.isMesh && o !== ground && !o.material.transparent) solids.push(o); });
+    function hiddenBehind(L) {
+      var d = camera.position.distanceTo(L.pos);
+      ray.set(camera.position, L.pos.clone().sub(camera.position).normalize());
+      ray.far = d - .6;
+      var hits = ray.intersectObjects(solids, false);
+      for (var i = 0; i < hits.length; i++) {
+        if (state.cut && hits[i].point.x < -.01) continue;   // the cut-away half
+        if (visibleChain(hits[i].object)) return true;
+      }
+      return false;
+    }
+    function visibleChain(o) { for (; o; o = o.parent) if (!o.visible) return false; return true; }
+    function placeLabels() {
+      var w = vp.clientWidth, h = vp.clientHeight, check = (occFrame++ % 6) === 0;
+      labels.forEach(function (L) {
+        var show = (L.kind !== "bounds" || state.bounds) && (!L.only || L.only === state.game || L.only === "place") && !(state.cut && L.pos.x < -.5);
+        if (show && check) L.occ = L.kind !== "bounds" && hiddenBehind(L);
+        if (!show || L.occ) { L.el.style.transform = "translate(-9999px,0)"; return; }
+        tmp.copy(L.pos).project(camera);
+        if (tmp.z > 1 || tmp.x < -1.05 || tmp.x > 1.05 || tmp.y < -1.05 || tmp.y > 1.05) { L.el.style.transform = "translate(-9999px,0)"; return; }
+        var x = (tmp.x * .5 + .5) * w, y = (-tmp.y * .5 + .5) * h;
+        L.el.style.transform = "translate(" + Math.round(x) + "px," + Math.round(y) + "px) translate(-50%,-50%)";
+      });
+    }
+    var named = (location.hash || "").replace("#", "");
+    if (VIEWS[named] || named === "walk") {
+      [].forEach.call($("segView").querySelectorAll("button"), function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-view") === named ? "true" : "false"); });
+      setCut(named === "side");
+      if (named === "walk") startWalk(); else { camera.position.copy(vec(VIEWS[named].pos)); controls.target.copy(vec(VIEWS[named].at)); }
+    }
+    requestAnimationFrame(frame);
+    window.__seam = { scene: scene, renderer: renderer, camera: camera };
+
+    return { setPlace: setPlace, setGame: setGame, setBounds: setBounds, setLabels: setLabels, setBridge: setBridge, go: go };
+  }
+})();
+</script>

@@ -7,7 +7,8 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-| (이 커밋, `claude/bold-johnson-8ez95n`) | 11-03 | R154 | 정문 앞 광장 · C 해자 도개교 회색 박스: `EarlyPlaza`·`EarlyPlazaBuilder`, 프리팹 뿌리 `Early_C_MoatDrawbridge` + 슬롯 2, `MissionStation`(`CourseKit`·`MoatRunsOn`)·`MgDrawbridge`·`PawnRushSection.StartDepth`·`PawnRushRound`·검증기·시험 키 F6·메뉴, 생성기, 앞길 4 m로 도면·문서 고침. 시험: Core 130·세션 41·전 어셈블리 + PawnRush 에디터 컴파일 |
+| (이 커밋, `claude/bold-johnson-8ez95n`) | 11-03 | R155 | 3D 이음매 예시 `Docs/KingRush/PAWN_RUSH_EARLY_PLAZA_3D.html`(1-1~1-5 × C·D·A, 시점 4, 단면, 걷기), R154 사용자 확인을 VALIDATION에, REQUIREMENTS·HANDOFF·PAWN_RUSH_EARLY_PLAZA. 코드 그대로 |
+| `591c2b0` | 11-03 | R154 | 정문 앞 광장 · C 해자 도개교 회색 박스: `EarlyPlaza`·`EarlyPlazaBuilder`, 프리팹 뿌리 `Early_C_MoatDrawbridge` + 슬롯 2, `MissionStation`(`CourseKit`·`MoatRunsOn`)·`MgDrawbridge`·`PawnRushSection.StartDepth`·`PawnRushRound`·검증기·시험 키 F6·메뉴, 생성기, 앞길 4 m로 도면·문서 고침. 시험: Core 130·세션 41·전 어셈블리 + PawnRush 에디터 컴파일 |
 | `2b10717` | 11-03 | R153 | 슬롯 2 '정문 앞 광장'(초반 미니게임 C·D·A) 구조안 도면: `Docs/KingRush/PAWN_RUSH_EARLY_PLAZA.md`·`.html`, 생성기 `Tools/Generators/early_plaza/`, 원문 사본 `PAWN_RUSH_MINIGAME_ZONES_v0.1.md`, REQUIREMENTS·HANDOFF·PAWN_RUSH_SECTIONS. 코드 그대로 |
 | (이 커밋, `claude/bold-johnson-8ez95n`) | 11-02 | R152 | 사용자가 나선 길 + 유리 징검다리 구조를 확정("좋아 이렇게 확정하자"): DECISIONS P29·REQUIREMENTS·HANDOFF·PAWN_RUSH_SECTIONS에 적음. 코드 그대로 |
 | `f77b242` | 11-02 | R152 | 대계단 현관홀 비트 3~5를 둥근 홀 한 나선 길로(휘어 오르는 계단·떠 있는 발판·점프대·다이빙 틈·바람 길·떨어지는 말·왕실 단 탑), 유리 징검다리 `GuessBridge`, `IntendedGap` + 검증기, 비트 6을 북쪽·아래로, 둥근 벽, 날개·다리·섬·룩 탑·`SwingingStair` 없앰, 문서. 시험: Core 130·세션 41·전 어셈블리 컴파일 |

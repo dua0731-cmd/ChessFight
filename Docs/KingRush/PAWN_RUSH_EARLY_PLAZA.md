@@ -2,9 +2,10 @@
 
 2026-11-03. 사용자: "폰러시 미니게임에 대한 레벨디자인을 할거야 … 첨부한 미니게임 기획서를 참고해서 초반 미니게임부터 초반에 나올 수 있는 장애물 구간과 이어졌을 때 어색하지 않을 미니게임 구간 구조를 시각자료로 만들어줘."(R153) → "C부터 만들기"(R154). 기획: [미니게임 구역 배치·디자인 기획서 v0.1](PAWN_RUSH_MINIGAME_ZONES_v0.1.md)(성한 님, 사용자 첨부 원문).
 
-**상태: C(해자 도개교) 회색 박스 프리팹이 있다. Linux/Windows 컴파일·Core 테스트만, Unity에서 사람이 본 적 없음.** 확인 목록은 [VALIDATION](../Network/VALIDATION.md) 최상단 R154 표. D·A 프리팹과 온라인 연결은 아직.
+**상태: C(해자 도개교) 회색 박스 프리팹이 있다. 사용자가 Unity에서 기능이 다 작동하는 것을 확인(11-03 "기능적으론 다 잘 작동").** 장애물 구간과 이어지는 모습은 슬롯 1이 비어 Unity에서 볼 수 없어 3D 예시로 본다(R155). 확인 목록은 [VALIDATION](../Network/VALIDATION.md) R154 표. D·A 프리팹과 온라인 연결은 아직.
 
 - 도면(같은 축척): [PAWN_RUSH_EARLY_PLAZA.html](PAWN_RUSH_EARLY_PLAZA.html)(브라우저로 열기) · 같은 페이지 [Artifact](https://claude.ai/artifact/URPiNSuWWBgU2MXu7ERckj)(사용자 계정 전용)
+- **3D 이음매 예시(R155)**: [PAWN_RUSH_EARLY_PLAZA_3D.html](PAWN_RUSH_EARLY_PLAZA_3D.html) · [Artifact](https://claude.ai/artifact/1bmM5zRLZ5riL2p7GQn9jY)(사용자 계정 전용). 앞 구간 1-1~1-5 × 게임 C·D·A를 바꿔 보며 테라스 시점·위에서·가운데 단면·걸어 들어가기, 프리팹 경계, C 다리 내리기. 좌표는 `EarlyPlazaBuilder.cs`와 2-1 `RoyalBalcony`와 같고, 1-x는 장소 기획의 마지막 비트·경계 소품만 대표로 그린 예시(three.js r128, 인터넷 필요)
 - 다시 그리기: `python Tools/Generators/early_plaza/build.py` (좌표는 `figs.py`, 코드 `EarlyPlazaBuilder.cs`와 같은 값)
 
 ## 1. 자리와 이음매
