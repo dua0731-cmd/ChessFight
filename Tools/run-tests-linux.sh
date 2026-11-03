@@ -208,14 +208,16 @@ check_boundaries() {
 # Pawn parts (RagdollPawn*.cs) are exempt: the host simulates them and snapshots carry them.
 # A mover driven by player state rather than time (a seesaw tipped by weight, a pillar fired when
 # someone comes close) cannot be a function of the clock. It says so with a "StateDrivenMover:"
-# comment naming why; it is offline only until the host sends its state (listed, not failed).
+# comment naming why; it is offline only until the host sends its state (listed, not failed). It is
+# listed even when it reads ObstacleClock for something else (R287: the Royal Carriage Yard's push
+# gate asks ObstacleClock.Authority who judges it, and had dropped off the list).
 check_obstacle_clock() {
   local bad=0 f
   for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/Scripts/RagdollLab Assets/Scripts/PawnRush 2>/dev/null \
              | grep -vE 'LabAutoTest|Test|Editor/|/RagdollPawn[^/]*\.cs$'); do
-    if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then
+    if grep -qE 'MovePosition|MoveRotation' "$f"; then
       if grep -q 'StateDrivenMover:' "$f"; then echo "NOTE: state-driven mover, offline only: $f"
-      else echo "$f"; bad=1; fi; fi
+      elif ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then echo "$f"; bad=1; fi; fi
   done
   if [ $bad -eq 0 ]; then echo "PASS: every moving obstacle runs on ObstacleClock"
   else echo "FAIL: the kinematic movers above do not read ObstacleClock (make them Obstacle subclasses)"; fi

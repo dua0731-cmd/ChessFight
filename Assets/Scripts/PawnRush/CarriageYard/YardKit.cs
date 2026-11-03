@@ -322,8 +322,10 @@ namespace ChessFight.PawnRush
             return wheels;
         }
 
-        // The carriage's one solid box, and the trigger shell round it that knocks characters away.
-        public static YardImpact CarriageCollider(Transform parent, float knockback)
+        // A moving carriage's one solid box, and the trigger shell round it that knocks characters away; the hits are
+        // judged by the box's faces (YardImpact.solid). With `seeThrough` the follow camera can look through the box
+        // (CameraSeeThrough, switched on by whoever owns it) instead of jumping in front of it as it sweeps past.
+        public static YardImpact CarriageCollider(Transform parent, float knockback, bool seeThrough = false)
         {
             var body = new GameObject("Carriage (collider)");
             body.transform.SetParent(parent, false);
@@ -331,7 +333,82 @@ namespace ChessFight.PawnRush
             box.center = new Vector3(0f, (CarriageHeight + .05f) * .5f, 0f);
             box.size = new Vector3(CarriageWidth, CarriageHeight - .05f, CarriageLength);
             body.AddComponent<NoClimbSurface>();
-            return Shell(parent, "Carriage (hit)", box.center, box.size + new Vector3(.5f, .2f, .5f), knockback);
+            if (seeThrough) body.AddComponent<CameraSeeThrough>().enabled = false;
+            var impact = Shell(parent, "Carriage (hit)", box.center, box.size + new Vector3(.5f, .2f, .5f), knockback);
+            impact.solid = box;
+            impact.onFloor = true;
+            return impact;
+        }
+
+        // ------------------------------------------------------------------ sounds
+
+        static AudioClip rumble, crack;
+
+        // A carriage's wheels on the cobbles: low noise with the knock of iron tyres, one second that loops without a
+        // seam (the noise is filtered round the loop twice, and the knocks fall on whole hertz). Made in code: the
+        // project has no carriage sounds yet.
+        public static AudioClip RumbleSound
+        {
+            get
+            {
+                if (rumble != null) return rumble;
+                const int rate = 22050;
+                var random = new System.Random(11);
+                var noise = new float[rate];
+                for (int i = 0; i < rate; i++) noise[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+                var data = new float[rate];
+                // Two one-pole low passes (~140 Hz) run twice round the loop, so its end leads into its start.
+                float a = 1f - Mathf.Exp(-2f * Mathf.PI * 140f / rate), y1 = 0f, y2 = 0f, peak = 1e-4f;
+                for (int pass = 0; pass < 2; pass++)
+                    for (int i = 0; i < rate; i++)
+                    {
+                        y1 += a * (noise[i] - y1);
+                        y2 += a * (y1 - y2);
+                        if (pass == 1) data[i] = y2;
+                    }
+                for (int i = 0; i < rate; i++)
+                {
+                    double t = (double)i / rate;
+                    // Nine knocks a second, and a deep body under the noise.
+                    double knock = System.Math.Pow(System.Math.Max(0.0, System.Math.Sin(2.0 * System.Math.PI * 9.0 * t)), 6.0);
+                    double body = .35 * System.Math.Sin(2.0 * System.Math.PI * 47.0 * t) + .2 * System.Math.Sin(2.0 * System.Math.PI * 73.0 * t + 1.3);
+                    data[i] = (float)(data[i] * 4.0 * (.6 + .8 * knock) + body * .25);
+                    peak = Mathf.Max(peak, Mathf.Abs(data[i]));
+                }
+                for (int i = 0; i < rate; i++) data[i] *= .7f / peak;
+                rumble = AudioClip.Create("YardRumble", rate, 1, rate, false);
+                rumble.SetData(data, 0);
+                return rumble;
+            }
+        }
+
+        // A whip crack as a charge starts: a sharp burst and its slap, a quarter of a second.
+        public static AudioClip CrackSound
+        {
+            get
+            {
+                if (crack != null) return crack;
+                const int rate = 22050, length = rate / 4;
+                var random = new System.Random(5);
+                var data = new float[length];
+                float last = 0f, peak = 1e-4f;
+                for (int i = 0; i < length; i++)
+                {
+                    float t = (float)i / rate;
+                    float white = (float)(random.NextDouble() * 2.0 - 1.0);
+                    // High-passed noise (the snap), a second smaller one 50 ms later (the slap back), a short ring.
+                    float hiss = white - last;
+                    last = white;
+                    float snap = hiss * (Mathf.Exp(-t / .012f) + .45f * (t > .05f ? Mathf.Exp(-(t - .05f) / .02f) : 0f));
+                    float ring = .35f * Mathf.Sin(2f * Mathf.PI * 1650f * t) * Mathf.Exp(-t / .025f);
+                    data[i] = snap + ring;
+                    peak = Mathf.Max(peak, Mathf.Abs(data[i]));
+                }
+                for (int i = 0; i < length; i++) data[i] *= .9f / peak;
+                crack = AudioClip.Create("YardWhipCrack", length, 1, rate, false);
+                crack.SetData(data, 0);
+                return crack;
+            }
         }
 
         // A trigger box that knocks characters away from the moving thing it belongs to.

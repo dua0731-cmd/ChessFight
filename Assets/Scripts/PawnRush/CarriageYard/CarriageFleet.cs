@@ -10,9 +10,10 @@ namespace ChessFight.PawnRush
     // plan and builds its carriages (RoamingCarriage, each an Obstacle reading its pose from the plan).
     //
     // The area is where the carriages' centres may go, in this object's frame (keep it BodyRadius + a little inside
-    // the walls). The plan starts startDelay seconds after the fleet is switched on (offline: when the yard's gate
-    // opens); a match hands every PC the same start (StartAt) and then every PC sees the same carriages, as with the
-    // grand stair hall's random rolls. Self-building; built from code on an inactive object, call Configure first.
+    // the walls). Offline the plan starts startDelay seconds after the fleet is switched on (when the yard's gate
+    // opens); a match hands every PC the same start and seed (StartAt; until then the carriages wait at home) and then
+    // every PC sees the same carriages, as with the grand stair hall's random rolls. Self-building; built from code
+    // on an inactive object, call Configure first.
     public sealed class CarriageFleet : MonoBehaviour
     {
         [Header("Area (the carriages' centres, this object's frame)")]
@@ -27,8 +28,8 @@ namespace ChessFight.PawnRush
         [SerializeField] float moveSpeed = 9f;
         [Tooltip("Each further carriage this much faster (m/s)")]
         [SerializeField] float speedStep = .3f;
-        [Tooltip("Seconds a carriage takes to turn to its next point")]
-        [SerializeField] float turnSeconds = 1.2f;
+        [Tooltip("Seconds a half turn on the spot takes; a smaller turn takes its share")]
+        [SerializeField] float turnSeconds = 2.2f;
         [Tooltip("Shortest and longest wait with the lamps red before a charge (s)")]
         [SerializeField] float minAim = .6f, maxAim = 1.2f;
         [Tooltip("Shortest and longest rest after a charge (s)")]
@@ -37,11 +38,12 @@ namespace ChessFight.PawnRush
         [SerializeField] float minCharge = 10f, maxCharge = 32f;
         [Tooltip("Seconds after it is switched on that the first carriage moves (offline)")]
         [SerializeField] float startDelay = 3f;
-        [Tooltip("The plan's own random points")]
-        [SerializeField] int seed = 101;
+        [Tooltip("The plan's own random points (a match draws one of RoamingFleet.YardSeeds, StartAt)")]
+        [SerializeField] int seed = 38;
 
         [Header("Hit")]
-        [SerializeField] float knockbackForce = 7f;
+        [Tooltip("Push of a hit (m/s) before the carriage's speed adds 0.25 per m/s (at most 7 in all), see RoamingCarriage")]
+        [SerializeField] float knockbackForce = 4f;
         [SerializeField] float knockdownSeconds = 1f;
 
         RoamingFleet fleet;
@@ -68,23 +70,36 @@ namespace ChessFight.PawnRush
             this.knockdownSeconds = knockdownSeconds;
         }
 
-        // A match's shared start (a clock time), after Configure, before or after the fleet is switched on: the plan
-        // is made again from it, the same on every PC. Each carriage goes straight to where the new plan has it (a cut,
-        // not a charge across the yard).
-        public void StartAt(double clockTime) => fleet = Plan(clockTime);
+        // A match's shared start (a clock time on ObstacleClock), after Configure, before or after the fleet is switched
+        // on: the plan is made again from it, the same on every PC. Each carriage goes straight to where the new plan
+        // has it (a cut, not a charge across the yard). The same start again changes nothing.
+        public void StartAt(double clockTime) => StartAt(clockTime, seed);
+
+        // The same with the round's own seed (every PC must pass the same one).
+        // (Against the plan's own start, which moves when the clock leaps: handed before the switch to the match clock
+        // and again after it, the start is planned again on the new clock instead of left on each PC's switch.)
+        public void StartAt(double clockTime, int seed)
+        {
+            if (fleet != null && fleet.StartTime == clockTime && this.seed == seed) return;
+            this.seed = seed;
+            fleet = Plan(clockTime);
+        }
 
         void Awake()
         {
             if (built) return;
             built = true;
-            if (fleet == null) fleet = Plan(ObstacleClock.Now + startDelay);
+            // Offline the carriages set off startDelay after the yard is built. On a shared match clock they stand at
+            // home until the match hands every PC the same start (StartAt): a start of its own would differ per PC.
+            if (fleet == null) fleet = Plan(ObstacleClock.Shared ? double.NaN : ObstacleClock.Now + startDelay);
             int n = Mathf.Max(1, count);
             for (int i = 0; i < n; i++)
             {
                 var go = new GameObject("Roaming carriage " + (i + 1));
                 go.SetActive(false);
                 go.transform.SetParent(transform, false);
-                go.AddComponent<RoamingCarriage>().Join(this, i, knockbackForce, knockdownSeconds, i % 3);
+                // Green and blue: red is the carriages' warning (their lamps), never a body.
+                go.AddComponent<RoamingCarriage>().Join(this, i, knockbackForce, knockdownSeconds, i % 2 == 0 ? 0 : 2);
                 go.SetActive(true);
             }
         }

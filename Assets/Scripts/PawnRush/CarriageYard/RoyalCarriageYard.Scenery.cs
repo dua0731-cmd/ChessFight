@@ -15,19 +15,19 @@ namespace ChessFight.PawnRush
             // Battlements on the walls a player sees from inside: the yard's and the canal's, the arena's.
             Merlons(s, -YardHalf - 1f, 0f, CanalZ1, 5f);
             Merlons(s, YardHalf, 0f, CanalZ1, 5f);
-            Merlons(own, -27f, ArenaStart, 176f, Top + 3f);
-            Merlons(own, 26f, ArenaStart, 176f, Top + 3f);
+            Merlons(own, -27f, ArenaStart, GateZ + 3f, Top + 3f);
+            Merlons(own, 26f, ArenaStart, GateZ + 3f, Top + 3f);
             // Banners: on the gate wall's yard face (where the carriages keep off), along the arena, on the final gate's
             // wall. None on the yard's side walls: a charging carriage would run through them.
             foreach (float x in new[] { -17f, -10f, 10f, 17f })
                 BannerOn(s, new Vector3(x, 5.6f, YardZ0 + .02f), 0f);
-            for (float z = ArenaStart + 6f; z < 170f; z += 12f)
+            for (float z = ArenaStart + 6f; z < CliffZ - 3f; z += 12f)   // none over a ramp's top, where it would hang into it
             {
                 BannerOn(own, new Vector3(-25.9f, 9.5f, z), 90f);
                 BannerOn(own, new Vector3(25.9f, 9.5f, z), -90f);
             }
             foreach (float x in new[] { -18f, -12f, 12f, 18f })
-                BannerOn(own, new Vector3(x, Top + 9.5f, 171.9f), 180f);
+                BannerOn(own, new Vector3(x, Top + 9.5f, GateZ - 1.1f), 180f);
             // Lamp posts on the canal's landings, at the arena's mouth, on the platform (none in the yard: the carriages).
             foreach (var at in new[] { new Vector3(-9f, 0f, CanalZ0 + 1f), new Vector3(9f, 0f, CanalZ0 + 1f),
                                        new Vector3(-9f, 0f, CanalZ1 - 1f), new Vector3(9f, 0f, CanalZ1 - 1f) })
@@ -38,7 +38,7 @@ namespace ChessFight.PawnRush
             // Corner towers outside the walls (pictures only) and the palace behind the finish.
             foreach (var at in new[] { new Vector3(-24f, 0f, 0f), new Vector3(24f, 0f, 0f), new Vector3(-28f, 0f, CanalZ1), new Vector3(28f, 0f, CanalZ1) })
                 Tower(s, at, 4f, 12f, false);
-            foreach (var at in new[] { new Vector3(-28f, 0f, 176f), new Vector3(28f, 0f, 176f) })
+            foreach (var at in new[] { new Vector3(-28f, 0f, GateZ + 3f), new Vector3(28f, 0f, GateZ + 3f) })
                 Tower(own, at, 4f, 19f, false);
             Palace(own);
         }
@@ -110,10 +110,12 @@ namespace ChessFight.PawnRush
             YardKit.Cone(s, "Crown", at + Vector3.up * 1.1f, 1.8f, 3.2f, YardKit.Hedge);
         }
 
-        // The palace the race runs towards, behind the finish: a keep, wings and towers, pictures only.
+        // The palace the race runs towards, behind the finish: a keep, wings and towers, pictures only. Written for the
+        // gate at z 173 and moved with it.
         void Palace(Transform parent)
         {
             var s = Group("Palace", parent);
+            s.localPosition = new Vector3(0f, 0f, GateZ - 173f);
             YardKit.Picture(s, "Keep", new Vector3(-12f, 0f, 200f), new Vector3(12f, Top + 20f, 214f), YardKit.WallStone);
             YardKit.Picture(s, "Keep roof band", new Vector3(-12.2f, Top + 19.5f, 199.8f), new Vector3(12.2f, Top + 20.2f, 214.2f), YardKit.Gold);
             for (int i = 0; i < 5; i++)

@@ -6,8 +6,9 @@ namespace ChessFight.PawnRush
     // The Royal Carriage Yard's carousel (회전 마차): carriages on beams round one fixed centre post, turning together
     // as one group - never each on its own - at a steady speed. The beams run overhead (armHeight), so a character
     // gets through between the carriages and under the beams by watching the gaps come round. A carriage that runs
-    // into someone knocks it away along its path; the push grows with the speed at that radius (YardImpact), so a
-    // faster carousel hits harder. The pose is a pure function of ObstacleClock.
+    // into someone knocks it away along its path and out; the push grows with the speed at that radius (YardImpact),
+    // so a faster carousel hits harder. Only its front hits (one driving away does not drag anyone along). The pose is
+    // a pure function of ObstacleClock.
     //
     // Self-building from its settings (the object's position is the centre on the floor). Built from code on an
     // inactive object, call Configure before switching it on.
@@ -22,8 +23,8 @@ namespace ChessFight.PawnRush
         [SerializeField] int carriageCount = 4;
         [Tooltip("Height of the beams' underside (m): characters pass under them")]
         [SerializeField] float armHeight = 3.2f;
-        [Tooltip("Push of a hit (m/s); the carriage's speed where it touches adds to it")]
-        [SerializeField] float knockbackForce = 6f;
+        [Tooltip("Push of a hit (m/s); the carriage's speed where it touches adds 0.6 per m/s. It sets the character's speed")]
+        [SerializeField] float knockbackForce = 4.5f;
 
         bool built;
 
@@ -75,6 +76,15 @@ namespace ChessFight.PawnRush
                 YardKit.Carriage(seat, i % 2 == 0 ? YardKit.CarriageGreen : YardKit.CarriageRed);
                 var impact = YardKit.CarriageCollider(seat, knockbackForce);
                 impact.knockdownSpeed = 2.5f;
+                // R287: the speed set rather than added (a pawn walking into it and one waiting both go the same way),
+                // along the carriage's travel and out from it, a small lift, and the part up the course (the +z of
+                // whatever holds the carousel - not the carousel, which turns) cut to 60 %: a hit never throws anyone
+                // past the carousel.
+                impact.replaceSpeed = true;
+                impact.alongShare = .6f;
+                impact.lift = 1.5f;
+                impact.course = transform.parent;
+                impact.forwardShare = .6f;
             }
         }
 

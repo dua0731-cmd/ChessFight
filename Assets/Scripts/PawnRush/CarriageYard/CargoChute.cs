@@ -7,8 +7,9 @@ namespace ChessFight.PawnRush
     // seconds a barrel or a bale drops out of the hatch over the top of the lane, rolls down it at rollingSpeed and
     // sinks through the drain grate at the bottom, then comes round again. Each pass a piece takes a new place across
     // the lane, so the gaps are never in the same place twice, but a piece is never wider than a third of the lane:
-    // there is always a way up between them. A piece that hits a character knocks it back down the slope
-    // (YardImpact on the piece).
+    // there is always a way up between them. A piece that hits a character knocks it back down the slope and out of
+    // the piece's way (YardImpact on the piece), never off its feet. Where each piece will land shows on the lane a
+    // second before it drops (RollingCargo).
     //
     // This object is the lane: its position is the top of the lane ON the slope's surface, its +z points down the
     // slope (along the surface) and its +y out of it. The pieces are RollingCargo obstacles, each a pure function of
@@ -32,8 +33,10 @@ namespace ChessFight.PawnRush
         [SerializeField] float phase;
         [Tooltip("Picks where across the lane each piece comes down")]
         [SerializeField] int seed = 1;
-        [Tooltip("Push of a hit (m/s); the piece's speed adds to it")]
-        [SerializeField] float knockbackForce = 6f;
+        [Tooltip("Push of a hit (m/s); 0.6 per m/s of the piece's speed adds to it (at most 6): down the lane and aside")]
+        [SerializeField] float knockbackForce = 3f;
+        [Tooltip("A character dead in a piece's line goes to the lane's right (1) or left (-1): the ramp's outer wall")]
+        [SerializeField] float centreSide = 1f;
 
         bool built;
         readonly List<RollingCargo> pieces = new List<RollingCargo>();
@@ -44,6 +47,7 @@ namespace ChessFight.PawnRush
         public float LaneWidth => laneWidth;
         public float DropHeight => dropHeight;
         public int Seed => seed;
+        public float CentreSide => centreSide;
         public IReadOnlyList<RollingCargo> Pieces => pieces;
 
         // Gravity of a dropping piece (m/s²): a little over plain gravity, like the Pawn Rush pieces fall.
@@ -57,8 +61,9 @@ namespace ChessFight.PawnRush
         public float LoopSeconds => PieceCount * Mathf.Max(.2f, spawnInterval);
 
         public void Configure(float spawnInterval, float rollingSpeed, float[] cargoSizes, float laneLength, float laneWidth,
-                              float dropHeight, float phase, int seed, float knockbackForce)
+                              float dropHeight, float phase, int seed, float knockbackForce, float centreSide = 1f)
         {
+            this.centreSide = centreSide;
             this.spawnInterval = spawnInterval;
             this.rollingSpeed = rollingSpeed;
             this.cargoSizes = cargoSizes;

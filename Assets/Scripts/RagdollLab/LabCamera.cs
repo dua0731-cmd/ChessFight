@@ -183,12 +183,13 @@ namespace ChessFight.RagdollLab
             float reach = Mathf.Lerp(distance, Mathf.Min(distance, AimDistance), aim);
             // Pull in in front of walls and ease back out. Pawns never block the view:
             // with a crowd around, the camera would otherwise dive into someone's head.
+            // Nor does a moving part that only sweeps past (CameraSeeThrough, R287).
             float allowed = reach;
             int n = Physics.SphereCastNonAlloc(pivot, collisionRadius, back, hits, reach, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];
-                if (h.distance <= 0f || RagdollPawn.ColliderOwner.ContainsKey(h.collider)) continue;
+                if (h.distance <= 0f || RagdollPawn.ColliderOwner.ContainsKey(h.collider) || CameraSeeThrough.Skips(h.collider)) continue;
                 allowed = Mathf.Min(allowed, h.distance);
             }
             // In quickly (a wall must not end up between camera and pawn), out slowly. A hard snap in

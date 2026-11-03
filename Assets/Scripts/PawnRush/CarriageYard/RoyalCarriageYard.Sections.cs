@@ -14,31 +14,45 @@ namespace ChessFight.PawnRush
         const float CanalZ0 = 50f, CanalZ1 = 82f, WalkZ0 = 58f, WalkZ1 = 74f, WheelZ = 66f, CanalWater = -1.2f;
         // The walkways' inner edges, either side of the giant wheel's axle.
         const float WalkInner = 3f;
-        // Half the walkways' break at the wheel (the wheel itself is 1 m deep): 2.6 m is a jump, not a step. At the
-        // pawn's real speeds (Settings/RagdollTuning: run 2.5, sprint 3.6 m/s; ~0.69 s in the air) a sprint jump from
-        // within ~0.45 m of the edge clears it on the ledge help, a plain run jump falls short and a jump + dive
-        // (+3 m/s) has room to spare. Whoever waits at the edge stands 0.7 m off the spokes' hit shell.
-        public const float WheelGapHalf = 1.3f;
+        // The walkways' break at the wheel (the wheel itself is 1 m deep), CrossingSettings.gapLength's default. At the
+        // pawn's real speeds (Settings/RagdollTuning: run 2.5, sprint 3.6 m/s; ~0.69 s in the air) a sprint jump reaches
+        // ~3.1 m with the ledge help and ~3.5 m pressed late in the coyote time, so 2.6 and even 3.2 m were crossed
+        // without a dive. At 3.4 m a sprint jump from the deck falls 0.3-0.6 m short, and it takes the user's
+        // "점프+슬라이딩": a sprint jump from within 0.3 m of the edge with a dive (+3 m/s, limp, no ledge help) pressed
+        // by ~0.1 s after the top of the jump, which lands the body 0.15-0.45 m past the far edge. Whoever waits at the
+        // edge stands 1.1 m off the spokes' hit shell.
+        public const float DefaultGap = 3.4f;
+        // The canal's parapets beside the landings and the entry landing's side railings, over the body of a pawn
+        // knocked while it jumps (hips up to ~1.6 m), so the yard never drops anyone into the canal: from the yard and the
+        // landing's first metres, before CP1, that was back to the start. The north ones, off every knock's way, 1.5 m.
+        const float ParapetTop = 2f, NorthParapetTop = 1.5f;
         // 3 and 4, their own frame: the arena starts at z 106 there, and is moved to start where the canal ends.
         const float ArenaStart = 106f, LaterShift = CanalZ1 - ArenaStart;
         // The arena's carousel and the lifting waterwheel, where several parts are fitted round each other.
-        const float CarouselZ = 125.5f, PoolZ0 = 139.3f, LiftZ = 144f, LiftY = 4.6f, LiftRadius = 5.2f, CliffZ = 150f, Top = 8f;
+        // The pool's near edge (R287, 0.55 m nearer the wheel than R284's 139.3): the paddle tips pass 0.7 m out at hip
+        // height and the handles 0.3-0.6 m out at a jump's reach, while a pawn standing at the edge stays clear of them.
+        const float CarouselZ = 125.5f, PoolZ0 = 139.85f, LiftZ = 144f, LiftY = 4.6f, LiftRadius = 5.2f, CliffZ = 150f, Top = 8f;
+        // The final gate's wall, 13 m past the cliff (R287: it was 23, an empty run once the gate was reached).
+        const float GateZ = 163f;
 
         // ------------------------------------------------------------------ 1. the outer gate and the yard
 
         void Entrance()
         {
             var s = Group("1 Entrance");
-            // The start court behind the gate, its twelve start places (white in front: the map test starts there). Its
-            // floor runs on under the gate to the yard: the opening has no floor of its own.
+            // The start court behind the gate and its twelve start places: the teams side by side, white west and
+            // black east of the gate's middle, three across and two deep each, so neither is nearer the gate (R287:
+            // white stood all in front, 3 m ahead of black). Its floor runs on under the gate to the yard: the opening
+            // has no floor of its own.
             YardKit.Floor(s, "Start court", -12f, 12f, -16f, YardZ0, 0f);
             YardKit.Wall(s, "Court wall W", -13f, -12f, 0f, 5f, -17f, 0f, YardKit.WallStone);
             YardKit.Wall(s, "Court wall E", 12f, 13f, 0f, 5f, -17f, 0f, YardKit.WallStone);
             YardKit.Wall(s, "Court wall S", -13f, 13f, 0f, 5f, -17f, -16f, YardKit.WallStone);
             for (int i = 0; i < 6; i++)
             {
-                Place<SpawnPoint>(s, "Start white " + i, new Vector3(-5f + 2f * i, 0f, -7f)).Configure(i, Teams.White);
-                Place<SpawnPoint>(s, "Start black " + i, new Vector3(-5f + 2f * i, 0f, -10f)).Configure(i, Teams.Black);
+                float x = 1.5f * (1 + i % 3), z = i < 3 ? -7f : -10f;
+                Place<SpawnPoint>(s, "Start white " + i, new Vector3(-x, 0f, z)).Configure(i, Teams.White);
+                Place<SpawnPoint>(s, "Start black " + i, new Vector3(x, 0f, z)).Configure(i, Teams.Black);
             }
             ParkedCarriage(s, new Vector3(-9.8f, 0f, -12.5f), 0f, YardKit.CarriageBlue);
             Crates(s, new Vector3(9.8f, 0f, -14.6f), 2);
@@ -52,8 +66,10 @@ namespace ChessFight.PawnRush
             foreach (float x in new[] { -4.8f, 4.8f })
                 Tower(s, new Vector3(x, 0f, 1f), 3f, 10f);
             var count = YardKit.Label(s, "", new Vector3(0f, 6.3f, -.3f), 3f, new Color(1f, .86f, .4f));
-            Place<TimedGate>(s, "Start gate W", new Vector3(-3f, 0f, 1f)).Configure(3f, 5.4f, false, gates.startDelay, gates.startDuration, count);
-            Place<TimedGate>(s, "Start gate E", new Vector3(3f, 0f, 1f)).Configure(3f, 5.4f, true, gates.startDelay, gates.startDuration);
+            startWest = Place<TimedGate>(s, "Start gate W", new Vector3(-3f, 0f, 1f));
+            startWest.Configure(3f, 5.4f, false, gates.startDelay, gates.startDuration, count);
+            startEast = Place<TimedGate>(s, "Start gate E", new Vector3(3f, 0f, 1f));
+            startEast.Configure(3f, 5.4f, true, gates.startDelay, gates.startDuration);
             Sign(s, "왕실 마차뜰", new Vector3(0f, 8.2f, -.3f), 2.2f);
 
             // The yard, right behind the gate: four carriages charge about it at random.
@@ -66,16 +82,16 @@ namespace ChessFight.PawnRush
         }
 
         // The four carriages share the whole yard (CarriageFleet): each keeps charging to a random point anywhere in it,
-        // planned clear of the others', so they never meet and there are no lanes or seams to hide in. Their centres
-        // stay BodyRadius + 0.2 m inside the walls and the canal's parapet (2.5 m more clear of the gate's open leaves),
-        // so the strip along the walls is seldom swept: a safer line, but the long way round (~33 m more than straight
-        // across). They start moving when the gate opens.
+        // planned clear of the others', so they never meet and there are no lanes or seams to hide in. Their bodies
+        // stay 0.8 m inside the walls and the canal's parapet, wider than a pawn, so nobody is pinned against a wall
+        // (R287; 2.5 m more clear of the gate's open leaves): the strip along the walls is a safe line, but the long way
+        // round (~33 m more than straight across, 9-10 s). They start moving when the gate opens.
         void RoamingCarriages(Transform parent)
         {
-            float keep = RoamingCarriage.BodyRadius + .2f;
-            Place<CarriageFleet>(parent, "Roaming carriages", Vector3.zero)
-                .Configure(-(YardHalf - keep), YardHalf - keep, YardZ0 + keep + 2.5f, YardZ1 - keep, 4, roaming.moveSpeed, roaming.turnSeconds,
-                           roaming.minAim, roaming.maxAim, gates.startDelay, roaming.seed, roaming.knockbackForce, roaming.knockdownSeconds);
+            float keep = RoamingCarriage.BodyRadius + .8f;
+            carriages = Place<CarriageFleet>(parent, "Roaming carriages", Vector3.zero);
+            carriages.Configure(-(YardHalf - keep), YardHalf - keep, YardZ0 + keep + 2.5f, YardZ1 - keep, 4, roaming.moveSpeed, roaming.turnSeconds,
+                                roaming.minAim, roaming.maxAim, gates.startDelay, roaming.seed, roaming.knockbackForce, roaming.knockdownSeconds);
         }
 
         // ------------------------------------------------------------------ 2. the canal and the giant waterwheel
@@ -97,21 +113,23 @@ namespace ChessFight.PawnRush
             YardKit.Picture(s, "Water", new Vector3(-YardHalf, bed, CanalZ0), new Vector3(YardHalf, CanalWater, CanalZ1), YardKit.Water);
             // A fall into the canal: in the water, a moment, back at the last checkpoint.
             Trigger<KillVolume>(s, "Canal (fall)", new Vector3(-YardHalf, bed, CanalZ0), new Vector3(YardHalf, CanalWater - .3f, CanalZ1));
-            // Parapets on the canal's edges beside the landings: nobody drops in from the yard or the arena by accident.
+            // Parapets on the canal's edges beside the landings, over a knocked pawn's hips: nobody drops in from the
+            // yard or the arena (from the yard, with no checkpoint yet, that was back to the start).
             foreach (float side in new[] { -1f, 1f })
             {
                 float a = side * 10f, b = side * YardHalf;
-                YardKit.Wall(s, "Parapet S", Mathf.Min(a, b), Mathf.Max(a, b), bed, .9f, CanalZ0, CanalZ0 + .4f, YardKit.WallStone);
-                YardKit.Wall(s, "Parapet N", Mathf.Min(a, b), Mathf.Max(a, b), bed, .9f, CanalZ1 - .4f, CanalZ1, YardKit.WallStone);
+                YardKit.Wall(s, "Parapet S", Mathf.Min(a, b), Mathf.Max(a, b), bed, ParapetTop, CanalZ0, CanalZ0 + .4f, YardKit.WallStone);
+                YardKit.Wall(s, "Parapet N", Mathf.Min(a, b), Mathf.Max(a, b), bed, NorthParapetTop, CanalZ1 - .4f, CanalZ1, YardKit.WallStone);
             }
 
-            // The landings either side, railed but where the walkways meet them.
-            Landing(s, "Entry landing", CanalZ0, WalkZ0, true, inner, outer, bed);
-            Landing(s, "Far landing", WalkZ1, CanalZ1, false, inner, outer, bed);
+            // The landings either side, railed but where the walkways meet them; the entry landing's sides as high as
+            // the parapets they meet.
+            Landing(s, "Entry landing", CanalZ0, WalkZ0, true, inner, outer, bed, ParapetTop);
+            Landing(s, "Far landing", WalkZ1, CanalZ1, false, inner, outer, bed, .9f);
 
             // The two walkways, wood, either side of the wheel's axle, broken where the wheel turns: the gap is jumped
             // through a hole between two spokes.
-            float gap = WheelGapHalf;
+            float gap = Mathf.Clamp(crossing.gapLength, 2.2f, 3.6f) * .5f;
             foreach (float side in new[] { -1f, 1f })
             {
                 Walkway(s, side, inner, outer, WalkZ0, WheelZ - gap, bed, false);
@@ -132,17 +150,36 @@ namespace ChessFight.PawnRush
 
             // Across the whole landing, railing to railing: a pawn heading for either walkway's outer edge passes them.
             Checkpoint(s, 1, new Vector3(0f, 0f, CanalZ0 + 3f), 19.2f);
-            Checkpoint(s, 2, new Vector3(0f, 0f, CanalZ1 - 3.5f), 19.2f);
+            var far = Checkpoint(s, 2, new Vector3(0f, 0f, CanalZ1 - 3.5f), 19.2f);
+            // CP2 is reached as soon as a pawn is across the wheel, a metre on along either far walkway, but it comes
+            // back on the far landing: whoever is shoved off there after crossing does not cross again (R287: a pawn
+            // past CP2 could come back and shove crossers into the canal at no cost, the crossers paying a whole new
+            // crossing). A metre on, so a jump that falls short does not count; from 0.3 m over the deck, so a diver still
+            // sliding on its front does.
+            foreach (float side in new[] { -1f, 1f })
+                Reach(far, new Vector3(side < 0f ? -outer : inner, .3f, WheelZ + gap + 1f), new Vector3(side < 0f ? -inner : outer, 3f, WalkZ1));
             Sign(s, "2. 거대 물레방아: 바퀴살 사이 구멍으로 점프 + 다이빙", new Vector3(0f, 2.6f, CanalZ0 + 5.5f), 1.2f);
         }
 
-        // A stone landing over the canal, z0..z1, 20 m wide: railed on its sides and on its canal edge (the north edge
-        // when `walkwaysNorth`, else the south) but where the two walkways meet it.
-        void Landing(Transform s, string name, float z0, float z1, bool walkwaysNorth, float inner, float outer, float bed)
+        // More of a checkpoint's trigger, min..max in its parent's frame: passing there counts as passing the
+        // checkpoint, and the respawn stays on the checkpoint's own floor. Checkpoint.RespawnPosition and its spots
+        // belong to its first box (the one CourseBuilder made); every trigger box on its object raises Reached.
+        static void Reach(CourseCheckpoint checkpoint, Vector3 min, Vector3 max)
+        {
+            var t = checkpoint.transform;
+            var box = checkpoint.gameObject.AddComponent<BoxCollider>();
+            box.isTrigger = true;
+            box.center = t.InverseTransformPoint(t.parent.TransformPoint((min + max) * .5f));
+            box.size = YardKit.Abs(max - min);
+        }
+
+        // A stone landing over the canal, z0..z1, 20 m wide: railed on its sides (`sideTop` high) and on its canal edge
+        // (the north edge when `walkwaysNorth`, else the south) but where the two walkways meet it.
+        void Landing(Transform s, string name, float z0, float z1, bool walkwaysNorth, float inner, float outer, float bed, float sideTop)
         {
             YardKit.Floor(s, name, -10f, 10f, z0, z1, 0f);
-            YardKit.Wall(s, name + " railing W", -10f, -9.6f, 0f, .9f, z0, z1);
-            YardKit.Wall(s, name + " railing E", 9.6f, 10f, 0f, .9f, z0, z1);
+            YardKit.Wall(s, name + " railing W", -10f, -9.6f, 0f, sideTop, z0, z1);
+            YardKit.Wall(s, name + " railing E", 9.6f, 10f, 0f, sideTop, z0, z1);
             float e0 = walkwaysNorth ? z1 - .4f : z0, e1 = e0 + .4f;
             YardKit.Wall(s, name + " railing", -9.6f, -outer, 0f, .9f, e0, e1);
             YardKit.Wall(s, name + " railing", -inner, inner, 0f, .9f, e0, e1);
@@ -207,8 +244,8 @@ namespace ChessFight.PawnRush
             YardKit.Floor(s, "Arena E of pool", 6f, 26f, PoolZ0, CliffZ, 0f);
             YardKit.Wall(s, "Arena wall SW", -27f, -22f, 0f, 6f, ArenaStart - 1f, ArenaStart, YardKit.WallStone);
             YardKit.Wall(s, "Arena wall SE", 22f, 27f, 0f, 6f, ArenaStart - 1f, ArenaStart, YardKit.WallStone);
-            YardKit.Wall(s, "Side wall W", -27f, -26f, 0f, Top + 3f, ArenaStart - 1f, 176f, YardKit.WallStone);
-            YardKit.Wall(s, "Side wall E", 26f, 27f, 0f, Top + 3f, ArenaStart - 1f, 176f, YardKit.WallStone);
+            YardKit.Wall(s, "Side wall W", -27f, -26f, 0f, Top + 3f, ArenaStart - 1f, GateZ + 3f, YardKit.WallStone);
+            YardKit.Wall(s, "Side wall E", 26f, 27f, 0f, Top + 3f, ArenaStart - 1f, GateZ + 3f, YardKit.WallStone);
 
             Carousel(s);
             CargoRamp(s, -1f);
@@ -266,8 +303,15 @@ namespace ChessFight.PawnRush
             var down = new Vector3(0f, -yTop, 118f - laneTop);
             var chute = Place<CargoChute>(s, "Cargo chute", new Vector3(x, yTop, laneTop));
             chute.transform.localRotation = Quaternion.LookRotation(down.normalized, Vector3.up);
+            // Facing down the lane its right is west: towards the left ramp's outer wall, the right ramp's inner edge.
             chute.Configure(cargo.spawnInterval, cargo.rollingSpeed, cargo.cargoSizes, down.magnitude, 7f, 3.4f,
-                            side > 0f ? cargo.rightRampOffset : 0f, side > 0f ? 7 : 3, cargo.knockbackForce);
+                            side > 0f ? cargo.rightRampOffset : 0f, side > 0f ? 7 : 3, cargo.knockbackForce, side < 0f ? 1f : -1f);
+            // The ramp's inner edge where it rises over the 2.2 m divider: a parapet, so nobody knocked aside drops off
+            // it into the middle way (R287).
+            // 1 cm proud of the ramp's own face, so the two faces never fight for the same pixels.
+            float inEdge = side * 18.14f, z0 = 126f, y0 = Top * (z0 - 118f) / (CliffZ - 118f);
+            YardKit.Slab(s, "Ramp inner parapet", new Vector3(inEdge, y0 + 1.1f, z0), new Vector3(inEdge, Top + 1.1f, CliffZ), .3f, 1.4f,
+                         YardKit.WallStone, Solid.NoClimb);
             Sign(s, side < 0f ? "왼쪽: 화물 경사로" : "오른쪽: 화물 경사로", new Vector3(x, 3.2f, 115.5f), 1.2f);
         }
 
@@ -306,7 +350,8 @@ namespace ChessFight.PawnRush
 
             // The middle way's whole width (between the dividers), so nobody reaches the pool without it.
             Checkpoint(s, 3, new Vector3(0f, 0f, 137f), 26f);
-            Sign(s, "물레방아에 매달리기: 우클릭을 누른 채로", new Vector3(0f, 2.8f, 136f), 1.1f);
+            // The handles pass just out of a standing pawn's reach: it jumps for one.
+            Sign(s, "물레방아에 점프해서 매달리기 (우클릭을 누른 채로)", new Vector3(0f, 2.8f, 136f), 1.1f);
         }
 
         // ------------------------------------------------------------------ 4. the platform and the final gate (own frame)
@@ -314,43 +359,48 @@ namespace ChessFight.PawnRush
         void Platform()
         {
             var s = Group("4 Final gate", later);
-            // The platform: either side of the ramps' tops, and the middle behind the cliff's marble face.
-            Block(s, "Platform W", -26f, -18f, CliffZ, 176f, -1f);
-            Block(s, "Platform E", 18f, 26f, CliffZ, 176f, -1f);
-            Block(s, "Platform middle", -18f, 18f, CliffZ + .6f, 176f, -3f);
+            // The platform: either side of the ramps' tops, and the middle behind the cliff's marble face, on to just
+            // past the final gate's wall.
+            Block(s, "Platform W", -26f, -18f, CliffZ, GateZ + 3f, -1f);
+            Block(s, "Platform E", 18f, 26f, CliffZ, GateZ + 3f, -1f);
+            Block(s, "Platform middle", -18f, 18f, CliffZ + .6f, GateZ + 3f, -3f);
             var cliff = YardKit.Span(s, "Cliff (marble)", new Vector3(-18f, -3f, CliffZ), new Vector3(18f, Top, CliffZ + .6f), YardKit.Marble, Solid.NoClimb);
             cliff.AddComponent<CourseFloor>();
             YardKit.Wall(s, "Edge railing W", -18f, -3.5f, Top, Top + 1f, CliffZ, CliffZ + .4f);
             YardKit.Wall(s, "Edge railing E", 3.5f, 18f, Top, Top + 1f, CliffZ, CliffZ + .4f);
-            Checkpoint(s, 4, new Vector3(0f, Top, 157f), 48f);
+            // Across the platform, and reached already on the lifting wheel's landing: a rider let off there and shoved
+            // back into the pool comes back on the platform, not at the foot of the wheel (R287: 12-15 s, the map's
+            // biggest loss, for nothing the shover paid).
+            var top = Checkpoint(s, 4, new Vector3(0f, Top, 153f), 52f);
+            Reach(top, new Vector3(-3.5f, Top + .3f, 148.4f), new Vector3(3.5f, Top + 3f, CliffZ));
 
             // The final gate in its wall, towers either side; the leaves open away from the platform.
-            const float z = 173f, h = 7.2f;
+            const float z = GateZ, h = 7.2f;
             YardKit.Wall(s, "Gate wall W", -26f, -4f, Top, Top + 11f, z - 1f, z + 1f, YardKit.WallStone);
             YardKit.Wall(s, "Gate wall E", 4f, 26f, Top, Top + 11f, z - 1f, z + 1f, YardKit.WallStone);
             YardKit.Wall(s, "Gate lintel", -4f, 4f, Top + h + .1f, Top + 11f, z - 1f, z + 1f, YardKit.WallStone);
             YardKit.Picture(s, "Gate arch trim", new Vector3(-4.3f, Top + h, z - 1.08f), new Vector3(4.3f, Top + h + .3f, z - 1f), YardKit.Gold);
             foreach (float x in new[] { -6.6f, 6.6f })
                 Tower(s, new Vector3(x, Top, z), 3.6f, 14f);
-            Place<PushGate>(s, "Final gate", new Vector3(0f, Top, z)).Configure(8f, h, gates.finalPushSeconds, gates.finalCrowdBonus);
+            Place<PushGate>(s, "Final gate", new Vector3(0f, Top, z)).Configure(8f, h, gates.finalPushSeconds, gates.finalCrowdBonus, 1f);
 
             // The finish court behind it.
-            Block(s, "Finish court", -10f, 10f, 176f, 195f, -3f);
-            YardKit.Wall(s, "Finish wall W", -11f, -10f, Top, Top + 5f, z + 1f, 196f, YardKit.WallStone);
-            YardKit.Wall(s, "Finish wall E", 10f, 11f, Top, Top + 5f, z + 1f, 196f, YardKit.WallStone);
-            YardKit.Wall(s, "Finish wall N", -11f, 11f, Top, Top + 5f, 195f, 196f, YardKit.WallStone);
+            Block(s, "Finish court", -10f, 10f, z + 3f, z + 22f, -3f);
+            YardKit.Wall(s, "Finish wall W", -11f, -10f, Top, Top + 5f, z + 1f, z + 23f, YardKit.WallStone);
+            YardKit.Wall(s, "Finish wall E", 10f, 11f, Top, Top + 5f, z + 1f, z + 23f, YardKit.WallStone);
+            YardKit.Wall(s, "Finish wall N", -11f, 11f, Top, Top + 5f, z + 22f, z + 23f, YardKit.WallStone);
             for (int i = 0; i < 20; i++)
-                YardKit.Picture(s, "Finish line", new Vector3(-10f + i, Top, 184f), new Vector3(-9f + i, Top + .02f, 185f), i % 2 == 0 ? YardKit.Gold : YardKit.Iron);
-            Trigger<FinishZone>(s, "Finish", new Vector3(-10f, Top, 185f), new Vector3(10f, Top + 3f, 195f)).Configure(true);
-            YardKit.Span(s, "Crown pedestal", new Vector3(-1.2f, Top, 191f), new Vector3(1.2f, Top + 1.4f, 193.4f), YardKit.Marble, Solid.NoClimb);
-            YardKit.Cylinder(s, "Crown", new Vector3(0f, Top + 1.9f, 192.2f), Vector3.up, 1.3f, .9f, YardKit.Gold, Solid.None);
+                YardKit.Picture(s, "Finish line", new Vector3(-10f + i, Top, z + 11f), new Vector3(-9f + i, Top + .02f, z + 12f), i % 2 == 0 ? YardKit.Gold : YardKit.Iron);
+            Trigger<FinishZone>(s, "Finish", new Vector3(-10f, Top, z + 12f), new Vector3(10f, Top + 3f, z + 22f)).Configure(true);
+            YardKit.Span(s, "Crown pedestal", new Vector3(-1.2f, Top, z + 18f), new Vector3(1.2f, Top + 1.4f, z + 20.4f), YardKit.Marble, Solid.NoClimb);
+            YardKit.Cylinder(s, "Crown", new Vector3(0f, Top + 1.9f, z + 19.2f), Vector3.up, 1.3f, .9f, YardKit.Gold, Solid.None);
             for (int i = 0; i < 5; i++)
             {
                 float a = i * Mathf.PI * 2f / 5f;
-                YardKit.Ball(s, "Crown point", new Vector3(Mathf.Sin(a) * .6f, Top + 2.55f, 192.2f + Mathf.Cos(a) * .6f), .26f, YardKit.Gold, Solid.None);
+                YardKit.Ball(s, "Crown point", new Vector3(Mathf.Sin(a) * .6f, Top + 2.55f, z + 19.2f + Mathf.Cos(a) * .6f), .26f, YardKit.Gold, Solid.None);
             }
-            Sign(s, "4. 최종 성문: 우클릭을 누른 채로 밀기", new Vector3(0f, Top + 2.6f, 162f), 1.3f);
-            Sign(s, "결승", new Vector3(0f, Top + 4.5f, 186f), 2.2f);
+            Sign(s, "4. 최종 성문: 우클릭을 누른 채로 밀기", new Vector3(0f, Top + 2.6f, z - 11f), 1.3f);
+            Sign(s, "결승", new Vector3(0f, Top + 4.5f, z + 13f), 2.2f);
         }
 
         // A solid block whose top is the platform (y 8), from `bottom` up.

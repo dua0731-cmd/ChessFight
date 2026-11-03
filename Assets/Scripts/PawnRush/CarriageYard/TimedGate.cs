@@ -5,8 +5,9 @@ namespace ChessFight.PawnRush
 {
     // One leaf of a gate that opens by itself when the race starts (the Royal Carriage Yard's outer gate): closed,
     // then swung open over openDuration, then open for good. The race start is a clock time: offline it is openDelay
-    // seconds after the leaf is switched on; a match can hand every PC the same shared start (OpenAt), and then all of
-    // them see the gate open together, because the pose is a pure function of ObstacleClock like any obstacle's.
+    // seconds after the leaf is switched on; on a shared match clock the leaf stays shut until the match hands every PC
+    // the same start (OpenAt), and then all of them see the gate open together, because the pose is a pure function of
+    // ObstacleClock like any obstacle's. A new start moves the leaf at once (a cut) instead of sweeping it.
     //
     // The object's position is the hinge. The leaf runs `width` from it along local +x (or -x with extendsLeft) and
     // swings to local +z, away from the players waiting behind it.
@@ -26,7 +27,7 @@ namespace ChessFight.PawnRush
         [Tooltip("Shows the seconds left over the gate (optional)")]
         [SerializeField] TextMesh countdown;
 
-        double openAt = double.NaN;
+        double openAt = double.NaN, evaluated = double.NaN, previous = double.NaN;   // the starts of the last two poses
         bool built;
 
         // Seconds until the gate starts to open (0 once it has).
@@ -47,10 +48,14 @@ namespace ChessFight.PawnRush
 
         protected override void Awake()
         {
-            if (double.IsNaN(openAt)) openAt = ObstacleClock.Now + phase + openDelay;
+            if (double.IsNaN(openAt) && !ObstacleClock.Shared) openAt = ObstacleClock.Now + phase + openDelay;
             Build();
             base.Awake();
         }
+
+        protected override bool JumpsBetween(double from, double to) => !Same(previous, evaluated);
+
+        static bool Same(double a, double b) => a == b || (double.IsNaN(a) && double.IsNaN(b));
 
         void Build()
         {
@@ -67,6 +72,8 @@ namespace ChessFight.PawnRush
 
         protected override void Evaluate(double time, out Vector3 position, out Quaternion rotation)
         {
+            previous = evaluated;
+            evaluated = openAt;
             position = StartPosition;
             float u = double.IsNaN(openAt) ? 0f : Mathf.Clamp01((float)((time - openAt) / Mathf.Max(.01f, openDuration)));
             float swing = openAngle * u * u * (3f - 2f * u);

@@ -21,7 +21,7 @@ namespace ChessFight.PawnRush
     public sealed class VerticalWaterwheel : Obstacle
     {
         [Tooltip("Degrees per second")]
-        [SerializeField] float rotationSpeed = 20f;
+        [SerializeField] float rotationSpeed = 28f;
         [Tooltip("Off: the near side (local -z) rises and riders go over the top forwards. On: the other way round")]
         [SerializeField] bool reverse;
         [Tooltip("Centre to the paddle tips (m)")]
@@ -38,7 +38,7 @@ namespace ChessFight.PawnRush
         [Tooltip("Push forward (m/s, along the way the top moves) when let go")]
         [SerializeField] float releaseForward = 4f;
         [Tooltip("Push up (m/s) when let go")]
-        [SerializeField] float releaseUp = 3.5f;
+        [SerializeField] float releaseUp = 4.5f;
 
         Rigidbody body;
         bool built;

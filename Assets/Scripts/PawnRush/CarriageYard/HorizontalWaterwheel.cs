@@ -1,3 +1,4 @@
+using ChessFight.Game;
 using ChessFight.Gameplay;
 using UnityEngine;
 
@@ -135,18 +136,23 @@ namespace ChessFight.PawnRush
                 blade.SetParent(transform, false);
                 blade.localRotation = Quaternion.AngleAxis(i * 360f / count, axis);
                 // Along the blade's local +y, from the hub out to the frame.
+                // The camera looks through the spokes and ties sweeping past instead of jumping in front of them.
                 foreach (float side in new[] { -1f, 1f })
                 {
-                    YardKit.Box(blade, "Spoke", new Vector3(0f, middle, side * (half - .11f)), new Vector3(spokeWidth, length, .22f), YardKit.WoodLight, solid);
+                    YardKit.Box(blade, "Spoke", new Vector3(0f, middle, side * (half - .11f)), new Vector3(spokeWidth, length, .22f), YardKit.WoodLight, solid)
+                           .AddComponent<CameraSeeThrough>();
                     YardKit.Box(blade, "Spoke iron", new Vector3(0f, inside - .35f, side * (half + .01f)), new Vector3(spokeWidth + .04f, .14f, .04f), YardKit.Iron, none);
                 }
                 foreach (float at in new[] { .45f, .8f })
                     YardKit.Box(blade, "Tie", new Vector3(0f, hubRadius + (inside - hubRadius) * at, 0f), new Vector3(spokeWidth * .7f, .22f, wheelDepth - .3f),
-                                YardKit.WoodDark, solid);
-                // Inside the wheel's depth (+0.1 a side), so it never reaches over a walkway's end.
-                var impact = YardKit.Shell(blade, "Spoke (hit)", new Vector3(0f, middle, 0f), new Vector3(spokeWidth + .5f, length + .2f, wheelDepth + .2f), knockbackForce);
+                                YardKit.WoodDark, solid).AddComponent<CameraSeeThrough>();
+                // Inside the wheel's depth (+0.1 a side), so it never reaches over a walkway's end, and 0.1 m either side
+                // of the spoke itself across its sweep (R287: it was 0.25, hitting a pawn the spoke had not reached).
+                var impact = YardKit.Shell(blade, "Spoke (hit)", new Vector3(0f, middle, 0f), new Vector3(spokeWidth + .2f, length + .2f, wheelDepth + .2f), knockbackForce);
                 impact.knockdownSpeed = 99f;   // a spoke shoves; only the water ends a run
                 impact.lift = 1.5f;
+                // Straight across the walkway the way the spoke goes, never along it: a jumper is not slowed short of the gap.
+                impact.alongShare = 1f;
             }
         }
 

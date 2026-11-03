@@ -58,16 +58,16 @@ namespace ChessFight.PawnRush
             cart.Configure(new Vector3(0f, 0f, 26f), 7f, 3f, 1.5f, .8f, 7f, 1f);
 
             Sign(s, "돌아다니는 마차 (무작위 돌진)", new Vector3(0f, 4.2f, 28.5f));
-            Place<RoamingCarriage>(s, "Roaming carriage", new Vector3(0f, 0f, 36f)).Configure(15f, 3f, 9f, 1.2f, .6f, 1.2f, 7, 7f, 1f, 2);
+            Place<RoamingCarriage>(s, "Roaming carriage", new Vector3(0f, 0f, 36f)).Configure(15f, 3f, 9f, 2.2f, .6f, 1.2f, 7, 4f, 1f, 2);
 
             Sign(s, "회전 마차", new Vector3(0f, 6.5f, 45f));
-            Place<RotatingCarriageGroup>(s, "Carousel", new Vector3(0f, 0f, 58f)).Configure(22f, true, 6f, 4, 6f);
+            Place<RotatingCarriageGroup>(s, "Carousel", new Vector3(0f, 0f, 58f)).Configure(22f, true, 6f, 4, 4.5f);
 
             // The giant waterwheel over water, two walkways through it, broken at the wheel (as on the yard).
             const float wheelZ = 86f, inner = 3f, width = 3.2f, radius = 9f, outer = inner + width;
             float inside = radius - HorizontalWaterwheel.DefaultRim;
             float axle = Mathf.Sqrt(inside * inside - outer * outer) - .4f, bed = Mathf.Min(-4.5f, axle - radius - .5f);
-            float gap = RoyalCarriageYard.WheelGapHalf;
+            float gap = RoyalCarriageYard.DefaultGap * .5f;
             cb.Checkpoint(1, new Vector3(0f, 0f, 72f), 0f, 16f);
             Sign(s, "거대 물레방아: 구멍으로 점프 + 다이빙", new Vector3(0f, 3.2f, 72.5f));
             YardKit.Floor(s, "Pit bed 1", -20f, 20f, 76f, 96f, bed, YardKit.WallStone);
@@ -104,6 +104,14 @@ namespace ChessFight.PawnRush
             YardKit.Slab(s, "Ramp up", new Vector3(0f, 0f, 122f), new Vector3(0f, 5f, 142f), 8f, 6f, YardKit.Stone).AddComponent<CourseFloor>().sloped = true;
             YardKit.Span(s, "Ramp top", new Vector3(-4f, -1f, 142f), new Vector3(4f, 5f, 148f), YardKit.Stone).AddComponent<CourseFloor>();
             YardKit.Slab(s, "Ramp down", new Vector3(0f, 5f, 148f), new Vector3(0f, 0f, 160f), 8f, 6f, YardKit.Stone).AddComponent<CourseFloor>().sloped = true;
+            // Railed both sides, as the map's ramps are walled: a hit sends a pawn down and aside.
+            foreach (float side in new[] { -1f, 1f })
+            {
+                float rx = side * 3.85f;
+                YardKit.Slab(s, "Ramp rail", new Vector3(rx, 1.1f, 122f), new Vector3(rx, 6.1f, 142f), .3f, 1.4f, YardKit.WallStone, Solid.NoClimb);
+                YardKit.Wall(s, "Ramp rail", rx - .15f, rx + .15f, 5f, 6.1f, 142f, 148f, YardKit.WallStone);
+                YardKit.Slab(s, "Ramp rail", new Vector3(rx, 6.1f, 148f), new Vector3(rx, 1.1f, 160f), .3f, 1.4f, YardKit.WallStone, Solid.NoClimb);
+            }
             YardKit.Span(s, "Gatehouse lintel", new Vector3(-4f, 7.4f, 138f), new Vector3(4f, 10f, 143f), YardKit.WallStone, Solid.NoClimb);
             YardKit.Span(s, "Gatehouse pillar", new Vector3(-4f, 3f, 138.5f), new Vector3(-3.4f, 10f, 140f), YardKit.WallStone, Solid.NoClimb);
             YardKit.Span(s, "Gatehouse pillar", new Vector3(3.4f, 3f, 138.5f), new Vector3(4f, 10f, 140f), YardKit.WallStone, Solid.NoClimb);
@@ -111,19 +119,20 @@ namespace ChessFight.PawnRush
             var down = new Vector3(0f, -yTop, 122f - 140f);
             var chute = Place<CargoChute>(s, "Cargo chute", new Vector3(0f, yTop, 140f));
             chute.transform.localRotation = Quaternion.LookRotation(down.normalized, Vector3.up);
-            chute.Configure(1.7f, 5f, new[] { 1f, 1.4f, 1.8f }, down.magnitude, 7f, 3.4f, 0f, 5, 6f);
+            chute.Configure(1.7f, 5f, new[] { 1f, 1.4f, 1.8f }, down.magnitude, 7f, 3.4f, 0f, 5, 3f);
             YardKit.Floor(s, "Floor 4", -20f, 20f, 160f, 168f, 0f);
 
-            // The lifting wheel: the same fit as on the yard (landing edge 4.7 m before the axle, cliff 6 m after it).
-            const float lz = 172.7f;
+            // The lifting wheel: the same fit as on the yard (landing edge 4.15 m before the axle, cliff 6 m after it).
+            const float lz = 172.7f, edge = lz - 4.15f;
             cb.Checkpoint(3, new Vector3(0f, 0f, 165f), 0f, 10f);
-            Sign(s, "세로 물레방아 (우클릭으로 매달리기)", new Vector3(0f, 3.2f, 164f));
-            YardKit.Floor(s, "Pool bed", -6f, 6f, lz - 4.7f, lz + 6f, -3f, YardKit.WallStone);
-            YardKit.Floor(s, "Pool side W", -20f, -6f, lz - 4.7f, lz + 6f, 0f);
-            YardKit.Floor(s, "Pool side E", 6f, 20f, lz - 4.7f, lz + 6f, 0f);
-            YardKit.Picture(s, "Pool water", new Vector3(-6f, -3f, lz - 4.7f), new Vector3(6f, -.5f, lz + 6f), YardKit.Water);
-            cb.Trigger<KillVolume>("Pool (fall)", new Vector3(-6f, -3f, lz - 4.7f), new Vector3(6f, -.8f, lz + 6f));
-            Place<VerticalWaterwheel>(s, "Lifting waterwheel", new Vector3(0f, 4.6f, lz)).Configure(20f, 5.2f, 8, 30f, 4f, 3.5f);
+            Sign(s, "세로 물레방아 (점프해서 우클릭으로 매달리기)", new Vector3(0f, 3.2f, 164f));
+            YardKit.Floor(s, "Floor 4b", -20f, 20f, 168f, edge, 0f);
+            YardKit.Floor(s, "Pool bed", -6f, 6f, edge, lz + 6f, -3f, YardKit.WallStone);
+            YardKit.Floor(s, "Pool side W", -20f, -6f, edge, lz + 6f, 0f);
+            YardKit.Floor(s, "Pool side E", 6f, 20f, edge, lz + 6f, 0f);
+            YardKit.Picture(s, "Pool water", new Vector3(-6f, -3f, edge), new Vector3(6f, -.5f, lz + 6f), YardKit.Water);
+            cb.Trigger<KillVolume>("Pool (fall)", new Vector3(-6f, -3f, edge), new Vector3(6f, -.8f, lz + 6f));
+            Place<VerticalWaterwheel>(s, "Lifting waterwheel", new Vector3(0f, 4.6f, lz)).Configure(28f, 5.2f, 8, 30f, 4f, 4.5f);
             foreach (float x in new[] { -2.5f, 2.5f })
                 YardKit.Span(s, "Pier", new Vector3(x - .5f, -3f, lz - .7f), new Vector3(x + .5f, 4.3f, lz + .7f), YardKit.WallStone, Solid.NoClimb);
             YardKit.Span(s, "Cliff", new Vector3(-20f, -3f, lz + 6f), new Vector3(20f, 8f, lz + 6.6f), YardKit.Marble, Solid.NoClimb).AddComponent<CourseFloor>();
@@ -136,7 +145,7 @@ namespace ChessFight.PawnRush
             YardKit.Wall(s, "Gate wall W", -20f, -4f, 8f, 17f, 197f, 199f, YardKit.WallStone);
             YardKit.Wall(s, "Gate wall E", 4f, 20f, 8f, 17f, 197f, 199f, YardKit.WallStone);
             YardKit.Wall(s, "Gate lintel", -4f, 4f, 15.3f, 17f, 197f, 199f, YardKit.WallStone);
-            Place<PushGate>(s, "Push gate", new Vector3(0f, 8f, 198f)).Configure(8f, 7.2f, 3f, .6f);
+            Place<PushGate>(s, "Push gate", new Vector3(0f, 8f, 198f)).Configure(8f, 7.2f, 10.5f, .6f, 1f);
             cb.Trigger<FinishZone>("Finish", new Vector3(-10f, 8f, 204f), new Vector3(10f, 11f, 210f)).Configure(true);
         }
     }

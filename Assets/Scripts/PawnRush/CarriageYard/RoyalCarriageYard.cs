@@ -17,7 +17,7 @@ namespace ChessFight.PawnRush
     //   3  Arena and waterfall            z 82..126   three ways: centre - the carousel of carriages, then the lifting
     //                                                 waterwheel up the waterfall (hold right click); left and right -
     //                                                 ramps up to the platform with cargo rolling down them
-    //   4  The final gate                 z 126..171  the three ways meet on the platform (y 8); the gate is pushed
+    //   4  The final gate                 z 126..162  the three ways meet on the platform (y 8); the gate is pushed
     //                                                 open (hold right click on it), the finish is behind it
     //
     // Sections 3 and 4 are written in their own frame (the 11-02 numbers, the arena starting at z 106) and built under
@@ -27,8 +27,9 @@ namespace ChessFight.PawnRush
     // this one component and the numbers below are its Inspector. Every obstacle is its own reusable component
     // (RoamingCarriage, HorizontalWaterwheel, RotatingCarriageGroup, VerticalWaterwheel, CargoChute/RollingCargo,
     // TimedGate, PushGate; ChargingCarriage and TiltingWoodenBridge are not on this map's route) with its own Inspector
-    // during Play. Moving parts run on ObstacleClock (absolute rule 7); the final gate is state-driven and offline
-    // only. Layout and the reasons for the numbers: Docs/KingRush/ROYAL_CARRIAGE_YARD.md.
+    // during Play. Moving parts run on ObstacleClock (absolute rule 7); a match hands the map its start and seed with
+    // StartAt. The final gate is state-driven and judged by the host (its state is not sent yet). Layout and the
+    // reasons for the numbers: Docs/KingRush/ROYAL_CARRIAGE_YARD.md.
     public sealed partial class RoyalCarriageYard : MonoBehaviour
     {
         [Serializable]
@@ -38,8 +39,8 @@ namespace ChessFight.PawnRush
             public float startDelay = 3f;
             [Tooltip("Seconds the outer gate takes to swing open")]
             public float startDuration = 2.5f;
-            [Tooltip("Seconds of one character pushing to open the final gate")]
-            public float finalPushSeconds = 3f;
+            [Tooltip("Seconds of one character pushing to open the final gate all the way (a pawn fits through after about a third)")]
+            public float finalPushSeconds = 10.5f;
             [Tooltip("Speed each extra pusher adds to the final gate (0.6 = 60 %)")]
             public float finalCrowdBonus = .6f;
         }
@@ -58,6 +59,9 @@ namespace ChessFight.PawnRush
             [Range(8f, 10f)] public float wheelRadius = 9f;
             [Tooltip("Width of each of the two walkways (m)")]
             [Range(2.4f, 3.6f)] public float passageWidth = 3.2f;
+            [Tooltip("The walkways' break at the wheel (m): up to ~3.2 a sprint jump alone clears it; at 3.4 it takes a "
+                     + "sprint jump and a dive at the top of it (the user's \"점프+슬라이딩\")")]
+            [Range(2.2f, 3.6f)] public float gapLength = DefaultGap;
             public float knockbackForce = 4f;
         }
 
@@ -66,13 +70,16 @@ namespace ChessFight.PawnRush
         {
             [Tooltip("Top speed of a charge (m/s); each carriage after the first is 0.3 m/s faster")]
             public float moveSpeed = 9f;
-            [Tooltip("Seconds a carriage takes to turn to its next point")]
-            public float turnSeconds = 1.2f;
-            [Tooltip("The carriages' random points: another seed, another dance")]
-            public int seed = 101;
+            [Tooltip("Seconds a half turn on the spot takes; a smaller turn takes its share (the ends swing at most ~5 m/s)")]
+            public float turnSeconds = 2.2f;
+            [Tooltip("The carriages' random points offline: another seed, another dance (a match draws one of "
+                     + "RoamingFleet.YardSeeds by its round seed, StartAt)")]
+            public int seed = 38;
             [Tooltip("Shortest and longest wait with the lamps red before a charge (s)")]
             public float minAim = .6f, maxAim = 1.2f;
-            public float knockbackForce = 7f;
+            [Tooltip("Push of a hit (m/s) before the speed adds 0.25 per m/s, at most 7 m/s; it sets the pawn's speed, "
+                     + "mostly out to the side of the charge, 60 % of its part up the yard")]
+            public float knockbackForce = 4f;
             public float knockdownSeconds = 1f;
         }
 
@@ -86,7 +93,8 @@ namespace ChessFight.PawnRush
             public int carriageCount = 4;
             [Tooltip("Centre post to carriage (m); keep it at 7.5 or under, the planters stand at 10 m")]
             [Range(5f, 7.5f)] public float rotationRadius = 7.5f;
-            public float knockbackForce = 6f;
+            [Tooltip("Push of a hit (m/s) before the speed adds 0.6 per m/s; it sets the pawn's speed")]
+            public float knockbackForce = 4.5f;
         }
 
         [Serializable]
@@ -100,21 +108,23 @@ namespace ChessFight.PawnRush
             public float[] cargoSizes = { 1f, 1.4f, 1.8f };
             [Tooltip("Seconds the right ramp runs ahead of the left, so the two are not in step")]
             public float rightRampOffset = .85f;
-            public float knockbackForce = 6f;
+            [Tooltip("Push of a hit (m/s) before the piece's speed adds 0.6 per m/s, at most 6: down the ramp and aside, "
+                     + "a stagger (R287, was 6 + speed straight down)")]
+            public float knockbackForce = 3f;
         }
 
         [Serializable]
         public sealed class LiftSettings
         {
-            [Tooltip("Degrees per second")]
-            public float rotationSpeed = 20f;
+            [Tooltip("Degrees per second (28: the middle way about as quick as the ramps)")]
+            public float rotationSpeed = 28f;
             public int bladeCount = 8;
             [Tooltip("Degrees past the top at which riders are let go onto the landing")]
             public float releaseAngle = 30f;
             [Tooltip("Push forward when let go (m/s)")]
             public float releaseForward = 4f;
-            [Tooltip("Push up when let go (m/s)")]
-            public float releaseUp = 3.5f;
+            [Tooltip("Push up when let go (m/s): 4.5 lifts a rider's feet over the landing's edge without the ledge help")]
+            public float releaseUp = 4.5f;
         }
 
         [Header("1. Gates")]
@@ -136,7 +146,28 @@ namespace ChessFight.PawnRush
         [SerializeField] bool signs = true;
 
         Transform root, later;
+        TimedGate startWest, startEast;
+        CarriageFleet carriages;
         bool built;
+
+        // A match's start, the same on every PC (R287): the time the race goes on ObstacleClock (the lobby's go plus any
+        // countdown) and the round's seed, both from data every PC holds (absolute rule 15). The outer gate starts to
+        // open then and the carriages set off then, dancing to one of the yard's vetted seeds drawn by the round's seed,
+        // so every PC sees the same gate and the same carriages without a packet. Until it is called on a shared match
+        // clock, the gate stays shut and the carriages wait at home; offline the map starts by itself (startDelay after
+        // it is built, roaming.seed). The same start again changes nothing.
+        public void StartAt(double clockTime, int roundSeed)
+        {
+            if (!built) Awake();
+            if (startWest != null) startWest.OpenAt(clockTime);
+            if (startEast != null) startEast.OpenAt(clockTime);
+            if (carriages == null) return;
+            uint seed = ChessFight.Network.RoamingFleet.YardSeed(roundSeed);
+            carriages.StartAt(clockTime, unchecked((int)seed));
+            // The seeds were vetted on the yard as it ships (RoamingFleet.Yard, the Core tests); another yard may dance worse.
+            if (carriages.Fleet != null && !carriages.Fleet.Matches(ChessFight.Network.RoamingFleet.Yard(seed, clockTime)))
+                Debug.LogWarning("[RoyalCarriageYard] 마차 무리 설정이 시드를 검사한 마당(RoamingFleet.Yard)과 달라, 검사한 시드 목록의 춤이 검사 때와 다를 수 있습니다");
+        }
 
         void Awake()
         {
