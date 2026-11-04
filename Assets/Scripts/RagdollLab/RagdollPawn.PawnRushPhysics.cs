@@ -146,6 +146,56 @@ namespace ChessFight.RagdollLab
             StepOvers++;
         }
 
+        // ---------------------------------------------------------------- pressed against a low lip (R398)
+
+        /// <summary>
+        /// Pushing into a lip below the chest - a kerb the step-up did not take, a block or a wall up to the knees or the
+        /// hips - counts as blocked, as a wall at chest height does (Locomotion's chest ray passes over such a lip). Not
+        /// blocked, the anchor stood the whole standing leash (0.6 m) inside the lip and the hips spring pinned the body
+        /// against it at full strength, and whatever then pulled the anchor back out of it threw the pawn backwards: the
+        /// jump's air leash (PawnRushAirLeash), or letting go of the key (blocked, that eases out at a safe rate).
+        /// </summary>
+        bool PawnRushLowLip(Vector3 hips, Vector3 dir)
+        {
+            var q = PawnRushPhysics;
+            if (q == null || !q.lipNoRecoil) return false;
+            float feetY = Mathf.Min(footL.bounds.min.y, footR.bounds.min.y);
+            // Just over the soles, and at the hips: with the chest ray, any face from a kerb up. Steep faces only - a
+            // slope underfoot is walked up, not pushed against.
+            for (int i = 0; i < 2; i++)
+            {
+                Vector3 at = new Vector3(hips.x, i == 0 ? feetY + 0.06f : hips.y, hips.z);
+                if (SolidRay(at, dir, LowLipReach, out RaycastHit h) && h.normal.y < 0.6f) return true;
+            }
+            return false;
+        }
+
+        const float LowLipReach = 0.5f;   // as far ahead as the chest ray looks for a wall
+
+        /// <summary>
+        /// Off the ground the anchor may lead the hips by a fifth of its standing leash (0.12 m against 0.6). Leaving the
+        /// ground with it further ahead - pressed against a lip, hopping up one, a jump out of the start of a run - the
+        /// air leash pulled it back in one step. Moved by MovePosition, the kinematic anchor went back at up to 24 m/s for
+        /// that step, and the hips joint's damper threw the body back with it (PITFALLS 20: the distance the anchor moves
+        /// in a step is its speed). Here the lead comes down to the air leash no faster than 0.8 / damper ratio per
+        /// second, the rate below which the anchor coming back never out-pulls its spring: the body is only ever pulled
+        /// the way it is going, and less hard than the air leash itself pulls.
+        /// </summary>
+        float PawnRushAirLeash(float leash, bool planted, Vector3 hips, Vector3 move, RagdollParams p, float dt)
+        {
+            var q = PawnRushPhysics;
+            if (q == null || !q.lipNoRecoil || planted || BodyCarried) return leash;
+            Vector3 offset = Flat(anchorPos - hips);
+            float lead = offset.magnitude;
+            if (lead <= leash) return leash;
+            // Only an anchor ahead the way the keys point (with no key held, one just pushed into a wall). One left behind
+            // a body that something threw on ahead of it keeps the shared rule.
+            bool ahead = move.sqrMagnitude > 0.0025f ? Vector3.Dot(offset, move) > 0f : pressedWall > 0f;
+            if (!ahead) return leash;
+            float ratio = p.anchorDamperRatio > 0.0001f ? p.anchorDamperRatio : p.damperRatio;
+            return Mathf.Max(leash, lead * Mathf.Exp(-0.8f / Mathf.Max(0.05f, ratio) * dt));
+        }
+
         // ---------------------------------------------------------------- gait and skid (R248)
 
         /// <summary>

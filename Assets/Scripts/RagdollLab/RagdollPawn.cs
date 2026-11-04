@@ -1225,8 +1225,10 @@ namespace ChessFight.RagdollLab
             // a whole leash inside it and the hips spring pinned the body there at full strength. Blocked
             // for a moment, it may only lead a little (eased in, so the anchor never jumps back). A pawn
             // in the way is not "blocked": walking into someone to push them off the hill keeps the push.
+            // Pawn Rush also counts a lip below the chest, which this ray passes over (R398; false everywhere else).
             bool blocked = moving && planted && ownSpeed < 0.3f && contactTimer <= 0f && !Grabbing
-                           && SolidRay(bodies[(int)BodyId.Chest].position, move.normalized, 0.5f, out _);
+                           && (SolidRay(bodies[(int)BodyId.Chest].position, move.normalized, 0.5f, out _)
+                               || PawnRushLowLip(hp, move.normalized));
             blockedTimer = blocked ? blockedTimer + dt : 0f;
             pressedWall = blocked ? 0.5f : pressedWall - dt;
             blockCap = blockedTimer > 0.1f
@@ -1239,6 +1241,8 @@ namespace ChessFight.RagdollLab
                 next += facing * (p.shoveLunge / Mathf.Max(0.05f, p.shoveDuration) * dt);
                 leash += p.shoveLunge;
             }
+            // Pawn Rush: leaving the ground, the anchor comes in to the air leash at a rate its damper takes (R398).
+            leash = PawnRushAirLeash(leash, planted, hp, move, p, dt);
 
             Vector3 offset = Flat(next - hp);
             // Reversing direction leaves the anchor behind the still-moving body, and the anchor

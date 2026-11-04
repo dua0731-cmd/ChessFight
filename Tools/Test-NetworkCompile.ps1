@@ -51,7 +51,7 @@ $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$d
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab compilation failed.' }
 # Pawn Rush course 01 (its Steam bridge, SteamPawnRushLink, sits in RagdollLabSteam and needs it).
 $pawnRush = Get-ChildItem "$projectRoot/Assets/Scripts/PawnRush" -Filter '*.cs' | ForEach-Object FullName
-$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.PawnRush.dll") + @($pawnRush)
+$compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.VFX.dll", "-out:$output/ChessFight.PawnRush.dll") + @($pawnRush)
 & $mono $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Pawn Rush course compilation failed.' }
 # The lab's Steam bridge and its scene builder, with exactly the references their asmdefs list.

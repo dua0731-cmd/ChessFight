@@ -1,0 +1,9 @@
+B6_RoyalBalcony/09_Clock_gate_(the_palace_door)/Clock_arch
+B6_RoyalBalcony/09_Clock_gate_(the_palace_door)/Clock_face
+B6_RoyalBalcony/09_Clock_gate_(the_palace_door)/Gate_pillar
+B6_RoyalBalcony/Balcony_wall_E
+B6_RoyalBalcony/Balcony_wall_W
+B6_RoyalBalcony/Gate_wall_E
+B6_RoyalBalcony/Gate_wall_W
+B6_RoyalBalcony/Knight_alcove_E
+B6_RoyalBalcony/Knight_alcove_W

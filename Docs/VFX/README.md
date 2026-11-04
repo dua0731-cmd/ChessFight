@@ -359,6 +359,51 @@ R162 사용자: "vfx 퀸 작업 해주면 되고 … 1번째 사진 퀸이 꼬�
 - E4 부품(R189, 새 파일 — 공용 부품은 안 고침): 킹 R185의 `VfxStarFlash` · 셰이더 `VFX_StarFlashAdd`를 기본값 그대로 다시 씀(재질 값으로 정사각형 · 가로줄 0 · 십자 0 · 빛살 16개), 새 재질 `M_Knight_KickStar` · `M_Knight_KickStreak`(`Soft Glow Additive`), 메시 `SM_Knight_Star`, 빛줄기는 Shuriken 꼬리(Trails)만 그림(늘인 입자는 시작에 꼬리가 나이트 쪽으로 튀어나와서). 빌더에 메뉴 `Build E4 (kick only)`와 `Quiet` · `KeepParticles` 도우미를 더함(`Build`는 F5 · E3 · E4). 연결: `SwordFightSkillFx.KnightVfx.cs`의 `KnightVfxKick` — `SwordFightSkillFx.Edge.cs`의 `KnightKickHit` 줄에서 실사 `RealKnightKickHit` 바로 뒤에 부르고, 실사와 같이 `OnBody`로 닿는 곳을 찾음. 끄기: `KnightVfxOn = false`(다른 층과 같이).
 - E3 연결: `SwordFightSkillFx.KnightVfx.cs`(`KnightVfxFlip`). `SwordFightSkillFx.Edge.cs`의 `SfFxKind.KnightFlip`(실사일 때)이 실사 공중제비(`RealKnightFlip`) 바로 뒤에 부른다. 실제 두 뒷발굽 가운데를 비행의 42%부터 착지 뒤 0.09초까지 따라 그림(`FlipPath`는 다른 PC로 안 가는 값을 써서 안 씀). 끄기: `KnightVfxOn = false`.
 
+### 코스 장애물: 대계단 홀 떨어지는 기사 말 (R341, 11-04, `seoungtest`)
+
+승규 님 "말 장애물 예고 실제 타격 vfx" → "대계단 홀만" → "모바일은 제공 안할거야 pc 용으로 데칼 해줘도 돼" → "기본 데칼 말고 고급 데칼 넣어서 차오르는 애니메이션". 장애물 `FallingChessPiece`의 시간표(예고 1.4초 → 떨어짐 0.65초 → 충격 0.7초 동안 판정 링이 0 → 5 m로 퍼짐 → 쉼 1.8초)에 맞춘다. **효과는 장애물 시계로만 움직인다:** `PawnRush/FallingPieceFx`가 Play 때 `Resources/VfxSets/Hazards`에서 만들어 매 프레임 `CycleTime`으로 `Seek` → 모든 PC가 같은 순간(패킷 없음). 홀의 말 2개에만 붙는다(`GrandStairHallModel.cs` `FallingKnights`).
+
+| 층 | 순간 | 프리팹 (`Prefabs/Common/`) | 모양 | 상태 |
+|---|---|---|---|---|
+| **W1** | 예고 + 떨어짐 (0 ~ 2.05초) | `20_Hazard_FallingPiece_Warn` | **투영 데칼**: 반경 5 m 주황 원(처음부터 옅게), 가운데에서 테두리로 차오르는 채움(뜨거운 앞줄 · 안쪽으로 끌리는 빛 · 옅은 체스판), 테두리 선과 바깥 번짐 · 안쪽 고리, 눈금 32개 카운트다운(앞쪽부터 시계 방향), 착지 자리 고리 + X, 마지막 0.35초 깜빡임, 착지 순간 꺼짐 | **만듦**(메뉴 실행 · 화면 미확인) |
+| **W2** | 예고 ~ 누운 동안 (0 ~ 2.75초), 줄기는 떨어짐만 | `21_Hazard_FallingPiece_Fall` | **그림자 데칼**(`VFX_GroundShadowDecal`): 기사 바로 밑 부드러운 어두운 원, 매달린 동안 반경 1.9 m · 진하기 .2 → 높이를 따라 줄어 착지 때 .95 m · .65, 누운 동안 남음 + **속도 줄기**(`VFX_FallStreakAdd`): 기사 둘레 10줄이 떨어지는 속도만큼 위로 길어짐(착지 때 3.2 m), 착지 0.05초에 꺼짐 | **만듦**(화면 미확인) |
+| **I1** | 착지 (2.05초 ~ 약 3.4초) | `22_Hazard_FallingPiece_Land` | **입자 네 겹**(`VFX_BurstParticles`): `I1 Flash` 섬광 1개(0.14초, 2.8 → 1.8 m, 따뜻한 흰색 → 주황 ×8, 더하기) · `I1 Dust` 돌가루 26개(바닥을 쓸며 약 2 m, 0.8 ~ 1.3초에 부풀며 옅어짐, 덮기) · `I1 Chips` 돌 조각 18개(네모, 약 1 m 튀어 돌며 떨어져 바닥에서 미끄러짐) · `I1 Sparks` 금빛 불꽃 16개(움직임 방향으로 늘인 줄, 0.25 ~ 0.45초) | **만듦**(화면 미확인) |
+| **I2** | 충격 (2.05 ~ 2.75초) | `23_Hazard_FallingPiece_Shock` | **판정과 같은 반경**(착지 뒤 경과 ÷ 0.7초 × 5 m)에 `I2 Decal` 바닥 띠(`VFX_ShockDecal`, 흰 심 앞줄 · 안쪽으로 끌리는 주황 빛 · 둘레 일렁임 · 최대 반경 옅은 선) + `I2 Wall` 낮은 빛 벽(`VFX_ShockWallAdd`, 0.9 → 0.35 m, 옆에서 볼수록 밝음), 끝으로 갈수록 빛이 줄고 판정이 끝나면 꺼짐. 키트의 노란 링은 안 그림 | **만듦**(화면 미확인) |
+| **I3** | 착지 ~ 다음 예고 전 (2.05 ~ 4.35초) | `24_Hazard_FallingPiece_After` | `I3 Cracks` 균열 데칼(`VFX_CrackDecal`, 텍스처 없이 노이즈로 큰 균열 9 · 곁가지 14 · 움푹 · 끊긴 고리, 0.12초에 2.8 m 뻗으며 흰 금빛 → 주황 → 어두운 탄 자국, 2.3초에 사라짐, 무늬는 말 위치로) + `I3 Embers` 불씨 22개(균열에서 천천히 오름) + `I3 Vanish` 기사가 사라질 때(착지 + 0.7초) 아이보리 연기 | **만듦**(화면 미확인) |
+
+- **투영 데칼(W1):** URP 데칼 기능(Shader Graph)이 아니라 HLSL `VFX_GroundWarnDecal`. 상자(Unity 큐브)의 뒷면을 ZTest Always로 그리고, 픽셀마다 카메라 깊이 텍스처(`PC_RPAsset` 켜짐)로 바닥 점을 되살려 상자 안 · 위를 보는 면만 칠한다(이웃 픽셀로 면 방향을 구함, `_Upward` 0.6). 상자 위아래 20%는 흐리게. 미리곱한 블렌드(그늘 `_Shade` + HDR 빛)라 밝은 돌에서도 읽힌다. Mobile 품질은 고려하지 않음(승규 님: PC만).
+- **W2:** 그림자와 W1은 같은 투영 코드(`VFX_DecalProjection.hlsl`)를 쓴다. 높이 · 낙하 시간은 `VfxDrop`(장애물과 같은 공식, 게임이 장애물 값을 넣음)이 정한다. 고치는 곳: 그림자 크기 · 진하기 = `W2 Shadow`의 `VfxDropShadow`, 색 · 진한 가운데 = 재질 `M_Hazard_DropShadow`, 줄기 수 · 퍼짐 · 길이 · 밝기 = `W2 Streaks`의 `VfxFallStreaks`, 색 · 굵기 = 재질 `M_Hazard_FallStreak`. 메뉴 `ChessFight/VFX/Hazard/Build`가 W1 · W2 · I1 · I2 · I3을 같이 만든다(`Build W1` ~ `Build I3`은 그 층만).
+- **I3:** 균열 무늬 · 굵기 · 색 · 탄 자국 = 재질 `M_Hazard_Cracks`, 뻗는 · 식는 · 사라지는 시간 = `I3 Cracks`의 `VfxCrackDecal`(착지 + `life`가 장애물 한 주기를 넘으면 게임이 줄임). 불씨 · 연기는 I1과 같은 `VfxParticleBurst`이고 `moment`(착지 / 사라짐)로 터지는 순간을 고른다.
+- **부품 규칙(R341):** 렌더러 · 메시 필터 · `MaterialPropertyBlock`은 `Ready()`가 비어 있을 때만 잡고, `Draw` · `Seek` · `Build`가 먼저 부른다. Play 중 스크립트 다시 읽기 뒤에는 블록이 사라지기 때문이다(그때 예외가 났음).
+
+### 코스 장애물: 대계단 홀 바람길 왕실 환풍기 (R351, 11-04, `seoungtest`)
+
+승규 님 "선풍기 vfx 적용 시켜줘 데칼 말고". `PawnRush/VentWindFx`가 `AirVent`와 같은 식으로 "마지막 바람이 시작된 뒤 시간"을 구해 매 프레임 Seek(쉼 3 → 예고 0.8 → 바람 3초, 두 통풍구 반 주기 차이), 통풍구의 `VFXPoint`에서 +z로. 키트의 금 막대 바람 표시는 안 그림.
+
+| 층 | 프리팹 `30_Hazard_Vent_Wind` | 모양 |
+|---|---|---|
+| `V1 Swirl` | `VfxWindSwirl` + `VFX_WindSwirl` | 팬 앞 원판(반지름 0.95 m)에 휘는 팔 5개가 돎, 예고에 서서히(0.45까지) · 바람 때 가득 · 멎으면 0.5초에 사라짐 |
+| `V1 Streaks` | `VfxWindFlow` + `VFX_WindFlow` | 바람 줄기 26개: 팬 축을 따라 나선으로 감겨 나와(1.6 rad/m, 2.2 m에 걸쳐 풀림) 퍼지며 길을 건너 6 m에서 사라짐, 9 m/s, 옅은 하늘빛 흰색 |
+| `V1 Motes` | 같음(`round`) | 먼지 30개, 6 m/s, 더 감기고 더 퍼짐 |
+
+- `VFX_WindFlow`는 줄기마다 위상 · 속도가 달라 바람 동안 되풀이해 나가고, 위치를 시간만으로 계산한다(장애물 시계로 되감기 · 모든 PC 같음). 바람이 멎어도 이미 나간 줄기는 끝까지 간다. 고치는 곳: 개수 · 속도 · 길이 · 감김 · 퍼짐 · 색 · 투명도 = 층의 `VfxWindFlow`, 소용돌이 세기 · 속도 = `VfxWindSwirl`, 팔 수 · 휨 = 재질 `M_Hazard_WindSwirl`.
+- **I2:** 앞면 반경은 `FallingChessPiece.FixedUpdate`의 판정 반경과 같은 식이다(바꾸면 둘 다 고친다). 고치는 곳: 앞줄 굵기 · 끌리는 빛 · 일렁임 · 최대 반경 선 = 재질 `M_Hazard_ShockDecal`, 끝에서 줄어드는 빛 = `I2 Decal`의 `VfxShockDecal`, 벽 높이 · 밝기 = `I2 Wall`의 `VfxShockWall`, 벽 색 · 옆 밝기 = 재질 `M_Hazard_ShockWall`.
+- **I1:** Shuriken 대신 `VfxParticleBurst` + `VFX_BurstParticles` — 셰이더가 입자 위치를 나이로 바로 계산한다(처음 속도 · 선형 끌림 · 중력 · 바닥 위로). 시뮬레이션이 없어 장애물 시계로 어느 순간이든 바로 그리고 모든 PC가 같은 모양이다. 미리곱한 블렌드라 `additive` 1이면 더하기(섬광 · 불꽃), 0이면 덮기(돌가루 · 조각). 층마다 개수 · 퍼짐 · 속도 · 수명 · 중력 · 끌림과 겉모양(색 · 크기 · 늘임 · 부드러움 · 네모)이 모두 그 층의 `VfxParticleBurst`에 있고 렌더러마다 넣으므로 재질은 `M_Hazard_Burst` 하나다. 첫 값은 `VfxHazardLooks`(빌더 · 메뉴 없는 길 공용). 모양 값을 바꾸면 메시를 다시 만든다.
+- **고치는 곳:** 색 · 밝기 · 선 굵기 · 눈금 수 · 체스판 크기 · 깜빡임 = 재질 `M_Hazard_WarnDecal`, 상자 높이 · 바닥 밑 깊이 · 나타나는 시간 · 깜빡이는 시간 · 채움 곡선 = 프리팹 `W1 Decal`의 `VfxGroundWarn`(반경 · `lead`는 게임이 장애물에서 넣음). 다시 빌드해도 둘 다 남는다.
+- 메뉴를 누르기 전에는 `FallingPieceFx`가 같은 셰이더로 기본값 데칼을 Play 때 직접 만든다(승규 님 "지금유니티 화면에 안보여"). 고친 값을 남기거나 플레이어 빌드에 셰이더를 넣으려면 메뉴로 프리팹 · 재질을 만든다.
+- 작업대(아무 기물)에서 `20_Hazard_FallingPiece_Warn`으로 볼 수 있고(2.05초에 꽉 참), 캡처 시점은 0.1 · 0.5 · 1 · 1.5 · 1.8 · 2.03 · 2.2초.
+
+### 코스 장애물: 대계단 홀 떨어지는 샹들리에 예고 (R340, 11-04, `seoungtest`)
+
+승규 님 "샹들리에 예고 vfx 만들어". 위 W1과 **같은 투영 데칼**(홀의 장애물 예고를 한 가지 말로)을 샹들리에 재질로. `ChandelierRain` 시간표: 예고 1.2초(0.42초부터 샹들리에가 내려와 흔들림) → 떨어짐 0.4초 → 닿음(넘어짐 2.5 m · 비틀거림 4.5 m).
+
+| 층 | 순간 | 프리팹 (`Prefabs/Common/`) | 모양 | 상태 |
+|---|---|---|---|---|
+| **W1** | 예고 + 떨어짐 (0 ~ 1.6초) | `21_Hazard_Chandelier_Warn` | 반경 4.5 m 주황 원, 가운데에서 차오르는 채움, 안쪽 고리 = 넘어짐 범위 2.5 m(밝기 1.8), 눈금 24개, 착지 표시 1.3 m, 마지막 0.35초 깜빡임, 닿는 순간 꽉 참 | 만듦, Unity 미확인 |
+
+- **만들기:** 메뉴 **ChessFight/VFX/Hazard/Build W1 chandelier (falling chandelier warning)** (`VFXEditor/ChandelierVfxBuilder.cs`) → 재질 `M_Hazard_ChandelierWarnDecal`(처음 만들 때만 값 채움, 다시 빌드해도 고친 값 남음), `Hazards` 세트의 `Chandelier_Warn`. 메뉴 전에는 `ChandelierRain.MakeWarn`이 같은 값으로 셰이더에서 직접 만든다.
+- **게임 연결:** 드롭마다 데칼 하나(드롭 풀과 같이 재사용), `VfxGroundWarn`은 꺼 두고 드롭 나이로 `Seek` → 모든 PC 같음. 데칼이 있으면 예전 어두운 원판 · 고리는 안 그림(셰이더가 없을 때만).
+
 ## 10. Unity에서 확인할 것
 
 [VALIDATION](../Network/VALIDATION.md) 맨 위 "R159 VFX 작업대" 표.

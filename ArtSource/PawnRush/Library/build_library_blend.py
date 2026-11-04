@@ -109,13 +109,18 @@ def unity_boxes():
         ("Right balcony", (11.45, -.12, 2), (7.1, .24, 21)),
         ("Goal floor", (0, 1.08, -20), (29.9, .24, 10)),
         ("Lower library floor", (0, -8.35, 0), (30, .7, 45)),
-        ("Return lower landing", (-16, -8.15, 3.6), (6, .3, 3)),
-        ("Return upper landing", (-16, -.15, 16), (6, .3, 3)),
     ]
-    for i in range(32):
-        h = .25 * (i + 1)
-        z = 3.8 + (i + .5) * .375
-        boxes.append((f"Return stair {i}", (-17.6, -8 + h / 2, z), (3, h, .38)))
+    # R378: a return stair on each side (return_stairs.py), the upper landing from the top step on plus a threshold.
+    for side, tag in ((-1, ""), (1, " (left)")):
+        boxes += [
+            ("Return lower landing" + tag, (side * 16.2, -8.15, 3.6), (6.4, .3, 3)),
+            ("Return upper landing" + tag, (side * 16.2, -.15, 16.65), (6.4, .3, 1.7)),
+            ("Return upper threshold" + tag, (side * 14.55, -.15, 15.15), (3.1, .3, 1.3)),
+        ]
+        for i in range(32):
+            h = .25 * (i + 1)
+            z = 3.8 + (i + .5) * .375
+            boxes.append((f"Return stair {i}{tag}", (side * 17.6, -8 + h / 2, z), (3, h, .38)))
     for i in range(8):
         h = .15 * (i + 1)
         z = -8.75 - .5 * i

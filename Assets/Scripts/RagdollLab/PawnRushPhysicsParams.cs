@@ -37,6 +37,14 @@ namespace ChessFight.RagdollLab
         // floor under the hips or a foot instead, and falls once both feet are off.
         [Tooltip("내려갈 때 발밑 높이 기준 (켜기)")] public bool standOnFeet = true;
 
+        // R398 (승규 님 11-04: "턱 정도 폰 발 정도 있는 건물에서 붙어서 점프 하면 뒤로 밀려나 … 미니 게임에도 같은 증상").
+        // Pressed against a lip lower than the chest, the locomotion anchor stood the whole standing leash (0.6 m) inside
+        // it - the chest ray that notices walls passes over a lip - and a jump cut that to the air leash (0.12 m) in one
+        // step: the kinematic anchor went back at 24 m/s and the hips joint's damper threw the pawn backwards with it.
+        // On: a lip from a kerb up counts as blocked, as a wall does (the anchor eases in to the blocked leash), and off the
+        // ground the anchor comes back no faster than its damper can take.
+        [Tooltip("낮은 턱에 붙어 점프해도 뒤로 안 튕김 (켜기)")] public bool lipNoRecoil = true;
+
         // The run's arms (R246, 승규 님: "팔도 실제 뛰는 것처럼"). The shared run held the arms out at 35 degrees and the
         // sprint flailed them round the vertical; here they hang by the sides and swing forward and back against the
         // legs, further the faster the pawn goes, a little forward of straight down as a runner's do.

@@ -11,14 +11,14 @@ namespace ChessFight.PawnRush
     //      IntendedGap says so (a jump pad's flight, a dive)
     //   3. floor under every checkpoint's respawn spots
     //   4. unclimbable: grey grid = NoClimbSurface, and the walls, statue, alcoves, gate walls, the dais, the beams,
-    //      the vent posts and the glass squares are unclimbable
+    //      the vents' ledges and consoles and the glass squares are unclimbable
     //   5. a kill volume (the respawn floor), and floor at the entry and the exit
     public static class SectionValidator
     {
         static readonly string[] MustBeUnclimbable =
         {
             "Hall wall", "Foyer wall", "Porch wall", "Foyer pillar", "King statue", "Knight alcove", "Gate wall", "Balcony wall",
-            "Royal dais", "Chandelier beam", "Wind vent post", "Glass square",
+            "Royal dais", "Chandelier beam", "Wind vent", "Glass square",
         };
 
         public static List<string> Run(PawnRushSection section, List<string> notes)

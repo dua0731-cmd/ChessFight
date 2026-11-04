@@ -14,6 +14,17 @@
 | `build_graybox.py` | `.blend`에 그레이박스 컬렉션 `GRAYBOX`를 (다시) 만든다(R262, §6) |
 | `air_cannons.py` | 환경 FBX의 대포 두 대에서 팬(허브 + 날개 10장)을 `BLOWER_<x>_Fan`으로 떼어 Unity가 돌릴 수 있게 한다(R291, 다시 돌려도 그대로) |
 | `armillary.py` | 골의 혼천의 두 대(`Goal_armillary_±1`, 받침 · 링 · 구가 한 덩어리)를 받침만 남기고 링 3개 + 구를 짐벌로 다시 만들어 FBX를 바로 고친다: Ring1 세로축, Ring2(적도)는 Ring1 옆 핀축, Ring3는 Ring2 핀축, 구는 35° 기운 축, 축마다 `<부품>_axis` 빈 물체(R324). R327부터 골의 두 대는 없애고 하나만 `Start_armillary`로 이름을 바꿔 출발 쪽 작전 지도 판 서쪽(x −8.98, y −19.7, 바닥 z 0)에 1.6배(꼭대기 = 지도 꼭대기 3.95 m)로 세움(`-- --preview <폴더>`로 자세 렌더만, 다시 돌려도 그대로) |
+| `return_stairs.py` | 바깥 돌아오는 계단(지하 문 → 출발층 문)을 디테일 모델로 다시 짓고 왼쪽에 대칭으로 하나 더 세워 FBX를 바로 고친다(R377 시안, R378 적용): 옛 상자 계단 · 기둥 · 손잡이 · 착지판을 지우고 `Return_stair_R` · `Return_stair_L`(같은 디딤판 높이 · 범위, 둥근 코 디딤판 · 아치 패널 옆벽 · 난간동자 · 공 장식 기둥 · 몰딩 착지판 · 고전 문틀), 왼쪽 벽 세 조각에 불리언으로 문 두 개, 문틀 거울 복사, 그 자리 왼쪽 책장 2개(빈 부모 + `…|Dupli|` 자식) 지움. 위층 착지판은 계단 끝(y −15.8)부터 + 문턱 띠. Unity 충돌체는 `LibraryReplacement`(양쪽, 이 README §3 · `unity_boxes()`와 같은 목록). `-- --preview <폴더>`는 렌더만, 다시 돌리면 그대로 |
+| `cannon_weather.py` | 대포 몸체를 `cannon_model.py`로 다시 지어(노즐 테가 관 위에 겹치지 않게) UV를 펴고, 재질 슬롯별 부위 · 위치 · 법선 · AO를 구워 바랜 금 · 페인트 청록 · 크림 돌에 때와 먼지로 칠한 맵(`Assets/Resources/PawnRushLibrary/Cannon/LibraryCannon` + `_MS`)과 재질 `Library cannon worn`으로 FBX를 바로 고친다(R383). `-- --preview <폴더>`는 렌더만, 다시 돌리면 그대로 |
+| `wall_anchors.py` | 지붕을 철골로 묶은 볼트로 읽히게, 철제 보 끝마다 바깥벽에 X자 주철 앵커(옆 기둥 윗몸 14개, 뒷벽 2개 — 세로 보를 뒷벽까지 늘임)를 달아 FBX를 바로 고친다(R381). 재질 `Library steel`. `-- --preview <폴더>`는 렌더만, 다시 돌리면 그대로 |
+| `roof_vault.py` | 볼트 면 8개(`Vault web coursed stone bay 00..07`, 위만 보는 한쪽 면 판)에 아래를 보는 짝 면을 넣어 지붕이 홀 안에서도 보이게 FBX를 바로 고친다(R380). `-- --preview <폴더>`는 뒷면 컬링 켜고 아래에서 전 · 후 렌더, 다시 돌리면 그대로 |
+| `compass_rose.py` | 출발 원판(`START_spawn_zone`, 반지름 1.1 m) 위에 청동 나침반(청동 띠 · 녹청 바탕 · 금 고리 · 눈금 64개 · 16방위 별, 점마다 밝은 금 / 어두운 청동 반쪽 · 북쪽 표시 +y)을 얹어 **렌더만** 한다(`-- --preview <폴더>`, 저장 · 내보내기 없음, 옛 `Upper20_Compass_star` · `Upper20_Start_compass_ring`은 렌더에서 숨김). R359, Unity 미적용 |
+| `war_map.py` | 출발 작전 지도(`V21_Original_treasure_map_clay`, 한 덩어리 6.5만 삼각형 조형 · UV 없음)를 숨기고 같은 크기로 깔끔한 상자 모델(나무 기둥 · 가로대, 쇠 띠 · 집게, 금 모서리 캡 + 쇠 다이아 징, 금 볼트 · 모서리 꺾쇠)과 평평한 양피지(numpy로 그린 텍스처: 종이 결 · 찢긴 탄 가장자리 · 강 · 점선 길 · 나무 · 산 · 나침반 · 성 · 연결선)를 짓고 입체 노드(쇠 고리 + 금 돔)를 세워 **렌더만** 한다(`-- --preview <폴더>`, 텍스처 PNG와 렌더만 씀). 양면 모두 제 쪽에서 바로 읽힘. R360, Unity 미적용 |
+| `cannon_model.py` | 공기 대포를 컨셉 사진대로 **직접 모델링**해 렌더만 한다(R368, v2 R370 — 돌 판재 포신 · 금 테 · 윗면 띠와 고리 · 큰 룩 청록 띠 · 리벳 박힌 청록 나팔 · 띠 두른 금 노즐 테 + 집게 · 날 20장 팬 · 겹친 트러니언 · 가운데 뚫린 A자 요크 · 계단 회전판 · 돌 블록 받침 + 룩 명판, 2.7만 면 + 팬 1,128면; `-- --preview <폴더>`): 크림 돌 받침(금 발 · 금 테 · 금 모서리 캡 + 리벳, 금 테 청록 옆판 + 금 룩), 회전판, 청록 요크 + 금 트러니언, 수평 포신(금 뒤 뚜껑 · 크림 돌 드럼 · 금 띠 · 금 룩 청록 판 · 손잡이), 청록 나팔, 금 노즐 고리 + 볼트, 어두운 강철 덕트, 새 팬(금 허브 + 소용돌이 날 14장, 원점 = 허브, 날은 y-z 평면). 축은 팬 허브 높이(z 1.501)로 수평이라 `LibraryAirCannon` 회전축과 맞음. 재질은 평면색 부위 5개(`Library gold/teal/cream/steel/dark`). 기존 조형 메시는 렌더에서 대체만, Unity 미적용 |
+| `cannon_conveyor_look.py` | 대포 조형(R368 첫 시안, 이제 `cannon_model.py`로 대체)과 컨베이어에 사진 재질을 입혀 렌더만 한다: 조형 메시는 스마트 UV → Cycles로 텍셀마다 위치 · 법선을 구워 numpy가 부위를 정해 `<이름>.png` + `_MS.png`로 칠함(경계가 곧음), 벨트 조각 8종은 원본 판 공간으로 UV를 되살려 판 조형 배치(테두리 · 리벳 띠 · 옆 타일 · 2 × 7 판자 · X · 별)에 맞춘 그림, 작은 부품은 이름으로 평면색. Unity 미적용 |
+| `cannon_conveyor_unity.py` | 위 두 시안을 FBX 두 개에 넣는다(R371): 환경 FBX의 대포 몸체 · 팬 메시를 `cannon_model.py` 것으로(베벨 적용 + 퇴화 면 정리), 셔틀 FBX는 `rail_shoes.py`처럼 애니메이션째 다시 써서 벨트 UV · 판 텍스처 · 섀시 UV · 맵(`Assets/Resources/PawnRushLibrary/Conveyor/`)을 넣음. Unity 재질은 `Course01v4Builder.LibraryLooks.cs`가 재질 이름(`Library …`)으로 입힘. `-- --check <폴더>`로 다시 읽어 렌더, 다시 돌리면 그대로 |
+| `armillary_look.py` | 출발 혼천의(`Start_armillary`)에 컨셉 사진 재질을 입혀 **렌더만** 한다(`-- --preview <폴더>`, 별자리 PNG와 렌더만 씀): 탁자 + 금 받침 한 덩어리 메시를 탁자 윗면 높이(혼천의 공간 z 0.888)로 나눠 나무 / 금, 링 3개 금, 구는 numpy로 그린 남색 별자리 지도(등장방형 2048 × 1024, 위도 보정 별)를 구 투영(중심 + 0.5)으로, 솔기 띠(반지름 > .339)는 금. 옆 작전 지도는 `war_map.py`로 같이 그림. R361, Unity 미적용 |
+| `start_props_unity.py` | 위 세 시안(`compass_rose.py` · `war_map.py` · `armillary_look.py`)을 환경 FBX에 바로 넣는다(R364): 옛 납작 별 · 고리 · 지도 조형을 지우고 `Start_compass_rose` · `War_map_frame` · `War_map_parchment`를 더하고, 혼천의 받침 · 구에 UV를 펴, 색과 금속도 · 매끈함을 Cycles로 `Assets/Resources/PawnRushLibrary/StartProps/`에 굽는다(`<이름>.png` + `<이름>_MS.png`). Unity 재질은 `Course01v4Builder.LibraryStartProps.cs`가 노드 이름으로 입힘. `-- --check <폴더>`로 구운 결과 렌더, 다시 돌리면 그대로 |
 | `inner_piers_stone.py` | 안쪽 기둥 10개(`V21/V23_Inner_gallery_pier`)를 승규 님 돌기둥 에셋(`../Endgame/source/stone_column.glb`)으로 바꿔 FBX를 바로 고친다(R315, 다시 돌려도 그대로) |
 | `rail_shoes.py` | 셔틀 FBX의 바퀴 · 바퀴 받침을 지우고 레일 윗날개를 감싸는 미끄럼 슈 `Carriage_rail_shoe` 4개를 단다(R288, FBX를 바로 고침, 다시 돌려도 그대로) |
 
@@ -57,6 +68,8 @@ Unity가 읽는 곳(바뀌지 않음): `Assets/Resources/PawnRushLibrary/PawnRus
 | `UNITY_Collisions_ref`를 내보내기 컬렉션에 넣기 | Unity 충돌체는 코드가 만든다. FBX에 들어가면 보이는 상자가 생긴다 |
 
 ## 3. 충돌체 맞추기(바닥 · 계단을 옮겼을 때)
+
+> R379부터 모델 자체도 충돌한다: `Course01v4Builder.LibraryCollision.cs`가 손 닿는 높이(모델 바닥 위 3.5 m 아래에서 시작)의 모든 부품에 메시 충돌(30 cm 미만 · 두께 8 cm 미만 바닥 장식 · 도는 부품 · `_zone` 표시는 뺌, 2만 삼각형 넘는 5 m 미만 소품은 상자)을, 컨베이어는 `Fixed_*`에만. 그래서 FBX 두 개 모두 `isReadable: 1`. 아래 상자들은 걷는 바닥 그대로 남는다.
 
 Unity 충돌체는 FBX가 아니라 `Course01v4Builder.LibraryReplacement.cs`의 `Box(...)` 줄이 만든다. 모델을 옮겼으면:
 

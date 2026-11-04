@@ -70,14 +70,10 @@ namespace ChessFight.PawnRush
         static void CentralLanding(CourseBuilder b)
         {
             var k = b.kit;
-            // x -14..14, z 52..66 (from z 51: the upper flight's last step), railed round; at its north-east corner
-            // the spiral's foot leads on (R303).
+            // x -14..14, z 52..66 (from z 51: the upper flight's last step); at its north-east corner the spiral's foot
+            // leads on (R303). R340 (승규 11-04): no railings round it any more - a chandelier's hit can throw a pawn
+            // off its edges (the hall model's balustrades there are cut out too, Course01v4Builder.OpenLanding).
             Mass(b, "Central landing", -14f, 14f, 51f, 66f, 8f);
-            Rail(b, "Central landing rail N", -14f, 4f, 65.7f, 66f, 8f);
-            Rail(b, "Central landing rail W", -14f, -13.7f, 51.3f, 65.7f, 8f);
-            Rail(b, "Central landing rail E", 13.7f, 14f, 51.3f, 63.5f, 8f);
-            Rail(b, "Central landing rail S (west)", -14f, -8.3f, 51f, 51.3f, 8f);
-            Rail(b, "Central landing rail S (east)", 8.3f, 14f, 51f, 51.3f, 8f);
             // The king statue: a 4 x 4 m base at (0, 8, 63), 6 m tall, unclimbable. The one fixed cover from the shock.
             Solid(b, "King statue base", V(-2f, 8f, 61f), V(2f, 9.2f, 65f));
             b.Cylinder("King statue body", V(0f, 9.2f, 63f), 2.4f, 2.6f, k.wallNoClimb, true, true);
@@ -125,14 +121,13 @@ namespace ChessFight.PawnRush
         static void Spiral(CourseBuilder b)
         {
             var k = b.kit;
-            // The spiral's foot off the landing's north-east corner (y 8).
+            // The spiral's foot off the landing's north-east corner (y 8). R348 (승규 11-04): no railings, like the landing
+            // it opens off (the hall model's are cut out too, Course01v4Builder.OpenLanding).
             Mass(b, "Spiral foot", 4f, 15.5f, 63.5f, 71.5f, 8f);
-            Rail(b, "Spiral foot rail W", 4f, 4.3f, 66f, 71.5f, 8f);
-            Rail(b, "Spiral foot rail N", 4.3f, 10.5f, 71.2f, 71.5f, 8f);
 
             // 3a. The curving stair (φ 297 -> 372, y 8 -> 10): along the wall, its inner edge open to the hall floor
             // 12 m down (a fall goes back to CP1). Two chandeliers swing across it, out to the wall.
-            Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, CurvingStairHalfIn, 0f, true, 1.2f, true);
+            Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, CurvingStairHalfIn, 0f, true, 1.2f);
             Chandelier(b, "11 Pendulum (chandelier) 1", 322f, Mathf.Lerp(8f, 10f, 25f / 75f), 0f);
             Chandelier(b, "11 Pendulum (chandelier) 2", 350f, Mathf.Lerp(8f, 10f, 53f / 75f), 1.6f);
             b.Checkpoint(2, OnSpiral(368f, 9.9f), Heading(368f), 4.5f);
@@ -163,17 +158,24 @@ namespace ChessFight.PawnRush
             Gap(b, "Dive gap 2", OnSpiral(548f, 14f), OnSpiral(560.3f, 14f), 2.5f);
             b.Checkpoint(4, OnSpiral(569f, 14f), Heading(569f), 3f);
 
-            // 4c. The windy way (φ 575 -> 640, y 14 -> 14.8): 3 m wide, no railings, two vents on posts at its inner
-            // edge blowing out over the edge, half their cycle apart. The wind carries a pawn at 3.5 m/s (R301).
+            // 4c. The windy way (φ 575 -> 640, y 14 -> 14.8): 3 m wide, no railings, two vents at its inner edge blowing
+            // out over the edge, half their cycle apart. The wind carries a pawn at 3.5 m/s (R301). R351 (승규 "위치도 길
+            // 쪽에 자연스럽게 배치해주고"): each vent's face on the way's inner edge, standing on a stone ledge out of the
+            // way's side on two consoles, instead of 0.1 m into the way on a post up from the hall floor.
             Walkway(b, "Windy way", 575f, 640f, 14f, 14.8f, 1.5f, 1.5f);
             float[] ventPhi = { 594f, 621f }, ventPhase = { 0f, 3.4f };
             for (int i = 0; i < ventPhi.Length; i++)
             {
                 float phi = ventPhi[i], y = Mathf.Lerp(14f, 14.8f, (phi - 575f) / 65f);
-                var at = OnSpiral(phi, y, -1.6f);
+                var at = OnSpiral(phi, y, -1.5f);
                 Gust(Hazard(b, k.airVent, "15 Wind vent " + (i + 1), at, OutwardYaw(phi), ventPhase[i]));
-                var post = at - Outward(phi) * .45f;
-                Solid(b, "Wind vent post " + (i + 1), V(post.x - .45f, Deep, post.z - .45f), V(post.x + .45f, y, post.z + .45f));
+                // The ledge under the fan's 0.5 m housing (a hair under the way's top where they meet), its consoles under it.
+                b.SlopeBetween("Wind vent ledge " + (i + 1), OnSpiral(phi, y - .01f, -2.25f), OnSpiral(phi, y - .01f, -1.48f), 3.2f, .6f, 0f,
+                               k.wallNoClimb, true);
+                var across = Vector3.Cross(Vector3.up, Outward(phi));
+                for (int side = -1; side <= 1; side += 2)
+                    b.SlopeBetween("Wind vent console " + (i + 1) + (side < 0 ? " a" : " b"), OnSpiral(phi, y - .61f, -2.1f) + across * side,
+                                   OnSpiral(phi, y - .61f, -1.52f) + across * side, .45f, 1.1f, 0f, k.wallNoClimb, true);
                 // Its wind (3 x 3 x 6 m from the inner edge outwards) covers the way's 3 m.
                 SpanAt(b, "Wind span " + (i + 1), OnSpiral(phi, y), Outward(phi), -1.6f, 1.6f);
             }
@@ -181,7 +183,7 @@ namespace ChessFight.PawnRush
 
             // 4d. The last stair (φ 640 -> 717, y 14.8 -> 16) round the dais: two 10 falling chess pieces on it, half
             // their cycle apart, then onto the dais.
-            Walkway(b, "Last stair", 640f, 717f, 14.8f, 16f, 1.75f, 1.75f, false, 1.2f, true);
+            Walkway(b, "Last stair", 640f, 717f, 14.8f, 16f, 1.75f, 1.75f, false, 1.2f);
             float[] piecePhi = { 662f, 694f }, piecePhase = { 0f, 2.27f };
             for (int i = 0; i < piecePhi.Length; i++)
             {
@@ -194,10 +196,10 @@ namespace ChessFight.PawnRush
         }
 
         // A way along the spiral from φA to φB rising yA -> yB, `halfIn` inside its middle line and `halfOut` outside
-        // (or out to the hall wall), made of chord slabs no more than 5° long that overlap a little. A stair gets a
-        // dark step line at each slab's start.
+        // (or out to the hall wall), made of chord slabs no more than 5° long that overlap a little. R341 (승규 11-04
+        // "검은색 줄 지워"): the stairs no longer get a dark step line at each slab's start.
         static void Walkway(CourseBuilder b, string name, float phiA, float phiB, float yA, float yB, float halfIn, float halfOut,
-                            bool toWall = false, float thickness = .6f, bool steps = false)
+                            bool toWall = false, float thickness = .6f)
         {
             int n = Mathf.Max(1, Mathf.CeilToInt((phiB - phiA) / 5f));
             for (int i = 0; i < n; i++)
@@ -209,9 +211,6 @@ namespace ChessFight.PawnRush
                 Vector3 a = Polar(p0, mid, y0), c = Polar(p1, mid, y1), along = (c - a).normalized * .15f;
                 var slab = b.SlopeBetween(name + " " + (i + 1), a - along, c + along, outer - inner, thickness, 0f, b.kit.floorChecker, true);
                 slab.AddComponent<CourseFloor>().sloped = !Mathf.Approximately(y0, y1);
-                if (steps && i > 0)
-                    b.SlopeBetween(name + " step line " + i, Polar(p0, inner, y0 + .02f), Polar(p0, outer, y0 + .02f), .12f, .01f, .01f, b.kit.trimBlack, false)
-                     .GetComponent<Collider>().enabled = false;
             }
         }
 

@@ -23,22 +23,8 @@ namespace ChessFight.PawnRush
                 return;
             }
             // Blender names are the Unity paths under Content with '_' for ' ' and '#2', '#3' for repeated names.
-            var hidden = new HashSet<string>();
-            foreach (var line in hiddenText.text.Split('\n'))
-            {
-                var path = line.Trim();
-                int mark = path.IndexOf('#');
-                if (mark >= 0) path = path.Substring(0, mark);
-                if (path.Length > 0) hidden.Add(path);
-            }
             var content = hall.Find(GrandStairHall.ContentName);
-            int off = 0;
-            foreach (var r in content.GetComponentsInChildren<Renderer>(true))
-            {
-                if (!hidden.Contains(PathUnder(content, r.transform).Replace(' ', '_'))) continue;
-                r.enabled = false;
-                off++;
-            }
+            int off = HideListed(content, hiddenText);
 
             var pivot = new GameObject("Grand stair hall v15").transform;
             pivot.SetParent(hall, false);
@@ -46,7 +32,8 @@ namespace ChessFight.PawnRush
             var view = Object.Instantiate(model, pivot, false);
             view.name = "Grand stair hall v15 model";
             var clay = HallClay;
-            var marble = PieceFigure.Lit(new Color(.8f, .8f, .79f), .78f);
+            // R358: the marble floors (and the balcony's marble) in Calacatta Oro (HallMarble, world space: no UVs).
+            var marble = HallMarble();
             var under = b.kit.floorChecker;
             // R325: the round hall's oculus in the crown ring. R332: in the crystal clear glass (PR_Glass.shader: it bends,
             // frosts and mirrors what is behind it), the kit's flat glass if that material is missing.
@@ -55,21 +42,198 @@ namespace ChessFight.PawnRush
             foreach (var r in view.GetComponentsInChildren<Renderer>(true))
             {
                 var slots = r.sharedMaterials;
+                // R384 (승규 11-04 "원형 대형 벽은 금색 테두리 안할거야 지워"): the round hall's big wall in plain stone, its
+                // window bars (the "... tracery" nodes) still gold.
+                bool roundWall = r.name.StartsWith(RoundWall) && !r.name.Contains("tracery");
+                // R385 (승규 11-04 "창살은 모든 대형 벽이 무광 은색으로 해"): every big wall's window bars ("<wall> tracery")
+                // in matte silver instead of gold.
+                bool bars = r.name.Contains(" tracery");
                 for (int i = 0; i < slots.Length; i++)
                 {
                     string name = slots[i] != null ? slots[i].name : "";
                     // The marble floors' joints show the lowered blockout floor under them.
                     slots[i] = ChandelierMaterial(name) ?? PalaceMaterial(name) ?? (name.StartsWith("Marble") ? marble
                              : name.StartsWith("Section_Floor_under") ? under : name.StartsWith("Glass") ? glass : clay);
+                    if (roundWall && slots[i] == palaceWall) slots[i] = PlainPalaceWall();
+                    else if (roundWall && slots[i] == palaceGold) slots[i] = palaceStone;
+                    else if (bars && slots[i] == palaceGold) slots[i] = MatteSilver();
                 }
                 r.sharedMaterials = slots;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             }
             Debug.Log("[대계단 홀] v15 모델 " + view.transform.childCount + "개 조각, 블록아웃 " + off + "개 숨김(충돌은 그대로)");
+            SeamlessFloors(view.transform, marble);
+            OpenLanding(view.transform, content);
+            ClearLandingChandeliers(view.transform, content);
             HubChandelierLights(view.transform);
             WidenHallFloor(content);
             CarpetHallFloor(content);
             HangPads(content, clay);
+            RoyalFans(content);
+            WindyWay(content);
+            GuardKnightWarnings(content);
+            RoyalBalcony(pivot, content, marble, clay);
+            StairStatues(pivot, view.transform, clay);
+            RoyalStair(pivot, view.transform, content, clay);
+            SpiralPaving(view.transform);
+            PalaceTrims(view.transform);
+            Entrance(pivot, view.transform, clay);
+        }
+
+        // R343 (승규 11-04, an asset preview of a stone fan housing with gold crowned corner caps and a gold ring round a
+        // six-bladed fan: "1번째 사진 같이 모델링 해주고 회전 애니메이션 넣은 다음 택스쳐 입히고 적용해" + "블렌더에서 아주
+        // 세심하게"): the windy way's two vents in the royal fan (royal_fan_v35.py: RoyalFan_Frame still, RoyalFan_Rotor
+        // turned by RoyalFanSpin with the vent). It stands where the kit's VentModel was - the same 2.8 x 2.6 x 0.5 m box,
+        // its front the vent's front - and the VentModel's housing, aperture and grille draw nothing but keep any collider.
+        const string RoyalFanModel = "PawnRushGrandStairHall/RoyalFan";
+        static readonly System.Collections.Generic.Dictionary<string, Material> fanMaterials =
+            new System.Collections.Generic.Dictionary<string, Material>();
+
+        static void RoyalFans(Transform content)
+        {
+            var model = Resources.Load<GameObject>(RoyalFanModel);
+            if (model == null)
+            {
+                Debug.LogError("[대계단 홀] 왕실 환풍기 모델을 불러오지 못했습니다: Resources/" + RoyalFanModel + ".fbx");
+                return;
+            }
+            int fans = 0;
+            foreach (var t in content.GetComponentsInChildren<Transform>(true))
+            {
+                if (!t.name.StartsWith("15 Wind vent ")) continue;
+                var old = FindUnder(t, "VentModel");
+                if (old == null) continue;
+                foreach (var r in old.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+                var view = Object.Instantiate(model, old.parent, false);
+                view.name = "Royal fan";
+                view.transform.localPosition = old.localPosition;
+                view.transform.localRotation = old.localRotation;
+                var s = old.parent.lossyScale;
+                view.transform.localScale = new Vector3(1f / s.x, 1f / s.y, 1f / s.z);   // metres, whatever the vent's scale
+                foreach (var r in view.GetComponentsInChildren<Renderer>(true))
+                {
+                    var slots = r.sharedMaterials;
+                    for (int i = 0; i < slots.Length; i++) slots[i] = FanMaterial(slots[i] != null ? slots[i].name : "");
+                    r.sharedMaterials = slots;
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                }
+                foreach (var c in view.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
+                // The kit's warning bar (2.65 m) would sit in the corner caps' tops (2.62 m): up clear of them.
+                var bar = FindUnder(t, "WarningVisual");
+                if (bar != null && bar.localPosition.y < 2.8f) bar.localPosition = new Vector3(bar.localPosition.x, 2.8f, bar.localPosition.z);
+                var rotor = FindUnder(view.transform, "RoyalFan_Rotor");
+                if (rotor != null)
+                    view.AddComponent<RoyalFanSpin>().Configure(rotor, t.GetComponentInChildren<ChessFight.ProtectKing.AirVent>(true));
+                else Debug.LogError("[대계단 홀] 왕실 환풍기 모델에 날개(RoyalFan_Rotor)가 없어 돌릴 수 없습니다");
+                fans++;
+            }
+            Debug.Log("[대계단 홀] 바람 통풍구 " + fans + "개를 왕실 환풍기로");
+        }
+
+        // The fan's five materials by their Blender names: stone, gold and the blades textured (albedo + normal map, the
+        // boxed UVs tile them), the steel and the dark back plain.
+        static Material FanMaterial(string name)
+        {
+            // The import may call a material "RoyalFan_Gold (Instance)", "RoyalFan-RoyalFan_Steel" (model-material
+            // naming) or after its texture: the part after "RoyalFan_" decides.
+            int cut = name.IndexOf(' ');
+            if (cut >= 0) name = name.Substring(0, cut);
+            int at = name.LastIndexOf("RoyalFan_", System.StringComparison.Ordinal);
+            string part = at >= 0 ? name.Substring(at + "RoyalFan_".Length) : name;
+            if (part.EndsWith("_N")) part = part.Substring(0, part.Length - 2);
+            if (fanMaterials.TryGetValue(part, out var cached) && cached != null) return cached;
+            Material m;
+            switch (part)
+            {
+                // v3 (승규 11-04 "수정해": the stone read as black slate in the hall's shade): stone, not metal.
+                case "Frame": m = FanTextured("RoyalFan_Frame", .3f, 0f); break;
+                case "Gold": m = FanTextured("RoyalFan_Gold", .74f, .92f); break;
+                case "Blade": m = FanTextured("RoyalFan_Blade", .52f, .78f); break;
+                case "Steel": m = new Material(PieceFigure.Lit(new Color(.24f, .24f, .26f), .48f, .82f)); break;
+                default: m = new Material(PieceFigure.Lit(new Color(.03f, .03f, .035f), .25f, .3f)); break;   // Dark
+            }
+            m.name = "Royal fan " + part;
+            return fanMaterials[part] = m;
+        }
+
+        static Material FanTextured(string name, float smoothness, float metallic)
+        {
+            var albedo = Resources.Load<Texture2D>("PawnRushGrandStairHall/" + name);
+            var normal = Resources.Load<Texture2D>("PawnRushGrandStairHall/" + name + "_N");
+            if (albedo == null) Debug.LogError("[대계단 홀] 왕실 환풍기 텍스처를 불러오지 못했습니다: Resources/PawnRushGrandStairHall/" + name + ".png");
+            var m = new Material(PieceFigure.Lit(Color.white, smoothness, metallic)) { mainTexture = albedo };
+            if (normal != null)
+            {
+                m.SetTexture("_BumpMap", normal);
+                m.SetFloat("_BumpScale", 1f);
+                m.EnableKeyword("_NORMALMAP");
+            }
+            return m;
+        }
+
+        // R340 (승규 11-04 "계단 뒤에 올라간 후 그 공간에 난간 지워주고"): the central landing (y 8, x -14..14, z 51..66)
+        // without its balustrades. The blockout's rails are gone (GrandStairHallBuilder.CentralLanding); the model's are
+        // in one mesh with every other balustrade of the hall, so MeshCutOut takes out the pieces whose middle is on the
+        // landing's five rails (section frame). The upper flight's rails (x +-8.15, up to z 52) stay. R348 (승규 11-04, a
+        // shot of the L-shaped railing at the landing's north-east corner: "샹들리에 쪽 아직 난간이 제거가 안 됐어"): the
+        // spiral foot's two rails go too (W x 4.15, z 66 .. 71.5; N z 71.35, x 4.3 .. 10.5), the model's and the blockout's.
+        static void OpenLanding(Transform view, Transform content)
+        {
+            Transform rails = null;
+            foreach (var t in view.GetComponentsInChildren<MeshFilter>(true))
+                if (t.name == "HallV15_Balustrades") { rails = t.transform; break; }
+            if (rails == null)
+            {
+                Debug.LogError("[대계단 홀] 모델에서 난간(HallV15_Balustrades)을 찾지 못해 착지 공간 난간을 지우지 못했습니다");
+                return;
+            }
+            static Bounds Box(float x0, float x1, float z0, float z1) =>
+                new Bounds(new Vector3((x0 + x1) * .5f, 9f, (z0 + z1) * .5f), new Vector3(x1 - x0, 3f, z1 - z0));
+            rails.gameObject.AddComponent<MeshCutOut>().Configure(content,
+                Box(-14.6f, 4f, 65.3f, 66.05f),       // N, as far as the spiral foot's rail
+                Box(-14.6f, -13.3f, 50.6f, 66.3f),    // W
+                Box(13.3f, 14.6f, 50.6f, 64f),        // E, as far as the spiral foot
+                Box(-14.6f, -8.36f, 50.6f, 51.7f),    // S, west of the stair
+                Box(8.36f, 14.6f, 50.6f, 51.7f),      // S, east of the stair
+                Box(3.7f, 4.6f, 65.6f, 72f),          // the spiral foot's W rail (R348)
+                Box(3.9f, 11f, 70.7f, 72f),           // the spiral foot's N rail (R348)
+                // R350: the grand stair's own balustrades (the flights' and the middle landing's, with the stone panels
+                // under them) - RoyalStair draws new ones. x 7.7 .. 8.4: the foyer rails start at x 8.46.
+                new Bounds(new Vector3(-8.05f, 2.25f, 32.85f), new Vector3(.7f, 16.5f, 39.1f)),
+                new Bounds(new Vector3(8.05f, 2.25f, 32.85f), new Vector3(.7f, 16.5f, 39.1f)));
+        }
+
+        // R340 (승규 11-04 "장애물 샹들리에가 눈에 보이면 안돼"): the model's still chandeliers that hang over the central
+        // landing (HallV15_Chandelier_N, not the hub's _6) looked like the falling ones and cast shadows like their
+        // warnings; they go. Over the landing = their middle within 4 m of it (x -18..18, z 47..70, section frame).
+        static void ClearLandingChandeliers(Transform view, Transform content)
+        {
+            var gone = new List<string>();
+            foreach (var t in view.GetComponentsInChildren<Transform>(true))
+            {
+                if (!t.name.StartsWith("HallV15_Chandelier_") || t.name == HubChandelierNode) continue;
+                // Its middle from its meshes' corners (the hall is still inactive, so no Renderer.bounds).
+                bool any = false;
+                var b = new Bounds();
+                foreach (var f in t.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (f.sharedMesh == null) continue;
+                    var m = f.sharedMesh.bounds;
+                    for (int k = 0; k < 8; k++)
+                    {
+                        var corner = m.center + Vector3.Scale(m.extents, new Vector3((k & 1) == 0 ? -1 : 1, (k & 2) == 0 ? -1 : 1, (k & 4) == 0 ? -1 : 1));
+                        var p = content.InverseTransformPoint(f.transform.TransformPoint(corner));
+                        if (any) b.Encapsulate(p);
+                        else { b = new Bounds(p, Vector3.zero); any = true; }
+                    }
+                }
+                if (!any) continue;
+                var c = b.center;
+                if (c.x < -18f || c.x > 18f || c.z < 47f || c.z > 70f) continue;
+                t.gameObject.SetActive(false);
+                gone.Add(t.name);
+            }
+            Debug.Log("[대계단 홀] 착지 공간 위 매달린 샹들리에 " + gone.Count + "개 숨김: " + string.Join(", ", gone));
         }
 
         // R329 (승규 11-03, a gilded palace hall for reference: "중앙 샹들리에만 … 텍스쳐 입혀 불빛 나오는 곳에는 실제로 빛이
@@ -135,6 +299,30 @@ namespace ChessFight.PawnRush
             }
             return name.StartsWith("Palace_Wall") ? palaceWall : name.StartsWith("Palace_Stone") ? palaceStone
                  : name.StartsWith("Palace_Banner") ? palaceBanner : palaceGold;
+        }
+
+        // R384: the round wall's architectural wall without its gold. PR_PalaceWall gilds where the trim map passes
+        // _Threshold (smoothstep over +-_Edge); a cut above the map's 0..1 leaves only the limestone.
+        const string RoundWall = "HallV15_Round_wall";
+        static Material plainPalaceWall;
+
+        static Material PlainPalaceWall()
+        {
+            if (plainPalaceWall == null)
+            {
+                plainPalaceWall = new Material(palaceWall) { name = "Palace wall (no gold)" };
+                plainPalaceWall.SetFloat("_Threshold", 2f);
+                plainPalaceWall.SetFloat("_Edge", .01f);
+            }
+            return plainPalaceWall;
+        }
+
+        // R385: the window bars' matte silver - a pale grey metal, rough enough not to mirror the hall.
+        static Material matteSilver;
+        static Material MatteSilver()
+        {
+            if (matteSilver == null) matteSilver = new Material(PieceFigure.Lit(new Color(.74f, .75f, .77f), .22f, .7f)) { name = "Window bars (matte silver)" };
+            return matteSilver;
         }
 
         // R330: the chandelier (chandelier_hub_v27.py, three times v10's size) and its bulbs' lights hang from one pivot at
@@ -302,6 +490,7 @@ namespace ChessFight.PawnRush
             }
             Debug.Log("[대계단 홀] 떠 있는 발판 " + stones + "개, 점프 발판 " + pads + "개를 새 모델로");
             FallingKnights(content, clay);
+            HangHammers(content, clay);
         }
 
         // R317 (승규 11-03): the hall's falling pieces drawn as 승규's chess knight (knight_v20.py: 1.8 m round base like
@@ -325,6 +514,14 @@ namespace ChessFight.PawnRush
                 if (pawn == null || pawn.Find("Knight model") != null) continue;
                 foreach (var r in pawn.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
                 Hang(pawn, model, "Knight model", Vector3.zero, clay);
+                // R341: its effects on its own clock (FallingPieceFx: W1 the floor warning that fills as it lands).
+                var hazard = t.GetComponentInChildren<ChessFight.ProtectKing.FallingChessPiece>(true);
+                if (hazard != null && !hazard.TryGetComponent<FallingPieceFx>(out _)) hazard.gameObject.AddComponent<FallingPieceFx>();
+                // R341 (승규 "화살표 지워"): the kit's four push arrows, 4.5 m out, one hanging in the air off the narrow stair;
+                // the shockwave (FallingPieceFx I2) shows the push now.
+                foreach (var arrow in t.GetComponentsInChildren<Transform>(true))
+                    if (arrow.name == "Direction arrow")
+                        foreach (var r in arrow.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
                 knights++;
             }
             Debug.Log("[대계단 홀] 떨어지는 말 " + knights + "개를 기사 모델로");
@@ -352,6 +549,8 @@ namespace ChessFight.PawnRush
             Sink(FindUnder(pad, "Spring plate"), PadDeck);
             Sink(FindUnder(pad, "Jump pad base"), PadDeck);
             Hang(pad, model, "Pad model", Vector3.up * PadDeck, clay);
+            // R355: its glow, rising chevrons and motes, and the burst when a pawn lands on it (JumpPadFx).
+            if (!pad.TryGetComponent<JumpPadFx>(out _)) pad.gameObject.AddComponent<JumpPadFx>();
             return true;
         }
 

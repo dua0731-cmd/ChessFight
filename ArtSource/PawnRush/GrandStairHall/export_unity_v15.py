@@ -66,7 +66,8 @@ def clean(name):
 
 # ------------------------------------------------------------------ the hall
 new = [o for o in sc.objects if o.type == "MESH" and o not in retired and o.visible_get()
-       and (not o.get("unity_path") or o.name.endswith("(under marble)"))]
+       and (not o.get("unity_path") or o.name.endswith("(under marble)"))
+       and not o.get("own_fbx")]          # R342: the royal balcony (royal_balcony_v34.py) goes in its own FBX
 groups = {}
 for o in new:
     m = re.match(r"(Chandelier_\d+)/", o.name)

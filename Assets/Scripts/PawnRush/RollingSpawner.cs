@@ -41,7 +41,13 @@ namespace ChessFight.PawnRush
         [SerializeField] float warning = .8f;
         [Tooltip("The roll rises out of its hole over the last part of the warning.")]
         [SerializeField] float emerge = .35f;
-        [SerializeField] float bounce = .15f;
+
+        [Header("Lively picture (R356: gravity, bounce, sway - the collider is unchanged)")]
+        [SerializeField] float rollGravity = 14f;
+        [Tooltip("How much of a landing's speed bounces back: stone little, a rolled carpet more.")]
+        [SerializeField, Range(0f, .9f)] float statueRestitution = .28f, carpetRestitution = .45f;
+        [Tooltip("The most a landing sways the roll, degrees.")]
+        [SerializeField] float statueSway = 4f, carpetSway = 10f;
 
         [Header("Schedule")]
         [SerializeField] float minGap = 1.6f;
@@ -73,6 +79,7 @@ namespace ChessFight.PawnRush
             public Rigidbody body;
             public Transform picture;
             public bool statue, fresh;
+            public RollingSchedule.Roll roll;     // R356: what PosePicture draws from
             public long serial;
             public readonly HashSet<ImportedObstacleActor> struck = new HashSet<ImportedObstacleActor>();
         }
@@ -140,6 +147,7 @@ namespace ChessFight.PawnRush
                 {
                     item = Take(e.Statue);
                     item.serial = e.Serial;
+                    item.roll = e;
                     item.fresh = true;
                     item.struck.Clear();
                     live[e.Serial] = item;
@@ -175,13 +183,6 @@ namespace ChessFight.PawnRush
             return profile[profile.Length - 1].y;
         }
 
-        bool OnStairs(float z)
-        {
-            foreach (var s in stairs)
-                if (z >= s.x && z <= s.y) return true;
-            return false;
-        }
-
         void Pose(Item item, RollingSchedule.Roll e, float age)
         {
             float r = (item.statue ? statueDiameter : carpetDiameter) * .5f;
@@ -212,11 +213,160 @@ namespace ChessFight.PawnRush
                 item.body.MovePosition(world);
                 item.body.MoveRotation(transform.rotation);
             }
-            // The picture rolls (a turn per 2 pi r) and bumps a step at a time; the collider does neither.
-            float angle = travelled / Mathf.Max(.05f, r) * Mathf.Rad2Deg;
-            float hop = OnStairs(z) ? bounce * Mathf.Abs(Mathf.Sin(Mathf.PI * (z - Mathf.Floor(z)))) : 0f;
-            item.picture.localPosition = Vector3.up * hop;
-            item.picture.localRotation = Quaternion.AngleAxis(-angle, Vector3.right);
+            // The picture is posed every frame in LateUpdate (PosePicture); the collider keeps to the slope.
+        }
+
+        // ------------------------------------------------------------------ the lively picture (R356)
+
+        // R356 (승규 11-04 "계단 내려갈 때 물리엔진을 더 생동감 있게 해"): the picture comes down the steps as a body
+        // would - it rolls off each nosing, flies, lands on the tread below and bounces (gravity, restitution by kind),
+        // never sinks into a step (its centre stays r clear of every tread and nosing), settles on the landing, and
+        // every landing knocks it into a damped sway and tilt and a little sideways wander. The path of each kind is
+        // simulated once, at a fixed step along the way, so it is the same on every PC; the sway's directions come from
+        // the roll's serial. Posed every frame from the clock, so it is smooth between physics steps. The collider,
+        // the timing and the hits are as before (the body keeps to the walking slope).
+        const float PathStep = .01f;   // metres along the way between the path's samples
+
+        sealed class Track
+        {
+            public float[] y;                                                // the centre's height, PathStep apart
+            public readonly List<Vector2> hits = new List<Vector2>();        // (metres along, landing speed m/s)
+        }
+
+        Track statueTrack, carpetTrack;
+
+        Track TrackFor(bool statue) => statue
+            ? statueTrack ??= BuildTrack(statueDiameter * .5f, statueRestitution)
+            : carpetTrack ??= BuildTrack(carpetDiameter * .5f, carpetRestitution);
+
+        // The ground under z: the treads of the stair stretches (risers 1 m apart from half a metre in), else the profile.
+        float Ground(float z)
+        {
+            foreach (var s in stairs)
+            {
+                if (z < s.x || z > s.y + .5f) continue;
+                float first = s.x + .5f, y0 = Profile(s.x);
+                if (z < first) return y0;
+                int n = Mathf.Max(1, Mathf.RoundToInt(s.y - s.x));
+                float rise = (Profile(s.y) - y0) / n;
+                return y0 + rise * (Mathf.Min(Mathf.FloorToInt(z - first), n - 1) + 1);
+            }
+            return Profile(z);
+        }
+
+        // The lowest a round body of radius r can sit with its centre over z: r over the ground, and r clear of every
+        // nosing (a tread's front edge) within reach.
+        float Envelope(float z, float r)
+        {
+            float best = Ground(z) + r;
+            foreach (var s in stairs)
+            {
+                float first = s.x + .5f, y0 = Profile(s.x);
+                int n = Mathf.Max(1, Mathf.RoundToInt(s.y - s.x));
+                float rise = (Profile(s.y) - y0) / n;
+                int lo = Mathf.Max(0, Mathf.FloorToInt(z - r - first)), hi = Mathf.Min(n - 1, Mathf.CeilToInt(z + r - first));
+                for (int i = lo; i <= hi; i++)
+                {
+                    float d = z - (first + i);
+                    if (Mathf.Abs(d) < r) best = Mathf.Max(best, y0 + rise * (i + 1) + Mathf.Sqrt(r * r - d * d));
+                }
+            }
+            return best;
+        }
+
+        // The way down at the rolls' speed: in the air under gravity, on the ground riding its envelope, a landing
+        // faster than the ground's own fall bouncing back by the restitution (small ones just stick).
+        Track BuildTrack(float r, float restitution)
+        {
+            float total = holeZ - (drainZ - 1f) + .5f;
+            int n = Mathf.CeilToInt(total / PathStep) + 2;
+            var track = new Track { y = new float[n] };
+            float dt = PathStep / Mathf.Max(.1f, speed);
+            float y = Envelope(holeZ, r), vy = 0f;
+            for (int j = 0; j < n; j++)
+            {
+                float z = holeZ - j * PathStep, c = Envelope(z, r);
+                if (y <= c)
+                {
+                    float surface = (Envelope(z - PathStep, r) - c) / dt;   // how fast the ground ahead drops (or climbs)
+                    float hit = surface - vy;
+                    if (hit > .35f)
+                    {
+                        if (hit > .8f) track.hits.Add(new Vector2(j * PathStep, hit));
+                        vy = surface + restitution * hit;
+                    }
+                    else if (vy < surface) vy = surface;
+                    y = c;
+                }
+                track.y[j] = y;
+                vy -= rollGravity * dt;
+                y += vy * dt;
+            }
+            return track;
+        }
+
+        static float Sample(Track track, float along)
+        {
+            float f = Mathf.Max(0f, along) / PathStep;
+            int i = Mathf.Min((int)f, track.y.Length - 2);
+            return Mathf.Lerp(track.y[i], track.y[i + 1], Mathf.Clamp01(f - i));
+        }
+
+        void LateUpdate()
+        {
+            if (live.Count == 0) return;
+            double now = ObstacleClock.Now;
+            foreach (var item in live.Values)
+                if (item.root.activeSelf) PosePicture(item, (float)(now - item.roll.Time));
+        }
+
+        void PosePicture(Item item, float age)
+        {
+            var e = item.roll;
+            float r = (item.statue ? statueDiameter : carpetDiameter) * .5f;
+            float x = e.Lane < laneX.Length ? laneX[e.Lane] : 0f;
+            float along = Mathf.Max(0f, age) * speed, z = holeZ - along, y;
+            var track = TrackFor(item.statue);
+            if (age < 0f)
+            {
+                // Out of the hole, easing out with a little pop at the top.
+                float u = Mathf.Clamp01(1f + age / Mathf.Max(.01f, emerge));
+                float eased = 1f - (1f - u) * (1f - u) + .18f * Mathf.Sin(Mathf.PI * u);
+                y = Profile(holeZ) - r - .1f + eased * (2f * r + .1f);
+            }
+            else
+            {
+                y = Sample(track, along);
+                if (z < drainZ) y -= (drainZ - z) * (2f * r + .3f);   // into the drain grate over its last metre
+            }
+            // Each landing's sway (about up), tilt (one end dipping) and sideways shove, from the serial.
+            float yaw = 0f, tilt = 0f, drift = 0f;
+            float swayMax = item.statue ? statueSway : carpetSway, swayPer = item.statue ? 1.2f : 2.6f;
+            for (int i = 0; i < track.hits.Count; i++)
+            {
+                var h = track.hits[i];
+                if (h.x > along) break;
+                float since = (along - h.x) / Mathf.Max(.1f, speed);
+                float a = Mathf.Min(swayMax, h.y * swayPer);
+                drift += (Hash01(e.Serial, i, 3) - .5f) * .05f * h.y * (1f - Mathf.Exp(-since / .35f));
+                if (since > 2.5f) continue;
+                float fade = Mathf.Exp(-since / .45f);
+                yaw += (Hash01(e.Serial, i, 1) < .5f ? -a : a) * fade * Mathf.Sin(2f * Mathf.PI * 2.2f * since);
+                tilt += (Hash01(e.Serial, i, 2) < .5f ? -a : a) * .7f * fade * Mathf.Sin(2f * Mathf.PI * 3.1f * since);
+            }
+            float room = Mathf.Max(0f, laneWidth * .5f - (item.statue ? statueLength : carpetLength) * .5f);
+            drift = Mathf.Clamp(drift, -room, room);
+            float angle = along / Mathf.Max(.05f, r) * Mathf.Rad2Deg;          // rolling: a turn per 2 pi r
+            item.picture.SetPositionAndRotation(transform.TransformPoint(new Vector3(x + drift, y, z)),
+                transform.rotation * Quaternion.AngleAxis(yaw, Vector3.up) * Quaternion.AngleAxis(tilt, Vector3.forward)
+                * Quaternion.AngleAxis(-angle, Vector3.right));
+        }
+
+        static float Hash01(long serial, int i, int salt)
+        {
+            uint h = (uint)(serial * 73856093L) ^ (uint)(i * 19349663) ^ (uint)(salt * 83492791);
+            h ^= h >> 13; h *= 0x5bd1e995; h ^= h >> 15;
+            return (h & 0xFFFFFF) / (float)0x1000000;
         }
 
         void Strike(Item item)
@@ -284,6 +434,9 @@ namespace ChessFight.PawnRush
         Item MakeStatue()
         {
             var item = MakeBody("Rolling statue", true, statueDiameter, statueLength);
+            // R354 (승규 11-04, a picture of a faceted white marble pawn with gold rings): the modelled pawn
+            // (pawn_roll_v47.py, 2.6 m, base end to -x as below), else the primitives.
+            if (ModelPicture(item, Course01v4Builder.RollingStatueModel, "Rolling statue model")) return item;
             var mat = statueMaterial != null ? statueMaterial : Arena.Lit("M_RollingStatue", new Color(.95f, .55f, .2f));
             float l = statueLength, d = statueDiameter;
             // A pawn lying across the lane: base, body, collar, head, knob (base end to -x).
@@ -298,6 +451,9 @@ namespace ChessFight.PawnRush
         Item MakeCarpet()
         {
             var item = MakeBody("Rolling carpet", false, carpetDiameter, carpetLength);
+            // R353 (승규 11-04 "계단 장애물 모델링 … 일단 1개만"): the modelled roll (carpet_roll_v46.py: 3.2 m of rolled
+            // carpet, r 0.24, gold borders, spiral ends, gold hubs - inside the 0.5 x 3.4 capsule), else the primitives.
+            if (ModelPicture(item, Course01v4Builder.RollingCarpetModel, "Rolling carpet model")) return item;
             var mat = carpetMaterial != null ? carpetMaterial : Arena.Lit("M_RollingCarpet", new Color(.72f, .1f, .14f));
             Part(item.picture, PrimitiveType.Cylinder, Vector3.zero, carpetDiameter, carpetLength, mat);
             // Gold bands so the roll can be seen turning.
@@ -306,6 +462,24 @@ namespace ChessFight.PawnRush
                 Part(item.picture, PrimitiveType.Cylinder, new Vector3(x, 0f, 0f), carpetDiameter * 1.04f, .12f, gold);
             Part(item.picture, PrimitiveType.Cube, new Vector3(0f, carpetDiameter * .45f, 0f), .06f, carpetLength * .96f, gold);
             return item;
+        }
+
+        // R353 / R354: a modelled roll (Resources) as the item's picture, its materials the grand stair hall's; false when
+        // the model is missing (the primitives draw instead).
+        static bool ModelPicture(Item item, string resource, string name)
+        {
+            var model = Resources.Load<GameObject>(resource);
+            if (model == null) return false;
+            var view = Instantiate(model, item.picture, false);
+            view.name = name;
+            foreach (var c in view.GetComponentsInChildren<Collider>(true)) Destroy(c);
+            foreach (var r in view.GetComponentsInChildren<Renderer>(true))
+            {
+                var slots = r.sharedMaterials;
+                for (int i = 0; i < slots.Length; i++) slots[i] = Course01v4Builder.RollMaterial(slots[i] != null ? slots[i].name : "") ?? slots[i];
+                r.sharedMaterials = slots;
+            }
+            return true;
         }
 
         // A primitive picture lying along x (no collider): `size` across, `length` along.
