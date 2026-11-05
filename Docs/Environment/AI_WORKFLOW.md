@@ -49,5 +49,7 @@
 
 ## 5. 사용자에게 보고할 때
 
+GPT·Claude를 API로 연결하는 개발 도구는 [Tools/AiBridge](../../Tools/AiBridge/README.md)를 따른다(R307). `Setup.cmd`로 두 키를 로컬에서 설정하고 `Start.cmd`로 실행한다. 키는 Windows DPAPI로 저장하며 `.local/`·`runs/`는 Git에서 제외한다. `node --test Tools/AiBridge/bridge.test.mjs`는 모의 API 시험이며 실제 연결 확인이 아니다. `Start.ps1 -Check`도 설정 유무만 본다. 실제 연결 상태는 두 서비스의 응답을 받은 뒤 별도로 기록한다.
+
 - 한국어로 쓰고, 무엇을 했는지 → 확인한 것과 못 한 것 → 사용자가 Unity에서 볼 것 순으로 쓴다.
 - 확인하지 못한 것을 됐다고 쓰지 않는다. "테스트 통과"와 "Unity에서 동작"을 구분한다.

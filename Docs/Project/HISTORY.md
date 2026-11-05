@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| 이 기록을 추가한 커밋(`git log --grep=R307`) | 11-05 | R307 | GPT ↔ Claude API 연결 도구(`Tools/AiBridge`): 번갈아 답변·최종 정리, Windows DPAPI 키 설정·실행, 대화 기록, 모의 API 시험 13개·Core 164·세션 55 통과. **키 미설정 · 실제 연결 미시험**. 사용자 프리팹 변경을 보존하고 별도 main 작업 폴더에서 추가 |
 | `8f624263` · `ec2418e6` | 11-03 | R306 | 지연 줄이기: 측정 상자 지연 줄 · 연결 직접/릴레이(`SteamRoute`) · `-latencyBefore` 전후 스위치, 폰 러쉬 스냅샷 예약표(Core `SendSchedule`), 입력 바뀌면 바로(Core `InputSendGate` · `InputChange`), 방장이 물리 전에 입력 읽기, 인원 적으면 초당 60번(Core `SnapshotRate`, `PlaybackDelay` 바닥 · 간격 추정), 폰 러쉬 내 폰 먼저 그리기 F7(기본 꺼짐), `-queuedFrames` 시험 스위치, 랩 빌더 `-labDevelopment`, 고르지 않은 프레임에서 예약표 박자 유지(루프백 측정에서 찾음). 승규 님 "커밋 하지말고 로컬로" → 확인 뒤 "커밋해" → "다 main에 푸쉬 해" |
 | `4ff598f1` | 11-03 | R305 | 폰 러시 1-1 왕실 수로 정원 v31 그레이박스: 슬롯 1 `Early_1-1_RoyalWaterGarden`(뿌리 프리팹, `RoyalWaterGardenBuilder`, 메뉴 Build Early 1-1 Royal Water Garden), 새 부품 `GardenGeyser` · `GardenBoat` · `BoatLanes` · `RobotSweep` · `WaterCurrent` · `TiltingPad` · `GardenHits`, Core `RoyalWaterGardenRules` + 시험 3개, 검증기 · 시험 씬 · 생성기, 문서(PAWN_RUSH_ROYAL_GARDEN · SECTIONS · VALIDATION · DECISIONS P30 · REQUIREMENTS · HANDOFF) |
 | `7b86e99a` | 11-02 | R297 | 문서: VALIDATION 맨 위(빌드 두 개로 기준값 재는 순서 · Profiler 순서 · (가)~(바) · [4] · [5] 미확인) · HOST_AUTHORITY(§0 · §1.1 · W3 · W7 · §6 표 · P5 · P6 · §8.4 · 새 §10) · MOTION · SESSION(v26) · SKILLS_ONLINE · RAGDOLL · DECISIONS K13 · PITFALLS 65~66 · REQUIREMENTS · HANDOFF |
