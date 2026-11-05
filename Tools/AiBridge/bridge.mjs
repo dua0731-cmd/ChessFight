@@ -34,7 +34,7 @@ export function validate(config, { prompt, turns = 3, first = 'gpt', maxTokens =
   }
   for (const [provider, keyName] of [['gpt', 'OPENAI_API_KEY'], ['claude', 'ANTHROPIC_API_KEY']]) {
     if (!config.keys[provider] || !/^[\x21-\x7e]+$/.test(config.keys[provider])) {
-      throw new Error(`${keyName}가 없습니다. Start.ps1에서 API 키를 설정하세요.`);
+      throw new Error(`${keyName}가 없습니다. Setup-Api.cmd에서 API 키를 설정하세요.`);
     }
     if (!/^[a-zA-Z0-9._:-]{1,100}$/.test(config.models[provider])) {
       throw new Error(`${provider} 모델 ID를 확인하세요.`);

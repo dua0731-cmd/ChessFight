@@ -4,7 +4,7 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-11-05** — **R307 GPT ↔ Claude API 연결 도구**. 사용자가 연결 방식을 API로 선택. `Tools/AiBridge`에 기본 GPT 초안 → Claude 검토 → GPT 최종 답변(2~8회, 순서 변경 가능), Windows 키 설정·실행 단추, 암호화 키 저장, 대화 기록을 추가. [실행 안내](Tools/AiBridge/README.md). **API 키가 없어 실제 연결 미시험**. 다음 빈 번호 **R308**. 아래는 이전 작업 기록이다.
+최종 갱신: **2026-11-05** — **R308 GPT ↔ Claude를 API 키 없이 계정 로그인으로 연결**. R307 뒤 "api키 없이는 연결 못해?" → 계정 로그인 방식 설명 → "그럼 그렇게 할 수 있도록 해줘". 기본 `Start.cmd`·`Setup.cmd`를 Codex(ChatGPT)·Claude Code(Claude 계정) 방식으로 변경. 공식 Claude Code 2.1.318을 로컬 설치(SHA256 대조), 사용자가 Claude 로그인 완료. **실제 GPT → Claude → GPT 답변 전달 3단계 시험 통과(AI 관찰)**, 자동 시험 26개·기존 키 저장 시험 1개·Core 164·세션 55 통과. [실행 안내](Tools/AiBridge/README.md). 원래 API 도구는 `Api.cmd`·`Setup-Api.cmd`([안내](Tools/AiBridge/API.md))로 남음. 다음 빈 번호 **R309**. 아래는 이전 작업 기록이다.
 
 최종 갱신: **2026-11-03**(R306 **지연 줄이기**, upstream `main`에 푸시(코드 `8f624263` · 문서 `ec2418e6`): 승규 님이 넘긴 작업 지시서("ChessFight 네트워크 3순위 작업: 지연 줄이기", `main` `6b22719` 검토) + "커밋 하지말고 로컬로 확인해" → 확인 뒤 "커밋해" → "다 main에 푸쉬 해". `main` `4ff598f1`(R305 정원) 위에 브랜치 `r306-latency`로 커밋한 것을 그대로 main에 이어 붙였다. [0] F3 측정 상자에 "누름 → 방장 반응" · "내 몸이 움직여 보이기까지" · 흔들림 · 스냅샷 간격 · 연결 직접/릴레이(`SteamRoute`) · 방장 "입력 받음 → 물리 적용", 개발 빌드 `-latencyBefore`로 한 빌드에서 전후 비교 [1] 폰 러쉬 스냅샷 예약표(Core `SendSchedule`) [2] 입력이 바뀐 프레임에 바로(Core `InputSendGate` · `InputChange`, 최대 초당 120번) [3] 방장이 그 프레임 첫 물리 단계 전에 입력 읽기, 받은 보낸 시각 = 물리에 적용한 입력 [4] `-queuedFrames=1` 시험 스위치만(기본값 그대로) [5] 6명까지 스냅샷 초당 60번(Core `SnapshotRate`), 재생 지연 바닥 70 → 약 37 ms(`PlaybackDelay`) [6] 폰 러쉬 F7 "내 폰 먼저 그리기"(기본 꺼짐, 켤지는 승규 님이 시험 뒤 정함). 프로토콜 v26 그대로. [HOST_AUTHORITY §5 · §11](Docs/Network/HOST_AUTHORITY.md) · [VALIDATION 맨 위](Docs/Network/VALIDATION.md). 다음 빈 번호는 **R307**. R305는 같은 날 폰 러시 1-1 왕실 수로 정원이 먼저 써서 이 작업은 R306이다.)
 
@@ -318,7 +318,7 @@
 
 | 항목 | 상태 |
 |---|---|
-| **GPT ↔ Claude API 연결(11-05, R307)** | `Tools/AiBridge/Setup.cmd`에서 두 키 설정 → `Start.cmd`에서 요청 입력. Node.js 22 이상, 추가 라이브러리 없음. 기본 `gpt-6.1-sol`·`claude-sonnet-5-5`, 3회·답변당 4096토큰. 키는 Windows DPAPI, 키·기록은 Git 제외. 모의 API 시험 13개 통과, Core 164·세션 55 통과. **키 없음 · 실제 API 연결 미시험**, Unity·Steam 대상 아님 |
+| **GPT ↔ Claude 계정 연결(11-05, R308)** | `Tools/AiBridge/Start.cmd`에서 요청 입력. ChatGPT·Claude 계정 로그인 사용, API 키 제외·토큰 직접 접근 없음. 기본 GPT → Claude → GPT, 각 CLI 기본 모델. 요청·답변·최종 파일을 `runs/account-날짜/`에 기록. 사용자 Claude 로그인 완료, **실제 3단계 전달 시험 통과(AI 관찰)**. 자동 26개·키 저장 1개·Core 164·세션 55 통과. 게임의 Unity·Steam 확인 대상 아님. R307 API 방식은 별도 `Api.cmd` |
 | **폰 러시 초반 장애물 1-1 왕실 수로 정원 v31(11-03, R305)** | 슬롯 1에 `Early_1-1_RoyalWaterGarden`(뿌리 프리팹 + `RoyalWaterGardenBuilder`, 메뉴 Build Early 1-1 Royal Water Garden). ㄹ자 한 길 259.1 m: 광장 작은 회전 막대 5 → 물기둥 8 → 출렁 발판 8(+ P4 지름길) → 갑문 수문 3 + 물살 → 로봇 팔 2 → 가로 보트 4줄 × 2척(판 씨앗) → 성문 → 출구 테라스 · 4단 · 입구 띠. 새 부품 `GardenGeyser` · `GardenBoat` · `BoatLanes` · `RobotSweep` · `WaterCurrent` · `TiltingPad`(StateDrivenMover) · `GardenHits`, Core `RoyalWaterGardenRules`(시험 3개). 시험 씬은 정원 → 대계단 현관홀 순서. Core 156 · 세션 55 · 실제 DLL 컴파일, **Unity 미확인** → [PAWN_RUSH_ROYAL_GARDEN](Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md) |
 | **폰 러시 구간 프리팹·대계단 현관홀(11-02, R300 → R303)** | R303: 비트 3~5 = 둥근 홀 한 나선 길(떠 있는 발판·점프대·다이빙 틈·바람 길·떨어지는 말) + 유리 징검다리(`GuessBridge`), `IntendedGap`, 날개·움직이는 계단 없앰. R302: 꺾임 계단참 = 룩 탑을 도는 C자 + 스위퍼 + 틈, 날개 계단 2 = 움직이는 계단(`SwingingStair`), CP2 꺾임 계단참(번호 하나씩 밀림). R301: 바람이 폰을 실어 나름(`AirVent.DriftSpeed`·`IWindReceiver`·`RagdollPawn.Wind`), 날개 11 m 바깥(홀 ±51)·다리 A + 섬 + 다리 B·날개 계단 1 진자 셋과 아래 턱, 재미 검토는 PAWN_RUSH_SECTIONS §10. 아래는 R300: `main`(11-02 병합, R304). 한 판 = 7슬롯(장애물·미니게임 번갈아 + 마지막), 슬롯마다 `Settings/PawnRushSections.asset`의 프리팹 목록에서 판 씨앗으로 하나(Core `PawnRushSections`), `PawnRushRound`가 입구를 앞 구간 출구에 붙임, 체크포인트 번호 = 슬롯 × 100 + 번호. 구간 프리팹 `Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab`(저장소엔 뿌리만: 메뉴로 굽거나 깨어날 때 코드로 만듦), 새 장애물 `RollingSpawner`·`ChandelierRain`(사건 목록 + 공유 장애물 시계, 판정은 방장), `SectionValidator`, 시험 씬 `PawnRush_Sections.unity`, 키트 바탕 클래스 `CourseKit`(코스 01 키트도). Core 130·세션 41·컴파일 통과. **Unity 미확인**, 온라인 연결 안 함 |
 | **지연 줄이기(11-03, R306, `main` `8f624263`, 푸시함)** | 작업 지시서의 [0]~[6]: F3 측정 상자 지연 줄(누름 → 방장 반응 · 내 몸이 움직여 보이기까지 · 흔들림 · 간격 · 직접/릴레이 · 입력 받음 → 물리 적용, Core `PressTimer` · `LatencyAverage`, `SteamRoute`), 폰 러쉬 스냅샷 예약표(Core `SendSchedule`), 입력 바뀌면 바로(Core `InputSendGate` · `InputChange`), 방장이 물리 전에 입력 읽기(받은 보낸 시각 = 물리에 적용한 입력), 6명까지 스냅샷 60번(Core `SnapshotRate`, `PlaybackDelay` 바닥 · 간격 추정, 폰 러쉬 · 소드 파이트), 폰 러쉬 F7 내 폰 먼저(기본 꺼짐), `-queuedFrames` · `-latencyBefore` 개발 빌드 스위치. 프로토콜 v26 그대로. Core 164 · 세션 55 · 실제 DLL 컴파일 통과(정원 커밋과 합친 뒤), 빌드 `C:\Work\R305Builds\after`(이 PC, 이름 바꾸기 · 정원 커밋 전 `7b86e99a` 기준이라 로그 줄은 "R305 …"). **upstream `main`에 푸시(`8f624263` · `ec2418e6`), Unity 편집기 · Steam · 사람 미확인** → [VALIDATION 맨 위](Docs/Network/VALIDATION.md) |
@@ -385,7 +385,7 @@
 
 ## 2. 무엇이 되고 무엇이 안 되는가
 
-**R307 개발 도구:** GPT와 Claude API 사이의 답변 전달·검토·정리, 오류 시 중단·기록을 구현했다([사용법](Tools/AiBridge/README.md)). 기존 앱의 채팅·프로젝트 파일을 자동 공유하지 않는다. **실제 API 연결은 두 키 설정 후 짧은 요청으로 확인해야 한다.** 게임 기능의 확인 상태에는 영향 없다.
+**R308 개발 도구:** GPT와 Claude의 답변 전달·검토·정리를 **계정 로그인**으로 실행한다([사용법](Tools/AiBridge/README.md)). 새 요청과 명시적으로 첨부한 참고 파일만 전달하며 기존 앱의 채팅은 자동 공유하지 않는다. 실제 계정 전달 시험은 짧은 요청 3회까지다. 원래 API 직접 연결(R307)은 키가 없어 미시험인 상태로 별도 보존한다. 게임 기능의 확인 상태에는 영향 없다.
 
 **R161 체스복싱:** 단타 뒤 몸·머리의 휘청임과 안정화, 공격 접수 4회·적중 4회 뒤 체력 64에서 다운·기상 흐름을 실제 Play에서 관찰했다. `CBGloveContact`로 실제 충돌을 전달하고 펀치당 1회 피해를 적용한다. 머리/몸통 양손 4/4, 하단 가드 4차단/칩 피해 4, 선회 4/4(방향 오차 약 2°), KO 14시도·12적중/13.76초, AI 10초 7적중/플레이어 체력 37 기록을 확보했다. 최종 회피 4방향 모두 피해 0·가드 0, 무회피 피해 9. 실제 Unity 무음 영상으로 단타 약 3.8초·다운/기상 약 5.4초를 저장했다. 최종 로그 550줄에서 컴파일 오류·예외·null audio·missing script 각각 0, 비차단 폰트 경고 2건. 이번 세션 R160 시점의 공통 Core 131·Session 41 통과 뒤 공유 코드는 변경하지 않았으며 R161에서 공통 검사를 새로 실행한 것은 아니다. 사람 체감·장시간 안정성·별도 빌드는 미확인이다. 전신 무릎 래그돌 또는 잡기 구현으로 보지 않는다.
 
@@ -440,7 +440,7 @@
 
 ## 3. 진행 중인 일과 다음 할 일
 
-**R307 API 연결 다음:** `Tools/AiBridge/Setup.cmd`에서 OpenAI·Anthropic API 키를 로컬 입력 → 짧은 요청으로 GPT·Claude 양쪽 응답 확인. 이 PC 환경변수에는 두 키가 없다. 키를 채팅·문서에 적지 않는다. 원래 작업 폴더의 프리팹 변경은 보존하고, 별도 `.worktrees/api-bridge-main`에서 `main`에 작업했다.
+**R308 연결 도구 사용:** 이 PC에서는 두 계정 로그인이 인식되므로 `Tools/AiBridge/Start.cmd`에서 바로 요청을 입력한다. 다른 PC·로그인 만료 때만 `Setup.cmd`. 참고 문서는 `--context`로 지정하며 각 계정의 사용량 한도가 적용된다. 별도 `.worktrees/api-bridge-main`의 `main`에서 작업했고 원래 작업 폴더의 프리팹 변경은 보존한다.
 
 - **R306 지연 줄이기(11-03, `main` `8f624263`, 푸시함)**: 처음엔 승규 님 지시("커밋 하지말고 로컬로 확인해")로 로컬에서만 확인했고, 그 뒤 "커밋해"로 `main` `4ff598f1`에서 만든 `r306-latency`에 커밋했다(코드 · 시험 `8f624263`, 문서 `ec2418e6`). 그다음 "다 main에 푸쉬 해"로 upstream `main`에 그대로 이어 붙여 푸시했다. 다음은 개발 빌드 하나로 [VALIDATION 최상단](Docs/Network/VALIDATION.md) R306 순서대로 재는 것이다: 바로 가기 끝에 ` -latencyBefore`(전) · 없음(후). (가) 폰 러쉬 방장 스냅샷 초당 → (나) 누름 → 방장 반응 → (다) 내 몸이 움직여 보이기까지 · 재생 지연, 2~4명 → (라) 4명 60번 방장 보내기 KB/초 → (마) F7 내 폰 먼저 끊김 → (바) PC마다 직접/릴레이 · 왕복. 정할 것(승규 님): F7 기본값, 60번 기준(지금 6명), ICE · 직접 연결(재기만 했음), P8 방장 고르기. R297 빌드(v26)와 바이트가 같아 서로 매칭된다. AI가 이 PC 루프백(랩 개발 빌드, Steam 아님)으로 잰 값: 방장 + 2명에서 누름 → 방장 반응 약 37 → 18 ms, 내 몸이 움직여 보이기까지 약 116 → 63 ms. 이 측정에서 예약표가 고르지 않은 프레임에서 절반만 보내던 것을 찾아 고쳤다(늦은 프레임이 한 간격 안이면 박자 유지). 랩 빌드는 `-labDevelopment`를 붙여 뽑아야 시험 스위치가 먹는다(`RagdollLabBuilder`).
 - **R305 왕실 수로 정원 v31(11-03)**: `main` Pull → Unity → **ChessFight → Pawn Rush → Build Early 1-1 Royal Water Garden**("구간 검증 통과") → Open Section Test → Play로 [VALIDATION 최상단](Docs/Network/VALIDATION.md) R305 표를 확인. 혼자 한 바퀴 시간, 지름길 성공률, 보트 기다림을 보고 [§9 손잡이](Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md#9-unity에서-맞출-값)를 맞춘다. 길이 확정되면 Blender v31 아트(승규 님 `seoungtest` 정원)를 이 좌표에 맞춘다. 남은 결정: 지름길 이득 크기, 보트 방향을 판 중간에도 뒤집을지.
@@ -650,7 +650,7 @@ Tools/
 
 | 작업 | 먼저 읽을 것 | 그다음 코드 |
 |---|---|---|
-| GPT·Claude API 연결 도구(R307) | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md) → [실행·키 설정](Tools/AiBridge/README.md) | `Tools/AiBridge/bridge.mjs`, `Start.ps1`, `bridge.test.mjs`, `launcher.test.ps1` |
+| GPT·Claude 계정 연결(R308), 별도 API 방식(R307) | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md) → [계정 로그인·실행](Tools/AiBridge/README.md), [API 방식](Tools/AiBridge/API.md) | `Tools/AiBridge/cli-bridge.mjs`·`cli-bridge.test.mjs`, `Start.ps1`·`Install-Claude.ps1`, 기존 `bridge.mjs`·`Start-Api.ps1` |
 | 무엇이든 처음 | 이 파일 → [REQUIREMENTS](Docs/Project/REQUIREMENTS.md) → [DECISIONS](Docs/Project/DECISIONS.md) → [PITFALLS](Docs/Environment/PITFALLS.md) | — |
 | Unity 오류, Safe Mode, 클릭 안 됨 | [PITFALLS](Docs/Environment/PITFALLS.md), [SETUP](Docs/Environment/SETUP.md) | `Scripts/Editor/`, asmdef |
 | 파티, 매칭, 초대, 경기 중 빈자리 | [Network/SESSION](Docs/Network/SESSION.md) | `Network/SteamSession.cs`, `Core/TeamReservations.cs`, `Core/Backfill.cs` |
