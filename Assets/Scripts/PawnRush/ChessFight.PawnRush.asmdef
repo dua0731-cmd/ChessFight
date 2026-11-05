@@ -4,7 +4,8 @@
     "references": [
         "ChessFight.Game",
         "ChessFight.Gameplay",
-        "ChessFight.Network.Core"
+        "ChessFight.Network.Core",
+        "ChessFight.VFX"
     ],
     "autoReferenced": true
 }
