@@ -1,0 +1,98 @@
+{
+  "request": "R311",
+  "created": "2026-11-05",
+  "generator": "built-in Imagegen",
+  "purpose": "Modeling concept studies; dimensions and counts follow 3D and modeling guide",
+  "images": [
+    {
+      "file": "01_early_C_moat.png",
+      "game": "C",
+      "stage": "early",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2508855,
+      "sha256": "f2d6cb37d5008e10cdeb166a3a2a7712c76b141f58dfde84f56c303a23ebdd59"
+    },
+    {
+      "file": "02_early_D_capstan.png",
+      "game": "D",
+      "stage": "early",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2647662,
+      "sha256": "f4de0eca2f65fc49a7e831c650b4c347ace3a341434de5117933652497f456e9"
+    },
+    {
+      "file": "03_early_A_parade.png",
+      "game": "A",
+      "stage": "early",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2620979,
+      "sha256": "4f0da1373dd70b0ad92f73921805290192dec52fc4bf2888bd0c67260020e35c"
+    },
+    {
+      "file": "04_mid_B_repair.png",
+      "game": "B",
+      "stage": "mid",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2565159,
+      "sha256": "30c5f49b56e26e521aaed1dffdd00ca83ced3c1b8b59a5d1476bf4b45adcc912"
+    },
+    {
+      "file": "05_mid_E_library.png",
+      "game": "E",
+      "stage": "mid",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2361496,
+      "sha256": "1d2f6580c95c8726f0b3a4000adf1cd4432985af2d3e04e6a81115d3246bce0a"
+    },
+    {
+      "file": "06_mid_F_ballroom.png",
+      "game": "F",
+      "stage": "mid",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2603978,
+      "sha256": "907bf1da7b58f4c19ccedaac061678db096640be64a713969aef41dc6949572e"
+    },
+    {
+      "file": "07_mid_J_laundry.png",
+      "game": "J",
+      "stage": "mid",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2395650,
+      "sha256": "a225602e773d78d11a6f3ccb06c30794562a99309cbb37f9f26c1a0e06b5b651"
+    },
+    {
+      "file": "08_late_G_procession.png",
+      "game": "G",
+      "stage": "late",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2519323,
+      "sha256": "569d07507cac8109abe4af745945e871fd0d90d5788e9d8416d8287dfabce8b9"
+    },
+    {
+      "file": "09_late_H_chess.png",
+      "game": "H",
+      "stage": "late",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2222127,
+      "sha256": "f18bf481e6b0cb5ce4d010b9f296daa5d7cc0b5e0919233e433d8fec1b06f36e"
+    },
+    {
+      "file": "10_late_I_bedroom.png",
+      "game": "I",
+      "stage": "late",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2269823,
+      "sha256": "20b188258a091d5bee7432ca879345aaf1a337c92d1823878bb9db438d258c2f"
+    }
+  ]
+}

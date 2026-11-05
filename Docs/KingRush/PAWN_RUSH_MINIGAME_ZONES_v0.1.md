@@ -1,4 +1,4 @@
-> 사용자가 2026-11-03에 첨부한 원문 사본(원래 `claude/bold-johnson-8ez95n`의 R153). R310 미리보기의 근거로 보관한다. [기존 초반 3D 예시](PAWN_RUSH_EARLY_PLAZA_3D.html), [중반·후반 3D 설명](PAWN_RUSH_MINIGAME_PREFABS.md).
+> 사용자가 2026-11-03에 첨부한 원문 사본(원래 `claude/bold-johnson-8ez95n`의 R153). R310·R311 미리보기의 근거로 보관한다. [초반 3D](PAWN_RUSH_EARLY_PLAZA_3D.html), [전체 3D 설명](PAWN_RUSH_MINIGAME_PREFABS.md), [모델링 상세 지침](PAWN_RUSH_MINIGAME_MODELING.md).
 
 # 폰 러시 미니게임 구역 배치·디자인 기획서 v0.1
 

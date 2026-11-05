@@ -8,6 +8,7 @@ const folder = resolve(root, 'Docs/KingRush');
 const css = await readFile(resolve(folder, 'PAWN_RUSH_MINIGAME_PREVIEW.css'), 'utf8');
 const script = await readFile(resolve(folder, 'PAWN_RUSH_MINIGAME_PREVIEW.js'), 'utf8');
 for (const [stage, name, title] of [
+  ['early', 'PAWN_RUSH_EARLY_PLAZA_3D.html', '폰 러시 · 초반 미니게임 3D'],
   ['mid', 'PAWN_RUSH_MID_MINIGAMES_3D.html', '폰 러시 · 중반 미니게임 3D'],
   ['late', 'PAWN_RUSH_LATE_MINIGAMES_3D.html', '폰 러시 · 후반 미니게임 3D'],
 ]) {

@@ -4,6 +4,8 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
+최종 갱신: **2026-11-05** — **R311 초반 3D 개편 + 미니게임 전체10종 모델링 컨셉 이미지**. 사용자 "이런 식으로 초반 미니게임 디자인도 다시", 실제 인게임 공간·주변 구조물·디자인을 상세 이미지로 요청하고 **초반·중반·후반 전체10종** 선택. 초반 C·D·A를 공용3D로 교체(전체·단면·걸어가기·팀별동작·소품/초반장식 숨김). A 공유18m판·C 전체폭해자/4m다리진입·D8바퀴를 유지. 내장 Imagegen으로 전경·입체도·장치확대·재질 보드10장 작성. [이미지 갤러리](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html) · [모델링 상세 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md) · [3D/검사 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md). 실제 Three 객체70장면/카메라·3팀 문·앞장소50조합·표시13종·A/C/D 구조 검사, Core164·모의세션55 통과. **이미지는 외형 제안이고 수량·치수는3D/표 우선. 실제 브라우저·Unity·Steam·사용자 확인 전**, 게임자산 변경 없음. 원래 폴더의 프리팹 변경 보존. 다음 빈 번호 **R312**. 아래는 이전 기록이다.
+
 최종 갱신: **2026-11-05** — **R310 폰 러시 중반 4종·후반 3종 미니게임 3D 예시**. 지정한 Claude Code **「폰 러시 미니게임 레벨 디자인」** 세션의 초반 예시와 최신 "3D로 충분해" 지시를 확인하고, 같은 문맥의 Claude 검토를 받아 중반 B·E·F·J / 후반 G·H·I를 독립 HTML 두 개로 작성. 전체·테라스·위·스테이션 단면·걸어 들어가기, 동작 예시·팀 문·앞뒤 연결을 보여 준다. [열기·기획 근거·확인 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md). 장면·카메라 49건(팀 문 7건 포함), Core 164·모의 세션 55 통과. CPU 정지 그림으로 배치만 AI가 확인했으며 **앱 브라우저의 로컬 접근 제한으로 실제 브라우저 조작 미확인, Unity 프리팹 구현 아님, 사용자 확인 전**. 원래 작업 폴더의 프리팹 변경 보존. 작업 중 원격 R309 현관홀 아트를 가져온 뒤 이어 기록했다. 다음 빈 번호 **R311**. 아래는 이전 작업 기록이다.
 
 최종 갱신: **2026-11-05** — **R309 대계단 현관홀(2-1) 아트를 `seoungtest`에서 main으로.** 승규 님 "대계단 현관홀은 여기서 작업은 끝났어 대계단 현관홀만 다른 사람이 이어서 작업 할 수 있게 main에다가 넣어". `seoungtest` 시험 씬(구역 H)에서 만든 홀 아트(Blender 홀 · 대리석 · 돌 · 금 · 대계단 · 석상 · 퀸 · 발코니 · 입구 · 환풍기 · 해머 · 돔 · 위험물 VFX)만 옮김 — 정원 · 작전 회의실 · 시험 씬 장치(`SeoungTestCourse` · `Course01v4Builder.Zones`)는 안 옮김. main에서는 구간 프리팹이 **Play 때** 아트를 입는다(`GrandStairHall.Awake` → `Course01v4Builder.DressGrandStairHall`; 아트가 만드는 재질 · 메시는 프리팹에 구울 수 없음), 옛 블록아웃으로 구운 프리팹이면 먼저 다시 지음(`GrandStairHallBuilder.LayoutMark`). 코드 주석의 R308 ~ R413은 seoungtest 번호. 안내: [PAWN_RUSH_GRAND_STAIR_HALL_ART](Docs/KingRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md). Blender는 최신 `.blend` 7개 · 스크립트 · 원본 · 최신 렌더만(옛 버전 2 GB는 seoungtest). 실제 Unity DLL에 대해 Unity Roslyn으로 Core · Game · VFX · Gameplay · RagdollLab · PawnRush(+ Editor) · VFX.Editor 컴파일 통과, **Unity 화면 미확인**. 고침: 처음 커밋에서 `ChessFight.PawnRush.asmdef`에 `ChessFight.VFX` 참조가 빠져 Unity가 컴파일 오류(승규 님 "All compiler errors…" 사진) — 검사가 seoungtest의 참조 목록을 빌려 써서 놓침, 이제 각 asmdef의 참조로 다시 빌드해 통과. 다음 빈 번호 **R310**.
@@ -322,6 +324,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **폰 러시 전체 미니게임 모델링 자료(11-05, R311)** | 초반3D C/D/A를 중후반 공용뷰어로 개편. [10종 상세 이미지](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html)(전경·입체도·장치·재질, `ConceptArt/R311/`)와 [모듈·소품·피벗 제작 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md). 3D70장면·3팀문·50장소조합·표시13종·고유구조/진입폭, Core164·세션55 통과. **기획/모델링 제안, 실제 브라우저·Unity·사용자 확인 전** |
 | **폰 러시 중반·후반 미니게임 3D(11-05, R310)** | [중반 4종](Docs/KingRush/PAWN_RUSH_MID_MINIGAMES_3D.html)·[후반 3종](Docs/KingRush/PAWN_RUSH_LATE_MINIGAMES_3D.html). 기존 Claude 세션·초반 예시·사용자 원문에 맞춘 **기획 예시**. 천장·팀·카메라·동작 조작, x=−12 스테이션 단면. 장면 49·팀 문 7·Core 164·세션 55 통과. CPU 배치 그림 AI 확인, **브라우저 직접 조작·사용자 확인 전, Unity 변경 없음**. 상세 [PAWN_RUSH_MINIGAME_PREFABS](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) |
 | **GPT ↔ Claude 계정 연결(11-05, R308)** | `Tools/AiBridge/Start.cmd`에서 요청 입력. ChatGPT·Claude 계정 로그인 사용, API 키 제외·토큰 직접 접근 없음. 기본 GPT → Claude → GPT, 각 CLI 기본 모델. 요청·답변·최종 파일을 `runs/account-날짜/`에 기록. 사용자 Claude 로그인 완료, **실제 3단계 전달 시험 통과(AI 관찰)**. 자동 26개·키 저장 1개·Core 164·세션 55 통과. 게임의 Unity·Steam 확인 대상 아님. R307 API 방식은 별도 `Api.cmd` |
 | **폰 러시 초반 장애물 1-1 왕실 수로 정원 v31(11-03, R305)** | 슬롯 1에 `Early_1-1_RoyalWaterGarden`(뿌리 프리팹 + `RoyalWaterGardenBuilder`, 메뉴 Build Early 1-1 Royal Water Garden). ㄹ자 한 길 259.1 m: 광장 작은 회전 막대 5 → 물기둥 8 → 출렁 발판 8(+ P4 지름길) → 갑문 수문 3 + 물살 → 로봇 팔 2 → 가로 보트 4줄 × 2척(판 씨앗) → 성문 → 출구 테라스 · 4단 · 입구 띠. 새 부품 `GardenGeyser` · `GardenBoat` · `BoatLanes` · `RobotSweep` · `WaterCurrent` · `TiltingPad`(StateDrivenMover) · `GardenHits`, Core `RoyalWaterGardenRules`(시험 3개). 시험 씬은 정원 → 대계단 현관홀 순서. Core 156 · 세션 55 · 실제 DLL 컴파일, **Unity 미확인** → [PAWN_RUSH_ROYAL_GARDEN](Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md) |
@@ -390,6 +393,8 @@
 
 ## 2. 무엇이 되고 무엇이 안 되는가
 
+**R311 모델링 자료:** 초반3D는 옛 사본 대신 C·D·A 공용뷰어다. A는 공유판 중앙단면, 나머지는 x−12단면. 모든구역 게임소품 숨김, **주변장식 숨김은 초반만** 제공. C 권양기·줄을 측면으로 빼 다리 진입4m를 비우고 D완료8회전을 반영했다. 이미지10장은 건축·가구·재료의 외형제안이며 정확한 수량·경로·치수는3D와제작지침을 우선한다. 이미지·CPU그림 AI검토와자동검사만 했으며 **실제 브라우저·Unity·Steam 확인/프리팹 구현 없음**이다.
+
 **R310 3D 시각자료:** 중반 B·E·F·J와 후반 G·H·I를 기존 초반과 같은 44 × 36 m 연결 규격의 제안으로 볼 수 있다. 원래 Claude 세션을 복제한 문맥으로 검토했으며 원래 세션·프리팹은 수정하지 않았다. 장면 생성·좌표·카메라·팀 문 검사는 통과했지만 실제 브라우저 화면·마우스·모바일 조작은 미확인이다. Unity 프리팹·물리·게임 시간·온라인 구현으로 취급하지 않는다.
 
 **R308 개발 도구:** GPT와 Claude의 답변 전달·검토·정리를 **계정 로그인**으로 실행한다([사용법](Tools/AiBridge/README.md)). 새 요청과 명시적으로 첨부한 참고 파일만 전달하며 기존 앱의 채팅은 자동 공유하지 않는다. 실제 계정 전달 시험은 짧은 요청 3회까지다. 원래 API 직접 연결(R307)은 키가 없어 미시험인 상태로 별도 보존한다. 게임 기능의 확인 상태에는 영향 없다.
@@ -398,6 +403,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **폰 러시 초반3D·전체10종 상세 이미지**(R311) | 모델링 참고자료 작성, 공통건축3벌·게임킷10벌 제작지침. 장면70·3팀문·50장소조합·표시13종·고유구조 통과. 이미지/CPU배치 AI확인, 실제브라우저·Unity·사용자확인전 | [이미지 갤러리](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html) · [모델링 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md) |
 | **폰 러시 중반·후반 미니게임 3D**(R310): 중반 4종·후반 3종, 앞뒤 구간 대표 소품·팀 스테이션·완료 연출 | 기획용 HTML 작성, 장면·카메라 49건과 팀 문 7건 통과. 실제 브라우저 조작·사용자 확인 전, **Unity 구현 없음** | [KingRush/PAWN_RUSH_MINIGAME_PREFABS](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) |
 | **폰 러시 1-1 왕실 수로 정원 v31**(R305): 슬롯 1 초반 장애물, 작은 회전 막대 5 · 물기둥 · 출렁 발판과 매우 어려운 지름길 · 갑문 · 로봇 팔 · 가로 보트(판 씨앗) · 성문, 시험 씬에서 정원 → 대계단 현관홀 | 코드 · Core 시험 · 실제 DLL 컴파일 · 파이썬 좌표 점검, **Unity 미확인**. 아트는 Blender 원본(`seoungtest`) 그대로, 연꽃 발판 온라인 없음 | [KingRush/PAWN_RUSH_ROYAL_GARDEN](Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md) |
 | **폰 러시 구간 프리팹**(R300): 한 판 7구간 무작위 조합, 2-1 대계단 현관홀(굴러오는 석상·카펫, 샹들리에 낙하, 날개 계단 진자·컨베이어, 회랑 바람, 들리는 다리, 승강 계단참, 발코니 기병·시계 문), 3·4대는 날개 하나, 시험 씬 F8 새 판·F9 인원·CSV | 코드·Core 시험·파이썬 좌표 점검, **Unity 미확인**. 다른 6슬롯 프리팹·온라인 없음 | [KingRush/PAWN_RUSH_SECTIONS](Docs/KingRush/PAWN_RUSH_SECTIONS.md) |
@@ -447,6 +453,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R311 모델링 검토:** [전체 이미지](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html)에서 구역별 건축·소품·재질 인상을 보고 [제작 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md)과3D로 수량·축·이동공간을 맞춘다. 초반C 권양기옆4m진입, A공유판/둘레1m, E팀당6탑, J정확한8통경로, H러너비움, I단위1.1m빔을우선확인. 이후공통건축3벌과대표게임C/E/G부터모델링하는순서는제안이다. 아직사용자확인·Unity모델링/적용은하지않았다. 다음 요청 **R312**.
 
 **R310 미리보기 확인:** [중반](Docs/KingRush/PAWN_RUSH_MID_MINIGAMES_3D.html)·[후반](Docs/KingRush/PAWN_RUSH_LATE_MINIGAMES_3D.html)을 일반 브라우저에서 열어 게임 전환·단면·걸어 들어가기를 본다(Three.js CDN 인터넷 필요). 사용자는 아직 확인하지 않았다. 서고 문 가림·B 아래층·J 도약 길·G 모퉁이·H 대비·I 빛줄기 높이와 앞뒤 연결 인상을 확인한 뒤 Unity 구현할 게임을 정한다. 현재 요청은 3D 예시로 끝내며 Unity 구현을 추가하지 않는다. 원격 main의 R309 현관홀 아트를 보존하고 이번 번호는 R310으로 배정했다. 다음 요청 **R311**.
 
@@ -660,6 +668,7 @@ Tools/
 
 | 작업 | 먼저 읽을 것 | 그다음 코드 |
 |---|---|---|
+| 폰 러시 초반3D/전체10종 모델링 이미지(R311) | [3D·출처·검사](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) → [모델링 상세 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md) → [이미지갤러리](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html), [생성프롬프트](Docs/KingRush/ConceptArt/R311/PROMPTS.md). 치수/수량은생성그림보다표/3D우선 | 공용 `PAWN_RUSH_MINIGAME_PREVIEW.js`·`.css`, `Tools/Generators/build_minigame_previews.mjs`(3HTML), `Docs/KingRush/ConceptArt/R311/`(원본10장) |
 | 폰 러시 중반·후반 미니게임 3D(R310) | [미리보기·확인 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) → [사용자 구역 기획 원문](Docs/KingRush/PAWN_RUSH_MINIGAME_ZONES_v0.1.md), [기존 초반 3D](Docs/KingRush/PAWN_RUSH_EARLY_PLAZA_3D.html). 이 작업의 분류는 중반 B·E·F·J / 후반 G·H·I | `Docs/KingRush/PAWN_RUSH_MINIGAME_PREVIEW.js`·`.css`, `Tools/Generators/build_minigame_previews.mjs`(중반·후반 독립 HTML 생성) |
 | GPT·Claude 계정 연결(R308), 별도 API 방식(R307) | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md) → [계정 로그인·실행](Tools/AiBridge/README.md), [API 방식](Tools/AiBridge/API.md) | `Tools/AiBridge/cli-bridge.mjs`·`cli-bridge.test.mjs`, `Start.ps1`·`Install-Claude.ps1`, 기존 `bridge.mjs`·`Start-Api.ps1` |
 | 무엇이든 처음 | 이 파일 → [REQUIREMENTS](Docs/Project/REQUIREMENTS.md) → [DECISIONS](Docs/Project/DECISIONS.md) → [PITFALLS](Docs/Environment/PITFALLS.md) | — |
