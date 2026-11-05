@@ -25,7 +25,7 @@ def refs(block,key):
     return [int(x) for x in re.findall(r'fileID: (\d+)',m[1])] if m else []
 def clean(text): return '\n'.join(line.rstrip() for line in text.splitlines())+'\n'
 
-class Builder:
+class LegacyBuilder:
     def __init__(self):
         self.original=blocks((ROOT/SOURCE).read_text())
         self.raw=dict(self.original)
@@ -423,6 +423,99 @@ class Builder:
         self.report['solo_archive_route']=[ids[t] for t in self.report['solo_archive_route']]
         self.report['approval_gate']=ids[self.report['approval_gate']]
         self.report['local_id_scheme']='hierarchy-type-sha256-v2'
+        return text
+
+class Builder(LegacyBuilder):
+    def __init__(self):
+        self.d=kit.Doc(2000000);self.root=self.d.go('WarRoomComplete - Operations Offices and Headquarters')
+        self.raw={};self.fake={};self.report={'prefab':PREFAB,'scene':SCENE,'new_obstacles':[],'occluder_boxes':[], 'transition_route':[], 'footprint_m':[320,320]}
+        self.c=kit.Course.__new__(kit.Course);self.c.d=self.d;self.c.root=self.root;self.c.accent='Teal';self.c.units=[];self.c.cuts=[];self.c.bi=0
+        self.c.beat=self.root
+    def scroll(self,z,phase):
+        g=self.group('Rolling command map '+str(z),pos=(0,0,z));segments=[]
+        for i in range(8):
+            part=self.group('Parchment strip '+str(i),g,(0,0,i*2+1))
+            self.box(part,'Walkable parchment',(0,-.15,0),(12,.3,2),'Ivory')
+            self.box(part,'Map advance line',(0,.025,0),(.15,.03,1.8),'Teal',False)
+            segments.append(part)
+        roller=self.box(g,'Brass scroll roller',(0,.6,0),(1.2,6.2,1.2),'Gold',False,rot=(0,0,.70710678,.70710678),shape='Cylinder')
+        h=self.group('Grab to slow map',g,(5,1,-2));rb=self.d.rigidbody(h,True)
+        self.box(h,'Handle',(0,0,0),(.3,.3,1.4),'Gold')
+        self.d.script(g,'RollingMapBridge',kit.fields(roller=kit.ref(roller['tr']),handle=kit.ref(rb),length=16,openSeconds=5,rollSeconds=5,closedSeconds=2,unfurlSeconds=3,heldSpeed=.35,phaseSeconds=phase)+'  segments:\n'+''.join('  - '+kit.ref(s['go'])+'\n' for s in segments))
+    def exhibit(self,pos,ply):
+        # Replay the same coordinate data used by the live board, then show the selected move.
+        rows=[r.split(',') for r in (ROOT/'Assets/Resources/GiantChessScore.txt').read_text().strip().splitlines()]
+        board=list('RNBQKBNRPPPPPPPP................................pppppppprnbqkbnr')
+        for row in rows[:ply]:
+            a,b,ra,rb=map(int,row[:4]);board[b]=board[a];board[a]='.'
+            if ra>=0:board[rb]=board[ra];board[ra]='.'
+        g=self.group('Score preview '+str(ply+1)+' '+rows[ply][5],pos=pos)
+        self.box(g,'Framed score board',(0,4,0),(10,10,.5),'Wood')
+        for sq,piece in enumerate(board):
+            x=(sq%8-3.5);y=4+(sq//8-3.5)
+            self.box(g,'Square '+str(sq),(x,y,-.3),(.98,.98,.08),'White' if (sq%8+sq//8)%2 else 'Slate',False)
+            if piece!='.':
+                self.box(g,'Piece '+piece,(x,y,-.5),(.48,.48,.2),'Gold' if piece.isupper() else 'Purple',False,shape='Sphere')
+        a,b=map(int,rows[ply][:2]);
+        for sq,color in ((a,'Blue'),(b,'Safe')):
+            self.box(g,'Move '+str(sq),(sq%8-3.5,4+sq//8-3.5,-.65),(.75,.75,.1),color,False)
+        import math
+        points=[(a%8-3.5,4+a//8-3.5)]
+        if board[a].upper()=='N':points.append((b%8-3.5,4+a//8-3.5))
+        points.append((b%8-3.5,4+b//8-3.5))
+        for start,finish in zip(points,points[1:]):
+            angle=math.atan2(finish[1]-start[1],finish[0]-start[0])
+            self.box(g,'Actual move path',((start[0]+finish[0])/2,(start[1]+finish[1])/2,-.8),(math.dist(start,finish),.12,.06),'Teal',False,rot=(0,0,math.sin(angle/2),math.cos(angle/2)))
+        self.d.script(g,'WarRoomScoreLabel',kit.fields(label='"'+str(ply//2+1)+('. ' if ply%2==0 else '... ')+rows[ply][5]+'"'))
+    def save(self):
+        for x in (-160,160):self.wall(self.root,'Square perimeter side '+str(x),(x,20,10),(2,60,320))
+        for x in (-83,83):self.wall(self.root,'Square perimeter entrance '+str(x),(x,20,-150),(154,60,2))
+        self.wall(self.root,'Entrance header',(0,20,-150),(12,20,2))
+        self.box(self.root,'Operations ceiling',(0,30,-80),(320,1,140),'Slate')
+        for x in (-87.5,87.5):self.box(self.root,'Side room scenery floor '+str(x),(x,-1.4,-80),(143,.8,138),'Slate')
+        # Keep the playable strip narrow. The side rooms are scenery, without bypass floors.
+        for a,b in ((-146,-100),(-60,-20),(-20,0)):
+            self.box(self.root,'Approach floor '+str(a),(0,-.4,(a+b)/2),(12,.8,b-a),'Ivory')
+        for x in (-14,14):self.wall(self.root,'Operations corridor side '+str(x),(x,10,-77),(1,40,146))
+        self.box(self.root,'Sunken map pit',(0,-12,-88),(28,1,48),'Night',False)
+        self.press(-122,-3,6,0);self.press(-122,3,6,2.675)
+        self.scroll(-100,0);self.scroll(-76,3)
+        self.box(self.root,'Fixed seal island',(0,-.4,-80),(8,.4,8),'Wood',True,shape='Cylinder')
+        self.box(self.root,'Royal seal rest island',(0,.025,-80),(5,.05,5),'Gold',False,shape='Cylinder')
+        # Reuse the authored moving pawn formation geometry, with both rows on the forward axis.
+        original_raw=self.raw
+        self.raw={};self.beat=lambda i:self.root
+        self.c.beat=self.root
+        before=len(self.d.all);self.formations()
+        for obj in self.d.all[before:]:
+            if obj['parent'] is self.root and obj['name']=='Troop redeployment - moving passage':obj['pos']=(0,0,obj['pos'][2]-105)
+        self.raw=original_raw
+        self.headquarters()
+        for obj in self.d.all:
+            if obj['name']=='HQ rear wall':obj['pos']=(-66,24,170);obj['scale']=(118,68,2)
+        self.wall(self.hq,'HQ rear exit right',(66,24,170),(118,68,2))
+        self.wall(self.hq,'HQ rear exit header',(0,34,170),(14,48,2))
+        self.box(self.root,'Final exit walkway',(0,-.4,158),(12,.8,24),'Ivory')
+        self.exit['pos']=(0,0,169)
+        # The outer square's north edge is the HQ rear wall extended to both corners.
+        for x in (-142,142):self.wall(self.root,'North perimeter return '+str(x),(x,20,170),(36,60,2))
+        for x in (-28,28):
+            for z in (-130,-82,-30):
+                self.banner(self.root,(x,10,z))
+                self.shelf(self.root,(x,0,z))
+        for pos,ply in (((-10,0,-132),0),((10,0,-112),21),((-10,0,-57),33),((80,0,138),81)):
+            self.exhibit(pos,ply)
+        entry=self.group('Entry - travel forward',pos=(0,0,-142))
+        cps=[self.group('Checkpoint '+str(i),pos=(0,0,z)) for i,z in enumerate((-106,-80,-30),1)]
+        end=self.group('Approach exit',pos=(0,0,-4));self.chessEntry=end
+        route=[entry]+[self.group('Forward waypoint '+str(z),pos=(0,0,z)) for z in (-128,-106,-100,-84,-80,-76,-60,-49,-38,-30,-18)]+[end]
+        def arr(name,objs):return '  '+name+':\n'+''.join('  - '+kit.ref(o['tr'])+'\n' for o in objs)
+        module=self.d.script(self.root,'CourseModule',kit.fields(courseId='"3-1-HQ"',displayName='"직선 작전실과 총지휘부"',entry=kit.ref(entry['tr']),exit=kit.ref(self.exit['tr']),minigameSlot=kit.ref(self.hq['tr']),targetSeconds=150,laneWidth=12)+arr('checkpoints',cps)+arr('route',route)+'  placementBounds:\n    m_Center: {x: 0, y: 20, z: 10}\n    m_Extent: {x: 162, y: 50, z: 162}\n')
+        self.c.context(self.root);self.d.script(self.root,'PhysicsProfile',kit.fields(physicsRate=120,solverIterations=24))
+        self.d.script(self.root,'GiantChessCourse',kit.fields(pawnPrefab='{fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}',tuning='{fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}',tileSize=16,replaySpeed=5,moveSeconds=3,warningSeconds=5,restSeconds=2,knockbackSpeed=12,upwardSpeed=9,botsEnabled=1,boardPreview=kit.ref(self.preview['go']),chessSpawnDepth=4))
+        self.d.script(self.root,'GiantChessApproach',kit.fields(course=kit.ref(module),chessEntry=kit.ref(end['tr']))+'  transitionRoute: []\n')
+        text,ids=stabilize(clean(self.d.render(scene=False)));self.serialized_root=ids[self.root['tr']]
+        self.report.update(root=ids[self.root['go']],root_transform=self.serialized_root,local_id_scheme='hierarchy-type-sha256-v2',target_seconds=[120,180],score_plies=[0,21,33,81])
         return text
 
 def scene(prefab_root):

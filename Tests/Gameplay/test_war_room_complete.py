@@ -66,38 +66,6 @@ class CompleteWarRoom(unittest.TestCase):
                 self.assertTrue(external.startswith('0000000000000000') or external in guids,external)
             elif int(fid):self.assertIn(fid,self.data)
         self.assertFalse((ROOT/'Assets/Scenes/RoyalPalaceCourseTest.unity').exists())
-    def test_transition_is_continuous_and_static_walls_do_not_block_walking(self):
-        _,a,body=self.scripts_of('GiantChessApproach')[0]
-        course=fields(self.data[str(number(a['course']))])
-        route=self.route(body,'transitionRoute')
-        self.assertEqual(transform(self.data,number(course['exit'])),route[0])
-        self.assertEqual(route[0],(0,0,-60));self.assertEqual(route[-1],(0,0,-4))
-        self.assertEqual(transform(self.data,number(a['chessEntry'])),route[-1])
-        floors=[(lo,hi) for _,lo,hi,moving in self.boxes if not moving and abs(hi[1])<.01]
-        # The live controller's existing entry platform covers Z[-20,0].
-        tile=float(self.scripts_of('GiantChessCourse')[0][1]['tileSize'])
-        floors.append(((-4*tile,-.8,-20),(4*tile,0,0)))
-        for start,end in zip(route,route[1:]):
-            steps=int(math.dist(start,end)*2)+1
-            for j in range(steps+1):
-                p=tuple(a+(b-a)*j/steps for a,b in zip(start,end))
-                self.assertTrue(any(lo[0]-.01<=p[0]<=hi[0]+.01 and lo[2]-.01<=p[2]<=hi[2]+.01 for lo,hi in floors),p)
-                for name,lo,hi,moving in self.boxes:
-                    if moving or not(lo[1]<p[1]+1.2<hi[1]):continue
-                    self.assertFalse(lo[0]-.5<p[0]<hi[0]+.5 and lo[2]-.5<p[2]<hi[2]+.5,(name,p))
-    def test_outside_route_cannot_see_hq_even_when_door_is_open(self):
-        _,binding,_=self.scripts_of('GiantChessApproach')[0]
-        approach=self.data[str(number(binding['course']))]
-        sources=self.route(approach,'route')
-        targets=[((x-3.5)*16,.2,(z+.5)*16) for x in range(8) for z in range(8)]+[(-86,44,64),(86,44,64)]
-        # Only actual saved HQ/vestibule colliders, excluding the moving reveal door.
-        walls=[(lo,hi) for name,lo,hi,moving in self.boxes if not moving and any(n in name for n in ('HQ ','Vestibule ','Archive sight screen','Archive screen'))]
-        self.assertGreater(len(walls),10)
-        for p in sources:
-            for eye in (2,6,12):
-                source=(p[0],p[1]+eye,p[2])
-                for target in targets:
-                    self.assertTrue(any(segment_hits(source,target,lo,hi) for lo,hi in walls),(source,target))
     def test_closed_door_blocks_final_approach_and_volume_covers_the_leaves(self):
         doors=[(lo,hi) for name,lo,hi,_ in self.boxes if name=='Oak command door']
         self.assertEqual(len(doors),2)
@@ -108,23 +76,6 @@ class CompleteWarRoom(unittest.TestCase):
         self.assertEqual(volume['m_IsTrigger'],'1')
         self.assertGreaterEqual(vector(volume['m_Size'])[1],12)
         self.assertGreaterEqual(float(f['holdOpenSeconds']),1)
-    def test_new_hazards_have_telegraphs_and_no_crushing_head_colliders(self):
-        presses=self.scripts_of('CommandStampPress');self.assertEqual(len(presses),3)
-        self.assertEqual(len(self.scripts_of('CommandPointerSweep')),4)
-        self.assertEqual(len(self.scripts_of('AirVent')),1)
-        self.assertEqual(len(self.scripts_of('ChessClockGate')),4)
-        for _,f,_ in presses:
-            self.assertGreaterEqual(float(f['warningSeconds']),1.4)
-            self.assertGreaterEqual(float(f['restSeconds']),2)
-            self.assertNotEqual(number(f['warningVisual']),0)
-            area=fields(self.data[str(number(f['impactArea']))]);self.assertEqual(area['m_IsTrigger'],'1')
-            owner=number(f['m_GameObject']);head=self.owners[owner]
-            for box in self.data.values():
-                if not box.startswith('--- !u!65 '):continue
-                tid=self.owners[number(fields(box)['m_GameObject'])]
-                while tid:
-                    self.assertNotEqual(tid,head,'Press heads must not pin a ragdoll against the floor')
-                    tid=number(fields(self.data[str(tid)])['m_Father'])
     def test_entry_spawns_and_board_preview_are_not_blocked_by_saved_walls(self):
         _,game,_=self.scripts_of('GiantChessCourse')[0]
         self.assertEqual(float(game['tileSize']),16);self.assertEqual(float(game['replaySpeed']),5)

@@ -338,14 +338,14 @@ namespace ChessFight.RagdollLab
             string move = ply < score.Length ? $"{ply / 2 + 1}. {(ply % 2 == 0 ? "백" : "흑")} {score[ply][5]}" : "Rc2# · 기보 종료";
             int officeSeconds = approach != null ? Mathf.FloorToInt(approach.Elapsed(selected)) : 0;
             string stage = approach != null && approach.Available && !approach.Entered(selected)
-                ? $"작전실 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount} · {officeSeconds / 60}:{officeSeconds % 60:00} / 목표 2~3분"
+                ? $"작전실 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount} · {officeSeconds / 60}:{officeSeconds % 60:00} / 전체 목표 2~3분"
                 : $"총지휘부 · 거인 체스 · 작전실 기록 {officeSeconds / 60}:{officeSeconds % 60:00}";
             string state = approach != null && approach.Available && !approach.ChessStarted
                 ? "체스판 입구 도착 대기"
                 : phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비";
             GUI.Label(new Rect(24, 20, 690, 140), $"{stage} · {move}\n{state} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 현재 구간 복귀 · F3 전체 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
             if (inOffices) GUI.Label(new Rect(24, 166, 690, 50),
-                "포격 지도: 초록 칸으로 이동 · 병력 대열: 움직이는 틈을 통과\n승인문: 두 인장에 한 명씩 서기 · 혼자라면 금색 선을 따라 우회", hud);
+                "작전지도: 펼쳐질 때 전진 · 병력 대열: 움직이는 틈을 통과\n지도 손잡이: 우클릭 잡기로 감속 · 액자: 후반 기보 예고", hud);
         }
         void OnDestroy()
         {

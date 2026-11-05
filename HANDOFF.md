@@ -4,10 +4,12 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
-최종 갱신: **2026-11-02**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
+최종 갱신: **2026-11-05**(R65 **`main` 병합**: `JY-kingrush` 기준 + `JY-ragdoll_v2`의 폰러시 맵 시험 씬·장애물 + `JY-lobby`의 방장 장애물 시각. 그 전: R64 설정 창: `claude/settings-window` → 원격 `JY-kingrush`에 푸시. R63 메뉴 디자인 C 수정안: `claude/menu-c` → 원격 `JY-kingrush`에 푸시. R62 결과 화면은 10-01 원격 `JY-kingrush`에 푸시(`33f1648`). R61 채팅은 10-01 원격 `JY-kingrush`에 푸시(`e64012e`). R60 나간 사람만 나가기·빈자리 4분, R59 경기 중 빈자리 채우기, R58 로딩 화면·동시 출발은 09-30 원격 `JY-kingrush`에 푸시(`6b4118a`). 그 전 09-28: `feature/ui-sample-b`, `claude/host-migration`을 `JY-kingrush`에 합침) · 이 폴더의 작업 브랜치 **`JY-kingrush`**(R56, 출발점 `JY-gpt_gamemode@852eb2b`).
 
 > **작업 브랜치 = `main` (R66, 사용자 10-06).** 이 아래와 다른 문서에 남은 예전 브랜치 지시(`Network`, `JY-lobby`, `JY-gpt_gamemode`, `JY-kingrush`에만 커밋 등)는 **모두 이 결정으로 대체**됐다. AI 작업은 `main`에 커밋·푸시한다. 다른 브랜치는 기록용으로 남는다.
 >
+> **R122(사용자, 11-05):** 컨셉 미니맵 구현: 전체320m 정사각 안 직선 압인기→말리는 지도2개/인장→폰 대열→문→거인 체스. 실제 잡기 감속·기보 재생 액자4개. 단일 프리팹/고정ID 유지. 자동42·Core113·세션40·런타임7 통과, Unity 대기. [현재 안내](Docs/KingRush/WAR_ROOM_COMPLETE.md).
+
 > **R121(사용자, 11-02):** Prefab mismatch 원인 수정: 순번 fileID 재사용→계층/타입 기반 고정 ID. WarRoomComplete GUID 일회 이전·씬 동시 연결, 구조49·Core113·세션40·런타임7 통과. 오류 상태 씬 저장 금지→Unity 종료/Pull/저장된 씬 재열기. Unity 재확인 대기. [상세](Docs/KingRush/WAR_ROOM_COMPLETE.md).
 
 > **R120(사용자, 11-02):** 작전실 외벽160×160m 정사각형·4구간으로 단축·북쪽 횡단/체크포인트2 이동. 일반 경로639m, 총지휘부 입장까지2~3분 목표·개별 경과시간 HUD. 구조46·Core113·세션40·런타임7 통과, Unity 시간/주행 대기. [편집](Docs/KingRush/WAR_ROOM_COMPLETE.md).
@@ -176,6 +178,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **직선 작전실(R122)** | 전체320m 정사각 안 총지휘부 포함·지도 발판/기보 예고, Unity 대기 |
 | **프리팹 불일치 수정(R121)** | 고정 ID·원본/씬 재연결, Unity 재임포트 확인 대기 |
 | **정사각 작전실(R120)** | 160×160m·4구간/639m·2~3분 목표, 개별 타이머. Unity 미확인 |
 | **작전실 전술 장애물(R119)** | 포격 지도·폰 재배치·2인 승인/솔로 우회. 자동 검사 통과, Unity 주행/밸런스 대기 |
@@ -259,6 +262,7 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **컨셉 미니맵 구현(R122)** | 직선 동선·지도 잡기 감속·기보 액자4개, 오프라인 | [시험](Docs/KingRush/WAR_ROOM_COMPLETE.md) |
 | **Prefab mismatch(R121)** | 타입이 바뀌는 ID 재사용 방지·GUID 일회 이전 | [업데이트](Docs/KingRush/WAR_ROOM_COMPLETE.md) |
 | **정사각 작전실(R120)** | 체크포인트/우회로 유지·경과시간 기록 | [시험](Docs/KingRush/WAR_ROOM_COMPLETE.md) |
 | **작전실 전술 장애물(R119)** | 단일 프리팹에 전술 포격/폰 대열/협동 지름길, 오프라인 | [편집](Docs/KingRush/WAR_ROOM_COMPLETE.md) |
@@ -333,6 +337,8 @@
 | **아직 없음** | 전체 기물 선택·스킬, 킹러시 네트워크 코스/승패 전달, 공통 재접속(로딩 동기화는 위 R58, 호스트 이전은 위 방장 줄), 신뢰 이벤트 채널. 킹러시 승패는 R56 오프라인만. **소드파이트만** R47의 폰 전투·장외 점수·부활·결과·래그돌 전달이 있음 | [ROADMAP](Docs/Project/ROADMAP.md), [소드파이트](Docs/GameModes/SwordFight/README.md) |
 
 ## 3. 진행 중인 일과 다음 할 일
+
+**R122 우선:** GiantChessCourse에서 직선 주행, 두 지도 발판/고정 섬·우클릭 잡기 감속·R 복귀, 폰 대열/자동문/기보 액자 가독성/거인 체스까지 확인. 전체2~3분은 실측 필요.
 
 **R121 우선:** 오류 씬 저장 없이 Unity 종료→main Pull→GiantChessCourse 재열기로 Prefab mismatch 해소 확인. 로컬 별도 씬은 백업 후 새 프리팹 배치 필요. 자동 검사만 통과, Unity 성공 판정 금지.
 

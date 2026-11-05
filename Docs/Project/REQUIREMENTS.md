@@ -205,3 +205,8 @@
 ## R121 — Prefab mismatch 타입 불일치 오류 수정 (2026-11-02)
 
 사용자 오류: “The instance object in the scene is referencing a corresponding source object in the Prefab of a different type.” 생성기의 순번 fileID가 재생성 시 다른 타입에 재사용되는 원인 확인. 계층/클래스 기반 ID로 변경하고 GUID 일회 이전·GiantChessCourse 인스턴스 연결 동시 갱신. 49검사·Core113·세션40·런타임7 통과, 전체136원본 타입 참조 일치. Unity 재임포트/로컬 씬 확인 대기. [업데이트](../KingRush/WAR_ROOM_COMPLETE.md). 기록을 추가한 main 커밋.
+
+
+## R122 — 승인된 컨셉 미니맵을 단일 장애물 프리팹으로 구현 (2026-11-05)
+
+사용자: 직선 동선·전체 정사각 안 후반 거인 체스, 포격 대신 말리는 작전지도와 기보 예고 전시를 프로토타입으로 제작. WarRoomComplete 재구성·잡기 감속 지도2개·고정 휴식처·데이터 기반 액자4개·기존12명/체크포인트 연결. 자동42·Core113·세션40·런타임7 통과, Unity/시간 밸런스 미확인. [상세](../KingRush/WAR_ROOM_COMPLETE.md). 이 기록을 추가한 main 커밋.

@@ -18,3 +18,5 @@ R119: 통합 생성기에 전술 지도 포격판·이동 폰 대열2줄·이중
 R120: `square_route()`가 통합본의 4/5구간을 비활성화하고 횡단 바닥과 체크포인트2를 재배치한다. 외벽 중심선160×160m, 활성 구간1/2/3/6, 작전실 목표120~180초. 원본5개 프리팹에는 반영하지 않는다.
 
 R121: `stable_prefab_ids.py`로 통합 프리팹의 계층/클래스 기반 ID를 유지한다. 순번 ID는 장식 삽입 시 타입이 바뀌어 Unity Prefab mismatch를 일으켰다. WarRoomComplete GUID는 이번에 한 번 이전했으며 이후 고정한다. 씬 생성은 실제 meta GUID를 읽는다.
+
+R122: Builder가 컨셉 미니맵의 직선 코스를 생성한다. LegacyBuilder는 공통 소품/총지휘부 제작 함수 재사용용이며 예전 동선은 출력하지 않는다. stable_prefab_ids.py와 GUID는 유지한다.
