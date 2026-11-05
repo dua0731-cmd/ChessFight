@@ -38,6 +38,10 @@ namespace ChessFight.PawnRush
         public const float HallFloor = -4f, Deep = -5f;
         public static readonly Vector3 Entry = new Vector3(0f, 0f, -12f), Exit = new Vector3(0f, 15f, 158.3f);
 
+        // R309: a mark under Content saying the blockout is this builder's (seoungtest R323 ~ R413 changed it under the
+        // art); GrandStairHall builds a prefab baked without it again before dressing it.
+        public const string LayoutMark = "Layout v2 (seoungtest R413)";
+
         public static GameObject Build(GrandStairHall hall)
         {
             var kit = hall.Kit;
@@ -56,6 +60,7 @@ namespace ChessFight.PawnRush
             b.In("Hall", () => Shell(b));
             b.In("Checkpoints", () => Checkpoints(b));
             Path(b);
+            new GameObject(LayoutMark).transform.SetParent(root.transform, false);
 
             var section = hall.GetComponent<PawnRushSection>();
             if (section != null)

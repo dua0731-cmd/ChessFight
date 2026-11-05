@@ -70,21 +70,17 @@ namespace ChessFight.PawnRush
         static void CentralLanding(CourseBuilder b)
         {
             var k = b.kit;
-            // x -14..14, z 52..66 (from z 51: the upper flight's last step), railed round; at its north-east corner
-            // the spiral's foot leads on (R303).
+            // x -14..14, z 52..66 (from z 51: the upper flight's last step); at its north-east corner the spiral's foot
+            // leads on (R303). R340 (승규 11-04): no railings round it any more - a chandelier's hit can throw a pawn
+            // off its edges (the hall model's balustrades there are cut out too, Course01v4Builder.OpenLanding).
             Mass(b, "Central landing", -14f, 14f, 51f, 66f, 8f);
-            Rail(b, "Central landing rail N", -14f, 4f, 65.7f, 66f, 8f);
-            Rail(b, "Central landing rail W", -14f, -13.7f, 51.3f, 65.7f, 8f);
-            Rail(b, "Central landing rail E", 13.7f, 14f, 51.3f, 63.5f, 8f);
-            Rail(b, "Central landing rail S (west)", -14f, -8.3f, 51f, 51.3f, 8f);
-            Rail(b, "Central landing rail S (east)", 8.3f, 14f, 51f, 51.3f, 8f);
             // The king statue: a 4 x 4 m base at (0, 8, 63), 6 m tall, unclimbable. The one fixed cover from the shock.
-            Solid(b, "King statue base", V(-2f, 8f, 61f), V(2f, 9.2f, 65f));
-            b.Cylinder("King statue body", V(0f, 9.2f, 63f), 2.4f, 2.6f, k.wallNoClimb, true, true);
-            b.Cylinder("King statue collar", V(0f, 11.8f, 63f), 3f, .3f, k.wallNoClimb, true, true);
-            b.Sphere("King statue head", V(0f, 12.9f, 63f), 1.7f, k.wallNoClimb).AddComponent<NoClimbSurface>();
-            Solid(b, "King statue cross (upright)", V(-.2f, 13.5f, 62.8f), V(.2f, 14f, 63.2f));
-            Solid(b, "King statue cross (bar)", V(-.5f, 13.65f, 62.8f), V(.5f, 13.85f, 63.2f));
+            // R413 (승규 11-05 "교체 해주고 발판 지우고"): the statue is a queen now (queen_statue_v52.py, 6 m, on the
+            // floor with no pedestal; Course01v4Builder.LandingQueen draws it), so the blocks are her shape: her round foot
+            // and body (2.6 m across up to 4.5 m, the names kept for SectionValidator's unclimbable list) and her crown.
+            // Her two crossed maces are thin and collide with nothing.
+            b.Cylinder("King statue body", V(0f, 8f, 63f), 2.6f, 4.5f, k.wallNoClimb, true, true);
+            b.Cylinder("King statue collar", V(0f, 12.5f, 63f), 1.6f, 1.5f, k.wallNoClimb, true, true);
             // The falling chandeliers (§5): ChandelierRain draws them.
             var rain = b.Group("Chandelier rain");
             rain.gameObject.AddComponent<ChandelierRain>().Configure(k.rankGold);
@@ -102,7 +98,21 @@ namespace ChessFight.PawnRush
         public const float HallRadius = 31f, SpiralFrom = 297f, SpiralTo = 717f, SpiralOuter = 28.75f, SpiralInner = 10f;
         public const float DaisTop = 16f, DaisRadius = 8f, BalconyFront = 121f;
 
+        // R403: the spiral foot's north edge (the curving stair's inner corner at SpiralFrom) and the gold threshold on the
+        // way where the foot's marble gives way to the chessboard (PR_SpiralChecker), 1 m along its middle line.
+        public const float SpiralFootNorth = 68.39f, SpiralThreshold = SpiralFrom + 2f;
+
         public static float SpiralRadius(float phi) => Mathf.Lerp(SpiralOuter, SpiralInner, (phi - SpiralFrom) / (SpiralTo - SpiralFrom));
+
+        /// <summary>A point at φ (degrees, anticlockwise from +x), r from Hub, height y, in the hall's content frame.</summary>
+        public static Vector3 HallPolar(float phi, float r, float y) => Polar(phi, r, y);
+
+        /// <summary>The way's heading at φ (anticlockwise), a level unit vector in the content frame.</summary>
+        public static Vector3 SpiralHeading(float phi)
+        {
+            float a = phi * Mathf.Deg2Rad;
+            return new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a));
+        }
 
         static Vector3 Polar(float phi, float r, float y)
         {
@@ -125,14 +135,17 @@ namespace ChessFight.PawnRush
         static void Spiral(CourseBuilder b)
         {
             var k = b.kit;
-            // The spiral's foot off the landing's north-east corner (y 8).
-            Mass(b, "Spiral foot", 4f, 15.5f, 63.5f, 71.5f, 8f);
-            Rail(b, "Spiral foot rail W", 4f, 4.3f, 66f, 71.5f, 8f);
-            Rail(b, "Spiral foot rail N", 4.3f, 10.5f, 71.2f, 71.5f, 8f);
+            // The spiral's foot off the landing's north-east corner (y 8). R348 (승규 11-04): no railings, like the landing
+            // it opens off (the hall model's are cut out too, Course01v4Builder.OpenLanding).
+            // R403 (승규 11-04 "대리석 바닥에서 나선형 코스로 넘어 갈 때 합쳐지는 구간을 자연스럽게"): its north edge on the
+            // curving stair's inner corner (φ 297°, r 26.5: z 68.39), not 3.1 m further at z 71.5 - that part stuck out as
+            // a flat marble shelf beside the rising way, a lip with a gold edge along it. Everything behind the stair's
+            // first edge is still covered (the landing to z 66, this foot from there to the corner).
+            Mass(b, "Spiral foot", 4f, 15.5f, 63.5f, SpiralFootNorth, 8f);
 
             // 3a. The curving stair (φ 297 -> 372, y 8 -> 10): along the wall, its inner edge open to the hall floor
             // 12 m down (a fall goes back to CP1). Two chandeliers swing across it, out to the wall.
-            Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, 2.25f, 0f, true, 1.2f, true);
+            Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, CurvingStairHalfIn, 0f, true, 1.2f);
             Chandelier(b, "11 Pendulum (chandelier) 1", 322f, Mathf.Lerp(8f, 10f, 25f / 75f), 0f);
             Chandelier(b, "11 Pendulum (chandelier) 2", 350f, Mathf.Lerp(8f, 10f, 53f / 75f), 1.6f);
             b.Checkpoint(2, OnSpiral(368f, 9.9f), Heading(368f), 4.5f);
@@ -163,17 +176,24 @@ namespace ChessFight.PawnRush
             Gap(b, "Dive gap 2", OnSpiral(548f, 14f), OnSpiral(560.3f, 14f), 2.5f);
             b.Checkpoint(4, OnSpiral(569f, 14f), Heading(569f), 3f);
 
-            // 4c. The windy way (φ 575 -> 640, y 14 -> 14.8): 3 m wide, no railings, two vents on posts at its inner
-            // edge blowing out over the edge, half their cycle apart. The wind carries a pawn at 3.5 m/s (R301).
+            // 4c. The windy way (φ 575 -> 640, y 14 -> 14.8): 3 m wide, no railings, two vents at its inner edge blowing
+            // out over the edge, half their cycle apart. The wind carries a pawn at 3.5 m/s (R301). R351 (승규 "위치도 길
+            // 쪽에 자연스럽게 배치해주고"): each vent's face on the way's inner edge, standing on a stone ledge out of the
+            // way's side on two consoles, instead of 0.1 m into the way on a post up from the hall floor.
             Walkway(b, "Windy way", 575f, 640f, 14f, 14.8f, 1.5f, 1.5f);
             float[] ventPhi = { 594f, 621f }, ventPhase = { 0f, 3.4f };
             for (int i = 0; i < ventPhi.Length; i++)
             {
                 float phi = ventPhi[i], y = Mathf.Lerp(14f, 14.8f, (phi - 575f) / 65f);
-                var at = OnSpiral(phi, y, -1.6f);
+                var at = OnSpiral(phi, y, -1.5f);
                 Gust(Hazard(b, k.airVent, "15 Wind vent " + (i + 1), at, OutwardYaw(phi), ventPhase[i]));
-                var post = at - Outward(phi) * .45f;
-                Solid(b, "Wind vent post " + (i + 1), V(post.x - .45f, Deep, post.z - .45f), V(post.x + .45f, y, post.z + .45f));
+                // The ledge under the fan's 0.5 m housing (a hair under the way's top where they meet), its consoles under it.
+                b.SlopeBetween("Wind vent ledge " + (i + 1), OnSpiral(phi, y - .01f, -2.25f), OnSpiral(phi, y - .01f, -1.48f), 3.2f, .6f, 0f,
+                               k.wallNoClimb, true);
+                var across = Vector3.Cross(Vector3.up, Outward(phi));
+                for (int side = -1; side <= 1; side += 2)
+                    b.SlopeBetween("Wind vent console " + (i + 1) + (side < 0 ? " a" : " b"), OnSpiral(phi, y - .61f, -2.1f) + across * side,
+                                   OnSpiral(phi, y - .61f, -1.52f) + across * side, .45f, 1.1f, 0f, k.wallNoClimb, true);
                 // Its wind (3 x 3 x 6 m from the inner edge outwards) covers the way's 3 m.
                 SpanAt(b, "Wind span " + (i + 1), OnSpiral(phi, y), Outward(phi), -1.6f, 1.6f);
             }
@@ -181,7 +201,7 @@ namespace ChessFight.PawnRush
 
             // 4d. The last stair (φ 640 -> 717, y 14.8 -> 16) round the dais: two 10 falling chess pieces on it, half
             // their cycle apart, then onto the dais.
-            Walkway(b, "Last stair", 640f, 717f, 14.8f, 16f, 1.75f, 1.75f, false, 1.2f, true);
+            Walkway(b, "Last stair", 640f, 717f, 14.8f, 16f, 1.75f, 1.75f, false, 1.2f);
             float[] piecePhi = { 662f, 694f }, piecePhase = { 0f, 2.27f };
             for (int i = 0; i < piecePhi.Length; i++)
             {
@@ -194,10 +214,10 @@ namespace ChessFight.PawnRush
         }
 
         // A way along the spiral from φA to φB rising yA -> yB, `halfIn` inside its middle line and `halfOut` outside
-        // (or out to the hall wall), made of chord slabs no more than 5° long that overlap a little. A stair gets a
-        // dark step line at each slab's start.
+        // (or out to the hall wall), made of chord slabs no more than 5° long that overlap a little. R341 (승규 11-04
+        // "검은색 줄 지워"): the stairs no longer get a dark step line at each slab's start.
         static void Walkway(CourseBuilder b, string name, float phiA, float phiB, float yA, float yB, float halfIn, float halfOut,
-                            bool toWall = false, float thickness = .6f, bool steps = false)
+                            bool toWall = false, float thickness = .6f)
         {
             int n = Mathf.Max(1, Mathf.CeilToInt((phiB - phiA) / 5f));
             for (int i = 0; i < n; i++)
@@ -209,9 +229,6 @@ namespace ChessFight.PawnRush
                 Vector3 a = Polar(p0, mid, y0), c = Polar(p1, mid, y1), along = (c - a).normalized * .15f;
                 var slab = b.SlopeBetween(name + " " + (i + 1), a - along, c + along, outer - inner, thickness, 0f, b.kit.floorChecker, true);
                 slab.AddComponent<CourseFloor>().sloped = !Mathf.Approximately(y0, y1);
-                if (steps && i > 0)
-                    b.SlopeBetween(name + " step line " + i, Polar(p0, inner, y0 + .02f), Polar(p0, outer, y0 + .02f), .12f, .01f, .01f, b.kit.trimBlack, false)
-                     .GetComponent<Collider>().enabled = false;
             }
         }
 
@@ -234,19 +251,57 @@ namespace ChessFight.PawnRush
             motion.shove = false;
         }
 
-        // A chandelier (11 pendulum) swinging across the way at φ, 40° (4.7 m either side of the middle line, out to
-        // the wall), hung from a thin beam from a post inside the way to the hall wall.
+        // A chandelier (11 pendulum) swinging across the way at φ, 40°, hung from a thin beam from a post inside the way
+        // to the hall wall. R326 (승규 11-03, the round hall checked in numbers): hung on the way's middle line its ball
+        // (1.1 m, 6 m under the pivot: 4.96 m out at 40°) went 1.3 m into the wall and its two swing-boundary marks (12 m
+        // in the prefab) out through the windows. Now it hangs as far in as stops the ball's outer side 0.1 m short of
+        // the wall face (r 31) at the top of its swing - its inner side swings out over the drop, so it still sweeps the
+        // whole way - and the marks run from the way's inner edge to that point.
+        const float CurvingStairHalfIn = 2.25f;
+
         static void Chandelier(CourseBuilder b, string name, float phi, float y, float phase)
         {
-            var at = OnSpiral(phi, y + .15f);
-            var pendulum = Hazard(b, b.kit.pendulum, name, at, Heading(phi), phase);
+            var pendulum = Hazard(b, b.kit.pendulum, name, OnSpiral(phi, y + .15f), Heading(phi), phase);
             var swing = pendulum != null ? pendulum.GetComponentInChildren<PendulumSwing>(true) : null;
-            if (swing != null) swing.SwingAngle = 40f;
-            Span(pendulum, Outward(phi), -5.2f, 5.2f, y);
-            float pivotY = at.y + 7.3f, postR = SpiralRadius(phi) - 6.2f;
+            float reach = 4.96f;
+            if (swing != null)
+            {
+                swing.SwingAngle = 40f;
+                reach = BallReach(swing);
+            }
+            float r = Mathf.Min(SpiralRadius(phi), HallRadius - .1f - reach), inner = SpiralRadius(phi) - CurvingStairHalfIn;
+            var at = Polar(phi, r, y + .15f);
+            if (pendulum != null)
+            {
+                pendulum.transform.localPosition = at;
+                // The marks lie along the prefab's x, across the way.
+                float outX = Mathf.Sign(Vector3.Dot(pendulum.transform.localRotation * Vector3.right, Outward(phi)));
+                float from = inner - r, to = reach;
+                ForChildren(pendulum, "Swing boundary", t =>
+                {
+                    var p = t.localPosition; p.x = outX * (from + to) * .5f; t.localPosition = p;
+                    var s = t.localScale; s.x = to - from; t.localScale = s;
+                });
+            }
+            Span(pendulum, Outward(phi), -reach, reach, y);
+            float pivotY = at.y + 7.3f, postR = r - 6.2f;
             var post = Polar(phi, postR, 0f);
             Beam(b, name + " post", V(post.x - .2f, Deep, post.z - .2f), V(post.x + .2f, pivotY + .8f, post.z + .2f));
-            b.SlopeBetween(name + " beam", Polar(phi, postR, pivotY + .6f), Polar(phi, HallRadius + .5f, pivotY + .6f), .4f, .2f, .2f, b.kit.trimBlack, true);
+            // R325: on into the Blender round wall (its face 31 .. 32.8 there, a window's recess at φ 322) as far as the
+            // window bars (r 33), so its end no longer hangs in the air in front of them.
+            b.SlopeBetween(name + " beam", Polar(phi, postR, pivotY + .6f), Polar(phi, HallRadius + 2f, pivotY + .6f), .4f, .2f, .2f, b.kit.trimBlack, true);
+        }
+
+        // How far the ball's far side swings out from under the pivot: the cable's length times sin(the swing), plus
+        // the ball's radius.
+        static float BallReach(PendulumSwing swing)
+        {
+            if (swing.Ball == null) return 4.96f;
+            float length = Vector3.Distance(swing.transform.position, swing.Ball.position);
+            var sphere = swing.Ball.GetComponent<SphereCollider>();
+            var s = swing.Ball.lossyScale;
+            float radius = sphere != null ? sphere.radius * Mathf.Max(Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z)) : 1.1f;
+            return length * Mathf.Sin(Mathf.Clamp(swing.SwingAngle, 0f, 85f) * Mathf.Deg2Rad) + radius;
         }
 
         // A 02 jump pad at `from` throwing a pawn onto `to`: 9 m/s up and forward fast enough to cover the distance in
@@ -308,6 +363,11 @@ namespace ChessFight.PawnRush
             // row. GuessBridge picks which of each pair holds, from the section's seed.
             const int rows = 7;
             const float size = 1.8f, gap = 1.05f;
+            // R333 (승규 11-03): in the Pawn Rush glass (PR_Glass.shader; R334: crystal clear colours on the ice blue sample's
+            // frost, distortion and reflection) - both of a pair alike, as the
+            // game wants - and the shards GuessBridge breaks off take the same material. The kit's glass if it is missing.
+            var glass = Resources.Load<Material>("PR_GlassStones");
+            if (glass == null) glass = k.glass;
             var left = new GameObject[rows];
             var right = new GameObject[rows];
             var stones = b.In("Glass stones", () =>
@@ -315,8 +375,8 @@ namespace ChessFight.PawnRush
                 for (int i = 0; i < rows; i++)
                 {
                     float z0 = Hub.y + DaisRadius + gap + i * (size + gap);
-                    left[i] = b.Box("Glass square L" + (i + 1), V(-.6f - size, DaisTop - .3f, z0), V(-.6f, DaisTop, z0 + size), k.glass, true);
-                    right[i] = b.Box("Glass square R" + (i + 1), V(.6f, DaisTop - .3f, z0), V(.6f + size, DaisTop, z0 + size), k.glass, true);
+                    left[i] = b.Box("Glass square L" + (i + 1), V(-.6f - size, DaisTop - .3f, z0), V(-.6f, DaisTop, z0 + size), glass, true);
+                    right[i] = b.Box("Glass square R" + (i + 1), V(.6f, DaisTop - .3f, z0), V(.6f + size, DaisTop, z0 + size), glass, true);
                 }
             });
             stones.gameObject.AddComponent<GuessBridge>().Configure(left, right);

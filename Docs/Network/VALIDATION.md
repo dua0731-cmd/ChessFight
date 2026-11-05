@@ -1,5 +1,18 @@
 # Network 구현 검증 기록
 
+## 2026-11-05 대계단 현관홀 아트를 main으로 (R309) — 사용자/Unity 확인 전
+
+[PAWN_RUSH_GRAND_STAIR_HALL_ART](../KingRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md). 순서: `main` Pull(LFS 포함) → Unity가 새 FBX · 텍스처를 가져오기 기다림 → ChessFight → Pawn Rush → **Build Mid 2-1 Grand Stair Hall** → **Open Section Test** → Play.
+
+| 확인 | 결과 |
+|---|---|
+| 셰이더 `PR_PalaceStone` · `PR_PalaceWall` · `PR_PalaceTrim` · `PR_VeinedMarble` · `PR_SpiralChecker` · `PR_WorldWood` · `PR_Glass` · `VFX_*` 11개가 오류 없이 컴파일된다(분홍 재질 없음) | 미확인 |
+| Play: Console에 "[대계단 홀] v15 모델 …"부터 "계단참 석상 = 퀸"까지 줄이 뜨고 오류(빨간 줄)가 없다 | 미확인 |
+| Play: 홀이 seoungtest 시험 씬 구역 H와 같은 모습(대리석 바닥 · 크림 벽 · 대계단 카펫 · 석상 · 퀸 · 발코니 · 입구 · 돔 · 나선 체스판) | 미확인 |
+| Play: 위험물 효과(샹들리에 · 기사 예고, 환풍기 바람, 해머 사슬 · 궤적, 점프 발판 사각 빛, 근위 기사 유령)가 돈다 | 미확인 |
+| 이번 전에 구운 프리팹도 Play 때 새 블록아웃으로 다시 지어진 뒤 아트를 입는다(빌드 메뉴를 안 눌러도) | 미확인 |
+| 블록아웃만 보고 싶으면 프리팹 `GrandStairHall` → `Dress In Play` 끄기 | 미확인 |
+
 ## ★ 2026-11-03 지연 줄이기 (R306, `main` `8f624263`) — 한 빌드로 전후 재는 순서와 확인 목록
 
 [HOST_AUTHORITY §5 · §7 · §11](HOST_AUTHORITY.md) · [MOTION §3](MOTION.md). **upstream `main`에 푸시**(코드 `8f624263` · 문서 `ec2418e6`, `main` `4ff598f1` 위. 승규 님 "커밋 하지말고 로컬로 확인해" → 확인 뒤 "커밋해" → "다 main에 푸쉬 해"). 빌드는 이 PC의 `C:\Work\R305Builds\after\NetworkTest\ChessFight.exe`(게임) · `…\Lab\RagdollLab.exe`(랩)이다. 이 빌드는 R305 → R306 이름 바꾸기 · 정원 커밋 전(`7b86e99a` 기준)이라 로그 줄이 "R305 …"로 찍히고, 동작은 커밋과 같다. **아래 (가)~(바)는 모두 미확인이다.** AI가 이 PC 한 대에서 랩 빌드끼리 잰 값(아래 "AI 루프백")은 Steam도 사람도 아니라서 확인이 아니다. 테스트 통과도 확인이 아니다.
