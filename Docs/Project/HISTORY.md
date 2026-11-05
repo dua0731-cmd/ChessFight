@@ -7,6 +7,7 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
+| 이 기록을 추가한 커밋(`git log --grep=R310`) | 11-05 | R310 | 지정 Claude Code 세션의 초반 3D·구역 원문을 기준으로 중반 4종·후반 3종 3D HTML 작성, Claude 문맥 검토 반영. 전체·테라스·위·스테이션 단면·걸어 들어가기·동작 예시·팀 문. 장면 49·팀 문 7·Core 164·세션 55 통과, CPU 배치 그림 AI 확인. 실제 브라우저 조작·사용자 확인 전, Unity 구현 없음 |
 | 이 기록을 추가한 커밋(`git log --grep=R308`) | 11-05 | R308 | API 키 없이 Codex·Claude Code 계정 로그인으로 연결: 기본 실행·설정 버튼 변경, 공식 Claude Code 로컬 설치·SHA256 대조, 요청·답변 파일 교환, 참고 문서 첨부, API 자격증명 제외. 실제 GPT → Claude → GPT 3단계 시험, 자동 26개·키 저장 1개·Core 164·세션 55 통과. 사용자가 Claude 로그인 완료, 게임 변경 없음 |
 | 이 기록을 추가한 커밋(`git log --grep=R307`) | 11-05 | R307 | GPT ↔ Claude API 연결 도구(`Tools/AiBridge`): 번갈아 답변·최종 정리, Windows DPAPI 키 설정·실행, 대화 기록, 모의 API 시험 13개·Core 164·세션 55 통과. **키 미설정 · 실제 연결 미시험**. 사용자 프리팹 변경을 보존하고 별도 main 작업 폴더에서 추가 |
 | `8f624263` · `ec2418e6` | 11-03 | R306 | 지연 줄이기: 측정 상자 지연 줄 · 연결 직접/릴레이(`SteamRoute`) · `-latencyBefore` 전후 스위치, 폰 러쉬 스냅샷 예약표(Core `SendSchedule`), 입력 바뀌면 바로(Core `InputSendGate` · `InputChange`), 방장이 물리 전에 입력 읽기, 인원 적으면 초당 60번(Core `SnapshotRate`, `PlaybackDelay` 바닥 · 간격 추정), 폰 러쉬 내 폰 먼저 그리기 F7(기본 꺼짐), `-queuedFrames` 시험 스위치, 랩 빌더 `-labDevelopment`, 고르지 않은 프레임에서 예약표 박자 유지(루프백 측정에서 찾음). 승규 님 "커밋 하지말고 로컬로" → 확인 뒤 "커밋해" → "다 main에 푸쉬 해" |
