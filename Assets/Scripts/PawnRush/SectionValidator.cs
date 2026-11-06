@@ -98,7 +98,9 @@ namespace ChessFight.PawnRush
             var hall = section.GetComponent<GrandStairHall>();
             if (hall != null) return hall.Kit;
             var garden = section.GetComponent<RoyalWaterGarden>();
-            return garden != null ? garden.Kit : null;
+            if (garden != null) return garden.Kit;
+            var room = section.GetComponent<WarRoomSection>();
+            return room != null ? room.Kit : null;
         }
 
         // NoClimbSurface on it or above it, active or not (the portcullis and the east lift's wall wait switched off).

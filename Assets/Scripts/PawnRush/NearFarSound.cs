@@ -94,7 +94,7 @@ namespace ChessFight.PawnRush
         {
             Measure();
             float m = Muffle();
-            gain *= LibraryMuffle.Gain(m);
+            gain *= LibraryMuffle.Gain(m) * Presence();
             float k = 1f - Mathf.Exp(-6f * Time.deltaTime);
             Set(near, gain * NearWeight, pitch, k);
             Set(far, gain * FarWeight, pitch, k);
@@ -110,7 +110,8 @@ namespace ChessFight.PawnRush
         {
             Measure();
             float m = Muffle();
-            volume *= LibraryMuffle.Gain(m);
+            volume *= LibraryMuffle.Gain(m) * Presence();
+            if (volume <= .001f) return;
             if (farWall != null) farWall.cutoffFrequency = LibraryMuffle.CutoffAt(m);
             // A one-shot plays at volume x the source's volume, so a shot's own source carries the layer weight.
             Fire(near, nearClip, NearWeight, volume, pitch);
@@ -125,6 +126,13 @@ namespace ChessFight.PawnRush
             a.volume = weight;
             a.pitch = pitch;
             a.PlayOneShot(clip, volume);
+        }
+
+        // R495: a war room's sounds only in and just around it (1 for every other sound).
+        float Presence()
+        {
+            Muffle();
+            return muffle != null ? muffle.Presence : 1f;
         }
 
         // R459: how muffled the war room's sounds are now (0 outside a war room).

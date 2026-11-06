@@ -13,7 +13,8 @@ namespace ChessFight.PawnRush.Editor
     //   Build Mid 2-1 Grand Stair Hall   rebuilds the hall from code (GrandStairHallBuilder) into its prefab,
     //                                    keeping the links to the imported obstacle prefabs; running it twice
     //                                    gives the same prefab. Then validates it.
-    //   Open Section Test                the round test scene (PawnRush_Sections.unity)
+    //   Open Section Test                the round test scene (PawnRush_Sections.unity); since R493 its last slot is the
+    //                                    war room (Final_WarRoom, built in Play from zone E's code, never baked)
     //   Validate Sections                every prefab in the section set, built in a scratch scene and checked
     //                                    (SectionValidator), then the scratch scene is thrown away
     // Hand edits inside the prefab's Content are lost on the next build: change the builder instead.
@@ -126,6 +127,9 @@ namespace ChessFight.PawnRush.Editor
                     if (hall != null && !hall.HasContent) GrandStairHallBuilder.Build(hall);
                     var garden = go.GetComponent<RoyalWaterGarden>();
                     if (garden != null && !garden.HasContent) RoyalWaterGardenBuilder.Build(garden);
+                    // R493: the war room (slot 7) is never baked; it is built here as in Play.
+                    var room = go.GetComponent<WarRoomSection>();
+                    if (room != null && !room.HasContent) Course01v4Builder.BuildWarRoomSection(room);
                     var section = go.GetComponent<PawnRushSection>();
                     if (section == null)
                     {

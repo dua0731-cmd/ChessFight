@@ -7,12 +7,20 @@
 #   Assets/Settings/PawnRushSectionKit.asset               those materials + the imported obstacle prefabs
 #   Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab
 #                                                          the grand stair hall's ROOT only (GrandStairHall +
-#                                                          PawnRushSection: id, entry z -12, exit (0, 19, 132))
+#                                                          PawnRushSection: id, entry z -12, exit (0, 15, 158.3) -
+#                                                          R303's exit terrace; R493: was R300's (0, 19, 132))
 #   Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab
 #                                                          the royal water garden's ROOT only (RoyalWaterGarden +
 #                                                          PawnRushSection: entry z -61, exit (0, 2.8, 72.5); R305)
+#   Assets/Prefabs/PawnRushSections/Final_WarRoom.prefab   the war room's ROOT only (WarRoomSection + PawnRushSection,
+#                                                          kind Final: entry z -22.5, exit (0, 1.49, 18); R493)
 #   Assets/Settings/PawnRushSections.asset                 the round's seven slots; the garden in slot 1 (초반 장애물),
-#                                                          the hall in slot 3 (중반 장애물)
+#                                                          the hall in slot 3 (중반 장애물), the war room in slot 7
+#                                                          (마지막 구간). The mini-games of slots 2, 4 and 6 are put in
+#                                                          by Unity's Build All Mini-game Prefabs (R312), not here.
+#
+# A section's entry and exit here must be its builder's (Describe): the round joins the sections by these saved
+# values before the sections wake (PITFALLS 68).
 #   Assets/Scenes/PawnRush_Sections.unity                  camera, light, physics rate, the round (PawnRushRound)
 #                                                          and the offline playtest (ragdoll pawn, white team)
 #
@@ -63,7 +71,7 @@ PR = "Assets/Scripts/PawnRush"
 SCRIPT = {
     "SectionKit": script("SectionKit", PR), "PawnRushSectionSet": script("PawnRushSectionSet", PR),
     "PawnRushSection": script("PawnRushSection", PR), "GrandStairHall": script("GrandStairHall", PR),
-    "RoyalWaterGarden": script("RoyalWaterGarden", PR),
+    "RoyalWaterGarden": script("RoyalWaterGarden", PR), "WarRoomSection": script("WarRoomSection", PR),
     "PawnRushRound": script("PawnRushRound", PR), "SectionPlaytest": script("SectionPlaytest", PR),
     "OrbitCamera": script("OrbitCamera", "Assets/Scripts/Game"),
     "PhysicsProfile": script("PhysicsProfile", "Assets/Scripts/Gameplay"),
@@ -144,7 +152,7 @@ def mono(fid, script_name, fields):
             "  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  m_GameObject: {fileID: %d}\n  m_Enabled: 1\n"
             "  m_EditorHideFlags: 0\n  m_Script: {fileID: 11500000, guid: %s, type: 3}\n  m_Name: \n  m_EditorClassIdentifier: \n%s"
             % (fid, GO, SCRIPT[script_name], fields))
-def section_root(path, name, display, entry, exit_, builder, builder_fields):
+def section_root(path, name, display, entry, exit_, builder, builder_fields, kind=0):
     """A section prefab's root: PawnRushSection + the builder's root component (it builds the rest when it wakes)."""
     prefab = HEAD + (
         "--- !u!1 &%d\nGameObject:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n"
@@ -158,21 +166,24 @@ def section_root(path, name, display, entry, exit_, builder, builder_fields):
                "  m_LocalScale: {x: 1, y: 1, z: 1}\n  m_ConstrainProportionsScale: 0\n  m_Children: []\n  m_Father: {fileID: 0}\n"
                "  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}\n") % (TR, GO)
     prefab += mono(SECTION, "PawnRushSection",
-                   "  id: %s\n  displayName: %s\n  kind: 0\n  entry: %s\n  exit: %s\n  exitYaw: 0\n  beats: []\n"
-                   "  slot: 0\n  seed: 1\n  teamSize: 6\n" % (name, text(display), v3(entry), v3(exit_)))
+                   "  id: %s\n  displayName: %s\n  kind: %d\n  entry: %s\n  exit: %s\n  exitYaw: 0\n  beats: []\n"
+                   "  slot: 0\n  seed: 1\n  teamSize: 6\n" % (name, text(display), kind, v3(entry), v3(exit_)))
     prefab += mono(BUILDER, builder, builder_fields)
     write(path, prefab)
     return "{fileID: %d, guid: %s, type: 3}" % (GO, meta_guid(path))
-hall_ref = section_root(PREFAB, "Mid_2-1_GrandStairHall", "대계단 현관홀", (0, 0, -12), (0, 19, 132), "GrandStairHall",
+hall_ref = section_root(PREFAB, "Mid_2-1_GrandStairHall", "대계단 현관홀", (0, 0, -12), (0, 15, 158.3), "GrandStairHall",
                         "  kit: %s\n  buildIfEmpty: 1\n  wings:\n  - {fileID: 0}\n  - {fileID: 0}\n  portcullis:\n  - {fileID: 0}\n"
                         "  - {fileID: 0}\n  eastLift: {fileID: 0}\n  eastLiftWall: {fileID: 0}\n" % kit)
 # R305: the royal water garden v31 (early obstacle 1-1).
 garden_ref = section_root(GARDEN_PREFAB, "Early_1-1_RoyalWaterGarden", "왕실 수로 정원", (0, 0, -61), (0, 2.8, 72.5),
                           "RoyalWaterGarden", "  kit: %s\n  buildIfEmpty: 1\n" % kit)
+# R493: the war room (승규 님's library conveyor course, the SeoungTest scene's zone E) as the last section.
+war_ref = section_root("Assets/Prefabs/PawnRushSections/Final_WarRoom.prefab", "Final_WarRoom", "작전 회의실",
+                       (0, 0, -22.5), (0, 1.49, 18), "WarRoomSection", "  kit: %s\n  buildIfEmpty: 1\n" % kit, kind=2)
 
 # ------------------------------------------------------------------ the round's seven slots
 SLOTS = [("장애물 1 (초반 · 바깥뜰)", 0, [garden_ref]), ("미니게임 1", 1, []), ("장애물 2 (중반 · 아랫궁)", 0, [hall_ref]),
-         ("미니게임 2", 1, []), ("장애물 3 (후반 · 윗궁)", 0, []), ("미니게임 3", 1, []), ("마지막 구간", 2, [])]
+         ("미니게임 2", 1, []), ("장애물 3 (후반 · 윗궁)", 0, []), ("미니게임 3", 1, []), ("마지막 구간", 2, [war_ref])]
 slots = "  slots:\n" + "".join(
     "  - name: %s\n    kind: %d\n    prefabs:%s\n" % (text(name), kind, "".join("\n    - " + p for p in prefabs) if prefabs else " []")
     for name, kind, prefabs in SLOTS)

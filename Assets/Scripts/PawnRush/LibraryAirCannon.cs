@@ -135,13 +135,17 @@ namespace ChessFight.PawnRush
         }
 
         // The hall's world box, from its renderers where the zone stands now (on the first frame, after the test
-        // scene has moved the zone into its row).
+        // scene has moved the zone into its row). R494 (승규 11-06 "대포 회전 소리가 다른 코스 구간에도 영향을 미쳐"): only
+        // the meshes - the model and the effects' quads. The goal rooks' laser warning is a world-space line still
+        // lying at the world origin until it first aims, and its bounds stretched the box from there to the hall: in the
+        // section test (the war room is the round's seventh section, some 430 m from the origin) the whirr filled every
+        // section before it; in 승규 님's test scene zone E stands at the origin, so it never showed.
         void MeasureRoom()
         {
             roomMeasured = true;
             room = new Bounds();
             if (hall == null) { Debug.LogWarning("Air cannon has no library hall: its fan stays silent.", this); return; }
-            foreach (var r in hall.GetComponentsInChildren<Renderer>())
+            foreach (var r in hall.GetComponentsInChildren<MeshRenderer>())
                 if (room.size == Vector3.zero) room = r.bounds;
                 else room.Encapsulate(r.bounds);
         }
