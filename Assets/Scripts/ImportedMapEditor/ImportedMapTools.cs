@@ -24,7 +24,7 @@ namespace ChessFight.Maps.Editor
             var map=scene.GetRootGameObjects().FirstOrDefault(g=>g.name=="Map");
             if(map!=null){Selection.activeGameObject=map; SceneView.lastActiveSceneView?.FrameSelected();}
         }
-        [MenuItem("ChessFight/Imported Map/Select Obstacle Prefabs")]
+        [MenuItem("ChessFight/Development/Assets/Select Obstacle Prefabs")]
         public static void SelectPrefabs()=>Selection.activeObject=AssetDatabase.LoadAssetAtPath<DefaultAsset>(Prefabs);
 
         // Explicit batch entry point; never runs on project load or regenerates the map.

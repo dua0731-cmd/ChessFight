@@ -20,7 +20,7 @@ namespace ChessFight.RagdollLab
             var match = bed != null ? bed.Match : null;
             if (match == null)
             {
-                Report("M8 개척의 탑", false, "시험대나 경기(QueenHillMatch)가 없음");
+                Report("M8 개척의 탑", false, "시험대나 경기(PioneerCourse)가 없음");
                 yield break;
             }
             match.ResetRound();
@@ -45,9 +45,9 @@ namespace ChessFight.RagdollLab
             yield return Sim(0.2f, () => pawn.SetInput(default));
         }
 
-        IEnumerator PioneerBells(QueenHillTestBed bed, QueenHillMatch match)
+        IEnumerator PioneerBells(PhysicsMechanicsBed bed, PioneerCourse match)
         {
-            Vector3 bell = QueenHillTestBed.BellSpot(1);
+            Vector3 bell = PhysicsMechanicsBed.BellSpot(1);
             var white = SpawnTeam(bell + new Vector3(-0.9f, 0f, 0f), Vector3.right, "pioneer-white", Teams.White);
             var black = SpawnTeam(bell + new Vector3(-0.9f, 0f, 1.2f), Vector3.right, "pioneer-black", Teams.Black);
             yield return Sim(0.6f);
@@ -60,7 +60,7 @@ namespace ChessFight.RagdollLab
             yield return RingBell(black);
             bool kept = match.Pioneer(1) == Teams.White;
             // Black rings the second section's bell, on top of the second wall.
-            black.Teleport(QueenHillTestBed.BellSpot(2) + new Vector3(-0.9f, black.standHeight + 0.02f, 0f), Vector3.right);
+            black.Teleport(PhysicsMechanicsBed.BellSpot(2) + new Vector3(-0.9f, black.standHeight + 0.02f, 0f), Vector3.right);
             yield return Sim(0.5f);
             yield return RingBell(black);
             bool second = match.IsOpen(2) && match.Pioneer(2) == Teams.Black;
@@ -71,7 +71,7 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
-        IEnumerator PioneerExclusive(QueenHillTestBed bed, QueenHillMatch match)
+        IEnumerator PioneerExclusive(PhysicsMechanicsBed bed, PioneerCourse match)
         {
             // S1 was opened by white just now. Put a white and a black pawn on its lift once it is up high.
             Transform lift = bed.PillarLifts[1].transform;
@@ -82,7 +82,7 @@ namespace ChessFight.RagdollLab
             {
                 for (float t = 0f; t < 15f && lift.position.y < 2.4f; t += Dt) yield return Sim(Dt);
             }
-            float LiftTop() => lift.position.y + QueenHillTestBed.PlatformThickness * 0.5f;
+            float LiftTop() => lift.position.y + PhysicsMechanicsBed.PlatformThickness * 0.5f;
             void PutOn(RagdollPawn pawn, float side) =>
                 pawn.Teleport(new Vector3(lift.position.x + side, LiftTop() + pawn.standHeight + 0.02f, lift.position.z), Vector3.right);
 
@@ -113,29 +113,29 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
-        IEnumerator PioneerCheckpoints(QueenHillMatch match)
+        IEnumerator PioneerCheckpoints(PioneerCourse match)
         {
             // Now S1 is white's and S2 black's. A black straggler comes back one below black's best (S1);
             // a white pawn that stood on the S1 landing itself comes back there; a white straggler has
             // nothing higher than its bridge (white's best S1, one below = none).
             var blackLag = SpawnTeam(new Vector3(44f, 0f, -12f), Vector3.right, "lag-black", Teams.Black);
             var whiteLag = SpawnTeam(new Vector3(44f, 0f, -13.5f), Vector3.right, "lag-white", Teams.White);
-            var climber = SpawnTeam(QueenHillTestBed.LandingSpawn(1), Vector3.right, "landed-white", Teams.White);
+            var climber = SpawnTeam(PhysicsMechanicsBed.LandingSpawn(1), Vector3.right, "landed-white", Teams.White);
             yield return Sim(0.8f);
             var climberDriver = climber.GetComponent<RagdollDriver>();
             int climberBest = climberDriver != null ? match.PersonalBest(climberDriver) : -1;
-            float y = QueenHillTestBed.WaterTop + 0.3f;
+            float y = PhysicsMechanicsBed.WaterTop + 0.3f;
             blackLag.Teleport(new Vector3(11f, y, -40f), Vector3.forward);
             whiteLag.Teleport(new Vector3(18.5f, y, -40f), Vector3.forward);
             climber.Teleport(new Vector3(11f, y, -43f), Vector3.forward);
             float delay = Bed.Water != null ? Bed.Water.RespawnDelay : 5f;
             yield return Sim(delay + 1f);
             float Off(RagdollPawn pawn, Vector3 spot) => Flat(pawn.Hips.position - spot).magnitude;
-            Vector3 s1 = QueenHillTestBed.LandingSpawn(1);
-            float blackOff = Off(blackLag, s1), climberOff = Off(climber, s1), whiteOff = Off(whiteLag, QueenHillTestBed.Checkpoint);
+            Vector3 s1 = PhysicsMechanicsBed.LandingSpawn(1);
+            float blackOff = Off(blackLag, s1), climberOff = Off(climber, s1), whiteOff = Off(whiteLag, PhysicsMechanicsBed.Checkpoint);
             // Two come back to the S1 landing at once: the second takes the next free spot (1 m on).
-            bool ok = climberBest == 1 && blackOff < 1.6f && blackLag.Hips.position.y > QueenHillTestBed.SectionRise
-                      && climberOff < 1.6f && climber.Hips.position.y > QueenHillTestBed.SectionRise && whiteOff < 1f
+            bool ok = climberBest == 1 && blackOff < 1.6f && blackLag.Hips.position.y > PhysicsMechanicsBed.SectionRise
+                      && climberOff < 1.6f && climber.Hips.position.y > PhysicsMechanicsBed.SectionRise && whiteOff < 1f
                       && Flat(blackLag.Hips.position - climber.Hips.position).magnitude > 0.6f;
             Report("M9 체크포인트: 물에서 나오는 곳 = 내가 선 가장 높은 착지대와 우리 팀 최고 구간 한 칸 아래 중 높은 곳",
                 ok,
@@ -144,12 +144,12 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
-        void PioneerWire(QueenHillMatch match)
+        void PioneerWire(PioneerCourse match)
         {
             string text = match.Encode();
             byte[] bytes = RagdollNetProtocol.Match(55, text);
             bool read = bytes != null && RagdollNetProtocol.ReadMatch(bytes, 55, out string got) && got == text;
-            var client = new QueenHillRules(match.Rules.Sections, match.Rules.ExclusiveSeconds);
+            var client = new PioneerRules(match.Rules.Sections, match.Rules.ExclusiveSeconds);
             bool applied = read && client.Apply(text) && client.Pioneer(1) == match.Pioneer(1) && client.Pioneer(2) == match.Pioneer(2)
                            && Math.Abs(client.OpenedAt(1) - match.Rules.OpenedAt(1)) < 0.002;
             bool otherMatch = bytes != null && !RagdollNetProtocol.ReadMatch(bytes, 56, out _);

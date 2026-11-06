@@ -26,7 +26,7 @@ namespace ChessFight.RagdollLab
 
         void UpdateSkillLanding(float dt)
         {
-            if (dashing || flight || flying || skillStage != SkillStage.None) KeepSkillLandingSafe();
+            if (dashing || flight || skillStage != SkillStage.None) KeepSkillLandingSafe();
             else if (skillLandSafe > 0f) skillLandSafe -= dt;
         }
     }

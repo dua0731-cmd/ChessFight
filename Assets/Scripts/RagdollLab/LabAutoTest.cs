@@ -132,10 +132,10 @@ namespace ChessFight.RagdollLab
             log.AppendLine($"Ragdoll lab autotest {DateTime.Now:yyyy-MM-dd HH:mm:ss}  fixedDt={Time.fixedDeltaTime:F4} gravity={Physics.gravity.y:F2}");
             log.AppendLine("params " + JsonUtility.ToJson(game.tuning.values));
             if (Arg("-ragdollDiag") != null) yield return Diagnostics();
-            // -ragdollQueenHillOnly: just the Queen of the Hill mechanics (quick to iterate on).
-            if (Arg("-ragdollQueenHillOnly") != null)
+            // -ragdollMechanicsOnly: just the shared physics mechanics (quick to iterate on).
+            if (Arg("-ragdollMechanicsOnly") != null)
             {
-                yield return QueenHill();
+                yield return Mechanics();
                 yield return HookChecks();
                 yield return PioneerChecks();
                 yield return LaunchChecks();
@@ -174,7 +174,7 @@ namespace ChessFight.RagdollLab
             ("DiveSlope", DiveSlope), ("Contact", Contact), ("GrabDrag", GrabDrag),
             ("StruggleEscape", StruggleEscape), ("Climb", Climb), ("ClimbBugs", ClimbBugs),
             ("ClimbSurfaces", ClimbSurfaces), ("ClimbMoves", ClimbMoves), ("DiveTackle", DiveTackle), ("Bar", Bar), ("Beam", Beam),
-            ("WallClimb", WallClimb), ("QueenHill", QueenHill), ("Hook", HookChecks), ("Pioneer", PioneerChecks),
+            ("WallClimb", WallClimb), ("Mechanics", Mechanics), ("Hook", HookChecks), ("Pioneer", PioneerChecks),
             ("Launch", LaunchChecks), ("Rope", RopeChecks), ("Status", StatusChecks),
             ("Piece", PieceChecks), ("Knight", KnightChecks), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
         };

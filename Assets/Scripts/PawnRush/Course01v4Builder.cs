@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // Course 01 v0.4 (Pawn Rush course 01 level design v0.4, Docs/KingRush/PAWN_RUSH_COURSE01_DESIGN_v0.4.md):
+    // Course 01 v0.4 (Pawn Rush course 01 level design v0.4, Docs/PawnRush/Prototype/PAWN_RUSH_COURSE01_DESIGN_v0.4.md):
     // one road both teams run, through two mission plazas where each team's mini-game station sits
     // beside the other's. Every part is at the design doc's WORLD coordinates (§4) - +x east, +y up,
     // +z north; y is a floor's top. Nothing is mirrored between the teams but the plaza stations

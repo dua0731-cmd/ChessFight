@@ -40,10 +40,10 @@ namespace ChessFight.VFX.Editor
 
         // ---------------------------------------------------------------- menus
 
-        [MenuItem("ChessFight/VFX/Capture/Window")]
+        [MenuItem("ChessFight/Development/VFX/Capture/Window")]
         static void OpenWindow() => EditorWindow.GetWindow<VfxCaptureWindow>("VFX Capture");
 
-        [MenuItem("ChessFight/VFX/Capture/Build Capture Scene")]
+        [MenuItem("ChessFight/Development/VFX/Capture/Build Capture Scene")]
         public static void BuildScene()
         {
             if (EditorApplication.isPlaying) return;
@@ -99,7 +99,7 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Capture scene built: " + ScenePath);
         }
 
-        [MenuItem("ChessFight/VFX/Capture/Build Color Chart")]
+        [MenuItem("ChessFight/Development/VFX/Capture/Build Color Chart")]
         public static void BuildChart()
         {
             if (EditorApplication.isPlaying) return;
@@ -129,7 +129,7 @@ namespace ChessFight.VFX.Editor
         /// The chart with the game's look (ACES) and with only its tonemapping swapped for Neutral and for none, and the
         /// three stacked in one image (1 ACES, 2 Neutral, 3 none): which tonemapping to keep is the user's call.
         /// </summary>
-        [MenuItem("ChessFight/VFX/Capture/Color Chart (ACES, Neutral, None)")]
+        [MenuItem("ChessFight/Development/VFX/Capture/Color Chart (ACES, Neutral, None)")]
         public static string CaptureChart()
         {
             BuildChart();
@@ -156,9 +156,9 @@ namespace ChessFight.VFX.Editor
         }
 
         static bool NotPlaying() => !EditorApplication.isPlaying;
-        [MenuItem("ChessFight/VFX/Capture/Build Capture Scene", true)] static bool CanBuildScene() => NotPlaying();
-        [MenuItem("ChessFight/VFX/Capture/Build Color Chart", true)] static bool CanBuildChart() => NotPlaying();
-        [MenuItem("ChessFight/VFX/Capture/Color Chart (ACES, Neutral, None)", true)] static bool CanCaptureChart() => NotPlaying();
+        [MenuItem("ChessFight/Development/VFX/Capture/Build Capture Scene", true)] static bool CanBuildScene() => NotPlaying();
+        [MenuItem("ChessFight/Development/VFX/Capture/Build Color Chart", true)] static bool CanBuildChart() => NotPlaying();
+        [MenuItem("ChessFight/Development/VFX/Capture/Color Chart (ACES, Neutral, None)", true)] static bool CanCaptureChart() => NotPlaying();
 
         // ---------------------------------------------------------------- capture
 

@@ -7,7 +7,7 @@ namespace ChessFight.PawnRush
     // The grand stair hall's beats in the order a pawn runs them (section frame, y = a floor's top). Beats 1, 2 and
     // 6 are the level design's §4 tables; since R303 the hall between them is round and climbed by one spiral way
     // (the user's spiral-stair picture). Where the build differs from the doc, the reason is next to it and in
-    // Docs/KingRush/PAWN_RUSH_SECTIONS.md §6.
+    // Docs/PawnRush/PAWN_RUSH_SECTIONS.md §6.
     public static partial class GrandStairHallBuilder
     {
         public static readonly float[] LaneX = { -6f, -2f, 2f, 6f };

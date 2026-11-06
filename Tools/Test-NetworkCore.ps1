@@ -6,14 +6,17 @@ $compiler = Join-Path $UnityEditor 'Data/MonoBleedingEdge/lib/mono/4.5/csc.exe'
 $outputDirectory = Join-Path $projectRoot 'Temp/NetworkTests'
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 $output = Join-Path $outputDirectory 'NetworkCoreTests.exe'
-$sources = Get-ChildItem (Join-Path $projectRoot 'Assets/Scripts/Core') -Filter '*.cs' | ForEach-Object FullName
+# Archived rules keep the original Core assembly through an asmref in Unity.
+$coreDirectories = @((Join-Path $projectRoot 'Assets/Scripts/Core'), (Join-Path $projectRoot 'Assets/Prototype/PawnRush/Scripts/Core'))
+$coreSources = @(Get-ChildItem -LiteralPath $coreDirectories -Recurse -Filter '*.cs' | ForEach-Object FullName)
+$sources = @($coreSources)
 $sources += Join-Path $projectRoot 'Tests/Network/NetworkCoreTests.cs'
 & $mono $compiler '-nologo' '-langversion:latest' "-out:$output" @sources
 if ($LASTEXITCODE -ne 0) { throw 'Core test compilation failed.' }
 & $mono $output
 if ($LASTEXITCODE -ne 0) { throw 'Core tests failed.' }
 $sessionOutput = Join-Path $outputDirectory 'SessionFlowTests.exe'
-$sessionSources = Get-ChildItem (Join-Path $projectRoot 'Assets/Scripts/Core') -Filter '*.cs' | ForEach-Object FullName
+$sessionSources = @($coreSources)
 $sessionSources += Join-Path $projectRoot 'Assets/Scripts/Network/SteamSession.cs'
 $sessionSources += Join-Path $projectRoot 'Tests/Network/FakeSteam.cs'
 $sessionSources += Join-Path $projectRoot 'Tests/Network/SessionFlowTests.cs'

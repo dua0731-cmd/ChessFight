@@ -40,7 +40,7 @@ namespace ChessFight.PawnRush.Editor
         public static string PrefabPath(int game) => PrefabFolder + "/" + FileNames[game] + ".prefab";
         public static int Zone(int game) => MiniGamePalaceArt.Early(game) ? 0 : MiniGamePalaceArt.Late(game) ? 2 : 1;
 
-        [MenuItem("ChessFight/Pawn Rush/Build All Mini-game Prefabs", false, 23)]
+        [MenuItem("ChessFight/Pawn Rush/Build/All Mini-game Prefabs", false, 102)]
         public static void BuildAll()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -92,7 +92,7 @@ namespace ChessFight.PawnRush.Editor
             }
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Open Mini-game Prefab Test", false, 24)]
+        [MenuItem("ChessFight/Pawn Rush/Open Mini-game Prefab Test", false, 1)]
         public static void OpenTest()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;

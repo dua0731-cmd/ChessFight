@@ -59,7 +59,7 @@ namespace ChessFight.VFX.Editor
             new Vector2Int(-1, -2), new Vector2Int(-2, -1), new Vector2Int(-2, 1), new Vector2Int(-1, 2),
         };
 
-        [MenuItem("ChessFight/VFX/Knight/Build")]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build")]
         public static void Build()
         {
             // In Play mode the layers' Awake runs as they are made and what it does is saved into the prefab (VFX1 found a
@@ -83,11 +83,11 @@ namespace ChessFight.VFX.Editor
         }
 
         /// <summary>The menu is greyed out in Play mode.</summary>
-        [MenuItem("ChessFight/VFX/Knight/Build", true)]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build", true)]
         static bool CanBuild() => !EditorApplication.isPlaying;
 
         /// <summary>E1 alone (R195): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Knight/Build E1 (coil only)")]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build E1 (coil only)")]
         public static void BuildE1()
         {
             if (EditorApplication.isPlaying)
@@ -101,11 +101,11 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Knight E1 built: the light drawn in as it crouches (E_Coil). Workbench: piece 5, " + coil.name);
         }
 
-        [MenuItem("ChessFight/VFX/Knight/Build E1 (coil only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build E1 (coil only)", true)]
         static bool CanBuildE1() => !EditorApplication.isPlaying;
 
         /// <summary>E2 alone (R192): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Knight/Build E2 (spring only)")]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build E2 (spring only)")]
         public static void BuildE2()
         {
             if (EditorApplication.isPlaying)
@@ -119,11 +119,11 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Knight E2 built: the flash where it springs (E_Spring). Workbench: piece 5, " + spring.name);
         }
 
-        [MenuItem("ChessFight/VFX/Knight/Build E2 (spring only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build E2 (spring only)", true)]
         static bool CanBuildE2() => !EditorApplication.isPlaying;
 
         /// <summary>E3 alone (R182): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Knight/Build E3 (flip only)")]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build E3 (flip only)")]
         public static void BuildE3()
         {
             if (EditorApplication.isPlaying)
@@ -137,11 +137,11 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Knight E3 built: the crescent over the somersault (E_Flip). Workbench: piece 5, " + flip.name);
         }
 
-        [MenuItem("ChessFight/VFX/Knight/Build E3 (flip only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build E3 (flip only)", true)]
         static bool CanBuildE3() => !EditorApplication.isPlaying;
 
         /// <summary>E4 alone (R189): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Knight/Build E4 (kick only)")]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build E4 (kick only)")]
         public static void BuildE4()
         {
             if (EditorApplication.isPlaying)
@@ -155,7 +155,7 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Knight E4 built: the star where its hooves strike (E_Kick). Workbench: piece 5, " + kick.name);
         }
 
-        [MenuItem("ChessFight/VFX/Knight/Build E4 (kick only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Knight/Build E4 (kick only)", true)]
         static bool CanBuildE4() => !EditorApplication.isPlaying;
 
         // ---------------------------------------------------------------- F5: the fork

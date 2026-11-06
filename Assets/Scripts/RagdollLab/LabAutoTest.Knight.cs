@@ -25,8 +25,8 @@ namespace ChessFight.RagdollLab
         IEnumerator KnightJumpCheck()
         {
             // In front of the [7h] ledge, level with the L-pad but 2 m aside of it.
-            Vector3 start = QueenHillTestBed.PadCenter + new Vector3(0f, 0f, -2f);
-            Vector3 spot = start + new Vector3(3f, QueenHillTestBed.PadThrow.y, 0f);
+            Vector3 start = PhysicsMechanicsBed.PadCenter + new Vector3(0f, 0f, -2f);
+            Vector3 spot = start + new Vector3(3f, PhysicsMechanicsBed.PadThrow.y, 0f);
             var knight = Spawn(start, Vector3.right, "knight");
             knight.SetPiece(PieceKind.Knight);
             yield return Sim(0.6f);
@@ -90,7 +90,7 @@ namespace ChessFight.RagdollLab
         {
             var bed = Bed;
             var match = bed != null ? bed.Match : null;
-            var rook = SpawnTeam(QueenHillTestBed.BellSpot(1) + new Vector3(-0.9f, 0f, 0f), Vector3.right, "rook-bell", Teams.White);
+            var rook = SpawnTeam(PhysicsMechanicsBed.BellSpot(1) + new Vector3(-0.9f, 0f, 0f), Vector3.right, "rook-bell", Teams.White);
             rook.SetPiece(PieceKind.Rook);
             if (match != null) match.ResetRound();
             yield return Sim(0.6f);

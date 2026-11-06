@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // 승규 님's endgame (phase 3) course for the test scene (seoungtest): the war room (Docs/KingRush/PAWN_RUSH_ENDGAME_RESEARCH.md).
+    // 승규 님's endgame (phase 3) course for the test scene (seoungtest): the war room (Docs/PawnRush/PAWN_RUSH_ENDGAME_RESEARCH.md).
     // v2 (10-30, R244): the look of the S1-S4 concept art (cream marble, gold lines, teal and gold rails, map tables,
     // bookshelves, blue banners) at the size and with the devices of the wardrobe concept.
-    // Hard LD v1 (10-30, R255, Docs/KingRush/ENDGAME_LD_HARD_v1.md §6): every value below is the one in
+    // Hard LD v1 (10-30, R255, Docs/PawnRush/ENDGAME_LD_HARD_v1.md §6): every value below is the one in
     // ArtSource/PawnRush/Endgame/eg_layout.py ld_v1(); change both together and run `python eg_timing.py ld_v1` again.
     // Six a side: the way is 12 m wide (x -6..6), running north from z 0, one line (no side way past a device).
     // y 0 up to the lift tiles, y 3 after them.

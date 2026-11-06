@@ -11,7 +11,7 @@ namespace ChessFight.RagdollLab.Editor
     {
         public const string ScenePath = "Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity";
 
-        [MenuItem("ChessFight/Pawn Rush/Open Skill Test", false, 40)]
+        [MenuItem("ChessFight/Pawn Rush/Open Skill Test", false, 2)]
         public static void Open()
         {
             if (!File.Exists(ScenePath))

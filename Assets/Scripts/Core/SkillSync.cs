@@ -50,7 +50,7 @@ namespace ChessFight.Network
     {
         public ushort Seq;
         public uint TimeMs;                // host clock when it happened
-        public byte Mode;                  // SkillWire.ModePawnRush, ModeQueenHill, ModeSwordFight
+        public byte Mode;                  // SkillWire.ModePawnRush, ModeRetiredQueenHill, ModeSwordFight
         public byte Kind;
         public byte By, Target;            // roster places, SkillWire.None
         public float X, Y, Z;              // where
@@ -114,9 +114,9 @@ namespace ChessFight.Network
     /// </summary>
     public static class SkillWire
     {
-        /// <summary>Whose moment it is: Pawn Rush's, Queen of the Hill's, or the Sword Fight test's (R121; its states go
-        /// in their own packet, SwordWire, and only its moments come here).</summary>
-        public const byte ModePawnRush = 0, ModeQueenHill = 1, ModeSwordFight = 2;
+        /// <summary>Pawn Rush and Sword Fight events share this packet. Value 1 stays reserved for the retired mode;
+        /// Sword Fight states use SwordWire while its events come here.</summary>
+        public const byte ModePawnRush = 0, ModeRetiredQueenHill = 1, ModeSwordFight = 2;
         public const byte None = 255;
         public const int HeaderBytes = 4 + 2 + 1 + 1 + 1 + 1;   // host time, first seq, four counts
         public const int StateBytes = 1 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + 6 + 6 + 1 + 1 + 1 + 1 + 1 + 1;   // 29

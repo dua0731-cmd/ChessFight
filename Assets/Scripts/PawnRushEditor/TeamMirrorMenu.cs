@@ -13,7 +13,7 @@ namespace ChessFight.PawnRush.Editor
     // hand edit before it goes into the builder.
     public static class TeamMirrorMenu
     {
-        [MenuItem("ChessFight/Pawn Rush/Mirror White → Black", false, 20)]
+        [MenuItem("ChessFight/Prototype/Pawn Rush/Mirror White → Black", false, 20)]
         static void MirrorTeam()
         {
             var white = FindWhite(Selection.activeGameObject);
@@ -24,10 +24,10 @@ namespace ChessFight.PawnRush.Editor
             Selection.activeGameObject = black.gameObject;
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Mirror White → Black", true)]
+        [MenuItem("ChessFight/Prototype/Pawn Rush/Mirror White → Black", true)]
         static bool CanMirrorTeam() => !EditorApplication.isPlaying && FindWhite(Selection.activeGameObject) != null;
 
-        [MenuItem("ChessFight/Pawn Rush/Mirror Selected (Left-Right Pair)", false, 21)]
+        [MenuItem("ChessFight/Development/Pawn Rush/Layout/Mirror Selected (Left-Right Pair)", false, 21)]
         static void MirrorSelected()
         {
             foreach (var go in Selection.gameObjects)
@@ -37,7 +37,7 @@ namespace ChessFight.PawnRush.Editor
             }
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Mirror Selected (Left-Right Pair)", true)]
+        [MenuItem("ChessFight/Development/Pawn Rush/Layout/Mirror Selected (Left-Right Pair)", true)]
         static bool CanMirrorSelected() => !EditorApplication.isPlaying && Selection.gameObjects.Length > 0;
 
         // The *_White group the selection is in (or is).

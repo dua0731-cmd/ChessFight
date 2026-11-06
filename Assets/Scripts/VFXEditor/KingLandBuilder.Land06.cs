@@ -14,7 +14,7 @@ namespace ChessFight.VFX.Editor
     {
         const string Land06Path = VfxAssets.Root + "/Prefabs/King/06_King_E_Land.prefab";
 
-        [MenuItem("ChessFight/VFX/King Land (06, game)/Build")]
+        [MenuItem("ChessFight/Prototype/VFX/King Landing 06/Build")]
         public static void BuildLand06()
         {
             if (EditorApplication.isPlaying)

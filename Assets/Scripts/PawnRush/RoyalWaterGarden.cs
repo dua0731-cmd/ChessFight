@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // The root of the early obstacle section 1-1, the royal water garden v31 (Assets/Prefabs/PawnRushSections/
-    // Early_1-1_RoyalWaterGarden.prefab; Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md). The garden 승규 님 built in Blender
+    // Early_1-1_RoyalWaterGarden.prefab; Docs/PawnRush/PAWN_RUSH_ROYAL_GARDEN.md). The garden 승규 님 built in Blender
     // (seoungtest, v30) ran straight north in 112 m; the user asked for it longer and folded, the big spin bar cut into
     // small ones, a very hard shortcut off the platforms and boats crossing sideways. This is that layout as a graybox.
     //

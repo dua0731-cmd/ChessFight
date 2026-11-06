@@ -15,17 +15,15 @@ namespace ChessFight.RagdollLab
     /// PC's camera at once and a press starts its warning at once (D-S3, <see cref="ViewAim"/>, <see cref="PredictPress"/>);
     /// the host's state takes over when it arrives. The bodies always follow the host.
     ///
-    /// The wire slots mean different things per mode (Pawn Rush / Queen of the Hill); the maps are below and in
+    /// The active skill state uses the established Pawn Rush wire slots; the maps are below and in
     /// SKILLS_ONLINE §8.
     /// </summary>
     public partial class RagdollPawn
     {
         // Pawn Rush flags (R153: the rook's air charge and the knight's second press are gone; 2, 16 and 64 are free)
         const byte NetLocked = 1, NetDashing = 4, NetValid = 8, NetTapped = 32;
-        // Queen of the Hill flags (NetLocked, NetDashing and NetValid as above)
-        const byte NetFlying = 2, NetBlocked = 16, NetShell = 32;
-        // Flags2
-        const byte NetQueenHill = 128, NetAsked = 1;
+        // Wire bit 128 belonged to a retired mode. Keep it reserved and ignore its old states.
+        const byte RetiredModeFlag = 128;
 
         // ---------------------------------------------------------------- the visual hit stop (D-S2)
 
@@ -72,9 +70,9 @@ namespace ChessFight.RagdollLab
         /// rook). The test screen times only these presses (R118).</summary>
         public bool CouldStartSkill =>
             PawnRushSkills != null && State == PawnState.Active && skillStage == SkillStage.None && skillCooldownLeft <= 0.05f
-            && (Grounded || (QueenHillSkills == null && (piece == PieceKind.Knight || piece == PieceKind.Rook)))
+            && (Grounded || piece == PieceKind.Knight || piece == PieceKind.Rook)
             // R153: the Pawn Rush knight's key does nothing without an enemy to leap at.
-            && (QueenHillSkills != null || piece != PieceKind.Knight || knightCandidate != null);
+            && (piece != PieceKind.Knight || knightCandidate != null);
 
         /// <summary>R153: the Pawn Rush knight has no second press any more (kept for the test screen's timing).</summary>
         public bool KnightSecondReady => false;
@@ -85,7 +83,7 @@ namespace ChessFight.RagdollLab
         public bool SkillNetIdle =>
             PawnRushSkills == null
             || (skillStage == SkillStage.None && skillCooldownLeft <= 0f && getUpGuardLeft <= 0f && chainPhase == ChainPhase.None
-                && lassoPhase == LassoPhase.None && wardLeft <= 0f && castleAsker == null && !flying && qhCrouch <= 0.001f);
+                && lassoPhase == LassoPhase.None);
 
         /// <summary>This piece's skill as the others need to draw it. <paramref name="refOf"/> turns a piece into its
         /// roster place.</summary>
@@ -99,73 +97,49 @@ namespace ChessFight.RagdollLab
             s.Flags2 = 0;
             s.Target = s.Other = SkillWire.None;
             Vector3 dir, p = Vector3.zero, q = Vector3.zero;
-            if (QueenHillSkills != null)
+            // R153 slots: A the rook chain's time in its phase; C the bishop's flight (1/100 s); D the pawn's step or the
+            // rook chain's phase; P the bishop's point, the knight's landing or the chain's tip; Target the pawn's second
+            // step, the knight's target in flight, or the piece on the rook's chain.
+            if (aimLocked) s.Flags |= NetLocked;
+            if (dashing) s.Flags |= NetDashing;
+            if (bishopValid) s.Flags |= NetValid;
+            if (knightTapped) s.Flags |= NetTapped;
+            dir = piece == PieceKind.Bishop ? bishopYaw : skillDir;
+            RagdollPawn target = null;
+            switch (piece)
             {
-                s.Flags2 |= NetQueenHill;
-                if (aimLocked) s.Flags |= NetLocked;
-                if (flying) s.Flags |= NetFlying;
-                if (dashing) s.Flags |= NetDashing;
-                if (qhValid) s.Flags |= NetValid;
-                if (slashBlocked) s.Flags |= NetBlocked;
-                if (shellOut) s.Flags |= NetShell;
-                if (castleAsker != null) s.Flags2 |= NetAsked;
-                dir = piece == PieceKind.Queen ? slashDir : skillDir;
-                p = qhPoint;
-                q = piece == PieceKind.Knight ? leapSpot : piece == PieceKind.Bishop ? shellTo : Vector3.zero;
-                var target = piece == PieceKind.Knight && aimLocked ? leapTarget : qhTarget;
-                if (target != null) s.Target = refOf(target);
-                if (castleAsker != null) s.Other = refOf(castleAsker);
-                s.A = Mathf.Max(0f, wardLeft);
-                s.B = castleAsker != null ? castleAskAge : 0f;
-                s.C = (byte)Mathf.Clamp(Mathf.RoundToInt(qhCrouch * 255f), 0, 255);
-                s.D = (byte)Mathf.Clamp(Mathf.RoundToInt(QhFlyProgress * 255f), 0, 255);
+                case PieceKind.Bishop when PawnRushSkills != null && PawnRushSkills.bishopRope:
+                    // 10-26, the X rope: D its phase, A its length, P its tip, Q where it left from, Target the piece
+                    // it is round (or, aiming, the enemy it would go to).
+                    dir = lassoDir;
+                    p = lassoTip;
+                    q = lassoFrom;
+                    s.D = (byte)lassoPhase;
+                    s.A = lassoRest;
+                    target = lassoOn != null ? lassoOn : skillStage == SkillStage.Windup ? lassoAim : null;
+                    break;
+                case PieceKind.Bishop:
+                    p = bishopPoint;
+                    q = bishopFrom;
+                    s.C = (byte)Mathf.Clamp(Mathf.RoundToInt(bishopFlight * 100f), 0, 255);
+                    break;
+                case PieceKind.Knight:
+                    p = knightSpot;
+                    target = knightTarget;
+                    break;
+                case PieceKind.Rook:
+                    p = chainTip;
+                    target = chainOn != null ? chainOn : skillStage == SkillStage.Windup ? chainAimTarget : null;
+                    s.A = chainT;
+                    s.D = (byte)chainPhase;
+                    break;
+                case PieceKind.Pawn:
+                    target = pawnTarget;
+                    s.D = (byte)Mathf.Clamp(pawnStep, 0, 255);
+                    break;
             }
-            else
-            {
-                // R153 slots: A the rook chain's time in its phase; C the bishop's flight (1/100 s); D the pawn's step or the
-                // rook chain's phase; P the bishop's point, the knight's landing or the chain's tip; Target the pawn's second
-                // step, the knight's target in flight, or the piece on the rook's chain.
-                if (aimLocked) s.Flags |= NetLocked;
-                if (dashing) s.Flags |= NetDashing;
-                if (bishopValid) s.Flags |= NetValid;
-                if (knightTapped) s.Flags |= NetTapped;
-                dir = piece == PieceKind.Bishop ? bishopYaw : skillDir;
-                RagdollPawn target = null;
-                switch (piece)
-                {
-                    case PieceKind.Bishop when PawnRushSkills != null && PawnRushSkills.bishopRope:
-                        // 10-26, the X rope: D its phase, A its length, P its tip, Q where it left from, Target the piece
-                        // it is round (or, aiming, the enemy it would go to).
-                        dir = lassoDir;
-                        p = lassoTip;
-                        q = lassoFrom;
-                        s.D = (byte)lassoPhase;
-                        s.A = lassoRest;
-                        target = lassoOn != null ? lassoOn : skillStage == SkillStage.Windup ? lassoAim : null;
-                        break;
-                    case PieceKind.Bishop:
-                        p = bishopPoint;
-                        q = bishopFrom;
-                        s.C = (byte)Mathf.Clamp(Mathf.RoundToInt(bishopFlight * 100f), 0, 255);
-                        break;
-                    case PieceKind.Knight:
-                        p = knightSpot;
-                        target = knightTarget;
-                        break;
-                    case PieceKind.Rook:
-                        p = chainTip;
-                        target = chainOn != null ? chainOn : skillStage == SkillStage.Windup ? chainAimTarget : null;
-                        s.A = chainT;
-                        s.D = (byte)chainPhase;
-                        break;
-                    case PieceKind.Pawn:
-                        target = pawnTarget;
-                        s.D = (byte)Mathf.Clamp(pawnStep, 0, 255);
-                        break;
-                }
-                if (target != null) s.Target = refOf(target);
-                s.B = Mathf.Max(0f, getUpGuardLeft);
-            }
+            if (target != null) s.Target = refOf(target);
+            s.B = Mathf.Max(0f, getUpGuardLeft);
             s.Dx = dir.x; s.Dy = dir.y; s.Dz = dir.z;
             s.Px = p.x; s.Py = p.y; s.Pz = p.z;
             s.Qx = q.x; s.Qy = q.y; s.Qz = q.z;
@@ -185,6 +159,7 @@ namespace ChessFight.RagdollLab
         /// place back into a piece.</summary>
         public void ApplySkillNet(in SkillWireState s, Func<byte, RagdollPawn> pawnOf)
         {
+            if ((s.Flags2 & RetiredModeFlag) != 0) return;
             netStage = (SkillStage)s.Stage;
             netLocked = (s.Flags & NetLocked) != 0;
             skillStage = netStage;
@@ -196,82 +171,56 @@ namespace ChessFight.RagdollLab
             var p = new Vector3(s.Px, s.Py, s.Pz);
             var q = new Vector3(s.Qx, s.Qy, s.Qz);
             var target = s.Target != SkillWire.None ? pawnOf(s.Target) : null;
-            if ((s.Flags2 & NetQueenHill) != 0)
+            dashing = (s.Flags & NetDashing) != 0;
+            bishopValid = (s.Flags & NetValid) != 0;
+            knightTapped = (s.Flags & NetTapped) != 0;
+            netKicked = knightTapped;
+            if (piece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope)
             {
-                flying = (s.Flags & NetFlying) != 0;
-                dashing = (s.Flags & NetDashing) != 0;
-                qhValid = (s.Flags & NetValid) != 0;
-                slashBlocked = (s.Flags & NetBlocked) != 0;
-                shellOut = (s.Flags & NetShell) != 0;
-                if (piece == PieceKind.Queen) slashDir = FlatDir(dir, slashDir);
-                else if (dir.sqrMagnitude > 0.5f) skillDir = dir;
-                qhPoint = p;
-                if (piece == PieceKind.Knight) leapSpot = q;
-                if (piece == PieceKind.Bishop) shellTo = q;
-                qhTarget = target;
-                leapTarget = piece == PieceKind.Knight && netLocked ? target : null;
-                castleAsker = (s.Flags2 & NetAsked) != 0 && s.Other != SkillWire.None ? pawnOf(s.Other) : null;
-                castleAskAge = s.B;
-                wardLeft = s.A;
-                wardTotal = Mathf.Max(wardLeft, QueenHillSkills != null ? QueenHillSkills.wardTime : wardLeft);
-                qhCrouch = s.C / 255f;
-                // QhFlyProgress is flyT / flyTime: the share of the flight, as the host has it.
-                flyTime = 1f;
-                flyT = s.D / 255f;
+                // 10-26, the X rope (see the host's side above).
+                bishopYaw = FlatDir(dir, bishopYaw);
+                if (dir.sqrMagnitude > 0.5f) lassoDir = dir.normalized;
+                lassoPhase = (LassoPhase)s.D;
+                lassoRest = s.A;
+                lassoFrom = q;
+                lassoOn = lassoPhase == LassoPhase.Hold ? target : null;
+                if (skillStage == SkillStage.Windup && !IsLocalView) lassoAim = target;
+                lassoTip = lassoPhase == LassoPhase.Hold && target != null ? target.LassoBelly : p;
             }
-            else
+            else if (piece == PieceKind.Bishop)
             {
-                dashing = (s.Flags & NetDashing) != 0;
-                bishopValid = (s.Flags & NetValid) != 0;
-                knightTapped = (s.Flags & NetTapped) != 0;
-                netKicked = knightTapped;
-                if (piece == PieceKind.Bishop && PawnRushSkills != null && PawnRushSkills.bishopRope)
-                {
-                    // 10-26, the X rope (see the host's side above).
-                    bishopYaw = FlatDir(dir, bishopYaw);
-                    if (dir.sqrMagnitude > 0.5f) lassoDir = dir.normalized;
-                    lassoPhase = (LassoPhase)s.D;
-                    lassoRest = s.A;
-                    lassoFrom = q;
-                    lassoOn = lassoPhase == LassoPhase.Hold ? target : null;
-                    if (skillStage == SkillStage.Windup && !IsLocalView) lassoAim = target;
-                    lassoTip = lassoPhase == LassoPhase.Hold && target != null ? target.LassoBelly : p;
-                }
-                else if (piece == PieceKind.Bishop)
-                {
-                    bishopYaw = FlatDir(dir, bishopYaw);
-                    bishopPoint = p;
-                    bishopFrom = q;
-                    bishopFlight = s.C / 100f;
-                }
-                else if (dir.sqrMagnitude > 0.5f) skillDir = dir;
-                knightTarget = null;
-                pawnTarget = null;
-                switch (piece)
-                {
-                    case PieceKind.Knight:
-                        knightSpot = p;
-                        knightTarget = target;
-                        break;
-                    case PieceKind.Rook:
-                        chainPhase = (ChainPhase)s.D;
-                        chainT = s.A;
-                        chainOn = chainPhase != ChainPhase.None ? target : null;
-                        if (skillStage == SkillStage.Windup && !IsLocalView) chainAimTarget = target;
-                        // Pulling, the tip is the piece's chest on this screen (its body is drawn here every frame).
-                        chainTip = chainPhase == ChainPhase.Pull && target != null ? target.bodies[(int)BodyId.Chest].position : p;
-                        break;
-                    case PieceKind.Pawn:
-                        pawnStep = s.D;
-                        pawnTarget = target;
-                        break;
-                }
-                getUpGuardLeft = s.B;
+                bishopYaw = FlatDir(dir, bishopYaw);
+                bishopPoint = p;
+                bishopFrom = q;
+                bishopFlight = s.C / 100f;
             }
+            else if (dir.sqrMagnitude > 0.5f) skillDir = dir;
+            knightTarget = null;
+            pawnTarget = null;
+            switch (piece)
+            {
+                case PieceKind.Knight:
+                    knightSpot = p;
+                    knightTarget = target;
+                    break;
+                case PieceKind.Rook:
+                    chainPhase = (ChainPhase)s.D;
+                    chainT = s.A;
+                    chainOn = chainPhase != ChainPhase.None ? target : null;
+                    if (skillStage == SkillStage.Windup && !IsLocalView) chainAimTarget = target;
+                    // Pulling, the tip is the piece's chest on this screen (its body is drawn here every frame).
+                    chainTip = chainPhase == ChainPhase.Pull && target != null ? target.bodies[(int)BodyId.Chest].position : p;
+                    break;
+                case PieceKind.Pawn:
+                    pawnStep = s.D;
+                    pawnTarget = target;
+                    break;
+            }
+            getUpGuardLeft = s.B;
             // A piece doing its skill faces the skill's way (the effects lean on it: the queen's blade, a fallback aim).
             if (skillStage != SkillStage.None)
             {
-                Vector3 face = QueenHillSkills != null && piece == PieceKind.Queen ? slashDir : piece == PieceKind.Bishop ? bishopYaw : skillDir;
+                Vector3 face = piece == PieceKind.Bishop ? bishopYaw : skillDir;
                 facing = FlatDir(face, facing);
             }
             ApplyPrediction();
@@ -280,18 +229,14 @@ namespace ChessFight.RagdollLab
         /// <summary>This piece is not in the host's packet: its skill is idle (a client's puppet).</summary>
         public void ClearSkillNet()
         {
-            if (netStage == SkillStage.None && skillStage == SkillStage.None && skillCooldownLeft <= 0f && !flying && castleAsker == null
-                && wardLeft <= 0f && qhCrouch <= 0f && chainPhase == ChainPhase.None && lassoPhase == LassoPhase.None) return;
+            if (netStage == SkillStage.None && skillStage == SkillStage.None && skillCooldownLeft <= 0f && chainPhase == ChainPhase.None && lassoPhase == LassoPhase.None) return;
             netStage = SkillStage.None;
             netLocked = netKicked = false;
             skillStage = SkillStage.None;
             aimLocked = dashing = knightTapped = false;
-            flying = slashBlocked = shellOut = false;
             skillCooldownLeft = cooldownTotal = 0f;
-            getUpGuardLeft = wardLeft = 0f;
-            qhCrouch = 0f;
-            castleAsker = null;
-            knightTarget = qhTarget = leapTarget = pawnTarget = chainOn = null;
+            getUpGuardLeft = 0f;
+            knightTarget = pawnTarget = chainOn = null;
             chainPhase = ChainPhase.None;
             lassoOn = null;
             lassoPhase = LassoPhase.None;
@@ -307,7 +252,6 @@ namespace ChessFight.RagdollLab
             if (skillStage != SkillStage.None) stageTime += dt;
             skillCooldownLeft -= dt;
             getUpGuardLeft -= dt;
-            wardLeft -= dt;
             if (chainPhase != ChainPhase.None)
             {
                 chainT += dt;
@@ -318,7 +262,6 @@ namespace ChessFight.RagdollLab
                 lassoT += dt;
                 if (lassoPhase == LassoPhase.Hold && lassoOn != null) lassoTip = lassoOn.LassoBelly;
             }
-            if (castleAsker != null) castleAskAge += dt;
             if (predictLeft > 0f)
             {
                 predictLeft -= dt;
@@ -331,8 +274,6 @@ namespace ChessFight.RagdollLab
                     NetStats.GuessesDropped++;
                 }
             }
-            // The queen's slash runs along the floor (R97): the way is the same arithmetic on every PC.
-            if (QueenHillSkills != null && piece == PieceKind.Queen && skillStage != SkillStage.None) SlashLine(QueenHillSkills);
         }
 
         /// <summary>The local player's own piece on a client: while it aims, the aim follows this PC's camera at once
@@ -342,28 +283,10 @@ namespace ChessFight.RagdollLab
             if (PawnRushSkills == null) return;
             // R153: the Pawn Rush knight's target is found on its own screen at once (its icon and the ring over the enemy);
             // the host finds its own when the key arrives.
-            if (QueenHillSkills == null && piece == PieceKind.Knight)
+            if (piece == PieceKind.Knight)
                 knightCandidate = skillStage == SkillStage.None && State == PawnState.Active ? FindKnightTarget(PawnRushSkills, aim) : null;
             if (skillStage != SkillStage.Windup || aimLocked) return;
             input.aim = aim;
-            if (QueenHillSkills != null)
-            {
-                var s = QueenHillSkills;
-                switch (piece)
-                {
-                    case PieceKind.Queen:
-                        slashDir = AimFlat();
-                        break;
-                    case PieceKind.Bishop:
-                        BishopAimQh(s);
-                        break;
-                    case PieceKind.Knight:
-                        // A head the host's aim has caught stays (the host judges pieces); a floor spot is aimed here.
-                        if (qhTarget == null) AimFloor(s.knightRange, s.knightMaxRise, out qhPoint, out qhValid, out qhWhy);
-                        break;
-                }
-                return;
-            }
             if (piece == PieceKind.Rook) { skillDir = ChainAim(PawnRushSkills); localView = Time.frameCount; }
             else if (piece == PieceKind.Bishop) BishopAim(PawnRushSkills);
         }
@@ -376,38 +299,34 @@ namespace ChessFight.RagdollLab
         public void PredictPress(int key, float hold)
         {
             if (PawnRushSkills == null || State != PawnState.Active) return;
-            bool qh = QueenHillSkills != null;
-            bool aims = qh ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King;
+            bool aims = piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King;
             bool aiming = skillStage == SkillStage.Windup && !aimLocked && aims;
             switch (key)
             {
                 case 0:
-                    // Asked to swap by a rook (Queen of the Hill), or called by a king (R146): the key is the yes, not a
-                    // skill of its own.
-                    if (castleAsker != null || KingCallSeen) break;
+                    // Called by a king: the key accepts the call rather than starting another skill.
+                    if (KingCallSeen) break;
                     if (CouldStartSkill)
                     {
                         // The pieces whose skill opens with a warning or an aim; a dash or a leap is the body's to show.
-                        // R118: every Queen of the Hill skill starts on the floor only (the host refused the guesses made in
-                        // the air, mostly the pawn's: ten taken back out of 57 in the first two-PC test).
-                        bool windup = (qh && Grounded) || piece == PieceKind.Queen || piece == PieceKind.Rook || piece == PieceKind.Bishop
+                        bool windup = piece == PieceKind.Queen || piece == PieceKind.Rook || piece == PieceKind.Bishop
                                       || piece == PieceKind.King
-                                      || (piece == PieceKind.Knight && Grounded && (qh || knightCandidate != null));
+                                      || (piece == PieceKind.Knight && Grounded && knightCandidate != null);
                         if (windup) Predict(SkillStage.Windup, false, hold, true);
                     }
-                    else if (aiming && !(qh && piece == PieceKind.Bishop)) Predict(SkillStage.None, false, hold, false);
+                    else if (aiming) Predict(SkillStage.None, false, hold, false);
                     break;
                 case 1:
                     // R146: the king's list takes its clicks on the screen (the picks go with its key).
-                    if (!aiming || (qh && piece == PieceKind.Bishop) || (!qh && piece == PieceKind.King)) break;
-                    bool valid = qh ? qhValid : piece != PieceKind.Bishop || bishopValid;
+                    if (!aiming || piece == PieceKind.King) break;
+                    bool valid = piece != PieceKind.Bishop || bishopValid;
                     if (!valid) break;
                     // The Pawn Rush bishop throws at once (its X in flight); the others lock their aim and wind up.
-                    if (!qh && piece == PieceKind.Bishop) Predict(SkillStage.Active, false, hold, true);
+                    if (piece == PieceKind.Bishop) Predict(SkillStage.Active, false, hold, true);
                     else Predict(SkillStage.Windup, true, hold, true);
                     break;
                 case 2:
-                    if (aiming && !(qh && piece == PieceKind.Bishop)) Predict(SkillStage.None, false, hold, false);
+                    if (aiming) Predict(SkillStage.None, false, hold, false);
                     break;
             }
         }
@@ -457,18 +376,13 @@ namespace ChessFight.RagdollLab
             predictLeft = 0f;
             if (PawnRushSkills == null) return;
             bool midway = skillStage != SkillStage.None;
-            float cooldown = skillCooldownLeft, total = cooldownTotal, guard = getUpGuardLeft, ward = wardLeft;
-            var wardFrom = wardBy;
+            float cooldown = skillCooldownLeft, total = cooldownTotal, guard = getUpGuardLeft;
             ClearSkills();
-            flying = false;
-            castleAsker = null;
             skillCooldownLeft = Mathf.Max(0f, cooldown);
             cooldownTotal = total;
             if (midway && skillCooldownLeft <= 0f)
-                StartCooldown(QueenHillSkills != null ? QueenHillCooldown(QueenHillSkills) : PieceCooldown(PawnRushSkills));
+                StartCooldown(PieceCooldown(PawnRushSkills));
             getUpGuardLeft = Mathf.Max(0f, guard);
-            wardLeft = Mathf.Max(0f, ward);
-            wardBy = wardFrom;
         }
 
         // The local player's own rook aims on this screen (ViewAim): its aim target is its own, not the host's late one.

@@ -36,7 +36,7 @@ namespace ChessFight.PawnRush.Editor
 
         static Transform root;
 
-        [MenuItem("ChessFight/Pawn Rush/Art Dress Course01 (Kit v1)", false, 20)]
+        [MenuItem("ChessFight/Prototype/Pawn Rush/Art Dress Course01 (Kit v1)", false, 20)]
         public static void Dress()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -185,7 +185,7 @@ namespace ChessFight.PawnRush.Editor
             Debug.Log("[PawnRush] Art Dress Course01 (Kit v1): S_Start ~ Plaza 1 yard dressed.");
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Remove Art Dress", false, 21)]
+        [MenuItem("ChessFight/Prototype/Pawn Rush/Remove Art Dress", false, 21)]
         public static void Undress()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -982,7 +982,7 @@ namespace ChessFight.PawnRush.Editor
 
         // Blue sky with clouds and a cloud sea below, a warm sun from behind the start (front light on
         // everything the runners face), sky-tinted ambient, and haze so the far course fades into the sky.
-        [MenuItem("ChessFight/Pawn Rush/Art Kit: Apply Sky", false, 23)]
+        [MenuItem("ChessFight/Development/Pawn Rush/Art Tools/Apply Sky", false, 23)]
         public static void ApplySky()
         {
             var sky = AssetDatabase.LoadAssetAtPath<Material>(SkyMatPath);
@@ -1043,7 +1043,7 @@ namespace ChessFight.PawnRush.Editor
 
         // What MapLook loads at run time: the 96-sided cylinder, the water material and the surface textures
         // (copied into ResDir by hand from ArtSource/PawnRush/textures; normal maps marked as such here).
-        [MenuItem("ChessFight/Pawn Rush/Art Kit: Run-time Look", false, 25)]
+        [MenuItem("ChessFight/Development/Pawn Rush/Art Tools/Run-time Look", false, 25)]
         public static void SetupRuntimeLook()
         {
             if (!AssetDatabase.IsValidFolder(ResDir)) AssetDatabase.CreateFolder("Assets/Art/PawnRushMap", "Resources");
@@ -1129,7 +1129,7 @@ namespace ChessFight.PawnRush.Editor
         // at run time (station floors, planks, drawbridge...). Its floor and wall materials are shared files in
         // Assets/Materials, so Pawn Rush gets its own copies in the map palette and the kit points at them;
         // the originals stay as they are. Takes effect on the next Build Course01 v4 / Play.
-        [MenuItem("ChessFight/Pawn Rush/Art Kit: Course Materials", false, 24)]
+        [MenuItem("ChessFight/Development/Pawn Rush/Art Tools/Course Materials", false, 24)]
         public static void SetupCourseKit()
         {
             var kit = AssetDatabase.LoadAssetAtPath<Course01Kit>(KitAssetPath);
@@ -1196,7 +1196,7 @@ namespace ChessFight.PawnRush.Editor
 
         // One URP Lit material per palette name in MatDir; every kit FBX is remapped to them, so a
         // colour is tuned once for the whole kit.
-        [MenuItem("ChessFight/Pawn Rush/Art Kit: Setup Materials", false, 22)]
+        [MenuItem("ChessFight/Development/Pawn Rush/Art Tools/Setup Materials", false, 22)]
         public static void SetupMaterials()
         {
             if (!AssetDatabase.IsValidFolder(MatDir)) AssetDatabase.CreateFolder("Assets/Art/PawnRushMap", "Materials");

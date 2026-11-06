@@ -1011,7 +1011,7 @@ namespace ChessFight.Game
         }
 
         // The piece that stars in each mode, posed as on the design sample: a pawn
-        // running, the queen waving, a rook with its arm up for a fight.
+        // running, or a rook with its arm up for a fight.
         static RenderTexture ModePortrait(string key)
         {
             switch (key)
@@ -1019,8 +1019,6 @@ namespace ChessFight.Game
                 case "kingrush":
                     return MenuArt.Portrait("run", PieceKind.Pawn, 0,
                         new FigurePose { Leg = .7f, ArmLeft = 1.1f, ArmRight = -.1f, Lean = .22f, Jump = .15f }, new Vector2(3, 4), false);
-                case "queenhill":
-                    return MenuArt.Portrait("wave", PieceKind.Queen, 0, new FigurePose { ArmLeft = 2.3f, ArmRight = .5f, Jump = .05f }, new Vector2(1, 6), false);
                 case "swordfight":
                     return MenuArt.Portrait("fight", PieceKind.Rook, 0, new FigurePose { ArmRight = 2f, ArmLeft = .4f, Lean = .08f }, new Vector2(-1.5f, 6), false, 7.2f, 1.35f);
                 default:
@@ -1033,7 +1031,6 @@ namespace ChessFight.Game
             switch (key)
             {
                 case "kingrush": return new Color(.27f, .51f, .94f);
-                case "queenhill": return new Color(.62f, .38f, .88f);
                 case "swordfight": return new Color(.86f, .32f, .28f);
                 default: return new Color(.4f, .45f, .55f);
             }

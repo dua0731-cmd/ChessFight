@@ -21,7 +21,7 @@ namespace ChessFight.RagdollLab.Editor
         const string OutDir = "Assets/Resources/MenuPieces";
         static readonly string[] Pieces = { "Pawn", "King", "Queen", "Rook", "Bishop", "Knight" };
 
-        [MenuItem("ChessFight/Ragdoll Lab/Bake Menu Pieces")]
+        [MenuItem("ChessFight/Development/Ragdoll Lab/Bake Menu Pieces")]
         public static void BakeAll()
         {
             var log = new StringBuilder("[MenuPieces]");

@@ -79,9 +79,9 @@ namespace ChessFight.RagdollLab
             yield return Clear();
         }
 
-        IEnumerator PadLandings(QueenHillTestBed bed)
+        IEnumerator PadLandings(PhysicsMechanicsBed bed)
         {
-            Vector3 pad = QueenHillTestBed.PadCenter, spot = bed.Pad.Landing;
+            Vector3 pad = PhysicsMechanicsBed.PadCenter, spot = bed.Pad.Landing;
             var runs = new List<PadThrowResult>();
             yield return ThrowFromPad("걸어서", pad + new Vector3(-3f, 0f, 0f), Vector3.right, null,
                 _ => new PawnInput { move = Vector3.right }, spot, runs);
@@ -104,7 +104,7 @@ namespace ChessFight.RagdollLab
 
             // The height: the arc peaks PadClearance above the landing, 7.2 m over the pad. The anchor must not
             // hold the body down on the way (it rides along with the hips in the air).
-            float want = QueenHillTestBed.PadThrow.y + QueenHillTestBed.PadClearance;
+            float want = PhysicsMechanicsBed.PadThrow.y + PhysicsMechanicsBed.PadClearance;
             var still = runs[runs.Count - 1];
             var crate = GameObject.CreatePrimitive(PrimitiveType.Cube);
             crate.name = "launch-crate";
@@ -120,7 +120,7 @@ namespace ChessFight.RagdollLab
             float crateOff = Flat(crate.transform.position - spot).magnitude;
             Destroy(crate);
             bool high = still.thrown && still.rise > want * 0.93f && still.rise < want * 1.07f;
-            bool crateOk = crateThrown && crateY > QueenHillTestBed.PadThrow.y && crateOff < 2f;
+            bool crateOk = crateThrown && crateY > PhysicsMechanicsBed.PadThrow.y && crateOff < 2f;
             Report("M7 발사: 몸이 계산한 높이까지 오름 (이동 앵커가 위로 튀는 힘을 막지 않음), 상자도 같은 곡선",
                 high && crateOk,
                 $"제자리에서 던져진 몸 {still.rise:F2} m 오름 (계산 {want:F1} m), "
@@ -128,12 +128,12 @@ namespace ChessFight.RagdollLab
             yield return Sim(0.2f);
         }
 
-        IEnumerator SpringLift(QueenHillTestBed bed)
+        IEnumerator SpringLift(PhysicsMechanicsBed bed)
         {
             var spring = bed.Spring;
             // Start early in a cycle, so the pawns stand on it a while before it fires.
             if (spring.SecondsToFire < 2.2f) yield return Sim(spring.SecondsToFire + 0.1f);
-            Vector3 center = QueenHillTestBed.SpringCenter + Vector3.up * QueenHillTestBed.SpringTop;
+            Vector3 center = PhysicsMechanicsBed.SpringCenter + Vector3.up * PhysicsMechanicsBed.SpringTop;
             Vector3[] spots = { new Vector3(-0.6f, 0f, -0.6f), new Vector3(0.6f, 0f, 0.1f), new Vector3(-0.5f, 0f, 0.75f) };
             var pawns = spots.Select((o, i) => Spawn(center + o, Vector3.right, $"spring-{i + 1}")).ToArray();
             yield return Sim(0.6f);
@@ -150,9 +150,9 @@ namespace ChessFight.RagdollLab
             });
             bool together = launchStep.All(s => s > 0 && s == launchStep[0]);
             yield return Sim(3f);
-            Vector3 shift = new Vector3(QueenHillTestBed.SpringThrow.z, 0f, 0f);
+            Vector3 shift = new Vector3(PhysicsMechanicsBed.SpringThrow.z, 0f, 0f);
             var offs = pawns.Select((p, i) => Flat(p.Hips.position - (from[i] + shift)).magnitude).ToArray();
-            bool landed = pawns.All(p => p.State == PawnState.Active && p.Hips.position.y > QueenHillTestBed.SpringLedgeTop + 0.1f);
+            bool landed = pawns.All(p => p.State == PawnState.Active && p.Hips.position.y > PhysicsMechanicsBed.SpringLedgeTop + 0.1f);
             Report("M7 태엽 스프링: 감기는 동안은 그대로, 풀리면 위에 선 모두를 한꺼번에 8 m 위 바닥으로 (선 간격 그대로)",
                 waited && together && landed && offs.All(o => o < 0.6f),
                 $"감기는 동안 안 튐 {waited}, 같은 순간 발사 {together}, 위층에 서 있음 {landed}, "

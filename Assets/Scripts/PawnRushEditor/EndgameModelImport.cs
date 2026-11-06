@@ -26,7 +26,7 @@ namespace ChessFight.PawnRush.Editor
             { "EG_Lamp_Emissive", 1f },
         };
 
-        [MenuItem("ChessFight/Pawn Rush/Endgame: Import Blender Models (R255)", false, 30)]
+        [MenuItem("ChessFight/Development/Pawn Rush/Models/Import Endgame Models", false, 30)]
         public static void Import()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;

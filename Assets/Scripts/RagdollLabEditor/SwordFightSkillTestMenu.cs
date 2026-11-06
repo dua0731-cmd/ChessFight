@@ -15,7 +15,7 @@ namespace ChessFight.RagdollLab.Editor
     {
         public const string ScenePath = "Assets/Scenes/SkillTest/SwordFight_SkillTest/SwordFight_SkillTest.unity";
 
-        [MenuItem("ChessFight/Sword Fight/Open Skill Test", false, 42)]
+        [MenuItem("ChessFight/Sword Fight/Open Skill Test", false, 1)]
         public static void Open()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
@@ -45,7 +45,7 @@ namespace ChessFight.RagdollLab.Editor
 
     /// <summary>Writes SwordFightSkillFilm's frames into H.264 .mp4 files with Unity's own encoder, one file per Began …
     /// Ended. R106: with the skills' sounds — every sound SwordFightSkillSfx starts is mixed into a 44.1 kHz stereo track
-    /// from the frame it started on, at its own speed (also in the slow film), as QueenHillSkillFilmEncoder does. R116: a
+    /// from the frame it started on, at its own speed (also in the slow film). R116: a
     /// sound cut short (an edge skill called off) fades out in the track where it did in the game.</summary>
     [InitializeOnLoad]
     public static class SwordFightSkillFilmEncoder

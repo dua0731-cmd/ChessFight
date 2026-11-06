@@ -11,8 +11,8 @@ namespace ChessFight.RagdollLab
     /// ("퀸 오브 더 힐 사운드랑 똑같게"), queen A 만화 효과음, rook A 만화 효과음, bishop B 마법 줄, knight E 묵직한 말.
     ///
     /// The clips are in Resources/PawnRushSkillSfx, named after the moment (Tools/Sfx/PawnRushSkills/export_unity.py
-    /// wrote them); the pawn's come from Resources/QueenHillSkillSfx (PawnDash, PawnBump, PawnCrouch). Prepared once when
-    /// loaded like QueenHillSkillSfx does: the quiet lead-in and the silent tail are cut and the loudest 0.3 s is brought
+    /// wrote them); the pawn's come from Resources/SharedSkills/Sfx (PawnDash, PawnBump, PawnCrouch). Prepared once when
+    /// loaded with the shared normalization: the quiet lead-in and the silent tail are cut and the loudest 0.3 s is brought
     /// to −21 dB (R119, was −15; at most ×8, peaks under 0.98). Played flat (2D), panned a little by where the moment is on screen.
     ///
     /// What starts a sound: the effect signals (<see cref="RagdollPawn.SkillFx"/> — online a client raises them from the
@@ -105,7 +105,7 @@ namespace ChessFight.RagdollLab
             Current = this;
             fx = GetComponent<PawnRushSkillFx>();
             foreach (var clip in Resources.LoadAll<AudioClip>(Folder)) Add(clip);
-            foreach (var name in PawnClips) Add(Resources.Load<AudioClip>(QueenHillSkillSfx.Folder + "/" + name));
+            foreach (var name in PawnClips) Add(Resources.Load<AudioClip>("SharedSkills/Sfx/" + name));
             var holder = new GameObject("Pawn Rush skill sounds").transform;
             holder.SetParent(transform, false);
             voices = new AudioSource[Voices];

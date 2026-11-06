@@ -436,7 +436,7 @@ def king_rush():
     d.script(play, "PlaytestSpawner",
         "  characterPrefab: %s\n  spawnPoint: {fileID: %d}\n  cameraRig: {fileID: %d}\n  fallLimit: -20\n  showHelp: 1\n"
         % (prefab_ref(CHARACTER), first["tr"], rig))
-    write("Assets/Scenes/KingRush.unity", d.render(PREAMBLE))
+    write("Assets/Prototype/PawnRush/Scenes/PawnRushCapsule.unity", d.render(PREAMBLE))
 
 def ragdoll_test():
     d = Doc(1000)

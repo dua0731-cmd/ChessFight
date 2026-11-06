@@ -54,7 +54,7 @@ namespace ChessFight.RagdollLab.Editor
             m.clipAnimations = clips;
         }
 
-        [MenuItem("ChessFight/Sword Fight/Skill Clips/Fill From Mixamo Folder")]
+        [MenuItem("ChessFight/Development/Sword Fight/Skill Clips/Fill From Mixamo Folder")]
         public static void Fill()
         {
             if (!AssetDatabase.IsValidFolder(Folder))

@@ -9,7 +9,7 @@ namespace ChessFight.PawnRush
     // The royal water garden's beats in the order a pawn runs them (section frame: x east, z north, y = a floor's top).
     // Numbers are the v31 layout the user approved as a picture on 11-02 (plaza option A, the shortcut off the fourth
     // platform, four boat lanes with two boats each, both teams riding them); where the graybox differs, the reason is
-    // next to it and in Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md.
+    // next to it and in Docs/PawnRush/PAWN_RUSH_ROYAL_GARDEN.md.
     public static partial class RoyalWaterGardenBuilder
     {
         // ------------------------------------------------------------------ beat 1: the fountain plaza (y 0)

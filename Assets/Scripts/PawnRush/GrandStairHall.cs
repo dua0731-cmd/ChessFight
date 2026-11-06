@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // The root of the mid-game obstacle section 2-1, the grand stair hall (Assets/Prefabs/PawnRushSections/
-    // Mid_2-1_GrandStairHall.prefab; level design v0.3, Docs/KingRush/PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md,
+    // Mid_2-1_GrandStairHall.prefab; level design v0.3, Docs/PawnRush/PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md,
     // reshaped into one spiral way in R303).
     //
     // The hall is built from code (GrandStairHallBuilder). The menu ChessFight > Pawn Rush > Build Mid 2-1 Grand

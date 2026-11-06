@@ -72,34 +72,34 @@ namespace ChessFight.VFX.Editor
         // The crater, from his hips as he hangs: on the wall's face, a little over them.
         static readonly Vector3 VaultCrater = new Vector3(0f, .26f, .1f);
 
-        [MenuItem("ChessFight/VFX/King/Build E2 (mark only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build E2 (mark only)")]
         public static void BuildE2() => BuildOne(BuildMark, "E2 the crown foretold (E_Gather)");
 
-        [MenuItem("ChessFight/VFX/King/Build E2 (mark only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build E2 (mark only)", true)]
         static bool CanBuildE2() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build E3 (vault only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build E3 (vault only)")]
         public static void BuildE3() => BuildOne(BuildVault, "E3 the spring (E_Vault)");
 
-        [MenuItem("ChessFight/VFX/King/Build E3 (vault only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build E3 (vault only)", true)]
         static bool CanBuildE3() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build E4 (land only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build E4 (land only)")]
         public static void BuildE4() => BuildOne(BuildLand, "E4 the landing (E_Land)");
 
-        [MenuItem("ChessFight/VFX/King/Build E4 (land only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build E4 (land only)", true)]
         static bool CanBuildE4() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build E5 (land hit only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build E5 (land hit only)")]
         public static void BuildE5() => BuildOne(BuildLandHit, "E5 whoever the landing throws (E_Hit)");
 
-        [MenuItem("ChessFight/VFX/King/Build E5 (land hit only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build E5 (land hit only)", true)]
         static bool CanBuildE5() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build E6 (drop only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build E6 (drop only)")]
         public static void BuildE6() => BuildOne(BuildDrop, "E6 the fall (E_Drop)");
 
-        [MenuItem("ChessFight/VFX/King/Build E6 (drop only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build E6 (drop only)", true)]
         static bool CanBuildE6() => !EditorApplication.isPlaying;
 
         // ---------------------------------------------------------------- E1 (R198): sparks off the stab

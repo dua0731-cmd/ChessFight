@@ -23,7 +23,7 @@ namespace ChessFight.VFX.Editor
         // The chandelier's look over the shader's own (the knights'); ChandelierRain uses the same when the prefab is missing.
         public const float InnerRing = 2.5f / 4.5f, Ticks = 24f, Mark = 1.3f, InnerLight = 1.8f;
 
-        [MenuItem("ChessFight/VFX/Hazard/Build W1 chandelier (falling chandelier warning)")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build W1 chandelier (falling chandelier warning)")]
         public static void Build()
         {
             if (EditorApplication.isPlaying)
@@ -65,7 +65,7 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Hazard W1 chandelier built: the falling chandelier's floor warning (Chandelier_Warn). Workbench: any piece, " + prefab.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build W1 chandelier (falling chandelier warning)", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build W1 chandelier (falling chandelier warning)", true)]
         static bool CanBuild() => !EditorApplication.isPlaying;
 
         static void Look(Material m)

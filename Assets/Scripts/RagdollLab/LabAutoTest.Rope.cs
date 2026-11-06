@@ -32,7 +32,7 @@ namespace ChessFight.RagdollLab
         IEnumerator RopeClimb()
         {
             var p = game.tuning.values;
-            Vector3 top = QueenHillTestBed.ClimbRopeTop;
+            Vector3 top = PhysicsMechanicsBed.ClimbRopeTop;
             var pawn = Spawn(new Vector3(top.x - 1.4f, 0f, top.z), Vector3.right, "rope-climb");
             yield return Sim(0.5f);
             // Walk up to it with the button held: the hands take it.
@@ -58,8 +58,8 @@ namespace ChessFight.RagdollLab
             float spent = (before - pawn.Stamina) * p.climbStaminaMax;
             yield return Sim(0.8f, () => RopeInput(pawn, false));
             bool onTop = pawn.RopeTopOuts > topOuts && !pawn.OnRope && pawn.State == PawnState.Active
-                         && pawn.Hips.position.y > QueenHillTestBed.RopeTowerTop && pawn.Hips.position.x > QueenHillTestBed.RopeTowerFaceX;
-            float rise = QueenHillTestBed.RopeTowerTop - y0;
+                         && pawn.Hips.position.y > PhysicsMechanicsBed.RopeTowerTop && pawn.Hips.position.x > PhysicsMechanicsBed.RopeTowerFaceX;
+            float rise = PhysicsMechanicsBed.RopeTowerTop - y0;
             Report("M6 밧줄 오르기: 6 m 사슬을 우클릭으로 잡고 W로 올라 꼭대기에 올라섬 (멈추면 스테미나 안 줆)",
                 grabAt >= 0f && hung && Mathf.Abs(still) < 0.002f && onTop && !wall,
                 $"잡음 {Fmt(grabAt)}, 1초 가만히 {still * 100f:F1}% 줄어듦, 매달림 {hung}, 꼭대기에 올라섬 {onTop} ({climbT:F1}초, 약 {rise:F1} m), "
@@ -73,7 +73,7 @@ namespace ChessFight.RagdollLab
         {
             // Stand ready well before the swing's next visit to the west end.
             if (swing.SecondsToEnd(false, ObstacleClock.Now) < 1.5f) yield return Sim(swing.SecondsToEnd(false, ObstacleClock.Now) + 0.2f);
-            var pawn = Spawn(QueenHillTestBed.SwingStart, Vector3.right, name);
+            var pawn = Spawn(PhysicsMechanicsBed.SwingStart, Vector3.right, name);
             yield return Sim(0.5f);
             float t = 0f;
             for (; t < swing.Period && !pawn.OnRope; t += Dt) yield return Sim(Dt, () => RopeInput(pawn, true));
@@ -97,11 +97,11 @@ namespace ChessFight.RagdollLab
             bool stayed = pawn.OnRope;
             yield return Sim(1.5f, () => RopeInput(pawn, false));
             Vector3 h = pawn.Hips.position;
-            bool across = h.x > QueenHillTestBed.SwingEastEdgeX + 0.3f && h.y > QueenHillTestBed.SwingPlatformTop && pawn.State == PawnState.Active;
+            bool across = h.x > PhysicsMechanicsBed.SwingEastEdgeX + 0.3f && h.y > PhysicsMechanicsBed.SwingPlatformTop && pawn.State == PawnState.Active;
             Report("M6 그네: 8 m 틈을 그네로 건넘 (끝에 왔을 때 잡고, 건너편 끝에서 놓기)",
                 on && stayed && across,
                 $"잡음 {Fmt(grabAt)}, {ride:F1}초 타는 동안 매달림 {stayed} (가장 낮을 때 골반 {lowest:F2} m), "
-                + $"놓은 뒤 ({h.x:F1}, {h.y:F2}) = 건너편 가장자리({QueenHillTestBed.SwingEastEdgeX:F0})에서 {h.x - QueenHillTestBed.SwingEastEdgeX:F2} m, 서 있음 {pawn.State == PawnState.Active}");
+                + $"놓은 뒤 ({h.x:F1}, {h.y:F2}) = 건너편 가장자리({PhysicsMechanicsBed.SwingEastEdgeX:F0})에서 {h.x - PhysicsMechanicsBed.SwingEastEdgeX:F2} m, 서 있음 {pawn.State == PawnState.Active}");
             yield return Clear();
         }
 
@@ -133,7 +133,7 @@ namespace ChessFight.RagdollLab
 
         IEnumerator PoleClimb()
         {
-            Vector3 pole = QueenHillTestBed.PoleCenter;
+            Vector3 pole = PhysicsMechanicsBed.PoleCenter;
             var pawn = Spawn(new Vector3(pole.x - 1.3f, 0f, pole.z), Vector3.right, "pole");
             yield return Sim(0.5f);
             float y0 = pawn.Hips.position.y, peak = y0, held = 0f;

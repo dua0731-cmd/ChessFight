@@ -36,7 +36,7 @@
 | 보간 버퍼 | 미구현. 50ms 배수 권장 | — |
 | 되감기 판정, 래그돌 팔다리 로컬 | 래그돌 병합과 권한 결정 후 | — |
 | M1 기물 선택, M2 재대결 | 게임 규칙 필요 | — |
-| 체크포인트 순서 검증 | 지금 `Checkpoint.Reached`는 로컬 이벤트. 호스트 판정으로 바꾸는 작업과 같음 | [KingRush](../KingRush/README.md) |
+| 체크포인트 순서 검증 | 지금 `Checkpoint.Reached`는 로컬 이벤트. 호스트 판정으로 바꾸는 작업과 같음 | [KingRush](../PawnRush/README.md) |
 | 두 브랜치 통일 | 결정 필요(킹을-지켜라는 비호환) | [OVERVIEW](../Project/OVERVIEW.md) |
 
 ## 3. 기획안에 보탠 의견

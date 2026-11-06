@@ -118,7 +118,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 ## 8. 퀸 오브 더 힐 기능 (M1~M11, M13)
 
-2026-09-26, 브랜치 `JY-ragdoll_v2`, 요청 R34·R35. 무엇을 왜 만드는지와 완료 기준은 [MECHANICS_TODO](../GameModes/QueenOfTheHill/MECHANICS_TODO.md). 자동 점검(빌드한 랩 플레이어) 통과, **사용자가 Unity에서 1차 12개 확인(09-26, 모두 성공)**. 그 뒤 의견대로 고친 것(넘어진 뒤 1초 누워 있기, 물에 5초 뜨기·버둥)은 재확인 대기 → [VALIDATION](../Network/VALIDATION.md) 최상단 표.
+2026-09-26, 브랜치 `JY-ragdoll_v2`, 요청 R34·R35. 무엇을 왜 만드는지와 완료 기준은 [MECHANICS_TODO](../Archive/QueenOfTheHill/MECHANICS_TODO.md). 자동 점검(빌드한 랩 플레이어) 통과, **사용자가 Unity에서 1차 12개 확인(09-26, 모두 성공)**. 그 뒤 의견대로 고친 것(넘어진 뒤 1초 누워 있기, 물에 5초 뜨기·버둥)은 재확인 대기 → [VALIDATION](../Network/VALIDATION.md) 최상단 표.
 
 ### 8.1 새 입력 (M2)
 
@@ -189,7 +189,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 ### 8.7 갈고리 = 2칸 이동, 앙파상 (M5)
 
-2026-09-27, 요청 R40. 기획([DESIGN §4.1·4.2](../GameModes/QueenOfTheHill/DESIGN.md))에서 **사용자가 조작과 규칙을 바꿨다**: 능력 키로 바로 던지는 대신 **E로 꺼내고, 좌클릭을 꾹 누르면 돌팔매처럼 머리 위로 돌리며 게이지가 차고, 떼면 게이지만큼 멀리 날아간다.** 표시된 면만이 아니라 **어느 면에나** 박히고, 다리보다 낮은 곳에서 튕기는 규칙은 없다(레벨을 그렇게 안 걸리게 만든다). 코드: `RagdollPawn.Hook.cs`(동작), `PawnHookView.cs`(그림), `Gameplay/Course/HookStartZone.cs`(던질 수 있는 곳).
+2026-09-27, 요청 R40. 기획([DESIGN §4.1·4.2](../Archive/QueenOfTheHill/DESIGN.md))에서 **사용자가 조작과 규칙을 바꿨다**: 능력 키로 바로 던지는 대신 **E로 꺼내고, 좌클릭을 꾹 누르면 돌팔매처럼 머리 위로 돌리며 게이지가 차고, 떼면 게이지만큼 멀리 날아간다.** 표시된 면만이 아니라 **어느 면에나** 박히고, 다리보다 낮은 곳에서 튕기는 규칙은 없다(레벨을 그렇게 안 걸리게 만든다). 코드: `RagdollPawn.Hook.cs`(동작), `PawnHookView.cs`(그림), `Gameplay/Course/HookStartZone.cs`(던질 수 있는 곳).
 
 | 무엇 | 어떻게 | 값 (`RagdollTuning` "갈고리" 묶음) |
 |---|---|---|
@@ -215,7 +215,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 ### 8.9 개척의 종·열리는 길 (M8)과 체크포인트 (M9)
 
-2026-09-27, R42(자율). 기획: [DESIGN §3.3 B·C](../GameModes/QueenOfTheHill/DESIGN.md).
+2026-09-27, R42(자율). 기획: [DESIGN §3.3 B·C](../Archive/QueenOfTheHill/DESIGN.md).
 
 - **규칙(Core, Unity 없음)** `Core/QueenHillRules`: 구간 1..n(0 = 출발 다리). **먼저 종을 친 팀이 그 구간을 연다**(나중에 친 팀은 못 바꿈). 연 뒤 **20초는 연 팀만**, 그다음 누구나. 개인 체크포인트 = 내가 선 가장 높은 착지대, 팀 체크포인트 = 우리 팀이 연 가장 높은 구간 **한 칸 아래**, 다시 나오는 곳 = 둘 중 높은 곳(0이면 다리). 열린 목록은 짧은 글자(`구간:팀:열린 시각 ms;…`)로 오가고, 받는 쪽은 **열기만** 한다(깨진 글자는 통째로 버림). Core 테스트 3개.
 - **장면 부품(Gameplay/QueenHill)**:
@@ -232,7 +232,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 ### 8.10 도약대·태엽 스프링 (M7)
 
-2026-09-27, R43(자율). 기획: [DESIGN §3.4 S3·S5](../GameModes/QueenOfTheHill/DESIGN.md), [MECHANICS_TODO M7](../GameModes/QueenOfTheHill/MECHANICS_TODO.md).
+2026-09-27, R43(자율). 기획: [DESIGN §3.4 S3·S5](../Archive/QueenOfTheHill/DESIGN.md), [MECHANICS_TODO M7](../Archive/QueenOfTheHill/MECHANICS_TODO.md).
 
 - **장면 부품(Gameplay)** `Obstacles/LaunchPad`: 위에 선 것을 **정해진 곡선**으로 던진다. 착지점(패드 기준 위·앞)과 착지점 위로 얼마나 더 솟을지(`clearance`)만 정하면, 던질 속도는 **각자 선 자리의 발밑에서** 계산한다. 그래서 패드 어디를 밟아도, 걸어서·달려서·점프해서 올라와도 같은 곳에 내린다. 속도를 **더하지 않고 정한다**(`ILaunchable.Launch`). 캐릭터가 아닌 몸(상자)도 같은 곡선으로 난다.
   - **L자 도약대**(`period` 0): 밟는 순간 던진다. 한 번 던진 몸은 0.6초 동안 다시 안 던진다(떠오르는 동안 상자 안에 있으니까).
@@ -249,7 +249,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 ### 8.11 밧줄·사슬·그네 (M6)
 
-2026-09-27, R44(자율). 기획: [DESIGN §3.4 S2·S4·S5·S6·S8](../GameModes/QueenOfTheHill/DESIGN.md), [MECHANICS_TODO M6](../GameModes/QueenOfTheHill/MECHANICS_TODO.md).
+2026-09-27, R44(자율). 기획: [DESIGN §3.4 S2·S4·S5·S6·S8](../Archive/QueenOfTheHill/DESIGN.md), [MECHANICS_TODO M6](../Archive/QueenOfTheHill/MECHANICS_TODO.md).
 
 - **먼저 시험한 것(MECHANICS_TODO)**: 두꺼운 밧줄 기둥을 지금의 벽 등반으로 오를 수 있는가 → **된다.** 지름 0.5 m 기둥을 W+우클릭 5초에 5.5 m 올랐다. 그래서 **서 있는 사슬 기둥은 벽 등반으로 대신**하고 따로 `ClimbChain`을 만들지 않았다. 매달린 밧줄·사슬·그네는 아래 `RopeLine`이 맡는다.
 - **장면 부품(Gameplay)** `Obstacles/RopeLine`: 이 오브젝트 위치(꼭대기)에서 늘어진 선. 길이, 흔들리는 각도(0 = 가만히 있는 밧줄·사슬), 주기, 위상. **흔들림은 공유 장애물 시계의 함수**(`각도 = 최대각 × sin(2π(t+위상)/주기)`, 로컬 앞쪽으로)라 모든 PC에서 같은 자리에 있고 패킷이 없다. 충돌체가 없어 아무도 밀지 않는다(캐릭터는 `RopeLine.All`로 찾는다). 굵기를 주면 원기둥으로 그린다. `Point`·`PointVelocity`·`Distance`·`SecondsToEnd`(다음에 끝에 닿기까지).
@@ -266,7 +266,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 ### 8.12 상태 효과: 찌그러짐·비틀·면역 (M13)
 
-2026-09-27, R45(자율). 기획: [DESIGN §6.2](../GameModes/QueenOfTheHill/DESIGN.md)(나이트의 밟기, 비숍의 돌조각, 킹의 면역).
+2026-09-27, R45(자율). 기획: [DESIGN §6.2](../Archive/QueenOfTheHill/DESIGN.md)(나이트의 밟기, 비숍의 돌조각, 킹의 면역).
 
 - **약속(Gameplay)** `Characters/IStatusReceiver`: `Squash(초, 면역 초)`, `Stagger(초)`. 능력(M12)이 `IHitReceiver`처럼 이것으로 캐릭터에 효과를 준다. 안 먹히면 false(면역, 이미 넘어짐, 직전 찌그러짐의 면역 중). 방장만 부르고 꼭두각시는 무시한다.
 - **래그돌** `RagdollPawn.Status.cs`:
@@ -279,7 +279,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 ### 8.13 승격과 기물별 성능 (M11)
 
-2026-09-27, R46(자율). 기획: [DESIGN §6.2](../GameModes/QueenOfTheHill/DESIGN.md)(시작값).
+2026-09-27, R46(자율). 기획: [DESIGN §6.2](../Archive/QueenOfTheHill/DESIGN.md)(시작값).
 
 - **규칙(Core, Unity 없음)** `Core/ChessPieces`: `PieceKind`(폰·룩·비숍·나이트·킹·퀸)과 `PieceStats`(무게·이동·등반 배율, 전력질주 여부, 상태 면역). 시작값: **룩** 무게 1.5·등반 0.7배, **나이트** 무게 0.8, **킹** 무게 3·이동 0.8배·전력질주 없음·찌그러짐/비틀 면역, **퀸** 무게 2, 비숍·폰은 1. 승격 규칙 `CanPromote`: **폰만**, 룩·비숍·나이트·킹 중 하나, **킹은 팀에 하나**, 퀸은 고를 수 없다(2단계에서 정해짐). Core 테스트 2개(34개).
 - **장면 부품(Gameplay)** `QueenHill/PromotionPad`(받침대, 상호작용 키 F로 승격, `demote`는 시험대용 "폰으로"), `Characters/IPromotable`(`Piece`, `Promote`).

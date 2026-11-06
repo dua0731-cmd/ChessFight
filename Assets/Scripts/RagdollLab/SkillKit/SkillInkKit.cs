@@ -10,8 +10,8 @@ using Random = UnityEngine.Random;
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// Design A's parts ("잉크 테두리 장난감 체스", picked 2026-10-08 for Pawn Rush, Queen of the Hill and Sword Fight), for any
-    /// mode's skill effects (R90; the same parts as the Queen of the Hill effects' own kit, QueenHillSkillFx.Kit.cs, R89,
+    /// Design A's parts ("잉크 테두리 장난감 체스", picked 2026-10-08 for Pawn Rush and Sword Fight), for any
+    /// mode's shared skill effects (R90,
     /// made standalone so the Pawn Rush effects draw with them too):
     ///
     /// flat inked shapes on a quad (board squares, rings, a horseshoe, arcs: <c>ChessFight/Skill Tile</c>), cartoon puffs and
@@ -125,10 +125,10 @@ namespace ChessFight.RagdollLab
             if (parent != null) root.SetParent(parent, false);
             this.viewer = viewer;
             this.eye = eye;
-            shTile = Find("ChessFight/Skill Tile", "QueenHillSkillFx/SkillTile");
-            shInk = Find("ChessFight/Skill Ink", "QueenHillSkillFx/SkillInk");
-            shLine = Find("ChessFight/Skill Ink Line", "QueenHillSkillFx/SkillInkLine");
-            shBand = Find("ChessFight/Skill Band", "QueenHillSkillFx/SkillBand");
+            shTile = Find("ChessFight/Skill Tile", "SharedSkills/Fx/SkillTile");
+            shInk = Find("ChessFight/Skill Ink", "SharedSkills/Fx/SkillInk");
+            shLine = Find("ChessFight/Skill Ink Line", "SharedSkills/Fx/SkillInkLine");
+            shBand = Find("ChessFight/Skill Band", "SharedSkills/Fx/SkillBand");
             shToon = Find("ChessFight/Skill Toon", "PawnRushSkillFx/SkillToon");
             matTile = new Material(shTile) { hideFlags = HideFlags.HideAndDontSave };
             matInk = new Material(shInk) { hideFlags = HideFlags.HideAndDontSave };

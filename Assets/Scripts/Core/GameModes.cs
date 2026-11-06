@@ -38,15 +38,11 @@ namespace ChessFight.Network
             "kingrush", "폰 러쉬", "팀 레이스",
             "장애물 코스를 달려 팀원 4명이 먼저 결승선을 넘으면 승리", "PR", "PawnRush_Course01");
 
-        public static readonly GameModeInfo QueenOfTheHill = new GameModeInfo(
-            "queenhill", "퀸 오브 더 힐", "정상 쟁탈",
-            "가운데 성을 올라 정상에 먼저 닿은 폰이 퀸으로 승격", "QH", null);
-
         public static readonly GameModeInfo SwordFight = new GameModeInfo(
             "swordfight", "소드 파이트", "대난투",   // 10-27 (승규 님): was "3 VS 3 · 떨어뜨리고 빼앗기"
             "상대를 판 밖으로 떨어뜨리면 1점, 먼저 10점. 폰으로 떨어뜨리면 그 기물을 빼앗아요", "SF", "SwordFight");
 
-        public static readonly GameModeInfo[] All = { KingRush, QueenOfTheHill, SwordFight };
+        public static readonly GameModeInfo[] All = { KingRush, SwordFight };
 
         // What a fresh party queues for.
         public static GameModeInfo Default => KingRush;

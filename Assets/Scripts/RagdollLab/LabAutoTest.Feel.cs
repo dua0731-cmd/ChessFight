@@ -356,7 +356,7 @@ namespace ChessFight.RagdollLab
         /// reeled up 10 m and stood on top. The camera looks where the throw is aimed, as a player's would.</summary>
         IEnumerator FeelHook()
         {
-            var pawn = Spawn(QueenHillTestBed.HookStart, Vector3.right, "feel");
+            var pawn = Spawn(PhysicsMechanicsBed.HookStart, Vector3.right, "feel");
             yield return FeelPreroll(pawn, 0.8f, 90f);
             var (aim, steps) = TowerTopThrow(pawn, 1.5f);
             var cam = game.labCamera;
@@ -392,7 +392,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The L-shaped launch pad (M7): walk onto it holding W, up 6 m and 3 m on, onto the ledge.</summary>
         IEnumerator FeelLaunchPad()
         {
-            var pawn = Spawn(QueenHillTestBed.PadCenter + new Vector3(-4f, 0f, 0f), Vector3.right, "feel");
+            var pawn = Spawn(PhysicsMechanicsBed.PadCenter + new Vector3(-4f, 0f, 0f), Vector3.right, "feel");
             yield return FeelPreroll(pawn, 0.8f, 90f);
             clipFolder = FeelFolder("launch_pad");
             // W until the pad throws it; the flight needs no keys (it flies the pad's arc).
@@ -405,7 +405,7 @@ namespace ChessFight.RagdollLab
         {
             var spring = Bed != null ? Bed.Spring : null;
             if (spring != null && spring.SecondsToFire < 2.5f) yield return Sim(spring.SecondsToFire + 0.1f);
-            var pawn = Spawn(QueenHillTestBed.SpringCenter + Vector3.up * QueenHillTestBed.SpringTop, Vector3.right, "feel");
+            var pawn = Spawn(PhysicsMechanicsBed.SpringCenter + Vector3.up * PhysicsMechanicsBed.SpringTop, Vector3.right, "feel");
             yield return FeelPreroll(pawn, 0.6f, 90f);
             float wait = spring != null ? Mathf.Max(0.3f, spring.SecondsToFire - 0.8f) : 1f;
             // Skip most of the wind-up; record the last moment of it, the throw and the landing.
@@ -417,7 +417,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The chain up the 6 m tower (M6): walk to it with the right button, W up it and onto the top.</summary>
         IEnumerator FeelRopeClimb()
         {
-            Vector3 top = QueenHillTestBed.ClimbRopeTop;
+            Vector3 top = PhysicsMechanicsBed.ClimbRopeTop;
             var pawn = Spawn(new Vector3(top.x - 1.6f, 0f, top.z), Vector3.right, "feel");
             yield return FeelPreroll(pawn, 0.8f, 90f);
             clipFolder = FeelFolder("rope_climb");
@@ -434,7 +434,7 @@ namespace ChessFight.RagdollLab
             var swing = Bed != null ? Bed.Swing : null;
             if (swing == null) yield break;
             if (swing.SecondsToEnd(false, ObstacleClock.Now) < 2f) yield return Sim(swing.SecondsToEnd(false, ObstacleClock.Now) + 0.2f);
-            var pawn = Spawn(QueenHillTestBed.SwingStart, Vector3.right, "feel");
+            var pawn = Spawn(PhysicsMechanicsBed.SwingStart, Vector3.right, "feel");
             yield return FeelPreroll(pawn, 0.6f, 90f);
             // Skip most of the wait; record the last second of it.
             float wait = Mathf.Max(0f, swing.SecondsToEnd(false, ObstacleClock.Now) - 1.2f);
@@ -447,7 +447,7 @@ namespace ChessFight.RagdollLab
         /// <summary>The knight's L-jump (M12): E in front of the [7h] ledge, 6 m up and 3 m on, onto it.</summary>
         IEnumerator FeelKnight()
         {
-            var pawn = Spawn(QueenHillTestBed.PadCenter + new Vector3(-1f, 0f, -2f), Vector3.right, "feel");
+            var pawn = Spawn(PhysicsMechanicsBed.PadCenter + new Vector3(-1f, 0f, -2f), Vector3.right, "feel");
             pawn.SetPiece(ChessFight.Network.PieceKind.Knight);
             yield return FeelPreroll(pawn, 0.8f, 90f);
             clipFolder = FeelFolder("knight");

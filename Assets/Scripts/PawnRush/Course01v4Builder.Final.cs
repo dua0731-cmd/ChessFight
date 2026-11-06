@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // 승규 님's final approach and throne room, grey boxes for the test scene (seoungtest, 10-30): what follows the
-    // endgame's mission 3 gate (Docs/KingRush/PAWN_RUSH_ENDGAME_RESEARCH.md §9). The tower's two ways up are kept and
+    // endgame's mission 3 gate (Docs/PawnRush/PAWN_RUSH_ENDGAME_RESEARCH.md §9). The tower's two ways up are kept and
     // rebuilt for six a side. Running north from z 0 on y 0:
     //
     //   z  0 .. 24   the yard behind the mission 3 gate, 30 m wide                                            CP 1

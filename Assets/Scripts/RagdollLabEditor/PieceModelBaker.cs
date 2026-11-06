@@ -25,7 +25,7 @@ namespace ChessFight.RagdollLab.Editor
         const string ModelsDir = Root + "/Resources/PieceModels";
         static readonly string[] Pieces = { "King", "Queen", "Rook", "Bishop", "Knight" };
 
-        [MenuItem("ChessFight/Ragdoll Lab/Bake Piece Models")]
+        [MenuItem("ChessFight/Development/Ragdoll Lab/Bake Piece Models")]
         public static void BakeAll()
         {
             var log = new StringBuilder("[PieceModels]");
@@ -60,7 +60,7 @@ namespace ChessFight.RagdollLab.Editor
         /// Art/PawnRushRig/&lt;Name&gt;_Skinned_PawnRush.asset and Resources/PieceModels/PawnRush/&lt;Name&gt;.prefab. Only a
         /// pawn with RagdollPawn.PawnRushPhysics wears them; the shared models above stay as they are.
         /// </summary>
-        [MenuItem("ChessFight/Ragdoll Lab/Bake Pawn Rush Piece Models")]
+        [MenuItem("ChessFight/Development/Ragdoll Lab/Bake Pawn Rush Piece Models")]
         public static void BakePawnRush()
         {
             var log = new StringBuilder("[PieceModels PawnRush]");

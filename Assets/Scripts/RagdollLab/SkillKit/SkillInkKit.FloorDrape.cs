@@ -11,7 +11,7 @@ namespace ChessFight.RagdollLab
         /// up) it went into it and showed only on the lower side.
         ///
         /// <see cref="Fit"/> looks at the floor under the quad: if some of it is above or below the floor under its middle,
-        /// the quad becomes a grid laid over the floor like a sticker (as QueenHillSkillFx's Tile.Drape, R98): each point sits
+        /// the quad becomes a grid laid over the floor like a sticker: each point sits
         /// over the floor found under it by as much as the middle sits over its own, and a cell that would hang down a step's
         /// face is left out, so a ring across the dais edge shows on both floors. The grid is in the quad's own unit space
         /// (lying, its +z is world up), so the shaders' uv-based shapes and the board look's slab draw as before. It is

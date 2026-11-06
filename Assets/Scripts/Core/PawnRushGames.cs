@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ChessFight.Network
 {
-    // The rules of the Pawn Rush mini-games v1.0 (Docs/KingRush/PAWN_RUSH_MINIGAMES_v1.md) that need no Unity:
+    // The rules of the Pawn Rush mini-games v1.0 (Docs/PawnRush/PAWN_RUSH_MINIGAMES_v1.md) that need no Unity:
     // the board grid, the en passant statues' clock, the drawbridge rope, the knight pads' islands and the king
     // escort's path. The host and the offline playtest run them; every PC can recompute what depends only on the
     // shared clock or a seed; the Core tests check them.

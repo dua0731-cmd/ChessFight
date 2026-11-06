@@ -23,7 +23,7 @@ namespace ChessFight.RagdollLab
     /// (<see cref="SfFxKind.BishopSet"/>) settles with a soft airy thump.
     ///
     /// One clip per moment in Resources/SwordFightSkillSfx, named after the <see cref="SfFxKind"/>; the cast is per piece
-    /// ("Cast" + piece, the knight has none: its leap is its cast). Prepared once when loaded like QueenHillSkillSfx does:
+    /// ("Cast" + piece, the knight has none: its leap is its cast). Prepared once when loaded with the shared normalization:
     /// the quiet lead-in and the silent tail are cut and the loudest 0.3 s is brought to −21 dB (R119, was −15; at most ×8, peaks under
     /// 0.98). Played flat (2D), panned a little by where the moment is on screen. The same moment twice in one frame (two
     /// pieces hit) sounds once.

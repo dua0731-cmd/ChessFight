@@ -1,6 +1,6 @@
 # 폰 러시 엔드게임(전략회의실) — Blender 키트 · 블록아웃 · 검증 (R255, 2026-10-30)
 
-설계 문서: [ENDGAME_LD_HARD_v1](../../../Docs/KingRush/ENDGAME_LD_HARD_v1.md). **Unity에 아직 넣지 않았고, 사람이 확인하지 않았다.**
+설계 문서: [ENDGAME_LD_HARD_v1](../../../Docs/PawnRush/ENDGAME_LD_HARD_v1.md). **Unity에 아직 넣지 않았고, 사람이 확인하지 않았다.**
 
 ## 다시 만들기
 

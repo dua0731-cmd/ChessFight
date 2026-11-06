@@ -118,11 +118,11 @@ public static class SessionFlowTests
                 As(leader,()=>leader.FindMatch(true));Step(20);As(leader,()=>changed=leader.SetMode("kingrush"));
                 Check(!changed&&leader.MatchMode==GameModes.SwordFight&&follower.MatchMode==GameModes.SwordFight,"room lost the mode");});
             Test("Public search only pairs parties that picked the same mode",()=>{
-                Setup(3);As(clients[0],()=>clients[0].SetMode("queenhill"));Step();
+                Setup(3);As(clients[0],()=>clients[0].SetMode("swordfight"));Step();
                 foreach(var c in clients)As(c,()=>c.FindMatch());Step(80);
                 Check(clients.All(c=>c.Match!=0),"someone never got a room");
                 Check(clients[1].Match==clients[2].Match&&clients[0].Match!=clients[1].Match,"different modes shared a room");
-                Check(clients[0].MatchMode==GameModes.QueenOfTheHill&&clients[1].MatchMode==GameModes.KingRush,"room modes");});
+                Check(clients[0].MatchMode==GameModes.SwordFight&&clients[1].MatchMode==GameModes.KingRush,"room modes");});
             Test("A room joined by its number keeps the host's mode",()=>{
                 Setup(2);As(clients[0],()=>clients[0].SetMode("swordfight"));As(clients[0],()=>clients[0].FindMatch(true));Step();
                 As(clients[1],()=>clients[1].JoinPrivateMatch(clients[0].Match));Step(20);

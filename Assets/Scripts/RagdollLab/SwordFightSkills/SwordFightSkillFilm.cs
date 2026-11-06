@@ -7,7 +7,7 @@ using UnityEngine;
 namespace ChessFight.RagdollLab
 {
     /// <summary>
-    /// Films the Sword Fight skills for review (R91), the way QueenHillSkillFilm does: the probe's runs from a fixed
+    /// Films the Sword Fight skills for review (R91): the probe's runs from a fixed
     /// camera per shot, game time stepped 1/fps per frame (Time.captureFramerate), every frame handed to whoever listens
     /// (in the editor SwordFightSkillFilmEncoder writes the .mp4), every StillEvery-th frame kept as a .jpg. Two films:
     /// full speed, then the same shots slowed ×0.3 from the moment each is staged. A caption names the skill at the top;

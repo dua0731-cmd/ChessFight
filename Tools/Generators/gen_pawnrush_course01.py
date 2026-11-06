@@ -1,7 +1,7 @@
 # Generates the Pawn Rush course 01 assets that have to exist before Unity has opened them,
 # as hand-written Unity YAML (same method as gen_queenhill_scene.py):
 #
-#   Assets/Scenes/PawnRush_Course01.unity       camera, light, physics rate, the course
+#   Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity       camera, light, physics rate, the course
 #                                                        root (PawnRushCourse) and the offline
 #                                                        playtest (ragdoll pawn, white team)
 #   Assets/Settings/Course01Kit.asset                    materials + imported obstacle prefabs
@@ -16,7 +16,7 @@
 # Run from the project root:  python3 Tools/Generators/gen_pawnrush_course01.py --overwrite
 import hashlib, os, re, sys
 
-SCENE = "Assets/Scenes/PawnRush_Course01.unity"
+SCENE = "Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity"
 # Since the 10-08 folder cleanup the course has no folder of its own: scripts in
 # Assets/Scripts/PawnRush, materials in Assets/Materials, the kit in Assets/Settings.
 MATERIALS = "Assets/Materials"
@@ -158,7 +158,7 @@ class Doc:
         return out
 
 # The camera block, the light block and the scene settings come from the scenes Unity wrote.
-kingrush = open("Tools/Generators/templates/KingRush.unity").read()
+kingrush = open("Tools/Generators/templates/PawnRushPrototype.unity").read()
 camera_body = re.search(r'--- !u!20 &\d+\nCamera:\n.*?m_GameObject: \{fileID: \d+\}\n(.*?)(?=--- !u!)', kingrush, re.S).group(1)
 camera_body = re.sub(r'm_BackGroundColor: \{[^}]*\}', 'm_BackGroundColor: {r: 0.64, g: 0.79, b: 0.93, a: 1}', camera_body)
 camera_body = camera_body.replace("far clip plane: 1000", "far clip plane: 1500")

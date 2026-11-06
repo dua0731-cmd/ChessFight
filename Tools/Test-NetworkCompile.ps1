@@ -6,6 +6,14 @@ param(
 # player build, visual test, or two-account Steam connectivity test.
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
+# asmref-backed prototype code still belongs to the original assembly.
+function Get-AssemblySources([string]$AssemblyFolder) {
+    foreach ($sourceDirectory in @("$projectRoot/Assets/Scripts/$AssemblyFolder", "$projectRoot/Assets/Prototype/PawnRush/Scripts/$AssemblyFolder")) {
+        if (Test-Path -LiteralPath $sourceDirectory) {
+            Get-ChildItem -LiteralPath $sourceDirectory -Recurse -Filter '*.cs' | ForEach-Object FullName
+        }
+    }
+}
 $output = Join-Path $projectRoot 'Temp/NetworkCompile'
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $data = Join-Path $UnityEditor 'Data'
@@ -24,60 +32,60 @@ $steamSources = Get-ChildItem $SteamRuntimeSources -Recurse -Filter '*.cs' | For
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-out:$output/Steamworks.NET.dll") + @($steamSources)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Steamworks source compilation failed.' }
-$core = Get-ChildItem "$projectRoot/Assets/Scripts/Core" -Filter '*.cs' | ForEach-Object FullName
+$core = Get-AssemblySources 'Core'
 $compileArgs = $baseArgs + @($standardRefs) + @("-out:$output/ChessFight.Network.Core.dll") + @($core)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Core compilation failed.' }
-$runtime = Get-ChildItem "$projectRoot/Assets/Scripts/Network" -Filter '*.cs' | ForEach-Object FullName
+$runtime = Get-AssemblySources 'Network'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.Network.Steam.dll") + @($runtime)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Steam adapter compilation failed.' }
-$game = Get-ChildItem "$projectRoot/Assets/Scripts/Game" -Filter '*.cs' | ForEach-Object FullName
+$game = Get-AssemblySources 'Game'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.Game.dll") + @($game)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Game (view/input/HUD) compilation failed.' }
 # The VFX workbench and cues. VisualEffect is the engine's VFX module, not the VFX Graph package.
-$vfx = Get-ChildItem "$projectRoot/Assets/Scripts/VFX" -Filter '*.cs' | ForEach-Object FullName
+$vfx = Get-AssemblySources 'VFX'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.VFX.dll") + @($vfx)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'VFX workbench compilation failed.' }
 # The VFX builders (editor only): generated textures, meshes, materials and prefabs.
-$vfxEditor = Get-ChildItem "$projectRoot/Assets/Scripts/VFXEditor" -Filter '*.cs' | ForEach-Object FullName
+$vfxEditor = Get-AssemblySources 'VFXEditor'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.VFX.dll", "-out:$output/ChessFight.VFX.Editor.dll") + @($vfxEditor)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'VFX builder compilation failed.' }
-$gameplay = Get-ChildItem "$projectRoot/Assets/Scripts/Gameplay" -Recurse -Filter '*.cs' | ForEach-Object FullName
+$gameplay = Get-AssemblySources 'Gameplay'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.Gameplay.dll") + @($gameplay)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Gameplay (characters/obstacles/course/playtest) compilation failed.' }
-$ragdoll = Get-ChildItem "$projectRoot/Assets/Scripts/RagdollLab" -Recurse -Filter '*.cs' | ForEach-Object FullName
+$ragdoll = Get-AssemblySources 'RagdollLab'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.VFX.dll", "-out:$output/ChessFight.RagdollLab.dll") + @($ragdoll)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab compilation failed.' }
 # Pawn Rush course 01 (its Steam bridge, SteamPawnRushLink, sits in RagdollLabSteam and needs it).
-$pawnRush = Get-ChildItem "$projectRoot/Assets/Scripts/PawnRush" -Filter '*.cs' | ForEach-Object FullName
+$pawnRush = Get-AssemblySources 'PawnRush'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.VFX.dll", "-out:$output/ChessFight.PawnRush.dll") + @($pawnRush)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Pawn Rush course compilation failed.' }
 # Compile the section authoring tools with the references declared by their own asmdef.
-$pawnRushEditor = Get-ChildItem "$projectRoot/Assets/Scripts/PawnRushEditor" -Filter '*.cs' | ForEach-Object FullName
+$pawnRushEditor = Get-AssemblySources 'PawnRushEditor'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.PawnRush.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.PawnRush.Editor.dll") + @($pawnRushEditor)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Pawn Rush authoring tools compilation failed.' }
 # The lab's Steam bridge and its scene builder, with exactly the references their asmdefs list.
-$bootstrap = Get-ChildItem "$projectRoot/Assets/Scripts/Bootstrap" -Filter '*.cs' | ForEach-Object FullName
+$bootstrap = Get-AssemblySources 'Bootstrap'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.Network.Steam.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-out:$output/ChessFight.Game.Steam.dll") + @($bootstrap)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Bootstrap compilation failed.' }
-$ragdollNet = Get-ChildItem "$projectRoot/Assets/Scripts/RagdollLabSteam" -Filter '*.cs' | ForEach-Object FullName
+$ragdollNet = Get-AssemblySources 'RagdollLabSteam'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$output/Steamworks.NET.dll", "-r:$output/ChessFight.Network.Core.dll", "-r:$output/ChessFight.Network.Steam.dll", "-r:$output/ChessFight.RagdollLab.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Game.Steam.dll", "-r:$output/ChessFight.PawnRush.dll", "-out:$output/ChessFight.RagdollLab.Net.dll") + @($ragdollNet)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab Steam bridge compilation failed.' }
-$ragdollEditor = Get-ChildItem "$projectRoot/Assets/Scripts/RagdollLabEditor" -Filter '*.cs' | ForEach-Object FullName
+$ragdollEditor = Get-AssemblySources 'RagdollLabEditor'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-r:$output/ChessFight.RagdollLab.dll", "-r:$output/ChessFight.Game.dll", "-r:$output/ChessFight.Gameplay.dll", "-r:$output/ChessFight.Network.Core.dll", "-out:$output/ChessFight.RagdollLab.Editor.dll") + @($ragdollEditor)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Ragdoll lab builder compilation failed.' }
-$editor = Get-ChildItem "$projectRoot/Assets/Scripts/Editor" -Filter '*.cs' | ForEach-Object FullName
+$editor = Get-AssemblySources 'Editor'
 $compileArgs = $baseArgs + @($standardRefs) + @($unityRefs) + @($symbols, "-r:$data/Managed/UnityEditor.dll", "-out:$output/ChessFight.Network.Editor.dll") + @($editor)
 & $compilerHost $compiler @compileArgs
 if ($LASTEXITCODE -ne 0) { throw 'Editor utility compilation failed.' }

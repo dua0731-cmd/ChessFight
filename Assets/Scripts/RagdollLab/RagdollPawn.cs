@@ -892,7 +892,6 @@ namespace ChessFight.RagdollLab
         {
             if (Floating) return;   // the water catches it
             if (KingCallShielded) return;   // on its way in to its king (R146)
-            if (WardCatchesKnockdown(cause)) return;   // a Queen of the Hill king's guard (R89): a stagger instead
             DropHook();
             DropRope();
             EndClimbPose();
@@ -1314,8 +1313,7 @@ namespace ChessFight.RagdollLab
             float gaitShare = 1f - Mathf.Clamp01(stanceNow / 0.01f);
             // On a lift the floor will have moved by the end of this step; aim for where it will be.
             next.y = planted && groundFound
-                // (SkillCrouch / SkillCrouchDrop: a Queen of the Hill pawn crouching for its dash, R89; 0 otherwise.)
-                ? PawnRushStandY(groundY) + surfaceVel.y * dt + standHeight + (lift + bob) * (1f - SkillCrouch) * gaitShare - landDip - strideDrop - SkillCrouchDrop - stanceNow
+                ? PawnRushStandY(groundY) + surfaceVel.y * dt + standHeight + (lift + bob) * gaitShare - landDip - strideDrop - stanceNow
                 : hp.y + hips.linearVelocity.y * dt
                   // Thrown by a pad, lead by where gravity will have the hips, not where they would coast to:
                   // the step-ahead anchor held a thrown body up a little (0.15 m higher, 0.1 s longer, 0.2 m long).
@@ -3256,14 +3254,6 @@ namespace ChessFight.RagdollLab
         {
             if (NetworkPuppet) return;
             if (KingCallShielded) return;   // on its way in to its king (R146)
-            // A Queen of the Hill king its guards stand round: the nearest guard takes the hit, the king nothing.
-            var cover = Cover();
-            if (cover != null)
-            {
-                cover.TakeHit(push, knockdownSeconds, staminaDamage, false);
-                LastHit = $"{cover.DisplayName}이(가) 대신 막음";
-                return;
-            }
             var p = P;
             if (stamina < 0f) stamina = p.climbStaminaMax;
             Hits++;
@@ -3273,9 +3263,8 @@ namespace ChessFight.RagdollLab
             if (drop) LetGo(0.6f);
             if (knockdownSeconds > 0f && !Floating) Knockdown("피격", knockdownSeconds);
             else if (push.sqrMagnitude > 1e-4f) hitTimer = Mathf.Max(hitTimer, p.hitRecoveryTime);
-            // Heavier pieces go less far (M11): the king a third, the rook two thirds. A Queen of the Hill king's
-            // guard (R89) takes most of a push away as well.
-            push *= PushScale * WardPushScale;
+            // Heavier pieces go less far (M11): the king a third, the rook two thirds.
+            push *= PushScale;
             // Still on the wall (no drop, no knockdown): the wall takes the push, only the stamina counts.
             if (push.sqrMagnitude <= 1e-6f || climbKinematic) return;
             AddVelocity(push);

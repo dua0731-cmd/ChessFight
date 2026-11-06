@@ -168,9 +168,9 @@ namespace ChessFight.RagdollLab
         {
             ApplyTime();
             ApplyGravity();
-            // The Queen of the Hill mechanics test bed, south-east of the arena. Built from code, so the
+            // The shared physics mechanics test bed, south-east of the arena. Built from code, so the
             // scene does not need rebuilding; the automated checks use it too. Not in the skill network test (R112).
-            if (!NetTestMode && GetComponent<QueenHillTestBed>() == null) gameObject.AddComponent<QueenHillTestBed>().game = this;
+            if (!NetTestMode && GetComponent<PhysicsMechanicsBed>() == null) gameObject.AddComponent<PhysicsMechanicsBed>().game = this;
             PawnHookView.LocalAim = LocalAim;
             if (AutoTest) return;
             SetUpCameras();
@@ -334,7 +334,7 @@ namespace ChessFight.RagdollLab
             var spot = spawnOf.TryGetValue(pawn, out var s) ? s : (LabLayout.SpawnP1, Vector3.forward);
             pawn.Teleport(spot.Item1 + Vector3.up * (pawn.standHeight + 0.02f), spot.Item2);
             // R153 (Pawn Rush skill plan v0.3 §2.5): no skill takes a piece for a moment after it respawns.
-            if (pawn.PawnRushSkills != null && pawn.QueenHillSkills == null) pawn.GuardFromSkills(pawn.PawnRushSkills.respawnGuard);
+            if (pawn.PawnRushSkills != null) pawn.GuardFromSkills(pawn.PawnRushSkills.respawnGuard);
         }
 
         public void RespawnAll()

@@ -1,8 +1,38 @@
 # Network 구현 검증 기록
 
+## 2026-11-06 main 파일·Prototype·폐기 모드·메뉴·브랜치 정리(R497) — 자동 검사 기록 / 사용자 확인 전
+
+[정리 범위·복구 안내](../Architecture/PROJECT_CLEANUP_R497.md). 기존 `C:\Users\dua07\GitHub\ChessFighter`의 main에서 작업했다. 실제 사용 중인 두 모드와 공용 물리·네트워크를 유지하고, 폐기 Queen 전용 구현과 구형 맵의 위치를 정리했다.
+
+| AI 자동 검사·기록 | 실제 결과와 한계 |
+|---|---|
+| Core·모의 세션 | 최종 root 실행 Core162개·모의55개 통과. 폐기 Queen 지도 전용2개 테스트를 제거해164→162이며 공용 개척/체크포인트/기물/프로토콜 검사는 유지. Steam 실접속 검사 아님 |
+| 의존성·장애물 시계 | Git Bash 문법 검사와 `Tools/run-tests-linux.sh --checks-only` 통과. Prototype 소스 포함, 줄 끝 주석을 코드 의존성으로 오인하던 검사 보완 |
+| Unity GUI의 로비 | 기존 경로에서 Lobby Play 화면 표시를 AI가 관찰. 모드 선택 버튼 조작 때 사용자 입력 감지로 추가 화면 조작을 멈췄으며, 두 카드와 네 그룹의 GUI 직접 확인은 미확인 |
+| 전체 대상 외부 컴파일 | Prototype의41개 소스와7asmref를 반영한 소스 수집으로 전체 어셈블리 통과. Input 외부 검사는 제외하고 실제 Unity 가져오기와 구분 |
+| 실제 Unity 저장 자산 | Native 저장 검사에서 C# 컴파일·미니게임10프리팹·시험 씬 참조 모두 통과, 실패0. 실제 플레이 입력이나 시각 품질 검사가 아님 |
+| 실제 Native Play | R497 최종 기존 경로/Unity6000.3.11f1에서10종 모두 PASS. 기능 캐시·자기 팀 문·2번 reset·seed 재생성·A 두 인스턴스 공유판 분리·I 초기화 후 외형 유지 검사. ForceComplete 연결 검사이며 실제 퍼즐 달성이 아님 |
+| 최종 Native 로그 | R497 저장/Play 로그에서 errorCS·Exception 일치0. 렌더나 실제 입력·플레이어 빌드·여러 PC 검사를 대신하지 않음 |
+| 메뉴 정적 목록 | Pawn Rush/Sword Fight/Prototype/Development 4그룹, 명령81개·validator37개, 중복0·고아validator0·Queen메뉴0. 메뉴 GUI 직접 조작과 구분 |
+| GUID·공용 자원 | 실제 삭제 Queen 메타63GUID의 현재 Assets YAML 참조0. 이동한 자산과 공용5셰이더/3음원·재분류된 물리/개척 기능은 GUID 보존 |
+| 브랜치 정리 | cutoff2026-10-06 22:09:42 KST, 원격8·로컬8 삭제(원격24→16, 로컬15→7). main·현재/최근 브랜치 보존.16ref bundle 약7.9MB검사·manifest·복구안내 보관, LFS캐시는 유지 |
+| 역사·이전 맵 | 원문 HANDOFF 전체를 archive에 bytecopy 보관. 구형 Course01 씬은 Prototype으로 이동하되 온라인 호환 이름·빌드 활성 상태·kingrush 키는 유지. 새로운 구간 온라인 연결은 하지 않음 |
+
+근거는 `Logs/R497-Core-final.log`, `R497-Compile-final.log`, `R497-Native-Saved-Assets.log`, `R497-Native-Play.log`, `R497-Menu-Audit.json`, `R497-Branch-Cleanup-Result.json`, `R497-Prototype-Code-Moves.json`, `R497-Deleted-QueenGuids.txt`다. Logs는 Git 제외 대상이며 지속 인계에는 정리 문서와 아래 실제 결과를 사용한다. 브랜치 복구본은 사용자 Desktop의 `Backups/R497-Branches-20261106-221133`에 보관했다. bundle은 LFS 바이너리 별도 포함본이 아니다.
+
+| 사용자 수동 확인 | 기대 | 상태 |
+|---|---|---|
+| 기존 main 프로젝트 가져오기 | 빨간 Console 컴파일 오류·Missing Script 없이 열리고 네 메뉴 그룹이 보임 | 미확인 |
+| 현재 맵·미니게임 시험 | Sections에서 최신 구간이 연결되고10종 선택·팀 전환·초기화·카메라·퍼즐/팀 문이 실제 입력으로 동작 | 미확인 |
+| 로비·기존 온라인 경기 | Intro→Lobby에서 폰 러시/소드 파이트 두 모드, Prototype Course01 온라인/결과→로비 흐름 유지 | 미확인 |
+| Prototype 보관본 | 구형 맵·체스복싱·미리보기는 Prototype 위치/메뉴로 열리고 현재 맵과 구분됨 | 미확인 |
+| 실제 플레이·여러 PC | 각 퍼즐 해결 가능성·손맛·12명 성능·Steam 상태 동기화 | 미확인 |
+
+자동 완료는 이벤트·문 연결 검사이며 실제 퍼즐을 풀었다는 뜻이 아니다. AI 자동 검사·렌더 생성·정적 목록과 사용자의 Unity/Steam 직접 확인은 구분한다.
+
 ## 2026-11-06 기존 프로젝트/main 직접 사용(R496) — 이전·백업 기록 / 사용자 Unity·Steam 확인 전
 
-[현재 프로젝트 위치·보존본](../KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md#11-현재-작업unity-프로젝트-위치r496). 사용자는 워크트리 대신 기존 `C:\Users\dua07\GitHub\ChessFighter`에서 직접 확인하도록 요청했다. 이 경로를 최신 main `dff53cdc`로 전환했고 이후에도 같은 루트/main에서 직접 작업한다.
+[현재 프로젝트 위치·보존본](../PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md#11-현재-작업unity-프로젝트-위치r496). 사용자는 워크트리 대신 기존 `C:\Users\dua07\GitHub\ChessFighter`에서 직접 확인하도록 요청했다. 이 경로를 최신 main `dff53cdc`로 전환했고 이후에도 같은 루트/main에서 직접 작업한다.
 
 | AI 기록 | 결과와 범위 |
 |---|---|
@@ -66,7 +96,7 @@ AI가 Unity `Editor.log`로 본 것(고치기 전 사용자 Play): "이번 판 �
 
 ## 2026-11-06 Pull 뒤 미니게임 프리팹·메뉴 표시 문제 (R313) — AI 화면 관찰 / 사용자 플레이 확인 전
 
-사용자 제보: "전부 풀 받았는데 프리팹도 안보이고 기능도 안보여". GitHub Desktop은 `C:\Users\dua07\GitHub\ChessFighter\.worktrees\api-bridge-main`의 `main` `5ab4ecc8`(R312)을 보고, 실행 중 Unity는 원래 `C:\Users\dua07\GitHub\ChessFighter`의 `claude/bold-johnson-8ez95n` `1ebc9cb0`(R155)을 열고 있었다. AI가 Git·실제 파일·Unity `Editor.log`의 프로젝트 경로를 대조했다. 원래 폴더에는 기존2프리팹과 새 메뉴 코드 없음, main에는 새10프리팹·메뉴·시험 씬이 존재했다. [정확한 경로·Hub 등록·여는 순서](../KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md).
+사용자 제보: "전부 풀 받았는데 프리팹도 안보이고 기능도 안보여". GitHub Desktop은 `C:\Users\dua07\GitHub\ChessFighter\.worktrees\api-bridge-main`의 `main` `5ab4ecc8`(R312)을 보고, 실행 중 Unity는 원래 `C:\Users\dua07\GitHub\ChessFighter`의 `claude/bold-johnson-8ez95n` `1ebc9cb0`(R155)을 열고 있었다. AI가 Git·실제 파일·Unity `Editor.log`의 프로젝트 경로를 대조했다. 원래 폴더에는 기존2프리팹과 새 메뉴 코드 없음, main에는 새10프리팹·메뉴·시험 씬이 존재했다. [정확한 경로·Hub 등록·여는 순서](../PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md).
 
 | AI 검사·관찰 | 결과와 한계 |
 |---|---|
@@ -90,7 +120,7 @@ AI가 Unity `Editor.log`로 본 것(고치기 전 사용자 Play): "이번 판 �
 
 ## 2026-11-06 미니게임 구간 프리팹 10종 (R312) — 자동 검사 기록 / 사용자 Unity·Steam 확인 전
 
-[구간 프리팹·여는 법](../KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md). `main` Pull(LFS 포함) → Unity 가져오기·컴파일 완료 대기 → **ChessFight → Pawn Rush → Open Mini-game Prefab Test** → Play. 새 프리팹 10개와 `PawnRush_MiniGames.unity`는 저장되어 있다. 코드에서 다시 만들 때만 **Build All Mini-game Prefabs**를 실행한다.
+[구간 프리팹·여는 법](../PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md). `main` Pull(LFS 포함) → Unity 가져오기·컴파일 완료 대기 → **ChessFight → Pawn Rush → Open Mini-game Prefab Test** → Play. 새 프리팹 10개와 `PawnRush_MiniGames.unity`는 저장되어 있다. 코드에서 다시 만들 때만 **Build All Mini-game Prefabs**를 실행한다.
 
 아래는 AI가 별도 작업 폴더에서 **Unity 6000.3.11f1**로 실행한 자동 검사 결과다. **사용자가 Unity·Steam에서 보고 조작한 확인은 아직 없다.** 시험 씬의 저장 참조 검사와 빈 씬에서 실행한 프리팹 검사를 구분한다.
 
@@ -105,7 +135,7 @@ AI가 Unity `Editor.log`로 본 것(고치기 전 사용자 Play): "이번 판 �
 | 대표 렌더 | C 도개교·E 서고·G 행차 회랑 각각 입구/전체, 1536×1024 PNG 총 6장 생성. 실제 플레이 입력·모든 각도의 카메라·시각 품질을 보장하지 않음 |
 | 최종 실행 오류 | 최종 Native 가져오기·저장 검사·Play 로그에서 C# 컴파일 오류, 예외, 누락 스크립트, 검사 실패 없음. Play 중 오류·Assert·Exception 수집도 0. 기존 직렬화 필드·구식 API 등의 컴파일 경고는 남음 |
 
-지속 보관본: [저장 참조 보고서](../KingRush/ConceptArt/R312/SAVED_PREFABS.txt) · [Play 검사 보고서](../KingRush/ConceptArt/R312/RUNTIME.txt), [C 입구](../KingRush/ConceptArt/R312/C_Drawbridge_entry.png) · [E 입구](../KingRush/ConceptArt/R312/E_Bells_entry.png) · [G 입구](../KingRush/ConceptArt/R312/G_KingEscort_entry.png). 원래 로컬 근거(커밋 제외)는 `Temp-Compile-R312-final.log`, `Temp-R312-native-build-final.log`, `Temp-R312-native-saved-final.log`, `Temp-R312-native-play-final.log`와 `Logs/MiniGameValidation/saved-prefabs.txt`·`runtime.txt`, 같은 Logs 폴더의 원본 PNG 6장이다. Unity가 정상 종료 때 `Temp/`를 지우므로 상세 검사 보고서·그림은 무시 목록에 있는 `Logs/`에 보존하고 선택한 사본만 문서에 넣었다.
+지속 보관본: [저장 참조 보고서](../PawnRush/ConceptArt/R312/SAVED_PREFABS.txt) · [Play 검사 보고서](../PawnRush/ConceptArt/R312/RUNTIME.txt), [C 입구](../PawnRush/ConceptArt/R312/C_Drawbridge_entry.png) · [E 입구](../PawnRush/ConceptArt/R312/E_Bells_entry.png) · [G 입구](../PawnRush/ConceptArt/R312/G_KingEscort_entry.png). 원래 로컬 근거(커밋 제외)는 `Temp-Compile-R312-final.log`, `Temp-R312-native-build-final.log`, `Temp-R312-native-saved-final.log`, `Temp-R312-native-play-final.log`와 `Logs/MiniGameValidation/saved-prefabs.txt`·`runtime.txt`, 같은 Logs 폴더의 원본 PNG 6장이다. Unity가 정상 종료 때 `Temp/`를 지우므로 상세 검사 보고서·그림은 무시 목록에 있는 `Logs/`에 보존하고 선택한 사본만 문서에 넣었다.
 
 **실패를 거쳐 고친 검사 경로:** 처음 저장 검사에서는 `ArenaDressing`의 MonoBehaviour 파일 불일치로 누락 스크립트 20건, 프리팹 미리보기의 OS 글꼴 atlas 재연결로 임시 재질 102건을 보고했다. 클래스를 같은 이름의 파일로 분리했고, 영구 자산을 미리보기 실행 전에 엄격히 검사하도록 구분했다. 저장 YAML의 글꼴은 102개 모두 내장 글꼴 참조, null 재질 참조는 0개였으며 저장 참조 누락을 허용하는 예외는 넣지 않았다. Play 첫 두 번은 게임 코드가 아닌 `UnityEditor.Search.SearchDatabase` 시작 초기화 예외로 실패했다. 오류를 무시하지 않고 편집기 가져오기·컴파일이 멈춘 뒤 2초 기다려 Play를 시작하도록 고친 최종 실행에서 예외 없이 통과했다. 캐시는 변경하지 않았다. 실패 2회는 `Logs/MiniGameValidation/runtime-search-startup-failure*.txt`와 `Temp-R312-native-play-search-startup-failure*.log`에 남겼다. 제한된 실행 환경에서 Unity 자체 통신·라이선스 초기화가 실패한 첫 실행도 `Temp-R312-native-restricted-startup-failure.log`로 보존했다.
 
@@ -131,7 +161,7 @@ AI가 Unity `Editor.log`로 본 것(고치기 전 사용자 Play): "이번 판 �
 
 ## 2026-11-05 대계단 현관홀 아트를 main으로 (R309) — 사용자/Unity 확인 전
 
-[PAWN_RUSH_GRAND_STAIR_HALL_ART](../KingRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md). 순서: `main` Pull(LFS 포함) → Unity가 새 FBX · 텍스처를 가져오기 기다림 → ChessFight → Pawn Rush → **Build Mid 2-1 Grand Stair Hall** → **Open Section Test** → Play.
+[PAWN_RUSH_GRAND_STAIR_HALL_ART](../PawnRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md). 순서: `main` Pull(LFS 포함) → Unity가 새 FBX · 텍스처를 가져오기 기다림 → ChessFight → Pawn Rush → **Build Mid 2-1 Grand Stair Hall** → **Open Section Test** → Play.
 
 | 확인 | 결과 |
 |---|---|
@@ -216,7 +246,7 @@ R297 빌드(v26)와 바이트가 같아 서로 매칭은 되지만, 시험할 �
 
 ## ★ 2026-11-03 폰 러시 1-1 왕실 수로 정원 v31 그레이박스 (R305) — 확인 목록
 
-`main`. 모두 혼자(오프라인). 설명: [PAWN_RUSH_ROYAL_GARDEN](../KingRush/PAWN_RUSH_ROYAL_GARDEN.md). **아래는 모두 미확인이다**(자동 테스트 · 컴파일 · 파이썬 좌표 점검만 함). 먼저 `main` Pull.
+`main`. 모두 혼자(오프라인). 설명: [PAWN_RUSH_ROYAL_GARDEN](../PawnRush/PAWN_RUSH_ROYAL_GARDEN.md). **아래는 모두 미확인이다**(자동 테스트 · 컴파일 · 파이썬 좌표 점검만 함). 먼저 `main` Pull.
 
 | # | 할 일 | 기대 | 결과 |
 |---|---|---|---|
@@ -303,7 +333,7 @@ R297 빌드(v26)와 바이트가 같아 서로 매칭은 되지만, 시험할 �
 
 ## ★ 2026-11-02 대계단 현관홀을 하나의 나선 길로 + 유리 징검다리 (R303) — 확인 목록
 
-`main`(11-02 병합). 모두 혼자(오프라인). 설명: [PAWN_RUSH_SECTIONS §4](../KingRush/PAWN_RUSH_SECTIONS.md). **먼저 Build Mid 2-1 Grand Stair Hall을 다시 눌러야 한다.** 아래 R301 표의 날개·다리·섬 줄(2, 3, 7, 8, 10)과 R302 줄(4, 4-2)은 R303로 없어진 것이다.
+`main`(11-02 병합). 모두 혼자(오프라인). 설명: [PAWN_RUSH_SECTIONS §4](../PawnRush/PAWN_RUSH_SECTIONS.md). **먼저 Build Mid 2-1 Grand Stair Hall을 다시 눌러야 한다.** 아래 R301 표의 날개·다리·섬 줄(2, 3, 7, 8, 10)과 R302 줄(4, 4-2)은 R303로 없어진 것이다.
 
 | # | 할 일 | 기대 | 결과 |
 |---|---|---|---|
@@ -321,7 +351,7 @@ R297 빌드(v26)와 바이트가 같아 서로 매칭은 되지만, 시험할 �
 
 ## ★ 2026-11-02 대계단 현관홀 세 곳 고침 — 바람·다리 + 섬·날개 계단 (R301) — 확인 목록
 
-`main`(11-02 병합). 모두 혼자(오프라인). 설명: [PAWN_RUSH_SECTIONS §6 R301 줄·§10](../KingRush/PAWN_RUSH_SECTIONS.md). **먼저 Build Mid 2-1 Grand Stair Hall을 다시 눌러 프리팹을 새로 구워야 한다**(구운 프리팹은 예전 모양 그대로 남아 있음).
+`main`(11-02 병합). 모두 혼자(오프라인). 설명: [PAWN_RUSH_SECTIONS §6 R301 줄·§10](../PawnRush/PAWN_RUSH_SECTIONS.md). **먼저 Build Mid 2-1 Grand Stair Hall을 다시 눌러 프리팹을 새로 구워야 한다**(구운 프리팹은 예전 모양 그대로 남아 있음).
 
 | # | 할 일 | 기대 | 결과 |
 |---|---|---|---|
@@ -341,7 +371,7 @@ R297 빌드(v26)와 바이트가 같아 서로 매칭은 되지만, 시험할 �
 
 ## ★ 2026-11-02 폰 러시 구간 프리팹 — 한 판 7구간, 2-1 대계단 현관홀 (R300) — 확인 목록
 
-`main`(11-02 병합). 모두 혼자(오프라인). 설명: [PAWN_RUSH_SECTIONS](../KingRush/PAWN_RUSH_SECTIONS.md).
+`main`(11-02 병합). 모두 혼자(오프라인). 설명: [PAWN_RUSH_SECTIONS](../PawnRush/PAWN_RUSH_SECTIONS.md).
 
 | # | 할 일 | 기대 | 결과 |
 |---|---|---|---|
@@ -1787,7 +1817,7 @@ Core 133개 통과(.NET 10). Unity 편집기 연결/설치가 없어 새 C# · �
 
 ## ★ 2026-11-01 폰 러쉬 왕실 수로 정원 구역 G (R263, `seoungtest`) — 확인 목록
 
-준비: Unity를 끄고 받기(R257) → Unity로 열기 → `SeoungTest_PawnRush` 씬 → "구역이 코드와 다릅니다(옛 버전, 지금 v9)" 창에서 **다시 짓기**(또는 메뉴 **ChessFight → SeoungTest → Build Pawn Rush Test Scene**). 콘솔에 `Pawn Rush royal garden model is missing` · `... has no ...; it will not move.` 오류가 없어야 한다. 수치는 [PAWN_RUSH_GARDEN](../KingRush/PAWN_RUSH_GARDEN.md). 아무도 안 봄(AI는 Blender 렌더 · 리눅스 컴파일만).
+준비: Unity를 끄고 받기(R257) → Unity로 열기 → `SeoungTest_PawnRush` 씬 → "구역이 코드와 다릅니다(옛 버전, 지금 v9)" 창에서 **다시 짓기**(또는 메뉴 **ChessFight → SeoungTest → Build Pawn Rush Test Scene**). 콘솔에 `Pawn Rush royal garden model is missing` · `... has no ...; it will not move.` 오류가 없어야 한다. 수치는 [PAWN_RUSH_GARDEN](../PawnRush/PAWN_RUSH_GARDEN.md). 아무도 안 봄(AI는 Blender 렌더 · 리눅스 컴파일만).
 
 | # | 할 일 | 기대(계산값) | 결과 |
 |---|---|---|---|
@@ -1814,7 +1844,7 @@ Core 133개 통과(.NET 10). Unity 편집기 연결/설치가 없어 새 C# · �
 
 R257(10-30): 엔드게임 E · F는 **승규 님 노트북(`KKND1236_LENOVO`)에서만** 지어진다. 다른 PC에서 시험 씬을 열면 코스 01 A · B · C · 탑 + 미니게임이 나와야 하고(엔드게임 없음), 폰 러쉬 물리 · 자세는 같아야 한다. 아무도 안 봄.
 
-R256(10-30): [반영 목록](../KingRush/ENDGAME_LD_HARD_v1.md#6-unity-반영-목록-course01v4builderwarroomcs)을 `Course01v4Builder.WarRoom.cs`에 옮기고, Blender 모델 1127개(장치 스킨 53개)를 `Course01v4Builder.WarRoomModels.cs`가 붙인다. AI는 Unity 편집기에서 컴파일 오류 0, 임시 씬에 구역 E만 지어 모델이 모두 놓이는 것(FBX 없음 0 · 장치 못 찾음 0)과 정지 화면 4장만 봤다. **Play · 움직임은 아무도 안 봄.**
+R256(10-30): [반영 목록](../PawnRush/ENDGAME_LD_HARD_v1.md#6-unity-반영-목록-course01v4builderwarroomcs)을 `Course01v4Builder.WarRoom.cs`에 옮기고, Blender 모델 1127개(장치 스킨 53개)를 `Course01v4Builder.WarRoomModels.cs`가 붙인다. AI는 Unity 편집기에서 컴파일 오류 0, 임시 씬에 구역 E만 지어 모델이 모두 놓이는 것(FBX 없음 0 · 장치 못 찾음 0)과 정지 화면 4장만 봤다. **Play · 움직임은 아무도 안 봄.**
 
 준비(한 번): Unity 메뉴 **ChessFight → Pawn Rush → Endgame: Import Blender Models (R255)** → **ChessFight → SeoungTest → Build Pawn Rush Test Scene**(시험 씬을 다시 지음, 씬 안 손 편집은 사라짐). Play 시작 때 콘솔에 `엔드게임 Blender 모델: 1127개 배치(장치 스킨 53개), FBX 없음 0개`.
 
@@ -3242,7 +3272,7 @@ R89 영상을 본 승규 님의 수정 4개 → [Skills/QUEEN_HILL §R93](../Ski
 
 ## ★ 2026-10-08 폰 러시 코스 01 v0.4 — 미션 광장과 미니게임 (R86, 같은 씬) — 확인 목록
 
-R69(v0.2) 표를 대체한다. Linux 컴파일과 파이썬 좌표 점검만, **Unity 미확인**. 순서·키는 [PAWN_RUSH_COURSE01](../KingRush/PAWN_RUSH_COURSE01.md). **ChessFight → Pawn Rush → Open Course01** → Play.
+R69(v0.2) 표를 대체한다. Linux 컴파일과 파이썬 좌표 점검만, **Unity 미확인**. 순서·키는 [PAWN_RUSH_COURSE01](../PawnRush/Prototype/PAWN_RUSH_COURSE01.md). **ChessFight → Pawn Rush → Open Course01** → Play.
 
 | # | 확인 | 기대 | 결과 |
 |---|---|---|---|
@@ -3299,7 +3329,7 @@ R69(v0.2) 표를 대체한다. Linux 컴파일과 파이썬 좌표 점검만, **
 
 ## ★ 2026-10-05 맵 이식 (지성 님, `JY-ragdoll_v2`의 R47 → 10-06 `main`의 R65) — Unity 미확인
 
-[설명](../KingRush/MAP_IMPORT.md). **기존 온라인 경기에 이식 씬을 자동 연결하지 않았다.**
+[설명](../PawnRush/MAP_IMPORT.md). **기존 온라인 경기에 이식 씬을 자동 연결하지 않았다.**
 
 | # | 확인 | 결과 |
 |---|---|---|
@@ -3431,7 +3461,7 @@ R69(v0.2) 표를 대체한다. Linux 컴파일과 파이썬 좌표 점검만, **
 
 ## ★ R56 왕의 계단 / 체크메이트 결승 — 사용자 확인 대기
 
-사용자 요청으로 직접 테스트는 나중에 한다. 자동 결과는 [FINAL_COURSE](../KingRush/FINAL_COURSE.md). **아래 항목은 모두 미확인**, R55 또한 미확인 상태를 유지한다. `JY-kingrush` 프로젝트의 Open Opening Course에서 실행한다.
+사용자 요청으로 직접 테스트는 나중에 한다. 자동 결과는 [FINAL_COURSE](../PawnRush/Prototype/FINAL_COURSE.md). **아래 항목은 모두 미확인**, R55 또한 미확인 상태를 유지한다. `JY-kingrush` 프로젝트의 Open Opening Course에서 실행한다.
 
 | 확인할 것 | 조작/기대 결과 | 상태 |
 |---|---|---|
@@ -3480,7 +3510,7 @@ R69(v0.2) 표를 대체한다. Linux 컴파일과 파이썬 좌표 점검만, **
 
 ## ★ R55 승격 집결 / 성벽 갈림길 / 판 뒤집기 (`JY-kingrush`, 09-27)
 
-같은 **Open Opening Course → Play**. R54에 대해 사용자 “잘 만들어줬다”와 승격 구역 화면/진행 정정 수신. 아래 새 흐름과 개별 항목은 **사용자 미확인**. [전체 규칙/단축키](../KingRush/CASTLE_COURSE.md).
+같은 **Open Opening Course → Play**. R54에 대해 사용자 “잘 만들어줬다”와 승격 구역 화면/진행 정정 수신. 아래 새 흐름과 개별 항목은 **사용자 미확인**. [전체 규칙/단축키](../PawnRush/Prototype/CASTLE_COURSE.md).
 
 자동 검사: Core56·모의 세션20·실제 Unity DLL 컴파일, Windows 전체 코스68/0·새 구간 먼저34/0·기존 기능80/0. 화면 렌더 확인 포함이나 아래 사용자 결과를 대신하지 않는다.
 
@@ -3499,7 +3529,7 @@ R69(v0.2) 표를 대체한다. Linux 컴파일과 파이썬 좌표 점검만, **
 
 ## ★ R54 첫 연결 맵·상자 미션 (`JY-kingrush`, 09-27)
 
-**ChessFight → King Rush → Open Opening Course → Play**. 새 씬이며 기존 능력 시험장은 Open Mechanics Test로 보존. 로비의 KingRush는 아직 옛 캡슐 씬이다. [규칙/단축키/자동 검사](../KingRush/OPENING_COURSE.md).
+**ChessFight → King Rush → Open Opening Course → Play**. 새 씬이며 기존 능력 시험장은 Open Mechanics Test로 보존. 로비의 KingRush는 아직 옛 캡슐 씬이다. [규칙/단축키/자동 검사](../PawnRush/Prototype/OPENING_COURSE.md).
 
 | 확인 | 방법·기대 | 사용자 결과 |
 |---|---|---|
@@ -3534,7 +3564,7 @@ R69(v0.2) 표를 대체한다. Linux 컴파일과 파이썬 좌표 점검만, **
 
 ## ★ R52 킹 러쉬 첫 오프라인 시험장 (`JY-kingrush`, 09-27)
 
-Unity에서 `C:/Users/trews/.codex/worktrees/jy-kingrush/ChessFight` → **ChessFight → King Rush → Open Mechanics Test** → Play. 새 시험장은 **로비 KingRush 선택과 별개**. 자동 검사와 사람 확인을 혼동하지 않는다. [현재 범위/실행](../KingRush/README.md).
+Unity에서 `C:/Users/trews/.codex/worktrees/jy-kingrush/ChessFight` → **ChessFight → King Rush → Open Mechanics Test** → Play. 새 시험장은 **로비 KingRush 선택과 별개**. 자동 검사와 사람 확인을 혼동하지 않는다. [현재 범위/실행](../PawnRush/README.md).
 
 **09-27 사용자:** “잘 작동해. 계속 진행해줘.” 첫 시험장 일반 동작 확인으로 기록한다. 아래 개별 항목은 별도 결과 보고가 없어 일괄 성공 처리하지 않는다.
 
@@ -3648,7 +3678,7 @@ R47 자동 검사 기록: Core **37**·모의 Steam **16**·전체 DLL 컴파일
 아직 미완성: 최종 맵·다른 기물 스킬·소리/타격 이펙트·연속타 밸런스. 20점/4분 등은 시험값이다. 고급 봇·온라인 체감 지연·로딩 시점 차이는 추가 실기 검사가 필요하다.
 ## ★ 2026-09-27 퀸 오브 더 힐 맵 7차: 7개 층 + 8랭크 (R49, `JY-lobby`) — 확인 목록
 
-맵은 Play 때 데이터로 만든다([GRAYBOX](../GameModes/QueenOfTheHill/GRAYBOX.md)). 코드·컴파일·Core 테스트·미리보기 그림만, **Unity에서 본 것은 없다.** `ChessFight > Scenes > Queen of the Hill (offline graybox)` → Play.
+맵은 Play 때 데이터로 만든다([GRAYBOX](../Archive/QueenOfTheHill/GRAYBOX.md)). 코드·컴파일·Core 테스트·미리보기 그림만, **Unity에서 본 것은 없다.** `ChessFight > Scenes > Queen of the Hill (offline graybox)` → Play.
 
 | # | 확인 | 기대 | 결과 |
 |---|---|---|---|
@@ -3671,7 +3701,7 @@ R47 자동 검사 기록: Core **37**·모의 Steam **16**·전체 DLL 컴파일
 
 사용자가 Unity에서 열어 봄(09-27): 맵이 만들어지고 폰이 선다. 의견 "단조롭다, 컨셉 아트와 다르다" → R49 7차로 바꿨다. 아래 표는 기록.
 
-맵은 Play 때 코드가 만든다([GRAYBOX](../GameModes/QueenOfTheHill/GRAYBOX.md)). 코드·컴파일·Core 테스트만 통과, **Unity에서 본 것은 없다.** `ChessFight > Scenes > Queen of the Hill (offline graybox)` → Play.
+맵은 Play 때 코드가 만든다([GRAYBOX](../Archive/QueenOfTheHill/GRAYBOX.md)). 코드·컴파일·Core 테스트만 통과, **Unity에서 본 것은 없다.** `ChessFight > Scenes > Queen of the Hill (offline graybox)` → Play.
 
 | # | 확인 | 기대 | 결과 |
 |---|---|---|---|

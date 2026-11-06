@@ -6,7 +6,7 @@ namespace ChessFight.ProtectKing
 {
     public enum SpringPillarState { Ready, Warning, Extend, Hold, Retract, Cooldown }
     // StateDrivenMover: fired when a player comes close, not by ObstacleClock. Offline only
-    // until the host sends its state (Docs/KingRush/MAP_IMPORT.md).
+    // until the host sends its state (Docs/PawnRush/MAP_IMPORT.md).
     public sealed class SpringPillar : MonoBehaviour
     {
         public ObstacleContext context;

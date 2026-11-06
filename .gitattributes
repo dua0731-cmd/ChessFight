@@ -18,6 +18,7 @@
 *.cginc                 text
 *.compute               text linguist-language=hlsl
 *.cs                    text diff=csharp
+*.sh                    text eol=lf
 *.hlsl                  text linguist-language=hlsl
 *.raytrace              text linguist-language=hlsl
 *.shader                text

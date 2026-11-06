@@ -239,7 +239,7 @@ namespace ChessFight.RagdollLab
         // A client's press (F, or the click that fires / calls off an aim) until the host's state of its piece changes.
         float pressAt = -1f;
         SkillStage pressStage, lastOwnStage;
-        bool pressLocked, pressAccept, pressKick;
+        bool pressLocked, pressKick;
         // R118: this PC's frame time (smoothed) and physics steps a second, for the test screen.
         float frameMs = -1f;
         int physicsSteps, physicsRate;
@@ -292,8 +292,6 @@ namespace ChessFight.RagdollLab
         public int SkillPresses { get; private set; }
         public int SkillStarts { get; private set; }
         public int ReactionsLost { get; private set; }
-        /// <summary>F pressed as the yes to a rook's swap (Queen of the Hill): not a skill of this piece's own.</summary>
-        public int SwapAccepts { get; private set; }
         /// <summary>A client's skill moments: how far from their pose they were drawn (ms, average of the last 20; should
         /// be near 0) and how long they waited after arriving (about the playback delay).</summary>
         public float MomentLateMs => Average(momentLate, momentCount);
@@ -387,14 +385,12 @@ namespace ChessFight.RagdollLab
         protected virtual void OnEnable()
         {
             RagdollPawn.SkillFx += OnPawnRushFx;
-            RagdollPawn.QueenHillFx += OnQueenHillFx;
             SwordFightSkills.Fx += OnSwordFx;
         }
 
         protected virtual void OnDisable()
         {
             RagdollPawn.SkillFx -= OnPawnRushFx;
-            RagdollPawn.QueenHillFx -= OnQueenHillFx;
             SwordFightSkills.Fx -= OnSwordFx;
             KeysTaken = false;
         }
@@ -702,7 +698,7 @@ namespace ChessFight.RagdollLab
         /// clients show the same paths opening at the same shared-clock moment.</summary>
         void SendMatchState()
         {
-            var match = QueenHillMatch.Current;
+            var match = PioneerCourse.Current;
             if (match == null || Time.realtimeSinceStartup - lastMatchSend < MatchInterval) return;
             lastMatchSend = Time.realtimeSinceStartup;
             string text = match.Encode();
@@ -727,17 +723,6 @@ namespace ChessFight.RagdollLab
             }, NowMs());
         }
 
-        void OnQueenHillFx(QueenHillFxEvent e)
-        {
-            if (!matchActive || !NetIsHost || replaying) return;
-            eventLog.Add(new SkillWireEvent
-            {
-                Mode = SkillWire.ModeQueenHill, Kind = (byte)e.kind, By = RefOf(e.by), Target = RefOf(e.target),
-                X = e.at.x, Y = e.at.y, Z = e.at.z, Dx = e.dir.x, Dy = e.dir.y, Dz = e.dir.z,
-                Ux = e.to.x, Uy = e.to.y, Uz = e.to.z,
-                Count = (byte)Mathf.Clamp(e.count, 0, 255), Size = e.size,
-            }, NowMs());
-        }
 
         void ReceiveInput(ulong sender, byte[] bytes)
         {
@@ -829,22 +814,18 @@ namespace ChessFight.RagdollLab
                 // R112: time a press until the host's state of my piece changes (the skill key; the click that fires or
                 // the right click that calls off an aim). Measured before the guess below draws over my piece.
                 bool aiming = me.HostStage == SkillStage.Windup && !me.HostAimLocked;
-                // Asked to swap by a rook (Queen of the Hill): F is the yes, timed until the host takes the ask away.
-                bool accepting = local.skill && me.CastleAsker != null;
                 // R118: only a press that can do something is timed: one that starts a skill, the knight's second press in
                 // its leap, the yes to a swap, or the aim's click. A press on cooldown or in the air used to start the clock
                 // too, and the skill that came later counted from it (averages of 400-700 ms at a 25 ms round trip).
                 bool kick = local.skill && me.KnightSecondReady;
-                bool timed = (local.skill && (accepting || kick || me.CouldStartSkill))
+                bool timed = (local.skill && (kick || me.CouldStartSkill))
                              || (aiming && (local.shove || (local.grab && !grabWasDown)));
-                if (accepting) SwapAccepts++;
-                else if (local.skill) SkillPresses++;
+                if (local.skill) SkillPresses++;
                 if (timed && pressAt < 0f)
                 {
                     pressAt = Time.realtimeSinceStartup;
                     pressStage = me.HostStage;
                     pressLocked = me.HostAimLocked;
-                    pressAccept = accepting;
                     pressKick = kick;
                 }
                 // D-S3: my own press and aim drawn at once, for about a round trip, until the host's state says the same.
@@ -1080,8 +1061,7 @@ namespace ChessFight.RagdollLab
             if (lastOwnStage == SkillStage.None && stage != SkillStage.None) SkillStarts++;
             lastOwnStage = stage;
             if (pressAt < 0f) return;
-            bool answered = pressAccept ? me.CastleAsker == null
-                          : pressKick ? me.HostKnightKicked || stage != pressStage
+            bool answered = pressKick ? me.HostKnightKicked || stage != pressStage
                           : stage != pressStage || me.HostAimLocked != pressLocked;
             if (!answered) return;
             LastReactionMs = (Time.realtimeSinceStartup - pressAt) * 1000f;
@@ -1200,12 +1180,7 @@ namespace ChessFight.RagdollLab
                 {
                     if (!PlaySword(w, by, target, at, dir)) return;
                 }
-                else
-                {
-                    var kind = (QueenHillFxKind)w.Kind;
-                    RagdollPawn.RaiseQueenHillFx(new QueenHillFxEvent { kind = kind, by = by, target = target, at = at, dir = dir, to = u, size = w.Size, count = w.Count });
-                    if (Trace) Log($"moment {w.Seq} {kind} by {(by != null ? by.DisplayName : "-")} on {(target != null ? target.DisplayName : "-")}, {playbackMs - w.TimeMs:0} ms after its pose");
-                }
+                else return;   // Retired or unknown mode: acknowledge the event without playing it.
                 eventsPlayed++;
             }
             finally { replaying = false; }
@@ -1288,7 +1263,7 @@ namespace ChessFight.RagdollLab
             matchActive = true;
             obstacleSynced = false;
             // A new round on the shared clock: bells closed; only the host rings them.
-            var queen = QueenHillMatch.Current;
+            var queen = PioneerCourse.Current;
             if (queen != null)
             {
                 queen.ResetRound();
@@ -1321,7 +1296,7 @@ namespace ChessFight.RagdollLab
             StopHostingGuard();
             ObstacleClock.Use(null);
             ObstacleClock.Authority = true;
-            var queen = QueenHillMatch.Current;
+            var queen = PioneerCourse.Current;
             if (queen != null)
             {
                 queen.Authority = true;
@@ -1402,7 +1377,7 @@ namespace ChessFight.RagdollLab
             }
             if (game != null) game.NetworkHost = nowHost;
             ObstacleClock.Authority = nowHost;
-            var queen = QueenHillMatch.Current;
+            var queen = PioneerCourse.Current;
             if (queen != null) queen.Authority = nowHost;
             while (buffer.Count > 0) Recycle(0);
             inputs.Clear();
@@ -1559,7 +1534,7 @@ namespace ChessFight.RagdollLab
                     if (!RagdollNetProtocol.ReadMatch(bytes, NetMatch, out string text)) break;
                     // R149: the Sword Fight prototype's match state, else Queen of the Hill's.
                     if (sword != null) { if (sword.Match != null) sword.Match.ApplyRemote(text); }
-                    else QueenHillMatch.Current?.ApplyRemote(text);
+                    else PioneerCourse.Current?.ApplyRemote(text);
                     break;
                 case RagdollNetProtocol.TypeDev:
                     if (AcceptsDev && RagdollNetProtocol.ReadDev(bytes, NetMatch, out string command)) RunDev(command);
@@ -1628,7 +1603,7 @@ namespace ChessFight.RagdollLab
             pressAt = LastReactionMs = -1f;
             lastOwnStage = SkillStage.None;
             reactionCount = reactionNext = momentCount = momentNext = 0;
-            MomentsStale = SkillPresses = SkillStarts = ReactionsLost = SwapAccepts = PlaybackJumps = 0;
+            MomentsStale = SkillPresses = SkillStarts = ReactionsLost = PlaybackJumps = 0;
             snapshotBytesLast = 0;
             peerStats.Clear();
             RagdollPawn.NetStats.Clear();

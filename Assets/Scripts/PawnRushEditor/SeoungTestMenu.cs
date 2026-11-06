@@ -17,10 +17,10 @@ namespace ChessFight.PawnRush.Editor
         const string Folder = "Assets/Scenes/SeoungTest";
         public const string PawnRushScene = Folder + "/SeoungTest_PawnRush.unity";
         public const string SwordFightScene = Folder + "/SeoungTest_SwordFight.unity";
-        const string CourseSource = "Assets/Scenes/PawnRush_Course01.unity";
+        const string CourseSource = "Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity";
         const string ArenaSource = "Assets/Scenes/SkillTest/SwordFight_ArenaSkillTest/SwordFight_ArenaSkillTest.unity";
 
-        [MenuItem("ChessFight/SeoungTest/Build Pawn Rush Test Scene", false, 0)]
+        [MenuItem("ChessFight/Development/Map Authoring/Build Pawn Rush Sandbox", false, 0)]
         public static void BuildPawnRush()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -82,7 +82,7 @@ namespace ChessFight.PawnRush.Editor
             Debug.Log("[SeoungTest] 폰 러쉬 시험 씬을 만들었습니다: " + PawnRushScene + " (구역 " + root.GetComponentsInChildren<SeoungTestZone>().Length + "개)");
         }
 
-        [MenuItem("ChessFight/SeoungTest/Build Sword Fight Sandbox Scene", false, 1)]
+        [MenuItem("ChessFight/Development/Map Authoring/Build Sword Fight Sandbox", false, 1)]
         public static void BuildSwordFight()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;

@@ -1,4 +1,4 @@
-"""Assemble Docs/KingRush/ENDGAME_LD_HARD_v1.md from the template, the computed tables, the Unity list and the
+"""Assemble Docs/PawnRush/ENDGAME_LD_HARD_v1.md from the template, the computed tables, the Unity list and the
 Blender reports (Review/validation_v1.json, Review/export_report.json).
 
     python make_doc.py

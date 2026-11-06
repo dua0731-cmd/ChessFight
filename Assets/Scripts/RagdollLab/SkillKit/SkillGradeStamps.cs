@@ -237,7 +237,6 @@ namespace ChessFight.RagdollLab
         static Camera ViewCamera()
         {
             if (PawnRushSkillFx.ViewOverride != null) return PawnRushSkillFx.ViewOverride;
-            if (QueenHillSkillFx.ViewOverride != null) return QueenHillSkillFx.ViewOverride;
             if (SwordFightSkillFx.ViewOverride != null) return SwordFightSkillFx.ViewOverride;
             var rig = FindAnyObjectByType<LabCamera>();
             return rig != null && rig.Cam != null && rig.Cam.isActiveAndEnabled ? rig.Cam : Camera.main;

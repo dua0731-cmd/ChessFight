@@ -157,8 +157,7 @@ namespace ChessFight.RagdollLab
         public static bool SkillMarksHidden { get; set; }
 
         bool Aiming => skillStage == SkillStage.Windup && !aimLocked
-                       && (QueenHillSkills != null ? QueenHillAims : piece == PieceKind.Rook || piece == PieceKind.Bishop
-                           || piece == PieceKind.King);   // R146: the king's list, its clicks the list's
+                       && (piece == PieceKind.Rook || piece == PieceKind.Bishop || piece == PieceKind.King);   // R146: the king's list, its clicks the list's
 
         /// <summary>A skill is moving this pawn into others, or has just stopped doing so: contacts between
         /// pawns are the skill's to judge, not the collision knockdown's.</summary>
@@ -305,11 +304,6 @@ namespace ChessFight.RagdollLab
                 input.shoveHeld = false;
                 input.grab = false;
             }
-            if (QueenHillSkills != null)
-            {
-                PreQueenHillSkills();   // the Queen of the Hill skills take it from here (R89)
-                return;
-            }
             // Aiming, the rook walks (and jumps) as usual but cannot sprint; from the click to the end it stays put (R153).
             if (Aiming && piece == PieceKind.Rook) input.sprint = false;
             bool rooted = dashing || skillStage == SkillStage.Recovery
@@ -343,11 +337,6 @@ namespace ChessFight.RagdollLab
             }
             UpdateLassoDrag(s, dt);   // 10-26: a bishop's rope round its waist, or held taut by it
             TrackGetUp(s);
-            if (QueenHillSkills != null)
-            {
-                UpdateQueenHillSkills(QueenHillSkills, press, confirm, cancel, dt);   // Queen of the Hill skills (R89)
-                return;
-            }
             // R146: a king's call answered (its own key), or the trip in to him.
             press = UpdateKingCallMate(s, press, dt);
             // R153: pulled in on a rook's chain.
@@ -393,7 +382,6 @@ namespace ChessFight.RagdollLab
             knightTarget = knightCandidate = null;
             SkillDetail = "";
             HideSkillMarks();
-            ClearQueenHill();
             ClearKingCall();
             ClearRookChain();
             ClearLasso();
@@ -479,22 +467,6 @@ namespace ChessFight.RagdollLab
                 // On its way in to a king (R146), just respawned or on the finish pad (R153): nothing takes.
                 target.LastSkillHit = $"{cause}: 스킬 대상 아님";
                 return "대상 아님";
-            }
-            var cover = target.Cover();
-            if (cover != null)
-            {
-                // A Queen of the Hill king its guards stand round: the nearest one takes the hit for it.
-                target.LastSkillHit = $"{cause}: {cover.DisplayName}이(가) 대신 막음";
-                SkillHit(cover, push, knockdown, cause);
-                return $"{cover.DisplayName}이(가) 대신 막음";
-            }
-            if (target.wardLeft > 0f && target.State != PawnState.Ragdoll)
-            {
-                // Guarded by a Queen of the Hill king (R89): no knockdown, a much smaller push (TakeHit scales it).
-                target.TakeHit(Flat(push), 0f, 0f, false);
-                target.Stagger(target.QueenHillSkills != null ? target.QueenHillSkills.wardStagger : 0.2f);
-                target.LastSkillHit = $"{cause}: 호위로 버팀";
-                return "호위로 버팀";
             }
             float guardStagger = PawnRushSkills != null ? PawnRushSkills.guardStagger : 0.3f;
             string result;
@@ -1333,11 +1305,6 @@ namespace ChessFight.RagdollLab
                 thighL = Quaternion.Euler(2f * w, 0f, 3f);
                 thighR = Quaternion.Euler(-2f * w, 0f, -3f);
                 footL = footR = Quaternion.identity;
-                return;
-            }
-            if (QueenHillSkills != null)
-            {
-                QueenHillPose(ref armL, ref armR, ref chest, ref head, ref thighL, ref thighR, ref footL, ref footR);   // R89
                 return;
             }
             // 10-26: the bishop on its rope (RagdollPawn.BishopLasso.cs).

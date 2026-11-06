@@ -68,7 +68,7 @@ namespace ChessFight.VFX.Editor
         // bright gold toward yellow and white (R179, the knight), and under it this one shows as the king's #C9952F.
         static readonly Color Gold = new Color(.8f, .52f, .12f), WarmWhite = new Color(1f, .957f, .839f);
 
-        [MenuItem("ChessFight/VFX/King/Build")]
+        [MenuItem("ChessFight/Development/VFX/King/Build")]
         public static void Build()
         {
             // In Play mode the layers' Awake runs as they are made and what it does is saved into the prefab (VFX1 found a
@@ -99,37 +99,37 @@ namespace ChessFight.VFX.Editor
         }
 
         /// <summary>The menu is greyed out in Play mode.</summary>
-        [MenuItem("ChessFight/VFX/King/Build", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build", true)]
         static bool CanBuild() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build F1 (guard only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build F1 (guard only)")]
         public static void BuildF1() => BuildOne(BuildGuard, "F1 the guard (F_Guard)");
 
-        [MenuItem("ChessFight/VFX/King/Build F1 (guard only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build F1 (guard only)", true)]
         static bool CanBuildF1() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build F2 (block only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build F2 (block only)")]
         public static void BuildF2() => BuildOne(BuildParry, "F2 the block (F_Block)");
 
-        [MenuItem("ChessFight/VFX/King/Build F2 (block only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build F2 (block only)", true)]
         static bool CanBuildF2() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build F4 (hit only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build F4 (hit only)")]
         public static void BuildF4() => BuildOne(BuildHit, "F4 whoever the counter strikes (F_Hit)");
 
-        [MenuItem("ChessFight/VFX/King/Build F4 (hit only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build F4 (hit only)", true)]
         static bool CanBuildF4() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build F5 (whiff only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build F5 (whiff only)")]
         public static void BuildF5() => BuildOne(BuildWhiff, "F5 the whiff (F_Whiff)");
 
-        [MenuItem("ChessFight/VFX/King/Build F5 (whiff only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build F5 (whiff only)", true)]
         static bool CanBuildF5() => !EditorApplication.isPlaying;
 
-        [MenuItem("ChessFight/VFX/King/Build E1 (stab only)")]
+        [MenuItem("ChessFight/Development/VFX/King/Build E1 (stab only)")]
         public static void BuildE1() => BuildOne(BuildStab, "E1 the stab (E_Stab)");
 
-        [MenuItem("ChessFight/VFX/King/Build E1 (stab only)", true)]
+        [MenuItem("ChessFight/Development/VFX/King/Build E1 (stab only)", true)]
         static bool CanBuildE1() => !EditorApplication.isPlaying;
 
         /// <summary>Only one layer, the other layers' prefabs left as they are.</summary>

@@ -31,7 +31,7 @@ namespace ChessFight.Gameplay
         }
 
         // Where on the circle the platform is at `time`, relative to the centre, in the centre's frame.
-        // Tools/QueenHill/preview/index.html (orbitOffset) mirrors this; keep them the same.
+        // The orbit offset is computed from the shared obstacle clock.
         public static Vector3 Offset(Vector3 axis, float radius, float period, double time)
         {
             Vector3 a = axis.sqrMagnitude > 1e-8f ? axis.normalized : Vector3.forward;

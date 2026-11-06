@@ -14,7 +14,7 @@ namespace ChessFight.RagdollLab.Editor
     {
         public const string ScenePath = "Assets/Scenes/SwordFight.unity";
         const string Lab = "Assets/";
-        [MenuItem("ChessFight/Sword Fight/Open Test Scene")]
+        [MenuItem("ChessFight/Sword Fight/Open Test Scene", false, 0)]
         public static void OpenScene()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;

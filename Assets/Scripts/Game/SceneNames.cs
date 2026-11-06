@@ -11,9 +11,6 @@ namespace ChessFight.Game
         public const string SwordFight = "SwordFight";
         // Development only: opened directly in the Editor, never loaded at run time.
         public const string RagdollTest = "RagdollTest";
-        // Queen of the Hill graybox: offline playtest only until the networked ragdoll
-        // (MECHANICS_TODO M14) lets GameModes.QueenOfTheHill load it for a match.
-        public const string QueenOfTheHill = "QueenOfTheHill";
         // The Pawn Rush result scenes (R76, in place of R62's LastScene): the winners' and the
         // losers'. Since R125 the race loads them when a team has a majority on the crown
         // platform (PawnRushResultFlow), and they go back to the lobby.

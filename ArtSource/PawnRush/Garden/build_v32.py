@@ -1,7 +1,7 @@
 """R307: v31 -> v32. Run in Blender 5.2: blender --background --python build_v32.py
 
 User request 11-03 ("지금 seoungtest에 정원 맵에 저 배치로 바꿔 없는 프리팹은 블록 아웃 처리 해서 넣어줘" -> "모델을 옮겨
-쓰고"): the garden takes main's v31 layout (Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md, RoyalWaterGardenBuilder: a folded
+쓰고"): the garden takes main's v31 layout (Docs/PawnRush/PAWN_RUSH_ROYAL_GARDEN.md, RoyalWaterGardenBuilder: a folded
 way round the walled square instead of straight up its middle). Unity builds that layout as a graybox from code; this
 file moves the garden's own models onto it. Models are moved and turned only, never reshaped or cut (11-02 rule):
 - stay where they are: the castle walls and towers, the moat, the round plaza and its piers, the start pad, the

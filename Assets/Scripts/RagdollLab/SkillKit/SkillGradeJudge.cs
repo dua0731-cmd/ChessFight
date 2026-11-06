@@ -13,11 +13,11 @@ namespace ChessFight.RagdollLab
     /// !! a crowd or a ring-out, ! a save or two at once, !? it paid but the caster fell, ? an attack that hit nothing,
     /// ?? the caster (or only allies) fell. !! shows on every screen, the rest only on the caster's own.
     ///
-    /// It only listens: the three modes' skill moments (<see cref="RagdollPawn.SkillFx"/>, <see cref="RagdollPawn.QueenHillFx"/>,
+    /// It only listens: the active modes' skill moments (<see cref="RagdollPawn.SkillFx"/>,
     /// <see cref="SwordFightSkills.Fx"/>) and the pieces' positions. Online, the clients raise the same moments when they
     /// replay the host's (LabNetLink.Play), so every screen judges for itself and nothing new goes on the wire (protocol
     /// v18 as it was). A cast is a caster's moments until they go quiet; a few skills stay open for what they leave
-    /// behind (the Pawn Rush bishop's wire, the Queen of the Hill bishop's hover and rook's request). !! is stamped the
+    /// behind (such as the Pawn Rush bishop's wire). !! is stamped the
     /// moment it is earned; anything else when the cast ends; a ring-out found up to 2.5 s after the hit still raises a
     /// lesser stamp to !!.
     /// </summary>
@@ -34,7 +34,7 @@ namespace ChessFight.RagdollLab
         const float SelfWatchTime = 2.2f;  // ... within this long of its last moment
         const float SwordOutY = -2.5f;     // Sword Fight: off the board on the way to its ring-out at -3 m (SwordFightGame)
 
-        enum Mode { PawnRush, QueenHill, SwordF, SwordEdge }
+        enum Mode { PawnRush, SwordF, SwordEdge }
 
         class Watched
         {
@@ -88,7 +88,7 @@ namespace ChessFight.RagdollLab
         static void Ensure()
         {
             if (Current != null) return;
-            bool bed = FindAnyObjectByType<PawnRushSkillBed>() != null || FindAnyObjectByType<QueenHillSkillBed>() != null
+            bool bed = FindAnyObjectByType<PawnRushSkillBed>() != null
                        || FindAnyObjectByType<SwordFightSkillBed>() != null;
             if (!bed) return;
             var go = new GameObject("Skill grades (R128)");
@@ -104,14 +104,12 @@ namespace ChessFight.RagdollLab
         void OnEnable()
         {
             RagdollPawn.SkillFx += OnPawnRush;
-            RagdollPawn.QueenHillFx += OnQueenHill;
             SwordFightSkills.Fx += OnSword;
         }
 
         void OnDisable()
         {
             RagdollPawn.SkillFx -= OnPawnRush;
-            RagdollPawn.QueenHillFx -= OnQueenHill;
             SwordFightSkills.Fx -= OnSword;
         }
 
@@ -158,38 +156,6 @@ namespace ChessFight.RagdollLab
             Check(c);
         }
 
-        void OnQueenHill(QueenHillFxEvent e)
-        {
-            Struck(e.target, e.by);
-            var c = Touch(e.by, Mode.QueenHill, PieceOf(e.kind.ToString(), e.by));
-            if (c == null) return;
-            switch (e.kind)
-            {
-                case QueenHillFxKind.QueenHit: case QueenHillFxKind.BishopHit: case QueenHillFxKind.PawnBump:
-                    if (e.count == 0) Hit(c, e.target);   // 1 = the king's guard took it (QhHit)
-                    break;
-                case QueenHillFxKind.KnightFlatten: case QueenHillFxKind.KnightFall: case QueenHillFxKind.Down:
-                    Hit(c, e.target); break;
-                case QueenHillFxKind.WardOn:
-                    // The king's guard on an ally: his cast stays open while it lasts (size = its time), and a blow
-                    // it takes counts as his save, whoever raised it.
-                    c.holdUntil = Mathf.Max(c.holdUntil, Now + e.size + 0.1f);
-                    if (e.target != null) wards[e.target] = c;
-                    break;
-                case QueenHillFxKind.WardBlock:
-                    if (e.target != null && wards.TryGetValue(e.target, out var king) && !king.closed) { king.helped++; Check(king); }
-                    break;
-                // Aiming is part of the cast: it stays open from the lock to the blow, however long the aim.
-                case QueenHillFxKind.QueenLock: case QueenHillFxKind.KnightLock: c.holdUntil = Now + 6f; break;
-                case QueenHillFxKind.QueenSlash: c.holdUntil = 0f; break;
-                case QueenHillFxKind.KnightLeap: c.holdUntil = Now + e.size + 0.2f; break;   // size = the flight time
-                case QueenHillFxKind.BishopRise: c.holdUntil = Now + 8f; break;     // open while it hovers
-                case QueenHillFxKind.BishopLand: case QueenHillFxKind.BishopDrop: c.holdUntil = 0f; break;
-                case QueenHillFxKind.RookRequest: c.holdUntil = Now + 6f; break;    // open while the ally decides
-                case QueenHillFxKind.RookSwap: case QueenHillFxKind.RookCancel: c.holdUntil = 0f; break;
-            }
-            Check(c);
-        }
 
         void OnSword(SfFxEvent e)
         {
@@ -287,13 +253,6 @@ namespace ChessFight.RagdollLab
                         case PieceKind.Rook: return SkillGradeRule.Move(3);      // also a way through
                         default: return SkillGradeRule.Move(2);                  // the pawn's steps, the knight's leap
                     }
-                case Mode.QueenHill:
-                    switch (c.piece)
-                    {
-                        case PieceKind.Queen: case PieceKind.Bishop: case PieceKind.Knight: return SkillGradeRule.Attack(2);
-                        case PieceKind.King: return SkillGradeRule.Move(3);       // a guard: three saves is !!
-                        default: return SkillGradeRule.Move(3);                   // the rook's swap, the pawn's dash
-                    }
                 case Mode.SwordF:
                     switch (c.piece)
                     {
@@ -316,7 +275,6 @@ namespace ChessFight.RagdollLab
                 else t.AllyFalls++;
             }
             // The king's guard counts its saves as the others count enemies.
-            if (c.mode == Mode.QueenHill && c.piece == PieceKind.King && c.helped >= 3) t.Enemies = Mathf.Max(t.Enemies, c.helped);
             return t;
         }
 

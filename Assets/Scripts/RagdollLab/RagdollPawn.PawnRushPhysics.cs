@@ -39,7 +39,7 @@ namespace ChessFight.RagdollLab
         float RiseGravityScale => PawnRushPhysics != null ? PawnRushPhysics.gravityScale : 1f;
 
         /// <summary>Something else is flying the body (a pad's arc, a skill's leap or dash): its own gravity rules.</summary>
-        bool BodyCarried => launched || dashing || flight || flying || skillStage != SkillStage.None;
+        bool BodyCarried => launched || dashing || flight || skillStage != SkillStage.None;
 
         /// <summary>The extra pull in the air. Standing it is left alone: the joints hold the body up against plain gravity.</summary>
         void PawnRushGravity()

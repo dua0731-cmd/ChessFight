@@ -28,7 +28,7 @@ namespace ChessFight.PawnRush.Editor
         // R400 (승규 11-04, from main): the v31 graybox and the garden's water baked into the garden prefab, so it can be
         // seen and remodelled by hand in Prefab Mode. Rebuilding throws away whatever is under Content, so it asks first
         // when the prefab already holds a garden.
-        [MenuItem("ChessFight/Pawn Rush/Build Early 1-1 Royal Water Garden", false, 19)]
+        [MenuItem("ChessFight/Pawn Rush/Build/Early 1-1 Royal Water Garden", false, 100)]
         public static void BuildRoyalWaterGarden()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -56,7 +56,7 @@ namespace ChessFight.PawnRush.Editor
             if (prefabAsset != null) Report(new List<GameObject> { prefabAsset }, false);
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Build Mid 2-1 Grand Stair Hall", false, 20)]
+        [MenuItem("ChessFight/Pawn Rush/Build/Mid 2-1 Grand Stair Hall", false, 101)]
         public static void BuildGrandStairHall()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -84,7 +84,7 @@ namespace ChessFight.PawnRush.Editor
             if (prefabAsset != null) Report(new List<GameObject> { prefabAsset }, false);
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Open Section Test", false, 21)]
+        [MenuItem("ChessFight/Pawn Rush/Open Section Test", false, 0)]
         public static void OpenTestScene()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -92,7 +92,7 @@ namespace ChessFight.PawnRush.Editor
             EditorSceneManager.OpenScene(TestScene);
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Validate Sections", false, 22)]
+        [MenuItem("ChessFight/Pawn Rush/Validate/Sections", false, 200)]
         public static void ValidateSections()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;

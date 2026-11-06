@@ -68,7 +68,7 @@ public static class NetworkCoreTests
             Along1 = 0.5f, Out0 = 0.62f, Out1 = -0.31f });
         p.Barricades.Add(new SkillWireBarricade { Index = 0, Standing = false, RegrowLeft = 3.4f });
         p.Barricades.Add(new SkillWireBarricade { Index = 2, Standing = true });
-        p.Events.Add(new SkillWireEvent { Seq = 65531, TimeMs = 123000, Mode = SkillWire.ModeQueenHill, Kind = 9, By = SkillWire.Ref(1, 3), Target = SkillWire.None,
+        p.Events.Add(new SkillWireEvent { Seq = 65531, TimeMs = 123000, Mode = SkillWire.ModeRetiredQueenHill, Kind = 9, By = SkillWire.Ref(1, 3), Target = SkillWire.None,
             X = 1, Y = 2, Z = 3, Dx = 0, Dy = 0, Dz = -1, Ux = -5, Uy = 0, Uz = 5, Count = 3, Size = 6.5f, Source = 9 });
         p.Events.Add(new SkillWireEvent { Seq = 65532, TimeMs = 123010, Mode = SkillWire.ModeSwordFight, Kind = 36, By = SkillWire.Ref(0, 2), Target = SkillWire.Ref(1, 0),
             X = 6.5f, Y = 0.4f, Z = -1, Dx = 1, Count = 1, Size = 3.5f });
@@ -498,7 +498,7 @@ public static class NetworkCoreTests
                 var random = new Random(32); for (int i = 0; i < 300; i++) { var chars = new char[i]; for (int j = 0; j < i; j++) chars[j] = (char)random.Next(32, 127); b.Apply(new string(chars)); }
                 Check(b.Encode() == before, "fuzz preserved"); });
             Test("Sword Fight is selectable and Queen remains planned", () => {
-                Check(GameModes.SwordFight.Playable && GameModes.SwordFight.Scene == "SwordFight" && !GameModes.QueenOfTheHill.Playable, "scene routing"); });
+                Check(GameModes.SwordFight.Playable && GameModes.SwordFight.Scene == "SwordFight" && GameModes.Find("queenhill") == null, "scene routing"); });
             Test("Sword ring-out scores once per life and respawns on time", () => {
                 var r = new SwordFightRules(); Check(r.RingOut(1, 0) && !r.RingOut(1, 0) && r.Black == 1, "duplicate score");
                 r.Advance(2.99); Check(!r.TryRespawn(1), "early respawn"); r.Advance(.02);
@@ -979,20 +979,8 @@ public static class NetworkCoreTests
                 Check(GameModes.All.Select(m => m.Key).Distinct().Count() == GameModes.All.Length, "duplicate key");
                 Check(GameModes.All.All(m => m.Key.Length > 0 && m.Key.Length <= 16 && m.Key.All(ch => ch >= 'a' && ch <= 'z')), "lobby keys are short lowercase words");
                 Check(GameModes.Default.Playable && GameModes.Find("kingrush") == GameModes.KingRush && GameModes.KingRush.Scene == "PawnRush_Course01", "default (the 폰 러쉬 match is Pawn Rush course 01 since 10-08)");
-                Check(GameModes.Find("nope") == null && GameModes.Resolve("") == GameModes.Default && GameModes.IndexOf("swordfight") == 2, "lookup");
+                Check(GameModes.Find("nope") == null && GameModes.Resolve("") == GameModes.Default && GameModes.IndexOf("swordfight") == 1, "lookup");
                 Check(GameModes.All.All(m => m.Playable == (m.Scene.Length > 0)), "playable means a scene"); });
-            Test("Queen of the Hill course: seven floors, one per rank, the summit is rank 8", () => {
-                Check(QueenHillCourse.Floors == 7 && QueenHillCourse.Sections == 7 && QueenHillCourse.All.Length == 7, "seven floors");
-                Check(Math.Abs(QueenHillCourse.RankHeight(1) - 16f) < 1e-3f && Math.Abs(QueenHillCourse.TopHeight - 156f) < 1e-3f, "heights");
-                Check(Enumerable.Range(1, 7).All(r => Math.Abs(QueenHillCourse.RankHeight(r + 1) - QueenHillCourse.RankHeight(r) - QueenHillCourse.FloorHeight) < 1e-3f), "even floors");
-                Check(QueenHillCourse.All.Select((f, i) => f.Number == i + 1).All(ok => ok), "numbering");
-                Check(QueenHillCourse.Floor(0) == null && QueenHillCourse.Floor(8) == null && QueenHillCourse.Floor(4).Shared && QueenHillCourse.Floor(7).Shared, "lookup");
-                Check(QueenHillCourse.RankAt(16.5f) == 1 && QueenHillCourse.RankAt(36.3f) == 2 && QueenHillCourse.RankAt(200f) == 8 && QueenHillCourse.RankAt(0f) == 1, "rank at a height"); });
-            Test("Queen of the Hill course: the hook reaches the cliff easily and the two-squares roof only at full strength", () => {
-                Check(QueenHillCourse.HookDistanceToRim < QueenHillCourse.HookFullReach * 0.8f, "the rim is out of an easy throw");
-                Check(QueenHillCourse.HookDistanceToTwoSquares < QueenHillCourse.HookFullReach, "the two-squares roof is out of reach");
-                Check(QueenHillCourse.HookDistanceToTwoSquares > QueenHillCourse.HookFullReach * 0.8f, "the two-squares roof is too easy");
-                Check(QueenHillCourse.LiftSeconds > 5f && QueenHillCourse.LiftSeconds < 8f, "the light lift takes about six seconds"); });
             Test("Link simulator delays in order and drops about the configured share", () => {
                 var sim=new LinkSimulator<int>(7){Profile=new LinkProfile{RoundTripMs=200}}; var got=new List<int>();
                 for(int n=0;n<5;n++) sim.Push(n,n*0.01);
@@ -1093,7 +1081,7 @@ public static class NetworkCoreTests
                 p.States.Add(new SkillWireState{Pawn=SkillWire.Ref(1,3),Stage=2,Flags=0xA5,Flags2=3,StageTime=1.234f,Cooldown=7.25f,CooldownTotal=12f,Dx=0.6f,Dy=0.8f,Px=-12.345f,Py=1.5f,Pz=33.3f,Qx=4,Qy=-0.5f,Qz=79,Target=SkillWire.Ref(0,5),Other=SkillWire.None,A=2.5f,B=25.5f,C=200,D=7});
                 p.Wires.Add(new SkillWireObject{Id=9,Owner=SkillWire.Ref(0,1),X=3,Y=0.02f,Z=-4,Yaw=271,Age=2.5f,Flags=1,Trips=1,Along0=0.33f,Along1=0.5f,Out0=0.62f,Out1=-0.31f});
                 p.Barricades.Add(new SkillWireBarricade{Index=0,Standing=false,RegrowLeft=3.4f});
-                p.Events.Add(new SkillWireEvent{Seq=65531,TimeMs=123000,Mode=SkillWire.ModeQueenHill,Kind=9,By=SkillWire.Ref(1,3),Target=SkillWire.None,X=1,Y=2,Z=3,Dx=0,Dy=0,Dz=-1,Ux=-5,Uy=0,Uz=5,Count=3,Size=6.5f,Source=9});
+                p.Events.Add(new SkillWireEvent{Seq=65531,TimeMs=123000,Mode=SkillWire.ModeRetiredQueenHill,Kind=9,By=SkillWire.Ref(1,3),Target=SkillWire.None,X=1,Y=2,Z=3,Dx=0,Dy=0,Dz=-1,Ux=-5,Uy=0,Uz=5,Count=3,Size=6.5f,Source=9});
                 var ms=new System.IO.MemoryStream(); var w=new System.IO.BinaryWriter(ms); SkillWire.Write(w,p); w.Flush(); var b=ms.ToArray();
                 Check(b.Length==SkillWire.Size(1,1,1,1),"length");
                 var q=new SkillWirePacket(); Check(SkillWire.Read(new System.IO.BinaryReader(new System.IO.MemoryStream(b)),b.Length,q),"read");
@@ -1296,39 +1284,39 @@ public static class NetworkCoreTests
                 var all=LatencyBefore.Parse(new[]{"-latencyBefore"}); Check(all.Slipping&&all.SlotsOnly&&all.ReadInUpdate&&all.Always30&&all.Items=="[1][2][3][5]","all");
                 var some=LatencyBefore.Parse(new[]{"x","-latencyBefore=3,5"}); Check(!some.Slipping&&!some.SlotsOnly&&some.ReadInUpdate&&some.Always30&&some.Items=="[3][5]","some");
                 Check(!LatencyBefore.Parse(null).Any&&!LatencyBefore.Parse(new[]{"-latencyBeforeX"}).Any,"nothing asked"); });
-            Test("Queen of the Hill: the first team to ring a bell opens its section, 20 s for that team", () => {
-                var q=new QueenHillRules(8);
-                Check(q.TryOpen(3,QueenHillRules.Black,100)&&!q.TryOpen(3,QueenHillRules.White,101),"first ring wins");
-                Check(q.IsOpen(3)&&q.Pioneer(3)==QueenHillRules.Black&&!q.IsOpen(2),"state");
-                Check(q.CanUse(3,QueenHillRules.Black,105)&&!q.CanUse(3,QueenHillRules.White,119.9)&&q.CanUse(3,QueenHillRules.White,120),"exclusive window");
-                Check(!q.CanUse(2,QueenHillRules.Black,500),"closed section");
+            Test("Pioneer checkpoints: the first team to ring a bell opens its section, 20 s for that team", () => {
+                var q=new PioneerRules(8);
+                Check(q.TryOpen(3,PioneerRules.Black,100)&&!q.TryOpen(3,PioneerRules.White,101),"first ring wins");
+                Check(q.IsOpen(3)&&q.Pioneer(3)==PioneerRules.Black&&!q.IsOpen(2),"state");
+                Check(q.CanUse(3,PioneerRules.Black,105)&&!q.CanUse(3,PioneerRules.White,119.9)&&q.CanUse(3,PioneerRules.White,120),"exclusive window");
+                Check(!q.CanUse(2,PioneerRules.Black,500),"closed section");
                 Check(!q.TryOpen(0,0,1)&&!q.TryOpen(9,0,1)&&!q.TryOpen(1,-1,1)&&!q.TryOpen(1,2,1)&&!q.TryOpen(1,0,double.NaN),"bad input"); });
-            Test("Queen of the Hill: respawn at the higher of own checkpoint and one below the team's best", () => {
-                var q=new QueenHillRules(8);
-                Check(q.RespawnSection(1,QueenHillRules.White)==0,"nothing yet = the bridge");
-                q.Reach(1,2); q.Reach(1,1); Check(q.PersonalBest(1)==2&&q.RespawnSection(1,QueenHillRules.White)==2,"own best, never lowered");
-                q.TryOpen(1,QueenHillRules.White,1); q.TryOpen(5,QueenHillRules.White,2); q.TryOpen(6,QueenHillRules.Black,3);
-                Check(q.TeamBest(QueenHillRules.White)==5&&q.TeamBest(QueenHillRules.Black)==6,"team best");
-                Check(q.RespawnSection(2,QueenHillRules.White)==4&&q.RespawnSection(1,QueenHillRules.White)==4,"one below the leader");
-                q.Reach(3,7); Check(q.RespawnSection(3,QueenHillRules.White)==7,"own checkpoint higher");
+            Test("Pioneer checkpoints: respawn at the higher of own checkpoint and one below the team's best", () => {
+                var q=new PioneerRules(8);
+                Check(q.RespawnSection(1,PioneerRules.White)==0,"nothing yet = the bridge");
+                q.Reach(1,2); q.Reach(1,1); Check(q.PersonalBest(1)==2&&q.RespawnSection(1,PioneerRules.White)==2,"own best, never lowered");
+                q.TryOpen(1,PioneerRules.White,1); q.TryOpen(5,PioneerRules.White,2); q.TryOpen(6,PioneerRules.Black,3);
+                Check(q.TeamBest(PioneerRules.White)==5&&q.TeamBest(PioneerRules.Black)==6,"team best");
+                Check(q.RespawnSection(2,PioneerRules.White)==4&&q.RespawnSection(1,PioneerRules.White)==4,"one below the leader");
+                q.Reach(3,7); Check(q.RespawnSection(3,PioneerRules.White)==7,"own checkpoint higher");
                 q.Reach(4,0); q.Reach(4,99); Check(q.PersonalBest(4)==0,"bad sections ignored");
-                q.Reset(); Check(!q.IsOpen(5)&&q.RespawnSection(3,QueenHillRules.White)==0,"reset"); });
-            Test("Queen of the Hill: openings travel as text and only ever open", () => {
-                var host=new QueenHillRules(8); host.TryOpen(2,QueenHillRules.White,12.5); host.TryOpen(4,QueenHillRules.Black,40.25);
-                var client=new QueenHillRules(8); Check(client.Apply(host.Encode())&&!client.Apply(host.Encode()),"applied once");
-                Check(client.Pioneer(2)==QueenHillRules.White&&Math.Abs(client.OpenedAt(4)-40.25)<1e-6,"same state");
+                q.Reset(); Check(!q.IsOpen(5)&&q.RespawnSection(3,PioneerRules.White)==0,"reset"); });
+            Test("Pioneer checkpoints: openings travel as text and only ever open", () => {
+                var host=new PioneerRules(8); host.TryOpen(2,PioneerRules.White,12.5); host.TryOpen(4,PioneerRules.Black,40.25);
+                var client=new PioneerRules(8); Check(client.Apply(host.Encode())&&!client.Apply(host.Encode()),"applied once");
+                Check(client.Pioneer(2)==PioneerRules.White&&Math.Abs(client.OpenedAt(4)-40.25)<1e-6,"same state");
                 Check(client.Apply("")==false&&client.IsOpen(2),"empty keeps state");
                 foreach(string bad in new[]{"2:0","x:0:1","2:5:1","9:0:1","2:0:1;junk",new string('1',600)})
-                    Check(!new QueenHillRules(8).Apply(bad),"rejected "+bad);
-                var partial=new QueenHillRules(8); Check(!partial.Apply("1:0:10;3:9:10")&&!partial.IsOpen(1),"all or nothing"); });
-            Test("Queen of the Hill pieces: the starting values of DESIGN 6.2", () => {
+                    Check(!new PioneerRules(8).Apply(bad),"rejected "+bad);
+                var partial=new PioneerRules(8); Check(!partial.Apply("1:0:10;3:9:10")&&!partial.IsOpen(1),"all or nothing"); });
+            Test("Shared chess pieces: the starting values of DESIGN 6.2", () => {
                 var pawn=ChessPieces.Stats(PieceKind.Pawn); Check(pawn.Weight==1f&&pawn.Move==1f&&pawn.Climb==1f&&pawn.Sprint&&!pawn.StatusImmune,"pawn");
                 var rook=ChessPieces.Stats(PieceKind.Rook); Check(rook.Weight==1.5f&&rook.Climb==0.7f&&rook.Sprint,"rook");
                 var king=ChessPieces.Stats(PieceKind.King); Check(king.Weight==3f&&king.Move==0.8f&&king.Sprint&&king.StatusImmune,"king");
                 Check(ChessPieces.Stats(PieceKind.Knight).Weight==0.8f&&ChessPieces.Stats(PieceKind.Queen).Weight==2f,"knight, queen");
                 Check(ChessPieces.Stats((PieceKind)9).Weight==1f&&!ChessPieces.IsValid(6)&&ChessPieces.IsValid(5)&&!ChessPieces.IsValid(-1),"out of range");
                 Check(ChessPieces.Name(PieceKind.Knight)=="나이트"&&ChessPieces.Name(PieceKind.Pawn)=="폰","names"); });
-            Test("Queen of the Hill pieces: a pawn promotes to a rook, bishop, knight or the team's one king", () => {
+            Test("Shared chess pieces: a pawn promotes to a rook, bishop, knight or the team's one king", () => {
                 foreach(var to in new[]{PieceKind.Rook,PieceKind.Bishop,PieceKind.Knight,PieceKind.King})
                     Check(ChessPieces.CanPromote(PieceKind.Pawn,to,0),"pawn to "+to);
                 Check(!ChessPieces.CanPromote(PieceKind.Pawn,PieceKind.King,1),"one king per team");

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // Mid-game obstacle section 2-1, the grand stair hall (level design v0.3, Docs/KingRush/
+    // Mid-game obstacle section 2-1, the grand stair hall (level design v0.3, Docs/PawnRush/
     // PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md, reshaped by the user in R303): the porch, the rolling grand
     // stair and the chandelier landing of the doc lead into a round hall climbed by one spiral way - a curving
     // stair along the wall, floating stones, a jump pad, gaps to dive across, a windy way, a last stair with

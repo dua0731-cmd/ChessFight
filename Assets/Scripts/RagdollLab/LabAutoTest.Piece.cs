@@ -30,7 +30,7 @@ namespace ChessFight.RagdollLab
         }
 
         static Vector3 AtPedestal(RagdollPawn pawn, int i) =>
-            QueenHillTestBed.Pedestal(i) + new Vector3(0f, pawn.standHeight + 0.02f, 0.9f);
+            PhysicsMechanicsBed.Pedestal(i) + new Vector3(0f, pawn.standHeight + 0.02f, 0.9f);
 
         IEnumerator PromoteAt(RagdollPawn pawn, int pedestal)
         {
@@ -42,7 +42,7 @@ namespace ChessFight.RagdollLab
         IEnumerator Promotions()
         {
             // Pedestals: 0 rook, 1 bishop, 2 knight, 3 king, 4 back to a pawn.
-            var white = SpawnTeam(QueenHillTestBed.Pedestal(0) + new Vector3(0f, 0f, 0.9f), Vector3.back, "promote-white", Teams.White);
+            var white = SpawnTeam(PhysicsMechanicsBed.Pedestal(0) + new Vector3(0f, 0f, 0.9f), Vector3.back, "promote-white", Teams.White);
             yield return Sim(0.5f);
             yield return RingBell(white);
             bool rook = white.Piece == PieceKind.Rook;

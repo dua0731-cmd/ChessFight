@@ -20,7 +20,7 @@ namespace ChessFight.VFX.Editor
         const string ProfilePath = VfxAssets.Root + "/Settings/VFX_Workbench_Neutral.asset";
         const string VolumeName = "Bench Tonemap (Neutral)";
 
-        [MenuItem("ChessFight/VFX/Workbench/Add Neutral Tonemap Compare")]
+        [MenuItem("ChessFight/Development/VFX/Workbench/Add Neutral Tonemap Compare")]
         public static void AddNeutral()
         {
             if (EditorApplication.isPlaying) return;
@@ -66,7 +66,7 @@ namespace ChessFight.VFX.Editor
             }
         }
 
-        [MenuItem("ChessFight/VFX/Workbench/Add Neutral Tonemap Compare", true)]
+        [MenuItem("ChessFight/Development/VFX/Workbench/Add Neutral Tonemap Compare", true)]
         static bool CanAdd() => !EditorApplication.isPlaying;
 
         static VolumeProfile Profile()

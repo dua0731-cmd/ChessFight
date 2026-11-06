@@ -31,10 +31,10 @@ ensure_mono() {
 
 run_tests() {
   mcs -nologo -langversion:experimental -out:"$OUT/NetworkCoreTests.exe" \
-      Assets/Scripts/Core/*.cs Tests/Network/NetworkCoreTests.cs
+      Assets/Scripts/Core/*.cs Assets/Prototype/PawnRush/Scripts/Core/*.cs Tests/Network/NetworkCoreTests.cs
   mono "$OUT/NetworkCoreTests.exe"
   mcs -nologo -langversion:experimental -nowarn:414 -r:System.Web.Extensions.dll -out:"$OUT/SessionFlowTests.exe" \
-      Assets/Scripts/Core/*.cs Assets/Scripts/Network/SteamSession.cs Tests/Network/FakeSteam.cs Tests/Network/SessionFlowTests.cs
+      Assets/Scripts/Core/*.cs Assets/Prototype/PawnRush/Scripts/Core/*.cs Assets/Scripts/Network/SteamSession.cs Tests/Network/FakeSteam.cs Tests/Network/SessionFlowTests.cs
   mono "$OUT/SessionFlowTests.exe"
 }
 
@@ -119,8 +119,13 @@ compile_all() {
   ensure_roslyn
   local build="$OUT/build" src="$OUT/src" refs sym m=/usr/lib/mono/4.5
   rm -rf "$build" "$src"; mkdir -p "$build" "$src"
-  # Every assembly is a folder under Assets/Scripts (the ragdoll lab and Pawn Rush too since 10-08).
+  # Prototype code uses asmrefs, so fold those sources into their original logical assembly folders.
   cp -r Assets/Scripts "$src/Scripts"
+  local prototype
+  for prototype in Assets/Prototype/PawnRush/Scripts/*; do
+    [ -d "$prototype" ] || continue
+    cp -r "$prototype"/. "$src/Scripts/$(basename "$prototype")/"
+  done
   unity6_to_2021 "$src"
   refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
   sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
@@ -185,18 +190,28 @@ check_boundaries() {
   local bad=0 hits
   # code_refs PATTERN PATHS...: matches outside // comments.
   code_refs() { local pattern="$1"; shift
-    grep -rnE "$pattern" "$@" --include='*.cs' --include='*.asmdef' | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true; }
+    local match code
+    while IFS= read -r match; do
+      code="${match#*:}"; code="${code#*:}"; code="${code%%//*}"
+      if [[ "$code" =~ $pattern ]]; then printf '%s\n' "$match"; fi
+    done < <(grep -rnE "$pattern" "$@" --include='*.cs' --include='*.asmdef' || true)
+  }
   # Only Network/ and Bootstrap/ may know about Steam (and RagdollLabSteam/, the lab's own
   # Bootstrap-style bridge, which is why it is its own assembly beside RagdollLab/).
   hits=$(code_refs 'Steamworks|ChessFight\.Network\.Steam|SteamSession|SteamMotion' \
          Assets/Scripts/Core Assets/Scripts/Game Assets/Scripts/Gameplay Assets/Scripts/Input Assets/Scripts/RagdollLab \
-         Assets/Scripts/PawnRush Assets/Scripts/VFX)
+         Assets/Scripts/PawnRush Assets/Scripts/VFX \
+         Assets/Prototype/PawnRush/Scripts/Core Assets/Prototype/PawnRush/Scripts/Game \
+         Assets/Prototype/PawnRush/Scripts/Gameplay Assets/Prototype/PawnRush/Scripts/RagdollLab \
+         Assets/Prototype/PawnRush/Scripts/PawnRush)
   if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Steam referenced outside Network/ and Bootstrap/"; bad=1; fi
   # The network layer and scene flow never depend on a character implementation.
   # (The lab's own folders, RagdollLab/, RagdollLabEditor/ and RagdollLabSteam/, sit in Assets/Scripts
   # since the 10-08 folder cleanup; the rule is about the network and game folders beside them.)
   hits=$(code_refs 'RagdollLab|RagdollPawn|LabGame' Assets/Scripts/Core Assets/Scripts/Network Assets/Scripts/Game \
-         Assets/Scripts/Gameplay Assets/Scripts/Bootstrap Assets/Scripts/Input Assets/Scripts/Editor Assets/Scripts/VFX)
+         Assets/Scripts/Gameplay Assets/Scripts/Bootstrap Assets/Scripts/Input Assets/Scripts/Editor Assets/Scripts/VFX \
+         Assets/Prototype/PawnRush/Scripts/Core Assets/Prototype/PawnRush/Scripts/Game \
+         Assets/Prototype/PawnRush/Scripts/Gameplay)
   if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: the network and game code depends on the ragdoll lab"; bad=1; fi
   [ $bad -eq 0 ] && echo "PASS: assembly boundaries (Steam only in Network/Bootstrap, the network and game code does not depend on the ragdoll)"
   return $bad
@@ -211,7 +226,9 @@ check_boundaries() {
 # comment naming why; it is offline only until the host sends its state (listed, not failed).
 check_obstacle_clock() {
   local bad=0 f
-  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/Scripts/RagdollLab Assets/Scripts/PawnRush 2>/dev/null \
+  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/Scripts/RagdollLab Assets/Scripts/PawnRush \
+             Assets/Prototype/PawnRush/Scripts/Gameplay Assets/Prototype/PawnRush/Scripts/RagdollLab \
+             Assets/Prototype/PawnRush/Scripts/PawnRush 2>/dev/null \
              | grep -vE 'LabAutoTest|Test|Editor/|/RagdollPawn[^/]*\.cs$'); do
     if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then
       if grep -q 'StateDrivenMover:' "$f"; then echo "NOTE: state-driven mover, offline only: $f"
@@ -222,10 +239,9 @@ check_obstacle_clock() {
   return $bad
 }
 
-ensure_mono
 check_boundaries
 check_obstacle_clock
-# The Queen of the Hill map is generated data; the committed JSON must match its script.
-if command -v python3 >/dev/null 2>&1; then python3 Tools/QueenHill/build_layout.py --check || exit 1; fi
+if [ "${1:-}" = "--checks-only" ]; then exit 0; fi
+ensure_mono
 run_tests
 if [ "${1:-}" = "--compile" ]; then compile_all; fi

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
-    // Early obstacle section 1-1, the royal water garden v31 (Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md, the user's
+    // Early obstacle section 1-1, the royal water garden v31 (Docs/PawnRush/PAWN_RUSH_ROYAL_GARDEN.md, the user's
     // 2026-11-02 review of the Blender garden). The garden's walled square (92 x 123 m inside the walls) is walked as
     // one folded way instead of straight up its middle: the fountain plaza and its five small spin bars, west along the
     // geyser canal and up a ramp, east across the water on eight bobbing platforms (a very hard shortcut leaves the

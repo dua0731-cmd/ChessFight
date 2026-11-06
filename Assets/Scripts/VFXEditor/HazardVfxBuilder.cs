@@ -28,7 +28,7 @@ namespace ChessFight.VFX.Editor
         const string KnightLandingPart = "K1 Landing", KnightLanePart = "K1 Lane";
 
         /// <summary>K1 alone: the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Hazard/Build K1 (knight charge warning)")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build K1 (knight charge warning)")]
         public static void BuildK1()
         {
             if (EditorApplication.isPlaying)
@@ -42,7 +42,7 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Hazard K1 built: the guard knight's landing and charge warnings (Knight_Warn). Workbench: any piece, " + knight.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build K1 (knight charge warning)", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build K1 (knight charge warning)", true)]
         static bool CanBuildK1() => !EditorApplication.isPlaying;
 
         static GameObject BuildKnight()
@@ -97,7 +97,7 @@ namespace ChessFight.VFX.Editor
         const string WarnPart = "W1 Decal", ShadowPart = "W2 Shadow", StreakPart = "W2 Streaks";
         const string ShockDecalPart = "I2 Decal", ShockWallPart = "I2 Wall";
 
-        [MenuItem("ChessFight/VFX/Hazard/Build")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build")]
         public static void Build()
         {
             if (EditorApplication.isPlaying)
@@ -121,11 +121,11 @@ namespace ChessFight.VFX.Editor
                 + warn.name + ", " + fall.name + ", " + land.name + ", " + shock.name + ", " + after.name + ", " + wind.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build", true)]
         static bool CanBuild() => !EditorApplication.isPlaying;
 
         /// <summary>V1 alone: the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Hazard/Build V1 (vent wind)")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build V1 (vent wind)")]
         public static void BuildV1()
         {
             if (EditorApplication.isPlaying)
@@ -139,7 +139,7 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Hazard V1 built: the royal fan's wind (Vent_Wind). Workbench: any piece, " + wind.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build V1 (vent wind)", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build V1 (vent wind)", true)]
         static bool CanBuildV1() => !EditorApplication.isPlaying;
 
         static GameObject BuildWind()
@@ -184,7 +184,7 @@ namespace ChessFight.VFX.Editor
         }
 
         /// <summary>I3 alone: the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Hazard/Build I3 (falling piece after)")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build I3 (falling piece after)")]
         public static void BuildI3()
         {
             if (EditorApplication.isPlaying)
@@ -199,11 +199,11 @@ namespace ChessFight.VFX.Editor
                 + "Workbench: any piece, " + after.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build I3 (falling piece after)", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build I3 (falling piece after)", true)]
         static bool CanBuildI3() => !EditorApplication.isPlaying;
 
         /// <summary>I2 alone: the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Hazard/Build I2 (falling piece shockwave)")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build I2 (falling piece shockwave)")]
         public static void BuildI2()
         {
             if (EditorApplication.isPlaying)
@@ -218,11 +218,11 @@ namespace ChessFight.VFX.Editor
                 + "Workbench: any piece, " + shock.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build I2 (falling piece shockwave)", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build I2 (falling piece shockwave)", true)]
         static bool CanBuildI2() => !EditorApplication.isPlaying;
 
         /// <summary>I1 alone: the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Hazard/Build I1 (falling piece landing)")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build I1 (falling piece landing)")]
         public static void BuildI1()
         {
             if (EditorApplication.isPlaying)
@@ -237,11 +237,11 @@ namespace ChessFight.VFX.Editor
                 + "Workbench: any piece, " + land.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build I1 (falling piece landing)", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build I1 (falling piece landing)", true)]
         static bool CanBuildI1() => !EditorApplication.isPlaying;
 
         /// <summary>W2 alone: the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Hazard/Build W2 (falling piece fall)")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build W2 (falling piece fall)")]
         public static void BuildW2()
         {
             if (EditorApplication.isPlaying)
@@ -255,11 +255,11 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Hazard W2 built: the falling piece's shadow and speed lines (FallingPiece_Fall). Workbench: any piece, " + fall.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build W2 (falling piece fall)", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build W2 (falling piece fall)", true)]
         static bool CanBuildW2() => !EditorApplication.isPlaying;
 
         /// <summary>W1 alone: the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Hazard/Build W1 (falling piece warning)")]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build W1 (falling piece warning)")]
         public static void BuildW1()
         {
             // In Play mode a layer's Awake runs as it is made and what it does is saved into the prefab: edit mode only.
@@ -274,7 +274,7 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Hazard W1 built: the falling piece's floor warning (FallingPiece_Warn). Workbench: any piece, " + warn.name);
         }
 
-        [MenuItem("ChessFight/VFX/Hazard/Build W1 (falling piece warning)", true)]
+        [MenuItem("ChessFight/Development/VFX/Hazard/Build W1 (falling piece warning)", true)]
         static bool CanBuildW1() => !EditorApplication.isPlaying;
 
         static GameObject BuildWarn()

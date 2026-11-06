@@ -8,7 +8,7 @@ namespace ChessFight.EditorTools
 {
     /// <summary>
     /// Plays each listed scene for a few seconds and saves stills from its cameras, for comparing the look
-    /// before and after a rendering change (the URP move). Menu: ChessFight/Tools/Capture Scenes (before|after).
+    /// before and after a rendering change (the URP move). Menu: ChessFight/Development/Tools/Capture Scenes (before|after).
     /// Stills land in Temp/Captures/urp/&lt;label&gt;/&lt;scene&gt;_&lt;n&gt;.png. Survives the domain reload on entering Play.
     /// </summary>
     [InitializeOnLoad]
@@ -24,10 +24,9 @@ namespace ChessFight.EditorTools
             "Assets/Scenes/Lobby.unity",
             "Assets/Scenes/PawnRushVictory.unity",
             "Assets/Scenes/PawnRushLose.unity",
-            "Assets/Scenes/PawnRush_Course01.unity",
+            "Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity",
             "Assets/Scenes/SwordFight.unity",
             "Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity",
-            "Assets/Scenes/SkillTest/QueenOfTheHill_SkillTest/QueenOfTheHill_SkillTest.unity",
             "Assets/Scenes/SkillTest/SwordFight_SkillTest/SwordFight_SkillTest.unity",
         };
 
@@ -40,10 +39,10 @@ namespace ChessFight.EditorTools
             if (EditorApplication.isPlaying && Queue.Count > 0) Begin();
         }
 
-        [MenuItem("ChessFight/Tools/Capture Scenes (before)")]
+        [MenuItem("ChessFight/Development/Tools/Capture Scenes (before)")]
         static void CaptureBefore() => Run("before");
 
-        [MenuItem("ChessFight/Tools/Capture Scenes (after)")]
+        [MenuItem("ChessFight/Development/Tools/Capture Scenes (after)")]
         static void CaptureAfter() => Run("after");
 
         public static void Run(string label, params string[] scenes)

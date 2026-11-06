@@ -33,7 +33,7 @@
 | 컴파일러 없음 | `python3 Tools/Generators/check_braces.py` | 괄호 균형만 확인 |
 | 이 PC Unity (승규 님 PC, R71) | Unity MCP 다리(MCP for Unity 10.2.0, `C:/Work/ChessFight`가 연 에디터, 포트는 `~/.unity-mcp/unity-mcp-port-*.json`, 보통 6401)에 TCP로 붙어 `refresh_unity`(컴파일) → `read_console`(오류) → `manage_editor play` → `execute_code`(예: `PawnRushSkillProbe.Run("all")`) → `manage_camera screenshot`(`Temp/Captures`) | **열린 에디터에서 바로 돌려 보고 재기.** 패키지 줄(`com.coplaydev.unity-mcp`)은 그 PC의 `Packages/manifest.json`에만 두고 **커밋하지 않는다**. 커밋 뒤 동기화 훅이 `C:/Work`로 옮긴 다음 **별도 명령으로** 새로고침한다(같은 명령에 넣으면 옛 코드로 컴파일). 사람의 Unity 확인을 대신하지 않는다 → [Skills README](../Skills/README.md#자동-시험-도구-ai용-사람도-가능) |
 
-- 현재 기준: **Core 29개, 세션 15개**, 래그돌 자동 점검 **56 통과 / 0 실패(09-27, `JY-ragdoll_v2`)**. 수가 줄면 뭔가 빠진 것이다.
+- 현재 기준(R497): **Core 162개, 세션 55개**, 래그돌 자동 점검 **56 통과 / 0 실패(09-27, `JY-ragdoll_v2`)**. 테스트 수가 줄면 삭제된 기능의 전용 검사인지 확인하고 근거를 남긴다. R497은 폐기 Queen 지도 검사2개만 제거했다.
 - **새 래그돌 점검은 빌드한 플레이어에서 한 번 이상 돌려 보고 커밋한다.** Unity 없이 쓴 점검 9개가 처음부터 실패했고 그중 4개는 점검이 틀렸다([PITFALLS 21](PITFALLS.md)).
 - 테스트 파일: `Tests/Network/NetworkCoreTests.cs`, `SessionFlowTests.cs`, `FakeSteam.cs`(Steam/Unity API 모사). 새 Steam API를 쓰면 `FakeSteam.cs`에도 스텁을 추가한다.
 - 테스트 통과는 **Unity 실행 검증이 아니다.** Unity·Steam에서만 확인할 수 있는 항목은 [VALIDATION](../Network/VALIDATION.md) 최상단에 '미확인'으로 추가하고 사용자에게 확인 방법을 알려준다.

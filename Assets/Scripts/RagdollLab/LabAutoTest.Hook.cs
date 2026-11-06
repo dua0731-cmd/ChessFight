@@ -114,8 +114,8 @@ namespace ChessFight.RagdollLab
 
         (Vector3 aim, int steps) TowerTopThrow(RagdollPawn pawn, float inland) =>
             SolveHookThrow(pawn, Vector3.right, hit =>
-                (hit.normal.y > 0.6f && hit.point.y > QueenHillTestBed.HookTowerTop - 0.1f ? 0f : 100f)
-                + Mathf.Abs(hit.point.x - (QueenHillTestBed.HookTowerFaceX + inland)));
+                (hit.normal.y > 0.6f && hit.point.y > PhysicsMechanicsBed.HookTowerTop - 0.1f ? 0f : 100f)
+                + Mathf.Abs(hit.point.x - (PhysicsMechanicsBed.HookTowerFaceX + inland)));
 
         // ------------------------------------------------------------------ gauge
 
@@ -167,7 +167,7 @@ namespace ChessFight.RagdollLab
 
         IEnumerator HookSurfaces()
         {
-            var pawn = Spawn(QueenHillTestBed.HookStart, Vector3.right, "hook-faces");
+            var pawn = Spawn(PhysicsMechanicsBed.HookStart, Vector3.right, "hook-faces");
             yield return Sim(0.6f);
             // The tower's face at about 5 m.
             float wallY = 5f;
@@ -180,7 +180,7 @@ namespace ChessFight.RagdollLab
             yield return StowHook(pawn);
 
             // The tower's top.
-            pawn.Teleport(QueenHillTestBed.HookStart + Vector3.up * (pawn.standHeight + 0.02f), Vector3.right);
+            pawn.Teleport(PhysicsMechanicsBed.HookStart + Vector3.up * (pawn.standHeight + 0.02f), Vector3.right);
             yield return Sim(0.6f, () => HookInput(pawn, Vector3.zero));
             (aim, steps) = TowerTopThrow(pawn, 1.5f);
             yield return ThrowHookSteps(pawn, aim, steps);
@@ -190,7 +190,7 @@ namespace ChessFight.RagdollLab
             yield return StowHook(pawn);
 
             // The arch's underside, straight up from beneath it.
-            Vector3 under = QueenHillTestBed.HookArchCenter;
+            Vector3 under = PhysicsMechanicsBed.HookArchCenter;
             pawn.Teleport(new Vector3(under.x, pawn.standHeight + 0.02f, under.z), Vector3.right);
             yield return Sim(0.6f, () => HookInput(pawn, Vector3.zero));
             yield return ThrowHook(pawn, Vector3.up, 0.6f);
@@ -202,7 +202,7 @@ namespace ChessFight.RagdollLab
             yield return StowHook(pawn);
 
             Report("M5 갈고리: 어느 면에나 박힘 (탑 벽면 · 탑 윗면 · 아치 천장)", wall && top && ceiling,
-                $"벽면 {wall} (높이 {wallAt.y:F1} m), 윗면 {top} (높이 {topAt.y:F1} m, 벽에서 {topAt.x - QueenHillTestBed.HookTowerFaceX:F1} m 안쪽), "
+                $"벽면 {wall} (높이 {wallAt.y:F1} m), 윗면 {top} (높이 {topAt.y:F1} m, 벽에서 {topAt.x - PhysicsMechanicsBed.HookTowerFaceX:F1} m 안쪽), "
                 + $"천장 {ceiling} (높이 {ceilingAt.y:F2} m, 매달린 머리 높이 {hangHead:F2} m)");
             yield return Clear();
         }
@@ -211,7 +211,7 @@ namespace ChessFight.RagdollLab
 
         IEnumerator HookTower()
         {
-            var pawn = Spawn(QueenHillTestBed.HookStart, Vector3.right, "hook-tower");
+            var pawn = Spawn(PhysicsMechanicsBed.HookStart, Vector3.right, "hook-tower");
             yield return Sim(0.6f);
             var (aim, steps) = TowerTopThrow(pawn, 1.5f);
             float t = 0f, stuckAt = -1f, arrivedAt = -1f, fastest = 0f;
@@ -239,12 +239,12 @@ namespace ChessFight.RagdollLab
             });
             float pull = arrivedAt >= 0f ? arrivedAt - stuckAt : -1f;
             float distance = arrivedAt >= 0f ? Vector3.Distance(from, arrivedPos) : 0f;
-            bool standing = pawn.State == PawnState.Active && pawn.Grounded && pawn.Hips.position.y > QueenHillTestBed.HookTowerTop + 0.1f
-                            && pawn.Hips.position.x > QueenHillTestBed.HookTowerFaceX + 0.2f;
+            bool standing = pawn.State == PawnState.Active && pawn.Grounded && pawn.Hips.position.y > PhysicsMechanicsBed.HookTowerTop + 0.1f
+                            && pawn.Hips.position.x > PhysicsMechanicsBed.HookTowerFaceX + 0.2f;
             Report("M5 갈고리: 박히면 약 6 m/s로 끌려가 10 m 탑 위에 올라섬 (약 20 m를 약 4초)",
                 pull > 2.5f && pull < 6f && distance > 18f && standing && pawn.Knockdowns == 0,
                 $"끌려간 거리 {distance:F1} m, 걸린 시간 {Fmt(pull)} (평균 {(pull > 0f ? distance / pull : 0f):F1} m/s, 최고 {fastest:F1} m/s), "
-                + $"도착 뒤 탑 위에 서 있음 {standing} (골반 높이 {pawn.Hips.position.y:F2} m, 탑 {QueenHillTestBed.HookTowerTop:F0} m), 넘어짐 {pawn.Knockdowns}");
+                + $"도착 뒤 탑 위에 서 있음 {standing} (골반 높이 {pawn.Hips.position.y:F2} m, 탑 {PhysicsMechanicsBed.HookTowerTop:F0} m), 넘어짐 {pawn.Knockdowns}");
             yield return StowHook(pawn);
             yield return Clear();
         }
@@ -253,14 +253,14 @@ namespace ChessFight.RagdollLab
 
         IEnumerator HookWall()
         {
-            var pawn = Spawn(QueenHillTestBed.HookStart, Vector3.right, "hook-wall");
+            var pawn = Spawn(PhysicsMechanicsBed.HookStart, Vector3.right, "hook-wall");
             yield return Sim(0.6f);
             var (aim, steps) = SolveHookThrow(pawn, Vector3.right, hit =>
                 (Mathf.Abs(hit.normal.x + 1f) < 0.1f ? 0f : 100f) + Mathf.Abs(hit.point.y - 6f));
             yield return ThrowHookSteps(pawn, aim, steps);
             yield return Sim(6f, () => HookInput(pawn, aim));
             // Hanging on the rope against the face, off the ground, not climbing yet.
-            float gap = QueenHillTestBed.HookTowerFaceX - pawn.Hips.position.x;
+            float gap = PhysicsMechanicsBed.HookTowerFaceX - pawn.Hips.position.x;
             bool hanging = pawn.Hook == HookPhase.Pulling && !pawn.Climbing && pawn.Hips.position.y > 3f && gap < 0.6f;
             float hangY = pawn.Hips.position.y;
             // The right button takes hold of the wall: from here it is an ordinary climb.
@@ -318,8 +318,8 @@ namespace ChessFight.RagdollLab
 
         IEnumerator HookEnPassant()
         {
-            var climber = Spawn(QueenHillTestBed.HookStart, Vector3.right, "hook-climber");
-            var cutter = Spawn(new Vector3(QueenHillTestBed.HookTowerFaceX + 3f, QueenHillTestBed.HookTowerTop, QueenHillTestBed.HookTowerCenter.z + 3f),
+            var climber = Spawn(PhysicsMechanicsBed.HookStart, Vector3.right, "hook-climber");
+            var cutter = Spawn(new Vector3(PhysicsMechanicsBed.HookTowerFaceX + 3f, PhysicsMechanicsBed.HookTowerTop, PhysicsMechanicsBed.HookTowerCenter.z + 3f),
                 Vector3.left, "hook-cutter");
             yield return Sim(0.6f);
             var (aim, steps) = TowerTopThrow(climber, 1.5f);
@@ -328,7 +328,7 @@ namespace ChessFight.RagdollLab
             yield return WaitForHook(climber, aim);
             bool stuck = climber.Hook == HookPhase.Pulling;
             Vector3 hook = climber.HookPoint;
-            cutter.Teleport(new Vector3(hook.x + 0.3f, QueenHillTestBed.HookTowerTop + cutter.standHeight + 0.02f, hook.z + 1.2f), Vector3.back);
+            cutter.Teleport(new Vector3(hook.x + 0.3f, PhysicsMechanicsBed.HookTowerTop + cutter.standHeight + 0.02f, hook.z + 1.2f), Vector3.back);
             yield return Sim(0.3f, () =>
             {
                 HookInput(climber, aim);
@@ -354,7 +354,7 @@ namespace ChessFight.RagdollLab
                 if (cutAt < 0f && climber.HookCutOff > 0) cutAt = t;
                 climberTop = Mathf.Max(climberTop, climber.Hips.position.y);
             });
-            bool fell = climber.Hips.position.y < QueenHillTestBed.HookTowerTop - 1f && climber.Hook != HookPhase.Pulling;
+            bool fell = climber.Hips.position.y < PhysicsMechanicsBed.HookTowerTop - 1f && climber.Hook != HookPhase.Pulling;
             var p = game.tuning.values;
             Report("M5·M10 앙파상: 끌려가는 적의 갈고리 옆에서 F를 0.4초 누르면 갈고리가 빠지고 적이 떨어짐 (같은 팀은 안 됨)",
                 stuck && teammateLeft && cutAt > 0f && Mathf.Abs(cutAt - p.enPassantHold) < 0.1f && fell && cutter.EnPassantCuts == 1,

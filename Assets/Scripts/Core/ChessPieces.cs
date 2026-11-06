@@ -1,6 +1,6 @@
 namespace ChessFight.Network
 {
-    // The Queen of the Hill pieces (Docs/GameModes/QueenOfTheHill/DESIGN.md §6.2)
+    // Shared chess piece kinds used by the active game modes
     // and what each one is made of, as plain numbers with no Unity in them, so the
     // table and the promotion rule are tested on their own (M11). Every
     // character keeps the pawn's ragdoll - the same size and the same physics -

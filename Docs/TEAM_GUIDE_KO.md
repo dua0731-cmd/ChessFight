@@ -4,7 +4,7 @@
 
 이번 주차 역할 분담에 맞춰 **각자 main에 바로 작업을 올릴 수 있도록** 만든 개발 환경의 설명서다.
 
-> **AI에게 일을 맡길 때는 저장소 루트의 [`HANDOFF.md`](../HANDOFF.md)를 먼저 읽게 한다.** 현재 상태, 절대 규칙, 분야별 문서 지도가 거기 있다. 이 가이드는 팀원이 읽기 편하게 요약을 겹쳐 둔 것이고, 어긋나면 분야 문서(`Docs/Player`, `Docs/KingRush`, `Docs/Network`)가 기준이다.
+> **AI에게 일을 맡길 때는 저장소 루트의 [`HANDOFF.md`](../HANDOFF.md)를 먼저 읽게 한다.** 현재 상태, 절대 규칙, 분야별 문서 지도가 거기 있다. 이 가이드는 팀원이 읽기 편하게 요약을 겹쳐 둔 것이고, 어긋나면 분야 문서(`Docs/Player`, `Docs/PawnRush`, `Docs/Network`)가 기준이다.
 
 | 담당 | 이번 주 할 일 | 이 문서에서 볼 곳 |
 |---|---|---|
@@ -29,7 +29,7 @@
 |---|---|---|---|
 | Intro | `Assets/Scenes/Intro.unity` | 타이틀. Steam 초기화 | **온라인** 흐름 시작 |
 | Lobby | `Assets/Scenes/Lobby.unity` | 파티·매칭·친구 초대·봇 | **온라인** |
-| KingRush | `Assets/Scenes/KingRush.unity` | 킹러시 코스 | **오프라인 플레이테스트** |
+| KingRush | `Assets/Prototype/PawnRush/Scenes/PawnRushCapsule.unity` | 킹러시 코스 | **오프라인 플레이테스트** |
 | RagdollTest | `Assets/Scenes/RagdollTest.unity` | 래그돌 랩 (2026-09-25 준영 님 랩 씬을 옮김) | **오프라인 2인 로컬** |
 
 메뉴 `ChessFight > Scenes`에서 바로 연다.
@@ -219,7 +219,7 @@ namespace ChessFight.Gameplay
 
 ### 6.5 장애물 기획서
 
-**장애물마다 기획서를 같이 만든다.** 양식은 `Docs/KingRush/OBSTACLE_TEMPLATE.md`. 완성본은 `Docs/KingRush/Obstacles/이름.md`로 둔다. 종류는 많을수록 좋다.
+**장애물마다 기획서를 같이 만든다.** 양식은 `Docs/PawnRush/OBSTACLE_TEMPLATE.md`. 완성본은 `Docs/PawnRush/Obstacles/이름.md`로 둔다. 종류는 많을수록 좋다.
 
 ### 6.6 네트워크 경기에서의 현재 한계
 
@@ -229,12 +229,12 @@ namespace ChessFight.Gameplay
 
 ```text
 ChessFight 저장소 main에서 feature 브랜치를 만들어 킹러시 맵과 장애물을 작업합니다.
-저장소 루트 HANDOFF.md를 먼저 읽고, Docs/KingRush/README.md와 OBSTACLES.md(이 가이드 6장과 같은 내용)를 읽으세요.
-Assets/Scenes/KingRush.unity가 작업 씬입니다. 직접 Play하면 오프라인 플레이테스트가 됩니다.
+저장소 루트 HANDOFF.md를 먼저 읽고, Docs/PawnRush/README.md와 OBSTACLES.md(이 가이드 6장과 같은 내용)를 읽으세요.
+Assets/Prototype/PawnRush/Scenes/PawnRushCapsule.unity가 작업 씬입니다. 직접 Play하면 오프라인 플레이테스트가 됩니다.
 장애물은 Assets/Scripts/Gameplay/Obstacles/Obstacle을 상속하고 Evaluate만 구현합니다.
 반드시 지킬 것: 위치·회전은 ObstacleClock 시간의 순수 함수로만 계산하고
 프레임마다 누적하지 않습니다(멀티에서 모든 PC가 같은 장면을 보기 위함).
-각 장애물은 Docs/KingRush/OBSTACLE_TEMPLATE.md 양식으로 기획서를 함께 만듭니다.
+각 장애물은 Docs/PawnRush/OBSTACLE_TEMPLATE.md 양식으로 기획서를 함께 만듭니다.
 맵 구간은 프리팹으로 나눠 만들어 두 사람이 같은 씬 파일을 동시에 고치지 않게 합니다.
 ```
 

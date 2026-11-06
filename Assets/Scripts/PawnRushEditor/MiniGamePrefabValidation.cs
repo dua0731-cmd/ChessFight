@@ -38,7 +38,7 @@ namespace ChessFight.PawnRush.Editor
                 EditorApplication.delayCall += CompleteExit;
         }
 
-        [MenuItem("ChessFight/Pawn Rush/Validate Mini Game Prefabs", false, 27)]
+        [MenuItem("ChessFight/Pawn Rush/Validate/Mini Game Prefabs", false, 201)]
         public static void ValidateMenu()
         {
             var issues = CheckSavedPrefabs();

@@ -193,7 +193,7 @@ namespace ChessFight.RagdollLab
         public const uint Magic = RagdollWire.Magic;
         public const byte TypeInput = 1;
         public const byte TypeSnapshot = RagdollWire.TypeSnapshot;
-        // The Queen of the Hill round's opened sections (QueenHillMatch.Encode), host to clients.
+        // The Queen of the Hill round's opened sections (PioneerCourse.Encode), host to clients.
         public const byte TypeMatch = 3;
         // The piece skills (R111): every busy piece's state, the bishops' wires, the barricades and the moments a client
         // has not confirmed yet (SkillWire), host to each client with every snapshot.
@@ -577,7 +577,7 @@ namespace ChessFight.RagdollLab
         // ---------------------------------------------------------------- match state
 
         /// <summary>
-        /// Which sections are open and since when (QueenHillMatch.Encode: short text, the shared clock's
+        /// Which sections are open and since when (PioneerCourse.Encode: short text, the shared clock's
         /// milliseconds). Sent by the host twice a second: an opening is final for the round, so repeating
         /// the whole list makes it arrive over an unreliable channel and reach late joiners. Null if too long.
         /// </summary>

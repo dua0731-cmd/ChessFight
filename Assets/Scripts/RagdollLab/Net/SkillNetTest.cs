@@ -154,7 +154,7 @@ namespace ChessFight.RagdollLab
             sb.Append(link.ReactionsLost > 0 ? $" · 반응 없음 {link.ReactionsLost}번\n" : "\n");
             if (avg >= 0f) sb.Append($"내 몸이 움직여 보이기까지 약 {avg + (float)link.PlaybackDelayMs:0} ms (반응 + 재생 지연)\n");
             sb.Append($"스킬 키 {link.SkillPresses}번 → 방장에서 시작 {link.SkillStarts}번");
-            sb.Append(link.SwapAccepts > 0 ? $" · 교대 수락 {link.SwapAccepts}번\n" : "\n");
+            sb.Append("\n");
             sb.Append($"미리 그림 {RagdollPawn.NetStats.Guesses}번 · 방장과 맞음 {RagdollPawn.NetStats.GuessesMatched} · 되돌림 {RagdollPawn.NetStats.GuessesDropped}\n");
 
             sb.Append("\n<b>스킬 신호</b> (맞음 · 폭발 · 착지)\n");

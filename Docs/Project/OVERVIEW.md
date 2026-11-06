@@ -15,7 +15,7 @@
 |---|---|---|---|
 | 사용자 (dua0731) | 메인 기획. AI로 네트워크·기반 개발 | 파티·매칭 마무리, 기초 개발 환경 | [HANDOFF](../../HANDOFF.md) |
 | 준영 | 래그돌·캐릭터 | 래그돌 모델링과 이동·점프·잡기·밀기 프리팹. 멀티 고려 | [Player/RAGDOLL](../Player/RAGDOLL.md), 팀 가이드 5장 |
-| 진호 · 지성 | 킹러시 맵·장애물 | 킹러시 맵과 장애물 세부 기획·제작, 장애물 기획서 | [KingRush](../KingRush/README.md), 팀 가이드 6장 |
+| 진호 · 지성 | 킹러시 맵·장애물 | 킹러시 맵과 장애물 세부 기획·제작, 장애물 기획서 | [KingRush](../PawnRush/README.md), 팀 가이드 6장 |
 | 승규 | 네트워크 방어 기획 | 멀티 구조 숙지 → 지연·호스트 이탈 등 방어 기획. 기획안 v0.1 작성함 | [Network/PLAN_V0.1_STATUS](../Network/PLAN_V0.1_STATUS.md), 팀 가이드 7장 |
 
 팀원은 각자 다른 AI 도구(ChatGPT 아스트라 등)를 쓴다. 그래서 모든 문서는 도구에 상관없이 읽히는 마크다운으로 둔다.
@@ -27,7 +27,7 @@
 | `Network` | 사용자 + AI 개발 브랜치. 이 문서 체계의 기준 | 최신 |
 | `main` | 팀원이 받는 브랜치 | `0df4403`(2026-09-25 R17 병합). **`Network`의 모든 커밋을 포함**하고 24커밋 앞선다 |
 | `JY-lobby` | 로비·게임모드 작업(2026-09-25 `main`에서 시작). **AI는 이 작업을 여기에만 푸시** | 진행 중 |
-| `JY-ragdoll_v2` | **퀸 오브 더 힐 래그돌 기능**(M1~, [MECHANICS_TODO](../GameModes/QueenOfTheHill/MECHANICS_TODO.md)). 2026-09-26 사용자가 `JY-lobby`의 `d3d617d`에서 만듦(`JY-ragdoll`의 커밋도 모두 포함). 캐릭터 조작·물리를 바꾸는 작업은 여기서 한다(`JY-lobby`는 R18로 금지) | 진행 중. 랩 온라인 프로토콜 **v4**라 `JY-lobby`(v3) 빌드와는 매칭되지 않는다 |
+| `JY-ragdoll_v2` | **퀸 오브 더 힐 래그돌 기능**(M1~, [MECHANICS_TODO](../Archive/QueenOfTheHill/MECHANICS_TODO.md)). 2026-09-26 사용자가 `JY-lobby`의 `d3d617d`에서 만듦(`JY-ragdoll`의 커밋도 모두 포함). 캐릭터 조작·물리를 바꾸는 작업은 여기서 한다(`JY-lobby`는 R18로 금지) | 진행 중. 랩 온라인 프로토콜 **v4**라 `JY-lobby`(v3) 빌드와는 매칭되지 않는다 |
 | `JY-ragdoll` | 준영의 래그돌 랩(`Assets/`, 로컬 2P, 네트워크 없음). `c9c1e6a`에서 분기, 최신 `2d450aa` | **`Network`에 병합됨**(2026-09-25, `fc006b8`). 이후 래그돌 작업은 `Network`/`main` 기준 |
 | `킹을-지켜라` | 다른 미니게임 프로토타입(`5af7c8c`에서 분기) | **호환 안 됨**: Unity 6000.3.12f1, URP 17.3.0, uGUI 2.0.0, Input System 1.19.0, 고정 안 된 MCP 패키지, 자체 `SteamLobbyTransport`. 통합 전에 어느 쪽을 기준으로 할지 결정 필요 |
 | `SteamNetworkTest` | 초기 실험 | 사용 안 함 |

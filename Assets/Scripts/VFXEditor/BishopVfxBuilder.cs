@@ -62,7 +62,7 @@ namespace ChessFight.VFX.Editor
         const float CutOut = .3f;
         static readonly Color BishopSilver = new Color(.76f, .79f, .83f);
 
-        [MenuItem("ChessFight/VFX/Bishop/Build")]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build")]
         public static void Build()
         {
             // In Play mode the layers' Awake runs as they are made and what it does is saved into the prefab (VFX1 found a
@@ -86,11 +86,11 @@ namespace ChessFight.VFX.Editor
         }
 
         /// <summary>The menu is greyed out in Play mode.</summary>
-        [MenuItem("ChessFight/VFX/Bishop/Build", true)]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build", true)]
         static bool CanBuild() => !EditorApplication.isPlaying;
 
         /// <summary>F1 alone (R194): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Bishop/Build F1 (draw only)")]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F1 (draw only)")]
         public static void BuildF1()
         {
             if (EditorApplication.isPlaying)
@@ -104,11 +104,11 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Bishop F1 built: the second sword forming in his left hand (F_Draw). Workbench: piece 4, " + draw.name);
         }
 
-        [MenuItem("ChessFight/VFX/Bishop/Build F1 (draw only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F1 (draw only)", true)]
         static bool CanBuildF1() => !EditorApplication.isPlaying;
 
         /// <summary>F3 alone (R188): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Bishop/Build F3 (windup only)")]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F3 (windup only)")]
         public static void BuildF3()
         {
             if (EditorApplication.isPlaying)
@@ -122,11 +122,11 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Bishop F3 built: the light up the blades as he draws them back (F_Windup). Workbench: piece 4, " + windup.name);
         }
 
-        [MenuItem("ChessFight/VFX/Bishop/Build F3 (windup only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F3 (windup only)", true)]
         static bool CanBuildF3() => !EditorApplication.isPlaying;
 
         /// <summary>F4 alone (R191): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Bishop/Build F4 (throw only)")]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F4 (throw only)")]
         public static void BuildF4()
         {
             if (EditorApplication.isPlaying)
@@ -140,11 +140,11 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Bishop F4 built: the flash at his hands and the air split as he lets them go (F_Throw). Workbench: piece 4, " + release.name);
         }
 
-        [MenuItem("ChessFight/VFX/Bishop/Build F4 (throw only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F4 (throw only)", true)]
         static bool CanBuildF4() => !EditorApplication.isPlaying;
 
         /// <summary>F5 alone (R181): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Bishop/Build F5 (flight only)")]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F5 (flight only)")]
         public static void BuildF5()
         {
             if (EditorApplication.isPlaying)
@@ -158,11 +158,11 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Bishop F5 built: the swords on their way out (F_Flight). Workbench: piece 4, " + flight.name);
         }
 
-        [MenuItem("ChessFight/VFX/Bishop/Build F5 (flight only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F5 (flight only)", true)]
         static bool CanBuildF5() => !EditorApplication.isPlaying;
 
         /// <summary>F8 alone (R186): the other layers' prefabs are left as they are.</summary>
-        [MenuItem("ChessFight/VFX/Bishop/Build F8 (return only)")]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F8 (return only)")]
         public static void BuildF8()
         {
             if (EditorApplication.isPlaying)
@@ -176,7 +176,7 @@ namespace ChessFight.VFX.Editor
             Debug.Log("[VFX] Bishop F8 built: the swords on their way back (F_Return). Workbench: piece 4, " + back.name);
         }
 
-        [MenuItem("ChessFight/VFX/Bishop/Build F8 (return only)", true)]
+        [MenuItem("ChessFight/Development/VFX/Bishop/Build F8 (return only)", true)]
         static bool CanBuildF8() => !EditorApplication.isPlaying;
 
         // ---------------------------------------------------------------- F1: the second sword

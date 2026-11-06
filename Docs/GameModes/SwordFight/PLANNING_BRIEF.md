@@ -196,4 +196,4 @@
 
 ### 부록: 더 볼 문서 (저장소 안, Claude Code용)
 
-- 현재 구현·수치: [README](README.md) · 9-27 첫 기획: [DESIGN](DESIGN.md) · 기물 스킬: [Skills/DESIGN](../../Skills/DESIGN.md) · 폰 러쉬 코스: [PAWN_RUSH_COURSE01](../../KingRush/PAWN_RUSH_COURSE01.md) · 이동 튜닝 결정: [DECISIONS G31·G32](../../Project/DECISIONS.md)
+- 현재 구현·수치: [README](README.md) · 9-27 첫 기획: [DESIGN](DESIGN.md) · 기물 스킬: [Skills/DESIGN](../../Skills/DESIGN.md) · 폰 러쉬 코스: [PAWN_RUSH_COURSE01](../../PawnRush/Prototype/PAWN_RUSH_COURSE01.md) · 이동 튜닝 결정: [DECISIONS G31·G32](../../Project/DECISIONS.md)

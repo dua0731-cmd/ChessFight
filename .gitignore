@@ -116,3 +116,9 @@ InitTestScene*.unity*
 # Python caches from the Blender scripts under ArtSource (they were committed by accident before the merge into main)
 __pycache__/
 *.py[cod]
+
+# Unity recovery and temporary preview scenes are local; curated previews live in Prototype.
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+/Assets/_PiecePreview/
+/Assets/_PiecePreview.meta

@@ -226,7 +226,7 @@ class Doc:
         return out
 
 # The camera block, the light block and the scene settings come from the scenes Unity wrote.
-kingrush = open("Tools/Generators/templates/KingRush.unity").read()
+kingrush = open("Tools/Generators/templates/PawnRushPrototype.unity").read()
 camera_body = re.search(r'--- !u!20 &\d+\nCamera:\n.*?m_GameObject: \{fileID: \d+\}\n(.*?)(?=--- !u!)', kingrush, re.S).group(1)
 camera_body = re.sub(r'm_BackGroundColor: \{[^}]*\}', 'm_BackGroundColor: {r: 0.64, g: 0.79, b: 0.93, a: 1}', camera_body)
 camera_body = camera_body.replace("far clip plane: 1000", "far clip plane: 1500")

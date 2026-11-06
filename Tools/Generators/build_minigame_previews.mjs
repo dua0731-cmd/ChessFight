@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 // Each output is portable: all local presentation code is embedded; only pinned Three.js is remote.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const folder = resolve(root, 'Docs/KingRush');
+const folder = resolve(root, 'Docs/PawnRush');
 const css = await readFile(resolve(folder, 'PAWN_RUSH_MINIGAME_PREVIEW.css'), 'utf8');
 const script = await readFile(resolve(folder, 'PAWN_RUSH_MINIGAME_PREVIEW.js'), 'utf8');
 for (const [stage, name, title] of [

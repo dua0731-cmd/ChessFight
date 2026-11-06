@@ -26,7 +26,7 @@ namespace ChessFight.VFX.Editor
         static readonly Color KingGold = new Color(1f, .76f, .38f);
         static readonly Color FlareWhite = new Color(1f, .93f, .78f);
 
-        [MenuItem("ChessFight/VFX/King Land (new)/Build")]
+        [MenuItem("ChessFight/Development/VFX/King Land (new)/Build")]
         public static void Build()
         {
             if (EditorApplication.isPlaying)

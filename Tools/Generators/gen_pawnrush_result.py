@@ -74,7 +74,7 @@ class Doc:
         return out
 
 # The camera block and the scene settings come from scenes Unity wrote.
-kingrush = open("Tools/Generators/templates/KingRush.unity").read()
+kingrush = open("Tools/Generators/templates/PawnRushPrototype.unity").read()
 camera_body = re.search(r'--- !u!20 &\d+\nCamera:\n.*?m_GameObject: \{fileID: \d+\}\n(.*?)(?=--- !u!)', kingrush, re.S).group(1)
 camera_body = re.sub(r'm_BackGroundColor: \{[^}]*\}', 'm_BackGroundColor: {r: 0.078, g: 0.051, b: 0.031, a: 1}', camera_body)
 camera_body = re.sub(r'field of view: [0-9.]+', 'field of view: 30', camera_body)

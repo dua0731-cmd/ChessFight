@@ -43,7 +43,7 @@ namespace ChessFight.RagdollLab.Editor
             public Material pawnP1, pawnP2, pawnDummy, floor, wall, slope, beam, hazard, post, low;
         }
 
-        [MenuItem("ChessFight/Ragdoll Lab/Rebuild Pawn + Scene")]
+        [MenuItem("ChessFight/Development/Ragdoll Lab/Rebuild Pawn + Scene")]
         public static void RebuildAll()
         {
             EnsureFolders();
@@ -56,7 +56,7 @@ namespace ChessFight.RagdollLab.Editor
             Debug.Log("[RagdollLab] Rebuild complete: " + ScenePath);
         }
 
-        [MenuItem("ChessFight/Ragdoll Lab/Build Windows Player")]
+        [MenuItem("ChessFight/Development/Ragdoll Lab/Build Windows Player")]
         public static void BuildPlayer()
         {
             string output = Arg("-labOut") ?? Path.GetFullPath("Builds/RagdollLab");
