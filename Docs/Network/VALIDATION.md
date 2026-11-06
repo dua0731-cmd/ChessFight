@@ -1,5 +1,29 @@
 # Network 구현 검증 기록
 
+## 2026-11-06 Pull 뒤 미니게임 프리팹·메뉴 표시 문제 (R313) — AI 화면 관찰 / 사용자 플레이 확인 전
+
+사용자 제보: "전부 풀 받았는데 프리팹도 안보이고 기능도 안보여". GitHub Desktop은 `C:\Users\dua07\GitHub\ChessFighter\.worktrees\api-bridge-main`의 `main` `5ab4ecc8`(R312)을 보고, 실행 중 Unity는 원래 `C:\Users\dua07\GitHub\ChessFighter`의 `claude/bold-johnson-8ez95n` `1ebc9cb0`(R155)을 열고 있었다. AI가 Git·실제 파일·Unity `Editor.log`의 프로젝트 경로를 대조했다. 원래 폴더에는 기존2프리팹과 새 메뉴 코드 없음, main에는 새10프리팹·메뉴·시험 씬이 존재했다. [정확한 경로·Hub 등록·여는 순서](../KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md).
+
+| AI 검사·관찰 | 결과와 한계 |
+|---|---|
+| 프로젝트 경로 바로잡기 | main 폴더를 `-projectPath`로 지정해 별도 Unity를 열고 `MiniGamePrefabMenu.OpenTest` 진입점을 실행. 기존 `ChessFighter / PawnRush_Sections`와 새 `api-bridge-main / PawnRush_MiniGames` 창을 함께 관찰 |
+| 실제 저장 시험 씬 Play·Start | 새 창에서 Play를 눌렀고 `Mini-game being tested`·C 도개교 궁전·`RagdollPawn (Playtest)` 캐릭터·HUD 표시를 AI가 관찰. R312의 빈 씬 프리팹 검사 이후 실제 시험 씬의 C Start를 추가 관찰한 것 |
+| 키 조작 범위 | 숫자1~0·F5를 시도하기 전 사용자 마우스 입력을 감지하여 추가 조작 중지. 게임 전환·팀 전환·F8·실제 퍼즐 달성은 확인하지 않음 |
+| Core·모의 세션 | `R313-CoreTests.log`: Core164·모의세션55 통과. Steam 실접속 검사가 아님 |
+| 새 편집기 로그 | `R313-Open-Main-Editor.log`: C# 컴파일 오류·Exception·누락 스크립트 일치0. 공유래그돌 `PawnHipsHull` ConvexMesh partial hull 경고1건 관찰. 이번 작업은 관련 기물 물리 코드를 변경하지 않음 |
+| 보존 범위 | 게임 코드·프리팹 재생성·기존 브랜치 강제 변경 없음. 원래 폴더의 수정 중인 `Early_C_MoatDrawbridge`·`Mid_2-1_GrandStairHall` 보존 |
+
+**위는 AI의 화면·로그 관찰이며 사용자 직접 확인으로 취급하지 않는다.** 다음 표는 모두 사용자 수동 확인 전이다.
+
+| 사용자 확인 | 기대 | 상태 |
+|---|---|---|
+| 실제로 Pull한 프로젝트 선택 | GitHub Desktop **Repository → Show in Explorer** 폴더와 Unity 프로젝트 루트가 같고 새 `*_MG_*`10종이 보임 | 미확인 |
+| 새 main 시험 씬의 캐릭터·시점 | `api-bridge-main / PawnRush_MiniGames`에서 이동·카메라·HUD가 동작 | 미확인 |
+| 숫자1~0·F5·F8 | 10종 선택·팀 전환·다시 시작이 실제 키 입력으로 동작 | 미확인 |
+| 각 퍼즐·성능·Steam | 아래 R312 게임별 실제 입력·문 통과, 손맛·12명 성능·멀티 PC 동기화 | 미확인 |
+
+원인을 확인하려고 원래 프로젝트에 파일을 복사하거나 기존 브랜치를 강제로 바꾸지 않는다. Pull은 선택한 작업 폴더에만 반영되므로 올바른 Unity 프로젝트를 연다. 이번 조치는 표시·Start까지의 확인이며 전체10종을 직접 풀거나 온라인 연결을 확인한 결과가 아니다.
+
 ## 2026-11-06 미니게임 구간 프리팹 10종 (R312) — 자동 검사 기록 / 사용자 Unity·Steam 확인 전
 
 [구간 프리팹·여는 법](../KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md). `main` Pull(LFS 포함) → Unity 가져오기·컴파일 완료 대기 → **ChessFight → Pawn Rush → Open Mini-game Prefab Test** → Play. 새 프리팹 10개와 `PawnRush_MiniGames.unity`는 저장되어 있다. 코드에서 다시 만들 때만 **Build All Mini-game Prefabs**를 실행한다.

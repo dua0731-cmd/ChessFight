@@ -6,6 +6,29 @@
 
 ## 1. 파일과 여는 법
 
+### 1.1 프리팹·메뉴가 안 보일 때(R313)
+
+2026-11-06 사용자 제보: "전부 풀 받았는데 프리팹도 안보이고 기능도 안보여". GitHub Desktop은 최신 `main`을 받았지만 Unity가 다른 작업 폴더를 열고 있었다. AI가 두 폴더의 Git 상태·실제 파일과 실행 중 Unity의 `Editor.log` 프로젝트 경로를 대조했다.
+
+| 구분 | 프로젝트 루트 | 브랜치·당시 커밋 | 실제 파일 |
+|---|---|---|---|
+| GitHub Desktop에서 Pull한 폴더 | `C:\Users\dua07\GitHub\ChessFighter\.worktrees\api-bridge-main` | `main` · `5ab4ecc8`(R312) | `*_MG_*.prefab` 10개·`MiniGamePrefabMenu.cs`·시험 씬 존재 |
+| 제보 당시 Unity가 연 폴더 | `C:\Users\dua07\GitHub\ChessFighter` | `claude/bold-johnson-8ez95n` · `1ebc9cb0`(R155) | 기존 `Early_C_MoatDrawbridge`·`Mid_2-1_GrandStairHall` 2개, 새 메뉴 코드 없음 |
+
+**GitHub Desktop의 Repository → Show in Explorer가 여는 폴더와 Unity가 연 프로젝트 루트가 같아야 한다.** 같은 프로젝트 이름의 다른 복사본이므로 Unity 창 제목만으로 구분하지 않는다. Pull은 GitHub Desktop에서 선택한 작업 폴더에만 반영된다.
+
+1. GitHub Desktop에서 `main`의 **api-bridge-main**을 선택하고 **Repository → Show in Explorer**로 위치를 확인한다.
+2. Unity Hub의 **Projects → Add → Add project from disk**(버전에 따라 Add/디스크에서 프로젝트 추가)로 위의 `C:\Users\dua07\GitHub\ChessFighter\.worktrees\api-bridge-main` 폴더 자체를 등록하고 Unity **6000.3.11f1**로 연다.
+3. 가져오기·컴파일을 기다린 뒤 Project의 `Assets/Prefabs/PawnRushSections`에서 `*_MG_*`10개를 보고, **ChessFight → Pawn Rush → Open Mini-game Prefab Test**로 시험 씬을 연다. 새 파일은 이미 저장돼 있으므로 메뉴에서 다시 굽지 않아도 된다.
+
+원래 폴더의 수정 중인 프리팹2개는 그대로 보존한다. 이번 조치는 올바른 프로젝트 열기이며 게임 코드 재생성·기존 브랜치 강제 변경·원본 자산 덮어쓰기를 하지 않는다. **경로 원인은 AI가 확인했고, 아래와 같이 올바른 프로젝트의 실제 Start 표시도 AI가 관찰했다. 사용자 직접 성공 확인·퍼즐 완주·Steam은 미확인이다.**
+
+R313에서 `-projectPath`를 위 main 폴더로 지정하고 `ChessFight.PawnRush.Editor.MiniGamePrefabMenu.OpenTest`로 별도 Unity를 열었다. 기존 `ChessFighter / PawnRush_Sections` 창과 새 `api-bridge-main / PawnRush_MiniGames` 창이 함께 존재하는 것을 확인했다. 새 창의 Play를 눌러 실제 저장 시험 씬에서 `Mini-game being tested`·C 도개교 궁전·`RagdollPawn (Playtest)` 캐릭터·HUD가 나타나는 **Start 흐름을 AI가 관찰했다**. **숫자1~0·F5 조작은 시도 전 사용자 마우스 입력을 감지하여 중지했고 미확인**이다.
+
+이번 `R313-CoreTests.log`는 Core164·모의세션55 통과다. `R313-Open-Main-Editor.log`에서 C# 컴파일 오류·Exception·누락 스크립트 일치0이었다. 공유래그돌 `PawnHipsHull`의 ConvexMesh partial hull 경고1건을 관찰했으며 이번 작업에서 기물 물리 코드를 변경하지 않았다. 이 기록은 AI의 화면·로그 관찰이며 사용자 확인으로 바꾸지 않는다.
+
+### 1.2 프리팹과 시험 장면
+
 모든 프리팹은 `Assets/Prefabs/PawnRushSections/`에 둔다. 원래 작업 폴더에서 사용자가 수정한 `Early_C_MoatDrawbridge`와 구분하기 위해 새 파일에는 `MG`를 넣었다.
 
 | 구역 | 게임 | 프리팹 파일 |
@@ -72,7 +95,7 @@ Unity 메뉴 **ChessFight → Pawn Rush → Build All Mini-game Prefabs**는 코
 
 ## 5. 확인 범위
 
-2026-11-06, AI가 별도 작업 폴더의 **Unity 6000.3.11f1**에서 실행한 결과다. **사용자 Unity·Steam 확인 전**이며, 자동 검사 통과를 실제 퍼즐 해결이나 사용자 확인으로 취급하지 않는다.
+다음 표는 R312에서 AI가 별도 작업 폴더의 **Unity 6000.3.11f1**로 실행한 결과다. 이후 R313에는 위 §1.1처럼 실제 저장 시험 씬의 C Start·캐릭터·HUD까지 AI가 관찰했으며, 1~0/F5 입력은 여전히 미확인이다. **사용자 Unity·Steam 확인 전**이며, 자동 검사 통과를 실제 퍼즐 해결이나 사용자 확인으로 취급하지 않는다.
 
 | 검사 | 결과와 한계 |
 |---|---|

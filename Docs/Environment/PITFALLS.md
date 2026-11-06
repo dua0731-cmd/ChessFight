@@ -90,6 +90,8 @@ R50 실행 로그에서 수동 설정했던 무게중심이 검날 중앙 `z=0.5
 
 ## AI 도구 작업 시 주의
 
+- **R313 GitHub Desktop 작업 폴더와 Unity 프로젝트 루트 불일치:** Desktop의 `api-bridge-main`은 `C:\Users\dua07\GitHub\ChessFighter\.worktrees\api-bridge-main`의 `main`이고, Unity는 원래 `C:\Users\dua07\GitHub\ChessFighter`의 `claude/bold-johnson-8ez95n`을 열고 있었다. 전자는 R312 미니게임10종·메뉴를 갖고 후자는 R155 프리팹2개만 가져 제보 화면과 일치했다. Pull은 선택한 폴더에만 반영된다. **Repository → Show in Explorer**가 여는 폴더와 Unity 프로젝트 루트를 대조하고 Hub **Add project from disk**로 같은 폴더를 연다. 이름이 같아 창 제목만으로 구분하지 않는다. 원래 사용자 수정2개를 보존하고 경로를 바로잡으며, 기존 브랜치를 강제로 바꾸거나 생성기로 자산을 덮어쓰지 않는다. 올바른 폴더의 별도 Unity에서 실제 저장 시험 씬 Start·C 궁전·캐릭터·HUD를 AI가 관찰했지만 사용자 입력을 감지한 뒤 숫자키·팀 전환은 더 조작하지 않았다. 화면 관찰과 사용자 직접 퍼즐 성공은 구분한다. [실제 경로·순서·결과](../KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md).
+
 - **R312 구운 프리팹과 실제 실행의 차이:** 게임의 비직렬화 배열·참조는 저장만으로 복구되지 않아 Play에 Game socket만 재설치한다. A판 정적 캐시는 구간 인스턴스로 묶고 비활성 계층의 다른 팀도 연결한다. `ArenaDressing`처럼 별도 MonoBehaviour를 다른 이름의 파일 안에 두면 저장된 컴포넌트의 스크립트를 잃을 수 있어 동일 이름 파일로 분리했다. OS 동적 폰트/atlas는 저장용 기본 폰트와 live 바인딩을 분리하고, 자산 참조 검사는 ExecuteAlways 실행 전 영속 프리팹에서 한다. 재질/메시 캐시 원본을 자산화하지 말고 복제한다.
 
 - **R312 편집기 작업/검사의 범위:** 미리보기 굽기는 `NewPreviewScene`을 쓰며 새 Untitled 씬을 additive로 만들어 닫는 방식은 피한다. 시험 씬을 고칠 때 대상 active scene을 명시하고 복원하지 않으면 다른 씬의 RenderSettings를 바꾼다. batch 시작 직후 Play는 Unity SearchDatabase 초기화 예외로2회 실패했고, import/compile 완료 뒤2초 idle 후 시작하자 통과했다(실패 로그 보존·예외 필터 완화 없음). Unity 종료가 Temp를 지워 보고서는 `Logs/MiniGameValidation`에 남긴다. 오래된 Mono csc는 기존 C#9 문법을 못 읽으므로 Windows 전체 컴파일은 해당 Unity의 `NetCoreRuntime/dotnet` + `DotNetSdkRoslyn/csc.dll`을 먼저 쓴다. 강제 완료·참조/문 검사와 실제 플레이 입력으로 퍼즐을 푸는 검사는 구분한다.

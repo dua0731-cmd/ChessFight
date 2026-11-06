@@ -1,5 +1,7 @@
 # ChessFight HANDOFF — 모든 작업은 여기서 시작한다
 
+최종 갱신: **2026-11-06** — **R313 Pull 뒤 미니게임 프리팹·메뉴가 안 보인 원인 = Unity가 다른 작업 폴더를 열음**. 사용자 사진의 GitHub Desktop은 `api-bridge-main`의 `main` `5ab4ecc8`(R312), Unity는 원래 `C:\Users\dua07\GitHub\ChessFighter`의 `claude/bold-johnson-8ez95n` `1ebc9cb0`(R155)이었다. Git·실제 파일·실행 중 Unity의 Editor.log 경로를 AI가 대조했다. 최신 자산10개·메뉴는 `C:\Users\dua07\GitHub\ChessFighter\.worktrees\api-bridge-main`에 존재한다. [경로·Hub 등록·여는 법](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md). **GitHub Desktop Repository → Show in Explorer가 여는 폴더와 Unity 프로젝트 루트를 일치**시킨다. 원래 수정 프리팹2개를 보존하고 게임 코드·프리팹 재생성·브랜치 강제 변경은 하지 않는다. 올바른 main 폴더를 별도 Unity로 열고 실제 저장 시험 씬을 Play하여 C 도개교 궁전·시험 캐릭터·HUD·Start 생성 계층을 AI가 관찰했다. 숫자키1~0·F5 조작은 사용자 마우스 입력 감지 후 중지하여 미확인이고, 사용자 직접 성공·퍼즐 완주·Steam도 미확인이다. Core164·모의세션55 재통과. 새 편집기 로그에서 C# 컴파일 오류·예외·누락 스크립트 일치0, 공유래그돌 PawnHipsHull의 ConvexMesh 경고1건은 남았다(관련 물리 코드 수정 없음). 다음 빈 번호 **R314**. 아래는 이전 기록이다.
+
 > **AI·개발자 공통 규칙:** 새 채팅, 다른 AI 도구, 새 팀원 모두 **이 파일을 가장 먼저 끝까지 읽는다.**
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
@@ -326,6 +328,7 @@
 
 | 항목 | 상태 |
 |---|---|
+| **Pull 뒤 프리팹·메뉴 표시 문제(11-06, R313)** | Desktop `api-bridge-main/main` R312와 Unity 원래 `ChessFighter/claude/bold-johnson` R155의 폴더 불일치. Git·파일·Editor.log로 원인 확인(AI), main에10종·메뉴 존재. [올바른 경로·Hub 등록](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md). 원본 수정2개 보존. main의 저장 시험 씬을 Play하여 C 궁전·캐릭터·HUD·Start를 AI 관찰. Core164·모의55 통과. **1~0/F5 입력·사용자 플레이·퍼즐 완주·Steam 미확인** |
 | **폰 러시 미니게임 구간 프리팹10종(11-06, R312)** | 실제 저장 `*_MG_*`10개·메시2/재질83개·슬롯2/4/6 후보3/4/3개. [전용 안내](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md): Build All/Open Test, 숫자1~0·F5/F6/F8, Game socket 재설치·수동 편집 주의. Core164·세션55·Roslyn·네이티브 굽기·정적10·시험 씬 참조·Play10종 문/초기화/씨앗/A 분리 검사 통과(AI). C/E/G 대표6장 배치 관찰(천장 표시). **실제 퍼즐 입력·시험 씬 Start/키·사용자 Unity·Steam·12명 성능 미확인**, `CFP4` 그대로·구간 온라인 미연결 |
 | **폰 러시 전체 미니게임 모델링 자료(11-05, R311)** | 초반3D C/D/A를 중후반 공용뷰어로 개편. [10종 상세 이미지](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html)(전경·입체도·장치·재질, `ConceptArt/R311/`)와 [모듈·소품·피벗 제작 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md). 3D70장면·3팀문·50장소조합·표시13종·고유구조/진입폭, Core164·세션55 통과. **R311 당시 기획/모델링 제안, 실제 브라우저·Unity·사용자 확인 전** |
 | **폰 러시 중반·후반 미니게임 3D(11-05, R310)** | [중반 4종](Docs/KingRush/PAWN_RUSH_MID_MINIGAMES_3D.html)·[후반 3종](Docs/KingRush/PAWN_RUSH_LATE_MINIGAMES_3D.html). 기존 Claude 세션·초반 예시·사용자 원문에 맞춘 **기획 예시**. 천장·팀·카메라·동작 조작, x=−12 스테이션 단면. 장면 49·팀 문 7·Core 164·세션 55 통과. CPU 배치 그림 AI 확인, **브라우저 직접 조작·사용자 확인 전, R310 당시 Unity 변경 없음**. 상세 [PAWN_RUSH_MINIGAME_PREFABS](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) |
@@ -396,6 +399,8 @@
 
 ## 2. 무엇이 되고 무엇이 안 되는가
 
+**R313 프로젝트 위치:** GitHub Desktop에서 최신 main을 받아도 Unity가 원래 폴더의 이전 브랜치를 열면 새 프리팹·메뉴가 표시되지 않는다. Desktop의 **Repository → Show in Explorer** 폴더와 Unity 프로젝트 루트를 대조하고 Hub에서 동일한 `.worktrees/api-bridge-main`을 등록해 연다([실제 경로와 순서](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md)). 최신 자산·구현은 main에 존재하며 원래 사용자 수정2개는 별도 폴더에 보존한다. 경로 원인은 AI가 확인했다. 올바른 main 프로젝트의 저장 시험 씬을 실제 Play하여 C 궁전·시험 캐릭터·HUD가 나타나는 Start 흐름을 AI가 관찰했다. 숫자키1~0·F5는 사용자 입력 감지로 중지하여 미확인이고 사용자 직접 플레이·퍼즐 완주·Steam도 미확인이다.
+
 **R312 실제 구현:** 미니게임10종은 구운 자산으로 저장돼 있고 슬롯2·4·6의3·4·3개 후보에서 뽑힌다. 기존 장애물 후보와 원래 사용자 프리팹 수정2개는 보존했다. 건축·장식은 프리팹으로 보며 Play 시작에는 `Game socket`의 기존 게임을 다시 설치해 비직렬화 참조를 복원한다. 소켓 내부의 수동 편집은 Play에서 유지되지 않고, Build All은 정적 건축도 코드에서 다시 만든다. 네이티브 저장10개·별도 시험 씬 참조·실제 Play10종의 캐시/팀별 문/반복 초기화/씨앗/A 두 인스턴스 분리 검사는 통과했다(AI). **자동 완료는 이벤트 연결 시험이다. 실제 장치 조작·퍼즐 완주와 시험 씬 Start/키 입력·사용자 Unity·Steam·12명 성능은 미확인**이다. Course01의 기존 `CFP4` 형식은 그대로이고 구간 조합 코스는 온라인 미연결이다.
 
 **R311 당시 모델링 자료:** 초반3D는 옛 사본 대신 C·D·A 공용뷰어다. A는 공유판 중앙단면, 나머지는 x−12단면. 모든구역 게임소품 숨김, **주변장식 숨김은 초반만** 제공. C 권양기·줄을 측면으로 빼 다리 진입4m를 비우고 D완료8회전을 반영했다. 이미지10장은 건축·가구·재료의 외형제안이며 정확한 수량·경로·치수는3D와제작지침을 우선한다. R311은 이미지·CPU그림 AI검토와자동검사만 했으며 **당시 실제 브라우저·Unity·Steam 확인/프리팹 구현은 없었다**. 실제 자산 구현은 R312의 별도 결과다.
@@ -460,7 +465,9 @@
 
 ## 3. 진행 중인 일과 다음 할 일
 
-**R312 다음 확인 / 다음 빈 번호 R313:** Unity 가져오기·컴파일 완료 뒤 **ChessFight → Pawn Rush → Open Mini-game Prefab Test** → Play. 저장된10프리팹을 숫자1~0으로 선택하고 F5 팀 전환·F8 다시 시작을 실제로 확인한다. F6은 완료 이벤트·문 연결용 개발 지름길이며 퍼즐 해결 시험이 아니다. [수동 확인 목록](Docs/Network/VALIDATION.md)의 A 칠하기·B 판자·C 매듭/다리·D8바퀴·E 등반/등·F 타이밍·G 가마/룩·H 킹·I 침대/방패·J 점프/다이빙을 직접 조작하고 외형·카메라·손맛을 확인한다. 저장 프리팹을 바로 볼 수 있고 **Build All Mini-game Prefabs는 코드 수정 후 다시 구울 때만** 필요하다([소켓 재설치 주의](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md#3-프리팹-저장과-런타임-재연결)). 온라인·플레이어 빌드·12명 성능은 별도 확인 대상으로 남긴다.
+**R313 다음 확인 / 다음 빈 번호 R314:** main 작업 폴더의 별도 Unity `api-bridge-main / PawnRush_MiniGames`는 AI가 열어 Play·Start·C 궁전/캐릭터/HUD까지 관찰했다. 사용자는 이 창에서 숫자1~0·F5 팀 전환·F8 다시 시작을 직접 확인한다. AI는 사용자 마우스 입력을 감지한 뒤 추가 조작을 중지했다. 원래 프로젝트 창과 수정 중인2프리팹은 유지한다. [경로 안내](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md)·[R313 확인 표](Docs/Network/VALIDATION.md)를 따르고 아래 R312의 실제 퍼즐 입력·성능·온라인 확인을 이어간다.
+
+**R312 플레이 확인 계속:** Unity 가져오기·컴파일 완료 뒤 **ChessFight → Pawn Rush → Open Mini-game Prefab Test** → Play. 저장된10프리팹을 숫자1~0으로 선택하고 F5 팀 전환·F8 다시 시작을 실제로 확인한다. F6은 완료 이벤트·문 연결용 개발 지름길이며 퍼즐 해결 시험이 아니다. [수동 확인 목록](Docs/Network/VALIDATION.md)의 A 칠하기·B 판자·C 매듭/다리·D8바퀴·E 등반/등·F 타이밍·G 가마/룩·H 킹·I 침대/방패·J 점프/다이빙을 직접 조작하고 외형·카메라·손맛을 확인한다. 저장 프리팹을 바로 볼 수 있고 **Build All Mini-game Prefabs는 코드 수정 후 다시 구울 때만** 필요하다([소켓 재설치 주의](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md#3-프리팹-저장과-런타임-재연결)). 온라인·플레이어 빌드·12명 성능은 별도 확인 대상으로 남긴다.
 
 **R311·R310 참고자료 이력:** [전체 이미지](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html)·[제작 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md)·[중반3D](Docs/KingRush/PAWN_RUSH_MID_MINIGAMES_3D.html)·[후반3D](Docs/KingRush/PAWN_RUSH_LATE_MINIGAMES_3D.html)은 배치·재질·수량·축 참고로 유지한다. 당시에는 시각자료만 작성했고, 실제 프리팹 제작은 R312에서 진행했다. 원래 세션·사용자 프리팹 수정은 보존했으며 자료의 미리보기 동작은 실제 퍼즐 해결·사용자 확인을 대신하지 않는다.
 
@@ -675,6 +682,7 @@ Tools/
 
 | 작업 | 먼저 읽을 것 | 그다음 코드 |
 |---|---|---|
+| Pull 뒤 새 프리팹·메뉴가 안 보임(R313) | [실제 프로젝트 경로·Hub 등록·열기](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md) → [작업 폴더 주의](Docs/Environment/PITFALLS.md). GitHub Desktop Repository → Show in Explorer와 Unity 루트를 대조 | `.worktrees/api-bridge-main`의 `main`, 원래 `ChessFighter`의 이전 브랜치와 구분. Git worktree·실제 파일·Unity Editor.log 경로 |
 | 폰 러시 실제 미니게임 구간 프리팹10종(R312) | [자산·메뉴·소켓 재설치·검사 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md) → [7슬롯 구간 연결](Docs/KingRush/PAWN_RUSH_SECTIONS.md) → [모델링 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md). 사용자 미확인 항목은 [VALIDATION R312](Docs/Network/VALIDATION.md) | `PawnRush/MiniGameSection*`·`MiniGamePalaceArt*`·`MiniGamePrefabTest`·`PalaceGateLeaf`·`PalaceTextBinding`, `PawnRushEditor/MiniGamePrefabMenu`·`MiniGamePrefabValidation`, `Assets/Prefabs/PawnRushSections/*_MG_*` |
 | 폰 러시 초반3D/전체10종 모델링 이미지(R311) | [3D·출처·검사](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) → [모델링 상세 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md) → [이미지갤러리](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html), [생성프롬프트](Docs/KingRush/ConceptArt/R311/PROMPTS.md). 치수/수량은생성그림보다표/3D우선 | 공용 `PAWN_RUSH_MINIGAME_PREVIEW.js`·`.css`, `Tools/Generators/build_minigame_previews.mjs`(3HTML), `Docs/KingRush/ConceptArt/R311/`(원본10장) |
 | 폰 러시 중반·후반 미니게임 3D(R310) | [미리보기·확인 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) → [사용자 구역 기획 원문](Docs/KingRush/PAWN_RUSH_MINIGAME_ZONES_v0.1.md), [기존 초반 3D](Docs/KingRush/PAWN_RUSH_EARLY_PLAZA_3D.html). 이 작업의 분류는 중반 B·E·F·J / 후반 G·H·I | `Docs/KingRush/PAWN_RUSH_MINIGAME_PREVIEW.js`·`.css`, `Tools/Generators/build_minigame_previews.mjs`(중반·후반 독립 HTML 생성) |
