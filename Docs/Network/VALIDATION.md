@@ -1,5 +1,25 @@
 # Network 구현 검증 기록
 
+## 2026-11-06 기존 프로젝트/main 직접 사용(R496) — 이전·백업 기록 / 사용자 Unity·Steam 확인 전
+
+[현재 프로젝트 위치·보존본](../KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md#11-현재-작업unity-프로젝트-위치r496). 사용자는 워크트리 대신 기존 `C:\Users\dua07\GitHub\ChessFighter`에서 직접 확인하도록 요청했다. 이 경로를 최신 main `dff53cdc`로 전환했고 이후에도 같은 루트/main에서 직접 작업한다.
+
+| AI 기록 | 결과와 범위 |
+|---|---|
+| 파일·브랜치 이전 | 기존 루트가 main, 최신 미니게임10종·시험 씬·R492~R495를 포함한 저장본. 이전 main worktree는 같은 HEAD에서 detach하여 점유만 해제, 내용은 유지 |
+| 원래 수정 보존 | 수정 프리팹2개와meta 총4파일을 외부 R496 백업에 SHA256 일치 복사. manifest·binary patch·명명 stash·옛 브랜치3커밋 유지. main에 없는 EarlyPlaza를 참조하는 구C는 main 위에 자동 복원하지 않음 |
+| Core·모의 세션 | 기존 경로의 `Logs/R496-CoreTests.log`: Core164·모의세션55 통과. Steam 실접속 검사 아님 |
+| 기존 경로 Unity | 로그 프로젝트 경로가 기존 루트. `ChessFighter / PawnRush_MiniGames` 창에서 MG 프리팹 목록·Build All/Open Test/Validate 메뉴를 GUI로 펼쳐 AI관찰. Open Test 선택·Play 후 C 궁전·캐릭터·HUD Start 표시, 숫자5 입력으로 E 왕궁 서고·책장 공간 전환 관찰. 전체 숫자1~0·F5/F8·퍼즐 실제 완주를 의미하지 않음 |
+| 새 편집기 로그 | C# 컴파일 오류·Exception·Missing Script 일치0. 기존 `PawnHipsHull` ConvexMesh partial hull 경고1건 관찰, 관련 물리 코드 변경 없음 |
+| GitHub Desktop의 기존 폴더 선택 | 창 활성화·캡처 결과 확인 전. 사용자의 Escape로 컴퓨터 조작이 중단되어 이 턴의 추가 UI 조작을 멈췄다. Repository → Show in Explorer 경로도 기존 루트가 되도록 선택해야 함 |
+| 변경 범위 | 게임 코드·프리팹 재생성 없이 작업 위치 통일. 다른 팀의 R492~R495 및 LFS 원본을 수정하지 않음 |
+
+| 사용자 확인 | 기대 | 상태 |
+|---|---|---|
+| 기존 프로젝트 직접 열기 | GitHub Desktop·Unity가 모두 `C:\Users\dua07\GitHub\ChessFighter`를 사용하고 프리팹10종·새 메뉴가 보임 | 미확인 |
+| 미니게임 시험 씬 | 캐릭터·시점·Start, 숫자1~0 선택·F5 팀·F8 다시 시작이 실제 조작으로 동작 | 미확인 |
+| 기존 기능·온라인 | R493~R495와 R312의 게임별 실제 입력·문 통과·Steam·성능 확인을 아래 표대로 계속 | 미확인 |
+
 ## 2026-11-06 작전 회의실 소리는 회의실 안에서만 (R495) — 사용자/Unity 확인 전
 
 | 확인 | 결과 |

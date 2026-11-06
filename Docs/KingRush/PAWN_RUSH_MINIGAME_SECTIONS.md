@@ -6,7 +6,19 @@
 
 ## 1. 파일과 여는 법
 
-### 1.1 프리팹·메뉴가 안 보일 때(R313)
+### 1.1 현재 작업·Unity 프로젝트 위치(R496)
+
+**현재 프로젝트 루트는 `C:\Users\dua07\GitHub\ChessFighter`, 브랜치는 `main`이다.** 사용자 요청으로 이 기존 폴더를 최신 main `dff53cdc`로 전환했다. 앞으로 작업·Pull·Unity 확인을 같은 경로에서 직접 하며 새 워크트리를 만들지 않는다. 아래 R313의 `.worktrees/api-bridge-main` 열기 절차는 당시 대응 이력이며 현재 열 위치가 아니다.
+
+1. GitHub Desktop에서 기존 **ChessFighter** 폴더를 선택하고 **Repository → Show in Explorer**가 `C:\Users\dua07\GitHub\ChessFighter`를 여는지 확인한다.
+2. Unity Hub의 기존 **ChessFighter** 항목에서 같은 폴더를 Unity **6000.3.11f1**로 연다. 목록에 없다면 **Add → Add project from disk**에 이 폴더 자체를 지정한다.
+3. 가져오기·컴파일 뒤 `Assets/Prefabs/PawnRushSections`의 `*_MG_*`10종을 보고 **ChessFight → Pawn Rush → Open Mini-game Prefab Test**로 시험 씬을 연다. 저장된 프리팹은 다시 굽지 않아도 된다.
+
+원래 수정 프리팹2개와 각 `.meta`(4파일)는 SHA256 일치 사본·manifest·binary patch를 `C:\Users\dua07\Desktop\개발일지\2학기 프로젝트수업\체스파이트\Backups\R496-20261106-214131`에 보관했다. `R496 preserve original project prefab edits before main migration` stash와 옛 `claude/bold-johnson-8ez95n` 브랜치의 R153~R155 3커밋도 유지한다. 옛 C는 최신 main에 없는 `EarlyPlaza`를 참조하므로 보관본을 main 자산에 자동 적용하지 않는다. 백업은 보존본이고 현재 main 자산으로 복원한 결과가 아니다. 이전 main 작업 폴더는 내용 삭제 없이 detached HEAD로 남겼으며 현재 작업 대상이 아니다. 게임 코드·새 프리팹 재생성 없이 작업 경로를 통일했고, 최신 R492~R495 팀 변경을 유지한다.
+
+Core164·모의세션55는 기존 폴더에서 재통과했다(`Logs/R496-CoreTests.log`). 기존 `C:\Users\dua07\GitHub\ChessFighter`의 `ChessFighter / PawnRush_MiniGames` 창에서 Project의 MG 프리팹 목록과 **Build All Mini-game Prefabs / Open Mini-game Prefab Test / Validate Mini Game Prefabs** 메뉴를 실제로 펼쳐 AI가 관찰했다. Open Test를 GUI로 선택하고 Play하여 C 도개교 궁전·`RagdollPawn`·HUD가 표시되는 Start를 관찰했으며, Game View에 초점을 두고 **숫자5 입력으로 E 왕궁 서고·책장 공간으로 전환**되는 것도 관찰했다. GitHub Desktop의 기존 폴더 선택은 확인 전이고, 전체 숫자1~0·F5·F8·각 퍼즐 실제 완주·사용자 직접 성공·Steam은 미확인이다. 이번 편집기 로그에서 C# 컴파일 오류·Exception·Missing Script 일치0이었고 기존 `PawnHipsHull` ConvexMesh partial hull 경고1건을 관찰했다. 관련 기물 물리 코드는 변경하지 않았다.
+
+### 1.2 R313의 경로 불일치와 당시 대응 이력
 
 2026-11-06 사용자 제보: "전부 풀 받았는데 프리팹도 안보이고 기능도 안보여". GitHub Desktop은 최신 `main`을 받았지만 Unity가 다른 작업 폴더를 열고 있었다. AI가 두 폴더의 Git 상태·실제 파일과 실행 중 Unity의 `Editor.log` 프로젝트 경로를 대조했다.
 
@@ -16,6 +28,8 @@
 | 제보 당시 Unity가 연 폴더 | `C:\Users\dua07\GitHub\ChessFighter` | `claude/bold-johnson-8ez95n` · `1ebc9cb0`(R155) | 기존 `Early_C_MoatDrawbridge`·`Mid_2-1_GrandStairHall` 2개, 새 메뉴 코드 없음 |
 
 **GitHub Desktop의 Repository → Show in Explorer가 여는 폴더와 Unity가 연 프로젝트 루트가 같아야 한다.** 같은 프로젝트 이름의 다른 복사본이므로 Unity 창 제목만으로 구분하지 않는다. Pull은 GitHub Desktop에서 선택한 작업 폴더에만 반영된다.
+
+**아래는 R313 당시의 절차다. R496부터는 위의 기존 경로를 사용한다.**
 
 1. GitHub Desktop에서 `main`의 **api-bridge-main**을 선택하고 **Repository → Show in Explorer**로 위치를 확인한다.
 2. Unity Hub의 **Projects → Add → Add project from disk**(버전에 따라 Add/디스크에서 프로젝트 추가)로 위의 `C:\Users\dua07\GitHub\ChessFighter\.worktrees\api-bridge-main` 폴더 자체를 등록하고 Unity **6000.3.11f1**로 연다.
@@ -27,7 +41,7 @@ R313에서 `-projectPath`를 위 main 폴더로 지정하고 `ChessFight.PawnRus
 
 이번 `R313-CoreTests.log`는 Core164·모의세션55 통과다. `R313-Open-Main-Editor.log`에서 C# 컴파일 오류·Exception·누락 스크립트 일치0이었다. 공유래그돌 `PawnHipsHull`의 ConvexMesh partial hull 경고1건을 관찰했으며 이번 작업에서 기물 물리 코드를 변경하지 않았다. 이 기록은 AI의 화면·로그 관찰이며 사용자 확인으로 바꾸지 않는다.
 
-### 1.2 프리팹과 시험 장면
+### 1.3 프리팹과 시험 장면
 
 모든 프리팹은 `Assets/Prefabs/PawnRushSections/`에 둔다. 원래 작업 폴더에서 사용자가 수정한 `Early_C_MoatDrawbridge`와 구분하기 위해 새 파일에는 `MG`를 넣었다.
 
