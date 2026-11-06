@@ -41,6 +41,10 @@ namespace ChessFight.Game
 
         public bool FreeFly { get; private set; }
         public float Yaw => yaw;
+        // R442 (승규 11-05): the lowest the following camera may go at a point - over water: its surface is drawn from
+        // above only, so from under it the sky showed through where a piece had fallen in. The gameplay side sets it
+        // (WaterZone); null or -infinity, no floor. Not for the free camera.
+        public static System.Func<Vector3, float> FloorAt;
         // The key that toggles the free camera (승규 님's test scene takes F1 and flies with F2 itself: None).
         public static KeyCode FlyKey = KeyCode.F1;
 
@@ -155,7 +159,13 @@ namespace ChessFight.Game
                 allowed = Mathf.Min(allowed, h.distance);
             }
             shown = Mathf.Lerp(shown, allowed, 1f - Mathf.Exp((allowed < shown ? -25f : -4f) * dt));
-            transform.SetPositionAndRotation(pivot + back * Mathf.Max(0.3f, shown), rot);
+            Vector3 at = pivot + back * Mathf.Max(0.3f, shown);
+            if (FloorAt != null)
+            {
+                float floor = FloorAt(at);
+                if (at.y < floor) at.y = floor;
+            }
+            transform.SetPositionAndRotation(at, rot);
         }
 
         void Fly(float dt)

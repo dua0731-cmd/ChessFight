@@ -11,7 +11,9 @@ namespace ChessFight.PawnRush
     {
         // R394 (승규 11-04 "아직도 떠 보이고 밀리는 세기가 약해"): the belt pushes a rider back BeltPush times as fast as
         // its links are drawn running (0.64 m/s measured, R393), and the deck's top is set on the belt as it is drawn.
-        const float BeltPush = 2.2f;
+        // R425 (승규 11-05 "컨베이어 역방향 할 때 기물이랑 더 밀리게 해"): 2.2 -> 4, about 1.4 -> 2.6 m/s back along the deck
+        // (a pawn runs 5 m/s, so it can still win against the belt, slower).
+        const float BeltPush = 4f;
 
         LibraryShuttleDriver driver;
         bool fitted;

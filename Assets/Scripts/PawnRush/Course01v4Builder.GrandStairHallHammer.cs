@@ -43,7 +43,14 @@ namespace ChessFight.PawnRush
 
                 // The swinging part on the Pivot, the kit's cable, collars and ball under it drawing nothing.
                 foreach (var r in pivot.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+                // R410 (승규 11-05 "해머 쪽 예고 바닥에 막대기 지우고"): the kit's orange swing marks on the floor draw nothing.
+                foreach (var r in t.GetComponentsInChildren<Renderer>(true))
+                    if (r.name == "Swing boundary" || r.transform.parent != null && r.transform.parent.name == "Swing boundary"
+                        || r.name == "OptionalWarningArea") r.enabled = false;
                 HammerPart(model, "Hammer_Swing", "Hammer swing", pivot, pivot.position, pivot.rotation, Vector3.one, clay);
+                // R403 (승규 11-04 "사슬에 애니메이션을 넣어서 스윙하는 듯한 궤적을 만들어라"): the links (hammer_v51.py) each in
+                // a holder of their own on the Pivot, bowed by HammerChainSway as it swings, with a ribbon behind the ball.
+                HangChain(model, pivot, clay);
                 // The hanger stays where the pivot rests, on the pendulum (it does not swing).
                 HammerPart(model, "Hammer_Hanger", "Hammer hanger", t, pivot.position, pivot.rotation, Vector3.one, clay);
 
@@ -67,6 +74,33 @@ namespace ChessFight.PawnRush
                 hammers++;
             }
             Debug.Log("[대계단 홀] 해머 " + hammers + "개를 새 모델로");
+        }
+
+        const int HammerLinks = 13;   // hammer_v51.py: Hammer_Link_01 (on the pin) .. Hammer_Link_13 (on the ball's eye)
+
+        static void HangChain(GameObject model, Transform pivot, Material clay)
+        {
+            var chain = new GameObject("Hammer chain").transform;
+            chain.SetParent(pivot, false);
+            var links = new Transform[HammerLinks];
+            for (int i = 0; i < HammerLinks; i++)
+            {
+                string part = "Hammer_Link_" + (i + 1).ToString("00");
+                if (model.transform.Find(part) == null)
+                {
+                    Debug.LogError("[대계단 홀] 해머 모델에 사슬 고리(" + part + ")가 없습니다 - hammer_v51.py로 다시 내보내세요");
+                    Object.DestroyImmediate(chain.gameObject);
+                    return;
+                }
+                HammerPart(model, part, "Hammer link " + (i + 1), chain, pivot.position, pivot.rotation, Vector3.one, clay);
+                links[i] = chain.GetChild(i);
+            }
+            var swing = pivot.GetComponent<ChessFight.ProtectKing.PendulumSwing>();
+            var ball = swing != null ? swing.Ball : null;
+            float radius = 1.1f;
+            if (ball != null && ball.TryGetComponent<SphereCollider>(out var sphere))
+                radius = sphere.radius * Mathf.Max(Mathf.Abs(ball.lossyScale.x), Mathf.Abs(ball.lossyScale.y), Mathf.Abs(ball.lossyScale.z));
+            chain.gameObject.AddComponent<HammerChainSway>().Configure(pivot, links, ball, radius);
         }
 
         // A copy of one of the model's parts under `parent` at a place in the world, sized `scale` in the world along its

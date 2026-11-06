@@ -168,7 +168,10 @@ def flat_balustrade(b, pts, z, skip_first=True):
         newel(b, x, y, z, 1.12)
 
 
-def build_side(side):
+def build_side(side, open_outer=False):
+    """open_outer (R457, north_stairs.py): the upper landing's outer side left open onto the north stairs' gallery -
+    the stringer's level part under the landing's slab, no level coping, no balustrade there (the gallery's own runs
+    along the landing's far end)."""
     b = Build(side)
     # ---- treads, nosings and the stair mass under them (walking tops and spans as the old steps)
     for k in range(1, STEPS + 1):
@@ -180,11 +183,16 @@ def build_side(side):
     b.box(X0, X1, LAND_UP[0], LAND_UP[1], BASE - .3, -.3)                    # mass under the upper landing
     # ---- outer stringer wall: sloped top with coping, plinth, pilasters, blind arches, consoles beneath
     ya = Y0 + .3
-    b.prism_yz([(ya, BASE - .3), (ya, tread_z(Y0) + .18), (YTOP, .18), (LAND_UP[0], .18), (LAND_UP[0], BASE - .3)],
-               X1, XO)
+    if open_outer:
+        b.prism_yz([(ya, BASE - .3), (ya, tread_z(Y0) + .18), (YTOP, .18), (YTOP, -.3), (LAND_UP[0], -.3),
+                    (LAND_UP[0], BASE - .3)], X1, XO)
+    else:
+        b.prism_yz([(ya, BASE - .3), (ya, tread_z(Y0) + .18), (YTOP, .18), (LAND_UP[0], .18), (LAND_UP[0], BASE - .3)],
+                   X1, XO)
     b.prism_yz([(ya + .03, tread_z(Y0) + .16), (ya + .03, tread_z(Y0) + .25), (YTOP, .25), (YTOP, .16)],
                X1 - .04, XO + .05)                                           # sloped coping
-    b.box(X1 - .04, XO + .05, LAND_UP[0] - .03, YTOP, .16, .25)              # its level part by the landing
+    if not open_outer:
+        b.box(X1 - .04, XO + .05, LAND_UP[0] - .03, YTOP, .16, .25)          # its level part by the landing
     b.box(XO, XO + .07, LAND_UP[0], ya, BASE - .3, BASE + .05)               # plinth band
     b.box(XO, XO + .05, LAND_UP[0], ya, BASE - .42, BASE - .3)               # underside moulding
     b.box(X0 + .02, XO + .05, LAND_UP[0], ya, BASE - .42, BASE - .3)
@@ -241,8 +249,10 @@ def build_side(side):
     b.box(13.0, X0, LAND_UP[1], -14.5, -.3, 0.0)                              # the threshold strip by the door
     b.box(XO - .1, XO + .06, LAND_UP[0] - .06, LAND_UP[1], -.42, -.26)
     b.box(15.48, XO + .06, LAND_UP[0] - .06, LAND_UP[0] + .1, -.42, -.26)
-    b.box(15.48, XO + .05, LAND_UP[0] - .03, LAND_UP[0] + .24, 0.0, .25)      # kerb along the landing's far end
-    flat_balustrade(b, [(xc, YTOP), (xc, LAND_UP[0] + .12), (15.75, LAND_UP[0] + .12)], .25)
+    if not open_outer:                                                        # (R459: the gallery's wider landing goes on)
+        b.box(15.48, XO + .05, LAND_UP[0] - .03, LAND_UP[0] + .24, 0.0, .25)  # kerb along the landing's far end
+    if not open_outer:
+        flat_balustrade(b, [(xc, YTOP), (xc, LAND_UP[0] + .12), (15.75, LAND_UP[0] + .12)], .25)
     b.box(13.0, XO, LAND_LO[0], LAND_LO[1], BASE - .3, BASE)
     b.box(XO - .1, XO + .06, LAND_LO[0], LAND_LO[1] + .06, BASE - .42, BASE - .26)
     b.box(15.48, XO + .06, LAND_LO[1] - .1, LAND_LO[1] + .06, BASE - .42, BASE - .26)

@@ -16,6 +16,10 @@ namespace ChessFight.PawnRush
         // The props of several parts (bookcases, crates, desks, lanterns, chests, balustrades, scroll bundles) are painted
         // part by part when the course plays (LibraryPaint). No banners: their cloths, rods, finials and mounts are
         // switched off. The pieces the other work dressed (the start props, the cannons, the anchors) keep their looks.
+        // R402 (승규 11-04): the bookcases, the balcony chests and their scrolls are new models in their own maps and the
+        // start / goal lantern posts are gone (war_room_props.py), so the "bookcase", "chest", "scrolls" and those
+        // "lantern" recipes below find no clay there any more. Banners are back, as new blue rook banners on the inner
+        // piers (Pier_banner_*, LibraryLooks); the model's old clay banners stay off.
         const string LibraryPaintMaterial = "PR_LibraryPaint", GoalInlayMaterial = "PR_LibraryGoalInlay", DoorMaterial = "PR_LibraryDoor",
             CeilingMedallionMaterial = "PR_LibraryCeilingMedallion";   // Assets/Art/PawnRushMap/Resources
         static Material libraryDoor;

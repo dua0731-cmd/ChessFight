@@ -89,18 +89,26 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 float _Glint, _GlintSharpness, _Sparkle;
             CBUFFER_END
 
-            // Globals from GardenWaterInteraction (sizes match its MaxBoats / MaxSplashes / MaxBobbers). R287: three hulls (the
-            // parade boat); renamed from _GardenBoat* because Unity keeps a global array's first size for the editor session.
-            float4 _GardenHull[3];        // world xyz, speed (m/s)
-            float4 _GardenHullAxis[3];    // heading xz, half length, half width
-            float4 _GardenHullInfo[3];    // x: vertical speed (m/s), y: roll + pitch rate (rad/s)
-            float _GardenHullCount;
+            // R482: the v31 garden's boats (GardenBoatWater, its Max); renamed from R287's three-long _GardenHull*
+            // (the old Blender garden's GardenWaterInteraction) because Unity keeps a global array's first size for the
+            // editor session. R486: twelve - the reservoir's eight and the lake's three (GardenLakeBoat) - so renamed
+            // again from R482's eight-long _GardenHulls*.
+            float4 _GardenBoatHulls[12];       // world x, waterline y, z, speed (m/s)
+            float4 _GardenBoatHullsAxis[12];   // heading xz, half length, half width (0: no hull)
+            float4 _GardenBoatHullsInfo[12];   // x: vertical speed (m/s), y: roll + pitch rate (rad/s)
+            float _GardenBoatHullsCount;
             float4 _GardenLanding[24];    // landing line: start xz, end xz
             float4 _GardenLandingInfo[24];// x: water height, y: strength
             float _GardenLandingCount;
             float4 _GardenBobber[8];      // world xyz of a bobbing platform, radius
             float4 _GardenBobberInfo[8];  // x: vertical speed (m/s), y: water height
             float _GardenBobberCount;
+            // R442, R444: the splashes and the rings of the drops falling back (GardenSplashFx): world xz, start (_Time.y),
+            // strength; the info: its pool's height, its wavelengths' scale, how much it churns. 16 long (renamed from
+            // R442's 8-long _GardenSplash*: Unity keeps a global array's first size for the editor session).
+            float4 _GardenSplashes[16];
+            float4 _GardenSplashesInfo[16];
+            float _GardenSplashesCount;
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
             struct Varyings
@@ -193,6 +201,19 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 return h;
             }
 
+            // R442: the rings off a splash `age` s old at distance r (m): a packet of waves of length `len` leaving at its
+            // group speed (half the phase speed on deep water), as wide as it has spread, weaker as it spreads (1 / sqrt r)
+            // and dying away (e-folding 1.6 s). d(height)/dr.
+            float SplashRing(float r, float age, float len, float height)
+            {
+                float k = 6.2831853 / len;
+                float w = Omega(k);
+                float front = 0.5 * w / k * age;
+                float width = 0.35 + 0.5 * age;
+                float x = (r - front) / width;
+                return height * exp(-x * x) * exp(-age / 1.6) / sqrt(1 + r) * k * cos(k * r - w * age);
+            }
+
             // Extra surface slope from the waterfalls, the platforms and the boats at world point (p.xz, height y);
             // `landing` is the distance (m) to the nearest landing line at this height (large when there is none);
             // `hull` (0..1) is the water heaped against a boat.
@@ -204,7 +225,8 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                 [loop] for (int k = 0; k < 24; k++)
                 {
                     if (k >= (int)_GardenLandingCount) break;
-                    if (abs(y - _GardenLandingInfo[k].x) > 1.0) continue;
+                    // R440: the garden's pools are 0.85 m apart or more (R441: lake -0.55, moat -1.9): a landing stirs only its own pool.
+                    if (abs(y - _GardenLandingInfo[k].x) > 0.3) continue;
                     float2 a = _GardenLanding[k].xy, ab = _GardenLanding[k].zw - a;
                     float h = saturate(dot(p - a, ab) / max(dot(ab, ab), 1e-4));
                     float2 q = p - (a + ab * h);
@@ -224,11 +246,37 @@ Shader "ChessFight/Pawn Rush Garden Clear Water"
                     float stir = 0.25 + saturate(abs(_GardenBobberInfo[m].x) / 0.35);
                     slope -= q / max(dist, 1e-3) * RingSlope(r, 1.6, _RippleHeight * stir, 5.0);
                 }
-                [loop] for (int b = 0; b < 3; b++)
+                // R442: a piece's splash - short and long rings leaving it, and for about a second the churned patch the
+                // cavity leaves (through `landing`, so it reads as the falls' churn: a lighter blue, never white).
+                // R444: and the small rings where its drops fall back in (shorter waves, no churn); none quite round -
+                // three lobes stronger and weaker at a turn of its own.
+                [loop] for (int s = 0; s < 16; s++)
                 {
-                    if (b >= (int)_GardenHullCount) break;
-                    float4 boat = _GardenHull[b], axis = _GardenHullAxis[b], info = _GardenHullInfo[b];
-                    if (axis.z <= 0 || abs(y - boat.y) > 1.5) continue;
+                    if (s >= (int)_GardenSplashesCount) break;
+                    float4 si = _GardenSplashesInfo[s];
+                    if (abs(y - si.x) > 0.3) continue;
+                    float4 sp = _GardenSplashes[s];
+                    float age = _Time.y - sp.z;
+                    if (age < 0 || age > 5) continue;
+                    float2 q = p - sp.xy;
+                    float d = length(q);
+                    float turn = d > 1e-4 ? atan2(q.y, q.x) : 0;
+                    float lobes = 1 + 0.25 * sin(3 * turn + frac(sp.z * 7.31) * 6.2831853);
+                    float scale = max(si.y, 0.1);
+                    float rings = SplashRing(d, age, 0.45 * scale, 0.03) + SplashRing(d, age, 1.2 * scale, 0.045);
+                    slope -= q / max(d, 1e-3) * rings * sp.w * lobes;
+                    if (si.z > 0)
+                    {
+                        float patch = max(0, d - (0.35 + 0.9 * sqrt(age))) + 2.2 * age;
+                        landing = min(landing, patch / max(sp.w * si.z, 0.35));
+                    }
+                }
+                [loop] for (int b = 0; b < 12; b++)
+                {
+                    if (b >= (int)_GardenBoatHullsCount) break;
+                    float4 boat = _GardenBoatHulls[b], axis = _GardenBoatHullsAxis[b], info = _GardenBoatHullsInfo[b];
+                    // R482: its own pool only, and near enough for its wake and rings to show (they fade out by ~30 m)
+                    if (axis.z <= 0 || abs(y - boat.y) > 1.5 || dot(p - boat.xz, p - boat.xz) > 1600) continue;
                     const float e = 0.04;
                     float near, unused;
                     float h0 = BoatWaves(p, boat, axis, info, near);

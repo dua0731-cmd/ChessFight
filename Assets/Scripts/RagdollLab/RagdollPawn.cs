@@ -131,8 +131,16 @@ namespace ChessFight.RagdollLab
         public float SprintBlend => sprintBlend;
 
         /// <summary>The speed the pawn is running at right now, between moveSpeed and sprintSpeed.</summary>
-        public float TopSpeed => Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
-                                 * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move;
+        public float TopSpeed
+        {
+            get
+            {
+                float top = Mathf.Lerp(P.moveSpeed, SprintTop(P), sprintBlend)
+                            * (hookPhase == HookPhase.Charging ? P.hookChargeMoveScale : 1f) * pieceStats.Move;
+                // R461: over a speed lane (ISpeedSurface) at least its speed
+                return groundSpeedSurface != null ? Mathf.Max(top, groundSpeedSurface.TopSpeed) : top;
+            }
+        }
 
         /// <summary>Steps in which the jump rise guard gave vertical speed back (GuardJumpRise).</summary>
         public int RiseTopUps { get; private set; }
@@ -371,6 +379,7 @@ namespace ChessFight.RagdollLab
         // in the frame of whatever it stands on and then carried along with it.
         Collider groundCollider;             // what the ground probe hit; the surface below is cached per collider
         IMovingSurface groundSurface;
+        ISpeedSurface groundSpeedSurface;    // R461: a speed lane under the pawn (looked up with groundSurface)
         Vector3 surfaceVel;                  // the ground's velocity under the hips this step, all three axes
         Vector3 carryVel;                    // horizontal velocity of the last thing stood on, kept through the air
         float carryRise;                     // and its vertical speed, so a jump off a rising lift is a real jump
@@ -763,6 +772,7 @@ namespace ChessFight.RagdollLab
             {
                 groundCollider = under;
                 groundSurface = under != null ? under.GetComponentInParent<IMovingSurface>() : null;
+                groundSpeedSurface = under != null ? under.GetComponentInParent<ISpeedSurface>() : null;
             }
             surfaceVel = groundFound ? SurfaceVelocity(groundSurface, groundBody, bodies[0].position) : Vector3.zero;
             bool feet = FootTouches(footL) || FootTouches(footR);
@@ -3332,6 +3342,7 @@ namespace ChessFight.RagdollLab
             surfaceVel = climbSurfaceVel = Vector3.zero;
             groundCollider = climbCollider = null;
             groundSurface = climbSurface = null;
+            groundSpeedSurface = null;
             // Holding grab through the respawn must not grab or climb the first thing it sees.
             climbGrabLatch = true;
             climbCooldown = Mathf.Max(climbCooldown, 0.5f);

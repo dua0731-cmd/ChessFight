@@ -98,14 +98,26 @@ namespace ChessFight.PawnRush
         const string SpiralCheckerMaterial = "PR_SpiralChecker";   // Assets/Art/PawnRushMap/Resources
         const string SpiralNode = "HallV15_B3_Spiral__";
 
-        static void SpiralPaving(Transform hallModel)
+        static void SpiralPaving(Transform hallModel, Transform content)
         {
-            var paving = Resources.Load<Material>(SpiralCheckerMaterial);
-            if (paving == null)
+            var shared = Resources.Load<Material>(SpiralCheckerMaterial);
+            if (shared == null)
             {
                 Debug.LogError("[대계단 홀] 나선 체스판 재질(Resources/" + SpiralCheckerMaterial + ".mat)을 불러오지 못했습니다");
                 return;
             }
+            // R403: a copy that knows where the way leaves the marble foot - its first metre in the floors' marble, then a
+            // gold threshold strip square across it, then the chessboard (the shared asset is left as it is).
+            var paving = new Material(shared) { name = SpiralCheckerMaterial + " (foot threshold)" };
+            var frame = FindUnder(content, "Spiral foot");
+            frame = frame != null ? frame.parent : content;
+            float phi = GrandStairHallBuilder.SpiralThreshold;
+            var at = frame.TransformPoint(GrandStairHallBuilder.HallPolar(phi, GrandStairHallBuilder.SpiralRadius(phi), 8f));
+            var along = frame.TransformDirection(GrandStairHallBuilder.SpiralHeading(phi)).normalized;
+            // R406: anchored to the hall model - the zone is moved to its place after it is built.
+            HallAnchors(hallModel).Add(paving, "_FootPoint", at, false, 7f);
+            HallAnchors(hallModel).Add(paving, "_FootAlong", along, true, .12f);
+            CopyMarble(HallMarble(), paving);
             int paved = 0;
             foreach (var r in hallModel.GetComponentsInChildren<Renderer>(true))
             {
@@ -115,7 +127,115 @@ namespace ChessFight.PawnRush
                 r.sharedMaterials = slots;
                 paved++;
             }
-            Debug.Log("[대계단 홀] 나선 길 " + paved + "조각을 미니게임 바닥 체스판(" + paving.GetFloat("_Cell") + " m 칸)으로, 둥근 테는 금 · 옆은 크림 돌");
+            Debug.Log("[대계단 홀] 나선 길 " + paved + "조각을 미니게임 바닥 체스판(" + paving.GetFloat("_Cell") + " m 칸)으로, 둥근 테는 금 · 옆은 크림 돌, " +
+                      "시작 1 m는 바닥 대리석 + 금 문턱");
+        }
+
+        // The floors' marble values into the way's threshold marble (PR_VeinedMarble's names -> PR_SpiralChecker's _M*).
+        static readonly string[] MarbleColours = { "_BaseColor", "_MBase", "_ShadeColor", "_MShade", "_VeinColor", "_MVein", "_GoldColor", "_MGold", "_FineColor", "_MFine" };
+        static readonly string[] MarbleFloats =
+        {
+            "_CloudScale", "_MCloudScale", "_VeinScale", "_MVeinScale", "_FineScale", "_MFineScale", "_Warp", "_MWarp",
+            "_VeinWidth", "_MVeinWidth", "_FineWidth", "_MFineWidth", "_VeinStrength", "_MVeinStrength",
+            "_GoldStrength", "_MGoldStrength", "_FineStrength", "_MFineStrength", "_Glossiness", "_MGlossiness",
+        };
+
+        static void CopyMarble(Material marble, Material to)
+        {
+            if (marble == null || !marble.HasProperty("_FineScale")) return;   // the plain fallback: keep the shader's own
+            for (int i = 0; i < MarbleColours.Length; i += 2) to.SetColor(MarbleColours[i + 1], marble.GetColor(MarbleColours[i]));
+            for (int i = 0; i < MarbleFloats.Length; i += 2) to.SetFloat(MarbleFloats[i + 1], marble.GetFloat(MarbleFloats[i]));
+        }
+
+        // R403 (승규 11-04 "대리석 바닥에서 나선형 코스로 넘어 갈 때 합쳐지는 구간을 자연스럽게 처리해라"): the spiral's foot
+        // now ends on the curving stair's inner corner (GrandStairHallBuilder.SpiralFootNorth), so the hall model's foot
+        // box and its edge moulding - both still the old 8 m deep foot - are off. The blockout foot (its collider) is drawn
+        // in the floors' marble instead, and its two open edges (west, and north up to the stair's side) get the floors'
+        // moulding as the model's: a band 0.12 m under the walked edge, limestone with a gold top fillet (PR_FloorMoulding).
+        static readonly Vector2[] MouldingProfile =
+            { new Vector2(0f, 0f), new Vector2(.06f, .02f), new Vector2(.1f, .1f), new Vector2(.14f, .2f), new Vector2(.14f, .32f), new Vector2(0f, .36f) };
+
+        static void SpiralFootJoin(Transform hallModel, Transform content, Material marble)
+        {
+            int off = 0;
+            foreach (var t in hallModel.GetComponentsInChildren<Transform>(true))
+            {
+                string name = t.name.Replace('_', ' ');
+                if (!name.Contains("Spiral foot (under marble)") && name != "HallV15 Spiral foot moulding") continue;
+                t.gameObject.SetActive(false);
+                off++;
+            }
+            var foot = FindUnder(content, "Spiral foot");
+            if (foot == null || !foot.TryGetComponent<Renderer>(out var view))
+            {
+                Debug.LogError("[대계단 홀] 나선 발치 블록아웃(Spiral foot)을 찾지 못했습니다");
+                return;
+            }
+            view.enabled = true;
+            view.sharedMaterial = marble;
+            view.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+
+            var trim = Resources.Load<Material>(FloorMouldingTrim);
+            if (trim == null)
+            {
+                Debug.LogError("[대계단 홀] 바닥 테 몰딩 재질(Resources/" + FloorMouldingTrim + ".mat)을 불러오지 못했습니다");
+                return;
+            }
+            float top = 8f, north = GrandStairHallBuilder.SpiralFootNorth;
+            // West from inside the landing (z < 66) to past the corner; north from past the corner into the stair's side.
+            Moulding(foot.parent, "Spiral foot moulding W", new Vector3(4f, 0f, 65.8f), new Vector3(4f, 0f, north + .14f), Vector3.left, top, trim);
+            Moulding(foot.parent, "Spiral foot moulding N", new Vector3(4f - .14f, 0f, north), new Vector3(12.6f, 0f, north), Vector3.forward, top, trim);
+            Debug.Log("[대계단 홀] 나선 발치: 모델의 옛 발치 · 몰딩 " + off + "개 끔, 블록아웃 발치를 대리석으로, 새 몰딩 2줄");
+        }
+
+        // A straight run of the floors' moulding from `a` to `b` (level, in `parent`'s frame) on the side facing `outwards`,
+        // its top 0.12 m under the walked edge at `top`, closed at both ends; flat-shaded, no UVs (PR_PalaceTrim needs none).
+        static void Moulding(Transform parent, string name, Vector3 a, Vector3 b, Vector3 outwards, float top, Material material)
+        {
+            var along = (b - a).normalized;
+            float baseY = top - .12f - .36f;
+            Vector3 At(Vector3 end, Vector2 q) => end + outwards * q.x + Vector3.up * (baseY + q.y);
+            var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
+            var triangles = new List<int>();
+            void Quad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 n)
+            {
+                int k = vertices.Count;
+                vertices.Add(p0); vertices.Add(p1); vertices.Add(p2); vertices.Add(p3);
+                for (int j = 0; j < 4; j++) normals.Add(n);
+                bool flip = Vector3.Dot(Vector3.Cross(p1 - p0, p2 - p0), n) < 0f;
+                if (flip) triangles.AddRange(new[] { k, k + 2, k + 1, k, k + 3, k + 2 });
+                else triangles.AddRange(new[] { k, k + 1, k + 2, k, k + 2, k + 3 });
+            }
+            var profile = MouldingProfile;
+            for (int i = 0; i + 1 < profile.Length; i++)
+            {
+                var e = profile[i + 1] - profile[i];
+                var n = (outwards * e.y - Vector3.up * e.x).normalized;   // the profile edge turned a quarter outwards
+                Quad(At(a, profile[i]), At(a, profile[i + 1]), At(b, profile[i + 1]), At(b, profile[i]), n);
+            }
+            // The two ends: the profile (convex, closed along the wall) as a fan.
+            foreach (var (end, n) in new[] { (a, -along), (b, along) })
+            {
+                int k = vertices.Count;
+                foreach (var q in profile) { vertices.Add(At(end, q)); normals.Add(n); }
+                for (int j = 1; j + 1 < profile.Length; j++)
+                {
+                    bool flip = Vector3.Dot(Vector3.Cross(vertices[k + j] - vertices[k], vertices[k + j + 1] - vertices[k]), n) < 0f;
+                    triangles.AddRange(flip ? new[] { k, k + j + 1, k + j } : new[] { k, k + j, k + j + 1 });
+                }
+            }
+            var mesh = new Mesh { name = name };
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
         }
 
         // R375 (승규 11-04, a shot of the dais drum's grey pilasters: "원기둥 쪽에서 회색 부분 아직 텍스쳐가 안 입혀졌고 나선
@@ -148,6 +268,19 @@ namespace ChessFight.PawnRush
                 r.sharedMaterials = slots;
             }
             Debug.Log("[대계단 홀] 회색 장식 칠함: 단상 탑 " + towers + "개(크림 돌 + 금 띠), 바닥 테 몰딩 " + mouldings + "개(크림 돌 + 금 윗선)");
+
+            // R410 (승규 11-05 "원기둥 쪽 기둥도 지워"): the dais tower's sixteen pilasters out of its mesh - each its own
+            // piece (Blender z -2.8 .. 14.4 at r 8), their middles 9.8 m over the tower's foot; the base (middle 0.6 m
+            // up) and the cornice (19.2 m up) are pieces round the axis outside that height, so they stay. Cut in Play
+            // (MeshCutOut, as R340's balustrades), in the hall model's own frame (it only turns about y).
+            foreach (var r in hallModel.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!r.name.Replace('_', ' ').StartsWith("HallV15 Royal dais tower") || !r.TryGetComponent<MeshFilter>(out var f)) continue;
+                var b = r.bounds;
+                var mid = hallModel.InverseTransformPoint(new Vector3(b.center.x, b.min.y + 9.8f, b.center.z));
+                if (!f.TryGetComponent<MeshCutOut>(out _))
+                    f.gameObject.AddComponent<MeshCutOut>().Configure(hallModel, new Bounds(mid, new Vector3(20f, 6f, 20f)));
+            }
         }
 
         // R353: the rolling carpet's model (RollingSpawner) and its materials: the body in the hall carpet, the spiral

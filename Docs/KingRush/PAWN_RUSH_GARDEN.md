@@ -1,5 +1,104 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R491(11-06):** 나무 = `tree_asset.py`(source/tree_cone.glb · tree_round.glb → TreeAsset_v1.blend, 줄기 · 이끼 · 잎 2색 · 새로 만든 꽃) → `trees_sample.py`(테라스: 다트, 둑: 3~4개 숲, 성벽 · 탑 · 코스 피함) → export GardenTrees(손작업 후처리 없음). Unity `Concept` 조각 `GardenTrees`(덮기 · 충돌 없음). v159.
+
+> **R490(11-06):** 성문 탑 판 옆 틈: 판 뒤에 몸통 속으로 마개(`PLUG_X` · `PLUG_BACK`, `gate_arch_asset.py`). v158.
+
+> **R489(11-06):** 성문 테라스 화분 나무 8개 지움(`remove_topiaries.py`로 지금 blend에서, `walls_sample_v2.py`에서도). v157.
+
+> **R488(11-06):** 탑 에셋 덤불 = 원뿔(`tower_asset.BUSHES`, `in_bush`: 반지름 1.35배 + 0.012, 발치 · 둘레 풀, 몸통 · 기둥 · 매끈한 돌 제외). 순서: tower_asset → walls_sample → handmade 2·3·4 → export GardenWalls. v156.
+
+> **R487(11-06):** 호수 보트 4척 = 항로 2개(`lake_routes.py`: 남 117 m · 북 87 m, 자기 교차 검사) × 반 바퀴 간격 2척, 1.3 m/s(남 48 s · 북 36 s마다 한 척), `Lake boat south 1/2 · north 1/2`. 수문 · 수로에는 배 없음. v155.
+
+> **R486(11-06):** 호수 보트 3척: `lake_routes.py`(세 물의 항로 · 장애물 여유 검사 · 평면도) → `GardenLakeBoat`(남 207 m · 서 176 m · 동 37 m, 0.45~0.9 m/s), `GardenWatergate.fbx`의 `Lake boat south / west / east`(파랑 · 진홍 · 아이보리), 물결은 `GardenBoatWater` → `_GardenBoatHulls*`(12칸: 저수지 8 + 호수). v154.
+
+> **R485(11-06):** 동쪽 수로 수문: `gate_asset.py`(승규 님 castle gate GLB, 자리별로 칠함) → `watergate_sample_v1.py`(뒤집고 17.2배, 둑 높이 0.6, 물속 기초 2개, 통로 x 41.2~43.96) → `GardenWatergate.fbx`; 보트 `Watergate boat`(royal boat 0.75배)를 `GardenWatergateBoat`가 항로 83 m(통로 직선 + 양 끝 고리, `route_opt.py`)로 0.45~0.9 m/s, 약 107 s에 한 바퀴. 저수지 보트는 가라앉기 시작하면 물과 상호작용 없음(물보라 · 소리 뺌). v153.
+
+> **R484(11-06):** 성문 수리: 배너 자리 = 닫힌 돌 판(`PANEL_*`, 받침 · 처마 속까지) + 그 위 뒷면 돌 켜(판 가장자리에서 bisect로 자름), 항아리 윗면 구멍 메움, 잎 칠 범위(갓돌 위 더미 · 그릇 둘레 · 덩굴, `URN_X` 0.40 · `urn_r`), 12.4만 면. v152.
+
+> **R483(11-06):** 출구 성문 = 승규 님 성문 에셋(`gate_arch_asset.py` → `GateArchAsset_v1.blend`: 깃발 · 배너 삭제, 배너 자리 = 탑 뒷면 돌 켜 거울 복사 4 cm 앞, 수평 색 경계 자른 뒤 부위별 GC 재질, 9.35만 면), `gate_sample_v2.ASSET_GATE`(50.6배, (0, 66.5, 2.8), 받침대 북쪽 5.8 m; 손으로 만든 문은 안 넣음). 순서: gate_arch_asset → gate_sample_v2 → handmade 2·3·4 → export GardenGate. 충돌체 `Beats.Gate`(문설주 면 7.1, 탑 x 9.2~14.1, 화단 `Exit gate wing planter *`). v151.
+
+> **R482(11-06):** 보트 ↔ 물: `GardenBoatWater`(B6 Boats, `_GardenHulls*` 8칸 → `PR_GardenClearWater`의 항적 · 고리 · 선체 물), `GardenBoatRock`(장식 흔들림, ObstacleClock), 잠수 · 부상 물보라(`GardenSplashFx`). v150.
+
+> **R481(11-06):** 성벽 탑 = 승규 님 에셋(`tower_asset.py` → `TowerAsset_v1.blend`, 깃발 삭제 · 부위별 GC 재질 · 1.8만 면) × 12, `walls_sample_v2.asset_tower`(정원 쪽 앞, 하나 걸러 뒤집기, 처마 ~18 m, 돌 받침). 순서: tower_asset → walls_sample → handmade 2·3·4 → export. v149.
+
+> **R480(11-06):** 후처리 4단계: 정점 색 `HM`(R 색차 · G 때 · B 이끼 · A 물자국) → `PR_GardenWeathered.shader`(stone · tile · joint · grout · paving GC_ 재질을 바꿔 그림, 반복 지우기). 물 · 폭포 메시는 제 정점 색 유지. 순서: 견본 → handmade 2 → 3 → 4 → export. v148.
+
+> **R479(11-06):** 후처리 3단계: 긴 부품 처짐 0.4~1.5 cm · 휨, 돌 블록 기울기 0.35° · 크기 ±1 %, 7 % 모서리 깨짐(2~4.5 cm). 8개 FBX, v147.
+
+> **R478(11-06):** 손작업 후처리 `handmade_pass.py --step 2`(견본 스크립트 뒤, 내보내기 전에 꼭 다시): 작은 장식 묶음별 회전 ±15° · 기울기 · 크기 ±6% · 위치, 난간 기둥 ±12°, 원뿔 나무 ±0.3 m, 걸린 판은 제 평면 안에서만; 돌 · 바닥 · 물 · 분수는 그대로. 8개 FBX, v146.
+
+> **R477(11-06):** 성벽 · 탑 돌 = `GC_castle_stone`(Stone_Gate × (1.0, .93, .86)), 문은 `GC_gate_stone` 그대로, v145.
+
+> **R476(11-05):** 성벽 아치 = 관통 창(두 면 같은 켜, 문설주 · 홍예석이 벽 가운데서 만남, 관통 문턱), 돌 = 출구 문 석조(한 색, 2단 둥근 모서리, 9 cm 뒤 몰탈 심, 켜 1.3), `GardenWalls.fbx`, v144.
+
+> **R475(11-05):** 성벽 고리 Unity 반영 — `GardenWalls.fbx`, 블록아웃 `Castle wall W1..E6`(회전 상자) · `Castle tower W1..E6` · `Castle bank W/E` · `Castle strip *`, 사각 벽 · 모서리 탑 · 북쪽 벽 지움, 마당 북쪽 난간 · 출구 테라스 난간 60.5부터 · 문 날개 충돌, `GardenGate.fbx` 다시(테라스는 GardenWalls로), v143.
+
+> **R474(11-05):** 외곽 성벽 견본 v2 `walls_sample_v2.py`: 초타원 고리(54 × 66.81, 지수 2.4, 중심 z 4.21), 탑 한쪽 6개(첫 탑 테라스 모서리 (±44.4, 48.6) → (±52.9, 23.2) → (±53.9, −3.7) → (±49.1, −30.2) → (±34.2, −52.2) → 입구 탑 (±9.5, −62.2)), 첫 벽은 문 날개 끝 블록 바깥 모서리 (±24.82, 67.72)에서, 아치 20개(해자 위 포함), 갈라짐 · 깨짐, 문 · 저수지 테라스는 고리에 잘려 이 견본에서, 고리 밖 잔디. `check_coplanar.py`는 모든 방향 · 실제 공통 면적. Unity 미반영.
+
+> **R472(11-05):** 외곽 성벽 견본 `walls_sample_v1.py`: 사각 벽 대신 둥근 탑 22개 고리(문 날개 → 양옆 최대 x ±50.4 → 남쪽 입구 탑 x ±9.3), 흉벽 · 아치 · 깃발천, 둑(0.6) · 북쪽 띠(2.8), 옛 북쪽 벽 없음. Unity 미반영(붙일 때 셸 블록아웃 교체).
+
+> **R467(11-05):** 출구 문 꽃 없음(`GATE_FLOWERS = False`; 항아리 · 화단은 흙만).
+
+> **R465(11-05):** 출구 문 꽃 = `round_leaf` · `blossom`(겹꽃) · 줄기 덩굴 · 꽃무리, GardenGate.fbx 갱신.
+
+> **R462(11-05):** B7 Unity 반영 — `GardenGate.fbx`, 앞쪽 개선문 블록아웃 지움, 출구 문 충돌체(문설주 x ±6..8.6 · 어깨 · 탑 x ±8.6..13.5 · 아치 꼭대기 18.2..24), v142.
+
+> **R460(11-05):** 출구 문 돌 = `Stone_Gate`(그림 색) · `gate_run`(켜 1.7 m, 둥근 모서리, 얇은 줄눈); 키트 벽(켜 0.68, 세 색, 어두운 줄눈)과 다름 — "문만 이대로": 정원 나머지는 키트 돌 유지.
+
+> **R458(11-05):** B7 v2 `gate_sample_v2.py`: 앞쪽 개선문 없음, 출구 문 = 승규 님 레퍼런스(탑 · 반원 아치 · 방패 · 깃발 · 꽃), 개구부 12 m 기준 높이 31 m · 폭 49 m, Unity 미반영(붙일 때 출구 아치 충돌체 바꿈).
+
+> **R456(11-05):** B7 문 · 출구 견본 `gate_sample_v1.py`(개선문 · 출구 아치 · 메달 · 계단 · 테라스), Unity 미반영.
+
+> **R446(11-05):** 배는 사진대로 `royal_boat.py`에서 직접 모델링(안쪽 가구 포함, 덮개 · 기둥 없음; 반폭 1.199, 랜턴 5.38), 터널 처마 5.5(`TunnelEaveY`, 4.4였음 — 이제 탄 기물을 치지 않음, 배가 가라앉을 때 빠짐), 지붕 6.1..7.3. GardenBoats.fbx, v138.
+> **R444(11-05):** 물보라 무작위는 물리 분포(포아송 · 로그정규 · 폰 미제스)로, `_GardenSplashes[16]`, 소리 3가지.
+
+> **R442 물에 빠지면(11-05):** 물마다 `WaterZone`(보고 안 함: 떠오르기만) + `GardenSplashPool`(물보라) + 사망 구역(되살리기). 물보라 계산 · 효과는 `GardenSplashFx`, 물결은 물 셰이더 `_GardenSplash*`, 소리는 `splash_sound.py` → `GardenSplash.wav`. 카메라는 어떤 물에서도 수면 위(`OrbitCamera.FloorAt`).
+
+> **R441 물 높이(11-05):** 저수지 3.0 / 호수 −0.55 / 해자 −1.9. 호수는 P1 통 발(가장 낮을 때 −0.40) 아래여야 함(`water_tiers.py`의 `assert`). 물 높이에 붙는 장식은 모두 `water_tiers`에서 읽음(광장 WATER, 발판 WATER_Z, 배 RES_Y). 저수지 남벽 충돌: 여수로 부분 = 마루 높이, 나머지 = 3.8.
+
+> **R440 물 3층 Unity 반영(11-05):** `GardenWater.fbx` + `PR_GardenFallUpper/Lower.mat` + `GardenWater_Landings.json`(모두 `water_tiers.py` → `export_water.py` · `export_concept.py`). 빌더 `Water()`는 사망 구역만(해자 · 호수), 물 그림은 컨셉 장식. 물 높이를 바꿀 때: `water_tiers.py` → 샘플 · 두 export 다시 → `RoyalWaterGardenBuilder.EarlyWaterY/MiddleWaterY` 맞추기.
+
+> **R439 물 3층(11-05):** 후반 저수지 1.95 / 중반 호수 −0.35 / 초반 해자 −1.2. 여수로(저수지 남벽 x −26..−10.4) · 둑(z −15.5, 수로길 동 · 서). 수치는 `ArtSource/PawnRush/GardenConcept/water_tiers.py`가 유일한 원천(Unity 쪽 착수선 · 사망 구역도 거기 숫자로). 샘플 `water_sample_v1.py`, 아직 Unity에 안 붙임.
+
+> **R437 B6 Unity 반영(11-05):** `GardenBoats.fbx`; `ConceptPieces`의 `GardenBoats` 구간. 매달기 묶음 이름은 경로도 됨(`B6_BoatCrossing/Boats`).
+
+> **R436 B6 샘플(11-05):** `boats_sample_v1.py`. 배 = `Boat L-n`(곤돌라, 갑판 3.8, 매달 것), 터널 = 보트 하우스(블록아웃 유리 폭포 `Boat tunnel falls`는 덮지 않음). 아직 Unity에 안 붙임.
+
+> **R435 수정(11-05):** 로봇 팔은 북쪽으로 82°까지 들리므로 흔들림 면(로봇 x ±0.9, 둑 벽 뒤 포함)에는 아무것도 두지 않음: 돌기둥은 x +1.15..+2.95, 받침은 허브 동쪽 면에서 나오는 금 축. 서쪽 갠트리 기둥 · 보는 지움. 수문은 파란색(`GC_gate_blue`). 장식 면은 블록아웃 그림 · 서로와 같은 평면에 두지 않음(깜빡임).
+
+> **R434 수정(11-05):** 로봇 충돌 = 그린 모양(`Robot hand` 1.8 m · 4.7 m 아래, `Robot pillar block n`), 허브 원통은 `hammer_asset._drum`으로 새로 그림. 정원 돌벽은 모두 이음 4 cm · 3 cm에 줄눈 심(뒤가 비쳐 보이지 않게). Unity는 뒷면을 그리지 않으므로 손으로 만든 면은 법선을 바깥으로(PITFALLS §38).
+
+> **R433 B4 · B5 Unity 반영(11-05):** `GardenLockDyke.fbx`; 덮음 · 매달기 목록은 `RoyalWaterGardenBuilder.Concept.cs`의 `GardenLockDyke` 구간. 로봇 기둥(고정)은 갠트리 기둥 충돌체를 덮고, `Robot arm N`은 손잡이 · 공만 흔들림(허브 원통은 고정).
+
+> **R432 B4 · B5 샘플(11-05):** `lock_dyke_sample_v1.py` + 승규 님 공 망치 에셋(`hammer_asset.py`, `source/ball_and_chain.glb`). 로봇 = `Robot pillar N`(고정, 갠트리 기둥 충돌체를 덮게 넓힘) + `Robot arm N`(손잡이 · 공, 움직이는 팔에 매달 것). 수문 = `Sluice gate 1..3`(매달 것). 블록아웃 `Lock water` · `Current arrow`는 덮지 않음. 아직 Unity에 안 붙임.
+
+> **R431 B3 Unity 반영(11-05):** `GardenPlatforms.fbx`; `ConceptPieces`의 `covered` · `hung` · `removed` 목록(이름 `*` 허용)으로 구간을 더함.
+
+> **R430 B3 v3(11-05):** 큰 발판 = 기둥 없는 레퍼런스 통(`platforms_sample_v3.py`, 비교 `compare_tub.py`). Unity에 붙일 때 `Bobbing platform P* stem`은 그림 · 충돌 모두 지움.
+
+> **R429 B3 v2(11-05):** 큰 발판 = 레퍼런스의 금 테두리 청록 통(`platforms_sample_v2.py` `tub`), 새 재질 `GC | platform stone` · `teal paint` · `teal dark` · `crown blue`. 이후 B3 작업은 v2 기준.
+
+> **R428 B3 견본(11-05):** `platforms_sample_v1.py` — 움직이는 장식은 블록아웃 움직이는 부품과 같은 이름의 따로 된 물체(Unity에서 매달기): `Bobbing platform P1..8` · `Shortcut post K1..3` · `Shortcut post K4 spin bar` · `Shortcut lotus L1..2`. 덮을 블록아웃(그림만 끔): `West landing` · `West landing rail N/S` · `Bobbing platform P* stem` · `Shortcut post K*`(K4 받침 · 줄기) · `Shortcut lotus L* stem`, 매다는 부품 아래 `Drum` · `Drum rim` · `Post` · `Post rim` · `Bar` · `Hub` · `Pad` · `Pad rim`.
+
+> **R426 물기둥 = 바닥 분수 + 계산한 물(11-05):** 설비는 `canal_sample_v2.py`(평지 6 = 수반 · 노즐, 경사로 2 = 배수판 · 노즐), 물은 `Assets/Scripts/PawnRush/GardenJet.cs` ↔ `jet_math.py`(같은 식; 바꾸면 둘 다) · 재질 `GC_jet`(폭포 셰이더, 정점 색 g = 공기, a = 1 물줄기 / 0 물막). 미리보기 `jet_preview.py -- sheet` · `-- video`.
+
+> **R424 B2 Unity 반영(11-05):** `export_concept.py -- CanalSample_v1.blend "Canal dressing" GardenCanal` → `GardenCanal.fbx`. `RoyalWaterGardenBuilder.Concept.cs`의 `ConceptPieces`에 구간을 하나씩 더함(FBX 이름 + 덮을 블록아웃 (묶음, 이름)).
+
+> **R423 B2 수로길 견본(11-05):** `canal_sample_v1.py`(공통 `gc_kit.py`) — 타일 바닥(수로길 · 앞마당 · 경사로), 블록 물가 벽, 돌 난간 4줄(금 구슬 · 금 화분), 서쪽 큰 벽, 물기둥 8개 = 돌 고리 + 금 고리 + 쇠 격자. Unity 반영은 확인 뒤(덮을 블록아웃 이름은 HANDOFF R423).
+
+> **R419 v4(11-05):** 키트 그림 색(픽셀로 잼) · 바닥: 곡선 타일 동심원 + 사각 타일(`Tile_Peach.png`, 0.6 m, 4 × 4), 헤링본 · 띠 · 별 · 원판 없음, 둥근 회전 축(짙은 돌 띠 · 금 잎), 금 양파 꼭지 기둥. `plaza_sample_v4.py` → `export_plaza_v4.py`. 이후 작업은 v4 기준.
+
+> **R415 v3(11-05):** 레퍼런스 렌더대로 회전 막대(팔각 돌 축 · 잎 문양 · 금 지붕 · 나무결 통나무 · 리벳 금 띠 · 끝 마개) · 화단(둥근 블록 2단 + 갓돌, 패널 기둥, 금 돔/화분) · 꽃(꽃잎 5장 + 꽃술, 잎 덤불, 토피어리). `plaza_sample_v3.py` → `export_plaza_v3.py`(텍스처 · 색 · 반복은 재질의 `gc_texture` · `gc_tint` · `gc_tiling`). 약 34만 삼각형.
+
+> **R412 Unity 반영(11-05):** `export_plaza_v2.py` → `Resources/PawnRushGardenConcept/GardenPlaza.fbx` · `Materials/GC_*.mat` · `Textures/Herringbone_PinkBeige.png`. `RoyalWaterGardenBuilder.Concept.cs` `ConceptDressing`: `Content/Concept dressing`(Y 180°)에 FBX, 재질은 이름으로 `GC_*` 교체, 덮인 광장 블록아웃(`Start yard` · `Start yard rail W/E` · `Fountain plaza` · `Plaza kerb*`)은 그림만 끔, `Spin bar N` 장식은 같은 이름 회전 부품의 자식(블록아웃 막대 · 허브 그림 끔). 다음 구간도 같은 방식: Blender 견본 → 내보내기 → `ConceptDressing`에 덮을 이름 추가.
+
+> **R409 견본 v2(11-05):** `plaza_sample_v2.py` — 바닥 동심원 띠 · 가운데 별, 입구 기둥 2.1 m · 깃발 · 큰 화분, 통나무 r 0.175 · 금 마개(그린 끝 ≤ 충돌 길이), 높은 막대 금 끝판, 화단 받침띠 · 몰딩, 반투명 물줄기 · 물보라. 이후 작업은 v2 기준.
+
+> **R408 컨셉 아트 입히기 — 견본 1 분수 광장(11-04):** 배치 · 충돌은 v31 그대로, 겉모습만 컨셉 아트로. Blender 원본 `ArtSource/PawnRush/GardenConcept/plaza_sample_v1.py`(실행 `blender -b --python plaza_sample_v1.py`, 같은 폴더에 `.blend` · 렌더 · `textures/`). 재질 이름 `GC | …`(크림 석재 3톤 · 금 · 나무 · 흙 · 잎 3톤 · 꽃 5색 · 로열 블루 · 물줄기 · 연잎 · 헤링본). 다음: 승규 님 확인 → 광장 FBX 내보내기 → 프리팹에 붙이고 블록아웃 렌더러 끄기(충돌 유지) → 수로길 · 착지 등에 같은 재질 복사.
+
+> **R400 리모델링 시작점 — v31 블록아웃 + 정원 물(11-04):** 승규 님 "물 그래픽을 제외하고 완전 초기 상태" → (물만 남겼다가) "맵 구조가 안보이고 물만 보이는데?". 정원 프리팹 `Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab`의 내용 = `RoyalWaterGardenBuilder.Build`: main v31 블록아웃 전체(B1 ~ B7 · `Garden` · `ProgressPath`) + 물 그래픽 — v31의 납작한 파란 물 판 대신 `Garden/Water/Garden water surface`(FBX `RoyalWaterGarden.fbx`의 `V07 Water | lower moat | gentle wave`, x ±46.5 · z ±58.5 · y 약 −1.7, `Water`가 Y 180°), 낙사 판정 y −3.9 ~ −1.8(v31보다 0.9 m 아래, R307과 같음), 저수지 판 `PR_GardenWater`. **ChessFight > Pawn Rush > Build Early 1-1 Royal Water Garden**(`PawnRushEditor/SectionPrefabMenu.cs`, main에서 가져옴)이 프리팹 `Content`로 구움 → 프리팹 모드에서 보고 손으로 고침. 다시 누르면 `Content`를 새로 지으므로 손으로 고친 것이 사라짐(이미 있으면 물어봄). 구역 G(`Course01v4Builder.RoyalGarden`)는 이 프리팹만 놓음 — 아래 R263 ~ R309의 Blender 모델 얹기 · 블록아웃 숨기기는 더 안 함(코드에서 지움, git 기록에 있음). 정원 FBX(56 MB)는 물 메시 하나 때문에 계속 쓰임.
+
 > **R309 Unity v33 — 남은 블록아웃 덮기:** `build_v33.py`가 v31 블록아웃 위에 모델을 더 얹음(묶음 `V33 | v31 layout dressing`, 이름 `V19 | V33 …`). 바닥 · 벽 · 둑 · 터널 · 계단 · 출구 = V19 벽돌 모듈 타일, 난간 = V21 기둥 + 갓돌, 섬 · 기둥 줄기 = 둥근 벽돌 기둥, 지름길 K1~K3 = 1.2 m 통 발판 · K4 = 2.6 m 통 + 회전봉. 새 회색 클레이: 배 8척 · 수문 판 3 · 연잎 2 · 회전봉 6 · 간헐천 테두리 8. 움직이는 것은 메시 역할의 `attach`로 코드 부품(`Boat L-N`, `Sluice gate n`, `Shortcut post Kn`, `Shortcut lotus Ln`, `Spin bar n/Arm k`, `Bobbing platform Pn`)에 붙음. V33 부품은 충돌체 없음. Version 34.
 
 > **R307 Unity v32 — main v31 배치:** 구역 G는 main의 `Early_1-1_RoyalWaterGarden` 프리팹(v31, `RoyalWaterGardenBuilder`)을 짓고 그 위에 정원 모델을 얹음. 모델 좌표 = v31 구간 좌표(Blender x, y, z → 구간 x, z, y). 옮긴 모델: 성문 묶음 · 승선 블록(높이 5.0 → 3.8), 통 발판 → P1~P8 위(`attach`, 코드 발판의 자식), 로봇 팔 2대 → 둑 남쪽 x 22.5 · 10.5. 모델이 덮는 블록아웃은 렌더러만 끄고 충돌은 그대로. 지운 모델 · 알려진 겹침은 HANDOFF R307과 `ArtSource/PawnRush/Garden/v32_report.json`. 미확인.

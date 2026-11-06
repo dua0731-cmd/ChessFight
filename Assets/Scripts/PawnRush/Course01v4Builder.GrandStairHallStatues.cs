@@ -50,6 +50,45 @@ namespace ChessFight.PawnRush
             Debug.Log("[대계단 홀] 계단 옆 동상 " + view.transform.childCount + "개 조각(흰 대리석 · 트래버틴 받침), 홀 모델의 옛 동상 " + off + "개 끔");
         }
 
+        // R413 (승규 11-05, a shot of the central landing's grey king statue and a Tripo queen statue: "교체 해주고 발판
+        // 지우고 텍스쳐 입혀"): the landing's statue is the queen (queen_statue_v52.py: her square pedestal cut off, 6 m,
+        // foot on the landing at (0, 8, 63), facing the stair), in the stair statues' white marble with her crown, orb
+        // and crossed maces in the walls' gold. The hall model's king statue is switched off; the blockout under it
+        // (GrandStairHallBuilder.Beats CentralLanding) is her shape.
+        const string QueenModel = "PawnRushGrandStairHall/QueenStatue";
+
+        static void LandingQueen(Transform hallModel, Transform content, Material clay)
+        {
+            var model = Resources.Load<GameObject>(QueenModel);
+            var body = FindUnder(content, "King statue body");
+            if (model == null || body == null)
+            {
+                Debug.LogError("[대계단 홀] 퀸 석상을 놓지 못했습니다: Resources/" + QueenModel + ".fbx 또는 블록아웃 King statue body 없음");
+                return;
+            }
+            foreach (var t in hallModel.GetComponentsInChildren<Transform>(true))
+                if (t.name.StartsWith("HallV15_King statue")) t.gameObject.SetActive(false);
+            var view = Object.Instantiate(model, body.parent, false);
+            view.name = "Queen statue v52 model";
+            view.transform.localPosition = new Vector3(0f, 8f, 63f);
+            view.transform.localRotation = Quaternion.identity;   // her front (Blender -Y) on the section's -z: the stair
+            var white = StatueMarble("PR_StatueMarble", new Color(.95f, .94f, .92f), .72f);
+            var gold = PalaceMaterial("Palace_Gold");
+            foreach (var r in view.GetComponentsInChildren<Renderer>(true))
+            {
+                var slots = r.sharedMaterials;
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    string name = slots[i] != null ? slots[i].name : "";
+                    slots[i] = name.StartsWith("Queen_Gold") ? gold : name.StartsWith("Queen_Marble") ? white : clay;
+                }
+                r.sharedMaterials = slots;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            }
+            foreach (var c in view.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
+            Debug.Log("[대계단 홀] 계단참 석상 = 퀸(흰 대리석 + 금 왕관 · 홀), 옛 왕 석상 끔");
+        }
+
         static Material StatueMarble(string resource, Color fallback, float smoothness)
         {
             var m = Resources.Load<Material>(resource);

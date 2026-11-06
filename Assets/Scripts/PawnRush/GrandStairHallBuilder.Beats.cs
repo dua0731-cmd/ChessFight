@@ -75,12 +75,12 @@ namespace ChessFight.PawnRush
             // off its edges (the hall model's balustrades there are cut out too, Course01v4Builder.OpenLanding).
             Mass(b, "Central landing", -14f, 14f, 51f, 66f, 8f);
             // The king statue: a 4 x 4 m base at (0, 8, 63), 6 m tall, unclimbable. The one fixed cover from the shock.
-            Solid(b, "King statue base", V(-2f, 8f, 61f), V(2f, 9.2f, 65f));
-            b.Cylinder("King statue body", V(0f, 9.2f, 63f), 2.4f, 2.6f, k.wallNoClimb, true, true);
-            b.Cylinder("King statue collar", V(0f, 11.8f, 63f), 3f, .3f, k.wallNoClimb, true, true);
-            b.Sphere("King statue head", V(0f, 12.9f, 63f), 1.7f, k.wallNoClimb).AddComponent<NoClimbSurface>();
-            Solid(b, "King statue cross (upright)", V(-.2f, 13.5f, 62.8f), V(.2f, 14f, 63.2f));
-            Solid(b, "King statue cross (bar)", V(-.5f, 13.65f, 62.8f), V(.5f, 13.85f, 63.2f));
+            // R413 (승규 11-05 "교체 해주고 발판 지우고"): the statue is a queen now (queen_statue_v52.py, 6 m, on the
+            // floor with no pedestal; Course01v4Builder.LandingQueen draws it), so the blocks are her shape: her round foot
+            // and body (2.6 m across up to 4.5 m, the names kept for SectionValidator's unclimbable list) and her crown.
+            // Her two crossed maces are thin and collide with nothing.
+            b.Cylinder("King statue body", V(0f, 8f, 63f), 2.6f, 4.5f, k.wallNoClimb, true, true);
+            b.Cylinder("King statue collar", V(0f, 12.5f, 63f), 1.6f, 1.5f, k.wallNoClimb, true, true);
             // The falling chandeliers (§5): ChandelierRain draws them.
             var rain = b.Group("Chandelier rain");
             rain.gameObject.AddComponent<ChandelierRain>().Configure(k.rankGold);
@@ -98,7 +98,21 @@ namespace ChessFight.PawnRush
         public const float HallRadius = 31f, SpiralFrom = 297f, SpiralTo = 717f, SpiralOuter = 28.75f, SpiralInner = 10f;
         public const float DaisTop = 16f, DaisRadius = 8f, BalconyFront = 121f;
 
+        // R403: the spiral foot's north edge (the curving stair's inner corner at SpiralFrom) and the gold threshold on the
+        // way where the foot's marble gives way to the chessboard (PR_SpiralChecker), 1 m along its middle line.
+        public const float SpiralFootNorth = 68.39f, SpiralThreshold = SpiralFrom + 2f;
+
         public static float SpiralRadius(float phi) => Mathf.Lerp(SpiralOuter, SpiralInner, (phi - SpiralFrom) / (SpiralTo - SpiralFrom));
+
+        /// <summary>A point at φ (degrees, anticlockwise from +x), r from Hub, height y, in the hall's content frame.</summary>
+        public static Vector3 HallPolar(float phi, float r, float y) => Polar(phi, r, y);
+
+        /// <summary>The way's heading at φ (anticlockwise), a level unit vector in the content frame.</summary>
+        public static Vector3 SpiralHeading(float phi)
+        {
+            float a = phi * Mathf.Deg2Rad;
+            return new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a));
+        }
 
         static Vector3 Polar(float phi, float r, float y)
         {
@@ -123,7 +137,11 @@ namespace ChessFight.PawnRush
             var k = b.kit;
             // The spiral's foot off the landing's north-east corner (y 8). R348 (승규 11-04): no railings, like the landing
             // it opens off (the hall model's are cut out too, Course01v4Builder.OpenLanding).
-            Mass(b, "Spiral foot", 4f, 15.5f, 63.5f, 71.5f, 8f);
+            // R403 (승규 11-04 "대리석 바닥에서 나선형 코스로 넘어 갈 때 합쳐지는 구간을 자연스럽게"): its north edge on the
+            // curving stair's inner corner (φ 297°, r 26.5: z 68.39), not 3.1 m further at z 71.5 - that part stuck out as
+            // a flat marble shelf beside the rising way, a lip with a gold edge along it. Everything behind the stair's
+            // first edge is still covered (the landing to z 66, this foot from there to the corner).
+            Mass(b, "Spiral foot", 4f, 15.5f, 63.5f, SpiralFootNorth, 8f);
 
             // 3a. The curving stair (φ 297 -> 372, y 8 -> 10): along the wall, its inner edge open to the hall floor
             // 12 m down (a fall goes back to CP1). Two chandeliers swing across it, out to the wall.

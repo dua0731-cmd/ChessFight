@@ -74,9 +74,12 @@ namespace ChessFight.PawnRush
             GuardKnightWarnings(content);
             RoyalBalcony(pivot, content, marble, clay);
             StairStatues(pivot, view.transform, clay);
+            LandingQueen(view.transform, content, clay);
             RoyalStair(pivot, view.transform, content, clay);
-            SpiralPaving(view.transform);
+            SpiralPaving(view.transform, content);
             PalaceTrims(view.transform);
+            SpiralFootJoin(view.transform, content, marble);
+            DomeVault(view.transform);
             Entrance(pivot, view.transform, clay);
         }
 
@@ -118,9 +121,11 @@ namespace ChessFight.PawnRush
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
                 }
                 foreach (var c in view.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
-                // The kit's warning bar (2.65 m) would sit in the corner caps' tops (2.62 m): up clear of them.
+                // R403 (승규 11-04 "예고 시 나오는 환풍기 위에 막대 지워"): the kit's orange warning bar over the fan draws
+                // nothing (its object stays, AirVent still switches it); the fan's speed-up and VentWindFx's swirl warn.
                 var bar = FindUnder(t, "WarningVisual");
-                if (bar != null && bar.localPosition.y < 2.8f) bar.localPosition = new Vector3(bar.localPosition.x, 2.8f, bar.localPosition.z);
+                if (bar != null)
+                    foreach (var r in bar.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
                 var rotor = FindUnder(view.transform, "RoyalFan_Rotor");
                 if (rotor != null)
                     view.AddComponent<RoyalFanSpin>().Configure(rotor, t.GetComponentInChildren<ChessFight.ProtectKing.AirVent>(true));

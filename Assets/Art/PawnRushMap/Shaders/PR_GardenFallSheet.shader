@@ -18,6 +18,7 @@ Shader "ChessFight/Garden Fall Sheet"
         _Aeration ("Aeration", Range(0, 1)) = 0.6
         _PoolTint ("Pool water at the foot", Color) = (0.66, 0.86, 1.0, 1)
         _FootHeight ("Foot blend height (m)", Float) = 0.55
+        _FallHeight ("Own drop for the foot (m; 0 = the moat height _GardenFoot)", Float) = 0
     }
     SubShader
     {
@@ -37,7 +38,7 @@ Shader "ChessFight/Garden Fall Sheet"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             CBUFFER_START(UnityPerMaterial)
                 half4 _Tint, _FoamColor, _PoolTint;
-                float _Speed, _Refraction, _Wobble, _Aeration, _FootHeight;
+                float _Speed, _Refraction, _Wobble, _Aeration, _FootHeight, _FallHeight;
             CBUFFER_END
             float4 _GardenFoot;   // x: world height of the moat surface, w: 1 when set (GardenWaterInteraction)
             struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv0:TEXCOORD0; float4 color:COLOR; };
@@ -51,6 +52,11 @@ Shader "ChessFight/Garden Fall Sheet"
                 float fog:TEXCOORD4;
             };
             float FallHash(float2 p) { return frac(sin(dot(p,float2(127.1,311.7)))*43758.5453); }
+            // R440: a fall given its own drop (_FallHeight, the garden's tiered falls) finds its foot from its data - g, 0 at
+            // the brink and 1 at the pool, times the drop - so it works in whichever pool it lands and wherever the zone is
+            // placed (PITFALLS 36); the others use the moat height _GardenFoot as before.
+            float FootAbove(float wsY, float fall) { return _FallHeight > 0 ? (1 - fall) * _FallHeight : wsY - _GardenFoot.x; }
+            float FootOn() { return _FallHeight > 0 ? 1 : _GardenFoot.w; }
             float FallNoise(float2 p)
             {
                 float2 a=floor(p), f=frac(p); f=f*f*(3-2*f);
@@ -64,7 +70,7 @@ Shader "ChessFight/Garden Fall Sheet"
                 // Ripples run down the water and grow as it falls.
                 ws+=n*sin(v.uv0.x*2.1+v.uv0.y*1.9-_Time.y*_Speed*1.3+v.color.b*6.2831853)*_Wobble*(0.2+v.color.g);
                 // At the foot the water breaks up and pushes outward a little as it hits the pool.
-                float low=_GardenFoot.w*saturate(1-(ws.y-_GardenFoot.x)/max(_FootHeight,0.05));
+                float low=FootOn()*saturate(1-FootAbove(ws.y,v.color.g)/max(_FootHeight,0.05));
                 ws+=n*low*low*0.12*sin(v.uv0.x*5.3-_Time.y*7.0+v.color.b*11.0);
                 o.positionWS=ws; o.normalWS=n;
                 o.positionCS=TransformWorldToHClip(ws);
@@ -96,10 +102,11 @@ Shader "ChessFight/Garden Fall Sheet"
                 half3 aerated=_FoamColor.rgb*(0.78+0.22*saturate(dot(normal,sun.direction)));
                 half3 c=lerp(glass,aerated,white)+sun.color*spec*0.6;
                 // Near the pool the water takes its colour and thins out unevenly into it, instead of ending on a line.
-                float above=(i.positionWS.y-_GardenFoot.x)/max(_FootHeight,0.05);
-                half pool=_GardenFoot.w*saturate(1-above);
+                float above=FootAbove(i.positionWS.y,fall)/max(_FootHeight,0.05);
+                half footOn=FootOn();
+                half pool=footOn*saturate(1-above);
                 c=lerp(c,behind*_PoolTint.rgb+_PoolTint.rgb*0.12,pool*0.7);
-                half sink=lerp(1.0,smoothstep(0.0,0.35+0.5*n2,above+(n1-0.5)*0.3),_GardenFoot.w);
+                half sink=lerp(1.0,smoothstep(0.0,0.35+0.5*n2,above+(n1-0.5)*0.3),footOn);
                 // A veil of a curtain, fuller streams; frayed curtain sides and a soft foot.
                 half edge=lerp(smoothstep(0.0,0.06+n3*0.05,side)*smoothstep(1.0,0.94-n3*0.05,side),1.0,jet);
                 half foot=(1-smoothstep(0.94,1.0,fall+(n2-0.5)*0.04))*sink;

@@ -17,6 +17,10 @@ namespace ChessFight.PawnRush
 
         readonly AudioSource near, far;
         readonly AudioLowPassFilter nearAir;
+        // R459: in the war room, its LibraryMuffle (looked for once, on the first sound) and a low-pass on the far layer
+        LibraryMuffle muffle;
+        AudioLowPassFilter farWall;
+        bool muffleLooked;
         float distance;
 
         static AudioListener listener;
@@ -89,21 +93,30 @@ namespace ChessFight.PawnRush
         public void Mix(float gain, float pitch)
         {
             Measure();
+            float m = Muffle();
+            gain *= LibraryMuffle.Gain(m);
             float k = 1f - Mathf.Exp(-6f * Time.deltaTime);
             Set(near, gain * NearWeight, pitch, k);
             Set(far, gain * FarWeight, pitch, k);
-            // Air absorption: 22 kHz up close down to about 1.5 kHz where the near layer ends.
+            // Air absorption: 22 kHz up close down to about 1.5 kHz where the near layer ends; through stone (R459)
+            // no higher than the muffle's cutoff.
             float t = Ramp(NearFull, NearEnd, distance);
-            nearAir.cutoffFrequency = Mathf.Lerp(nearAir.cutoffFrequency, Mathf.Lerp(22000f, 1500f, Mathf.Sqrt(t)), k);
+            float air = Mathf.Min(Mathf.Lerp(22000f, 1500f, Mathf.Sqrt(t)), LibraryMuffle.CutoffAt(m));
+            nearAir.cutoffFrequency = Mathf.Lerp(nearAir.cutoffFrequency, air, k);
+            if (farWall != null) farWall.cutoffFrequency = LibraryMuffle.CutoffAt(m);
         }
 
         public void Shot(AudioClip nearClip, AudioClip farClip, float volume, float pitch)
         {
             Measure();
+            float m = Muffle();
+            volume *= LibraryMuffle.Gain(m);
+            if (farWall != null) farWall.cutoffFrequency = LibraryMuffle.CutoffAt(m);
             // A one-shot plays at volume x the source's volume, so a shot's own source carries the layer weight.
             Fire(near, nearClip, NearWeight, volume, pitch);
             Fire(far, farClip, FarWeight, volume, pitch);
-            nearAir.cutoffFrequency = Mathf.Lerp(22000f, 1500f, Mathf.Sqrt(Ramp(NearFull, NearEnd, distance)));
+            nearAir.cutoffFrequency = Mathf.Min(Mathf.Lerp(22000f, 1500f, Mathf.Sqrt(Ramp(NearFull, NearEnd, distance))),
+                LibraryMuffle.CutoffAt(m));
         }
 
         static void Fire(AudioSource a, AudioClip clip, float weight, float volume, float pitch)
@@ -112,6 +125,22 @@ namespace ChessFight.PawnRush
             a.volume = weight;
             a.pitch = pitch;
             a.PlayOneShot(clip, volume);
+        }
+
+        // R459: how muffled the war room's sounds are now (0 outside a war room).
+        float Muffle()
+        {
+            if (!muffleLooked)
+            {
+                muffleLooked = true;
+                muffle = near.GetComponentInParent<LibraryMuffle>();
+                if (muffle != null)
+                {
+                    farWall = far.gameObject.AddComponent<AudioLowPassFilter>();
+                    farWall.cutoffFrequency = 22000f;
+                }
+            }
+            return muffle != null ? muffle.Amount : 0f;
         }
 
         void Measure()

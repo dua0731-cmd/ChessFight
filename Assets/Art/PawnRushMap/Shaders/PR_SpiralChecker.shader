@@ -9,7 +9,11 @@
 // cream limestone of PR_PalaceStone.shader, its grain and veins filtered over a pixel). Lit by
 // Assets/Shaders/URP/CFLit.hlsl, as CoursePattern.shader, but with no SSAO (R369: rebuilt from depth alone, it rings on a
 // broad top seen low), and the way casts its shadow from _ShadowDrop under itself, so its own top never shadows itself
-// (acne) while what stands on it still does.
+// (acne) while what stands on it still does. R403 (승규 11-04 "대리석 바닥에서 나선형 코스로 넘어 갈 때 합쳐지는 구간을
+// 자연스럽게 처리해라"): where the way leaves the spiral's marble foot its first metre is the floors' own marble - the
+// Calacatta Oro of PR_VeinedMarble.shader, the same world-space veins, so the line where the rising band comes out of
+// the flat foot no longer shows - and a gold threshold strip square across the way then starts the chessboard.
+// _FootPoint / _FootAlong (set by Course01v4Builder.SpiralPaving) place that strip; reach 0 = none.
 Shader "ChessFight/Pawn Rush Spiral Checker"
 {
     Properties
@@ -32,6 +36,23 @@ Shader "ChessFight/Pawn Rush Spiral Checker"
         _Variation ("Stone variation", Range(0, 1)) = 0.55
         _SideSmoothness ("Side stone smoothness", Range(0, 1)) = 0.32
         _ShadowDrop ("Shadow cast from this far under the way (m)", Range(0, 0.5)) = 0.2
+        _FootPoint ("Threshold: a point on it, world (w: reach round it in m, 0 = none)", Vector) = (0, 0, 0, 0)
+        _FootAlong ("Threshold: the way's heading there, world (w: gold strip in m)", Vector) = (0, 0, 1, 0.12)
+        _MBase ("Threshold marble (PR_CalacattaOro)", Color) = (0.95, 0.94, 0.91, 1)
+        _MShade ("Threshold marble clouds", Color) = (0.88, 0.86, 0.82, 1)
+        _MVein ("Threshold marble bold veins", Color) = (0.55, 0.53, 0.5, 1)
+        _MGold ("Threshold marble gold round the veins", Color) = (0.78, 0.64, 0.4, 1)
+        _MFine ("Threshold marble fine veins", Color) = (0.7, 0.69, 0.67, 1)
+        _MCloudScale ("Threshold marble clouds (per metre)", Range(0.02, 2)) = 0.3
+        _MVeinScale ("Threshold marble bold veins (per metre)", Range(0.02, 2)) = 0.22
+        _MFineScale ("Threshold marble fine veins (per metre)", Range(0.1, 6)) = 0.9
+        _MWarp ("Threshold marble warp", Range(0, 6)) = 2.6
+        _MVeinWidth ("Threshold marble bold vein width", Range(0.002, 0.1)) = 0.022
+        _MFineWidth ("Threshold marble fine vein width", Range(0.001, 0.05)) = 0.008
+        _MVeinStrength ("Threshold marble bold vein strength", Range(0, 1)) = 0.85
+        _MGoldStrength ("Threshold marble gold strength", Range(0, 1)) = 0.45
+        _MFineStrength ("Threshold marble fine vein strength", Range(0, 1)) = 0.35
+        _MGlossiness ("Threshold marble smoothness", Range(0, 1)) = 0.86
     }
     SubShader
     {
@@ -44,6 +65,9 @@ Shader "ChessFight/Pawn Rush Spiral Checker"
         half4 _Color, _Color2, _GoldColor, _BaseColor, _ShadeColor, _VeinColor;
         half _Cell, _Smoothness, _TopCos, _GoldMetallic, _GoldSmoothness, _EdgeCos;
         half _CloudScale, _GrainScale, _VeinScale, _Variation, _SideSmoothness, _ShadowDrop;
+        float4 _FootPoint, _FootAlong;
+        half4 _MBase, _MShade, _MVein, _MGold, _MFine;
+        half _MCloudScale, _MVeinScale, _MFineScale, _MWarp, _MVeinWidth, _MFineWidth, _MVeinStrength, _MGoldStrength, _MFineStrength, _MGlossiness;
         CBUFFER_END
         ENDHLSL
 
@@ -82,6 +106,32 @@ Shader "ChessFight/Pawn Rush Spiral Checker"
                 return s;
             }
 
+            float fbm5(float3 p)
+            {
+                float s = 0, a = 0.5;
+                [unroll] for (int k = 0; k < 5; k++) { s += a * vnoise(p); p = p * 2.03 + 17.1; a *= 0.5; }
+                return s;
+            }
+
+            // PR_VeinedMarble.shader's colour at p, line for line, so the threshold's marble runs on from the foot's.
+            half3 FootMarble(float3 p)
+            {
+                float cloud = fbm5(p * _MCloudScale + 3.7);
+                float3 q = p * _MVeinScale;
+                float3 warp = float3(fbm5(q * 0.6 + 1.3), fbm5(q * 0.6 + 7.9), fbm5(q * 0.6 + 4.1)) - 0.5;
+                float field = fbm5(q + warp * _MWarp);
+                float d = abs(field - 0.5);
+                float bold = 1 - smoothstep(_MVeinWidth * 0.35, _MVeinWidth, d);
+                float halo = 1 - smoothstep(_MVeinWidth, _MVeinWidth * 4.5, d);
+                float3 r = p * _MFineScale;
+                float fineField = fbm5(r + warp * _MWarp * 1.6 + 11.3);
+                float fine = 1 - smoothstep(_MFineWidth * 0.3, _MFineWidth, abs(fineField - 0.5));
+                half3 c = lerp(_MBase.rgb, _MShade.rgb, saturate((cloud - 0.35) * 1.8));
+                c = lerp(c, _MGold.rgb, halo * (1 - bold) * _MGoldStrength);
+                c = lerp(c, _MFine.rgb, fine * _MFineStrength);
+                return lerp(c, _MVein.rgb, bold * _MVeinStrength);
+            }
+
             half4 frag(CFLitVaryings i) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(i);
@@ -99,13 +149,30 @@ Shader "ChessFight/Pawn Rush Spiral Checker"
                 float w = fbm(q + fbm(q * 0.5) * 2.5);
                 float wAA = fwidth(w);
                 float vein = (1 - smoothstep(0.0, 0.035 + wAA, abs(w - 0.5))) * saturate(1 - wAA * 12);
+                // The threshold: how far past its line along the way (s), filtered over the pixel.
+                float3 fromFoot = p - _FootPoint.xyz;
+                float footS = dot(fromFoot, _FootAlong.xyz);
+                float footFw = max(fwidth(footS), 1e-4);
+                bool nearFoot = _FootPoint.w > 0 && dot(fromFoot.xz, fromFoot.xz) < _FootPoint.w * _FootPoint.w && abs(fromFoot.y) < 1.5;
                 if (n.y > _TopCos)
                 {
                     // The walked top (level, or the ramps' few degrees), lit flat.
                     half3 albedo = lerp(_Color.rgb, _Color2.rgb, saturate(0.5 - 0.5 * tri.x * tri.y));
+                    half metal = 0, gloss = _Smoothness;
                     CFLitVaryings top = i;
                     top.normalWS = float3(0, 1, 0);
-                    return CFShade(top, albedo, 0, _Smoothness, 1);
+                    if (nearFoot && footS < _FootAlong.w + footFw)
+                    {
+                        // Marble before the line, the gold strip on it, the chessboard after it.
+                        float marbleK = saturate(0.5 - footS / footFw);
+                        float goldK = saturate(0.5 + footS / footFw) * saturate(0.5 + (_FootAlong.w - footS) / footFw);
+                        albedo = lerp(albedo, FootMarble(p), marbleK);
+                        gloss = lerp(gloss, _MGlossiness, marbleK);
+                        albedo = lerp(albedo, _GoldColor.rgb * (0.94 + 0.12 * cloud), goldK);
+                        metal = goldK * _GoldMetallic;
+                        gloss = lerp(gloss, _GoldSmoothness, goldK);
+                    }
+                    return CFShade(top, albedo, metal, gloss, 1);
                 }
                 if (n.y > _EdgeCos)
                     return CFShade(i, _GoldColor.rgb * (0.94 + 0.12 * cloud), _GoldMetallic, _GoldSmoothness, 1);

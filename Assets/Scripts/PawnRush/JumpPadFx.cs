@@ -13,17 +13,22 @@ namespace ChessFight.PawnRush
     //           and the arrow flash
     // The launch itself is the host's (ObstacleSurface.Apply); every PC sees a pawn land on the pad, so each one fires
     // the burst when it sees a pawn arrive on the deck - no packet. Pictures only: no collider, nothing it moves.
+    // R404 (승규 11-04, a shot of the pad's round gold ring: "이 점프 발판 vfx를 발판 모양에 맞게 사각형으로 해"): the
+    // glow ring and the launch's shock ring are rounded squares on the deck's own axes (the glow hugging its 3 m edge),
+    // and the sparks fly out square to the deck's four edges instead of in a circle.
     public sealed class JumpPadFx : MonoBehaviour
     {
         const float Deck = .41f, Side = 3f, Rearm = .3f;
         static readonly Color Gold = new Color(1f, .74f, .32f), Ember = new Color(1f, .45f, .12f);
         static readonly Color ArrowGlow = Color.white * 3f;     // the pad material's own emission (PadMaterial)
-        static Texture2D dot, ring, chevron;
+        const float ShockLife = .45f;
+        static Texture2D dot, square, chevron;
 
         BoxCollider pad;
         Vector3 launch = Vector3.up;                            // local, normalised
-        ParticleSystem motes, sparks, streaks, shock;
-        Transform glow;
+        ParticleSystem motes, sparks, streaks;
+        Transform glow, shock;
+        Renderer shockRenderer;
         readonly Transform[] chevrons = new Transform[3];
         Renderer glowRenderer, arrow;
         readonly Renderer[] chevronRenderers = new Renderer[3];
@@ -45,9 +50,14 @@ namespace ChessFight.PawnRush
 
             var flat = new Vector3(launch.x, 0f, launch.z);
             float yaw = flat.sqrMagnitude > 1e-4f ? Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg : 0f;
-            glow = Flat("Jump pad glow ring", ring, Side * 1.2f, 0f);
+            glow = Flat("Jump pad glow square", square, Side * 1.2f, 0f);
             glow.localPosition = Vector3.up * (Deck + .015f);
             glowRenderer = glow.GetComponent<Renderer>();
+            // The launch's shock: the same square, growing out from the deck (Update), hidden until a burst.
+            shock = Flat("Jump pad shock square", square, Side * 1.7f, 0f);
+            shock.localPosition = Vector3.up * (Deck + .03f);
+            shockRenderer = shock.GetComponent<Renderer>();
+            shockRenderer.enabled = false;
             for (int i = 0; i < chevrons.Length; i++)
             {
                 chevrons[i] = Flat("Jump pad chevron " + (i + 1), chevron, 1.3f, yaw);
@@ -84,12 +94,6 @@ namespace ChessFight.PawnRush
             streaks = Particles("Jump pad streaks", dot, new Color(3.2f, 2.3f, 1.1f), true);
             streaks.GetComponent<ParticleSystemRenderer>().velocityScale = .07f;
             Fade(streaks, Color.white, Gold);
-            shock = Particles("Jump pad shock ring", ring, new Color(3f, 2f, .8f), false);
-            shock.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.HorizontalBillboard;
-            var size = shock.sizeOverLifetime;
-            size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, .22f, 1f, 1f));
-            Fade(shock, Color.white, Gold);
 
             lamp = new GameObject("Jump pad light").AddComponent<Light>();
             lamp.transform.SetParent(transform, false);
@@ -110,6 +114,18 @@ namespace ChessFight.PawnRush
 
             Tint(glowRenderer, new Color(2.2f, 1.6f, .8f, .35f + .3f * breathe + .6f * burst));   // HDR: over the bloom
             glow.localScale = Vector3.one * (Side * 1.2f * (1f + .08f * burst));
+            // The shock square: from a fifth of its size out past the deck in ShockLife, white to gold, fading.
+            shockRenderer.enabled = since < ShockLife;
+            if (shockRenderer.enabled)
+            {
+                float u = since / ShockLife;
+                float grow = Mathf.SmoothStep(.22f, 1f, u);
+                shock.localScale = Vector3.one * (Side * 1.7f * grow);
+                float alpha = Mathf.Clamp01(u / .12f) * (1f - u);
+                var c = Color.Lerp(new Color(3f, 3f, 3f), new Color(3f, 2f, .8f), u);
+                c.a = alpha;
+                Tint(shockRenderer, c);
+            }
             var flat = new Vector3(launch.x, 0f, launch.z);
             for (int i = 0; i < chevrons.Length; i++)
             {
@@ -154,9 +170,13 @@ namespace ChessFight.PawnRush
             var e = new ParticleSystem.EmitParams();
             for (int i = 0; i < 46; i++)
             {
-                float a = Random.value * Mathf.PI * 2f;
-                var dir = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
-                e.position = deck + dir * Random.Range(.3f, 1.3f);
+                // Off one of the deck's four edges, thrown out square to it (in the pad's own axes).
+                int edge = Random.Range(0, 4);
+                var normal = edge == 0 ? Vector3.right : edge == 1 ? Vector3.left : edge == 2 ? Vector3.forward : Vector3.back;
+                var tangent = new Vector3(normal.z, 0f, -normal.x);
+                var local = normal * (Side * .5f * Random.Range(.55f, 1f)) + tangent * (Side * .5f * Random.Range(-1f, 1f));
+                var dir = transform.TransformDirection(normal);
+                e.position = deck + transform.TransformVector(local);
                 e.velocity = dir * Random.Range(2f, 6f) + Vector3.up * Random.Range(2.5f, 6f);
                 e.startLifetime = Random.Range(.45f, .9f);
                 e.startSize = Random.Range(.05f, .11f);
@@ -171,12 +191,6 @@ namespace ChessFight.PawnRush
                 e.startSize = Random.Range(.07f, .12f);
                 streaks.Emit(e, 1);
             }
-            e = new ParticleSystem.EmitParams
-            {
-                position = deck + Vector3.up * .02f, velocity = Vector3.zero, startLifetime = .45f, startSize = Side * 1.7f,
-                startColor = Color.white
-            };
-            shock.Emit(e, 1);
         }
 
         // ------------------------------------------------------------------ parts
@@ -264,12 +278,16 @@ namespace ChessFight.PawnRush
         {
             if (dot != null) return;
             dot = Draw(64, (x, y) => { float r = Mathf.Sqrt(x * x + y * y); return Mathf.Pow(Mathf.Clamp01(1f - r), 2f); });
-            ring = Draw(256, (x, y) =>
+            square = Draw(256, (x, y) =>
             {
-                float r = Mathf.Sqrt(x * x + y * y);
-                float band = Mathf.Exp(-Mathf.Pow((r - .86f) / .035f, 2f));
-                float halo = Mathf.Exp(-Mathf.Pow((r - .86f) / .12f, 2f)) * .35f;
-                return Mathf.Clamp01((band + halo) * (r < 1f ? 1f : 0f));
+                // A rounded square's outline (half side .86, corners .1 round): a thin bright band and a soft halo.
+                const float half = .86f, round = .1f;
+                float qx = Mathf.Abs(x) - half + round, qy = Mathf.Abs(y) - half + round;
+                float d = Mathf.Sqrt(Mathf.Max(qx, 0f) * Mathf.Max(qx, 0f) + Mathf.Max(qy, 0f) * Mathf.Max(qy, 0f))
+                        + Mathf.Min(Mathf.Max(qx, qy), 0f) - round;
+                float band = Mathf.Exp(-Mathf.Pow(d / .035f, 2f));
+                float halo = Mathf.Exp(-Mathf.Pow(d / .12f, 2f)) * .35f;
+                return Mathf.Clamp01(band + halo);
             });
             chevron = Draw(128, (x, y) =>
             {

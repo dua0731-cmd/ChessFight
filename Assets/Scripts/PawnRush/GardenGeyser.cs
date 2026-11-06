@@ -27,6 +27,10 @@ namespace ChessFight.PawnRush
         long struckEruption = long.MinValue;
         float columnDiameter = 1.8f, bubblesDiameter = 2f;
 
+        // R426: the concept dressing takes the picture over (GardenJet draws the water, computed); column and bubbles go.
+        public int Order => order;
+        public float Height => height;
+
         // For the builder: on an inactive object, before it wakes.
         public void Configure(int order, Transform column, Transform bubbles, Vector3 back)
         {

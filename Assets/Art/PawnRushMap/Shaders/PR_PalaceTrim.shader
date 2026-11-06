@@ -5,7 +5,9 @@
 // UVs, so a material places the gold two ways: on faces that look up past _GoldUp (a moulding's top fillet), and in up
 // to four height bands measured from the mesh's own origin (the hall's frame: z 0 of the Blender hall), for the
 // tower's pilaster feet and capitals, its base fillet and its cornice's corona. The bands' edges, the stone's grain and
-// its veins are filtered over a pixel. Lit by Assets/Shaders/URP/CFLit.hlsl.
+// its veins are filtered over a pixel. Lit by Assets/Shaders/URP/CFLit.hlsl. R405 (승규 11-04, the round hall's dome
+// ribs: option A "크림 돌 + 금 테"): a third way, for the star vault's chamfered ribs - gold on faces that slant off the
+// dome's radius from _DomeCentre (the cut corners at 45 degrees), stone on the faces along it or across it.
 Shader "ChessFight/Pawn Rush Palace Trim"
 {
     Properties
@@ -24,6 +26,8 @@ Shader "ChessFight/Pawn Rush Palace Trim"
         _GoldUp ("Gold on faces looking up past (cos; over 1 = none)", Range(0, 2)) = 2
         _GoldBandsA ("Gold heights over the mesh origin (m): from, to, from, to", Vector) = (-1000, -1000, -1000, -1000)
         _GoldBandsB ("More gold heights: from, to, from, to", Vector) = (-1000, -1000, -1000, -1000)
+        _DomeCentre ("Gold on faces slanting off a dome round this point (world; w > 0 = on)", Vector) = (0, 0, 0, 0)
+        _DomeSlant ("... whose |cos| to the dome's radius lies between x and y", Vector) = (0.55, 0.8, 0, 0)
     }
     SubShader
     {
@@ -34,7 +38,7 @@ Shader "ChessFight/Pawn Rush Palace Trim"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         CBUFFER_START(UnityPerMaterial)
         half4 _BaseColor, _ShadeColor, _VeinColor, _GoldColor;
-        float4 _GoldBandsA, _GoldBandsB;
+        float4 _GoldBandsA, _GoldBandsB, _DomeCentre, _DomeSlant;
         half _CloudScale, _GrainScale, _VeinScale, _Variation, _Glossiness, _GoldMetallic, _GoldSmoothness, _GoldUp;
         CBUFFER_END
         ENDHLSL
@@ -92,6 +96,12 @@ Shader "ChessFight/Pawn Rush Palace Trim"
                 float gold = face.y > _GoldUp ? 1 : 0;
                 gold = max(gold, max(Band(h, hw, _GoldBandsA.x, _GoldBandsA.y), Band(h, hw, _GoldBandsA.z, _GoldBandsA.w)));
                 gold = max(gold, max(Band(h, hw, _GoldBandsB.x, _GoldBandsB.y), Band(h, hw, _GoldBandsB.z, _GoldBandsB.w)));
+                // R405: a vault rib's cut corners - the faces neither on the dome (outer, inner) nor across it (sides).
+                if (_DomeCentre.w > 0)
+                {
+                    float slant = abs(dot(face, normalize(p - _DomeCentre.xyz)));
+                    gold = max(gold, slant > _DomeSlant.x && slant < _DomeSlant.y ? 1 : 0);
+                }
 
                 // PR_PalaceStone's limestone: broad clouds, fine grain, faint veins - the grain and veins fading where a
                 // pixel holds more than one of them.

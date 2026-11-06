@@ -7,6 +7,9 @@ using UnityEngine.SceneManagement;
 namespace ChessFight.PawnRush.Editor
 {
     // The section prefabs' menus (ChessFight > Pawn Rush):
+    //   Build Early 1-1 Royal Water Garden
+    //                                    builds the garden's starting point (the v31 graybox with the garden's water,
+    //                                    RoyalWaterGardenBuilder) into its prefab, then validates it (R400)
     //   Build Mid 2-1 Grand Stair Hall   rebuilds the hall from code (GrandStairHallBuilder) into its prefab,
     //                                    keeping the links to the imported obstacle prefabs; running it twice
     //                                    gives the same prefab. Then validates it.
@@ -17,8 +20,40 @@ namespace ChessFight.PawnRush.Editor
     public static class SectionPrefabMenu
     {
         public const string HallPrefab = "Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab";
+        public const string GardenPrefab = "Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab";
         public const string TestScene = "Assets/Scenes/PawnRush_Sections.unity";
         public const string SectionSet = "Assets/Settings/PawnRushSections.asset";
+
+        // R400 (승규 11-04, from main): the v31 graybox and the garden's water baked into the garden prefab, so it can be
+        // seen and remodelled by hand in Prefab Mode. Rebuilding throws away whatever is under Content, so it asks first
+        // when the prefab already holds a garden.
+        [MenuItem("ChessFight/Pawn Rush/Build Early 1-1 Royal Water Garden", false, 19)]
+        public static void BuildRoyalWaterGarden()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            var root = PrefabUtility.LoadPrefabContents(GardenPrefab);
+            try
+            {
+                var garden = root.GetComponent<RoyalWaterGarden>();
+                if (garden == null || garden.Kit == null)
+                {
+                    EditorUtility.DisplayDialog("Build Early 1-1 Royal Water Garden", GardenPrefab + "에 RoyalWaterGarden(키트 지정)이 없습니다.", "확인");
+                    return;
+                }
+                if (garden.HasContent && !EditorUtility.DisplayDialog("Build Early 1-1 Royal Water Garden",
+                        "프리팹에 이미 정원(Content)이 있습니다. 처음 상태로 다시 지으면 Content 밑에서 손으로 바꾼 것이 모두 사라집니다.", "다시 짓기", "취소"))
+                    return;
+                RoyalWaterGardenBuilder.Build(garden);
+                PrefabUtility.SaveAsPrefabAsset(root, GardenPrefab);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+            Debug.Log("[PawnRush] Build Early 1-1 Royal Water Garden: 프리팹을 다시 만들고 저장했습니다 (" + GardenPrefab + ").");
+            var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(GardenPrefab);
+            if (prefabAsset != null) Report(new List<GameObject> { prefabAsset }, false);
+        }
 
         [MenuItem("ChessFight/Pawn Rush/Build Mid 2-1 Grand Stair Hall", false, 20)]
         public static void BuildGrandStairHall()

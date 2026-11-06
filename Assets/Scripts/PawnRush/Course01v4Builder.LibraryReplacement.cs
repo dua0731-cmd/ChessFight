@@ -18,6 +18,9 @@ namespace ChessFight.PawnRush
             var pivot = new GameObject("Library replacement").transform;
             pivot.SetParent(b.parent, false);
             pivot.localRotation = Quaternion.Euler(0, 180, 0);
+            // R459 (승규 11-05 "사운드가 지하실이나 계단 쪽에 있으면 약간의 방음이 되야 해"): the hall's sounds a little
+            // quieter and duller while the listener is in the lower floor or on the outside stairs.
+            pivot.gameObject.AddComponent<LibraryMuffle>();
             var hall = Object.Instantiate(environment, pivot, false);
             hall.name = "Library environment";
             // The start's compass rose, war map and armillary in their baked textures (R364).
@@ -63,6 +66,8 @@ namespace ChessFight.PawnRush
             // The rest of the clay in the concept art's materials, the banners off (R386); after the collision, so a
             // banner's collider goes off with it.
             LibraryDressing(hall);
+            // R448: the goal's three rooks shoot at the way up to it (after the collision, so their pieces' colliders exist).
+            LibraryRooks(hall);
             // R392 (승규 11-04, two shots - from above the hall, outside R388's box, bright and warm; from the pawn,
             // inside it, dark: "전체적인 조명이나 분위기를 1번 사진 처럼 하고 싶어"): no dimming of its own any more (R388's
             // ZoneExposure gone); what burned the piers white was the FBX lantern lights, now 6 (R389).
@@ -166,19 +171,66 @@ namespace ChessFight.PawnRush
                 // upper landing (0 at z 15.425), 34 degrees.
                 Ramp(pivot, "Return stairs ramp" + s, new Vector3(side * 17.6f, -7.96f, 3.425f), new Vector3(side * 17.6f, .04f, 15.425f), 3f);
             }
+            // R457 (승규 11-05 "제일 북쪽 에서 떨어지면 남쪽 계단 까지 가서 계단을 타야 하니 까 ... 빠른 계단 설치 해 양 옆으로
+            // 도착 지점은 남쪽 계단과 북쪽 계단은 똑같아"): a return stair at the lower floor's north end on each side
+            // (ArtSource/PawnRush/Library/north_stairs.py) - a door through the side wall where the northmost bookcase
+            // stood (z -17.38 .. -14.62 here), a landing outside it, 32 steps of 0.25 x 0.375 m climbing toward the start
+            // (z -14.3 .. -2.3, treads from the wall's face x 15.5 .. 19.1), a landing at the start floor's height, and a
+            // gallery beside the old return stair (x 19.6 .. 22.6) out to the old stair's upper landing, which it opens
+            // onto: the same arrival, the start floor's door.
+            foreach (float side in new[] { -1f, 1f })
+            {
+                string s = side < 0 ? "" : " (left)";
+                // R459 ("남쪽 계단 오르는게 3초 중후반 대라 북쪽 계단도 그에 맞게 스피드 업 장치를 설치 해"), R461 ("날아가
+                // 버려 그리고 조작감이 힘들고 표시를 해줘 데칼이라던가 이런걸로"): the route's walking colliders are a speed
+                // lane (LibraryStairBoost: a pawn on them runs at least 10 up the flight, 12 on the flat - no carry, it
+                // steers as always; about 3.8 s door to door), painted on the floor as a decal (LibraryStairBoostFx). The
+                // flat ones ride 2 cm over the model's floors, so the pawn's ground probe finds them and not the mesh's
+                // coplanar top.
+                var route = new[]
+                {
+                    new Vector3(side * 16f, -8f, -16.2f),          // in the north door
+                    new Vector3(side * 17.3f, -8f, -14.4875f),     // at the stair's foot (half a tread before it)
+                    new Vector3(side * 17.3f, 0f, -2.4875f),       // the top tread's middle
+                    new Vector3(side * 21.1f, 0f, .8f),            // into the gallery
+                    new Vector3(side * 21.1f, 0f, 16.8f),          // its end, by the old upper landing
+                    new Vector3(side * 15.9f, 0f, 16f),            // the start floor's door
+                };
+                Boost(Box(pivot, "North return lower landing collision" + s, new Vector3(side * 17.2f, -8.13f, -16f), new Vector3(4.4f, .3f, 3.4f)), LibraryStairBoost.FlatSpeed);
+                for (int i = 0; i < 32; i++)
+                {
+                    float height = .25f * (i + 1);
+                    float z = -14.3f + (i + .5f) * .375f;
+                    Box(pivot, "North return stair collision " + i + s, new Vector3(side * 17.3f, -8f + height / 2f, z), new Vector3(3.6f, height, .38f));
+                }
+                Boost(Ramp(pivot, "North return stairs ramp" + s, new Vector3(side * 17.3f, -7.96f, -14.675f), new Vector3(side * 17.3f, .04f, -2.675f), 3.6f), LibraryStairBoost.StairSpeed);
+                Boost(Box(pivot, "North return top landing collision" + s, new Vector3(side * 19.05f, -.13f, -.15f), new Vector3(7.1f, .3f, 4.3f)), LibraryStairBoost.FlatSpeed);
+                // R459 (승규's shot of the join's newels: "사진 구간 넓혀줘"): the gallery and a strip beside the old upper
+                // landing 1.7 m further south (to z 19.2), the way onto the landing 3.4 m wide.
+                Boost(Box(pivot, "North return gallery collision" + s, new Vector3(side * 21.1f, -.13f, 10.6f), new Vector3(3f, .3f, 17.2f)), LibraryStairBoost.FlatSpeed);
+                Boost(Box(pivot, "North return gallery join collision" + s, new Vector3(side * 19.5f, -.13f, 16.65f), new Vector3(.4f, .3f, 1.7f)), LibraryStairBoost.FlatSpeed);
+                Boost(Box(pivot, "North return wider landing collision" + s, new Vector3(side * 17.54f, -.13f, 18.35f), new Vector3(4.12f, .3f, 1.7f)), LibraryStairBoost.FlatSpeed);
+                var lane = new GameObject("North return speed lane" + s);
+                lane.transform.SetParent(pivot, false);
+                lane.AddComponent<LibraryStairBoostFx>().Configure(pivot, route);
+            }
         }
 
-        static void Box(Transform parent, string name, Vector3 center, Vector3 size)
+        static void Boost(GameObject surface, float topSpeed) =>
+            surface.AddComponent<LibraryStairBoost>().Configure(topSpeed);
+
+        static GameObject Box(Transform parent, string name, Vector3 center, Vector3 size)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.localPosition = center;
             go.AddComponent<BoxCollider>().size = size;
+            return go;
         }
 
         // A walked ramp whose top runs from `from` up to `to` (the parent's space), `width` across, 0.4 m thick under
         // its top.
-        static void Ramp(Transform parent, string name, Vector3 from, Vector3 to, float width)
+        static GameObject Ramp(Transform parent, string name, Vector3 from, Vector3 to, float width)
         {
             const float Thick = .4f;
             var go = new GameObject(name);
@@ -189,6 +241,7 @@ namespace ChessFight.PawnRush
             go.transform.localPosition = (from + to) * .5f - turn * Vector3.up * (Thick * .5f);
             go.AddComponent<BoxCollider>().size = new Vector3(width, Thick, along.magnitude);
             go.AddComponent<CourseFloor>().sloped = true;
+            return go;
         }
     }
 

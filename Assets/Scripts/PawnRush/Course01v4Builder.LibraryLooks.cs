@@ -12,7 +12,8 @@ namespace ChessFight.PawnRush
         // (Blender's linear colours as sRGB here) and the conveyor's painted maps in Resources/PawnRushLibrary/Conveyor
         // ("Library conveyor deck", "Library conveyor chassis": <name> base colour, <name>_MS metallic RGB +
         // smoothness A). Any other material is left as it is.
-        const string ConveyorMaps = "PawnRushLibrary/Conveyor/", CannonMaps = "PawnRushLibrary/Cannon/";
+        const string ConveyorMaps = "PawnRushLibrary/Conveyor/", CannonMaps = "PawnRushLibrary/Cannon/",
+            WarPropMaps = "PawnRushLibrary/WarProps/";
         static readonly Dictionary<string, Material> libraryLooks = new Dictionary<string, Material>();
 
         static void LibraryLooks(GameObject root, string what)
@@ -58,6 +59,36 @@ namespace ChessFight.PawnRush
                 case "Library conveyor chassis": m = MappedLook("LibraryConveyorChassis"); break;
                 // R376: the conveyor worn and dusty like its reference; its small parts share one baked atlas.
                 case "Library conveyor parts": m = MappedLook("LibraryConveyorParts"); break;
+                // R402 (승규 11-04, ArtSource/PawnRush/Library/war_room_props.py): the new bookcases (tiled warm wood, the
+                // back boards and plinth the same wood darker, the books from one painted atlas), the pier banners, the
+                // scroll crate's weathered wood and its aged parchment rolls.
+                case "Library bookcase wood": m = MappedLook("LibraryBookcaseWood", WarPropMaps); break;
+                case "Library bookcase wood dark":
+                    m = MappedLook("LibraryBookcaseWood", WarPropMaps);
+                    if (m != null) m.color = new Color(.55f, .47f, .42f);
+                    break;
+                case "Library bookcase books": m = MappedLook("LibraryBookcaseBooks", WarPropMaps); break;
+                case "Library banner": m = MappedLook("LibraryBanner", WarPropMaps); break;
+                case "Library crate wood": m = MappedLook("LibraryCrateWood", WarPropMaps); break;
+                case "Library parchment": m = MappedLook("LibraryParchment", WarPropMaps); break;
+                // R427 (승규 11-05 "지하실 구간이 살짝 밋밋해", basement_dressing.py): the lower floor's campaign maps (on the
+                // walls and the sand table) and its lanterns' glass, lit from inside.
+                case "Library campaign map": m = MappedLook("LibraryCampaignMap", WarPropMaps); break;
+                case "Library lantern glass":
+                    m = FlatLook(new Color(1f, .8f, .5f), .6f, 0f);
+                    LitMaterials.SetEmission(m, new Color(2.4f, 1.5f, .6f));
+                    break;
+                // R448 (goal_rooks.py): the goal rooks' polished marble, their pedestals' darker steps, and the socket
+                // glow under each piece (dim at rest; LibraryRookTurret brightens it through a charge).
+                case "Library marble": m = MappedLook("LibraryMarble", WarPropMaps); break;
+                case "Library marble dark":
+                    m = MappedLook("LibraryMarble", WarPropMaps);
+                    if (m != null) m.color = new Color(.62f, .6f, .58f);
+                    break;
+                case "Library rook glow":
+                    m = FlatLook(new Color(1f, .78f, .42f), .7f, 0f);
+                    LitMaterials.SetEmission(m, new Color(.25f, .18f, .07f));
+                    break;
                 default: m = null; break;   // the start props' own (LibraryStartProps) or an unknown name
             }
             if (m != null) m.name = name;

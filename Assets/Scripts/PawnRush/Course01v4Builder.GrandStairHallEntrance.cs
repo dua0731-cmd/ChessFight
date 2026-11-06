@@ -24,6 +24,41 @@ namespace ChessFight.PawnRush
         {
             HandBuilt(pivot, hallModel, clay, EntranceModel, OldEntrance, "입구");
             HandBuilt(pivot, hallModel, clay, FoyerSidesModel, OldFoyerSides, "현관 옆벽");
+            WoodenGateAndRails(pivot, hallModel, clay);
+        }
+
+        // R411 (승규 11-05, a shot of the entrance arch and one of the grey balustrades beside the entrance's cream one:
+        // "처음 구간 문을 나무 재질로 바꾸고 아직 텍스쳐 칠해져 있지 않은 난간 나무 재질로 바꿔"): polished walnut
+        // (PR_WorldWood: the balcony doors' grain laid in world space - neither mesh has UVs) on the entrance arch's stone
+        // (EntranceV46_arch: piers, spandrels, entablature and its balustrade; its gold, crown plaques and candles stay)
+        // and on the hall model's merged balustrades (HallV15_Balustrades, still the clay). The entrance's passage and
+        // wing balustrades are stone and stay.
+        const string WorldWood = "PR_WorldWood";   // Assets/Art/PawnRushMap/Resources
+
+        static void WoodenGateAndRails(Transform pivot, Transform hallModel, Material clay)
+        {
+            var wood = Resources.Load<Material>(WorldWood);
+            if (wood == null)
+            {
+                Debug.LogError("[대계단 홀] 나무 재질(Resources/" + WorldWood + ".mat)을 불러오지 못했습니다");
+                return;
+            }
+            var stone = PalaceMaterial("Palace_Stone");
+            int gate = 0, rails = 0;
+            foreach (var r in pivot.GetComponentsInChildren<Renderer>(true))
+            {
+                bool arch = r.name.StartsWith("EntranceV46_arch"), rail = r.name == "HallV15_Balustrades";
+                if (!arch && !rail) continue;
+                var slots = r.sharedMaterials;
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    if (arch && slots[i] == stone) { slots[i] = wood; gate++; }
+                    else if (rail && (slots[i] == clay || slots[i] == null || slots[i].name.StartsWith("Arch_Clay") || slots[i].name.StartsWith("Hall clay")))
+                    { slots[i] = wood; rails++; }
+                }
+                r.sharedMaterials = slots;
+            }
+            Debug.Log("[대계단 홀] 나무: 입구 아치 돌 " + gate + "칸, 홀 난간 " + rails + "칸 = 호두나무(" + WorldWood + ")");
         }
 
         // One hand-built piece: the hall model's nodes it replaces off, its model under the hall's pivot in the hall's

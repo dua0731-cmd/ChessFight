@@ -30,7 +30,8 @@ namespace ChessFight.PawnRush
                 string n = filter.name;
                 bool turns = (n.StartsWith("BLOWER_") && n.EndsWith("_Fan")) || n.StartsWith("Start_armillary_Ring")
                     || n.StartsWith("Start_armillary_Sphere")
-                    || n.Contains("_zone");   // START_spawn_zone: the start disc pawns appear on stays walk-through, as before
+                    || n.Contains("_zone")    // START_spawn_zone: the start disc pawns appear on stays walk-through, as before
+                    || n.StartsWith("Pier_banner_");   // R402: the pier banners are cloth (their foot 3.1 m up)
                 var size = r.bounds.size;
                 bool high = r.bounds.min.y - floor > ReachAbove;
                 bool small = Mathf.Max(size.x, Mathf.Max(size.y, size.z)) < SmallPiece;
