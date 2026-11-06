@@ -25,7 +25,8 @@ namespace ChessFight.PawnRush
     //       B5_RobotDyke       the dyke (CP4, CP5 where the shortcut lands), two robot arms (RobotSweep)
     //       B6_BoatCrossing    the boarding quay (CP6), the reservoir, the boat tunnels, eight boats (BoatLanes)
     //       B7_Gate            the gate yard and arch, the exit terrace (CP7), four steps down, the entrance band
-    //       Garden             the walls and towers, the water (respawn) and its kill volumes, the island
+    //       Garden             the castle ring (walls, towers, banks, the strip by the gate; R474), the terraces, the water
+    //                          (respawn) and its kill volumes, the island
     //       ProgressPath       the one route, for the HUD and the validator
     //
     // Everything solid is unclimbable (NoClimbSurface). Built inactive and switched on at the end, so nothing inside
@@ -33,7 +34,7 @@ namespace ChessFight.PawnRush
     public static partial class RoyalWaterGardenBuilder
     {
         public const string DisplayName = "왕실 수로 정원";
-        public const float Deep = -6f, WaterY = -.8f, ReservoirY = 1.95f, Upper = 3.8f, WestLandingY = 1.8f;
+        public const float Deep = -6f, WaterY = -.8f, ReservoirY = 3.0f, Upper = 3.8f, WestLandingY = 1.8f;   // R441: the reservoir 3.0 (was 1.95)
         public static readonly Vector3 Entry = new Vector3(0f, 0f, -61f), Exit = new Vector3(0f, Upper - 1f, 72.5f);
 
         public static GameObject Build(RoyalWaterGarden garden)
@@ -56,12 +57,57 @@ namespace ChessFight.PawnRush
             b.In("B7_Gate", () => Gate(b));
             b.In("Garden", () => Shell(b));
             Path(b);
+            // R400: the reservoir in the garden's water shader too.
+            var reservoir = root.transform.Find("B6_BoatCrossing/Reservoir water (respawn)");
+            var water = Resources.Load<Material>("PR_GardenWater");
+            if (reservoir != null && water != null && reservoir.TryGetComponent<Renderer>(out var surface)) surface.sharedMaterial = water;
+            // R412: the concept-art dressing over the graybox (beat by beat; R440: the water's pools and falls too).
+            ConceptDressing(root.transform);
 
             var section = garden.GetComponent<PawnRushSection>();
             if (section != null)
                 section.Describe(RoyalWaterGarden.Id, DisplayName, PawnRushSection.SlotKind.Obstacle, Entry, Exit, 0f, Beats());
             root.SetActive(true);
             return root;
+        }
+
+        // ------------------------------------------------------------------ the water (R400; R440 in tiers)
+
+        // R440 (승규 11-05, "물을 초반 중반 후반 으로 층으로 나누어서 … 물이 떨어지게 수학적으로 자연스럽게 계산해"): the
+        // single sheet under the whole garden (y -1.7, R400) is now three level pools, stepping up as the course climbs -
+        // the plaza moat (beats 1-2), the platform lake (beats 3-5) and the reservoir (beat 6, ReservoirY) - the water
+        // falling from each to the next over a spillway in the reservoir's south wall and two weirs on the canal walk's
+        // line (ArtSource/PawnRush/GardenConcept/water_tiers.py works them out; these heights must match it). The pools'
+        // and falls' meshes come with the concept dressing (GardenWater.fbx, ConceptPieces); here is what is played:
+        // falling into a pool ends the try (1.5 s, back on the last checkpoint), a kill volume 0.1 m under its surface.
+        // R441 (승규 "층이 더 확실히 보이게 좀 더 높게 … 발판이 물에 잠기지 않게"): the steps made bigger - the lake down to -0.55
+        // (P1's tub feet, -0.40 at the bottom of its bob, were dipping into -0.35), the moat to -1.9, the reservoir up to
+        // 3.0: drops of 3.45 m and 1.31 m (were 2.2 and 0.81).
+        public const float EarlyWaterY = -1.9f, MiddleWaterY = -.55f;
+        // The spillway's crest: the reservoir 0.20 m over it (water_tiers.SPILL_HEAD).
+        public const float SpillwayCrestY = ReservoirY - .2f;
+        const float WeirLineZ = -15.5f;   // the early / middle boundary: the canal walk's middle, carried east and west
+
+        static void Water(CourseBuilder b)
+        {
+            b.Trigger<KillVolume>("Kill volume (moat, early)", V(-46.5f, EarlyWaterY - 2.2f, -61.5f), V(46.5f, EarlyWaterY - .1f, WeirLineZ));
+            b.Trigger<KillVolume>("Kill volume (lake, middle)", V(-46.5f, MiddleWaterY - 2.2f, WeirLineZ), V(46.5f, MiddleWaterY - .1f, 60.5f));
+            Pool(b, "moat, early", -46.5f, 46.5f, -61.5f, WeirLineZ, EarlyWaterY);
+            Pool(b, "lake, middle", -46.5f, 46.5f, WeirLineZ, 60.5f, MiddleWaterY);
+        }
+
+        // R442 (승규 11-05, "기물이 바닥에 떨어졌을 때 물에 풍덩 한 것처럼 해"): a pool catches a piece at its surface. It floats
+        // there, its hips 0.2 m under (a WaterZone that reports nothing: the kill volume, 0.1 m under the surface, still
+        // ends the try), instead of sinking 11 m out of sight in the 1.5 s before it is put back with the camera after it
+        // (from under the surface the sky showed). The camera stays over the water (WaterZone -> OrbitCamera.FloorAt), and
+        // the piece splashes where it goes in (GardenSplashPool -> GardenSplashFx). The zones' heights do not overlap where
+        // they lie over one another (the lake's over the reservoir's), so a point finds its own pool.
+        static void Pool(CourseBuilder b, string name, float x0, float x1, float z0, float z1, float surface)
+        {
+            b.Trigger<WaterZone>("Water (" + name + ")", V(x0, surface - 2.2f, z0), V(x1, surface, z1)).Report = false;
+            const float under = .6f, over = .05f;
+            b.Trigger<GardenSplashPool>("Splash (" + name + ")", V(x0, surface - under, z0), V(x1, surface + over, z1))
+                .Configure((under - over) * .5f);
         }
 
         static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
@@ -158,26 +204,64 @@ namespace ChessFight.PawnRush
 
         // ------------------------------------------------------------------ the garden around it all
 
+        // R474 (승규 "직사각형 모양으로 하지 말고 저런 모양으로", "평면을 더 둥글게, 탑을 그림처럼 길쭉하게", "왼쪽 오른쪽 각각
+        // 6개만"): the castle wall round the garden is a ring (ArtSource/PawnRush/GardenConcept/walls_sample_v2.py,
+        // GardenWalls.fbx) instead of v31's square walls (x +-46.5..48.5, z -63..62) and four corner towers. An oval
+        // (x / 54)^2.4 + ((z - 4.21) / 66.81)^2.4 = 1 through the gate wings' ends and the way in, six slim towers a side
+        // evenly along it (the way in's is the sixth), straight walls 2.4 m thick between. These numbers are the Blender
+        // sample's and must match it (the east side; the west mirrors it).
+        static readonly Vector2[] CastleTowersEast =
+        {
+            new Vector2(44.405f, 48.592f), new Vector2(52.888f, 23.179f), new Vector2(53.864f, -3.740f),
+            new Vector2(49.124f, -30.181f), new Vector2(34.150f, -52.228f), new Vector2(9.500f, -62.168f),
+        };
+        // Towers r 2.1 (the way in's 2.4) on a foot 0.4 wider, the eave at 17.98; the walls to their merlons' tops.
+        const float CastleTowerR = 2.1f, CastleDoorTowerR = 2.4f, CastleFoot = .4f, CastleEave = 17.98f;
+        const float CastleWallHalf = 1.2f, CastleWallTop = 12.3f;
+        // The first wall leaves the gate wing's low end block on its end plane (x 24.8), its outer face out of the
+        // block's outer corner, and reaches 1.05 m back into the block.
+        static readonly Vector2 CastleWingStart = new Vector2(24.8f, 66.128f);
+        const float CastleWingBack = 1.047f;
+        // The bank (scenery) between the lake's edge and the wall where the wall stands out past the water.
+        const float CastleBankY = .6f, CastleBankEdge = 45.8f, CastleBankZ0 = -35.08f, CastleBankZ1 = 44.41f;
+
         static void Shell(CourseBuilder b)
         {
             var k = b.kit;
-            // The outer walls (x +-46.5..48.5, z -63..62), open 12.6 m where the way comes in (south) and goes out (north).
-            Solid(b, "Garden wall W", V(-48.5f, Deep, -63f), V(-46.5f, 7f, 62f));
-            Solid(b, "Garden wall E", V(46.5f, Deep, -63f), V(48.5f, 7f, 62f));
-            Solid(b, "Garden wall S (west)", V(-46.5f, Deep, -63f), V(-6.3f, 7f, -61.5f));
-            Solid(b, "Garden wall S (east)", V(6.3f, Deep, -63f), V(46.5f, 7f, -61.5f));
-            Solid(b, "Garden wall N (west)", V(-46.5f, Deep, 60.5f), V(-6.3f, 9f, 62f));
-            Solid(b, "Garden wall N (east)", V(6.3f, Deep, 60.5f), V(46.5f, 9f, 62f));
-            foreach (var at in new[] { V(-47.5f, Deep, -62f), V(47.5f, Deep, -62f), V(-47.5f, Deep, 61f), V(47.5f, Deep, 61f) })
-                b.Cylinder("Garden tower", at, 8f, 22f - Deep, k.wallNoClimb, true, true);
+            // R474: the castle ring (see CastleTowersEast), open where the way comes in between the two towers at the
+            // way in (x +-9.5, z -62.2) and goes out through the gate (the wings' ends at x +-24.8).
+            foreach (float s in new[] { -1f, 1f })
+            {
+                string side = s < 0 ? "W" : "E";
+                var from = new Vector2(s * CastleWingStart.x, CastleWingStart.y);
+                for (int i = 0; i < CastleTowersEast.Length; i++)
+                {
+                    var to = new Vector2(s * CastleTowersEast[i].x, CastleTowersEast[i].y);
+                    var start = i == 0 ? from - (to - from).normalized * CastleWingBack : from;
+                    b.SlopeBetween("Castle wall " + side + (i + 1), V(start.x, CastleWallTop, start.y), V(to.x, CastleWallTop, to.y),
+                        CastleWallHalf * 2f, CastleWallTop - Deep, 0f, k.wallNoClimb, true);
+                    float r = (i == CastleTowersEast.Length - 1 ? CastleDoorTowerR : CastleTowerR) + CastleFoot;
+                    b.Cylinder("Castle tower " + side + (i + 1), V(to.x, Deep, to.y), r * 2f, CastleEave - Deep, k.wallNoClimb, true, true);
+                    from = to;
+                }
+                // The bank along the side (under the wall beyond its inner face; past the wall nobody comes).
+                Solid(b, "Castle bank " + side, V(s < 0 ? -54.5f : CastleBankEdge, Deep, CastleBankZ0),
+                    V(s < 0 ? -CastleBankEdge : 54.5f, CastleBankY, CastleBankZ1));
+                // The strip at 2.8 where the old north wall stood: between the gate yard's north rail, the gate terrace's
+                // north edge (z 59), the gate's towers and wings and the first wall.
+                Solid(b, "Castle strip " + side + " (yard)", V(s < 0 ? -14.3f : 6.3f, Deep, 60.5f), V(s < 0 ? -6.3f : 14.3f, Upper - 1f, 65.3f));
+                Solid(b, "Castle strip " + side + " (terrace)", V(s < 0 ? -25.2f : 14.3f, Deep, 59f), V(s < 0 ? -14.3f : 25.2f, Upper - 1f, 65.3f));
+                Solid(b, "Castle strip " + side + " (corner)", V(s < 0 ? -31f : 25.2f, Deep, 59f), V(s < 0 ? -25.2f : 31f, Upper - 1f, 63.1f));
+            }
             // The water between everything: falling in ends the try (1.5 s, back on the highest checkpoint).
-            Picture(b, "Garden water (respawn)", V(-46.5f, WaterY - .05f, -61.5f), V(46.5f, WaterY, 60.5f), CourseKit.Or(k.respawnFloor, k.trimBlack));
-            b.Trigger<KillVolume>("Kill volume (garden water)", V(-46.5f, WaterY - 2.2f, -61.5f), V(46.5f, WaterY - .1f, 60.5f));
+            // R400: the Blender garden's water sheet instead of v31's flat picture; R440: three pools, a kill volume under each.
+            Water(b);
             b.Trigger<KillVolume>("Kill volume (far below)", V(-80f, -42f, -90f), V(80f, -40f, 100f));
             // The island in the north-west water and its fountain (scenery).
             b.Cylinder("Garden island", V(-18f, Deep, 16f), 10f, .6f - Deep, k.wallNoClimb, true, true);
             b.Cylinder("Island fountain", V(-18f, .6f, 16f), 2f, 2f, k.glass, false);
-            // The terraces either side of the reservoir and the gate yard (scenery, not the way).
+            // The terraces either side of the reservoir and the gate yard (scenery, not the way). R474: the castle wall cuts
+            // the gate terraces' outer corners (dressed so in GardenWalls); their boxes run on under it, out of reach.
             Solid(b, "Garden terrace W (reservoir)", V(-44f, Deep, 33f), V(-26f, Upper, 48.6f));
             Solid(b, "Garden terrace E (reservoir)", V(26f, Deep, 33f), V(44f, Upper, 48.6f));
             Solid(b, "Garden terrace W (gate)", V(-44f, Deep, 48.6f), V(-14.3f, Upper, 59f));

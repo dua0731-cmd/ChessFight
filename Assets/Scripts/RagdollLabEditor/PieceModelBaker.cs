@@ -50,8 +50,54 @@ namespace ChessFight.RagdollLab.Editor
         static string Bake(string piece, Transform pawn, SkinnedMeshRenderer pawnSkin, Dictionary<string, int> index)
         {
             string dir = PiecesDir + "/" + piece + "/";
-            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(dir + piece + "_Rigged.fbx");
-            var material = AssetDatabase.LoadAssetAtPath<Material>(dir + piece + ".mat");
+            return Bake(piece, dir + piece + "_Rigged.fbx", AssetDatabase.LoadAssetAtPath<Material>(dir + piece + ".mat"),
+                dir + piece + "_Skinned.asset", ModelsDir + "/" + piece + ".prefab", true, pawn, pawnSkin, index);
+        }
+
+        /// <summary>
+        /// The Pawn Rush set (seoungtest R251): the same pieces and the pawn itself, weighted again by
+        /// Tools/PieceRig/rig_pawnrush.py (Art/PawnRushRig/&lt;Name&gt;_Rigged_PawnRush.fbx), baked the same way into
+        /// Art/PawnRushRig/&lt;Name&gt;_Skinned_PawnRush.asset and Resources/PieceModels/PawnRush/&lt;Name&gt;.prefab. Only a
+        /// pawn with RagdollPawn.PawnRushPhysics wears them; the shared models above stay as they are.
+        /// </summary>
+        [MenuItem("ChessFight/Ragdoll Lab/Bake Pawn Rush Piece Models")]
+        public static void BakePawnRush()
+        {
+            var log = new StringBuilder("[PieceModels PawnRush]");
+            var pawn = PrefabUtility.LoadPrefabContents(PawnPrefab);
+            try
+            {
+                var skin = pawn.GetComponent<RagdollPawn>().skin;
+                RagdollLabBuilder.ApplyBindPose(skin);
+                var index = new Dictionary<string, int>();
+                for (int i = 0; i < skin.bones.Length; i++)
+                    if (skin.bones[i] != null) index[skin.bones[i].name] = i;
+                foreach (string piece in PawnRushNames)
+                {
+                    // The pawn keeps its own material (its team's colour is set on the skin); its prefab only carries the mesh.
+                    var material = piece == "Pawn" ? skin.sharedMaterial
+                        : AssetDatabase.LoadAssetAtPath<Material>(PiecesDir + "/" + piece + "/" + piece + ".mat");
+                    log.Append(' ').Append(Bake(piece, PawnRushDir + "/" + piece + "_Rigged_PawnRush.fbx", material,
+                        PawnRushDir + "/" + piece + "_Skinned_PawnRush.asset", PawnRushModelsDir + "/" + piece + ".prefab",
+                        piece != "Pawn", pawn.transform, skin, index)).Append(';');
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(pawn);
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log(log.ToString());
+        }
+
+        const string PawnRushDir = Root + "/Art/PawnRushRig";
+        const string PawnRushModelsDir = ModelsDir + "/PawnRush";
+        static readonly string[] PawnRushNames = { "Pawn", "King", "Queen", "Rook", "Bishop", "Knight" };
+
+        static string Bake(string piece, string fbxPath, Material material, string meshPath, string prefabPath, bool marks,
+            Transform pawn, SkinnedMeshRenderer pawnSkin, Dictionary<string, int> index)
+        {
+            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
             if (fbx == null || material == null) return piece + " has no model";
             var model = (GameObject)Object.Instantiate(fbx);
             UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(model, pawn.gameObject.scene);
@@ -88,7 +134,6 @@ namespace ChessFight.RagdollLab.Editor
                 }
 
                 // Filled in place: a new mesh copied over the old asset once left the old vertices in it.
-                string meshPath = dir + piece + "_Skinned.asset";
                 var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
                 bool created = mesh == null;
                 if (created) mesh = new Mesh { name = piece + "_Skinned" };
@@ -112,14 +157,14 @@ namespace ChessFight.RagdollLab.Editor
                     var look = holder.AddComponent<SkinnedMeshRenderer>();
                     look.sharedMesh = mesh;
                     look.sharedMaterial = material;
-                    foreach (string side in new[] { "Left", "Right" })
+                    foreach (string side in marks ? new[] { "Left", "Right" } : new string[0])
                     {
                         if (!Mark(holder.transform, side, vertices, weights, index, pawnSkin.transform, pawn))
                             return piece + " has no " + side.ToLowerInvariant() + " arm and mitten";
                         if (!MarkFoot(holder.transform, side, vertices, weights, index, pawnSkin.transform, pawn))
                             return piece + " has no " + side.ToLowerInvariant() + " foot";
                     }
-                    PrefabUtility.SaveAsPrefabAsset(holder, ModelsDir + "/" + piece + ".prefab");
+                    PrefabUtility.SaveAsPrefabAsset(holder, prefabPath);
                 }
                 finally
                 {

@@ -206,29 +206,41 @@ namespace ChessFight.PawnRush
                 b.Rail("Top rail NW", -13.3f, -5f, 230f, 230.3f, 15f);
                 b.Rail("Top rail NE", -1f, 7.3f, 230f, 230.3f, 15f);
                 // The finish: the crown's 6 m circle; a pawn finishes when its hips are in.
-                var finish = b.Cylinder("Finish (crown circle)", V(-3f, 15f, 220f), 6f, 3f, null);
-                finish.GetComponent<Collider>().isTrigger = true;
-                Object.DestroyImmediate(finish.GetComponent<MeshRenderer>());
-                finish.AddComponent<FinishZone>().Configure(true);
-                b.Cylinder("Crown circle", V(-3f, 15f, 220f), 6f, .04f, k.rankGold, false);
+                FinishCircle(b, "Finish (crown circle)", "Crown circle", V(-3f, 15f, 220f), 6f);
                 b.Trigger<NoGrabZone>("No-grab zone (whole top)", V(-13f, 15f, 210f), V(7f, 20f, 234f));
-                // The crown over the circle, seen from anywhere. No collisions.
-                var crown = b.Group("8th rank crown");
-                crown.localPosition = V(-3f, 19f, 220f);
-                var outer = b.parent;
-                b.parent = crown;
-                b.Cylinder("Band", V(0f, 0f, 0f), 6f, 1.6f, k.rankGold, false);
-                for (int i = 0; i < 5; i++)
-                {
-                    float a = i * Mathf.PI * 2f / 5f;
-                    var point = b.Box("Point", V(-.4f, 0f, -.4f), V(.4f, 2.4f, .4f), k.rankGold, false, false);
-                    point.transform.localPosition = V(Mathf.Sin(a) * 2.6f, 2.8f, Mathf.Cos(a) * 2.6f);
-                }
-                b.Sphere("Orb", V(0f, 5f, 0f), 2f, k.rankGold, false);
-                b.Box("Cross upright", V(-.35f, 5.8f, -.35f), V(.35f, 10f, .35f), k.rankGold, false, false);
-                b.Box("Cross bar", V(-1.4f, 8f, -.35f), V(1.4f, 8.7f, .35f), k.rankGold, false, false);
-                b.parent = outer;
+                Crown(b, "8th rank crown", V(-3f, 19f, 220f));
             });
+        }
+
+        // A finish circle on a floor at `at` (CrownFinish judges whose hips are in it) and the gold circle that shows it.
+        static void FinishCircle(CourseBuilder b, string name, string look, Vector3 at, float diameter)
+        {
+            var finish = b.Cylinder(name, at, diameter, 3f, null);
+            finish.GetComponent<Collider>().isTrigger = true;
+            Object.DestroyImmediate(finish.GetComponent<MeshRenderer>());
+            finish.AddComponent<FinishZone>().Configure(true);
+            b.Cylinder(look, at, diameter, .04f, b.kit.rankGold, false);
+        }
+
+        // The crown over a finish circle, seen from anywhere. No collisions.
+        static void Crown(CourseBuilder b, string name, Vector3 at)
+        {
+            var k = b.kit;
+            var crown = b.Group(name);
+            crown.localPosition = at;
+            var outer = b.parent;
+            b.parent = crown;
+            b.Cylinder("Band", V(0f, 0f, 0f), 6f, 1.6f, k.rankGold, false);
+            for (int i = 0; i < 5; i++)
+            {
+                float a = i * Mathf.PI * 2f / 5f;
+                var point = b.Box("Point", V(-.4f, 0f, -.4f), V(.4f, 2.4f, .4f), k.rankGold, false, false);
+                point.transform.localPosition = V(Mathf.Sin(a) * 2.6f, 2.8f, Mathf.Cos(a) * 2.6f);
+            }
+            b.Sphere("Orb", V(0f, 5f, 0f), 2f, k.rankGold, false);
+            b.Box("Cross upright", V(-.35f, 5.8f, -.35f), V(.35f, 10f, .35f), k.rankGold, false, false);
+            b.Box("Cross bar", V(-1.4f, 8f, -.35f), V(1.4f, 8.7f, .35f), k.rankGold, false, false);
+            b.parent = outer;
         }
 
         // ------------------------------------------------------------------ checkpoints and the path

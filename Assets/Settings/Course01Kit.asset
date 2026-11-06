@@ -35,3 +35,5 @@ MonoBehaviour:
   foldingBridge: {fileID: 3928159743330734561, guid: 6cd1dd77d1d7a644ab04981dec2e0a61, type: 3}
   airVent: {fileID: 7751891203928480429, guid: fa5b01e2bcb854449b8473d1451eb0b3, type: 3}
   knightCavalry: {fileID: 8095789638639489457, guid: 3ea334236c84b5b4bb9372df45c1493c, type: 3}
+  grandStairHall: {fileID: 1000, guid: e572d026a1c6be428f9716d3217c5699, type: 3}
+  royalWaterGarden: {fileID: 1000, guid: c1c3a74ebadb6049a082ae6410fe9b70, type: 3}

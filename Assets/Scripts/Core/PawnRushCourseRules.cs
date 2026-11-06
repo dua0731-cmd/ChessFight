@@ -75,7 +75,8 @@ namespace ChessFight.Network
     public static class PawnRushFinish
     {
         public const int None = -1;
-        // The platform: hips within this of the circle's middle (flat) and this high over its floor.
+        // The platform: hips within this of the circle's middle (flat) and this high over its floor. Radius is the
+        // tower's 6 m crown circle; a platform of another size passes its own (the endgame throne's 8.5 m, R240).
         public const float Radius = 3f, Below = 0.6f, Above = 3.2f;
 
         public static int Needed(int teamPlayers) => MatchResult.MajorityOf(Math.Max(1, teamPlayers));
@@ -92,7 +93,9 @@ namespace ChessFight.Network
         }
 
         // On the platform: the hips' offset from the circle's middle on its floor.
-        public static bool OnPlatform(float dx, float dy, float dz) =>
-            dx * dx + dz * dz <= Radius * Radius && dy >= -Below && dy <= Above;
+        public static bool OnPlatform(float dx, float dy, float dz) => OnPlatform(dx, dy, dz, Radius);
+
+        public static bool OnPlatform(float dx, float dy, float dz, float radius) =>
+            dx * dx + dz * dz <= radius * radius && dy >= -Below && dy <= Above;
     }
 }

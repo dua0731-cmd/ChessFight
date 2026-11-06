@@ -25,6 +25,10 @@ namespace ChessFight.RagdollLab
         /// <summary>The skills' numbers here: the design (v0.1 previz, D2) cooldowns, not the test bed's 2 s.</summary>
         public readonly PawnRushSkillParams skills = new PawnRushSkillParams { testCooldown = 0f };
 
+        /// <summary>The Pawn Rush pieces' own movement (jump, gravity, lips and ledges; seoungtest 10-30). Sword Fight
+        /// and the other modes keep the shared tuning. Shown in the Inspector during Play to try numbers live.</summary>
+        public PawnRushPhysicsParams physics = new PawnRushPhysicsParams();
+
         PawnRushSkillFx fx;
         PawnRushSkillSfx sfx;
         PlaytestSpawner spawner;
@@ -94,7 +98,11 @@ namespace ChessFight.RagdollLab
                 return;
             }
             foreach (var pawn in RagdollPawn.All)
-                if (pawn != null && pawn.PawnRushSkills == null) pawn.PawnRushSkills = skills;
+            {
+                if (pawn == null) continue;
+                if (pawn.PawnRushSkills == null) pawn.PawnRushSkills = skills;
+                if (pawn.PawnRushPhysics == null) pawn.PawnRushPhysics = physics;
+            }
         }
 
         /// <summary>The skill key card at the bottom right, in the same colours as the skill test bed's (PawnRushSkillFx.SkillCard,

@@ -272,11 +272,14 @@ namespace ChessFight.PawnRush
             Robot(b, "2", 13f, 3f);
         }
 
-        // A robot arm hung from a gantry at x: pivot 5.8 m over the dyke's middle line, a 4.9 m arm, a hand 1.3 m across
-        // that passes 0.25 m over the floor (RobotSweep). The second robot runs half a cycle (3 s) behind the first.
+        // A robot arm hung from a gantry at x: pivot 5.8 m over the dyke's middle line, a hand 1.8 m across 4.7 m down (R434)
+        // that passes 0.2 m over the floor (RobotSweep). The second robot runs half a cycle (3 s) behind the first.
         static void Robot(CourseBuilder b, string n, float x, float phaseSeconds)
         {
             var k = b.kit;
+            // R434, R435: the drawn robot's stone pillar (승규's ball-and-chain, GardenLockDyke) stands here, east of the
+            // swing (the arm rests and winds up to the north, through the gantry's middle), over the east post.
+            Solid(b, "Robot pillar block " + n, V(x + 1.15f, Upper, 30.55f), V(x + 2.95f, 9.5f, 32.3f));
             Solid(b, "Robot gantry post W " + n, V(x - 1.8f, Upper, 30.6f), V(x - 1.3f, 10.4f, 31.6f));
             Solid(b, "Robot gantry post E " + n, V(x + 1.3f, Upper, 30.6f), V(x + 1.8f, 10.4f, 31.6f));
             Solid(b, "Robot gantry beam W " + n, V(x - 1.8f, 9.9f, 26.6f), V(x - 1.3f, 10.4f, 30.6f));
@@ -288,7 +291,9 @@ namespace ChessFight.PawnRush
             Under(b, pivot, () =>
             {
                 b.Box("Robot upper arm", V(-.3f, -4.6f, -.3f), V(.3f, 0f, .3f), k.hazard);
-                hand = b.Sphere("Robot hand", V(0f, -4.9f, 0f), 1.3f, k.hazard);
+                // R434 (승규 "해머 부분이 통과가 돼"): the hand is the drawn ball - 1.8 m across, its middle 4.7 m down
+                // (it was 1.3 m at 4.9 m, so the ball's top and sides let pawns through); it still clears the dyke by 0.2 m.
+                hand = b.Sphere("Robot hand", V(0f, -4.7f, 0f), 1.8f, k.hazard);
             });
             var sweep = pivot.gameObject.AddComponent<RobotSweep>();
             sweep.Configure(Vector3.left, hand.transform);
@@ -307,6 +312,10 @@ namespace ChessFight.PawnRush
             new[] { 33f, 34.2f }, new[] { 36.6f, 37.8f }, new[] { 40.2f, 41.4f }, new[] { 43.8f, 45f }, new[] { 47.4f, 48.6f },
         };
 
+        // R446 (승규 "처마를 올리기"): the tunnels' eave 1.1 m higher (4.4 -> 5.5) so the royal boats (royal_boat.py:
+        // lanterns to 5.38, scroll 4.99, furniture backs 4.68) pass under it; the roof and the lane walls go up with it.
+        public const float TunnelEaveY = 5.5f, TunnelRoofY = TunnelEaveY + .6f, TunnelTopY = TunnelRoofY + 1.2f;
+
         static void BoatCrossing(CourseBuilder b)
         {
             var k = b.kit;
@@ -315,21 +324,28 @@ namespace ChessFight.PawnRush
             Rail(b, "Boarding quay rail W", -10.3f, -10f, 27f, 33f, Upper);
             Rail(b, "Boarding quay rail S", -10f, 8f, 26.7f, 27f, Upper);
             b.Checkpoint(6, V(-4f, Upper, 30f), 0f, 8f);
-            // The reservoir (x -26..26, z 33..48.6, water at 1.95): falling in goes back to CP6.
-            Solid(b, "Reservoir wall S", V(-26f, Deep, 32.6f), V(26f, ReservoirY + .35f, 33f));
+            // The reservoir (x -26..26, z 33..48.6, water at ReservoirY): falling in goes back to CP6.
+            // R441: the wall's collider as it is drawn - west of the quay the spillway's crest (the water pours over it,
+            // ReservoirY - 0.2), from there east flush with the quay and the dyke and on to the lock (x -10.4 .. 35: it
+            // stood 0.45 m under them, an unseen ledge over the water, and the dyke's face now covers it to z 33).
+            Solid(b, "Reservoir wall S (spillway)", V(-26f, Deep, 32.6f), V(-10.4f, SpillwayCrestY, 33f));
+            Solid(b, "Reservoir wall S", V(-10.4f, Deep, 32.6f), V(35f, Upper, 33f));
             Picture(b, "Reservoir water (respawn)", V(-26f, ReservoirY - .05f, 33f), V(26f, ReservoirY, 48.6f), CourseKit.Or(k.respawnFloor, k.trimBlack));
-            b.Trigger<KillVolume>("Kill volume (reservoir)", V(-26f, .3f, 33f), V(26f, ReservoirY - .1f, 48.6f));
-            // A tunnel at either end (|x| 18..26): a low eave 0.6 m over the decks - ride a boat into it and it, and the
-            // falls hanging in its mouth, knock you into the water - a roof, and walls between the lanes. The boats sink
-            // out of sight under it and come round under the water.
+            // R441: from z 32.6, so the spillway's crest (under 0.2 m of water) is in it too.
+            b.Trigger<KillVolume>("Kill volume (reservoir)", V(-26f, .3f, 32.6f), V(26f, ReservoirY - .1f, 48.6f));
+            // R442: a piece floats where it falls in and splashes (as the other pools: Pool).
+            Pool(b, "reservoir", -26f, 26f, 32.6f, 48.6f, ReservoirY);
+            // A tunnel at either end (|x| 18..26): an eave over the decks (R446: 1.7 m, TunnelEaveY, was 0.6 m and knocked
+            // riders off), the falls hanging in its mouth, a roof, and walls between the lanes. The boats sink out of
+            // sight under it - whoever still rides one goes into the water - and come round under the water.
             foreach (float s in new[] { -1f, 1f })
             {
                 float xa = s > 0 ? 18f : -26f, xb = s > 0 ? 26f : -18f;
-                Solid(b, "Boat tunnel roof", V(xa, 5f, 33f), V(xb, 6.2f, 48.6f));
-                Solid(b, "Boat tunnel eave", V(s > 0 ? 18f : -18.6f, 4.4f, 33f), V(s > 0 ? 18.6f : -18f, 5f, 48.6f));
-                foreach (var w in TunnelWalls) Solid(b, "Boat tunnel wall", V(xa, Deep, w[0]), V(xb, 5f, w[1]));
+                Solid(b, "Boat tunnel roof", V(xa, TunnelRoofY, 33f), V(xb, TunnelTopY, 48.6f));
+                Solid(b, "Boat tunnel eave", V(s > 0 ? 18f : -18.6f, TunnelEaveY, 33f), V(s > 0 ? 18.6f : -18f, TunnelRoofY, 48.6f));
+                foreach (var w in TunnelWalls) Solid(b, "Boat tunnel wall", V(xa, Deep, w[0]), V(xb, TunnelRoofY, w[1]));
                 foreach (float z in LaneZ)
-                    Picture(b, "Boat tunnel falls", V(s > 0 ? 18.65f : -18.85f, ReservoirY, z - 1.2f), V(s > 0 ? 18.85f : -18.65f, 4.4f, z + 1.2f), k.glass);
+                    Picture(b, "Boat tunnel falls", V(s > 0 ? 18.65f : -18.85f, ReservoirY, z - 1.2f), V(s > 0 ? 18.85f : -18.65f, TunnelEaveY, z + 1.2f), k.glass);
             }
             // Two boats a lane (6 x 2.4 m, decks at 3.8), placed 18 m apart; BoatLanes gives the lanes their way and speed
             // from the round's seed. Both teams ride them.
@@ -350,11 +366,14 @@ namespace ChessFight.PawnRush
                         });
                         var boat = root.gameObject.AddComponent<GardenBoat>();
                         boat.Configure(n, x);
+                        root.gameObject.AddComponent<GardenBoatRock>();     // R482: its dressing rocks on the swell
                         boats.Add(boat);
                         laneOf.Add(lane);
                     }
             });
             group.gameObject.AddComponent<BoatLanes>().Configure(boats.ToArray(), laneOf.ToArray());
+            // R482 (승규 "배랑 물이랑 상호작용 하게 만들어"): the boats' wakes, bow waves, rings and dive splashes on the water.
+            group.gameObject.AddComponent<GardenBoatWater>().Configure(boats.ToArray(), ReservoirY);
             Gap(b, "Boat crossing", V(0f, Upper, 33f), V(0f, Upper, 48.6f), 18f);
         }
 
@@ -363,23 +382,47 @@ namespace ChessFight.PawnRush
         static void Gate(CourseBuilder b)
         {
             var k = b.kit;
-            // The gate yard (x -14..14, z 48.6..60.5) and its arch (12 m wide) at z 55.
+            // The gate yard (x -14..14, z 48.6..60.5). R462 (승규 "앞문 지우고 뒷문을 이걸로"): its arch at z 55 is gone; the
+            // exit's gate is the garden's gate now.
             Mass(b, "Gate yard", -14f, 14f, 48.6f, 60.5f, Upper);
             Rail(b, "Gate yard rail W", -14.3f, -14f, 48.6f, 60.5f, Upper);
             Rail(b, "Gate yard rail E", 14f, 14.3f, 48.6f, 60.5f, Upper);
-            Solid(b, "Gate arch pillar W", V(-7.5f, Upper, 54.5f), V(-6f, 11f, 56f));
-            Solid(b, "Gate arch pillar E", V(6f, Upper, 54.5f), V(7.5f, 11f, 56f));
-            Solid(b, "Gate arch lintel", V(-7.5f, 11f, 54.5f), V(7.5f, 12.6f, 56f));
-            // Through the garden's north wall: the exit terrace (12 x 6 m, CP 끝 = CP7), 1 m over the mini-game.
+            // R474: the garden's north wall is gone (the castle ring takes the gate in, Shell): the yard's north edge has a
+            // balustrade over the strip (2.8) either side of the exit terrace, whose rails now start at the yard.
+            Rail(b, "Gate yard rail N W", -14.3f, -6.3f, 60.2f, 60.5f, Upper);
+            Rail(b, "Gate yard rail N E", 6.3f, 14.3f, 60.2f, 60.5f, Upper);
+            // The exit terrace (12 x 6 m, CP 끝 = CP7), 1 m over the mini-game.
             Mass(b, "Exit terrace", -6f, 6f, 60.5f, 66.5f, Upper);
             Marker(b, "Exit terrace (CP 끝)", -6f, 6f, 60.5f, 66.5f, Upper);
-            Rail(b, "Exit terrace rail W", -6.3f, -6f, 62f, 66.1f, Upper);
-            Rail(b, "Exit terrace rail E", 6f, 6.3f, 62f, 66.1f, Upper);
+            Rail(b, "Exit terrace rail W", -6.3f, -6f, 60.5f, 66.1f, Upper);
+            Rail(b, "Exit terrace rail E", 6f, 6.3f, 60.5f, 66.1f, Upper);
             b.Checkpoint(7, V(0f, Upper, 63.5f), 0f, 10f);
             // The open arch, four steps of 0.25 down, the entrance band (z 68.5..72.5, y 2.8): the section contract.
-            Solid(b, "Exit arch pillar W", V(-7f, Upper - 1f, 66.1f), V(-6f, Upper + 6f, 66.9f));
-            Solid(b, "Exit arch pillar E", V(6f, Upper - 1f, 66.1f), V(7f, Upper + 6f, 66.9f));
-            Solid(b, "Exit arch lintel", V(-7f, Upper + 5f, 66.1f), V(7f, Upper + 6f, 66.9f));
+            // R462: the arch is 승규's reference gate (gate_sample_v2.py, its sizes in units of the 12 m opening, from the
+            // band's 2.8): the jambs (x +-6..8.6, z 64.7..68.3) up to where the round arch (springing 13, crown 19) clears
+            // them, a haunch block either side, the ring's crown over the opening (was a 1 m lintel at 8.8, now inside the
+            // open arch), the towers (x +-8.6..13.5, z 64.05..68.95) to their cornice. R474: the wings collide too now
+            // that the strip runs up to them inside the castle ring - the vine wall (x +-13.5..18.5) to its coping, the urn
+            // pillar (x +-18.5..22.6) to its cap, the low end block (x +-22.6..24.8) the first castle wall leaves.
+            // R483 (승규 "성문 쪽 에셋 바꾸고 똑같이 텍스쳐 입혀"): the gate is 승규's Tripo gate (gate_arch_asset.py, 50.6 times
+            // its size so its wings still end at x +-24.8), so the blocks are its parts: the jambs' faces at x +-7.1 (the
+            // pillar block still starts at the walk's edge, x +-6, closing the gap between the terrace's and the band's
+            // rails), the round arch's crown at 19.4, the towers x +-9.2..14.1 to their eaves (24.4), z 64.0..69.0; the
+            // vine wall to 14.4 with a planter before it (and one behind) to 6.3, the urn pillar x +-18.9..22.6 to its cap,
+            // the end block to 14.2.
+            foreach (float s in new[] { -1f, 1f })
+            {
+                string side = s < 0 ? "W" : "E";
+                Solid(b, "Exit arch pillar " + side, V(s < 0 ? -9.21f : 6f, Upper - 1f, 64.02f), V(s < 0 ? -6f : 9.21f, 17.98f, 69.03f));
+                Solid(b, "Exit arch haunch " + side, V(s < 0 ? -6f : 5.06f, 17.98f, 64.02f), V(s < 0 ? -5.06f : 6f, 19.4f, 69.03f));
+                Solid(b, "Exit gate tower " + side, V(s < 0 ? -14.07f : 9.21f, Upper - 1f, 64.02f), V(s < 0 ? -9.21f : 14.07f, 24.4f, 69.03f));
+                Solid(b, "Exit gate wing " + side, V(s < 0 ? -18.93f : 14.07f, Upper - 1f, 64.68f), V(s < 0 ? -14.07f : 18.93f, 14.4f, 68.32f));
+                Solid(b, "Exit gate wing planter S " + side, V(s < 0 ? -19.23f : 13.67f, Upper - 1f, 61.24f), V(s < 0 ? -13.67f : 19.23f, 6.3f, 64.68f));
+                Solid(b, "Exit gate wing planter N " + side, V(s < 0 ? -19.23f : 13.67f, Upper - 1f, 68.32f), V(s < 0 ? -13.67f : 19.23f, 6.3f, 71.76f));
+                Solid(b, "Exit gate urn pillar " + side, V(s < 0 ? -22.57f : 18.93f, Upper - 1f, 63.97f), V(s < 0 ? -18.93f : 22.57f, 15.96f, 69.03f));
+                Solid(b, "Exit gate end block " + side, V(s < 0 ? -24.8f : 22.57f, Upper - 1f, 64.68f), V(s < 0 ? -22.57f : 24.8f, 14.19f, 68.32f));
+            }
+            Solid(b, "Exit arch lintel", V(-9.21f, 19.4f, 64.02f), V(9.21f, 23f, 69.03f));
             for (int i = 1; i <= 4; i++)
                 Mass(b, "Step down " + i, -6f, 6f, 66.5f + (i - 1) * .5f, 66.5f + i * .5f, Upper - .25f * i, Upper - 6f);
             Mass(b, "Mini-game entrance band", -6f, 6f, 68.5f, 72.5f, Upper - 1f, Upper - 6f);

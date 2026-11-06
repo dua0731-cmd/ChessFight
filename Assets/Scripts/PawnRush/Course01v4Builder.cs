@@ -83,12 +83,13 @@ namespace ChessFight.PawnRush
             if (surface != null) surface.launchVelocity = PadLaunch;
         }
 
-        static void Disc(CourseBuilder b, string name, Vector3 top, bool counterClockwise)
+        static GameObject Disc(CourseBuilder b, string name, Vector3 top, bool counterClockwise)
         {
             // The prefab's top is 0.4 over its root.
             var disc = b.Obstacle(b.kit.spinningDisc, "01 Spinning disc " + name, top - Vector3.up * .4f);
             var surface = disc.GetComponent<ObstacleSurface>();
             if (surface != null) surface.counterClockwise = counterClockwise;
+            return disc;
         }
 
         // §6 rotating jump bar: a bar spinning about its middle, 0.2 to 0.52 m up (contact only). It was

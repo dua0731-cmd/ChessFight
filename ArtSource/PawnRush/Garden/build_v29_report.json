@@ -1,0 +1,94 @@
+{
+ "old_removed": 159,
+ "wall": {
+  "towers_u": [
+   0.1328,
+   0.4138,
+   0.6238,
+   0.807,
+   0.9935,
+   1.1812,
+   1.386,
+   1.6686
+  ],
+  "inner_face_n": -0.0418,
+  "triangles": 165596
+ },
+ "side W": {
+  "length_m": 135.55,
+  "stretch": 1.023
+ },
+ "side N": {
+  "length_m": 104.55,
+  "stretch": 1.069
+ },
+ "side E": {
+  "length_m": 135.55,
+  "stretch": 1.026
+ },
+ "side S": {
+  "length_m": 104.55,
+  "stretch": 0.906
+ },
+ "tower": {
+  "triangles": 59006
+ },
+ "placed": [
+  [
+   "V29 | castle wall W1 S1",
+   1.023
+  ],
+  [
+   "V29 | castle wall W2 S5",
+   1.023
+  ],
+  [
+   "V29 | castle wall W3 S2",
+   1.023
+  ],
+  [
+   "V29 | castle wall W4 S6",
+   1.023
+  ],
+  [
+   "V29 | castle wall N1 S3",
+   1.069
+  ],
+  [
+   "V29 | castle wall N2 S1",
+   1.069
+  ],
+  [
+   "V29 | castle wall N3 S5",
+   1.069
+  ],
+  [
+   "V29 | castle wall E1 S7",
+   1.026
+  ],
+  [
+   "V29 | castle wall E2 S2",
+   1.026
+  ],
+  [
+   "V29 | castle wall E3 S6",
+   1.026
+  ],
+  [
+   "V29 | castle wall E4 S3",
+   1.026
+  ],
+  [
+   "V29 | castle wall S1 S7",
+   0.906
+  ],
+  [
+   "V29 | castle wall S2 G",
+   1.0
+  ],
+  [
+   "V29 | castle wall S3 S1",
+   0.906
+  ]
+ ]
+}

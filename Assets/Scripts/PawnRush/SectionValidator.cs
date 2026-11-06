@@ -22,6 +22,8 @@ namespace ChessFight.PawnRush
             // The royal water garden (1-1).
             "Garden wall", "Garden tower", "Garden terrace", "Garden island", "Plaza kerb", "Lock wall", "Lock gate post", "Lock gate beam",
             "Dyke wall", "Robot gantry", "Reservoir wall", "Boat tunnel", "Gate arch", "Exit arch",
+            // its castle ring and exit gate since seoungtest R474 (the old garden walls and towers gone)
+            "Castle wall", "Castle tower", "Exit gate",
         };
 
         public static List<string> Run(PawnRushSection section, List<string> notes)

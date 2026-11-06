@@ -112,3 +112,7 @@ InitTestScene*.unity*
 
 # VFX captures (R172): frame captures and contact sheets from Tools/VFX/Capture stay local.
 /VFXCaptures/
+
+# Python caches from the Blender scripts under ArtSource (they were committed by accident before the merge into main)
+__pycache__/
+*.py[cod]

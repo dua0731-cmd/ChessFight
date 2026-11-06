@@ -34,7 +34,16 @@ namespace ChessFight.Gameplay
         BoxCollider Box => box != null ? box : (box = GetComponent<BoxCollider>());
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => active.Clear();
+        static void ResetStatics()
+        {
+            active.Clear();
+            ChessFight.Game.OrbitCamera.FloorAt = CameraFloor;
+        }
+
+        // R442: the following camera stays a little over any water it would go under (OrbitCamera.FloorAt): from
+        // under the surface the water is not drawn and the sky showed through.
+        const float CameraClearance = .3f;
+        static float CameraFloor(Vector3 point) => SurfaceAt(point, out float surface) ? surface + CameraClearance : float.NegativeInfinity;
 
         void OnEnable() => active.Add(this);
         void OnDisable() => active.Remove(this);
