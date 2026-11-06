@@ -4,8 +4,8 @@
 현재 지침과 사용자의 최신 요청이 과거 기록보다 우선한다.
 작업이 끝나면 §8에 따라 코드·문서·검사 결과를 함께 마감한다.
 
-최종 갱신: **2026-11-06 · R497 main 파일·메뉴·구형 맵·폐기 모드·오래된 브랜치 정리**.
-다음 빈 요청 번호는 **R498**이다.
+최종 갱신: **2026-11-06 · R498 미니게임 C·A·J·G 깜빡임(z-fighting) 수정** (seoungtest 작업 트리, 커밋 안 함). 그 전: R497 main 파일·메뉴·구형 맵·폐기 모드·오래된 브랜치 정리.
+다음 빈 요청 번호는 **R502**이다. R501: C 도개교 Blender 모델(`ArtSource/PawnRush/MiniGames/Early`) + Unity 연결 `MiniGameModels`. R500: 미니게임 시험 화면 안내를 단계별 세 줄(1·2·3 / 4·5·6·7 / 8·9·0)로. R499: 코스·미니게임 3단계 아트 기준 초안([PAWN_RUSH_ART_PHASES](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md)).
 사용자는 기존 정리 원칙을 바탕으로 흩어진 파일과 메뉴를 정리하고,
 KingRush 옛 이름 변경, 이전 폰 러시 맵의 Prototype 보관, Queen of the Hill 폐기,
 한 달 이상 지난 구현 브랜치 삭제를 요청했다.
@@ -31,6 +31,8 @@ R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDO
 | 문서 | `Docs/PawnRush`가 현재 자료. 옛 맵 문서9개는 `Docs/PawnRush/Prototype`, 폐기 모드 자료는 `Docs/Archive/QueenOfTheHill` |
 | 브랜치 | 2026-10-06 22:09:42 KST 이전 마지막 커밋 기준 원격8개·로컬8개 삭제. 원격24→16, 로컬15→7. main·최근 브랜치 보존 |
 | 자동 검사 | Core162·모의 세션55·의존성/장애물 시계 정적 검사·전체 대상 외부 컴파일 통과. Unity 저장10프리팹/시험 씬 실패0·실제 Play10종 로드/문/초기화/씨앗 검사 통과 |
+| 미니게임 깜빡임 | R498: C 해자 벽·J 물 벽은 그림만 바닥 면에서 1cm(`MissionGames.LinedWall`), A 공유판 밑 금 테두리 잘라냄(`PaintBoard.ClipRims`), G 연석 1cm 밖. Play 재설치로 반영, 프리팹 재굽기 안 함. 사용자 확인 전 |
+| 미니게임 모델 | R501: C 도개교를 Blender로 모델링했다(구간 FBX + 다리·드럼 FBX, 1단계 `GC_` 재질). `MiniGameModels`가 Play 때 붙이고 코드 그림은 그리기만 끈다. 크기·판정·시스템은 그대로. Unity 화면 확인 전 |
 | 사용자 확인 | R497 이후 Unity 화면·입력·온라인·실제 퍼즐 완주·12명 성능은 사용자 확인 전 |
 
 브랜치 삭제 전16개 참조를 bundle·manifest·복구 안내로 보관하고 bundle 검사를 통과했다.
@@ -61,7 +63,9 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 3. 폰 러시 각 퍼즐의 실제 입력·문 통과·복귀 동선과12명 성능을 확인한다.
 4. 구형 맵을 고칠 때는 Prototype 문서를 먼저 읽는다. 현재 구간 코스와 구형 온라인 코스를 같은 것으로 취급하지 않는다.
 5. 새 구간 코스의 온라인 연결은 별도 설계·요청으로 진행한다. 이번 정리로 프로토콜을 새로 정의하지 않았다.
-6. 다음 새 요청은 **R498**부터 기록한다.
+6. R498 깜빡임 수정을 Play에서 1·3·7·8번으로 확인한다([VALIDATION](Docs/Network/VALIDATION.md) 맨 위). 편집 모드 프리팹까지 바꾸려면 동료 수정 여부를 확인한 뒤 Build All을 다시 굽는다.
+7. C 도개교 모델(R501)을 Unity Play에서 확인한 뒤 D·A로 이어간다. 미니게임 모델링은 [3단계 아트 기준](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md) §5의 결정 5가지를 먼저 정하고 C·E·G부터 만든다. FBX가 나오면 미니게임 FBX 연결 코드가 필요하다.
+8. 다음 새 요청은 **R501**부터 기록한다.
 
 다른 채팅의 진행 상태와 과거 제한은 원본 아카이브의 날짜·브랜치를 확인해 해석한다.
 현재 사용자 작업 위치(main/기존 경로)와 최신 사용자 지시가 우선한다.
@@ -127,6 +131,7 @@ Prototype의41개 C# 파일은7개 asmref로 기존 어셈블리에 속한다.
 | 무엇이든 처음 | 이 파일 → [REQUIREMENTS](Docs/Project/REQUIREMENTS.md)·[DECISIONS](Docs/Project/DECISIONS.md)·[PITFALLS](Docs/Environment/PITFALLS.md) | 현재 main의 관련 파일만 |
 | 파일·메뉴·Prototype·브랜치 정리 | [R497 정리 안내](Docs/Architecture/PROJECT_CLEANUP_R497.md) → [STRUCTURE](Docs/Architecture/STRUCTURE.md) | 경로 문자열·asmref·메타·생성기·검사 스크립트 |
 | 현재 폰 러시 맵 | [PawnRush README](Docs/PawnRush/README.md) → [구간](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | PawnRushRound·PawnRushSection·SectionPrefabMenu·구간 프리팹 |
+| 코스·미니게임 모델링·텍스처 | [3단계 아트 기준](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md) → [모델링 지침](Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGamePalaceArt*·RoyalWaterGardenBuilder.Concept·ArtSource/PawnRush |
 | 미니게임10종 | [실제 프리팹](Docs/PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md) → [기존 규칙](Docs/PawnRush/PAWN_RUSH_MINIGAMES_v1.md)·[모델링](Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGameSection*·MiniGamePalaceArt*·MissionStation·Mg*·PaintBoard |
 | 정원·홀·작전 회의실 | [정원](Docs/PawnRush/PAWN_RUSH_GARDEN.md)·[홀 아트](Docs/PawnRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md)·[구간](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | RoyalWaterGardenBuilder*·GrandStairHall*·WarRoomSection·Course01v4Builder.* |
 | 구형 맵·기존 폰 러시 온라인 | [Prototype Course01](Docs/PawnRush/Prototype/PAWN_RUSH_COURSE01.md) → [Prototype 기획](Docs/PawnRush/Prototype/DESIGN.md) | Assets/Prototype/PawnRush·SteamPawnRushLink·PawnRushNetState |

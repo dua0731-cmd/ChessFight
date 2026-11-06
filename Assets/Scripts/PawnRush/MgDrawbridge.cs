@@ -55,8 +55,9 @@ namespace ChessFight.PawnRush
             // The moat: water at -0.9, its bottom at -1.6, walls to the floor; the ends closed down to the plaza
             // floor. Falling in counts as a fall (back to the plaza's checkpoint).
             var stone = Arena.Lit("M_MoatStone", Arena.Hex("#6E6A64"), 0f, .9f);
-            b.Box("Moat wall S", V(-10f, -1.6f, Moat0 - .2f), V(10f, 0f, Moat0), stone, true);
-            b.Box("Moat wall N", V(-10f, -1.6f, Moat1), V(10f, 0f, Moat1 + .2f), stone, true);
+            // The S and N walls lie inside the floors' edges: their pictures stand off the floors' faces (R498).
+            MissionGames.LinedWall(b, "Moat wall S", V(-10f, -1.6f, Moat0 - .2f), V(10f, 0f, Moat0), stone, 1f);
+            MissionGames.LinedWall(b, "Moat wall N", V(-10f, -1.6f, Moat1), V(10f, 0f, Moat1 + .2f), stone, -1f);
             b.Box("Moat wall W", V(-10f, -1.6f, Moat0), V(-9.8f, -Arena.DaisHeight, Moat1), stone, true);
             b.Box("Moat wall E", V(9.8f, -1.6f, Moat0), V(10f, -Arena.DaisHeight, Moat1), stone, true);
             b.Box("Moat bottom", V(-10f, -2.6f, Moat0), V(10f, -1.6f, Moat1), stone, true);

@@ -44,6 +44,7 @@ namespace ChessFight.PawnRush
             Paths(b, owner.GameIndex);
             RebuildGames(owner);
             MiniGamePalaceArt.BuildShell(content.transform, owner.Kit, owner.GameIndex);
+            MiniGameModels.Apply(owner);   // R501: after the shell, which the models replace
             RefreshText(owner);
             content.SetActive(true);
         }
@@ -64,6 +65,7 @@ namespace ChessFight.PawnRush
                 }
             }
             finally { Random.state = random; }
+            MiniGameModels.Apply(owner);
             RefreshText(owner);
         }
 

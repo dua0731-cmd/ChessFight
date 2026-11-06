@@ -115,8 +115,9 @@ namespace ChessFight.PawnRush
                     if (rook >= 0 && KingEscortPath.RookGarages[rook] == next) continue;
                     var n = MiniGameParts.Local(station, new StationPoint(df, dr)) - MiniGameParts.Local(station, new StationPoint(0f, 0f));
                     var along = new Vector3(Mathf.Abs(n.z), 0f, Mathf.Abs(n.x));
-                    var mid = c + n * (h - .09f);
-                    var half = along * h + new Vector3(Mathf.Abs(n.x), 0f, Mathf.Abs(n.z)) * .09f;
+                    // R498: the curb's outer face stands a centimetre past the road square's, not in its plane.
+                    var mid = c + n * (h - .09f + MissionGames.Proud * .5f);
+                    var half = along * h + new Vector3(Mathf.Abs(n.x), 0f, Mathf.Abs(n.z)) * (.09f + MissionGames.Proud * .5f);
                     Arena.Picture(road, "Curb", mid - half, mid + half + Vector3.up * .16f, curb);
                 }
                 // A corner: a gold ring and an arrow the way the road goes on (the king does not turn; it is pushed

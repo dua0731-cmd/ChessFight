@@ -225,6 +225,53 @@ namespace ChessFight.PawnRush
             return m;
         }
 
+        // R498: a station's gold rim (Arena.Rim) that runs under this board has the board's top (both TileHeight
+        // over the dais), so it flickered through the joints. Keep only the parts of `game`'s rims outside the
+        // board's footprint. Both stations call this for their own game once the board exists.
+        public void ClipRims(Transform game)
+        {
+            if (game == null) return;
+            float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f, u0 = PawnRushBoard.U0, u1 = u0 + 2f * half;
+            // The footprint in the game's frame (the frames differ by a shift and a turn of 0 or 180 degrees).
+            var a = game.InverseTransformPoint(transform.TransformPoint(new Vector3(-half, 0f, u0)));
+            var c = game.InverseTransformPoint(transform.TransformPoint(new Vector3(half, 0f, u1)));
+            float x0 = Mathf.Min(a.x, c.x), x1 = Mathf.Max(a.x, c.x), z0 = Mathf.Min(a.z, c.z), z1 = Mathf.Max(a.z, c.z);
+            var rimList = new List<Transform>();
+            foreach (Transform child in game) if (child.name.StartsWith("Rim ")) rimList.Add(child);
+            foreach (var rim in rimList)
+            {
+                Vector3 p = rim.localPosition, s = rim.localScale;
+                float rx0 = p.x - s.x * .5f, rx1 = p.x + s.x * .5f, rz0 = p.z - s.z * .5f, rz1 = p.z + s.z * .5f;
+                if (rx1 <= x0 || rx0 >= x1 || rz1 <= z0 || rz0 >= z1) continue;
+                // What is left of the strip once the footprint is cut out: (x0, x1, z0, z1) rectangles.
+                var pieces = new List<Vector4>();
+                if (rx0 < x0) pieces.Add(new Vector4(rx0, x0, rz0, rz1));
+                if (rx1 > x1) pieces.Add(new Vector4(x1, rx1, rz0, rz1));
+                float cx0 = Mathf.Max(rx0, x0), cx1 = Mathf.Min(rx1, x1);
+                if (rz0 < z0) pieces.Add(new Vector4(cx0, cx1, rz0, z0));
+                if (rz1 > z1) pieces.Add(new Vector4(cx0, cx1, z1, rz1));
+                pieces.RemoveAll(q => q.y - q.x < .02f || q.w - q.z < .02f);
+                if (pieces.Count == 0)
+                {
+                    Object.DestroyImmediate(rim.gameObject);
+                    continue;
+                }
+                float y0 = p.y - s.y * .5f, y1 = p.y + s.y * .5f;
+                var material = rim.GetComponent<Renderer>().sharedMaterial;
+                for (int i = 0; i < pieces.Count; i++)
+                {
+                    var q = pieces[i];
+                    Vector3 min = new Vector3(q.x, y0, q.z), max = new Vector3(q.y, y1, q.w);
+                    if (i == 0)
+                    {
+                        rim.localPosition = (min + max) * .5f;
+                        rim.localScale = max - min;
+                    }
+                    else Arena.Picture(game, rim.name, min, max, material);
+                }
+            }
+        }
+
         // ------------------------------------------------------------------ the host's game
 
         void FixedUpdate()

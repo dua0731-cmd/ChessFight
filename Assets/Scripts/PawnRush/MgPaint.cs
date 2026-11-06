@@ -35,6 +35,7 @@ namespace ChessFight.PawnRush
             var game = b.parent.gameObject.AddComponent<MgPaint>();
             game.station = station;
             game.board = PaintBoard.For(station, b.parent);
+            if (game.board != null) game.board.ClipRims(b.parent);
             return game;
         }
 

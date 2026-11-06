@@ -39,6 +39,7 @@
 | 현관홀 아트 | [PAWN_RUSH_GRAND_STAIR_HALL_ART](PAWN_RUSH_GRAND_STAIR_HALL_ART.md) |
 | 작전 회의실 아트·코드 | [Library 아트 원본](../../ArtSource/PawnRush/Library/README.md) |
 | 미니게임 규칙 | [PAWN_RUSH_MINIGAMES_v1](PAWN_RUSH_MINIGAMES_v1.md) |
+| **코스·미니게임 3단계 아트 기준(모델링·텍스처)** | [PAWN_RUSH_ART_PHASES](PAWN_RUSH_ART_PHASES.md) |
 | 공간 이미지·제작 규격 | [모델링 지침](PAWN_RUSH_MINIGAME_MODELING.md) · [이미지 갤러리](PAWN_RUSH_MINIGAME_CONCEPTS.html) |
 | 사용자 Unity·Steam 확인 목록 | [VALIDATION](../Network/VALIDATION.md) |
 

@@ -98,9 +98,10 @@ namespace ChessFight.PawnRush
         void OnGUI()
         {
             if (style == null) style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true, wordWrap = true };
-            GUILayout.BeginArea(new Rect(12f, 12f, Mathf.Min(Screen.width - 24f, 560f), 166f), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12f, 12f, Mathf.Min(Screen.width - 24f, 560f), 186f), GUI.skin.box);
             GUILayout.Label("<b>미니게임 프리팹 시험</b> · " + (plaza != null ? MiniGameSectionBuilder.Names[plaza.GameIndex] : "준비 중"), style);
-            GUILayout.Label("1 도개교 · 2 쇠살문 · 3 의장 광장 · 4 동관 · 5 서고\n6 무도회장 · 7 세탁장 · 8 행차 회랑 · 9 체스 홀 · 0 침실", style);
+            // R500: one row per phase (slots 2 · 4 · 6), the same order as the number keys.
+            GUILayout.Label("<b>1단계</b>  1 도개교 · 2 쇠살문 · 3 의장 광장\n<b>2단계</b>  4 동관 · 5 서고 · 6 무도회장 · 7 세탁장\n<b>3단계</b>  8 행차 회랑 · 9 체스 홀 · 0 침실", style);
             GUILayout.Label("F5 팀 전환 · F6 자기 팀 완료 시험 · F8 다시 시작\nR 체크포인트 · Backspace 처음 · F1 자유 카메라", style);
             if (plaza != null)
                 foreach (var station in plaza.Stations)
