@@ -4,6 +4,8 @@
 > 그다음 아래 [6. 어디를 읽을까](#6-어디를-읽을까--작업-분야별-안내)에서 작업 분야 문서만 골라 읽고 코드로 간다.
 > 작업을 마치면 [8. 작업 종료 체크리스트](#8-작업-종료-체크리스트)대로 **이 파일과 요구사항 기록을 갱신한다.** 그래야 다음 도구가 같은 지점에서 이어 간다.
 
+최종 갱신: **2026-11-06** — **R312 미니게임 구간 프리팹10종 제작·저장**. 사용자 "이 모습을 바탕으로 장애물 구간 프리팹처럼 프로젝트에 미니게임 프리팹들을 제작". R311 설계를 기존 `Mg*` 규칙에 연결해 `Assets/Prefabs/PawnRushSections/*_MG_*.prefab`10개, 영구 메시2개·재질83개, 별도 오프라인 시험 씬 `PawnRush_MiniGames.unity`를 저장했다. 슬롯2·4·6에 초반 C/D/A3종·중반 B/E/F/J4종·후반 G/H/I3종을 등록한다. **Build All Mini-game Prefabs**로 재생성, **Open Mini-game Prefab Test**로 열기(1~0 선택·F5 팀·F6 완료 연결·F8 초기화). 정적 건축은 저장하고 Play 시작에 기능 게임 소켓을 재설치한다. Core164·모의 세션55·실제 DLL Roslyn 컴파일, 네이티브 굽기·정적10개·시험 씬 참조·Play10종의 팀 문/반복 초기화/씨앗 변경·A 공유판 인스턴스 분리 자동검사 통과(AI). C/E/G 대표6장(천장 표시 상태)으로 배치만 AI 관찰. **시험 씬의 실제 Start·키 입력, 장치 직접 입력·퍼즐 완주·손맛, 사용자 Unity·Steam·12명 성능은 미확인**. 기존 Course01 `CFP4`·프로토콜은 그대로이며 구간 조합 코스의 온라인 연결은 범위 밖이다. [자산·여는 법·편집 주의·검사 근거](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md). 원래 작업 폴더의 사용자 수정 프리팹2개는 보존했다. 다음 빈 번호 **R313**. 아래 R311·R310의 "Unity 구현 없음"은 당시 자료 작성 이력이다.
+
 최종 갱신: **2026-11-05** — **R311 초반 3D 개편 + 미니게임 전체10종 모델링 컨셉 이미지**. 사용자 "이런 식으로 초반 미니게임 디자인도 다시", 실제 인게임 공간·주변 구조물·디자인을 상세 이미지로 요청하고 **초반·중반·후반 전체10종** 선택. 초반 C·D·A를 공용3D로 교체(전체·단면·걸어가기·팀별동작·소품/초반장식 숨김). A 공유18m판·C 전체폭해자/4m다리진입·D8바퀴를 유지. 내장 Imagegen으로 전경·입체도·장치확대·재질 보드10장 작성. [이미지 갤러리](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html) · [모델링 상세 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md) · [3D/검사 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md). 실제 Three 객체70장면/카메라·3팀 문·앞장소50조합·표시13종·A/C/D 구조 검사, Core164·모의세션55 통과. **이미지는 외형 제안이고 수량·치수는3D/표 우선. 실제 브라우저·Unity·Steam·사용자 확인 전**, 게임자산 변경 없음. 원래 폴더의 프리팹 변경 보존. 다음 빈 번호 **R312**. 아래는 이전 기록이다.
 
 최종 갱신: **2026-11-05** — **R310 폰 러시 중반 4종·후반 3종 미니게임 3D 예시**. 지정한 Claude Code **「폰 러시 미니게임 레벨 디자인」** 세션의 초반 예시와 최신 "3D로 충분해" 지시를 확인하고, 같은 문맥의 Claude 검토를 받아 중반 B·E·F·J / 후반 G·H·I를 독립 HTML 두 개로 작성. 전체·테라스·위·스테이션 단면·걸어 들어가기, 동작 예시·팀 문·앞뒤 연결을 보여 준다. [열기·기획 근거·확인 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md). 장면·카메라 49건(팀 문 7건 포함), Core 164·모의 세션 55 통과. CPU 정지 그림으로 배치만 AI가 확인했으며 **앱 브라우저의 로컬 접근 제한으로 실제 브라우저 조작 미확인, Unity 프리팹 구현 아님, 사용자 확인 전**. 원래 작업 폴더의 프리팹 변경 보존. 작업 중 원격 R309 현관홀 아트를 가져온 뒤 이어 기록했다. 다음 빈 번호 **R311**. 아래는 이전 작업 기록이다.
@@ -324,8 +326,9 @@
 
 | 항목 | 상태 |
 |---|---|
-| **폰 러시 전체 미니게임 모델링 자료(11-05, R311)** | 초반3D C/D/A를 중후반 공용뷰어로 개편. [10종 상세 이미지](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html)(전경·입체도·장치·재질, `ConceptArt/R311/`)와 [모듈·소품·피벗 제작 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md). 3D70장면·3팀문·50장소조합·표시13종·고유구조/진입폭, Core164·세션55 통과. **기획/모델링 제안, 실제 브라우저·Unity·사용자 확인 전** |
-| **폰 러시 중반·후반 미니게임 3D(11-05, R310)** | [중반 4종](Docs/KingRush/PAWN_RUSH_MID_MINIGAMES_3D.html)·[후반 3종](Docs/KingRush/PAWN_RUSH_LATE_MINIGAMES_3D.html). 기존 Claude 세션·초반 예시·사용자 원문에 맞춘 **기획 예시**. 천장·팀·카메라·동작 조작, x=−12 스테이션 단면. 장면 49·팀 문 7·Core 164·세션 55 통과. CPU 배치 그림 AI 확인, **브라우저 직접 조작·사용자 확인 전, Unity 변경 없음**. 상세 [PAWN_RUSH_MINIGAME_PREFABS](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) |
+| **폰 러시 미니게임 구간 프리팹10종(11-06, R312)** | 실제 저장 `*_MG_*`10개·메시2/재질83개·슬롯2/4/6 후보3/4/3개. [전용 안내](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md): Build All/Open Test, 숫자1~0·F5/F6/F8, Game socket 재설치·수동 편집 주의. Core164·세션55·Roslyn·네이티브 굽기·정적10·시험 씬 참조·Play10종 문/초기화/씨앗/A 분리 검사 통과(AI). C/E/G 대표6장 배치 관찰(천장 표시). **실제 퍼즐 입력·시험 씬 Start/키·사용자 Unity·Steam·12명 성능 미확인**, `CFP4` 그대로·구간 온라인 미연결 |
+| **폰 러시 전체 미니게임 모델링 자료(11-05, R311)** | 초반3D C/D/A를 중후반 공용뷰어로 개편. [10종 상세 이미지](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html)(전경·입체도·장치·재질, `ConceptArt/R311/`)와 [모듈·소품·피벗 제작 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md). 3D70장면·3팀문·50장소조합·표시13종·고유구조/진입폭, Core164·세션55 통과. **R311 당시 기획/모델링 제안, 실제 브라우저·Unity·사용자 확인 전** |
+| **폰 러시 중반·후반 미니게임 3D(11-05, R310)** | [중반 4종](Docs/KingRush/PAWN_RUSH_MID_MINIGAMES_3D.html)·[후반 3종](Docs/KingRush/PAWN_RUSH_LATE_MINIGAMES_3D.html). 기존 Claude 세션·초반 예시·사용자 원문에 맞춘 **기획 예시**. 천장·팀·카메라·동작 조작, x=−12 스테이션 단면. 장면 49·팀 문 7·Core 164·세션 55 통과. CPU 배치 그림 AI 확인, **브라우저 직접 조작·사용자 확인 전, R310 당시 Unity 변경 없음**. 상세 [PAWN_RUSH_MINIGAME_PREFABS](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) |
 | **GPT ↔ Claude 계정 연결(11-05, R308)** | `Tools/AiBridge/Start.cmd`에서 요청 입력. ChatGPT·Claude 계정 로그인 사용, API 키 제외·토큰 직접 접근 없음. 기본 GPT → Claude → GPT, 각 CLI 기본 모델. 요청·답변·최종 파일을 `runs/account-날짜/`에 기록. 사용자 Claude 로그인 완료, **실제 3단계 전달 시험 통과(AI 관찰)**. 자동 26개·키 저장 1개·Core 164·세션 55 통과. 게임의 Unity·Steam 확인 대상 아님. R307 API 방식은 별도 `Api.cmd` |
 | **폰 러시 초반 장애물 1-1 왕실 수로 정원 v31(11-03, R305)** | 슬롯 1에 `Early_1-1_RoyalWaterGarden`(뿌리 프리팹 + `RoyalWaterGardenBuilder`, 메뉴 Build Early 1-1 Royal Water Garden). ㄹ자 한 길 259.1 m: 광장 작은 회전 막대 5 → 물기둥 8 → 출렁 발판 8(+ P4 지름길) → 갑문 수문 3 + 물살 → 로봇 팔 2 → 가로 보트 4줄 × 2척(판 씨앗) → 성문 → 출구 테라스 · 4단 · 입구 띠. 새 부품 `GardenGeyser` · `GardenBoat` · `BoatLanes` · `RobotSweep` · `WaterCurrent` · `TiltingPad`(StateDrivenMover) · `GardenHits`, Core `RoyalWaterGardenRules`(시험 3개). 시험 씬은 정원 → 대계단 현관홀 순서. Core 156 · 세션 55 · 실제 DLL 컴파일, **Unity 미확인** → [PAWN_RUSH_ROYAL_GARDEN](Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md) |
 | **폰 러시 구간 프리팹·대계단 현관홀(11-02, R300 → R303)** | R303: 비트 3~5 = 둥근 홀 한 나선 길(떠 있는 발판·점프대·다이빙 틈·바람 길·떨어지는 말) + 유리 징검다리(`GuessBridge`), `IntendedGap`, 날개·움직이는 계단 없앰. R302: 꺾임 계단참 = 룩 탑을 도는 C자 + 스위퍼 + 틈, 날개 계단 2 = 움직이는 계단(`SwingingStair`), CP2 꺾임 계단참(번호 하나씩 밀림). R301: 바람이 폰을 실어 나름(`AirVent.DriftSpeed`·`IWindReceiver`·`RagdollPawn.Wind`), 날개 11 m 바깥(홀 ±51)·다리 A + 섬 + 다리 B·날개 계단 1 진자 셋과 아래 턱, 재미 검토는 PAWN_RUSH_SECTIONS §10. 아래는 R300: `main`(11-02 병합, R304). 한 판 = 7슬롯(장애물·미니게임 번갈아 + 마지막), 슬롯마다 `Settings/PawnRushSections.asset`의 프리팹 목록에서 판 씨앗으로 하나(Core `PawnRushSections`), `PawnRushRound`가 입구를 앞 구간 출구에 붙임, 체크포인트 번호 = 슬롯 × 100 + 번호. 구간 프리팹 `Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab`(저장소엔 뿌리만: 메뉴로 굽거나 깨어날 때 코드로 만듦), 새 장애물 `RollingSpawner`·`ChandelierRain`(사건 목록 + 공유 장애물 시계, 판정은 방장), `SectionValidator`, 시험 씬 `PawnRush_Sections.unity`, 키트 바탕 클래스 `CourseKit`(코스 01 키트도). Core 130·세션 41·컴파일 통과. **Unity 미확인**, 온라인 연결 안 함 |
@@ -393,9 +396,11 @@
 
 ## 2. 무엇이 되고 무엇이 안 되는가
 
-**R311 모델링 자료:** 초반3D는 옛 사본 대신 C·D·A 공용뷰어다. A는 공유판 중앙단면, 나머지는 x−12단면. 모든구역 게임소품 숨김, **주변장식 숨김은 초반만** 제공. C 권양기·줄을 측면으로 빼 다리 진입4m를 비우고 D완료8회전을 반영했다. 이미지10장은 건축·가구·재료의 외형제안이며 정확한 수량·경로·치수는3D와제작지침을 우선한다. 이미지·CPU그림 AI검토와자동검사만 했으며 **실제 브라우저·Unity·Steam 확인/프리팹 구현 없음**이다.
+**R312 실제 구현:** 미니게임10종은 구운 자산으로 저장돼 있고 슬롯2·4·6의3·4·3개 후보에서 뽑힌다. 기존 장애물 후보와 원래 사용자 프리팹 수정2개는 보존했다. 건축·장식은 프리팹으로 보며 Play 시작에는 `Game socket`의 기존 게임을 다시 설치해 비직렬화 참조를 복원한다. 소켓 내부의 수동 편집은 Play에서 유지되지 않고, Build All은 정적 건축도 코드에서 다시 만든다. 네이티브 저장10개·별도 시험 씬 참조·실제 Play10종의 캐시/팀별 문/반복 초기화/씨앗/A 두 인스턴스 분리 검사는 통과했다(AI). **자동 완료는 이벤트 연결 시험이다. 실제 장치 조작·퍼즐 완주와 시험 씬 Start/키 입력·사용자 Unity·Steam·12명 성능은 미확인**이다. Course01의 기존 `CFP4` 형식은 그대로이고 구간 조합 코스는 온라인 미연결이다.
 
-**R310 3D 시각자료:** 중반 B·E·F·J와 후반 G·H·I를 기존 초반과 같은 44 × 36 m 연결 규격의 제안으로 볼 수 있다. 원래 Claude 세션을 복제한 문맥으로 검토했으며 원래 세션·프리팹은 수정하지 않았다. 장면 생성·좌표·카메라·팀 문 검사는 통과했지만 실제 브라우저 화면·마우스·모바일 조작은 미확인이다. Unity 프리팹·물리·게임 시간·온라인 구현으로 취급하지 않는다.
+**R311 당시 모델링 자료:** 초반3D는 옛 사본 대신 C·D·A 공용뷰어다. A는 공유판 중앙단면, 나머지는 x−12단면. 모든구역 게임소품 숨김, **주변장식 숨김은 초반만** 제공. C 권양기·줄을 측면으로 빼 다리 진입4m를 비우고 D완료8회전을 반영했다. 이미지10장은 건축·가구·재료의 외형제안이며 정확한 수량·경로·치수는3D와제작지침을 우선한다. R311은 이미지·CPU그림 AI검토와자동검사만 했으며 **당시 실제 브라우저·Unity·Steam 확인/프리팹 구현은 없었다**. 실제 자산 구현은 R312의 별도 결과다.
+
+**R310 당시 3D 시각자료:** 중반 B·E·F·J와 후반 G·H·I를 기존 초반과 같은 44 × 36 m 연결 규격의 제안으로 작성했다. 원래 Claude 세션을 복제한 문맥으로 검토했으며 원래 세션·프리팹은 수정하지 않았다. 장면 생성·좌표·카메라·팀 문 검사는 통과했지만 실제 브라우저 화면·마우스·모바일 조작은 미확인이다. R310 HTML 자체를 Unity 프리팹·물리·게임 시간·온라인 구현으로 취급하지 않는다.
 
 **R308 개발 도구:** GPT와 Claude의 답변 전달·검토·정리를 **계정 로그인**으로 실행한다([사용법](Tools/AiBridge/README.md)). 새 요청과 명시적으로 첨부한 참고 파일만 전달하며 기존 앱의 채팅은 자동 공유하지 않는다. 실제 계정 전달 시험은 짧은 요청 3회까지다. 원래 API 직접 연결(R307)은 키가 없어 미시험인 상태로 별도 보존한다. 게임 기능의 확인 상태에는 영향 없다.
 
@@ -403,10 +408,11 @@
 
 | 기능 | 상태 | 상세 문서 |
 |---|---|---|
+| **폰 러시 미니게임 구간 프리팹10종**(R312) | 실제 자산10개·후보3/4/3개·별도 오프라인 시험 씬. Core164·세션55·Roslyn·네이티브 정적10/Play10·문/초기화/씨앗/A 분리 검사 통과(AI). 대표 C/E/G6장 배치 관찰. **시험 씬 Start/키·퍼즐 직접 입력·사용자 Unity·Steam·12명 성능 미확인** | [자산·메뉴·편집 주의·검사](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md) |
 | **폰 러시 초반3D·전체10종 상세 이미지**(R311) | 모델링 참고자료 작성, 공통건축3벌·게임킷10벌 제작지침. 장면70·3팀문·50장소조합·표시13종·고유구조 통과. 이미지/CPU배치 AI확인, 실제브라우저·Unity·사용자확인전 | [이미지 갤러리](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html) · [모델링 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md) |
-| **폰 러시 중반·후반 미니게임 3D**(R310): 중반 4종·후반 3종, 앞뒤 구간 대표 소품·팀 스테이션·완료 연출 | 기획용 HTML 작성, 장면·카메라 49건과 팀 문 7건 통과. 실제 브라우저 조작·사용자 확인 전, **Unity 구현 없음** | [KingRush/PAWN_RUSH_MINIGAME_PREFABS](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) |
+| **폰 러시 중반·후반 미니게임 3D**(R310): 중반 4종·후반 3종, 앞뒤 구간 대표 소품·팀 스테이션·완료 연출 | 기획용 HTML 작성, 장면·카메라 49건과 팀 문 7건 통과. 실제 브라우저 조작·사용자 확인 전, **R310 당시 Unity 구현 없음** | [KingRush/PAWN_RUSH_MINIGAME_PREFABS](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) |
 | **폰 러시 1-1 왕실 수로 정원 v31**(R305): 슬롯 1 초반 장애물, 작은 회전 막대 5 · 물기둥 · 출렁 발판과 매우 어려운 지름길 · 갑문 · 로봇 팔 · 가로 보트(판 씨앗) · 성문, 시험 씬에서 정원 → 대계단 현관홀 | 코드 · Core 시험 · 실제 DLL 컴파일 · 파이썬 좌표 점검, **Unity 미확인**. 아트는 Blender 원본(`seoungtest`) 그대로, 연꽃 발판 온라인 없음 | [KingRush/PAWN_RUSH_ROYAL_GARDEN](Docs/KingRush/PAWN_RUSH_ROYAL_GARDEN.md) |
-| **폰 러시 구간 프리팹**(R300): 한 판 7구간 무작위 조합, 2-1 대계단 현관홀(굴러오는 석상·카펫, 샹들리에 낙하, 날개 계단 진자·컨베이어, 회랑 바람, 들리는 다리, 승강 계단참, 발코니 기병·시계 문), 3·4대는 날개 하나, 시험 씬 F8 새 판·F9 인원·CSV | 코드·Core 시험·파이썬 좌표 점검, **Unity 미확인**. 다른 6슬롯 프리팹·온라인 없음 | [KingRush/PAWN_RUSH_SECTIONS](Docs/KingRush/PAWN_RUSH_SECTIONS.md) |
+| **폰 러시 구간 프리팹**(R300): 한 판 7구간 무작위 조합, 2-1 대계단 현관홀(굴러오는 석상·카펫, 샹들리에 낙하, 날개 계단 진자·컨베이어, 회랑 바람, 들리는 다리, 승강 계단참, 발코니 기병·시계 문), 3·4대는 날개 하나, 시험 씬 F8 새 판·F9 인원·CSV | 코드·Core 시험·파이썬 좌표 점검, **R300 당시 Unity 미확인**. R312에서 미니게임 슬롯2·4·6 후보를 추가했고 슬롯5·7과 구간 온라인은 없음 | [KingRush/PAWN_RUSH_SECTIONS](Docs/KingRush/PAWN_RUSH_SECTIONS.md) |
 | **지연 줄이기**(R306, `main` `8f624263`, 푸시함): 참가자가 누른 것이 방장에게 더 빨리 닿고(입력 바로 · 방장이 물리 전에 읽음) 더 빨리 돌아오고(폰 러쉬 스냅샷 제때, 6명까지 초당 60번), 화면 재생 지연이 70 → 약 37 ms(60번일 때). F3 상자에서 "누름 → 방장 반응" · "내 몸이 움직여 보이기까지" · 직접/릴레이를 봄. 폰 러쉬 F7로 내 폰을 먼저 그려 비교(기본 꺼짐). `-latencyBefore`로 같은 빌드에서 전후 비교 | 코드 · Core 시험 · 실제 DLL 컴파일 · 빌드 · 이 PC 루프백 측정(AI). **`main`에 푸시, Unity 편집기 · Steam · 사람 미확인** | [HOST_AUTHORITY §5 · §11](Docs/Network/HOST_AUTHORITY.md) · [MOTION §3](Docs/Network/MOTION.md) · [VALIDATION 맨 위](Docs/Network/VALIDATION.md) |
 | **12명 시험 준비**(R297): 개발 빌드 경기에서 F3로 프레임 · 물리 · 스냅샷 바이트 · KB/초 · 왕복 · 손실 · GC 할당을 봄, `-autopilot`으로 PC가 혼자 플레이, 스냅샷이 말마다 9바이트 작아짐(12명 810바이트), 패킷마다 하던 할당이 줄어듦(바이트는 그대로), 사람이 안 온 예약은 60초 쉼, 받은 메시지 하나가 오류를 내도 나머지는 계속 읽음 | 코드 · Core · 모의 시험 · 실제 DLL 컴파일. **빌드 안 뽑음, Unity · Steam 미확인, 기준값(전후 수치) 아직 없음** | [HOST_AUTHORITY §6 · §10](Docs/Network/HOST_AUTHORITY.md) · [MOTION §3](Docs/Network/MOTION.md) · [SESSION §4](Docs/Network/SESSION.md) · [VALIDATION 맨 위](Docs/Network/VALIDATION.md) |
 | **방장 교체 보완**(R295): 느리게 불러오는 PC 때문에 방장이 바뀌거나 쫓겨나지 않음, 폰 러쉬에서 방장이 나가도 남은 모든 PC의 시계 · 발판 · 스킬이 계속, 대기실 넘김 중 받을 PC가 나가도 방 유지, 방장 교체 때 음성 유지, 가짜 `claim` 무시 | 코드 · Core · 모의 시험 · 실제 DLL 컴파일. **PC 3대 · Steam 미확인**, 빌드 안 뽑음 | [HOST](Docs/Network/HOST.md) · [MOTION §4](Docs/Network/MOTION.md) · [VALIDATION 맨 위](Docs/Network/VALIDATION.md) |
@@ -454,9 +460,9 @@
 
 ## 3. 진행 중인 일과 다음 할 일
 
-**R311 모델링 검토:** [전체 이미지](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html)에서 구역별 건축·소품·재질 인상을 보고 [제작 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md)과3D로 수량·축·이동공간을 맞춘다. 초반C 권양기옆4m진입, A공유판/둘레1m, E팀당6탑, J정확한8통경로, H러너비움, I단위1.1m빔을우선확인. 이후공통건축3벌과대표게임C/E/G부터모델링하는순서는제안이다. 아직사용자확인·Unity모델링/적용은하지않았다. 다음 요청 **R312**.
+**R312 다음 확인 / 다음 빈 번호 R313:** Unity 가져오기·컴파일 완료 뒤 **ChessFight → Pawn Rush → Open Mini-game Prefab Test** → Play. 저장된10프리팹을 숫자1~0으로 선택하고 F5 팀 전환·F8 다시 시작을 실제로 확인한다. F6은 완료 이벤트·문 연결용 개발 지름길이며 퍼즐 해결 시험이 아니다. [수동 확인 목록](Docs/Network/VALIDATION.md)의 A 칠하기·B 판자·C 매듭/다리·D8바퀴·E 등반/등·F 타이밍·G 가마/룩·H 킹·I 침대/방패·J 점프/다이빙을 직접 조작하고 외형·카메라·손맛을 확인한다. 저장 프리팹을 바로 볼 수 있고 **Build All Mini-game Prefabs는 코드 수정 후 다시 구울 때만** 필요하다([소켓 재설치 주의](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md#3-프리팹-저장과-런타임-재연결)). 온라인·플레이어 빌드·12명 성능은 별도 확인 대상으로 남긴다.
 
-**R310 미리보기 확인:** [중반](Docs/KingRush/PAWN_RUSH_MID_MINIGAMES_3D.html)·[후반](Docs/KingRush/PAWN_RUSH_LATE_MINIGAMES_3D.html)을 일반 브라우저에서 열어 게임 전환·단면·걸어 들어가기를 본다(Three.js CDN 인터넷 필요). 사용자는 아직 확인하지 않았다. 서고 문 가림·B 아래층·J 도약 길·G 모퉁이·H 대비·I 빛줄기 높이와 앞뒤 연결 인상을 확인한 뒤 Unity 구현할 게임을 정한다. 현재 요청은 3D 예시로 끝내며 Unity 구현을 추가하지 않는다. 원격 main의 R309 현관홀 아트를 보존하고 이번 번호는 R310으로 배정했다. 다음 요청 **R311**.
+**R311·R310 참고자료 이력:** [전체 이미지](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html)·[제작 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md)·[중반3D](Docs/KingRush/PAWN_RUSH_MID_MINIGAMES_3D.html)·[후반3D](Docs/KingRush/PAWN_RUSH_LATE_MINIGAMES_3D.html)은 배치·재질·수량·축 참고로 유지한다. 당시에는 시각자료만 작성했고, 실제 프리팹 제작은 R312에서 진행했다. 원래 세션·사용자 프리팹 수정은 보존했으며 자료의 미리보기 동작은 실제 퍼즐 해결·사용자 확인을 대신하지 않는다.
 
 **R308 연결 도구 사용:** 이 PC에서는 두 계정 로그인이 인식되므로 `Tools/AiBridge/Start.cmd`에서 바로 요청을 입력한다. 다른 PC·로그인 만료 때만 `Setup.cmd`. 참고 문서는 `--context`로 지정하며 각 계정의 사용량 한도가 적용된다. 별도 `.worktrees/api-bridge-main`의 `main`에서 작업했고 원래 작업 폴더의 프리팹 변경은 보존한다.
 
@@ -653,6 +659,7 @@ Docs/
 │  ├─ OBSTACLES.md              장애물 규칙과 만드는 법
 │  ├─ OBSTACLE_TEMPLATE.md      장애물 기획서 양식
 │  ├─ PAWN_RUSH_SECTIONS.md     폰 러시 한 판 7구간 · 2-1 대계단 현관홀 (R300~R303)
+│  ├─ PAWN_RUSH_MINIGAME_SECTIONS.md 실제 미니게임10프리팹 · 후보3/4/3개 · 별도 시험 씬 · 편집 주의 (R312)
 │  └─ PAWN_RUSH_ROYAL_GARDEN.md 폰 러시 1-1 왕실 수로 정원 v31 그레이박스 (R305)
 ├─ TEAM_GUIDE_KO.md             팀원용 한 권 안내서 (역할별 장, AI 시작 프롬프트)
 └─ AI/                          옛 경로 (새 문서로 안내만 함)
@@ -668,6 +675,7 @@ Tools/
 
 | 작업 | 먼저 읽을 것 | 그다음 코드 |
 |---|---|---|
+| 폰 러시 실제 미니게임 구간 프리팹10종(R312) | [자산·메뉴·소켓 재설치·검사 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md) → [7슬롯 구간 연결](Docs/KingRush/PAWN_RUSH_SECTIONS.md) → [모델링 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md). 사용자 미확인 항목은 [VALIDATION R312](Docs/Network/VALIDATION.md) | `PawnRush/MiniGameSection*`·`MiniGamePalaceArt*`·`MiniGamePrefabTest`·`PalaceGateLeaf`·`PalaceTextBinding`, `PawnRushEditor/MiniGamePrefabMenu`·`MiniGamePrefabValidation`, `Assets/Prefabs/PawnRushSections/*_MG_*` |
 | 폰 러시 초반3D/전체10종 모델링 이미지(R311) | [3D·출처·검사](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) → [모델링 상세 지침](Docs/KingRush/PAWN_RUSH_MINIGAME_MODELING.md) → [이미지갤러리](Docs/KingRush/PAWN_RUSH_MINIGAME_CONCEPTS.html), [생성프롬프트](Docs/KingRush/ConceptArt/R311/PROMPTS.md). 치수/수량은생성그림보다표/3D우선 | 공용 `PAWN_RUSH_MINIGAME_PREVIEW.js`·`.css`, `Tools/Generators/build_minigame_previews.mjs`(3HTML), `Docs/KingRush/ConceptArt/R311/`(원본10장) |
 | 폰 러시 중반·후반 미니게임 3D(R310) | [미리보기·확인 범위](Docs/KingRush/PAWN_RUSH_MINIGAME_PREFABS.md) → [사용자 구역 기획 원문](Docs/KingRush/PAWN_RUSH_MINIGAME_ZONES_v0.1.md), [기존 초반 3D](Docs/KingRush/PAWN_RUSH_EARLY_PLAZA_3D.html). 이 작업의 분류는 중반 B·E·F·J / 후반 G·H·I | `Docs/KingRush/PAWN_RUSH_MINIGAME_PREVIEW.js`·`.css`, `Tools/Generators/build_minigame_previews.mjs`(중반·후반 독립 HTML 생성) |
 | GPT·Claude 계정 연결(R308), 별도 API 방식(R307) | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md) → [계정 로그인·실행](Tools/AiBridge/README.md), [API 방식](Tools/AiBridge/API.md) | `Tools/AiBridge/cli-bridge.mjs`·`cli-bridge.test.mjs`, `Start.ps1`·`Install-Claude.ps1`, 기존 `bridge.mjs`·`Start-Api.ps1` |

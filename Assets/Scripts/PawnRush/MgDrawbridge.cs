@@ -30,6 +30,7 @@ namespace ChessFight.PawnRush
         [SerializeField] Transform rope, drum, pawl, deckLook;
         [SerializeField] Renderer[] lamps = new Renderer[3];
         [SerializeField] LineRenderer[] chains = new LineRenderer[2];
+        [SerializeField] float ropeOffsetX;
 
         float pulled;            // metres of rope pulled (host), or the host's (client)
         float shown;             // what is drawn: the host's own, a client's eased
@@ -91,6 +92,16 @@ namespace ChessFight.PawnRush
 
             // The winch: a walnut frame, the drum across it (axis along v), gold teeth and the pawl at its east end,
             // three latch lamps on the east post.
+            // Palace sections keep the complete four-metre bridge approach clear. The actual handles and rope
+            // move with the winch, rather than decorating one place while judging a pull somewhere else.
+            float ropeOffset = station.PalaceStyle ? (station.Mirrored ? 4f : -4f) : 0f;
+            float postSide = station.PalaceStyle && !station.Mirrored ? -1f : 1f;
+            var winchParent = b.parent;
+            if (station.PalaceStyle)
+            {
+                b.parent = b.Group("Winch assembly");
+                b.parent.localPosition = Vector3.right * ropeOffset;
+            }
             b.Box("Winch frame", V(-1.6f, 0f, Winch - .5f), V(1.6f, 1f, Winch + .5f), Arena.Wood(false), true);
             var drumGo = new GameObject("Drum").transform;
             drumGo.SetParent(b.parent, false);
@@ -106,13 +117,13 @@ namespace ChessFight.PawnRush
             }
             var pawlGo = new GameObject("Pawl").transform;
             pawlGo.SetParent(b.parent, false);
-            pawlGo.localPosition = V(1.2f, DrumHeight + DrumRadius + .3f, Winch - .2f);
+            pawlGo.localPosition = V(postSide * 1.2f, DrumHeight + DrumRadius + .3f, Winch - .2f);
             MiniGameParts.Part(pawlGo, PrimitiveType.Cube, new Vector3(0f, -.15f, 0f), new Vector3(.12f, .6f, .12f), gold);
-            b.Box("Winch post E", V(1.9f, 0f, Winch - .1f), V(2.1f, 2.5f, Winch + .1f), Arena.Wood(false), true);
+            b.Box("Winch post E", V(postSide * 1.9f, 0f, Winch - .1f), V(postSide * 2.1f, 2.5f, Winch + .1f), Arena.Wood(false), true);
             var lampOff = Arena.Lit("M_LampOff", new Color(.3f, .27f, .2f), 0f, .6f);
             var lamps = new Renderer[3];
             for (int i = 0; i < 3; i++)
-                lamps[i] = MiniGameParts.Part(b.parent, PrimitiveType.Sphere, V(2f, 1f + i * .6f, Winch - .16f), Vector3.one * .16f, lampOff).GetComponent<Renderer>();
+                lamps[i] = MiniGameParts.Part(b.parent, PrimitiveType.Sphere, V(postSide * 2f, 1f + i * .6f, Winch - .16f), Vector3.one * .16f, lampOff).GetComponent<Renderer>();
 
             // The rope lane: dark slate, a gold tick every metre from u 10.2 down to 3.2, arrows pointing south.
             Arena.Picture(b.parent, "Rope lane", V(-1.2f, 0f, .2f), V(1.2f, .015f, RopeStart), Arena.Lit("M_RopeLane", Arena.Hex("#565C6B"), 0f, .8f));
@@ -133,8 +144,11 @@ namespace ChessFight.PawnRush
                 }
             }
 
+            b.parent = winchParent;
+
             var game = b.parent.gameObject.AddComponent<MgDrawbridge>();
             game.station = station;
+            game.ropeOffsetX = ropeOffset;
             game.hinge = body;
             game.drum = drumGo;
             game.pawl = pawlGo;
@@ -144,11 +158,11 @@ namespace ChessFight.PawnRush
             game.lampOn = Arena.Emissive(Arena.Gold, 1f);
             // The rope (a picture from the drum to its tail) and the knots on it.
             game.ropeMat = Arena.Lit("M_Rope", Arena.Hex("#C9A57A"), 0f, .9f);
-            game.ropeHeld = Arena.Lit("M_RopeHeld", Arena.TeamColor(station.Team == Teams.White ? Teams.Black : Teams.White), .4f, .7f);
+            game.ropeHeld = Arena.Lit("M_RopeHeld", station.Accent(station.Team == Teams.White ? Teams.Black : Teams.White), .4f, .7f);
             game.rope = MiniGameParts.Part(b.parent, PrimitiveType.Cylinder, Vector3.zero, Vector3.one, game.ropeMat).transform;
             for (int i = 0; i < Knots; i++)
             {
-                var h = MiniGameParts.Handle(b.parent, "Knot " + (i + 1), V(0f, RopeHeight, KnotU(0f, i)), new Vector3(.3f, .3f, .14f), game, (byte)i, GrabHandle.HandleKind.Pull);
+                var h = MiniGameParts.Handle(b.parent, "Knot " + (i + 1), V(ropeOffset, RopeHeight, KnotU(0f, i)), new Vector3(.3f, .3f, .14f), game, (byte)i, GrabHandle.HandleKind.Pull);
                 game.knots[i] = h;
                 game.knotBodies[i] = h.GetComponent<Rigidbody>();
             }
@@ -156,13 +170,15 @@ namespace ChessFight.PawnRush
             {
                 var c = new GameObject("Chain").AddComponent<LineRenderer>();
                 c.transform.SetParent(b.parent, false);
-                c.useWorldSpace = true;
-                c.positionCount = 2;
+                c.useWorldSpace = !station.PalaceStyle;
+                c.positionCount = station.PalaceStyle ? 3 : 2;
                 c.widthMultiplier = .05f;
                 c.sharedMaterial = Arena.Lit("M_Chain", new Color(.45f, .45f, .47f), 0f, .4f);
                 game.chains[i] = c;
             }
             game.Pose(0f);
+            game.RopePose(0f, 0f);
+            game.ChainPose();
             return game;
         }
 
@@ -243,7 +259,40 @@ namespace ChessFight.PawnRush
                 hinge.MoveRotation(parent != null ? parent.rotation * local : local);
             }
             for (int i = 0; i < Knots; i++)
-                if (knotBodies[i] != null) knotBodies[i].MovePosition(World(new Vector3(0f, RopeHeight, KnotU(metres, i))));
+                if (knotBodies[i] != null) knotBodies[i].MovePosition(World(new Vector3(ropeOffsetX, RopeHeight, KnotU(metres, i))));
+        }
+
+        void RopePose(float metres, float shiver)
+        {
+            float tail = KnotU(metres, Knots - 1) - Tail;
+            var a = new Vector3(ropeOffsetX, RopeHeight + shiver, RopeStart);
+            var z = new Vector3(ropeOffsetX, RopeHeight + shiver, tail);
+            rope.localPosition = (a + z) * .5f;
+            rope.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            rope.localScale = new Vector3(.14f, (RopeStart - tail) * .5f, .14f);
+        }
+
+        void ChainPose()
+        {
+            if (hinge == null) return;
+            for (int i = 0; i < chains.Length; i++)
+            {
+                if (chains[i] == null) continue;
+                float x = i == 0 ? -1.6f : 1.6f;
+                var end = hinge.transform.TransformPoint(new Vector3(x, 0f, -Deck));
+                if (station.PalaceStyle)
+                {
+                    // Local positions follow a placed prefab even before its first Play-mode Update.
+                    chains[i].SetPosition(0, transform.InverseTransformPoint(end));
+                    chains[i].SetPosition(1, new Vector3(i == 0 ? -2.4f : 2.4f, 5.4f, 16.2f));
+                    chains[i].SetPosition(2, new Vector3(ropeOffsetX + x * .6f, DrumHeight + DrumRadius, Winch));
+                }
+                else
+                {
+                    chains[i].SetPosition(0, end);
+                    chains[i].SetPosition(1, World(new Vector3(x * .6f, DrumHeight + DrumRadius, Winch)));
+                }
+            }
         }
 
         // StateDrivenMover: the deck, the drum and the knots follow the rope's length (the host's game state), not
@@ -254,13 +303,8 @@ namespace ChessFight.PawnRush
             float p = shown / DrawbridgeRope.Length;
             bool moving = !Completed && net > 0f && shown < DrawbridgeRope.Length - .001f;
             // The rope from the drum to its tail, shivering 0.015 m at 40 Hz while it is pulled.
-            float tail = KnotU(shown, Knots - 1) - Tail;
             float shiver = moving ? .015f * Mathf.Sin(Time.time * 40f * Mathf.PI * 2f) : 0f;
-            var a = new Vector3(0f, RopeHeight + shiver, RopeStart);
-            var z = new Vector3(0f, RopeHeight + shiver, tail);
-            rope.localPosition = (a + z) * .5f;
-            rope.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            rope.localScale = new Vector3(.14f, (RopeStart - tail) * .5f, .14f);
+            RopePose(shown, shiver);
             var held = (knotBits >> 4) != 0 && Mathf.Repeat(Time.time * 4f, 1f) < .5f;
             var mat = held ? ropeHeld : ropeMat;
             var rr = rope.GetComponent<Renderer>();
@@ -274,7 +318,7 @@ namespace ChessFight.PawnRush
             {
                 clicks = metre;
                 pawlKick = 1f;
-                var at = World(pawl.localPosition);
+                var at = pawl.position;
                 ArenaFx.Burst(at, new[] { Arena.Gold }, 6, 1f, 1.2f, .4f, .05f);
                 ArenaFx.Sfx("sfx_ratchet_click", at);
             }
@@ -287,13 +331,7 @@ namespace ChessFight.PawnRush
                 if (lamps[i] != null && lamps[i].sharedMaterial != want) lamps[i].sharedMaterial = want;
             }
             // The chains from the deck's end to the drum's top.
-            if (hinge != null)
-                for (int i = 0; i < 2; i++)
-                {
-                    float x = i == 0 ? -1.6f : 1.6f;
-                    chains[i].SetPosition(0, hinge.transform.TransformPoint(new Vector3(x, 0f, -Deck)));
-                    chains[i].SetPosition(1, World(new Vector3(x * .6f, DrumHeight + DrumRadius, Winch)));
-                }
+            ChainPose();
             Sounds(moving);
             Dust();
             // Down: a thud and a 0.05 m bounce at the far bank's end.
@@ -314,7 +352,7 @@ namespace ChessFight.PawnRush
 
         void Sounds(bool moving)
         {
-            var at = World(new Vector3(0f, DrumHeight, Winch));
+            var at = World(new Vector3(ropeOffsetX, DrumHeight, Winch));
             float speed = DrawbridgeRope.Speed(Mathf.Max(0f, net), 0f);
             if (moving)
             {
@@ -332,7 +370,7 @@ namespace ChessFight.PawnRush
                 if ((knotBits >> i & 1) != 0 && Time.time - strainAt[i] >= 2f)
                 {
                     strainAt[i] = Time.time;
-                    ArenaFx.Sfx("sfx_strain", World(new Vector3(0f, 1f, KnotU(shown, i) - 1f)), volume: .7f);
+                    ArenaFx.Sfx("sfx_strain", World(new Vector3(ropeOffsetX, 1f, KnotU(shown, i) - 1f)), volume: .7f);
                 }
         }
 
@@ -343,7 +381,7 @@ namespace ChessFight.PawnRush
             dustAt = Time.time;
             for (int i = 0; i < Knots; i++)
                 if ((knotBits >> i & 1) != 0)
-                    ArenaFx.Burst(World(new Vector3(0f, .05f, KnotU(shown, i) - 1.1f)), new[] { new Color(.8f, .72f, .6f) }, 3, .8f, .6f, .4f, .06f);
+                    ArenaFx.Burst(World(new Vector3(ropeOffsetX, .05f, KnotU(shown, i) - 1.1f)), new[] { new Color(.8f, .72f, .6f) }, 3, .8f, .6f, .4f, .06f);
         }
 
         // ------------------------------------------------------------------ the wire (§9.6)

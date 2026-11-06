@@ -141,7 +141,7 @@ namespace ChessFight.PawnRush
 
             // The rooks in the way (grab-only: held and pushed, never climbed), their grooves, garages and gold stops.
             var them = Opponent;
-            ringPlain = Arena.Lit("M_PieceRing", Arena.TeamColor(them), .4f, .5f);
+            ringPlain = Arena.Lit("M_PieceRing", station.Accent(them), .4f, .5f);
             ringWarn = Arena.Lit("M_PieceRingWarn", Arena.Hex("#F08A2C"), .9f, .5f);
             var garageFloor = Arena.Lit("M_Garage", Arena.Hex("#2F333D"), 0f, .8f);
             var grooveMat = Arena.Lit("M_Groove", Arena.Hex("#1D2028"), 0f, .8f);
@@ -158,7 +158,7 @@ namespace ChessFight.PawnRush
                 var stop = Arena.Picture(road, "Rook stop", -Abs(across * .8f + g * .07f), Abs(across * .8f + g * .07f) + Vector3.up * .2f, gold);
                 stop.transform.localPosition = garage + g * (h - .1f);
                 stops[k] = stop.transform;
-                var rook = MiniGameParts.Piece(b.parent, "Rook in the way " + (k + 1), PieceKind.Rook, 1.6f, MiniGameParts.PieceMaterial(them), Arena.TeamColor(them), true, .4f, grabbable: true);
+                var rook = MiniGameParts.Piece(b.parent, "Rook in the way " + (k + 1), PieceKind.Rook, 1.6f, MiniGameParts.PieceMaterial(them), station.Accent(them), true, .4f, grabbable: true);
                 rook.transform.localPosition = from;
                 rooks[k] = rook.GetComponent<Rigidbody>();
                 foreach (var r in rook.GetComponentsInChildren<Renderer>()) if (r.name == "Ring") rookRings[k] = r;
@@ -167,7 +167,7 @@ namespace ChessFight.PawnRush
             // Our rook tower on g8.
             var g8 = Cell("g8");
             b.Box("Rook tower base", g8 + new Vector3(-.9f, 0f, -.9f), g8 + new Vector3(.9f, .3f, .9f), Arena.Lit("M_TowerBase", Arena.Hex("#CFC5B3"), 0f, .8f), true);
-            tower = MiniGameParts.Piece(b.parent, "Rook tower", PieceKind.Rook, 2.2f, MiniGameParts.PieceMaterial(station.Team), Arena.TeamColor(station.Team), false).transform;
+            tower = MiniGameParts.Piece(b.parent, "Rook tower", PieceKind.Rook, 2.2f, MiniGameParts.PieceMaterial(station.Team), station.Accent(station.Team), false).transform;
             tower.localPosition = g8 + Vector3.up * .3f;
 
             // The sled: a square walnut base on runners with our king on it, one kinematic body whose colliders (the
@@ -191,9 +191,9 @@ namespace ChessFight.PawnRush
             MiniGameParts.Part(sledLook, PrimitiveType.Cube, new Vector3(0f, .3f, 0f), new Vector3(SledSize, .5f, SledSize), Arena.Wood(false));
             foreach (float side in new[] { -.6f, .6f })
                 MiniGameParts.Part(sledLook, PrimitiveType.Cube, new Vector3(side, .03f, 0f), new Vector3(.08f, .06f, SledSize + .1f), Arena.Lit("M_Runner", new Color(.4f, .4f, .42f), 0f, .4f));
-            MiniGameParts.Piece(sledLook, "Our king", PieceKind.King, 1.7f, MiniGameParts.PieceMaterial(station.Team), Arena.TeamColor(station.Team), false).transform.localPosition = new Vector3(0f, .55f, 0f);
+            MiniGameParts.Piece(sledLook, "Our king", PieceKind.King, 1.7f, MiniGameParts.PieceMaterial(station.Team), station.Accent(station.Team), false).transform.localPosition = new Vector3(0f, .55f, 0f);
             // A ring round the base: our colour while it is pushed on, theirs while they hold it back.
-            sledRing = MiniGameParts.Loop(sledLook, "Push ring", new Vector3(0f, .06f, 0f), SledHalf + .45f, .08f, Arena.TeamColor(station.Team));
+            sledRing = MiniGameParts.Loop(sledLook, "Push ring", new Vector3(0f, .06f, 0f), SledHalf + .45f, .08f, station.Accent(station.Team));
             sledRing.enabled = false;
             Place(0f, true);
         }
@@ -312,7 +312,7 @@ namespace ChessFight.PawnRush
             // The push ring: ours while pushed on, theirs blinking while held back.
             bool held = holders > 0 && Mathf.Repeat(t * 3f, 1f) < .5f;
             sledRing.enabled = pushers > 0 || held;
-            var rc = held ? Arena.TeamColor(Opponent) : Arena.TeamColor(station.Team);
+            var rc = held ? station.Accent(Opponent) : station.Accent(station.Team);
             sledRing.startColor = sledRing.endColor = rc;
 
             // Moving: dust behind (sand: more, and sand-coloured), the drag loop pitched by speed.
@@ -395,7 +395,7 @@ namespace ChessFight.PawnRush
             {
                 if (castleAt < 0f) castleAt = t;
                 var at = World(Cell("g8"));
-                ArenaFx.Beam(at, 1.2f, 1.8f, 7f, 1.3f, Arena.TeamColor(station.Team));
+                ArenaFx.Beam(at, 1.2f, 1.8f, 7f, 1.3f, station.Accent(station.Team));
                 ArenaFx.Sfx("sfx_castle_whoosh", at);
                 landed = false;
             }
@@ -412,8 +412,8 @@ namespace ChessFight.PawnRush
             {
                 landed = true;
                 var at = World(to);
-                ArenaFx.Ring(at, 0f, 2.5f, .6f, Arena.TeamColor(station.Team));
-                ArenaFx.Burst(at + Vector3.up * .2f, new[] { Arena.TeamColor(station.Team), Arena.Gold }, 20, 2f, 2.5f, .9f, .1f);
+                ArenaFx.Ring(at, 0f, 2.5f, .6f, station.Accent(station.Team));
+                ArenaFx.Burst(at + Vector3.up * .2f, new[] { station.Accent(station.Team), Arena.Gold }, 20, 2f, 2.5f, .9f, .1f);
                 ArenaFx.Sfx("sfx_castle_land", at);
             }
         }

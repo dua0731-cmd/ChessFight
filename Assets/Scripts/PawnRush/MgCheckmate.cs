@@ -65,7 +65,7 @@ namespace ChessFight.PawnRush
         {
             float m = MiniGameParts.Mirror(station);
             var board = b.Group("Board");
-            var team = Arena.TeamColor(station.Team);
+            var team = station.Accent(station.Team);
             var plate = Arena.Glow(new Color(team.r, team.g, team.b, .28f));
             attack = new Transform[64];
             for (int s = 0; s < 64; s++)
@@ -117,7 +117,7 @@ namespace ChessFight.PawnRush
             halos = new LineRenderer[n];
             for (int k = 0; k < n; k++)
             {
-                var go = MiniGameParts.Piece(b.parent, "King " + (k + 1), PieceKind.King, KingHeight, skin, Arena.TeamColor(them), true, KingRadius);
+                var go = MiniGameParts.Piece(b.parent, "King " + (k + 1), PieceKind.King, KingHeight, skin, station.Accent(them), true, KingRadius);
                 kings[k] = go.transform;
                 looks[k] = go.transform.Find("Look");
                 bodies[k] = go.GetComponent<Rigidbody>();
@@ -256,7 +256,7 @@ namespace ChessFight.PawnRush
             }
             if (now.State == CheckmateHunt.KingState.Free && was.State == CheckmateHunt.KingState.Frozen)
             {
-                ArenaFx.Burst(at + Vector3.up * .5f, new[] { Arena.TeamColor(station.Team == Teams.White ? Teams.Black : Teams.White) }, 10, 1.4f, 1.4f, .7f, .08f);
+                ArenaFx.Burst(at + Vector3.up * .5f, new[] { station.Accent(station.Team == Teams.White ? Teams.Black : Teams.White) }, 10, 1.4f, 1.4f, .7f, .08f);
                 ArenaFx.Sfx("sfx_rescue", at);
             }
             Copy(now, was);
@@ -287,7 +287,7 @@ namespace ChessFight.PawnRush
             if (bodies[k] != null) bodies[k].interpolation = RigidbodyInterpolation.None;
             halos[k].enabled = false;
             var at = World(from[k] + Vector3.up * .5f);
-            ArenaFx.Burst(at, new[] { Arena.Gold, Arena.TeamColor(station.Team), Color.white }, 30, 2.5f, 3.5f, 1.1f, .1f);
+            ArenaFx.Burst(at, new[] { Arena.Gold, station.Accent(station.Team), Color.white }, 30, 2.5f, 3.5f, 1.1f, .1f);
             ArenaFx.Sfx("sfx_king_capture", at);
         }
 

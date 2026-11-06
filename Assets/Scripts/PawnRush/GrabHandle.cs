@@ -26,6 +26,7 @@ namespace ChessFight.PawnRush
 
         Renderer look;
         Material gold, lit;
+        MissionStation paletteStation;
         static readonly Collider[] none = new Collider[0];
 
         public static readonly Color Gold = new Color(.886f, .698f, .235f);
@@ -35,6 +36,7 @@ namespace ChessFight.PawnRush
             // A handle is held, never climbed (R128): without this, grab + forward into it started a climb.
             if (GetComponent<GrabOnlySurface>() == null) gameObject.AddComponent<GrabOnlySurface>();
             look = GetComponent<Renderer>();
+            paletteStation = GetComponentInParent<MissionStation>(true);
             if (look != null)
             {
                 gold = Arena.Emissive(Gold, .4f);
@@ -47,8 +49,8 @@ namespace ChessFight.PawnRush
         {
             if (look == null) return;
             if (team < 0) { look.sharedMaterial = gold; return; }
-            if (lit == null) lit = Arena.Emissive(Arena.TeamColor(team), .8f);
-            lit.color = Arena.TeamColor(team);
+            var color = paletteStation != null ? paletteStation.Accent(team) : Arena.TeamColor(team);
+            if (lit == null || lit.color != color) lit = Arena.Emissive(color, .8f);
             look.sharedMaterial = lit;
         }
 

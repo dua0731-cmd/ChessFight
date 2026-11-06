@@ -65,7 +65,8 @@ namespace ChessFight.PawnRush
             MissionGames.Floor(b, 0f, South);
             // The strip runs from the gate (v -3.2) to f8 (v 4.4), mirrored for black.
             float m = MiniGameParts.Mirror(station), v0 = Mathf.Min(-3.2f * m, 4.4f * m), v1 = Mathf.Max(-3.2f * m, 4.4f * m);
-            b.Box("Gate strip", new Vector3(v0, -1f, North), new Vector3(v1, 0f, 20f), Arena.DaisMaterial).AddComponent<CourseFloor>();
+            b.Box("Gate strip", new Vector3(v0, -1f, North), new Vector3(v1, 0f, 20f),
+                station.PalaceStyle ? MiniGamePalaceArt.DaisMaterial(PawnRushMissions.KnightPads) : Arena.DaisMaterial).AddComponent<CourseFloor>();
             var stone = Arena.Lit("M_MoatStone", Arena.Hex("#6E6A64"), 0f, .9f);
             b.Box("Water bottom", new Vector3(-10f, Bottom - 1f, South), new Vector3(10f, Bottom, North), stone, true);
             b.Box("Water wall S", new Vector3(-10f, Bottom, South - .1f), new Vector3(10f, 0f, South), stone, true);
@@ -109,7 +110,7 @@ namespace ChessFight.PawnRush
             pieceColliders = new Collider[pieces.Length];
             for (int i = 0; i < pieces.Length; i++)
             {
-                var go = MiniGameParts.Piece(b.parent, "Piece " + KnightRoute.PieceSquares[i], KnightRoute.PieceKinds[i], PieceHeight, MiniGameParts.PieceMaterial(them), Arena.TeamColor(them), true, .3f);
+                var go = MiniGameParts.Piece(b.parent, "Piece " + KnightRoute.PieceSquares[i], KnightRoute.PieceKinds[i], PieceHeight, MiniGameParts.PieceMaterial(them), station.Accent(them), true, .3f);
                 go.transform.localPosition = Square(KnightRoute.PieceSquares[i]) + new Vector3(.55f, 0f, .55f);
                 pieces[i] = go.transform;
                 pieceColliders[i] = go.GetComponent<Collider>();
@@ -235,7 +236,7 @@ namespace ChessFight.PawnRush
             splashed[i] = false;
             if (pieceColliders[i] != null) pieceColliders[i].enabled = false;
             var at = World(takenFrom[i] + Vector3.up * .6f);
-            ArenaFx.Burst(at, new[] { MiniGameParts.PieceColor(Opponent), Arena.TeamColor(Opponent), Arena.Gold }, 22, 2.4f, 3f, 1f, .1f);
+            ArenaFx.Burst(at, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent), Arena.Gold }, 22, 2.4f, 3f, 1f, .1f);
             ArenaFx.Ring(World(takenFrom[i] + Vector3.up * .05f), 0f, 1.8f, .5f, Arena.Gold);
             ArenaFx.Sfx("sfx_ep_capture", at, pitch: Mathf.Pow(2f, (Done - Total) / 12f));
         }

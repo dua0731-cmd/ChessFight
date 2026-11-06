@@ -79,13 +79,13 @@ namespace ChessFight.PawnRush
             b.Box("Tray", new Vector3(tv - .7f, 0f, 3f), new Vector3(tv + .7f, .3f, 19f), Arena.Wood(false), true);
             Arena.Picture(b.parent, "Tray rim W", new Vector3(tv - .74f, 0f, 2.96f), new Vector3(tv - .66f, .34f, 19.04f), Arena.TrimGold);
             Arena.Picture(b.parent, "Tray rim E", new Vector3(tv + .66f, 0f, 2.96f), new Vector3(tv + .74f, .34f, 19.04f), Arena.TrimGold);
-            counter = Arena.Text(b.parent, "Tray count", new Vector3(tv, 1.5f, 19f), .5f, Arena.TeamColor(station.Team));
+            counter = Arena.Text(b.parent, "Tray count", new Vector3(tv, 1.5f, 19f), .5f, station.Accent(station.Team));
 
             var them = Opponent;
             skin = MiniGameParts.PieceMaterial(them);
             glowSkin = Arena.Lit("M_PieceWindow", Color.Lerp(MiniGameParts.PieceColor(them), Arena.Gold, .35f), .3f, .4f);
-            ring = Arena.Lit("M_PieceRing", Arena.TeamColor(them), .4f, .5f);
-            warnRing = Arena.Lit("M_PieceRingWarn", Color.Lerp(Arena.TeamColor(them), Color.black, .55f), .2f, .5f);
+            ring = Arena.Lit("M_PieceRing", station.Accent(them), .4f, .5f);
+            warnRing = Arena.Lit("M_PieceRingWarn", Color.Lerp(station.Accent(them), Color.black, .55f), .2f, .5f);
             statues = new Transform[n];
             looks = new Transform[n];
             bodies = new Rigidbody[n];
@@ -95,7 +95,7 @@ namespace ChessFight.PawnRush
             halos = new LineRenderer[n];
             for (int i = 0; i < n; i++)
             {
-                var go = MiniGameParts.Piece(b.parent, "Statue " + (i + 1), PieceKind.Pawn, StatueHeight, skin, Arena.TeamColor(them), true, StatueRadius);
+                var go = MiniGameParts.Piece(b.parent, "Statue " + (i + 1), PieceKind.Pawn, StatueHeight, skin, station.Accent(them), true, StatueRadius);
                 statues[i] = go.transform;
                 statues[i].localPosition = MiniGameParts.Local(station, EnPassantRules.Home(i));
                 looks[i] = go.transform.Find("Look");
@@ -188,7 +188,7 @@ namespace ChessFight.PawnRush
             halos[i].enabled = false;
             Paint(i, false, false);
             var at = World(fallFrom[i] + Vector3.up * .5f);
-            ArenaFx.Burst(at, new[] { MiniGameParts.PieceColor(Opponent), Arena.TeamColor(Opponent), Arena.Gold }, 22, 2.5f, 3f, 1f, .1f);
+            ArenaFx.Burst(at, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent), Arena.Gold }, 22, 2.5f, 3f, 1f, .1f);
             ArenaFx.Ring(World(fallFrom[i] + Vector3.up * .05f), 0f, 1.8f, .5f, Arena.Gold);
             ArenaFx.Sfx("sfx_ep_capture", at);
             ShowCount();

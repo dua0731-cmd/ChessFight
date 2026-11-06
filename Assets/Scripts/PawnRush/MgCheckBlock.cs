@@ -65,8 +65,8 @@ namespace ChessFight.PawnRush
         {
             MissionGames.Floor(b, 0f, 20f);
             // The board in low contrast (§7.1), so the beams and pieces stand out.
-            var light = Arena.Lit("M_CheckBoardLight", Arena.Hex("#CBBF9F"), 0f, .7f);
-            var dark = Arena.Lit("M_CheckBoardDark", Arena.Hex("#A79A7C"), 0f, .7f);
+            var light = Arena.Lit(station.PalaceStyle ? "PR_MG_CheckBoardLight" : "M_CheckBoardLight", Arena.Hex("#CBBF9F"), 0f, .7f);
+            var dark = Arena.Lit(station.PalaceStyle ? "PR_MG_CheckBoardDark" : "M_CheckBoardDark", Arena.Hex("#A79A7C"), 0f, .7f);
             var board = b.Group("Board");
             float h = PawnRushBoard.Cell * .5f;
             for (int s = 0; s < 64; s++)
@@ -110,8 +110,8 @@ namespace ChessFight.PawnRush
             var them = Opponent;
             var themMat = MiniGameParts.PieceMaterial(them);
             var usMat = MiniGameParts.PieceMaterial(station.Team);
-            var ring = Arena.TeamColor(them);
-            beamMat = Arena.Lit("M_AttackBeam", Arena.TeamColor(them), 1.2f, .3f);
+            var ring = station.Accent(them);
+            beamMat = Arena.Lit("M_AttackBeam", station.Accent(them), 1.2f, .3f);
             beamGrey = Arena.Lit("M_AttackBeamOff", Arena.Hex("#7A7067"), .2f, .6f);
             beamRed = Arena.Lit("M_AttackBeamDouble", Arena.Red, 1.2f, .3f);
             var railFloor = Arena.Lit("M_RailFloor", Arena.Hex("#6A6152"), 0f, .8f);
@@ -133,7 +133,7 @@ namespace ChessFight.PawnRush
             // R128: held and pushed itself, never climbed (no separate gold ring to catch).
             baseGo.AddComponent<GrabOnlySurface>();
             MiniGameParts.Part(baseGo.transform, PrimitiveType.Cylinder, new Vector3(0f, .175f, 0f), new Vector3(1.8f, .175f, 1.8f), Arena.Lit("M_PillarStone", Arena.Hex("#857E74"), 0f, .9f));
-            MiniGameParts.Piece(baseGo.transform, "Our king", PieceKind.King, 1.9f, usMat, Arena.TeamColor(station.Team), false).transform.localPosition = new Vector3(0f, .35f, 0f);
+            MiniGameParts.Piece(baseGo.transform, "Our king", PieceKind.King, 1.9f, usMat, station.Accent(station.Team), false).transform.localPosition = new Vector3(0f, .35f, 0f);
             checkRing = MiniGameParts.Loop(baseGo.transform, "Check ring", new Vector3(0f, .05f, 0f), 1.3f, .3f, Arena.Red, true, 48);
 
             var list = layout.Situations;
@@ -186,7 +186,7 @@ namespace ChessFight.PawnRush
                         foreach (float x in new[] { -.66f, .66f })
                             foreach (float zz in new[] { -.4f, .4f })
                                 MiniGameParts.Part(look, PrimitiveType.Cylinder, new Vector3(x, .2f, zz), new Vector3(.4f, .04f, .4f), Arena.Wood(true)).transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-                        MiniGameParts.Piece(look, "Shield", s.Shield, 1.2f, usMat, Arena.TeamColor(station.Team), false).transform.localPosition = new Vector3(0f, .8f, 0f);
+                        MiniGameParts.Piece(look, "Shield", s.Shield, 1.2f, usMat, station.Accent(station.Team), false).transform.localPosition = new Vector3(0f, .8f, 0f);
                         movers[i] = body;
                         moverLooks[i] = look;
                         break;
@@ -222,11 +222,17 @@ namespace ChessFight.PawnRush
                     doubleBeams[k].gameObject.SetActive(false);
                 }
                 var e = At(layout.Escape);
-                var team = Arena.TeamColor(station.Team);
+                var team = station.Accent(station.Team);
                 escapePlate = Arena.Picture(root, "Escape square", e + new Vector3(-1.05f, .05f, -1.05f), e + new Vector3(1.05f, .07f, 1.05f), Arena.Glow(new Color(team.r, team.g, team.b, .35f)));
                 escapePlate.SetActive(false);
             }
             Place(true);
+            // A new seed replaces Position and all its moving pictures. The palace skin follows that lifecycle.
+            if (station.PalaceStyle)
+            {
+                MiniGamePalaceArt.Dress(station, PawnRushMissions.CheckBlock);
+                MiniGameSectionBuilder.RefreshText(station.GetComponentInParent<MiniGameSection>(true));
+            }
         }
 
         Transform Beam(string name, float thick, out Renderer look)
@@ -425,7 +431,7 @@ namespace ChessFight.PawnRush
                     {
                         sparkAt = t;
                         var face = MoverAt(i, shown[i]) + Vector3.up * BeamHeight;
-                        ArenaFx.Burst(World(face), new[] { Arena.TeamColor(Opponent) }, 3, .8f, .8f, .3f, .05f);
+                        ArenaFx.Burst(World(face), new[] { station.Accent(Opponent) }, 3, .8f, .8f, .3f, .05f);
                     }
                 }
                 if (s.Kind != CheckBlockGenerator.Kind.Rail && !solved && moverLooks[i] != null)
@@ -478,15 +484,15 @@ namespace ChessFight.PawnRush
             {
                 case CheckBlockGenerator.Kind.Rail:
                     ArenaFx.Ring(at, 0f, 2.2f, .5f, Arena.Gold);
-                    ArenaFx.Burst(at + Vector3.up * .8f, new[] { Arena.Gold, Arena.TeamColor(Opponent), Color.white }, 24, 2f, 2.5f, .8f, .08f);
+                    ArenaFx.Burst(at + Vector3.up * .8f, new[] { Arena.Gold, station.Accent(Opponent), Color.white }, 24, 2f, 2.5f, .8f, .08f);
                     ArenaFx.Sfx("sfx_shield_lock", at);
                     break;
                 case CheckBlockGenerator.Kind.Knight:
-                    ArenaFx.Burst(at + Vector3.up * .6f, new[] { MiniGameParts.PieceColor(Opponent), Arena.TeamColor(Opponent) }, 20, 1.8f, 2f, .8f, .08f);
+                    ArenaFx.Burst(at + Vector3.up * .6f, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent) }, 20, 1.8f, 2f, .8f, .08f);
                     ArenaFx.Sfx("sfx_piece_fall", at);
                     break;
                 default:
-                    ArenaFx.Burst(at + Vector3.up * .5f, new[] { MiniGameParts.PieceColor(Opponent), Arena.TeamColor(Opponent), Arena.Gold }, 18, 1.8f, 2f, .8f, .08f);
+                    ArenaFx.Burst(at + Vector3.up * .5f, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent), Arena.Gold }, 18, 1.8f, 2f, .8f, .08f);
                     ArenaFx.Sfx("sfx_ep_capture", at);
                     break;
             }
@@ -536,7 +542,7 @@ namespace ChessFight.PawnRush
             if (doubleDone && !wasDoubleDone)
             {
                 var at = World(At(layout.Escape));
-                ArenaFx.Ring(at, 0f, 3f, .6f, Arena.TeamColor(station.Team));
+                ArenaFx.Ring(at, 0f, 3f, .6f, station.Accent(station.Team));
                 ArenaFx.Sfx("sfx_resolve", at);
                 escapePlate.SetActive(false);
             }

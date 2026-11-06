@@ -27,13 +27,15 @@ namespace ChessFight.PawnRush
         // (the games' own frame, floor top at 0) sits that much up; Pawns() gives heights from the dais top.
 
         [SerializeField, Range(0, 1)] int team = Teams.White;
-        [SerializeField, Range(1, 2)] int plaza = 1;
+        [SerializeField, Range(1, 3)] int plaza = 1;
         [Tooltip("Black's station is the mirror of white's: D's capstan turns the other way.")]
         [SerializeField] bool mirrored;
         [SerializeField] TeamGate gate;
         [SerializeField] Transform gameSocket;
         [SerializeField] Course01Kit kit;
         [SerializeField] int gameIndex = PawnRushMissions.None;
+        [Tooltip("The standalone palace section supplies its own architectural dressing and promotion layout.")]
+        [SerializeField] bool palaceStyle;
 
         public int Team => team;
         public int Plaza => plaza;
@@ -43,13 +45,16 @@ namespace ChessFight.PawnRush
         public int GameIndex => gameIndex;
         public MiniGameBase Game => gameSocket != null ? gameSocket.GetComponentInChildren<MiniGameBase>(true) : null;
         public Transform Socket => gameSocket;
+        public bool PalaceStyle => palaceStyle;
+        public Color Accent(int forTeam) => Arena.TeamColor(forTeam, palaceStyle);
+        public void SetPalaceStyle(bool value) => palaceStyle = value;
         // The single-use promotion pad beside the game (R125), made the first time it is asked for in Play (after
         // Configure: a course built from code at Play adds this component before configuring it).
         public StationPromotion Promotion
         {
             get
             {
-                if (promotion == null && Application.isPlaying && gameSocket != null)
+                if (!palaceStyle && promotion == null && Application.isPlaying && gameSocket != null)
                 {
                     // One pad by the game instead of the design doc's four placeholder pads (a scene built before
                     // R125 still has those: they go).
@@ -74,6 +79,7 @@ namespace ChessFight.PawnRush
         // Builds the given game in place of the current one (a new round, or the playtest's keys).
         public MiniGameBase Install(int game)
         {
+            if (gameSocket == null) throw new System.InvalidOperationException("A mission station needs a game socket before installing a game.");
             RaiseSocket();
             for (int i = gameSocket.childCount - 1; i >= 0; i--) DestroyImmediate(gameSocket.GetChild(i).gameObject);
             gameIndex = game;
@@ -83,10 +89,13 @@ namespace ChessFight.PawnRush
             {
                 Hook(built);
                 // §2.4: the game rises out of the dais, dust rings the floor, the sign nods.
-                if (built != null) InstallRise.Play(built.transform);
+                if (built != null && !palaceStyle) InstallRise.Play(built.transform);
                 var at = transform.TransformPoint(new Vector3(0f, Arena.DaisHeight, 10f));
-                ArenaFx.Ring(at, 2f, 9f, .8f, new Color(.85f, .78f, .65f));
-                ArenaFx.Sfx("sfx_mg_install", at);
+                if (!palaceStyle)
+                {
+                    ArenaFx.Ring(at, 2f, 9f, .8f, new Color(.85f, .78f, .65f));
+                    ArenaFx.Sfx("sfx_mg_install", at);
+                }
                 var dressing = Dressing;
                 if (dressing != null) dressing.Installed(game);
             }
@@ -106,7 +115,7 @@ namespace ChessFight.PawnRush
         {
             get
             {
-                if (dressing == null && Application.isPlaying && kit != null) dressing = Arena.Dress(this);
+                if (!palaceStyle && dressing == null && Application.isPlaying && kit != null) dressing = Arena.Dress(this);
                 return dressing;
             }
         }
@@ -117,7 +126,7 @@ namespace ChessFight.PawnRush
         void Start()
         {
             RaiseSocket();
-            if (Promotion == null) Debug.LogWarning("[PawnRush] 스테이션에 승격 발판을 만들지 못했습니다: " + name);
+            if (!palaceStyle && Promotion == null) Debug.LogWarning("[PawnRush] 스테이션에 승격 발판을 만들지 못했습니다: " + name);
             if (Dressing != null && dressing.isActiveAndEnabled) dressing.Installed(gameIndex);
             if (hooked == null) Hook(Game);
         }
@@ -132,6 +141,11 @@ namespace ChessFight.PawnRush
         void OpenGate()
         {
             if (gate != null) gate.Open();
+        }
+
+        void OnDestroy()
+        {
+            if (hooked != null) hooked.Finished -= OpenGate;
         }
 
         public void ResetRound()

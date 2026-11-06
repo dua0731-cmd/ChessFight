@@ -1,5 +1,46 @@
 # Network 구현 검증 기록
 
+## 2026-11-06 미니게임 구간 프리팹 10종 (R312) — 자동 검사 기록 / 사용자 Unity·Steam 확인 전
+
+[구간 프리팹·여는 법](../KingRush/PAWN_RUSH_MINIGAME_SECTIONS.md). `main` Pull(LFS 포함) → Unity 가져오기·컴파일 완료 대기 → **ChessFight → Pawn Rush → Open Mini-game Prefab Test** → Play. 새 프리팹 10개와 `PawnRush_MiniGames.unity`는 저장되어 있다. 코드에서 다시 만들 때만 **Build All Mini-game Prefabs**를 실행한다.
+
+아래는 AI가 별도 작업 폴더에서 **Unity 6000.3.11f1**로 실행한 자동 검사 결과다. **사용자가 Unity·Steam에서 보고 조작한 확인은 아직 없다.** 시험 씬의 저장 참조 검사와 빈 씬에서 실행한 프리팹 검사를 구분한다.
+
+| 자동 검사 | 실제 결과·범위 |
+|---|---|
+| `Tools/Test-NetworkCore.ps1` | Core 164개·모의 세션 55개 통과. 실제 Steam 연결 검사가 아님 |
+| 실제 Unity DLL에 대한 번들 Roslyn 컴파일 | 전체 검사 대상 어셈블리 통과. PawnRush·PawnRush.Editor 포함. Input 어셈블리는 이 외부 검사 대상에서 제외하며 이후 실제 Unity 가져오기·Play 실행도 통과 |
+| Unity `MiniGamePrefabMenu.BuildBatch` | 종료 코드 0. 초반 C·D·A / 중반 B·E·F·J / 후반 G·H·I 10개 재생성·저장 |
+| 저장 프리팹 `MiniGamePrefabValidation.RunBatch` | 종료 코드 0, 10개 모두 PASS, 실패 0. 메시·재질·글꼴의 영구 참조, 누락 스크립트, 팀 스테이션·문 연결, 입출구·바닥·팀 통과 공간, A 공유판 1개·64칸, 슬롯 2·4·6의 후보 3·4·3개 검사 |
+| 저장 시험 씬 참조 | PASS. Preview Scene으로 열어 누락 스크립트, 키 1~0의 프리팹 10개 순서, 선택기→스포너, 영구 캐릭터 프리팹·드라이버, 같은 씬의 OrbitCamera·Camera 참조·활성 상태 검사. 씬을 저장하거나 실제 Start·키 입력을 실행한 검사는 아님 |
+| Unity `MiniGamePrefabValidation.RunPlayBatch` | 종료 코드 0, 10개 모두 PASS. 빈 씬에서 저장 프리팹을 실제 생성해 런타임 캐시·장치 재설치, 백·흑 완료 시 자기 문만 열림, 두 번 초기화, 씨앗 변경 재생성을 검사. A 두 인스턴스의 공유판 소유권 분리, I 반복 초기화 후 킹 외형 유지도 통과 |
+| 대표 렌더 | C 도개교·E 서고·G 행차 회랑 각각 입구/전체, 1536×1024 PNG 총 6장 생성. 실제 플레이 입력·모든 각도의 카메라·시각 품질을 보장하지 않음 |
+| 최종 실행 오류 | 최종 Native 가져오기·저장 검사·Play 로그에서 C# 컴파일 오류, 예외, 누락 스크립트, 검사 실패 없음. Play 중 오류·Assert·Exception 수집도 0. 기존 직렬화 필드·구식 API 등의 컴파일 경고는 남음 |
+
+지속 보관본: [저장 참조 보고서](../KingRush/ConceptArt/R312/SAVED_PREFABS.txt) · [Play 검사 보고서](../KingRush/ConceptArt/R312/RUNTIME.txt), [C 입구](../KingRush/ConceptArt/R312/C_Drawbridge_entry.png) · [E 입구](../KingRush/ConceptArt/R312/E_Bells_entry.png) · [G 입구](../KingRush/ConceptArt/R312/G_KingEscort_entry.png). 원래 로컬 근거(커밋 제외)는 `Temp-Compile-R312-final.log`, `Temp-R312-native-build-final.log`, `Temp-R312-native-saved-final.log`, `Temp-R312-native-play-final.log`와 `Logs/MiniGameValidation/saved-prefabs.txt`·`runtime.txt`, 같은 Logs 폴더의 원본 PNG 6장이다. Unity가 정상 종료 때 `Temp/`를 지우므로 상세 검사 보고서·그림은 무시 목록에 있는 `Logs/`에 보존하고 선택한 사본만 문서에 넣었다.
+
+**실패를 거쳐 고친 검사 경로:** 처음 저장 검사에서는 `ArenaDressing`의 MonoBehaviour 파일 불일치로 누락 스크립트 20건, 프리팹 미리보기의 OS 글꼴 atlas 재연결로 임시 재질 102건을 보고했다. 클래스를 같은 이름의 파일로 분리했고, 영구 자산을 미리보기 실행 전에 엄격히 검사하도록 구분했다. 저장 YAML의 글꼴은 102개 모두 내장 글꼴 참조, null 재질 참조는 0개였으며 저장 참조 누락을 허용하는 예외는 넣지 않았다. Play 첫 두 번은 게임 코드가 아닌 `UnityEditor.Search.SearchDatabase` 시작 초기화 예외로 실패했다. 오류를 무시하지 않고 편집기 가져오기·컴파일이 멈춘 뒤 2초 기다려 Play를 시작하도록 고친 최종 실행에서 예외 없이 통과했다. 캐시는 변경하지 않았다. 실패 2회는 `Logs/MiniGameValidation/runtime-search-startup-failure*.txt`와 `Temp-R312-native-play-search-startup-failure*.log`에 남겼다. 제한된 실행 환경에서 Unity 자체 통신·라이선스 초기화가 실패한 첫 실행도 `Temp-R312-native-restricted-startup-failure.log`로 보존했다.
+
+**자동 완료(`ForceComplete`)는 완료 이벤트와 문 연결만 시험한다. 실제 장치를 풀어서 달성한 결과가 아니다.** 아래는 모두 사용자 수동 확인 전이다.
+
+| 사용자 확인 | 기대 | 상태 |
+|---|---|---|
+| 새 시험 씬을 열고 Play | 캐릭터·마우스 시점·10종 선택(1~0), F5 팀 변경, F8 다시 시작이 동작하며 빨간 Console 오류 없음 | 미확인 |
+| 10종 입구·전체·장치 가까이 이동 | 외형·동선·시야·충돌이 읽히며 장식이 통과·조작을 방해하지 않음 | 미확인 |
+| A 의장 광장 | 공유판 위에서 양팀 각각 자기 32칸을 칠하고 자기 문만 열림 | 미확인 |
+| C 해자 도개교 | 실제 매듭을 당겨 걸쇠를 풀고 내려간 다리·팀 문을 통과 | 미확인 |
+| D 쇠살문 누각 | 막대를 밀어 기존 8바퀴 규칙을 채우고 올라간 쇠살문 통과 | 미확인 |
+| B 보수 중인 동관 | 판자를 운반·설치해 틈을 건너며 비계·장식으로 우회되지 않음 | 미확인 |
+| E 왕궁 서고 | 6개 책장 등반·열람등 점등·회전 책장 문 통과 | 미확인 |
+| F 대무도회장 | 태엽 폰의 스텝 예고·잡기 타이밍과 목표 달성 | 미확인 |
+| J 왕궁 세탁장 | 8통 경로의 점프·다이빙·인형 잡기, 추락 후 복귀 | 미확인 |
+| G 행차 회랑 | 가마·막은 룩 자체를 밀고 당기며 경로·차고·캐슬링 완료 | 미확인 |
+| H 국왕 체스 홀 | 기둥 사이 킹 몰이·굳음·잡기·기권 외형 | 미확인 |
+| I 국왕 침실 | 방패 수레·빛줄기·체크 표시·침대 이동과 반복 초기화 | 미확인 |
+| 실제 플레이·성능·온라인 | 퍼즐 해결 가능성·손맛·12명 성능·다중 PC Steam 상태 동기화 | 미확인 |
+
+구간 조합 코스의 온라인 연결은 기존부터 구현 전이며 R312는 오프라인 프리팹·시험 연결 범위다. 새 10종이 3광장 Steam 경기에 연결됐다는 뜻이 아니다. 시험 씬의 실제 Start·키 입력, 각 퍼즐 수행, 플레이어 빌드·12명 성능·Steam 검사는 실행하지 않았다.
+
 ## 2026-11-05 대계단 현관홀 아트를 main으로 (R309) — 사용자/Unity 확인 전
 
 [PAWN_RUSH_GRAND_STAIR_HALL_ART](../KingRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md). 순서: `main` Pull(LFS 포함) → Unity가 새 FBX · 텍스처를 가져오기 기다림 → ChessFight → Pawn Rush → **Build Mid 2-1 Grand Stair Hall** → **Open Section Test** → Play.

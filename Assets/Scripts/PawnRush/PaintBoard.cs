@@ -26,6 +26,7 @@ namespace ChessFight.PawnRush
         static void ResetStatics() => boards.Clear();
 
         [SerializeField] int plaza;
+        [SerializeField] PawnRushSection section;
         [SerializeField] MissionStation white, black;
         [SerializeField] Transform[] squares = new Transform[64];
         [SerializeField] Renderer[] tiles = new Renderer[64];
@@ -68,9 +69,10 @@ namespace ChessFight.PawnRush
         // The plaza's board: the one already built, or a new one in `under` (the asking station's game).
         public static PaintBoard For(MissionStation station, Transform under)
         {
+            var section = station.GetComponentInParent<PawnRushSection>(true);
             boards.RemoveAll(b => b == null);
             foreach (var b in boards)
-                if (b.plaza == station.Plaza)
+                if (b.plaza == station.Plaza && b.section == section)
                 {
                     b.Link(station);
                     return b;
@@ -79,9 +81,15 @@ namespace ChessFight.PawnRush
             go.transform.SetParent(under, false);
             var board = go.AddComponent<PaintBoard>();
             board.plaza = station.Plaza;
+            board.section = section;
             board.Link(station);
-            foreach (var other in Object.FindObjectsByType<MissionStation>(FindObjectsSortMode.None))
-                if (other != station && other.Plaza == station.Plaza && other.Team != station.Team) board.Link(other);
+            // A section is built while its Content is inactive. Its other station must still be linked before
+            // Make chooses the shared board's centre; unrelated prefab instances never share a board.
+            var neighbours = section != null ? section.GetComponentsInChildren<MissionStation>(true)
+                : Object.FindObjectsByType<MissionStation>(FindObjectsSortMode.None);
+            foreach (var other in neighbours)
+                if (other != station && other.Plaza == station.Plaza && other.Team != station.Team
+                    && other.GetComponentInParent<PawnRushSection>(true) == section) board.Link(other);
             board.Make();
             boards.Add(board);
             return board;
@@ -91,6 +99,11 @@ namespace ChessFight.PawnRush
         {
             if (!boards.Contains(this)) boards.Add(this);
         }
+
+        void OnDestroy() => boards.Remove(this);
+
+        bool PalaceStyle => (white != null ? white : black) is MissionStation station && station.PalaceStyle;
+        Color TeamColor(int team) => Arena.TeamColor(team, PalaceStyle);
 
         void Link(MissionStation station)
         {
@@ -114,7 +127,8 @@ namespace ChessFight.PawnRush
                 float aisle = (Vector3.Distance(Flat(white.transform.position), Flat(black.transform.position)) - MissionStation.Size) * .5f;
                 if (aisle > .05f)
                 {
-                    var dais = b.Box("Aisle dais", new Vector3(-aisle, -Arena.DaisHeight, 0f), new Vector3(aisle, 0f, MissionStation.Size), Arena.DaisMaterial);
+                    var dais = b.Box("Aisle dais", new Vector3(-aisle, -Arena.DaisHeight, 0f), new Vector3(aisle, 0f, MissionStation.Size),
+                        PalaceStyle ? MiniGamePalaceArt.DaisMaterial(PawnRushMissions.Paint) : Arena.DaisMaterial);
                     dais.AddComponent<CourseFloor>();
                 }
             }
@@ -153,7 +167,7 @@ namespace ChessFight.PawnRush
                 var plate = new GameObject("Plate");
                 plate.transform.SetParent(sq, false);
                 plate.transform.localPosition = new Vector3(0f, TileHeight + .008f, 0f);
-                rims[s] = Arena.Picture(plate.transform, "Plate rim", new Vector3(-.53f, 0f, -.53f), new Vector3(.53f, .006f, .53f), Arena.Glow(Arena.TeamColor(team))).GetComponent<Renderer>();
+                rims[s] = Arena.Picture(plate.transform, "Plate rim", new Vector3(-.53f, 0f, -.53f), new Vector3(.53f, .006f, .53f), Arena.Glow(TeamColor(team))).GetComponent<Renderer>();
                 Arena.Picture(plate.transform, "Plate paint", new Vector3(-.5f, .004f, -.5f), new Vector3(.5f, .014f, .5f), PaintMaterial(team));
                 plates[s] = plate.transform;
                 plate.SetActive(false);
@@ -197,16 +211,16 @@ namespace ChessFight.PawnRush
             return root;
         }
 
-        static readonly Material[] paint = new Material[2];
+        static readonly Material[] paint = new Material[4];
 
         // §3.4: white's paint is cream glowing sky blue, black's is near-black glowing orange.
-        static Material PaintMaterial(int team)
+        Material PaintMaterial(int team)
         {
-            int i = Slot(team);
+            int i = Slot(team) + (PalaceStyle ? 2 : 0);
             if (paint[i] != null) return paint[i];
             var m = new Material(Arena.Lit(team == Teams.Black ? "M_PaintBlack" : "M_PaintWhite", Arena.Hex(team == Teams.Black ? "#231E1B" : "#F3EADB"), 0f, .5f));
             m.EnableKeyword("_EMISSION");
-            m.SetColor("_EmissionColor", Arena.TeamColor(team) * .25f);
+            m.SetColor("_EmissionColor", TeamColor(team) * .25f);
             paint[i] = m;
             return m;
         }
@@ -305,7 +319,7 @@ namespace ChessFight.PawnRush
             hopAt[s] = Time.time;
             hopHeight[s] = .18f;
             var at = transform.TransformPoint(squares[s].localPosition + Vector3.up * (TileHeight + .02f));
-            var color = Arena.TeamColor(team);
+            var color = TeamColor(team);
             ArenaFx.Ring(at, 0f, 1.9f, .45f, color);
             ArenaFx.Burst(at, new[] { color, Color.white }, 10, 1.6f, 2f, .7f, .08f);
             ArenaFx.Sfx("sfx_paint_done", at);
@@ -387,7 +401,7 @@ namespace ChessFight.PawnRush
                 if (!show) continue;
                 plate.localScale = new Vector3(shown[s] * Tile, 1f, shown[s] * Tile);
                 bool flash = charging && blocked[s] && Mathf.Repeat(t / .3f, 1f) < .5f;
-                var rimWant = Arena.Glow(flash ? Arena.Red : Arena.TeamColor(TeamOf(s)));
+                var rimWant = Arena.Glow(flash ? Arena.Red : TeamColor(TeamOf(s)));
                 if (rims[s].sharedMaterial != rimWant) rims[s].sharedMaterial = rimWant;
             }
             // A finished rank: a gold light runs along it, left to right, in 0.5 s.

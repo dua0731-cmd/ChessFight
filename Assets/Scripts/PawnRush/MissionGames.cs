@@ -42,7 +42,9 @@ namespace ChessFight.PawnRush
         public static GameObject Floor(CourseBuilder b, float u0, float u1)
         {
             var floor = b.Floor("Station floor", -MissionStation.Half, MissionStation.Half, u0, u1, 0f);
-            floor.GetComponent<Renderer>().sharedMaterial = Arena.DaisMaterial;
+            var station = b.parent.GetComponentInParent<MissionStation>(true);
+            floor.GetComponent<Renderer>().sharedMaterial = station != null && station.PalaceStyle
+                ? MiniGamePalaceArt.DaisMaterial(station.GameIndex) : Arena.DaisMaterial;
             Arena.Rim(b, u0, u1);
             return floor;
         }

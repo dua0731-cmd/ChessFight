@@ -1,0 +1,15 @@
+R312 saved prefab inspection
+Persistent asset references are checked before loading a preview scene and running ExecuteAlways bindings.
+Not player-input, Steam, or visual-quality validation.
+Assets/Prefabs/PawnRushSections/Early_MG_C_MoatDrawbridge.prefab: PASS, renderers=1131
+Assets/Prefabs/PawnRushSections/Early_MG_D_PortcullisCourt.prefab: PASS, renderers=1139
+Assets/Prefabs/PawnRushSections/Early_MG_A_ParadeCourt.prefab: PASS, renderers=1496
+Assets/Prefabs/PawnRushSections/Mid_MG_B_RepairWing.prefab: PASS, renderers=1339
+Assets/Prefabs/PawnRushSections/Mid_MG_E_RoyalLibrary.prefab: PASS, renderers=2373
+Assets/Prefabs/PawnRushSections/Mid_MG_F_ClockworkBallroom.prefab: PASS, renderers=1441
+Assets/Prefabs/PawnRushSections/Mid_MG_J_PalaceLaundry.prefab: PASS, renderers=1539
+Assets/Prefabs/PawnRushSections/Late_MG_G_RoyalProcession.prefab: PASS, renderers=1266
+Assets/Prefabs/PawnRushSections/Late_MG_H_KingsChessHall.prefab: PASS, renderers=1490
+Assets/Prefabs/PawnRushSections/Late_MG_I_KingsBedchamber.prefab: PASS, renderers=1368
+Assets/Scenes/PawnRush_MiniGames.unity: PASS, serialized selector/player/camera references only; Start and keyboard input not exercised
+Saved asset result: PASS, failures=0
