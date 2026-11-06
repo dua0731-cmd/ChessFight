@@ -254,3 +254,9 @@ R50 실행 로그에서 수동 설정했던 무게중심이 검날 중앙 `z=0.5
 파일과 `.meta`를 같이 옮겨도 `Resources.Load`·`AssetDatabase`·씬 문자열·생성기·검사 도구의 경로는 자동으로 바뀌지 않는다. 공유 Queen 효과/음원을 `Resources/SharedSkills/Fx`·`Sfx`로 옮긴 뒤 실제 로드 문자열도 수정하고, 진짜 삭제된 Queen 메타63GUID가 현재 Assets YAML에 남지 않았는지 대조했다(참조0). 기물 Queen과 폐기 게임 모드를 같은 것으로 삭제하지 않는다.
 
 Prototype 코드41개는 새 asmdef로 분리하면 기존 어셈블리 내부 참조가 끊기므로7개 asmref로 원래 소속을 유지했다. 외부 컴파일/테스트의 소스 수집도 Prototype을 포함하고 중복을 제외한다. 브랜치 bundle은 Git 참조 복구용이며 LFS 바이너리 전체 백업은 아니다. 원문 HANDOFF를 archive에 bytecopy 보존한 뒤 현재 인계를 줄여 과거 결정의 근거를 잃지 않게 했다.
+
+## R498 파티클 Orbital XYZ 모드와 검사 도구의 재생 상태
+
+작전 회의실의 `LibraryAirCannonFx`는 Orbital X·Y가 Constant 0인데 Z만 `MinMaxCurve(2.5f, 5f)`의 TwoConstants라 `Particle Orbital Velocity curves must all be in the same mode`를 냈다. `MinMaxCurve(0f)`와 `MinMaxCurve(0f, 0f)`는 값이 모두0이어도 모드가 다르다. X·Y를 두 인자 생성자로 맞추고 설정 완료 후 모듈을 켠다. Z 범위와 로컬 공간·외형은 유지한다. 같은 Orbital XYZ 묶음 안의 모드를 맞추며, 선형 XYZ와 Orbital XYZ 사이의 모드는 달라도 된다(실제 Unity 대조군 통과).
+
+실제 충전/발사·입자 방출·시뮬레이션의 세 방향 검사에서 수정 전 엔진 오류30건+모드 실패3건, 수정 후 오류0·세 방향 통과를 AI가 기록했다. 자동 검사 결과와 사용자 회의실 외형 확인은 구분한다. 검사기 자체의 첫 실행은 재생 중 `randomSeed`를 설정한 assertion도 냈으므로, 먼저 `Stop(...StopEmittingAndClear)`한 뒤 씨앗을 넣도록 고쳤다. 운영 효과가 collider를 `Object.Destroy`로 정리하므로 이 경로의 회귀 검사는 Play Mode에서 실행한다. 초기 검사기 실패 기록도 `Logs/AirCannonFxValidation/R498-initial-harness-failure.txt`에 보존한다. [VFX 상세](../VFX/README.md#r498-작전-회의실-공기-대포의-orbital-velocity-오류-2026-11-06).

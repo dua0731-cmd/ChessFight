@@ -1,5 +1,30 @@
 # Network 구현 검증 기록
 
+## 2026-11-06 공기 대포 공전 곡선 모드 오류(R498) — Native 수정 전·후 자동 검사 / 사용자 확인 전
+
+사용자 제보는 팀원 맵 시험 중의 `Particle Orbital Velocity curves must all be in the same mode`다. 기존 `C:\Users\dua07\GitHub\ChessFighter`의 main에서 실제 `LibraryAirCannonFx.Build`를 실행하여 작전 회의실 대포의 런타임 intake가 원문 오류를 내는 것을 재현했다.
+
+| AI 검사·기록 | 실제 결과와 한계 |
+|---|---|
+| 원인·최소 수정 | 공전 X/Y 기본 Constant, Z만 TwoConstants(2.5~5)였다. X/Y를 TwoConstants(0~0)로 명시하고 XYZ 설정 뒤 모듈을 활성화. 공전 속도·로컬 공간·발사 방향은 유지 |
+| 수정 전 Native Play | Unity6000.3.11f1·실제 Build/Charge/Fire/Emit/Simulate, 서로 다른3방향·이동/회전 부모에서 Constant/Constant/TwoConstants. 엔진 원문 오류30건+모드 검사 실패3건으로 FAIL·issues33·종료1. seed Assert0 |
+| 수정 후 Native Play | 같은 검사기·3방향에서 TwoConstants/TwoConstants/TwoConstants, X/Y=0~0·Z=2.5~5·Local 좌표·포구 위치/방향 유지. 실제 Fire의 streaks/puffs/flecks 생성·시뮬레이션 생존과 수동 방출 입자 생존 검사 모두 PASS·issues0·종료0 |
+| 독립 그룹 대조군 | 선형 XYZ를 TwoConstants, 공전 XYZ를 Constant로 둔 정지→설정→재생 입자계는 수정 전·후 모두 PASS. 이 재현에서는 선형/공전 그룹끼리 같은 모드일 필요가 없고, 공전 XYZ 내부의 모드 불일치가 문제임을 구분 |
+| 저장 자산 읽기 전용 감사 | `.prefab`/`.unity`145개·입자계22개에서 선형/공전/offset XYZ 각 그룹의 모드 불일치0. 저장된 King 효과를 일괄 고치는 대신 실제 재현된 런타임 생성 코드만 수정. 프리팹 재굽기·자산 수정·씬 저장 없음 |
+| 검사기 자체 오류 처리 | 최초 시험에는 재생 중 random seed 설정으로 Assert36건이 추가되어 FAIL69였다. 정지 후 seed를 설정하도록 검사기를 고치고 원래 런타임으로 baseline을 다시 실행해 위 FAIL33을 확보했다. 최초 실패 로그도 보존했으며 오류 필터를 완화하지 않음 |
+| 회귀 검사 범위 | `AirCannonFxValidation.RunBatch`는 배치 전용 임시 빈 씬에서 Play Mode 진입, 원본 Build의 Destroy 경로를 그대로 실행. 종료 때 임시 오브젝트·로그 구독을 정리. 새 메뉴 없음. Error/Exception/Assert 및 원문 진단(Warning이어도)을 실패로 수집 |
+| Core·모의 세션·컴파일 | Core162개·모의 세션55개 및 전체 대상 외부 컴파일 통과. 기존 obsolete/미할당 필드 경고는 유지. 외부 컴파일의 Input 제외와 실제 Unity 컴파일을 구분하며 Steam 실접속·플레이어 빌드 검사는 아님 |
+| Unity GUI AI 관찰 | 같은 기존 루트에서 `SeoungTest_PawnRush.unity`를 열고 Play. 캐릭터·작전 회의실(컨베이어·대포) 화면을 약25초 AI관찰, Console 빨간 오류0. 새 `Logs/R498-GUI.log`의 정확한 원문 오류·errorCS·runtime Exception header0. Play를 정지하고 같은 씬 편집 상태로 남김. 기존 그림자 atlas/InputManager 경고는 유지 |
+| 확인 한계 | 자동 입자 시뮬레이션과 GUI AI 관찰은 외형·소리의 적합성·맵 전체 주행·사용자 실제 입력·온라인·성능 확인을 대신하지 않음 |
+
+근거: `Logs/R498-Particle-Asset-Audit.json`, `Logs/R498-Particle-Baseline-Clean.log`, `Logs/R498-Particle-Fixed.log`, `Logs/AirCannonFxValidation/R498-baseline.txt`(FAIL33), `Logs/AirCannonFxValidation/R498.txt`(PASS0), `Logs/R498-Core.log`, `Logs/R498-Compile.log`, `Logs/R498-GUI.log`. 최초 검사기 실패는 `Logs/R498-Particle-Baseline.log`·`Logs/AirCannonFxValidation/R498-initial-harness-failure.txt`(FAIL69)에 보존한다. Logs는 Git 제외 대상이며 이 표가 지속 인계 기록이다.
+
+| 사용자 수동 확인 | 기대 | 상태 |
+|---|---|---|
+| 기존 프로젝트·구간 시험 | 기존 루트의 main에서 `ChessFight → Pawn Rush → Open Section Test` 열기·Play | 미확인 |
+| 작전 회의실 대포 | 충전·발사를 여러 차례 보고 원문 오류가 재발하지 않으며 공기 회오리·발사 효과·소리가 의도대로 표시 | 미확인 |
+| 실제 플레이·온라인·성능 | 맵 입력·완주, 여러 PC의 대포 표시·동기화,12명 성능 | 미확인 |
+
 ## 2026-11-06 main 파일·Prototype·폐기 모드·메뉴·브랜치 정리(R497) — 자동 검사 기록 / 사용자 확인 전
 
 [정리 범위·복구 안내](../Architecture/PROJECT_CLEANUP_R497.md). 기존 `C:\Users\dua07\GitHub\ChessFighter`의 main에서 작업했다. 실제 사용 중인 두 모드와 공용 물리·네트워크를 유지하고, 폐기 Queen 전용 구현과 구형 맵의 위치를 정리했다.

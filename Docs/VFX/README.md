@@ -1,5 +1,15 @@
 # VFX: 기물별 작업대와 공통 기준 (R159, 2026-10-27)
 
+## R498 작전 회의실 공기 대포의 Orbital Velocity 오류 (2026-11-06)
+
+`Particle Orbital Velocity curves must all be in the same mode`의 원인은 Play 때 만드는 `PawnRush/LibraryAirCannonFx.cs`의 흡입 입자다. `orbitalX`·`orbitalY`는 기본 Constant 0인데 `orbitalZ`만 `new ParticleSystem.MinMaxCurve(2.5f, 5f)`로 TwoConstants여서 같은 Orbital XYZ 묶음의 모드가 달랐다.
+
+X·Y를 `new ParticleSystem.MinMaxCurve(0f, 0f)`로 설정해 세 축을 TwoConstants로 맞추고, 값을 모두 넣은 뒤 모듈을 켠다. X·Y의 실제 회전량 0, Z의 2.5~5 범위, 로컬 공간과 다른 외형 값은 유지한다. 인자 하나인 생성자는 상수, 인자 두 개인 생성자는 최소·최대 범위다([Unity 6.3 API](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/ParticleSystem.MinMaxCurve-ctor.html)). 선형 XYZ와 Orbital XYZ는 별개 묶음이므로 두 묶음의 모드까지 같게 만들 필요는 없다.
+
+AI가 기존 프로젝트의 Unity 6000.3.11f1 Play Mode에서 실제 생성 코드·충전/발사·명시적 입자 방출·시뮬레이션을 실행했다. 세 방향에서 수정 전 정확한 엔진 오류30건과 모드 검사실패3건을 재현했고, 수정 후 세 방향 모두 통과·오류0이었다. 선형 XYZ는 TwoConstants, Orbital XYZ는 Constant인 대조군도 통과했다. **사용자의 실제 회의실 화면·외형 확인과 전체 맵·Steam·성능 확인은 아직 전**이다.
+
+검사 진입점은 `ChessFight.PawnRush.Editor.AirCannonFxValidation.RunBatch`(독립 batch 전용)다. 보고서는 `Logs/AirCannonFxValidation/R498-baseline.txt`·`R498.txt`, 실행 로그는 `Logs/R498-Particle-Baseline-Clean.log`·`R498-Particle-Fixed.log`에 보관한다. 이 로그는 Git 제외 대상이다. 아래 R159 이후의 기획·메뉴·브랜치 표기는 당시 기록이며 현재 작업 위치는 루트 HANDOFF를 따른다.
+
 > **상태:** 코드·자산 파일 작성, Core·세션 시험과 전 어셈블리 컴파일 통과. **Unity에서 사람이 아직 보지 않았다.**
 > 브랜치: `skill-network-test`(사용자 "브랜치 스킬넷에서 테스트 돌릴거고").
 

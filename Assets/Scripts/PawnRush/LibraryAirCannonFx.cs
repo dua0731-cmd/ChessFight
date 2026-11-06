@@ -78,10 +78,12 @@ namespace ChessFight.PawnRush
             im.simulationSpace = ParticleSystemSimulationSpace.Local;
             im.maxParticles = 600;
             var orbit = intake.velocityOverLifetime;
-            orbit.enabled = true;
             orbit.space = ParticleSystemSimulationSpace.Local;
             orbit.x = orbit.y = orbit.z = new ParticleSystem.MinMaxCurve(0f);
+            // All orbital axes must use TwoConstants, including the zero-speed axes.
+            orbit.orbitalX = orbit.orbitalY = new ParticleSystem.MinMaxCurve(0f, 0f);
             orbit.orbitalZ = new ParticleSystem.MinMaxCurve(2.5f, 5f);
+            orbit.enabled = true;
             crackle = Particles("Air cannon crackle", dot, new Color(2.6f, 2.1f, 1.3f), true, true);
             Fade(crackle, 1f, 0f);
             streaks = Particles("Air cannon streaks", dot, Air * 1.6f, true, true);

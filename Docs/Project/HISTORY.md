@@ -1,5 +1,7 @@
 # 변경 이력
 
+- 2026-11-06 R498: 공기 대포 런타임 공전 XYZ 모드 불일치 수정(X/Y=0~0·Z=2.5~5 TwoConstants, Local 유지·설정 후 활성화). Native Play3방향 수정 전 원문 오류30건+모드 실패3건=FAIL33→수정 후 독립 그룹 대조군 포함 PASS·issues0. 저장 자산145개/입자계22개 감사 불일치0·자산 재굽기/씬 저장 없음. Core162·모의55·전체 외부 컴파일 통과. 기존 루트 SeoungTest_PawnRush GUI Play 약25초 AI관찰·Console 빨간 오류0·원문 로그0, 같은 씬 편집 상태 유지. 사용자 입력·연출·Steam·성능 미확인. 이 기록을 추가한 커밋(`git log --grep=R498`).
+
 - 2026-11-06 R497: main 종류별 폴더 정리·Docs/PawnRush·구형 맵 Prototype/GUID·asmref 보존·Queen 폐기/공용기능 중립화·메뉴4그룹·오래된 원격8/로컬8브랜치 bundle 보관 후 삭제·HANDOFF 원문 archive 보존. Core162·모의55·전체컴파일·Unity저장10종/씬 실패0, 실제 Unity Play10종 기능캐시/문/초기화/씨앗/A분리/I외형 자동검사 통과. 사용자 Unity/Steam 미확인. 이 기록을 추가한 커밋(`git log --grep=R497`).
 
 - 2026-11-06 R496: 사용자 지정 기존 `C:\Users\dua07\GitHub\ChessFighter`를 최신 main으로 전환, 원래 수정2프리팹+meta·해시·patch·stash·옛 브랜치 보존. 새 워크트리 없이 지정 루트에서 직접 작업(T13). 게임 코드·프리팹 재생성 없음, Core164·모의55 통과, 기존 경로 Unity MG목록·새메뉴GUI·C Start·숫자5→E 서고 AI관찰, 전체키·퍼즐·사용자/Steam·Desktop선택 미확인.

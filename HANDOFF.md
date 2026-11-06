@@ -4,11 +4,11 @@
 현재 지침과 사용자의 최신 요청이 과거 기록보다 우선한다.
 작업이 끝나면 §8에 따라 코드·문서·검사 결과를 함께 마감한다.
 
-최종 갱신: **2026-11-06 · R497 main 파일·메뉴·구형 맵·폐기 모드·오래된 브랜치 정리**.
-다음 빈 요청 번호는 **R498**이다.
-사용자는 기존 정리 원칙을 바탕으로 흩어진 파일과 메뉴를 정리하고,
-KingRush 옛 이름 변경, 이전 폰 러시 맵의 Prototype 보관, Queen of the Hill 폐기,
-한 달 이상 지난 구현 브랜치 삭제를 요청했다.
+최종 갱신: **2026-11-06 · R498 공기 대포 Particle Orbital Velocity 오류 수정**.
+다음 빈 요청 번호는 **R499**이다.
+사용자는 팀원 맵 시험 중 `Particle Orbital Velocity curves must all be in the same mode` 오류를 제보했다.
+작전 회의실 공기 대포의 런타임 공전 XYZ 모드를 맞췄고, 실제 Unity 자동 검사에서 수정 전 오류30건·수정 후0건을 기록했다.
+기존 루트의 SeoungTest_PawnRush Play에서 작전 회의실 화면과 Console 오류0을 AI가 관찰했고, 사용자 직접 입력·연출 적합성 확인은 남아 있다.
 
 R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDOFF_BEFORE_R497.md)에 보존했다.
 당시의 기획·결정·튜닝 근거가 필요할 때만 그 기록을 읽는다.
@@ -28,10 +28,12 @@ R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDO
 | 공용 물리·기물 | 래그돌·Hook/Rope·승격·폰 러시/소드 스킬 유지. 옛 Queen 시험대는 PhysicsMechanicsBed, 개척 규칙은 PioneerCourse/PioneerRules로 재분류 |
 | 공용 스킬 자원 | `Resources/SharedSkills/Fx` 셰이더5개·`Sfx` 음원3개는 GUID 유지. 실제 사용되는 공유 자원만 남김 |
 | Unity 메뉴 | ChessFight 아래 **Pawn Rush / Sword Fight / Prototype / Development** 네 그룹. 상세 개발 도구는 Development로 |
+| 공기 대포 VFX | R498: `LibraryAirCannonFx` 공전 XYZ를 모두 TwoConstants(X/Y=0~0, Z=2.5~5)로 설정한 뒤 모듈 활성화. Local 공간·기존 속도 유지, 자산 재굽기 없음 |
+| 현재 Unity 편집 상태 | R498 AI가 기존 루트 `SeoungTest_PawnRush` Play에서 캐릭터·작전 회의실·컨베이어·대포를 약25초 관찰한 뒤 정지. 같은 씬 편집 상태로 사용자 시험 가능, Console 빨간 오류0 |
 | 문서 | `Docs/PawnRush`가 현재 자료. 옛 맵 문서9개는 `Docs/PawnRush/Prototype`, 폐기 모드 자료는 `Docs/Archive/QueenOfTheHill` |
 | 브랜치 | 2026-10-06 22:09:42 KST 이전 마지막 커밋 기준 원격8개·로컬8개 삭제. 원격24→16, 로컬15→7. main·최근 브랜치 보존 |
-| 자동 검사 | Core162·모의 세션55·의존성/장애물 시계 정적 검사·전체 대상 외부 컴파일 통과. Unity 저장10프리팹/시험 씬 실패0·실제 Play10종 로드/문/초기화/씨앗 검사 통과 |
-| 사용자 확인 | R497 이후 Unity 화면·입력·온라인·실제 퍼즐 완주·12명 성능은 사용자 확인 전 |
+| 자동 검사 | R498 Core162·모의 세션55·전체 대상 외부 컴파일 통과. 대포 Native Play 3방향·독립 그룹 대조군 PASS, issues0. R497 저장10프리팹/시험 씬·Play10종 검사 기록은 별도 유지 |
+| 사용자 확인 | R498 대포 충전·발사 화면/오류 재발과 R497 이후 Unity 입력·온라인·실제 퍼즐 완주·12명 성능은 사용자 확인 전 |
 
 브랜치 삭제 전16개 참조를 bundle·manifest·복구 안내로 보관하고 bundle 검사를 통과했다.
 보관 위치: `C:\Users\dua07\Desktop\개발일지\2학기 프로젝트수업\체스파이트\Backups\R497-Branches-20261106-221133`.
@@ -52,16 +54,19 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 - Queen of the Hill을 새 모드로 다시 등록하지 않는다. Queen 기물 자체는 다른 모드가 쓰므로 유지한다.
 - 새 Sections 코스를 기존 Course01 온라인 흐름에 연결했다고 말하지 않는다. 기존 Steam 흐름의 변경도 이번 범위가 아니다.
 - R497 실제 Unity 저장10프리팹/시험 씬 실패0, Play10종의 기능 캐시·자기 팀 문·2번 초기화·씨앗 재생성·A 인스턴스 분리·I 외형 유지 자동 검사 통과. [VALIDATION](Docs/Network/VALIDATION.md)에 범위와 한계를 기록했다.
+- R498 실제 대포 Build·Charge·Fire·입자 시뮬레이션을 3방향에서 자동 검사했다. 수정 전 Constant/Constant/TwoConstants로 원문 오류30건, 수정 후 XYZ TwoConstants로 issues0. 저장 자산145개/입자계22개의 곡선 그룹 불일치0이며 씬·프리팹을 다시 저장하지 않았다. 자세한 범위·로그는 [VALIDATION](Docs/Network/VALIDATION.md) 최상단을 따른다.
+- R498 기존 루트의 SeoungTest_PawnRush Play 화면을 AI가 약25초 관찰했다. Console 빨간 오류0, 새 GUI 로그의 원문 오류·errorCS·runtime Exception header0. 기존 그림자 atlas/InputManager 경고는 유지하며 사용자 입력·맵 완주·연출 적합성 확인은 아니다.
 - AI의 컴파일·자동 검사·렌더 관찰과 사용자가 Unity/Steam에서 직접 보고 조작한 확인을 구분한다.
 
 ## 3. 진행 중인 일과 다음 할 일
 
-1. 자동 검사와 별개로 새 메뉴·로비 두 모드·현재/Prototype 장면을 Unity GUI에서 살펴보고 [확인 목록](Docs/Network/VALIDATION.md)에 사용자 결과를 기록한다.
-2. 사용자는 기존 프로젝트에서 네 메뉴 그룹, 미니게임 선택·팀 전환·초기화, Intro→Lobby→두 모드를 확인한다.
-3. 폰 러시 각 퍼즐의 실제 입력·문 통과·복귀 동선과12명 성능을 확인한다.
-4. 구형 맵을 고칠 때는 Prototype 문서를 먼저 읽는다. 현재 구간 코스와 구형 온라인 코스를 같은 것으로 취급하지 않는다.
-5. 새 구간 코스의 온라인 연결은 별도 설계·요청으로 진행한다. 이번 정리로 프로토콜을 새로 정의하지 않았다.
-6. 다음 새 요청은 **R498**부터 기록한다.
+1. 기존 프로젝트의 Open Section Test에서 작전 회의실 대포 충전·발사를 직접 보고 원문 오류가 재발하지 않는지 확인한다. R498 자동 검사는 사용자 시각·입력·Steam 확인을 대신하지 않는다.
+2. 자동 검사와 별개로 새 메뉴·로비 두 모드·현재/Prototype 장면을 Unity GUI에서 살펴보고 [확인 목록](Docs/Network/VALIDATION.md)에 사용자 결과를 기록한다.
+3. 사용자는 기존 프로젝트에서 네 메뉴 그룹, 미니게임 선택·팀 전환·초기화, Intro→Lobby→두 모드를 확인한다.
+4. 폰 러시 각 퍼즐의 실제 입력·문 통과·복귀 동선과12명 성능을 확인한다.
+5. 구형 맵을 고칠 때는 Prototype 문서를 먼저 읽는다. 현재 구간 코스와 구형 온라인 코스를 같은 것으로 취급하지 않는다.
+6. 새 구간 코스의 온라인 연결은 별도 설계·요청으로 진행한다. 이번 정리로 프로토콜을 새로 정의하지 않았다.
+7. 다음 새 요청은 **R499**부터 기록한다.
 
 다른 채팅의 진행 상태와 과거 제한은 원본 아카이브의 날짜·브랜치를 확인해 해석한다.
 현재 사용자 작업 위치(main/기존 경로)와 최신 사용자 지시가 우선한다.
@@ -137,7 +142,7 @@ Prototype의41개 C# 파일은7개 asmref로 기존 어셈블리에 속한다.
 | 이동 동기화·방장·지연 | [MOTION](Docs/Network/MOTION.md)·[HOST](Docs/Network/HOST.md)·[HOST_AUTHORITY](Docs/Network/HOST_AUTHORITY.md) | SteamMotion·RagdollLabSteam·HostElection·스냅샷 프로토콜 |
 | 로비·HUD·씬 흐름 | [UI](Docs/Architecture/UI.md)·[SCENES](Docs/Architecture/SCENES.md) | Game·Bootstrap·SceneNames·EditorBuildSettings |
 | Safe Mode·컴파일·클릭 오류 | [PITFALLS](Docs/Environment/PITFALLS.md)·[SETUP](Docs/Environment/SETUP.md) | 관련 asmdef·Editor·입력 경로 |
-| 검사·빌드 | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md)·[VALIDATION](Docs/Network/VALIDATION.md) | Tools/Test-NetworkCore.ps1·Test-NetworkCompile.ps1·MiniGamePrefabValidation |
+| 검사·빌드 | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md)·[VALIDATION](Docs/Network/VALIDATION.md) | Tools/Test-NetworkCore.ps1·Test-NetworkCompile.ps1·MiniGamePrefabValidation·AirCannonFxValidation(R498 대포 회귀 검사) |
 | GPT·Claude 계정 연결 | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md) → [연결 사용법](Tools/AiBridge/README.md) | Tools/AiBridge |
 | 폐기 모드의 과거 근거 | [아카이브](Docs/Archive/HANDOFF_BEFORE_R497.md)·[Queen 기록](Docs/Archive/QueenOfTheHill/README.md) | 현재 모드 등록이나 새 작업 지시로 재사용하지 않음 |
 
