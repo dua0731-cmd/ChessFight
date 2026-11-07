@@ -2,6 +2,14 @@ using UnityEngine;
 
 namespace ChessFight.PawnRush
 {
+    // A mini-game's own gate pictures (R507, E's bookcase door: user 11-07 "문이 열리는 효과도 교체 해"): a component on
+    // the station that has one replaces the shared quarter and gate-open pictures below. Pictures only.
+    public interface IGateFx
+    {
+        void Quarter(int quarter);
+        void Opened();
+    }
+
     // A station's sign and gate bar at run time: the game's name, the bar filled to its progress (§2.1), the
     // 25 / 50 / 75 % and done moments (§2.4) played from the progress every PC has (online: the host's numbers).
     public sealed class ArenaDressing : MonoBehaviour
@@ -56,9 +64,14 @@ namespace ChessFight.PawnRush
                 quarter = q;
                 pulse = .15f;
                 var gate = station.transform.TransformPoint(new Vector3(0f, Arena.DaisHeight + .05f, 18.8f));
-                ArenaFx.Ring(gate, 0f, 3f, .7f, Arena.Gold);
-                ArenaFx.Burst(gate + Vector3.up * 5.6f, new[] { Arena.Gold }, 10, 2.5f, 2f, .9f, .1f);
-                ArenaFx.Sfx("sfx_mg_quarter", gate, pitch: Mathf.Pow(2f, (q - 1) / 12f));
+                var own = station.GetComponent<IGateFx>();
+                if (own != null) own.Quarter(q);
+                else
+                {
+                    // no gold ground ring at the quarters in any mini-game (user, 11-07: "모든 미니 게임 지워")
+                    ArenaFx.Burst(gate + Vector3.up * 5.6f, new[] { Arena.Gold }, 10, 2.5f, 2f, .9f, .1f);
+                    // no quarter sound in any mini-game (user, 11-07: "25 50 75 효과음은 하지마")
+                }
             }
             if (g.Completed && !done)
             {
@@ -66,11 +79,13 @@ namespace ChessFight.PawnRush
                 quarter = 4;
                 var gate = station.transform.TransformPoint(new Vector3(0f, Arena.DaisHeight + .05f, 18.8f));
                 var team = station.Accent(station.Team);
+                bool ours = MissionStation.LocalTeam == station.Team;
+                ArenaFx.Sfx("sfx_mg_complete", gate, twoD: true, volume: ours ? 1f : .35f);
+                var own = station.GetComponent<IGateFx>();
+                if (own != null) { own.Opened(); return; }
                 ArenaFx.Beam(gate, 1.2f, 1.8f, 9f, 1.6f, team);
                 ArenaFx.Burst(gate + Vector3.up, new[] { team, Arena.Gold, Color.white }, 90, 3f, 7f, 2.2f, .14f);
                 ArenaFx.Ring(gate, 0f, 8f, 1f, team);
-                bool ours = MissionStation.LocalTeam == station.Team;
-                ArenaFx.Sfx("sfx_mg_complete", gate, twoD: true, volume: ours ? 1f : .35f);
                 ArenaFx.Sfx("sfx_gate_open", gate);
             }
         }

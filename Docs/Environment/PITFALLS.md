@@ -255,3 +255,7 @@ R50 실행 로그에서 수동 설정했던 무게중심이 검날 중앙 `z=0.5
 파일과 `.meta`를 같이 옮겨도 `Resources.Load`·`AssetDatabase`·씬 문자열·생성기·검사 도구의 경로는 자동으로 바뀌지 않는다. 공유 Queen 효과/음원을 `Resources/SharedSkills/Fx`·`Sfx`로 옮긴 뒤 실제 로드 문자열도 수정하고, 진짜 삭제된 Queen 메타63GUID가 현재 Assets YAML에 남지 않았는지 대조했다(참조0). 기물 Queen과 폐기 게임 모드를 같은 것으로 삭제하지 않는다.
 
 Prototype 코드41개는 새 asmdef로 분리하면 기존 어셈블리 내부 참조가 끊기므로7개 asmref로 원래 소속을 유지했다. 외부 컴파일/테스트의 소스 수집도 Prototype을 포함하고 중복을 제외한다. 브랜치 bundle은 Git 참조 복구용이며 LFS 바이너리 전체 백업은 아니다. 원문 HANDOFF를 archive에 bytecopy 보존한 뒤 현재 인계를 줄여 과거 결정의 근거를 잃지 않게 했다.
+
+## 43. MonoBehaviour 필드 초기화에서 `new MaterialPropertyBlock()` 금지 (R506)
+
+`readonly MaterialPropertyBlock b = new MaterialPropertyBlock();`처럼 필드에서 만들면 Unity가 "CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer)"를 내고 b가 null로 남는다. 그 뒤 필드 초기화(배열 등)도 함께 실패해 Update가 매 프레임 예외로 멈추고, 화면에는 "아무 일도 안 일어남"으로만 보인다. Awake/Update에서 처음 쓸 때 만든다. 증상이 안 보이면 먼저 Editor.log를 본다.

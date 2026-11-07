@@ -21,6 +21,9 @@ namespace ChessFight.PawnRush
 
         public bool IsOpen => openedAt >= 0f;
 
+        // How long the full opening takes (D's portcullis rises slower, in time with its chain sound: R505).
+        public float Seconds { get => seconds; set => seconds = Mathf.Max(.1f, value); }
+
         void Awake()
         {
             body = GetComponent<Rigidbody>();

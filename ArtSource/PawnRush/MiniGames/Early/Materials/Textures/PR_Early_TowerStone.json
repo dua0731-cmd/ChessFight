@@ -1,0 +1,20 @@
+{
+ "stone_srgb": [
+  0.8667,
+  0.6627,
+  0.4745
+ ],
+ "mortar_srgb": [
+  0.7059,
+  0.5137,
+  0.3373
+ ],
+ "stone_std": [
+  0.0279,
+  0.0251,
+  0.0218
+ ],
+ "roughness": 0.671,
+ "tile_metres": 0.5,
+ "source": "R502_CastleTower_Tripo.glb"
+}

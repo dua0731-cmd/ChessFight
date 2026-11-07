@@ -16,7 +16,7 @@
 | 코스 컨셉아트 | [초반 A](ConceptArt/R160/01_early_A.png) · [초반 B](ConceptArt/R160/02_early_B.png) · 정원 컨셉([정원 문서](PAWN_RUSH_GARDEN.md) R408~) | [중반 A](ConceptArt/R160/03_middle_A.png) · [중반 B](ConceptArt/R160/04_middle_B.png) · [홀 아트](PAWN_RUSH_GRAND_STAIR_HALL_ART.md) | [후반 A](ConceptArt/R160/05_late_A.png) · [후반 B](ConceptArt/R160/06_late_B.png) · [작전 회의실 원본](../../ArtSource/PawnRush/Library/README.md) |
 | 미니게임 컨셉아트 | [C](ConceptArt/R311/01_early_C_moat.png) · [D](ConceptArt/R311/02_early_D_capstan.png) · [A](ConceptArt/R311/03_early_A_parade.png) | [B](ConceptArt/R311/04_mid_B_repair.png) · [E](ConceptArt/R311/05_mid_E_library.png) · [F](ConceptArt/R311/06_mid_F_ballroom.png) · [J](ConceptArt/R311/07_mid_J_laundry.png) | [G](ConceptArt/R311/08_late_G_procession.png) · [H](ConceptArt/R311/09_late_H_chess.png) · [I](ConceptArt/R311/10_late_I_bedroom.png) |
 | 코스 아트 현재 | Blender FBX 진행 중(`GardenConcept`, `GC_` 재질) | Play 때 FBX·셰이더로 입힘(`PR_Palace*`·칼라카타 오로) | 작전 회의실만 FBX 있음 |
-| 미니게임 아트 현재 | **C 도개교: Blender 모델(R501, `ArtSource/PawnRush/MiniGames/Early`)**. D·A는 코드로 만든 깎은 상자(`MiniGamePalaceArt`) | 코드 상자 | 코드 상자 |
+| 미니게임 아트 현재 | **C 도개교: Blender 모델(R501, `ArtSource/PawnRush/MiniGames/Early`)**. D·A는 코드로 만든 깎은 상자(`MiniGamePalaceArt`) | **B 동관: 사용자 Tripo 모델로 방 전체 재배치(R503, `ArtSource/PawnRush/MiniGames/Mid`, 셸 그림 전부 끔, 사용자 확인 11-07)**. E·F·J는 코드 상자 | 코드 상자 |
 
 R160 그림 중 지금 코스로 쓰지 않는 칸(마구간·대장간·부엌·금고 등)은 **그 단계의 모티프 창고**다. 새 장애물이나 소품을 만들 때 다른 단계의 칸에서 가져오지 않는다.
 

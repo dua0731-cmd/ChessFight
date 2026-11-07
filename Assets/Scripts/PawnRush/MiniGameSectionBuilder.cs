@@ -107,11 +107,12 @@ namespace ChessFight.PawnRush
             b.Floor("Rear corridor", -22f, 22f, 30f, 36f);
             if (game == PawnRushMissions.Drawbridge)
             {
-                b.Floor("Central aisle south", -2f, 2f, 4f, 16f);
-                b.Floor("Central aisle north", -2f, 2f, 20f, 24f);
-                var water = b.Box("Central moat water", new Vector3(-2f, -.6f, 16f), new Vector3(2f, -.5f, 20f), b.kit.glass, false, false);
-                b.Trigger<KillVolume>("Central moat return", new Vector3(-2f, -1.2f, 16f), new Vector3(2f, -.3f, 20f));
-                Collision(b, "Central moat railing", new Vector3(-2f, 0f, 15.7f), new Vector3(2f, 1.1f, 16f));
+                // R502: the moat is 5 m (z 15.5..20.5), as the stations' (MgDrawbridge.PalaceMoat0/1, user 11-07)
+                b.Floor("Central aisle south", -2f, 2f, 4f, 15.5f);
+                b.Floor("Central aisle north", -2f, 2f, 20.5f, 24f);
+                var water = b.Box("Central moat water", new Vector3(-2f, -.6f, 15.5f), new Vector3(2f, -.5f, 20.5f), b.kit.glass, false, false);
+                b.Trigger<KillVolume>("Central moat return", new Vector3(-2f, -1.2f, 15.5f), new Vector3(2f, -.3f, 20.5f));
+                Collision(b, "Central moat railing", new Vector3(-2f, 0f, 15.2f), new Vector3(2f, 1.1f, 15.5f));
             }
             else b.Floor("Central aisle", -2f, 2f, 4f, 24f);
             if (game == PawnRushMissions.Paint)
