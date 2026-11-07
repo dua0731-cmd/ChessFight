@@ -30,12 +30,30 @@ namespace ChessFight.PawnRush
         public static void Apply(MiniGameSection owner)
         {
             if (owner == null) return;
+            ClearGateFx(owner);
             if (owner.GameIndex == PawnRushMissions.Drawbridge) Drawbridge(owner);
             else if (owner.GameIndex == PawnRushMissions.Capstan) Capstan(owner);
             else if (owner.GameIndex == PawnRushMissions.Planks) RepairWing(owner);
             else if (owner.GameIndex == PawnRushMissions.KingEscort) RoyalProcession(owner);
             else if (owner.GameIndex == PawnRushMissions.Bells) RoyalLibrary(owner);
             else if (owner.GameIndex == PawnRushMissions.Paint) ParadeCourt(owner);   // MiniGameModels.ParadeCourt.cs (R506)
+            else if (owner.GameIndex == PawnRushMissions.Checkmate) ChessHall(owner);   // MiniGameModels.ChessHall.cs (R510)
+            else if (owner.GameIndex == PawnRushMissions.KnightPads) PalaceLaundry(owner);   // MiniGameModels.Laundry.cs (R509)
+            else if (owner.GameIndex == PawnRushMissions.EnPassant) ClockworkBallroom(owner);   // MiniGameModels.Ballroom.cs (R508)
+        }
+
+        // A section's stations stay when another game is put in (the test scene's number keys), and every game adds its
+        // team-gate moments (IGateFx) only when the station has none: the first game's stayed, and D's gate opened with
+        // C's team beam and burst (user, 11-08: "문이 열릴 때 효과 파란색이랑 폭죽 처럼 된거"). Each Apply now drops them
+        // all first; the game being dressed adds its own again below.
+        static void ClearGateFx(MiniGameSection owner)
+        {
+            foreach (var station in owner.Stations)
+            {
+                if (station == null) continue;
+                foreach (var fx in station.GetComponents<MonoBehaviour>())
+                    if (fx is IGateFx) Object.DestroyImmediate(fx);
+            }
         }
 
         // G · 왕의 행차 회랑 (R504, ArtSource/PawnRush/MiniGames/Late/g_center_gate_v1.py).
@@ -55,7 +73,9 @@ namespace ChessFight.PawnRush
                 {
                     var at = new GameObject(GateName).transform;
                     at.SetParent(content, false);
-                    at.localPosition = new Vector3(0f, 0f, 23.69f);   // the closed central door's face (MiniGamePalaceArt.Shell)
+                    // its door face 2 m behind the pylons' front: the front at the boards' end (z 24), off the g8 rook tower and
+                    // the f8 road square (user 11-08); was the shell's closed-door face, z 23.69
+                    at.localPosition = new Vector3(0f, 0f, 26f);
                     Hang(at, RideName, gate, cache);
                 }
                 var shell = content.Find(MiniGamePalaceArt.ShellName);
@@ -272,11 +292,18 @@ namespace ChessFight.PawnRush
         // edge to edge between fluted columns, every bay stretched along the wall to the exact column spacing, so the
         // wall runs on without a gap; the columns stand in front of the bay joints. Openings the game needs keep their
         // size: the team portals (x +-9.75..14.25, 5.8 m) and the entry (x +-6.25, 7.5 m) get marble lintels above.
-        const float Hall = 12f, BackX = 22.6f, BackN = 24.6f, BackS = -.75f;
+        const float Hall = 12f, BackX = 22.6f, BackN = 26.4f, BackS = -.75f;
+        // R504 fix (user 11-08: a north-wall column stood on the road square f8 by the rook): the team boards run to z 24,
+        // so the north wall's back line is 26.4 and its 2.4 m columns end exactly at the board's edge (was 24.6).
+        static readonly float[] SideCols = { .45f, 6.64f, 12.83f, 19.01f, BackN - ColumnDepth * .5f };
         const float ColumnHalf = 1.215f, ColumnDepth = 2.4f;
         static readonly float[] BayDepth = { 1.75f, 1.46f };            // window, plain (model depth at 12 m)
         static readonly float[] BayWidth = { 5.48f, 5.36f };
 
+        // Shared with H (MiniGameModels.ChessHall.cs, 11-08): H calls RoyalProcessionHall, RoyalProcessionFloor and
+        // TeamGateDoor and the constants BackN, EnvName, RideName, and removes the env children "Fanfare trumpets",
+        // "Crown pedestal" and "Aisle stanchions". Renaming any of these, or changing a signature, breaks H; layout
+        // changes (walls, light, cloth) reach H as well.
         static void RoyalProcessionHall(Transform content, Dictionary<string, Material> cache)
         {
             if (content.Find(EnvName) != null) return;
@@ -381,7 +408,7 @@ namespace ChessFight.PawnRush
             }
             float colIn = BackX - ColumnHalf;    // 21.385: corner columns, shared by the side and end walls
             // side walls: 5 columns from the entry corner to the north corner, 4 bays
-            var side = new[] { .45f, 6.3f, 12.15f, 18f, 23.4f };
+            var side = SideCols;
             foreach (float s in new[] { -1f, 1f })
                 Run(Vector3.forward, new Vector3(-s, 0f, 0f), BackX, side, new[] { true, true, true, true }, new[] { true, true, true, true, true }, s < 0f ? "West wall" : "East wall");
             // north wall, per half: column beside the centre gate, the team portal (no bay, a lintel), column, one bay to
@@ -416,8 +443,14 @@ namespace ChessFight.PawnRush
                 else if (marble != null)
                     MarbleBlock(env, "Portal lintel", new Vector3(s * 12f, (5.8f + Hall) * .5f, BackN - .8f), new Vector3(6.93f, Hall - 5.8f, 1.6f), marble);
             }
-            if (marble != null)   // behind and above the centre gate (10.4 m) up to the ceiling
-                MarbleBlock(env, "Centre wall", new Vector3(0f, Hall * .5f, BackN - .3f), new Vector3(2f * 8.535f, Hall, .6f), marble);
+            if (marble != null)   // above the centre gate (10.4 m) up to the ceiling
+                MarbleBlock(env, "Centre wall", new Vector3(0f, (10.4f + Hall) * .5f, BackN - .3f), new Vector3(2f * 8.535f, Hall - 10.4f, .6f), marble);   // only above the gate: the gate (face z 26) fills the rest
+            // the strip between the boards' end (z 24) and the moved-back north wall, at dais height, so no gap shows
+            // under the wall; the two team tunnels (x +-9.75..14.25) keep their own floor (the step down at z 24)
+            if (marble != null)
+                foreach (var (x0, x1) in new[] { (-BackX, -14.25f), (-9.75f, 9.75f), (14.25f, BackX) })
+                    MarbleBlock(env, "North floor strip", new Vector3((x0 + x1) * .5f, Arena.DaisHeight * .5f, (24f + BackN) * .5f),
+                                new Vector3(x1 - x0, Arena.DaisHeight, BackN - 24f), marble);
             // entry wall, per half: column beside the entry, three bays to the corner column
             foreach (float s in new[] { -1f, 1f })
             {
@@ -512,31 +545,47 @@ namespace ChessFight.PawnRush
                 h.localRotation = Quaternion.LookRotation(-inward, Vector3.up);
                 return h;
             }
+            GameObject Brass(PrimitiveType kind, string name, Transform face, Vector3 at, Quaternion turn, Vector3 scale)
+            {
+                var go = GameObject.CreatePrimitive(kind);
+                go.name = name;
+                if (Application.isPlaying) Object.Destroy(go.GetComponent<Collider>());
+                else Object.DestroyImmediate(go.GetComponent<Collider>());   // a prefab build runs this outside Play
+                go.transform.SetParent(face, false);
+                go.transform.localPosition = at;
+                go.transform.localRotation = turn;
+                go.transform.localScale = scale;
+                go.GetComponent<Renderer>().sharedMaterial = brass;
+                return go;
+            }
             void Cloth(Transform face, float along, float top, float w, float h, Material m)
             {
                 MiniGameBannerCloth.Hang(face, new Vector3(along, top, 0f), w, h, m);
                 if (brass == null) return;
-                var rod = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                rod.name = "Cloth rod";
-                if (Application.isPlaying) Object.Destroy(rod.GetComponent<Collider>());
-                else Object.DestroyImmediate(rod.GetComponent<Collider>());   // a prefab build runs this outside Play
-                rod.transform.SetParent(face, false);
-                rod.transform.localPosition = new Vector3(along, top + .05f, 0f);
-                rod.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-                rod.transform.localScale = new Vector3(.09f, w * .5f + .2f, .09f);
-                rod.GetComponent<Renderer>().sharedMaterial = brass;
+                float y = top + .05f, half = w * .5f + .2f;
+                Brass(PrimitiveType.Cylinder, "Cloth rod", face, new Vector3(along, y, 0f), Quaternion.Euler(0f, 0f, 90f), new Vector3(.09f, half, .09f));
+                // the rod is held: an arm at each end back into the wall (user 11-08: "깃발이 붕 떠 있어"; the holder's
+                // +z is toward the wall, the cloth hangs 0.15 m in front of it) and a round knob on each end
+                const float reach = .4f;
+                foreach (float end in new[] { -1f, 1f })
+                {
+                    float x = along + end * (half - .08f);
+                    Brass(PrimitiveType.Cylinder, "Rod bracket", face, new Vector3(x, y, reach * .5f), Quaternion.Euler(90f, 0f, 0f), new Vector3(.07f, reach * .5f, .07f));
+                    Brass(PrimitiveType.Cube, "Bracket plate", face, new Vector3(x, y, reach - .03f), Quaternion.identity, new Vector3(.18f, .26f, .04f));
+                    Brass(PrimitiveType.Sphere, "Rod knob", face, new Vector3(along + end * (half + .06f), y, 0f), Quaternion.identity, Vector3.one * .16f);
+                }
             }
             const float pad = .15f;   // in front of the bay's face
             foreach (float s in new[] { -1f, 1f })
             {
                 var inward = new Vector3(-s, 0f, 0f);
-                // side walls: bays between the columns .45 / 6.3 / 12.15 / 18 / 23.4 are window, plain, window, plain
-                foreach (float z in new[] { 3.375f, 15.075f })
+                // side walls: the bays between SideCols are window, plain, window, plain
+                foreach (float z in new[] { (SideCols[0] + SideCols[1]) * .5f, (SideCols[2] + SideCols[3]) * .5f })
                 {
                     var face = Face("Side window curtains", new Vector3(s * (BackX - BayDepth[0] - pad), 0f, z), inward);
                     foreach (float side in new[] { -1f, 1f }) Cloth(face, side * 1.75f, 9.4f, 1.25f, 8.4f, velvet);
                 }
-                foreach (float z in new[] { 9.225f, 20.7f })
+                foreach (float z in new[] { (SideCols[1] + SideCols[2]) * .5f, (SideCols[3] + SideCols[4]) * .5f })
                     Cloth(Face("Royal banner", new Vector3(s * (BackX - BayDepth[1] - pad), 0f, z), inward), 0f, 9.6f, 1.9f, 5.2f, royal != null ? royal : velvet);
                 // north wall: the window bay at x +-18.43
                 var north = Face("North window curtains", new Vector3(s * 18.425f, 0f, BackN - BayDepth[0] - pad), Vector3.back);

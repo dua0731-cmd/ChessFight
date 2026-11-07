@@ -40,6 +40,9 @@ ARCH_APEX = 8.5                    # the entry / exit arch's inner crown
 BEAM_Z = [5., 10., 15., 20.]       # ceiling beams across the room (section z), over the module joints
 BEAM_H = .5
 SHELF = (3.6, .5, 1.7)             # low wall bookcase in front of each ground side module's wainscot
+# R508: F Clockwork Ballroom reuses this room (same section, same phase) without the library's wall bookcases
+BALLROOM = "--ballroom" in ARGS
+NAME = "F_HallEnv" if BALLROOM else "E_HallEnv"
 
 
 # ------------------------------------------------------------------ splitting rules (measured, kit_groups)
@@ -288,7 +291,7 @@ def main():
         for i, z in enumerate(SIDE_Z):
             env.append(pc(g, "ground", side_m(sd, z, 0., 1.03)))
             sm = Matrix.Translation((sd * (FACE - SHELF[1] / 2 - .02), z, 0.)) @ Matrix.Rotation(-sd * math.pi / 2, 4, 'Z')
-            env.append(pc(sh, "shelf", sm))
+            if not BALLROOM: env.append(pc(sh, "shelf", sm))
             bm = Matrix.Translation((sd * (FACE - .01 * (i % 2)), z, DECK_TOP)) @ Matrix.Rotation(-sd * math.pi / 2, 4, 'Z') @ Matrix.Diagonal((1.03, 1, 1, 1))
             env.append(pc(bal, "balcony", bm))
             env.append(pc(up, "upper", side_m(sd, z, DECK_TOP, 1.03)))
@@ -386,10 +389,10 @@ def main():
     env += [stone, ceil] + strips
     for o in list(walls.values()) + list(gate.values()):
         bpy.data.objects.remove(o)
-    hall = E.join(env, "E_HallEnv")
+    hall = E.join(env, NAME)
     print("HALL tris", E.tris(hall), "fill boxes", len(specs))
-    if "--export" in ARGS: E.export(hall, "E_HallEnv")
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(HERE, "E_Hall_v1.blend"))
+    if "--export" in ARGS: E.export(hall, NAME)
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(HERE, "F_Hall_v1.blend" if BALLROOM else "E_Hall_v1.blend"))
     if "--render" in ARGS: render(hall)
 
 

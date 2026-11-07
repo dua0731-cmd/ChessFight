@@ -222,7 +222,9 @@ namespace ChessFight.PawnRush
 
         // tip > 0: the hem is a V whose point (centre) hangs `tip` metres below the side corners. normalizedUv: UV
         // 0..1 over the whole cloth (a painted banner) instead of metres (the canvas tile).
-        public void Configure(float w, float h, float tip = 0f, bool normalizedUv = false)
+        // R508 (F ballroom's window drapes; both 0 elsewhere): pleat = depth (m) of vertical folds every 0.22 m;
+        // gather = how far (0..1) the cloth is drawn in at a tie-back 35 % up, flaring out again below it.
+        public void Configure(float w, float h, float tip = 0f, bool normalizedUv = false, float pleat = 0f, float gather = 0f)
         {
             width = w; height = h; seed = Random.value * 10f;
             mesh = new Mesh { name = "Swaying cloth" };
@@ -235,8 +237,15 @@ namespace ChessFight.PawnRush
                     float x = (c / (float)Columns - .5f) * w;
                     float hem = tip * Mathf.Abs(2f * x / w);
                     float y = Mathf.Lerp(hem, h, r / (float)Rows);
-                    rest[i] = new Vector3(x, y, 0f);
-                    uv[i] = normalizedUv ? new Vector2(c / (float)Columns, y / h) : new Vector2(x, y);
+                    float u = x;
+                    if (gather > 0f)
+                    {
+                        float k = (y / h - .35f) / .14f;
+                        x *= 1f - gather * Mathf.Exp(-k * k);
+                    }
+                    float fold = pleat > 0f ? pleat * Mathf.Sin(u / .22f * 2f * Mathf.PI) * (1f - .5f * y / h) : 0f;
+                    rest[i] = new Vector3(x, y, fold);
+                    uv[i] = normalizedUv ? new Vector2(c / (float)Columns, y / h) : new Vector2(u, y);
                 }
             tipIndex = Columns / 2;                       // bottom row, centre column: the hem point
             for (int r = 0, k = 0; r < Rows; r++)
@@ -261,7 +270,7 @@ namespace ChessFight.PawnRush
                 var p = rest[i];
                 float free = 1f - p.y / height;                       // pinned at the top, freest at the hem
                 float wave = Mathf.Sin(t * 1.3f + p.x * .9f) * .6f + Mathf.Sin(t * 2.1f + p.y * 1.7f + p.x * .4f) * .4f;
-                moved[i] = new Vector3(p.x + Mathf.Sin(t * .8f + p.y) * .03f * free, p.y, -.12f * free * free * wave);
+                moved[i] = new Vector3(p.x + Mathf.Sin(t * .8f + p.y) * .03f * free, p.y, p.z - .12f * free * free * wave);
             }
             mesh.vertices = moved;
             mesh.RecalculateNormals();

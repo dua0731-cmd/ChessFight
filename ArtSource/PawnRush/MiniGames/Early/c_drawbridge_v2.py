@@ -666,8 +666,15 @@ def build():
         lo_x, hi_x = sorted((s * 10., s * 14.))
         floor(me, lo_x, hi_x, MOAT1, FACADE, DAIS)
         floor(me, lo_x, hi_x, FACADE, REAR, 0.)                   # the team passage through the gatehouse
+    # the central aisle stays low, its curbs to the stations kept (user 11-08, "역과 통로 사이 옆 턱은 유지")
     floor(me, -2., 2., 4., MOAT0, 0.)
     floor(me, -2., 2., MOAT1, FACADE + .8, 0.)
+    # two stone steps up from the entry band to each station, the station's whole width (x 2..22, y 2.4..4); the game
+    # walks a hidden 14 degree slope under them (MiniGameModels.Drawbridge.CurbRamps, as the stations' own ramp)
+    for s in (-1, 1):
+        lo_x, hi_x = sorted((s * 2., s * 22.))
+        floor(me, lo_x, hi_x, 2.4, 3.2, DAIS * .5)
+        floor(me, lo_x, hi_x, 3.2, 4., DAIS)
     # ---- the rear corridor (the game's, y 30..36) to the exit (x -6..6 at y 36): floor, back walls, side walls
     floor(me, -22., 22., REAR, REAR + 6., 0.)
     for lo_x, hi_x in ((-22., -14.), (-10., 10.), (14., 22.)):      # under the gatehouse's rear edge: no sky below it

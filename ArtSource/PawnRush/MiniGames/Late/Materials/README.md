@@ -31,3 +31,19 @@ G 왕의 행차 회랑 [R504 컨셉 시트](../../../../../Docs/PawnRush/Concept
 - **기능 금 `#E2B23C`**(가마 띠·룩 목띠·모퉁이 고리·차고 멈춤쇠)은 게임의 평평한 색을 그대로 쓴다. 텍스처를 만들지 않는다. 장식 금속은 전부 무광 황동이다.
 - 팀색(파랑·주황)은 재질 세트에 없다. 팀 문·깃발에만 게임이 칠한다.
 - 아직 Unity `Assets/`로 옮기지 않았다. 사용자가 견본을 확인한 뒤 다음 단계(Unity 3단계 조명: 천창 빛기둥·남색 그림자)에서 옮긴다.
+
+## H 국왕 체스 홀 추가 견본 (R510)
+
+[R510 컨셉 시트](../../../../../Docs/PawnRush/ConceptArt/R510_KingsChessHall/) `H_03_props_materials.png`의 견본 줄 10칸 중 7칸은 위 R504 세트를 그대로 쓴다(사용자 11-08: "다른 채팅에서 썼던 애셋들 … 겹치면 코덱스에 신청 안하고 써도 돼"). 크림·남색 대리석, 메이플·월넛 칸, 보라 벨벳, 무광 황동은 같은 이름, **상아 기물은 `PR_Late_MarbleCream`**(G의 상아 룩과 같은 크림 대리석). 새로 3종만 `r510_material_swatches.py`로 굽는다. 이 스크립트는 `r504_material_swatches.py`의 함수(`tnoise`·`bake`·`sheet`·`heal_band`·미리보기)를 불러 쓴다.
+
+```
+"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --python r510_material_swatches.py -- --bake --preview
+```
+
+| 재질 | 타일 | 맵 | 내용 |
+|---|---|---|---|
+| `PR_Late_FrozenStone` 굳은 회색 돌 | 1 m | BaseColor · Normal · Roughness · Metallic · **Emission** | 굳은 킹. 회색 돌 + 가는 금 금(기능 금 `#E2B23C`). Metallic·Emission은 금 마스크라 Unity에서 금이 빛나게(발광은 코드가 켬) |
+| `PR_Late_Ebony` 흑단 | 1 m | BaseColor · Normal · Roughness | 파랑 팀 쪽 킹(상대색). 짙은 갈색 윤나는 나무, 가는 결 |
+| `PR_Late_Bronze` 청동 | 1 m | BaseColor · Normal · Roughness · Metallic | 뒤 벽 홀 종. 따뜻한 주물 청동, 얼룩 |
+
+비교 그림은 `r510_swatch_compare.png`(위 컨셉 견본 줄, 아래 1 m 견본·2×2 반복). G의 `swatch_compare.png`는 건드리지 않는다. Unity `Assets/`로는 아직 옮기지 않았다.

@@ -51,6 +51,14 @@ namespace ChessFight.PawnRush
         readonly float[] target = new float[64], shown = new float[64], hopAt = new float[64], hopHeight = new float[64];
         readonly bool[] blocked = new bool[64], wasCharging = new bool[64], wasBlocked = new bool[64], rankDone = new bool[9];
         readonly AudioSource[] chargeVoice = new AudioSource[64];
+        // R506 sounds back (user, 11-08: "A 로 해주고 사운드도 넣어"): one brush stroke (sfx_paint_stroke_1..8) at each
+        // band the brush starts, drawn from a shuffled bag of the 8 so the order is random and no take repeats soon.
+        readonly int[] strokeBand = new int[64];
+        readonly List<int> strokeBag = new List<int>();
+        // Takes 6 and 7 dropped (user, 11-08: "기계음 같은게 들리는데 그 사운드 빼줘"): the two with several knocks and
+        // almost no bristle hiss (under 10 % of their energy over 4 kHz, the other six 35-80 %).
+        static readonly int[] StrokeTakes = { 1, 2, 3, 4, 5, 8 };
+        int lastStroke = -1;
         readonly float[] nextSpark = new float[64];
         PaintBoardFx fx;
 
@@ -119,6 +127,28 @@ namespace ChessFight.PawnRush
 
         void OnDestroy() => boards.Remove(this);
 
+        // The stations' gold rims run under the board with its top's height and flicker in the joints (user, 11-08:
+        // "칠하는곳 사이사이 노란색 부분에서 깜빡깜빡 거려"). Build clips them (ClipRims), but a saved prefab (A's
+        // Early_MG_A_ParadeCourt) still carried whole rims, so clip again when play starts.
+        void Start()
+        {
+            foreach (var station in new[] { white, black })
+            {
+                if (station == null) continue;
+                foreach (var game in station.GetComponentsInChildren<MgPaint>(true)) ClipRims(game.transform);
+            }
+            // A saved prefab's joints still end on the board's sides (see Make): pull their ends in the same 2 cm.
+            float full = PawnRushBoard.N * PawnRushBoard.Cell;
+            foreach (Transform child in transform)
+            {
+                bool file = child.name == "Joint file", rank = child.name == "Joint rank";
+                if (!file && !rank) continue;
+                var size = child.localScale;
+                if (file && size.z > full - .01f) child.localScale = new Vector3(size.x, size.y, full - .04f);
+                if (rank && size.x > full - .01f) child.localScale = new Vector3(full - .04f, size.y, size.z);
+            }
+        }
+
         bool PalaceStyle => (white != null ? white : black) is MissionStation station && station.PalaceStyle;
         Color TeamColor(int team) => Arena.TeamColor(team, PalaceStyle);
 
@@ -153,13 +183,17 @@ namespace ChessFight.PawnRush
             // One collider for the whole board, its slate showing in the joints; gold lines in the joints.
             float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f, u0 = PawnRushBoard.U0, u1 = u0 + 2f * half;
             b.Box("Board", new Vector3(-half, 0f, u0), new Vector3(half, TileHeight, u1), Arena.Lit("M_BoardJoint", Arena.Groove, 0f, .8f)).AddComponent<CourseFloor>();
+            // Gold lines in the joints. Their ends stop 2 cm inside the board's sides: ending on the sides, their end faces
+            // shared the sides' plane and flickered as small gold squares along the board's edge (user, 11-08: "아직도
+            // 깜빡 거려", a recording).
             var joint = Arena.Emissive(Arena.Gold, .6f);
+            const float JointInset = .02f;
             for (int k = 1; k < PawnRushBoard.N; k++)
             {
                 float at = -half + k * PawnRushBoard.Cell;
-                Arena.Picture(transform, "Joint file", new Vector3(at - .035f, 0f, u0), new Vector3(at + .035f, .08f, u1), joint);
+                Arena.Picture(transform, "Joint file", new Vector3(at - .035f, 0f, u0 + JointInset), new Vector3(at + .035f, .08f, u1 - JointInset), joint);
                 at = u0 + k * PawnRushBoard.Cell;
-                Arena.Picture(transform, "Joint rank", new Vector3(-half, 0f, at - .035f), new Vector3(half, .08f, at + .035f), joint);
+                Arena.Picture(transform, "Joint rank", new Vector3(-half + JointInset, 0f, at - .035f), new Vector3(half - JointInset, .08f, at + .035f), joint);
             }
 
             var slate = (PalaceStyle ? Stone("PR_A_Slate") : null) ?? Arena.Lit("M_BoardSquare", Arena.Slate, 0f, .45f);
@@ -422,7 +456,8 @@ namespace ChessFight.PawnRush
             var color = TeamColor(team);
             // R506: A's own particles (PaintBoardFx) instead of the shared ring, cube bits and light column: the square's
             // new stone (ivory / basalt) splashes on, droplets fly, it twinkles and a soft light ring runs out.
-            Fx.Painted(at, color, Arena.Hex(team == Teams.Black ? "#2E2A26" : "#EEE3D0"), Tile);
+            Fx.Painted(at, color, Arena.Hex(team == Teams.Black ? "#2E2A26" : "#EEE3D0"), Tile, transform.eulerAngles.y);
+            ArenaFx.Sfx("sfx_paint_done", at);                       // the user's stamp ("도장 쾅")
             int rank = PawnRushBoard.RankOf(s);
             if (!rankDone[rank])
             {
@@ -435,6 +470,7 @@ namespace ChessFight.PawnRush
                     rankText[rank - 1].color = gold;
                     rankText[7 + rank].color = gold;
                     sweepAt = Time.time;
+                    ArenaFx.Sfx("sfx_rank_complete", at, false, .9f);
                     sweepRank = rank;
                     // R506: a gold fountain of twinkles and a ring at both ends of the rank, where its numbers are.
                     float half = PawnRushBoard.N * PawnRushBoard.Cell * .5f;
@@ -464,7 +500,8 @@ namespace ChessFight.PawnRush
             foreach (float v in new[] { -half, half })
                 foreach (float u in new[] { u0, u0 + 2f * half })
                     corners[i++] = transform.TransformPoint(new Vector3(v, TileHeight, u));
-            Fx.TeamDone(centre, corners, half, TeamColor(team), Arena.Gold, Arena.Hex("#F3EADB"));
+            Fx.TeamDone(centre, corners, half, TeamColor(team), Arena.Gold, Arena.Hex("#F3EADB"), transform.eulerAngles.y);
+            ArenaFx.Sfx("sfx_paint_team_complete", centre, true);
         }
 
         // ------------------------------------------------------------------ brushed paint (R506)
@@ -473,7 +510,7 @@ namespace ChessFight.PawnRush
         static Texture2D brushTexture, brushNormal;
         static byte[] brushTone;                                 // BrushMaps' streak tone, 256 x 256, for the live paint
         static readonly int CutoffId = Shader.PropertyToID("_Cutoff");
-        const int Bands = 5;                                     // strokes across a square
+        const int Bands = 4;                                     // strokes across a square (concept BP_01: four bands)
 
         // The painting sheet, wet paint in the team's stone colour (user, 11-07: "실제로 렌더링 되게 해줘 칠해보이는 게"):
         // alpha-clipped by the brush order, lit through a normal map of bristle grooves and the ridges of paint at each
@@ -662,7 +699,7 @@ namespace ChessFight.PawnRush
             tilt.SetParent(root, false);
             var oak = Arena.Lit("M_BrushHandle", Arena.Hex("#8A5A2E"), 0f, .55f);
             var brass = Arena.Lit("M_BrushFerrule", Arena.Hex("#9C8354"), 0f, .3f);
-            var hair = Arena.Lit("M_BrushHair", Arena.Hex("#5A4030"), 0f, .8f);
+            var hair = Arena.Lit("M_BrushHairCream", Arena.Hex("#E6D6B8"), 0f, .7f);
             var dip = Arena.Lit(team == Teams.Black ? "M_BrushDipBlack" : "M_BrushDipWhite", Arena.Hex(team == Teams.Black ? "#2E2A26" : "#EEE3D0"), 0f, .2f);
             void Part(PrimitiveType type, string name, Vector3 at, Vector3 scale, Material m)
             {
@@ -677,9 +714,10 @@ namespace ChessFight.PawnRush
             }
             Part(PrimitiveType.Cube, "Brush paint tip", new Vector3(0f, .06f, 0f), new Vector3(.36f, .12f, .09f), dip);
             Part(PrimitiveType.Cube, "Brush bristles", new Vector3(0f, .2f, 0f), new Vector3(.38f, .2f, .1f), hair);
-            Part(PrimitiveType.Cube, "Brush ferrule", new Vector3(0f, .37f, 0f), new Vector3(.4f, .16f, .13f), brass);
+            Part(PrimitiveType.Cylinder, "Brush ferrule", new Vector3(0f, .37f, 0f), new Vector3(.42f, .09f, .16f), brass);
             Part(PrimitiveType.Cylinder, "Brush handle", new Vector3(0f, .85f, 0f), new Vector3(.09f, .4f, .09f), oak);
             Part(PrimitiveType.Sphere, "Brush handle end", new Vector3(0f, 1.25f, 0f), new Vector3(.11f, .11f, .11f), oak);
+            root.localScale = Vector3.one * 1.23f;                      // concept BP_01: a big brush (user, 11-08: 1.7 -> 1.45 -> 15 % smaller)
             brushes[s] = root;
             return root;
         }
@@ -699,6 +737,23 @@ namespace ChessFight.PawnRush
             brush.localPosition = TipLocal(s, progress) + Vector3.up * (.015f + .02f * Mathf.Abs(Mathf.Sin(t * 9f)));
             // the bristles' wide side across the stroke; the handle leaning back against the travel
             brush.localRotation = Quaternion.Euler(0f, 90f, 0f) * Quaternion.Euler(-dir * 35f, 0f, 0f);
+        }
+
+        void StrokeSound(int s, Vector3 at)
+        {
+            if (strokeBag.Count == 0)
+            {
+                foreach (int i in StrokeTakes) strokeBag.Add(i);
+                for (int i = strokeBag.Count - 1; i > 0; i--)
+                {
+                    int j = Random.Range(0, i + 1);
+                    (strokeBag[i], strokeBag[j]) = (strokeBag[j], strokeBag[i]);
+                }
+                if (strokeBag[strokeBag.Count - 1] == lastStroke) (strokeBag[0], strokeBag[strokeBag.Count - 1]) = (strokeBag[strokeBag.Count - 1], strokeBag[0]);
+            }
+            lastStroke = strokeBag[strokeBag.Count - 1];
+            strokeBag.RemoveAt(strokeBag.Count - 1);
+            ArenaFx.Sfx("sfx_paint_stroke_" + lastStroke, at, false, .8f);
         }
 
         void Cut(int s)
@@ -730,8 +785,10 @@ namespace ChessFight.PawnRush
                 var at = transform.TransformPoint(sq.localPosition + Vector3.up * TileHeight);
                 if (!charging && wasCharging[s]) { Cut(s); stopShown[s] = Mathf.Max(.001f, shown[s]); }
                 if (charging && !wasCharging[s] && strokes[s] != null) StartPaint(s);
+                if (charging && !wasCharging[s]) strokeBand[s] = -1;
                 wasCharging[s] = charging;
-                wasBlocked[s] = charging && blocked[s];       // A has no sounds for now (user, 11-07: "사운드는 다 없애고")
+                if (charging && blocked[s] && !wasBlocked[s]) ArenaFx.Sfx("sfx_paint_blocked", at, false, .7f);
+                wasBlocked[s] = charging && blocked[s];
 
                 // The brushing follows the host's time (eased on a client), and wipes back in 0.2 s when it stops.
                 float want = target[s] * PlateMax;
@@ -759,6 +816,11 @@ namespace ChessFight.PawnRush
                 if (rims[s].sharedMaterial != rimWant)
                     foreach (var edge in rims[s].transform.parent.GetComponentsInChildren<Renderer>()) edge.sharedMaterial = rimWant;
                 PlaceBrush(s, progress, charging, t);
+                if (charging && !blocked[s])
+                {
+                    int band = Mathf.FloorToInt(Mathf.Clamp(progress, 0f, .999f) * Bands);
+                    if (band != strokeBand[s]) { strokeBand[s] = band; StrokeSound(s, at); }
+                }
                 // R506: soft glowing motes at the brush's tip while it paints (red while blocked).
                 if (charging && t >= nextSpark[s])
                 {

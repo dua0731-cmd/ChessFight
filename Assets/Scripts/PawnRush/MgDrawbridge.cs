@@ -70,6 +70,7 @@ namespace ChessFight.PawnRush
         readonly float[] strainAt = new float[Knots];
         float dustAt;
         AudioSource creak, winch;
+        float hum;               // the winch and rope loops' level, 0..1: eased in and out (user 11-08)
         Material ropeMat, ropeHeld, lampOn, lampOff;
         bool slammed;
 
@@ -511,7 +512,7 @@ namespace ChessFight.PawnRush
             // The chains from the deck's end to the drum's top.
             ChainPose();
             Sounds(moving);
-            Dust();
+            if (moving) Dust();
             // Down: a thud and a 0.05 m bounce at the far bank's end.
             if (Completed && !slammed && shown >= DrawbridgeRope.Length - .01f)
             {
@@ -532,11 +533,19 @@ namespace ChessFight.PawnRush
         {
             var at = World(winchAt);
             float speed = DrawbridgeRope.Speed(Mathf.Max(0f, net), 0f);
-            if (moving)
+            // user 11-08 ("줄을 당기다가 갑자기 안하면 갑자기 사운드가 멈춰"): the loops no longer stop dead when the
+            // pulling stops - they swell in over 0.25 s and die away over 0.6 s (a short pause in the pulling keeps them on)
+            hum = Mathf.MoveTowards(hum, moving ? 1f : 0f, Time.deltaTime / (moving ? .25f : .6f));
+            if (hum > 0f)
             {
-                if (creak == null || !creak.isPlaying) creak = ArenaFx.Hold("sfx_rope_creak", at, 1f, .6f);
-                if (winch == null || !winch.isPlaying) winch = ArenaFx.Hold("sfx_winch", at, 1f, .6f);
-                if (creak != null) creak.pitch = .8f + speed / DrawbridgeRope.MaxSpeed * .4f;
+                if (creak == null || !creak.isPlaying) creak = ArenaFx.Hold("sfx_rope_creak", at, 1f, .6f * hum);
+                if (winch == null || !winch.isPlaying) winch = ArenaFx.Hold("sfx_winch", at, 1f, .6f * hum);
+                if (creak != null)
+                {
+                    creak.volume = .6f * hum;
+                    if (moving) creak.pitch = .8f + speed / DrawbridgeRope.MaxSpeed * .4f;
+                }
+                if (winch != null) winch.volume = .6f * hum;
             }
             else
             {
@@ -544,6 +553,9 @@ namespace ChessFight.PawnRush
                 ArenaFx.Cut(winch);
                 creak = winch = null;
             }
+            // only while the rope runs: once the bridge is down the knots' last bits stay set (Pull no longer runs), and
+            // the strain kept repeating from the rope (user 11-08, "다 줄을 땅겼는데 줄쪽에서 소리가 남아 있어")
+            if (!moving) return;
             for (int i = 0; i < Knots; i++)
                 if ((knotBits >> i & 1) != 0 && Time.time - strainAt[i] >= 2f)
                 {

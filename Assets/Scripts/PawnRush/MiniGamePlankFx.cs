@@ -251,8 +251,8 @@ namespace ChessFight.PawnRush
             var right = slot.right * (slot.lossyScale.x * .5f);
             var fwd = slot.forward * (slot.lossyScale.z * .5f);
             ArenaFx.Sfx("sfx_plank_lay", c);
-            for (int i = 0; i < 10; i++)
-                Puff(c - fwd + right * Random.Range(-1f, 1f), new Vector3(0f, .35f, 0f) - slot.forward * Random.Range(.2f, .6f), 0f, Random.Range(.9f, 1.4f), Random.Range(.5f, .9f));
+            for (int i = 0; i < 6; i++)
+                Puff(c - fwd + right * Random.Range(-1f, 1f), new Vector3(0f, .3f, 0f) - slot.forward * Random.Range(.2f, .5f), 0f, Random.Range(.6f, .9f), Random.Range(.28f, .45f));
             for (int i = 0; i < 16; i++)
                 Flake(c + right * Random.Range(-.9f, .9f) + fwd * Random.Range(-.8f, .8f),
                       new Vector3(Random.Range(-1.2f, 1.2f), Random.Range(1.6f, 3f), Random.Range(-1.2f, 1.2f)), c.y);
@@ -265,28 +265,28 @@ namespace ChessFight.PawnRush
         {
             for (int i = 0; i < 6; i++)
                 Mote(at, new Vector3(Random.Range(-1.5f, 1.5f), Random.Range(1f, 2.4f), Random.Range(-1.5f, 1.5f)), 0f, Random.Range(.25f, .45f), Random.Range(.05f, .09f));
-            Puff(at, Vector3.up * .25f, 0f, .7f, .35f);
+            Puff(at, Vector3.up * .25f, 0f, .5f, .2f);
         }
 
         void Pick(Vector3 at)
         {
             ArenaFx.Sfx("sfx_plank_pick", at, volume: .8f);
-            for (int i = 0; i < 5; i++)
-                Puff(at + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-.8f, .8f)), new Vector3(0f, .3f, 0f), 0f, Random.Range(.8f, 1.2f), Random.Range(.4f, .7f));
+            for (int i = 0; i < 3; i++)
+                Puff(at + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-.8f, .8f)), new Vector3(0f, .3f, 0f), 0f, Random.Range(.5f, .8f), Random.Range(.22f, .35f));
         }
 
         void Return(Vector3 at)
         {
             ArenaFx.Sfx("sfx_plank_return", at, volume: .7f);
-            for (int i = 0; i < 4; i++)
-                Puff(at + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-.8f, .8f)), new Vector3(0f, .25f, 0f), 0f, Random.Range(.8f, 1.1f), Random.Range(.4f, .6f));
+            for (int i = 0; i < 3; i++)
+                Puff(at + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-.8f, .8f)), new Vector3(0f, .25f, 0f), 0f, Random.Range(.5f, .8f), Random.Range(.22f, .35f));
         }
 
         void Drop(Vector3 at)
         {
             ArenaFx.Sfx("sfx_plank_drop", at);
-            for (int i = 0; i < 7; i++)
-                Puff(at + Random.insideUnitSphere * .6f, new Vector3(0f, .3f, 0f), 0f, Random.Range(.9f, 1.3f), Random.Range(.5f, .8f));
+            for (int i = 0; i < 4; i++)
+                Puff(at + Random.insideUnitSphere * .6f, new Vector3(0f, .3f, 0f), 0f, Random.Range(.6f, .9f), Random.Range(.3f, .45f));
             for (int i = 0; i < 10; i++)
                 Flake(at, new Vector3(Random.Range(-2f, 2f), Random.Range(1f, 2.5f), Random.Range(-2f, 2f)), at.y - 1.2f);
         }
@@ -313,9 +313,9 @@ namespace ChessFight.PawnRush
             var front = -gate.forward;
             var bottom = gate.position - gate.up * (gate.lossyScale.y * .5f) + front * (gate.lossyScale.z * .5f + .1f);
             ArenaFx.Sfx("sfx_dustsheet_open", gate.position);
-            for (int i = 0; i < 22; i++)
-                Puff(bottom + right * Random.Range(-1.1f, 1.1f), front * Random.Range(.3f, .9f) + Vector3.up * Random.Range(.2f, .6f),
-                     Random.Range(0f, .6f), Random.Range(1.6f, 2.6f), Random.Range(.9f, 1.6f));
+            for (int i = 0; i < 12; i++)
+                Puff(bottom + right * Random.Range(-1.1f, 1.1f), front * Random.Range(.3f, .8f) + Vector3.up * Random.Range(.2f, .5f),
+                     Random.Range(0f, .5f), Random.Range(1.1f, 1.6f), Random.Range(.45f, .8f));
             // sawdust shaken off the batten as the sheet rises, falling over the doorway
             for (int i = 0; i < 18; i++)
                 Flake(bottom + right * Random.Range(-1f, 1f) + Vector3.up * Random.Range(3.6f, 4.4f),
@@ -391,8 +391,8 @@ namespace ChessFight.PawnRush
                 Color c;
                 if (b.Kind == 0)
                 {
-                    b.T.localScale = Vector3.one * b.Size * Mathf.Lerp(.5f, 1.9f, ease);
-                    float a = (k < .2f ? k / .2f : (1f - k) / .8f) * .55f;
+                    b.T.localScale = Vector3.one * b.Size * Mathf.Lerp(.6f, 1.35f, ease);
+                    float a = (k < .12f ? k / .12f : Mathf.Pow(1f - (k - .12f) / .88f, 1.6f)) * .26f;
                     c = new Color(Dust.r, Dust.g, Dust.b, a);
                 }
                 else

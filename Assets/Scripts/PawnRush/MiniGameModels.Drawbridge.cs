@@ -35,6 +35,7 @@ namespace ChessFight.PawnRush
             }
             Hide(content.Find(EnvName));                       // a v1 model hung earlier
             WidenCentralMoat(content);
+            CurbRamps(content);
             Hide(content.Find(MiniGamePalaceArt.ShellName));
             foreach (var floor in new[] { "Entry band", "Rear corridor", "Central aisle", "Central aisle south", "Central aisle north" })
                 Hide(content.Find(floor));
@@ -53,7 +54,7 @@ namespace ChessFight.PawnRush
             {
                 if (station == null) continue;
                 foreach (var t in station.GetComponentsInChildren<Transform>(true))
-                    if (t.name == "Gate passage" || t.name == "Station floor" || t.name == "Palace station ramp") Hide(t);
+                    if (t.name == "Gate passage" || t.name == "Station floor" || t.name == "Palace station ramp" || t.name.StartsWith("Rim ")) Hide(t);   // Rim: the game's flat gold trim, a barrier look over the steps (11-08)
                 var game = station.Game != null ? station.Game.transform : null;
                 if (game == null) continue;
                 foreach (var t in game.GetComponentsInChildren<Transform>(true))
@@ -154,6 +155,47 @@ namespace ChessFight.PawnRush
         }
 
         // One sheet of the phase-1 moat water over the whole moat (x -22..22, z 16..20), at the game's water level.
+        // User 11-08 ("여기 부분이 투명 벽처럼 박혀 있어", "아직 못지나가"): the stations stand on a 0.4 m dais and the only
+        // way up was the game's ramp at the middle of each station's front (its picture hidden under the model), so the
+        // rest of the curb stopped a pawn like an invisible wall; a 0.8 m wedge (27 degrees) was still too steep. Each
+        // station's whole front, x 2..22, rises from the entry band on one hidden slope 1.6 m deep - the stations' own
+        // ramp's 14 degrees - under the model's two stone steps (c_drawbridge_v2.py, y 2.4..4). The curbs between the
+        // stations and the low central aisle stay (user 11-08). Section frame: plaza at 0, dais top at 0.4.
+        const string CurbName = "MODEL_CurbRamps";
+        const float CurbRise = Arena.DaisHeight, CurbRun = Arena.RampLength;
+
+        static void CurbRamps(Transform content)
+        {
+            if (content.Find(CurbName) != null) return;
+            var root = new GameObject(CurbName).transform;
+            root.SetParent(content, false);
+            foreach (float s in new[] { -1f, 1f })
+                Curb(root, new Vector3(s * 2f, CurbRise, 4f), new Vector3(s * 22f, CurbRise, 4f), Vector3.back);
+        }
+
+        // A walkable wedge under the edge a-b (both on the dais top), sloping down `run` metres toward `outward`.
+        static void Curb(Transform parent, Vector3 a, Vector3 b, Vector3 outward)
+        {
+            var o = outward * CurbRun;
+            var lip = -outward * .05f;                         // a little under the dais, so no seam at the top
+            var down = Vector3.down * CurbRise;
+            var v = new[]
+            {
+                a + lip, b + lip,                              // 0 1 the top edge
+                a + down + o, b + down + o,                    // 2 3 the foot
+                a + down + lip, b + down + lip,                // 4 5 under the top edge
+            };
+            var mesh = new Mesh { name = "Curb ramp" };
+            mesh.vertices = v;
+            mesh.triangles = new[] { 0, 2, 1, 1, 2, 3, 4, 5, 2, 5, 3, 2, 0, 1, 4, 1, 5, 4, 0, 4, 2, 1, 3, 5 };
+            var go = new GameObject("Curb ramp");
+            go.transform.SetParent(parent, false);
+            var col = go.AddComponent<MeshCollider>();
+            col.sharedMesh = mesh;
+            col.convex = true;
+            go.AddComponent<CourseFloor>().sloped = true;
+        }
+
         static void MoatWaterV2(Transform content)
         {
             // user 11-07 "이제 물도 넣어줘": the material was only made by the look-test menu and was missing, so the

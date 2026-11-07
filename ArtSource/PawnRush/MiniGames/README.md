@@ -50,6 +50,46 @@ Unity 연결은 `Assets/Scripts/PawnRush/MiniGameModels.cs`에 있다. 게임이
 
 **D 배치 때 지킬 것(사용자 11-07, 행차 회랑 세션 전달):** 기존 셸(`MiniGamePalaceArt.Shell`)의 벽·기둥·창 그림은 숨기고 모델로 다시 세팅해도 된다. **벽은 이어지게:** `D_Wall`(4.5 m) 모듈을 띄엄띄엄 두지 말고 빈틈 없이(살짝 겹치게) 벽 전체 길이를 덮고, 모듈 위로 남는 높이도 같은 재질로 채운다. 콜라이더·문·게임 장치, 구간 입구·출구 크기·위치는 그대로.
 
+## F · 대무도회장 (R508)
+
+작업 순서는 `Mid/PROMPT_GPT_F_J.md`(B 동관 방식). 1단계 컨셉 시트 3장 `Docs/PawnRush/ConceptArt/R508_ClockworkBallroom/`(사용자 확인 11-08). 2단계 재질 견본(사용자 확인 11-08) `Mid/Materials/r508_material_swatches.py`(새 3종: 쪽마루·자두색 벨벳·회색 거울, 나머지는 B 것, 크림 대리석은 F 전용 `PR_Mid_BallroomMarble`, 상세는 `Mid/Materials/README.md`).
+
+게임 좌표(`MgEnPassant`·`EnPassantRules`, 스테이션 프레임 x = v·z = u, 원점 구간 (±12, 0, 4), 흑 팀은 v 거울):
+
+| 물체 | 위치·크기 |
+|---|---|
+| 무용수 16개 `Statue 1~16` | 열 v −6.75·−2.25·2.25·6.75, 행 u 6·10.4·14.8·19.2(남쪽 줄부터). 높이 0.9 m, 반지름 0.38 m, 상대 팀색 |
+| 레인 칸 `Lane i square s` | 칸 1.1 m, u = 집 − 0·1.1·2.2(입구 쪽으로 3칸), 높이 0.04 m. 스텝 2.2 m |
+| 잡힌 폰 받침 `Tray` | v 9.2(통로 쪽, 구간 x ∓2.8), u 3~19, 폭 1.4 m, 높이 0.3 m, 양옆 금 테두리. 잡힌 폰은 u 3.4부터 1 m 간격으로 눕힘 |
+| 바닥 `Station floor` | u 0~20(구간 z 4~24), 팀 문 4 × 4.6 m(u 23~23.4) |
+
+### F 3단계 에셋 (R508, 11-08)
+
+- 시트 3장은 `Docs/PawnRush/ConceptArt/R508_ClockworkBallroom/AssetRefs/`, 다른 방에서 가져다 쓰는 목록은 그 위 `REUSE.md`. 거울 면은 Tripo로 만들지 않고 빈 틀만 받는다(사용자 선택 "방만 비침": Blender 판 + Unity 거울 재질·반사 프로브).
+- **무용수는 Blender로 직접**(사용자 11-08 "첫번 째는 너가 만들어주고 인형 느낌나게 해줘", `Mid/f_dancers_v1.py` → `Export/F_DancerGown`·`F_DancerTailcoat`·`F_WindKey.fbx`, 렌더 `Mid/render_f_dancers_front/back.png`). 인형 느낌: 도자기 몸, 어깨·팔꿈치 구체 관절, 둥근 손, 볼 홍조, 주름 12개 치마 + 레이스 밑단, 레이스 깃, 핀으로 고정한 이중 스웨그 6개(황동 구슬), 허리 띠·등 리본, 연미복은 꼬리 2개·셔츠 판·라펠·나비넥타이·황동 단추. 높이 0.895 m, 반지름 0.371·0.355 m(게임 판정 0.38 안). 재질 칸: `F_DancerBody`·`F_DancerCostume`(흰 천, Unity에서 상대 팀색)·`F_DancerTrim`·`PR_Mid_MatteBrass`·`F_DancerBlush`, 천은 `PR_Mid_Canvas` 노멀. 앞 = Blender −y, 원점 = 바닥 가운데. 태엽 열쇠는 따로(원점 = 등 구멍 (0, 0.178, 0.515)에 꽂히는 축 끝, 축 +y = 뒤쪽, 돌릴 수 있게). 삼각형: 드레스 4,000·연미복 3,500(만든 뒤 데시메이트)·열쇠 868. Unity 미반영.
+- **Tripo FBX 2개**(사용자 11-08): `Mid/Source/R508_F_Frames.fbx`(+`R508_F_Frames_tex/`), `R508_F_Props.fbx`(+`R508_F_Props_tex/`), 텍스처 basecolor·normal·metallic·roughness. 검사 `Mid/f_inspect_v1.py`(렌더 `render_f_inspect_*`): 둘 다 메시 1개·0.98 m 상자, 시트 순서대로 x로 깔끔히 나뉨. 거울 틀 두 개는 가운데가 실제로 뚫려 있음.
+
+| 부품 | Tripo 원본 삼각형 | 게임에서 | 손질 뒤 목표 | 판정 |
+|---|---|---|---|---|
+| 거울 팀 문짝 틀 | 82,158 | 팀마다 1개, 열릴 때 가까이 | 6,000 | 줄이기 |
+| 벽 거울 틀 | 81,108 | 약 10개, 3 m 위 | 3,000 | 줄이기 |
+| 스포트라이트 | 115,048 | 약 8개, 천장 | 2,500 | 줄이기 |
+| 악보대 | 36,908 | 회랑·벽가 2~4개 | 2,000 | 줄이기 |
+| 코트 걸이 | 27,538 | 입구 구석 2개 | 1,500 | 줄이기 |
+| 음료 탁자 | 76,008 | 벽가 2~4개 | 2,500 | 줄이기 |
+| 화분 토피어리 | 76,434 | 벽가·입구 4~6개 | 3,000 | 줄이기 |
+| 하프 | 60,162(조각 3) | 회랑 1~2개 | 3,000 | 줄이기 |
+
+늘릴 부품은 없다.
+
+- **손질**(사용자 11-08 "확인, 부품 손질 진행", `Mid/f_props_v1.py` → `Export/F_<이름>.fbx`, 렌더 `Mid/render_f_props_row/door.png`): 시트 줄을 x로 나눠 부품마다 게임 크기·목표 면 수로 맞춤. 거울 문짝 3.85 × 4.55 × 0.32 m(게임 문짝, 원점 바닥 가운데) 6,000, 벽 거울 1.77 × 2.6 m·두께 0.16(원점 뒷면 바닥 가운데, 벽에 검) 3,000, 스포트라이트 높이 0.95 m(원점 천장 판) 2,500, 악보대 1.15 m 2,000, 코트 걸이 1.8 m 1,500, 음료 탁자 0.98 m 2,500, 화분 1.6 m 3,000, 하프 1.8 m 3,000. 앞 = −y. 재질은 세트마다 하나 `PR_Mid_FramesKit`·`PR_Mid_PropsKit`(Tripo 베이스 컬러·노멀을 2048로 `Mid/Materials/Textures`). **거울 판 `MIRROR_Surface`**(거울 틀의 자식, 재질 `PR_Mid_Mirror`): 틀을 정면에서 1 cm 격자로 칠하고 가운데 빈 칸을 채워 구멍 모양을 찾은 뒤 2 cm 넓혀 가장자리를 틀 밑에 숨김, 구멍 둘레 틀 깊이의 중간에 둠. 처음엔 가운데서 광선을 쏘는 방식이라 문짝 판 가장자리가 들쭉날쭉하고 벽 거울 판이 별 모양으로 깨져 바꿈. Unity 미반영.
+
+- **Unity 배치**(사용자 11-08 "확인, Unity 배치 진행"): 방 껍데기는 E 것을 책장만 빼고 다시 내보냄(`e_hall_v1.py --ballroom` → `Export/F_HallEnv.fbx`, 옵션 없이 돌리면 E 결과 그대로). 잡힌 무용수 받침은 `f_bench_v1.py` → `F_Bench`(호두나무 받침·누빈 자두색 벨벳·황동 난간·양끝 쿠션, 16 × 1.4 m, 윗면 0.3 m = 게임 받침 윗면, 2,312 삼각형). `f_install_unity.py`로 FBX 13개 → `Assets/Resources/PawnRushMiniGames/Mid/F`, 텍스처 → `Assets/Art/PawnRushMiniGames/Mid/Textures`, 재질 10개(`PR_Mid_FramesKit`·`PropsKit`·`Parquet`·`PlumVelvet`·`BallroomMarble`·`Mirror`, `F_DancerBody`·`Costume`·`Trim`·`Blush`). 연결 `Assets/Scripts/PawnRush/MiniGameModels.Ballroom.cs`(`MiniGameModels.Apply`에 한 줄): 셸 끔 + `F_HallEnv`, E 샹들리에·벽등(`E_LightsEnv`, 불빛 코드), E 바닥(`LibraryFloors`), E 팀 문틀, 코드 팀 깃발; 무용수는 각 `Statue N/Look`에 인형(4×4 바둑판으로 드레스·연미복), 게임 몸·R312 의상은 그리기만 끄고 팀 띠 `Ring`·잡기 고리선은 둠, `MiniGameDancerLook`이 의상 칸을 상대 팀색으로(잡을 수 있는 때 금빛 쪽으로) 칠하고 등 태엽을 돌림(평소 90°/s, 창 열림 540°/s); 레인 칸 쪽마루, 받침(`Tray`·금 테두리) 대신 `F_Bench`, R312 작은 벤치 끔; 팀 문은 `DEC_PalaceGate`에 `F_MirrorDoor`(게임 문과 함께 움직임); 벽 거울 8개(회랑 창 사이 z 5·10·15·20, 아래 7.3 m), 스포트라이트 8개, 하프·악보대(회랑), 코트 걸이·음료 탁자·화분(입구 구석·뒤 복도); `MiniGameMirrorProbe`가 방 가운데 상자 투영 반사 프로브(44 × 13 × 36 m)를 Play 첫 프레임에 무용수·폰을 숨기고 한 번 그림. 컴파일·Core·모의 세션 55 통과. 사용자 확인(11-08 "확인").
+
+- **거울 문 실시간 반사·다음 마무리**(사용자 11-08 스크린샷 + "여기는 실제로 반사 되게 유리 넣고 다음 작업 진행 해"): 거울에 기본 하늘이 비친 원인은 프로젝트 품질 설정에서 실시간 반사 프로브가 꺼져 있어서(`ProjectSettings/QualitySettings.asset` `realtimeReflectionProbes: 0`, 바꾸지 않음). 거울 문은 `MiniGameMirrorGlass`: 인트로 바닥 광택(`IntroStage.Gloss`)과 같은 방식으로 거울 뒤에 반사 카메라를 두고(시선을 거울면으로 뒤집음, 거울면을 가까운 면으로 하는 비스듬한 투영이라 문 뒤 통로는 안 찍힘) 화면 절반 크기 텍스처에 그려 새 셰이더 `Assets/Resources/PawnRushMiniGames/Fx/PR_MirrorGlass.shader`(화면 위치로 좌우 뒤집어 읽음, 은빛 색조·비스듬할수록 강해지는 유리 광택·대각선 광택 줄)로 입힘. 방의 모든 것(폰·무용수 포함)이 비침, 거울이 화면에 보이고 60 m 안일 때만 그림, 문이 움직이면 따라감. 벽 거울은 `MiniGameMirrorProbe`를 Custom 프로브로 바꿈: Play 첫 프레임에 무용수·폰을 숨기고 방 가운데에서 큐브맵(256)을 한 번 찍어 붙임(실시간 설정과 무관). 다음 작업: 스텝을 밟아 잡을 수 있는 무용수만 위에서 비추는 따뜻한 스포트 빛(`MiniGameBallroomSpots`, 팀마다 최대 3개, 8 m 위·남쪽 2.5 m에서, 켜지고 꺼질 때 서서히), 간판은 B의 호두나무·황동 틀(`DressRepairWingSigns`). 컴파일·Core 162·모의 세션 55 통과. 사용자 확인(11-08 "확인").
+
+- **창가 휘장·무대 테두리**(사용자 11-08 "확인 다음 작업"; 앞 두 단계는 VALIDATION에 사용자 확인으로 기록): 작업 지시서의 마무리 중 남은 것. `BallroomDrapes`: 양 옆벽 1층 창(z 2.5~22.5) 양옆에 크림 캔버스 휘장(`PR_Mid_Canvas` 양면, 폭 0.75·높이 3.95 m, 벽에서 0.12 m)과 창 위 황동 봉·끝 구슬(4.5 m), 35 % 높이 황동 고리. 천은 코드(`SwayingCloth`): 공용 `Configure`에 기본값 0인 `pleat`(세로 주름 깊이, 0.22 m 간격)·`gather`(묶은 허리 당김) 인자를 더함, 다른 방 천은 그대로. 무대 둘레 금 테두리(`Rim W/E/S W/S E/N W/N E`)는 숨기지 않고 무광 황동으로(밝은 금은 게임 신호인 무용수 밑 고리만). 컴파일·Core 162·모의 세션 55 통과. 사용자 확인(11-08 "확인").
+
 ## E · 왕궁 서고 (R507, `Mid/e_library_v1.py`)
 
 컨셉 시트 3장은 `Docs/PawnRush/ConceptArt/R507_RoyalLibrary/`, 에셋 시트 2장(흰 배경, Tripo 권장 면 수 포함)은 그 아래 `AssetRefs/`에 있다. 사용자가 만든 Tripo FBX 2개는 `Mid/Source/R507_StackedWoodenBookcases.fbx`(탑 3종)와 `R507_AntiquePropCollection.fbx`(문틀·회전 책장 문·손종·램프·꼭대기 발판)이다. 둘 다 10만 삼각형에 4096 텍스처다. **열람등은 쓰지 않는다**(사용자 11-07: "책장 위에 램프는 두지 않을거야"). 꼭대기 표시는 게임 규칙 그대로 손종이다.
@@ -144,3 +184,15 @@ B처럼 E의 R312 셸을 모두 치우고(사용자 11-07: 기존 구조물은 �
   - 뒤 복도 양 끝: 열람 책상, 쌓인 책, 책 수레
   - 전체 12.7만 삼각형. 연결은 `MiniGameModels.LibraryHall`(`MODEL_Props`). **사용자가 Unity에서 확인했다(2026-11-07).**
 - 렌더 `Mid/render_e_hall_entry/side/back/corner/rear.png`. 컴파일·Core 162·모의 세션 55 통과. **사용자가 Unity에서 확인했다(2026-11-07).**
+
+## H 국왕 체스 홀 (R510)
+
+G와 같은 3단계라 홀은 G 것을 그대로 쓴다(`Docs/PawnRush/ConceptArt/R510_KingsChessHall/REUSE.md`). H만의 것:
+
+1. `Late/h_props_v1.py` — 사용자 Tripo `Late/Source/R510_H_A1_Props.fbx`를 체스 시계·예비 기물 상자·기보 석판·홀 종으로 잘라 손질(`g_props_v1.py` 함수 재사용) → `Late/Export/H`, 렌더 `Late/render_h_props.png`.
+2. `Late/h_board_kit_v1.py` — 판 기둥·울타리 기둥·킹 쟁반·천창 우물(`H_SkylightWell`, H는 G 볼트 대신 이 천장)을, `Late/h_crest_v1.py` — 팀 문 위 킹 문장(`H_TeamGateCrest`, G 룩 문장 자리)을, `Late/h_decals_v1.py` — 석판 기보·시계 숫자 글자판(`H_NotationText`·`H_ClockDials`, 글꼴로 렌더한 텍스처)을 Blender로 직접(3단계 재질 이름 슬롯) → `Late/Export/H`, 렌더 `Late/render_h_board_kit.png`.
+3. `Late/h_install_unity.py` — `Assets/Resources/PawnRushMiniGames/Late/H`, 재질 `PR_Late_H_Props`·`Ebony`·`Bronze`·`FrozenStone`(발광 맵).
+4. `Assets/Scripts/PawnRush/MiniGameModels.ChessHall.cs` — Play 때 배치. 킹 모델은 게임 킹의 `Look`에 매달려 함께 움직이고, `MiniGameKingLook`이 굳은 상태를 따라 재질을 바꾼다. 홀 종은 받침쇠(`H_HallBellBracket`)와 종(`H_HallBellBody`, 원점 = 경첩)으로 나뉘어 `MiniGameHallBell`이 체크(`MgCheckmate.KingChecked`) 때 흔든다. 충돌·규칙은 게임 그대로.
+
+다시 손질하면 1·2 → 3 순서. G 함수(`RoyalProcessionHall` 등)를 바꾸면 H에도 그대로 적용된다.
+

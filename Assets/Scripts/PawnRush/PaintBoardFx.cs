@@ -15,8 +15,8 @@ namespace ChessFight.PawnRush
     // Built in code with its own small textures, as LibraryConveyorJoltFx; PaintBoard adds it.
     public sealed class PaintBoardFx : MonoBehaviour
     {
-        static Texture2D dot, star, splatTex, ringTex, flake;
-        ParticleSystem motes, splat, drops, ring, stars, confetti;
+        static Texture2D dot, star, splatTex, ringTex, flake, frameTex, fillTex;
+        ParticleSystem motes, splat, drops, ring, stars, confetti, frame, fill;
         ParticleSystem.EmitParams e;                                   // a struct: reused, so not readonly
 
         void Awake()
@@ -44,6 +44,15 @@ namespace ChessFight.PawnRush
             ring = Particles("A light ring", ringTex, true, ParticleSystemRenderMode.HorizontalBillboard, 40, 1.7f);
             Fade(ring, .9f, 0f, .05f);
             Shrink(ring, .15f, 1f, true);
+
+            // The board's own shape for a painted square and a finished team (user, 11-08: "원형으로 효과가 나오는데 채스판에
+            // 맞춰서"): a square light frame that starts on the square's edge and glides out, and a square flash of the
+            // new stone over the square, both turned with the board.
+            frame = Particles("A square frame", frameTex, true, ParticleSystemRenderMode.HorizontalBillboard, 40, 1.8f);
+            Fade(frame, 1f, 0f, .04f, .12f);
+            Shrink(frame, FrameFrom, 1f, true);
+            fill = Particles("A square flash", fillTex, true, ParticleSystemRenderMode.HorizontalBillboard, 40, 1.2f);
+            Fade(fill, .8f, 0f, .03f, .1f);
 
             stars = Particles("A twinkles", star, true, ParticleSystemRenderMode.Billboard, 400, 3f);
             Fade(stars, 1f, 0f, .15f);
@@ -81,11 +90,19 @@ namespace ChessFight.PawnRush
                  Random.Range(.6f, 1f), Random.Range(.09f, .16f), Glow(team, 2.2f));
         }
 
-        // A square painted: the stone splashes on, droplets fly, it twinkles and a ring of light runs out.
-        public void Painted(Vector3 at, Color team, Color stone, float squareSize)
+        // Frame and flash textures put their edge at 0.82 of the half size; the frame grows from FrameFrom to 1.
+        const float FrameEdge = .82f, FrameFrom = 1f / 1.35f;
+
+        // A square light frame on a `side` m square (turned `yaw` degrees with the board), gliding out to 1.35 times it.
+        void Frame(Vector3 at, float side, float yaw, float life, Color color) =>
+            Emit(frame, at, Vector3.zero, life, side / FrameEdge / FrameFrom, color, yaw);
+
+        // A square painted: a flash of the new stone over the square, a square light frame running out from its edge,
+        // droplets fly and it twinkles over the square.
+        public void Painted(Vector3 at, Color team, Color stone, float squareSize, float yaw)
         {
-            Emit(splat, at + Vector3.up * .015f, Vector3.zero, .9f, squareSize * 1.05f, stone, Random.Range(0f, 360f));
-            Emit(ring, at + Vector3.up * .02f, Vector3.zero, .7f, squareSize * 2.2f, Glow(team, 1.6f));
+            Emit(fill, at + Vector3.up * .015f, Vector3.zero, .45f, squareSize / FrameEdge, Glow(team, 1.4f), yaw);
+            Frame(at + Vector3.up * .02f, squareSize, yaw, .7f, Glow(team, 1.6f));
             for (int i = 0; i < 16; i++)
             {
                 var dir = Random.insideUnitCircle.normalized;
@@ -94,9 +111,11 @@ namespace ChessFight.PawnRush
                      new Vector3(dir.x, 0f, dir.y) * Random.Range(1.2f, 2.8f) + Vector3.up * Random.Range(1.6f, 3f), Random.Range(.5f, .8f),
                      Random.Range(.06f, .12f), c);
             }
+            var turn = Quaternion.Euler(0f, yaw, 0f);
             for (int i = 0; i < 7; i++)
             {
-                var p = Random.insideUnitCircle * squareSize * .45f;
+                var p = turn * new Vector3(Random.Range(-.45f, .45f), 0f, Random.Range(-.45f, .45f)) * squareSize;
+                p = new Vector3(p.x, p.z, 0f);
                 Emit(stars, at + new Vector3(p.x, Random.Range(.1f, .7f), p.y), Vector3.up * Random.Range(.2f, .6f), Random.Range(.5f, .8f),
                      Random.Range(.25f, .45f), Glow(i % 2 == 0 ? team : Color.white, 2.5f), Random.Range(0f, 360f));
             }
@@ -125,9 +144,9 @@ namespace ChessFight.PawnRush
         }
 
         // A team's 32 squares done: confetti thrown up from the board's corners, a wide ring and glitter over the board.
-        public void TeamDone(Vector3 centre, Vector3[] corners, float radius, Color team, Color gold, Color cream)
+        public void TeamDone(Vector3 centre, Vector3[] corners, float radius, Color team, Color gold, Color cream, float yaw)
         {
-            Emit(ring, centre + Vector3.up * .03f, Vector3.zero, 1.4f, radius * 2.4f, Glow(team, 1.5f));
+            Frame(centre + Vector3.up * .03f, radius * 2f, yaw, 1.4f, Glow(team, 1.5f));          // the whole board's outline
             var colours = new[] { team, gold, cream };
             foreach (var corner in corners)
             {
@@ -144,7 +163,8 @@ namespace ChessFight.PawnRush
             }
             for (int i = 0; i < 40; i++)
             {
-                var p = Random.insideUnitCircle * radius;
+                var q = Quaternion.Euler(0f, yaw, 0f) * new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)) * radius;   // over the board, not a disc
+                var p = new Vector2(q.x, q.z);
                 Emit(stars, centre + new Vector3(p.x, Random.Range(.3f, 2.5f), p.y), Vector3.up * Random.Range(.1f, .5f), Random.Range(.7f, 1.3f),
                      Random.Range(.3f, .6f), Glow(i % 3 == 0 ? gold : team, 2.8f), Random.Range(0f, 360f));
             }
@@ -285,6 +305,18 @@ namespace ChessFight.PawnRush
             {
                 float r = Mathf.Sqrt(x * x + y * y);
                 return Mathf.Pow(Mathf.Clamp01(1f - Mathf.Abs(r - .82f) / .14f), 2f);
+            });
+            // a square light frame: a soft line along the square whose half size is FrameEdge
+            frameTex = Draw(256, (x, y) =>
+            {
+                float d = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
+                return Mathf.Pow(Mathf.Clamp01(1f - Mathf.Abs(d - FrameEdge) / .07f), 2f);
+            });
+            // a square flash: full inside the square, a soft edge, brighter toward the edge
+            fillTex = Draw(128, (x, y) =>
+            {
+                float d = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
+                return Mathf.Clamp01((FrameEdge - d) / .03f) * (.35f + .65f * d / FrameEdge);
             });
             // a confetti flake: a rounded rectangle twice as long as wide
             flake = Draw(48, (x, y) =>
