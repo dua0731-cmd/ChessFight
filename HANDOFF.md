@@ -4,9 +4,14 @@
 현재 지침과 사용자의 최신 요청이 과거 기록보다 우선한다.
 작업이 끝나면 §8에 따라 코드·문서·검사 결과를 함께 마감한다.
 
-최종 갱신: **2026-11-06 · R498 공기 대포 Particle Orbital Velocity 오류 수정**.
-다음 빈 요청 번호는 **R499**이다.
-사용자는 팀원 맵 시험 중 `Particle Orbital Velocity curves must all be in the same mode` 오류를 제보했다.
+최종 갱신: **2026-11-08 · R505 네트워크 고침 R502~R504를 upstream main에 커밋 · 푸시, 네트워크 안내 · 월요일 시험 문서**.
+다음 빈 요청 번호는 **R506**이다(R498~R501은 seoungtest `f33c51c9`가 씀).
+R505: 승규 님 요청으로 R502~R504(네트워크 검토 고침 18가지, 프로토콜 v27)를 upstream main에 커밋 · 푸시했다(`git log --grep=R504`, main은 그사이 바뀌지 않아 `f296ace1` 위에 그대로 이어 붙임). 네트워크를 모르는 사람도 읽을 수 있는 구조 · 기능 · 한계 · 월요일(11-09) 팀원 시험 문서를 Claude 문서로 만들었다([네트워크 안내와 월요일 시험](https://claude.ai/artifact/Btut2SApfso4Gfkm7aNi1N)). 승규 님 Unity(`C:\Work\ChessFight`)는 아직 예전 main(`5f0c9832`)이라 새 main을 받아야 보인다.
+R504: 같은 검토의 작은 문제 아홉을 R503 위에 이어 고쳤다. 다음 방장 차례인 PC도 멈추면 그다음 순번이 3초 뒤 건너뛰고 이어받기(member data `past`), 방장 교체 뒤 소드 파이트 남은 시간 · 폰 러쉬 장애물이 뒤로 가던 것, 방 주인 이전 중 경기 끝 기록이 사라지던 것, 소드 파이트 경기 글 순서, 내 파티 초대를 받으면 파티장을 잃던 것, 개발 빌드의 기물 요청 되풀이, 명단 할당, 로컬 시험 자리 번호다. 프로토콜은 v27 그대로(R503과 함께 아직 빌드한 적 없음). R505에서 upstream main에 커밋 · 푸시. Core165 · 모의 세션65 · 전체 외부 컴파일 통과, Unity · Steam · 여러 PC 확인 전. [VALIDATION R504](Docs/Network/VALIDATION.md) · [HOST R504](Docs/Network/HOST.md).
+R503: 같은 검토의 중간 문제 여섯을 R502 위에 이어 고쳤다. 대기실을 막 넘겨받은 방장의 이른 시작 · 봇, 다음 방장 PC 혼자 끊겼을 때의 잘못된 이어받기(member data `quiet`, **프로토콜 v26 → v27**), 순간이동 · 부활 때 모두의 재생 지연이 사라지던 것, 방 번호 참가 거절 뒤 원하지 않은 공개 검색, 대기실이 닫히면 다른 파티가 매칭을 그만두던 것, 잠깐의 Steam 로그오프에 바로 취소하던 것이다. R505에서 upstream main에 커밋 · 푸시. Core163 · 모의 세션62 · 전체 외부 컴파일 통과, Unity · Steam · 여러 PC 확인 전. [VALIDATION R503](Docs/Network/VALIDATION.md) · [SESSION §6](Docs/Network/SESSION.md).
+R502: 승규 님의 네트워크 검토 요청에서 나온 큰 문제 셋을 고쳤다. 로딩 중 방장이 바뀌면 경기가 시작하지 않던 것, 소드 파이트 방장 교체 뒤 부활하지 못하던 것, 폰 러쉬 방장 교체 뒤 체크포인트 · 물 부활이 사라지던 것이다. `C:\Work\ChessFight-R305`의 `r502-migration-fixes`(upstream main `f296ace1` 기준)에서 고쳐 R505에서 upstream main에 커밋 · 푸시. Core163 · 모의 세션57 · 전체 외부 컴파일 통과, Unity · Steam · 여러 PC 확인 전. [VALIDATION R502](Docs/Network/VALIDATION.md) · [HOST R502](Docs/Network/HOST.md).
+
+R498: 사용자는 팀원 맵 시험 중 `Particle Orbital Velocity curves must all be in the same mode` 오류를 제보했다.
 작전 회의실 공기 대포의 런타임 공전 XYZ 모드를 맞췄고, 실제 Unity 자동 검사에서 수정 전 오류30건·수정 후0건을 기록했다.
 기존 루트의 SeoungTest_PawnRush Play에서 작전 회의실 화면과 Console 오류0을 AI가 관찰했고, 사용자 직접 입력·연출 적합성 확인은 남아 있다.
 
@@ -34,6 +39,7 @@ R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDO
 | 브랜치 | 2026-10-06 22:09:42 KST 이전 마지막 커밋 기준 원격8개·로컬8개 삭제. 원격24→16, 로컬15→7. main·최근 브랜치 보존 |
 | 자동 검사 | R498 Core162·모의 세션55·전체 대상 외부 컴파일 통과. 대포 Native Play 3방향·독립 그룹 대조군 PASS, issues0. R497 저장10프리팹/시험 씬·Play10종 검사 기록은 별도 유지 |
 | 사용자 확인 | R498 대포 충전·발사 화면/오류 재발과 R497 이후 Unity 입력·온라인·실제 퍼즐 완주·12명 성능은 사용자 확인 전 |
+| 네트워크 방장 교체 (R502 · R503 · R504) | R502: 시작 시각 `go`는 `SteamSession`이 방장일 때 정함(로딩 화면은 기다리기만). 소드 파이트 새 방장은 가장 새 칼 프레임 + `SwordMatchRules.Adopt`로 규칙이 몸을 따름. 폰 러쉬는 모든 PC가 체크포인트 기록, 새 방장이 0.3초 뒤 부활 다시 예약. R503: 대기실 새 방장은 방 주인 + `resv`를 읽은 뒤에만 시작 · 봇, 다음 방장은 다른 사람도 방장을 못 들을 때만(`quiet`) 이어받음, 순간이동한 말만 그대로 그림, 번호 참가 거절은 로비로, 닫힌 대기실은 다시 찾기, Steam 로그오프 10초 기다림. R504: 다음 방장이 멈추면 그다음이 3초 뒤 `past`를 적고 건너뜀(한 칸만), 소드 파이트 화면 시계는 마지막 글 뒤 1초까지 · 새 방장은 화면 시간에서, 폰 러쉬 장애물 시계는 지우지 않음(`Hold`), `EndMatch`는 방 주인이 될 때까지 들고 있음, 경기 글 순서, 내 파티 초대 무시, 개발 빌드 기물 요청 되풀이 막음, 명단 `Dictionary`, 로컬 시험 빈자리. **프로토콜 v27**(v26 빌드와 섞이지 않음). R505에서 upstream main에 커밋 · 푸시(`git log --grep=R504`), 사용자 확인 전 |
 
 브랜치 삭제 전16개 참조를 bundle·manifest·복구 안내로 보관하고 bundle 검사를 통과했다.
 보관 위치: `C:\Users\dua07\Desktop\개발일지\2학기 프로젝트수업\체스파이트\Backups\R497-Branches-20261106-221133`.
