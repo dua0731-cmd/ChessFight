@@ -46,7 +46,7 @@ namespace ChessFight.RagdollLab.Net
         protected override ulong NetSelf => session.Self;
         protected override ulong NetHost => session.Host;
         protected override ulong NetMatch => session.Match;
-        protected override IReadOnlyDictionary<ulong, LabSeat> NetRoster => roster;
+        protected override Dictionary<ulong, LabSeat> NetRoster => roster;
         protected override string NetName(ulong id) => session.Name(id);
         protected override string NetKind => "스팀";
         protected override string NetRoute => SteamRoute.Line(session);

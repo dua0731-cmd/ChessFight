@@ -23,6 +23,9 @@ namespace ChessFight.Gameplay
         readonly Dictionary<ICharacterDriver, int> inside = new Dictionary<ICharacterDriver, int>();
         readonly List<ICharacterDriver> gone = new List<ICharacterDriver>();
 
+        // Is any part of this character in the volume now (R502: a new host looks for the falls it never heard of).
+        public bool Holds(ICharacterDriver driver) => driver != null && inside.ContainsKey(driver);
+
         public Bounds Bounds => GetComponent<BoxCollider>().bounds;
 
         void Awake() => GetComponent<BoxCollider>().isTrigger = true;

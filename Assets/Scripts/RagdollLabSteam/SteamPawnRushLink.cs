@@ -47,7 +47,12 @@ namespace ChessFight.RagdollLab.Net
     /// its playback reaches that time, so gates, bridges, capstans and carried planks move with the bodies.</item>
     /// </list>
     ///
-    /// Not yet: bots only stand at the start, a new host after a host change starts everyone's checkpoints over.
+    /// R502 (host changes): every PC keeps each pawn's checkpoint from what its own physics sees (a client's puppets
+    /// touch the same triggers), so a new host puts a fallen pawn back where the old host would have, not on the start
+    /// square; a moment after taking over it also puts back whoever the old host had waiting in the water, a kill volume,
+    /// an enemy team's zone or a long fall (Rearm).
+    ///
+    /// Not yet: bots only stand at the start.
     /// </summary>
     [DefaultExecutionOrder(-150)]
     public sealed class SteamPawnRushLink : MonoBehaviour
@@ -96,10 +101,11 @@ namespace ChessFight.RagdollLab.Net
             public bool Bot;
             public RagdollPawn Pawn;
             public RagdollDriver Driver;
-            // Host only: where it comes back and when.
+            // Where it comes back: on every PC (R502, OnCheckpoint), so a new host has it.
             public int Checkpoint = int.MinValue;
             public Vector3 RespawnAt;
             public Quaternion RespawnRotation;
+            // Host only: when.
             public float RespawnTime = -1f;
             // Host only: the owner's latest input, the presses it has counted and those waiting for a physics step.
             public RagdollLabInput Input;
@@ -129,6 +135,9 @@ namespace ChessFight.RagdollLab.Net
         bool authority;
         // The host this PC follows, to notice a change of it on every PC (R295, SetAuthority).
         readonly HostWatch hostWatch = new HostWatch();
+        // R502: when a new host looks for the respawns the old one had waiting (Rearm), -1 when it does not.
+        float rearmAt = -1f;
+        const float RearmDelay = .3f;
         Callback<SteamNetworkingMessagesSessionRequest_t> requests;
         CrownFinish finish;
 
@@ -407,6 +416,9 @@ namespace ChessFight.RagdollLab.Net
         // over; the new host carries on the old one's numbering.
         void SetAuthority(bool host)
         {
+            // R504: the obstacle time this PC showed as the host, for HostObstacleClock.Hold below.
+            bool wasHost = authority;
+            double shownObstacles = HostObstacleTime();
             authority = host;
             MiniGameBase.Remote = !host;
             ObstacleClock.Authority = host;
@@ -470,7 +482,11 @@ namespace ChessFight.RagdollLab.Net
             lastSent = default;
             presses.Reset();
             applyWait.Clear();
-            hostObstacles.Clear();
+            // R504: the obstacles never step back at a host change (HostObstacleClock: that shakes anyone standing on a
+            // platform). Clearing the clock here moved them 100-200 ms back on every client and on the old host: the new
+            // host's first snapshot is drawn the playback delay behind. A client keeps its clock, which holds still until
+            // the new stream passes it; a host that became a client holds from the time it showed.
+            if (wasHost && !host) hostObstacles.Hold(shownObstacles, Time.timeAsDouble);
             obstacleSynced = false;
             while (stateQueue.Count > 0) { statePool.Push(stateQueue[0]); stateQueue.RemoveAt(0); }
             eventLog.Clear();
@@ -481,6 +497,9 @@ namespace ChessFight.RagdollLab.Net
             roundTripMs = 0f;
             delay.Reset();
             hostSilence.Enter(Time.realtimeSinceStartup);
+            // R502: the respawns waiting on the old host went with it (only a host schedules them); a moment from now,
+            // once this PC's own physics has moved the bodies on from the newest pose, Rearm finds them again.
+            rearmAt = host ? Time.time + RearmDelay : -1f;
         }
 
         // ------------------------------------------------------------------ frame
@@ -504,6 +523,7 @@ namespace ChessFight.RagdollLab.Net
             if (authority)
             {
                 if (runners.TryGetValue(session.Self, out var self)) self.Pawn.SetInput(local);
+                if (rearmAt >= 0f && Time.time >= rearmAt) { rearmAt = -1f; Rearm(); }
                 foreach (var r in runners.Values) CheckRespawn(r);
                 if (SnapshotDue(now)) SendSnapshot();   // the course state goes with it, 30 a second at most
                 session.ReportHostSilence(0f);
@@ -625,15 +645,19 @@ namespace ChessFight.RagdollLab.Net
 
         // ------------------------------------------------------------------ host: checkpoints and falls
 
-        bool Find(ICharacterDriver who, out Runner r)
+        bool Find(ICharacterDriver who, out Runner r) => Known(who, out r) && authority;
+
+        bool Known(ICharacterDriver who, out Runner r)
         {
             r = null;
-            return authority && who != null && byDriver.TryGetValue(who, out r);
+            return who != null && byDriver.TryGetValue(who, out r);
         }
 
+        // R502: on every PC, not only the host's: a client's puppets pass through the same triggers, and a new host
+        // used to start everyone's checkpoints over, so the next fall went back to the start square.
         void OnCheckpoint(ICharacterDriver who, Checkpoint checkpoint)
         {
-            if (!Find(who, out var r) || checkpoint.Order <= r.Checkpoint) return;
+            if (!Known(who, out var r) || checkpoint.Order <= r.Checkpoint) return;
             var spots = checkpoint.GetComponent<CourseCheckpoint>();
             if (spots != null && !spots.Shared && spots.Team != r.Team) return;
             r.Checkpoint = checkpoint.Order;
@@ -650,6 +674,28 @@ namespace ChessFight.RagdollLab.Net
         void OnFell(ICharacterDriver who, FallDistanceRespawn rule) => Schedule(who, rule.RespawnDelay);
         void OnWater(ICharacterDriver who, WaterZone water) => Schedule(who, water.RespawnDelay);
         void OnIntruded(ICharacterDriver who, TeamZone zone) => Schedule(who, 0f);
+
+        // R502: the respawns the old host had waiting. A zone tells only of its first touch, and this PC had that touch
+        // while it was a client (the zones count the puppets' limbs in and out too), so it never told again: a pawn in
+        // the water or a kill volume stayed there for good. A moment after the takeover (a pawn the old host had just put
+        // back is out of the zone by then) whoever is still in one, in an enemy team's zone, or falling past the drop
+        // rule is put back after that rule's delay, counted from now.
+        void Rearm()
+        {
+            var kills = FindObjectsByType<KillVolume>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var waters = FindObjectsByType<WaterZone>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var zones = FindObjectsByType<TeamZone>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            foreach (var r in runners.Values)
+            {
+                if (r.Pawn == null || r.Driver == null || r.RespawnTime >= 0f) continue;
+                foreach (var volume in kills) if (volume.Holds(r.Driver)) Schedule(r.Driver, volume.RespawnDelay);
+                foreach (var water in waters) if (water.Report && water.Holds(r.Driver)) Schedule(r.Driver, water.RespawnDelay);
+                Vector3 hips = r.Pawn.Hips.position;
+                foreach (var zone in zones) if (zone.Team != r.Team && zone.Bounds.Contains(hips)) Schedule(r.Driver, 0f);
+                var drop = r.Pawn.GetComponentInChildren<FallDistanceRespawn>();
+                if (drop != null && drop.Falling) Schedule(r.Driver, drop.RespawnDelay);
+            }
+        }
 
         void CheckRespawn(Runner r)
         {

@@ -69,7 +69,10 @@ namespace ChessFight.RagdollLab
         protected abstract ulong NetSelf { get; }
         protected abstract ulong NetHost { get; }
         protected abstract ulong NetMatch { get; }
-        protected abstract IReadOnlyDictionary<ulong, LabSeat> NetRoster { get; }
+        // R504: the dictionary itself, not IReadOnlyDictionary: every foreach over that interface boxed its enumerator,
+        // about a thousand small allocations a second on a 12-player client (PawnOf runs per skill state, wire, moment
+        // and fighter), against R297's work on allocations. The links only read it here.
+        protected abstract Dictionary<ulong, LabSeat> NetRoster { get; }
         protected abstract string NetName(ulong id);
         /// <summary>Send raw bytes now (after the lag simulator).</summary>
         protected abstract void NetSend(ulong id, byte[] bytes);
@@ -742,14 +745,17 @@ namespace ChessFight.RagdollLab
             if (!r.synced)
             {
                 // A client's counts start where they are when the host first hears it (after a host change too): presses
-                // from before are not played again. The piece it asked for is.
+                // from before are not played again. The piece it asked for is, except in a Sword Fight match past its pick
+                // (R504): there only a development command asks for a piece (SwordFightMatch.Dev), every client still sends
+                // its last ask after a host change, and playing it again changed pieces mid-match (a respawned pawn, a
+                // stolen piece) and reset their skills. Pawn Rush takes the count the same way.
                 r.synced = true;
                 r.jumps = fresh.jumps;
                 r.shoves = fresh.shoves;
                 r.abilities = fresh.abilities;
                 r.abilities2 = fresh.abilities2;
                 r.skills = fresh.skills;
-                r.pieceSeq = 0;
+                r.pieceSeq = sword != null && sword.Match != null && sword.Match.Phase != SwordPhase.Pick ? fresh.pieceSeq : (byte)0;
                 r.emoteSeq = fresh.emoteSeq;   // an emote asked for before the host heard this client is not played late
             }
             r.jump = Mathf.Min(4, r.jump + PressCount.Take(fresh.jumps, ref r.jumps));
@@ -932,11 +938,11 @@ namespace ChessFight.RagdollLab
                 var latest = to.At(i);
                 if (!pawns.TryGetValue(latest.id, out var pawn) || pawn == null) continue;
                 var source = Find(from, latest.id);
-                if (latest.snap || source == null)
-                {
-                    pawn.ApplyNetworkPose(latest);
-                    playbackMs = newest.hostTimeMs;
-                }
+                // R503 [6]: a pawn that teleported (a respawn, a skill; the host flags 3 snapshots) or is new is
+                // drawn as it is, alone. The playback clock used to jump to the newest snapshot for everyone: every
+                // pawn lost its jitter buffer for about 1.3 s (PlaybackDelay wins the delay back slowly), so a late
+                // snapshot froze them all, which 6 v 6 respawns made frequent. As 폰 러쉬 does (SteamPawnRushLink.Draw).
+                if (latest.snap || source == null) pawn.ApplyNetworkPose(latest);
                 else
                 {
                     RagdollPose.Blend(source, latest, t, blended);

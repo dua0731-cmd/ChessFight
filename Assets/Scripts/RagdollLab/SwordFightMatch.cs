@@ -37,6 +37,7 @@ namespace ChessFight.RagdollLab
         SwordMatchRules rules;
         SwordMatchState view = new SwordMatchState();
         float viewAt;               // when a client's view arrived (realtime)
+        bool viewHeard;             // R504: a text from the current host is in view (SwordMatchWire.Older)
         bool slowing;
         float slowUntil;
         bool overReported;
@@ -46,9 +47,10 @@ namespace ChessFight.RagdollLab
         public int White => view.White;
         public int Black => view.Black;
         public bool Finished => view.Phase == SwordPhase.Result;
-        /// <summary>The match clock now: the host's rules, a client's view moved on since it arrived.</summary>
-        public double Clock => Authority ? rules.Clock : view.Clock + (Live(view.Phase) ? Time.realtimeSinceStartup - viewAt : 0f);
-        public double PhaseTime => Authority ? rules.PhaseTime : view.PhaseTime + (view.Phase != SwordPhase.Result ? Time.realtimeSinceStartup - viewAt : 0f);
+        /// <summary>The match clock now: the host's rules, a client's view moved on since it arrived (R504: by no more
+        /// than SwordMatchState.MoveOnLimit, so a silent host's clock stands still).</summary>
+        public double Clock => Authority ? rules.Clock : view.ClockAfter(Time.realtimeSinceStartup - viewAt);
+        public double PhaseTime => Authority ? rules.PhaseTime : view.PhaseTimeAfter(Time.realtimeSinceStartup - viewAt);
         public float Remaining => view.Phase == SwordPhase.Pick || view.Phase == SwordPhase.Countdown ? (float)settings.Duration
             : Mathf.Max(0f, (float)(settings.Duration - Clock));
         bool Authority => game != null && game.Authority && rules != null;
@@ -117,7 +119,8 @@ namespace ChessFight.RagdollLab
             var last = view;
             rules = new SwordMatchRules(last.Seed != 0 ? last.Seed : Random.Range(1, int.MaxValue), settings);
             foreach (var f in game.Fighters.Values) if (f != null) rules.Add(f.Id, f.Pawn.Team);
-            rules.Restore(last);
+            // R504: the clocks as this screen showed them (moved on since the text arrived), not back at the text's time.
+            rules.Restore(last, Time.realtimeSinceStartup - viewAt);
             foreach (var s in last.Fighters)
             {
                 var r = rules.Get(s.Id);
@@ -129,6 +132,14 @@ namespace ChessFight.RagdollLab
                 if (!s.Alive) r.RespawnAt = rules.Time + s.Respawn;
             }
             overReported = last.Phase == SwordPhase.Result;
+            // R502: then who is out, and each piece, as the bodies show them (LabNetLink has put the newest sword frame
+            // and pose on them): the text can be up to a tenth of a second older, and a fall in that gap left a piece
+            // the rules took for alive out for good (FixedUpdate respawns only bodies that are out and rules that agree).
+            var phase = rules.Phase;
+            foreach (var f in game.Fighters.Values)
+                if (f != null) rules.Adopt(f.Id, f.Alive, f.Pawn.Piece, f.RespawnSeconds);
+            // The tenth point may have been one of them: the result as the old host would have shown it.
+            if (rules.Phase != phase) EnterPhase(rules.Phase);
         }
 
         /// <summary>A fighter came into the match (SwordFightGame.Add).</summary>
@@ -415,9 +426,16 @@ namespace ChessFight.RagdollLab
             if (game.Authority && rules != null) return;
             var link = LabNetLink.Current;
             if (link == null || !SwordMatchWire.Decode(text, link.SwordIdOf, out var state)) return;
+            // R504: a text overtaken by a newer one is left (the phase or the score went back a tenth of a second).
+            if (viewHeard && SwordMatchWire.Older(state, view)) return;
             view = state;
             viewAt = Time.realtimeSinceStartup;
+            viewHeard = true;
             if (TeamSize() >= 4 && !Mathf.Approximately(Cell, bigCellSize) && state.Phase == SwordPhase.Pick) SizeBoard(bigCellSize);
         }
+
+        /// <summary>R504: another PC hosts now (LabNetLink.Sword.cs): its texts are compared from scratch. Its clock goes
+        /// on from its own view, which may be a text behind this one's.</summary>
+        public void NewHost() => viewHeard = false;
     }
 }

@@ -1376,6 +1376,27 @@ public static class NetworkCoreTests
                 Check(HostElection.Successor(new ulong[] { 1 }, new HashSet<ulong> { 1, 2, 3 }, 1, fallback) == 3, "the leaver never succeeds itself");
                 Check(HostElection.Successor(null, new HashSet<ulong>(), 1, null) == 0, "nobody left");
                 Check(HostElection.Decode("3,x,,2,3,0").SequenceEqual(new ulong[] { 3, 2 }) && HostElection.Encode(new ulong[] { 3, 2 }) == "3,2", "encoding"); });
+            // R504: a next in line that never claimed stopped the walk, and the match ended with healthy players after it.
+            Test("Host claims (R504): the one right after a next in line that never claims may pass it over, saying so, two epochs up", () => {
+                var order = new List<ulong> { 2, 3, 4 };
+                int e;
+                var claims = new Dictionary<ulong, int> { { 1, 0 }, { 2, 0 }, { 3, 3 }, { 4, 0 } };
+                var passed = new Dictionary<ulong, ulong> { { 1, 0 }, { 2, 0 }, { 3, 2 }, { 4, 0 } };
+                Check(HostElection.PassOver(order, claims.Keys, 1, 2, null) == 3, "who passes 2 over");
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e, passed) == 3 && e == 3, "the one after it passes it over");
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e) == 1 && e == 1, "a walk that knows no passing over");
+                passed[3] = 0;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e, passed) == 1, "without the word (a PC that took 2 for gone steps back down)");
+                passed[3] = 2; claims[3] = 4;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e, passed) == 1, "more than two up");
+                claims[3] = 0; passed[3] = 0; claims[4] = 3; passed[4] = 2;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e, passed) == 1, "only the one right after it may pass it over");
+                claims[3] = 3; passed[3] = 2; claims[4] = 0; passed[4] = 0; claims[2] = 2;
+                Check(HostElection.Follow(1, 1, 1, order, claims, null, out e, passed) == 3 && e == 3, "the one passed over claims after all: it, then the one after it");
+                Check(HostElection.Follow(3, 3, 3, order, claims, null, out e, passed) == 3 && e == 3, "from the new host's record the one passed over is not reached again");
+                Check(HostElection.PassOver(order, new List<ulong> { 1, 2, 4 }, 1, 2, null) == 4 &&
+                      HostElection.Follow(1, 1, 1, order, new Dictionary<ulong, int> { { 2, 0 }, { 4, 3 } }, null, out e, new Dictionary<ulong, ulong> { { 2, 0 }, { 4, 2 } }) == 4 && e == 3,
+                      "a successor gone between them is skipped as well"); });
             Test("Host claims (R295): only the next in line counts, one epoch up, and successors are followed one after another", () => {
                 var order = new List<ulong> { 2, 3, 4 };
                 int e;
@@ -1557,6 +1578,15 @@ public static class NetworkCoreTests
                 c.Sample(200.0, 12.0, 1.15);
                 Check(Math.Abs(c.Now(12.04) - (200.0 + 0.04 * 1.15)) < 1e-9, "playback rate ignored");
                 c.Sample(double.NaN, 13.0, 1.0); Check(Math.Abs(c.Now(12.04) - (200.0 + 0.04 * 1.15)) < 1e-9, "NaN accepted");
+                // R504: a host that became a client holds the time it showed until the new host's stream (the playback
+                // delay behind) passes it; a cleared clock took that stream at once and every obstacle stepped back.
+                var h = new HostObstacleClock(); h.Hold(500.0, 20.0);
+                Check(h.HasSample && Math.Abs(h.Now(20.0) - 500.0) < 1e-9, "not held from the host's own time");
+                h.Sample(499.86, 20.02, 1.0);
+                Check(h.Now(20.02) >= 500.0 && h.Now(20.1) >= 500.0, "stepped back to the new host's stream");
+                h.Sample(500.05, 20.2, 1.0);
+                Check(Math.Abs(h.Now(20.2) - 500.05) < 1e-9, "did not take the new stream once it passed");
+                h.Hold(double.NaN, 21.0); Check(Math.Abs(h.Now(20.2) - 500.05) < 1e-9, "NaN held");
                 c.Clear(); Check(!c.HasSample, "clear"); });
             Test("Player name: two to twelve Hangul, Latin letters or digits, one space between words", () => {
                 Check(!PlayerNames.Check("", false).Ok && PlayerNames.Check("   ", true).Error == "", "empty says nothing");
@@ -1722,6 +1752,46 @@ public static class NetworkCoreTests
                 Check(text.Length < 400 && SwordMatchWire.Decode(text, b => (ulong)b, out back), "round trip " + text);
                 Check(back.White == 1 && back.Black == 1 && back.Phase == SwordPhase.Playing && Math.Abs(back.Clock - w.Clock) < .01 && back.Fighters.Count == 2 && back.Feed.Count == 2 && back.Feed[0].Victim == 2, "same state");
                 Check(!SwordMatchWire.Decode("9,0,0|", b => 1, out back) && !SwordMatchWire.Decode("x", b => 1, out back), "junk refused"); });
+            // R502: the old host's last text can be a tenth of a second older than the bodies a new host takes over.
+            Test("Sword Fight takeover: the new host's rules take who is out and each piece from the bodies, so no piece stays out or falls for ever", () => {
+                var r = new SwordMatchRules(4); r.Add(1, 0); r.Add(2, 1); r.Add(3, 1); r.Pick(1, PieceKind.Rook); r.Pick(2, PieceKind.Queen); r.Pick(3, PieceKind.King);
+                r.Advance(15.1); r.Advance(3.1);
+                Check(!r.Adopt(1, true, PieceKind.Rook, 0) && !r.Adopt(2, true, PieceKind.Queen, 0) && r.White == 0 && r.Black == 0, "bodies that agree change nothing");
+                Check(r.Adopt(2, false, PieceKind.Queen, 2.8) && !r.Get(2).Alive && r.White == 1 && r.Feed.Count == 1 && r.Feed[0].Credit == 0 && r.Feed[0].Cause == SwordCause.Self, "a fall in the gap: the point, no credit");
+                Check(!r.TryRespawn(2), "back before the body's own count"); r.Advance(2.85); Check(r.TryRespawn(2) && r.Get(2).Piece == PieceKind.Pawn, "not back after the body's count, as a pawn");
+                r.RingOut(3); Check(!r.Get(3).Alive && r.White == 2, "setup: out in the rules");
+                Check(r.Adopt(3, true, PieceKind.Pawn, 0) && r.Get(3).Alive && r.Get(3).Piece == PieceKind.Pawn && r.RespawnLeft(3) == 0, "a comeback in the gap is not taken");
+                Check(r.RingOut(3).Valid && r.White == 3, "a piece taken back does not fall again");
+                r.Get(1).Piece = PieceKind.Pawn; Check(r.Adopt(1, true, PieceKind.Queen, 0) && r.Get(1).Piece == PieceKind.Queen, "a steal in the gap: the body's piece");
+                Check(r.Adopt(2, false, PieceKind.Pawn, double.NaN) && Math.Abs(r.RespawnLeft(2) - r.Settings.RespawnDelay) < 1e-9, "no count on the body: the full delay");
+                var p = new SwordMatchRules(2); p.Add(1, 0); p.Add(2, 1); p.Pick(1, PieceKind.Rook);
+                Check(!p.Adopt(1, true, PieceKind.Pawn, 0) && p.Get(1).Piece == PieceKind.Rook, "a pick is not a body's piece yet");
+                p.Advance(15.1); Check(p.Phase == SwordPhase.Countdown && p.Adopt(1, false, PieceKind.Rook, 1) && !p.Get(1).Alive && p.White == 0 && p.Black == 0, "out of play: no point, the piece waits");
+                p.Advance(3.1); Check(p.Phase == SwordPhase.Playing && p.TryRespawn(1), "and comes back");
+                var w = new SwordMatchRules(6); w.Add(1, 0); w.Add(2, 1); w.Advance(15.1); w.Advance(3.1);
+                for (int i = 0; i < 9; i++) { w.RingOut(2); w.Advance(3.01); w.TryRespawn(2); }
+                Check(w.White == 9 && w.Phase == SwordPhase.Playing, "setup: nine");
+                Check(w.Adopt(2, false, PieceKind.Pawn, 1) && w.White == 10 && w.Phase == SwordPhase.Result && w.Winner == 0, "the tenth point in the gap ends the match"); });
+            // R504: a client's screen ran the match clock on without end, a new host went back to the last text's time, and a
+            // text overtaken by the next one was shown after it.
+            Test("Sword Fight clocks: a client's runs on a second at most past the last text, a new host goes on from what it showed, an overtaken text is left", () => {
+                var r = new SwordMatchRules(9); r.Add(1, 0); r.Add(2, 1); r.Advance(15.1); r.Advance(3.1); r.Advance(20);
+                var s = r.State();
+                Check(s.Phase == SwordPhase.Playing && Math.Abs(s.ClockAfter(0.4) - (s.Clock + 0.4)) < 1e-9 && Math.Abs(s.PhaseTimeAfter(0.4) - (s.PhaseTime + 0.4)) < 1e-9, "runs on between texts");
+                Check(Math.Abs(s.ClockAfter(4.5) - (s.Clock + SwordMatchState.MoveOnLimit)) < 1e-9 && s.ClockAfter(-1) == s.Clock && s.ClockAfter(double.NaN) == s.Clock, "a silent host's clock ran on");
+                var n = new SwordMatchRules(s.Seed); n.Add(1, 0); n.Add(2, 1); n.Restore(s, 4.5);
+                Check(n.Phase == SwordPhase.Playing && Math.Abs(n.Clock - s.ClockAfter(4.5)) < 1e-9 && Math.Abs(n.PhaseTime - s.PhaseTimeAfter(4.5)) < 1e-9, "the new host went back to the text's time");
+                var pick = new SwordMatchRules(3).State();
+                Check(pick.ClockAfter(2) == 0 && Math.Abs(pick.PhaseTimeAfter(0.5) - 0.5) < 1e-9, "the match clock runs in play only");
+                var end = new SwordMatchRules(9); end.Add(1, 0); end.Add(2, 1); end.Advance(15.1); end.Advance(3.1); end.Advance(end.Settings.Duration - 0.3);
+                var last = end.State(); var e2 = new SwordMatchRules(last.Seed); e2.Add(1, 0); e2.Add(2, 1); e2.Restore(last, 0.8);
+                Check(e2.Phase == SwordPhase.Playing && e2.Clock <= e2.Settings.Duration && e2.Advance(0.02) && e2.Phase != SwordPhase.Playing, "past the end of play: the rules end it");
+                var t1 = r.State(); r.Advance(0.1); var t2 = r.State();
+                Check(SwordMatchWire.Older(t1, t2) && !SwordMatchWire.Older(t2, t1) && !SwordMatchWire.Older(t2, t2), "an overtaken text in the same phase");
+                var play = new SwordMatchState { Phase = SwordPhase.Playing, PhaseTime = 50, Seed = 5 };
+                var sudden = new SwordMatchState { Phase = SwordPhase.SuddenDeath, PhaseTime = 0.1, Seed = 5 };
+                Check(SwordMatchWire.Older(play, sudden) && !SwordMatchWire.Older(sudden, play), "a text from the phase before");
+                Check(!SwordMatchWire.Older(new SwordMatchState { Phase = SwordPhase.Pick, Seed = 6 }, sudden) && !SwordMatchWire.Older(play, null), "a new round (another seed) is not older"); });
             Test("Sword Fight board: the ghost passes over 20 seeds never leave an island and keep two respawn squares a side", () => {
                 for (int seed = 0; seed < 20; seed++)
                 {

@@ -872,6 +872,20 @@ namespace ChessFight.RagdollLab
                         if (pawns.TryGetValue(pose.id, out var pawn) && pawn != null) pawn.ApplyNetworkPose(pose);
                     }
                 }
+                // R502: and the newest lives and swords with it, not the drawn ones: a piece that fell or came back in
+                // that playback delay would otherwise be taken over in the state it had before (SwordFightMatch.TakeOver
+                // takes who is out from these bodies).
+                if (weaponFrames.Count > 0)
+                {
+                    var latest = weaponFrames[weaponFrames.Count - 1];
+                    foreach (var f in sword.Fighters.Values)
+                    {
+                        if (f == null || f.Pawn == null) continue;
+                        byte place = RefOf(f.Pawn);
+                        if (place != SkillWire.None && latest.ByRef.TryGetValue(place, out var b))
+                            f.ApplyRemote(b.Alive, b.Drawn, b.Protection, b.Grip, b.Turn, b.Respawn, b.Flash, b.Classic);
+                    }
+                }
                 // The sides as they were drawn; the round from where the old host left it.
                 swordTeams.Clear();
                 foreach (var pair in pawns) if (pair.Value != null) swordTeams[pair.Key] = pair.Value.Team;
@@ -914,6 +928,8 @@ namespace ChessFight.RagdollLab
                     f.Authority = false;
                 }
                 sword.Authority = false;
+                // R504: the new host's match texts are taken from scratch, not against the old host's last one.
+                if (sword.Match != null) sword.Match.NewHost();
                 if (floor != null) foreach (var c in floor.Collapses) c.remote = true;
                 StopHostingGuard();
                 lastTick = 0;

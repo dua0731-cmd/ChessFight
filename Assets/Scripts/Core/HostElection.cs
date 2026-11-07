@@ -168,8 +168,17 @@ namespace ChessFight.Network
         // every PC reaches the same host.
         // claims   every seated player still here, with their claim (0 = none)
         // seen     the highest epoch this PC knows: the room's record or its own
+        // passed   R504: the next host in line each player passed over when it claimed (0 = none, see below)
+        //
+        // R504: a next in line that never claims (frozen, still loading, behind the same dead router as the host)
+        // used to stop the walk, and the match ended with healthy players after it. The one after it may claim in
+        // its place if its claim names the one it passes over: a claim without that word does not count while the
+        // one before it is here (a PC that took a present player for gone still steps back down), and the place
+        // passed over counts as a skip in ClaimLimit, so the claim may be two above. Whoever is passed over and
+        // claims later is still followed first, and then the one after it, whose claim is higher.
         public static ulong Follow(ulong recordHost, int recordEpoch, int seen, IList<ulong> published,
-                                   IDictionary<ulong, int> claims, IEnumerable<Candidate> fallback, out int epoch)
+                                   IDictionary<ulong, int> claims, IEnumerable<Candidate> fallback, out int epoch,
+                                   IDictionary<ulong, ulong> passed = null)
         {
             ulong host = recordHost;
             epoch = recordEpoch;
@@ -178,11 +187,24 @@ namespace ChessFight.Network
             {
                 ulong next = Successor(published, claims.Keys, host, fallback, out int skipped);
                 if (next == 0 || !claims.TryGetValue(next, out int claim)) break;
+                if (claim <= epoch && passed != null)
+                {
+                    ulong over = next;
+                    var rest = claims.Keys.Where(id => id != over).ToList();
+                    ulong after = Successor(published, rest, host, fallback?.Where(c => c.Id != over), out int skippedAfter);
+                    if (after != 0 && passed.TryGetValue(after, out ulong said) && said == over && claims.TryGetValue(after, out int afterClaim))
+                    { next = after; claim = afterClaim; skipped = Math.Max(skippedAfter, skipped + 1); }
+                }
                 if (claim <= epoch || claim > ClaimLimit(Math.Max(seen, epoch), skipped)) break;
                 host = next; epoch = claim;
             }
             return host;
         }
+
+        // R504: who passes `over` over: the next host after `leaving` once `over` is left out. Every PC that agrees
+        // `over` has not stepped in reaches the same one.
+        public static ulong PassOver(IEnumerable<ulong> published, ICollection<ulong> present, ulong leaving, ulong over, IEnumerable<Candidate> fallback) =>
+            Successor(published, present.Where(id => id != over).ToList(), leaving, fallback?.Where(c => c.Id != over));
 
         // Lobby metadata form: "id,id,id".
         public static string Encode(IEnumerable<ulong> ids) => string.Join(",", ids);

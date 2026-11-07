@@ -50,5 +50,18 @@ namespace ChessFight.Network
         }
 
         public void Clear() { hasSample = hasLast = false; sample = sampleAt = last = 0; rate = 1; }
+
+        // R504: this PC ran the obstacles on its own clock as the host and draws a new host's stream now. That
+        // stream is the playback delay behind (70-160 ms), and a cleared clock took it at once: every obstacle
+        // stepped back on the old host's screen. From here they hold still until the new stream passes this time.
+        // (A client keeps its clock through a host change and never needs this: it holds by itself.)
+        public void Hold(double obstacleTime, double now)
+        {
+            if (double.IsNaN(obstacleTime) || double.IsInfinity(obstacleTime)) return;
+            sample = last = obstacleTime;
+            sampleAt = now;
+            rate = 1;
+            hasSample = hasLast = true;
+        }
     }
 }

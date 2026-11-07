@@ -78,8 +78,10 @@ namespace Steamworks
         // owns it. Seconds of that delay (0 = at once), and the changes still on their way.
         public static float OwnerDelay;
         public static Dictionary<ulong,(ulong to,float at)> OwnerChanges=new Dictionary<ulong,(ulong,float)>();
+        // Users whose connection to Steam is down (SteamUser.BLoggedOn false). Their lobby calls still go through here.
+        public static HashSet<ulong> LoggedOff=new HashSet<ulong>();
         static ulong nextLobby=1000; static int nextCall;
-        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();OwnerDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
+        public static void Reset() {Lobbies.Clear();Presence.Clear();Handlers.Clear();Results.Clear();Pending.Clear();Denied.Clear();PingLocations.Clear();Pings.Clear();OwnerChanges.Clear();LoggedOff.Clear();OwnerDelay=0;nextLobby=1000;nextCall=0;UnityEngine.Time.realtimeSinceStartup=0;}
         // A game that dies without leaving: Steam drops the user from every lobby
         // and hands an owned lobby to the next member, and nothing of it runs again.
         public static void Crash(ulong user)
@@ -103,7 +105,7 @@ namespace Steamworks
     public static class Packsize { public static bool Test()=>true; }
     public static class DllCheck { public static bool Test()=>true; }
     public static class SteamAPI {public static bool Init()=>true;public static void RunCallbacks()=>FakeSteam.Dispatch();public static void Shutdown(){} }
-    public static class SteamUser { public static CSteamID GetSteamID()=>new CSteamID(FakeSteam.User);public static bool BLoggedOn()=>true; }
+    public static class SteamUser { public static CSteamID GetSteamID()=>new CSteamID(FakeSteam.User);public static bool BLoggedOn()=>!FakeSteam.LoggedOff.Contains(FakeSteam.User); }
     public struct SteamNetworkPingLocation_t { public string Text; }
     public static class Constants { public const int k_cchMaxSteamNetworkingPingLocationString=1024; }
     public static class SteamNetworkingUtils

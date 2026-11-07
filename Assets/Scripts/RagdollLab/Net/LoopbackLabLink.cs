@@ -92,7 +92,7 @@ namespace ChessFight.RagdollLab
         protected override ulong NetSelf => self;
         protected override ulong NetHost => HostId;
         protected override ulong NetMatch => MatchId;
-        protected override IReadOnlyDictionary<ulong, LabSeat> NetRoster => seats;
+        protected override Dictionary<ulong, LabSeat> NetRoster => seats;
         protected override string NetName(ulong id) => id == HostId ? "방장 PC" : $"참가자 {id - HostId}";
         protected override string NetKind => "로컬 시험";
         protected override bool AcceptsDev => true;
@@ -218,6 +218,20 @@ namespace ChessFight.RagdollLab
             foreach (var other in peers.Values) SendRoster(other);
         }
 
+        // R504: the lowest seat nobody holds, counted as the sides alternate (0 is the host's: white, first slot). There is
+        // always one below MaxPawns: Control lets in no more than MaxPawns - 1 clients.
+        int FreeSeat()
+        {
+            for (int index = 1; index < RagdollNetProtocol.MaxPawns; index++)
+            {
+                int team = index % 2, slot = index / 2;
+                bool taken = false;
+                foreach (var seat in seats.Values) if (seat.Team == team && seat.Slot == slot) { taken = true; break; }
+                if (!taken) return index;
+            }
+            return seats.Count;
+        }
+
         // ---------------------------------------------------------------- transport
 
         protected override void NetSend(ulong id, byte[] bytes)
@@ -275,7 +289,11 @@ namespace ChessFight.RagdollLab
                         if (peers.Count >= RagdollNetProtocol.MaxPawns - 1) return;
                         id = nextClient++;
                         // Alternate sides: the first client plays the other team, the next one the host's, and so on.
-                        int index = (int)(id - HostId);
+                        // R504: the first seat free, not one worked out from the id. Ids are never used twice (a client's
+                        // old state stays under its own), so after a few reconnects the next id's seat was past the eighth
+                        // slot: SkillWire.Ref has no place there (its skills, wires and moments were dropped) and the
+                        // spawn points end.
+                        int index = FreeSeat();
                         int team = index % 2, slot = index / 2;
                         peers[id] = from;
                         peerIds[from] = id;

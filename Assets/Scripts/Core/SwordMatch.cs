@@ -294,12 +294,60 @@ namespace ChessFight.Network
             return true;
         }
 
-        /// <summary>A new host carries on from the last state the old one sent (HANDOFF rule 15).</summary>
-        public void Restore(SwordMatchState s)
+        /// <summary>
+        /// R502: a new host's rules take a piece's life and piece from its body after <see cref="Restore"/>. The body
+        /// is newer than the old host's last text (a sword frame and a pose come with every snapshot, the text ten
+        /// times a second), and a fall or a comeback in that gap left the two disagreeing: the rules' piece "alive"
+        /// with its body out never came back, the rules' piece "out" with its body back fell for ever.
+        /// <list type="bullet">
+        /// <item>Out on the body, alive in the rules: the fall is counted now, as the old host counted it (the point,
+        /// the end at ten). The text does not carry who hit it, so there is no credit and no steal. Out of play the
+        /// piece just waits. Either way it comes back after <paramref name="respawnLeft"/>, the body's own count
+        /// (the full delay when it has none).</item>
+        /// <item>Back on the body, out in the rules: the comeback the old host made (a pawn, its out flag cleared).</item>
+        /// <item>In play, a living body's piece is the rules' piece (a steal in the gap).</item>
+        /// </list>
+        /// True when anything changed.
+        /// </summary>
+        public bool Adopt(ulong id, bool alive, PieceKind piece, double respawnLeft)
+        {
+            Fighter f = Get(id);
+            if (f == null) return false;
+            bool changed = false;
+            if (f.Alive && !alive)
+            {
+                double wait = respawnLeft > 0 && !double.IsNaN(respawnLeft) ? Math.Min(Settings.RespawnDelay, respawnLeft) : Settings.RespawnDelay;
+                f.HitBy = 0;
+                f.HitAt = double.NegativeInfinity;
+                if (!RingOut(id).Valid) { f.Alive = false; f.SpawnCell = -1; }
+                f.RespawnAt = Time + wait;
+                changed = true;
+            }
+            else if (!f.Alive && alive)
+            {
+                f.Alive = true;
+                f.Piece = PieceKind.Pawn;
+                f.RespawnAt = -1;
+                f.SpawnCell = -1;
+                f.HitBy = 0;
+                f.HitAt = double.NegativeInfinity;
+                changed = true;
+            }
+            if (alive && Live && f.Piece != piece && ChessPieces.IsValid((byte)piece)) { f.Piece = piece; changed = true; }
+            return changed;
+        }
+
+        /// <summary>A new host carries on from the last state the old one sent (HANDOFF rule 15). R504:
+        /// <paramref name="aged"/> is how long ago that state arrived. A client's screen ran its clocks on meanwhile
+        /// (<see cref="SwordMatchState.ClockAfter"/>), and the rules go on from what it showed: from the state's own
+        /// time the timer stepped back by the whole silence before the takeover, and the squares the ghost had
+        /// erased by the clock came back.</summary>
+        public void Restore(SwordMatchState s, double aged = 0)
         {
             Phase = s.Phase;
-            PhaseTime = s.PhaseTime;
-            Clock = s.Clock;
+            PhaseTime = s.PhaseTimeAfter(aged);
+            Clock = s.ClockAfter(aged);
+            if (Phase == SwordPhase.Playing) Clock = Math.Min(Settings.Duration, Clock);
             White = s.White;
             Black = s.Black;
             Winner = s.Winner;
@@ -348,6 +396,21 @@ namespace ChessFight.Network
         public int OutsWhite, OutsBlack, StealsWhite, StealsBlack, FeedSeq;
         public readonly List<SwordMatchFighter> Fighters = new List<SwordMatchFighter>();
         public readonly List<SwordFeed> Feed = new List<SwordFeed>();
+
+        /// <summary>R504: how far a client's clocks run past the last state (the host sends ten a second). A silent
+        /// host's match stands still on every screen; the clocks used to run on with no end, and stepped back when the
+        /// host was heard again or a new one took over.</summary>
+        public const double MoveOnLimit = 1;
+
+        /// <summary>The match clock <paramref name="seconds"/> after this state was sent, as a client's screen runs it:
+        /// in play only, at most <see cref="MoveOnLimit"/>.</summary>
+        public double ClockAfter(double seconds) =>
+            Clock + (Phase == SwordPhase.Playing || Phase == SwordPhase.SuddenDeath ? MovedOn(seconds) : 0);
+
+        /// <summary>The phase time the same way: in every phase but the result.</summary>
+        public double PhaseTimeAfter(double seconds) => PhaseTime + (Phase != SwordPhase.Result ? MovedOn(seconds) : 0);
+
+        static double MovedOn(double seconds) => seconds > 0 && !double.IsNaN(seconds) ? Math.Min(seconds, MoveOnLimit) : 0;
 
         public SwordMatchFighter? Find(ulong id)
         {
@@ -440,6 +503,19 @@ namespace ChessFight.Network
                 }
             state = s;
             return true;
+        }
+
+        /// <summary>
+        /// R504: the text comes ten times a second over an unreliable channel, and a text overtaken by the next one
+        /// was shown after it: the phase or the score went back for a tenth of a second (the pick screen came back
+        /// for a moment at the fight). One host's texts of one round never go back in phase or in phase time, which
+        /// runs on in every phase; a new round has a new seed. True for a text older than <paramref name="last"/>:
+        /// leave it. A new host's texts are compared from scratch (the caller forgets the last one then).
+        /// </summary>
+        public static bool Older(SwordMatchState next, SwordMatchState last)
+        {
+            if (next == null || last == null || next.Seed != last.Seed) return false;
+            return next.Phase < last.Phase || (next.Phase == last.Phase && next.PhaseTime < last.PhaseTime);
         }
 
         static bool Int(string text, out int value) { return int.TryParse(text, NumberStyles.Integer, Inv, out value); }

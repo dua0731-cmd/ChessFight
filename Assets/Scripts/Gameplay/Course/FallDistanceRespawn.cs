@@ -27,6 +27,8 @@ namespace ChessFight.Gameplay
         public float RespawnDelay => respawnDelay;
         // The last floor's height, NaN until it has stood somewhere.
         public float FloorHeight { get; private set; } = float.NaN;
+        // Reported and not on a floor since (R502: a new host looks for the falls it never heard of).
+        public bool Falling => reported;
 
         public static event Action<ICharacterDriver, FallDistanceRespawn> Fell;
 

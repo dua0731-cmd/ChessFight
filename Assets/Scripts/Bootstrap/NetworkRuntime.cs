@@ -99,6 +99,8 @@ namespace ChessFight.Game
             Session = new SteamSession(BuildTag, Debug.isDebugBuild);
             // The name chosen on the name screen (R84), shown and published by the session.
             Session.LocalName = PlayerProfile.Name;
+            // R502: the host writes the shared start ("go") on the same clock every PC starts by.
+            Session.SharedClock = clock.Now;
             PlayerProfile.Changed += OnNameChanged;
             Session.Initialize();
             if (Session.Online) Motion = new SteamMotion(Session);

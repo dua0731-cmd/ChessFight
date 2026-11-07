@@ -22,6 +22,8 @@ namespace ChessFight.Game
     // host announces one start time on the shared Steam clock ("go") once all
     // are ready or the slowest has had MatchStart.MaxWait. Every PC lifts its
     // screen at that moment, and local input stays blocked until then.
+    // R502: the session picks that time (SteamSession.AnnounceStartWhenDue), not
+    // this screen, so a host that takes over after its screen has gone still does.
     sealed class MatchLoader
     {
         // The screen is drawn at least this long before the scene may switch on,
@@ -39,7 +41,7 @@ namespace ChessFight.Game
         WarmupMeter warmup;
         ThreadPriority loadingPriority;
         bool skipFrame;
-        float shownAt, readyAt = -1, hostSince = -1, matchingSince, gateSince = -1;
+        float shownAt, readyAt = -1, matchingSince, gateSince = -1;
 
         public MatchLoader(NetworkRuntime runtime, Func<double> clock)
         {
@@ -82,7 +84,7 @@ namespace ChessFight.Game
             load = SceneManager.LoadSceneAsync(sceneName);
             phase = Phase.Loading;
             shownAt = Time.unscaledTime;
-            readyAt = hostSince = -1;
+            readyAt = -1;
             if (load == null)
             {
                 Debug.LogError("[ChessFight] 경기 씬을 불러오지 못했습니다: " + sceneName + " (File > Build Profiles의 씬 목록 확인)");
@@ -291,22 +293,13 @@ namespace ChessFight.Game
                 Add(state, session, p.Id, p.Team, session.LoadPercent(p.Id) >= MatchStart.Ready);
         }
 
-        // Ready: wait for the host's start time, and as the host, pick it.
+        // Ready: wait for the host's start time (the session picks it as the host, R502).
         string Wait(SteamSession session, float now)
         {
             // Nobody to wait for without a live match.
             if (!session.Online || session.Match == 0) { Finish(); return ""; }
-            // A player who takes the host role while waiting counts its wait from then.
-            if (session.IsHost) { if (hostSince < 0) hostSince = now; }
-            else hostSince = -1;
 
             double start = session.StartAt;
-            if (start == 0 && session.CanAnnounceStart &&
-                MatchStart.ShouldStart(session.Roster.Keys.Select(session.LoadPercent), now - Mathf.Max(readyAt, hostSince)))
-            {
-                session.AnnounceStart(clock() + MatchStart.Lead);
-                start = session.StartAt;
-            }
             // A late player finds the start already past and goes at once.
             if (start > 0 && clock() >= start) { Finish(); return ""; }
             if (start == 0 && now - readyAt >= MatchStart.ClientGiveUp) { Finish(); return ""; }

@@ -69,6 +69,9 @@ namespace ChessFight.Gameplay
         public static event Action<ICharacterDriver, WaterZone> Entered;
 
         readonly Dictionary<ICharacterDriver, int> inside = new Dictionary<ICharacterDriver, int>();
+
+        // Is any part of this character in the water now (R502: a new host looks for the dips it never heard of).
+        public bool Holds(ICharacterDriver driver) => driver != null && inside.ContainsKey(driver);
         readonly List<ICharacterDriver> gone = new List<ICharacterDriver>();
 
         void Awake() => Box.isTrigger = true;
