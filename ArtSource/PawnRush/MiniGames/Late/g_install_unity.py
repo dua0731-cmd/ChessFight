@@ -123,6 +123,20 @@ def main():
         t = t.replace("- _AlphaClip: 0", "- _AlphaClip: 1").replace("m_CustomRenderQueue: -1", "m_CustomRenderQueue: 2450")
         t = t.replace("RenderType: Opaque", "RenderType: TransparentCutout")
         write(rel, t)
+    # the functional gold (grips, collars, stops: PAWN_RUSH_ART_PHASES #E2B23C, emission 0.6), a plain material for the
+    # Blender-modelled props (g_props_blender_v1.py): the brass material without its texture, gold coloured, glowing
+    rel = MAT_DIR + "/PR_Late_GoldFunctional.mat"
+    if not os.path.exists(p(rel)):
+        t = read(MAT_DIR + "/PR_Late_Brass.mat").replace("m_Name: PR_Late_Brass", "m_Name: PR_Late_GoldFunctional")
+        t = re.sub(r"m_Texture: \{fileID: 2800000, guid: \w+, type: 3\}", "m_Texture: {fileID: 0}", t)
+        t = t.replace("  m_ValidKeywords:\n  - _NORMALMAP\n", "  m_ValidKeywords:\n  - _EMISSION\n")
+        t = t.replace("_BaseColor: {r: 1, g: 1, b: 1, a: 1}", "_BaseColor: {r: 0.886, g: 0.698, b: 0.235, a: 1}")
+        t = t.replace("_Color: {r: 1, g: 1, b: 1, a: 1}", "_Color: {r: 0.886, g: 0.698, b: 0.235, a: 1}")
+        t = t.replace("_EmissionColor: {r: 0, g: 0, b: 0, a: 1}", "_EmissionColor: {r: 0.53, g: 0.42, b: 0.14, a: 1}")
+        t = t.replace("m_LightmapFlags: 4", "m_LightmapFlags: 2")
+        write(rel, t)
+        meta_from(MAT_DIR + "/PR_Early_CenterGate.mat", rel)
+        print("made", rel)
     # matte brass is a metal
     rel = MAT_DIR + "/PR_Late_Brass.mat"
     t = read(rel)

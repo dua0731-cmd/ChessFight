@@ -81,12 +81,19 @@ namespace ChessFight.PawnRush
                 var team = station.Accent(station.Team);
                 bool ours = MissionStation.LocalTeam == station.Team;
                 ArenaFx.Sfx("sfx_mg_complete", gate, twoD: true, volume: ours ? 1f : .35f);
-                var own = station.GetComponent<IGateFx>();
-                if (own != null) { own.Opened(); return; }
-                ArenaFx.Beam(gate, 1.2f, 1.8f, 9f, 1.6f, team);
-                ArenaFx.Burst(gate + Vector3.up, new[] { team, Arena.Gold, Color.white }, 90, 3f, 7f, 2.2f, .14f);
-                ArenaFx.Ring(gate, 0f, 8f, 1f, team);
-                ArenaFx.Sfx("sfx_gate_open", gate);
+                // The gate's opening sounds the same anywhere in this mini-game (MiniGameEar): every ArenaFx.Sfx in this
+                // moment, the shared one and each game's own IGateFx.Opened, goes flat for a listener inside.
+                MiniGameEar.Current = station;
+                try
+                {
+                    var own = station.GetComponent<IGateFx>();
+                    if (own != null) { own.Opened(); return; }
+                    ArenaFx.Beam(gate, 1.2f, 1.8f, 9f, 1.6f, team);
+                    ArenaFx.Burst(gate + Vector3.up, new[] { team, Arena.Gold, Color.white }, 90, 3f, 7f, 2.2f, .14f);
+                    ArenaFx.Ring(gate, 0f, 8f, 1f, team);
+                    ArenaFx.Sfx("sfx_gate_open", gate);
+                }
+                finally { MiniGameEar.Current = null; }
             }
         }
     }

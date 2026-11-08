@@ -61,32 +61,48 @@ namespace ChessFight.PawnRush
         static Vector3 Divide(Vector3 a, Vector3 b) =>
             new Vector3(a.x / Mathf.Max(Mathf.Abs(b.x), 1e-4f), a.y / Mathf.Max(Mathf.Abs(b.y), 1e-4f), a.z / Mathf.Max(Mathf.Abs(b.z), 1e-4f));
 
-        // A canvas dust sheet over a team gate box (any scale): it rides the gate as the gate rises.
-        // width/height in metres; the sheet hangs from a top batten at the gate's front face.
-        public static void GateCloth(Transform gate, float width, float height)
+        // A canvas dust sheet over a team gate box (any scale). The sheet and its top batten stay where the shut gate
+        // stands; when the gate rises the bottom roller winds the sheet up and climbs with it (RollingSheet, user
+        // 2026-11-08: "돌돌 말려서 올라가는 느낌"). width/height in metres; the sheet hangs at the gate's front face.
+        public static void GateCloth(Transform gate, float width, float height, float gateRise = 4.6f)
         {
-            if (gate == null || gate.Find("MODEL_Cloth") != null) return;
-            var holder = new GameObject("MODEL_Cloth").transform;
-            holder.SetParent(gate, false);
-            holder.localPosition = new Vector3(0f, -.5f, -.5f);              // bottom of the box's front face
-            holder.localScale = Divide(Vector3.one, gate.localScale);        // metres inside the scaled box
+            if (gate == null || gate.parent == null) return;
+            var old = gate.Find("MODEL_Cloth");                              // the earlier sheet that rode the gate
+            if (old != null) Object.Destroy(old.gameObject);
+            string name = "MODEL_Gate cloth " + gate.name;
+            if (gate.parent.Find(name) != null) return;
+            var holder = new GameObject(name).transform;
+            holder.SetParent(gate.parent, false);
+            holder.position = gate.TransformPoint(new Vector3(0f, -.5f, -.5f));   // bottom of the shut box's front face
+            holder.rotation = gate.rotation;
+            holder.localScale = Divide(Vector3.one, gate.parent.lossyScale);       // metres
             var sheet = new GameObject("Dust sheet");
             sheet.transform.SetParent(holder, false);
             sheet.transform.localPosition = new Vector3(0f, .1f, -.05f);
             sheet.AddComponent<MeshFilter>();
             var mr = sheet.AddComponent<MeshRenderer>();
             mr.sharedMaterial = Mat(ref canvas, "PR_Mid_Canvas");
-            sheet.AddComponent<SwayingCloth>().Configure(width - .1f, height - .3f);
-            foreach (float y in new[] { .12f, height - .12f })
-            {
-                var b = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                b.name = "Sheet batten";
-                Object.Destroy(b.GetComponent<Collider>());
-                b.transform.SetParent(holder, false);
-                b.transform.localPosition = new Vector3(0f, y, -.08f);
-                b.transform.localScale = new Vector3(width + .1f, .16f, .14f);
-                b.GetComponent<Renderer>().sharedMaterial = Mat(ref batten, "PR_Mid_JoistWood");
-            }
+            var cloth = sheet.AddComponent<SwayingCloth>();
+            cloth.Configure(width - .1f, height - .3f);
+            var top = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            top.name = "Sheet batten";
+            Object.Destroy(top.GetComponent<Collider>());
+            top.transform.SetParent(holder, false);
+            top.transform.localPosition = new Vector3(0f, height - .12f, -.08f);
+            top.transform.localScale = new Vector3(width + .1f, .16f, .14f);
+            top.GetComponent<Renderer>().sharedMaterial = Mat(ref batten, "PR_Mid_JoistWood");
+            // the roller: a walnut rod with the wound canvas round it
+            var rod = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            rod.name = "Sheet roller";
+            Object.Destroy(rod.GetComponent<Collider>());
+            rod.transform.SetParent(holder, false);
+            rod.GetComponent<Renderer>().sharedMaterial = Mat(ref batten, "PR_Mid_JoistWood");
+            var roll = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            roll.name = "Sheet roll";
+            Object.Destroy(roll.GetComponent<Collider>());
+            roll.transform.SetParent(holder, false);
+            roll.GetComponent<Renderer>().sharedMaterial = Mat(ref canvas, "PR_Mid_Canvas");
+            holder.gameObject.AddComponent<RollingSheet>().Configure(gate, cloth, rod.transform, roll.transform, width, height, gateRise);
         }
 
         static Material brass;
@@ -216,7 +232,8 @@ namespace ChessFight.PawnRush
         const int Columns = 10, Rows = 12;
         Mesh mesh;
         Vector3[] rest, moved;
-        float width, height, seed;
+        Vector2[] uvs;
+        float width, height, seed, calm = 1f;
         Transform follower;
         int tipIndex;
 
@@ -256,6 +273,7 @@ namespace ChessFight.PawnRush
                     tris[k++] = a + 1; tris[k++] = b; tris[k++] = b + 1;
                 }
             moved = (Vector3[])rest.Clone();
+            uvs = uv;
             mesh.vertices = rest; mesh.uv = uv; mesh.triangles = tris;
             mesh.RecalculateNormals(); mesh.RecalculateBounds();
             GetComponent<MeshFilter>().sharedMesh = mesh;
@@ -270,6 +288,7 @@ namespace ChessFight.PawnRush
                 var p = rest[i];
                 float free = 1f - p.y / height;                       // pinned at the top, freest at the hem
                 float wave = Mathf.Sin(t * 1.3f + p.x * .9f) * .6f + Mathf.Sin(t * 2.1f + p.y * 1.7f + p.x * .4f) * .4f;
+                free *= calm;
                 moved[i] = new Vector3(p.x + Mathf.Sin(t * .8f + p.y) * .03f * free, p.y, p.z - .12f * free * free * wave);
             }
             mesh.vertices = moved;
@@ -277,11 +296,76 @@ namespace ChessFight.PawnRush
             if (follower != null) follower.localPosition = moved[tipIndex];
         }
 
+        // The rolling sheet (a plain sheet, no V hem): the cloth now starts at `bottom` (its own metres) where it leaves
+        // the front of a roll of radius `front`, leaning back to its plane at the top; the canvas stays fixed to the
+        // cloth (v = height), so it reads as being wound away. calm 0..1 scales the sway (a sheet on a roller hangs taut).
+        public void Span(float bottom, float front, float calmness)
+        {
+            if (mesh == null) return;
+            calm = calmness;
+            bottom = Mathf.Clamp(bottom, 0f, height - .05f);
+            for (int r = 0, i = 0; r <= Rows; r++)
+                for (int c = 0; c <= Columns; c++, i++)
+                {
+                    float y = Mathf.Lerp(bottom, height, r / (float)Rows);
+                    rest[i] = new Vector3(rest[i].x, y, -front * (1f - r / (float)Rows));
+                    uvs[i] = new Vector2(uvs[i].x, y);
+                }
+            mesh.uv = uvs;
+            mesh.RecalculateBounds();
+        }
+
         // A child that rides the hem point (a tassel).
         public void Follow(Transform t)
         {
             follower = t;
             if (moved != null) follower.localPosition = moved[tipIndex];
+        }
+    }
+
+    // B's team-gate dust sheet winding up on its bottom roller as the gate rises (user 2026-11-08). It reads the gate's
+    // own height, so the network-driven gate, a new round's shut gate and the editor all show the right state.
+    public sealed class RollingSheet : MonoBehaviour
+    {
+        const float Rod = .07f, Thickness = .012f;
+        Transform gate, rod, roll;
+        SwayingCloth cloth;
+        float startY, width, height, rise = 4.6f;
+
+        public void Configure(Transform g, SwayingCloth c, Transform rodT, Transform rollT, float w, float h, float gateRise)
+        {
+            gate = g; cloth = c; rod = rodT; roll = rollT; width = w; height = h;
+            startY = g.localPosition.y;
+            rise = gateRise;
+            Pose(0f);
+        }
+
+        void LateUpdate()
+        {
+            if (gate == null) return;
+            // TeamGate eases in and out (SmoothStep); undo that to get its clock, then wind with an ease-in so the
+            // roller speeds up and hits the top batten at full speed exactly when the gate is fully up (the sound's knock)
+            float g = Mathf.Clamp01((gate.localPosition.y - startY) / rise);
+            float t = .5f - Mathf.Sin(Mathf.Asin(1f - 2f * g) / 3f);
+            Pose(t * t);
+        }
+
+        void Pose(float p)
+        {
+            float travel = height - .42f;                     // the roller stops just under the top batten
+            float wound = p * travel;
+            float y = .12f + wound;
+            float r = Mathf.Sqrt(Rod * Rod + Thickness * wound / Mathf.PI) + .006f;
+            // Unity's cylinder: 2 m tall along y, 1 m across; lie it along x
+            rod.localPosition = new Vector3(0f, y, -.05f);
+            rod.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            rod.localScale = new Vector3(Rod * 2f, (width + .14f) * .5f, Rod * 2f);
+            roll.localPosition = new Vector3(0f, y, -.05f);
+            roll.localRotation = Quaternion.Euler(-wound / r * Mathf.Rad2Deg, 0f, 0f) * Quaternion.Euler(0f, 0f, 90f);
+            roll.localScale = new Vector3(r * 2f, (width - .1f) * .5f, r * 2f);
+            roll.gameObject.SetActive(wound > .01f);
+            // the sheet's own frame starts .1 m up the holder
+            cloth.Span(y - .1f, r, 1f - Mathf.SmoothStep(0f, .08f, p));
         }
     }
 }

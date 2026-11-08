@@ -318,7 +318,7 @@ namespace ChessFight.PawnRush
                      Random.Range(0f, .5f), Random.Range(1.1f, 1.6f), Random.Range(.45f, .8f));
             // sawdust shaken off the batten as the sheet rises, falling over the doorway
             for (int i = 0; i < 18; i++)
-                Flake(bottom + right * Random.Range(-1f, 1f) + Vector3.up * Random.Range(3.6f, 4.4f),
+                Flake(bottom + right * Random.Range(-1f, 1f) + Vector3.up * Random.Range(4.9f, 5.3f),
                       new Vector3(Random.Range(-.6f, .6f), Random.Range(0f, .8f), 0f) + front * Random.Range(.2f, .8f), bottom.y, Random.Range(.2f, 1.2f));
             for (int i = 0; i < 14; i++)
                 Mote(bottom + right * Random.Range(-1f, 1f) + Vector3.up * Random.Range(.5f, 3f), front * Random.Range(.3f, .7f) + Vector3.up * Random.Range(.1f, .4f),

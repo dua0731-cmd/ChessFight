@@ -19,7 +19,8 @@ namespace ChessFight.PawnRush
         // The gatehouse stands on the dais's level, not the ground's: on the ground its foot sat 0.4 m under the board
         // with no floor in front of it, so it looked afloat over a sky-coloured strip (user, 11-07: "떠 보이지 않게").
         const float ParadeFacadeY = Arena.DaisHeight;
-        const float ParadeArchZ = 23.8f;                         // the shell's "Team portal front" (opening 4.5 m)
+        const float ParadeArchZ = 23.8f;
+        const float ParadeDoorZ = 20.45f;                        // the team door's centre, station frame (section z 24.45)                         // the shell's "Team portal front" (opening 4.5 m)
         // No gaps (user, 11-07: "난간이랑 벽 틈 있게 하지마"): Tripo's module ends are rounded, so modules that only touch
         // show a slit between them. Neighbours overlap by a fifth of a module, and each run reaches into what it meets
         // (the entry wall's back, the rear end wall, the entry and exit arches, the side walls).
@@ -61,6 +62,10 @@ namespace ChessFight.PawnRush
                 {
                     case "Team portal front": case "ENV_SideWall": case "Rear passage side wall": case "Entry wing wall":
                     case "ENV_RookGatehouse": case "DEC_ThresholdProps":
+                    // user, 11-08: "초록색 공 지워": the old planters' ball cypresses; the place test below skipped their
+                    // top tier (3.5 m up). A has its own planters and cypresses (A_Planter, A_Cypress).
+                    case "Planter foot": case "Planter bowl": case "Planter rim": case "Planter foliage": case "Planter flower":
+                    case "Cypress tier":
                         Hide(t);
                         break;
                     case "Facade cornice":
@@ -89,6 +94,43 @@ namespace ChessFight.PawnRush
                     if (new Vector2(Mathf.Abs(c.x) - 18.7f, c.z - z).magnitude < 1.5f) renderer.enabled = false;
             }
             ParadeBanners(shell);
+            ParadePassages(shell);
+        }
+
+        // The passages the teams walk out through (user, 11-08: "출구 쪽 벽도 자연스럽게 이어지게 색 입혀"): the team portal
+        // tunnels (linings, rear arch, the pocket over the gate) and the rear passage's end walls and common exit arch were
+        // the shell's flat cream / grey boxes. Each now draws A's stone brick (PR_A_StoneBrick, the gatehouse plinth's
+        // stone) as a tiled copy of the same box (MarbleBlock: 2 m repeats, not stretched); its own picture stops
+        // drawing, colliders stay.
+        static readonly string[] ParadePassageParts = { "Portal tunnel lining", "Gate pocket cover", "Rear passage end wall", "Arch jamb block", "Arch voussoir" };
+        static readonly string[] ParadePassageGroups = { "Team portal rear", "ENV_CommonExitArch" };
+        const string StoneCopy = " (A stone)";
+
+        static void ParadePassages(Transform shell)
+        {
+            var brick = Resources.Load<Material>(OwnMaterials + "PR_A_StoneBrick");
+            if (brick == null) return;
+            var parts = new List<Transform>();
+            foreach (var t in shell.GetComponentsInChildren<Transform>(true))
+            {
+                if (System.Array.IndexOf(ParadePassageParts, t.name) < 0 || t.GetComponent<MeshRenderer>() == null) continue;
+                bool archBlock = t.name.StartsWith("Arch ");
+                if (archBlock && (t.parent == null || System.Array.IndexOf(ParadePassageGroups, t.parent.name) < 0)) continue;
+                parts.Add(t);
+            }
+            foreach (var t in parts)
+            {
+                if (t.parent.Find(t.name + StoneCopy) == null)
+                {
+                    // the copy shares the box's place and turn; its size is the box's scale (the shell's groups are unscaled)
+                    // plus 2 cm on every face: at the box's own size its faces shared planes with the passage floors' sides
+                    // (the gate passage, the rear corridor) and flickered along the wall's foot (user, 11-08: "뒤쪽 벽
+                    // 하단에 깜빡깜빡"); 2 cm out, those floor sides sit inside the wall
+                    var copy = MarbleBlock(t.parent, t.name + StoneCopy, t.localPosition, t.localScale + Vector3.one * .04f, brick);
+                    copy.transform.localRotation = t.localRotation;
+                }
+                t.GetComponent<MeshRenderer>().enabled = false;
+            }
         }
 
         static void ParadeBuild(MiniGameSection owner, Transform content, Dictionary<string, Material> cache)
@@ -122,9 +164,11 @@ namespace ChessFight.PawnRush
             {
                 MarbleBlock(court, "Centre block back", new Vector3(0f, 3.1f, 28.8f), new Vector3(19.4f, 6.2f, 2.4f), brick);
                 // The gatehouse's floor at the dais's level (top 1 cm under the dais, no shared plane): under the
-                // gatehouse and the recess before its doors, from the board's edge back to the rear corridor.
+                // gatehouse and the recess before its doors, from the board's edge back to the rear corridor. Its back stops
+                // 4 cm short of the centre block's back (z 30): sharing that plane, the floor's 0.4 m side flickered through
+                // the wall's foot in the rear corridor (user, 11-08 recording: "여기 깜깜 거려").
                 var paving = Resources.Load<Material>(OwnMaterials + "PR_A_CourtPaving");
-                MarbleBlock(court, "Gatehouse floor", new Vector3(0f, (ParadeFacadeY - .01f - .6f) * .5f, 27.01f), new Vector3(20f, ParadeFacadeY - .01f + .6f, 5.98f),
+                MarbleBlock(court, "Gatehouse floor", new Vector3(0f, (ParadeFacadeY - .01f - .6f) * .5f, 26.99f), new Vector3(20f, ParadeFacadeY - .01f + .6f, 5.94f),
                     paving != null ? paving : brick);
                 foreach (float s in new[] { -1f, 1f })
                 {
@@ -200,6 +244,20 @@ namespace ChessFight.PawnRush
             // A's own 25 / 50 / 75 % gate moment, no ring (PaintGateFx; user 11-07 via the C session)
             if (station.GetComponent<PaintGateFx>() == null) station.gameObject.AddComponent<PaintGateFx>();
             var door = station.Gate != null ? station.Gate.transform : null;
+            // The door in its arch (user, 11-08: "문 위치가 동떨어져 있어", chose "아치 바로 안쪽으로"): the game puts it 3.4 m
+            // into the tunnel (station z 23.2, section 27.2), behind the A_TeamArch body (section z 23.8..26.7). It moves
+            // to just inside the arch's mouth (section 24.45, its face 0.45 m behind the arch's front) with its team
+            // barrier the same 0.5 m behind it; rising when open it stays inside the arch's 10.7 m stone.
+            if (door != null)
+            {
+                float dz = ParadeDoorZ - door.localPosition.z;
+                if (Mathf.Abs(dz) > .001f)
+                {
+                    station.Gate.Shift(door.parent.TransformVector(new Vector3(0f, 0f, dz)));
+                    foreach (var t in station.GetComponentsInChildren<Transform>(true))
+                        if (t.name == "Team barrier") t.localPosition = new Vector3(t.localPosition.x, t.localPosition.y, ParadeDoorZ + .5f);
+                }
+            }
             var leaf = Load(ParadeFolder + "A_TeamDoor");
             if (door != null && leaf != null)
             {
@@ -222,9 +280,39 @@ namespace ChessFight.PawnRush
                 foreach (Transform part in t)
                     if (part.name == "Flag stone base" || part.name == "Flagpole" || part.name == "Banner rod") Hide(part);
                 if (pole != null && t.Find(RideName) == null) Hang(t, RideName, pole, cache);
-                var crown = Resources.Load<Material>(OwnMaterials + "PR_A_CrownBanner");
-                SwayBanners(t, _ => crown);
+                ParadeFlag(t, Resources.Load<Material>(OwnMaterials + "PR_A_CrownBanner"));
             }
+        }
+
+        // A_Flagpole's crossbar (a_props_v1.py export, measured): 1.44 m wide along the model's x, its underside 3.77 m up,
+        // 0.08 m deep either side of the pole. User, 11-08: "깃발 위치 제대로 맞추고": the old code banner hung 0.62 m to
+        // one side of the pole from the old pole's arm, half off the new crossbar, and edge-on to the court (the cloth
+        // in the bar's plane, the bar running along the side walls). Now the flag turns to face the court (the board),
+        // and the cloth hangs centred under the crossbar, just in front of the pole. Every Apply: the old cloth goes.
+        const float FlagBarUnder = 3.77f, FlagClothWidth = 1.3f, FlagClothLength = 1.9f, FlagClothFront = .12f;
+
+        static void ParadeFlag(Transform flag, Material cloth)
+        {
+            var section = flag.GetComponentInParent<MiniGameSection>(true);
+            if (section != null)
+            {
+                float side = section.transform.InverseTransformPoint(flag.position).x;
+                var face = section.transform.TransformDirection(new Vector3(-Mathf.Sign(side), 0f, 0f));
+                flag.rotation = Quaternion.LookRotation(-face, section.transform.up);     // the cloth faces local -z
+            }
+            foreach (Transform t in flag)
+                if (t.name.StartsWith("Banner border") || t.name.StartsWith("Banner pawn")) Hide(t);
+                else if (t.name.StartsWith("Banner cloth"))
+                {
+                    var r = t.GetComponent<Renderer>();
+                    if (r != null) r.enabled = false;
+                    if (!t.name.Contains(Swapped)) t.name += Swapped;
+                }
+            var old = new List<GameObject>();
+            foreach (var c in flag.GetComponentsInChildren<MiniGameBannerCloth>(true)) old.Add(c.gameObject);
+            foreach (var go in old) if (Application.isPlaying) Object.Destroy(go); else Object.DestroyImmediate(go);
+            if (cloth != null)
+                MiniGameBannerCloth.Hang(flag, new Vector3(0f, FlagBarUnder, -FlagClothFront), FlagClothWidth, FlagClothLength, cloth);
         }
 
         // Stiff banner boxes -> swaying cloth (MiniGameBannerCloth), as D's Banners: the brass border strips and the
@@ -295,23 +383,40 @@ namespace ChessFight.PawnRush
                 if (cloth != null) MiniGameBannerCloth.Hang(root, new Vector3(s * 4.45f, 5.75f, wall - .06f), .9f, 2.6f, cloth);
                 Prim(PrimitiveType.Cylinder, root, "Banner rod", new Vector3(s * 4.45f, 5.8f, wall - .06f), new Vector3(.07f, .6f, .07f), 90f, brass);
             }
-            // the crown, 2.4 m wide: plinth, band, five points (outer ones leaning out), a ball on each, three jewels
-            var crown = new GameObject("Gate crown").transform;
+            // The emblem on the parapet (user, 11-08: "로고 퀸으로 제대로 해"): the game's own chess queen (the piece model
+            // in Resources/Pieces, reused rather than made again), matte brass, 2.6 m tall, on the stone plinth. The
+            // primitive crown it replaces read as boxes and balls.
+            var crown = new GameObject("Gate queen").transform;
             crown.SetParent(root, false);
             crown.localPosition = new Vector3(0f, 7.42f, wall + .25f);
             if (brick != null) MarbleBlock(crown, "Crown plinth", new Vector3(0f, .15f, 0f), new Vector3(2.9f, .3f, 1.1f), brick);
-            Prim(PrimitiveType.Cube, crown, "Crown band", new Vector3(0f, .55f, 0f), new Vector3(2.4f, .42f, .34f), 0f, brass);
-            float[] x = { -1.1f, -.55f, 0f, .55f, 1.1f }, h = { .95f, .75f, 1.15f, .75f, .95f }, lean = { 14f, 6f, 0f, -6f, -14f };
-            for (int i = 0; i < 5; i++)
+            var queen = Resources.Load<GameObject>(QueenModel);
+            if (queen == null) { Debug.LogWarning("[미니게임 A] 퀸 모델이 없습니다: Resources/" + QueenModel); return; }
+            var copy = Object.Instantiate(queen, crown, false);
+            copy.name = "Queen emblem";
+            foreach (var c in copy.GetComponentsInChildren<Collider>(true))
+                if (Application.isPlaying) Object.Destroy(c); else Object.DestroyImmediate(c);
+            var renderers = copy.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) return;
+            foreach (var r in renderers)
             {
-                var point = Prim(PrimitiveType.Cube, crown, "Crown point", new Vector3(x[i], .76f + h[i] * .5f, 0f), new Vector3(.26f, h[i], .26f), lean[i], brass);
-                var top = point.transform.localPosition + Quaternion.Euler(0f, 0f, lean[i]) * new Vector3(0f, h[i] * .5f + .1f, 0f);
-                Prim(PrimitiveType.Sphere, crown, "Crown ball", top, Vector3.one * .26f, 0f, brass);
+                var slots = r.sharedMaterials;
+                for (int i = 0; i < slots.Length; i++) slots[i] = brass;
+                r.sharedMaterials = slots;
             }
-            var stone = Resources.Load<Material>(OwnMaterials + "PR_A_IvoryLimestone");
-            foreach (float jx in new[] { -.6f, 0f, .6f })
-                Prim(PrimitiveType.Sphere, crown, "Crown jewel", new Vector3(jx, .55f, -.18f), new Vector3(.2f, .2f, .1f), 0f, stone != null ? stone : brass);
+            // fit: 2.6 m tall, its foot on the plinth's top, centred on the plinth
+            var bounds = renderers[0].bounds;
+            foreach (var r in renderers) bounds.Encapsulate(r.bounds);
+            float k = QueenHeight / Mathf.Max(.01f, bounds.size.y);
+            copy.transform.localScale *= k;
+            bounds = renderers[0].bounds;
+            foreach (var r in renderers) bounds.Encapsulate(r.bounds);
+            var foot = crown.InverseTransformPoint(new Vector3(bounds.center.x, bounds.min.y, bounds.center.z));
+            copy.transform.localPosition -= foot - new Vector3(0f, .3f, 0f);
         }
+
+        const string QueenModel = "Pieces/PR_Piece_Queen";
+        const float QueenHeight = 2.6f;
 
         // A primitive without its collider (pictures only), turned `roll` degrees about local z.
         static GameObject Prim(PrimitiveType type, Transform parent, string name, Vector3 at, Vector3 scale, float roll, Material material)

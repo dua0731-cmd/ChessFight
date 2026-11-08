@@ -6,8 +6,8 @@ namespace ChessFight.PawnRush
     // makes its own 25 / 50 / 75 % effect and none of them uses a ground ring ("원은 사용 하지 않는 vfx"):
     //   quarter  the moat answers the winch - a column of water bursts up in front of the deck, bigger each quarter,
     //            and the chains shake: iron and gold sparks off both pylon eyes; no sound (user 11-07)
-    //   opened   as the shared one (the beam, the burst, the ring and sfx_gate_open: the completion moment is kept as it
-    //            was) with a last big splash out of the moat
+    //   opened   the team gate hauled up: dust and grit off it, the team's motes through the passage, its own sound
+    //            (no shared beam, burst or ring: user 11-08)
     //   pulling  (user 11-07, "줄 잡아 당길 때 vfx 적용 시켜") from the metres pulled as drawn, so a client sees the same:
     //            every 0.2 m rope fibres flick off where the rope leaves the drum, friction sparks and fibres at both
     //            pulleys, fibres off the gripped knots, water drips off the deck's far edge as it lowers; every whole
@@ -81,16 +81,54 @@ namespace ChessFight.PawnRush
             // no sound at the quarters (user 11-07, "25 50 75 효과음은 하지마")
         }
 
+        // User 11-08 ("문이 열릴 때 vfx랑 사운드도 해줘 기존 문이 열리는 vfx는 지워주고"): no shared beam, burst or ring
+        // and no moat splash any more. The team gate (the game's 4 x 4.6 m door, rising 4.6 m in 1.2 s, TeamGate) is
+        // hauled up: a dust puff where its foot leaves the floor, stone dust and grit shaken off its top edge all the
+        // way up, then at the top a puff under the arch and the team's motes drifting up through the open passage;
+        // sfx_drawbridge_gate (Early/Sfx/c_sounds.py: a wooden gate hauled up, a thunk at the top).
+        static readonly Color[] Dust = { new Color(.86f, .78f, .64f), new Color(.74f, .66f, .52f) };
+        static readonly Color[] Grit = { new Color(.62f, .55f, .44f), new Color(.86f, .78f, .64f), new Color(.45f, .36f, .25f) };
+        const float GateSeconds = 1.2f;
+
         public void Opened()
         {
             if (station == null) return;
-            var gate = station.transform.TransformPoint(new Vector3(0f, Arena.DaisHeight + .05f, 18.8f));
+            var door = station.transform.Find("Team gate");
+            var at = door != null ? door.position : station.transform.TransformPoint(new Vector3(0f, Arena.DaisHeight, 18.8f));
+            ArenaFx.Sfx("sfx_drawbridge_gate", at + Vector3.up * 2f);
+            StopAllCoroutines();
+            StartCoroutine(Hauled(door, at));
+        }
+
+        System.Collections.IEnumerator Hauled(Transform door, Vector3 at)
+        {
             var team = station.Accent(station.Team);
-            ArenaFx.Beam(gate, 1.2f, 1.8f, 9f, 1.6f, team);
-            ArenaFx.Burst(gate + Vector3.up, new[] { team, Arena.Gold, Color.white }, 90, 3f, 7f, 2.2f, .14f);
-            ArenaFx.Ring(gate, 0f, 8f, 1f, team);
-            ArenaFx.Sfx("sfx_gate_open", gate);
-            if (game != null) ArenaFx.Burst(Moat, Water, 60, 1.6f, 7.5f, 1.6f, .15f);
+            var look = door != null ? door.GetComponent<Renderer>() : null;
+            var right = station.transform.right;
+            float foot = look != null ? look.bounds.min.y : at.y;
+            // the foot leaves the floor
+            for (int e = -1; e <= 1; e++)
+                ArenaFx.Burst(new Vector3(at.x, foot + .05f, at.z) + right * (e * 1.4f), Dust, 8, 1.2f, .5f, .9f, .12f);
+            float t0 = Time.time;
+            while (Time.time - t0 < GateSeconds)
+            {
+                // the top edge as it rises: dust off it, grit falling
+                float top = look != null ? look.bounds.max.y : at.y + 4.6f;
+                var edge = new Vector3(at.x, top, at.z) + right * Random.Range(-1.8f, 1.8f);
+                ArenaFx.Burst(edge, Dust, 3, .5f, .2f, .7f, .1f);
+                ArenaFx.Burst(edge, Grit, 3, .3f, -1.5f, .8f, .05f);
+                yield return new WaitForSeconds(.1f);
+            }
+            // at the top: a puff under the arch, the team's motes drifting up through the opened passage
+            float high = look != null ? look.bounds.min.y : foot + 4.6f;
+            for (int e = -1; e <= 1; e++)
+                ArenaFx.Burst(new Vector3(at.x, high, at.z) + right * (e * 1.3f), Dust, 10, 1f, .3f, 1.1f, .13f);
+            for (int i = 0; i < 4; i++)
+            {
+                ArenaFx.Burst(new Vector3(at.x, foot + .3f, at.z) + right * Random.Range(-1.5f, 1.5f),
+                    new[] { team, Color.Lerp(team, Color.white, .5f) }, 6, .35f, 1.2f, 1.6f, .07f);
+                yield return new WaitForSeconds(.25f);
+            }
         }
     }
 }

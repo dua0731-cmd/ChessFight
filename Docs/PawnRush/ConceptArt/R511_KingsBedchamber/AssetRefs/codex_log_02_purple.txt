@@ -1,0 +1,779 @@
+Reading prompt from stdin...
+OpenAI Codex v0.166.0-alpha.6
+--------
+workdir: C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R511_KingsBedchamber\AssetRefs
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: none
+reasoning summaries: none
+session id: 01a1b7d4-a4e9-7343-9760-b0361e09259c
+--------
+user
+<!--
+Tripo 권장 면 수: PROMPT.md와 같음 (I_assets_01 약 55,000 / I_assets_02 약 40,000).
+사용자 11-08 "퍼플 더 레퍼런스 사진과 같이": 첫 시트(try1/)의 보라가 붉은 자주라 컨셉 시트의 푸른 로열 바이올렛으로 다시.
+-->
+You are generating asset reference images for a 3D modeler. Use your image generation tool. Do NOT write code. Generate exactly TWO images, then copy each generated PNG into the current working directory with these exact names:
+
+- I_assets_01_bed_cart.png
+- I_assets_02_props.png
+
+Reply with the two file paths only.
+
+## What to do
+
+Attached images 1 and 2 (try1/I_assets_01_bed_cart.png and try1/I_assets_02_props.png) are the previous versions of these two sheets. REDRAW each one with EXACTLY the same assets, shapes, layout, order, camera, lighting, white background and style. Change ONLY the colour of every purple part.
+
+The purple in images 1 and 2 is WRONG: it is a reddish magenta / plum / fuchsia. The correct purple is the one in attached images 3 and 4 (the King's Bedchamber concept sheets: the canopies, curtains, blankets, banners and the "Purple Velvet" swatch cube): a deep ROYAL BLUE-VIOLET velvet, cool and slightly bluish, around #4A2670 in the shadows, #5E3488 mid-tone and #7A52A6 on the soft velvet highlights. No red or pink tint at all.
+
+Apply that purple to: the bed canopy, its valance and tied curtains, the blanket, the cart's screen panels (image 1); the book, the slippers, the folded robe and the dressing screen panels (image 2).
+
+Keep everything else identical: dark walnut wood, cream linen, white ermine with small black tails, cream marble and ceramic, the one bright gold band on the bed base and the one gold stripe on the cart front. On the bed, make the four canopy posts, the finials and the canopy trim MATTE BRUSHED BRASS (muted, slightly darker, not shiny bright gold).
+
+Absolutely NOT in any image: no text, no labels, no numbers, no arrows, no flags, no banners, no emblems, no characters, no chess pieces, no team colours (no blue, no orange), no flames, no glow, no glass, no floor plane, no frames. Each asset separate with empty white space around it, never cropped.
+
+codex
+imagegen 스킬을 사용해 두 시트의 보라색과 지정한 황동 부분을 수정하고, 요청한 파일명으로 저장하겠습니다.
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content 'C:\\Users\\Makebot2\\Documents\\GitHub\\ChessFight\\HANDOFF.md' -Raw" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R511_KingsBedchamber\AssetRefs
+ succeeded in 238ms:
+# ChessFight HANDOFF ??紐⑤뱺 ?묒뾽? ?ш린???쒖옉?쒕떎
+
+???뚯씪 ?꾩껜瑜??쎄퀬 짠6?먯꽌 ?꾩옱 ?묒뾽???꾩슂???곸꽭 臾몄꽌留??쎈뒗??
+?꾩옱 吏移④낵 ?ъ슜?먯쓽 理쒖떊 ?붿껌??怨쇨굅 湲곕줉蹂대떎 ?곗꽑?쒕떎.
+?묒뾽???앸굹硫?짠8???곕씪 肄붾뱶쨌臾몄꽌쨌寃??寃곌낵瑜??④퍡 留덇컧?쒕떎.
+
+理쒖쥌 媛깆떊: **2026-11-08 쨌 R510 H 援?솗 泥댁뒪 ? 而⑥뀎 ?쒗듃 3??* (seoungtest ?묒뾽 ?몃━, 而ㅻ컠 ????. 洹??? R502 ?꾧컻援??ъ쭏 寃щ낯 4醫? 洹??? R498 誘몃땲寃뚯엫 源쒕묀???섏젙, R497 main ?뚯씪쨌硫붾돱쨌援ы삎 留돠룻룓湲?紐⑤뱶쨌?ㅻ옒??釉뚮옖移??뺣━.
+?ㅼ쓬 鍮??붿껌 踰덊샇??**R512**?대떎(R511 I 援?솗 移⑥떎 梨꾪똿???ъ슜 以???1?④퀎 醫뚰몴?쑣룸같移섎룄쨌而⑥뀎 ?쒗듃 3??[R511_KingsBedchamber](Docs/PawnRush/ConceptArt/R511_KingsBedchamber/), 湲곕줉 `ArtSource/PawnRush/MiniGames/Late/I/README.md`. R510 H 援?솗 泥댁뒪 ? 梨꾪똿???ъ슜 以???而⑥뀎 ?쒗듃 3??[R510_KingsChessHall](Docs/PawnRush/ConceptArt/R510_KingsChessHall/), ?ъ슜???뺤씤 ?湲? ?ㅼ쓬? ?ъ쭏 寃щ낯 ??Tripo???먯뀑 ?쒗듃. R509 J ?뺢턿 ?명긽??梨꾪똿???ъ슜 以? R508 F ?臾대룄?뚯옣 梨꾪똿???ъ슜 以? R503 B ?숆?쨌R504 G ?됱감 ?뚮옉쨌R505 D ?좎궡臾맞톀506 A ?섏옣 愿묒옣쨌R507 E ?뺢턿 ?쒓퀬??媛?梨꾪똿?먯꽌 ?ъ슜). R507: E ?뺢턿 ?쒓퀬 ??而⑥뀎 ?쒗듃 3?Β룹뿉???쒗듃 5??GPT, [R507_RoyalLibrary](Docs/PawnRush/ConceptArt/R507_RoyalLibrary/)), ?ъ슜??Tripo濡?梨낆옣 ??痢듬쭏??移?紐⑤뱢쨌?몃몢?섎Т ?쒓퍚)쨌?먯쥌(?몃━硫?湲덈튆, ?⑦봽 ?놁쓬)쨌?뚯쟾 梨낆옣 臾맞룻? 臾명?, ?몄쓣 移섏슦怨?踰승룸?臾맞룹엯援?異쒓뎄 ?꾩튂쨌泥쒖옣?쇰줈 諛??꾩껜 ?щ같移?`e_hall_v1.py`), B ?밸뱾由ъ뿉쨌踰쎈벑(遺덈튆 肄붾뱶), Blender濡?吏곸젒 留뚮뱺 ?뚰뭹 6醫? 諛붾떏 B ?ъ쭏. ?곌껐 `MiniGameModels.Library.cs`(MiniGameModels瑜?partial濡?. ?ъ슜??Unity ?뺤씤(醫?湲덈튆쨌臾??뚯쟾 ?숈옉? 誘명솗??. 湲곕줉 `ArtSource/PawnRush/MiniGames/README.md` E ?? R506: A ?섏옣 愿묒옣 而⑥뀎 ?쒗듃 3??GPT, [R506_CeremonialCourt](Docs/PawnRush/ConceptArt/R506_CeremonialCourt/)) + ?ъ쭏 寃щ낯 5醫?`Early/Materials/r506_material_swatches.py`, `PR_A_*`쨌`PR_Early_RoofSlate`) + Tripo???먯뀑 ?ъ쭊 3??`R506_CeremonialCourt/AssetRefs`) + ?ъ슜??Tripo FBX 3媛?寃??룹넀吏?`Early/Source/R506_A_README.md`) ??Unity ?ㅼ튂쨌諛곗튂(`MiniGameModels.ParadeCourt.cs`, Unity ?뺤씤 ??. R505: D ?좎궡臾?而⑥뀎 ?쒗듃 3??GPT) + ?ъ슜??罹≪뒪?는룹쨷???깅Ц FBX瑜?寃뚯엫 移섏닔濡??먯쭏?섍퀬 Unity???곌껐(`MiniGameModels.Capstan`, Play ??遺숈쓬, Unity ?붾㈃ 誘명솗??. R502: R501 紐⑤뜽???먰븯???ㅽ??쇱씠 ?꾨땲?댁꽌 [李멸퀬 ?ъ쭊 3??(Docs/PawnRush/ConceptArt/R502_DrawbridgeSheets/) 湲곗??쇰줈 ?ㅼ떆 留뚮뱶??5?④퀎 以?1?④퀎, ?ъ쭏 寃щ낯 4醫?`ArtSource/PawnRush/MiniGames/Early/Materials`). R501: C ?꾧컻援?Blender 紐⑤뜽(`ArtSource/PawnRush/MiniGames/Early`) + Unity ?곌껐 `MiniGameModels`. R500: 誘몃땲寃뚯엫 ?쒗뿕 ?붾㈃ ?덈궡瑜??④퀎蹂???以?1쨌2쨌3 / 4쨌5쨌6쨌7 / 8쨌9쨌0)濡? R499: 肄붿뒪쨌誘몃땲寃뚯엫 3?④퀎 ?꾪듃 湲곗? 珥덉븞([PAWN_RUSH_ART_PHASES](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md)).
+?ъ슜?먮뒗 湲곗〈 ?뺣━ ?먯튃??諛뷀깢?쇰줈 ?⑹뼱吏??뚯씪怨?硫붾돱瑜??뺣━?섍퀬,
+KingRush ???대쫫 蹂寃? ?댁쟾 ???ъ떆 留듭쓽 Prototype 蹂닿?, Queen of the Hill ?먭린,
+?????댁긽 吏??援ы쁽 釉뚮옖移???젣瑜??붿껌?덈떎.
+
+R496源뚯????먮낯 HANDOFF ?꾩껜??[?댁쟾 ?멸퀎 湲곕줉](Docs/Archive/HANDOFF_BEFORE_R497.md)??蹂댁〈?덈떎.
+?뱀떆??湲고쉷쨌寃곗젙쨌?쒕떇 洹쇨굅媛 ?꾩슂???뚮쭔 洹?湲곕줉???쎈뒗??
+?뺣━ 踰붿쐞쨌寃쎈줈쨌?덉쇅쨌蹂듦뎄 諛⑸쾿? [R497 ?뺣━ ?덈궡](Docs/Architecture/PROJECT_CLEANUP_R497.md)瑜??곕Ⅸ??
+
+## 1. ?꾩옱 ?곹깭 ?ㅻ깄??
+
+| ??ぉ | ?꾩옱 ?곹깭 |
+|---|---|
+| ?묒뾽 ?꾩튂 | **`C:\Users\dua07\GitHub\ChessFighter`??`main`?먯꽌 吏곸젒 ?묒뾽**. ?ъ슜?먭? ?덈줈 ?붿껌?섍린 ?꾩뿉??異붽? ?뚰겕?몃━瑜?留뚮뱾嫄곕굹 ?ъ슜?섏? ?딅뒗??T13, R496) |
+| Unity | 6000.3.11f1, Windows, URP 17.3, ?덇굅??Input Manager(Old) |
+| 媛쒕컻 以묒씤 紐⑤뱶 | ???ъ떆쨌?뚮뱶 ?뚯씠????媛? Queen of the Hill? R497???먭린쨌?깅줉/?꾩슜 留??ㅽ궗/?쒗뿕 ?먯썝 ?쒓굅 |
+| ???ъ떆 ?꾩옱 留?| 援ш컙 ?꾨━??議고빀: ?뺤썝쨌?怨꾨떒 ?쨌誘몃땲寃뚯엫10醫끒룹옉???뚯쓽?? ?щ’5 ?꾨컲 ?μ븷臾쇱? ?꾩쭅 ?놁쓬 |
+| ???ъ떆 ?⑤씪??寃쎄린 | 湲곗〈 Course01??Prototype??蹂닿??섎릺 ?⑤씪???명솚 ?ъ쑝濡??좎?. ??援ш컙 議고빀 肄붿뒪???⑤씪???곌껐? ?꾩쭅 ?놁쓬 |
+| 援ы삎 留?| `Assets/Prototype/PawnRush`: Course01 ?? ??留?肄붾뱶41媛쑣룰린議?Opening ?꾨━??4媛? GUID쨌湲곗〈 ?댁뀍釉붾━ ?뚯냽 ?좎? |
+| 湲고? ?꾨줈?좏???| 泥댁뒪蹂듭떛? `Assets/Prototype/ChessBoxing`, 湲곕Ъ 誘몃━蹂닿린??`Assets/Prototype/Previews` |
+| 怨듭슜 臾쇰━쨌湲곕Ъ | ?섍렇?뙿텵ook/Rope쨌?밴꺽쨌???ъ떆/?뚮뱶 ?ㅽ궗 ?좎?. ??Queen ?쒗뿕???PhysicsMechanicsBed, 媛쒖쿃 洹쒖튃? PioneerCourse/PioneerRules濡??щ텇瑜?|
+| 怨듭슜 ?ㅽ궗 ?먯썝 | `Resources/SharedSkills/Fx` ?곗씠??媛쑣?Sfx` ?뚯썝3媛쒕뒗 GUID ?좎?. ?ㅼ젣 ?ъ슜?섎뒗 怨듭쑀 ?먯썝留??④? |
+| Unity 硫붾돱 | ChessFight ?꾨옒 **Pawn Rush / Sword Fight / Prototype / Development** ??洹몃９. ?곸꽭 媛쒕컻 ?꾧뎄??Development濡?|
+| 臾몄꽌 | `Docs/PawnRush`媛 ?꾩옱 ?먮즺. ??留?臾몄꽌9媛쒕뒗 `Docs/PawnRush/Prototype`, ?먭린 紐⑤뱶 ?먮즺??`Docs/Archive/QueenOfTheHill` |
+| 釉뚮옖移?| 2026-10-06 22:09:42 KST ?댁쟾 留덉?留?而ㅻ컠 湲곗? ?먭꺽8媛쑣룸줈而?媛???젣. ?먭꺽24??6, 濡쒖뺄15??. main쨌理쒓렐 釉뚮옖移?蹂댁〈 |
+| ?먮룞 寃??| Core162쨌紐⑥쓽 ?몄뀡55쨌?섏〈???μ븷臾??쒓퀎 ?뺤쟻 寃??룹쟾泥?????몃? 而댄뙆???듦낵. Unity ???0?꾨━???쒗뿕 ???ㅽ뙣0쨌?ㅼ젣 Play10醫?濡쒕뱶/臾?珥덇린???⑥븮 寃???듦낵 |
+| 誘몃땲寃뚯엫 源쒕묀??| R498: C ?댁옄 踰승텷 臾?踰쎌? 洹몃┝留?諛붾떏 硫댁뿉??1cm(`MissionGames.LinedWall`), A 怨듭쑀??諛?湲??뚮몢由??섎씪??`PaintBoard.ClipRims`), G ?곗꽍 1cm 諛? Play ?ъ꽕移섎줈 諛섏쁺, ?꾨━???ш돕湲????? ?ъ슜???뺤씤 ??|
+| 誘몃땲寃뚯엫 紐⑤뜽 | R501: C ?꾧컻援먮? Blender濡?紐⑤뜽留곹뻽??援ш컙 FBX + ?ㅻ━쨌?쒕읆 FBX, 1?④퀎 `GC_` ?ъ쭏). `MiniGameModels`媛 Play ??遺숈씠怨?肄붾뱶 洹몃┝? 洹몃━湲곕쭔 ?덈떎. ?ш린쨌?먯젙쨌?쒖뒪?쒖? 洹몃?濡? Unity ?붾㈃ ?뺤씤 ?? **R502: ?ъ슜?먭? "?먰븯???ㅽ??쇱씠 ?꾨땲??** ??李멸퀬 ?ъ쭊 3?κ낵 媛숈? ?ъ쭏쨌遺꾩쐞湲곕줈 ?ㅼ떆 留뚮뱺?? ?꾧컻援먯뿉???μ떇 湲덉쓣 ?곗? ?딅뒗??寃뚯엫??湲??먯옟?는룸늿湲덉? 洹몃?濡? |
+| R502 ?ъ쭏 寃щ낯 | ?щ┝ ??踰쎈룎쨌?섎Т ?먯옄쨌由щ껙 湲덉냽?먃룸Ъ??Blender ?낆껜 寃щ낯?먯꽌 ?댁뼱 遺숇뒗 PBR 留듭쑝濡?援ъ?(`Early/Materials/Textures`, Unity 誘몃컲??. `swatch_compare.png`濡??ъ쭊 3怨?鍮꾧탳. ?댁뼱???ъ슜??GLB 2媛쒕줈 **踰승룸컮??= ??釉붾줉 紐⑥뼇 + ?깊깙 ?ъ쭏**: 1 m 紐⑤뱢(6泥??쇨컖?? 2048 留?4?? `r502_tower_block.py`). 以꾨늿? 源딆씠??40%留?硫붿?. ?ъ슜???뺤씤 ?湲?**Unity ?곸슜(11-07):** `MiniGameModels.Drawbridge.cs`媛 Play ??v2 紐⑤뜽(?ъ슜???먯뀑)??遺숈씠怨? `MgDrawbridge`??沅뚯뼇湲곕? ?낃뎄 履쎌쑝濡????. Unity ?붾㈃ ?뺤씤 ??|
+| 誘몃땲寃뚯엫 援ъ“ | ?ъ슜??11-07, B ?숆? ?몄뀡?먯꽌 ?꾨떖): **?낃뎄쨌異쒓뎄 ?ш린? ?꾩튂留?留욎쑝硫?Unity??嫄댁텞 援ъ“(泥쒖옣 ????諛붽퓭???쒕떎.** 紐⑺몴??李멸퀬 ?ъ쭊怨??묎컳?? 寃뚯엫 ?μ튂(臾맞룸떎由?룸갊以꽷룹넀?≪씠)???먯젙? 蹂꾨룄 ?뺤씤. **R502 ?꾧컻援? R311 C 洹몃┝ 諛곗튂? ?묎컳?? ?ъ슜???먯뀑(?깊깙쨌??釉붾줉쨌沅뚯뼇湲걔룹꽦臾????ㅼ젣 紐⑤뜽濡? 沅뚯뼇湲곕뒗 洹몃┝泥섎읆 ?낃뎄 履쎌쑝濡????(寃뚯엫 肄붾뱶 蹂寃??덉슜). 湲덉깋? ?ъ슜???먯뀑??湲덉깋??留욎텣???댁쟾 "湲????" ?泥?.** **遺덈튆쨌?붾뱾由щ뒗 泥쒖? 肄붾뱶濡?*(?ъ슜??11-07, B ?숆? ?몄뀡 ?꾨떖: "珥덈굹 ?대윴 嫄?紐삵빐 ??肄붾뱶濡?, "泥쒕룄 留덉갔媛吏濡???肄붾뱶濡??댁빞 ??): ?깅텋쨌珥쏅텋? 遺??녿뒗 紐몄껜留?紐⑤뜽濡? 遺덇퐙쨌鍮쏅굹???좊━쨌?ㅼ젣 Light??Unity 肄붾뱶濡?遺숈엫. 源껊컻쨌而ㅽ듉泥섎읆 嫄몃젮 ?붾뱾由щ뒗 泥쒕룄 肄붾뱶(泥?硫붿떆쨌?곗씠??. Blender 誘몃━蹂닿린??鍮쏅굹???좊━쨌源껊컻? ?꾩튂 ?뺤씤?? **踰쎌? ?딄? ?놁씠**(?ъ슜??11-07, C ?됱감 ?뚮옉 ?몄뀡 ?꾨떖: "踰쎌? ?뱁엳 ?댁뼱吏???먮굦?댁뼱????): 湲곗〈 ??踰쎌? 移섏슦怨?紐⑤뜽濡???좏빐???섎ŉ, 踰?紐⑤뱢? ?댁쭩 寃뱀퀜 ?꾩껜 湲몄씠瑜???퀬 ?꾩뿉 ?⑤뒗 ?믪씠??媛숈? ?ъ쭏濡?梨꾩슫?? **?먯뀑 ?ъ쭊(GPT ?쒗듃)??以??뚮뒗 Tripo 沅뚯옣 硫??섎? ?④퍡**(?ъ슜??11-07, C ?됱감 ?뚮옉 ?몄뀡 ?꾨떖): ?ъ쭊留덈떎 "Tripo 沅뚯옣 硫??? ?쒗듃 ?꾩껜 ??N" ??以꾧낵 洹쇨굅(遺???샕룰쾶??諛섎났 ?샕룹넀吏???紐⑺몴), ?먯쭏 ??紐⑺몴??3~5諛곕? 諛쏅뒗?? **?ㅻⅨ 梨꾪똿 ?먯뀑 ?ъ궗??*(?ъ슜??11-08, H 泥댁뒪 ? ?몄뀡: "?ㅻⅨ 梨꾪똿?먯꽌 ?쇰뜕 ?좎뀑????寃뱀튂硫?肄붾뜳?ㅼ뿉 ?좎껌 ?덊븯怨??⑤룄 ??): ???먯뀑 ?쒗듃瑜?Codex???붿껌?섍린 ?꾩뿉 ?ㅻⅨ 誘몃땲寃뚯엫???대? 留뚮뱺 紐⑤뜽(`ArtSource/PawnRush/MiniGames/*/Export`, `Assets/Resources/PawnRushMiniGames`)쨌?ъ쭏(`*/Materials/Textures`)怨?寃뱀튂??遺?덉? 洹몃?濡?媛?몃떎 ?곌퀬, 寃뱀튂吏 ?딅뒗 寃껊쭔 ?붿껌?쒕떎(8媛?誘몃땲寃뚯엫 梨꾪똿???꾨떖?? |
+| H 泥댁뒪 ?(R510) | 1?④퀎 而⑥뀎 ?쒗듃 3???꾧꼍쨌嫄댁텞 紐⑤뱢쨌?뚰뭹/?ъ쭏, `codex exec`, `Docs/PawnRush/ConceptArt/R510_KingsChessHall`). 寃뚯엫 ?レ옄: ?留덈떎 8횞8??18 m, 湲곕뫁 c6쨌f3쨌f7(1.6횞1.6횞2.2 m), 0.55 m ?명?由?湲곕뫁, ?곷?????6(?뚮옉 ? = ?묐떒, 二쇳솴 ? = ?곸븘), ???곷컲 0.7횞8 m. ?쒗듃???명?由?援듦린쨌湲곕뫁 移몄? 紐⑤뜽 ?④퀎?먯꽌 寃뚯엫 移섏닔濡? ?ъ쭏: R504 3?④퀎 ?명듃 7醫??ъ궗??+ ??3醫?`PR_Late_FrozenStone`쨌`Ebony`쨌`Bronze`, `Late/Materials/r510_material_swatches.py`, Unity 誘몃컲??. ?ㅻⅨ 諛??먯뀑 ?ъ궗??紐⑸줉 `R510_KingsChessHall/REUSE.md`: ??Codex ?붿껌? 泥댁뒪 ?쒓퀎쨌?덈퉬 湲곕Ъ ?곸옄쨌湲곕낫 ?앺뙋쨌? 醫?4醫낅쭔 ??Tripo???쒗듃 `R510_KingsChessHall/AssetRefs/H_assets_01_props.png`(沅뚯옣 ??45,000硫? ?꾨즺 ???ъ슜??Tripo FBX 蹂닿?쨌寃??`ArtSource/PawnRush/MiniGames/Late/Source/R510_H_A1_Props.fbx`, 285,180 ?쇨컖?? ?먯젙??`Late/Source/README.md` R510 ?? 紐⑤몢 以꾩씠湲걔룰묠吏?怨??놁쓬). ??Blender ?먯쭏(`Late/h_props_v1.py`쨌`h_board_kit_v1.py`) ???ㅼ튂(`h_install_unity.py`) ??**`Assets/Scripts/PawnRush/MiniGameModels.ChessHall.cs`濡?諛곗튂**(G ? ?⑥닔 ?ъ궗?? ??`G_King` ?묐떒/?곸븘 + `MiniGameKingLook` 援녹? ?? ? 醫낆? 泥댄겕쨌援녹쓬 ???붾뱾由?`MiniGameHallBell`, 泥쒖옣? H留??됲룊???由ъ꽍 + ?ш컖 泥쒖갹 ?곕Ъ 8媛?`H_SkylightWell`, ? 臾?????臾몄옣 `H_TeamGateCrest`). **?ъ슜??Unity ?뺤씤(11-08 "?뺤씤"): 諛㈑룻뙋쨌?뮤룹냼?댟룹쿇??** 援녹? ?뮤룹쥌 ?몃┝쨌臾몄옣? ?뺤씤 ?? ?앺뙋 湲곕낫쨌?쒓퀎 ?レ옄 湲?먰뙋(`h_decals_v1.py`, ?뺤씤 ??. H ?꾩슜 ?④낵 `CheckmateFx`(?뺤씤 ??. ?⑥? ?꾨낫: H ?④낵??泥댄겕쨌硫붿씠?맞룹옟湲걔룰뎄異쑣룹뒪?뚯씪硫붿씠??wav媛 ?놁뼱 吏湲?臾댁쓬) 而댄뙆???듦낵, **Unity ?뺤씤 ??*(VALIDATION 留??? Play 9踰?, 肄붾뱶 蹂寃??놁쓬 |
+| B ?숆? ?꾪듃(R503) | ?ъ슜??Tripo 紐⑤뜽 + Blender ?먯쭏(`ArtSource/PawnRush/MiniGames/Mid`, ?곸꽭??洹?`Materials/README.md`)濡?諛??꾩껜瑜??ㅼ떆 ?몄?: 媛?대뜲 ?μ떇 ?臾? ?녿꼍 1쨌2痢??꾩튂 李??좊━ ?놁씠 李쎈컰??蹂댁엫), ?뚮옉쨌?쒓컙(??以?, 泥섎쭏쨌?몃몢?섎Т ?ㅻ낫쨌泥쒖옣, ? 臾??꾩튂, ?낃뎄쨌異쒓뎄 ?꾩튂, 蹂듬룄 踰? ?덉쓣 硫붿슦???щ┝ ??梨꾩? 踰? ?먯옄 紐⑤뜽쨌???꾨옒 吏?샕룹옣?졖룸퉬怨? 諛붾떏 ?ъ쭏 3醫? 遺덈튆쨌泥쒖? 肄붾뱶(`MiniGameFixtures.cs`). `MiniGameModels.RepairWing`??B 寃뚯엫?먯꽌留?遺숈씠怨?R312 ??洹몃┝? ?꾨? ?? 異⑸룎쨌洹쒖튃쨌?낃뎄/異쒓뎄 洹몃?濡? **?ъ슜??Unity ?뺤씤??11-07)**, 而ㅻ컠 ?놁쓬 |
+| F ?臾대룄?뚯옣(R508) | 吏꾪뻾 以?11-08): 而⑥뀎 ?쒗듃 3?Β룹옱吏?寃щ낯(B 4醫??ъ궗??+ ??4醫? 臾대룄?뚯옣 ?щ┝ ?由ъ꽍쨌履쎈쭏猷㉱룹옄?먯깋 踰⑤껙쨌?뚯깋 嫄곗슱)쨌?ъ궗??紐⑸줉 `Docs/PawnRush/ConceptArt/R508_ClockworkBallroom/REUSE.md`(諛?猿띾뜲湲곕뒗 E쨌B, 怨꾨떒쨌以?湲곕뫁 G, ?붾텇 A쨌D)쨌?먯뀑 ?쒗듃 3?? 臾댁슜??2醫끒룻깭???댁뇿??Blender濡?吏곸젒(`Mid/f_dancers_v1.py`, ?명삎 ?먮굦, ?섏긽 ?ъ쭏 移몄? Unity?먯꽌 ?곷? ???, Tripo 8遺???먯쭏(`Mid/f_props_v1.py`). **嫄곗슱? Tripo濡?留뚮뱾吏 ?딆쓬**(?ъ슜??"留됲???嫄곗슱 媛숈? ?먮굦???놁옏?? ??"諛⑸쭔 鍮꾩묠"): 鍮?? + `MIRROR_Surface` ?? Unity 嫄곗슱 ?ъ쭏쨌諛섏궗 ?꾨줈釉? Unity ?ㅼ튂(`Mid/f_install_unity.py`)쨌?곌껐(`MiniGameModels.Ballroom.cs`: 諛⑹? E 猿띾뜲湲곗뿉??梨낆옣留?類 `F_HallEnv`, 臾댁슜???명삎쨌履쎈쭏猷??덉씤쨌踰⑤껙 踰ㅼ튂쨌嫄곗슱 臾맞룸꼍 嫄곗슱쨌?ㅽ룷?몃씪?댄듃쨌?뚰뭹, 諛섏궗 ?꾨줈釉? ?꾨즺. 嫄곗슱 臾몄? ?ㅼ떆媛?諛섏궗 移대찓??+ `PR_MirrorGlass` ?곗씠???ъ슜??"?ㅼ젣濡?諛섏궗 ?섍쾶"; ?덉쭏 ?ㅼ젙???ㅼ떆媛??꾨줈釉뚭? 爰쇱졇 ?덉뼱 ?꾨줈釉뚮쭔?쇰줈???섎뒛??鍮꾩낀??, 踰?嫄곗슱? ?쒖옉 ??李띾뒗 ?먮툕留??꾨줈釉? ?≪쓣 ???덈뒗 臾댁슜???ㅽ룷??鍮쎛룰컙?????ш린源뚯? ?ъ슜??Unity ?뺤씤(11-08). ?댁뼱??李쎄? ?섏옣(肄붾뱶 泥?쨌臾대? ?뚮몢由??⑸룞(?뺤씤 ??. 湲곕줉 `ArtSource/PawnRush/MiniGames/README.md` F ?? ?섏옣쨌?뚮몢由щ룄 ?ъ슜??Unity ?뺤씤(11-08), 而ㅻ컠 ?놁쓬 |
+| J ?명긽???꾪듃(R509) | 1?④퀎: 寃뚯엫 醫뚰몴 ?쑣룹쐞?먯꽌 蹂?諛곗튂??`ArtSource/PawnRush/MiniGames/Mid/J/`), 而⑥뀎 ?쒗듃 3??`Docs/PawnRush/ConceptArt/R509_PalaceLaundry`). ?꾧꼍 洹몃┝? ?쒖そ ??7媛쒕씪 諛곗튂??諛곗튂?꾧? 湲곗?. ?ъ슜???뺤씤??11-08 "?뺤씤, ?ㅼ쓬 ?④퀎"). 2쨌3?④퀎: ?ъ쭏 寃щ낯 ??3醫?`Mid/Materials/r509_material_swatches.py` ??`PR_Mid_WhiteTile`쨌`OakStaves`쨌`DollLinen`, ?섎㉧吏??B ?ъ궗?? Unity 誘몃컲??怨?Tripo???먯뀑 ?쒗듃 5??`R509_PalaceLaundry/AssetRefs`, 沅뚯옣 硫??섎뒗 J README ??. ?ㅻⅨ 梨꾪똿 紐⑤뜽 ?ъ궗??吏??11-08)???곕씪 踰승룸?臾맞룻? 臾명?? B/E 紐⑤뜽, ?섏“ 踰승룹텧諛쒕???Blender ?곸옄濡??섍퀬 **Tripo??3?λ쭔**(?돠룸텇異쒓뎄쨌?섎Ц 臾몄쭩쨌諛뷀대? ?⑹튇 `J_tripo_01_tub_sluice.png` / ?명삎 6醫?/ ?뚰뭹). ?돠룹닔臾?FBX瑜?諛쏆븘 `Mid/J/j_props_v1.py`濡??먯쭏 ??`Mid/Export/J_Tub`(7泥? ?먯젏 ?쒓퍚 ?쀫㈃)쨌`J_Nozzle`(Tripo媛 李?뼱??Blender濡??덈줈)쨌`J_Leaf`(3.85횞4.55)쨌`J_Wheel`(1.2 m). `Mid/J/j_install_unity.py`濡??ㅼ튂?섍퀬 `MiniGameModels.Laundry.cs`(Apply??J ??以?媛 Play ???돠룸텇異쒓뎄瑜?湲?移맞룹젏?꾨??? ?섎Ц 臾몄쭩??? 臾몄뿉, 諛뷀대? 臾?諛붽묑 踰쎌뿉 遺숈엫(異⑸룎쨌洹쒖튃 洹몃?濡? ??**?ъ슜??Unity ?뺤씤(11-08)**. ?댁뼱??諛? `Mid/J/j_hall_v1.py`媛 E 諛??ㅽ겕由쏀듃瑜?遺덈윭(怨좎튂吏 ?딆쓬) 踰?梨낆옣??鍮쇨퀬 ??????덈━ 1.5 m + ?몃몢?섎Т ?좊? ?뷀븳 `J_HallEnv`, ?섏“ ?????`J_BasinEnv`(?ㅽ뀒?댁뀡 醫뚰몴, 寃? ?? ?ㅼ쭛??. Unity??E??議곕챸쨌? 臾명?쨌源껊컻쨌諛붾떏 ?ъ쭏 ?ъ궗?? ???④?. 而댄뙆?셋텰ore 162쨌紐⑥쓽 ?몄뀡 55 ?듦낵, **諛㈑룹닔議??ъ슜??Unity ?뺤씤(11-08)**. 鍮꾨닓臾? ?ъ슜??"?됱? 醫뗭???臾?泥섎읆 ?덈낫?? ??C 臾??곗씠?붾뒗 ?뉖튆 ?섏〈?대씪 ?ㅻ궡?먯꽌 諛뗫컠 ??J ?꾩슜 ?ㅻ궡 臾??곗씠??`PR_SoapyWater.shader`(?ㅻ궡 鍮?肄붿뒪?굿룹꺓?ㅻ━?먃룹갹 愿묓깮 諛섏쭩?꽷룻????쇰쟻?? + `Mid/J/PR_Mid_J_SoapyWater.mat`(???좎?쨌??留묎쾶, 媛??댁쭩 ?? ???ъ슜??Unity ?뺤씤(11-08). 鍮⑤옯以? ?녿꼍 李?移몃쭏??4.2 m 以?+ ?붾뱾由щ뒗 ??由щ꽙 ?쒗듃(`LaundryLines`, `MiniGameBannerCloth` ?ъ궗?? `PR_Mid_J_Linen`) ???ъ슜??Unity ?뺤씤(11-08). ?뚰뭹 7醫낆? ?ъ슜???좏깮?쇰줈 Blender 吏곸젒(`Mid/J/j_laundry_props_v1.py` ??`J_PropsEnv`, E ?뚰뭹 ?꾧뎄 ?ъ궗?? ?낃뎄 紐⑥꽌由?룸뮘 蹂듬룄 ?? ???ъ슜??Unity ?뺤씤(11-08). ?명삎 6醫낅룄 ?ъ슜???좏깮?쇰줈 Blender 吏곸젒(`Mid/J/j_dolls_v1.py` ??`J_Doll_*`, ?섏씠?몃뒗 ?놁쓣 遊? Unity `LaundryDolls`媛 湲곕Ъ??嫄멸퀬 ?곷? 湲곕Ъ??紐?+ ?곷? ????뚮몢由щ줈 移좏븿) ???ъ슜??Unity ?뺤씤(11-08). **?명긽???꾪듃 ????ぉ ?ъ슜???뺤씤**, Tripo ?湲??놁쓬. J ?ъ쭏 `.meta` 5媛?諛붾줈?≪쓬(E ?ㅼ튂 ?꾧뎄 踰꾧렇, E쨌B `.meta`??媛숈? 臾몄젣 ??誘몄닔??. **?명삎쨌?뚰뭹 FBX ?湲?*, 鍮꾨닓臾??곗씠?붋룸묠?レ쨪 ?쒗듃(肄붾뱶) ?⑥쓬. 而ㅻ컠 ?놁쓬 |
+| I 移⑥떎 ?꾪듃(R511) | 1?④퀎(11-08): 寃뚯엫 醫뚰몴 ?쑣룸같移섎룄(`ArtSource/PawnRush/MiniGames/Late/I/`), 而⑥뀎 ?쒗듃 3??`Docs/PawnRush/ConceptArt/R511_KingsBedchamber`: ?꾧꼍쨌嫄댁텞 紐⑤뱢쨌?뚰뭹/?ъ쭏). ?먯? H? 媛숈? ?먮━(?留덈떎 8횞8, 2.25 m, ?뚮옉 x ??1~??쨌z 6~24), ??鍮?踰좎씠吏 移댄렖 #CBBF9F/#A79A7C, ??移⑤???7??겕 c~f(留????ㅻ쫫), 鍮쏆쨪湲?????1.1 m. 移⑤?쨌?섎젅쨌怨듦꺽 湲곕Ъ? ?⑥븮留덈떎 移몄씠 諛붾뚮뒗 ?吏곸씠??紐⑤뜽?대씪 嫄댁텞? ??諛뽰뿉留? ?꾧꼍? 遺꾩쐞湲?李멸퀬??鍮쏆쨪湲?紐?媛쒓? ?뚮젅?댁뼱?먯꽌 ?섏샂), 諛곗튂??諛곗튂??湲곗?. **?ъ슜???뺤씤 ?湲?* ???ㅼ쓬: ?ъ쭏 寃щ낯(G쨌H 3?④퀎 ?명듃 ?ъ궗??+ 移댄렖 2醫끒룸젅???붾꽋 ?? ???ъ궗??紐⑸줉(G 踰승룹갹쨌泥쒖갹쨌怨꾨떒쨌? 臾맞룸궃媛? H 泥쒖갹 ?곕Ъ, F 踰ㅼ튂쨌?붾텇, ?ъ쭏 ?대퉬?맞룸꺼踰? ??Tripo???먯뀑 ?쒗듃(移⑤?쨌諛⑺뙣 ?섎젅쨌?룹옣쨌?몃㈃? ???녿뒗 寃껊쭔). 肄붾뱶 蹂寃??놁쓬, 而ㅻ컠 ?놁쓬 ?ъ슜???뺤씤(11-08 "?뺤씤, ?ㅼ쓬 ?④퀎") ??2쨌3?④퀎: ?ъ쭏 寃щ낯 ??2醫?`Late/Materials/r511_material_swatches.py` ??`PR_Late_I_CarpetLight`쨌`CarpetDark`, ?섎㉧吏 9移??ъ궗?? Unity 誘몃컲??, ?ъ궗??紐⑸줉 `R511_KingsBedchamber/REUSE.md`(怨듦꺽 湲곕Ъ? 湲곗〈 `PR_Piece_*`), Tripo???먯뀑 ?쒗듃 2??`R511_KingsBedchamber/AssetRefs`(移⑤?쨌諛⑺뙣 ?섎젅 ??55,000 / 移⑥떎 ?뚰뭹 6醫???40,000). **?ъ슜??Tripo ?湲?** |
+| ?ъ슜???뺤씤 | R497 ?댄썑 Unity ?붾㈃쨌?낅젰쨌?⑤씪?맞룹떎???쇱쫹 ?꾩＜쨌12紐??깅뒫? ?ъ슜???뺤씤 ??|
+
+釉뚮옖移???젣 ??6媛?李몄“瑜?bundle쨌manifest쨌蹂듦뎄 ?덈궡濡?蹂닿??섍퀬 bundle 寃?щ? ?듦낵?덈떎.
+蹂닿? ?꾩튂: `C:\Users\dua07\Desktop\媛쒕컻?쇱?\2?숆린 ?꾨줈?앺듃?섏뾽\泥댁뒪?뚯씠??Backups\R497-Branches-20261106-221133`.
+??.9 MB??Git bundle?대ŉ LFS 諛붿씠?덈━瑜?蹂꾨룄 ?ы븿?섏? ?딅뒗?? 湲곗〈 LFS 罹먯떆??蹂댁〈?덈떎.
+R496???ъ슜???꾨━??媛?蹂댁〈蹂맞룸챸紐?stash쨌?뱀떆 ??釉뚮옖移?湲곕줉???뺣━ ?묒뾽???꾩쓽濡?踰꾨━吏 ?딅뒗??
+
+## 2. 臾댁뾿???섍퀬 臾댁뾿?????섎뒗媛
+
+- **?꾩옱 ?몄쭛?????ъ떆**: `ChessFight ??Pawn Rush ??Open Section Test`.
+- **誘몃땲寃뚯엫留??좏깮**: `ChessFight ??Pawn Rush ??Open Mini-game Prefab Test`; ?レ옄1~0, F5 ?, F8 珥덇린??
+- C/D/A??珥덈컲, B/E/F/J??以묐컲, G/H/I???꾨컲 ?꾨낫濡??щ’2/4/6??/4/3媛??깅줉???덈떎.
+- ?щ’1 ?뺤썝 ???щ’2 珥덈컲 誘몃땲寃뚯엫 ???щ’3 ? ???щ’4 以묐컲 誘몃땲寃뚯엫 ???щ’6 ?꾨컲 誘몃땲寃뚯엫 ???щ’7 ?묒쟾 ?뚯쓽?ㅻ줈 ?댁뼱吏꾨떎.
+- 誘몃땲寃뚯엫??嫄댁텞쨌?μ떇? ??λ맂 ?꾨━?뱀씠?? Play?먮뒗 Game socket??湲곕뒫 寃뚯엫留??ㅼ떆 ?ㅼ튂?쒕떎.
+- ?먮룞 ?꾨즺(F6/ForceComplete)???대깽?맞룻? 臾??곌껐 寃?щ떎. ?ㅼ젣 ?μ튂瑜???댁꽌 ?ъ꽦?덈떎???살씠 ?꾨땲??
+- ?뺤썝쨌?쨌?묒쟾 ?뚯쓽?ㅼ쓽 ?쇰? ?꾪듃??Play??留뚮뱾?댁쭊?? ?몄쭛 紐⑤뱶??鍮?猷⑦듃留?蹂닿퀬 ?먯궛 ?꾨씫?쇰줈 ?먮떒?섏? ?딅뒗??
+- **Prototype Course01**? 湲곗〈 ?⑤씪??寃쎄린媛 ?몄텧?섎뒗 ?ъ씠?? ???대쫫 `PawnRush_Course01`, 濡쒕퉬 ??`kingrush`, 湲곗〈 ?듭떊 援ъ“???좎??쒕떎.
+- `GameModes.KingRush` ?대쫫怨?`ModeRetiredQueenHill = 1` 媛숈? ?덉빟 ?듭떊 媛믪? ?뚯씪 ?뺣━ ?뚮Ц??諛붽씀吏 ?딅뒗??
+- Queen of the Hill????紐⑤뱶濡??ㅼ떆 ?깅줉?섏? ?딅뒗?? Queen 湲곕Ъ ?먯껜???ㅻⅨ 紐⑤뱶媛 ?곕?濡??좎??쒕떎.
+- ??Sections 肄붿뒪瑜?湲곗〈 Course01 ?⑤씪???먮쫫???곌껐?덈떎怨?留먰븯吏 ?딅뒗?? 湲곗〈 Steam ?먮쫫??蹂寃쎈룄 ?대쾲 踰붿쐞媛 ?꾨땲??
+- R497 ?ㅼ젣 Unity ???0?꾨━???쒗뿕 ???ㅽ뙣0, Play10醫낆쓽 湲곕뒫 罹먯떆쨌?먭린 ? 臾맞?踰?珥덇린?붋룹뵪???ъ깮?굿텮 ?몄뒪?댁뒪 遺꾨━쨌I ?명삎 ?좎? ?먮룞 寃???듦낵. [VALIDATION](Docs/Network/VALIDATION.md)??踰붿쐞? ?쒓퀎瑜?湲곕줉?덈떎.
+- AI??而댄뙆?셋룹옄??寃??룸젋??愿李곌낵 ?ъ슜?먭? Unity/Steam?먯꽌 吏곸젒 蹂닿퀬 議곗옉???뺤씤??援щ텇?쒕떎.
+
+## 3. 吏꾪뻾 以묒씤 ?쇨낵 ?ㅼ쓬 ????
+
+1. ?먮룞 寃?ъ? 蹂꾧컻濡???硫붾돱쨌濡쒕퉬 ??紐⑤뱶쨌?꾩옱/Prototype ?λ㈃??Unity GUI?먯꽌 ?댄렣蹂닿퀬 [?뺤씤 紐⑸줉](Docs/Network/VALIDATION.md)???ъ슜??寃곌낵瑜?湲곕줉?쒕떎.
+2. ?ъ슜?먮뒗 湲곗〈 ?꾨줈?앺듃?먯꽌 ??硫붾돱 洹몃９, 誘몃땲寃뚯엫 ?좏깮쨌? ?꾪솚쨌珥덇린?? Intro?묹obby?믩몢 紐⑤뱶瑜??뺤씤?쒕떎.
+3. ???ъ떆 媛??쇱쫹???ㅼ젣 ?낅젰쨌臾??듦낵쨌蹂듦? ?숈꽑怨?2紐??깅뒫???뺤씤?쒕떎.
+4. 援ы삎 留듭쓣 怨좎튌 ?뚮뒗 Prototype 臾몄꽌瑜?癒쇱? ?쎈뒗?? ?꾩옱 援ш컙 肄붿뒪? 援ы삎 ?⑤씪??肄붿뒪瑜?媛숈? 寃껋쑝濡?痍④툒?섏? ?딅뒗??
+5. ??援ш컙 肄붿뒪???⑤씪???곌껐? 蹂꾨룄 ?ㅺ퀎쨌?붿껌?쇰줈 吏꾪뻾?쒕떎. ?대쾲 ?뺣━濡??꾨줈?좎퐳???덈줈 ?뺤쓽?섏? ?딆븯??
+6. R498 源쒕묀???섏젙??Play?먯꽌 1쨌3쨌7쨌8踰덉쑝濡??뺤씤?쒕떎([VALIDATION](Docs/Network/VALIDATION.md) 留???. ?몄쭛 紐⑤뱶 ?꾨━?밴퉴吏 諛붽씀?ㅻ㈃ ?숇즺 ?섏젙 ?щ?瑜??뺤씤????Build All???ㅼ떆 援쎈뒗??
+7. **C ?꾧컻援??ㅼ떆 留뚮뱾湲?R502, ?④퀎留덈떎 ?ъ슜???뺤씤 ???ㅼ쓬?쇰줈):** ???ъ쭏 寃щ낯 4醫????깊깙 ?ъ쭏 ??釉붾줉 紐⑤뱢濡??뺤젙 ??Unity 1?④퀎 議곕챸쨌?꾩쿂由??꾨줈???곕쑜???뉖튆쨌遺?쒕윭??洹몃┝?먃톁SAO쨌?쏀븳 Bloom쨌諛앷퀬 ?곕쑜????蹂댁젙) + 臾??곗씠??泥?줉쨌肄붿뒪?굿룰??μ옄由?嫄고뭹), 寃щ낯 踰?臾??곗쑝濡??뺤씤 ???ъ슜???뺤씤??11-07 "?댁뼱 遊ㅼ뼱, 愿쒖갖??) ??**吏湲???* ???댁옄蹂 踰?援ш컙(?ъ쭊 2??5쨌6踰? ?섎굹濡?紐⑥뼇 ?뺤씤 ???μ튂 ??嫄댁텞 ???뚰뭹 ??R501 FBX ?먮━??援먯껜(`MiniGameModels` ?곌껐쨌寃뚯엫 ?ш린 洹몃?濡?. 洹???D쨌A濡??댁뼱媛꾨떎. 誘몃땲寃뚯엫 紐⑤뜽留곸? [3?④퀎 ?꾪듃 湲곗?](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md) 짠5??寃곗젙 5媛吏瑜?癒쇱? ?뺥븯怨?C쨌E쨌G遺??留뚮뱺?? FBX媛 ?섏삤硫?誘몃땲寃뚯엫 FBX ?곌껐 肄붾뱶媛 ?꾩슂?섎떎. **?꾩옱(11-07):** ???ㅻ? ?ъ슜??Tripo ?먯뀑?쇰줈 ??踰덉뿉 吏꾪뻾??C ?꾧컻援?v2瑜?Unity??遺숈???`c_drawbridge_v2.py` ??`c_drawbridge_v2_export.py` ??`c_install.py`, `MiniGameModels.Drawbridge.cs`). 沅뚯뼇湲??μ튂???꾨Ⅴ??諛⑹떇(?욎そ 沅뚯뼇湲?x 짹16, 以꾩씠 ?좏뙋 沅ㅻ룄瑜??곕씪 ?댁옄 ??湲곕뫁???꾨Ⅴ??2媛쒕? ?뚯븘 x 짹18.4濡??섎????뚯븘 ?섏삤怨? ?곗? 洹?留ㅻ벊???욎そ?쇰줈 7 m ?밴?, 紐⑤몢 ?ㅻ━ 諛? ?좎궗?ъ? 留앸（ 瑗??湲?怨좊━?믪긽????怨좊━, 留앸（ ?좏뙋 ?쒓굅). ? ?듬줈쨌??蹂듬룄??諛붾떏쨌踰쎌쓣 源붽퀬 ??吏遺??묒쓣 y 41濡???꺼 ?듬줈瑜??붿?. 留앸（???ъ슜??Unity ?뺤씤(11-07). ?ъ슜??Unity ?뺤씤 ??[VALIDATION](Docs/Network/VALIDATION.md) "C ?꾧컻援?v2 Unity ?곸슜").
+8. ?ㅼ쓬 ???붿껌? **R508**遺??湲곕줉?쒕떎. **A ?섏옣 愿묒옣(R506)**: (11-08) 遺?移??쒖븞 A 梨꾪깮쨌?뚮━ ?ㅼ떆 ?ｌ쓬(Unity ?뺤씤 ?? VALIDATION 留???.  而⑥뀎 ?쒗듃 3??`Docs/PawnRush/ConceptArt/R506_CeremonialCourt`)怨??ъ쭏 寃щ낯 5醫?`ArtSource/PawnRush/MiniGames/Early/Materials/r506_material_swatches.py` ??`Textures/PR_A_Slate`쨌`PR_A_IvoryLimestone`쨌`PR_A_Basalt`쨌`PR_A_CourtPaving`쨌`PR_Early_RoofSlate`, 鍮꾧탳 `r506_swatch_compare.png`) ?꾨즺, ?ъ슜???뺤씤 ?? 愿묒옣 ?ъ옣쨌吏遺??щ젅?댄듃??D ?좎궡臾몄쓽 ?⑥? 諛붾떏 ?ъ옣쨌吏遺뺤뿉???????덈떎. ??諛곌꼍 ?먯뀑 ?ъ쭊 3?λ룄 ?꾨즺(`Docs/PawnRush/ConceptArt/R506_CeremonialCourt/AssetRefs`: ?뺣Ц ??10留뙿룰뎄議?6醫???4.5留뙿룹냼??8醫???6留?硫?沅뚯옣, 源껊컻 泥쑣룹솗愿 臾몄옣쨌遺덈튆쨌?좊━ ?놁쓬, ? 臾몄쭩? 寃뚯엫 臾몄쭩 ????3.85횞4.55 m??留욎땄). ?ъ슜??Tripo FBX 3媛쒕뒗 `ArtSource/PawnRush/MiniGames/Early/Source/R506_A_*.fbx`??蹂닿?쨌寃?ы븿(遺??15媛??먯젙??`Source/R506_A_README.md`, ?섎┫ 寃??놁쓬, 源⑥쭊 寃? ???꾨옒 紐명넻쨌?낃뎄 湲곕뫁 諛쏆묠쨌踰꾩꽢 紐⑥뼇 踰ㅼ튂쨌移좏넻 ??寃? ???놁쓬). ?ъ슜??吏??"Blender濡?怨좎퀜")濡?`Early/a_props_v1.py`?먯꽌 15媛쒕? ?먯쭏쨌?섎━??`Early/Export/A_*.fbx`濡??대낫???뺣Ц 25,000 ?쇨컖???? ?뚮뜑 `Early/render_a_prop_*.png`). ?⑥? ?? ?뺣Ц ?ㅻⅨ履??????묒? 寃? ?먭뎅, ? ?꾩튂 ??9.25 m???뺣Ц(짹10 m)怨?寃뱀묠 ??諛곗튂 ??湲곕뫁 醫곹엳湲? ?ъ슜??吏??"Unity 諛곗튂 吏꾪뻾")濡?`Early/a_install.py`媛 Assets???ㅼ튂?섍퀬 `Assets/Scripts/PawnRush/MiniGameModels.ParadeCourt.cs`媛 Play ??諛곗튂(?뺣Ц z 24쨌? ?꾩튂 짹12쨌?깅꼍쨌?뫢룹엯援?湲곕뫁쨌?ъ씠?꾨윭?ㅒ룻솕遺꽷룸깽移샕룹젙???는룹튌 ?뚰뭹, **?깅꼍쨌?쒓컙(??? ?뺤썝 ??? ???놁씠 紐⑤뱢 1/5??寃뱀튂怨??뺣Ц ?녌룸뮘????踰쎈룎濡?梨꾩?**(?ъ슜??11-07 "?쒓컙?대옉 踰????덇쾶 ?섏?留?), ? 臾몄쭩? 寃뚯엫 臾멸낵 ?④퍡, 源껊????⑸룞 紐⑤뜽 + ?붾뱾由щ뒗 泥? 諛붾떏 ?щ┝ ?먯꽍), `PaintBoard` 移몄? ?щ젅?댄듃쨌?곸븘 ?앺쉶?붋룻쁽臾댁븫(洹몃┝留?. 而댄뙆?셋텰ore 162쨌紐⑥쓽 ?몄뀡 55 ?듦낵, **?ъ슜??Unity ?뺤씤??*(11-07 "?뺤씤", VALIDATION). ?댁뼱??源껊컻쨌臾몄옣??肄붾뱶濡? `Early/a_banner_tex_v1.py` ?띿뒪泥?4???щ┝ ?뺢? 源껊컻 2쨌? 諛⑺뙣 源껊컻 2) ??源껊?쨌?쨌???듬줈 源껊컻, ?뺣Ц ?묒쁿 湲??뺢? 源껊컻, ?됰꼍 ???⑸룞 ?뺢?(`ParadeGatehouseDress`); ?ъ슜??"踰??뚮Ц??吏遺뺤씠 媛?ㅼ졇" ????遺곸そ 諛붽묑 踰??⑹뼱由?11 m)瑜??꾧퀬 5 m ?깅꼍 ?묐㈃?쇰줈 諛붽퓭 紐⑥꽌由???吏遺뺤씠 ?쒕윭?섍쾶, ?뺣Ц ????梨꾩? 6.3 m濡? "??蹂댁씠吏 ?딄쾶" ???뺣Ц쨌源껊컻쨌?뺢??????믪씠 0.4 m濡??щ━怨??뺣Ц ?꾨옒쨌?욎뿉 ?먯꽍 諛붾떏(`Gatehouse floor`); "sfx??vfx???댁쨾" ??ElevenLabs ?④낵??5媛?`Early/Sfx/a_sounds.py` ??`Assets/Resources/PawnRushMiniGameSfx/sfx_paint_*.wav`쨌`sfx_rank_complete.wav`, 洹濡??뺤씤 ??? `PaintBoard` ?쒓컖 ?④낵(移좏븯??以?諛섏쭩?는룹셿猷?鍮쏄린?Β룻븳 以?湲?怨좊━쨌? ?꾩꽦 ?됱쥌?? ???ъ슜??"?대윴 vfx 留먭퀬"(?먭린??鍮쏄린?? ??A ?꾩슜 ?낆옄 ?④낵 `PaintBoardFx.cs`濡?援먯껜(鍮??뚭갚?는룸Ъ媛??먭뎅쨌臾쇨컧 諛⑹슱쨌鍮?怨좊━쨌蹂?諛섏쭩?는룹깋醫낆씠, ?먭린?Β룸꽕紐?議곌컖 ?놁쓬); "梨꾩썙吏???뚮━媛 ?좎뭅濡쒖썙" ??移좏븯??以??뚮━瑜???퀬 ?κ렐 ?뚮━濡??덈줈(`Sfx/Source/paint_charge_soft_*`, 以묒떖 ??300 Hz) ???ъ슜?먭? 怨좊Ⅸ 諛⑺뼢?쇰줈 ?ㅼ떆: 梨꾩슦???뚮━ = 遺볦쭏 ?ㅼ쑞(`paint_charge_brush_take3`), ?꾨즺 ?뚮━ = ?꾩옣 苡?`paint_done_stamp_take3`). ?뚯씠?щ? 諛붽씀?ㅻ㈃ `Early/Sfx/a_sounds.py`. 移좏븯???숈븞 ????遺볦쭏 8醫?`sfx_paint_stroke_1~8`)???욎? ?쒖꽌濡??댁뼱 ?ъ깮(`PaintBoard.Stroke/NextStroke`, ?곗냽 臾몄?由??뚮━??吏?). 25쨌50쨌75 % ? 臾??④낵??A ?꾩슜 `PaintGateFx.cs`(臾쇨컧 諛⑹슱 遺꾩닔쨌蹂?諛섏쭩?? ???놁쓬, ?④낵???놁쓬; ?ъ슜??吏?? C ?몄뀡 ?꾨떖). **?댄썑 ?ъ슜??"?ъ슫?쒕뒗 ???놁븷怨?: A ?뚮━ ?꾨? ?붋톣av ??젣(怨듭슜 ?꾨즺 ?뚮┝?뚮쭔 ?⑥쓬), 移좏븯湲곕뒗 遺볦씠 移몄쓣 吏洹몄옱洹몃줈 移좏빐 ?섍???洹몃┝(`PaintBoard.BrushMaps/StrokeMaterial/BrushTip`), 臾쇨컧 ?붿쿋 ?몃? 留돠룹젚? 愿묓깮, 移??꾨? ?ㅺ???遺?紐⑤뜽(`Brush/PlaceBrush`); 移좎? 移몃퀎 ?띿뒪泥섏뿉 遺??먭뎅??留??꾨젅??李띾뒗 ?ㅼ떆媛?洹몃━湲?`StartPaint/PaintTo/Stamp/PathUV`).** Unity ?뺤씤 ?湲?誘몃땲寃뚯엫 ?쒗뿕 3踰?. ?ㅼ떆 ?먯쭏?섎㈃ `a_props_v1.py` ??`a_install.py` ?쒖꽌 ??`MiniGameModels`濡??곌껐. 泥댁뒪??移??먃룹튌?섎뒗 ?먯? 寃뚯엫 肄붾뱶(`PaintBoard`)媛 洹몃━誘濡??먯젙쨌?ш린??洹몃?濡??먭퀬 ?ъ쭏留?諛붽씔?? D ?좎궡臾?R505): 罹≪뒪??`D_Capstan_Static`/`Bars`)쨌以묒븰 ?깅Ц(`D_CenterGate`)? ?ъ슜???뺤씤?? ? ?꾩튂쨌?좎궡臾?`D_TeamArch`/`D_Portcullis`)? ?곌껐?덇퀬 Unity ?뺤씤 ?? ?ъ븫 援ъ“ ?명듃???ъ슜?먭? ?곗? ?딄린濡???11-07, ?곌껐쨌?뚯씪 ?섎룎由?. ?⑥? 遺???꾨Ⅴ???ㅻ낫쨌踰승룻룷?Β룹엯援?湲곕뫁쨌?깅텋 ?쨌?뚰뭹)? GPT ?쒗듃濡?Tripo??2??`Docs/PawnRush/ConceptArt/R505_PortcullisCourt/AssetRefs`: `D_assets_04_structure_bundle.png` = 諛뷀??녿뒗 ?꾨Ⅴ???쨌諛뷀는룸꼍쨌?ъ옣쨌?낃뎄 湲곕뫁쨌?깅텋 ?, `D_assets_02_props.png` = ?뚰뭹; 諛뷀대뒗 罹≪뒪?닿낵 ?④퍡 ?뚮┫ ?덉젙)??留뚮뱾?덇퀬, ?ъ슜?먭? 以 Tripo FBX 2媛쒕뒗 ?꾩껜 ??5泥??쇨컖?뺤씠??遺?덈퀎 ?먯젙(諛뷀는룹궗???붾?쨌?ш뎄쨌?붾텇쨌?깅텋? ?섎━湲?= Tripo ?ㅼ떆 ?대낫?닿린, ?ъ옣? 以꾩씠湲? ?꾨Ⅴ???? 怨좎젙??鍮좎쭚; `ArtSource/PawnRush/MiniGames/Early/Source/README.md`). **?먯튃: 以꾩씠湲곕뒗 Blender, ?섎━湲곕뒗 Tripo ?щ궡蹂대궡湲???Tripo??硫????됰꼮?섍쾶.** ?대쾲 寃껋? ?ъ슜??吏?쒕줈 Blender?먯꽌 ?섎━硫?留욎땄(`Early/d_props_v1.py`, 遺??10媛?`Early/Export/D_*.fbx`, 諛붾떏 ?ъ옣 ?쒖쇅) ??`MiniGameModels.Court`쨌`CapstanChain`?쇰줈 諛곗튂쨌?곌껐?????녿꼍 ?④린怨?`D_Wall`횞1.3??鍮덊땲 ?놁씠, ?꾨Ⅴ??諛뷀는룹궗?ъ? `MiniGamePulleyChain`?쇰줈 罹≪뒪?닿낵 ?④퍡 ?뚮ŉ ?ъ뒳??諛뷀??꾨줈 媛먭꺼 ?먮쫫). **?ъ슜?먭? Play 2踰덉뿉???뺤씤??*(11-07, [VALIDATION](Docs/Network/VALIDATION.md)). ?깅텋 遺덈튆(`MiniGameFlame`)쨌?붾뱾由щ뒗 源껊컻(`MiniGameBannerCloth`)??肄붾뱶濡?遺숈엫(Unity ?뺤씤 ??. 踰승룹븘移샕룹꽦臾?援щ찉? `ArtSource/PawnRush/MiniGames/Early/mg_holes.py`(??梨꾩?쨌?욎そ ?덈컲 ?ㅼ쭛湲?濡?留됱븯怨??ъ슜???뺤씤?? 諛붾떏 ?ъ옣? numpy ?щ┝ ?먯꽍 ?띿뒪泥?`Early/Materials/r505_paving.py`)瑜?`MiniGameModels.Paving`?쇰줈 ?낇옒(?ъ슜???뺤씤??. 罹≪뒪??紐명넻 ?먯옄 ?덉? `d_capstan_v1.py` `core()` ?띿떖?쇰줈 留됱쓬(?ъ슜???뺤씤??, 2李⑤줈 紐명넻 22k ?쇨컖?빧룹냽??以묎컙 諛앷린濡?Unity ?뺤씤 ??. ?ъ씠?꾨윭???섎Т??Blender濡?吏곸젒 留뚮벀(`Early/d_cypress_v1.py` ??`D_Cypress`, `MiniGameModels.Cypresses`, ?ㅽ뀒?댁뀡留덈떎 3洹몃（, ?몄쓽 ??怨?紐⑥뼇 ?섎Т???④?, ?ъ슜???뺤씤??. 而⑥뀎?먯꽌 ?⑥? 寃? 紐⑥꽌由??깊깙 ??GPT ?쒗듃 `Docs/PawnRush/ConceptArt/R505_PortcullisCourt/AssetRefs/D_assets_05_tower.png`(Tripo 沅뚯옣 ??50,000硫? ???ъ슜??Tripo FBX瑜?`Early/d_tower_v1.py`濡?13.5 m쨌14k ?쇨컖?뺤쑝濡?留욎떠 `D_CornerTower`濡?(짹23, 0, 25)?????ъ슜???뺤씤?? `Early/Source/README.md`). ?대줈??而⑥뀎??遺?덉? 紐⑤몢 ?ㅼ뼱媛? ??踰?諛붽묑履?|x| 9.7~22) ???곸옄??`MiniGameModels.NorthWall`?????ㅻえ ?뫢룰린?Β룻뙋?뚯쓣 ?④린怨???踰쎈룎???낇엳硫? 踰??꾩뿉 `D_Wall` ?됰꼍(?ъ슜???뺤씤??. 以묒븰 ?깅Ц 臾몄쭩 ?꾨옒 ?덉? `d_center_gate_v1.py threshold()` ?먯꽍 臾명꽦?쇰줈 留됱쓬, ? 臾??듬줈 諛붾떏 ?묒쁿 ?덉? `MiniGameModels.PassageEdges` ?먯꽍 ?좊줈 留됱쓬(????Unity ?뺤씤 ??. ?뚮━쨌?④낵??`Assets/Scripts/PawnRush/MiniGameCourtFx.cs`(罹≪뒪???뚮━湲걔룹궗??怨좊━ ?뚮━, ??諛뷀대쭏??荑돠룸㉫吏, ???대┝ ?뚮━쨌癒쇱?쨌遺덇퐙; ElevenLabs ?뚯씠??`Early/Sfx/Takes`, 湲곕낯 ?뚯씠???ｌ쓬; ???대┝? D ? 臾몄쓣 4珥덈줈 ??텛怨??ъ슜?먭? 怨좊Ⅸ chain 3??洹몃룞??諛섎났; ?뚮━???뚮━???섎Т ?쒖븞 B 4踰? ?좎궡臾??뚮━??荑?4踰댟룹뿴由?2踰?4珥? ??踰??ъ깮), ?ъ뒳? ?쒕읆 B3쨌?꾨Ⅴ??C3, 紐⑤몢 ?ъ슜???좏깮, Unity ?뺤씤 ??. **怨듭슜:** 25/50/75 % 吏꾪뻾 ??? 臾?諛붾떏??湲덈튆 ?먭낵 吏꾪뻾 ?뚮┝??`sfx_mg_quarter`)? ?ъ슜??吏?쒕줈 紐⑤뱺 誘몃땲寃뚯엫?먯꽌 類먮떎(`ArenaDressing`, 11-07). 媛?誘몃땲寃뚯엫? ???녿뒗 ?먭린 洹몃┝ ?④낵留??붾떎. `MiniGameModels.Apply`???쒖옉?????ㅽ뀒?댁뀡??`IGateFx`瑜?紐⑤몢 吏?대떎(`ClearGateFx`, 11-08: 寃뚯엫??諛붽퓭????寃뚯엫 ?④낵媛 ?⑤뜕 臾몄젣). 媛?寃뚯엫? ?먭린 `Apply`?먯꽌 ?ㅼ떆 遺숈씠硫??쒕떎. ?깅텋 遺덈튆쨌源껊컻? 肄붾뱶濡? ?욎쓽 ??紐⑤뜽 紐⑤뜽??`Assets/Resources/PawnRushMiniGames/Early/D`???ｊ퀬 `MiniGameModels.Capstan`?쇰줈 ?곌껐(留됰???`Capstan bars`??遺숈뼱 ?④퍡 ?? ??**?ъ슜?먭? Unity Play 2踰덉뿉???뺤씤??*(11-07, [VALIDATION](Docs/Network/VALIDATION.md) 留??? [Early/Source](ArtSource/PawnRush/MiniGames/Early/Source/README.md)). ?ㅼ떆 ?먯쭏?섎㈃ Blender ?ㅽ겕由쏀듃 ??`d_install.py` ?쒖꽌.
+
+?ㅻⅨ 梨꾪똿??吏꾪뻾 ?곹깭? 怨쇨굅 ?쒗븳? ?먮낯 ?꾩뭅?대툕???좎쭨쨌釉뚮옖移섎? ?뺤씤???댁꽍?쒕떎.
+?꾩옱 ?ъ슜???묒뾽 ?꾩튂(main/湲곗〈 寃쎈줈)? 理쒖떊 ?ъ슜??吏?쒓? ?곗꽑?쒕떎.
+
+## 4. ?덈? 洹쒖튃 ???닿린硫?怨쇨굅???ㅼ젣濡??ш퀬媛 ?щ뜕 寃껊뱾
+
+1. **Active Input Handling? `Input Manager (Old)`(0)濡??붾떎. Input System ?⑦궎吏???ㅼ튂?섏? ?딅뒗??*(`JY-lobby`, R20: ?ㅼ튂???덉쑝硫?耳??뚮쭏??諛깆뿏?쒕? 耳쒕씪??李쎌씠 ?щ떎). uGUI媛 ?놁뼱??Both/New濡?諛붽씀硫?HUD ?대┃怨??낅젰???꾨? 二쎈뒗?? `InputSettingsGuard`媛 ?먮룞?쇰줈 ?섎룎由곕떎. ??[PITFALLS 짠1](Docs/Environment/PITFALLS.md)
+2. **?꾨줈?앺듃???좏깮 ?⑦궎吏媛 ?섎굹???놁뼱??而댄뙆?쇰릺?댁빞 ?쒕떎.** Safe Mode?먯꽌???ㅼ튂 ?ㅽ겕由쏀듃媛 ?뚯? ?딅뒗?? ?좏깮 ?⑦궎吏 肄붾뱶???꾩슜 asmdef + `versionDefines` + `defineConstraints`濡?媛?붾떎. `ENABLE_INPUT_SYSTEM`???⑦궎吏 ?ㅼ튂 ?щ?濡??곗? ?딅뒗??
+3. **`Packages/manifest.json`쨌`packages-lock.json`??諛붾뚮㈃ Discard?섏? 留먭퀬 而ㅻ컠?쒕떎.**
+4. **?대뜑 ?섎굹 = ?댁뀍釉붾━ ?섎굹.** `Game`쨌`Gameplay`??Steam??李몄“?섏? ?딅뒗?? `Core`??Unity??李몄“?섏? ?딅뒗?? ??[Architecture/STRUCTURE](Docs/Architecture/STRUCTURE.md)
+5. **Steam 珥덇린?붋룹쥌猷??뚯쑀?먮뒗 `NetworkRuntime` ?섎굹??** SteamManager瑜??곕줈 異붽??섏? ?딅뒗??
+6. **HUD?먮뒗 湲곕낯 ?뚮쭏媛 ?녿떎.** ScrollView쨌Dropdown 媛숈? 蹂듯빀 而⑦듃濡ㅼ? 蹂댁씠吏 ?딅뒗?? ?됰쾾??VisualElement留??대떎.
+7. **?μ븷臾??꾩튂쨌?뚯쟾? `ObstacleClock` ?쒓컙???쒖닔 ?⑥닔濡쒕쭔 怨꾩궛?쒕떎(?ㅼ뒪濡??吏곸씠??kinematic 臾쇱껜??`Obstacle`???곸냽, ?뚯뒪???ㅽ겕由쏀듃媛 寃?? ?뚮젅?댁뼱 ?곹깭濡??吏곸씠??寃껋? `StateDrivenMover:` 二쇱꽍???ш퀬 ?ㅽ봽?쇱씤 ?꾩슜).** ?꾨젅?꾨쭏???꾩쟻?섏? ?딅뒗?? ?⑤씪???섍렇??李멸??먮뒗 諛⑹옣???ㅻ깄?룹뿉 ?ㅼ? ?μ븷臾??쒓컖???대떎(R51).
+8. **?대씪?댁뼵?몃뒗 ?낅젰留?蹂대궦??** 醫뚰몴瑜?沅뚯쐞濡?諛쏆? ?딅뒗?? ?뚰떚??媛숈? ????듭㎏濡??덉빟?쒕떎.
+9. **?ㅽ듃?뚰겕 鍮꾪샇??蹂寃쎌쓣 ?섎㈃ `SteamSession.Protocol`???щ┛??** ?⑦궥 援ъ“瑜?諛붽씀硫?`MotionProtocol` magic???щ┛??
+10. **寃利??쒓린???뺤쭅?섍쾶 ?쒕떎.** ?ъ슜?먭? Unity??Steam?먯꽌 吏곸젒 蹂?寃껊쭔 VALIDATION??'?깃났'?쇰줈 ?곷뒗?? 肄붾뱶 ?묒꽦怨??뚯뒪???듦낵??寃利앹씠 ?꾨땲??
+11. **`.meta`????긽 媛숈씠 而ㅻ컠?쒕떎.** Unity 諛뽰뿉???뚯씪??留뚮뱾硫?`Tools/Generators/mkmeta.py`濡?留뚮뱺??
+12. **媛숈? `.unity` ?ъ쓣 ???щ엺???숈떆??怨좎튂吏 ?딅뒗??** 留듭? 援ш컙 ?꾨━?뱀쑝濡??섎늿??
+13. **?ㅽ듃?뚰겕쨌寃뚯엫 肄붾뱶(`Assets/Scripts`??Core쨌Network쨌Game쨌Gameplay쨌Bootstrap쨌Input쨌Editor)???섍렇????낆쓣 李몄“?섏? ?딄퀬, ?섍렇??`Assets/Scripts/RagdollLab`, 10-08 ?대뜑 ?뺣━ ??`Assets/ChessFight/RagdollLab`)? Steam??李몄“?섏? ?딅뒗??** ?⑹쓣 Steam???뉖뒗 肄붾뱶??`Assets/Scripts/RagdollLabSteam/`(Bootstrap怨?媛숈? ?ㅻ━)?먮쭔 ?붾떎. 罹먮┃?곕뒗 `ICharacterDriver`濡쒕쭔 遺瑜몃떎. `Tools/run-tests-linux.sh`??寃쎄퀎 寃?ш? ?뺤씤?쒕떎.
+14. **臾쇰━ 肄쒕갚(`OnCollision*`쨌`OnTrigger*`) ?덉뿉???쒓컙?대룞?섍굅??愿?덉쓣 利됱떆 吏?곗? ?딅뒗??** Unity媛 `DestroyImmediate`瑜?嫄곕????↔린 愿?덉씠 ?⑤뒗?? ?뚮━湲곕쭔 ?섍퀬 ?ㅼ쓬 Update?먯꽌 泥섎━?쒕떎(`WaterZone` ???쒗뿕?쨌`PlaytestSpawner`). ??[PITFALLS 짠19](Docs/Environment/PITFALLS.md)
+15. **(`claude/host-migration`遺?? 寃쎄린 ?곹깭瑜?諛⑹옣 PC?먮쭔 ?먯? ?딅뒗??** 諛⑹옣? 寃쎄린 以묒뿉 諛붾????덈떎([HOST](Docs/Network/HOST.md)). ?먯닔쨌??대㉧쨌紐⑤뱶 ?곹깭???ㅻ깄?룹씠??濡쒕퉬 ?곗씠?곗뿉 ?ㅼ뼱 紐⑤몢媛 媛뽮퀬 ?덇쾶 ?쒕떎. 諛⑹옣留??꾨뒗 媛믪? ?댁쟾 ???щ씪吏꾨떎.
+
+## 5. 臾몄꽌 ?몃━
+
+```text
+HANDOFF.md                           ?꾩옱 ?곹깭쨌洹쒖튃쨌?묒뾽 寃쎈줈
+Docs/
+?쒋? Project/                          REQUIREMENTS 쨌 DECISIONS 쨌 HISTORY
+?쒋? Architecture/                     STRUCTURE 쨌 SCENES 쨌 UI 쨌 PROJECT_CLEANUP_R497
+?쒋? Environment/                      SETUP 쨌 AI_WORKFLOW 쨌 PITFALLS
+?쒋? Network/                          SESSION 쨌 MOTION 쨌 HOST 쨌 HOST_AUTHORITY 쨌 VALIDATION
+?쒋? Player/                           MOVEMENT_INPUT 쨌 RAGDOLL
+?쒋? RagdollLab/                       怨듭슜 臾쇰━ ?쒗뿕쨌?대뙌???ㅻ챸
+?쒋? Skills/                           ???ъ떆쨌?뚮뱶 ?뚯씠???ㅽ궗
+?쒋? VFX/                              怨듭슜 ?④낵쨌?묒뾽?
+?쒋? PawnRush/                         ?꾩옱 ???ъ떆 留돠룰뎄媛꽷룸??덇쾶???먮즺
+?? ?쒋? PAWN_RUSH_SECTIONS.md           援ш컙 紐⑸줉쨌?곌껐쨌?쒗뿕
+?? ?쒋? PAWN_RUSH_MINIGAME_SECTIONS.md  ?ㅼ젣10醫??꾨━?뮤룹뿬??踰빧룹닔??二쇱쓽
+?? ?쒋? PAWN_RUSH_MINIGAME_MODELING.md  嫄댁텞쨌?뚰뭹쨌?쇰쿁쨌?대룞 怨듦컙
+?? ?쒋? Prototype/                     Course01쨌?댁쟾 Opening/Castle/Final 湲고쉷
+?? ?붴? ConceptArt/                    紐⑤뜽留??대?吏쨌寃???먮즺
+?쒋? GameModes/SwordFight/              ?뚮뱶 ?뚯씠??湲고쉷쨌?꾨줈?좏??끒룹떆??
+?붴? Archive/                          ?댁쟾 HANDOFF ?꾩껜쨌?먭린 Queen 紐⑤뱶 臾몄꽌
+Assets/
+?쒋? Scripts/                          醫낅쪟蹂??댁뀍釉붾━쨌?꾩옱 肄붾뱶
+?쒋? Scenes/                           ?꾩옱 ?⑤씪???먮쫫쨌?쒗뿕 ??
+?쒋? Prefabs/PawnRushSections/          ?꾩옱 援ш컙쨌誘몃땲寃뚯엫 ?꾨━??
+?쒋? Prototype/                        援ы삎 留돠룹껜?ㅻ났?굿룰린臾?誘몃━蹂닿린
+?쒋? Resources/SharedSkills/            ?꾩옱 紐⑤뱶媛 ?곕뒗 怨듭슜 ?④낵쨌?뚮━
+?붴? Art 쨌 Materials 쨌 Settings 쨌 StreamingAssets 쨌 VFX
+ArtSource/                           Blender ?먮낯쨌?대낫?닿린 ?ㅽ겕由쏀듃
+Tools/                               ?앹꽦湲걔룰???텮I ?곌껐 ??媛쒕컻 ?꾧뎄
+```
+
+Prototype??1媛?C# ?뚯씪?7媛?asmref濡?湲곗〈 ?댁뀍釉붾━???랁븳??
+?대뜑瑜???꼈?ㅻ뒗 ?댁쑀濡?媛숈? ??낆쓣 ?ㅻⅨ ?댁뀍釉붾━??蹂듭젣?섍굅????asmdef瑜?留뚮뱾吏 ?딅뒗??
+怨쇨굅 臾몄꽌??[?꾩껜 ?꾩뭅?대툕](Docs/Archive/HANDOFF_BEFORE_R497.md)?먯꽌 ?뱀떆 寃쎈줈? ?④퍡 李얜뒗??
+
+## 6. ?대뵒瑜??쎌쓣源????묒뾽 遺꾩빞蹂??덈궡
+
+| ?묒뾽 | 癒쇱? ?쎌쓣 寃?| 洹몃떎??肄붾뱶 |
+|---|---|---|
+| 臾댁뾿?대뱺 泥섏쓬 | ???뚯씪 ??[REQUIREMENTS](Docs/Project/REQUIREMENTS.md)쨌[DECISIONS](Docs/Project/DECISIONS.md)쨌[PITFALLS](Docs/Environment/PITFALLS.md) | ?꾩옱 main??愿???뚯씪留?|
+| ?뚯씪쨌硫붾돱쨌Prototype쨌釉뚮옖移??뺣━ | [R497 ?뺣━ ?덈궡](Docs/Architecture/PROJECT_CLEANUP_R497.md) ??[STRUCTURE](Docs/Architecture/STRUCTURE.md) | 寃쎈줈 臾몄옄?는톋smref쨌硫뷀?쨌?앹꽦湲걔룰????ㅽ겕由쏀듃 |
+| ?꾩옱 ???ъ떆 留?| [PawnRush README](Docs/PawnRush/README.md) ??[援ш컙](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | PawnRushRound쨌PawnRushSection쨌SectionPrefabMenu쨌援ш컙 ?꾨━??|
+| 肄붿뒪쨌誘몃땲寃뚯엫 紐⑤뜽留겶룻뀓?ㅼ쿂 | [3?④퀎 ?꾪듃 湲곗?](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md) ??[紐⑤뜽留?吏移?(Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGamePalaceArt*쨌RoyalWaterGardenBuilder.Concept쨌ArtSource/PawnRush |
+| 誘몃땲寃뚯엫10醫?| [?ㅼ젣 ?꾨━??(Docs/PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md) ??[湲곗〈 洹쒖튃](Docs/PawnRush/PAWN_RUSH_MINIGAMES_v1.md)쨌[紐⑤뜽留?(Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGameSection*쨌MiniGamePalaceArt*쨌MissionStation쨌Mg*쨌PaintBoard |
+| ?뺤썝쨌?쨌?묒쟾 ?뚯쓽??| [?뺤썝](Docs/PawnRush/PAWN_RUSH_GARDEN.md)쨌[? ?꾪듃](Docs/PawnRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md)쨌[援ш컙](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | RoyalWaterGardenBuilder*쨌GrandStairHall*쨌WarRoomSection쨌Course01v4Builder.* |
+| 援ы삎 留돠룰린議????ъ떆 ?⑤씪??| [Prototype Course01](Docs/PawnRush/Prototype/PAWN_RUSH_COURSE01.md) ??[Prototype 湲고쉷](Docs/PawnRush/Prototype/DESIGN.md) | Assets/Prototype/PawnRush쨌SteamPawnRushLink쨌PawnRushNetState |
+| ?뚮뱶 ?뚯씠??| [PROTOTYPE](Docs/GameModes/SwordFight/PROTOTYPE.md) ??[紐낆꽭](Docs/GameModes/SwordFight/PROTOTYPE_SPEC_v1.0.md)쨌[SKILLS_ONLINE](Docs/Network/SKILLS_ONLINE.md) | SwordFightGame쨌SwordFightMatch*쨌SwordFightSkills*쨌LabNetLink.Sword |
+| 怨듭슜 ?섍렇?뙿룹엯?Β룹씠??| [RAGDOLL](Docs/Player/RAGDOLL.md) ??[MOVEMENT_INPUT](Docs/Player/MOVEMENT_INPUT.md)쨌[??(Docs/RagdollLab/README.md) | RagdollPawn*쨌RagdollDriver쨌ICharacterDriver쨌PhysicsMechanicsBed |
+| ?ㅽ궗쨌?④낵 | [Skills](Docs/Skills/README.md)쨌[VFX](Docs/VFX/README.md) ??[SKILLS_ONLINE](Docs/Network/SKILLS_ONLINE.md) | PawnRushSkills쨌SwordFightSkills쨌SkillKit쨌SharedSkills쨌VFX |
+| 留ㅼ묶쨌?뚰떚쨌?뚯꽦 | [SESSION](Docs/Network/SESSION.md)쨌[寃뚯엫 紐⑤뱶](Docs/GameModes/README.md) | SteamSession쨌GameModes쨌TeamReservations쨌SteamVoice |
+| ?대룞 ?숆린?붋룸갑?Β룹???| [MOTION](Docs/Network/MOTION.md)쨌[HOST](Docs/Network/HOST.md)쨌[HOST_AUTHORITY](Docs/Network/HOST_AUTHORITY.md) | SteamMotion쨌RagdollLabSteam쨌HostElection쨌?ㅻ깄???꾨줈?좎퐳 |
+| 濡쒕퉬쨌HUD쨌???먮쫫 | [UI](Docs/Architecture/UI.md)쨌[SCENES](Docs/Architecture/SCENES.md) | Game쨌Bootstrap쨌SceneNames쨌EditorBuildSettings |
+| Safe Mode쨌而댄뙆?셋룻겢由??ㅻ쪟 | [PITFALLS](Docs/Environment/PITFALLS.md)쨌[SETUP](Docs/Environment/SETUP.md) | 愿??asmdef쨌Editor쨌?낅젰 寃쎈줈 |
+| 寃??룸퉴??| [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md)쨌[VALIDATION](Docs/Network/VALIDATION.md) | Tools/Test-NetworkCore.ps1쨌Test-NetworkCompile.ps1쨌MiniGamePrefabValidation |
+| GPT쨌Claude 怨꾩젙 ?곌껐 | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md) ??[?곌껐 ?ъ슜踰?(Tools/AiBridge/README.md) | Tools/AiBridge |
+| ?먭린 紐⑤뱶??怨쇨굅 洹쇨굅 | [?꾩뭅?대툕](Docs/Archive/HANDOFF_BEFORE_R497.md)쨌[Queen 湲곕줉](Docs/Archive/QueenOfTheHill/README.md) | ?꾩옱 紐⑤뱶 ?깅줉?대굹 ???묒뾽 吏?쒕줈 ?ъ궗?⑺븯吏 ?딆쓬 |
+
+## 7. ?ъ슜?먯? ?쇳븯??諛⑹떇
+
+- **?쒓뎅?대줈 ?듯븳??** 肄붾뱶 二쇱꽍怨?而ㅻ컠 硫붿떆吏???곸뼱??
+- ?ъ슜?먮뒗 硫붿씤 湲고쉷?먯씠硫?肄붾뱶瑜?吏곸젒 ?곗? ?딅뒗?? 寃곌낵쨌?곹뼢쨌?щ뒗 ?쒖꽌瑜??쎄쾶 ?ㅻ챸?쒕떎.
+- ?묒뾽? **湲곗〈 `C:\Users\dua07\GitHub\ChessFighter`??main?먯꽌 吏곸젒** ?쒕떎. 異붽? ?뚰겕?몃━????紐낆떆 ?붿껌???덉쓣 ?뚮쭔 ?대떎.
+- 援ы쁽쨌?뺣━ ?붿껌? ?ㅼ젣 蹂寃승룹쟻?덊븳 寃??톗ain 而ㅻ컠쨌?몄떆源뚯? ?꾨즺?쒕떎. PR? ?붿껌???뚮쭔 留뚮뱺??
+- ???ъ슜??吏?쒓? 怨쇨굅 釉뚮옖移샕룸낫議?踰붿쐞쨌踰덊샇 洹쒖튃蹂대떎 ?곗꽑?쒕떎. 怨쇨굅 湲곕줉??"而ㅻ컠 湲덉?"瑜??꾩옱 ?꾩껜 ?묒뾽 ?쒗븳?쇰줈 ?ㅽ빐?섏? ?딅뒗??
+- ?ъ슜???섏젙蹂몄? ??뼱?곌린 ?꾩뿉 蹂댁〈?쒕떎. ?뚯씪 諛깆뾽쨌?⑥튂쨌stash? ?꾩옱 main???곸슜??寃곌낵瑜?援щ텇?쒕떎.
+- **?ъ슜?먭? Unity??Steam?먯꽌 吏곸젒 蹂닿퀬 議곗옉??寃껊쭔 '寃利앸맖/?깃났'?대씪怨?湲곕줉?쒕떎.** AI ?먮룞 寃??룸젋?붋룹퐫??愿李곗? 洹?洹쇨굅? ?쒓퀎瑜??대떎.
+- UI ?먮룞?붽? ?ъ슜???낅젰쨌Escape濡?以묐떒?섎㈃ 異붽? ?붾㈃ 議곗옉??硫덉텛怨??꾨즺??踰붿쐞? ?⑥? 踰붿쐞瑜?援щ텇?쒕떎.
+- 怨듭쑀 罹먮┃??臾쇰━쨌移대찓?셋룸꽕?몄썙?щ뒗 ?붿껌 踰붿쐞 ?놁씠 諛붽씀吏 ?딅뒗?? ?뚯씪 ?뺣━濡?寃뚯엫 洹쒖튃?대굹 ?꾨줈?좎퐳??諛붽씀吏 ?딅뒗??
+- ?ъ슜?먭? ?レ뼱?섎뒗 寃껋? ?대┃ 遺덇? UI, Safe Mode, ??덈줈 ?앷린??蹂寃쎌젏, ?쎄린 ?섎뱺 以묒꺽 ?대뜑, 洹쇨굅 ?녿뒗 ?꾨즺 二쇱옣?대떎.
+
+## 8. ?묒뾽 醫낅즺 泥댄겕由ъ뒪??
+
+1. Windows??`Tools/Test-NetworkCore.ps1`, ?꾩슂?섎㈃ `Tools/Test-NetworkCompile.ps1 -SteamRuntimeSources <Runtime 寃쎈줈>`瑜??ㅽ뻾?쒕떎. Linux??`Tools/run-tests-linux.sh --compile`???곕Ⅸ??
+2. ?붿껌? [REQUIREMENTS](Docs/Project/REQUIREMENTS.md)???좎쭨쨌?댁슜쨌寃곌낵쨌而ㅻ컠쨌?곹깭濡?湲곕줉?쒕떎.
+3. ??寃곗젙? [DECISIONS](Docs/Project/DECISIONS.md), ?ㅼ젣 寃れ? ?⑥젙? [PITFALLS](Docs/Environment/PITFALLS.md)???④릿??
+4. 蹂寃?遺꾩빞???곸꽭 臾몄꽌? ?ㅼ젣 肄붾뱶쨌?뚯씪쨌硫붾돱쨌由ъ냼??寃쎈줈瑜?留욎텣??
+5. ?ъ슜??Unity쨌Steam ?뺤씤 ??ぉ? [VALIDATION](Docs/Network/VALIDATION.md) 理쒖긽?⑥뿉 誘명솗???쒕줈 ?④릿??
+6. ???뚯씪??理쒖떊 ?좎쭨쨌踰덊샇? 짠1 ?곹깭쨌짠2 踰붿쐞쨌짠3 ?ㅼ쓬 ?묒뾽쨌짠6 寃쎈줈瑜?媛깆떊?쒕떎. 怨쇨굅 湲??대젰? ?꾩뭅?대툕???붾떎.
+7. [HISTORY](Docs/Project/HISTORY.md)??寃곌낵瑜???以?湲곕줉?섍퀬 **main??而ㅻ컠쨌?몄떆**?쒕떎. 愿???녿뒗 ?ъ슜??蹂寃쎌쓣 ?④퍡 stage?섏? ?딅뒗??
+8. 寃?щ? ?꾧굅??寃쎄퀬瑜??④꺼 ?듦낵?쒗궎吏 ?딅뒗?? ?먮룞 寃??룹궗?⑹옄 ?뺤씤쨌?뚮젅?댁뼱 鍮뚮뱶쨌Steam쨌?깅뒫??媛곴컖 援щ텇??蹂닿퀬?쒕떎.
+
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content 'C:\\Users\\Makebot2\\.codex\\skills\\.system\\imagegen\\SKILL.md' -Raw" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R511_KingsBedchamber\AssetRefs
+ succeeded in 227ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires `OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with `view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default `$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ??candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ??product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ??app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ??diagrams/infographics with structured layout and text.
+- scientific-educational ??classroom explainers, scientific diagrams, and learning visuals with required labels and accuracy constraints.
+- ads-marketing ??campaign concepts and ad creatives with audience, brand position, scene, and exact tagline/copy.
+- productivity-visual ??slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ??logo/mark exploration, vector-friendly.
+- illustration-story ??comics, children?셲 book art, narrative scenes.
+- stylized-concept ??style-driven concept art, 3D/stylized renders.
+- historical-scene ??period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ??translate/replace in-image text, preserve layout.
+- identity-preserve ??try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ??remove/replace a specific element (including interior swaps).
+- lighting-weather ??time-of-day/season/atmosphere changes only.
+- background-extraction ??transparent background / clean cutout. Ask built-in `image_gen` for actual transparency.
+- style-transfer ??apply reference style while changing subject/scene.
+- compositing ??multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ??drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in `references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI mode.
+
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content 'C:\\Users\\Makebot2\\Documents\\GitHub\\ChessFight\\HANDOFF.md' -Encoding UTF8 -Raw" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R511_KingsBedchamber\AssetRefs
+ succeeded in 212ms:
+# ChessFight HANDOFF — 모든 작업은 여기서 시작한다
+
+이 파일 전체를 읽고 §6에서 현재 작업에 필요한 상세 문서만 읽는다.
+현재 지침과 사용자의 최신 요청이 과거 기록보다 우선한다.
+작업이 끝나면 §8에 따라 코드·문서·검사 결과를 함께 마감한다.
+
+최종 갱신: **2026-11-08 · R510 H 국왕 체스 홀 컨셉 시트 3장** (seoungtest 작업 트리, 커밋 안 함). 그 전: R502 도개교 재질 견본 4종. 그 전: R498 미니게임 깜빡임 수정, R497 main 파일·메뉴·구형 맵·폐기 모드·오래된 브랜치 정리.
+다음 빈 요청 번호는 **R512**이다(R511 I 국왕 침실 채팅이 사용 중 — 1단계 좌표표·배치도·컨셉 시트 3장 [R511_KingsBedchamber](Docs/PawnRush/ConceptArt/R511_KingsBedchamber/), 기록 `ArtSource/PawnRush/MiniGames/Late/I/README.md`. R510 H 국왕 체스 홀 채팅이 사용 중 — 컨셉 시트 3장 [R510_KingsChessHall](Docs/PawnRush/ConceptArt/R510_KingsChessHall/), 사용자 확인 대기, 다음은 재질 견본 → Tripo용 에셋 시트. R509 J 왕궁 세탁장 채팅이 사용 중, R508 F 대무도회장 채팅이 사용 중, R503 B 동관·R504 G 행차 회랑·R505 D 쇠살문·R506 A 의장 광장·R507 E 왕궁 서고는 각 채팅에서 사용). R507: E 왕궁 서고 — 컨셉 시트 3장·에셋 시트 5장(GPT, [R507_RoyalLibrary](Docs/PawnRush/ConceptArt/R507_RoyalLibrary/)), 사용자 Tripo로 책장 탑(층마다 칸 모듈·호두나무 뚜껑)·손종(울리면 금빛, 램프 없음)·회전 책장 문·팀 문틀, 셸을 치우고 벽·대문·입구/출구 아치·천장으로 방 전체 재배치(`e_hall_v1.py`), B 샹들리에·벽등(불빛 코드), Blender로 직접 만든 소품 6종, 바닥 B 재질. 연결 `MiniGameModels.Library.cs`(MiniGameModels를 partial로). 사용자 Unity 확인(종 금빛·문 회전 동작은 미확인). 기록 `ArtSource/PawnRush/MiniGames/README.md` E 절. R506: A 의장 광장 컨셉 시트 3장(GPT, [R506_CeremonialCourt](Docs/PawnRush/ConceptArt/R506_CeremonialCourt/)) + 재질 견본 5종(`Early/Materials/r506_material_swatches.py`, `PR_A_*`·`PR_Early_RoofSlate`) + Tripo용 에셋 사진 3장(`R506_CeremonialCourt/AssetRefs`) + 사용자 Tripo FBX 3개 검사·손질(`Early/Source/R506_A_README.md`) → Unity 설치·배치(`MiniGameModels.ParadeCourt.cs`, Unity 확인 전). R505: D 쇠살문 컨셉 시트 3장(GPT) + 사용자 캡스턴·중앙 성문 FBX를 게임 치수로 손질하고 Unity에 연결(`MiniGameModels.Capstan`, Play 때 붙음, Unity 화면 미확인). R502: R501 모델이 원하는 스타일이 아니어서 [참고 사진 3장](Docs/PawnRush/ConceptArt/R502_DrawbridgeSheets/) 기준으로 다시 만드는 5단계 중 1단계, 재질 견본 4종(`ArtSource/PawnRush/MiniGames/Early/Materials`). R501: C 도개교 Blender 모델(`ArtSource/PawnRush/MiniGames/Early`) + Unity 연결 `MiniGameModels`. R500: 미니게임 시험 화면 안내를 단계별 세 줄(1·2·3 / 4·5·6·7 / 8·9·0)로. R499: 코스·미니게임 3단계 아트 기준 초안([PAWN_RUSH_ART_PHASES](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md)).
+사용자는 기존 정리 원칙을 바탕으로 흩어진 파일과 메뉴를 정리하고,
+KingRush 옛 이름 변경, 이전 폰 러시 맵의 Prototype 보관, Queen of the Hill 폐기,
+한 달 이상 지난 구현 브랜치 삭제를 요청했다.
+
+R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDOFF_BEFORE_R497.md)에 보존했다.
+당시의 기획·결정·튜닝 근거가 필요할 때만 그 기록을 읽는다.
+정리 범위·경로·예외·복구 방법은 [R497 정리 안내](Docs/Architecture/PROJECT_CLEANUP_R497.md)를 따른다.
+
+## 1. 현재 상태 스냅샷
+
+| 항목 | 현재 상태 |
+|---|---|
+| 작업 위치 | **`C:\Users\dua07\GitHub\ChessFighter`의 `main`에서 직접 작업**. 사용자가 새로 요청하기 전에는 추가 워크트리를 만들거나 사용하지 않는다(T13, R496) |
+| Unity | 6000.3.11f1, Windows, URP 17.3, 레거시 Input Manager(Old) |
+| 개발 중인 모드 | 폰 러시·소드 파이트 두 개. Queen of the Hill은 R497에 폐기·등록/전용 맵/스킬/시험 자원 제거 |
+| 폰 러시 현재 맵 | 구간 프리팹 조합: 정원·대계단 홀·미니게임10종·작전 회의실. 슬롯5 후반 장애물은 아직 없음 |
+| 폰 러시 온라인 경기 | 기존 Course01을 Prototype에 보관하되 온라인 호환 씬으로 유지. 새 구간 조합 코스의 온라인 연결은 아직 없음 |
+| 구형 맵 | `Assets/Prototype/PawnRush`: Course01 씬, 옛 맵 코드41개·기존 Opening 프리팹24개. GUID·기존 어셈블리 소속 유지 |
+| 기타 프로토타입 | 체스복싱은 `Assets/Prototype/ChessBoxing`, 기물 미리보기는 `Assets/Prototype/Previews` |
+| 공용 물리·기물 | 래그돌·Hook/Rope·승격·폰 러시/소드 스킬 유지. 옛 Queen 시험대는 PhysicsMechanicsBed, 개척 규칙은 PioneerCourse/PioneerRules로 재분류 |
+| 공용 스킬 자원 | `Resources/SharedSkills/Fx` 셰이더5개·`Sfx` 음원3개는 GUID 유지. 실제 사용되는 공유 자원만 남김 |
+| Unity 메뉴 | ChessFight 아래 **Pawn Rush / Sword Fight / Prototype / Development** 네 그룹. 상세 개발 도구는 Development로 |
+| 문서 | `Docs/PawnRush`가 현재 자료. 옛 맵 문서9개는 `Docs/PawnRush/Prototype`, 폐기 모드 자료는 `Docs/Archive/QueenOfTheHill` |
+| 브랜치 | 2026-10-06 22:09:42 KST 이전 마지막 커밋 기준 원격8개·로컬8개 삭제. 원격24→16, 로컬15→7. main·최근 브랜치 보존 |
+| 자동 검사 | Core162·모의 세션55·의존성/장애물 시계 정적 검사·전체 대상 외부 컴파일 통과. Unity 저장10프리팹/시험 씬 실패0·실제 Play10종 로드/문/초기화/씨앗 검사 통과 |
+| 미니게임 깜빡임 | R498: C 해자 벽·J 물 벽은 그림만 바닥 면에서 1cm(`MissionGames.LinedWall`), A 공유판 밑 금 테두리 잘라냄(`PaintBoard.ClipRims`), G 연석 1cm 밖. Play 재설치로 반영, 프리팹 재굽기 안 함. 사용자 확인 전 |
+| 미니게임 모델 | R501: C 도개교를 Blender로 모델링했다(구간 FBX + 다리·드럼 FBX, 1단계 `GC_` 재질). `MiniGameModels`가 Play 때 붙이고 코드 그림은 그리기만 끈다. 크기·판정·시스템은 그대로. Unity 화면 확인 전. **R502: 사용자가 "원하는 스타일이 아니다"** → 참고 사진 3장과 같은 재질·분위기로 다시 만든다. 도개교에는 장식 금을 쓰지 않는다(게임의 금 손잡이·눈금은 그대로) |
+| R502 재질 견본 | 크림 돌 벽돌·나무 판자·리벳 금속판·물을 Blender 입체 견본에서 이어 붙는 PBR 맵으로 구움(`Early/Materials/Textures`, Unity 미반영). `swatch_compare.png`로 사진 3과 비교. 이어서 사용자 GLB 2개로 **벽·바닥 = 돌 블록 모양 + 성탑 재질**: 1 m 모듈(6천 삼각형, 2048 맵 4장, `r502_tower_block.py`). 줄눈은 깊이의 40%만 메움. 사용자 확인 대기 **Unity 적용(11-07):** `MiniGameModels.Drawbridge.cs`가 Play 때 v2 모델(사용자 에셋)을 붙이고, `MgDrawbridge`는 권양기를 입구 쪽으로 옮김. Unity 화면 확인 전 |
+| 미니게임 구조 | 사용자(11-07, B 동관 세션에서 전달): **입구·출구 크기와 위치만 맞으면 Unity의 건축 구조(천장 등)는 바꿔도 된다.** 목표는 참고 사진과 똑같이. 게임 장치(문·다리·밧줄·손잡이)의 판정은 별도 확인. **R502 도개교: R311 C 그림 배치와 똑같이, 사용자 에셋(성탑·돌 블록·권양기·성문)을 실제 모델로. 권양기는 그림처럼 입구 쪽으로 옮김(게임 코드 변경 허용). 금색은 사용자 에셋의 금색에 맞춘다(이전 "금 안 씀" 대체).** **불빛·흔들리는 천은 코드로**(사용자 11-07, B 동관 세션 전달: "초나 이런 건 못해 … 코드로", "천도 마찬가지로 … 코드로 해야 해"): 등불·촛불은 불 없는 몸체만 모델로, 불꽃·빛나는 유리·실제 Light는 Unity 코드로 붙임. 깃발·커튼처럼 걸려 흔들리는 천도 코드(천 메시·셰이더). Blender 미리보기의 빛나는 유리·깃발은 위치 확인용. **벽은 끊김 없이**(사용자 11-07, C 행차 회랑 세션 전달: "벽은 특히 이어지는 느낌이어야 돼"): 기존 셸 벽은 치우고 모델로 대신해도 되며, 벽 모듈은 살짝 겹쳐 전체 길이를 덮고 위에 남는 높이도 같은 재질로 채운다. **에셋 사진(GPT 시트)을 줄 때는 Tripo 권장 면 수를 함께**(사용자 11-07, C 행차 회랑 세션 전달): 사진마다 "Tripo 권장 면 수: 시트 전체 약 N" 한 줄과 근거(부품 수·게임 반복 수·손질 뒤 목표), 손질 뒤 목표의 3~5배를 받는다. **다른 채팅 에셋 재사용**(사용자 11-08, H 체스 홀 세션: "다른 채팅에서 썼던 애셋들 … 겹치면 코덱스에 신청 안하고 써도 돼"): 새 에셋 시트를 Codex에 요청하기 전에 다른 미니게임이 이미 만든 모델(`ArtSource/PawnRush/MiniGames/*/Export`, `Assets/Resources/PawnRushMiniGames`)·재질(`*/Materials/Textures`)과 겹치는 부품은 그대로 가져다 쓰고, 겹치지 않는 것만 요청한다(8개 미니게임 채팅에 전달함) |
+| H 체스 홀(R510) | 1단계 컨셉 시트 3장(전경·건축 모듈·소품/재질, `codex exec`, `Docs/PawnRush/ConceptArt/R510_KingsChessHall`). 게임 숫자: 팀마다 8×8판 18 m, 기둥 c6·f3·f7(1.6×1.6×2.2 m), 0.55 m 울타리 기둥, 상대색 킹 6(파랑 팀 = 흑단, 주황 팀 = 상아), 킹 쟁반 0.7×8 m. 시트의 울타리 굵기·기둥 칸은 모델 단계에서 게임 치수로. 재질: R504 3단계 세트 7종 재사용 + 새 3종(`PR_Late_FrozenStone`·`Ebony`·`Bronze`, `Late/Materials/r510_material_swatches.py`, Unity 미반영). 다른 방 에셋 재사용 목록 `R510_KingsChessHall/REUSE.md`: 새 Codex 요청은 체스 시계·예비 기물 상자·기보 석판·홀 종 4종만 → Tripo용 시트 `R510_KingsChessHall/AssetRefs/H_assets_01_props.png`(권장 약 45,000면) 완료 → 사용자 Tripo FBX 보관·검사(`ArtSource/PawnRush/MiniGames/Late/Source/R510_H_A1_Props.fbx`, 285,180 삼각형, 판정표 `Late/Source/README.md` R510 절: 모두 줄이기·깨진 곳 없음). → Blender 손질(`Late/h_props_v1.py`·`h_board_kit_v1.py`) → 설치(`h_install_unity.py`) → **`Assets/Scripts/PawnRush/MiniGameModels.ChessHall.cs`로 배치**(G 홀 함수 재사용, 킹 `G_King` 흑단/상아 + `MiniGameKingLook` 굳은 돌, 홀 종은 체크·굳음 때 흔들림 `MiniGameHallBell`, 천장은 H만 평평한 대리석 + 사각 천창 우물 8개 `H_SkylightWell`, 팀 문 위 킹 문장 `H_TeamGateCrest`). **사용자 Unity 확인(11-08 "확인"): 방·판·킹·소품·천장.** 굳은 킹·종 울림·문장은 확인 전. 석판 기보·시계 숫자 글자판(`h_decals_v1.py`, 확인 전). H 전용 효과 `CheckmateFx`(확인 전). 남은 후보: H 효과음(체크·메이트·잡기·구출·스테일메이트 wav가 없어 지금 무음) 컴파일 통과, **Unity 확인 전**(VALIDATION 맨 위, Play 9번), 코드 변경 없음 |
+| B 동관 아트(R503) | 사용자 Tripo 모델 + Blender 손질(`ArtSource/PawnRush/MiniGames/Mid`, 상세는 그 `Materials/README.md`)로 방 전체를 다시 세움: 가운데 장식 대문, 옆벽 1·2층 아치 창(유리 없이 창밖이 보임), 회랑·난간(한 줄), 처마·호두나무 들보·천장, 팀 문 아치, 입구·출구 아치, 복도 벽, 틈을 메우는 크림 돌 채움 벽, 판자 모델·틈 아래 지하·장선·비계, 바닥 재질 3종. 불빛·천은 코드(`MiniGameFixtures.cs`). `MiniGameModels.RepairWing`이 B 게임에서만 붙이고 R312 셸 그림은 전부 끔. 충돌·규칙·입구/출구 그대로. **사용자 Unity 확인됨(11-07)**, 커밋 없음 |
+| F 대무도회장(R508) | 진행 중(11-08): 컨셉 시트 3장·재질 견본(B 4종 재사용 + 새 4종: 무도회장 크림 대리석·쪽마루·자두색 벨벳·회색 거울)·재사용 목록 `Docs/PawnRush/ConceptArt/R508_ClockworkBallroom/REUSE.md`(방 껍데기는 E·B, 계단·줄 기둥 G, 화분 A·D)·에셋 시트 3장. 무용수 2종·태엽 열쇠는 Blender로 직접(`Mid/f_dancers_v1.py`, 인형 느낌, 의상 재질 칸은 Unity에서 상대 팀색), Tripo 8부품 손질(`Mid/f_props_v1.py`). **거울은 Tripo로 만들지 않음**(사용자 "막혀서 거울 같은 느낌이 없잖아" → "방만 비침"): 빈 틀 + `MIRROR_Surface` 판, Unity 거울 재질·반사 프로브. Unity 설치(`Mid/f_install_unity.py`)·연결(`MiniGameModels.Ballroom.cs`: 방은 E 껍데기에서 책장만 뺀 `F_HallEnv`, 무용수 인형·쪽마루 레인·벨벳 벤치·거울 문·벽 거울·스포트라이트·소품, 반사 프로브) 완료. 거울 문은 실시간 반사 카메라 + `PR_MirrorGlass` 셰이더(사용자 "실제로 반사 되게"; 품질 설정의 실시간 프로브가 꺼져 있어 프로브만으로는 하늘이 비쳤음), 벽 거울은 시작 때 찍는 큐브맵 프로브, 잡을 수 있는 무용수 스포트 빛·간판 — 여기까지 사용자 Unity 확인(11-08). 이어서 창가 휘장(코드 천)·무대 테두리 황동(확인 전). 기록 `ArtSource/PawnRush/MiniGames/README.md` F 절. 휘장·테두리도 사용자 Unity 확인(11-08), 커밋 없음 |
+| J 세탁장 아트(R509) | 1단계: 게임 좌표 표·위에서 본 배치도(`ArtSource/PawnRush/MiniGames/Mid/J/`), 컨셉 시트 3장(`Docs/PawnRush/ConceptArt/R509_PalaceLaundry`). 전경 그림은 한쪽 통 7개라 배치는 배치도가 기준. 사용자 확인됨(11-08 "확인, 다음 단계"). 2·3단계: 재질 견본 새 3종(`Mid/Materials/r509_material_swatches.py` → `PR_Mid_WhiteTile`·`OakStaves`·`DollLinen`, 나머지는 B 재사용, Unity 미반영)과 Tripo용 에셋 시트 5장(`R509_PalaceLaundry/AssetRefs`, 권장 면 수는 J README 표). 다른 채팅 모델 재사용 지시(11-08)에 따라 벽·대문·팀 문틀은 B/E 모델, 수조 벽·출발대는 Blender 상자로 하고 **Tripo는 3장만**(통·분출구·수문 문짝·바퀴를 합친 `J_tripo_01_tub_sluice.png` / 인형 6종 / 소품). 통·수문 FBX를 받아 `Mid/J/j_props_v1.py`로 손질 → `Mid/Export/J_Tub`(7천, 원점 뚜껑 윗면)·`J_Nozzle`(Tripo가 찢어져 Blender로 새로)·`J_Leaf`(3.85×4.55)·`J_Wheel`(1.2 m). `Mid/J/j_install_unity.py`로 설치하고 `MiniGameModels.Laundry.cs`(Apply에 J 한 줄)가 Play 때 통·분출구를 길 칸·점프대에, 수문 문짝을 팀 문에, 바퀴를 문 바깥 벽에 붙임(충돌·규칙 그대로) → **사용자 Unity 확인(11-08)**. 이어서 방: `Mid/J/j_hall_v1.py`가 E 방 스크립트를 불러(고치지 않음) 벽 책장을 빼고 흰 타일 허리 1.5 m + 호두나무 띠를 더한 `J_HallEnv`, 수조 흰 타일 `J_BasinEnv`(스테이션 좌표, 검은 팀은 뒤집음). Unity는 E의 조명·팀 문틀·깃발·바닥 재질 재사용, 셸 숨김. 컴파일·Core 162·모의 세션 55 통과, **방·수조 사용자 Unity 확인(11-08)**. 비눗물: 사용자 "색은 좋은데 물 처럼 안보여" → C 물 셰이더는 햇빛 의존이라 실내에서 밋밋 → J 전용 실내 물 셰이더 `PR_SoapyWater.shader`(실내 빛 코스틱·샹들리에·창 광택 반짝임·타일 일렁임) + `Mid/J/PR_Mid_J_SoapyWater.mat`(색 유지·더 맑게, 값 살짝 더) → 사용자 Unity 확인(11-08). 빨랫줄: 옆벽 창 칸마다 4.2 m 줄 + 흔들리는 흰 리넨 시트(`LaundryLines`, `MiniGameBannerCloth` 재사용, `PR_Mid_J_Linen`) → 사용자 Unity 확인(11-08). 소품 7종은 사용자 선택으로 Blender 직접(`Mid/J/j_laundry_props_v1.py` → `J_PropsEnv`, E 소품 도구 재사용, 입구 모서리·뒤 복도 끝) → 사용자 Unity 확인(11-08). 인형 6종도 사용자 선택으로 Blender 직접(`Mid/J/j_dolls_v1.py` → `J_Doll_*`, 나이트는 옆을 봄, Unity `LaundryDolls`가 기물에 걸고 상대 기물색 몸 + 상대 팀색 테두리로 칠함) → 사용자 Unity 확인(11-08). **세탁장 아트 전 항목 사용자 확인**, Tripo 대기 없음. J 재질 `.meta` 5개 바로잡음(E 설치 도구 버그, E·B `.meta`도 같은 문제 — 미수정). **인형·소품 FBX 대기**, 비눗물 셰이더·빨랫줄 시트(코드) 남음. 커밋 없음 |
+| I 침실 아트(R511) | 1단계(11-08): 게임 좌표 표·배치도(`ArtSource/PawnRush/MiniGames/Late/I/`), 컨셉 시트 3장(`Docs/PawnRush/ConceptArt/R511_KingsBedchamber`: 전경·건축 모듈·소품/재질). 판은 H와 같은 자리(팀마다 8×8, 2.25 m, 파랑 x −21~−3·z 6~24), 저대비 베이지 카펫 #CBBF9F/#A79A7C, 킹 침대는 7랭크 c~f(매 판 다름), 빛줄기 단 위 1.1 m. 침대·수레·공격 기물은 씨앗마다 칸이 바뀌는 움직이는 모델이라 건축은 판 밖에만. 전경은 분위기 참고용(빛줄기 몇 개가 플레이어에서 나옴), 배치는 배치도 기준. **사용자 확인 대기** → 다음: 재질 견본(G·H 3단계 세트 재사용 + 카펫 2종·레일 월넛 등) → 재사용 목록(G 벽·창·천창·계단·팀 문·난간, H 천창 우물, F 벤치·화분, 재질 담비털·벨벳) → Tripo용 에셋 시트(침대·방패 수레·옷장·세면대 등 없는 것만). 코드 변경 없음, 커밋 없음 사용자 확인(11-08 "확인, 다음 단계") → 2·3단계: 재질 견본 새 2종(`Late/Materials/r511_material_swatches.py` → `PR_Late_I_CarpetLight`·`CarpetDark`, 나머지 9칸 재사용, Unity 미반영), 재사용 목록 `R511_KingsBedchamber/REUSE.md`(공격 기물은 기존 `PR_Piece_*`), Tripo용 에셋 시트 2장 `R511_KingsBedchamber/AssetRefs`(침대·방패 수레 약 55,000 / 침실 소품 6종 약 40,000). **사용자 Tripo 대기.** |
+| 사용자 확인 | R497 이후 Unity 화면·입력·온라인·실제 퍼즐 완주·12명 성능은 사용자 확인 전 |
+
+브랜치 삭제 전16개 참조를 bundle·manifest·복구 안내로 보관하고 bundle 검사를 통과했다.
+보관 위치: `C:\Users\dua07\Desktop\개발일지\2학기 프로젝트수업\체스파이트\Backups\R497-Branches-20261106-221133`.
+약7.9 MB의 Git bundle이며 LFS 바이너리를 별도 포함하지 않는다. 기존 LFS 캐시는 보존했다.
+R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 기록도 정리 작업이 임의로 버리지 않는다.
+
+## 2. 무엇이 되고 무엇이 안 되는가
+
+- **현재 편집할 폰 러시**: `ChessFight → Pawn Rush → Open Section Test`.
+- **미니게임만 선택**: `ChessFight → Pawn Rush → Open Mini-game Prefab Test`; 숫자1~0, F5 팀, F8 초기화.
+- C/D/A는 초반, B/E/F/J는 중반, G/H/I는 후반 후보로 슬롯2/4/6에3/4/3개 등록돼 있다.
+- 슬롯1 정원 → 슬롯2 초반 미니게임 → 슬롯3 홀 → 슬롯4 중반 미니게임 → 슬롯6 후반 미니게임 → 슬롯7 작전 회의실로 이어진다.
+- 미니게임의 건축·장식은 저장된 프리팹이다. Play에는 Game socket의 기능 게임만 다시 설치한다.
+- 자동 완료(F6/ForceComplete)는 이벤트·팀 문 연결 검사다. 실제 장치를 풀어서 달성했다는 뜻이 아니다.
+- 정원·홀·작전 회의실의 일부 아트는 Play에 만들어진다. 편집 모드의 빈 루트만 보고 자산 누락으로 판단하지 않는다.
+- **Prototype Course01**은 기존 온라인 경기가 호출하는 씬이다. 씬 이름 `PawnRush_Course01`, 로비 키 `kingrush`, 기존 통신 구조는 유지한다.
+- `GameModes.KingRush` 이름과 `ModeRetiredQueenHill = 1` 같은 예약 통신 값은 파일 정리 때문에 바꾸지 않는다.
+- Queen of the Hill을 새 모드로 다시 등록하지 않는다. Queen 기물 자체는 다른 모드가 쓰므로 유지한다.
+- 새 Sections 코스를 기존 Course01 온라인 흐름에 연결했다고 말하지 않는다. 기존 Steam 흐름의 변경도 이번 범위가 아니다.
+- R497 실제 Unity 저장10프리팹/시험 씬 실패0, Play10종의 기능 캐시·자기 팀 문·2번 초기화·씨앗 재생성·A 인스턴스 분리·I 외형 유지 자동 검사 통과. [VALIDATION](Docs/Network/VALIDATION.md)에 범위와 한계를 기록했다.
+- AI의 컴파일·자동 검사·렌더 관찰과 사용자가 Unity/Steam에서 직접 보고 조작한 확인을 구분한다.
+
+## 3. 진행 중인 일과 다음 할 일
+
+1. 자동 검사와 별개로 새 메뉴·로비 두 모드·현재/Prototype 장면을 Unity GUI에서 살펴보고 [확인 목록](Docs/Network/VALIDATION.md)에 사용자 결과를 기록한다.
+2. 사용자는 기존 프로젝트에서 네 메뉴 그룹, 미니게임 선택·팀 전환·초기화, Intro→Lobby→두 모드를 확인한다.
+3. 폰 러시 각 퍼즐의 실제 입력·문 통과·복귀 동선과12명 성능을 확인한다.
+4. 구형 맵을 고칠 때는 Prototype 문서를 먼저 읽는다. 현재 구간 코스와 구형 온라인 코스를 같은 것으로 취급하지 않는다.
+5. 새 구간 코스의 온라인 연결은 별도 설계·요청으로 진행한다. 이번 정리로 프로토콜을 새로 정의하지 않았다.
+6. R498 깜빡임 수정을 Play에서 1·3·7·8번으로 확인한다([VALIDATION](Docs/Network/VALIDATION.md) 맨 위). 편집 모드 프리팹까지 바꾸려면 동료 수정 여부를 확인한 뒤 Build All을 다시 굽는다.
+7. **C 도개교 다시 만들기(R502, 단계마다 사용자 확인 후 다음으로):** ① 재질 견본 4종 → 성탑 재질 돌 블록 모듈로 확정 ② Unity 1단계 조명·후처리 프로필(따뜻한 햇빛·부드러운 그림자·SSAO·약한 Bloom·밝고 따뜻한 색 보정) + 물 셰이더(청록·코스틱·가장자리 거품), 견본 벽+물+폰으로 확인 → 사용자 확인됨(11-07 "열어 봤어, 괜찮아") ← **지금 ③** ③ 해자변 벽 구간(사진 2의 5·6번) 하나로 모양 확인 ④ 장치 → 건축 → 소품 ⑤ R501 FBX 자리에 교체(`MiniGameModels` 연결·게임 크기 그대로). 그 뒤 D·A로 이어간다. 미니게임 모델링은 [3단계 아트 기준](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md) §5의 결정 5가지를 먼저 정하고 C·E·G부터 만든다. FBX가 나오면 미니게임 FBX 연결 코드가 필요하다. **현재(11-07):** ③~⑤를 사용자 Tripo 에셋으로 한 번에 진행해 C 도개교 v2를 Unity에 붙였다(`c_drawbridge_v2.py` → `c_drawbridge_v2_export.py` → `c_install.py`, `MiniGameModels.Drawbridge.cs`). 권양기 장치는 도르래 방식(앞쪽 권양기 x ±16, 줄이 쇠판 궤도를 따라 해자 앞 기둥의 도르래 2개를 돌아 x ±18.4로 나란히 돌아 나오고, 폰은 그 매듭을 앞쪽으로 7 m 당김, 모두 다리 밖. 쇠사슬은 망루 꼭대기 고리→상판 끝 고리, 망루 쇠판 제거). 팀 통로·뒤 복도에 바닥·벽을 깔고 뒤 지붕 탑을 y 41로 옮겨 통로를 틔움. 망루는 사용자 Unity 확인(11-07). 사용자 Unity 확인 전([VALIDATION](Docs/Network/VALIDATION.md) "C 도개교 v2 Unity 적용").
+8. 다음 새 요청은 **R508**부터 기록한다. **A 의장 광장(R506)**: (11-08) 붓 칠 시안 A 채택·소리 다시 넣음(Unity 확인 전, VALIDATION 맨 위).  컨셉 시트 3장(`Docs/PawnRush/ConceptArt/R506_CeremonialCourt`)과 재질 견본 5종(`ArtSource/PawnRush/MiniGames/Early/Materials/r506_material_swatches.py` → `Textures/PR_A_Slate`·`PR_A_IvoryLimestone`·`PR_A_Basalt`·`PR_A_CourtPaving`·`PR_Early_RoofSlate`, 비교 `r506_swatch_compare.png`) 완료, 사용자 확인 전. 광장 포장·지붕 슬레이트는 D 쇠살문의 남은 바닥 포장·지붕에도 쓸 수 있다. 흰 배경 에셋 사진 3장도 완료(`Docs/PawnRush/ConceptArt/R506_CeremonialCourt/AssetRefs`: 정문 약 10만·구조 6종 약 4.5만·소품 8종 약 6만 면 권장, 깃발 천·왕관 문장·불빛·유리 없음, 팀 문짝은 게임 문짝 한 장 3.85×4.55 m에 맞춤). 사용자 Tripo FBX 3개는 `ArtSource/PawnRush/MiniGames/Early/Source/R506_A_*.fbx`에 보관·검사함(부품 15개 판정표 `Source/R506_A_README.md`, 늘릴 것 없음, 깨진 것: 탑 아래 몸통·입구 기둥 받침·버섯 모양 벤치·칠통 흰/검은 색 없음). 사용자 지시("Blender로 고쳐")로 `Early/a_props_v1.py`에서 15개를 손질·수리해 `Early/Export/A_*.fbx`로 내보냄(정문 25,000 삼각형 등, 렌더 `Early/render_a_prop_*.png`). 남은 점: 정문 오른쪽 탑 위 작은 검은 자국, 팀 아치 폭 9.25 m라 정문(±10 m)과 겹침 → 배치 때 기둥 좁히기. 사용자 지시("Unity 배치 진행")로 `Early/a_install.py`가 Assets에 설치하고 `Assets/Scripts/PawnRush/MiniGameModels.ParadeCourt.cs`가 Play 때 배치(정문 z 24·팀 아치 ±12·성벽·탑·입구 기둥·사이프러스·화분·벤치·정원 담·칠 소품, **성벽·난간(낮은 정원 담)은 틈 없이 모듈 1/5씩 겹치고 정문 옆·뒤는 돌 벽돌로 채움**(사용자 11-07 "난간이랑 벽 틈 있게 하지마"), 팀 문짝은 게임 문과 함께, 깃대는 황동 모델 + 흔들리는 천, 바닥 크림 판석), `PaintBoard` 칸은 슬레이트·상아 석회암·현무암(그림만). 컴파일·Core 162·모의 세션 55 통과, **사용자 Unity 확인됨**(11-07 "확인", VALIDATION). 이어서 깃발·문장을 코드로: `Early/a_banner_tex_v1.py` 텍스처 4장(크림 왕관 깃발 2·팀 방패 깃발 2) → 깃대·팀·뒤 통로 깃발, 정문 양옆 긴 왕관 깃발, 흉벽 위 황동 왕관(`ParadeGatehouseDress`); 사용자 "벽 때문에 지붕이 가려져" → 셸 북쪽 바깥 벽 덩어리(11 m)를 끄고 5 m 성벽 양면으로 바꿔 모서리 탑 지붕이 드러나게, 정문 탑 옆 채움 6.3 m로; "떠 보이지 않게" → 정문·깃발·왕관을 단 높이 0.4 m로 올리고 정문 아래·앞에 판석 바닥(`Gatehouse floor`); "sfx랑 vfx도 해줘" → ElevenLabs 효과음 5개(`Early/Sfx/a_sounds.py` → `Assets/Resources/PawnRushMiniGameSfx/sfx_paint_*.wav`·`sfx_rank_complete.wav`, 귀로 확인 전)와 `PaintBoard` 시각 효과(칠하는 중 반짝이·완료 빛기둥·한 줄 금 고리·팀 완성 색종이) → 사용자 "이런 vfx 말고"(원기둥 빛기둥) → A 전용 입자 효과 `PaintBoardFx.cs`로 교체(빛 알갱이·물감 자국·물감 방울·빛 고리·별 반짝이·색종이, 원기둥·네모 조각 없음); "채워지는 소리가 날카로워" → 칠하는 중 소리를 낮고 둥근 소리로 새로(`Sfx/Source/paint_charge_soft_*`, 중심 약 300 Hz) → 사용자가 고른 방향으로 다시: 채우는 소리 = 붓질 스윽(`paint_charge_brush_take3`), 완료 소리 = 도장 쾅(`paint_done_stamp_take3`). 테이크를 바꾸려면 `Early/Sfx/a_sounds.py`. 칠하는 동안 한 획 붓질 8종(`sfx_paint_stroke_1~8`)을 섞은 순서로 이어 재생(`PaintBoard.Stroke/NextStroke`, 연속 문지름 소리는 지움). 25·50·75 % 팀 문 효과는 A 전용 `PaintGateFx.cs`(물감 방울 분수·별 반짝이, 원 없음, 효과음 없음; 사용자 지시, C 세션 전달). **이후 사용자 "사운드는 다 없애고": A 소리 전부 끔·wav 삭제(공용 완료 알림음만 남음), 칠하기는 붓이 칸을 지그재그로 칠해 나가는 그림(`PaintBoard.BrushMaps/StrokeMaterial/BrushTip`), 물감 요철 노멀 맵·젖은 광택, 칸 위를 오가는 붓 모델(`Brush/PlaceBrush`); 칠은 칸별 텍스처에 붓 자국을 매 프레임 찍는 실시간 그리기(`StartPaint/PaintTo/Stamp/PathUV`).** Unity 확인 대기(미니게임 시험 3번). 다시 손질하면 `a_props_v1.py` → `a_install.py` 순서 → `MiniGameModels`로 연결. 체스판 칸 판·칠하는 판은 게임 코드(`PaintBoard`)가 그리므로 판정·크기는 그대로 두고 재질만 바꾼다. D 쇠살문(R505): 캡스턴(`D_Capstan_Static`/`Bars`)·중앙 성문(`D_CenterGate`)은 사용자 확인됨, 팀 아치·쇠살문(`D_TeamArch`/`D_Portcullis`)은 연결했고 Unity 확인 전, 사암 구조 세트는 사용자가 쓰지 않기로 함(11-07, 연결·파일 되돌림). 남은 부품(도르래 들보·벽·포장·입구 기둥·등불 틀·소품)은 GPT 시트로 Tripo용 2장(`Docs/PawnRush/ConceptArt/R505_PortcullisCourt/AssetRefs`: `D_assets_04_structure_bundle.png` = 바퀴 없는 도르래 틀·바퀴·벽·포장·입구 기둥·등불 틀, `D_assets_02_props.png` = 소품; 바퀴는 캡스턴과 함께 돌릴 예정)을 만들었고, 사용자가 준 Tripo FBX 2개는 전체 약 5천 삼각형이라 부품별 판정(바퀴·사슬 더미·투구·화분·등불은 늘리기 = Tripo 다시 내보내기, 포장은 줄이기, 도르래 틀은 고정쇠 빠짐; `ArtSource/PawnRush/MiniGames/Early/Source/README.md`). **원칙: 줄이기는 Blender, 늘리기는 Tripo 재내보내기 → Tripo는 면 수 넉넉하게.** 이번 것은 사용자 지시로 Blender에서 늘리며 맞춤(`Early/d_props_v1.py`, 부품 10개 `Early/Export/D_*.fbx`, 바닥 포장 제외) → `MiniGameModels.Court`·`CapstanChain`으로 배치·연결함(셸 옆벽 숨기고 `D_Wall`×1.3을 빈틈 없이, 도르래 바퀴·사슬은 `MiniGamePulleyChain`으로 캡스턴과 함께 돌며 사슬이 바퀴 위로 감겨 흐름). **사용자가 Play 2번에서 확인함**(11-07, [VALIDATION](Docs/Network/VALIDATION.md)). 등불 불빛(`MiniGameFlame`)·흔들리는 깃발(`MiniGameBannerCloth`)도 코드로 붙임(Unity 확인 전). 벽·아치·성문 구멍은 `ArtSource/PawnRush/MiniGames/Early/mg_holes.py`(속 채움·앞쪽 절반 뒤집기)로 막았고 사용자 확인됨. 바닥 포장은 numpy 크림 판석 텍스처(`Early/Materials/r505_paving.py`)를 `MiniGameModels.Paving`으로 입힘(사용자 확인됨). 캡스턴 몸통 판자 틈은 `d_capstan_v1.py` `core()` 속심으로 막음(사용자 확인됨), 2차로 몸통 22k 삼각형·속심 중간 밝기로(Unity 확인 전). 사이프러스 나무는 Blender로 직접 만듦(`Early/d_cypress_v1.py` → `D_Cypress`, `MiniGameModels.Cypresses`, 스테이션마다 3그루, 셸의 옛 공 모양 나무는 숨김, 사용자 확인됨). 컨셉에서 남은 것: 모서리 성탑 — GPT 시트 `Docs/PawnRush/ConceptArt/R505_PortcullisCourt/AssetRefs/D_assets_05_tower.png`(Tripo 권장 약 50,000면) → 사용자 Tripo FBX를 `Early/d_tower_v1.py`로 13.5 m·14k 삼각형으로 맞춰 `D_CornerTower`로 (±23, 0, 25)에 둠(사용자 확인됨, `Early/Source/README.md`). 이로써 컨셉의 부품은 모두 들어감. 뒤 벽 바깥쪽(|x| 9.7~22) 셸 상자는 `MiniGameModels.NorthWall`이 옛 네모 탑·기둥·판돌을 숨기고 돌 벽돌을 입히며, 벽 위에 `D_Wall` 흉벽(사용자 확인됨). 중앙 성문 문짝 아래 틈은 `d_center_gate_v1.py threshold()` 판석 문턱으로 막음, 팀 문 통로 바닥 양옆 틈은 `MiniGameModels.PassageEdges` 판석 띠로 막음(둘 다 Unity 확인 전). 소리·효과는 `Assets/Scripts/PawnRush/MiniGameCourtFx.cs`(캡스턴 돌리기·사슬 고리 소리, 한 바퀴마다 쿵·먼지, 다 열림 소리·먼지·불꽃; ElevenLabs 테이크 `Early/Sfx/Takes`, 기본 테이크 넣음; 다 열림은 D 팀 문을 4초로 늦추고 사용자가 고른 chain 3을 그동안 반복; 돌리는 소리는 나무 시안 B 4번, 쇠살문 소리는 쿵 4번·열림 2번(4초, 한 번 재생), 사슬은 드럼 B3·도르래 C3, 모두 사용자 선택, Unity 확인 전). **공용:** 25/50/75 % 진행 때 팀 문 바닥의 금빛 원과 진행 알림음(`sfx_mg_quarter`)은 사용자 지시로 모든 미니게임에서 뺐다(`ArenaDressing`, 11-07). 각 미니게임은 원 없는 자기 그림 효과만 둔다. `MiniGameModels.Apply`는 시작할 때 스테이션의 `IGateFx`를 모두 지운다(`ClearGateFx`, 11-08: 게임을 바꿔도 앞 게임 효과가 남던 문제). 각 게임은 자기 `Apply`에서 다시 붙이면 된다. 등불 불빛·깃발은 코드로. 앞의 두 모델 모델을 `Assets/Resources/PawnRushMiniGames/Early/D`에 넣고 `MiniGameModels.Capstan`으로 연결(막대는 `Capstan bars`에 붙어 함께 돎) → **사용자가 Unity Play 2번에서 확인함**(11-07, [VALIDATION](Docs/Network/VALIDATION.md) 맨 위, [Early/Source](ArtSource/PawnRush/MiniGames/Early/Source/README.md)). 다시 손질하면 Blender 스크립트 → `d_install.py` 순서.
+
+다른 채팅의 진행 상태와 과거 제한은 원본 아카이브의 날짜·브랜치를 확인해 해석한다.
+현재 사용자 작업 위치(main/기존 경로)와 최신 사용자 지시가 우선한다.
+
+## 4. 절대 규칙 — 어기면 과거에 실제로 사고가 났던 것들
+
+1. **Active Input Handling은 `Input Manager (Old)`(0)로 둔다. Input System 패키지는 설치하지 않는다**(`JY-lobby`, R20: 설치돼 있으면 켤 때마다 백엔드를 켜라는 창이 뜬다). uGUI가 없어서 Both/New로 바꾸면 HUD 클릭과 입력이 전부 죽는다. `InputSettingsGuard`가 자동으로 되돌린다. → [PITFALLS §1](Docs/Environment/PITFALLS.md)
+2. **프로젝트는 선택 패키지가 하나도 없어도 컴파일되어야 한다.** Safe Mode에서는 설치 스크립트가 돌지 않는다. 선택 패키지 코드는 전용 asmdef + `versionDefines` + `defineConstraints`로 가둔다. `ENABLE_INPUT_SYSTEM`을 패키지 설치 여부로 쓰지 않는다.
+3. **`Packages/manifest.json`·`packages-lock.json`이 바뀌면 Discard하지 말고 커밋한다.**
+4. **폴더 하나 = 어셈블리 하나.** `Game`·`Gameplay`는 Steam을 참조하지 않는다. `Core`는 Unity도 참조하지 않는다. → [Architecture/STRUCTURE](Docs/Architecture/STRUCTURE.md)
+5. **Steam 초기화·종료 소유자는 `NetworkRuntime` 하나다.** SteamManager를 따로 추가하지 않는다.
+6. **HUD에는 기본 테마가 없다.** ScrollView·Dropdown 같은 복합 컨트롤은 보이지 않는다. 평범한 VisualElement만 쓴다.
+7. **장애물 위치·회전은 `ObstacleClock` 시간의 순수 함수로만 계산한다(스스로 움직이는 kinematic 물체는 `Obstacle`을 상속, 테스트 스크립트가 검사. 플레이어 상태로 움직이는 것은 `StateDrivenMover:` 주석을 달고 오프라인 전용).** 프레임마다 누적하지 않는다. 온라인 래그돌 참가자는 방장이 스냅샷에 실은 장애물 시각을 쓴다(R51).
+8. **클라이언트는 입력만 보낸다.** 좌표를 권위로 받지 않는다. 파티는 같은 팀에 통째로 예약한다.
+9. **네트워크 비호환 변경을 하면 `SteamSession.Protocol`을 올린다.** 패킷 구조를 바꾸면 `MotionProtocol` magic도 올린다.
+10. **검증 표기는 정직하게 한다.** 사용자가 Unity나 Steam에서 직접 본 것만 VALIDATION에 '성공'으로 적는다. 코드 작성과 테스트 통과는 검증이 아니다.
+11. **`.meta`는 항상 같이 커밋한다.** Unity 밖에서 파일을 만들면 `Tools/Generators/mkmeta.py`로 만든다.
+12. **같은 `.unity` 씬을 두 사람이 동시에 고치지 않는다.** 맵은 구간 프리팹으로 나눈다.
+13. **네트워크·게임 코드(`Assets/Scripts`의 Core·Network·Game·Gameplay·Bootstrap·Input·Editor)는 래그돌 타입을 참조하지 않고, 래그돌(`Assets/Scripts/RagdollLab`, 10-08 폴더 정리 전 `Assets/ChessFight/RagdollLab`)은 Steam을 참조하지 않는다.** 랩을 Steam에 잇는 코드는 `Assets/Scripts/RagdollLabSteam/`(Bootstrap과 같은 다리)에만 둔다. 캐릭터는 `ICharacterDriver`로만 부른다. `Tools/run-tests-linux.sh`의 경계 검사가 확인한다.
+14. **물리 콜백(`OnCollision*`·`OnTrigger*`) 안에서 순간이동하거나 관절을 즉시 지우지 않는다.** Unity가 `DestroyImmediate`를 거부해 잡기 관절이 남는다. 알리기만 하고 다음 Update에서 처리한다(`WaterZone` → 시험대·`PlaytestSpawner`). → [PITFALLS §19](Docs/Environment/PITFALLS.md)
+15. **(`claude/host-migration`부터) 경기 상태를 방장 PC에만 두지 않는다.** 방장은 경기 중에 바뀔 수 있다([HOST](Docs/Network/HOST.md)). 점수·타이머·모드 상태는 스냅샷이나 로비 데이터에 실어 모두가 갖고 있게 한다. 방장만 아는 값은 이전 때 사라진다.
+
+## 5. 문서 트리
+
+```text
+HANDOFF.md                           현재 상태·규칙·작업 경로
+Docs/
+├─ Project/                          REQUIREMENTS · DECISIONS · HISTORY
+├─ Architecture/                     STRUCTURE · SCENES · UI · PROJECT_CLEANUP_R497
+├─ Environment/                      SETUP · AI_WORKFLOW · PITFALLS
+├─ Network/                          SESSION · MOTION · HOST · HOST_AUTHORITY · VALIDATION
+├─ Player/                           MOVEMENT_INPUT · RAGDOLL
+├─ RagdollLab/                       공용 물리 시험·어댑터 설명
+├─ Skills/                           폰 러시·소드 파이트 스킬
+├─ VFX/                              공용 효과·작업대
+├─ PawnRush/                         현재 폰 러시 맵·구간·미니게임 자료
+│  ├─ PAWN_RUSH_SECTIONS.md           구간 목록·연결·시험
+│  ├─ PAWN_RUSH_MINIGAME_SECTIONS.md  실제10종 프리팹·여는 법·수정 주의
+│  ├─ PAWN_RUSH_MINIGAME_MODELING.md  건축·소품·피벗·이동 공간
+│  ├─ Prototype/                     Course01·이전 Opening/Castle/Final 기획
+│  └─ ConceptArt/                    모델링 이미지·검사 자료
+├─ GameModes/SwordFight/              소드 파이트 기획·프로토타입·시연
+└─ Archive/                          이전 HANDOFF 전체·폐기 Queen 모드 문서
+Assets/
+├─ Scripts/                          종류별 어셈블리·현재 코드
+├─ Scenes/                           현재 온라인 흐름·시험 씬
+├─ Prefabs/PawnRushSections/          현재 구간·미니게임 프리팹
+├─ Prototype/                        구형 맵·체스복싱·기물 미리보기
+├─ Resources/SharedSkills/            현재 모드가 쓰는 공용 효과·소리
+└─ Art · Materials · Settings · StreamingAssets · VFX
+ArtSource/                           Blender 원본·내보내기 스크립트
+Tools/                               생성기·검사·AI 연결 등 개발 도구
+```
+
+Prototype의41개 C# 파일은7개 asmref로 기존 어셈블리에 속한다.
+폴더를 옮겼다는 이유로 같은 타입을 다른 어셈블리에 복제하거나 새 asmdef를 만들지 않는다.
+과거 문서는 [전체 아카이브](Docs/Archive/HANDOFF_BEFORE_R497.md)에서 당시 경로와 함께 찾는다.
+
+## 6. 어디를 읽을까 — 작업 분야별 안내
+
+| 작업 | 먼저 읽을 것 | 그다음 코드 |
+|---|---|---|
+| 무엇이든 처음 | 이 파일 → [REQUIREMENTS](Docs/Project/REQUIREMENTS.md)·[DECISIONS](Docs/Project/DECISIONS.md)·[PITFALLS](Docs/Environment/PITFALLS.md) | 현재 main의 관련 파일만 |
+| 파일·메뉴·Prototype·브랜치 정리 | [R497 정리 안내](Docs/Architecture/PROJECT_CLEANUP_R497.md) → [STRUCTURE](Docs/Architecture/STRUCTURE.md) | 경로 문자열·asmref·메타·생성기·검사 스크립트 |
+| 현재 폰 러시 맵 | [PawnRush README](Docs/PawnRush/README.md) → [구간](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | PawnRushRound·PawnRushSection·SectionPrefabMenu·구간 프리팹 |
+| 코스·미니게임 모델링·텍스처 | [3단계 아트 기준](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md) → [모델링 지침](Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGamePalaceArt*·RoyalWaterGardenBuilder.Concept·ArtSource/PawnRush |
+| 미니게임10종 | [실제 프리팹](Docs/PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md) → [기존 규칙](Docs/PawnRush/PAWN_RUSH_MINIGAMES_v1.md)·[모델링](Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGameSection*·MiniGamePalaceArt*·MissionStation·Mg*·PaintBoard |
+| 정원·홀·작전 회의실 | [정원](Docs/PawnRush/PAWN_RUSH_GARDEN.md)·[홀 아트](Docs/PawnRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md)·[구간](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | RoyalWaterGardenBuilder*·GrandStairHall*·WarRoomSection·Course01v4Builder.* |
+| 구형 맵·기존 폰 러시 온라인 | [Prototype Course01](Docs/PawnRush/Prototype/PAWN_RUSH_COURSE01.md) → [Prototype 기획](Docs/PawnRush/Prototype/DESIGN.md) | Assets/Prototype/PawnRush·SteamPawnRushLink·PawnRushNetState |
+| 소드 파이트 | [PROTOTYPE](Docs/GameModes/SwordFight/PROTOTYPE.md) → [명세](Docs/GameModes/SwordFight/PROTOTYPE_SPEC_v1.0.md)·[SKILLS_ONLINE](Docs/Network/SKILLS_ONLINE.md) | SwordFightGame·SwordFightMatch*·SwordFightSkills*·LabNetLink.Sword |
+| 공용 래그돌·입력·이동 | [RAGDOLL](Docs/Player/RAGDOLL.md) → [MOVEMENT_INPUT](Docs/Player/MOVEMENT_INPUT.md)·[랩](Docs/RagdollLab/README.md) | RagdollPawn*·RagdollDriver·ICharacterDriver·PhysicsMechanicsBed |
+| 스킬·효과 | [Skills](Docs/Skills/README.md)·[VFX](Docs/VFX/README.md) → [SKILLS_ONLINE](Docs/Network/SKILLS_ONLINE.md) | PawnRushSkills·SwordFightSkills·SkillKit·SharedSkills·VFX |
+| 매칭·파티·음성 | [SESSION](Docs/Network/SESSION.md)·[게임 모드](Docs/GameModes/README.md) | SteamSession·GameModes·TeamReservations·SteamVoice |
+| 이동 동기화·방장·지연 | [MOTION](Docs/Network/MOTION.md)·[HOST](Docs/Network/HOST.md)·[HOST_AUTHORITY](Docs/Network/HOST_AUTHORITY.md) | SteamMotion·RagdollLabSteam·HostElection·스냅샷 프로토콜 |
+| 로비·HUD·씬 흐름 | [UI](Docs/Architecture/UI.md)·[SCENES](Docs/Architecture/SCENES.md) | Game·Bootstrap·SceneNames·EditorBuildSettings |
+| Safe Mode·컴파일·클릭 오류 | [PITFALLS](Docs/Environment/PITFALLS.md)·[SETUP](Docs/Environment/SETUP.md) | 관련 asmdef·Editor·입력 경로 |
+| 검사·빌드 | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md)·[VALIDATION](Docs/Network/VALIDATION.md) | Tools/Test-NetworkCore.ps1·Test-NetworkCompile.ps1·MiniGamePrefabValidation |
+| GPT·Claude 계정 연결 | [AI_WORKFLOW](Docs/Environment/AI_WORKFLOW.md) → [연결 사용법](Tools/AiBridge/README.md) | Tools/AiBridge |
+| 폐기 모드의 과거 근거 | [아카이브](Docs/Archive/HANDOFF_BEFORE_R497.md)·[Queen 기록](Docs/Archive/QueenOfTheHill/README.md) | 현재 모드 등록이나 새 작업 지시로 재사용하지 않음 |
+
+## 7. 사용자와 일하는 방식
+
+- **한국어로 답한다.** 코드 주석과 커밋 메시지는 영어다.
+- 사용자는 메인 기획자이며 코드를 직접 쓰지 않는다. 결과·영향·여는 순서를 쉽게 설명한다.
+- 작업은 **기존 `C:\Users\dua07\GitHub\ChessFighter`의 main에서 직접** 한다. 추가 워크트리는 새 명시 요청이 있을 때만 쓴다.
+- 구현·정리 요청은 실제 변경·적절한 검사·main 커밋·푸시까지 완료한다. PR은 요청할 때만 만든다.
+- 새 사용자 지시가 과거 브랜치·보존 범위·번호 규칙보다 우선한다. 과거 기록의 "커밋 금지"를 현재 전체 작업 제한으로 오해하지 않는다.
+- 사용자 수정본은 덮어쓰기 전에 보존한다. 파일 백업·패치·stash와 현재 main에 적용한 결과를 구분한다.
+- **사용자가 Unity나 Steam에서 직접 보고 조작한 것만 '검증됨/성공'이라고 기록한다.** AI 자동 검사·렌더·코드 관찰은 그 근거와 한계를 쓴다.
+- UI 자동화가 사용자 입력·Escape로 중단되면 추가 화면 조작을 멈추고 완료된 범위와 남은 범위를 구분한다.
+- 공유 캐릭터 물리·카메라·네트워크는 요청 범위 없이 바꾸지 않는다. 파일 정리로 게임 규칙이나 프로토콜을 바꾸지 않는다.
+- 사용자가 싫어하는 것은 클릭 불가 UI, Safe Mode, 저절로 생기는 변경점, 읽기 힘든 중첩 폴더, 근거 없는 완료 주장이다.
+
+## 8. 작업 종료 체크리스트
+
+1. Windows는 `Tools/Test-NetworkCore.ps1`, 필요하면 `Tools/Test-NetworkCompile.ps1 -SteamRuntimeSources <Runtime 경로>`를 실행한다. Linux는 `Tools/run-tests-linux.sh --compile`을 따른다.
+2. 요청은 [REQUIREMENTS](Docs/Project/REQUIREMENTS.md)에 날짜·내용·결과·커밋·상태로 기록한다.
+3. 새 결정은 [DECISIONS](Docs/Project/DECISIONS.md), 실제 겪은 함정은 [PITFALLS](Docs/Environment/PITFALLS.md)에 남긴다.
+4. 변경 분야의 상세 문서와 실제 코드·파일·메뉴·리소스 경로를 맞춘다.
+5. 사용자 Unity·Steam 확인 항목은 [VALIDATION](Docs/Network/VALIDATION.md) 최상단에 미확인 표로 남긴다.
+6. 이 파일의 최신 날짜·번호와 §1 상태·§2 범위·§3 다음 작업·§6 경로를 갱신한다. 과거 긴 이력은 아카이브에 둔다.
+7. [HISTORY](Docs/Project/HISTORY.md)에 결과를 한 줄 기록하고 **main에 커밋·푸시**한다. 관련 없는 사용자 변경을 함께 stage하지 않는다.
+8. 검사를 끄거나 경고를 숨겨 통과시키지 않는다. 자동 검사·사용자 확인·플레이어 빌드·Steam·성능을 각각 구분해 보고한다.
+
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content 'C:\\Users\\Makebot2\\Documents\\GitHub\\ChessFight\\HANDOFF.md' -Encoding UTF8 | Select-Object -Skip 58 -First 35" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R511_KingsBedchamber\AssetRefs
+ succeeded in 250ms:
+- **Prototype Course01**은 기존 온라인 경기가 호출하는 씬이다. 씬 이름 `PawnRush_Course01`, 로비 키 `kingrush`, 기존 통신 구조는 유지한다.
+- `GameModes.KingRush` 이름과 `ModeRetiredQueenHill = 1` 같은 예약 통신 값은 파일 정리 때문에 바꾸지 않는다.
+- Queen of the Hill을 새 모드로 다시 등록하지 않는다. Queen 기물 자체는 다른 모드가 쓰므로 유지한다.
+- 새 Sections 코스를 기존 Course01 온라인 흐름에 연결했다고 말하지 않는다. 기존 Steam 흐름의 변경도 이번 범위가 아니다.
+- R497 실제 Unity 저장10프리팹/시험 씬 실패0, Play10종의 기능 캐시·자기 팀 문·2번 초기화·씨앗 재생성·A 인스턴스 분리·I 외형 유지 자동 검사 통과. [VALIDATION](Docs/Network/VALIDATION.md)에 범위와 한계를 기록했다.
+- AI의 컴파일·자동 검사·렌더 관찰과 사용자가 Unity/Steam에서 직접 보고 조작한 확인을 구분한다.
+
+## 3. 진행 중인 일과 다음 할 일
+
+1. 자동 검사와 별개로 새 메뉴·로비 두 모드·현재/Prototype 장면을 Unity GUI에서 살펴보고 [확인 목록](Docs/Network/VALIDATION.md)에 사용자 결과를 기록한다.
+2. 사용자는 기존 프로젝트에서 네 메뉴 그룹, 미니게임 선택·팀 전환·초기화, Intro→Lobby→두 모드를 확인한다.
+3. 폰 러시 각 퍼즐의 실제 입력·문 통과·복귀 동선과12명 성능을 확인한다.
+4. 구형 맵을 고칠 때는 Prototype 문서를 먼저 읽는다. 현재 구간 코스와 구형 온라인 코스를 같은 것으로 취급하지 않는다.
+5. 새 구간 코스의 온라인 연결은 별도 설계·요청으로 진행한다. 이번 정리로 프로토콜을 새로 정의하지 않았다.
+6. R498 깜빡임 수정을 Play에서 1·3·7·8번으로 확인한다([VALIDATION](Docs/Network/VALIDATION.md) 맨 위). 편집 모드 프리팹까지 바꾸려면 동료 수정 여부를 확인한 뒤 Build All을 다시 굽는다.
+7. **C 도개교 다시 만들기(R502, 단계마다 사용자 확인 후 다음으로):** ① 재질 견본 4종 → 성탑 재질 돌 블록 모듈로 확정 ② Unity 1단계 조명·후처리 프로필(따뜻한 햇빛·부드러운 그림자·SSAO·약한 Bloom·밝고 따뜻한 색 보정) + 물 셰이더(청록·코스틱·가장자리 거품), 견본 벽+물+폰으로 확인 → 사용자 확인됨(11-07 "열어 봤어, 괜찮아") ← **지금 ③** ③ 해자변 벽 구간(사진 2의 5·6번) 하나로 모양 확인 ④ 장치 → 건축 → 소품 ⑤ R501 FBX 자리에 교체(`MiniGameModels` 연결·게임 크기 그대로). 그 뒤 D·A로 이어간다. 미니게임 모델링은 [3단계 아트 기준](Docs/PawnRush/PAWN_RUSH_ART_PHASES.md) §5의 결정 5가지를 먼저 정하고 C·E·G부터 만든다. FBX가 나오면 미니게임 FBX 연결 코드가 필요하다. **현재(11-07):** ③~⑤를 사용자 Tripo 에셋으로 한 번에 진행해 C 도개교 v2를 Unity에 붙였다(`c_drawbridge_v2.py` → `c_drawbridge_v2_export.py` → `c_install.py`, `MiniGameModels.Drawbridge.cs`). 권양기 장치는 도르래 방식(앞쪽 권양기 x ±16, 줄이 쇠판 궤도를 따라 해자 앞 기둥의 도르래 2개를 돌아 x ±18.4로 나란히 돌아 나오고, 폰은 그 매듭을 앞쪽으로 7 m 당김, 모두 다리 밖. 쇠사슬은 망루 꼭대기 고리→상판 끝 고리, 망루 쇠판 제거). 팀 통로·뒤 복도에 바닥·벽을 깔고 뒤 지붕 탑을 y 41로 옮겨 통로를 틔움. 망루는 사용자 Unity 확인(11-07). 사용자 Unity 확인 전([VALIDATION](Docs/Network/VALIDATION.md) "C 도개교 v2 Unity 적용").
+8. 다음 새 요청은 **R508**부터 기록한다. **A 의장 광장(R506)**: (11-08) 붓 칠 시안 A 채택·소리 다시 넣음(Unity 확인 전, VALIDATION 맨 위).  컨셉 시트 3장(`Docs/PawnRush/ConceptArt/R506_CeremonialCourt`)과 재질 견본 5종(`ArtSource/PawnRush/MiniGames/Early/Materials/r506_material_swatches.py` → `Textures/PR_A_Slate`·`PR_A_IvoryLimestone`·`PR_A_Basalt`·`PR_A_CourtPaving`·`PR_Early_RoofSlate`, 비교 `r506_swatch_compare.png`) 완료, 사용자 확인 전. 광장 포장·지붕 슬레이트는 D 쇠살문의 남은 바닥 포장·지붕에도 쓸 수 있다. 흰 배경 에셋 사진 3장도 완료(`Docs/PawnRush/ConceptArt/R506_CeremonialCourt/AssetRefs`: 정문 약 10만·구조 6종 약 4.5만·소품 8종 약 6만 면 권장, 깃발 천·왕관 문장·불빛·유리 없음, 팀 문짝은 게임 문짝 한 장 3.85×4.55 m에 맞춤). 사용자 Tripo FBX 3개는 `ArtSource/PawnRush/MiniGames/Early/Source/R506_A_*.fbx`에 보관·검사함(부품 15개 판정표 `Source/R506_A_README.md`, 늘릴 것 없음, 깨진 것: 탑 아래 몸통·입구 기둥 받침·버섯 모양 벤치·칠통 흰/검은 색 없음). 사용자 지시("Blender로 고쳐")로 `Early/a_props_v1.py`에서 15개를 손질·수리해 `Early/Export/A_*.fbx`로 내보냄(정문 25,000 삼각형 등, 렌더 `Early/render_a_prop_*.png`). 남은 점: 정문 오른쪽 탑 위 작은 검은 자국, 팀 아치 폭 9.25 m라 정문(±10 m)과 겹침 → 배치 때 기둥 좁히기. 사용자 지시("Unity 배치 진행")로 `Early/a_install.py`가 Assets에 설치하고 `Assets/Scripts/PawnRush/MiniGameModels.ParadeCourt.cs`가 Play 때 배치(정문 z 24·팀 아치 ±12·성벽·탑·입구 기둥·사이프러스·화분·벤치·정원 담·칠 소품, **성벽·난간(낮은 정원 담)은 틈 없이 모듈 1/5씩 겹치고 정문 옆·뒤는 돌 벽돌로 채움**(사용자 11-07 "난간이랑 벽 틈 있게 하지마"), 팀 문짝은 게임 문과 함께, 깃대는 황동 모델 + 흔들리는 천, 바닥 크림 판석), `PaintBoard` 칸은 슬레이트·상아 석회암·현무암(그림만). 컴파일·Core 162·모의 세션 55 통과, **사용자 Unity 확인됨**(11-07 "확인", VALIDATION). 이어서 깃발·문장을 코드로: `Early/a_banner_tex_v1.py` 텍스처 4장(크림 왕관 깃발 2·팀 방패 깃발 2) → 깃대·팀·뒤 통로 깃발, 정문 양옆 긴 왕관 깃발, 흉벽 위 황동 왕관(`ParadeGatehouseDress`); 사용자 "벽 때문에 지붕이 가려져" → 셸 북쪽 바깥 벽 덩어리(11 m)를 끄고 5 m 성벽 양면으로 바꿔 모서리 탑 지붕이 드러나게, 정문 탑 옆 채움 6.3 m로; "떠 보이지 않게" → 정문·깃발·왕관을 단 높이 0.4 m로 올리고 정문 아래·앞에 판석 바닥(`Gatehouse floor`); "sfx랑 vfx도 해줘" → ElevenLabs 효과음 5개(`Early/Sfx/a_sounds.py` → `Assets/Resources/PawnRushMiniGameSfx/sfx_paint_*.wav`·`sfx_rank_complete.wav`, 귀로 확인 전)와 `PaintBoard` 시각 효과(칠하는 중 반짝이·완료 빛기둥·한 줄 금 고리·팀 완성 색종이) → 사용자 "이런 vfx 말고"(원기둥 빛기둥) → A 전용 입자 효과 `PaintBoardFx.cs`로 교체(빛 알갱이·물감 자국·물감 방울·빛 고리·별 반짝이·색종이, 원기둥·네모 조각 없음); "채워지는 소리가 날카로워" → 칠하는 중 소리를 낮고 둥근 소리로 새로(`Sfx/Source/paint_charge_soft_*`, 중심 약 300 Hz) → 사용자가 고른 방향으로 다시: 채우는 소리 = 붓질 스윽(`paint_charge_brush_take3`), 완료 소리 = 도장 쾅(`paint_done_stamp_take3`). 테이크를 바꾸려면 `Early/Sfx/a_sounds.py`. 칠하는 동안 한 획 붓질 8종(`sfx_paint_stroke_1~8`)을 섞은 순서로 이어 재생(`PaintBoard.Stroke/NextStroke`, 연속 문지름 소리는 지움). 25·50·75 % 팀 문 효과는 A 전용 `PaintGateFx.cs`(물감 방울 분수·별 반짝이, 원 없음, 효과음 없음; 사용자 지시, C 세션 전달). **이후 사용자 "사운드는 다 없애고": A 소리 전부 끔·wav 삭제(공용 완료 알림음만 남음), 칠하기는 붓이 칸을 지그재그로 칠해 나가는 그림(`PaintBoard.BrushMaps/StrokeMaterial/BrushTip`), 물감 요철 노멀 맵·젖은 광택, 칸 위를 오가는 붓 모델(`Brush/PlaceBrush`); 칠은 칸별 텍스처에 붓 자국을 매 프레임 찍는 실시간 그리기(`StartPaint/PaintTo/Stamp/PathUV`).** Unity 확인 대기(미니게임 시험 3번). 다시 손질하면 `a_props_v1.py` → `a_install.py` 순서 → `MiniGameModels`로 연결. 체스판 칸 판·칠하는 판은 게임 코드(`PaintBoard`)가 그리므로 판정·크기는 그대로 두고 재질만 바꾼다. D 쇠살문(R505): 캡스턴(`D_Capstan_Static`/`Bars`)·중앙 성문(`D_CenterGate`)은 사용자 확인됨, 팀 아치·쇠살문(`D_TeamArch`/`D_Portcullis`)은 연결했고 Unity 확인 전, 사암 구조 세트는 사용자가 쓰지 않기로 함(11-07, 연결·파일 되돌림). 남은 부품(도르래 들보·벽·포장·입구 기둥·등불 틀·소품)은 GPT 시트로 Tripo용 2장(`Docs/PawnRush/ConceptArt/R505_PortcullisCourt/AssetRefs`: `D_assets_04_structure_bundle.png` = 바퀴 없는 도르래 틀·바퀴·벽·포장·입구 기둥·등불 틀, `D_assets_02_props.png` = 소품; 바퀴는 캡스턴과 함께 돌릴 예정)을 만들었고, 사용자가 준 Tripo FBX 2개는 전체 약 5천 삼각형이라 부품별 판정(바퀴·사슬 더미·투구·화분·등불은 늘리기 = Tripo 다시 내보내기, 포장은 줄이기, 도르래 틀은 고정쇠 빠짐; `ArtSource/PawnRush/MiniGames/Early/Source/README.md`). **원칙: 줄이기는 Blender, 늘리기는 Tripo 재내보내기 → Tripo는 면 수 넉넉하게.** 이번 것은 사용자 지시로 Blender에서 늘리며 맞춤(`Early/d_props_v1.py`, 부품 10개 `Early/Export/D_*.fbx`, 바닥 포장 제외) → `MiniGameModels.Court`·`CapstanChain`으로 배치·연결함(셸 옆벽 숨기고 `D_Wall`×1.3을 빈틈 없이, 도르래 바퀴·사슬은 `MiniGamePulleyChain`으로 캡스턴과 함께 돌며 사슬이 바퀴 위로 감겨 흐름). **사용자가 Play 2번에서 확인함**(11-07, [VALIDATION](Docs/Network/VALIDATION.md)). 등불 불빛(`MiniGameFlame`)·흔들리는 깃발(`MiniGameBannerCloth`)도 코드로 붙임(Unity 확인 전). 벽·아치·성문 구멍은 `ArtSource/PawnRush/MiniGames/Early/mg_holes.py`(속 채움·앞쪽 절반 뒤집기)로 막았고 사용자 확인됨. 바닥 포장은 numpy 크림 판석 텍스처(`Early/Materials/r505_paving.py`)를 `MiniGameModels.Paving`으로 입힘(사용자 확인됨). 캡스턴 몸통 판자 틈은 `d_capstan_v1.py` `core()` 속심으로 막음(사용자 확인됨), 2차로 몸통 22k 삼각형·속심 중간 밝기로(Unity 확인 전). 사이프러스 나무는 Blender로 직접 만듦(`Early/d_cypress_v1.py` → `D_Cypress`, `MiniGameModels.Cypresses`, 스테이션마다 3그루, 셸의 옛 공 모양 나무는 숨김, 사용자 확인됨). 컨셉에서 남은 것: 모서리 성탑 — GPT 시트 `Docs/PawnRush/ConceptArt/R505_PortcullisCourt/AssetRefs/D_assets_05_tower.png`(Tripo 권장 약 50,000면) → 사용자 Tripo FBX를 `Early/d_tower_v1.py`로 13.5 m·14k 삼각형으로 맞춰 `D_CornerTower`로 (±23, 0, 25)에 둠(사용자 확인됨, `Early/Source/README.md`). 이로써 컨셉의 부품은 모두 들어감. 뒤 벽 바깥쪽(|x| 9.7~22) 셸 상자는 `MiniGameModels.NorthWall`이 옛 네모 탑·기둥·판돌을 숨기고 돌 벽돌을 입히며, 벽 위에 `D_Wall` 흉벽(사용자 확인됨). 중앙 성문 문짝 아래 틈은 `d_center_gate_v1.py threshold()` 판석 문턱으로 막음, 팀 문 통로 바닥 양옆 틈은 `MiniGameModels.PassageEdges` 판석 띠로 막음(둘 다 Unity 확인 전). 소리·효과는 `Assets/Scripts/PawnRush/MiniGameCourtFx.cs`(캡스턴 돌리기·사슬 고리 소리, 한 바퀴마다 쿵·먼지, 다 열림 소리·먼지·불꽃; ElevenLabs 테이크 `Early/Sfx/Takes`, 기본 테이크 넣음; 다 열림은 D 팀 문을 4초로 늦추고 사용자가 고른 chain 3을 그동안 반복; 돌리는 소리는 나무 시안 B 4번, 쇠살문 소리는 쿵 4번·열림 2번(4초, 한 번 재생), 사슬은 드럼 B3·도르래 C3, 모두 사용자 선택, Unity 확인 전). **공용:** 25/50/75 % 진행 때 팀 문 바닥의 금빛 원과 진행 알림음(`sfx_mg_quarter`)은 사용자 지시로 모든 미니게임에서 뺐다(`ArenaDressing`, 11-07). 각 미니게임은 원 없는 자기 그림 효과만 둔다. `MiniGameModels.Apply`는 시작할 때 스테이션의 `IGateFx`를 모두 지운다(`ClearGateFx`, 11-08: 게임을 바꿔도 앞 게임 효과가 남던 문제). 각 게임은 자기 `Apply`에서 다시 붙이면 된다. 등불 불빛·깃발은 코드로. 앞의 두 모델 모델을 `Assets/Resources/PawnRushMiniGames/Early/D`에 넣고 `MiniGameModels.Capstan`으로 연결(막대는 `Capstan bars`에 붙어 함께 돎) → **사용자가 Unity Play 2번에서 확인함**(11-07, [VALIDATION](Docs/Network/VALIDATION.md) 맨 위, [Early/Source](ArtSource/PawnRush/MiniGames/Early/Source/README.md)). 다시 손질하면 Blender 스크립트 → `d_install.py` 순서.
+
+다른 채팅의 진행 상태와 과거 제한은 원본 아카이브의 날짜·브랜치를 확인해 해석한다.
+현재 사용자 작업 위치(main/기존 경로)와 최신 사용자 지시가 우선한다.
+
+## 4. 절대 규칙 — 어기면 과거에 실제로 사고가 났던 것들
+
+1. **Active Input Handling은 `Input Manager (Old)`(0)로 둔다. Input System 패키지는 설치하지 않는다**(`JY-lobby`, R20: 설치돼 있으면 켤 때마다 백엔드를 켜라는 창이 뜬다). uGUI가 없어서 Both/New로 바꾸면 HUD 클릭과 입력이 전부 죽는다. `InputSettingsGuard`가 자동으로 되돌린다. → [PITFALLS §1](Docs/Environment/PITFALLS.md)
+2. **프로젝트는 선택 패키지가 하나도 없어도 컴파일되어야 한다.** Safe Mode에서는 설치 스크립트가 돌지 않는다. 선택 패키지 코드는 전용 asmdef + `versionDefines` + `defineConstraints`로 가둔다. `ENABLE_INPUT_SYSTEM`을 패키지 설치 여부로 쓰지 않는다.
+3. **`Packages/manifest.json`·`packages-lock.json`이 바뀌면 Discard하지 말고 커밋한다.**
+4. **폴더 하나 = 어셈블리 하나.** `Game`·`Gameplay`는 Steam을 참조하지 않는다. `Core`는 Unity도 참조하지 않는다. → [Architecture/STRUCTURE](Docs/Architecture/STRUCTURE.md)
+5. **Steam 초기화·종료 소유자는 `NetworkRuntime` 하나다.** SteamManager를 따로 추가하지 않는다.
+6. **HUD에는 기본 테마가 없다.** ScrollView·Dropdown 같은 복합 컨트롤은 보이지 않는다. 평범한 VisualElement만 쓴다.
+7. **장애물 위치·회전은 `ObstacleClock` 시간의 순수 함수로만 계산한다(스스로 움직이는 kinematic 물체는 `Obstacle`을 상속, 테스트 스크립트가 검사. 플레이어 상태로 움직이는 것은 `StateDrivenMover:` 주석을 달고 오프라인 전용).** 프레임마다 누적하지 않는다. 온라인 래그돌 참가자는 방장이 스냅샷에 실은 장애물 시각을 쓴다(R51).
+8. **클라이언트는 입력만 보낸다.** 좌표를 권위로 받지 않는다. 파티는 같은 팀에 통째로 예약한다.
+9. **네트워크 비호환 변경을 하면 `SteamSession.Protocol`을 올린다.** 패킷 구조를 바꾸면 `MotionProtocol` magic도 올린다.
+10. **검증 표기는 정직하게 한다.** 사용자가 Unity나 Steam에서 직접 본 것만 VALIDATION에 '성공'으로 적는다. 코드 작성과 테스트 통과는 검증이 아니다.
+11. **`.meta`는 항상 같이 커밋한다.** Unity 밖에서 파일을 만들면 `Tools/Generators/mkmeta.py`로 만든다.
+12. **같은 `.unity` 씬을 두 사람이 동시에 고치지 않는다.** 맵은 구간 프리팹으로 나눈다.
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\Makebot2\\.codex\\generated_images\\01a1b7d4-a4e9-7343-9760-b0361e09259c\\exec-b49e8fd5-f7d8-49d6-abb2-eaa2d29b9b3d.png' -Destination '.\\I_assets_01_bed_cart.png'" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R511_KingsBedchamber\AssetRefs
+ succeeded in 217ms:
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\Makebot2\\.codex\\generated_images\\01a1b7d4-a4e9-7343-9760-b0361e09259c\\exec-72630d08-3557-4a50-974d-58c13641b710.png' -Destination '.\\I_assets_02_props.png'" in C:\Users\Makebot2\Documents\GitHub\ChessFight\Docs\PawnRush\ConceptArt\R511_KingsBedchamber\AssetRefs
+ succeeded in 202ms:
+codex
+[I_assets_01_bed_cart.png](I_assets_01_bed_cart.png)
+
+[I_assets_02_props.png](I_assets_02_props.png)
+tokens used
+69,284
+[I_assets_01_bed_cart.png](I_assets_01_bed_cart.png)
+
+[I_assets_02_props.png](I_assets_02_props.png)

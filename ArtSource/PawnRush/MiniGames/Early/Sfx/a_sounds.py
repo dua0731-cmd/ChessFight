@@ -190,3 +190,18 @@ for i in range(1, 9):
     y = first_stroke(load("paint_stroke_take%d.mp3" % i))
     write(OUT_REL + "/sfx_paint_stroke_%d.wav" % i, y)
     print("SOUND sfx_paint_stroke_%d  %.2f s, %d onsets, >4k %.0f %%" % (i, len(y) / RATE, onsets(y), high_share(y) * 100))
+
+# The team door opening (user, 11-08: "문이 열리는 vfx랑 사운드 넣어줘"; PaintGateFx.Opened): 4 takes of an oak door
+# lifting into a stone arch (Source/paint_door_open_take1..4, same flow and model). The pick: the take sounding
+# longest (30 dB under its peak, wanted ~1.3 s, the door's lift time) with the least energy over 4 kHz (a heavy
+# wooden groan, not a hiss); trimmed, softened over 6 kHz, faded -> sfx_paint_door_open.
+door = []
+for t in range(1, 5):
+    x = load("paint_door_open_take%d.mp3" % t)
+    e, n = env(x)
+    active = (db(e) > db(e.max()) - 30.).sum() * n / RATE
+    door.append((min(1., active / 1.3) * (1. - high_share(x)), t, x))
+best = max(door, key=lambda d: d[0])
+y = fades(soften(trim(best[2])), .02, .12)
+write(OUT_REL + "/sfx_paint_door_open.wav", y)
+print("SOUND sfx_paint_door_open  take %d (scores %s) %.2f s" % (best[1], " / ".join("%.2f" % d[0] for d in door), len(y) / RATE))

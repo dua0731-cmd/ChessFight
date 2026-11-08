@@ -202,6 +202,60 @@ def floor(me, x0, x1, y0, y1, z, k=PAVER):
             mod(me, (x0 + (i + .5) * sx * MW, y0 + j * sy * MH - sy * MH * (OVER_F - 1) / 2, z), up=True, scale=(sx * OVER_F, 1.0, sy * OVER_F))
 
 
+def tunnel_liner(cx, y0, y1, half, spring, mat, steps=16):
+    """A passage's lining, faces inward: two walls from the floor to `spring` at cx +- half and a half-round vault of
+    radius `half` over them, y0..y1. UVs in metres / 2 (the stone texture's 2 m tile) - along y and around the arch."""
+    bm = bmesh.new()
+    uv = bm.loops.layers.uv.new()
+    prof = [(cx - half, 0.)] + [(cx - half * math.cos(math.pi * k / steps), spring + half * math.sin(math.pi * k / steps))
+                                for k in range(steps + 1)] + [(cx + half, 0.)]
+    arc = [0.]
+    for i in range(1, len(prof)):
+        arc.append(arc[-1] + math.dist(prof[i - 1], prof[i]))
+    a = [bm.verts.new((x, y0, z)) for x, z in prof]
+    b = [bm.verts.new((x, y1, z)) for x, z in prof]
+    for i in range(len(prof) - 1):
+        f = bm.faces.new((a[i], b[i], b[i + 1], a[i + 1]))
+        for lp, (u, v) in zip(f.loops, ((y0, arc[i]), (y1, arc[i]), (y1, arc[i + 1]), (y0, arc[i + 1]))):
+            lp[uv].uv = (u / 2., v / 2.)
+    bm.normal_update()
+    bm.faces.ensure_lookup_table()
+    # face the inside: the first wall's normal must point +x (toward the middle)
+    if bm.faces[0].normal.x < 0:
+        bmesh.ops.reverse_faces(bm, faces=list(bm.faces))
+    me = bpy.data.meshes.new("passage lining")
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(mat)
+    ob = bpy.data.objects.new("passage lining", me)
+    link(ob)
+    return ob
+
+
+def slab_uv(name, lo, hi, mat):
+    """A box with UVs in metres / 2 on every face (the stone texture's 2 m tile)."""
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.)
+    lo, hi = Vector(lo), Vector(hi)
+    for v in bm.verts:
+        v.co = Vector((lo.x if v.co.x < 0 else hi.x, lo.y if v.co.y < 0 else hi.y, lo.z if v.co.z < 0 else hi.z))
+    uv = bm.loops.layers.uv.new()
+    bm.normal_update()
+    for f in bm.faces:
+        n = f.normal
+        for lp in f.loops:
+            c = lp.vert.co
+            lp[uv].uv = ((c.y, c.z) if abs(n.x) > .5 else (c.x, c.z) if abs(n.y) > .5 else (c.x, c.y))
+            lp[uv].uv = (lp[uv].uv[0] / 2., lp[uv].uv[1] / 2.)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(mat)
+    ob = bpy.data.objects.new(name, me)
+    link(ob)
+    return ob
+
+
 def wall(me, x0, x1, y, z, yaw, courses=1, k=WALL_K):
     """Standing modules along x (yaw 0: face toward -y at y; yaw 180: face toward +y), k times the module."""
     n = max(1, round((x1 - x0) / (MW * k)))
@@ -418,7 +472,7 @@ def load_kit():
 def pylon(me, iron, glass, gold, x, lowered, sx):
     """The user's rook pylon (kit) by the hinge, 3.3 m, its chain anchor turned toward the bridge; a lantern on its
     south face; a chain from its top to the deck's far corner."""
-    y = HINGE + .25
+    y = MOAT1 + 1.45     # wholly on the north bank, not out over the moat (user 11-08; MgDrawbridge.PalacePylonBack)
     ob, size, med = KIT["KIT_Pylon"]
     k = 3.3 / size.z
     # square to the section, the crown's middle on (x, y): the anchor plate is gone (strip_pylon_plate), and the game's
@@ -651,6 +705,13 @@ def build():
         square_tower(me, s * 19.8, FACADE - 1.7, 3.6, DAIS, 3)   # clear of the 5 m moat (ends at y 20.5)
     # the upper arcade: the gatehouse again, turned so its three-arched side faces the plaza, raised behind it
     place(gate, (0, FACADE + 9.5, 9.0), (7. / gsize.x, 22. / gsize.y, 15.), -90)
+    # user 11-08 ("플레이어가 위를 보면 이렇게 꺠진 것을 보고 ... 벽을 가려"): the gatehouse's cut-through passages showed
+    # the model's ragged inside, and the raised arcade's open underside showed from the rear corridor. A dressed stone
+    # tunnel lines each team passage just inside the cut (measured: x 9.93..14.06, vault top 5.78), and a stone soffit
+    # closes the arcade's underside.
+    for s in (-1, 1):
+        tunnel_liner(s * 12., FACADE + .05, FACADE + 6.05, 2.0, 3.72, stone_m)
+    slab_uv("arcade soffit", (-11.3, FACADE + 5.9, 8.85), (11.3, FACADE + 13.1, 9.05), stone_m)
 
     # ---- floors (the stone block face up): entry band, the two stations (0.4 m up), the central aisle
     floor(me, -22, 22, 0., 4., 0.)
@@ -700,8 +761,7 @@ def build():
         # stands on a stone block wall rising from the moat's bottom
         railing_run(rail, rsize, s, 4., FACADE - .2, DAIS)
         side_wall(me, s * (22. - 1.2), MOAT0 - .3, MOAT1 + .3, -1.8, -s, k=2.)
-        for y in (6., 9.5, 13., 22.):
-            cypress(dark_leaf, (s * 23.4, y, 0.), random.uniform(5.5, 7.))
+        # no cypresses outside the railings: past the section's edge they stood over the void (user 11-08, "나무 지워")
 
     # ---- bridges, pylons and chains: white's lowered, black's standing (as the concept)
     for s, lowered in ((-1, True), (1, False)):
@@ -763,8 +823,8 @@ def build():
     white = cw.principled("emblem", "#FAFAF7", .7)
     front = FACADE - .25
     for s, cloth in ((-1, blue), (1, orange)):
-        banner("team banner", s * 12., 10.9, front, 2.6, 3.8, cloth, gold, gold, emblem=white)
-        banner("laurel banner", s * 6.3, 10.2, front - .3, 2.0, 3.4, cream, gold, gold, laurel=gold)
+        banner("team banner", s * 12., 10.1, FACADE - .07, 2.6, 3.8, cloth, gold, gold, emblem=white)   # under the wall's top (10.45)
+        # no cream banners by the central door (user 11-08, "이 깃발은 빼")
         banner("outer banner", s * 20.8, 6.6, 1.0, 1.5, 2.8, cream, gold, gold, laurel=gold)
         bpost = box("banner post", (s * 20.8 - .06, .94, 0), (s * 20.8 + .06, 1.06, 6.5), iron)
         for e in (-1, 1):

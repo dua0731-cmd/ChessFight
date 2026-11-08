@@ -54,7 +54,7 @@ namespace ChessFight.PawnRush
             {
                 if (station == null) continue;
                 foreach (var t in station.GetComponentsInChildren<Transform>(true))
-                    if (t.name == "Gate passage" || t.name == "Station floor" || t.name == "Palace station ramp" || t.name.StartsWith("Rim ")) Hide(t);   // Rim: the game's flat gold trim, a barrier look over the steps (11-08)
+                    if (t.name == "Gate passage" || t.name == "Station floor" || t.name == "Palace station ramp" || t.name.StartsWith("Rim ") || t.name == "Gate progress bar") Hide(t);   // Rim: the game's flat gold trim over the steps; the gate bar floated in front of the gatehouse (11-08)
                 var game = station.Game != null ? station.Game.transform : null;
                 if (game == null) continue;
                 foreach (var t in game.GetComponentsInChildren<Transform>(true))
@@ -226,10 +226,50 @@ namespace ChessFight.PawnRush
             var r = go.GetComponent<Renderer>();
             r.sharedMaterial = water;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            MoatSound(go.transform.parent);
         }
 
-        // The concept's banners, swaying: each team's banner over its own passage (x +-12), cream laurel banners by the
-        // central door (x +-6.3) and on the posts at the front corners (x +-20.8). Section frame, facing the entrance.
+        // User 11-08 ("물 사운드도 잔잔하게 들어갈 수 있게"): the moat laps quietly - a looped calm-water ambience
+        // (Resources/PawnRushMiniGameSfx/sfx_moat_water, Early/Sfx/c_sounds.py) from three voices along the 44 m moat
+        // (x -14, 0, 14 on the water), each heard from about 22 m, loudest within 4 m, at a low level; their starts are
+        // spread so the loops never line up.
+        const string MoatSoundName = "MODEL_MoatSound";
+
+        static void MoatSound(Transform content)
+        {
+            if (content == null || content.Find(MoatSoundName) != null) return;
+            var clip = Resources.Load<AudioClip>("PawnRushMiniGameSfx/sfx_moat_water");
+            if (clip == null)
+            {
+                Debug.LogWarning("[미니게임 모델] C 해자 물소리가 없습니다: Resources/PawnRushMiniGameSfx/sfx_moat_water");
+                return;
+            }
+            var root = new GameObject(MoatSoundName).transform;
+            root.SetParent(content, false);
+            int k = 0;
+            foreach (float x in new[] { -14f, 0f, 14f })
+            {
+                var go = new GameObject("Moat water sound");
+                go.transform.SetParent(root, false);
+                go.transform.localPosition = new Vector3(x, -.4f, 18f);
+                var a = go.AddComponent<AudioSource>();
+                a.clip = clip;
+                a.loop = true;
+                a.playOnAwake = false;
+                a.spatialBlend = 1f;
+                a.rolloffMode = AudioRolloffMode.Linear;
+                a.minDistance = 4f;
+                a.maxDistance = 22f;
+                a.volume = .28f;
+                a.pitch = 1f + (k - 1) * .04f;
+                a.time = clip.length * k / 3f;
+                a.Play();
+                k++;
+            }
+        }
+
+        // The concept's banners, swaying: each team's banner over its own passage (x +-12) and cream laurel banners on the
+        // posts at the front corners (x +-20.8); the cream pair by the central door was taken out (user 11-08). Section frame.
         static void BannersV2(MiniGameSection owner, Transform content, Dictionary<string, Material> cache)
         {
             var root = new GameObject(BannersV2Name).transform;
@@ -238,13 +278,16 @@ namespace ChessFight.PawnRush
             {
                 if (station == null) continue;
                 float side = Mathf.Sign(content.InverseTransformPoint(station.transform.position).x);
-                MiniGameFixtures.Pennant(root, "Team banner " + (side < 0f ? "W" : "E"), new Vector3(side * 12f, 10.9f, 23.7f), 2.6f, 3.8f,
+                MiniGameFixtures.Pennant(root, "Team banner " + (side < 0f ? "W" : "E"), new Vector3(side * 12f, 10.1f, 23.93f), 2.6f, 3.8f,
                     station.Accent(station.Team));
             }
             var cream = Resources.Load<Material>(OwnMaterials + "PR_Mid_Canvas");
             var gold = Resources.Load<Material>(OwnMaterials + "PR_Early_C_Gold");
             if (cream == null) return;
-            foreach (var (x, top, z, w, h) in new[] { (6.3f, 10.2f, 23.4f, 2f, 3.4f), (20.8f, 6.6f, .95f, 1.5f, 2.8f) })
+            // on the gatehouse's face (user 11-08, "깃발이 공중에 떠 보여": the team banners' rod was above the wall's top at
+            // x +-12, 10.45 m, and both hung 0.4-0.6 m out from the face, y 24.02..24.17)
+            // (the cream banners by the central door are gone: user 11-08, "이 깃발은 빼")
+            foreach (var (x, top, z, w, h) in new[] { (20.8f, 6.6f, .95f, 1.5f, 2.8f) })
                 foreach (float s in new[] { -1f, 1f })
                 {
                     var at = new Vector3(s * x, top, z);

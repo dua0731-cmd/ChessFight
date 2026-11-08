@@ -106,9 +106,11 @@ def main():
     # writing plates (h_decals_v1.py): RGBA ink on a transparent ground, alpha-clipped like G's royal banner; the
     # marble's normal map gives the ink the stone's grain
     marble_normal = guid(TEX_DIR + "/PR_Late_MarbleCream_Normal.png")
-    for name in ("PR_Late_H_Notation", "PR_Late_H_ClockDial"):
+    velvet_normal = guid(TEX_DIR + "/PR_Late_Velvet_Normal.png")
+    for name, normal, smooth in (("PR_Late_H_Notation", marble_normal, .3), ("PR_Late_H_ClockDial", marble_normal, .3),
+                                 ("PR_Late_H_KingBanner", velvet_normal, .1)):     # the banner: H's royal banner, code cloth
         base = copy(os.path.join(TEX, name + "_BaseColor.png"), "%s/%s_BaseColor.png" % (TEX_DIR, name), BASE_META)
-        rel = material(name, base, marble_normal, .3)
+        rel = material(name, base, normal, smooth)
         t = read(rel)
         if "_ALPHATEST_ON" not in t:
             t = t.replace("  m_ValidKeywords:\n  - _NORMALMAP\n", "  m_ValidKeywords:\n  - _ALPHATEST_ON\n  - _NORMALMAP\n")

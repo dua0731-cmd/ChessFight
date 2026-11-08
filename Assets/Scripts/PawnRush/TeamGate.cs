@@ -43,6 +43,15 @@ namespace ChessFight.PawnRush
             if (openedAt < 0f) lift = Mathf.Clamp(metres, 0f, rise);
         }
 
+        // Moves the shut door, and the place it opens from, by `delta` (world metres): A stands its door in its arch
+        // (R506). Before Awake, Awake takes the moved place anyway.
+        public void Shift(Vector3 delta)
+        {
+            transform.position += delta;
+            closed += delta;
+            if (body != null) body.position = transform.position;
+        }
+
         // A new round: shut, down.
         public void Close()
         {

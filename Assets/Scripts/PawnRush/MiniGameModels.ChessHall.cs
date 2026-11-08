@@ -6,11 +6,12 @@ using Object = UnityEngine.Object;
 
 namespace ChessFight.PawnRush
 {
-    // H · 국왕 체스 홀 (R510). H is a phase-3 room like G, so it reuses G's hall as it is (user 11-08: reuse other chats'
-    // assets, Docs/PawnRush/ConceptArt/R510_KingsChessHall/REUSE.md): the 12 m marble walls, skylight vaults and light
-    // shafts, ceiling, hanging cloth, raised aisle with its stairs, team portal frames, team gate doors, the centre gate
-    // and the phase-3 floors (RoyalProcessionHall / RoyalProcessionFloor / TeamGateDoor in MiniGameModels.cs). Only the
-    // things G does not have are H's own (ArtSource/PawnRush/MiniGames/Late/h_props_v1.py, h_board_kit_v1.py):
+    // H · 국왕 체스 홀 (R510). H borrows from G only the parts that are really the same (user 11-08: reuse other chats'
+    // assets — but not the architecture, whose concept differs per room: "행차 회랑 체스 홀 침실 … 벽 구조물이 다른데"):
+    // G's light shafts, raised aisle with its stairs, team portal frames, team gate doors, the centre gate and the phase-3
+    // floors (RoyalProcessionHall builds them; H then takes out G's wall modules, cloth, vaults and ceiling and puts its
+    // own: ChessHallWalls, ChessHallCeiling, ChessHallCrests). The rest is H's own (ArtSource/PawnRush/MiniGames/Late/
+    // h_props_v1.py, h_board_kit_v1.py, h_walls_v1.py, h_crest_v1.py, h_decals_v1.py):
     //   board squares   -> maple / walnut swatches (the attacked-square plates stay the game's)
     //   pillars c6 f3 f7 -> H_BoardPillar (1.6 x 1.6 x 2.2 m, the collider's box)      fence posts -> H_FencePost
     //   king tray       -> H_KingTray (its top at 0.3 m, where the captured kings lie)
@@ -39,7 +40,10 @@ namespace ChessFight.PawnRush
                 var drop = new List<GameObject>();
                 foreach (Transform t in env)
                     if (t.name == "Fanfare trumpets" || t.name == "Crown pedestal" || t.name == "Aisle stanchions"
-                        || t.name == "Skylight vault" || t.name == "Ceiling") drop.Add(t.gameObject);   // H's own ceiling below
+                        || t.name == "Skylight vault" || t.name == "Ceiling"                              // H's own ceiling below
+                        || t.name.EndsWith(" column") || t.name.EndsWith(" window bay") || t.name.EndsWith(" plain bay")
+                        || t.name == "Hanging cloth"                                                       // H's own walls and cloth
+                        || t.name == "Centre wall") drop.Add(t.gameObject);   // H's taller gate head wall (same face: no flicker)
                 foreach (var go in drop)
                 {
                     if (Application.isPlaying) Object.Destroy(go);
@@ -48,6 +52,7 @@ namespace ChessFight.PawnRush
                 ChessHallProps(env, cache);
                 ChessHallCeiling(env, cache);
                 ChessHallCrests(env, cache);
+                ChessHallWalls(env, cache);
             }
             ChessHallStations(owner, cache);
             RoyalProcessionFloor(owner, content);
@@ -183,6 +188,119 @@ namespace ChessFight.PawnRush
                     else Object.DestroyImmediate(old.gameObject);
                 }
                 Hang(seat, RideName, crest, cache);
+            }
+        }
+
+        // H's own walls (user 11-08, relayed by the I chat: "행차 회랑 체스 홀 침실 컨셉 아트에 있는 벽 구조물이 다른데 왜
+        // 구조물이 다 같아?"): G's wall modules and G's curtains and crown banners are taken out above, and H's from its
+        // concept stand on the same lines (h_walls_v1.py): fluted columns with brass rings, cream marble bays with a round-
+        // arched mullioned window or a tall panel, 12 m. The openings keep their size and place: the team portals (G's
+        // portal frames, kept), the centre gate and the entry with its lintel. Code cloth (MiniGameBannerCloth): a purple
+        // curtain tied to one side of every window, H's king banner (PR_Late_H_KingBanner) on every panel bay.
+        const float HallWallDepth = .6f, HallBayWidth = 6.2f;
+
+        static void ChessHallWalls(Transform env, Dictionary<string, Material> cache)
+        {
+            var window = Load("Late/H/H_WallWindowBay");
+            var panel = Load("Late/H/H_WallPanelBay");
+            var column = Load("Late/H/H_WallColumn");
+            if (window == null || panel == null || column == null) return;
+            var velvet = Resources.Load<Material>(OwnMaterials + "PR_Late_Velvet");
+            var banner = Resources.Load<Material>(OwnMaterials + "PR_Late_H_KingBanner");
+            var brass = Resources.Load<Material>(OwnMaterials + "PR_Late_Brass");
+            var cloth = new GameObject("H hanging cloth").transform;
+            cloth.SetParent(env, false);
+
+            // a wall run: `back` is the wall's back line on `along` (unit along the wall), `inward` into the hall
+            Transform Holder(string name, Vector3 at, Vector3 inward, float stretch)
+            {
+                var h = new GameObject(name).transform;
+                h.SetParent(env, false);
+                h.localPosition = at;
+                h.localRotation = Quaternion.LookRotation(-inward, Vector3.up);    // the model's face (holder -z) to the hall
+                h.localScale = new Vector3(stretch, 1f, 1f);
+                return h;
+            }
+            void Bay(bool withWindow, Vector3 a, Vector3 b, Vector3 inward, string wall)
+            {
+                var mid = (a + b) * .5f;
+                float width = Vector3.Distance(a, b);
+                var h = Holder(wall + (withWindow ? " H window bay" : " H panel bay"), mid, inward, width / HallBayWidth);
+                Hang(h, RideName, withWindow ? window : panel, cache);
+                // the cloth hangs 0.15 m in front of the bay's face, on an unstretched holder
+                var face = new GameObject("Cloth face").transform;
+                face.SetParent(cloth, false);
+                face.localPosition = mid + inward * (HallWallDepth + .15f);
+                face.localRotation = Quaternion.LookRotation(-inward, Vector3.up);
+                if (withWindow) Cloth(face, -1.95f, 9.9f, 1.1f, 8.9f, velvet);          // tied to the window's left
+                else Cloth(face, 0f, 10.4f, 1.9f, 5.2f, banner != null ? banner : velvet);
+            }
+            void Cloth(Transform face, float along, float top, float w, float h, Material m)
+            {
+                if (m == null) return;
+                MiniGameBannerCloth.Hang(face, new Vector3(along, top, 0f), w, h, m);
+                if (brass == null) return;
+                var rod = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                rod.name = "Cloth rod";
+                if (Application.isPlaying) Object.Destroy(rod.GetComponent<Collider>()); else Object.DestroyImmediate(rod.GetComponent<Collider>());
+                rod.transform.SetParent(face, false);
+                rod.transform.localPosition = new Vector3(along, top + .05f, 0f);
+                rod.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                rod.transform.localScale = new Vector3(.08f, w * .5f + .15f, .08f);
+                rod.GetComponent<Renderer>().sharedMaterial = brass;
+                foreach (float end in new[] { -1f, 1f })   // held into the wall (G's lesson: "깃발이 붕 떠 있어")
+                {
+                    var arm = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                    arm.name = "Rod bracket";
+                    if (Application.isPlaying) Object.Destroy(arm.GetComponent<Collider>()); else Object.DestroyImmediate(arm.GetComponent<Collider>());
+                    arm.transform.SetParent(face, false);
+                    arm.transform.localPosition = new Vector3(along + end * (w * .5f + .05f), top + .05f, .1f);
+                    arm.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                    arm.transform.localScale = new Vector3(.06f, .12f, .06f);
+                    arm.GetComponent<Renderer>().sharedMaterial = brass;
+                }
+            }
+            void Column(Vector3 axis, string wall)
+            {
+                var h = Holder(wall + " H column", axis, Vector3.back, 1f);
+                Hang(h, RideName, column, cache);
+            }
+
+            // Over the centre gate (user 11-08 screenshot: "빈 공간 자연스럽게 연결해"): the gate model's top is 8.66 m over its
+            // wings, 9.57 m in the middle, 10.39 m at the crown, but G's centre wall only starts at 10.4 m, so the sky showed
+            // between. A marble wall on the north wall's face from 8.4 m (behind the wings' top) to the ceiling, the width of
+            // the gate and its columns, with H's cornice running on across it. The rear corridor behind is under 6.3 m.
+            var marble = Resources.Load<Material>(OwnMaterials + "PR_Late_MarbleCream");
+            if (marble != null)
+            {
+                const float from = 8.4f, half = 8.6f;
+                float wallFace = BackN - HallWallDepth;
+                MarbleBlock(env, "Gate head wall", new Vector3(0f, (from + Hall) * .5f, BackN - HallWallDepth * .5f),
+                            new Vector3(half * 2f, Hall - from, HallWallDepth), marble);
+                MarbleBlock(env, "Gate head cornice", new Vector3(0f, Hall - .575f, wallFace - .1f), new Vector3(half * 2f, .25f, .2f), marble);
+                MarbleBlock(env, "Gate head cornice", new Vector3(0f, Hall - .225f, wallFace - .19f), new Vector3(half * 2f, .45f, .38f), marble);
+            }
+
+            foreach (float s in new[] { -1f, 1f })
+            {
+                string side = s < 0f ? "West wall" : "East wall";
+                // side wall: columns on the wall face at G's spacing, window / panel / window / panel between
+                var inward = new Vector3(-s, 0f, 0f);
+                float back = s * BackX, face = s * (BackX - HallWallDepth);
+                for (int i = 0; i < SideCols.Length; i++) Column(new Vector3(face, 0f, SideCols[i]), side);
+                for (int i = 0; i + 1 < SideCols.Length; i++)
+                    Bay(i % 2 == 0, new Vector3(back, 0f, SideCols[i]), new Vector3(back, 0f, SideCols[i + 1]), inward, side);
+                // north wall: columns beside the centre gate and the team portal; a window bay from the portal to the corner
+                float north = BackN, northFace = BackN - HallWallDepth;
+                Column(new Vector3(s * 8.535f, 0f, northFace), "North wall");
+                Column(new Vector3(s * 15.465f, 0f, northFace), "North wall");
+                Bay(true, new Vector3(s * 15.465f, 0f, north), new Vector3(s * (BackX - HallWallDepth), 0f, north), Vector3.back, "North wall");
+                // entry wall: columns beside the entry and between; panel bays (the entry band is low, no windows there)
+                float entryFace = BackS + HallWallDepth;
+                var entryCols = new[] { 7.465f, 12.105f, 16.745f, BackX - HallWallDepth };
+                for (int i = 0; i < entryCols.Length - 1; i++) Column(new Vector3(s * entryCols[i], 0f, entryFace), "Entry wall");
+                for (int i = 0; i + 1 < entryCols.Length; i++)
+                    Bay(false, new Vector3(s * entryCols[i], 0f, BackS), new Vector3(s * entryCols[i + 1], 0f, BackS), Vector3.forward, "Entry wall");
             }
         }
 

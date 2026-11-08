@@ -161,6 +161,7 @@ namespace ChessFight.PawnRush
                 // a take as long as the opening plays once as it is; a short one loops (user, 11-07: haul take 2, 4 s)
                 foreach (var a in new[] { haul, haul2 })
                 {
+                    MiniGameEar.Fit(a, station);           // the same anywhere in D (user 11-08)
                     a.clip = openClip; a.loop = openClip.length < OpenSeconds * .9f; a.volume = 0f; a.pitch = 1f; a.time = 0f; a.Play();
                 }
                 haulAge = 0f;
@@ -333,6 +334,89 @@ namespace ChessFight.PawnRush
         void OnDestroy()
         {
             if (root != null) Destroy(root.gameObject);
+        }
+    }
+
+    // The capstan's "turn this way" sign as an effect (user, 11-08: "바닥에 그려지는 t 자형 빼주고 돌리라는 화살표 표시를
+    // vfx 로 해"): the game's eight flat gold T marks ("Way round", "Way round tip") stop drawing, and twelve soft gold
+    // chevrons lie on the floor round the capstan (radius 2.6 m, as the marks were) and keep flowing the way it turns,
+    // each pulsing a little; they fade out once the game is done. Texture: Resources/PawnRushMiniGames/Fx/T_Turn_Chevron
+    // (ArtSource/PawnRush/MiniGames/Early/Materials/r505_turn_chevron.py) on the additive particle material, HDR gold so
+    // the bloom takes it. Pictures only, from the station's own state, the same on every PC.
+    public sealed class MiniGameTurnArrows : MonoBehaviour
+    {
+        const int Count = 12;
+        const float Radius = 2.6f, Size = .62f, Speed = .45f;      // m, m, radians a second along the ring
+        static readonly Color Gold = new Color(2.6f, 1.75f, .55f, 1f);
+        static Material additive;
+        static Texture2D chevron;
+        static bool loaded;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() { additive = null; chevron = null; loaded = false; }
+
+        MissionStation station;
+        float sign = 1f, fade = 1f;
+        readonly List<Renderer> quads = new List<Renderer>();
+        MaterialPropertyBlock block;
+
+        // centre: the capstan axis on the floor (this transform's parent space); turn: +1 or -1 as the marks pointed.
+        public void Setup(MissionStation team, float turn)
+        {
+            station = team; sign = turn;
+            if (!loaded)
+            {
+                loaded = true;
+                var a = Resources.Load<Material>("URPVariants/Particles Additive");
+                chevron = Resources.Load<Texture2D>("PawnRushMiniGames/Fx/T_Turn_Chevron");
+                if (a != null && chevron != null) additive = new Material(a) { name = "Capstan turn arrows" };
+                else Debug.LogWarning("[미니게임 모델] 캡스턴 화살표 효과 재질·텍스처가 없어 그리지 않습니다");
+            }
+            if (additive == null || quads.Count > 0) return;
+            block = new MaterialPropertyBlock();
+            for (int i = 0; i < Count; i++)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                Object.DestroyImmediate(go.GetComponent<Collider>());
+                go.name = "Turn arrow";
+                go.transform.SetParent(transform, false);
+                go.transform.localScale = Vector3.one * Size;
+                var r = go.GetComponent<Renderer>();
+                r.sharedMaterial = additive;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+                block.Clear(); block.SetTexture("_BaseMap", chevron); block.SetColor("_BaseColor", Color.clear); r.SetPropertyBlock(block);
+                quads.Add(r);
+            }
+            Place(0f);
+        }
+
+        void Update()
+        {
+            if (quads.Count == 0) return;
+            var game = station != null ? station.Game : null;
+            fade = Mathf.MoveTowards(fade, game != null && game.Completed ? 0f : 1f, Time.deltaTime);
+            Place(Time.time);
+        }
+
+        void Place(float time)
+        {
+            for (int i = 0; i < quads.Count; i++)
+            {
+                float a = i * Mathf.PI * 2f / Count + sign * time * Speed;
+                var radial = new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a));
+                var tangent = Vector3.Cross(Vector3.up, radial) * sign;
+                var t = quads[i].transform;
+                t.localPosition = radial * Radius;
+                // flat on the floor, visible from above, the chevron's point (+V) along the way round
+                t.localRotation = Quaternion.LookRotation(Vector3.down, tangent);
+                float pulse = .55f + .45f * Mathf.Sin(time * 3.2f - i * .9f);
+                float k = fade * pulse;
+                block.Clear(); quads[i].GetPropertyBlock(block);
+                block.SetColor("_BaseColor", new Color(Gold.r * k, Gold.g * k, Gold.b * k, k));   // premultiplied
+                quads[i].SetPropertyBlock(block);
+                quads[i].enabled = k > .01f;
+            }
         }
     }
 }

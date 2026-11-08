@@ -32,7 +32,12 @@ def main():
     normal = e.copy(os.path.join(TEX, name + "_Normal.png"), e.TEX_DIR + "/" + name + "_Normal.png", e.NORMAL_META)
     e.material(name, base, normal, smooth=.25)
     # the nozzle built in Blender has no UVs: plain matte brass and near-black holes (Blender colours as sRGB)
-    e.material("PR_Mid_J_NozzleBrass", color=(.659, .514, .235), smooth=.55, metallic=.8)
+    # user 11-08 (the gold pad ring removed): the nozzle marks the jump spot, so it is a bright, low-metal brass with a
+    # faint warm glow - at 0.8 metallic it read nearly black under the hall's ceiling. Rewritten on every run.
+    nozzle = e.MAT_DIR + "/PR_Mid_J_NozzleBrass.mat"
+    if os.path.exists(e.p(nozzle)):
+        os.remove(e.p(nozzle))
+    e.material("PR_Mid_J_NozzleBrass", color=(.88, .70, .34), emission=(.16, .11, .03), smooth=.5, metallic=.3)
     e.material("PR_Mid_J_NozzleHole", color=(.11, .09, .07), smooth=.1)
     # the room (j_hall_v1.py): E's hall without its wall bookcases + a white tile dado; the basin's white tile. The
     # other hall materials are B's / E's, already installed (b_install_unity.py, e_install_unity.py).

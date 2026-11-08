@@ -43,7 +43,8 @@ namespace ChessFight.PawnRush
         public const float PalaceWinchOut = 6.4f, PalacePulleyAside = 2.4f, PalaceKnotU = 8.3f;
         public const float PalaceAnchorBack = .5f;     // the pulley post's south face, this far short of the moat (c_drawbridge_v2.py ANCHOR_Y)
         public const float PalacePulleyU = .08f;       // the pulleys' rope line, this far south of the post's face
-        public const float PalacePylonX = 3.4f, PalacePylonHalf = 1.1f;   // the pylons' middle from the bridge's, the shaft's half width
+        public const float PalacePylonX = 3.4f, PalacePylonHalf = 1.1f;
+        public const float PalacePylonBack = 1.45f;   // the pylons' middle behind the moat's north edge (c_drawbridge_v2.py)   // the pylons' middle from the bridge's, the shaft's half width
         public const float PalaceCrownFloor = 2.81f;   // the pylon crown's middle floor (c_drawbridge_v2.py, the kit pylon at 3.3 m), the chain's eye
 
         [SerializeField] MissionStation station;
@@ -68,6 +69,47 @@ namespace ChessFight.PawnRush
         int clicks;              // whole metres pulled, for the ratchet's click
         float pawlKick, slamAt = -1f;
         readonly float[] strainAt = new float[Knots];
+        // R502 (user 11-08, "줄이 처음 부터 이렇게 고정 되어 있으면 이상하잖아 바닥에 늘어져 있는데 자연스렙게 잡을 수 있게",
+        // "좀 더 자연스럽게"): the returning rope lies slack on the floor until it is gripped or hauled; the rope's
+        // tautness round each knot, eased (slow start and end), 0 = sagging and wandering on the floor, 1 = drawn
+        // straight: it tightens in 0.3 s and slackens over 0.8 s once let go (RopeLine draws the sag from it). Worked out
+        // the same on every PC from what each sees (Lift, every physics step).
+        readonly float[] shownLift = new float[Knots];
+        public const float PalaceKnotRest = .16f;          // a resting knot's middle: its 0.3 m box just clear of the floor
+        public float LiftSum { get; private set; }
+        // User 11-08 ("잡으면 기물이 올라가 버려", "바닥에서 끌리면 안돼", "아직도 이렇게 잡으면 붕 뜨는데", "아직도 떠"): a
+        // kinematic knot counts as an environment grip (RagdollPawn.IsEnvironmentGrip), which switches the pawn's launch
+        // guard off (GuardLaunch), and a kinematic body moving up or pressing on the pawn has no weight to give - so any
+        // rise of a gripped knot, or its box against the pawn's chest, floated the pawn, whatever height it was carried
+        // to. On the host a palace knot is therefore a light (KnotMass) weightless body: the game still sets where it is
+        // along the rope (x, z, and its height while nobody holds it), but a held knot's height is left to the hands -
+        // the pawn lifts it to where its holding arm puts it (forward, a little above the shoulder: RagdollPawn.ReachPose)
+        // and nothing can lift the pawn. The other knots lie on the taut line from the second pulley through the held
+        // ones while the rope is gripped or hauled (the free end past the last grip droops and stays off the floor),
+        // or rest on the floor. Another PC, whose pawns are drawn, not simulated, keeps the knots kinematic and puts a
+        // knot with a hand within 0.35 m of it at that hand.
+        public const float KnotMass = .6f;
+        const float FreeMin = .2f, Droop = .3f, GripNear = .35f;
+        // User 11-08 ("그냥 폰이 다가가면 자동으로 올라가게 하자"): a knot rises off the floor to a pawn's hands
+        // (ApproachHeight) in 0.3 s when a pawn comes within KnotNear of it, drawing its neighbours half-way with it,
+        // and settles back over 0.8 s when nobody is near - so it is gripped at hand height and never has to rise in
+        // a hand.
+        public const float KnotNear = 1.3f, ApproachHeight = .42f;
+        readonly float[] near01 = new float[Knots];
+        // User 11-08 ("손잡이랑 줄이 같이 없고 줄이 잘 안잡혀"): a light knot left loose all the time was shoved off the
+        // rope by the pawns' bodies and hands, and away from a reaching hand. Now only a gripped knot is the light free
+        // body (Loosen); a free one is kinematic again and stays exactly on the rope (Tighten). And the pawns' arms,
+        // hands, chest and legs never touch the knots (Physics.IgnoreCollision, renewed every second for pawns that came
+        // or came back): a hand takes hold by being near a knot (PawnHand looks with an overlap query), not by touching
+        // it, so a reaching arm no longer pushes it, nor the knot the pawn. Only the hips' first collider keeps touching
+        // them: a hand ignores anything that one passes through (RagdollPawn.PassesThrough).
+        float ignoreClock;
+        readonly HashSet<Object> unhit = new HashSet<Object>();
+        readonly float[] knotY = new float[Knots];       // each knot's height now (game frame)
+        bool knotYReady;
+        float taut;                                       // 0 slack on the floor .. 1 drawn taut
+        readonly int[] gripCount = new int[Knots];
+        readonly float[] gripY = new float[Knots];       // another PC: the gripping hands' heights, summed
         float dustAt;
         AudioSource creak, winch;
         float hum;               // the winch and rope loops' level, 0..1: eased in and out (user 11-08)
@@ -82,7 +124,9 @@ namespace ChessFight.PawnRush
             var V = (System.Func<float, float, float, Vector3>)MissionGames.V;
             // the moat, the hinge on its far edge and the deck spanning it (palace: the wider R502 moat)
             float Moat0 = station.PalaceStyle ? PalaceMoat0 : MgDrawbridge.Moat0, Moat1 = station.PalaceStyle ? PalaceMoat1 : MgDrawbridge.Moat1;
-            float Hinge = Moat1 - .05f, Deck = Moat1 - Moat0 + .1f, Tower = Moat1 + .2f;
+            // palace: the pylons stand wholly on the north bank (their 2.7 m crown's front 0.05 m behind the moat, user
+            // 11-08 "기둥이 바닥 위에 있게 뒤로"), not 0.9 m out over the water; the chains run from there (ChainEnds)
+            float Hinge = Moat1 - .05f, Deck = Moat1 - Moat0 + .1f, Tower = Moat1 + (station.PalaceStyle ? PalacePylonBack : .2f);
             MissionGames.Floor(b, 0f, Moat0);
             MissionGames.Floor(b, Moat1, 20f);
             // The moat: water at -0.9, its bottom at -1.6, walls to the floor; the ends closed down to the plaza
@@ -250,9 +294,13 @@ namespace ChessFight.PawnRush
 
         // Knot k's position (game frame) when `metres` have been pulled (palace: on the returning line, pulled south
         // toward the front winch; knot 0 is the southern one).
-        Vector3 KnotPos(float metres, int k) => palaceFront
-            ? new Vector3(pullX, RopeHeight, PalaceKnotU - metres + k * PalaceKnotGap)
-            : new Vector3(ropeOffsetX, RopeHeight, KnotU(metres, k));
+        Vector3 KnotPos(float metres, int k)
+        {
+            if (!palaceFront) return new Vector3(ropeOffsetX, RopeHeight, KnotU(metres, k));
+            float z = KnotZ(metres, k);
+            // its height: Lift (a gripped knot at the waist, the others on the taut line, slack ones resting)
+            return new Vector3(pullX, knotYReady ? knotY[k] : RestY(z), z);
+        }
 
         float PulleyU => moat0 - PalaceAnchorBack - PalacePulleyU;
 
@@ -264,8 +312,195 @@ namespace ChessFight.PawnRush
             if (!Completed && !Remote) Pull();
             if (Remote) shown = Mathf.MoveTowards(shown, pulled, Time.fixedDeltaTime * .6f);
             else shown = pulled;
+            if (palaceFront) Lift();
             Pose(shown);
         }
+
+        void Lift()
+        {
+            float dt = Time.fixedDeltaTime;
+            if (!knotYReady)
+            {
+                for (int k = 0; k < Knots; k++) knotY[k] = RestY(KnotZ(shown, k));
+                knotYReady = true;
+            }
+            ignoreClock -= dt;
+            if (ignoreClock <= 0f)
+            {
+                ignoreClock = 1f;
+                unhit.Clear();
+            }
+            foreach (var p in station.Pawns())
+                if (p.Driver is Component body && unhit.Add(body))
+                {
+                    // all but the hips' first collider: a hand will not take hold of anything that one passes
+                    // through (RagdollPawn.PassesThrough reads ownColliders[0], the hips')
+                    var hips = p.Driver.FollowTarget;
+                    var keep = hips != null ? hips.GetComponentInChildren<Collider>(true) : null;
+                    foreach (var c in body.GetComponentsInChildren<Collider>(true))
+                    {
+                        if (c == keep) continue;
+                        for (int k = 0; k < Knots; k++)
+                        {
+                            var kc = knots[k] != null ? knots[k].GetComponent<Collider>() : null;
+                            if (kc != null && c != kc) Physics.IgnoreCollision(c, kc, true);
+                        }
+                    }
+                }
+            // 1. the grips: which knots are held (and, on another PC, how high the hands on them are)
+            for (int k = 0; k < Knots; k++) { gripCount[k] = 0; gripY[k] = 0f; }
+            foreach (var p in station.Pawns())
+            {
+                var mg = p.Driver as IMiniGamePawn;
+                if (mg == null) continue;
+                for (int h = 0; h < 2; h++)
+                {
+                    int k = GripKnot(mg, h);
+                    if (k < 0) continue;
+                    gripCount[k]++;
+                    gripY[k] += transform.InverseTransformPoint(mg.HandPosition(h)).y;
+                }
+            }
+            bool anyGrip = false;
+            for (int k = 0; k < Knots; k++) anyGrip |= gripCount[k] > 0;
+            // a pawn near a knot: it rises to meet the hands
+            for (int k = 0; k < Knots; k++)
+            {
+                bool near = false;
+                if (knots[k] != null)
+                {
+                    var at = knots[k].transform.position;
+                    foreach (var p in station.Pawns())
+                    {
+                        var hips = p.Driver != null ? p.Driver.FollowTarget : null;
+                        if (hips == null) continue;
+                        var d = hips.position - at;
+                        d.y = 0f;
+                        if (d.sqrMagnitude < KnotNear * KnotNear) { near = true; break; }
+                    }
+                }
+                near01[k] = Mathf.MoveTowards(near01[k], near ? 1f : 0f, dt / (near ? .3f : .8f));
+            }
+            bool hauled = Mathf.Abs(net) > .05f && !Completed;
+            taut = Mathf.MoveTowards(taut, hauled || anyGrip ? 1f : 0f, dt / (hauled || anyGrip ? .3f : .8f));
+            float s01 = Mathf.SmoothStep(0f, 1f, taut);
+            // 2. a held knot is where the hands carry it: its own body on the host, the hands on another PC
+            for (int k = 0; k < Knots; k++)
+            {
+                if (gripCount[k] == 0) continue;
+                var rb = knotBodies[k];
+                if (!Remote && rb != null && !rb.isKinematic) knotY[k] = transform.InverseTransformPoint(rb.position).y;
+                else knotY[k] = Mathf.MoveTowards(knotY[k], gripY[k] / gripCount[k], 3f * dt);
+            }
+            // 3. the others: on the taut line between the pulley and the held knots, drooping past the last one, or
+            // (slack) resting on the floor
+            float sum = s01;
+            for (int k = 0; k < Knots; k++)
+            {
+                shownLift[k] = s01;
+                if (gripCount[k] > 0) { sum += knotY[k]; continue; }
+                float z = KnotZ(shown, k);
+                float zN = PulleyU, yN = RopeHeight;                     // the nearest support toward the pulley
+                for (int n = k + 1; n < Knots; n++)
+                    if (gripCount[n] > 0) { zN = KnotZ(shown, n); yN = knotY[n]; break; }
+                int sIdx = -1;                                            // and toward the tail
+                for (int n = k - 1; n >= 0; n--)
+                    if (gripCount[n] > 0) { sIdx = n; break; }
+                float line = sIdx >= 0
+                    ? Mathf.Lerp(yN, knotY[sIdx], Mathf.InverseLerp(zN, KnotZ(shown, sIdx), z))
+                    : Mathf.Max(FreeMin, yN - Droop * Mathf.Max(0f, zN - z));
+                float target = Mathf.Lerp(RestY(z), Mathf.Max(PalaceKnotRest, line), s01);
+                // lifted to meet a pawn coming near it, or half-way by one coming near its neighbour
+                float meet = Mathf.SmoothStep(0f, 1f, near01[k]);
+                if (k > 0) meet = Mathf.Max(meet, .45f * Mathf.SmoothStep(0f, 1f, near01[k - 1]));
+                if (k < Knots - 1) meet = Mathf.Max(meet, .45f * Mathf.SmoothStep(0f, 1f, near01[k + 1]));
+                target = Mathf.Max(target, Mathf.Lerp(RestY(z), ApproachHeight, meet));
+                knotY[k] = Mathf.MoveTowards(knotY[k], target, 1.5f * dt);
+                sum += knotY[k];
+            }
+            LiftSum = sum;
+        }
+
+        // A gripped knot on the host: light and weightless, free to rise and fall in a hand, carried along the rope by
+        // a hidden kinematic carrier the game moves (MovePosition, so the move has a speed) through a joint that locks
+        // the knot to it across and along the rope and leaves only up and down free. User 11-08 ("잡고 땅기면 폰이
+        // 미끄러져"): teleporting the knot along each step instead gave the grip joint a jump to make up every step,
+        // which it did by dragging the pawn's hand, and the pawn slid over the floor.
+        readonly Rigidbody[] carriers = new Rigidbody[Knots];
+
+        void Loosen(int i)
+        {
+            var rb = knotBodies[i];
+            if (carriers[i] == null)
+            {
+                var go = new GameObject("Knot carrier " + (i + 1));
+                go.transform.SetParent(transform, false);
+                var c = go.AddComponent<Rigidbody>();
+                c.isKinematic = true;
+                c.useGravity = false;
+                carriers[i] = c;
+            }
+            carriers[i].position = rb.position;
+            carriers[i].rotation = rb.rotation;
+            rb.isKinematic = false;
+            rb.useGravity = false;
+            rb.mass = KnotMass;
+            rb.linearDamping = 2f;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+            var slide = rb.GetComponent<ConfigurableJoint>();
+            if (slide == null) slide = rb.gameObject.AddComponent<ConfigurableJoint>();
+            slide.connectedBody = carriers[i];
+            slide.autoConfigureConnectedAnchor = false;
+            slide.anchor = Vector3.zero;
+            slide.connectedAnchor = Vector3.zero;
+            // the joint's free axis is the world's up, in the knot's own frame (the knot is not turned: the hand
+            // already holds it as it is)
+            var up = rb.transform.InverseTransformDirection(Vector3.up);
+            var across = rb.transform.InverseTransformDirection(transform.right);
+            across = (across - up * Vector3.Dot(across, up)).normalized;
+            slide.axis = across;
+            slide.secondaryAxis = up;
+            slide.xMotion = ConfigurableJointMotion.Locked;
+            slide.yMotion = ConfigurableJointMotion.Free;
+            slide.zMotion = ConfigurableJointMotion.Locked;
+            slide.angularXMotion = slide.angularYMotion = slide.angularZMotion = ConfigurableJointMotion.Locked;
+            slide.enableCollision = false;
+        }
+
+        // A free knot: kinematic, exactly where the game puts it on the rope (no carrier joint).
+        void Tighten(int i)
+        {
+            var rb = knotBodies[i];
+            var slide = rb.GetComponent<ConfigurableJoint>();
+            if (slide != null) Destroy(slide);
+            rb.isKinematic = true;
+            rb.constraints = RigidbodyConstraints.None;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+        }
+
+        // Which knot hand `h` of `mg` grips, or -1: the real grip on the host, a hand at a knot on another PC.
+        int GripKnot(IMiniGamePawn mg, int h)
+        {
+            if (!Remote)
+            {
+                var c = mg.Held(h);
+                if (c == null) return -1;
+                var held = c.GetComponentInParent<GrabHandle>();
+                for (int k = 0; k < Knots; k++) if (held != null && held == knots[k]) return k;
+                return -1;
+            }
+            var at = mg.HandPosition(h);
+            for (int k = 0; k < Knots; k++)
+                if (knots[k] != null && (knots[k].transform.position - at).sqrMagnitude < GripNear * GripNear) return k;
+            return -1;
+        }
+
+        float KnotZ(float metres, int k) => PalaceKnotU - metres + k * PalaceKnotGap;
+
+        // Where knot k rests when nobody holds it: on the floor, except the one by the pulley, which hangs on the rope
+        // coming down from it at no steeper than about 35 degrees.
+        float RestY(float z) => Mathf.Max(PalaceKnotRest, RopeHeight - Mathf.Max(0f, PulleyU - z) * .7f);
 
         // §9.2, on the host every physics step.
         void Pull()
@@ -330,7 +565,43 @@ namespace ChessFight.PawnRush
                 hinge.MoveRotation(parent != null ? parent.rotation * local : local);
             }
             for (int i = 0; i < Knots; i++)
-                if (knotBodies[i] != null) knotBodies[i].MovePosition(World(KnotPos(metres, i)));
+            {
+                var rb = knotBodies[i];
+                if (rb == null) continue;
+                var at = KnotPos(metres, i);
+                if (!palaceFront)
+                {
+                    rb.MovePosition(World(at));
+                    continue;
+                }
+                var world = World(at);
+                bool held = gripCount[i] > 0;
+                if (!Remote && held)
+                {
+                    // the host, gripped: the carrier takes it along the rope, the hands keep its height
+                    if (rb.isKinematic) Loosen(i);
+                    carriers[i].MovePosition(new Vector3(world.x, rb.position.y, world.z));
+                }
+                else
+                {
+                    // free (or drawn on another PC): kinematic, exactly on the rope
+                    if (!rb.isKinematic) Tighten(i);
+                    rb.MovePosition(world);
+                }
+                // a gripped knot keeps the turn it was gripped at: turning it would twist the hands and the pawn
+                if (!held)
+                {
+                    // along the rope through it: from the next knot toward the pulley to the one toward the tail
+                    var up = i < Knots - 1 ? KnotPos(metres, i + 1) : new Vector3(pullX, RopeHeight, PulleyU);
+                    var down = i > 0 ? KnotPos(metres, i - 1) : at + pullDir * Tail + Vector3.down * (at.y - .075f) * (1f - shownLift[0]);
+                    var dir = up - down;
+                    if (dir.sqrMagnitude > 1e-4f)
+                    {
+                        var q = transform.rotation * Quaternion.LookRotation(dir.normalized, Vector3.up);
+                        if (rb.isKinematic) rb.MoveRotation(q); else rb.rotation = q;
+                    }
+                }
+            }
         }
 
         void RopePose(float metres, float shiver)
@@ -358,6 +629,13 @@ namespace ChessFight.PawnRush
         public Vector3 DrumWorld => transform.TransformPoint(new Vector3(winchAt.x, DrumHeight, winchAt.z));
         public Vector3 PulleyWorld(int i) => transform.TransformPoint(new Vector3(i == 0 ? winchAt.x : pullX, RopeHeight, PulleyU));
         public Vector3 KnotWorld(int i) => transform.TransformPoint(KnotPos(shown, i));
+        // Seconds since knot i's strain sound (a sprinting puller's tug, every 2 s); large when it never played. The rope
+        // swells round that knot in time with it (MiniGameDrawbridgeRope).
+        // How hard the rope is being hauled, 0..1, from the net pull every PC has (each puller 1, a sprinting one 1.8,
+        // minus the rivals holding back; 5 = about three sprinting pawns): the rope looks ready to part
+        // (MiniGameDrawbridgeRope). 0 once the bridge is down.
+        public float Tension01 => Completed ? 0f : Mathf.Clamp01(net / 5f);
+        public float StrainAge(int i) => strainAt[i] > 0f ? Time.time - strainAt[i] : 99f;
         public bool KnotHeld(int i) => (knotBits >> i & 1) != 0 || (knotBits >> (4 + i) & 1) != 0;
 
         // The deck's face normal in world space (the chain's deck eye stands on it).
@@ -420,8 +698,38 @@ namespace ChessFight.PawnRush
             }
             depart = into.Count - 1;
             Wrap(into, into[depart], p1, p2);
-            Wrap(into, p1, p2, tail);
-            into.Add(tail);
+            Wrap(into, p1, p2, new Vector3(tail.x, RopeHeight, tail.z));
+            // past the second pulley the rope runs through the knots, the pulley's side first; slack, it sags onto the
+            // floor between them and its tail lies on the floor (user 11-08)
+            const float Floor = .075f;
+            var last = into[into.Count - 1];
+            float lastLift = 1f;
+            for (int k = Knots - 1; k >= -1; k--)
+            {
+                Vector3 next;
+                float l;
+                if (k >= 0) { next = KnotPos(shown, k); l = shownLift[k]; }
+                else
+                {
+                    l = shownLift[0];
+                    next = KnotPos(shown, 0) + pullDir * Tail;
+                    next.y = Mathf.Lerp(Floor, Mathf.Max(FreeMin, next.y - Droop * Tail), l);   // taut, the tail droops off the floor
+                }
+                float slack = 1f - Mathf.Min(l, lastLift);
+                if (slack > .01f)
+                    for (int q = 1; q <= 3; q++)                     // the sag: a sine dip, never below the floor
+                    {
+                        float t = q / 4f;
+                        var m = Vector3.Lerp(last, next, t);
+                        m.y = Mathf.Max(Floor, m.y - .45f * slack * Mathf.Sin(Mathf.PI * t));
+                        // lying slack it wanders a little to the sides, never quite straight (alternating per gap)
+                        m.x += ((k & 1) == 0 ? 1f : -1f) * .13f * slack * Mathf.Sin(Mathf.PI * t);
+                        into.Add(m);
+                    }
+                into.Add(next);
+                last = next;
+                lastLift = l;
+            }
             return true;
         }
 

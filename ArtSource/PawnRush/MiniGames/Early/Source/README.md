@@ -234,4 +234,14 @@ Blender에서 "높이기"는 없는 모양을 만들 수 없어서 두 가지로
 - **문 열림에 다른 게임 효과가 나오던 것(사용자 11-08 "문이 열릴 때 효과 파란색이랑 폭죽 처럼 된거 사운드 없지? 그 효과도 바꿔"):** 시험 장면은 숫자 키로 게임을 바꿔도 스테이션이 그대로라, 먼저 한 게임의 팀 문 효과(`IGateFx`, 예: C의 팀색 빛기둥·폭죽)가 남고 각 게임은 "없을 때만" 자기 것을 붙여서 D 문이 C 효과로 열렸다. `MiniGameModels.Apply`가 처음에 `ClearGateFx`로 스테이션의 `IGateFx`를 모두 지우고, 지금 게임이 자기 것을 다시 붙인다(모든 미니게임 공통).
 - **열림 타이밍(사용자 11-07 "쇠사슬 문이 좀더 천천히 열리게 하고 타이밍맞추고" + chain 3 링크):** 게임 팀 문(`TeamGate`)은 1.2초에 열리고 소리는 5초라 어긋났다. `TeamGate.Seconds`를 더해 D만 4초(`MiniGameCourtGateFx.OpenSeconds`)로 열고, 다 열림 소리를 사용자가 고른 `chain_3`(1초 사슬)으로 바꿔 4초 동안 반복한다. 크기·높이는 문의 SmoothStep 속도(가운데가 가장 빠름)를 따르고, 끝에 멈춘다. 먼지·부스러기·불꽃도 4초에 걸쳐 나온다.
 
+**문 열림 소리 어디서나 같게(사용자 11-08, 모든 미니게임):** 공용 `Assets/Scripts/PawnRush/MiniGameEar.cs`. D의 열림 소리 두 겹(`haul`, `haul2`)도 `MiniGameEar.Fit`으로 구역 안이면 2D.
+
+**회전 화살표 효과(사용자 11-08 "바닥에 그려지는 t 자형 빼주고 돌리라는 화살표 표시를 vfx 로 해"):** 게임의 금색 표시 `Way round`·`Way round tip`(T자 8개)을 그리기만 끄고, `MiniGameTurnArrows`(`MiniGameCourtFx.cs`)가 캡스턴 둘레 반지름 2.6 m 바닥(표시보다 2.5 cm 위)에 꺾쇠 12개를 깔아 돌리는 방향으로 초당 0.45 rad 흐르게 한다. 하나씩 은은하게 깜빡이고, 게임이 끝나면 1초에 걸쳐 사라진다. 텍스처 `Assets/Resources/PawnRushMiniGames/Fx/T_Turn_Chevron.png`(`../Materials/r505_turn_chevron.py`, 검은 바탕 흰 꺾쇠), Particles Additive에 HDR 금빛.
+
+**팀 깃발·외곽 벽 밑 틈(사용자 11-08 "깃발 도개교 맵이랑 똑같이 해주고 위치도 제대로 맞춰", "외곽 벽에 틈 안보이게 수정해"):** `MiniGameModels.Banners`가 셸 팀 깃발(|x| 12 근처)을 옮기던 것을 숨기고, C처럼 `MiniGameFixtures.Pennant`(팀색 천·뾰족한 끝·황동 막대·구슬·술·흔들림)를 (±12, 6.95, 22.7)에 폭 2.3·높이 2.1 m로 건다(`MODEL_TeamBanners`, 아치 앞면 z 22.95·구멍 위 5.25 m는 Blender로 잼). `Paving`이 구간 전체 아래 2 cm에 그림만 있는 판석 판(`Court underlay`, x −24~24, z −1.1~36.5, 충돌 없음)을 깔아, 바닥이 벽 앞에서 끝나는 틈으로 하늘 대신 판석이 보이게 했다.
+
+**출구 쪽 벽(사용자 11-08, A 세션 전달 "출구 쪽 벽도 자연스럽게 이어지게 색 입혀"):** `MiniGameModels.ExitPassage`가 셸의 `Portal tunnel lining`·`Team portal rear` 아치 돌·`Rear passage end wall`·`ENV_CommonExitArch` 아치 돌·뒤 회랑 기둥(z > 34)에 벽 속 재질 `PR_Early_WallCore`를 입히고, 상자의 큰 두 변만큼 반복한다. 모양·충돌 그대로.
+
+**출구 쪽 위 깜빡임(사용자 11-08 "출구 쪽 위에 깜빡깜빡 거리는 부분 있어"):** 뒤 벽 흉벽 모듈의 홈 바닥이 벽 윗면(11 m)과 같은 높이라 번갈아 그려졌다 → 흉벽을 3 cm 올림(`ParapetLift`). 바닥 밑 판석 판도 2 cm에서 25 cm 아래로 내림(멀리서 바닥과 깊이를 다툴 수 있어서). 사용자 녹화("아직도 깜빡깜빡")로 찾은 진짜 자리: 팀 문 통로 천장 — 셸 `Portal upper wall`과 `Gate pocket cover`의 밑면이 둘 다 6.0 m이고 깊이 0.65 m 겹쳐, 벽돌을 입힌 뒤 번갈아 그려졌다 → `NorthWall`이 덮개(그림만)를 2 cm 올림.
+
 **캡스턴 판자 틈 2차(사용자 11-07 "여기 꺠져 보이는 것들 수정 해"):** 속심이 어두운 참나무라 판자 틈이 검게 갈라진 줄로 보였다. `d_capstan_v1.py`: 정적 몸통을 9,000 → 22,000 삼각형으로 덜 줄이고(줄일 때 판자가 찢어져 틈이 넓어졌다), 속심을 몸통 1.5 cm 안쪽(전 3 cm)에, 색은 나무 칸 중 밝기 중간값에 가장 가깝고 고른 칸으로(전: 어두운 25 %). 정적 25,355 삼각형.

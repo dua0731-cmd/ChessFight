@@ -7,6 +7,8 @@
 #                  gloved hands, _4 a cartoon "hup") the user picked strainalt_2 -> sfx_strain (a gripped knot, 2 s apart)
 #   ratchet_take*  (0.8 s) one wooden pawl clack on a wooden gear, no metal ring      -> sfx_ratchet_click (every metre)
 #   slam_take*     (2.5 s) the wooden deck slamming down, a short chain rattle, a splash -> sfx_bridge_slam (deck lands)
+#   moat_take*     (8 s, loop) calm moat water lapping on stone                        -> sfx_moat_water  (looped on the moat)
+#   gate_take*     (2.2 s) a wooden gate hauled up by rope, a thunk at the top          -> sfx_drawbridge_gate (team gate opens)
 # No 25 / 50 / 75 % sound (user 11-07). Takes are picked by shape, not by ear: the loops by the least energy over 4 kHz
 # (no metal) and kept whole (they loop as made, MgDrawbridge restarts them); strain by the least over 4 kHz; the click by
 # the sharpest attack (first 60 ms against the whole); the slam by the louder. One-shots: leading silence cut (40 dB
@@ -107,7 +109,13 @@ SOUNDS = [("winch", "sfx_winch", lambda x: -high_share(x), True),
           ("creak", "sfx_rope_creak", lambda x: -high_share(x), True),
           ("strainalt_2", "sfx_strain", lambda x: 0., False),   # the user's pick (11-08, "이걸로"): the wooden creak
           ("ratchet", "sfx_ratchet_click", attack, False),
-          ("slam", "sfx_bridge_slam", lambda x: np.sqrt((x ** 2).mean()), False)]
+          ("slam", "sfx_bridge_slam", lambda x: np.sqrt((x ** 2).mean()), False),
+          # the moat's calm lapping (user 11-08, "물 사운드도 잔잔하게"): the steadier take (the least spread of its 10 ms
+          # loudness in dB - no splash standing out), kept whole as it loops
+          ("moat", "sfx_moat_water", lambda x: -np.std(db(env(x)[0])), True),
+          # the team gate hauled up (user 11-08, "문이 열릴 때 ... 사운드도"): the take whose loudest 20 ms frame (the
+          # closing thunk) comes latest, as the door stops at the top after its 1.2 s rise
+          ("gate", "sfx_drawbridge_gate", lambda x: float(np.argmax(env(x, .02)[0])) / max(1, len(env(x, .02)[0])), False)]
 
 for stem, out, score, loop in SOUNDS:
     takes = [(int(p[-5]), load(p)) for p in sorted(glob.glob(os.path.join(SRC, stem + ("_take*.mp3" if "alt" not in stem else ".mp3"))))]

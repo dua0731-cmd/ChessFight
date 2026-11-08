@@ -40,6 +40,7 @@ namespace ChessFight.PawnRush
             else if (owner.GameIndex == PawnRushMissions.Checkmate) ChessHall(owner);   // MiniGameModels.ChessHall.cs (R510)
             else if (owner.GameIndex == PawnRushMissions.KnightPads) PalaceLaundry(owner);   // MiniGameModels.Laundry.cs (R509)
             else if (owner.GameIndex == PawnRushMissions.EnPassant) ClockworkBallroom(owner);   // MiniGameModels.Ballroom.cs (R508)
+            else if (owner.GameIndex == PawnRushMissions.CheckBlock) KingsBedchamber(owner);   // MiniGameModels.Bedchamber.cs (R511)
         }
 
         // A section's stations stay when another game is put in (the test scene's number keys), and every game adds its
@@ -107,11 +108,10 @@ namespace ChessFight.PawnRush
         //   garages c7 / g7    -> the arched alcove (2.6 m wide), mouth to the road, where DEC_RookParkingBay stood. The
         //                         photo's gold bar across its mouth was cut away; the game's gold stop at the back stays.
         const string AlcoveName = "MODEL_RookAlcove";
-        const float AlcoveScale = 2.6f / 3.6f;
+        const float AlcoveScale = 1f;   // g_garage_alcove_v1.py builds it at the game's size (2.6 m wide, niche 1.6 x 2.4 m)
 
         static void RoyalProcessionStations(MiniGameSection owner, Dictionary<string, Material> cache)
         {
-            var palanquinKing = Load("Late/G/G_PalanquinKing");
             var palanquin = Load("Late/G/G_Palanquin");
             var ebony = Load("Late/G/G_RookEbony");
             var ivory = Load("Late/G/G_RookIvory");
@@ -125,11 +125,10 @@ namespace ChessFight.PawnRush
 
                 var sled = Find(game, "King sled");
                 var look = sled != null ? sled.Find("Look") : null;
-                var carrier = white ? palanquinKing : palanquin;
+                var carrier = palanquin;   // g_props_blender_v1.py: open box, the game's own (team coloured) king sits on its cushion
                 if (look != null && carrier != null)
                 {
-                    if (white) HideExcept(look, "Push ring");
-                    else HideExcept(look, "Push ring", "Our king");
+                    HideExcept(look, "Push ring", "Our king");
                     if (look.Find(RideName) == null) Hang(look, RideName, carrier, cache);
                 }
 
@@ -300,10 +299,10 @@ namespace ChessFight.PawnRush
         static readonly float[] BayDepth = { 1.75f, 1.46f };            // window, plain (model depth at 12 m)
         static readonly float[] BayWidth = { 5.48f, 5.36f };
 
-        // Shared with H (MiniGameModels.ChessHall.cs, 11-08): H calls RoyalProcessionHall, RoyalProcessionFloor and
-        // TeamGateDoor and the constants BackN, EnvName, RideName, and removes the env children "Fanfare trumpets",
-        // "Crown pedestal" and "Aisle stanchions". Renaming any of these, or changing a signature, breaks H; layout
-        // changes (walls, light, cloth) reach H as well.
+        // H (MiniGameModels.ChessHall.cs) and I (MiniGameModels.Bedchamber.cs) called this whole G hall on 11-08 and are
+        // moving to their own concept walls (user 11-08: each room's architecture follows its own concept). Do not assume a
+        // change here reaches H or I; keep the names H/I may still call (RoyalProcessionFloor, TeamGateDoor, BackN, EnvName,
+        // RideName) stable until they no longer do.
         static void RoyalProcessionHall(Transform content, Dictionary<string, Material> cache)
         {
             if (content.Find(EnvName) != null) return;
@@ -342,22 +341,12 @@ namespace ChessFight.PawnRush
             var marble = Resources.Load<Material>(OwnMaterials + "PR_Late_MarbleCream");
             ProcessionWalls(env, cache, marble);
 
-            // Skylight vaults (g_skylight_v1.py): the user's rib frame is half a barrel (low rail at Blender -x, high bar
-            // at +x, 5.9 m across, 3.4 m rise). Two halves, the east one mirrored, meet in a barrel over each team half
-            // (centre x +-8, 11.8 m wide) on the new 12 m ceiling, each half twice along z 0..23.6 (stretched 0.8 along its
-            // rails). Open to the sky, no glass (user 11-07). The flat marble ceiling closes everything else.
-            var vault = Load("Late/G/G_SkylightVault");
-            if (vault != null)
-                foreach (float centre in new[] { -8f, 8f })
-                    foreach (float half in new[] { -1f, 1f })
-                        foreach (float z in new[] { 5.9f, 17.7f })
-                        {
-                            var at = new GameObject("Skylight vault").transform;
-                            at.SetParent(env, false);
-                            at.localPosition = new Vector3(centre + half * 2.95f, Hall + .5f, z);   // on top of the 0.5 m ceiling slab, so no face shares its plane
-                            at.localScale = new Vector3(half < 0f ? 1f : -1f, 1f, .8f);
-                            Hang(at, RideName, vault, cache);
-                        }
+            // Skylight vaults, built in code (user 11-08 "지붕 위에 쪽 안맞아 자연스럽게 해": the two mirrored halves of the
+            // Tripo rib frame met in a clutter of hanging corbels and doubled ribs at every joint). Over each team half
+            // (centre x +-8) a clean barrel of cream marble ribs over the ceiling opening (x +-2.4..13.6, z 0..23.6): a
+            // segmental arch 11.2 m across rising 2.6 m, a rib every 2.36 m, a rail along each foot on the slab, a ridge
+            // beam and two purlins either side. Open to the sky, no glass (user 11-07). Pictures only.
+            if (marble != null) SkylightVaults(env, marble);
             RoyalProcessionLight(env);
             RoyalProcessionCloth(env);
             if (marble == null) return;
@@ -614,6 +603,44 @@ namespace ChessFight.PawnRush
             return mesh;
         }
 
+        static void SkylightVaults(Transform env, Material marble)
+        {
+            const float half = 5.6f, rise = 2.6f, z0 = 0f, z1 = 23.6f, rib = .38f, depth = .5f;
+            float y0 = Hall + .5f;                                         // on the 0.5 m ceiling slab
+            float r = (half * half + rise * rise) / (2f * rise);           // the arch's radius
+            float cy = y0 + rise - r;                                      // its centre, below the slab
+            float a = Mathf.Asin(half / r);                                // half the arch's angle
+            Vector3 On(float t, float cx) => new Vector3(cx + r * Mathf.Sin(t), cy + r * Mathf.Cos(t), 0f);
+            foreach (float cx in new[] { -8f, 8f })
+            {
+                var vault = new GameObject("Skylight vault").transform;
+                vault.SetParent(env, false);
+                // ribs: the arc in 12 straight pieces, each a box along its chord
+                const int pieces = 12, ribs = 11;
+                for (int k = 0; k < ribs; k++)
+                {
+                    float z = Mathf.Lerp(z0 + rib * .5f, z1 - rib * .5f, k / (float)(ribs - 1));
+                    for (int i = 0; i < pieces; i++)
+                    {
+                        float t0 = -a + 2f * a * i / pieces, t1 = -a + 2f * a * (i + 1) / pieces;
+                        Vector3 p0 = On(t0, cx), p1 = On(t1, cx), chord = p1 - p0;
+                        var piece = MarbleBlock(vault, "Vault rib", (p0 + p1) * .5f + new Vector3(0f, 0f, z), new Vector3(chord.magnitude + .04f, depth, rib), marble);
+                        piece.transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(chord.y, chord.x) * Mathf.Rad2Deg);
+                    }
+                }
+                // rails at the feet, the ridge on top, a purlin half way up each side: beams along z
+                void Beam(float t, float w, float hgt)
+                {
+                    var p = On(t, cx);
+                    var beam = MarbleBlock(vault, "Vault beam", new Vector3(p.x, p.y, (z0 + z1) * .5f), new Vector3(w, hgt, z1 - z0), marble);
+                    beam.transform.localRotation = Quaternion.Euler(0f, 0f, -t * Mathf.Rad2Deg);
+                }
+                Beam(-a, .6f, .6f); Beam(a, .6f, .6f);
+                Beam(0f, .45f, .55f);
+                Beam(-a * .5f, .3f, .4f); Beam(a * .5f, .3f, .4f);
+            }
+        }
+
         // A box drawn in a tiling swatch material: every face's UVs are its size in metres / 2 (the swatches are 2 m tiles),
         // so long walls repeat the texture instead of stretching it. Picture only, no collider.
         static readonly Dictionary<Vector3, Mesh> tiledBoxes = new Dictionary<Vector3, Mesh>();
@@ -706,6 +733,19 @@ namespace ChessFight.PawnRush
                 }
             }
             foreach (var name in new[] { "Entry band", "Central aisle", "Rear corridor" }) TileOver(content.Find(name), cream);
+            // the team exit tunnels (user 11-08 screenshot: the kit's black-and-white checker and a strip of sky either
+            // side): the station's "Gate passage" floor (station x -2..2, z 20..26) in cream marble, and a marble strip
+            // under each tunnel lining (x +-2..2.5), so no gap shows between the floor and the walls. Pictures only.
+            if (cream != null)
+                foreach (var station in owner.Stations)
+                {
+                    var passage = station != null ? station.transform.Find("Gate passage") : null;
+                    if (passage == null) continue;
+                    TileOver(passage, cream);
+                    if (station.transform.Find("Tunnel floor edge") != null) continue;
+                    foreach (float side in new[] { -1f, 1f })
+                        MarbleBlock(station.transform, "Tunnel floor edge", new Vector3(side * 2.25f, -.5f, 23f), new Vector3(.5f, 1f, 6f), cream);
+                }
             var shell = content.Find(MiniGamePalaceArt.ShellName);
             if (shell == null) return;
             foreach (var r in shell.GetComponentsInChildren<Renderer>(true))
@@ -806,7 +846,11 @@ namespace ChessFight.PawnRush
                 {
                     var flat = teamGate.GetComponent<Renderer>();
                     if (flat != null) flat.enabled = false;
-                    MiniGameFixtures.GateCloth(teamGate, 4f, 4.6f);
+                    MiniGameFixtures.GateCloth(teamGate, 4.4f, 5.4f);   // hung higher (5.4 m) and wider than the 4 x 4.6 gate (user 11-08)
+                    // the sheet winds up on its roller as the gate rises; the rise lasts as long as the roll-up sound's
+                    // rustle, so its closing "tak" lands when the roller reaches the top (sfx_dustsheet_open: the rustle, then the first knock at 3.42 s)
+                    var rising = teamGate.GetComponent<TeamGate>();
+                    if (rising != null) rising.Seconds = RollUpSeconds;
                     // B's moments (pick, lay, drop, return, quarters, the dust sheet going up): MiniGamePlankFx, which is
                     // also this station's IGateFx so the shared beam/burst gives way to the dust-sheet effect
                     var fx = station.GetComponent<MiniGamePlankFx>();
@@ -1006,6 +1050,9 @@ namespace ChessFight.PawnRush
         static GameObject plankModel;
 
         // Also called by MgPlanks for each carried plank it makes at run time.
+        // B's team gate rise = the time to the roll-up sound's closing knock (Resources/PawnRushMiniGameSfx/sfx_dustsheet_open).
+        const float RollUpSeconds = 3.42f;
+
         public static void DressPlank(GameObject box)
         {
             if (box == null || box.transform.Find(RideName) != null) return;
@@ -1061,7 +1108,7 @@ namespace ChessFight.PawnRush
 
             Court(content, cache);
             Cypresses(owner, content, cache);
-            Banners(content);
+            Banners(owner, content);
             Paving(owner, content);
             var portcullis = Load("Early/D/D_Portcullis");
             var drum = Load("Early/D/D_Capstan_Static");
@@ -1110,6 +1157,21 @@ namespace ChessFight.PawnRush
                     if (turning.Find(RideName) == null) Hang(turning, RideName, bars, cache);
                 }
                 CapstanChain(station, game, turning, content, cache);
+                // The floor's gold T marks become flowing chevrons (MiniGameTurnArrows, user 11-08), just above the marks.
+                if (turning.parent.Find(TurnArrowsName) == null)
+                {
+                    float floorY = turning.localPosition.y;
+                    foreach (Transform t in turning.parent)
+                        if (t.name == "Way round" || t.name == "Way round tip")
+                        {
+                            floorY = t.localPosition.y;
+                            foreach (var r in t.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+                        }
+                    var arrows = new GameObject(TurnArrowsName).transform;
+                    arrows.SetParent(turning.parent, false);
+                    arrows.localPosition = new Vector3(turning.localPosition.x, floorY + .025f, turning.localPosition.z);
+                    arrows.gameObject.AddComponent<MiniGameTurnArrows>().Setup(station, station.Mirrored ? -1f : 1f);
+                }
                 // Sounds and effects (MiniGameCourtFx.cs): the turning creak and chain loops on the bars, the gate's
                 // step / open moments on the station in place of the shared ones.
                 if (turning.GetComponent<MiniGameCapstanSound>() == null)
@@ -1137,6 +1199,8 @@ namespace ChessFight.PawnRush
         static readonly Vector2 TowerAt = new Vector2(23f, 25f);   // x, z of the east corner tower
         // MiniGamePalaceArt.Facade: the early north wall's top; the scaled D_Wall's crenel floor; parapet module centres
         const float NorthTop = 11f, ParapetCrenel = 2.05f;
+        // the crenel floor sat exactly on the wall's top and flickered with it (user, 11-08: "출구 쪽 위에 깜빡깜빡"): 3 cm up
+        const float ParapetLift = .03f;
         static readonly float[] ParapetX = { 12.4f, 17.25f, 21.2f };
         const float TowerYaw = 37f;                                    // its window toward the room's middle
         const float ArchTop = 7.25f, PulleyZ = 23.65f, PulleyAxleUp = 1.91f;   // d_props_v1.py FORK axle z
@@ -1162,6 +1226,7 @@ namespace ChessFight.PawnRush
                             break;
                     }
                 NorthWall(content, shell);
+                ExitPassage(content, shell);
                 // the garden edge's plain planters and benches at the entry and the rear corridor (replaced below)
                 foreach (var renderer in shell.GetComponentsInChildren<Renderer>(true))
                 {
@@ -1232,7 +1297,7 @@ namespace ChessFight.PawnRush
                 for (int i = 0; i < ParapetX.Length; i++)
                 {
                     float k = i & 1;
-                    Place("D_Wall", new Vector3(s * ParapetX[i], NorthTop - ParapetCrenel + k * Stagger.y, 24.9f + k * Stagger.x), 0f, WallScale, "D_Wall parapet");
+                    Place("D_Wall", new Vector3(s * ParapetX[i], NorthTop - ParapetCrenel + ParapetLift + k * Stagger.y, 24.9f + k * Stagger.x), 0f, WallScale, "D_Wall parapet");
                 }
                 // The corner tower (d_tower_v1.py, 13.5 m, above the 11 m north wall) where the side wall's line meets the
                 // north wall's middle; its window (the holder's -z) turned toward the room. Its base (radius 2 m) reaches
@@ -1311,14 +1376,56 @@ namespace ChessFight.PawnRush
                 }
             }
             foreach (var t in facade.GetComponentsInChildren<Transform>(true))
+            {
                 if (t.name == "ENV_RookGatehouse") Hide(t);
+                // The wall over each team portal and the pocket cover behind it both end at 6.0 m and overlap 0.65 m in
+                // depth: in brick the shared underside flickered over the passage (user, 11-08 recording, "아직도
+                // 깜빡깜빡"). The cover (a picture, no collider) goes 2 cm up so the wall's underside is the only one there.
+                if (t.name == "Gate pocket cover") { t.localPosition += Vector3.up * .02f; t.name += Done; }
+            }
+        }
+
+        // The exit side was plain shell boxes (user, 11-08 via the A session: "출구 쪽 벽도 자연스럽게 이어지게 색 입혀"):
+        // each team passage's tunnel linings and the arch at its rear, the rear corridor's end wall, the common exit arch
+        // and the pilasters by it. They keep their shapes and wear the walls' tinted stone brick (PR_Early_WallCore, 2 m
+        // a tile), repeated over each box's two largest sides. Colliders stay.
+        static void ExitPassage(Transform content, Transform shell)
+        {
+            var brick = Resources.Load<Material>(OwnMaterials + "PR_Early_WallCore");
+            if (brick == null) return;
+            var block = new MaterialPropertyBlock();
+            foreach (var r in shell.GetComponentsInChildren<Renderer>(true))
+            {
+                bool wall = r.name == "Portal tunnel lining" || r.name == "Rear passage end wall";
+                if (!wall)
+                    for (var t = r.transform.parent; t != null && t != shell; t = t.parent)
+                        if (t.name == "Team portal rear" || t.name == "ENV_CommonExitArch") { wall = true; break; }
+                if (!wall && (r.name == "Column plinth" || r.name == "Column shaft" || r.name == "Column capital"))
+                    wall = content.InverseTransformPoint(r.bounds.center).z > 34f;
+                if (!wall) continue;
+                var size = content.InverseTransformVector(r.bounds.size);
+                var d = new[] { Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z) };
+                System.Array.Sort(d);
+                r.sharedMaterial = brick;
+                r.GetPropertyBlock(block);
+                block.SetVector(BaseMapST, new Vector4(d[2] / 2f, d[1] / 2f, 0f, 0f));
+                r.SetPropertyBlock(block);
+            }
         }
 
         // The shell's banners in D: the team banners hung where the pulley wheel now turns, so they come down onto the
         // arch's face; then every banner's stiff cloth box becomes a swaying cloth (MiniGameBannerCloth, the user's rule:
         // hanging cloth is code). The rod stays; the brass border strips and the pawn emblem on the cloth go, since
         // they cannot sway with it. Runs on every Apply (a rebuilt shell is redone) and marks what it has done.
-        static void Banners(Transform content)
+        // D's team banners as C's (user, 11-08: "깃발 도개교 맵이랑 똑같이 해주고 위치도 제대로 맞춰"): the code pennant
+        // (MiniGameFixtures.Pennant: team cloth with a pointed hem, brass rod and finials, tassel, sway), hung from the
+        // team arch's lintel in front of the arch face and over the top of the portcullis, as on the concept sheet.
+        // The shell's team banner boxes stop drawing.
+        static readonly Vector3 TeamBannerTop = new Vector3(12f, 6.95f, 22.7f);   // arch face 22.95 (lintel 23.11), opening top 5.25
+        const float TeamBannerWidth = 2.3f, TeamBannerHeight = 2.1f;
+        const string TeamBannersName = "MODEL_TeamBanners";
+
+        static void Banners(MiniGameSection owner, Transform content)
         {
             var shell = content.Find(MiniGamePalaceArt.ShellName);
             if (shell == null) return;
@@ -1328,15 +1435,27 @@ namespace ChessFight.PawnRush
                 {
                     if (!t.name.StartsWith("Banner") || t.name.Contains(Done) || t.GetComponent<MiniGameBannerCloth>() != null) continue;
                     var p = t.localPosition;
-                    if (Mathf.Abs(Mathf.Abs(p.x) - 12f) < 1.6f && p.y > 5.5f) { t.localPosition = p + new Vector3(0f, -1.6f, -.9f); t.name += Done; }
+                    if (Mathf.Abs(Mathf.Abs(p.x) - 12f) < 1.6f && p.y > 5.5f) { Hide(t); t.name += Done; }
                 }
+            if (content.Find(TeamBannersName) == null)
+            {
+                var root = new GameObject(TeamBannersName).transform;
+                root.SetParent(content, false);
+                foreach (var station in owner.Stations)
+                {
+                    if (station == null) continue;
+                    float side = Mathf.Sign(content.InverseTransformPoint(station.transform.position).x);
+                    MiniGameFixtures.Pennant(root, "Team banner " + (side < 0f ? "W" : "E"),
+                        new Vector3(side * TeamBannerTop.x, TeamBannerTop.y, TeamBannerTop.z), TeamBannerWidth, TeamBannerHeight, station.Accent(station.Team));
+                }
+            }
             var cloths = new List<Transform>();
             foreach (var t in shell.GetComponentsInChildren<Transform>(true))
                 if (t.name.StartsWith("Banner cloth") && !t.name.Contains(Swapped) && t.GetComponent<MiniGameBannerCloth>() == null) cloths.Add(t);
             foreach (var box in cloths)
             {
                 var r = box.GetComponent<Renderer>();
-                if (r == null) continue;
+                if (r == null || box.name.Contains(Done)) continue;          // the hidden team banners stay hidden
                 Vector3 c = box.localPosition, size = box.localScale;
                 foreach (Transform t in box.parent)
                     if ((t.name.StartsWith("Banner border") || t.name.StartsWith("Banner pawn")) &&
@@ -1355,6 +1474,7 @@ namespace ChessFight.PawnRush
         // aisle, rear corridor, each station's floor, ramp and gate passage), repeated by each box's size through a
         // property block so the stones keep their size. Colliders and every other material stay.
         static readonly int BaseMapST = Shader.PropertyToID("_BaseMap_ST");
+        const string UnderlayName = "Court underlay", TurnArrowsName = "Turn arrows";
 
         static void Paving(MiniGameSection owner, Transform content)
         {
@@ -1377,6 +1497,22 @@ namespace ChessFight.PawnRush
                 r.SetPropertyBlock(block);
             }
             foreach (var name in new[] { "Entry band", "Rear corridor", "Central aisle" }) Lay(content.Find(name));
+            // Under the whole court, 25 cm below the floors, a picture-only paving slab: where a game floor stops short of
+            // a wall (the side walls' bulging foot, the entry wall, the north wall) the gap shows paving, not the sky
+            // (user, 11-08: "외곽 벽에 틈 안보이게 수정해"). Inside the 1 m floor boxes it is hidden; no collider. At 2 cm it
+            // fought the floors for depth from afar and flickered (user, 11-08: "출구 쪽 위에 깜빡깜빡"), so it lies deeper.
+            var old = content.Find(UnderlayName);
+            if (old != null && old.localPosition.y > -.2f) Object.DestroyImmediate(old.gameObject);
+            if (content.Find(UnderlayName) == null)
+            {
+                var slab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                Object.DestroyImmediate(slab.GetComponent<Collider>());
+                slab.name = UnderlayName;
+                slab.transform.SetParent(content, false);
+                slab.transform.localPosition = new Vector3(0f, -.25f - .05f, 17.7f);
+                slab.transform.localScale = new Vector3(48f, .1f, 37.6f);           // x -24..24, z -1.1..36.5
+                Lay(slab.transform);
+            }
             foreach (var station in owner.Stations)
             {
                 if (station == null) continue;

@@ -11,8 +11,10 @@ namespace ChessFight.PawnRush
     // jump, the pieces, the water and the team gate stay the game's.
     //   "Road xx"     -> wash tub 2.2 m across, its lid top on the square's top; the square box, its R312 barrel and the
     //                    square's gold rims stop drawing. The gold road number stays (a game marker).
-    //   "Jump pad xx" -> brass bubble nozzle on the lid; the pad's discs stop drawing, its gold "Pad ring" stays. The
-    //                    nozzle rides the pad, so it squashes with the pad's bounce.
+    //   "Jump pad xx" -> brass bubble nozzle on the lid; the pad's discs and its gold "Pad ring" stop drawing (user 11-08:
+    //                    "이런 원형으로 된 노란색 하지 말고 다른 거 해줘" - the nozzle itself, bright brass with a steady
+    //                    trickle of bubbles (MiniGameLaundryFx), marks the jump spot). The nozzle rides the pad, so it
+    //                    squashes with the pad's bounce. The jump rule (PadRadius 0.8 m) is unchanged.
     //   team gate     -> the sluice gate leaf (3.85 x 4.55 m like every team door, its lifting bar above); it rises with
     //                    the gate (TeamGate lifts it).
     //   beside it     -> the brass sluice wheel on the wall face, outside each team door.
@@ -50,6 +52,8 @@ namespace ChessFight.PawnRush
                         Hang(at, RideName, leaf, cache);
                     }
                 }
+                // J's own bubbles, suds and sluice gush (MiniGameLaundryFx), also in place of the shared gate moments
+                if (station.GetComponent<MiniGameLaundryFx>() == null) station.gameObject.AddComponent<MiniGameLaundryFx>();
                 if (station.Game == null) continue;
                 LaundryRoad(station.Game.transform, tub, nozzle, cache);
                 LaundryDolls(station, station.Game.transform, cache);
@@ -285,7 +289,7 @@ namespace ChessFight.PawnRush
             if (nozzle != null)
                 foreach (var pad in pads)
                 {
-                    HideExcept(pad, "Pad ring");
+                    HideExcept(pad);
                     if (pad.Find(RideName) == null) Hang(pad, RideName, nozzle, cache);
                 }
         }

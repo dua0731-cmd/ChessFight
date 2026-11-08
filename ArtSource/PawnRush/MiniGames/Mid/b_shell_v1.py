@@ -87,6 +87,12 @@ def main():
             a, b = sorted((s * (x - .25 if x == t0 else x), s * (x if x == t0 else x + .25)))
             specs += [(a, b, 24.0, 30.0, 0., tc)]
         a, b = sorted((s * t0, s * t1)); specs += [(a, b, 24.0, 30.0, tc, tc + .35)]
+    # Behind the north corridor modules outside the team arches (x +-16.3..22, front z 24.0, only ~3 cm deep) the
+    # facade stood 1 m back at z 25.0, leaving a slot open from the module top up (user, 2026-11-08: "벽뒤에 공간이
+    # 있잖아"). A block from the module back to the facade, floor to ceiling, closes it; above the 4.4 m modules its
+    # face (z 24.04) carries the wall straight up.
+    for s in (-1, 1):
+        a, b = sorted((s * 16.3, s * 22.6)); specs += [(a, b, 24.04, 25.0, 0., TOP)]
     # North block back (room face z 29.95 toward the rear corridor), tunnel rears kept open
     nb = (29.4, 29.95)
     specs += [(-22.3, 22.3, *nb, tc, TOP)]

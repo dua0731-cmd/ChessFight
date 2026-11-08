@@ -172,6 +172,7 @@ namespace ChessFight.PawnRush
                 }
             }
             BallroomDrapes(content);
+            BallroomFloorGaps(content);
             if (content.Find("MODEL_MirrorProbe") == null)
             {
                 var probe = new GameObject("MODEL_MirrorProbe");
@@ -222,6 +223,37 @@ namespace ChessFight.PawnRush
                 }
         }
 
+        // Where the game's floors stop short of the room (user, 11-08 screenshots: "출구쪽 틈이 안보이게 하고"): slabs a few
+        // millimetres under the game's floor tops, in the floor's own material, so no sky shows through. No colliders.
+        //   team-gate tunnels: the walls stand at |x| 9.78..14.22 but the passage floor is |x| 10..14 (z 24..30)
+        //   under the centre facade: the aisle's chequer ends at z 24, the facade's uneven foot stands from z 23.69
+        //   under the entry and exit arches, past the entry band (z 0) and the rear corridor (z 36)
+        static void BallroomFloorGaps(Transform content)
+        {
+            if (content.Find("MODEL_FloorGaps") != null) return;
+            var slate = Resources.Load<Material>(OwnMaterials + "PR_Mid_SlateFloor");
+            var chequer = Resources.Load<Material>(OwnMaterials + "PR_Mid_CheckerMarble");
+            var cream = Resources.Load<Material>(OwnMaterials + "PR_Mid_CreamFloor");
+            if (slate == null || chequer == null || cream == null) return;
+            var root = new GameObject("MODEL_FloorGaps").transform;
+            root.SetParent(content, false);
+            const float top = -.004f;
+            foreach (float s in new[] { -1f, 1f })
+                Slab(root, "Tunnel floor", new Vector3(s * 12f, 0f, 27f), new Vector3(4.5f, 0f, 6.1f), top, slate);
+            Slab(root, "Centre facade floor", new Vector3(0f, 0f, 24.7f), new Vector3(19.6f, 0f, 1.6f), top, chequer);
+            Slab(root, "Entry arch floor", new Vector3(0f, 0f, -.4f), new Vector3(15.2f, 0f, .8f), top, chequer);
+            Slab(root, "Exit arch floor", new Vector3(0f, 0f, 36.4f), new Vector3(15.2f, 0f, .8f), top, cream);
+        }
+
+        static void Slab(Transform parent, string name, Vector3 centre, Vector3 size, float top, Material m)
+        {
+            const float depth = .5f;
+            var t = DrapePart(PrimitiveType.Cube, parent, name, new Vector3(centre.x, top - depth * .5f, centre.z), new Vector3(size.x, depth, size.z), m);
+            var block = new MaterialPropertyBlock();
+            block.SetVector("_BaseMap_ST", new Vector4(size.x * .5f, size.z * .5f, 0f, 0f));    // the floors' 2 m tile
+            t.GetComponent<Renderer>().SetPropertyBlock(block);
+        }
+
         static Transform DrapePart(PrimitiveType type, Transform parent, string name, Vector3 at, Vector3 scale, Material m)
         {
             var go = GameObject.CreatePrimitive(type);
@@ -247,7 +279,13 @@ namespace ChessFight.PawnRush
             if (art.Find(RideName) != null) return;
             var at = new GameObject(RideName).transform;
             at.SetParent(art, false);
-            at.localPosition = new Vector3(0f, -2.275f, 0f);    // the leaf's foot (4.55 m leaf, centred)
+            // the leaf's foot (4.55 m leaf, centred), 8 cm toward the room so the enlarged leaf's back stays in front of
+            // the door arch's face (z 23.3) as it rises
+            at.localPosition = new Vector3(0f, -2.275f, -.08f);
+            // user, 11-08: "출구 쪽 문도 위로 더 크게 해서 빈틈 없게 해" - the 3.85 x 4.55 m leaf left the door arch's opening
+            // (E_DoorArch: 4.5 m wide, crown 5.8 m) showing round it: stretched to 4.62 x 5.95 m so it covers the
+            // opening to the crown; it still stands in front of the arch and rides the gate as before
+            at.localScale = new Vector3(4.62f / 3.85f, 5.95f / 4.55f, 1f);
             Hang(at, "MODEL_MirrorDoor", door, cache);
             // user, 11-08 (the probe showed the sky: realtime probes are off in the quality settings): "여기는 실제로
             // 반사 되게 유리 넣고" - the door's glass is a live reflection

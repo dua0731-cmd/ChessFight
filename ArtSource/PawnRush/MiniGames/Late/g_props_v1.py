@@ -31,15 +31,16 @@ BRASS = np.array([.30, .23, .12], np.float32)
 #   gold rules: None (keep), "all" (whole object), ("above", f) (faces above f x height)
 SOURCES = {
     "Pieces": ("R504_G_A1_Pieces.fbx", 0, 0., [
-        (0, "G_PalanquinKing", "base", 1.6, 12000, ("above", .14)),
-        (1, "G_Palanquin", "base", 1.6, 12000, ("above", .14)),
+        # G_PalanquinKing: now modelled in Blender, g_props_blender_v1.py (user 11-08)
+        # G_Palanquin: now modelled in Blender, g_props_blender_v1.py (user 11-08)
         (2, "G_RookEbony", "h", 1.6, 5000, None),
         (4, "G_CastlingRook", "h", 2.2, 6000, None),
         (5, "G_King", "h", 1.7, 3000, None)]),
     "Decor": ("R504_G_A2_Decor.fbx", 0, 180., [
         (0, "G_Balustrade", "h", 1.1, 2000, "all"),
-        (1, "G_CrownPedestal", "h", 1.6, 3000, "all"),
-        (3, "G_StanchionPair", "h", 1.0, 2500, "all")]),
+        # G_CrownPedestal: now modelled in Blender, g_props_blender_v1.py (user 11-08)
+        # G_StanchionPair: now modelled in Blender, g_props_blender_v1.py (user 11-08)
+        ]),
     "Fixes": ("R504_G_A4_TrumpetStand.fbx", 0, 0., [
         (0, "G_RookIvory", "h", 1.6, 5000, None),
         (1, "G_TrumpetStand", "h", 1.3, 3000, None)]),
@@ -47,7 +48,7 @@ SOURCES = {
         # the B session 11-07: "천도 마찬가지로 흐느적 거리는게 없잖아 그것도 안돼 코드로 해야 해")
     "Modules": ("R504_G_A3_Modules.fbx", 1, -90., [
         (2, "G_DaisEdge", "h", .6, 1000, "all"),
-        ("3a", "G_GarageAlcove", "w", 3.6, 5000, None),
+        # ("3a", G_GarageAlcove): now modelled in Blender, g_garage_alcove_v1.py (user 11-08), not cut from this sheet
         ("3b", "G_WallWindow", "h", 6.0, 1500, "all")]),
     # the wall system (asset photo G_W1_walls.png, user's Tripo "Classical Marble Elements", 80k): 12 m high; the niche
     # bay came out open like a window and the inside corner broke, so they are left out (corners get a column)

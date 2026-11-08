@@ -16,7 +16,7 @@ namespace ChessFight.PawnRush
     public sealed class PaintBoardFx : MonoBehaviour
     {
         static Texture2D dot, star, splatTex, ringTex, flake, frameTex, fillTex;
-        ParticleSystem motes, splat, drops, ring, stars, confetti, frame, fill;
+        ParticleSystem motes, splat, drops, ring, stars, confetti, frame, fill, dust;
         ParticleSystem.EmitParams e;                                   // a struct: reused, so not readonly
 
         void Awake()
@@ -53,6 +53,17 @@ namespace ChessFight.PawnRush
             Shrink(frame, FrameFrom, 1f, true);
             fill = Particles("A square flash", fillTex, true, ParticleSystemRenderMode.HorizontalBillboard, 40, 1.2f);
             Fade(fill, .8f, 0f, .03f, .1f);
+
+            // stone dust shaken loose as the door lifts in its arch (R506 door moment): soft, not glowing, drifting out
+            dust = Particles("A stone dust", dot, false, ParticleSystemRenderMode.Billboard, 300);
+            Fade(dust, .55f, 0f, .1f, .3f);
+            Shrink(dust, .45f, 1.6f);
+            var dd = dust.main;
+            dd.gravityModifier = -.02f;
+            var drift = dust.limitVelocityOverLifetime;
+            drift.enabled = true;
+            drift.limit = .5f;
+            drift.dampen = .12f;
 
             stars = Particles("A twinkles", star, true, ParticleSystemRenderMode.Billboard, 400, 3f);
             Fade(stars, 1f, 0f, .15f);
@@ -193,6 +204,115 @@ namespace ChessFight.PawnRush
                 Emit(stars, p, Vector3.up * Random.Range(.2f, .6f), Random.Range(.6f, 1.1f), Random.Range(.35f, .6f),
                      Glow(i % 3 == 0 ? Color.white : team, 2.8f), Random.Range(0f, 360f));
             }
+        }
+
+        // The team door opening (user, 11-08: "문이 열리는 vfx랑 사운드 넣어줘"; replaces the shared light column the user
+        // turned down on 11-07, "이런 vfx 말고"). `door` is the closed door's floor middle, `right` its across direction,
+        // `court` the way out of the arch toward the court, `yaw` the station's turn. At the start: a square of light on
+        // the passage floor (the board's own shape), a flash, stone dust puffing out along the door's foot and falling
+        // from the lintel, and paint confetti thrown out of the arch toward the court. DoorRising adds the rest.
+        public void GateOpened(Vector3 door, Vector3 right, Vector3 court, float yaw, Color team, Color stone, Color gold, Color cream)
+        {
+            Emit(fill, door + Vector3.up * .03f, Vector3.zero, .5f, 4.2f / FrameEdge, Glow(team, 1.4f), yaw);
+            Frame(door + Vector3.up * .04f, 4.2f, yaw, .9f, Glow(team, 1.7f));
+            Frame(door + Vector3.up * .05f, 4.2f, yaw, 1.3f, Glow(gold, 1.5f));
+            for (int i = 0; i < 26; i++)
+            {
+                float x = Random.Range(-2f, 2f);
+                var at = door + right * x + court * Random.Range(.1f, .4f) + Vector3.up * Random.Range(.05f, .4f);
+                Emit(dust, at, court * Random.Range(.3f, 1.1f) + right * x * .15f + Vector3.up * Random.Range(.05f, .3f), Random.Range(1.4f, 2.2f),
+                     Random.Range(.6f, 1.1f), stone, Random.Range(0f, 360f));
+            }
+            for (int i = 0; i < 12; i++)
+            {
+                var at = door + right * Random.Range(-2f, 2f) + Vector3.up * Random.Range(4.6f, 5.2f) + court * .2f;
+                Emit(dust, at, Vector3.down * Random.Range(.2f, .6f) + court * Random.Range(.1f, .4f), Random.Range(1.2f, 1.8f),
+                     Random.Range(.4f, .8f), stone, Random.Range(0f, 360f));
+            }
+            // In place of the confetti (user, 11-08: "폭죽 연출은 하지 말고 다른 거 넣어줘"): a brushed paint path rolls out
+            // from under the rising door into the tunnel, the way the team now walks out (PaintPath).
+            StartCoroutine(PaintPath(door, -court, right, team, stone));
+        }
+
+        // A 3.2 m wide stroke of the team's paint, brushed from the door's foot `length` m along `along` (into the
+        // tunnel) in 0.9 s, its front a ragged bristle edge, gold twinkles at its edges as it goes; it holds, then
+        // fades in 1.2 s. A quad of its own (Particles/Unlit, alpha blended), 3 cm over the floor.
+        System.Collections.IEnumerator PaintPath(Vector3 door, Vector3 along, Vector3 right, Color team, Color stone)
+        {
+            const float Width = 3.2f, Length = 5.4f, Roll = .9f, Hold = 1.6f, FadeOut = 1.2f;
+            var shader = Shader.Find(LitMaterials.ParticlesUnlitName);
+            if (shader == null) yield break;
+            var go = new GameObject("A door paint path", typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(transform, false);
+            go.transform.position = door + Vector3.up * .03f;
+            go.transform.rotation = Quaternion.LookRotation(along, Vector3.up);
+            var mesh = new Mesh { name = "A door paint path" };
+            mesh.SetVertices(new[] { new Vector3(-.5f, 0f, 0f), new Vector3(.5f, 0f, 0f), new Vector3(.5f, 0f, 1f), new Vector3(-.5f, 0f, 1f) });
+            mesh.SetUVs(0, new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f) });
+            mesh.SetTriangles(new[] { 0, 2, 1, 0, 3, 2 }, 0);
+            mesh.RecalculateNormals();
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            var m = new Material(shader) { mainTexture = PathTexture(), name = "A door paint path" };
+            LitMaterials.MakeTransparent(m, false);
+            var paint = Color.Lerp(team, stone, .35f);
+            m.color = paint;
+            var r = go.GetComponent<MeshRenderer>();
+            r.sharedMaterial = m;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            float t = 0f;
+            while (t < Roll + Hold + FadeOut)
+            {
+                t += Time.deltaTime;
+                float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / Roll));
+                go.transform.localScale = new Vector3(Width, 1f, Mathf.Max(.05f, Length * k));
+                if (t < Roll && Random.value < .6f)
+                    foreach (float side in new[] { -1f, 1f })
+                        Emit(stars, door + along * Length * k + right * side * Width * .5f + Vector3.up * .15f, Vector3.up * .3f,
+                             Random.Range(.4f, .7f), Random.Range(.25f, .4f), Glow(side < 0f ? Color.white : team, 2.6f), Random.Range(0f, 360f));
+                var c = paint;
+                c.a = 1f - Mathf.Clamp01((t - Roll - Hold) / FadeOut);
+                m.color = c;
+                yield return null;
+            }
+            Destroy(go);
+            Destroy(mesh);
+            Destroy(m);
+        }
+
+        static Texture2D pathTex;
+
+        // The path's paint, white in the mask (the material's colour tints it): bristle streaks running along it (v),
+        // thinning to ragged edges at both sides and a dry-brush front at its far end.
+        static Texture2D PathTexture()
+        {
+            if (pathTex != null) return pathTex;
+            pathTex = Draw(128, (x, y) =>
+            {
+                float u = (x + 1f) * .5f, v = (y + 1f) * .5f;
+                float streak = .7f + .3f * Mathf.PerlinNoise(u * 40f, 3.1f);
+                float side = Mathf.Clamp01((.5f - Mathf.Abs(u - .5f)) * 9f - Mathf.PerlinNoise(v * 6f, u * 3f) * .6f);
+                float front = Mathf.Clamp01((1f - v) * 14f - Mathf.PerlinNoise(u * 30f, 7.7f) * 1.2f);
+                return streak * side * front;
+            });
+            pathTex.wrapMode = TextureWrapMode.Clamp;
+            return pathTex;
+        }
+
+        // While the door rises (called a few times a second): twinkles and a little dust along the door's rising foot
+        // (`footHeight` over the floor) and a twinkle on the arch's outline.
+        public void DoorRising(Vector3 door, Vector3 right, Vector3 court, float footHeight, Color team, Color stone)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                var at = door + right * Random.Range(-1.9f, 1.9f) + Vector3.up * footHeight + court * .25f;
+                Emit(stars, at, Vector3.down * Random.Range(.1f, .4f), Random.Range(.4f, .7f), Random.Range(.25f, .45f),
+                     Glow(i == 0 ? Color.white : team, 2.6f), Random.Range(0f, 360f));
+                Emit(dust, at, court * Random.Range(.1f, .5f) + Vector3.down * .2f, Random.Range(.8f, 1.3f), Random.Range(.3f, .55f),
+                     stone, Random.Range(0f, 360f));
+            }
+            float a = Random.Range(0f, Mathf.PI);
+            var p = door + right * Mathf.Cos(a) * 2.5f + Vector3.up * (3.55f + Mathf.Sin(a) * 2.3f) + court * .3f;
+            Emit(stars, p, Vector3.up * .3f, .8f, .4f, Glow(team, 2.8f), Random.Range(0f, 360f));
         }
 
         // ------------------------------------------------------------------ parts

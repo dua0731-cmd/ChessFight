@@ -383,6 +383,13 @@ def main():
     for sd in (-1, 1):
         for x0, x1 in ((2., t0 + .2), (t1 - .2, FILL_IN)):
             a, b = sorted((sd * x0, sd * x1)); slate.append((a, b, 23.99, NORTH + .01, -.6, .395))
+    # (user, 11-08: "출구 쪽 바닥 틈 안보이게 해. 이런데 빈틈 있어") the team-gate tunnels: their floor (top 0) runs
+    # x +-10..14 between walls at 9.78 and 14.22 -> slate beside it, z 24..30; and the middle under the centre gate
+    # (the aisle, top 0, ends at z 24; the gate's ragged foot showed the hole behind it) -> slate z 23.9..25
+    for sd in (-1, 1):
+        for x0, x1 in ((t0 - .1, 10.), (14., t1 + .1)):
+            a, b = sorted((sd * x0, sd * x1)); slate.append((a, b, 23.95, 30.05, -.6, -.002))
+    slate.append((-2.05, 2.05, 23.9, NORTH + .01, -.6, -.002))
     strips.append(boxes(slate, floor_mat("PR_Mid_SlateFloor"), "north floor strip", uv_name))
     strips.append(boxes([(-FILL_IN, FILL_IN, -.07, 0., -.6, -.002)], floor_mat("PR_Mid_CheckerMarble"), "entry floor strip", uv_name))
     strips.append(boxes([(-FILL_IN, FILL_IN, 29.9, 30., -.6, -.002)], floor_mat("PR_Mid_CreamFloor"), "rear floor strip", uv_name))

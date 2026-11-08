@@ -68,7 +68,7 @@ cd = bpy.data.cameras.new("cam"); cam = bpy.data.objects.new("cam", cd); sc.coll
 views = {"entry": ((0, 1.5, 2.2), (0, 24, 6), 18), "side": ((-8, 4, 3), (22, 14, 6), 20),
          "north": ((0, 12, 3), (0, 24, 6), 18), "rear": ((-10, 31, 2), (10, 35, 4), 18), "back": ((0, 34, 2.5), (0, -1, 6), 18),
          "railtop": ((-19.5, 10, 9.5), (-21, 14, 5.3), 22), "railside": ((-14, 6, 6.2), (-20.8, 14, 5.8), 26),
-         "aisle": ((0, 9, 9), (0, 14.01, 0), 24), "roof": ((30, -25, 40), (0, 18, 6), 28)}
+         "aisle": ((0, 9, 9), (0, 14.01, 0), 24), "northgap": ((13, 19, 9), (19.5, 24.5, 3.5), 18), "roof": ((30, -25, 40), (0, 18, 6), 28)}
 ONLY = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 for name, (loc, tgt, lens) in views.items():
     if ONLY and name not in ONLY: continue

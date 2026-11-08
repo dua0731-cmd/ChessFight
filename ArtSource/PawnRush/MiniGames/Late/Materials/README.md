@@ -47,3 +47,18 @@ G 왕의 행차 회랑 [R504 컨셉 시트](../../../../../Docs/PawnRush/Concept
 | `PR_Late_Bronze` 청동 | 1 m | BaseColor · Normal · Roughness · Metallic | 뒤 벽 홀 종. 따뜻한 주물 청동, 얼룩 |
 
 비교 그림은 `r510_swatch_compare.png`(위 컨셉 견본 줄, 아래 1 m 견본·2×2 반복). G의 `swatch_compare.png`는 건드리지 않는다. Unity `Assets/`로는 아직 옮기지 않았다.
+
+## I 국왕 침실 추가 견본 (R511)
+
+[R511 컨셉 시트](../../../../../Docs/PawnRush/ConceptArt/R511_KingsBedchamber/) `I_03_props_materials.png`의 견본 줄 11칸 중 9칸은 재사용(사용자 11-08 재사용 지시): 크림·남색 대리석, 보라 벨벳, 담비털, 무광 황동(R504), 레일 = `PR_Late_Walnut`(Unity에서 게임 레일색 #6A6152 쪽으로 어둡게), 흑단 `PR_Late_Ebony`(R510), 상아 = `PR_Late_MarbleCream`, 침대 리넨 = `PR_Mid_DollLinen`(R509 J). 새로 2종만 `r511_material_swatches.py`로 굽는다(r504 함수 재사용).
+
+```
+"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --python r511_material_swatches.py -- --bake --preview
+```
+
+| 재질 | 타일 | 맵 | 내용 |
+|---|---|---|---|
+| `PR_Late_I_CarpetLight` | 1 m | BaseColor·Normal·Roughness·AO | 밝은 베이지 카펫 #CBBF9F, 1 cm 바구니 직조(실 96가닥/m, 짝수라 이어짐) + 얼룩·보풀 |
+| `PR_Late_I_CarpetDark` | 1 m | 같음 | 어두운 베이지 카펫 #A79A7C |
+
+게임은 64칸을 일부러 저대비로 그린다(`MgCheckBlock`) — Unity에서는 칸 재질만 바꾼다. 비교 그림 `r511_swatch_compare.png`. Unity `Assets/`로는 아직 옮기지 않았다.

@@ -106,7 +106,7 @@ def tile_dado(hall):
     uv_name = hall.data.uv_layers.active.name
     t_obj = tile_boxes(tiles, tile, "tile dado", 1., uv_name)
     c_obj = tile_boxes(caps, walnut, "cap rail", 2., uv_name)
-    hall = E.join([hall, t_obj, c_obj], "J_HallEnv")
+    hall = E.join([hall, t_obj, c_obj] + gap_fills(uv_name), "J_HallEnv")
     # e_hall_v1 makes some materials twice ("PR_Mid_WalnutFloor.001"): Unity finds kit materials by name, so every
     # duplicate slot goes back to its first material
     mats = hall.data.materials
@@ -117,6 +117,32 @@ def tile_dado(hall):
                 mats[i] = base
     print("HALL materials", sorted({m.name for m in mats if m}))
     return hall
+
+
+def gap_fills(uv_name):
+    """User 11-08 (two photos at the doors), "출구 쪽 문 빈틈 없이 채워": the sky showed through two holes in the floor.
+      - the team-gate tunnels: the game's "Gate passage" floor is 4 m wide (x +-10..14, z 24..30) but the tunnel walls
+        stand at |x| 9.78 and 14.22, so a 0.22 m slot ran along both walls the whole tunnel -> slate strips there;
+      - the centre gate: its door is set back to z ~24.2 while the central aisle floor stops at z 24, and its bottom is
+        a few cm off the floor, ragged -> the aisle's chequer carried on under it to the wall (z 25), and a 0.25 m stone
+        threshold under the door (x +-2.6) that the door's ragged foot stands into.
+    Tops 2 mm under the game floors they meet (no shared plane)."""
+    slate = tex_mat("PR_Mid_SlateFloor", "PR_Mid_SlateFloor")
+    chequer = tex_mat("PR_Mid_CheckerMarble", "PR_Mid_CheckerMarble")
+    t0, t1 = H.TUNNEL[0], H.TUNNEL[1]
+    strips = []
+    for sd in (-1, 1):
+        for a, b in ((t0 - .03, 10.03), (13.97, t1 + .03)):
+            x0, x1 = sorted((sd * a, sd * b))
+            strips.append((x0, x1, 23.97, 30.03, -.6, -.002))
+    out = [tile_boxes(strips, slate, "tunnel floor edges", 2., uv_name)]
+    out.append(tile_boxes([(-2.02, 2.02, 23.97, H.NORTH + .02, -.6, -.002)], chequer, "centre gate floor", 2., uv_name))
+    out.append(tile_boxes([(-2.6, 2.6, 24.0, H.NORTH - .02, 0., .25)], slate, "centre gate threshold", 1., uv_name))
+    # the door leaves' Tripo surface is torn low on the right (the wall behind showed through): a walnut board just
+    # behind the doors (their face is at z ~24.2) so any tear shows dark wood
+    walnut = tex_mat("PR_Mid_WalnutFloor", "PR_Mid_WalnutFloor")
+    out.append(tile_boxes([(-2.6, 2.6, 24.42, 24.52, .2, 3.2)], walnut, "centre door backing", 2., uv_name))
+    return out
 
 
 def basin():

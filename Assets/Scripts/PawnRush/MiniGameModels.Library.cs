@@ -11,6 +11,8 @@ namespace ChessFight.PawnRush
         // e_library_v1.py: the top storey's lid 2 cm over each top, the bell's stand 0.5 cm on it (BELL_LIFT), 0.55 m to
         // the north of the top's centre
         const float BellLift = .025f, BellBack = .55f;
+        const string DoorFitName = "MODEL_DoorFit";
+        const float DoorTop = 5.79f, DoorWidth = 4.2f;   // e_hall_v1.py TUNNEL: ceiling 5.8, walls 4.44 apart
 
         static void RoyalLibrary(MiniGameSection owner)
         {
@@ -27,11 +29,22 @@ namespace ChessFight.PawnRush
                 // The pivoting bookcase (MiniGamePalaceArt.DressGate, turned by PalaceGateLeaf when the team's gate
                 // opens): the leaf model hangs on the same pivot, hinge on it and the leaf along +x, so it swings with
                 // it; the code-built shelf stops drawing.
+                // Fitted to the rebuilt tunnel with no gap (user, 11-08: "출구 쪽 문 비틈 없이 문 크기 위로 키워"): the
+                // 3.8 x 4.6 m leaf grows to the tunnel's floor-to-ceiling 5.79 m and to its far wall (4.2 m from a
+                // hinge 8 cm out from the game's pivot, |x| 9.78..14.22 at x +-12); open, it lies along the wall.
                 var pivot = station.transform.Find("DEC_ShelfDoorPivot");
                 if (pivot != null && door != null)
                 {
                     HideExcept(pivot);
-                    if (pivot.Find(RideName) == null) Hang(pivot, RideName, door, cache);
+                    if (pivot.Find(DoorFitName) == null)
+                    {
+                        var fit = new GameObject(DoorFitName).transform;
+                        fit.SetParent(pivot, false);
+                        // the pivot sits at the gate's middle, 2.3 m up: the leaf from the floor (-2.3) to 5.79 m (+3.49)
+                        fit.localPosition = new Vector3(-.08f, (DoorTop - 2.3f - 2.3f) * .5f, 0f);
+                        fit.localScale = new Vector3(DoorWidth / 3.8f, DoorTop / 4.6f, 1f);
+                        Hang(fit, RideName, door, cache);
+                    }
                 }
                 if (station.Game == null) continue;
                 var game = station.Game.transform;
@@ -491,6 +504,7 @@ namespace ChessFight.PawnRush
                     v.playOnAwake = false; v.spatialBlend = 1f; v.rolloffMode = AudioRolloffMode.Linear;
                     v.minDistance = 5f; v.maxDistance = 50f;
                 }
+                MiniGameEar.Fit(v, station);   // the same anywhere in this mini-game (user 11-08, D session)
                 v.PlayOneShot(creak);
             }
             if (additive == null || blended == null) return;
@@ -505,7 +519,7 @@ namespace ChessFight.PawnRush
             for (int i = 0; i < 16; i++)
             {
                 bool top = i >= 11;
-                var at = centre + right * R(-1.9f, 1.9f) + Vector3.up * (top ? R(2f, 2.3f) : R(-2.1f, -1.8f)) - forward * R(.1f, .5f);
+                var at = centre + right * R(-1.9f, 1.9f) + Vector3.up * (top ? R(3.2f, 3.5f) : R(-2.1f, -1.8f)) - forward * R(.1f, .5f);
                 Add(0, dustTex, blended, at, new Vector3(0f, top ? -.25f : .35f, 0f) - forward * R(.2f, .6f) + right * R(-.3f, .3f),
                     R(0f, .7f), R(1.6f, 2.4f), R(.9f, 1.5f));
             }
@@ -524,7 +538,7 @@ namespace ChessFight.PawnRush
                 var r = go.GetComponent<Renderer>();
                 if (page != null) r.sharedMaterial = page;
                 r.enabled = false;
-                bits.Add(new Bit { T = go.transform, R = r, Kind = 2, From = centre + right * R(-1.7f, 1.7f) + Vector3.up * 2.4f - forward * .35f,
+                bits.Add(new Bit { T = go.transform, R = r, Kind = 2, From = centre + right * R(-1.9f, 1.9f) + Vector3.up * 3.55f - forward * .35f,
                                    Delay = R(.2f, .8f), Life = 3.2f, Phase = R(0f, 6.3f), Spin = new Vector3(R(-90f, 90f), R(-160f, 160f), R(-90f, 90f)) });
             }
             // the light spilling from the tunnel

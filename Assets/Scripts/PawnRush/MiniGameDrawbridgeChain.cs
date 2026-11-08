@@ -155,6 +155,21 @@ namespace ChessFight.PawnRush
         readonly List<Vector3> normals = new List<Vector3>();
         readonly List<Vector2> uvs = new List<Vector2>();
         readonly List<int> tris = new List<int>();
+        readonly float[] snap = new float[4];                // each knot's strain moment now, 0..1
+        readonly float[] snapAt = new float[4];              // where along the rope (m) each knot is
+        bool snapping;
+        float tension, fibreClock, lastLift = -1f;
+
+        // User 11-08 ("줄이 팽창 하는 거 말고 줄이 끊어질랑 말랑 하는 거 여려명이서 하면 그 강도가 쎄지고"): not a swell -
+        // the rope looks ready to part, the harder the more pawns haul (MgDrawbridge.Tension01, from the synced net pull):
+        // its three strands work loose and thin (up to 60 % apart, 15 % thinner) and loose fibres spit off it; the line
+        // itself does not move (no trembling: "줄이 출렁 이면 안돼"). At each sprinting tug's strain sound (MgDrawbridge.StrainAge) the rope
+        // round that knot frays hard for half a second (0.7 m either side) and sprays fibres. Off the drum only: the
+        // wound coil stays tight.
+        const float FrayMax = .6f, ThinMax = .15f, SnapReach = .7f;
+        static readonly Color[] Fibres = { new Color(.86f, .74f, .55f), new Color(.72f, .6f, .42f), new Color(.95f, .88f, .72f) };
+
+        static float SnapAt(float age) => age < 0f || age > .6f ? 0f : age < .06f ? age / .06f : Mathf.Exp(-(age - .06f) / .16f);
 
         // `rope` and `pieceMesh` are from the pieced rope this replaces: only rope 0 is made, the piece is not used.
         public static MiniGameDrawbridgeRope Add(MgDrawbridge game, int rope, Mesh pieceMesh, Material material)
@@ -181,7 +196,23 @@ namespace ChessFight.PawnRush
         {
             if (game == null || mesh == null) return;
             float shown = game.Shown;
-            if (Mathf.Abs(shown - lastShown) < 1e-4f) return;
+            bool wasLive = snapping || tension > .01f;
+            snapping = false;
+            for (int k = 0; k < 4; k++)
+            {
+                float age = game.StrainAge(k);
+                float was = snap[k];
+                snap[k] = SnapAt(age);
+                if (snap[k] > 0f) snapping = true;
+                if (age >= 0f && age < .1f && was <= 0f)        // the tug (first frame it shows): a spray of fibres at the knot
+                    ArenaFx.Burst(game.KnotWorld(k) + Vector3.up * .1f, Fibres, 10, .9f, .8f, .6f, .03f);
+            }
+            tension = game.Tension01;
+            bool live = snapping || tension > .01f;
+            float liftSum = game.LiftSum;
+            bool settling = Mathf.Abs(liftSum - lastLift) > 1e-4f;
+            lastLift = liftSum;
+            if (Mathf.Abs(shown - lastShown) < 1e-4f && !live && !wasLive && !settling) return;
             if (!game.RopeLine(line, out int depart) || line.Count < 2) { mesh.Clear(); return; }
             lastShown = shown;
 
@@ -203,6 +234,18 @@ namespace ChessFight.PawnRush
                 pts.Add(Vector3.Lerp(line[seg], line[seg + 1], Mathf.Clamp01((sv - len[seg]) / l)));
                 sAt.Add(sv);
             }
+            if (snapping)
+                for (int k = 0; k < 4; k++)
+                {
+                    if (snap[k] <= 0f) continue;
+                    var at = transform.InverseTransformPoint(game.KnotWorld(k));
+                    float best = float.MaxValue;
+                    for (int i = 0; i < n; i++)
+                    {
+                        float d = (pts[i] - at).sqrMagnitude;
+                        if (d < best) { best = d; snapAt[k] = sAt[i]; }
+                    }
+                }
             tan.Clear();
             for (int i = 0; i < n; i++)
             {
@@ -230,15 +273,31 @@ namespace ChessFight.PawnRush
                 var nn = nrm[i];
                 var bb = Vector3.Cross(t, nn);
                 float psi = (sAt[i] - sDep - shown) * Twist;
+                // the strain here: the haul along the whole run off the drum, plus a tug's moment round its knot
+                float strain = 0f;
+                if (sAt[i] > sDep)
+                {
+                    strain = tension * Mathf.Clamp01((sAt[i] - sDep) / .5f);
+                    if (snapping)
+                        for (int k = 0; k < 4; k++)
+                            if (snap[k] > 0f)
+                            {
+                                float d = (sAt[i] - snapAt[k]) / SnapReach;
+                                strain += snap[k] * Mathf.Exp(-d * d);
+                            }
+                    strain = Mathf.Min(strain, 1.4f);
+                }
+                float apart = 1f + FrayMax * strain, thin = 1f - ThinMax * Mathf.Min(1f, strain);
+                var centre = pts[i];                       // the rope's line stays taut and still (user 11-08: "줄이 출렁 이면 안돼")
                 for (int j = 0; j < Strands; j++)
                 {
                     float th = psi + j * 2f * Mathf.PI / Strands;
-                    var off = (nn * Mathf.Cos(th) + bb * Mathf.Sin(th)) * StrandOff;
+                    var off = (nn * Mathf.Cos(th) + bb * Mathf.Sin(th)) * StrandOff * apart;
                     for (int k = 0; k < Sides; k++)
                     {
                         float be = k * 2f * Mathf.PI / Sides;
                         var dir = nn * Mathf.Cos(be) + bb * Mathf.Sin(be);
-                        verts.Add(pts[i] + off + dir * StrandR);
+                        verts.Add(centre + off + dir * (StrandR * thin));
                         normals.Add(dir);
                         uvs.Add(new Vector2(k / (float)Sides, sAt[i] - shown));
                     }
@@ -273,6 +332,17 @@ namespace ChessFight.PawnRush
                         if (e == 0) { tris.Add(ci); tris.Add(v1); tris.Add(v0); }
                         else { tris.Add(ci); tris.Add(v0); tris.Add(v1); }
                     }
+                }
+            }
+            if (tension > .01f)
+            {
+                fibreClock += Time.deltaTime * tension * 12f;
+                while (fibreClock >= 1f)
+                {
+                    fibreClock -= 1f;
+                    float s0 = Random.Range(sDep + .5f, total);
+                    int i = Mathf.Clamp(Mathf.RoundToInt(s0 / total * (n - 1)), 0, n - 1);
+                    ArenaFx.Burst(transform.TransformPoint(pts[i]), Fibres, 2, .4f, .35f, .5f, .025f);
                 }
             }
             mesh.Clear();

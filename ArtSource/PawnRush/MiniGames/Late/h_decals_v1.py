@@ -5,10 +5,12 @@
 # around y -0.18..-0.20). Each FBX shares its model's origin, so it hangs under the same holder in Unity.
 #   H_NotationText  tablet plate 0.84 x 0.86 m at y -0.128: king, knight, rook, pawn symbols, a rule, three moves
 #   H_ClockDials    two 0.3 m plates at y -0.208: numerals 1-12 inside the tick marks
+#   PR_Late_H_KingBanner  the royal banner texture (purple, cream border, king, V hem) for the code cloth
 # Textures: Materials/Textures/PR_Late_H_Notation_BaseColor.png, PR_Late_H_ClockDial_BaseColor.png (RGBA).
 #
 #   "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --python h_decals_v1.py -- [--export]
 import bpy, bmesh, math, os, sys
+from mathutils import Matrix
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "Export", "H")
@@ -101,6 +103,38 @@ def dial_texture():
     shoot(os.path.join(TEX, "PR_Late_H_ClockDial_BaseColor.png"), DIAL_SIZE, DIAL_SIZE, 512)
 
 
+BANNER_W, BANNER_H = 1.9, 5.2     # the code cloth's size on H's panel bays (MiniGameModels.ChessHall)
+
+
+def banner_texture():
+    """H's royal banner (concept H_01 / H_03 #8): purple velvet, a cream border, a big cream king, a V hem (alpha)."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    w, h, notch = BANNER_W, BANNER_H, .55
+    purple, cream = ink("purple", "#4E2A6A"), ink("cream", "#EFE4CC")
+
+    def shape(m, inset, z):
+        bm = bmesh.new()
+        hw, hh = w / 2 - inset, h / 2 - inset
+        vs = [bm.verts.new(p) for p in ((-hw, hh, z), (-hw, -hh + notch, z), (0, -hh, z), (hw, -hh + notch, z), (hw, hh, z))]
+        bm.faces.new(vs)
+        me = bpy.data.meshes.new("s"); bm.to_mesh(me); bm.free()
+        me.materials.append(m)
+        bpy.context.scene.collection.objects.link(bpy.data.objects.new("s", me))
+    shape(cream, 0., 0.)               # the border shows round the purple
+    shape(purple, .09, .001)
+    shape(cream, .16, .002)            # a thin inner line
+    shape(purple, .19, .003)
+    # the king: the silhouette of G's king model (Export/G/G_King.fbx) in flat cream, 2.3 m high, standing up the banner
+    bpy.ops.import_scene.fbx(filepath=os.path.join(HERE, "Export", "G", "G_King.fbx"))
+    king = [o for o in bpy.context.selected_objects if o.type == "MESH"][0]
+    king.data.transform(king.matrix_world); king.matrix_world.identity()
+    zs = [v.co.z for v in king.data.vertices]
+    s = 2.3 / (max(zs) - min(zs))
+    king.data.transform(Matrix.Translation((0, .3 - 1.15, .6)) @ Matrix.Rotation(math.radians(-90), 4, "X") @ Matrix.Scale(s, 4) @ Matrix.Translation((0, 0, -min(zs))))
+    for i in range(len(king.data.materials)): king.data.materials[i] = cream
+    shoot(os.path.join(TEX, "PR_Late_H_KingBanner_BaseColor.png"), w, h, 1400)
+
+
 def quad(bm, uv, cx, cz, w, h, y):
     """A plate facing -y (front), UV 0..1 left-to-right, bottom-to-top as seen from the front."""
     vs = [bm.verts.new((cx - w / 2, y, cz - h / 2)), bm.verts.new((cx + w / 2, y, cz - h / 2)),
@@ -133,6 +167,7 @@ def export(ob):
 
 tablet_texture()
 dial_texture()
+banner_texture()
 if "--export" in ARGS:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     t = TABLET
