@@ -42,7 +42,8 @@ class StraightWarRoom(unittest.TestCase):
     def test_concept_obstacles_and_preview_sources(self):
         t=self.t
         self.assertEqual(len(t.scripts_of('CommandStampPress')),2)
-        self.assertEqual(len(t.scripts_of('TroopFormationSlide')),2)
+        self.assertEqual(len(t.scripts_of('TroopFormationSlide')),0)
+        self.assertEqual(len(t.scripts_of('TypewriterStairs')),1)
         self.assertEqual(len(t.scripts_of('TacticalMapBarrage')),0)
         self.assertEqual(len(t.scripts_of('DualApprovalGate')),0)
         fractions=[float(f['previewFraction']) for _,f,_ in t.scripts_of('WarRoomScoreLabel')]

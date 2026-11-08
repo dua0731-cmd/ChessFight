@@ -1,5 +1,12 @@
 # 작전실 → 총지휘부 통합 프리팹 (R122)
 
+**2026-11-08 · 타자기 계단:** 병력 대열 두 줄을 제거하고, 작전 명령서와 4열×5단(총20키) 타자기 계단으로 교체했다. 입구 문서의 단어는 **CHECK**. 문서에 등장하는 C/H/E/K 키만 안전하고 나머지 글자 키를 밟으면 뒤12m/s·위6m/s 타격,0.7초 넘어짐·0.3초 빨간 반응이 적용된다. 글자의 순서는 강제하지 않는다. 문서와 판정은 같은 Printed Word를 사용한다.
+
+키 높이는 단마다0.25m, 총1.25m이며 앞면에 보행용 경사를 두고 출구에도 하강 경사를 연결했다. 각 줄에 안전한 키가 하나씩 있고, 다음 안전 키는 같은/인접 열에 배치했다. 손만 닿거나 공중에서 지나는 경우는 제외하고 발 위치·접지 상태를 검사한다. 여러 래그돌 Collider가 닿아도 캐릭터당1초에 한 번만 타격한다. Inspector에서 Printed Word, Backward Speed, Upward Speed, Knockdown Seconds, Hit Cooldown, Flash Seconds를 조절할 수 있다. 문서를 바꿀 때는 Key Letters와 안전 경로도 함께 맞춰야 한다.
+
+실제 씬의 `Assets/Prefabs/Obstacles/WarRoomComplete.prefab`과 생성 원본 `Assets/Resources/RoyalPalace/WarRoomComplete.prefab`을 함께 갱신했다. 실제 프리팹에서는 병력 대열 계층만 교체했고 사용자 타일 크기·기보·지도·도장·씬 변경은 보존했다. 자동49검사·런타임9개 컴파일 통과. Unity에서 문서/키 가독성, 계단 주행, 오답 타격감은 확인 대기다. 봇은 퍼즐을 읽도록 개편하지 않았으므로 수동 캐릭터로 시험한다.
+
+
 **현재 씬 프리팹:** 사용자 타일 크기 수정(ed776c4) 이후 GiantChessCourse 씬은 `Assets/Prefabs/Obstacles/WarRoomComplete.prefab`을 참조한다. 해당 복사본에도 지도 하위 계층과 도장 시간만 이전했으며 나머지 사용자 배치는 보존했다. `Assets/Resources/RoyalPalace`의 생성 원본과 구분한다.
 
 **2026-11-08 · 도장/지도 동작 수정:** 도장 상승2.5초·급강하0.18초(약14배 빠름), 기존 경고1.4초·바닥 유지0.6초를 유지한다. Inspector의 Retract Seconds/Slam Seconds로 각각 조절한다.

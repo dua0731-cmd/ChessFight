@@ -357,7 +357,7 @@ namespace ChessFight.RagdollLab
                 : phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비";
             GUI.Label(new Rect(24, 20, 690, 175), $"{CurrentGame.Title}\n{stage} · {move}\n{state} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 현재 구간 복귀 · F3 전체 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
             if (inOffices) GUI.Label(new Rect(24, 202, 690, 50),
-                "작전지도: 펼쳐질 때 전진 · 병력 대열: 움직이는 틈을 통과\n지도 손잡이: 우클릭 잡기로 감속 · 액자: 후반 기보 예고", hud);
+                "작전지도: 펼쳐질 때 전진 · 타자기 계단: 명령서에 있는 글자만 밟기\n지도 손잡이: 우클릭 잡기로 감속 · 액자: 후반 기보 예고", hud);
         }
         void OnDestroy()
         {

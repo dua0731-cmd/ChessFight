@@ -449,6 +449,36 @@ class Builder(LegacyBuilder):
         self.d.script(g,'RollingMapBridge',kit.fields(roller=kit.ref(roller['tr']),hangingParchment=kit.ref(hanging['tr']),handle=kit.ref(rb),
             length=16,mapWidth=12,deploymentHeight=6,descentDrift=.6,unfoldFromRight=1 if right else 0,lowerSeconds=1.5,
             openSeconds=5,rollSeconds=5,closedSeconds=2,unfurlSeconds=3,heldSpeed=.35,phaseSeconds=phase)+'  segments:\n'+''.join('  - '+kit.ref(s['go'])+'\n' for s in segments))
+    def typewriter(self):
+        import math
+        g=self.group('Typewriter stairs - printed command',pos=(0,0,-51));ctx=self.c.context(g)
+        areas=[];faces=[];visuals=[];letters='BCFNQSHRXEVPCBNRQKWZ'
+        self.box(g,'Typewriter dark case',(0,-.25,7),(12.4,.5,14.4),'Night')
+        for side in (-1,1):
+            self.wall(g,'Typewriter side casing '+str(side),(side*6.3,1.5,7),(.6,3,14.4))
+        for row in range(5):
+            height=(row+1)*.25;z=row*2.8
+            for col in range(4):
+                key=self.group('Key '+str(row)+'-'+str(col),g,((col-1.5)*3,0,z))
+                cap=self.box(key,'Typewriter key cap',(0,(height-.3)/2,1.8),(2.98,height+.3,2),'White')
+                visuals.append(cap['comps'][2])
+                angle=math.atan2(.25,.8)
+                self.box(key,'Walk-up key bevel',(0,height-.125-.06*math.cos(angle),.4),
+                    (2.98,.12,math.sqrt(.8**2+.25**2)),'White',rot=kit.pitch(-math.degrees(angle)))
+                face=self.group('Key letter',key,(0,height+.025,1.8),kit.pitch(90));faces.append(face['tr'])
+                areas.append(self.d.box(key,size=(2.98,.7,2.8),center=(0,height-.1,1.4),trigger=True))
+        angle=math.atan2(1.25,5)
+        self.box(g,'Typewriter exit ramp',(0,.625-.08*math.cos(angle),16.5),
+            (12,.16,math.sqrt(25+1.25**2)),'Ivory',rot=kit.pitch(math.degrees(angle)))
+        self.box(g,'Printed order frame',(0,5,-3),(9.4,3.4,.4),'Wood',False)
+        self.box(g,'Printed order paper',(0,5,-3.23),(9,3,.04),'White',False)
+        document=self.group('Printed order text',g,(0,5,-3.27))
+        for side in (-1,1):self.box(g,'Paper feed support '+str(side),(side*6.3,3,-3),(.5,6,.5),'Gold')
+        fields=kit.fields(context=kit.ref(ctx),printedWord='"CHECK"',keyLetters='"'+letters+'"',documentFace=kit.ref(document['tr']),
+            backwardSpeed=12,upwardSpeed=6,knockdownSeconds=.7,hitCooldown=1,flashSeconds=.3)
+        for name,values in [('keyAreas',areas),('keyFaces',faces),('keyVisuals',visuals)]:
+            fields+='  '+name+':\n'+''.join('  - '+kit.ref(x)+'\n' for x in values)
+        self.d.script(g,'TypewriterStairs',fields)
     def exhibit(self,pos,fraction):
         g=self.group('Random GM replay preview '+str(fraction),pos=pos)
         self.box(g,'Framed score board',(0,4,0),(10,10,.5),'Wood')
@@ -470,14 +500,7 @@ class Builder(LegacyBuilder):
         self.scroll(-100,0);self.scroll(-76,3)
         self.box(self.root,'Fixed seal island',(0,-.4,-80),(8,.4,8),'Wood',True,shape='Cylinder')
         self.box(self.root,'Royal seal rest island',(0,.025,-80),(5,.05,5),'Gold',False,shape='Cylinder')
-        # Reuse the authored moving pawn formation geometry, with both rows on the forward axis.
-        original_raw=self.raw
-        self.raw={};self.beat=lambda i:self.root
-        self.c.beat=self.root
-        before=len(self.d.all);self.formations()
-        for obj in self.d.all[before:]:
-            if obj['parent'] is self.root and obj['name']=='Troop redeployment - moving passage':obj['pos']=(0,0,obj['pos'][2]-105)
-        self.raw=original_raw
+        self.typewriter()
         self.headquarters()
         for obj in self.d.all:
             if obj['name']=='HQ rear wall':obj['pos']=(-66,24,170);obj['scale']=(118,68,2)
