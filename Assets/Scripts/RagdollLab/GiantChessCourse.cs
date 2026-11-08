@@ -34,6 +34,8 @@ namespace ChessFight.RagdollLab
         LabCamera cameraRig;
         GiantChessApproach approach;
         string[][] score;
+        GiantChessGames library;
+        public GiantChessGame CurrentGame { get; private set; }
         int selected, ply, phase, from, to, rookFrom, rookTo;
         float elapsed;
         ulong attack;
@@ -58,7 +60,7 @@ namespace ChessFight.RagdollLab
             for (int s = 0; s < 64; s++) occupiedMarks[s].SetActive(Occupied(s));
         }
         Vector3 Spawn(int i) => approach != null && approach.Available && !approach.Entered(i) ? approach.Spawn(i) : transform.TransformPoint(new Vector3((i / 6 == 0 ? -1 : 1) * tileSize + (i % 3 - 1) * 2.5f, 0, -chessSpawnDepth - i % 2 * 3));
-        Material Mat(Color color) { var m = new Material(Shader.Find("Standard")) { color = color }; materials.Add(m); return m; }
+        Material Mat(Color color) { var m = LitMaterials.NewLit(color); materials.Add(m); return m; }
         GameObject Shape(string name, Vector3 pos, Vector3 size, Material mat, PrimitiveType type = PrimitiveType.Cube, bool solid = true)
         {
             var go = GameObject.CreatePrimitive(type); go.name = name; go.transform.SetParent(transform, false);
@@ -71,10 +73,10 @@ namespace ChessFight.RagdollLab
             cameraRig = FindFirstObjectByType<LabCamera>();
             approach = GetComponent<GiantChessApproach>();
             if (approach != null) approach.ResetProgress();
-            var data = Resources.Load<TextAsset>("GiantChessScore");
+            var data = Resources.Load<TextAsset>("GiantChessGames");
             if (!pawnPrefab || !tuning || !cameraRig || !data) { Debug.LogError("Giant chess requires pawn, tuning, camera and score.", this); enabled = false; return; }
-            var lines = data.text.Trim().Split('\n'); score = new string[lines.Length][];
-            for (int i = 0; i < lines.Length; i++) score[i] = lines[i].Trim().Split(',');
+            library = JsonUtility.FromJson<GiantChessGames>(data.text);
+            ChooseGame();
             if (boardPreview != null) boardPreview.SetActive(false);
             savedGravity = Physics.gravity; savedLock = Cursor.lockState; savedCursor = Cursor.visible; initialized = true;
             Physics.gravity = Vector3.down * 9.81f * tuning.values.gravityScale;
@@ -136,6 +138,13 @@ namespace ChessFight.RagdollLab
             shoulders[side] = transform.TransformPoint(shoulder);
             arms[side] = Shape("GM reaching arm", shoulder, Vector3.one, suit, solid: false).transform;
             hands[side] = Shape("GM moving hand", shoulder, new Vector3(7, 3, 7), white, PrimitiveType.Sphere, false).transform;
+        }
+        void ChooseGame()
+        {
+            CurrentGame=library.Pick();
+            score=new string[CurrentGame.rows.Length][];
+            for(int i=0;i<score.Length;i++)score[i]=CurrentGame.rows[i].Split(',');
+            foreach(var panel in GetComponentsInChildren<WarRoomScoreLabel>())panel.Refresh(CurrentGame);
         }
         void ResetBoard()
         {
@@ -208,7 +217,10 @@ namespace ChessFight.RagdollLab
         void Land()
         {
             if (pieces[to]) { pieces[to].GetComponent<Collider>().enabled = false; Destroy(pieces[to]); }
+            int captured=int.Parse(score[ply][6]);
+            if(captured>=0 && captured!=to && pieces[captured]) { pieces[captured].GetComponent<Collider>().enabled=false; Destroy(pieces[captured]);pieces[captured]=null; }
             pieces[to] = moving; pieces[from] = null; moving.transform.position = Square(to); moving.GetComponent<Collider>().enabled = true;
+            if(score[ply][7]!=".") { moving.GetComponent<Collider>().enabled=false;Destroy(moving); moving=BuildPiece(score[ply][7][0],to);pieces[to]=moving; }
             if (rookFrom >= 0) { pieces[rookTo] = pieces[rookFrom]; pieces[rookFrom] = null; pieces[rookTo].transform.position = Square(rookTo); }
             // Evacuate before the next physics step: a full-square collider must not spawn inside a ragdoll.
             phase = 2;
@@ -253,7 +265,7 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.Tab)) Select((selected + 1) % 12);
                 if (Input.GetKeyDown(KeyCode.B)) botsEnabled = !botsEnabled;
                 if (Input.GetKeyDown(KeyCode.R)) Place(selected);
-                if (Input.GetKeyDown(KeyCode.F3)) { ResetBoard(); ResetPlayers(); }
+                if (Input.GetKeyDown(KeyCode.F3)) { ChooseGame(); ResetBoard(); ResetPlayers(); }
                 if (Input.GetKeyDown(KeyCode.N) && running && (approach == null || !approach.Available || approach.ChessStarted)) elapsed = 1000; // Advance one phase, never skip a chess move.
             }
             bool active = running && !menu && Application.isFocused;
@@ -334,8 +346,8 @@ namespace ChessFight.RagdollLab
             if (hud == null) hud = new GUIStyle(GUI.skin.label) { fontSize = 18, font = RuntimePanels.KoreanFont, wordWrap = true };
             int a = 0, b = 0; for (int i = 0; i < 12; i++) if (finished[i]) { if (i < 6) a++; else b++; }
             bool inOffices = approach != null && approach.Available && !approach.Entered(selected);
-            GUI.Box(new Rect(12, 12, 720, inOffices ? 210 : 155), "");
-            string move = ply < score.Length ? $"{ply / 2 + 1}. {(ply % 2 == 0 ? "백" : "흑")} {score[ply][5]}" : "Rc2# · 기보 종료";
+            GUI.Box(new Rect(12, 12, 720, inOffices ? 250 : 195), "");
+            string move = ply < score.Length ? $"{ply / 2 + 1}. {(ply % 2 == 0 ? "백" : "흑")} {score[ply][5]}" : "기보 종료 · " + CurrentGame.result;
             int officeSeconds = approach != null ? Mathf.FloorToInt(approach.Elapsed(selected)) : 0;
             string stage = approach != null && approach.Available && !approach.Entered(selected)
                 ? $"작전실 · 체크포인트 {approach.Checkpoint(selected)}/{approach.CheckpointCount} · {officeSeconds / 60}:{officeSeconds % 60:00} / 전체 목표 2~3분"
@@ -343,8 +355,8 @@ namespace ChessFight.RagdollLab
             string state = approach != null && approach.Available && !approach.ChessStarted
                 ? "체스판 입구 도착 대기"
                 : phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비";
-            GUI.Label(new Rect(24, 20, 690, 140), $"{stage} · {move}\n{state} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 현재 구간 복귀 · F3 전체 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
-            if (inOffices) GUI.Label(new Rect(24, 166, 690, 50),
+            GUI.Label(new Rect(24, 20, 690, 175), $"{CurrentGame.Title}\n{stage} · {move}\n{state} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 현재 구간 복귀 · F3 전체 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
+            if (inOffices) GUI.Label(new Rect(24, 202, 690, 50),
                 "작전지도: 펼쳐질 때 전진 · 병력 대열: 움직이는 틈을 통과\n지도 손잡이: 우클릭 잡기로 감속 · 액자: 후반 기보 예고", hud);
         }
         void OnDestroy()

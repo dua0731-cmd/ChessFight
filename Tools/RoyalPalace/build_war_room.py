@@ -442,31 +442,12 @@ class Builder(LegacyBuilder):
         h=self.group('Grab to slow map',g,(5,1,-2));rb=self.d.rigidbody(h,True)
         self.box(h,'Handle',(0,0,0),(.3,.3,1.4),'Gold')
         self.d.script(g,'RollingMapBridge',kit.fields(roller=kit.ref(roller['tr']),handle=kit.ref(rb),length=16,openSeconds=5,rollSeconds=5,closedSeconds=2,unfurlSeconds=3,heldSpeed=.35,phaseSeconds=phase)+'  segments:\n'+''.join('  - '+kit.ref(s['go'])+'\n' for s in segments))
-    def exhibit(self,pos,ply):
-        # Replay the same coordinate data used by the live board, then show the selected move.
-        rows=[r.split(',') for r in (ROOT/'Assets/Resources/GiantChessScore.txt').read_text().strip().splitlines()]
-        board=list('RNBQKBNRPPPPPPPP................................pppppppprnbqkbnr')
-        for row in rows[:ply]:
-            a,b,ra,rb=map(int,row[:4]);board[b]=board[a];board[a]='.'
-            if ra>=0:board[rb]=board[ra];board[ra]='.'
-        g=self.group('Score preview '+str(ply+1)+' '+rows[ply][5],pos=pos)
+    def exhibit(self,pos,fraction):
+        g=self.group('Random GM replay preview '+str(fraction),pos=pos)
         self.box(g,'Framed score board',(0,4,0),(10,10,.5),'Wood')
-        for sq,piece in enumerate(board):
-            x=(sq%8-3.5);y=4+(sq//8-3.5)
-            self.box(g,'Square '+str(sq),(x,y,-.3),(.98,.98,.08),'White' if (sq%8+sq//8)%2 else 'Slate',False)
-            if piece!='.':
-                self.box(g,'Piece '+piece,(x,y,-.5),(.48,.48,.2),'Gold' if piece.isupper() else 'Purple',False,shape='Sphere')
-        a,b=map(int,rows[ply][:2]);
-        for sq,color in ((a,'Blue'),(b,'Safe')):
-            self.box(g,'Move '+str(sq),(sq%8-3.5,4+sq//8-3.5,-.65),(.75,.75,.1),color,False)
-        import math
-        points=[(a%8-3.5,4+a//8-3.5)]
-        if board[a].upper()=='N':points.append((b%8-3.5,4+a//8-3.5))
-        points.append((b%8-3.5,4+b//8-3.5))
-        for start,finish in zip(points,points[1:]):
-            angle=math.atan2(finish[1]-start[1],finish[0]-start[0])
-            self.box(g,'Actual move path',((start[0]+finish[0])/2,(start[1]+finish[1])/2,-.8),(math.dist(start,finish),.12,.06),'Teal',False,rot=(0,0,math.sin(angle/2),math.cos(angle/2)))
-        self.d.script(g,'WarRoomScoreLabel',kit.fields(label='"'+str(ply//2+1)+('. ' if ply%2==0 else '... ')+rows[ply][5]+'"'))
+        for sq in range(64):
+            self.box(g,'Square '+str(sq),(sq%8-3.5,4+sq//8-3.5,-.3),(.98,.98,.08),'White' if (sq%8+sq//8)%2 else 'Slate',False)
+        self.d.script(g,'WarRoomScoreLabel',kit.fields(previewFraction=fraction))
     def save(self):
         for x in (-160,160):self.wall(self.root,'Square perimeter side '+str(x),(x,20,10),(2,60,320))
         for x in (-83,83):self.wall(self.root,'Square perimeter entrance '+str(x),(x,20,-150),(154,60,2))
@@ -503,7 +484,7 @@ class Builder(LegacyBuilder):
             for z in (-130,-82,-30):
                 self.banner(self.root,(x,10,z))
                 self.shelf(self.root,(x,0,z))
-        for pos,ply in (((-10,0,-132),0),((10,0,-112),21),((-10,0,-57),33),((80,0,138),81)):
+        for pos,ply in (((-10,0,-132),0),((10,0,-112),.25),((-10,0,-57),.55),((80,0,138),.9)):
             self.exhibit(pos,ply)
         entry=self.group('Entry - travel forward',pos=(0,0,-142))
         cps=[self.group('Checkpoint '+str(i),pos=(0,0,z)) for i,z in enumerate((-106,-80,-30),1)]
@@ -515,7 +496,7 @@ class Builder(LegacyBuilder):
         self.d.script(self.root,'GiantChessCourse',kit.fields(pawnPrefab='{fileID: 7684884123511159585, guid: fe69acb7e49fea745aa289c4d39f3e62, type: 3}',tuning='{fileID: 11400000, guid: f387368cafccca042ac935642cf094be, type: 2}',tileSize=16,replaySpeed=5,moveSeconds=3,warningSeconds=5,restSeconds=2,knockbackSpeed=12,upwardSpeed=9,botsEnabled=1,boardPreview=kit.ref(self.preview['go']),chessSpawnDepth=4))
         self.d.script(self.root,'GiantChessApproach',kit.fields(course=kit.ref(module),chessEntry=kit.ref(end['tr']))+'  transitionRoute: []\n')
         text,ids=stabilize(clean(self.d.render(scene=False)));self.serialized_root=ids[self.root['tr']]
-        self.report.update(root=ids[self.root['go']],root_transform=self.serialized_root,local_id_scheme='hierarchy-type-sha256-v2',target_seconds=[120,180],score_plies=[0,21,33,81])
+        self.report.update(root=ids[self.root['go']],root_transform=self.serialized_root,local_id_scheme='hierarchy-type-sha256-v2',target_seconds=[120,180],preview_fractions=[0,.25,.55,.9])
         return text
 
 def scene(prefab_root):

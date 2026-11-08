@@ -1,5 +1,7 @@
 # Network 구현 검증 기록
 
+**2026-11-08 · GM 기보:** 오프라인 거인 체스 40경기, 새 판 선택·액자4개·특수행마 재생 자동검사 통과. Unity에서 F3 선택/HUD/액자/승격·URP 재질 확인 대기. 이 작업은 멀티 연결 변경이 아니다.
+
 **2026-11-08 · Fork 병합 복구:** Gameplay45·세션66·런타임9개 컴파일 통과. Core golden hash는 upstream에서도 동일 실패, Editor 구버전 참조 API 제한. Unity 6 재임포트/씬 실행/Steam 미확인. [상세](../Environment/UPSTREAM_MERGE_FIX_20261108.md).
 
 

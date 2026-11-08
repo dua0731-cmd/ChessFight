@@ -32,8 +32,8 @@ class StraightWarRoom(unittest.TestCase):
         self.assertEqual(len(t.scripts_of('TroopFormationSlide')),2)
         self.assertEqual(len(t.scripts_of('TacticalMapBarrage')),0)
         self.assertEqual(len(t.scripts_of('DualApprovalGate')),0)
-        labels=[f['label'].strip('"') for _,f,_ in t.scripts_of('WarRoomScoreLabel')]
-        self.assertEqual(labels,['1. Nf3','11... Na4','17... Be6','41... Rc2#'])
+        fractions=[float(f['previewFraction']) for _,f,_ in t.scripts_of('WarRoomScoreLabel')]
+        self.assertEqual(fractions,[0,.25,.55,.9])
     def test_hq_and_entrance_share_one_square(self):
         t=self.t
         for name,lo,hi,_ in t.boxes:

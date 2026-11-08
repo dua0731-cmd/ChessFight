@@ -1,5 +1,5 @@
 {
-  "prefab": "Assets/Maps/RoyalPalace/WarRoomComplete.prefab",
+  "prefab": "Assets/Resources/RoyalPalace/WarRoomComplete.prefab",
   "scene": "Assets/Scenes/GiantChessCourse.unity",
   "new_obstacles": [],
   "occluder_boxes": [
@@ -133,10 +133,10 @@
     120,
     180
   ],
-  "score_plies": [
+  "preview_fractions": [
     0,
-    21,
-    33,
-    81
+    0.25,
+    0.55,
+    0.9
   ]
 }

@@ -1,0 +1,70 @@
+[
+  {
+    "year": 2013,
+    "url": "https://raw.githubusercontent.com/mainali123/Chess-Dataset/5721c8a71a0f9850d54fe6d5b2d8060abcab1357/Chess_Candidates_and_Interzonals/Candidates2013.pgn",
+    "sha256": "77d4d89b93365274550a95f490a3b76baf6ce13be165d4f0677ad9144c981602",
+    "selected_indices": [
+      3,
+      21,
+      24,
+      25,
+      27,
+      32,
+      36,
+      48,
+      51,
+      53
+    ]
+  },
+  {
+    "year": 2016,
+    "url": "https://raw.githubusercontent.com/mainali123/Chess-Dataset/5721c8a71a0f9850d54fe6d5b2d8060abcab1357/Chess_Candidates_and_Interzonals/Candidates2016.pgn",
+    "sha256": "4493d0b4d2e266ff378e5de283fbbdb087ca8cc4fd5c4b440f919698b8363ffa",
+    "selected_indices": [
+      4,
+      5,
+      8,
+      16,
+      18,
+      28,
+      35,
+      43,
+      45,
+      47
+    ]
+  },
+  {
+    "year": 2018,
+    "url": "https://raw.githubusercontent.com/mainali123/Chess-Dataset/5721c8a71a0f9850d54fe6d5b2d8060abcab1357/Chess_Candidates_and_Interzonals/Candidates2018.pgn",
+    "sha256": "de1acd25671807ddd2ac3290059f64a46f14b9f38a3da76f3e31e0e3f9601ac5",
+    "selected_indices": [
+      1,
+      7,
+      8,
+      19,
+      25,
+      27,
+      32,
+      34,
+      40,
+      42
+    ]
+  },
+  {
+    "year": 2022,
+    "url": "https://raw.githubusercontent.com/mainali123/Chess-Dataset/5721c8a71a0f9850d54fe6d5b2d8060abcab1357/Chess_Candidates_and_Interzonals/Candidates2022.pgn",
+    "sha256": "42ff564cdeb31565f4c02a26d2bbf1a14f9751e3fa93e2f4c474b8d1d789072d",
+    "selected_indices": [
+      3,
+      18,
+      19,
+      28,
+      33,
+      34,
+      37,
+      44,
+      45,
+      54
+    ]
+  }
+]

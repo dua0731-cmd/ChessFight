@@ -31,7 +31,10 @@ BASE = 'Assets/Resources/RoyalPalace'
 outputs = {}
 reports = []
 
-def guid(path): return hashlib.md5(('chessfight:'+path).encode()).hexdigest()
+def guid(path):
+    meta = ROOT / (path + '.meta')
+    if meta.exists(): return re.search(r'^guid: (\w+)', meta.read_text(), re.M)[1]
+    return hashlib.md5(('chessfight:'+path).encode()).hexdigest()
 def ref(n): return '{fileID: %d}' % n
 def external(n,path): return '{fileID: %d, guid: %s, type: 3}' % (n,guid(path))
 def yaw(deg): return (0,math.sin(math.radians(deg)/2),0,math.cos(math.radians(deg)/2))
