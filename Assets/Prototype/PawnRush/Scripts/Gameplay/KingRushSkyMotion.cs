@@ -26,17 +26,12 @@ namespace ChessFight.Gameplay
             // Never sweep a returning part through players during its reset.
             foreach (var solid in solids) solid.enabled = cycle >= .15f && cycle < ActiveUntil;
             if (surface != null)
-<<<<<<< HEAD:Assets/Scripts/Gameplay/Obstacles/KingRushSkyMotion.cs
             {
                 tint.Clear();
-                if (WarningAt(cycle)) tint.SetColor("_Color", Color.red);
+                if (WarningAt(cycle)) LitMaterials.SetColor(tint, Color.red);
                 surface.SetPropertyBlock(tint);
             }
             ShowVisuals(cycle);
-=======
-            { tint.Clear(); if (!hand && cycle >= 3 && cycle < 4) LitMaterials.SetColor(tint, Color.red); surface.SetPropertyBlock(tint); }
-            if (shadow != null) shadow.SetActive(cycle < 3.5f);
->>>>>>> upstream/main:Assets/Prototype/PawnRush/Scripts/Gameplay/KingRushSkyMotion.cs
             base.FixedUpdate();
         }
     }

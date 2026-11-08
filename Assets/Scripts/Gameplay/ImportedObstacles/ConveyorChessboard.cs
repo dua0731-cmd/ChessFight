@@ -9,6 +9,7 @@ namespace ChessFight.ProtectKing
         [SerializeField] Transform[] beltMarkers;
         [SerializeField, Min(.1f)] float beltLength = 6f;
         Vector3[] markerOrigins;
+        public void MirrorDirection() { direction.x = -direction.x; }
 
         public override Vector3 PointVelocity(Vector3 point) => Running
             ? transform.TransformDirection(direction.normalized) * conveyorSpeed : Vector3.zero;

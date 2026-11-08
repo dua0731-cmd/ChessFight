@@ -7543,9 +7543,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 24477440}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 1
   axis: {x: 0, y: 1, z: 0}
   distance: 4
@@ -27780,9 +27780,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 93753442}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.45
@@ -33461,9 +33461,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 111782205}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.35
@@ -57135,9 +57135,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 190075172}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.35
@@ -60828,9 +60828,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 201519901}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.4
@@ -61002,9 +61002,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 202068143}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 1
   axis: {x: 0, y: 1, z: 0}
   distance: 4
@@ -99088,9 +99088,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 331821093}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.35
@@ -154717,9 +154717,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 509270500}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.4
@@ -166754,9 +166754,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 548836173}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.4
@@ -214034,9 +214034,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 707114036}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.45
@@ -265888,9 +265888,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 883094548}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 2
   axis: {x: 0, y: 1, z: 0}
   distance: 3
@@ -290146,9 +290146,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 961570239}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 1
   axis: {x: 0, y: 1, z: 0}
   distance: 4
@@ -323789,9 +323789,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1086510824}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 2
   axis: {x: 0, y: 1, z: 0}
   distance: 3
@@ -331071,9 +331071,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1109578586}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.45
@@ -338064,9 +338064,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1131218554}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.35
@@ -361685,9 +361685,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1199880549}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.45
@@ -369765,9 +369765,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1228952775}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 1
   axis: {x: 0, y: 1, z: 0}
   distance: 4
@@ -378588,9 +378588,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1261677947}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.35
@@ -421947,9 +421947,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1407933380}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.35
@@ -454248,9 +454248,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1517198270}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 2
   axis: {x: 0, y: 1, z: 0}
   distance: 3
@@ -526614,9 +526614,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1755903465}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 1
   axis: {x: 0, y: 1, z: 0}
   distance: 4
@@ -565594,9 +565594,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1891445185}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.35
@@ -610363,9 +610363,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2043533989}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 1
   axis: {x: 0, y: 1, z: 0}
   distance: 4
@@ -639095,9 +639095,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2142149454}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.35

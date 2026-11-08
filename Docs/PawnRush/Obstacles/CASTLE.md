@@ -12,10 +12,8 @@
 | 철퇴 | 높이10m 피벗/팔6m, 공 지름2m, Z축±55° |5초| 충돌 속도1m/s 이상 넉다운 |
 | 성문 | 폭28×높이4m, 위로6×clamp01(1.5w+0.5)m |8초| 충돌 속도1m/s 이상 넉다운 |
 
-<<<<<<< HEAD:Docs/KingRush/Obstacles/CASTLE.md
 구간 프리팹 `12_CastleUpper`~`15_CastlePromotion`. 3.5m 벽은 공유 등반, 위쪽 내려오는 경사는3.5m/14m. 12명이 지나갈 폭과 초반 등반 대기 시간은 사용자 시험 후 조정한다. 팀원이 편집한 기존 프리팹을 재생성하지 않는다. 자동 통과/렌더 결과와 미확인 구분은 [CASTLE_COURSE](../CASTLE_COURSE.md).
 
 R71: `KingRushCastleMotion`은 추상 주기 부모다. `KingRushFerry`/`KingRushCastleWall`/`KingRushDrawbridge`/`KingRushPortcullis`/`KingRushMace`에 각 거리·각도를 분리했다. [전체 구조](../OBSTACLE_CLASSES.md). 기존 수치·시간 함수는 보존, Unity 재확인 대기.
-=======
+
 구간 프리팹 `12_CastleUpper`~`15_CastlePromotion`. 3.5m 벽은 공유 등반, 위쪽 내려오는 경사는3.5m/14m. 12명이 지나갈 폭과 초반 등반 대기 시간은 사용자 시험 후 조정한다. 팀원이 편집한 기존 프리팹을 재생성하지 않는다. 자동 통과/렌더 결과와 미확인 구분은 [CASTLE_COURSE](../Prototype/CASTLE_COURSE.md).
->>>>>>> upstream/main:Docs/PawnRush/Obstacles/CASTLE.md

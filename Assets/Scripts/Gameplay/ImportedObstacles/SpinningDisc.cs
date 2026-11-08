@@ -17,6 +17,11 @@ namespace ChessFight.ProtectKing
         [SerializeField, HideInInspector] Transform rotatingSurface;
         Quaternion rotationOrigin;
 
+        public bool CounterClockwise
+        {
+            get => rotationDirection == RotationDirection.Counterclockwise;
+            set => rotationDirection = value ? RotationDirection.Counterclockwise : RotationDirection.Clockwise;
+        }
         float AngularSpeed => Mathf.Max(0f, rotationSpeed) *
             (rotationDirection == RotationDirection.Clockwise ? 1f : -1f);
         public bool TransportActive => Running;

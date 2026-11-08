@@ -11,7 +11,7 @@ namespace ChessFight.PawnRush
     //           gold motes drift up the same way, a warm light over it
     //   launch  a shock ring across the deck, sparks thrown out and up, light streaks shot along the launch, the light
     //           and the arrow flash
-    // The launch itself is the host's (ObstacleSurface.Apply); every PC sees a pawn land on the pad, so each one fires
+    // The launch itself is the host's (JumpPad.Launch); every PC sees a pawn land on the pad, so each one fires
     // the burst when it sees a pawn arrive on the deck - no packet. Pictures only: no collider, nothing it moves.
     // R404 (승규 11-04, a shot of the pad's round gold ring: "이 점프 발판 vfx를 발판 모양에 맞게 사각형으로 해"): the
     // glow ring and the launch's shock ring are rounded squares on the deck's own axes (the glow hugging its 3 m edge),
@@ -42,8 +42,8 @@ namespace ChessFight.PawnRush
         void Start()
         {
             block = new MaterialPropertyBlock();
-            var surface = GetComponent<ObstacleSurface>();
-            if (surface != null && surface.launchVelocity.sqrMagnitude > .01f) launch = surface.launchVelocity.normalized;
+            var surface = GetComponent<ChessFight.ProtectKing.JumpPad>();
+            if (surface != null && surface.LaunchVelocity.sqrMagnitude > .01f) launch = surface.LaunchVelocity.normalized;
             pad = GetComponentInChildren<BoxCollider>();
             FindArrow();
             Textures();

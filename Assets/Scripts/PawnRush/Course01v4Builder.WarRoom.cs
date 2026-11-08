@@ -73,13 +73,13 @@ namespace ChessFight.PawnRush
 
             b.In("S2 Ferry", () =>
             {
-                // A wooden map deck in a teal frame, carried by an ObstacleMotion on its root (riders carried).
+                // A wooden map deck in a teal frame, carried by an CourseObstacleMotion on its root (riders carried).
                 // At either end it stops 0.2 m short of the floor; in the middle 6 m of drop lies each side.
                 // Max speed 6 * 2pi / 12 = 3.1 m/s. Its rim is flush (0.12 m) so it passes under the hurdle.
                 var root = new GameObject("Device_Ferry");
                 root.transform.SetParent(b.parent, false);
                 root.transform.localPosition = V(0f, 0f, FerryMiddle);
-                var motion = root.AddComponent<ObstacleMotion>();
+                var motion = root.AddComponent<CourseObstacleMotion>();
                 motion.kind = MotionKind.Translate;
                 motion.axis = Vector3.forward;
                 motion.distance = FerryTravel;
@@ -217,7 +217,7 @@ namespace ChessFight.PawnRush
                     var root = new GameObject("Device_Crate " + (i + 1));
                     root.transform.SetParent(b.parent, false);
                     root.transform.localPosition = V(0f, Upper, z);
-                    var motion = root.AddComponent<ObstacleMotion>();
+                    var motion = root.AddComponent<CourseObstacleMotion>();
                     motion.kind = MotionKind.Translate;
                     motion.axis = Vector3.forward;
                     motion.distance = .5f;
@@ -324,7 +324,7 @@ namespace ChessFight.PawnRush
                 {
                     var p = child.localPosition;
                     child.localPosition = new Vector3(left ? -9f : 9f, p.y, p.z);
-                    var motion = child.GetComponent<ObstacleMotion>();
+                    var motion = child.GetComponent<CourseObstacleMotion>();
                     if (motion != null) motion.distance = 6f;
                     var wall = child.Find("Rook wall");
                     if (wall != null) wall.localScale = new Vector3(6f, wall.localScale.y, wall.localScale.z);

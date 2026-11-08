@@ -11,11 +11,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-<<<<<<< HEAD:Assets/ChessFight/RagdollLab/Scripts/RagdollDriver.cs
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IAirSteerableLaunchable, IStatusReceiver, IPromotable
-=======
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IStatusReceiver, IPromotable, IMiniGamePawn, IWindReceiver
->>>>>>> upstream/main:Assets/Scripts/RagdollLab/RagdollDriver.cs
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IAirSteerableLaunchable, IStatusReceiver, IPromotable, IMiniGamePawn, IWindReceiver
     {
         RagdollPawn pawn;
 

@@ -7,7 +7,7 @@ from test_obstacle_assets import blocks, fields
 from test_royal_palace_courses import number, vector, transform
 
 ROOT=Path(__file__).resolve().parents[2]
-PREFAB=ROOT/'Assets/Maps/RoyalPalace/WarRoomComplete.prefab'
+PREFAB=ROOT/'Assets/Resources/RoyalPalace/WarRoomComplete.prefab'
 
 def segment_hits(a,b,lo,hi):
     near,far=0.,1.

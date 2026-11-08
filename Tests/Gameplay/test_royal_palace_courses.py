@@ -7,7 +7,7 @@ import unittest
 from test_obstacle_assets import blocks, fields
 
 ROOT = Path(__file__).resolve().parents[2]
-COURSES = ROOT / 'Assets/Maps/RoyalPalace/Courses'
+COURSES = ROOT / 'Assets/Resources/RoyalPalace/Courses'
 
 def number(value): return int(re.search(r'fileID: (\d+)', value)[1])
 def vector(value): return tuple(float(n) for n in re.findall(r'[xyzw]: ([\d.eE+-]+)',value))

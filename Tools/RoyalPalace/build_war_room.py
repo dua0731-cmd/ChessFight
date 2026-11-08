@@ -12,9 +12,9 @@ import build_courses as kit
 from stable_prefab_ids import stabilize
 
 ROOT=kit.ROOT
-PREFAB='Assets/Maps/RoyalPalace/WarRoomComplete.prefab'
+PREFAB='Assets/Resources/RoyalPalace/WarRoomComplete.prefab'
 SCENE='Assets/Scenes/GiantChessCourse.unity'
-SOURCE='Assets/Maps/RoyalPalace/Courses/3-1_RoyalWarRoom.prefab'
+SOURCE='Assets/Resources/RoyalPalace/Courses/3-1_RoyalWarRoom.prefab'
 REPORT='Tools/RoyalPalace/war_room_report.json'
 
 def blocks(text):

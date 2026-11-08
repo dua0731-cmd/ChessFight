@@ -6102,14 +6102,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ConveyorChessboard
   context: {fileID: 7552624901312276449}
   direction: {x: 0, y: 0, z: -1}
-<<<<<<< HEAD:Assets/Maps/ImportedChessFight/Prefabs/Obstacles/08_ConveyorChessboard.prefab
   conveyorSpeed: 3
-=======
-  conveyorSpeed: 1.5
-  launchVelocity: {x: 0, y: 14, z: 8}
-  launchCooldown: 0.7
-  rotors: []
->>>>>>> upstream/main:Assets/Prefabs/Obstacles/08_ConveyorChessboard.prefab
   beltMarkers:
   - {fileID: 2979173044912652436}
   - {fileID: 5527751223071830228}

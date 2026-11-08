@@ -79,16 +79,16 @@ namespace ChessFight.PawnRush
         static void JumpPad(CourseBuilder b, string name, Vector3 at, float yaw)
         {
             var pad = b.Obstacle(b.kit.jumpPad, "PR_02 Jump pad " + name, at, yaw);
-            var surface = pad.GetComponent<ObstacleSurface>();
-            if (surface != null) surface.launchVelocity = PadLaunch;
+            var surface = pad.GetComponent<ChessFight.ProtectKing.JumpPad>();
+            if (surface != null) surface.ConfigureDirectedLaunch(PadLaunch);
         }
 
         static GameObject Disc(CourseBuilder b, string name, Vector3 top, bool counterClockwise)
         {
             // The prefab's top is 0.4 over its root.
             var disc = b.Obstacle(b.kit.spinningDisc, "01 Spinning disc " + name, top - Vector3.up * .4f);
-            var surface = disc.GetComponent<ObstacleSurface>();
-            if (surface != null) surface.counterClockwise = counterClockwise;
+            var surface = disc.GetComponent<SpinningDisc>();
+            if (surface != null) surface.CounterClockwise = counterClockwise;
             return disc;
         }
 
@@ -100,7 +100,7 @@ namespace ChessFight.PawnRush
             var root = new GameObject("Device_SpinBar " + name);
             root.transform.SetParent(b.parent, false);
             root.transform.localPosition = hub + Vector3.up * .65f;
-            var motion = root.AddComponent<ObstacleMotion>();
+            var motion = root.AddComponent<CourseObstacleMotion>();
             motion.kind = MotionKind.Rotate;
             motion.axis = Vector3.up;
             motion.degreesPerSecond = degreesPerSecond;
@@ -118,7 +118,7 @@ namespace ChessFight.PawnRush
             var root = new GameObject("Device_RookWall " + name);
             root.transform.SetParent(b.parent, false);
             root.transform.localPosition = center + Vector3.up * 1.6f;
-            var motion = root.AddComponent<ObstacleMotion>();
+            var motion = root.AddComponent<CourseObstacleMotion>();
             motion.kind = MotionKind.Translate;
             motion.axis = Vector3.right;
             motion.distance = distance;
@@ -145,7 +145,7 @@ namespace ChessFight.PawnRush
         {
             var board = b.Cylinder("Device_RotatingBoardRound", center - Vector3.up * .5f, diameter, .5f, b.kit.trimWhite);
             board.AddComponent<CourseFloor>();
-            var motion = board.AddComponent<ObstacleMotion>();
+            var motion = board.AddComponent<CourseObstacleMotion>();
             motion.kind = MotionKind.Rotate;
             motion.axis = Vector3.up;
             motion.degreesPerSecond = degreesPerSecond;
@@ -190,7 +190,7 @@ namespace ChessFight.PawnRush
                 {
                     var p = child.localPosition;
                     child.localPosition = new Vector3(left ? -7.5f : 7.5f, p.y, p.z);
-                    var motion = child.GetComponent<ObstacleMotion>();
+                    var motion = child.GetComponent<CourseObstacleMotion>();
                     if (motion != null) motion.distance = 5f;
                     var wall = child.Find("Rook wall");
                     if (wall != null) wall.localScale = new Vector3(5f, wall.localScale.y, wall.localScale.z);

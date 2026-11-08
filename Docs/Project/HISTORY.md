@@ -1,5 +1,8 @@
 # 변경 이력
 
+**2026-11-08 · Fork 병합 복구:** 원격 b93100f의 충돌 표식·잘못된 씬/프리팹 병합·장애물 API 불일치 복구. [검사 결과](../Environment/UPSTREAM_MERGE_FIX_20261108.md).
+
+
 - 2026-11-06 R498: 공기 대포 런타임 공전 XYZ 모드 불일치 수정(X/Y=0~0·Z=2.5~5 TwoConstants, Local 유지·설정 후 활성화). Native Play3방향 수정 전 원문 오류30건+모드 실패3건=FAIL33→수정 후 독립 그룹 대조군 포함 PASS·issues0. 저장 자산145개/입자계22개 감사 불일치0·자산 재굽기/씬 저장 없음. Core162·모의55·전체 외부 컴파일 통과. 기존 루트 SeoungTest_PawnRush GUI Play 약25초 AI관찰·Console 빨간 오류0·원문 로그0, 같은 씬 편집 상태 유지. 사용자 입력·연출·Steam·성능 미확인. 이 기록을 추가한 커밋(`git log --grep=R498`).
 
 - 2026-11-06 R497: main 종류별 폴더 정리·Docs/PawnRush·구형 맵 Prototype/GUID·asmref 보존·Queen 폐기/공용기능 중립화·메뉴4그룹·오래된 원격8/로컬8브랜치 bundle 보관 후 삭제·HANDOFF 원문 archive 보존. Core162·모의55·전체컴파일·Unity저장10종/씬 실패0, 실제 Unity Play10종 기능캐시/문/초기화/씨앗/A분리/I외형 자동검사 통과. 사용자 Unity/Steam 미확인. 이 기록을 추가한 커밋(`git log --grep=R497`).
@@ -51,7 +54,6 @@
 
 | 커밋 | 날짜 | 요청 | 내용 |
 |---|---|---|---|
-<<<<<<< HEAD
 | 이 기록을 추가한 커밋 (main) | 11-05 | R122 | 컨셉 미니맵의 직선 정사각 코스·말리는 지도/잡기 감속·기보 예고 전시·후반 거인 체스를 단일 프리팹으로 구현 |
 | 이 기록을 추가한 커밋 (main) | 11-02 | R121 | Prefab mismatch 원인인 순번 ID 재사용 제거·고정 ID 생성·프리팹/씬 동시 이전·타입 회귀검사 |
 | 이 기록을 추가한 커밋 (main) | 11-02 | R120 | 작전실160m 정사각 외벽·4구간 단축·체크포인트 이동·2~3분 목표/개별 경과시간 표시 |
@@ -108,7 +110,7 @@
 | 이 기록을 추가한 커밋 (`main`) | 10-10 | R69 | 원판 외향 밀기 제거·접지 원형 운반·점프 관성 유지, 회전 속도/발사 높이 SerializeField. Core83·세션39·7개 런타임 컴파일 통과, Unity 재확인 대기 |
 | 이 기록을 추가한 커밋 (`main`) | 10-10 | R68 | 래그돌 장애물 시험장 15종: 새 씬·선택 메뉴·현재 시험대 복귀. 공통 물리/기존 씬 보존. Linux Core83·세션39·7개 어셈블리 컴파일 및 씬 정적 검사 통과, Unity 직접 확인 대기 |
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/KingRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
-=======
+
 | (이 병합 커밋) | 11-06 | R492 | `seoungtest`(`ef4146c`, R237 ~ R491)를 `main`에 병합: 실제 충돌 32개 — 정원 코드 = seoungtest, 대계단 현관홀 · 구간 설정 · 홀 `.npy` = main, 나머지(키트 · 검증 · 메뉴 · 시험 · 컴파일 스크립트 · 문서) = 양쪽 모두; 폰 조작 = seoungtest; main 장면 5개(Intro · Lobby · QueenOfTheHill · RagdollTest · QotH 스킬 시험)와 빌드 장면 목록은 main 그대로; seoungtest의 `_Recovery` 추가분 · `__pycache__` 뺌, `.gitignore` 캐시 규칙 |
 | 이 기록을 추가한 커밋(`git log --grep=R496`) | 11-06 | R496 | 기존 프로젝트 루트/main 직접 작업으로 통일·수정 프리팹2개와meta 외부 해시 백업/patch/stash/옛3커밋 보존. main 점유 해제만 하고 이전 worktree 내용 유지. 새 worktree 사용 안 함(T13), 게임 코드·프리팹 재생성 없음. Core164·모의55 통과, 기존 경로 Unity MG목록·새메뉴GUI·C Start·숫자5→E 서고 AI관찰, 전체키·퍼즐·사용자/Steam·Desktop선택 미확인 |
 | 이 기록을 추가한 커밋(`git log --grep=R313`) | 11-06 | R313 | Pull 뒤 미니게임 프리팹·메뉴가 안 보인 제보: Desktop의 `api-bridge-main/main` R312와 Unity의 원래 `ChessFighter/claude/bold-johnson` R155 경로 불일치를 Git·파일·Editor.log로 확인(AI). 올바른 Hub 프로젝트 등록·Show in Explorer 대조 안내, 원본 수정2개 보존. 게임 코드·자산·브랜치 변경 없음. 올바른 main을 별도 Unity로 열어 실제 시험 씬 Play·Start/C 궁전·시험 캐릭터·HUD를 AI 관찰. 사용자 입력 감지 후 중지하여 1~0/F5·실제 퍼즐·사용자/Steam은 미확인. Core164·모의55 통과, 새 로그 오류/예외/누락0·공유래그돌 ConvexMesh 경고1건(물리 변경 없음) |
@@ -398,7 +400,6 @@
 | (이 커밋, `main`) | 10-06 | R67 | 문서: `Docs/PawnRush/PAWN_RUSH_MAP_KIT.md`(폰 러시 맵 기획 재료집), KingRush README 링크, REQUIREMENTS R67, HANDOFF |
 | `12772fe` (`claude/menu-c` → `JY-kingrush`, 위 병합으로 들어옴) | 10-06 | R76 | 문서: UI §13(폰 러쉬 결과 화면)·§10(바뀜 안내), SCENES·STRUCTURE·ROADMAP, DECISIONS U13, VALIDATION 결과 화면 표(12개, R62 표는 끝남), PITFALLS 25~27(이 브랜치에서는 26~28), REQUIREMENTS R65(이 브랜치에서는 R76), HANDOFF |
 | `5972c7e` (`claude/menu-c` → `JY-kingrush`, 위 병합으로 들어옴) | 10-06 | R76 | `LastScene` 삭제(씬·`LastSceneDirector`·`LastSceneCeremony`·`LastSceneStage`·`LastSceneHud`·uxml·uss·tss·생성기) → 폰 러쉬 결과 씬 `PawnRushVictory`·`PawnRushLose`(`PawnRushResultDirector`·`PawnRushResultStage`·`PawnRushResultHud`, `PawnRushResultHud.uxml`·`.uss`·`PawnRushResultTheme.tss`, 생성기 `gen_pawnrush_result.py`), 메뉴 2개, `SceneNames`. 시안(결승 중계 on B 장면)의 three.js·CSS를 그대로 옮김: 갈색 홀 반사 큐브맵, 배경 판·빛줄기, 보드 글자, 램프, 더하는 빛(칸·고리), 점·꽃가루, 웹 자세·카메라, Painter2D 그라데이션 결과판, 육각 얼굴, 그라데이션 글자. 미리보기 `holdAt`·`holdHidden`·`Hold()` |
->>>>>>> upstream/main
 | (이 커밋, `main`) | 10-06 | R66 | 작업 브랜치를 `main`으로(AI 안내 파일 5개, HANDOFF, AI_WORKFLOW, DECISIONS T6), REQUIREMENTS R66, VALIDATION 나이트 표 |
 | `9e4966f` (`main`, 원본 `f476968` `JY-ragdoll_v2`) | 10-06 | R66 | 나이트 L자 도약·밟기(`RagdollPawn.Abilities`), 갈고리·앙파상·종은 폰만, 튜닝 8개, 자동 점검 `LabAutoTest.Knight` |
 | (이 커밋, `main` 병합) | 10-06 | R65 | 문서: REQUIREMENTS R51(`JY-lobby`)·R65, HISTORY, VALIDATION 병합 표, HANDOFF, DECISIONS T4, 맵 이식 문서 번호 R47 → R65 |

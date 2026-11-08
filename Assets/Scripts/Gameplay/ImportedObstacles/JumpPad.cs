@@ -12,6 +12,12 @@ namespace ChessFight.ProtectKing
         [SerializeField, Min(0f), Tooltip("Horizontal acceleration and braking from movement input (m/s squared). Releasing input keeps momentum.")]
         float airAcceleration = 12f;
         [SerializeField, Min(.1f)] float launchCooldown = .7f;
+        [SerializeField] bool directedLaunch;
+        [SerializeField] Vector3 directedVelocity;
+        public Vector3 LaunchVelocity => directedLaunch ? directedVelocity : Vector3.up * Mathf.Sqrt(2f * Mathf.Max(0f, -Physics.gravity.y) * Mathf.Max(0f, jumpHeight));
+        // Explicit opt-in for courses authored with ballistic gaps; test pads retain input steering.
+        public void ConfigureDirectedLaunch(Vector3 velocity) { directedLaunch = true; directedVelocity = velocity; }
+        public void MirrorDirection() { directedVelocity.x = -directedVelocity.x; }
         readonly Dictionary<ImportedObstacleActor, float> lastLaunch = new Dictionary<ImportedObstacleActor, float>();
         readonly Collider[] occupants = new Collider[512];
         readonly HashSet<ImportedObstacleActor> visited = new HashSet<ImportedObstacleActor>();
@@ -40,7 +46,8 @@ namespace ChessFight.ProtectKing
             if (lastLaunch.TryGetValue(actor, out float previous) && time >= previous && time - previous < launchCooldown) return;
             lastLaunch[actor] = time;
             float rise = Mathf.Sqrt(2f * Mathf.Max(0f, -Physics.gravity.y) * Mathf.Max(0f, jumpHeight));
-            actor.LaunchWithAirControl(rise, airMoveSpeed, airAcceleration);
+            if (directedLaunch) actor.LaunchFromObstacle(transform.TransformDirection(directedVelocity));
+            else actor.LaunchWithAirControl(rise, airMoveSpeed, airAcceleration);
         }
         void OnDisable() { lastLaunch.Clear(); }
     }

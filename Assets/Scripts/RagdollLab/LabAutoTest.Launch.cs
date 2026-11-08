@@ -31,7 +31,7 @@ namespace ChessFight.RagdollLab
 
         IEnumerator SteeredJumpPad()
         {
-            var pawn = Spawn(QueenHillTestBed.PadCenter + new Vector3(-4f, 0f, -3f), Vector3.right, "steered-pad");
+            var pawn = Spawn(PhysicsMechanicsBed.PadCenter + new Vector3(-4f, 0f, -3f), Vector3.right, "steered-pad");
             yield return Sim(0.6f);
             pawn.AddVelocity(Vector3.right * 3f);
             float incoming = Flat(pawn.Hips.linearVelocity).x;

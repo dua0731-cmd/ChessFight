@@ -2983,9 +2983,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 545047833669141465}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.45
@@ -10362,9 +10362,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2910027380390008406}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.45
@@ -13613,9 +13613,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 3640141798864867358}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.45
@@ -14496,9 +14496,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 3930781875418143352}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df869fb4d83f6b74cb0a041a1bb9367e, type: 3}
+  m_Script: {fileID: 11500000, guid: 75de101cdf994df99ed8ecabc3f039e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.ObstacleMotion
+  m_EditorClassIdentifier: ChessFight.Gameplay::ChessFight.ProtectKing.CourseObstacleMotion
   kind: 0
   axis: {x: 0, y: 1, z: 0}
   distance: 0.45

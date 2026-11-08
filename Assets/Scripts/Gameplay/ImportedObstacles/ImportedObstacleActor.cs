@@ -66,7 +66,6 @@ namespace ChessFight.ProtectKing
             if (launcher != null) launcher.Launch(velocity);
             else hits.ApplyHit(velocity - Velocity,0,0,true);
         }
-<<<<<<< HEAD
         public void LaunchWithAirControl(float upwardSpeed, float maxMoveSpeed, float acceleration)
         {
             if (!CanReceiveObstacle) return;
@@ -75,11 +74,9 @@ namespace ChessFight.ProtectKing
             else
                 LaunchFromObstacle(Vector3.ProjectOnPlane(Velocity, Vector3.up) + Vector3.up * upwardSpeed);
         }
-=======
         // A wind that carries the character over the ground (AirVent.DriftSpeed): false when it is not that
         // kind of character or cannot be carried right now, and the vent pushes its bodies instead.
         public bool Blow(Vector3 velocity) => CanReceiveObstacle && wind != null && wind.Blow(velocity);
->>>>>>> upstream/main
         // Wind is continuous acceleration, not a repeated hit/stagger. Reject
         // puppets via their kinematic body, then push every body part equally.
         public Vector3 Accelerate(Vector3 acceleration, float limit, float dt)

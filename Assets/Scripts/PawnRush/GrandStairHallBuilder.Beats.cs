@@ -151,7 +151,7 @@ namespace ChessFight.PawnRush
             b.Checkpoint(2, OnSpiral(368f, 9.9f), Heading(368f), 4.5f);
 
             // 3b. The floating stones (φ 372 -> 440, y 10 -> 11.5): eight round slabs 2.6 m across, 0.75 m apart, every
-            // second one bobbing 0.45 m up and down every 3 s (ObstacleMotion, the shared clock), so some steps want
+            // second one bobbing 0.45 m up and down every 3 s (CourseObstacleMotion, the shared clock), so some steps want
             // a jump at the right moment.
             for (int i = 0; i < 8; i++)
             {
@@ -241,7 +241,7 @@ namespace ChessFight.PawnRush
             var body = stone.AddComponent<Rigidbody>();
             body.isKinematic = true;
             body.useGravity = false;
-            var motion = stone.AddComponent<ObstacleMotion>();
+            var motion = stone.AddComponent<CourseObstacleMotion>();
             motion.kind = MotionKind.Translate;
             motion.axis = Vector3.up;
             motion.useLocalTranslationAxes = false;
@@ -312,8 +312,8 @@ namespace ChessFight.PawnRush
             float distance = flat.magnitude, rise = to.y - from.y, up = 9f;
             float time = (up + Mathf.Sqrt(up * up - 2f * 9.81f * rise)) / 9.81f;
             var pad = Hazard(b, b.kit.jumpPad, name, from, Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg);
-            var surface = pad != null ? pad.GetComponentInChildren<ObstacleSurface>(true) : null;
-            if (surface != null) surface.launchVelocity = new Vector3(0f, up, distance / time);
+            var surface = pad != null ? pad.GetComponentInChildren<ChessFight.ProtectKing.JumpPad>(true) : null;
+            if (surface != null) surface.ConfigureDirectedLaunch(new Vector3(0f, up, distance / time));
             Gap(b, name + " flight", from, to, 3f);
         }
 

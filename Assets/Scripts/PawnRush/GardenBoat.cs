@@ -10,7 +10,7 @@ namespace ChessFight.PawnRush
     // (RoyalWaterGardenRules.BoatX / BoatDrop). A pure function of the shared obstacle clock and its lane, which
     // BoatLanes gives it from the section's seed, so every PC has it in the same place. Whoever stands on its deck is
     // carried (an Obstacle is an IMovingSurface). Both teams ride the same boats.
-    public sealed class GardenBoat : Obstacle
+    public sealed class GardenBoat : KinematicObstacle
     {
         [Tooltip("Which of its lane's boats (0, 1): they run a spacing apart.")]
         [SerializeField] int boat;

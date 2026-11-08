@@ -605,7 +605,6 @@ namespace ChessFight.RagdollLab
             foreach (var rb in bodies) rb.linearVelocity += dv;
         }
 
-<<<<<<< HEAD:Assets/ChessFight/RagdollLab/Scripts/RagdollPawn.cs
         /// <summary>A vertical jump pad keeps incoming horizontal momentum and allows input steering.</summary>
         public void LaunchWithAirControl(float upwardSpeed, float maxMoveSpeed, float acceleration)
         {
@@ -618,7 +617,7 @@ namespace ChessFight.RagdollLab
             // Steering must brake the inherited velocity itself, rather than an immutable carry frame.
             carryVel = Vector3.zero;
             anchorVel = momentum;
-=======
+        }
         // Pawn Rush mini-games (R126): the move last given, sprint held, stamina spent from outside, held still.
         float holdStillUntil = -1f;
         public Vector3 GivenMove => givenMove;
@@ -627,7 +626,6 @@ namespace ChessFight.RagdollLab
         {
             if (stamina < 0f) stamina = P.climbStaminaMax;   // not ticked yet: full
             UseStamina(P, amount);
->>>>>>> upstream/main:Assets/Scripts/RagdollLab/RagdollPawn.cs
         }
 
         /// <summary>
@@ -1214,12 +1212,8 @@ namespace ChessFight.RagdollLab
             Vector3 targetVel = steerLaunch && !moving ? ownAnchor
                 : move * (launched && !steerLaunch ? Mathf.Min(top, p.launchSteer) : top);
             upSettle = Mathf.Max(0f, upSettle - dt);
-<<<<<<< HEAD:Assets/ChessFight/RagdollLab/Scripts/RagdollPawn.cs
-            float accel = (moving ? p.acceleration * RiseFactor() : p.stopDeceleration) * (planted ? 1f : p.airControl);
-            if (steerLaunch) accel = launchAirAcceleration;
-=======
             float accel = (moving ? p.acceleration * RiseFactor() : StopDeceleration(p)) * (planted ? 1f : p.airControl);
->>>>>>> upstream/main:Assets/Scripts/RagdollLab/RagdollPawn.cs
+            if (steerLaunch) accel = launchAirAcceleration;
             // Push off in steps instead of gliding: thrust peaks as each foot takes weight.
             if (p.stanceThrust > 0f && planted && moving)
             {

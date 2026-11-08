@@ -27,7 +27,7 @@ ns['MESH']['Cylinder'] = 10206
 SCRIPT = {p.stem: re.search(r'guid: (\w+)',p.with_suffix('.cs.meta').read_text())[1]
           for p in (ROOT/'Assets').rglob('*.cs') if p.with_suffix('.cs.meta').exists()}
 ns['SCRIPT'] = SCRIPT
-BASE = 'Assets/Maps/RoyalPalace'
+BASE = 'Assets/Resources/RoyalPalace'
 outputs = {}
 reports = []
 

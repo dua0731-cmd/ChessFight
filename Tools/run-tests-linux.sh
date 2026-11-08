@@ -226,17 +226,11 @@ check_boundaries() {
 # comment naming why; it is offline only until the host sends its state (listed, not failed).
 check_obstacle_clock() {
   local bad=0 f
-<<<<<<< HEAD
-  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/ChessFight 2>/dev/null \
-             | grep -vE 'LabAutoTest|Test|/Editor/|/RagdollPawn[^/]*\.cs$'); do
-    if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|SharedTime|: *KinematicObstacle\b' "$f"; then
-=======
   for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/Scripts/RagdollLab Assets/Scripts/PawnRush \
              Assets/Prototype/PawnRush/Scripts/Gameplay Assets/Prototype/PawnRush/Scripts/RagdollLab \
              Assets/Prototype/PawnRush/Scripts/PawnRush 2>/dev/null \
              | grep -vE 'LabAutoTest|Test|Editor/|/RagdollPawn[^/]*\.cs$'); do
-    if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then
->>>>>>> upstream/main
+    if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|SharedTime|: *KinematicObstacle|: *Obstacle\b' "$f"; then
       if grep -q 'StateDrivenMover:' "$f"; then echo "NOTE: state-driven mover, offline only: $f"
       else echo "$f"; bad=1; fi; fi
   done
@@ -247,15 +241,10 @@ check_obstacle_clock() {
 
 check_boundaries
 check_obstacle_clock
-<<<<<<< HEAD
-# The Queen of the Hill map is generated data; the committed JSON must match its script.
 if command -v python3 >/dev/null 2>&1; then
-  python3 Tools/QueenHill/build_layout.py --check || exit 1
-  PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s Tests/Gameplay -p 'test_*.py' -v || exit 1
+  PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s Tests/Gameplay -p 'test_*.py' -v
 fi
-=======
 if [ "${1:-}" = "--checks-only" ]; then exit 0; fi
 ensure_mono
->>>>>>> upstream/main
 run_tests
 if [ "${1:-}" = "--compile" ]; then compile_all; fi

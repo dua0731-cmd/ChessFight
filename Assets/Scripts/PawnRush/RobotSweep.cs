@@ -12,7 +12,7 @@ namespace ChessFight.PawnRush
     // shared obstacle clock. Its arm and hand push what they touch like any moving collider; on top of that, the
     // authority knocks a pawn the hand reaches while it crosses low: off the dyke into the water on the sweep, back
     // against the north wall on the return - once per pass.
-    public sealed class RobotSweep : Obstacle
+    public sealed class RobotSweep : KinematicObstacle
     {
         [Tooltip("Local axis it swings about; a positive angle lifts the hand towards its own (north) side.")]
         [SerializeField] Vector3 axis = Vector3.left;

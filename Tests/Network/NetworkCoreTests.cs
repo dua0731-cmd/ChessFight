@@ -14,7 +14,6 @@ public static class NetworkCoreTests
     static HostElection.Candidate C(ulong id, int fit, int ping = -1) => new HostElection.Candidate { Id = id, Fitness = fit, PingMs = ping };
     static HostElection.Candidate M(ulong id, int now, int machine) => new HostElection.Candidate { Id = id, Fitness = now, BaseFitness = machine, PingMs = -1 };
     static bool Reserve(TeamReservations r, int first, int count, double now = 0) => r.Reserve((ulong)first, (ulong)first + 100, "t" + first, Ids(first, count), now, out _);
-<<<<<<< HEAD
     static ChessTimerState TimerSnapshot(int seed = 114)
     {
         var boards = ChessWirePuzzle.GenerateCourse(new Random(seed));
@@ -83,7 +82,6 @@ public static class NetworkCoreTests
         }
         Check(safe == board.RequiredCuts && board.WireCount - safe == 2, "exact safe quota and two dangerous wires");
     }
-=======
     // An input packet as far as the skill key goes (no tuples: mcs runs these tests on Linux).
     struct PressPacket { public uint Seq; public byte Count; }
     // A snapshot pawn with every field set from its id, the hook's gauge and point too (R297).
@@ -203,12 +201,10 @@ public static class NetworkCoreTests
     }
     const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 c1be8d7c616ed0f6 bcc5fd028cb3c436 "
                           + "028c824dd7ab7066 0a5aaf2e798a59b6 52d23acd7ef29404";
->>>>>>> upstream/main
     public static int Main()
     {
         try
         {
-<<<<<<< HEAD
             Test("Chess timer ties run both clocks and a stable majority pauses only its team", () => {
                 var r = new ChessTimerRules(10, 2, .35f);
                 r.Step(.1f, 2, 2, 0, 0);
@@ -563,7 +559,6 @@ public static class NetworkCoreTests
                 var p = new ChessWirePuzzle(); p.Step(float.NaN, 0, 2, true); p.Step(-1, 0, 2, true);
                 Check(p.Progress == 0 && !p.Solved, "invalid time ignored");
             });
-=======
             Test("Pawn Rush draws two different mini-games and leaves out the previous round's", () => {
                 var seen = new HashSet<int>();
                 for (int seed = 0; seed < 400; seed++)
@@ -809,7 +804,6 @@ public static class NetworkCoreTests
                 Check(RoyalWaterGardenRules.RobotAngle(2.2) == RoyalWaterGardenRules.RobotDown, "holds over the water");
                 Check(RoyalWaterGardenRules.RobotAngle(5.0) == RoyalWaterGardenRules.RobotRest, "rests raised");
                 Check(RoyalWaterGardenRules.RobotPhase(6.0 * 283333333 + 1.5, out into) == RoyalWaterGardenRules.Swing.Sweep, "Unix time"); });
->>>>>>> upstream/main
             Test("King Rush final starts with both kings or exactly first plus twenty-five", () => {
                 var r = new KingRushFinalRules(); r.Advance(1, 0, 0, 0); Check(!r.Started, "no kings");
                 r.ArriveKing(0, 2); r.Advance(26.999, 1, 0, 0); Check(!r.Started && r.Progress(0) == 0, "not early");

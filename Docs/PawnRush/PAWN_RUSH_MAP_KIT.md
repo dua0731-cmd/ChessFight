@@ -180,13 +180,11 @@
 
 **02 점핑 발판** (`JumpPad`)
 - 3 × 3 m 판이다. 위에 서면 즉시 발사되고, 0.7초 안에는 다시 발사되지 않는다.
-<<<<<<< HEAD:Docs/KingRush/PAWN_RUSH_MAP_KIT.md
 - R73: `Jump Height` 기본 10 m, 수직 속도 √(2gh). `Forward Speed` 제거: 진입 수평 관성 유지, 공중 이동 입력으로 가속·제동. `Air Move Speed` 기본 6 m/s, `Air Acceleration` 기본 12 m/s². 무입력은 관성 유지, 반대 입력은 감속 후 역방향 이동. 착지 위치는 진입 속도와 입력에 따라 달라진다.
 - 낮은 단으로 보낼 때는 Inspector에서 `Jump Height`를 줄인다. 실제 정점은 관절·충돌·물리 시간 간격의 영향을 받으므로 Unity에서 확인한다.
-=======
+
 - 발사 속도는 위 14, 앞 8 m/s(설정값)다. 래그돌 기준 **최고 약 10 m, 약 23 m 앞에 떨어진다(계산값).**
 - **원본 캡슐 캐릭터용 값이라 래그돌에게는 지나치게 세다.** 점프(3.8 m/s)의 3배가 넘는다. 기획에 쓸 때는 "높이 _ m 위 단으로 올려 주기"처럼 **원하는 결과를 적고 수치는 조정 대상으로** 둔다.
->>>>>>> upstream/main:Docs/PawnRush/PAWN_RUSH_MAP_KIT.md
 
 **03 왕복 밀대** (`ReciprocatingPusher` + `ObstacleImpact`)
 - 코스 방향으로 놓인 8 m 막대(0.8 × 1.6 m)다. 레일 위에서 좌우 ±4.5 m를 4초 주기 사인파로 오간다. 가장 빠를 때 약 7.1 m/s(계산값).
@@ -212,15 +210,13 @@
 - R78: 실제 물리 하중으로 기울어진다. 동적 Rigidbody와 중심 HingeJoint, Maximum Tilt 기본 ±24°. Deck Mass 40 kg, Return Spring 150, Return Damper 120, Maximum Angular Speed 30°/초. 탑승 판정으로 각도를 만드는 경로는 제거했다. 실제 기울기는 하중과 복귀 스프링의 균형으로 결정하며 스프링 0이면 자동 복귀하지 않는다.
 - 팀원끼리 균형을 맞추는 협동 장애물로 쓸 만하다. **온라인에서는 지금 기울지 않는다**(상태 전달이 없음).
 
-<<<<<<< HEAD:Docs/KingRush/PAWN_RUSH_MAP_KIT.md
 **08 컨베이어 체스판** (`ConveyorChessboard`)
 - 6.4 × 8 m 판이다. 위에 탄 폰을 **3 m/s로 뒤(출발 쪽)로** 보낸다.
 - 달리기 5.5 m/s로 거슬러 가면 실제 전진은 2.5 m/s다. 8 m를 약 3.2초에 건넌다. 전력질주면 6.6 m/s.
-=======
+
 **08 컨베이어 체스판** (`ObstacleSurface` Conveyor)
 - 6.4 × 8 m 판이다. 위에 탄 폰을 **1.5 m/s로 뒤(출발 쪽)로** 보낸다(10-08 R89에 프리팹 값 3 → 1.5).
 - 달리기(2.5 m/s)로 거슬러 가면 실제 전진 1.0 m/s, 8 m에 약 8초. 전력질주(3.6)면 2.1 m/s, 약 4초(스테미나 4). 3 m/s 그대로였다면 달리기로는 못 건넜다.
->>>>>>> upstream/main:Docs/PawnRush/PAWN_RUSH_MAP_KIT.md
 - 방향은 프리팹 설정값으로 바꿀 수 있다. 앞으로 보내면 가속 구간이 된다.
 
 **09 체스 시계 문** (`ChessClockGate` ×2 + `ChessClockHand` ×2)

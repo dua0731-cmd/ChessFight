@@ -183,13 +183,12 @@ R50 실행 로그에서 수동 설정했던 무게중심이 검날 중앙 `z=0.5
 - 이전 도구 시절: GitHub 연동 앱이 저장소 쓰기에 403을 냈다. 사용자가 GitHub Desktop으로 커밋·푸시해 해결했다. 권한 문제는 코드 오류가 아니다. 도구마다 쓰기 권한을 먼저 확인한다.
 - 이전 도구 시절: 샌드박스의 headless Unity가 라이선스 IPC 문제로 실패했다. 이후 사용자 Unity Hub에서 빌드에 성공했다. 과거 장애를 지금의 검증 불가 사유로 재사용하지 않는다.
 - Steam 로그인은 사용자가 직접 한다. 비밀번호·인증 코드·토큰을 문서나 저장소에 적지 않는다.
-<<<<<<< HEAD
 
 
 ## 생성 프리팹의 fileID를 다른 타입에 재사용하지 말 것 (R121)
 
 순번 기반 YAML 생성은 앞에 객체가 추가되면 기존 컴포넌트 ID를 다른 클래스에 재사용한다. Unity 캐시/씬 overrides에서 “Prefab mismatch … different type”과 데이터 손실 경고를 일으킬 수 있다. 계층 정체성과 Unity 클래스/스크립트 GUID를 포함한 고정 ID를 사용하고, 장식 삽입 전후 기존 ID/타입 보존을 검사한다. 이미 잘못 재사용한 에셋은 저장된 씬까지 함께 이전하고 오류 상태의 로컬 씬을 강제 저장하지 않는다. WarRoomComplete 수정은 [R121](../KingRush/WAR_ROOM_COMPLETE.md) 참고.
-=======
+
 - **R111 Unity MCP `execute_code`:** Play에 들어가면 도메인을 다시 불러와 연결이 잠깐 끊기고, 명령이 실패하거나 다시 보내질 수 있다. 부작용 있는 명령(로컬 시험 방장 시작 등)은 "이미 있으면 안 함"으로 막는다. 막지 않았을 때 방장이 여러 개 떠서 UDP 47611이 "이미 사용 중"이었다. 빌드도 한 번에 하나씩 부른다.
 - **R111 로컬 시험으로 지연을 잴 때:** 편집기 방장이 자기 화면을 연속 저장(`burst`)하면 약 3프레임/초로 느려져 스냅샷이 몰려 오고 신호가 최대 250 ms 늦게 그려진다. 시간은 저장 없이 `report`·기록 줄로 재고, 화면은 참가자 창만 저장한다. `ScreenCapture`는 프레임 끝에 저장된다.
 - **R112 Unity 편집기 두 개(MCP):** `C:/Work/ChessFight`와 `C:/Work/ChessFight-SkillNet`이 함께 켜져 있으면 MCP 명령은 "지금 고른 쪽"으로 간다. 먼저 `mcpforunity://instances`를 읽고 `set_active_instance`로 고른 뒤, 명령 안에서도 `Directory.GetCurrentDirectory()`로 폴더를 확인한다(사용자가 다른 편집기에서 Play 중일 수 있다). Play에 들어간 직후 몇 초는 그 편집기가 목록에서 빠져 "not found"가 나는데, 다른 편집기로 넘어가지 않으니 잠깐 기다렸다 다시 부른다. 새 폴더의 첫 열기는 약 3분, 첫 빌드는 셰이더 때문에 약 2분 반 걸렸다.
@@ -267,4 +266,3 @@ Prototype 코드41개는 새 asmdef로 분리하면 기존 어셈블리 내부 �
 작전 회의실의 `LibraryAirCannonFx`는 Orbital X·Y가 Constant 0인데 Z만 `MinMaxCurve(2.5f, 5f)`의 TwoConstants라 `Particle Orbital Velocity curves must all be in the same mode`를 냈다. `MinMaxCurve(0f)`와 `MinMaxCurve(0f, 0f)`는 값이 모두0이어도 모드가 다르다. X·Y를 두 인자 생성자로 맞추고 설정 완료 후 모듈을 켠다. Z 범위와 로컬 공간·외형은 유지한다. 같은 Orbital XYZ 묶음 안의 모드를 맞추며, 선형 XYZ와 Orbital XYZ 사이의 모드는 달라도 된다(실제 Unity 대조군 통과).
 
 실제 충전/발사·입자 방출·시뮬레이션의 세 방향 검사에서 수정 전 엔진 오류30건+모드 실패3건, 수정 후 오류0·세 방향 통과를 AI가 기록했다. 자동 검사 결과와 사용자 회의실 외형 확인은 구분한다. 검사기 자체의 첫 실행은 재생 중 `randomSeed`를 설정한 assertion도 냈으므로, 먼저 `Stop(...StopEmittingAndClear)`한 뒤 씨앗을 넣도록 고쳤다. 운영 효과가 collider를 `Object.Destroy`로 정리하므로 이 경로의 회귀 검사는 Play Mode에서 실행한다. 초기 검사기 실패 기록도 `Logs/AirCannonFxValidation/R498-initial-harness-failure.txt`에 보존한다. [VFX 상세](../VFX/README.md#r498-작전-회의실-공기-대포의-orbital-velocity-오류-2026-11-06).
->>>>>>> upstream/main

@@ -10,7 +10,6 @@ namespace ChessFight.ProtectKing
     [DefaultExecutionOrder(-100)]
     public sealed class FoldingBridge : Obstacle
     {
-<<<<<<< HEAD
         public ObstacleContext context;
         public Rigidbody LeftPivot, RightPivot;
         [SerializeField, Range(0f, 85f), Tooltip("Maximum downward angle, not a forced target. Reduce Return Spring if the panel stops before this limit.")] public float FoldAngle = 70f;
@@ -19,33 +18,6 @@ namespace ChessFight.ProtectKing
         [SerializeField, Min(0f)] float returnDamper = 250f;
         [SerializeField, Min(1f)] float maximumFoldSpeed = 45f;
         public UnityEvent OnFolding = new UnityEvent(), OnClosed = new UnityEvent(), OnOpened = new UnityEvent();
-=======
-        float RuntimeTime => SampleTime(ObstacleClock.Now);
-        float SampleTime(double t) => ObstacleContext.PeriodicTime(t+phaseOffset,StartDelay,CycleDuration,Repeat);
-        public ObstacleContext context;
-        public Rigidbody LeftPivot;
-        public Rigidbody RightPivot;
-        [Min(0)] public float OpenDuration = 5;
-        [Min(0)] public float WarningDuration = 1.5f;
-        [Min(.25f)] public float FoldDuration = 2.5f;
-        [Min(0)] public float ClosedDuration = 2;
-        [Range(0, 80)] public float FoldAngle = 70;
-        [Min(0)] public float StartDelay = 1;
-        public bool Repeat = true;
-        [Tooltip("Seconds added to the shared obstacle clock: the same cycle, earlier or later.")]
-        public float phaseOffset;
-        public bool Simultaneous = true;
-        [Min(0), Tooltip("Right panel delay when Simultaneous is disabled.")]
-        public float RightDelay = .6f;
-        public Renderer[] WarningVisuals;
-        [Min(.1f)] public float WarningFlashRate = 4;
-        public AudioSource WarningAudio;
-        public AudioClip WarningClip;
-        public UnityEvent OnWarning = new UnityEvent();
-        public UnityEvent OnFolding = new UnityEvent();
-        public UnityEvent OnClosed = new UnityEvent();
-        public UnityEvent OnOpened = new UnityEvent();
->>>>>>> upstream/main
         public FoldingBridgeState State { get; private set; }
         public float LeftAngle => leftJoint != null ? Mathf.Abs(leftJoint.angle) : 0f;
         public float RightAngle => rightJoint != null ? Mathf.Abs(rightJoint.angle) : 0f;

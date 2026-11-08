@@ -60,7 +60,7 @@ namespace ChessFight.PawnRush
             {
                 if (bridges[i] == null || bridgeLamps[i] == null) continue;
                 var state = bridges[i].State;
-                Light(bridgeLamps[i], state == FoldingBridgeState.Open ? Go : state == FoldingBridgeState.Warning ? Soon : Stop);
+                Light(bridgeLamps[i], state == FoldingBridgeState.Open ? Go : state == FoldingBridgeState.Folding ? Soon : Stop);
             }
         }
 

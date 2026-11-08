@@ -83,7 +83,7 @@ namespace ChessFight.PawnRush
         // Directions a transform does not carry. `subtree` covers a whole obstacle prefab at once.
         static void FixValues(GameObject go, bool subtree)
         {
-            var motions = subtree ? go.GetComponentsInChildren<ObstacleMotion>(true) : go.GetComponents<ObstacleMotion>();
+            var motions = subtree ? go.GetComponentsInChildren<CourseObstacleMotion>(true) : go.GetComponents<CourseObstacleMotion>();
             foreach (var m in motions)
             {
                 var a = m.axis;
@@ -91,13 +91,12 @@ namespace ChessFight.PawnRush
             }
             var vents = subtree ? go.GetComponentsInChildren<AirVent>(true) : go.GetComponents<AirVent>();
             foreach (var v in vents) v.WindDirection = new Vector3(-v.WindDirection.x, v.WindDirection.y, v.WindDirection.z);
-            var surfaces = subtree ? go.GetComponentsInChildren<ObstacleSurface>(true) : go.GetComponents<ObstacleSurface>();
-            foreach (var s in surfaces)
-            {
-                s.counterClockwise = !s.counterClockwise;
-                s.direction = new Vector3(-s.direction.x, s.direction.y, s.direction.z);
-                s.launchVelocity = new Vector3(-s.launchVelocity.x, s.launchVelocity.y, s.launchVelocity.z);
-            }
+            var discs = subtree ? go.GetComponentsInChildren<SpinningDisc>(true) : go.GetComponents<SpinningDisc>();
+            foreach (var disc in discs) disc.CounterClockwise = !disc.CounterClockwise;
+            var belts = subtree ? go.GetComponentsInChildren<ConveyorChessboard>(true) : go.GetComponents<ConveyorChessboard>();
+            foreach (var belt in belts) belt.MirrorDirection();
+            var pads = subtree ? go.GetComponentsInChildren<ChessFight.ProtectKing.JumpPad>(true) : go.GetComponents<ChessFight.ProtectKing.JumpPad>();
+            foreach (var pad in pads) pad.MirrorDirection();
         }
 
         // Everything under `root` that belongs to a team now belongs to `team`.

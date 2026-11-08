@@ -1,12 +1,10 @@
 # 킹러시
 
-<<<<<<< HEAD:Docs/KingRush/README.md
 **R117 통합 씬:** `GiantChessCourse`에서 작전실 코스→거인 체스로 이어서 진행한다. `RoyalPalaceCourseTest` 씬/선택 메뉴는 사용자 요청으로 삭제했으며 코스5개 프리팹은 유지한다. [실행](GIANT_CHESS_COURSE.md#r117-작전실-코스와-한-씬으로-연결-2026-11-02).
 
 **R115 윗궁 코스 프리팹:** 최신 첨부의 작전실·금고실·집무실·옷방·천문대5개와 전용 래그돌 시험 씬. [실행/저장/범위](ROYAL_PALACE_COURSES.md). 자동검사 통과·Unity 확인 대기.
-=======
+
 > **(R90, 2026-10-08) 이 문서의 씬은 지웠다.** `KingRush.unity`(옛 캡슐 경기 씬), `KingRushOpening.unity`(R54~R56 코스), `KingRushPrototype.unity`(R52 시험장)는 사용자 요청으로 삭제했고, 로비의 폰 러쉬 경기 씬은 [폰 러시 코스 01](PAWN_RUSH_COURSE01.md)이다. 코드(`Scripts/RagdollLab/KingRush*`, `Gameplay/KingRush`, 빌더)와 구간 프리팹(`Prefabs/KingRushOpening`)은 남겼고, 씬을 다시 만들던 메뉴(King Rush → Open …)만 뺐다. 아래는 기록이다.
->>>>>>> upstream/main:Docs/PawnRush/Prototype/README_HISTORICAL.md
 
 ## 최신: R56 왕의 계단과 결승
 

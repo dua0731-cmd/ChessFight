@@ -34,13 +34,13 @@ def world(data,tid,p=(0,0,0)):
 
 def main():
     colors={}
-    for p in (ROOT/'Assets/Maps/RoyalPalace/Materials').glob('*.mat'):
+    for p in (ROOT/'Assets/Resources/RoyalPalace/Materials').glob('*.mat'):
         guid=re.search(r'guid: (\w+)',Path(str(p)+'.meta').read_text())[1]
         c=re.search(r'_Color: \{r: ([\d.]+), g: ([\d.]+), b: ([\d.]+)',p.read_text())
         colors[guid]=tuple(float(n) for n in c.groups())
     fig,axes=plt.subplots(1,5,figsize=(20,6),facecolor='#101923',layout='constrained')
     names=['3-1  WAR ROOM','3-2  VAULT','3-3  STUDY','3-4  WARDROBE','3-5  OBSERVATORY']
-    for ax,path,title in zip(axes,sorted((ROOT/'Assets/Maps/RoyalPalace/Courses').glob('*.prefab')),names):
+    for ax,path,title in zip(axes,sorted((ROOT/'Assets/Resources/RoyalPalace/Courses').glob('*.prefab')),names):
         data=read(path);transforms={v['m_GameObject']['fileID']:key for key,(kind,v) in data.items() if kind==4}
         meshes={v['m_GameObject']['fileID']:v['m_Mesh']['fileID'] for kind,v in data.values() if kind==33}
         shapes=[]

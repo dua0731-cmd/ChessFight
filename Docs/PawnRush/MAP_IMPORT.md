@@ -67,9 +67,8 @@ R70: 시험장 15종은 모두 `Obstacle` 아래 전용 클래스를 사용한�
 
 맵을 연 뒤 Play하여 시작점에 래그돌이 생기는지, 카메라가 따라오는지, 바닥을 밟고 점프하는지 확인한다. 각 장애물 프리팹은 필요하면 별도 테스트 씬에 끌어 놓고 시험한다. 다리 위 탑승/접힘, 피스톤·기둥 타격, 진자 넉백, 바람 상한, 대리석 붕괴와 경고를 확인한다. 원본 맵 배치는 수정하지 않은 상태로 비교한다. 원래 KingRush/RagdollTest도 각각 열어 기존 동작을 확인한다.
 
-<<<<<<< HEAD:Docs/KingRush/MAP_IMPORT.md
 R71: 16~18번 `CrumblingRoyalFloor`/`KnightCavalryCharge`/`CastlingCrossingBridges`까지 공통 `Obstacle` 상속을 적용했다. 각 전용 설정·GUID·상태 로직은 유지한다.
-=======
+
 ## 이동 튜닝에 맞춘 높이·속도 조정 (2026-10-08, R89)
 
 사용자 튜닝(R88: 달리기 2.5 m/s, 점프 약 0.74 m)으로 못 지나가게 된 곳을 사용자 요청으로 고쳤다. 원본 배치(위치·회전·크기)는 이것 말고는 그대로다.
@@ -82,4 +81,3 @@ R71: 16~18번 `CrumblingRoyalFloor`/`KnightCavalryCharge`/`CastlingCrossingBridg
 | 08 컨베이어 체스판 | 뒤로 3 m/s → **1.5 m/s** | 프리팹 `08_ConveyorChessboard`의 `conveyorSpeed`(씬은 덮어쓰지 않음) |
 
 그대로 둔 것: 낮은 벽 4개(1.1 m, 예전에도 점프로 못 넘던 "잡고 오르기" 벽), 오르내리는 체스 칸(낮을 때 올라타면 됨), 발사형 장애물(02·13)의 세기. **Unity 미확인**.
->>>>>>> upstream/main:Docs/PawnRush/MAP_IMPORT.md

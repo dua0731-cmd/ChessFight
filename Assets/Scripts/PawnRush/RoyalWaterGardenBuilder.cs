@@ -144,15 +144,15 @@ namespace ChessFight.PawnRush
             Object.DestroyImmediate(go.GetComponent<Collider>());
         }
 
-        // A group whose children move together: a kinematic root driven by ObstacleMotion (phase in cycles).
-        static ObstacleMotion Mover(CourseBuilder b, string name, Vector3 at, MotionKind kind, Vector3 axis, float phaseCycles)
+        // A group whose children move together: a kinematic root driven by CourseObstacleMotion (phase in cycles).
+        static CourseObstacleMotion Mover(CourseBuilder b, string name, Vector3 at, MotionKind kind, Vector3 axis, float phaseCycles)
         {
             var root = b.Group(name);
             root.localPosition = at;
             var body = root.gameObject.AddComponent<Rigidbody>();
             body.isKinematic = true;
             body.useGravity = false;
-            var motion = root.gameObject.AddComponent<ObstacleMotion>();
+            var motion = root.gameObject.AddComponent<CourseObstacleMotion>();
             motion.kind = kind;
             motion.axis = axis;
             motion.useLocalTranslationAxes = false;
