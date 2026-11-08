@@ -131,3 +131,26 @@ Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는
 Play 첫 두 번은 `UnityEditor.Search.SearchDatabase`의 시작 초기화 예외로 실패했다. 실패 기록(`Logs/MiniGameValidation/runtime-search-startup-failure*.txt`, `Temp-R312-native-play-search-startup-failure*.log`)을 보존하고, 편집기 가져오기·컴파일이 끝난 뒤 2초 기다려 Play로 진입하도록 검사 도구를 고쳤다. 최종 실행은 해당 예외 없이 통과했고 오류 필터·검색 캐시는 변경하지 않았다. 제한된 실행 환경의 Unity 자체 통신·라이선스 시작 실패 로그도 `Temp-R312-native-restricted-startup-failure.log`에 남겼다.
 
 **완료 검사는 `ForceComplete`로 이벤트·팀 문 연결을 시험한 것이다. 실제 입력으로 장치를 풀어서 달성한 결과가 아니다.** 사용자 확인 항목은 10종 외형·카메라·동선, 시험 씬의 실제 Start·1~0/F5/F8 키, A 양팀 칠하기, C 실제 매듭 당기기와 다리 통과, D 밀기와 쇠살문, B 운반·설치, E 등반·등 점등, F 타이밍, J 점프/다이빙, G 물체 자체 밀기, H 킹 몰이, I 방패·침대 이동이다. 실제 해결 가능성·손맛·플레이어 빌드·12명 성능·Steam은 미확인이다. 구간 조합 코스의 온라인 연결은 이번 구현 범위에 포함되지 않는다. 항목별 수동 확인 표는 [VALIDATION R312](../Network/VALIDATION.md)에 있다.
+
+## 6. 가운데 문 — 없애기로 함, 아트 담당이 정리 (R515, 2026-11-09)
+
+사용자(11-09 할 일 목록 7번): **"각 미니게임 구간에 중앙문 제거(의미도 없는데 있으니까 햇갈림)"**. 가운데 통로(x ±2, z 4~24)가 북쪽 가운데 블록(x −10~10, z 24~30, 충돌 상자 · `NoClimbSurface`)의 닫힌 문으로 끝나서, 출구처럼 보이지만 열리지 않는다. 팀은 자기 팀 문(x ±12, z 23)으로만 나간다. 문은 **그림뿐**이라 지워도 판정 · 충돌 · 네트워크는 그대로다.
+
+조사해 보니 10개 방의 가운데 문이 세 가지 형태라, 사용자가 **"승규 님께 넘기기"**로 정했다(R515: 코드 · 에셋은 안 바꾸고 이 목록만 남김). 경로는 11-09 main 기준.
+
+| 방 | 지금 가운데 문 | 어디서 | 지울 때 |
+|---|---|---|---|
+| 공통(코드 셸) | `DEC_ClosedCeremonialDoor`(6.7 × 7.6 m 나무 문 · 쇠띠 · 리벳 · 고리) + `Crown arch`(폭 7.5 · 높이 9.4 m) + 그 위 `Crown` | `MiniGamePalaceArt.Shell.cs` `Facade()`. 10개 `*_MG_*` 프리팹에 **구워져 있음** | 코드에서 빼고 **Build → All Mini-game Prefabs**로 다시 굽거나(굽기는 프리팹 안 손 편집을 덮어씀, §3), `MiniGameModels.Apply`에서 숨김. 뒤에 `North wall mass` · `Ashlar face`가 있어 구멍은 안 생김 |
+| A 의장 광장 | `A_Facade.fbx` — Tripo 통짜 메시 하나(성문 정면 · 탑 둘 · 가운데 나무 이중문) | `Assets/Resources/PawnRushMiniGames/Early/A/A_Facade.fbx`, 원본 `ArtSource/PawnRush/MiniGames/Early/a_props_v1.py`(`FACADE` = R506_A_Facade_StoneCastleGate) | 메시에서 문 면을 지우고 벽으로 메워 다시 내보내기(문만 따로 숨길 수 없음) |
+| B 보수 중인 동관 | `B_CenterGate`(아치 대문, 16 × 9.9 m) | `MiniGameModels.cs` `RepairWing()`(배치) · `HideCentreDoor(content, 10f)` | 배치를 빼면 셸의 가운데 벽 · 석재면이 보임. 셸 문 그림(위 공통)은 숨겨야 함 |
+| C 해자 도개교 | `C_Drawbridge_EnvV2.fbx` 안의 `PR_Early_RoyalGate`(50만 폴리곤 성문: 왕관 달린 가운데 문 + 양옆 아치 통로, 통로는 R502에 뚫음) | 원본 `ArtSource/PawnRush/MiniGames/Early/c_gate_open.py` · `c_drawbridge_v2.py` · `c_drawbridge_v2_export.py`. 셸은 통째로 숨김 | 모델에서 가운데 문을 벽으로(양옆 통로는 팀 길이라 그대로) |
+| D 정문 쇠살문 누각 | `D_CenterGate` | `MiniGameModels.cs` `Capstan()`(배치) · `HideCentreFacade(content)` — **가운데 벽까지** 숨김 | 배치를 빼면 `HideCentreFacade` 대신 문 그림만 숨겨야 벽이 남음 |
+| E 왕궁 서고 | `E_HallEnv.fbx`(통짜 메시) 안의 R507_ModularFantasyKit "가운데 정면 — 닫힌 이중문"(폭 16 m, 앞면 z 23.69) | `ArtSource/PawnRush/MiniGames/Mid/e_hall_v1.py`(센터 정면 배치 부분, `GATE_W` · `GATE_FRONT`). 셸은 통째로 숨김 | 스크립트에서 문 정면 대신 벽 조각으로 바꿔 다시 내보내기 |
+| F 대무도회장 | `F_HallEnv.fbx`(통짜 메시, E 홀 계열 — 가운데 문 있음으로 보임, 렌더로 확인 필요) | `ArtSource/PawnRush/MiniGames/Mid/f_install_unity.py` | E와 같은 방법 |
+| G 왕의 행차 회랑 | `G_CenterGate`("Royal Stone Gateway", 16 × 10.4 m, z 26) | `MiniGameModels.cs` `RoyalProcession()`(배치 · 셸 문 그림 숨김, 셸 가운데 벽은 10.4 m부터 남김) | 배치를 빼면 셸 가운데 벽 아래쪽이 보이는지 확인 |
+| H 국왕 체스 홀 | `G_CenterGate` + 그 위 대리석 `Gate head wall`(8.4 m ~ 천장) · 양옆 기둥(x ±8.535) | `MiniGameModels.ChessHall.cs` `ChessHallGate()` · `ChessHallWalls` 쪽 "Over the centre gate" | 대문을 빼면 0 ~ 8.4 m가 빔 → 대리석 벽을 바닥까지 |
+| I 국왕 침실 | `ChessHallGate`(G 대문 재사용) | `MiniGameModels.Bedchamber.cs` `KingsBedchamber()` · `BedchamberHall()`(셸 북쪽 정면을 포털 통로만 남기고 숨김) | 대문을 빼면 가운데가 뚫림 → 셸 가운데 벽을 살리거나 벽을 채워야 |
+| J 왕궁 세탁장 | `J_HallEnv.fbx`(통짜 메시, E 홀 기반) 안의 가운데 문 + `centre door backing`(Tripo 문짝이 찢어진 곳을 가린 호두나무 판) · 문 밑 문턱 | `ArtSource/PawnRush/MiniGames/Mid/J/j_hall_v1.py`("출구 쪽 문 빈틈 없이 채워" 부분) | E와 같은 방법, 문 뒤 판 · 문턱도 같이 |
+
+- 3단계(G · H · I)의 가운데 보라 카펫(`Central velvet runner`, 셸 바닥)도 이 문으로 이어진다. 문을 지울 때 같이 볼 것.
+- 문을 지운 자리는 벽만 남아도 되고(뒤가 막힌 블록), 기획상 장식이 필요하면 문이 아니라고 읽히는 것(문장 · 깃발 · 조각 등)으로.
