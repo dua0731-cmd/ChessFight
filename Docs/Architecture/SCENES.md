@@ -11,6 +11,7 @@
 | PawnRush_Sections | `Assets/Scenes/PawnRush_Sections.unity` · 개편 중인 전체 구간 연결 시험 | Pawn Rush → Open Section Test |
 | PawnRush_MiniGames | `Assets/Scenes/PawnRush_MiniGames.unity` · 저장 프리팹10종을 골라 보는 오프라인 시험 | Pawn Rush → Open Mini-game Prefab Test |
 | PawnRush_SkillTest | `Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity` · 기물 스킬 시험 | Pawn Rush → Open Skill Test |
+| PawnRush_MapTest | `Assets/Scenes/PawnRush_MapTest.unity` · 맵 프리팹(`Assets/Prefabs/PawnRushMaps/`) 하나씩 오프라인 시험, 왕실 마차뜰 포함(R507에 `claude/nifty-tesla-8212va`에서 병합, 빌드 목록 밖) · 코스 01의 카메라·조명·물리·플레이테스트 폰 + `PawnRushMapTest` | Pawn Rush → Open Map Test |
 | PawnRush_Course01 | `Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity` · 구형 전체 맵, 현재 온라인 호환 씬 | Prototype → Pawn Rush → Open Course01 |
 | PawnRushVictory / PawnRushLose | `Assets/Scenes/` · 폰 러시 결과·로비 복귀 | Development → Pawn Rush → Result Preview |
 | SwordFight | `Assets/Scenes/SwordFight.unity` · 소드 파이트 경기 | Sword Fight → Open Test Scene |
@@ -30,7 +31,7 @@ QueenOfTheHill 본 장면·스킬 시험·메뉴는 폐기해 제거한다. 과�
 
 `GameModes.KingRush.Scene`과 `SceneNames.PawnRushCourse01`의 값은 **`PawnRush_Course01`**이다. 로비의 폰 러시 온라인 진입은 여전히 프로토타입 폴더로 옮긴 이 씬을 연다. 파일 위치는 바뀌어도 씬 이름·GUID·통신 키 `kingrush`는 유지한다. `NetworkSetup.ShippedScenes`와 생성기에서도 새 실제 경로를 사용한다.
 
-현재 `PawnRush_Sections`·`PawnRush_MiniGames`는 오프라인 시험이다. 3광장·7슬롯 코스를 현재2광장·4스테이션 CFP4 통신에 연결하는 작업은 이 정리에 포함되지 않는다.
+현재 `PawnRush_Sections`·`PawnRush_MiniGames`·`PawnRush_MapTest`는 오프라인 시험이다. 3광장·7슬롯 코스를 현재2광장·4스테이션 CFP4 통신에 연결하는 작업은 이 정리에 포함되지 않는다.
 
 ## 3. 온라인 진입
 

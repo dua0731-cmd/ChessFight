@@ -149,13 +149,13 @@ namespace ChessFight.Game
             Vector3 pivot = focus + rot * Vector3.right * shoulder;
             Vector3 back = rot * Vector3.back;
             // Pull in in front of walls (quickly), ease back out (slowly). The character's
-            // own colliders never count.
+            // own colliders never count, nor a moving part that only sweeps past (CameraSeeThrough).
             float allowed = distance;
             int n = Physics.SphereCastNonAlloc(pivot, collisionRadius, back, hits, distance, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];
-                if (h.distance <= 0f || (targetRoot != null && h.collider.transform.IsChildOf(targetRoot))) continue;
+                if (h.distance <= 0f || (targetRoot != null && h.collider.transform.IsChildOf(targetRoot)) || CameraSeeThrough.Skips(h.collider)) continue;
                 allowed = Mathf.Min(allowed, h.distance);
             }
             shown = Mathf.Lerp(shown, allowed, 1f - Mathf.Exp((allowed < shown ? -25f : -4f) * dt));

@@ -53,7 +53,7 @@
 
 | 슬롯 | 종류 | 프리팹 목록(지금) |
 |---|---|---|
-| 1 | 장애물 1 (초반 · 바깥뜰 1-x) | **Early_1-1_RoyalWaterGarden**(R305, [왕실 수로 정원](PAWN_RUSH_ROYAL_GARDEN.md)) |
+| 1 | 장애물 1 (초반 · 바깥뜰 1-x) | **Early_1-1_RoyalWaterGarden**(R305, [왕실 수로 정원](PAWN_RUSH_ROYAL_GARDEN.md)) — 팀원 맵 "1-2 왕실 마차뜰"(R507 병합)은 아직 후보 아님: [맵 시험 장면](PAWN_RUSH_MAP_TEST.md)에서만, 넣는 조건은 [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) §12 결정 1 · §13 |
 | 2 | 미니게임 1 | **C 해자 도개교 · D 쇠살문 누각 · A 의장 광장**(R312,3종) |
 | 3 | 장애물 2 (중반 · 아랫궁 2-x) | **Mid_2-1_GrandStairHall** |
 | 4 | 미니게임 2 | **B 보수 중인 동관 · E 왕궁 서고 · F 대무도회장 · J 왕궁 세탁장**(R312,4종) |

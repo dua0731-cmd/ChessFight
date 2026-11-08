@@ -13,6 +13,7 @@
 | 기물 스킬 | **ChessFight → Pawn Rush → Open Skill Test** | `Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity` |
 | 구간 후보 목록 | Project에서 선택 | `Assets/Settings/PawnRushSections.asset` |
 | 정원·홀·미니게임·작전 회의실 프리팹 | Project에서 선택 | `Assets/Prefabs/PawnRushSections/` |
+| 맵 프리팹 하나씩(왕실 마차뜰 등, R507 병합) | **ChessFight → Pawn Rush → Open Map Test**, `[` `]`로 맵 고르기 | `Assets/Scenes/PawnRush_MapTest.unity` · `Assets/Prefabs/PawnRushMaps/` |
 
 판은 장애물·미니게임을 번갈아 배치하는 7슬롯 구조다. 현재 후보가 있는 슬롯은 다음과 같고, 빈 슬롯5는 건너뛴다.
 
@@ -25,6 +26,8 @@
 | 5 후반 장애물 | 없음 |
 | 6 후반 미니게임 | G 행차 회랑 · H 체스 홀 · I 침실 |
 | 7 마지막 구간 | 작전 회의실 |
+
+팀원 맵 **왕실 마차뜰**(`RoyalCarriageYard`, `claude/nifty-tesla-8212va`에서 R507로 병합)은 아직 슬롯 후보가 아니라 맵 시험 장면에서만 연다. 슬롯 1 "1-2 왕실 마차뜰"로 넣으려면 입구·출구와 결승 처리를 먼저 정해야 한다([ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) §12 결정 1 · §13).
 
 정원·현관홀·작전 회의실의 현재 아트와 빌더는 개편에 계속 사용한다. `Course01v4Builder`라는 클래스 이름을 가진 partial 파일도 이 맵들을 만들므로 구형 전체 코스와 함께 옮기거나 삭제하지 않는다.
 
@@ -39,6 +42,8 @@
 | 현관홀 아트 | [PAWN_RUSH_GRAND_STAIR_HALL_ART](PAWN_RUSH_GRAND_STAIR_HALL_ART.md) |
 | 작전 회의실 아트·코드 | [Library 아트 원본](../../ArtSource/PawnRush/Library/README.md) |
 | 미니게임 규칙 | [PAWN_RUSH_MINIGAMES_v1](PAWN_RUSH_MINIGAMES_v1.md) |
+| 왕실 마차뜰(팀원 맵 프리팹)·장애물·재미 검증 | [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) |
+| 맵 프리팹 하나씩 시험하는 장면·새 맵 만들기 | [PAWN_RUSH_MAP_TEST](PAWN_RUSH_MAP_TEST.md) · [맵 폴더 규칙](../../Assets/Prefabs/PawnRushMaps/README.md) |
 | 공간 이미지·제작 규격 | [모델링 지침](PAWN_RUSH_MINIGAME_MODELING.md) · [이미지 갤러리](PAWN_RUSH_MINIGAME_CONCEPTS.html) |
 | 사용자 Unity·Steam 확인 목록 | [VALIDATION](../Network/VALIDATION.md) |
 
@@ -46,9 +51,9 @@
 
 상단 **ChessFight**에는 `Pawn Rush`·`Sword Fight`·`Development`·`Prototype` 네 그룹만 둔다.
 
-- **Pawn Rush:** 위의 시험 장면3종, `Build` 아래 정원·홀·미니게임 재굽기, `Validate` 아래 구간·미니게임 검사.
+- **Pawn Rush:** 위의 시험 장면3종과 맵 시험(`Open Map Test`, R507), `Build` 아래 정원·홀·미니게임 재굽기, `Validate` 아래 구간·미니게임 검사.
 - **Development → Pawn Rush:** 공유 아트·재질·하늘 도구, 엔드게임 모델 가져오기, 좌우 배치 도구, 결과 화면 미리보기.
-- **Development → Map Authoring:** 현재 제작용 Pawn Rush·Sword Fight 샌드박스 재생성. SeoungTest 이름의 씬과 현재 아트 소스는 유지한다.
+- **Development → Map Authoring:** 현재 제작용 Pawn Rush·Sword Fight 샌드박스 재생성, 맵 시험의 새 맵 프리팹·고른 맵 시험·장면 재생성(R507). SeoungTest 이름의 씬과 현재 아트 소스는 유지한다.
 - **Prototype → Pawn Rush:** 구형 Course01 열기·재생성·검사·전용 Art Dress. 현재 구간 코스를 고칠 때는 이 전체 코스 재생성 메뉴를 사용하지 않는다.
 
 재굽기는 코드 생성 영역을 덮어쓴다. 수동으로 수정한 프리팹은 해당 제작 문서의 보존 범위를 먼저 읽는다.

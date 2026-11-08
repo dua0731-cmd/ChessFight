@@ -260,3 +260,11 @@ Prototype 코드41개는 새 asmdef로 분리하면 기존 어셈블리 내부 �
 작전 회의실의 `LibraryAirCannonFx`는 Orbital X·Y가 Constant 0인데 Z만 `MinMaxCurve(2.5f, 5f)`의 TwoConstants라 `Particle Orbital Velocity curves must all be in the same mode`를 냈다. `MinMaxCurve(0f)`와 `MinMaxCurve(0f, 0f)`는 값이 모두0이어도 모드가 다르다. X·Y를 두 인자 생성자로 맞추고 설정 완료 후 모듈을 켠다. Z 범위와 로컬 공간·외형은 유지한다. 같은 Orbital XYZ 묶음 안의 모드를 맞추며, 선형 XYZ와 Orbital XYZ 사이의 모드는 달라도 된다(실제 Unity 대조군 통과).
 
 실제 충전/발사·입자 방출·시뮬레이션의 세 방향 검사에서 수정 전 엔진 오류30건+모드 실패3건, 수정 후 오류0·세 방향 통과를 AI가 기록했다. 자동 검사 결과와 사용자 회의실 외형 확인은 구분한다. 검사기 자체의 첫 실행은 재생 중 `randomSeed`를 설정한 assertion도 냈으므로, 먼저 `Stop(...StopEmittingAndClear)`한 뒤 씨앗을 넣도록 고쳤다. 운영 효과가 collider를 `Object.Destroy`로 정리하므로 이 경로의 회귀 검사는 Play Mode에서 실행한다. 초기 검사기 실패 기록도 `Logs/AirCannonFxValidation/R498-initial-harness-failure.txt`에 보존한다. [VFX 상세](../VFX/README.md#r498-작전-회의실-공기-대포의-orbital-velocity-오류-2026-11-06).
+
+## R507 seoungtest 계열 브랜치를 main에 병합하면 Intro·Lobby가 지워진다
+
+`seoungtest`는 시험 브랜치로 만들며 Intro·Lobby·RagdollTest 같은 main 장면과 빌드 장면 목록을 지웠다. 그 브랜치에서 갈라진 브랜치(예: `claude/nifty-tesla-8212va`)에도 이 장면들이 없다. 그런 브랜치가 main을 한 번 합친 적이 있으면(그 브랜치 쪽 병합 `afd5de6`가 장면 삭제를 그대로 둠) git은 "그 브랜치가 장면을 지웠다"로 읽어, 다시 main에 합칠 때 Intro·Lobby 삭제와 옛 빌드 목록·옛 네트워크 코드가 충돌 없이 딸려 올 수 있다. 사용자도 그 브랜치를 Unity에서 열면 Scenes 폴더에 Intro·Lobby가 안 보여 "지워졌나" 하고 묻게 된다(R492·R507 두 번).
+
+R507은 `git merge -s ours --no-commit`으로 main 트리를 그대로 둔 채 병합 기록만 만들고, 그 브랜치가 **직접 만든 커밋의 변경**(`git diff <갈라진 점> <그 브랜치 커밋>`, 병합 커밋은 빼고)만 `git apply --3way`로 얹었다. 마지막에 `git diff --cached --name-status HEAD`에 `D`가 없고 `A`·`M`이 모두 그 브랜치 작업인지 확인한다. 같은 이유로 그 브랜치의 요청 번호(R283~R288)는 main 번호와 겹치니 "· nifty-tesla"처럼 브랜치를 붙여 옮긴다.
+
+Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에 이미 두 가지 Linux 전용 실패가 있었다(병합 전 `98f7e0e`에서도 같음). ① Core "Packets (R297 [3])" 고정 바이트의 6번째 값(`PawnRushNetState`)이 mono에서 다르게 나와 첫 실패에서 Core 시험 전체가 멈춘다(Windows `Test-NetworkCore.ps1` 기록은 통과). ② PawnRush 에디터 어셈블리 컴파일이 쓰는 UnityEditor.dll(2021.1)에 `Texture.imageContentsHash`·`EditorSceneManager.OpenPreviewScene`·`RenderPipeline.StandardRequest`가 없어 `MiniGamePrefabMenu`·`MiniGamePrefabValidation`에서 오류 6개가 난다. 검사를 끄거나 고정값을 바꾸지 말고, 로컬에서만 그 한 줄을 출력으로 바꿔 나머지 시험·컴파일을 돌린 뒤 되돌리고, 두 실패를 따로 보고한다.

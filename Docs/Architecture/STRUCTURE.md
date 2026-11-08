@@ -8,7 +8,7 @@
 Assets/
   Art/                  현재 모델·텍스처·생성 메시
   Materials/            공유 재질·셰이더
-  Prefabs/              현재 캐릭터·장애물·PawnRushSections
+  Prefabs/              현재 캐릭터·장애물·PawnRushSections·PawnRushMaps(맵 시험 장면용 맵 프리팹, R507)
   Resources/            코드가 이름으로 읽는 현재 UI·글꼴·모델·VFX 세트
   Scenes/               Intro·Lobby·현재 시험 장면·결과 화면·SwordFight
   Scripts/              원래 어셈블리별 현재 코드

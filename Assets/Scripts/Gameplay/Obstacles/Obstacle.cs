@@ -24,7 +24,7 @@ namespace ChessFight.Gameplay
         Rigidbody body;
         Vector3 startPosition, fromPosition, toPosition, linearVelocity, angularVelocity;
         Quaternion startRotation, fromRotation, toRotation, stepTurn = Quaternion.identity;
-        double stepKey = double.NaN, lastTime = double.NaN;
+        double stepKey = double.NaN, lastTime = double.NaN, awakeTime;
         bool jumped;
 
         // For obstacles built from code (the Queen of the Hill level): call it on an
@@ -37,6 +37,11 @@ namespace ChessFight.Gameplay
         // Where the obstacle is at this time. The only thing a new obstacle type writes.
         protected abstract void Evaluate(double time, out Vector3 position, out Quaternion rotation);
 
+        // True when the pose between these two clock times is a cut, not a motion: a piece of cargo that goes back
+        // to the top of its chute (Royal Carriage Yard, 11-02). The step then puts the body there instead of sweeping
+        // it through everything in between, and nobody standing on it is told it moved. Nothing else uses it.
+        protected virtual bool JumpsBetween(double from, double to) => false;
+
         protected virtual void Awake()
         {
             body = GetComponent<Rigidbody>();
@@ -47,7 +52,8 @@ namespace ChessFight.Gameplay
             startRotation = transform.rotation;
             // Start at the current pose, so the first step does not report a huge
             // velocity from the authored pose to wherever the clock says it is.
-            Evaluate(ObstacleClock.Now + phase, out toPosition, out toRotation);
+            awakeTime = ObstacleClock.Now + phase;
+            Evaluate(awakeTime, out toPosition, out toRotation);
             fromPosition = toPosition;
             fromRotation = toRotation;
             transform.SetPositionAndRotation(toPosition, toRotation);
@@ -84,8 +90,10 @@ namespace ChessFight.Gameplay
             Evaluate(now, out toPosition, out toRotation);
             float dt = Time.fixedDeltaTime;
             // The clock itself jumped - switched to the shared match clock or back, or a long hitch:
-            // go there without reporting the jump as speed to whoever stands on the obstacle.
-            jumped = !double.IsNaN(lastTime) && Math.Abs(now - lastTime - dt) > 0.25;
+            // go there without reporting the jump as speed to whoever stands on the obstacle. The first
+            // step only asks the obstacle, from the pose Awake set (a roaming carriage handed a new plan).
+            jumped = double.IsNaN(lastTime) ? JumpsBetween(awakeTime, now)
+                                            : Math.Abs(now - lastTime - dt) > 0.25 || JumpsBetween(lastTime, now);
             lastTime = now;
             if (jumped)
             {

@@ -4,8 +4,9 @@
 현재 지침과 사용자의 최신 요청이 과거 기록보다 우선한다.
 작업이 끝나면 §8에 따라 코드·문서·검사 결과를 함께 마감한다.
 
-최종 갱신: **2026-11-08 · R506 봇은 움직이지 않게 하기로 결정(DECISIONS K14) · R505 네트워크 고침 R502~R504를 upstream main에 커밋 · 푸시, 네트워크 안내 · 월요일 시험 문서**.
-다음 빈 요청 번호는 **R507**이다(R498~R501은 seoungtest `f33c51c9`가 씀).
+최종 갱신: **2026-11-08 · R507 팀원 브랜치 `claude/nifty-tesla-8212va`(왕실 마차뜰 · 맵 시험 장면)를 main 양식으로 병합 · R506 봇은 움직이지 않게 하기로 결정(DECISIONS K14) · R505 네트워크 고침 R502~R504를 upstream main에 커밋 · 푸시, 네트워크 안내 · 월요일 시험 문서**.
+다음 빈 요청 번호는 **R508**이다(R498~R501은 seoungtest `f33c51c9`가 씀. R283~R288 · R306은 `claude/nifty-tesla-8212va`도 다른 일에 써서 main 기록에는 "· nifty-tesla"를 붙임).
+R507: 사용자 "claude/nifty-tesla-8212va의 내용을 main에 병합 … 팀원이 폰 러시 장애물구간 프리팹을 하나 만들었어. 메인브런치의 양식을 기준으로" · "Lobby랑 Intro가 안 보이던데 삭제한 건 아니지?" → 그 브랜치(팀원 songjiseong, seoungtest에서 갈라져 옛 main R297을 품음)를 병합하되 **main 트리를 바탕으로 그 브랜치가 직접 만든 변경만** 얹었다: 맵 시험 장면 `PawnRush_MapTest` · 맵 폴더 `Assets/Prefabs/PawnRushMaps/` · **왕실 마차뜰** `RoyalCarriageYard`(+ 장애물 시험장, 장애물 9종), Core `RoamingFleet`, 공용 `Obstacle.JumpsBetween` · `CameraSeeThrough`(카메라가 지나가는 마차 · 물레방아에 당겨지지 않음). main 양식: 코드 · 장애물 프리팹의 하위 폴더를 종류별 폴더로(T7, GUID 그대로), 문서 `Docs/PawnRush/`, 메뉴 **Pawn Rush → Open Map Test** · **Development → Map Authoring**. **Intro · Lobby는 main에서 지운 적 없다** — seoungtest 계열인 그 브랜치에만 없고 병합본은 main 장면 · 빌드 목록 그대로([PITFALLS R507](Docs/Environment/PITFALLS.md)). 마차뜰은 아직 7구간 슬롯 후보가 아니다(입구 · 출구 · 결승 처리를 정해야 함, [ROYAL_CARRIAGE_YARD](Docs/PawnRush/ROYAL_CARRIAGE_YARD.md) §12 결정 1). Linux Core 168 · 세션 65 · 런타임 컴파일 통과, main에 원래 있던 Linux 전용 실패 둘은 병합 전과 같음. Unity 미확인 → [VALIDATION R507](Docs/Network/VALIDATION.md).
 R506: 승규 님 결정 "봇은 실제로 움직이게 하지 않을 거야"를 DECISIONS K14 · BOTS에 적었다. 폰 러쉬 봇은 출발점에 서 있고 소드 파이트 봇은 더미로 남는다. 봇 행동은 할 일이 아니며, 12명 시험의 부하 · 느낌은 사람이나 `-autopilot` PC로 본다. 안내 문서의 봇 설명도 고쳤다. 승규 님 "응, 올려 줘"로 upstream main에 커밋 · 푸시(`git log --grep=R506`).
 R505: 승규 님 요청으로 R502~R504(네트워크 검토 고침 18가지, 프로토콜 v27)를 upstream main에 커밋 · 푸시했다(`git log --grep=R504`, main은 그사이 바뀌지 않아 `f296ace1` 위에 그대로 이어 붙임). 네트워크를 모르는 사람도 읽을 수 있는 구조 · 기능 · 한계 · 월요일(11-09) 팀원 시험 문서를 Claude 문서로 만들었다([네트워크 안내와 월요일 시험](https://claude.ai/artifact/Btut2SApfso4Gfkm7aNi1N)). 승규 님 Unity(`C:\Work\ChessFight`)는 아직 예전 main(`5f0c9832`)이라 새 main을 받아야 보인다. 월요일 시험에는 새 main으로 v27 개발 빌드를 새로 뽑아 모든 PC에 같은 것을 깔아야 한다(지금 있는 R498 · R306 · R297 빌드는 모두 v26 이하). 문서를 쓰다 찾은 VALIDATION R504 ⑭(실제 소드 파이트 경기에는 F12 지연 시뮬레이터가 없어 휴대폰 핫스팟 시험으로 바꿈)와 R297 메뉴 경로를 고쳤다. 아직 코드와 어긋난 문서: README 프로토콜 "v2", HOST_AUTHORITY §1.3 방장 넘김 1.15배(지금 1.0) · §8.4 3명 초당 30번(지금 60번) · §1.1 입력 40바이트(지금 42 · 46), SESSION §3 이른 시작이 폰 러쉬만인 듯 적힘(소드 파이트도 됨) · §8 "5 대 5는 비공개 방만"(R148로 낡음).
 R504: 같은 검토의 작은 문제 아홉을 R503 위에 이어 고쳤다. 다음 방장 차례인 PC도 멈추면 그다음 순번이 3초 뒤 건너뛰고 이어받기(member data `past`), 방장 교체 뒤 소드 파이트 남은 시간 · 폰 러쉬 장애물이 뒤로 가던 것, 방 주인 이전 중 경기 끝 기록이 사라지던 것, 소드 파이트 경기 글 순서, 내 파티 초대를 받으면 파티장을 잃던 것, 개발 빌드의 기물 요청 되풀이, 명단 할당, 로컬 시험 자리 번호다. 프로토콜은 v27 그대로(R503과 함께 아직 빌드한 적 없음). R505에서 upstream main에 커밋 · 푸시. Core165 · 모의 세션65 · 전체 외부 컴파일 통과, Unity · Steam · 여러 PC 확인 전. [VALIDATION R504](Docs/Network/VALIDATION.md) · [HOST R504](Docs/Network/HOST.md).
@@ -27,7 +28,7 @@ R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDO
 | 작업 위치 | **`C:\Users\dua07\GitHub\ChessFighter`의 `main`에서 직접 작업**. 사용자가 새로 요청하기 전에는 추가 워크트리를 만들거나 사용하지 않는다(T13, R496) |
 | Unity | 6000.3.11f1, Windows, URP 17.3, 레거시 Input Manager(Old) |
 | 개발 중인 모드 | 폰 러시·소드 파이트 두 개. Queen of the Hill은 R497에 폐기·등록/전용 맵/스킬/시험 자원 제거 |
-| 폰 러시 현재 맵 | 구간 프리팹 조합: 정원·대계단 홀·미니게임10종·작전 회의실. 슬롯5 후반 장애물은 아직 없음 |
+| 폰 러시 현재 맵 | 구간 프리팹 조합: 정원·대계단 홀·미니게임10종·작전 회의실. 슬롯5 후반 장애물은 아직 없음. 팀원 맵 **왕실 마차뜰**(R507 병합)은 맵 시험 장면(`Open Map Test`)에서만, 슬롯 후보는 아직 아님 |
 | 폰 러시 온라인 경기 | 기존 Course01을 Prototype에 보관하되 온라인 호환 씬으로 유지. 새 구간 조합 코스의 온라인 연결은 아직 없음 |
 | 구형 맵 | `Assets/Prototype/PawnRush`: Course01 씬, 옛 맵 코드41개·기존 Opening 프리팹24개. GUID·기존 어셈블리 소속 유지 |
 | 기타 프로토타입 | 체스복싱은 `Assets/Prototype/ChessBoxing`, 기물 미리보기는 `Assets/Prototype/Previews` |
@@ -38,7 +39,7 @@ R496까지의 원본 HANDOFF 전체는 [이전 인계 기록](Docs/Archive/HANDO
 | 현재 Unity 편집 상태 | R498 AI가 기존 루트 `SeoungTest_PawnRush` Play에서 캐릭터·작전 회의실·컨베이어·대포를 약25초 관찰한 뒤 정지. 같은 씬 편집 상태로 사용자 시험 가능, Console 빨간 오류0 |
 | 문서 | `Docs/PawnRush`가 현재 자료. 옛 맵 문서9개는 `Docs/PawnRush/Prototype`, 폐기 모드 자료는 `Docs/Archive/QueenOfTheHill` |
 | 브랜치 | 2026-10-06 22:09:42 KST 이전 마지막 커밋 기준 원격8개·로컬8개 삭제. 원격24→16, 로컬15→7. main·최근 브랜치 보존 |
-| 자동 검사 | R498 Core162·모의 세션55·전체 대상 외부 컴파일 통과. 대포 Native Play 3방향·독립 그룹 대조군 PASS, issues0. R497 저장10프리팹/시험 씬·Play10종 검사 기록은 별도 유지 |
+| 자동 검사 | R507 Linux: Core168·모의 세션65·런타임 어셈블리 컴파일 통과. 같은 Linux 실행의 기존 실패 둘(R297 패킷 고정 바이트, Unity 6 전용 에디터 API 6곳)은 병합 전 main도 같음([PITFALLS R507](Docs/Environment/PITFALLS.md)). R498 Core162·모의 세션55·전체 대상 외부 컴파일 통과. 대포 Native Play 3방향·독립 그룹 대조군 PASS, issues0. R497 저장10프리팹/시험 씬·Play10종 검사 기록은 별도 유지 |
 | 사용자 확인 | R498 대포 충전·발사 화면/오류 재발과 R497 이후 Unity 입력·온라인·실제 퍼즐 완주·12명 성능은 사용자 확인 전 |
 | 네트워크 방장 교체 (R502 · R503 · R504) | R502: 시작 시각 `go`는 `SteamSession`이 방장일 때 정함(로딩 화면은 기다리기만). 소드 파이트 새 방장은 가장 새 칼 프레임 + `SwordMatchRules.Adopt`로 규칙이 몸을 따름. 폰 러쉬는 모든 PC가 체크포인트 기록, 새 방장이 0.3초 뒤 부활 다시 예약. R503: 대기실 새 방장은 방 주인 + `resv`를 읽은 뒤에만 시작 · 봇, 다음 방장은 다른 사람도 방장을 못 들을 때만(`quiet`) 이어받음, 순간이동한 말만 그대로 그림, 번호 참가 거절은 로비로, 닫힌 대기실은 다시 찾기, Steam 로그오프 10초 기다림. R504: 다음 방장이 멈추면 그다음이 3초 뒤 `past`를 적고 건너뜀(한 칸만), 소드 파이트 화면 시계는 마지막 글 뒤 1초까지 · 새 방장은 화면 시간에서, 폰 러쉬 장애물 시계는 지우지 않음(`Hold`), `EndMatch`는 방 주인이 될 때까지 들고 있음, 경기 글 순서, 내 파티 초대 무시, 개발 빌드 기물 요청 되풀이 막음, 명단 `Dictionary`, 로컬 시험 빈자리. **프로토콜 v27**(v26 빌드와 섞이지 않음). R505에서 upstream main에 커밋 · 푸시(`git log --grep=R504`), 사용자 확인 전 |
 
@@ -51,6 +52,7 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 
 - **현재 편집할 폰 러시**: `ChessFight → Pawn Rush → Open Section Test`.
 - **미니게임만 선택**: `ChessFight → Pawn Rush → Open Mini-game Prefab Test`; 숫자1~0, F5 팀, F8 초기화.
+- **맵 프리팹 하나씩(R507)**: `ChessFight → Pawn Rush → Open Map Test`; `[` `]` 맵 바꾸기, F5 다시 짓기, T 폰 옮기기. 팀원 맵 왕실 마차뜰(`Assets/Prefabs/PawnRushMaps/RoyalCarriageYard`)과 장애물 시험장이 들어 있다. 새 맵 만들기 · 장면 재생성은 `Development → Map Authoring`.
 - C/D/A는 초반, B/E/F/J는 중반, G/H/I는 후반 후보로 슬롯2/4/6에3/4/3개 등록돼 있다.
 - 슬롯1 정원 → 슬롯2 초반 미니게임 → 슬롯3 홀 → 슬롯4 중반 미니게임 → 슬롯6 후반 미니게임 → 슬롯7 작전 회의실로 이어진다.
 - 미니게임의 건축·장식은 저장된 프리팹이다. Play에는 Game socket의 기능 게임만 다시 설치한다.
@@ -73,7 +75,9 @@ R496의 사용자 프리팹2개 보존본·명명 stash·당시 옛 브랜치 �
 4. 폰 러시 각 퍼즐의 실제 입력·문 통과·복귀 동선과12명 성능을 확인한다.
 5. 구형 맵을 고칠 때는 Prototype 문서를 먼저 읽는다. 현재 구간 코스와 구형 온라인 코스를 같은 것으로 취급하지 않는다.
 6. 새 구간 코스의 온라인 연결은 별도 설계·요청으로 진행한다. 이번 정리로 프로토콜을 새로 정의하지 않았다.
-7. 다음 새 요청은 **R499**부터 기록한다.
+7. 사용자는 [VALIDATION](Docs/Network/VALIDATION.md) 최상단 R507 표(Intro·Lobby 그대로, 메뉴, Open Map Test의 왕실 마차뜰)와 그 아래 마차뜰 표(R283~R288 · nifty-tesla)를 확인한다.
+8. 왕실 마차뜰을 슬롯1 "1-2 왕실 마차뜰" 후보로 넣을지 정한다. 넣으려면 `PawnRushSection`(입구·출구)과, 슬롯7 몫인 결승·왕관·막힌 북쪽 벽의 처리를 먼저 정한다([ROYAL_CARRIAGE_YARD](Docs/PawnRush/ROYAL_CARRIAGE_YARD.md) §12 결정 1 · §13).
+9. 다음 새 요청은 **R508**부터 기록한다.
 
 다른 채팅의 진행 상태와 과거 제한은 원본 아카이브의 날짜·브랜치를 확인해 해석한다.
 현재 사용자 작업 위치(main/기존 경로)와 최신 사용자 지시가 우선한다.
@@ -113,6 +117,7 @@ Docs/
 │  ├─ PAWN_RUSH_SECTIONS.md           구간 목록·연결·시험
 │  ├─ PAWN_RUSH_MINIGAME_SECTIONS.md  실제10종 프리팹·여는 법·수정 주의
 │  ├─ PAWN_RUSH_MINIGAME_MODELING.md  건축·소품·피벗·이동 공간
+│  ├─ ROYAL_CARRIAGE_YARD.md · PAWN_RUSH_MAP_TEST.md  팀원 맵 왕실 마차뜰·맵 시험 장면(R507 병합)
 │  ├─ Prototype/                     Course01·이전 Opening/Castle/Final 기획
 │  └─ ConceptArt/                    모델링 이미지·검사 자료
 ├─ GameModes/SwordFight/              소드 파이트 기획·프로토타입·시연
@@ -121,6 +126,7 @@ Assets/
 ├─ Scripts/                          종류별 어셈블리·현재 코드
 ├─ Scenes/                           현재 온라인 흐름·시험 씬
 ├─ Prefabs/PawnRushSections/          현재 구간·미니게임 프리팹
+├─ Prefabs/PawnRushMaps/              맵 시험 장면용 맵 프리팹(왕실 마차뜰, R507)
 ├─ Prototype/                        구형 맵·체스복싱·기물 미리보기
 ├─ Resources/SharedSkills/            현재 모드가 쓰는 공용 효과·소리
 └─ Art · Materials · Settings · StreamingAssets · VFX
@@ -140,6 +146,8 @@ Prototype의41개 C# 파일은7개 asmref로 기존 어셈블리에 속한다.
 | 파일·메뉴·Prototype·브랜치 정리 | [R497 정리 안내](Docs/Architecture/PROJECT_CLEANUP_R497.md) → [STRUCTURE](Docs/Architecture/STRUCTURE.md) | 경로 문자열·asmref·메타·생성기·검사 스크립트 |
 | 현재 폰 러시 맵 | [PawnRush README](Docs/PawnRush/README.md) → [구간](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | PawnRushRound·PawnRushSection·SectionPrefabMenu·구간 프리팹 |
 | 미니게임10종 | [실제 프리팹](Docs/PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md) → [기존 규칙](Docs/PawnRush/PAWN_RUSH_MINIGAMES_v1.md)·[모델링](Docs/PawnRush/PAWN_RUSH_MINIGAME_MODELING.md) | MiniGameSection*·MiniGamePalaceArt*·MissionStation·Mg*·PaintBoard |
+| 맵 프리팹 하나씩 시험·왕실 마차뜰(팀원 맵, R507) | [맵 시험](Docs/PawnRush/PAWN_RUSH_MAP_TEST.md) → [왕실 마차뜰](Docs/PawnRush/ROYAL_CARRIAGE_YARD.md) | PawnRushMapTest·PawnRushMapTestMenu·RoyalCarriageYard*·CarriageFleet·RoamingCarriage·YardImpact·Core RoamingFleet |
+| 다른 브랜치를 main에 병합(특히 seoungtest 계열) | [PITFALLS R507](Docs/Environment/PITFALLS.md) → [REQUIREMENTS R492·R507](Docs/Project/REQUIREMENTS.md) | `git merge -s ours` + 그 브랜치 커밋의 diff만 적용, `git diff --cached --name-status HEAD` |
 | 정원·홀·작전 회의실 | [정원](Docs/PawnRush/PAWN_RUSH_GARDEN.md)·[홀 아트](Docs/PawnRush/PAWN_RUSH_GRAND_STAIR_HALL_ART.md)·[구간](Docs/PawnRush/PAWN_RUSH_SECTIONS.md) | RoyalWaterGardenBuilder*·GrandStairHall*·WarRoomSection·Course01v4Builder.* |
 | 구형 맵·기존 폰 러시 온라인 | [Prototype Course01](Docs/PawnRush/Prototype/PAWN_RUSH_COURSE01.md) → [Prototype 기획](Docs/PawnRush/Prototype/DESIGN.md) | Assets/Prototype/PawnRush·SteamPawnRushLink·PawnRushNetState |
 | 소드 파이트 | [PROTOTYPE](Docs/GameModes/SwordFight/PROTOTYPE.md) → [명세](Docs/GameModes/SwordFight/PROTOTYPE_SPEC_v1.0.md)·[SKILLS_ONLINE](Docs/Network/SKILLS_ONLINE.md) | SwordFightGame·SwordFightMatch*·SwordFightSkills*·LabNetLink.Sword |
