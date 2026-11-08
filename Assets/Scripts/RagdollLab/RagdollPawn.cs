@@ -834,6 +834,11 @@ namespace ChessFight.RagdollLab
                         float steep = downhill ? Mathf.Clamp01((SlopeAngle - 5f) / 15f) : 0f;
                         SetSlideFriction(Mathf.Lerp(PawnRushPhysics != null ? PawnRushPhysics.diveSlideFriction : p.diveFriction, p.diveSlopeFriction, steep));
                         DampDiveRoll(p, dt);
+                        PawnRushDiveFlat(dt);   // Pawn Rush only: flat on its front, however far it falls (R513)
+                        // Pawn Rush: still up in the air the dive goes on - its clock waits at diveMinTime until it is
+                        // down, and nothing gets it up before then (R513; from 15 m it got up in mid-fall at 2 x diveMaxTime).
+                        bool aloft = PawnRushDiveAloft();
+                        if (aloft) stateTimer = Mathf.Min(stateTimer, DiveMinTime(p));
                         // It gets up from lying on its front, never in mid-flop: a dive from standing
                         // stopped fast enough to stand straight back up out of the air.
                         bool lying = HipsTilt > 60f && groundFound && bodies[0].position.y - groundY < standHeight + 0.05f
@@ -852,7 +857,7 @@ namespace ChessFight.RagdollLab
                         diveStill = still ? diveStill + dt : 0f;
                         bool stuck = stateTimer >= DiveMinTime(p) && diveStill >= DiveStuckTime;
                         bool asked = (input.jump || input.shove || input.grab) && stateTimer >= DiveMinTime(p) * 0.6f && !fast;
-                        if (((slowed || timeUp) && settled) || stuck || asked || stateTimer >= DiveMaxTime(p) * 2f) BeginGetUp(p);
+                        if (!aloft && (((slowed || timeUp) && settled) || stuck || asked || stateTimer >= DiveMaxTime(p) * 2f)) BeginGetUp(p);
                     }
                     else if (knockdownHold > 0f)
                     {
@@ -961,13 +966,18 @@ namespace ChessFight.RagdollLab
             float hipsY = bodies[0].position.y;
             Vector3 side = Vector3.Cross(Vector3.up, dir);
             slideSide = -slideSide;   // alternate hips, so two tackles in a row do not look the same
+            // Pawn Rush (R513): every part leaves with the same climb - the hop exactly from the floor, the body's own
+            // fall plus the soften in the air - so the same dive goes the same way whatever the limbs were doing.
+            bool even = q != null && q.diveHoldFlat;
+            float bodyVy = ComVelocity().y;
             for (int i = 0; i < Count; i++)
             {
                 Vector3 v = bodies[i].linearVelocity;
                 Vector3 next = dir * speed + drift;
                 // From the ground a small hop, just enough for the legs to swing out in front; in the
                 // air it only softens the fall a little (no free double jump).
-                next.y = onGround ? Mathf.Max(v.y, hop) : v.y + lift * 0.25f;
+                if (even) next.y = onGround ? hop + carryRise : bodyVy + lift * 0.25f;
+                else next.y = onGround ? Mathf.Max(v.y, hop) : v.y + lift * 0.25f;
                 // Head first: everything above the hips is thrown forward faster than the legs, so the
                 // body pitches onto its front and lands on its chest and arms, the skirt trailing
                 // behind. (Feet first, the skirt's rim dug into the floor and the pawn flipped.)
@@ -1347,19 +1357,31 @@ namespace ChessFight.RagdollLab
         void Jump(RagdollParams p, float dt)
         {
             // A jump on the wall is a kick-off (UpdateClimb); held by someone it powers the struggle.
-            if (Climbing || Floating || heldTimer > 0.15f || hookPhase == HookPhase.Pulling || rope != null) return;
+            if (Climbing || Floating || heldTimer > 0.15f || hookPhase == HookPhase.Pulling || rope != null)
+            {
+                jumpBuffered = 0f;
+                return;
+            }
             // Hanging off a ledge by the hands, holding forward is enough to climb onto it: after a
             // moment it does the same vault the jump button does. (Only the jump used to, so holding
             // W under a ledge just dangled there.)
             bool onLedge = handL.HoldingLedge || handR.HoldingLedge;
             ledgePush = onLedge && !Grounded && Vector3.Dot(Flat(input.move), facing) > 0.5f ? ledgePush + dt : 0f;
             bool autoVault = ledgePush >= 0.35f && !pullUpUsed;
-            if ((!input.jump && !autoVault) || State == PawnState.Ragdoll) return;
+            // Pawn Rush (R513): a press the pawn could not jump on yet is kept a moment (input.jump everywhere else).
+            bool pressed = PawnRushJumpPressed(input.jump, dt);
+            if ((!pressed && !autoVault) || State == PawnState.Ragdoll) return;
             bool fromGround = coyote > 0f && airTimer <= 0f && !autoVault;
             bool pullUp = !fromGround && !pullUpUsed && onLedge;
             if (!fromGround && !pullUp) return;
             ledgePush = 0f;
+            jumpBuffered = 0f;
             float up = JumpSpeed(p) * (pullUp ? p.pullUpFactor : 1f);
+            // Pawn Rush (R513): from the floor, the kick that tops the hips out where a jump from standing height would -
+            // not while a skill is carrying the body (the pawn's F then Space keeps its own climb; ROYAL_CARRIAGE_YARD §13).
+            bool exact = fromGround && PawnRushJumpExact && !BodyCarried;
+            if (exact) up = PawnRushTakeoff(up);
+            riseExact = exact;
             Vector3 toward = Vector3.zero;
             if (pullUp)
             {
@@ -1380,8 +1402,19 @@ namespace ChessFight.RagdollLab
                 // was already doing, so jumping out of a bump went twice as high as a clean jump.
                 // Measured from the floor it leaves: off a lift going up at 3 m/s the old rule gave a
                 // 1.5 m/s hop, off one going down a jump 7.5 m/s strong.
-                v.y = Mathf.Max(v.y, up + (fromGround ? carryRise : 0f));
+                // Pawn Rush (R513): exactly that for every part, so no limb still on its way down kicks the floor
+                // as the body leaves it.
+                v.y = exact ? up + carryRise : Mathf.Max(v.y, up + (fromGround ? carryRise : 0f));
                 bodies[i].linearVelocity = v;
+            }
+            if (exact)
+            {
+                // Pawn Rush (R513): the anchor starts the climb level with the hips. Standing it sits where the stride
+                // wants them - the sprint's bound up to 0.12 m over the hips that lag under it - and sent from there to
+                // "the hips, a step on" it went down that far in one step: its damper threw the body down with it and a
+                // sprint jump left with 2 m/s less, 0.3 to 0.6 m short (measured, LabAutoTest.PawnRushMove; PITFALLS 20).
+                Vector3 at = anchor.position;
+                anchor.position = new Vector3(at.x, bodies[0].position.y, at.z);
             }
             airTimer = 0.2f;
             jumpTimer = 0.5f;
@@ -1391,12 +1424,13 @@ namespace ChessFight.RagdollLab
             if (pullUp) pullUpUsed = true;
             // A jump off the ground climbs the same however fast the pawn was going (GuardJumpRise).
             riseVel = ComVelocity().y;
-            riseBudget = fromGround ? RiseBudget : 0f;
+            riseBudget = fromGround ? (exact ? RiseBudget * 2f : RiseBudget) : 0f;
         }
 
         const float RiseTolerance = 0.05f;   // m/s a step: the guard ignores model error below this
         const float RiseStepLimit = 0.5f;    // m/s lost in one step is a knock (a beam, a ceiling): not the guard's
         const float RiseBudget = 1.5f;       // m/s the guard may give back over a whole jump
+        const float RiseGainLimit = 1f;      // Pawn Rush: m/s gained in one step that is a shove, not the jump's (R513)
 
         /// <summary>
         /// Holds a jump to the climb it was given. On the way up nothing should take vertical speed off
@@ -1442,6 +1476,21 @@ namespace ChessFight.RagdollLab
                 foreach (var rb in bodies) rb.linearVelocity += Vector3.up * give;
                 riseBudget -= give;
                 vy += give;
+                RiseTopUps++;
+            }
+            else if (-lost > RiseTolerance && riseExact && !BodyCarried)
+            {
+                // Pawn Rush (R513): more climb than the arc comes off too - a foot kicking the floor as the jump pose
+                // swings the legs, the stride's spring - so every jump tops out at the same height. More than
+                // RiseGainLimit in one step is a real shove up (a pad, a hit, a skill), not the jump's: the hold ends.
+                float extra = -lost;
+                if (extra > RiseGainLimit)
+                {
+                    riseBudget = 0f;
+                    return;
+                }
+                foreach (var rb in bodies) rb.linearVelocity -= Vector3.up * extra;
+                vy -= extra;
                 RiseTopUps++;
             }
             riseVel = vy;

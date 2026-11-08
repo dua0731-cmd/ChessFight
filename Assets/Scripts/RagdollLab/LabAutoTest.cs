@@ -177,6 +177,7 @@ namespace ChessFight.RagdollLab
             ("WallClimb", WallClimb), ("Mechanics", Mechanics), ("Hook", HookChecks), ("Pioneer", PioneerChecks),
             ("Launch", LaunchChecks), ("Rope", RopeChecks), ("Status", StatusChecks),
             ("Piece", PieceChecks), ("Knight", KnightChecks), ("Crowd", Crowd), ("NetLoopback", NetLoopback),
+            ("PawnRushMove", PawnRushMove),   // R513: the Pawn Rush jump's and dive's repeatability (LabAutoTest.PawnRushMove.cs)
         };
 
         string JointErrors(RagdollPawn pawn)

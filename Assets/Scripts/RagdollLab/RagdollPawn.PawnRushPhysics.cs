@@ -35,6 +35,99 @@ namespace ChessFight.RagdollLab
 
         float JumpSpeed(RagdollParams p) => PawnRushPhysics != null ? PawnRushPhysics.jumpSpeed : p.jumpImpulse;
 
+        // ---------------------------------------------------------------- the same jump every time (R513)
+
+        float jumpBuffered;   // Pawn Rush: seconds left on a jump pressed before the pawn could jump
+        bool riseExact;       // Pawn Rush: this jump's climb is held to its arc both ways (GuardJumpRise)
+
+        /// <summary>The jump holds the hips to its arc both ways on the way up (GuardJumpRise), and leaves the floor with
+        /// every part at the same climb (Jump).</summary>
+        bool PawnRushJumpExact => PawnRushPhysics != null && PawnRushPhysics.jumpExact;
+
+        /// <summary>
+        /// The jump key as Jump reads it. Pawn Rush keeps a press made while the pawn was up and about but could not jump
+        /// (in the air a moment before it lands) for jumpBuffer seconds, so it goes on the step the pawn can; a press while
+        /// it is down or getting up is not kept (the one that gets it up out of a dive must not jump it as well).
+        /// </summary>
+        bool PawnRushJumpPressed(bool pressed, float dt)
+        {
+            var q = PawnRushPhysics;
+            if (q == null || q.jumpBuffer <= 0f)
+            {
+                jumpBuffered = 0f;
+                return pressed;
+            }
+            if (pressed && State == PawnState.Active) jumpBuffered = q.jumpBuffer;
+            else jumpBuffered = State == PawnState.Active ? jumpBuffered - dt : 0f;
+            return pressed || jumpBuffered > 0f;
+        }
+
+        /// <summary>
+        /// The take-off speed that tops the hips out over the floor where a jump from standing height would. The stride rides
+        /// the hips up (the sprint's bound, up to 0.12 m) or down (a landing's dip), and the same kick from there went that
+        /// much higher or lower: a sprint jump was up to 14 % higher depending on where in the bound the key came.
+        /// </summary>
+        float PawnRushTakeoff(float up)
+        {
+            var q = PawnRushPhysics;
+            // Standing on the floor only: a coyote jump off an edge has the low floor under it and keeps the plain kick.
+            if (q == null || !q.jumpExact || !groundFound || !Grounded) return up;
+            float g = -Physics.gravity.y * Mathf.Max(1f, q.gravityScale);
+            float over = Mathf.Clamp(bodies[0].position.y - (PawnRushStandY(groundY) + standHeight), -TakeoffSpan, TakeoffSpan);
+            return Mathf.Sqrt(Mathf.Max(0.25f, up * up - 2f * g * over));
+        }
+
+        // m over or under standing height the take-off makes up for: the stride's ride (0.12 m), a landing's dip, and a
+        // jump pressed just before landing, which goes once the hips are within Grounded's reach (0.22 m over standing).
+        const float TakeoffSpan = 0.25f;
+
+        // ---------------------------------------------------------------- the belly flop (R513)
+
+        /// <summary>
+        /// A Pawn Rush dive lays the body flat on its front along the dive and holds it there: in the air however long it
+        /// falls, and sliding on the floor (lying along its face). The shared dive tips the body over at diveTip and lets it
+        /// go, so from a jump's top or off a ledge it kept turning, past flat and over its head. The hips and the chest turn
+        /// toward the pose at diveTurnGain per second of the angle left, at most diveTurnRate; the rest of the body follows
+        /// on its joints.
+        /// </summary>
+        void PawnRushDiveFlat(float dt)
+        {
+            var q = PawnRushPhysics;
+            if (q == null || !q.diveHoldFlat) return;
+            Rigidbody hips = bodies[0];
+            // Close to the floor the body lies along it (a slope's face); up in the air, level.
+            Vector3 n = Vector3.up;
+            if (groundFound && groundNormal.y > 0.5f && hips.position.y - groundY < standHeight + DiveAloftHeight) n = groundNormal;
+            Vector3 along = Vector3.ProjectOnPlane(diveDirection, n);
+            if (along.sqrMagnitude < 1e-4f) return;
+            along.Normalize();
+            // The hips' front (forward) faces the floor and their up (the spine) points along the dive, head first.
+            Quaternion target = Quaternion.AngleAxis(q.diveFlatPitch, Vector3.Cross(n, along)) * Quaternion.LookRotation(-n, along);
+            Quaternion error = target * Quaternion.Inverse(hips.rotation);
+            error.ToAngleAxis(out float angle, out Vector3 axis);
+            if (float.IsNaN(axis.x) || axis.sqrMagnitude < 1e-8f) return;
+            if (angle > 180f) angle -= 360f;
+            Vector3 want = axis.normalized * (angle * Mathf.Deg2Rad * q.diveTurnGain);
+            if (want.sqrMagnitude > q.diveTurnRate * q.diveTurnRate) want = want.normalized * q.diveTurnRate;
+            float follow = 1f - Mathf.Exp(-DiveTurnFollow * dt);
+            foreach (int i in DiveCore)
+                bodies[i].angularVelocity = Vector3.Lerp(bodies[i].angularVelocity, want, follow);
+        }
+
+        static readonly int[] DiveCore = { (int)BodyId.Hips, (int)BodyId.Chest };
+        // 1/s: how fast the turn takes over from the body's own spin. At 25 the body ran on 0.04 s past flat at full turn
+        // rate and nodded 26 degrees over it (measured); quicker, it stops near flat.
+        const float DiveTurnFollow = 60f;
+        const float DiveAloftHeight = 0.45f;   // m over standing height: further up than this a dive is still in the air
+
+        /// <summary>A Pawn Rush dive still up in the air (more than DiveAloftHeight over standing height, or no floor in reach).</summary>
+        bool PawnRushDiveAloft()
+        {
+            var q = PawnRushPhysics;
+            if (q == null || !q.diveHoldFlat) return false;
+            return !groundFound || bodies[0].position.y - groundY > standHeight + DiveAloftHeight;
+        }
+
         /// <summary>Gravity on a rising body, as a share of the world's (GuardJumpRise measures the climb with it).</summary>
         float RiseGravityScale => PawnRushPhysics != null ? PawnRushPhysics.gravityScale : 1f;
 

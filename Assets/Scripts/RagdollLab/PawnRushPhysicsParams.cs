@@ -21,6 +21,14 @@ namespace ChessFight.RagdollLab
         [Tooltip("공중 중력 배율 (1 = 기본)")] [Range(1f, 3f)] public float gravityScale = 1.4f;
         [Tooltip("떨어질 때 중력 더 (배, 1 = 같음)")] [Range(1f, 2f)] public float fallGravity = 1.15f;
 
+        // R513 (the user, 11-09: "점프 높이가 매번 다른 문제 … 폴가이즈를 레퍼런스로"). Fall Guys' jump is the same arc every time
+        // and a press a moment before landing still goes. Here the jump tops the hips out the same height over the floor
+        // wherever the stride had them (the sprint's bound rides them up to 0.12 m higher), anything but gravity that
+        // changes the climb on the way up comes off again (a foot kicking the floor as the jump pose swings the legs), and
+        // a press up to jumpBuffer before the pawn can jump goes as soon as it can.
+        [Tooltip("점프 높이 고정: 발 디딘 바닥에서 늘 같은 높이 (켜기)")] public bool jumpExact = true;
+        [Tooltip("점프 미리 누르기: 착지 이만큼 전에 누른 점프도 닿자마자 나감 (초, 0 = 끔)")] [Range(0f, 0.3f)] public float jumpBuffer = 0.12f;
+
         // Walking into a low lip (the 0.15 m curbs, a plank edge) the bell of the body stopped dead against it. Up to
         // this high the pawn hops onto it by itself; the 0.3 m jump stairs still take a jump.
         [Tooltip("저절로 올라가는 턱 높이 (m, 0 = 끔)")] [Range(0f, 0.5f)] public float stepUpHeight = 0.25f;
@@ -72,6 +80,15 @@ namespace ChessFight.RagdollLab
         // straight up past the head, the head held up; down on the floor the hands come down ahead to catch it.
         [Tooltip("다이빙 고개 들기 (도)")] [Range(0f, 70f)] public float diveHeadUp = 45f;
         [Tooltip("다이빙 착지 자세로 바뀌는 시간 (초)")] [Range(0.02f, 0.5f)] public float diveLandBlend = 0.12f;
+        // R513 (the user: "다이빙 할 때 캐릭터가 높이서 떨어진다고 공중에서 공중제비가 돌아지면 안돼. 높이가 어쨌든 배치기하는 형태로
+        // 낙하"). The shared dive tips the body over at diveTip (5 rad/s) and lets it go: a dive from a jump's top or off a
+        // ledge kept turning, past flat, over its head and onto its back. Here the body turns until it lies flat on its
+        // front along the dive and is held there, in the air however long it falls and sliding on the floor (Fall Guys'
+        // belly flop), and the dive does not end while it is still up in the air.
+        [Tooltip("다이빙: 몸을 배로 수평하게 잡아 공중제비 없이 (켜기)")] public bool diveHoldFlat = true;
+        [Tooltip("다이빙 몸을 수평으로 돌리는 세기 (남은 각도의 초당 몇 배)")] [Range(1f, 30f)] public float diveTurnGain = 9f;
+        [Tooltip("다이빙 몸 돌리는 최고 속도 (rad/s)")] [Range(1f, 30f)] public float diveTurnRate = 9f;
+        [Tooltip("다이빙 자세: 수평에서 머리 숙이기 (도, + = 머리 아래)")] [Range(-30f, 30f)] public float diveFlatPitch = 0f;
         [Tooltip("점프 착지 자세 시간 (초)")] [Range(0f, 0.8f)] public float landPoseTime = 0.25f;
 
         // The slide and after it (R248, 승규 님: "슬라이딩 하고 난 후 조금 쓸려야 돼"). On its front the body slides on
