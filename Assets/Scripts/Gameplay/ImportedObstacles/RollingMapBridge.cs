@@ -45,8 +45,7 @@ namespace ChessFight.ProtectKing
             float t = (float)((clock % (a+b+c+d) + (a+b+c+d)) % (a+b+c+d));
             float deployment = t < a ? 1 : t < a+b ? 1-(t-a)/b : t < a+b+c ? 0 : (t-a-b-c)/d;
             Vector3 edge = DeploymentPosition(deployment, out float horizontal);
-            if (segments != null) for (int i = 0; i < segments.Length; i++) if (segments[i] != null)
-                segments[i].SetActive(horizontal >= (i + 1f) / segments.Length);
+            UpdateFloor(horizontal);
             if (roller != null)
             {
                 roller.localPosition = edge + Vector3.up * .6f;
@@ -66,6 +65,27 @@ namespace ChessFight.ProtectKing
                     hangingParchment.localRotation = Quaternion.FromToRotation(Vector3.up, delta);
                     hangingParchment.localScale = new Vector3(.12f, delta.magnitude, Mathf.Max(1, length));
                 }
+            }
+        }
+        void UpdateFloor(float horizontal)
+        {
+            if (segments == null || segments.Length == 0) return;
+            float width = Mathf.Max(1, mapWidth), drift = Mathf.Clamp(descentDrift, 0, width * .1f);
+            float stripWidth = (width - drift) / segments.Length;
+            float start = -width * .5f + drift, direction = unfoldFromRight ? -1 : 1;
+            for (int i = 0; i < segments.Length; i++)
+            {
+                var segment = segments[i];
+                if (segment == null) continue;
+                float fraction = Mathf.Clamp01(horizontal * segments.Length - i);
+                if (fraction <= 0) { segment.SetActive(false); continue; }
+                // Grow from the fixed near edge, with a level top, all the way to the roller.
+                // The renderer and solid collider share this transform, so visible paper is walkable.
+                segment.transform.localRotation = Quaternion.identity;
+                segment.transform.localPosition = new Vector3(
+                    direction * (start + (i + fraction * .5f) * stripWidth), 0, length * .5f);
+                segment.transform.localScale = new Vector3(fraction, 1, 1);
+                segment.SetActive(true);
             }
         }
         bool Held()

@@ -36,6 +36,9 @@ class RoyalPalaceCourses(unittest.TestCase):
 
     def test_five_independent_prefabs_and_all_references_resolve(self):
         self.assertEqual(len(self.prefabs),5)
+        # Unity Graphics package Runtime/*.cs.meta GUIDs, not project Assets metadata.
+        dependencies=json.loads((ROOT/'Packages/manifest.json').read_text())['dependencies']
+        package_guids={'474bcb49853aa07438625e644c072ee6','a79441f348de89743a2939f4d699eac1'} if 'com.unity.render-pipelines.universal' in dependencies else set()
         paths=self.prefabs+[ROOT/'Assets/Scenes/GiantChessCourse.unity']
         for path in paths:
             text=path.read_text(); data=blocks(text)
@@ -43,7 +46,7 @@ class RoyalPalaceCourses(unittest.TestCase):
             for fid,tail in re.findall(r'\{fileID: (\d+)([^}]*)\}',text):
                 if 'guid:' in tail:
                     guid=re.search(r'guid: (\w+)',tail)[1]
-                    self.assertTrue(guid.startswith('0000000000000000') or guid in self.guids,(path,guid))
+                    self.assertTrue(guid.startswith('0000000000000000') or guid in self.guids or guid in package_guids,(path,guid))
                 elif int(fid):self.assertIn(fid,data,(path,fid))
             # Reciprocal transform ownership catches broken prefab hierarchies.
             for key,b in data.items():

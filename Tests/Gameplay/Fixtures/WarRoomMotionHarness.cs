@@ -16,7 +16,7 @@ namespace UnityEngine
  public class Collider { public Rigidbody attachedRigidbody;public Transform transform=new GameObject().transform; }
  public class BoxCollider:Collider { public Vector3 center,size; }
  public struct Pose { public Vector3 position;public Quaternion rotation;public Pose(Vector3 p,Quaternion r){position=p;rotation=r;} }
- public struct Quaternion { public static Quaternion Euler(float a,float b,float c)=>default(Quaternion);public static Quaternion FromToRotation(Vector3 a,Vector3 b)=>default(Quaternion);public static Vector3 operator*(Quaternion q,Vector3 v)=>v; }
+ public struct Quaternion { public static Quaternion identity=>default(Quaternion); public static Quaternion Euler(float a,float b,float c)=>default(Quaternion);public static Quaternion FromToRotation(Vector3 a,Vector3 b)=>default(Quaternion);public static Vector3 operator*(Quaternion q,Vector3 v)=>v; }
  public struct Vector3 {
   public float x,y,z;public Vector3(float a,float b,float c){x=a;y=b;z=c;}
   public static Vector3 up=>new Vector3(0,1,0);public static Vector3 back=>new Vector3(0,0,-1);
@@ -78,6 +78,23 @@ class WarRoomMotionHarness {
   Set(map,"clock",12.75);Call(map,"ApplyCycle");foreach(var s in strips)Check(!s.activeSelf,"Descending sheet is not walkable");
   Set(map,"clock",0.0);Call(map,"ApplyCycle");foreach(var s in strips)Check(s.activeSelf,"Fully open bridge is walkable");
   Set(map,"clock",11.0);Call(map,"ApplyCycle");foreach(var s in strips)Check(!s.activeSelf,"Closed bridge has no floor");
+  foreach(bool right in new[]{false,true}) {
+   Set(map,"unfoldFromRight",right);
+   for(int step=1;step<=100;step++) {
+    double progress=step/100.0;
+    Set(map,"clock",13.5+3*progress);Call(map,"ApplyCycle");
+    float direction=right?-1:1, next=-5.4f;
+    foreach(var strip in strips) if(strip.activeSelf) {
+     float half=1.425f*strip.transform.localScale.x*.5f;
+     float centre=direction*strip.transform.localPosition.x;
+     Check(Math.Abs(centre-half-next)<.0001f,"No gaps in horizontal floor");
+     Check(strip.transform.localPosition.y==0 && strip.transform.localScale.y==1,"Floor stays level at target Y");
+     next=centre+half;
+    }
+    Check(Math.Abs(next-(-5.4+11.4*progress))<.0001f,"Walkable floor reaches roller continuously");
+    Check(strips[0].activeSelf,"Floor appears immediately when horizontal unfolding starts");
+   }
+  }
   Console.WriteLine("PASS: slow rise / fast slam; steep descent, continuous corner, horizontal spread, mirrored sides and floor activation");
  }
 }
