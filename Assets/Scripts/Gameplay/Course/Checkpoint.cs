@@ -12,6 +12,9 @@ namespace ChessFight.Gameplay
         [SerializeField] int order;
         public int Order => order;
 
+        // For checkpoints built from code (the Pawn Rush course).
+        public void Configure(int order) => this.order = order;
+
         // The floor of the trigger volume, so a respawn lands on the ground rather
         // than in mid-air at the volume's centre.
         public Vector3 RespawnPosition

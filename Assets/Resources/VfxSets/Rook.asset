@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cdc53bce073d78ca1b4a3fa0ac4c736, type: 3}
+  m_Name: Rook
+  m_EditorClassIdentifier: 
+  entries:
+  - key: F_Slam
+    prefab: {fileID: 100, guid: 2db0b8f2bc467bd5a7c68d4719e43358, type: 3}
+  - key: F_Stamp
+    prefab: {fileID: 100, guid: ce9cf79918ddb22227aa06a75438691d, type: 3}
+  - key: F_Hit
+    prefab: {fileID: 100, guid: b0f4f285c2779b14aab3f92e482cad52, type: 3}
+  - key: F_Line
+    prefab: {fileID: 100, guid: 0374fc558950a28a4fa19e635b67dd3b, type: 3}
+  - key: F_Phantom
+    prefab: {fileID: 100, guid: d24d040b6699ea245bd34b2ee5a96340, type: 3}
+  - key: E_Break
+    prefab: {fileID: 100, guid: df9d24864e7ddfc24d37c5e9b647cc06, type: 3}

@@ -56,7 +56,7 @@ IMoveInputSource.Read() → MoveIntent { Move(Vector2), Jump(누른 순간), Sho
 | 방식 | 수식(평면, 충돌 없음), 호스트 권위 | CharacterController(**임시품**) |
 | 동작 | 이동·점프 | 이동·점프·밀치기·잡기 흉내·장애물에 밀림 |
 | 수치 | 속도 6, 점프 7, 중력 22 | 같은 값 + 밀치기·잡기·넉백 값(Inspector) |
-| 문서 | [Network/MOTION](../Network/MOTION.md) | 이 문서, [KingRush](../KingRush/README.md) |
+| 문서 | [Network/MOTION](../Network/MOTION.md) | 이 문서, [KingRush](../PawnRush/README.md) |
 
 최종 캐릭터는 **래그돌**이 두 곳을 모두 대체한다([RAGDOLL](RAGDOLL.md)). 네트워크 경기에서 래그돌을 쓰려면 권한 결정(호스트가 전부 시뮬레이션 vs 각자 시뮬레이션 + 호스트 검증)이 먼저다.
 

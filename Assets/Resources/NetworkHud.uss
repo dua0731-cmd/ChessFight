@@ -26,14 +26,11 @@
 .btn.danger-text:hover { background-color: rgba(255, 120, 90, 0.14); }
 .btn.danger-text:disabled { color: rgb(110, 100, 100); background-color: rgba(0, 0, 0, 0); }
 
-/* ---------- design C shared: walnut panels, slab buttons, small type ----------
-   .wood-panel gets its lacquered walnut texture and gold corner accent from
-   NetworkHudView (USS has no gradients). .chunky buttons are drawn by
-   ChunkyButtons: the slab's side is part of the bottom padding (6 px, ch-lg 7,
-   ch-sm 4, ch-xs 3), so text sits on the plate. */
-.wood-panel { border-width: 1px; border-color: rgba(217, 174, 98, 0.26); border-top-color: rgba(255, 220, 170, 0.34);
-              background-color: rgb(52, 34, 21); -unity-background-scale-mode: scale-and-crop; }
-.panel-accent { position: absolute; left: 0; top: 0; width: 46px; height: 3px; background-color: rgb(255, 201, 61); }
+/* ---------- design C shared: slab buttons, small type ----------
+   .chunky buttons are drawn by ChunkyButtons: the slab's side is part of the
+   bottom padding (6 px, ch-lg 7, ch-sm 4, ch-xs 3), so text sits on the plate.
+   The intro, the entrance screen, the settings window and the result screens
+   use them; the lobby uses design A below (R83). */
 .mono { font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(185, 165, 140); }
 .chunky { background-color: rgba(0, 0, 0, 0); border-width: 0; border-radius: 0; margin: 0; flex-shrink: 0;
           flex-direction: row; justify-content: center; align-items: center;
@@ -51,19 +48,85 @@
 .btn-sq { width: 32px; height: 35px; padding: 0 0 3px 0; font-size: 17px; }
 .btn-xs { margin: 0 3px; }
 
+/* ---------- lobby design A (R83): the name screen's look ----------
+   Thin gold lines on dark glass, line icons (MenuMarks.IconMark), small gold
+   capitals over labels and the ivory start button. Shades, panel fills, rules,
+   the silver title and the start button's face are painted by NetworkHudView.
+   Alphas are the page's, bent for linear-space blending (MenuArt.BlendAlpha):
+   light lines and washes on dark through the sRGB curve (.38 -> .12), dark
+   fills through StageKit.Darkening (.78 -> .96), or they read too strong or too thin. */
+.a-btn { flex-direction: row; align-items: center; justify-content: center; flex-shrink: 0; height: 34px; margin: 0;
+         padding: 0 12px; border-width: 1px; border-radius: 0; border-color: rgba(201, 154, 69, 0.55);
+         background-color: rgba(21, 17, 14, 0.78); color: rgb(243, 235, 221); font-size: 13px; -unity-font-style: bold;
+         -unity-text-align: middle-center; white-space: nowrap;
+         transition-property: scale, background-color, border-color, color; transition-duration: 0.12s; }
+.a-btn:hover { background-color: rgba(46, 36, 27, 0.94); border-color: rgb(201, 154, 69); color: rgb(243, 235, 221); }
+.a-btn:active { scale: 0.96 0.96; background-color: rgba(62, 48, 35, 0.95); }
+.a-btn:disabled { opacity: 0.2; }
+.a-btn-text { font-size: 13px; -unity-font-style: bold; white-space: nowrap; }
+.a-icon { width: 16px; height: 16px; margin-right: 7px; flex-shrink: 0; }
+.a-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.a-sm .a-btn-text { font-size: 12px; }
+.a-sm .a-icon { width: 13px; height: 13px; margin-right: 5px; }
+.a-sq { width: 26px; height: 26px; padding: 0; font-size: 15px; }
+.a-gap { margin: 0 3px; }
+.a-danger { border-color: rgba(255, 150, 130, 0.7); color: rgb(255, 196, 180); }
+.a-danger:hover { border-color: rgb(255, 150, 130); background-color: rgba(120, 30, 40, 0.85); color: rgb(255, 230, 222); }
+.a-ivory { border-width: 0; background-color: rgb(240, 226, 200); color: rgb(36, 23, 13); }
+.a-ivory:hover { background-color: rgb(250, 240, 220); color: rgb(36, 23, 13); }
+.a-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 4px; color: rgb(217, 174, 98); }
+.a-kicker-wide { font-size: 11px; }
+.a-label { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(185, 166, 138); margin-bottom: 4px; }
+.a-panel { border-width: 1px; border-color: rgba(201, 154, 69, 0.45); background-color: rgba(0, 0, 0, 0);
+           -unity-background-scale-mode: stretch-to-fill; }
+.a-panel-rule { position: absolute; left: -1px; top: -1px; }
+.a-cta { height: 70px; margin: 0; padding: 0; border-width: 0; border-radius: 0; background-color: rgba(0, 0, 0, 0);
+         flex-direction: row; justify-content: center; align-items: center; flex-shrink: 0;
+         transition-property: translate; transition-duration: 0.08s; }
+.a-cta:hover { background-color: rgba(0, 0, 0, 0); }
+.a-cta:active { translate: 0 1px; }
+.a-cta:disabled { opacity: 0.2; }
+.a-cta-text { font-size: 24px; -unity-font-style: bold-and-italic; letter-spacing: 3px; color: rgb(21, 17, 14); white-space: nowrap; }
+.a-cta-arrow { width: 24px; height: 24px; margin-left: 14px; }
+.a-cta-sm { height: 44px; margin-top: 12px; }
+.a-cta-sm .a-cta-text { font-size: 17px; letter-spacing: 2px; }
+.a-hints { margin-top: 10px; justify-content: flex-end; }
+.a-cap { padding: 1px 6px 2px 6px; margin-right: 6px; border-width: 1px; border-color: rgba(201, 154, 69, 0.6);
+         background-color: rgba(21, 17, 14, 0.85); font-size: 10px; -unity-font-style: bold; color: rgb(255, 255, 255); }
+.a-hint { font-size: 11px; -unity-font-style: bold; color: rgb(243, 235, 221); margin-right: 16px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.a-hint-last { margin-right: 0; }
+
 /* ---------- lobby frame ---------- */
 .lobby { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 
-.top-fade { position: absolute; left: 0; top: 0; right: 0; height: 76px; -unity-background-scale-mode: stretch-to-fill; }
-.topbar { position: absolute; left: 0; top: 0; right: 0; height: 74px; flex-direction: row; align-items: center;
+.scrim { position: absolute; -unity-background-scale-mode: stretch-to-fill; }
+.scrim-top { left: 0; top: 0; right: 0; height: 130px; }
+.scrim-right { right: 0; top: 0; bottom: 0; width: 560px; }
+.scrim-bottom { left: 0; right: 0; bottom: 0; height: 270px; }
+.topbar { position: absolute; left: 0; top: 0; right: 0; height: 64px; flex-direction: row; align-items: center;
           padding-left: 26px; padding-right: 24px; }
-.logo { font-size: 30px; letter-spacing: 2px; color: rgb(247, 203, 110); margin-right: 38px; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
-.tab { font-size: 20px; margin-right: 30px; padding-top: 6px; padding-bottom: 9px; border-bottom-width: 3px; border-color: rgba(0, 0, 0, 0); }
-.tab-on { color: rgb(255, 246, 232); border-color: rgb(255, 201, 61); }
-.tab-off { color: rgb(185, 165, 140); }
-.pill { height: 46px; margin-left: 10px; padding: 0 14px 4px 14px; font-size: 16px; }
-.profile { -unity-text-align: middle-center; }
+.a-logo { width: 76px; height: 53px; margin-right: 30px; flex-shrink: 0; background-image: resource("Menu/LobbyLogo");
+          -unity-background-scale-mode: scale-to-fit; }
+.a-tab { height: 64px; margin-right: 30px; font-size: 16px; -unity-font-style: bold-and-italic; color: rgb(185, 166, 138);
+         -unity-text-align: middle-left; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); }
+.a-tab-on { color: rgb(243, 235, 221); }
+.a-tab-box { height: 64px; margin-right: 30px; }
+.a-tab-box .a-tab { margin-right: 0; }
+.a-tab-rule { position: absolute; left: 0; bottom: 14px; }
+/* 10-17 ("글자만"): no boxes at the top right - icon, word and a gold number over the top shade;
+   my name underlined in gold. */
+.a-top { margin-left: 22px; padding: 0 2px; border-width: 0; background-color: rgba(0, 0, 0, 0); color: rgb(243, 235, 221);
+         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85); }
+.a-top:hover { background-color: rgba(0, 0, 0, 0); color: rgb(255, 255, 255); }
+.a-top:active { background-color: rgba(0, 0, 0, 0); }
+#details-open { width: auto; }
+#details-open .a-btn-text { display: none; }
+#details-open .a-icon { margin-right: 0; width: 18px; height: 18px; }
+.a-profile { margin-left: 26px; height: 30px; padding: 0 2px 2px 2px; border-width: 0 0 2px 0; border-color: rgb(217, 177, 92);
+             background-color: rgba(0, 0, 0, 0); color: rgb(243, 235, 221); }
+.a-profile:hover { border-color: rgb(240, 205, 120); background-color: rgba(0, 0, 0, 0); }
+.a-crown { width: 16px; height: 12px; margin-right: 8px; flex-shrink: 0; }
 
 /* ---------- top centre: notices and the matchmaking banner ---------- */
 .top-center { position: absolute; left: 0; right: 0; top: 80px; align-items: center; }
@@ -73,9 +136,9 @@
 .notice { display: none; padding: 8px 8px 8px 16px; margin-bottom: 8px; background-color: rgba(110, 32, 24, 0.94);
           border-left-width: 3px; border-color: rgb(255, 77, 98); }
 .notice-text { font-size: 14px; color: rgb(255, 236, 228); margin-right: 10px; }
-.notice-btn { padding: 6px 12px 10px 12px; font-size: 14px; }
+.notice-btn { margin-left: 4px; }
 
-.match-panel { display: none; width: 360px; padding: 14px 20px 13px 20px; border-color: rgba(255, 201, 61, 0.55); }
+.match-panel { display: none; width: 360px; padding: 14px 20px 13px 20px; border-color: rgba(226, 184, 102, 0.55); }
 .match-line { position: absolute; left: 0; top: 0; right: 0; height: 3px; -unity-background-scale-mode: stretch-to-fill; }
 .match-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(217, 174, 98); margin-bottom: 5px; }
 .match-head { align-items: center; }
@@ -103,20 +166,20 @@
 /* ---------- bottom left: tools and the party panel ---------- */
 .bottom-left { position: absolute; left: 24px; bottom: 24px; }
 .tools { margin-bottom: 16px; }
-.tool-btn { margin-right: 10px; }
-.party-bar { width: 640px; height: 92px; padding: 0 18px; align-items: center; }
+.a-tool { height: 36px; padding: 0 14px; margin-right: 8px; }
+.party-bar { width: 644px; height: 104px; padding: 0 14px 0 20px; align-items: center; }
 .party-count { flex-shrink: 0; justify-content: center; }
-.party-number { font-size: 34px; color: rgb(246, 236, 223); margin-top: 4px; }
-.party-sep { width: 1px; height: 60px; margin: 0 18px; background-color: rgba(217, 174, 98, 0.25); }
+.party-number { font-size: 34px; -unity-font-style: bold-and-italic; color: rgb(243, 235, 221); margin-top: 2px; }
+.party-sep { width: 1px; height: 52px; margin: 0 15px; background-color: rgba(201, 154, 69, 0.4); }
 .party-section { justify-content: center; flex-shrink: 0; }
-.party-code { font-size: 18px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(246, 236, 223); margin-top: 7px; white-space: nowrap; }
-.party-copy { margin-left: 14px; }
-.bot-count { font-size: 20px; -unity-font-style: bold; color: rgb(246, 236, 223); width: 30px; -unity-text-align: middle-center; }
+.party-code { font-size: 16px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(243, 235, 221); white-space: nowrap; }
+.party-copy { margin-left: 10px; }
+.bot-count { font-size: 18px; -unity-font-style: bold; color: rgb(243, 235, 221); width: 30px; -unity-text-align: middle-center; }
 .bots-note { font-size: 10px; color: rgb(255, 190, 90); margin-top: 3px; }
 .party-leave { margin-left: 10px; }
 
-/* ---------- bottom right: the start button or the busy card ---------- */
-.bottom-right { position: absolute; right: 24px; bottom: 24px; width: 396px; align-items: stretch; }
+/* ---------- bottom right: the start button or the busy card, then the key hints ---------- */
+.bottom-right { position: absolute; right: 24px; bottom: 20px; width: 400px; align-items: stretch; }
 /* Superseded by the right rail; kept in the layout only for the name contract. */
 .mode-card { display: none; }
 .mode-tile { width: 60px; height: 60px; margin-right: 12px; border-radius: 10px; align-items: center; justify-content: center;
@@ -125,77 +188,108 @@
 .mode-name { font-size: 20px; -unity-font-style: bold; color: rgb(255, 255, 255); }
 .mode-tagline { font-size: 11px; color: rgb(220, 200, 172); }
 .mode-change { font-size: 12px; color: rgb(220, 200, 172); }
-.start-btn { height: 103px; padding: 0 26px 7px 26px; align-items: center; justify-content: center; }
-.start-title { font-size: 40px; color: rgb(28, 18, 0); }
-.start-chevrons { width: 40px; height: 20px; margin-left: 16px; }
-.start-btn:disabled .start-title { color: rgba(255, 255, 255, 0.55); }
 .keycap { padding: 3px 7px; border-radius: 4px; border-width: 1.5px; font-size: 11px; -unity-font-style: bold; }
 .busy-card { display: none; padding: 14px 16px; }
 .busy-row { align-items: center; }
 .spinner { width: 26px; height: 26px; margin-right: 12px; border-radius: 13px; border-width: 4px;
-           border-color: rgba(255, 220, 170, 0.15); border-top-color: rgb(255, 201, 61); }
-.busy-title { font-size: 22px; color: rgb(246, 236, 223); }
+           border-color: rgba(255, 220, 170, 0.15); border-top-color: rgb(226, 184, 102); }
+.busy-title { font-size: 22px; color: rgb(255, 243, 218); }
 .busy-sub { font-size: 12px; color: rgb(220, 200, 172); margin-top: 3px; }
-.busy-start { margin-top: 12px; font-size: 20px; }
 
 .version { position: absolute; left: 0; right: 0; bottom: 4px; font-size: 10px; -unity-text-align: middle-center;
-           color: rgba(246, 236, 223, 0.35); }
+           color: rgba(255, 255, 255, 0.35); }
 
 /* ---------- right rail: the game modes ---------- */
-.mode-rail { position: absolute; right: 24px; top: 94px; width: 396px; }
-.rail-head { align-items: flex-end; margin-bottom: 12px; }
-.rail-title { font-size: 24px; color: rgb(246, 236, 223); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
-.rail-hint { font-size: 13px; color: rgb(185, 165, 140); margin-bottom: 2px; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
-.rail-card { height: 116px; margin: 0 0 10px 0; padding: 0; border-radius: 0; border-width: 1px; border-color: rgba(217, 174, 98, 0.22);
-             border-top-color: rgba(255, 220, 170, 0.3); overflow: hidden; background-color: rgb(60, 39, 24);
-             -unity-background-scale-mode: stretch-to-fill; transition-property: translate; transition-duration: 0.3s;
-             transition-timing-function: ease-out-back; }
+.mode-rail { position: absolute; right: 24px; bottom: 130px; width: 400px; }
+/* 10-17: the cards wait below until the pointer rests on "모드 선택"; they rise one by one (delays set in code). */
+.rail-head { transition-property: opacity; transition-duration: 0.25s; }
+.mode-rail.rail-closed .rail-head { opacity: 0; }
+/* The cards themselves slide and fade from code (NetworkHudView.SetRail): up with a bounce, down into Sword Fight. */
+.rail-head { align-items: center; margin-bottom: 8px; }
+.rail-hint { font-size: 11px; -unity-font-style: bold; color: rgb(243, 235, 221); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.rail-title { display: none; }
+.rail-rule { display: none; }
+.rail-card { height: 74px; margin: 0 0 8px 0; padding: 0; border-radius: 0; border-width: 1px; border-color: rgba(201, 154, 69, 0.3);
+             overflow: hidden; background-color: rgba(0, 0, 0, 0); -unity-background-scale-mode: stretch-to-fill;
+             transition-property: translate, top, opacity; transition-duration: 0.3s, 0.34s, 0.22s;
+             transition-timing-function: ease-out-back, ease-out-back, ease-out; }
 .rail-card:hover { translate: -4px 0; }
 .rail-card:disabled { translate: 0 0; }
-.rail-card.rail-on { border-color: rgba(255, 201, 61, 0.75); }
-.rail-locked { opacity: 0.92; }
-.rail-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background-color: rgb(255, 201, 61); display: none; }
+.rail-card.rail-on { border-width: 2px; border-color: rgb(233, 196, 106); }
+.rail-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background-color: rgb(233, 196, 106); display: none; }
 .rail-on .rail-bar { display: flex; }
-.rail-art { position: absolute; right: -6px; bottom: -26px; width: 156px; height: 156px; -unity-background-scale-mode: scale-to-fit; }
-.rail-text { position: absolute; left: 18px; top: 10px; width: 232px; height: 97px; }
+.rail-art { position: absolute; right: -2px; bottom: -20px; width: 104px; height: 104px; -unity-background-scale-mode: scale-to-fit; }
+.rail-text { position: absolute; left: 18px; top: 9px; width: 280px; height: 58px; }
 .rail-foot { position: absolute; left: 0; bottom: 0; flex-direction: row; align-items: center; }
-.rail-badge { margin-left: 10px; padding: 3px 7px; border-width: 1px; font-size: 11px; -unity-font-style: bold; letter-spacing: 1px;
-              color: rgb(185, 165, 140); border-color: rgb(185, 165, 140); background-color: rgba(20, 12, 7, 0.55); }
-.rail-badge-on { color: rgb(255, 201, 61); border-color: rgb(255, 201, 61); }
-.rail-badge-ok { color: rgb(75, 224, 143); border-color: rgb(75, 224, 143); }
-.rail-name { font-size: 28px; color: rgb(246, 236, 223); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
-.rail-summary { font-size: 13px; color: rgb(220, 200, 172); white-space: normal; margin-top: 2px; }
-.rail-tagline { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(217, 174, 98); }
+.rail-name { font-size: 21px; -unity-font-style: bold-and-italic; color: rgb(243, 235, 221); }
+.rail-on .rail-name { color: rgb(243, 235, 221); }
+.rail-locked .rail-name { color: rgb(220, 208, 188); }
+.rail-summary { display: none; }
+.rail-on .rail-summary { color: rgb(243, 235, 221); }
+.rail-locked .rail-summary { color: rgb(170, 152, 126); }
+.rail-tagline { font-size: 11px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(233, 196, 106); }
+.rail-on .rail-tagline { color: rgb(233, 196, 106); }
+.rail-locked .rail-tagline { color: rgb(190, 160, 104); }
+.rail-badge { margin-left: 10px; padding: 1px 7px 2px 7px; border-width: 1px; font-size: 10px; -unity-font-style: bold; letter-spacing: 1px;
+              color: rgb(185, 166, 138); border-color: rgba(185, 166, 138, 0.4); background-color: rgba(0, 0, 0, 0); }
+.rail-badge-on { color: rgb(21, 17, 14); border-color: rgb(233, 196, 106); background-color: rgb(233, 196, 106); }
+.rail-badge-ok { color: rgb(243, 235, 221); border-color: rgba(233, 196, 106, 0.6); }
 
 /* ---------- lineup nameplates, positioned over the 3D pieces from code ---------- */
 .plate { position: absolute; width: 200px; height: 64px; align-items: center; justify-content: flex-end; }
-.plate-row { flex-direction: row; align-items: center; padding: 7px 16px 8px 16px; border-top-width: 2px; border-color: rgb(255, 201, 61);
-             background-color: rgba(52, 33, 19, 0.95); }
-.plate-crown { width: 18px; height: 14px; margin-right: 8px; }
-.plate-name { font-size: 19px; color: rgb(246, 236, 223); white-space: nowrap; }
-.plate-me .plate-name { color: rgb(255, 230, 170); }
-.plate-tag { margin-top: 5px; font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 217, 138);
-             text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); white-space: nowrap; }
-.invite-spot { position: absolute; width: 120px; align-items: center; }
-.invite-plus { width: 54px; height: 54px; border-radius: 27px; border-width: 2px; border-color: rgb(231, 190, 114); padding: 0;
-               font-size: 32px; color: rgb(255, 230, 184); background-color: rgba(255, 190, 100, 0.16); -unity-text-align: middle-center;
-               transition-property: scale; transition-duration: 0.3s; transition-timing-function: ease-out-back; }
-.invite-plus:hover { scale: 1.1 1.1; background-color: rgba(255, 190, 100, 0.28); }
-.invite-plus:active { scale: 0.9 0.9; }
-.invite-label { margin-top: 8px; font-size: 11px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 217, 138);
-                text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
+.plate-row { flex-direction: row; align-items: center; padding: 0 2px; border-width: 0; background-color: rgba(0, 0, 0, 0); }
+.plate-crown { width: 18px; height: 13px; margin-right: 8px; }
+.plate-name { font-size: 20px; -unity-font-style: bold; letter-spacing: 0.5px; color: rgb(243, 235, 221); white-space: nowrap;
+              text-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.95); }
+.plate-tag { margin-top: 5px; padding-top: 4px; border-top-width: 2px; border-color: rgb(217, 177, 92); font-size: 11px;
+             -unity-font-style: bold; letter-spacing: 1px; color: rgb(243, 235, 221); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); white-space: nowrap; }
+/* Voice chat on the nameplates (R131): the loudspeaker before the name, its spreading ring while the
+   member talks, the invisible button over another member's plate, and its one-button mute menu. */
+.plate-voice { width: 17px; height: 17px; margin-right: 8px; }
+.plate-voice-icon { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.plate-voice-ring { position: absolute; left: -3px; top: -3px; right: -3px; bottom: -3px; border-width: 2px; border-radius: 12px;
+                    border-color: rgba(0, 0, 0, 0); }
+.plate-hit { position: absolute; left: 0; top: 0; right: 0; bottom: 0; margin: 0; padding: 0; border-width: 0; border-radius: 0;
+             background-color: rgba(0, 0, 0, 0); }
+.plate-hit:hover { background-color: rgba(255, 243, 218, 0.012); }
+.plate-menu { position: absolute; padding: 5px; border-radius: 6px; border-width: 1px; border-color: rgb(14, 8, 5);
+              background-color: rgb(52, 34, 21); }
+.plate-menu-name { padding: 3px 8px 6px 8px; font-size: 12px; -unity-font-style: bold; color: rgb(191, 174, 142); white-space: nowrap; }
+.plate-menu-btn { flex-direction: row; align-items: center; height: 32px; margin: 0; padding: 0 14px 0 11px; border-width: 0; border-radius: 4px;
+                  background-color: rgb(26, 20, 16); }
+.plate-menu-btn:hover { background-color: rgb(42, 32, 25); }
+.plate-menu-btn-on { background-color: rgb(239, 228, 204); }
+.plate-menu-btn-on:hover { background-color: rgb(250, 242, 226); }
+.plate-menu-icon { width: 15px; height: 15px; margin-right: 8px; }
+.plate-menu-text { font-size: 13px; -unity-font-style: bold; color: rgb(239, 228, 204); white-space: nowrap; }
+.plate-menu-btn-on .plate-menu-text { color: rgb(26, 20, 16); }
+.invite-spot { position: absolute; width: 140px; align-items: center; }
+/* 10-17: one pill, navy with a gold rim and white bold text (the concept art's banners), not a glowing ring */
+.invite-plus { height: 36px; padding: 0 16px; border-radius: 18px; border-width: 2px; border-color: rgb(231, 190, 114);
+               font-size: 14px; -unity-font-style: bold; letter-spacing: 1px; color: rgb(255, 255, 255);
+               background-color: rgba(26, 36, 82, 0.9); -unity-text-align: middle-center; white-space: nowrap;
+               transition-property: scale, background-color; transition-duration: 0.2s; transition-timing-function: ease-out-back; }
+.invite-plus:hover { scale: 1.06 1.06; background-color: rgba(38, 54, 118, 0.96); }
+.invite-plus:active { scale: 0.95 0.95; }
 
-/* ---------- side cards (friends, details) ---------- */
+/* ---------- side cards (party, friends, details) ---------- */
+.party-card { width: 340px; }
+.party-line { align-items: center; margin-bottom: 4px; }
+.party-gap { margin-top: 14px; }
+.party-actions { margin-top: 16px; }
+.party-action { flex-grow: 1; margin-right: 6px; }
+.party-leave { margin-top: 10px; }
 .side-card { display: none; position: absolute; right: 24px; top: 94px; width: 360px; padding: 16px; }
 .details-card { width: 320px; }
 .panel-head { align-items: center; margin-bottom: 8px; }
+.panel-head > .a-sq { margin-left: auto; }
 .panel-title { font-size: 22px; color: rgb(246, 236, 223); }
 .friends-info { font-size: 11px; color: rgb(185, 165, 140); margin-right: 8px; }
 .friends-bar { margin-bottom: 8px; align-items: center; }
 .seg { min-height: 26px; margin: 0 4px 0 0; padding: 2px 12px; border-radius: 0; border-width: 0; border-bottom-width: 2px;
        border-color: rgba(0, 0, 0, 0); font-size: 13px; -unity-font-style: bold; color: rgb(185, 165, 140); background-color: rgba(0, 0, 0, 0); }
 .seg:hover { color: rgb(246, 236, 223); }
-.seg-on { color: rgb(255, 255, 255); border-color: rgb(255, 201, 61); }
+.seg-on { color: rgb(255, 255, 255); border-color: rgb(226, 184, 102); }
 .friends-page { font-size: 12px; color: rgb(220, 200, 172); margin: 0 6px; }
 .friend-list { min-height: 300px; }
 .friend-group { flex-direction: row; justify-content: space-between; margin: 8px 2px 3px 2px; }
@@ -220,63 +314,120 @@
 
 /* ---------- modals (join by code, mode picker) ---------- */
 .modal { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-         align-items: center; justify-content: center; background-color: rgba(10, 5, 2, 0.62); }
+         align-items: center; justify-content: center; background-color: rgba(10, 5, 2, 0.88); }
 .modal-card { width: 470px; padding: 20px; }
 .modal-card.wide { width: 620px; }
 .modal-btn { flex-grow: 1; flex-basis: 0; margin: 0 4px; }
 .mode-list { margin-top: 8px; }
 
-/* ---------- settings (SettingsHud.uxml + SettingsWindow, R64) ---------- */
-.settings { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-            align-items: center; justify-content: center; background-color: rgba(10, 5, 2, 0.74); }
-.settings-card { width: 780px; height: 596px; padding: 22px 26px 22px 26px; }
-.settings-head { align-items: flex-start; }
-.settings-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(250, 208, 60); }
-.settings-title { font-size: 30px; color: rgb(246, 236, 223); margin-top: 2px; }
-.settings-tabs { margin-top: 14px; border-bottom-width: 1px; border-color: rgba(217, 174, 98, 0.22); flex-shrink: 0; }
-.settings-tab { margin: 0 26px 0 0; padding: 6px 0 9px 0; border-width: 0 0 3px 0; border-radius: 0;
-                border-color: rgba(0, 0, 0, 0); background-color: rgba(0, 0, 0, 0); font-size: 17px; color: rgb(185, 165, 140); }
-.settings-tab:hover { color: rgb(246, 236, 223); background-color: rgba(0, 0, 0, 0); }
-.settings-tab-on { color: rgb(246, 236, 223); border-color: rgb(255, 201, 61); }
-.settings-body { flex-grow: 1; padding-top: 10px; }
-.settings-foot { padding-top: 14px; border-top-width: 1px; border-color: rgba(217, 174, 98, 0.22); flex-shrink: 0; }
-.settings-foot-btn { margin-left: 12px; }
+/* ---------- settings (SettingsHud.uxml + SettingsWindow, R64; layout R77) ----------
+   Full screen over the still chess background: tabs across the top, pages down
+   the left, one line per setting (name 58 %, value the rest), key hints below. */
+.s2 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgb(14, 8, 5); }
+.s2-bg { position: absolute; left: 0; top: 0; right: 0; bottom: 0; -unity-background-scale-mode: scale-and-crop; }
+.s2-top { position: absolute; left: 0; top: 0; right: 0; height: 74px; padding: 0 28px; align-items: center;
+          background-color: rgba(30, 18, 10, 0.86); border-bottom-width: 1px; border-color: rgba(217, 174, 98, 0.3); }
+.s2-top-line { position: absolute; left: 0; bottom: -1px; width: 220px; height: 2px; background-color: rgb(255, 201, 61); }
+.s2-brand { font-size: 24px; color: rgb(255, 201, 61); margin-right: 28px; }
+.s2-tab { margin: 0 4px 0 0; padding: 11px 20px 14px 20px; border-width: 0; border-radius: 0;
+          background-color: rgba(0, 0, 0, 0); }
+.s2-tab:hover { background-color: rgba(0, 0, 0, 0); }
+.s2-tab-text { font-size: 17px; color: rgb(217, 198, 168); }
+.s2-tab:hover .s2-tab-text { color: rgb(255, 243, 218); }
+.s2-tab-on .s2-tab-text { color: rgb(28, 18, 0); }
+.s2-tab-on:hover .s2-tab-text { color: rgb(28, 18, 0); }
+.s2-chip { padding: 6px 14px 6px 6px; border-width: 1px; border-color: rgba(217, 174, 98, 0.3); background-color: rgba(12, 7, 4, 0.6); }
+.s2-avatar { width: 30px; height: 30px; margin-right: 10px; justify-content: center; align-items: center; background-color: rgb(255, 201, 61); }
+.s2-avatar-mark { font-size: 15px; -unity-font-style: bold; color: rgb(44, 26, 14); }
+.s2-name { font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
+.s2-steam { font-size: 10px; -unity-font-style: bold; color: rgb(75, 224, 143); white-space: nowrap; }
+.s2-steam-off { color: rgb(255, 200, 80); }
 
-.set-row { flex-direction: row; align-items: center; min-height: 52px; flex-shrink: 0;
-           border-bottom-width: 1px; border-color: rgba(217, 174, 98, 0.10); }
-.set-left { width: 210px; }
-.set-label { font-size: 15px; -unity-font-style: bold; color: rgb(246, 236, 223); }
-.set-note { font-size: 11px; color: rgb(185, 165, 140); margin-top: 2px; }
-.set-ctrl { flex-direction: row; align-items: center; flex-grow: 1; }
-.set-arrow { width: 34px; height: 37px; padding: 0 0 3px 0; font-size: 17px; }
-.set-bar { width: 236px; height: 12px; margin: 0 12px; border-width: 1px; border-color: rgba(217, 174, 98, 0.32);
-           background-color: rgba(12, 7, 4, 0.6); }
-.set-fill { position: absolute; left: 0; top: 0; bottom: 0; background-color: rgb(255, 201, 61); }
-.set-knob { position: absolute; top: -6px; width: 6px; height: 20px; margin-left: -3px; background-color: rgb(255, 243, 218);
-            border-bottom-width: 2px; border-color: rgb(110, 74, 38); }
-.set-value { min-width: 70px; margin-left: 12px; font-size: 18px; color: rgb(255, 201, 61); }
-.set-box { width: 236px; height: 34px; margin: 0 12px; border-width: 1px; border-color: rgba(217, 174, 98, 0.32);
-           background-color: rgba(12, 7, 4, 0.45); -unity-text-align: middle-center; font-size: 14px;
-           -unity-font-style: bold; color: rgb(246, 236, 223); }
-.set-seg { flex-direction: row; padding-left: 1px; }
-.set-seg-btn { height: 34px; margin: 0 0 0 -1px; padding: 0 16px; border-width: 1px; border-radius: 0;
-               border-color: rgba(217, 174, 98, 0.32); background-color: rgba(12, 7, 4, 0.45);
-               font-size: 13px; -unity-font-style: bold; color: rgb(185, 165, 140); }
-.set-seg-btn:hover { color: rgb(246, 236, 223); background-color: rgba(255, 220, 170, 0.08); }
-.set-seg-on { background-color: rgb(255, 201, 61); border-color: rgb(255, 201, 61); color: rgb(28, 18, 0); }
-.set-seg-on:hover { background-color: rgb(255, 214, 100); color: rgb(28, 18, 0); }
-.set-section { flex-direction: row; align-items: flex-end; margin: 16px 0 8px 0; flex-shrink: 0; }
-.set-section-title { font-size: 16px; color: rgb(255, 201, 61); margin-right: 10px; }
-.set-hint { font-size: 11px; color: rgb(185, 165, 140); }
-.set-keys { flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
-.set-key-row { width: 47%; flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.set-key { min-width: 104px; padding: 8px 12px 12px 12px; font-size: 13px; }
-.set-preview { margin-top: 16px; padding: 12px 14px; border-width: 1px; border-color: rgba(217, 174, 98, 0.18);
-               background-color: rgba(12, 7, 4, 0.45); flex-shrink: 0; }
-.set-preview-row { flex-direction: row; align-items: flex-end; margin-top: 6px; }
-.set-preview-row > Label { margin-right: 8px; }
-.set-ping { padding: 5px 10px; margin-left: 12px; background-color: rgba(12, 7, 4, 0.6); font-size: 12px;
-            -unity-font-style: bold; color: rgb(75, 224, 143); }
+.s2-side { position: absolute; left: 28px; top: 98px; width: 210px; }
+.s2-sub { margin: 0 0 6px 0; padding: 11px 14px 11px 16px; border-width: 0 0 0 4px; border-radius: 0;
+          border-color: rgba(0, 0, 0, 0); background-color: rgba(44, 28, 16, 0.86);
+          -unity-text-align: middle-left; font-size: 15px; -unity-font-style: bold; color: rgb(232, 216, 190); }
+.s2-sub:hover { background-color: rgba(74, 48, 28, 0.92); color: rgb(255, 243, 218); }
+.s2-sub-on { border-color: rgb(255, 201, 61); background-color: rgba(122, 86, 40, 0.92); color: rgb(255, 243, 218); }
+.s2-sub-on:hover { background-color: rgba(132, 94, 44, 0.95); }
+.s2-desc { margin-top: 18px; padding: 12px 14px; border-width: 1px; border-color: rgba(217, 174, 98, 0.18);
+           background-color: rgba(12, 7, 4, 0.62); }
+.s2-kicker { font-size: 10px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(250, 208, 60); }
+.s2-desc-title { margin-top: 6px; font-size: 14px; -unity-font-style: bold; color: rgb(255, 243, 218); white-space: normal; }
+.s2-desc-text { margin-top: 4px; font-size: 12px; color: rgb(205, 184, 154); white-space: normal; }
+
+.s2-view { position: absolute; left: 262px; top: 98px; width: 950px; height: 552px; overflow: hidden; }
+.s2-content { position: absolute; left: 0; top: 0; right: 16px; }
+.s2-bar { position: absolute; right: 0; top: 0; bottom: 0; width: 8px; background-color: rgba(0, 0, 0, 0.25); }
+.s2-thumb { position: absolute; left: 0; right: 0; top: 0; height: 40px; background-color: rgba(217, 174, 98, 0.45); }
+.s2-thumb:hover { background-color: rgba(255, 201, 61, 0.7); }
+
+.s2-section { flex-direction: row; align-items: flex-end; margin-bottom: 8px; }
+.s2-section-title { font-size: 20px; color: rgb(255, 201, 61); margin-right: 12px; }
+.s2-section-note { font-size: 12px; color: rgb(185, 165, 140); padding-bottom: 2px; }
+.s2-group { margin-bottom: 22px; }
+.s2-row { flex-direction: row; height: 34px; margin-bottom: 3px; }
+.s2-lab { width: 58%; flex-direction: row; align-items: center; padding: 0 14px; border-left-width: 3px;
+          border-color: rgba(0, 0, 0, 0); background-color: rgba(52, 34, 21, 0.88); }
+.s2-lab-text { font-size: 14px; color: rgb(241, 228, 210); }
+.s2-soon { margin-left: 10px; padding: 1px 6px; font-size: 10px; -unity-font-style: bold; color: rgb(185, 165, 140);
+           border-width: 1px; border-color: rgba(185, 165, 140, 0.4); }
+.s2-val { flex-grow: 1; flex-direction: row; align-items: center; margin-left: 3px; padding: 0 6px; background-color: rgba(28, 17, 10, 0.9); }
+.s2-row:hover > .s2-lab { background-color: rgba(84, 57, 37, 0.95); border-color: rgb(255, 201, 61); }
+.s2-row:hover > .s2-val { background-color: rgba(44, 28, 16, 0.95); }
+.s2-ar { width: 26px; height: 26px; padding: 0; margin: 0; border-width: 0; background-color: rgba(0, 0, 0, 0);
+         font-size: 18px; -unity-font-style: bold; color: rgb(255, 201, 61); }
+.s2-ar:hover { color: rgb(255, 243, 218); background-color: rgba(0, 0, 0, 0); }
+.s2-ar:disabled { color: rgba(185, 165, 140, 0.35); }
+.s2-vt { flex-grow: 1; -unity-text-align: middle-center; font-size: 13px; -unity-font-style: bold; color: rgb(255, 243, 218); }
+.s2-dd { flex-grow: 1; height: 28px; margin: 0; padding: 0 6px 0 10px; border-width: 0; background-color: rgba(0, 0, 0, 0);
+         flex-direction: row; align-items: center; justify-content: space-between; }
+.s2-dd:hover { background-color: rgba(255, 220, 170, 0.06); }
+.s2-dd-text { font-size: 13px; -unity-font-style: bold; color: rgb(255, 243, 218); }
+.s2-dd-mark { font-size: 12px; color: rgb(255, 201, 61); }
+.s2-num { width: 52px; padding-left: 6px; font-size: 13px; -unity-font-style: bold; color: rgb(255, 243, 218); }
+.s2-track { flex-grow: 1; height: 22px; margin-right: 12px; justify-content: center; }
+.s2-rail { height: 6px; background-color: rgba(255, 243, 218, 0.16); }
+.s2-fill { position: absolute; left: 0; top: 0; bottom: 0; background-color: rgb(255, 201, 61); }
+.s2-knob { position: absolute; top: -5px; width: 16px; height: 16px; margin-left: -8px; border-radius: 8px;
+           background-color: rgb(255, 243, 218); border-bottom-width: 2px; border-color: rgb(110, 74, 38); }
+.s2-keys { flex-grow: 1; flex-direction: row; padding: 0 4px; }
+.s2-key { flex-grow: 1; flex-basis: 0; margin: 0 4px; padding: 4px 6px 7px 6px; font-size: 12px; }
+.s2-meter { flex-grow: 1; flex-direction: row; padding: 0 8px; }
+.s2-meter-cell { flex-grow: 1; height: 12px; margin-right: 3px; background-color: rgba(255, 243, 218, 0.12); }
+.s2-meter-on { background-color: rgb(255, 201, 61); }
+.s2-meter-hot { background-color: rgb(232, 56, 76); }
+.s2-test { width: auto; padding: 0 10px; font-size: 12px; }
+
+/* The voice chat page (R131): the threshold slider's rail fills with the live microphone level,
+   dim below the knob and gold once it passes; a microphone problem shows as a note. */
+.s2-level { background-color: rgba(255, 243, 218, 0.3); }
+.s2-level-go { background-color: rgb(255, 201, 61); }
+.s2-mic-note { flex-grow: 1; padding-left: 8px; -unity-text-align: middle-left; font-size: 12px; color: rgb(185, 165, 140); white-space: nowrap; }
+
+.s2-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 46px; padding: 0 28px; align-items: center;
+           background-color: rgba(20, 12, 7, 0.92); border-top-width: 1px; border-color: rgba(217, 174, 98, 0.25); }
+.s2-foot-btn { margin: 0 26px 0 0; padding: 0; border-width: 0; background-color: rgba(0, 0, 0, 0); align-items: center; }
+.s2-foot-btn:hover { background-color: rgba(0, 0, 0, 0); }
+.s2-foot-btn > Label { color: rgb(232, 216, 190); font-size: 13px; -unity-font-style: bold; }
+.s2-foot-btn:hover > Label { color: rgb(255, 243, 218); }
+.s2-foot-btn > .s2-cap { color: rgb(44, 26, 14); font-size: 11px; }
+.s2-cap { min-width: 34px; height: 22px; margin-right: 8px; padding: 0 6px; -unity-text-align: middle-center;
+          -unity-font-style: bold; background-color: rgb(240, 214, 168); border-bottom-width: 2px; border-color: rgb(110, 74, 38); }
+.s2-saved { font-size: 12px; color: rgb(156, 135, 108); }
+
+.s2-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.s2-catch { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.s2-menu { position: absolute; padding: 4px; border-width: 1px; border-color: rgba(217, 174, 98, 0.45); background-color: rgb(30, 18, 10); }
+.s2-opt { margin: 0; padding: 8px 10px; border-width: 0; border-radius: 0; background-color: rgba(0, 0, 0, 0);
+          -unity-text-align: middle-left; font-size: 13px; -unity-font-style: bold; color: rgb(232, 216, 190); }
+.s2-opt:hover { background-color: rgba(255, 220, 170, 0.1); color: rgb(255, 243, 218); }
+.s2-opt-on { background-color: rgb(255, 201, 61); color: rgb(28, 18, 0); }
+.s2-opt-on:hover { background-color: rgb(255, 214, 100); color: rgb(28, 18, 0); }
+
+/* The frame counter (ScreenOverlay). */
+.overlay-fps { position: absolute; right: 14px; top: 10px; padding: 3px 8px; font-size: 12px; -unity-font-style: bold;
+               color: rgb(75, 224, 143); background-color: rgba(0, 0, 0, 0.5); }
 
 /* Chat text size (settings → 채팅). */
 .chat-size-0 .chat-name, .chat-size-0 .chat-text, .chat-size-0 .chat-notice { font-size: 12px; }
@@ -300,33 +451,39 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
                            border-color: rgba(217, 174, 98, 0.4); font-size: 17px;
                            background-color: rgba(12, 7, 4, 0.7); color: rgb(255, 255, 255); }
 
-/* ---------- title screen (over IntroStage's wooden chessboard) ----------
-   The R58 layout (title block left) with R63's wood and brass: a walnut shade,
-   a brass rule, walnut plates (texture from IntroController) and a walnut
-   slab key (ChunkyButtons). */
+/* ---------- title screen (over IntroStage's castle hall race) ----------
+   R150 (2026-10-16): the title block from the chosen mockup (BrawlShove): Exo 2
+   Black Italic, CHESS ivory over ebony with a gold edge, FIGHT in gold, a dashed
+   road line that runs (IntroController), the gold start plate (ChunkyButtons'
+   default look), an outlined "이름 바꾸기" and a bare Steam line. */
 .intro { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .intro-shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; -unity-background-scale-mode: stretch-to-fill; }
-.intro-block { position: absolute; left: 64px; top: 158px; }
-.intro-kicker { font-size: 13px; -unity-font-style: bold; letter-spacing: 2px; color: rgb(255, 201, 61);
-                text-shadow: 0 2px 6px rgba(30, 16, 6, 0.6); }
-.intro-title { font-size: 104px; -unity-font-style: bold-and-italic; color: rgb(255, 248, 236);
-               margin-top: -16px; margin-bottom: -20px; text-shadow: 0 7px 0 rgb(62, 34, 16); }
-.intro-title-b { color: rgb(255, 201, 61); }
-.intro-rule { margin-top: 26px; align-items: center; }
-.intro-rule-gold { width: 46px; height: 3px; background-color: rgb(255, 201, 61); }
-.intro-rule-brass { width: 300px; height: 1px; background-color: rgba(217, 174, 98, 0.75); }
-.intro-subs { margin-top: 14px; padding: 12px 18px 8px 16px; border-left-width: 3px; border-color: rgb(217, 174, 98);
-              background-color: rgba(52, 33, 19, 0.88); -unity-background-scale-mode: scale-and-crop; }
-.intro-sub { font-size: 16px; -unity-font-style: bold; color: rgb(246, 236, 223); margin-bottom: 6px; }
-.intro-press { position: absolute; left: 64px; top: 584px; padding: 9px 18px 13px 10px; }
-.intro-key { width: 30px; height: 30px; margin-right: 12px; border-radius: 6px; font-size: 12px; -unity-font-style: bold;
-             -unity-text-align: middle-center; color: rgb(52, 33, 19); background-color: rgb(255, 201, 61); }
-.intro-hint { font-size: 18px; -unity-font-style: bold; color: rgb(255, 248, 236); }
-.intro-chip { position: absolute; left: 64px; top: 648px; height: 34px; padding: 0 14px 0 13px;
-              border-width: 1px; border-color: rgba(217, 174, 98, 0.45); background-color: rgba(52, 33, 19, 0.95);
-              -unity-background-scale-mode: scale-and-crop; }
-.intro-dot { width: 8px; height: 8px; margin-right: 8px; border-radius: 4px; background-color: rgb(255, 200, 80); }
-.intro-status { font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
+.intro-block { position: absolute; left: 112px; top: 79px; }
+.intro-title { font-size: 112px; color: rgb(243, 233, 210); margin: 0 0 -26px 0; padding: 0;
+               -unity-text-outline-width: 2px; -unity-text-outline-color: rgb(201, 160, 79);
+               text-shadow: 0 8px 12px rgba(0, 0, 0, 0.7); white-space: nowrap; }
+.intro-two { position: relative; }
+.intro-two-low { position: absolute; left: 0; right: -40px; overflow: hidden; }
+.intro-title-dark { position: absolute; left: 0; top: 0; color: rgb(42, 36, 32); text-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+.intro-title-b { color: rgb(242, 193, 78); -unity-text-outline-width: 1px; -unity-text-outline-color: rgb(122, 78, 20);
+                 text-shadow: 0 4px 0 rgb(90, 58, 18); }
+.intro-road { margin-top: 30px; width: 330px; height: 9px; overflow: hidden; }
+.intro-road-run { position: absolute; left: 0; top: 0; height: 9px; }
+.intro-road-dash { width: 34px; height: 8px; margin-right: 6px; rotate: 0; }
+.intro-actions { position: absolute; left: 112px; top: 352px; align-items: center; }
+.intro-press { padding: 9px 26px 13px 26px; }
+.intro-hint { font-size: 18px; -unity-font-style: bold; color: rgb(43, 26, 13); }
+/* "이름 바꾸기" beside the start plate (R85): a dark plate with a gold edge. */
+.intro-rename { height: 46px; margin: 0 0 4px 12px; padding: 0 20px; align-items: center;
+                border-width: 2px; border-radius: 4px; border-color: rgb(201, 160, 79); background-color: rgba(20, 12, 6, 0.75);
+                transition-property: scale, border-color; transition-duration: 0.12s; }
+.intro-rename:hover { border-color: rgb(233, 196, 106); }
+.intro-rename:active { scale: 0.96 0.96; }
+.intro-rename-text { font-size: 15px; -unity-font-style: bold; color: rgb(246, 236, 223); white-space: nowrap; }
+.intro-chip { position: absolute; left: 112px; top: 424px; height: 24px; padding: 0; }
+.intro-dot { width: 9px; height: 9px; margin-right: 8px; border-radius: 5px; background-color: rgb(255, 200, 80); }
+.intro-status { font-size: 13px; -unity-font-style: bold; color: rgb(226, 207, 175); white-space: nowrap;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
 
 /* ---------- match HUD (MatchHud.uxml) ---------- */
 .screen { flex-grow: 1; flex-direction: row; padding: 20px; }
@@ -420,6 +577,8 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .load-ticks { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .load-cancel-row { position: absolute; left: 0; right: 0; bottom: 112px; align-items: center; justify-content: center; }
 .load-add-bot { margin-right: 12px; }
+.load-start { margin-right: 12px; }
+.load-start-note { position: absolute; left: 0; right: 0; bottom: 84px; -unity-text-align: middle-center; font-size: 14px; color: rgb(242, 226, 190); }
 .load-cancel { padding: 10px 20px 14px 20px; font-size: 18px; }
 .load-tick { position: absolute; top: -5px; width: 1px; height: 16px; background-color: rgba(255, 226, 180, 0.35); }
 .load-tick-label { position: absolute; top: 18px; left: -4px; font-size: 10px; -unity-font-style: bold; color: rgb(156, 138, 115); }
@@ -437,7 +596,8 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
    everyone gold; my own name gold. */
 .chat-screen { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .chat { position: absolute; justify-content: flex-end; }
-.chat-lobby { left: 24px; bottom: 192px; width: 430px; }
+/* 10-17: no chat in the lobby (승규). */
+.chat-lobby { display: none; left: 24px; bottom: 24px; width: 430px; }
 .chat-match { right: 24px; bottom: 28px; width: 440px; }
 
 /* closed */
@@ -454,6 +614,11 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .chat-key { padding: 2px 6px; border-width: 1.5px; border-radius: 4px; border-color: rgba(246, 236, 223, 0.85);
             font-size: 10px; -unity-font-style: bold; color: rgb(246, 236, 223); }
 .chat-closed-text { margin-left: 8px; font-size: 13px; -unity-font-style: bold; color: rgb(246, 236, 223); }
+/* The lobby's closed chat line in design A (R83): a thin gold frame on dark glass. */
+.chat-lobby .chat-closed { padding: 4px 11px 4px 7px; border-color: rgba(201, 154, 69, 0.55); border-top-color: rgba(201, 154, 69, 0.55);
+                           background-color: rgba(21, 17, 14, 0.85); }
+.chat-lobby .chat-closed .chat-key { border-width: 1px; border-radius: 0; border-color: rgba(201, 154, 69, 0.6); color: rgb(243, 235, 221); }
+.chat-lobby .chat-closed-text { font-size: 12px; color: rgb(243, 235, 221); }
 
 /* open */
 .chat-panel { height: 270px; border-width: 1px; border-color: rgba(217, 174, 98, 0.26); border-top-color: rgba(255, 220, 170, 0.34);
@@ -489,7 +654,7 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
 .chat-name { flex-shrink: 0; margin-right: 8px; font-size: 14px; -unity-font-style: bold; }
 .chat-name-party { color: rgb(75, 224, 143); }
 .chat-name-team { color: rgb(60, 208, 255); }
-.chat-name-all { color: rgb(255, 214, 120); }
+.chat-name-all { color: rgb(233, 196, 106); }
 .chat-name-me { color: rgb(255, 201, 61); }
 .chat-text { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; font-size: 14px; color: rgb(241, 228, 210); white-space: normal; }
 .chat-notice { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; font-size: 12px; -unity-font-style: italic;
@@ -526,3 +691,186 @@ TextField { margin: 12px 3px 10px 3px; height: 40px; }
              -unity-font-style: bold; color: rgb(255, 179, 188); background-color: rgba(255, 77, 98, 0.16);
              border-left-width: 3px; border-color: rgb(255, 77, 98); }
 .chat-note-error { color: rgb(255, 179, 188); }
+
+/* ---------- 10-31 chat design B1 (사용자: "채팅은 왼쪽에서", "B1 띠 그대로 위로 펼침 좋다",
+   https://claude.ai/artifact/GA6MaACNmS8iCFmLj5StYu) ----------
+   Every line is a strip: the channel's colour down its left edge (party mint, team blue, everyone white,
+   my own gold) over dark glass, as wide as its words. Closed, the newest strips float and fade with
+   "Tab 채팅" under them; open, there is no panel: more strips grow upward, the input line is a strip of
+   its channel, and the channels sit under it as a legend with the keys. Bottom left in a match too. */
+.chat-match { left: 24px; right: auto; bottom: 28px; width: 470px; }
+.chat-match .chat-recent { align-items: flex-start; }
+.chat-match .chat-line, .chat-match .chat-recent-line {
+    align-self: flex-start; max-width: 100%; margin-top: 4px; padding: 6px 12px 6px 10px; border-width: 0;
+    border-left-width: 3px; border-color: rgb(239, 228, 210); background-color: rgba(20, 13, 8, 0.82); }
+.chat-match .chat-line-party { border-color: rgb(95, 211, 163); }
+.chat-match .chat-line-team { border-color: rgb(106, 168, 240); }
+.chat-match .chat-line-all { border-color: rgb(239, 228, 210); }
+.chat-match .chat-line-me { border-color: rgb(242, 182, 50); background-color: rgba(72, 52, 22, 0.86); }
+.chat-match .chat-line-notice { border-color: rgb(242, 182, 50); background-color: rgba(20, 13, 8, 0.5); }
+.chat-match .chat-line .chat-text, .chat-match .chat-line .chat-notice { flex-grow: 0; flex-basis: auto; }
+.chat-match .chat-name { margin-right: 10px; font-size: 15px; }
+.chat-match .chat-text { font-size: 15px; color: rgb(239, 228, 210); }
+.chat-match .chat-notice { font-size: 13px; color: rgb(242, 182, 50); }
+.chat-match .chat-name-party { color: rgb(143, 240, 200); }
+.chat-match .chat-name-team { color: rgb(142, 197, 255); }
+.chat-match .chat-name-all { color: rgb(239, 228, 210); }
+.chat-match .chat-name-me { color: rgb(242, 182, 50); }
+.chat-match .chat-text, .chat-match .chat-name, .chat-match .chat-notice { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
+
+/* closed: "Tab 채팅" and the unread count, no box */
+.chat-match .chat-closed { align-self: flex-start; margin-top: 8px; padding: 0; border-width: 0; background-color: rgba(0, 0, 0, 0); }
+.chat-match .chat-key { border-width: 1px; border-color: rgb(90, 70, 48); background-color: rgba(20, 13, 8, 0.7); color: rgb(205, 189, 165); }
+.chat-match .chat-closed-text { font-size: 13px; -unity-font-style: normal; color: rgb(205, 189, 165); }
+.chat-match .chat-unread { margin-left: 6px; padding: 0 6px; border-radius: 8px; color: rgb(26, 17, 10); background-color: rgb(242, 182, 50); }
+
+/* open: no panel, the strips go on upward */
+.chat-match .chat-panel { height: 330px; border-width: 0; background-color: rgba(0, 0, 0, 0); }
+.chat-match .chat-lines { padding: 0; align-items: flex-start; }
+.chat-match .chat-entry { height: 46px; margin: 10px 0 0 0; padding: 0 10px 0 10px; border-width: 0; border-left-width: 3px;
+                          border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-color: rgb(106, 168, 240);
+                          background-color: rgba(20, 13, 8, 0.92); }
+.chat-match .chat-entry.chat-line-party { border-color: rgb(95, 211, 163); }
+.chat-match .chat-entry.chat-line-all { border-color: rgb(239, 228, 210); }
+.chat-match .chat-chip { padding: 3px 9px; margin-right: 10px; border-radius: 4px; font-size: 13px; letter-spacing: 0; text-shadow: none; }
+.chat-match .chat-chip-party { color: rgb(143, 240, 200); background-color: rgba(95, 211, 163, 0.2); }
+.chat-match .chat-chip-team { color: rgb(142, 197, 255); background-color: rgba(106, 168, 240, 0.2); }
+.chat-match .chat-chip-all { color: rgb(239, 228, 210); background-color: rgba(239, 228, 210, 0.14); }
+.chat-match .chat-hint { font-size: 12px; color: rgb(110, 93, 72); text-shadow: none; }
+.chat-match .chat-hint.chat-note-error { color: rgb(255, 154, 138); }
+.chat-match .chat-tabs { height: 26px; margin-top: 6px; padding: 0 0 0 4px; border-width: 0; }
+.chat-match .chat-tab { min-height: 20px; margin: 0 14px 0 0; padding: 0; border-width: 0; }
+.chat-match .chat-tab-text { font-size: 12px; -unity-font-style: normal; color: rgb(141, 122, 98); }
+.chat-match .chat-tab-on .chat-tab-text { color: rgb(255, 244, 220); -unity-font-style: bold; }
+.chat-match .chat-dot { width: 7px; height: 7px; margin-right: 5px; }
+.chat-match .chat-dot-party { background-color: rgb(95, 211, 163); }
+.chat-match .chat-dot-team { background-color: rgb(106, 168, 240); }
+.chat-match .chat-dot-all { background-color: rgb(239, 228, 210); }
+.chat-match .chat-close { display: none; }
+.chat-keys { display: none; }
+.chat-match .chat-keys { display: flex; font-size: 12px; color: rgb(141, 122, 98); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
+.chat-match .chat-scrolled { margin: 0 10px 0 0; font-size: 11px; }
+.chat-match .chat-note { margin-top: 6px; }
+
+/* ---------- 10-27 design A (승규 님 chose "연기 유리 + 가는 금선"): smoked glass and gold hairlines ----------
+   The glass and its gold edge are drawn by GlassPlate (the vector painter) on the matching card, the banner, the
+   start buttons, the mode cards and the entrance screen's seats; these rules clear the old fills and borders under
+   it and set the text, the small buttons and the badges to match. Later rules here win over the ones above. */
+.glass { border-width: 0; background-color: rgba(0, 0, 0, 0); border-radius: 12px; }
+.a-btn { border-radius: 8px; border-color: rgba(233, 198, 122, 0.55); background-color: rgba(30, 22, 14, 0.62); color: rgb(243, 220, 164); }
+.a-btn:hover { background-color: rgba(52, 38, 24, 0.82); border-color: rgb(233, 198, 122); color: rgb(255, 236, 196); }
+.a-danger { border-color: rgba(239, 141, 141, 0.7); color: rgb(255, 179, 179); }
+.a-danger:hover { border-color: rgb(239, 141, 141); background-color: rgba(110, 30, 34, 0.8); color: rgb(255, 225, 222); }
+.a-cta { transition-property: translate, scale; transition-duration: 0.12s; }
+.a-cta:hover { translate: 0 -2px; }
+.a-cta:active { translate: 0 0; scale: 0.98 0.98; }
+.a-cta-text { -unity-font-style: bold; letter-spacing: 6px; color: rgb(255, 233, 184); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7); }
+.a-cta-sm .a-cta-text { letter-spacing: 3px; }
+.spinner { border-color: rgba(233, 198, 122, 0.16); border-top-color: rgb(255, 226, 160); }
+.a-kicker-wide { letter-spacing: 5px; }
+.rail-card { border-width: 0; border-radius: 12px; }
+.rail-card.rail-on { border-width: 0; }
+.rail-card:hover { translate: -4px -1px; }
+.rail-on .rail-bar { display: none; }
+.rail-name { -unity-font-style: bold; color: rgb(251, 239, 213); }
+.rail-tagline { color: rgb(217, 192, 138); }
+.rail-badge { border-radius: 9px; padding: 1px 8px 2px 8px; border-color: rgba(233, 198, 122, 0.5); color: rgb(255, 220, 149); }
+.rail-badge-on { color: rgb(42, 28, 12); border-color: rgb(233, 198, 122); background-color: rgb(233, 198, 122); }
+.rail-badge-ok { color: rgb(255, 220, 149); border-color: rgba(233, 198, 122, 0.5); }
+
+/* the entrance screen: glass seats with a team line, a dashed edge for an empty one, a gold VS between hairlines */
+.load-card { border-radius: 10px; opacity: 1; background-color: rgba(0, 0, 0, 0); }
+.load-card-bar { left: 0; top: 13px; bottom: 13px; width: 3px; border-radius: 2px; }
+.load-roster-black .load-card-bar { left: auto; right: 0; }
+.load-roster-white .load-card-on .load-card-bar { background-color: rgb(142, 197, 240); }
+.load-roster-black .load-card-on .load-card-bar { background-color: rgb(239, 141, 141); }
+.load-avatar { border-radius: 19px; border-width: 2px; border-color: rgba(233, 198, 122, 0.6); opacity: 0; }
+.load-card-on .load-avatar { opacity: 1; }
+.load-card .load-name { color: rgba(255, 255, 255, 0.3); }   /* an empty seat: no gold (10-27) */
+.load-card-on .load-name { color: rgb(251, 239, 213); }
+.load-card-on.load-me .load-name { color: rgb(255, 217, 143); }
+.load-state { color: rgba(255, 255, 255, 0.3); }
+.load-roster-white .load-card-on .load-state { color: rgb(233, 198, 122); }
+.load-roster-black .load-card-on .load-state { color: rgb(233, 198, 122); }
+.load-vs-row { position: absolute; left: 0; right: 0; top: 156px; justify-content: center; align-items: center; }
+.load-vs { position: relative; left: auto; right: auto; top: auto; margin: 0 20px; font-size: 64px; color: rgb(233, 198, 122);
+           text-shadow: 0 3px 10px rgba(0, 0, 0, 0.7); }
+.load-vs-line { width: 110px; height: 1px; background-color: rgba(233, 198, 122, 0.55); }
+.load-btn { height: 40px; padding: 0 22px; font-size: 15px; }
+.load-btn-gold { border-color: rgb(233, 198, 122); color: rgb(255, 233, 184); }
+.load-line { border-radius: 3px; }
+.load-allin { border-radius: 10px; }
+.load-tip-kicker { border-radius: 6px; border-width: 1px; border-color: rgba(233, 198, 122, 0.4); background-color: rgba(233, 198, 122, 0.18);
+                   color: rgb(255, 217, 143); }
+/* the bar and the tip under the middle, between the rosters, as in the design A sample */
+.load-progress { left: 340px; right: 340px; }
+.load-step { font-size: 16px; }
+.load-percent { font-size: 24px; }
+.load-tip { left: 340px; right: 340px; justify-content: center; }
+.load-tip-text { font-size: 12px; }
+/* 10-27 (승규 님: "입체감 빼줘"): the settings window's top line, the title's start and the name screen's start as
+   flat smoked glass with a thin gold edge (GlassPlate), like the lobby; no gold slabs ("클릭해서 시작" keeps its slab). */
+.s2-top-line { height: 1px; background-color: rgb(233, 198, 122); }
+.s2-brand { color: rgb(233, 198, 122); }
+.s2-tab { border-radius: 8px; }
+.s2-tab-on .s2-tab-text { color: rgb(255, 233, 184); }
+.s2-tab-on:hover .s2-tab-text { color: rgb(255, 233, 184); }
+/* 10-30 design A (사용자 picked A of three samples, https://claude.ai/artifact/GA6MaACNmS8iCFmLj5StYu):
+   tabs underlined instead of a glass plate, narrower page list, the lines in one rounded box (name left,
+   value a fixed 300 px on the right, boxed drop-downs, on/off as a switch), the description on the right. */
+.s2-tab { border-radius: 0; padding: 11px 18px 12px 18px; border-bottom-width: 3px; border-color: rgba(0, 0, 0, 0); }
+.s2-tab-on { border-color: rgb(242, 182, 50); }
+.s2-tab-text { color: rgb(168, 149, 124); }
+.s2-tab-on .s2-tab-text { color: rgb(255, 244, 220); }
+.s2-tab-on:hover .s2-tab-text { color: rgb(255, 244, 220); }
+.s2-side { width: 176px; }
+.s2-sub { border-width: 1px; border-radius: 8px; border-color: rgba(0, 0, 0, 0); background-color: rgba(0, 0, 0, 0);
+          color: rgb(185, 166, 139); -unity-font-style: normal; }
+.s2-sub:hover { background-color: rgba(242, 182, 50, 0.07); }
+.s2-sub-on { border-color: rgb(242, 182, 50); background-color: rgba(242, 182, 50, 0.14); color: rgb(255, 244, 220); -unity-font-style: bold; }
+.s2-sub-on:hover { background-color: rgba(242, 182, 50, 0.18); }
+.s2-view { left: 228px; width: 752px; }
+.s2-desc { position: absolute; right: 28px; top: 134px; width: 252px; margin-top: 0; padding: 16px 18px; border-radius: 10px;
+           border-color: rgba(242, 182, 50, 0.18); background-color: rgba(20, 13, 8, 0.78); }
+.s2-kicker { color: rgb(242, 182, 50); }
+.s2-desc-title { margin-top: 8px; font-size: 17px; }
+.s2-desc-text { margin-top: 6px; font-size: 13px; color: rgb(205, 189, 165); }
+.s2-desc-note { margin-top: 10px; padding-top: 8px; border-top-width: 1px; border-color: rgba(255, 255, 255, 0.08);
+                font-size: 11px; color: rgb(168, 149, 124); white-space: normal; }
+.s2-section-title { color: rgb(242, 182, 50); }
+.s2-group { border-width: 1px; border-radius: 10px; border-color: rgba(242, 182, 50, 0.18); background-color: rgba(20, 13, 8, 0.72);
+            overflow: hidden; }
+.s2-row { height: 44px; margin-bottom: 0; padding: 0 16px 0 18px; align-items: center;
+          border-bottom-width: 1px; border-color: rgba(255, 255, 255, 0.06); }
+.s2-row:hover { background-color: rgba(242, 182, 50, 0.08); }
+.s2-lab { width: auto; flex-grow: 1; height: 100%; padding: 0; border-left-width: 0; background-color: rgba(0, 0, 0, 0); }
+.s2-lab-text { font-size: 15px; }
+.s2-row:hover > .s2-lab { background-color: rgba(0, 0, 0, 0); }
+.s2-row:hover .s2-lab-text { color: rgb(255, 244, 220); -unity-font-style: bold; }
+.s2-val { flex-grow: 0; flex-shrink: 0; width: 300px; height: 32px; margin-left: 12px; padding: 0; background-color: rgba(0, 0, 0, 0); }
+.s2-row:hover > .s2-val { background-color: rgba(0, 0, 0, 0); }
+.s2-dd { height: 32px; padding: 0 12px; border-width: 1px; border-radius: 6px; border-color: rgb(74, 56, 38); background-color: rgb(43, 32, 23); }
+.s2-dd:hover { border-color: rgba(242, 182, 50, 0.6); background-color: rgb(52, 39, 28); }
+.s2-dd-text { font-size: 14px; }
+.s2-dd-mark { font-size: 11px; color: rgb(242, 182, 50); }
+.s2-num { width: 48px; padding-left: 0; padding-right: 0; margin-left: 14px; -unity-text-align: middle-right; font-size: 14px; }
+.s2-slide { flex-direction: row-reverse; }
+.s2-track { margin-right: 0; }
+.s2-fill { background-color: rgb(242, 182, 50); }
+.s2-knob { top: -6px; width: 18px; height: 18px; margin-left: -9px; border-radius: 9px; border-width: 3px;
+           border-color: rgba(242, 182, 50, 0.45); background-color: rgb(255, 244, 220); }
+.s2-vt { font-size: 14px; }
+.s2-val-toggle { justify-content: flex-end; }
+.s2-toggle-text { margin-right: 12px; font-size: 13px; color: rgb(168, 149, 124); }
+.s2-switch { width: 50px; height: 26px; margin: 0; padding: 3px; border-width: 1px; border-radius: 13px;
+             border-color: rgb(90, 70, 48); background-color: rgb(43, 32, 23); flex-direction: row; }
+.s2-switch:hover { border-color: rgba(242, 182, 50, 0.6); background-color: rgb(52, 39, 28); }
+.s2-switch-knob { width: 18px; height: 18px; border-radius: 9px; background-color: rgb(141, 122, 98); }
+.s2-switch-on { justify-content: flex-end; border-color: rgb(242, 182, 50); background-color: rgb(242, 182, 50); }
+.s2-switch-on:hover { border-color: rgb(255, 211, 107); background-color: rgb(255, 211, 107); }
+.s2-switch-on > .s2-switch-knob { background-color: rgb(28, 18, 0); }
+.s2-on .s2-toggle-text { color: rgb(255, 244, 220); }
+.s2-foot { height: 56px; }
+.s2-reset { height: 36px; padding: 0 14px 0 6px; margin-right: 0; border-width: 1px; border-radius: 8px; border-color: rgb(90, 70, 48); }
+.s2-reset:hover { border-color: rgba(242, 182, 50, 0.6); }
+.intro-rename { border-width: 0; border-radius: 10px; background-color: rgba(0, 0, 0, 0); }

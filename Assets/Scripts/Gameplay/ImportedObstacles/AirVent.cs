@@ -14,6 +14,7 @@ namespace ChessFight.ProtectKing
         public BoxCollider WindTrigger;
         public GameObject WarningVisual, WindVisual;
         public Transform VFXPoint;
+<<<<<<< HEAD
         [Min(0)] [SerializeField] public float IdleDuration = 3;
         [Min(0)] [SerializeField] public float WarningDuration = .8f;
         [Min(.1f)] [SerializeField] public float BlowDuration = 3;
@@ -25,6 +26,24 @@ namespace ChessFight.ProtectKing
         [Range(0, 22)] [SerializeField] public float MaxPushSpeed = 10;
         [Min(0)] [SerializeField] public float StartDelay = .5f;
         [SerializeField] public bool Repeat = true;
+=======
+        [Min(0)] public float IdleDuration = 3;
+        [Min(0)] public float WarningDuration = .8f;
+        [Min(.1f)] public float BlowDuration = 3;
+        [Min(0)] public float WindStrength = 20;
+        public Vector3 WindDirection = Vector3.forward;
+        [Min(0)] public float VerticalForce;
+        [Min(0)] public float AirborneMultiplier = 1.3f;
+        [Min(0)] public float GroundedMultiplier = 1;
+        [Range(0, 22)] public float MaxPushSpeed = 10;
+        [Min(0), Tooltip("0: push the bodies (WindStrength). Above 0: carry a character that can be carried (IWindReceiver) " +
+                         "over the ground at this speed, times the grounded/airborne multiplier - its own footing cannot cancel it.")]
+        public float DriftSpeed;
+        [Min(0)] public float StartDelay = .5f;
+        public bool Repeat = true;
+        [Tooltip("Seconds added to the shared obstacle clock: the same cycle, earlier or later.")]
+        public float phaseOffset;
+>>>>>>> upstream/main
         public UnityEvent OnWarning = new UnityEvent();
         public UnityEvent OnBlowing = new UnityEvent();
         public UnityEvent OnStopped = new UnityEvent();
@@ -55,7 +74,11 @@ namespace ChessFight.ProtectKing
             if (clock < previousClock || (context != null && !context.Running)) visited.Clear();
             previousClock = clock;
             if (context != null && !context.Running) { State = AirVentState.Idle; Visuals(false, false); return; }
+<<<<<<< HEAD
             var next = Evaluate(ObstacleContext.PeriodicTime(SharedTime,StartDelay,CycleDuration,Repeat));
+=======
+            var next = Evaluate(ObstacleContext.PeriodicTime(ObstacleClock.Now+phaseOffset,StartDelay,CycleDuration,Repeat));
+>>>>>>> upstream/main
             if (next != State)
             {
                 if (State == AirVentState.Blowing) OnStopped.Invoke();
@@ -76,6 +99,7 @@ namespace ChessFight.ProtectKing
                 var motor = ImportedObstacleActor.Find(buffer[i]);
                 if (motor == null || !motor.CanReceiveObstacle || !visited.Add(motor)) continue;
                 float multiplier = motor.Grounded ? Mathf.Max(0,GroundedMultiplier) : Mathf.Max(0,AirborneMultiplier);
+                if (DriftSpeed > 0 && motor.Blow(transform.TransformDirection(WindDirection.normalized)*DriftSpeed*multiplier)) continue;
                 Vector3 acceleration = (transform.TransformDirection(WindDirection.normalized)*Mathf.Max(0,WindStrength)
                     + Vector3.up*Mathf.Max(0,VerticalForce))*multiplier;
                 var change = motor.Accelerate(acceleration,Mathf.Max(0,MaxPushSpeed),Time.fixedDeltaTime);

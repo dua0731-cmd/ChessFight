@@ -36,5 +36,22 @@ namespace ChessFight.Network
             return respawning.Remove(id);
         }
         public void Remove(ulong id) => respawning.Remove(id);
+
+        /// <summary>A new host picks the round up where the old one left it (the score and the clock it last sent; R121,
+        /// the skill test online). Who is waiting to come back is told again with <see cref="Wait"/>.</summary>
+        public void Restore(int white, int black, double elapsed)
+        {
+            White = Math.Max(0, white);
+            Black = Math.Max(0, black);
+            Elapsed = Math.Max(0, Math.Min(Duration, double.IsNaN(elapsed) ? 0 : elapsed));
+            respawning.Clear();
+        }
+
+        /// <summary>This one is out and comes back in <paramref name="seconds"/>, with no point for anyone.</summary>
+        public void Wait(ulong id, double seconds)
+        {
+            if (id == 0 || double.IsNaN(seconds)) return;
+            respawning[id] = Elapsed + Math.Max(0, seconds);
+        }
     }
 }

@@ -1,0 +1,29 @@
+{
+  "meshes": 483,
+  "tracks": 13,
+  "frames": 721,
+  "max_roundtrip_bounds_error_m": 0.07997918128967285,
+  "worst": [
+    [
+      0.07997918128967285,
+      "V07 Water | upper reservoir | gentle wave"
+    ],
+    [
+      0.0799250602722168,
+      "V07 Water | lower moat | gentle wave"
+    ],
+    [
+      5.7220458984375e-06,
+      "V22 | robot 2 elbow knuckle"
+    ],
+    [
+      5.7220458984375e-06,
+      "V20 | robot 2 forearm and weight"
+    ],
+    [
+      3.814697265625e-06,
+      "\ucd08\ubc18_\uac08\ub9bc\uae38\ud3d0\uc1c4_\uc67c\ucabd"
+    ]
+  ],
+  "unity_runtime_tested": false
+}

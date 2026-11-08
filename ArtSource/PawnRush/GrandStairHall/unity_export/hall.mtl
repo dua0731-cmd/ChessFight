@@ -1,0 +1,39 @@
+newmtl Section_Floor
+Kd 0.4 0.6 0.88
+
+newmtl Section_NoClimb
+Kd 0.68 0.69 0.72
+
+newmtl Trim_Black
+Kd 0.93 0.88 0.76
+
+newmtl Section_Hazard
+Kd 0.97 0.55 0.16
+
+newmtl Stone
+Kd 0.38 0.43 0.48
+
+newmtl BoardDark
+Kd 0.19 0.235 0.28
+
+newmtl Hazard
+Kd 0.91 0.37 0.1
+
+newmtl CheckpointGold
+Kd 0.96 0.64 0.16
+
+newmtl BoardLight
+Kd 0.7 0.74 0.76
+
+newmtl Glass_TeamDivider
+Kd 0.6 0.82 0.95
+
+newmtl Section_Marker
+Kd 0.5 0.84 0.97
+
+newmtl Section_Respawn
+Kd 0.4 0.13 0.15
+
+newmtl Rank_Gold
+Kd 0.93 0.88 0.76
+

@@ -22,6 +22,10 @@ namespace ChessFight.Gameplay
         [SerializeField] float respawnDelay = 5f;
         public float RespawnDelay => respawnDelay;
 
+        [Tooltip("Off: characters float in it but nobody is told (J's pads put them back themselves, not the course).")]
+        [SerializeField] bool report = true;
+        public bool Report { get => report; set => report = value; }
+
         // The top of the box: where the water ends and the air begins.
         public float SurfaceHeight => Box.bounds.max.y;
 
@@ -30,7 +34,16 @@ namespace ChessFight.Gameplay
         BoxCollider Box => box != null ? box : (box = GetComponent<BoxCollider>());
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => active.Clear();
+        static void ResetStatics()
+        {
+            active.Clear();
+            ChessFight.Game.OrbitCamera.FloorAt = CameraFloor;
+        }
+
+        // R442: the following camera stays a little over any water it would go under (OrbitCamera.FloorAt): from
+        // under the surface the water is not drawn and the sky showed through.
+        const float CameraClearance = .3f;
+        static float CameraFloor(Vector3 point) => SurfaceAt(point, out float surface) ? surface + CameraClearance : float.NegativeInfinity;
 
         void OnEnable() => active.Add(this);
         void OnDisable() => active.Remove(this);
@@ -56,6 +69,9 @@ namespace ChessFight.Gameplay
         public static event Action<ICharacterDriver, WaterZone> Entered;
 
         readonly Dictionary<ICharacterDriver, int> inside = new Dictionary<ICharacterDriver, int>();
+
+        // Is any part of this character in the water now (R502: a new host looks for the dips it never heard of).
+        public bool Holds(ICharacterDriver driver) => driver != null && inside.ContainsKey(driver);
         readonly List<ICharacterDriver> gone = new List<ICharacterDriver>();
 
         void Awake() => Box.isTrigger = true;
@@ -66,7 +82,7 @@ namespace ChessFight.Gameplay
             if (driver == null) return;
             inside.TryGetValue(driver, out int count);
             inside[driver] = count + 1;
-            if (count == 0) Entered?.Invoke(driver, this);
+            if (count == 0 && report) Entered?.Invoke(driver, this);
         }
 
         void OnTriggerExit(Collider other)

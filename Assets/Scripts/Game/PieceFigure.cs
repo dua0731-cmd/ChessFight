@@ -220,17 +220,13 @@ namespace ChessFight.Game
             renderer.shadowCastingMode = ShadowCastingMode.Off;
         }
 
-        // Standard is what this project's Built-in path lights with (see
-        // QueenHillLevel); a build that stripped it falls back to Diffuse.
+        // URP's Lit (LitMaterials), with Standard's glossiness as its smoothness.
         public static Material Lit(Color color, float gloss, float metal = 0f)
         {
             string key = "L" + ColorUtility.ToHtmlStringRGB(color) + "_" + gloss + "_" + metal;
             if (materials.TryGetValue(key, out var cached) && cached != null) return cached;
-            var shader = Shader.Find("Standard");
-            if (shader == null) shader = Shader.Find("Legacy Shaders/Diffuse");
-            var material = new Material(shader) { color = color, name = "Figure " + key };
-            if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", gloss);
-            if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", metal);
+            var material = LitMaterials.NewLit(color, gloss, metal);
+            material.name = "Figure " + key;
             materials[key] = material;
             return material;
         }
@@ -239,7 +235,7 @@ namespace ChessFight.Game
         {
             string key = "U" + ColorUtility.ToHtmlStringRGB(color);
             if (materials.TryGetValue(key, out var cached) && cached != null) return cached;
-            var shader = Shader.Find("Unlit/Color");
+            var shader = LitMaterials.Unlit;
             if (shader == null) return Lit(color, 0f);
             var material = new Material(shader) { color = color, name = "Figure " + key };
             materials[key] = material;

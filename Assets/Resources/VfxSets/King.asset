@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cdc53bce073d78ca1b4a3fa0ac4c736, type: 3}
+  m_Name: King
+  m_EditorClassIdentifier: 
+  entries:
+  - key: F_Guard
+    prefab: {fileID: 6472073344000900146, guid: c59de105a4d235743a9eb7da67cd0963, type: 3}
+  - key: F_Block
+    prefab: {fileID: 3098044458694650886, guid: 12ad2c9eb280ac34b9326488f88b3036, type: 3}
+  - key: F_Counter
+    prefab: {fileID: 1690309238414435383, guid: 0eab3e790cc3b97489cf53cb73cf1b05, type: 3}
+  - key: E_Stab
+    prefab: {fileID: 2420582488781491399, guid: 5b9b44493e1341b4c94b0f5c07b1ea46, type: 3}
+  - key: E_Vault
+    prefab: {fileID: 6698017756789097042, guid: 266af483cdcb3534faefca9d87bf522d, type: 3}
+  - key: E_Land
+    prefab: {fileID: 7292298526473932740, guid: e3a8714584d5340458f2edf04224af60, type: 3}
+  - key: E_Gather
+    prefab: {fileID: 4166892061144238856, guid: 039b1340bbf27ca4ab4c4627983166ec, type: 3}
+  - key: E_Return
+    prefab: {fileID: 100, guid: dd6364a9225baf4bda1bcd703a07d044, type: 3}
+  - key: F_Hit
+    prefab: {fileID: 580762707016479213, guid: a1dc2c4ba30d89149afd7654c97bfe9c, type: 3}
+  - key: F_Whiff
+    prefab: {fileID: 2276085328707787826, guid: 0d58d46476760eb428a9b1bbd9991148, type: 3}
+  - key: E_Hit
+    prefab: {fileID: 5184392440472924378, guid: e062f4835f31a0e4680d7cb8b70db653, type: 3}
+  - key: E_Drop
+    prefab: {fileID: 6559156959729112819, guid: bf3bd9acd4af70c4fa049a15f7b63cf2, type: 3}

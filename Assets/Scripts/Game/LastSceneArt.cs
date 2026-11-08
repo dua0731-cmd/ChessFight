@@ -29,24 +29,12 @@ namespace ChessFight.Game
             return materials["T" + key] = material;
         }
 
-        // Standard in cutout mode, for banners with a swallowtail.
+        // Lit in cutout mode, for banners with a swallowtail.
         public static Material Cutout(string key, Texture texture, float gloss)
         {
             if (materials.TryGetValue("C" + key, out var cached) && cached != null) return cached;
             var material = new Material(PieceFigure.Lit(Color.white, gloss)) { name = "Last " + key, mainTexture = texture };
-            if (material.HasProperty("_Mode"))
-            {
-                material.SetFloat("_Mode", 1f);
-                material.SetOverrideTag("RenderType", "TransparentCutout");
-                material.SetInt("_SrcBlend", (int)BlendMode.One);
-                material.SetInt("_DstBlend", (int)BlendMode.Zero);
-                material.SetInt("_ZWrite", 1);
-                material.EnableKeyword("_ALPHATEST_ON");
-                material.DisableKeyword("_ALPHABLEND_ON");
-                material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                material.SetFloat("_Cutoff", .5f);
-                material.renderQueue = (int)RenderQueue.AlphaTest;
-            }
+            LitMaterials.MakeCutout(material, .5f);
             return materials["C" + key] = material;
         }
 

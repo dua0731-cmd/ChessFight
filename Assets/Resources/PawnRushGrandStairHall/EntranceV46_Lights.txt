@@ -1,0 +1,15 @@
+# kind x y z in Blender's frame (Unity hall: x, z, y)
+sconce -8.120 -12.930 4.300
+sconce -8.120 -9.670 4.300
+sconce 8.120 -12.930 4.300
+sconce 8.120 -9.670 4.300
+lantern -9.300 -11.300 12.320
+lantern 9.300 -11.300 12.320
+sconce -7.600 -8.075 3.300
+sconce -7.300 -1.700 3.950
+lantern -8.300 -1.350 10.020
+lantern -19.550 -1.350 10.020
+sconce 7.600 -8.075 3.300
+sconce 7.300 -1.700 3.950
+lantern 8.300 -1.350 10.020
+lantern 19.550 -1.350 10.020

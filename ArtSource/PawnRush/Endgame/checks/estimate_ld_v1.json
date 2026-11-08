@@ -1,0 +1,154 @@
+{
+ "rows": [
+  {
+   "beat": "S1",
+   "metres": 14,
+   "ideal": 5.6,
+   "wait": 0.0,
+   "clean": 5.6,
+   "first_try": 1.0,
+   "penalty": 0.0,
+   "lethal": false,
+   "average": 5.6,
+   "failure": "없음"
+  },
+  {
+   "beat": "R1",
+   "metres": 26,
+   "ideal": 10.4,
+   "wait": 0.0,
+   "clean": 10.4,
+   "first_try": 0.65,
+   "penalty": 10.4,
+   "lethal": true,
+   "average": 16.0,
+   "failure": "스윕 막대에 걸려 판 밖으로 쓸려 떨어짐"
+  },
+  {
+   "beat": "S2",
+   "metres": 20.4,
+   "ideal": 7.0,
+   "wait": 3.7,
+   "clean": 10.7,
+   "first_try": 0.65,
+   "penalty": 9.6,
+   "lethal": true,
+   "average": 17.9,
+   "failure": "탑승 · 하선 창을 놓쳐 떨어짐, 갑판 위 걸림 막대에 밀려 떨어짐"
+  },
+  {
+   "beat": "R2",
+   "metres": 37.6,
+   "ideal": 15.0,
+   "wait": 2.2,
+   "clean": 17.2,
+   "first_try": 0.65,
+   "penalty": 6.0,
+   "lethal": false,
+   "average": 21.7,
+   "failure": "책장 벽에 밀려 휘청(5 + 2), 시계 문에 막힘"
+  },
+  {
+   "beat": "S3",
+   "metres": 26.0,
+   "ideal": 10.4,
+   "wait": 1.2,
+   "clean": 11.6,
+   "first_try": 0.7,
+   "penalty": 2.5,
+   "lethal": false,
+   "average": 13.2,
+   "failure": "차폐판에 밀림(난간 안, 떨어지지 않음)"
+  },
+  {
+   "beat": "R3",
+   "metres": 20.0,
+   "ideal": 8.0,
+   "wait": 0.7,
+   "clean": 8.7,
+   "first_try": 0.55,
+   "penalty": 16.0,
+   "lethal": true,
+   "average": 22.4,
+   "failure": "진자(14 + 3 m/s)에 맞아 다리 밖으로 날아감"
+  },
+  {
+   "beat": "R4",
+   "metres": 12.0,
+   "ideal": 7.8,
+   "wait": 1.5,
+   "clean": 9.3,
+   "first_try": 0.65,
+   "penalty": 6.0,
+   "lethal": false,
+   "average": 13.3,
+   "failure": "옆바람에 타일에서 밀려 구덩이로 떨어짐(죽지 않음, 다시 탐)"
+  },
+  {
+   "beat": "R5",
+   "metres": 28.6,
+   "ideal": 9.9,
+   "wait": 1.0,
+   "clean": 11.0,
+   "first_try": 0.6,
+   "penalty": 16.1,
+   "lethal": true,
+   "average": 22.4,
+   "failure": "충격파(10 + 4)에 벨트 가장자리 밖으로 날아감, 늦게 타면 벨트가 다음 충격파로 실어 감"
+  },
+  {
+   "beat": "R5b",
+   "metres": 19.3,
+   "ideal": 9.7,
+   "wait": 0.3,
+   "clean": 10.0,
+   "first_try": 0.65,
+   "penalty": 9.0,
+   "lethal": true,
+   "average": 15.0,
+   "failure": "상자 사이로 떨어짐, 상자 위에서 밀려 떨어짐"
+  },
+  {
+   "beat": "R6",
+   "metres": 16.6,
+   "ideal": 7.6,
+   "wait": 0.0,
+   "clean": 7.6,
+   "first_try": 0.7,
+   "penalty": 13.7,
+   "lethal": true,
+   "average": 13.5,
+   "failure": "원판 바깥쪽 힘에 튕겨 떨어짐"
+  },
+  {
+   "beat": "S4",
+   "metres": 16.6,
+   "ideal": 6.6,
+   "wait": 1.3,
+   "clean": 8.0,
+   "first_try": 0.55,
+   "penalty": 7.2,
+   "lethal": true,
+   "average": 14.9,
+   "failure": "접히는 판에서 미끄러져 떨어짐, 착지대에서 차폐판 · 상대에게 밀려 떨어짐"
+  },
+  {
+   "beat": "EX",
+   "metres": 27.0,
+   "ideal": 10.8,
+   "wait": 0.0,
+   "clean": 10.8,
+   "first_try": 1.0,
+   "penalty": 0.0,
+   "lethal": false,
+   "average": 10.8,
+   "failure": "없음"
+  }
+ ],
+ "total": {
+  "metres": 264.1,
+  "ideal": 108.8,
+  "clean": 120.9,
+  "average": 186.7
+ }
+}

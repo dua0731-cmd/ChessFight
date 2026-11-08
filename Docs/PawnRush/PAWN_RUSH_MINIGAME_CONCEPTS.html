@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>폰 러시 · 미니게임 공간 모델링 참고</title>
+  <style>
+    :root{color-scheme:light;--paper:#f0efe9;--card:#faf9f4;--ink:#242b32;--muted:#626a70;--line:#d4d5cb;--accent:#5b527b;--active:#293d4a;--on:#fff;--early:#76603e;--mid:#5f5949;--late:#69567e}
+    @media(prefers-color-scheme:dark){:root{color-scheme:dark;--paper:#141a21;--card:#1c252e;--ink:#eeeae0;--muted:#b4bebf;--line:#3a4650;--accent:#c6b6e8;--active:#c7d2d8;--on:#1c252e;--early:#d0b17d;--mid:#d6bd94;--late:#ccb5e7}}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.7 'Malgun Gothic','Apple SD Gothic Neo',sans-serif}a{color:var(--accent);text-underline-offset:3px}button{font:inherit;cursor:pointer}a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:4px}[hidden]{display:none!important}.wrap{max-width:1280px;margin:auto;padding:32px 26px 56px}.eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--muted)}h1{font:700 clamp(29px,4vw,46px)/1.25 Georgia,'Batang',serif;margin:9px 0 14px}h2{font:700 28px/1.35 Georgia,'Batang',serif;margin:4px 0 9px}h3{font-size:18px;line-height:1.4;margin:0}.intro{max-width:850px;color:var(--muted);margin:0}.links{display:flex;flex-wrap:wrap;gap:9px 18px;margin:22px 0}.links a{font-size:13px}.notice{border-left:4px solid var(--accent);padding:14px 18px;background:var(--card);font-size:13px;margin:23px 0;color:var(--muted)}.notice strong{color:var(--ink)}.filterbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 0;margin:28px 0 24px}.filters{display:flex;flex-wrap:wrap;gap:6px}.filter{border:1px solid var(--line);border-radius:6px;padding:7px 13px;background:var(--card);color:var(--ink);font-size:13px}.filter[aria-pressed=true]{background:var(--active);color:var(--on);border-color:var(--active)}.count{font-size:12px;color:var(--muted)}.jump{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;margin-bottom:28px}.stage{scroll-margin-top:100px}.stage-heading{display:flex;gap:18px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:15px;margin:42px 0 20px}.stage-heading p{font-size:13px;color:var(--muted);margin:0}.stage:first-of-type .stage-heading{margin-top:0}.stage-code{font-size:11px;letter-spacing:.14em;font-weight:700;color:var(--muted)}.card{margin:0 0 30px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;scroll-margin-top:100px}.card-head{padding:19px 22px 16px;display:flex;justify-content:space-between;align-items:start;gap:14px}.card-head p{font-size:13px;color:var(--muted);margin:6px 0 0;max-width:85ch}.number{font:700 13px Georgia,serif;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:5px}.original{flex-shrink:0;font-size:12px;border:1px solid var(--line);padding:6px 11px;border-radius:5px;text-decoration:none}.art{display:block;background:#e5e1d7;text-decoration:none}.art img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain}.card-foot{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;padding:16px 22px 19px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.card-foot strong{display:block;color:var(--ink);font-size:11px;letter-spacing:.03em;margin-bottom:4px}.card-foot p{margin:0}.footer{margin-top:45px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.footer p{margin:0 0 8px}.files{margin-top:22px;padding:17px 20px;border:1px solid var(--line);border-radius:8px;background:var(--card)}.files summary{cursor:pointer;font-size:13px;font-weight:700}.file-list{display:grid;grid-template-columns:1fr 1fr;gap:7px 20px;padding:14px 0 0;list-style:none;margin:0;font-size:12px}.file-list a{overflow-wrap:anywhere}.back{font-size:12px}
+    @media(max-width:760px){.wrap{padding:22px 12px 36px}.filterbar{gap:8px;padding:10px 0}.filter{padding:6px 9px;font-size:12px}.stage-heading{display:block;margin-top:30px}.stage-heading p{margin-top:8px}.card{border-radius:8px;margin-bottom:22px}.card-head{padding:15px;display:block}.original{display:inline-block;margin-top:12px}.card-foot{grid-template-columns:1fr;gap:12px;padding:14px 15px}.file-list{grid-template-columns:1fr}h2{font-size:25px}h3{font-size:17px}.notice{padding:12px 14px}.jump{gap:7px 13px}.links{gap:8px 14px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <main class="wrap" id="top">
+    <header>
+      <div class="eyebrow">CHESSFIGHT / PAWN RUSH / ENVIRONMENT STUDIES</div>
+      <h1>왕궁으로 가는 열 가지 공간</h1>
+      <p class="intro">초반 바깥뜰에서 아랫궁을 지나 왕의 방까지. 게임의 할 일이 건축과 가구의 이유가 되도록, 주변 구조물·재료·장치의 연결을 함께 그린 모델링 참고 이미지입니다.</p>
+      <nav class="links" aria-label="관련 자료">
+        <a href="PAWN_RUSH_EARLY_PLAZA_3D.html">초반 3D 배치</a>
+        <a href="PAWN_RUSH_MID_MINIGAMES_3D.html">중반 3D 배치</a>
+        <a href="PAWN_RUSH_LATE_MINIGAMES_3D.html">후반 3D 배치</a>
+        <a href="PAWN_RUSH_MINIGAME_MODELING.md">상세 모델링 지침</a>
+        <a href="PAWN_RUSH_MINIGAME_ZONES_v0.1.md">기준 기획서</a>
+      </nav>
+      <div class="notice"><strong>외형은 이미지에서, 정확한 배치는 3D와 치수표에서 확인합니다.</strong><br>생성 이미지의 장치 개수·칸 배치·거리에는 차이가 있을 수 있습니다. 게임 규칙·수량·좌표는 상세 제작 지침을 우선해 주세요. 실제 Unity 화면이 아니며, 모델링·프리팹 적용 전의 제안입니다.</div>
+    </header>
+
+    <div class="filterbar">
+      <div class="filters" role="group" aria-label="구역 선택">
+        <button class="filter" data-filter="all" aria-pressed="true">전체 10종</button>
+        <button class="filter" data-filter="early" aria-pressed="false">초반 · 바깥뜰 3종</button>
+        <button class="filter" data-filter="mid" aria-pressed="false">중반 · 아랫궁 4종</button>
+        <button class="filter" data-filter="late" aria-pressed="false">후반 · 윗궁 3종</button>
+      </div>
+      <span class="count" id="count" role="status" aria-live="polite">10개의 공간 · 이미지를 누르면 원본 확대</span>
+    </div>
+    <nav class="jump" aria-label="공간 바로 가기">
+      <a href="#early-c" data-jump="early">C 해자 도개교</a><a href="#early-d" data-jump="early">D 쇠살문 누각</a><a href="#early-a" data-jump="early">A 의장 광장</a>
+      <a href="#mid-b" data-jump="mid">B 보수 동관</a><a href="#mid-e" data-jump="mid">E 왕궁 서고</a><a href="#mid-f" data-jump="mid">F 무도회장</a><a href="#mid-j" data-jump="mid">J 세탁장</a>
+      <a href="#late-g" data-jump="late">G 행차 회랑</a><a href="#late-h" data-jump="late">H 체스 홀</a><a href="#late-i" data-jump="late">I 국왕 침실</a>
+    </nav>
+
+    <section class="stage" data-stage="early" aria-labelledby="early-title">
+      <div class="stage-heading"><div><div class="stage-code">01 / EARLY · OPENING</div><h2 id="early-title">왕궁 정문 앞 바깥뜰</h2></div><p>크림 석회암 · 참나무와 철물 · 회색 슬레이트 · 맑은 낮</p></div>
+      <article class="card" id="early-c">
+        <div class="card-head"><div><span class="number">01 / C</span><h3>해자 도개교</h3><p>밧줄을 당기는 손에서 권양기·사슬·다리까지. 청록 물을 건너기 위해 성문 장치를 움직이는 공간입니다.</p></div><a class="original" href="ConceptArt/R311/01_early_C_moat.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/01_early_C_moat.png" target="_blank" rel="noopener" aria-label="해자 도개교 원본 이미지 확대"><img src="ConceptArt/R311/01_early_C_moat.png" alt="크림 석재 왕궁 앞 청록 해자와 좌우 작동 도개교, 참나무 권양기·줄·힌지·문루의 모델링 참고 보드" width="1536" height="1024" fetchpriority="high"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>북쪽 힌지 · 드럼과 줄의 연결 · 룩 문루 · 강둑 단면 · 회색 지붕</p></div><div><strong>정확한 규칙</strong><p>해자는 광장 폭 전체. 좌우 팀 다리와 중앙 고정 장식 다리를 구분합니다.</p></div></div>
+      </article>
+      <article class="card" id="early-d">
+        <div class="card-head"><div><span class="number">02 / D</span><h3>정문 쇠살문 누각</h3><p>참나무 막대를 원으로 밀면 머리 위 사슬이 감기고 팀 쇠살문이 올라갑니다. 수평 회전과 수직 상승이 만납니다.</p></div><a class="original" href="ConceptArt/R311/02_early_D_capstan.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/02_early_D_capstan.png" target="_blank" rel="noopener" aria-label="쇠살문 누각 원본 이미지 확대"><img src="ConceptArt/R311/02_early_D_capstan.png" alt="왕궁 누각의 네 막대 캡스턴과 수직 쇠살문, 머리 위 사슬·도르래·돌 문틀을 보여 주는 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>쇠띠 드럼 · 막대 끝의 기능성 금 · 회전 원판 · 사슬 가이드 · 부분 처마</p></div><div><strong>정확한 규칙</strong><p>팀마다 캡스턴 1개·막대 4개. 사슬은 머리 위 약 2.5m의 시각 연결입니다.</p></div></div>
+      </article>
+      <article class="card" id="early-a">
+        <div class="card-head"><div><span class="number">03 / A</span><h3>정문 의장 광장</h3><p>바랜 의전용 체스 포장을 두 팀이 함께 다시 칠합니다. 넓은 판의 밝기와 돌 재질, 주변의 비워 둔 공간이 주인공입니다.</p></div><a class="original" href="ConceptArt/R311/03_early_A_parade.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/03_early_A_parade.png" target="_blank" rel="noopener" aria-label="의장 광장 원본 이미지 확대"><img src="ConceptArt/R311/03_early_A_parade.png" alt="왕궁 정문 앞 하나의 큰 체스 포장 광장, 칠 전 슬레이트와 흰 석회암·검은 현무암, 깃대와 낮은 관람석의 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>칠 전후 표면 · 얇은 금 줄눈 · 랭크·파일 글자 · 칠통·붓 걸이 · 관람석</p></div><div><strong>정확한 규칙</strong><p>공유판은 하나, 18×18m·8×8칸·한 칸 2.25m. 판 둘레 1m는 비웁니다.</p></div></div>
+      </article>
+    </section>
+
+    <section class="stage" data-stage="mid" aria-labelledby="mid-title">
+      <div class="stage-heading"><div><div class="stage-code">02 / MIDDLE · TACTICS</div><h2 id="mid-title">아랫궁의 작업과 생활</h2></div><p>호두나무 판벽 · 체크 대리석 · 높은 창 · 샹들리에와 따뜻한 등불</p></div>
+      <article class="card" id="mid-b">
+        <div class="card-head"><div><span class="number">04 / B</span><h3>보수 중인 동관</h3><p>뜯긴 마루 아래로 어두운 비계가 드러납니다. 마루 널을 나르고 놓는 행위가 다음 문으로 가는 길을 만듭니다.</p></div><a class="original" href="ConceptArt/R311/04_mid_B_repair.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/04_mid_B_repair.png" target="_blank" rel="noopener" aria-label="보수 동관 원본 이미지 확대"><img src="ConceptArt/R311/04_mid_B_repair.png" alt="호두나무 판벽의 왕궁 동관, 스테이션 마루의 틈과 아래층 비계, 판자 더미·장선·먼지막이 천을 보여 주는 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>마루 절단면 · 장선과 판자 · 아래층 깊이 · 천막 문 · 공구와 톱질 받침</p></div><div><strong>정확한 규칙</strong><p>팀마다 10m 틈, 판자 2열×5줄. 가운데 4m 통로는 끊지 않습니다.</p></div></div>
+      </article>
+      <article class="card" id="mid-e">
+        <div class="card-head"><div><span class="number">05 / E</span><h3>왕궁 서고</h3><p>높이가 다른 책장 탑을 오르며 열람등을 켭니다. 남쪽으로 물러난 선반 턱과 회전 책장 문이 공간의 규칙입니다.</p></div><a class="original" href="ConceptArt/R311/05_mid_E_library.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/05_mid_E_library.png" target="_blank" rel="noopener" aria-label="왕궁 서고 원본 이미지 확대"><img src="ConceptArt/R311/05_mid_E_library.png" alt="높은 창과 상부 발코니가 있는 왕궁 서고, 계단처럼 후퇴한 책장 탑과 꼭대기 열람등·회전 책장 문의 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>등반 책등과 장식 책등의 구별 · 쉬는 턱 · 등과 손종 · 책 수레·지구본</p></div><div><strong>정확한 규칙</strong><p>팀마다 6개 탑, 높이 6·6·7.5·7.5·9·9m. 쉬는 턱은 3m마다 남쪽으로 후퇴합니다.</p></div></div>
+      </article>
+      <article class="card" id="mid-f">
+        <div class="card-head"><div><span class="number">06 / F</span><h3>대무도회장</h3><p>드레스와 연미복을 입은 태엽 폰이 두 칸 스텝을 밟습니다. 막 나선 폰 아래 금 고리와 스포트라이트가 기회를 알립니다.</p></div><a class="original" href="ConceptArt/R311/06_mid_F_ballroom.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/06_mid_F_ballroom.png" target="_blank" rel="noopener" aria-label="대무도회장 원본 이미지 확대"><img src="ConceptArt/R311/06_mid_F_ballroom.png" alt="쪽마루 레인과 태엽 폰 무용수가 있는 왕궁 무도회장, 샹들리에·높은 거울·의상·등 태엽·금 고리의 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>폰의 의상과 태엽 · 세 칸 레인 · 스텝 자세 · 벨벳 벤치 · 판벽과 높은 거울</p></div><div><strong>정확한 규칙</strong><p>팀마다 폰 16개. 레인은 한 칸 1.1m씩 3칸이며 낮은 벽에는 거울을 두지 않습니다.</p></div></div>
+      </article>
+      <article class="card" id="mid-j">
+        <div class="card-head"><div><span class="number">07 / J</span><h3>왕궁 세탁장</h3><p>비눗물 위 빨래통을 나이트 행마로 건너며 기물 인형을 빠뜨립니다. 흰 타일·시트·거품이 주방과 다른 생활 공간을 만듭니다.</p></div><a class="original" href="ConceptArt/R311/07_mid_J_laundry.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/07_mid_J_laundry.png" target="_blank" rel="noopener" aria-label="왕궁 세탁장 원본 이미지 확대"><img src="ConceptArt/R311/07_mid_J_laundry.png" alt="흰 타일 왕궁 세탁장의 노출된 비눗물 수면과 여덟 빨래통, 기물 인형·거품 분출구·시트·빨래 소품의 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>통 가운데 분출구 · 통 숫자와 금 고리 · 천 인형 · 얇은 수면 · 흰 시트</p></div><div><strong>정확한 규칙</strong><p>통 8개·인형 6종. d1→b2→a4→c5→e4→g5→h7→f8 경로가 기준입니다.</p></div></div>
+      </article>
+    </section>
+
+    <section class="stage" data-stage="late" aria-labelledby="late-title">
+      <div class="stage-heading"><div><div class="stage-code">03 / LATE · ENDGAME</div><h2 id="late-title">왕을 모시고, 잡고, 지키는 방</h2></div><p>높은 대리석 홀 · 보라 벨벳 · 흰 기물 문장 · 천창 빛과 남색 그림자</p></div>
+      <article class="card" id="late-g">
+        <div class="card-head"><div><span class="number">08 / G</span><h3>왕의 행차 회랑</h3><p>킹 가마를 굽은 길로 모시고 막은 룩을 옆 차고로 치웁니다. 담비털 칸은 느림, 금 띠는 물체를 잡을 수 있음을 뜻합니다.</p></div><a class="original" href="ConceptArt/R311/08_late_G_procession.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/08_late_G_procession.png" target="_blank" rel="noopener" aria-label="행차 회랑 원본 이미지 확대"><img src="ConceptArt/R311/08_late_G_procession.png" alt="높은 왕실 회랑의 굽은 열다섯 칸 행차 길, 킹 가마·막은 룩·벽감 차고·담비털 칸·보라 테두리의 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>가마 받침과 금 띠 · 막은 룩 목띠 · 모퉁이 표시 · 차고 멈춤쇠 · 담비털</p></div><div><strong>정확한 규칙</strong><p>길 15칸·느린 칸 4개·막은 룩 2개. 작은 손잡이 블록이나 밧줄은 추가하지 않습니다.</p></div></div>
+      </article>
+      <article class="card" id="late-h">
+        <div class="card-head"><div><span class="number">09 / H</span><h3>국왕 체스 홀</h3><p>기둥 사이로 킹들이 도망갑니다. 굳어 돌이 된 킹 위의 빛과 옆으로 눕는 기권 모양을 또렷하게 보여 주는 대국실입니다.</p></div><a class="original" href="ConceptArt/R311/09_late_H_chess.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/09_late_H_chess.png" target="_blank" rel="noopener" aria-label="국왕 체스 홀 원본 이미지 확대"><img src="ConceptArt/R311/09_late_H_chess.png" alt="국왕 체스 홀의 나무 여덟 곱하기 여덟 판과 세 기둥, 도망치는 킹과 회색 돌 킹·벨벳 기물 상자의 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>무광 기둥머리 · 킹의 세 상태 · 기물 상자 · 큰 체스 시계 · 비워 둔 판 둘레</p></div><div><strong>정확한 규칙</strong><p>8×8판·상대 킹 6개·기둥 c6/f3/f7. 판과 둘레 1m에는 보라 러너를 깔지 않습니다.</p></div></div>
+      </article>
+      <article class="card" id="late-i">
+        <div class="card-head"><div><span class="number">10 / I</span><h3>국왕 침실</h3><p>잠든 킹을 향하는 체크를 방패 수레로 막고 마지막에는 침대째 피합니다. 낮은 빛줄기와 높은 캐노피 장식을 구분합니다.</p></div><a class="original" href="ConceptArt/R311/10_late_I_bedroom.png" target="_blank" rel="noopener">원본 확대 ↗</a></div>
+        <a class="art" href="ConceptArt/R311/10_late_I_bedroom.png" target="_blank" rel="noopener" aria-label="국왕 침실 원본 이미지 확대"><img src="ConceptArt/R311/10_late_I_bedroom.png" alt="작은 캐노피 침대에서 잠든 나이트캡 킹, 레일 위 방패 수레·상대 기물·체크 빛줄기·보라 커튼의 모델링 참고 보드" width="1536" height="1024" loading="lazy"></a>
+        <div class="card-foot"><div><strong>모델링에서 볼 것</strong><p>이동하는 작은 침대 · 바퀴 수레와 레일 · 빨간 고리 · 커튼 뒤 공격 방향 · 나이트캡</p></div><div><strong>정확한 규칙</strong><p>빛줄기는 단 위 1.1m. 그 높이 근처에 보라·금 장식선을 놓지 않습니다.</p></div></div>
+      </article>
+    </section>
+
+    <details class="files">
+      <summary>이미지 원본 10개 · 개별 파일 열기</summary>
+      <ul class="file-list">
+        <li><a href="ConceptArt/R311/01_early_C_moat.png" download>01_early_C_moat.png</a></li>
+        <li><a href="ConceptArt/R311/02_early_D_capstan.png" download>02_early_D_capstan.png</a></li>
+        <li><a href="ConceptArt/R311/03_early_A_parade.png" download>03_early_A_parade.png</a></li>
+        <li><a href="ConceptArt/R311/04_mid_B_repair.png" download>04_mid_B_repair.png</a></li>
+        <li><a href="ConceptArt/R311/05_mid_E_library.png" download>05_mid_E_library.png</a></li>
+        <li><a href="ConceptArt/R311/06_mid_F_ballroom.png" download>06_mid_F_ballroom.png</a></li>
+        <li><a href="ConceptArt/R311/07_mid_J_laundry.png" download>07_mid_J_laundry.png</a></li>
+        <li><a href="ConceptArt/R311/08_late_G_procession.png" download>08_late_G_procession.png</a></li>
+        <li><a href="ConceptArt/R311/09_late_H_chess.png" download>09_late_H_chess.png</a></li>
+        <li><a href="ConceptArt/R311/10_late_I_bedroom.png" download>10_late_I_bedroom.png</a></li>
+      </ul>
+    </details>
+    <footer class="footer">
+      <p>R311 · 2026-11-05 · 공간·가구·재질의 제작 제안. 사용자 확인·Unity 적용 전입니다.</p>
+      <p>금은 할 일, 파랑·주황은 팀 표시, 빨강은 위험입니다. 장식 금은 어두운 무광 황동으로 낮추고 규칙을 나타내는 색과 분리합니다.</p>
+      <p><a href="PAWN_RUSH_MINIGAME_MODELING.md">수량·치수·모듈·피벗·재질 분리까지 상세 제작 지침 보기</a></p>
+      <a class="back" href="#top">처음으로 ↑</a>
+    </footer>
+  </main>
+  <script>
+    // Filtering only changes presentation; all image links remain native links.
+    (() => {
+      const buttons = [...document.querySelectorAll('[data-filter]')];
+      const sections = [...document.querySelectorAll('section[data-stage]')];
+      const jumps = [...document.querySelectorAll('[data-jump]')];
+      const count = document.getElementById('count');
+      function select(stage) {
+        buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === stage)));
+        sections.forEach(section => { section.hidden = stage !== 'all' && section.dataset.stage !== stage; });
+        jumps.forEach(link => { link.hidden = stage !== 'all' && link.dataset.jump !== stage; });
+        const total = sections.filter(section => !section.hidden).reduce((sum, section) => sum + section.querySelectorAll('article').length, 0);
+        count.textContent = `${total}개의 공간 · 이미지를 누르면 원본 확대`;
+      }
+      buttons.forEach(button => button.addEventListener('click', () => select(button.dataset.filter)));
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+Arch Stones	baked	Arch_Stones_Albedo.png	Arch_Stones_Normal.png	Arch_Stones_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Brazier_Baked	image	Brazier_Baked_Albedo.png	Brazier_Baked_Normal.png	Brazier_Baked_MetalSmooth.png	Brazier_Baked_Emission.png	1.5	1	1	1	0	0.5	0	0	0	0
+Candelabra	baked	Candelabra_Albedo.png		Candelabra_MetalSmooth.png	Candelabra_Emission.png	1.0	1	1	1	0	0.5	0	0	0	0
+Carpet	solid					0	0.6588	0.1255	0.1647	0.0	0.2	0	0	0	0
+Castle Stone X	baked	Castle_Stone_X_Albedo.png	Castle_Stone_X_Normal.png	Castle_Stone_X_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Castle Stone Y	baked	Castle_Stone_Y_Albedo.png	Castle_Stone_Y_Normal.png	Castle_Stone_Y_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Cream Block	solid					0	0.9529	0.9098	0.8157	0.0	0.65	0	0	0	0
+Door Walnut	solid					0	0.2902	0.1725	0.0941	0.0	0.5	0	0	0	0
+Ebony	solid					0	0.0824	0.0667	0.0549	0.0	0.78	0	0	0	0
+Gate Curtain	baked	Gate_Curtain_Albedo.png		Gate_Curtain_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Gate Hinge Iron	baked	Gate_Hinge_Iron_Albedo.png		Gate_Hinge_Iron_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Gate Light	solid					0	1.0	0.949	0.8157	0.0	0.0	0	0	0	0
+Gold	solid					0	0.851	0.6706	0.2902	1.0	0.72	0	0	0	0
+Groove	solid					0	0.1412	0.0824	0.0471	0.0	0.4	0	0	0	0
+Grout	solid					0	0.3529	0.3137	0.2824	0.0	0.2	0	0	0	0
+Heraldic Shield	baked	Heraldic_Shield_Albedo.png		Heraldic_Shield_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Iron Rod	solid					0	0.2275	0.2078	0.1882	0.6	0.5	0	0	0	0
+Ivory Marble	baked	Ivory_Marble_Albedo.png		Ivory_Marble_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+King Marble 1e1a18	baked	King_Marble_1e1a18_Albedo.png		King_Marble_1e1a18_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+King Marble efe6d4	baked	King_Marble_efe6d4_Albedo.png		King_Marble_efe6d4_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+KingPost_Baked	image	KingPost_Baked_Albedo.png	KingPost_Baked_Normal.png	KingPost_Baked_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Knight 1e1a18	baked	Knight_1e1a18_Albedo.png		Knight_1e1a18_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Knight efe6d4	baked	Knight_efe6d4_Albedo.png		Knight_efe6d4_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Pennant 1C1612	image	Pennant_1C1612_Albedo.png				0	1	1	1	0.0	0.2	1	0	0	0
+Pennant 7A1F24	image	Pennant_7A1F24_Albedo.png				0	1	1	1	0.0	0.2	1	0	0	0
+Plinth Stone	baked	Plinth_Stone_Albedo.png	Plinth_Stone_Normal.png	Plinth_Stone_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Red Block	solid					0	0.7843	0.1961	0.2275	0.0	0.65	0	0	0	0
+Royal Crown	baked	Royal_Crown_Albedo.png		Royal_Crown_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Side Door	baked	Side_Door_Albedo.png		Side_Door_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Stage Wood	solid					0	0.1647	0.102	0.0627	0.0	0.5	0	0	0	0
+Statue Ebony	solid					0	0.1176	0.102	0.0941	0.0	0.72	0	0	0	0
+Step Stone	baked	Step_Stone_Albedo.png	Step_Stone_Normal.png	Step_Stone_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Tile Cream	baked	Tile_Cream_Albedo.png		Tile_Cream_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Tile Slate	baked	Tile_Slate_Albedo.png		Tile_Slate_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+Topiary	baked	Topiary_Albedo.png		Topiary_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0
+WallLantern_Baked	image	WallLantern_Baked_Albedo.png	WallLantern_Baked_Normal.png	WallLantern_Baked_MetalSmooth.png	WallLantern_Baked_Emission.png	1.5	1	1	1	0	0.5	0	0	0	0
+White Marble	baked	White_Marble_Albedo.png		White_Marble_MetalSmooth.png		0	1	1	1	0	0.5	0	0	0	0

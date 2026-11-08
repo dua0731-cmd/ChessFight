@@ -1,0 +1,29 @@
+{
+  "meshes": 456,
+  "tracks": 15,
+  "frames": 721,
+  "max_roundtrip_bounds_error_m": 0.10000038146972656,
+  "worst": [
+    [
+      0.10000038146972656,
+      "V07 Waterfall | right reservoir lip"
+    ],
+    [
+      0.10000038146972656,
+      "V07 Waterfall | left reservoir lip"
+    ],
+    [
+      0.07997918128967285,
+      "V07 Water | upper reservoir | gentle wave"
+    ],
+    [
+      0.0799250602722168,
+      "V07 Water | lower moat | gentle wave"
+    ],
+    [
+      5.7220458984375e-06,
+      "V22 | robot 2 elbow knuckle"
+    ]
+  ],
+  "unity_runtime_tested": false
+}

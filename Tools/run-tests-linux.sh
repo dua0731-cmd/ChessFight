@@ -31,10 +31,10 @@ ensure_mono() {
 
 run_tests() {
   mcs -nologo -langversion:experimental -out:"$OUT/NetworkCoreTests.exe" \
-      Assets/Scripts/Core/*.cs Tests/Network/NetworkCoreTests.cs
+      Assets/Scripts/Core/*.cs Assets/Prototype/PawnRush/Scripts/Core/*.cs Tests/Network/NetworkCoreTests.cs
   mono "$OUT/NetworkCoreTests.exe"
   mcs -nologo -langversion:experimental -nowarn:414 -r:System.Web.Extensions.dll -out:"$OUT/SessionFlowTests.exe" \
-      Assets/Scripts/Core/*.cs Assets/Scripts/Network/SteamSession.cs Tests/Network/FakeSteam.cs Tests/Network/SessionFlowTests.cs
+      Assets/Scripts/Core/*.cs Assets/Prototype/PawnRush/Scripts/Core/*.cs Assets/Scripts/Network/SteamSession.cs Tests/Network/FakeSteam.cs Tests/Network/SessionFlowTests.cs
   mono "$OUT/SessionFlowTests.exe"
 }
 
@@ -70,6 +70,10 @@ unity6_to_2021() {
   # parseEscapeSequences) do not exist in 2021.3: dropped from the copy.
   grep -rlE 'selectAllOn(Focus|MouseUp)|IgnoreEvent|parseEscapeSequences' "$dir" | xargs -r sed -i -E \
     -e '/\.selectAllOn(Focus|MouseUp) *=/d' -e '/focusController\?\.IgnoreEvent\(/d' -e 's/, *parseEscapeSequences *= *(true|false)//'
+  # Resolution.refreshRateRatio and RenderSettings.customReflectionTexture are Unity 2022.2+;
+  # the 2021.3 equivalents are refreshRate and customReflection (a Cubemap, which is what is set).
+  grep -rlE 'refreshRateRatio|customReflectionTexture' "$dir" | xargs -r sed -i \
+    -e 's/\.refreshRateRatio\.value/.refreshRate/g' -e 's/customReflectionTexture/customReflection/g'
   # Painter2D (MeshGenerationContext.painter2D) is Unity 2022.1+. The menu art draws with it, so
   # the copy gets a signature-only stand-in: the calls are type-checked, nothing is drawn.
   if grep -rlq 'painter2D' "$dir"; then
@@ -82,8 +86,18 @@ namespace UnityEngine.UIElements
     public class Painter2D
     {
         public Color fillColor, strokeColor; public float lineWidth; public LineCap lineCap; public LineJoin lineJoin;
+        public FillGradient fillGradient, strokeFillGradient;
         public void BeginPath() { } public void ClosePath() { } public void MoveTo(Vector2 p) { } public void LineTo(Vector2 p) { }
-        public void Arc(Vector2 center, float radius, Angle start, Angle end) { } public void Fill() { } public void Stroke() { }
+        public void Arc(Vector2 center, float radius, Angle start, Angle end) { } public void ArcTo(Vector2 p1, Vector2 p2, float radius) { }
+        public void Fill() { } public void Fill(FillRule rule) { } public void Stroke() { }
+    }
+    public enum FillRule { NonZero, OddEven }
+    // Unity 6 gradient fills (the Pawn Rush result screen, the glass menus). AddressMode is in the 2021.3 references.
+    public struct FillGradient
+    {
+        public static FillGradient MakeLinearGradient(Gradient gradient, Vector2 start, Vector2 end, AddressMode mode) => default;
+        public static FillGradient MakeLinearGradient(Color startColor, Color endColor, Vector2 start, Vector2 end, AddressMode mode) => default;
+        public static FillGradient MakeRadialGradient(Gradient gradient, Vector2 center, float radius, Vector2 focus, AddressMode mode) => default;
     }
     public static class Painter2DStandInExtensions { public static Painter2D Painter2DStandIn(this MeshGenerationContext c) => null; }
 }
@@ -105,7 +119,13 @@ compile_all() {
   ensure_roslyn
   local build="$OUT/build" src="$OUT/src" refs sym m=/usr/lib/mono/4.5
   rm -rf "$build" "$src"; mkdir -p "$build" "$src"
-  cp -r Assets/Scripts "$src/Scripts"; cp -r Assets/ChessFight/RagdollLab/Scripts "$src/RagdollLab"; cp -r Assets/ChessFight/RagdollLabSteam "$src/RagdollLabSteam"
+  # Prototype code uses asmrefs, so fold those sources into their original logical assembly folders.
+  cp -r Assets/Scripts "$src/Scripts"
+  local prototype
+  for prototype in Assets/Prototype/PawnRush/Scripts/*; do
+    [ -d "$prototype" ] || continue
+    cp -r "$prototype"/. "$src/Scripts/$(basename "$prototype")/"
+  done
   unity6_to_2021 "$src"
   refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
   sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
@@ -118,17 +138,51 @@ compile_all() {
   # Game too (SettingsWindow's quit stops play mode in the Editor): player defines.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs        -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Game.dll" "$src"/Scripts/Game/*.cs
   $csc $sym $refs -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.Gameplay.dll" $(find "$src/Scripts/Gameplay" -name '*.cs')
+  # The VFX workbench and cues (Assets/Scripts/VFX). Player defines; its UNITY_EDITOR folder scan is compiled below.
+  $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
+       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" -out:"$build/ChessFight.VFX.dll" "$src"/Scripts/VFX/*.cs
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
        -out:"$build/ChessFight.Game.Steam.dll" "$src"/Scripts/Bootstrap/*.cs
   # Player defines: its UNITY_EDITOR blocks need UnityEditor.dll, which the reference package lacks.
   $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
        -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
-       -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/RagdollLab" -name '*.cs')
+       -r:"$build/ChessFight.VFX.dll" -out:"$build/ChessFight.RagdollLab.dll" $(find "$src/Scripts/RagdollLab" -name '*.cs')
+  # Pawn Rush course 01 (Assets/Scripts/PawnRush). Player defines here; its UNITY_EDITOR blocks and
+  # its editor assembly (Assets/Scripts/PawnRushEditor) are compiled against UnityEditor.dll below.
+  $csc "-define:UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER" $refs \
+       -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
+       -r:"$build/ChessFight.VFX.dll" -out:"$build/ChessFight.PawnRush.dll" $(find "$src/Scripts/PawnRush" -name '*.cs')
   $csc $sym $refs -r:"$build/Steamworks.NET.dll" -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.Network.Steam.dll" \
        -r:"$build/ChessFight.RagdollLab.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Game.Steam.dll" \
-       -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/RagdollLabSteam" -name '*.cs')
-  echo "PASS: Core, Network.Steam, Game, Gameplay, Bootstrap, RagdollLab and RagdollLabSteam compiled with Roslyn (Input/ and Editor code skipped)."
+       -r:"$build/ChessFight.PawnRush.dll" -out:"$build/ChessFight.RagdollLab.Net.dll" $(find "$src/Scripts/RagdollLabSteam" -name '*.cs')
+  compile_pawnrush_editor
+  echo "PASS: Core, Network.Steam, Game, VFX, Gameplay, Bootstrap, RagdollLab, RagdollLabSteam and PawnRush compiled with Roslyn (Input/ and other Editor code skipped)."
+}
+
+# The Pawn Rush editor tools (and the course scripts' UNITY_EDITOR blocks) against a UnityEditor.dll
+# (NuGet "Unity3D.SDK" 2021.1, the newest there is) next to the 2021.3 module DLLs. Older than the
+# engine references, so it proves the calls exist, not that they behave the same in Unity 6.
+compile_pawnrush_editor() {
+  local build="$OUT/build" src="$OUT/src" refs m=/usr/lib/mono/4.5
+  if [ ! -f "$OUT/editor/lib/UnityEditor.dll" ]; then
+    mkdir -p "$OUT/editor"
+    curl -sSL -o "$OUT/editor/sdk.nupkg" "https://api.nuget.org/v3-flatcontainer/unity3d.sdk/2021.1.14.1/unity3d.sdk.2021.1.14.1.nupkg"
+    (cd "$OUT/editor" && unzip -qo sdk.nupkg lib/UnityEditor.dll)
+  fi
+  refs=$(ls "$OUT"/unity/lib/net45/UnityEngine*.dll | sed 's/^/-r:/' | tr '\n' ' ')
+  local csc="dotnet $CSC -nologo -noconfig -nostdlib+ -target:library -langversion:9 -nowarn:414,649,169,8632,0618,1701,1702,1705 -r:$m/mscorlib.dll -r:$m/System.dll -r:$m/System.Core.dll"
+  local sym="-define:UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;UNITY_2017_1_OR_NEWER;UNITY_2019_3_OR_NEWER"
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" -r:"$build/ChessFight.Network.Core.dll" \
+       -r:"$build/ChessFight.VFX.dll" -out:"$build/ChessFight.PawnRush.EditorBuild.dll" $(find "$src/Scripts/PawnRush" -name '*.cs')
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Gameplay.dll" \
+       -r:"$build/ChessFight.Network.Core.dll" -r:"$build/ChessFight.PawnRush.EditorBuild.dll" -out:"$build/ChessFight.PawnRush.Editor.dll" $(find "$src/Scripts/PawnRushEditor" -name '*.cs')
+  # The VFX workbench's editor-only folder scan (AssetDatabase).
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.Game.dll" -r:"$build/ChessFight.Network.Core.dll" \
+       -out:"$build/ChessFight.VFX.EditorBuild.dll" "$src"/Scripts/VFX/*.cs
+  # The VFX builders (Assets/Scripts/VFXEditor), editor only.
+  $csc $sym $refs -r:"$OUT/editor/lib/UnityEditor.dll" -r:"$build/ChessFight.VFX.EditorBuild.dll" \
+       -out:"$build/ChessFight.VFX.Editor.dll" "$src"/Scripts/VFXEditor/*.cs
 }
 
 # Assembly boundaries that keep gameplay work from reaching into the network layer.
@@ -136,16 +190,30 @@ check_boundaries() {
   local bad=0 hits
   # code_refs PATTERN PATHS...: matches outside // comments.
   code_refs() { local pattern="$1"; shift
-    grep -rnE "$pattern" "$@" --include='*.cs' --include='*.asmdef' | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true; }
+    local match code
+    while IFS= read -r match; do
+      code="${match#*:}"; code="${code#*:}"; code="${code%%//*}"
+      if [[ "$code" =~ $pattern ]]; then printf '%s\n' "$match"; fi
+    done < <(grep -rnE "$pattern" "$@" --include='*.cs' --include='*.asmdef' || true)
+  }
   # Only Network/ and Bootstrap/ may know about Steam (and RagdollLabSteam/, the lab's own
-  # Bootstrap-style bridge, which is why it sits outside RagdollLab/).
+  # Bootstrap-style bridge, which is why it is its own assembly beside RagdollLab/).
   hits=$(code_refs 'Steamworks|ChessFight\.Network\.Steam|SteamSession|SteamMotion' \
-         Assets/Scripts/Core Assets/Scripts/Game Assets/Scripts/Gameplay Assets/Scripts/Input Assets/ChessFight/RagdollLab)
+         Assets/Scripts/Core Assets/Scripts/Game Assets/Scripts/Gameplay Assets/Scripts/Input Assets/Scripts/RagdollLab \
+         Assets/Scripts/PawnRush Assets/Scripts/VFX \
+         Assets/Prototype/PawnRush/Scripts/Core Assets/Prototype/PawnRush/Scripts/Game \
+         Assets/Prototype/PawnRush/Scripts/Gameplay Assets/Prototype/PawnRush/Scripts/RagdollLab \
+         Assets/Prototype/PawnRush/Scripts/PawnRush)
   if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Steam referenced outside Network/ and Bootstrap/"; bad=1; fi
   # The network layer and scene flow never depend on a character implementation.
-  hits=$(code_refs 'RagdollLab|RagdollPawn|LabGame' Assets/Scripts)
-  if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: Assets/Scripts depends on the ragdoll lab"; bad=1; fi
-  [ $bad -eq 0 ] && echo "PASS: assembly boundaries (Steam only in Network/Bootstrap, nothing in Assets/Scripts depends on the ragdoll)"
+  # (The lab's own folders, RagdollLab/, RagdollLabEditor/ and RagdollLabSteam/, sit in Assets/Scripts
+  # since the 10-08 folder cleanup; the rule is about the network and game folders beside them.)
+  hits=$(code_refs 'RagdollLab|RagdollPawn|LabGame' Assets/Scripts/Core Assets/Scripts/Network Assets/Scripts/Game \
+         Assets/Scripts/Gameplay Assets/Scripts/Bootstrap Assets/Scripts/Input Assets/Scripts/Editor Assets/Scripts/VFX \
+         Assets/Prototype/PawnRush/Scripts/Core Assets/Prototype/PawnRush/Scripts/Game \
+         Assets/Prototype/PawnRush/Scripts/Gameplay)
+  if [ -n "$hits" ]; then echo "$hits"; echo "FAIL: the network and game code depends on the ragdoll lab"; bad=1; fi
+  [ $bad -eq 0 ] && echo "PASS: assembly boundaries (Steam only in Network/Bootstrap, the network and game code does not depend on the ragdoll)"
   return $bad
 }
 
@@ -158,9 +226,17 @@ check_boundaries() {
 # comment naming why; it is offline only until the host sends its state (listed, not failed).
 check_obstacle_clock() {
   local bad=0 f
+<<<<<<< HEAD
   for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/ChessFight 2>/dev/null \
              | grep -vE 'LabAutoTest|Test|/Editor/|/RagdollPawn[^/]*\.cs$'); do
     if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|SharedTime|: *KinematicObstacle\b' "$f"; then
+=======
+  for f in $(grep -rlE 'isKinematic *= *true' --include='*.cs' Assets/Scripts/Gameplay Assets/Scripts/RagdollLab Assets/Scripts/PawnRush \
+             Assets/Prototype/PawnRush/Scripts/Gameplay Assets/Prototype/PawnRush/Scripts/RagdollLab \
+             Assets/Prototype/PawnRush/Scripts/PawnRush 2>/dev/null \
+             | grep -vE 'LabAutoTest|Test|Editor/|/RagdollPawn[^/]*\.cs$'); do
+    if grep -qE 'MovePosition|MoveRotation' "$f" && ! grep -qE 'ObstacleClock|: *Obstacle\b' "$f"; then
+>>>>>>> upstream/main
       if grep -q 'StateDrivenMover:' "$f"; then echo "NOTE: state-driven mover, offline only: $f"
       else echo "$f"; bad=1; fi; fi
   done
@@ -169,13 +245,17 @@ check_obstacle_clock() {
   return $bad
 }
 
-ensure_mono
 check_boundaries
 check_obstacle_clock
+<<<<<<< HEAD
 # The Queen of the Hill map is generated data; the committed JSON must match its script.
 if command -v python3 >/dev/null 2>&1; then
   python3 Tools/QueenHill/build_layout.py --check || exit 1
   PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s Tests/Gameplay -p 'test_*.py' -v || exit 1
 fi
+=======
+if [ "${1:-}" = "--checks-only" ]; then exit 0; fi
+ensure_mono
+>>>>>>> upstream/main
 run_tests
 if [ "${1:-}" = "--compile" ]; then compile_all; fi

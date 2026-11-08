@@ -1,0 +1,26 @@
+Use case: stylized-concept.
+Create a finished, high quality environment-and-obstacle concept art board for the medieval party platformer PAWN RUSH. This is NEW concept art, not a screenshot and not a technical diagram.
+FORMAT: very large portrait 2:3 image. EXACTLY FIVE separated scene panels: one full-width panoramic panel across the upper third, two equal panels in the middle row, two equal panels in the bottom row. Thin warm ivory gutters. Narrow ivory title band at top; narrow ivory caption bands beneath each panel. Fill the canvas, five scenes only. Korean labels must be crisp and correct; no other text.
+VISUAL STYLE: polished stylized 3D game art, charming faceted forms, rich but readable materials, warm cream limestone and chunky oak/brass/iron machinery. The supplied visual direction is an inviting medieval castle race with deep vertical atriums, gaps, elevated traversable walkways, red/blue heraldic banners. Keep obstacles substantial and mechanically believable with visible hinges, rails, pivots and supports. Every panel must show an obvious entry ledge in the foreground, a main obstacle crossing in the middle, and a reachable exit doorway/ledge in the background. No uniformly repeated generic wooden bridge in every scene.
+CHARACTERS: 2 or 3 small cute ivory pawn adventurers per scene, spherical subtly faceted heads, simple flared pawn-shaped bodies, short black mitten hands and feet, blue or red collar. Most seen from behind or three-quarter view. Use them as scale and to demonstrate waiting, jumping, or riding. They are around 1m tall; ordinary jump gaps are small (~1–1.5 pawn heights), giant shafts are crossed by moving devices. No realistic humans.
+READABILITY: obstacle mechanism is the focal point, foreground unobscured, camera elevated three-quarter view wide enough to see route. One small elegant pale amber movement arrow near each main device is allowed, no UI overlays, no dense diagrams, no paragraphs. Warm high detail, clear silhouettes. Avoid photorealism, sci-fi, modern plastic, gore, random floating structures, huge impossible jumps, invisible support machinery, watermarks.
+BOARD TITLE (verbatim): "중반 A · 성 안의 생활 공간".
+PANEL 1 (top full width):
+Caption verbatim: "01 서재 · 미닫이 책장".
+Tall warm royal library, books, brass globe, bright arched windows, a deep two-storey reading hall. Two heavy oak bookcases slide sideways on visible floor rails into alternating portions of an elevated reading-gallery route. One cabinet extends, the next retracts, leaving an obvious weaving passage. Short book-return conveyor inset into a nearby floor moves against a walking pawn. Books fixed in shelving, no levitating books.
+
+PANEL 2 (middle left):
+Caption verbatim: "02 부엌 · 구리솥 진자".
+Large castle kitchen with brick hearth, hanging pans and vegetables. An enormous rounded COPPER POT swings by a chain from a ceiling timber across a kitchen worktop catwalk. Nearby, a broad wooden slat food-delivery conveyor with fixed brass sides carries a few vegetables backwards along the route while a pawn runs forward. Clear safe butcher-block landings, warm copper and cream stone.
+
+PANEL 3 (middle right):
+Caption verbatim: "03 중앙계단 · 샹들리에 그네 [신규]".
+Grand central staircase hall with red carpet, double stone stairs and open atrium. A NEW RIDEABLE chandelier swing: a rigid broad FLAT octagonal oak-and-brass platform suspended by four equal chains, low decorative lamps around its OUTER rim, no flames on the walking surface. It swings as a pendulum between two stair landings while staying level enough to stand on. Show one pawn riding and another waiting at the destination. Nearby small square elevating stone stair-landings on vertical guides support the route. This is a traversable swing platform, not a dangling collision ball.
+
+PANEL 4 (bottom left):
+Caption verbatim: "04 목욕탕 · 증기 징검돌".
+Cream stone bathhouse, turquoise mosaic, calm pools and high warm window light. Four square tiled stone platforms rise vertically in alternating pairs from the bath, guided by thick pillars, creating a path. A brass wall nozzle periodically blows WHITE STEAM sideways across one segment, with a safe waiting dry ledge and visible vent lip. Steam implies pushing air, no scalding injury; no lava or hazard spikes.
+
+PANEL 5 (bottom right):
+Caption verbatim: "05 연회장 · 회전 연회무대".
+High timber royal banquet hall with candlelit tables below and red-gold banners. A large circular parquet banquet dais with checker inlay rotates HORIZONTALLY on a visible central bearing, pawns ride it from entry to exit. Above center hangs an enormous silver serving CLOCHE (domed food cover) on a vertical guide, poised to drop; a clearly visible warm amber circular warning ring underneath and nearby sturdy banquet cabinets provide cover. Elegant round dome, nonviolent toy-like impact concept.

@@ -30,6 +30,10 @@ namespace ChessFight.Gameplay
         // press edge itself.
         public bool Interact;
 
+        // Edge: the piece skill key (F) in a scene that plays the Pawn Rush piece skills (CourseSkills, R125).
+        // There F is not the interact key, so Interact stays off.
+        public bool Skill;
+
         // WORLD space unit vector the player aims along: the camera's forward, pitch
         // included. The hook is thrown along it and the charges go along it. Like
         // Move, the owning client works it out from its own camera. Zero = no aim.

@@ -1,0 +1,26 @@
+Use case: stylized-concept.
+Create a finished, high quality environment-and-obstacle concept art board for the medieval party platformer PAWN RUSH. This is NEW concept art, not a screenshot and not a technical diagram.
+FORMAT: very large portrait 2:3 image. EXACTLY FIVE separated scene panels: one full-width panoramic panel across the upper third, two equal panels in the middle row, two equal panels in the bottom row. Thin warm ivory gutters. Narrow ivory title band at top; narrow ivory caption bands beneath each panel. Fill the canvas, five scenes only. Korean labels must be crisp and correct; no other text.
+VISUAL STYLE: polished stylized 3D game art, charming faceted forms, rich but readable materials, warm cream limestone and chunky oak/brass/iron machinery. The supplied visual direction is an inviting medieval castle race with deep vertical atriums, gaps, elevated traversable walkways, red/blue heraldic banners. Keep obstacles substantial and mechanically believable with visible hinges, rails, pivots and supports. Every panel must show an obvious entry ledge in the foreground, a main obstacle crossing in the middle, and a reachable exit doorway/ledge in the background. No uniformly repeated generic wooden bridge in every scene.
+CHARACTERS: 2 or 3 small cute ivory pawn adventurers per scene, spherical subtly faceted heads, simple flared pawn-shaped bodies, short black mitten hands and feet, blue or red collar. Most seen from behind or three-quarter view. Use them as scale and to demonstrate waiting, jumping, or riding. They are around 1m tall; ordinary jump gaps are small (~1–1.5 pawn heights), giant shafts are crossed by moving devices. No realistic humans.
+READABILITY: obstacle mechanism is the focal point, foreground unobscured, camera elevated three-quarter view wide enough to see route. One small elegant pale amber movement arrow near each main device is allowed, no UI overlays, no dense diagrams, no paragraphs. Warm high detail, clear silhouettes. Avoid photorealism, sci-fi, modern plastic, gore, random floating structures, huge impossible jumps, invisible support machinery, watermarks.
+BOARD TITLE (verbatim): "중반 B · 성 안의 설비와 통로".
+PANEL 1 (top full width):
+Caption verbatim: "06 무기고 · 방패 진열 밀대".
+Blue-and-gold royal armoury, racks of sheathed ceremonial weapons. A massive wooden shield display rack carrying three oversized rounded blue shields slides HORIZONTALLY across an elevated stone route on visible parallel rails; clear gap when withdrawn. Behind, a mechanical knight-horse armour training statue occupies a straight charge lane with a landing marker, brass feet and no rider. Focus on shield rack motion, broad safe side pads.
+
+PANEL 2 (middle left):
+Caption verbatim: "07 경비실 · 교대 보안문".
+Compact multi-level guard room with benches, helmets and watch bells. Two barred security doors in cream stone frames lift alternately, one open one shut, large simple brass clock dials mounted above. A short crenellated guard barricade slides sideways on rails beyond. Red runner on safe landings, tidy functional military interior, route leads to rear wooden door.
+
+PANEL 3 (middle right):
+Caption verbatim: "08 식량창고 · 곡물 운반로".
+Tall warm royal pantry, sacks of grain, onion strings, produce crates, honey oak shelves. A broad dark wooden slat CONVEYOR floor between shelves carries secured grain sacks opposite the running direction, brass rollers visibly underneath at the edge. Beyond it a small two-leaf service drawbridge between storage shelves lifts both INNER ends UPWARD from outer hinges. Safe cargo loading bays beside the belt, no scattered clutter blocking legibility.
+
+PANEL 4 (bottom left):
+Caption verbatim: "09 포도주저장고 · 술통 왕복틀".
+Vaulted stone wine cellar, plum-red banners, huge oak barrels on racks. Primary obstacle a stout horizontal rail-mounted cradle with an oak wine barrel firmly strapped onto it, sliding SIDEWAYS across the walkway; make track and attached carriage clearly visible. Secondary a separate windmill-like hammer with a small barrel-shaped fixed counterweight at its arm end rotates in a VERTICAL plane around a horizontal axle. Wine barrels never roll loose. Safe masonry landings above a shallow dark red reflection pool.
+
+PANEL 5 (bottom right):
+Caption verbatim: "10 회랑 · 움직이는 초상화".
+Bright elegant portrait gallery with cream stone arches, ivy outside and sunlight on pale floor. Two thick royal portrait wall-panels in oak-and-gold frames slide SIDEWAYS into the walkway from wall pockets, on exposed brass guide rails along the floor. Beyond them a low brass heraldic baton circles horizontally from a pedestal, at easily jumpable ankle height. Vary framed chess-piece portraits, no human photo faces. A pawn threads through the currently open gap.

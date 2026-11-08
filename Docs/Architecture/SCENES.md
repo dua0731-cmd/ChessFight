@@ -1,73 +1,60 @@
-# 씬 구성과 흐름
+# 씬과 진입 흐름
 
-**R54 별도 첫 연결 코스:** `KingRushOpening.unity`, 메뉴 **ChessFight → King Rush → Open Opening Course**. 오프라인12명, 장난감 코스·상자 미션·출구. 구간 프리팹은 `Assets/Prefabs/KingRushOpening`. `KingRushOpeningBuilder` 전용 빌드에서만 첫 씬이고 일반 로비/배포 라우팅은 바꾸지 않는다. 기존 `KingRushPrototype` 능력 시험장도 보존. [실행](../KingRush/OPENING_COURSE.md).
+2026-11-06 · R497 정리 기준. 현재 제작용 구간 시험과 로비가 실제로 여는 호환 경기 씬을 구분한다. 작업·Unity 경로는 기존 `C:\Users\dua07\GitHub\ChessFighter`의 `main`이다.
 
-사용자 요구(R11): 씬을 **인트로 - 로비 - 게임 씬(킹러시, 승격쟁탈전 등)**으로 나누고, 킹러시 맵 작업 씬과 래그돌 테스트 씬을 만든다. 구현 `72ddf9e`. R19(2026-09-25): 경기 씬은 **경기 방의 게임 모드**가 정한다([GameModes](../GameModes/README.md)). **Unity에서 아직 열지 않았다**(확인 목록: [VALIDATION](../Network/VALIDATION.md) 최상단).
+## 1. 현재 장면 목록
 
-## 1. 흐름
+| 씬 | 위치·역할 | 여는 메뉴 |
+|---|---|---|
+| Intro | `Assets/Scenes/Intro.unity` · 시작 영상·타이틀·이름 설정 | Development → Scenes → Intro |
+| Lobby | `Assets/Scenes/Lobby.unity` · 파티·모드·매칭 | Development → Scenes → Lobby |
+| PawnRush_Sections | `Assets/Scenes/PawnRush_Sections.unity` · 개편 중인 전체 구간 연결 시험 | Pawn Rush → Open Section Test |
+| PawnRush_MiniGames | `Assets/Scenes/PawnRush_MiniGames.unity` · 저장 프리팹10종을 골라 보는 오프라인 시험 | Pawn Rush → Open Mini-game Prefab Test |
+| PawnRush_SkillTest | `Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity` · 기물 스킬 시험 | Pawn Rush → Open Skill Test |
+| PawnRush_Course01 | `Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity` · 구형 전체 맵, 현재 온라인 호환 씬 | Prototype → Pawn Rush → Open Course01 |
+| PawnRushVictory / PawnRushLose | `Assets/Scenes/` · 폰 러시 결과·로비 복귀 | Development → Pawn Rush → Result Preview |
+| SwordFight | `Assets/Scenes/SwordFight.unity` · 소드 파이트 경기 | Sword Fight → Open Test Scene |
+| SwordFight 스킬·아레나 시험 | `Assets/Scenes/SkillTest/SwordFight_*` · 기존 스킬/아레나 시험 | Sword Fight → Open Skill Test |
+| RagdollTest | `Assets/Scenes/RagdollTest.unity` · 공용 물리·기물 랩 | Development → Ragdoll Lab → Open Test Scene |
+| SeoungTest_PawnRush / SeoungTest_SwordFight | `Assets/Scenes/SeoungTest/` · 현재 맵 제작 샌드박스 | Development → Map Authoring |
+| ChessBoxingPrototype | `Assets/Prototype/ChessBoxing/Scenes/ChessBoxingPrototype.unity` · 독립 프로토타입 | Prototype → Chess Boxing |
+| PiecePreview | `Assets/Prototype/Previews/PiecePreview.unity` · 기물 미리보기 | Project에서 열기 |
 
-```text
- Intro ──시작 판 클릭──▶ Lobby ──모두가 phase=playing──▶ [로딩 화면] ──모두 준비, 공유 시각 go──▶ 모드 씬 ──경기 끝(Match==0) / Esc──▶ Lobby
- (타이틀)          (파티·모드·매칭)                  킹 러시 = KingRush
-                                                   소드 파이트 = SwordFight / 퀸 오브 더 힐 = 준비 중
- RagdollTest ← 개발 전용. 흐름 밖.
-```
+위 메뉴는 모두 **ChessFight** 아래에 있다. Unity의 편집 화면에서 빈 장면처럼 보여도 Play 때 프리팹·코스·캐릭터를 생성하는 시험 장면이 있다.
 
-| 씬 | 빌드 순서 | 붙는 컨트롤러 | Play를 누르면 |
-|---|---|---|---|
-| `Intro.unity` | 0 | `IntroController` | 온라인. 타이틀, Steam 시작, 시작 판 클릭 → Lobby, Esc 설정 창 |
-| `Lobby.unity` (구 ChessFightLab, GUID 동일) | 1 | `LobbyBootstrap` (구 GameBootstrap) | 온라인. 파티 라인업(3D), 모드·파티·매칭 HUD. 이동 없음 |
-| `KingRush.unity` | 2 | 경기로 들어왔을 때만 `MatchSceneView` | 직접 열면 **오프라인 플레이테스트** |
-| `SwordFight.unity` | 3 | `SwordFightGame`, 온라인은 `SteamSwordFightLink` | 직접 열면 폰 2v2(나+봇 3), 온라인은 로비 명단 |
-| `RagdollTest.unity` | 비활성 | 없음 (씬 안의 `LabGame`이 동작) | 래그돌 랩. Steam 없이 2인 로컬 |
-| `QueenOfTheHill.unity` (R48, 맵 7차 R49) | 빌드 제외(아직) | 없음 | 퀸 오브 더 힐 그레이박스. `QueenHillLevel`이 맵 데이터(JSON)로 맵을 만들고 래그돌 폰 1인 오프라인 |
-| `LastScene.unity` (R62, 결과 화면) | 빌드 제외(아직 흐름에 없음) | 씬에 저장된 `LastSceneDirector`(Steam 모름) | 결과 화면 미리보기. 무대·말·HUD를 코드로 만들고 예시 경기를 보여 줌(F1 이긴 팀, F2 진 팀, R 다시 재생, H 결과판) |
-| `SampleScene.unity` | 빌드 제외 | 없음 | 아무것도 안 함(템플릿) |
+QueenOfTheHill 본 장면·스킬 시험·메뉴는 폐기해 제거한다. 과거 `KingRush.unity`·`KingRushOpening.unity`·`KingRushPrototype.unity`는 이미 R90에 삭제한 장면이다. 그 초기 맵 코드와 프리팹은 이번에 `Assets/Prototype/PawnRush/`로 모았다. 당시 설명은 [역사 사본](../PawnRush/Prototype/README_HISTORICAL.md)이다.
 
-씬 이름 상수는 `Game/SceneNames.cs`. **런타임에 로드하는 씬은 빌드 목록(`EditorBuildSettings.asset`)에도 있어야 한다.** 빌드 메뉴(`NetworkSetup.ShippedScenes`)가 Intro·Lobby·KingRush·SwordFight를 넣는다.
+## 2. 빌드와 호환 경기
 
-R47: `GameSceneConfig.customMatchSimulation=true`인 SwordFight에서는 캡슐 `MatchSceneView`와 `Motion.Update`를 실행하지 않는다. 별도 래그돌-네트워크 다리가 **기존 NetworkRuntime.Session을 빌려** 실행하며 독립적인 Steam 초기화/종료는 하지 않는다. 직접 열어 Play하면 Steam 없이 연습한다. 공유 캐릭터 물리와 다른 씬은 그대로다.
+`ProjectSettings/EditorBuildSettings.asset`의 활성 장면은 런타임에서 이름으로 로드할 수 있어야 한다. Intro·Lobby·SwordFight·폰 러시 결과 장면과 **이동한 구형 PawnRush_Course01**을 유지한다. 기존 스킬/아레나 장면의 필요한 활성 설정은 별도로 관리한다. 새 구간·미니게임·랩·샌드박스를 정리 편의로 온라인 경기 목록에 추가하지 않는다.
 
-## 2. NetworkRuntime — 씬을 넘어 사는 유일한 Steam 소유자
+`GameModes.KingRush.Scene`과 `SceneNames.PawnRushCourse01`의 값은 **`PawnRush_Course01`**이다. 로비의 폰 러시 온라인 진입은 여전히 프로토타입 폴더로 옮긴 이 씬을 연다. 파일 위치는 바뀌어도 씬 이름·GUID·통신 키 `kingrush`는 유지한다. `NetworkSetup.ShippedScenes`와 생성기에서도 새 실제 경로를 사용한다.
 
-**R52 별도 시험 씬:** `KingRushPrototype.unity`는 `KingRushBuilder` 전용 빌드에서만 첫 씬이며 일반 `EditorBuildSettings`/GameModes 라우팅은 바꾸지 않는다. `PhysicsProfile`, `KingRushPrototype`, `LabCamera`로 오프라인 12명을 만든다. `GameSceneConfig`/Steam 컨트롤러가 없고, 기존 `KingRush.unity`·`SwordFight.unity`는 수정하지 않는다. [실행](../KingRush/README.md).
+현재 `PawnRush_Sections`·`PawnRush_MiniGames`는 오프라인 시험이다. 3광장·7슬롯 코스를 현재2광장·4스테이션 CFP4 통신에 연결하는 작업은 이 정리에 포함되지 않는다.
 
-`Scripts/Bootstrap/NetworkRuntime.cs`
+## 3. 온라인 진입
 
-- `[RuntimeInitializeOnLoadMethod(AfterSceneLoad)]`에서 **첫 씬이 Intro나 Lobby일 때만** 만들어진다. `DontDestroyOnLoad`.
-- 가진 것: `SteamSession`, `SteamMotion`, 입력 소스(`Controls`), `MovementGate`(씬이 등록하는 이동 허용 조건).
-- 매 프레임: `Session.Tick()` → 입력 읽기(게이트 적용) → `Motion.Update()` → F8 지연 시뮬레이터 키(개발 빌드) → `FollowMatch()`.
-- **(R58, 09-30) 로비 → 경기 씬은 `MatchLoader`가 로딩 화면 뒤에서 `LoadSceneAsync`로 불러온다.** 예전 동기 `LoadScene`은 모든 PC를 5~10초 멈췄다. 모두 준비되면 방장이 정한 공유 시각에 동시에 화면이 걷히고, 그때까지 이동 입력을 막는다. 경기 → 로비는 그대로 동기 로드. 상세: [UI §8](UI.md#8-로딩-화면-r58-2026-09-30)
-- `FollowMatch()`: Lobby에서 `Session.Started`가 되면 경기 방의 모드(`Session.MatchMode`)의 씬을 고른다. 씬이 없는 모드면 `Session.Abort("… 준비 중")`으로 경기를 끝낸다. 있으면 `PlaytestSpawner.NetworkDriven = true`, `ObstacleClock.Use(공유 시계)` 후 그 씬 로드. 경기 방이 사라지면(`Match == 0`) 되돌리고 Lobby 로드.
-- `sceneLoaded` 때마다 씬에 맞는 컨트롤러를 **`GameSceneConfig`가 있는 오브젝트에** `AddComponent`로 붙인다. 경기로 연 모드 씬에는 `MatchSceneView`(구 `KingRushMatchView`, 모드 공용)를 붙인다. 컨트롤러를 씬에 저장하지 않는 이유: 씬 파일이 Steam 어셈블리를 참조하면 Steam 패키지 없는 PC에서 깨진다. 또 `RuntimeInitializeOnLoadMethod`는 한 번만 불린다.
-- 종료: `Motion.Dispose()` → `Session.Dispose()` 순서(Motion이 SessionChanged 구독을 푼다).
-- `BuildTag` = `Application.version` + 개발 빌드면 `-dev`. `SteamSession`에 전달된다.
-- 내부 `SharedClock`: `SteamUtils.GetServerRealTime()`(초 단위, 모든 PC 동일) + 로컬 시계로 소수부. PC 간 실제 오차는 미측정.
+1. Intro 또는 Lobby에서 시작하면 `NetworkRuntime`이 세션·공유 시계·장면 컨트롤러를 만든다.
+2. 파티장이 선택한 모드 키를 세션에 기록하고 같은 모드의 방을 찾는다.
+3. `FollowMatch`가 경기 모드의 씬 이름을 읽고 네트워크용 플레이어 배치 상태를 설정한 뒤 씬을 연다.
+4. 폰 러시는 `SteamPawnRushLink`, 소드 파이트는 기존 래그돌 경기 연결이 명단·입력·스냅샷을 다룬다.
+5. 경기 종료·나가기·연결 종료는 기존 세션/결과 흐름을 따라 Lobby로 돌아간다.
 
-## 3. 씬별 내용
+Steam을 아는 컨트롤러는 런타임이 붙이며 씬 파일에 저장하지 않는 것이 기본이다. 직접 연 시험 장면과 온라인으로 진입한 경기의 플레이어 생성·권한은 같다고 취급하지 않는다.
 
-**Intro** — `IntroHud.uxml`. 키 입력 한 번이면 Lobby. 클릭 UI가 필요 없게 만들었다(클릭 문제 회피). Steam 시작 실패여도 로비로 간다(로비에 재시도 버튼).
+## 4. 현재 폰 러시 구간 시험
 
-**Lobby** — 편집 모드에는 카메라와 `ChessFight Game Root`만 있다. Play하면 `LobbyBootstrap`이 `LobbyStage`(하늘·흰 바닥·금색 원, 파티 라인업. 프리미티브와 팀 재질 복사본으로 만들어 새 에셋이 없다)와 `NetworkHudView`를 만든다. **로비는 메뉴라 캐릭터가 움직이지 않는다**(`MovementGate` = 항상 false). 예전 `Arena` 체스판 프리팹은 로비에서 더 이상 쓰지 않는다. HUD는 [UI](UI.md).
+`PawnRushRound`가 `Assets/Settings/PawnRushSections.asset`의 7슬롯을 뽑아 입구와 앞 구간 출구를 맞춰 이어 붙인다. 지금은 정원 → 초반 미니게임 → 현관홀 → 중반 미니게임 → 후반 미니게임 → 작전 회의실 순서이며 빈 슬롯5는 건너뛴다. 팀 인원·판 씨앗·공유 장애물 시각은 구간 부품에 전달한다.
 
-**KingRush** — 코스 뼈대, 장애물, 스폰 12곳, 체크포인트 2개, 골인, `PhysicsProfile`(120Hz), `Playtest`(`PlaytestSpawner`), `ChessFight Game Root`. 상세: [KingRush](../KingRush/README.md).
-- 직접 Play: `PlaytestSpawner`가 임시 캐릭터를 만든다.
-- 경기로 진입: `PlaytestSpawner.NetworkDriven`이라 캐릭터를 안 만들고, `MatchSceneView`가 네트워크 캡슐, 읽기 전용 `MatchHud`(명단, 핑, 끊김 배너)를 띄운다. **캡슐은 아직 로비용 평면 모터라 코스를 달릴 수 없다.** Esc = `Session.Cancel()`.
+`SectionPlaytest`의 F5 팀 변경·F8 새 판·F9 인원·이전/다음 구간 이동은 [구간 문서](../PawnRush/PAWN_RUSH_SECTIONS.md)를 따른다. `MiniGamePrefabTest`는 숫자1~0·F5·F8로 저장 프리팹을 골라 보고, F6은 실제 퍼즐 해결을 대신하는 완료 이벤트 시험용이다. [10종 프리팹 사용법](../PawnRush/PAWN_RUSH_MINIGAME_SECTIONS.md)을 먼저 읽는다.
 
-**QueenOfTheHill** (R48, `JY-lobby`) — 편집 모드에는 카메라(`OrbitCamera`), 조명, `ChessFight Game Root`(`GameSceneConfig`·`PhysicsProfile`), `Queen of the Hill Level`(`QueenHillLevel`), `Playtest`(`PlaytestSpawner` + `QueenHillPlaytestPanel`, 래그돌 프리팹·백팀)만 있다. **맵은 Play 때 `Resources/QueenHill/QueenHillLayout.json`(원본: `Tools/QueenHill/build_layout.py`)으로 만든다.** 메뉴 `ChessFight > Scenes > Queen of the Hill (offline graybox)`. 생성기 `Tools/Generators/gen_queenhill_scene.py`. 네트워크 래그돌(M14)이 생기기 전까지 로비 흐름에 넣지 않는다(`GameModes.QueenOfTheHill.Scene`은 비어 있다). 상세: [GRAYBOX](../GameModes/QueenOfTheHill/GRAYBOX.md).
+## 5. 새 장면을 추가하거나 옮길 때
 
-**LastScene** (R62, 10-01, `claude/last-scene` → `JY-kingrush`) — 경기 결과 화면. 편집 모드에는 `Main Camera`와 `Last Scene`(`LastSceneDirector`)만 있다. **Play하면 `LastSceneDirector`가 PAWN RUSH 결승 무대(성·아치·체크 광장), 말, 조명, 하늘, 결과판 HUD를 전부 코드로 만든다**(그래서 모양을 바꾸려면 코드를 고친다). 이긴 팀 화면은 세리머니, 진 팀 화면은 쓰러짐과 비. 메뉴 `ChessFight > Scenes > Last Scene (result preview)`. 생성기 `Tools/Generators/gen_lastscene.py`(씬을 덮어쓰니 `--overwrite`를 붙여야 돈다). `SceneNames.LastScene` 상수는 있지만 **아무도 이 씬을 불러오지 않고 빌드 목록·`ShippedScenes`에도 없다**: 결과를 코스 결승에서 보여 줄지 이 씬으로 넘어갈지 미정(승규 님). 이 씬으로 넘어가기로 하면 빌드 목록·`ShippedScenes`에 넣고, 경기 끝에 `LastSceneDirector.Show(결과, 내 팀)`, 나갈 때 `LobbyRequested`·`RequeueRequested`를 쓴다. `NetworkRuntime`이 없어도 돈다(Steam을 모른다). 상세: [UI §10](UI.md#10-결과-화면-r62-2026-10-01).
+1. 역할을 먼저 정한다: 현재 경기·현재 개발 시험은 `Assets/Scenes`, 구형 맵·독립 프로토타입은 `Assets/Prototype`이다.
+2. `.unity`와 `.meta`를 함께 옮겨 GUID를 유지한다.
+3. 경로 상수·씬 복사 원본·생성기·빌드 목록을 함께 갱신한다.
+4. 런타임 로드 씬은 `SceneNames`·`GameModes`·빌드 목록과 맞춘다. 표시 이름 변경과 통신 키 변경을 구분한다.
+5. 장면·프리팹의 참조를 검사하고 Play 시작·나가기·다시 열기를 해당 범위에서 살펴본다.
+6. 실제 사용자 Unity·Steam 확인은 [VALIDATION](../Network/VALIDATION.md)에 별도로 기록한다.
 
-**RagdollTest** — 2026-09-25부터 **준영 님 래그돌 랩 씬 그대로**다. 회전 봉, 벽 2·3·4m, 경사 15·30·45°, 외줄, 림보·터널이 있고, `LabGame`이 P1·P2·더미를 만든다. 튜닝 패널은 Tab. 물리 120Hz는 `LabGame`이 직접 걸고 씬을 떠날 때 되돌린다(`PhysicsProfile` 없음). 빌더 메뉴 `ChessFight > Ragdoll Lab > Rebuild Pawn + Scene`이 이 파일을 다시 만든다. 상세와 네트워크 안전성: [Player/RAGDOLL](../Player/RAGDOLL.md).
-
-## 4. 렌더링
-
-`Game/RenderPipelineOverride.cs`가 `BeforeSceneLoad`에 URP 에셋 참조를 비워 Built-in으로 그리고 종료 때 되돌린다. 어느 씬을 직접 열어도 보인다. `NetworkColor` 셰이더는 Unlit이라 조명이 화면에 영향을 주지 않는다.
-
-## 5. 새 게임 씬(모드)을 추가하려면
-
-1. `Assets/Scenes/<이름>.unity`를 만들고 `ChessFight Game Root`(`GameSceneConfig`)를 둔다. 래그돌을 쓰면 `PhysicsProfile`도 둔다.
-2. `SceneNames`에 상수, 빌드 목록과 `NetworkSetup.ShippedScenes`에 추가.
-3. `Core/GameModes.cs`의 그 모드 `Scene`에 씬 이름을 넣는다. `NetworkRuntime`은 고칠 필요가 없다(`FollowMatch`가 모드에서 씬을 읽고, `Attach`가 그 씬에 `MatchSceneView`를 붙인다). 모드 전용 화면·규칙이 생기면 그때 `Attach`에 추가한다.
-4. 오프라인 시험이 필요하면 `Playtest` 오브젝트를 둔다.
-5. 전체 체크리스트: [GameModes §4](../GameModes/README.md).
+URP 설정·공통 카메라·래그돌 튜닝은 폴더 정리를 이유로 임의 변경하지 않는다.

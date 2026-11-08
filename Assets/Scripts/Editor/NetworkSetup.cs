@@ -23,12 +23,13 @@ namespace ChessFight.Editor
     {
         const string IntroScene = "Assets/Scenes/Intro.unity";
         const string LobbyScene = "Assets/Scenes/Lobby.unity";
-        const string KingRushScene = "Assets/Scenes/KingRush.unity";
+        // The Pawn Rush match scene (the lobby's 폰 러쉬 mode) since 10-08; KingRush.unity is gone.
+        const string PawnRushCourseScene = "Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity";
         const string RagdollTestScene = "Assets/Scenes/RagdollTest.unity";
-        const string QueenOfTheHillScene = "Assets/Scenes/QueenOfTheHill.unity";
-        const string LastSceneScene = "Assets/Scenes/LastScene.unity";
+        const string PawnRushVictoryScene = "Assets/Scenes/PawnRushVictory.unity";
+        const string PawnRushLoseScene = "Assets/Scenes/PawnRushLose.unity";
         // Everything a player can reach, in load order. RagdollTest is development only.
-        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, KingRushScene, "Assets/Scenes/SwordFight.unity" };
+        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, PawnRushCourseScene, "Assets/Scenes/SwordFight.unity", PawnRushVictoryScene, PawnRushLoseScene };
 
         const string Steamworks = "com.rlabrecque.steamworks.net";
         const string SteamworksUrl = "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c21a8f0e31c56ae8707130967faf491f7dd7c0d8";
@@ -53,7 +54,7 @@ namespace ChessFight.Editor
             Install();
         }
 
-        [MenuItem("ChessFight/Setup/Install dependencies")]
+        [MenuItem("ChessFight/Development/Setup/Install dependencies")]
         public static void Install()
         {
             SessionState.SetBool("ChessFight.InstallAttempted", true);
@@ -100,7 +101,7 @@ namespace ChessFight.Editor
                           "resolves the same version.");
             else Debug.LogError("[ChessFight] Could not install " + installing + ": " + error +
                                 ". Check the internet connection (and Git for Windows for Steamworks), " +
-                                "then retry with ChessFight > Setup > Install dependencies.");
+                                "then retry with ChessFight > Development > Setup > Install dependencies.");
             request = null; installing = null;
             Next();
             if (request == null) ReportBackends();
@@ -108,22 +109,21 @@ namespace ChessFight.Editor
 
         // Which backend the next Play session will use. Without this the only clue
         // is the Input: line in the HUD, which is easy to miss.
-        [MenuItem("ChessFight/Setup/Report input backend")]
+        [MenuItem("ChessFight/Development/Setup/Report input backend")]
         public static void ReportBackends()
         {
             if (InputSystemInstalled) Debug.Log("[ChessFight] Input System installed: movement uses ChessFightControls.inputactions.");
             else Debug.Log("[ChessFight] com.unity.inputsystem is not installed (intended): movement uses the legacy Input Manager.");
         }
 
-        // Play from Intro or Lobby to go online. KingRush and RagdollTest played on
-        // their own stay offline and spawn the local playtest character.
-        [MenuItem("ChessFight/Scenes/Intro (online flow)", priority = 0)] static void OpenIntro() => Open(IntroScene);
-        [MenuItem("ChessFight/Scenes/Lobby (online)", priority = 1)] static void OpenLobby() => Open(LobbyScene);
-        [MenuItem("ChessFight/Scenes/King Rush (offline playtest)", priority = 20)] static void OpenKingRush() => Open(KingRushScene);
-        [MenuItem("ChessFight/Scenes/Ragdoll Test (offline)", priority = 21)] static void OpenRagdollTest() => Open(RagdollTestScene);
-        [MenuItem("ChessFight/Scenes/Queen of the Hill (offline graybox)", priority = 22)] static void OpenQueenOfTheHill() => Open(QueenOfTheHillScene);
-        // The result screen preview: F1 / F2 winners' or losers' screen, R replay, H hide the board.
-        [MenuItem("ChessFight/Scenes/Last Scene (result preview)", priority = 23)] static void OpenLastScene() => Open(LastSceneScene);
+        // Play from Intro or Lobby to go online. The other scenes played on their own stay offline
+        // and spawn the local playtest character (Pawn Rush course 01: ChessFight > Pawn Rush).
+        [MenuItem("ChessFight/Development/Scenes/Intro (online flow)", priority = 0)] static void OpenIntro() => Open(IntroScene);
+        [MenuItem("ChessFight/Development/Scenes/Lobby (online)", priority = 1)] static void OpenLobby() => Open(LobbyScene);
+        [MenuItem("ChessFight/Development/Ragdoll Lab/Open Test Scene", priority = 21)] static void OpenRagdollTest() => Open(RagdollTestScene);
+        // The Pawn Rush result scenes, previewed on their own: R replay, H hide the package.
+        [MenuItem("ChessFight/Development/Pawn Rush/Result Preview/Victory", priority = 23)] static void OpenPawnRushVictory() => Open(PawnRushVictoryScene);
+        [MenuItem("ChessFight/Development/Pawn Rush/Result Preview/Lose", priority = 24)] static void OpenPawnRushLose() => Open(PawnRushLoseScene);
 
         static void Open(string scene)
         {
@@ -131,10 +131,10 @@ namespace ChessFight.Editor
             EditorSceneManager.OpenScene(scene);
         }
 
-        [MenuItem("ChessFight/Network/Build Windows development test")]
+        [MenuItem("ChessFight/Development/Network/Build Windows development test")]
         public static void Build()
         {
-            if (!SteamworksInstalled) throw new InvalidOperationException("Install dependencies first from ChessFight > Setup.");
+            if (!SteamworksInstalled) throw new InvalidOperationException("Install dependencies first from ChessFight > Development > Setup.");
             // Legacy input is the intended path while the Input System package stays out.
             const string path = "Builds/NetworkTest/ChessFight.exe";
             Directory.CreateDirectory(Path.GetDirectoryName(path));

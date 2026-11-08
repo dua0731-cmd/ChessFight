@@ -16,6 +16,8 @@ namespace ChessFight.Game
         [Header("Content")]
         [Tooltip("The scene owns its character simulation instead of the legacy capsule match view.")]
         public bool customMatchSimulation;
+        [Tooltip("With customMatchSimulation: Esc leaves the match (a scene with no menu of its own to leave from, like Pawn Rush course 01).")]
+        public bool escapeLeavesMatch;
         [SerializeField] GameObject arenaPrefab;
         [SerializeField] PawnAvatar pawnPrefab;
         [SerializeField] Material blueTeamMaterial;

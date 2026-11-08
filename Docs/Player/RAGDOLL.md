@@ -11,7 +11,7 @@
 | 항목 | 상태 |
 |---|---|
 | 병합 | `JY-ragdoll`(`2d450aa`)을 `Network`에 병합함(`fc006b8`). 래그돌 파일 118개만 추가, 기존 파일 변경 없음 |
-| 위치 | `Assets/ChessFight/RagdollLab/`(Art, Editor, Generated, Materials, Prefabs, Scripts, Settings). 빌더가 이 경로를 알고 있어 옮기지 않는다 |
+| 위치 | `Assets/`(Art, Editor, Generated, Materials, Prefabs, Scripts, Settings). 빌더가 이 경로를 알고 있어 옮기지 않는다 |
 | **RagdollTest 씬** | `Assets/Scenes/RagdollTest.unity` = **래그돌 랩 씬 그대로**. 원래의 `RagdollLab.unity`는 지웠다. RagdollTest의 GUID는 유지 |
 | 어댑터 `RagdollDriver` | 구현하고 `RagdollPawn.prefab` 루트에 붙임. 빌더도 다시 만들 때 붙인다 |
 | 네트워크 래그돌 | 아직 없음. 권한 결정 필요([ROADMAP](../Project/ROADMAP.md)) |
@@ -38,7 +38,7 @@
 | 다른 씬에 끼어드는 코드 | `RuntimeInitializeOnLoadMethod`, `DontDestroyOnLoad`, `[InitializeOnLoad]` 없음. 빌더는 메뉴를 눌렀을 때만 동작 | 코드 확인 |
 | 프로젝트 설정 변경 | 병합은 새 파일만 추가했다. ProjectSettings·Packages·레이어·태그 변경 없음. 모든 오브젝트가 Default 레이어 | 병합 diff 확인 |
 | 입력 백엔드 | 랩은 레거시 `Input`과 XInput(Windows DLL, 없으면 조용히 무시)을 쓴다. Active Input Handling = Old와 맞는다 | [DECISIONS U2](../Project/DECISIONS.md) |
-| 렌더링 | 랩 재질은 Built-in `Standard` 셰이더. 프로젝트의 Built-in 우회로 그대로 보인다 | `RenderPipelineOverride` |
+| 렌더링 | 랩 재질은 URP `Lit`(R151에 Standard에서 바꿈). 코드로 만드는 재질은 `LitMaterials` | `Game/LitMaterials` |
 | 폴더 메타 변경점 반복 | `Assets/ChessFight.meta`가 없으면 Unity가 PC마다 다른 GUID로 만든다. 원래 GUID로 되살려 커밋했다 | 커밋 |
 
 **멀티를 위한 준비:** `RagdollPawn`은 입력을 직접 읽지 않고 `SetInput(PawnInput)`(월드 좌표)으로만 움직인다. `RagdollDriver`가 이것을 게임 공통 계약 `ICharacterDriver`로 연결하므로, 오프라인 플레이테스트·네트워크 호스트·봇이 같은 방식으로 래그돌을 움직일 수 있다.
@@ -77,14 +77,14 @@ public interface IHitReceiver
 }
 ```
 
-`Assets/ChessFight/RagdollLab/Scripts/RagdollDriver.cs`가 이것을 구현한다.
+`Assets/Scripts/RagdollLab/RagdollDriver.cs`가 이것을 구현한다.
 - `SetCommand` → `RagdollPawn.SetInput`. 필드는 이름만 바꿔 복사한다.
 - `ApplyHit` → `RagdollPawn.TakeHit`(09-26, §8).
 - 다른 코드는 `GetComponent<IHitReceiver>()`로 찾는다. 래그돌 타입을 몰라도 된다.
 - `FollowTarget` = `Hips`.
 - `Teleport(바닥, 회전)` → `RagdollPawn.Teleport(바닥 + standHeight + 0.02, 앞 방향)`. `LabGame.Respawn`과 같은 식이다.
 
-**킹러시에서 래그돌로 달려 보려면:** `KingRush` 씬 → `Playtest` 오브젝트 → `Character Prefab`을 `Assets/ChessFight/RagdollLab/Prefabs/RagdollPawn.prefab`으로 바꾼다. KingRush에는 `PhysicsProfile`(120Hz/24회)이 이미 있다. 튜닝 에셋은 프리팹에 연결되어 있다. **Unity에서 아직 시험하지 않았다.** 시험 후 결과를 VALIDATION에 적는다.
+**킹러시에서 래그돌로 달려 보려면:** `KingRush` 씬 → `Playtest` 오브젝트 → `Character Prefab`을 `Assets/Prefabs/RagdollPawn.prefab`으로 바꾼다. KingRush에는 `PhysicsProfile`(120Hz/24회)이 이미 있다. 튜닝 에셋은 프리팹에 연결되어 있다. **Unity에서 아직 시험하지 않았다.** 시험 후 결과를 VALIDATION에 적는다.
 
 ## 5. 멀티를 위해 계속 지킬 것
 
@@ -113,12 +113,12 @@ Docs/Player/RAGDOLL.md와 Docs/RagdollLab/README.md를 읽으세요.
 RagdollPawn은 SetInput(PawnInput)으로만 움직이고, RagdollDriver가 ICharacterDriver로 연결합니다. 이 구조를 유지하세요.
 RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드가 래그돌 타입을 참조하거나,
 래그돌 어셈블리가 Steam을 참조하면 안 됩니다. 작업 후 Tools/run-tests-linux.sh(또는 Windows의 Test 스크립트)로 확인하세요.
-Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
+래그돌 폴더(`Assets/Scripts/RagdollLab` 등, 2026-10-08 폴더 정리 뒤 위치)는 옮기지 않습니다.
 ```
 
 ## 8. 퀸 오브 더 힐 기능 (M1~M11, M13)
 
-2026-09-26, 브랜치 `JY-ragdoll_v2`, 요청 R34·R35. 무엇을 왜 만드는지와 완료 기준은 [MECHANICS_TODO](../GameModes/QueenOfTheHill/MECHANICS_TODO.md). 자동 점검(빌드한 랩 플레이어) 통과, **사용자가 Unity에서 1차 12개 확인(09-26, 모두 성공)**. 그 뒤 의견대로 고친 것(넘어진 뒤 1초 누워 있기, 물에 5초 뜨기·버둥)은 재확인 대기 → [VALIDATION](../Network/VALIDATION.md) 최상단 표.
+2026-09-26, 브랜치 `JY-ragdoll_v2`, 요청 R34·R35. 무엇을 왜 만드는지와 완료 기준은 [MECHANICS_TODO](../Archive/QueenOfTheHill/MECHANICS_TODO.md). 자동 점검(빌드한 랩 플레이어) 통과, **사용자가 Unity에서 1차 12개 확인(09-26, 모두 성공)**. 그 뒤 의견대로 고친 것(넘어진 뒤 1초 누워 있기, 물에 5초 뜨기·버둥)은 재확인 대기 → [VALIDATION](../Network/VALIDATION.md) 최상단 표.
 
 ### 8.1 새 입력 (M2)
 
@@ -182,14 +182,14 @@ Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 
 ### 8.6 네트워크
 
-- M1~M4에서 바뀐 것은 **랩 입력 패킷**뿐이었다(8.1). 스냅샷은 R36에서 버둥대기 게이지로 65바이트, **M5에서 갈고리로 73바이트**, **M11에서 기물 종류로 74바이트**가 됐다(8.7, 8.13).
+- M1~M4에서 바뀐 것은 **랩 입력 패킷**뿐이었다(8.1). 스냅샷은 R36에서 버둥대기 게이지로 65바이트, **M5에서 갈고리로 73바이트**, **M11에서 기물 종류로 74바이트**가 됐다(8.7, 8.13). (R297, 11-02) 갈고리 게이지 · 끝점은 갈고리를 돌리거나 던졌을 때만 싣고 받은 보낸 시각을 2바이트로 줄여 **65바이트**(그때만 72), magic `CFRD` → [MOTION §3](../Network/MOTION.md).
 - 탈것·피격·물은 **방장만 계산**한다(랩 방식). 참가자 화면의 인형은 피격·물 부활을 무시하고 방장이 보낸 자세를 그린다.
 - **발판은 공유 시계로 모든 PC에서 같다.** 랩 온라인 경기 동안 `SteamRagdollLink`가 장애물 시계를 Steam 서버 시계에 맞춘다. 다만 서버 시계를 그대로 쓰지 않고 **물리 스텝마다 고르게** 흐르게 하고(서버 시계는 프레임 단위로 뛰어서 승강기가 덜컥거린다) 서버 시계와의 차이만 매 프레임 조금씩 맞춘다. **참가자 쪽은 2026-09-30(R51)부터 방장 시각을 따른다:** 방장이 스냅샷마다 그 순간의 장애물 시각을 싣고, 참가자는 지금 그리는 인형과 **같은 순간**의 장애물 시각을 보간해 장애물을 돌린다(`Core/HostObstacleClock`). 그 전에는 참가자도 자기 Steam 시계에서 110 ms를 빼서 썼는데, Steam 시계는 초 단위라 PC 간 정밀도가 없고 전송 지연·재생 속도 조절·느린 방장을 몰라서 **모든 움직이는 장애물이 방장 판정과 수십~수백 ms 어긋났다**(3인 시험에서 "안 맞았는데 맞는" 현상). 첫 스냅샷 전까지만 Steam 시계를 쓴다. 시계가 바뀌는 순간(경기 시작·끝, 첫 스냅샷) 장애물은 속도 없이 그 자리로 옮겨 간다(`Obstacle`). 랩의 회전 봉(`SpinningBar`)도 같은 날부터 각도를 누적하지 않고 장애물 시계로 계산한다. **두 PC로 확인하지 않았다.**
 - 경기 씬의 래그돌 동기화와 새 상태(기물 등)의 스냅샷은 M14에서 한다.
 
 ### 8.7 갈고리 = 2칸 이동, 앙파상 (M5)
 
-2026-09-27, 요청 R40. 기획([DESIGN §4.1·4.2](../GameModes/QueenOfTheHill/DESIGN.md))에서 **사용자가 조작과 규칙을 바꿨다**: 능력 키로 바로 던지는 대신 **E로 꺼내고, 좌클릭을 꾹 누르면 돌팔매처럼 머리 위로 돌리며 게이지가 차고, 떼면 게이지만큼 멀리 날아간다.** 표시된 면만이 아니라 **어느 면에나** 박히고, 다리보다 낮은 곳에서 튕기는 규칙은 없다(레벨을 그렇게 안 걸리게 만든다). 코드: `RagdollPawn.Hook.cs`(동작), `PawnHookView.cs`(그림), `Gameplay/Course/HookStartZone.cs`(던질 수 있는 곳).
+2026-09-27, 요청 R40. 기획([DESIGN §4.1·4.2](../Archive/QueenOfTheHill/DESIGN.md))에서 **사용자가 조작과 규칙을 바꿨다**: 능력 키로 바로 던지는 대신 **E로 꺼내고, 좌클릭을 꾹 누르면 돌팔매처럼 머리 위로 돌리며 게이지가 차고, 떼면 게이지만큼 멀리 날아간다.** 표시된 면만이 아니라 **어느 면에나** 박히고, 다리보다 낮은 곳에서 튕기는 규칙은 없다(레벨을 그렇게 안 걸리게 만든다). 코드: `RagdollPawn.Hook.cs`(동작), `PawnHookView.cs`(그림), `Gameplay/Course/HookStartZone.cs`(던질 수 있는 곳).
 
 | 무엇 | 어떻게 | 값 (`RagdollTuning` "갈고리" 묶음) |
 |---|---|---|
@@ -215,7 +215,7 @@ Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 
 ### 8.9 개척의 종·열리는 길 (M8)과 체크포인트 (M9)
 
-2026-09-27, R42(자율). 기획: [DESIGN §3.3 B·C](../GameModes/QueenOfTheHill/DESIGN.md).
+2026-09-27, R42(자율). 기획: [DESIGN §3.3 B·C](../Archive/QueenOfTheHill/DESIGN.md).
 
 - **규칙(Core, Unity 없음)** `Core/QueenHillRules`: 구간 1..n(0 = 출발 다리). **먼저 종을 친 팀이 그 구간을 연다**(나중에 친 팀은 못 바꿈). 연 뒤 **20초는 연 팀만**, 그다음 누구나. 개인 체크포인트 = 내가 선 가장 높은 착지대, 팀 체크포인트 = 우리 팀이 연 가장 높은 구간 **한 칸 아래**, 다시 나오는 곳 = 둘 중 높은 곳(0이면 다리). 열린 목록은 짧은 글자(`구간:팀:열린 시각 ms;…`)로 오가고, 받는 쪽은 **열기만** 한다(깨진 글자는 통째로 버림). Core 테스트 3개.
 - **장면 부품(Gameplay/QueenHill)**:
@@ -232,7 +232,7 @@ Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 
 ### 8.10 도약대·태엽 스프링 (M7)
 
-2026-09-27, R43(자율). 기획: [DESIGN §3.4 S3·S5](../GameModes/QueenOfTheHill/DESIGN.md), [MECHANICS_TODO M7](../GameModes/QueenOfTheHill/MECHANICS_TODO.md).
+2026-09-27, R43(자율). 기획: [DESIGN §3.4 S3·S5](../Archive/QueenOfTheHill/DESIGN.md), [MECHANICS_TODO M7](../Archive/QueenOfTheHill/MECHANICS_TODO.md).
 
 - **장면 부품(Gameplay)** `Obstacles/LaunchPad`: 위에 선 것을 **정해진 곡선**으로 던진다. 착지점(패드 기준 위·앞)과 착지점 위로 얼마나 더 솟을지(`clearance`)만 정하면, 던질 속도는 **각자 선 자리의 발밑에서** 계산한다. 그래서 패드 어디를 밟아도, 걸어서·달려서·점프해서 올라와도 같은 곳에 내린다. 속도를 **더하지 않고 정한다**(`ILaunchable.Launch`). 캐릭터가 아닌 몸(상자)도 같은 곡선으로 난다.
   - **L자 도약대**(`period` 0): 밟는 순간 던진다. 한 번 던진 몸은 0.6초 동안 다시 안 던진다(떠오르는 동안 상자 안에 있으니까).
@@ -249,7 +249,7 @@ Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 
 ### 8.11 밧줄·사슬·그네 (M6)
 
-2026-09-27, R44(자율). 기획: [DESIGN §3.4 S2·S4·S5·S6·S8](../GameModes/QueenOfTheHill/DESIGN.md), [MECHANICS_TODO M6](../GameModes/QueenOfTheHill/MECHANICS_TODO.md).
+2026-09-27, R44(자율). 기획: [DESIGN §3.4 S2·S4·S5·S6·S8](../Archive/QueenOfTheHill/DESIGN.md), [MECHANICS_TODO M6](../Archive/QueenOfTheHill/MECHANICS_TODO.md).
 
 - **먼저 시험한 것(MECHANICS_TODO)**: 두꺼운 밧줄 기둥을 지금의 벽 등반으로 오를 수 있는가 → **된다.** 지름 0.5 m 기둥을 W+우클릭 5초에 5.5 m 올랐다. 그래서 **서 있는 사슬 기둥은 벽 등반으로 대신**하고 따로 `ClimbChain`을 만들지 않았다. 매달린 밧줄·사슬·그네는 아래 `RopeLine`이 맡는다.
 - **장면 부품(Gameplay)** `Obstacles/RopeLine`: 이 오브젝트 위치(꼭대기)에서 늘어진 선. 길이, 흔들리는 각도(0 = 가만히 있는 밧줄·사슬), 주기, 위상. **흔들림은 공유 장애물 시계의 함수**(`각도 = 최대각 × sin(2π(t+위상)/주기)`, 로컬 앞쪽으로)라 모든 PC에서 같은 자리에 있고 패킷이 없다. 충돌체가 없어 아무도 밀지 않는다(캐릭터는 `RopeLine.All`로 찾는다). 굵기를 주면 원기둥으로 그린다. `Point`·`PointVelocity`·`Distance`·`SecondsToEnd`(다음에 끝에 닿기까지).
@@ -266,7 +266,7 @@ Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 
 ### 8.12 상태 효과: 찌그러짐·비틀·면역 (M13)
 
-2026-09-27, R45(자율). 기획: [DESIGN §6.2](../GameModes/QueenOfTheHill/DESIGN.md)(나이트의 밟기, 비숍의 돌조각, 킹의 면역).
+2026-09-27, R45(자율). 기획: [DESIGN §6.2](../Archive/QueenOfTheHill/DESIGN.md)(나이트의 밟기, 비숍의 돌조각, 킹의 면역).
 
 - **약속(Gameplay)** `Characters/IStatusReceiver`: `Squash(초, 면역 초)`, `Stagger(초)`. 능력(M12)이 `IHitReceiver`처럼 이것으로 캐릭터에 효과를 준다. 안 먹히면 false(면역, 이미 넘어짐, 직전 찌그러짐의 면역 중). 방장만 부르고 꼭두각시는 무시한다.
 - **래그돌** `RagdollPawn.Status.cs`:
@@ -279,7 +279,7 @@ Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 
 ### 8.13 승격과 기물별 성능 (M11)
 
-2026-09-27, R46(자율). 기획: [DESIGN §6.2](../GameModes/QueenOfTheHill/DESIGN.md)(시작값).
+2026-09-27, R46(자율). 기획: [DESIGN §6.2](../Archive/QueenOfTheHill/DESIGN.md)(시작값).
 
 - **규칙(Core, Unity 없음)** `Core/ChessPieces`: `PieceKind`(폰·룩·비숍·나이트·킹·퀸)과 `PieceStats`(무게·이동·등반 배율, 전력질주 여부, 상태 면역). 시작값: **룩** 무게 1.5·등반 0.7배, **나이트** 무게 0.8, **킹** 무게 3·이동 0.8배·전력질주 없음·찌그러짐/비틀 면역, **퀸** 무게 2, 비숍·폰은 1. 승격 규칙 `CanPromote`: **폰만**, 룩·비숍·나이트·킹 중 하나, **킹은 팀에 하나**, 퀸은 고를 수 없다(2단계에서 정해짐). Core 테스트 2개(34개).
 - **장면 부품(Gameplay)** `QueenHill/PromotionPad`(받침대, 상호작용 키 F로 승격, `demote`는 시험대용 "폰으로"), `Characters/IPromotable`(`Piece`, `Promote`).
@@ -293,3 +293,114 @@ Assets/ChessFight/RagdollLab 폴더는 옮기지 않습니다.
 - 자동 점검 5개(`LabAutoTest.Piece.cs`, `-ragdollOnly Piece`): 받침대 승격(폰 → 룩, 룩에서 나이트는 안 됨, 폰으로 되돌림, 킹, 백 둘째 킹 안 됨, 흑은 됨, → 비숍) · 킹 속도 0.81배·Shift에도 전력질주 없음·찌그러짐 면역 · 같은 피격의 속도 룩 0.67·킹 0.33·나이트 1.25배 · 룩 벽 등반 0.69배 · 기물이 스냅샷으로 참가자에게(96바이트 = 헤더 22 + 74).
 
 - (갈고리) 자동 점검 7개(`LabAutoTest.Hook.cs`, `-ragdollOnly Hook`): 게이지(살짝 5.6 m / 가득 18.4 m, 좌클릭에 다이빙 안 함), 벽면·윗면·천장에 박힘, 탑 위로 23.6 m를 4.1초(평균 5.7 m/s)에 끌려가 섬, 벽 앞 매달림 → 우클릭 등반, 빗나감 2.5초 → 1초 뒤 재던지기, 앙파상 0.42초에 빠지고 상대 떨어짐, 원격 전달(게이지·상태·위치 오차 0.15 cm). 점검은 **조준과 게이지를 같이 골라** 던진다(가까운 곳은 덜 채워 던진다).
+
+## 폰 러쉬 전용 물리 (R245, 2026-10-30)
+
+승규 님 요청(`seoungtest`): 소드 파이트 물리는 그대로 두고 폰 러쉬 기물만 점프 · 턱 오르기 · 내려가기를 고친다.
+
+- **나누는 방법:** 공유 튜닝 `Assets/Settings/RagdollTuning.asset`과 프리팹은 그대로다. 폰 러쉬 값은 코드 클래스 `RagdollLab/PawnRushPhysicsParams.cs`에 있고, `PawnRushCourseSkills`(코스 01 · `SeoungTest_PawnRush`처럼 `CourseSkills.PawnRush`가 켜진 씬에서만 생김)가 모든 기물의 `RagdollPawn.PawnRushPhysics`에 넣어 준다. 이 값이 없는 기물(소드 파이트 · 킹 러쉬 · 퀸 오브 더 힐 · 랩)은 코드가 전과 똑같이 돈다(`RagdollPawn.PawnRushPhysics.cs`, `RagdollPawn.cs`에 부르는 곳 6개, 모두 값이 없으면 그대로 통과).
+- **Play 중 조정:** Hierarchy `Pawn Rush skills (course)` → Inspector `Physics`.
+
+| 값 | 기본 | 하는 일 |
+|---|---|---|
+| `jumpSpeed` | 4.9 m/s(R247, 처음 5.4) | 공유 `jumpImpulse`(3.8) 대신 |
+| `gravityScale` | 1.4(R247, 처음 1.7) | 공중에서만 더 당김(서 있을 때는 관절이 기본 중력 기준이라 안 건드림). 발사대 궤적 · 스킬 비행 · 등반 · 밧줄 · 갈고리 · 물 · 잡힘 중에는 꺼짐 |
+| `fallGravity` | 1.15(R247, 처음 1.25) | 내려올 때 더(빨리 떨어짐) |
+| `stepUpHeight` | 0.25 m | 걸어서 들이받은 턱이 이 높이 이하면 살짝 뛰어 올라섬(0.3 m 점프 계단은 여전히 점프) |
+| `ledgeAssistHeight` | 0.2 m | 공중에서 발이 모서리 위 끝보다 이만큼 아래 이내면 넘겨 줌(`ledgeAssistMaxRise` 1 m/s보다 빨리 오르는 중이면 아직 안 함) |
+| `stepProbe` · `stepClearance` · `stepForward` | 0.4 m · 0.06 m · 1.5 m/s | 턱을 찾는 거리 · 위로 더 띄우기 · 넘을 때 앞으로 최소 속도 |
+| `standOnFeet` | 켬 | 서는 높이 = 골반 아래 · 두 발 아래 바닥 중 가장 높은 것. 모서리에서 골반만 낮은 바닥 위로 나가면 몸을 아래로 끌어 앞으로 꼬꾸라뜨리던 것 |
+| `lipNoRecoil` | 켬(R398) | 낮은 턱에 붙어서 점프해도 뒤로 튕기지 않음. 아래 "낮은 턱에 붙어 점프" |
+
+- 공중 중력을 키우면 같은 높이에서 떨어져도 착지가 세져 넉다운(8 m/s)이 잦아지므로, 폰 러쉬에서는 **바닥 착지 충격만** √(gravityScale × fallGravity)로 나눠 예전과 같은 높이에서만 넘어진다. 다른 기물 · 벽 충돌은 그대로.
+- 점프 상승 보정(`GuardJumpRise`)도 이 중력 배율로 계산한다.
+- 네트워크: 방장이 물리를 돌리므로 프로토콜 변경 없음. 모든 PC에 `PawnRushCourseSkills`가 있어 방장이 바뀌어도 같은 값.
+- **Unity 미확인.** 확인 목록은 [VALIDATION](../Network/VALIDATION.md) 최상단 R245 표.
+
+### 점프 자세 · 다이빙 · 달리기 팔 (R246, 2026-10-30)
+
+같은 `PawnRushPhysicsParams`로 폰 러쉬 기물에만 적용(`RagdollPawn.PawnRushPhysics.cs`의 `PawnRushRunPose` · `PawnRushDivePose`, `Pose()`에서 부름, `Drives()` · `Dive()`에서 값 읽음).
+
+| 무엇 | 예전(공유) | 폰 러쉬 |
+|---|---|---|
+| 달리기 팔 | 옆으로 35도 벌려 앞뒤, 질주는 수직축으로 휘젓기 | `runArmDown` 65도(R247: 몸 옆에서 25도 벌림, 처음 60)로 내려 다리 반대로 앞뒤 `runArmSwing` 45도 · `sprintArmSwing` 65도, `runArmForward` 12도 앞으로 |
+| 점프 자세 | 공중이면 고정 자세 하나(다리 -25 · -15도, 팔 위로 35도) | 위로 갈 때: 달리다 뛰면 이륙 때 뒤에 있던 무릎 -55도 · 다른 다리 뒤로 20도, 반대 팔 앞 · 위로(제자리면 두 무릎 · 두 팔) → 내려올 때: 팔 벌림, 다리 모아 -12도. 세로 속도 ±`jumpPoseSpeed`(3 m/s) 사이로 이어짐 |
+| 다이빙 | 팔만 힘, 나머지 흐물(넘어지는 것처럼 보임) | 몸통 · 다리에 서 있을 때 힘의 `diveBodyStiffness`(0.5) → 판자처럼 곧게, 팔은 다이빙 방향 앞으로, 고개 -30도, 다리 모아 뒤로. `diveBoost` 3 · `diveLift` 2.2 · `diveMaxSpeed` 8(공유 1.55 · 0.55 · 5.3) |
+
+팔 방향은 가슴 기준(x 오른쪽 · y 위 · z 앞)으로 정해 `FromToRotation`으로 돌린다(`DiveReach`와 같은 방식). 모델 팔은 한 덩어리라 팔꿈치는 없다.
+
+### 걷기 · 뛰기 걸음, 슬라이딩 뒤 쓸림 (R248, 2026-10-30)
+
+| 무엇 | 예전(공유) | 폰 러쉬 |
+|---|---|---|
+| 걸음 리듬 | 초당 2.9(질주 3.5) 고정, 느려지면 비례로 줄어 느린 화면처럼 | `walkCadence` 1.8 → `runCadence` 2.6 → `sprintCadence` 3.3, 속도 따라 이어짐(`PawnRushCadence`) |
+| 다리 흔들기 | 늘 60도(엉덩이 한계) | `walkLegSwing` 25 → `runLegSwing` 42 → `sprintLegSwing` 56도(`PawnRushLegSwing`) |
+| 발 | 다리 반대로 돌려 바닥에 평평하게 | 그 위에 `footRoll` 15도: 앞발 뒤꿈치 착지(발끝 위로), 뒷발 앞꿈치로 밀기(`PawnRushFootRoll`) |
+| 다이빙 배 미끄럼 | 마찰 `diveFriction` 0.35 | `diveSlideFriction` 0.15(내리막은 공유 `diveSlopeFriction` 그대로) |
+| 일어난 뒤 | 속도 0.7배 남기고 멈추는 힘 29 m/s²로 거의 바로 섬 | `skidKeep` 0.9배 남기고 `skidTime` 0.5초 동안 멈추는 힘 `skidDeceleration` 7 m/s², 발 마찰도 미끄러짐 쪽(`PawnRushSkid`, `StopDeceleration`) |
+
+### 빨리 일어나기 · 경사 (R249, 2026-10-30)
+
+| 무엇 | 예전(공유) | 폰 러쉬 |
+|---|---|---|
+| 넘어진 뒤 | `getUpDelay` 1초 · `getUpBlendTime` 0.22초 · 달리기 대기 0.4초 | `getUpDelay` 0.6 · `getUpBlendTime` 0.15 · `upSettleTime` 0.2초 |
+| 다이빙 뒤 | `diveMinTime` 0.7 · `diveLieTime` 0.51초 | `diveMinTime` 0.45 · `diveLieTime` 0.25초 |
+| 경사 몸 힘 | 20도 넘으면 0.6배(흐물) | `slopeStiffness` 1 |
+| 경사 기울기 | 곧게 섬 | 오르막 경사의 `slopeLeanUp` 0.35배 앞으로, 내리막 `slopeLeanDown` 0.2배 뒤로(`PawnRushSlopeLean`) |
+| 경사 다리 | 평지처럼(오르막 발끝이 박힘) | 다리 흔들기를 남은 경사의 `slopeLegFollow` 0.6만큼 기울이고 발바닥은 경사에 맞춤(`PawnRushSlopeLegs`) |
+| 발밑 기준 서기(R245) | — | 골반 아래 바닥이 평평할 때만(법선 y ≥ 0.985). 경사에서 앞발 바닥을 잡아 골반이 뜨던 것 |
+
+### 다이빙 자세 · 착지 동작 (R250, 2026-10-30)
+
+| 무엇 | 폰 러쉬 |
+|---|---|
+| 다이빙 공중 | 두 팔이 가슴 기준 위(머리 위)로 몸을 따라 곧게 · 조금 앞 · 조금 벌림, 고개 `diveHeadUp` 45도, 가슴 -10도 젖힘, 다리 뒤로 10도 |
+| 다이빙 착지 | 골반이 바닥 가까이(서는 높이 + 0.1 m, 다이빙 0.1초 뒤부터)면 `diveLandBlend` 0.12초에 걸쳐: 두 손을 다이빙 방향 앞 아래로 짚기, 가슴 -18도, 다리 22도 들기(`diveLand`) |
+| 점프 · 낙하 착지 | 공중 → 땅에서 `landPoseTime` 0.25초 동안 팔 앞 아래로 받치기 · 고개 14도 숙임, 떨어지는 속도 6 m/s면 꽉 차게(느리면 반), 거의 서 있으면 다리 6도 벌려 딛기(`PawnRushLandPose`) |
+
+### 낮은 턱에 붙어 점프 (R398, 2026-11-04)
+
+승규 님: "모든 턱 정도 폰 발 정도 있는 건물에서 붙어서 점프 하면 뒤로 밀려나 미니 게임에도 같은 증상".
+
+| 단계 | 예전 | 폰 러쉬(`lipNoRecoil`) |
+|---|---|---|
+| 낮은 턱에 붙어 W | 막힘 판정(`blocked`)이 가슴 높이 광선 하나 → 가슴보다 낮은 턱은 못 봄 → 앵커가 서 있을 때 한도 0.6 m만큼 턱 안, 골반 스프링이 약 2700 N으로 누름 | `PawnRushLowLip`: 발바닥 6 cm 위 · 골반 높이 광선(0.5 m, 가파른 면만 — 법선 y < .6)도 막힘 → 0.1초 뒤부터 앵커가 `anchorBlockedLeash` 0.15 m로 서서히(초당 4) 줄고, 키를 놓으면 감쇠비가 정한 안전 속도로 빠짐(`pressedWall`) |
+| 점프(또는 턱 오르기 깡충 · 모서리에서 떨어짐) | 공중 한도 0.6 × `airControl` 0.4 × 0.5 = 0.12 m로 한 스텝에 자름 → 앵커가 0.48 m를 0.02초에 = 뒤로 24 m/s → 관절 감쇠(4500 × 0.21)가 몸을 뒤로 걷어참 | `PawnRushAirLeash`: 앵커가 공중 한도보다 앞서 있으면 초당 0.8 / 감쇠비(≈ 3.8)로만 줄임 — 이보다 느리게 돌아오는 앵커는 스프링을 못 이겨 몸은 앞으로만, 공중 한도보다 약하게 당겨짐. 키 방향 앞의 앵커만(키가 없으면 방금 막혔을 때만), 스킬 · 발사대가 몸을 날리는 중(`BodyCarried`)은 그대로 |
+
+- 다이빙은 래그돌 상태라 `Locomotion`의 앵커 코드를 지나지 않아 그대로. 밀치기(잡고 던지기)는 땅 위라 ②가 안 걸림. 값이 없는 다른 모드는 예전 그대로.
+- 같은 원리의 예전 사고: [PITFALLS 20 · 67](../Environment/PITFALLS.md).
+- 남은 의심: 비볼록 `MeshCollider`(작전 회의실 컨베이어 틀 등)는 `FootTouches`가 발 상자와 겹치기만 해도 땅으로 쳐서, 공중에서 발이 옆면에 닿으면 그 스텝에 `planted`가 되어 점프가 꺾일 수 있다. 상자 충돌체는 해당 없음. 이번에는 그대로 둠.
+- **Unity 미확인.** 확인 목록은 [VALIDATION](../Network/VALIDATION.md) 최상단 R398 표.
+
+### 폰 러쉬 전용 모델 칠하기 (R251, 2026-10-30)
+
+공유 모델(`Art/Pieces/*_Rigged.fbx` → `Resources/PieceModels/<기물>.prefab`, 폰은 `RagdollLabBuilder`가 칠함)은 그대로 두고 폰 러쉬용을 따로 만든다.
+
+1. **Blender:** `blender -b -P Tools/PieceRig/rig_pawnrush.py -- Assets/Art/PawnRushRig` (기본 6개: Pawn King Queen Rook Bishop Knight). 폰은 `Art/Pawn/Pawn.fbx`, 기물은 `Art/Pieces/<기물>/<기물>_Rigged.fbx`를 읽어 `PawnRushRig/<이름>_Rigged_PawnRush.fbx`를 쓴다(.meta는 `King_Rigged.fbx.meta` 설정 복사, guid 새로).
+2. **Unity:** ChessFight > Ragdoll Lab > **Bake Pawn Rush Piece Models**(`PieceModelBaker.BakePawnRush`) → `PawnRushRig/<이름>_Skinned_PawnRush.asset`, `Resources/PieceModels/PawnRush/<이름>.prefab`(폰은 표시 없이 메시만, 재질은 팀 색 그대로).
+3. **게임:** `RagdollPawn.ShowPieceModel`이 `PawnRushPhysics`가 있으면 `PieceModels/PawnRush/<기물>`을 먼저 찾고(없으면 공유), 폰은 `ShowPawnRushPawnMesh`가 메시만 바꾼다. `PawnRushPhysics`를 넣는 순간(`PawnRushCourseSkills`) 다시 입힌다. 구운 파일이 없으면 예전 모델 그대로라 안전하다.
+
+| 바꾼 칠하기 | 예전 | 폰 러쉬 |
+|---|---|---|
+| 목 | 기물: Spine2 → Head를 두 뼈 높이 사이 전체(얼굴 전체)에 섞음 / 폰: 목에서 딱 끊김 | 목의 가장 좁은 1 cm 단면(폰은 Neck 뼈 - 1 cm, 룩은 0.40 m)에서 아래 2 cm · 위 1 cm로만 섞음. 그 위는 전부 Head(얼굴 · 왕관 · 칼라가 한 덩어리) |
+| 작은 조각 | 높이대로 두 뼈에 나뉨(눈 · 고리 · 갈기가 고개 돌릴 때 찢어짐) | 높이 12 cm 이하의 따로 떨어진 조각은 가운데 높이의 무게 하나로 통째(기물별 3~15개) |
+| 몸통 | 높이로만 | 표면 이웃끼리 3번 고르게(머리 · 팔다리 제외, 발 무게는 몸에 번지지 않음) |
+| 폰 신발 | 0.12 × 키 아래에서 딱 끊김 | 신발 위 4 cm(치마 밑)만 골반으로 섞임. 첫 시도(치마 아랫단까지)는 걸을 때 치마 끝을 끌어서 고침 |
+| 팔 | 토막 통째 Arm | 뿌리 30 % → 토막 1/3 지점에서 0으로 몸(어깨 높이) 무게, 장갑 이음매 2번 부드럽게 |
+
+Blender 렌더(달리는 자세 · 무게 색)로 전후를 비교했다. 다리를 크게 벌리면 폰 신발이 치마 옆으로 비치는 것은 모델 모양 그대로(공유 모델도 같음).
+
+### 다이빙 뒤 빨리 일어나기 (R252, 2026-10-30)
+
+| 값 | R249 | R252 |
+|---|---|---|
+| `diveMinTime` · `diveLieTime` | 0.45 · 0.25초 | 0.3 · 0.1초 |
+| `diveGetUpSpeed`(이보다 느리면 일어남) | 공유 1 m/s | 3 m/s(남은 속도는 일어난 뒤 `skidKeep`로 쓸림) |
+| `diveMaxTime` | 공유 1.5초 | 0.7초 |
+| `getUpBlendTime` · `upSettleTime` | 0.15 · 0.2초 | 0.1 · 0.1초 |
+
+손 짚는 착지 자세(R250)가 몸을 받쳐 골반이 공유 "엎드림" 높이(서는 높이 + 5 cm)보다 높아, 다이빙이 끝까지 엎드린 것으로 안 쳐졌다. 폰 러쉬에서는 착지 자세가 다 들어가면(`diveLand` = 1) 엎드린 것으로 본다(`PawnRushDiveDown`). Unity CLI 측정(같은 자리, 5 m/s): 1.51 → 0.67초.
+
+### 폰 팔 벌리기 (R253, 2026-10-30)
+
+폰 러쉬의 폰만 `pawnArmSpread` 30도만큼 팔을 더 벌린다(몸 옆에서 55도, `runArmDown` 65 - 30). 폰의 종 모양 치마가 다른 기물 몸보다 넓어 25도에서는 장갑이 치마에 파묻혔다. 0 · 20 · 30 · 40도를 Unity에서 찍어 30을 골랐다. 서 있을 때와 뛸 때(앞뒤 흔들기의 기준 자세)에 쓰이고, 점프 · 다이빙 · 착지 자세는 그대로.

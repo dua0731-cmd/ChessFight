@@ -17,6 +17,50 @@ namespace ChessFight.Network
             silence >= UnstableAfter ? LinkHealth.Unstable : LinkHealth.Ok;
     }
 
+    // R295: how long a client in a match scene has not heard its host. A slow PC
+    // is not a lost host: the count starts at the host's first packet in the
+    // scene or at the shared start (go), whichever comes first, so neither a host
+    // still loading nor a client that loaded late takes the wait for silence. A
+    // host that never comes is still given up on: once the scene has waited as
+    // long as a client waits for the start (MatchStart.ClientGiveUp), the count
+    // starts anyway.
+    public sealed class HostSilence
+    {
+        float enteredAt, heardAt = -1;
+
+        // The scene is up, or the host changed: nothing heard from this host yet.
+        public void Enter(float now) { enteredAt = now; heardAt = -1; }
+
+        // A packet from the host.
+        public void Heard(float now) => heardAt = now;
+
+        // The silence in seconds. `started`: the shared start time has passed.
+        public float Seconds(float now, bool started)
+        {
+            if (heardAt < 0 && (started || now - enteredAt >= MatchStart.ClientGiveUp)) heardAt = now;
+            return heardAt < 0 ? 0 : Math.Max(0, now - heardAt);
+        }
+    }
+
+    // R295: whether the host a match scene's link follows has changed since it
+    // last looked. Every PC starts its stream from the host over then, not only
+    // the two whose roles swap: a third PC that kept the old host's numbering
+    // dropped the new host's packets as old ones.
+    public sealed class HostWatch
+    {
+        ulong host;
+        bool hosting, seen;
+
+        // The host now, and whether it is this PC: true when either differs from
+        // the last look (never on the first).
+        public bool Changed(ulong host, bool hosting)
+        {
+            bool changed = seen && (host != this.host || hosting != this.hosting);
+            this.host = host; this.hosting = hosting; seen = true;
+            return changed;
+        }
+    }
+
     // Input-to-confirmation time: from sending an input to the snapshot that
     // acknowledges it. This is what a player feels, so it includes the host's
     // tick and snapshot spacing on top of the wire ping.
@@ -52,8 +96,11 @@ namespace ChessFight.Network
     public struct LinkProfile
     {
         public int RoundTripMs, LossPercent;
-        public bool Active => RoundTripMs > 0 || LossPercent > 0;
-        public override string ToString() => Active ? $"+{RoundTripMs}ms / 손실 {LossPercent}%" : "꺼짐";
+        // R111: up to this much more one-way delay, at random per packet, so packets can
+        // overtake each other (the skills' moments and presses must survive that, C5).
+        public int JitterMs;
+        public bool Active => RoundTripMs > 0 || LossPercent > 0 || JitterMs > 0;
+        public override string ToString() => Active ? $"+{RoundTripMs}ms / 손실 {LossPercent}%" + (JitterMs > 0 ? $" / 흔들림 {JitterMs}ms" : "") : "꺼짐";
         public static readonly LinkProfile[] Presets =
         {
             new LinkProfile(),
@@ -67,6 +114,7 @@ namespace ChessFight.Network
     {
         struct Entry { public double Due; public T Item; }
         readonly List<Entry> queue = new List<Entry>();
+        readonly List<Entry> due = new List<Entry>();
         readonly Random random;
         public LinkProfile Profile;
 
@@ -76,20 +124,30 @@ namespace ChessFight.Network
         public bool Push(T item, double now)
         {
             if (Profile.LossPercent > 0 && random.Next(100) < Profile.LossPercent) return false;
-            queue.Add(new Entry { Due = now + Profile.RoundTripMs / 2000.0, Item = item });
+            double jitter = Profile.JitterMs > 0 ? random.NextDouble() * Profile.JitterMs / 1000.0 : 0;
+            queue.Add(new Entry { Due = now + Profile.RoundTripMs / 2000.0 + jitter, Item = item });
             return true;
         }
 
-        // Due items in the order they were pushed; the delay is constant, so
-        // the simulator never reorders.
+        // Due items, earliest first. Without jitter the delay is constant and that is the
+        // order they were pushed in; with jitter a later packet can come out first.
         public void Release(double now, Action<T> deliver)
         {
-            int n = 0;
-            while (n < queue.Count && queue[n].Due <= now) n++;
-            if (n == 0) return;
-            var due = queue.GetRange(0, n);
-            queue.RemoveRange(0, n);
-            foreach (var entry in due) deliver(entry.Item);
+            due.Clear();
+            for (int i = 0; i < queue.Count; i++)
+                if (queue[i].Due <= now) due.Add(queue[i]);
+            if (due.Count == 0) return;
+            queue.RemoveAll(e => e.Due <= now);
+            // Stable: equal times keep the order they were pushed in.
+            var ordered = new List<Entry>(due);
+            for (int i = 1; i < ordered.Count; i++)
+            {
+                var item = ordered[i];
+                int j = i - 1;
+                while (j >= 0 && ordered[j].Due > item.Due) { ordered[j + 1] = ordered[j]; j--; }
+                ordered[j + 1] = item;
+            }
+            foreach (var entry in ordered) deliver(entry.Item);
         }
 
         public int Count => queue.Count;

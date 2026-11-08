@@ -6,12 +6,18 @@ namespace ChessFight.ProtectKing
     [RequireComponent(typeof(Rigidbody))]
     public sealed class PendulumSwing : Obstacle
     {
+<<<<<<< HEAD
         float RuntimeTime => SampleTime(SharedTime);
         float SampleTime(double t) => ObstacleContext.PeriodicTime(t,StartDelay,2 * (Mathf.Max(.3f,SwingDuration)+Mathf.Max(0,PauseAtEnds)),true);
+=======
+        float RuntimeTime => SampleTime(ObstacleClock.Now);
+        float SampleTime(double t) => ObstacleContext.PeriodicTime(t+phaseOffset,StartDelay,2 * (Mathf.Max(.3f,SwingDuration)+Mathf.Max(0,PauseAtEnds)),true);
+>>>>>>> upstream/main
         public ObstacleContext context;
         public Transform Ball;
         [Range(0, 85)] [SerializeField] public float SwingAngle = 55;
         [Min(.3f), Tooltip("Seconds from one extreme to the other, excluding end pauses.")]
+<<<<<<< HEAD
         [SerializeField] public float SwingDuration = 2;
         [Min(0)] [SerializeField] public float StartDelay = .5f;
         [Min(0)] [SerializeField] public float PauseAtEnds = .2f;
@@ -20,6 +26,16 @@ namespace ChessFight.ProtectKing
         [SerializeField, Min(.05f)] float hitCooldown = .35f;
         public float HitCooldown => hitCooldown;
         [SerializeField] public bool Active = true;
+=======
+        public float SwingDuration = 2;
+        [Min(0)] public float StartDelay = .5f;
+        [Min(0)] public float PauseAtEnds = .2f;
+        [Min(0)] public float KnockbackForce = 14;
+        [Min(0)] public float UpwardForce = 3;
+        public bool Active = true;
+        [Tooltip("Seconds added to the shared obstacle clock: the same swing, earlier or later (Pawn Rush pairs).")]
+        public float phaseOffset;
+>>>>>>> upstream/main
         public float Angle { get; private set; }
         public Vector3 BallVelocity { get; private set; }
         public bool CanHit => isActiveAndEnabled && Active && (context == null || context.Running);

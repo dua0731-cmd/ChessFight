@@ -12,6 +12,7 @@ namespace ChessFight.ProtectKing
         readonly ICharacterDriver driver;
         readonly IHitReceiver hits;
         readonly ILaunchable launcher;
+        readonly IWindReceiver wind;
         readonly Rigidbody[] bodies;
         readonly RaycastHit[] groundHits = new RaycastHit[24];
         public GameObject gameObject => owner != null ? owner.gameObject : null;
@@ -35,7 +36,7 @@ namespace ChessFight.ProtectKing
         ImportedObstacleActor(Component owner, ICharacterDriver driver)
         {
             this.owner=owner; this.driver=driver;
-            hits=owner.GetComponent<IHitReceiver>(); launcher=owner.GetComponent<ILaunchable>();
+            hits=owner.GetComponent<IHitReceiver>(); launcher=owner.GetComponent<ILaunchable>(); wind=owner.GetComponent<IWindReceiver>();
             bodies=owner.GetComponentsInChildren<Rigidbody>();
         }
         public static ImportedObstacleActor Find(Collider collider)
@@ -55,12 +56,17 @@ namespace ChessFight.ProtectKing
         static void Reset() => actors.Clear();
         public void AddObstacleImpulse(Vector3 velocity)
         { if (CanReceiveObstacle) hits.ApplyHit(velocity,0,0,true); }
+        // A hit that also knocks the character down for a while (0 = a stagger, as AddObstacleImpulse).
+        // The Pawn Rush grand stair hall's rolling statues and falling chandeliers (level design v0.3 §5).
+        public void AddObstacleHit(Vector3 velocity, float knockdownSeconds)
+        { if (CanReceiveObstacle) hits.ApplyHit(velocity,Mathf.Max(0,knockdownSeconds),0,true); }
         public void LaunchFromObstacle(Vector3 velocity)
         {
             if (!CanReceiveObstacle) return;
             if (launcher != null) launcher.Launch(velocity);
             else hits.ApplyHit(velocity - Velocity,0,0,true);
         }
+<<<<<<< HEAD
         public void LaunchWithAirControl(float upwardSpeed, float maxMoveSpeed, float acceleration)
         {
             if (!CanReceiveObstacle) return;
@@ -69,6 +75,11 @@ namespace ChessFight.ProtectKing
             else
                 LaunchFromObstacle(Vector3.ProjectOnPlane(Velocity, Vector3.up) + Vector3.up * upwardSpeed);
         }
+=======
+        // A wind that carries the character over the ground (AirVent.DriftSpeed): false when it is not that
+        // kind of character or cannot be carried right now, and the vent pushes its bodies instead.
+        public bool Blow(Vector3 velocity) => CanReceiveObstacle && wind != null && wind.Blow(velocity);
+>>>>>>> upstream/main
         // Wind is continuous acceleration, not a repeated hit/stagger. Reject
         // puppets via their kinematic body, then push every body part equally.
         public Vector3 Accelerate(Vector3 acceleration, float limit, float dt)

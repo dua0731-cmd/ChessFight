@@ -13,8 +13,8 @@ namespace ChessFight.Gameplay
     //
     // With no spawn point assigned it starts at the scene's SpawnPoint 0 of its
     // team (a level built from code places them), else at its own transform. In a
-    // scene with a QueenHillMatch the water puts the character back where the
-    // match's checkpoint rules say (QueenHillMatch.TryRespawn).
+    // scene with a PioneerCourse the water puts the character back where the
+    // match's checkpoint rules say (PioneerCourse.TryRespawn).
     public sealed class PlaytestSpawner : MonoBehaviour
     {
         // Set by the match flow before loading a scene for a networked match, so
@@ -51,10 +51,14 @@ namespace ChessFight.Gameplay
         GameObject instance;
 
         public ICharacterDriver Driver => driver;
+        // The character it spawns: a networked match of the same scene spawns this for every player (R92).
+        public GameObject CharacterPrefab => characterPrefab;
+        public OrbitCamera Orbit => orbitCamera;
         public int Team => team;
         public Vector3 StartPosition => startPosition;
         public Quaternion StartRotation => startRotation;
         public float RunSeconds => Time.time - runStart;
+        bool useWasDown;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => NetworkDriven = false;
@@ -64,6 +68,9 @@ namespace ChessFight.Gameplay
             Checkpoint.Reached += OnCheckpoint;
             FinishZone.Reached += OnFinish;
             WaterZone.Entered += OnWater;
+            KillVolume.Entered += OnKill;
+            FallDistanceRespawn.Fell += OnFell;
+            TeamZone.Intruded += OnIntruded;
         }
 
         void OnDisable()
@@ -71,6 +78,9 @@ namespace ChessFight.Gameplay
             Checkpoint.Reached -= OnCheckpoint;
             FinishZone.Reached -= OnFinish;
             WaterZone.Entered -= OnWater;
+            KillVolume.Entered -= OnKill;
+            FallDistanceRespawn.Fell -= OnFell;
+            TeamZone.Intruded -= OnIntruded;
         }
 
         void Start()
@@ -120,7 +130,7 @@ namespace ChessFight.Gameplay
         {
             if (driver == null) return;
             bool flying = orbitCamera != null && orbitCamera.FreeFly;
-            var intent = Application.isFocused && !flying ? input.Read() : default;
+            var intent = Application.isFocused && !flying && !GameMenu.IsOpen ? input.Read() : default;
             Vector3 move, aim;
             if (orbitCamera != null)
             {
@@ -141,9 +151,12 @@ namespace ChessFight.Gameplay
                 Move = Vector3.ClampMagnitude(move, 1f),
                 Jump = intent.Jump, Shove = intent.Shove, ShoveHeld = intent.ShoveHeld, Grab = intent.Grab,
                 Sprint = intent.Sprint, Ability = intent.Ability, Ability2 = intent.Ability2,
-                Interact = intent.Interact,
+                // A scene with the Pawn Rush piece skills (course 01, R125): F is the skill key, not interact.
+                Interact = intent.Interact && !CourseSkills.PawnRush,
+                Skill = CourseSkills.PawnRush && intent.Interact && !useWasDown,
                 Aim = aim
             });
+            useWasDown = intent.Interact;
 
             var target = driver.FollowTarget;
             CatchLongFall(target);
@@ -188,13 +201,31 @@ namespace ChessFight.Gameplay
             lastY = float.NaN;
             fallSpeed = 0f;
             driver?.Teleport(position, rotation);
+            // A drop measured from where it was is no drop from here.
+            if (instance != null)
+            {
+                var drop = instance.GetComponentInChildren<FallDistanceRespawn>();
+                if (drop != null) drop.Forget();
+            }
             if (orbitCamera != null) orbitCamera.Cut();
+        }
+
+        // A new start (승규 님's test scene putting the pawn into a zone): R, Backspace and a fall all come back here.
+        public void SetStart(Vector3 position, Quaternion rotation)
+        {
+            reachedCheckpoint = int.MinValue;
+            startPosition = respawnPosition = position;
+            startRotation = respawnRotation = rotation;
+            finished = false;
+            result = "";
+            runStart = Time.time;
+            MoveTo(position, rotation);
         }
 
         void Respawn()
         {
             respawnAt = -1f;
-            var match = QueenHillMatch.Current;
+            var match = PioneerCourse.Current;
             if (match != null)
             {
                 // Queen of the Hill: the higher of its own and its team's checkpoint, else the bridge.
@@ -219,7 +250,7 @@ namespace ChessFight.Gameplay
             result = "";
             runStart = Time.time;
             // A fresh round: every bell silent, every checkpoint forgotten.
-            QueenHillMatch.Current?.ResetRound();
+            PioneerCourse.Current?.ResetRound();
             MoveTo(startPosition, startRotation);
         }
 
@@ -229,6 +260,42 @@ namespace ChessFight.Gameplay
             reachedCheckpoint = checkpoint.Order;
             respawnPosition = checkpoint.RespawnPosition;
             respawnRotation = checkpoint.transform.rotation;
+        }
+
+        // A cliff's kill volume: back on the last checkpoint after its delay.
+        void OnKill(ICharacterDriver who, KillVolume volume)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time + volume.RespawnDelay;
+            caughtFalling = true;
+        }
+
+        // The 8 m drop rule: back on the checkpoint before landing on the floor below.
+        void OnFell(ICharacterDriver who, FallDistanceRespawn rule)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time + rule.RespawnDelay;
+            caughtFalling = true;
+        }
+
+        // Thrown into the other team's section: straight back.
+        void OnIntruded(ICharacterDriver who, TeamZone zone)
+        {
+            if (who != driver || respawnAt >= 0f) return;
+            respawnAt = Time.time;
+            caughtFalling = true;
+        }
+
+        // Switch sides (the Pawn Rush playtest's F5): the character joins the other team and starts again
+        // from that team's first spawn point, every checkpoint forgotten.
+        public void SetTeam(int newTeam)
+        {
+            team = Mathf.Clamp(newTeam, -1, 1);
+            if (driver is ITeamAssignable member) member.AssignTeam(team);
+            var at = FindSpawn();
+            startPosition = at.position;
+            startRotation = at.rotation;
+            Restart();
         }
 
         // Stage-one rule: a fall into the water puts the character back on its last
@@ -275,9 +342,9 @@ namespace ChessFight.Gameplay
                 "WASD 이동 · Space 점프 · 좌클릭 밀치기 · 우클릭 잡기\n" +
                 (orbitCamera != null
                     ? "Shift 질주 · E 능력(폰: 갈고리) · 좌클릭 꾹 = 게이지, 떼면 던짐 · F 종·승격·앙파상\n" +
-                      "마우스 시점(게임 화면 클릭) · 휠 줌 · Esc 커서 · V 자유 카메라(WASD·Space·C)\n"
+                      "마우스 시점(게임 화면 클릭) · 휠 줌 · Esc 커서 · F1 자유 카메라(WASD·Space·C·Shift 빠르게)\n"
                     : "") +
-                (orbitCamera != null && orbitCamera.FreeFly ? "<b>자유 카메라</b> — V로 캐릭터에게 돌아가기\n" : "") +
+                (orbitCamera != null && orbitCamera.FreeFly ? "<b>자유 카메라</b> — F1로 캐릭터에게 돌아가기\n" : "") +
                 (respawnAt >= 0f ? (caughtFalling ? "<b>추락!</b>" : "<b>물에 빠졌어요!</b>") + " 곧 체크포인트로 돌아갑니다\n" : "") +
                 "R 체크포인트로 · Backspace 처음부터\n" +
                 $"기록 {(finished ? result : (Time.time - runStart).ToString("0.0") + "초")}";

@@ -46,6 +46,8 @@ namespace ChessFight.Game
         public event Action AddBot, RemoveBot, FillRoom, ClearRoomBots, RetrySteam;
         public event Action AddAllyDummy, RemoveAllyDummy, AddEnemyDummy, RemoveEnemyDummy;
         public event Action FriendsOpened, RefreshFriends, SteamOverlayInvite;
+        // My name top right was pressed: change it (R85, NameChange).
+        public event Action Rename;
         public event Action<ulong> JoinParty, JoinMatch, InviteFriend;
         public event Action<string> PickMode;
 
@@ -65,7 +67,7 @@ namespace ChessFight.Game
         Func<bool> chatBlocker;
 
         Label status, details, profile, version, toast, offlineText;
-        Button friendsOpen, retry, play, cancel, start, codeOpen, createTest, leaveParty, copyParty;
+        Button partyOpen, friendsOpen, profileOpen, retry, play, cancel, start, codeOpen, createTest, leaveParty, copyParty;
         Button botsLess, botsMore, fillRoom, clearRoomBots, modeOpen, joinParty, joinMatch;
         Label partyCount, partyCode, bots, botsNote, busyTitle, busySub;
         Label modeName, modeTagline, modeBadge, modeChange, modeHint;
@@ -79,7 +81,7 @@ namespace ChessFight.Game
         readonly List<VisualElement> ourSlots = new List<VisualElement>(), theirSlots = new List<VisualElement>();
         TextField code;
 
-        VisualElement friendsPanel, detailsPanel, codeModal, modeModal;
+        VisualElement friendsPanel, partyPanel, detailsPanel, codeModal, modeModal;
         VisualElement friendsList;
         Label friendsInfo, friendsPage;
         Button friendsOnline, friendsAll;
@@ -93,9 +95,105 @@ namespace ChessFight.Game
         readonly Dictionary<string, Button> modeButtons = new Dictionary<string, Button>();
 
         // The game-mode rail down the right, one card per mode.
-        VisualElement railList;
+        VisualElement railList, rail;
+        Label playLabel;
+        bool railOpen;
+
+        // 10-17 (승규 님): the mode cards wait below the screen. The pointer resting on "모드 선택" brings them
+        // up one after another from the bottom, and they stay while it moves onto them; when it leaves both
+        // they sink back, top one first. While they are up the button reads "게임 시작" and a click starts
+        // the game. (Enter does the same in two presses: the first brings them up.)
+        int railHover;
+        IVisualElementScheduledItem railClose;
+
+        void PlayPressed()
+        {
+            if (!railOpen) { SetRail(true); return; }
+            Play?.Invoke();
+        }
+
+        void HoverRail(VisualElement element)
+        {
+            if (element == null) return;
+            element.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                railHover++;
+                railClose?.Pause();
+                if (Usable(play)) SetRail(true);
+            });
+            element.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                railHover = Mathf.Max(0, railHover - 1);
+                // A moment's grace, so moving from the button up to the cards does not close them.
+                railClose?.Pause();
+                railClose = element.schedule.Execute(() => { if (railHover == 0) SetRail(false); }).StartingIn(250);
+            });
+        }
+
+        const float RailStep = 82f;   // a card's height and the gap under it (NetworkHud.uss)
+        IVisualElementScheduledItem railReset;
+
+        // A rail card's slide (top) and fade, each with its own delay, length and easing.
+        static void Card(VisualElement card, float topDelay, float topTime, float fadeTime, float fadeDelay, float unused,
+                         float extraDelay, EasingMode topEase, EasingMode fadeEase, float top, float opacity)
+        {
+            card.style.transitionProperty = new List<StylePropertyName> { "translate", "top", "opacity" };
+            card.style.transitionDuration = new List<TimeValue> { new TimeValue(.3f), new TimeValue(topTime), new TimeValue(fadeTime) };
+            card.style.transitionDelay = new List<TimeValue> { new TimeValue(0f), new TimeValue(topDelay), new TimeValue(fadeDelay + extraDelay) };
+            card.style.transitionTimingFunction = new List<EasingFunction>
+                { new EasingFunction(EasingMode.EaseOutBack), new EasingFunction(topEase), new EasingFunction(fadeEase) };
+            card.style.top = top;
+            card.style.opacity = opacity;
+        }
+
+        void SetRail(bool open, bool force = false)
+        {
+            if (!force && railOpen == open && rail != null && rail.ClassListContains("rail-closed") == !open) return;
+            railOpen = open;
+            if (rail != null)
+            {
+                rail.EnableInClassList("rail-closed", !open);
+                // Not disabled while closed (that switched the cards to their disabled look at once); the
+                // hidden cards just stop taking the pointer.
+                if (railList != null)
+                {
+                    int n = railList.childCount;
+                    for (int i = 0; i < n; i++)
+                    {
+                        var card = railList[i];
+                        card.pickingMode = open ? PickingMode.Position : PickingMode.Ignore;
+                        if (force) { Card(card, 0f, 0f, 0f, .3f, .3f, 0f, EasingMode.Linear, EasingMode.Linear, 70f, 0f); continue; }
+                        if (open)
+                            // Up one after another from below, the bottom card first, with a little bounce.
+                            Card(card, (n - 1 - i) * .06f, .34f, .22f, 0f, 0f, (n - 1 - i) * .06f, EasingMode.EaseOutBack, EasingMode.EaseOut, 0f, 1f);
+                        else
+                        {
+                            // Down: the bottom card (Sword Fight) stays; the ones above slide softly down into it,
+                            // the nearest first, and then they all fade out together.
+                            float drop = (n - 1 - i) * RailStep;
+                            Card(card, (n - 1 - i) == 0 ? 0f : (i == 0 ? .06f : 0f), .5f, .3f, .38f, .38f, 0f, EasingMode.EaseInOutSine, EasingMode.EaseIn, drop, 0f);
+                        }
+                    }
+                    // Once it has faded, move the hidden cards back below (unseen), ready to rise again.
+                    railReset?.Pause();
+                    if (!open && !force)
+                        railReset = railList.schedule.Execute(() =>
+                        {
+                            if (railOpen) return;
+                            foreach (var card in railList.Children()) Card(card, 0f, 0f, 0f, 0f, 0f, 0f, EasingMode.Linear, EasingMode.Linear, 70f, 0f);
+                        }).StartingIn(800);
+                }
+            }
+            if (playLabel != null) playLabel.text = open ? "게임 시작" : "모드 선택";
+        }
         Label railHint;
         readonly Dictionary<string, Button> railButtons = new Dictionary<string, Button>();
+        // Each card's glass (10-27, design A): brighter, with a fuller gold edge, while its mode is picked.
+        readonly Dictionary<string, GlassPlate> railPlates = new Dictionary<string, GlassPlate>();
+        // The picked mode, and the last card clicked and when (two clicks on one card in this time: start).
+        const float DoubleClick = .4f;
+        string pickedRail, lastRailKey;
+        float lastRailClick = -10f;
 
         // Nameplates over the 3D lineup.
         VisualElement lineupLayer;
@@ -103,6 +201,16 @@ namespace ChessFight.Game
         readonly List<LineupEntry> lineup = new List<LineupEntry>();
         readonly List<VisualElement> plates = new List<VisualElement>();
         readonly List<Button> inviteButtons = new List<Button>();
+        // Voice chat on the nameplates (R131): a loudspeaker before each member's name (party green
+        // while talking, red when I muted them), and a click on another member's plate opens a small
+        // menu with one button, 음소거 / 음소거 풀기 (kept on this PC, the other side never knows).
+        readonly List<ChessGlyphs.SpeakerMark> plateVoices = new List<ChessGlyphs.SpeakerMark>();
+        readonly List<VisualElement> plateRings = new List<VisualElement>(), plateRows = new List<VisualElement>();
+        VisualElement voiceMenu;
+        Button voiceMenuButton;
+        ChessGlyphs.SpeakerMark voiceMenuIcon;
+        Label voiceMenuName, voiceMenuText;
+        int voiceMenuIndex = -1;
 
         public bool IsTyping
         {
@@ -113,6 +221,19 @@ namespace ChessFight.Game
             }
         }
         public bool FriendsOpen => Visible(friendsPanel);
+
+        // The centre of my name top right, as a fraction of the screen from the top
+        // left: the transition into the name screen closes there.
+        public Vector2 ProfileAt
+        {
+            get
+            {
+                if (profileOpen?.panel == null || root == null || root.worldBound.width <= 0) return new Vector2(.9f, .05f);
+                var c = profileOpen.worldBound.center;
+                var r = root.worldBound;
+                return new Vector2((c.x - r.x) / r.width, (c.y - r.y) / r.height);
+            }
+        }
 
         public void Build(VisualTreeAsset layout, ThemeStyleSheet theme, PanelSettings settings, Vector2Int referenceResolution)
         {
@@ -142,6 +263,7 @@ namespace ChessFight.Game
             slotsOurs = root.Q<VisualElement>("slots-ours"); slotsTheirs = root.Q<VisualElement>("slots-theirs");
             code = root.Q<TextField>("code");
             friendsPanel = root.Q<VisualElement>("friends"); detailsPanel = root.Q<VisualElement>("details-card");
+            partyPanel = root.Q<VisualElement>("party-card");
             codeModal = root.Q<VisualElement>("code-modal"); modeModal = root.Q<VisualElement>("mode-modal");
             friendsList = root.Q<VisualElement>("friends-list");
             friendsInfo = root.Q<Label>("friends-info"); friendsPage = root.Q<Label>("friends-page");
@@ -162,14 +284,25 @@ namespace ChessFight.Game
                 // button never responds and this never logs, the runtime input
                 // backend is the problem, not the layout or the enabled states.
                 if (!pointerSeen) { pointerSeen = true; Debug.Log("[ChessFight] HUD 포인터 입력 확인됨."); }
+                var target = evt.target as VisualElement;
+                // A click outside the nameplate menu closes it (its own plate toggles it instead).
+                if (voiceMenu != null && voiceMenuIndex >= 0 &&
+                    !(target != null && (target == voiceMenu || voiceMenu.Contains(target) || target.ClassListContains("plate-hit"))))
+                    CloseVoiceMenu();
                 // Clicking anywhere but the number field hands focus back, so the
                 // keyboard shortcuts work again.
                 if (code == null) return;
-                var target = evt.target as VisualElement;
                 if (target != code && (target == null || !code.Contains(target))) root.Focus();
             }, TrickleDown.TrickleDown);
 
-            play = Bind(root, "play", () => Play?.Invoke());
+            play = Bind(root, "play", PlayPressed);
+            // 10-17 (승규 님): the mode cards wait below the screen; the button reads "모드 선택" until they
+            // slide up, then "게임 시작".
+            rail = root.Q<VisualElement>("mode-rail");
+            playLabel = play?.Q<Label>(className: "a-cta-text");
+            HoverRail(play);
+            HoverRail(rail);
+            SetRail(false);
             start = Bind(root, "start", () => StartGame?.Invoke());
             cancel = Bind(root, "cancel", () => Cancel?.Invoke());
             leaveParty = Bind(root, "leave-party", () => LeaveParty?.Invoke());
@@ -186,7 +319,10 @@ namespace ChessFight.Game
             copyParty = Bind(root, "copy-party", () => CopyParty?.Invoke());
             Bind(root, "copy-match", () => CopyMatch?.Invoke());
 
+            partyOpen = Bind(root, "party-open", () => TogglePanel(partyPanel));
+            Bind(root, "party-close", () => Close(partyPanel));
             friendsOpen = Bind(root, "friends-open", () => { if (FriendsOpen) Close(friendsPanel); else OpenFriends(); });
+            profileOpen = Bind(root, "profile-open", () => Rename?.Invoke());
             Bind(root, "details-open", () => TogglePanel(detailsPanel));
             Bind(root, "details-close", () => Close(detailsPanel));
             codeOpen = Bind(root, "code-open", () => Open(codeModal));
@@ -210,6 +346,8 @@ namespace ChessFight.Game
 
             BuildModeList();
             BuildModeRail();
+            SetRail(false, true);   // the cards exist now: hide them and stop them taking the pointer
+            BuildVoiceMenu();
             Dress();
             // The chat (ChatBox, on the runtime) stays shut while the room-number
             // box or a picker is open.
@@ -221,30 +359,147 @@ namespace ChessFight.Game
             diagnoseAt = Time.unscaledTime + 1f;
         }
 
-        // Design C's materials, which USS cannot express: lacquered walnut on every
-        // panel with its gold corner accent, the top bar's shade, the banner's line,
-        // the chevrons on the start button, and the slab buttons themselves.
+        // Lobby design A (R83), the name screen's look, where USS cannot express it:
+        // the warm shades behind the HUD, the panels' fill with their gold and silver
+        // rule, the tab and title rules, the silver "게임 모드", the line icons and
+        // the ivory start button. Only the 2D layer changes; the stage is LobbyStage's.
+        static readonly Color Gold = PieceFigure.Hex(0xD9AE62), Brass = PieceFigure.Hex(0xE2B866), Ink = PieceFigure.Hex(0x24170D);
+        static readonly Color Silver = PieceFigure.Hex(0xDCE2E8);
+        // The name screen's title: linear-gradient(180deg, #FFF 0%, #E4E9EE 28%, #A3AEB9 49%, #66707B 53%, #BCC5CE 76%, #F2F5F8 100%).
+        static readonly (float at, Color c)[] SilverStops =
+        {
+            (0f, Color.white), (.28f, PieceFigure.Hex(0xE4E9EE)), (.49f, PieceFigure.Hex(0xA3AEB9)),
+            (.53f, PieceFigure.Hex(0x66707B)), (.76f, PieceFigure.Hex(0xBCC5CE)), (1f, PieceFigure.Hex(0xF2F5F8))
+        };
+
         void Dress()
         {
-            var panel = MenuArt.PanelTexture();
-            root.Query<VisualElement>(className: "wood-panel").ForEach(e =>
+            // 10-17, the lobby castle, option B "ebony lacquer and gold leaf": ebony shades only where
+            // text sits, ebony panels with a gold rule over the bright courtyard (was warm dark glass, R83).
+            Color shade = new Color(18 / 255f, 14 / 255f, 11 / 255f), floor = new Color(16 / 255f, 12 / 255f, 9 / 255f);
+            const MenuArt.HudBlend dark = MenuArt.HudBlend.Shade;
+            Paint(root.Q("scrim-top"), MenuArt.Ramp(true, dark, (0f, Alpha(shade, .85f)), (.46f, Alpha(shade, .44f)), (1f, Alpha(shade, 0f))));
+            Paint(root.Q("scrim-right"), MenuArt.Ramp(false, dark, (0f, Alpha(shade, 0f)), (.35f, Alpha(shade, .38f)), (1f, Alpha(shade, .55f))));
+            Paint(root.Q("scrim-bottom"), MenuArt.Ramp(true, dark, (0f, Alpha(floor, 0f)), (.58f, Alpha(floor, .4f)), (1f, Alpha(floor, .62f))));
+
+            // Windows that open over other HUD (friends, details, the pickers) are nearly solid.
+            var cover = MenuArt.Ramp(true, dark, (0f, new Color(26 / 255f, 21 / 255f, 17 / 255f, .98f)), (1f, new Color(17 / 255f, 13 / 255f, 10 / 255f, .99f)));
+            root.Query<VisualElement>(className: "a-panel").ForEach(e =>
             {
-                e.style.backgroundImage = new StyleBackground(panel);
-                var accent = new VisualElement { pickingMode = PickingMode.Ignore };
-                accent.AddToClassList("panel-accent");
-                if (e == matchPanel) accent.style.display = DisplayStyle.None;
-                e.Insert(0, accent);
+                // 10-27 (design A): the panels over the lobby (the matching card, the banner) are smoked glass with
+                // a gold hairline; the windows that open over other HUD stay nearly solid.
+                if (!e.ClassListContains("side-card") && !e.ClassListContains("modal-card"))
+                {
+                    e.AddToClassList("glass");
+                    GlassPlate.On(e);
+                    return;
+                }
+                Paint(e, cover);
+                e.Insert(0, Rule(46f, 150f, 2f, "a-panel-rule"));
             });
-            var fade = root.Q<VisualElement>("top-fade");
-            if (fade != null) fade.style.backgroundImage = new StyleBackground(MenuArt.VerticalFade(new Color(14 / 255f, 8 / 255f, 4 / 255f, .9f), new Color(14 / 255f, 8 / 255f, 4 / 255f, 0f)));
+            // On the tab's box, not the label: a label with children stops measuring its text.
+            root.Query<VisualElement>(className: "a-tab-box").ForEach(e => e.Add(Rule(14f, 30f, 2f, "a-tab-rule")));
+            root.Q("rail-title")?.Add(BandText("게임 모드", 27f, 220f, 32f, SilverStops, 24));
+            root.Q("rail-rule")?.Add(Rule(46f, 170f, 3f));
             var line = root.Q<VisualElement>("match-line");
             if (line != null)
             {
                 Color red = PieceFigure.Hex(0xFF4D62), gold = PieceFigure.Hex(0xFFC93D), clear = new Color(1f, .3f, .38f, 0f);
                 line.style.backgroundImage = new StyleBackground(MenuArt.Line(clear, red, gold, red, clear));
             }
-            root.Q<VisualElement>("play-chevrons")?.Add(new MenuMarks.Chevrons(new Color(28 / 255f, 18 / 255f, 0f)));
+
+            IconText(friendsOpen, MenuMarks.Icon.People);
+            IconText(root.Q<Button>("details-open"), MenuMarks.Icon.Info);
+            IconText(codeOpen, MenuMarks.Icon.Hash);
+            IconText(createTest, MenuMarks.Icon.Lock);
+            IconText(copyParty, MenuMarks.Icon.Copy);
+            IconText(leaveParty, MenuMarks.Icon.Exit);
+            root.Q("profile-crown")?.Add(new MenuMarks.CrownMark(Brass, Color.clear, 0f));
+            // 10-27 (design A): smoked glass with a polished gold edge, no arrow, no key hints under it
+            if (play != null) GlassPlate.Button(play);
+            if (start != null) GlassPlate.Button(start, 10f);
+            // Whatever still carries the slab class (nothing in the lobby since R83).
             ChunkyButtons.Attach(root);
+        }
+
+        static Color Alpha(Color c, float a) { c.a = a; return c; }
+
+        static void Paint(VisualElement e, Texture2D texture)
+        {
+            if (e != null && texture != null) e.style.backgroundImage = new StyleBackground(texture);
+        }
+
+        // The name screen's rule: a short gold bar, then silver fading out to the right.
+        static VisualElement Rule(float gold, float fade, float thick, string className = null)
+        {
+            var rule = new VisualElement { pickingMode = PickingMode.Ignore };
+            rule.style.flexDirection = FlexDirection.Row;
+            if (className != null) rule.AddToClassList(className);
+            var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+            bar.style.width = gold; bar.style.height = thick; bar.style.backgroundColor = Gold;
+            var tail = new VisualElement { pickingMode = PickingMode.Ignore };
+            tail.style.width = fade; tail.style.height = thick;
+            tail.style.backgroundImage = new StyleBackground(MenuArt.Ramp(false, MenuArt.HudBlend.Tint, (0f, Silver), (1f, Alpha(Silver, 0f))));
+            rule.Add(bar);
+            rule.Add(tail);
+            return rule;
+        }
+
+        // Display-font text in a vertical gradient, left aligned: in each horizontal
+        // band of the box a copy of the label is cut to that band and coloured there.
+        static VisualElement BandText(string text, float size, float w, float h, (float at, Color c)[] stops, int bands)
+        {
+            var box = new VisualElement { pickingMode = PickingMode.Ignore };
+            box.style.width = w; box.style.height = h;
+            for (int i = 0; i < bands; i++)
+            {
+                float y0 = h * i / bands, y1 = h * (i + 1) / bands;
+                var clip = new VisualElement { pickingMode = PickingMode.Ignore };
+                clip.style.position = Position.Absolute;
+                clip.style.left = 0; clip.style.top = y0; clip.style.width = w;
+                clip.style.height = y1 - y0 + (i < bands - 1 ? .5f : 0f);
+                clip.style.overflow = Overflow.Hidden;
+                var label = new Label(text) { pickingMode = PickingMode.Ignore };
+                RuntimePanels.Display(label);
+                label.style.position = Position.Absolute;
+                label.style.left = 0; label.style.top = -y0; label.style.width = w; label.style.height = h;
+                label.style.fontSize = size;
+                label.style.unityTextAlign = TextAnchor.MiddleLeft;
+                label.style.marginLeft = 0; label.style.paddingLeft = 0;
+                label.style.color = Sample(stops, (y0 + y1) / 2f / h);
+                clip.Add(label);
+                box.Add(clip);
+            }
+            return box;
+        }
+
+        static Color Sample((float at, Color c)[] stops, float t)
+        {
+            if (t <= stops[0].at) return stops[0].c;
+            for (int i = 1; i < stops.Length; i++)
+                if (t <= stops[i].at) return Color.Lerp(stops[i - 1].c, stops[i].c, (t - stops[i - 1].at) / Mathf.Max(1e-5f, stops[i].at - stops[i - 1].at));
+            return stops[stops.Length - 1].c;
+        }
+
+        // A line icon before the button's text (Button.text cannot sit beside a
+        // child, so the text moves into a label; SetText reaches it).
+        static void IconText(Button button, MenuMarks.Icon icon)
+        {
+            if (button == null) return;
+            var mark = new MenuMarks.IconMark(icon);
+            mark.AddToClassList("a-icon");
+            var label = new Label(button.text) { pickingMode = PickingMode.Ignore };
+            label.AddToClassList("a-btn-text");
+            button.text = "";
+            button.Add(mark);
+            button.Add(label);
+        }
+
+        static void SetText(Button button, string text)
+        {
+            if (button == null) return;
+            var label = button.Q<Label>(className: "a-btn-text") ?? button.Q<Label>(className: "a-cta-text");
+            if (label != null) label.text = text; else button.text = text;
         }
 
         static VisualElement Slot(VisualElement parent)
@@ -271,9 +526,11 @@ namespace ChessFight.Game
             if (matchLive != null && Visible(matchPanel))
                 matchLive.style.opacity = .25f + .75f * (.5f + .5f * Mathf.Cos(Time.unscaledTime * Mathf.PI * 2f));
             // While the chat is open its keys are its own: Enter sends a line, it
-            // does not start a game.
-            if (!ChatBox.KeysHeld) Shortcuts();
-            FallbackClick();
+            // does not start a game. So are the name screen's (R85: Enter there
+            // changes the name) and nothing here moves under a transition.
+            bool covered = NameScreen.Showing || SceneTransition.Busy;
+            if (!ChatBox.KeysHeld && !covered) Shortcuts();
+            FallbackClick(covered);
         }
 
         void LateUpdate() => PlaceLineup();
@@ -293,7 +550,9 @@ namespace ChessFight.Game
             if (LegacyKeys.Down(KeyCode.Escape))
             {
                 if (SettingsWindow.IsOpen) SettingsWindow.Back();
+                else if (voiceMenuIndex >= 0) CloseVoiceMenu();
                 else if (Visible(modeModal)) Close(modeModal);
+                else if (railOpen && Usable(play)) SetRail(false);
                 else if (Visible(codeModal)) Close(codeModal);
                 else if (Visible(friendsPanel)) Close(friendsPanel);
                 else if (Visible(detailsPanel)) Close(detailsPanel);
@@ -305,7 +564,7 @@ namespace ChessFight.Game
             if (!modal && (LegacyKeys.Down(KeyCode.Return) || LegacyKeys.Down(KeyCode.KeypadEnter)))
             {
                 if (Usable(start)) StartGame?.Invoke();
-                else if (Usable(play)) Play?.Invoke();
+                else if (Usable(play)) PlayPressed();
             }
             if (!modal && LegacyKeys.Down(KeyCode.F)) { if (FriendsOpen) Close(friendsPanel); else if (canInvite) OpenFriends(); }
             if (!modal && LegacyKeys.Down(KeyCode.M) && Usable(modeOpen)) Open(modeModal);
@@ -315,8 +574,10 @@ namespace ChessFight.Game
         // the mouse directly. This is a safety net, not the intended path: it
         // switches itself off the moment a genuine event arrives, and it cannot
         // help with typing, which is what the paste button is for.
-        void FallbackClick()
+        void FallbackClick(bool covered)
         {
+            // A click on the name screen or the transition is not the lobby's.
+            if (covered) { pressedAt = -1; return; }
             if (pointerSeen || fallbackDead || SettingsWindow.IsOpen) return;
             bool pressed;
             Vector2 screen;
@@ -349,7 +610,7 @@ namespace ChessFight.Game
             // rather than betting the whole fallback on the convention.
             var hit = Resolve(panel, new Vector2(screen.x, Screen.height - screen.y)) ?? Resolve(panel, screen);
             if (hit == null || !hit.Value.button.enabledInHierarchy) return;
-            ChunkyButtons.Pulse(hit.Value.button);
+            if (hit.Value.button.ClassListContains(ChunkyButtons.ClassName)) ChunkyButtons.Pulse(hit.Value.button);
             hit.Value.action();
         }
 
@@ -369,6 +630,7 @@ namespace ChessFight.Game
         {
             if (!canInvite) return;
             Close(detailsPanel);
+            Close(partyPanel);
             Open(friendsPanel);
             FriendsOpened?.Invoke();
         }
@@ -377,7 +639,10 @@ namespace ChessFight.Game
 
         void Open(VisualElement panel)
         {
-            if (panel == detailsPanel) Close(friendsPanel);
+            // One side card at a time (party, friends, details share the right edge).
+            if (panel == detailsPanel || panel == partyPanel) Close(friendsPanel);
+            if (panel != detailsPanel) Close(detailsPanel);
+            if (panel != partyPanel) Close(partyPanel);
             Show(panel, true);
         }
         void Close(VisualElement panel) => Show(panel, false);
@@ -404,14 +669,19 @@ namespace ChessFight.Game
             foreach (var stale in inviteButtons) actions.Remove(stale);
             inviteButtons.Clear();
             plates.Clear();
+            plateVoices.Clear();
+            plateRings.Clear();
+            plateRows.Clear();
+            CloseVoiceMenu();
             lineupLayer.Clear();
             for (int i = 0; i < lineup.Count; i++)
             {
                 var entry = lineup[i];
-                var plate = entry.Invite ? InviteSpot() : Nameplate(entry);
+                var plate = entry.Invite ? InviteSpot() : Nameplate(entry, i);
                 plate.style.display = DisplayStyle.None;   // until placed
                 lineupLayer.Add(plate);
                 plates.Add(plate);
+                if (entry.Invite) { plateVoices.Add(null); plateRings.Add(null); plateRows.Add(null); }
             }
         }
 
@@ -426,7 +696,7 @@ namespace ChessFight.Game
             return true;
         }
 
-        static VisualElement Nameplate(LineupEntry entry)
+        VisualElement Nameplate(LineupEntry entry, int index)
         {
             var plate = new VisualElement { pickingMode = PickingMode.Ignore };
             plate.AddToClassList("plate");
@@ -437,14 +707,42 @@ namespace ChessFight.Game
             {
                 var crown = new VisualElement { pickingMode = PickingMode.Ignore };
                 crown.AddToClassList("plate-crown");
-                crown.Add(new MenuMarks.CrownMark(PieceFigure.Hex(0xFFC93D), Color.clear, 0f));
+                crown.Add(new MenuMarks.CrownMark(Brass, Color.clear, 0f));
                 row.Add(crown);
+            }
+            ChessGlyphs.SpeakerMark voice = null;
+            VisualElement ring = null;
+            if (!entry.Bot)
+            {
+                var holder = new VisualElement { pickingMode = PickingMode.Ignore };
+                holder.AddToClassList("plate-voice");
+                ring = new VisualElement { pickingMode = PickingMode.Ignore };
+                ring.AddToClassList("plate-voice-ring");
+                holder.Add(ring);
+                voice = new ChessGlyphs.SpeakerMark(PlateQuiet, 2.4f);
+                voice.AddToClassList("plate-voice-icon");
+                holder.Add(voice);
+                holder.style.display = DisplayStyle.None;   // until the voice runs
+                row.Add(holder);
             }
             var name = new Label(entry.Name) { pickingMode = PickingMode.Ignore };
             name.AddToClassList("plate-name");
-            RuntimePanels.Display(name);
             row.Add(name);
             plate.Add(row);
+            plateVoices.Add(voice);
+            plateRings.Add(ring);
+            plateRows.Add(row);
+            // Another person's plate opens the mute menu; mine and the bots' do nothing.
+            if (!entry.Me && !entry.Bot && entry.Id != 0)
+            {
+                var hit = new Button { focusable = false };
+                hit.AddToClassList("plate-hit");
+                Action open = () => ToggleVoiceMenu(index);
+                hit.clicked += open;
+                actions[hit] = open;
+                inviteButtons.Add(hit);
+                row.Add(hit);
+            }
             if (!string.IsNullOrEmpty(entry.Tag))
             {
                 var tag = new Label(entry.Tag) { pickingMode = PickingMode.Ignore };
@@ -458,7 +756,8 @@ namespace ChessFight.Game
         {
             var spot = new VisualElement { pickingMode = PickingMode.Ignore };
             spot.AddToClassList("invite-spot");
-            var plus = new Button { text = "+", focusable = false };
+            // 10-17: one pill button "+ 친구 초대" (was a round "+" with a label under it)
+            var plus = new Button { text = "+  친구 초대", focusable = false };
             plus.AddToClassList("invite-plus");
             RuntimePanels.Display(plus);
             Action open = OpenFriends;
@@ -466,9 +765,6 @@ namespace ChessFight.Game
             actions[plus] = open;
             inviteButtons.Add(plus);
             spot.Add(plus);
-            var label = new Label("친구 초대") { pickingMode = PickingMode.Ignore };
-            label.AddToClassList("invite-label");
-            spot.Add(label);
             return spot;
         }
 
@@ -484,9 +780,110 @@ namespace ChessFight.Game
                 if (!front) continue;
                 Vector2 at = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, world, lineupCamera);
                 // Fixed widths from the USS, so centring needs no layout pass.
-                plates[i].style.left = at.x - (invite ? 60f : 100f);
-                plates[i].style.top = at.y - (invite ? 27f : 64f);
+                plates[i].style.left = at.x - (invite ? 70f : 100f);
+                plates[i].style.top = at.y - (invite ? 18f : 64f);
             }
+            for (int i = 0; i < plateVoices.Count && i < lineup.Count; i++) DrawVoice(i);
+            PlaceVoiceMenu();
+        }
+
+        // ---------- voice on the nameplates (R131) ----------
+
+        static readonly Color PlateQuiet = new Color(239 / 255f, 228 / 255f, 204 / 255f, .5f);
+
+        void DrawVoice(int i)
+        {
+            var mark = plateVoices[i];
+            if (mark == null) return;
+            var holder = mark.parent;
+            bool running = VoiceBoard.Running;
+            holder.style.display = running ? DisplayStyle.Flex : DisplayStyle.None;
+            var row = plateRows[i];
+            if (!running) { row.style.borderTopColor = row.style.borderBottomColor = row.style.borderLeftColor = row.style.borderRightColor = StyleKeyword.Null; return; }
+            var entry = lineup[i];
+            bool muted = !entry.Me && VoiceBoard.IsMuted(entry.Id);
+            var channel = VoiceChannel.Party;
+            bool talking = !muted && VoiceBoard.IsTalking(entry.Id, out channel);
+            var color = talking ? VoiceBoard.ColorOf(channel) : muted ? VoiceBoard.MutedColor : PlateQuiet;
+            mark.Set(muted ? ChessGlyphs.SpeakerMark.Look.Muted : talking ? ChessGlyphs.SpeakerMark.Look.Talking : ChessGlyphs.SpeakerMark.Look.Quiet, color);
+            // A ring that keeps spreading from the loudspeaker while they talk, and the plate's edge in their colour.
+            var ring = plateRings[i];
+            float t = Time.unscaledTime / 1.1f % 1f;
+            ring.style.display = talking ? DisplayStyle.Flex : DisplayStyle.None;
+            if (talking)
+            {
+                ring.style.scale = new Scale(Vector3.one * Mathf.Lerp(.7f, 1.7f, t));
+                ring.style.opacity = .9f * (1f - t);
+                ring.style.borderTopColor = ring.style.borderBottomColor = ring.style.borderLeftColor = ring.style.borderRightColor = color;
+            }
+            StyleColor edge = talking ? color : muted ? new Color(VoiceBoard.MutedColor.r, VoiceBoard.MutedColor.g, VoiceBoard.MutedColor.b, IntroFlowStyle.Light(.6f))
+                                                      : (StyleColor)StyleKeyword.Null;
+            row.style.borderTopColor = row.style.borderBottomColor = row.style.borderLeftColor = row.style.borderRightColor = edge;
+        }
+
+        void BuildVoiceMenu()
+        {
+            voiceMenu = new VisualElement { pickingMode = PickingMode.Position };
+            voiceMenu.AddToClassList("plate-menu");
+            voiceMenuName = new Label { pickingMode = PickingMode.Ignore, enableRichText = false };
+            voiceMenuName.AddToClassList("plate-menu-name");
+            voiceMenu.Add(voiceMenuName);
+            voiceMenuButton = new Button { focusable = false };
+            voiceMenuButton.AddToClassList("plate-menu-btn");
+            voiceMenuIcon = new ChessGlyphs.SpeakerMark(PieceFigure.Hex(0xEFE4CC), 2.4f);
+            voiceMenuIcon.AddToClassList("plate-menu-icon");
+            voiceMenuButton.Add(voiceMenuIcon);
+            voiceMenuText = new Label("음소거") { pickingMode = PickingMode.Ignore };
+            voiceMenuText.AddToClassList("plate-menu-text");
+            voiceMenuButton.Add(voiceMenuText);
+            Action toggle = () =>
+            {
+                if (voiceMenuIndex >= 0 && voiceMenuIndex < lineup.Count) VoiceBoard.ToggleMuted(lineup[voiceMenuIndex].Id);
+                CloseVoiceMenu();
+            };
+            voiceMenuButton.clicked += toggle;
+            actions[voiceMenuButton] = toggle;
+            voiceMenu.Add(voiceMenuButton);
+            root.Add(voiceMenu);
+            Show(voiceMenu, false);
+        }
+
+        void ToggleVoiceMenu(int index)
+        {
+            if (voiceMenu == null || index < 0 || index >= lineup.Count) return;
+            if (voiceMenuIndex == index) { CloseVoiceMenu(); return; }
+            voiceMenuIndex = index;
+            var entry = lineup[index];
+            bool muted = VoiceBoard.IsMuted(entry.Id);
+            voiceMenuName.text = entry.Name;
+            voiceMenuText.text = muted ? "음소거 풀기" : "음소거";
+            voiceMenuButton.EnableInClassList("plate-menu-btn-on", muted);
+            voiceMenuIcon.Set(muted ? ChessGlyphs.SpeakerMark.Look.Quiet : ChessGlyphs.SpeakerMark.Look.Muted,
+                              muted ? PieceFigure.Hex(0x1A1410) : PieceFigure.Hex(0xEFE4CC));
+            Show(voiceMenu, true);
+            voiceMenu.BringToFront();
+            PlaceVoiceMenu();
+        }
+
+        void CloseVoiceMenu()
+        {
+            voiceMenuIndex = -1;
+            Show(voiceMenu, false);
+        }
+
+        // Centred just above the plate it belongs to, which moves with the camera: clear of my own plate
+        // in the middle and of the game-mode list on the right.
+        void PlaceVoiceMenu()
+        {
+            if (voiceMenu == null || voiceMenuIndex < 0) return;
+            if (voiceMenuIndex >= plateRows.Count || plateRows[voiceMenuIndex] == null || !VoiceBoard.Running) { CloseVoiceMenu(); return; }
+            var box = plateRows[voiceMenuIndex].worldBound;
+            if (box.width <= 0) return;
+            var top = root.WorldToLocal(new Vector2(box.center.x, box.yMin));
+            float width = voiceMenu.layout.width > 0 ? voiceMenu.layout.width : 130f;
+            float height = voiceMenu.layout.height > 0 ? voiceMenu.layout.height : 66f;
+            voiceMenu.style.left = top.x - width * .5f;
+            voiceMenu.style.top = Mathf.Max(70f, top.y - height - 6f);
         }
 
         // ---------- mode picker ----------
@@ -543,7 +940,8 @@ namespace ChessFight.Game
                 var card = new Button { focusable = false };
                 card.AddToClassList("rail-card");
                 if (!mode.Playable) card.AddToClassList("rail-locked");
-                card.style.backgroundImage = new StyleBackground(MenuArt.CardTexture(ModeGlow(mode.Key)));
+                // 10-27 (design A, was option B's ebony lacquer): smoked glass with a gold hairline
+                railPlates[mode.Key] = GlassPlate.On(card);
 
                 var art = new VisualElement { pickingMode = PickingMode.Ignore };
                 art.AddToClassList("rail-art");
@@ -574,7 +972,15 @@ namespace ChessFight.Game
                 card.Add(text);
 
                 string key = mode.Key;
-                Action pick = () => PickMode?.Invoke(key);
+                // 10-27 (승규 님): a double click on a card starts the game with that mode, as "게임 시작" does
+                Action pick = () =>
+                {
+                    bool twice = lastRailKey == key && Time.unscaledTime - lastRailClick < DoubleClick;
+                    lastRailKey = twice ? null : key;
+                    lastRailClick = Time.unscaledTime;
+                    if (key != pickedRail) PickMode?.Invoke(key);
+                    if (twice) Play?.Invoke();
+                };
                 card.clicked += pick;
                 actions[card] = pick;
                 railButtons[key] = card;
@@ -604,20 +1010,8 @@ namespace ChessFight.Game
             return wrapped.ToString();
         }
 
-        // Each mode's glow on its walnut card (design C: green, blue, red).
-        static Color ModeGlow(string key)
-        {
-            switch (key)
-            {
-                case "kingrush": return new Color(75 / 255f, 224 / 255f, 143 / 255f);
-                case "queenhill": return new Color(120 / 255f, 150 / 255f, 1f);
-                case "swordfight": return new Color(1f, 92 / 255f, 92 / 255f);
-                default: return new Color(.7f, .6f, .45f);
-            }
-        }
-
         // The piece that stars in each mode, posed as on the design sample: a pawn
-        // running, the queen waving, a rook with its arm up for a fight.
+        // running, or a rook with its arm up for a fight.
         static RenderTexture ModePortrait(string key)
         {
             switch (key)
@@ -625,8 +1019,6 @@ namespace ChessFight.Game
                 case "kingrush":
                     return MenuArt.Portrait("run", PieceKind.Pawn, 0,
                         new FigurePose { Leg = .7f, ArmLeft = 1.1f, ArmRight = -.1f, Lean = .22f, Jump = .15f }, new Vector2(3, 4), false);
-                case "queenhill":
-                    return MenuArt.Portrait("wave", PieceKind.Queen, 0, new FigurePose { ArmLeft = 2.3f, ArmRight = .5f, Jump = .05f }, new Vector2(1, 6), false);
                 case "swordfight":
                     return MenuArt.Portrait("fight", PieceKind.Rook, 0, new FigurePose { ArmRight = 2f, ArmLeft = .4f, Lean = .08f }, new Vector2(-1.5f, 6), false, 7.2f, 1.35f);
                 default:
@@ -639,7 +1031,6 @@ namespace ChessFight.Game
             switch (key)
             {
                 case "kingrush": return new Color(.27f, .51f, .94f);
-                case "queenhill": return new Color(.62f, .38f, .88f);
                 case "swordfight": return new Color(.86f, .32f, .28f);
                 default: return new Color(.4f, .45f, .55f);
             }
@@ -784,7 +1175,7 @@ namespace ChessFight.Game
             if (details != null) details.text = model.Details;
             if (profile != null) profile.text = string.IsNullOrEmpty(model.PlayerName) ? "—" : model.PlayerName;
             if (version != null) version.text = model.Version;
-            if (friendsOpen != null) friendsOpen.text = model.Online ? $"친구  {model.FriendsOnline}" : "친구";
+            SetText(friendsOpen, model.Online ? $"친구 <color=#E2B866><b>{model.FriendsOnline}</b></color>" : "친구");
 
             Show(offline, !model.Online);
             if (offlineText != null && !string.IsNullOrEmpty(model.Status) && !model.Online) offlineText.text = model.Status;
@@ -792,7 +1183,8 @@ namespace ChessFight.Game
 
             RenderMode(model);
 
-            if (partyCount != null) partyCount.text = $"{model.PartySize} / 6";
+            if (partyCount != null) partyCount.text = $"{model.PartySize}<color=#E7BE72> / 6</color>";
+            SetText(partyOpen, $"파티 <color=#E9C46A><b>{model.PartySize}</b></color>/6");
             if (partyCode != null) partyCode.text = model.PartyCode;
             if (bots != null) bots.text = model.Bots;
             if (botsNote != null) { botsNote.text = model.BotsNote; Show(botsNote, !string.IsNullOrEmpty(model.BotsNote)); }
@@ -834,10 +1226,10 @@ namespace ChessFight.Game
             if (testHint != null) testHint.text = model.TestHint;
             Enable(allyMore, model.CanAddAlly); Enable(allyLess, model.CanRemoveAlly);
             Enable(enemyMore, model.CanAddEnemy); Enable(enemyLess, model.CanRemoveEnemy);
-            if (createTest != null) createTest.text = sword ? "더미 테스트 (혼자 가능)" : "비공개 방";
+            SetText(createTest, sword ? "더미 테스트 (혼자 가능)" : "비공개 방");
             if (partyBotsTitle != null) partyBotsTitle.text = sword ? "파티 더미 (아군)" : "AI 봇";
             if (clearRoomBots != null) clearRoomBots.text = sword ? "추가 더미 비우기" : "봇 비우기";
-            if (start != null) start.text = model.ShowTestBots ? "테스트 시작  Enter" : "경기 시작";
+            SetText(start, model.ShowTestBots ? "테스트 시작  Enter" : "경기 시작");
 
             Enable(codeOpen, model.CanJoinParty || model.CanJoinMatch);
             Enable(joinParty, model.CanJoinParty); Enable(joinMatch, model.CanJoinMatch);
@@ -880,19 +1272,23 @@ namespace ChessFight.Game
                 var info = GameModes.Find(pair.Key);
                 bool on = pair.Key == mode.Key, playable = info != null && info.Playable;
                 pair.Value.EnableInClassList("rail-on", on);
-                pair.Value.SetEnabled(model.CanChangeMode && playable && !on);
+                if (railPlates.TryGetValue(pair.Key, out var plate)) plate.Set(on, false);
+                if (on) pickedRail = pair.Key;
+                // the picked card stays clickable too, for the double click that starts the game
+                pair.Value.SetEnabled(model.CanChangeMode && playable);
                 var state = pair.Value.Q<Label>("state");
                 if (state != null)
                 {
                     state.text = on ? "선택됨" : playable ? "플레이 가능" : "준비 중";
                     state.EnableInClassList("rail-badge-on", on);
+                    state.EnableInClassList("rail-badge-ok", !on && playable);
                 }
             }
             if (railHint != null)
                 railHint.text = !model.Online ? "Steam 연결이 필요해요"
                               : model.Busy ? "매칭 중엔 바꿀 수 없어요"
                               : !model.CanChangeMode ? "파티장만 바꿀 수 있어요"
-                              : "모드마다 따로 매칭돼요";
+                              : "";   // 10-27 (승규 님): "모드마다 따로 매칭돼요" taken off
         }
 
         static void Fill(List<VisualElement> slots, int filled, int team)

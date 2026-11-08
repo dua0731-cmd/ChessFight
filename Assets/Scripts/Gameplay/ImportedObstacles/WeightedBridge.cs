@@ -6,9 +6,16 @@ using UnityEngine.Serialization;
 
 namespace ChessFight.ProtectKing
 {
+<<<<<<< HEAD
     // StateDrivenMover: PhysX contact forces rotate a hinged deck. Remote peers follow the host angle.
     [ExecuteAlways, DefaultExecutionOrder(-100)]
     public sealed class WeightedBridge : Obstacle
+=======
+    // StateDrivenMover: tilted by the weight on its deck, not by ObstacleClock. Offline only
+    // until the host sends its angle (Docs/PawnRush/MAP_IMPORT.md).
+    [RequireComponent(typeof(Rigidbody))]
+    public sealed class WeightedBridge : MonoBehaviour
+>>>>>>> upstream/main
     {
         [SerializeField] ObstacleContext context;
         [SerializeField, Range(0f, 80f), Tooltip("Maximum downward tilt in degrees on either side. Zero keeps the deck level.")]

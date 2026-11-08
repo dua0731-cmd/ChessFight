@@ -26,13 +26,14 @@
 | 환경 | 명령 | 내용 |
 |---|---|---|
 | Linux / 클라우드 AI | `Tools/run-tests-linux.sh` | **어셈블리 경계 검사**(Steam은 Network·Bootstrap에만, `Assets/Scripts`는 래그돌을 참조하지 않음) + Core 테스트 + 모의 Steam 세션 테스트. Mono가 없으면 apt로 설치 |
-| 〃 | `Tools/run-tests-linux.sh --compile` | 위 + **Roslyn**(.NET 8 SDK, 없으면 apt로 설치)으로 Steamworks.NET 원본 소스(고정 커밋)와 Unity 참조 DLL(NuGet `UnityEngine.Modules` 2021.3)에 대해 Core·Network·Game·Gameplay·Bootstrap·RagdollLab 컴파일. Input/·에디터 코드는 제외 |
+| 〃 | `Tools/run-tests-linux.sh --compile` | 위 + **Roslyn**(.NET 8 SDK, 없으면 apt로 설치)으로 Steamworks.NET 원본 소스(고정 커밋)와 Unity 참조 DLL(NuGet `UnityEngine.Modules` 2021.3)에 대해 Core·Network·Game·Gameplay·Bootstrap·RagdollLab·PawnRush 컴파일. 에디터 코드는 폰 러시 코스(`Assets/Scripts/PawnRushEditor`)만 NuGet `Unity3D.SDK` 2021.1의 `UnityEditor.dll`로 컴파일(R68), Input/·나머지 에디터 코드는 제외 |
 | Windows (Unity 설치) | `./Tools/Test-NetworkCore.ps1` | Core + 세션 테스트 (Unity 내장 Mono 사용) |
 | 〃 | `./Tools/Test-NetworkCompile.ps1 -SteamRuntimeSources <PackageCache의 Steamworks Runtime>` | 실제 Unity DLL로 컴파일(09-26부터 랩 Steam 다리 `RagdollLabSteam`과 랩 빌더도 asmdef 참조 그대로). 이 PC: `-SteamRuntimeSources Library/PackageCache/com.rlabrecque.steamworks.net@6fb66c768572/Runtime` |
 | 〃 (래그돌 물리) | 프로젝트 사본 → `Unity.exe -batchmode -nographics -projectPath <사본> -executeMethod ChessFight.RagdollLab.Editor.RagdollLabBuilder.BuildPlayerBatch -labOut <사본>\build` → `RagdollLab.exe -batchmode -nographics -ragdollAutoTest report.txt` (`-ragdollQueenHillOnly`로 퀸 오브 더 힐 점검만, `-ragdollOnly Climb,ClimbBugs`처럼 묶음 이름으로 일부만(`-ragdollAutoTestOnly`도 같음), `-ragdollFeel <폴더>`로 조작감 녹화) | **실제 PhysX로 도는 래그돌 자동 점검.** 에디터가 같은 프로젝트를 열고 있으면 배치 모드를 못 쓰므로 사본(`Assets`·`Packages`·`ProjectSettings`·`Library`, 약 210 MB)에서 한다. 결과 기준: [RagdollLab README "자동 점검"](../RagdollLab/README.md#자동-점검). 사람의 Unity 확인을 대신하지 않는다 |
 | 컴파일러 없음 | `python3 Tools/Generators/check_braces.py` | 괄호 균형만 확인 |
+| 이 PC Unity (승규 님 PC, R71) | Unity MCP 다리(MCP for Unity 10.2.0, `C:/Work/ChessFight`가 연 에디터, 포트는 `~/.unity-mcp/unity-mcp-port-*.json`, 보통 6401)에 TCP로 붙어 `refresh_unity`(컴파일) → `read_console`(오류) → `manage_editor play` → `execute_code`(예: `PawnRushSkillProbe.Run("all")`) → `manage_camera screenshot`(`Temp/Captures`) | **열린 에디터에서 바로 돌려 보고 재기.** 패키지 줄(`com.coplaydev.unity-mcp`)은 그 PC의 `Packages/manifest.json`에만 두고 **커밋하지 않는다**. 커밋 뒤 동기화 훅이 `C:/Work`로 옮긴 다음 **별도 명령으로** 새로고침한다(같은 명령에 넣으면 옛 코드로 컴파일). 사람의 Unity 확인을 대신하지 않는다 → [Skills README](../Skills/README.md#자동-시험-도구-ai용-사람도-가능) |
 
-- 현재 기준: **Core 29개, 세션 15개**, 래그돌 자동 점검 **56 통과 / 0 실패(09-27, `JY-ragdoll_v2`)**. 수가 줄면 뭔가 빠진 것이다.
+- 현재 기준(R497): **Core 162개, 세션 55개**, 래그돌 자동 점검 **56 통과 / 0 실패(09-27, `JY-ragdoll_v2`)**. 테스트 수가 줄면 삭제된 기능의 전용 검사인지 확인하고 근거를 남긴다. R497은 폐기 Queen 지도 검사2개만 제거했다.
 - **새 래그돌 점검은 빌드한 플레이어에서 한 번 이상 돌려 보고 커밋한다.** Unity 없이 쓴 점검 9개가 처음부터 실패했고 그중 4개는 점검이 틀렸다([PITFALLS 21](PITFALLS.md)).
 - 테스트 파일: `Tests/Network/NetworkCoreTests.cs`, `SessionFlowTests.cs`, `FakeSteam.cs`(Steam/Unity API 모사). 새 Steam API를 쓰면 `FakeSteam.cs`에도 스텁을 추가한다.
 - 테스트 통과는 **Unity 실행 검증이 아니다.** Unity·Steam에서만 확인할 수 있는 항목은 [VALIDATION](../Network/VALIDATION.md) 최상단에 '미확인'으로 추가하고 사용자에게 확인 방법을 알려준다.
@@ -47,6 +48,8 @@
 - 커밋 → `git push -u origin main` ([HANDOFF §1](../../HANDOFF.md), R66)
 
 ## 5. 사용자에게 보고할 때
+
+GPT·Claude 연결 도구는 [Tools/AiBridge](../../Tools/AiBridge/README.md)를 따른다. **기본은 계정 로그인(R308)**: `Setup.cmd`에서 Codex(ChatGPT)·Claude Code(Claude 계정) 로그인, `Start.cmd`에서 요청 입력. API 키를 자식 프로그램에 전달하지 않으며 토큰은 공식 CLI가 관리한다. 요청·답변 파일로 교환하고 참고 문서는 `--context`로 명시한다. 원래 [API 방식(R307)](../../Tools/AiBridge/API.md)은 `Setup-Api.cmd`·`Api.cmd`로 분리했다. `.local/`·`runs/`는 Git 제외. 자동 시험은 `node --test Tools/AiBridge/cli-bridge.test.mjs Tools/AiBridge/bridge.test.mjs`, 기존 API 키 저장 시험은 `launcher.test.ps1`. `Start.ps1 -Check`는 두 계정 상태만 보며 모델 호출은 하지 않는다. 실제 계정 전달 시험은 짧은 GPT → Claude → GPT 3회까지 AI가 관찰했고 사용자 확인은 Claude 로그인 완료 응답까지다. 게임의 Unity·Steam 확인을 대신하지 않는다.
 
 - 한국어로 쓰고, 무엇을 했는지 → 확인한 것과 못 한 것 → 사용자가 Unity에서 볼 것 순으로 쓴다.
 - 확인하지 못한 것을 됐다고 쓰지 않는다. "테스트 통과"와 "Unity에서 동작"을 구분한다.

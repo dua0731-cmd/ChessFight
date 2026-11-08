@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cdc53bce073d78ca1b4a3fa0ac4c736, type: 3}
+  m_Name: Queen
+  m_EditorClassIdentifier: 
+  entries:
+  - key: F_Thrust
+    prefab: {fileID: 100, guid: 7c5226afa1009c8798db9ec3e12fa8d5, type: 3}
+  - key: F_Hit
+    prefab: {fileID: 100, guid: 9294d0975eb070ec16c424e7c2b0e152, type: 3}
+  - key: E_Blink
+    prefab: {fileID: 100, guid: c869c071f5ca65d5d40b6bd52fa15f75, type: 3}
+  - key: E_Cut
+    prefab: {fileID: 100, guid: b30f59443d2d068ac32f5c0a50e07de9, type: 3}
+  - key: Phantom
+    prefab: {fileID: 100, guid: d8b425cb67cd78ffdae60c68f0cffb59, type: 3}

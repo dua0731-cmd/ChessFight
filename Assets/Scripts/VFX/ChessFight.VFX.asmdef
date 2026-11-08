@@ -1,0 +1,6 @@
+{
+  "name": "ChessFight.VFX",
+  "rootNamespace": "ChessFight.VFX",
+  "references": ["ChessFight.Game"],
+  "autoReferenced": true
+}
