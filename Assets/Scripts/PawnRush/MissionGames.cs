@@ -49,6 +49,24 @@ namespace ChessFight.PawnRush
             return floor;
         }
 
+        // R498: how far a picture stands off a face it would otherwise share with another body. Two faces in one
+        // plane z-fight (flicker) at any distance; a centimetre is invisible up close and holds at palace range.
+        public const float Proud = .01f;
+
+        // A solid wall built into the edge of a floor slab (a moat's or a pool's lining). The collider stays exactly
+        // where it was; only its picture moves: `Proud` out of the slab's face toward `facing` (+1 = +z, -1 = -z),
+        // `Proud` in from both ends and under the slab's top, so no face of it lies in a face of the slab.
+        public static GameObject LinedWall(CourseBuilder b, string name, Vector3 min, Vector3 max, Material material, float facing)
+        {
+            var wall = b.Box(name, min, max, material, true);
+            Object.DestroyImmediate(wall.GetComponent<MeshRenderer>());
+            if (facing > 0f) max.z += Proud; else min.z -= Proud;
+            min.x += Proud; max.x -= Proud;
+            if (max.y > -Proud) max.y = -Proud;
+            Arena.Picture(b.parent, name + " look", min, max, material);
+            return wall;
+        }
+
         public static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
     }
 }

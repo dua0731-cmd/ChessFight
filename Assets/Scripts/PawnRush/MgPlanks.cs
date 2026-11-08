@@ -233,6 +233,7 @@ namespace ChessFight.PawnRush
             board.transform.SetParent(transform, false);
             board.transform.localScale = new Vector3(PlankWidth, .12f, Row);
             board.GetComponent<Renderer>().sharedMaterial = station.Kit.boardDark;
+            MiniGameModels.DressPlank(board);   // the walnut plank model when the B art is installed (R503)
             return board;
         }
 

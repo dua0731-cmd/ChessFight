@@ -21,6 +21,9 @@ namespace ChessFight.PawnRush
 
         public bool IsOpen => openedAt >= 0f;
 
+        // How long the full opening takes (D's portcullis rises slower, in time with its chain sound: R505).
+        public float Seconds { get => seconds; set => seconds = Mathf.Max(.1f, value); }
+
         void Awake()
         {
             body = GetComponent<Rigidbody>();
@@ -38,6 +41,15 @@ namespace ChessFight.PawnRush
         public void SetLift(float metres)
         {
             if (openedAt < 0f) lift = Mathf.Clamp(metres, 0f, rise);
+        }
+
+        // Moves the shut door, and the place it opens from, by `delta` (world metres): A stands its door in its arch
+        // (R506). Before Awake, Awake takes the moved place anyway.
+        public void Shift(Vector3 delta)
+        {
+            transform.position += delta;
+            closed += delta;
+            if (body != null) body.position = transform.position;
         }
 
         // A new round: shut, down.

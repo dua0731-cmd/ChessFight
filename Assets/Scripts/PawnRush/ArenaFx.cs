@@ -210,6 +210,8 @@ namespace ChessFight.PawnRush
             if (fx == null || string.IsNullOrEmpty(name)) return;
             var clip = fx.Clip(name);
             if (clip == null) return;
+            // a team gate opening: flat for a listener inside that mini-game (MiniGameEar, user 11-08)
+            if (!twoD && MiniGameEar.Current != null && MiniGameEar.Inside(MiniGameEar.Current)) twoD = true;
             var voice = fx.voices[fx.nextVoice];
             fx.nextVoice = (fx.nextVoice + 1) % Voices;
             voice.transform.position = at;

@@ -230,6 +230,7 @@ R50 실행 로그에서 수동 설정했던 무게중심이 검날 중앙 `z=0.5
 - **증상:** 정원 수문 가로보 아래 · 문 기둥 · 수로 바닥이 카메라를 움직이면 반짝반짝 깜빡임.
 - **까닭:** 두 면이 같은 평면(또는 몇 mm 차이)에 겹치면 깊이 버퍼가 어느 쪽을 그릴지 매 프레임 바뀐다(z-fighting). 금 띠 바닥 = 돌 가로보 바닥, 벽 홈 면 = 기둥 면, 수로 바닥 윗면 = 블록아웃 물 그림 − 5 mm였다.
 - **막는 법:** 겹치는 장식은 최소 1–3 cm 떼어 놓는다(덧대는 쪽이 밖으로). 덮지 않고 남겨 두는 블록아웃 그림(물 · 화살표 · 유리 폭포) 바로 옆 · 밑에는 장식 면을 두지 않는다. 블록 뒤 줄눈 심은 블록보다 안쪽 · 짧게. 내보내기 전 `blender -b --python check_coplanar.py -- <Sample.blend> "*"`로 검사(R438). R474부터 검사기는 모든 방향의 면(비스듬한 벽 · 지붕)을 보고, 상자 겹침이 아니라 삼각형의 실제 공통 면적(1 cm² 넘으면)으로 판정하며 종류별 예시를 3개씩 보여 준다. 다른 부품이 같은 높이에서 만나는 수평 면(성벽 길 띠 ↔ 탑 띠, 두 벽이 함께 덮는 모서리의 갓돌)도 잘 걸린다 — 한쪽을 1~2 cm 키우거나 한쪽을 다른 쪽 뒤에서 시작한다.
+- **R498 미니게임:** 코드로 만든 게임 부품도 같다. 바닥 판 가장자리에 묻은 벽(해자·물 벽), 판 밑에 깔린 금 테두리, 연석 바깥 면 = 도로 옆면이 깜빡였다. 충돌체는 그대로 두고 그림만 `MissionGames.Proud`(1 cm) 떼어 놓는다(`MissionGames.LinedWall`, `PaintBoard.ClipRims`).
 
 ## 40. FBX 정점 색은 Blender로 다시 불러오면 값이 달라 보임 (R440)
 
@@ -272,3 +273,6 @@ Prototype 코드41개는 새 asmdef로 분리하면 기존 어셈블리 내부 �
 R507은 `git merge -s ours --no-commit`으로 main 트리를 그대로 둔 채 병합 기록만 만들고, 그 브랜치가 **직접 만든 커밋의 변경**(`git diff <갈라진 점> <그 브랜치 커밋>`, 병합 커밋은 빼고)만 `git apply --3way`로 얹었다. 마지막에 `git diff --cached --name-status HEAD`에 `D`가 없고 `A`·`M`이 모두 그 브랜치 작업인지 확인한다. 같은 이유로 그 브랜치의 요청 번호(R283~R288)는 main 번호와 겹치니 "· nifty-tesla"처럼 브랜치를 붙여 옮긴다.
 
 Linux 검사(`Tools/run-tests-linux.sh --compile`)에는 R507 때 main 자체에 이미 두 가지 Linux 전용 실패가 있었다(병합 전 `98f7e0e`에서도 같음). ① Core "Packets (R297 [3])" 고정 바이트의 6번째 값(`PawnRushNetState`)이 mono에서 다르게 나와 첫 실패에서 Core 시험 전체가 멈춘다(Windows `Test-NetworkCore.ps1` 기록은 통과). ② PawnRush 에디터 어셈블리 컴파일이 쓰는 UnityEditor.dll(2021.1)에 `Texture.imageContentsHash`·`EditorSceneManager.OpenPreviewScene`·`RenderPipeline.StandardRequest`가 없어 `MiniGamePrefabMenu`·`MiniGamePrefabValidation`에서 오류 6개가 난다. 검사를 끄거나 고정값을 바꾸지 말고, 로컬에서만 그 한 줄을 출력으로 바꿔 나머지 시험·컴파일을 돌린 뒤 되돌리고, 두 실패를 따로 보고한다.
+## 43. MonoBehaviour 필드 초기화에서 `new MaterialPropertyBlock()` 금지 (R506)
+
+`readonly MaterialPropertyBlock b = new MaterialPropertyBlock();`처럼 필드에서 만들면 Unity가 "CreateImpl is not allowed to be called from a MonoBehaviour constructor (or instance field initializer)"를 내고 b가 null로 남는다. 그 뒤 필드 초기화(배열 등)도 함께 실패해 Update가 매 프레임 예외로 멈추고, 화면에는 "아무 일도 안 일어남"으로만 보인다. Awake/Update에서 처음 쓸 때 만든다. 증상이 안 보이면 먼저 Editor.log를 본다.

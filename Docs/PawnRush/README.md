@@ -44,6 +44,7 @@
 | 미니게임 규칙 | [PAWN_RUSH_MINIGAMES_v1](PAWN_RUSH_MINIGAMES_v1.md) |
 | 왕실 마차뜰(팀원 맵 프리팹)·장애물·재미 검증 | [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) |
 | 맵 프리팹 하나씩 시험하는 장면·새 맵 만들기 | [PAWN_RUSH_MAP_TEST](PAWN_RUSH_MAP_TEST.md) · [맵 폴더 규칙](../../Assets/Prefabs/PawnRushMaps/README.md) |
+| **코스·미니게임 3단계 아트 기준(모델링·텍스처)** | [PAWN_RUSH_ART_PHASES](PAWN_RUSH_ART_PHASES.md) |
 | 공간 이미지·제작 규격 | [모델링 지침](PAWN_RUSH_MINIGAME_MODELING.md) · [이미지 갤러리](PAWN_RUSH_MINIGAME_CONCEPTS.html) |
 | 사용자 Unity·Steam 확인 목록 | [VALIDATION](../Network/VALIDATION.md) |
 

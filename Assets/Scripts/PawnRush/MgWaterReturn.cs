@@ -52,8 +52,14 @@ namespace ChessFight.PawnRush
                 if (!wet.Contains(p.Driver))
                 {
                     var at = game.TransformPoint(new Vector3(p.Local.x, surface, p.Local.z));
-                    ArenaFx.Burst(at, new[] { Arena.Hex("#7FC8E8"), Color.white }, 24, 1.6f, 5f, .9f, .08f);
-                    ArenaFx.Ring(at, 0f, 2f, .7f, Arena.Hex("#BFE6F5"));
+                    // a station may play its own splash (J's crown, ripples and foam, MiniGameLaundryFx)
+                    var own = station.GetComponent<IWaterGameFx>();
+                    if (own != null) own.Splash(at, 1f);
+                    else
+                    {
+                        ArenaFx.Burst(at, new[] { Arena.Hex("#7FC8E8"), Color.white }, 24, 1.6f, 5f, .9f, .08f);
+                        ArenaFx.Ring(at, 0f, 2f, .7f, Arena.Hex("#BFE6F5"));
+                    }
                     ArenaFx.Sfx("sfx_splash", at);
                 }
             }

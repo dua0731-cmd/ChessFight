@@ -44,6 +44,17 @@ namespace ChessFight.PawnRush
             }
         }
 
+        // A model now draws the handle (R502 C's knots, MiniGameModels.Drawbridge): the handle's own box stops drawing
+        // (its collider stays) and `accent` - the model's gold part - takes the team colour while gripped, its own
+        // material otherwise. A null accent only hides the box.
+        public void Restyle(Renderer accent)
+        {
+            var own = GetComponent<Renderer>();
+            if (own != null && own != accent) own.enabled = false;
+            look = accent;
+            if (accent != null) gold = accent.sharedMaterial;
+        }
+
         // The team colour lights up while one of `team` grips it (§2.2.7); the plain gold otherwise.
         public void ShowHeld(int team)
         {

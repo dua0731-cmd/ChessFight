@@ -17,6 +17,15 @@ namespace ChessFight.PawnRush
     public sealed class MgCheckmate : MiniGameBase, IProgressCount
     {
         public const float KingHeight = .9f, KingRadius = .35f, TrayV = 9.6f;
+
+        // R510 art hook (MiniGameHallBell): a king took a check (false) or froze (true). Raised from Present, so on every
+        // PC from its own view of the hunt; pictures only, the rule and the network do not use it.
+        public static event System.Action<bool> KingChecked;
+
+        // R510: H's own soft particle effects (CheckmateFx) in place of ArenaFx's bursts, ring and solid beam; added on
+        // first use, so the saved prefab carries nothing new. Sounds stay ArenaFx.Sfx.
+        CheckmateFx fx;
+        CheckmateFx Fx => fx != null ? fx : (fx = gameObject.AddComponent<CheckmateFx>());
         const float HopSeconds = .35f, HopApex = .4f, FlySeconds = .9f, FlyApex = 2f, Vanish = .3f;
 
         [SerializeField] MissionStation station;
@@ -235,9 +244,8 @@ namespace ChessFight.PawnRush
                 jumped[k] = Mathf.Max(Mathf.Abs(now.File - was.File), Mathf.Abs(now.Rank - was.Rank)) > 1;
                 if (jumped[k])
                 {
-                    var smoke = new[] { Arena.Hex("#7FA8FF") };
-                    ArenaFx.Burst(at + Vector3.up * .4f, smoke, 16, 1.2f, 1f, .8f, .12f);
-                    ArenaFx.Burst(World(to[k]) + Vector3.up * .4f, smoke, 16, 1.2f, 1f, .8f, .12f);
+                    Fx.Vanish(at);
+                    Fx.Vanish(World(to[k]));
                     ArenaFx.Sfx("sfx_stalemate", at);
                 }
                 landed[k] = false;
@@ -245,18 +253,19 @@ namespace ChessFight.PawnRush
             if (now.State == CheckmateHunt.KingState.Free && was.State == CheckmateHunt.KingState.Free && now.Checks > was.Checks)
             {
                 flinchAt[k] = Time.time;
-                ArenaFx.Ring(at, 0f, 1.8f, .5f, Arena.Red);
-                ArenaFx.Burst(at + Vector3.up * .7f, new[] { Arena.Red }, 8, 1.4f, 1.6f, .6f, .08f);
+                Fx.Check(at, PawnRushBoard.Cell, transform.eulerAngles.y);
                 ArenaFx.Sfx("sfx_check", at);
+                KingChecked?.Invoke(false);
             }
             if (now.State == CheckmateHunt.KingState.Frozen && was.State == CheckmateHunt.KingState.Free)
             {
-                ArenaFx.Beam(at, .6f, 1f, 6f, 1f, Arena.Gold);
+                Fx.Freeze(at, PawnRushBoard.Cell, transform.eulerAngles.y);
                 ArenaFx.Sfx("sfx_mate", at);
+                KingChecked?.Invoke(true);
             }
             if (now.State == CheckmateHunt.KingState.Free && was.State == CheckmateHunt.KingState.Frozen)
             {
-                ArenaFx.Burst(at + Vector3.up * .5f, new[] { station.Accent(station.Team == Teams.White ? Teams.Black : Teams.White) }, 10, 1.4f, 1.4f, .7f, .08f);
+                Fx.Rescue(at, station.Accent(station.Team == Teams.White ? Teams.Black : Teams.White));
                 ArenaFx.Sfx("sfx_rescue", at);
             }
             Copy(now, was);
@@ -287,7 +296,7 @@ namespace ChessFight.PawnRush
             if (bodies[k] != null) bodies[k].interpolation = RigidbodyInterpolation.None;
             halos[k].enabled = false;
             var at = World(from[k] + Vector3.up * .5f);
-            ArenaFx.Burst(at, new[] { Arena.Gold, station.Accent(station.Team), Color.white }, 30, 2.5f, 3.5f, 1.1f, .1f);
+            Fx.Capture(World(from[k]), PawnRushBoard.Cell, transform.eulerAngles.y, station.Accent(station.Team));
             ArenaFx.Sfx("sfx_king_capture", at);
         }
 
@@ -337,7 +346,7 @@ namespace ChessFight.PawnRush
                     if (!jumped[k])
                     {
                         var at = World(to[k]);
-                        ArenaFx.Burst(at + Vector3.up * .05f, new[] { new Color(.8f, .72f, .6f) }, 3, .6f, .4f, .5f, .06f);
+                        Fx.Land(at);
                         ArenaFx.Sfx("sfx_king_hop", at, volume: .7f);
                     }
                 }

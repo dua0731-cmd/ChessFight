@@ -69,8 +69,10 @@ namespace ChessFight.PawnRush
                 station.PalaceStyle ? MiniGamePalaceArt.DaisMaterial(PawnRushMissions.KnightPads) : Arena.DaisMaterial).AddComponent<CourseFloor>();
             var stone = Arena.Lit("M_MoatStone", Arena.Hex("#6E6A64"), 0f, .9f);
             b.Box("Water bottom", new Vector3(-10f, Bottom - 1f, South), new Vector3(10f, Bottom, North), stone, true);
-            b.Box("Water wall S", new Vector3(-10f, Bottom, South - .1f), new Vector3(10f, 0f, South), stone, true);
-            b.Box("Water wall N", new Vector3(-10f, Bottom, North), new Vector3(10f, -Arena.DaisHeight, North + .1f), stone, true);
+            // The S wall lies inside the south floor's edge, the N wall inside the gate strip's: their pictures stand
+            // off those faces (R498).
+            MissionGames.LinedWall(b, "Water wall S", new Vector3(-10f, Bottom, South - .1f), new Vector3(10f, 0f, South), stone, 1f);
+            MissionGames.LinedWall(b, "Water wall N", new Vector3(-10f, Bottom, North), new Vector3(10f, -Arena.DaisHeight, North + .1f), stone, -1f);
             b.Box("Water wall W", new Vector3(-10f, Bottom, South), new Vector3(-9.9f, -Arena.DaisHeight, North), stone, true);
             b.Box("Water wall E", new Vector3(9.9f, Bottom, South), new Vector3(10f, -Arena.DaisHeight, North), stone, true);
             Arena.Picture(b.parent, "Water", new Vector3(-9.9f, Surface - .05f, South), new Vector3(9.9f, Surface, North), MapLook.Water != null ? MapLook.Water : Arena.Glow(new Color(.35f, .62f, .78f, .6f)));
@@ -206,8 +208,14 @@ namespace ChessFight.PawnRush
                 {
                     bounceAt[launchSquare] = t;
                     var at = World(pads[launchSquare].localPosition);
-                    ArenaFx.Burst(at + Vector3.up * .1f, new[] { new Color(.8f, .72f, .6f), Arena.Gold }, 8, 1.4f, 1.5f, .5f, .07f);
-                    ArenaFx.Ring(at, 0f, 1.6f, .5f, Arena.Gold);
+                    // a station may play its own picture (J's soapy jet, MiniGameLaundryFx); else the shared burst and ring
+                    var own = station != null ? station.GetComponent<IWaterGameFx>() : null;
+                    if (own != null) own.PadLaunch(at);
+                    else
+                    {
+                        ArenaFx.Burst(at + Vector3.up * .1f, new[] { new Color(.8f, .72f, .6f), Arena.Gold }, 8, 1.4f, 1.5f, .5f, .07f);
+                        ArenaFx.Ring(at, 0f, 1.6f, .5f, Arena.Gold);
+                    }
                     ArenaFx.Sfx("sfx_pad_launch", at);
                 }
             }
@@ -236,8 +244,13 @@ namespace ChessFight.PawnRush
             splashed[i] = false;
             if (pieceColliders[i] != null) pieceColliders[i].enabled = false;
             var at = World(takenFrom[i] + Vector3.up * .6f);
-            ArenaFx.Burst(at, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent), Arena.Gold }, 22, 2.4f, 3f, 1f, .1f);
-            ArenaFx.Ring(World(takenFrom[i] + Vector3.up * .05f), 0f, 1.8f, .5f, Arena.Gold);
+            var own = station.GetComponent<IWaterGameFx>();
+            if (own != null) own.PieceTaken(World(takenFrom[i]), transform.TransformDirection(takenDir[i]));
+            else
+            {
+                ArenaFx.Burst(at, new[] { MiniGameParts.PieceColor(Opponent), station.Accent(Opponent), Arena.Gold }, 22, 2.4f, 3f, 1f, .1f);
+                ArenaFx.Ring(World(takenFrom[i] + Vector3.up * .05f), 0f, 1.8f, .5f, Arena.Gold);
+            }
             ArenaFx.Sfx("sfx_ep_capture", at, pitch: Mathf.Pow(2f, (Done - Total) / 12f));
         }
 
@@ -255,7 +268,9 @@ namespace ChessFight.PawnRush
             {
                 splashed[i] = true;
                 var at = World(new Vector3(to.x, Surface, to.z));
-                ArenaFx.Burst(at, new[] { Arena.Hex("#7FC8E8"), Color.white }, 16, 1.4f, 4f, .8f, .07f);
+                var own = station.GetComponent<IWaterGameFx>();
+                if (own != null) own.Splash(at, .7f);
+                else ArenaFx.Burst(at, new[] { Arena.Hex("#7FC8E8"), Color.white }, 16, 1.4f, 4f, .8f, .07f);
                 ArenaFx.Sfx("sfx_splash", at, volume: .7f);
             }
         }
