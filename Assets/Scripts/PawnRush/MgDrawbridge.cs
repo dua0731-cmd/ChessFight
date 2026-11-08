@@ -40,7 +40,10 @@ namespace ChessFight.PawnRush
         // 있는 건 왼쪽에다가": the returning line with the knots runs on the bridge's side (x 16), the track and the winch
         // outside it (x 18.4), the line clear of the winch's 3.2 m frame (pulled all the way the knots stay beside it). The pawns grab the knots on the returning line and walk south, toward the winch. The lead knot (the
         // southern one) starts at u 8.3, the knots 0.8 m apart behind it; 7 m pulled brings it to u 1.3.
-        public const float PalaceWinchOut = 6.4f, PalacePulleyAside = 2.4f, PalaceKnotU = 8.3f;
+        // User 11-08 (a sketch: "원리는 그대로 하고 위치만 이렇게"): the same winch, track, pulley post and returning line,
+        // moved in beside the central aisle - the winch 3.8 m from the section's middle (its frame just clear of the
+        // aisle's curb at 2), the returning line 2.4 m further out (6.2), clear of the bridge (10..14).
+        public const float PalaceWinchFromMiddle = 3.8f, PalacePulleyAside = 2.4f, PalaceKnotU = 8.3f;
         public const float PalaceAnchorBack = .5f;     // the pulley post's south face, this far short of the moat (c_drawbridge_v2.py ANCHOR_Y)
         public const float PalacePulleyU = .08f;       // the pulleys' rope line, this far south of the post's face
         public const float PalacePylonX = 3.4f, PalacePylonHalf = 1.1f;
@@ -179,8 +182,9 @@ namespace ChessFight.PawnRush
             // it, near the entrance; the knots, the pull and the ratchet are as before. The handles and rope move with
             // the lane, rather than decorating one place while judging a pull somewhere else.
             float postSide = station.PalaceStyle && !station.Mirrored ? -1f : 1f;      // the station's outer side
-            float winchX = station.PalaceStyle ? postSide * PalaceWinchOut : 0f;
-            float ropeOffset = station.PalaceStyle ? winchX - postSide * PalacePulleyAside : 0f;   // palace: the returning (pulled) line
+            // palace: the station's middle is 12 m out from the section's; the aisle is on its -postSide... side
+            float winchX = station.PalaceStyle ? -postSide * (12f - PalaceWinchFromMiddle) : 0f;
+            float ropeOffset = station.PalaceStyle ? winchX + postSide * PalacePulleyAside : 0f;   // palace: the returning (pulled) line, further out
             float winchU = station.PalaceStyle ? PalaceWinchU : Winch;
             var winchParent = b.parent;
             Transform laneParent = b.parent;
@@ -240,7 +244,7 @@ namespace ChessFight.PawnRush
             game.ropeOffsetX = ropeOffset;
             game.winchAt = new Vector3(winchX, DrumHeight, winchU);
             game.pullDir = Vector3.back;                                        // both: the pawns walk south to pull
-            game.pullX = winchX - postSide * PalacePulleyAside;          // the bridge's side of the winch, clear of its frame
+            game.pullX = ropeOffset;                                     // outside the winch, clear of its frame and the bridge
             game.palaceFront = station.PalaceStyle;
             game.moat0 = Moat0;
             game.deckLen = Deck;
@@ -269,7 +273,7 @@ namespace ChessFight.PawnRush
             }
             for (int i = 0; i < Knots; i++)
             {
-                var h = MiniGameParts.Handle(b.parent, "Knot " + (i + 1), (station.PalaceStyle ? V(winchX - postSide * PalacePulleyAside, RopeHeight, PalaceKnotU + i * PalaceKnotGap) : V(ropeOffset, RopeHeight, KnotU(0f, i))), new Vector3(.3f, .3f, .14f), game, (byte)i, GrabHandle.HandleKind.Pull);
+                var h = MiniGameParts.Handle(b.parent, "Knot " + (i + 1), (station.PalaceStyle ? V(ropeOffset, RopeHeight, PalaceKnotU + i * PalaceKnotGap) : V(ropeOffset, RopeHeight, KnotU(0f, i))), new Vector3(.3f, .3f, .14f), game, (byte)i, GrabHandle.HandleKind.Pull);
                 game.knots[i] = h;
                 game.knotBodies[i] = h.GetComponent<Rigidbody>();
             }

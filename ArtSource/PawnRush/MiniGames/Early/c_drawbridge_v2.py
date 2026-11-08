@@ -41,9 +41,9 @@ DECK_LEN, DECK_W = 5.1, 4.
 FACADE = 24.
 REAR = 30.          # the game's rear corridor y 30..36 behind the gatehouse, the exit at x -6..6 (MiniGameSectionBuilder)
 LANE_X, LANE_Y0, LANE_Y1 = 11., 4.2, 14.9
-WINCH_X, WINCH_Y = 18.4, 5.4      # outside the bridge (x 10..14) and the knot line: MgDrawbridge 12 + PalaceWinchOut 6.4
+WINCH_X, WINCH_Y = 3.8, 5.4       # beside the central aisle (user 11-08 sketch; MgDrawbridge.PalaceWinchFromMiddle)
 ANCHOR_Y = MOAT0 - .5             # the pulley post's south face (MgDrawbridge.PalaceAnchorBack)
-PULL_ASIDE = 2.4                  # the returning line, this far toward the bridge, clear of the winch (MgDrawbridge.PalacePulleyAside)
+PULL_ASIDE = 2.4                  # the returning line, this far further out, clear of the winch (MgDrawbridge.PalacePulleyAside)
 KNOTS = [14.2, 13.2, 12.2, 11.2]
 PYLON_H = 3.3
 MW, MD, MH = 1.0, .74, 1.093       # the stone block module
@@ -778,7 +778,7 @@ def build():
         # top north along a track of two dark iron plates (gold studs) to a pulley on a stone post by the moat, across
         # the post to a second pulley and back south beside the track; the pawns pull the knots on the returning line
         # south, toward the winch (MgDrawbridge.PalacePulleyAside 1.3, PalaceKnotU 8.3, gap 0.8).
-        bx = wx - s * PULL_ASIDE                     # the returning line (the bridge's side, user 11-07 swap)
+        bx = wx + s * PULL_ASIDE                     # the returning line, outside the winch (user 11-08 sketch)
         py = ANCHOR_Y - .08                          # the pulleys' rope line (MgDrawbridge.PalacePulleyU)
         for e in (-1, 1):
             x0, x1 = wx + e * .12, wx + e * .62
