@@ -315,22 +315,8 @@ namespace ChessFight.Gameplay
 
         void OnDestroy() => input?.Disable();
 
-        Texture2D white;
-
-        // A plain bar at the bottom middle: green to red as it empties.
-        void StaminaBar(float stamina)
-        {
-            if (white == null) white = Texture2D.whiteTexture;
-            const float width = 240f, height = 12f;
-            var back = new Rect((Screen.width - width) * 0.5f, Screen.height - 44f, width, height);
-            var old = GUI.color;
-            GUI.color = new Color(0.08f, 0.1f, 0.14f, 0.7f);
-            GUI.DrawTexture(back, white);
-            GUI.color = Color.Lerp(new Color(1f, 0.32f, 0.26f), new Color(0.4f, 0.92f, 0.46f), stamina);
-            GUI.DrawTexture(new Rect(back.x + 2f, back.y + 2f, (width - 4f) * Mathf.Clamp01(stamina), height - 4f), white);
-            GUI.color = old;
-            GUI.Label(new Rect(back.x, back.y - 20f, width, 20f), "스테미나", style);
-        }
+        // A plain bar at the bottom middle: green to red as it empties (a match shows the same one, MatchStaminaBar).
+        void StaminaBar(float stamina) => StaminaBarGui.Draw(stamina, style);
 
         void OnGUI()
         {

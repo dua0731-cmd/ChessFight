@@ -117,6 +117,7 @@ R47 소드파이트 경기 HUD는 `SwordFightHud.uxml/.uss` + `SwordFightTheme.t
 - `MatchHud.uxml`(`MatchSceneView`): 읽기 전용. (R61) 오른쪽 아래에 채팅([§9](#9-채팅-r61-2026-09-30)): **Tab**으로 열고, 여는 동안 이동이 멈춘다. 안내 줄 끝에 "Tab 채팅". 로비 아래 키 안내에도 "Tab 채팅". 제목은 경기 모드 이름, 상태, 명단, 핑/응답 줄, Esc 안내. 방장 신호가 끊기면 상단 가운데에 **노란 "연결 불안정" → 빨간 "멈춤"** 배너(`.warning`, `.warning-frozen`). 매 프레임 갱신한다.
 - (R59) 상태 줄: 빈자리가 있으면 "경기 중 · 빈자리 n개 · 매칭 중인 플레이어가 들어올 수 있습니다", 누가 빈자리에 앉으면 6초 동안 "○○ 님이 빈자리를 채웠습니다"(`SteamSession.Note`).
 - 오프라인 플레이테스트 도움말은 IMGUI(`PlaytestSpawner.OnGUI`)로 그린다.
+- (R514) **스테미나 바**: 화면 아래 가운데, 240 × 12 px, 초록 → 빨강, 위에 "스테미나"(`Gameplay/Playtest/StaminaBarGui`, IMGUI). 오프라인은 `PlaytestSpawner`, 폰 러쉬 경기는 `MatchStaminaBar`(`SteamPawnRushLink`가 붙여 이 PC의 폰을 따라감, 시작 신호 뒤부터 승패가 날 때까지). 소드 파이트 경기에는 아직 없다(기획 미정).
 
 ## 8. 로딩 화면 (R58, 2026-09-30)
 

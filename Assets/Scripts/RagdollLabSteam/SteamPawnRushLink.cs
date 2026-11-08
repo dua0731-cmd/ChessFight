@@ -147,6 +147,8 @@ namespace ChessFight.RagdollLab.Net
         // What the match runs on (R508): course 01 or a section round.
         MatchCourse match;
         bool matchStartSet;
+        // R514: this PC's stamina bar (the offline playtest's, which a match switches off).
+        MatchStaminaBar staminaBar;
         PlaytestSpawner spawner;
         NetworkRuntime runtime;
         SteamSession session;
@@ -295,6 +297,9 @@ namespace ChessFight.RagdollLab.Net
             WaterZone.Entered += OnWater;
             TeamZone.Intruded += OnIntruded;
             RagdollPawn.SkillFx += OnPawnRushFx;
+            // R514: this PC's stamina, the bar the offline playtest shows (the playtest is off in a match); on once the race goes.
+            staminaBar = gameObject.AddComponent<MatchStaminaBar>();
+            staminaBar.enabled = false;
             SyncRoster();
             NetMetricsOverlay.Attach(gameObject, CurrentMetrics);
             if (Debug.isDebugBuild && AutoPilot.Requested(Environment.GetCommandLineArgs(), session.Self, out uint seed))
@@ -393,6 +398,7 @@ namespace ChessFight.RagdollLab.Net
                 // Whose fanfare is loud, whose aiming arc shows (R508: the match's own pawn, as the playtests do offline).
                 MissionStation.LocalTeam = team;
                 MiniGameBase.LocalDriver = driver;
+                if (staminaBar != null) staminaBar.Follow(driver);
                 if (PawnRushCourseSkills.Current != null) PawnRushCourseSkills.Current.Local = pawn;
                 if (orbit != null) orbit.Follow(driver.FollowTarget, pawn.transform, rotation * Vector3.forward);
             }
@@ -542,6 +548,8 @@ namespace ChessFight.RagdollLab.Net
             SyncObstacleClock();
             ArmStartBar();
             ArmMatchStart();
+            // R514: shown from the shared start on (before it the loading screen is up), until the race is decided.
+            if (staminaBar != null) staminaBar.enabled = Started() && !ended;
             // The match sheet's piece icons (VoiceHud, R131): who has been promoted, as this PC draws them.
             foreach (var r in runners.Values) MatchPieces.Set(r.Id, r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn);
             // A client's skill timers run before this frame's packets overwrite them.
