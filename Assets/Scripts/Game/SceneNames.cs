@@ -6,7 +6,9 @@ namespace ChessFight.Game
     {
         public const string Intro = "Intro";
         public const string Lobby = "Lobby";
-        // The 폰 러쉬 match (GameModes.KingRush keeps its old key). Was the KingRush capsule scene until 10-08.
+        // The 폰 러쉬 match since R508 (GameModes.KingRush keeps its old key): the section round.
+        public const string PawnRushRound = "PawnRush_Round";
+        // The 폰 러쉬 match from 10-08 to R508 (was the KingRush capsule scene until 10-08); kept as a prototype.
         public const string PawnRushCourse01 = "PawnRush_Course01";
         public const string SwordFight = "SwordFight";
         // Development only: opened directly in the Editor, never loaded at run time.

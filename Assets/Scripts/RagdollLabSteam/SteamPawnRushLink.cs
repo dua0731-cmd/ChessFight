@@ -52,6 +52,14 @@ namespace ChessFight.RagdollLab.Net
     /// square; a moment after taking over it also puts back whoever the old host had waiting in the water, a kill volume,
     /// an enemy team's zone or a long fall (Rearm).
     ///
+    /// R508 (the match on sections): the lobby's 폰 러쉬 now loads PawnRush_Round, a PawnRushRound with a crown
+    /// finish on the war room's goal. As the scene loads, before anything starts, this link builds the round from the
+    /// match's number (PawnRushSections.MatchSeed: every PC draws the same sections and seeds, nothing is sent) and
+    /// moves its start to the lobby's go once that is known (MatchCourse.StartAt). The course state names the round's
+    /// stations (each mini-game section's white then black) and carries the sections' own state (ISectionNetPart:
+    /// the guess bridge's squares, the tilting pads, the carriage yard's final gate). Course 01 still works the same
+    /// way through MatchCourse (its draw and its pads).
+    ///
     /// Not yet: bots only stand at the start.
     /// </summary>
     [DefaultExecutionOrder(-150)]
@@ -69,6 +77,9 @@ namespace ChessFight.RagdollLab.Net
         const string OwnLeadArgument = "-ownLead";
         /// <summary>A moment played this much later than the poses it belongs to is not drawn any more (ms).</summary>
         const double StaleEventMs = 1000;
+        /// <summary>R508: a round's start until the lobby's go is known (s ahead on the obstacle clock). Under an hour:
+        /// the yard's carriages take a start more than RoamingFleet.Leap away for a clock leap and set off at once.</summary>
+        const double ProvisionalStart = 600;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
@@ -84,13 +95,22 @@ namespace ChessFight.RagdollLab.Net
         {
             var runtime = NetworkRuntime.Instance;
             if (runtime == null || runtime.Session == null || !runtime.Session.Started || runtime.Session.Match == 0) return;
+            var session = runtime.Session;
             var course = FindFirstObjectByType<PawnRushCourse>();
+            var round = course == null ? FindFirstObjectByType<PawnRushRound>() : null;
             var spawner = FindFirstObjectByType<PlaytestSpawner>(FindObjectsInactive.Include);
-            if (course == null || spawner == null || FindFirstObjectByType<SteamPawnRushLink>() != null) return;
+            if ((course == null && round == null) || spawner == null || FindFirstObjectByType<SteamPawnRushLink>() != null) return;
+            // R508: the match's round, built here (the scene has loaded, nothing has started) from the match's number,
+            // the same sections and seeds on every PC; its start is the lobby's go (ArmMatchStart), which comes after
+            // every PC has loaded, so until then a start ProvisionalStart ahead holds the gates shut and the carriages
+            // at home.
+            if (round != null)
+                round.BuildForMatch(PawnRushSections.MatchSeed(session.Match),
+                                    session.StartAt > 0 ? session.StartAt : ObstacleClock.Now + ProvisionalStart);
             var go = new GameObject("ChessFight Pawn Rush Net");
-            SceneManager.MoveGameObjectToScene(go, course.gameObject.scene);   // gone with the match scene
+            SceneManager.MoveGameObjectToScene(go, (course != null ? course.gameObject : round.gameObject).scene);   // gone with the match scene
             var link = go.AddComponent<SteamPawnRushLink>();
-            link.course = course;
+            link.match = course != null ? MatchCourse.Of(course) : MatchCourse.Of(round);
             link.spawner = spawner;
         }
 
@@ -124,7 +144,9 @@ namespace ChessFight.RagdollLab.Net
             public ushort EventAck;
         }
 
-        PawnRushCourse course;
+        // What the match runs on (R508): course 01 or a section round.
+        MatchCourse match;
+        bool matchStartSet;
         PlaytestSpawner spawner;
         NetworkRuntime runtime;
         SteamSession session;
@@ -246,7 +268,7 @@ namespace ChessFight.RagdollLab.Net
             authority = session.IsHost;
             hostWatch.Changed(session.Host, authority);
             MiniGameBase.Remote = !authority;
-            finish = course != null ? course.Finish : null;
+            finish = match != null ? match.Finish : null;
             if (finish != null)
             {
                 finish.Authority = authority;
@@ -319,6 +341,9 @@ namespace ChessFight.RagdollLab.Net
             RagdollPawn.SkillFx -= OnPawnRushFx;
             if (finish != null) finish.Decided -= OnDecided;
             Course01Playtest.NetworkDriver = null;
+            SectionPlaytest.NetworkDriver = null;
+            MiniGameBase.LocalDriver = null;
+            MissionStation.LocalTeam = Teams.White;
             MiniGameBase.Remote = false;
             PromotionChooser.Asked = null;
             MiniGameBase.SeatOf = null;
@@ -363,6 +388,11 @@ namespace ChessFight.RagdollLab.Net
             {
                 Course01Playtest.NetworkDriver = driver;
                 Course01Playtest.NetworkTeam = team;
+                SectionPlaytest.NetworkDriver = driver;
+                SectionPlaytest.NetworkTeam = team;
+                // Whose fanfare is loud, whose aiming arc shows (R508: the match's own pawn, as the playtests do offline).
+                MissionStation.LocalTeam = team;
+                MiniGameBase.LocalDriver = driver;
                 if (PawnRushCourseSkills.Current != null) PawnRushCourseSkills.Current.Local = pawn;
                 if (orbit != null) orbit.Follow(driver.FollowTarget, pawn.transform, rotation * Vector3.forward);
             }
@@ -511,6 +541,7 @@ namespace ChessFight.RagdollLab.Net
             SyncRoster();
             SyncObstacleClock();
             ArmStartBar();
+            ArmMatchStart();
             // The match sheet's piece icons (VoiceHud, R131): who has been promoted, as this PC draws them.
             foreach (var r in runners.Values) MatchPieces.Set(r.Id, r.Pawn != null ? r.Pawn.Piece : PieceKind.Pawn);
             // A client's skill timers run before this frame's packets overwrite them.
@@ -819,15 +850,19 @@ namespace ChessFight.RagdollLab.Net
 
         void SendState(uint stamp, bool reliable = false)
         {
-            var picker = course != null ? course.Missions : null;
-            if (picker == null) return;
+            if (match == null) return;
             state.Tick = ++stateTick;
             state.HostTimeMs = stamp;
-            state.First = (sbyte)picker.First;
-            state.Second = (sbyte)picker.Second;
-            for (int k = 0; k < PawnRushNetState.Stations; k++)
+            // The course's own fields (course 01: its draw and pads; a round: its sections' bytes), from a clean slate.
+            state.First = state.Second = -1;
+            state.PadFirst = state.PadSecond = state.PadsUsed = 0;
+            for (int i = 0; i < state.PadChooser.Length; i++) state.PadChooser[i] = PawnRushNetState.NoChooser;
+            state.PartsLength = 0;
+            match.Write(state);
+            state.StationCount = Mathf.Min(match.StationCount, PawnRushNetState.MaxStations);
+            for (int k = 0; k < state.StationCount; k++)
             {
-                var station = picker.Station(k / 2 + 1, k % 2);
+                var station = match.Station(k);
                 var game = station != null ? station.Game : null;
                 state.Game[k] = (sbyte)(station != null ? station.GameIndex : -1);
                 state.Progress[k] = game != null ? game.Progress01 : 0f;
@@ -836,10 +871,6 @@ namespace ChessFight.RagdollLab.Net
                 if (game != null) game.WriteNet(ref block);
                 state.BlockLength[k] = block.Written;
             }
-            state.PadFirst = (byte)picker.PadFirst;
-            state.PadSecond = (byte)picker.PadSecond;
-            state.PadsUsed = picker.PadsUsed;
-            picker.Choosers(state.PadChooser);
             state.Winner = (sbyte)(finish != null ? finish.Winner : PawnRushFinish.None);
             state.Clock = finish != null ? (finish.Winner != PawnRushFinish.None ? finish.WinClock : finish.Clock) : 0f;
             state.FinisherCount = 0;
@@ -1050,22 +1081,23 @@ namespace ChessFight.RagdollLab.Net
             buffer.Add(snap);
         }
 
-        // Not the host: the host's round (its two games), each station's progress and look, the pads and the race.
+        // Not the host: the host's draw (course 01), each station's progress and look, the course's own state (course
+        // 01's pads, a round's sections) and the race.
         void ApplyState(PawnRushNetState s)
         {
-            var picker = course != null ? course.Missions : null;
-            if (picker == null) return;
-            if (s.First >= 0 && s.Second >= 0 && (picker.First != s.First || picker.Second != s.Second)) picker.Install(s.First, s.Second);
-            for (int k = 0; k < PawnRushNetState.Stations; k++)
+            if (match == null) return;
+            match.ApplyBefore(s);
+            int stations = Mathf.Min(s.StationCount, match.StationCount);
+            for (int k = 0; k < stations; k++)
             {
-                var station = picker.Station(k / 2 + 1, k % 2);
+                var station = match.Station(k);
                 var game = station != null ? station.Game : null;
                 if (game == null || station.GameIndex != s.Game[k]) continue;
                 var block = new NetBlock(s.Block[k], 0, s.BlockLength[k]);
                 game.ReadNet(ref block);
                 game.ApplyRemote(s.Progress[k], s.Completed[k]);
             }
-            picker.ApplyPads((PieceKind)s.PadFirst, (PieceKind)s.PadSecond, s.PadsUsed, s.PadChooser);
+            match.ApplyAfter(s);
             if (finish != null) finish.ApplyRemote(s.Winner, s.Clock, s.FinisherSeat, s.FinisherTime, s.FinisherCount);
         }
 
@@ -1124,6 +1156,15 @@ namespace ChessFight.RagdollLab.Net
             if (startBarSet || StartBar.Current == null || session.StartAt <= 0) return;
             startBarSet = true;
             StartBar.Current.ReleaseAtClock(session.StartAt + StartBar.Current.Countdown);
+        }
+
+        // R508: the round's sections count from the lobby's go once it is known (before the race: the mini-games are
+        // built again from it), on every PC.
+        void ArmMatchStart()
+        {
+            if (matchStartSet || match == null || session.StartAt <= 0) return;
+            matchStartSet = true;
+            match.StartAt(session.StartAt);
         }
 
         // R295: the match's shared start has passed, by the runtime's shared clock: from then on at the latest a client

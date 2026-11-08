@@ -13,8 +13,9 @@ namespace ChessFight.PawnRush
     // kill volume sends the faller back to the dais's checkpoint.
     //
     // StateDrivenMover: a square breaks because someone stands on it, not on the shared clock. The authority
-    // (offline, or the host) decides; online the host still has to send which squares are open.
-    public sealed class GuessBridge : MonoBehaviour, ISectionPart
+    // (offline, or the host) decides; online (R508) the host sends each square's state in the course state
+    // (ISectionNetPart: a byte a square, 0 whole, else how long it has been open in tenths of a second).
+    public sealed class GuessBridge : MonoBehaviour, ISectionPart, ISectionNetPart
     {
         [Tooltip("Row by row from the dais: the left (west) and right (east) squares.")]
         [SerializeField] GameObject[] left = new GameObject[0];
@@ -53,6 +54,46 @@ namespace ChessFight.PawnRush
         }
 
         GameObject Square(int i) => i < Rows ? left[i] : right[i - Rows];
+
+        // ------------------------------------------------------------------ online (R508)
+
+        public int NetBytes => Rows * 2;
+
+        public void WriteNet(ref NetBlock block)
+        {
+            for (int i = 0; i < Rows * 2; i++)
+            {
+                float open = brokenAt != null && brokenAt[i] >= 0f ? Time.time - brokenAt[i] : -1f;
+                block.U8(open < 0f ? 0 : Mathf.Clamp(1 + Mathf.FloorToInt(open * 10f), 1, 254));
+            }
+        }
+
+        // Not the host: the host's squares. One the host has open opens here (counted from when it did there); one the host
+        // has whole again closes here.
+        public void ReadNet(ref NetBlock block)
+        {
+            for (int i = 0; i < Rows * 2; i++)
+            {
+                int v = block.ReadU8();
+                if (brokenAt == null || Square(i) == null) continue;
+                if (v == 0)
+                {
+                    if (brokenAt[i] >= 0f) Mend(i);
+                    continue;
+                }
+                float open = (v - 1) / 10f, at = Time.time - open;
+                if (brokenAt[i] < 0f) Show(Square(i), false);
+                if (brokenAt[i] < 0f || Mathf.Abs(brokenAt[i] - at) > .5f) brokenAt[i] = at;
+            }
+        }
+
+        void Mend(int i)
+        {
+            brokenAt[i] = -1f;
+            Show(Square(i), true);
+            if (shards != null && shards[i] != null)
+                foreach (var piece in shards[i]) if (piece != null) piece.gameObject.SetActive(false);
+        }
         bool Holds(int i) => i < Rows ? leftHolds[i] : !leftHolds[i - Rows];
 
         void FixedUpdate()

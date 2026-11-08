@@ -3,6 +3,8 @@
 2026-11-02. 기획: [대계단 현관홀 레벨 디자인 v0.3](PAWN_RUSH_GRAND_STAIR_HALL_DESIGN_v0.3.md)(성한 님, 사용자 첨부 원문), 참고: [4분 장애물 코스 컨셉아트 v2](PAWN_RUSH_CONCEPT_ART_v2.md), [장소별 4분 코스 설계](PAWN_RUSH_PLACES_4MIN.md), [미니게임 경계 설계](PAWN_RUSH_MINIGAME_BOUNDARY.svg). 사용자: "폰 러시는 장애물 구간 3개와 미니게임 구간 3개, 마지막 구간 1개 총 7개의 구간이 한 판을 이룰거야. 따라서 각 구간들은 해당 구간에서 나올 수 있는 프리팹 목록 중 랜덤으로 한 가지 프리팹을 뽑아 등장하고 조합되어 한 판을 이룰거야."
 **R300~R303 자동검사 기록은 컴파일·Core 테스트·좌표 점검 기준이다.** 현재 사용자 확인 목록은 [VALIDATION](../Network/VALIDATION.md)에 모은다.
 
+**R508(11-08): 한 판이 로비의 실제 경기가 됐다.** 사용자 "레벨디자인 했던대로 랜덤 장애물구간과 미니게임구간이 출력되어 이어지는게 한 판의 게임이 될 수 있도록 로비 씬과 연결해서 실제 게임에 적용". 로비의 폰 러쉬가 경기 장면 `PawnRush_Round`(**Pawn Rush → Open Match Round**)를 연다. 슬롯 1에 **왕실 마차뜰**(구간 모드), 슬롯 5에 **임시 바닥**, 작전 회의실 골에 팀 과반 승리. 판은 매치 번호로 모든 PC가 같이 짓는다(아래 §3 "온라인"). **Unity · Steam 미확인.**
+
 **R495(11-06): 작전 회의실의 모든 소리(대포 · 컨베이어 · 골 룩)는 회의실 안에서만**, 밖으로 4 m에서 0(`LibraryMuffle.Presence` → `NearFarSound`). 구간이 맞붙어 있어 앞 미니게임 끝까지 들리던 것. **Unity 미확인.**
 
 **R494(11-06): 구간 시험도 폰 러쉬 기물 이동 · 스킬, 작전 회의실 대포 회전 소리는 회의실 안에서만.** 승규 님 "open sect test에도 기물 물리엔진 수정 한 거 넣어주고 작전회의실 사운드 대포 회전 소리가 다른 코스 구간에도 영향을 미쳐". `PawnRushRound`가 `CourseSkills.PawnRush`를 켜서 SeoungTest 장면 · 코스 01처럼 폰마다 `PawnRushPhysicsParams`와 스킬이 붙음(F = 스킬). 대포 팬 소리의 방 상자에 골 룩 레이저 선(월드 원점)이 들어가 판 전체로 늘던 것을 고침([PITFALLS](../Environment/PITFALLS.md) 69). **Unity 미확인.**
@@ -53,11 +55,11 @@
 
 | 슬롯 | 종류 | 프리팹 목록(지금) |
 |---|---|---|
-| 1 | 장애물 1 (초반 · 바깥뜰 1-x) | **Early_1-1_RoyalWaterGarden**(R305, [왕실 수로 정원](PAWN_RUSH_ROYAL_GARDEN.md)) — 팀원 맵 "1-2 왕실 마차뜰"(R507 병합)은 아직 후보 아님: [맵 시험 장면](PAWN_RUSH_MAP_TEST.md)에서만, 넣는 조건은 [ROYAL_CARRIAGE_YARD](ROYAL_CARRIAGE_YARD.md) §12 결정 1 · §13 |
+| 1 | 장애물 1 (초반 · 바깥뜰 1-x) | **Early_1-1_RoyalWaterGarden**(R305, [왕실 수로 정원](PAWN_RUSH_ROYAL_GARDEN.md)) · **Early_1-2_RoyalCarriageYard**(R508, 팀원 맵 [왕실 마차뜰](ROYAL_CARRIAGE_YARD.md)의 구간 모드 — 아래) |
 | 2 | 미니게임 1 | **C 해자 도개교 · D 쇠살문 누각 · A 의장 광장**(R312,3종) |
 | 3 | 장애물 2 (중반 · 아랫궁 2-x) | **Mid_2-1_GrandStairHall** |
 | 4 | 미니게임 2 | **B 보수 중인 동관 · E 왕궁 서고 · F 대무도회장 · J 왕궁 세탁장**(R312,4종) |
-| 5 | 장애물 3 (후반 · 윗궁 3-x) | 없음 |
+| 5 | 장애물 3 (후반 · 윗궁 3-x) | **Late_3-0_TempFloor**(R508, 임시 바닥 — 진짜 후반 구간이 생기면 뺀다) |
 | 6 | 미니게임 3 | **G 왕의 행차 회랑 · H 국왕 체스 홀 · I 국왕 침실**(R312,3종) |
 | 7 | 마지막 구간 | **Final_WarRoom**(R493, 작전 회의실 — SeoungTest 구역 E와 같은 코드) |
 
@@ -69,7 +71,10 @@
 - **체크포인트 번호** = 슬롯 × 100 + 구간 안 번호(슬롯 번호는 0부터: 왕실 수로 정원은 0~7, 대계단 현관홀은 200~207). 플레이테스트는 가장 높은 번호에서 다시 하므로 구간을 넘어가도 맞다.
 - **팀 인원**·씨앗·판 시작 시각은 `PawnRushSection.Configure`로 들어가 `ISectionPart`(구간 안의 장애물·스위치)에 전달된다.
 - **새 구간 프리팹의 약속**: 뿌리에 `PawnRushSection`(id, 이름, 종류, 입구·출구, 비트). 판의 값이 필요한 것은 `ISectionPart`를 구현. 체크포인트는 `CourseCheckpoint`(번호 0~99). 입구 폭 12 m·출구는 미니게임 입구 띠 끝(경계 설계 SVG: 테라스 +1 m → 0.25 m × 4단 → 입구 띠 4 m).
-- **온라인**: 아직 연결하지 않았다. 방장이 판 씨앗과 판 시작 시각(공유 장애물 시계)을 보내면 모든 PC가 같은 판·같은 사건을 만든다. 맞음 판정은 이미 방장만(`ObstacleClock.Authority`).
+- **온라인(R508)**: 로비의 폰 러쉬 = `Assets/Scenes/PawnRush_Round.unity`(이 시험 장면의 복사본 + `GameSceneConfig`, `PawnRushRound`는 buildOnStart · finishRace). 경기 장면이 열리면 `SteamPawnRushLink`가 Start 전에 `BuildForMatch(PawnRushSections.MatchSeed(매치 번호), go)`로 판을 짓는다 — **매치 번호가 판 씨앗**이라 보내는 것 없이 모든 PC가 같은 판 · 같은 구간 씨앗이고, 직전 판 빼기는 하지 않는다(PC마다 직전 판이 다르므로). go는 모두가 로딩을 마친 뒤에 오므로 그때까지는 지금+600초로 잡아 두고(성문 닫힘 · 마차 대기), go가 오면 `SetStartClock`이 모든 구간을 다시 설정한다(미니게임은 그 시각으로 다시 설치). 맞음 판정은 방장만(`ObstacleClock.Authority`).
+  - **코스 상태 CFP5**(`PawnRushNetState`, 프로토콜 v28): 스테이션 = 미니게임 구간마다 백 · 흑 순서(최대 6), 각 스테이션의 게임 번호 · 진행 · 완료 · 게임 블록, 그리고 **구간 상태**: `ISectionNetPart`를 구현한 부품이 판 순서대로 정해진 바이트만큼(합쳐서 96바이트까지, 넘으면 뒤쪽은 안 보냄 + 경고). 지금: 유리 징검다리 `GuessBridge`(줄마다 2바이트: 칸마다 0 멀쩡 / 1 + 깨진 지 0.1초 단위), 기울어지는 발판 `TiltingPad`(1바이트), 밀어 여는 성문 `PushGate`(2바이트 진행). 사람이 밟거나 밀어 바뀌는 새 장치는 `ISectionNetPart`를 구현해야 참가자 화면에 보인다.
+  - 승리: 작전 회의실 골의 `FinishZone`(4.8 m 원판) 위에 팀 과반 → `CrownFinish`(코스 01과 같은 규칙 · 결과 장면 · 로비 복귀). 오프라인 시험(이 장면 · 경기 장면을 혼자 Play)에서도 결승은 플레이테스트 폰 하나를 센다(경기 장면만 `finishRace`).
+  - 미니게임 스테이션은 궁전 양식이라 승격 발판이 없다(코스 01만).
 
 ## 4. 2-1 대계단 현관홀 (R303: 하나의 나선 길)
 
@@ -148,7 +153,10 @@ CP0 현관 (0, 0, −6) · CP1 중앙 계단참 (0, 8, 53.5) · CP2 휘어 오�
 | `Gameplay/ImportedObstacles/ImportedObstacleActor.cs` | `AddObstacleHit(속도, 넘어짐 초)` 추가, R301 `Blow`(바람이 실어 나름: `IWindReceiver` → `RagdollPawn.Wind`) |
 | `Materials/CoursePattern.shader` | 1 m 격자 무늬(윗면 2, 옆면 3) 추가 |
 | `Tools/Generators/gen_pawnrush_sections.py` | 격자 재질 5개(`Section_*`), `PawnRushSectionKit.asset`, 프리팹 뿌리, `PawnRushSections.asset`, 시험 씬 |
-| `PawnRush/WarRoomSection.cs`, `Course01v4Builder.WarRoomSection.cs` | (R493) 슬롯 7 작전 회의실의 뿌리와 감싸기(아래) |
+| `PawnRush/WarRoomSection.cs`, `Course01v4Builder.WarRoomSection.cs` | (R493) 슬롯 7 작전 회의실의 뿌리와 감싸기(아래). R508: 골에 `FinishZone`(4.8 m) |
+| `PawnRush/MatchCourse.cs` | (R508) 경기 링크가 보는 코스: 코스 01(뽑기 · 발판) / 라운드(스테이션 목록 · 구간 상태 바이트 · 시작 시각) |
+| `PawnRush/TempLateSection.cs` | (R508) 슬롯 5 임시 바닥 `Late_3-0_TempFloor` |
+| `PawnRush/RoyalCarriageYard*.cs` (`asSection`) | (R508) 마차뜰 구간 모드 `Early_1-2_RoyalCarriageYard` |
 
 ### 작전 회의실 (슬롯 7 마지막 구간, R493)
 
@@ -218,7 +226,7 @@ CP0 현관 (0, 0, −6) · CP1 중앙 계단참 (0, 8, 53.5) · CP2 휘어 오�
 - R301에서 생긴 것: 바람 3.5 m/s(질주 3.6과 거의 같아 "벽 쪽으로 질주하면 겨우 버팀"), 다리 닫힘 3초, 카펫 2 m/s, 날개 계단 1 진자 쉼 2.5 m. 모두 Unity에서 느낌을 보고 맞출 값.
 - 아직 안 한 것(§10 검토의 다음 단계): 구간 시간 3분 / 4분 결정, 기다리게 해서 다시 모으는 장치(다리 주기·큰 승강판·현관문), 기획서 §7 길이 손잡이, 비트 6 늘리기. 컨셉아트의 "다리 위 옆바람"은 다리 주기와 바람 주기가 겹쳐 읽기 어려워 넣지 않음.
 - R303에서 생긴 것(Unity에서 맞출 값): 다이빙 틈 안쪽 3.0~3.1 m(질주 점프 약 2.8 m와 다이빙 점프 사이로 잡은 추정), 점프대 앞 속도 7.9 m/s(계산), 출렁이는 발판 ±0.45 m·3초, 유리 칸 깨짐 0.12초·다시 생김 15초, 바람 길 바람 3.5 m/s. 유리 징검다리의 깨짐은 아직 온라인으로 안 보냄.
-- 하지 않은 것(현재): 온라인 연결(판 씨앗·시작 시각을 방장이 보내기 — `SteamPawnRushLink`는 코스01 전용), 슬롯5 후반 장애물(슬롯7 마지막 구간은 R493 작전 회의실), 미니게임10종의 사용자 직접 입력·완주·손맛 확인, 효과음(구멍 소리·샹들리에 삐걱). 굴러오는 석상이 넘어진 폰을 "계단 아래로 2~3 m" 미는 정도는 맞음 세기로만. 미니게임 구간 프리팹 제작은 R312에서 구현했다.
+- 하지 않은 것(현재): 슬롯5 진짜 후반 장애물(R508은 임시 바닥, 슬롯7 마지막 구간은 R493 작전 회의실), 로딩 화면 홀로그램을 구간 라운드로(지금은 코스 01 모형), 미니게임10종의 사용자 직접 입력·완주·손맛 확인, 효과음(구멍 소리·샹들리에 삐걱). 굴러오는 석상이 넘어진 폰을 "계단 아래로 2~3 m" 미는 정도는 맞음 세기로만. 미니게임 구간 프리팹 제작은 R312에서 구현했다.
 
 ## 9. 자동으로 확인한 것과 못 한 것
 

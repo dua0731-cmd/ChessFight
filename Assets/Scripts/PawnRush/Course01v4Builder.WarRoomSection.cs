@@ -44,6 +44,10 @@ namespace ChessFight.PawnRush
             ride.transform.SetParent(root.transform, false);
             ride.transform.localPosition = new Vector3(0f, .5f, 0f);
             ride.AddComponent<IntendedGap>().Configure(new Vector3(4f, 3f, 25.2f), "컨베이어가 아래층 위로 실어 나름 (16초 왕복)");
+            // R508: the round's finish (a match's CrownFinish binds it; offline the playtest shows "골인"). The capture
+            // zone itself is 2.1 m across, too small for a team's majority to stand on at once, so the platform is the
+            // 4.8 m circle round it on the star platform (CrownFinish takes the box's narrower half as its radius).
+            b.Trigger<FinishZone>("Finish (goal)", new Vector3(-2.4f, 1.2f, 15.6f), new Vector3(2.4f, 4.6f, 20.4f)).Configure(true);
             WarRoomPath(root.transform);
 
             var section = room.GetComponent<PawnRushSection>();

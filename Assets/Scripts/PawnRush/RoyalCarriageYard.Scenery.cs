@@ -40,7 +40,8 @@ namespace ChessFight.PawnRush
                 Tower(s, at, 4f, 12f, false);
             foreach (var at in new[] { new Vector3(-28f, 0f, GateZ + 3f), new Vector3(28f, 0f, GateZ + 3f) })
                 Tower(own, at, 4f, 19f, false);
-            Palace(own);
+            // As a section the next mini-game stands where the palace would (R508).
+            if (!asSection) Palace(own);
         }
 
         // A round tower standing on `at`, a blue cone on top. Solid where players can reach it.

@@ -62,7 +62,7 @@
 
 구형 전체 맵은 `Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity`에 보관한다. 초기 OpeningCourse 프리팹24개와 구형 코드41개도 `Assets/Prototype/PawnRush/`에 모았다. 코드의 `.meta`와 기존 어셈블리 소속은 보존하며, `Scripts/`의 asmref7개가 원래 asmdef를 가리킨다.
 
-**로비의 폰 러시 온라인 경기는 아직 이 구형 Course01을 사용한다.** `GameModes`의 통신 키 `kingrush`, 씬 이름 `PawnRush_Course01`, 기존2광장·4스테이션 전송은 호환을 위해 유지한다. 따라서 프로토타입 폴더로 이동한 Course01도 빌드 목록에서 활성 상태다. 폴더 정리로 새3광장 구간 시험이 온라인 경기에 연결되는 것은 아니다.
+**R508부터 로비의 폰 러시 온라인 경기는 구간 라운드 `Assets/Scenes/PawnRush_Round.unity`다**(통신 키 `kingrush` 그대로, 판은 매치 번호로 모든 PC가 같이 짓고 작전 회의실 골에 팀 과반이 서면 승리 — [구간 §3 온라인](PAWN_RUSH_SECTIONS.md)). 구형 Course01은 빌드 목록에 남아 있고 경기 링크도 그것을 그대로 돌릴 수 있지만(`MatchCourse`, 2광장·4스테이션·승격 발판), 로비는 더 이상 열지 않는다.
 
 초기 KingRush 시험장·왕의 계단·결승의 당시 규칙과 실행 기록은 [프로토타입 역사 문서](Prototype/README_HISTORICAL.md)에 분리했다. 그 문서의 옛 씬·메뉴·브랜치 안내를 현재 작업 절차로 사용하지 않는다. 개편 전 Course01의 상세 규칙은 [PAWN_RUSH_COURSE01](Prototype/PAWN_RUSH_COURSE01.md)에 남긴다.
 

@@ -91,12 +91,13 @@ public static class NetworkCoreTests
     }
     static PawnRushNetState GoldenRush()
     {
-        var s = new PawnRushNetState { Tick = 4242, HostTimeMs = 7654321, First = 2, Second = 0, PadFirst = 3, PadSecond = 1, PadsUsed = 2, Winner = 1, Clock = 87.25f };
+        var s = new PawnRushNetState { Tick = 4242, HostTimeMs = 7654321, First = 2, Second = 0, PadFirst = 3, PadSecond = 1, PadsUsed = 2, Winner = 1, Clock = 87.25f,
+                                       StationCount = 4 };
         s.PadChooser[1] = SkillWire.Ref(0, 3);
         s.PadChooser[2] = SkillWire.Ref(1, 1);
         for (int i = 0; i < 5; i++) { s.FinisherSeat[i] = SkillWire.Ref(i % 2, i); s.FinisherTime[i] = 60f + i * 1.7f; }
         s.FinisherCount = 5;
-        for (int st = 0; st < PawnRushNetState.Stations; st++)
+        for (int st = 0; st < s.StationCount; st++)
         {
             s.Game[st] = (sbyte)(st == 3 ? -1 : st);
             s.Progress[st] = st * 0.3f;
@@ -131,7 +132,7 @@ public static class NetworkCoreTests
             Fnv(Through(w => SwordWire.Write(w, GoldenSword()))),
         });
     }
-    const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 c1be8d7c616ed0f6 bcc5fd028cb3c436 "
+    const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 001c4e7168c95ab7 8e55c2b172fd2821 "
                           + "028c824dd7ab7066 0a5aaf2e798a59b6 52d23acd7ef29404";
     // The Royal Carriage Yard's four roaming carriages as RoyalCarriageYard and CarriageFleet build them (R286, R287):
     // RoamingFleet.Yard, the yard the seeds are vetted on; the map checks its own fleet against it.
@@ -992,8 +993,8 @@ public static class NetworkCoreTests
                 t.Acknowledged(3,0.099+0.1); Check(Math.Abs(t.Milliseconds-100)<0.5,"first sample "+t.Milliseconds);
                 t.Acknowledged(2,1.0); Check(Math.Abs(t.Milliseconds-100)<0.5,"stale ack changed estimate");
                 t.Acknowledged(5,0.165+0.180); Check(t.Milliseconds>100&&t.Milliseconds<180,"smoothing "+t.Milliseconds); });
-            Test("Pawn Rush course state (CFP4) round-trips stations with their blocks and refuses damaged packets", () => {
-                var a = new PawnRushNetState { Tick = 77, HostTimeMs = 123456, First = 3, Second = 0 };
+            Test("Pawn Rush course state (CFP5) round-trips stations with their blocks and refuses damaged packets", () => {
+                var a = new PawnRushNetState { Tick = 77, HostTimeMs = 123456, First = 3, Second = 0, StationCount = 4 };
                 a.Game[0] = 3; a.Game[1] = 3; a.Game[2] = 0; a.Game[3] = 0;
                 a.Progress[0] = .25f; a.Progress[3] = 1f; a.Completed[3] = true;
                 var w = new NetBlock(a.Block[0], 0, PawnRushNetState.BlockBytes);
@@ -1024,15 +1025,15 @@ public static class NetworkCoreTests
                 var longer = new byte[bytes.Length + 1]; Array.Copy(bytes, longer, bytes.Length);
                 Check(!PawnRushNetState.Read(longer, 42UL, b), "long packet");
                 bytes[0] ^= 1; Check(!PawnRushNetState.Read(bytes, 42UL, b), "wrong magic"); });
-            Test("Pawn Rush course state (CFP4) carries the pads and their choosers, the winner, the clock and the crown finishers", () => {
+            Test("Pawn Rush course state (CFP5) carries the pads and their choosers, the winner, the clock and the crown finishers", () => {
                 var a = new PawnRushNetState { Tick = 9, First = 1, Second = 4, PadFirst = (byte)PieceKind.Knight, PadSecond = (byte)PieceKind.Queen,
-                                               PadsUsed = 0x5, Winner = 1, Clock = 187.25f, FinisherCount = 3 };
+                                               PadsUsed = 0x5, Winner = 1, Clock = 187.25f, FinisherCount = 3, StationCount = 4 };
                 a.PadChooser[2] = SkillWire.Ref(0, 3);
                 a.FinisherSeat[0] = SkillWire.Ref(1, 0); a.FinisherTime[0] = 170.04f;
                 a.FinisherSeat[1] = SkillWire.Ref(1, 2); a.FinisherTime[1] = 181.5f;
                 a.FinisherSeat[2] = SkillWire.Ref(0, 5); a.FinisherTime[2] = 186.96f;
                 byte[] bytes = a.Write(7UL);
-                Check(bytes.Length == PawnRushNetState.HeaderBytes + 3 * PawnRushNetState.FinisherBytes + 4 * PawnRushNetState.StationFixedBytes, "size " + bytes.Length);
+                Check(bytes.Length == PawnRushNetState.HeaderBytes + 4 + 3 * PawnRushNetState.FinisherBytes + 4 * PawnRushNetState.StationFixedBytes, "size " + bytes.Length);
                 var b = new PawnRushNetState();
                 Check(PawnRushNetState.Read(bytes, 7UL, b), "read");
                 Check(b.PadFirst == (byte)PieceKind.Knight && b.PadSecond == (byte)PieceKind.Queen && b.PadsUsed == 0x5, "pads");
@@ -1042,7 +1043,29 @@ public static class NetworkCoreTests
                       && Math.Abs(b.FinisherTime[2] - 187f) < 0.051f, "finishers to a tenth");
                 var none = new PawnRushNetState().Write(7UL);
                 Check(PawnRushNetState.Read(none, 7UL, b) && b.Winner == -1 && b.FinisherCount == 0, "a fresh state: nobody yet");
-                bytes[PawnRushNetState.HeaderBytes - 1] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
+                bytes[PawnRushNetState.FinisherCountAt] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
+            Test("Pawn Rush course state (CFP5, R508): a round's six stations and its sections' bytes round-trip, too many are refused", () => {
+                var a = new PawnRushNetState { Tick = 5, HostTimeMs = 99, StationCount = 6, PadsUsed = 0x3f };
+                for (int st = 0; st < 6; st++) { a.Game[st] = (sbyte)(st / 2 * 3); a.Progress[st] = st / 6f; a.Completed[st] = st == 5; a.PadChooser[st] = (byte)(st == 4 ? 7 : PawnRushNetState.NoChooser); }
+                a.BlockLength[5] = 3; a.Block[5][0] = 9; a.Block[5][1] = 8; a.Block[5][2] = 7;
+                a.PartsLength = 17;
+                for (int k = 0; k < a.PartsLength; k++) a.Parts[k] = (byte)(200 - k);
+                byte[] bytes = a.Write(11UL);
+                Check(bytes.Length == a.Bytes && bytes.Length == PawnRushNetState.HeaderBytes + 6 + 6 * PawnRushNetState.StationFixedBytes + 3 + 17, "size " + bytes.Length);
+                var b = new PawnRushNetState();
+                Check(PawnRushNetState.Read(bytes, 11UL, b), "read");
+                Check(b.StationCount == 6 && b.Game[4] == 6 && b.Completed[5] && !b.Completed[4] && Math.Abs(b.Progress[3] - .5f) < 1e-4f && b.PadsUsed == 0x3f
+                      && b.PadChooser[4] == 7 && b.PadChooser[0] == PawnRushNetState.NoChooser, "six stations");
+                Check(b.BlockLength[5] == 3 && b.Block[5][2] == 7, "the last station's block");
+                Check(b.PartsLength == 17 && b.Parts[0] == 200 && b.Parts[16] == 184, "the sections' bytes");
+                var copy = new PawnRushNetState(); copy.CopyFrom(b);
+                var sent = (byte[])bytes.Clone();
+                Check(copy.Write(11UL).SequenceEqual(sent), "copy writes the same bytes");
+                Check(new PawnRushNetState().Write(11UL).Length == PawnRushNetState.HeaderBytes, "no stations, no parts: the header alone");
+                var seven = (byte[])sent.Clone(); seven[PawnRushNetState.FinisherCountAt + 1] = 7;
+                Check(!PawnRushNetState.Read(seven, 11UL, b), "seven stations");
+                var cut = new byte[sent.Length - 1]; Array.Copy(sent, cut, cut.Length);
+                Check(!PawnRushNetState.Read(cut, 11UL, b), "a part byte short"); });
             Test("Board (v1.0 A/G/H/I): a1 dark, h1 light, 32 of each, index and square round trips", () => {
                 Check(!PawnRushBoard.IsLight(0, 1) && PawnRushBoard.IsLight(7, 1) && PawnRushBoard.IsLight(0, 8) && !PawnRushBoard.IsLight(7, 8), "corners");
                 int light = 0;
@@ -1237,7 +1260,7 @@ public static class NetworkCoreTests
             Test("Game mode catalog: unique lobby keys, a playable default, safe lookups", () => {
                 Check(GameModes.All.Select(m => m.Key).Distinct().Count() == GameModes.All.Length, "duplicate key");
                 Check(GameModes.All.All(m => m.Key.Length > 0 && m.Key.Length <= 16 && m.Key.All(ch => ch >= 'a' && ch <= 'z')), "lobby keys are short lowercase words");
-                Check(GameModes.Default.Playable && GameModes.Find("kingrush") == GameModes.KingRush && GameModes.KingRush.Scene == "PawnRush_Course01", "default (the 폰 러쉬 match is Pawn Rush course 01 since 10-08)");
+                Check(GameModes.Default.Playable && GameModes.Find("kingrush") == GameModes.KingRush && GameModes.KingRush.Scene == "PawnRush_Round", "default (the 폰 러쉬 match is the section round since R508; course 01 before)");
                 Check(GameModes.Find("nope") == null && GameModes.Resolve("") == GameModes.Default && GameModes.IndexOf("swordfight") == 1, "lookup");
                 Check(GameModes.All.All(m => m.Playable == (m.Scene.Length > 0)), "playable means a scene"); });
             Test("Link simulator delays in order and drops about the configured share", () => {

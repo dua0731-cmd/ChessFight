@@ -14,7 +14,10 @@ namespace ChessFight.PawnRush
     // A slot with no prefab yet is skipped (the next section joins the previous one).
     //
     // Offline the round is built when the scene starts, from the clock's seed; twelve start spots go at the
-    // first section's entry. Online the match will pass the host's seed and the shared start time.
+    // first section's entry. Online (R508, PawnRush_Round) the match link builds it before anything starts, from the
+    // match's number (PawnRushSections.MatchSeed, the same on every PC, no packet and no "last round"), and moves its
+    // start to the lobby's shared go once that is known (SetStartClock): every PC then has the same sections, the same
+    // seeds and the same schedules. With finishRace the round has a crown finish on the last section's goal.
     [DefaultExecutionOrder(-500)]
     public sealed class PawnRushRound : MonoBehaviour
     {
@@ -24,8 +27,12 @@ namespace ChessFight.PawnRush
         [Tooltip("0: a new seed every round (offline: the clock). Otherwise always this one.")]
         [SerializeField] int seed;
         [SerializeField] bool buildOnAwake = true;
-        [Tooltip("Six start spots a team at the first section's entry, for the offline playtest.")]
+        [Tooltip("The match scene (R508): build when the scene starts unless the match link has built it already (it does so as the scene loads).")]
+        [SerializeField] bool buildOnStart;
+        [Tooltip("Six start spots a team at the first section's entry (the match's start places too).")]
         [SerializeField] bool startSpots = true;
+        [Tooltip("The match scene (R508): a crown finish (CrownFinish) on the last section's goal - a team majority on it wins.")]
+        [SerializeField] bool finishRace;
 
         // The previous round's picks (offline: this session), left out where a slot has another.
         static int[] lastPicks;
@@ -63,25 +70,38 @@ namespace ChessFight.PawnRush
             if (buildOnAwake) Build(seed != 0 ? seed : Environment.TickCount);
         }
 
+        void Start()
+        {
+            if (buildOnStart && holder == null) Build(seed != 0 ? seed : Environment.TickCount);
+        }
+
+        public bool HasBuilt => holder != null;
+
         void OnDestroy()
         {
             if (Current == this) Current = null;
             CourseSkills.PawnRush = false;
         }
 
-        public void Build(int roundSeed)
+        public void Build(int roundSeed) => Build(roundSeed, ObstacleClock.Now, false);
+
+        // A match's round (R508): the match's seed and start, and no leaving out of this PC's own last round (another PC
+        // has another last round), so every PC draws the same sections.
+        public void BuildForMatch(int roundSeed, double startClock) => Build(roundSeed, startClock, true);
+
+        void Build(int roundSeed, double startClock, bool fresh)
         {
             Clear();
             Seed = roundSeed;
-            StartClock = ObstacleClock.Now;
+            StartClock = startClock;
             if (set == null)
             {
                 Debug.LogError("[PawnRush] PawnRushRound에 구간 목록(PawnRushSections)이 없습니다.");
                 return;
             }
             var prefabs = new List<GameObject>();
-            var picks = PawnRushSections.Choose(roundSeed, set.Options(prefabs), lastPicks);
-            lastPicks = picks;
+            var picks = PawnRushSections.Choose(roundSeed, set.Options(prefabs), fresh ? null : lastPicks);
+            if (!fresh) lastPicks = picks;
 
             holder = new GameObject("Round " + roundSeed);
             holder.SetActive(false);
@@ -115,8 +135,29 @@ namespace ChessFight.PawnRush
             }
             if (startSpots && sections.Count > 0) StartSpots(holder.transform, sections[0]);
             holder.SetActive(true);
+            if (finishRace) BindFinish();
             Debug.Log(log.ToString());
             Built?.Invoke(this);
+        }
+
+        // The crown finish on this round's goal (the last section's FinishZone: the war room's).
+        void BindFinish()
+        {
+            var finish = GetComponent<CrownFinish>();
+            if (finish == null) finish = gameObject.AddComponent<CrownFinish>();
+            finish.Bind(holder.transform);
+        }
+
+        public CrownFinish Finish => finishRace ? GetComponent<CrownFinish>() : null;
+
+        // The match's shared start, once the lobby has it (R508): every section's schedules, mini-games and gates count
+        // from it, the same on every PC. Before the race; the mini-games are rebuilt from it.
+        public void SetStartClock(double clock)
+        {
+            if (Math.Abs(clock - StartClock) < 1e-6) return;
+            StartClock = clock;
+            foreach (var s in sections)
+                if (s != null) s.Configure(s.Slot, s.Seed, teamSize, StartClock);
         }
 
         // Six spots a team in two rows across the first section's entry, facing the way on.

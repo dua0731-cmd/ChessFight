@@ -61,6 +61,10 @@ namespace ChessFight.Network
         // A section's own seed: the round's seed mixed with the slot number. Its obstacles mix in their own
         // number again (SeededSchedule.Hash), so no two streams in a round are the same.
         public static int SectionSeed(int roundSeed, int slot) => unchecked((int)SeededSchedule.Hash(roundSeed, slot + 1));
+
+        // R508: a match's round seed, the same on every PC without a packet - from the match's number, which every
+        // member of the match room holds.
+        public static int MatchSeed(ulong match) => unchecked((int)SeededSchedule.Hash(unchecked((int)(match ^ (match >> 32))), 0x4D41));
     }
 
     // Grand stair hall team-size rules (level design v0.3 §6): with three or four a side only one wing opens

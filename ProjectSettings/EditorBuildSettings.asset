@@ -14,6 +14,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity
     guid: ff686b26959ee558d85e7a252abe3e23
+  - enabled: 1
+    path: Assets/Scenes/PawnRush_Round.unity
+    guid: 291dae92c0cc44df919bfb5ea3180df3
   - enabled: 0
     path: Assets/Scenes/RagdollTest.unity
     guid: 1e84d4575290698f1ed256706677510a

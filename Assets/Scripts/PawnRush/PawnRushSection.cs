@@ -12,6 +12,18 @@ namespace ChessFight.PawnRush
         void OnSection(PawnRushSection section);
     }
 
+    // A part of a section that someone standing on something changes - not the shared clock - so a match's host has to
+    // send it (R508): the grand stair hall's glass stones, the garden's lotus pads, the carriage yard's final gate. Only
+    // the host judges it (ObstacleClock.Authority); the others are handed its state. Each writes a fixed number of bytes,
+    // and every PC writes and reads the round's parts in the same order (the same round: the same sections, built the
+    // same way), so the bytes need no names.
+    public interface ISectionNetPart
+    {
+        int NetBytes { get; }
+        void WriteNet(ref ChessFight.Network.NetBlock block);
+        void ReadNet(ref ChessFight.Network.NetBlock block);
+    }
+
     // A beat of a section (the level design's 비트): a named box in the section's frame, for the HUD and the
     // playtest's CSV. Several boxes may share a name (the two wings of one beat).
     [Serializable]

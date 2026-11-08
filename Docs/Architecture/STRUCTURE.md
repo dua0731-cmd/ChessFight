@@ -63,7 +63,7 @@ Tools/                  검사·제작·생성 도구
 
 폐기 모드의 전용 규칙·카드·맵을 제거해도 다른 모드가 사용하는 구현은 유지한다. 현재 공용 명칭은 `Core/PioneerRules.cs`, `Gameplay/Course/PioneerCourse.cs`, `RagdollLab/PhysicsMechanicsBed.cs`, `RagdollLab/SkillKit/` 등이다. `ModeRetiredQueenHill` 같은 예약 번호는 이전 전송 값과 충돌하지 않게 남긴 호환 자리이며 모드 선택 항목이 아니다.
 
-예전 `KingRush*` 타입은 `Prototype/PawnRush/Scripts` 안에서 보존한다. 예전 네트워크 키 `kingrush`와 씬 이름 `PawnRush_Course01`은 현재 온라인 호환 계약이므로 폴더명과 함께 바꾸지 않는다.
+예전 `KingRush*` 타입은 `Prototype/PawnRush/Scripts` 안에서 보존한다. 예전 네트워크 키 `kingrush`는 통신 계약이라 폴더명과 함께 바꾸지 않는다(R508부터 그 키가 여는 장면은 `PawnRush_Round`, 씬 이름 `PawnRush_Course01`은 빌드에 남은 구형 장면).
 
 `Prototype`은 관리용 분류다. asmref가 원래 어셈블리에 연결된 코드와 `Resources` 자산이 자동으로 플레이어 빌드에서 제외되는 것은 아니다. 특히 구형 Course01은 아직 로비의 온라인 목적지다.
 

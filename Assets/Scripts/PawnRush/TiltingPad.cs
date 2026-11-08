@@ -10,9 +10,10 @@ namespace ChessFight.PawnRush
     // off again at once, and it never tips.
     //
     // StateDrivenMover: it tips because someone stands on it, not on the shared clock. The authority (offline, or the
-    // host) decides; online the host would still have to send when it tips, as with the grand stair hall's glass stones.
+    // host) decides; online (R508) the host sends when it tipped in the course state (ISectionNetPart, as the grand stair
+    // hall's glass stones: a byte, 0 at rest, else how long ago it tipped in fiftieths of a second).
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class TiltingPad : MonoBehaviour
+    public sealed class TiltingPad : MonoBehaviour, ISectionNetPart
     {
         [Tooltip("Local axis it tips about (the shortcut's way along, so it tips to the side).")]
         [SerializeField] Vector3 axis = Vector3.forward;
@@ -68,6 +69,25 @@ namespace ChessFight.PawnRush
                 actor.AddObstacleImpulse(down * shove + Vector3.up);
                 GardenHits.Report(actor.gameObject, "연꽃 발판");
             }
+        }
+
+        // ------------------------------------------------------------------ online (R508)
+
+        public int NetBytes => 1;
+
+        public void WriteNet(ref ChessFight.Network.NetBlock block)
+        {
+            block.U8(tippedAt < 0f ? 0 : Mathf.Clamp(1 + Mathf.FloorToInt((Time.time - tippedAt) / .02f), 1, 254));
+        }
+
+        // Not the host: the host's tip, counted from when it tipped there. A tip that has run its course here ends by
+        // itself, as the host's does.
+        public void ReadNet(ref ChessFight.Network.NetBlock block)
+        {
+            int v = block.ReadU8();
+            if (v == 0) return;
+            float at = Time.time - (v - 1) * .02f;
+            if (tippedAt < 0f || Mathf.Abs(tippedAt - at) > .15f) tippedAt = at;
         }
 
         // Pawns standing just over the pad.

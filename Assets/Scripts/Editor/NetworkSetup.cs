@@ -23,13 +23,16 @@ namespace ChessFight.Editor
     {
         const string IntroScene = "Assets/Scenes/Intro.unity";
         const string LobbyScene = "Assets/Scenes/Lobby.unity";
-        // The Pawn Rush match scene (the lobby's 폰 러쉬 mode) since 10-08; KingRush.unity is gone.
+        // Pawn Rush course 01, the lobby's 폰 러쉬 match scene from 10-08 to R508 (KingRush.unity is gone); kept in the
+        // build as the prototype.
         const string PawnRushCourseScene = "Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity";
+        // The lobby's 폰 러쉬 match scene since R508: a round of random sections (PawnRushRound) ending in the war room.
+        const string PawnRushRoundScene = "Assets/Scenes/PawnRush_Round.unity";
         const string RagdollTestScene = "Assets/Scenes/RagdollTest.unity";
         const string PawnRushVictoryScene = "Assets/Scenes/PawnRushVictory.unity";
         const string PawnRushLoseScene = "Assets/Scenes/PawnRushLose.unity";
         // Everything a player can reach, in load order. RagdollTest is development only.
-        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, PawnRushCourseScene, "Assets/Scenes/SwordFight.unity", PawnRushVictoryScene, PawnRushLoseScene };
+        static readonly string[] ShippedScenes = { IntroScene, LobbyScene, PawnRushCourseScene, PawnRushRoundScene, "Assets/Scenes/SwordFight.unity", PawnRushVictoryScene, PawnRushLoseScene };
 
         const string Steamworks = "com.rlabrecque.steamworks.net";
         const string SteamworksUrl = "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c21a8f0e31c56ae8707130967faf491f7dd7c0d8";

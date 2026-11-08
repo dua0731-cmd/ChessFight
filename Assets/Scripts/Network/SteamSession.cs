@@ -71,7 +71,10 @@ namespace ChessFight.Network
         //      take over a silent host in a room with one.
         //      R504 (the same number: neither was ever built or sent out): the one after a next host in line that never
         //      steps in may pass it over (member data "past", HostElection.Follow). A v26 player does not follow it.
-        public const string Protocol = "chessfight.dua0731.network.v27";
+        // v28 (R508): the 폰 러쉬 match is the section round (PawnRush_Round, drawn from the match's number) and its
+        //      course state is CFP5 (as many stations as the course has, the sections' own bytes). A v27 build would load
+        //      course 01 and drop every CFP5 state.
+        public const string Protocol = "chessfight.dua0731.network.v28";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

@@ -32,11 +32,12 @@ namespace ChessFight.Network
     public static class GameModes
     {
         // The key keeps the old name (keys never change); the mode is shown as
-        // 폰 러쉬 since 2026-10-03, and its match is Pawn Rush course 01 since
-        // 2026-10-08 (the KingRush capsule scene is gone).
+        // 폰 러쉬 since 2026-10-03. Its match was Pawn Rush course 01 from 2026-10-08
+        // (the KingRush capsule scene is gone) and is the section round since R508
+        // (PawnRush_Round: seven sections drawn by the match's number).
         public static readonly GameModeInfo KingRush = new GameModeInfo(
             "kingrush", "폰 러쉬", "팀 레이스",
-            "장애물 코스를 달려 팀원 4명이 먼저 결승선을 넘으면 승리", "PR", "PawnRush_Course01");
+            "장애물 구간과 미니게임을 지나 작전 회의실의 골에 팀 과반이 먼저 서면 승리", "PR", "PawnRush_Round");
 
         public static readonly GameModeInfo SwordFight = new GameModeInfo(
             "swordfight", "소드 파이트", "대난투",   // 10-27 (승규 님): was "3 VS 3 · 떨어뜨리고 빼앗기"

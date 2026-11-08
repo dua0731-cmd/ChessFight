@@ -21,11 +21,31 @@ namespace ChessFight.PawnRush
     //   CSV        every beat entered and left, every fall onto the respawn floor and every hit by a rolling
     //              statue, a carpet or a chandelier, with the time and the team (the level design's §8 "비트별
     //              입장·퇴장 시각과 실패 횟수"; Logs/PawnRush in the project, or persistentDataPath)
+    //
+    // The match scene (R508, PawnRush_Round) has it too. In a match the link sets NetworkDriver to this PC's pawn (the
+    // spawner stays off): no test keys, the HUD and the CSV follow that pawn. Played offline, a round with a crown finish
+    // counts the spawner's pawn on it (one of one is a majority: the result scenes follow).
     public sealed class SectionPlaytest : MonoBehaviour
     {
         [SerializeField] PlaytestSpawner spawner;
         [SerializeField] PawnRushRound round;
         [SerializeField] bool writeCsv = true;
+
+        // A match (R508): this PC's pawn and team, set by the match link.
+        public static ICharacterDriver NetworkDriver;
+        public static int NetworkTeam;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            NetworkDriver = null;
+            NetworkTeam = 0;
+        }
+
+        bool Online => NetworkDriver != null;
+        ICharacterDriver Driver => Online ? NetworkDriver : spawner != null ? spawner.Driver : null;
+        int Team => Online ? NetworkTeam : spawner != null ? spawner.Team : Teams.White;
+        ICharacterDriver registered;
 
         string currentBeat;
         PawnRushSection currentSection;
@@ -67,7 +87,17 @@ namespace ChessFight.PawnRush
 
         void Update()
         {
-            if (spawner == null || spawner.Driver == null || round == null) return;
+            if (Driver == null || round == null) return;
+            if (Online)
+            {
+                Track(NetworkDriver);
+                return;
+            }
+            if (spawner == null) return;
+            // Whose fanfare is loud, whose aiming arc shows: the spawner's pawn (the match link sets the match's own).
+            MissionStation.LocalTeam = spawner.Team;
+            MiniGameBase.LocalDriver = spawner.Driver;
+            CountOnFinish();
             if (LegacyKeys.Down(KeyCode.F5))
             {
                 spawner.SetTeam(spawner.Team == Teams.Black ? Teams.White : Teams.Black);
@@ -76,6 +106,7 @@ namespace ChessFight.PawnRush
             if (LegacyKeys.Down(KeyCode.F8))
             {
                 round.Build(Environment.TickCount);
+                if (round.Finish != null) round.Finish.Restart();
                 // The start spots are the new round's: start again from them.
                 spawner.SetTeam(Mathf.Max(0, spawner.Team));
                 Restarted();
@@ -88,7 +119,23 @@ namespace ChessFight.PawnRush
             if (LegacyKeys.Down(KeyCode.Backspace)) Restarted();
             if (LegacyKeys.Down(KeyCode.LeftBracket)) Jump(-1);
             if (LegacyKeys.Down(KeyCode.RightBracket)) Jump(1);
-            var target = spawner.Driver.FollowTarget;
+            Track(spawner.Driver);
+        }
+
+        // Offline with a crown finish (the match scene played on its own): the spawner's pawn is the one runner.
+        void CountOnFinish()
+        {
+            var finish = round.Finish;
+            if (finish == null || spawner.Driver == null || registered == spawner.Driver) return;
+            if (registered != null) finish.Unregister(registered);
+            registered = spawner.Driver;
+            finish.Register(registered, spawner.Team, "나", counts: true, self: true);
+        }
+
+        // The section and the beat the pawn is in, for the HUD and the CSV.
+        void Track(ICharacterDriver driver)
+        {
+            var target = driver != null ? driver.FollowTarget : null;
             if (target == null) return;
             var section = round.SectionAt(target.position, out string beat);
             string key = section != null ? section.DisplayName + " / " + beat : null;
@@ -137,11 +184,11 @@ namespace ChessFight.PawnRush
             Log("-", "restart");
         }
 
-        bool Mine(GameObject who) => spawner != null && spawner.Driver is Component c && who != null && (who == c.gameObject || c.transform.IsChildOf(who.transform) || who.transform.IsChildOf(c.transform));
+        bool Mine(GameObject who) => Driver is Component c && who != null && (who == c.gameObject || c.transform.IsChildOf(who.transform) || who.transform.IsChildOf(c.transform));
 
         void OnFall(ICharacterDriver who, KillVolume volume)
         {
-            if (spawner == null || who != spawner.Driver) return;
+            if (who == null || who != Driver) return;
             falls++;
             Log(currentBeat ?? "-", "fall");
         }
@@ -178,11 +225,11 @@ namespace ChessFight.PawnRush
 
         void Log(string beat, string what)
         {
-            if (csvPath == null || spawner == null) return;
+            if (csvPath == null || Driver == null) return;
             try
             {
                 File.AppendAllText(csvPath, string.Format(CultureInfo.InvariantCulture, "\"{0}\",{1},{2:0.00},{3},{4},{5}\n",
-                    beat, what, Time.time - runStart, Teams.Name(spawner.Team), round != null ? round.Seed : 0, round != null ? round.TeamSize : 0));
+                    beat, what, Time.time - runStart, Teams.Name(Team), round != null ? round.Seed : 0, round != null ? round.TeamSize : 0));
             }
             catch (Exception) { csvPath = null; }
         }
@@ -191,7 +238,7 @@ namespace ChessFight.PawnRush
 
         void OnGUI()
         {
-            if (spawner == null || spawner.Driver == null || round == null) return;
+            if (Driver == null || round == null) return;
             if (style == null) style = new GUIStyle(GUI.skin.label) { font = RuntimePanels.KoreanFont, fontSize = 14, richText = true };
             var slots = new List<string>();
             var set = round.Set;
@@ -203,12 +250,14 @@ namespace ChessFight.PawnRush
                 slots.Add((i + 1) + " " + picked);
             }
             string here = currentSection != null ? currentSection.DisplayName + " · 비트 " + currentBeat.Substring(currentBeat.IndexOf('/') + 2) : "구간 밖";
-            string text = $"<b>폰 러시 구간 시험</b> · 판 씨앗 {round.Seed} · {round.TeamSize}대{round.TeamSize} · {Teams.Name(spawner.Team)}팀\n" +
-                          $"{here}\n" +
-                          $"낙하 {falls} · 맞음 {hits}" + (Time.time - lastHitAt < 2f ? $" (<b>{lastHit}</b>)" : "") + "\n" +
-                          $"판 구성: {string.Join(" | ", slots)}\n" +
-                          "F 스킬 · F5 팀 바꾸기 · F8 새 판(새 씨앗) · F9 팀 인원 3~6\n" +
-                          "R 체크포인트 · Backspace 처음 · [ ] 이전/다음 구간";
+            string text = Online
+                ? $"<b>폰 러시</b> · {Teams.Name(Team)}팀\n{here}\n판 구성: {string.Join(" | ", slots)}"
+                : $"<b>폰 러시 구간 시험</b> · 판 씨앗 {round.Seed} · {round.TeamSize}대{round.TeamSize} · {Teams.Name(Team)}팀\n" +
+                  $"{here}\n" +
+                  $"낙하 {falls} · 맞음 {hits}" + (Time.time - lastHitAt < 2f ? $" (<b>{lastHit}</b>)" : "") + "\n" +
+                  $"판 구성: {string.Join(" | ", slots)}\n" +
+                  "F 스킬 · F5 팀 바꾸기 · F8 새 판(새 씨앗) · F9 팀 인원 3~6\n" +
+                  "R 체크포인트 · Backspace 처음 · [ ] 이전/다음 구간";
             // As tall as the text (the round's seven slots can take two lines).
             float height = style.CalcHeight(new GUIContent(text), 540f) + 14f;
             var box = new Rect(Screen.width - 572, 12, 560, height);

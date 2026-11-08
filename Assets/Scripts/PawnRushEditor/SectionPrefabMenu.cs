@@ -15,6 +15,8 @@ namespace ChessFight.PawnRush.Editor
     //                                    gives the same prefab. Then validates it.
     //   Open Section Test                the round test scene (PawnRush_Sections.unity); since R493 its last slot is the
     //                                    war room (Final_WarRoom, built in Play from zone E's code, never baked)
+    //   Open Match Round                 the lobby's 폰 러쉬 match scene (PawnRush_Round.unity, R508): the same round with a
+    //                                    crown finish on the war room's goal; played on its own it is offline
     //   Validate Sections                every prefab in the section set, built in a scratch scene and checked
     //                                    (SectionValidator), then the scratch scene is thrown away
     // Hand edits inside the prefab's Content are lost on the next build: change the builder instead.
@@ -23,6 +25,7 @@ namespace ChessFight.PawnRush.Editor
         public const string HallPrefab = "Assets/Prefabs/PawnRushSections/Mid_2-1_GrandStairHall.prefab";
         public const string GardenPrefab = "Assets/Prefabs/PawnRushSections/Early_1-1_RoyalWaterGarden.prefab";
         public const string TestScene = "Assets/Scenes/PawnRush_Sections.unity";
+        public const string MatchScene = "Assets/Scenes/PawnRush_Round.unity";
         public const string SectionSet = "Assets/Settings/PawnRushSections.asset";
 
         // R400 (승규 11-04, from main): the v31 graybox and the garden's water baked into the garden prefab, so it can be
@@ -90,6 +93,14 @@ namespace ChessFight.PawnRush.Editor
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             EditorSceneManager.OpenScene(TestScene);
+        }
+
+        [MenuItem("ChessFight/Pawn Rush/Open Match Round", false, 1)]
+        public static void OpenMatchScene()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            EditorSceneManager.OpenScene(MatchScene);
         }
 
         [MenuItem("ChessFight/Pawn Rush/Validate/Sections", false, 200)]

@@ -28,10 +28,22 @@ namespace ChessFight.PawnRush
     // (RoamingCarriage, HorizontalWaterwheel, RotatingCarriageGroup, VerticalWaterwheel, CargoChute/RollingCargo,
     // TimedGate, PushGate; ChargingCarriage and TiltingWoodenBridge are not on this map's route) with its own Inspector
     // during Play. Moving parts run on ObstacleClock (absolute rule 7); a match hands the map its start and seed with
-    // StartAt. The final gate is state-driven and judged by the host (its state is not sent yet). Layout and the
-    // reasons for the numbers: Docs/PawnRush/ROYAL_CARRIAGE_YARD.md.
-    public sealed partial class RoyalCarriageYard : MonoBehaviour
+    // StartAt. The final gate is state-driven and judged by the host. Layout and the reasons for the numbers:
+    // Docs/PawnRush/ROYAL_CARRIAGE_YARD.md.
+    //
+    // As a section (R508, Early_1-2_RoyalCarriageYard.prefab, slot 1 "1-2 왕실 마차뜰"; asSection): the round's start
+    // places stand in the start court (no own ones), the round starts it (ISectionPart: StartAt at the section's start
+    // plus the gate's countdown, the section's seed), the finish court, the crown and the palace behind them give way to
+    // the boundary every early section ends with - 12 m of runout after the final gate, a terrace 1 m over the next
+    // mini-game (CP5), an open arch, four 0.25 m steps down and the 12 x 4 m entrance band - and the final gate's
+    // progress goes to the other PCs in the course state (PushGate is an ISectionNetPart). Entry (0, 0, -16): the start
+    // court's south wall; exit (0, 7, 164): the band's end. The map test scene keeps the map as it was.
+    public sealed partial class RoyalCarriageYard : MonoBehaviour, ISectionPart
     {
+        public const string SectionId = "Early_1-2_RoyalCarriageYard";
+        public const string SectionName = "왕실 마차뜰";
+        public static readonly Vector3 SectionEntry = new Vector3(0f, 0f, -16f), SectionExit = new Vector3(0f, 7f, 164f);
+
         [Serializable]
         public sealed class GateSettings
         {
@@ -144,6 +156,10 @@ namespace ChessFight.PawnRush
         [SerializeField] bool scenery = true;
         [Tooltip("Signs over each section (Korean)")]
         [SerializeField] bool signs = true;
+        [Header("Round")]
+        [Tooltip("A section of the round (R508): no start places of its own, the round starts it, and it ends in the boundary "
+                 + "to the next mini-game instead of the finish court")]
+        [SerializeField] bool asSection;
 
         Transform root, later;
         TimedGate startWest, startEast;
@@ -189,12 +205,52 @@ namespace ChessFight.PawnRush
                 CarriageArena();
                 Platform();
                 if (scenery) Scenery();
+                if (asSection) SectionParts();
             }
             finally
             {
                 go.SetActive(true);
             }
         }
+
+        // The round placed this section and gave it its start and seed (R508; again when a match learns its go).
+        public void OnSection(PawnRushSection section)
+        {
+            if (asSection) StartAt(section.StartClock + gates.startDelay, section.Seed);
+        }
+
+        // As a section (R508), in the map's frame: the one way for the HUD and the validator (the left walkway, the west
+        // cargo ramp, the gate, the boundary), the walkways' break at the wheel (a sprint jump and a dive: meant), and the
+        // section's own description.
+        void SectionParts()
+        {
+            var parts = Group("Section");
+            Place<IntendedGap>(parts, "Wheel gap (meant)", new Vector3(-4.6f, .5f, WheelZ))
+                .Configure(new Vector3(4f, 3f, crossing.gapLength + 1f), "물레방아 사이 틈: 질주 점프 + 다이빙");
+            var route = new[]
+            {
+                SectionEntry, new Vector3(0f, 0f, -6f), new Vector3(0f, 0f, 1f), new Vector3(0f, 0f, 40f),
+                new Vector3(-4.6f, 0f, CanalZ0 + 4f), new Vector3(-4.6f, 0f, WalkZ1), new Vector3(0f, 0f, CanalZ1 + 2f),
+                new Vector3(-22f, 0f, 94f), new Vector3(-22f, Top, 126f), new Vector3(0f, Top, 130f), new Vector3(0f, Top, 152f),
+                new Vector3(0f, Top, 158f), new Vector3(0f, Top - 1f, 160f), SectionExit,
+            };
+            var beats = new[] { "1", "1", "1", "1", "2", "2", "3", "3", "4", "4", "4", "4", "4", "4" };
+            var path = new GameObject("ProgressPath");
+            path.transform.SetParent(parts, false);
+            path.AddComponent<ProgressPath>().Configure(route, (Vector3[])route.Clone(), beats);
+            var section = GetComponent<PawnRushSection>();
+            if (section != null)
+                section.Describe(SectionId, SectionName, PawnRushSection.SlotKind.Obstacle, SectionEntry, SectionExit, 0f, SectionBeats());
+        }
+
+        // Areas for the HUD and the CSV, the first that holds a pawn wins (hips).
+        public static SectionBeat[] SectionBeats() => new[]
+        {
+            new SectionBeat("1 바깥 성문 · 마당", new Vector3(-23f, -2f, -17f), new Vector3(23f, 9f, 50f)),
+            new SectionBeat("2 운하 · 대형 물레방아", new Vector3(-23f, -5f, 50f), new Vector3(23f, 12f, 82f)),
+            new SectionBeat("3 마차 회전목마 · 폭포", new Vector3(-27f, -4f, 82f), new Vector3(27f, 9f, 126f)),
+            new SectionBeat("4 최종 성문", new Vector3(-27f, 5f, 126f), new Vector3(27f, 16f, 165f)),
+        };
 
         // ------------------------------------------------------------------ helpers
 

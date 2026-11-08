@@ -71,7 +71,25 @@ namespace ChessFight.PawnRush
             if (Current == this) Current = null;
         }
 
-        void Start() => FindPlatform();
+        void Start()
+        {
+            if (!found) FindPlatform();
+        }
+
+        // A section round's goal (R508): the FinishZone under `within` - the round's own sections, not one a rebuilt
+        // round leaves in the scene until the frame ends. Called when the round is built.
+        public void Bind(Transform within)
+        {
+            found = false;
+            if (within != null)
+                foreach (var zone in within.GetComponentsInChildren<FinishZone>(true))
+                {
+                    if (!Platform(zone, out middle, out radius)) continue;
+                    found = true;
+                    return;
+                }
+            Debug.LogWarning("[PawnRush] 이번 판 구간에 골(FinishZone)이 없습니다. 승리 판정이 꺼집니다.");
+        }
 
         // The platform: the course's finish circle (its trigger's middle, on its floor, and its radius).
         void FindPlatform()

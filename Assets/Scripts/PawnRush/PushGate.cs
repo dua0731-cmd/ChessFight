@@ -4,9 +4,9 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // StateDrivenMover: the Royal Carriage Yard's final gate (최종 성문) opens as far as characters have pushed it, not
-    // by the clock, so it is not an Obstacle and, like the other state-driven movers, it is offline only until the
-    // host sends its state (HANDOFF absolute rule 7). Only the PC that judges (offline, or a match's host:
-    // ObstacleClock.Authority) counts pushers; another PC shows what it is handed (SetProgress).
+    // by the clock, so it is not an Obstacle (HANDOFF absolute rule 7). Only the PC that judges (offline, or a match's
+    // host: ObstacleClock.Authority) counts pushers; another PC shows what it is handed (SetProgress) - in a section
+    // round's match the host sends its progress in the course state (R508, ISectionNetPart: two bytes).
     //
     // Two heavy leaves that open away from the platform (local +z). A character opens them by holding the right mouse
     // button on a leaf - the ragdoll's own grab, a hand jointed to the leaf - from the platform side, close to it.
@@ -17,7 +17,7 @@ namespace ChessFight.PawnRush
     // ease-out swing opened a pawn-wide slot after ~0.45 s of one pusher), and the leaves never stop dead at speed with
     // hands on them. However many push, the gate goes at most maxCrowd times one pusher's speed: the leaves' rings stay
     // under a run (~2.5 m/s). Fully open they stay open for everyone, for good. A bar over the gate shows how far it is.
-    public sealed class PushGate : MonoBehaviour
+    public sealed class PushGate : MonoBehaviour, ISectionNetPart
     {
         [Tooltip("Width of the opening, both leaves together (m)")]
         [SerializeField] float openingWidth = 8f;
@@ -51,6 +51,10 @@ namespace ChessFight.PawnRush
         // The judging PC's progress, on a PC that does not judge the gate (a match's client, once the host sends it).
         // It never closes.
         public void SetProgress(float value) => progress = Mathf.Max(progress, Mathf.Clamp01(value));
+
+        public int NetBytes => 2;
+        public void WriteNet(ref ChessFight.Network.NetBlock block) => block.Unit16(progress, 1f);
+        public void ReadNet(ref ChessFight.Network.NetBlock block) => SetProgress(block.ReadUnit16(1f));
 
         public void Configure(float openingWidth, float height, float pushSeconds, float crowdBonus, float frontDepth = .5f)
         {

@@ -2,6 +2,8 @@
 
 > **main 병합(R507, 2026-11-08):** 이 문서는 `claude/nifty-tesla-8212va`(팀원 songjiseong)의 `Docs/KingRush/`에서 main의 `Docs/PawnRush/`로 옮겼다. 병합하며 바뀐 것: 메뉴(**ChessFight → Pawn Rush → Open Map Test**, 맵 만들기 도구는 **Development → Map Authoring**), 코드 `Assets/Scripts/PawnRush/CarriageYard/` → `Assets/Scripts/PawnRush/`, 장애물 프리팹 `Assets/Prefabs/Obstacles/RoyalCarriageYard/` → `Assets/Prefabs/Obstacles/`(폴더 규칙 T7, 메타 · GUID 그대로). **이 문서의 R283~R288은 그 브랜치의 번호**로, main의 같은 번호(seoungtest 정원 작업 · 네트워크 R306 등)와 다른 요청이다. 아직 7구간 판(`Open Section Test`)의 슬롯에는 넣지 않았다(아래 §12 결정 1).
 
+> **슬롯 1 구간(R508, 2026-11-08):** 사용자 "초반 2개(정원, 마차뜰)"로 §13 결정 1 (a) · 결정 6 (a)대로 넣었다. `Assets/Prefabs/PawnRushSections/Early_1-2_RoyalCarriageYard.prefab` = 뿌리에 `PawnRushSection`(입구 (0, 0, −16) 출발 마당 남쪽 벽 · 출구 (0, 7, 164) 입구 띠 끝) + `RoyalCarriageYard`(**asSection** 켬). 구간 모드는 같은 코드에서 자기 출발 자리 12개 · 결승 뜰 · 왕관 · "결승" 표지 · 궁전을 빼고, 최종 성문 뒤에 경계 설계(보완점 2)를 짓는다: 12 m 빈 길 → 12 × 6 m 테라스(y 8, CP5) → 폭 12 m 열린 아치 → 0.25 m × 4단 → y 7의 12 × 4 m 입구 띠. 판이 놓으면 `OnSection`이 `StartAt(구간 시작 + startDelay, 구간 씨앗)`을 부르고(go가 오면 다시), 최종 성문 진행값은 코스 상태 CFP5로 간다(`PushGate` = `ISectionNetPart`). 진행 경로 · 물레방아 틈(`IntendedGap`) · 비트 4개도 더했다. **맵 시험 장면(`Open Map Test`)의 `PawnRushMaps/RoyalCarriageYard`는 맵 모드 그대로**(결승 뜰 · 궁전 있음). §13의 나머지 결정(2 길이 · 3 폰 F · 4 틈 · 5 끝 잡기 · 7 늦은 사람)과 보완점 3 · 4 · 5는 아직이다. Unity 미확인([VALIDATION R508](../Network/VALIDATION.md)).
+
 **폰 러쉬 맵 프리팹**이다. 처음에는 사용자 지시서 「ROYAL CARRIAGE YARD – 왕실 마차뜰」대로 만들었고(R284), 11-03 사용자가 맵 방향을 다시 정했다(R286). 6 대 6 팀이 몸싸움을 하며 장애물을 통과해 결승까지 가는 레이스이고, 미션 · 수집 · 퍼즐은 없다.
 
 첨부 이미지(왕궁 마차뜰 그림 · 나무 물레방아 사진)는 **그래픽 · 형태 참고**로 썼다. 구조와 장애물은 사용자 지시를 따랐다.
@@ -180,6 +182,7 @@ R284의 해석(세로 물레방아는 서 있는 바퀴, 슬라이딩 = 다이�
   - 1시간보다 먼 미래의 시작, 1시간 넘게 지난 시작(1시간 넘게 진행된 경기에 늦게 들어온 사람)도 지금 시각에서 새로 시작한다. 한 판이 몇 분이라 상관없다.
   - 지금 장면 중에는 시계가 바뀌는 곳에 이 맵이 없다(맵 시험 씬은 오프라인, 폰 러쉬 경기는 씬을 열기 전에 Steam 시계로 바꿈). 안전장치로 둔 것이다.
 - 넉백 · 물레방아에서 놓아 주기 · 미끄럼 당김은 **방장(오프라인)만** 계산한다.
+- **R508 구간 모드에서 된 것**: 판이 `StartAt(구간 시작 + 카운트다운, 구간 씨앗)`을 부름(go가 오면 다시), 최종 성문 진행값을 방장이 코스 상태 CFP5로 보냄(받는 쪽 `ReadNet` → `SetProgress`), 로비 경기 장면 `PawnRush_Round`의 슬롯 1 후보. 아래 "아직 안 된 것"은 맵 모드(맵 시험 장면) 이야기다.
 - **아직 안 된 것:**
   - 최종 성문 열림 상태를 방장이 보내는 패킷(받는 쪽 `SetProgress`는 있음)
   - 경기 코드가 `RoyalCarriageYard.StartAt(go, 판 씨앗)`을 부르는 것(입구는 R287에 만듦, 부르는 곳 없음). **주의**: 공유 매치 시계에서는 이것을 부르기 전까지 시작 성문이 닫혀 있고 마차가 제자리에서 기다리므로, 온라인 경기에 이 맵을 쓰려면 반드시 연결해야 한다(R287 전에는 PC마다 따로 출발해 어긋났음)

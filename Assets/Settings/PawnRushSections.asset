@@ -17,6 +17,7 @@ MonoBehaviour:
     kind: 0
     prefabs:
     - {fileID: 1000, guid: c1c3a74ebadb6049a082ae6410fe9b70, type: 3}
+    - {fileID: 1000, guid: 571186e568a78ee62b158d2a8fdee05a, type: 3}
   - name: "\uBBF8\uB2C8\uAC8C\uC784 1"
     kind: 1
     prefabs:
@@ -36,7 +37,8 @@ MonoBehaviour:
     - {fileID: 3916480530429441579, guid: 0a9181e8643e0ec47973004fd211639e, type: 3}
   - name: "\uC7A5\uC560\uBB3C 3 (\uD6C4\uBC18 \xB7 \uC717\uAD81)"
     kind: 0
-    prefabs: []
+    prefabs:
+    - {fileID: 1000, guid: 4f5f9c86c5e000dd4ea86b8527489ff1, type: 3}
   - name: "\uBBF8\uB2C8\uAC8C\uC784 3"
     kind: 1
     prefabs:

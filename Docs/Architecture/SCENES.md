@@ -8,11 +8,12 @@
 |---|---|---|
 | Intro | `Assets/Scenes/Intro.unity` · 시작 영상·타이틀·이름 설정 | Development → Scenes → Intro |
 | Lobby | `Assets/Scenes/Lobby.unity` · 파티·모드·매칭 | Development → Scenes → Lobby |
+| PawnRush_Round | `Assets/Scenes/PawnRush_Round.unity` · **로비 폰 러쉬 경기 장면(R508)**: 구간 라운드 + 작전 회의실 골 승리, `GameSceneConfig`. 혼자 Play하면 오프라인 판 | Pawn Rush → Open Match Round |
 | PawnRush_Sections | `Assets/Scenes/PawnRush_Sections.unity` · 개편 중인 전체 구간 연결 시험 | Pawn Rush → Open Section Test |
 | PawnRush_MiniGames | `Assets/Scenes/PawnRush_MiniGames.unity` · 저장 프리팹10종을 골라 보는 오프라인 시험 | Pawn Rush → Open Mini-game Prefab Test |
 | PawnRush_SkillTest | `Assets/Scenes/SkillTest/PawnRush_SkillTest/PawnRush_SkillTest.unity` · 기물 스킬 시험 | Pawn Rush → Open Skill Test |
 | PawnRush_MapTest | `Assets/Scenes/PawnRush_MapTest.unity` · 맵 프리팹(`Assets/Prefabs/PawnRushMaps/`) 하나씩 오프라인 시험, 왕실 마차뜰 포함(R507에 `claude/nifty-tesla-8212va`에서 병합, 빌드 목록 밖) · 코스 01의 카메라·조명·물리·플레이테스트 폰 + `PawnRushMapTest` | Pawn Rush → Open Map Test |
-| PawnRush_Course01 | `Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity` · 구형 전체 맵, 현재 온라인 호환 씬 | Prototype → Pawn Rush → Open Course01 |
+| PawnRush_Course01 | `Assets/Prototype/PawnRush/Scenes/PawnRush_Course01.unity` · 구형 전체 맵(R508까지 로비 경기 장면, 빌드에는 남음) | Prototype → Pawn Rush → Open Course01 |
 | PawnRushVictory / PawnRushLose | `Assets/Scenes/` · 폰 러시 결과·로비 복귀 | Development → Pawn Rush → Result Preview |
 | SwordFight | `Assets/Scenes/SwordFight.unity` · 소드 파이트 경기 | Sword Fight → Open Test Scene |
 | SwordFight 스킬·아레나 시험 | `Assets/Scenes/SkillTest/SwordFight_*` · 기존 스킬/아레나 시험 | Sword Fight → Open Skill Test |
@@ -27,11 +28,11 @@ QueenOfTheHill 본 장면·스킬 시험·메뉴는 폐기해 제거한다. 과�
 
 ## 2. 빌드와 호환 경기
 
-`ProjectSettings/EditorBuildSettings.asset`의 활성 장면은 런타임에서 이름으로 로드할 수 있어야 한다. Intro·Lobby·SwordFight·폰 러시 결과 장면과 **이동한 구형 PawnRush_Course01**을 유지한다. 기존 스킬/아레나 장면의 필요한 활성 설정은 별도로 관리한다. 새 구간·미니게임·랩·샌드박스를 정리 편의로 온라인 경기 목록에 추가하지 않는다.
+`ProjectSettings/EditorBuildSettings.asset`의 활성 장면은 런타임에서 이름으로 로드할 수 있어야 한다. Intro·Lobby·**PawnRush_Round**(R508)·SwordFight·폰 러시 결과 장면과 **이동한 구형 PawnRush_Course01**을 유지한다. 기존 스킬/아레나 장면의 필요한 활성 설정은 별도로 관리한다. 새 구간·미니게임·랩·샌드박스를 정리 편의로 온라인 경기 목록에 추가하지 않는다.
 
-`GameModes.KingRush.Scene`과 `SceneNames.PawnRushCourse01`의 값은 **`PawnRush_Course01`**이다. 로비의 폰 러시 온라인 진입은 여전히 프로토타입 폴더로 옮긴 이 씬을 연다. 파일 위치는 바뀌어도 씬 이름·GUID·통신 키 `kingrush`는 유지한다. `NetworkSetup.ShippedScenes`와 생성기에서도 새 실제 경로를 사용한다.
+**R508부터** `GameModes.KingRush.Scene` = `SceneNames.PawnRushRound` = **`PawnRush_Round`**다(통신 키 `kingrush` 그대로). 장면이 열리면 `SteamPawnRushLink`가 Start 전에 판을 매치 번호로 짓고(`PawnRushRound.BuildForMatch`), go가 오면 구간 시각을 옮긴다. 구형 `PawnRush_Course01`(`SceneNames.PawnRushCourse01`)은 Prototype 폴더에서 빌드 목록 · `NetworkSetup.ShippedScenes`에 남고, 같은 링크가 `MatchCourse`로 그것도 돌린다(로비는 안 엶).
 
-현재 `PawnRush_Sections`·`PawnRush_MiniGames`·`PawnRush_MapTest`는 오프라인 시험이다. 3광장·7슬롯 코스를 현재2광장·4스테이션 CFP4 통신에 연결하는 작업은 이 정리에 포함되지 않는다.
+`PawnRush_Sections`·`PawnRush_MiniGames`·`PawnRush_MapTest`는 오프라인 시험이다. `PawnRush_Round`는 `PawnRush_Sections`를 복사해 `PawnRushRound`(buildOnAwake 끔 · buildOnStart · finishRace)와 `ChessFight Game Root`(`GameSceneConfig` customMatchSimulation · escapeLeavesMatch)를 바꾼 것이다. 구간 시험 장면을 고치면 경기 장면에도 같은 변경이 필요한지 본다.
 
 ## 3. 온라인 진입
 

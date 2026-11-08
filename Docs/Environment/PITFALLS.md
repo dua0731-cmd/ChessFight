@@ -261,6 +261,10 @@ Prototype 코드41개는 새 asmdef로 분리하면 기존 어셈블리 내부 �
 
 실제 충전/발사·입자 방출·시뮬레이션의 세 방향 검사에서 수정 전 엔진 오류30건+모드 실패3건, 수정 후 오류0·세 방향 통과를 AI가 기록했다. 자동 검사 결과와 사용자 회의실 외형 확인은 구분한다. 검사기 자체의 첫 실행은 재생 중 `randomSeed`를 설정한 assertion도 냈으므로, 먼저 `Stop(...StopEmittingAndClear)`한 뒤 씨앗을 넣도록 고쳤다. 운영 효과가 collider를 `Object.Destroy`로 정리하므로 이 경로의 회귀 검사는 Play Mode에서 실행한다. 초기 검사기 실패 기록도 `Logs/AirCannonFxValidation/R498-initial-harness-failure.txt`에 보존한다. [VFX 상세](../VFX/README.md#r498-작전-회의실-공기-대포의-orbital-velocity-오류-2026-11-06).
 
+## R508 경기 시작 전의 임시 시작 시각을 1시간 넘게 잡으면 마차뜰 마차가 바로 출발한다
+
+구간 라운드는 장면이 열리자마자 지어지지만 로비의 go는 모든 PC가 로딩을 마친 뒤에 온다. 그 사이 구간의 시작 시각을 "아주 먼 뒤"로 잡고 싶어지는데, 왕실 마차뜰의 마차 무리(Core `RoamingFleet`)는 계획한 시작보다 `Leap`(3600초) 넘게 이른 시각을 **시계가 뛴 것**으로 읽어 그 시각에서 바로 다시 시작한다. 지금+3600초로 잡으면 go 전에 PC마다 제 시각에 마차가 출발한다. R508은 임시 시작을 지금+600초(`SteamPawnRushLink.ProvisionalStart`)로 두어 성문은 닫혀 있고 마차는 집에서 기다리게 했고, go가 오면 `SetStartClock`으로 다시 계획한다. 시간으로 움직이는 새 장치가 시계 뜀을 따로 다루면 같은 함정이 있는지 본다.
+
 ## R507 seoungtest 계열 브랜치를 main에 병합하면 Intro·Lobby가 지워진다
 
 `seoungtest`는 시험 브랜치로 만들며 Intro·Lobby·RagdollTest 같은 main 장면과 빌드 장면 목록을 지웠다. 그 브랜치에서 갈라진 브랜치(예: `claude/nifty-tesla-8212va`)에도 이 장면들이 없다. 그런 브랜치가 main을 한 번 합친 적이 있으면(그 브랜치 쪽 병합 `afd5de6`가 장면 삭제를 그대로 둠) git은 "그 브랜치가 장면을 지웠다"로 읽어, 다시 main에 합칠 때 Intro·Lobby 삭제와 옛 빌드 목록·옛 네트워크 코드가 충돌 없이 딸려 올 수 있다. 사용자도 그 브랜치를 Unity에서 열면 Scenes 폴더에 Intro·Lobby가 안 보여 "지워졌나" 하고 묻게 된다(R492·R507 두 번).

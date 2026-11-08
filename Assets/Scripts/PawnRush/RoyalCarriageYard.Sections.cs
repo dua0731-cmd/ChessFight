@@ -48,7 +48,8 @@ namespace ChessFight.PawnRush
             YardKit.Wall(s, "Court wall W", -13f, -12f, 0f, 5f, -17f, 0f, YardKit.WallStone);
             YardKit.Wall(s, "Court wall E", 12f, 13f, 0f, 5f, -17f, 0f, YardKit.WallStone);
             YardKit.Wall(s, "Court wall S", -13f, 13f, 0f, 5f, -17f, -16f, YardKit.WallStone);
-            for (int i = 0; i < 6; i++)
+            // As a section the round puts its own start places here (R508: two sets would be one too many).
+            for (int i = 0; i < 6 && !asSection; i++)
             {
                 float x = 1.5f * (1 + i % 3), z = i < 3 ? -7f : -10f;
                 Place<SpawnPoint>(s, "Start white " + i, new Vector3(-x, 0f, z)).Configure(i, Teams.White);
@@ -383,6 +384,12 @@ namespace ChessFight.PawnRush
             foreach (float x in new[] { -6.6f, 6.6f })
                 Tower(s, new Vector3(x, Top, z), 3.6f, 14f);
             Place<PushGate>(s, "Final gate", new Vector3(0f, Top, z)).Configure(8f, h, gates.finalPushSeconds, gates.finalCrowdBonus, 1f);
+            if (asSection)
+            {
+                Sign(s, "4. 최종 성문: 우클릭을 누른 채로 밀기", new Vector3(0f, Top + 2.6f, z - 11f), 1.3f);
+                SectionEnd(s, z + 1f);
+                return;
+            }
 
             // The finish court behind it.
             Block(s, "Finish court", -10f, 10f, z + 3f, z + 22f, -3f);
@@ -401,6 +408,31 @@ namespace ChessFight.PawnRush
             }
             Sign(s, "4. 최종 성문: 우클릭을 누른 채로 밀기", new Vector3(0f, Top + 2.6f, z - 11f), 1.3f);
             Sign(s, "결승", new Vector3(0f, Top + 4.5f, z + 13f), 2.2f);
+        }
+
+        // As a section (R508): behind the final gate's wall (`from`, own frame) the boundary every early section ends with
+        // (PAWN_RUSH_SECTIONS.md, the mini-game boundary): 12 m of runout with nothing in it, a 12 x 6 m terrace 1 m over the
+        // next mini-game with a checkpoint, an open arch 12 m wide, four steps of 0.25 m down and the 12 x 4 m entrance
+        // band at y 7, whose end is the section's exit.
+        void SectionEnd(Transform s, float from)
+        {
+            float runout = from + 12f, terrace = runout + 6f, steps = terrace + 2f, band = steps + 4f;
+            Block(s, "Runout", -6f, 6f, GateZ + 3f, runout, -3f);
+            Block(s, "Terrace", -6f, 6f, runout, terrace, -3f);
+            foreach (float x in new[] { -1f, 1f })
+            {
+                float a = x * 6f, c = x * 6.3f;
+                YardKit.Wall(s, "Runout railing", Mathf.Min(a, c), Mathf.Max(a, c), Top, Top + 1.1f, from, terrace - .4f);
+                YardKit.Wall(s, "Band railing", Mathf.Min(a, c), Mathf.Max(a, c), Top - 1f, Top + .1f, terrace + .4f, band);
+                float p0 = x * 6f, p1 = x * 7f;
+                YardKit.Wall(s, "Arch pillar", Mathf.Min(p0, p1), Mathf.Max(p0, p1), Top - 1f, Top + 7f, terrace - .4f, terrace + .4f, YardKit.WallStone);
+            }
+            YardKit.Wall(s, "Arch lintel", -7f, 7f, Top + 6f, Top + 7f, terrace - .4f, terrace + .4f, YardKit.WallStone);
+            for (int i = 1; i <= 4; i++)
+                YardKit.Span(s, "Step down " + i, new Vector3(-6f, -3f, terrace + (i - 1) * .5f), new Vector3(6f, Top - .25f * i, terrace + i * .5f),
+                             YardKit.Stone).AddComponent<CourseFloor>();
+            YardKit.Span(s, "Mini-game entrance band", new Vector3(-6f, -3f, steps), new Vector3(6f, Top - 1f, band), YardKit.Stone).AddComponent<CourseFloor>();
+            Checkpoint(s, 5, new Vector3(0f, Top, runout + 3f), 10f);
         }
 
         // A solid block whose top is the platform (y 8), from `bottom` up.
