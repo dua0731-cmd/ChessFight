@@ -26,6 +26,19 @@ class StraightWarRoom(unittest.TestCase):
             for z in (origin[2]+1,origin[2]+15):
                 floors=[name for name,lo,hi,_ in t.boxes if lo[0]<0<hi[0] and lo[2]<z<hi[2] and -.5<hi[1]<.1]
                 self.assertTrue(floors);self.assertTrue(all(n=='Walkable parchment' for n in floors),floors)
+    def test_saved_stamp_timing_and_side_map_deployment(self):
+        t=self.t
+        for _,f,_ in t.scripts_of('CommandStampPress'):
+            self.assertAlmostEqual(float(f['slamSeconds']),.18)
+            self.assertAlmostEqual(float(f['retractSeconds']),2.5)
+        maps=t.scripts_of('RollingMapBridge')
+        self.assertEqual({int(f['unfoldFromRight']) for _,f,_ in maps},{0,1})
+        for _,f,_ in maps:
+            self.assertEqual(float(f['deploymentHeight']),6)
+            self.assertEqual(float(f['descentDrift']),.6)
+            self.assertEqual(float(f['lowerSeconds']),1.5)
+            self.assertNotEqual(number(f['hangingParchment']),0)
+
     def test_concept_obstacles_and_preview_sources(self):
         t=self.t
         self.assertEqual(len(t.scripts_of('CommandStampPress')),2)

@@ -150,7 +150,7 @@ class LegacyBuilder:
         self.box(head,'Press brass head',(0,.8,0),(width-.2,1.6,5.8),'Gold',False)
         self.box(head,'Crown die',(0,2,0),(width*.55,1,3),'Purple',False)
         self.d.script(head,'CommandStampPress',kit.fields(context=kit.ref(context),impactArea=kit.ref(area),warningVisual=kit.ref(warning['go']),
-            raisedHeight=6,restSeconds=2,warningSeconds=1.4,slamSeconds=.35,holdSeconds=.6,retractSeconds=1,phaseOffset=offset,pushForce=10,upwardForce=2))
+            raisedHeight=6,restSeconds=2,warningSeconds=1.4,slamSeconds=.18,holdSeconds=.6,retractSeconds=2.5,phaseOffset=offset,pushForce=10,upwardForce=2))
     def pointers(self,z):
         g=self.c.group('Opposed command pointers - read the closing gap',z,kind='pointer_gate');context=self.c.context(g)
         for side in (-1,1):
@@ -433,15 +433,22 @@ class Builder(LegacyBuilder):
         self.c.beat=self.root
     def scroll(self,z,phase):
         g=self.group('Rolling command map '+str(z),pos=(0,0,z));segments=[]
+        right=phase>0; direction=-1 if right else 1
+        width=12;drift=.6;strip=(width-drift)/8
         for i in range(8):
-            part=self.group('Parchment strip '+str(i),g,(0,0,i*2+1))
-            self.box(part,'Walkable parchment',(0,-.15,0),(12,.3,2),'Ivory')
-            self.box(part,'Map advance line',(0,.025,0),(.15,.03,1.8),'Teal',False)
+            x=direction*(-width/2+drift+(i+.5)*strip)
+            part=self.group('Parchment strip '+str(i),g,(x,0,8))
+            self.box(part,'Walkable parchment',(0,-.15,0),(strip,.3,16),'Ivory')
+            self.box(part,'Map advance line',(0,.025,0),(.15,.03,15.8),'Teal',False)
             segments.append(part)
-        roller=self.box(g,'Brass scroll roller',(0,.6,0),(1.2,6.2,1.2),'Gold',False,rot=(0,0,.70710678,.70710678),shape='Cylinder')
-        h=self.group('Grab to slow map',g,(5,1,-2));rb=self.d.rigidbody(h,True)
+        roller=self.box(g,'Brass scroll roller',(direction*6,.6,8),(1.2,8.2,1.2),'Gold',False,rot=(.70710678,0,0,.70710678),shape='Cylinder')
+        hanging=self.box(g,'Descending parchment',(direction*(-6+.3),3,8),(.12,6.03,16),'Ivory',False)
+        self.box(g,'Elevated map mount',(direction*-6,6.2,8),(.5,.4,16.5),'Gold',False)
+        h=self.group('Grab to slow map',g,(direction*-5,1,-2));rb=self.d.rigidbody(h,True)
         self.box(h,'Handle',(0,0,0),(.3,.3,1.4),'Gold')
-        self.d.script(g,'RollingMapBridge',kit.fields(roller=kit.ref(roller['tr']),handle=kit.ref(rb),length=16,openSeconds=5,rollSeconds=5,closedSeconds=2,unfurlSeconds=3,heldSpeed=.35,phaseSeconds=phase)+'  segments:\n'+''.join('  - '+kit.ref(s['go'])+'\n' for s in segments))
+        self.d.script(g,'RollingMapBridge',kit.fields(roller=kit.ref(roller['tr']),hangingParchment=kit.ref(hanging['tr']),handle=kit.ref(rb),
+            length=16,mapWidth=12,deploymentHeight=6,descentDrift=.6,unfoldFromRight=1 if right else 0,lowerSeconds=1.5,
+            openSeconds=5,rollSeconds=5,closedSeconds=2,unfurlSeconds=3,heldSpeed=.35,phaseSeconds=phase)+'  segments:\n'+''.join('  - '+kit.ref(s['go'])+'\n' for s in segments))
     def exhibit(self,pos,fraction):
         g=self.group('Random GM replay preview '+str(fraction),pos=pos)
         self.box(g,'Framed score board',(0,4,0),(10,10,.5),'Wood')

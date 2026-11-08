@@ -13,9 +13,9 @@ namespace ChessFight.ProtectKing
         [SerializeField, Min(1)] float raisedHeight = 6;
         [SerializeField, Min(.5f)] float restSeconds = 2;
         [SerializeField, Min(.5f)] float warningSeconds = 1.4f;
-        [SerializeField, Min(.1f)] float slamSeconds = .35f;
+        [SerializeField, Min(.1f)] float slamSeconds = .18f;
         [SerializeField, Min(.1f)] float holdSeconds = .6f;
-        [SerializeField, Min(.2f)] float retractSeconds = 1;
+        [SerializeField, Min(.2f)] float retractSeconds = 2.5f;
         [SerializeField] float phaseOffset;
         [SerializeField, Min(0)] float pushForce = 10;
         [SerializeField, Min(0)] float upwardForce = 2;

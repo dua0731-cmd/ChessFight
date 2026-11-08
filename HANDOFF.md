@@ -1,5 +1,8 @@
 # ChessFight HANDOFF — 모든 작업은 여기서 시작한다
 
+**2026-11-08 · Fork 작전실 동작:** 도장 상승2.5초/급강하0.18초, 지도 측면 위→가파른 대각 하강→수평 펼침 구현. 기존 씬 수치 유지. 자동47·런타임9개 컴파일, Unity 확인 대기. [설정](Docs/PawnRush/WAR_ROOM_COMPLETE.md).
+
+
 **2026-11-08 · GM 기보 40개 적용:** 씬 시작/F3 무작위 선택(직전 제외), 액자/표시 동기화, 3,764반수 대조·선택 10,000회·Gameplay45·런타임9개 컴파일 통과. Unity 확인 대기. [경기 목록](Docs/PawnRush/GIANT_CHESS_GAME_LIST.md).
 
 **2026-11-08 · Fork 병합 복구 완료:** 28개 충돌 파일과 추가 클래스/API 연결 복구. [변경·검사·Unity 확인 절차](Docs/Environment/UPSTREAM_MERGE_FIX_20261108.md).
