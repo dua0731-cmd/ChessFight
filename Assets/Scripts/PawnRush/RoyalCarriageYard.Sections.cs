@@ -28,10 +28,10 @@ namespace ChessFight.PawnRush
         const float ParapetTop = 2f, NorthParapetTop = 1.5f;
         // 3 and 4, their own frame: the arena starts at z 106 there, and is moved to start where the canal ends.
         const float ArenaStart = 106f, LaterShift = CanalZ1 - ArenaStart;
-        // The arena's carousel and the lifting waterwheel, where several parts are fitted round each other.
+        // The lifting waterwheel and its pool, where several parts are fitted round each other.
         // The pool's near edge (R287, 0.55 m nearer the wheel than R284's 139.3): the paddle tips pass 0.7 m out at hip
         // height and the handles 0.3-0.6 m out at a jump's reach, while a pawn standing at the edge stays clear of them.
-        const float CarouselZ = 125.5f, PoolZ0 = 139.85f, LiftZ = 144f, LiftY = 4.6f, LiftRadius = 5.2f, CliffZ = 150f, Top = 8f;
+        const float PoolZ0 = 139.85f, LiftZ = 144f, LiftY = 4.6f, LiftRadius = 5.2f, CliffZ = 150f, Top = 8f;
         // The final gate's wall, 13 m past the cliff (R287: it was 23, an empty run once the gate was reached).
         const float GateZ = 163f;
 
@@ -248,33 +248,11 @@ namespace ChessFight.PawnRush
             YardKit.Wall(s, "Side wall W", -27f, -26f, 0f, Top + 3f, ArenaStart - 1f, GateZ + 3f, YardKit.WallStone);
             YardKit.Wall(s, "Side wall E", 26f, 27f, 0f, Top + 3f, ArenaStart - 1f, GateZ + 3f, YardKit.WallStone);
 
-            Carousel(s);
+            LoadingYard(s);
             CargoRamp(s, -1f);
             CargoRamp(s, 1f);
             Waterfall(s);
-            Sign(s, "3. 마차 경기장: 가운데 회전 마차 · 좌우 화물 경사로", new Vector3(0f, 3.6f, ArenaStart + 3.5f), 1.2f);
-        }
-
-        void Carousel(Transform parent)
-        {
-            var s = Group("Carousel", parent);
-            Place<RotatingCarriageGroup>(s, "Rotating carriages", new Vector3(0f, 0f, CarouselZ))
-                .Configure(carousel.rotationSpeed, carousel.clockwise, Mathf.Min(7.5f, carousel.rotationRadius), carousel.carriageCount,
-                           carousel.knockbackForce);
-            // Dividers between the middle way and the ramps (not to be climbed), and planters that close the middle
-            // round the carousel, so the way through is between the carriages and not round them.
-            foreach (float side in new[] { -1f, 1f })
-            {
-                YardKit.Wall(s, "Divider", Mathf.Min(side * 13f, side * 18f), Mathf.Max(side * 13f, side * 18f), 0f, 2.2f, 116f, CliffZ);
-                YardKit.Picture(s, "Divider hedge", new Vector3(Mathf.Min(side * 13.3f, side * 17.7f), 2.2f, 116.3f),
-                                new Vector3(Mathf.Max(side * 13.3f, side * 17.7f), 2.9f, CliffZ - .3f), YardKit.Hedge);
-                YardKit.Wall(s, "Planter", Mathf.Min(side * 10f, side * 13f), Mathf.Max(side * 10f, side * 13f), 0f, 1.2f, 117.5f, 133.5f);
-                YardKit.Picture(s, "Planter hedge", new Vector3(Mathf.Min(side * 10.2f, side * 12.8f), 1.2f, 117.7f),
-                                new Vector3(Mathf.Max(side * 10.2f, side * 12.8f), 1.8f, 133.3f), YardKit.Hedge);
-                for (float z = 120f; z < CliffZ; z += 7f)
-                    Tree(s, new Vector3(side * 15.5f, 2.9f, z));
-            }
-            Sign(s, "가운데: 회전 마차 사이로", new Vector3(0f, 6.8f, 114.5f), 1.2f);
+            Sign(s, "3. 마차 하역장: 가운데 곧장 (빠르지만 위험) · 좌우 화물 경사로 (안전)", new Vector3(0f, 3.6f, ArenaStart + 3.5f), 1.2f);
         }
 
         // A ramp up to the platform at x side*22 (8 m wide), z 118..150, y 0..8, with cargo rolling down it out of a
@@ -307,11 +285,13 @@ namespace ChessFight.PawnRush
             // Facing down the lane its right is west: towards the left ramp's outer wall, the right ramp's inner edge.
             chute.Configure(cargo.spawnInterval, cargo.rollingSpeed, cargo.cargoSizes, down.magnitude, 7f, 3.4f,
                             side > 0f ? cargo.rightRampOffset : 0f, side > 0f ? 7 : 3, cargo.knockbackForce, side < 0f ? 1f : -1f);
-            // The ramp's inner edge where it rises over the 2.2 m divider: a parapet, so nobody knocked aside drops off
-            // it into the middle way (R287).
+            // The ramp's inner edge beside the 2.2 m divider: a parapet, so nobody knocked aside drops off it into the
+            // middle way (R287), and so nobody hops from the ramp onto the divider's top and walks along it past the
+            // loading yard (R532: from z 120, where the ramp is 0.5 m up, 1.6 m over the ramp - a jump's feet reach
+            // 1.07 m with the ledge help, the pawn's F step and a jump 1.42 m).
             // 1 cm proud of the ramp's own face, so the two faces never fight for the same pixels.
-            float inEdge = side * 18.14f, z0 = 126f, y0 = Top * (z0 - 118f) / (CliffZ - 118f);
-            YardKit.Slab(s, "Ramp inner parapet", new Vector3(inEdge, y0 + 1.1f, z0), new Vector3(inEdge, Top + 1.1f, CliffZ), .3f, 1.4f,
+            float inEdge = side * 18.14f, z0 = 120f, y0 = Top * (z0 - 118f) / (CliffZ - 118f);
+            YardKit.Slab(s, "Ramp inner parapet", new Vector3(inEdge, y0 + 1.6f, z0), new Vector3(inEdge, Top + 1.6f, CliffZ), .3f, 1.9f,
                          YardKit.WallStone, Solid.NoClimb);
             Sign(s, side < 0f ? "왼쪽: 화물 경사로" : "오른쪽: 화물 경사로", new Vector3(x, 3.2f, 115.5f), 1.2f);
         }
@@ -349,8 +329,9 @@ namespace ChessFight.PawnRush
             landing.AddComponent<CourseFloor>();
             YardKit.Picture(s, "Landing trim", new Vector3(-3.55f, Top - .32f, 148.35f), new Vector3(3.55f, Top - .2f, 148.45f), YardKit.Gold);
 
-            // The middle way's whole width (between the dividers), so nobody reaches the pool without it.
-            Checkpoint(s, 3, new Vector3(0f, 0f, 137f), 26f);
+            // The middle way's whole width (between the dividers), so nobody reaches the pool without it: on the apron
+            // past the loading yard's second crane (R532, was z 137), its respawn 3 m from the pool's edge.
+            Checkpoint(s, 3, new Vector3(0f, 0f, LoadApronZ), 26f);
             // The handles pass just out of a standing pawn's reach: it jumps for one.
             Sign(s, "물레방아에 점프해서 매달리기 (우클릭을 누른 채로)", new Vector3(0f, 2.8f, 136f), 1.1f);
         }

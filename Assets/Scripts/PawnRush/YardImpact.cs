@@ -71,6 +71,12 @@ namespace ChessFight.PawnRush
         [Range(0f, 1f)] public float forwardShare = .6f;
         [Tooltip("A character dead in the part's line goes to its right (1) or its left (-1)")]
         public float centreSide = 1f;
+        [Tooltip("Judge which face comes at a character by the touching part's nearest point, not the hips: a crate dropping "
+                 + "onto someone lying beside it hits whatever of them is under it (R532)")]
+        public bool judgePart;
+        [Tooltip("Longest a knocked-down character is let through the box while still overlapping it (s): longer for a crate "
+                 + "that sits where it fell (R532)")]
+        public float ghostSeconds = .6f;
 
         IMovingSurface surface;
         IHitTurns turns;
@@ -140,11 +146,12 @@ namespace ChessFight.PawnRush
                 d.Receiver.ApplyHit(push + Vector3.up * lift, d.Down, 0f, true);
             }
             due.Clear();
-            // The box takes a knocked-down character back once they no longer overlap (after 0.35 s), or after 0.6 s.
+            // The box takes a knocked-down character back once they no longer overlap (after 0.35 s), or after
+            // ghostSeconds (0.6 s).
             for (int i = ghosts.Count - 1; i >= 0; i--)
             {
                 float age = Time.time - ghosts[i].Since;
-                if (age < .35f || (age < .6f && Overlaps(ghosts[i].Parts))) continue;
+                if (age < .35f || (age < ghostSeconds && Overlaps(ghosts[i].Parts))) continue;
                 Collide(ghosts[i], true);
                 ghosts.RemoveAt(i);
             }
@@ -199,7 +206,9 @@ namespace ChessFight.PawnRush
             float speed = velocity.magnitude;
             // Only a part coming at the character, through the face nearest it and mostly towards it: a carousel
             // carriage's side, swept round with it, only grazes.
-            float coming = Vector3.Dot(velocity, Facing(target, centre));
+            var judged = target;
+            if (judgePart) judged = other is MeshCollider mesh && !mesh.convex ? other.bounds.ClosestPoint(centre) : other.ClosestPoint(centre);
+            float coming = Vector3.Dot(velocity, Facing(judged, centre));
             if (coming < Mathf.Max(minSpeed, .5f * speed)) return;
 
             // Along the part's motion (or its lane), and straight out from its line to the side the character is on.

@@ -14,9 +14,10 @@ namespace ChessFight.PawnRush
     //   2  Canal and the giant wheel      z 50..82    stone landings either side; two wooden walkways between them go
     //                                                 through one giant waterwheel (a round frame and six spokes) -
     //                                                 jump and dive through a hole between two spokes
-    //   3  Arena and waterfall            z 82..126   three ways: centre - the carousel of carriages, then the lifting
-    //                                                 waterwheel up the waterfall (hold right click); left and right -
-    //                                                 ramps up to the platform with cargo rolling down them
+    //   3  Arena and waterfall            z 82..126   three ways: centre - the loading yard (R532: carriages bolting out
+    //                                                 of stables, a bolting horse, crates dropped by cranes), then the
+    //                                                 lifting waterwheel up the waterfall (hold right click); left and
+    //                                                 right - ramps up to the platform with cargo rolling down them
     //   4  The final gate                 z 126..162  the three ways meet on the platform (y 8); the gate is pushed
     //                                                 open (hold right click on it), the finish is behind it
     //
@@ -25,8 +26,9 @@ namespace ChessFight.PawnRush
     //
     // Built from code when the prefab is placed (Awake), like the map test's calibration yard, so the prefab itself is
     // this one component and the numbers below are its Inspector. Every obstacle is its own reusable component
-    // (RoamingCarriage, HorizontalWaterwheel, RotatingCarriageGroup, VerticalWaterwheel, CargoChute/RollingCargo,
-    // TimedGate, PushGate; ChargingCarriage and TiltingWoodenBridge are not on this map's route) with its own Inspector
+    // (RoamingCarriage, HorizontalWaterwheel, StableCharger, CraneDrop/CraneCrate, VerticalWaterwheel,
+    // CargoChute/RollingCargo, TimedGate, PushGate; ChargingCarriage, RotatingCarriageGroup - the centre way's carousel
+    // until R532 - and TiltingWoodenBridge are not on this map's route) with its own Inspector
     // during Play. Moving parts run on ObstacleClock (absolute rule 7); a match hands the map its start and seed with
     // StartAt. The final gate is state-driven and judged by the host. Layout and the reasons for the numbers:
     // Docs/PawnRush/ROYAL_CARRIAGE_YARD.md.
@@ -95,18 +97,37 @@ namespace ChessFight.PawnRush
             public float knockdownSeconds = 1f;
         }
 
+        // The centre way's loading yard (R532, was the carousel): two carriages bolting out of stables across the way, a
+        // horse bolting diagonally across it and back, and two cranes dropping crates anywhere on it.
         [Serializable]
-        public sealed class CarouselSettings
+        public sealed class LoadingYardSettings
         {
-            [Tooltip("Degrees per second")]
-            public float rotationSpeed = 22f;
-            [Tooltip("Clockwise seen from above")]
-            public bool clockwise = true;
-            public int carriageCount = 4;
-            [Tooltip("Centre post to carriage (m); keep it at 7.5 or under, the planters stand at 10 m")]
-            [Range(5f, 7.5f)] public float rotationRadius = 7.5f;
-            [Tooltip("Push of a hit (m/s) before the speed adds 0.6 per m/s; it sets the pawn's speed")]
-            public float knockbackForce = 4.5f;
+            [Tooltip("Top speed of a stable carriage's bolt across the way (m/s)")]
+            public float carriageSpeed = 10f;
+            [Tooltip("Top speed of a carriage backing into its stable (m/s): about 5 at most, it shoves whoever is in the way")]
+            public float carriageReturnSpeed = 5f;
+            [Tooltip("Seconds a carriage stands in its stable between bolts (its warning is the last of them)")]
+            public float carriageWait = 1.4f;
+            [Tooltip("Top speed of the bolting horse (m/s)")]
+            public float horseSpeed = 11f;
+            [Tooltip("The horse gallops back as hard as it came, warned the same way; off, it trots back at horseReturnSpeed")]
+            public bool horseBothWays = true;
+            [Tooltip("Speed of the horse trotting back to its stall when it does not gallop both ways (m/s)")]
+            public float horseReturnSpeed = 5f;
+            [Tooltip("Seconds the horse stands at either end before it runs (it turns round in 1.6 s, then rears for the warning)")]
+            public float horseWait = 2.8f;
+            [Tooltip("Seconds of red floor line, red lamps or rearing before a carriage or the horse runs")]
+            public float warning = 1f;
+            [Tooltip("Push of a carriage's or the horse's hit (m/s) before the speed adds 0.25 per m/s, at most 7")]
+            public float knockbackForce = 4f;
+            [Tooltip("Seconds of one crane hook's trip: carry, hold still, drop, sit on the floor")]
+            public float cranePeriod = 3f;
+            [Tooltip("Height of a hanging crate's underside (m): how far it drops")]
+            public float dropHeight = 5f;
+            [Tooltip("Edge of a crate (m)")]
+            public float crateSize = 1.4f;
+            [Tooltip("Push of a falling crate's hit (m/s), straight out from under it")]
+            public float crateKnockback = 5f;
         }
 
         [Serializable]
@@ -145,8 +166,8 @@ namespace ChessFight.PawnRush
         [SerializeField] RoamingSettings roaming = new RoamingSettings();
         [Header("2. Canal: the giant waterwheel")]
         [SerializeField] CrossingSettings crossing = new CrossingSettings();
-        [Header("3. Arena: the carousel")]
-        [SerializeField] CarouselSettings carousel = new CarouselSettings();
+        [Header("3. Arena: the loading yard (centre)")]
+        [SerializeField] LoadingYardSettings loadingYard = new LoadingYardSettings();
         [Header("3. Arena: cargo ramps")]
         [SerializeField] CargoSettings cargo = new CargoSettings();
         [Header("3. Arena: the lifting waterwheel")]
@@ -248,7 +269,7 @@ namespace ChessFight.PawnRush
         {
             new SectionBeat("1 바깥 성문 · 마당", new Vector3(-23f, -2f, -17f), new Vector3(23f, 9f, 50f)),
             new SectionBeat("2 운하 · 대형 물레방아", new Vector3(-23f, -5f, 50f), new Vector3(23f, 12f, 82f)),
-            new SectionBeat("3 마차 회전목마 · 폭포", new Vector3(-27f, -4f, 82f), new Vector3(27f, 9f, 126f)),
+            new SectionBeat("3 마차 하역장 · 폭포", new Vector3(-27f, -4f, 82f), new Vector3(27f, 9f, 126f)),
             new SectionBeat("4 최종 성문", new Vector3(-27f, 5f, 126f), new Vector3(27f, 16f, 165f)),
         };
 
