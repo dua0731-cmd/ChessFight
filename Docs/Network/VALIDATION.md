@@ -1,12 +1,12 @@
 # Network 구현 검증 기록
 
-## ★ 2026-11-09 빌드에서 Steam 연결 (R523) — 확인 목록
+## ★ 2026-11-09 빌드에서 Steam 연결 (R523) — 확인 목록 (1번 사용자 확인, 2~6번 확인 전)
 
-원인: Unity **File › Build Profiles**로 뽑은 빌드(`11.9 빌드파일`)에 `steam_appid.txt`가 없어, Steam이 켜져 있고 로그인돼 있어도 "No appID found"로 거절함(에디터는 프로젝트 루트의 파일로 됨, [PITFALLS 72](../Environment/PITFALLS.md)). AI 재현(이 PC, Steam 로그인 상태): 그 빌드의 `steam_api64.dll` 직접 초기화 — 파일 없음 실패 · 파일 있음 성공 · 파일 없이 `SteamAppId=480` 성공(Unity의 Mono에서도). 그 빌드 exe를 창 없이 실행 — 파일 없음: 25초 동안 Steam 클라이언트 라이브러리가 안 붙음, 파일을 exe 옆에 넣음: 1초 만에 붙음(다른 작업 폴더에서 켜도). **사람이 화면으로 본 확인은 아니다.** 고친 코드(빌드 후처리 `SteamAppIdBuildStep`, 실행 때 `SteamSession.EnsureAppId`, 실패 이유 로그)로 뽑은 빌드는 아직 없다. Core 171 · 세션 65 · 전체 컴파일 · 경계 검사 통과.
+원인: Unity **File › Build Profiles**로 뽑은 빌드(`11.9 빌드파일`)에 `steam_appid.txt`가 없어, Steam이 켜져 있고 로그인돼 있어도 "No appID found"로 거절함(에디터는 프로젝트 루트의 파일로 됨, [PITFALLS 72](../Environment/PITFALLS.md)). AI 재현(이 PC, Steam 로그인 상태): 그 빌드의 `steam_api64.dll` 직접 초기화 — 파일 없음 실패 · 파일 있음 성공 · 파일 없이 `SteamAppId=480` 성공(Unity의 Mono에서도). 그 빌드 exe를 창 없이 실행 — 파일 없음: 25초 동안 Steam 클라이언트 라이브러리가 안 붙음, 파일을 exe 옆에 넣음: 1초 만에 붙음(다른 작업 폴더에서 켜도). **1번은 사용자가 Steam에서 확인함**(11-09 "연결됐어": 파일을 넣은 그 빌드가 연결됨 — 원인이 빠진 파일이었음이 확인됨). 고친 코드(빌드 후처리 `SteamAppIdBuildStep`, 실행 때 `SteamSession.EnsureAppId`, 실패 이유 로그)로 뽑은 빌드는 아직 없다. Core 171 · 세션 65 · 전체 컴파일 · 경계 검사 통과.
 
 | # | 할 일 | 기대 | 결과 |
 |---|---|---|---|
-| 1 | 지금 있는 `11.9 빌드파일\ChessFighter.exe`를 Steam 로그인 상태에서 실행(AI가 exe 옆에 `steam_appid.txt`를 넣어 둠) | 인트로 상태 칩이 "STEAM 연결됨 · 이름", 로비에 내 파티가 생김 | 미확인 |
+| 1 | 지금 있는 `11.9 빌드파일\ChessFighter.exe`를 Steam 로그인 상태에서 실행(AI가 exe 옆에 `steam_appid.txt`를 넣어 둠) | 인트로 상태 칩이 "STEAM 연결됨 · 이름", 로비에 내 파티가 생김 | **성공**(11-09 사용자 "연결됐어") |
 | 2 | `main` Pull 뒤 **File › Build Profiles › Build**로 새 폴더에 빌드 | Console에 `[ChessFight] Copied steam_appid.txt next to the build: …`, 그 폴더의 exe 옆에 `steam_appid.txt` | 미확인 |
 | 3 | 2의 빌드를 Steam 로그인 상태에서 실행 | 1과 같이 연결됨 | 미확인 |
 | 4 | 3의 폴더에서 `steam_appid.txt`를 지우고 다시 실행 | 그래도 연결됨(게임이 App ID 480을 스스로 알려 줌) | 미확인 |
