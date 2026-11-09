@@ -752,7 +752,10 @@ namespace ChessFight.RagdollLab.Net
         void CheckRespawn(Runner r)
         {
             if (r.Pawn == null) return;
-            bool fell = r.Pawn.Hips.position.y < FallLimit || !r.Pawn.IsFinite();
+            // R531: and a pawn the physics engine has flung (PawnRushRunaway), at once - one was left in the sky. Not one a
+            // skill flies (the king's call).
+            var v = r.Pawn.Hips.linearVelocity;
+            bool fell = r.Pawn.Hips.position.y < FallLimit || !r.Pawn.IsFinite() || (!r.Pawn.OuterFlying && PawnRushRunaway.Flung(v.x, v.y, v.z));
             if (!fell && (r.RespawnTime < 0f || Time.time < r.RespawnTime)) return;
             r.RespawnTime = -1f;
             r.Driver.Teleport(r.RespawnAt, r.RespawnRotation);   // marks the next snapshot as a jump cut

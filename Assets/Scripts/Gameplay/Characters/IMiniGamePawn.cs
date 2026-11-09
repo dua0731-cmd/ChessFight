@@ -35,6 +35,9 @@ namespace ChessFight.Gameplay
         // has used (a charge is one use: F counts one capture per charge).
         bool SkillDashing { get; }
         int SkillUses { get; }
+        // R531: a flight a skill or a cheat drives (the king's call carrying a teammate in, the F1 flight): it may go
+        // faster than anything a course does, so the runaway respawn (PawnRushRunaway) leaves it alone.
+        bool Carried { get; }
         // When (Time.time) a knight's leap last landed, and where; -1 never.
         float KnightLandedAt { get; }
         Vector3 KnightLandedWhere { get; }

@@ -323,7 +323,10 @@ namespace ChessFight.PawnRush
             Mass(b, "Boarding quay", -10f, 10f, 27f, 33f, Upper);
             Rail(b, "Boarding quay rail W", -10.3f, -10f, 27f, 33f, Upper);
             Rail(b, "Boarding quay rail S", -10f, 8f, 26.7f, 27f, Upper);
-            b.Checkpoint(6, V(-4f, Upper, 30f), 0f, 8f);
+            // R531: CP6's trigger is the whole quay (it was 8 m across its west half, x -8..0, z 29..31: a runner off the dyke
+            // who went straight to the boats east of that never touched it, and a fall from the boats sent it back to CP5,
+            // between the robot arms - 11-09 build test). Its spots across the middle (x -5..5 at z 30, were -7.5..-0.5).
+            b.Checkpoint(6, V(0f, Upper, 30f), 0f, 20f).GetComponent<BoxCollider>().size = new Vector3(20f, 3f, 6f);
             // The reservoir (x -26..26, z 33..48.6, water at ReservoirY): falling in goes back to CP6.
             // R441: the wall's collider as it is drawn - west of the quay the spillway's crest (the water pours over it,
             // ReservoirY - 0.2), from there east flush with the quay and the dyke and on to the lock (x -10.4 .. 35: it

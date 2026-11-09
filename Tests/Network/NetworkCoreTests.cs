@@ -295,7 +295,7 @@ public static class NetworkCoreTests
                     Check(GrandStairHallRules.WingOpen(0, 6, seed) && GrandStairHallRules.WingOpen(1, 6, seed), "six a side: both");
                 }
                 Check(seen.Count == 2, "west and east both come up"); });
-            Test("Royal water garden boats: lanes from the seed, both ways, 24 m apart, sunk while they wrap", () => {
+            Test("Royal water garden boats: lanes from the seed, both ways, 24 m apart, sunk while they wrap, a wrap a cut (R531)", () => {
                 var speeds = new HashSet<double>(RoyalWaterGardenRules.Speeds);
                 var dirs = new int[2];
                 for (int seed = 1; seed <= 500; seed++)
@@ -336,6 +336,8 @@ public static class NetworkCoreTests
                                         Check(RoyalWaterGardenRules.BoatDrop(x) == RoyalWaterGardenRules.DiveDepth
                                               && RoyalWaterGardenRules.BoatDrop(before[k]) == RoyalWaterGardenRules.DiveDepth, "wraps only when sunk");
                                     else Check(Math.Abs(step - l.Dir * l.Speed * dt) < 1e-3, "lane speed, way");
+                                    // R531: the wrap is told as a cut (GardenBoat puts the body there), a step never is.
+                                    Check(RoyalWaterGardenRules.BoatWraps(l, k, t - dt, t) == (Math.Abs(step) > 1), "a wrap and only a wrap is a cut");
                                     before[k] = x;
                                     if (k == 1)
                                     {
@@ -2370,6 +2372,14 @@ public static class NetworkCoreTests
                 var none = RouteSummary.None;
                 Check(!none.Known && none.PingMs < 0, "no route known yet");
                 Check(new RouteSummary { Relayed = 1, PingMs = 30 }.Known, "a relayed route is a known one"); });
+            Test("Runaway pawn (R531): flung hips are past every speed a course gives, broken numbers too", () => {
+                Check(!PawnRushRunaway.Flung(0f, 0f, 0f) && !PawnRushRunaway.Flung(9.6f, 0f, 0f), "standing, the sprint");
+                Check(!PawnRushRunaway.Flung(0f, 14f, 8f) && !PawnRushRunaway.Flung(9.6f, 18f, 0f), "a launch pad, one taken at a sprint");
+                Check(!PawnRushRunaway.Flung(0f, -34.3f, 0f) && !PawnRushRunaway.Flung(28f, 6f, -4f), "a 60 m fall, the robot arm's hardest hit (29 m/s)");
+                Check(!PawnRushRunaway.Flung(32f, 0f, 9.6f) && !PawnRushRunaway.Flung(0f, -49.9f, 0f), "the rook's chain at a sprint, just under the line");
+                Check(PawnRushRunaway.Flung(1800f, 550f, -465f) && PawnRushRunaway.Flung(40f, 0f, 40f) && PawnRushRunaway.Flung(0f, -50.5f, 0f),
+                      "a wrapping boat's bat (11-09), fast sideways, a fall past the line");
+                Check(PawnRushRunaway.Flung(float.NaN, 0f, 0f) && PawnRushRunaway.Flung(0f, float.PositiveInfinity, 0f), "broken numbers"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

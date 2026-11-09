@@ -98,4 +98,21 @@ namespace ChessFight.Network
         public static bool OnPlatform(float dx, float dy, float dz, float radius) =>
             dx * dx + dz * dz <= radius * radius && dy >= -Below && dy <= Above;
     }
+
+    // R531: a pawn the physics engine has flung. A solid that moves far too fast in one physics step throws what its
+    // speculative contacts reach out at hundreds of m/s - the royal water garden's boats wrapping round their loop, 48 m
+    // in a step until R531 made that a cut (RoyalWaterGardenRules.BoatWraps): in the 11-09 build test a pawn on the quay,
+    // then one on the dyke, went up past the 320 m the snapshots reach and stayed in the sky, because the host put back
+    // only a pawn under the course. Nothing the courses and the skills do to a pawn comes near this speed (a launch pad
+    // 16-18 m/s, the sprint 9.6, the robot arm's hardest hit about 29, the rook's chain 32, a 60 m fall 34), so whoever
+    // simulates a pawn puts it back on its checkpoint the moment its hips go faster: the host (SteamPawnRushLink) and
+    // the offline playtest (PlaytestSpawner). A flight a skill drives (the king's call, IMiniGamePawn.Carried) is left
+    // alone: a long call carries a teammate in at over 100 m/s.
+    public static class PawnRushRunaway
+    {
+        public const float Speed = 50f;
+
+        // The hips' velocity; a NaN or an infinity counts as flung.
+        public static bool Flung(float x, float y, float z) => !(x * x + y * y + z * z <= Speed * Speed);
+    }
 }

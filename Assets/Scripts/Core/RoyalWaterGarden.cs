@@ -63,6 +63,14 @@ namespace ChessFight.Network
             return u - Loop * .5;
         }
 
+        // R531: whether a boat wraps round its loop (Loop / 2 to -Loop / 2, DiveDepth under the water) between two clock
+        // times. That is a cut, not a motion (GardenBoat.JumpsBetween): swept as a motion the boat crossed the reservoir's
+        // 48 m in one physics step, about 5760 m/s, and the physics engine's speculative contacts for so fast a body batted
+        // pawns standing tens of metres away on the quay and the dyke into the sky (the 11-09 build test). A step moves a
+        // boat a few centimetres, a wrap all but the whole loop.
+        public static bool BoatWraps(BoatLane lane, int boat, double from, double to) =>
+            Math.Abs(BoatX(lane, boat, to) - BoatX(lane, boat, from)) > Loop * .5;
+
         // How far below the deck's height a boat is at x: 0 in sight, sinking smoothly under the tunnels.
         public static double BoatDrop(double x)
         {

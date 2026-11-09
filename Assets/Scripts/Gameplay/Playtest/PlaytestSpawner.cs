@@ -1,4 +1,5 @@
 using ChessFight.Game;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.Gameplay
@@ -169,10 +170,23 @@ namespace ChessFight.Gameplay
             CatchLongFall(target);
             if (!flying && LegacyKeys.Down(KeyCode.Backspace)) Restart();
             else if ((!flying && LegacyKeys.Down(KeyCode.R)) || (target != null && target.position.y < fallLimit)
-                     || (respawnAt >= 0f && Time.time >= respawnAt))
+                     || Flung(target) || (respawnAt >= 0f && Time.time >= respawnAt))
                 Respawn();
             if (orbitCamera == null && cameraRig != null && target != null) cameraRig.Follow(target, Time.deltaTime);
         }
+
+        // R531: a ragdoll the physics engine has flung (hundreds of m/s, PawnRushRunaway) goes straight back, as on the host;
+        // not one a skill or the F1 cheat flies (IMiniGamePawn.Carried).
+        bool Flung(Transform target)
+        {
+            if (target == null || (driver is IMiniGamePawn pawn && pawn.Carried)) return false;
+            if (hipsBody == null || hipsBody.transform != target) hipsBody = target.GetComponent<Rigidbody>();
+            if (hipsBody == null || hipsBody.isKinematic) return false;
+            var v = hipsBody.linearVelocity;
+            return PawnRushRunaway.Flung(v.x, v.y, v.z);
+        }
+
+        Rigidbody hipsBody;
 
         // A long fall: the same as the water, a little sooner.
         void CatchLongFall(Transform target)

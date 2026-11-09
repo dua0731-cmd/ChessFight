@@ -21,7 +21,7 @@
 | 폰 생성 · 입력 | `PlaytestSpawner`가 Play 때 `RagdollPawn.prefab`(래그돌 폰, `RagdollDriver` = `ICharacterDriver`)을 시작점에 하나 만들고, 키보드 · 마우스를 `CharacterCommand`로 넘긴다. 카메라는 `OrbitCamera`(마우스 시점, 이동은 카메라 기준) |
 | 폰 러쉬 움직임 | 씬이 `CourseSkills.PawnRush = true`를 켜면 `PawnRushCourseSkills`가 저절로 붙어 모든 폰에 **폰 러쉬 전용 물리**(`PawnRushPhysicsParams`: 점프 4.9 m/s, 공중 중력, 턱 올라서기 등)와 **기물 스킬**(`PawnRushSkillParams`, 기획 쿨타임)을 넣는다. 코스 01과 같다 |
 | 스킬 | F = 스킬(룩 · 비숍은 F 조준 → 좌클릭), 오른쪽 아래 스킬 카드. 1~6으로 기물을 바꿔 각 기물 스킬을 시험 |
-| 낙사 · 복귀 | 맵의 `KillVolume` · `WaterZone` · `Checkpoint`를 스포너가 그대로 처리(1.5초 뒤 마지막 체크포인트). y −40 아래로 떨어져도 복귀 |
+| 낙사 · 복귀 | 맵의 `KillVolume` · `WaterZone` · `Checkpoint`를 스포너가 그대로 처리(1.5초 뒤 마지막 체크포인트). y −40 아래로 떨어져도 복귀. 골반이 50 m/s를 넘어도(물리 엔진이 쳐 낸 폰) 곧바로 복귀(R531, 경기 방장도 같음) |
 | 장애물 | 맵 안의 `Obstacle`(Spinner · Oscillator · Pendulum …)은 `ObstacleClock` 시간으로 움직이고, 위에 선 폰은 `IMovingSurface`로 같이 움직인다 |
 
 ## 3. 쓰는 법

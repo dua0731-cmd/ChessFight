@@ -40,6 +40,10 @@ namespace ChessFight.PawnRush
 
         RoyalWaterGardenRules.BoatLane Lane => new RoyalWaterGardenRules.BoatLane { Dir = dir, Speed = speed, Offset = offset };
 
+        // R531: the wrap under the water is a cut (RoyalWaterGardenRules.BoatWraps): put there, not swept 48 m in one step.
+        // The times are Evaluate's (the phase is in them).
+        protected override bool JumpsBetween(double from, double to) => RoyalWaterGardenRules.BoatWraps(Lane, boat, from, to);
+
         protected override void Evaluate(double time, out Vector3 position, out Quaternion rotation)
         {
             double x = RoyalWaterGardenRules.BoatX(Lane, boat, time);

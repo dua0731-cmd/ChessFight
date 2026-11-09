@@ -72,6 +72,7 @@ namespace ChessFight.RagdollLab
                                                            : (Pawn.handR != null ? Pawn.handR.Center : Pawn.Hips.position);
         public bool SkillDashing => Pawn.SkillDashing;
         public int SkillUses => Pawn.SkillUses;
+        public bool Carried => Pawn.OuterFlying;
         public float KnightLandedAt { get; private set; } = -1f;
         public Vector3 KnightLandedWhere { get; private set; }
         public void AddVelocity(Vector3 change) => Pawn.AddVelocity(change);
