@@ -194,6 +194,9 @@ namespace ChessFight.RagdollLab.Net
         readonly LatencyAverage applyWait = new LatencyAverage(64);
         readonly PressTimer presses = new PressTimer();
         string routeLine = "";
+        // R521: the same routes as numbers, and the players the host's last snapshot went to (the metrics box's card).
+        RouteSummary routes = RouteSummary.None;
+        int snapshotReceivers;
         // R306 [6] (HOST_AUTHORITY P3): this PC's own pawn drawn the lost-snapshot margin sooner (PlaybackDelay.LeadMs),
         // and the obstacles with it - a development build's A/B switch, off unless F7 or -ownLead turns it on.
         bool ownLead;
@@ -319,6 +322,7 @@ namespace ChessFight.RagdollLab.Net
             Seen = presses.Seen.Average, PressesTimed = presses.Seen.Count, PressesLost = presses.Lost, Route = routeLine,
             OwnLead = authority ? "" : ownLead ? $"내 폰 먼저 그리기 (P3, F7): 켜짐 · {ownLeadMs:F1} ms 먼저 (장애물도 내 폰 시각)"
                                                 : "내 폰 먼저 그리기 (P3, F7): 꺼짐",
+            Receivers = snapshotReceivers, Routes = routes,
         };
 
         void UpdateStats()
@@ -331,7 +335,8 @@ namespace ChessFight.RagdollLab.Net
             snapshotInRate = snapshotsIn;
             sentBytes = receivedBytes = snapshotsOut = snapshotsIn = 0;
             // R306 [0]: straight or through Steam's relays (a development build's metrics box).
-            routeLine = Debug.isDebugBuild ? SteamRoute.Line(session) : "";
+            routes = Debug.isDebugBuild ? SteamRoute.Summary(session) : RouteSummary.None;
+            routeLine = Debug.isDebugBuild ? SteamRoute.Line(session, routes) : "";
         }
 
         void OnDestroy()
@@ -798,6 +803,7 @@ namespace ChessFight.RagdollLab.Net
             snapshotsOut++;
             int receivers = 0;
             foreach (var id in session.Roster.Keys) if (Send(id, bytes, false)) receivers++;
+            snapshotReceivers = receivers;
             SendSkills(stamp);
             // The course state 30 times a second whatever the snapshots' rate (R306 [5]): its stations and pads change
             // slowly, and the clients play it at its host time.

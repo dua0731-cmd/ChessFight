@@ -186,6 +186,9 @@ namespace ChessFight.RagdollLab
         readonly LatencyAverage applyWait = new LatencyAverage(64);
         readonly PressTimer presses = new PressTimer();
         string routeLine = "";
+        // R521: the same routes as numbers, and the players the host's last snapshot went to (the metrics box's card).
+        RouteSummary routes = RouteSummary.None;
+        int snapshotReceivers;
         // A client: how long the host has been silent (R295: from its first packet or the shared start).
         readonly HostSilence hostSilence = new HostSilence();
         float savedMaxFrameStep = -1f;
@@ -322,8 +325,13 @@ namespace ChessFight.RagdollLab
         /// <summary>R118: the line the session shows for a few seconds when the host role moves ("" otherwise).</summary>
         public virtual string HostNote => "";
         /// <summary>R306 [0]: how the packets go, for the metrics box (Steam: straight or through relays, and the ping; read
-        /// once a second).</summary>
-        protected virtual string NetRoute => NetKind;
+        /// once a second) - the line, and since R521 the same as numbers (<see cref="RouteSummary.None"/> where it is not
+        /// Steam).</summary>
+        protected virtual string ReadRoute(out RouteSummary route)
+        {
+            route = RouteSummary.None;
+            return NetKind;
+        }
         /// <summary>The online panel (F3); the test screen opens it while no match is on.</summary>
         public bool PanelShown { get => hudOpen; set => hudOpen = value; }
 
@@ -372,6 +380,7 @@ namespace ChessFight.RagdollLab
             SnapshotRateTarget = (int)Math.Round(1d / snapshotInterval), JitterMs = delay.JitterMs, IntervalMs = delay.IntervalMs,
             ApplyWaitMs = applyWait.Average, Answered = presses.Answered.Average, AnsweredLast = presses.Answered.Last,
             Seen = presses.Seen.Average, PressesTimed = presses.Seen.Count, PressesLost = presses.Lost, Route = routeLine,
+            Receivers = snapshotReceivers, Routes = routes,
         };
 
         // ---- R306 [0]: the latencies the metrics box and the test panel show
@@ -633,6 +642,7 @@ namespace ChessFight.RagdollLab
                 Send(id, bytes);
                 if (!BotIdentity.IsBot(id)) receivers++;
             }
+            snapshotReceivers = receivers;
             // R306 [5]: the next snapshot's interval, by the players it goes to and the pawns in it.
             snapshotInterval = Before.Always30 ? SnapshotRate.Normal : SnapshotRate.Interval(receivers, outgoing.Count);
             SendSkills(stamp);
@@ -1642,7 +1652,12 @@ namespace ChessFight.RagdollLab
             swordStateRate = swordStateBytes;
             sentBytes = receivedBytes = snapshotsIn = skillBytes = skillPackets = skillPacketMax = snapshotsOut = physicsSteps = swordStateBytes = 0;
             // R306 [0]: how the packets go, for the metrics box and the test panel (a development build's).
-            routeLine = matchActive && Debug.isDebugBuild ? NetRoute : "";
+            if (matchActive && Debug.isDebugBuild) routeLine = ReadRoute(out routes);
+            else
+            {
+                routeLine = "";
+                routes = RouteSummary.None;
+            }
             UpdatePeerStats();
             // R306: the latencies in the log every five seconds (-labTrace), for before/after runs without screenshots.
             if (Trace && matchActive && ++traceSeconds % 5 == 0) TraceLatency();

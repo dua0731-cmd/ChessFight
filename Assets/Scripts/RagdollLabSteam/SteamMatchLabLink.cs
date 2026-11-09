@@ -38,7 +38,11 @@ namespace ChessFight.RagdollLab.Net
         protected override Dictionary<ulong, LabSeat> NetRoster => roster;
         protected override string NetName(ulong id) => session.Name(id);
         protected override string NetKind => "스팀";
-        protected override string NetRoute => SteamRoute.Line(session);
+        protected override string ReadRoute(out RouteSummary route)
+        {
+            route = SteamRoute.Summary(session);
+            return SteamRoute.Line(session, route);
+        }
         protected override double NetServerSeconds() => SteamUtils.GetServerRealTime();
 
         protected override void Awake()

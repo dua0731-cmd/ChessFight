@@ -25,22 +25,42 @@ namespace ChessFight.Network
             return true;
         }
 
-        /// <summary>The metrics box's line: on a client its route to the host; on the host how many players go straight
-        /// and how many through relays, and the worst ping. A string a call: read it once a second, not every frame.</summary>
-        public static string Line(SteamSession session)
+        /// <summary>R521: the routes as numbers for the metrics box: on a client its route to the host; on the host how many
+        /// players go straight and how many through relays (bots and itself not counted), and the worst ping. It asks Steam
+        /// once a player: read it once a second, not every frame.</summary>
+        public static RouteSummary Summary(SteamSession session)
         {
-            if (session == null || session.Match == 0) return "";
+            var route = RouteSummary.None;
+            if (session == null || session.Match == 0) return route;
             if (!session.IsHost)
-                return Read(session.Host, out bool relayed, out int ping) ? $"{(relayed ? "릴레이" : "직접")} · Steam 핑 {ping} ms" : "방장과 연결 정보 없음";
-            int direct = 0, relays = 0, worst = -1;
+            {
+                if (Read(session.Host, out bool relayed, out int ping))
+                {
+                    if (relayed) route.Relayed = 1;
+                    else route.Direct = 1;
+                    route.PingMs = ping;
+                }
+                return route;
+            }
             foreach (ulong id in session.Roster.Keys)
             {
                 if (id == session.Self || BotIdentity.IsBot(id) || !Read(id, out bool viaRelay, out int ms)) continue;
-                if (viaRelay) relays++;
-                else direct++;
-                if (ms > worst) worst = ms;
+                if (viaRelay) route.Relayed++;
+                else route.Direct++;
+                if (ms > route.PingMs) route.PingMs = ms;
             }
-            return direct + relays == 0 ? "참가자와 연결 정보 없음" : $"직접 {direct}명 · 릴레이 {relays}명 · Steam 핑 최대 {worst} ms";
+            return route;
+        }
+
+        /// <summary>The metrics box's line for <paramref name="route"/> (<see cref="Summary"/>): on a client its route to the
+        /// host, on the host how many players go straight and how many through relays, and the worst ping. Empty outside a
+        /// match.</summary>
+        public static string Line(SteamSession session, RouteSummary route)
+        {
+            if (session == null || session.Match == 0) return "";
+            if (!session.IsHost)
+                return route.Known ? $"{(route.Relayed > 0 ? "릴레이" : "직접")} · Steam 핑 {route.PingMs} ms" : "방장과 연결 정보 없음";
+            return route.Known ? $"직접 {route.Direct}명 · 릴레이 {route.Relayed}명 · Steam 핑 최대 {route.PingMs} ms" : "참가자와 연결 정보 없음";
         }
     }
 }

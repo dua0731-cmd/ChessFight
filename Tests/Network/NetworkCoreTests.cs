@@ -2284,6 +2284,41 @@ public static class NetworkCoreTests
                 Check(acked == confirmed, "a later 0 or an older number changes nothing");
                 SkillWire.TakeAck(unchecked((ushort)(confirmed + 5)), ref acked, ref set);
                 Check(acked == unchecked((ushort)(confirmed + 5)), "a newer one moves it on"); });
+            Test("Metrics box grades (R521): green, orange and red at each number's two lines; grey while nothing is measured", () => {
+                Check(NetHealth.Fps(60) == NetGrade.Good && NetHealth.Fps(55) == NetGrade.Good && NetHealth.Fps(45) == NetGrade.Warn
+                      && NetHealth.Fps(29) == NetGrade.Bad && NetHealth.Fps(0) == NetGrade.None, "frames: green from 55, orange from 30");
+                Check(NetHealth.Ping(40) == NetGrade.Good && NetHealth.Ping(80) == NetGrade.Good && NetHealth.Ping(81) == NetGrade.Warn
+                      && NetHealth.Ping(150) == NetGrade.Warn && NetHealth.Ping(151) == NetGrade.Bad, "ping: 80 and 150 ms");
+                Check(NetHealth.Ping(0) == NetGrade.None && NetHealth.Ping(-1) == NetGrade.None, "no round trip yet is grey, not green");
+                Check(NetHealth.AtMost(0, NetHealth.PingGood, NetHealth.PingWarn) == NetGrade.Good, "Steam's 0 ms on a LAN is green");
+                Check(NetHealth.Felt(120) == NetGrade.Good && NetHealth.Felt(200) == NetGrade.Warn && NetHealth.Felt(300) == NetGrade.Bad
+                      && NetHealth.Felt(-1) == NetGrade.None, "a press until it shows: 150 and 250 ms");
+                Check(NetHealth.Loss(0) == NetGrade.Good && NetHealth.Loss(0.01) == NetGrade.Good && NetHealth.Loss(0.03) == NetGrade.Warn
+                      && NetHealth.Loss(0.06) == NetGrade.Bad, "loss: 1% and 5%");
+                Check(NetHealth.Jitter(4) == NetGrade.Good && NetHealth.Jitter(20) == NetGrade.Warn && NetHealth.Jitter(31) == NetGrade.Bad, "jitter: 10 and 30 ms");
+                Check(NetHealth.Snapshots(60, 60) == NetGrade.Good && NetHealth.Snapshots(54, 60) == NetGrade.Good
+                      && NetHealth.Snapshots(40, 60) == NetGrade.Warn && NetHealth.Snapshots(19, 60) == NetGrade.Bad, "60 aimed at: green from 54, orange from 20");
+                Check(NetHealth.Snapshots(27, 30) == NetGrade.Good && NetHealth.Snapshots(25, 30) == NetGrade.Warn
+                      && NetHealth.Snapshots(0, 30) == NetGrade.Bad && NetHealth.Snapshots(5, 0) == NetGrade.None, "30 aimed at: green from 27; no rate is grey");
+                Check(NetHealth.Pace(1.0) == NetGrade.Good && NetHealth.Pace(0.9) == NetGrade.Warn && NetHealth.Pace(0.5) == NetGrade.Bad
+                      && NetHealth.Pace(-1) == NetGrade.None, "physics against real time: 95% and 80%");
+                Check(NetHealth.Upload(261) == NetGrade.Good && NetHealth.Upload(500) == NetGrade.Warn && NetHealth.Upload(900) == NetGrade.Bad, "upload: 350 and 700 KB/s");
+                Check(NetHealth.Worse(NetGrade.None, NetGrade.Good) == NetGrade.Good && NetHealth.Worse(NetGrade.Warn, NetGrade.Good) == NetGrade.Warn
+                      && NetHealth.Worse(NetGrade.Warn, NetGrade.Bad) == NetGrade.Bad, "the head shows the worst; grey counts for nothing");
+                Check(NetHealth.AtMost(double.NaN, 1, 2) == NetGrade.None && NetHealth.AtLeast(double.NaN, 2, 1) == NetGrade.None, "NaN is not measured"); });
+            Test("Metrics box grades (R521): the lines agree with the snapshot rates, the jitter buffer and twelve players' upload", () => {
+                Check(NetHealth.TargetFromInterval(1000.0 / 60) == 60 && NetHealth.TargetFromInterval(1000.0 / 30) == 30
+                      && NetHealth.TargetFromInterval(0) == 30 && NetHealth.TargetFromInterval(PlaybackDelay.DefaultIntervalMs) == 30, "a client reads 30 or 60 from the interval");
+                int slow = (int)Math.Round(1 / SnapshotRate.Normal);
+                Check(NetHealth.Snapshots(slow, slow) == NetGrade.Good && NetHealth.RateWarn < slow, "the slow rate itself is green, and its shortfall orange before red");
+                Check(NetHealth.LossWarn <= PlaybackDelay.LossyShare, "red by the time the jitter buffer waits a snapshot more for losses");
+                Check(NetHealth.JitterGood > PlaybackDelay.FreeJitterMs, "the jitter that costs nothing is green");
+                double twelve = SnapshotRate.SnapshotBytes(12) * (1 / SnapshotRate.Normal) * 11 / 1024.0;
+                Check(twelve < NetHealth.UploadGood && twelve > NetHealth.UploadGood / 2, "twelve players at 30 a second (" + twelve.ToString("0") + " KB/s) are green, not far under the line");
+                Check(NetHealth.FpsGood <= 1 / SnapshotRate.Fast, "60 frames a second is green");
+                var none = RouteSummary.None;
+                Check(!none.Known && none.PingMs < 0, "no route known yet");
+                Check(new RouteSummary { Relayed = 1, PingMs = 30 }.Known, "a relayed route is a known one"); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}
