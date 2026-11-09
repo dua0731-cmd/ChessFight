@@ -31,6 +31,24 @@ class TypewriterTests(unittest.TestCase):
             section=re.search(r'^  '+name+r':\n((?:  - .*\n)+)',block,re.M)[1]
             self.assertEqual(len(re.findall('fileID:',section)),20)
 
+    def test_labels_and_supports_share_the_same_physical_row_order(self):
+        room.CompleteWarRoom.setUpClass();r=room.CompleteWarRoom()
+        _,_,block=r.scripts_of('TypewriterStairs')[0]
+        def refs(name):
+            section=re.search(r'^  '+name+r':\n((?:  - .*\n)+)',block,re.M)[1]
+            return re.findall(r'fileID: (\d+)',section)
+        def owner(ref):return room.number(fields(r.data[ref])['m_GameObject'])
+        for index,(key,area,face,visual) in enumerate(zip(refs('keys'),refs('keyAreas'),refs('keyFaces'),refs('keyVisuals'))):
+            go=owner(key)
+            self.assertEqual(r.names[go],f'Key {index//4}-{index%4}')
+            self.assertEqual(owner(area),go)
+            key_transform=r.owners[go]
+            for child in (face,str(r.owners[owner(visual)])):
+                self.assertEqual(room.number(fields(r.data[child])['m_Father']),key_transform)
+        for index,face in enumerate(refs('clueFaces')):
+            parent=room.number(fields(r.data[face])['m_Father'])
+            self.assertEqual(r.names[owner(str(parent))],f'Memory clue {index+1}')
+
     def test_entrance_floor_seam_and_interior_clearance(self):
         room.CompleteWarRoom.setUpClass();r=room.CompleteWarRoom()
         for z in (-26,-19,-12,-9):

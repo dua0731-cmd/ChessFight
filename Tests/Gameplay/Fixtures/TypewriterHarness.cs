@@ -8,7 +8,7 @@ namespace UnityEngine {
  public class SerializeField:Attribute {} public class DefaultExecutionOrder:Attribute { public DefaultExecutionOrder(int n){} } public class RequireComponent:Attribute {public RequireComponent(Type t){}} public class MinAttribute:Attribute {public MinAttribute(float f){}}
  public class MonoBehaviour {public bool enabled=true;public bool isActiveAndEnabled=true;public Transform transform=new Transform();public T GetComponentInParent<T>() where T:class=>null;public T GetComponent<T>() where T:new()=>new T();}
  public class GameObject {public bool activeInHierarchy=true;public Transform transform=new Transform();public GameObject(){}public GameObject(string n){}public T AddComponent<T>() where T:new()=>new T();public T GetComponent<T>() where T:new()=>new T();}
- public class Transform {public Vector3 position,localScale,lossyScale=Vector3.one;public object rotation;public Transform parent;public Vector3 localPosition,up=Vector3.up;public void SetParent(Transform t,bool b){}public Vector3 TransformPoint(Vector3 v)=>position+v;public Vector3 InverseTransformPoint(Vector3 v)=>v-position;public Vector3 TransformDirection(Vector3 v)=>v;}
+ public class Transform {public Vector3 position,localScale,lossyScale=Vector3.one;public object rotation;public Transform parent;public Vector3 localPosition,up=Vector3.up;public bool IsChildOf(Transform t)=>this==t||parent==t;public void SetParent(Transform t,bool b){}public Vector3 TransformPoint(Vector3 v)=>position+v;public Vector3 InverseTransformPoint(Vector3 v)=>v-position;public Vector3 TransformDirection(Vector3 v)=>v;}
  public struct Vector3 {public float x,y,z;public Vector3(float a,float b,float c){x=a;y=b;z=c;}public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 back=>new Vector3(0,0,-1);public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3 operator*(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);public static Vector3 Scale(Vector3 a,Vector3 b)=>new Vector3(a.x*b.x,a.y*b.y,a.z*b.z);}
  public struct Color {public static Color white=>default(Color);public static Color black=>default(Color);public static Color red=>default(Color);}
  public class Font {public object material;}
@@ -22,7 +22,7 @@ namespace UnityEngine {
  public class Renderer {public void SetPropertyBlock(MaterialPropertyBlock m){}}
  public class MeshRenderer:Renderer {public object sharedMaterial;public Bounds localBounds;}
  public class MaterialPropertyBlock {public void Clear(){}}
- public class Collider {public ImportedObstacleActor actor;public Transform transform=new Transform();public GameObject gameObject=new GameObject();}
+ public class Collider {public TypewriterKey key;public T GetComponentInParent<T>() where T:class=>key as T;public ImportedObstacleActor actor;public Transform transform=new Transform();public GameObject gameObject=new GameObject();}
  public class BoxCollider:Collider {public Vector3 center,size;public Bounds bounds=>new Bounds {center=transform.TransformPoint(center),size=size};}
  public static class Time {public static float time,fixedDeltaTime=.02f;}
  public static class Mathf {public static float Min(float a,float b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Abs(float a)=>Math.Abs(a);public static float Clamp(float n,float a,float b)=>Math.Max(a,Math.Min(b,n));public static float MoveTowards(float a,float b,float d)=>Math.Abs(b-a)<=d?b:a+Math.Sign(b-a)*d;}
@@ -32,7 +32,7 @@ namespace UnityEngine {
 }
 namespace ChessFight.Game {public static class RuntimePanels {public static Font KoreanFont;}public static class LitMaterials {public static void SetColor(MaterialPropertyBlock m,Color c){}}}
 namespace ChessFight.Gameplay {public class Obstacle:MonoBehaviour{} public interface IMovingSurface {Quaternion DeltaRotation{get;}Vector3 PointVelocity(Vector3 p);}}
-namespace ChessFight.ProtectKing {public class ObstacleContext {public bool Running=true,Authority=true;}public class ImportedObstacleActor {public bool CanReceiveObstacle=true,Grounded=true;public Vector3 Position,Impulse;public int hits;public static ImportedObstacleActor Find(Collider c)=>c.actor;public void AddObstacleHit(Vector3 v,float stun){hits++;Impulse=v;}}}
+namespace ChessFight.ProtectKing {public class ObstacleContext {public bool Running=true,Authority=true;}public class ImportedObstacleActor {public bool CanReceiveObstacle=true,Grounded=true;public Vector3 Position,Impulse;public Collider support;public bool TryGetGroundCollider(out Collider c){c=support;return Grounded&&c!=null;}public int hits;public static ImportedObstacleActor Find(Collider c)=>c.actor;public void AddObstacleHit(Vector3 v,float stun){hits++;Impulse=v;}}}
 class Harness {
  static void Check(bool b,string m){if(!b)throw new Exception(m);}
  static void Set(object o,string field,object v)=>o.GetType().GetField(field,BindingFlags.NonPublic|BindingFlags.Instance).SetValue(o,v);
@@ -58,12 +58,22 @@ class Harness {
   Set(stairs,"keyboardWell",new BoxCollider{center=new Vector3(30,.15f,0),size=new Vector3(65,2,5)});
   var context=new ObstacleContext();Set(stairs,"context",context);
   var actor=new ImportedObstacleActor{Position=new Vector3(safeIndex*3,.25f,0)};Physics.found=new[]{new Collider{actor=actor},new Collider{actor=actor}};
+  actor.support=new Collider{key=keys[safeIndex]};
   Tick(stairs,0);Check(actor.hits==0,"Safe row key and reaching hands ignored");
   actor.Position=new Vector3(wrongIndex*3,.25f,0);actor.Grounded=false;Tick(stairs,.1f);Check(actor.hits==0,"Airborne crossing");
-  actor.Grounded=true;actor.Position=new Vector3(wrongIndex*3,-2,0);Tick(stairs,.2f);Check(actor.hits==0,"Below-key contact");
-  actor.Position=new Vector3(wrongIndex*3,.25f,0);Tick(stairs,.3f);Check(actor.hits==1&&actor.Impulse.z==-12&&actor.Impulse.y==6,"Wrong grounded key");
+  actor.Grounded=true;actor.support=null;actor.Position=new Vector3(wrongIndex*3,-2,0);Tick(stairs,.2f);Check(actor.hits==0,"Below-key contact");
+  actor.support=new Collider{key=keys[wrongIndex]};actor.Position=new Vector3(wrongIndex*3,.25f,0);Tick(stairs,.3f);Check(actor.hits==1&&actor.Impulse.z==-12&&actor.Impulse.y==6,"Wrong grounded key");
   Tick(stairs,.4f);Check(actor.hits==1,"No multiple impulses");context.Authority=false;Tick(stairs,2);Check(actor.hits==1,"Authority guard");context.Authority=true;
+  actor.support=new Collider();actor.support.transform.parent=((BoxCollider)typeof(TypewriterStairs).GetField("keyboardWell",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(stairs)).transform;
   actor.Position=new Vector3(1.5f,0,1.5f);Tick(stairs,3);Check(actor.hits==2,"Keyboard gaps cannot bypass the puzzle");
+  // Every physical row has a safe support, including a hip projection outside the circular key.
+  int priorHits=actor.hits;
+  for(int row=0;row<5;row++) {
+   int index=row*4;while(!puzzle.Safe(index))index++;
+   actor.support=new Collider{key=keys[index]};actor.Position=new Vector3(1.5f,0,1.5f);
+   Tick(stairs,10+row*2);Check(actor.hits==priorHits,"Safe support edge must not become a gap hit");
+  }
+  actor.support=new Collider();Tick(stairs,21);Check(actor.hits==priorHits,"Unrelated supporting floor is not keyboard bed");
   var spring=new TypewriterKey();Set(spring,"body",new Rigidbody());spring.SetPressed(true);
   var step=typeof(TypewriterKey).GetMethod("FixedUpdate",BindingFlags.NonPublic|BindingFlags.Instance);
   for(int i=0;i<20;i++)step.Invoke(spring,null);

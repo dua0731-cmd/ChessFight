@@ -21,17 +21,22 @@ namespace ChessFight.ProtectKing
         Rigidbody MainBody => driver.FollowTarget != null ? driver.FollowTarget.GetComponent<Rigidbody>() : null;
         public Vector3 Velocity => MainBody != null ? MainBody.linearVelocity : Vector3.zero;
         public bool CanReceiveObstacle => isActiveAndEnabled && hits != null && (MainBody == null || !MainBody.isKinematic);
-        public bool Grounded
+        public bool Grounded => TryGetGroundCollider(out _);
+        // Return the support used for grounding, rather than guessing a surface from hip position.
+        public bool TryGetGroundCollider(out Collider support)
         {
-            get
+            support = null;
+            if (!isActiveAndEnabled || Velocity.y > 1.5f) return false;
+            int n = Physics.SphereCastNonAlloc(Position + Vector3.up * .24f, .15f, Vector3.down,
+                groundHits, .4f, ~0, QueryTriggerInteraction.Ignore);
+            float nearest = float.PositiveInfinity;
+            for (int i = 0; i < n; i++)
             {
-                if (!isActiveAndEnabled || Velocity.y > 1.5f) return false;
-                int n = Physics.SphereCastNonAlloc(Position + Vector3.up * .24f, .15f, Vector3.down,
-                    groundHits, .4f, ~0, QueryTriggerInteraction.Ignore);
-                for (int i = 0; i < n; i++)
-                    if (!groundHits[i].collider.transform.IsChildOf(owner.transform) && groundHits[i].normal.y > .55f) return true;
-                return false;
+                var hit = groundHits[i];
+                if (hit.collider.transform.IsChildOf(owner.transform) || hit.normal.y <= .55f || hit.distance >= nearest) continue;
+                nearest = hit.distance; support = hit.collider;
             }
+            return support != null;
         }
         ImportedObstacleActor(Component owner, ICharacterDriver driver)
         {

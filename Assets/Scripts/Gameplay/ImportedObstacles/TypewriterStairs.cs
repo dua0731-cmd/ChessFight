@@ -91,28 +91,29 @@ namespace ChessFight.ProtectKing
                 int count = Physics.OverlapBoxNonAlloc(area.transform.TransformPoint(area.center),
                     Vector3.Scale(area.size * .5f, new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z))),
                     overlaps, area.transform.rotation, ~0, QueryTriggerInteraction.Ignore);
-                for (int j = 0; j < count; j++)
-                {
-                    var actor = ImportedObstacleActor.Find(overlaps[j]);
-                    if (actor == null || !actor.CanReceiveObstacle || !actor.Grounded) continue;
-                    Vector3 foot = area.transform.InverseTransformPoint(actor.Position) - area.center;
-                    Vector3 half = area.size * .5f;
-                    // A reaching hand, an airborne crossing or a pawn below the step cannot press a key.
-                    if (foot.x * foot.x + foot.z * foot.z > 1.4f * 1.4f || Mathf.Abs(foot.y) > half.y || !visited.Add(actor)) continue;
-                    keys[i].SetPressed(true);
-                    if (!IsSafe(i)) Hit(actor, now, i);
-                }
+                for (int j = 0; j < count; j++) CheckSupport(ImportedObstacleActor.Find(overlaps[j]), now);
             }
-            // The dark bed between round keys is also unsafe; it cannot become a shortcut below them.
             var well = keyboardWell.bounds;
             int n = Physics.OverlapBoxNonAlloc(well.center, well.extents, overlaps, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < n; i++) CheckSupport(ImportedObstacleActor.Find(overlaps[i]), now);
+        }
+        void CheckSupport(ImportedObstacleActor actor, float now)
+        {
+            if (actor == null || !actor.CanReceiveObstacle || !visited.Add(actor) ||
+                !actor.TryGetGroundCollider(out var support)) return;
+            // The actual supporting collider wins, even when the hips project into a gap.
+            var key = support.GetComponentInParent<TypewriterKey>();
+            if (key != null)
             {
-                var actor = ImportedObstacleActor.Find(overlaps[i]);
-                if (actor == null || !actor.CanReceiveObstacle || !actor.Grounded || visited.Contains(actor)) continue;
-                if (!well.Contains(actor.Position)) continue;
-                visited.Add(actor); Hit(actor, now, -1);
+                int index = Array.IndexOf(keys, key);
+                if (index < 0) return;
+                key.SetPressed(true);
+                if (!IsSafe(index)) Hit(actor, now, index);
+                return;
             }
+            // Only a grounded contact on this keyboard's bed can count as a gap failure.
+            if (support.transform.IsChildOf(keyboardWell.transform) && keyboardWell.bounds.Contains(actor.Position))
+                Hit(actor, now, -1);
         }
         void Hit(ImportedObstacleActor actor, float now, int key)
         {
