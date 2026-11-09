@@ -1,4 +1,5 @@
 using ChessFight.Game;
+using ChessFight.Gameplay;
 using ChessFight.Network;
 using UnityEngine;
 
@@ -130,9 +131,22 @@ namespace ChessFight.RagdollLab
                 pawnSkinMaterial = skin.sharedMaterial;
             }
             SwapSkinMesh(look.sharedMesh);
-            skin.sharedMaterial = look.sharedMaterial;
+            skin.sharedMaterial = PieceMaterial(look.sharedMaterial);
             if (VisualSync != null) VisualSync.SetPieceLook(look.transform);
             return true;
+        }
+
+        /// <summary>
+        /// R527 (user 11-09 build test, 4: "흑팀 승격 기물들 모델링 넣어야 함" → "흑팀 기물 어둡게 칠하기"): on Pawn Rush a black
+        /// team pawn's piece wears the dark set, Resources/PieceModels/Black/&lt;piece&gt; (Tools/PieceRig/black_set.py: the
+        /// same atlas with an ebony body and gold hands, shoes and eyes); every other piece, and a piece without a dark
+        /// material, the model's own. Both teams' promoted pieces used to wear the one cream set.
+        /// </summary>
+        Material PieceMaterial(Material own)
+        {
+            if (PawnRushPhysics == null || team != Teams.Black) return own;
+            var dark = Resources.Load<Material>("PieceModels/Black/" + piece);
+            return dark != null ? dark : own;
         }
 
         /// <summary>

@@ -86,8 +86,11 @@ namespace ChessFight.RagdollLab
             get => team;
             set
             {
+                bool changed = team != value;
                 team = value;
                 if (ownColliders != null) TeamBodies.Set(this, team, ownColliders);
+                // R527: a promoted piece's look is the team's (the black team's dark set): a team change redresses it.
+                if (changed && piece != ChessFight.Network.PieceKind.Pawn) ShowPiece();
             }
         }
 

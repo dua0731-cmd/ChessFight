@@ -378,7 +378,7 @@ RAGDOLL.md 5절 규칙을 반드시 지키세요. 특히 Assets/Scripts 코드�
 
 1. **Blender:** `blender -b -P Tools/PieceRig/rig_pawnrush.py -- Assets/Art/PawnRushRig` (기본 6개: Pawn King Queen Rook Bishop Knight). 폰은 `Art/Pawn/Pawn.fbx`, 기물은 `Art/Pieces/<기물>/<기물>_Rigged.fbx`를 읽어 `PawnRushRig/<이름>_Rigged_PawnRush.fbx`를 쓴다(.meta는 `King_Rigged.fbx.meta` 설정 복사, guid 새로).
 2. **Unity:** ChessFight > Ragdoll Lab > **Bake Pawn Rush Piece Models**(`PieceModelBaker.BakePawnRush`) → `PawnRushRig/<이름>_Skinned_PawnRush.asset`, `Resources/PieceModels/PawnRush/<이름>.prefab`(폰은 표시 없이 메시만, 재질은 팀 색 그대로).
-3. **게임:** `RagdollPawn.ShowPieceModel`이 `PawnRushPhysics`가 있으면 `PieceModels/PawnRush/<기물>`을 먼저 찾고(없으면 공유), 폰은 `ShowPawnRushPawnMesh`가 메시만 바꾼다. `PawnRushPhysics`를 넣는 순간(`PawnRushCourseSkills`) 다시 입힌다. 구운 파일이 없으면 예전 모델 그대로라 안전하다.
+3. **게임:** `RagdollPawn.ShowPieceModel`이 `PawnRushPhysics`가 있으면 `PieceModels/PawnRush/<기물>`을 먼저 찾고(없으면 공유), 폰은 `ShowPawnRushPawnMesh`가 메시만 바꾼다. (R527) 폰 러쉬의 **흑팀** 기물은 재질만 `Resources/PieceModels/Black/<기물>.mat`(흑단색 몸 · 금색 손 · 신발 · 눈, 텍스처 `Art/Pieces/<기물>/<기물>_Black_Albedo.png`)으로 입는다(`PieceMaterial`). 텍스처는 `Tools/PieceRig/black_set.py`(numpy · Pillow)가 원본 아틀라스를 다시 칠해 만든다: 아주 검은 핵심에서 이어진 어두운 부분 → 금색, 나머지 몸 → 흑단색, 눈의 흰 반짝임 · 분홍 볼 그대로. 팀이 바뀌면(`Team`) 승격한 기물을 다시 입힌다. 재질이 없으면 원래 재질. `PawnRushPhysics`를 넣는 순간(`PawnRushCourseSkills`) 다시 입힌다. 구운 파일이 없으면 예전 모델 그대로라 안전하다.
 
 | 바꾼 칠하기 | 예전 | 폰 러쉬 |
 |---|---|---|
