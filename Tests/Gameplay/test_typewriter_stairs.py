@@ -25,11 +25,11 @@ class TypewriterTests(unittest.TestCase):
         self.assertNotIn('keyLetters',f)
         clue_section=re.search(r'^  clueFaces:\n((?:  - .*\n)+)',block,re.M)[1]
         self.assertEqual(len(re.findall('fileID:',clue_section)),5)
-        self.assertEqual(len(r.scripts_of('TypewriterKey')),20)
+        self.assertEqual(len(r.scripts_of('TypewriterKey')),23)
         self.assertNotIn('fileID: 0',f['documentFace'])
         for name in ('keyAreas','keyFaces','keyVisuals','keys'):
             section=re.search(r'^  '+name+r':\n((?:  - .*\n)+)',block,re.M)[1]
-            self.assertEqual(len(re.findall('fileID:',section)),20)
+            self.assertEqual(len(re.findall('fileID:',section)),23)
 
     def test_labels_and_supports_share_the_same_physical_row_order(self):
         room.CompleteWarRoom.setUpClass();r=room.CompleteWarRoom()
@@ -40,7 +40,11 @@ class TypewriterTests(unittest.TestCase):
         def owner(ref):return room.number(fields(r.data[ref])['m_GameObject'])
         for index,(key,area,face,visual) in enumerate(zip(refs('keys'),refs('keyAreas'),refs('keyFaces'),refs('keyVisuals'))):
             go=owner(key)
-            self.assertEqual(r.names[go],f'Key {index//4}-{index%4}')
+            row=next(row for row,start in enumerate((0,5,9,14,18)) if start<=index<start+(5 if row%2==0 else 4))
+            start=(0,5,9,14,18)[row]
+            self.assertEqual(r.names[go],f'Key {row}-{index-start}')
+            pos=room.transform(r.data,r.owners[go])
+            self.assertAlmostEqual(pos[0],(index-start-(2 if row%2==0 else 1.5))*3)
             self.assertEqual(owner(area),go)
             key_transform=r.owners[go]
             for child in (face,str(r.owners[owner(visual)])):
@@ -61,3 +65,28 @@ class TypewriterTests(unittest.TestCase):
         names=set(r.names.values())
         self.assertTrue({'Black platen roller','Round brass key rim','Paper backing','Ink ribbon spool -1'}<=names)
         for i in range(1,6):self.assertIn('Memory clue '+str(i),names)
+
+    def test_display_clearance_and_door_match_typewriter_exit(self):
+        room.CompleteWarRoom.setUpClass();r=room.CompleteWarRoom()
+        def box(name):return next((lo,hi) for n,lo,hi,_ in r.boxes if n==name)
+        left,right=box('Inside typewriter wall -1'),box('Inside typewriter wall 1')
+        self.assertAlmostEqual(left[1][0],-8)
+        self.assertAlmostEqual(right[0][0],8)
+        self.assertAlmostEqual(left[1][2],-10)
+        roof=box('Inside typewriter roof');header=box('HQ doorway header')
+        self.assertAlmostEqual(roof[0][1],6.8)
+        self.assertAlmostEqual(header[0][1],roof[0][1])
+        doors=[(lo,hi) for n,lo,hi,_ in r.boxes if n=='Oak command door']
+        self.assertAlmostEqual(min(lo[0] for lo,hi in doors),left[1][0])
+        self.assertAlmostEqual(max(hi[0] for lo,hi in doors),right[0][0])
+        self.assertTrue(all(abs(hi[1]-6.8)<.001 for lo,hi in doors))
+        floor=box('Approach floor -27')
+        self.assertAlmostEqual(floor[0][0],-8);self.assertAlmostEqual(floor[1][0],8)
+        for side in (-1,1):
+            alcove=box('Typewriter display alcove side '+str(side))
+            housing=box('Enamel side housing '+str(side))
+            self.assertGreater(min(abs(alcove[0][0]),abs(alcove[1][0]))-max(abs(housing[0][0]),abs(housing[1][0])),7)
+            cheek=box('Low keyboard cheek '+str(side))
+            self.assertLess(cheek[1][1],1.3)
+        old_walls=[hi[2] for name,lo,hi,_ in r.boxes if name.startswith('Operations corridor side')]
+        self.assertTrue(all(z<=-60 for z in old_walls))

@@ -40,21 +40,22 @@ class Harness {
  static void Main(){
   var random=new System.Random(51);string previous=null;int changes=0;
   for(int seed=0;seed<2000;seed++) {
-   var layout=TypewriterMemory.Generate(new System.Random(seed));Check(layout.Sequence.Length==5&&layout.Keys.Length==20,"Layout size");
-   Check(new HashSet<char>(layout.Sequence).Count==5,"Distinct random letters");int last=-1;
+   var layout=TypewriterMemory.Generate(new System.Random(seed));Check(layout.Sequence.Length==5&&layout.Keys.Length==23,"Layout size");
+   Check(new HashSet<char>(layout.Sequence).Count==5,"Distinct random letters");float last=100;
    for(int row=0;row<5;row++) {int safe=-1,count=0;var unique=new HashSet<char>();
-    for(int col=0;col<4;col++){unique.Add(layout.Keys[row*4+col]);if(layout.Safe(row*4+col)){safe=col;count++;}}
-    Check(count==1&&unique.Count==4,"One safe distinct key per row");Check(last<0||Math.Abs(safe-last)<=1,"Reachable adjacent columns");last=safe;
+    int columns=TypewriterMemory.RowLength(row),start=TypewriterMemory.RowStart(row);
+    for(int col=0;col<columns;col++){unique.Add(layout.Keys[start+col]);if(layout.Safe(start+col)){safe=col;count++;}}
+    Check(count==1&&unique.Count==columns,"One safe distinct key per row");float x=safe-(columns-1)*.5f;Check(row==0||Math.Abs(x-last)<=.5f,"Reachable staggered columns");last=x;
    }
-   Check(!layout.Safe(-1)&&!layout.Safe(20),"Invalid indices");if(previous!=layout.Sequence)changes++;previous=layout.Sequence;
+   Check(!layout.Safe(-1)&&!layout.Safe(23),"Invalid indices");if(previous!=layout.Sequence)changes++;previous=layout.Sequence;
    Check(layout.Keys==TypewriterMemory.Generate(new System.Random(seed)).Keys,"Repeatable seed");
   }
   Check(changes>1950,"Random rounds differ");
   var puzzle=TypewriterMemory.Generate(random);var stairs=new TypewriterStairs();Set(stairs,"layout",puzzle);
   int safeIndex=0;while(!puzzle.Safe(safeIndex))safeIndex++;int wrongIndex=safeIndex==0?1:0;
-  var areas=new BoxCollider[20];var keys=new TypewriterKey[20];
-  for(int i=0;i<20;i++){areas[i]=new BoxCollider{center=new Vector3(i*3,.15f,0),size=new Vector3(2.8f,.7f,2.8f)};keys[i]=new TypewriterKey();}
-  Set(stairs,"keyAreas",areas);Set(stairs,"keys",keys);Set(stairs,"flashUntil",new float[20]);
+  var areas=new BoxCollider[23];var keys=new TypewriterKey[23];
+  for(int i=0;i<23;i++){areas[i]=new BoxCollider{center=new Vector3(i*3,.15f,0),size=new Vector3(2.8f,.7f,2.8f)};keys[i]=new TypewriterKey();}
+  Set(stairs,"keyAreas",areas);Set(stairs,"keys",keys);Set(stairs,"flashUntil",new float[23]);
   Set(stairs,"keyboardWell",new BoxCollider{center=new Vector3(30,.15f,0),size=new Vector3(65,2,5)});
   var context=new ObstacleContext();Set(stairs,"context",context);
   var actor=new ImportedObstacleActor{Position=new Vector3(safeIndex*3,.25f,0)};Physics.found=new[]{new Collider{actor=actor},new Collider{actor=actor}};
@@ -69,7 +70,7 @@ class Harness {
   // Every physical row has a safe support, including a hip projection outside the circular key.
   int priorHits=actor.hits;
   for(int row=0;row<5;row++) {
-   int index=row*4;while(!puzzle.Safe(index))index++;
+   int index=TypewriterMemory.RowStart(row);while(!puzzle.Safe(index))index++;
    actor.support=new Collider{key=keys[index]};actor.Position=new Vector3(1.5f,0,1.5f);
    Tick(stairs,10+row*2);Check(actor.hits==priorHits,"Safe support edge must not become a gap hit");
   }
@@ -82,9 +83,9 @@ class Harness {
   Check(Math.Abs(spring.TakeJumpBonus(Vector3.one)-1.2f)<.001f,"Small bonus on explicit jump");Check(spring.TakeJumpBonus(Vector3.one)==0,"Bonus cannot stack");
   spring.SetPressed(false);Time.time=4;for(int i=0;i<20;i++)step.Invoke(spring,null);
   Check(spring.TakeJumpBonus(Vector3.one)==0,"Walking off does not launch");
-  var text=new TextMesh[20];for(int i=0;i<20;i++)text[i]=new TextMesh();var clues=new TextMesh[5];for(int i=0;i<5;i++)clues[i]=new TextMesh();Set(stairs,"keyText",text);Set(stairs,"clueText",clues);
+  var text=new TextMesh[23];for(int i=0;i<23;i++)text[i]=new TextMesh();var clues=new TextMesh[5];for(int i=0;i<5;i++)clues[i]=new TextMesh();Set(stairs,"keyText",text);Set(stairs,"clueText",clues);
   string before=puzzle.Sequence;stairs.NewRound();var next=(TypewriterMemory)typeof(TypewriterStairs).GetField("layout",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(stairs);
-  Check(next.Sequence!=before,"New round changes clues");for(int i=0;i<5;i++)Check(clues[i].text==(i+1)+"\n"+next.Sequence[i],"Clue order");for(int i=0;i<20;i++)Check(text[i].text==next.Keys[i].ToString(),"Keyboard matches clues");
+  Check(next.Sequence!=before,"New round changes clues");for(int i=0;i<5;i++)Check(clues[i].text==(i+1)+"\n"+next.Sequence[i],"Clue order");for(int i=0;i<23;i++)Check(text[i].text==next.Keys[i].ToString(),"Keyboard matches clues");
   Console.WriteLine("PASS: 2000 memory layouts, row rules, hits, key depression, jump-only rebound and new-round clues");
  }
 }

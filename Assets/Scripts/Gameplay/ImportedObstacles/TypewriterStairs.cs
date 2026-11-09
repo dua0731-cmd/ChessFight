@@ -37,18 +37,18 @@ namespace ChessFight.ProtectKing
         void Awake()
         {
             if (context == null) context = GetComponentInParent<ObstacleContext>();
-            if (keyAreas == null || keyAreas.Length != 20 || keys == null || keys.Length != 20 ||
-                keyFaces == null || keyFaces.Length != 20 || keyVisuals == null || keyVisuals.Length != 20 ||
+            if (keyAreas == null || keyAreas.Length != TypewriterMemory.KeyCount || keys == null || keys.Length != TypewriterMemory.KeyCount ||
+                keyFaces == null || keyFaces.Length != TypewriterMemory.KeyCount || keyVisuals == null || keyVisuals.Length != TypewriterMemory.KeyCount ||
                 clueFaces == null || clueFaces.Length != 5 || keyboardWell == null)
-            { Debug.LogError("Typewriter requires twenty keys and five route clues.", this); enabled = false; return; }
-            for (int i = 0; i < 20; i++)
+            { Debug.LogError("Typewriter requires 23 staggered keys and five route clues.", this); enabled = false; return; }
+            for (int i = 0; i < TypewriterMemory.KeyCount; i++)
                 if (keys[i] == null || keyAreas[i] == null || keyFaces[i] == null || keyVisuals[i] == null)
                 { Debug.LogError("Typewriter has an unassigned key.", this); enabled = false; return; }
             foreach (var clue in clueFaces) if (clue == null)
             { Debug.LogError("Typewriter has an unassigned clue.", this); enabled = false; return; }
-            flashUntil = new float[20]; tint = new MaterialPropertyBlock();
-            keyText = new TextMesh[20]; clueText = new TextMesh[5];
-            for (int i = 0; i < 20; i++) keyText[i] = Label(keyFaces[i], "W", 1.7f, 1.5f, Color.black);
+            flashUntil = new float[TypewriterMemory.KeyCount]; tint = new MaterialPropertyBlock();
+            keyText = new TextMesh[TypewriterMemory.KeyCount]; clueText = new TextMesh[5];
+            for (int i = 0; i < TypewriterMemory.KeyCount; i++) keyText[i] = Label(keyFaces[i], "W", 1.7f, 1.5f, Color.black);
             for (int i = 0; i < 5; i++) clueText[i] = Label(clueFaces[i], "5\nW", 2.3f, 2.3f, Color.black);
             if (documentFace != null)
                 Label(documentFace, "1 → 2 → 3 → 4 → 5\n기억한 글자로 올라가 안으로 들어가세요", 8, 1.2f, Color.black);
@@ -61,7 +61,7 @@ namespace ChessFight.ProtectKing
             string previous = layout == null ? null : layout.Sequence;
             do { layout = TypewriterMemory.Generate(new System.Random(UnityEngine.Random.Range(0, int.MaxValue))); }
             while (layout.Sequence == previous);
-            for (int i = 0; i < 20; i++) { keyText[i].text = layout.Keys[i].ToString(); keys[i].ResetKey(); }
+            for (int i = 0; i < TypewriterMemory.KeyCount; i++) { keyText[i].text = layout.Keys[i].ToString(); keys[i].ResetKey(); }
             for (int i = 0; i < 5; i++) clueText[i].text = (i + 1) + "\n" + layout.Sequence[i];
             lastHit.Clear(); visited.Clear(); Array.Clear(flashUntil, 0, flashUntil.Length);
         }

@@ -315,8 +315,8 @@ class LegacyBuilder:
     def headquarters(self):
         g=self.group('Headquarters - enclosed command chamber');self.hq=g
         # Full height facade, side walls, rear wall and ceiling hide both board and giants.
-        for x in (-65,65):self.wall(g,'HQ front facade',(x,24,-10),(118,68,2),True)
-        self.wall(g,'HQ doorway header',(0,34,-10),(12,48,2),True)
+        for x in (-66,66):self.wall(g,'HQ front facade',(x,24,-10),(116,68,2),True)
+        self.wall(g,'HQ doorway header',(0,32.4,-10),(16,51.2,2),True)
         for x in (-124,124):self.wall(g,'HQ side wall',(x,24,80),(2,68,182),True)
         self.wall(g,'HQ rear wall',(0,24,170),(250,68,2),True)
         self.wall(g,'HQ coffered ceiling',(0,58.5,80),(250,1,182),True)
@@ -346,22 +346,22 @@ class LegacyBuilder:
         self.map(frame,(0,0,0))
         for x in (-44,44):self.banner(g,(x,30,168))
         # Foreground banner/crest and paneled door jambs read as a command entrance.
-        for x in (-7,7):self.box(g,'HQ door carved jamb',(x,5,-11.3),(1.4,10,1),'Wood')
+        for x in (-8.7,8.7):self.box(g,'HQ door carved jamb',(x,3.4,-11.3),(1.4,6.8,1),'Wood')
         for x in (-9,9):self.banner(g,(x,9,-11.5))
-        self.box(g,'HQ door lintel',(0,10.5,-11.3),(16,1,1),'Gold')
+        self.box(g,'HQ door lintel',(0,7.3,-11.3),(19,1,1),'Gold')
         self.box(g,'HQ royal crest',(0,14,-11.3),(4,3,.5),'Gold',False)
         gate=self.group('Headquarters privacy doors - proximity reveal',g,(0,0,-10))
-        volume=self.d.box(gate,size=(14,12,12),center=(0,6,0),trigger=True)
+        volume=self.d.box(gate,size=(18,12,12),center=(0,6,0),trigger=True)
         bodies=[]
         for side in (-1,1):
-            leaf=self.group('Solid command door leaf',gate,(side*3,0,0))
+            leaf=self.group('Solid command door leaf',gate,(side*4,0,0))
             bodies.append(self.d.rigidbody(leaf,True))
-            self.box(leaf,'Oak command door',(0,5,0),(6,10,.6),'Wood')
-            self.box(leaf,'Brass inset',(0,5,-.35),(4,7,.1),'Gold',False)
-            self.box(leaf,'Purple panel',(0,5,-.42),(3.6,6.6,.08),'Purple',False)
-            self.report['occluder_boxes'].append({'name':'Closed HQ door','center':(side*3,5,-10),'size':(6,10,.6)})
+            self.box(leaf,'Oak command door',(0,3.4,0),(8,6.8,.6),'Wood')
+            self.box(leaf,'Brass inset',(0,3.4,-.35),(6,5,.1),'Gold',False)
+            self.box(leaf,'Purple panel',(0,3.4,-.42),(5.6,4.6,.08),'Purple',False)
+            self.report['occluder_boxes'].append({'name':'Closed HQ door','center':(side*4,3.4,-10),'size':(8,6.8,.6)})
         self.d.script(gate,'HeadquartersPrivacyDoor',kit.fields(leftLeaf=kit.ref(bodies[0]),rightLeaf=kit.ref(bodies[1]),presenceVolume=kit.ref(volume),
-            openDistance=7,moveSpeed=4,holdOpenSeconds=1.5))
+            openDistance=9,moveSpeed=4,holdOpenSeconds=1.5))
         preview=self.group('Board preview - replaced by live chess on Play',g)
         for x in range(8):
             for z in range(8):self.box(preview,'Chess square preview',((x-3.5)*16,-.4,(z+.5)*16),(16,.8,16),'White' if (x+z)%2==0 else 'Night',False)
@@ -454,23 +454,25 @@ class Builder(LegacyBuilder):
         g=self.group('Typewriter stairs - printed command',pos=(0,0,-51));ctx=self.c.context(g)
         areas=[];faces=[];visuals=[];keys=[];clues=[]
         # A black enamel case, brass round keys, exposed levers, ribbon spools and a wide paper carriage.
-        self.box(g,'Black enamel keyboard bed',(0,-.55,7),(12.4,.3,14),'EnamelBlack')
-        well=self.d.box(g,size=(12,2.8,14),center=(0,.7,7),trigger=True)
+        self.box(g,'Black enamel keyboard bed',(0,-.55,7),(15.4,.3,14),'EnamelBlack')
+        well=self.d.box(g,size=(15.4,2.8,14),center=(0,.7,7),trigger=True)
         for side in (-1,1):
-            self.box(g,'Enamel side housing '+str(side),(side*8.6,2.1,13),(5,5.2,28),'EnamelBlack')
-            self.box(g,'Polished side rail '+str(side),(side*6.2,3.9,8),(.25,.3,18),'Gold',False)
-            self.box(g,'Curved front cheek '+str(side),(side*8,1,0),(6,3,5),'EnamelBlack',False,shape='Sphere')
+            self.box(g,'Enamel side housing '+str(side),(side*10.1,2.1,20),(4,5.2,14),'EnamelBlack')
+            self.box(g,'Low keyboard cheek '+str(side),(side*10.1,.35,6),(4,1.7,14),'EnamelBlack')
+            self.box(g,'Polished side rail '+str(side),(side*8.2,1.25,6),(.25,.3,14),'Gold',False)
+            self.box(g,'Curved front cheek '+str(side),(side*10,.3,0),(4,1.6,3),'EnamelBlack',False,shape='Sphere')
             spool=self.box(g,'Ink ribbon spool '+str(side),(side*8,5,17),(4,.25,4),'EnamelBlack',False,shape='Cylinder')
             self.box(g,'Spool brass hub '+str(side),(side*8,5.35,17),(.8,.15,.8),'Gold',False,shape='Cylinder')
             self.box(g,'Ribbon guide '+str(side),(side*4.7,5.4,18),(.2,1,.3),'Gold',False)
             self.box(g,'Carriage knob '+str(side),(side*11.7,7.5,21),(1.6,.5,1.6),'EnamelBlack',False,rot=(0,0,.70710678,.70710678),shape='Cylinder')
             for z in (1,23):self.box(g,'Rubber foot '+str(side)+' '+str(z),(side*9,-.8,z),(2,.4,2),'EnamelBlack',False,shape='Cylinder')
         self.box(g,'Crimson ink ribbon',(0,5.4,18),(16,.22,.12),'Purple',False)
-        self.box(g,'Front brass rim',(0,-.05,-.3),(13,.3,.35),'Gold',False)
+        self.box(g,'Front brass rim',(0,-.05,-.3),(16,.3,.35),'Gold',False)
         for row in range(5):
             height=(row+1)*.32;z=row*2.8+1.4
-            for col in range(4):
-                x=(col-1.5)*3
+            columns=5 if row%2==0 else 4
+            for col in range(columns):
+                x=(col-(columns-1)*.5)*3
                 self.box(g,'Key stem '+str(row)+'-'+str(col),(x,height*.5-.3,z),(.3,max(.1,height*.5),.3),'Gold',False,shape='Cylinder')
                 key=self.group('Key '+str(row)+'-'+str(col),g,(x,height-.15,z))
                 self.d.rigidbody(key,True)
@@ -487,7 +489,7 @@ class Builder(LegacyBuilder):
             self.box(g,'Type bar '+str(i),(math.sin(math.radians(angle))*5,5.6,17+math.cos(math.radians(angle))*2),
                 (.12,.16,4),'Gold',False,rot=kit.yaw(angle))
         self.box(g,'Type basket fascia',(0,6.1,16.2),(13,1.2,.8),'EnamelBlack')
-        self.box(g,'Inner sill',(0,1.3,16),(12,.6,4),'EnamelBlack')
+        self.box(g,'Inner sill',(0,1.3,16),(16,.6,4),'EnamelBlack')
         self.box(g,'Carriage steel rail',(0,7.2,21),(23,.3,.3),'TypewriterSteel',False)
         self.box(g,'Black platen roller',(0,7.8,21),(2.1,11,2.1),'EnamelBlack',False,rot=(0,0,.70710678,.70710678),shape='Cylinder')
         paper=self.group('Paper carriage',g,(0,11.5,22),kit.pitch(-8))
@@ -499,11 +501,11 @@ class Builder(LegacyBuilder):
         self.box(g,'Keyboard instruction plate',(0,4.8,14.2),(10,1.5,.2),'Ivory',False)
         document=self.group('Printed order text',g,(0,4.8,14.08))
         # Enclosed continuation: climbing into the typewriter leads directly to the headquarters door.
-        for side in (-1,1):self.wall(g,'Inside typewriter wall '+str(side),(side*6.4,3.5,27.5),(.8,7,27))
-        self.box(g,'Inside typewriter roof',(0,7,27.5),(12,.4,27),'EnamelBlack')
+        for side in (-1,1):self.wall(g,'Inside typewriter wall '+str(side),(side*8.4,3.4,27.5),(.8,6.8,27))
+        self.box(g,'Inside typewriter roof',(0,7,27.5),(16,.4,27),'EnamelBlack')
         angle=math.atan2(1.6,6)
         self.box(g,'Typewriter interior descent',(0,.8-.08*math.cos(angle),21),
-            (12,.16,math.sqrt(36+1.6**2)),'EnamelBlack',rot=kit.pitch(math.degrees(angle)))
+            (16,.16,math.sqrt(36+1.6**2)),'EnamelBlack',rot=kit.pitch(math.degrees(angle)))
         for i,z in enumerate((-138,-112,-80,-58,-53)):
             x=-8 if i%2==0 else 8
             plaque=self.group('Memory clue '+str(i+1),g,(x,3.8,z+51))
@@ -529,8 +531,11 @@ class Builder(LegacyBuilder):
         for x in (-87.5,87.5):self.box(self.root,'Side room scenery floor '+str(x),(x,-1.4,-80),(143,.8,138),'Slate')
         # Keep the playable strip narrow. The side rooms are scenery, without bypass floors.
         for a,b in ((-146,-100),(-60,-51),(-27,-8)):
-            self.box(self.root,'Approach floor '+str(a),(0,-.4,(a+b)/2),(12,.8,b-a),'Ivory')
-        for x in (-14,14):self.wall(self.root,'Operations corridor side '+str(x),(x,10,-77),(1,40,146))
+            self.box(self.root,'Approach floor '+str(a),(0,-.4,(a+b)/2),(16 if a==-27 else 12,.8,b-a),'Ivory')
+        for x in (-14,14):self.wall(self.root,'Operations corridor side '+str(x),(x,10,-105),(1,40,90))
+        for side in (-1,1):
+            self.wall(self.root,'Typewriter display alcove side '+str(side),(side*20,10,-35.5),(1,40,49))
+            self.wall(self.root,'Typewriter alcove shoulder '+str(side),(side*17,10,-60),(6,40,1))
         self.box(self.root,'Sunken map pit',(0,-12,-88),(28,1,48),'Night',False)
         self.press(-122,-3,6,0);self.press(-122,3,6,2.675)
         self.scroll(-100,0);self.scroll(-76,3)
