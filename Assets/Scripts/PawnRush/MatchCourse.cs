@@ -9,8 +9,10 @@ namespace ChessFight.PawnRush
     //   course 01 (the prototype)   two plazas, four stations; the host draws the two games and sends them, and the
     //                               promotion pads (pieces, spent, who is choosing)
     //   a section round (the match) each mini-game section's white then black station (six for three sections); the games
-    //                               come with the sections every PC drew from the match's number, there are no pads, and
-    //                               the sections' own state (ISectionNetPart) rides along as one run of bytes
+    //                               come with the sections every PC drew from the match's number, each station's
+    //                               promotion pad sends whether it is spent and who chooses on it (R516; the player picks
+    //                               the piece, so there is no draw), and the sections' own state (ISectionNetPart) rides
+    //                               along as one run of bytes
     public abstract class MatchCourse
     {
         public abstract int StationCount { get; }
@@ -111,6 +113,15 @@ namespace ChessFight.PawnRush
         public override void Write(PawnRushNetState state)
         {
             List();
+            // R516: the stations' promotion pads, in the stations' order (a bit each for spent, the seat choosing on it).
+            state.PadsUsed = 0;
+            for (int k = 0; k < stations.Count && k < PawnRushNetState.MaxStations; k++)
+            {
+                var pad = stations[k] != null ? stations[k].Promotion : null;
+                if (pad == null) continue;
+                if (pad.Used) state.PadsUsed |= (byte)(1 << k);
+                state.PadChooser[k] = pad.ChooserSeat;
+            }
             var block = new NetBlock(state.Parts, 0, PawnRushNetState.MaxPartBytes);
             foreach (var part in parts)
             {
@@ -125,6 +136,15 @@ namespace ChessFight.PawnRush
         public override void ApplyAfter(PawnRushNetState state)
         {
             List();
+            // R516: the host's word on each pad - spent, and who is choosing on it (their cards come up on their own PC).
+            for (int k = 0; k < stations.Count && k < PawnRushNetState.MaxStations; k++)
+            {
+                var pad = stations[k] != null ? stations[k].Promotion : null;
+                if (pad == null) continue;
+                byte seat = state.PadChooser[k];
+                var who = seat != PawnRushNetState.NoChooser && MiniGameBase.DriverOf != null ? MiniGameBase.DriverOf(seat) : null;
+                pad.ApplyRemote(pad.Piece, (state.PadsUsed & (1 << k)) != 0, who);
+            }
             var block = new NetBlock(state.Parts, 0, Mathf.Min(state.PartsLength, PawnRushNetState.MaxPartBytes));
             foreach (var part in parts)
             {

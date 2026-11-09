@@ -21,6 +21,11 @@ namespace ChessFight.PawnRush
     // The station makes it when Play starts (MissionStation.Start), so the scene built before R125 has it too.
     // The round's piece comes from MissionPicker (both teams' pads in a plaza give the same piece). Online only
     // the host judges it; the other PCs show what the host sends (ApplyRemote), like the mini-games.
+    //
+    // R516: every palace mini-game section's two stations have one as well (the section round, the mini-game prefab
+    // test), in the same station-local place - the outer side of the entry strip, on the dais every game lays from u 0
+    // across the station's full width - so a round has six: one a team in each of its three mini-games. Online the
+    // section round sends their spent bits and choosers in the course state (MatchCourse's RoundMatch).
     public sealed class StationPromotion : MonoBehaviour
     {
         // Station-local: u (north) and v (across) of the pad's middle, and half its side. On the entry strip
@@ -191,9 +196,11 @@ namespace ChessFight.PawnRush
             slabOff = kit != null && kit.trimBlack != null ? kit.trimBlack : new Material(shader) { color = new Color(.25f, .25f, .27f) };
             fillMaterial = new Material(shader) { color = new Color(1f, .97f, .85f) };
 
-            // A low slab on the floor (no collider: the floor carries the pawns), a frame in the team's colour.
+            // A low slab on the floor (no collider: the floor carries the pawns), a frame in the team's colour - the palace
+            // sections' blue and orange there (R516), the course's own trim elsewhere.
             slab = Part(PrimitiveType.Cube, transform, new Vector3(0f, .03f, 0f), new Vector3(Half * 2f, .06f, Half * 2f), slabOn).GetComponent<Renderer>();
-            var frame = kit != null ? kit.Team(station.Team) : null;
+            var frame = station.PalaceStyle ? Arena.Lit("PR_MG_PromotionFrame", station.Accent(station.Team))
+                      : kit != null ? kit.Team(station.Team) : null;
             if (frame != null)
                 for (int i = 0; i < 4; i++)
                 {

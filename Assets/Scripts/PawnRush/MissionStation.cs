@@ -34,7 +34,7 @@ namespace ChessFight.PawnRush
         [SerializeField] Transform gameSocket;
         [SerializeField] Course01Kit kit;
         [SerializeField] int gameIndex = PawnRushMissions.None;
-        [Tooltip("The standalone palace section supplies its own architectural dressing and promotion layout.")]
+        [Tooltip("The standalone palace section supplies its own architectural dressing (the promotion pad is the course's, R516).")]
         [SerializeField] bool palaceStyle;
 
         public int Team => team;
@@ -49,12 +49,13 @@ namespace ChessFight.PawnRush
         public Color Accent(int forTeam) => Arena.TeamColor(forTeam, palaceStyle);
         public void SetPalaceStyle(bool value) => palaceStyle = value;
         // The single-use promotion pad beside the game (R125), made the first time it is asked for in Play (after
-        // Configure: a course built from code at Play adds this component before configuring it).
+        // Configure: a course built from code at Play adds this component before configuring it). R516 (the user's list,
+        // 11-09: "승격발판 다시 넣어야 함"): the palace mini-game sections have it too, in the same place (R312 left it out).
         public StationPromotion Promotion
         {
             get
             {
-                if (!palaceStyle && promotion == null && Application.isPlaying && gameSocket != null)
+                if (promotion == null && Application.isPlaying && gameSocket != null)
                 {
                     // One pad by the game instead of the design doc's four placeholder pads (a scene built before
                     // R125 still has those: they go).
@@ -126,7 +127,7 @@ namespace ChessFight.PawnRush
         void Start()
         {
             RaiseSocket();
-            if (!palaceStyle && Promotion == null) Debug.LogWarning("[PawnRush] 스테이션에 승격 발판을 만들지 못했습니다: " + name);
+            if (Promotion == null) Debug.LogWarning("[PawnRush] 스테이션에 승격 발판을 만들지 못했습니다: " + name);
             if (Dressing != null && dressing.isActiveAndEnabled) dressing.Installed(gameIndex);
             if (hooked == null) Hook(Game);
         }

@@ -74,7 +74,10 @@ namespace ChessFight.Network
         // v28 (R508): the 폰 러쉬 match is the section round (PawnRush_Round, drawn from the match's number) and its
         //      course state is CFP5 (as many stations as the course has, the sections' own bytes). A v27 build would load
         //      course 01 and drop every CFP5 state.
-        public const string Protocol = "chessfight.dua0731.network.v28";
+        // v29 (R516): the section round's mini-game stations have promotion pads; their spent bits and choosers ride the
+        //      course state (the same CFP5 bytes, now read for a round). A v28 host never sends them, so a v29 PC's pads
+        //      would never work with it.
+        public const string Protocol = "chessfight.dua0731.network.v29";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }

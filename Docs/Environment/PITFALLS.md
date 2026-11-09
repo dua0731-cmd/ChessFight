@@ -262,6 +262,10 @@ Prototype 코드41개는 새 asmdef로 분리하면 기존 어셈블리 내부 �
 
 실제 충전/발사·입자 방출·시뮬레이션의 세 방향 검사에서 수정 전 엔진 오류30건+모드 실패3건, 수정 후 오류0·세 방향 통과를 AI가 기록했다. 자동 검사 결과와 사용자 회의실 외형 확인은 구분한다. 검사기 자체의 첫 실행은 재생 중 `randomSeed`를 설정한 assertion도 냈으므로, 먼저 `Stop(...StopEmittingAndClear)`한 뒤 씨앗을 넣도록 고쳤다. 운영 효과가 collider를 `Object.Destroy`로 정리하므로 이 경로의 회귀 검사는 Play Mode에서 실행한다. 초기 검사기 실패 기록도 `Logs/AirCannonFxValidation/R498-initial-harness-failure.txt`에 보존한다. [VFX 상세](../VFX/README.md#r498-작전-회의실-공기-대포의-orbital-velocity-오류-2026-11-06).
 
+## R516 배치 모드 Play 점검이 편집기 오류 하나로 일시정지돼 시간 초과된다
+
+미니게임 런타임 점검(`MiniGamePrefabValidation.RunPlayBatch`, 프로젝트 사본에서 배치 모드)이 첫 방 캡처 직후, 또는 F 무도회장을 띄운 직후 멈춰 1200초 뒤 실패했다. 로그에는 화면 갱신("no audio listeners" 수십만 줄)이 계속되는데 점검은 `Time.fixedTime`이 늘기를 기다리고 있었다. Play 중 렌더 파이프라인이 자기 편집기 에셋(`TraceRenderingLayerMask.urtshader`)에 대해 `Host type is not matching any asset type` 오류를 찍으면, 이 PC의 콘솔 설정 **Error Pause**(에디터 설정이라 사본에도 적용)가 Play를 일시정지시키기 때문이다. 게임 오류가 아니니 점검은 그 메시지를 실패로 세지 않고, 매 프레임 `EditorApplication.isPaused`를 풀어 둔다(R516). 배치 모드 Play 자동화를 새로 짤 때도 같은 함정을 본다.
+
 ## R513 걸음이 정한 높이에 있던 이동 앵커가 점프 순간 한 스텝에 내려가 점프를 끌어내린다
 
 서 있는 동안 래그돌의 이동 앵커(키네마틱)는 걸음이 원하는 골반 높이에 있다. 질주 출렁임(`sprintLift` + `sprintBob`)이 있으면 그 높이는 처지는 골반보다 최대 0.12 m 위다. 점프하면 공중 규칙대로 앵커를 "골반 + 한 스텝"으로 보내는데, 키네마틱은 한 스텝에 움직인 거리가 곧 속도라(PITFALLS 20) 앵커가 아래로 약 7 m/s로 움직인 셈이 되고, 관절 감쇠기(945 N·s/m)가 50 kg 몸을 같이 끌어내려 상승 2 m/s를 잃었다. 상승 보정(`GuardJumpRise`)은 한 스텝 0.5 m/s 넘는 손실을 천장 부딪힘으로 보고 포기해서, 폰 러쉬 질주 점프가 0.58~0.86 m(정상 1.09)로 낮고 들쭉날쭉했다. 코드만 읽어서는 안 보였고 단계별 기록(`LabAutoTest.PawnRushMove`의 가장 낮은 점프 추적)에서 첫 스텝에 2 m/s가 사라지는 것으로 찾았다. R513는 점프 순간 앵커를 골반 높이로 옮겨 놓고(`Rigidbody.position`, 속도 없이) 시작한다(폰 러쉬만, `Launch`도 같은 방법). 앵커를 공중 · 땅 규칙 사이로 바꾸는 다른 순간(착지 등)도 같은 함정을 본다.

@@ -22,6 +22,7 @@ namespace ChessFight.PawnRush.Editor
         const string CodeKey = "ChessFight.R312.MiniGames.ValidateCode";
         // Unity deletes Temp on normal batch exit, so evidence belongs in its ignored Logs folder.
         const string Folder = "Logs/MiniGameValidation";
+        const float RuntimeLimit = 1200f;   // s for the whole Play Mode run (a hang guard, not a speed target)
         static readonly List<string> errors = new List<string>();
         static GameObject holder;
         static MiniGameSection current;
@@ -306,6 +307,10 @@ namespace ChessFight.PawnRush.Editor
 
         static void OnLog(string condition, string stack, LogType type)
         {
+            // R516: the render pipeline's editor package logs this about its own ray-tracing shader asset the first time a
+            // capture asks for a render request in batch mode (Unity 6000.3, every run since): an editor asset message, not
+            // the game's. The picture is taken all the same.
+            if (condition != null && condition.StartsWith("Host type is not matching any asset type") && condition.Contains(".urtshader")) return;
             if (type == LogType.Error || type == LogType.Assert || type == LogType.Exception)
                 errors.Add(condition + "\n" + stack);
         }
@@ -313,13 +318,20 @@ namespace ChessFight.PawnRush.Editor
         static void Tick()
         {
             if (!EditorApplication.isPlaying || stopping) return;
+            // R516: an error the editor itself logs in Play (the render pipeline's ".urtshader" message, see OnLog) pauses
+            // Play Mode when the Console's Error Pause is on; the run then waited for game time that never came (11-09:
+            // after room C's captures and at room F's start, 1200 s each).
+            if (EditorApplication.isPaused) EditorApplication.isPaused = false;
             try
             {
-                if (EditorApplication.timeSinceStartup - beganAt > 180f)
-                    throw new InvalidOperationException("Runtime smoke exceeded 180 seconds");
+                // R516: 180 s was enough for the R312 rooms; with the rooms' Blender art each first render in batch mode
+                // compiles its shaders, and the pad captures render every room (the first room alone took over 180 s).
+                if (EditorApplication.timeSinceStartup - beganAt > RuntimeLimit)
+                    throw new InvalidOperationException("Runtime smoke exceeded " + RuntimeLimit + " seconds");
                 if (errors.Count > 0) throw new InvalidOperationException("Runtime error was logged: " + errors[0]);
                 if (phase == 0)
                 {
+                    while (index < MiniGamePrefabMenu.Games.Length && !Wanted(MiniGamePrefabMenu.Games[index])) index++;
                     if (index >= MiniGamePrefabMenu.Games.Length) { StopPlay(0); return; }
                     if (holder != null) Object.DestroyImmediate(holder);
                     int game = MiniGamePrefabMenu.Games[index];
@@ -338,6 +350,8 @@ namespace ChessFight.PawnRush.Editor
                 if (phase == 1)
                 {
                     CheckRuntimeWiring();
+                    CheckPads();   // R516: the promotion pads are back in the palace sections
+                    CapturePads(current);
                     if (current.GameIndex == PawnRushMissions.Paint) CheckDuplicatePaint();
                     if (current.GameIndex == PawnRushMissions.CheckBlock) kingRenderers = KingRendererCount();
                     if (current.GameIndex == PawnRushMissions.Drawbridge || current.GameIndex == PawnRushMissions.Bells
@@ -380,6 +394,25 @@ namespace ChessFight.PawnRush.Editor
             }
         }
 
+        // R516: -miniGameOnly G,H,I runs just those rooms (the letters of PawnRushMissions.Ids); without it, all ten.
+        static string[] onlyRooms;
+
+        static bool Wanted(int game)
+        {
+            if (onlyRooms == null)
+            {
+                var args = Environment.GetCommandLineArgs();
+                int at = Array.IndexOf(args, "-miniGameOnly");
+                onlyRooms = at >= 0 && at + 1 < args.Length
+                    ? args[at + 1].Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToArray()
+                    : new string[0];
+            }
+            if (onlyRooms.Length == 0) return true;
+            string id = PawnRushMissions.Ids[game];
+            return onlyRooms.Any(r => id.Equals(r, StringComparison.OrdinalIgnoreCase)
+                                      || id.StartsWith(r + "_", StringComparison.OrdinalIgnoreCase));
+        }
+
         static void Next(int value)
         {
             phase = value; phaseAt = EditorApplication.timeSinceStartup; fixedAt = Time.fixedTime;
@@ -401,6 +434,42 @@ namespace ChessFight.PawnRush.Editor
             }
             Require(current.GetComponentsInChildren<Transform>(true).Count(t => t.name == MiniGamePalaceArt.ShellName) == 1,
                 "Static shell duplicated or missing");
+        }
+
+        // R516: each station's promotion pad is there, lies on the dais (a ray from above lands on the floor it is drawn on),
+        // and nothing solid stands in the room a pawn needs on it. Pictures (no collider) are left to the captures.
+        static void CheckPads()
+        {
+            var up = current.transform.up;
+            foreach (var station in current.Stations)
+            {
+                var pad = station.Promotion;
+                Require(pad != null, "No promotion pad: " + station.name);
+                Vector3 at = pad.transform.position;
+                bool floor = Physics.Raycast(at + up * 1.5f, -up, out var hit, 3f, ~0, QueryTriggerInteraction.Ignore);
+                float off = floor ? Vector3.Dot(hit.point - at, up) : float.NaN;
+                Require(floor && Mathf.Abs(off) < .06f, "Promotion pad not on the dais: " + station.name
+                    + (floor ? $" ({off:F2} m from {hit.collider.name})" : " (no floor under it)"));
+                var solid = Physics.OverlapBox(at + up * 1.1f, new Vector3(StationPromotion.Half * .9f, .9f, StationPromotion.Half * .9f),
+                    pad.transform.rotation, ~0, QueryTriggerInteraction.Ignore);
+                Require(solid.Length == 0, "Something solid over the promotion pad: " + station.name + " ("
+                    + string.Join(", ", solid.Select(c => c.name)) + ")");
+                Log($"Promotion pad {station.name}: on {hit.collider.name} ({off:F3} m), nothing solid over it");
+            }
+        }
+
+        // Each pad from inside the room - over the entry band, halfway to the middle, above a pawn's eye - so a person can
+        // see what stands round it. (6.5 m south of the pad was outside the entry wall: the indoor rooms showed its back.)
+        static void CapturePads(MiniGameSection level)
+        {
+            foreach (var station in level.Stations)
+            {
+                var pad = station.Promotion;
+                if (pad == null) continue;
+                Vector3 local = level.transform.InverseTransformPoint(pad.transform.position);
+                string name = PawnRushMissions.Ids[level.GameIndex] + "_pad_" + (station.Team == Teams.White ? "white" : "black");
+                CaptureView(level, name, new Vector3(local.x * .5f, local.y + 4.6f, 2.5f), local + new Vector3(0f, .5f, .3f), 55f);
+            }
         }
 
         static bool Finite(Vector3 v) => !float.IsNaN(v.x) && !float.IsInfinity(v.x)
@@ -435,46 +504,55 @@ namespace ChessFight.PawnRush.Editor
 
         static void Capture(MiniGameSection level)
         {
+            string id = PawnRushMissions.Ids[level.GameIndex];
+            CaptureView(level, id + "_entry", new Vector3(0f, 4f, 1f), new Vector3(0f, 3.5f, 22f), 82f);
+            CaptureView(level, id + "_overview", new Vector3(-12f, 38f, -26f), new Vector3(0f, 3f, 17f), 48f);
+        }
+
+        // One picture of the section from `eye` toward `target` (both in the section's frame) into the validation folder.
+        static void CaptureView(MiniGameSection level, string name, Vector3 eye, Vector3 target, float fieldOfView)
+        {
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
             {
                 Log("NOT RUN: visual capture unavailable with the null graphics device"); return;
             }
-            foreach (string view in new[] { "entry", "overview" })
+            // R516: -miniGameNoCapture runs the checks without pictures (11-09 in batch mode the editor stopped advancing
+            // frames after the first room's captures, the rooms' art in).
+            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-miniGameNoCapture") >= 0)
             {
-                Vector3 eye = view == "entry" ? new Vector3(0f, 4f, 1f) : new Vector3(-12f, 38f, -26f);
-                captureCamera.transform.position = level.transform.TransformPoint(eye);
-                captureCamera.transform.LookAt(level.transform.TransformPoint(view == "entry"
-                    ? new Vector3(0f, 3.5f, 22f) : new Vector3(0f, 3f, 17f)), level.transform.up);
-                captureCamera.fieldOfView = view == "entry" ? 82f : 48f;
-                captureCamera.aspect = 1.5f;
-                var texture = new RenderTexture(1536, 1024, 24, RenderTextureFormat.ARGB32);
-                var before = RenderTexture.active;
-                Texture2D picture = null;
-                try
+                Log("NOT RUN: capture " + name + " (-miniGameNoCapture)"); return;
+            }
+            captureCamera.transform.position = level.transform.TransformPoint(eye);
+            captureCamera.transform.LookAt(level.transform.TransformPoint(target), level.transform.up);
+            captureCamera.fieldOfView = fieldOfView;
+            captureCamera.aspect = 1.5f;
+            var texture = new RenderTexture(1536, 1024, 24, RenderTextureFormat.ARGB32);
+            var before = RenderTexture.active;
+            Texture2D picture = null;
+            try
+            {
+                texture.Create();
+                var request = new RenderPipeline.StandardRequest { destination = texture };
+                if (GraphicsSettings.currentRenderPipeline != null)
                 {
-                    texture.Create();
-                    var request = new RenderPipeline.StandardRequest { destination = texture };
-                    if (GraphicsSettings.currentRenderPipeline != null)
-                    {
-                        Require(RenderPipeline.SupportsRenderRequest(captureCamera, request),
-                            "URP does not support this capture request");
-                        RenderPipeline.SubmitRenderRequest(captureCamera, request);
-                    }
-                    else { captureCamera.targetTexture = texture; captureCamera.Render(); captureCamera.targetTexture = null; }
-                    RenderTexture.active = texture;
-                    picture = new Texture2D(texture.width, texture.height, TextureFormat.RGB24, false);
-                    picture.ReadPixels(new Rect(0f, 0f, texture.width, texture.height), 0, 0);
-                    picture.Apply();
-                    string path = Path.Combine(Folder, PawnRushMissions.Ids[level.GameIndex] + "_" + view + ".png");
-                    File.WriteAllBytes(path, picture.EncodeToPNG());
-                    Log("Captured " + path);
+                    Require(RenderPipeline.SupportsRenderRequest(captureCamera, request),
+                        "URP does not support this capture request");
+                    RenderPipeline.SubmitRenderRequest(captureCamera, request);
                 }
-                finally
-                {
-                    RenderTexture.active = before;
-                    if (picture != null) Object.DestroyImmediate(picture);
-                    texture.Release(); Object.DestroyImmediate(texture);
-                }
+                else { captureCamera.targetTexture = texture; captureCamera.Render(); captureCamera.targetTexture = null; }
+                RenderTexture.active = texture;
+                picture = new Texture2D(texture.width, texture.height, TextureFormat.RGB24, false);
+                picture.ReadPixels(new Rect(0f, 0f, texture.width, texture.height), 0, 0);
+                picture.Apply();
+                string path = Path.Combine(Folder, name + ".png");
+                File.WriteAllBytes(path, picture.EncodeToPNG());
+                Log("Captured " + path);
+            }
+            finally
+            {
+                RenderTexture.active = before;
+                if (picture != null) Object.DestroyImmediate(picture);
+                texture.Release(); Object.DestroyImmediate(texture);
             }
         }
 
