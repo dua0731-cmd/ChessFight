@@ -22,7 +22,11 @@ namespace ChessFight.PawnRush
     public sealed class MgKingEscort : MiniGameBase
     {
         public const float SledSize = 1.6f, SledHalf = SledSize * .5f, RookHalf = .45f;
-        public const float CastleSeconds = 1.3f, CastleApex = 3.2f, PathCell = 2.22f;
+        public const float CastleSeconds = 1.6f, CastleApex = 3.4f, PathCell = 2.22f;
+        // R522: the castling jump's beats - the crouch, the flight (the landing's squash and bounces take the rest of
+        // CastleSeconds) - and where it lands: c8, beside the team door, not d8 in front of the door's open half.
+        const float CastleCrouch = .22f, CastleFlight = 1f, TowerMiddle = 1.1f;
+        const string CastleFrom = "g8", CastleTo = "c8";
 
         [SerializeField] MissionStation station;
 
@@ -33,6 +37,7 @@ namespace ChessFight.PawnRush
         readonly Renderer[] rookRings = new Renderer[2];
         readonly Transform[] stops = new Transform[2];
         Transform tower;
+        Renderer towerRing;
         Material ringPlain, ringWarn;
 
         // Host state (a client's copy from the wire).
@@ -52,7 +57,7 @@ namespace ChessFight.PawnRush
         readonly float[] lastRook = new float[2];
         readonly bool[] wasGaraged = new bool[2], wasBlocked = new bool[2];
         readonly float[] popAt = { -1f, -1f };
-        bool wasCastling, landed;
+        bool wasCastling, tookOff, landed;
         AudioSource drag, sand, stone;
 
         public float Distance => s;
@@ -170,6 +175,7 @@ namespace ChessFight.PawnRush
             b.Box("Rook tower base", g8 + new Vector3(-.9f, 0f, -.9f), g8 + new Vector3(.9f, .3f, .9f), Arena.Lit("M_TowerBase", Arena.Hex("#CFC5B3"), 0f, .8f), true);
             tower = MiniGameParts.Piece(b.parent, "Rook tower", PieceKind.Rook, 2.2f, MiniGameParts.PieceMaterial(station.Team), station.Accent(station.Team), false).transform;
             tower.localPosition = g8 + Vector3.up * .3f;
+            foreach (var r in tower.GetComponentsInChildren<Renderer>(true)) if (r.name == "Ring") towerRing = r;
 
             // The sled: a square walnut base on runners with our king on it, one kinematic body whose colliders (the
             // base, and the king at hand height) are held by hand or pushed, never climbed. It never turns.
@@ -388,35 +394,85 @@ namespace ChessFight.PawnRush
             Castle(t);
         }
 
-        // At the gate: our rook tower jumps from g8 over the king to d8 in 1.3 s (3.2 m up, one turn round).
+        // At the gate our rook tower castles over the king. R522 (the user's list, 11-09, 6: "왕의 행차 회랑 마지막구간
+        // 수정 필요. 룩이 점프뛰는 연출도 별로임"): it crouches (0.22 s, down and wide, leaning back), leaps from g8 in an arc
+        // that bends over the king at the gate - stretched as it leaves and as it comes down, one forward somersault round
+        // its middle, its floor band left off while it flies - and lands on c8 beside the team door with a squash and two
+        // bounces, dust and its ring; the whoosh goes with the leap. Before, it floated at one speed along the rank, spun
+        // like a top with its band stuck under it, landed without a jolt, and stood on d8, in front of the half of the
+        // door the sled leaves open. Every PC plays it from when it saw the castling start (no clock on the wire).
         void Castle(float t)
         {
             if (tower == null) return;
             if (castling && !wasCastling)
             {
                 if (castleAt < 0f) castleAt = t;
-                var at = World(Cell("g8"));
-                ArenaFx.Beam(at, 1.2f, 1.8f, 7f, 1.3f, station.Accent(station.Team));
-                ArenaFx.Sfx("sfx_castle_whoosh", at);
-                landed = false;
+                ArenaFx.Beam(World(Cell(CastleFrom)), 1.2f, 1.8f, 7f, CastleCrouch + CastleFlight, station.Accent(station.Team));
+                tookOff = landed = false;
             }
             wasCastling = castling;
-            var from = Cell("g8", .3f);
-            var to = Cell("d8");
-            if (!castling) { tower.localPosition = from; tower.localRotation = Quaternion.identity; return; }
-            float k = Mathf.Clamp01((t - castleAt) / CastleSeconds);
-            var p = Vector3.Lerp(from, to, k);
-            p.y += CastleApex * 4f * k * (1f - k);
-            tower.localPosition = p;
-            tower.localRotation = Quaternion.Euler(0f, 360f * k, 0f);
-            if (k >= 1f && !landed)
+            var from = Cell(CastleFrom, .3f);
+            if (!castling) { PoseTower(from, Quaternion.identity, Vector3.one, true); return; }
+            float e = t - castleAt;
+            var to = Cell(CastleTo);
+            var dir = to - from;
+            dir.y = 0f;
+            var axis = Vector3.Cross(Vector3.up, dir.normalized);   // a positive turn round it tips the top the way on
+            if (e < CastleCrouch)
+            {
+                float c = Mathf.SmoothStep(0f, 1f, e / CastleCrouch);
+                PoseTower(from, Quaternion.AngleAxis(-8f * c, axis), new Vector3(1f + .1f * c, 1f - .18f * c, 1f + .1f * c), true);
+                return;
+            }
+            if (e < CastleCrouch + CastleFlight)
+            {
+                float u = (e - CastleCrouch) / CastleFlight;
+                if (!tookOff)
+                {
+                    tookOff = true;
+                    ArenaFx.Sfx("sfx_castle_whoosh", World(from));
+                }
+                // On the flat a quadratic curve through the king's place at its middle; up and down a parabola.
+                var king = SledAt(KingEscortPath.Length, out _);
+                Vector3 p0 = Flat(from), p2 = Flat(to), bend = Flat(king) * 2f - (p0 + p2) * .5f;
+                var p = Vector3.Lerp(Vector3.Lerp(p0, bend, u), Vector3.Lerp(bend, p2, u), u);
+                p.y = Mathf.Lerp(from.y, to.y, u) + CastleApex * 4f * u * (1f - u);
+                // out of the crouch's lean, then one somersault, upright again before it lands
+                float turn = Mathf.Lerp(-8f, 0f, Mathf.Clamp01(u / .1f)) + 360f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.1f, .9f, u));
+                var flip = Quaternion.AngleAxis(turn, axis);
+                float stretch = u < .3f ? 1f - u / .3f : u > .8f ? (u - .8f) / .2f : 0f;
+                PoseTower(p, flip, new Vector3(1f - .06f * stretch, 1f + .14f * stretch, 1f - .06f * stretch), false);
+                return;
+            }
+            float a = e - CastleCrouch - CastleFlight;
+            if (!landed)
             {
                 landed = true;
                 var at = World(to);
                 ArenaFx.Ring(at, 0f, 2.5f, .6f, station.Accent(station.Team));
-                ArenaFx.Burst(at + Vector3.up * .2f, new[] { station.Accent(station.Team), Arena.Gold }, 20, 2f, 2.5f, .9f, .1f);
+                ArenaFx.Burst(at + Vector3.up * .2f, new[] { station.Accent(station.Team), Arena.Gold, new Color(.85f, .8f, .7f) }, 24, 2.2f, 2.5f, .9f, .1f);
                 ArenaFx.Sfx("sfx_castle_land", at);
             }
+            // squashed flat on landing, springing back through a stretch in two bounces
+            float squash = .22f * Mathf.Exp(-a / .12f) * Mathf.Cos(a * 2f * Mathf.PI / .18f);
+            PoseTower(to, Quaternion.identity, new Vector3(1f + squash * .6f, 1f - squash, 1f + squash * .6f), true);
+        }
+
+        static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+
+        // The tower with its foot at `foot` (the game's frame), scaled from its foot. Standing it leans on its foot and shows
+        // its floor band; flying it turns round its middle (`foot` is then where the foot would be, upright) without it.
+        void PoseTower(Vector3 foot, Quaternion turn, Vector3 scale, bool standing)
+        {
+            tower.localRotation = turn;
+            if (standing) tower.localPosition = foot;
+            else
+            {
+                var middle = Vector3.up * (TowerMiddle * scale.y);
+                tower.localPosition = foot + middle - turn * middle;
+            }
+            tower.localScale = scale;
+            if (towerRing != null && towerRing.enabled != standing) towerRing.enabled = standing;
         }
 
         // ------------------------------------------------------------------ the wire (7 bytes)
@@ -461,10 +517,11 @@ namespace ChessFight.PawnRush
                 popAt[k] = -1f;
                 rookPushers[k] = 0;
             }
-            castling = wasCastling = landed = false;
+            castling = wasCastling = tookOff = landed = false;
             castleAt = -1f;
             pushers = holders = 0;
             if (sled != null) Place(0f, true);
+            if (tower != null) PoseTower(Cell(CastleFrom, .3f), Quaternion.identity, Vector3.one, true);
         }
     }
 }
