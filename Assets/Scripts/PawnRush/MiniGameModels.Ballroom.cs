@@ -306,13 +306,22 @@ namespace ChessFight.PawnRush
             var model = ((index % 4) + (index / 4)) % 2 == 0 ? gown : coat;
             if (model == null) return;
             Renderer skin = null;
+            // R520 (the user's list, 11-09, 11: "대무도회장 미니게임에 표적들이 이상하게 생긴 애들이 있음"): the doll's own parts
+            // (once hung: the doll and its key) keep drawing, nothing else does. Before, a statue with no doll yet skipped
+            // every renderer under the statue (`?? statue`), so in Play - one dressing of freshly installed games - the
+            // game's black pawn and R312's code costume (an orange cylinder gown, an iron tailcoat block with a white shirt
+            // plate, a second key) stayed on round and through the doll, and the doll never glowed in its capture window
+            // (no skin to read).
+            var ride = look.Find(RideName);
+            var ownKey = look.Find("MODEL_Key");
             foreach (var r in look.GetComponentsInChildren<Renderer>(true))
             {
-                if (r.name == "Ring" || r is LineRenderer || r.transform.IsChildOf(look.Find(RideName) ?? statue)) continue;
+                if (r.name == "Ring" || r is LineRenderer) continue;
+                if ((ride != null && r.transform.IsChildOf(ride)) || (ownKey != null && r.transform.IsChildOf(ownKey))) continue;
                 if (skin == null && r.transform.parent == look) skin = r;
                 r.enabled = false;
             }
-            if (look.Find(RideName) != null) return;
+            if (ride != null) return;
             Hang(look, RideName, model, cache);
             Transform spin = null;
             if (key != null)

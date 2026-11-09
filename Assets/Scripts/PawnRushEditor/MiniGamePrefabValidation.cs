@@ -353,6 +353,7 @@ namespace ChessFight.PawnRush.Editor
                     CheckPads();   // R516: the promotion pads are back in the palace sections
                     CapturePads(current);
                     if (current.GameIndex == PawnRushMissions.Paint) CheckDuplicatePaint();
+                    if (current.GameIndex == PawnRushMissions.EnPassant) CheckDancers();
                     if (current.GameIndex == PawnRushMissions.CheckBlock) kingRenderers = KingRendererCount();
                     if (current.GameIndex == PawnRushMissions.Drawbridge || current.GameIndex == PawnRushMissions.Bells
                         || current.GameIndex == PawnRushMissions.KingEscort) Capture(current);
@@ -434,6 +435,29 @@ namespace ChessFight.PawnRush.Editor
             }
             Require(current.GetComponentsInChildren<Transform>(true).Count(t => t.name == MiniGamePalaceArt.ShellName) == 1,
                 "Static shell duplicated or missing");
+        }
+
+        // R520: in the ballroom (F) every statue shows its doll and nothing else - the team band ring, the capture halo and
+        // the doll with its key draw; the game's pawn and R312's code costume do not (in Play they stayed on, 11-09) - and
+        // each has its MiniGameDancerLook (the doll's glow in the capture window).
+        static void CheckDancers()
+        {
+            int statues = 0;
+            foreach (var station in current.Stations)
+                foreach (var t in station.Game.GetComponentsInChildren<Transform>(true))
+                {
+                    var look = t.name.StartsWith("Statue ") ? t.Find("Look") : null;
+                    if (look == null) continue;
+                    statues++;
+                    var stray = look.GetComponentsInChildren<Renderer>(true)
+                        .Where(r => r.enabled && r.name != "Ring" && !(r is LineRenderer)
+                                    && !r.GetComponentsInParent<Transform>(true).Any(p => p.parent == look && (p.name == "MODEL_Ride" || p.name == "MODEL_Key")))
+                        .Select(r => r.name).Distinct().ToList();
+                    Require(stray.Count == 0, "Ballroom statue shows more than its doll: " + station.name + " " + t.name + " (" + string.Join(", ", stray) + ")");
+                    Require(look.Find("MODEL_Ride") != null && t.GetComponent<MiniGameDancerLook>() != null, "Ballroom statue has no doll: " + station.name + " " + t.name);
+                }
+            Require(statues == 2 * EnPassantRules.Statues, "Ballroom: " + statues + " statues, expected " + 2 * EnPassantRules.Statues);
+            Log("Ballroom dancers: all " + statues + " statues show only their dolls");
         }
 
         // R516: each station's promotion pad is there, lies on the dais (a ray from above lands on the floor it is drawn on),

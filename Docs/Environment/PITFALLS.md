@@ -262,6 +262,13 @@ Prototype 코드41개는 새 asmdef로 분리하면 기존 어셈블리 내부 �
 
 실제 충전/발사·입자 방출·시뮬레이션의 세 방향 검사에서 수정 전 엔진 오류30건+모드 실패3건, 수정 후 오류0·세 방향 통과를 AI가 기록했다. 자동 검사 결과와 사용자 회의실 외형 확인은 구분한다. 검사기 자체의 첫 실행은 재생 중 `randomSeed`를 설정한 assertion도 냈으므로, 먼저 `Stop(...StopEmittingAndClear)`한 뒤 씨앗을 넣도록 고쳤다. 운영 효과가 collider를 `Object.Destroy`로 정리하므로 이 경로의 회귀 검사는 Play Mode에서 실행한다. 초기 검사기 실패 기록도 `Logs/AirCannonFxValidation/R498-initial-harness-failure.txt`에 보존한다. [VFX 상세](../VFX/README.md#r498-작전-회의실-공기-대포의-orbital-velocity-오류-2026-11-06).
 
+## R520 편집 모드에서는 맞고 Play에서만 겹쳐 보이던 무도회장 인형 (`?? statue`)
+
+F 대무도회장의 석상(상대 팀 폰, 팀마다 16개)은 게임이 설치될 때마다 `MiniGameModels.Apply` → `Dancer`가 옛 모양(게임의 폰 몸통, R312 코드 옷)을 끄고 태엽 인형을 씌운다. 끄는 반복문이 "인형 부품은 건너뛰기"를 `r.transform.IsChildOf(look.Find(RideName) ?? statue)`로 썼는데, 인형이 아직 없으면 `?? statue` 때문에 석상 전체가 기준이 되어 **모든 부품을 건너뛰었다**. 편집기 Build는 `Apply`를 두 번 돌려(두 번째에는 인형이 있어 제대로 끔) 프리팹 · 편집 화면에서는 멀쩡했고, Play는 게임을 새로 깔고 한 번만 돌아 주황 원통 · 쇠 상자 옷과 검은 폰이 인형을 덮었다(사용자 11-09 "표적들이 이상하게 생긴 애들이 있음"). 인형의 금빛(잡을 수 있는 때)도 몸통을 못 찾아 한 번도 켜지지 않았다.
+
+- "건너뛸 것"을 고르는 조건에 `??`로 넓은 기본값을 주지 않는다. 없으면 아무것도 건너뛰지 않는 쪽이 맞다.
+- 그림을 끄고 켜는 코드는 Play(한 번 설치)에서 확인한다. 편집 화면은 Build가 같은 단계를 여러 번 돌린 결과다. `MiniGamePrefabValidation.RunPlayBatch`가 R520부터 F 방 석상마다 인형 말고 켜진 그림이 없는지 본다.
+
 ## R516 배치 모드 Play 점검이 편집기 오류 하나로 일시정지돼 시간 초과된다
 
 미니게임 런타임 점검(`MiniGamePrefabValidation.RunPlayBatch`, 프로젝트 사본에서 배치 모드)이 첫 방 캡처 직후, 또는 F 무도회장을 띄운 직후 멈춰 1200초 뒤 실패했다. 로그에는 화면 갱신("no audio listeners" 수십만 줄)이 계속되는데 점검은 `Time.fixedTime`이 늘기를 기다리고 있었다. Play 중 렌더 파이프라인이 자기 편집기 에셋(`TraceRenderingLayerMask.urtshader`)에 대해 `Host type is not matching any asset type` 오류를 찍으면, 이 PC의 콘솔 설정 **Error Pause**(에디터 설정이라 사본에도 적용)가 Play를 일시정지시키기 때문이다. 게임 오류가 아니니 점검은 그 메시지를 실패로 세지 않고, 매 프레임 `EditorApplication.isPaused`를 풀어 둔다(R516). 배치 모드 Play 자동화를 새로 짤 때도 같은 함정을 본다.
