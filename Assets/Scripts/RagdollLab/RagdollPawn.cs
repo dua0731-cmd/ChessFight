@@ -1391,6 +1391,10 @@ namespace ChessFight.RagdollLab
             if (!fromGround && !pullUp) return;
             ledgePush = 0f;
             float up = JumpSpeed(p) * (pullUp ? p.pullUpFactor : 1f);
+            // A pressed spring key adds a small boost only to an actual grounded jump.
+            if (fromGround && Grounded && groundCollider != null &&
+                groundCollider.GetComponentInParent<IJumpSpringSurface>() is IJumpSpringSurface spring)
+                up += Mathf.Clamp(spring.TakeJumpBonus(Hips.position), 0f, 2f);
             Vector3 toward = Vector3.zero;
             if (pullUp)
             {

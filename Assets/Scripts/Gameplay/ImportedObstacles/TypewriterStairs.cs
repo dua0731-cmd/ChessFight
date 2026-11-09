@@ -2,20 +2,26 @@ using System;
 using System.Collections.Generic;
 using ChessFight.Game;
 using ChessFight.Gameplay;
+using ChessFight.Network;
 using UnityEngine;
 
 namespace ChessFight.ProtectKing
 {
-    // The printed order is the source of truth. Any letter in it is safe; order is not enforced.
+    // Five route clues map to five keyboard rows. The final keyboard never reveals the answers.
+    [DefaultExecutionOrder(-120)]
     public sealed class TypewriterStairs : Obstacle
     {
         [SerializeField] ObstacleContext context;
-        [SerializeField] string printedWord = "CHECK";
-        [SerializeField] string keyLetters = "BCFNQSHRXEVPCBNRQKWZ";
+        [SerializeField] Transform[] clueFaces;
+        [SerializeField] TypewriterKey[] keys;
+        [SerializeField] BoxCollider keyboardWell;
+        TypewriterMemory layout;
+        TextMesh[] keyText, clueText;
         [SerializeField] BoxCollider[] keyAreas;
         [SerializeField] Transform[] keyFaces;
         [SerializeField] Renderer[] keyVisuals;
         [SerializeField] Transform documentFace;
+        [SerializeField] Transform nameplateFace;
         [SerializeField, Min(0)] float backwardSpeed = 12;
         [SerializeField, Min(0)] float upwardSpeed = 6;
         [SerializeField, Min(0)] float knockdownSeconds = .7f;
@@ -27,25 +33,39 @@ namespace ChessFight.ProtectKing
         float[] flashUntil;
         MaterialPropertyBlock tint;
 
-        public bool IsSafe(char letter) => char.IsLetter(letter) && !string.IsNullOrEmpty(printedWord)
-            && printedWord.IndexOf(char.ToUpperInvariant(letter).ToString(), StringComparison.OrdinalIgnoreCase) >= 0;
-
+        public bool IsSafe(int index) => layout != null && layout.Safe(index);
         void Awake()
         {
             if (context == null) context = GetComponentInParent<ObstacleContext>();
-            if (string.IsNullOrWhiteSpace(printedWord) || keyAreas == null || keyLetters == null || keyLetters.Length != keyAreas.Length ||
-                keyFaces == null || keyFaces.Length != keyAreas.Length || keyVisuals == null || keyVisuals.Length != keyAreas.Length)
-            { Debug.LogError("Typewriter stairs require matching letters, areas, labels and key visuals.", this); enabled = false; return; }
-            for (int i = 0; i < keyAreas.Length; i++)
-                if (keyAreas[i] == null || keyFaces[i] == null || keyVisuals[i] == null)
-                { Debug.LogError("Typewriter stairs have an unassigned key.", this); enabled = false; return; }
-            flashUntil = new float[keyAreas.Length]; tint = new MaterialPropertyBlock();
-            for (int i = 0; i < keyFaces.Length; i++)
-                Label(keyFaces[i], char.ToUpperInvariant(keyLetters[i]).ToString(), 2.2f, 1.1f, Color.black);
+            if (keyAreas == null || keyAreas.Length != 20 || keys == null || keys.Length != 20 ||
+                keyFaces == null || keyFaces.Length != 20 || keyVisuals == null || keyVisuals.Length != 20 ||
+                clueFaces == null || clueFaces.Length != 5 || keyboardWell == null)
+            { Debug.LogError("Typewriter requires twenty keys and five route clues.", this); enabled = false; return; }
+            for (int i = 0; i < 20; i++)
+                if (keys[i] == null || keyAreas[i] == null || keyFaces[i] == null || keyVisuals[i] == null)
+                { Debug.LogError("Typewriter has an unassigned key.", this); enabled = false; return; }
+            foreach (var clue in clueFaces) if (clue == null)
+            { Debug.LogError("Typewriter has an unassigned clue.", this); enabled = false; return; }
+            flashUntil = new float[20]; tint = new MaterialPropertyBlock();
+            keyText = new TextMesh[20]; clueText = new TextMesh[5];
+            for (int i = 0; i < 20; i++) keyText[i] = Label(keyFaces[i], "W", 1.7f, 1.5f, Color.black);
+            for (int i = 0; i < 5; i++) clueText[i] = Label(clueFaces[i], "5\nW", 2.3f, 2.3f, Color.black);
             if (documentFace != null)
-                Label(documentFace, "작전 명령서\n" + printedWord.ToUpperInvariant() + "\n이 글자만 밟으시오\n다른 키는 뒤로 튕겨냅니다", 8, 2.6f, Color.black);
+                Label(documentFace, "1 → 2 → 3 → 4 → 5\n기억한 글자로 올라가 안으로 들어가세요", 8, 1.2f, Color.black);
+            if (nameplateFace != null) Label(nameplateFace, "MEMORY TYPEWRITER", 9, .65f, Color.white);
+            NewRound();
         }
-        static void Label(Transform parent, string value, float width, float height, Color color)
+        public void NewRound()
+        {
+            if (keyText == null) return;
+            string previous = layout == null ? null : layout.Sequence;
+            do { layout = TypewriterMemory.Generate(new System.Random(UnityEngine.Random.Range(0, int.MaxValue))); }
+            while (layout.Sequence == previous);
+            for (int i = 0; i < 20; i++) { keyText[i].text = layout.Keys[i].ToString(); keys[i].ResetKey(); }
+            for (int i = 0; i < 5; i++) clueText[i].text = (i + 1) + "\n" + layout.Sequence[i];
+            lastHit.Clear(); visited.Clear(); Array.Clear(flashUntil, 0, flashUntil.Length);
+        }
+        static TextMesh Label(Transform parent, string value, float width, float height, Color color)
         {
             var go = new GameObject("Printed lettering"); go.transform.SetParent(parent, false);
             var text = go.AddComponent<TextMesh>(); text.text = value; text.anchor = TextAnchor.MiddleCenter;
@@ -55,15 +75,16 @@ namespace ChessFight.ProtectKing
             Vector3 size = renderer.localBounds.size;
             float scale = Mathf.Min(1, Mathf.Min(width / Mathf.Max(.001f, size.x), height / Mathf.Max(.001f, size.y)));
             go.transform.localScale = Vector3.one * scale;
+            return text;
         }
         void FixedUpdate()
         {
             if (keyAreas == null || flashUntil == null || (context != null && (!context.Running || !context.Authority))) return;
             float now = Time.time;
             visited.Clear();
+            foreach (var key in keys) key.SetPressed(false);
             for (int i = 0; i < keyAreas.Length; i++)
             {
-                if (IsSafe(keyLetters[i])) continue;
                 var area = keyAreas[i];
                 if (!area.gameObject.activeInHierarchy) continue;
                 var scale = area.transform.lossyScale;
@@ -77,14 +98,31 @@ namespace ChessFight.ProtectKing
                     Vector3 foot = area.transform.InverseTransformPoint(actor.Position) - area.center;
                     Vector3 half = area.size * .5f;
                     // A reaching hand, an airborne crossing or a pawn below the step cannot press a key.
-                    if (Mathf.Abs(foot.x) > half.x || Mathf.Abs(foot.z) > half.z || Mathf.Abs(foot.y) > half.y || !visited.Add(actor)) continue;
-                    if (lastHit.TryGetValue(actor, out float previous) && now >= previous && now - previous < Mathf.Max(.1f, hitCooldown)) continue;
-                    lastHit[actor] = now; flashUntil[i] = now + Mathf.Max(.05f, flashSeconds);
-                    actor.AddObstacleHit(transform.TransformDirection(Vector3.back) * Mathf.Max(0, backwardSpeed)
-                        + Vector3.up * Mathf.Max(0, upwardSpeed), Mathf.Max(0, knockdownSeconds));
+                    if (foot.x * foot.x + foot.z * foot.z > 1.4f * 1.4f || Mathf.Abs(foot.y) > half.y || !visited.Add(actor)) continue;
+                    keys[i].SetPressed(true);
+                    if (!IsSafe(i)) Hit(actor, now, i);
                 }
             }
+            // The dark bed between round keys is also unsafe; it cannot become a shortcut below them.
+            var well = keyboardWell.bounds;
+            int n = Physics.OverlapBoxNonAlloc(well.center, well.extents, overlaps, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var actor = ImportedObstacleActor.Find(overlaps[i]);
+                if (actor == null || !actor.CanReceiveObstacle || !actor.Grounded || visited.Contains(actor)) continue;
+                if (!well.Contains(actor.Position)) continue;
+                visited.Add(actor); Hit(actor, now, -1);
+            }
         }
+        void Hit(ImportedObstacleActor actor, float now, int key)
+        {
+            if (lastHit.TryGetValue(actor, out float previous) && now >= previous && now - previous < Mathf.Max(.1f, hitCooldown)) return;
+            lastHit[actor] = now;
+            if (key >= 0) flashUntil[key] = now + Mathf.Max(.05f, flashSeconds);
+            actor.AddObstacleHit(transform.TransformDirection(Vector3.back) * Mathf.Max(0, backwardSpeed)
+                + Vector3.up * Mathf.Max(0, upwardSpeed), Mathf.Max(0, knockdownSeconds));
+        }
+
         void Update()
         {
             if (flashUntil == null) return;

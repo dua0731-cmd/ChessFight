@@ -452,33 +452,69 @@ class Builder(LegacyBuilder):
     def typewriter(self):
         import math
         g=self.group('Typewriter stairs - printed command',pos=(0,0,-51));ctx=self.c.context(g)
-        areas=[];faces=[];visuals=[];letters='BCFNQSHRXEVPCBNRQKWZ'
-        self.box(g,'Typewriter dark case',(0,-.25,7),(12.4,.5,14.4),'Night')
+        areas=[];faces=[];visuals=[];keys=[];clues=[]
+        # A black enamel case, brass round keys, exposed levers, ribbon spools and a wide paper carriage.
+        self.box(g,'Black enamel keyboard bed',(0,-.55,7),(12.4,.3,14),'EnamelBlack')
+        well=self.d.box(g,size=(12,2.8,14),center=(0,.7,7),trigger=True)
         for side in (-1,1):
-            self.wall(g,'Typewriter side casing '+str(side),(side*6.3,1.5,7),(.6,3,14.4))
+            self.box(g,'Enamel side housing '+str(side),(side*8.6,2.1,13),(5,5.2,28),'EnamelBlack')
+            self.box(g,'Polished side rail '+str(side),(side*6.2,3.9,8),(.25,.3,18),'Gold',False)
+            self.box(g,'Curved front cheek '+str(side),(side*8,1,0),(6,3,5),'EnamelBlack',False,shape='Sphere')
+            spool=self.box(g,'Ink ribbon spool '+str(side),(side*8,5,17),(4,.25,4),'EnamelBlack',False,shape='Cylinder')
+            self.box(g,'Spool brass hub '+str(side),(side*8,5.35,17),(.8,.15,.8),'Gold',False,shape='Cylinder')
+            self.box(g,'Ribbon guide '+str(side),(side*4.7,5.4,18),(.2,1,.3),'Gold',False)
+            self.box(g,'Carriage knob '+str(side),(side*11.7,7.5,21),(1.6,.5,1.6),'EnamelBlack',False,rot=(0,0,.70710678,.70710678),shape='Cylinder')
+            for z in (1,23):self.box(g,'Rubber foot '+str(side)+' '+str(z),(side*9,-.8,z),(2,.4,2),'EnamelBlack',False,shape='Cylinder')
+        self.box(g,'Crimson ink ribbon',(0,5.4,18),(16,.22,.12),'Purple',False)
+        self.box(g,'Front brass rim',(0,-.05,-.3),(13,.3,.35),'Gold',False)
         for row in range(5):
-            height=(row+1)*.25;z=row*2.8
+            height=(row+1)*.32;z=row*2.8+1.4
             for col in range(4):
-                key=self.group('Key '+str(row)+'-'+str(col),g,((col-1.5)*3,0,z))
-                cap=self.box(key,'Typewriter key cap',(0,(height-.3)/2,1.8),(2.98,height+.3,2),'White')
-                visuals.append(cap['comps'][2])
-                angle=math.atan2(.25,.8)
-                self.box(key,'Walk-up key bevel',(0,height-.125-.06*math.cos(angle),.4),
-                    (2.98,.12,math.sqrt(.8**2+.25**2)),'White',rot=kit.pitch(-math.degrees(angle)))
-                face=self.group('Key letter',key,(0,height+.025,1.8),kit.pitch(90));faces.append(face['tr'])
-                areas.append(self.d.box(key,size=(2.98,.7,2.8),center=(0,height-.1,1.4),trigger=True))
-        angle=math.atan2(1.25,5)
-        self.box(g,'Typewriter exit ramp',(0,.625-.08*math.cos(angle),16.5),
-            (12,.16,math.sqrt(25+1.25**2)),'Ivory',rot=kit.pitch(math.degrees(angle)))
-        self.box(g,'Printed order frame',(0,5,-3),(9.4,3.4,.4),'Wood',False)
-        self.box(g,'Printed order paper',(0,5,-3.23),(9,3,.04),'White',False)
-        document=self.group('Printed order text',g,(0,5,-3.27))
-        for side in (-1,1):self.box(g,'Paper feed support '+str(side),(side*6.3,3,-3),(.5,6,.5),'Gold')
-        fields=kit.fields(context=kit.ref(ctx),printedWord='"CHECK"',keyLetters='"'+letters+'"',documentFace=kit.ref(document['tr']),
+                x=(col-1.5)*3
+                self.box(g,'Key stem '+str(row)+'-'+str(col),(x,height*.5-.3,z),(.3,max(.1,height*.5),.3),'Gold',False,shape='Cylinder')
+                key=self.group('Key '+str(row)+'-'+str(col),g,(x,height-.15,z))
+                self.d.rigidbody(key,True)
+                keys.append(self.d.script(key,'TypewriterKey',kit.fields(pressDepth=.14,pressSpeed=.8,returnSpeed=1.5,jumpBonus=1.2)))
+                rim=self.box(key,'Round brass key rim',(0,0,0),(2.8,.15,2.8),'Gold',True,shape='Cylinder')
+                self.box(key,'Black key bezel',(0,.145,0),(2.64,.018,2.64),'EnamelBlack',False,shape='Cylinder')
+                face=self.box(key,'Ivory letter disk',(0,.165,0),(2.42,.012,2.42),'Ivory',False,shape='Cylinder')
+                visuals.append(face['comps'][2])
+                faces.append(self.group('Key letter',key,(0,.195,0),kit.pitch(90))['tr'])
+                areas.append(self.d.box(key,size=(2.8,.9,2.8),center=(0,.2,0),trigger=True))
+        # The keyboard rises into the machine, through a high clear opening under its type basket.
+        for i in range(17):
+            angle=(i-8)*5
+            self.box(g,'Type bar '+str(i),(math.sin(math.radians(angle))*5,5.6,17+math.cos(math.radians(angle))*2),
+                (.12,.16,4),'Gold',False,rot=kit.yaw(angle))
+        self.box(g,'Type basket fascia',(0,6.1,16.2),(13,1.2,.8),'EnamelBlack')
+        self.box(g,'Inner sill',(0,1.3,16),(12,.6,4),'EnamelBlack')
+        self.box(g,'Carriage steel rail',(0,7.2,21),(23,.3,.3),'TypewriterSteel',False)
+        self.box(g,'Black platen roller',(0,7.8,21),(2.1,11,2.1),'EnamelBlack',False,rot=(0,0,.70710678,.70710678),shape='Cylinder')
+        paper=self.group('Paper carriage',g,(0,11.5,22),kit.pitch(-8))
+        self.box(paper,'Paper backing',(0,0,0),(17,7,.12),'White',False)
+        self.box(g,'Paper pressure bar',(0,8.5,20.3),(19,.22,.25),'Gold',False)
+        for line in range(7):self.box(paper,'Printed paper line '+str(line),(0,-2+line*.55,-.075),(12-line%3,.06,.025),'Slate',False)
+        self.box(g,'Carriage nameplate',(0,9,20),(10,1.2,.3),'EnamelBlack',False)
+        nameplate=self.group('Carriage branding',g,(0,9,19.8))
+        self.box(g,'Keyboard instruction plate',(0,4.8,14.2),(10,1.5,.2),'Ivory',False)
+        document=self.group('Printed order text',g,(0,4.8,14.08))
+        # Enclosed continuation: climbing into the typewriter leads directly to the headquarters door.
+        for side in (-1,1):self.wall(g,'Inside typewriter wall '+str(side),(side*6.4,3.5,27.5),(.8,7,27))
+        self.box(g,'Inside typewriter roof',(0,7,27.5),(12,.4,27),'EnamelBlack')
+        angle=math.atan2(1.6,6)
+        self.box(g,'Typewriter interior descent',(0,.8-.08*math.cos(angle),21),
+            (12,.16,math.sqrt(36+1.6**2)),'EnamelBlack',rot=kit.pitch(math.degrees(angle)))
+        for i,z in enumerate((-138,-112,-80,-58,-53)):
+            x=-8 if i%2==0 else 8
+            plaque=self.group('Memory clue '+str(i+1),g,(x,3.8,z+51))
+            self.box(plaque,'Brass clue frame',(0,0,0),(3.2,3.2,.3),'Gold',False)
+            self.box(plaque,'Clue paper',(0,0,-.18),(2.9,2.9,.04),'White',False)
+            clues.append(self.group('Random clue glyph',plaque,(0,0,-.22))['tr'])
+        data=kit.fields(context=kit.ref(ctx),documentFace=kit.ref(document['tr']),nameplateFace=kit.ref(nameplate['tr']),keyboardWell=kit.ref(well),
             backwardSpeed=12,upwardSpeed=6,knockdownSeconds=.7,hitCooldown=1,flashSeconds=.3)
-        for name,values in [('keyAreas',areas),('keyFaces',faces),('keyVisuals',visuals)]:
-            fields+='  '+name+':\n'+''.join('  - '+kit.ref(x)+'\n' for x in values)
-        self.d.script(g,'TypewriterStairs',fields)
+        for name,values in [('keyAreas',areas),('keyFaces',faces),('keyVisuals',visuals),('keys',keys),('clueFaces',clues)]:
+            data+='  '+name+':\n'+''.join('  - '+kit.ref(x)+'\n' for x in values)
+        self.d.script(g,'TypewriterStairs',data)
     def exhibit(self,pos,fraction):
         g=self.group('Random GM replay preview '+str(fraction),pos=pos)
         self.box(g,'Framed score board',(0,4,0),(10,10,.5),'Wood')
@@ -492,7 +528,7 @@ class Builder(LegacyBuilder):
         self.box(self.root,'Operations ceiling',(0,30,-80),(320,1,140),'Slate')
         for x in (-87.5,87.5):self.box(self.root,'Side room scenery floor '+str(x),(x,-1.4,-80),(143,.8,138),'Slate')
         # Keep the playable strip narrow. The side rooms are scenery, without bypass floors.
-        for a,b in ((-146,-100),(-60,-20),(-20,0)):
+        for a,b in ((-146,-100),(-60,-51),(-27,-8)):
             self.box(self.root,'Approach floor '+str(a),(0,-.4,(a+b)/2),(12,.8,b-a),'Ivory')
         for x in (-14,14):self.wall(self.root,'Operations corridor side '+str(x),(x,10,-77),(1,40,146))
         self.box(self.root,'Sunken map pit',(0,-12,-88),(28,1,48),'Night',False)

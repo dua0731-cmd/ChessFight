@@ -1,5 +1,7 @@
 # 변경 이력
 
+**2026-11-09 · 빈티지 기억 타자기:** 활성/원본 프리팹 타자기 교체, TypewriterMemory 무작위 경로·힌트, TypewriterKey 눌림·점프 반동, RagdollPawn의 IJumpSpringSurface 선택적 연결 추가. 저장된 접근로와 런타임 Entry platform 경계를 분리. 형상 Blender 미리보기 추가. 외부 런타임9개 컴파일 통과, Unity 확인 전. Gameplay 자동50검사 통과.
+
 **2026-11-08 · Fork 타자기 계단:** 작전실 병력 대열 두 줄을 CHECK 문서 기반 타자기 계단으로 교체. 20키·안전 경로·보행 경사·오답 타격 구현. 자동49·런타임9개 컴파일 통과, Unity 확인 전.
 
 

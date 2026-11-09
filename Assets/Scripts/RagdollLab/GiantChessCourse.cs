@@ -98,7 +98,8 @@ namespace ChessFight.RagdollLab
                 }
                 occupiedMarks[s] = mark;
             }
-            Shape("Entry platform", new Vector3(0, -.4f, -10), new Vector3(tileSize * 8, .8f, 20), gold);
+            float entryDepth = approach != null && approach.Available ? 8 : 20;
+            Shape("Entry platform", new Vector3(0, -.4f, -entryDepth * .5f), new Vector3(tileSize * 8, .8f, entryDepth), gold);
             Shape("Exit platform", new Vector3(0, -.4f, tileSize * 8 + 10), new Vector3(tileSize * 8, .8f, 20), gold);
             Shape("Finish stripe", new Vector3(0, .03f, tileSize * 8 + 3), new Vector3(tileSize * 8, .04f, 1), white, solid: false);
             for (int side = -1; side <= 1; side += 2)
@@ -265,7 +266,11 @@ namespace ChessFight.RagdollLab
                 if (Input.GetKeyDown(KeyCode.Tab)) Select((selected + 1) % 12);
                 if (Input.GetKeyDown(KeyCode.B)) botsEnabled = !botsEnabled;
                 if (Input.GetKeyDown(KeyCode.R)) Place(selected);
-                if (Input.GetKeyDown(KeyCode.F3)) { ChooseGame(); ResetBoard(); ResetPlayers(); }
+                if (Input.GetKeyDown(KeyCode.F3))
+                {
+                    ChooseGame(); ResetBoard(); ResetPlayers();
+                    foreach (var keyboard in GetComponentsInChildren<ChessFight.ProtectKing.TypewriterStairs>()) keyboard.NewRound();
+                }
                 if (Input.GetKeyDown(KeyCode.N) && running && (approach == null || !approach.Available || approach.ChessStarted)) elapsed = 1000; // Advance one phase, never skip a chess move.
             }
             bool active = running && !menu && Application.isFocused;
@@ -357,7 +362,7 @@ namespace ChessFight.RagdollLab
                 : phase == 1 ? "기물 착지 예고" : phase == 2 ? "빨간 칸 공격 예고" : phase == 3 ? "충격파!" : "다음 수 준비";
             GUI.Label(new Rect(24, 20, 690, 175), $"{CurrentGame.Title}\n{stage} · {move}\n{state} · 백팀 도착 {a}/6 / 흑팀 {b}/6\nEnter 시작 · WASD 이동 · 마우스 좌 밀치기 / 우 잡기 · Space 점프\nTab 캐릭터 · B 봇 · R 현재 구간 복귀 · F3 전체 초기화 · N 다음 연출 단계 · Esc 기보 일시정지", hud);
             if (inOffices) GUI.Label(new Rect(24, 202, 690, 50),
-                "작전지도: 펼쳐질 때 전진 · 타자기 계단: 명령서에 있는 글자만 밟기\n지도 손잡이: 우클릭 잡기로 감속 · 액자: 후반 기보 예고", hud);
+                "작전지도: 펼쳐질 때 전진 · 타자기: 힌트 1~5를 기억하고 각 단의 글자 선택\n지도 손잡이: 우클릭 잡기로 감속 · 액자: 후반 기보 예고", hud);
         }
         void OnDestroy()
         {
