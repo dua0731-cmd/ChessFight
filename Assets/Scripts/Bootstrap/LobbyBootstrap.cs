@@ -91,6 +91,14 @@ namespace ChessFight.Game
                 else hud.ShowToast("지금은 초대할 수 없습니다.", true);
             };
             hud.SteamOverlayInvite += () => session.Invite();
+            // R529: an invite this PC received, answered on the lobby's card.
+            hud.AcceptInvite += lobby =>
+            {
+                session.AcceptInvite(lobby);
+                if (!string.IsNullOrEmpty(session.Error)) hud.ShowToast(session.Error, true);
+                refreshAt = 0;
+            };
+            hud.DeclineInvite += lobby => { session.DeclineInvite(lobby); refreshAt = 0; };
             // My name top right (R85): the name screen over the lobby, then back.
             hud.Rename += () =>
             {
@@ -145,6 +153,10 @@ namespace ChessFight.Game
             stage.Show(lineup);
             hud.SetLineup(lineup, stage.View);
             hud.Render(in model);
+            // R529: the newest party invite this PC received (the session keeps a few, each for a while).
+            var invites = session.Invites;
+            if (invites.Count == 0) hud.SetInvite("", 0);
+            else hud.SetInvite(session.Name(invites[invites.Count - 1].From), invites[invites.Count - 1].Lobby, invites.Count - 1);
         }
 
         // Presence changes while the panel sits open, so re-poll on a timer. With

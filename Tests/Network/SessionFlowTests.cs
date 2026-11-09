@@ -703,6 +703,21 @@ public static class SessionFlowTests
                 As(leader,leader.StartGame);Step(5);ulong room=leader.Match;
                 FakeSteam.Crash(member.Self);clients.Remove(member);Step(20);
                 Check(leader.Match==room&&leader.Started&&solo.Started&&leader.Roster.Count==2&&RoomData(leader,"open")=="1","a member's crash ended the match for its party");});
+            // R529: an invite used to reach the game only once accepted in Steam's overlay.
+            Test("A party invite reaches the friend's game: listed with its sender, a party chat line, declined, accepted, expired",()=>{
+                Setup(3);var a=clients[0];var b=clients[1];var c=clients[2];
+                As(a,()=>a.InviteToParty(b.Self));Step();
+                Check(b.Invites.Count==1&&b.Invites[0].From==a.Self&&b.Invites[0].Lobby==a.Party,"the invite did not arrive: "+b.Invites.Count);
+                Check(b.Chat.Entries.Any(e=>e.Notice&&e.Text.Contains("파티에 초대했어요")),"no line in the party chat");
+                As(b,()=>b.DeclineInvite(a.Party));Check(b.Invites.Count==0,"a declined invite is still listed");
+                As(a,()=>a.InviteToParty(b.Self));As(a,()=>a.InviteToParty(b.Self));Step();
+                Check(b.Invites.Count==1,"one invite per sender and party: "+b.Invites.Count);
+                As(b,()=>b.AcceptInvite(b.Invites[0].Lobby));Step(10);
+                Check(b.Party==a.Party&&b.Invites.Count==0&&b.Error=="","accepting did not take b into a's party: "+b.Error);
+                As(a,()=>a.InviteToParty(c.Self));Step();
+                Check(c.Invites.Count==1,"the second invite did not arrive");
+                UnityEngine.Time.realtimeSinceStartup+=SteamSession.InviteLasts+1;Step(1);
+                Check(c.Invites.Count==0,"an invite left alone never goes away");});
             Test("Party chat reaches every member under the sender's Steam name, notes joins and leaves, and allows one line a second",()=>{
                 Setup(3);JoinParty(1,0);JoinParty(2,0);var leader=clients[0];var member=clients[1];
                 Check(leader.Chat.In(ChatChannel.Party).Count(e=>e.Notice&&e.Text.Contains("파티에 들어왔어요"))==2,"joins not noted");

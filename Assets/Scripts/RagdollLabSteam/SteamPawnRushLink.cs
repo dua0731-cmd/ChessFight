@@ -144,6 +144,8 @@ namespace ChessFight.RagdollLab.Net
             public ushort EventAck;
             // Host only (R525): the last mini-game cheat press heard from this player (TypeDevClear's number).
             public byte DevClearSeq;
+            // Host only (R529): the last flight cheat press heard from this player (TypeDevFly's number).
+            public byte DevFlySeq;
         }
 
         // What the match runs on (R508): course 01 or a section round.
@@ -569,6 +571,7 @@ namespace ChessFight.RagdollLab.Net
             // R525 (user 11-09: "미니게임 즉시 클리어 치트 필요"): a development build's F6 finishes this player's team's next
             // mini-game - on the host at once, from a client through the host (only the host judges the mini-games).
             if (Debug.isDebugBuild && LegacyKeys.Down(KeyCode.F6) && !ChatBox.KeysHeld) AskMiniGameDone();
+            if (Debug.isDebugBuild && DevCheats.FlightKey != KeyCode.None && LegacyKeys.Down(DevCheats.FlightKey) && !ChatBox.KeysHeld) AskFlight();
             if (authority)
             {
                 if (runners.TryGetValue(session.Self, out var self)) self.Pawn.SetInput(local);
@@ -992,6 +995,33 @@ namespace ChessFight.RagdollLab.Net
             Debug.Log($"[PawnRush] 치트(F6): 방장에게 {Teams.Name(self.Team)}팀 다음 미니게임 완료를 요청" + (sent ? "" : " (보내지 못함)"));
         }
 
+        // R529: the flight cheat (development builds, F1): the host flies its own pawn; a client asks the host, reliably,
+        // with a new number, for the state it wants (so a lost or repeated ask cannot flip it twice).
+        byte devFlySent;
+        bool flightAsked;
+        void AskFlight()
+        {
+            if (!runners.TryGetValue(session.Self, out var self) || self.Pawn == null) return;
+            if (authority)
+            {
+                self.Pawn.CheatFlying = !self.Pawn.CheatFlying;
+                Debug.Log("[PawnRush] 치트(F1): 캐릭터 비행 " + (self.Pawn.CheatFlying ? "켬" : "끔"));
+                return;
+            }
+            flightAsked = !flightAsked;
+            devFlySent = (byte)(devFlySent == 255 ? 1 : devFlySent + 1);
+            bool sent = Send(session.Host, RagdollNetProtocol.DevFly(session.Match, devFlySent, flightAsked), true);
+            Debug.Log("[PawnRush] 치트(F1): 방장에게 캐릭터 비행 " + (flightAsked ? "켜기" : "끄기") + "를 요청" + (sent ? "" : " (보내지 못함)"));
+        }
+
+        void ReceiveDevFly(Runner r, byte[] bytes)
+        {
+            if (!Debug.isDebugBuild || !RagdollNetProtocol.ReadDevFly(bytes, session.Match, out byte seq, out bool on) || seq == r.DevFlySeq) return;
+            r.DevFlySeq = seq;
+            if (r.Pawn != null) r.Pawn.CheatFlying = on;
+            Debug.Log($"[PawnRush] 치트(F1): {session.Name(r.Id)} 님의 캐릭터 비행 " + (on ? "켬" : "끔"));
+        }
+
         void ReceiveDevClear(Runner r, byte[] bytes)
         {
             if (!Debug.isDebugBuild || !RagdollNetProtocol.ReadDevClear(bytes, session.Match, out byte seq) || seq == r.DevClearSeq) return;
@@ -1005,6 +1035,7 @@ namespace ChessFight.RagdollLab.Net
         {
             if (!runners.TryGetValue(id, out var r)) return;
             if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevClear) { ReceiveDevClear(r, bytes); return; }
+            if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevFly) { ReceiveDevFly(r, bytes); return; }
             if (!RagdollNetProtocol.ReadLabInput(bytes, session.Match, out uint sequence, out uint clientTime, out var fresh)) return;
             if (r.Sequence != 0 && !RagdollNetProtocol.Newer(sequence, r.Sequence)) return;   // overtaken: its counts are stale
             if (!r.Synced)

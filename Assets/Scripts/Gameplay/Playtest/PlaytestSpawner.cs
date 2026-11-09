@@ -157,6 +157,13 @@ namespace ChessFight.Gameplay
                 Aim = aim
             });
             useWasDown = intent.Interact;
+            // R529: F1 flies the pawn itself (development builds; the free camera is F4 now).
+            if (DevCheats.Allowed && DevCheats.FlightKey != KeyCode.None && !flying && !ChatBox.KeysHeld
+                && LegacyKeys.Down(DevCheats.FlightKey) && driver is ICheatFlight cheat)
+            {
+                cheat.CheatFlying = !cheat.CheatFlying;
+                Debug.Log("[ChessFight] 치트(F1): 캐릭터 비행 " + (cheat.CheatFlying ? "켬" : "끔"));
+            }
 
             var target = driver.FollowTarget;
             CatchLongFall(target);
@@ -328,9 +335,11 @@ namespace ChessFight.Gameplay
                 "WASD 이동 · Space 점프 · 좌클릭 밀치기 · 우클릭 잡기\n" +
                 (orbitCamera != null
                     ? "Shift 질주 · E 능력(폰: 갈고리) · 좌클릭 꾹 = 게이지, 떼면 던짐 · F 종·승격·앙파상\n" +
-                      "마우스 시점(게임 화면 클릭) · 휠 줌 · Esc 커서 · F1 자유 카메라(WASD·Space·C·Shift 빠르게)\n"
+                      "마우스 시점(게임 화면 클릭) · 휠 줌 · Esc 커서 · F4 자유 카메라(WASD·Space·C·Shift 빠르게)\n" +
+                      (DevCheats.Allowed && DevCheats.FlightKey != KeyCode.None ? $"{DevCheats.FlightKey} 캐릭터 비행(개발: 보는 쪽으로 W, Shift 빠르게)\n" : "")
                     : "") +
-                (orbitCamera != null && orbitCamera.FreeFly ? "<b>자유 카메라</b> — F1로 캐릭터에게 돌아가기\n" : "") +
+                (orbitCamera != null && orbitCamera.FreeFly ? $"<b>자유 카메라</b> — {OrbitCamera.FlyKey}로 캐릭터에게 돌아가기\n" : "") +
+                (driver is ICheatFlight flyer && flyer.CheatFlying ? $"<b>비행 중</b> — 보는 쪽으로 W · Shift 빠르게 · {DevCheats.FlightKey}로 내려오기\n" : "") +
                 (respawnAt >= 0f ? (caughtFalling ? "<b>추락!</b>" : "<b>물에 빠졌어요!</b>") + " 곧 체크포인트로 돌아갑니다\n" : "") +
                 "R 체크포인트로 · Backspace 처음부터\n" +
                 $"기록 {(finished ? result : (Time.time - runStart).ToString("0.0") + "초")}";

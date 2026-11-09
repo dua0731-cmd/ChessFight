@@ -257,7 +257,7 @@ namespace ChessFight.PawnRush
             string here = currentSection != null ? currentSection.DisplayName + " · 비트 " + currentBeat.Substring(currentBeat.IndexOf('/') + 2)
                         : currentBeat == CorridorBeat ? CorridorBeat : "구간 밖";
             // R525: a development build shows its mini-game cheat (F6) in a match too.
-            string cheat = Debug.isDebugBuild ? " · F6 미니게임 완료(개발)" : "";
+            string cheat = Debug.isDebugBuild ? " · F6 미니게임 완료 · F1 캐릭터 비행(개발)" : "";
             string text = Online
                 ? $"<b>폰 러시</b> · {Teams.Name(Team)}팀\n{here}\n판 구성: {string.Join(" | ", slots)}" + (cheat != "" ? "\n개발 빌드" + cheat : "")
                 : $"<b>폰 러시 구간 시험</b> · 판 씨앗 {round.Seed} · {round.TeamSize}대{round.TeamSize} · {Teams.Name(Team)}팀\n" +

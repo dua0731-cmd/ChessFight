@@ -216,6 +216,9 @@ namespace ChessFight.RagdollLab
         // release build's host ignores it, and so does an older build (it reads lab inputs only).
         public const byte TypeDevClear = 10;
         public const int DevClearBytes = 4 + 1 + 8 + 1;   // 14
+        // R529: a development build's flight cheat (F1): fly or stop, for the sender's own pawn.
+        public const byte TypeDevFly = 11;
+        public const int DevFlyBytes = 4 + 1 + 8 + 1 + 1;   // 15
         public const int HeaderBytes = 4 + 1 + 8;
         public const int MatchHeaderBytes = 4 + 1 + 8 + 2;
         public const int MaxMatchText = 400;
@@ -494,6 +497,31 @@ namespace ChessFight.RagdollLab
             var r = streams.Open(bytes);
             if (r.ReadUInt32() != Magic || r.ReadByte() != TypeDevClear || r.ReadUInt64() != session) return false;
             seq = r.ReadByte();
+            return seq != 0;
+        }
+
+        // R529: "fly" or "stop flying" for the sender's own pawn (TypeDevFly), numbered like DevClear (the host takes a
+        // number once).
+        public static byte[] DevFly(ulong session, byte seq, bool on)
+        {
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeDevFly);
+            w.Write(session);
+            w.Write(seq);
+            w.Write((byte)(on ? 1 : 0));
+            return streams.Finish();
+        }
+
+        public static bool ReadDevFly(byte[] bytes, ulong session, out byte seq, out bool on)
+        {
+            seq = 0;
+            on = false;
+            if (bytes == null || bytes.Length != DevFlyBytes) return false;
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeDevFly || r.ReadUInt64() != session) return false;
+            seq = r.ReadByte();
+            on = r.ReadByte() != 0;
             return seq != 0;
         }
 

@@ -52,6 +52,7 @@ namespace ChessFight.PawnRush
             CourseSkills.PawnRush = true;
             MissionStation.LocalTeam = Teams.White;
             OrbitCamera.FlyKey = KeyCode.None;
+            DevCheats.FlightKey = KeyCode.None;   // R529: F1 is this scene's own (into the zone it looks at)
             var saved = transform.Find(RootName);
             // A scene whose zones are not the code's (a pull that added or took out sections, R241 / R243): built again
             // for this Play only; the scene file keeps its old zones until the menu builds it again.
@@ -77,7 +78,8 @@ namespace ChessFight.PawnRush
         void OnDestroy()
         {
             CourseSkills.PawnRush = false;
-            OrbitCamera.FlyKey = KeyCode.F1;
+            OrbitCamera.FlyKey = OrbitCamera.DefaultFlyKey;
+            DevCheats.FlightKey = DevCheats.DefaultFlightKey;
         }
 
         void Update()

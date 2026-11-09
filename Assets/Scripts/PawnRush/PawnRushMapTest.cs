@@ -14,7 +14,7 @@ namespace ChessFight.PawnRush
     //
     //   [ ]        previous / next map            F5   build the map again (picks up prefab edits made during Play)
     //   1~6        pawn, knight, bishop, rook, queen, king (F skill, left click to throw the aimed ones)
-    //   T          put the pawn where the camera looks  F1   free camera (the orbit camera's own key)
+    //   T          put the pawn where the camera looks  F4   free camera (the orbit camera's own key; F1 flies the pawn, R529)
     //   F2         look over the whole map        F3   slow motion 1x / 0.5x / 0.25x
     //   R          back to the checkpoint         Backspace  from the map's start again
     //   H          help on / off
@@ -68,7 +68,7 @@ namespace ChessFight.PawnRush
             // The piece skills on (F) as on the course (PawnRushCourse); this PC plays white.
             CourseSkills.PawnRush = true;
             MissionStation.LocalTeam = Teams.White;
-            OrbitCamera.FlyKey = KeyCode.F1;
+            OrbitCamera.FlyKey = OrbitCamera.DefaultFlyKey;   // F4 (R529: F1 flies the pawn, DevCheats)
             mapRoot = new GameObject("Map (test)").transform;
             mapRoot.SetParent(transform, false);
             Collect();
@@ -324,7 +324,7 @@ namespace ChessFight.PawnRush
                 "WASD 이동 · Space 점프 · Shift 질주 · 좌클릭 다이빙 · 우클릭 꾹 잡기",
                 "F 스킬 · 1 폰 · 2 나이트 · 3 비숍 · 4 룩 · 5 퀸 · 6 킹",
                 "[ ] 이전/다음 맵 · F5 맵 다시 짓기 · T 보는 곳으로 이동",
-                "F1 자유 카메라 · F2 맵 전체 보기 · F3 느리게(" + SlowSteps[slow].ToString("0.##") + "배)",
+                "F4 자유 카메라 · F1 캐릭터 비행(개발) · F2 맵 전체 보기 · F3 느리게(" + SlowSteps[slow].ToString("0.##") + "배)",
                 "R 체크포인트로 · Backspace 맵 처음부터",
                 ""
             };

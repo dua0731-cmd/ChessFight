@@ -38,6 +38,7 @@ namespace Steamworks
     public struct LobbyMatchList_t { public uint m_nLobbiesMatching; }
     public struct LobbyChatMsg_t { public ulong m_ulSteamIDLobby; public uint m_iChatID; }
     public struct GameLobbyJoinRequested_t { public CSteamID m_steamIDLobby; }
+    public struct LobbyInvite_t { public ulong m_ulSteamIDUser, m_ulSteamIDLobby, m_ulGameID; }
     public struct GameRichPresenceJoinRequested_t { public CSteamID m_steamIDFriend; public string m_rgchConnect; }
     public sealed class Callback<T> : IDisposable
     {
@@ -148,7 +149,8 @@ namespace Steamworks
         public static CSteamID GetLobbyMemberByIndex(CSteamID id,int i)=>new CSteamID(FakeSteam.Get(id).Members[i]);
         public static string GetLobbyMemberData(CSteamID id,CSteamID user,string key) {var lobby=FakeSteam.Get(id);return lobby!=null&&lobby.MemberData.TryGetValue((user.m_SteamID,key),out var value)?value:"";}
         public static void SetLobbyMemberData(CSteamID id,string key,string value)=>FakeSteam.Get(id).MemberData[(FakeSteam.User,key)]=value;
-        public static bool InviteUserToLobby(CSteamID lobby,CSteamID invitee)=>true;
+        public static bool InviteUserToLobby(CSteamID lobby,CSteamID invitee)
+        {ulong from=FakeSteam.User;FakeSteam.Enqueue(invitee.m_SteamID,()=>FakeSteam.Raise(invitee.m_SteamID,new LobbyInvite_t{m_ulSteamIDUser=from,m_ulSteamIDLobby=lobby.m_SteamID}));return true;}
         public static bool SetLobbyJoinable(CSteamID id,bool value) {var l=FakeSteam.Get(id);if(l.Owner!=FakeSteam.User)return false;l.Joinable=value;return true;}
         public static bool SetLobbyOwner(CSteamID id,CSteamID owner)
         {

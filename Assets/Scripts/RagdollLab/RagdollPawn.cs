@@ -176,6 +176,37 @@ namespace ChessFight.RagdollLab
         public bool SprintHeld => input.sprint;
         public bool GrabHeld => input.grab;
 
+        // R529 (user 11-09: "f1키 자유카메라에서 캐릭터 비행으로 치트 변경"): the development builds' flight cheat (F1, DevCheats).
+        // The pawn flies where the camera looks: W and S along the view (look up to climb, down to sink), A and D across it,
+        // Shift faster; no gravity, and with no keys down it hangs where it is. Fly (OuterFlight) carries it, a step ahead
+        // each step, so a wall still stops it, every limb keeps its own swing and the anchor rides along. Off again, it
+        // falls from where it is. Set where the pawn is simulated (offline, the host); a puppet ignores it.
+        public const float CheatFlySpeed = 7f, CheatFlySprint = 16f;
+        bool cheatFlying;
+
+        public bool CheatFlying
+        {
+            get => cheatFlying;
+            set
+            {
+                if (cheatFlying == value) return;
+                cheatFlying = value;
+                if (!value) EndFlight();
+            }
+        }
+
+        void UpdateCheatFlight(float dt)
+        {
+            if (!cheatFlying || NetworkPuppet) return;
+            Vector3 aim = input.aim.sqrMagnitude > 1e-4f ? input.aim.normalized : Flat(facing).normalized;
+            Vector3 flat = Flat(aim);
+            flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : Flat(facing).normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, flat);
+            float ahead = Vector3.Dot(input.move, flat), side = Vector3.Dot(input.move, right);
+            Vector3 velocity = Vector3.ClampMagnitude(aim * ahead + right * side, 1f) * (input.sprint ? CheatFlySprint : CheatFlySpeed);
+            Fly(Hips.position + velocity * dt, velocity);
+        }
+
         // R528: a mini-game carries something for this pawn (B's plank, MiniGameHooks.HandsFull): while it does, the hands
         // grip nothing and climb nothing, the grab button still down (the arms keep reaching forward under the plank).
         // Read once a physics step.
@@ -724,6 +755,7 @@ namespace ChessFight.RagdollLab
             Struggle(p, dt);
             UpdateAbilities(p, dt);
             UpdateSkills(dt);   // Pawn Rush skills only
+            UpdateCheatFlight(dt);   // the development builds' flight cheat (F1, R529): carried by Fly, so before the dash step
             UpdateOuterDash(dt);   // a dash another mode's skill drives (the Sword Fight queen, R99)
             UpdateSkillLanding(dt);   // a skill that carried it lands it standing (10-11)
             UpdateHook(p, dt);

@@ -45,11 +45,13 @@ namespace ChessFight.Game
         // above only, so from under it the sky showed through where a piece had fallen in. The gameplay side sets it
         // (WaterZone); null or -infinity, no floor. Not for the free camera.
         public static System.Func<Vector3, float> FloorAt;
-        // The key that toggles the free camera (승규 님's test scene takes F1 and flies with F2 itself: None).
-        public static KeyCode FlyKey = KeyCode.F1;
+        // The key that toggles the free camera (승규 님's test scene flies with F2 itself: None). R529: F4 (the ragdoll lab's
+        // free camera key too); F1 flies the pawn itself now (DevCheats, user 11-09 "f1키 자유카메라에서 캐릭터 비행으로").
+        public const KeyCode DefaultFlyKey = KeyCode.F4;
+        public static KeyCode FlyKey = DefaultFlyKey;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => FlyKey = KeyCode.F1;
+        static void ResetStatics() => FlyKey = DefaultFlyKey;
 
         // Fly from a given place and view (the test scene's look over the whole map).
         public void FlyAt(Vector3 position, float yawDegrees, float pitchDegrees)
@@ -96,7 +98,7 @@ namespace ChessFight.Game
                          && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))
                     Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = Cursor.lockState != CursorLockMode.Locked;
-                // F1 flies the free camera (승규 10-22; was V, which push-to-talk took over in R131).
+                // The free camera (승규 10-22 on F1; was V, which push-to-talk took over in R131; F4 since R529).
                 if (FlyKey != KeyCode.None && Input.GetKeyDown(FlyKey))
                 {
                     FreeFly = !FreeFly;

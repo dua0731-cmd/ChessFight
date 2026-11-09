@@ -275,6 +275,16 @@ namespace ChessFight.Network
         // Lines arrive through Steam lobby chat, which echoes our own lines back to
         // us too: the log shows what Steam actually delivered.
         public readonly ChatLog Chat = new ChatLog();
+
+        // R529 (user 11-09: "파티초대 메시지가 인게임에서 출력될 수 있게"): party invites this PC received (Steam's
+        // LobbyInvite_t, sent by InviteToParty), oldest first, each for InviteLasts seconds. The lobby shows the newest
+        // with 수락 / 거절 and a match scene's chat gets a party line; Steam's own overlay notice still comes as well.
+        // An invite used to reach the game only once accepted in the overlay (GameLobbyJoinRequested_t).
+        public struct PartyInvite { public ulong From, Lobby; public float At; }
+        public const float InviteLasts = 300f;
+        public const int InvitesKept = 3;
+        readonly List<PartyInvite> invites = new List<PartyInvite>();
+        public IReadOnlyList<PartyInvite> Invites => invites;
         public bool CanChat(ChatChannel channel) =>
             Online && (channel == ChatChannel.Party ? Party != 0 :
                        channel == ChatChannel.All ? Match != 0 : Match != 0 && Roster.ContainsKey(Self));
@@ -568,6 +578,7 @@ namespace ChessFight.Network
                 SteamNetworkingUtils.InitRelayNetworkAccess();
                 callbacks.Add(Callback<LobbyChatMsg_t>.Create(OnChat));
                 callbacks.Add(Callback<GameLobbyJoinRequested_t>.Create(c => JoinParty(c.m_steamIDLobby.m_SteamID)));
+                callbacks.Add(Callback<LobbyInvite_t>.Create(c => ReceiveInvite(c.m_ulSteamIDUser, c.m_ulSteamIDLobby)));
                 // "Join game" on a friend in the Steam friends list, while we are running.
                 callbacks.Add(Callback<GameRichPresenceJoinRequested_t>.Create(c =>
                 { ulong target = ParseConnect(c.m_rgchConnect); if (target != 0 && target != Party) JoinParty(target); }));
@@ -634,6 +645,7 @@ namespace ChessFight.Network
             if (!Online || disposed) return;
             SteamAPI.RunCallbacks();
             float now = Time.realtimeSinceStartup;
+            if (invites.Count > 0) invites.RemoveAll(i => now - i.At > InviteLasts || i.Lobby == Party);
             if (pending && now > deadline) { generation++; pending = false; Fail("Steam 응답이 없습니다. 다시 시도하세요."); }
             if (now < nextPoll) return;
             nextPoll = now + .25f;
@@ -825,6 +837,28 @@ namespace ChessFight.Network
             if (!Online || Party == 0 || friend == 0 || Busy) return false;
             return SteamMatchmaking.InviteUserToLobby(Id(Party), Id(friend));
         }
+        // R529: an invite came in (LobbyInvite_t). One per sender and per party, the newest last.
+        void ReceiveInvite(ulong from, ulong lobby)
+        {
+            if (lobby == 0 || lobby == Party || from == Self) return;
+            float now = Time.realtimeSinceStartup;
+            invites.RemoveAll(i => i.Lobby == lobby || i.From == from);
+            invites.Add(new PartyInvite { From = from, Lobby = lobby, At = now });
+            while (invites.Count > InvitesKept) invites.RemoveAt(0);
+            Chat.Add(ChatChannel.Party, 0, "", $"{Name(from)} 님이 파티에 초대했어요 · " + (Busy ? "끝나고 로비에서 수락할 수 있어요" : "로비에서 수락할 수 있어요"),
+                     true, false, now);
+            Debug.Log($"[ChessFight] 파티 초대 받음: {Name(from)} ({from}) → 파티 {lobby}");
+        }
+
+        // 수락: into that party (JoinParty says why not, as an Error, while matching or in a match).
+        public void AcceptInvite(ulong lobby)
+        {
+            invites.RemoveAll(i => i.Lobby == lobby);
+            JoinParty(lobby);
+        }
+
+        public void DeclineInvite(ulong lobby) => invites.RemoveAll(i => i.Lobby == lobby);
+
         public void JoinParty(ulong lobby)
         {
             // R504: an invite to the party this PC is already in (an old one accepted from Steam) changes nothing. It used

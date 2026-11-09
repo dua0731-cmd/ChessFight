@@ -11,7 +11,7 @@ namespace ChessFight.RagdollLab
     /// the pawn the same way, through IHitReceiver.
     /// </summary>
     [RequireComponent(typeof(RagdollPawn))]
-    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IStatusReceiver, IPromotable, IMiniGamePawn, IWindReceiver
+    public sealed class RagdollDriver : MonoBehaviour, ICharacterDriver, IHitReceiver, ITeamMember, ITeamAssignable, IStaminaReadout, ILaunchable, IStatusReceiver, IPromotable, IMiniGamePawn, IWindReceiver, ICheatFlight
     {
         RagdollPawn pawn;
 
@@ -61,6 +61,8 @@ namespace ChessFight.RagdollLab
         public Vector3 MoveInput => Pawn.GivenMove;
         public bool SprintHeld => Pawn.SprintHeld;
         public bool GrabHeld => Pawn.GrabHeld;
+        // The development builds' flight cheat (R529, DevCheats).
+        public bool CheatFlying { get => Pawn.CheatFlying; set => Pawn.CheatFlying = value; }
         public bool Sprinting => Pawn.Sprinting;
         public void SpendStamina(float amount) => Pawn.SpendStamina(amount);
         public Vector3 HipsVelocity => Pawn.Hips.linearVelocity;

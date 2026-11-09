@@ -49,6 +49,8 @@ namespace ChessFight.Game
         // My name top right was pressed: change it (R85, NameChange).
         public event Action Rename;
         public event Action<ulong> JoinParty, JoinMatch, InviteFriend;
+        // R529: the party invite card's buttons (the party the invite is for).
+        public event Action<ulong> AcceptInvite, DeclineInvite;
         public event Action<string> PickMode;
 
         const int FriendsPerPage = 7;
@@ -98,6 +100,17 @@ namespace ChessFight.Game
         VisualElement railList, rail;
         Label playLabel;
         bool railOpen;
+
+        // R529 (user 11-09: "모드 선택 UI가 마우스 올리는 것 말고, 현재 선택된 모드가 뭔지 바로 알 수 있게"): the chosen mode
+        // on a plate over the start button, always on show (the rail's cards come up only under the pointer). A click or
+        // the pointer on it brings the cards up, as the button does.
+        Button currentMode;
+        Label currentModeName, currentModeTag;
+
+        // R529 (user 11-09: "파티초대 메시지가 인게임에서 출력될 수 있게"): a party invite this PC received, with 수락 / 거절.
+        VisualElement inviteCard;
+        Label inviteText;
+        ulong inviteLobby;
 
         // 10-17 (승규 님): the mode cards wait below the screen. The pointer resting on "모드 선택" brings them
         // up one after another from the bottom, and they stay while it moves onto them; when it leaves both
@@ -346,6 +359,8 @@ namespace ChessFight.Game
 
             BuildModeList();
             BuildModeRail();
+            BuildCurrentMode();
+            BuildInviteCard();
             SetRail(false, true);   // the cards exist now: hide them and stop them taking the pointer
             BuildVoiceMenu();
             Dress();
@@ -988,6 +1003,76 @@ namespace ChessFight.Game
             }
         }
 
+        // R529: the plate over the start button that names the chosen mode.
+        void BuildCurrentMode()
+        {
+            if (play == null || play.parent == null) return;
+            currentMode = new Button { name = "current-mode", focusable = false };
+            currentMode.AddToClassList("current-mode");
+            var kicker = new Label("현재 모드") { pickingMode = PickingMode.Ignore };
+            kicker.AddToClassList("current-mode-kicker");
+            currentModeName = new Label { pickingMode = PickingMode.Ignore };
+            currentModeName.AddToClassList("current-mode-name");
+            RuntimePanels.Display(currentModeName);
+            currentModeTag = new Label { pickingMode = PickingMode.Ignore };
+            currentModeTag.AddToClassList("current-mode-tag");
+            currentMode.Add(kicker);
+            currentMode.Add(currentModeName);
+            currentMode.Add(currentModeTag);
+            Action open = () => { if (Usable(play)) SetRail(true); };
+            currentMode.clicked += open;
+            actions[currentMode] = open;
+            HoverRail(currentMode);
+            play.parent.Insert(play.parent.IndexOf(play), currentMode);
+        }
+
+        // R529: the invite card, top centre over the lobby (built hidden; SetInvite shows it).
+        void BuildInviteCard()
+        {
+            inviteCard = new VisualElement { name = "invite-card" };
+            inviteCard.AddToClassList("a-panel");
+            inviteCard.AddToClassList("invite-card");
+            var kicker = new Label("PARTY INVITE") { pickingMode = PickingMode.Ignore };
+            kicker.AddToClassList("a-kicker");
+            inviteText = new Label { pickingMode = PickingMode.Ignore };
+            inviteText.AddToClassList("invite-text");
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            row.AddToClassList("row");
+            row.AddToClassList("invite-row");
+            var accept = new Button { text = "수락", focusable = false };
+            accept.AddToClassList("a-btn");
+            accept.AddToClassList("a-sm");
+            accept.AddToClassList("invite-accept");
+            var decline = new Button { text = "거절", focusable = false };
+            decline.AddToClassList("a-btn");
+            decline.AddToClassList("a-sm");
+            Action yes = () => { if (inviteLobby != 0) AcceptInvite?.Invoke(inviteLobby); };
+            Action no = () => { if (inviteLobby != 0) DeclineInvite?.Invoke(inviteLobby); };
+            accept.clicked += yes;
+            actions[accept] = yes;
+            decline.clicked += no;
+            actions[decline] = no;
+            row.Add(accept);
+            row.Add(decline);
+            inviteCard.Add(kicker);
+            inviteCard.Add(inviteText);
+            inviteCard.Add(row);
+            // In the top centre's column (notices and the toast), above them; the root if the layout has none.
+            var top = root.Q<VisualElement>(className: "top-center");
+            if (top != null) top.Insert(0, inviteCard); else root.Add(inviteCard);
+            Show(inviteCard, false);
+        }
+
+        // R529: the newest invite (lobby 0: none). `more`: how many older ones wait behind it.
+        public void SetInvite(string from, ulong lobby, int more = 0)
+        {
+            if (inviteCard == null) return;
+            inviteLobby = lobby;
+            Show(inviteCard, lobby != 0);
+            if (lobby == 0 || inviteText == null) return;
+            inviteText.text = $"{from} 님이 파티에 초대했어요" + (more > 0 ? $"  (초대 {more}개 더)" : "");
+        }
+
         // UI Toolkit breaks Korean between any two syllables, even mid-word, so
         // break the card text at spaces here instead. Widths are estimated: a
         // Hangul syllable counts two units, anything else one.
@@ -1193,6 +1278,7 @@ namespace ChessFight.Game
             Enable(leaveParty, model.CanLeaveParty);
 
             Show(play, !model.Busy);
+            Show(currentMode, !model.Busy);
             Enable(play, model.CanPlay);
             Show(busy, model.Busy);
             if (busyTitle != null) busyTitle.text = model.BusyTitle;
@@ -1245,6 +1331,8 @@ namespace ChessFight.Game
         void RenderMode(in HudModel model)
         {
             var mode = GameModes.Resolve(model.ModeKey);
+            if (currentModeName != null) currentModeName.text = mode.Name;
+            if (currentModeTag != null) currentModeTag.text = mode.Tagline;
             if (modeName != null) modeName.text = mode.Name;
             if (modeTagline != null) modeTagline.text = mode.Tagline;
             if (modeBadge != null) modeBadge.text = mode.Badge;
