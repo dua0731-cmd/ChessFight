@@ -98,6 +98,7 @@ namespace ChessFight.Game
             closedHint = root.Q<VisualElement>("chat-closed");
             lines = root.Q<VisualElement>("chat-lines");
             field = root.Q<TextField>("chat-field");
+            ImeGuard.Watch(field);   // R530: the IME on only while typing here (Korean), off in play
             entry = root.Q<VisualElement>("chat-entry");
             chip = root.Q<Label>("chat-channel");
             placeholder = root.Q<Label>("chat-placeholder");

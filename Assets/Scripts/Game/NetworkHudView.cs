@@ -275,6 +275,7 @@ namespace ChessFight.Game
             testHint = root.Q<Label>("test-hint"); partyBotsTitle = root.Q<Label>("party-bots-title");
             slotsOurs = root.Q<VisualElement>("slots-ours"); slotsTheirs = root.Q<VisualElement>("slots-theirs");
             code = root.Q<TextField>("code");
+            ImeGuard.Watch(code);   // R530: the IME follows the keyboard into the room-number field too
             friendsPanel = root.Q<VisualElement>("friends"); detailsPanel = root.Q<VisualElement>("details-card");
             partyPanel = root.Q<VisualElement>("party-card");
             codeModal = root.Q<VisualElement>("code-modal"); modeModal = root.Q<VisualElement>("mode-modal");

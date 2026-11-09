@@ -69,6 +69,7 @@ namespace ChessFight.Game
             IntroFlowStyle.Apply(root);
             fieldBox = root.Q<VisualElement>("name-field-box");
             field = root.Q<TextField>("name-field");
+            ImeGuard.Watch(field);   // R530: the IME on only while typing here (Korean names)
             placeholder = root.Q<Label>("name-placeholder");
             counter = root.Q<Label>("name-counter");
             suggestButton = root.Q<VisualElement>("name-suggest");

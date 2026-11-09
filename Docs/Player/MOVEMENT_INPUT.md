@@ -29,6 +29,8 @@ IMoveInputSource.Read() → MoveIntent { Move(Vector2), Jump(누른 순간), Sho
 
 기타 키는 `LegacyKeys.Down/AnyDown`으로 읽는다(레거시가 꺼져 있어도 예외를 삼킨다).
 
+**입력기(IME, R530):** 게임 중에는 한국어 입력기를 끈다(`ImeGuard`, `Input.imeCompositionMode = Off`). 채팅 · 이름 · 방 번호 입력칸(`ImeGuard.Watch`)에 키보드가 있을 때만 켠다. 입력기가 켜져 있으면 Windows 한국어 입력기의 "Shift+Space = 한/영 전환" 설정이 질주 중 점프(Shift+Space)의 Space를 가져갔다(PITFALLS 77). 새 텍스트 입력칸은 `ImeGuard.Watch`에 등록한다.
+
 ## 2. 파일
 
 | 파일 | 역할 |
