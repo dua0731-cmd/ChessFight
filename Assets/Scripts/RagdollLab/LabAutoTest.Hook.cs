@@ -375,10 +375,17 @@ namespace ChessFight.RagdollLab
             var list = new System.Collections.Generic.List<RagdollPose> { pose };
             var snapshot = new RagdollSnapshot();
             bool parsed = true;
+            // The copy is drawn 4 m to the side. In a real match the pawn and its copy are on two machines; here,
+            // drawn on top of the host, the kinematic puppet pushes the host out of itself, and on the old
+            // JY-pieces branch that knocked it down and dropped the hook (pass or fail by how many millimetres
+            // the two happened to overlap, R532).
+            var offset = new Vector3(4f, 0f, 0f);
             void Copy()
             {
                 host.CaptureNetworkPose(pose);
                 pose.id = 1;
+                pose.hips += offset;
+                pose.hookPoint += offset;
                 byte[] bytes = RagdollNetProtocol.Snapshot(77, 1, 1, list);
                 parsed &= RagdollNetProtocol.ReadSnapshot(bytes, 77, snapshot);
                 remote.ApplyNetworkPose(snapshot.At(0));
@@ -394,7 +401,7 @@ namespace ChessFight.RagdollLab
             yield return Sim(0.2f, () => HookInput(host, aim));
             Copy();
             bool flying = remote.Hook == HookPhase.Flying;
-            float pointError = Vector3.Distance(remote.HookPoint, host.HookPoint);
+            float pointError = Vector3.Distance(remote.HookPoint - offset, host.HookPoint);
             // The input packet carries the held button.
             var sent = new RagdollNetInput { shoveHeld = true, aim = Vector3.up };
             bool heldOk = RagdollNetProtocol.ReadInput(RagdollNetProtocol.Input(77, 3, 5, sent), 77, out _, out _, out var got) && got.shoveHeld;

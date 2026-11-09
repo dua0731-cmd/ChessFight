@@ -161,6 +161,8 @@ namespace ChessFight.RagdollLab
             yield return Sim(0.4f);
             var pose = new RagdollPose { id = 1 };
             host.CaptureNetworkPose(pose);
+            // Drawn where the copy stands, not inside the host (a kinematic puppet on top of a pawn throws it, R532).
+            pose.hips += remote.Hips.position - host.Hips.position;
             byte[] bytes = RagdollNetProtocol.Snapshot(78, 1, 1, new List<RagdollPose> { pose });
             var snapshot = new RagdollSnapshot();
             bool parsed = RagdollNetProtocol.ReadSnapshot(bytes, 78, snapshot);
