@@ -116,6 +116,11 @@ namespace ChessFight.PawnRush
         float dustAt;
         AudioSource creak, winch;
         float hum;               // the winch and rope loops' level, 0..1: eased in and out (user 11-08)
+        // R519 (the user's list, 11-09, 1: "도개교 미니게임에서 끼기익거리는 사운드 음량 살짝 낮추기"): the two squeaky
+        // sounds - the rope's creak loop while it runs (most of it at 0.8 to 3 kHz) and a held knot's strain every 2 s
+        // (most at 1.5 to 6 kHz) - 3 dB lower (x 0.7, were 0.6 and 0.7). The winch's low rumble, the ratchet's click
+        // and the deck's slam as before.
+        const float CreakVolume = .42f, StrainVolume = .5f, WinchVolume = .6f;
         Material ropeMat, ropeHeld, lampOn, lampOff;
         bool slammed;
 
@@ -850,14 +855,14 @@ namespace ChessFight.PawnRush
             hum = Mathf.MoveTowards(hum, moving ? 1f : 0f, Time.deltaTime / (moving ? .25f : .6f));
             if (hum > 0f)
             {
-                if (creak == null || !creak.isPlaying) creak = ArenaFx.Hold("sfx_rope_creak", at, 1f, .6f * hum);
-                if (winch == null || !winch.isPlaying) winch = ArenaFx.Hold("sfx_winch", at, 1f, .6f * hum);
+                if (creak == null || !creak.isPlaying) creak = ArenaFx.Hold("sfx_rope_creak", at, 1f, CreakVolume * hum);
+                if (winch == null || !winch.isPlaying) winch = ArenaFx.Hold("sfx_winch", at, 1f, WinchVolume * hum);
                 if (creak != null)
                 {
-                    creak.volume = .6f * hum;
+                    creak.volume = CreakVolume * hum;
                     if (moving) creak.pitch = .8f + speed / DrawbridgeRope.MaxSpeed * .4f;
                 }
-                if (winch != null) winch.volume = .6f * hum;
+                if (winch != null) winch.volume = WinchVolume * hum;
             }
             else
             {
@@ -872,7 +877,7 @@ namespace ChessFight.PawnRush
                 if ((knotBits >> i & 1) != 0 && Time.time - strainAt[i] >= 2f)
                 {
                     strainAt[i] = Time.time;
-                    ArenaFx.Sfx("sfx_strain", World(KnotPos(shown, i) + (palaceFront ? pullDir : Vector3.back) * 1f + Vector3.up * .2f), volume: .7f);
+                    ArenaFx.Sfx("sfx_strain", World(KnotPos(shown, i) + (palaceFront ? pullDir : Vector3.back) * 1f + Vector3.up * .2f), volume: StrainVolume);
                 }
         }
 
