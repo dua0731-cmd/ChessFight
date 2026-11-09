@@ -49,6 +49,8 @@ namespace ChessFight.PawnRush
 
         string currentBeat;
         PawnRushSection currentSection;
+        // Between two sections (R517): the HUD and the CSV name the corridor.
+        const string CorridorBeat = "구간 사이 복도";
         float runStart;
         string csvPath;
         int falls, hits;
@@ -138,7 +140,7 @@ namespace ChessFight.PawnRush
             var target = driver != null ? driver.FollowTarget : null;
             if (target == null) return;
             var section = round.SectionAt(target.position, out string beat);
-            string key = section != null ? section.DisplayName + " / " + beat : null;
+            string key = section != null ? section.DisplayName + " / " + beat : round.InCorridor(target.position) ? CorridorBeat : null;
             if (key != currentBeat)
             {
                 if (currentBeat != null) Log(currentBeat, "exit");
@@ -249,7 +251,8 @@ namespace ChessFight.PawnRush
                     if (s != null && s.Slot == i) picked = s.DisplayName;
                 slots.Add((i + 1) + " " + picked);
             }
-            string here = currentSection != null ? currentSection.DisplayName + " · 비트 " + currentBeat.Substring(currentBeat.IndexOf('/') + 2) : "구간 밖";
+            string here = currentSection != null ? currentSection.DisplayName + " · 비트 " + currentBeat.Substring(currentBeat.IndexOf('/') + 2)
+                        : currentBeat == CorridorBeat ? CorridorBeat : "구간 밖";
             string text = Online
                 ? $"<b>폰 러시</b> · {Teams.Name(Team)}팀\n{here}\n판 구성: {string.Join(" | ", slots)}"
                 : $"<b>폰 러시 구간 시험</b> · 판 씨앗 {round.Seed} · {round.TeamSize}대{round.TeamSize} · {Teams.Name(Team)}팀\n" +

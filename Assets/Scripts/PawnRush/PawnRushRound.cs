@@ -18,6 +18,9 @@ namespace ChessFight.PawnRush
     // match's number (PawnRushSections.MatchSeed, the same on every PC, no packet and no "last round"), and moves its
     // start to the lobby's shared go once that is known (SetStartClock): every PC then has the same sections, the same
     // seeds and the same schedules. With finishRace the round has a crown finish on the last section's goal.
+    //
+    // R517: between two sections a corridor (SectionCorridor, 10 m, in the look of the zone it leaves): the next section's
+    // entry goes on the corridor's exit. The same on every PC (it is built from the same picks), nothing on the wire.
     [DefaultExecutionOrder(-500)]
     public sealed class PawnRushRound : MonoBehaviour
     {
@@ -38,6 +41,7 @@ namespace ChessFight.PawnRush
         static int[] lastPicks;
 
         readonly List<PawnRushSection> sections = new List<PawnRushSection>();
+        readonly List<Transform> corridors = new List<Transform>();
         readonly List<string> skipped = new List<string>();
         GameObject holder;
 
@@ -45,6 +49,8 @@ namespace ChessFight.PawnRush
         public static event Action<PawnRushRound> Built;
 
         public IReadOnlyList<PawnRushSection> Sections => sections;
+        // The corridors between them (R517): corridor i joins Sections[i] to Sections[i + 1].
+        public IReadOnlyList<Transform> Corridors => corridors;
         public IReadOnlyList<string> Skipped => skipped;
         public PawnRushSectionSet Set => set;
         public int Seed { get; private set; }
@@ -127,6 +133,13 @@ namespace ChessFight.PawnRush
                     Destroy(go);
                     continue;
                 }
+                if (sections.Count > 0)
+                {
+                    var corridor = SectionCorridor.Build(holder.transform, at, sections[sections.Count - 1], section, corridors.Count + 1);
+                    corridor.SetSiblingIndex(go.transform.GetSiblingIndex());   // in the hierarchy as on the way: before it
+                    corridors.Add(corridor);
+                    at = SectionCorridor.Exit(corridor);
+                }
                 section.PlaceEntryOn(at);
                 section.Configure(slot, PawnRushSections.SectionSeed(roundSeed, slot), teamSize, StartClock);
                 at = section.ExitWorld;
@@ -190,6 +203,7 @@ namespace ChessFight.PawnRush
         public void Clear()
         {
             sections.Clear();
+            corridors.Clear();
             skipped.Clear();
             if (holder == null) return;
             if (Application.isPlaying) Destroy(holder);
@@ -208,6 +222,14 @@ namespace ChessFight.PawnRush
             }
             beat = null;
             return null;
+        }
+
+        // Is a world point in one of the corridors between the sections (R517).
+        public bool InCorridor(Vector3 world)
+        {
+            foreach (var c in corridors)
+                if (SectionCorridor.Holds(c, world)) return true;
+            return false;
         }
     }
 }

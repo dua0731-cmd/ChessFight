@@ -77,7 +77,10 @@ namespace ChessFight.Network
         // v29 (R516): the section round's mini-game stations have promotion pads; their spent bits and choosers ride the
         //      course state (the same CFP5 bytes, now read for a round). A v28 host never sends them, so a v29 PC's pads
         //      would never work with it.
-        public const string Protocol = "chessfight.dua0731.network.v29";
+        // v30 (R517): a corridor (10 m) stands between every two sections of the round, so every section after the first
+        //      lies further on. A v29 PC would put the host's pawns beside its own course; a build's tag is only its
+        //      version (the same between two dev builds), so the protocol keeps them apart.
+        public const string Protocol = "chessfight.dua0731.network.v30";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }
