@@ -142,6 +142,8 @@ namespace ChessFight.RagdollLab.Net
             // The last promotion choice heard (R130: the lab input's pieceSeq).
             public byte PieceSeq;
             public ushort EventAck;
+            // Host only (R525): the last mini-game cheat press heard from this player (TypeDevClear's number).
+            public byte DevClearSeq;
         }
 
         // What the match runs on (R508): course 01 or a section round.
@@ -564,6 +566,9 @@ namespace ChessFight.RagdollLab.Net
             ReceiveOnce();
             var local = ReadLocalInput();
             float now = Time.realtimeSinceStartup;
+            // R525 (user 11-09: "미니게임 즉시 클리어 치트 필요"): a development build's F6 finishes this player's team's next
+            // mini-game - on the host at once, from a client through the host (only the host judges the mini-games).
+            if (Debug.isDebugBuild && LegacyKeys.Down(KeyCode.F6) && !ChatBox.KeysHeld) AskMiniGameDone();
             if (authority)
             {
                 if (runners.TryGetValue(session.Self, out var self)) self.Pawn.SetInput(local);
@@ -974,11 +979,32 @@ namespace ChessFight.RagdollLab.Net
             }
         }
 
+        // R525: the mini-game cheat (development builds). The host finishes its own team's next mini-game; a client asks
+        // the host, reliably, with a new number (the host takes a number once).
+        byte devClearSent;
+        void AskMiniGameDone()
+        {
+            var round = PawnRushRound.Current;
+            if (round == null || !runners.TryGetValue(session.Self, out var self)) return;
+            if (authority) { round.CompleteNextMiniGame(self.Team, session.Name(session.Self)); return; }
+            devClearSent = (byte)(devClearSent == 255 ? 1 : devClearSent + 1);
+            bool sent = Send(session.Host, RagdollNetProtocol.DevClear(session.Match, devClearSent), true);
+            Debug.Log($"[PawnRush] 치트(F6): 방장에게 {Teams.Name(self.Team)}팀 다음 미니게임 완료를 요청" + (sent ? "" : " (보내지 못함)"));
+        }
+
+        void ReceiveDevClear(Runner r, byte[] bytes)
+        {
+            if (!Debug.isDebugBuild || !RagdollNetProtocol.ReadDevClear(bytes, session.Match, out byte seq) || seq == r.DevClearSeq) return;
+            r.DevClearSeq = seq;
+            PawnRushRound.Current?.CompleteNextMiniGame(r.Team, session.Name(r.Id));
+        }
+
         // Host: a player's input. The presses are counts: what is new since the last one heard waits for the physics.
         // arrivedAt: when Steam received it, on Time.realtimeSinceStartupAsDouble's clock (R306 [0]).
         void ReceiveInput(ulong id, byte[] bytes, double arrivedAt)
         {
             if (!runners.TryGetValue(id, out var r)) return;
+            if (RagdollNetProtocol.TypeOf(bytes) == RagdollNetProtocol.TypeDevClear) { ReceiveDevClear(r, bytes); return; }
             if (!RagdollNetProtocol.ReadLabInput(bytes, session.Match, out uint sequence, out uint clientTime, out var fresh)) return;
             if (r.Sequence != 0 && !RagdollNetProtocol.Newer(sequence, r.Sequence)) return;   // overtaken: its counts are stale
             if (!r.Synced)

@@ -49,6 +49,35 @@ namespace ChessFight.PawnRush
         public static event Action<PawnRushRound> Built;
 
         public IReadOnlyList<PawnRushSection> Sections => sections;
+
+        // R525 (user 11-09 build test: "미니게임 즉시 클리어 치트 필요"): a team's next mini-game in course order that is not
+        // done yet (its gate still shut), or null. A team cannot pass a mini-game it has not done, so this is the one its
+        // players are at or running to.
+        public MissionStation NextOpenStation(int team)
+        {
+            foreach (var section in sections)
+            {
+                var games = section != null ? section.GetComponent<MiniGameSection>() : null;
+                if (games == null || games.Stations == null) continue;
+                foreach (var station in games.Stations)
+                    if (station != null && station.Team == team && station.Game != null && !station.Game.Completed) return station;
+            }
+            return null;
+        }
+
+        // The development cheat itself (offline F6, or the match host for whoever pressed it): that mini-game is done
+        // now, as if the team had played it out (its gate opens; online the host's next state tells every PC). Only
+        // where the mini-games are judged: offline, or on the match's host.
+        public string CompleteNextMiniGame(int team, string who)
+        {
+            var station = NextOpenStation(team);
+            string line = station == null
+                ? $"[PawnRush] 치트(F6): {who} — {Teams.Name(team)}팀에 남은 미니게임이 없습니다"
+                : $"[PawnRush] 치트(F6): {who} — {Teams.Name(team)}팀 미니게임 '{station.GetComponentInParent<PawnRushSection>()?.DisplayName}' 완료";
+            if (station != null) station.Game.ForceComplete();
+            Debug.Log(line);
+            return line;
+        }
         // The corridors between them (R517): corridor i joins Sections[i] to Sections[i + 1].
         public IReadOnlyList<Transform> Corridors => corridors;
         public IReadOnlyList<string> Skipped => skipped;

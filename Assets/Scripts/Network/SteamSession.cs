@@ -124,13 +124,33 @@ namespace ChessFight.Network
         // One more filler bot from the entrance screen while the room fills.
         public bool CanAddRoomBot => CanUseRoomBots && Roster.ContainsKey(Self) && reservations.Count < 12;
         public bool CanEditTestBots => RunsRoom && privateRoom && Roster.ContainsKey(Self);
-        public bool CanStartGame => RunsRoom && reservations.Groups.All(g => g.Committed) &&
+        public bool CanStartGame => RunsRoom && reservations.Groups.All(g => g.Committed) && SeatingJoiners == 0 &&
             (privateRoom ? Roster.Count >= 2 : reservations.Ready || CanStartEarly);
+        // R525 (user 11-09 build test: "10초 안에 전부 들어와서 시작해도 방장PC만 시작되고 나머지는 튕김"): players in the
+        // room whose seat request the host has not answered yet - they have just come in, or their request went
+        // unanswered while the room was being handed to its best PC (only the owner grants seats) - for up to JoinGrace
+        // each. The start closes the room, so it used to throw them out ("파티 전체가 들어갈 자리가 없습니다" or, 28 s
+        // later, "입장 승인이 시간 초과되었습니다") although they stood in the room on every screen; a six-player
+        // simulation with Steam's owner change taking a second did exactly that. A player that never asks holds it once.
+        public const float JoinGrace = 8f;
+        public int SeatingJoiners
+        {
+            get
+            {
+                if (Match == 0 || Started || reservations.Count >= 12) return 0;
+                float now = Time.realtimeSinceStartup;
+                return unseatedSince.Values.Count(since => now - since < JoinGrace);
+            }
+        }
         // R148: a public 폰 러쉬 room's host may start it short of twelve - three or more a side, the sides even.
         // R149: a 소드 파이트 room too (its prototype is played three against three).
         public bool EarlyStartMode => !privateRoom && Match != 0 && ((MatchMode ?? PartyMode)?.Key == GameModes.KingRush.Key
                                                                     || (MatchMode ?? PartyMode)?.Key == GameModes.SwordFight.Key);
-        public bool CanStartEarly => EarlyStartMode && reservations.ReadyEarly;
+        public bool CanStartEarly => EarlyStartMode && reservations.ReadyEarlyFrom(MinTeamToStart);
+        // R525 (user 11-09 build test, 3: "1대1로도 테스트 가능하도록 임시 조치"): a development build's host may start a public
+        // room from one a side (the sides still even); a release build keeps three (TeamReservations.MinTeamToStart).
+        // The same switch that lets development builds take bots into public rooms (M6), so nothing has to be undone.
+        public int MinTeamToStart => AllowPublicBots ? 1 : TeamReservations.MinTeamToStart;
         public int TeamCount(int team) => reservations.Used(team);
         public int TestBots(int team) => reservations.FillerBots(team);
         public bool CanAddTestBot(int team) => CanEditTestBots && team >= 0 && team <= 1 && reservations.Used(team) < TeamReservations.TeamSize;
@@ -243,6 +263,8 @@ namespace ChessFight.Network
         // Seats the host keeps for a joining party's members still on their way.
         // The room carries the same list ("held"), so a new host picks it up.
         readonly List<Backfill.Seat> held = new List<Backfill.Seat>();
+        // R525: waiting-room players without a seat yet, by when the host first saw them (SeatingJoiners).
+        readonly Dictionary<ulong, float> unseatedSince = new Dictionary<ulong, float>();
         bool heldLoaded;
         // What this host last set the room's Steam joinable flag to: -1 unknown, 0 or 1.
         int joinable = -1;
@@ -639,7 +661,7 @@ namespace ChessFight.Network
             if (now - loggedOffSince < LogoffGrace) { Status = "Steam 연결이 잠시 끊겼습니다. 다시 연결되기를 기다리는 중..."; return; }
             if (logoffLeft) return;
             logoffLeft = true;
-            Cancel(); Error = "Steam 연결이 끊겼습니다. 다시 로그인한 뒤 Play를 재시작하세요.";
+            Cancel($"Steam 연결이 {LogoffGrace:0}초 넘게 끊겨 나감"); Error = "Steam 연결이 끊겼습니다. 다시 로그인한 뒤 Play를 재시작하세요.";
         }
 
         public void CreateParty()
@@ -671,6 +693,7 @@ namespace ChessFight.Network
                     // into the seats of players who left (Backfill).
                     Set(Match, "private", privateRoom ? "1" : "0"); Set(Match, "open", "1"); PublishRoster();
                     Set(Party, "route", Match.ToString()); mergeAt = Time.realtimeSinceStartup + 6;
+                    Diagnose(privateRoom ? "비공개 방을 만듦" : "대기실을 만듦(찾은 방이 없음)");
                     SessionChanged?.Invoke();
                 }
             });
@@ -822,6 +845,7 @@ namespace ChessFight.Network
                 string problem = success ? Incompatibility(lobby, party ? "party" : "match") : "방이 가득 찼거나 닫혔습니다.";
                 if (problem != null)
                 {
+                    Diagnose($"{(party ? "파티" : "방")} {lobby}에 못 들어감: {problem}");
                     if (success) SteamMatchmaking.LeaveLobby(Id(lobby));
                     if (!party && IsLeader && Searching && !privateRoom) { nextSearch = Time.realtimeSinceStartup + UnityEngine.Random.Range(1f, 3f); TryCandidate(); }
                     // The old party is already left; a fresh solo party keeps the
@@ -845,6 +869,7 @@ namespace ChessFight.Network
                     deadline = Time.realtimeSinceStartup + 28; nextRequest = 0;
                     // R503 [7]: a public room's number is no way round M6 (public matches are people only).
                     if (joinedByNumber && !privateRoom && BotsBlockPublicMatch) { Fail(BotsInPublicMessage); return; }
+                    Diagnose(Live(Match) ? "진행 중인 경기의 빈자리로 들어감" : "대기실에 들어감");
                     SessionChanged?.Invoke();
                 }
             });
@@ -916,7 +941,7 @@ namespace ChessFight.Network
                 if (merge && (found.Count == 0 || !IsHost || reservations.Groups.Count != 1 || Started)) return;
                 // Seats of players who left come first: that match is short-handed now.
                 candidates.Clear(); foreach (ulong l in found.OrderBy(x => Live(x) ? 0 : 1).ThenBy(x => x)) candidates.Enqueue(l);
-                if (merge) { LeaveMatchInternal(); Set(Party, "route", "search"); }
+                if (merge) { Diagnose("우리 파티뿐인 대기실을 닫고 더 오래된 방으로 옮김"); LeaveMatchInternal(); Set(Party, "route", "search"); }
                 if (candidates.Count > 0) TryCandidate();
                 else if (++emptySearches >= 2) CreateLobby(true);
                 else nextSearch = Time.realtimeSinceStartup + UnityEngine.Random.Range(1f, 3f);
@@ -938,21 +963,22 @@ namespace ChessFight.Network
                 partyOwner = owner;
                 // A started match goes on whoever leads the party now (R60).
                 if (Started) return;
-                Cancel(); Error = "파티장이 나갔습니다. 매칭이 취소되었습니다."; return;
+                Cancel("파티장이 바뀌어 매칭 취소"); Error = "파티장이 나갔습니다. 매칭이 취소되었습니다."; return;
             }
             // Before the start the party moves as one. Once the match has started,
             // everyone plays it out on their own: a member who leaves, or whose
             // game dies, takes only its own seat with it (R60).
             if (IsLeader && Searching && !Started)
             {
-                if (!queuedHumans.SequenceEqual(PartyMembers)) { Cancel(); Error = "파티 구성이 바뀌어 매칭을 취소했습니다."; return; }
+                if (!queuedHumans.SequenceEqual(PartyMembers)) { Cancel("파티 구성이 바뀌어 매칭 취소"); Error = "파티 구성이 바뀌어 매칭을 취소했습니다."; return; }
                 foreach (var pair in cancelBaseline)
-                    if (pair.Value != SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(pair.Key), "cancel")) { Cancel(); Status = "파티원이 취소했습니다."; return; }
+                    if (pair.Value != SteamMatchmaking.GetLobbyMemberData(Id(Party), Id(pair.Key), "cancel")) { Cancel($"파티원 {Name(pair.Key)} 님이 취소해 매칭 취소"); Status = "파티원이 취소했습니다."; return; }
             }
             if (IsLeader || Started) return;
             string route = Route(Party);
             if (route == "idle")
             {
+                if (Match != 0) Diagnose("파티장이 매칭을 멈춰 방에서 나옴");
                 if (Match != 0 || pending) { generation++; pending = false; LeaveMatchInternal(); }
                 cancelledFollower = false; Status = "파티 준비 완료. 파티장을 기다리는 중."; return;
             }
@@ -965,10 +991,11 @@ namespace ChessFight.Network
             if (route == "search")
             {
                 if (pending) { generation++; pending = false; }
-                if (Match != 0) LeaveMatchInternal(); Status = "파티장이 매칭을 찾는 중..."; return;
+                if (Match != 0) { Diagnose("파티장이 다른 방을 찾기 시작해 방에서 나옴"); LeaveMatchInternal(); }
+                Status = "파티장이 매칭을 찾는 중..."; return;
             }
             if (ulong.TryParse(route, out ulong target) && target != Match && !pending)
-            { LeaveMatchInternal(); Join(target, false); }
+            { if (Match != 0) Diagnose($"파티장을 따라 방 {target}(으)로 옮김"); LeaveMatchInternal(); Join(target, false); }
         }
 
         void PollMatch(float now)
@@ -984,13 +1011,17 @@ namespace ChessFight.Network
             if (!live && phase != "closed") FollowWaitingHost(now);
             if (phase == "closed" || (!live && (Host == 0 || Owner(Match) != Host)))
             {
-                // Party-route and match-close notifications can arrive in either order
-                // while the host merges an otherwise empty waiting room.
-                if (invalidHostSince < 0) invalidHostSince = now;
                 // R294: a waiting-room handover on its way (the record names a host still in the
                 // room, Steam has not moved the ownership yet) is not a host that has gone.
                 bool handing = phase != "closed" && Host != 0 && ParseId(Data(Match, "host")) == Host && Members(Match).Contains(Host);
                 float grace = handing ? WaitingHandoffGrace : 2;
+                // Party-route and match-close notifications can arrive in either order
+                // while the host merges an otherwise empty waiting room.
+                if (invalidHostSince < 0)
+                {
+                    invalidHostSince = now;
+                    Diagnose(phase == "closed" ? "대기실이 닫힘" : handing ? $"방 주인이 방장에게 넘어오기를 기다림(최대 {grace:0}초)" : $"방장이 방에 없음({grace:0}초 기다림)");
+                }
                 if (now - invalidHostSince > grace) LeaveClosedRoom(live, now - invalidHostSince - grace);
                 return;
             }
@@ -1016,9 +1047,14 @@ namespace ChessFight.Network
                     if (Owner(Match) == Self)
                     {
                         if (adoptReservations) { LoadReservations(); adoptReservations = false; }
-                        foreach (var removed in reservations.Reconcile(present, now)) Set(Match, "grant_" + removed.Leader, removed.Ticket + "|expired");
+                        foreach (var removed in reservations.Reconcile(present, now))
+                        {
+                            Diagnose($"자리 예약 풀림: {Who(removed.Leader)} 님 파티 {removed.Members.Length}명(기한 안에 다 오지 못했거나, 다 온 뒤 한 명이 나감)");
+                            Set(Match, "grant_" + removed.Leader, removed.Ticket + "|expired");
+                        }
                         if (reservations.Find(Self) == null) { Fail("예약 시간 안에 파티가 모두 입장하지 못했습니다."); return; }
                         PublishRoster();
+                        TrackJoiners(present, now);
                         // R159: a start that is waiting for a newcomer's machine score goes on by itself.
                         if ((!privateRoom && reservations.Ready) || startWanted) StartGame();
                         if (!Started) ElectWaiting(present, now);
@@ -1271,6 +1307,12 @@ namespace ChessFight.Network
             float now = Time.realtimeSinceStartup;
             hostSince = now;
             if (previous == next) return;
+            Diagnose($"방장 바뀜: {Who(previous)} → {Who(next)}" + (string.IsNullOrEmpty(note) ? "" : $" ({note})"));
+            // R525: a PC that becomes the host starts from the room's roster, the one the host before it wrote last.
+            // Its own copy was its last read as a player, a poll or more old: at the start (StartGame moves the role to
+            // the best PC in the same poll that seats the last arrival) the new host published that copy and threw out
+            // whoever had sat down since ("예약이 해제되었거나 파티원 연결이 끊겼습니다", found in a six-player simulation).
+            if (next == Self && Match != 0) ReadRoster();
             lastHandoff = now;
             Note = note; noteUntil = now + 6;
             // The next host reads the held seats and the room's state afresh.
@@ -1300,6 +1342,16 @@ namespace ChessFight.Network
                 Debug.Log($"[ChessFight] 방장 정하기(대기실): {seen} → " + (move ? $"{Name(next)} 님에게 넘김" : "그대로"));
             }
             if (move) HandOffWaiting(next, $"PC 성능 1등인 {Name(next)} 님이 방장을 맡습니다.");
+        }
+
+        // R525: who stands in the waiting room without a seat yet, and since when (SeatingJoiners holds the start).
+        void TrackJoiners(HashSet<ulong> present, float now)
+        {
+            var seated = new HashSet<ulong>(reservations.Groups.SelectMany(g => g.Members));
+            foreach (ulong id in unseatedSince.Keys.ToList())
+                if (!present.Contains(id) || seated.Contains(id)) unseatedSince.Remove(id);
+            foreach (ulong id in present)
+                if (id != Self && !seated.Contains(id) && !BotIdentity.IsBot(id) && !unseatedSince.ContainsKey(id)) unseatedSince[id] = now;
         }
 
         // A player whose whole party has arrived: only they may host the waiting room
@@ -1424,6 +1476,7 @@ namespace ChessFight.Network
             nextFitPublish = nextSuccessors = nextOwnerFix = noteUntil = 0; lastHandoff = -1000; Note = "";
             startWanted = adoptReservations = false; startWaitSince = -1; nextWaitElect = 0; lastWaitElection = "";
             held.Clear(); heldLoaded = false; joinable = -1;
+            unseatedSince.Clear();
         }
 
         // ---- Empty seats of a started match (Backfill) ----
@@ -1532,7 +1585,10 @@ namespace ChessFight.Network
         void RetryAdmission(string message, string alone = null)
         {
             if (IsLeader && Searching && !privateRoom && !joinedByNumber)
-            { LeaveMatchInternal(); Set(Party, "route", "search"); Status = message; nextSearch = Time.realtimeSinceStartup + UnityEngine.Random.Range(1f, 3f); }
+            {
+                Diagnose("방에서 나와 다른 방을 찾음: " + message);
+                LeaveMatchInternal(); Set(Party, "route", "search"); Status = message; nextSearch = Time.realtimeSinceStartup + UnityEngine.Random.Range(1f, 3f);
+            }
             else Fail(alone ?? message);
         }
         // A line someone typed, from the lobby it arrived in.
@@ -1712,7 +1768,17 @@ namespace ChessFight.Network
         void WriteEnded() { if (endWanted && Data(Match, "ended") != "1") Set(Match, "ended", "1"); }
         public bool MatchEnded => Match != 0 && (endWanted || Data(Match, "ended") == "1");
 
-        public void Cancel()
+        public void Cancel() => Cancel(Started ? "경기에서 나감" : Match != 0 ? "대기실에서 나감(취소)" : "매칭 취소");
+
+        // The same, with why for Player.log (R525): a ConnectionStatus or a Status line was all a build kept of it.
+        public void Cancel(string why)
+        {
+            if (!Online) return;
+            Diagnose(why);
+            Leave();
+        }
+
+        void Leave()
         {
             if (!Online) return;
             // Leaving a started match takes only this player out (R60). Its seat
@@ -1733,7 +1799,7 @@ namespace ChessFight.Network
         public void LeaveParty()
         {
             if (!Online) return;
-            Cancel(); LeavePartyInternal(); CreateParty();
+            Cancel("파티를 나감"); LeavePartyInternal(); CreateParty();
         }
         void LeavePartyInternal()
         { if (Party != 0) SteamMatchmaking.LeaveLobby(Id(Party)); Party = 0; partyOwner = 0; PartyBots = 0; }
@@ -1777,9 +1843,25 @@ namespace ChessFight.Network
             ResetHostState();
             SessionChanged?.Invoke();
         }
-        void Fail(string error) { Cancel(); Error = error; Status = error; }
+        void Fail(string error) { Diagnose("나감: " + error); Leave(); Error = error; Status = error; }
         // For the scene flow: leave the match and tell the player why.
         public void Abort(string reason) { if (Online) Fail(reason); }
+
+        // R525 (user 11-09, the first public test with six PCs: "매칭 중에 호스트PC가 10초 시점에서 계속 튕기는 현상 ... 제일
+        // 시급"): every way out of a room, every change of its host and every wait for its owner goes to Player.log, with the
+        // room as this PC sees it. Before, a player thrown out left no line anywhere (Fail only set the HUD's text), so the
+        // builds' logs could not say which rule had done it. Rare lines (state changes only), never per frame.
+        void Diagnose(string what)
+        {
+            string room = Match == 0 ? "방 없음"
+                : $"방 {Match} · {Data(Match, "phase")} · 방장 {Who(Host)} · 주인 {Who(Owner(Match))} · 기록 방장 {Who(ParseId(Data(Match, "host")))}" +
+                  $" · {(IsHost ? "내가 방장" : "참가자")} · 명단 {Roster.Count}{(Roster.ContainsKey(Self) ? "(나 있음)" : "(나 없음)")}" +
+                  $" · 방 인원 {Members(Match).Count}{(Started ? " · 경기 중" : "")}";
+            string party = Party == 0 ? "" : IsLeader ? " · 파티장" : " · 파티원";
+            Debug.Log($"[ChessFight] 세션: {what} | {room}{party} | t {Time.realtimeSinceStartup:0.0}");
+        }
+
+        string Who(ulong id) => id == 0 ? "-" : id == Self ? "나" : Name(id);
 
         // Tells the party which started match we are playing ("match"), so a leader
         // back in the lobby does not queue us again meanwhile (PartyStillPlaying).
@@ -1810,7 +1892,7 @@ namespace ChessFight.Network
         public void Dispose()
         {
             if (disposed) return;
-            if (Online) { Cancel(); LeavePartyInternal(); SteamFriends.ClearRichPresence(); }
+            if (Online) { Cancel("게임 종료"); LeavePartyInternal(); SteamFriends.ClearRichPresence(); }
             disposed = true;
             foreach (var c in callbacks) c.Dispose(); foreach (var c in calls) c.Dispose();
             callbacks.Clear(); calls.Clear();

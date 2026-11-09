@@ -54,6 +54,8 @@ namespace ChessFight.Network
         float accumulator, lastReceive, nextSnapshot, nextPingPoll;
         byte jumps;
         bool jumpQueued, listed;
+        // R525: whether a snapshot from this host ever came (for the log), and whether this silence is logged already.
+        bool heardHost, lostNoted;
 
         // Development only: extra delay and loss on this machine's packets.
         public LinkProfile Simulation
@@ -90,7 +92,12 @@ namespace ChessFight.Network
                 if (session.IsPeer(id)) SteamNetworkingMessages.AcceptSessionWithUser(ref c.m_identityRemote);
             });
             failures = Callback<SteamNetworkingMessagesSessionFailed_t>.Create(c =>
-            { ConnectionStatus = "Steam P2P 연결 실패. 취소 후 다시 시도하세요."; });
+            {
+                ConnectionStatus = "Steam P2P 연결 실패. 취소 후 다시 시도하세요.";
+                // R525: and why, for Player.log (Steam's end reason and its own words).
+                ulong peer = c.m_info.m_identityRemote.GetSteamID64();
+                Debug.LogWarning($"[ChessFight] Steam P2P 연결 실패: {session.Name(peer)} ({peer}) · 이유 {c.m_info.m_eEndReason} {c.m_info.m_szEndDebug}");
+            });
         }
         public void Update(float x, float z, bool jump)
         {
@@ -169,7 +176,27 @@ namespace ChessFight.Network
                 foreach (ulong id in session.Roster.Keys) Send(id, bytes);
             }
             if (Health == LinkHealth.Lost)
-            { session.Cancel(); ConnectionStatus = "방장의 응답이 끊겨 파티로 돌아왔습니다."; return; }
+            {
+                // R525 (user 11-09 build test: players thrown out of the waiting room "at 10 seconds", over and over, with no
+                // message): this stream only carries the waiting room's walk-around. A waiting room it cannot hear is no
+                // reason to leave: the room itself says whether its host is still there (SteamSession: a host gone or closed
+                // ends it with a message). It used to Cancel here, silently - and a party member's Cancel writes "cancel",
+                // which calls the whole party's search off. Now a waiting room only notes it; a started match that runs on
+                // this stream (a scene without its own simulation) still leaves, with its reason in Player.log.
+                if (session.Started)
+                {
+                    session.Cancel($"방장 움직임이 {LinkMonitor.LostAfter:0}초 동안 오지 않아 경기에서 나감" + (heardHost ? "" : "(이 방장에게서 한 번도 받지 못함)"));
+                    ConnectionStatus = "방장의 응답이 끊겨 파티로 돌아왔습니다.";
+                    return;
+                }
+                if (!lostNoted)
+                {
+                    lostNoted = true;
+                    Debug.Log($"[ChessFight] 대기실: 방장 {session.Name(session.Host)} 님의 움직임이 {LinkMonitor.LostAfter:0}초 동안 오지 않음" +
+                              (heardHost ? "" : "(한 번도 받지 못함: Steam P2P 연결을 확인)") + " · 대기실에 그대로 있음");
+                }
+            }
+            else lostNoted = false;
             if (now >= nextPingPoll) { nextPingPoll = now + 1; PingMs = PollPing(); }
         }
 
@@ -183,12 +210,12 @@ namespace ChessFight.Network
             var previous = Health;
             Health = LinkMonitor.Classify(Silence);
             if (Health == LinkHealth.Unstable) ConnectionStatus = "방장 연결이 불안정합니다...";
-            else if (Health == LinkHealth.Frozen)
+            else if (Health >= LinkHealth.Frozen)
                 // A started match hands the host role on after a few seconds (HOST.md);
-                // the return to the party is only the last resort.
+                // the return to the party is only the last resort. A waiting room waits (R525).
                 ConnectionStatus = session.Started
-                    ? $"방장 응답 없음 - 멈춤. 다음 방장으로 넘기는 중... ({Math.Ceiling(LinkMonitor.LostAfter - Silence)}초 안에 안 되면 파티로 복귀)"
-                    : $"방장 응답 없음 - 멈춤 ({Math.Ceiling(LinkMonitor.LostAfter - Silence)}초 뒤 파티로 복귀)";
+                    ? $"방장 응답 없음 - 멈춤. 다음 방장으로 넘기는 중... ({Math.Max(0, Math.Ceiling(LinkMonitor.LostAfter - Silence))}초 안에 안 되면 파티로 복귀)"
+                    : "방장의 대기실 움직임이 오지 않습니다 - 대기실에서 기다리는 중";
             else if (previous != LinkHealth.Ok) ConnectionStatus = "Steam으로 연결됨";
         }
 
@@ -272,7 +299,7 @@ namespace ChessFight.Network
             }
             else if (sender == session.Host && MotionProtocol.ReadSnapshot(bytes, session.Match, out uint receivedTick, arriving) && MotionProtocol.Newer(receivedTick, lastSnapshot))
             {
-                lastSnapshot = receivedTick; lastReceive = now;
+                lastSnapshot = receivedTick; lastReceive = now; heardHost = true;
                 if (Health != LinkHealth.Ok || ConnectionStatus == "") ConnectionStatus = "Steam으로 연결됨";
                 Health = LinkHealth.Ok;
                 foreach (var pawn in arriving)
@@ -314,7 +341,7 @@ namespace ChessFight.Network
             foreach (ulong id in connected.ToArray()) Close(id);
             States.Clear(); inputs.Clear(); lastInput.Clear(); consumedJumps.Clear(); jumpBaseline.Clear(); unacknowledged.Clear(); bots.Clear();
             delayedOut.Clear(); delayedIn.Clear(); response.Clear();
-            accumulator = 0; nextSnapshot = 0; sequence = tick = lastSnapshot = 0; jumps = 0; jumpQueued = listed = false;
+            accumulator = 0; nextSnapshot = 0; sequence = tick = lastSnapshot = 0; jumps = 0; jumpQueued = listed = heardHost = lostNoted = false;
             lastReceive = Time.realtimeSinceStartup; ConnectionStatus = ""; Health = LinkHealth.Ok; Silence = 0; PingMs = -1;
         }
 
@@ -329,6 +356,7 @@ namespace ChessFight.Network
             delayedIn.Clear(); response.Clear();
             accumulator = 0; nextSnapshot = 0;
             listed = false; lastReceive = now; Health = LinkHealth.Ok; Silence = 0; PingMs = -1;
+            heardHost = lostNoted = false;
             if (session.IsHost)
             {
                 // Continue from the newest state this PC was shown. The tick keeps

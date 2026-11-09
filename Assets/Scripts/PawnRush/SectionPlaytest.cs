@@ -12,6 +12,7 @@ namespace ChessFight.PawnRush
     //   F          the piece's skill (R494: the round is a Pawn Rush course - the seoungtest pawn movement and the
     //              piece skills, as in 승규 님's test scene; PawnRushRound raises CourseSkills.PawnRush)
     //   F5         switch the pawn to the other team (and start again)
+    //   F6         (development builds, R525) the team's next mini-game done now; in a match through its host (SteamPawnRushLink)
     //   F8         a new round: a new seed, the sections drawn again, every random obstacle on a new order
     //   F9         team size 3 -> 4 -> 5 -> 6 a side (the grand stair hall opens one wing for 3 or 4)
     //   R / Backspace   the last checkpoint / the start (the spawner's own keys)
@@ -121,6 +122,8 @@ namespace ChessFight.PawnRush
             if (LegacyKeys.Down(KeyCode.Backspace)) Restarted();
             if (LegacyKeys.Down(KeyCode.LeftBracket)) Jump(-1);
             if (LegacyKeys.Down(KeyCode.RightBracket)) Jump(1);
+            // R525: the team's next mini-game done now (a match does it through its host: SteamPawnRushLink).
+            if (Debug.isDebugBuild && LegacyKeys.Down(KeyCode.F6) && !ChatBox.KeysHeld) Log("-", round.CompleteNextMiniGame(spawner.Team, "나"));
             Track(spawner.Driver);
         }
 
@@ -253,14 +256,16 @@ namespace ChessFight.PawnRush
             }
             string here = currentSection != null ? currentSection.DisplayName + " · 비트 " + currentBeat.Substring(currentBeat.IndexOf('/') + 2)
                         : currentBeat == CorridorBeat ? CorridorBeat : "구간 밖";
+            // R525: a development build shows its mini-game cheat (F6) in a match too.
+            string cheat = Debug.isDebugBuild ? " · F6 미니게임 완료(개발)" : "";
             string text = Online
-                ? $"<b>폰 러시</b> · {Teams.Name(Team)}팀\n{here}\n판 구성: {string.Join(" | ", slots)}"
+                ? $"<b>폰 러시</b> · {Teams.Name(Team)}팀\n{here}\n판 구성: {string.Join(" | ", slots)}" + (cheat != "" ? "\n개발 빌드" + cheat : "")
                 : $"<b>폰 러시 구간 시험</b> · 판 씨앗 {round.Seed} · {round.TeamSize}대{round.TeamSize} · {Teams.Name(Team)}팀\n" +
                   $"{here}\n" +
                   $"낙하 {falls} · 맞음 {hits}" + (Time.time - lastHitAt < 2f ? $" (<b>{lastHit}</b>)" : "") + "\n" +
                   $"판 구성: {string.Join(" | ", slots)}\n" +
                   "F 스킬 · F5 팀 바꾸기 · F8 새 판(새 씨앗) · F9 팀 인원 3~6\n" +
-                  "R 체크포인트 · Backspace 처음 · [ ] 이전/다음 구간";
+                  "R 체크포인트 · Backspace 처음 · [ ] 이전/다음 구간" + cheat;
             // As tall as the text (the round's seven slots can take two lines).
             float height = style.CalcHeight(new GUIContent(text), 540f) + 14f;
             var box = new Rect(Screen.width - 572, 12, 560, height);

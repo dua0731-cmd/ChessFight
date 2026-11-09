@@ -211,6 +211,11 @@ namespace ChessFight.RagdollLab
         // (CFR9 and the other packets unchanged: an older build still meets this one).
         public const byte TypeKingCall = 9;
         public const int KingCallBytes = 4 + 1 + 8 + 1 + 1 + 1;   // 16
+        // R525 (user 11-09: "미니게임 즉시 클리어 치트 필요"): a development build's F6 in a Pawn Rush match, a client's to the
+        // host: "my team's next mini-game is done", with a number that changes with every press, sent a few times over. A
+        // release build's host ignores it, and so does an older build (it reads lab inputs only).
+        public const byte TypeDevClear = 10;
+        public const int DevClearBytes = 4 + 1 + 8 + 1;   // 14
         public const int HeaderBytes = 4 + 1 + 8;
         public const int MatchHeaderBytes = 4 + 1 + 8 + 2;
         public const int MaxMatchText = 400;
@@ -468,6 +473,27 @@ namespace ChessFight.RagdollLab
             seq = r.ReadByte();
             a = r.ReadByte();
             b = r.ReadByte();
+            return seq != 0;
+        }
+
+        // R525: a development build's "my team's next mini-game is done" (TypeDevClear).
+        public static byte[] DevClear(ulong session, byte seq)
+        {
+            var w = streams.Begin();
+            w.Write(Magic);
+            w.Write(TypeDevClear);
+            w.Write(session);
+            w.Write(seq);
+            return streams.Finish();
+        }
+
+        public static bool ReadDevClear(byte[] bytes, ulong session, out byte seq)
+        {
+            seq = 0;
+            if (bytes == null || bytes.Length != DevClearBytes) return false;
+            var r = streams.Open(bytes);
+            if (r.ReadUInt32() != Magic || r.ReadByte() != TypeDevClear || r.ReadUInt64() != session) return false;
+            seq = r.ReadByte();
             return seq != 0;
         }
 

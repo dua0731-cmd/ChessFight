@@ -235,6 +235,34 @@ public static class SessionFlowTests
                 Check(strong.CanStartGame,"the new host cannot run the room");
                 As(strong,strong.StartGame);Step(30);
                 Check(clients.All(c=>c.Started&&c.Host==strong.Self),"the start after a slow handover");});
+            // R525 (user 11-09, the first public test with six PCs: "10초 안에 전부 들어와서 시작해도 방장PC만 시작되고 나머지는
+            // 튕김"): their machines' scores and their order, Steam taking a second to move a room's owner. The room went to a
+            // better PC twice while players came in; the host started as soon as it could with six in the room, and the
+            // players whose seats had not been granted yet (asked during the handover) were thrown out, one of them later by
+            // the new host's old copy of the roster. Now the start waits for them and the new host reads the room's roster.
+            Test("Six public searchers: the start waits for everyone in the room to be seated, through slow handovers to the best PC",()=>{
+                Setup(6);int[] fit={845,701,737,697,635,529};float[] at={2,0,3,4,5,6};
+                for(int i=0;i<6;i++){clients[i].LocalFitness=fit[i];FakeSteam.PingLocations[clients[i].Self]="loc"+i;}
+                for(int a=0;a<6;a++)for(int b=a+1;b<6;b++)FakeSteam.Pings[("loc"+a,"loc"+b)]=25;
+                FakeSteam.OwnerDelay=1;var searching=new bool[6];bool pressed=false;
+                for(int tick=0;tick<240;tick++)
+                {
+                    for(int i=0;i<6;i++)if(!searching[i]&&tick*.25f>=at[i]){searching[i]=true;var c=clients[i];As(c,()=>c.FindMatch());}
+                    UnityEngine.Time.realtimeSinceStartup+=.25f;foreach(var c in clients.ToArray())As(c,c.Tick);
+                    var host=clients.FirstOrDefault(c=>c.IsHost&&c.Match!=0&&!c.Started&&c.CanStartGame);
+                    if(host!=null&&!pressed&&clients.Count(c=>c.Match==host.Match)==6){pressed=true;As(host,host.StartGame);}
+                }
+                Check(pressed,"the host never could start with six in the room");
+                Check(clients.All(c=>c.Started&&c.Match==clients[0].Match&&c.Error==""),"someone was thrown out at the start");
+                Check(clients.All(c=>c.Host==clients[0].Self)&&clients[0].Roster.Count==6,"not everyone in one match under the best PC");
+                Check(clients.All(c=>c.EmptySeats==0)&&RoomData(clients[0],"seats")=="3,3","the match started short: "+RoomData(clients[0],"seats"));});
+            Test("A player in the waiting room who never asks for a seat holds the start only for a while",()=>{
+                Room(new[]{900,800});var host=clients[0];
+                FakeSteam.Lobbies[host.Match].Members.Add(99);Step(2);
+                Check(!host.CanStartGame&&host.SeatingJoiners==1,"a player in the room without a seat should hold the start");
+                Step(30);
+                Check(host.CanStartGame&&host.SeatingJoiners==0,"one who never asks must not hold it for ever");
+                As(host,host.StartGame);Step(10);Check(clients.All(c=>c.Started),"the start after the wait");});
             // R295: the PC a waiting room was handed to leaves (its party cancels) before Steam has moved the room to it.
             // The old host still owns the room and takes it back; the room used to end 2 seconds later.
             Test("A waiting-room handover whose new host leaves before the room is theirs goes back to the old host",()=>{

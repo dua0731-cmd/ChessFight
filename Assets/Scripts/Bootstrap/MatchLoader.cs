@@ -177,9 +177,11 @@ namespace ChessFight.Game
             // R148: the 폰 러쉬 room's host may start short of twelve (3+ a side, even sides).
             state.ShowStart = session.EarlyStartMode && session.IsHost && !session.Started;
             state.CanStart = session.CanStartGame;
-            int white = session.TeamCount(0), black = session.TeamCount(1), min = TeamReservations.MinTeamToStart;
+            int white = session.TeamCount(0), black = session.TeamCount(1), min = session.MinTeamToStart;
             state.StartNote = !session.EarlyStartMode || session.Started ? ""
                 : state.CanStart ? (session.IsHost ? $"{white} 대 {black} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)" : $"{white} 대 {black} · 방장이 시작할 수 있어요")
+                // R525: the start waits (up to SteamSession.JoinGrace) for players already in the room to get their seats.
+                : session.SeatingJoiners > 0 ? $"{white} 대 {black} · 방에 들어온 {session.SeatingJoiners}명이 자리를 받는 중이에요"
                 : white < min || black < min ? $"{white} 대 {black} · 팀마다 {min}명 이상이면 시작할 수 있어요"
                 : white != black ? $"{white} 대 {black} · 두 팀 인원이 같아야 시작할 수 있어요"
                 : $"{white} 대 {black} · 모두 입장하면 시작할 수 있어요";

@@ -119,7 +119,9 @@ namespace ChessFight.Network
         // R148 (Pawn Rush): the host may start before twelve once each side has at least MinTeamToStart and the
         // two sides are the same size (3v3, 4v4, 5v5), everyone arrived.
         public const int MinTeamToStart = 3;
-        public bool ReadyEarly => Used(0) >= MinTeamToStart && Used(0) == Used(1) && groups.All(g => g.Committed);
+        public bool ReadyEarly => ReadyEarlyFrom(MinTeamToStart);
+        // R525: the same from another minimum a side (a development build's host starts from one: SteamSession.MinTeamToStart).
+        public bool ReadyEarlyFrom(int minimum) => Used(0) >= Math.Max(1, minimum) && Used(0) == Used(1) && groups.All(g => g.Committed);
         public int Bots => groups.Sum(g => g.Members.Count(BotIdentity.IsBot));
         public int FillerBots(int team) => groups.Where(g => g.Team == team && BotIdentity.IsBot(g.Leader)).Sum(g => g.Members.Length);
         public bool RemoveFillerBot(int team)
