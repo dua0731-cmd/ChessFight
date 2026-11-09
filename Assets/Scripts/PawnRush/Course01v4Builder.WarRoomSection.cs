@@ -36,6 +36,11 @@ namespace ChessFight.PawnRush
             var b = new CourseBuilder(room.Kit, root.transform);
 
             LibraryReplacement(b);
+            // R518 (the user's list 13, "엔딩구간 난이도가 너무 어려움(혼자서도 못감). 우선 중앙 레일이 역방향으로 돌아가는 것만
+            // 빼봐도 해볼만 할듯"): in the round the conveyor's belt stands still on its carriage, which still goes back and
+            // forth. The reverse run pushed a rider back about 2.6 m/s along the deck (R425). Zone E of 승규 님's test scene,
+            // built by the same LibraryReplacement, keeps it.
+            foreach (var shuttle in root.GetComponentsInChildren<LibraryShuttleDriver>(true)) shuttle.BeltRuns = false;
             // The test scene started a pawn at (0, 0, -16.5); the checkpoint spans the start floor so a pawn coming in
             // along either side passes it too (its six respawn spots stay in the middle, clear of the war map's props).
             b.Checkpoint(0, new Vector3(0f, 0f, -15.5f), 0f, 28f);

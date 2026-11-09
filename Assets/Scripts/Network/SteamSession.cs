@@ -80,6 +80,9 @@ namespace ChessFight.Network
         // v30 (R517): a corridor (10 m) stands between every two sections of the round, so every section after the first
         //      lies further on. A v29 PC would put the host's pawns beside its own course; a build's tag is only its
         //      version (the same between two dev builds), so the protocol keeps them apart.
+        //      R518 (the same number: v30 was pushed the same hour and never built or sent out): the round's war room
+        //      conveyor belt stands still on its carriage. The host moves every pawn, so a build from between the two
+        //      would only show a belt the host does not push with.
         public const string Protocol = "chessfight.dua0731.network.v30";
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.

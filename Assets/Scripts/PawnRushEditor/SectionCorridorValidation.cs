@@ -14,7 +14,8 @@ namespace ChessFight.PawnRush.Editor
     // every join, joined to both sections' entry and exit, its floor level with both neighbours' floors where they meet,
     // its walls and lid where they belong, nothing solid in its way, and pictures of every corridor (Logs/CorridorValidation):
     // from 5 m before it, from 6 m past it looking back, inside, from 16 m before and 16 m past it, and the war room's
-    // end walls. Not a play test: no pawn walks through, nothing goes online.
+    // end walls. Since R518 also the war room's conveyor: its belt held still on the carriage, the carriage travelling,
+    // the deck carrying a rider only with the carriage. Not a play test: no pawn walks through, nothing goes online.
     //
     // Batch (do not pass -quit; it exits after Play Mode):
     //   Unity -batchmode -projectPath <copy> -executeMethod ChessFight.PawnRush.Editor.SectionCorridorValidation.RunPlayBatch
@@ -156,6 +157,16 @@ namespace ChessFight.PawnRush.Editor
                         if (now - phaseAt < Settle) return;
                         Physics.SyncTransforms();
                         Measure(seeds[seedIndex], seedIndex == 0);
+                        phase = 2;
+                        return;
+                    case 2:
+                        // after the corridors' pictures (they go first, one a frame), so the belt is timed alone
+                        BeltStart(seedIndex == 0);
+                        phase = 3; phaseAt = now;
+                        return;
+                    case 3:
+                        if (now - phaseAt < BeltWait) return;
+                        BeltCheck(seeds[seedIndex]);
                         seedIndex++;
                         phase = 0;
                         return;
@@ -263,6 +274,45 @@ namespace ChessFight.PawnRush.Editor
                 pictures.Enqueue(() => CaptureView(corridor, id + "_far", new Vector3(0f, 6f, -16f), new Vector3(0f, 3.5f, 4f), 58f));
                 pictures.Enqueue(() => CaptureView(corridor, id + "_farback", new Vector3(0f, 6f, 26f), new Vector3(0f, 3.5f, 6f), 58f));
             }
+        }
+
+        // R518: the round's war room conveyor - its belt held still on the carriage (LibraryShuttleDriver.BeltRuns), the
+        // carriage still travelling, the deck carrying a rider only with the carriage. Measured over BeltWait seconds.
+        const float BeltWait = 3f;
+        static LibraryShuttleDriver belt;
+        static Transform[] beltLinks;
+        static Vector3[] beltLinkAt;
+        static Vector3 beltCarriageAt;
+
+        static void BeltStart(bool picture)
+        {
+            belt = round.GetComponentsInChildren<LibraryShuttleDriver>(true).FirstOrDefault();
+            beltLinks = null;
+            if (belt == null || belt.Carriage == null) { Check(false, "war room: no conveyor (LibraryShuttleDriver) in the round"); return; }
+            beltLinks = belt.Carriage.GetComponentsInChildren<Transform>(true).Where(t => t.name.StartsWith("BELT_LINK_")).ToArray();
+            beltLinkAt = beltLinks.Select(t => belt.Carriage.InverseTransformPoint(t.position)).ToArray();
+            beltCarriageAt = belt.Carriage.position;
+            if (!picture || NoCapture) return;
+            var room = round.Sections.LastOrDefault();
+            if (room != null)
+                pictures.Enqueue(() => CaptureView(room.transform, "warroom_conveyor", new Vector3(-7f, 5f, -20f), new Vector3(0f, -.5f, -3f), 66f));
+        }
+
+        static void BeltCheck(int seed)
+        {
+            if (belt == null || beltLinks == null) return;
+            Check(!belt.BeltRuns, "seed " + seed + " war room: the conveyor belt still runs (BeltRuns)");
+            float drift = 0f;
+            for (int i = 0; i < beltLinks.Length; i++)
+                if (beltLinks[i] != null) drift = Mathf.Max(drift, (belt.Carriage.InverseTransformPoint(beltLinks[i].position) - beltLinkAt[i]).magnitude);
+            float travel = Vector3.Distance(belt.Carriage.position, beltCarriageAt);
+            var deck = belt.GetComponentsInChildren<LibraryConveyorSurface>(true).FirstOrDefault();
+            float push = deck != null ? (deck.PointVelocity(deck.transform.position) - belt.CarriageVelocity).magnitude : float.NaN;
+            Check(beltLinks.Length > 0 && drift < .001f, "seed " + seed + " war room: belt links moved " + drift.ToString("0.000") + " m on the carriage (" + beltLinks.Length + " links)");
+            Check(travel > .3f, "seed " + seed + " war room: the carriage moved only " + travel.ToString("0.00") + " m in " + BeltWait + " s");
+            Check(deck != null && push < .001f, "seed " + seed + " war room: the deck pushes " + push.ToString("0.000") + " m/s beyond the carriage");
+            Log("seed " + seed + " war room conveyor: belt held (" + beltLinks.Length + " links moved at most " + drift.ToString("0.0000") + " m on the carriage in " + BeltWait +
+                " s), carriage travelled " + travel.ToString("0.00") + " m, deck velocity - carriage velocity = " + push.ToString("0.0000") + " m/s");
         }
 
         static void Check(bool ok, string failure)

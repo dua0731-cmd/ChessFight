@@ -5,7 +5,8 @@ namespace ChessFight.PawnRush
 {
     // Character controller reads both the travel and the backwards belt velocity.
     // The belt runs against the deck's forward, which is toward the goal once the pivot turns 180 degrees;
-    // that reverse run is intended (승규 님, R258). The carriage's travel comes from LibraryShuttleDriver,
+    // that reverse run is intended (승규 님, R258) - except in the round's war room, where since R518 the belt is held
+    // still (LibraryShuttleDriver.BeltRuns, the user's list 13). The carriage's travel comes from LibraryShuttleDriver,
     // which moves it from the shared clock in the same physics step the riders read it (R259).
     public sealed class LibraryConveyorSurface : MonoBehaviour, IMovingSurface
     {
@@ -25,6 +26,8 @@ namespace ChessFight.PawnRush
         public Vector3 PointVelocity(Vector3 point)
         {
             var carriage = driver != null ? driver.CarriageVelocity : Vector3.zero;
+            // R518: where the belt is held (the round's war room) the deck only travels with the carriage.
+            if (driver != null && !driver.BeltRuns) return carriage;
             if (driver != null && driver.BeltMeasured) return carriage + (driver.BeltVelocity - carriage) * BeltPush;
             return carriage - transform.forward * (.644f * BeltPush);
         }

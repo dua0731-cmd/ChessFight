@@ -68,6 +68,25 @@ namespace ChessFight.PawnRush
 
         public Vector3 CarriageVelocity { get { Step(); return carriageVelocity; } }
 
+        /// <summary>R518 (the user's list, 11-09, 13: "엔딩구간 난이도가 너무 어려움(혼자서도 못감). 우선 중앙 레일이 역방향으로
+        /// 돌아가는 것만 빼봐도 해볼만 할듯"): false holds the belt still on the carriage - every part the take runs on it
+        /// (the links, the drums) keeps the place the take's start gives it there - so a rider only travels with the
+        /// carriage (LibraryConveyorSurface). The carriage still goes back and forth and jolts. The round's war room sets
+        /// it (Course01v4Builder.BuildWarRoomSection); 승규 님's test scene (zone E) keeps the reverse run (R258).</summary>
+        public bool BeltRuns
+        {
+            get => beltRuns;
+            set
+            {
+                beltRuns = value;
+                beltMeasured = false;
+            }
+        }
+        bool beltRuns = true;
+        Transform[] heldParts;
+        Vector3[] heldPosition;        // in the carriage's space
+        Quaternion[] heldRotation;
+
         // R393 (승규 11-04 "컨베이어 벨트 역방향이랑 이제 상호 작용 할 수 있게 해"): how fast the belt's top run moves in the
         // world - the carriage's travel plus the links running back along it, measured from the links the take moves
         // (the ones on top, a step that wraps round a drum left out), so a rider goes exactly as the drawn belt does.
@@ -94,6 +113,8 @@ namespace ChessFight.PawnRush
         {
             FindLinks();
             beltMeasured = false;
+            beltVelocity = carriageVelocity;
+            if (!beltRuns) return;                             // R518: held, the belt's top run is the carriage
             if (links == null || links.Length == 0) return;   // not configured yet (AddComponent runs OnEnable first)
             float top = float.MinValue;
             foreach (var l in links) top = Mathf.Max(top, l.position.y);
@@ -154,11 +175,66 @@ namespace ChessFight.PawnRush
         float Sample(double time)
         {
             if (clip == null || clip.length <= 0f) return 0f;
+            if (!beltRuns) FindHeldParts();
             float t = (float)(time % clip.length);
             if (t < 0f) t += clip.length;
             clip.SampleAnimation(gameObject, t);
             Jolt(t);
+            if (!beltRuns) HoldParts();
             return t;
+        }
+
+        // R518: the carriage's parts the take moves on it (whatever changes its place in the carriage's space between
+        // three times of the take: the belt's links, its drums), each with its place at the take's start.
+        void FindHeldParts()
+        {
+            if (heldParts != null || carriage == null) return;
+            var all = carriage.GetComponentsInChildren<Transform>(true);
+            float[] times = { 0f, clip.length * .31f, clip.length * .67f };
+            var position = new Vector3[times.Length, all.Length];
+            var rotation = new Quaternion[times.Length, all.Length];
+            for (int k = 0; k < times.Length; k++)
+            {
+                clip.SampleAnimation(gameObject, times[k]);
+                var inverse = Quaternion.Inverse(carriage.rotation);
+                for (int i = 0; i < all.Length; i++)
+                {
+                    position[k, i] = carriage.InverseTransformPoint(all[i].position);
+                    rotation[k, i] = inverse * all[i].rotation;
+                }
+            }
+            var parts = new System.Collections.Generic.List<int>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] == carriage) continue;
+                for (int k = 1; k < times.Length; k++)
+                    if ((position[k, i] - position[0, i]).sqrMagnitude > 1e-6f || Quaternion.Angle(rotation[k, i], rotation[0, i]) > .1f)
+                    {
+                        parts.Add(i);
+                        break;
+                    }
+            }
+            heldParts = new Transform[parts.Count];
+            heldPosition = new Vector3[parts.Count];
+            heldRotation = new Quaternion[parts.Count];
+            for (int j = 0; j < parts.Count; j++)
+            {
+                heldParts[j] = all[parts[j]];
+                heldPosition[j] = position[0, parts[j]];
+                heldRotation[j] = rotation[0, parts[j]];
+            }
+            Debug.Log("[작전 회의실] 컨베이어 벨트를 캐리지 위에 멈춤(R518): 테이크가 돌리던 부품 " + heldParts.Length + "개를 제자리에");
+        }
+
+        // Every held part back on its place on the carriage as the carriage now stands (a parent before its children).
+        void HoldParts()
+        {
+            if (heldParts == null || carriage == null) return;
+            for (int j = 0; j < heldParts.Length; j++)
+            {
+                if (heldParts[j] == null) continue;
+                heldParts[j].SetPositionAndRotation(carriage.TransformPoint(heldPosition[j]), carriage.rotation * heldRotation[j]);
+            }
         }
 
         float Wrap(float t)
