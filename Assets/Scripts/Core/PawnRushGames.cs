@@ -173,11 +173,14 @@ namespace ChessFight.Network
             flatDistance <= Reach && (diving || flatSpeed >= Speed || padJump);
     }
 
-    // G, the king escort (spec §5): the sled's road of fifteen board squares to the gate, as one distance s.
+    // G, the king escort (spec §5): the sled's road of fifteen board squares, d1 to e8 in front of the team gate, as
+    // one distance s. R524 (user 11-09, the list's 6: "룩이 있는 그 라인 후에 출구 벽 속까지 밀어야 되는 현상"): the road
+    // ends on e8's middle, the 1.6 m sled whole on the board in front of the gate. Before, a last leg ran on north from
+    // e8 to u 20.3, past the board's north edge (u 20): the sled was pushed 1.1 m into the team door's tunnel, into the
+    // north wall's depth and over the tunnel floor 0.4 m below the board.
     public static class KingEscortPath
     {
         public static readonly string[] Cells = { "d1", "d2", "d3", "c3", "b3", "b4", "b5", "b6", "c6", "d6", "e6", "f6", "f7", "f8", "e8" };
-        public const float GateU = 20.3f;
         public static readonly string[] Sand = { "b4", "b5", "d6", "e6" };
         // The two rooks in the way: the cell they stand on and the garage they are dragged into.
         public static readonly string[] RookCells = { "c6", "f7" };
@@ -190,7 +193,7 @@ namespace ChessFight.Network
         static StationPoint[] points;
         static float[] along;
 
-        // The path's corners: every cell's middle, then the gate.
+        // The path's corners: every cell's middle; the last, e8's, is the end.
         public static StationPoint[] Points
         {
             get
@@ -202,8 +205,6 @@ namespace ChessFight.Network
                     PawnRushBoard.Parse(c, out int f, out int r);
                     list.Add(PawnRushBoard.Center(f, r));
                 }
-                var last = list[list.Count - 1];
-                list.Add(new StationPoint(last.V, GateU));
                 points = list.ToArray();
                 along = new float[points.Length];
                 for (int i = 1; i < points.Length; i++) along[i] = along[i - 1] + points[i].DistanceTo(points[i - 1]);
@@ -213,7 +214,7 @@ namespace ChessFight.Network
 
         public static float Length { get { var p = Points; return along[p.Length - 1]; } }
 
-        // s of the middle of cell i (and of the gate, i = Cells.Length).
+        // s of the middle of cell i (the last cell's is Length, the end).
         public static float At(int i) { var p = Points; return along[i]; }
 
         public static int CellIndex(string name) => Array.IndexOf(Cells, name);
@@ -232,7 +233,7 @@ namespace ChessFight.Network
             return new StationPoint(p[i].V + (p[i + 1].V - p[i].V) * t, p[i].U + (p[i + 1].U - p[i].U) * t);
         }
 
-        // A turntable cell: the road bends there (and at the last cell, into the gate).
+        // A turntable cell: the road bends there (never the first or the last cell).
         public static bool Turns(int i)
         {
             var p = Points;

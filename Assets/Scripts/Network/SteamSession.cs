@@ -84,7 +84,10 @@ namespace ChessFight.Network
         //      R518 (the same number: v30 was pushed the same hour and never built or sent out): the round's war room
         //      conveyor belt stands still on its carriage. The host moves every pawn, so a build from between the two
         //      would only show a belt the host does not push with.
-        public const string Protocol = "chessfight.dua0731.network.v30";
+        // v31 (R524): G's king escort road ends on e8 (31.5 m), no longer 1.4 m on into the team door's tunnel. The wire
+        //      is the same, but a v30 host would keep the sled moving past where a v31 PC draws it stopped, and a v30
+        //      build was handed out (the 11-09 build, R523), so the two must not meet in one room.
+        public const string Protocol = "chessfight.dua0731.network.v31";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

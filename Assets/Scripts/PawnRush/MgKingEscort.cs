@@ -5,9 +5,10 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // G, king escort (mini-games v1.0 §5, reworked in R128): our king on a square sled is pushed and pulled along
-    // fifteen board squares (KingEscortPath, d1 to e8) to the gate; two of the other side's rooks stand in the road
-    // until they are pushed or dragged into their garages; at the gate our rook tower jumps over the king (castling)
-    // and the gate opens.
+    // fifteen board squares (KingEscortPath, d1 to e8 in front of the gate); two of the other side's rooks stand in the
+    // road until they are pushed or dragged into their garages; on e8 our rook tower jumps over the king (castling) and
+    // the gate opens. R524: the road ends on e8, the sled whole on the board (a gold frame shows where it stops); it used
+    // to run on into the team door's tunnel, so the sled had to be pushed into the north wall.
     //
     // R128 (user, after playing it): no ropes and no gold handle blocks. The ropes left no room by the walls, the
     // small blocks were hard to catch, grab + forward climbed them, and turning the sled pulled the grips off. Now
@@ -108,14 +109,14 @@ namespace ChessFight.PawnRush
                 if (isSand)
                     for (int w = -1; w <= 1; w++)
                         Arena.Picture(road, "Sand ripple", c + new Vector3(-h + .2f, .08f, w * .6f - .04f), c + new Vector3(h - .2f, .09f, w * .6f + .04f), ripple);
-                // Curbs on the outer sides: not toward the road's neighbours, d1's south (the start), e8's north (the
-                // gate) or a rook square's garage side.
+                // Curbs on the outer sides: not toward the road's neighbours, d1's south (the start) or a rook square's
+                // garage side. The end, e8, is closed all round (R524: it was open north, the road going on to the gate).
                 for (int side = 0; side < 4; side++)
                 {
                     int df = side == 0 ? 0 : side == 1 ? 1 : side == 2 ? 0 : -1, dr = side == 0 ? 1 : side == 1 ? 0 : side == 2 ? -1 : 0;
                     string next = PawnRushBoard.OnBoard(f + df, r + dr) ? PawnRushBoard.Name(f + df, r + dr) : "";
                     if (i > 0 && cells[i - 1] == next || i < cells.Length - 1 && cells[i + 1] == next) continue;
-                    if (i == 0 && side == 2 || i == cells.Length - 1 && side == 0) continue;
+                    if (i == 0 && side == 2) continue;
                     int rook = System.Array.IndexOf(KingEscortPath.RookCells, cells[i]);
                     if (rook >= 0 && KingEscortPath.RookGarages[rook] == next) continue;
                     var n = MiniGameParts.Local(station, new StationPoint(df, dr)) - MiniGameParts.Local(station, new StationPoint(0f, 0f));
@@ -138,6 +139,17 @@ namespace ChessFight.PawnRush
                         var arm = Arena.Picture(road, "Corner arrow", new Vector3(-.04f, 0f, -.3f), new Vector3(.04f, .02f, .3f), gold);
                         arm.transform.localPosition = c + Quaternion.Euler(0f, yaw, 0f) * new Vector3(side * .18f, .1f, .1f);
                         arm.transform.localRotation = Quaternion.Euler(0f, yaw - side * 40f, 0f);
+                    }
+                }
+                // The end (R524): a gold frame just round the sled's footprint, where it stops for the castling. The
+                // bars across run between the bars along, so no two tops overlap.
+                if (i == cells.Length - 1)
+                {
+                    const float edge = SledHalf + .1f, bar = .05f;
+                    foreach (float side in new[] { -1f, 1f })
+                    {
+                        Arena.Picture(road, "Goal frame", c + new Vector3(-edge - bar, .081f, side * edge - bar), c + new Vector3(edge + bar, .1f, side * edge + bar), gold);
+                        Arena.Picture(road, "Goal frame", c + new Vector3(side * edge - bar, .081f, -edge + bar), c + new Vector3(side * edge + bar, .1f, edge - bar), gold);
                     }
                 }
             }
@@ -394,13 +406,14 @@ namespace ChessFight.PawnRush
             Castle(t);
         }
 
-        // At the gate our rook tower castles over the king. R522 (the user's list, 11-09, 6: "왕의 행차 회랑 마지막구간
-        // 수정 필요. 룩이 점프뛰는 연출도 별로임"): it crouches (0.22 s, down and wide, leaning back), leaps from g8 in an arc
-        // that bends over the king at the gate - stretched as it leaves and as it comes down, one forward somersault round
-        // its middle, its floor band left off while it flies - and lands on c8 beside the team door with a squash and two
-        // bounces, dust and its ring; the whoosh goes with the leap. Before, it floated at one speed along the rank, spun
-        // like a top with its band stuck under it, landed without a jolt, and stood on d8, in front of the half of the
-        // door the sled leaves open. Every PC plays it from when it saw the castling start (no clock on the wire).
+        // At the road's end our rook tower castles over the king. R522 (the user's list, 11-09, 6: "왕의 행차 회랑
+        // 마지막구간 수정 필요. 룩이 점프뛰는 연출도 별로임"): it crouches (0.22 s, down and wide, leaning back), leaps from g8 in an arc
+        // over the king (on e8 since R524, so straight along rank 8) - stretched as it leaves and as it comes down, one
+        // forward somersault round its middle, its floor band left off while it flies - and lands on c8 beside the team door
+        // with a squash and two bounces, dust and its ring; the whoosh goes with the leap. Before, it floated at one speed
+        // along the rank, spun like a top with its band stuck under it, landed without a jolt, and stood on d8, in front of
+        // the half of the door the sled leaves open. Every PC plays it from when it saw the castling start (no clock on the
+        // wire).
         void Castle(float t)
         {
             if (tower == null) return;

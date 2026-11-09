@@ -1107,15 +1107,20 @@ public static class NetworkCoreTests
                 foreach (var q in KnightRoute.PieceSquares) Check(Array.IndexOf(KnightRoute.Squares, q) > 0, "piece on the road: " + q);
                 Check(KnightRoute.SquareAt(KnightRoute.Center("c5")) == 3 && KnightRoute.SquareAt(new StationPoint(0f, 10f)) < 0, "squares and water");
                 Check(KnightRoute.Takes(.5f, true, 0f, false) && KnightRoute.Takes(.5f, false, 0f, true) && !KnightRoute.Takes(.5f, false, 2.5f, false) && !KnightRoute.Takes(1.2f, true, 9f, true), "takes"); });
-            Test("G king escort: a road of fifteen joined squares, 32.9 m, six turntables, the speed table", () => {
+            Test("G king escort: a road of fifteen joined squares, 31.5 m, five turntables, ends on e8 on the board, the speed table", () => {
                 Check(KingEscortPath.Connected() && KingEscortPath.Cells.Length == 15, "joined");
-                Check(Math.Abs(KingEscortPath.Length - 32.925f) < .01f, "length " + KingEscortPath.Length);
+                Check(Math.Abs(KingEscortPath.Length - 31.5f) < .01f, "length " + KingEscortPath.Length);
                 int turns = 0; for (int i = 0; i < KingEscortPath.Cells.Length; i++) if (KingEscortPath.Turns(i)) turns++;
-                Check(turns == 6, "turntables " + turns);
+                Check(turns == 5 && !KingEscortPath.Turns(KingEscortPath.CellIndex("e8")), "turntables " + turns);
                 var p = KingEscortPath.Position(0f, out float dv, out float du);
                 Check(Math.Abs(p.V - PawnRushBoard.Center(3, 1).V) < 1e-4f && dv == 0f && du == 1f, "starts on d1 going north");
+                // R524: the end is e8's middle, reached going west from f8; the 1.6 m sled (half 0.8) stays on the board,
+                // short of its north edge (u 20) where the team door's tunnel starts.
                 var g = KingEscortPath.Position(KingEscortPath.Length, out dv, out du);
-                Check(Math.Abs(g.U - KingEscortPath.GateU) < 1e-3f, "ends at the gate");
+                var e8 = PawnRushBoard.Center(4, 8);
+                Check(g.DistanceTo(e8) < 1e-3f && Math.Abs(dv + 1f) < 1e-4f && Math.Abs(du) < 1e-4f, "ends on e8 going west");
+                Check(g.U + .8f < PawnRushBoard.U0 + PawnRushBoard.Cell * PawnRushBoard.N, "the sled stops on the board");
+                Check(Math.Abs(KingEscortPath.At(KingEscortPath.Cells.Length - 1) - KingEscortPath.Length) < 1e-4f, "the last cell's s is the end");
                 Check(Math.Abs(KingEscortPath.Speed(1.5f, false) - .735f) < 1e-4f && KingEscortPath.Speed(.5f, true) == .11f && KingEscortPath.Speed(9f, false) == 1.1f, "speeds");
                 Check(KingEscortPath.IsSand(KingEscortPath.At(5)) && !KingEscortPath.IsSand(KingEscortPath.At(0)), "sand");
                 Check(KingEscortPath.RookStop(0) < KingEscortPath.At(8) && KingEscortPath.RookStop(1) < KingEscortPath.At(12), "rooks stop the sled short"); });
