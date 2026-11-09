@@ -25,7 +25,7 @@
 
 | 환경 | 명령 | 내용 |
 |---|---|---|
-| Linux / 클라우드 AI | `Tools/run-tests-linux.sh` | **어셈블리 경계 검사**(Steam은 Network·Bootstrap에만, `Assets/Scripts`는 래그돌을 참조하지 않음) + Core 테스트 + 모의 Steam 세션 테스트. Mono가 없으면 apt로 설치 |
+| Linux / 클라우드 AI | `Tools/run-tests-linux.sh` | **어셈블리 경계 검사**(Steam은 Network·Bootstrap에만, `Assets/Scripts`는 래그돌을 참조하지 않음) + 장애물 시계 검사 + (R526) 이름으로 찾는 효과 셰이더가 빌드에 들어가는지(`VfxShaderKeep`) + Core 테스트 + 모의 Steam 세션 테스트. Mono가 없으면 apt로 설치 |
 | 〃 | `Tools/run-tests-linux.sh --compile` | 위 + **Roslyn**(.NET 8 SDK, 없으면 apt로 설치)으로 Steamworks.NET 원본 소스(고정 커밋)와 Unity 참조 DLL(NuGet `UnityEngine.Modules` 2021.3)에 대해 Core·Network·Game·Gameplay·Bootstrap·RagdollLab·PawnRush 컴파일. 에디터 코드는 폰 러시 코스(`Assets/Scripts/PawnRushEditor`)만 NuGet `Unity3D.SDK` 2021.1의 `UnityEditor.dll`로 컴파일(R68), Input/·나머지 에디터 코드는 제외 |
 | Windows (Unity 설치) | `./Tools/Test-NetworkCore.ps1` | Core + 세션 테스트 (Unity 내장 Mono 사용) |
 | 〃 | `./Tools/Test-NetworkCompile.ps1 -SteamRuntimeSources <PackageCache의 Steamworks Runtime>` | 실제 Unity DLL로 컴파일(09-26부터 랩 Steam 다리 `RagdollLabSteam`과 랩 빌더도 asmdef 참조 그대로). 이 PC: `-SteamRuntimeSources Library/PackageCache/com.rlabrecque.steamworks.net@6fb66c768572/Runtime` |

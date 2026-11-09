@@ -400,6 +400,7 @@ R162 사용자: "vfx 퀸 작업 해주면 되고 … 1번째 사진 퀸이 꼬�
 - **I2:** 앞면 반경은 `FallingChessPiece.FixedUpdate`의 판정 반경과 같은 식이다(바꾸면 둘 다 고친다). 고치는 곳: 앞줄 굵기 · 끌리는 빛 · 일렁임 · 최대 반경 선 = 재질 `M_Hazard_ShockDecal`, 끝에서 줄어드는 빛 = `I2 Decal`의 `VfxShockDecal`, 벽 높이 · 밝기 = `I2 Wall`의 `VfxShockWall`, 벽 색 · 옆 밝기 = 재질 `M_Hazard_ShockWall`.
 - **I1:** Shuriken 대신 `VfxParticleBurst` + `VFX_BurstParticles` — 셰이더가 입자 위치를 나이로 바로 계산한다(처음 속도 · 선형 끌림 · 중력 · 바닥 위로). 시뮬레이션이 없어 장애물 시계로 어느 순간이든 바로 그리고 모든 PC가 같은 모양이다. 미리곱한 블렌드라 `additive` 1이면 더하기(섬광 · 불꽃), 0이면 덮기(돌가루 · 조각). 층마다 개수 · 퍼짐 · 속도 · 수명 · 중력 · 끌림과 겉모양(색 · 크기 · 늘임 · 부드러움 · 네모)이 모두 그 층의 `VfxParticleBurst`에 있고 렌더러마다 넣으므로 재질은 `M_Hazard_Burst` 하나다. 첫 값은 `VfxHazardLooks`(빌더 · 메뉴 없는 길 공용). 모양 값을 바꾸면 메시를 다시 만든다.
 - **고치는 곳:** 색 · 밝기 · 선 굵기 · 눈금 수 · 체스판 크기 · 깜빡임 = 재질 `M_Hazard_WarnDecal`, 상자 높이 · 바닥 밑 깊이 · 나타나는 시간 · 깜빡이는 시간 · 채움 곡선 = 프리팹 `W1 Decal`의 `VfxGroundWarn`(반경 · `lead`는 게임이 장애물에서 넣음). 다시 빌드해도 둘 다 남는다.
+- (R526) 메뉴로 만든 프리팹 묶음이 없어도 플레이어 빌드에 셰이더 9개(W1 · W2 · I1~I3 · V1, 샹들리에 W1)가 들어간다: `Resources/VfxShaderKeep.asset`이 참조하고 대체 경로는 `VfxShaderKeep.Find`로 찾는다(전에는 빌드에서 효과가 하나도 안 그려짐). 이름으로 찾는 `ChessFight/VFX/…` 셰이더를 새로 쓰면 이 목록에 넣는다(`Tools/run-tests-linux.sh --checks-only`가 검사).
 - 메뉴를 누르기 전에는 `FallingPieceFx`가 같은 셰이더로 기본값 데칼을 Play 때 직접 만든다(승규 님 "지금유니티 화면에 안보여"). 고친 값을 남기거나 플레이어 빌드에 셰이더를 넣으려면 메뉴로 프리팹 · 재질을 만든다.
 - 작업대(아무 기물)에서 `20_Hazard_FallingPiece_Warn`으로 볼 수 있고(2.05초에 꽉 참), 캡처 시점은 0.1 · 0.5 · 1 · 1.5 · 1.8 · 2.03 · 2.2초.
 

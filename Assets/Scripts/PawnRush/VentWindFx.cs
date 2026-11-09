@@ -66,7 +66,8 @@ namespace ChessFight.PawnRush
         // A layer without its prefab: a mesh at the anchor with a material on its shader (a null mesh is the layer's own).
         T Made<T>(Transform anchor, string name, string shaderName, Mesh mesh) where T : Component
         {
-            var shader = Shader.Find(shaderName);
+            // R526: a player build keeps the shader through Resources/VfxShaderKeep (Shader.Find alone saw none there).
+            var shader = VfxShaderKeep.Find(shaderName);
             if (shader == null)
             {
                 Debug.LogWarning("[대계단 홀] 환풍기 바람 셰이더가 없습니다(" + shaderName + "): 메뉴 ChessFight/VFX/Hazard/Build를 한 번 누르세요");

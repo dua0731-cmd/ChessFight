@@ -241,8 +241,33 @@ check_obstacle_clock() {
   return $bad
 }
 
+# R526: an effect shader that runtime code finds by name ("ChessFight/VFX/...") must be in every player build. A build
+# takes a shader in only when something in it references it, and Shader.Find cannot see one it left out: the 11-09 build
+# drew none of the grand stair hall's falling-piece, chandelier and fan effects. Assets/Resources/VfxShaderKeep.asset
+# references the ones nothing else does (VfxShaderKeep.Find); a shader inside a Resources folder needs no entry.
+check_build_shaders() {
+  local bad=0 name file guid names
+  # (set -euo pipefail: a grep that finds nothing must not end the script)
+  names=$(grep -roE '"ChessFight/VFX/[^"]+"' --include='*.cs' Assets/Scripts Assets/Prototype 2>/dev/null \
+          | grep -v 'Editor/' | sed 's/^[^"]*"//; s/"$//' | grep -vF '...' | sort -u || true)
+  while IFS= read -r name; do
+    [ -z "$name" ] && continue
+    file=$(grep -rlF "Shader \"$name\"" Assets --include='*.shader' 2>/dev/null | head -1 || true)
+    if [ -z "$file" ]; then echo "no shader file declares \"$name\""; bad=1; continue; fi
+    case "$file" in */Resources/*) continue ;; esac
+    guid=$(grep -oE 'guid: [0-9a-f]{32}' "$file.meta" | head -1 | cut -d' ' -f2 || true)
+    if ! grep -q "guid: $guid" Assets/Resources/VfxShaderKeep.asset 2>/dev/null; then
+      echo "$name ($file) is not in Assets/Resources/VfxShaderKeep.asset"; bad=1
+    fi
+  done <<< "$names"
+  if [ $bad -eq 0 ]; then echo "PASS: every effect shader runtime code finds by name is kept in player builds"
+  else echo "FAIL: add the shaders above to Assets/Resources/VfxShaderKeep.asset (or keep them in a Resources folder)"; fi
+  return $bad
+}
+
 check_boundaries
 check_obstacle_clock
+check_build_shaders
 if [ "${1:-}" = "--checks-only" ]; then exit 0; fi
 ensure_mono
 run_tests

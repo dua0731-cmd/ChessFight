@@ -20,8 +20,9 @@ namespace ChessFight.PawnRush
     //                          picked by where the piece stands, so each piece has its own and every PC the same), the
     //                          embers out of them and a puff as the piece goes
     // Before that menu has been run (승규 11-04 "지금 유니티 화면에 안보여") each layer is made here from its shaders with
-    // their own values: the same look, but nothing to tune in a prefab, and a player build keeps the shaders only once the
-    // menu's materials reference them.
+    // their own values: the same look, but nothing to tune in a prefab. R526: a player build keeps those shaders through
+    // Resources/VfxShaderKeep (VfxShaderKeep.Find); it used to keep them only once the menu's materials referenced them, and
+    // the menu's set was never made, so builds drew none of these effects.
     [DisallowMultipleComponent]
     public sealed class FallingPieceFx : MonoBehaviour
     {
@@ -111,7 +112,7 @@ namespace ChessFight.PawnRush
         // A part without its prefab: a mesh under the piece with a material on its shader (a null mesh is the part's own).
         T Made<T>(string name, string shaderName, Mesh mesh) where T : Component
         {
-            var shader = Shader.Find(shaderName);
+            var shader = VfxShaderKeep.Find(shaderName);
             if (shader == null)
             {
                 Debug.LogWarning("[대계단 홀] 떨어지는 말 효과 셰이더가 없습니다(" + shaderName + "): 메뉴 ChessFight/VFX/Hazard/Build를 한 번 누르세요");

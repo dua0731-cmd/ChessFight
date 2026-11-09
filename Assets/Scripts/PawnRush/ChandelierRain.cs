@@ -451,7 +451,8 @@ namespace ChessFight.PawnRush
             {
                 if (warnMaterial == null)
                 {
-                    var shader = Shader.Find(WarnShader);
+                    // R526: a player build keeps the shader through Resources/VfxShaderKeep (Shader.Find alone saw none there).
+                    var shader = VfxShaderKeep.Find(WarnShader);
                     if (shader == null)
                     {
                         Debug.LogWarning("[대계단 홀] 샹들리에 예고 셰이더가 없습니다(" + WarnShader + "): 어두운 원판으로 예고합니다");
