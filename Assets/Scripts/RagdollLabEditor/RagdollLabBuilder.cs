@@ -72,10 +72,7 @@ namespace ChessFight.RagdollLab.Editor
             });
             if (report.summary.result != BuildResult.Succeeded)
                 throw new Exception("Player build failed: " + report.summary.result);
-            // Steam only initialises from a build if it is launched through Steam or finds this file.
-            string appId = Path.GetFullPath("steam_appid.txt");
-            if (File.Exists(appId)) File.Copy(appId, Path.Combine(output, "steam_appid.txt"), true);
-            else Debug.LogWarning("[RagdollLab] steam_appid.txt not found at the project root; the build cannot start Steam.");
+            // steam_appid.txt is copied next to the exe by SteamAppIdBuildStep (Assets/Scripts/Editor), as for every player build (R523).
             Debug.Log("[RagdollLab] Player built: " + output);
         }
 

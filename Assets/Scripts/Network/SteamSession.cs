@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Steamworks;
@@ -84,6 +85,9 @@ namespace ChessFight.Network
         //      conveyor belt stands still on its carriage. The host moves every pawn, so a build from between the two
         //      would only show a belt the host does not push with.
         public const string Protocol = "chessfight.dua0731.network.v30";
+        // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
+        // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
+        public const uint DevAppId = 480;
         // Which build made a lobby. Two builds of the same protocol can still
         // disagree on game rules, so rooms and parties only admit the same build.
         public string Build { get; }
@@ -521,8 +525,17 @@ namespace ChessFight.Network
         {
             try
             {
-                if (!Packsize.Test() || !DllCheck.Test() || !SteamAPI.Init())
-                { Error = "Steam 초기화 실패. Steam을 실행하고 로그인한 뒤 다시 연결하세요. (개발용 App ID 480)"; return; }
+                string appId = EnsureAppId();
+                string why = "Packsize/DllCheck";
+                var result = Packsize.Test() && DllCheck.Test() ? SteamAPI.InitEx(out why) : ESteamAPIInitResult.k_ESteamAPIInitResult_FailedGeneric;
+                if (result != ESteamAPIInitResult.k_ESteamAPIInitResult_OK)
+                {
+                    // Steam's own reason goes to the log (Player.log in a build): before R523 a build refused for a
+                    // missing App ID only ever said "log in", with nothing in the log.
+                    Error = InitFailure(result, appId);
+                    Debug.LogWarning("[ChessFight] Steam 초기화 실패: " + result + " · App ID " + appId + " · " + why);
+                    return;
+                }
                 Online = true; Self = SteamUser.GetSteamID().m_SteamID;
                 SteamNetworkingUtils.InitRelayNetworkAccess();
                 callbacks.Add(Callback<LobbyChatMsg_t>.Create(OnChat));
@@ -537,6 +550,47 @@ namespace ChessFight.Network
             catch (Exception ex) when (ex is DllNotFoundException || ex is BadImageFormatException || ex is EntryPointNotFoundException)
             { Error = "Steamworks 플러그인을 불러오지 못했습니다: " + ex.Message; }
         }
+
+        const string AppIdFile = "steam_appid.txt";
+
+        // R523: Steam takes the App ID from SteamAppId in the environment (Steam sets it when it starts a game), else
+        // from a steam_appid.txt beside the game. The Editor runs in the project root, next to that file; a player
+        // started outside Steam had neither, since Unity's own Build never copies the file (Steamworks.NET's build step
+        // neither). Steam then refused with "No appID found" while it was running and logged in, so the build looked as
+        // if it never saw the login. With neither, SteamAppId is set here, before the init: from the file next to the
+        // exe, else DevAppId (Steam reads the variable even with its library already loaded). Once the game has a real
+        // App ID and ships through Steam, a copy started outside Steam should be sent through Steam instead
+        // (SteamAPI.RestartAppIfNecessary). Returns the App ID Steam is going to use, for the messages.
+        static string EnsureAppId()
+        {
+            string id = Environment.GetEnvironmentVariable("SteamAppId");
+            if (!string.IsNullOrEmpty(id)) return id;
+            id = ReadAppId(Path.Combine(Directory.GetCurrentDirectory(), AppIdFile));
+            if (id != null) return id;
+            // Application.dataPath is <exe folder>/<name>_Data in a player.
+            string exeFolder = string.IsNullOrEmpty(Application.dataPath) ? null : Path.GetDirectoryName(Application.dataPath);
+            id = (exeFolder != null ? ReadAppId(Path.Combine(exeFolder, AppIdFile)) : null) ?? DevAppId.ToString();
+            Environment.SetEnvironmentVariable("SteamAppId", id);
+            return id;
+        }
+
+        // The App ID written in a steam_appid.txt, or null when the file is missing or holds no App ID.
+        static string ReadAppId(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return null;
+                string text = File.ReadAllText(path).Trim();
+                return uint.TryParse(text, out uint id) && id != 0 ? id.ToString() : null;
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { return null; }
+        }
+
+        // What the player is told when Steam refuses to start, by Steam's reason.
+        static string InitFailure(ESteamAPIInitResult result, string appId) =>
+            result == ESteamAPIInitResult.k_ESteamAPIInitResult_VersionMismatch
+                ? "Steam 클라이언트가 이 게임보다 오래되었습니다. Steam을 업데이트한 뒤 다시 연결하세요."
+                : "Steam 초기화 실패. Steam을 실행하고 로그인한 뒤 다시 연결하세요. (App ID " + appId + ")";
 
         // Steam has to be running before Play starts. Without this the only way out
         // of a failed init was to stop and re-enter Play mode.

@@ -29,8 +29,9 @@
 
 ## 2. 시작과 초대
 
-- `Initialize()`: Packsize/DLL 검사 → `SteamAPI.Init()` → Self ID → `InitRelayNetworkAccess()` → 콜백 등록(로비 채팅, 초대 `GameLobbyJoinRequested_t`, Rich Presence 참가 `GameRichPresenceJoinRequested_t`) → 실행 인자에 `+connect_lobby <ID>`가 있으면 그 파티로, 없으면 1인 파티 생성.
-- 초기화 실패 → HUD `Steam 다시 연결` → `Retry()`.
+- `Initialize()`: App ID 준비(`EnsureAppId`, R523) → Packsize/DLL 검사 → `SteamAPI.InitEx()` → Self ID → `InitRelayNetworkAccess()` → 콜백 등록(로비 채팅, 초대 `GameLobbyJoinRequested_t`, Rich Presence 참가 `GameRichPresenceJoinRequested_t`) → 실행 인자에 `+connect_lobby <ID>`가 있으면 그 파티로, 없으면 1인 파티 생성.
+- App ID(R523): Steam은 자기가 띄우지 않은 프로그램에게서 App ID를 환경 변수 `SteamAppId`나 게임 옆 `steam_appid.txt`로만 받는다. 둘 다 없으면 `EnsureAppId`가 초기화 전에 `SteamAppId`를 넣는다(exe 옆 `steam_appid.txt` → 없으면 `SteamSession.DevAppId` 480). Steam이 띄운 경우(변수가 이미 있음)와 에디터(작업 폴더 = 프로젝트 루트, 파일 있음)는 건드리지 않는다. 빌드에는 `SteamAppIdBuildStep`(Editor)이 파일을 복사한다. 자체 App ID가 생기면 두 숫자를 바꾸고, Steam 밖에서 켠 사본을 Steam으로 다시 띄울지(`RestartAppIfNecessary`) 정한다.
+- 초기화 실패 → HUD에 한국어 이유(Steam 클라이언트가 오래됨 / 그 밖은 "Steam을 실행하고 로그인한 뒤 다시 연결", App ID 함께), Steam이 준 영어 이유는 `[ChessFight] Steam 초기화 실패` 경고로 로그(빌드는 Player.log)에 → HUD `Steam 다시 연결` → `Retry()`.
 - 초대: 게임 내 친구 패널의 `InviteToParty(friend)`(= `InviteUserToLobby`). 예비로 `Invite()`(오버레이).
 - **Rich Presence(M5):** 파티가 한가할 때 `connect = "+connect_lobby <파티ID>"`, `status = "로비에서 대기 중 · 파티 n/6"`. 검색·경기 중에는 `connect`를 지우고 `status`만 "<모드> 매칭 찾는 중 / <모드> 대기실 / <모드> 경기 중". 친구의 `status`는 로비 친구 카드에 이름 아래 줄로 보인다(`FriendInfo.Detail`). 값이 바뀔 때만 설정한다. 종료 때 `ClearRichPresence()`. 파싱은 `SteamSession.ParseConnect`.
 - **버전 검사:** 입장한 로비의 `kind`, `protocol`, `build`를 `Incompatibility()`가 확인한다. 파티가 다른 버전이면 나와서 "게임 버전이 다릅니다 (내 버전 X / 상대 Y)"를 보여 주고 **새 1인 파티**를 만든다(옛 코드는 파티 없이 남았다).

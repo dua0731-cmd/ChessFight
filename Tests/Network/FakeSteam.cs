@@ -8,7 +8,8 @@ using System.Web.Script.Serialization;
 namespace UnityEngine
 {
     public static class Time { public static float realtimeSinceStartup; }
-    public static class Debug { public static readonly List<string> Lines = new List<string>(); public static void Log(object message) => Lines.Add(message?.ToString() ?? ""); }
+    public static class Debug { public static readonly List<string> Lines = new List<string>(); public static void Log(object message) => Lines.Add(message?.ToString() ?? ""); public static void LogWarning(object message) => Log(message); }
+    public static class Application { public static string dataPath = ""; }
     public static class Random { public static float Range(float a,float b) => (a+b)/2; }
     public static class JsonUtility
     {
@@ -21,6 +22,7 @@ namespace Steamworks
     public struct CSteamID { public ulong m_SteamID; public CSteamID(ulong id) {m_SteamID=id;} }
     public struct SteamAPICall_t { public int Value; }
     public enum EResult { k_EResultOK, k_EResultFail }
+    public enum ESteamAPIInitResult { k_ESteamAPIInitResult_OK, k_ESteamAPIInitResult_FailedGeneric, k_ESteamAPIInitResult_NoSteamClient, k_ESteamAPIInitResult_VersionMismatch }
     public enum ELobbyType { k_ELobbyTypePublic, k_ELobbyTypePrivate }
     public enum ELobbyComparison { k_ELobbyComparisonEqual }
     public enum ELobbyDistanceFilter { k_ELobbyDistanceFilterDefault }
@@ -104,7 +106,7 @@ namespace Steamworks
     }
     public static class Packsize { public static bool Test()=>true; }
     public static class DllCheck { public static bool Test()=>true; }
-    public static class SteamAPI {public static bool Init()=>true;public static void RunCallbacks()=>FakeSteam.Dispatch();public static void Shutdown(){} }
+    public static class SteamAPI {public static ESteamAPIInitResult InitEx(out string message){message="";return ESteamAPIInitResult.k_ESteamAPIInitResult_OK;}public static void RunCallbacks()=>FakeSteam.Dispatch();public static void Shutdown(){} }
     public static class SteamUser { public static CSteamID GetSteamID()=>new CSteamID(FakeSteam.User);public static bool BLoggedOn()=>!FakeSteam.LoggedOff.Contains(FakeSteam.User); }
     public struct SteamNetworkPingLocation_t { public string Text; }
     public static class Constants { public const int k_cchMaxSteamNetworkingPingLocationString=1024; }

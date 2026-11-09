@@ -71,7 +71,7 @@ namespace ChessFight.RagdollLab.Editor
                     locationPathName = Path.Combine(output, "ChessFight.exe"), target = BuildTarget.StandaloneWindows64, options = BuildOptions.Development
                 });
                 if (report.summary.result != BuildResult.Succeeded) throw new Exception("Sword Fight build failed: " + report.summary.result);
-                if (File.Exists("steam_appid.txt")) File.Copy("steam_appid.txt", Path.Combine(output, "steam_appid.txt"), true);
+                // steam_appid.txt: SteamAppIdBuildStep copies it next to the exe (R523).
                 Debug.Log("[SwordFightBuild] PASS " + (test ? "test scene" : "Intro/Lobby and all enabled modes") + " -> " + output);
                 EditorApplication.Exit(0);
             }

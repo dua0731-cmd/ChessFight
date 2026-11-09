@@ -1,5 +1,18 @@
 # Network 구현 검증 기록
 
+## ★ 2026-11-09 빌드에서 Steam 연결 (R523) — 확인 목록
+
+원인: Unity **File › Build Profiles**로 뽑은 빌드(`11.9 빌드파일`)에 `steam_appid.txt`가 없어, Steam이 켜져 있고 로그인돼 있어도 "No appID found"로 거절함(에디터는 프로젝트 루트의 파일로 됨, [PITFALLS 72](../Environment/PITFALLS.md)). AI 재현(이 PC, Steam 로그인 상태): 그 빌드의 `steam_api64.dll` 직접 초기화 — 파일 없음 실패 · 파일 있음 성공 · 파일 없이 `SteamAppId=480` 성공(Unity의 Mono에서도). 그 빌드 exe를 창 없이 실행 — 파일 없음: 25초 동안 Steam 클라이언트 라이브러리가 안 붙음, 파일을 exe 옆에 넣음: 1초 만에 붙음(다른 작업 폴더에서 켜도). **사람이 화면으로 본 확인은 아니다.** 고친 코드(빌드 후처리 `SteamAppIdBuildStep`, 실행 때 `SteamSession.EnsureAppId`, 실패 이유 로그)로 뽑은 빌드는 아직 없다. Core 171 · 세션 65 · 전체 컴파일 · 경계 검사 통과.
+
+| # | 할 일 | 기대 | 결과 |
+|---|---|---|---|
+| 1 | 지금 있는 `11.9 빌드파일\ChessFighter.exe`를 Steam 로그인 상태에서 실행(AI가 exe 옆에 `steam_appid.txt`를 넣어 둠) | 인트로 상태 칩이 "STEAM 연결됨 · 이름", 로비에 내 파티가 생김 | 미확인 |
+| 2 | `main` Pull 뒤 **File › Build Profiles › Build**로 새 폴더에 빌드 | Console에 `[ChessFight] Copied steam_appid.txt next to the build: …`, 그 폴더의 exe 옆에 `steam_appid.txt` | 미확인 |
+| 3 | 2의 빌드를 Steam 로그인 상태에서 실행 | 1과 같이 연결됨 | 미확인 |
+| 4 | 3의 폴더에서 `steam_appid.txt`를 지우고 다시 실행 | 그래도 연결됨(게임이 App ID 480을 스스로 알려 줌) | 미확인 |
+| 5 | Steam을 끈(또는 로그아웃한) 채 빌드 실행 | 칩에 "Steam 초기화 실패. Steam을 실행하고 로그인한 뒤 다시 연결하세요. (App ID 480)", Player.log(`%USERPROFILE%\AppData\LocalLow\DefaultCompany\ChessFighter`)에 `[ChessFight] Steam 초기화 실패: … · App ID 480 · <Steam의 이유>` 한 줄. Steam을 켜고 로비의 다시 연결을 누르면 연결됨 | 미확인 |
+| 6 | 서로 다른 Steam 계정의 두 PC에 같은 새 빌드(폴더 전체, [SETUP §4](../Environment/SETUP.md)) | 서로 파티 초대 · 매칭이 됨 | 미확인 |
+
 ## ★ 2026-11-09 행차 회랑 캐슬링 연출 (R522) — 확인 목록
 
 `main` Pull 뒤 혼자(**ChessFight → Pawn Rush → Open Mini-game Prefab Test** → Play, G 왕의 행차 회랑, F6 등으로 끝까지 또는 직접 밀어서). Unity 배치 점검(프로젝트 사본, 승규 님 아트 포함): 진단 캡처로 고치기 전 · 후 점프를 프레임별로 비교(웅크림 → 킹 위로 휘는 비행 · 앞 공중제비 → c8 착지, 나는 동안 띠 꺼짐), `RunPlayBatch -miniGameOnly G,F` PASS. Core 169 · 세션 65 · 컴파일 · 경계 검사 통과(사람이 본 확인 아님).

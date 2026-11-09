@@ -11,7 +11,7 @@
 | uGUI (`com.unity.ugui`) | **없다.** UI는 UI Toolkit |
 | URP | `com.unity.render-pipelines.universal` 17.3.0(R151, `urp-conversion` 브랜치 — `Packages/manifest.json`에 그 줄이 있어야 함). `Settings/PC_RPAsset`(PC 품질, Forward+)·`Mobile_RPAsset` |
 | Multiplayer Center | 템플릿 기본. **UGS를 쓴다는 뜻이 아니다** |
-| Steam App ID | 480 (루트 `steam_appid.txt`). 출시 전에 자체 App ID로 바꾼다 |
+| Steam App ID | 480 (루트 `steam_appid.txt` · `SteamSession.DevAppId`). 출시 전에 자체 App ID로 둘 다 바꾼다. 모든 Windows · Linux 빌드는 exe 옆에 이 파일을 받는다(`SteamAppIdBuildStep`, R523) |
 
 manifest/lock은 커밋되어 있어 Pull하면 Unity가 복원한다. 복원이 실패하면 메뉴 `ChessFight > Setup > Install dependencies`로 설치하고, **바뀐 manifest/lock을 커밋한다**(Discard 금지).
 
@@ -31,13 +31,15 @@ manifest/lock은 커밋되어 있어 Pull하면 Unity가 복원한다. 복원이
 | `ChessFight/Setup/Install dependencies` | Steamworks.NET을 UPM Client API로 설치(Input System은 설치하지 않음) |
 | `ChessFight/Setup/Report input backend` | 현재 입력 설정과 백엔드를 Console에 출력 |
 | `ChessFight/Scenes/…` | Intro, Lobby, King Rush, Ragdoll Test 열기 |
-| `ChessFight/Network/Build Windows development test` | Intro·Lobby·KingRush로 x64 개발 빌드 → `Builds/NetworkTest/ChessFight.exe`, `steam_appid.txt` 복사 |
+| `ChessFight/Development/Network/Build Windows development test` | 출시 장면 전체(`NetworkSetup.ShippedScenes`)로 x64 개발 빌드 → `Builds/NetworkTest/ChessFight.exe` |
 
 `InputSettingsGuard`(`[InitializeOnLoad]`)는 uGUI가 없는 동안 Active Input Handling을 Old로 되돌린다. 되돌렸다면 **Unity를 완전히 재시작**해야 적용된다.
 
 ## 4. 빌드 배포
 
 - 팀원에게는 `Builds/NetworkTest` **폴더 전체**를 보낸다(exe만으로는 실행되지 않는다). `Builds/`는 git 대상이 아니다.
+- Unity의 **File › Build Profiles**로 다른 폴더에 뽑아도 된다. R523부터 빌드 후처리 `SteamAppIdBuildStep`이 `steam_appid.txt`(480)를 exe 옆에 복사한다(R523 전에는 위 메뉴만 복사해서, Build Profiles 빌드는 Steam이 켜져 있어도 연결하지 못했다 — [PITFALLS 72](PITFALLS.md)). 파일이 없는 R523 전 빌드는 exe 옆에 루트의 `steam_appid.txt`를 넣으면 된다.
+- 빌드가 Steam에 연결하지 못하면 Player.log(`%USERPROFILE%\AppData\LocalLow\DefaultCompany\ChessFighter\Player.log`)에서 `[ChessFight] Steam 초기화 실패` 줄(Steam이 준 이유)을 본다.
 - 테스터에게 새 빌드를 줄 때마다 **Player Settings › Version을 올린다.** 로비의 `build` 값이 달라져 옛 빌드가 "게임 버전이 다릅니다" 안내를 받는다.
 - 개발 빌드는 build 값에 `-dev`가 붙어 릴리스 빌드와 만나지 않는다.
 

@@ -149,7 +149,7 @@ namespace ChessFight.Editor
                 options = BuildOptions.Development
             });
             if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Network test build failed.");
-            File.Copy("steam_appid.txt", "Builds/NetworkTest/steam_appid.txt", true);
+            // steam_appid.txt is copied next to the exe by SteamAppIdBuildStep, as for every player build (R523).
             Debug.Log("[ChessFight] Development build: " + Path.GetFullPath(path));
         }
     }
