@@ -17,6 +17,8 @@ namespace ChessFight.Gameplay
         // The latest move input: world, flat, length 0..1 (zero when there is none).
         Vector3 MoveInput { get; }
         bool SprintHeld { get; }
+        // The grab button is down now (on the PC that simulates the character): B carries a plank while it is (R528).
+        bool GrabHeld { get; }
         // Really sprinting now (held, moving, stamina left, not worn out). The character spends its own stamina
         // for it, holding a rope or not: a game that counts a sprint (C) reads this and spends nothing itself.
         bool Sprinting { get; }
@@ -49,7 +51,15 @@ namespace ChessFight.Gameplay
         // simulates the character, with its driver; true eats the jump.
         public static Func<ICharacterDriver, bool> JumpIntercept;
 
+        // The pawn's hands are full with something a game carries for it (B's plank, R528): while true they grip
+        // nothing and climb nothing, though the grab button stays down. Called on the PC that simulates the character.
+        public static Func<ICharacterDriver, bool> HandsFull;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => JumpIntercept = null;
+        static void ResetStatics()
+        {
+            JumpIntercept = null;
+            HandsFull = null;
+        }
     }
 }

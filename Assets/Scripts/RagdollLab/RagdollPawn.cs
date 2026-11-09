@@ -174,6 +174,21 @@ namespace ChessFight.RagdollLab
         public int InteractPresses { get; private set; }
         public bool InteractHeld => input.interact;
         public bool SprintHeld => input.sprint;
+        public bool GrabHeld => input.grab;
+
+        // R528: a mini-game carries something for this pawn (B's plank, MiniGameHooks.HandsFull): while it does, the hands
+        // grip nothing and climb nothing, the grab button still down (the arms keep reaching forward under the plank).
+        // Read once a physics step.
+        bool handsFull;
+        RagdollDriver ownDriver;
+
+        bool HandsFullNow()
+        {
+            var hook = ChessFight.Gameplay.MiniGameHooks.HandsFull;
+            if (hook == null || NetworkPuppet) return false;
+            if (ownDriver == null) ownDriver = GetComponent<RagdollDriver>();
+            return ownDriver != null && hook(ownDriver);
+        }
         public Vector3 Aim => input.aim;
 
         /// <summary>Hits taken through TakeHit (IHitReceiver) and the last one, for the test bed.</summary>
@@ -698,6 +713,7 @@ namespace ChessFight.RagdollLab
             UpdateStiffness(p, dt);
 
             PreSkills();   // Pawn Rush skills only (off unless PawnRushSkills is set)
+            handsFull = HandsFullNow();
             Jump(p, dt);
             PawnRushStepOver(dt);   // Pawn Rush only (off unless PawnRushPhysics is set)
             Mantle(dt);
@@ -715,7 +731,7 @@ namespace ChessFight.RagdollLab
             UpdateStamina(p, dt);
             if (!input.grab) climbGrabLatch = false;
             bool wantGrab = input.grab && State != PawnState.Ragdoll && !Climbing && !climbGrabLatch && !Floating
-                            && hookPhase != HookPhase.Pulling && rope == null;
+                            && hookPhase != HookPhase.Pulling && rope == null && !handsFull;
             handL.Tick(wantGrab, p, dt, Climbing);
             handR.Tick(wantGrab, p, dt, Climbing);
             if (Grounded) pullUpUsed = false; // one ledge vault per trip off the ground
@@ -2065,7 +2081,7 @@ namespace ChessFight.RagdollLab
             {
                 holdsPlaced = false;
                 bool wants = input.grab && State == PawnState.Active && stamina > 0f && climbCooldown <= 0f && !Floating
-                             && (!Grounded || climbUp > 0.1f) && rope == null;
+                             && (!Grounded || climbUp > 0.1f) && rope == null && !handsFull;
                 if (wants && (FindWallAhead(p, out var ahead) || (climbUp > 0.1f && FindHeldWall(p, out ahead))))
                     StartClimb(p, ahead);
                 return;

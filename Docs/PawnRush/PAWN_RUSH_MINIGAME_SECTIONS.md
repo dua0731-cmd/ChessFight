@@ -79,7 +79,7 @@ Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는
 
 - 뿌리는 `PawnRushSection` + `MiniGameSection`이다. 입구(0,0,0), 출구(0,0,36), 폭44m, 양팀 스테이션 중심 x±12·z4를 유지한다. 앞 구간의 출구 위치·회전에 따라 배치된다.
 - `MiniGameSectionBuilder`가 바닥·벽 충돌·두 팀 문·스테이션·체크포인트·낙하 복귀·진행 경로를 만든다. `MissionStation.Install`이 기존 `Mg*` 규칙을 설치한다. 게임 완료는 자기 문만 연다. `TeamBarrier`는 다른 팀의 출구 통과를 막는다.
-- A는 공유18×18m판 하나·팀별32칸이다. 공유판 캐시는 같은 프리팹 인스턴스 안에서만 연결된다. C는 전체 폭 해자와 중앙 난간, 측면 권양기로4m 다리 접근을 유지한다. D는 기존8바퀴 규칙이다.
+- A는 공유18×18m판 하나·팀별32칸이다. 공유판 캐시는 같은 프리팹 인스턴스 안에서만 연결된다. C는 전체 폭 해자와 중앙 난간, 측면 권양기로4m 다리 접근을 유지한다. D는 기존8바퀴 규칙이다. B는 R528부터 판자를 잡기로 들어 나른다(상대 판자도, 벗어나면 원래 더미로, 팀별 나무색 · 띠, 놓거나 0.5초 들고 있으면 자동 설치 — [미니게임 규칙 B 판자](PAWN_RUSH_MINIGAMES_v1.md)).
 - 기존 Course01의 팔레트와 흐름은 그대로이고 새 `PalaceStyle` 스테이션만 파랑·주황 표시와 짙은 아레나 단을 쓴다. 빨강은 체크·위험 표시다. 기존 아레나 장식·솟아오름을 새 공간에 중복 생성하지 않는다. **승격 발판은 R516부터 다시 만든다**(사용자 11-09 "승격발판 다시 넣어야 함"): 코스 01과 같은 스테이션 자리(입구 쪽 바깥, 스테이션 기준 v ±4.5 · u 1 → 구간 기준 x ±16.5 · z 5, 무대 위 0.4 m)와 같은 규칙(자기 팀 폰이 2초 서 있으면 카드 4장에서 기물 선택, 판마다 한 번), 테두리만 방의 팀색(파랑 · 주황). Play 때 만들어져 프리팹에는 없다. 온라인 구간 라운드는 발판마다 "사용함"과 고르는 사람을 코스 상태로 보낸다(`MatchCourse` RoundMatch, 프로토콜 v29).
 - **Blender 모델(R501~):** C 도개교는 `Resources/PawnRushMiniGames/Early/C_Drawbridge_*.fbx`가 Play 때 구간과 다리 힌지·드럼에 붙고, 대신하는 코드 그림은 그리기만 꺼진다(`MiniGameModels`, [원본](../../ArtSource/PawnRush/MiniGames/README.md)). 판정·크기는 그대로다.
 - **겹친 면 금지(R498):** 바닥 판 가장자리에 묻는 벽은 `MissionGames.LinedWall`(충돌체 그대로, 그림만 `Proud`=1cm 떼기)로 만든다. A 공유판은 각 스테이션의 금 테두리 중 판 밑 부분을 `PaintBoard.ClipRims`로 잘라 낸다. 새 장식도 다른 면과 같은 평면에 두지 않는다([PITFALLS §39](../Environment/PITFALLS.md)).

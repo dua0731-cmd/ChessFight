@@ -60,6 +60,7 @@ namespace ChessFight.RagdollLab
         public bool Diving => Pawn.Diving;
         public Vector3 MoveInput => Pawn.GivenMove;
         public bool SprintHeld => Pawn.SprintHeld;
+        public bool GrabHeld => Pawn.GrabHeld;
         public bool Sprinting => Pawn.Sprinting;
         public void SpendStamina(float amount) => Pawn.SpendStamina(amount);
         public Vector3 HipsVelocity => Pawn.Hips.linearVelocity;

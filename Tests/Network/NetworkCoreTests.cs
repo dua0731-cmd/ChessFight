@@ -1124,6 +1124,52 @@ public static class NetworkCoreTests
                 Check(Math.Abs(KingEscortPath.Speed(1.5f, false) - .735f) < 1e-4f && KingEscortPath.Speed(.5f, true) == .11f && KingEscortPath.Speed(9f, false) == 1.1f, "speeds");
                 Check(KingEscortPath.IsSand(KingEscortPath.At(5)) && !KingEscortPath.IsSand(KingEscortPath.At(0)), "sand");
                 Check(KingEscortPath.RookStop(0) < KingEscortPath.At(8) && KingEscortPath.RookStop(1) < KingEscortPath.At(12), "rooks stop the sled short"); });
+            Test("B plank bridge (R528): lenient laying in the nearest free slot, the chasm, the station, the piles", () => {
+                Check(PlankBridge.Slots == 10 && PlankBridge.Planks == 10 && PlankBridge.Chasm1 == 16f, "ten slots, ten planks, a 10 m chasm");
+                Check(Math.Abs(PlankBridge.SlotX(0) + 1.25f) < 1e-5f && Math.Abs(PlankBridge.SlotX(1) - 1.25f) < 1e-5f && Math.Abs(PlankBridge.SlotZ(0) - 7f) < 1e-5f
+                      && Math.Abs(PlankBridge.SlotZ(9) - 15f) < 1e-5f, "slot centres");
+                // A carrier on the near floor 1.4 m short of the edge (hips z 4.6): the plank in front of it (1.2 m ahead) lays row 0.
+                Check(PlankBridge.Snap(-.3f, 6.0f, 0) == 0 && PlankBridge.Snap(.3f, 6.0f, 0) == 1, "row 0 from the floor, the nearer column");
+                Check(PlankBridge.Snap(-.3f, 5.6f, 0) == 0 && PlankBridge.Snap(0f, 5.4f, 0) == -1 && PlankBridge.Snap(2.9f, 7f, 0) == -1, "not from further, not beside the bridge");
+                Check(PlankBridge.Snap(0f, 6.0f, 1) == 1 && PlankBridge.Snap(-.3f, 6.0f, 1) == -1 && PlankBridge.Snap(-1.25f, 7f, 3) == -1, "the free column (within 1.5 m), nothing when the row is laid");
+                Check(PlankBridge.Snap(-1.25f, 8.6f, 3) == 2 && PlankBridge.Snap(0f, 5.0f, 0, 1.7f) == 0, "the next row from the first, a wider preview");
+                Check(PlankBridge.OverChasm(0f, 7f, 0) && !PlankBridge.OverChasm(0f, 7f, 3) && PlankBridge.OverChasm(3f, 7f, 3) && !PlankBridge.OverChasm(0f, 5.9f, 0)
+                      && !PlankBridge.OverChasm(0f, 16.1f, 0), "the chasm, a laid row, beside the bridge, the floors");
+                Check(PlankBridge.InArea(10f, 20f) && !PlankBridge.InArea(10.5f, 3f) && !PlankBridge.InArea(0f, -.5f), "the station");
+                Check(PlankBridge.InCarryArea(-11.5f, 3f) && !PlankBridge.InCarryArea(-11.7f, 3f) && PlankBridge.InCarryArea(0f, 21.5f), "held out a little further");
+                Check(PlankBridge.OnPile(-8f, 3.5f) && PlankBridge.OnPile(9f, 4.3f) && !PlankBridge.OnPile(0f, 3.5f), "the piles");
+                Check(PlankBridge.Count(0x3FF) == 10 && PlankBridge.Count(0x5) == 2, "counted"); });
+            Test("B plank block (R528): every state round-trips, a lying plank on the 0.1 m grid, 26 bytes at most", () => {
+                var a = new PlankBoard();
+                Check(a.Stock(0) == 5 && a.Stock(1) == 5 && a.TopOf(0) == 4 && a.TopOf(1) == 9, "two full piles");
+                a.Laid = 0x3;
+                a.State[4] = PlankState.Laid; a.State[9] = PlankState.Laid;
+                a.State[3] = PlankState.Carried; a.Seat[3] = 7;
+                a.State[8] = PlankState.Lying; a.X[8] = PlankBoard.GridX(-3.04f); a.Z[8] = PlankBoard.GridZ(4.46f); a.Turned[8] = true;
+                a.State[0] = PlankState.Lying; a.X[0] = PlankBoard.GridX(9.9f); a.Z[0] = PlankBoard.GridZ(18.2f);
+                var buffer = new byte[PawnRushNetState.BlockBytes];
+                var w = new NetBlock(buffer, 0, buffer.Length);
+                a.Write(ref w);
+                Check(w.Written == 2 + 4 + 1 + 2 * 2, "bytes " + w.Written);
+                var b = new PlankBoard();
+                var r = new NetBlock(buffer, 0, w.Written);
+                b.Read(ref r);
+                Check(b.Laid == 0x3 && b.LaidCount == 2 && b.Stock(0) == 2 && b.Stock(1) == 3 && b.TopOf(0) == 2, "laid and stock");
+                Check(b.State[3] == PlankState.Carried && b.Seat[3] == 7 && b.Seat[8] == PlankBoard.NoSeat, "the carrier");
+                Check(b.State[8] == PlankState.Lying && b.Turned[8] && Math.Abs(b.X[8] + 3.0f) < 1e-4f && Math.Abs(b.Z[8] - 4.5f) < 1e-4f, "lying, turned, on the grid");
+                Check(b.State[0] == PlankState.Lying && !b.Turned[0] && Math.Abs(b.X[0] - 9.9f) < 1e-4f && Math.Abs(b.Z[0] - 18.2f) < 1e-4f, "lying far side");
+                // The worst case: every plank lying.
+                var all = new PlankBoard();
+                for (int i = 0; i < PlankBridge.Planks; i++) { all.State[i] = PlankState.Lying; all.X[i] = -12.8f + i; all.Z[i] = 23.5f - i; }
+                var big = new NetBlock(buffer, 0, buffer.Length);
+                all.Write(ref big);
+                Check(big.Written == PlankBoard.MaxBytes && PlankBoard.MaxBytes <= PawnRushNetState.BlockBytes, "worst case " + big.Written);
+                var back = new PlankBoard();
+                var rb = new NetBlock(buffer, 0, big.Written);
+                back.Read(ref rb);
+                Check(Math.Abs(back.X[0] + 12.8f) < 1e-4f && Math.Abs(back.Z[0] - 23.5f) < 1e-4f && Math.Abs(back.X[9] + 3.8f) < 1e-4f, "the grid's ends");
+                back.Reset();
+                Check(back.Stock(0) == 5 && back.LaidCount == 0 && back.State[7] == PlankState.Pile, "reset"); });
             Test("H checkmate hunt: mate in a corner, stalemate with nowhere to go, four checks freeze, deterministic", () => {
                 var hunt = new CheckmateHunt();
                 foreach (var k in hunt.All) k.State = CheckmateHunt.KingState.Captured;

@@ -871,6 +871,8 @@ namespace ChessFight.PawnRush
                     // under the planks now show where the bridge goes. Picture only, they never had a collider.
                     else if (t.name == "Plank place" && env != null) Hide(t);
                 }
+                // R528: then each team's wood (white's maple, black's ebony) and the piles' team bands.
+                (station.Game as MgPlanks)?.DressTeams();
             }
         }
 
@@ -1049,7 +1051,7 @@ namespace ChessFight.PawnRush
 
         static GameObject plankModel;
 
-        // Also called by MgPlanks for each carried plank it makes at run time.
+        // Also called by MgPlanks for each of the ten planks it makes at run time (carried or lying, R528).
         // B's team gate rise = the time to the roll-up sound's closing knock (Resources/PawnRushMiniGameSfx/sfx_dustsheet_open).
         const float RollUpSeconds = 3.42f;
 

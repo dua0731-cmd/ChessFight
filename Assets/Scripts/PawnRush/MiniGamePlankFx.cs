@@ -4,18 +4,17 @@ using UnityEngine;
 namespace ChessFight.PawnRush
 {
     // R503: B 보수 중인 동관's moments, played by whoever sees them (pictures and sounds only, no game state).
-    // One per station, it watches MgPlanks' own objects - the laid slots, the pile boards and the carried boards - so a
-    // client plays the same moments from the state it gets (ArenaFx's rule), with no change to MgPlanks:
-    //   pick    a board leaves a pile: a dust puff off the stack, sfx_plank_pick
+    // One per station, it watches MgPlanks' state - the laid slots, the piles' stock and every plank's PlankState (R528) -
+    // so a client plays the same moments from the state it gets (ArenaFx's rule):
+    //   pick    a plank leaves a pile, or is taken off the floor: a dust puff, sfx_plank_pick
     //   lay     a slot turns on: the plank thuds onto the joists (dust along its front edge, sawdust flakes) and two
     //           hammer strikes on the nails (sparks + puffs at 0.18 s and 0.5 s), sfx_plank_lay
-    //   drop    a carried board vanishes without a lay (knocked over, fell): a clatter of dust and flakes where it was,
-    //           sfx_plank_drop
-    //   return  a pile grows back (the dropped plank is restacked after 5 s): a puff, sfx_plank_return
+    //   drop    a carried plank is put down on a floor, or falls into the chasm (a copy of it tumbles down out of
+    //           sight): a clatter of dust and flakes, sfx_plank_drop
+    //   return  a pile grows back (a plank that fell or left the station is home again): a puff, sfx_plank_return
     //   quarter 25 / 50 / 75 % (IGateFx): warm motes rise out of the chasm along the laid bridge (no sound)
-    //   ghost   while a pawn carrying a plank walks up to the bridge's front edge, a see-through glowing plank
-    //           hovers over the slot the game would fill (MgPlanks.Lay's own column rule), brighter once the pawn
-    //           is inside the laying zone
+    //   ghost   while a carried plank comes near a free slot, a see-through glowing plank hovers over the slot it
+    //           would be laid in (MgPlanks.Preview), brighter once it is in reach and as the hold-to-lay fills
     //   opened  the gate's dust sheet goes up (IGateFx, instead of the shared beam): a dust cloud off the hem and the
     //           floor, sawdust shaken off the batten, sfx_dustsheet_open
     // Textures are the library's (T_Door_Dust / T_Door_Mote), flakes use the joist-wood material. Sounds go through
@@ -40,7 +39,7 @@ namespace ChessFight.PawnRush
             public float Start, Life, Size, Phase, Floor;
         }
 
-        sealed class Carried { public Transform T; public Vector3 Last; }
+        sealed class Falling { public GameObject Go; public Vector3 Velocity, Spin; public float Until; }
 
         MissionStation station;
         MgPlanks game;
@@ -48,11 +47,13 @@ namespace ChessFight.PawnRush
         readonly List<Bit> bits = new List<Bit>();
         readonly Stack<Bit>[] spare = { new Stack<Bit>(), new Stack<Bit>(), new Stack<Bit>() };   // pooled per kind
         MaterialPropertyBlock block;
-        readonly List<Transform> slots = new List<Transform>(), piles = new List<Transform>();
+        readonly List<Transform> slots = new List<Transform>();
         readonly List<bool> slotOn = new List<bool>();
         readonly int[] pileCount = new int[2];
-        readonly Dictionary<int, Carried> carried = new Dictionary<int, Carried>();
-        readonly List<int> gone = new List<int>();
+        readonly Network.PlankState[] shown = new Network.PlankState[Network.PlankBridge.Planks];
+        readonly Vector3[] last = new Vector3[Network.PlankBridge.Planks];
+        readonly List<Falling> falling = new List<Falling>();
+        readonly List<int> dropAt = new List<int>();
         readonly List<(float at, Vector3 where)> hammer = new List<(float, Vector3)>();
         bool primed;
         float clock;
@@ -64,14 +65,11 @@ namespace ChessFight.PawnRush
         {
             station = owner;
             game = planks;
-            slots.Clear(); piles.Clear(); slotOn.Clear(); carried.Clear(); primed = false;
+            slots.Clear(); slotOn.Clear(); dropAt.Clear(); primed = false;
             DropGhosts();
             if (game == null) return;
             foreach (var t in game.GetComponentsInChildren<Transform>(true))
-            {
                 if (t.name == "Plank (laid)") slots.Add(t);
-                else if (t.name == "Pile plank") piles.Add(t);
-            }
             foreach (var s in slots) slotOn.Add(s.gameObject.activeSelf);
         }
 
@@ -97,72 +95,98 @@ namespace ChessFight.PawnRush
         {
             if (game == null || !Application.isPlaying) return;
             clock += Time.deltaTime;
-            int laidNow = -1;
             for (int i = 0; i < slots.Count; i++)
             {
                 if (slots[i] == null) continue;
                 bool on = slots[i].gameObject.activeSelf;
-                if (primed && on && !slotOn[i]) { Lay(slots[i]); laidNow = i; }
+                if (primed && on && !slotOn[i]) Lay(slots[i]);
                 slotOn[i] = on;
             }
+            var board = game.Board;
             for (int p = 0; p < 2; p++)
             {
-                int n = 0;
-                Transform top = null;
-                for (int i = p * MgPlanks.PerPile; i < (p + 1) * MgPlanks.PerPile && i < piles.Count; i++)
-                    if (piles[i] != null && piles[i].gameObject.activeSelf) { n++; top = piles[i]; }
-                var stack = piles.Count > p * MgPlanks.PerPile ? piles[p * MgPlanks.PerPile] : null;
-                if (primed && stack != null)
+                int n = board.Stock(p);
+                if (primed)
                 {
-                    var at = (top != null ? top.position : stack.position) + Vector3.up * .15f;
+                    var at = game.PileTop(p) + Vector3.up * .15f;
                     if (n < pileCount[p]) Pick(at);
                     else if (n > pileCount[p]) Return(at);
                 }
                 pileCount[p] = n;
             }
-            // carried boards: children MgPlanks makes and destroys; one that vanishes without a lay was dropped
-            gone.Clear();
-            foreach (var kv in carried)
-                if (kv.Value.T == null) gone.Add(kv.Key);
-                else kv.Value.Last = kv.Value.T.position;
-            foreach (var id in gone)
+            // every plank: taken off the floor, put down on it, or fallen into the chasm on its way home
+            for (int i = 0; i < Network.PlankBridge.Planks; i++)
             {
-                if (primed && laidNow < 0) Drop(carried[id].Last);
-                carried.Remove(id);
+                var state = board.State[i];
+                var look = game.PlankLook(i);
+                var before = shown[i];
+                if (primed && state != before)
+                {
+                    if (before == Network.PlankState.Lying && state == Network.PlankState.Carried) Pick(last[i]);
+                    else if (before == Network.PlankState.Carried && state == Network.PlankState.Lying) dropAt.Add(i);
+                    else if (state == Network.PlankState.Pile && before != Network.PlankState.Pile && game.OverChasm(last[i])) Fall(look, last[i]);
+                }
+                shown[i] = state;
+                if (look != null && look.gameObject.activeInHierarchy) last[i] = look.position;
             }
-            foreach (Transform c in game.transform)
-                if (c.name == "Plank (carried)" && !carried.ContainsKey(c.GetInstanceID()))
-                    carried[c.GetInstanceID()] = new Carried { T = c, Last = c.position };
+            // the clatter where a put-down plank lands (its picture eases there over a quarter of a second)
+            for (int k = dropAt.Count - 1; k >= 0; k--)
+            {
+                int i = dropAt[k];
+                var look = game.PlankLook(i);
+                if (board.State[i] != Network.PlankState.Lying || look == null) { dropAt.RemoveAt(k); continue; }
+                if (look.localPosition.sqrMagnitude > 1e-4f) continue;
+                Drop(look.position + Vector3.up * .1f);
+                dropAt.RemoveAt(k);
+            }
             primed = true;
+            Tumble();
             Ghosts();
             for (int i = hammer.Count - 1; i >= 0; i--)
                 if (clock >= hammer[i].at) { Strike(hammer[i].where); hammer.RemoveAt(i); }
             Animate();
         }
 
+        // A plank that fell into the chasm: a picture copy tumbles down out of sight while the plank itself is back on
+        // its pile.
+        void Fall(Transform look, Vector3 at)
+        {
+            ArenaFx.Sfx("sfx_plank_drop", at, volume: .8f);
+            for (int i = 0; i < 3; i++)
+                Puff(at + Random.insideUnitSphere * .5f, new Vector3(0f, .2f, 0f), 0f, Random.Range(.5f, .8f), Random.Range(.25f, .4f));
+            if (look == null) return;
+            var copy = Instantiate(look.gameObject);
+            copy.name = "Plank (falling)";
+            foreach (var m in copy.GetComponentsInChildren<MonoBehaviour>(true)) Destroy(m);
+            foreach (var c in copy.GetComponentsInChildren<Collider>(true)) Destroy(c);
+            copy.transform.SetPositionAndRotation(at, look.rotation);
+            copy.transform.localScale = look.lossyScale;
+            copy.SetActive(true);
+            falling.Add(new Falling { Go = copy, Velocity = new Vector3(0f, -.5f, 0f), Spin = new Vector3(Random.Range(-90f, 90f), 0f, Random.Range(-60f, 60f)), Until = clock + 1.1f });
+        }
+
+        void Tumble()
+        {
+            for (int i = falling.Count - 1; i >= 0; i--)
+            {
+                var f = falling[i];
+                if (f.Go == null || clock >= f.Until) { if (f.Go != null) Destroy(f.Go); falling.RemoveAt(i); continue; }
+                f.Velocity += Physics.gravity * Time.deltaTime;
+                f.Go.transform.position += f.Velocity * Time.deltaTime;
+                f.Go.transform.rotation *= Quaternion.Euler(f.Spin * Time.deltaTime);
+            }
+        }
+
         // ---------------------------------------------------------------- placement preview
-        // The pawn stands about 1.1 m under its board (MgPlanks.LateUpdate), so the board tells where the carrier is.
+        // Every carried plank the game would lay in a free slot (or nearly would) shows that slot.
         void Ghosts()
         {
             ghostNear.Clear();
-            int front = -1;
-            for (int r = 0; r < MgPlanks.Rows && front < 0; r++)
-                if (!Laid(r, 0) || !Laid(r, 1)) front = r;
-            if (front >= 0)
+            for (int i = 0; i < Network.PlankBridge.Planks; i++)
             {
-                float edge = MgPlanks.Chasm0 + front * MgPlanks.Row;
-                foreach (var kv in carried)
-                {
-                    if (kv.Value.T == null) continue;
-                    var at = game.transform.InverseTransformPoint(kv.Value.T.position) - Vector3.up * 1.1f;
-                    // shown a little before the laying zone (edge - 1.6 .. edge + .4, |x| <= 3.2) so the pawn sees where to go
-                    if (at.z < edge - 3.2f || at.z > edge + .6f || Mathf.Abs(at.x) > MgPlanks.PlankWidth + 1.2f || at.y < -1f || at.y > 2.5f) continue;
-                    int col = Laid(front, 0) ? 1 : Laid(front, 1) ? 0 : at.x < 0f ? 0 : 1;
-                    int slot = front * MgPlanks.Columns + col;
-                    if (slot >= slots.Count || slots[slot] == null) continue;
-                    bool inside = at.z > edge - 1.6f && at.z < edge + .4f && Mathf.Abs(at.x) <= MgPlanks.PlankWidth + .7f;
-                    ghostNear[slot] = Mathf.Max(ghostNear.TryGetValue(slot, out var n) ? n : 0f, inside ? 1f : .45f);
-                }
+                int slot = game.Preview(i, out float strength);
+                if (slot < 0 || slot >= slots.Count || slots[slot] == null) continue;
+                ghostNear[slot] = Mathf.Max(ghostNear.TryGetValue(slot, out var n) ? n : 0f, strength);
             }
             foreach (var kv in ghosts)
                 if (!ghostNear.ContainsKey(kv.Key)) foreach (var r in kv.Value) if (r != null) r.enabled = false;
@@ -183,12 +207,6 @@ namespace ChessFight.PawnRush
                     block.Clear(); block.SetColor("_BaseColor", c); r.SetPropertyBlock(block);
                 }
             }
-        }
-
-        bool Laid(int row, int col)
-        {
-            int i = row * MgPlanks.Columns + col;
-            return i < slots.Count && slots[i] != null && slots[i].gameObject.activeSelf;
         }
 
         static GameObject GhostRoot(Renderer r)
@@ -408,6 +426,8 @@ namespace ChessFight.PawnRush
         void OnDestroy()
         {
             if (root != null) Destroy(root.gameObject);
+            foreach (var f in falling) if (f.Go != null) Destroy(f.Go);
+            falling.Clear();
             DropGhosts();
         }
     }

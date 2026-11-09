@@ -67,6 +67,7 @@ GPT 에셋 시트(`Docs/PawnRush/ConceptArt/R503_RepairWing/AssetRefs/`, 글자�
 
 - 쓰지 않은 것: 지하 돌판(갈색으로 나옴), 마루 끝 조각(회색 돌로 나옴), 놓인 판자(끝이 들쭉날쭉), 받침 위 판자 더미(게임 더미와 겹침).
 - `B_Plank`: 세운 판자를 눕혀 한 변 1 m 상자에 맞췄다(널 5장이 x 방향, 금 못). 게임의 판자는 모두 크기를 늘린 정육면체 상자라서(놓인 2.5 × 0.3 × 2, 더미·들고 가는 2.5 × 0.12 × 2) 상자 아래에 걸면 크기가 맞는다. 1,600 삼각형.
+- (R528) 팀 판자: 흑팀은 코드가 `PR_Mid_WoodKit` 색에 짙은 흑단을 곱하고, 백팀은 밝은 단풍나무 사본 `Resources/PawnRushMiniGames/Materials/PR_Mid_WoodKit_Maple.mat`(텍스처 `Assets/Art/PawnRushMiniGames/Mid/Textures/PR_Mid_WoodKit_Maple_BaseColor.png` 1024², `../b_plank_maple.py`: 나무 밝기를 단풍나무 색 띠로 다시 칠하고 금 못 머리는 그대로)을 입는다. 곱하기로는 어두운 텍스처를 밝게 못 해서 따로 만들었다. 다시 만들려면 프로젝트 루트에서 `python ArtSource/PawnRush/MiniGames/Mid/b_plank_maple.py`.
 - `B_StationEnv`(MgPlanks 좌표, v 대칭이라 두 팀 공용, 9.2만 삼각형):
   - 틈(u 6~16, v −10~10) 아래 4 m에 지하 바닥과 네 벽(`PR_Mid_BasementStone`, 2 m 타일)을 둔다. 게임 바닥 판과 같은 평면을 피해 1 cm 안쪽에 둔다.
   - 장선 7줄(v −10·−6.25·−2.5·0·2.5·6.25·10, 0.4 × 0.45 m, 윗면 −0.32: 놓인 판자 바로 아래).
