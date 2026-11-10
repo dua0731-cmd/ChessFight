@@ -1,6 +1,7 @@
 using ChessFight.Game;
 using ChessFight.Gameplay;
 using ChessFight.ProtectKing;
+using ChessFight.VFX;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -227,7 +228,7 @@ namespace ChessFight.PawnRush
 
         void MakeShadow()
         {
-            var shader = Shader.Find(ShadowShader);
+            var shader = VfxShaderKeep.Find(ShadowShader);   // R537: Shader.Find alone can miss it in a player build (R526)
             if (shader == null) return;
             var go = new GameObject("Knight landing shadow");
             go.transform.SetParent(transform, false);

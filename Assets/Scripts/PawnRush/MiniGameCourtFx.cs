@@ -40,6 +40,7 @@ namespace ChessFight.PawnRush
             a.clip = clip; a.loop = true; a.playOnAwake = false;
             a.spatialBlend = 1f; a.rolloffMode = AudioRolloffMode.Linear; a.minDistance = near; a.maxDistance = far;
             a.dopplerLevel = 0f; a.volume = 0f;
+            SectionSoundGate.Gate(a);   // R529
             return a;
         }
 
@@ -154,6 +155,7 @@ namespace ChessFight.PawnRush
                     var a = gate.gameObject.AddComponent<AudioSource>();
                     a.playOnAwake = false; a.spatialBlend = 1f; a.rolloffMode = AudioRolloffMode.Linear;
                     a.minDistance = 15f; a.maxDistance = 80f; a.dopplerLevel = 0f;   // full volume across the station
+                    SectionSoundGate.Gate(a);   // R529
                     return a;
                 }
                 if (haul == null) haul = Haul();
@@ -174,6 +176,7 @@ namespace ChessFight.PawnRush
                     voice = gate.gameObject.AddComponent<AudioSource>();
                     voice.playOnAwake = false; voice.spatialBlend = 1f; voice.rolloffMode = AudioRolloffMode.Linear;
                     voice.minDistance = 5f; voice.maxDistance = 50f; voice.dopplerLevel = 0f;
+                    SectionSoundGate.Gate(voice);   // R529
                 }
                 voice.pitch = open ? 1f : R(.95f, 1.05f);
                 voice.PlayOneShot(clip, open ? 1f : .85f);

@@ -218,6 +218,7 @@ namespace ChessFight.PawnRush
             a.minDistance = 4f;
             a.maxDistance = 35f;
             a.dopplerLevel = 0f;
+            SectionSoundGate.Gate(a);   // R529
             a.volume = 0f;
             return a;
         }

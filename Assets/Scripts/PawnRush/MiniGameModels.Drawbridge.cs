@@ -261,6 +261,7 @@ namespace ChessFight.PawnRush
                 a.minDistance = 4f;
                 a.maxDistance = 22f;
                 a.volume = .28f;
+                SectionSoundGate.Gate(a);   // R529: only in this room, near loud and far quiet inside it
                 a.pitch = 1f + (k - 1) * .04f;
                 a.time = clip.length * k / 3f;
                 a.Play();

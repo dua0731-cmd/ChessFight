@@ -132,7 +132,7 @@ namespace ChessFight.PawnRush
             glow.shadows = LightShadows.None;
             glow.enabled = false;
 
-            var shader = Shader.Find(CrackShader);
+            var shader = VfxShaderKeep.Find(CrackShader);   // R537: as the shadow (R526)
             if (shader != null)
             {
                 var floor = new GameObject("Knight scorch");
