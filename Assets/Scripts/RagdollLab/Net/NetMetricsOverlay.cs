@@ -270,7 +270,7 @@ namespace ChessFight.RagdollLab
         {
             lineCount = 0;
             var before = LatencyTest.Before;
-            Line($"측정 (F3) · {(m.Host ? "방장" : "참가자")} · {m.Players}명" + (m.Piloted ? $" · 자동 입력 (시드 {m.PilotSeed})" : "")
+            Line($"측정 (F3) · {(m.Host ? "물리 담당" : "참가자")} · {m.Players}명" + (m.Piloted ? $" · 자동 입력 (시드 {m.PilotSeed})" : "")
                  + (before.Any ? $" · R306 전 동작 {before.Items}" : ""));
             Line($"프레임 {frameMs:F1} ms · 물리 {stepAverage:F2} ms/스텝 (최대 {stepLargest:F2}) · {stepRate}스텝/초"
                  + $" · 그래픽 대기 {QualitySettings.maxQueuedFrames}프레임 ({SystemInfo.graphicsDeviceType})");
@@ -402,7 +402,7 @@ namespace ChessFight.RagdollLab
                 for (int i = 0; i < rowCount; i++) Width(lineStyle, rows[i].Name + rows[i].Note + rows[i].Value);
                 Width(lineStyle, players + foot);
             }
-            Width(lineStyle, "좋음 주의 위험 재는 중 방장 참가자 F3 자세히 닫기 — 0123456789");
+            Width(lineStyle, "좋음 주의 위험 재는 중 물리 담당 참가자 F3 자세히 닫기 — 0123456789");
             rowCount = lineCount = 0;
             measured = false;
             if (view != View.Hidden) Build();
@@ -420,7 +420,7 @@ namespace ChessFight.RagdollLab
 
             // The head: this PC's part and the players on the left, the worst grade on the right.
             float chipY = Mathf.Round(y + (headH - chipH) / 2f);
-            string role = host ? "방장" : "참가자";
+            string role = host ? "물리 담당" : "참가자";
             var roleChip = new Rect(x, chipY, Mathf.Round(ChipWidth(role)), chipH);
             Pill(roleChip, host ? HostChip : ClientChip);
             Label(roleChip, role, chipStyle, ChipInk);
@@ -481,7 +481,7 @@ namespace ChessFight.RagdollLab
                 if (rows[i].Note.Length > 0) w += 6f * s + Width(noteStyle, rows[i].Note);
                 if (w > widest) widest = w;
             }
-            float head = ChipWidth(host ? "방장" : "참가자") + 8f * s + Width(headStyle, players) + 20f * s + StatusWidth();
+            float head = ChipWidth(host ? "물리 담당" : "참가자") + 8f * s + Width(headStyle, players) + 20f * s + StatusWidth();
             float content = Mathf.Max(widest + Px(DotSize) + 10f * s, head) + 2f * Mathf.Round(Pad * s);
             float step = 20f * s;
             cardWidth = Mathf.Round(Mathf.Max(MinWidth * s, Mathf.Ceil(content / step) * step));

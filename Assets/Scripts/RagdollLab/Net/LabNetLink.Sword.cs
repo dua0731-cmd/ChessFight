@@ -170,7 +170,7 @@ namespace ChessFight.RagdollLab
             sword.Networked = true;
             sword.Authority = NetIsHost;
             sword.LocalId = NetSelf;
-            sword.LeaveMatch = () => NetLeave("경기 나가기");
+            sword.LeaveMatch = () => NetLeave(LeftByChoice);
             sword.ResetRound();
             SwordFightEdgeFloor.Current?.ClearAll();
             ResetStream();
@@ -643,7 +643,7 @@ namespace ChessFight.RagdollLab
             NetHostSilence(silence);
             if (silence > SilenceTimeout)
             {
-                message = "방장이 자세 전송을 멈췄어요. 경기를 나갑니다.";
+                message = "물리 계산을 맡은 PC가 자세 전송을 멈췄어요. 경기를 나갑니다.";
                 NetLeave(message);
             }
         }
@@ -912,7 +912,7 @@ namespace ChessFight.RagdollLab
                 if (floor != null) foreach (var c in floor.Collapses) c.remote = false;
                 tick = lastTick;   // clients keep accepting "newer" snapshots
                 StartHostingGuard();
-                message = "이 PC가 새 방장이 되었어요. 물리와 스킬을 이어서 계산해요.";
+                message = "이 PC가 물리 계산을 맡았어요. 물리와 스킬을 이어서 계산해요.";
             }
             else
             {
@@ -933,7 +933,7 @@ namespace ChessFight.RagdollLab
                 if (floor != null) foreach (var c in floor.Collapses) c.remote = true;
                 StopHostingGuard();
                 lastTick = 0;
-                message = $"방장이 {NetName(next)} 님으로 바뀌었어요.";
+                message = $"물리 담당 PC가 {NetName(next)} 님으로 바뀌었어요.";
             }
             foreach (var w in weaponFrames) spareWeapons.Push(w);
             weaponFrames.Clear();

@@ -77,8 +77,14 @@ namespace ChessFight.RagdollLab.Net
         protected override void NetHostSilence(float seconds) => session.ReportHostSilence(seconds);
         // R295: the room's shared start has passed, by Steam's server clock (whole seconds: at most one late).
         protected override bool NetStarted => session != null && session.StartAt > 0 && SteamUtils.GetServerRealTime() >= session.StartAt;
-        protected override void NetLeave(string why) => session.Cancel();
+        // R533: the menu's own "경기 나가기" is the player's choice (a desertion in a public match under way); a leave
+        // the link decides on (a silent host) is not.
+        protected override void NetLeave(string why)
+        {
+            if (why == LeftByChoice) session.LeaveByChoice(); else session.Cancel(why);
+        }
         protected override void NetMatchOver() => session.EndMatch();
+        protected override void NetSawResult() => session.SawResult();
         protected override void DrawLobby() { }
 
         void OnHostChanged(ulong previous, ulong next) => HostChanged(previous, next);

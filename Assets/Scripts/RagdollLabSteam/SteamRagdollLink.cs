@@ -235,7 +235,7 @@ namespace ChessFight.RagdollLab.Net
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUI.enabled = session.IsHost && !session.Started && session.Roster.Count >= 2;
+            GUI.enabled = session.IsManager && !session.Started && session.Roster.Count >= 2;
             if (GUILayout.Button($"시작 ({session.Roster.Count}명)", Button)) session.StartGame();
             GUI.enabled = session.Busy;
             if (GUILayout.Button("나가기", Button)) session.Cancel();
@@ -264,7 +264,7 @@ namespace ChessFight.RagdollLab.Net
         string Hint()
         {
             if (!session.Online) return "스팀 연결이 필요해요";
-            if (session.IsHost && !session.Started) return session.Roster.Count >= 2 ? "시작할 수 있어요" : "상대가 들어오길 기다리는 중";
+            if (session.IsManager && !session.Started) return session.Roster.Count >= 2 ? "시작할 수 있어요" : "상대가 들어오길 기다리는 중";
             if (session.Match != 0) return "방에 들어가 있어요 (호스트가 시작을 눌러야 해요)";
             if (session.Searching) return "방을 찾는 중";
             if (!session.IsLeader) return "파티장이 아니에요 (혼자면 자동으로 파티장이에요)";

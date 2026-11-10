@@ -144,6 +144,13 @@ namespace ChessFight.Game
             // A party leader may start a search while this member changes the name.
             if (NameChange.Showing && Matching) NameChange.Abort();
             PollFriends(now);
+            // R533: a development build can wipe this player's desertions (to test the matchmaking stop itself).
+            if (Debug.isDebugBuild && session.Online && LegacyKeys.Down(KeyCode.F9) && !ChatBox.KeysHeld)
+            {
+                session.ClearLeavePenalty();
+                hud.ShowToast("개발 빌드: 탈주 기록을 지웠어요");
+                refreshAt = 0;
+            }
             if (now < refreshAt) return;
             refreshAt = now + RefreshSeconds;
 
@@ -237,7 +244,8 @@ namespace ChessFight.Game
             // back early from one, keep the party from queueing again.
             bool waiting = session.WaitingForParty;
             bool canQueue = idleLeader && !session.PartyStillPlaying;
-            bool hostWaiting = session.IsHost && !session.Started;
+            // R533: why matchmaking is stopped for this party just now (a deserter's stop), "" when it is not.
+            string stop = session.Busy ? "" : session.PenaltyNotice;
             int humans = session.PartyMembers.Length;
             int party = humans + session.PartyBots;
             int roomCount = session.Roster.Count;
@@ -261,7 +269,7 @@ namespace ChessFight.Game
                 Details = $"Steam: {(session.Online ? "연결됨" : "연결 안 됨 - Steam 실행 후 다시 연결")}\n" +
                           Line(motion?.ConnectionStatus) + Line(motion?.QualityLine) +
                           $"입력: {runtime.Controls?.DisplayName}\n버전 {session.Build}" +
-                          (Debug.isDebugBuild ? "\nF8 지연 시뮬레이터" : ""),
+                          (Debug.isDebugBuild ? "\nF8 지연 시뮬레이터 · F9 탈주 기록 지우기" : ""),
                 Version = $"v{session.Build} · STEAM",
                 FriendsOnline = friendsOnline,
 
@@ -283,7 +291,8 @@ namespace ChessFight.Game
                 Busy = busy,
                 // Release builds keep bots out of public matches (M6); the test
                 // room still takes them.
-                CanPlay = canQueue && !session.BotsBlockPublicMatch && partyMode.Playable,
+                CanPlay = canQueue && !session.BotsBlockPublicMatch && partyMode.Playable && stop == "",
+                PlayNote = stop,
                 BusyTitle = waiting ? "파티원 경기 중"
                           : following ? "파티장을 따라가는 중"
                           : inRoom && session.Started ? "경기 시작!"
@@ -291,7 +300,7 @@ namespace ChessFight.Game
                           : "매칭 중",
                 BusySub = $"{Clock(now)} · {(inRoom ? roomCount : party)}/12",
                 CanCancel = session.Busy && !waiting,
-                ShowStart = inRoom && session.PrivateRoom && session.IsHost,
+                ShowStart = inRoom && session.PrivateRoom && session.IsManager,
                 // Mirrors StartGame's real rules, so the button is never a no-op.
                 CanStart = session.CanStartGame,
 
@@ -303,8 +312,8 @@ namespace ChessFight.Game
                 MatchTitle = !inRoom ? (waiting ? "파티원들이 경기를 마치기를 기다리는 중" : following ? "파티장이 방을 찾는 중..." : "상대 팀 찾는 중")
                            : session.Started ? "경기를 시작합니다!"
                            : session.JoiningLive ? "진행 중인 경기에 들어가는 중..."
-                           : dummyRoom && session.IsHost ? "더미를 추가하고 시작하세요"
-                           : session.PrivateRoom ? (session.IsHost ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")
+                           : dummyRoom && session.IsManager ? "더미를 추가하고 시작하세요"
+                           : session.PrivateRoom ? (session.IsManager ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")
                            : "상대 팀 찾는 중",
                 MatchTimer = Clock(now),
                 MatchNote = waiting ? "먼저 나왔어요 · 혼자 하려면 파티 나가기"
@@ -314,7 +323,7 @@ namespace ChessFight.Game
                 ShowRoomTools = inRoom && (session.PrivateRoom || session.CanUseRoomBots),
                 RoomCode = "방 번호  " + Spaced(session.Match),
                 CanFillRoom = session.CanUseRoomBots && session.Roster.ContainsKey(session.Self) && roomCount < 12,
-                CanClearRoomBots = hostWaiting && (session.TestBots(0) + session.TestBots(1)) > 0,
+                CanClearRoomBots = session.CanClearRoomBots,
                 ShowTestBots = dummyRoom,
                 AllyDummies = session.Roster.Values.Count(p => p.Team == ourTeam && BotIdentity.IsBot(p.Id)),
                 EnemyDummies = session.Roster.Values.Count(p => p.Team != ourTeam && BotIdentity.IsBot(p.Id)),
@@ -322,7 +331,7 @@ namespace ChessFight.Game
                 CanAddEnemy = dummyRoom && session.CanAddTestBot(1 - ourTeam),
                 CanRemoveAlly = dummyRoom && session.CanEditTestBots && session.TestBots(ourTeam) > 0,
                 CanRemoveEnemy = dummyRoom && session.CanEditTestBots && session.TestBots(1 - ourTeam) > 0,
-                TestHint = !session.IsHost ? "방장만 더미 수를 변경하고 시작할 수 있어요."
+                TestHint = !session.IsManager ? "방장만 더미 수를 변경하고 시작할 수 있어요."
                     : "이동·공격 없는 더미 · 팀당 최대 6명 (나 포함)\n" +
                       (roomCount < 2 ? "아군이나 적군 더미를 1명 이상 추가하세요."
                        : session.PartyBots > 0 ? "파티 더미는 유지됩니다. −는 이 방에서 추가한 더미만 제거해요."

@@ -59,7 +59,7 @@ namespace ChessFight.Network
         {
             if (session == null || session.Match == 0) return "";
             if (!session.IsHost)
-                return route.Known ? $"{(route.Relayed > 0 ? "릴레이" : "직접")} · Steam 핑 {route.PingMs} ms" : "방장과 연결 정보 없음";
+                return route.Known ? $"{(route.Relayed > 0 ? "릴레이" : "직접")} · Steam 핑 {route.PingMs} ms" : "물리 담당 PC와 연결 정보 없음";
             return route.Known ? $"직접 {route.Direct}명 · 릴레이 {route.Relayed}명 · Steam 핑 최대 {route.PingMs} ms" : "참가자와 연결 정보 없음";
         }
     }

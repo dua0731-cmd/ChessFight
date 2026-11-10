@@ -74,7 +74,7 @@ namespace ChessFight.Network
                 string route = RelayedPeers + DirectPeers == 0 ? ""
                              : session.IsHost ? $" · 직접 {DirectPeers} · 릴레이 {RelayedPeers}"
                              : RelayedPeers > 0 ? " · 릴레이" : " · 직접";
-                string line = session.IsHost ? $"방장 · 최대 핑 {ping}{route}"
+                string line = session.IsHost ? $"물리 담당 · 최대 핑 {ping}{route}"
                             : $"핑 {ping} · 응답 {(ResponseMs < 0 ? "—" : Math.Round(ResponseMs) + "ms")}{route}";
                 return Simulation.Active ? line + " · 지연 시뮬 " + Simulation : line;
             }
@@ -185,14 +185,14 @@ namespace ChessFight.Network
                 // this stream (a scene without its own simulation) still leaves, with its reason in Player.log.
                 if (session.Started)
                 {
-                    session.Cancel($"방장 움직임이 {LinkMonitor.LostAfter:0}초 동안 오지 않아 경기에서 나감" + (heardHost ? "" : "(이 방장에게서 한 번도 받지 못함)"));
-                    ConnectionStatus = "방장의 응답이 끊겨 파티로 돌아왔습니다.";
+                    session.Cancel($"물리 담당 PC의 움직임이 {LinkMonitor.LostAfter:0}초 동안 오지 않아 경기에서 나감" + (heardHost ? "" : "(이 PC에게서 한 번도 받지 못함)"));
+                    ConnectionStatus = "물리 담당 PC의 응답이 끊겨 파티로 돌아왔습니다.";
                     return;
                 }
                 if (!lostNoted)
                 {
                     lostNoted = true;
-                    Debug.Log($"[ChessFight] 대기실: 방장 {session.Name(session.Host)} 님의 움직임이 {LinkMonitor.LostAfter:0}초 동안 오지 않음" +
+                    Debug.Log($"[ChessFight] 대기실: 물리 담당 {session.Name(session.Host)} 님의 움직임이 {LinkMonitor.LostAfter:0}초 동안 오지 않음" +
                               (heardHost ? "" : "(한 번도 받지 못함: Steam P2P 연결을 확인)") + " · 대기실에 그대로 있음");
                 }
             }
@@ -209,13 +209,13 @@ namespace ChessFight.Network
             Silence = now - lastReceive;
             var previous = Health;
             Health = LinkMonitor.Classify(Silence);
-            if (Health == LinkHealth.Unstable) ConnectionStatus = "방장 연결이 불안정합니다...";
+            if (Health == LinkHealth.Unstable) ConnectionStatus = "물리 담당 PC와의 연결이 불안정합니다...";
             else if (Health >= LinkHealth.Frozen)
                 // A started match hands the host role on after a few seconds (HOST.md);
                 // the return to the party is only the last resort. A waiting room waits (R525).
                 ConnectionStatus = session.Started
-                    ? $"방장 응답 없음 - 멈춤. 다음 방장으로 넘기는 중... ({Math.Max(0, Math.Ceiling(LinkMonitor.LostAfter - Silence))}초 안에 안 되면 파티로 복귀)"
-                    : "방장의 대기실 움직임이 오지 않습니다 - 대기실에서 기다리는 중";
+                    ? $"물리 담당 PC 응답 없음 - 멈춤. 다음 PC로 넘기는 중... ({Math.Max(0, Math.Ceiling(LinkMonitor.LostAfter - Silence))}초 안에 안 되면 파티로 복귀)"
+                    : "물리 담당 PC의 대기실 움직임이 오지 않습니다 - 대기실에서 기다리는 중";
             else if (previous != LinkHealth.Ok) ConnectionStatus = "Steam으로 연결됨";
         }
 
@@ -365,13 +365,13 @@ namespace ChessFight.Network
                 consumedJumps.Clear();
                 consumedJumps[session.Self] = jumps;
                 foreach (ulong id in session.Roster.Keys) if (id != session.Self && !BotIdentity.IsBot(id)) jumpBaseline.Add(id);
-                ConnectionStatus = "이 PC가 방장을 맡았습니다.";
+                ConnectionStatus = "이 PC가 물리 계산을 맡았습니다.";
             }
             else
             {
                 consumedJumps.Clear();
                 lastSnapshot = 0;
-                ConnectionStatus = "방장이 바뀌었습니다.";
+                ConnectionStatus = "물리 담당 PC가 바뀌었습니다.";
             }
         }
 

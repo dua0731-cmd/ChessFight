@@ -592,7 +592,7 @@ namespace ChessFight.RagdollLab.Net
                 // stops in this scene, so this link tells it instead. Leaving is the last resort.
                 float silence = hostSilence.Seconds(now, Started());
                 session.ReportHostSilence(silence);
-                if (silence > SilenceTimeout && !ended) session.Abort("폰 러쉬 방장 연결이 끊어졌습니다.");
+                if (silence > SilenceTimeout && !ended) session.Abort("물리 계산을 맡은 PC와 연결이 끊어졌습니다.");
             }
             UpdateStats();
         }
@@ -770,6 +770,8 @@ namespace ChessFight.RagdollLab.Net
         void OnDecided(int team)
         {
             ended = true;
+            // R533: from the result on, leaving is not a desertion (on every PC, before the room's own mark arrives).
+            session.SawResult();
             // The result scene goes back to the lobby by leaving the match (the runtime loads the lobby then).
             var s = session;
             PawnRushResultFlow.Leave = () =>

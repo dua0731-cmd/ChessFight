@@ -26,6 +26,11 @@ namespace ChessFight.Game
 
         Action leave;
         string warning;
+        // R533: an online match's menu asks what leaving would cost right now and says it first, in place of the old
+        // "may be penalised": the desertion this would be and the matchmaking stop it brings, or "" where leaving
+        // costs nothing (a private room, a match that is over, the Editor). The game sets it once (NetworkRuntime).
+        public static Func<string> OnlineCost;
+        bool online;
         bool open, confirm, cursorTaken, savedVisible;
         CursorLockMode savedLock;
         int closedFrame = -10;
@@ -35,15 +40,17 @@ namespace ChessFight.Game
         // Esc was the menu's this frame or the last (a scene's own Esc handling skips it).
         public static bool EscapeHeld => current != null && (current.open || Time.frameCount - current.closedFrame <= 1);
 
-        // This scene's menu: `leave` is what "나가기" does, `online` picks the warning (a match: leaving is desertion;
-        // offline: only the practice ends). Replaces the menu a scene already has.
+        // This scene's menu: `leave` is what "나가기" does, `online` picks the warning (a match: what leaving costs
+        // just now, OnlineCost, and what it does to the team; offline: only the practice ends). Replaces the menu a
+        // scene already has.
         public static GameMenu Use(GameObject host, Action leave, bool online)
         {
             if (host == null) return null;
             var menu = host.GetComponent<GameMenu>() ?? host.AddComponent<GameMenu>();
             menu.leave = leave;
+            menu.online = online;
             menu.warning = online
-                ? "경기 도중 나가면 탈주로 처리되어 불이익(페널티)을 받을 수 있습니다.\n팀은 한 명이 빠진 채로 계속 싸우게 되고, 빈자리는 다른 플레이어가 채울 수 있습니다."
+                ? "팀은 한 명이 빠진 채로 계속 싸우게 되고, 빈자리는 다른 플레이어가 채울 수 있습니다."
                 : "연습을 끝내고 로비로 돌아갑니다. 지금까지의 진행은 저장되지 않습니다.";
             current = menu;
             return menu;
@@ -204,7 +211,10 @@ namespace ChessFight.Game
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f)) * keep;
             float sw = Screen.width / scale, sh = Screen.height / scale;
 
-            string[] lines = warning.Split('\n');
+            string now = null;
+            try { now = online ? OnlineCost?.Invoke() : null; }
+            catch (Exception e) { Debug.LogException(e); }
+            string[] lines = (string.IsNullOrEmpty(now) ? warning : now + "\n" + warning).Split('\n');
             float w = 460f, h = confirm ? 196f + lines.Length * 46f : 352f;
             var panel = new Rect((sw - w) * .5f, (sh - h) * .5f, w, h);
             Box(panel, Dark, confirm ? new Color(Red.r, Red.g, Red.b, .6f) : new Color(Gold.r, Gold.g, Gold.b, .4f), 16f);

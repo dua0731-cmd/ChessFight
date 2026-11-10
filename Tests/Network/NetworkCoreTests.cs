@@ -2380,6 +2380,59 @@ public static class NetworkCoreTests
                 Check(PawnRushRunaway.Flung(1800f, 550f, -465f) && PawnRushRunaway.Flung(40f, 0f, 40f) && PawnRushRunaway.Flung(0f, -50.5f, 0f),
                       "a wrapping boat's bat (11-09), fast sideways, a fall past the line");
                 Check(PawnRushRunaway.Flung(float.NaN, 0f, 0f) && PawnRushRunaway.Flung(0f, float.PositiveInfinity, 0f), "broken numbers"); });
+            Test("Host fitness (R533): the graphics card counts too - a fast one costs nothing, a slow one the square root of how much slower, never under 40%", () => {
+                int cpu = HostFitness.Base(40, 8, 16000, false);
+                Check(cpu == 1000 && HostFitness.Base(40, 8, 16000, false, 0) == cpu && HostFitness.Base(40, 8, 16000, false, -1) == cpu, "an unmeasured card costs nothing");
+                Check(HostFitness.Base(40, 8, 16000, false, 3) == cpu && HostFitness.Base(40, 8, 16000, false, HostFitness.ReferenceGpuMs) == cpu, "a card at or under the reference time costs nothing");
+                Check(HostFitness.Base(40, 8, 16000, false, 24) == cpu / 2, "four times slower than the reference: half, got " + HostFitness.Base(40, 8, 16000, false, 24));
+                int entry = HostFitness.Base(40, 8, 16000, false, 9), chip = HostFitness.Base(40, 8, 16000, false, 80), worse = HostFitness.Base(40, 8, 16000, false, 400);
+                Check(entry < cpu && entry > cpu * 3 / 4, "a somewhat slower card loses a little: " + entry);
+                Check(chip == (int)Math.Round(cpu * HostFitness.GpuFloor) && worse == chip, "an integrated chip is floored: " + chip + " / " + worse);
+                // The comparison the user asked for (CPU and GPU together): a faster processor with an integrated chip against a
+                // somewhat slower processor with a real card.
+                Check(HostFitness.Base(30, 8, 16000, false, 80) < HostFitness.Base(40, 8, 16000, false, 4), "a fast CPU does not make up for an integrated chip");
+                Check(HostFitness.Base(30, 8, 16000, false, 4) > HostFitness.Base(40, 8, 16000, false, 4), "with good cards on both, the processor decides");
+                Check(HostFitness.GpuFactor(double.NaN) == 1 && HostFitness.Base(0, 8, 16000, false, 4) == 0, "nothing measured"); });
+            Test("Leave penalty (R533, rule 3): two desertions free, then 10 minutes, 30 minutes, an hour; each counts for 24 hours", () => {
+                Check(LeavePenalty.BanSeconds(0) == 0 && LeavePenalty.BanSeconds(1) == 0 && LeavePenalty.BanSeconds(2) == 0, "two chances");
+                Check(LeavePenalty.BanSeconds(3) == 600 && LeavePenalty.BanSeconds(4) == 1800 && LeavePenalty.BanSeconds(5) == 3600 && LeavePenalty.BanSeconds(9) == 3600,
+                      "10 minutes, 30 minutes, an hour and an hour from then on");
+                double t0 = 1.7e9;
+                var leaves = new List<double>();
+                Check(LeavePenalty.Count(leaves, t0) == 0 && LeavePenalty.SecondsLeft(leaves, t0) == 0 && LeavePenalty.SecondsLeft(null, t0) == 0, "nothing yet");
+                leaves = LeavePenalty.Add(leaves, t0);
+                leaves = LeavePenalty.Add(leaves, t0 + 1000);
+                Check(LeavePenalty.Count(leaves, t0 + 1001) == 2 && LeavePenalty.SecondsLeft(leaves, t0 + 1001) == 0, "the first two cost nothing");
+                leaves = LeavePenalty.Add(leaves, t0 + 2000);
+                Check(LeavePenalty.Count(leaves, t0 + 2000) == 3 && LeavePenalty.SecondsLeft(leaves, t0 + 2000) == 600, "the third: 10 minutes from its moment");
+                Check(LeavePenalty.SecondsLeft(leaves, t0 + 2599) == 1 && LeavePenalty.SecondsLeft(leaves, t0 + 2600) == 0, "and over after them");
+                leaves = LeavePenalty.Add(leaves, t0 + 3000);
+                Check(LeavePenalty.SecondsLeft(leaves, t0 + 3000) == 1800, "the fourth: 30 minutes");
+                leaves = LeavePenalty.Add(leaves, t0 + 5000);
+                Check(LeavePenalty.SecondsLeft(leaves, t0 + 5000) == 3600, "the fifth: an hour");
+                leaves = LeavePenalty.Add(leaves, t0 + 9000);
+                Check(LeavePenalty.SecondsLeft(leaves, t0 + 9000) == 3600 && LeavePenalty.Count(leaves, t0 + 9000) == 6, "the sixth: an hour again");
+                // 24 hours after each one it stops counting: the first two have dropped out, so the next is a fifth, not a seventh.
+                double day = LeavePenalty.Window;
+                Check(LeavePenalty.Count(leaves, t0 + day - 1) == 6 && LeavePenalty.Count(leaves, t0 + day) == 5 && LeavePenalty.Count(leaves, t0 + day + 1000) == 4, "each drops out after 24 hours");
+                Check(LeavePenalty.Count(leaves, t0 + 9000 + day) == 0 && LeavePenalty.SecondsLeft(leaves, t0 + 9000 + day) == 0, "a day after the last: clean");
+                var next = LeavePenalty.Add(leaves, t0 + 9000 + day);
+                Check(next.Count == 1 && LeavePenalty.SecondsLeft(next, t0 + 9000 + day) == 0, "then the count starts over, and what no longer counts is dropped");
+                // A desertion a day after two others is a second (the first of those has dropped out), not a third.
+                var spread = LeavePenalty.Add(LeavePenalty.Add(LeavePenalty.Add(null, t0), t0 + 10), t0 + day + 5);
+                Check(spread.Count == 2 && LeavePenalty.SecondsLeft(spread, t0 + day + 5) == 0, "the day window slides: " + spread.Count);
+                // Kept between runs as text; nonsense is dropped, and so is the far future (a clock set forward).
+                string text = LeavePenalty.Encode(leaves);
+                var back = LeavePenalty.Decode(text);
+                Check(back.SequenceEqual(leaves) && LeavePenalty.Encode(back) == text, "round trip: " + text);
+                Check(LeavePenalty.Decode(null).Count == 0 && LeavePenalty.Decode("").Count == 0 && LeavePenalty.Decode("x,-5,1e9,,7").SequenceEqual(new double[] { 7 }), "unreadable entries");
+                Check(LeavePenalty.Decode(string.Join(",", Enumerable.Range(1, 40))).Count == LeavePenalty.Kept, "no more than it keeps");
+                Check(LeavePenalty.Count(new double[] { t0 + 500 }, t0) == 0 && LeavePenalty.Add(new double[] { t0 + 500 }, t0).Count == 1, "an entry dated after now does not count and is dropped");
+                var many = new List<double>();
+                for (int i = 0; i < 30; i++) many = LeavePenalty.Add(many, t0 + i);
+                Check(many.Count == LeavePenalty.Kept && many[many.Count - 1] == t0 + 29, "the newest are kept");
+                Check(LeavePenalty.Clock(600) == "10:00" && LeavePenalty.Clock(59.2) == "1:00" && LeavePenalty.Clock(3600) == "1:00:00" && LeavePenalty.Clock(-3) == "0:00" && LeavePenalty.Clock(3725) == "1:02:05",
+                      "the clock: " + LeavePenalty.Clock(600) + " " + LeavePenalty.Clock(59.2) + " " + LeavePenalty.Clock(3725)); });
             Console.WriteLine($"{passed} core tests passed."); return 0;
         }
         catch(Exception e) {Console.Error.WriteLine(e);return 1;}

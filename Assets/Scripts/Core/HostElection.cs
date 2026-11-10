@@ -19,18 +19,34 @@ namespace ChessFight.Network
         // Below 40 fps the measured frame time says more than the benchmark.
         public const double SlowFrameMs = 25;
 
+        // R533 (user 11-10, rule 4: "제일 좋은 PC(CPU, GPU 통합)"): HostFitnessProbe's graphics workload on a graphics
+        // card that keeps the match's frame rate up without trouble. A card at or under this time costs the score
+        // nothing; a slower one costs the square root of how much slower it is, down to GpuFloor (an integrated chip).
+        // The host draws the match like everyone else, and a host that draws it slowly steps its physics in lumps and
+        // sends its snapshots late - to every screen - however fast its processor is.
+        public const double ReferenceGpuMs = 6, GpuFloor = 0.4;
+
+        // What the graphics card leaves of the score: 1 for a card that is fast enough, or not measured (gpuMs <= 0).
+        public static double GpuFactor(double gpuMs)
+        {
+            if (gpuMs <= ReferenceGpuMs || double.IsNaN(gpuMs)) return 1;
+            return Math.Max(GpuFloor, Math.Sqrt(ReferenceGpuMs / gpuMs));
+        }
+
         // The machine alone, 0 when not measured yet.
         // benchMs  best time of the probe's fixed CPU workload
         // cores    logical processors (physics uses worker threads)
         // memoryMb system RAM, <= 0 = unknown
         // editor   inside the Unity Editor, which costs a host noticeably more
-        public static int Base(double benchMs, int cores, int memoryMb, bool editor)
+        // gpuMs    best time of the probe's fixed graphics workload, <= 0 = unknown (R533)
+        public static int Base(double benchMs, int cores, int memoryMb, bool editor, double gpuMs = 0)
         {
             if (benchMs <= 0 || double.IsNaN(benchMs)) return 0;
             double score = 1000 * ReferenceBenchMs / benchMs;
             score *= 0.75 + 0.25 * Math.Min(Math.Max(cores, 1), 8) / 8.0;
             if (memoryMb > 0 && memoryMb < 8000) score *= 0.85;
             if (editor) score *= 0.85;
+            score *= GpuFactor(gpuMs);
             return (int)Math.Round(Math.Min(Math.Max(score, 1), 99999));
         }
 

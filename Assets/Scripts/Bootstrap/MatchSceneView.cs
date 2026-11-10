@@ -30,7 +30,7 @@ namespace ChessFight.Game
         {
             runtime = NetworkRuntime.Instance;
             if (runtime == null) { enabled = false; return; }
-            GameMenu.Use(gameObject, () => runtime.Session.Cancel(), true);
+            NetworkRuntime.UseMatchMenu(gameObject);
 
             var config = GetComponent<GameSceneConfig>();
             if (config == null) config = gameObject.AddComponent<GameSceneConfig>();

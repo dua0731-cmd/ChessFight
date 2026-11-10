@@ -24,6 +24,8 @@ namespace ChessFight.Game
 
         // Idle: the start button. Busy: the matching card in its place.
         public bool Busy, CanPlay, CanCancel, ShowStart, CanStart;
+        // R533: why "게임 시작" is off for a while (a deserter's matchmaking stop, with the time left); "" for nothing.
+        public string PlayNote;
         public string BusyTitle, BusySub;
 
         // The matchmaking panel at the top: our side on the left, 6 slots each.
@@ -361,6 +363,7 @@ namespace ChessFight.Game
             BuildModeList();
             BuildModeRail();
             BuildCurrentMode();
+            BuildPlayNote();
             BuildInviteCard();
             SetRail(false, true);   // the cards exist now: hide them and stop them taking the pointer
             BuildVoiceMenu();
@@ -1005,6 +1008,17 @@ namespace ChessFight.Game
         }
 
         // R529: the plate over the start button that names the chosen mode.
+        // R533: a line under "게임 시작" for a matchmaking stop (hidden while there is none).
+        Label playNote;
+        void BuildPlayNote()
+        {
+            if (play == null || play.parent == null) return;
+            playNote = new Label { name = "play-note", pickingMode = PickingMode.Ignore };
+            playNote.AddToClassList("play-note");
+            playNote.style.display = DisplayStyle.None;
+            play.parent.Insert(play.parent.IndexOf(play) + 1, playNote);
+        }
+
         void BuildCurrentMode()
         {
             if (play == null || play.parent == null) return;
@@ -1281,6 +1295,12 @@ namespace ChessFight.Game
             Show(play, !model.Busy);
             Show(currentMode, !model.Busy);
             Enable(play, model.CanPlay);
+            if (playNote != null)
+            {
+                bool noted = !model.Busy && !string.IsNullOrEmpty(model.PlayNote);
+                Show(playNote, noted);
+                if (noted && playNote.text != model.PlayNote) playNote.text = model.PlayNote;
+            }
             Show(busy, model.Busy);
             if (busyTitle != null) busyTitle.text = model.BusyTitle;
             if (busySub != null) busySub.text = model.BusySub;

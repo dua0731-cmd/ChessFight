@@ -107,6 +107,9 @@ namespace ChessFight.Game
                 screen.CancelRequested += () => runtime.Session.Cancel();
                 screen.AddBotRequested += () => runtime.Session.AddRoomBot();
                 screen.StartRequested += () => runtime.Session.StartGame();
+                // R533: the manager's buttons on a player's card, with that player's id (LoadingState.Keys).
+                screen.GiveRequested += id => runtime.Session.GiveManager(id);
+                screen.KickRequested += id => runtime.Session.Kick(id);
                 return screen;
             }
             catch (Exception e)
@@ -171,15 +174,18 @@ namespace ChessFight.Game
             state.Expected = TeamReservations.TeamSize * 2;
             state.CanCancel = session.Busy && !session.WaitingForParty;
             // Development builds let public rooms take bots (M6); the leader sees
-            // the button from the start, usable once it hosts the room it made.
-            state.ShowAddBot = session.AllowPublicBots && (session.Match == 0 ? session.IsLeader : session.IsHost);
+            // the button from the start, usable once it manages the room it made (R533: the manager, not the host).
+            state.ShowAddBot = session.AllowPublicBots && (session.Match == 0 ? session.IsLeader : session.IsManager);
             state.CanAddBot = session.CanAddRoomBot;
-            // R148: the 폰 러쉬 room's host may start short of twelve (3+ a side, even sides).
-            state.ShowStart = session.EarlyStartMode && session.IsHost && !session.Started;
+            // R148: the room's manager may start short of twelve (3+ a side, even sides). R533: the manager is whoever
+            // made the room (or was handed the role), whichever PC hosts it.
+            state.ShowStart = session.EarlyStartMode && session.IsManager && !session.Started;
             state.CanStart = session.CanStartGame;
             int white = session.TeamCount(0), black = session.TeamCount(1), min = session.MinTeamToStart;
-            state.StartNote = !session.EarlyStartMode || session.Started ? ""
-                : state.CanStart ? (session.IsHost ? $"{white} 대 {black} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)" : $"{white} 대 {black} · 방장이 시작할 수 있어요")
+            bool ready = white >= min && white == black && session.SeatingJoiners == 0;
+            state.StartNote = !session.EarlyStartMode || session.Started || session.Match == 0 ? ""
+                : state.CanStart ? $"{white} 대 {black} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)"
+                : !session.IsManager && ready ? $"{white} 대 {black} · 방장이 시작할 수 있어요"
                 // R525: the start waits (up to SteamSession.JoinGrace) for players already in the room to get their seats.
                 : session.SeatingJoiners > 0 ? $"{white} 대 {black} · 방에 들어온 {session.SeatingJoiners}명이 자리를 받는 중이에요"
                 : white < min || black < min ? $"{white} 대 {black} · 팀마다 {min}명 이상이면 시작할 수 있어요"
@@ -194,7 +200,13 @@ namespace ChessFight.Game
             if (session.Match != 0 && session.Roster.Count > 0)
             {
                 foreach (var p in session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot))
+                {
                     Add(state, session, p.Id, p.Team, false);
+                    // R533: what this PC's player may do as the room's manager, and (development builds) each PC's score.
+                    state.CanGive.Add(!session.Started && session.CanGiveManager(p.Id));
+                    state.CanKick.Add(session.CanKick(p.Id));
+                    state.Scores.Add(Debug.isDebugBuild ? session.MachineScore(p.Id) : 0);
+                }
             }
             else
             {
@@ -213,6 +225,8 @@ namespace ChessFight.Game
         {
             if (id == session.Self) state.Me = state.Teams.Count;
             if (id == session.Host) state.Host = state.Teams.Count;
+            if (id == session.Manager) state.Manager = state.Teams.Count;
+            state.Keys.Add(id);
             state.Teams.Add(team);
             state.Joined.Add(true);
             state.Ready.Add(ready);

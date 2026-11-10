@@ -90,6 +90,9 @@ namespace ChessFight.RagdollLab
         protected virtual bool NetStarted => true;
         /// <summary>Leave the match (the host stopped sending).</summary>
         protected abstract void NetLeave(string why);
+        // R533: the player's own "경기 나가기" (the in-game menu), as against a leave the link itself decides on (a
+        // silent host): in a public match the first is a desertion (SteamMatchLabLink).
+        public const string LeftByChoice = "경기 나가기";
         /// <summary>The panel's part for when no match is on (making and joining a room).</summary>
         protected abstract void DrawLobby();
         /// <summary>What carries the packets, for the panel.</summary>
@@ -101,9 +104,17 @@ namespace ChessFight.RagdollLab
         protected virtual bool RealMatch => false;
         /// <summary>R149: the host's match is over (the room takes no more players).</summary>
         protected virtual void NetMatchOver() { }
+        /// <summary>R533: this PC saw the match's result (leaving from here on is not a desertion).</summary>
+        protected virtual void NetSawResult() { }
 
-        /// <summary>R149: the host tells the room the match is over (SwordFightMatch, once it has a result).</summary>
-        public void ReportMatchOver() { if (matchActive && NetIsHost) NetMatchOver(); }
+        /// <summary>R149: the match has a result (SwordFightMatch, on every PC): the host tells the room it is over.
+        /// R533: every PC notes that it saw the result.</summary>
+        public void ReportMatchOver()
+        {
+            if (!matchActive) return;
+            NetSawResult();
+            if (NetIsHost) NetMatchOver();
+        }
 
         /// <summary>R149: a player's roster place (SkillWire.Ref) and back, for the Sword Fight match state.</summary>
         public byte SwordRef(ulong id) => NetRoster.TryGetValue(id, out var seat) ? SkillWire.Ref(seat.Team, seat.Slot) : SkillWire.None;

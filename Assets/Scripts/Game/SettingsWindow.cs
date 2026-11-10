@@ -282,7 +282,7 @@ namespace ChessFight.Game
                     new Page { Name = "정보 표시", Sections = new[] { new Section { Title = "정보 표시", Note = "경기 화면 구석에 작게", Items = new Item[]
                     {
                         Switch("showfps", "프레임 표시", false, "오른쪽 위에 초당 프레임 수."),
-                        Switch("showping", "핑 표시", true, "방장과 주고받는 데 걸리는 시간. 끊김 경고는 끄더라도 그대로 떠요."),
+                        Switch("showping", "핑 표시", true, "물리 계산을 맡은 PC와 주고받는 데 걸리는 시간. 끊김 경고는 끄더라도 그대로 떠요."),
                         Switch("netgraph", "연결 상태 그래프", false, "핑과 끊김을 작은 그래프로.", soon: true),
                     } } } },
                 } },

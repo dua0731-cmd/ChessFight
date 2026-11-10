@@ -1,5 +1,7 @@
 # 파티·매칭·예약 (`SteamSession`, `TeamReservations`)
 
+> **R533(2026-11-10, 사용자 매칭 규칙 목록): 프로토콜 v34. 방장(관리)과 물리 담당 PC를 나눴다** → [§10](#10-방장과-물리-담당-양도와-강퇴-r533-2026-11-10). **탈주 벌칙** → [§11](#11-탈주-벌칙-r533-2026-11-10). **이 문서와 [HOST](HOST.md)의 R532까지의 글에서 '방장'은 지금의 '물리 담당 PC'**(`Host`, Steam 방 주인)를 말한다. 화면의 '방장'은 R533부터 게임 시작 · 강퇴 · 양도를 하는 관리 방장(`Manager`)이다.
+
 > **R60(2026-09-30, 승규 님): 빈자리를 받는 시간 4분, 시작한 경기에서는 나간 사람만 나간다**(방장이면 방장 이전) → [§6](#6-취소퇴장호스트-이탈).
 
 > **R59(2026-09-30, 승규 님): 프로토콜 v14. 시작한 경기의 빈자리를 매칭으로 채운다** → [§8](#8-빈자리-채우기-r59-2026-09-30). 팀마다 시작 인원까지만(6 대 6이면 6명, 5 대 5면 5명). 검색 필터가 `phase=waiting`에서 `open=1`로 바뀌었다.
@@ -8,7 +10,7 @@
 
 > **R51 / `JY-gpt_gamemode`: 프로토콜 v10.** 강한 물리 베기만 넉다운하는 새 규칙과 무게감 있는 드래그. 패킷은 R50의 **CFS3/CFR4 그대로**, 클라이언트는 보정된 시점의 입력만 보내며 실제 검의 에너지/타격은 호스트가 판정한다. v9 이하와 매칭되지 않아 두 PC 모두 같은 새 빌드 필요. 채널33·506바이트 칼 상태·ability2 선택 절대값·몸/칼 동일 지연 보간·정지 더미 규칙 유지. 보정 드래그의 지연과 네트워크 보간은 서로 다르며 클라이언트 체감은 두 PC 확인이 필요하다. [실행](../GameModes/SwordFight/README.md).
 
-코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/Backfill.cs`(빈자리), `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam: 소드파이트 더미 5개·방장 선정·이전 8개·빈자리 4개·지어낸 파티원 자리 남용 2개 포함, 개수는 [HISTORY](../Project/HISTORY.md)의 줄), `NetworkCoreTests.cs`(예약 규칙과 쉬는 시간, 모드 목록, 방장 점수, 빈자리 규칙).
+코드: `Scripts/Network/SteamSession.cs`, `Scripts/Core/TeamReservations.cs`, `Scripts/Core/Backfill.cs`(빈자리), `Scripts/Core/LeavePenalty.cs`(탈주 벌칙, R533), `Scripts/Core/GameModes.cs`. 테스트: `Tests/Network/SessionFlowTests.cs`(모의 Steam: 소드파이트 더미 5개·방장 선정·이전 8개·빈자리 4개·지어낸 파티원 자리 남용 2개 포함, 개수는 [HISTORY](../Project/HISTORY.md)의 줄), `NetworkCoreTests.cs`(예약 규칙과 쉬는 시간, 모드 목록, 방장 점수, 빈자리 규칙).
 
 방장 선정·이전(`claude/host-migration`의 R50, `JY-lobby` 계열 번호)은 별도 문서 [HOST](HOST.md).
 
@@ -20,7 +22,7 @@
 | 최대 | 6 | 12 |
 | 공개 | 비공개(ID를 알면 입장 가능) | 자동 매칭은 공개, 테스트 방은 비공개 |
 | ID | `Party` | `Match` |
-| 주인 | 파티장 `IsLeader` | 처음엔 만든 사람 `Host`. 시작 전 대기실(입장 화면)에서도 PC 성능 1등이 들어오면 그 PC로(R159 · R294), 시작 때 가장 적합한 PC로, 경기 중 방장이 사라지면 후계자로 옮겨 간다([HOST](HOST.md)) |
+| 주인 | 파티장 `IsLeader` | 처음엔 만든 사람 `Host`. 시작 전 대기실(입장 화면)에서도 PC 성능 1등이 들어오면 그 PC로(R159 · R294), 시작 때 가장 적합한 PC로, 경기 중 방장이 사라지면 후계자로 옮겨 간다([HOST](HOST.md)). (R533) 이 주인이 **물리 담당 PC**이고, 시작 · 강퇴 같은 관리는 따로 **방장**(`Manager`, 방을 만든 사람)이 한다 → §10 |
 | 경기 취소 시 | 유지 | 나감 |
 
 한 사람은 자기 파티 로비에 남은 채로 경기 로비에도 들어간다. 파티장과 경기 호스트는 같을 수도 다를 수도 있다.
@@ -53,6 +55,7 @@
 9. 예약이 정확히 12이고 모두 입장 완료면 공개 경기를 자동 시작한다.
 10. **(R525) 개발 빌드의 공개 방은 1 대 1부터**(사용자 11-09 "1대1로도 테스트 가능하도록 임시 조치", `SteamSession.MinTeamToStart` = 개발 빌드 1, 출시 빌드 3). **방에 들어와 아직 자리를 못 받은 사람이 있으면 시작이 기다린다**(`SeatingJoiners`, 한 사람당 최대 `JoinGrace` 8초, 입장 화면 "방에 들어온 n명이 자리를 받는 중이에요"): 전에는 시작이 방을 닫아, 대기실 방장 넘김 중에 들어와 요청이 늦게 처리된 사람이 "파티 전체가 들어갈 자리가 없습니다"나 28초 뒤 "입장 승인이 시간 초과되었습니다"로 튕겼다(모의 6인, 방 주인 이전 1~3초). 아래 R148의 "3명 이상"은 출시 빌드 기준.
 11. **(R148) 폰 러쉬 공개 방은 12명 전에도 시작할 수 있다:** 두 팀이 **각각 3명 이상이고 인원이 같으며**(3 대 3, 4 대 4, 5 대 5) 모두 입장 완료면 방장의 입장 화면에 "게임 시작" 버튼이 켜진다(`TeamReservations.ReadyEarly`, `SteamSession.CanStartEarly`). 누르면 지금 인원으로 시작하고, 빈자리 채우기는 그 시작 인원까지만이다(§8). 12명이 차면 예전처럼 자동 시작. 다른 모드는 그대로 12명. 봇 규칙은 바뀌지 않았다(예약된 봇도 인원에 들어감).
+12. **(R533) '게임 시작'은 방장(관리)의 것**: 방을 만든 사람(양도받은 사람)의 화면에만 버튼이 있다. 방장이 물리 담당 PC가 아니면 누른 것이 방 채팅 요청(`manage` · `start`)으로 물리 담당 PC에 가고, 그 PC가 9 ~ 11의 조건(인원, 자리를 받는 중인 사람)을 자기 장부로 다시 확인한 뒤 시작한다(§10). **사용자 매칭 규칙 1 ~ 2**(11-10: 팀마다 3명 이상 · 같은 인원이면 방장이 시작 → 3 대 3으로 시작한 방은 6자리 · 4 대 4는 8 · 5 대 5는 10 · 6 대 6은 12, 나간 자리만 출발 뒤 4분 안에 매칭 중인 사람으로 채움, 꽉 찬 방 대신 새 방)는 9 ~ 11과 §8에 이미 있던 규칙이라 코드는 그대로 두고 모의 테스트 4개(`Matching rules 1 ~ 2` · `Matching rule 1-4` 3개, 출시 빌드 기준 `MinTeamToStart` 3)로 고정했다. 개발 빌드의 1 대 1부터(R525)는 그대로다.
 
 여러 파티가 이미 들어간 대기 방끼리는 합치지 않는다. 모의 12인 동시 검색 수렴 테스트가 실제 Steam의 수렴 시간을 보장하지는 않는다.
 
@@ -106,7 +109,7 @@
 
 | 키 | 위치 | 값 |
 |---|---|---|
-| `protocol` | 두 로비 | 지금 `chessfight.dua0731.network.v33`(**v33 = 11-10 R532: 마차뜰 가운데 길이 마차 하역장(마구간 마차 · 말 · 크레인 짐)으로 바뀜 — 패킷은 그대로, v32 PC는 회전 마차를 그려 방장의 넉백과 어긋남. v32 = 11-09 R528: B 판자 블록이 `PlankBoard`(판자 10장 상태 · 운반자 좌석 · 누운 자리)로 바뀜. v28 ~ v31은 `SteamSession.Protocol` 주석에.** 이전: `chessfight.dua0731.network.v27`(**v27 = 11-08 R503: 다음 방장은 경기를 불러온 다른 사람이 방장을 못 듣는다고 알릴 때만(`quiet`) 조용한 방장을 이어받는다([HOST §5](HOST.md)). v26 빌드는 `quiet`를 쓰지 않아 섞이면 이어받기가 안 된다. 패킷은 그대로. 11-08 R504도 같은 번호(둘 다 아직 빌드한 적 없음): 다음 방장 차례인 PC가 나서지 않으면 그다음 순번이 `past`를 적고 건너뛴다. v26 빌드는 이 건너뛰기를 따라가지 않는다.** v26 = 11-02 R297: 래그돌 스냅샷의 말 하나 74 → 65바이트(갈고리를 돌리거나 던진 말 72), 받은 보낸 시각 16비트, magic `CFRD`([MOTION §3](MOTION.md), [HOST_AUTHORITY §10](HOST_AUTHORITY.md)). 같은 R297의 자리 예약 제한(§4)은 방장 PC 안의 일이라 버전과 상관없다.** v25 = 11-02 R295: 방장 `claim`은 다음 순번의 것만, 볼 수 있는 번호 + 1까지만 인정([HOST §5](HOST.md)). 패킷은 그대로. v16~v24는 `SteamSession.Protocol` 주석에). 아래는 v15까지의 기록: `chessfight.dua0731.network.v15`(**v15 = 10-06 main 병합: `JY-lobby` R51의 래그돌 랩 스냅샷 헤더에 방장의 장애물 시각 8바이트, magic `CFR6`(`JY-lobby`에서는 "v8")**. v14 = 09-30 R59 `claude/pawnrush-loading`: 빈자리 채우기. 경기 `open`·`seats`·`held`, 검색은 `open=1`. v13 = 09-30 R58: 로딩 화면 뒤 동시 출발. 멤버 `load`, 경기 `go`. 패킷은 그대로. v12 = `JY-kingrush` 09-28 병합 뒤: 소드파이트 v10 + 아래 v7 + 아래 방장 이전 "v8"을 한 빌드에. v8~v10은 `JY-gpt_gamemode`에서 따로 매긴 소드파이트 번호) (이전 기록: v3: 게임 모드 추가, v4(`JY-ragdoll_v2`, 09-26): 래그돌 랩 입력 패킷에 능력·상호작용·조준 추가, magic `CFR2`. **v5(`JY-ragdoll_v2`, 09-26 R36): 래그돌 랩 스냅샷에 버둥대기 게이지 1바이트 추가(폰당 64 → 65바이트), magic `CFR3`**. **v6(09-27 R40): 입력에 좌클릭 누르고 있기, 스냅샷에 갈고리 8바이트(폰당 73바이트), magic `CFR4`**. **v7(09-27 R46): 스냅샷에 기물 종류 1바이트(폰당 74바이트), magic `CFR5`**. **v8(`claude/host-migration`, 09-28 R50): 방장 이전. 경기 로비 `epoch`·`successors`, 멤버 `fit`·`base`·`loc`·`claim`. 패킷은 그대로**) |
+| `protocol` | 두 로비 | 지금 `chessfight.dua0731.network.v34`(**v34 = 11-10 R533: 방장(관리)과 물리 담당 PC를 나눔 — 방 데이터 `manager` · `kicked` · `seating`, 방 채팅 요청 `manage`, 파티 멤버 `ban`, 성능 점수에 그래픽 측정. v33 빌드는 `manager`를 몰라 시작 버튼이 물리 담당 PC에 남고 방장의 요청을 버린다.** **v33 = 11-10 R532: 마차뜰 가운데 길이 마차 하역장(마구간 마차 · 말 · 크레인 짐)으로 바뀜 — 패킷은 그대로, v32 PC는 회전 마차를 그려 방장의 넉백과 어긋남. v32 = 11-09 R528: B 판자 블록이 `PlankBoard`(판자 10장 상태 · 운반자 좌석 · 누운 자리)로 바뀜. v28 ~ v31은 `SteamSession.Protocol` 주석에.** 이전: `chessfight.dua0731.network.v27`(**v27 = 11-08 R503: 다음 방장은 경기를 불러온 다른 사람이 방장을 못 듣는다고 알릴 때만(`quiet`) 조용한 방장을 이어받는다([HOST §5](HOST.md)). v26 빌드는 `quiet`를 쓰지 않아 섞이면 이어받기가 안 된다. 패킷은 그대로. 11-08 R504도 같은 번호(둘 다 아직 빌드한 적 없음): 다음 방장 차례인 PC가 나서지 않으면 그다음 순번이 `past`를 적고 건너뛴다. v26 빌드는 이 건너뛰기를 따라가지 않는다.** v26 = 11-02 R297: 래그돌 스냅샷의 말 하나 74 → 65바이트(갈고리를 돌리거나 던진 말 72), 받은 보낸 시각 16비트, magic `CFRD`([MOTION §3](MOTION.md), [HOST_AUTHORITY §10](HOST_AUTHORITY.md)). 같은 R297의 자리 예약 제한(§4)은 방장 PC 안의 일이라 버전과 상관없다.** v25 = 11-02 R295: 방장 `claim`은 다음 순번의 것만, 볼 수 있는 번호 + 1까지만 인정([HOST §5](HOST.md)). 패킷은 그대로. v16~v24는 `SteamSession.Protocol` 주석에). 아래는 v15까지의 기록: `chessfight.dua0731.network.v15`(**v15 = 10-06 main 병합: `JY-lobby` R51의 래그돌 랩 스냅샷 헤더에 방장의 장애물 시각 8바이트, magic `CFR6`(`JY-lobby`에서는 "v8")**. v14 = 09-30 R59 `claude/pawnrush-loading`: 빈자리 채우기. 경기 `open`·`seats`·`held`, 검색은 `open=1`. v13 = 09-30 R58: 로딩 화면 뒤 동시 출발. 멤버 `load`, 경기 `go`. 패킷은 그대로. v12 = `JY-kingrush` 09-28 병합 뒤: 소드파이트 v10 + 아래 v7 + 아래 방장 이전 "v8"을 한 빌드에. v8~v10은 `JY-gpt_gamemode`에서 따로 매긴 소드파이트 번호) (이전 기록: v3: 게임 모드 추가, v4(`JY-ragdoll_v2`, 09-26): 래그돌 랩 입력 패킷에 능력·상호작용·조준 추가, magic `CFR2`. **v5(`JY-ragdoll_v2`, 09-26 R36): 래그돌 랩 스냅샷에 버둥대기 게이지 1바이트 추가(폰당 64 → 65바이트), magic `CFR3`**. **v6(09-27 R40): 입력에 좌클릭 누르고 있기, 스냅샷에 갈고리 8바이트(폰당 73바이트), magic `CFR4`**. **v7(09-27 R46): 스냅샷에 기물 종류 1바이트(폰당 74바이트), magic `CFR5`**. **v8(`claude/host-migration`, 09-28 R50): 방장 이전. 경기 로비 `epoch`·`successors`, 멤버 `fit`·`base`·`loc`·`claim`. 패킷은 그대로**) |
 | `build` | 두 로비 | `NetworkRuntime.BuildTag` 예: `0.1.0-dev` |
 | `kind` | 두 로비 | `party` / `match` |
 | `route` | 파티 | `idle` / `search` / 경기 로비 ID |
@@ -114,7 +117,11 @@
 | `mode` | 경기 | 방을 만든 파티장의 모드. 검색 필터와 경기 씬 선택에 쓴다. 번호로 들어간 사람도 이 값을 따른다 |
 | `cancel` | 파티원 member data | 검색·대기실에서 취소할 때 새 GUID. 시작한 경기에서 나갈 때는 쓰지 않는다(R60) |
 | `match` | 파티 member data | (R60) 지금 뛰고 있는 시작한 경기 ID, 아니면 빈 값. 파티장은 누가 경기 중이면 매칭을 시작하지 않는다 |
+| `ban` | 파티 member data | (R533) 탈주 벌칙으로 매칭이 멈춘 사람의 풀리는 시각(Steam 서버 초), 아니면 빈 값. 파티장이 보고 공개 매칭을 시작하지 않는다(§11) |
 | `host` | 경기 | 호스트 Steam ID. 시작 뒤에도, (R159) 시작 전 대기실에서도 PC 성능 1등에게 바뀔 수 있다 |
+| `manager` | 경기 | (R533, v34) 방장(관리)의 Steam ID: 방을 만든 사람 → 양도받은 사람 → 나가면 남은 사람 중 자리 번호가 가장 앞선 사람. 방 주인(물리 담당 PC)만 쓴다. 모두 이 값으로 누가 시작 · 강퇴 · 양도 버튼을 갖는지 안다(§10) |
+| `kicked` | 경기 | (R533, v34) 방장이 내보낸 사람들 `id,id,…`(최대 24명, 넘으면 오래된 사람부터 빠짐). 여기 있는 사람의 자리 요청은 거절되고, 그 사람(이 든 파티)의 매칭 검색은 이 방을 건너뛴다. 내보내진 PC는 이 값에서 자기를 보고 방을 나간다 |
+| `seating` | 경기 | (R533, v34) 방에 들어와 아직 자리를 못 받은 사람 수(물리 담당 PC가 쓴다, R525 `SeatingJoiners`). 방장이 물리 담당이 아닐 때 "n명이 자리를 받는 중"과 시작 버튼을 이 값으로 정한다 |
 | `resv` | 경기 | (R159) 대기실 방장을 넘길 때 적는 파티 예약(JSON, 기한 = Steam 서버 시각). 새 대기실 방장이 이어받는다([HOST §4](HOST.md)) |
 | `epoch` | 경기 | 방장 번호. 시작 = 1, 방장이 바뀔 때마다 +1(`int.MaxValue`에서 멈춤). ~~가장 높은 번호가 이긴다~~ → (R295) 이 기록에서 시작해 다음 순번의 `claim`을 차례로 따른다([HOST §5](HOST.md)) |
 | `successors` | 경기 | 다음 방장 순서 `id,id,…`. 방장이 2초마다 갱신 |
@@ -188,6 +195,7 @@
 속성: `Online`, `Party`, `PartyLeader`, `PartyMode`, `Match`, `MatchMode`, `Host`, `IsHost`, `IsLeader`, `Busy`, `Searching`, `Started`, `PrivateRoom`, `Roster`, `PartyMembers`, `PartyBots`, `MaxPartyBots`, `RoomBots`, `Build`, `AllowPublicBots`, `BotsBlockPublicMatch`, `CanUseRoomBots`, `Status`, `Error`.
 방장 선정·이전([HOST](HOST.md)): `LocalFitness`(세션을 돌리는 쪽이 넣는 기계 점수), `CurrentFitness`, `FrameMs`, `Epoch`, `Note`(6초 알림: 방장 교체·빈자리 채움. R59 전 이름 `HostNote`), `ReportFrame(ms)`(매 프레임), `ReportHostSilence(s)`(매 프레임, 이동 계층), 이벤트 `HostChanged(이전, 다음)`.
 빈자리 채우기(§8): `JoiningLive`(시작한 경기에 들어와 자리를 기다리는 중), `EmptySeats`(지금 매칭에 내놓은 빈자리 수). R60: `PartyStillPlaying`(다른 파티원이 아직 경기 중), `WaitingForParty`(경기에서 먼저 나와 파티를 기다리는 중), `PartyPlayingMessage`. 채팅(§9, R61): `Chat`, `CanChat(channel)`, `Say(channel, text)`.
+(R533) 방장(관리, §10): `Manager`, `IsManager`, `CanStartGame`(방장에게만 참) · `StartGame()`, `CanGiveManager(id)` · `GiveManager(id)`, `CanKick(id)` · `Kick(id)`, `KickedMessage`, `MachineScore(id)`(개발 빌드의 입장 화면 표시용), 봇 도구(`AddRoomBot` · `FillRoomWithBots` · `ClearRoomBots` · `AddTestBot` · `RemoveTestBot`)도 방장의 것. 탈주 벌칙(§11): `LeavePenaltyOn`, `LoadLeaves` · `SaveLeaves`, `Desertions`, `PenaltySeconds`, `PenaltyNotice`, `WouldDesert`, `LeaveWarning`, `LeaveByChoice()`, `SawResult()`, `ClearLeavePenalty()`.
 
 ## 8. 빈자리 채우기 (R59, 2026-09-30)
 
@@ -238,3 +246,44 @@
 - **프로토콜은 v14 그대로.** 채팅을 모르는 빌드는 `CFC1|` 줄을 JSON으로 읽다 실패해 버릴 뿐이라 매칭·자리 요청에 해가 없다(그 빌드의 사람에게는 채팅이 안 보일 뿐). 그래도 같은 빌드끼리만 만나는 규칙(K5)은 그대로다.
 - **알고 있는 한계**: 팀 줄은 상대 팀 PC에도 도착한다(화면에만 안 보임). 고친 클라이언트는 읽을 수 있다. 막으려면 팀원에게만 P2P로 보내야 한다(나중 일). 받는 쪽 도배 제한도 없다(보내는 쪽 1초 제한만).
 - 공개 API: `Chat`(로그), `CanChat(channel)`, `Say(channel, text)` → ""(보냄 또는 보낼 것 없음) 또는 막힌 이유.
+
+## 10. 방장과 물리 담당, 양도와 강퇴 (R533, 2026-11-10)
+
+사용자 매칭 규칙 4번: "(지금 상태가 나은지 이 제안이 나은지 판단 후) 게임 시작, 강퇴 권한 등 게임 관리 권한이 있는 방장 PC와 제일 좋은 PC로서 물리연산을 담당하는 PC를 구분해서 선정한다. 관리 권한의 방장 PC는 해당 유저가 방장을 양도하거나 방을 나가면 다른 플레이어에게 이전된다. 물리 담당 PC는 방장 권한과는 별개로 방에 존재하는 유저에 변동이 있을 때마다 제일 좋은 PC(CPU, GPU 통합)가 물리 담당 PC가 된다. 물리 담당 PC도 마찬가지로 게임 중, 매칭 중 등 방에서 나가면 다음으로 좋은 PC를 보유한 유저에게 자동 이전 된다." → 판단: 제안이 낫다. 이유와 다르게 한 두 가지는 [DECISIONS P44](../Project/DECISIONS.md).
+
+| | 방장(관리) | 물리 담당 PC |
+|---|---|---|
+| 코드 | `SteamSession.Manager` · `IsManager`, 방 데이터 `manager` | `Host` · `IsHost`, 방 데이터 `host`, Steam 방 주인 |
+| 누가 | 방을 만든 사람 → 양도받은 사람 → 나가면 남은 사람 중 자리 번호가 가장 앞선 사람(같으면 백팀, 그다음 Steam ID). 봇은 안 된다 | 성능 점수 1등([HOST §3](HOST.md): CPU 벤치마크 × 그래픽 계수 × 코어 · 메모리, 핑 반영) |
+| 하는 일 | 게임 시작, 대기실 강퇴, 방장 양도, (개발 빌드 · 비공개 방) 봇 넣기 · 빼기 | 모든 캐릭터 계산, 방 데이터 쓰기, 자리 예약 장부, 빈자리 채우기 |
+| 바뀔 때 | 양도. 방장이 방에서 나감 · 튕김 · 자리를 잃음 | 대기실: 사람이 드나들 때마다 다시 고름(R159 · R294). 경기 중: 그 PC가 나가거나 응답이 없거나 계속 느릴 때만([HOST §5](HOST.md)) — 더 좋은 PC가 빈자리로 들어온 것만으로는 넘기지 않는다(P44) |
+| 화면 | 입장 화면 카드의 이름 아래 "방장", 경기 명단 "· 방장", 알림 "방장이 ○○ 님으로 바뀌었습니다" | 카드의 이름 아래 "물리 담당", 경기 명단 "· 물리 담당", F3 칩 "물리 담당", 알림 "물리 담당 PC가 ○○ 님으로 바뀌었어요" |
+
+- **방 데이터는 Steam 방 주인만 쓸 수 있고 주인은 물리 담당 PC다.** 그래서 방장이 물리 담당이 아니면 방장의 일은 자리 예약(§4)처럼 **방 채팅 요청**으로 간다: `{"kind":"manage","op":"start|give|kick|fill|addbot|clearbots|addtest|removetest","target":<Steam ID>,"team":0|1,"seq":n}`. 물리 담당 PC는 **방 데이터의 `manager`가 보낸 것만**, 번호(`seq`)마다 한 번만 실행한다(`Manage`). 방장이 곧 물리 담당 PC면 요청 없이 바로 한다.
+- **요청은 될 때까지 다시 보낸다**(`Ask` · `SendAsk`, 1초마다): 시작은 12초 동안, 나머지는 2.5초 동안. 물리 담당 PC가 막 바뀌어 아직 방 주인이 아니거나 넘겨받은 예약을 읽기 전이면, 또는 들어온 사람이 자리를 받는 중이면 그 요청은 실행하지 않고 두었다가 다음에 온 같은 번호를 실행한다 — 물리 담당이 바뀌는 순간에 '게임 시작'을 눌러도 사라지지 않는다. 같은 일을 또 누르면 새 요청이 아니라 보내는 시간만 늘어난다(봇 한 명 추가만 누른 만큼).
+- **방장 화면이 읽는 값은 방 데이터**: 인원 = 6 − `free0` · `free1`, 자리를 받는 중인 사람 = `seating`, 더미 수 = 명단. 자리 예약 장부(`reservations`)는 물리 담당 PC에만 있다([PITFALLS 79](../Environment/PITFALLS.md)). `CanStartGame`은 방장에게만 참이고(`SeesRoomReady`), 물리 담당 PC가 요청을 받으면 자기 장부로 다시 본다(`HostCanStart`).
+- **방장 이어받기**: 물리 담당 PC가 폴링마다 `manager`가 방에 있고 자리가 있는지 본다(`KeepManager`). 없으면 다음 사람(`NextManager`)을 쓴다. 방장이 스스로 나갈 때 자기가 방 주인이면 나가면서 쓴다(`LeaveManagerBehind`). 모든 PC는 `FollowManager`로 읽고, 바뀌면 6초 알림("방장이 ○○ 님으로 바뀌었습니다." / "이 PC가 방장이 되었습니다. 게임 시작과 방 관리를 맡아요.")과 로그 `방장(관리) 바뀜`.
+- **양도**(`GiveManager`): 방에 앉아 있는 사람에게. 입장 화면 카드의 [양도] → 금색 "확인" → 3초 안에 한 번 더([UI §17](../Architecture/UI.md)).
+- **강퇴**(`Kick`): **시작 전 대기실에서만.** 그 사람이 함께 온 파티(자리 예약 묶음)를 통째로 내보내고 `kicked`에 적는다: 그 방의 자리 요청이 거절되고(방 번호로 들어와도), 매칭 검색은 그 방을 건너뛰어 다른 방이나 새 방으로 간다. 내보내진 PC는 `kicked`에서 자기를 보고 방을 나가 "방장이 방에서 내보냈습니다."를 띄운다(파티원도 각자). 방장 자기 파티와 봇은 대상이 아니다(파티원은 파티에서 내보내고, 봇은 봇 버튼으로). 물리 담당 PC도 내보낼 수 있다(그 PC가 다음 PC에 방을 넘기고 나간다). 경기 중 강퇴는 없다 — 방장이 상대 팀을 내보낼 수 있어서.
+- **한계**: 물리 담당 PC가 고친 클라이언트면 방장의 요청을 무시할 수 있다(전에도 그 PC가 방장이었으니 새 위험은 아니다). `kicked`는 그 방만 막는다(다음에 생긴 방에서는 다시 만날 수 있다). 방장이 말없이 사라지면(크래시) 물리 담당 PC가 다음 폴링에서 다음 방장을 정한다. 물리 담당 PC가 말없이 사라진 **대기실**은 방장이 남아 있어도 예전 규칙대로 끝난다([HOST §8](HOST.md)).
+- 모의 테스트(`SessionFlowTests`): `The room's manager (rule 4)…`, `A manager on another PC sees the players still being seated…`, `The manager puts a player out of the waiting room…`, `A manager that crashes…`, 그리고 '시작은 방장이'로 고친 기존 9개(물리 담당이 바뀌는 중에 누른 시작이 방 주인이 된 뒤 실행되는 46번 포함).
+
+## 11. 탈주 벌칙 (R533, 2026-11-10)
+
+사용자 매칭 규칙 3번: "탈주를 한 플레이어는 2번 까지 기회가 있으며 3번 부터 매칭 10분 정지 4번 30분 정지 5번 1시간 정지이며 24시간이 지나면 초기화 된다(빌드용, 에디터는 미적용)". 규칙은 `Core/LeavePenalty.cs`(순수 C#), 세고 막는 것은 `SteamSession`, 저장과 켜기는 `NetworkRuntime`. 무엇을 탈주로 볼지의 결정과 이유는 [DECISIONS P45](../Project/DECISIONS.md).
+
+| | |
+|---|---|
+| 탈주로 세는 것 | **시작한 공개 경기**를 **끝나기 전에 스스로** 나감: Esc 메뉴의 게임 나가기(`LeaveByChoice`), 경기 중 게임 종료(창 닫기 · Alt+F4 → `Dispose`). 그때 내가 자리에 앉아 있고 다른 사람이 아직 그 경기에 있어야 한다(`WouldDesert`) |
+| 세지 않는 것 | 끝난 경기(방의 `ended`, 또는 이 PC가 결과를 본 뒤 `SawResult`), 비공개 방, 시작 전 대기실(매칭 취소), 연결 끊김 · 오류 · 물리 담당 PC가 사라져 나가짐(`Abort` · `Fail` · 링크가 부른 `Cancel`), 강제 종료 · 크래시, 자리를 받기 전, 사람이 나뿐인 경기, Unity 에디터 |
+| 횟수 | 탈주마다 일어난 때부터 24시간 동안 센다(`LeavePenalty.Window`, 굴러가는 24시간). 최근 16개까지 기억 |
+| 정지 | 24시간 안의 1 · 2번째 = 없음(`Free` 2), 3번째 = 10분, 4번째 = 30분, 5번째부터 = 1시간(`BanSeconds`). 정지는 그 탈주 시각부터, 여러 개가 겹치면 가장 늦게 끝나는 것(`BannedUntil`) |
+| 정지 중 막는 것 | 공개 매칭(`FindMatch`), 방 번호로 공개 방에 들어가기. 비공개 방(테스트 · 친구 방)은 된다. 파티원이 정지 중이면 파티장의 공개 매칭도 막힌다(파티 멤버 데이터 `ban`) |
+| 시계 | Steam 서버 시각(`ServerNow`) — PC 시계를 돌려도 그대로 |
+| 저장 | PlayerPrefs `ChessFight.Leaves.<SteamID>`(탈주 시각 목록 `t,t,…`). 서버가 없어 이 PC에만 있다 |
+| 켜는 곳 | `NetworkRuntime`: `Session.LeavePenaltyOn = !Application.isEditor`. 꺼져 있으면 세지도 막지도 않는다 |
+
+- 화면([UI §17](../Architecture/UI.md)): 로비 '게임 시작' 아래 빨간 줄(`PenaltyNotice` → `HudModel.PlayNote`) "탈주 벌칙으로 매칭이 정지되어 있어요. 9:41 남음 (24시간 안에 3번 나감)" 또는 "파티원 ○○ 님이 탈주 벌칙으로 매칭 정지 중이에요. 29:05 남음" — 그동안 버튼이 꺼진다. Esc 메뉴의 나가기 경고 첫 줄(`LeaveWarning` → `GameMenu.OnlineCost`) "지금 나가면 탈주 n회로 기록됩니다. 24시간 안에 3회부터 매칭이 정지됩니다." / "지금 나가면 24시간 안의 3번째 탈주라 매칭이 10분 동안 정지됩니다." 나간 뒤 로비의 오류 줄 "경기 도중 나가 탈주 n회로 기록됐어요…" / "…탈주 3회째예요. 매칭이 10분 동안 정지됩니다."
+- 개발 빌드: 로비에서 **F9**로 이 PC의 기록을 지운다(`ClearLeavePenalty`, 규칙 자체를 시험하려고).
+- 한계: 강제 종료(작업 관리자 · 크래시 · 전원)는 세지 않는다 — 게임이 멈추거나 튕긴 것과 구별할 수 없어서. PlayerPrefs를 지우거나 다른 PC에서 켜면 0부터다. 실제로 남용이 보이면 '경기 중' 표식을 저장해 두었다가 다음 실행 때 세는 방법이 있다(P45).
+- 테스트: Core `LeavePenalty`(횟수 · 정지 시간 · 24시간 · 저장 글), 모의 세션 `Deserters (rule 3)…`, `A party does not search while one of its members' matchmaking is stopped…`, `What is not a desertion…`.

@@ -101,6 +101,13 @@ namespace ChessFight.Game
             Session.LocalName = PlayerProfile.Name;
             // R502: the host writes the shared start ("go") on the same clock every PC starts by.
             Session.SharedClock = clock.Now;
+            // R533 (user 11-10, rule 3: "빌드용, 에디터는 미적용"): desertions are counted and matchmaking stopped in builds
+            // only; the list is kept between runs, one for each Steam account on this PC.
+            Session.LeavePenaltyOn = !Application.isEditor;
+            // Every online match's Esc menu (this one's, Sword Fight's own) says what leaving would cost just now.
+            GameMenu.OnlineCost = () => Session != null ? Session.LeaveWarning : "";
+            Session.LoadLeaves = () => PlayerPrefs.GetString(LeavesKey, "");
+            Session.SaveLeaves = text => { PlayerPrefs.SetString(LeavesKey, text); PlayerPrefs.Save(); };
             PlayerProfile.Changed += OnNameChanged;
             Session.Initialize();
             if (Session.Online) Motion = new SteamMotion(Session);
@@ -144,6 +151,13 @@ namespace ChessFight.Game
             Attach(SceneManager.GetActiveScene());
         }
 
+        string LeavesKey => "ChessFight.Leaves." + (Session != null ? Session.Self : 0);
+
+        // The in-game menu's 나가기 in a network match (R533): the player's own choice, a desertion while the match is
+        // under way; the menu's warning says first what this one would cost.
+        GameMenu MatchMenu(GameObject host) => GameMenu.Use(host, () => Session.LeaveByChoice(), true);
+        public static GameMenu UseMatchMenu(GameObject host) => Instance != null ? Instance.MatchMenu(host) : null;
+
         void OnNameChanged()
         {
             if (Session != null) Session.LocalName = PlayerProfile.Name;
@@ -175,7 +189,7 @@ namespace ChessFight.Game
             // instead of its offline playtest.
             if (inMatchScene && scene.name == matchScene && !customSimulation) Host(scene).AddComponent<MatchSceneView>();
             // A match scene without a menu of its own: Esc is the in-game menu, and leaving it leaves the match.
-            if (inMatchScene && scene.name == matchScene && escapeLeaves) GameMenu.Use(Host(scene), () => Session.Cancel(), true);
+            if (inMatchScene && scene.name == matchScene && escapeLeaves) MatchMenu(Host(scene));
         }
 
         // The scene's GameSceneConfig object when it has one, so the controller
@@ -201,7 +215,11 @@ namespace ChessFight.Game
             if (fitness > Session.LocalFitness)
             {
                 Session.LocalFitness = fitness;
-                Debug.Log($"[ChessFight] 이 PC 성능 점수: {fitness} (벤치마크 {HostFitnessProbe.BenchMs:0.0}ms · 코어 {SystemInfo.processorCount} · 메모리 {SystemInfo.systemMemorySize}MB{(Application.isEditor ? " · 에디터" : "")})");
+                // R533: the graphics card's time and what it leaves of the score (HostFitness.GpuFactor).
+                double gpu = HostFitnessProbe.GpuMs;
+                Debug.Log($"[ChessFight] 이 PC 성능 점수: {fitness} (벤치마크 {HostFitnessProbe.BenchMs:0.0}ms · 코어 {SystemInfo.processorCount} · 메모리 {SystemInfo.systemMemorySize}MB" +
+                          (gpu > 0 ? $" · 그래픽 {gpu:0.0}ms ×{HostFitness.GpuFactor(gpu):0.00} {SystemInfo.graphicsDeviceName}" : " · 그래픽 측정 없음") +
+                          $"{(Application.isEditor ? " · 에디터" : "")})");
             }
             Session.ReportFrame(Time.unscaledDeltaTime * 1000f);
             Session.Tick();
@@ -383,7 +401,7 @@ namespace ChessFight.Game
         // Shared by the lobby and the match HUD.
         public static string MatchRoster(SteamSession session) =>
             string.Join("\n", session.Roster.Values.OrderBy(p => p.Team).ThenBy(p => p.Slot)
-                .Select(p => $"{(p.Team == 0 ? "청팀" : "주황팀")}  {session.Name(p.Id)}{(p.Id == session.Self ? " (나)" : "")}{(p.Id == session.Host ? " · 방장" : "")}"));
+                .Select(p => $"{(p.Team == 0 ? "청팀" : "주황팀")}  {session.Name(p.Id)}{(p.Id == session.Self ? " (나)" : "")}{(p.Id == session.Manager ? " · 방장" : "")}{(p.Id == session.Host ? " · 물리 담당" : "")}"));
 
         void OnDestroy()
         {
@@ -400,6 +418,7 @@ namespace ChessFight.Game
             VoiceBoard.Running = false;
             SettingsWindow.VoiceLevel = null;
             SettingsWindow.VoiceProblem = null;
+            GameMenu.OnlineCost = null;
             // Motion must go before the session: it unregisters from SessionChanged.
             Motion?.Dispose();
             Session?.Dispose();
