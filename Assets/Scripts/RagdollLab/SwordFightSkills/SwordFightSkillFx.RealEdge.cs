@@ -166,6 +166,7 @@ namespace ChessFight.RagdollLab
         /// (it was a pulsing gold band and a gold ring round them), brighter as the moment comes.</summary>
         void RealQueenLine(SwordFightSkills s, SwordFightEdgeParams X)
         {
+            if (previewHidden) return;   // R535: not on the other side's screen
             var owner = s;
             kit.Keep(s, "queen real line", () =>
             {

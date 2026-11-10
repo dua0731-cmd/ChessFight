@@ -652,6 +652,7 @@ namespace ChessFight.RagdollLab
         /// line an edge skill draws to say who or where: its target, its landing).</summary>
         void RealCircle(object owner, string key, System.Func<Vector3?> centre, float radius, float opacity = 0.4f)
         {
+            if (previewHidden) return;   // R535: not on the other side's screen
             kit.Keep(owner, key, () =>
             {
                 var fx = new Kit.Fx();

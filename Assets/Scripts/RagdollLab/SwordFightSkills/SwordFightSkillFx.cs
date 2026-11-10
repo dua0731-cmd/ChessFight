@@ -73,6 +73,7 @@ namespace ChessFight.RagdollLab
             if (game == null) game = FindFirstObjectByType<SwordFightGame>();
             kit = new Kit(new GameObject("Sword Fight skill effects").transform, () => Viewer, () => Eye);
             kit.NoPuffs = true;
+            SetUpTeamTint();   // R534: online, the other side's effects red (SwordFightSkillFx.TeamTint.cs)
             // 10-28: the puffs stay off; the rook F's dust (DustSpread) is its own real dust (the kit's would also take the
             // knockdown's floor ring away).
             jetDust = new SkillDust(kit.root);
@@ -211,6 +212,7 @@ namespace ChessFight.RagdollLab
             StepOrbit(cam);
             StepView(cam);
             TrackTips();
+            ApplyTeamTint();   // last: after every effect has set its colours this frame
         }
 
         // ---------------------------------------------------------------- the view: a zoom kick and a colour edge
@@ -244,7 +246,7 @@ namespace ChessFight.RagdollLab
         void Tint(RagdollPawn a, RagdollPawn b, Color c, float alpha, int frames)
         {
             if (!Sees(a, b)) return;
-            tintColor = c;
+            tintColor = SideTint(c);   // R534: a foe's skill washes my view red
             tintAmp = alpha;
             tintLeft = tintTotal = frames * F;
         }
@@ -548,6 +550,7 @@ namespace ChessFight.RagdollLab
         /// stops asking they flash white for two frames and are gone in six.</summary>
         void Warn(SwordFightSkills owner, string key, Warning w)
         {
+            if (previewHidden) return;   // R535: not on the other side's screen
             string id = key + "#" + w.marks.Count;
             warnings[(owner, id)] = w;
             var caster = owner.Pawn;
@@ -624,22 +627,43 @@ namespace ChessFight.RagdollLab
             foreach (var s in SwordFightSkills.All)
             {
                 if (s == null || s.Pawn == null || s.Fighter == null || !s.Fighter.Alive) continue;
-                BishopDrawWatch(s);   // R194: his second sword forming as he calls the X cut (every screen)
-                EdgeMarks(s, s.Pawn == Viewer);   // the edge skills (R103): offline only the player's own can be used
-                bool mine = s.Pawn == Viewer || ViewOverride != null;
-                if (s.Stage == SfStage.Aim && !mine) continue;   // the aim is the owner's own
-                float aimAlpha = s.Stage == SfStage.Aim ? 0.55f : 1f;
-                switch (s.Piece)
+                int from = watchFrom = Owned(s.Pawn);   // R534: his marks are his side's
+                previewHidden = PreviewHidden(s);   // R535: his aim and windup previews not on the other side's screen
+                try { WatchOne(s, S); }
+                finally
                 {
-                    case PieceKind.King: KingMarks(s, S); break;
-                    case PieceKind.Queen: QueenMarks(s, S, aimAlpha); break;
-                    case PieceKind.Rook: RookMarks(s, S, aimAlpha); break;
-                    case PieceKind.Bishop: BishopMarks(s, S, aimAlpha); break;
-                    case PieceKind.Knight: KnightMarks(s, S, aimAlpha); break;
+                    EndOwned(from);
+                    previewHidden = false;
                 }
-                if (s.SlowLeft > 0f && s.PinLeft <= 0f && !Real(PieceKind.Bishop)) SlowRing(s);   // pinned, the hands say it
-                if (s.PinLeft > 0f) { if (Real(PieceKind.Bishop)) RealPin(s); else PinMarks(s); }
             }
+        }
+
+        int watchFrom;
+
+        void WatchOne(SwordFightSkills s, SwordFightSkillParams S)
+        {
+            BishopDrawWatch(s);   // R194: his second sword forming as he calls the X cut (every screen)
+            EdgeMarks(s, s.Pawn == Viewer);   // the edge skills (R103): offline only the player's own can be used
+            bool mine = s.Pawn == Viewer || ViewOverride != null;
+            if (s.Stage == SfStage.Aim && !mine) return;   // the aim is the owner's own
+            float aimAlpha = s.Stage == SfStage.Aim ? 0.55f : 1f;
+            switch (s.Piece)
+            {
+                case PieceKind.King: KingMarks(s, S); break;
+                case PieceKind.Queen: QueenMarks(s, S, aimAlpha); break;
+                case PieceKind.Rook: RookMarks(s, S, aimAlpha); break;
+                case PieceKind.Bishop: BishopMarks(s, S, aimAlpha); break;
+                case PieceKind.Knight: KnightMarks(s, S, aimAlpha); break;
+            }
+            if (s.SlowLeft <= 0f && s.PinLeft <= 0f) return;
+            // Pinned or slowed: the hands on him are the bishop's who pinned him (R534: in that bishop's side's colours).
+            kit.ClaimFrom(watchFrom);
+            int pinFrom = kit.root.childCount;
+            if (pinnedBy.TryGetValue(s.Pawn, out var pin) && pin.by != null && pin.by.Pawn != null) kit.Owner = pin.by.Pawn;
+            if (s.SlowLeft > 0f && s.PinLeft <= 0f && !Real(PieceKind.Bishop)) SlowRing(s);   // pinned, the hands say it
+            if (s.PinLeft > 0f) { if (Real(PieceKind.Bishop)) RealPin(s); else PinMarks(s); }
+            kit.ClaimFrom(pinFrom);
+            kit.Owner = s.Pawn;
         }
 
         float Charge(SwordFightSkills s, float windup) => s.Stage == SfStage.Aim ? 0.3f : Kit.Charge(s.StageTime, windup);
@@ -1395,6 +1419,14 @@ namespace ChessFight.RagdollLab
         void OnFx(SfFxEvent e)
         {
             if (!effects || kit == null || e.by == null) return;
+            // R534: all it draws is the skill's own piece's (a hit on someone else included).
+            int from = Owned(e.by.Pawn);
+            try { DrawFx(e); }
+            finally { EndOwned(from); }
+        }
+
+        void DrawFx(SfFxEvent e)
+        {
             stopBy = e.by.Pawn;
             stopTarget = e.target;
             if (OnEdgeFx(e)) return;

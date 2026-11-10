@@ -228,7 +228,7 @@ namespace ChessFight.RagdollLab
             var set = VfxSet.Load(piece);
             if (set == null) return null;
             var facing = forward.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(forward) : Quaternion.identity;
-            return set.Play(key, at, facing, kit.root);
+            return Claimed(set.Play(key, at, facing, kit.root));   // R534: claimed now, as it may be hung on a body next
         }
     }
 }
