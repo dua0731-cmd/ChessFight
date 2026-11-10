@@ -1,0 +1,74 @@
+{
+ "blend": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/pawn_lowpoly/Pawn_Rigged.blend",
+ "out": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/work/methods2",
+ "team": "white",
+ "atlas": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/atlas/eyes_oval_white.png",
+ "height": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/atlas/eyes_oval_white_height.png",
+ "eye": {
+  "az": 24.6,
+  "el": -15.5,
+  "w": 0.0661,
+  "roll": 3.0
+ },
+ "blush": {
+  "az": 41.9,
+  "el": -34.5,
+  "d": 0.0718,
+  "aspect": 0.878,
+  "colour": [
+   0.96,
+   0.6,
+   0.54
+  ],
+  "alpha": 1.0
+ },
+ "methods": [
+  "flat",
+  "lens",
+  "bevel",
+  "lensbevel"
+ ],
+ "bump": 0.0015,
+ "samples": 64,
+ "views": [
+  {
+   "name": "front",
+   "turn": 0,
+   "el": -5.13,
+   "target": [
+    0,
+    0,
+    0.797
+   ],
+   "dist": 4.217,
+   "lens": 300,
+   "res": 1000
+  },
+  {
+   "name": "q34",
+   "turn": 33,
+   "el": -5.13,
+   "target": [
+    0,
+    0,
+    0.797
+   ],
+   "dist": 4.217,
+   "lens": 300,
+   "res": 1000
+  },
+  {
+   "name": "side",
+   "turn": 77,
+   "el": -5.13,
+   "target": [
+    0,
+    0,
+    0.797
+   ],
+   "dist": 4.217,
+   "lens": 300,
+   "res": 1000
+  }
+ ]
+}

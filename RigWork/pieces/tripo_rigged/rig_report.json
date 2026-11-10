@@ -1,0 +1,41 @@
+{
+ "rook": {
+  "vertices": 3254,
+  "faces": 3602,
+  "stub_root_moved": 0,
+  "top": 1.132,
+  "chain": [
+   0.256,
+   0.3,
+   0.34,
+   0.38,
+   0.42
+  ]
+ },
+ "knight": {
+  "vertices": 4205,
+  "faces": 4630,
+  "stub_root_moved": 0,
+  "top": 1.2922,
+  "chain": [
+   0.256,
+   0.327,
+   0.409,
+   0.503,
+   0.643
+  ]
+ },
+ "bishop": {
+  "vertices": 10196,
+  "faces": 11782,
+  "stub_root_moved": 56,
+  "top": 1.447,
+  "chain": [
+   0.256,
+   0.327,
+   0.409,
+   0.503,
+   0.643
+  ]
+ }
+}

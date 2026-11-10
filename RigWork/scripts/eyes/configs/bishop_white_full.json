@@ -1,0 +1,65 @@
+{
+ "body": "C:/Users/trews/Downloads/bishop.fbx",
+ "out": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/work/bishop_white_final",
+ "team": "white",
+ "style": "diamond",
+ "atlas": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/atlas/eyes_diamond_white.png",
+ "height": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/eyes/atlas/eyes_diamond_white_height.png",
+ "eye": {
+  "az": 28.75,
+  "z": 0.894,
+  "w": 0.0663,
+  "roll": 0
+ },
+ "blush": {
+  "az": 47.6,
+  "z": 0.837,
+  "d": 0.0612,
+  "aspect": 0.94,
+  "colour": [
+   0.9,
+   0.48,
+   0.46
+  ],
+  "glow": 0.15
+ },
+ "methods": [
+  "lensbevel"
+ ],
+ "bump": 0.0015,
+ "samples": 48,
+ "eye_spec": 0.25,
+ "eye_rough": 0.18,
+ "views": [
+  {
+   "name": "full",
+   "turn": 0,
+   "el": 0,
+   "target": [
+    0,
+    0,
+    0.78
+   ],
+   "dist": 5.2,
+   "lens": 100,
+   "res": 1254
+  },
+  {
+   "name": "q34",
+   "turn": 33,
+   "el": 8,
+   "target": [
+    0,
+    0,
+    0.894
+   ],
+   "dist": 4.2,
+   "lens": 280,
+   "res": 900
+  }
+ ],
+ "lathe_sides": 0,
+ "body_blend": "C:/Users/trews/OneDrive/문서/GitHub/ChessFight/RigWork/pieces/models/Bishop_LowPoly.blend",
+ "body_object": "Bishop",
+ "smooth": "mesh"
+}
