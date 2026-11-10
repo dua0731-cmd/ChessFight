@@ -198,6 +198,7 @@ namespace ChessFight.Network
         // R525 (user 11-09 build test, 3: "1대1로도 테스트 가능하도록 임시 조치"): a development build's host may start a public
         // room from one a side (the sides still even); a release build keeps three (TeamReservations.MinTeamToStart).
         // The same switch that lets development builds take bots into public rooms (M6), so nothing has to be undone.
+        // R540: the game passes that switch as true in every build for now (NetworkRuntime.TestRulesInEveryBuild).
         public int MinTeamToStart => AllowPublicBots ? 1 : TeamReservations.MinTeamToStart;
         // Seats reserved a team in the waiting room, players still on their way included. The host counts its
         // reservations; everyone else reads what the room says is left of six (free0 / free1) - before R533 a PC

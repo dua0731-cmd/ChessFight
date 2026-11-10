@@ -147,10 +147,10 @@ namespace ChessFight.Game
             if (NameChange.Showing && Matching) NameChange.Abort();
             PollFriends(now);
             // R533: a development build can wipe this player's desertions (to test the matchmaking stop itself).
-            if (Debug.isDebugBuild && session.Online && LegacyKeys.Down(KeyCode.F9) && !ChatBox.KeysHeld)
+            if (NetworkRuntime.TestRules && session.Online && LegacyKeys.Down(KeyCode.F9) && !ChatBox.KeysHeld)
             {
                 session.ClearLeavePenalty();
-                hud.ShowToast("개발 빌드: 탈주 기록을 지웠어요");
+                hud.ShowToast("시험 규칙: 탈주 기록을 지웠어요");
                 refreshAt = 0;
             }
             if (now < refreshAt) return;
@@ -271,7 +271,7 @@ namespace ChessFight.Game
                 Details = $"Steam: {(session.Online ? "연결됨" : "연결 안 됨 - Steam 실행 후 다시 연결")}\n" +
                           Line(motion?.ConnectionStatus) + Line(motion?.QualityLine) +
                           $"입력: {runtime.Controls?.DisplayName}\n버전 {session.Build}" +
-                          (Debug.isDebugBuild ? "\nF8 지연 시뮬레이터 · F9 탈주 기록 지우기" : ""),
+                          (Debug.isDebugBuild ? "\nF8 지연 시뮬레이터 · F9 탈주 기록 지우기" : NetworkRuntime.TestRules ? "\nF9 탈주 기록 지우기" : ""),
                 Version = $"v{session.Build} · STEAM",
                 FriendsOnline = friendsOnline,
 
@@ -321,7 +321,7 @@ namespace ChessFight.Game
                 MatchTimer = Clock(now),
                 MatchNote = waiting ? "먼저 나왔어요 · 혼자 하려면 파티 나가기"
                           : session.JoiningLive ? "내 자리와 체크포인트로 돌아가요"
-                          : dummyRoom ? "12명 없이 시작 가능" : session.AllowPublicBots ? "개발 빌드 · 봇 허용" : "",
+                          : dummyRoom ? "12명 없이 시작 가능" : session.AllowPublicBots ? "시험 규칙 · 1 대 1부터 · 봇 허용" : "",
                 OurTeam = ourTeam, OursFilled = ours, TheirsFilled = theirs,
                 ShowRoomTools = inRoom && (session.PrivateRoom || session.CanUseRoomBots),
                 RoomCode = "방 번호  " + Spaced(session.Match),
