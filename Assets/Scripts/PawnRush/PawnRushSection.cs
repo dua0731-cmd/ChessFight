@@ -114,7 +114,12 @@ namespace ChessFight.PawnRush
         {
             started = true;
             Apply();
+            // R529: the section's sounds are heard only inside it (SectionSoundGate).
+            SectionSoundGate.GateAll(transform);
         }
+
+        void OnEnable() => SectionSoundGate.Register(this);
+        void OnDisable() => SectionSoundGate.Unregister(this);
 
         void Apply()
         {

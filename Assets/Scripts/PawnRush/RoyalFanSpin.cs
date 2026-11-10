@@ -7,7 +7,7 @@ namespace ChessFight.PawnRush
     // vent - idling slowly, spinning up through the warning, at full speed while it blows, running down after. About the
     // vent's front axis through the rotor's origin (the hub's centre). A picture only, like the hub chandelier's sway:
     // nothing touches the blades (the vent's housing collider is the blockout's), so it reads Time.deltaTime.
-    public sealed class RoyalFanSpin : MonoBehaviour
+    public sealed partial class RoyalFanSpin : MonoBehaviour
     {
         [SerializeField] Transform rotor;
         [SerializeField] AirVent vent;
@@ -43,6 +43,7 @@ namespace ChessFight.PawnRush
             speed = Mathf.Lerp(speed, target, 1f - Mathf.Exp(-rate * Time.deltaTime));
             angle = Mathf.Repeat(angle + speed * Time.deltaTime, 360f);
             rotor.localRotation = Quaternion.AngleAxis(angle, axis) * rest;
+            Sound(state);
         }
     }
 }

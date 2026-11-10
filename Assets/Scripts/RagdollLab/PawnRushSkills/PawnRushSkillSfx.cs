@@ -343,6 +343,8 @@ namespace ChessFight.RagdollLab
             lastFrame[key] = Time.frameCount;
             Count[name] = Count.TryGetValue(name, out int n) ? n + 1 : 1;
             float gain = Mathf.Clamp01(volume * level * (Level.TryGetValue(name, out float l) ? l : 1f) * ChessFight.Game.GameSettings.Effects);
+            // R529: in a course section, heard only inside it and quieter with distance (1 anywhere else)
+            gain *= ChessFight.Gameplay.CourseSoundPlace.Gain(at);
             float pan = Pan(at);
             var a = FreeVoice();
             a.Stop();

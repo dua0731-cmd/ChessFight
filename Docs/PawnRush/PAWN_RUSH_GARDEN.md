@@ -1,5 +1,7 @@
 # 폰 러쉬 왕실 수로 정원 — 시험 씬 구역 G (R263)
 
+> **R530(11-09):** 효과음 시작 — 비트 1 분수 광장: 회전 막대 축 · 휙 · 쿵(`GardenSpinBarSound`), 분수 6개 · 해자 물결(`GardenPlazaSound`), ElevenLabs → `plaza_sounds.py` → `Resources/PawnRushGardenSfx`. 전체 목록과 진행은 [정원 효과음](PAWN_RUSH_GARDEN_SFX.md). v160.
+
 > **R491(11-06):** 나무 = `tree_asset.py`(source/tree_cone.glb · tree_round.glb → TreeAsset_v1.blend, 줄기 · 이끼 · 잎 2색 · 새로 만든 꽃) → `trees_sample.py`(테라스: 다트, 둑: 3~4개 숲, 성벽 · 탑 · 코스 피함) → export GardenTrees(손작업 후처리 없음). Unity `Concept` 조각 `GardenTrees`(덮기 · 충돌 없음). v159.
 
 > **R490(11-06):** 성문 탑 판 옆 틈: 판 뒤에 몸통 속으로 마개(`PLUG_X` · `PLUG_BACK`, `gate_arch_asset.py`). v158.

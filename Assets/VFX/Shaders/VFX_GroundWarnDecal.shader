@@ -12,7 +12,8 @@
 //   the rim           a bright line with a glow outside it and a thin inner ring (_InnerRing)
 //   the ticks         _Ticks round the rim, lit clockwise from the front as _Sweep goes 0 -> 1 (a countdown)
 //   the landing mark  a ring and an X where the piece comes down (_Mark)
-// _Urgency blinks the rim, ticks and mark; _Fade fades it all. VfxGroundWarn sets _Fill, _Sweep, _Urgency, _Fade, _Age
+// _Urgency blinks the rim, ticks and mark; _Strike turns it all red and floods the disc (R534: the charge is done, it
+// is coming down); _Fade fades it all. VfxGroundWarn sets _Fill, _Sweep, _Urgency, _Fade, _Age
 // (seconds, the blink's clock) and _Radius / _Margin (the box is _Radius * _Margin each way) per renderer.
 Shader "ChessFight/VFX/Ground Warn Decal"
 {
@@ -50,6 +51,10 @@ Shader "ChessFight/VFX/Ground Warn Decal"
         _Fill ("Fill", Range(0, 1)) = 0.5
         _Sweep ("Ticks lit", Range(0, 1)) = 0.5
         _Urgency ("Urgency", Range(0, 1)) = 0
+        [HDR] _StrikeColor ("Glow color once it strikes (HDR)", Color) = (1.8, 0.05, 0.04, 1)
+        [HDR] _StrikeHot ("Hot core color once it strikes (HDR)", Color) = (1.6, 0.32, 0.26, 1)
+        _StrikeFlood ("Red flood over the disc once it strikes", Range(0, 1)) = 0.45
+        _Strike ("Strike", Range(0, 1)) = 0
         _Fade ("Fade", Range(0, 1)) = 1
         _Age ("Age (s)", Float) = 0
     }
@@ -105,6 +110,10 @@ Shader "ChessFight/VFX/Ground Warn Decal"
                 half _Fill;
                 half _Sweep;
                 half _Urgency;
+                half4 _StrikeColor;
+                half4 _StrikeHot;
+                half _StrikeFlood;
+                half _Strike;
                 half _Fade;
                 float _Age;
             CBUFFER_END
@@ -173,9 +182,13 @@ Shader "ChessFight/VFX/Ground Warn Decal"
                 half mark = Line(r - _Mark, _MarkWidth)
                           + Line(min(abs(diagonal.x), abs(diagonal.y)), _MarkWidth) * step(r, _Mark * 0.72);
 
-                half3 glow = _Color.rgb * (rim * _RimLight * blink + rimGlow * 0.6 + inner * _InnerLight
+                // R534 (승규 11-09 "차징이 다 완료돼서 떨어질 때 빨간색으로 뜨게"): red once it strikes.
+                half3 glowColor = lerp(_Color.rgb, _StrikeColor.rgb, _Strike);
+                half3 hotColor = lerp(_HotColor.rgb, _StrikeHot.rgb, _Strike);
+                half3 glow = glowColor * (rim * _RimLight * blink + rimGlow * 0.6 + inner * _InnerLight
                                          + ticks * _TickLight * blink + trail * _TrailLight + checker * _CheckerLight)
-                           + _HotColor.rgb * (front * _FrontLight + rim * 0.5 * blink + saturate(mark) * _MarkLight * blink);
+                           + hotColor * (front * _FrontLight + rim * 0.5 * blink + saturate(mark) * _MarkLight * blink)
+                           + _StrikeColor.rgb * (_Strike * _StrikeFlood * inDisc);
                 half shade = _Shade.a * inDisc * lerp(_IdleShade, _FillShade, filled);
 
                 half mask = surface * _Fade;

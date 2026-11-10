@@ -20,7 +20,7 @@ namespace ChessFight.PawnRush
     // authority's (ObstacleClock.Authority): inside 2.5 m a pawn is knocked flat (12 + up 4), out to 4.5 m it
     // staggers (7 + up 2). The king statue shields what is behind it, like the falling piece's cover. The
     // broken pieces lie 1.5 s and touch nothing.
-    public sealed class ChandelierRain : MonoBehaviour, ISectionPart
+    public sealed partial class ChandelierRain : MonoBehaviour, ISectionPart
     {
         [Header("Where (section frame)")]
         [SerializeField] Vector2 areaMin = new Vector2(-13f, 54f);
@@ -75,6 +75,9 @@ namespace ChessFight.PawnRush
             // centre lies over the floor once it is down.
             public bool[] body;
             public float[] lift;
+            // R533: its warning and break sounds (ChandelierRain.Sound.cs) and which drop each last played for.
+            public AudioSource warnVoice, breakVoice;
+            public long warnedFor = long.MinValue, brokeFor = long.MinValue;
         }
 
         // R340: the bounce on the floor, snappier than real gravity so it reads from the play camera.
@@ -145,6 +148,7 @@ namespace ChessFight.PawnRush
                     live[d.Serial] = view;
                 }
                 Draw(view, d, (float)age);
+                Sound(view, d, (float)age);   // R533: the warning tick and the crash (ChandelierRain.Sound.cs)
                 // The hit, once, the step the impact time is crossed (never for impacts before this PC started).
                 double impact = d.Time + warning + fall;
                 if (ObstacleClock.Authority && !double.IsNaN(lastClock) && impact > lastClock && impact <= now) Strike(d);
@@ -480,6 +484,8 @@ namespace ChessFight.PawnRush
             warn.enabled = false;
             warn.radius = outerRadius;
             warn.lead = warning + fall;
+            // R534 (승규 11-09 "차징이 다 완료돼서 떨어질 때 빨간색으로 뜨게"): red from the moment it falls to the landing.
+            warn.strikeAt = warning;
             return warn;
         }
 

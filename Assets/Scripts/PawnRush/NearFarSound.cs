@@ -50,6 +50,7 @@ namespace ChessFight.PawnRush
             a.minDistance = 1f;
             a.maxDistance = 500f;
             a.volume = 0f;
+            SectionSoundGate.Gate(a);   // R529: the war room already fades its sounds (LibraryMuffle); this keeps every course sound on one rule
             if (loop && clip != null)
             {
                 a.time = Random.value * clip.length;   // loops on one machine never share a seam

@@ -11,7 +11,7 @@ namespace ChessFight.PawnRush
     // springs back, and each link turns along the curve with a small twist. A warm ribbon behind the ball draws the arc
     // it sweeps. Pictures only (nothing collides with the links or the ribbon), so it reads Time.deltaTime, like
     // RoyalFanSpin and the hub chandelier's sway.
-    public sealed class HammerChainSway : MonoBehaviour
+    public sealed partial class HammerChainSway : MonoBehaviour
     {
         [SerializeField] Transform pivot;
         [SerializeField] Transform[] links = new Transform[0];
@@ -116,6 +116,7 @@ namespace ChessFight.PawnRush
                 bowRate *= .5f;
             }
             Pose();
+            Sound();
         }
 
         // Each link on the bowed line pin -> eye (sin(π s): the ends stay on the pin and the eye), turned along it.

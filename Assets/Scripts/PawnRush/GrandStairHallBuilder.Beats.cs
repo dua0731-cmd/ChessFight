@@ -147,7 +147,7 @@ namespace ChessFight.PawnRush
             // 12 m down (a fall goes back to CP1). Two chandeliers swing across it, out to the wall.
             Walkway(b, "Curving stair", 297f, 372f, 8f, 10f, CurvingStairHalfIn, 0f, true, 1.2f);
             Chandelier(b, "11 Pendulum (chandelier) 1", 322f, Mathf.Lerp(8f, 10f, 25f / 75f), 0f);
-            Chandelier(b, "11 Pendulum (chandelier) 2", 350f, Mathf.Lerp(8f, 10f, 53f / 75f), 1.6f);
+            Chandelier(b, "11 Pendulum (chandelier) 2", 350f, Mathf.Lerp(8f, 10f, 53f / 75f), HammerPhase2);
             b.Checkpoint(2, OnSpiral(368f, 9.9f), Heading(368f), 4.5f);
 
             // 3b. The floating stones (φ 372 -> 440, y 10 -> 11.5): eight round slabs 2.6 m across, 0.75 m apart, every
@@ -259,6 +259,12 @@ namespace ChessFight.PawnRush
         // whole way - and the marks run from the way's inner edge to that point.
         const float CurvingStairHalfIn = 2.25f;
 
+        // R547 (승규 11-09 "H로 해주고 사운드에 맞게 해머도 속도에 맞춰"): the hall's hammers swing end to end in 1.4 s
+        // (was the prefab's 2), as long as their whoosh (HallHammerWhoosh, hall_hammer_sounds.py SWING_SECONDS), so the
+        // ball is fastest as the sound is loudest. The second keeps its place in the first's cycle: 1.6 s of 4.4 then,
+        // 1.16 s of 3.2 now (2 x (swing + the 0.2 s pause)).
+        const float HammerSwing = 1.4f, HammerPhase2 = 1.16f;
+
         static void Chandelier(CourseBuilder b, string name, float phi, float y, float phase)
         {
             var pendulum = Hazard(b, b.kit.pendulum, name, OnSpiral(phi, y + .15f), Heading(phi), phase);
@@ -267,6 +273,7 @@ namespace ChessFight.PawnRush
             if (swing != null)
             {
                 swing.SwingAngle = 40f;
+                swing.SwingDuration = HammerSwing;
                 reach = BallReach(swing);
             }
             float r = Mathf.Min(SpiralRadius(phi), HallRadius - .1f - reach), inner = SpiralRadius(phi) - CurvingStairHalfIn;

@@ -23,7 +23,7 @@ namespace ChessFight.PawnRush
     // their own values: the same look, but nothing to tune in a prefab, and a player build keeps the shaders only once the
     // menu's materials reference them.
     [DisallowMultipleComponent]
-    public sealed class FallingPieceFx : MonoBehaviour
+    public sealed partial class FallingPieceFx : MonoBehaviour
     {
         const string SetName = "Hazards", WarnKey = "FallingPiece_Warn", FallKey = "FallingPiece_Fall", LandKey = "FallingPiece_Land",
             ShockKey = "FallingPiece_Shock", AfterKey = "FallingPiece_After";
@@ -138,6 +138,9 @@ namespace ChessFight.PawnRush
             {
                 warn.radius = piece.shockRadius;
                 warn.lead = lead;
+                // R563 (승규 11-10 "차징이 다 되면 색이 빨간색으로 되게 해"): red from the moment it falls to the landing,
+                // as the chandeliers' (R534).
+                warn.strikeAt = piece.warningSeconds;
                 warn.Seek(t);
             }
             if (shadow != null)
@@ -176,6 +179,7 @@ namespace ChessFight.PawnRush
                 burst.burstAt = burst.moment == VfxParticleBurst.Moment.Gone ? lead + drop.hold : lead;
                 burst.Seek(t);
             }
+            Sound(t, lead);   // R543: the warning ticks, the drop and the slam (FallingPieceFx.Sound.cs)
         }
     }
 }
