@@ -977,6 +977,53 @@ public static class SessionFlowTests
                 b.LeavePenaltyOn=true;Check(b.Desertions==0,"the Editor wrote a desertion down");
                 Duel(a,b);As(b,b.Dispose);clients.Remove(b);Step(5);
                 Check(store.TryGetValue(b.Self,out var kept)&&LeavePenalty.Decode(kept).Count==1,"closing the game in a match was not counted");});
+            // R536 (user 11-10, rule 4 as written, "바로 넘기기"): in a running match too the best PC hosts whenever the
+            // players in it change.
+            Test("Rule 4 in a running match: a stronger PC that takes an empty seat takes the host role once its scene has been up a moment, the manager stays; a PC of the same class does not",()=>{
+                foreach(int late in new[]{1300,950})
+                {
+                    Setup(4);var a=clients[0];var b=clients[1];var c=clients[2];var n=clients[3];
+                    a.LocalFitness=900;b.LocalFitness=700;c.LocalFitness=500;n.LocalFitness=late;
+                    As(a,()=>a.FindMatch(true));Step();As(b,()=>b.JoinPrivateMatch(a.Match));As(c,()=>c.JoinPrivateMatch(a.Match));Step(20);
+                    Check(a.Roster.Count==3&&a.IsHost&&a.IsManager,"setup: a room of three, made by the best PC");
+                    As(a,a.StartGame);Step(5);foreach(var x in new[]{a,b,c}){var y=x;As(y,()=>y.ReportLoading(100));}
+                    Step(60);
+                    Check(a.Started&&a.StartAt>0&&clients.Take(3).All(x=>x.Host==a.Self&&x.Epoch==1),"setup: the match under way under its maker (nobody is 10% better)");
+                    As(c,c.Cancel);Step(5);
+                    As(n,()=>n.JoinPrivateMatch(a.Match));for(int t=0;t<40&&!n.Started;t++)Step(1);
+                    Check(n.Started&&a.Roster.ContainsKey(n.Self)&&a.IsHost,"setup: the newcomer has the empty seat");
+                    var room=new[]{a,b,n};
+                    // Its scene still loading: however long that takes, it is not weighed.
+                    As(n,()=>n.ReportLoading(40));Step(60);
+                    Check(room.All(x=>x.Host==a.Self&&x.Epoch==1),"a PC still loading was given the match");
+                    As(n,()=>n.ReportLoading(100));Step(6);
+                    Check(room.All(x=>x.Host==a.Self),"the role moved before the newcomer's scene had been up a moment");
+                    Step(30);
+                    bool moved=n.IsHost&&a.Host==n.Self&&b.Host==n.Self;
+                    Check(moved==(late==1300),$"a {late} PC into a 900 host's match: moved={moved}");
+                    if(moved)Check(Owner(n)==n.Self&&RoomData(n,"host")==n.Self.ToString()&&RoomData(n,"epoch")=="2"&&room.All(x=>x.Started&&x.Epoch==2),"the room did not follow the new host");
+                    Check(room.All(x=>x.Manager==a.Self)&&a.IsManager,"the manager moved with the host");
+                    // And it rests there.
+                    Step(80);Check(room.All(x=>x.Started&&x.Host==(moved?n.Self:a.Self)&&x.Epoch==(moved?2:1)),"the role moved again");
+                    foreach(var x in clients.ToArray())As(x,x.Dispose);
+                }});
+            Test("A running match weighs a machine score that reaches it late, but not before the shared start has passed; a leaver moves nothing",()=>{
+                // B's probe is still running at the start (past the start's wait), so the weaker maker keeps the host.
+                Room(new[]{900,0,500});var a=clients[0];var b=clients[1];var c=clients[2];
+                As(a,a.StartGame);Step(20);Check(a.IsHost&&a.Started&&b.Started&&a.StartAt==0,"setup: started under its maker, still loading");
+                b.LocalFitness=1400;As(a,()=>a.ReportLoading(100));As(b,()=>b.ReportLoading(100));As(c,()=>c.ReportLoading(40));
+                // C is slow to load: the start waits for it, and so does the role (the loading screens wait on this host).
+                Step(40);
+                Check(a.StartAt==0&&clients.All(x=>x.Host==a.Self&&x.Epoch==1),"the role moved before the shared start was set");
+                As(c,()=>c.ReportLoading(100));Step(4);
+                double go=a.StartAt;Check(go>0&&a.IsHost,"setup: the shared start is set, by the same host");
+                for(int t=0;t<80&&!b.IsHost;t++)Step(1);
+                Check(b.IsHost&&a.Host==b.Self&&c.Host==b.Self&&clients.All(x=>x.Started&&x.Epoch==2)&&b.StartAt==go,"the stronger PC did not take the running match: host "+a.Host);
+                Check(SteamUtils.GetServerRealTime()>=go+SteamSession.LiveElectSettle-1,"the role moved at the start line, not a moment into the match");
+                Check(clients.All(x=>x.Manager==a.Self),"the manager moved with the host");
+                // A player gone is a change as well: weighed, and the best PC already hosts.
+                As(c,c.Cancel);Step(40);
+                Check(b.IsHost&&a.Host==b.Self&&a.Epoch==2&&b.Roster.Count==2,"a leaver moved the host");});
             Console.WriteLine($"{passed} simulated session tests passed (not Steam integration tests).");return 0;
         }
         catch(Exception e){Console.Error.WriteLine(e);return 1;}

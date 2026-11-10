@@ -274,6 +274,11 @@ namespace ChessFight.Network
         public const float WaitingHandoffGrace = 10f;
         // Between a start or handover and the next handover for slowness.
         public const float StruggleCooldown = 45f;
+        // R536: a change in who is in a running match (a player into an empty seat, a player gone, a machine score
+        // that has just reached the room) is weighed once it has stood LiveElectSettle - a newcomer's match scene
+        // has then been up that long, so it holds the poses a new host carries on from - and not within
+        // LiveElectCooldown of the start or of a handover.
+        public const float LiveElectSettle = 5f, LiveElectCooldown = 10f;
         // ---- Loading and a shared start (MatchStart) ----
         // How far this PC's match scene has loaded; published as member data "load".
         public void ReportLoading(int percent)
@@ -387,6 +392,10 @@ namespace ChessFight.Network
         // R294: what the waiting-room election last wrote to the log.
         string lastWaitElection = "";
         float hostSilence, hostSince = -1, orphanSince = -1, nextFitPublish, nextSuccessors, nextOwnerFix, lastHandoff = -1000, noteUntil;
+        // R536: the players this host weighed last in the running match (null: none yet - it takes the room as it
+        // finds it), the players as they stand now, and since when they have stood so (ElectLive).
+        string liveElectorate, liveSeen = "";
+        float liveSeenSince;
         readonly TeamReservations reservations = new TeamReservations();
         readonly List<IDisposable> callbacks = new List<IDisposable>();
         readonly List<IDisposable> calls = new List<IDisposable>();
@@ -1217,6 +1226,7 @@ namespace ChessFight.Network
                     PublishMembers();
                     PublishSuccessors(present, now);
                     CheckStruggle(present, now);
+                    ElectLive(present, now);
                 }
             }
             else
@@ -1461,6 +1471,8 @@ namespace ChessFight.Network
             // whoever had sat down since ("예약이 해제되었거나 파티원 연결이 끊겼습니다", found in a six-player simulation).
             if (next == Self && Match != 0) ReadRoster();
             lastHandoff = now;
+            // R536: whoever hosts now weighs the room afresh from the players it finds (ElectLive).
+            liveElectorate = null; liveSeen = "";
             Note = note; noteUntil = now + 6;
             // The next host reads the held seats and the room's state afresh.
             heldLoaded = false; joinable = -1;
@@ -1615,12 +1627,44 @@ namespace ChessFight.Network
             if (next != 0) HandOff(next, HostElection.Rank(candidates), $"물리 담당 PC가 느려져 {Name(next)} 님의 PC가 이어받습니다.");
         }
 
+        // R536 (user 11-10, rule 4: "방에 존재하는 유저에 변동이 있을 때마다 제일 좋은 PC(CPU, GPU 통합)가 물리 담당 PC가 된다";
+        // asked whether a better PC that comes into an empty seat of a running match should take the role at once:
+        // "바로 넘기기"). R533 kept the host through a running match unless it left, went silent or stayed slow. Now
+        // the host weighs the room again whenever the players who could carry the match change - seated, here, their
+        // match scene loaded, their machine score known to the room - and hands the match to the best of them if that
+        // PC is LiveMargin better (machines alone, as at the start: HostElection.StartHost).
+        // Once for each change, not all the time: ratings move a little with the estimated pings, and a rule that
+        // watched them would pass the role back and forth. Not around the shared start (the loading screens wait on
+        // this host for it, R502), not right after a handover, not once the match is decided.
+        void ElectLive(HashSet<ulong> present, float now)
+        {
+            if (Owner(Match) != Self || MatchEnded) return;
+            var all = Candidates(present);
+            var able = all.Where(c => c.Id == Self || (c.BaseFitness > 0 && LoadPercent(c.Id) >= MatchStart.Ready)).ToList();
+            string electorate = HostElection.Encode(able.Select(c => c.Id));
+            // A host that has just taken the match (the start, a handover) takes the room as it finds it: whoever
+            // gave it the role had weighed them.
+            if (liveElectorate == null) { liveElectorate = liveSeen = electorate; return; }
+            if (electorate == liveElectorate) { liveSeen = electorate; return; }
+            if (electorate != liveSeen) { liveSeen = electorate; liveSeenSince = now; }
+            // Not before the match has run a moment past the shared start (every screen settles into it then), nor
+            // right after a handover, nor before the change has stood a moment.
+            if (StartAt == 0 || SharedNow() < StartAt + LiveElectSettle || now - lastHandoff < LiveElectCooldown || now - liveSeenSince < LiveElectSettle) return;
+            liveElectorate = electorate;
+            ulong next = HostElection.StartHost(Self, able, HostElection.LiveMargin);
+            Debug.Log("[ChessFight] 물리 담당 정하기(경기 중): " + string.Join(" · ", able.Select(c =>
+                $"{Name(c.Id)}{(c.Id == Self ? "(지금 담당)" : "")} 성능 {(c.BaseFitness > 0 ? c.BaseFitness.ToString() : "측정 전")} 핑 {c.PingMs}")) +
+                " → " + (next != Self ? $"{Name(next)} 님에게 넘김" : "그대로"));
+            if (next != Self) HandOff(next, HostElection.Rank(all), $"성능이 더 좋은 {Name(next)} 님의 PC가 물리 계산을 넘겨받습니다.");
+        }
+
         void ResetHostState()
         {
             epoch = ownClaim = 0; publishedFit = publishedBase = 0; publishedLoc = publishedQuiet = ""; hostSilence = 0; hostSince = -1; orphanSince = -1;
             ownPast = 0; passOverSince = -1; endWanted = false;
             waitingHandedTo = 0;
             nextFitPublish = nextSuccessors = nextOwnerFix = noteUntil = 0; lastHandoff = -1000; Note = "";
+            liveElectorate = null; liveSeen = ""; liveSeenSince = 0;
             startWanted = adoptReservations = false; startWaitSince = -1; nextWaitElect = 0; lastWaitElection = "";
             held.Clear(); heldLoaded = false; joinable = -1;
             unseatedSince.Clear();

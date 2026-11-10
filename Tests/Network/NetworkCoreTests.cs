@@ -2393,6 +2393,17 @@ public static class NetworkCoreTests
                 Check(HostFitness.Base(30, 8, 16000, false, 80) < HostFitness.Base(40, 8, 16000, false, 4), "a fast CPU does not make up for an integrated chip");
                 Check(HostFitness.Base(30, 8, 16000, false, 4) > HostFitness.Base(40, 8, 16000, false, 4), "with good cards on both, the processor decides");
                 Check(HostFitness.GpuFactor(double.NaN) == 1 && HostFitness.Base(0, 8, 16000, false, 4) == 0, "nothing measured"); });
+            Test("The host of a running match (R536): a PC a tenth better takes it, one of the same class does not; pings and unknown machines as at the start", () => {
+                var host = new HostElection.Candidate { Id = 5, Fitness = 400, BaseFitness = 1000, PingMs = 20 };
+                Func<int, int, int, HostElection.Candidate> other = (machine, ping, now) => new HostElection.Candidate { Id = 3, Fitness = now > 0 ? now : machine, BaseFitness = machine, PingMs = ping };
+                Func<HostElection.Candidate, ulong> elect = c => HostElection.StartHost(5, new[] { host, c }, HostElection.LiveMargin);
+                Check(HostElection.LiveMargin > HostElection.StartMargin && HostElection.LiveMargin < HostElection.StruggleMargin, "between the start's margin and a struggling host's");
+                Check(elect(other(1099, 20, 0)) == 5 && elect(other(1000, 20, 0)) == 5, "a PC of the same class (a lower Steam ID, too) leaves the host where it is");
+                Check(elect(other(1101, 20, 0)) == 3 && elect(other(1500, 20, 0)) == 3, "a tenth better takes the match");
+                // Machines alone, as at the start: the newcomer's frame rate has just dipped, the host's is low because it hosts.
+                Check(elect(other(1500, 20, 300)) == 3, "frame rates of the moment decided it");
+                Check(elect(other(1500, 240, 0)) == 5, "a far-away PC is not the better host");
+                Check(elect(other(0, 20, 0)) == 5, "an unmeasured machine took the match"); });
             Test("Leave penalty (R533, rule 3): two desertions free, then 10 minutes, 30 minutes, an hour; each counts for 24 hours", () => {
                 Check(LeavePenalty.BanSeconds(0) == 0 && LeavePenalty.BanSeconds(1) == 0 && LeavePenalty.BanSeconds(2) == 0, "two chances");
                 Check(LeavePenalty.BanSeconds(3) == 600 && LeavePenalty.BanSeconds(4) == 1800 && LeavePenalty.BanSeconds(5) == 3600 && LeavePenalty.BanSeconds(9) == 3600,

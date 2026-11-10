@@ -90,7 +90,11 @@ namespace ChessFight.Network
         // flicker, and nothing is simulated yet, so a move costs nothing. Mid-match,
         // when the host is struggling, only a clearly stronger machine takes over:
         // moving then costs a hitch.
-        public const double StartMargin = 1.0, StruggleMargin = 1.5;
+        // R536 (user 11-10: a better PC that comes into a running match takes the role at once): when the players in
+        // a running match change, the best PC hosts as well - if it is LiveMargin better. Not 1.0: a move in a
+        // running match is a hitch on every screen, and two PCs of one class measure a few percent apart from run to
+        // run, so without a margin the role would move for nothing.
+        public const double StartMargin = 1.0, StruggleMargin = 1.5, LiveMargin = 1.1;
 
         public static double Rating(Candidate c)
         {
