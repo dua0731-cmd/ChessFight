@@ -132,7 +132,9 @@ public static class NetworkCoreTests
             Fnv(Through(w => SwordWire.Write(w, GoldenSword()))),
         });
     }
-    const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 001c4e7168c95ab7 8e55c2b172fd2821 "
+    // R538: the two course states (the sixth and the seventh) are CFP6's - a new magic and a seat count in the header;
+    // the other eight are the ones pinned at R297.
+    const string Golden = "5987212808aaa44b 3c303a5513dae951 a58dbecbc6b998b2 93eb863d4250712f 8286075e86dc6fe2 d8194986b34e5938 6aa7acd5e02fe864 "
                           + "028c824dd7ab7066 0a5aaf2e798a59b6 52d23acd7ef29404";
     // The Royal Carriage Yard's four roaming carriages as RoyalCarriageYard and CarriageFleet build them (R286, R287):
     // RoamingFleet.Yard, the yard the seeds are vetted on; the map checks its own fleet against it.
@@ -1046,6 +1048,28 @@ public static class NetworkCoreTests
                 var none = new PawnRushNetState().Write(7UL);
                 Check(PawnRushNetState.Read(none, 7UL, b) && b.Winner == -1 && b.FinisherCount == 0, "a fresh state: nobody yet");
                 bytes[PawnRushNetState.FinisherCountAt] = 13; Check(!PawnRushNetState.Read(bytes, 7UL, b), "more finishers than seats"); });
+            Test("Pawn Rush course state (CFP6, R538): each seat's checkpoint and piece round-trip after everything else, too many are refused", () => {
+                var a = new PawnRushNetState { Tick = 3, HostTimeMs = 99, StationCount = 2, PartsLength = 5, SeatCount = 3 };
+                for (int k = 0; k < 5; k++) a.Parts[k] = (byte)(40 + k);
+                a.SeatRef[0] = SkillWire.Ref(0, 0); a.SeatCheckpoint[0] = PawnRushNetState.CheckpointOf(int.MinValue); a.SeatPiece[0] = (byte)PieceKind.Pawn;
+                a.SeatRef[1] = SkillWire.Ref(1, 4); a.SeatCheckpoint[1] = PawnRushNetState.CheckpointOf(203); a.SeatPiece[1] = (byte)PieceKind.Queen;
+                a.SeatRef[2] = SkillWire.Ref(0, 5); a.SeatCheckpoint[2] = PawnRushNetState.CheckpointOf(-1); a.SeatPiece[2] = (byte)PieceKind.Rook;
+                byte[] sent = (byte[])a.Write(11UL).Clone();
+                Check(sent.Length == a.Bytes && sent.Length == PawnRushNetState.HeaderBytes + 2 + 2 * PawnRushNetState.StationFixedBytes + 5 + 3 * PawnRushNetState.SeatBytes, "size " + sent.Length);
+                var b = new PawnRushNetState();
+                Check(PawnRushNetState.Read(sent, 11UL, b) && b.SeatCount == 3 && b.PartsLength == 5 && b.Parts[4] == 44, "read");
+                Check(b.SeatRef[0] == SkillWire.Ref(0, 0) && b.SeatCheckpoint[0] == PawnRushNetState.NoCheckpoint && b.SeatPiece[0] == (byte)PieceKind.Pawn, "a seat that has reached no checkpoint");
+                Check(b.SeatRef[1] == SkillWire.Ref(1, 4) && b.SeatCheckpoint[1] == 203 && b.SeatPiece[1] == (byte)PieceKind.Queen && b.SeatCheckpoint[2] == -1 && b.SeatPiece[2] == (byte)PieceKind.Rook, "checkpoints and pieces");
+                Check(PawnRushNetState.CheckpointOf(100000) == short.MaxValue && PawnRushNetState.CheckpointOf(int.MinValue) == PawnRushNetState.NoCheckpoint, "the checkpoint's range");
+                var c = new PawnRushNetState(); c.CopyFrom(b);
+                Check(c.SeatCount == 3 && c.SeatCheckpoint[1] == 203 && c.SeatPiece[2] == (byte)PieceKind.Rook, "a copy carries them");
+                // Most states carry none: the same packet a seat table shorter.
+                a.SeatCount = 0; byte[] bare = (byte[])a.Write(11UL).Clone();
+                Check(bare.Length == sent.Length - 3 * PawnRushNetState.SeatBytes && PawnRushNetState.Read(bare, 11UL, b) && b.SeatCount == 0, "a state without the seats");
+                var thirteen = (byte[])sent.Clone(); thirteen[PawnRushNetState.FinisherCountAt + 3] = 13;
+                Check(!PawnRushNetState.Read(thirteen, 11UL, b), "thirteen seats");
+                var cut = new byte[sent.Length - 1]; Array.Copy(sent, cut, cut.Length);
+                Check(!PawnRushNetState.Read(cut, 11UL, b), "a seat byte short"); });
             Test("Pawn Rush course state (CFP5, R508): a round's six stations and its sections' bytes round-trip, too many are refused", () => {
                 var a = new PawnRushNetState { Tick = 5, HostTimeMs = 99, StationCount = 6, PadsUsed = 0x3f };
                 for (int st = 0; st < 6; st++) { a.Game[st] = (sbyte)(st / 2 * 3); a.Progress[st] = st / 6f; a.Completed[st] = st == 5; a.PadChooser[st] = (byte)(st == 4 ? 7 : PawnRushNetState.NoChooser); }
@@ -1800,37 +1824,32 @@ public static class NetworkCoreTests
                 var early = new WarmupMeter();
                 for (int i = 0; i < 20; i++) early.Add(5);
                 Check(!early.Done && early.Fraction < 1, "too soon even when smooth"); });
-            Test("Backfill: an empty seat goes to the team that lost a player, and only up to the size that team started with", () => {
-                Func<int, int, ulong, Backfill.Seat> seat = (t, slot, id) => new Backfill.Seat { Id = id, Team = t, Slot = slot };
-                var sixes = new[] { 6, 6 };
-                var taken = new List<Backfill.Seat>();
-                for (int s = 0; s < 6; s++) taken.Add(seat(0, s, (ulong)(10 + s)));
-                foreach (int s in new[] { 0, 1, 2, 4, 5 }) taken.Add(seat(1, s, (ulong)(20 + s)));
-                Check(Backfill.Free(sixes, taken, 0) == 0 && Backfill.Free(sixes, taken, 1) == 1, "free seats");
-                Check(Backfill.Place(sixes, taken, 1, out int team, out int[] slots) && team == 1 && slots.SequenceEqual(new[] { 3 }), "the leaver's seat");
-                Check(!Backfill.Place(sixes, taken, 2, out _, out _), "a party of two split or squeezed in");
-                var fives = new[] { 5, 5 };
-                var five = taken.Where(s => s.Slot < 5).ToList();
-                Check(Backfill.Place(fives, five, 1, out team, out slots) && team == 1 && slots.SequenceEqual(new[] { 3 }), "a 5 v 5 match refills its own seat");
-                five.Add(seat(1, 3, 99));
-                Check(Backfill.Free(fives, five, 0) == 0 && Backfill.Free(fives, five, 1) == 0 && !Backfill.Place(fives, five, 1, out _, out _), "a sixth player got into a 5 v 5 team");
-                var few = new List<Backfill.Seat> { seat(0, 1, 1), seat(1, 0, 2), seat(1, 2, 3) };
-                Check(Backfill.Place(sixes, few, 2, out team, out slots) && team == 0 && slots.SequenceEqual(new[] { 0, 2 }), "more empty seats first, lowest free slots");
-                Check(Backfill.Place(new[] { 1, 1 }, new List<Backfill.Seat>(), 1, out team, out _) && team == 0, "a tie goes to white");
-                Check(Backfill.Free(null, few, 0) == 0 && !Backfill.Place(null, few, 1, out _, out _), "no known size, no seat");
+            Test("Starters (R538): a started match knows who it started with, who is away, and gives a player back only their own seat", () => {
+                var starters = new List<Starters.Seat>();
+                for (int k = 0; k < 3; k++) starters.Add(new Starters.Seat { Id = (ulong)(10 + k), Team = 0, Slot = k });
+                for (int k = 0; k < 3; k++) starters.Add(new Starters.Seat { Id = (ulong)(20 + k), Team = 1, Slot = k });
+                var seated = new HashSet<ulong> { 10, 11, 12, 20, 22 };
+                Check(Starters.Away(starters, seated, 0) == 0 && Starters.Away(starters, seated, 1) == 1, "who is away");
+                seated.Add(99);   // someone the match did not start with changes nothing
+                Check(Starters.Away(starters, seated, 1) == 1 && Starters.Away(null, seated, 0) == 0 && Starters.Away(starters, null, 0) == 0, "strangers and nothing known");
+                Check(Starters.SeatOf(starters, 21, out var seat) && seat.Team == 1 && seat.Slot == 1, "a starter's own seat");
+                Check(!Starters.SeatOf(starters, 99, out _) && !Starters.SeatOf(starters, 0, out _) && !Starters.SeatOf(null, 21, out _), "nobody else has one");
                 Check(TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 1, 2 }) && !TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 2 }) &&
                       !TeamReservations.ValidRequest(1, 101, "t", new ulong[] { 1, 1 }) && !TeamReservations.ValidRequest(1, 101, "t", null), "request shape"); });
-            Test("Backfill: seats are offered for four minutes after the start, and the room keeps sizes and held seats as text", () => {
-                Check(Backfill.OpenSeconds == 240 && Backfill.Open(0, 5) && Backfill.Open(1000, 1000 + Backfill.OpenSeconds - .5) && !Backfill.Open(1000, 1000 + Backfill.OpenSeconds), "window");
-                Check(Backfill.EncodeCapacity(6, 5) == "6,5" && Backfill.DecodeCapacity("6,5").SequenceEqual(new[] { 6, 5 }), "sizes");
-                Check(Backfill.DecodeCapacity("") == null && Backfill.DecodeCapacity("7,6") == null && Backfill.DecodeCapacity("6") == null &&
-                      Backfill.DecodeCapacity("-1,6") == null && Backfill.DecodeCapacity("a,b") == null, "bad sizes");
-                var held = new[] { new Backfill.Seat { Id = 76561198000000001, Team = 1, Slot = 3, Until = 1790743925 }, new Backfill.Seat { Id = 5, Team = 0, Slot = 0, Until = 1790743930 } };
-                var back = Backfill.DecodeHeld(Backfill.EncodeHeld(held));
-                Check(back.Count == 2 && back[0].Id == 76561198000000001 && back[0].Team == 1 && back[0].Slot == 3 && back[0].Until == 1790743925 && back[1].Id == 5, "held round trip");
-                Check(Backfill.EncodeHeld(new Backfill.Seat[0]) == "" && Backfill.DecodeHeld(null).Count == 0, "nothing held");
-                var messy = Backfill.DecodeHeld("0:0:0:1;7:2:0:1;8:0:6:1;9:0:1:x;10:1:1:5;10:0:2:5;11:1:1:5;12:0:0:5:9");
-                Check(messy.Count == 1 && messy[0].Id == 10 && messy[0].Team == 1, "bad held entries kept"); });
+            Test("Starters (R538): the room keeps the starters and the team sizes as text", () => {
+                var two = new[] { new Starters.Seat { Id = 76561198000000001, Team = 1, Slot = 3 }, new Starters.Seat { Id = 5, Team = 0, Slot = 0 } };
+                Check(Starters.Encode(two) == "76561198000000001:1:3;5:0:0", "as text: " + Starters.Encode(two));
+                var back = Starters.Decode(Starters.Encode(two));
+                Check(back.Count == 2 && back[0].Id == 76561198000000001 && back[0].Team == 1 && back[0].Slot == 3 && back[1].Id == 5 && back[1].Team == 0, "round trip");
+                Check(Starters.Encode(new Starters.Seat[0]) == "" && Starters.Decode(null).Count == 0 && Starters.Decode("").Count == 0, "nobody");
+                // A zero id, a third team, a seventh seat, a word for a number, a seat taken twice, an id twice, a field too many.
+                var messy = Starters.Decode("0:0:0;7:2:0;8:0:6;9:0:x;10:1:1;11:1:1;10:0:2;12:0:0:5");
+                Check(messy.Count == 1 && messy[0].Id == 10 && messy[0].Team == 1 && messy[0].Slot == 1, "bad entries kept: " + messy.Count);
+                var many = string.Join(";", Enumerable.Range(0, 20).Select(k => (100 + k) + ":" + (k % 2) + ":" + (k / 2 % 6)));
+                Check(Starters.Decode(many).Count <= 12, "more starters than a match has seats");
+                Check(Starters.EncodeCapacity(6, 5) == "6,5" && Starters.DecodeCapacity("6,5").SequenceEqual(new[] { 6, 5 }), "sizes");
+                Check(Starters.DecodeCapacity("") == null && Starters.DecodeCapacity("7,6") == null && Starters.DecodeCapacity("6") == null &&
+                      Starters.DecodeCapacity("-1,6") == null && Starters.DecodeCapacity("a,b") == null, "bad sizes"); });
             Test("Chat: a line is one clean line of at most eighty characters, and only chat lines decode", () => {
                 Check(ChatText.Clean("  안녕\n하세요\t\t 폰 러시  ") == "안녕 하세요 폰 러시", "white space");
                 Check(ChatText.Clean("a\u202Eb\u200Bc\u0007d") == "abc d", "control and format characters");

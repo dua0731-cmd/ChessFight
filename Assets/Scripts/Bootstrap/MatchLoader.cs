@@ -65,9 +65,9 @@ namespace ChessFight.Game
             scene = sceneName;
             int white = session.Roster.Values.Count(p => p.Team == 0), black = session.Roster.Values.Count(p => p.Team != 0);
             var content = LoadingContent.For(mode, Math.Max(white, black));
-            // The start time is already set: this player takes the empty seat of
-            // someone who left (Backfill) and goes in as soon as it has loaded.
-            if (session.StartAt > 0) content.Kicker += " · 경기 중 합류";
+            // The start time is already set: this player is coming back into the match
+            // it left (R538) and goes in as soon as it has loaded.
+            if (session.StartAt > 0) content.Kicker += " · 경기로 복귀";
 
             if (kept != null)
             {
@@ -183,7 +183,8 @@ namespace ChessFight.Game
             state.CanStart = session.CanStartGame;
             int white = session.TeamCount(0), black = session.TeamCount(1), min = session.MinTeamToStart;
             bool ready = white >= min && white == black && session.SeatingJoiners == 0;
-            state.StartNote = !session.EarlyStartMode || session.Started || session.Match == 0 ? ""
+            // R538: nor for a player on its way back into a running match (the room's numbers there are who is away).
+            state.StartNote = !session.EarlyStartMode || session.Started || session.Match == 0 || session.JoiningLive ? ""
                 : state.CanStart ? $"{white} 대 {black} · 지금 시작할 수 있어요 (12명이 차면 자동으로 시작)"
                 : !session.IsManager && ready ? $"{white} 대 {black} · 방장이 시작할 수 있어요"
                 // R525: the start waits (up to SteamSession.JoinGrace) for players already in the room to get their seats.
@@ -195,7 +196,7 @@ namespace ChessFight.Game
             state.Clock = $"{seconds / 60:00}:{seconds % 60:00}";
             // R294: a new host in the waiting room says so for a few seconds (who, and why: the best PC).
             state.Step = session.NoteShowing ? session.Note
-                       : session.JoiningLive ? "진행 중인 경기에 들어가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
+                       : session.JoiningLive ? "나갔던 경기로 돌아가는 중" : Following(session) ? "파티장이 방을 찾는 중" : "상대 팀 찾는 중";
             state.Clear();
             if (session.Match != 0 && session.Roster.Count > 0)
             {

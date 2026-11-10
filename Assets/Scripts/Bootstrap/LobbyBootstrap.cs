@@ -70,6 +70,8 @@ namespace ChessFight.Game
             // "게임 시작" queues the whole party for the chosen mode, as in the
             // reference video; the mode card above it says what that will be.
             hud.Play += () => session.FindMatch();
+            // R538: back into the started match this player left (its own seat, its own checkpoint).
+            hud.Rejoin += () => { session.Rejoin(); refreshAt = 0; };
             hud.CreateTest += () => session.FindMatch(true);
             hud.StartGame += () => session.StartGame();
             hud.Cancel += () => session.Cancel();
@@ -293,6 +295,7 @@ namespace ChessFight.Game
                 // room still takes them.
                 CanPlay = canQueue && !session.BotsBlockPublicMatch && partyMode.Playable && stop == "",
                 PlayNote = stop,
+                RejoinNote = session.CanRejoin ? $"{session.RejoinMode.Name} · 나갔던 경기가 아직 진행 중이에요 · 내 자리로 돌아가요" : "",
                 BusyTitle = waiting ? "파티원 경기 중"
                           : following ? "파티장을 따라가는 중"
                           : inRoom && session.Started ? "경기 시작!"
@@ -311,13 +314,13 @@ namespace ChessFight.Game
                 MatchKicker = (session.PrivateRoom ? "PRIVATE ROOM · " : "QUICK MATCH · ") + mode.Name,
                 MatchTitle = !inRoom ? (waiting ? "파티원들이 경기를 마치기를 기다리는 중" : following ? "파티장이 방을 찾는 중..." : "상대 팀 찾는 중")
                            : session.Started ? "경기를 시작합니다!"
-                           : session.JoiningLive ? "진행 중인 경기에 들어가는 중..."
+                           : session.JoiningLive ? "나갔던 경기로 돌아가는 중..."
                            : dummyRoom && session.IsManager ? "더미를 추가하고 시작하세요"
                            : session.PrivateRoom ? (session.IsManager ? "방 번호를 친구에게 알려 주세요" : "방장이 시작하기를 기다리는 중")
                            : "상대 팀 찾는 중",
                 MatchTimer = Clock(now),
                 MatchNote = waiting ? "먼저 나왔어요 · 혼자 하려면 파티 나가기"
-                          : session.JoiningLive ? "나간 플레이어의 빈자리를 채워요"
+                          : session.JoiningLive ? "내 자리와 체크포인트로 돌아가요"
                           : dummyRoom ? "12명 없이 시작 가능" : session.AllowPublicBots ? "개발 빌드 · 봇 허용" : "",
                 OurTeam = ourTeam, OursFilled = ours, TheirsFilled = theirs,
                 ShowRoomTools = inRoom && (session.PrivateRoom || session.CanUseRoomBots),

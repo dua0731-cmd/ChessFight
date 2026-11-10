@@ -37,6 +37,7 @@ namespace Steamworks
     public struct LobbyEnter_t { public uint m_EChatRoomEnterResponse; }
     public struct LobbyMatchList_t { public uint m_nLobbiesMatching; }
     public struct LobbyChatMsg_t { public ulong m_ulSteamIDLobby; public uint m_iChatID; }
+    public struct LobbyDataUpdate_t { public ulong m_ulSteamIDLobby, m_ulSteamIDMember; public byte m_bSuccess; }
     public struct GameLobbyJoinRequested_t { public CSteamID m_steamIDLobby; }
     public struct LobbyInvite_t { public ulong m_ulSteamIDUser, m_ulSteamIDLobby, m_ulGameID; }
     public struct GameRichPresenceJoinRequested_t { public CSteamID m_steamIDFriend; public string m_rgchConnect; }
@@ -152,6 +153,14 @@ namespace Steamworks
         public static bool InviteUserToLobby(CSteamID lobby,CSteamID invitee)
         {ulong from=FakeSteam.User;FakeSteam.Enqueue(invitee.m_SteamID,()=>FakeSteam.Raise(invitee.m_SteamID,new LobbyInvite_t{m_ulSteamIDUser=from,m_ulSteamIDLobby=lobby.m_SteamID}));return true;}
         public static bool SetLobbyJoinable(CSteamID id,bool value) {var l=FakeSteam.Get(id);if(l.Owner!=FakeSteam.User)return false;l.Joinable=value;return true;}
+        // R538: a lobby's data for someone who is not in it. The answer comes as a callback on that user's next
+        // dispatch: success while the lobby exists (GetLobbyData then reads it), failure once it is gone.
+        public static bool RequestLobbyData(CSteamID id)
+        {
+            ulong user=FakeSteam.User,lobby=id.m_SteamID;
+            FakeSteam.Enqueue(user,()=>FakeSteam.Raise(user,new LobbyDataUpdate_t{m_ulSteamIDLobby=lobby,m_ulSteamIDMember=lobby,m_bSuccess=(byte)(FakeSteam.Get(new CSteamID(lobby))!=null?1:0)}));
+            return true;
+        }
         public static bool SetLobbyOwner(CSteamID id,CSteamID owner)
         {
             var l=FakeSteam.Get(id);if(l==null||l.Owner!=FakeSteam.User||!l.Members.Contains(owner.m_SteamID))return false;

@@ -19,22 +19,32 @@ namespace ChessFight.Network
     // changed and the shared clock cannot tell (the grand stair hall's broken glass, the garden's tipped lotus pads, the
     // carriage yard's final gate) - as one run of bytes the sections write and read in the round's order
     // (ISectionNetPart). The round itself needs no bytes: every PC draws it from the match's number.
+    // CFP6 (R538, a player comes back into the match it left): each seat's checkpoint and piece - the seats in play
+    // and the seats of players who are away. Every PC worked the checkpoints out from its own physics (R502), which a
+    // PC that was not there cannot: one that came back and then hosts (R536 gives the match to the best PC) put a
+    // fallen pawn back on the start square, and a host that was away when a player left had nowhere to put that
+    // player back. Not with every state: now and again and when it changes (SeatCount 0 otherwise).
     public sealed class PawnRushNetState
     {
-        public const uint Magic = 0x43465035;   // "CFP5"
+        public const uint Magic = 0x43465036;   // "CFP6"
         public const int MaxStations = 6;
         public const int MaxFinishers = 12;
         public const int BlockBytes = 32;
         public const int MaxPartBytes = 96;
+        public const int MaxSeats = 12;
+        public const int SeatBytes = 1 + 2 + 1;   // the seat (SkillWire.Ref), its checkpoint (Checkpoint.Order), its piece
+        // A seat that has reached no checkpoint yet (it comes back on the start square).
+        public const short NoCheckpoint = short.MinValue;
         // magic, match, tick, host time, the two games, the pads (3), the winner, the clock, then the counts: finishers,
-        // stations, part bytes
-        public const int HeaderBytes = 4 + 8 + 4 + 4 + 1 + 1 + 3 + 1 + 4 + 1 + 1 + 1;   // 33
+        // stations, part bytes, seats
+        public const int HeaderBytes = 4 + 8 + 4 + 4 + 1 + 1 + 3 + 1 + 4 + 1 + 1 + 1 + 1;   // 34
         // Where the finisher count sits (the tests damage it).
         public const int FinisherCountAt = 30;
         public const byte NoChooser = 255;
         public const int FinisherBytes = 1 + 2;   // the seat (SkillWire.Ref) and the time, 0.1 s
         public const int StationFixedBytes = 1 + 2 + 1 + 1;   // game, progress, flags, block length
-        public const int MaxBytes = HeaderBytes + MaxStations + MaxFinishers * FinisherBytes + MaxStations * (StationFixedBytes + BlockBytes) + MaxPartBytes;
+        public const int MaxBytes = HeaderBytes + MaxStations + MaxFinishers * FinisherBytes + MaxStations * (StationFixedBytes + BlockBytes) + MaxPartBytes
+                                    + MaxSeats * SeatBytes;
 
         public uint Tick;
         // The host's clock (ms, the snapshots' hostTimeMs) when this state was taken.
@@ -64,8 +74,18 @@ namespace ChessFight.Network
         // The sections' own state (ISectionNetPart), in the round's order.
         public int PartsLength;
         public readonly byte[] Parts = new byte[MaxPartBytes];
+        // R538: the seats' checkpoints and pieces (0 seats: this state does not carry them).
+        public int SeatCount;
+        public readonly byte[] SeatRef = new byte[MaxSeats];
+        public readonly short[] SeatCheckpoint = new short[MaxSeats];
+        public readonly byte[] SeatPiece = new byte[MaxSeats];
 
         int Stations => Math.Max(0, Math.Min(StationCount, MaxStations));
+        int Seats => Math.Max(0, Math.Min(SeatCount, MaxSeats));
+
+        // A checkpoint's order as the state carries it.
+        public static short CheckpointOf(int order) =>
+            order <= short.MinValue ? NoCheckpoint : (short)Math.Min(short.MaxValue, order);
 
         public int Bytes
         {
@@ -73,7 +93,7 @@ namespace ChessFight.Network
             {
                 int n = HeaderBytes + Stations + Math.Max(0, Math.Min(FinisherCount, MaxFinishers)) * FinisherBytes;
                 for (int s = 0; s < Stations; s++) n += StationFixedBytes + Math.Max(0, Math.Min(BlockLength[s], BlockBytes));
-                return n + Math.Max(0, Math.Min(PartsLength, MaxPartBytes));
+                return n + Math.Max(0, Math.Min(PartsLength, MaxPartBytes)) + Seats * SeatBytes;
             }
         }
 
@@ -83,7 +103,7 @@ namespace ChessFight.Network
         public byte[] Write(ulong match)
         {
             int finishers = Math.Max(0, Math.Min(FinisherCount, MaxFinishers)), stations = Stations;
-            int parts = Math.Max(0, Math.Min(PartsLength, MaxPartBytes));
+            int parts = Math.Max(0, Math.Min(PartsLength, MaxPartBytes)), seats = Seats;
             var b = pool.Get(Bytes);
             int i = 0;
             PutU32(b, ref i, Magic);
@@ -100,6 +120,7 @@ namespace ChessFight.Network
             b[i++] = (byte)finishers;
             b[i++] = (byte)stations;
             b[i++] = (byte)parts;
+            b[i++] = (byte)seats;
             for (int s = 0; s < stations; s++) b[i++] = PadChooser[s];
             for (int f = 0; f < finishers; f++)
             {
@@ -117,6 +138,13 @@ namespace ChessFight.Network
                 i += length;
             }
             Array.Copy(Parts, 0, b, i, parts);
+            i += parts;
+            for (int k = 0; k < seats; k++)
+            {
+                b[i++] = SeatRef[k];
+                PutU16(b, ref i, (ushort)SeatCheckpoint[k]);
+                b[i++] = SeatPiece[k];
+            }
             return b;
         }
 
@@ -132,8 +160,8 @@ namespace ChessFight.Network
             byte padFirst = b[i++], padSecond = b[i++], padsUsed = (byte)(b[i++] & 0x3f);
             sbyte winner = (sbyte)b[i++];
             float clock = BitConverter.Int32BitsToSingle((int)U32(b, ref i));
-            int finishers = b[i++], stations = b[i++], parts = b[i++];
-            if (finishers > MaxFinishers || stations > MaxStations || parts > MaxPartBytes) return false;
+            int finishers = b[i++], stations = b[i++], parts = b[i++], seats = b[i++];
+            if (finishers > MaxFinishers || stations > MaxStations || parts > MaxPartBytes || seats > MaxSeats) return false;
             int choosersAt = i;
             i += stations;
             if (i + finishers * FinisherBytes > b.Length) return false;
@@ -146,7 +174,7 @@ namespace ChessFight.Network
                 if (length > BlockBytes) return false;
                 at += StationFixedBytes + length;
             }
-            if (at + parts != b.Length) return false;
+            if (at + parts + seats * SeatBytes != b.Length) return false;
 
             into.Tick = tick;
             into.HostTimeMs = hostTime;
@@ -177,6 +205,14 @@ namespace ChessFight.Network
             }
             into.PartsLength = parts;
             Array.Copy(b, i, into.Parts, 0, parts);
+            i += parts;
+            into.SeatCount = seats;
+            for (int k = 0; k < seats; k++)
+            {
+                into.SeatRef[k] = b[i++];
+                into.SeatCheckpoint[k] = (short)U16(b, ref i);
+                into.SeatPiece[k] = b[i++];
+            }
             return true;
         }
 
@@ -196,6 +232,10 @@ namespace ChessFight.Network
             }
             PartsLength = o.PartsLength;
             Array.Copy(o.Parts, Parts, MaxPartBytes);
+            SeatCount = o.SeatCount;
+            Array.Copy(o.SeatRef, SeatRef, MaxSeats);
+            Array.Copy(o.SeatCheckpoint, SeatCheckpoint, MaxSeats);
+            Array.Copy(o.SeatPiece, SeatPiece, MaxSeats);
         }
 
         static void PutU16(byte[] b, ref int i, ushort v) { b[i++] = (byte)v; b[i++] = (byte)(v >> 8); }

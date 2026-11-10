@@ -103,6 +103,9 @@ namespace ChessFight.Game
             Session.SharedClock = clock.Now;
             // R533 (user 11-10, rule 3: "빌드용, 에디터는 미적용"): desertions are counted and matchmaking stopped in builds
             // only; the list is kept between runs, one for each Steam account on this PC.
+            // R538: the started match this player may come back to, kept between runs (a crash, a closed game).
+            Session.LoadRejoin = () => PlayerPrefs.GetString(RejoinKey, "");
+            Session.SaveRejoin = text => { PlayerPrefs.SetString(RejoinKey, text); PlayerPrefs.Save(); };
             Session.LeavePenaltyOn = !Application.isEditor;
             // Every online match's Esc menu (this one's, Sword Fight's own) says what leaving would cost just now.
             GameMenu.OnlineCost = () => Session != null ? Session.LeaveWarning : "";
@@ -152,6 +155,7 @@ namespace ChessFight.Game
         }
 
         string LeavesKey => "ChessFight.Leaves." + (Session != null ? Session.Self : 0);
+        string RejoinKey => "ChessFight.Rejoin." + (Session != null ? Session.Self : 0);
 
         // The in-game menu's 나가기 in a network match (R533): the player's own choice, a desertion while the match is
         // under way; the menu's warning says first what this one would cost.
