@@ -224,18 +224,20 @@ namespace ChessFight.RagdollLab
         public const int MaxMatchText = 400;
         public const int MaxBytes = RagdollWire.MaxBytes;
         public const int MaxPawns = RagdollWire.MaxPawns;
-        // Metres, symmetric around the scene origin: a 16-bit step of about 1 cm. Every map a ragdoll runs online must fit
-        // inside it (Pawn Rush course 01 runs from z -6 to about 246 m); Quantize clamps anything further out.
-        public const float PositionRange = 320f;
+        // Positions travel as WirePoint (Core, R541): x and z a millimetre a step over +-8388 m around the scene origin, y
+        // about 1 cm over +-320 m. Every map a ragdoll runs online must fit inside it; it clamps anything further out, and
+        // a client then draws the pawn pinned at the edge (PITFALLS 38: 16 bits over +-320 m fell short of the section
+        // round's z 580 m).
 
-        // A pawn in the snapshot: 65 bytes, 72 while its hook is out of the hand (RagdollWire, R297; 74 before).
+        // A pawn in the snapshot: 67 bytes, 76 while its hook is out of the hand (RagdollWire, R541; 65 and 72 from R297,
+        // 74 before).
         public const int PoseBytes = RagdollWire.PoseBytes;
         public const int SnapshotHeaderBytes = RagdollWire.HeaderBytes;          // 30
         // The wire's bodies are this pawn's: a mismatch does not compile (a constant division by zero).
         const int BodiesMatch = 1 / (RagdollPawn.Count == RagdollWire.Bodies ? 1 : 0);
         public const int InputBytes = 4 + 1 + 8 + 4 + 4 + 1 + 1 + 1 + 3;         // 27
         public const int LabInputBytes = 4 + 1 + 8 + 4 + 4 + 2 + 1 + 3 + 5 + 2 + 2 + 4 + 2;   // 42
-        public const int SwordInputBytes = LabInputBytes + 6;   // 46
+        public const int SwordInputBytes = LabInputBytes + WirePoint.Bytes;   // 50: the aimed point
 
         const float SmallestThreeRange = 0.70710678f;
 
@@ -338,12 +340,7 @@ namespace ChessFight.RagdollLab
             w.Write(input.roundTripMs);
             w.Write(input.delayMs);
             w.Write(input.lossPercent);
-            if (sword)
-            {
-                w.Write(Quantize(input.aimPoint.x));
-                w.Write(Quantize(input.aimPoint.y));
-                w.Write(Quantize(input.aimPoint.z));
-            }
+            if (sword) WirePoint.Write(w, input.aimPoint.x, input.aimPoint.y, input.aimPoint.z);
             return streams.Finish();
         }
 
@@ -390,7 +387,11 @@ namespace ChessFight.RagdollLab
             input.roundTripMs = r.ReadUInt16();
             input.delayMs = r.ReadByte();
             input.lossPercent = r.ReadByte();
-            if (sword) input.aimPoint = new Vector3(Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()), Dequantize(r.ReadInt16()));
+            if (sword)
+            {
+                WirePoint.Read(r, out float ax, out float ay, out float az);
+                input.aimPoint = new Vector3(ax, ay, az);
+            }
             if (input.pieceSeq != 0 && !ChessPieces.IsValid(input.pieceAsk)) return false;
             if (input.emoteSeq != 0 && !PieceEmotes.IsValidSlot(input.emoteAsk)) return false;
             if (input.lossPercent > 100) return false;
@@ -578,9 +579,9 @@ namespace ChessFight.RagdollLab
         static void ToWire(RagdollPose pose, PoseWire w)
         {
             w.Id = pose.id;
-            w.HipsX = Quantize(pose.hips.x);
-            w.HipsY = Quantize(pose.hips.y);
-            w.HipsZ = Quantize(pose.hips.z);
+            w.HipsX = WirePoint.ToFlat(pose.hips.x);
+            w.HipsY = WirePoint.ToHeight(pose.hips.y);
+            w.HipsZ = WirePoint.ToFlat(pose.hips.z);
             for (int b = 0; b < RagdollPawn.Count; b++) w.Rotations[b] = PackRotation(pose.rotations[b]);
             w.Flags = (byte)((pose.state & 3) | (pose.grounded ? 4 : 0) | (pose.grabbing ? 8 : 0) | (pose.snap ? 16 : 0)
                              | (pose.sprinting ? 32 : 0) | (pose.exhausted ? 64 : 0) | (pose.held ? 128 : 0));
@@ -588,9 +589,9 @@ namespace ChessFight.RagdollLab
             w.Escape = (byte)Mathf.Clamp(Mathf.RoundToInt(pose.escape * 255f), 0, 255);
             w.Hook = pose.hook;
             w.HookCharge = (byte)Mathf.Clamp(Mathf.RoundToInt(pose.hookCharge * 255f), 0, 255);
-            w.HookX = Quantize(pose.hookPoint.x);
-            w.HookY = Quantize(pose.hookPoint.y);
-            w.HookZ = Quantize(pose.hookPoint.z);
+            w.HookX = WirePoint.ToFlat(pose.hookPoint.x);
+            w.HookY = WirePoint.ToHeight(pose.hookPoint.y);
+            w.HookZ = WirePoint.ToFlat(pose.hookPoint.z);
             w.Piece = pose.piece;
             // Its low 16 bits: a round trip is far shorter than the 65.5 s they span (RagdollWire.AckAge).
             w.Ack = (ushort)pose.ack;
@@ -604,7 +605,7 @@ namespace ChessFight.RagdollLab
                 var w = wireIn.At(i);
                 var pose = into.At(i);
                 pose.id = w.Id;
-                pose.hips = new Vector3(Dequantize(w.HipsX), Dequantize(w.HipsY), Dequantize(w.HipsZ));
+                pose.hips = new Vector3(WirePoint.FromFlat(w.HipsX), WirePoint.FromHeight(w.HipsY), WirePoint.FromFlat(w.HipsZ));
                 for (int b = 0; b < RagdollPawn.Count; b++) pose.rotations[b] = UnpackRotation(w.Rotations[b]);
                 pose.state = (byte)(w.Flags & 3);
                 pose.grounded = (w.Flags & 4) != 0;
@@ -617,7 +618,7 @@ namespace ChessFight.RagdollLab
                 pose.escape = w.Escape / 255f;
                 pose.hook = w.Hook;
                 pose.hookCharge = w.HookCharge / 255f;
-                pose.hookPoint = new Vector3(Dequantize(w.HookX), Dequantize(w.HookY), Dequantize(w.HookZ));
+                pose.hookPoint = new Vector3(WirePoint.FromFlat(w.HookX), WirePoint.FromHeight(w.HookY), WirePoint.FromFlat(w.HookZ));
                 pose.piece = w.Piece;
                 pose.ack = w.Ack;
             }
@@ -667,12 +668,7 @@ namespace ChessFight.RagdollLab
             return true;
         }
 
-        // ---------------------------------------------------------------- quantisation
-
-        public static short Quantize(float metres) =>
-            (short)Mathf.Clamp(Mathf.RoundToInt(metres / PositionRange * short.MaxValue), short.MinValue + 1, short.MaxValue);
-
-        public static float Dequantize(short value) => value / (float)short.MaxValue * PositionRange;
+        // ---------------------------------------------------------------- quantisation (positions: WirePoint, Core)
 
         /// <summary>Smallest-three: 2 bits for the dropped component, 10 bits for each of the others.</summary>
         public static uint PackRotation(Quaternion q)

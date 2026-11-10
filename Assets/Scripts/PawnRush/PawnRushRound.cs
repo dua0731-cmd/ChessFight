@@ -179,7 +179,34 @@ namespace ChessFight.PawnRush
             holder.SetActive(true);
             if (finishRace) BindFinish();
             Debug.Log(log.ToString());
+            CheckWireRange();
             Built?.Invoke(this);
+        }
+
+        // R541 (11-11 online test: participants met an unseen wall on the hall's last glass stones while the host walked
+        // on): a client draws every pawn from the host's snapshots, and those carry a position only so far (WirePoint:
+        // ±8388 m across, ±320 m up). Until R541 it was ±320 m every way, and a seven-section round runs to about 580 m:
+        // every pawn past 320 m was drawn on that line. A round that leaves the range again says so as it is built.
+        // The margins: how far a section reaches beyond its entry and exit (its wings, its upper floors).
+        const float WireMarginFlat = 200f, WireMarginHeight = 60f;
+
+        void CheckWireRange()
+        {
+            float flat = WirePoint.FlatRange - WireMarginFlat, height = WirePoint.HeightRange - WireMarginHeight;
+            Vector3 start = transform.position;
+            foreach (var section in sections)
+            {
+                Vector3 end = section.ExitWorld.position;
+                foreach (var p in new[] { start, end })
+                {
+                    if (Mathf.Abs(p.x) <= flat && Mathf.Abs(p.z) <= flat && Mathf.Abs(p.y) <= height) continue;
+                    Debug.LogError($"[PawnRush] 판의 '{section.DisplayName}' 구간({p.x:0}, {p.y:0}, {p.z:0} m)이 온라인 위치 범위 " +
+                                   $"(가로 ±{WirePoint.FlatRange:0} m, 높이 ±{WirePoint.HeightRange:0} m)에 너무 가깝거나 밖에 있습니다. " +
+                                   "참가자 화면에서는 그 너머의 말이 범위 끝에 멈춰 보입니다 (PITFALLS 38).");
+                    return;
+                }
+                start = end;
+            }
         }
 
         // The crown finish on this round's goal (the last section's FinishZone: the war room's).

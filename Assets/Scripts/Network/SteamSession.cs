@@ -101,7 +101,12 @@ namespace ChessFight.Network
         //      offered to matchmaking again ("open" stays 0 after the start, "held" is gone). The Pawn Rush course state
         //      carries every seat's checkpoint and piece (CFP6). A v34 searcher would still walk into a v34 host's
         //      started match, and a v34 host would seat a stranger in a v35 player's match.
-        public const string Protocol = "chessfight.dua0731.network.v35";
+        // v36 (R541): every point on the ragdoll wire is a WirePoint - x and z over +-8388 m, y over +-320 m - instead of
+        //      16 bits over +-320 m ("CFRE": the snapshot's hips and hook, 67 and 76 bytes a pawn; the skills packet; the
+        //      Sword Fight input's aimed point). The section round runs to z 580 m and a v35 client drew every pawn past
+        //      z 320 m pinned there (11-11 online test: an unseen wall on the grand stair hall's last glass stones). A v35
+        //      PC drops every v36 ragdoll packet.
+        public const string Protocol = "chessfight.dua0731.network.v36";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;

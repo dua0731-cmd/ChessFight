@@ -127,8 +127,9 @@ namespace ChessFight.Network
 
     /// <summary>
     /// R306 [5] (HOST_AUTHORITY P2): how often the host sends its snapshots. 60 a second while its snapshots alone cost its
-    /// upload no more than <see cref="FastBudgetBytes"/> at that rate - up to six players (5 clients x 420 B x 60 = 123
-    /// KB/s, half of a full twelve's 261 KB/s at 30), or two to three players with bots filling up to twelve - else 30.
+    /// upload no more than <see cref="FastBudgetBytes"/> at that rate - up to six players (5 clients x 432 B x 60 = 127
+    /// KB/s, half of a full twelve's 269 KB/s at 30), or two to three players with bots filling up to twelve - else 30.
+    /// R541: a pawn grew from 65 to 67 bytes (WirePoint), and six players still fit; a 68-byte pawn would not.
     /// A client's snapshot wait halves (17 to 8 ms) and its playback floor with it (70 to 37 ms, PlaybackDelay). Clients
     /// read the rate from the snapshots' host times: nothing on the wire changes.
     /// </summary>
