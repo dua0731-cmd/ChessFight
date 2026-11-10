@@ -17,7 +17,7 @@ namespace ChessFight.VFX
     public sealed class VfxGroundWarn : MonoBehaviour, IVfxSeekable
     {
         static readonly int FillId = Shader.PropertyToID("_Fill"), SweepId = Shader.PropertyToID("_Sweep"),
-            UrgencyId = Shader.PropertyToID("_Urgency"), FadeId = Shader.PropertyToID("_Fade"), AgeId = Shader.PropertyToID("_Age"),
+            UrgencyId = Shader.PropertyToID("_Urgency"), StrikeId = Shader.PropertyToID("_Strike"), FadeId = Shader.PropertyToID("_Fade"), AgeId = Shader.PropertyToID("_Age"),
             RadiusId = Shader.PropertyToID("_Radius"), MarginId = Shader.PropertyToID("_Margin");
 
         [Min(.1f), Tooltip("The danger disc's radius (m): the strike's reach.")]
@@ -38,6 +38,9 @@ namespace ChessFight.VFX
         public float outTime = .06f;
         [Range(.2f, 1f), Tooltip("How the fill runs: 1 = even, less = quick at first and slow to the rim.")]
         public float fillCurve = .85f;
+        [Tooltip("Seconds after it shows that it turns red (R534: the charge is done, the thing comes down); "
+                 + "negative = never.")]
+        public float strikeAt = -1f;
 
         MeshRenderer view;
         MaterialPropertyBlock block;
@@ -86,6 +89,7 @@ namespace ChessFight.VFX
             block.SetFloat(FillId, Mathf.Pow(run, fillCurve));
             block.SetFloat(SweepId, run);
             block.SetFloat(UrgencyId, Mathf.Clamp01((age - lead + urgent) / .05f));
+            block.SetFloat(StrikeId, strikeAt >= 0f ? Mathf.Clamp01((age - strikeAt) / .04f) : 0f);
             block.SetFloat(FadeId, fade);
             block.SetFloat(AgeId, age);
             block.SetFloat(RadiusId, radius);

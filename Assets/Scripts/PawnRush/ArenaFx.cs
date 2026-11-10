@@ -74,6 +74,7 @@ namespace ChessFight.PawnRush
             a.rolloffMode = AudioRolloffMode.Linear;
             a.minDistance = 3f;
             a.maxDistance = 30f;
+            SectionSoundGate.Gate(a);   // R529: heard only in its section
             return a;
         }
 

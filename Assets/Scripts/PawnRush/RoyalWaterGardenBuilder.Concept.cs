@@ -223,6 +223,7 @@ namespace ChessFight.PawnRush
                 Cover(content, piece.covered);
                 Remove(content, piece.removed);
                 Hang(content, dress.transform, piece.hung);
+                if (piece.model == "GardenPlaza") RefitSpouts(content, dress.transform);
                 if (piece.model == "GardenCanal") RefitGeysers(content.Find("B2_GeyserCanal"));
                 if (piece.model == "GardenWater") FallLines(content);
                 if (piece.model == "GardenWatergate") LakeBoats(content, dress.transform);
@@ -334,7 +335,38 @@ namespace ChessFight.PawnRush
                 }
                 foreach (var renderer in mover.GetComponentsInChildren<Renderer>(true)) renderer.enabled = false;
                 node.SetParent(mover, true);
+                // R532: a spin bar's dressing is seated back on its graybox and collides as it is drawn (on waking).
+                if (name.StartsWith("Spin bar") || name.EndsWith("spin bar"))
+                {
+                    var fit = mover.GetComponent<GardenSpinBarFit>();
+                    if (fit == null) fit = mover.gameObject.AddComponent<GardenSpinBarFit>();
+                    fit.Configure(node.GetComponent<MeshFilter>());
+                }
             }
+        }
+
+        // R532 (승규 "벽에 물줄기가 ... 실제로 물줄기가 나와야 돼"): the plaza's six kerb fountains run (GardenSpout). On waking it
+        // takes the model's glass tubes and still foam out of "Plaza fountain jets" (its gold nozzles stay).
+        static readonly float[] SpoutAngles = { 0f, 44f, -44f, 136f, 180f, 224f };
+        const float SpoutRadius = 17.37f, SpoutHeight = .45f, SpoutMouth = .14f;   // plaza_sample_v4.py: BED_OUT + .02, .45
+
+        static void RefitSpouts(Transform content, Transform dress)
+        {
+            MeshRenderer oldJets = null;
+            foreach (var renderer in dress.GetComponentsInChildren<MeshRenderer>(true))
+                if (renderer.name == "Plaza fountain jets") oldJets = renderer;
+            var nozzles = new Vector3[SpoutAngles.Length];
+            var outs = new Vector3[SpoutAngles.Length];
+            for (int i = 0; i < SpoutAngles.Length; i++)
+            {
+                outs[i] = PlazaPoint(SpoutAngles[i], 1f) - PlazaPoint(SpoutAngles[i], 0f);
+                nozzles[i] = PlazaPoint(SpoutAngles[i], SpoutRadius + SpoutMouth, SpoutHeight);
+            }
+            var water = Resources.Load<Material>(ConceptMaterials + "GC_jet");
+            if (water == null) Debug.LogWarning("[정원] 물줄기 재질이 없습니다: " + ConceptMaterials + "GC_jet");
+            var spouts = new GameObject("Plaza spouts");
+            spouts.transform.SetParent(content, false);
+            spouts.AddComponent<GardenSpout>().Configure(nozzles, outs, EarlyWaterY, water, oldJets);
         }
 
         // R426: each geyser's water is computed (GardenJet, GC_jet) instead of the graybox's glass column and bubbles; the

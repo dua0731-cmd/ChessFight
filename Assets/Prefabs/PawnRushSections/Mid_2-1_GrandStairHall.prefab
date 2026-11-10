@@ -35404,6 +35404,10 @@ PrefabInstance:
       propertyPath: SwingAngle
       value: 40
       objectReference: {fileID: 0}
+    - target: {fileID: 871924836754015072, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
+      propertyPath: SwingDuration
+      value: 1.4
+      objectReference: {fileID: 0}
     - target: {fileID: 1221733643433733635, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
       propertyPath: m_Name
       value: 11 Pendulum (chandelier) 1
@@ -36301,8 +36305,12 @@ PrefabInstance:
       value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 871924836754015072, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
+      propertyPath: SwingDuration
+      value: 1.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 871924836754015072, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
       propertyPath: phaseOffset
-      value: 1.6
+      value: 1.16
       objectReference: {fileID: 0}
     - target: {fileID: 1221733643433733635, guid: d8fa8ce6dd87c5541a97c03395ae343b, type: 3}
       propertyPath: m_Name

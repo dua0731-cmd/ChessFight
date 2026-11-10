@@ -16,7 +16,8 @@ namespace ChessFight.PawnRush
     // R404 (승규 11-04, a shot of the pad's round gold ring: "이 점프 발판 vfx를 발판 모양에 맞게 사각형으로 해"): the
     // glow ring and the launch's shock ring are rounded squares on the deck's own axes (the glow hugging its 3 m edge),
     // and the sparks fly out square to the deck's four edges instead of in a circle.
-    public sealed class JumpPadFx : MonoBehaviour
+    // R562: the launch and landing sounds and the landing's burst are in JumpPadFx.Land.cs.
+    public sealed partial class JumpPadFx : MonoBehaviour
     {
         const float Deck = .41f, Side = 3f, Rearm = .3f;
         static readonly Color Gold = new Color(1f, .74f, .32f), Ember = new Color(1f, .45f, .12f);
@@ -102,6 +103,7 @@ namespace ChessFight.PawnRush
             lamp.color = new Color(1f, .66f, .32f);
             lamp.range = 6f;
             lamp.shadows = LightShadows.None;
+            StartLanding();
         }
 
         void Update()
@@ -142,6 +144,7 @@ namespace ChessFight.PawnRush
                 block.Clear();
             }
             Watch(t);
+            Follow(t);
         }
 
         // A pawn arriving on the deck (the host launches it the same physics step): the burst, once per arrival.
@@ -156,10 +159,18 @@ namespace ChessFight.PawnRush
             {
                 var actor = ImportedObstacleActor.Find(hits[i]);
                 if (actor == null || actor.Position.y < box.max.y - .2f || actor.Position.y > box.max.y + .4f) continue;
-                if (!lastSeen.TryGetValue(actor, out float last) || t - last > Rearm) fire = true;
+                if (!lastSeen.TryGetValue(actor, out float last) || t - last > Rearm)
+                {
+                    fire = true;
+                    Launched(actor, t);
+                }
                 lastSeen[actor] = t;
             }
-            if (fire) Burst(t);
+            if (fire)
+            {
+                Burst(t);
+                PlayLaunch();
+            }
         }
 
         void Burst(float t)
