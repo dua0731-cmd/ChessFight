@@ -31,7 +31,13 @@ namespace ChessFight.RagdollLab
         public int Team => Pawn.Team;
 
         // Set by whoever spawns the pawn outside the lab (the offline playtest of a mode scene).
-        public void AssignTeam(int team) => Pawn.Team = team;
+        public void AssignTeam(int team)
+        {
+            Pawn.Team = team;
+            string name = ChessFight.Game.PlayerProfile.Name;
+            Pawn.DisplayName = string.IsNullOrEmpty(name) ? "나" : name;
+            MatchNameplate.Attach(Pawn);
+        }
 
         public float Stamina01 => Pawn.Stamina;
 

@@ -21,12 +21,11 @@ namespace ChessFight.RagdollLab
 
         Font display;
         GUIStyle displayStyle, bodyStyle;
-        Texture2D panelTex, pipW, pipB, pillW, pillB, badgeTex, dimTex, brassTex;
+        Texture2D panelTex, pipW, pipB, dimTex, brassTex;
         // The pick cards in the settings window's design A look (10-30): smoked dark glass, a thin gold edge.
         static readonly Color Amber = SwordFightShapes.Hex("#f2b632"), Parch = SwordFightShapes.Hex("#efe4d2"),
             ParchBright = SwordFightShapes.Hex("#fff4dc"), Muted = SwordFightShapes.Hex("#a8957c");
         Texture2D pickPanelTex, cardTex, cardHotTex, cardOffTex, capTex, capDimTex, chipTex, chipMeTex, ringTex, railTex, fillTex;
-        readonly Dictionary<int, Texture2D> icons = new Dictionary<int, Texture2D>();
         int feedSeen;
         AudioSource tick;
         int lastTickSecond = -1;
@@ -147,56 +146,6 @@ namespace ChessFight.RagdollLab
             return t;
         }
 
-        Texture2D Icon(PieceKind kind, bool whiteStyle)
-        {
-            int key = (int)kind * 2 + (whiteStyle ? 1 : 0);
-            if (icons.TryGetValue(key, out var have) && have != null) return have;
-            Vector2[] outline = kind switch
-            {
-                PieceKind.King => ChessOutlines.King, PieceKind.Queen => ChessOutlines.Queen, PieceKind.Rook => ChessOutlines.Rook,
-                PieceKind.Bishop => ChessOutlines.Bishop, PieceKind.Knight => ChessOutlines.Knight, _ => ChessOutlines.Pawn,
-            };
-            const int W = 40, H = 64;
-            float s = H / 205f;
-            var inside = new bool[W * H];
-            for (int y = 0; y < H; y++)
-                for (int x = 0; x < W; x++)
-                {
-                    var p = new Vector2((x + 0.5f) / s - (W / s - 100f) / 2f, (H - y - 0.5f) / s);
-                    bool inn = Inside(outline, p);
-                    if (kind == PieceKind.Queen) foreach (var b in ChessOutlines.QueenBalls) inn |= (p - new Vector2(b.x, b.y)).magnitude <= b.z;
-                    if (kind == PieceKind.Pawn) inn |= (p - new Vector2(ChessOutlines.PawnHead.x, ChessOutlines.PawnHead.y)).magnitude <= ChessOutlines.PawnHead.z;
-                    inside[y * W + x] = inn;
-                }
-            var t = new Texture2D(W, H, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
-            for (int y = 0; y < H; y++)
-                for (int x = 0; x < W; x++)
-                {
-                    bool inn = inside[y * W + x];
-                    bool edge = false;
-                    if (inn)
-                        for (int dy = -2; dy <= 2 && !edge; dy++)
-                            for (int dx = -2; dx <= 2; dx++)
-                            {
-                                int nx = x + dx, ny = y + dy;
-                                if (nx < 0 || ny < 0 || nx >= W || ny >= H || !inside[ny * W + nx]) { edge = true; break; }
-                            }
-                    Color c = !inn ? Color.clear : whiteStyle ? (edge ? Ink : Cream) : Cream;
-                    t.SetPixel(x, y, c);
-                }
-            t.Apply();
-            icons[key] = t;
-            return t;
-        }
-
-        static bool Inside(Vector2[] poly, Vector2 p)
-        {
-            bool c = false;
-            for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
-                if ((poly[i].y > p.y) != (poly[j].y > p.y) && p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x) c = !c;
-            return c;
-        }
-
         void Styles()
         {
             if (panelTex != null) return;
@@ -207,9 +156,6 @@ namespace ChessFight.RagdollLab
             panelTex = Rounded(32, 32, 10f, new Color(246 / 255f, 236 / 255f, 214 / 255f, 0.92f), SwordFightShapes.Hex("#b8924a"), 1.2f);
             pipW = Rounded(26, 26, 13f, Cream, SwordFightShapes.Hex("#c9a04c"), 1.5f);
             pipB = Rounded(26, 26, 13f, SwordFightShapes.Hex("#2a2421"), SwordFightShapes.Hex("#c9a04c"), 1.5f);
-            pillW = Rounded(24, 18, 9f, new Color(243 / 255f, 236 / 255f, 221 / 255f, 0.92f), new Color(243 / 255f, 236 / 255f, 221 / 255f, 0.92f), 0f);
-            pillB = Rounded(24, 18, 9f, new Color(32 / 255f, 27 / 255f, 24 / 255f, 0.9f), new Color(32 / 255f, 27 / 255f, 24 / 255f, 0.9f), 0f);
-            badgeTex = Rounded(16, 14, 6f, Gold, Gold, 0f);
             brassTex = Rounded(16, 16, 8f, SwordFightShapes.Hex("#c9a04c"), SwordFightShapes.Hex("#b8924a"), 1f);
             pickPanelTex = Rounded(40, 40, 16f, new Color(20 / 255f, 13 / 255f, 8 / 255f, 0.92f), new Color(Amber.r, Amber.g, Amber.b, 0.35f), 1.2f);
             cardTex = Rounded(28, 28, 12f, SwordFightShapes.Hex("#2b2017"), SwordFightShapes.Hex("#4a3826"), 1.2f);
@@ -256,7 +202,7 @@ namespace ChessFight.RagdollLab
             var me = game.Local;
             int myTeam = me != null ? me.Pawn.Team : 0;
 
-            DrawTags(ui);
+            DrawTags();
             DrawScore(w, ui);
             DrawCaption(w, h, ui, me);
             switch (view.Phase)
@@ -303,42 +249,24 @@ namespace ChessFight.RagdollLab
             if (gone) r.y += 4f;
             GUI.DrawTexture(r, white ? pipW : pipB);
             var piece = view.Phase == SwordPhase.Pick && !f.Picked ? PieceKind.Pawn : f.Piece;
-            var icon = Icon(piece, white);
+            var icon = MatchNameplate.Icon(piece, white);
             float ih = r.height * 0.78f, iw = ih * icon.width / icon.height;
             GUI.DrawTexture(new Rect(r.center.x - iw / 2f, r.center.y - ih / 2f, iw, ih), icon);
             GUI.color = old;
         }
 
-        void DrawTags(float ui)
+        void DrawTags()
         {
             var cam = game.CameraRig != null ? game.CameraRig.Cam : Camera.main;
-            if (cam == null) return;
-            float h = Screen.height;
+            if (cam == null || Event.current.type != EventType.Repaint) return;
             foreach (var f in game.Fighters.Values)
             {
                 if (f == null || !f.Alive) continue;
-                Vector3 s = cam.WorldToScreenPoint(f.Pawn.bodies[(int)BodyId.Head].position + Vector3.up * 0.5f);
-                if (s.z < 0.2f) continue;
                 var info = view.Find(f.Id);
-                bool white = f.Pawn.Team == 0;
                 var piece = view.Phase == SwordPhase.Pick && info.HasValue ? info.Value.Piece : f.Pawn.Piece;
-                bool e = info.HasValue && info.Value.EReady;
-                int size = Mathf.RoundToInt(11 * ui);
-                bodyStyle.fontSize = size;
-                float textW = bodyStyle.CalcSize(new GUIContent(f.Pawn.DisplayName)).x;
-                float ih = 14f * ui, iw = ih * 40f / 64f, pad = 6f * ui, badgeW = e ? 16f * ui : 0f;
-                float tagW = pad + iw + 3f * ui + textW + (e ? 3f * ui + badgeW : 0f) + pad, tagH = 18f * ui;
-                var r = new Rect(s.x - tagW / 2f, h - s.y - tagH, tagW, tagH);
-                Panel(r, white ? pillW : pillB, 8);
-                GUI.DrawTexture(new Rect(r.x + pad, r.y + (tagH - ih) / 2f, iw, ih), Icon(piece, white));
-                Text(new Rect(r.x + pad + iw + 3f * ui, r.y, textW + 2f, tagH), f.Pawn.DisplayName, bodyStyle, size, white ? Ink : Cream, TextAnchor.MiddleLeft);
-                if (e)
-                {
-                    var br = new Rect(r.xMax - pad - badgeW, r.y + 2f * ui, badgeW, tagH - 4f * ui);
-                    GUI.DrawTexture(br, badgeTex);
-                    Text(br, "E", bodyStyle, size, Ink);
-                }
-                if (debugView) DrawFallStart(f, s, h);
+                bool ready = info.HasValue && info.Value.EReady;
+                if (MatchNameplate.Draw(cam, f.Pawn, piece, ready, out var screen) && debugView)
+                    DrawFallStart(f, screen, Screen.height);
             }
         }
 
@@ -465,7 +393,7 @@ namespace ChessFight.RagdollLab
                 Panel(badge, chosen ? capTex : capDimTex, 4);
                 Text(badge, (i + 1).ToString(), bodyStyle, Mathf.RoundToInt(13 * ui), chosen ? Ink : Parch);
 
-                var icon = Icon(p, false);
+                var icon = MatchNameplate.Icon(p, false);
                 float ih = 78f * ui, icw = ih * icon.width / icon.height;
                 GUI.DrawTexture(new Rect(cr.center.x - icw / 2f, cr.y + 22f * ui, icw, ih), icon);
                 Text(new Rect(cr.x, cr.y + 108f * ui, cw, 30f * ui), ChessPieces.Name(p), displayStyle, Mathf.RoundToInt(24 * ui), hot ? ParchBright : Parch);

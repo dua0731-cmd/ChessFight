@@ -381,13 +381,19 @@ namespace ChessFight.RagdollLab.Net
 
         // ------------------------------------------------------------------ roster
 
+        float nextNameRefresh;
         void SyncRoster()
         {
+            bool refreshNames = Time.unscaledTime >= nextNameRefresh;
+            if (refreshNames) nextNameRefresh = Time.unscaledTime + 1f;
             gone.Clear();
             foreach (var id in runners.Keys) if (!session.Roster.ContainsKey(id)) gone.Add(id);
             foreach (var id in gone) Remove(id);
             foreach (var e in session.Roster)
-                if (!runners.ContainsKey(e.Key)) Spawn(e.Key, Mathf.Clamp(e.Value.Team, 0, 1), Mathf.Max(0, e.Value.Slot));
+            {
+                if (!runners.TryGetValue(e.Key, out var runner)) Spawn(e.Key, Mathf.Clamp(e.Value.Team, 0, 1), Mathf.Max(0, e.Value.Slot));
+                else if (refreshNames) runner.Pawn.DisplayName = session.Name(e.Key);
+            }
         }
 
         void Spawn(ulong id, int team, int slot)
@@ -409,6 +415,7 @@ namespace ChessFight.RagdollLab.Net
             pawn.name = name;
             pawn.DisplayName = name;
             pawn.Team = team;
+            MatchNameplate.Attach(pawn);
             pawn.skin.sharedMaterial = team == Teams.White ? white : black;
             var driver = pawn.GetComponent<RagdollDriver>();
             if (driver == null) driver = pawn.gameObject.AddComponent<RagdollDriver>();

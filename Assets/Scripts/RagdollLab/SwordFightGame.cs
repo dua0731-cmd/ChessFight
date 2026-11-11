@@ -133,7 +133,13 @@ namespace ChessFight.RagdollLab
         public static Vector3 Facing(int team) => team == 0 ? Vector3.forward : Vector3.back;
         public SwordFightPawn Add(ulong id, int team, int slot, bool bot, string displayName)
         {
-            if (Fighters.TryGetValue(id, out var old)) return old;
+            if (Fighters.TryGetValue(id, out var old))
+            {
+                old.Pawn.DisplayName = displayName;
+                return old;
+            }
+            if (!Networked && !bot && id == LocalId && PlayerProfile.HasName)
+                displayName = PlayerProfile.Name;
             Vector3 at = Match != null ? Match.StartPoint(team, slot) : SpawnPoint(team, slot);
             var pawn = Instantiate(pawnPrefab, at + Vector3.up * .02f, Quaternion.LookRotation(Facing(team)));
             pawn.name = displayName; pawn.DisplayName = displayName; pawn.tuning = tuning; pawn.Team = team;
@@ -143,6 +149,7 @@ namespace ChessFight.RagdollLab
             fighter.Initialize(id, slot, bot); fighter.Respawn(at, Facing(team), Authority);
             Fighters.Add(id, fighter);
             Match?.Joined(fighter);
+            if (Match == null && !Automated) MatchNameplate.Attach(pawn, fighter);
             if (id == LocalId && CameraRig != null) CameraRig.soloTarget = pawn;
             return fighter;
         }
