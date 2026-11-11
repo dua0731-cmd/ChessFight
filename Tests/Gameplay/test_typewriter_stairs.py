@@ -82,11 +82,19 @@ class TypewriterTests(unittest.TestCase):
         self.assertTrue(all(abs(hi[1]-6.8)<.001 for lo,hi in doors))
         floor=box('Approach floor -27')
         self.assertAlmostEqual(floor[0][0],-8);self.assertAlmostEqual(floor[1][0],8)
+        names=set(r.names.values())
+        self.assertFalse(any(n.startswith(('Operations corridor side','Typewriter display alcove','Typewriter alcove shoulder')) for n in names))
         for side in (-1,1):
-            alcove=box('Typewriter display alcove side '+str(side))
-            housing=box('Enamel side housing '+str(side))
-            self.assertGreater(min(abs(alcove[0][0]),abs(alcove[1][0]))-max(abs(housing[0][0]),abs(housing[1][0])),7)
             cheek=box('Low keyboard cheek '+str(side))
             self.assertLess(cheek[1][1],1.3)
-        old_walls=[hi[2] for name,lo,hi,_ in r.boxes if name.startswith('Operations corridor side')]
-        self.assertTrue(all(z<=-60 for z in old_walls))
+
+    def test_discrete_tables_keep_jump_and_map_gaps_open(self):
+        room.CompleteWarRoom.setUpClass();r=room.CompleteWarRoom()
+        names=set(r.names.values())
+        for name in ('Approach floor -146','Dispatch table after jump','Fixed seal island','Approach floor -60','Approach floor -27','Typewriter furniture base','Final exit walkway'):
+            legs=[n for n in names if n.startswith(name+' carved leg ')]
+            self.assertEqual(len(legs),4,name)
+        for z in (-128,-92,-68):
+            floors=[name for name,lo,hi,moving in r.boxes if not moving and name!='Walkable parchment' and lo[0]<0<hi[0] and lo[2]<z<hi[2] and -.1<hi[1]<.1]
+            self.assertEqual(floors,[],(z,floors))
+        self.assertFalse(any(n.startswith('Side room scenery floor') for n in names))

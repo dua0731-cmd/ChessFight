@@ -431,6 +431,15 @@ class Builder(LegacyBuilder):
         self.raw={};self.fake={};self.report={'prefab':PREFAB,'scene':SCENE,'new_obstacles':[],'occluder_boxes':[], 'transition_route':[], 'footprint_m':[320,320]}
         self.c=kit.Course.__new__(kit.Course);self.c.d=self.d;self.c.root=self.root;self.c.accent='Teal';self.c.units=[];self.c.cuts=[];self.c.bi=0
         self.c.beat=self.root
+    def table(self,name,a,b,width=12,solid=True,top=0):
+        # Preserve the playable top at Y=0; the furniture extends down into the room.
+        self.box(self.root,name,(0,top-.6,(a+b)/2),(width,1.2,b-a),'Wood',solid)
+        self.box(self.root,name+' brass edge',(0,top-1.25,(a+b)/2),(width+.15,.15,b-a+.15),'Gold',False)
+        for side in (-1,1):
+            self.box(self.root,name+' apron '+str(side),(side*(width/2-.4),top-2,(a+b)/2),(.5,2,b-a-1),'Wood',False)
+            for z in (a+1.2,b-1.2):
+                self.box(self.root,name+' carved leg '+str(side)+' '+str(z),(side*(width/2-1.2),-11,z),(1.8,20,1.8),'Wood',False)
+                self.box(self.root,name+' leg ferrule '+str(side)+' '+str(z),(side*(width/2-1.2),-20.5,z),(2,1,2),'Gold',False)
     def scroll(self,z,phase):
         g=self.group('Rolling command map '+str(z),pos=(0,0,z));segments=[]
         right=phase>0; direction=-1 if right else 1
@@ -528,18 +537,16 @@ class Builder(LegacyBuilder):
         for x in (-83,83):self.wall(self.root,'Square perimeter entrance '+str(x),(x,20,-150),(154,60,2))
         self.wall(self.root,'Entrance header',(0,20,-150),(12,20,2))
         self.box(self.root,'Operations ceiling',(0,30,-80),(320,1,140),'Slate')
-        for x in (-87.5,87.5):self.box(self.root,'Side room scenery floor '+str(x),(x,-1.4,-80),(143,.8,138),'Slate')
-        # Keep the playable strip narrow. The side rooms are scenery, without bypass floors.
-        for a,b in ((-146,-100),(-60,-51),(-27,-8)):
-            self.box(self.root,'Approach floor '+str(a),(0,-.4,(a+b)/2),(16 if a==-27 else 12,.8,b-a),'Ivory')
-        for x in (-14,14):self.wall(self.root,'Operations corridor side '+str(x),(x,10,-105),(1,40,90))
-        for side in (-1,1):
-            self.wall(self.root,'Typewriter display alcove side '+str(side),(side*20,10,-35.5),(1,40,49))
-            self.wall(self.root,'Typewriter alcove shoulder '+str(side),(side*17,10,-60),(6,40,1))
-        self.box(self.root,'Sunken map pit',(0,-12,-88),(28,1,48),'Night',False)
+        # An open room with discrete tables, not a walled corridor. Gaps stay open for jumps/maps.
+        self.box(self.root,'Distant operations room floor',(0,-23,-80),(318,1,138),'Slate',False)
+        self.table('Approach floor -146',-146,-129)
+        self.table('Dispatch table after jump',-127,-100)
+        self.table('Approach floor -60',-60,-51)
+        self.table('Approach floor -27',-27,-8,16)
+        self.table('Typewriter furniture base',-51,-27,25,True,-.8)
         self.press(-122,-3,6,0);self.press(-122,3,6,2.675)
         self.scroll(-100,0);self.scroll(-76,3)
-        self.box(self.root,'Fixed seal island',(0,-.4,-80),(8,.4,8),'Wood',True,shape='Cylinder')
+        self.table('Fixed seal island',-84,-76,8)
         self.box(self.root,'Royal seal rest island',(0,.025,-80),(5,.05,5),'Gold',False,shape='Cylinder')
         self.typewriter()
         self.headquarters()
@@ -547,7 +554,7 @@ class Builder(LegacyBuilder):
             if obj['name']=='HQ rear wall':obj['pos']=(-66,24,170);obj['scale']=(118,68,2)
         self.wall(self.hq,'HQ rear exit right',(66,24,170),(118,68,2))
         self.wall(self.hq,'HQ rear exit header',(0,34,170),(14,48,2))
-        self.box(self.root,'Final exit walkway',(0,-.4,158),(12,.8,24),'Ivory')
+        self.table('Final exit walkway',146,170)
         self.exit['pos']=(0,0,169)
         # The outer square's north edge is the HQ rear wall extended to both corners.
         for x in (-142,142):self.wall(self.root,'North perimeter return '+str(x),(x,20,170),(36,60,2))
