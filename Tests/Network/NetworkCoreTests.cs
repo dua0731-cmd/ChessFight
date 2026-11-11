@@ -1168,7 +1168,7 @@ public static class NetworkCoreTests
                 Check(PlankBridge.InCarryArea(-11.5f, 3f) && !PlankBridge.InCarryArea(-11.7f, 3f) && PlankBridge.InCarryArea(0f, 21.5f), "held out a little further");
                 Check(PlankBridge.OnPile(-8f, 3.5f) && PlankBridge.OnPile(9f, 4.3f) && !PlankBridge.OnPile(0f, 3.5f), "the piles");
                 Check(PlankBridge.Count(0x3FF) == 10 && PlankBridge.Count(0x5) == 2, "counted"); });
-            Test("B plank block (R528): every state round-trips, a lying plank on the 0.1 m grid, 26 bytes at most", () => {
+            Test("B plank block (R528, R543): every state round-trips, a lying plank on the 0.1 m grid, 31 bytes at most", () => {
                 var a = new PlankBoard();
                 Check(a.Stock(0) == 5 && a.Stock(1) == 5 && a.TopOf(0) == 4 && a.TopOf(1) == 9, "two full piles");
                 a.Laid = 0x3;
@@ -1179,7 +1179,7 @@ public static class NetworkCoreTests
                 var buffer = new byte[PawnRushNetState.BlockBytes];
                 var w = new NetBlock(buffer, 0, buffer.Length);
                 a.Write(ref w);
-                Check(w.Written == 2 + 4 + 1 + 2 * 2, "bytes " + w.Written);
+                Check(w.Written == 2 + 5 + 1 + 2 * 2, "bytes " + w.Written);
                 var b = new PlankBoard();
                 var r = new NetBlock(buffer, 0, w.Written);
                 b.Read(ref r);
@@ -1192,7 +1192,7 @@ public static class NetworkCoreTests
                 for (int i = 0; i < PlankBridge.Planks; i++) { all.State[i] = PlankState.Lying; all.X[i] = -12.8f + i; all.Z[i] = 23.5f - i; }
                 var big = new NetBlock(buffer, 0, buffer.Length);
                 all.Write(ref big);
-                Check(big.Written == PlankBoard.MaxBytes && PlankBoard.MaxBytes <= PawnRushNetState.BlockBytes, "worst case " + big.Written);
+                Check(big.Written == all.Bytes && all.Bytes == 27 && PlankBoard.MaxBytes <= PawnRushNetState.BlockBytes, "worst case " + big.Written);
                 var back = new PlankBoard();
                 var rb = new NetBlock(buffer, 0, big.Written);
                 back.Read(ref rb);
@@ -1310,6 +1310,237 @@ public static class NetworkCoreTests
                           && again.Situations.Zip(l.Situations, (x, y) => x.From.Is(y.From.File, y.From.Rank) && x.Kind == y.Kind).All(ok => ok), "same seed, seed " + seed);
                 }
                 Check(doubles > 50 && knights > 100 && pawns > 50, "every kind comes up: double " + doubles + ", knight " + knights + ", pawn " + pawns); });
+            Test("R543 scale: three to six a side, the baseline five; one or two a side play the smallest", () => {
+                Check(MiniGameScale.Clamp(1) == 3 && MiniGameScale.Clamp(2) == 3 && MiniGameScale.Clamp(5) == 5 && MiniGameScale.Clamp(9) == 6, "clamp");
+                Check(MiniGameScale.Workers(3) == 4 && MiniGameScale.Workers(5) == PawnRushMissions.WorkerCap && MiniGameScale.Workers(6) == 5, "who counts at once");
+                // What one player has to do stays about the baseline's share (within a fifth of it).
+                Func<Func<int, float>, string, bool> even = (amount, what) =>
+                {
+                    float share = amount(5) / 5f;
+                    for (int n = 3; n <= 6; n++)
+                    {
+                        float mine = amount(n) / n;
+                        if (mine < share * .8f || mine > share * 1.2f) throw new Exception(what + " at " + n + " a side: " + mine + " a player, baseline " + share);
+                        if (n > 3 && amount(n) < amount(n - 1)) throw new Exception(what + " shrinks at " + n);
+                    }
+                    return true;
+                };
+                even(n => MiniGameScale.PaintBoard(n).CountOf(true), "A squares");
+                even(n => MiniGameScale.Planks(n).Planks, "B planks");
+                even(n => 1f / MiniGameScale.RopeForce(n), "C rope");
+                even(n => MiniGameScale.CapstanTurns(n), "D turns");
+                even(n => MiniGameScale.BellTowerCount(n) * MiniGameScale.BellTowerHeight(n), "E metres to climb");
+                Check(MiniGameScale.BellTowerCount(5) * MiniGameScale.BellTowerHeight(5) == 6f + 6f + 7.5f + 7.5f + 9f + 9f, "five a side climbs the 45 m the six old towers were");
+                even(n => MiniGameScale.EnPassantStatues(n), "F statues");
+                even(n => MiniGameScale.KingRoadCells(n) - 1, "G steps");
+                even(n => MiniGameScale.CheckmateKings(n), "H kings");
+                even(n => MiniGameScale.KnightSquares(n) - 2, "J pieces");
+                Check(MiniGameScale.PaintBoard(5).Count == 64 && MiniGameScale.Planks(5) == PlankLayout.Baseline && MiniGameScale.RopeForce(5) == 1f
+                      && MiniGameScale.EnPassantStatues(5) == EnPassantRules.Statues && MiniGameScale.KingRoadCells(5) == KingEscortPath.Cells.Length
+                      && MiniGameScale.CheckmateKings(5) == CheckmateHunt.Kings && MiniGameScale.KnightSquares(5) == KnightRoute.Squares.Length
+                      && MiniGameScale.KnightSquareSize(5) == KnightRoute.SquareSize && MiniGameScale.KingSledCrew(5) == PawnRushMissions.WorkerCap, "five a side is what there was"); });
+            Test("R543 A paint board: as many light squares as dark, the 8 x 8 where it was, bigger boards centred on it", () => {
+                for (int n = 3; n <= 6; n++)
+                {
+                    var g = MiniGameScale.PaintBoard(n);
+                    Check(g.CountOf(true) == g.CountOf(false) && g.CountOf(true) * 2 == g.Count, "equal halves at " + n);
+                    Check(Math.Abs(g.V0 + g.V1) < 1e-4f && Math.Abs((g.U0 + g.U1) * .5f - 11f) < 1e-4f && g.U0 >= 2f - 1e-4f && g.U1 <= 20f + 1e-4f && g.HalfWidth <= 11.25f + 1e-4f, "centred, on the dais, at " + n);
+                    for (int i = 0; i < g.Count; i++)
+                    {
+                        int f = g.FileOf(i), r = g.RankOf(i);
+                        Check(g.Index(f, r) == i && g.OnBoard(f, r) && g.SquareAt(g.Center(f, r), out int f2, out int r2) && f2 == f && r2 == r, "index and square at " + n);
+                    }
+                    Check(g.Count <= 80, "the block's ten bytes of squares at " + n);
+                }
+                var eight = MiniGameScale.PaintBoard(5);
+                for (int f = 0; f < 8; f++)
+                    for (int r = 1; r <= 8; r++)
+                        Check(eight.Index(f, r) == PawnRushBoard.Index(f, r) && eight.Center(f, r).DistanceTo(PawnRushBoard.Center(f, r)) < 1e-5f && eight.IsLight(f, r) == PawnRushBoard.IsLight(f, r), "the 8 x 8 board");
+                Check(MiniGameScale.PaintBoard(3).Files == 6 && MiniGameScale.PaintBoard(4).Ranks == 6 && MiniGameScale.PaintBoard(6).Files == 10, "6 x 6, 8 x 6, 10 x 8"); });
+            Test("R543 B planks: two a player over the same 10 m chasm - far rows laid from the start, or six shorter rows", () => {
+                int[] planks = { 6, 8, 10, 12 };
+                for (int n = 3; n <= 6; n++)
+                {
+                    var l = PlankLayout.For(n);
+                    Check(l.Planks == planks[n - 3] && l.PerPile * 2 == l.Planks && Math.Abs(l.Chasm1 - 16f) < 1e-4f, "planks at " + n + ": " + l.Planks);
+                    Check(l.Count(l.PreLaid) == l.Slots - l.Planks && l.Carried(l.PreLaid) == 0 && l.Carried(l.AllLaid) == l.Planks, "laid from the start at " + n);
+                    var board = new PlankBoard(l);
+                    Check(board.Laid == l.PreLaid && board.Carried == 0 && board.Stock(0) == l.PerPile && board.Stock(1) == l.PerPile && board.TopOf(1) == l.Planks - 1, "a fresh board at " + n);
+                    // Every plank lying on a floor is the longest block.
+                    for (int i = 0; i < l.Planks; i++) { board.State[i] = PlankState.Lying; board.X[i] = i - 5f; board.Z[i] = 20f - i; board.Turned[i] = (i & 1) != 0; }
+                    board.Laid = l.PreLaid | 1;
+                    var buffer = new byte[PawnRushNetState.BlockBytes];
+                    var w = new NetBlock(buffer, 0, buffer.Length);
+                    board.Write(ref w);
+                    Check(w.Written == board.Bytes && board.Bytes <= PlankBoard.MaxBytes, "bytes at " + n + ": " + w.Written);
+                    var back = new PlankBoard(l);
+                    var r = new NetBlock(buffer, 0, w.Written);
+                    back.Read(ref r);
+                    Check(back.Laid == board.Laid && back.Carried == 1, "laid round trip at " + n);
+                    for (int i = 0; i < l.Planks; i++)
+                        Check(back.State[i] == PlankState.Lying && back.Turned[i] == board.Turned[i] && Math.Abs(back.X[i] - board.X[i]) < 1e-4f && Math.Abs(back.Z[i] - board.Z[i]) < 1e-4f, "plank " + i + " at " + n);
+                    // A block that says nothing is laid still has the rows that were laid from the start.
+                    var none = new PlankBoard(l);
+                    var zero = new NetBlock(new byte[PawnRushNetState.BlockBytes], 0, 7);
+                    none.Read(ref zero);
+                    Check(none.Laid == l.PreLaid, "the rows laid from the start stay at " + n);
+                }
+                var three = PlankLayout.For(3);
+                Check(three.PreLaid == 0x3C0 && !three.OverChasm(0f, 13f, three.PreLaid) && three.OverChasm(0f, 11f, three.PreLaid) && three.Snap(-1f, 13f, three.PreLaid) == -1
+                      && three.Snap(-1f, 11f, three.PreLaid) == 4, "three a side: rows four and five are there");
+                var six = PlankLayout.For(6);
+                Check(six.Rows == 6 && Math.Abs(six.Row - 10f / 6f) < 1e-5f && six.PreLaid == 0 && Math.Abs(six.SlotZ(11) - (16f - 5f / 6f)) < 1e-4f && six.Snap(1f, 6.2f, 0) == 1
+                      && six.OverChasm(0f, 15.9f, 0x3FF) && !six.OverChasm(0f, 15.9f, 0xFFF), "six a side: six rows of 1.67 m");
+                Check(PlankBoard.MaxBytes == 31 && PlankBoard.MaxBytes <= PawnRushNetState.BlockBytes, "the block fits"); });
+            Test("R543 C rope and D capstan: a small team's pull is worth more, a big team's less; the bars turn at 70 %", () => {
+                Check(Math.Abs(DrawbridgeRope.Speed(3, 0, MiniGameScale.RopeForce(3)) - DrawbridgeRope.Speed(5, 0)) < 1e-4f, "three of three pull as five did");
+                Check(DrawbridgeRope.Speed(4, 0, MiniGameScale.RopeForce(6)) < DrawbridgeRope.Speed(4, 0) && DrawbridgeRope.Speed(4, 0, MiniGameScale.RopeForce(4)) > DrawbridgeRope.Speed(4, 0), "heavier at six, lighter at four");
+                Check(DrawbridgeRope.Speed(9, 0, MiniGameScale.RopeForce(3)) <= DrawbridgeRope.MaxSpeed + 1e-6f, "never faster than the rope runs");
+                Check(Math.Abs(DrawbridgeRope.Speed(1, 5, MiniGameScale.RopeForce(6)) - DrawbridgeRope.MinSpeed) < 1e-6f && DrawbridgeRope.Speed(0, 0, 2f) == 0f, "one puller always gets somewhere");
+                Check(Math.Abs(MiniGameScale.CapstanTurnRate - .091f) < 1e-5f && MiniGameScale.CapstanSpeedPushers == 4, "70 % of 0.13 turns a second a pusher");
+                for (int n = 3; n <= 6; n++) Check(MiniGameScale.CapstanBars(n) == n, "a bar a player at " + n);
+                // Five a side: six turns at the new top speed take about what eight took at the old one.
+                float before = 8f / (4 * .13f), now = MiniGameScale.CapstanTurns(5) / (MiniGameScale.CapstanSpeedPushers * MiniGameScale.CapstanTurnRate);
+                Check(Math.Abs(now - before) < 2f, "the baseline's time: " + before + " s -> " + now + " s"); });
+            Test("R543 E bell towers: a 9 m tower a player, every top out of a dive's reach of every other, clear of the room's gallery and chandeliers", () => {
+                Check(BellTowers.DiveReach(0f) > 5f && BellTowers.DiveReach(0f) < BellTowers.MinGap - .5f, "a dive's reach on the level: " + BellTowers.DiveReach(0f));
+                Check(BellTowers.DiveReach(1.5f) > BellTowers.MinGap, "a top 1.5 m lower would be in reach: " + BellTowers.DiveReach(1.5f));
+                for (int n = 3; n <= 6; n++)
+                {
+                    var towers = BellTowers.Layout(n);
+                    Check(towers.Length == n, "a tower a player at " + n);
+                    for (int i = 0; i < towers.Length; i++)
+                    {
+                        var t = towers[i];
+                        float half = BellTowers.Top * .5f;
+                        Check(t.Height == 9f, "9 m, every one, at " + n);
+                        float south = t.U - half - (BellTowers.Storeys(t.Height) - 1) * BellTowers.Ledge;
+                        Check(t.V - half >= BellTowers.WallSide - 1e-4f && t.V + half <= BellTowers.AisleSide + 1e-4f && south >= 2.5f && t.U + half <= 17.5f,
+                              "off the gallery's side, inside the station, clear of the entrance band and the gate, at " + n + ": " + t.V + ", " + t.U);
+                        // Nothing of a top under a chandelier: a pawn on it (its head 10 m up, higher when it jumps) would stand in the lights.
+                        foreach (float cu in BellTowers.ChandelierU)
+                        {
+                            float dv = Math.Max(0f, Math.Abs(t.V) - half), du = Math.Max(0f, Math.Abs(t.U - cu) - half);
+                            Check(t.Height + 1.3f < BellTowers.ChandelierBottom || Math.Sqrt(dv * dv + du * du) >= BellTowers.ChandelierRadius, "under a chandelier at " + n + ": " + t.V + ", " + t.U);
+                        }
+                        for (int k = i + 1; k < towers.Length; k++)
+                            Check(BellTowers.Gap(t, towers[k]) >= BellTowers.MinGap - 1e-4f, "towers " + i + " and " + k + " at " + n + ": " + BellTowers.Gap(t, towers[k]) + " m apart");
+                    }
+                }
+                Check(BellTowers.Storeys(7.5f) == 3 && BellTowers.Storeys(9f) == 3 && BellTowers.Storeys(6f) == 2 && BellTowers.Top == 2f, "storeys of 3 m, tops of 2 m");
+                // The towers there were (v +-5; u 5, 11, 17; 6, 7.5 and 9 m) were in reach of each other: 3.6 m apart down a row's step.
+                Check(new BellTowers.Tower(-5f, 17f, 9f).Height - 7.5f == 1.5f && 6f - 2.4f < BellTowers.DiveReach(1.5f), "what was wrong before"); });
+            Test("R543 F en passant: ten to nineteen statues, every one its own place and its own moment", () => {
+                int[] count = { 10, 13, 16, 19 };
+                for (int n = 3; n <= 6; n++)
+                {
+                    var field = EnPassantField.For(n);
+                    Check(field.Count == count[n - 3], "statues at " + n);
+                    var offsets = new HashSet<float>();
+                    for (int i = 0; i < field.Count; i++)
+                    {
+                        offsets.Add(field.Offset(i));
+                        var home = field.Home(i);
+                        Check(Math.Abs(home.V) <= 6.75f + 1e-4f && home.U >= 6f - 1e-4f && home.U <= 19.2f + 1e-4f && home.U - EnPassantRules.Advance >= 3.5f, "home on the floor at " + n);
+                        for (int k = i + 1; k < field.Count; k++)
+                        {
+                            var other = field.Home(k);
+                            Check(Math.Abs(other.V - home.V) >= 2.2f || Math.Abs(other.U - home.U) >= 3.3f - 1e-3f, "statues " + i + " and " + k + " apart at " + n);
+                        }
+                    }
+                    Check(offsets.Count == field.Count, "offsets at " + n);
+                }
+                for (int i = 0; i < 16; i++)
+                {
+                    var was = new StationPoint(EnPassantRules.Columns[i % 4], EnPassantRules.Homes[i / 4]);
+                    Check(EnPassantField.Baseline.Home(i).DistanceTo(was) < 1e-5f && Math.Abs(EnPassantField.Baseline.Offset(i) - ((i * 7) % 16) / 16f * 14f) < 1e-5f, "sixteen as they stood, " + i);
+                }
+                Check(Math.Abs(EnPassantField.For(3).Home(8).V + 2.25f) < 1e-4f && Math.Abs(EnPassantField.For(4).Home(12).V) < 1e-4f && Math.Abs(EnPassantField.For(6).Home(17).V) < 1e-4f
+                      && Math.Abs(EnPassantField.For(6).HomeU(1) - 9.3f) < 1e-4f, "a short last row in the middle, five rows 3.3 m apart"); });
+            Test("R543 J knight's road: six to nine squares, a knight's move apart, none touching another", () => {
+                int[] squares = { 6, 7, 8, 9 };
+                for (int n = 3; n <= 6; n++)
+                {
+                    var road = KnightRoad.For(n);
+                    Check(road.Squares.Length == squares[n - 3] && road.Pieces == squares[n - 3] - 2 && road.PieceKinds.Length == road.Pieces, "squares at " + n);
+                    Check(road.Joined() && road.Spread(), "joined and apart at " + n);
+                    Check(road.Squares[0] == "d1" && (road.Squares[road.Squares.Length - 1] == "f8" || road.Squares[road.Squares.Length - 1] == "e8"), "entrance to gate at " + n);
+                    Check(road.SquareSize <= PawnRushBoard.Cell - .04f && road.SquareSize >= 1.8f, "a square's width at " + n);
+                    Check(road.SquareAt(road.Center(2)) == 2 && road.SquareAt(new StationPoint(9.9f, 10f)) < 0, "squares and water at " + n);
+                    Check(road.PieceKinds[road.Pieces - 1] == PieceKind.King && road.PieceKinds[0] == PieceKind.Pawn, "a pawn first, the king last, at " + n);
+                }
+                Check(KnightRoad.Baseline.Squares == KnightRoute.Squares && KnightRoad.Baseline.PieceSquares.SequenceEqual(KnightRoute.PieceSquares) && KnightRoad.For(5) == KnightRoad.Baseline, "eight as they were");
+                Check(!new KnightRoad(new[] { "d1", "e3", "d5", "f4", "e6", "f8" }, new[] { PieceKind.Pawn, PieceKind.Knight, PieceKind.Rook, PieceKind.King }, 2f).Spread(), "corner to corner is touching"); });
+            Test("R543 G king's road: 2,000 seeds a team size - joined, never along itself, rooks and garages fit, a different road nearly every time", () => {
+                Check(KingRoad.Baseline.Connected() && KingRoad.Baseline.Apart() && KingRoad.Baseline.RooksFit() && KingRoad.Baseline.TurnCount == 5, "the old road keeps the rules");
+                int[] cells = { 11, 13, 15, 17 }, sand = { 2, 3, 4, 5 }, rooks = { 1, 2, 2, 3 };
+                for (int n = 3; n <= 6; n++)
+                {
+                    var seen = new HashSet<string>();
+                    int most = 0;
+                    for (int seed = 0; seed < 2000; seed++)
+                    {
+                        var road = KingRoad.Generate(seed, n);
+                        string id = string.Join("", road.Cells) + "|" + string.Join("", road.Sand) + "|" + string.Join("", road.RookCells) + string.Join("", road.RookGarages);
+                        Check(road != KingRoad.Baseline, "no road for seed " + seed + " at " + n);
+                        Check(road.Cells.Length == cells[n - 3] && road.Sand.Length == sand[n - 3] && road.Rooks == rooks[n - 3], "the size's numbers, seed " + seed + " at " + n + ": " + id);
+                        Check(road.Cells[0] == "d1" && road.Cells[1] == "d2" && road.Cells[road.Cells.Length - 1] == "e8", "d1 north to e8, seed " + seed + ": " + id);
+                        Check(road.Connected() && road.Apart(), "joined and apart, seed " + seed + ": " + id);
+                        Check(road.RooksFit(), "rooks and garages, seed " + seed + ": " + id);
+                        Check(road.TurnCount >= 3 && road.TurnCount <= road.Cells.Length / 3 + 1, "turns " + road.TurnCount + ", seed " + seed);
+                        for (int k = 0; k < road.Rooks; k++)
+                        {
+                            Check(road.RookStop(k) > (k == 0 ? 0f : road.RookStop(k - 1)) && Array.IndexOf(road.Sand, road.RookCells[k]) < 0, "rook " + k + " stops the sled in turn, seed " + seed);
+                            Check(Array.IndexOf(road.Sand, road.RookGarages[k]) < 0, "a garage is no sand, seed " + seed);
+                        }
+                        foreach (var c in road.Sand) Check(road.CellIndex(c) >= 2 && road.CellIndex(c) < road.Cells.Length - 2, "sand in the middle, seed " + seed);
+                        for (int i = 1; i < road.Cells.Length; i++) Check(road.Cells[i][1] != '1', "rank 1 only at the start, seed " + seed);
+                        // Files b..g only (the hall's columns and rope posts stand along a and h), a garage never on rank 1.
+                        foreach (var c in road.Cells) Check(c[0] >= 'b' && c[0] <= 'g', "the road off files a and h, seed " + seed + ": " + id);
+                        foreach (var c in road.RookGarages) Check(c[0] >= 'b' && c[0] <= 'g' && c[1] != '1', "a garage off files a and h and rank 1, seed " + seed + ": " + id);
+                        var again = KingRoad.Generate(seed, n);
+                        Check(string.Join("", again.Cells) + "|" + string.Join("", again.Sand) + "|" + string.Join("", again.RookCells) + string.Join("", again.RookGarages) == id, "same seed, same road");
+                        seen.Add(id);
+                        most = Math.Max(most, road.TurnCount);
+                    }
+                    Check(seen.Count > 250, "roads at " + n + " a side: " + seen.Count + " different in 2,000");
+                    Console.WriteLine("    (" + n + " a side: " + seen.Count + " different roads in 2,000 seeds, up to " + most + " turns)");
+                }
+                Check(KingEscortPath.Speed(4, 0, false, 4) == 1.1f && KingEscortPath.Speed(3, 0, false, 3) == 1.1f && KingEscortPath.Speed(5, 0, false, 5) == 1.1f && KingEscortPath.Speed(9, 0, false, 5) == 1.1f, "the whole crew at full speed");
+                Check(Math.Abs(KingEscortPath.Speed(2, 0, false, 4) - .85f) < 1e-5f && Math.Abs(KingEscortPath.Speed(1, 2, false, 4)) < 1e-6f && KingEscortPath.Speed(1, 0, false, 3) > KingEscortPath.Speed(1, 0, false, 4)
+                      && KingEscortPath.Speed(1, 0, false, 5) < KingEscortPath.Speed(1, 0, false, 4), "lighter for three, heavier for six"); });
+            Test("R543 H kings and I checks: four to seven kings on their own squares; a position for every seed at every team size", () => {
+                for (int n = 3; n <= 6; n++)
+                {
+                    var hunt = new CheckmateHunt(MiniGameScale.CheckmateKings(n));
+                    Check(hunt.Count == n + 1 && hunt.All.Length == hunt.Count && !hunt.Done, "kings at " + n);
+                    var on = new HashSet<int>();
+                    foreach (var k in hunt.All) { Check(!CheckmateHunt.IsPillar(k.File, k.Rank), "not on a pillar"); on.Add(PawnRushBoard.Index(k.File, k.Rank)); }
+                    Check(on.Count == hunt.Count, "a square each at " + n);
+                    foreach (var k in hunt.All) k.State = CheckmateHunt.KingState.Captured;
+                    Check(hunt.Done && hunt.Captured == hunt.Count, "all taken at " + n);
+                }
+                int[] least = { 1, 2, 2, 3 }, most = { 2, 2, 3, 3 };
+                float[] work = new float[4];
+                for (int n = 3; n <= 6; n++)
+                {
+                    var budget = CheckBlockGenerator.BudgetFor(n);
+                    for (int seed = 0; seed < 65536; seed += n == 5 ? 1 : 7)
+                    {
+                        var l = CheckBlockGenerator.Generate(seed, n);
+                        int rails = l.Situations.Count(s => s.Kind == CheckBlockGenerator.Kind.Rail);
+                        Check(rails >= least[n - 3] && rails <= most[n - 3] && l.Situations.Count <= 6, "lines to block at " + n + ", seed " + seed + ": " + rails);
+                        Check(l.Points >= budget.MinPoints && l.Points <= budget.MaxPoints, "budget at " + n + ", seed " + seed + ": " + l.Points);
+                        work[n - 3] += l.Points;
+                    }
+                }
+                Check(work[0] / (65536 / 7 + 1) < work[1] / (65536 / 7 + 1) && work[1] / (65536 / 7 + 1) < work[2] / 65536 && work[2] / 65536 < work[3] / (65536 / 7 + 1), "more to do the bigger the team");
+                Console.WriteLine("    (a position's points, 3 to 6 a side: " + (int)(work[0] / (65536 / 7 + 1)) + " / " + (int)(work[1] / (65536 / 7 + 1)) + " / " + (int)(work[2] / 65536) + " / " + (int)(work[3] / (65536 / 7 + 1)) + ")");
+                for (int seed = 0; seed < 300; seed++)
+                {
+                    var a = CheckBlockGenerator.Generate(seed); var b = CheckBlockGenerator.Generate(seed, 5);
+                    Check(a.King.File == b.King.File && a.Points == b.Points && a.Situations.Count == b.Situations.Count && a.Double == b.Double, "five a side is the position it always was, seed " + seed);
+                } });
             Test("Promotion pads: two different pieces a round, the same for every seed holder, never the pawn or the king", () => {
                 var seen = new HashSet<PieceKind>();
                 for (int seed = 0; seed < 400; seed++)

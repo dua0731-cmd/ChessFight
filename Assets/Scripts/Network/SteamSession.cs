@@ -106,7 +106,11 @@ namespace ChessFight.Network
         //      Sword Fight input's aimed point). The section round runs to z 580 m and a v35 client drew every pawn past
         //      z 320 m pinned there (11-11 online test: an unseen wall on the grand stair hall's last glass stones). A v35
         //      PC drops every v36 ragdoll packet.
-        public const string Protocol = "chessfight.dua0731.network.v36";
+        // v37 (R543): the Pawn Rush mini-games are built for the size the teams started with (room data "seats": 3 to 6
+        //      a side, MiniGameScale) - another board, other towers, another number of statues, kings and planks, the
+        //      king's road drawn from a seed - and several games' blocks are laid out anew (A, B, F, G). A v36 PC would
+        //      build six a side's old games beside a v37 host's and read its blocks wrongly.
+        public const string Protocol = "chessfight.dua0731.network.v37";
         // The Steam App ID this project runs under until it has one of its own: Valve's public test app (Spacewar),
         // the same number as the project root's steam_appid.txt. A real App ID changes both (and see EnsureAppId).
         public const uint DevAppId = 480;
@@ -306,6 +310,20 @@ namespace ChessFight.Network
             BotIdentity.IsBot(id) ? MatchStart.Ready : id == Self ? loadPercent : MatchStart.Parse(MemberData(Match, id, "load"));
         // The shared-clock time the host picked for everyone to start; 0 until then.
         public double StartAt => MatchStart.ParseTime(Data(Match, "go"));
+        // R543: the size the teams started the match with, the larger of the two (the room's "seats", written at the
+        // start before "playing": every PC in the match reads the same number, and a player who comes back reads it
+        // again). The Pawn Rush mini-games are scaled to it (MiniGameScale). While the room does not say - a start
+        // from an older build - the players seated now.
+        public string StartSeats => Data(Match, "seats");
+        public int StartTeamSize
+        {
+            get
+            {
+                var seats = Starters.DecodeCapacity(Data(Match, "seats"));
+                if (seats != null && Math.Max(seats[0], seats[1]) > 0) return Math.Max(seats[0], seats[1]);
+                return Math.Max(1, Math.Max(Roster.Values.Count(p => p.Team == 0), Roster.Values.Count(p => p.Team == 1)));
+            }
+        }
         // Only a host that owns the room can write it (HOST.md), so a successor
         // still waiting for ownership leaves the start to the next poll.
         public bool CanAnnounceStart => IsHost && Started && Owner(Match) == Self;

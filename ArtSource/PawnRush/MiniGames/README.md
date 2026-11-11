@@ -38,7 +38,8 @@ Unity 연결은 `Assets/Scripts/PawnRush/MiniGameModels.cs`에 있다. 게임이
 | FBX (`Early/Export/`) | 만드는 스크립트 | 기준 좌표 | Unity에서 붙는 곳 (`MiniGameModels.Capstan`) |
 |---|---|---|---|
 | `D_Capstan_Static` | `d_capstan_v1.py` | 드럼 축 바닥(지름 1.4 m, 윗면 1.8 m) | 두 팀의 `Capstan drum` 자리 |
-| `D_Capstan_Bars` | `d_capstan_v1.py` | 회전축 원점(막대 0.55~3.0 m, 높이 0.40~0.62 m) | 두 팀의 `Capstan bars` — 게임이 돌리는 대로 함께 돎 |
+| `D_Capstan_Bars` | `d_capstan_v1.py` | 회전축 원점(막대 0.55~3.0 m, 높이 0.40~0.62 m) | 두 팀의 `Capstan bars` — 게임이 돌리는 대로 함께 돎. R543부터는 아래 막대 1개 모델이 없을 때(막대가 4개인 판)만 |
+| `D_Capstan_Bar` | `d_capstan_bar_v1.py`(R543: `D_Capstan_Bars`에서 +x 막대 하나만 잘라 냄, 1,200면) | 회전축 원점, 막대는 +x | 막대가 팀 인원수(3 ~ 6)만큼이라 게임의 막대마다 하나씩(`MODEL_CapstanBars/Bar model`) |
 | `D_CenterGate` | `d_center_gate_v1.py` | 문짝 앞면·바닥·가운데(19.85배, 폭 19.9 m·높이 12.2 m) | 구간 (0, 0, 23.69), 가운데 막힌 구역 앞 |
 | `D_TeamArch` | `d_team_gate_v1.py` | 문 구멍 바닥 가운데(구멍 4.5 m, 기둥 0.9 m, 폭 6.3 m·높이 7.25 m) | 구간 (±12, 0, 23.8), 예전 `Team portal front` 자리 |
 | `D_Portcullis` | `d_team_gate_v1.py` | 뾰족 끝 높이·가운데(폭 4.4 m·높이 4.78 m) | 두 팀의 `Team gate` 바닥 — 게임이 올리는 대로 함께 오름 |
@@ -119,10 +120,18 @@ Unity 연결은 `Assets/Scripts/PawnRush/MiniGameModels.cs`에 있다. 게임이
 
 늘려야 할 부품은 없다. `E_StationEnv`(탑 6개 + 뚜껑·속채움)는 15.2만 삼각형이고, 두 팀이 같이 쓴다.
 
+**R543(11-11, 사용자: "종탑은 종탑의 개수를 조절해줘 … 종탑 꼭대기에서 다른 종탑으로 다이빙을 통해 바로 넘어가지 못하게 … 적절히 띄어서 배치해주고 높이도 신경써줘"): 탑 한 개짜리 모델 `E_Tower_9`로 바꿨다.** 탑 수(3 ~ 6, 팀 인원)와 자리가 판 규모마다 달라져서, 탑 6개를 제자리에 구운 `E_StationEnv`는 더 쓰지 않는다(`Assets/Resources`에서 뺌, `Mid/Export/E_StationEnv.fbx`는 남김). `e_library_v1.py`의 `tower()`를 그대로 써서 **원점(꼭대기 가운데 바로 아래 바닥)에 9 m 탑 하나**를 내보낸다: 3만 삼각형, 꼭대기 2 × 2 m(`TOP` 2.4 → 2 — 간격을 맞추려고 줄임), 층 3 m × 3, 남쪽 턱 0.8 m씩. 종은 꼭대기 북쪽 0.4 m(전 0.55 m).
+
+```text
+"C:/Program Files/Blender Foundation/Blender 3.4/blender.exe" -b --python e_library_v1.py -- --export-tower --no-save
+```
+
+(`--export-tower`는 탑만 내보내고 `--no-save`는 `.blend`를 건드리지 않는다. Blender 3.4에서도 돈다. 스크립트가 `Materials/Textures/PR_Mid_Library*Kit_*.png`를 다시 저장하므로 내용이 같으면 되돌린다.) 설치는 `e_install_unity.py`의 목록에 `E_Tower_9`가 들어 있다. 탑 자리는 Core `BellTowers.Layout`이 정하고, 방 모델을 재서 정했다(`E_HallEnv`: 옆벽 2층 회랑이 |x| 20.68까지 4 ~ 7 m 높이, `E_LightsEnv`: 스테이션 가운데 줄 위 샹들리에 반지름 1.52 m · 바닥 10.3 m, `E_PropsEnv`: 벽 책장 사다리 |x| 20.9). 방 모델을 바꾸면 그 수치(`BellTowers.WallSide` · `ChandelierU` 등)도 같이 본다.
+
 **Unity 연결**(`Assets/Scripts/PawnRush/MiniGameModels.Library.cs`, `MiniGameModels`를 partial로 나눔):
 
-- `E_StationEnv`는 각 팀 게임 프레임(x = v, z = u)에 건다. 게임의 탑 층 상자, 그 위 코드 책장 면, 종 기둥·들보는 그리기만 끈다. 충돌은 그대로다.
-- `E_Bell`은 꼭대기마다 북쪽 0.55 m, 뚜껑 위 0.5 cm에 세운다. 게임의 종 원통(과 R312 열람등 장식)은 그리기만 끈다. 게임은 종을 울리면 이 원통의 재질을 금으로 바꾸는데, `MiniGameBellLook`이 그 재질을 지켜보다가 손종을 금빛(`PR_Mid_BellRung`, 기능 금·발광 0.6)으로 바꾸고 1.4초 흔든다. 초기화하면 원래대로 돌아온다. 네트워크 값은 새로 만들지 않았다.
+- (R543) `E_Tower_9`를 게임의 탑마다 그 자리(게임 프레임 x = v, z = u, 바닥)에 건다(`MODEL_Tower n`). 게임의 탑 층 상자, 그 위 코드 책장 면, 종 기둥·들보는 그리기만 끈다. 충돌은 그대로다. (전: `E_StationEnv` 하나를 게임 프레임에.)
+- `E_Bell`은 꼭대기마다 북쪽 0.4 m(R543 전 0.55 m), 뚜껑 위 0.5 cm에 세운다. 게임의 종 원통(과 R312 열람등 장식)은 그리기만 끈다. 게임은 종을 울리면 이 원통의 재질을 금으로 바꾸는데, `MiniGameBellLook`이 그 재질을 지켜보다가 손종을 금빛(`PR_Mid_BellRung`, 기능 금·발광 0.6)으로 바꾸고 1.4초 흔든다. 초기화하면 원래대로 돌아온다. 네트워크 값은 새로 만들지 않았다.
 - `E_ShelfDoor`는 `DEC_ShelfDoorPivot`에 건다. 11-08("출구 쪽 문 비틈 없이 문 크기 위로 키워"): 새 통로에 꽉 차게 키움(높이 바닥~통로 천장 5.79 m, 폭 4.2 m, 경첩은 게임 축에서 8 cm 바깥, `MODEL_DoorFit`). 열리면 통로 벽을 따라 눕는다. 문 열림 효과의 먼지·종이도 새 문 높이에서 시작. 팀 문이 열리면 `PalaceGateLeaf`가 그 축을 돌리므로 모델도 함께 돈다. 코드 책장 문짝은 그리기만 끈다.
 - `E_DoorArch`는 구간 (±12, 0, 23.8)에 세운다. 셸의 "Team portal front" 아치는 그리기만 끈다.
 - **바닥**(`LibraryFloors`, 컨셉 `E_01_overview.png`대로): B가 구운 2단계 바닥(2 m 타일)을 게임의 바닥 상자에 입힌다. 팀 구역·팀 문 통로는 짙은 슬레이트(`PR_Mid_SlateFloor`), 입구 띠·가운데 통로는 크림·회색 체크 대리석(`PR_Mid_CheckerMarble`), 뒤 복도는 크림 대리석(`PR_Mid_CreamFloor`)이다. 셸이 입구 띠와 뒤 복도에 깔던 코드 바닥 판(`ENV_EntryAndRearPaving`)은 그리기만 끈다. 충돌과 금 테두리는 그대로다. Unity 화면 확인 전.

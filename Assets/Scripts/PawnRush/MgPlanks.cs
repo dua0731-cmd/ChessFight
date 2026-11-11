@@ -26,15 +26,20 @@ namespace ChessFight.PawnRush
     // a picture with no collider (nothing to shove pawns with), a lying one a 0.12 m board to walk over.
     //
     // Online: the block is a PlankBoard (every plank's state, the carrier's seat or where it lies, the laid slots,
-    // 26 bytes at most). Every PC draws a carried plank in front of the carrier it draws.
+    // 31 bytes at most). Every PC draws a carried plank in front of the carrier it draws.
+    //
+    // R543 (user 11-11: "판자 다리는 옮겨야하는 판자의 개수를 조절해줘"): two planks a player (PlankLayout, Core). The chasm
+    // stays 10 m: three and four a side find its far rows laid already (six and eight planks to carry), six a side
+    // lay six rows of shorter planks (twelve). Five a side is the bridge described above.
     public sealed class MgPlanks : MiniGameBase, IProgressCount
     {
-        public const int Rows = PlankBridge.Rows, Columns = PlankBridge.Columns, PerPile = PlankBridge.PerPile;
-        public const float Chasm0 = PlankBridge.Chasm0, Row = PlankBridge.Row, PlankWidth = PlankBridge.PlankWidth;
-        // The carried plank's centre in front of the hips (its near edge 0.2 m ahead, just past the belly) and above them
-        // (its underside on the hands, which reach forward 0.4 .. 0.48 m up while the grab button is down; hips 0.25).
-        public const float CarryAhead = 1.2f, CarryUp = .28f;
-        const float EaseSeconds = .25f, PileHeight = PerPile * PlankBridge.PileStep;
+        public const int Columns = PlankBridge.Columns;
+        public const float Chasm0 = PlankBridge.Chasm0, PlankWidth = PlankBridge.PlankWidth;
+        // The carried plank's centre above the hips (its underside on the hands, which reach forward 0.4 .. 0.48 m up
+        // while the grab button is down; hips 0.25) and in front of them: its near edge 0.2 m ahead, just past the belly
+        // (CarryAhead: 1.2 m for a 2 m plank).
+        public const float CarryUp = .28f, CarryGap = .2f;
+        const float EaseSeconds = .25f;
 
         [SerializeField] MissionStation station;
         [Tooltip("Row by row, west column first: hidden until laid.")]
@@ -42,6 +47,17 @@ namespace ChessFight.PawnRush
         [SerializeField] GameObject[] pileBoards = new GameObject[PlankBridge.Planks];
         [Tooltip("Each pile's solid stack (held, never climbed), as high as the planks on it.")]
         [SerializeField] BoxCollider[] pileBlocks = new BoxCollider[PlankBridge.Piles];
+        [Tooltip("The bridge's rows and how many of the far ones are laid from the start (PlankLayout for the team's size).")]
+        [SerializeField] int rows = PlankBridge.Rows;
+        [SerializeField] int preLaidRows;
+
+        PlankLayout layout;
+        // This bridge's numbers (a game saved before R543 has five rows and none laid: the baseline).
+        public PlankLayout Layout => layout ?? (layout = rows == PlankBridge.Rows && preLaidRows == 0 ? PlankLayout.Baseline : new PlankLayout(rows, preLaidRows));
+        float Row => Layout.Row;
+        int PerPile => Layout.PerPile;
+        float PileHeight => PerPile * PlankBridge.PileStep;
+        float CarryAhead => CarryGap + Row * .5f;
 
         // A plank of the team: one body (kinematic, held only), its collider on only while it lies on a floor, and its
         // picture, which eases into place after every change.
@@ -57,14 +73,15 @@ namespace ChessFight.PawnRush
             public PlankState Shown = PlankState.Pile;
         }
 
-        readonly PlankBoard board = new PlankBoard();
-        readonly PlankBoard incoming = new PlankBoard();
+        PlankBoard made, incomingMade;
+        PlankBoard board => made ?? (made = new PlankBoard(Layout));
+        PlankBoard incoming => incomingMade ?? (incomingMade = new PlankBoard(Layout));
         // Host: who carries each plank. Every PC: how the carried plank faces (degrees in the game's frame, eased) and
         // how long it has hovered over a free slot.
-        readonly ICharacterDriver[] carrier = new ICharacterDriver[PlankBridge.Planks];
-        readonly float[] yaw = new float[PlankBridge.Planks];
-        readonly float[] hover = new float[PlankBridge.Planks];
-        readonly Vector3[] lastHips = new Vector3[PlankBridge.Planks];
+        readonly ICharacterDriver[] carrier = new ICharacterDriver[PlankBridge.MaxPlanks];
+        readonly float[] yaw = new float[PlankBridge.MaxPlanks];
+        readonly float[] hover = new float[PlankBridge.MaxPlanks];
+        readonly Vector3[] lastHips = new Vector3[PlankBridge.MaxPlanks];
         // Pawns whose plank was sent home under them (carried out of the station, a fall, a respawn): they take nothing
         // until they let go of the grab button, or the next step would take one off the pile beside them and send it
         // home again, every step.
@@ -77,38 +94,44 @@ namespace ChessFight.PawnRush
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => live.Clear();
 
+        // The planks the team has laid itself, of the planks it has to carry.
         public int Laid => count;
         public int Done => count;
-        public int Total => PlankBridge.Slots;
+        public int Total => Layout.Planks;
 
         public static MgPlanks Build(CourseBuilder b, MissionStation station)
         {
             var k = b.kit;
+            var layout = PlankLayout.For(station.TeamSize);
+            float row = layout.Row;
+            int perPile = layout.PerPile;
             MissionGames.Floor(b, 0f, Chasm0);
-            MissionGames.Floor(b, PlankBridge.Chasm1, 20f);
-            var slots = new GameObject[PlankBridge.Slots];
-            for (int r = 0; r < Rows; r++)
+            MissionGames.Floor(b, layout.Chasm1, 20f);
+            var slots = new GameObject[layout.Slots];
+            for (int r = 0; r < layout.Rows; r++)
                 for (int c = 0; c < Columns; c++)
                 {
-                    float x0 = c == 0 ? -PlankWidth : 0f, z0 = Chasm0 + r * Row;
+                    float x0 = c == 0 ? -PlankWidth : 0f, z0 = Chasm0 + r * row;
                     // Where a plank goes: a gold outline over the chasm (no collider).
-                    b.Box("Plank place", MissionGames.V(x0 + .05f, -.05f, z0 + .05f), MissionGames.V(x0 + PlankWidth - .05f, -.02f, z0 + Row - .05f),
+                    b.Box("Plank place", MissionGames.V(x0 + .05f, -.05f, z0 + .05f), MissionGames.V(x0 + PlankWidth - .05f, -.02f, z0 + row - .05f),
                           k.rankGold, false, false);
-                    var plank = b.Box("Plank (laid)", MissionGames.V(x0, -.3f, z0), MissionGames.V(x0 + PlankWidth, 0f, z0 + Row), k.boardDark);
+                    var plank = b.Box("Plank (laid)", MissionGames.V(x0, -.3f, z0), MissionGames.V(x0 + PlankWidth, 0f, z0 + row), k.boardDark);
                     plank.AddComponent<CourseFloor>();
-                    plank.SetActive(false);
+                    // R543: a row laid from the start is there when the game starts
+                    plank.SetActive(layout.IsLaid(layout.PreLaid, r * Columns + c));
                     slots[r * Columns + c] = plank;
                 }
-            var boards = new GameObject[PlankBridge.Planks];
+            var boards = new GameObject[layout.Planks];
             var blocks = new BoxCollider[PlankBridge.Piles];
             for (int p = 0; p < PlankBridge.Piles; p++)
             {
                 float px = PlankBridge.PileCentreX(p), pz = PlankBridge.PileZ;
-                for (int i = 0; i < PerPile; i++)
-                    boards[p * PerPile + i] = b.Box("Pile plank", MissionGames.V(px - PlankWidth * .5f, i * PlankBridge.PileStep, pz - Row * .5f),
-                                                    MissionGames.V(px + PlankWidth * .5f, i * PlankBridge.PileStep + PlankBridge.Thickness, pz + Row * .5f), k.boardDark, false, false);
+                for (int i = 0; i < perPile; i++)
+                    boards[p * perPile + i] = b.Box("Pile plank", MissionGames.V(px - PlankWidth * .5f, i * PlankBridge.PileStep, pz - row * .5f),
+                                                    MissionGames.V(px + PlankWidth * .5f, i * PlankBridge.PileStep + PlankBridge.Thickness, pz + row * .5f), k.boardDark, false, false);
                 // The stack is solid (a pawn walks into it, not through it) and held, never climbed; the boards draw it.
-                var block = b.Box("Plank pile", MissionGames.V(px - PlankWidth * .5f, 0f, pz - Row * .5f), MissionGames.V(px + PlankWidth * .5f, PileHeight, pz + Row * .5f), null);
+                var block = b.Box("Plank pile", MissionGames.V(px - PlankWidth * .5f, 0f, pz - row * .5f),
+                                  MissionGames.V(px + PlankWidth * .5f, perPile * PlankBridge.PileStep, pz + row * .5f), null);
                 block.GetComponent<Renderer>().enabled = false;
                 block.AddComponent<GrabOnlySurface>();
                 blocks[p] = block.GetComponent<BoxCollider>();
@@ -118,6 +141,9 @@ namespace ChessFight.PawnRush
             game.slots = slots;
             game.pileBoards = boards;
             game.pileBlocks = blocks;
+            game.rows = layout.Rows;
+            game.preLaidRows = layout.PreLaidRows;
+            game.layout = layout;
             return game;
         }
 
@@ -150,7 +176,7 @@ namespace ChessFight.PawnRush
 
         int Carries(ICharacterDriver driver)
         {
-            for (int i = 0; i < PlankBridge.Planks; i++)
+            for (int i = 0; i < board.Planks; i++)
                 if (board.State[i] == PlankState.Carried && ReferenceEquals(carrier[i], driver)) return i;
             return -1;
         }
@@ -165,7 +191,7 @@ namespace ChessFight.PawnRush
         {
             incoming.Read(ref block);
             board.CopyFrom(incoming);
-            count = board.LaidCount;
+            count = board.Carried;
             ShowSlots();
             ShowPiles();
         }
@@ -175,7 +201,7 @@ namespace ChessFight.PawnRush
             if (station == null || Remote) return;
             float dt = Time.fixedDeltaTime;
             var pawns = station.Pawns();
-            for (int i = 0; i < PlankBridge.Planks; i++)
+            for (int i = 0; i < board.Planks; i++)
                 if (board.State[i] == PlankState.Carried) Carry(i, pawns, dt);
             letGo.Clear();
             foreach (var d in letGoFirst)
@@ -183,9 +209,9 @@ namespace ChessFight.PawnRush
             foreach (var d in letGo) letGoFirst.Remove(d);
             if (!Completed)
                 foreach (var p in pawns) TryTake(p);
-            count = board.LaidCount;
-            Progress01 = count / (float)PlankBridge.Slots;
-            if (count >= PlankBridge.Slots) Complete();
+            count = board.Carried;
+            Progress01 = count / (float)Layout.Planks;
+            if (count >= Layout.Planks) Complete();
         }
 
         void Carry(int i, List<MissionStation.Pawn> pawns, float dt)
@@ -204,7 +230,7 @@ namespace ChessFight.PawnRush
             if (!PlankBridge.InCarryArea(c.x, c.z)) { SendHome(i); return; }
             var mg = who as IMiniGamePawn;
             if (mg != null && (!mg.GrabHeld || mg.Down || mg.Diving)) { PutDown(i, c, yaw[i]); return; }
-            if (PlankBridge.Snap(c.x, c.z, board.Laid) >= 0)
+            if (Layout.Snap(c.x, c.z, board.Laid) >= 0)
             {
                 hover[i] += dt;
                 if (hover[i] >= PlankBridge.HoverSeconds) PutDown(i, c, yaw[i]);
@@ -216,7 +242,7 @@ namespace ChessFight.PawnRush
         // leaves the station or lands on a pile, else lying on the floor, square to the room.
         void PutDown(int i, Vector3 c, float facing)
         {
-            int slot = PlankBridge.Snap(c.x, c.z, board.Laid);
+            int slot = Layout.Snap(c.x, c.z, board.Laid);
             if (slot >= 0)
             {
                 board.Laid |= 1 << slot;
@@ -225,7 +251,7 @@ namespace ChessFight.PawnRush
                 ShowSlots();
                 return;
             }
-            if (!PlankBridge.InArea(c.x, c.z) || PlankBridge.OverChasm(c.x, c.z, board.Laid) || PlankBridge.OnPile(c.x, c.z)) { Return(i); return; }
+            if (!PlankBridge.InArea(c.x, c.z) || Layout.OverChasm(c.x, c.z, board.Laid) || Layout.OnPile(c.x, c.z)) { Return(i); return; }
             board.State[i] = PlankState.Lying;
             board.X[i] = PlankBoard.GridX(c.x);
             board.Z[i] = PlankBoard.GridZ(c.z);
@@ -278,7 +304,7 @@ namespace ChessFight.PawnRush
                     float d = BoxDistance(at, new Vector3(PlankBridge.PileCentreX(pile), h, PlankBridge.PileZ), new Vector3(PlankWidth * .5f, h, Row * .5f));
                     if (d < best) { best = d; take = board.TopOf(pile); }
                 }
-                for (int i = 0; i < PlankBridge.Planks; i++)
+                for (int i = 0; i < board.Planks; i++)
                 {
                     if (board.State[i] != PlankState.Lying) continue;
                     var half = board.Turned[i] ? new Vector3(Row * .5f, PlankBridge.Thickness * .5f, PlankWidth * .5f)
@@ -313,7 +339,7 @@ namespace ChessFight.PawnRush
             return f.sqrMagnitude < 1e-4f ? fallback : Mathf.Atan2(f.x, f.z) * Mathf.Rad2Deg;
         }
 
-        static Vector3 Centre(Vector3 hips, float facing) => hips + Quaternion.Euler(0f, facing, 0f) * new Vector3(0f, CarryUp, CarryAhead);
+        Vector3 Centre(Vector3 hips, float facing) => hips + Quaternion.Euler(0f, facing, 0f) * new Vector3(0f, CarryUp, CarryAhead);
 
         // Planks lying on top of each other differ by 4 mm, so their faces never share a plane.
         static float LyingY(int i) => PlankBridge.Thickness * .5f + i * .004f;
@@ -324,7 +350,7 @@ namespace ChessFight.PawnRush
         {
             if (station == null) return;
             MakePlanks();
-            for (int i = 0; i < PlankBridge.Planks; i++) Draw(i);
+            for (int i = 0; i < board.Planks; i++) Draw(i);
         }
 
         void Draw(int i)
@@ -342,7 +368,7 @@ namespace ChessFight.PawnRush
             {
                 // The picture starts where it was drawn and eases to its new place (picked up, put down).
                 bool from = plank.Root.activeSelf && plank.Look != null;
-                plank.FromPosition = from ? plank.Look.position : PileTop(PlankBridge.PileOf(i));
+                plank.FromPosition = from ? plank.Look.position : PileTop(Layout.PileOf(i));
                 plank.FromRotation = from ? plank.Look.rotation : transform.rotation;
                 plank.Eased = state == PlankState.Carried || state == PlankState.Lying ? 0f : 1f;
                 plank.Shown = state;
@@ -375,8 +401,8 @@ namespace ChessFight.PawnRush
         void MakePlanks()
         {
             if (planks != null) return;
-            planks = new Plank[PlankBridge.Planks];
-            for (int i = 0; i < PlankBridge.Planks; i++)
+            planks = new Plank[board.Planks];
+            for (int i = 0; i < planks.Length; i++)
             {
                 var root = new GameObject("Plank " + (i + 1));
                 root.transform.SetParent(transform, false);
@@ -414,9 +440,9 @@ namespace ChessFight.PawnRush
 
         void ShowSlots()
         {
-            for (int s = 0; s < PlankBridge.Slots && s < slots.Length; s++)
+            for (int s = 0; s < Layout.Slots && s < slots.Length; s++)
             {
-                bool on = PlankBridge.IsLaid(board.Laid, s);
+                bool on = Layout.IsLaid(board.Laid, s);
                 if (slots[s] != null && slots[s].activeSelf != on) slots[s].SetActive(on);
             }
         }
@@ -426,7 +452,7 @@ namespace ChessFight.PawnRush
             for (int p = 0; p < PlankBridge.Piles; p++)
             {
                 int n = board.Stock(p);
-                for (int i = 0; i < PerPile; i++)
+                for (int i = 0; i < PerPile && p * PerPile + i < pileBoards.Length; i++)
                     if (pileBoards[p * PerPile + i] != null) pileBoards[p * PerPile + i].SetActive(i < n);
                 var block = p < pileBlocks.Length ? pileBlocks[p] : null;
                 if (block == null) continue;
@@ -531,7 +557,7 @@ namespace ChessFight.PawnRush
         public bool OverChasm(Vector3 world)
         {
             var at = transform.InverseTransformPoint(world);
-            return PlankBridge.OverChasm(at.x, at.z, board.Laid);
+            return Layout.OverChasm(at.x, at.z, board.Laid);
         }
 
         // Where a carried plank would be laid: the slot, and how sure (1 laid now, about .5 within reach, .3 nearly).
@@ -540,13 +566,13 @@ namespace ChessFight.PawnRush
             strength = 0f;
             if (planks == null || board.State[i] != PlankState.Carried || !planks[i].Root.activeSelf) return -1;
             var c = transform.InverseTransformPoint(planks[i].Root.transform.position);
-            int slot = PlankBridge.Snap(c.x, c.z, board.Laid);
+            int slot = Layout.Snap(c.x, c.z, board.Laid);
             if (slot >= 0)
             {
                 strength = .55f + .45f * Mathf.Clamp01(hover[i] / PlankBridge.HoverSeconds);
                 return slot;
             }
-            slot = PlankBridge.Snap(c.x, c.z, board.Laid, 1.7f);
+            slot = Layout.Snap(c.x, c.z, board.Laid, 1.7f);
             if (slot >= 0) strength = .3f;
             return slot;
         }
@@ -555,7 +581,7 @@ namespace ChessFight.PawnRush
         {
             base.ResetGame();
             board.Reset();
-            for (int i = 0; i < PlankBridge.Planks; i++) Free(i);
+            for (int i = 0; i < board.Planks; i++) Free(i);
             letGoFirst.Clear();
             count = 0;
             ShowSlots();

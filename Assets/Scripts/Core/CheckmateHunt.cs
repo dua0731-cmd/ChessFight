@@ -12,8 +12,10 @@ namespace ChessFight.Network
     // in, the same moves out. Board space: files 0..7 (a..h), ranks 1..8, as in PawnRushBoard.
     public sealed class CheckmateHunt
     {
-        public const int Kings = 6;
-        public static readonly string[] Starts = { "b7", "e6", "g5", "c3", "g2", "b4" };
+        // R543: six is five a side's hunt; the number of kings goes with the team's size (MiniGameScale.CheckmateKings: four to
+        // seven), the first so many of Starts.
+        public const int Kings = 6, MaxKings = 7;
+        public static readonly string[] Starts = { "b7", "e6", "g5", "c3", "g2", "b4", "e8" };
         public static readonly string[] Pillars = { "c6", "f3", "f7" };
         public const float TurnSeconds = 1f, FirstTurn = .45f, React = .2f, Immunity = 3f, RescueImmunity = 1.5f;
         public const float StaleRange = 3.2f, MoveRange = 9f, MoveGain = .3f, NeighbourWeight = 1.3f;
@@ -36,28 +38,33 @@ namespace ChessFight.Network
         static readonly int[] DF = { 0, 1, 1, 1, 0, -1, -1, -1 };
         static readonly int[] DR = { 1, 1, 0, -1, -1, -1, 0, 1 };
 
-        public readonly King[] All = new King[Kings];
+        public readonly int Count;
+        public readonly King[] All;
         readonly bool[] pillar = new bool[64];
         readonly bool[] attacked = new bool[64];
         double last = double.NaN;
 
         public int Captured { get { int n = 0; foreach (var k in All) if (k.State == KingState.Captured) n++; return n; } }
-        public bool Done => Captured >= Kings;
+        public bool Done => Captured >= Count;
 
-        public CheckmateHunt()
+        public CheckmateHunt() : this(Kings) { }
+
+        public CheckmateHunt(int kings)
         {
             foreach (var name in Pillars)
             {
                 PawnRushBoard.Parse(name, out int f, out int r);
                 pillar[PawnRushBoard.Index(f, r)] = true;
             }
-            for (int k = 0; k < Kings; k++) All[k] = new King();
+            Count = Math.Max(1, Math.Min(MaxKings, kings));
+            All = new King[Count];
+            for (int k = 0; k < Count; k++) All[k] = new King();
             Reset(0);
         }
 
         public void Reset(double now)
         {
-            for (int k = 0; k < Kings; k++)
+            for (int k = 0; k < Count; k++)
             {
                 PawnRushBoard.Parse(Starts[k], out int f, out int r);
                 var king = All[k];

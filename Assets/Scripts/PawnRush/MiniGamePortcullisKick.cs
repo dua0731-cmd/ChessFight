@@ -28,6 +28,9 @@ namespace ChessFight.PawnRush
             unitsPerMetre = parent != null ? 1f / Mathf.Max(.0001f, Mathf.Abs(parent.lossyScale.y)) : 1f;
         }
 
+        // R543: the turns that open the gate go with the team's size (MgCapstan.TurnsToOpen).
+        public void SetTurns(float turnsToOpen) => turns = turnsToOpen;
+
         void LateUpdate()
         {
             var game = station != null ? station.Game : null;

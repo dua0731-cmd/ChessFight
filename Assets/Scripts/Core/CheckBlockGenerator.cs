@@ -65,6 +65,31 @@ namespace ChessFight.Network
 
         public const int MaxAttempts = 600;
         public const float MinPoints = 55f, MaxPoints = 125f;
+
+        // R543 (user 11-11: "체크 막기는 장애물 개수 등을 조절해줘"): how much a position holds for a team size. Five a side
+        // is what it always was (the same position from the same seed as before): two or three lines to block, sometimes
+        // a knight or a pawn, sometimes the hidden double check, 55 to 125 points (a point is about a second of one
+        // pawn's work). Three a side has one line or two, four a side always two, six a side always three, and the points
+        // go with them, so a position holds about the same work for each player whatever the team.
+        public sealed class Budget
+        {
+            public int MinRails, MaxRails;   // lines to block
+            public double FewRails;          // how often MinRails of them (MaxRails otherwise)
+            public double Knight, Pawn;    // one roll: under Knight a knight, else under Pawn a pawn, else neither
+            public double Double;          // how often the hidden double check
+            public float MinPoints, MaxPoints;
+        }
+
+        public static Budget BudgetFor(int teamSize)
+        {
+            switch (MiniGameScale.Clamp(teamSize))
+            {
+                case 3: return new Budget { MinRails = 1, MaxRails = 2, FewRails = .5, Knight = .25, Pawn = .50, Double = .25, MinPoints = 30f, MaxPoints = 75f };
+                case 4: return new Budget { MinRails = 2, MaxRails = 2, FewRails = 1, Knight = .20, Pawn = .40, Double = .25, MinPoints = 45f, MaxPoints = 88f };
+                case 6: return new Budget { MinRails = 3, MaxRails = 3, FewRails = 0, Knight = .25, Pawn = .50, Double = .35, MinPoints = 75f, MaxPoints = 130f };
+                default: return new Budget { MinRails = 2, MaxRails = 3, FewRails = .55, Knight = .30, Pawn = .55, Double = .40, MinPoints = MinPoints, MaxPoints = MaxPoints };
+            }
+        }
         public const float KnightPoints = 14f, PawnPoints = 8f, DoublePoints = 19f, RailBonus = 6f;
 
         // Directions from the king: south, west, east (rook lines), south-west, south-east (bishop lines).
@@ -84,17 +109,18 @@ namespace ChessFight.Network
             }
         }
 
-        public static Layout Generate(int seed)
+        public static Layout Generate(int seed, int teamSize = MiniGameScale.Baseline)
         {
+            var budget = BudgetFor(teamSize);
             for (int attempt = 0; attempt < MaxAttempts; attempt++)
             {
-                var layout = TryGenerate(seed, attempt);
+                var layout = TryGenerate(seed, attempt, budget);
                 if (layout != null) return layout;
             }
-            throw new InvalidOperationException("CheckBlockGenerator: no position for seed " + seed);
+            throw new InvalidOperationException("CheckBlockGenerator: no position for seed " + seed + " at " + teamSize + " a side");
         }
 
-        static Layout TryGenerate(int seed, int attempt)
+        static Layout TryGenerate(int seed, int attempt, Budget budget)
         {
             var rng = new Random(unchecked(seed * 7919 + attempt * 104729 + 17));
             var layout = new Layout { Seed = seed, Attempt = attempt };
@@ -104,7 +130,7 @@ namespace ChessFight.Network
             var lines = new HashSet<int>();   // squares an attack line crosses
             taken.Add(Key(layout.King));
 
-            int rails = rng.NextDouble() < .55 ? 2 : 3;
+            int rails = rng.NextDouble() < budget.FewRails ? budget.MinRails : budget.MaxRails;
             for (int i = 0; i < rails; i++)
             {
                 var s = Rail(rng, layout, used, taken, lines);
@@ -113,27 +139,27 @@ namespace ChessFight.Network
             }
 
             double extra = rng.NextDouble();
-            if (extra < .30)
+            if (extra < budget.Knight)
             {
                 var s = Knight(rng, layout, taken, lines);
                 if (s == null) return null;
                 layout.Situations.Add(s);
             }
-            else if (extra < .55)
+            else if (extra < budget.Pawn)
             {
                 var s = Pawn(rng, layout, taken, lines);
                 if (s == null) return null;
                 layout.Situations.Add(s);
             }
 
-            if (rng.NextDouble() < .40 && !used[South] && (!used[SouthWest] || !used[SouthEast]))
+            if (rng.NextDouble() < budget.Double && !used[South] && (!used[SouthWest] || !used[SouthEast]))
                 if (!Double(rng, layout, used, taken, lines)) return null;
 
             float points = 0f;
             foreach (var s in layout.Situations) points += s.Points;
             if (layout.Double) points += DoublePoints;
             layout.Points = points;
-            return points >= MinPoints && points <= MaxPoints ? layout : null;
+            return points >= budget.MinPoints && points <= budget.MaxPoints ? layout : null;
         }
 
         static int Key(Square s) => PawnRushBoard.Index(s.File, s.Rank);

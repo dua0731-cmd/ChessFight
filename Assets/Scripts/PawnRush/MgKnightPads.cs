@@ -20,6 +20,10 @@ namespace ChessFight.PawnRush
     // the host from the jump the host reads (MiniGameHooks.JumpIntercept); the flight and the dive are the
     // ragdoll's own, seen by everyone in the snapshots. The pieces are kinematic and never pushed. The host sends
     // which pieces are taken, a launch counter and the pad it was on (3 bytes); every PC plays the moments.
+    //
+    // R543 (user 11-11: "나이트의 길은 돌 수반의 개수와 사이즈를 조절해줘"): the road goes with the team's size (KnightRoad,
+    // Core) - six, seven, eight (as before) or nine squares, a piece on every one but the first and the last, each
+    // square 1.9, 2.0, 2.05 or 2.2 m wide.
     public sealed class MgKnightPads : MiniGameBase, IProgressCount
     {
         public const float Surface = -.6f, Bottom = -1.8f, South = 2.1f, North = 19.3f, PieceHeight = 1.1f;
@@ -31,21 +35,25 @@ namespace ChessFight.PawnRush
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => live.Clear();
 
+        // This game's road (R543: its squares, their size, the pieces on them).
+        KnightRoad road = KnightRoad.Baseline;
+        public KnightRoad Road => road;
+
         int taken, launches, launchSquare;
         readonly Dictionary<ICharacterDriver, float> jumpedAt = new Dictionary<ICharacterDriver, float>();
 
-        // The look.
+        // The look. (Up to eight pieces - the block's one byte - on up to ten squares.)
         Transform[] pads;
         Transform[] pieces;
         Collider[] pieceColliders;
-        readonly float[] takenAt = new float[6];
-        readonly Vector3[] takenFrom = new Vector3[6], takenDir = new Vector3[6];
-        readonly bool[] splashed = new bool[6];
-        readonly float[] bounceAt = new float[8];
+        readonly float[] takenAt = new float[8];
+        readonly Vector3[] takenFrom = new Vector3[8], takenDir = new Vector3[8];
+        readonly bool[] splashed = new bool[8];
+        readonly float[] bounceAt = new float[10];
         int shownTaken, shownLaunches;
 
         public int Done { get { int n = 0; for (int b = taken; b != 0; b &= b - 1) n++; return n; } }
-        public int Total => KnightRoute.PieceSquares.Length;
+        public int Total => road.Pieces;
 
         public static MgKnightPads Build(CourseBuilder b, MissionStation station)
         {
@@ -61,10 +69,13 @@ namespace ChessFight.PawnRush
 
         void Make(CourseBuilder b)
         {
+            road = KnightRoad.For(station.TeamSize);
             // The south floor (the way in and the promotion pad) and a strip by the gate; water between them.
             MissionGames.Floor(b, 0f, South);
-            // The strip runs from the gate (v -3.2) to f8 (v 4.4), mirrored for black.
-            float m = MiniGameParts.Mirror(station), v0 = Mathf.Min(-3.2f * m, 4.4f * m), v1 = Mathf.Max(-3.2f * m, 4.4f * m);
+            // The strip runs from the gate (v -3.2) to the last square's far side (f8: v 4.4; never less than the gate's
+            // own width), mirrored for black.
+            float end = Mathf.Max(3.2f, road.Center(road.Squares.Length - 1).V + road.SquareSize * .5f);
+            float m = MiniGameParts.Mirror(station), v0 = Mathf.Min(-3.2f * m, end * m), v1 = Mathf.Max(-3.2f * m, end * m);
             b.Box("Gate strip", new Vector3(v0, -1f, North), new Vector3(v1, 0f, 20f),
                 station.PalaceStyle ? MiniGamePalaceArt.DaisMaterial(PawnRushMissions.KnightPads) : Arena.DaisMaterial).AddComponent<CourseFloor>();
             var stone = Arena.Lit("M_MoatStone", Arena.Hex("#6E6A64"), 0f, .9f);
@@ -81,11 +92,11 @@ namespace ChessFight.PawnRush
             // The road: eight squares standing out of the water on their own pillars, numbered, each with a pad.
             var padMat = Arena.Lit("M_KnightPad", Arena.Hex("#D9CDB4"), 0f, .6f);
             var spring = Arena.Lit("M_PadSpring", new Color(.55f, .55f, .58f), 0f, .4f);
-            float h = KnightRoute.SquareSize * .5f;
-            pads = new Transform[KnightRoute.Squares.Length];
-            for (int i = 0; i < KnightRoute.Squares.Length; i++)
+            float h = road.SquareSize * .5f;
+            pads = new Transform[road.Squares.Length];
+            for (int i = 0; i < road.Squares.Length; i++)
             {
-                string name = KnightRoute.Squares[i];
+                string name = road.Squares[i];
                 PawnRushBoard.Parse(name, out int f, out int r);
                 var c = Square(name);
                 b.Box("Road " + name, c + new Vector3(-h, Bottom, -h), c + new Vector3(h, 0f, h), Arena.Wood(PawnRushBoard.IsLight(f, r)), true).AddComponent<CourseFloor>();
@@ -108,12 +119,12 @@ namespace ChessFight.PawnRush
 
             // The other side's pieces, one on each of six squares, a little off the pad.
             var them = Opponent;
-            pieces = new Transform[KnightRoute.PieceSquares.Length];
+            pieces = new Transform[road.Pieces];
             pieceColliders = new Collider[pieces.Length];
             for (int i = 0; i < pieces.Length; i++)
             {
-                var go = MiniGameParts.Piece(b.parent, "Piece " + KnightRoute.PieceSquares[i], KnightRoute.PieceKinds[i], PieceHeight, MiniGameParts.PieceMaterial(them), station.Accent(them), true, .3f);
-                go.transform.localPosition = Square(KnightRoute.PieceSquares[i]) + new Vector3(.55f, 0f, .55f);
+                var go = MiniGameParts.Piece(b.parent, "Piece " + road.PieceSquares[i], road.PieceKinds[i], PieceHeight, MiniGameParts.PieceMaterial(them), station.Accent(them), true, .3f);
+                go.transform.localPosition = Square(road.PieceSquares[i]) + new Vector3(.55f, 0f, .55f);
                 pieces[i] = go.transform;
                 pieceColliders[i] = go.GetComponent<Collider>();
                 takenAt[i] = -10f;
@@ -232,7 +243,7 @@ namespace ChessFight.PawnRush
             takenAt[i] = Time.time;
             takenFrom[i] = pieces[i].localPosition;
             // Knocked away from the nearest pawn this PC draws (toward the water).
-            var away = takenFrom[i] - Square(KnightRoute.PieceSquares[i]);
+            var away = takenFrom[i] - Square(road.PieceSquares[i]);
             float best = 3f;
             foreach (var p in station.Pawns())
             {
@@ -277,7 +288,7 @@ namespace ChessFight.PawnRush
 
         void Restore(int i)
         {
-            pieces[i].localPosition = Square(KnightRoute.PieceSquares[i]) + new Vector3(.55f, 0f, .55f);
+            pieces[i].localPosition = Square(road.PieceSquares[i]) + new Vector3(.55f, 0f, .55f);
             pieces[i].localRotation = Quaternion.identity;
             if (pieceColliders[i] != null) pieceColliders[i].enabled = true;
             takenAt[i] = -10f;

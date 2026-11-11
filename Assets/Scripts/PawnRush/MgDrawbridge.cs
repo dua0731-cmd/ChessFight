@@ -63,6 +63,9 @@ namespace ChessFight.PawnRush
         [SerializeField] bool palaceFront;
         [SerializeField] Vector3 pullDir = Vector3.back;      // the way the pawns walk to pull (game frame)
         [SerializeField] float pullX;                          // palace: the returning (pulled) line's x
+        // R543 (user 11-11: "도개교는 당겨지는 힘(진척도가 올라가는 정도)를 조절해줘"): what one puller's pull is worth for
+        // the team's size (MiniGameScale.RopeForce: 5 / the size; 1 for five a side and for a bridge saved before).
+        [SerializeField] float worth = 1f;
         [SerializeField] float moat0 = Moat0, deckLen = Deck, towerU = 16.2f;
 
         float pulled;            // metres of rope pulled (host), or the host's (client)
@@ -246,6 +249,7 @@ namespace ChessFight.PawnRush
 
             var game = b.parent.gameObject.AddComponent<MgDrawbridge>();
             game.station = station;
+            game.worth = MiniGameScale.RopeForce(station.TeamSize);
             game.ropeOffsetX = ropeOffset;
             game.winchAt = new Vector3(winchX, DrumHeight, winchU);
             game.pullDir = Vector3.back;                                        // both: the pawns walk south to pull
@@ -541,7 +545,7 @@ namespace ChessFight.PawnRush
             }
             net = force - hold;
             knotBits = bits;
-            pulled = Mathf.Min(DrawbridgeRope.Length, pulled + DrawbridgeRope.Speed(force, hold) * Time.fixedDeltaTime);
+            pulled = Mathf.Min(DrawbridgeRope.Length, pulled + DrawbridgeRope.Speed(force, hold, worth) * Time.fixedDeltaTime);
             Progress01 = pulled / DrawbridgeRope.Length;
             if (pulled >= DrawbridgeRope.Length - 1e-4f)
             {
@@ -643,7 +647,7 @@ namespace ChessFight.PawnRush
         // How hard the rope is being hauled, 0..1, from the net pull every PC has (each puller 1, a sprinting one 1.8,
         // minus the rivals holding back; 5 = about three sprinting pawns): the rope looks ready to part
         // (MiniGameDrawbridgeRope). 0 once the bridge is down.
-        public float Tension01 => Completed ? 0f : Mathf.Clamp01(net / 5f);
+        public float Tension01 => Completed ? 0f : Mathf.Clamp01(net * worth / 5f);
         public float StrainAge(int i) => strainAt[i] > 0f ? Time.time - strainAt[i] : 99f;
         public bool KnotHeld(int i) => (knotBits >> i & 1) != 0 || (knotBits >> (4 + i) & 1) != 0;
 
@@ -849,7 +853,7 @@ namespace ChessFight.PawnRush
         void Sounds(bool moving)
         {
             var at = World(winchAt);
-            float speed = DrawbridgeRope.Speed(Mathf.Max(0f, net), 0f);
+            float speed = DrawbridgeRope.Speed(Mathf.Max(0f, net), 0f, worth);
             // user 11-08 ("줄을 당기다가 갑자기 안하면 갑자기 사운드가 멈춰"): the loops no longer stop dead when the
             // pulling stops - they swell in over 0.25 s and die away over 0.6 s (a short pause in the pulling keeps them on)
             hum = Mathf.MoveTowards(hum, moving ? 1f : 0f, Time.deltaTime / (moving ? .25f : .6f));

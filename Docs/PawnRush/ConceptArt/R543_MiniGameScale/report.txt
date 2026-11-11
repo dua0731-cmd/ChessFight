@@ -1,0 +1,43 @@
+R543 mini-game rooms at 3 to 6 a side: what is built, pictures beside this file.
+Not a playtest.
+C_Drawbridge_3: a puller counts 1.67
+C_Drawbridge_4: a puller counts 1.25
+C_Drawbridge_5: a puller counts 1
+C_Drawbridge_6: a puller counts 0.83
+D_Capstan_3: 3 bars, 3.5 turns
+D_Capstan_4: 4 bars, 5 turns
+D_Capstan_5: 5 bars, 6 turns
+D_Capstan_6: 6 bars, 7 turns
+A_Paint_3: board 6 x 6, 18 squares a team
+A_Paint_4: board 8 x 6, 24 squares a team
+A_Paint_5: board 8 x 8, 32 squares a team
+A_Paint_6: board 10 x 8, 40 squares a team
+B_Planks_3: 5 rows of 2 m, 2 laid from the start, 6 planks to carry
+B_Planks_4: 5 rows of 2 m, 1 laid from the start, 8 planks to carry
+B_Planks_5: 5 rows of 2 m, 0 laid from the start, 10 planks to carry
+B_Planks_6: 6 rows of 1.67 m, 0 laid from the start, 12 planks to carry
+E_Bells_3: 3 towers: (0.4, 6.5) 9 m (-5.6, 15.6) 9 m (6.4, 15.6) 9 m
+E_Bells_4: 4 towers: (-5.6, 6.5) 9 m (6.4, 6.5) 9 m (-5.6, 15.6) 9 m (6.4, 15.6) 9 m
+E_Bells_5: 5 towers: (-7.6, 6.5) 9 m (8.4, 6.5) 9 m (0.4, 10.5) 9 m (-7.6, 15.6) 9 m (8.4, 15.6) 9 m
+E_Bells_6: 6 towers: (-7.6, 6.5) 9 m (0.4, 6.5) 9 m (8.4, 6.5) 9 m (-7.6, 15.6) 9 m (0.4, 16.4) 9 m (8.4, 15.6) 9 m
+F_EnPassant_3: 10 statues in 3 rows
+F_EnPassant_4: 13 statues in 4 rows
+F_EnPassant_5: 16 statues in 4 rows
+F_EnPassant_6: 19 statues in 5 rows
+J_KnightPads_3: 6 squares of 1.9 m (d1 b2 a4 b6 d7 f8), 4 pieces
+J_KnightPads_4: 7 squares of 2 m (d1 b2 a4 c5 e4 f6 e8), 5 pieces
+J_KnightPads_5: 8 squares of 2.05 m (d1 b2 a4 c5 e4 g5 h7 f8), 6 pieces
+J_KnightPads_6: 9 squares of 2.2 m (d1 b2 a4 c5 e4 g3 h5 g7 e8), 7 pieces
+G_KingEscort_3: seed 53194: d1 d2 c2 c3 c4 c5 d5 e5 e6 e7 e8 | sand d5 e5 | rooks c3 -> b3
+G_KingEscort_4: seed 53194: d1 d2 d3 d4 e4 f4 g4 g5 g6 g7 g8 f8 e8 | sand d3 d4 g8 | rooks f4 g6 -> f3 f6
+G_KingEscort_5: seed 53194: d1 d2 c2 b2 b3 b4 b5 b6 c6 d6 e6 f6 f7 f8 e8 | sand b2 b3 d6 e6 | rooks c6 f7 -> c7 g7
+G_KingEscort_6: seed 53194: d1 d2 d3 e3 f3 g3 g4 g5 g6 f6 e6 d6 c6 c7 c8 d8 e8 | sand g4 g5 e6 d6 c6 | rooks e3 f6 c7 -> e4 f7 b7
+H_Checkmate_3: 4 kings
+H_Checkmate_4: 5 kings
+H_Checkmate_5: 6 kings
+H_Checkmate_6: 7 kings
+I_CheckBlock_3: seed 11221: 1 checks to answer
+I_CheckBlock_4: seed 11221: 2 checks to answer
+I_CheckBlock_5: seed 11221: 3 checks to answer
+I_CheckBlock_6: seed 11221: 4 checks to answer
+Result: PASS

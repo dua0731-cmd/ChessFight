@@ -2,6 +2,7 @@
 # (Docs/PawnRush/ConceptArt/R507_RoyalLibrary/AssetRefs), cut into parts and fitted to MgBells' numbers.
 #
 #   "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --python e_library_v1.py -- [--render] [--export]
+#   R543: "-- --export-tower --no-save" writes only E_Tower_9.fbx and leaves the .blend alone (run with Blender 3.4 too).
 #
 # Sources (Source/, each 1 m wide, z up, the parts standing on the ground plane):
 #   R507_StackedWoodenBookcases: three stepped bookcase towers (front = Blender -y). Tripo made the lower storeys taller
@@ -13,12 +14,14 @@
 # Every part keeps its set's own texture (PR_Mid_LibraryTowerKit / PR_Mid_LibraryPropKit).
 #
 # Outputs (Export/):
-#   E_StationEnv.fbx  MgBells' game frame of one station (Blender x = v, y = u, z = up; symmetric in v, so it serves
-#                     both teams): the six towers built from cabinet modules on the game's storey boxes, a walnut lid
-#                     and core per storey, a brass rail round every top. A tower storey is 2.4 m wide, 3 m tall (the 7.5 m tower's last one 1.5 m),
-#                     flush at the back (u + 1.2) and 0.8 m deeper to the south for every storey above it. A 2.4 m deep
-#                     storey is one cabinet; a deeper one is two cabinets, one at the back and one at the front (1 cm
-#                     wider so their side faces never share a plane), so no cabinet is stretched in depth.
+#   E_Tower_9.fbx     ONE tower (R543, user 11-11: the towers' number goes with the team's size and they stand further
+#                     apart, so Unity hangs this on each of the game's towers - MiniGameModels.Library; until then
+#                     E_StationEnv.fbx was one mesh of six towers where they always stood). Origin on the floor under
+#                     the top's middle (Blender x = v, y = u, z = up), 9 m tall, built from cabinet modules on the game's
+#                     storey boxes, a walnut lid and core per storey. A storey is 2 m wide (TOP; 2.4 m until R543), 3 m
+#                     tall, flush at the back (u + 1) and 0.8 m deeper to the south for every storey above it. A 2 m
+#                     deep storey is one cabinet; a deeper one is two cabinets, one at the back and one at the front
+#                     (1 cm wider so their side faces never share a plane), so no cabinet is stretched in depth.
 #   E_Bell.fbx        the hand bell on its stand, 1.25 m tall, origin at the stand's bottom centre. Code hangs one on
 #                     each top and gilds it when the game rings it.
 #   E_ShelfDoor.fbx   the pivoting bookcase leaf, 3.8 x 4.6 x 0.45 m, books to Blender -y, hinge post on x = 0 and the
@@ -35,10 +38,13 @@ TEX = os.path.join(HERE, "Materials", "Textures")
 OUT_FBX = os.path.join(HERE, "Export")
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 
-# MgBells (game frame): (v, height, u); storeys of 3 m; top 2.4 m square; 0.8 m ledge per storey on the south side.
-TOWERS = [(-5., 6., 5.), (5., 6., 5.), (-5., 7.5, 11.), (5., 7.5, 11.), (-5., 9., 17.), (5., 9., 17.)]
-TOP, LEDGE, STOREY = 2.4, .8, 3.
-BELL_BACK = .55          # the bell stands on the top's north half, out of the climbers' way
+# MgBells (game frame): (v, height, u); storeys of 3 m; top 2 m square; 0.8 m ledge per storey on the south side.
+# R543: where the towers stand is Core's BellTowers.Layout (three to six of them, all 9 m); these six are six a side's,
+# for the preview render only.
+TOWER_H = 9.
+TOWERS = [(-7.6, TOWER_H, 6.5), (.4, TOWER_H, 6.5), (8.4, TOWER_H, 6.5), (-7.6, TOWER_H, 15.6), (.4, TOWER_H, 16.4), (8.4, TOWER_H, 15.6)]
+TOP, LEDGE, STOREY = 2., .8, 3.
+BELL_BACK = .4           # the bell stands on the top's north half, out of the climbers' way
 BELL_H = 1.25
 BELL_LIFT = .025         # the bell's stand 0.5 cm over the top storey's lid (lid top = game top + 2 cm)
 # The top rail (user, 11-07: "난간도 이어지지 않아"): Tripo's railed platform came out with torn, unjoined bars, so the
@@ -387,25 +393,32 @@ def main():
         cabinet(o)
     bell(props["bell"]); door(props["door"]); arch(props["arch"])
 
-    env = []
     walnut = walnut_material(); brass = brass_material()
     uv_name = mods["cab_short"].data.uv_layers[0].name   # one UV map name, so the join keeps one map
-    for v, h, u in TOWERS:
-        env += tower(mods, v, h, u, uv_name, walnut)
-        # no rail on the tops (user, 11-07: "제일 위에 난간 그냥 지우자"); rail() is kept for reference
-    for o in list(mods.values()):
-        bpy.data.objects.remove(o)
-    station = join(env, "E_StationEnv")
-    print("ENV tris", tris(station))
+    # R543: one tower at the origin (Unity hangs it on each of the game's towers)
+    # no rail on the tops (user, 11-07: "제일 위에 난간 그냥 지우자"); rail() is kept for reference
+    one = join(tower(mods, 0., TOWER_H, 0., uv_name, walnut), "E_Tower_9")
+    print("TOWER tris", tris(one), coords(one).min(0).round(2), coords(one).max(0).round(2))
     for k in ("bell", "door", "arch"):
         print("PART", k, tris(props[k]), coords(props[k]).min(0).round(2), coords(props[k]).max(0).round(2))
+    if "--export" in ARGS or "--export-tower" in ARGS:
+        export(one, "E_Tower_9")
     if "--export" in ARGS:
-        export(station, "E_StationEnv")
         export(props["bell"], "E_Bell")
         export(props["door"], "E_ShelfDoor")
         export(props["arch"], "E_DoorArch")
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(HERE, "E_Library_v1.blend"))
     if "--render" in ARGS:
+        # the preview's station: six a side's towers
+        env = []
+        for v, h, u in TOWERS:
+            env += tower(mods, v, h, u, uv_name, walnut)
+        station = join(env, "E_StationPreview")
+    for o in list(mods.values()):
+        bpy.data.objects.remove(o)
+    if "--no-save" not in ARGS:
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(HERE, "E_Library_v1.blend"))
+    if "--render" in ARGS:
+        one.hide_render = True
         render(station, props)
 
 

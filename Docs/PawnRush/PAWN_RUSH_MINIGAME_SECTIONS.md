@@ -69,7 +69,8 @@ Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는
 | 8 / 9 / 0 (3단계) | G 행차 회랑 / H 체스 홀 / I 침실 |
 | F5 | 백팀·흑팀 전환 후 입구에서 시작 |
 | F6 | 자기 팀의 완료 이벤트·문 연결 시험. 실제 장치 수행을 대신한 개발용 지름길. (R525) 구간 시험 · 구간 라운드 경기에서도 개발 빌드면 F6 = 우리 팀의 다음 미니게임 완료(경기는 방장이 판정) |
-| F8 | 현재 프리팹을 새로 불러와 초기화 |
+| F8 | 현재 프리팹을 새로 불러와 초기화. (R543) 그때마다 **새 씨앗** — G 행차 회랑의 길, I 침실의 배치가 바뀐다 |
+| F9 | (R543) **인원 규모** 3 → 4 → 5 → 6 대 6. 그 규모로 방을 새로 짓는다. 처음은 5 대 5. 왼쪽 위에 지금 규모 · 씨앗 표시 |
 | R / Backspace | 기존 캐릭터 시험의 체크포인트 / 처음으로 |
 | F1 | (R529) 캐릭터 비행 — 개발 빌드 · 에디터 치트: 보는 쪽으로 W(위를 보면 올라감) · Shift 빠르게 · 다시 F1이면 떨어짐. 자유 카메라는 **F4** |
 
@@ -77,9 +78,11 @@ Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는
 
 ## 2. 연결과 플레이 소유권
 
+- **(R543) 미니게임 규모는 팀 인원(3 ~ 6)에 따라 달라진다.** 구간의 팀 인원(`PawnRushSection.TeamSize` — 판이 정하고, 온라인 경기는 시작 인원 `SteamSession.StartTeamSize`)을 스테이션이 읽어(`MissionStation.TeamSize`) 게임을 그 규모로 짓는다. 인원이 바뀌면 `MiniGameSection`이 게임을 다시 설치한다. 표와 규칙은 [미니게임 규칙 14절](PAWN_RUSH_MINIGAMES_v1.md#14-인원수별-규모-r543-2026-11-11), 숫자는 Core `MiniGameScale`. 저장된 프리팹의 Game socket 안은 예전(5 대 5) 모양이 구워져 있지만 Play 때 다시 설치되므로 다시 굽지 않아도 된다.
+- **(R543) 개수가 달라지는 것에 붙는 모델은 '하나짜리'여야 한다.** E 종탑은 탑 6개를 한 덩어리로 구운 `E_StationEnv.fbx` 대신 **탑 1개** `E_Tower_9.fbx`를 게임의 탑마다 건다. D 캡스턴 막대도 4개짜리 `D_Capstan_Bars.fbx` 대신 **막대 1개** `D_Capstan_Bar.fbx`를 게임의 막대마다 건다(없으면 4개일 때만 예전 모델). 나머지 방은 이름으로 찾아 붙여서("Statue n" · "King n" · "Road xx" · "Plank (laid)" …) 개수가 달라져도 따라온다. J 통(2.2 m)은 칸 너비에 맞춰 가로로 늘거나 준다.
 - 뿌리는 `PawnRushSection` + `MiniGameSection`이다. 입구(0,0,0), 출구(0,0,36), 폭44m, 양팀 스테이션 중심 x±12·z4를 유지한다. 앞 구간의 출구 위치·회전에 따라 배치된다.
 - `MiniGameSectionBuilder`가 바닥·벽 충돌·두 팀 문·스테이션·체크포인트·낙하 복귀·진행 경로를 만든다. `MissionStation.Install`이 기존 `Mg*` 규칙을 설치한다. 게임 완료는 자기 문만 연다. `TeamBarrier`는 다른 팀의 출구 통과를 막는다.
-- A는 공유18×18m판 하나·팀별32칸이다. 공유판 캐시는 같은 프리팹 인스턴스 안에서만 연결된다. C는 전체 폭 해자와 중앙 난간, 측면 권양기로4m 다리 접근을 유지한다. D는 기존8바퀴 규칙이다. B는 R528부터 판자를 잡기로 들어 나른다(상대 판자도, 벗어나면 원래 더미로, 팀별 나무색 · 띠, 놓거나 0.5초 들고 있으면 자동 설치 — [미니게임 규칙 B 판자](PAWN_RUSH_MINIGAMES_v1.md)).
+- A는 공유18×18m판 하나·팀별32칸이다(5 대 5; R543: 6 × 6 ~ 10 × 8). 공유판 캐시는 같은 프리팹 인스턴스 안에서만 연결된다. C는 전체 폭 해자와 중앙 난간, 측면 권양기로4m 다리 접근을 유지한다. D는 기존8바퀴 규칙이었다(R543: 막대 = 인원수 · 3.5 ~ 7바퀴 · 회전 70%). B는 R528부터 판자를 잡기로 들어 나른다(상대 판자도, 벗어나면 원래 더미로, 팀별 나무색 · 띠, 놓거나 0.5초 들고 있으면 자동 설치 — [미니게임 규칙 B 판자](PAWN_RUSH_MINIGAMES_v1.md)).
 - 기존 Course01의 팔레트와 흐름은 그대로이고 새 `PalaceStyle` 스테이션만 파랑·주황 표시와 짙은 아레나 단을 쓴다. 빨강은 체크·위험 표시다. 기존 아레나 장식·솟아오름을 새 공간에 중복 생성하지 않는다. **승격 발판은 R516부터 다시 만든다**(사용자 11-09 "승격발판 다시 넣어야 함"): 코스 01과 같은 스테이션 자리(입구 쪽 바깥, 스테이션 기준 v ±4.5 · u 1 → 구간 기준 x ±16.5 · z 5, 무대 위 0.4 m)와 같은 규칙(자기 팀 폰이 2초 서 있으면 카드 4장에서 기물 선택, 판마다 한 번), 테두리만 방의 팀색(파랑 · 주황). Play 때 만들어져 프리팹에는 없다. 온라인 구간 라운드는 발판마다 "사용함"과 고르는 사람을 코스 상태로 보낸다(`MatchCourse` RoundMatch, 프로토콜 v29).
 - **Blender 모델(R501~):** C 도개교는 `Resources/PawnRushMiniGames/Early/C_Drawbridge_*.fbx`가 Play 때 구간과 다리 힌지·드럼에 붙고, 대신하는 코드 그림은 그리기만 꺼진다(`MiniGameModels`, [원본](../../ArtSource/PawnRush/MiniGames/README.md)). 판정·크기는 그대로다.
 - **겹친 면 금지(R498):** 바닥 판 가장자리에 묻는 벽은 `MissionGames.LinedWall`(충돌체 그대로, 그림만 `Proud`=1cm 떼기)로 만든다. A 공유판은 각 스테이션의 금 테두리 중 판 밑 부분을 `PaintBoard.ClipRims`로 잘라 낸다. 새 장식도 다른 면과 같은 평면에 두지 않는다([PITFALLS §39](../Environment/PITFALLS.md)).
@@ -106,7 +109,9 @@ Unity 메뉴 **ChessFight → Pawn Rush → Build → All Mini-game Prefabs**는
 | `PalaceTextBinding.cs` | 저장할 수 없는 OS 글꼴·atlas 재연결 |
 | `MiniGamePrefabTest.cs` | 오프라인10종 선택·팀 전환·완료 연결 시험 |
 | `PawnRushEditor/MiniGamePrefabMenu.cs` | 영속 자산 굽기·10프리팹·목록 등록·시험 씬 |
-| `PawnRushEditor/MiniGamePrefabValidation.cs` | 저장된 자산 참조, 실제 로드·문·초기화·대표 렌더 검사 |
+| `PawnRushEditor/MiniGamePrefabValidation.cs` | 저장된 자산 참조, 실제 로드·문·초기화·대표 렌더 검사. (R543) `-miniGameTeamSize 3~6`으로 그 규모에서 검사(기본 5) |
+| `Core/MiniGameScale.cs` | (R543) 인원수별 규모 표 한 곳: `MiniGameScale` · `BoardGrid`(A 판) · `BellTowers`(E 탑 자리 · 간격). 게임별 배치는 Core `PlankLayout` · `EnPassantField` · `KnightRoad` · `KingRoad` · `CheckBlockGenerator.BudgetFor` |
+| `PawnRushEditor/MiniGameScaleCapture.cs` | (R543) 10방을 3 ~ 6 대 6 규모로 차례로 지어 위에서 본 그림 · 목록을 `Logs/MiniGameScale/`에 남김(메뉴 `Development → Mini-game Scale Pictures (3 to 6 a side)`, 배치 `RunBatch`) |
 | `Tools/Test-NetworkCompile.ps1` | Unity 번들 Roslyn 사용, 실제 asmdef에 맞는 VFX·PawnRush.Editor 참조 검사 |
 
 ## 5. 확인 범위

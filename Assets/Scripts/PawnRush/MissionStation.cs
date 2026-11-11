@@ -46,6 +46,18 @@ namespace ChessFight.PawnRush
         public MiniGameBase Game => gameSocket != null ? gameSocket.GetComponentInChildren<MiniGameBase>(true) : null;
         public Transform Socket => gameSocket;
         public bool PalaceStyle => palaceStyle;
+        // R543 (user 11-11: "몇 대 몇이냐에 따라 미니게임 규모를 정할거야"): the size the teams started with, which a game
+        // built here is scaled to (MiniGameScale: 3 to 6 a side). A section round's stations take it from their section
+        // (the round's, the match's "seats"); a station of no section (course 01) plays five a side's game, what there
+        // was before.
+        public int TeamSize
+        {
+            get
+            {
+                var section = GetComponentInParent<PawnRushSection>(true);
+                return MiniGameScale.Clamp(section != null ? section.TeamSize : MiniGameScale.Baseline);
+            }
+        }
         public Color Accent(int forTeam) => Arena.TeamColor(forTeam, palaceStyle);
         public void SetPalaceStyle(bool value) => palaceStyle = value;
         // The single-use promotion pad beside the game (R125), made the first time it is asked for in Play (after
